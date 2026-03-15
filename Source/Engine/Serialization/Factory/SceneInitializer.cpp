@@ -5,6 +5,13 @@
 #include <random>
 #include <vector>
 
+
+#include "Engine/Physics/JoltPhysicsManager.h"
+#include "Engine/GamePlay/Physics/Rigidbody/JoltRigidBodyComponent.h"
+#include <Jolt/Physics/Body/BodyCreationSettings.h>
+#include <Jolt/Physics/Collision/Shape/BoxShape.h>
+#include <Jolt/Physics/Collision/Shape/SphereShape.h>
+
 using namespace CCL::ECS;
 
 void SceneInitializer::SpawnPlayerTest(
@@ -131,7 +138,6 @@ void SceneInitializer::SpawnTransformLoadTest(
     }
 }
 
-
 void SceneInitializer::SpawnLightStartSet(CCL::ECS::Core::World &world, ID3D11Device *device)
 {
     // ライティングセットアップ
@@ -146,4 +152,94 @@ void SceneInitializer::SpawnGameLightSetting(CCL::ECS::Core::World &world, ID3D1
     // ポイントライト配置テスト
     Prefab::SpawnPrefab(world, "Assets/GamePlay/Prefabs/Light/PointLight.json", {0, 3, 0});
     Prefab::SpawnPrefab(world, "Assets/GamePlay/Prefabs/Light/PointLight.json", {5, 2, 5});
+}
+
+void SceneInitializer::SpawnJoltTest(CCL::ECS::Core::World &world, ID3D11Device *device)
+{
+    if (!world.HasResource<JoltPhysicsManager>()) return;
+    auto               &joltManager   = world.GetResource<JoltPhysicsManager>();
+    JPH::BodyInterface &bodyInterface = joltManager.GetBodyInterface();
+
+    // ──────────────────────────────────────────
+    // 1. 床の生成 (Box)
+    // ──────────────────────────────────────────
+
+    // ★重要: 基準となる「半分のサイズ(Half-Extent)」を変数として定義する
+    JPH::Vec3 floorHalfExtent(50.0f, 1.0f, 50.0f);
+
+    // 物理側: Joltには半分のサイズをそのまま渡す
+    JPH::BoxShapeSettings floorShapeSettings(floorHalfExtent);
+    JPH::ShapeRefC        floorShape = floorShapeSettings.Create().Get();
+
+    JPH::BodyCreationSettings floorSettings(floorShape,
+        JPH::RVec3(0.0f, -2.0f, 0.0f),
+        JPH::Quat::sIdentity(),
+        JPH::EMotionType::Static,
+        PhysicsLayers::NON_MOVING);
+    JPH::Body                *floorBody = bodyInterface.CreateBody(floorSettings);
+    bodyInterface.AddBody(floorBody->GetID(), JPH::EActivation::DontActivate);
+
+    // ECS側: アーキタイプを指定してエンティティの生成を予約
+    auto floorArchetype =
+        ArchetypeHelper::Generate<JoltRigidBodyComponent, TransformComponent, PrimitiveComponent>();
+    auto floorEntity = world.RequestSpawnEntity(floorArchetype);
+
+    TransformComponent floorTransform;
+    floorTransform.position = {0.0f, -2.0f, 0.0f};
+    floorTransform.rotation = {0.0f, 0.0f, 0.0f, 1.0f};
+    floorTransform.scale    = {1.0f, 1.0f, 1.0f};
+    world.AddComponent<TransformComponent>(floorEntity, floorTransform);
+
+    JoltRigidBodyComponent floorJolt;
+    floorJolt.bodyID = floorBody->GetID();
+    world.AddComponent<JoltRigidBodyComponent>(floorEntity, floorJolt);
+
+    PrimitiveComponent floorPrim;
+    floorPrim.type = PrimitiveType::Box;
+    // ★重要: 描画側(Primitive)には、物理のサイズを「2倍(全体サイズ)」にして渡す
+    floorPrim.size  = {floorHalfExtent.GetX() * 2.0f,
+         floorHalfExtent.GetY() * 2.0f,
+         floorHalfExtent.GetZ() * 2.0f};
+    floorPrim.color = {0.5f, 0.5f, 0.5f, 1.0f}; // グレーの床
+    world.AddComponent<PrimitiveComponent>(floorEntity, floorPrim);
+
+    // ──────────────────────────────────────────
+    // 2. 落下する球の生成 (Sphere)
+    // ──────────────────────────────────────────
+
+    // 球の場合は物理も描画も「半径(Radius)」で共通しているため、そのまま使える
+    float sphereRadius = 1.0f;
+
+    JPH::SphereShapeSettings sphereShapeSettings(sphereRadius);
+    JPH::ShapeRefC           sphereShape = sphereShapeSettings.Create().Get();
+
+    JPH::BodyCreationSettings sphereSettings(sphereShape,
+        JPH::RVec3(0.0f, 15.0f, 0.0f),
+        JPH::Quat::sIdentity(),
+        JPH::EMotionType::Dynamic,
+        PhysicsLayers::MOVING);
+    sphereSettings.mRestitution = 0.8f; // よく弾む設定
+
+    JPH::Body *sphereBody = bodyInterface.CreateBody(sphereSettings);
+    bodyInterface.AddBody(sphereBody->GetID(), JPH::EActivation::Activate);
+
+    auto sphereArchetype =
+        ArchetypeHelper::Generate<JoltRigidBodyComponent, TransformComponent, PrimitiveComponent>();
+    auto sphereEntity = world.RequestSpawnEntity(sphereArchetype);
+
+    TransformComponent sphereTransform;
+    sphereTransform.position = {0.0f, 15.0f, 0.0f};
+    sphereTransform.rotation = {0.0f, 0.0f, 0.0f, 1.0f};
+    sphereTransform.scale    = {1.0f, 1.0f, 1.0f};
+    world.AddComponent<TransformComponent>(sphereEntity, sphereTransform);
+
+    JoltRigidBodyComponent sphereJolt;
+    sphereJolt.bodyID = sphereBody->GetID();
+    world.AddComponent<JoltRigidBodyComponent>(sphereEntity, sphereJolt);
+
+    PrimitiveComponent spherePrim;
+    spherePrim.type   = PrimitiveType::Sphere;
+    spherePrim.radius = sphereRadius;             // そのまま渡す
+    spherePrim.color  = {1.0f, 0.2f, 0.2f, 1.0f}; // 赤い球
+    world.AddComponent<PrimitiveComponent>(sphereEntity, spherePrim);
 }

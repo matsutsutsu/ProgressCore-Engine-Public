@@ -5,10 +5,12 @@
 #include "Engine/Serialization/SceneSerializer.h"
 #include "Engine/Serialization/Factory/Prefab.h"
 #include "Engine/Serialization/Factory/SceneInitializer.h"
+
 #include "Engine/Graphics/Core/Graphics.h"
 #include "Engine/Physics/Grid.h"
-#include "Game/Logics/Combat/Weapon/Attachments/AttachmentMasterData.h" 
+#include "Engine/Physics/JoltPhysicsManager.h"
 #include "Game/Logics/Combat/GlobalDamageQueue.h"
+
 
 #include "Engine/GamePlay/Graphics/Core/EnvironmentSystem.h"
 
@@ -36,6 +38,10 @@ void BaseScene::Initialize()
     // リソース登録
     _worldPtr->AddResource<Grid>();
     _worldPtr->AddResource<GlobalDamageQueue>();
+
+    // WorldのリソースとしてJoltを登録し、初期化する
+    _worldPtr->AddResource<JoltPhysicsManager>();
+    _worldPtr->GetResource<JoltPhysicsManager>().Initialize();
 
     // システムがコンストラクタ引数なしでもアクセスできるようにポインタを登録
     _worldPtr->AddResource<Camera *>(&camera);
@@ -105,7 +111,7 @@ void BaseScene::Render()
 
     // 1. 描画準備 & ポストプロセス開始
     graphics.SetRenderTargets(false);
-    graphics.Clear(0.35f, 0.65f, 1.0f, 1, false);
+    graphics.Clear(0.65f, 0.65f, 1.0f, 1, false);
 
     // ブルームなどのポストプロセス開始
     float clearColor[] = {0.11, 0.16f, 0.25f, 1.0f};
@@ -159,6 +165,15 @@ void BaseScene::Render()
     // _world.DrawDebugCollision は消滅したので、SystemManagerから直接呼ぶ
     if (_ecsContext && _ecsContext->GetSystemManager()) {
         _ecsContext->GetSystemManager()->DrawDebugShape(graphics.GetShapeRenderer());
+    }
+
+    // =========================================================
+    // ShapeRendererが画面に描画される【直前】に、
+    // Joltの当たり判定をShapeRendererのキューに溜め込む
+    // =========================================================
+    if (_worldPtr->HasResource<JoltPhysicsManager>()) {
+        auto &joltManager = _worldPtr->GetResource<JoltPhysicsManager>();
+        joltManager.DrawBodies(graphics.GetShapeRenderer());
     }
 
     // DebugShape描画

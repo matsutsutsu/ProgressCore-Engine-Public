@@ -1,5 +1,4 @@
 #include "ParticleScene.h"
-#include "Game/Core/SystemGroups.h"
 #include "Engine/Serialization/Factory/Prefab.h"
 #include "Engine/Graphics/Core/Graphics.h"
 #include <imgui.h>
@@ -40,8 +39,6 @@ void ParticleScene::RegisterSystems()
     // (SystemGroupsの関数が参照を受け取る仕様であると推測されるため、ポインタをデリファレンスしています)
     auto &sysManager = *(_ecsContext->GetSystemManager());
 
-    _particleRenderer = SystemGroups::RegisterParticleSystems(sysManager);
-
     //_particleUpdater
 }
 
@@ -50,9 +47,7 @@ void ParticleScene::OnRender3D(RenderContext &rc)
     auto* prim = Graphics::Instance().GetPrimitiveRenderer();
     prim->DrawGrid(20, 1);
 
-    if (_particleRenderer) {
-        _particleRenderer->Update(0.0f);
-    }
+
 }
 
 void ParticleScene::OnDrawImGui()

@@ -3,6 +3,9 @@
 #include <Jolt/RegisterTypes.h>
 #include <cstdarg>
 #include <iostream>
+#include <windows.h>
+
+#include <Jolt/Physics/Body/BodyManager.h>
 
 using namespace JPH;
 
@@ -14,15 +17,28 @@ static void TraceImpl(const char *inFMT, ...)
     char buffer[1024];
     vsnprintf(buffer, sizeof(buffer), inFMT, list);
     va_end(list);
-    std::cout << "[Jolt] " << buffer << std::endl;
+
+    OutputDebugStringA("[Jolt] ");
+    OutputDebugStringA(buffer);
+    OutputDebugStringA("\n");
 }
 
 #ifdef JPH_ENABLE_ASSERTS
 static bool AssertFailedImpl(
     const char *inExpression, const char *inMessage, const char *inFile, uint inLine)
 {
-    std::cout << "[Jolt Assert] " << inFile << ":" << inLine << ": (" << inExpression << ") "
-              << (inMessage ? inMessage : "") << std::endl;
+    char buffer[2048];
+    snprintf(buffer,
+        sizeof(buffer),
+        "[Jolt Assert] %s:%d: (%s) %s\n",
+        inFile,
+        inLine,
+        inExpression,
+        (inMessage ? inMessage : ""));
+
+    // ★確実にVisual Studioの出力ウィンドウにエラーを叩き出す
+    OutputDebugStringA(buffer);
+
     return true; // trueでデバッガをブレークさせる
 }
 #endif
@@ -132,3 +148,24 @@ void JoltPhysicsManager::Step(float deltaTime)
     const int cCollisionSteps = 1;
     m_physicsSystem->Update(deltaTime, cCollisionSteps, m_tempAllocator.get(), m_jobSystem.get());
 }
+
+void JoltPhysicsManager::DrawBodies(ShapeRenderer *shapeRenderer)
+{
+    if (!m_isInitialized || !shapeRenderer) return;
+
+    // レンダラーがまだ作られていなければ生成する
+    if (!m_debugRenderer) {
+        m_debugRenderer = std::make_unique<JoltDebugRenderer>(shapeRenderer);
+    }
+
+    // Joltの描画設定（何を描画するか）
+    JPH::BodyManager::DrawSettings settings;
+    settings.mDrawBoundingBox = false; // 四角い大枠（AABB）を描画するか
+    settings.mDrawShape       = true;  // 本当の当たり判定を描画するか★
+    settings.mDrawVelocity    = false; // 速度の矢印を描画するか
+
+    // 物理空間内の全ボディを描画する命令を、ShapeRendererに向けて発行！
+    m_physicsSystem->DrawBodies(settings, m_debugRenderer.get());
+}
+
+

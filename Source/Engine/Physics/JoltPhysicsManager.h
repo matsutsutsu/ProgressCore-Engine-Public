@@ -10,6 +10,8 @@
 #include <Jolt/Physics/Collision/BroadPhase/BroadPhaseLayer.h>
 #include <Jolt/Physics/Collision/ObjectLayer.h>
 
+#include "JoltDebugRenderer.h"
+
 #include <memory>
 
 // ──────────────────────────────────────────────
@@ -69,6 +71,9 @@ class JoltPhysicsManager {
     void Initialize();
     void Step(float deltaTime);
 
+    // 描画実行関数
+    void DrawBodies(ShapeRenderer *shapeRenderer);
+
     // ECSシステムから物理空間にアクセスするためのゲッター
     JPH::PhysicsSystem *GetPhysicsSystem() const { return m_physicsSystem.get(); }
     JPH::BodyInterface &GetBodyInterface() const { return m_physicsSystem->GetBodyInterface(); }
@@ -79,10 +84,14 @@ class JoltPhysicsManager {
     std::unique_ptr<JPH::TempAllocatorImpl>   m_tempAllocator;
     std::unique_ptr<JPH::JobSystemThreadPool> m_jobSystem;
 
+    // デバッグレンダラーのインスタンスを保持
+    std::unique_ptr<JoltDebugRenderer> m_debugRenderer;
+
     // フィルターのインスタンス
     BPLayerInterfaceImpl              m_bpLayerInterface;
     ObjectVsBroadPhaseLayerFilterImpl m_objectVsBroadphaseFilter;
     ObjectLayerPairFilterImpl         m_objectVsObjectFilter;
+
 
     bool m_isInitialized = false;
 };

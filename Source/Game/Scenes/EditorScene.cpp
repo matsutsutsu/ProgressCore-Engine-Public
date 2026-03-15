@@ -1,7 +1,5 @@
 #include "EditorScene.h"
-#include "Game/Core/SystemGroups.h"
 #include "Engine/Serialization/Factory/SceneInitializer.h"
-#include "Game/Logics/World/LevelLoader.h"
 #include "Engine/Graphics/Core/Graphics.h"
 #include <imgui.h>
 
@@ -19,76 +17,14 @@ void EditorScene::Initialize()
 
 
     ID3D11Device *device = Graphics::Instance().GetDevice();
-    //SceneInitializer::SpawnLightStartSet(_world, device);
+    SceneInitializer::SpawnLightStartSet(*_worldPtr, device);
     //SceneInitializer::SpawnGameLightSetting(_world, device);
-
-#if 0
-    
-    #if 1   敵の動きデバッグ用
-    // ステージロードなど
-    //LevelLoader::Load(&_world, Graphics::Instance().GetDevice(), "Assets/GamePlay/StageTemplatesDebugMaze.json");
-    LevelLoader::Load(&_world, Graphics::Instance().GetDevice(), "Assets/GamePlay/StageTemplatesTestStage.json");
-    SceneInitializer::SpawnMapChipTest(_world, Graphics::Instance().GetDevice());
-
-   // ★修正: Prefab::ID::FreeCamera -> "Assets/GamePlay/Prefabs/Camera/FreeCamera.json"
-    // EntityID camera = CCL::Prefab::SpawnPrefab(_world, "Assets/GamePlay/Prefabs/Camera/FreeCamera.json");
-
-    // 敵スポーン (Input帯で処理)
-    //_systemManager.RegisterSystem<EnemySpawnSystem>(SystemGroup::Logic, Priority::Logic::Input);
-    //_systemManager.RegisterSystem<MapDebugSystem>(SystemGroup::Render, Priority::Render::MainDraw);
-
-    #else   ステージテンプレート作成用
-
-    // ステージロードなど
-    LevelLoader::DebugLoad(&_world, Graphics::Instance().GetDevice(), "Assets/GamePlay/StageTemplatesDebugMaze.json");
-    //SceneInitializer::SpawnMapChipTest(_world, Graphics::Instance().GetDevice());
-
-    EntityID camera = Prefab::SpawnPrefab(
-        _world, "Assets/GamePlay/Prefabs/Camera/FreeCamera.json", DirectX::XMFLOAT3{15.0f, 15.0f, 15.0f});
-
-
-    // 敵スポーン (Input帯で処理)
-   
-    auto* mapDebug =_systemManager.RegisterSystem<MapDebugSystem>(SystemGroup::Render, Priority::Render::MainDraw);
-    mapDebug->SetDevice(device);
-    mapDebug->isDebugVisible = true;
-
-    #endif
-#else
-    #if 0
-      // ★分岐: ステージ5はボス部屋、それ以外はランダム生成
-
-        // --- A. ボス部屋 (固定JSONロード) ---
-        // 事前にMapDebugSystemで作っておいたボス部屋ファイルを指定
-
-        LevelLoader::Load(&_world, device, "Assets/GamePlay/RoomTemplates/Stage5_BossStage.json");
-
-         auto player = _worldPtr->View<PlayerComponent>();
-         if (!player.empty()) {
-        
-            _worldPtr->PatchComponent<TransformComponent>(player[0], [](TransformComponent &trans) {
-                trans.position = {51.0f,0.0f,12.0f}; // プレイヤーを親にする
-            });
-        }
-
-        // ボス演出用ライトをスポーン
-        // ★修正: Prefab::ID::BossLighting -> "Assets/GamePlay/Prefabs/Light/BossLighting.json"
-        Prefab::SpawnPrefab(*_worldPtr, "Assets/GamePlay/Prefabs/Light/BossLighting.json");
-
-        // ボスをスポーン
-        // ★修正: Prefab::ID::Boss -> "Assets/GamePlay/Prefabs/Enemy/Boss.json"
-        // 座標指定がない場合はJSON内の座標が使われるか、(0,0,0)になるので注意。必要なら座標引数を追加。
-        Prefab::SpawnPrefab(*_worldPtr, "Assets/GamePlay/Prefabs/Enemy/Boss.json" /*, {0,0,20} */);
-    #else
-
     Prefab::SpawnPrefab(*_worldPtr, "Assets/GamePlay/Prefabs/Camera/FreeCamera.json");
-    Prefab::SpawnPrefab(*_worldPtr, "Assets/GamePlay/Prefabs/Light/LightingSetup.json");
-    SceneInitializer::SpawnTransformLoadTest(*_worldPtr, device, 100000);
 
 
-    #endif
-       
-#endif
+
+    //SceneInitializer::SpawnTransformLoadTest(*_worldPtr, device, 100000);
+    SceneInitializer::SpawnJoltTest(*_worldPtr, device);
 
     
 }

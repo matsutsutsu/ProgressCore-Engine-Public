@@ -456,6 +456,17 @@ void ShapeRenderer::DrawLine(
 	XMStoreFloat4x4(&instance.worldTransform, World);
 }
 
+// 3つの頂点を線で結ぶだけなので、内部でDrawLineを再利用する（保守性の担保）
+void ShapeRenderer::DrawTriangle(const DirectX::XMFLOAT3 &v1,
+    const DirectX::XMFLOAT3                              &v2,
+    const DirectX::XMFLOAT3                              &v3,
+    const DirectX::XMFLOAT4                              &color)
+{
+    DrawLine(v1, v2, color);
+    DrawLine(v2, v3, color);
+    DrawLine(v3, v1, color);
+}
+
 // レイ描画
 void ShapeRenderer::DrawRay(
 	const DirectX::XMFLOAT3& origin,

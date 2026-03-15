@@ -295,6 +295,12 @@
     <Filter Include="Source\Engine\Serialization\Meta">
       <UniqueIdentifier>{bb611d4c-bc75-4a8d-8a31-1810ea67ad4d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\GamePlay\Physics\Jolt">
+      <UniqueIdentifier>{b8bd7308-0343-4a22-9cfa-3c895298950a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Physics\Jolt">
+      <UniqueIdentifier>{bcbda7cc-2567-497f-b2ca-c7f409adbf23}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -738,9 +744,6 @@
     <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\SphereColliderComponent.h">
       <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\RigidBody\GridUpdateSystem.h">
-      <Filter>Source\Engine\GamePlay\Physics\RigidBody</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\GamePlay\Transform\HierarchyCleanupSystem.h">
       <Filter>Source\Engine\GamePlay\Transform</Filter>
     </ClInclude>
@@ -981,14 +984,20 @@
     <ClInclude Include="Source\Engine\Graphics\Renderer\ParticleRenderer.h">
       <Filter>Source\Engine\Graphics\Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Physics\JoltPhysicsManager.h">
-      <Filter>Source\Engine\Physics</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\GamePlay\Physics\RigidBody\JoltRigidBodyComponent.h">
       <Filter>Source\Engine\GamePlay\Physics\RigidBody</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Utils\PooledParticleComponent.h">
       <Filter>Source\Game\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltUpdateSystem.h">
+      <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\JoltPhysicsManager.h">
+      <Filter>Source\Engine\Physics\Jolt</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\JoltDebugRenderer.h">
+      <Filter>Source\Engine\Physics\Jolt</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1373,9 +1382,6 @@
     <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\ModelRenderSystem.cpp">
       <Filter>Source\Engine\GamePlay\Graphics\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Physics\RigidBody\GridUpdateSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Physics\RigidBody</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\UI\UIElement.cpp">
       <Filter>Source\Engine\UI</Filter>
     </ClCompile>
@@ -1436,8 +1442,14 @@
     <ClCompile Include="Source\Engine\Graphics\Renderer\ParticleRenderer.cpp">
       <Filter>Source\Engine\Graphics\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltUpdateSystem.cpp">
+      <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Physics\JoltPhysicsManager.cpp">
-      <Filter>Source\Engine\Physics</Filter>
+      <Filter>Source\Engine\Physics\Jolt</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Physics\JoltDebugRenderer.cpp">
+      <Filter>Source\Engine\Physics\Jolt</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

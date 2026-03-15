@@ -73,6 +73,12 @@ public:
 		const DirectX::XMFLOAT3& p2,
 		const DirectX::XMFLOAT4& color);
 
+	// 三角形（ワイヤーフレーム）描画
+        void DrawTriangle(const DirectX::XMFLOAT3 &v1,
+            const DirectX::XMFLOAT3               &v2,
+            const DirectX::XMFLOAT3               &v3,
+            const DirectX::XMFLOAT4               &color);
+
 	// レイ描画 (始点と方向と長さを指定)
 	void DrawRay(
 		const DirectX::XMFLOAT3& origin,

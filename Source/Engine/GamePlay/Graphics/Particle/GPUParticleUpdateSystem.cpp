@@ -5,7 +5,7 @@
 #include <random>
 
 #include "Game/Utils/PooledParticleComponent.h"
-#include "Game/Utils/PooledBulletComponent.h"
+
 
 // システムの実行順序の定義ヘッダー
 #include "ECS/System/CCL_SystemRegistry.h"
@@ -81,17 +81,6 @@ void GPUParticleUpdateSystem::Update(float dt)
                 if (pooled->isSleeping) return;
             }
 
-            // =========================================================
-            // 親が「待機中（地下にいる）の弾丸」なら処理をスキップ
-            // =========================================================
-            if (transform.parentID != 0) {
-                if (auto *parentPool =
-                        _world->GetComponent<PooledBulletComponent>(transform.parentID)) {
-                    if (!parentPool->isActive) {
-                        return; // 親が寝ているなら何もしない（CSのDispatchも呼ばない）
-                    }
-                }
-            }
 
             // 例: 親がいない(プール待機中)なら更新しない
             //if (transform.parentID == 0) return;

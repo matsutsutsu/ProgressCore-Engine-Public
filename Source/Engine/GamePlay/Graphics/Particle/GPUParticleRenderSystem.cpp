@@ -2,7 +2,6 @@
 #include "Engine/Graphics/Core/Graphics.h"
 #include "Engine/Graphics/Renderer/ParticleRenderer.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
-#include "Game/Utils/PooledBulletComponent.h"
 
 // システムの実行順序の定義ヘッダー
 #include "ECS/System/CCL_SystemRegistry.h"
@@ -20,10 +19,6 @@ void GPUParticleRenderSystem::Update(float dt)
         // プール待機中（親ID=0）のものは描画しない
         if (transform.parentID == 0) return;
 
-        // 親が「プール待機中(isActive == false)」の弾丸なら描画しない
-        if (auto *parentPool = _world->GetComponent<PooledBulletComponent>(transform.parentID)) {
-            if (!parentPool->isActive) return;
-        }
 
         // リソースが未初期化、またはバッファが存在しない場合はスキップ
         if (!particle.isInitialized || !particle.computeBuffer.IsValid()) return;
