@@ -78,8 +78,8 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d11.lib;DirectXTK.lib;dxgi.lib;xinput.lib;xaudio2.lib;winmm.lib;%(AdditionalDependencies);PhysX_64.lib;PhysXCommon_64.lib;PhysXCooking_64.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);{CPP_LIB}/PhysX/PhysX-5.1.3/lib/$(Platform)/$(Configuration);.\External\PhysX-107.3-physx-5.6.1\physx\bin\win.x86_64.vc143.mt\$(Configuration);.\External\DirectXTK-main\Bin\Desktop_2022\x64\$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>d3d11.lib;DirectXTK.lib;dxgi.lib;xinput.lib;xaudio2.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);.\External\DirectXTK-main\Bin\Desktop_2022\x64\$(Configuration)</AdditionalLibraryDirectories>
       <ShowProgress>NotSet</ShowProgress>
     </Link>
     <FxCompile>
@@ -117,8 +117,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d11.lib;DirectXTK.lib;dxgi.lib;xinput.lib;xaudio2.lib;winmm.lib;%(AdditionalDependencies);PhysX_64.lib;PhysXCommon_64.lib;PhysXCooking_64.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);{CPP_LIB}/PhysX/PhysX-5.1.3/lib/$(Platform)/$(Configuration);.\External\PhysX-107.3-physx-5.6.1\physx\bin\win.x86_64.vc143.mt\$(Configuration);.\External\DirectXTK-main\Bin\Desktop_2022\x64\$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>d3d11.lib;DirectXTK.lib;dxgi.lib;xinput.lib;xaudio2.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);.\External\DirectXTK-main\Bin\Desktop_2022\x64\$(Configuration)</AdditionalLibraryDirectories>
       <ShowProgress>NotSet</ShowProgress>
     </Link>
     <FxCompile>
@@ -312,7 +312,6 @@
     <ClInclude Include="Source\Engine\Physics\Collision.h" />
     <ClInclude Include="Source\Engine\Physics\CollisionHelper.h" />
     <ClInclude Include="Source\Engine\Physics\Grid.h" />
-    <ClInclude Include="Source\Engine\Physics\PhysXManager.h" />
     <ClInclude Include="Source\Engine\Physics\RaycastUtil.h" />
     <ClInclude Include="Source\Engine\Platform\Dialog.h" />
     <ClInclude Include="Source\Engine\Platform\Input\GamePad.h" />
@@ -544,7 +543,6 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\ShaderReflection.cpp" />
     <ClCompile Include="Source\Engine\Physics\Collision.cpp" />
     <ClCompile Include="Source\Engine\Physics\CollisionHelper.cpp" />
-    <ClCompile Include="Source\Engine\Physics\PhysXManager.cpp" />
     <ClCompile Include="Source\Engine\Physics\TinyBvhImpl.cpp" />
     <ClCompile Include="Source\Engine\Platform\Dialog.cpp" />
     <ClCompile Include="Source\Engine\Platform\Input\GamePad.cpp" />

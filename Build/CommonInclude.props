@@ -30,7 +30,6 @@
 				$(SolutionDir)External\sol2\include;
 				$(SolutionDir)External\Tracy;
 
-				<!-- PhysX -->
 
 				<!-- BVH (madmann91) -->
 				$(SolutionDir)External\tinybvh-main;

@@ -852,9 +852,6 @@
     <ClInclude Include="Source\Engine\Physics\Grid.h">
       <Filter>Source\Engine\Physics</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Physics\PhysXManager.h">
-      <Filter>Source\Engine\Physics</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Physics\RaycastUtil.h">
       <Filter>Source\Engine\Physics</Filter>
     </ClInclude>
@@ -1533,9 +1530,6 @@
       <Filter>Source\Engine\Physics</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Physics\CollisionHelper.cpp">
-      <Filter>Source\Engine\Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Physics\PhysXManager.cpp">
       <Filter>Source\Engine\Physics</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Physics\TinyBvhImpl.cpp">
