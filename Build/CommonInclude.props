@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0"
+         xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+	<ItemDefinitionGroup>
+		<ClCompile>
+			<AdditionalIncludeDirectories>
+
+				<!-- ===== Project Sources ===== -->
+				$(SolutionDir)Source;
+				$(SolutionDir)Source\Scene;
+				$(SolutionDir)Source\ECS\Common;
+				$(SolutionDir)Source\ECS\Core;
+
+				<!-- ===== Editor Only ===== -->
+				$(SolutionDir)Source\Editor;
+
+				<!-- ===== External Libraries ===== -->
+				$(SolutionDir)External\imgui-docking;
+				$(SolutionDir)External\ImGuizmo;
+				$(SolutionDir)External\cereal\include;
+				$(SolutionDir)External\tinygltf;
+				$(SolutionDir)External\DirectXTex;
+				$(SolutionDir)External\implot-master;
+				$(SolutionDir)External\ImGuiFileDialog;
+				$(SolutionDir)External\ImGuiColorTextEdit;
+				$(SolutionDir)External\nlohmann;
+				$(SolutionDir)External\DirectXTK-main\Inc;
+				$(SolutionDir)External\Lua\src;
+				$(SolutionDir)External\sol2\include;
+				$(SolutionDir)External\Tracy;
+
+				<!-- PhysX -->
+
+				<!-- BVH (madmann91) -->
+				$(SolutionDir)External\tinybvh-main;
+
+				<!-- Inherited -->
+				%(AdditionalIncludeDirectories)
+
+			</AdditionalIncludeDirectories>
+		</ClCompile>
+	</ItemDefinitionGroup>
+
+</Project>

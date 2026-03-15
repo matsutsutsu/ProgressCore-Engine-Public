@@ -1,0 +1,80 @@
+{
+    "entities": [
+        {
+            "components": {
+                "CapsuleCollider": {
+                    "center": [
+                        0.0,
+                        1.0,
+                        0.0
+                    ],
+                    "height": 4.7,
+                    "layer": 4,
+                    "mask": 30,
+                    "radius": 0.83
+                },
+                "Enemy": {
+                    "aiType": 3,
+                    "attackInterval": 1.5,
+                    "attackRange": 2.0,
+                    "chargeSpeed": 20.0,
+                    "detectRange": 35.0,
+                    "formationSlot": 0,
+                    "jumpForce": 12.0,
+                    "keepDistance": 10.0,
+                    "moveSpeed": 10.0,
+                    "rangeAttackDist": 15.0,
+                    "speedRandomness": 1.0,
+                    "weightSeek": 1.0,
+                    "weightSeparation": 1.5,
+                    "weightWall": 5.0
+                },
+                "Health": {
+                    "currentHealth": 25.0,
+                    "invincibilityDuration": 0.3,
+                    "maxHealth": 25.0,
+                    "team": 1
+                },
+                "Material": null,
+                "Model": {
+                    "path": "Assets/Models/Enemy/Enemy_Evader.glb"
+                },
+                "RigidBody": {
+                    "bounciness": 0.699999988079071,
+                    "dynamicFriction": 0.5,
+                    "isStatic": false,
+                    "linearDamping": 0.9800000190734863,
+                    "mass": 5.0,
+                    "maxSpeed": 999.0,
+                    "minSpeed": 5.0,
+                    "useGravity": true,
+                    "velocity": [
+                        0.3367942273616791,
+                        -5.877084732055664,
+                        -8.160598754882813
+                    ]
+                },
+                "Transform": {
+                    "position": [
+                        24.873746871948242,
+                        0.0,
+                        17.025375366210938
+                    ],
+                    "rotation": [
+                        0.0,
+                        -0.9879595041275024,
+                        0.0,
+                        -0.1547132283449173
+                    ],
+                    "scale": [
+                        0.07000000029802322,
+                        0.07000000029802322,
+                        0.07000000029802322
+                    ]
+                }
+            },
+            "id": 17179869241
+        }
+    ],
+    "name": "Entity"
+}

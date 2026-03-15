@@ -1,0 +1,140 @@
+{
+    "entities": [
+        {
+            "components": {
+                "Animator": {
+                    "currentAnimIndex": 0,
+                    "isLoop": true,
+                    "playbackSpeed": 1.0
+                },
+                "LuaScript": {
+                    "path": "Assets/GamePlay/Scripts/BossAI.lua"
+                },
+                "BossBehavior": {
+                    "actionCooldown": -0.016666656360030174,
+                    "attackRangeShock": 25.0,
+                    "attackRangeSweep": 6.0,
+                    "chargeDashDur": 0.800000011920929,
+                    "chargeRecoveryDur": 1.5,
+                    "chargeSpeed": 25.0,
+                    "chargeWindupDur": 2.200000047683716,
+                    "currentPhase": 1,
+                    "isEnraged": false,
+                    "maxMinions": 3,
+                    "moveSpeed": 5.0,
+                    "rotationSpeed": 2.0,
+                    "shockwaveCooldown": -1.952424645423889e-05,
+                    "shockwaveDuration": 1.5,
+                    "shockwaveHitTime": 0.75,
+                    "state": 2,
+                    "stateTimer": 1.2499995231628418,
+                    "summonCooldown": 12.766777038574219,
+                    "summonDuration": 2.0,
+                    "summonSpawnTime": 1.5,
+                    "sweepDuration": 1.5,
+                    "sweepHitTime": 0.75
+                },
+                "CapsuleCollider": {
+                    "center": [
+                        0.0,
+                        3.0,
+                        0.0
+                    ],
+                    "height": 12.0,
+                    "layer": 4,
+                    "mask": 10,
+                    "radius": 3.200000047683716
+                },
+                "Health": {
+                    "currentHealth": 500.0,
+                    "invincibilityDuration": 0.10000000149011612,
+                    "maxHealth": 500.0,
+                    "team": 1
+                },
+                "Material": null,
+                "Model": {
+                    "path": "Assets/Models/Enemy/Boss.glb"
+                },
+                "Name": {
+                    "name": "Boss"
+                },
+                "RigidBody": {
+                    "bounciness": 0.699999988079071,
+                    "dynamicFriction": 0.5,
+                    "isStatic": false,
+                    "linearDamping": 0.9800000190734863,
+                    "mass": 5.0,
+                    "maxSpeed": 50.0,
+                    "minSpeed": 5.0,
+                    "useGravity": true,
+                    "velocity": [
+                        -3.963672399520874,
+                        0.0,
+                        -2.364534854888916
+                    ]
+                },
+                "Transform": {
+                    "position": [
+                        50.03166198730469,
+                        0.0,
+                        47.914024353027344
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.8695731163024902,
+                        0.0,
+                        -0.4938030540943146
+                    ],
+                    "scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ]
+                }
+            },
+            "id": 4294967318
+        },
+        {
+            "components": {
+                "Name": {
+                    "name": "BossLight"
+                },
+                "PointLight": {
+                    "attenuation": [
+                        1.0,
+                        0.10000000149011612,
+                        0.009999999776482582
+                    ],
+                    "color": [
+                        0.31274133920669556,
+                        0.4188816547393799,
+                        1.0
+                    ],
+                    "intensity": 8.100000381469727,
+                    "range": 10.0
+                },
+                "Transform": {
+                    "parentID": 4294967318,
+                    "position": [
+                        0.0,
+                        18.299999237060547,
+                        0.8999999761581421
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                }
+            },
+            "id": 4294967319
+        }
+    ],
+    "name": "Boss"
+}

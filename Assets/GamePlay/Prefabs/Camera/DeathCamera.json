@@ -1,0 +1,39 @@
+{
+    "entities": [
+        {
+            "components": {
+                "CameraAimLookAt": {
+                    "damping": 5.0,
+                    "offset": [
+                        0.0,
+                        0.5,
+                        0.0
+                    ],
+                    "target": 4294967339
+                },
+                "CameraBodyFollow": {
+                    "damping": 2.0,
+                    "lockY": true,
+                    "offset": [
+                        0.0,
+                        16.0,
+                        -8.0
+                    ],
+                    "target": 4294967339
+                },
+                "Name": {
+                    "name": "DeathCamera"
+                },
+                "VirtualCamera": {
+                    "blendTime": 3.0,
+                    "farClip": 1000.0,
+                    "fov": 30.0,
+                    "nearClip": 0.10000000149011612,
+                    "priority": 100
+                }
+            },
+            "id": 4294967343
+        }
+    ],
+    "name": "DeathCamera"
+}
