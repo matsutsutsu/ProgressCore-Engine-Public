@@ -30,6 +30,7 @@
 				$(SolutionDir)External\sol2\include;
 				$(SolutionDir)External\Tracy;
 
+				$(SolutionDir)External\JoltPhysics\include;
 
 				<!-- BVH (madmann91) -->
 				$(SolutionDir)External\tinybvh-main;
