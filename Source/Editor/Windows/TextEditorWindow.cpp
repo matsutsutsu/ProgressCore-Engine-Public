@@ -2,7 +2,6 @@
 
 #include "Engine/Graphics/Core/Graphics.h"
 #include "Engine/Platform/Dialog.h"
-#include "Game/Logics/Combat/Weapon/Attachments/AttachmentMasterData.h"
 #include "Engine/Graphics/Renderer/ImGuiRenderer.h"
 
 #include <imgui.h>
@@ -67,10 +66,7 @@ void TextEditorWindow::DrawContents(EditorContext &context)
         // ファイルパスを文字列として判定
         std::string pathStr(_filePath);
 
-        // JSONの特定ファイルならマスタデータを再読み込み
-        if (pathStr.find("AttachmentMaster.json") != std::string::npos) {
-            AttachmentMasterData::LoadFromJson(_filePath);
-        }
+      
         // Luaスクリプトの場合の処理（必要になれば拡張してください）
         // else if (pathStr.find(".lua") != std::string::npos) {
         //     // TODO: Lua VMをリロードしたり、コンポーネントに再読み込み指令を出す

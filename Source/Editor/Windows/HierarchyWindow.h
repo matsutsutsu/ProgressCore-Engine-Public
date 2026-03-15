@@ -202,13 +202,12 @@ private:
         using namespace CCL::ECS;
         // 判定用のArchetypeをキャッシュ
         static const auto playArch = ArchetypeHelper::Generate<PlayerComponent>();
-        static const auto enemyArch = ArchetypeHelper::Generate<EnemyComponent>();
+        
         static const auto dirLightArch = ArchetypeHelper::Generate<DirectionalLightComponent>();
         static const auto poiLightArch = ArchetypeHelper::Generate<PointLightComponent>();
         static const auto spotLightArch = ArchetypeHelper::Generate<SpotLightComponent>();
 
         if (ArchetypeHelper::LhasR(arch, playArch)) return "Player";
-        if (ArchetypeHelper::LhasR(arch, enemyArch)) return "Enemy";
         if (ArchetypeHelper::LhasR(arch, dirLightArch)) return "DirectionalLight";
         if (ArchetypeHelper::LhasR(arch, poiLightArch)) return "PointLight";
         if (ArchetypeHelper::LhasR(arch, spotLightArch)) return "SpotLight";

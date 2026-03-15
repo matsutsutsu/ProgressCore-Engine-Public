@@ -241,12 +241,6 @@
     <Filter Include="Source\Game\Logics\Character\Player">
       <UniqueIdentifier>{ed9c166e-35f2-4b23-87b8-78bb1571fccb}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Game\Logics\Combat\Weapon">
-      <UniqueIdentifier>{338c4058-ee4d-49dd-8118-fa91dac33d0d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\Combat\Loot">
-      <UniqueIdentifier>{e7e9b0bb-4618-4c67-a53f-ed2a21fb544e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Game\Script">
       <UniqueIdentifier>{03df5b05-b96f-45fb-b20c-0c2d76a6f604}</UniqueIdentifier>
     </Filter>
@@ -267,12 +261,6 @@
     </Filter>
     <Filter Include="Source\Game\Logics\World">
       <UniqueIdentifier>{06bc2403-42a1-441a-ac76-e1efb592543c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\World\Generation">
-      <UniqueIdentifier>{7121f6b9-8a43-48f5-849a-709d809c0b6e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\World\Systems">
-      <UniqueIdentifier>{3889130d-8a9d-4727-99de-51d5331f31f1}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Game\Logics\World\Triggers">
       <UniqueIdentifier>{a39d9320-0e17-4fdd-85d9-a2dc0011e75e}</UniqueIdentifier>
@@ -298,24 +286,6 @@
     <Filter Include="Shader\Material\PBR">
       <UniqueIdentifier>{7fe08d8d-9ddd-4639-b0e7-a230086cd0d3}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Game\Logics\Combat\Weapon\Core">
-      <UniqueIdentifier>{511613ec-c47a-4b4a-b058-6d659326cc9f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\Combat\Weapon\BaseSystems">
-      <UniqueIdentifier>{3ca2496b-c09b-4790-a5bb-4e291a9de340}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\Combat\Weapon\Attachments">
-      <UniqueIdentifier>{6f04791f-d28b-4765-8d91-a6d70190a36d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\Combat\Weapon\Attachments\Systems">
-      <UniqueIdentifier>{6fe343df-4acf-49b8-8e3c-87986ea1295d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\Combat\Weapon\Attachments\Logics">
-      <UniqueIdentifier>{067ea346-11a1-4a00-aadd-fa1ec3ec0bb9}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\Combat\Weapon\Attachments\Core">
-      <UniqueIdentifier>{101ca4bb-eb85-4be6-baf1-81a4a3e8c236}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Game\GameEvent">
       <UniqueIdentifier>{6d456466-192c-420e-8be4-6fe0a14e4d5b}</UniqueIdentifier>
     </Filter>
@@ -324,9 +294,6 @@
     </Filter>
     <Filter Include="Source\Engine\Serialization\Meta">
       <UniqueIdentifier>{bb611d4c-bc75-4a8d-8a31-1810ea67ad4d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Scenes\SceneStates">
-      <UniqueIdentifier>{5f0a3231-c126-4a73-ad8e-e11fc80f7f0a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -530,9 +497,6 @@
     </ClInclude>
     <ClInclude Include="Source\ECS\Core\CCL_JobSystem.h">
       <Filter>Source\ECS\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Core\SystemGroups.h">
-      <Filter>Source\Game\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Core\SystemPriority.h">
       <Filter>Source\Game\Core</Filter>
@@ -765,31 +729,16 @@
     <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\CapsuleColliderComponent.h">
       <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\CollisionConfigComponent.h">
-      <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\CollisionLayers.h">
       <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\CollisionSystem.h">
       <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\GroundCheckSystem.h">
-      <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\SphereColliderComponent.h">
       <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\WallCollisionSystem.h">
-      <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\GamePlay\Physics\RigidBody\GridUpdateSystem.h">
-      <Filter>Source\Engine\GamePlay\Physics\RigidBody</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\RigidBody\PhysicsIntegrationSystem.h">
-      <Filter>Source\Engine\GamePlay\Physics\RigidBody</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\RigidBody\RigidBodyComponent.h">
       <Filter>Source\Engine\GamePlay\Physics\RigidBody</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GamePlay\Transform\HierarchyCleanupSystem.h">
@@ -879,38 +828,8 @@
     <ClInclude Include="Source\Engine\Serialization\Factory\SceneInitializer.h">
       <Filter>Source\Engine\Serialization\Factory</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\Loot\CoinComponent.h">
-      <Filter>Source\Game\Logics\Combat\Loot</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\Loot\CoinSystem.h">
-      <Filter>Source\Game\Logics\Combat\Loot</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Combat\HealthComponent.h">
       <Filter>Source\Game\Logics\Combat</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Enemy\BossBehaviorSystem.h">
-      <Filter>Source\Game\Logics\Character\Enemy</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Enemy\BossComponent.h">
-      <Filter>Source\Game\Logics\Character\Enemy</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Enemy\CombatDirector.h">
-      <Filter>Source\Game\Logics\Character\Enemy</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyBehaviorSystem.h">
-      <Filter>Source\Game\Logics\Character\Enemy</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyComponent.h">
-      <Filter>Source\Game\Logics\Character\Enemy</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemySpawnSystem.h">
-      <Filter>Source\Game\Logics\Character\Enemy</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Enemy\FloatingComponent.h">
-      <Filter>Source\Game\Logics\Character\Enemy</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Enemy\FloatingSystem.h">
-      <Filter>Source\Game\Logics\Character\Enemy</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerComponent.h">
       <Filter>Source\Game\Logics\Character\Player</Filter>
@@ -921,46 +840,16 @@
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerMoveSystem.h">
       <Filter>Source\Game\Logics\Character\Player</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Player\PlayerShootingSystem.h">
-      <Filter>Source\Game\Logics\Character\Player</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\World\Generation\MapGenerator.h">
-      <Filter>Source\Game\Logics\World\Generation</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\World\Generation\RoomTemplateManager.h">
-      <Filter>Source\Game\Logics\World\Generation</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\World\Generation\RoomTemplates.h">
-      <Filter>Source\Game\Logics\World\Generation</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\World\Triggers\TriggerComponent.h">
       <Filter>Source\Game\Logics\World\Triggers</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\World\Triggers\TriggerSystem.h">
       <Filter>Source\Game\Logics\World\Triggers</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\World\Systems\MapDebugSystem.h">
-      <Filter>Source\Game\Logics\World\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\World\LevelLoader.h">
-      <Filter>Source\Game\Logics\World</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\World\StageMap.h">
-      <Filter>Source\Game\Logics\World</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Script\LuaBind_Boss.h">
-      <Filter>Source\Game\Script</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Scenes\EditorScene.h">
       <Filter>Source\Game\Scenes</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Scenes\GameScene.h">
-      <Filter>Source\Game\Scenes</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Scenes\SceneLoading.h">
-      <Filter>Source\Game\Scenes</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Scenes\ShopScene.h">
       <Filter>Source\Game\Scenes</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Scenes\BaseScene.h">
@@ -974,12 +863,6 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Core\AllComponents.h">
       <Filter>Source\Game\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\World\Systems\MeshBatcher.h">
-      <Filter>Source\Game\Logics\World\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\World\Systems\StruckRescueSystem.h">
-      <Filter>Source\Game\Logics\World\Systems</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\UI\UIContext.h">
       <Filter>Source\Engine\UI</Filter>
@@ -1008,26 +891,11 @@
     <ClInclude Include="Source\Game\UI\FloatingTextSystem.h">
       <Filter>Source\Game\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\UI\InventoryEvent.h">
-      <Filter>Source\Game\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\UI\StoreEvent.h">
-      <Filter>Source\Game\UI</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\UI\ImGui\ImGuiThemes.h">
       <Filter>Source\Engine\UI\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\UI\Widgets\UIText.h">
       <Filter>Source\Engine\UI\Widgets</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\UI\PlayerHUD.h">
-      <Filter>Source\Game\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Utils\PooledBulletComponent.h">
-      <Filter>Source\Game\Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Utils\BulletPoolManager.h">
-      <Filter>Source\Game\Utils</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Math\StringHash.h">
       <Filter>Source\Engine\Core\Math</Filter>
@@ -1050,54 +918,6 @@
     <ClInclude Include="Source\ECS\Core\CCL_ECSContext.h">
       <Filter>Source\ECS\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\Weapon\Core\BulletBlueprint.h">
-      <Filter>Source\Game\Logics\Combat\Weapon\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\Weapon\Core\BulletBlueprintBuilder.h">
-      <Filter>Source\Game\Logics\Combat\Weapon\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\Weapon\Core\BulletBlueprintLibrary.h">
-      <Filter>Source\Game\Logics\Combat\Weapon\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\Weapon\Core\BulletContextComponent.h">
-      <Filter>Source\Game\Logics\Combat\Weapon\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\Weapon\Core\BulletEnums.h">
-      <Filter>Source\Game\Logics\Combat\Weapon\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\Weapon\Core\GunBuilder.h">
-      <Filter>Source\Game\Logics\Combat\Weapon\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\Weapon\Core\GunComponent.h">
-      <Filter>Source\Game\Logics\Combat\Weapon\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\Weapon\BaseSystems\BulletCollisionSystem.h">
-      <Filter>Source\Game\Logics\Combat\Weapon\BaseSystems</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\Weapon\BaseSystems\BulletRaycastSystem.h">
-      <Filter>Source\Game\Logics\Combat\Weapon\BaseSystems</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\Weapon\BaseSystems\BulletUpdateSystem.h">
-      <Filter>Source\Game\Logics\Combat\Weapon\BaseSystems</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\Weapon\Attachments\TravelSystems.h">
-      <Filter>Source\Game\Logics\Combat\Weapon\Attachments\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\Weapon\Attachments\OnHitSystems.h">
-      <Filter>Source\Game\Logics\Combat\Weapon\Attachments\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\Weapon\Attachments\AttachmentLogics.h">
-      <Filter>Source\Game\Logics\Combat\Weapon\Attachments\Logics</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\Weapon\Attachments\AttachmentComponents.h">
-      <Filter>Source\Game\Logics\Combat\Weapon\Attachments\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\Weapon\Attachments\BulletHitStateComponent.h">
-      <Filter>Source\Game\Logics\Combat\Weapon\Attachments\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\Weapon\Attachments\AttachmentRegistry.h">
-      <Filter>Source\Game\Logics\Combat\Weapon\Attachments\Core</Filter>
-    </ClInclude>
     <ClInclude Include="Source\ECS\Core\CCL_EventBus.h">
       <Filter>Source\ECS\Core</Filter>
     </ClInclude>
@@ -1109,12 +929,6 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\GameEvent\GameEvents.h">
       <Filter>Source\Game\GameEvent</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Utils\PooledParticleComponent.h">
-      <Filter>Source\Game\Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\Weapon\Attachments\AttachmentMasterData.h">
-      <Filter>Source\Game\Logics\Combat\Weapon\Attachments\Logics</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\TextEditorWindow.h">
       <Filter>Source\Editor\Windows</Filter>
@@ -1146,9 +960,6 @@
     <ClInclude Include="Source\Engine\Serialization\Meta\ComponentMetaImGui.h">
       <Filter>Source\Engine\Serialization\Meta</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyComponentMeta.h">
-      <Filter>Source\Game\Logics\Character\Enemy</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Combat\GlobalDamageQueue.h">
       <Filter>Source\Game\Logics\Combat</Filter>
     </ClInclude>
@@ -1161,32 +972,23 @@
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerDeathSequenceSystem.h">
       <Filter>Source\Game\Logics\Character\Player</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyDeathSystem.h">
-      <Filter>Source\Game\Logics\Character\Enemy</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerFeedbackSystem.h">
       <Filter>Source\Game\Logics\Character\Player</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\EnvironmentSystem.h">
       <Filter>Source\Engine\GamePlay\Graphics\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\Loot\HitFlashComponent.h">
-      <Filter>Source\Game\Logics\Combat\Loot</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\Loot\HitFlashSystem.h">
-      <Filter>Source\Game\Logics\Combat\Loot</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Renderer\ParticleRenderer.h">
       <Filter>Source\Engine\Graphics\Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\UI\PlayerHUDSystem.h">
-      <Filter>Source\Game\UI</Filter>
+    <ClInclude Include="Source\Engine\Physics\JoltPhysicsManager.h">
+      <Filter>Source\Engine\Physics</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\UI\PauseMenuUI.h">
-      <Filter>Source\Game\UI</Filter>
+    <ClInclude Include="Source\Engine\GamePlay\Physics\RigidBody\JoltRigidBodyComponent.h">
+      <Filter>Source\Engine\GamePlay\Physics\RigidBody</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Scenes\SceneStates\ShopSceneStates.h">
-      <Filter>Source\Game\Scenes\SceneStates</Filter>
+    <ClInclude Include="Source\Game\Utils\PooledParticleComponent.h">
+      <Filter>Source\Game\Utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1484,15 +1286,6 @@
     <ClCompile Include="Source\Engine\GamePlay\Physics\Collision\CollisionSystem.cpp">
       <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Physics\Collision\GroundCheckSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Physics\Collision\WallCollisionSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Physics\RigidBody\PhysicsIntegrationSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Physics\RigidBody</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\GamePlay\Transform\HierarchyCleanupSystem.cpp">
       <Filter>Source\Engine\GamePlay\Transform</Filter>
     </ClCompile>
@@ -1553,61 +1346,19 @@
     <ClCompile Include="Source\Engine\Serialization\Factory\SceneInitializer.cpp">
       <Filter>Source\Engine\Serialization\Factory</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Combat\Loot\CoinSystem.cpp">
-      <Filter>Source\Game\Logics\Combat\Loot</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Enemy\BossBehaviorSystem.cpp">
-      <Filter>Source\Game\Logics\Character\Enemy</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyBehaviorSystem.cpp">
-      <Filter>Source\Game\Logics\Character\Enemy</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemySpawnSystem.cpp">
-      <Filter>Source\Game\Logics\Character\Enemy</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerInputSystem.cpp">
       <Filter>Source\Game\Logics\Character\Player</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerMoveSystem.cpp">
       <Filter>Source\Game\Logics\Character\Player</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Player\PlayerShootingSystem.cpp">
-      <Filter>Source\Game\Logics\Character\Player</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\World\Generation\MapGenerator.cpp">
-      <Filter>Source\Game\Logics\World\Generation</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\World\Generation\RoomTemplateManager.cpp">
-      <Filter>Source\Game\Logics\World\Generation</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Game\Logics\World\Triggers\TriggerSystem.cpp">
       <Filter>Source\Game\Logics\World\Triggers</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\World\Systems\MapDebugSystem.cpp">
-      <Filter>Source\Game\Logics\World\Systems</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\World\Systems\MeshBatcher.cpp">
-      <Filter>Source\Game\Logics\World\Systems</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\World\Systems\StruckRescueSystem.cpp">
-      <Filter>Source\Game\Logics\World\Systems</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\World\StageMap.cpp">
-      <Filter>Source\Game\Logics\World</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Script\LuaBind_Boss.cpp">
-      <Filter>Source\Game\Script</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Scenes\EditorScene.cpp">
       <Filter>Source\Game\Scenes</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Scenes\GameScene.cpp">
-      <Filter>Source\Game\Scenes</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Game\Scenes\SceneLoading.cpp">
-      <Filter>Source\Game\Scenes</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Scenes\ShopScene.cpp">
       <Filter>Source\Game\Scenes</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Scenes\BaseScene.cpp">
@@ -1615,9 +1366,6 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Scenes\ParticleScene.cpp">
       <Filter>Source\Game\Scenes\HokaScene</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\World\LevelLoader.cpp">
-      <Filter>Source\Game\Logics\World</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GamePlay\Graphics\Lighting\ShadowMapRenderSystem.cpp">
       <Filter>Source\Engine\GamePlay\Graphics\Lighting</Filter>
@@ -1640,9 +1388,6 @@
     <ClCompile Include="Source\Engine\UI\ImGui\ImGuiThemes.cpp">
       <Filter>Source\Engine\UI\ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Utils\BulletPoolManager.cpp">
-      <Filter>Source\Game\Utils</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\DissolveShader.cpp">
       <Filter>Source\Engine\Graphics\Shader\Material</Filter>
     </ClCompile>
@@ -1651,36 +1396,6 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\PBRShader.cpp">
       <Filter>Source\Engine\Graphics\Shader\Material</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Combat\Weapon\Core\BulletBlueprintBuilder.cpp">
-      <Filter>Source\Game\Logics\Combat\Weapon\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Combat\Weapon\Core\GunBuilder.cpp">
-      <Filter>Source\Game\Logics\Combat\Weapon\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Combat\Weapon\BaseSystems\BulletCollisionSystem.cpp">
-      <Filter>Source\Game\Logics\Combat\Weapon\BaseSystems</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Combat\Weapon\BaseSystems\BulletRaycastSystem.cpp">
-      <Filter>Source\Game\Logics\Combat\Weapon\BaseSystems</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Combat\Weapon\BaseSystems\BulletUpdateSystem.cpp">
-      <Filter>Source\Game\Logics\Combat\Weapon\BaseSystems</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Combat\Weapon\Attachments\OnHitSystems.cpp">
-      <Filter>Source\Game\Logics\Combat\Weapon\Attachments\Systems</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Combat\Weapon\Attachments\TravelSystems.cpp">
-      <Filter>Source\Game\Logics\Combat\Weapon\Attachments\Systems</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Combat\Weapon\Attachments\AttachmentLogics.cpp">
-      <Filter>Source\Game\Logics\Combat\Weapon\Attachments\Logics</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Combat\Weapon\Attachments\AttachmentRegistry.cpp">
-      <Filter>Source\Game\Logics\Combat\Weapon\Attachments\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Combat\Weapon\Attachments\AttachmentMasterData.cpp">
-      <Filter>Source\Game\Logics\Combat\Weapon\Attachments\Logics</Filter>
     </ClCompile>
     <ClCompile Include="External\ImGuiColorTextEdit\TextEditor.cpp">
       <Filter>External\ImGuiColorTextEdit</Filter>
@@ -1709,14 +1424,8 @@
     <ClCompile Include="Source\Engine\GamePlay\Utils\TimerSystem.cpp">
       <Filter>Source\Engine\GamePlay\Utils</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Enemy\FloatingSystem.cpp">
-      <Filter>Source\Game\Logics\Character\Enemy</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerDeathSequenceSystem.cpp">
       <Filter>Source\Game\Logics\Character\Player</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyDeathSystem.cpp">
-      <Filter>Source\Game\Logics\Character\Enemy</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerFeedbackSystem.cpp">
       <Filter>Source\Game\Logics\Character\Player</Filter>
@@ -1724,14 +1433,11 @@
     <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\EnvironmentSystem.cpp">
       <Filter>Source\Engine\GamePlay\Graphics\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Combat\Loot\HitFlashSystem.cpp">
-      <Filter>Source\Game\Logics\Combat\Loot</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Renderer\ParticleRenderer.cpp">
       <Filter>Source\Engine\Graphics\Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\UI\PlayerHUDSystem.cpp">
-      <Filter>Source\Game\UI</Filter>
+    <ClCompile Include="Source\Engine\Physics\JoltPhysicsManager.cpp">
+      <Filter>Source\Engine\Physics</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

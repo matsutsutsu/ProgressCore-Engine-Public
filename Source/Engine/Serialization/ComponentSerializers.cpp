@@ -229,31 +229,6 @@ namespace ComponentSerializers {
         }
     }
 
-    // --- RigidBodyComponent ---
-    void Serialize(json &j, const RigidBodyComponent &obj)
-    {
-        J_SAVE(mass);
-        J_SAVE(bounciness);
-        J_SAVE(linearDamping);
-        J_SAVE(dynamicFriction);
-        J_SAVE(isStatic);
-        J_SAVE(useGravity);
-        J_SAVE(maxSpeed);
-        J_SAVE(minSpeed);
-        J_SAVE(velocity);
-    }
-    void Deserialize(const json &j, RigidBodyComponent &obj)
-    {
-        J_LOAD(mass, 1.0f);
-        J_LOAD(bounciness, 0.5f);
-        J_LOAD(linearDamping, 0.98f);
-        J_LOAD(dynamicFriction, 0.3f);
-        J_LOAD(isStatic, false);
-        J_LOAD(useGravity, true);
-        J_LOAD(maxSpeed, 20.0f);
-        J_LOAD(minSpeed, 0.0f);
-        J_LOAD_OPT(velocity);
-    }
 
     // --- BoxColliderComponent ---
     void Serialize(json &j, const BoxColliderComponent &obj)
@@ -303,25 +278,6 @@ namespace ComponentSerializers {
         if (j.contains("mask")) obj.mask = static_cast<Layer>(j["mask"].get<uint32_t>());
     }
 
-    // --- CollisionConfigComponent ---
-    void Serialize(json &j, const CollisionConfigComponent &obj)
-    {
-        J_SAVE(checkGround);
-        J_SAVE(groundRayLength);
-        J_SAVE(groundRayOffset);
-        J_SAVE(checkWall);
-        J_SAVE(wallRayLength);
-        J_SAVE(wallCheckHeight);
-    }
-    void Deserialize(const json &j, CollisionConfigComponent &obj)
-    {
-        J_LOAD(checkGround, true);
-        J_LOAD(groundRayLength, 0.6f);
-        J_LOAD(groundRayOffset, 0.5f);
-        J_LOAD(checkWall, true);
-        J_LOAD(wallRayLength, 0.5f);
-        J_LOAD(wallCheckHeight, 1.0f);
-    }
 
     // --- ModelComponent ---
     void Serialize(json &j, const ModelComponent &obj) { j = json{{"path", obj.assetPath}}; }
@@ -530,92 +486,6 @@ namespace ComponentSerializers {
         J_LOAD(padSlot, 0);
     }
 
-    // --- EnemyComponent ---
-    //void Serialize(json &j, const EnemyComponent &obj)
-    //{
-    //    J_SAVE(aiType);
-    //    J_SAVE(moveSpeed);
-    //    J_SAVE(detectRange);
-    //    J_SAVE(attackRange);
-    //    J_SAVE(speedRandomness);
-    //    J_SAVE(formationSlot);
-    //    J_SAVE(chargeSpeed);
-    //    J_SAVE(jumpForce);
-    //    J_SAVE(rangeAttackDist);
-    //    J_SAVE(keepDistance);
-    //    J_SAVE(weightSeek);
-    //    J_SAVE(weightSeparation);
-    //    J_SAVE(weightWall);
-    //    J_SAVE(attackInterval);
-    //}
-    //void Deserialize(const json &j, EnemyComponent &obj)
-    //{
-    //    J_LOAD_ENUM(aiType, EnemyAIType, EnemyAIType::Pawn);
-    //    J_LOAD(moveSpeed, 8.0f);
-    //    J_LOAD(detectRange, 25.0f);
-    //    J_LOAD(attackRange, 2.0f);
-    //    J_LOAD(speedRandomness, 1.0f);
-    //    J_LOAD(formationSlot, 0);
-    //    J_LOAD(chargeSpeed, 20.0f);
-    //    J_LOAD(jumpForce, 12.0f);
-    //    J_LOAD(rangeAttackDist, 15.0f);
-    //    J_LOAD(keepDistance, 0.0f);
-    //    J_LOAD(weightSeek, 1.0f);
-    //    J_LOAD(weightSeparation, 1.5f);
-    //    J_LOAD(weightWall, 5.0f);
-    //    J_LOAD(attackInterval, 1.0f);
-    //}
-
-    // --- GunComponent & GunBuilder Helpers ---
-    namespace {
-        void GunBuilder_to_json(json &j, const GunBuilder &g)
-        {
-            j = json{{"baseBulletCount", g.baseBulletCount},
-                {"baseSpeed", g.baseSpeed},
-                {"baseSpread", g.baseSpread},
-                {"spawnOffset", g.spawnOffset},
-                {"maxSpawnSlots", g.maxSpawnSlots},
-                {"maxTravelSlots", g.maxTravelSlots},
-                {"maxOnHitSlots", g.maxOnHitSlots},
-                {"maxEndSlots", g.maxEndSlots},
-                {"spawnMods", reinterpret_cast<const std::vector<int> &>(g.spawnMods)},
-                {"travelMods", reinterpret_cast<const std::vector<int> &>(g.travelMods)},
-                {"onHitMods", reinterpret_cast<const std::vector<int> &>(g.onHitMods)},
-                {"endMods", reinterpret_cast<const std::vector<int> &>(g.endMods)}};
-        }
-        void GunBuilder_from_json(const json &j, GunBuilder &g)
-        {
-            g.baseBulletCount = j.value("baseBulletCount", 1);
-            g.baseSpeed       = j.value("baseSpeed", 50.0f);
-            g.baseSpread      = j.value("baseSpread", 0.0f);
-            g.spawnOffset     = j.value("spawnOffset", 1.5f);
-            g.maxSpawnSlots   = j.value("maxSpawnSlots", 3);
-            g.maxTravelSlots  = j.value("maxTravelSlots", 3);
-            g.maxOnHitSlots   = j.value("maxOnHitSlots", 3);
-            g.maxEndSlots     = j.value("maxEndSlots", 3);
-            if (j.contains("spawnMods"))
-                j["spawnMods"].get_to(reinterpret_cast<std::vector<int> &>(g.spawnMods));
-            if (j.contains("travelMods"))
-                j["travelMods"].get_to(reinterpret_cast<std::vector<int> &>(g.travelMods));
-            if (j.contains("onHitMods"))
-                j["onHitMods"].get_to(reinterpret_cast<std::vector<int> &>(g.onHitMods));
-            if (j.contains("endMods"))
-                j["endMods"].get_to(reinterpret_cast<std::vector<int> &>(g.endMods));
-        }
-    } // namespace
-    void Serialize(json &j, const GunComponent &obj)
-    {
-        J_SAVE(fireInterval);
-        J_SAVE(coolDownTimer);
-        GunBuilder_to_json(j["gun"], obj.gun);
-    }
-    void Deserialize(const json &j, GunComponent &obj)
-    {
-        J_LOAD(fireInterval, 0.2f);
-        J_LOAD(coolDownTimer, 0.0f);
-        if (j.contains("gun")) GunBuilder_from_json(j["gun"], obj.gun);
-    }
-
     // --- HealthComponent ---
     void Serialize(json &j, const HealthComponent &obj)
     {
@@ -657,22 +527,6 @@ namespace ComponentSerializers {
         obj.maxParticles              = maxP;
         obj.config.max_particle_count = maxP;
         obj.isInitialized             = false;
-    }
-
-    // --- FloatingComponent ---
-    void Serialize(json &j, const FloatingComponent &obj)
-    {
-        J_SAVE(center);
-        J_SAVE(amplitude);
-        J_SAVE(speed);
-        J_SAVE(timeOffset);
-    }
-    void Deserialize(const json &j, FloatingComponent &obj)
-    {
-        J_LOAD(center, XMFLOAT3(0, 2, 0));
-        J_LOAD(amplitude, XMFLOAT3(0, 0.5, 0));
-        J_LOAD(speed, XMFLOAT3(1, 2, 1));
-        J_LOAD(timeOffset, 0.0f);
     }
 
     // --- PooledParticleComponent ---
@@ -799,66 +653,6 @@ namespace ComponentSerializers {
     }
 
 
-    // --- BossComponent Serialization ---
-    void Serialize(json &j, const BossComponent &obj)
-    {
-        // ... (既存のパラメータ) ...
-        j["state"] = static_cast<int>(obj.state);
-        J_SAVE(stateTimer);
-        J_SAVE(currentPhase);
-        J_SAVE(isEnraged);
-        J_SAVE(moveSpeed);
-        J_SAVE(chargeSpeed);
-        J_SAVE(rotationSpeed);
-        J_SAVE(attackRangeSweep);
-        J_SAVE(attackRangeShock);
-        J_SAVE(actionCooldown);
-        J_SAVE(summonCooldown);
-        J_SAVE(shockwaveCooldown);
-        J_SAVE(maxMinions);
-
-        // ★追加: アニメーションタイミング
-        J_SAVE(chargeWindupDur);
-        J_SAVE(chargeDashDur);
-        J_SAVE(chargeRecoveryDur);
-        J_SAVE(sweepHitTime);
-        J_SAVE(sweepDuration);
-        J_SAVE(summonSpawnTime);
-        J_SAVE(summonDuration);
-        J_SAVE(shockwaveHitTime);
-        J_SAVE(shockwaveDuration);
-    }
-
-    void Deserialize(const json &j, BossComponent &obj)
-    {
-        J_LOAD_ENUM(state, BossState, BossState::Idle);
-        J_LOAD(stateTimer, 0.0f);
-        J_LOAD(currentPhase, 1);
-        J_LOAD(isEnraged, false);
-        J_LOAD(moveSpeed, 5.0f);
-        J_LOAD(chargeSpeed, 25.0f);
-        J_LOAD(rotationSpeed, 2.0f);
-        J_LOAD(attackRangeSweep, 6.0f);
-        J_LOAD(attackRangeShock, 25.0f);
-        J_LOAD(actionCooldown, 2.0f);
-        J_LOAD(summonCooldown, 0.0f);
-        J_LOAD(shockwaveCooldown, 10.0f);
-        J_LOAD(maxMinions, 3);
-
-        // ★追加
-        J_LOAD(chargeWindupDur, 2.20f);
-        J_LOAD(chargeDashDur, 0.80f);
-        J_LOAD(chargeRecoveryDur, 1.50f);
-        J_LOAD(sweepHitTime, 0.75f);
-        J_LOAD(sweepDuration, 1.50f);
-        J_LOAD(summonSpawnTime, 1.00f);
-        J_LOAD(summonDuration, 2.00f);
-        J_LOAD(shockwaveHitTime, 0.75f);
-        J_LOAD(shockwaveDuration, 1.50f);
-
-        obj.currentMinions = 0;
-    }
-
     // ---------------------------------------------------------
     // TriggerComponent
     // ---------------------------------------------------------
@@ -926,11 +720,11 @@ namespace ComponentSerializers {
     {
         RegisterT<NameComponent>("Name");
         RegisterT<TransformComponent>("Transform");
-        RegisterT<RigidBodyComponent>("RigidBody");
+
         RegisterT<BoxColliderComponent>("BoxCollider");
         RegisterT<SphereColliderComponent>("SphereCollider");
         RegisterT<CapsuleColliderComponent>("CapsuleCollider");
-        RegisterT<CollisionConfigComponent>("CollisionConfig");
+
         RegisterT<ModelComponent>("Model");
         RegisterT<StaticMeshComponent>("StaticMesh");
         RegisterT<MaterialComponent>("Material");
@@ -943,15 +737,15 @@ namespace ComponentSerializers {
         RegisterT<BloomConfigComponent>("BloomConfig");
         RegisterT<ToneMapConfigComponent>("ToneMapConfig");
         RegisterT<PlayerComponent>("Player");
-        RegisterT<GunComponent>("Gun");
+
         RegisterT<HealthComponent>("Health");
 
         // 【After：メタデータ駆動の登録へ差し替え】
-        ComponentMetaJson::RegisterMetaT<EnemyComponent>(ComponentRegistry::Instance(), "Enemy");
+        //ComponentMetaJson::RegisterMetaT<EnemyComponent>(ComponentRegistry::Instance(), "Enemy");
         //RegisterT<EnemyComponent>("Enemy");
 
         RegisterT<GPUParticleComponent>("GPUParticle");
-        RegisterT<FloatingComponent>("Floating");        
+      
         RegisterT<PooledParticleComponent>("PooledParticle");
         RegisterT<AnimatorComponent>("Animator");
         RegisterT<VirtualCamera>("VirtualCamera");
@@ -959,7 +753,7 @@ namespace ComponentSerializers {
         RegisterT<CameraAimLookAt>("CameraAimLookAt");
         RegisterT<CameraShake>("CameraShake");
         RegisterT<CameraBodyFree>("CameraBodyFree");
-        RegisterT<BossComponent>("BossBehavior");
+
 
         // ★これを追加
         RegisterT<TriggerComponent>("Trigger");

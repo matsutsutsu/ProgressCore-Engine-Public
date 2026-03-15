@@ -5,7 +5,6 @@
 #include "Bind/LuaBind_Entity.h"
 #include "Bind/LuaBind_Scene.h"
 #include "Bind/LuaBind_Components.h"
-#include "Game/Script/LuaBind_Boss.h"
 
 #include <fstream> // ファイル読み込み用
 #include <iostream>
@@ -54,7 +53,6 @@ void LuaScriptSystem::Initialize()
     LuaBind_Entity::Bind(lua, _world);
     LuaBind_Scene::Bind(lua, _world);
     LuaBind_Components::Bind(lua, _world);
-    LuaBind_Boss::Bind(lua, _world);
 
     // 他のバインダーもここで呼ぶ
     // LuaBind_Input::Bind(lua);

@@ -3,7 +3,6 @@
 #include "ECS/Core/CCL_World.h"
 #include <algorithm> // for std::unique if needed
 #include "Engine/Serialization/Factory/Prefab.h" // ★追加: ReturnParticleToPoolを使うため
-#include "Game/Utils/PooledParticleComponent.h" // ★追加
 #include <vector>
 
 // 各システムの .cpp ファイルの上部に追加
@@ -39,26 +38,16 @@ void HierarchyCleanupSystem::Update(float dt)
         // リスト作成中に重複して登録されている場合や、既に無効な場合はスキップ
         if (!_world->IsEntityValid(targetID)) continue;
 
-        // ★プール対象のパーティクルかチェック
-        bool isPooled = _world->HasComponent<PooledParticleComponent>(targetID);
-
+      
         // 親子関係の解除 (プールに戻す場合も、削除する場合も、リンクは切る必要がある)
         if (_world->HasComponent<TransformComponent>(targetID)) {
             TransformUpdateSystem::DetachChild(*_world, targetID);
         }
 
-        if (isPooled) {
-            // ★重要: プール対象なら「削除」ではなく「返却」
-            // これで画面から消え、次の出番まで待機状態になります
-            Prefab::ReturnParticleToPool(*_world, targetID);
-
-            // タグを外して、ECSによる削除を回避する
-            _world->RequestRemoveComponent<Tag::DestroyTag>(targetID);
-        }
-        else {
-            // 通常のエンティティなら完全に削除
-            _world->RequestDestroyEntity(targetID);
-        }
+       
+        // 通常のエンティティなら完全に削除
+        _world->RequestDestroyEntity(targetID);
+       
     }
 }
 

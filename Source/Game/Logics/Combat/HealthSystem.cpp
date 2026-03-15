@@ -1,10 +1,9 @@
 #include "HealthSystem.h"
-#include "Engine/GamePlay/Physics/RigidBody/RigidBodyComponent.h"
 #include "Game/Logics/Combat/DeadTag.h"
 #include "Game/Logics/Combat/GlobalDamageQueue.h"
 #include "Game/Logics/GameEvent/GameEvents.h"
 
-#include "Game/Logics/Character/Enemy/EnemyComponent.h"
+
 #include "Game/Logics/Character/Player/PlayerComponent.h"
 #include <algorithm>
 
@@ -50,22 +49,7 @@ void HealthSystem::Update(float dt)
                 // =======================================================
 
 
-                // 物理（ノックバック）の適用
-                // 本来は PhysicsCommandBuffer
-                // に積むのが理想ですが、段階的移行としてここで直接適用します
-                if (auto *rb = _world->GetComponent<RigidBodyComponent>(dmg.targetID)) {
 
-                    // もし相手が敵なら、ノックバック耐性を考慮する
-                    float multiplier = 1.0f;
-                    if (auto *e = _world->GetComponent<EnemyComponent>(dmg.targetID)) {
-                        // resistance が 1.0 なら multiplier は 0.0 になり、ノックバック無効
-                        multiplier = 1.0f - std::clamp(e->knockbackResistance, 0.0f, 1.0f);
-                    }
-
-                    rb->velocity.x += dmg.knockbackForce.x * multiplier;
-                    rb->velocity.y += dmg.knockbackForce.y * multiplier;
-                    rb->velocity.z += dmg.knockbackForce.z * multiplier;
-                }
             }
         }
 

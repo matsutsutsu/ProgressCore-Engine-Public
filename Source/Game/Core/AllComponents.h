@@ -12,8 +12,7 @@
 #include "Engine/GamePlay/Physics/Collision/SphereColliderComponent.h"
 #include "Engine/GamePlay/Physics/Collision/BoxColliderComponent.h"
 #include "Engine/GamePlay/Physics/Collision/CapsuleColliderComponent.h"
-#include "Engine/GamePlay/Physics/RigidBody/RigidBodyComponent.h"
-#include "Engine/GamePlay/Physics/Collision/CollisionConfigComponent.h"
+
 
 
 // カメラ
@@ -43,10 +42,7 @@
 #include "Game/Logics/Combat/Weapon/Core/BulletContextComponent.h"
 #include "Game/Logics/Combat/Weapon/Core/GunComponent.h"
 #include "Game/Logics/Character/Player/PlayerComponent.h"
-#include "Game/Logics/Character/Enemy/EnemyComponent.h"
-#include "Game/Logics/Character/Enemy/FloatingComponent.h"
 
-#include "Game/Logics/Character/Enemy/BossComponent.h"
 
 #include "Game/Logics/Combat/HealthComponent.h"
 #include "Engine/GamePlay/Utils/TimerComponent.h"

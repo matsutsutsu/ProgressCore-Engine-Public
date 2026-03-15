@@ -1,20 +1,20 @@
 #include "LuaBind_Components.h"
 #include "ECS/Common/CCL_Common.h"
-#include "ECS/Core/CCL_World.h" // ComponentHandle ‚Æ GetHandle ‚Ì‚½‚ß‚É•K—v
+#include "ECS/Core/CCL_World.h" // ComponentHandle ã¨ GetHandle ã®ãŸã‚ã«å¿…è¦
 
-// “o˜^‚·‚éƒRƒ“ƒ|[ƒlƒ“ƒg‚Ìƒwƒbƒ_[‚ğƒCƒ“ƒNƒ‹[ƒh
+// ç™»éŒ²ã™ã‚‹ã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆã®ãƒ˜ãƒƒãƒ€ãƒ¼ã‚’ã‚¤ãƒ³ã‚¯ãƒ«ãƒ¼ãƒ‰
 #include "Game/Core/AllComponents.h"
 
 using namespace DirectX;
 using namespace CCL::ECS::Core;
 
 // ==================================================================================
-// ƒwƒ‹ƒp[ƒ}ƒNƒ: ƒnƒ“ƒhƒ‹Œo—R‚ÌƒvƒƒpƒeƒBƒAƒNƒZƒX‚ğ’è‹`
+// ãƒ˜ãƒ«ãƒ‘ãƒ¼ãƒã‚¯ãƒ­: ãƒãƒ³ãƒ‰ãƒ«çµŒç”±ã®ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£ã‚¢ã‚¯ã‚»ã‚¹ã‚’å®šç¾©
 // ==================================================================================
-// –ğŠ„:
-// 1. ƒnƒ“ƒhƒ‹‚ª—LŒø(IsValid)‚©ƒ`ƒFƒbƒN‚·‚é
-// 2. —LŒø‚È‚ç‚»‚Ìƒƒ“ƒo•Ï”‚Ö‚ÌQÆ‚ğ•Ô‚· (Lua‚ª“Ç‚İ‘‚«‚Å‚«‚é)
-// 3. –³Œø‚È‚çƒ‰ƒ“ƒ^ƒCƒ€ƒGƒ‰[‚ğ“Š‚°‚é (Lua‘¤‚Å pcall “™‚ÅƒLƒƒƒbƒ`‰Â”\A‚Ü‚½‚Í‘¦’â~)
+// å½¹å‰²:
+// 1. ãƒãƒ³ãƒ‰ãƒ«ãŒæœ‰åŠ¹(IsValid)ã‹ãƒã‚§ãƒƒã‚¯ã™ã‚‹
+// 2. æœ‰åŠ¹ãªã‚‰ãã®ãƒ¡ãƒ³ãƒå¤‰æ•°ã¸ã®å‚ç…§ã‚’è¿”ã™ (LuaãŒèª­ã¿æ›¸ãã§ãã‚‹)
+// 3. ç„¡åŠ¹ãªã‚‰ãƒ©ãƒ³ã‚¿ã‚¤ãƒ ã‚¨ãƒ©ãƒ¼ã‚’æŠ•ã’ã‚‹ (Luaå´ã§ pcall ç­‰ã§ã‚­ãƒ£ãƒƒãƒå¯èƒ½ã€ã¾ãŸã¯å³åœæ­¢)
 #define HANDLE_PROP(CompType, MemberName)                                                          \
     sol::property(                                                                                 \
         [](ComponentHandle<CompType> &h) -> auto & {                                               \
@@ -27,14 +27,14 @@ using namespace CCL::ECS::Core;
             if (h.IsValid()) {                                                                     \
                 h->MemberName = v;                                                                 \
             }                                                                                      \
-            else { /* –³Œø‚Èê‡‚Í‘‚«‚İ‚ğ–³‹A‚ ‚é‚¢‚ÍƒƒOo—Í */                              \
+            else { /* ç„¡åŠ¹ãªå ´åˆã¯æ›¸ãè¾¼ã¿ã‚’ç„¡è¦–ã€ã‚ã‚‹ã„ã¯ãƒ­ã‚°å‡ºåŠ› */                              \
             }                                                                                      \
         })
 
 void LuaBind_Components::Bind(sol::state &lua, CCL::ECS::Core::World *world)
 {
     // --------------------------------------------------------
-    // 1. Šî–{Œ^ (Vector3‚È‚Ç) - •ÏX‚È‚µ
+    // 1. åŸºæœ¬å‹ (Vector3ãªã©) - å¤‰æ›´ãªã—
     // --------------------------------------------------------
     lua.new_usertype<XMFLOAT3>("Vector3",
         sol::constructors<XMFLOAT3(), XMFLOAT3(float, float, float)>(),
@@ -46,15 +46,15 @@ void LuaBind_Components::Bind(sol::state &lua, CCL::ECS::Core::World *world)
         &XMFLOAT3::z);
 
     // --------------------------------------------------------
-    // 2. ƒRƒ“ƒ|[ƒlƒ“ƒg‚Ì“o˜^ (‚·‚×‚Äƒnƒ“ƒhƒ‹Œ^‚É•ÏX)
+    // 2. ã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆã®ç™»éŒ² (ã™ã¹ã¦ãƒãƒ³ãƒ‰ãƒ«å‹ã«å¤‰æ›´)
     // --------------------------------------------------------
 
     // --- TransformComponent (Handle) ---
     lua.new_usertype<ComponentHandle<TransformComponent>>("Transform",
         "IsValid",
-        &ComponentHandle<TransformComponent>::IsValid, // —LŒøŠm”F—p
+        &ComponentHandle<TransformComponent>::IsValid, // æœ‰åŠ¹ç¢ºèªç”¨
 
-        // Šeƒƒ“ƒo‚Ö‚ÌƒAƒNƒZƒX (ƒ}ƒNƒ‚Å¶‘¶ƒ`ƒFƒbƒN•t‚«)
+        // å„ãƒ¡ãƒ³ãƒã¸ã®ã‚¢ã‚¯ã‚»ã‚¹ (ãƒã‚¯ãƒ­ã§ç”Ÿå­˜ãƒã‚§ãƒƒã‚¯ä»˜ã)
         "position",
         HANDLE_PROP(TransformComponent, position),
         "scale",
@@ -65,24 +65,7 @@ void LuaBind_Components::Bind(sol::state &lua, CCL::ECS::Core::World *world)
         HANDLE_PROP(TransformComponent, parentID));
 
     // --- RigidBodyComponent (Handle) ---
-    lua.new_usertype<ComponentHandle<RigidBodyComponent>>("RigidBody",
-        "IsValid",
-        &ComponentHandle<RigidBodyComponent>::IsValid,
-
-        "velocity",
-        HANDLE_PROP(RigidBodyComponent, velocity),
-        "mass",
-        HANDLE_PROP(RigidBodyComponent, mass),
-        "useGravity",
-        HANDLE_PROP(RigidBodyComponent, useGravity),
-        "isStatic",
-        HANDLE_PROP(RigidBodyComponent, isStatic),
-        "bounciness",
-        HANDLE_PROP(RigidBodyComponent, bounciness),
-        "linearDamping",
-        HANDLE_PROP(RigidBodyComponent, linearDamping),
-        "dynamicFriction",
-        HANDLE_PROP(RigidBodyComponent, dynamicFriction));
+    
 
     // --- HealthComponent (Handle) ---
     lua.new_usertype<ComponentHandle<HealthComponent>>("Health",
@@ -119,7 +102,7 @@ void LuaBind_Components::Bind(sol::state &lua, CCL::ECS::Core::World *world)
         HANDLE_PROP(PlayerComponent, turnSpeed));
 
     // --- NameComponent (Handle) ---
-    // char”z—ñ‚Ìˆµ‚¢‚Í“Áê‚È‚Ì‚Åƒ}ƒNƒ‚ğg‚í‚¸è‘‚«
+    // charé…åˆ—ã®æ‰±ã„ã¯ç‰¹æ®Šãªã®ã§ãƒã‚¯ãƒ­ã‚’ä½¿ã‚ãšæ‰‹æ›¸ã
     lua.new_usertype<ComponentHandle<NameComponent>>("NameInfo",
         "IsValid",
         &ComponentHandle<NameComponent>::IsValid,
@@ -137,16 +120,14 @@ void LuaBind_Components::Bind(sol::state &lua, CCL::ECS::Core::World *world)
             }));
 
     // --------------------------------------------------------
-    // 3. ƒRƒ“ƒ|[ƒlƒ“ƒgæ“¾ŠÖ”‚Ì“o˜^ (ƒnƒ“ƒhƒ‹‚ğ•Ô‚·‚æ‚¤‚É•ÏX)
+    // 3. ã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆå–å¾—é–¢æ•°ã®ç™»éŒ² (ãƒãƒ³ãƒ‰ãƒ«ã‚’è¿”ã™ã‚ˆã†ã«å¤‰æ›´)
     // --------------------------------------------------------
     sol::table entityTable = lua["Entity"].get_or_create<sol::table>();
 
-    // Entity.GetTransform(id) -> ComponentHandle<TransformComponent> ‚ğ•Ô‚·
+    // Entity.GetTransform(id) -> ComponentHandle<TransformComponent> ã‚’è¿”ã™
     entityTable.set_function("GetTransform",
         [world](CCL::ECS::EntityID id) { return world->GetHandle<TransformComponent>(id); });
 
-    entityTable.set_function("GetRigidBody",
-        [world](CCL::ECS::EntityID id) { return world->GetHandle<RigidBodyComponent>(id); });
 
     entityTable.set_function("GetHealth",
         [world](CCL::ECS::EntityID id) { return world->GetHandle<HealthComponent>(id); });
@@ -157,7 +138,7 @@ void LuaBind_Components::Bind(sol::state &lua, CCL::ECS::Core::World *world)
     entityTable.set_function(
         "GetName", [world](CCL::ECS::EntityID id) { return world->GetHandle<NameComponent>(id); });
 
-    // ƒvƒŒƒCƒ„[ƒRƒ“ƒ|[ƒlƒ“ƒgæ“¾‚à’Ç‰Á‚µ‚Ä‚¨‚«‚Ü‚·
+    // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆå–å¾—ã‚‚è¿½åŠ ã—ã¦ãŠãã¾ã™
     entityTable.set_function("GetPlayer",
         [world](CCL::ECS::EntityID id) { return world->GetHandle<PlayerComponent>(id); });
 }

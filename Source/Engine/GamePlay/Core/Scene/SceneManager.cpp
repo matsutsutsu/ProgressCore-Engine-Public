@@ -4,8 +4,7 @@
 // シーン登録ヘッダー
 #include"Game/Scenes/EditorScene.h"
 #include "Game/Scenes/ParticleScene.h"
-#include "Game/Scenes/GameScene.h"
-#include "Game/Scenes/ShopScene.h"
+
 
 //初期化
 void SceneManager::Initialize()
@@ -13,16 +12,12 @@ void SceneManager::Initialize()
 	//シーン登録
 	//SceneFactory::Instance().Register("ModelViewer", []() { return new ModelViewerScene(); });
 	SceneFactory::Instance().Register("Editor", []() { return new EditorScene(); });
-	SceneFactory::Instance().Register("Game", []() { return new GameScene(); });
 
 	SceneFactory::Instance().Register("Particle", []() { return new ParticleScene(); });
 
-	SceneFactory::Instance().Register("Shop", []() { return new ShopScene(); });
 
 	// 最初に表示するシーン
-	//ChangeScene("Editor");
-	ChangeScene("Shop");
-	//ChangeScene("Game");
+	ChangeScene("Editor");
 	//ChangeScene("Particle");
 }
 

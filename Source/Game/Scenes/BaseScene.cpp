@@ -61,8 +61,6 @@ void BaseScene::Initialize()
     // シリアライズ初期化
     ComponentRegister::RegisterAllComponentsForSerialization();
 
-    // アタッチメントマスターデータのロード
-    AttachmentMasterData::LoadFromJson("Assets/GamePlay/Weapon/AttachmentMaster.json");
 
 }
 

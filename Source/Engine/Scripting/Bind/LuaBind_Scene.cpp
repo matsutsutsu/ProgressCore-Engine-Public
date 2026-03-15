@@ -2,66 +2,58 @@
 #include "LuaBind_Scene.h"
 #include "Engine/GamePlay/Core/Scene/SceneManager.h"
 
-// •K—v‚ÈƒV[ƒ“‚âƒ[ƒ_[‚ğƒCƒ“ƒNƒ‹[ƒh
-#include "Game/Logics/World/LevelLoader.h"
-#include "Game/Scenes/GameScene.h"
+// å¿…è¦ãªã‚·ãƒ¼ãƒ³ã‚„ãƒ­ãƒ¼ãƒ€ãƒ¼ã‚’ã‚¤ãƒ³ã‚¯ãƒ«ãƒ¼ãƒ‰
 #include "Game/Scenes/SceneLoading.h"
-#include "Game/Scenes/ShopScene.h"
+
 
 void LuaBind_Scene::Bind(sol::state &lua, CCL::ECS::Core::World *world)
 {
     auto &sm = SceneManager::Instance();
 
     // ---------------------------------------------------
-    // 1. Sceneƒe[ƒuƒ‹ (ƒV[ƒ“ŠÇ—)
+    // 1. Sceneãƒ†ãƒ¼ãƒ–ãƒ« (ã‚·ãƒ¼ãƒ³ç®¡ç†)
     // ---------------------------------------------------
     auto scene = lua.create_named_table("Scene");
 
-    // Œ»İ‚ÌƒV[ƒ“–¼‚ğæ“¾
+    // ç¾åœ¨ã®ã‚·ãƒ¼ãƒ³åã‚’å–å¾—
     scene.set_function("GetName", [&sm]() -> std::string { return sm.GetCurrentSceneName(); });
 
-    // ƒV[ƒ“‘JˆÚ (•¶š—ñ‚©‚çƒNƒ‰ƒX‚ğ¶¬‚µ‚Äƒ[ƒh)
+    // ã‚·ãƒ¼ãƒ³é·ç§» (æ–‡å­—åˆ—ã‹ã‚‰ã‚¯ãƒ©ã‚¹ã‚’ç”Ÿæˆã—ã¦ãƒ­ãƒ¼ãƒ‰)
     scene.set_function("Load", [&sm](std::string nextName) {
         BaseScene *target = nullptr;
 
-        if (nextName == "Game") {
-            target = new GameScene();
-        }
-        else if (nextName == "Shop") {
-            target = new ShopScene();
-        }
+        //if (nextName == "Game") {
+            //target = new GameScene();
+        //}
+        //else if (nextName == "Shop") {
+        //    target = new ShopScene();
+        //}
 
         if (target) {
-            // –¼‘OXV
+            // åå‰æ›´æ–°
             sm.SetCurrentSceneName(nextName);
-            // ƒ[ƒh‰æ–Ê‚ğ‹²‚ñ‚Å‘JˆÚ
+            // ãƒ­ãƒ¼ãƒ‰ç”»é¢ã‚’æŒŸã‚“ã§é·ç§»
             sm.ChangeScene(new SceneLoading(target));
             printf("[Lua] Scene Changing to: %s\n", nextName.c_str());
         }
     });
 
     // ---------------------------------------------------
-    // 2. Playerƒe[ƒuƒ‹ (ƒŒƒxƒ‹ŠÇ—‚È‚Ç)
+    // 2. Playerãƒ†ãƒ¼ãƒ–ãƒ« (ãƒ¬ãƒ™ãƒ«ç®¡ç†ãªã©)
     // ---------------------------------------------------
     auto player = lua.create_named_table("Player");
 
-    // ƒŒƒxƒ‹æ“¾
+    // ãƒ¬ãƒ™ãƒ«å–å¾—
     player.set_function("GetLevel", [&sm]() { return sm.GetPlayerData().stageLevel; });
 
-    // ƒŒƒxƒ‹İ’è
+    // ãƒ¬ãƒ™ãƒ«è¨­å®š
     player.set_function("SetLevel", [&sm](int level) { sm.GetPlayerData().stageLevel = level; });
 
-    // ƒŒƒxƒ‹ƒŠƒZƒbƒg
+    // ãƒ¬ãƒ™ãƒ«ãƒªã‚»ãƒƒãƒˆ
     player.set_function("ResetLevel", [&sm]() { sm.GetPlayerData().Reset(); });
 
     // ---------------------------------------------------
-    // 3. Gameƒe[ƒuƒ‹ (‘S‘ÌƒVƒXƒeƒ€)
+    // 3. Gameãƒ†ãƒ¼ãƒ–ãƒ« (å…¨ä½“ã‚·ã‚¹ãƒ†ãƒ )
     // ---------------------------------------------------
-    auto game = lua.create_named_table("Game");
 
-    // ƒZ[ƒuÀs (Worldƒ|ƒCƒ“ƒ^‚ª•K—v‚È‚½‚ßƒLƒƒƒvƒ`ƒƒ‚·‚é)
-    game.set_function("Save", [world]() {
-        LevelLoader::SavePlayerData(world);
-        printf("[Lua] Game Saved.\n");
-    });
 }
