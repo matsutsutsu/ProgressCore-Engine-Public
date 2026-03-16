@@ -301,6 +301,9 @@
     <Filter Include="Source\Engine\Physics\Jolt">
       <UniqueIdentifier>{bcbda7cc-2567-497f-b2ca-c7f409adbf23}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\GamePlay\Physics\Jolt\_Meta">
+      <UniqueIdentifier>{5484d16a-68cd-425b-a595-7999825c74e9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -729,21 +732,6 @@
     <ClInclude Include="Source\Engine\GamePlay\Core\NameComponent.h">
       <Filter>Source\Engine\GamePlay\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\BoxColliderComponent.h">
-      <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\CapsuleColliderComponent.h">
-      <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\CollisionLayers.h">
-      <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\CollisionSystem.h">
-      <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\SphereColliderComponent.h">
-      <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\GamePlay\Transform\HierarchyCleanupSystem.h">
       <Filter>Source\Engine\GamePlay\Transform</Filter>
     </ClInclude>
@@ -984,9 +972,6 @@
     <ClInclude Include="Source\Engine\Graphics\Renderer\ParticleRenderer.h">
       <Filter>Source\Engine\Graphics\Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\RigidBody\JoltRigidBodyComponent.h">
-      <Filter>Source\Engine\GamePlay\Physics\RigidBody</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Utils\PooledParticleComponent.h">
       <Filter>Source\Game\Utils</Filter>
     </ClInclude>
@@ -1001,6 +986,24 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltPushSystem.h">
       <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltHandleComponent.h">
+      <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Physics\RigidBody\JoltRigidbodyComponent.h">
+      <Filter>Source\Engine\GamePlay\Physics\RigidBody</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltBodySetupSystem.h">
+      <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\JoltBoxColliderComponent.h">
+      <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\JoltSphereColliderComponent.h">
+      <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\JoltCapusuleColliderComponent.h">
+      <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1295,9 +1298,6 @@
     <ClCompile Include="Source\Engine\GamePlay\Core\Scene\SceneManager.cpp">
       <Filter>Source\Engine\GamePlay\Core\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Physics\Collision\CollisionSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\GamePlay\Transform\HierarchyCleanupSystem.cpp">
       <Filter>Source\Engine\GamePlay\Transform</Filter>
     </ClCompile>
@@ -1456,6 +1456,12 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltPushSystem.cpp">
       <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltBodySetupSystem.cpp">
+      <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltPhysicsComponentMeta.cpp">
+      <Filter>Source\Engine\GamePlay\Physics\Jolt\_Meta</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

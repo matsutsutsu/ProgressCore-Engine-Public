@@ -9,9 +9,10 @@
 #include "Engine/GamePlay/Core/NameComponent.h"
 
 // 物理
-#include "Engine/GamePlay/Physics/Collision/SphereColliderComponent.h"
-#include "Engine/GamePlay/Physics/Collision/BoxColliderComponent.h"
-#include "Engine/GamePlay/Physics/Collision/CapsuleColliderComponent.h"
+#include "Engine/GamePlay/Physics/RigidBody/JoltRigidbodyComponent.h"
+#include "Engine/GamePlay/Physics/Collision/JoltBoxColliderComponent.h"
+#include "Engine/GamePlay/Physics/Collision/JoltSphereColliderComponent.h"
+//#include "Engine/GamePlay/Physics/Collision/JoltCapusuleColliderComponent.h"
 
 
 

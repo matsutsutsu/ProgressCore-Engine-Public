@@ -4,7 +4,7 @@
 #include "ECS/System/CCL_System.h"
 #include "Engine/GamePlay/Transform/TransformComponent.h"
 #include "Engine/Physics/JoltPhysicsManager.h"
-#include "Engine/GamePlay/Physics/RigidBody/JoltRigidBodyComponent.h"
+#include "Engine/GamePlay/Physics/Jolt/JoltHandleComponent.h"
 
 // 1. 物理の時間を進めるシステム
 class JoltStepSystem : public CCL::ECS::IfSystem<JoltStepSystem> {
@@ -16,7 +16,7 @@ class JoltStepSystem : public CCL::ECS::IfSystem<JoltStepSystem> {
 // 2. 計算結果をECSのTransformに同期するシステム
 class JoltPullSystem : public CCL::ECS::IfSystem<JoltPullSystem,
                            CCL::ECS::Write<TransformComponent>,
-                           CCL::ECS::Read<JoltRigidBodyComponent>> {
+                           CCL::ECS::Read<JoltHandleComponent>> {
   public:
     JoltPullSystem() : IfSystem("JoltPullSystem") {}
     void Update(float dt) override;

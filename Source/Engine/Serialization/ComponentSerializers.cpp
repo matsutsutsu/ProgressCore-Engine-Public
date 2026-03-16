@@ -5,6 +5,10 @@
 
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
+// Metaファイル群
+#include "Engine/GamePlay/Physics/Jolt/JoltPhysicsComponentMeta.h"
+
+
 #include <DirectXMath.h>
 #include <algorithm>
 
@@ -227,55 +231,6 @@ namespace ComponentSerializers {
         else {
             obj.parentID = 0;
         }
-    }
-
-
-    // --- BoxColliderComponent ---
-    void Serialize(json &j, const BoxColliderComponent &obj)
-    {
-        J_SAVE(size);
-        J_SAVE(center);
-        j["layer"] = static_cast<uint32_t>(obj.layer);
-        j["mask"]  = static_cast<uint32_t>(obj.mask);
-    }
-    void Deserialize(const json &j, BoxColliderComponent &obj)
-    {
-        J_LOAD_OPT(size);
-        J_LOAD_OPT(center);
-        if (j.contains("layer")) obj.layer = static_cast<Layer>(j["layer"].get<uint32_t>());
-        if (j.contains("mask")) obj.mask = static_cast<Layer>(j["mask"].get<uint32_t>());
-    }
-
-    // --- SphereColliderComponent ---
-    void Serialize(json &j, const SphereColliderComponent &obj)
-    {
-        J_SAVE(radius);
-        j["layer"] = static_cast<uint32_t>(obj.layer);
-        j["mask"]  = static_cast<uint32_t>(obj.mask);
-    }
-    void Deserialize(const json &j, SphereColliderComponent &obj)
-    {
-        J_LOAD(radius, 0.5f);
-        if (j.contains("layer")) obj.layer = static_cast<Layer>(j["layer"].get<uint32_t>());
-        if (j.contains("mask")) obj.mask = static_cast<Layer>(j["mask"].get<uint32_t>());
-    }
-
-    // --- CapsuleColliderComponent ---
-    void Serialize(json &j, const CapsuleColliderComponent &obj)
-    {
-        J_SAVE(radius);
-        J_SAVE(height);
-        J_SAVE(center);
-        j["layer"] = static_cast<uint32_t>(obj.layer);
-        j["mask"]  = static_cast<uint32_t>(obj.mask);
-    }
-    void Deserialize(const json &j, CapsuleColliderComponent &obj)
-    {
-        J_LOAD(radius, 0.5f);
-        J_LOAD(height, 2.0f);
-        J_LOAD_OPT(center);
-        if (j.contains("layer")) obj.layer = static_cast<Layer>(j["layer"].get<uint32_t>());
-        if (j.contains("mask")) obj.mask = static_cast<Layer>(j["mask"].get<uint32_t>());
     }
 
 
@@ -721,9 +676,7 @@ namespace ComponentSerializers {
         RegisterT<NameComponent>("Name");
         RegisterT<TransformComponent>("Transform");
 
-        RegisterT<BoxColliderComponent>("BoxCollider");
-        RegisterT<SphereColliderComponent>("SphereCollider");
-        RegisterT<CapsuleColliderComponent>("CapsuleCollider");
+
 
         RegisterT<ModelComponent>("Model");
         RegisterT<StaticMeshComponent>("StaticMesh");
@@ -740,9 +693,17 @@ namespace ComponentSerializers {
 
         RegisterT<HealthComponent>("Health");
 
-        // 【After：メタデータ駆動の登録へ差し替え】
-        //ComponentMetaJson::RegisterMetaT<EnemyComponent>(ComponentRegistry::Instance(), "Enemy");
-        //RegisterT<EnemyComponent>("Enemy");
+
+        // 【Jolt Physics Components の登録】
+        // ComponentMetaJson::RegisterMetaT を使うことで、
+        // Jsonシリアライズと、ComponentRegistryへの登録を自動化します。
+
+        ComponentMetaJson::RegisterMetaT<JoltBoxColliderComponent>(
+            ComponentRegistry::Instance(), "JoltBoxCollider");
+        ComponentMetaJson::RegisterMetaT<JoltSphereColliderComponent>(
+            ComponentRegistry::Instance(), "JoltSphereCollider");
+        ComponentMetaJson::RegisterMetaT<JoltRigidbodyComponent>(
+            ComponentRegistry::Instance(), "JoltRigidbody");
 
         RegisterT<GPUParticleComponent>("GPUParticle");
       

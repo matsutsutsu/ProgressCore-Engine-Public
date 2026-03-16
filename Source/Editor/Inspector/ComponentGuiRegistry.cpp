@@ -179,6 +179,11 @@ void ComponentGuiRegistry::Initialize()
     //    }
     //});
 
+    // 【Jolt Physics Components GUIの登録】
+    ComponentMetaImGui::RegisterGuiMeta<JoltBoxColliderComponent>(*this);
+    ComponentMetaImGui::RegisterGuiMeta<JoltSphereColliderComponent>(*this);
+    ComponentMetaImGui::RegisterGuiMeta<JoltRigidbodyComponent>(*this);
+
     // --- Transform ---
     Register<TransformComponent>(
         "Transform", [](void *component, EntityID selfID, CCL::ECS::Core::World *world) {
@@ -323,41 +328,7 @@ void ComponentGuiRegistry::Initialize()
         }
     });
 
-    // --- Sphere Collider ---
-    Register<SphereColliderComponent>(
-        "Sphere Collider", [](void *data, EntityID, CCL::ECS::Core::World *) {
-            auto *s = static_cast<SphereColliderComponent *>(data);
-            ImGui::DragFloat("Radius", &s->radius, 0.1f, 0.0f, 100.0f);
-            ImGui::BeginDisabled();
-            ImGui::Checkbox("Is Colliding", &s->isColliding);
-            ImGui::EndDisabled();
-        });
-
-    // --- Box Collider (追加) ---
-    Register<BoxColliderComponent>(
-        "Box Collider", [](void *data, EntityID, CCL::ECS::Core::World *) {
-            auto *b = static_cast<BoxColliderComponent *>(data);
-            ImGui::DragFloat3("Center", &b->center.x, 0.1f);
-            ImGui::DragFloat3("Size", &b->size.x, 0.1f, 0.0f, 1000.0f);
-
-            ImGui::BeginDisabled();
-            ImGui::Checkbox("Is Colliding", &b->isColliding);
-            ImGui::EndDisabled();
-        });
-
-    // --- Capsule Collider (追加) ---
-    Register<CapsuleColliderComponent>(
-        "Capsule Collider", [](void *data, EntityID, CCL::ECS::Core::World *) {
-            auto *c = static_cast<CapsuleColliderComponent *>(data);
-            ImGui::DragFloat3("Center", &c->center.x, 0.1f);
-            ImGui::DragFloat("Radius", &c->radius, 0.1f, 0.0f, 100.0f);
-            ImGui::DragFloat("Height", &c->height, 0.1f, 0.0f, 100.0f);
-
-            ImGui::BeginDisabled();
-            ImGui::Checkbox("Is Colliding", &c->isColliding);
-            ImGui::EndDisabled();
-        });
-
+   
     // --- Model / Static Mesh ---
     Register<ModelComponent>("Model", [](void *data, EntityID, CCL::ECS::Core::World *) {
         auto *m = static_cast<ModelComponent *>(data);

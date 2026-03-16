@@ -12,7 +12,7 @@ void JoltPushSystem::Update(float dt)
     JPH::BodyInterface &bodyInterface = joltManager.GetBodyInterface();
 
     // ★あなたの強力なJobSystemを使って全コアで並列検知を行う
-    ForEachParallel([&](const TransformComponent &trans, const JoltRigidBodyComponent &joltBody) {
+    ForEachParallel([&](const TransformComponent &trans, const JoltHandleComponent &joltBody) {
         // Jolt側の現在の座標を取得
         JPH::RVec3 joltPos;
         JPH::Quat  joltRot;

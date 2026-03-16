@@ -8,7 +8,7 @@
 
 // Jolt関係のヘッダー
 #include "Engine/Physics/JoltPhysicsManager.h"
-#include "Engine/GamePlay/Physics/RigidBody/JoltRigidBodyComponent.h"
+#include "Engine/GamePlay/Physics/Jolt/JoltHandleComponent.h"
 
 // 各システムの .cpp ファイルの上部に追加
 #include "ECS/System/CCL_SystemRegistry.h"
@@ -65,8 +65,8 @@ void HierarchyCleanupSystem::Update(float dt)
             // ==========================================================
             // ★重要追加: ECSから削除する前に、Joltの物理空間から剛体を消去する
             // ==========================================================
-            if (hasJolt && _world->HasComponent<JoltRigidBodyComponent>(targetID)) {
-                auto &joltBody = *_world->GetComponent<JoltRigidBodyComponent>(targetID);
+            if (hasJolt && _world->HasComponent<JoltHandleComponent>(targetID)) {
+                auto &joltBody = *_world->GetComponent<JoltHandleComponent>(targetID);
                 JPH::BodyInterface &bodyInterface = joltManager->GetBodyInterface();
 
                 // 1. 物理シミュレーション空間から取り除く (Remove)

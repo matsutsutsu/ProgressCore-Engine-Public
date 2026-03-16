@@ -20,7 +20,7 @@ void JoltPullSystem::Update(float dt)
     JPH::BodyInterface &bodyInterface = joltManager.GetBodyInterface();
 
 
-    ForEachParallel([&](TransformComponent &trans, const JoltRigidBodyComponent &joltBody) {
+    ForEachParallel([&](TransformComponent &trans, const JoltHandleComponent &joltBody) {
         // スリープ状態（止まっている物体）なら、座標コピーの無駄な処理を省く
         if (!bodyInterface.IsActive(joltBody.bodyID)) {
             return;
