@@ -999,6 +999,9 @@
     <ClInclude Include="Source\Engine\Physics\JoltDebugRenderer.h">
       <Filter>Source\Engine\Physics\Jolt</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltPushSystem.h">
+      <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -1450,6 +1453,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Physics\JoltDebugRenderer.cpp">
       <Filter>Source\Engine\Physics\Jolt</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltPushSystem.cpp">
+      <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

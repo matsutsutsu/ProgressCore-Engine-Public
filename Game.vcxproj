@@ -259,6 +259,7 @@
     <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\CollisionLayers.h" />
     <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\CollisionSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\SphereColliderComponent.h" />
+    <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltPushSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltUpdateSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Physics\RigidBody\JoltRigidBodyComponent.h" />
     <ClInclude Include="Source\Engine\GamePlay\Transform\HierarchyCleanupSystem.h" />
@@ -454,6 +455,7 @@
     <ClCompile Include="Source\Engine\GamePlay\Graphics\Particle\GPUParticleUpdateSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Graphics\PostProcess\PostProcessSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Physics\Collision\CollisionSystem.cpp" />
+    <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltPushSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltUpdateSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Transform\HierarchyCleanupSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Transform\TransformUpdateSystem.cpp" />
