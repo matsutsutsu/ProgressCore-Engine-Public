@@ -12,6 +12,11 @@ using namespace CCL::ECS;
 // コンポーネントごとのGUI描画ロジックと表示名を管理する
 class ComponentGuiRegistry {
 public:
+    // シングルトンアクセス
+    // 中身を消し、宣言のみにする
+    static ComponentGuiRegistry &Instance();
+
+
     // EntityID と World* を受け取るように変更
     using GuiFunc = std::function<void(void*, EntityID, CCL::ECS::Core::World*)>;
     using CtorFunc = std::function<void(void*)>; // 追加：初期化用
@@ -34,13 +39,9 @@ public:
         std::function<void(CCL::ECS::Core::World *, EntityID)> drawInspector = nullptr;
     };
 
-    void Initialize();
 
     // コンストラクタで初期化を呼ぶようにすると使い勝手が良い
-    ComponentGuiRegistry() {
-        Initialize();
-    }
-
+    ComponentGuiRegistry() = default;
 
 
     // T: 型, name: 表示名, func: 描画関数

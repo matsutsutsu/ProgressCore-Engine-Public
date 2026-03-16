@@ -23,7 +23,6 @@
 // 描画
 #include "Engine/GamePlay/Graphics/Core/ModelComponent.h"
 #include "Engine/GamePlay/Graphics/Core/PrimitiveComponent.h"
-#include "Engine/GamePlay/Graphics/Core/StaticMeshComponent.h"
 #include "Engine/GamePlay/Graphics/Core/MaterialComponent.h"
 
 //#include "Game/GameLogics/Text/FloatingTextComponent.h"

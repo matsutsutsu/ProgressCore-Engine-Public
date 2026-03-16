@@ -73,16 +73,27 @@ namespace CCL::ECS
     class ID_Emitter
     {
     public:
-        static EntityID     EmitEntityID() { return s_nextEntityID++; }
-        static TypeID       EmitTypeID() { return s_nextTypeID++; }
-        static ComponentID  EmitComponentID() { return s_nextComponentID++; }
-        static SystemID     EmitSystemID() { return s_nextSystemID++; }
-
-    private:
-        inline static EntityID      s_nextEntityID = 0;
-        inline static TypeID        s_nextTypeID = 0;
-        inline static ComponentID   s_nextComponentID = 0;
-        inline static SystemID      s_nextSystemID = 0;
+        // inline static メンバ変数を廃止し、関数内 static に変更して分裂を強制阻止する
+        static EntityID EmitEntityID()
+        {
+            static EntityID s_nextEntityID = 0;
+            return s_nextEntityID++;
+        }
+        static TypeID EmitTypeID()
+        {
+            static TypeID s_nextTypeID = 0;
+            return s_nextTypeID++;
+        }
+        static ComponentID EmitComponentID()
+        {
+            static ComponentID s_nextComponentID = 0;
+            return s_nextComponentID++;
+        }
+        static SystemID EmitSystemID()
+        {
+            static SystemID s_nextSystemID = 0;
+            return s_nextSystemID++;
+        }
     };
 
 

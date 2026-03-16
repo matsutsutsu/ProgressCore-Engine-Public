@@ -3,8 +3,32 @@
 #include <DirectXMath.h>
 #include <cstring>
 #include <imgui.h>
+#include <type_traits> // メタプログラミング用
 
 namespace ComponentMetaImGui {
+
+    // ========================================================================
+    //  SFINAE 1: カスタムGUI変数が定義されているかを検知
+    // ========================================================================
+    template <typename T, typename = void> struct CheckCustomGui : std::false_type {};
+
+    template <typename T>
+    struct CheckCustomGui<T, std::void_t<decltype(ComponentMeta<T>::hasCustomGui)>>
+        : std::bool_constant<ComponentMeta<T>::hasCustomGui> {};
+
+    // ========================================================================
+    //  SFINAE 2: CustomGui が「3引数」で定義されているかを検知
+    // ========================================================================
+    template <typename T, typename = void> struct Has3ArgsCustomGui : std::false_type {};
+
+    template <typename T>
+    struct Has3ArgsCustomGui<T,
+        std::void_t<decltype(ComponentMeta<T>::CustomGui(std::declval<T &>(), 0ULL, nullptr))>>
+        : std::true_type {};
+
+    // ------------------------------------------------------------------------
+    // DrawField 関数は既存のまま完全に維持 (変更なし)
+    // ------------------------------------------------------------------------
     inline bool DrawField(const FieldDescriptor &fd, void *obj)
     {
         using namespace DirectX;
@@ -97,47 +121,61 @@ namespace ComponentMetaImGui {
         return changed;
     }
 
-    template <typename T> bool DrawInspector(T &component, const char *overrideName = nullptr)
+    // ------------------------------------------------------------------------
+    // DrawInspector: 自動描画と手動描画(CustomGui)を静的に分岐させる
+    // ------------------------------------------------------------------------
+    template <typename T>
+    bool DrawInspector(T &component, unsigned long long entity = 0, void *world = nullptr)
     {
-        // 1. 險ｭ險亥峙繧偵ｂ繧峨≧
-        const auto &fields = ComponentMeta<T>::Fields();
-        if (fields.empty()) return false;
-
-        bool  anyChanged = false;
-        void *obj        = &component;
+        bool anyChanged = false;
 
         ImGui::PushID(ComponentMeta<T>::displayName);
-
-        // 蟆代＠繧､繝ｳ繝・Φ繝医ｒ荳九￡縺ｦ隕九◆逶ｮ繧堤ｾ弱＠縺上☆繧・
         ImGui::Indent(4.0f);
 
-        const char *curCategory = nullptr;
-        bool        catOpen     = true;
+        //  自動描画か手動描画かをコンパイル時に分岐
+        if constexpr (CheckCustomGui<T>::value) {
+            
+            //  SFINAE分岐: 3引数版が存在すればそちらを呼び、なければ1引数版を呼ぶ
+            if constexpr (Has3ArgsCustomGui<T>::value) {
+                anyChanged = ComponentMeta<T>::CustomGui(component, entity, world);
+            } else {
+                anyChanged = ComponentMeta<T>::CustomGui(component);
+            }
+            
+        }
+        else {
+            // カスタムGUIがない場合は、従来通りの自動生成描画を実行する
+            const auto &fields = ComponentMeta<T>::Fields();
+            if (!fields.empty()) {
+                void       *obj         = &component;
+                const char *curCategory = nullptr;
+                bool        catOpen     = true;
 
-        // 2. 險ｭ險亥峙縺ｮ繝ｪ繧ｹ繝医ｒ荳翫°繧蛾・↓繝ｫ繝ｼ繝励☆繧・
-        for (const auto &fd : fields) {
-            if (fd.category != nullptr) {
-                if (curCategory == nullptr || strcmp(fd.category, curCategory) != 0) {
-                    if (curCategory != nullptr && catOpen) {
-                        ImGui::Unindent(12.0f);
-                        ImGui::TreePop();
+                for (const auto &fd : fields) {
+                    if (fd.category != nullptr) {
+                        if (curCategory == nullptr || strcmp(fd.category, curCategory) != 0) {
+                            if (curCategory != nullptr && catOpen) {
+                                ImGui::Unindent(12.0f);
+                                ImGui::TreePop();
+                            }
+                            curCategory = fd.category;
+                            catOpen     = ImGui::TreeNodeEx(curCategory,
+                                ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth);
+                            if (catOpen) ImGui::Indent(12.0f);
+                        }
                     }
-                    curCategory = fd.category;
-                    catOpen     = ImGui::TreeNodeEx(curCategory,
-                        ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth);
-                    if (catOpen) ImGui::Indent(12.0f);
+                    if (!catOpen) continue;
+
+                    ImGui::PushID((int)fd.offset);
+                    if (DrawField(fd, obj)) anyChanged = true;
+                    ImGui::PopID();
+                }
+
+                if (curCategory != nullptr && catOpen) {
+                    ImGui::Unindent(12.0f);
+                    ImGui::TreePop();
                 }
             }
-            if (!catOpen) continue;
-            ImGui::PushID((int)fd.offset);
-            // 2. 險ｭ險亥峙縺ｮ繝ｪ繧ｹ繝医ｒ荳翫°繧蛾・↓繝ｫ繝ｼ繝励☆繧・
-            if (DrawField(fd, obj)) anyChanged = true;
-            ImGui::PopID();
-        }
-
-        if (curCategory != nullptr && catOpen) {
-            ImGui::Unindent(12.0f);
-            ImGui::TreePop();
         }
 
         ImGui::Unindent(4.0f);
@@ -145,9 +183,18 @@ namespace ComponentMetaImGui {
         return anyChanged;
     }
 
+    // 登録時にポインタとIDをキャストしてリレーする
     template <typename T, typename RegistryType> void RegisterGuiMeta(RegistryType &registry)
     {
-        registry.template Register<T>(ComponentMeta<T>::displayName,
-            [](void *ptr, auto entity, auto *world) { DrawInspector(*static_cast<T *>(ptr)); });
+        registry.template Register<T>(
+            std::string(
+                ComponentMeta<T>::displayName), // const char* を std::string に明示的キャスト
+            typename RegistryType::GuiFunc([](void *ptr, auto entity, auto *world) {
+                // DrawInspector<T> と明示し、引数も全てキャストして渡す
+                DrawInspector<T>(*static_cast<T *>(ptr),
+                    static_cast<unsigned long long>(entity),
+                    static_cast<void *>(world));
+            }));
     }
+
 } // namespace ComponentMetaImGui

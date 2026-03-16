@@ -1,7 +1,7 @@
 #include "BaseScene.h"
 #include <imgui.h>
 
-#include "Engine/Serialization/RegisterComponentSerializer.h"
+
 #include "Engine/Serialization/SceneSerializer.h"
 #include "Engine/Serialization/Factory/Prefab.h"
 #include "Engine/Serialization/Factory/SceneInitializer.h"
@@ -10,6 +10,8 @@
 #include "Engine/Physics/Grid.h"
 #include "Engine/Physics/JoltPhysicsManager.h"
 #include "Game/Logics/Combat/GlobalDamageQueue.h"
+
+
 
 
 #include "Engine/GamePlay/Graphics/Core/EnvironmentSystem.h"
@@ -64,10 +66,8 @@ void BaseScene::Initialize()
     // GPUパーティクル事前準備　オブジェクトプール用に最初に確保しておく
     Prefab::PrewarmParticles(*_worldPtr);
 
-    // シリアライズ初期化
-    ComponentRegister::RegisterAllComponentsForSerialization();
-
-
+    
+   
 }
 
 void BaseScene::Start() {}

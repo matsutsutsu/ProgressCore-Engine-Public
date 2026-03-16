@@ -21,7 +21,7 @@ public:
         DeserializeToWorldFunc deserializeToWorld;
     };
 
-    static ComponentRegistry& Instance() { static ComponentRegistry s; return s; }
+    static ComponentRegistry &Instance();
 
     // 型Tを登録する
     template <typename T>

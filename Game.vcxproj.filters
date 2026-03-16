@@ -304,6 +304,30 @@
     <Filter Include="Source\Engine\GamePlay\Physics\Jolt\_Meta">
       <UniqueIdentifier>{5484d16a-68cd-425b-a595-7999825c74e9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\GamePlay\Graphics\Lighting\_Meta">
+      <UniqueIdentifier>{5bd1e528-5b2c-430b-b075-56ef6f072374}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\GamePlay\Core\_Meta">
+      <UniqueIdentifier>{c157df11-ee2b-43f2-9610-1a89dfaf3934}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\GamePlay\Transform\_Meta">
+      <UniqueIdentifier>{89c00020-3473-455c-91ea-df56e6404c41}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\GamePlay\Camera\_Meta">
+      <UniqueIdentifier>{0263adb9-a846-4730-a309-6dde5d6dc4e0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\GamePlay\Graphics\Core\_Meta">
+      <UniqueIdentifier>{8d586a4d-792b-4b5a-b533-6a605696e3ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\GamePlay\Animation\_Meta">
+      <UniqueIdentifier>{c9653b6e-1b17-404c-9a2f-9fb577b96b61}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\GamePlay\Graphics\Particle\_Meta">
+      <UniqueIdentifier>{7bbf421e-4aa1-4a14-aa69-2ff2e47e3adb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\GamePlay\Utils\_Meta">
+      <UniqueIdentifier>{eefff5ce-d3c2-469c-8cc1-3d17df82f778}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -675,9 +699,6 @@
     <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\PrimitiveRenderSystem.h">
       <Filter>Source\Engine\GamePlay\Graphics\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\StaticMeshComponent.h">
-      <Filter>Source\Engine\GamePlay\Graphics\Core</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\GamePlay\Graphics\Lighting\FogComponent.h">
       <Filter>Source\Engine\GamePlay\Graphics\Lighting</Filter>
     </ClInclude>
@@ -798,13 +819,7 @@
     <ClInclude Include="Source\Engine\Serialization\ComponentRegistry.h">
       <Filter>Source\Engine\Serialization</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Serialization\ComponentSerializers.h">
-      <Filter>Source\Engine\Serialization</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\PrefabSerializer.h">
-      <Filter>Source\Engine\Serialization</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Serialization\RegisterComponentSerializer.h">
       <Filter>Source\Engine\Serialization</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\SceneSerializer.h">
@@ -1004,6 +1019,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\JoltCapusuleColliderComponent.h">
       <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Serialization\ComponentSerializers.h">
+      <Filter>Source\Engine\Serialization</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1340,13 +1358,7 @@
     <ClCompile Include="Source\Engine\Physics\TinyBvhImpl.cpp">
       <Filter>Source\Engine\Physics</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Serialization\ComponentSerializers.cpp">
-      <Filter>Source\Engine\Serialization</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Serialization\PrefabSerializer.cpp">
-      <Filter>Source\Engine\Serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Serialization\RegisterComponentSerializer.cpp">
       <Filter>Source\Engine\Serialization</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Serialization\SceneSerializer.cpp">
@@ -1462,6 +1474,42 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltPhysicsComponentMeta.cpp">
       <Filter>Source\Engine\GamePlay\Physics\Jolt\_Meta</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\Transform\TransformComponentMeta.cpp">
+      <Filter>Source\Engine\GamePlay\Transform\_Meta</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\Core\CoreComponentMeta.cpp">
+      <Filter>Source\Engine\GamePlay\Core\_Meta</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\Graphics\Lighting\LightComponentMeta.cpp">
+      <Filter>Source\Engine\GamePlay\Graphics\Lighting\_Meta</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\Camera\VirtualCameraComponentMeta.cpp">
+      <Filter>Source\Engine\GamePlay\Camera\_Meta</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\EnvironmentComponentMeta.cpp">
+      <Filter>Source\Engine\GamePlay\Graphics\Core\_Meta</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Core\GamePlayComponentMeta.cpp">
+      <Filter>Source\Game\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\Animation\AnimatorComponentMeta.cpp">
+      <Filter>Source\Engine\GamePlay\Animation\_Meta</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\MaterialComponentMeta.cpp">
+      <Filter>Source\Engine\GamePlay\Graphics\Core\_Meta</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\Graphics\Particle\GPUParticleComponentMeta.cpp">
+      <Filter>Source\Engine\GamePlay\Graphics\Particle\_Meta</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\Utils\MiscComponentMeta.cpp">
+      <Filter>Source\Engine\GamePlay\Utils\_Meta</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Serialization\ComponentSerializers.cpp">
+      <Filter>Source\Engine\Serialization</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Serialization\ComponentRegistry.cpp">
+      <Filter>Source\Engine\Serialization</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

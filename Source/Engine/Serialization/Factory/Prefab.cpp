@@ -3,8 +3,6 @@
 #include "Game/Core/AllComponents.h"
 #include <SimpleMath.h>
 
-// これを入れないと get_to(config) が動きません
-#include "Engine/Serialization/ComponentSerializers.h"
 #include "Engine/GamePlay/Transform/TransformUpdateSystem.h"
 
 // インクルード
@@ -13,10 +11,136 @@
 #include <json.hpp>
 #include <unordered_map>
 #include <windows.h>
-#include <filesystem> // ★追加: ファイル存在確認用
+#include <filesystem> // ファイル存在確認用
 #include <sstream> // エラーメッセージ構築用
 
 using namespace DirectX::SimpleMath;
+
+// ----------------------------------------------------------------------------
+// 🌟 JSON ADL ヘルパー
+// ParticleSystemConfig と同じ名前空間（通常はグローバル）に配置することで、
+// nlohmann::json の関数が自動的にこれらを発見します。
+// ----------------------------------------------------------------------------
+void to_json(nlohmann::json &j, const ParticleSystemConfig &c)
+{
+    auto SafeFloat = [](float val) { return std::isfinite(val) ? val : 0.0f; };
+
+    j = nlohmann::json{{"max_particle_count", c.max_particle_count},
+        {"type", c.type},
+        {"color_mode", c.color_mode},
+        {"emission_mode", c.emission_mode},
+        {"burst_count", c.burst_count},
+        {"gravity", SafeFloat(c.gravity)},
+        {"velocity_stretch", SafeFloat(c.velocity_stretch)},
+        {"noise_scale", SafeFloat(c.noise_scale)},
+        {"noise_strength", SafeFloat(c.noise_strength)},
+        {"particle_offset_y", SafeFloat(c.particle_offset_y)},
+        {"emission_stretch_x", SafeFloat(c.emission_stretch_x)},
+        {"emission_stretch_z", SafeFloat(c.emission_stretch_z)},
+        {"sprite_anim_mode", c.sprite_anim_mode}};
+
+    j["spawn_delay"]            = {SafeFloat(c.spawn_delay.x), SafeFloat(c.spawn_delay.y)};
+    j["lifespan"]               = {SafeFloat(c.lifespan.x), SafeFloat(c.lifespan.y)};
+    j["emission_speed"]         = {SafeFloat(c.emission_speed.x), SafeFloat(c.emission_speed.y)};
+    j["emission_angular_speed"] = {
+        SafeFloat(c.emission_angular_speed.x), SafeFloat(c.emission_angular_speed.y)};
+    j["emission_offset"]     = {SafeFloat(c.emission_offset.x), SafeFloat(c.emission_offset.y)};
+    j["emission_cone_angle"] = {
+        SafeFloat(c.emission_cone_angle.x), SafeFloat(c.emission_cone_angle.y)};
+
+    j["manual_color"] = {SafeFloat(c.manual_color.x),
+        SafeFloat(c.manual_color.y),
+        SafeFloat(c.manual_color.z),
+        SafeFloat(c.manual_color.w)};
+
+    j["emission_size"]     = {SafeFloat(c.emission_size.x), SafeFloat(c.emission_size.y)};
+    j["fade_duration"]     = {SafeFloat(c.fade_duration.x), SafeFloat(c.fade_duration.y)};
+    j["uv_scroll_speed"]   = {SafeFloat(c.uv_scroll_speed.x), SafeFloat(c.uv_scroll_speed.y)};
+    j["sprite_sheet_grid"] = {c.sprite_sheet_grid.x, c.sprite_sheet_grid.y};
+
+    // もし particle_scale が XMFLOAT3 などである場合を想定して to_json にも追加
+    j["particle_scale"] = {SafeFloat(c.particle_scale.x), SafeFloat(c.particle_scale.y)};
+}
+
+void from_json(const nlohmann::json &j, ParticleSystemConfig &c)
+{
+    // ★ 安全に配列から値を読み取るためのローカルヘルパーラムダ関数
+    // これにより get_to() のコンパイルエラーを完全に回避します
+    auto ReadFloat2 = [&](const char *key, auto &vec) {
+        if (j.contains(key) && j[key].is_array() && j[key].size() >= 2) {
+            vec.x = j[key][0];
+            vec.y = j[key][1];
+        }
+    };
+
+    auto ReadFloat4 = [&](const char *key, auto &vec) {
+        if (j.contains(key) && j[key].is_array() && j[key].size() >= 4) {
+            vec.x = j[key][0];
+            vec.y = j[key][1];
+            vec.z = j[key][2];
+            vec.w = j[key][3];
+        }
+    };
+
+    // --- Vector系の読み込み (ヘルパーを使用して安全に代入) ---
+    ReadFloat2("emission_speed", c.emission_speed);
+    ReadFloat2("emission_angular_speed", c.emission_angular_speed);
+    ReadFloat2("emission_offset", c.emission_offset);
+    ReadFloat2("emission_cone_angle", c.emission_cone_angle);
+    ReadFloat2("emission_size", c.emission_size);
+    ReadFloat2("uv_scroll_speed", c.uv_scroll_speed);
+    ReadFloat2("sprite_sheet_grid", c.sprite_sheet_grid);
+    ReadFloat2("lifespan", c.lifespan);
+    ReadFloat2("spawn_delay", c.spawn_delay);
+    ReadFloat2("fade_duration", c.fade_duration);
+
+    ReadFloat2("particle_scale", c.particle_scale);
+
+    ReadFloat4("manual_color", c.manual_color);
+
+    // --- 通常の値の読み込み ---
+    if (j.contains("emission_mode")) c.emission_mode = j["emission_mode"];
+    if (j.contains("burst_count")) c.burst_count = j["burst_count"];
+    if (j.contains("color_mode")) c.color_mode = j["color_mode"];
+    if (j.contains("max_particle_count")) c.max_particle_count = j["max_particle_count"];
+    if (j.contains("type")) c.type = j["type"];
+
+    if (j.contains("gravity")) c.gravity = j["gravity"];
+    if (j.contains("velocity_stretch")) c.velocity_stretch = j["velocity_stretch"];
+    if (j.contains("noise_scale")) c.noise_scale = j["noise_scale"];
+    if (j.contains("noise_strength")) c.noise_strength = j["noise_strength"];
+    if (j.contains("particle_offset_y")) c.particle_offset_y = j["particle_offset_y"];
+    if (j.contains("emission_stretch_x")) c.emission_stretch_x = j["emission_stretch_x"];
+    if (j.contains("emission_stretch_z")) c.emission_stretch_z = j["emission_stretch_z"];
+    if (j.contains("sprite_anim_mode")) c.sprite_anim_mode = j["sprite_anim_mode"];
+}
+
+// ヘルパー: Shift-JIS(Windowsパス) -> UTF-8(JSON) ＆ 相対パス化
+// (※もしこれも消したファイルにあり、Prefab.cppで使っているなら移植します)
+namespace {
+    std::string PathToRelativeUtf8(const std::string &pathSjis)
+    {
+        if (pathSjis.empty()) return "";
+        int          len = MultiByteToWideChar(CP_ACP, 0, pathSjis.c_str(), -1, NULL, 0);
+        std::wstring wstr(len, 0);
+        MultiByteToWideChar(CP_ACP, 0, pathSjis.c_str(), -1, &wstr[0], len);
+        wstr.resize(len - 1);
+
+        namespace fs                = std::filesystem;
+        fs::path        absPath     = wstr;
+        fs::path        currentPath = fs::current_path();
+        std::error_code ec;
+        fs::path        relPath = fs::relative(absPath, currentPath, ec);
+        std::wstring finalWstr  = (!ec && !relPath.empty()) ? relPath.wstring() : absPath.wstring();
+
+        int utf8Len = WideCharToMultiByte(CP_UTF8, 0, finalWstr.c_str(), -1, NULL, 0, NULL, NULL);
+        std::string utf8Str(utf8Len, 0);
+        WideCharToMultiByte(CP_UTF8, 0, finalWstr.c_str(), -1, &utf8Str[0], utf8Len, NULL, NULL);
+        utf8Str.resize(utf8Len - 1);
+        std::replace(utf8Str.begin(), utf8Str.end(), '\\', '/');
+        return utf8Str;
+    }
+} // namespace
 
 namespace Prefab {
 
