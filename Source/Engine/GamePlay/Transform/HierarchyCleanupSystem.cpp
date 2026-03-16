@@ -3,7 +3,12 @@
 #include "ECS/Core/CCL_World.h"
 #include <algorithm> // for std::unique if needed
 #include "Engine/Serialization/Factory/Prefab.h" // ★追加: ReturnParticleToPoolを使うため
+#include "Game/Utils/PooledParticleComponent.h"
 #include <vector>
+
+// Jolt関係のヘッダー
+#include "Engine/Physics/JoltPhysicsManager.h"
+#include "Engine/GamePlay/Physics/RigidBody/JoltRigidBodyComponent.h"
 
 // 各システムの .cpp ファイルの上部に追加
 #include "ECS/System/CCL_SystemRegistry.h"
@@ -33,21 +38,47 @@ void HierarchyCleanupSystem::Update(float dt)
         }
     });
 
+    // Joltのマネージャへのアクセスを準備
+    bool hasJolt = _world->HasResource<JoltPhysicsManager>();
+    JoltPhysicsManager* joltManager = hasJolt ? &_world->GetResource<JoltPhysicsManager>() : nullptr;
+
     // 2. 集めたエンティティを一括処理
     for (EntityID targetID : executionList) {
         // リスト作成中に重複して登録されている場合や、既に無効な場合はスキップ
         if (!_world->IsEntityValid(targetID)) continue;
 
+        bool isPooled = _world->HasComponent<PooledParticleComponent>(targetID);
       
         // 親子関係の解除 (プールに戻す場合も、削除する場合も、リンクは切る必要がある)
         if (_world->HasComponent<TransformComponent>(targetID)) {
             TransformUpdateSystem::DetachChild(*_world, targetID);
         }
 
-       
-        // 通常のエンティティなら完全に削除
-        _world->RequestDestroyEntity(targetID);
-       
+        if (isPooled) {
+            Prefab::ReturnParticleToPool(*_world, targetID);
+            _world->RequestRemoveComponent<Tag::DestroyTag>(targetID);
+
+            // ※もしパーティクルにJoltBodyが付いている場合は、ここにも処理が必要になりますが、
+            // 一般的にエフェクトには物理演算を付けないため今回は考慮していません。
+        }
+        else {
+            // ==========================================================
+            // ★重要追加: ECSから削除する前に、Joltの物理空間から剛体を消去する
+            // ==========================================================
+            if (hasJolt && _world->HasComponent<JoltRigidBodyComponent>(targetID)) {
+                auto &joltBody = *_world->GetComponent<JoltRigidBodyComponent>(targetID);
+                JPH::BodyInterface &bodyInterface = joltManager->GetBodyInterface();
+
+                // 1. 物理シミュレーション空間から取り除く (Remove)
+                bodyInterface.RemoveBody(joltBody.bodyID);
+                // 2. メモリから完全に破棄する (Destroy)
+                bodyInterface.DestroyBody(joltBody.bodyID);
+            }
+
+            // 通常のエンティティなら完全に削除
+            _world->RequestDestroyEntity(targetID);
+        }
+
     }
 }
 

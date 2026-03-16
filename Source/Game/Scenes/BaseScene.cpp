@@ -171,10 +171,10 @@ void BaseScene::Render()
     // ShapeRendererが画面に描画される【直前】に、
     // Joltの当たり判定をShapeRendererのキューに溜め込む
     // =========================================================
-    if (_worldPtr->HasResource<JoltPhysicsManager>()) {
-        auto &joltManager = _worldPtr->GetResource<JoltPhysicsManager>();
-        joltManager.DrawBodies(graphics.GetShapeRenderer());
-    }
+    //if (_worldPtr->HasResource<JoltPhysicsManager>()) {
+    //    auto &joltManager = _worldPtr->GetResource<JoltPhysicsManager>();
+    //    joltManager.DrawBodies(graphics.GetShapeRenderer());
+    //}
 
     // DebugShape描画
     graphics.GetShapeRenderer()->Render(dc, camera.GetView(), camera.GetProjection());

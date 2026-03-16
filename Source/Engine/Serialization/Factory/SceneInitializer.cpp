@@ -197,9 +197,9 @@ void SceneInitializer::SpawnJoltTest(CCL::ECS::Core::World &world, ID3D11Device 
     PrimitiveComponent floorPrim;
     floorPrim.type = PrimitiveType::Box;
     // ★重要: 描画側(Primitive)には、物理のサイズを「2倍(全体サイズ)」にして渡す
-    floorPrim.size  = {floorHalfExtent.GetX() * 2.0f,
-         floorHalfExtent.GetY() * 2.0f,
-         floorHalfExtent.GetZ() * 2.0f};
+    floorPrim.size  = {floorHalfExtent.GetX(),
+         floorHalfExtent.GetY(),
+         floorHalfExtent.GetZ()};
     floorPrim.color = {0.5f, 0.5f, 0.5f, 1.0f}; // グレーの床
     world.AddComponent<PrimitiveComponent>(floorEntity, floorPrim);
 

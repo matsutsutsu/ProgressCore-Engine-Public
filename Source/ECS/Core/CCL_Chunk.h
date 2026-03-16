@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <unordered_map>
 #include <functional>
-#include "CCL_Common.h"
+#include "ECS/Common/CCL_Common.h"
 
 
 // Chunk（チャンク） は、特定のアーキタイプ（コンポーネントの組み合わせ）

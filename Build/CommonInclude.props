@@ -3,14 +3,13 @@
          xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
 	<ItemDefinitionGroup>
+
+		<!-- ===== C++ Compile ===== -->
 		<ClCompile>
 			<AdditionalIncludeDirectories>
 
 				<!-- ===== Project Sources ===== -->
 				$(SolutionDir)Source;
-				$(SolutionDir)Source\Scene;
-				$(SolutionDir)Source\ECS\Common;
-				$(SolutionDir)Source\ECS\Core;
 
 				<!-- ===== Editor Only ===== -->
 				$(SolutionDir)Source\Editor;
@@ -40,6 +39,35 @@
 
 			</AdditionalIncludeDirectories>
 		</ClCompile>
+
+		<!-- ===== Linker ===== -->
+		<Link>
+			<AdditionalLibraryDirectories>
+
+				$(SolutionDir)External\JoltPhysics\lib\$(Configuration);
+				$(SolutionDir)External\DirectXTK-main\Bin\Desktop_2022\x64\$(Configuration);
+
+				%(AdditionalLibraryDirectories)
+
+			</AdditionalLibraryDirectories>
+
+			<AdditionalDependencies>
+
+				d3d11.lib;
+				DirectXTK.lib;
+				dxgi.lib;
+				xinput.lib;
+				xaudio2.lib;
+				winmm.lib;
+				Jolt.lib;
+
+				%(AdditionalDependencies)
+
+			</AdditionalDependencies>
+			
+		</Link>
+
+
 	</ItemDefinitionGroup>
 
 </Project>
