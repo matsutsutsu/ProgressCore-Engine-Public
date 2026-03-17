@@ -31,10 +31,10 @@ void EditorWindowManager::Initialize()
     RegisterWindow<ECSDebugWindow>();
     RegisterWindow<AnimationSequencerWindow>();
     RegisterWindow<TextEditorWindow>();
-    // RegisterWindow<AssetBrowserWindow>();
-    // RegisterWindow<SceneViewWindow>();
-    // RegisterWindow<GameViewWindow>();
-    // RegisterWindow<ConsoleWindow>();
+    RegisterWindow<AssetBrowserWindow>();
+    //RegisterWindow<SceneViewWindow>();
+    //RegisterWindow<GameViewWindow>();
+    //RegisterWindow<ConsoleWindow>();
     //  必要に応じて他のウィンドウもここに登録
 }
 

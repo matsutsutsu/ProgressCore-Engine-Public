@@ -83,18 +83,20 @@ AssetBrowser::AssetBrowser(const std::string& rootPath, ID3D11Device* device)
     extensionMap = {
         {".fbx", "model"},
         {".obj", "model"},
-        {".glb", "model"},        // 追加
+        {".glb", "model"},       
         {".png", "texture"},
         {".jpg", "texture"},
         {".jpeg", "texture"},
         {".cpp", "script"},
         {".h", "script"},
+        {".json", "prefab"},
     };
 
     // 初期フィルタ設定（必要ならオンに）
-    //typeFilters["model"] = true;
-    //typeFilters["texture"] = true;
-    //typeFilters["script"] = true;
+    typeFilters["model"] = true;
+    typeFilters["texture"] = true;
+    typeFilters["script"] = true;
+    typeFilters["prefab"] = true;
 
     LoadIcons(device);
 
@@ -203,6 +205,7 @@ void AssetBrowser::LoadIcons(ID3D11Device* device)
     iconMap["model"] = LoadIcon(device, L"./Icons/TestImage.png");
     iconMap["texture"] = LoadIcon(device, L"./Icons/TestImage.png");
     iconMap["script"] = LoadIcon(device, L"./Icons/TestImage.png");
+    iconMap["prefab"] = LoadIcon(device, L"./Icons/TestImage.png"); 
 }
 
 
@@ -299,6 +302,25 @@ void AssetBrowser::DrawGridView(AssetNode& node)
             // 選択状態用に Push した色を戻す
             if (isSelected) ImGui::PopStyleColor();
 
+            // ドラッグ＆ドロップの「送り手（Source）」になる
+            if (!child.isDirectory) {
+                if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+                    std::string filePath = child.path.string();
+                    if (filePath.find(".json") != std::string::npos) {
+                        ImGui::SetDragDropPayload("ASSET_PREFAB", filePath.c_str(),
+                                                  filePath.size() + 1);
+                        ImGui::Text("Spawn Prefab: %s", child.name.c_str());
+                    }
+                    else if (filePath.find(".glb") != std::string::npos ||
+                                 filePath.find(".gltf") != std::string::npos) {
+                        ImGui::SetDragDropPayload("ASSET_MODEL", filePath.c_str(),
+                                                  filePath.size() + 1);
+                        ImGui::Text("Load Model: %s", child.name.c_str());
+                    }
+                    ImGui::EndDragDropSource();
+                }
+            }
+
             // ファイル名を表示（長い場合は折り返し）
             ImGui::TextWrapped("%s", child.name.c_str());
 
@@ -385,6 +407,20 @@ void AssetBrowser::DrawAssetNode(AssetNode& node)
             selectedFilePath = node.path.string();
         }
 
+        // ★ 追加：ツリー側のドラッグソース
+        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+            std::string filePath = node.path.string();
+            if (filePath.find(".json") != std::string::npos) {
+                ImGui::SetDragDropPayload("ASSET_PREFAB", filePath.c_str(), filePath.size() + 1);
+                ImGui::Text("Spawn Prefab: %s", node.name.c_str());
+            }
+            else if (filePath.find(".glb") != std::string::npos || filePath.find(".gltf") != std::string::npos) {
+                ImGui::SetDragDropPayload("ASSET_MODEL", filePath.c_str(), filePath.size() + 1);
+                ImGui::Text("Load Model: %s", node.name.c_str());
+            }
+            ImGui::EndDragDropSource();
+        }
+
         ImGui::Unindent(IndentValue); // インデントを戻す
 
     }
@@ -427,9 +463,7 @@ void AssetBrowser::Draw()
     DrawGridView(rootNode);   // ← グリッド表示用の関数
     ImGui::EndChild();
 
-  /*  DrawAssetNode(rootNode);
-
-    ImGui::Text("Selected: %s", selectedFilePath.c_str());*/
+    
 
     ImGui::End();
 }
@@ -455,6 +489,8 @@ void AssetBrowser::DrawSearchBar()
     ImGui::Checkbox(".png/.jpg", &typeFilters["texture"]);
     ImGui::SameLine();
     ImGui::Checkbox(".cpp/.h", &typeFilters["script"]);
+    ImGui::SameLine();
+    ImGui::Checkbox(".json", &typeFilters["prefab"]);
 }
 
 //----------------------------------------------
@@ -466,29 +502,35 @@ bool AssetBrowser::FilterAsset(const AssetNode& node)
     if (node.isDirectory)
         return true;
 
-    if (searchQuery.empty())
-        return true;
+    // 2. 検索バーのフィルタリング
+    if (!searchQuery.empty()) {
+        std::string nameLower = node.name;
+        std::string queryLower = searchQuery;
+        // 大文字小文字を区別せずに検索できるように小文字化
+        std::transform(nameLower.begin(), nameLower.end(), nameLower.begin(), ::tolower);
+        std::transform(queryLower.begin(), queryLower.end(), queryLower.begin(), ::tolower);
+        
+        if (nameLower.find(queryLower) == std::string::npos) {
+            return false; // 検索文字が含まれていなければ非表示
+        }
+    }
 
-    if (node.name.find(searchQuery) != std::string::npos)
-        return true;
+    // 3. 拡張子（チェックボックス）のフィルタリング
+    auto ext = node.path.extension().string();
+    std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower); // 拡張子を小文字化 (例: .JSON -> .json)
 
-    return false;
+    auto it = extensionMap.find(ext);
+    if (it != extensionMap.end()) {
+        const std::string& type = it->second;
+        // そのカテゴリのチェックボックスが外れていたら非表示
+        if (typeFilters.count(type) && !typeFilters[type]) {
+            return false;
+        }
+    } else {
+        // ★重要: extensionMap に登録されていない謎の拡張子（.metaなど）はノイズになるので隠す
+        return false;
+    }
 
-    //// 検索フィルタ
-    //if (!searchQuery.empty() &&
-    //    node.name.find(searchQuery) == std::string::npos)
-    //    return false;
-
-    //// 拡張子フィルタ
-    //auto ext = node.path.extension().string();
-    //std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-
-    //auto it = extensionMap.find(ext);
-    //if (it != extensionMap.end()) {
-    //    const std::string& type = it->second;
-    //    if (typeFilters.count(type) && !typeFilters[type])
-    //        return false;
-    //}
-
-    //return true;
+    // すべての条件をクリアしたファイルだけを表示
+    return true;
 }

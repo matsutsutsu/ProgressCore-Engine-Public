@@ -3,6 +3,9 @@
 #include <algorithm>
 #include <string>
 
+#include "Engine/Serialization/Factory/Prefab.h"
+
+
 HierarchyWindow::HierarchyWindow() : EditorWindow("Hierarchy") {}
 
 void HierarchyWindow::DrawContents(EditorContext &context)
@@ -117,6 +120,27 @@ void HierarchyWindow::DrawContents(EditorContext &context)
     }
 
     ImGui::EndChild(); // HierarchyTree
+
+    // Hierarchyウィンドウの余白全体を「受け皿（Target）」にする
+    // ImGui::EndChild() の直後に書くことで、ウィンドウ全体がドロップ判定になります
+    if (ImGui::BeginDragDropTarget()) {
+        
+        // "ASSET_PREFAB" というラベルの箱が落とされたら受け取る
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_PREFAB")) {
+            // 中身のパス（文字列）を取り出す
+            const char* prefabPath = (const char*)payload->Data;
+            
+            // パスを使ってECSの世界にプレハブをSpawn！
+            CCL::ECS::EntityID newEntity = Prefab::SpawnPrefab(*context.world, prefabPath);
+            
+            // UX向上：生成したエンティティを即座に「選択状態」にしてインスペクタに表示する
+            if (newEntity != CCL::ECS::InvalidEntityID) {
+                context.selectedEntity = newEntity;
+            }
+        }
+        
+        ImGui::EndDragDropTarget();
+    }
 
     // 何もない背景部分をクリックした時「だけ」選択解除する
     if (ImGui::IsMouseClicked(0) && ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) {

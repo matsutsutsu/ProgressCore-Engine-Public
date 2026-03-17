@@ -2,7 +2,6 @@
 #include "ECS/Core/CCL_World.h"
 #include "ECS/System/CCL_SystemManager.h"
 #include "Editor/Inspector/ComponentGuiRegistry.h"
-#include "Editor/Utils/AssetBrowser.h"
 #include <map>
 #include <string>
 #include <vector>
@@ -21,8 +20,6 @@ struct EditorContext {
 
     // シーンロード予約パス
     std::string pendingLoadScenePath;
-
-     AssetBrowser *assetBrowser = nullptr; // アセットへのアクセス
 
     // アニメーションエディタとの連携用
      bool  isAnimEditMode = false; // これらもポインタではなく実体値にするのが安全です
