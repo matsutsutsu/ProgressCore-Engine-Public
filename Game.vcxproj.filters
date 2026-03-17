@@ -1511,6 +1511,9 @@
     <ClCompile Include="Source\Engine\Serialization\ComponentRegistry.cpp">
       <Filter>Source\Engine\Serialization</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\InspectorWindow.cpp">
+      <Filter>Source\Editor\Windows</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shader\Common\Common.hlsli">

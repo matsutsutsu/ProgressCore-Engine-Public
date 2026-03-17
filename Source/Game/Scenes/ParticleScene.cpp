@@ -53,7 +53,7 @@ void ParticleScene::OnRender3D(RenderContext &rc)
 void ParticleScene::OnDrawImGui()
 {
     EditorContext context;
-    context.selectedEntity = &selectedEntity;
+    context.selectedEntity = selectedEntity;
     context.world          = _worldPtr;
     context.systemManager  = _ecsContext->GetSystemManager(); 
 

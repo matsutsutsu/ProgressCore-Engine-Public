@@ -203,12 +203,12 @@ void AnimationSequencerWindow::DrawContents(EditorContext &context)
     // ---------------------------------------------------------
     // 1. ターゲット検証と準備
     // ---------------------------------------------------------
-    if (!context.selectedEntity || *context.selectedEntity == 0) {
+    if (context.selectedEntity == CCL::ECS::InvalidEntityID || context.selectedEntity == 0) {
         ImGui::TextDisabled("Select an entity to edit animation.");
         return;
     }
 
-    CCL::ECS::EntityID entity    = *context.selectedEntity;
+    CCL::ECS::EntityID entity    = context.selectedEntity;
     auto              *animator  = context.world->GetComponent<AnimatorComponent>(entity);
     auto              *modelComp = context.world->GetComponent<ModelComponent>(entity);
 
@@ -253,9 +253,7 @@ void AnimationSequencerWindow::DrawContents(EditorContext &context)
     ImGui::Text("Anim: %s (%.2fs)", currentAnimName.c_str(), currentDuration);
 
     // 編集モード切替
-    if (context.isAnimEditMode) {
-        ImGui::Checkbox("Edit Mode (Pause & Preview)", context.isAnimEditMode);
-    }
+    ImGui::Checkbox("Edit Mode (Pause & Preview)", &context.isAnimEditMode);
 
     ImGui::SameLine();
     ImGui::Text("|"); // シンプルに文字で縦線を描画
@@ -279,7 +277,7 @@ void AnimationSequencerWindow::DrawContents(EditorContext &context)
 
     ImGui::Separator();
 
-// ---------------------------------------------------------
+    // ---------------------------------------------------------
     // 4. シーケンサー描画
     // ---------------------------------------------------------
     _sequencerImpl->SyncFromData();
@@ -290,13 +288,11 @@ void AnimationSequencerWindow::DrawContents(EditorContext &context)
     {
         // 時間管理
         int currentFrame = 0;
-        if (context.animEditTime) {
-            if (context.isAnimEditMode && *context.isAnimEditMode) {
-                currentFrame = (int)(*context.animEditTime * 60.0f);
-            }
-            else {
-                currentFrame = (int)(animator->currentTimer * 60.0f);
-            }
+        if (context.isAnimEditMode) {
+            currentFrame = (int)(context.animEditTime * 60.0f);
+        }
+        else if (animator) {
+            currentFrame = (int)(animator->currentTimer * 60.0f);
         }
 
         _expanded = true;
@@ -317,10 +313,8 @@ void AnimationSequencerWindow::DrawContents(EditorContext &context)
         // ---------------------------------------------------------
         // 5. プレビュー連動
         // ---------------------------------------------------------
-        if (context.animEditTime && context.isAnimEditMode && *context.isAnimEditMode) {
-            float newTime          = (float)currentFrame / 60.0f;
-            *context.animEditTime  = newTime;
-            animator->currentTimer = newTime;
+        if (context.isAnimEditMode && animator) {
+            context.animEditTime = (float)currentFrame / 60.0f;
         }
     }
   

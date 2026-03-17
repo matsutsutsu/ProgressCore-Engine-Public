@@ -430,6 +430,7 @@
     <ClCompile Include="Source\Editor\Utils\ShellIconLoader.cpp" />
     <ClCompile Include="Source\Editor\Windows\AnimationSequencerWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\HierarchyWindow.cpp" />
+    <ClCompile Include="Source\Editor\Windows\InspectorWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\TextEditorWindow.cpp" />
     <ClCompile Include="Source\Engine\Audio\Audio.cpp" />
     <ClCompile Include="Source\Engine\Audio\AudioResource.cpp" />

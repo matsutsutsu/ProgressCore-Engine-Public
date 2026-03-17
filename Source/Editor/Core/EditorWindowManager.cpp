@@ -5,6 +5,8 @@
 #include "Engine/GamePlay/Core/Scene/SceneManager.h"
 #include "Engine/Platform/Dialog.h"
 
+#include "Engine/GamePlay/Transform/TransformComponent.h"
+
 // 各ウィンドウのヘッダをインクルード
 #include "Editor/Windows/AssetBrowserWindow.h"
 #include "Editor/Windows/ECSDebugWindow.h"

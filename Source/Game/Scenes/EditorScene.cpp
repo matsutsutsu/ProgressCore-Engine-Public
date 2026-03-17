@@ -94,13 +94,13 @@ void EditorScene::OnRender3D(RenderContext &rc){}
 void EditorScene::OnDrawImGui()
 {
     EditorContext context;
-    context.selectedEntity = &selectedEntity;
+    context.selectedEntity = selectedEntity;
     context.world          = _worldPtr;
     context.systemManager  = _ecsContext->GetSystemManager(); // ★追加
 
     // 実体へのポインタを渡す
     context.isAnimEditMode = &m_isAnimEditMode;
-    context.animEditTime   = &m_animEditTime;
+    context.animEditTime   = m_animEditTime;
 
     _windowManager->Draw(context);
 
