@@ -46,6 +46,9 @@ namespace CCL::ECS::Core
         TypeData::ConstructFunc constructor = nullptr; // コピー構築 (Placement New)
         TypeData::AssignFunc    assigner    = nullptr; // 代入 (Operator=)
         TypeData::MoveFunc      mover       = nullptr; // 移動 (Move)
+
+        // デバッグ用の型名（XMTLで読み取り用）
+        const char *name = nullptr;
     };
 
     // ECSの実行フェーズ（Systemの更新中など）で発生したエンティティへの

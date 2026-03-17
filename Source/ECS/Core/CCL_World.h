@@ -166,7 +166,8 @@ namespace CCL::ECS::Core {
                 td.destructor,
                 td.constructor, // Copy Construct
                 td.assigner,    // Copy Assign
-                td.mover        // Move
+                td.mover,       // Move
+                td.name
             );
         }
 
@@ -199,6 +200,7 @@ namespace CCL::ECS::Core {
             op.constructor = td.constructor;
             op.assigner    = td.assigner;
             op.mover       = td.mover;
+            op.name = td.name;    // 名前をカプセルに詰める
             op.factory     = nullptr; // 遅い std::function は二度と使わない
 
             _pendingOps.Add(op);
@@ -363,7 +365,8 @@ namespace CCL::ECS::Core {
             const Destructor                  &dtor,
             TypeData::ConstructFunc            copyCtor,
             TypeData::AssignFunc               assigner,
-            TypeData::MoveFunc                 mover);
+            TypeData::MoveFunc                 mover, 
+            const char *name);
 
         // --------------------------------------------------------
         // Component Patching (Prefab生成後の部分修正用)

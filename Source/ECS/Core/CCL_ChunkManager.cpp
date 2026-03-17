@@ -594,6 +594,8 @@ namespace CCL::ECS::Core
                         newType.assigner = op->assigner;
                         newType.mover = op->mover;
 
+                        newType.name = op->name; // 名前を新しいアーキタイプに引き継ぐ
+
                         nextArch.Add(newType);
                     }
                 }

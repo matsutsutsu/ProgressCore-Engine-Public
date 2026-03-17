@@ -203,7 +203,8 @@ void InspectorWindow::DrawContents(EditorContext &context)
                     entry.dtor,
                     entry.constructor,
                     entry.assigner,
-                    entry.mover);
+                    entry.mover,
+                    entry.name.c_str());
                 
                 // 追加したら自動でポップアップを閉じる（UX向上）
                 ImGui::CloseCurrentPopup();

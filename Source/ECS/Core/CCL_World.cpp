@@ -67,7 +67,8 @@ namespace CCL::ECS::Core {
         const Destructor                    &dtor,
         TypeData::ConstructFunc              copyCtor,
         TypeData::AssignFunc                 assigner,
-        TypeData::MoveFunc                   mover)
+        TypeData::MoveFunc                   mover,
+        const char                          *name)
     {
         if (!IsEntityValid(entity)) return;
 
@@ -83,6 +84,7 @@ namespace CCL::ECS::Core {
         op.constructor = copyCtor;
         op.assigner    = assigner;
         op.mover       = mover;
+        op.name = name; // カプセルに名前を入れる
 
         // ここでコンストラクタを即時実行せず、factoryに保存する
         if (ctor) {
