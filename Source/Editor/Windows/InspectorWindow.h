@@ -4,6 +4,9 @@
 #include <algorithm>
 #include <cstring> // strcpy_s, sprintf_s用
 
+#include <windows.h> // OutputDebugString用
+#include <string>
+
 // NameComponent 等を知るために必要
 #include "Game/Core/AllComponents.h"
 
@@ -26,6 +29,8 @@ class InspectorWindow : public EditorWindow {
             ImGui::TextColored(ImVec4(1, 1, 0, 1), "Select an Entity to inspect.");
             return;
         }
+
+
 
         // =========================================================
         // Entity メタデータ編集エリア (名前・ID)
@@ -119,7 +124,8 @@ class InspectorWindow : public EditorWindow {
         // =========================================================
         // 1. Chunkを直接触らず、Worldから「今のコンポーネント構成」をもらう
         const auto& archetype = world->GetEntityArchetype(*selected);
-        auto& registry = context.guiRegistry;
+        // 空のコンテキスト変数ではなく、登録済みのシングルトンを正しく呼ぶ！
+        auto &registry = ComponentGuiRegistry::Instance();
 
         // 2. コンポーネントリストを描画
         for (const auto &typeData : archetype) {

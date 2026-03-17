@@ -18,7 +18,8 @@ enum class FieldKind : uint8_t {
 };
 
 struct FieldDescriptor {
-    const char        *name      = nullptr;
+    const char        *name      = nullptr; // ★UIでの表示名 (DisplayName)
+    const char        *jsonName  = nullptr; // ★JSONでの保存キー (JsonName) 追加
     FieldKind          kind      = FieldKind::Float;
     size_t             offset    = 0;
     float              dragSpeed = 0.05f;
@@ -30,34 +31,35 @@ struct FieldDescriptor {
     bool               serialize = true;
 };
 
-// --- インライン生成関数 (既存のまま変更なし) ---
-inline FieldDescriptor FD_Float(const char *name, size_t offset, float speed = 0.05f, float rangeMin = 0.0f, float rangeMax = 0.0f, const char *category = nullptr) {
-    FieldDescriptor d{}; d.name = name; d.kind = FieldKind::Float; d.offset = offset; d.dragSpeed = speed; d.rangeMin = rangeMin; d.rangeMax = rangeMax; d.category = category; return d;
+// --- インライン生成関数 ---
+inline FieldDescriptor FD_Float(const char *name, const char *jsonName, size_t offset, float speed = 0.05f, float rangeMin = 0.0f, float rangeMax = 0.0f, const char *category = nullptr) {
+    FieldDescriptor d{}; d.name = name; d.jsonName = jsonName; d.kind = FieldKind::Float; d.offset = offset; d.dragSpeed = speed; d.rangeMin = rangeMin; d.rangeMax = rangeMax; d.category = category; return d;
 }
-inline FieldDescriptor FD_Int(const char *name, size_t offset, float rangeMin = 0.0f, float rangeMax = 0.0f, const char *category = nullptr) {
-    FieldDescriptor d{}; d.name = name; d.kind = FieldKind::Int; d.offset = offset; d.dragSpeed = 1.0f; d.rangeMin = rangeMin; d.rangeMax = rangeMax; d.category = category; return d;
+inline FieldDescriptor FD_Int(const char *name, const char *jsonName, size_t offset, float rangeMin = 0.0f, float rangeMax = 0.0f, const char *category = nullptr) {
+    FieldDescriptor d{}; d.name = name; d.jsonName = jsonName; d.kind = FieldKind::Int; d.offset = offset; d.rangeMin = rangeMin; d.rangeMax = rangeMax; d.category = category; return d;
 }
-inline FieldDescriptor FD_Bool(const char *name, size_t offset, const char *category = nullptr) {
-    FieldDescriptor d{}; d.name = name; d.kind = FieldKind::Bool; d.offset = offset; d.category = category; return d;
+inline FieldDescriptor FD_Bool(const char *name, const char *jsonName, size_t offset, const char *category = nullptr) {
+    FieldDescriptor d{}; d.name = name; d.jsonName = jsonName; d.kind = FieldKind::Bool; d.offset = offset; d.category = category; return d;
 }
-inline FieldDescriptor FD_EnumU8(const char *name, size_t offset, const char *const *enumNames, int enumCount, const char *category = nullptr) {
-    FieldDescriptor d{}; d.name = name; d.kind = FieldKind::EnumU8; d.offset = offset; d.enumNames = enumNames; d.enumCount = enumCount; d.category = category; return d;
+inline FieldDescriptor FD_EnumU8(const char *name, const char *jsonName, size_t offset, const char *const *enumNames, int enumCount, const char *category = nullptr) {
+    FieldDescriptor d{}; d.name = name; d.jsonName = jsonName; d.kind = FieldKind::EnumU8; d.offset = offset; d.enumNames = enumNames; d.enumCount = enumCount; d.category = category; return d;
 }
-inline FieldDescriptor FD_EnumInt(const char *name, size_t offset, const char *const *enumNames, int enumCount, const char *category = nullptr) {
-    FieldDescriptor d{}; d.name = name; d.kind = FieldKind::EnumInt; d.offset = offset; d.enumNames = enumNames; d.enumCount = enumCount; d.category = category; return d;
+inline FieldDescriptor FD_EnumInt(const char *name, const char *jsonName, size_t offset, const char *const *enumNames, int enumCount, const char *category = nullptr) {
+    FieldDescriptor d{}; d.name = name; d.jsonName = jsonName; d.kind = FieldKind::EnumInt; d.offset = offset; d.enumNames = enumNames; d.enumCount = enumCount; d.category = category; return d;
 }
-inline FieldDescriptor FD_Float2(const char *name, size_t offset, float speed = 0.05f, const char *category = nullptr) {
-    FieldDescriptor d{}; d.name = name; d.kind = FieldKind::Float3; d.offset = offset; d.dragSpeed = speed; d.category = category; return d;
+inline FieldDescriptor FD_Float2(const char *name, const char *jsonName, size_t offset, float speed = 0.05f, const char *category = nullptr) {
+    FieldDescriptor d{}; d.name = name; d.jsonName = jsonName; d.kind = FieldKind::Float2; d.offset = offset; d.dragSpeed = speed; d.category = category; return d;
 }
-inline FieldDescriptor FD_Float3(const char *name, size_t offset, float speed = 0.05f, const char *category = nullptr) {
-    FieldDescriptor d{}; d.name = name; d.kind = FieldKind::Float3; d.offset = offset; d.dragSpeed = speed; d.category = category; return d;
+inline FieldDescriptor FD_Float3(const char *name, const char *jsonName, size_t offset, float speed = 0.05f, const char *category = nullptr) {
+    FieldDescriptor d{}; d.name = name; d.jsonName = jsonName; d.kind = FieldKind::Float3; d.offset = offset; d.dragSpeed = speed; d.category = category; return d;
 }
-inline FieldDescriptor FD_Float4(const char *name, size_t offset, float speed = 0.05f, const char *category = nullptr) {
-    FieldDescriptor d{}; d.name = name; d.kind = FieldKind::Float4; d.offset = offset; d.dragSpeed = speed; d.category = category; return d;
+inline FieldDescriptor FD_Float4(const char *name, const char *jsonName, size_t offset, float speed = 0.05f, const char *category = nullptr) {
+    FieldDescriptor d{}; d.name = name; d.jsonName = jsonName; d.kind = FieldKind::Float4; d.offset = offset; d.dragSpeed = speed; d.category = category; return d;
 }
-inline FieldDescriptor FD_RuntimeOnly(FieldDescriptor d) {
-    d.serialize = false; return d;
+inline FieldDescriptor FD_String(const char *name, const char *jsonName, size_t offset, const char *category = nullptr) {
+    FieldDescriptor d{}; d.name = name; d.jsonName = jsonName; d.kind = FieldKind::String; d.offset = offset; d.category = category; return d;
 }
+
 
 // ============================================================================
 //  メタ宣言用 共通マクロ群
@@ -65,29 +67,32 @@ inline FieldDescriptor FD_RuntimeOnly(FieldDescriptor d) {
 // offsetof を内部に隠蔽し、記述ミスをコンパイル時に検出します。
 // ============================================================================
 
-#define META_FIELD_FLOAT(ClassType, FieldName, DisplayName, Speed, Min, Max, Category)             \
-    FD_Float(DisplayName, offsetof(ClassType, FieldName), Speed, Min, Max, Category)
+#define META_FIELD_FLOAT(ClassType, FieldName, JsonName, DisplayName, Speed, Min, Max, Category) \
+    FD_Float(DisplayName, JsonName, offsetof(ClassType, FieldName), Speed, Min, Max, Category)
 
-#define META_FIELD_INT(ClassType, FieldName, DisplayName, Min, Max, Category)                      \
-    FD_Int(DisplayName, offsetof(ClassType, FieldName), Min, Max, Category)
+#define META_FIELD_INT(ClassType, FieldName, JsonName, DisplayName, Min, Max, Category) \
+    FD_Int(DisplayName, JsonName, offsetof(ClassType, FieldName), Min, Max, Category)
 
-#define META_FIELD_BOOL(ClassType, FieldName, DisplayName, Category)                               \
-    FD_Bool(DisplayName, offsetof(ClassType, FieldName), Category)
+#define META_FIELD_BOOL(ClassType, FieldName, JsonName, DisplayName, Category) \
+    FD_Bool(DisplayName, JsonName, offsetof(ClassType, FieldName), Category)
 
-#define META_FIELD_ENUM_U8(ClassType, FieldName, DisplayName, EnumNames, EnumCount, Category)      \
-    FD_EnumU8(DisplayName, offsetof(ClassType, FieldName), EnumNames, EnumCount, Category)
+#define META_FIELD_ENUM_U8(ClassType, FieldName, JsonName, DisplayName, EnumNames, EnumCount, Category) \
+    FD_EnumU8(DisplayName, JsonName, offsetof(ClassType, FieldName), EnumNames, EnumCount, Category)
 
-#define META_FIELD_ENUM_INT(ClassType, FieldName, DisplayName, EnumNames, EnumCount, Category)     \
-    FD_EnumInt(DisplayName, offsetof(ClassType, FieldName), EnumNames, EnumCount, Category)
+#define META_FIELD_ENUM_INT(ClassType, FieldName, JsonName, DisplayName, EnumNames, EnumCount, Category) \
+    FD_EnumInt(DisplayName, JsonName, offsetof(ClassType, FieldName), EnumNames, EnumCount, Category)
 
-#define META_FIELD_FLOAT2(ClassType, FieldName, DisplayName, Speed, Category)                      \
-    FD_Float2(DisplayName, offsetof(ClassType, FieldName), Speed, Category)
+#define META_FIELD_FLOAT2(ClassType, FieldName, JsonName, DisplayName, Speed, Category) \
+    FD_Float2(DisplayName, JsonName, offsetof(ClassType, FieldName), Speed, Category)
 
-#define META_FIELD_FLOAT3(ClassType, FieldName, DisplayName, Speed, Category)                      \
-    FD_Float3(DisplayName, offsetof(ClassType, FieldName), Speed, Category)
+#define META_FIELD_FLOAT3(ClassType, FieldName, JsonName, DisplayName, Speed, Category) \
+    FD_Float3(DisplayName, JsonName, offsetof(ClassType, FieldName), Speed, Category)
 
-#define META_FIELD_FLOAT4(ClassType, FieldName, DisplayName, Speed, Category)                      \
-    FD_Float4(DisplayName, offsetof(ClassType, FieldName), Speed, Category)
+#define META_FIELD_FLOAT4(ClassType, FieldName, JsonName, DisplayName, Speed, Category) \
+    FD_Float4(DisplayName, JsonName, offsetof(ClassType, FieldName), Speed, Category)
+
+#define META_FIELD_STRING(ClassType, FieldName, JsonName, DisplayName, Category) \
+    FD_String(DisplayName, JsonName, offsetof(ClassType, FieldName), Category)
 
 
 // ============================================================================

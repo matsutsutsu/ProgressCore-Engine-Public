@@ -133,12 +133,11 @@ template <> struct ComponentMeta<GPUParticleComponent> {
     static constexpr const char *displayName  = "GPU Particle";
     static constexpr bool        hasCustomGui = true;
 
-    static bool CustomGui(
-        GPUParticleComponent &compRef, unsigned long long entityID, void *worldPtr)
+    static bool CustomGui(GPUParticleComponent &compRef, unsigned long long entityID, void *worldPtr)
     {
-        bool                  changed = false;
-        GPUParticleComponent *p       = &compRef;
-        auto                 &cfg     = p->config;
+        bool changed = false;
+        GPUParticleComponent *p = &compRef;
+        auto &cfg = p->config;
 
         // 1. 管理・システム設定
         if (ImGui::Button(u8"プリセット保存 (Save Preset)")) {
@@ -190,13 +189,11 @@ template <> struct ComponentMeta<GPUParticleComponent> {
             }
         }
         if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip(
-                u8"Enterキーで適用します。\n注意: パーティクルが全てリセットされます。");
+            ImGui::SetTooltip(u8"Enterキーで適用します。\n注意: パーティクルが全てリセットされます。");
         }
 
         const char *typeNames[] = {"Point (Color Only)", "Quad (Texture)"};
-        if (ImGui::Combo(
-                u8"描画タイプ (Render Type)", &cfg.type, typeNames, IM_ARRAYSIZE(typeNames)))
+        if (ImGui::Combo(u8"描画タイプ (Render Type)", &cfg.type, typeNames, IM_ARRAYSIZE(typeNames)))
             changed = true;
         ImGui::Spacing();
 
@@ -207,20 +204,15 @@ template <> struct ComponentMeta<GPUParticleComponent> {
                 changed = true;
 
             if (cfg.emission_mode == 1) {
-                if (ImGui::DragInt(u8"発生数 (Count)", &cfg.burst_count, 1, 0, 10000))
-                    changed = true;
+                if (ImGui::DragInt(u8"発生数 (Count)", &cfg.burst_count, 1, 0, 10000)) changed = true;
                 if (ImGui::Button(u8"発火テスト (Trigger)", ImVec2(-1, 0))) {
                     p->TriggerBurst();
                     changed = true;
                 }
             }
             else {
-                if (ImGui::DragFloat2(u8"発生間隔 (Delay Min/Max)",
-                        &cfg.spawn_delay.x,
-                        0.001f,
-                        0.0f,
-                        1.0f,
-                        "%.4f"))
+                if (ImGui::DragFloat2(
+                        u8"発生間隔 (Delay Min/Max)", &cfg.spawn_delay.x, 0.001f, 0.0f, 1.0f, "%.4f"))
                     changed = true;
             }
 
@@ -236,8 +228,7 @@ template <> struct ComponentMeta<GPUParticleComponent> {
             if (ImGui::DragFloat(
                     u8"形状比率 Z (Shape Stretch Z)", &cfg.emission_stretch_z, 0.01f, 0.0f, 10.0f))
                 changed = true;
-            if (ImGui::DragFloat(
-                    u8"高さ範囲 Y (Height Volume)", &cfg.particle_offset_y, 0.1f, 0.0f, 50.0f))
+            if (ImGui::DragFloat(u8"高さ範囲 Y (Height Volume)", &cfg.particle_offset_y, 0.1f, 0.0f, 50.0f))
                 changed = true;
             if (ImGui::DragFloat2(u8"角度 (Angle Min/Max)", &cfg.emission_cone_angle.x, 0.1f))
                 changed = true;
@@ -249,8 +240,7 @@ template <> struct ComponentMeta<GPUParticleComponent> {
             if (ImGui::DragFloat(u8"重力 (Gravity)", &cfg.gravity, 0.1f)) changed = true;
             if (ImGui::DragFloat2(u8"速度 (Speed Min/Max)", &cfg.emission_speed.x, 0.1f))
                 changed = true;
-            if (ImGui::DragFloat2(
-                    u8"回転速度 (Rot Speed Min/Max)", &cfg.emission_angular_speed.x, 0.1f))
+            if (ImGui::DragFloat2(u8"回転速度 (Rot Speed Min/Max)", &cfg.emission_angular_speed.x, 0.1f))
                 changed = true;
             if (ImGui::DragFloat2(u8"寿命 (Life Min/Max)", &cfg.lifespan.x, 0.1f)) changed = true;
 
@@ -266,7 +256,8 @@ template <> struct ComponentMeta<GPUParticleComponent> {
         if (ImGui::TreeNode(u8"見た目 (Appearance)")) {
             const char *renderModes[] = {"Additive (Fire/Light)", "Alpha Blend (Smoke/Dark)"};
             int         currentMode   = p->config.render_mode;
-            if (ImGui::Combo("Render Mode", &currentMode, renderModes, IM_ARRAYSIZE(renderModes))) {
+            if (ImGui::Combo(
+                    "Render Mode", &currentMode, renderModes, IM_ARRAYSIZE(renderModes))) {
                 p->config.render_mode = currentMode;
                 changed               = true;
             }
@@ -274,10 +265,8 @@ template <> struct ComponentMeta<GPUParticleComponent> {
             if (ImGui::ColorEdit4(u8"基本色 (Base Color)", &cfg.manual_color.x)) changed = true;
 
             const char *colorModes[] = {u8"単色 (Single Color)", u8"カラーランプ (Color Ramp)"};
-            if (ImGui::Combo(u8"カラーモード (Color Mode)",
-                    &cfg.color_mode,
-                    colorModes,
-                    IM_ARRAYSIZE(colorModes)))
+            if (ImGui::Combo(
+                    u8"カラーモード (Color Mode)", &cfg.color_mode, colorModes, IM_ARRAYSIZE(colorModes)))
                 changed = true;
 
             if (cfg.color_mode == 1) {
@@ -308,10 +297,8 @@ template <> struct ComponentMeta<GPUParticleComponent> {
             }
 
             const char *animModes[] = {"Random (Fixed)", "Life Cycle (Animate)"};
-            if (ImGui::Combo(u8"再生モード (Anim Mode)",
-                    &cfg.sprite_anim_mode,
-                    animModes,
-                    IM_ARRAYSIZE(animModes)))
+            if (ImGui::Combo(
+                    u8"再生モード (Anim Mode)", &cfg.sprite_anim_mode, animModes, IM_ARRAYSIZE(animModes)))
                 changed = true;
             ImGui::TreePop();
         }
@@ -330,13 +317,12 @@ template <> struct ComponentMeta<GPUParticleComponent> {
                 HWND        hWnd          = Graphics::Instance().GetWindowHandle();
                 const char *filter = "Image Files\0*.png;*.jpg;*.tga;*.bmp;*.dds\0All Files\0*.*\0";
                 if (Dialog::OpenFileName(
-                        filename, sizeof(filename), filter, "Select Texture", hWnd) ==
-                    DialogResult::OK) {
-                    namespace fs                = std::filesystem;
-                    fs::path        absPath     = filename;
-                    fs::path        currentPath = fs::current_path();
+                        filename, sizeof(filename), filter, "Select Texture", hWnd) == DialogResult::OK) {
+                    namespace fs         = std::filesystem;
+                    fs::path absPath     = filename;
+                    fs::path currentPath = fs::current_path();
                     std::error_code ec;
-                    fs::path        relPath = fs::relative(absPath, currentPath, ec);
+                    fs::path relPath = fs::relative(absPath, currentPath, ec);
                     if (!ec && !relPath.empty()) {
                         strcpy_s(p->texturePath,
                             sizeof(p->texturePath),
@@ -380,13 +366,12 @@ template <> struct ComponentMeta<GPUParticleComponent> {
                 HWND        hWnd          = Graphics::Instance().GetWindowHandle();
                 const char *filter = "Image Files\0*.png;*.jpg;*.tga;*.bmp;*.dds\0All Files\0*.*\0";
                 if (Dialog::OpenFileName(
-                        filename, sizeof(filename), filter, "Select Color Ramp", hWnd) ==
-                    DialogResult::OK) {
-                    namespace fs                = std::filesystem;
-                    fs::path        absPath     = filename;
-                    fs::path        currentPath = fs::current_path();
+                        filename, sizeof(filename), filter, "Select Color Ramp", hWnd) == DialogResult::OK) {
+                    namespace fs         = std::filesystem;
+                    fs::path absPath     = filename;
+                    fs::path currentPath = fs::current_path();
                     std::error_code ec;
-                    fs::path        relPath = fs::relative(absPath, currentPath, ec);
+                    fs::path relPath = fs::relative(absPath, currentPath, ec);
                     if (!ec && !relPath.empty()) {
                         strcpy_s(p->colorRampPath,
                             sizeof(p->colorRampPath),
@@ -424,11 +409,11 @@ template <> struct ComponentMeta<GPUParticleComponent> {
 
     static const std::vector<FieldDescriptor> &Fields()
     {
+        // GPUパーティクルは現状プリセットファイルで管理されているため、通常のシーンシリアライズには含めない設計にします。
         static const std::vector<FieldDescriptor> empty;
         return empty;
     }
 };
-
 
 void RegisterParticleMeta()
 {
@@ -437,4 +422,3 @@ void RegisterParticleMeta()
     ComponentMetaImGui::RegisterGuiMeta<GPUParticleComponent>(
         ComponentGuiRegistry::Instance());
 }
-

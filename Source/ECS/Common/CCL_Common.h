@@ -201,13 +201,17 @@ namespace CCL::ECS
     class TypeInfo
     {
     public:
-        // static変数なので、型TごとにユニークIDが保証される
-        // いつ呼んでも同じIDが返る
-        // 動的ロード時も安全に動作するように関数内でstatic変数を定義
+        // ここが究極の解決策（C++17の inline static 変数）
+        // リンカは異なる .cpp ファイルに散らばった TypeInfo<Transform>::s_id を見つけると、
+        // C++17の言語仕様に基づき、絶対に1つのメモリ領域に統合（マージ）します。
+        // その結果、EmitTypeID() はプログラム全体で "型ごとにたった1回" しか呼ばれず、
+        // 100%安全なユニークID（数字）が生成されます。
+        inline static const TypeID s_id = ID_Emitter::EmitTypeID();
+
+
         static TypeID ID()
         {
-            static TypeID id = ID_Emitter::EmitTypeID();
-            return id;
+            return s_id; // 単なる変数の読み取りなので、超高速
         }
 		// Position->常に1, Velocity->常に2 みたいな感じで型ごとにユニークな数字を返す
 		// 同じ型には必ず同じ数字が返る

@@ -61,8 +61,7 @@ template <> struct ComponentMeta<AnimatorComponent> {
                         }
 
                         // プログレスバー表示
-                        if (anim.currentAnimIndex >= 0 &&
-                            anim.currentAnimIndex < animations.size()) {
+                        if (anim.currentAnimIndex >= 0 && anim.currentAnimIndex < animations.size()) {
                             float duration = animations[anim.currentAnimIndex].secondsLength;
                             if (duration > 0.0f) {
                                 float progress = anim.currentTimer / duration;
@@ -109,20 +108,19 @@ template <> struct ComponentMeta<AnimatorComponent> {
     {
         static const std::vector<FieldDescriptor> fields = {
             META_FIELD_FLOAT(
-                AnimatorComponent, playbackSpeed, "Playback Speed", 0.05f, -5.0f, 5.0f, "Playback"),
-            META_FIELD_BOOL(AnimatorComponent, isLoop, "Loop", "Playback"),
+                AnimatorComponent, playbackSpeed, "playbackSpeed", "Playback Speed", 0.05f, -5.0f, 5.0f, "Playback"),
+            META_FIELD_BOOL(AnimatorComponent, isLoop, "isLoop", "Loop", "Playback"),
             META_FIELD_INT(
-                AnimatorComponent, currentAnimIndex, "Current Anim Index", -1, 999, "State")};
+                AnimatorComponent, currentAnimIndex, "currentAnimIndex", "Current Anim Index", -1, 999, "State")};
         return fields;
     }
 };
 
-
 void RegisterAnimationMeta()
 {
-    ComponentMetaJson::RegisterMetaT<AnimatorComponent>(
-        ComponentRegistry::Instance(), "Animator");
-    ComponentMetaImGui::RegisterGuiMeta<AnimatorComponent>(
-        ComponentGuiRegistry::Instance());
-}
+    auto &jsonReg = ComponentRegistry::Instance();
+    ComponentMetaJson::RegisterMetaT<AnimatorComponent>(jsonReg, "Animator");
 
+    auto &guiReg = ComponentGuiRegistry::Instance();
+    ComponentMetaImGui::RegisterGuiMeta<AnimatorComponent>(guiReg);
+}

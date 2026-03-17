@@ -45,70 +45,45 @@ namespace _MetaJsonDX {
 namespace ComponentMetaJson {
     using json = nlohmann::json;
 
+    // ------------------------------------------------------------------------
+    // jsonName を使って保存する
+    // ------------------------------------------------------------------------
     inline void SerializeField(json &j, const FieldDescriptor &fd, const void *obj)
     {
-        if (!fd.serialize) return;
-        using namespace DirectX;
-        using namespace _MetaJsonDX;
+        if (!fd.serialize || !fd.jsonName) return; // jsonName が無い場合は安全のためスキップ
+
         switch (fd.kind) {
-        case FieldKind::Float: j[fd.name] = RawField<float>(obj, fd.offset); break;
-        case FieldKind::Int: j[fd.name] = RawField<int>(obj, fd.offset); break;
-        case FieldKind::Bool: j[fd.name] = RawField<bool>(obj, fd.offset); break;
-        case FieldKind::UInt8:
-            j[fd.name] = static_cast<int>(RawField<uint8_t>(obj, fd.offset));
-            break;
-        case FieldKind::EnumU8:
-            j[fd.name] = static_cast<int>(RawField<uint8_t>(obj, fd.offset));
-            break;
-        case FieldKind::EnumInt: j[fd.name] = RawField<int>(obj, fd.offset); break;
-        case FieldKind::Float2: {
-            json jv;
-            F2_to(jv, RawField<XMFLOAT2>(obj, fd.offset));
-            j[fd.name] = std::move(jv);
-            break;
-        }
-        case FieldKind::Float3: {
-            json jv;
-            F3_to(jv, RawField<XMFLOAT3>(obj, fd.offset));
-            j[fd.name] = std::move(jv);
-            break;
-        }
-        case FieldKind::Float4: {
-            json jv;
-            F4_to(jv, RawField<XMFLOAT4>(obj, fd.offset));
-            j[fd.name] = std::move(jv);
-            break;
-        }
-        case FieldKind::String: j[fd.name] = RawField<std::string>(obj, fd.offset); break;
-        default: break;
+        case FieldKind::Float:   j[fd.jsonName] = RawField<const float>(obj, fd.offset); break;
+        case FieldKind::Int:     j[fd.jsonName] = RawField<const int>(obj, fd.offset); break;
+        case FieldKind::Bool:    j[fd.jsonName] = RawField<const bool>(obj, fd.offset); break;
+        case FieldKind::UInt8:   j[fd.jsonName] = RawField<const uint8_t>(obj, fd.offset); break;
+        case FieldKind::EnumU8:  j[fd.jsonName] = RawField<const uint8_t>(obj, fd.offset); break;
+        case FieldKind::EnumInt: j[fd.jsonName] = RawField<const int>(obj, fd.offset); break;
+        case FieldKind::Float2:  _MetaJsonDX::F2_to(j[fd.jsonName], RawField<const DirectX::XMFLOAT2>(obj, fd.offset)); break;
+        case FieldKind::Float3:  _MetaJsonDX::F3_to(j[fd.jsonName], RawField<const DirectX::XMFLOAT3>(obj, fd.offset)); break;
+        case FieldKind::Float4:  _MetaJsonDX::F4_to(j[fd.jsonName], RawField<const DirectX::XMFLOAT4>(obj, fd.offset)); break;
+        case FieldKind::String:  j[fd.jsonName] = RawField<const std::string>(obj, fd.offset); break;
         }
     }
 
+    // ------------------------------------------------------------------------
+    // jsonName を使って読み込む
+    // ------------------------------------------------------------------------
     inline void DeserializeField(const json &j, const FieldDescriptor &fd, void *obj)
     {
-        if (!fd.serialize) return;
-        if (!j.contains(fd.name)) return;
-        using namespace DirectX;
-        using namespace _MetaJsonDX;
-        const json &jv = j.at(fd.name);
+        if (!fd.serialize || !fd.jsonName || !j.contains(fd.jsonName)) return;
+
         switch (fd.kind) {
-        case FieldKind::Float: RawField<float>(obj, fd.offset) = jv.get<float>(); break;
-        case FieldKind::Int: RawField<int>(obj, fd.offset) = jv.get<int>(); break;
-        case FieldKind::Bool: RawField<bool>(obj, fd.offset) = jv.get<bool>(); break;
-        case FieldKind::UInt8:
-            RawField<uint8_t>(obj, fd.offset) = static_cast<uint8_t>(jv.get<int>());
-            break;
-        case FieldKind::EnumU8:
-            RawField<uint8_t>(obj, fd.offset) = static_cast<uint8_t>(jv.get<int>());
-            break;
-        case FieldKind::EnumInt: RawField<int>(obj, fd.offset) = jv.get<int>(); break;
-        case FieldKind::Float2: F2_from(jv, RawField<XMFLOAT2>(obj, fd.offset)); break;
-        case FieldKind::Float3: F3_from(jv, RawField<XMFLOAT3>(obj, fd.offset)); break;
-        case FieldKind::Float4: F4_from(jv, RawField<XMFLOAT4>(obj, fd.offset)); break;
-        case FieldKind::String:
-            RawField<std::string>(obj, fd.offset) = jv.get<std::string>();
-            break;
-        default: break;
+        case FieldKind::Float:   j[fd.jsonName].get_to(RawField<float>(obj, fd.offset)); break;
+        case FieldKind::Int:     j[fd.jsonName].get_to(RawField<int>(obj, fd.offset)); break;
+        case FieldKind::Bool:    j[fd.jsonName].get_to(RawField<bool>(obj, fd.offset)); break;
+        case FieldKind::UInt8:   j[fd.jsonName].get_to(RawField<uint8_t>(obj, fd.offset)); break;
+        case FieldKind::EnumU8:  j[fd.jsonName].get_to(RawField<uint8_t>(obj, fd.offset)); break;
+        case FieldKind::EnumInt: j[fd.jsonName].get_to(RawField<int>(obj, fd.offset)); break;
+        case FieldKind::Float2:  _MetaJsonDX::F2_from(j[fd.jsonName], RawField<DirectX::XMFLOAT2>(obj, fd.offset)); break;
+        case FieldKind::Float3:  _MetaJsonDX::F3_from(j[fd.jsonName], RawField<DirectX::XMFLOAT3>(obj, fd.offset)); break;
+        case FieldKind::Float4:  _MetaJsonDX::F4_from(j[fd.jsonName], RawField<DirectX::XMFLOAT4>(obj, fd.offset)); break;
+        case FieldKind::String:  j[fd.jsonName].get_to(RawField<std::string>(obj, fd.offset)); break;
         }
     }
 

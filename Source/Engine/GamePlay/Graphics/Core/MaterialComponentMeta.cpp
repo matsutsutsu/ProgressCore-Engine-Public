@@ -1,9 +1,9 @@
 #include "ECS/Core/CCL_World.h"
+#include "Engine/GamePlay/Graphics/Core/MaterialComponent.h"
+#include "Engine/GamePlay/Graphics/Core/ModelComponent.h"
 #include "Engine/Graphics/Core/GpuResourceUtils.h"
 #include "Engine/Graphics/Core/Graphics.h"
 #include "Engine/Platform/Dialog.h"
-#include "Engine/GamePlay/Graphics/Core/MaterialComponent.h"
-#include "Engine/GamePlay/Graphics/Core/ModelComponent.h"
 
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/ComponentRegistry.h"
@@ -104,10 +104,12 @@ template <> struct ComponentMeta<MaterialComponent> {
                         ImGui::Text("%s: %s", slotName, hasTexture ? "[Set]" : "[Empty]");
                         ImGui::SameLine();
                         if (ImGui::Button("Load...")) {
-                            char filename[256] = {};
+                            char        filename[256] = {};
+                            const char *filter =
+                                "Image Files\0*.png;*.jpg;*.tga;*.bmp\0All Files\0*.*\0";
                             if (Dialog::OpenFileName(filename,
                                     256,
-                                    "Image Files\0*.png;*.jpg;*.tga;*.bmp\0",
+                                    filter,
                                     "Select Texture",
                                     Graphics::Instance().GetWindowHandle()) == DialogResult::OK) {
                                 Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv;
@@ -161,11 +163,8 @@ template <> struct ComponentMeta<MaterialComponent> {
     }
 };
 
-
 void RegisterGraphicsMeta()
 {
-    ComponentMetaJson::RegisterMetaT<MaterialComponent>(
-        ComponentRegistry::Instance(), "Material");
-    ComponentMetaImGui::RegisterGuiMeta<MaterialComponent>(
-        ComponentGuiRegistry::Instance());
+    ComponentMetaJson::RegisterMetaT<MaterialComponent>(ComponentRegistry::Instance(), "Material");
+    ComponentMetaImGui::RegisterGuiMeta<MaterialComponent>(ComponentGuiRegistry::Instance());
 }

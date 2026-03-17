@@ -1,9 +1,9 @@
 #include "Editor/Inspector/ComponentGuiRegistry.h"
+#include "Engine/GamePlay/Transform/TransformComponent.h"
 #include "Engine/Serialization/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
-#include "Engine/GamePlay/Transform/TransformComponent.h"
 
 #include "Engine/Serialization/ComponentSerializers.h"
 
@@ -38,18 +38,23 @@ template <> struct ComponentMeta<TransformComponent> {
     static const std::vector<FieldDescriptor> &Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
-            META_FIELD_FLOAT3(TransformComponent, position, "Position", 0.1f, "Transform"),
+            META_FIELD_FLOAT3(
+                TransformComponent, position, "position", "Position", 0.1f, "Transform"),
             META_FIELD_FLOAT4(TransformComponent,
                 rotation,
+                "rotation",
                 "Rotation",
                 0.1f,
                 "Transform"), // ComponentMeta.h に META_FIELD_FLOAT4 が必要です
-            META_FIELD_FLOAT3(TransformComponent, scale, "Scale", 0.1f, "Transform"),
-            META_FIELD_BOOL(TransformComponent, isStatic, "Is Static", "Transform")};
+            META_FIELD_FLOAT3(TransformComponent, scale, "scale", "Scale", 0.1f, "Transform"),
+            META_FIELD_BOOL(TransformComponent, isStatic, "isStatic", "Is Static", "Transform")};
         return fields;
     }
 };
 
+
+#include <windows.h> // OutputDebugString用
+#include <string>
 
 void RegisterTransformMeta()
 {
@@ -58,4 +63,11 @@ void RegisterTransformMeta()
 
     auto &guiReg = ComponentGuiRegistry::Instance();
     ComponentMetaImGui::RegisterGuiMeta<TransformComponent>(guiReg);
+
+    // ★ デバッグ出力：登録側の真実
+    std::string log =
+        "[Register] Transform ID: " + std::to_string(CCL::ECS::TypeInfo<TransformComponent>::ID()) +
+        " | GuiReg Addr: " + std::to_string(reinterpret_cast<uintptr_t>(&guiReg)) + "\n";
+    OutputDebugStringA(log.c_str());
+
 }

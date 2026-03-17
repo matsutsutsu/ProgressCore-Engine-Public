@@ -55,12 +55,12 @@ template <> struct ComponentMeta<PrimitiveComponent> {
     static const std::vector<FieldDescriptor> &Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
-            META_FIELD_ENUM_INT(PrimitiveComponent, type, "Type", nullptr, 5, "Settings"),
-            META_FIELD_FLOAT4(PrimitiveComponent, color, "Color", 0.01f, "Settings"),
-            META_FIELD_FLOAT3(PrimitiveComponent, size, "Size", 0.1f, "Settings"),
-            META_FIELD_FLOAT(PrimitiveComponent, radius, "Radius", 0.1f, 0.0f, 100.0f, "Settings"),
-            META_FIELD_FLOAT(PrimitiveComponent, height, "Height", 0.1f, 0.0f, 100.0f, "Settings"),
-            META_FIELD_BOOL(PrimitiveComponent, isWireframe, "Wireframe", "Settings")};
+            META_FIELD_ENUM_INT(PrimitiveComponent, type, "type", "Type", nullptr, 5, "Settings"),
+            META_FIELD_FLOAT4(PrimitiveComponent, color, "color", "Color", 0.01f, "Settings"),
+            META_FIELD_FLOAT3(PrimitiveComponent, size, "size", "Size", 0.1f, "Settings"),
+            META_FIELD_FLOAT(PrimitiveComponent, radius, "radius", "Radius", 0.1f, 0.0f, 100.0f, "Settings"),
+            META_FIELD_FLOAT(PrimitiveComponent, height, "height", "Height", 0.1f, 0.0f, 100.0f, "Settings"),
+            META_FIELD_BOOL(PrimitiveComponent, isWireframe, "isWireframe", "Wireframe", "Settings")};
         return fields;
     }
 };
@@ -86,9 +86,9 @@ template <> struct ComponentMeta<DissolveComponent> {
     {
         static const std::vector<FieldDescriptor> fields = {
             META_FIELD_FLOAT(
-                DissolveComponent, currentThreshold, "Threshold", 0.01f, 0.0f, 1.0f, "Settings"),
+                DissolveComponent, currentThreshold, "currentThreshold", "Threshold", 0.01f, 0.0f, 1.0f, "Settings"),
             META_FIELD_FLOAT(
-                DissolveComponent, dissolveSpeed, "Speed", 0.01f, 0.0f, 10.0f, "Settings")};
+                DissolveComponent, dissolveSpeed, "dissolveSpeed", "Speed", 0.01f, 0.0f, 10.0f, "Settings")};
         return fields;
     }
 };
@@ -126,13 +126,12 @@ template <> struct ComponentMeta<TimerComponent> {
     {
         static const std::vector<FieldDescriptor> fields = {
             META_FIELD_FLOAT(
-                TimerComponent, currentTime, "Current Time", 0.01f, 0.0f, 0.0f, "Settings"),
-            META_FIELD_FLOAT(TimerComponent, lifeTime, "Life Time", 0.1f, 0.0f, 0.0f, "Settings"),
-            META_FIELD_BOOL(TimerComponent, isExpired, "Is Expired", "Settings")};
+                TimerComponent, currentTime, "currentTime", "Current Time", 0.01f, 0.0f, 0.0f, "Settings"),
+            META_FIELD_FLOAT(TimerComponent, lifeTime, "lifeTime", "Life Time", 0.1f, 0.0f, 0.0f, "Settings"),
+            META_FIELD_BOOL(TimerComponent, isExpired, "isExpired", "Is Expired", "Settings")};
         return fields;
     }
 };
-
 
 void RegisterUtilsMeta()
 {

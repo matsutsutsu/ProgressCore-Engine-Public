@@ -30,13 +30,10 @@ template <> struct ComponentMeta<DirectionalLightComponent> {
     static const std::vector<FieldDescriptor> &Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
-            META_FIELD_FLOAT3(DirectionalLightComponent, color, "Color", 0.01f, "Lighting"),
-            META_FIELD_FLOAT(
-                DirectionalLightComponent, intensity, "Intensity", 0.05f, 0.0f, 100.0f, "Lighting"),
-            META_FIELD_FLOAT4(
-                DirectionalLightComponent, skyColor, "Sky Color", 0.01f, "Hemisphere"),
-            META_FIELD_FLOAT4(
-                DirectionalLightComponent, groundColor, "Ground Color", 0.01f, "Hemisphere")};
+            META_FIELD_FLOAT3(DirectionalLightComponent, color, "color", "Color", 0.01f, "Lighting"),
+            META_FIELD_FLOAT(DirectionalLightComponent, intensity, "intensity", "Intensity", 0.05f, 0.0f, 100.0f, "Lighting"),
+            META_FIELD_FLOAT4(DirectionalLightComponent, skyColor, "skyColor", "Sky Color", 0.01f, "Hemisphere"),
+            META_FIELD_FLOAT4(DirectionalLightComponent, groundColor, "groundColor", "Ground Color", 0.01f, "Hemisphere")};
         return fields;
     }
 };
@@ -67,16 +64,12 @@ template <> struct ComponentMeta<PointLightComponent> {
     static const std::vector<FieldDescriptor> &Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
-            META_FIELD_FLOAT3(PointLightComponent, color, "Color", 0.01f, "Lighting"),
-            META_FIELD_FLOAT(
-                PointLightComponent, intensity, "Intensity", 0.05f, 0.0f, 100.0f, "Lighting"),
-            META_FIELD_FLOAT(PointLightComponent, range, "Range", 0.5f, 0.0f, 1000.0f, "Lighting"),
-            META_FIELD_FLOAT(
-                PointLightComponent, constant, "Constant", 0.01f, 0.0f, 10.0f, "Attenuation"),
-            META_FIELD_FLOAT(
-                PointLightComponent, linear, "Linear", 0.01f, 0.0f, 10.0f, "Attenuation"),
-            META_FIELD_FLOAT(
-                PointLightComponent, quadratic, "Quadratic", 0.001f, 0.0f, 1.0f, "Attenuation")};
+            META_FIELD_FLOAT3(PointLightComponent, color, "color", "Color", 0.01f, "Lighting"),
+            META_FIELD_FLOAT(PointLightComponent, intensity, "intensity", "Intensity", 0.05f, 0.0f, 100.0f, "Lighting"),
+            META_FIELD_FLOAT(PointLightComponent, range, "range", "Range", 0.5f, 0.0f, 1000.0f, "Lighting"),
+            META_FIELD_FLOAT(PointLightComponent, constant, "constant", "Constant", 0.01f, 0.0f, 10.0f, "Attenuation"),
+            META_FIELD_FLOAT(PointLightComponent, linear, "linear", "Linear", 0.01f, 0.0f, 10.0f, "Attenuation"),
+            META_FIELD_FLOAT(PointLightComponent, quadratic, "quadratic", "Quadratic", 0.001f, 0.0f, 1.0f, "Attenuation")};
         return fields;
     }
 };
@@ -116,14 +109,11 @@ template <> struct ComponentMeta<SpotLightComponent> {
     static const std::vector<FieldDescriptor> &Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
-            META_FIELD_FLOAT3(SpotLightComponent, color, "Color", 0.01f, "Lighting"),
-            META_FIELD_FLOAT(
-                SpotLightComponent, intensity, "Intensity", 0.05f, 0.0f, 100.0f, "Lighting"),
-            META_FIELD_FLOAT(SpotLightComponent, range, "Range", 0.5f, 0.0f, 1000.0f, "Lighting"),
-            META_FIELD_FLOAT(
-                SpotLightComponent, innerCos, "Inner Cone (Cos)", 0.01f, 0.0f, 1.0f, "Cone"),
-            META_FIELD_FLOAT(
-                SpotLightComponent, outerCos, "Outer Cone (Cos)", 0.01f, 0.0f, 1.0f, "Cone")};
+            META_FIELD_FLOAT3(SpotLightComponent, color, "color", "Color", 0.01f, "Lighting"),
+            META_FIELD_FLOAT(SpotLightComponent, intensity, "intensity", "Intensity", 0.05f, 0.0f, 100.0f, "Lighting"),
+            META_FIELD_FLOAT(SpotLightComponent, range, "range", "Range", 0.5f, 0.0f, 1000.0f, "Lighting"),
+            META_FIELD_FLOAT(SpotLightComponent, innerCos, "innerCos", "Inner Cone (Cos)", 0.01f, 0.0f, 1.0f, "Cone"),
+            META_FIELD_FLOAT(SpotLightComponent, outerCos, "outerCos", "Outer Cone (Cos)", 0.01f, 0.0f, 1.0f, "Cone")};
         return fields;
     }
 };

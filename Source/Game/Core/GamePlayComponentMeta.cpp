@@ -1,19 +1,18 @@
 // (必要なヘッダーをインクルードしてください。Health, Player, Trigger, LuaScript 等)
 #include "Editor/Inspector/ComponentGuiRegistry.h"
+#include "Engine/Graphics/Core/Graphics.h"
+#include "Engine/Platform/Dialog.h"
+#include "Engine/Scripting/LuaScriptComponent.h"
 #include "Engine/Serialization/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
-#include <algorithm>
 #include "Game/Logics/Combat/HealthComponent.h"
 #include "Game/Logics/World/Triggers/TriggerComponent.h"
-#include "Engine/Scripting/LuaScriptComponent.h"
-#include "Engine/Platform/Dialog.h"
-#include "Engine/Graphics\Core/Graphics.h"
+#include <algorithm>
 
 #include "Engine/Serialization/ComponentSerializers.h"
 
-    
 // ============================================================================
 // Health Component
 // ============================================================================
@@ -67,19 +66,32 @@ template <> struct ComponentMeta<HealthComponent> {
     static const std::vector<FieldDescriptor> &Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
-            META_FIELD_FLOAT(
-                HealthComponent, maxHealth, "Max Health", 1.0f, 1.0f, 10000.0f, "Status"),
-            META_FIELD_FLOAT(
-                HealthComponent, currentHealth, "Current Health", 1.0f, 0.0f, 10000.0f, "Status"),
+            META_FIELD_FLOAT(HealthComponent,
+                maxHealth,
+                "maxHealth",
+                "Max Health",
+                1.0f,
+                1.0f,
+                10000.0f,
+                "Status"),
+            META_FIELD_FLOAT(HealthComponent,
+                currentHealth,
+                "currentHealth",
+                "Current Health",
+                1.0f,
+                0.0f,
+                10000.0f,
+                "Status"),
             META_FIELD_FLOAT(HealthComponent,
                 invincibilityDuration,
+                "invincibilityDuration",
                 "Invincible Duration",
                 0.1f,
                 0.0f,
                 10.0f,
                 "Status"),
             META_FIELD_ENUM_INT(
-                HealthComponent, team, "Team", nullptr, 3, "Status") // EnumNamesは適宜設定
+                HealthComponent, team, "team", "Team", nullptr, 3, "Status") // EnumNamesは適宜設定
         };
         return fields;
     }
@@ -115,8 +127,9 @@ template <> struct ComponentMeta<TriggerComponent> {
     static const std::vector<FieldDescriptor> &Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
-            META_FIELD_FLOAT(TriggerComponent, radius, "Radius", 0.1f, 0.0f, 100.0f, "Area"),
-            META_FIELD_BOOL(TriggerComponent, isOneShot, "One Shot", "Area")};
+            META_FIELD_FLOAT(
+                TriggerComponent, radius, "radius", "Radius", 0.1f, 0.0f, 100.0f, "Area"),
+            META_FIELD_BOOL(TriggerComponent, isOneShot, "isOneShot", "One Shot", "Area")};
         return fields;
     }
 };
@@ -175,13 +188,13 @@ template <> struct ComponentMeta<LuaScriptComponent> {
     static const std::vector<FieldDescriptor> &Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
-            // META_FIELD_STRING(LuaScriptComponent, scriptPath, "Script Path", "File") //
+             META_FIELD_STRING(LuaScriptComponent, scriptPath, "scriptPath", "Script Path",
+             "File") //
             // ※マクロがあれば使用
         };
         return fields;
     }
 };
-
 
 void RegisterGamePlayMeta()
 {
@@ -195,4 +208,3 @@ void RegisterGamePlayMeta()
     ComponentMetaImGui::RegisterGuiMeta<TriggerComponent>(guiReg);
     ComponentMetaImGui::RegisterGuiMeta<LuaScriptComponent>(guiReg);
 }
-
