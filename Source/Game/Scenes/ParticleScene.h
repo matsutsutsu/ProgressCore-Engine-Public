@@ -5,8 +5,9 @@
 
 class ParticleScene : public BaseScene {
     std::unique_ptr<EditorWindowManager>     _windowManager;
-    std::shared_ptr<GPUParticleRenderSystem> _particleRenderer;
-    CCL::ECS::EntityID                       selectedEntity = 0;
+
+    // エディタの全記憶を保持するコンテキスト（毎フレーム破棄されない）
+    EditorContext _context;
 
   public:
     ParticleScene() = default;

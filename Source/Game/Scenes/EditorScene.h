@@ -12,12 +12,9 @@ class EditorScene : public BaseScene {
     // アニメーションシステムへの参照 (手動更新用)
     AnimationSystem* _animationSystem;
 
-    // エディタ状態
-    bool  m_isAnimEditMode = false; // アニメーション編集モード中か
-    float m_animEditTime   = 0.0f;  // 現在のシーケンス時間
 
-
-    CCL::ECS::EntityID selectedEntity = 0;
+    // エディタの全記憶を保持するコンテキスト（毎フレーム破棄されない）
+    EditorContext _context;
 
   public:
     EditorScene() = default;

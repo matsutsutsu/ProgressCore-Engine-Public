@@ -4,6 +4,8 @@
 #include <imgui.h>
 #include "Engine/Serialization/Factory/SceneInitializer.h"
 
+#include "ECS/System/CCL_SystemRegistry.h"
+
 void ParticleScene::Initialize()
 {
     BaseScene::Initialize();
@@ -25,7 +27,7 @@ void ParticleScene::Initialize()
 void ParticleScene::Finalize()
 {
     // システム破棄の前にパーティクルを破棄しないとクラッシュするため
-    _particleRenderer.reset();
+    //_particleRenderer.reset();
 
     BaseScene::Finalize(); 
 }
@@ -38,8 +40,8 @@ void ParticleScene::RegisterSystems()
     // SystemManagerへのアクセスを _ecsContext 経由に変更
     // (SystemGroupsの関数が参照を受け取る仕様であると推測されるため、ポインタをデリファレンスしています)
     auto &sysManager = *(_ecsContext->GetSystemManager());
+    CCL::ECS::SystemRegistry::Instance().RegisterAll(sysManager);
 
-    //_particleUpdater
 }
 
 void ParticleScene::OnRender3D(RenderContext &rc)
@@ -52,15 +54,15 @@ void ParticleScene::OnRender3D(RenderContext &rc)
 
 void ParticleScene::OnDrawImGui()
 {
-    EditorContext context;
-    context.selectedEntity = selectedEntity;
-    context.world          = _worldPtr;
-    context.systemManager  = _ecsContext->GetSystemManager(); 
+    _context.world         = _worldPtr;
+    _context.systemManager = _ecsContext->GetSystemManager();
 
-    _windowManager->Draw(context);
+    if (_windowManager) {
+        _windowManager->Draw(_context);
+    }
 
-    if (!context.pendingLoadScenePath.empty()) {
-        _pendingLoadScenePath = context.pendingLoadScenePath;
+    if (!_context.pendingLoadScenePath.empty()) {
+        _pendingLoadScenePath = _context.pendingLoadScenePath;
     }
 
     if (_windowManager->IsVisible()) {
@@ -73,6 +75,4 @@ void ParticleScene::OnDrawImGui()
 
 void ParticleScene::OnPreLoadScene()
 {
-    _particleRenderer.reset();
-    selectedEntity = 0;
 }

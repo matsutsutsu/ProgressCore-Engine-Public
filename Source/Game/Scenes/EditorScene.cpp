@@ -54,7 +54,9 @@ void EditorScene::RegisterSystems()
 void EditorScene::FixedUpdate(float dt) 
 {
     // A. アニメーション編集モード中
-    if (m_isAnimEditMode && selectedEntity != 0) {
+    if (_context.isAnimEditMode && _context.selectedEntity != 0 &&
+        _context.selectedEntity != CCL::ECS::InvalidEntityID) 
+    {
         // ロジック更新（物理、AI、移動など）を一切行わない
         // BaseScene::FixedUpdate を呼ばずに return します。
         return;
@@ -69,15 +71,14 @@ void EditorScene::FixedUpdate(float dt)
 void EditorScene::Update(float dt)
 {
     // A. アニメーション編集モード中 (かつエンティティ選択中)
-    if (m_isAnimEditMode && selectedEntity != 0) {
-
-        // 1. ゲームロジックは止める (dt = 0.0f で更新)
+    if (_context.isAnimEditMode && _context.selectedEntity != 0 &&
+        _context.selectedEntity != CCL::ECS::InvalidEntityID) {
+        // 1. ゲームロジックは止める
         BaseScene::Update(0.0f);
 
         // 2. アニメーションだけ手動更新
         if (_animationSystem) {
-            // AnimationSystem.h に UpdateManual 関数を追加済みであること
-            _animationSystem->UpdateManual(selectedEntity, m_animEditTime);
+            _animationSystem->UpdateManual(_context.selectedEntity, _context.animEditTime);
         }
     }
     // B. 通常プレイ中
@@ -93,20 +94,14 @@ void EditorScene::OnRender3D(RenderContext &rc){}
 // GUI描画の拡張 (BaseScene::DrawGUIから呼ばれる)
 void EditorScene::OnDrawImGui()
 {
-    EditorContext context;
-    context.selectedEntity = selectedEntity;
-    context.world          = _worldPtr;
-    context.systemManager  = _ecsContext->GetSystemManager(); // ★追加
+    _context.world         = _worldPtr;
+    _context.systemManager = _ecsContext->GetSystemManager();
 
-    // 実体へのポインタを渡す
-    context.isAnimEditMode = &m_isAnimEditMode;
-    context.animEditTime   = m_animEditTime;
-
-    _windowManager->Draw(context);
+    _windowManager->Draw(_context);
 
     // ロード要求があればBaseSceneのパスに渡す
-    if (!context.pendingLoadScenePath.empty()) {
-        _pendingLoadScenePath = context.pendingLoadScenePath;
+    if (!_context.pendingLoadScenePath.empty()) {
+        _pendingLoadScenePath = _context.pendingLoadScenePath;
     }
 
     if (_windowManager->IsVisible()) {
@@ -119,5 +114,5 @@ void EditorScene::OnDrawImGui()
 // ロード前の後始末
 void EditorScene::OnPreLoadScene()
 {
-    selectedEntity = 0;
+    //selectedEntity = 0;
 }
