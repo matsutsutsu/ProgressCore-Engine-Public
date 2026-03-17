@@ -165,13 +165,13 @@ void SceneInitializer::SpawnJoltTest(CCL::ECS::Core::World &world, ID3D11Device 
     floorTrans.scale    = {1.0f, 1.0f, 1.0f};
     world.AddComponent<TransformComponent>(floorEntity, floorTrans);
 
-    // ★追加: 物理の「性質」を設定
+    // 物理の「性質」を設定
     JoltRigidbodyComponent floorRigidbody;
     floorRigidbody.motionType  = JPH::EMotionType::Static; // 動かない
     floorRigidbody.objectLayer = PhysicsLayers::NON_MOVING;
     world.AddComponent<JoltRigidbodyComponent>(floorEntity, floorRigidbody);
 
-    // ★追加: 物理の「形」を設定
+    // 物理の「形」を設定
     JoltBoxColliderComponent floorCollider;
     floorCollider.halfExtent = {50.0f, 1.0f, 50.0f}; // 半分のサイズ
     world.AddComponent<JoltBoxColliderComponent>(floorEntity, floorCollider);
@@ -199,14 +199,14 @@ void SceneInitializer::SpawnJoltTest(CCL::ECS::Core::World &world, ID3D11Device 
     sphereTrans.scale    = {1.0f, 1.0f, 1.0f};
     world.AddComponent<TransformComponent>(sphereEntity, sphereTrans);
 
-    // ★追加: 物理の「性質」を設定
+    // 物理の「性質」を設定
     JoltRigidbodyComponent sphereRigidbody;
     sphereRigidbody.motionType  = JPH::EMotionType::Dynamic; // 動く（重力に従う）
     sphereRigidbody.objectLayer = PhysicsLayers::MOVING;
     sphereRigidbody.restitution = 0.8f; // よく跳ねるように設定
     world.AddComponent<JoltRigidbodyComponent>(sphereEntity, sphereRigidbody);
 
-    // ★追加: 物理の「形」を設定
+    // 物理の「形」を設定
     JoltSphereColliderComponent sphereCollider;
     sphereCollider.radius = 1.0f;
     world.AddComponent<JoltSphereColliderComponent>(sphereEntity, sphereCollider);
@@ -217,4 +217,67 @@ void SceneInitializer::SpawnJoltTest(CCL::ECS::Core::World &world, ID3D11Device 
     spherePrim.radius = 1.0f;
     spherePrim.color  = {1.0f, 0.2f, 0.2f, 1.0f};
     world.AddComponent<PrimitiveComponent>(sphereEntity, spherePrim);
+
+
+    // ──────────────────────────────────────────
+    // 3. テスト用プレイヤー (CharacterVirtual) の生成
+    // ──────────────────────────────────────────
+
+    // PlayerMoveSystem の動作条件を満たすため、モデルとアニメーターも要求する
+    auto playerArchetype =
+        ArchetypeHelper::Generate<TransformComponent, PrimitiveComponent,
+                                  PlayerComponent,
+                                  JoltCapsuleColliderComponent,
+                                  ModelComponent,   
+                                  AnimatorComponent 
+                                  >();
+    auto playerEntity = world.RequestSpawnEntity(playerArchetype);
+
+    // 1. 座標 (少し高い位置からスポーンさせる)
+    TransformComponent playerTrans;
+    playerTrans.position = {0.0f, 5.0f, 0.0f};
+    playerTrans.rotation = {0.0f, 0.0f, 0.0f, 1.0f};
+    playerTrans.scale = {1.0f, 1.0f, 1.0f};
+    world.AddComponent<TransformComponent>(playerEntity, playerTrans);
+
+    // 2. プレイヤーの操作パラメータ
+    PlayerComponent playerComp;
+    playerComp.moveSpeed = 6.0f;
+    playerComp.turnSpeed = 10.0f;
+    world.AddComponent<PlayerComponent>(playerEntity, playerComp);
+
+    // 3. Joltのキャラクター性能設計図
+    JoltCharacterConfigComponent charConfig;
+    charConfig.maxSlopeAngle = 45.0f;
+    charConfig.maxStepHeight = 0.5f;
+    charConfig.walkSpeed = 6.0f;
+    charConfig.jumpSpeed = 10.0f;
+    charConfig.characterMass = 70.0f;
+    world.AddComponent<JoltCharacterConfigComponent>(playerEntity, charConfig);
+
+    // 4. Joltの物理形状（カプセル）
+    JoltCapsuleColliderComponent capsuleCollider;
+    capsuleCollider.halfHeight = 0.5f; // 全長 2.0m (0.5*2 + 半径0.5*2)
+    capsuleCollider.radius = 0.5f;
+    world.AddComponent<JoltCapsuleColliderComponent>(playerEntity,
+                                                     capsuleCollider);
+
+    // 5. 仮の見た目（カプセルのプリミティブ描画）
+    // ※ShapeRendererの実装に合わせてCapsuleが存在しない場合はBoxなどで代用してください
+    PrimitiveComponent playerPrim;
+    playerPrim.type = PrimitiveType::Capsule;
+    playerPrim.size = {0.0f, 1.0f, 0.0f}; // Heightとして代用
+    playerPrim.radius = 0.5f;
+    playerPrim.color = {0.2f, 0.8f, 0.2f, 1.0f}; // プレイヤーは緑色
+    world.AddComponent<PrimitiveComponent>(playerEntity, playerPrim);
+
+    // 6. ダミーのモデル＆アニメーター
+    // 本来はここで実際のプレイヤーモデルをロードしますが、今回はnullでシステムを騙します
+    ModelComponent modelComp;
+    //modelComp.assetPath = "Assets/Models/Player.glb"; // 将来的にロードするモデルのパスを指定しておく
+    modelComp.SetModel("Assets/Models/Player/Player.glb"); // これで将来モデルがロードされるようになる（今はnullのまま）
+    world.AddComponent<ModelComponent>(playerEntity, modelComp);
+
+    AnimatorComponent animatorComp;
+    world.AddComponent<AnimatorComponent>(playerEntity, animatorComp);
 }

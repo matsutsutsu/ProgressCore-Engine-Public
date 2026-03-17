@@ -26,9 +26,6 @@ void ParticleScene::Initialize()
 
 void ParticleScene::Finalize()
 {
-    // システム破棄の前にパーティクルを破棄しないとクラッシュするため
-    //_particleRenderer.reset();
-
     BaseScene::Finalize(); 
 }
 
@@ -41,7 +38,6 @@ void ParticleScene::RegisterSystems()
     // (SystemGroupsの関数が参照を受け取る仕様であると推測されるため、ポインタをデリファレンスしています)
     auto &sysManager = *(_ecsContext->GetSystemManager());
     CCL::ECS::SystemRegistry::Instance().RegisterAll(sysManager);
-
 }
 
 void ParticleScene::OnRender3D(RenderContext &rc)

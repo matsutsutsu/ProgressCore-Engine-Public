@@ -1,38 +1,76 @@
+# BasedOnStyle: LLVM
+
+
+# インデント
+# IndentWidth: 4
+# ContinuationIndentWidth: 4
+# UseTab: Never
+
+# 横幅制限（見切れ防止）
+# ColumnLimit: 100
+
+# = 揃え（enum / 定数 / 変数）
+# AlignConsecutiveAssignments: true
+# AlignConsecutiveDeclarations: true
+
+# 引数・パラメータは詰めない
+# BinPackArguments: false
+# BinPackParameters: false
+
+# 改行するなら ( の直後へ
+# AllowAllArgumentsOnNextLine: true
+# AllowAllParametersOfDeclarationOnNextLine: true
+
+# ネームスペースの中身をインデントする
+# NamespaceIndentation: All
+
+
+# AllowShortIfStatementsOnASingleLine: true
+# AllowShortLoopsOnASingleLine: true
+# AllowShortFunctionsOnASingleLine: true
+# AllowShortCaseLabelsOnASingleLine: true
+
+# ★ これが一番重要 ★
+# 開き括弧後の「謎の縦揃え」を禁止
+# AlignAfterOpenBracket: DontAlign
+
+# ブレーススタイル
+# BreakBeforeBraces: Stroustrup
 BasedOnStyle: LLVM
 
 
 # インデント
-IndentWidth: 4
-ContinuationIndentWidth: 4
-UseTab: Never
+# IndentWidth: 4
+# ContinuationIndentWidth: 4
+# UseTab: Never
 
 # 横幅制限（見切れ防止）
-ColumnLimit: 100
+# ColumnLimit: 100
 
 # = 揃え（enum / 定数 / 変数）
-AlignConsecutiveAssignments: true
-AlignConsecutiveDeclarations: true
+# AlignConsecutiveAssignments: true
+# AlignConsecutiveDeclarations: true
 
 # 引数・パラメータは詰めない
-BinPackArguments: false
-BinPackParameters: false
+# BinPackArguments: false
+# BinPackParameters: false
 
 # 改行するなら ( の直後へ
-AllowAllArgumentsOnNextLine: true
-AllowAllParametersOfDeclarationOnNextLine: true
+# AllowAllArgumentsOnNextLine: true
+# AllowAllParametersOfDeclarationOnNextLine: true
 
 # ネームスペースの中身をインデントする
-NamespaceIndentation: All
+# NamespaceIndentation: All
 
 
-AllowShortIfStatementsOnASingleLine: true
-AllowShortLoopsOnASingleLine: true
-AllowShortFunctionsOnASingleLine: true
-AllowShortCaseLabelsOnASingleLine: true
+# AllowShortIfStatementsOnASingleLine: true
+# AllowShortLoopsOnASingleLine: true
+# AllowShortFunctionsOnASingleLine: true
+# AllowShortCaseLabelsOnASingleLine: true
 
 # ★ これが一番重要 ★
 # 開き括弧後の「謎の縦揃え」を禁止
-AlignAfterOpenBracket: DontAlign
+# AlignAfterOpenBracket: DontAlign
 
 # ブレーススタイル
-BreakBeforeBraces: Stroustrup
+# BreakBeforeBraces: Stroustrup

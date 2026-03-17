@@ -5,11 +5,12 @@
 #include "Engine/GamePlay/Physics/Jolt/JoltHandleComponent.h"
 #include "Engine/GamePlay/Physics/Collision/JoltBoxColliderComponent.h"
 #include "Engine/GamePlay/Physics/Collision/JoltSphereColliderComponent.h"
-//#include "Engine/GamePlay/Physics/Collision/JoltCapusuleColliderComponent.h"
+#include "Engine/GamePlay/Physics/Collision/JoltCapsuleColliderComponent.h"
 
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
+#include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
 
 #include "ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"
@@ -41,6 +42,11 @@ void JoltBodySetupSystem::Update(float dt)
         }
         else if (auto *sphere = _world->GetComponent<JoltSphereColliderComponent>(id)) {
             JPH::SphereShapeSettings shapeSettings(sphere->radius);
+            shape = shapeSettings.Create().Get();
+        }
+        else if (auto *capsule = _world->GetComponent<JoltCapsuleColliderComponent>(id)) {
+            // Joltには (円柱の半分の高さ, 半径) の順で渡す
+            JPH::CapsuleShapeSettings shapeSettings(capsule->halfHeight, capsule->radius);
             shape = shapeSettings.Create().Get();
         }
 

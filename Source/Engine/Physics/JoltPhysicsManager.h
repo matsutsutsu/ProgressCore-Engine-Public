@@ -77,6 +77,9 @@ class JoltPhysicsManager {
     // ECSシステムから物理空間にアクセスするためのゲッター
     JPH::PhysicsSystem *GetPhysicsSystem() const { return m_physicsSystem.get(); }
     JPH::BodyInterface &GetBodyInterface() const { return m_physicsSystem->GetBodyInterface(); }
+    // CharacterVirtual の更新などに必要な一時アロケータを取得する
+    JPH::TempAllocator* GetTempAllocator() const { return m_tempAllocator.get(); }
+
 
   private:
     // Joltのコアシステム（破棄順序を制御するため unique_ptr で管理）

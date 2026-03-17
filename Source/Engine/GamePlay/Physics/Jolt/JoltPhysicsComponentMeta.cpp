@@ -4,6 +4,7 @@
 
 #include "Engine/GamePlay/Physics/Collision/JoltBoxColliderComponent.h"
 #include "Engine/GamePlay/Physics/Collision/JoltSphereColliderComponent.h"
+#include "Engine/GamePlay/Physics/Collision/JoltCapsuleColliderComponent.h" 
 #include "Engine/GamePlay/Physics/RigidBody/JoltRigidbodyComponent.h"
 
 #include "Engine/Serialization/ComponentRegistry.h"
@@ -47,6 +48,21 @@ template <> struct ComponentMeta<JoltSphereColliderComponent> {
             0.0f,
             100.0f,
             "Sphere Collider")};
+        return fields;
+    }
+};
+
+template <> struct ComponentMeta<JoltCapsuleColliderComponent> {
+    static constexpr bool                      registered  = true;
+    static constexpr const char               *displayName = "Jolt Capsule Collider";
+    static const std::vector<FieldDescriptor> &Fields()
+    {
+        static const std::vector<FieldDescriptor> fields = {
+            META_FIELD_FLOAT(JoltCapsuleColliderComponent, 
+                halfHeight, "halfHeight", "Half Height", 0.1f, 0.0f, 100.0f, "Capsule Collider"),
+            META_FIELD_FLOAT(JoltCapsuleColliderComponent, 
+                radius, "radius", "Radius", 0.1f, 0.0f, 100.0f, "Capsule Collider")
+        };
         return fields;
     }
 };
@@ -104,10 +120,13 @@ void RegisterPhysicsMeta()
         jsonRegistry, "JoltBoxCollider");
     ComponentMetaJson::RegisterMetaT<JoltSphereColliderComponent>(
         jsonRegistry, "JoltSphereCollider");
+    ComponentMetaJson::RegisterMetaT<JoltCapsuleColliderComponent>(
+        jsonRegistry, "JoltCapsuleCollider");
     ComponentMetaJson::RegisterMetaT<JoltRigidbodyComponent>(jsonRegistry, "JoltRigidbody");
 
     auto &guiRegistry = ComponentGuiRegistry::Instance();
     ComponentMetaImGui::RegisterGuiMeta<JoltBoxColliderComponent>(guiRegistry);
     ComponentMetaImGui::RegisterGuiMeta<JoltSphereColliderComponent>(guiRegistry);
+    ComponentMetaImGui::RegisterGuiMeta<JoltCapsuleColliderComponent>(guiRegistry);
     ComponentMetaImGui::RegisterGuiMeta<JoltRigidbodyComponent>(guiRegistry);
 }

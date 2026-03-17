@@ -12,8 +12,11 @@
 #include "Engine/GamePlay/Physics/RigidBody/JoltRigidbodyComponent.h"
 #include "Engine/GamePlay/Physics/Collision/JoltBoxColliderComponent.h"
 #include "Engine/GamePlay/Physics/Collision/JoltSphereColliderComponent.h"
-//#include "Engine/GamePlay/Physics/Collision/JoltCapusuleColliderComponent.h"
+#include "Engine/GamePlay/Physics/Collision/JoltCapsuleColliderComponent.h"
 
+// キャラクターコントローラー
+#include "Engine/GamePlay/Physics/Character/JoltCharacterHandleComponent.h"
+#include "Engine/GamePlay/Physics/Character/JoltCharacterConfigComponent.h"
 
 
 // カメラ
@@ -53,4 +56,3 @@
 
 #include "Engine/GamePlay/Transform/PendingParentComponent.h"
 
-#include "Game/Logics/Character/Player/PlayerDeathSequenceComponent.h"

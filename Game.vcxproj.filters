@@ -328,6 +328,9 @@
     <Filter Include="Source\Engine\GamePlay\Utils\_Meta">
       <UniqueIdentifier>{eefff5ce-d3c2-469c-8cc1-3d17df82f778}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\GamePlay\Physics\Character">
+      <UniqueIdentifier>{bf65d56c-dc30-4b2c-ac52-ca503e360bff}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -969,15 +972,6 @@
     <ClInclude Include="Source\Game\Logics\Combat\GlobalDamageQueue.h">
       <Filter>Source\Game\Logics\Combat</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Player\PlayerDeathSequenceComponent.h">
-      <Filter>Source\Game\Logics\Character\Player</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Player\PlayerDeathSequenceComponentMeta.h">
-      <Filter>Source\Game\Logics\Character\Player</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Player\PlayerDeathSequenceSystem.h">
-      <Filter>Source\Game\Logics\Character\Player</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerFeedbackSystem.h">
       <Filter>Source\Game\Logics\Character\Player</Filter>
     </ClInclude>
@@ -1017,11 +1011,23 @@
     <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\JoltSphereColliderComponent.h">
       <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\JoltCapusuleColliderComponent.h">
+    <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\JoltCapsuleColliderComponent.h">
       <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\ComponentSerializers.h">
       <Filter>Source\Engine\Serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Physics\Character\JoltCharacterConfigComponent.h">
+      <Filter>Source\Engine\GamePlay\Physics\Character</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Physics\Character\JoltCharacterHandleComponent.h">
+      <Filter>Source\Engine\GamePlay\Physics\Character</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Physics\Character\JoltCharacterSetupSystem.h">
+      <Filter>Source\Engine\GamePlay\Physics\Character</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Physics\Character\JoltCharacterUpdateSystem.h">
+      <Filter>Source\Engine\GamePlay\Physics\Character</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1445,9 +1451,6 @@
     <ClCompile Include="Source\Engine\GamePlay\Utils\TimerSystem.cpp">
       <Filter>Source\Engine\GamePlay\Utils</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Player\PlayerDeathSequenceSystem.cpp">
-      <Filter>Source\Game\Logics\Character\Player</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerFeedbackSystem.cpp">
       <Filter>Source\Game\Logics\Character\Player</Filter>
     </ClCompile>
@@ -1513,6 +1516,12 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\InspectorWindow.cpp">
       <Filter>Source\Editor\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\Physics\Character\JoltCharacterSetupSystem.cpp">
+      <Filter>Source\Engine\GamePlay\Physics\Character</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\Physics\Character\JoltCharacterUpdateSystem.cpp">
+      <Filter>Source\Engine\GamePlay\Physics\Character</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
