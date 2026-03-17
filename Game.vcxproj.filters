@@ -1029,6 +1029,9 @@
     <ClInclude Include="Source\Engine\GamePlay\Physics\Character\JoltCharacterUpdateSystem.h">
       <Filter>Source\Engine\GamePlay\Physics\Character</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Serialization\Factory\EntityFactory.h">
+      <Filter>Source\Engine\Serialization\Factory</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">

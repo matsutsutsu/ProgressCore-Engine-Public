@@ -20,6 +20,23 @@
 namespace CCL::ECS::Core {
     using namespace CCL::ECS;
 
+    // 前方宣言 (ComponentHandleで使うため)
+    class World;
+
+    // ========================================================================
+    // EntityRef (エンティティ操作用の超軽量ラッパー)
+    // ========================================================================
+    struct EntityRef {
+      World *world;
+      EntityID id;
+
+
+      // ここでは宣言だけにして、中身はファイルの末尾（World定義の後）に書きます
+      template <typename T> EntityRef &Set(T &&component);
+
+      operator EntityID() const { return id; }
+      EntityID ID() const { return id; }
+    };
 
     // ========================================================================
     // リソース管理用の高速IDジェネレータと型安全ラッパー
@@ -47,8 +64,7 @@ namespace CCL::ECS::Core {
         }
     };
 
-    // 前方宣言 (ComponentHandleで使うため)
-    class World;
+
 
     // ========================================================================
     // ComponentHandle
@@ -202,6 +218,11 @@ namespace CCL::ECS::Core {
         // 実際のChunkへの追加は ScrutinyAndApply で行われます。
         EntityID RequestSpawnEntity(const Archetype &archetype);
 
+
+        // ========================================================================
+        // ★ アーキタイプから生成し、軽量ラッパーを返す純粋なSpawn関数
+        // ========================================================================
+        EntityRef Spawn(const Archetype &archetype);
 
       
         // ゲーム側で使う親子関係対応している破棄処理
@@ -508,5 +529,19 @@ namespace CCL::ECS::Core {
         }
         return entities;
     }
+
+    // ★ EntityRef::Set の実装
+    template <typename T> inline EntityRef &EntityRef::Set(T &&component) {
+      // Worldの完全な定義がわかっているので AddComponent が呼べる
+      world->AddComponent<std::decay_t<T>>(id, std::forward<T>(component));
+      return *this;
+    }
+
+    // ★ World::Spawn の実装
+    inline EntityRef World::Spawn(const Archetype &archetype) {
+      EntityID id = RequestSpawnEntity(archetype);
+      return EntityRef{this, id};
+    }
+   
 
 } // namespace CCL::ECS::Core

@@ -3,9 +3,7 @@
 #include <unordered_map>
 #include <string>
 #include "ECS/Common/CCL_Common.h"
-
-// Worldクラスの前方宣言 (ヘッダ読み込み負荷軽減のため)
-namespace CCL::ECS::Core { class World; }
+#include "ECS/Core/CCL_World.h"
 
 using namespace CCL::ECS;
 

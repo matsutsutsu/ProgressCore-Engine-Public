@@ -20,6 +20,7 @@ void EditorScene::Initialize()
     SceneInitializer::SpawnLightStartSet(*_worldPtr, device);
     //SceneInitializer::SpawnGameLightSetting(_world, device);
     Prefab::SpawnPrefab(*_worldPtr, "Assets/GamePlay/Prefabs/Camera/FreeCamera.json");
+    //Prefab::SpawnPrefab(*_worldPtr, "Assets/GamePlay/Prefabs/Camera/FollowCamera.json");
 
 
 

@@ -7,4 +7,8 @@ class InspectorWindow : public EditorWindow {
 
   protected:
     void DrawContents(EditorContext &context) override;
+
+   private:
+    // コンポーネント検索用のバッファ
+    char _compSearchBuffer[256] = {0};
 };

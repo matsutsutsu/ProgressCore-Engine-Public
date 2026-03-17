@@ -102,7 +102,28 @@ void InspectorWindow::DrawContents(EditorContext &context)
 
     for (const auto &typeData : archetype) {
         CCL::ECS::TypeID typeID   = typeData.id;
-        std::string      compName = registry.GetName(typeID);
+
+        // 1. まずは Registry にカスタム名（表示名）が登録されているか確認
+        std::string compName = registry.GetName(typeID);
+
+        // 2. 未登録（Unknown）の場合、C++が自動取得した型名を使う
+        if (compName.find("Unknown") != std::string::npos &&
+            typeData.name != nullptr) {
+            compName = typeData.name; // 例: "struct JoltRigidbodyComponent"
+
+            // MSVCの typeid().name() は先頭に "struct " や "class "
+            // を付ける仕様があるため、それを削って綺麗にする
+            const std::string prefixes[] = {"struct ", "class "};
+            for (const auto &prefix : prefixes) {
+                if (compName.find(prefix) == 0) {
+                  compName.erase(0, prefix.length());
+                  break;
+                }
+            }
+
+          // GUIが未登録（パラメータ編集はできない状態）であることが分かるようにマークを付ける
+          compName += " (No GUI)";
+        }
 
         ImGui::PushID((int)typeID);
         bool headerOpen = ImGui::CollapsingHeader(
@@ -129,16 +150,51 @@ void InspectorWindow::DrawContents(EditorContext &context)
     // --- 新規コンポーネント追加メニュー ---
     if (ImGui::Button("+ Add Component", ImVec2(-1, 30))) {
         ImGui::OpenPopup("AddComponentMenu");
+        // メニューを開いた瞬間に検索ワードをリセットする
+        _compSearchBuffer[0] = '\0';
     }
 
+    // ポップアップの初期サイズを固定し、見栄えを整える
+    ImGui::SetNextWindowSize(ImVec2(280, 400), ImGuiCond_Appearing);
+    
     if (ImGui::BeginPopup("AddComponentMenu")) {
+        // 1. 自動フォーカス付きの検索バー
+        if (ImGui::IsWindowAppearing()) {
+            ImGui::SetKeyboardFocusHere(); // ポップアップが開いた瞬間、自動で文字入力状態にする
+        }
+        ImGui::SetNextItemWidth(-1.0f);
+        ImGui::InputTextWithHint("##CompSearch", "Search Component...", _compSearchBuffer, sizeof(_compSearchBuffer));
+        
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        // 検索文字列の小文字化（大文字小文字を区別せず検索するため）
+        std::string searchStr = _compSearchBuffer;
+        std::transform(searchStr.begin(), searchStr.end(), searchStr.begin(), ::tolower);
+
+        // 2. スクロール可能なリスト領域の開始
+        ImGui::BeginChild("ComponentList", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
+
         auto allAvailableTypes = registry.GetAllTypeIDs();
 
         for (auto typeID : allAvailableTypes) {
+            std::string compName = registry.GetName(typeID);
+
+            // 検索フィルタリング処理
+            if (!searchStr.empty()) {
+                std::string compNameLower = compName;
+                std::transform(compNameLower.begin(), compNameLower.end(), compNameLower.begin(), ::tolower);
+                if (compNameLower.find(searchStr) == std::string::npos) {
+                    continue; // 検索に引っかからなかったコンポーネントは非表示
+                }
+            }
+
+            // 既に持っているコンポーネントはグレーアウトして押せなくする
             bool alreadyHas = world->HasComponent(selected, typeID);
             if (alreadyHas) ImGui::BeginDisabled();
 
-            if (ImGui::Selectable(registry.GetName(typeID).c_str())) {
+            // コンポーネントの選択ボタン
+            if (ImGui::Selectable(compName.c_str())) {
                 auto &entry = registry.GetEntry(typeID);
                 world->RequestAddComponent(selected,
                     typeID,
@@ -148,9 +204,15 @@ void InspectorWindow::DrawContents(EditorContext &context)
                     entry.constructor,
                     entry.assigner,
                     entry.mover);
+                
+                // 追加したら自動でポップアップを閉じる（UX向上）
+                ImGui::CloseCurrentPopup();
             }
+
             if (alreadyHas) ImGui::EndDisabled();
         }
+        ImGui::EndChild(); // スクロール領域終了
         ImGui::EndPopup();
     }
+
 }

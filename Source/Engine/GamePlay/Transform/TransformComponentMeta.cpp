@@ -7,6 +7,34 @@
 
 #include "Engine/Serialization/ComponentSerializers.h"
 
+
+namespace {
+    //  クォータニオン -> オイラー角 (Degree) への変換
+    DirectX::XMFLOAT3 QuatToEulerDegrees(const DirectX::XMFLOAT4 &q) {
+      float pitch =
+          std::asin(std::clamp(2.0f * (q.w * q.x - q.y * q.z), -1.0f, 1.0f));
+      float yaw = std::atan2(2.0f * (q.w * q.y + q.z * q.x),
+                             1.0f - 2.0f * (q.x * q.x + q.y * q.y));
+      float roll = std::atan2(2.0f * (q.w * q.z + q.x * q.y),
+                              1.0f - 2.0f * (q.x * q.x + q.z * q.z));
+    
+      return {DirectX::XMConvertToDegrees(pitch), DirectX::XMConvertToDegrees(yaw),
+              DirectX::XMConvertToDegrees(roll)};
+    }
+    
+    //  オイラー角 (Degree) -> クォータニオンへの変換
+    DirectX::XMFLOAT4 EulerDegreesToQuat(const DirectX::XMFLOAT3 &euler) {
+      DirectX::XMVECTOR qVec = DirectX::XMQuaternionRotationRollPitchYaw(
+          DirectX::XMConvertToRadians(euler.x),
+          DirectX::XMConvertToRadians(euler.y),
+          DirectX::XMConvertToRadians(euler.z));
+      DirectX::XMFLOAT4 result;
+      DirectX::XMStoreFloat4(&result, qVec);
+      return result;
+    }
+} // namespace
+
+
 template <> struct ComponentMeta<TransformComponent> {
     static constexpr bool        registered  = true;
     static constexpr const char *displayName = "Transform";
@@ -21,9 +49,13 @@ template <> struct ComponentMeta<TransformComponent> {
         // 1. 位置
         changed |= ImGui::DragFloat3("Position", &comp.position.x, 0.1f);
 
-        // 2. 回転 (Quaternion -> XYZ Euler変換のUIを将来的に入れるのがAAAの定石です)
-        // 今回は直接四元数を触れるようにしていますが、後日Euler変換UIの実装を推奨します。
-        changed |= ImGui::DragFloat4("Rotation (Quat)", &comp.rotation.x, 0.05f);
+        // 2. Rotation (回転をオイラー角で表示・編集)
+        DirectX::XMFLOAT3 euler = QuatToEulerDegrees(comp.rotation);
+        if (ImGui::DragFloat3("Rotation", &euler.x, 1.0f)) {
+            // 値が変更されたらクォータニオンに戻して保存
+            comp.rotation = EulerDegreesToQuat(euler);
+            changed = true;
+        }
 
         // 3. スケール
         changed |= ImGui::DragFloat3("Scale", &comp.scale.x, 0.1f);
@@ -38,14 +70,8 @@ template <> struct ComponentMeta<TransformComponent> {
     static const std::vector<FieldDescriptor> &Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
-            META_FIELD_FLOAT3(
-                TransformComponent, position, "position", "Position", 0.1f, "Transform"),
-            META_FIELD_FLOAT4(TransformComponent,
-                rotation,
-                "rotation",
-                "Rotation",
-                0.1f,
-                "Transform"), // ComponentMeta.h に META_FIELD_FLOAT4 が必要です
+            META_FIELD_FLOAT3(TransformComponent, position, "position", "Position", 0.1f, "Transform"),
+            META_FIELD_FLOAT4(TransformComponent, rotation, "rotation", "Rotation", 0.1f, "Transform"), 
             META_FIELD_FLOAT3(TransformComponent, scale, "scale", "Scale", 0.1f, "Transform"),
             META_FIELD_BOOL(TransformComponent, isStatic, "isStatic", "Is Static", "Transform")};
         return fields;
@@ -63,11 +89,5 @@ void RegisterTransformMeta()
 
     auto &guiReg = ComponentGuiRegistry::Instance();
     ComponentMetaImGui::RegisterGuiMeta<TransformComponent>(guiReg);
-
-    // ★ デバッグ出力：登録側の真実
-    std::string log =
-        "[Register] Transform ID: " + std::to_string(CCL::ECS::TypeInfo<TransformComponent>::ID()) +
-        " | GuiReg Addr: " + std::to_string(reinterpret_cast<uintptr_t>(&guiReg)) + "\n";
-    OutputDebugStringA(log.c_str());
 
 }

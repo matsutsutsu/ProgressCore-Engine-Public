@@ -19,7 +19,7 @@ class GPUParticleRenderSystem : public CCL::ECS::IfSystem<GPUParticleRenderSyste
   public:
     GPUParticleRenderSystem() : IfSystem("GPUParticleRenderSystem") {}
 
-    GPUParticleRenderSystem::~GPUParticleRenderSystem()
+    ~GPUParticleRenderSystem()
     {
         // デストラクタでリソース解放を呼ぶ
         ReleaseAllResources();

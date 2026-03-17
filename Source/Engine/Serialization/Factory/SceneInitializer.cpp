@@ -2,6 +2,7 @@
 #include "ECS/Common/CCL_Common.h"
 #include "Game/Core/AllComponents.h"
 #include "Engine/Serialization/Factory/Prefab.h"
+#include "Engine/Serialization/Factory/EntityFactory.h"
 #include <random>
 #include <vector>
 
@@ -152,132 +153,63 @@ void SceneInitializer::SpawnJoltTest(CCL::ECS::Core::World &world, ID3D11Device 
     // ──────────────────────────────────────────
     // 1. 床の生成 (Box)
     // ──────────────────────────────────────────
-    auto floorArchetype = ArchetypeHelper::Generate<TransformComponent,
+    const auto floorArch = ArchetypeHelper::Generate<
+        TransformComponent,
         PrimitiveComponent,
-        JoltRigidbodyComponent,  // 物理の性質（重さ、摩擦など）
-        JoltBoxColliderComponent // 物理の形（箱）
-        >();
-    auto floorEntity    = world.RequestSpawnEntity(floorArchetype);
+        JoltRigidbodyComponent,
+        JoltBoxColliderComponent
+    >();
 
-    TransformComponent floorTrans;
-    floorTrans.position = {0.0f, -2.0f, 0.0f};
-    floorTrans.rotation = {0.0f, 0.0f, 0.0f, 1.0f};
-    floorTrans.scale    = {1.0f, 1.0f, 1.0f};
-    world.AddComponent<TransformComponent>(floorEntity, floorTrans);
+    auto floor = EntityFactory::SpawnNamed(world, "Floor_Box", floorArch);
 
-    // 物理の「性質」を設定
-    JoltRigidbodyComponent floorRigidbody;
-    floorRigidbody.motionType  = JPH::EMotionType::Static; // 動かない
-    floorRigidbody.objectLayer = PhysicsLayers::NON_MOVING;
-    world.AddComponent<JoltRigidbodyComponent>(floorEntity, floorRigidbody);
+    floor.Set(TransformComponent{ .position = {0.0f, -2.0f, 0.0f}, .rotation = {0.0f, 0.0f, 0.0f, 1.0f}, .scale = {1.0f, 1.0f, 1.0f} })
+         .Set(JoltRigidbodyComponent{ .motionType = JPH::EMotionType::Static, .objectLayer = PhysicsLayers::NON_MOVING })
+         .Set(JoltBoxColliderComponent{ .halfExtent = {50.0f, 1.0f, 50.0f} })
+         .Set(PrimitiveComponent{ .type = PrimitiveType::Box, .size = {50.0f, 1.0f, 50.0f}, .color = {0.5f, 0.5f, 0.5f, 1.0f} });
 
-    // 物理の「形」を設定
-    JoltBoxColliderComponent floorCollider;
-    floorCollider.halfExtent = {50.0f, 1.0f, 50.0f}; // 半分のサイズ
-    world.AddComponent<JoltBoxColliderComponent>(floorEntity, floorCollider);
-
-    // 描画の設定
-    PrimitiveComponent floorPrim;
-    floorPrim.type  = PrimitiveType::Box;
-    floorPrim.size  = {50.0f, 1.0f, 50.0f}; // 前回確認した通り、描画も2倍せずに合わせる
-    floorPrim.color = {0.5f, 0.5f, 0.5f, 1.0f};
-    world.AddComponent<PrimitiveComponent>(floorEntity, floorPrim);
 
     // ──────────────────────────────────────────
     // 2. 落下する球の生成 (Sphere)
     // ──────────────────────────────────────────
-    auto sphereArchetype = ArchetypeHelper::Generate<TransformComponent,
+    const auto sphereArch = ArchetypeHelper::Generate<
+        TransformComponent,
         PrimitiveComponent,
-        JoltRigidbodyComponent,     // 物理の性質
-        JoltSphereColliderComponent // 物理の形（球）
-        >();
-    auto sphereEntity    = world.RequestSpawnEntity(sphereArchetype);
+        JoltRigidbodyComponent,
+        JoltSphereColliderComponent
+    >();
 
-    TransformComponent sphereTrans;
-    sphereTrans.position = {0.0f, 15.0f, 0.0f};
-    sphereTrans.rotation = {0.0f, 0.0f, 0.0f, 1.0f};
-    sphereTrans.scale    = {1.0f, 1.0f, 1.0f};
-    world.AddComponent<TransformComponent>(sphereEntity, sphereTrans);
+    auto sphere = EntityFactory::SpawnNamed(world, "Bouncing_Sphere", sphereArch);
 
-    // 物理の「性質」を設定
-    JoltRigidbodyComponent sphereRigidbody;
-    sphereRigidbody.motionType  = JPH::EMotionType::Dynamic; // 動く（重力に従う）
-    sphereRigidbody.objectLayer = PhysicsLayers::MOVING;
-    sphereRigidbody.restitution = 0.8f; // よく跳ねるように設定
-    world.AddComponent<JoltRigidbodyComponent>(sphereEntity, sphereRigidbody);
-
-    // 物理の「形」を設定
-    JoltSphereColliderComponent sphereCollider;
-    sphereCollider.radius = 1.0f;
-    world.AddComponent<JoltSphereColliderComponent>(sphereEntity, sphereCollider);
-
-    // 描画の設定
-    PrimitiveComponent spherePrim;
-    spherePrim.type   = PrimitiveType::Sphere;
-    spherePrim.radius = 1.0f;
-    spherePrim.color  = {1.0f, 0.2f, 0.2f, 1.0f};
-    world.AddComponent<PrimitiveComponent>(sphereEntity, spherePrim);
+    sphere.Set(TransformComponent{ .position = {0.0f, 15.0f, 0.0f}, .rotation = {0.0f, 0.0f, 0.0f, 1.0f}, .scale = {1.0f, 1.0f, 1.0f} })
+          .Set(JoltRigidbodyComponent{ .motionType = JPH::EMotionType::Dynamic, .objectLayer = PhysicsLayers::MOVING, .restitution = 0.8f })
+          .Set(JoltSphereColliderComponent{ .radius = 1.0f })
+          .Set(PrimitiveComponent{ .type = PrimitiveType::Sphere, .radius = 1.0f, .color = {1.0f, 0.2f, 0.2f, 1.0f} });
 
 
     // ──────────────────────────────────────────
     // 3. テスト用プレイヤー (CharacterVirtual) の生成
     // ──────────────────────────────────────────
+    const auto playerArch = ArchetypeHelper::Generate<
+        TransformComponent, 
+        PrimitiveComponent,
+        PlayerComponent,
+        JoltCharacterConfigComponent, // ★修正: パフォーマンス低下を防ぐため設計図に含める
+        JoltCapsuleColliderComponent,
+        ModelComponent,   
+        AnimatorComponent 
+    >();
 
-    // PlayerMoveSystem の動作条件を満たすため、モデルとアニメーターも要求する
-    auto playerArchetype =
-        ArchetypeHelper::Generate<TransformComponent, PrimitiveComponent,
-                                  PlayerComponent,
-                                  JoltCapsuleColliderComponent,
-                                  ModelComponent,   
-                                  AnimatorComponent 
-                                  >();
-    auto playerEntity = world.RequestSpawnEntity(playerArchetype);
+    auto player = EntityFactory::SpawnNamed(world, "Test_Player", playerArch);
 
-    // 1. 座標 (少し高い位置からスポーンさせる)
-    TransformComponent playerTrans;
-    playerTrans.position = {0.0f, 5.0f, 0.0f};
-    playerTrans.rotation = {0.0f, 0.0f, 0.0f, 1.0f};
-    playerTrans.scale = {1.0f, 1.0f, 1.0f};
-    world.AddComponent<TransformComponent>(playerEntity, playerTrans);
-
-    // 2. プレイヤーの操作パラメータ
-    PlayerComponent playerComp;
-    playerComp.moveSpeed = 6.0f;
-    playerComp.turnSpeed = 10.0f;
-    world.AddComponent<PlayerComponent>(playerEntity, playerComp);
-
-    // 3. Joltのキャラクター性能設計図
-    JoltCharacterConfigComponent charConfig;
-    charConfig.maxSlopeAngle = 45.0f;
-    charConfig.maxStepHeight = 0.5f;
-    charConfig.walkSpeed = 6.0f;
-    charConfig.jumpSpeed = 10.0f;
-    charConfig.characterMass = 70.0f;
-    world.AddComponent<JoltCharacterConfigComponent>(playerEntity, charConfig);
-
-    // 4. Joltの物理形状（カプセル）
-    JoltCapsuleColliderComponent capsuleCollider;
-    capsuleCollider.halfHeight = 0.5f; // 全長 2.0m (0.5*2 + 半径0.5*2)
-    capsuleCollider.radius = 0.5f;
-    world.AddComponent<JoltCapsuleColliderComponent>(playerEntity,
-                                                     capsuleCollider);
-
-    // 5. 仮の見た目（カプセルのプリミティブ描画）
-    // ※ShapeRendererの実装に合わせてCapsuleが存在しない場合はBoxなどで代用してください
-    PrimitiveComponent playerPrim;
-    playerPrim.type = PrimitiveType::Capsule;
-    playerPrim.size = {0.0f, 1.0f, 0.0f}; // Heightとして代用
-    playerPrim.radius = 0.5f;
-    playerPrim.color = {0.2f, 0.8f, 0.2f, 1.0f}; // プレイヤーは緑色
-    world.AddComponent<PrimitiveComponent>(playerEntity, playerPrim);
-
-    // 6. ダミーのモデル＆アニメーター
-    // 本来はここで実際のプレイヤーモデルをロードしますが、今回はnullでシステムを騙します
+    // ※ ModelComponent は SetModel() という関数呼び出しが必要なため、一度変数を作ってから流し込む
     ModelComponent modelComp;
-    //modelComp.assetPath = "Assets/Models/Player.glb"; // 将来的にロードするモデルのパスを指定しておく
-    modelComp.SetModel("Assets/Models/Player/Player.glb"); // これで将来モデルがロードされるようになる（今はnullのまま）
-    world.AddComponent<ModelComponent>(playerEntity, modelComp);
+    modelComp.SetModel("Assets/Models/Player/Player.glb");
 
-    AnimatorComponent animatorComp;
-    world.AddComponent<AnimatorComponent>(playerEntity, animatorComp);
+    player.Set(TransformComponent{ .position = {0.0f, 5.0f, 0.0f}, .rotation = {0.0f, 0.0f, 0.0f, 1.0f}, .scale = {1.0f, 1.0f, 1.0f} })
+          .Set(PlayerComponent{ .moveSpeed = 6.0f, .turnSpeed = 10.0f })
+          .Set(JoltCharacterConfigComponent{ .maxSlopeAngle = 45.0f, .maxStepHeight = 0.5f, .walkSpeed = 6.0f, .jumpSpeed = 10.0f, .characterMass = 70.0f })
+          .Set(JoltCapsuleColliderComponent{ .halfHeight = 0.5f, .radius = 0.5f })
+          .Set(PrimitiveComponent{ .type = PrimitiveType::Capsule, .size = {0.0f, 1.0f, 0.0f}, .radius = 0.5f, .color = {0.2f, 0.8f, 0.2f, 1.0f} })
+          .Set(std::move(modelComp)) // 作っておいた ModelComponent をムーブ（無駄なコピー回避）
+          .Set(AnimatorComponent{}); // 空の初期化
 }

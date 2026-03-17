@@ -149,8 +149,14 @@ void HierarchyWindow::DrawEntityNode(CCL::ECS::EntityID                         
 
     bool opened = ImGui::TreeNodeEx((void *)(uintptr_t)entityID, flags, name.c_str());
 
-    if (ImGui::IsItemClicked()) {
-        context.selectedEntity = entityID;
+    // マウスの移動距離を計算し、ドラッグかクリックかを判定する
+    float dragDistSqr = ImGui::GetIO().MouseDragMaxDistanceSqr[0]; // 左クリック中の最大移動距離の2乗
+    float dragThreshold = ImGui::GetIO().MouseDragThreshold;       // ドラッグと判定される標準のしきい値
+    bool isCleanClick = dragDistSqr < (dragThreshold * dragThreshold);
+
+    // マウスを「離した瞬間」かつ「純粋なクリック（ドラッグのしきい値を超えていない）」時だけ選択
+    if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(0) && isCleanClick) {
+        context.selectedEntity = entityID; 
     }
 
     // ドラッグ＆ドロップ操作 (検索中は無効化するのが安全)

@@ -6,6 +6,7 @@
 #include "Engine/GamePlay/Camera/VirtualCameraComponents.h"
 
 #include "Engine/Serialization/ComponentSerializers.h"
+#include <algorithm> // std::max用
 
 // ============================================================================
 // Virtual Camera Base
@@ -28,39 +29,104 @@ template <> struct ComponentMeta<VirtualCamera> {
 };
 
 // ============================================================================
-// Camera Body Follow
+// Camera Body Follow (D&D対応)
 // ============================================================================
 template <> struct ComponentMeta<CameraBodyFollow> {
     static constexpr bool        registered  = true;
     static constexpr const char *displayName = "Camera Body (Follow)";
+    static constexpr bool        hasCustomGui = true; // カスタムGUIを有効化
+
+    static bool CustomGui(CameraBodyFollow &comp)
+    {
+        bool changed = false;
+
+        ImGui::SeparatorText("Target Link");
+        
+        // Target IDの直接入力
+        int targetInt = static_cast<int>(comp.target);
+        if (ImGui::InputInt("Target ID", &targetInt)) {
+            comp.target = static_cast<unsigned long long>(std::max(0, targetInt));
+            changed = true;
+        }
+
+        //  ドラッグ＆ドロップの「受け皿」の魔法
+        if (ImGui::BeginDragDropTarget()) {
+            // HierarchyWindowから投げられた "HIERARCHY_ENTITY" というタグのデータを受け取る
+            if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
+                unsigned long long droppedID = *(const unsigned long long *)payload->Data;
+                comp.target = droppedID;
+                changed = true;
+            }
+            ImGui::EndDragDropTarget();
+        }
+        
+        // ユーザーへの視覚的ヒント
+        ImGui::TextColored(ImVec4(0.5f, 0.8f, 1.0f, 1.0f), "[ Drop Entity Here from Hierarchy ]");
+        
+        ImGui::SeparatorText("Follow Settings");
+        changed |= ImGui::DragFloat3("Follow Offset", &comp.offset.x, 0.1f);
+        changed |= ImGui::DragFloat("Damping (遅延)", &comp.damping, 0.1f, 0.0f, 100.0f);
+        changed |= ImGui::Checkbox("Lock Y Height", &comp.lockY);
+
+        return changed;
+    }
 
     static const std::vector<FieldDescriptor> &Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
-            // Target(EntityID)は一旦Intとして扱う
             META_FIELD_INT(CameraBodyFollow, target, "target", "Target Entity ID", 0, 999999, "Follow Settings"),
             META_FIELD_FLOAT3(CameraBodyFollow, offset, "offset", "Follow Offset", 0.1f, "Follow Settings"),
-            META_FIELD_FLOAT(
-                CameraBodyFollow, damping, "damping", "Damping (遅延)", 0.1f, 0.0f, 100.0f, "Follow Settings"),
+            META_FIELD_FLOAT(CameraBodyFollow, damping, "damping", "Damping (遅延)", 0.1f, 0.0f, 100.0f, "Follow Settings"),
             META_FIELD_BOOL(CameraBodyFollow, lockY, "lockY", "Lock Y Height", "Follow Settings")};
         return fields;
     }
 };
 
 // ============================================================================
-// Camera Aim LookAt
+// Camera Aim LookAt (D&D対応)
 // ============================================================================
 template <> struct ComponentMeta<CameraAimLookAt> {
     static constexpr bool        registered  = true;
     static constexpr const char *displayName = "Camera Aim (LookAt)";
+    static constexpr bool        hasCustomGui = true; // カスタムGUIを有効化
+
+    static bool CustomGui(CameraAimLookAt &comp)
+    {
+        bool changed = false;
+
+        ImGui::SeparatorText("Target Link");
+        
+        // Target IDの直接入力
+        int targetInt = static_cast<int>(comp.target);
+        if (ImGui::InputInt("Target ID", &targetInt)) {
+            comp.target = static_cast<unsigned long long>(std::max(0, targetInt));
+            changed = true;
+        }
+
+        //  ドラッグ＆ドロップの「受け皿」
+        if (ImGui::BeginDragDropTarget()) {
+            if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
+                unsigned long long droppedID = *(const unsigned long long *)payload->Data;
+                comp.target = droppedID;
+                changed = true;
+            }
+            ImGui::EndDragDropTarget();
+        }
+        ImGui::TextColored(ImVec4(0.5f, 0.8f, 1.0f, 1.0f), "[ Drop Entity Here from Hierarchy ]");
+
+        ImGui::SeparatorText("Aim Settings");
+        changed |= ImGui::DragFloat3("LookAt Offset", &comp.offset.x, 0.1f);
+        changed |= ImGui::DragFloat("Damping (遅延)", &comp.damping, 0.1f, 0.0f, 100.0f);
+
+        return changed;
+    }
 
     static const std::vector<FieldDescriptor> &Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
             META_FIELD_INT(CameraAimLookAt, target, "target", "Target Entity ID", 0, 999999, "Aim Settings"),
             META_FIELD_FLOAT3(CameraAimLookAt, offset, "offset", "LookAt Offset", 0.1f, "Aim Settings"),
-            META_FIELD_FLOAT(
-                CameraAimLookAt, damping, "damping", "Damping (遅延)", 0.1f, 0.0f, 100.0f, "Aim Settings")};
+            META_FIELD_FLOAT(CameraAimLookAt, damping, "damping", "Damping (遅延)", 0.1f, 0.0f, 100.0f, "Aim Settings")};
         return fields;
     }
 };
