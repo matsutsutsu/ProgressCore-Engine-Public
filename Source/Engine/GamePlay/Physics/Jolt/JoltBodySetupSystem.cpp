@@ -62,6 +62,18 @@ void JoltBodySetupSystem::Update(float dt)
         bodySettings.mRestitution = rigid.restitution;
         bodySettings.mFriction    = rigid.friction;
 
+        // =========================================================
+        //  Joltに初速と詳細設定を叩き込む！
+        // =========================================================
+        bodySettings.mLinearVelocity = JPH::Vec3(rigid.initialVelocity.x, rigid.initialVelocity.y, rigid.initialVelocity.z);
+        bodySettings.mGravityFactor  = rigid.gravityFactor;
+        bodySettings.mIsSensor       = rigid.isSensor;
+
+        // 弾が高速すぎて壁をすり抜ける（トンネリング）現象を防ぐ最高品質の計算
+        if (rigid.useCCD) {
+            bodySettings.mMotionQuality = JPH::EMotionQuality::LinearCast;
+        }
+
         JPH::Body *body = bodyInterface.CreateBody(bodySettings);
 
         // Static(静的)なものは最初からスリープ状態で空間に追加し、無駄な計算を省く

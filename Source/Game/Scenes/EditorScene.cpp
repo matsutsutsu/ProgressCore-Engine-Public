@@ -19,9 +19,7 @@ void EditorScene::Initialize()
     ID3D11Device *device = Graphics::Instance().GetDevice();
     SceneInitializer::SpawnLightStartSet(*_worldPtr, device);
     //SceneInitializer::SpawnGameLightSetting(_world, device);
-    Prefab::SpawnPrefab(*_worldPtr, "Assets/GamePlay/Prefabs/Camera/FreeCamera.json");
-    //Prefab::SpawnPrefab(*_worldPtr, "Assets/GamePlay/Prefabs/Camera/FollowCamera.json");
-
+    //Prefab::SpawnPrefab(*_worldPtr, "Assets/GamePlay/Prefabs/Camera/FreeCamera.json");
 
 
     //SceneInitializer::SpawnTransformLoadTest(*_worldPtr, device, 100000);

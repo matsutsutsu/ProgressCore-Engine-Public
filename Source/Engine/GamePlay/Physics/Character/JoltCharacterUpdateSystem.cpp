@@ -6,18 +6,18 @@
 #include "Game/Core/SystemPriority.h"
 
 void JoltCharacterUpdateSystem::Update(float dt) {
-  if (!_world->HasResource<JoltPhysicsManager>())
-    return;
-  auto &joltManager = _world->GetResource<JoltPhysicsManager>();
-  JPH::PhysicsSystem *physicsSystem = joltManager.GetPhysicsSystem();
-  JPH::TempAllocator *tempAllocator = joltManager.GetTempAllocator();
+    if (!_world->HasResource<JoltPhysicsManager>())
+      return;
+    auto &joltManager = _world->GetResource<JoltPhysicsManager>();
+    JPH::PhysicsSystem *physicsSystem = joltManager.GetPhysicsSystem();
+    JPH::TempAllocator *tempAllocator = joltManager.GetTempAllocator();
 
-  // キャラクターのアップデート設定（重力に対する姿勢制御など）
-  JPH::CharacterVirtual::ExtendedUpdateSettings updateSettings;
+    // キャラクターのアップデート設定（重力に対する姿勢制御など）
+    JPH::CharacterVirtual::ExtendedUpdateSettings updateSettings;
 
-  // 全コアを使って並列でキャラクターの衝突計算を行う
-  ForEachParallel([&](TransformComponent &trans,
-                      const JoltCharacterHandleComponent &handle) {
+    // 全コアを使って並列でキャラクターの衝突計算を行う
+    ForEachParallel([&](TransformComponent &trans,
+                        const JoltCharacterHandleComponent &handle) {
     if (!handle.character)
       return;
 
@@ -39,4 +39,4 @@ void JoltCharacterUpdateSystem::Update(float dt) {
 }
 
 // 物理のStepが走る前、または同じPhysicsフェーズで実行する
-REGISTER_LOGIC_SYSTEM(JoltCharacterUpdateSystem, Priority::LogicStage::Physics);
+REGISTER_LOGIC_SYSTEM(JoltCharacterUpdateSystem, Priority::LogicStage::PrePhysics);

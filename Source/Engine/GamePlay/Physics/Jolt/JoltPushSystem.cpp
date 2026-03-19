@@ -11,38 +11,27 @@ void JoltPushSystem::Update(float dt)
     auto               &joltManager   = _world->GetResource<JoltPhysicsManager>();
     JPH::BodyInterface &bodyInterface = joltManager.GetBodyInterface();
 
-    // ★あなたの強力なJobSystemを使って全コアで並列検知を行う
-    ForEachParallel([&](const TransformComponent &trans, const JoltHandleComponent &joltBody) {
-        // Jolt側の現在の座標を取得
-        JPH::RVec3 joltPos;
-        JPH::Quat  joltRot;
-        bodyInterface.GetPositionAndRotation(joltBody.bodyID, joltPos, joltRot);
+    // 削除予定のエンティティIDを記録するリスト
+    std::vector<CCL::ECS::EntityID> completedRequests;
 
-        // ECS側の座標とJolt側の座標の「距離の二乗（高速な比較）」を計算
-        DirectX::XMVECTOR ecsP =
-            DirectX::XMVectorSet(trans.position.x, trans.position.y, trans.position.z, 0.0f);
-        DirectX::XMVECTOR joltP =
-            DirectX::XMVectorSet(joltPos.GetX(), joltPos.GetY(), joltPos.GetZ(), 0.0f);
+    // ★手紙(TeleportRequest)を持っているエンティティだけがここに流れてくる（超高速）
+    ForEachWithID([&](CCL::ECS::EntityID id, const JoltHandleComponent &joltBody, const JoltTeleportRequest &request) {
+       
+        // Joltの剛体を指定の座標へ強制ワープさせる
+        bodyInterface.SetPosition(
+            joltBody.bodyID,
+            JPH::RVec3(request.targetPosition.x, request.targetPosition.y, request.targetPosition.z),
+            JPH::EActivation::Activate // ワープ後はスリープを解除
+        );
 
-        DirectX::XMVECTOR distSqVec =
-            DirectX::XMVector3LengthSq(DirectX::XMVectorSubtract(ecsP, joltP));
-        float distSq;
-        DirectX::XMStoreFloat(&distSq, distSqVec);
-
-        // 許容誤差（0.0001f =
-        // 1cmのズレ）を超えていたら、ゲームロジックによって強制移動させられたと判定
-        const float DISTANCE_THRESHOLD_SQ = 0.0001f;
-
-        if (distSq > DISTANCE_THRESHOLD_SQ) {
-            // ECSの座標でJoltの剛体を上書き（テレポート）する
-            bodyInterface.SetPositionAndRotation(joltBody.bodyID,
-                JPH::RVec3(trans.position.x, trans.position.y, trans.position.z),
-                JPH::Quat(trans.rotation.x, trans.rotation.y, trans.rotation.z, trans.rotation.w),
-                JPH::EActivation::
-                    Activate // ★重要: ワープしたのだからスリープを強制解除して物理計算を再開させる
-            );
-        }
+        // 処理が終わったのでリストに追加
+        completedRequests.push_back(id);
     });
+
+    // 処理済みのエンティティから手紙(コンポーネント)を剥がす（次フレーム以降は無視される）
+    for (auto id : completedRequests) {
+      _world->RequestRemoveComponent<JoltTeleportRequest>(id);
+    }
 }
 
 // ======================================================================

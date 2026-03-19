@@ -34,6 +34,9 @@ namespace CCL::ECS::Core {
       // ここでは宣言だけにして、中身はファイルの末尾（World定義の後）に書きます
       template <typename T> EntityRef &Set(T &&component);
 
+      // すでに持っているコンポーネントの中身をラムダ式で書き換える
+      template <typename T, typename Func> EntityRef &Patch(Func &&func);
+
       operator EntityID() const { return id; }
       EntityID ID() const { return id; }
     };
@@ -537,6 +540,13 @@ namespace CCL::ECS::Core {
     template <typename T> inline EntityRef &EntityRef::Set(T &&component) {
       // Worldの完全な定義がわかっているので AddComponent が呼べる
       world->AddComponent<std::decay_t<T>>(id, std::forward<T>(component));
+      return *this;
+    }
+
+    template <typename T, typename Func>
+    inline EntityRef &EntityRef::Patch(Func &&func) 
+    {
+      world->PatchComponent<T>(id, std::forward<Func>(func));
       return *this;
     }
 

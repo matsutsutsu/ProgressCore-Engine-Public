@@ -162,7 +162,7 @@ void SceneInitializer::SpawnJoltTest(CCL::ECS::Core::World &world, ID3D11Device 
 
     auto floor = EntityFactory::SpawnNamed(world, "Floor_Box", floorArch);
 
-    floor.Set(TransformComponent{ .position = {0.0f, -2.0f, 0.0f}, .rotation = {0.0f, 0.0f, 0.0f, 1.0f}, .scale = {1.0f, 1.0f, 1.0f} })
+    floor.Set(TransformComponent{ .position = {0.0f, 0.0f, 0.0f}, .rotation = {0.0f, 0.0f, 0.0f, 1.0f}, .scale = {1.0f, 1.0f, 1.0f} })
          .Set(JoltRigidbodyComponent{ .motionType = JPH::EMotionType::Static, .objectLayer = PhysicsLayers::NON_MOVING })
          .Set(JoltBoxColliderComponent{ .halfExtent = {50.0f, 1.0f, 50.0f} })
          .Set(PrimitiveComponent{ .type = PrimitiveType::Box, .size = {50.0f, 1.0f, 50.0f}, .color = {0.5f, 0.5f, 0.5f, 1.0f} });
@@ -181,7 +181,12 @@ void SceneInitializer::SpawnJoltTest(CCL::ECS::Core::World &world, ID3D11Device 
     auto sphere = EntityFactory::SpawnNamed(world, "Bouncing_Sphere", sphereArch);
 
     sphere.Set(TransformComponent{ .position = {0.0f, 15.0f, 0.0f}, .rotation = {0.0f, 0.0f, 0.0f, 1.0f}, .scale = {1.0f, 1.0f, 1.0f} })
-          .Set(JoltRigidbodyComponent{ .motionType = JPH::EMotionType::Dynamic, .objectLayer = PhysicsLayers::MOVING, .restitution = 0.8f })
+          .Set(JoltRigidbodyComponent{
+            .motionType = JPH::EMotionType::Dynamic, 
+            .objectLayer = PhysicsLayers::MOVING, 
+            .restitution = 0.8f,
+            .initialVelocity = {0.0f, -5.0f, 0.0f},
+            .gravityFactor = 1.0f })
           .Set(JoltSphereColliderComponent{ .radius = 1.0f })
           .Set(PrimitiveComponent{ .type = PrimitiveType::Sphere, .radius = 1.0f, .color = {1.0f, 0.2f, 0.2f, 1.0f} });
 
@@ -212,4 +217,12 @@ void SceneInitializer::SpawnJoltTest(CCL::ECS::Core::World &world, ID3D11Device 
           .Set(PrimitiveComponent{ .type = PrimitiveType::Capsule, .size = {0.0f, 1.0f, 0.0f}, .radius = 0.5f, .color = {0.2f, 0.8f, 0.2f, 1.0f} })
           .Set(std::move(modelComp)) // 作っておいた ModelComponent をムーブ（無駄なコピー回避）
           .Set(AnimatorComponent{}); // 空の初期化
+
+    // 2. カメラの生成とターゲット設定が、一気に書ける！
+    auto camera = EntityFactory::SpawnPrefab(world, "Assets/GamePlay/Prefabs/Camera/PlayerFollowCamera.json");
+    
+    // player.ID() を渡してメソッドチェーンでPatchする
+    camera.Patch<CameraBodyFollow>([pid = player.ID()](auto& body) { body.target = pid; })
+          .Patch<CameraAimLookAt> ([pid = player.ID()](auto& aim)  { aim.target = pid; });
+
 }
