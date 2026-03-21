@@ -19,6 +19,8 @@
 #include "Engine/GamePlay/Physics/Character/JoltCharacterConfigComponent.h"
 
 
+#include "Game/Logics/Character/Enemy/EnemyComponent.h"
+
 // カメラ
 
 #include "Engine/GamePlay/Camera/VirtualCameraComponents.h"

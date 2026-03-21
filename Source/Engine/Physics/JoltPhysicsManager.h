@@ -15,14 +15,20 @@
 #include <memory>
 
 // ──────────────────────────────────────────────
-// 1. レイヤー定義（HelloWorld_JP.cpp 準拠）
+// 1. レイヤー定義
 // ──────────────────────────────────────────────
+
+// --- 1. 住人の種類 (ObjectLayer) ---
+// ObjectLayer は「この物体が何者か」を定義するためのレイヤーです。
 namespace PhysicsLayers {
     static constexpr JPH::ObjectLayer NON_MOVING = 0; // 静的オブジェクト（壁、床）
     static constexpr JPH::ObjectLayer MOVING     = 1; // 動的オブジェクト（キャラ、弾）
     static constexpr JPH::ObjectLayer NUM_LAYERS = 2;
 } // namespace PhysicsLayers
 
+// --- 2. 空間のバケツ (BroadPhaseLayer) ---
+// BroadPhaseLayer は「この物体がどんな空間にいるか」を定義するためのレイヤーです。
+// 普通になんの性質を持っているかのレイヤーの区分
 namespace BroadPhaseLayers {
     static constexpr JPH::BroadPhaseLayer NON_MOVING(0);
     static constexpr JPH::BroadPhaseLayer MOVING(1);

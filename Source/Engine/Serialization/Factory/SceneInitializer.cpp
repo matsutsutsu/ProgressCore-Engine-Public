@@ -226,3 +226,89 @@ void SceneInitializer::SpawnJoltTest(CCL::ECS::Core::World &world, ID3D11Device 
           .Patch<CameraAimLookAt> ([pid = player.ID()](auto& aim)  { aim.target = pid; });
 
 }
+
+void SceneInitializer::SpawnEnemySwarmTest(CCL::ECS::Core::World &world, ID3D11Device *device, int count)
+{
+   
+    // ──────────────────────────────────────────
+    // 3. テスト用プレイヤー (CharacterVirtual) の生成
+    // ──────────────────────────────────────────
+    const auto playerArch = ArchetypeHelper::Generate<
+        TransformComponent, 
+        PrimitiveComponent,
+        PlayerComponent,
+        JoltCharacterConfigComponent, // ★修正: パフォーマンス低下を防ぐため設計図に含める
+        JoltCapsuleColliderComponent,
+        ModelComponent,   
+        AnimatorComponent 
+    >();
+
+    auto player = EntityFactory::SpawnNamed(world, "Test_Player", playerArch);
+
+    // ※ ModelComponent は SetModel() という関数呼び出しが必要なため、一度変数を作ってから流し込む
+    ModelComponent modelComp;
+    modelComp.SetModel("Assets/Models/Player/Player.glb");
+
+    player.Set(TransformComponent{ .position = {0.0f, 5.0f, 0.0f}, .rotation = {0.0f, 0.0f, 0.0f, 1.0f}, .scale = {1.0f, 1.0f, 1.0f} })
+          .Set(PlayerComponent{ .moveSpeed = 6.0f, .turnSpeed = 10.0f })
+          .Set(JoltCharacterConfigComponent{ .maxSlopeAngle = 45.0f, .maxStepHeight = 0.5f, .walkSpeed = 6.0f, .jumpSpeed = 10.0f, .characterMass = 70.0f })
+          .Set(JoltCapsuleColliderComponent{ .halfHeight = 0.5f, .radius = 0.5f })
+          .Set(PrimitiveComponent{ .type = PrimitiveType::Capsule, .size = {0.0f, 1.0f, 0.0f}, .radius = 0.5f, .color = {0.2f, 0.8f, 0.2f, 1.0f} })
+          .Set(std::move(modelComp)) // 作っておいた ModelComponent をムーブ（無駄なコピー回避）
+          .Set(AnimatorComponent{}); // 空の初期化
+
+    // 2. カメラの生成とターゲット設定が、一気に書ける！
+    auto camera = EntityFactory::SpawnPrefab(world, "Assets/GamePlay/Prefabs/Camera/PlayerFollowCamera.json");
+    
+    // player.ID() を渡してメソッドチェーンでPatchする
+    camera.Patch<CameraBodyFollow>([pid = player.ID()](auto& body) { body.target = pid; })
+          .Patch<CameraAimLookAt> ([pid = player.ID()](auto& aim)  { aim.target = pid; });
+
+
+    // ──────────────────────────────────────────
+    // 1. 床の生成 (Box)
+    // ──────────────────────────────────────────
+    const auto floorArch = ArchetypeHelper::Generate<
+        TransformComponent,
+        PrimitiveComponent,
+        JoltRigidbodyComponent,
+        JoltBoxColliderComponent
+    >();
+
+    auto floor = EntityFactory::SpawnNamed(world, "Floor_Box", floorArch);
+
+    floor.Set(TransformComponent{ .position = {0.0f, 0.0f, 0.0f}, .rotation = {0.0f, 0.0f, 0.0f, 1.0f}, .scale = {1.0f, 1.0f, 1.0f} })
+         .Set(JoltRigidbodyComponent{ .motionType = JPH::EMotionType::Static, .objectLayer = PhysicsLayers::NON_MOVING })
+         .Set(JoltBoxColliderComponent{ .halfExtent = {50.0f, 1.0f, 50.0f} })
+         .Set(PrimitiveComponent{ .type = PrimitiveType::Box, .size = {50.0f, 1.0f, 50.0f}, .color = {0.5f, 0.5f, 0.5f, 1.0f} });
+
+
+    // 2. 敵の「設計図（Archetype）」をコード上で定義
+    const auto enemyArch = ArchetypeHelper::Generate<
+        TransformComponent,
+        PrimitiveComponent,         // 描画用（赤色カプセル）
+        JoltRigidbodyComponent,     // 物理の性質
+        JoltCapsuleColliderComponent, // 当たり判定の形
+        EnemyComponent              // 追従AI用
+    >();
+
+    std::mt19937 gen(12345);
+    // プレイヤーの周囲半径50mにランダム配置
+    std::uniform_real_distribution<float> xzDist(-50.0f, 50.0f); 
+
+    // 3. 圧倒的スピードでメモリに叩き込む
+    for (int i = 0; i < count; ++i) {
+        // EntityFactoryのSpawnNamedで名前付き生成
+        auto ref = EntityFactory::SpawnNamed(world, "SwarmEnemy", enemyArch);
+
+        ref.Set(TransformComponent{ .position = {xzDist(gen), 2.0f, xzDist(gen)}, .scale = {1.0f, 1.0f, 1.0f} })
+           .Set(EnemyComponent{ .moveSpeed = (4.0f + (i % 3)) }) // 少しずつ速度を変えてバラけさせる
+           .Set(JoltRigidbodyComponent{ 
+               .motionType = JPH::EMotionType::Dynamic, 
+               .objectLayer = PhysicsLayers::MOVING,
+               .friction = 0.0f // ★重要: 敵同士が渋滞して引っかからないよう摩擦はゼロにする
+            })
+           .Set(JoltCapsuleColliderComponent{ .halfHeight = 0.5f, .radius = 0.4f })
+           .Set(PrimitiveComponent{ .type = PrimitiveType::Capsule, .size = {0.0f, 1.0f, 0.0f}, .radius = 0.4f, .color = {1.0f, 0.0f, 0.0f, 1.0f} });
+    }
+}

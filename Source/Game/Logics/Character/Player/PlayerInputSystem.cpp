@@ -117,7 +117,7 @@ void PlayerInputSystem::Update(float dt)
     }
 
     ForEach([&](PlayerComponent &players) {
-        // --- ★修正: 移動入力の同時押し対策 ---
+        // --- 移動入力の同時押し対策 ---
         float moveX = 0.0f;
         float moveZ = 0.0f;
 

@@ -9,6 +9,8 @@
 
 using namespace JPH;
 
+#define PhysicsPerformanceCounters 1 // パフォーマンスを最大限対応にする
+
 // --- デバッグ用コールバック ---
 static void TraceImpl(const char *inFMT, ...)
 {
@@ -46,6 +48,7 @@ static bool AssertFailedImpl(
 // --- フィルター実装 ---
 BPLayerInterfaceImpl::BPLayerInterfaceImpl()
 {
+    // 「ObjectLayerのMOVING」を持った奴は、「BroadPhaseのMOVINGバケツ」に入れろ！という指示
     mObjectToBroadPhase[PhysicsLayers::NON_MOVING] = BroadPhaseLayers::NON_MOVING;
     mObjectToBroadPhase[PhysicsLayers::MOVING]     = BroadPhaseLayers::MOVING;
 }
@@ -79,9 +82,12 @@ bool ObjectVsBroadPhaseLayerFilterImpl::ShouldCollide(
 bool ObjectLayerPairFilterImpl::ShouldCollide(ObjectLayer inObject1, ObjectLayer inObject2) const
 {
     switch (inObject1) {
-    case PhysicsLayers::NON_MOVING: return inObject2 == PhysicsLayers::MOVING;
-    case PhysicsLayers::MOVING: return true;
-    default: JPH_ASSERT(false); return false;
+    case PhysicsLayers::NON_MOVING: 
+        return inObject2 == PhysicsLayers::MOVING; // 壁は、動くモノ(MOVING)とだけ当たる
+    case PhysicsLayers::MOVING: 
+        return true;                               // 動くモノは、全員と当たる
+    default: JPH_ASSERT(false); 
+        return false;
     }
 }
 
@@ -92,6 +98,8 @@ JoltPhysicsManager::~JoltPhysicsManager()
     if (!m_isInitialized) return;
 
     // 解放順序は「作成の逆」でなければ絶対にクラッシュします
+    // Systemを先に開放しないと、Systemの中で使っているAllocatorやFilterが先に消えてしまい、
+    // Systemのデストラクタでアクセス違反になる
     m_physicsSystem.reset();
     m_jobSystem.reset();
     m_tempAllocator.reset();
@@ -116,15 +124,46 @@ void JoltPhysicsManager::Initialize()
     RegisterTypes();
 
     // 3. 一時アロケータ (10MB) と ジョブシステムの構築
+    // TempAllocatorは毎フレーム出る衝突点のリストなどの一時的なデータを
+    // 確保するためで毎回newせずに、フレームの最後に一括でリセットして再利用するスタイル 
+    
+    #if PhysicsPerformanceCounters
+    // 50 * 1024 * 1024 = 約50MBの計算用スクラッチメモリ
+    m_tempAllocator = std::make_unique<JPH::TempAllocatorImpl>(50 * 1024 * 1024);
+
+    #else
+
     m_tempAllocator = std::make_unique<TempAllocatorImpl>(10 * 1024 * 1024);
+    #endif
+
+
+    // ジョブシステムは、物理計算を複数のCPUコアで並列に走らせるためのもの
     m_jobSystem     = std::make_unique<JobSystemThreadPool>(
         cMaxPhysicsJobs, cMaxPhysicsBarriers, std::thread::hardware_concurrency() - 1);
 
     // 4. 物理システムのパラメータ設定
+    
+    #if PhysicsPerformanceCounters
+
+    // 4. 物理システムのパラメータ設定（群衆対応のAAAスケール）
+    const uint cMaxBodies             = 65536; // 最大6万体まで許容
+    const uint cNumBodyMutexes        = 0;     // デフォルトのミューテックス数
+    const uint cMaxBodyPairs          = 65536; // 密集によるペア爆発に備える
+    const uint cMaxContactConstraints = 20480; // 大量に押し合うための接点バッファ
+
+    #else
+
+    // 世界に存在できる最大オブジェクト数
+    // 上限を決めることで内部のデータ構造を効率化しているため、必ず指定する必要があります
     const uint cMaxBodies             = 1024; // サンプル用。本番は65536等に増やす
+    // ボディのロックに使うミューテックスの数（0で自動設定）。多いほど並列処理が効率化しますが、メモリ使用量も増えます。
     const uint cNumBodyMutexes        = 0;
+    // 衝突ペアの上限。これも大きいほど多くの衝突を処理できますが、メモリ使用量が増えます。
     const uint cMaxBodyPairs          = 1024;
+    // 衝突制約の上限。これも大きいほど多くの衝突を処理できますが、メモリ使用量が増えます。
     const uint cMaxContactConstraints = 1024;
+
+    #endif
 
     m_physicsSystem = std::make_unique<PhysicsSystem>();
     m_physicsSystem->Init(cMaxBodies,
@@ -141,6 +180,7 @@ void JoltPhysicsManager::Initialize()
     m_isInitialized = true;
 }
 
+// 毎フレーム呼び出す更新関数
 void JoltPhysicsManager::Step(float deltaTime)
 {
     if (!m_isInitialized) return;
@@ -161,7 +201,7 @@ void JoltPhysicsManager::DrawBodies(ShapeRenderer *shapeRenderer)
     // Joltの描画設定（何を描画するか）
     JPH::BodyManager::DrawSettings settings;
     settings.mDrawBoundingBox = false; // 四角い大枠（AABB）を描画するか
-    settings.mDrawShape       = true;  // 本当の当たり判定を描画するか★
+    settings.mDrawShape       = true;  // 本当の当たり判定を描画するか
     settings.mDrawVelocity    = false; // 速度の矢印を描画するか
 
     // 物理空間内の全ボディを描画する命令を、ShapeRendererに向けて発行！
