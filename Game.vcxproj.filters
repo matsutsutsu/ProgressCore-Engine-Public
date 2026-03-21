@@ -1032,9 +1032,6 @@
     <ClInclude Include="Source\Engine\Serialization\Factory\EntityFactory.h">
       <Filter>Source\Engine\Serialization\Factory</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltTeleportRequest.h">
-      <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">

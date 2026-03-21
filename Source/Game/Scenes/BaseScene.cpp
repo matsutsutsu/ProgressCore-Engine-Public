@@ -90,8 +90,8 @@ void BaseScene::Update(float elapsedTime)
     // Graphics定数バッファ更新 (EditorSceneにあった処理を共通化)
     Graphics::Instance().Update(&camera);
 
-     if (_ecsContext) {
-        _ecsContext->UpdateRender(elapsedTime);
+    if (_ecsContext) {
+       _ecsContext->UpdateRender(elapsedTime);
     }
 
 }

@@ -47,18 +47,26 @@ template <> struct ComponentMeta<TransformComponent> {
         bool changed = false;
 
         // 1. 位置
-        changed |= ImGui::DragFloat3("Position", &comp.position.x, 0.1f);
+        if (ImGui::DragFloat3("Position", &comp.position.x, 0.1f)) {
+            comp.isTeleported = true; // ★ImGuiで動かしたら物理エンジンにもワープを指示
+            comp.isStatic = false;
+            changed = true;
+        }
 
         // 2. Rotation (回転をオイラー角で表示・編集)
         DirectX::XMFLOAT3 euler = QuatToEulerDegrees(comp.rotation);
         if (ImGui::DragFloat3("Rotation", &euler.x, 1.0f)) {
-            // 値が変更されたらクォータニオンに戻して保存
             comp.rotation = EulerDegreesToQuat(euler);
+            comp.isTeleported = true; // ★回転も同様
+            comp.isStatic = false;
             changed = true;
         }
 
         // 3. スケール
-        changed |= ImGui::DragFloat3("Scale", &comp.scale.x, 0.1f);
+        if (ImGui::DragFloat3("Scale", &comp.scale.x, 0.1f)) {
+            comp.isStatic = false;
+            changed = true;
+        }
 
         ImGui::Spacing();
         changed |= ImGui::Checkbox("Is Static (静的オブジェクト)", &comp.isStatic);
@@ -78,9 +86,6 @@ template <> struct ComponentMeta<TransformComponent> {
     }
 };
 
-
-#include <windows.h> // OutputDebugString用
-#include <string>
 
 void RegisterTransformMeta()
 {

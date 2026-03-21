@@ -264,7 +264,6 @@
     <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltBodySetupSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltHandleComponent.h" />
     <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltPushSystem.h" />
-    <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltTeleportRequest.h" />
     <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltUpdateSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Physics\RigidBody\JoltRigidbodyComponent.h" />
     <ClInclude Include="Source\Engine\GamePlay\Transform\HierarchyCleanupSystem.h" />

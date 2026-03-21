@@ -11,6 +11,9 @@ struct TransformComponent {
     // 静的オブジェクトフラグ (trueなら更新しない)
     bool isStatic = false;
 
+    // 物理ワープ用のDirtyフラグ（1バイト増えますが許容範囲のコストです）
+    bool isTeleported = false;
+
     // --- 【キャッシュ部】（システムが計算して書き込む値 = World） ---
     // ※手動では書き換えず、TransformUpdateSystemに計算させる
     DirectX::XMFLOAT4X4 worldMatrix = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
@@ -22,8 +25,23 @@ struct TransformComponent {
     CCL::ECS::EntityID prevSiblingID = 0; // 前の兄弟
     CCL::ECS::EntityID nextSiblingID = 0; // 次の兄弟
 
+    // =========================================================
+    // ★開発体験(DX)を最高にするための直感的Setter
+    // =========================================================
+    void SetPosition(const DirectX::XMFLOAT3 &newPos) {
+      position = newPos;
+      isTeleported = true; // 裏で自動的にフラグを立てる
+      isStatic = false;    // 行列の再計算も要求
+    }
+
+    void SetPosition(float x, float y, float z) {
+      position = {x, y, z};
+      isTeleported = true;
+      isStatic = false;
+    }
+
     // ------------------------------------------------------------------
-    // ★追加: 直感的に使うためのアクセサ（ヘルパー関数）
+    // 直感的に使うためのアクセサ（ヘルパー関数）
     // ------------------------------------------------------------------
 
     // ワールド座標を取得（物理判定や描画、音の発生源などで使用）

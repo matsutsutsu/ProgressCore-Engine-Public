@@ -47,26 +47,40 @@ void PlayerMoveSystem::Update(float dt)
         // =================================================================
         if (charHandle.character) {
             // --- A. 移動処理 ---
-            Vector3 moveVec(players.input.moveDir.x, 0, players.input.moveDir.z);
-            
-            // Joltの速度ベクトルを用意（現在のY軸の落下速度を維持する）
+            // 1. 現在の物理速度を取得
             JPH::Vec3 currentVel = charHandle.character->GetLinearVelocity();
-            JPH::Vec3 joltVelocity(0.0f, currentVel.GetY(), 0.0f);
 
+            // 2. 重力の適用 (毎秒 -9.8f の加速を dt 倍して加算)
+            float newVelocityY = currentVel.GetY() - (9.8f * dt);
+
+            // 3. 地面との接地判定 (IsSupported)
+            // 足元に地面がある場合、無限に重力が蓄積しないようにリセットする。
+            // ※完全に 0.0f にするより、微小なマイナス(-0.1f)を残しておくことで、
+            // 　下り坂を歩く時に「ピタッ」と地面に張り付く（跳ねない）ようになります。
+            if (charHandle.character->IsSupported()) {
+                if (newVelocityY < 0.0f) {
+                    newVelocityY = -0.1f; 
+                }
+            }
+
+            // 新しい速度ベクトルを構築
+            JPH::Vec3 joltVelocity(0.0f, newVelocityY, 0.0f);
+
+            // 4. X軸・Z軸のプレイヤー入力（WASD）の処理
+            Vector3 moveVec(players.input.moveDir.x, 0, players.input.moveDir.z);
             if (moveVec.LengthSquared() > 0.001f) {
                 moveVec.Normalize();
-                // configに設定された歩行速度を適用
                 joltVelocity.SetX(moveVec.x * charConfig.walkSpeed);
                 joltVelocity.SetZ(moveVec.z * charConfig.walkSpeed);
             }
 
-            // --- ジャンプ処理 ---
-            // IsSupported() で足元に地面（SupportingVolume）があるか判定
+            // 5. ジャンプ処理
+            // ジャンプボタンが押され、かつ足が地面に着いている時だけY軸の速度を上書き！
             if (players.input.jump && charHandle.character->IsSupported()) {
-                joltVelocity.SetY(charConfig.jumpSpeed); 
+                joltVelocity.SetY(charConfig.jumpSpeed);
             }
 
-            // 速度をキャラクターコントローラーに適用！
+            // 6. 計算し終わった速度をCharacterVirtualに叩き込む！
             charHandle.character->SetLinearVelocity(joltVelocity);
 
             // --- B. 回転処理 (以前のまま) ---

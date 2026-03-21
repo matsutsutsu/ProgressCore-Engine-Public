@@ -21,6 +21,21 @@ void JoltCharacterUpdateSystem::Update(float dt) {
     if (!handle.character)
       return;
 
+    // =======================================================
+    // プレイヤーの強制ワープ処理
+    // =======================================================
+    if (trans.isTeleported) {
+      handle.character->SetPosition(
+          JPH::RVec3(trans.position.x, trans.position.y, trans.position.z));
+      handle.character->SetRotation(
+          JPH::Quat(trans.rotation.x, trans.rotation.y, trans.rotation.z,
+                    trans.rotation.w));
+
+      // フラグを下ろす
+      trans.isTeleported = false;
+    }
+ 
+
     // 1. 地形との衝突や段差の乗り越えを計算 (Jolt内部処理)
     handle.character->ExtendedUpdate(
         dt, physicsSystem->GetGravity(), updateSettings,
