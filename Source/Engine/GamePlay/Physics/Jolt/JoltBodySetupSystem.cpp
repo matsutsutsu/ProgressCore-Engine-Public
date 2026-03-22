@@ -74,6 +74,11 @@ void JoltBodySetupSystem::Update(float dt)
             bodySettings.mMotionQuality = JPH::EMotionQuality::LinearCast;
         }
 
+        // =========================================================
+        // 　Jolt剛体の記憶に、ECSのEntityIDを刻み込む！
+        // =========================================================
+        bodySettings.mUserData = static_cast<JPH::uint64>(id);
+
         JPH::Body *body = bodyInterface.CreateBody(bodySettings);
 
         // Static(静的)なものは最初からスリープ状態で空間に追加し、無駄な計算を省く

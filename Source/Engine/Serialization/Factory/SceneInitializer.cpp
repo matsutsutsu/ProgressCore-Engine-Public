@@ -239,6 +239,7 @@ void SceneInitializer::SpawnEnemySwarmTest(CCL::ECS::Core::World &world, ID3D11D
         PlayerComponent,
         JoltCharacterConfigComponent, // ★修正: パフォーマンス低下を防ぐため設計図に含める
         JoltCapsuleColliderComponent,
+        JoltRigidbodyComponent,
         ModelComponent,   
         AnimatorComponent 
     >();
@@ -253,6 +254,9 @@ void SceneInitializer::SpawnEnemySwarmTest(CCL::ECS::Core::World &world, ID3D11D
           .Set(PlayerComponent{ .moveSpeed = 6.0f, .turnSpeed = 10.0f })
           .Set(JoltCharacterConfigComponent{ .maxSlopeAngle = 45.0f, .maxStepHeight = 0.5f, .walkSpeed = 6.0f, .jumpSpeed = 10.0f, .characterMass = 70.0f })
           .Set(JoltCapsuleColliderComponent{ .halfHeight = 0.5f, .radius = 0.5f })
+          .Set(JoltRigidbodyComponent{
+            .motionType  = JPH::EMotionType::Kinematic, // ★自力で動く無敵の物体
+            .objectLayer = PhysicsLayers::MOVING})
           .Set(PrimitiveComponent{ .type = PrimitiveType::Capsule, .size = {0.0f, 1.0f, 0.0f}, .radius = 0.5f, .color = {0.2f, 0.8f, 0.2f, 1.0f} })
           .Set(std::move(modelComp)) // 作っておいた ModelComponent をムーブ（無駄なコピー回避）
           .Set(AnimatorComponent{}); // 空の初期化
@@ -283,7 +287,9 @@ void SceneInitializer::SpawnEnemySwarmTest(CCL::ECS::Core::World &world, ID3D11D
          .Set(PrimitiveComponent{ .type = PrimitiveType::Box, .size = {50.0f, 1.0f, 50.0f}, .color = {0.5f, 0.5f, 0.5f, 1.0f} });
 
 
-    // 2. 敵の「設計図（Archetype）」をコード上で定義
+    // ──────────────────────────────────────────
+    // 4. 敵の大群（Swarm）の生成
+    // ──────────────────────────────────────────
     const auto enemyArch = ArchetypeHelper::Generate<
         TransformComponent,
         PrimitiveComponent,         // 描画用（赤色カプセル）
@@ -293,20 +299,22 @@ void SceneInitializer::SpawnEnemySwarmTest(CCL::ECS::Core::World &world, ID3D11D
     >();
 
     std::mt19937 gen(12345);
-    // プレイヤーの周囲半径50mにランダム配置
     std::uniform_real_distribution<float> xzDist(-50.0f, 50.0f); 
 
-    // 3. 圧倒的スピードでメモリに叩き込む
+    // 圧倒的スピードでメモリに叩き込む
     for (int i = 0; i < count; ++i) {
-        // EntityFactoryのSpawnNamedで名前付き生成
         auto ref = EntityFactory::SpawnNamed(world, "SwarmEnemy", enemyArch);
 
-        ref.Set(TransformComponent{ .position = {xzDist(gen), 2.0f, xzDist(gen)}, .scale = {1.0f, 1.0f, 1.0f} })
-           .Set(EnemyComponent{ .moveSpeed = (4.0f + (i % 3)) }) // 少しずつ速度を変えてバラけさせる
+        // ★修正: Transformのrotationを明示し、順番通りにする
+        // ★修正: EnemyComponent の変数は moveSpeed ではなく speed
+        // ★修正: Rigidbodyの restitution(反発) も明示的に書いて警告を防ぐ
+        ref.Set(TransformComponent{ .position = {xzDist(gen), 2.0f, xzDist(gen)}, .rotation = {0.0f, 0.0f, 0.0f, 1.0f}, .scale = {1.0f, 1.0f, 1.0f} })
+           .Set(EnemyComponent{ .speed = (4.0f + (i % 3)) }) // moveSpeed -> speed に修正
            .Set(JoltRigidbodyComponent{ 
-               .motionType = JPH::EMotionType::Dynamic, 
+               .motionType  = JPH::EMotionType::Dynamic, 
                .objectLayer = PhysicsLayers::MOVING,
-               .friction = 0.0f // ★重要: 敵同士が渋滞して引っかからないよう摩擦はゼロにする
+               .restitution = 0.0f,
+               .friction    = 0.0f // 敵同士が渋滞しないように摩擦ゼロ
             })
            .Set(JoltCapsuleColliderComponent{ .halfHeight = 0.5f, .radius = 0.4f })
            .Set(PrimitiveComponent{ .type = PrimitiveType::Capsule, .size = {0.0f, 1.0f, 0.0f}, .radius = 0.4f, .color = {1.0f, 0.0f, 0.0f, 1.0f} });

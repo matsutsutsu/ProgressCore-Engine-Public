@@ -177,6 +177,12 @@ void JoltPhysicsManager::Initialize()
     // 5. 重力設定（下方向に-9.8）
     m_physicsSystem->SetGravity(Vec3(0, -9.8f, 0));
 
+    // =========================================================
+    //  物理世界に「接触リスナー（ポスト）」を設置する
+    // =========================================================
+    m_contactListener = std::make_unique<JoltContactListener>();
+    m_physicsSystem->SetContactListener(m_contactListener.get());
+
     m_isInitialized = true;
 }
 

@@ -331,6 +331,9 @@
     <Filter Include="Source\Engine\GamePlay\Physics\Character">
       <UniqueIdentifier>{bf65d56c-dc30-4b2c-ac52-ca503e360bff}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\GamePlay\Physics\Collision\Collider">
+      <UniqueIdentifier>{1ac4e9b9-47e1-482d-a82e-d3ad2832ac12}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -990,15 +993,6 @@
     <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltBodySetupSystem.h">
       <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\JoltBoxColliderComponent.h">
-      <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\JoltSphereColliderComponent.h">
-      <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\JoltCapsuleColliderComponent.h">
-      <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\ComponentSerializers.h">
       <Filter>Source\Engine\Serialization</Filter>
     </ClInclude>
@@ -1021,6 +1015,27 @@
       <Filter>Source\Game\Logics\Character\Enemy</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyMoveSystem.h">
+      <Filter>Source\Game\Logics\Character\Enemy</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\JoltCollisionEvent.h">
+      <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\JoltBoxColliderComponent.h">
+      <Filter>Source\Engine\GamePlay\Physics\Collision\Collider</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\JoltCapsuleColliderComponent.h">
+      <Filter>Source\Engine\GamePlay\Physics\Collision\Collider</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\JoltSphereColliderComponent.h">
+      <Filter>Source\Engine\GamePlay\Physics\Collision\Collider</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\JoltContactListener.h">
+      <Filter>Source\Engine\Physics\Jolt</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\JoltCollisionEventSystem.h">
+      <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyHitTestSystem.h">
       <Filter>Source\Game\Logics\Character\Enemy</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1509,6 +1524,15 @@
       <Filter>Source\Engine\GamePlay\Physics\Character</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyMoveSystem.cpp">
+      <Filter>Source\Game\Logics\Character\Enemy</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Physics\JoltContactListener.cpp">
+      <Filter>Source\Engine\Physics\Jolt</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\Physics\Collision\JoltCollisionEventSystem.cpp">
+      <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyHitTestSystem.cpp">
       <Filter>Source\Game\Logics\Character\Enemy</Filter>
     </ClCompile>
   </ItemGroup>

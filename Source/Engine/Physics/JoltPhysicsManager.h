@@ -10,6 +10,7 @@
 #include <Jolt/Physics/Collision/ObjectLayer.h>
 
 #include "JoltDebugRenderer.h"
+#include "JoltContactListener.h"
 
 #include <memory>
 
@@ -104,12 +105,16 @@ class JoltPhysicsManager {
     // CharacterVirtual の更新などに必要な一時アロケータを取得する
     JPH::TempAllocator* GetTempAllocator() const { return m_tempAllocator.get(); }
 
+    // ECSシステムからリスナー（ポスト）にアクセスするためのゲッター
+    JoltContactListener* GetContactListener() const { return m_contactListener.get(); }
 
   private:
     // Joltのコアシステム（破棄順序を制御するため unique_ptr で管理）
     std::unique_ptr<JPH::PhysicsSystem>       m_physicsSystem;
     std::unique_ptr<JPH::TempAllocatorImpl>   m_tempAllocator;
     std::unique_ptr<JPH::JobSystemThreadPool> m_jobSystem;
+    // リスナーのインスタンスを保持
+    std::unique_ptr<JoltContactListener> m_contactListener;
 
     // デバッグレンダラーのインスタンスを保持
     std::unique_ptr<JoltDebugRenderer> m_debugRenderer;
