@@ -9,6 +9,8 @@ void JoltStepSystem::Update(float dt)
 {
     if (!_world->HasResource<JoltPhysicsManager>()) return;
     auto &joltManager = _world->GetResource<JoltPhysicsManager>();
+
+    // 物理の時間を dt 秒だけ進める
     joltManager.Step(dt); // ここでJolt内部の並列計算が走る
 }
 
@@ -26,10 +28,12 @@ void JoltPullSystem::Update(float dt)
             return;
         }
 
+        // Joltから最新の座標を取得
         JPH::RVec3 pos;
         JPH::Quat  rot;
         bodyInterface.GetPositionAndRotation(joltBody.bodyID, pos, rot);
 
+        // ECSのTransformを上書き
         trans.position = {pos.GetX(), pos.GetY(), pos.GetZ()};
         trans.rotation = {rot.GetX(), rot.GetY(), rot.GetZ(), rot.GetW()};
 

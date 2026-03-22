@@ -311,13 +311,8 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\PostProcessManager.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderReflection.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderResources.h" />
-    <ClInclude Include="Source\Engine\Physics\BvhConfig.h" />
-    <ClInclude Include="Source\Engine\Physics\Collision.h" />
-    <ClInclude Include="Source\Engine\Physics\CollisionHelper.h" />
-    <ClInclude Include="Source\Engine\Physics\Grid.h" />
     <ClInclude Include="Source\Engine\Physics\JoltDebugRenderer.h" />
     <ClInclude Include="Source\Engine\Physics\JoltPhysicsManager.h" />
-    <ClInclude Include="Source\Engine\Physics\RaycastUtil.h" />
     <ClInclude Include="Source\Engine\Platform\Dialog.h" />
     <ClInclude Include="Source\Engine\Platform\Input\GamePad.h" />
     <ClInclude Include="Source\Engine\Platform\Input\Input.h" />
@@ -504,11 +499,8 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\BloomPass.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\PostProcessManager.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\ShaderReflection.cpp" />
-    <ClCompile Include="Source\Engine\Physics\Collision.cpp" />
-    <ClCompile Include="Source\Engine\Physics\CollisionHelper.cpp" />
     <ClCompile Include="Source\Engine\Physics\JoltDebugRenderer.cpp" />
     <ClCompile Include="Source\Engine\Physics\JoltPhysicsManager.cpp" />
-    <ClCompile Include="Source\Engine\Physics\TinyBvhImpl.cpp" />
     <ClCompile Include="Source\Engine\Platform\Dialog.cpp" />
     <ClCompile Include="Source\Engine\Platform\Input\GamePad.cpp" />
     <ClCompile Include="Source\Engine\Platform\Input\Input.cpp" />

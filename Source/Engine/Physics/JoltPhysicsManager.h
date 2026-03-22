@@ -1,5 +1,4 @@
 #pragma once
-
 // Joltの基本ヘッダー（必ず一番上に）
 #include <Jolt/Jolt.h>
 #include <Jolt/Core/JobSystemThreadPool.h>
@@ -13,6 +12,25 @@
 #include "JoltDebugRenderer.h"
 
 #include <memory>
+
+// ===================================================================================
+// ファイル名: JoltPhysicsManager.h
+// 役割: Jolt
+// Physicsのライフサイクルとメモリ・スレッドを管理する「神（God）」クラス。
+//
+// 【アーキテクチャ仕様】
+// -
+// ECSのComponentやSystemには直接依存せず、純粋な物理空間のサンドボックスを提供する。
+// - 内部で TempAllocator (一時メモリ) と JobSystem (並列計算スレッド)
+// を保持する。
+//
+// 【使い方・ルール】
+// - ゲーム開始時に Initialize() を呼び、毎フレーム Step() を呼ぶ。
+// - System側からは _world->GetResource<JoltPhysicsManager>() 経由でアクセスし、
+//   GetBodyInterface() を通じて剛体を操作する。直接 JPH::PhysicsSystem
+//   を弄らないこと。
+// ===================================================================================
+
 
 // ──────────────────────────────────────────────
 // 1. レイヤー定義

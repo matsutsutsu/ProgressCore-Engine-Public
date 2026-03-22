@@ -2,6 +2,16 @@
 #include <DirectXMath.h>
 #include "ECS/Common/CCL_Common.h"
 
+// ===================================================================================
+// TransformComponent 物理同期に関するルール
+// - Joltの剛体をワープさせたい場合は、必ず SetPosition() または
+// SetPositionAndRotation() を使用する。
+// - これにより内部で isTeleported フラグが立ち、JoltPushSystem
+// が安全に物理空間を上書きする。
+// - ❌ 物理演算で動く物体（弾、キャラクター）の移動に SetPosition
+// を毎フレーム使ってはいけない！
+// ===================================================================================
+
 struct TransformComponent {
     // --- 【データ部】（保存・編集する値 = Local） ---
     DirectX::XMFLOAT3   position    = {0, 0, 0};    // 親からの相対位置 (Local Position)

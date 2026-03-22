@@ -19,7 +19,8 @@ void JoltPushSystem::Update(float dt) {
               JPH::RVec3(trans.position.x, trans.position.y, trans.position.z),
               JPH::Quat(trans.rotation.x, trans.rotation.y, trans.rotation.z,
                         trans.rotation.w),
-              JPH::EActivation::Activate);
+              JPH::EActivation::
+                  Activate); // ワープ後に物理シミュレーションを再開するためにActivateを指定
 
           // ワープが済んだらフラグを下ろす（以降のフレームは無視される）
           trans.isTeleported = false;

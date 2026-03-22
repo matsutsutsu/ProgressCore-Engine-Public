@@ -8,7 +8,6 @@
 #include <DirectXMath.h>
 #include <DirectXCollision.h>
 #include "Engine/Graphics/Resource/GraphicsTypes.h"
-#include "Engine/Physics/BvhConfig.h"
 
 class ModelResource
 {
@@ -129,14 +128,6 @@ public:
 		DirectX::XMFLOAT3 boundsMin;
 		DirectX::XMFLOAT3 boundsMax;
 
-		// TinyBVH の BVH データ
-        // CWBVH はGPU用などで高速ですが、基本の BVH クラスで十分高速です
-        tinybvh::BVH bvh;
-
-        // BVH構築用に変換した頂点データを保持しておく（レイキャスト時に参照されるため）
-        // tinybvhは内部でデータを持たず、ポインタで参照する場合があるため
-        std::vector<tinybvh::bvhvec4> bvhVertices;
-
 
 		// DirectXの頂点・インデックスバッファ
 		Microsoft::WRL::ComPtr<ID3D11Buffer>	vertexBuffer;
@@ -238,8 +229,6 @@ public:
 	// モデル全体のバウンディング取得
 	const DirectX::BoundingBox& GetBoundingBox() const { return m_boundingBox; }
 
-	// BVH構築
-    void BuildBVH();
 
 protected:
 	// モデルセットアップ

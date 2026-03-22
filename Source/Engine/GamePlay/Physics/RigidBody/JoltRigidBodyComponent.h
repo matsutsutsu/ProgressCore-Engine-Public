@@ -3,6 +3,23 @@
 #include <Jolt/Jolt.h>
 #include <Jolt/Physics/Body/MotionType.h>
 
+// ===================================================================================
+// ファイル名: JoltRigidbodyComponent.h
+// 役割: 物理挙動の「設計図（パラメータ）」を定義するデータコンポーネント。
+//
+// 【アーキテクチャ仕様】
+// - 純粋なデータ(DOD)であり、Joltのポインタ等は一切持たない。
+// - エディタ(ImGui)やJSONからシリアライズされる値。
+//
+// 【使い方・ルール】
+// - これと
+// TransformComponent、および形状(Box/Sphere等)の3つをEntityにアタッチすると、
+//   JoltBodySetupSystem が自動的にJolt空間に剛体（実体）を生成する。
+// -
+// 初期化後は、このコンポーネントの値を変更してもJoltには反映されない（初期パラメータとして扱う）。
+// ===================================================================================
+
+
 // ユーザーがエディタやJSONで付与し、物理の性質を設定するためのコンポーネント
 struct JoltRigidbodyComponent {
     JPH::EMotionType motionType  = JPH::EMotionType::Dynamic;

@@ -10,8 +10,8 @@
 # ColumnLimit: 100
 
 # = 揃え（enum / 定数 / 変数）
-# AlignConsecutiveAssignments: true
-# AlignConsecutiveDeclarations: true
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
 
 # 引数・パラメータは詰めない
 # BinPackArguments: false
@@ -36,7 +36,7 @@
 
 # ブレーススタイル
 # BreakBeforeBraces: Stroustrup
-BasedOnStyle: LLVM
+# BasedOnStyle: LLVM
 
 
 # インデント
@@ -56,17 +56,17 @@ BasedOnStyle: LLVM
 # BinPackParameters: false
 
 # 改行するなら ( の直後へ
-# AllowAllArgumentsOnNextLine: true
-# AllowAllParametersOfDeclarationOnNextLine: true
+AllowAllArgumentsOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: true
 
 # ネームスペースの中身をインデントする
-# NamespaceIndentation: All
+NamespaceIndentation: All
 
 
-# AllowShortIfStatementsOnASingleLine: true
+AllowShortIfStatementsOnASingleLine: true
 # AllowShortLoopsOnASingleLine: true
 # AllowShortFunctionsOnASingleLine: true
-# AllowShortCaseLabelsOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: true
 
 # ★ これが一番重要 ★
 # 開き括弧後の「謎の縦揃え」を禁止

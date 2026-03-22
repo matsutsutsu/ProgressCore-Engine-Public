@@ -30,12 +30,13 @@ void JoltCharacterSetupSystem::Update(float dt)
 
         // 1. カプセル形状の作成
         JPH::RefConst<JPH::Shape> characterShape;
-        // 1. カプセル形状の作成 (★修正:
-        // 必ずnewでヒープ確保し、RefConstで受ける)
+        // 1. カプセル形状の作成 (必ずnewでヒープ確保し、RefConstで受ける)
         JPH::RefConst<JPH::ShapeSettings> capsuleSettings =
             new JPH::CapsuleShapeSettings(capsule->halfHeight, capsule->radius);
 
+
         // オフセットをかける設定も同様にnewで確保する
+        // カプセルの中心を足元から半分の高さにオフセットするための設定
         JPH::RefConst<JPH::ShapeSettings> rotTransSettings =
             new JPH::RotatedTranslatedShapeSettings(
                 JPH::Vec3(0, capsule->halfHeight + capsule->radius, 0),
@@ -47,11 +48,15 @@ void JoltCharacterSetupSystem::Update(float dt)
         characterShape = rotTransSettings->Create().Get();
 
         // 2. CharacterVirtual の設定
+        // キャラクター専用の設定群
         JPH::CharacterVirtualSettings settings;
         settings.mShape = characterShape;
+
+        // キャラクターの足元を判定する平面センサーを設定
         settings.mSupportingVolume =
             JPH::Plane(JPH::Vec3::sAxisY(), -capsule->radius); // 足元の判定面
-        settings.mMaxSlopeAngle             = JPH::DegreesToRadians(config.maxSlopeAngle);
+        settings.mMaxSlopeAngle             = 
+            JPH::DegreesToRadians(config.maxSlopeAngle); // 登れる最大角度をラジアンに変換して設定
         settings.mMaxStrength               = config.characterMass * 10.0f; // 他の物体を押す力
         settings.mCharacterPadding          = 0.02f; // 壁への張り付きを防ぐ微小な隙間
         settings.mPenetrationRecoverySpeed  = 1.0f;

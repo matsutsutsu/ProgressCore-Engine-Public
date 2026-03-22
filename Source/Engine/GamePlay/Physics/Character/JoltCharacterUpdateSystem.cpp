@@ -18,8 +18,7 @@ void JoltCharacterUpdateSystem::Update(float dt) {
     // 全コアを使って並列でキャラクターの衝突計算を行う
     ForEachParallel([&](TransformComponent &trans,
                         const JoltCharacterHandleComponent &handle) {
-    if (!handle.character)
-      return;
+    if (!handle.character) return;
 
     // =======================================================
     // プレイヤーの強制ワープ処理

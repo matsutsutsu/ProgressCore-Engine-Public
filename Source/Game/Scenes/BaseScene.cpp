@@ -7,7 +7,6 @@
 #include "Engine/Serialization/Factory/SceneInitializer.h"
 
 #include "Engine/Graphics/Core/Graphics.h"
-#include "Engine/Physics/Grid.h"
 #include "Engine/Physics/JoltPhysicsManager.h"
 #include "Game/Logics/Combat/GlobalDamageQueue.h"
 
@@ -38,7 +37,6 @@ void BaseScene::Initialize()
     _worldPtr   = _ecsContext->GetWorld(); // 互換性用
 
     // リソース登録
-    //_worldPtr->AddResource<Grid>();
     _worldPtr->AddResource<GlobalDamageQueue>();
 
     // WorldのリソースとしてJoltを登録し、初期化する

@@ -43,7 +43,7 @@ void PlayerMoveSystem::Update(float dt)
         }
 
         // =================================================================
-        // タイトル画面でない場合のみ、移動と回転の計算を行う
+        //  移動と回転の計算を行う
         // =================================================================
         if (charHandle.character) {
             // --- A. 移動処理 ---
@@ -83,7 +83,9 @@ void PlayerMoveSystem::Update(float dt)
             // 6. 計算し終わった速度をCharacterVirtualに叩き込む！
             charHandle.character->SetLinearVelocity(joltVelocity);
 
-            // --- B. 回転処理 (以前のまま) ---
+            // --- B. 回転処理  ---
+            // 回転はJoltに任せるのではなく、見た目のTransformを直接操作して回す方式にする
+            // カプセルは常に直立不動なので、物理判定的には回転させない
             Vector3 targetPos  = players.input.lookPos;
             Vector3 currentPos = trans.GetWorldPosition();
             Vector3 lookDir = targetPos - currentPos;

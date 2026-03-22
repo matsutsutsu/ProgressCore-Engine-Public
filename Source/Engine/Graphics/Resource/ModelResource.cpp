@@ -283,32 +283,8 @@ void ModelResource::Load(ID3D11Device* device, const char* filename)
 	// モデル全体のAABBを計算
 	ComputeModelLocalAABB();
 
-	// BVH構築
-    BuildBVH();
 }
 
-void ModelResource::BuildBVH() {
-    for (auto &mesh : meshes) {
-        if (mesh.vertices.empty() || mesh.indices.empty())
-            continue;
-
-        // 1. 頂点データの変換 (tinybvh用に vec4 化)
-        mesh.bvhVertices.resize(mesh.vertices.size());
-        for (size_t i = 0; i < mesh.vertices.size(); ++i) {
-            auto &pos = mesh.vertices[i].position;
-            // w成分は0.0f
-            mesh.bvhVertices[i] = tinybvh::bvhvec4(pos.x, pos.y, pos.z, 0.0f);
-        }
-
-        // 2. BVH構築
-        // 引数は3つだけです： (頂点配列, インデックス配列, 三角形数)
-        // ※indices.data() は UINT* なので uint32_t* にキャストします
-        // ※const は付けずに渡します（内部で並び替え等に使われる可能性があるため）
-        mesh.bvh.Build(mesh.bvhVertices.data(),
-            reinterpret_cast<uint32_t *>(mesh.indices.data()),
-            static_cast<uint32_t>(mesh.indices.size() / 3));
-    }
-}
 
 // アニメーション追加読み込み
 void ModelResource::AppendAnimations(const char* filename)

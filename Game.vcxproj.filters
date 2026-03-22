@@ -804,21 +804,6 @@
     <ClInclude Include="Source\Engine\Platform\Dialog.h">
       <Filter>Source\Engine\Platform</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Physics\BvhConfig.h">
-      <Filter>Source\Engine\Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Physics\Collision.h">
-      <Filter>Source\Engine\Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Physics\CollisionHelper.h">
-      <Filter>Source\Engine\Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Physics\Grid.h">
-      <Filter>Source\Engine\Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Physics\RaycastUtil.h">
-      <Filter>Source\Engine\Physics</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\ComponentRegistry.h">
       <Filter>Source\Engine\Serialization</Filter>
     </ClInclude>
@@ -1363,15 +1348,6 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Platform\Dialog.cpp">
       <Filter>Source\Engine\Platform</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Physics\Collision.cpp">
-      <Filter>Source\Engine\Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Physics\CollisionHelper.cpp">
-      <Filter>Source\Engine\Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Physics\TinyBvhImpl.cpp">
-      <Filter>Source\Engine\Physics</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Serialization\PrefabSerializer.cpp">
       <Filter>Source\Engine\Serialization</Filter>
