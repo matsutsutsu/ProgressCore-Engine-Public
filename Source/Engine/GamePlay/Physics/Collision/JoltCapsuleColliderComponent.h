@@ -6,4 +6,5 @@
 struct JoltCapsuleColliderComponent {
     float halfHeight = 0.5f; // 円柱部分の半分の高さ
     float radius     = 0.5f; // 半径
+    bool  isDirty    = false; // サイズを変更した時にtrueにする
 };

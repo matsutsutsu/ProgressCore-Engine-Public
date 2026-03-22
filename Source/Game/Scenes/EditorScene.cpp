@@ -23,10 +23,10 @@ void EditorScene::Initialize()
 
 
     //SceneInitializer::SpawnTransformLoadTest(*_worldPtr, device, 100000);
-    //SceneInitializer::SpawnJoltTest(*_worldPtr, device);
+    SceneInitializer::SpawnJoltTest(*_worldPtr, device);
 
     // 1000体の群衆ストレステストを実行！
-    SceneInitializer::SpawnEnemySwarmTest(*_worldPtr, device, 200);
+    //SceneInitializer::SpawnEnemySwarmTest(*_worldPtr, device, 200);
 }
 
 void EditorScene::Finalize() 

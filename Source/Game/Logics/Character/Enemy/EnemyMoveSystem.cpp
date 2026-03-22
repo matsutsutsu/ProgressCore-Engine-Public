@@ -16,7 +16,11 @@ void EnemyMoveSystem::Update(float dt) {
     bool playerFound = false;
     auto playerView = _world->View<TransformComponent, JoltCharacterConfigComponent>();
 
-    CCL::ECS::EntityID pid = playerView[0];
+    CCL::ECS::EntityID pid;
+    if (playerView.empty()) return; // プレイヤーがいないなら何もしない
+
+    pid = playerView[0]; // 最初に見つかったプレイヤーをターゲットにする（複数いる場合は要注意）
+
     if (auto *t = _world->GetComponent<TransformComponent>(pid)) {
       playerPos   = t->position;
       playerFound = true;

@@ -9,7 +9,8 @@
 
 using namespace JPH;
 
-#define PhysicsPerformanceCounters 1 // パフォーマンスを最大限対応にする
+//#define PhysicsPerformanceCounters 1 // パフォーマンスを最大限対応にする
+#define PhysicsPerformanceCounters 0 // パフォーマンスを最低限対応にする
 
 // --- デバッグ用コールバック ---
 static void TraceImpl(const char *inFMT, ...)

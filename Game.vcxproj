@@ -266,6 +266,7 @@
     <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltBodySetupSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltHandleComponent.h" />
     <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltPushSystem.h" />
+    <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltShapeUpdateSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltUpdateSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Physics\RigidBody\JoltRigidbodyComponent.h" />
     <ClInclude Include="Source\Engine\GamePlay\Transform\HierarchyCleanupSystem.h" />
@@ -470,6 +471,7 @@
     <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltBodySetupSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltPhysicsComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltPushSystem.cpp" />
+    <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltShapeUpdateSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltUpdateSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Transform\HierarchyCleanupSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Transform\TransformComponentMeta.cpp" />
@@ -545,7 +547,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include=".clang-format" />
+    <None Include=".clang-formatt" />
     <None Include=".editorconfig" />
     <None Include="Build\CommonInclude.props" />
     <None Include="Shader\Common\Common.hlsli" />

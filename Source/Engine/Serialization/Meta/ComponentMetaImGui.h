@@ -26,6 +26,15 @@ namespace ComponentMetaImGui {
         std::void_t<decltype(ComponentMeta<T>::CustomGui(std::declval<T &>(), 0ULL, nullptr))>>
         : std::true_type {};
 
+    // ========================================================================
+    //  SFINAE 3: コンポーネントが「isDirty」という変数を持っているかを検知
+    // ========================================================================
+    template <typename T, typename = void> struct HasIsDirty : std::false_type {};
+
+    template <typename T>
+    struct HasIsDirty<T, std::void_t<decltype(std::declval<T>().isDirty)>> : std::true_type {};
+
+
     // ------------------------------------------------------------------------
     // DrawField 関数は既存のまま完全に維持 (変更なし)
     // ------------------------------------------------------------------------
@@ -175,6 +184,17 @@ namespace ComponentMetaImGui {
                     ImGui::Unindent(12.0f);
                     ImGui::TreePop();
                 }
+            }
+        }
+
+        // ========================================================================
+        // ★最強の自動化: 
+        // どの値でもいいから変更され(anyChanged == true)、かつ
+        // このコンポーネントが isDirty 変数を持っているなら、強制的に true を叩き込む！
+        // ========================================================================
+        if (anyChanged) {
+            if constexpr (HasIsDirty<T>::value) {
+                component.isDirty = true;
             }
         }
 

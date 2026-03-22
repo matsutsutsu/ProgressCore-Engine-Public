@@ -1038,6 +1038,9 @@
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyHitTestSystem.h">
       <Filter>Source\Game\Logics\Character\Enemy</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltShapeUpdateSystem.h">
+      <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -1535,6 +1538,9 @@
     <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyHitTestSystem.cpp">
       <Filter>Source\Game\Logics\Character\Enemy</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltShapeUpdateSystem.cpp">
+      <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shader\Common\Common.hlsli">
@@ -1576,7 +1582,7 @@
     <None Include="Build\CommonInclude.props">
       <Filter>Build</Filter>
     </None>
-    <None Include=".clang-format">
+    <None Include=".clang-formatt">
       <Filter>Build</Filter>
     </None>
     <None Include=".editorconfig">
