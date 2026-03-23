@@ -5,16 +5,15 @@
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 #include "Engine/GamePlay/Core/NameComponent.h"
 
-#include "Engine/Serialization/ComponentSerializers.h"
 
 template <> struct ComponentMeta<NameComponent> {
-    static constexpr bool        registered  = true;
-    static constexpr const char *displayName = "Name";
+    static constexpr bool        registered = true;
+    static constexpr const char* displayName = "Name";
 
     //  char配列を安全に編集するため完全カスタムGUI
     static constexpr bool hasCustomGui = true;
 
-    static bool CustomGui(NameComponent &comp)
+    static bool CustomGui(NameComponent& comp, unsigned long long /*entityID*/ = 0, void* /*world*/ = nullptr)
     {
         bool changed = false;
 
@@ -28,17 +27,14 @@ template <> struct ComponentMeta<NameComponent> {
 
     // char配列の自動シリアライズは現在のマクロ(std::string用)では危険なため、空にしておく。
     // ※後日、ComponentMetaJson 側に char配列専用の特殊化を追加することを推奨します。
-    static const std::vector<FieldDescriptor> &Fields()
+    static const std::vector<FieldDescriptor>& Fields()
     {
         static const std::vector<FieldDescriptor> empty;
         return empty;
     }
 };
 
-
-void RegisterCoreMeta()
-{
-    // ※ JSON登録はシリアライズ対応後にアンコメント
-     ComponentMetaJson::RegisterMetaT<NameComponent>(ComponentRegistry::Instance(),"Name");
-    ComponentMetaImGui::RegisterGuiMeta<NameComponent>(ComponentGuiRegistry::Instance());
-}
+// ============================================================================
+// 究極の自動化：これだけでJSONとImGuiの両方に登録される
+// ============================================================================
+REGISTER_COMPONENT(NameComponent, "Name")

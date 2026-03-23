@@ -8,25 +8,25 @@
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
-#include "Engine/Serialization/ComponentSerializers.h"
+// ❌ 削除: #include "Engine/Serialization/ComponentSerializers.h"
 
 // ============================================================================
 // Primitive Component
 // ============================================================================
 template <> struct ComponentMeta<PrimitiveComponent> {
-    static constexpr bool        registered   = true;
-    static constexpr const char *displayName  = "Primitive Shape";
+    static constexpr bool        registered = true;
+    static constexpr const char* displayName = "Primitive Shape";
     static constexpr bool        hasCustomGui = true;
 
-    static bool CustomGui(PrimitiveComponent &p, unsigned long long, void *)
+    static bool CustomGui(PrimitiveComponent& p, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr)
     {
         bool changed = false;
 
-        const char *typeNames[] = {"Box", "Sphere", "Cylinder", "Capsule", "Cone"};
+        const char* typeNames[] = { "Box", "Sphere", "Cylinder", "Capsule", "Cone" };
         int         currentType = static_cast<int>(p.type);
 
         if (ImGui::Combo("Type", &currentType, typeNames, IM_ARRAYSIZE(typeNames))) {
-            p.type  = static_cast<PrimitiveType>(currentType);
+            p.type = static_cast<PrimitiveType>(currentType);
             changed = true;
         }
 
@@ -52,7 +52,7 @@ template <> struct ComponentMeta<PrimitiveComponent> {
         return changed;
     }
 
-    static const std::vector<FieldDescriptor> &Fields()
+    static const std::vector<FieldDescriptor>& Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
             META_FIELD_ENUM_INT(PrimitiveComponent, type, "type", "Type", nullptr, 5, "Settings"),
@@ -60,7 +60,7 @@ template <> struct ComponentMeta<PrimitiveComponent> {
             META_FIELD_FLOAT3(PrimitiveComponent, size, "size", "Size", 0.1f, "Settings"),
             META_FIELD_FLOAT(PrimitiveComponent, radius, "radius", "Radius", 0.1f, 0.0f, 100.0f, "Settings"),
             META_FIELD_FLOAT(PrimitiveComponent, height, "height", "Height", 0.1f, 0.0f, 100.0f, "Settings"),
-            META_FIELD_BOOL(PrimitiveComponent, isWireframe, "isWireframe", "Wireframe", "Settings")};
+            META_FIELD_BOOL(PrimitiveComponent, isWireframe, "isWireframe", "Wireframe", "Settings") };
         return fields;
     }
 };
@@ -69,11 +69,11 @@ template <> struct ComponentMeta<PrimitiveComponent> {
 // Dissolve Component
 // ============================================================================
 template <> struct ComponentMeta<DissolveComponent> {
-    static constexpr bool        registered   = true;
-    static constexpr const char *displayName  = "Dissolve Effect";
+    static constexpr bool        registered = true;
+    static constexpr const char* displayName = "Dissolve Effect";
     static constexpr bool        hasCustomGui = true;
 
-    static bool CustomGui(DissolveComponent &comp, unsigned long long, void *)
+    static bool CustomGui(DissolveComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr)
     {
         bool changed = false;
         ImGui::SeparatorText("Dissolve Settings");
@@ -82,13 +82,13 @@ template <> struct ComponentMeta<DissolveComponent> {
         return changed;
     }
 
-    static const std::vector<FieldDescriptor> &Fields()
+    static const std::vector<FieldDescriptor>& Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
             META_FIELD_FLOAT(
                 DissolveComponent, currentThreshold, "currentThreshold", "Threshold", 0.01f, 0.0f, 1.0f, "Settings"),
             META_FIELD_FLOAT(
-                DissolveComponent, dissolveSpeed, "dissolveSpeed", "Speed", 0.01f, 0.0f, 10.0f, "Settings")};
+                DissolveComponent, dissolveSpeed, "dissolveSpeed", "Speed", 0.01f, 0.0f, 10.0f, "Settings") };
         return fields;
     }
 };
@@ -97,11 +97,11 @@ template <> struct ComponentMeta<DissolveComponent> {
 // Timer Component
 // ============================================================================
 template <> struct ComponentMeta<TimerComponent> {
-    static constexpr bool        registered   = true;
-    static constexpr const char *displayName  = "Timer Component";
+    static constexpr bool        registered = true;
+    static constexpr const char* displayName = "Timer Component";
     static constexpr bool        hasCustomGui = true;
 
-    static bool CustomGui(TimerComponent &comp, unsigned long long, void *)
+    static bool CustomGui(TimerComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr)
     {
         bool changed = false;
         ImGui::SeparatorText("Timer State");
@@ -115,33 +115,27 @@ template <> struct ComponentMeta<TimerComponent> {
 
         if (comp.isExpired && ImGui::Button("Reset Timer")) {
             comp.currentTime = 0.0f;
-            comp.isExpired   = false;
-            changed          = true;
+            comp.isExpired = false;
+            changed = true;
         }
 
         return changed;
     }
 
-    static const std::vector<FieldDescriptor> &Fields()
+    static const std::vector<FieldDescriptor>& Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
             META_FIELD_FLOAT(
                 TimerComponent, currentTime, "currentTime", "Current Time", 0.01f, 0.0f, 0.0f, "Settings"),
             META_FIELD_FLOAT(TimerComponent, lifeTime, "lifeTime", "Life Time", 0.1f, 0.0f, 0.0f, "Settings"),
-            META_FIELD_BOOL(TimerComponent, isExpired, "isExpired", "Is Expired", "Settings")};
+            META_FIELD_BOOL(TimerComponent, isExpired, "isExpired", "Is Expired", "Settings") };
         return fields;
     }
 };
 
-void RegisterUtilsMeta()
-{
-    auto &jsonReg = ComponentRegistry::Instance();
-    ComponentMetaJson::RegisterMetaT<PrimitiveComponent>(jsonReg, "Primitive");
-    ComponentMetaJson::RegisterMetaT<DissolveComponent>(jsonReg, "Dissolve");
-    ComponentMetaJson::RegisterMetaT<TimerComponent>(jsonReg, "Timer");
-
-    auto &guiReg = ComponentGuiRegistry::Instance();
-    ComponentMetaImGui::RegisterGuiMeta<PrimitiveComponent>(guiReg);
-    ComponentMetaImGui::RegisterGuiMeta<DissolveComponent>(guiReg);
-    ComponentMetaImGui::RegisterGuiMeta<TimerComponent>(guiReg);
-}
+// ============================================================================
+// 究極の自動化
+// ============================================================================
+REGISTER_COMPONENT(PrimitiveComponent, "Primitive")
+REGISTER_COMPONENT(DissolveComponent, "Dissolve")
+REGISTER_COMPONENT(TimerComponent, "Timer")

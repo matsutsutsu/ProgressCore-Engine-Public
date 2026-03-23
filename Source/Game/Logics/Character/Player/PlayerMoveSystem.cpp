@@ -1,18 +1,19 @@
 #include "PlayerMoveSystem.h"
-
-// 実装詳細でのみ必要なインクルード
 #include "Engine/GamePlay/Graphics/Lighting/FogComponent.h"
 #include "Game/Logics/Combat/HealthComponent.h"
 #include "Game/Logics/Combat/DeadTag.h"
 #include "Engine/Graphics/Resource/Model.h"
 #include <SimpleMath.h>
-#include <cmath> // atan2f用
+#include <cmath>
 
 #include "Game/Logics/GameEvent/GameStateMode.h"
-
-// システムの実行順序の定義ヘッダー
 #include "ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"
+
+// ★本来はResourceManagerから取得しますが、コンパイルを通すための暫定的なキャッシュ
+static AnimSequence s_tempSeqIdle;
+static AnimSequence s_tempSeqRun;
+static AnimSequence s_tempSeqAttack;
 
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
@@ -21,6 +22,17 @@ PlayerMoveSystem::PlayerMoveSystem() : IfSystem("PlayerMoveSystem") {}
 
 void PlayerMoveSystem::Update(float dt)
 {
+    // 暫定的なアニメーションデータの初期化（※本来はJSON等からロードします）
+    if (!_isAnimLoaded) {
+        s_tempSeqIdle.targetAnimName = "Idle";   s_tempSeqIdle.duration = 2.0f;
+        s_tempSeqRun.targetAnimName = "Run";     s_tempSeqRun.duration = 1.0f;
+        s_tempSeqAttack.targetAnimName = "Attack"; s_tempSeqAttack.duration = 1.5f;
+
+        _seqIdle = &s_tempSeqIdle;
+        _seqRun = &s_tempSeqRun;
+        _seqAttack = &s_tempSeqAttack;
+        _isAnimLoaded = true;
+    }
 
     ForEachWithID([&](EntityID            id,
                       TransformComponent &trans,
@@ -34,13 +46,6 @@ void PlayerMoveSystem::Update(float dt)
             return; // 死んでいたら何もさせない（アニメーションも更新しない）
         }
 
-        // --- 0. アニメーションIDの取得 (初回のみ) ---
-        if (modelComp.modelPtr) {
-            if (_animIdIdle == -1) _animIdIdle = modelComp.modelPtr->GetAnimationIndex("Idle");
-            // if (_animIdRun == -1) _animIdRun = modelComp.modelPtr->GetAnimationIndex("Run");
-            if (_animIdAttack == -1)
-                _animIdAttack = modelComp.modelPtr->GetAnimationIndex("Attack");
-        }
 
         // =================================================================
         //  移動と回転の計算を行う
@@ -101,30 +106,28 @@ void PlayerMoveSystem::Update(float dt)
 
         // --- 3. アニメーション制御 ---
 
+        // --- 3. アニメーション制御 ---
         bool isMoving = (players.input.moveDir.x != 0.0f || players.input.moveDir.z != 0.0f);
 
-        // 現在アクティブなアニメーションIDを取得
-        int currentActiveId =
-            (animator.targetAnimIndex != -1) ? animator.targetAnimIndex : animator.currentAnimIndex;
-
-        // ★優先度チェック:
-        // もし「攻撃中」かつ「まだ終わっていない」なら、移動モーションによる上書きを拒否する
-        bool isAttacking = (currentActiveId == _animIdAttack);
+        // ★修正: ポインタ比較で現在の状態を判定
+        bool isAttacking = (animator.currentSequence == _seqAttack);
 
         if (isAttacking && !animator.isFinished) {
-            // 何もしない（攻撃モーション継続）
+            // 攻撃モーションが終わるまで何もしない
         }
         else {
             // 通常の移動・待機モーション遷移
-            int nextAnimId = _animIdIdle;
-            if (isMoving && _animIdRun != -1) {
-                nextAnimId = _animIdRun;
+            const AnimSequence* nextSeq = _seqIdle;
+
+            if (isMoving && _seqRun != nullptr) {
+                nextSeq = _seqRun;
             }
 
-            // 状態が変わる場合のみPlay
-            if (nextAnimId != -1 && currentActiveId != nextAnimId) {
-                animator.Play(nextAnimId, true, 1.0f, 0.2f);
-            }
+            // ★ここで攻撃ボタンなどの入力があれば nextSeq = _seqAttack; にする等の処理が入ります
+            // if (players.input.attack) { nextSeq = _seqAttack; }
+
+            // ★追加した Play ヘルパー関数を呼び出す
+            animator.Play(nextSeq, (nextSeq != _seqAttack), 1.0f); // 攻撃以外はループ再生
         }
     });
 }

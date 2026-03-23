@@ -5,18 +5,18 @@
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 #include "Engine/GamePlay/Graphics/Lighting/LightComponent.h"
 
-#include "Engine/Serialization/ComponentSerializers.h"
+// ❌ 削除: #include "Engine/Serialization/ComponentSerializers.h"
 
 // ============================================================================
 // Directional Light
 // ============================================================================
 template <> struct ComponentMeta<DirectionalLightComponent> {
-    static constexpr bool        registered  = true;
-    static constexpr const char *displayName = "Directional Light";
+    static constexpr bool        registered = true;
+    static constexpr const char* displayName = "Directional Light";
 
     static constexpr bool hasCustomGui = true;
 
-    static bool CustomGui(DirectionalLightComponent &comp)
+    static bool CustomGui(DirectionalLightComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr)
     {
         bool changed = false;
         changed |= ImGui::ColorEdit3("Light Color", &comp.color.x);
@@ -27,13 +27,13 @@ template <> struct ComponentMeta<DirectionalLightComponent> {
         return changed;
     }
 
-    static const std::vector<FieldDescriptor> &Fields()
+    static const std::vector<FieldDescriptor>& Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
             META_FIELD_FLOAT3(DirectionalLightComponent, color, "color", "Color", 0.01f, "Lighting"),
             META_FIELD_FLOAT(DirectionalLightComponent, intensity, "intensity", "Intensity", 0.05f, 0.0f, 100.0f, "Lighting"),
             META_FIELD_FLOAT4(DirectionalLightComponent, skyColor, "skyColor", "Sky Color", 0.01f, "Hemisphere"),
-            META_FIELD_FLOAT4(DirectionalLightComponent, groundColor, "groundColor", "Ground Color", 0.01f, "Hemisphere")};
+            META_FIELD_FLOAT4(DirectionalLightComponent, groundColor, "groundColor", "Ground Color", 0.01f, "Hemisphere") };
         return fields;
     }
 };
@@ -42,12 +42,12 @@ template <> struct ComponentMeta<DirectionalLightComponent> {
 // Point Light
 // ============================================================================
 template <> struct ComponentMeta<PointLightComponent> {
-    static constexpr bool        registered  = true;
-    static constexpr const char *displayName = "Point Light";
+    static constexpr bool        registered = true;
+    static constexpr const char* displayName = "Point Light";
 
     static constexpr bool hasCustomGui = true;
 
-    static bool CustomGui(PointLightComponent &comp)
+    static bool CustomGui(PointLightComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr)
     {
         bool changed = false;
         changed |= ImGui::ColorEdit3("Light Color", &comp.color.x);
@@ -61,7 +61,7 @@ template <> struct ComponentMeta<PointLightComponent> {
         return changed;
     }
 
-    static const std::vector<FieldDescriptor> &Fields()
+    static const std::vector<FieldDescriptor>& Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
             META_FIELD_FLOAT3(PointLightComponent, color, "color", "Color", 0.01f, "Lighting"),
@@ -69,7 +69,7 @@ template <> struct ComponentMeta<PointLightComponent> {
             META_FIELD_FLOAT(PointLightComponent, range, "range", "Range", 0.5f, 0.0f, 1000.0f, "Lighting"),
             META_FIELD_FLOAT(PointLightComponent, constant, "constant", "Constant", 0.01f, 0.0f, 10.0f, "Attenuation"),
             META_FIELD_FLOAT(PointLightComponent, linear, "linear", "Linear", 0.01f, 0.0f, 10.0f, "Attenuation"),
-            META_FIELD_FLOAT(PointLightComponent, quadratic, "quadratic", "Quadratic", 0.001f, 0.0f, 1.0f, "Attenuation")};
+            META_FIELD_FLOAT(PointLightComponent, quadratic, "quadratic", "Quadratic", 0.001f, 0.0f, 1.0f, "Attenuation") };
         return fields;
     }
 };
@@ -78,12 +78,12 @@ template <> struct ComponentMeta<PointLightComponent> {
 // Spot Light
 // ============================================================================
 template <> struct ComponentMeta<SpotLightComponent> {
-    static constexpr bool        registered  = true;
-    static constexpr const char *displayName = "Spot Light";
+    static constexpr bool        registered = true;
+    static constexpr const char* displayName = "Spot Light";
 
     static constexpr bool hasCustomGui = true;
 
-    static bool CustomGui(SpotLightComponent &comp)
+    static bool CustomGui(SpotLightComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr)
     {
         bool changed = false;
         changed |= ImGui::ColorEdit3("Light Color", &comp.color.x);
@@ -100,38 +100,27 @@ template <> struct ComponentMeta<SpotLightComponent> {
         // 【フェイルセーフ】Inner(明るい部分)がOuter(減衰の境界)より小さくならないように強制補正
         if (comp.innerCos < comp.outerCos) {
             comp.innerCos = comp.outerCos;
-            changed       = true;
+            changed = true;
         }
 
         return changed;
     }
 
-    static const std::vector<FieldDescriptor> &Fields()
+    static const std::vector<FieldDescriptor>& Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
             META_FIELD_FLOAT3(SpotLightComponent, color, "color", "Color", 0.01f, "Lighting"),
             META_FIELD_FLOAT(SpotLightComponent, intensity, "intensity", "Intensity", 0.05f, 0.0f, 100.0f, "Lighting"),
             META_FIELD_FLOAT(SpotLightComponent, range, "range", "Range", 0.5f, 0.0f, 1000.0f, "Lighting"),
             META_FIELD_FLOAT(SpotLightComponent, innerCos, "innerCos", "Inner Cone (Cos)", 0.01f, 0.0f, 1.0f, "Cone"),
-            META_FIELD_FLOAT(SpotLightComponent, outerCos, "outerCos", "Outer Cone (Cos)", 0.01f, 0.0f, 1.0f, "Cone")};
+            META_FIELD_FLOAT(SpotLightComponent, outerCos, "outerCos", "Outer Cone (Cos)", 0.01f, 0.0f, 1.0f, "Cone") };
         return fields;
     }
 };
 
 // ============================================================================
-// 自動登録システム
+// 究極の自動化：これだけでJSONとImGuiの両方に登録される
 // ============================================================================
-
-void RegisterLightingMeta()
-{
-    auto &jsonReg = ComponentRegistry::Instance();
-    ComponentMetaJson::RegisterMetaT<DirectionalLightComponent>(
-        jsonReg, "DirectionalLight");
-    ComponentMetaJson::RegisterMetaT<PointLightComponent>(jsonReg, "PointLight");
-    ComponentMetaJson::RegisterMetaT<SpotLightComponent>(jsonReg, "SpotLight");
-
-    auto &guiReg = ComponentGuiRegistry::Instance();
-    ComponentMetaImGui::RegisterGuiMeta<DirectionalLightComponent>(guiReg);
-    ComponentMetaImGui::RegisterGuiMeta<PointLightComponent>(guiReg);
-    ComponentMetaImGui::RegisterGuiMeta<SpotLightComponent>(guiReg);
-}
+REGISTER_COMPONENT(DirectionalLightComponent, "DirectionalLight")
+REGISTER_COMPONENT(PointLightComponent, "PointLight")
+REGISTER_COMPONENT(SpotLightComponent, "SpotLight")

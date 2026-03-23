@@ -171,31 +171,11 @@ public:
 		void serialize(Archive& archive, int version);
 	};
 
-	// アニメーションイベント定義
-    struct AnimationEvent {
-        int   type     = 0;    // 0:HitBox, 1:Sound, etc.
-        float time     = 0.0f; // 発生時間 (秒)
-        float duration = 0.0f; // 持続時間 (秒)
-
-        // 汎用パラメータ
-        std::string stringParam;
-        float       floatParam = 0.0f;
-        int         intParam   = 0;
-
-        // 保存用関数
-        template <class Archive>
-		void serialize(Archive &archive, int version);
-    };
-
-	//
 	struct Animation
 	{
 		std::string					name;
 		float						secondsLength;
 		std::vector<NodeAnim>		nodeAnims;
-
-		// イベントリスト
-		std::vector<AnimationEvent> events;
 
 		template<class Archive>
 		void serialize(Archive& archive, int version);

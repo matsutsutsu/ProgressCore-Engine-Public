@@ -1,193 +1,172 @@
 #include "AnimationSequencerWindow.h"
-
-// 必要なヘッダー
 #include "Engine/GamePlay/Animation/AnimatorComponent.h"
 #include "Engine/GamePlay/Graphics/Core/ModelComponent.h"
 #include "ImSequencer.h"
 #include "Engine/Graphics/Resource/Model.h"
 #include "Engine/Graphics/Resource/ModelResource.h"
+#include "Engine/GamePlay/Animation/AnimSequence.h" // ★新しい台本データ
+
 #include <algorithm>
 #include <cstdio>
 #include <string>
 #include <vector>
+#include <fstream>
+#include <cereal/archives/json.hpp>
 
 // =============================================================================
-// データ管理クラス (ImSequencer <-> ModelResource の仲介)
+// データ管理クラス (ImSequencer <-> AnimSequence の仲介)
 // =============================================================================
 class AnimationSequenceImpl : public ImSequencer::SequenceInterface {
-  public:
-    // ImSequencer用のキャッシュデータ
+public:
+    // UI表示用のキャッシュデータ (ブロック単位)
     struct EditorEvent {
         int frameStart;
         int frameEnd;
         int type;
-        // 元データを保持
-        ModelResource::AnimationEvent originalData;
     };
 
-    std::vector<EditorEvent>                    cache;
-    std::vector<ModelResource::AnimationEvent> *targetEvents = nullptr;
+    std::vector<EditorEvent> cache;
+    AnimSequence* targetSequence = nullptr; // ★対象がModelResourceではなく台本に！
 
     int mFrameMin = 0;
-    int mFrameMax = 60 * 5; // デフォルト5秒
+    int mFrameMax = 60 * 5;
 
     // -------------------------------------------------------------------------
-    // 同期処理
-    // -------------------------------------------------------------------------
-
-    void SyncFromData()
-    {
+    // 同期処理: 台本(点) -> UI(ブロック) への変換
+    // ---------------------------------------------------------
+    void SyncFromData() {
         cache.clear();
-        if (!targetEvents) return;
+        if (!targetSequence) return;
 
-        for (const auto &evt : *targetEvents) {
-            EditorEvent item;
-            item.originalData = evt;
-            item.type         = evt.type;
+        int pendingHitBoxStart = -1;
 
-            item.frameStart = (int)(evt.time * 60.0f);
-            item.frameEnd   = (int)((evt.time + evt.duration) * 60.0f);
-
-            // 終了フレームが開始より前にならないように補正
-            if (item.frameEnd < item.frameStart + 1) item.frameEnd = item.frameStart + 1;
-
-            cache.push_back(item);
-        }
-    }
-
-    void SyncToData()
-    {
-        if (!targetEvents) return;
-        targetEvents->clear();
-
-        for (const auto &item : cache) {
-            ModelResource::AnimationEvent evt = item.originalData;
-            evt.type                          = item.type;
-
-            evt.time     = (float)item.frameStart / 60.0f;
-            evt.duration = (float)(item.frameEnd - item.frameStart) / 60.0f;
-
-            if (evt.duration < 0.0f) evt.duration = 0.0f;
-
-            targetEvents->push_back(evt);
-        }
-    }
-
-    void UpdateDuration(float durationSeconds)
-    {
-        // 少し余裕を持たせる（+10%）
-        mFrameMax = (int)(durationSeconds * 60.0f * 1.1f);
-        if (mFrameMax < 60) mFrameMax = 60;
-    }
-
-    // -------------------------------------------------------------------------
-    // ImSequencer Interface
-    // -------------------------------------------------------------------------
-    virtual int GetFrameMin() const override { return mFrameMin; }
-    virtual int GetFrameMax() const override { return mFrameMax; }
-    virtual int GetItemCount() const override { return (int)cache.size(); }
-
-    virtual int GetItemTypeCount() const override { return 3; } // タイプ数を増やす
-
-    virtual const char *GetItemTypeName(int typeIndex) const override
-    {
-        switch (typeIndex) {
-        case 0: return "HitBox (Attack)";
-        case 1: return "Sound (SE)";
-        case 2: return "Effect (VFX)";
-        default: return "Unknown";
-        }
-    }
-
-    virtual const char *GetItemLabel(int index) const override
-    {
-        static char temp[64];
-        if (index < 0 || index >= (int)cache.size()) return "";
-
-        const auto &item = cache[index];
-        switch (item.type) {
-        case 0: sprintf_s(temp, "[%d] Attack", index); break;
-        case 1: sprintf_s(temp, "[%d] Sound", index); break;
-        case 2: sprintf_s(temp, "[%d] Effect", index); break;
-        default: sprintf_s(temp, "[%d] Event", index); break;
-        }
-        return temp;
-    }
-
-    virtual void Get(int index, int **start, int **end, int *type, unsigned int *color) override
-    {
-        if (index < 0 || index >= (int)cache.size()) return;
-
-        EditorEvent &item = cache[index];
-        if (start) *start = &item.frameStart;
-        if (end) *end = &item.frameEnd;
-        if (type) *type = item.type;
-
-        if (color) {
-            // タイプごとの色分け (ABGR形式であることに注意)
-            switch (item.type) {
-            case 0: *color = 0xFF5050D0; break; // 赤 (HitBox)
-            case 1: *color = 0xFFD08050; break; // 青 (Sound)
-            case 2: *color = 0xFF50D050; break; // 緑 (Effect)
-            default: *color = 0xFFFFFFFF; break;
+        for (const auto& evt : targetSequence->events) {
+            if (evt.eventName == "HitBox_Start") {
+                pendingHitBoxStart = (int)(evt.time * 60.0f);
+            } 
+            else if (evt.eventName == "HitBox_End") {
+                if (pendingHitBoxStart != -1) {
+                    EditorEvent item{ pendingHitBoxStart, (int)(evt.time * 60.0f), 0 };
+                    cache.push_back(item);
+                    pendingHitBoxStart = -1;
+                }
+            } 
+            else if (evt.eventName == "Play_Sound") {
+                int frame = (int)(evt.time * 60.0f);
+                cache.push_back({ frame, frame + 1, 1 });
+            } 
+            else if (evt.eventName == "Play_Effect") {
+                int frame = (int)(evt.time * 60.0f);
+                cache.push_back({ frame, frame + 1, 2 });
             }
         }
     }
 
-    virtual void Add(int type) override
-    {
+    // -------------------------------------------------------------------------
+    // 同期処理: UI(ブロック) -> 台本(点) への変換と【自動ソート】
+    // ---------------------------------------------------------
+    void SyncToData() {
+        if (!targetSequence) return;
+        targetSequence->events.clear();
+
+        for (const auto& item : cache) {
+            float startSec = (float)item.frameStart / 60.0f;
+            float endSec   = (float)item.frameEnd / 60.0f;
+
+            if (item.type == 0) { // HitBoxブロック -> StartとEndの2つに分解
+                targetSequence->events.push_back({ startSec, "HitBox_Start" });
+                targetSequence->events.push_back({ endSec, "HitBox_End" });
+            } 
+            else if (item.type == 1) {
+                targetSequence->events.push_back({ startSec, "Play_Sound" });
+            } 
+            else if (item.type == 2) {
+                targetSequence->events.push_back({ startSec, "Play_Effect" });
+            }
+        }
+
+        // ★絶対条件: O(1)アクセスのため、時間を基準に昇順ソートする
+        std::sort(targetSequence->events.begin(), targetSequence->events.end(),
+            [](const AnimNotifyEvent& a, const AnimNotifyEvent& b) {
+                return a.time < b.time;
+            });
+    }
+
+    void UpdateDuration(float durationSeconds) {
+        mFrameMax = (int)(durationSeconds * 60.0f * 1.1f);
+        if (mFrameMax < 60) mFrameMax = 60;
+    }
+
+    // --- ImSequencer Interface (変更なし部分は省略気味に記載) ---
+    virtual int GetFrameMin() const override { return mFrameMin; }
+    virtual int GetFrameMax() const override { return mFrameMax; }
+    virtual int GetItemCount() const override { return (int)cache.size(); }
+    virtual int GetItemTypeCount() const override { return 3; }
+
+    virtual const char* GetItemTypeName(int typeIndex) const override {
+        switch (typeIndex) {
+            case 0: return "HitBox (Attack)";
+            case 1: return "Sound (SE)";
+            case 2: return "Effect (VFX)";
+            default: return "Unknown";
+        }
+    }
+
+    virtual const char* GetItemLabel(int index) const override {
+        static char temp[64];
+        if (index < 0 || index >= (int)cache.size()) return "";
+        const auto& item = cache[index];
+        switch (item.type) {
+            case 0: sprintf_s(temp, "[%d] Attack", index); break;
+            case 1: sprintf_s(temp, "[%d] Sound", index); break;
+            case 2: sprintf_s(temp, "[%d] Effect", index); break;
+            default: sprintf_s(temp, "[%d] Event", index); break;
+        }
+        return temp;
+    }
+
+    virtual void Get(int index, int** start, int** end, int* type, unsigned int* color) override {
+        if (index < 0 || index >= (int)cache.size()) return;
+        EditorEvent& item = cache[index];
+        if (start) *start = &item.frameStart;
+        if (end) *end = &item.frameEnd;
+        if (type) *type = item.type;
+        if (color) {
+            switch (item.type) {
+                case 0: *color = 0xFF5050D0; break; // 赤
+                case 1: *color = 0xFFD08050; break; // 青
+                case 2: *color = 0xFF50D050; break; // 緑
+                default: *color = 0xFFFFFFFF; break;
+            }
+        }
+    }
+
+    virtual void Add(int type) override {
         EditorEvent item;
-        item.type       = type;
+        item.type = type;
         item.frameStart = 0;
-        // HitBox(0)は持続あり、それ以外は1フレーム(瞬間)
-        item.frameEnd = (type == 0) ? 30 : 1;
-
-        item.originalData.type        = type;
-        item.originalData.stringParam = "";
-        item.originalData.floatParam  = 1.0f;
-
+        item.frameEnd = (type == 0) ? 30 : 1; // HitBoxのみ幅を持たせる
         cache.push_back(item);
-    };
-
-    virtual void Del(int index) override
-    {
-        if (index >= 0 && index < (int)cache.size()) {
-            cache.erase(cache.begin() + index);
-        }
     }
-
-    virtual void Duplicate(int index) override
-    {
-        if (index >= 0 && index < (int)cache.size()) {
-            cache.push_back(cache[index]);
-        }
+    
+    virtual void Del(int index) override {
+        if (index >= 0 && index < (int)cache.size()) cache.erase(cache.begin() + index);
     }
-
-    // 行の高さを少し広げる
+    virtual void Duplicate(int index) override {
+        if (index >= 0 && index < (int)cache.size()) cache.push_back(cache[index]);
+    }
     virtual size_t GetCustomHeight(int index) override { return 24; }
-
-    virtual void DoubleClick(int index) override
-    {
-        // ダブルクリック時の挙動（詳細ウィンドウを開くなど）を将来的に実装可能
-    }
-
-    virtual void CustomDraw(int index,
-        ImDrawList             *draw_list,
-        const ImRect           &rc,
-        const ImRect           &legendRect,
-        const ImRect           &clippingRect,
-        const ImRect           &legendClippingRect) override
-    {
-    }
-    virtual void CustomDrawCompact(
-        int index, ImDrawList *draw_list, const ImRect &rc, const ImRect &clippingRect) override
-    {
-    }
+    virtual void DoubleClick(int index) override {}
+    virtual void CustomDraw(int, ImDrawList*, const ImRect&, const ImRect&, const ImRect&, const ImRect&) override {}
+    virtual void CustomDrawCompact(int, ImDrawList*, const ImRect&, const ImRect&) override {}
 };
 
 // =============================================================================
 // Window Class Implementation
 // =============================================================================
+// ★エディタウィンドウ内で編集中の「台本」の実体を保持するための変数群
+static AnimSequence g_EditingSequence; 
+static char g_SavePath[256] = "Assets/GamePlay/Animations/Player_Attack.json";
 
 AnimationSequencerWindow::AnimationSequencerWindow()
     : EditorWindow("Sequencer"), _expanded(true), _selectedEntry(-1), _firstFrame(0)
@@ -198,124 +177,139 @@ AnimationSequencerWindow::AnimationSequencerWindow()
 
 AnimationSequencerWindow::~AnimationSequencerWindow() = default;
 
-void AnimationSequencerWindow::DrawContents(EditorContext &context)
+void AnimationSequencerWindow::DrawContents(EditorContext& context)
 {
-    // ---------------------------------------------------------
-    // 1. ターゲット検証と準備
-    // ---------------------------------------------------------
     if (context.selectedEntity == CCL::ECS::InvalidEntityID || context.selectedEntity == 0) {
         ImGui::TextDisabled("Select an entity to edit animation.");
         return;
     }
 
-    CCL::ECS::EntityID entity    = context.selectedEntity;
-    auto              *animator  = context.world->GetComponent<AnimatorComponent>(entity);
-    auto              *modelComp = context.world->GetComponent<ModelComponent>(entity);
+    CCL::ECS::EntityID entity = context.selectedEntity;
+    auto* animator = context.world->GetComponent<AnimatorComponent>(entity);
+    auto* modelComp = context.world->GetComponent<ModelComponent>(entity);
 
-    if (!animator) {
-        ImGui::TextColored(ImVec4(1, 0, 0, 1), "Selected entity has no AnimatorComponent.");
+    if (!animator || !modelComp || !modelComp->modelPtr) {
+        ImGui::TextColored(ImVec4(1, 0, 0, 1), "Entity needs Animator and Model components.");
         return;
     }
 
+    Model* model = modelComp->modelPtr.get();
+    ModelResource* resource = model->GetResourceMutable();
+    if (!resource) return;
+
     // ---------------------------------------------------------
-    // 2. 編集対象データの取得
+    // JSON保存・読み込みのUI
     // ---------------------------------------------------------
-    bool        targetFound     = false;
-    std::string currentAnimName = "(None)";
-    float       currentDuration = 1.0f;
-
-    if (modelComp && modelComp->modelPtr) {
-        Model         *model    = modelComp->modelPtr.get();
-        ModelResource *resource = model->GetResourceMutable();
-
-        if (resource) {
-            auto &animations = resource->GetAnimationsMutable();
-            int   idx        = animator->currentAnimIndex;
-
-            if (idx >= 0 && idx < (int)animations.size()) {
-                _sequencerImpl->targetEvents = &animations[idx].events;
-                _sequencerImpl->UpdateDuration(animations[idx].secondsLength);
-
-                currentAnimName = animations[idx].name;
-                currentDuration = animations[idx].secondsLength;
-                targetFound     = true;
-            }
+    ImGui::InputText("Save Path", g_SavePath, sizeof(g_SavePath));
+    
+    if (ImGui::Button("Save JSON")) {
+        // 現在の編集内容をJSONに書き出す
+        std::ofstream os(g_SavePath);
+        if (os.is_open()) {
+            cereal::JSONOutputArchive archive(os);
+            archive(cereal::make_nvp("AnimSequence", g_EditingSequence));
         }
     }
-
-    if (!targetFound) {
-        _sequencerImpl->targetEvents = nullptr;
-    }
-
-    // ---------------------------------------------------------
-    // 3. ツールバー表示 (ボタン類)
-    // ---------------------------------------------------------
-    ImGui::Text("Anim: %s (%.2fs)", currentAnimName.c_str(), currentDuration);
-
-    // 編集モード切替
-    ImGui::Checkbox("Edit Mode (Pause & Preview)", &context.isAnimEditMode);
-
     ImGui::SameLine();
-    ImGui::Text("|"); // シンプルに文字で縦線を描画
-    ImGui::SameLine();
-
-    // イベント追加ボタン群
-    if (ImGui::Button("+ Attack")) {
-        _sequencerImpl->Add(0); // HitBox
-        _sequencerImpl->SyncToData();
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("+ Sound")) {
-        _sequencerImpl->Add(1); // Sound
-        _sequencerImpl->SyncToData();
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("+ Effect")) {
-        _sequencerImpl->Add(2); // Effect
-        _sequencerImpl->SyncToData();
+    if (ImGui::Button("Load JSON")) {
+        std::ifstream is(g_SavePath);
+        if (is.is_open()) {
+            cereal::JSONInputArchive archive(is);
+            archive(cereal::make_nvp("AnimSequence", g_EditingSequence));
+            _sequencerImpl->SyncFromData(); // 読み込んだらUIを更新
+        }
     }
 
     ImGui::Separator();
 
     // ---------------------------------------------------------
-    // 4. シーケンサー描画
+    // ターゲットの関連付け（エディタ側で選択する設計に変更）
     // ---------------------------------------------------------
-    _sequencerImpl->SyncFromData();
+    // ModelResourceからアニメーション一覧を取得
+    auto& animations = resource->GetAnimationsMutable();
+    if (animations.empty()) {
+        ImGui::TextDisabled("No animations found in the model.");
+        return;
+    }
 
-    // ★修正: BeginChild / EndChild を削除しました
-    // これでマウスホイールのイベントが直接シーケンサーに届くようになります
+    // エディタ側で「今どのアニメーションの台本を作っているか」を記憶する
+    static int s_SelectedAnimIndex = 0;
+    
+    // 安全対策（モデルが切り替わってインデックスがはみ出した場合）
+    if (s_SelectedAnimIndex >= (int)animations.size()) {
+        s_SelectedAnimIndex = 0;
+    }
 
-    {
-        // 時間管理
+    // ★アニメーション選択用ドロップダウンメニュー
+    if (ImGui::BeginCombo("Target Animation", animations[s_SelectedAnimIndex].name.c_str())) {
+        for (int i = 0; i < (int)animations.size(); ++i) {
+            bool isSelected = (s_SelectedAnimIndex == i);
+            if (ImGui::Selectable(animations[i].name.c_str(), isSelected)) {
+                s_SelectedAnimIndex = i;
+            }
+            if (isSelected) ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+
+    int idx = s_SelectedAnimIndex;
+    
+    // 選択されたアニメーションの情報を、編集中の「台本」に反映する
+    // ※元のModelResource側が duration という変数名なら .duration に、
+    //   secondsLength という名前なら .secondsLength に合わせてください。
+    g_EditingSequence.targetAnimName = animations[idx].name;
+    g_EditingSequence.duration       = animations[idx].secondsLength;
+        
+    _sequencerImpl->targetSequence = &g_EditingSequence;
+    _sequencerImpl->UpdateDuration(animations[idx].secondsLength);
+
+    // ★超重要：プレビューモード中（Edit Mode）は、
+    // 役者（Component）の読む台本を、今まさに編集しているこの台本に強制的にすり替える
+    if (context.isAnimEditMode) {
+        animator->currentSequence = &g_EditingSequence;
+    }
+
+
+    // ---------------------------------------------------------
+    // ツールバー表示 (ボタン類)
+    // ---------------------------------------------------------
+    ImGui::Text("Anim: %s (%.2fs)", g_EditingSequence.targetAnimName.c_str(), g_EditingSequence.duration);
+    ImGui::Checkbox("Edit Mode (Pause & Preview)", &context.isAnimEditMode);
+
+    ImGui::SameLine(); ImGui::Text("|"); ImGui::SameLine();
+
+    if (ImGui::Button("+ Attack")) { _sequencerImpl->Add(0); _sequencerImpl->SyncToData(); }
+    ImGui::SameLine();
+    if (ImGui::Button("+ Sound"))  { _sequencerImpl->Add(1); _sequencerImpl->SyncToData(); }
+    ImGui::SameLine();
+    if (ImGui::Button("+ Effect")) { _sequencerImpl->Add(2); _sequencerImpl->SyncToData(); }
+
+    ImGui::Separator();
+
+    // ---------------------------------------------------------
+    // シーケンサー描画
+    // ---------------------------------------------------------
+    if (_sequencerImpl->targetSequence) {
+        _sequencerImpl->SyncFromData();
+
         int currentFrame = 0;
         if (context.isAnimEditMode) {
             currentFrame = (int)(context.animEditTime * 60.0f);
-        }
-        else if (animator) {
+        } else {
             currentFrame = (int)(animator->currentTimer * 60.0f);
         }
 
         _expanded = true;
-
-        // シーケンサー本体
-        bool changed = ImSequencer::Sequencer(_sequencerImpl.get(),
-            &currentFrame,
-            &_expanded,
-            &_selectedEntry,
-            &_firstFrame,
+        bool changed = ImSequencer::Sequencer(_sequencerImpl.get(), &currentFrame, &_expanded, &_selectedEntry, &_firstFrame,
             ImSequencer::SEQUENCER_EDIT_STARTEND | ImSequencer::SEQUENCER_ADD |
-                ImSequencer::SEQUENCER_DEL | ImSequencer::SEQUENCER_CHANGE_FRAME);
+            ImSequencer::SEQUENCER_DEL | ImSequencer::SEQUENCER_CHANGE_FRAME);
 
         if (changed) {
-            _sequencerImpl->SyncToData();
+            _sequencerImpl->SyncToData(); // 編集されたらデータに変換＆ソート
         }
 
-        // ---------------------------------------------------------
-        // 5. プレビュー連動
-        // ---------------------------------------------------------
-        if (context.isAnimEditMode && animator) {
+        if (context.isAnimEditMode) {
             context.animEditTime = (float)currentFrame / 60.0f;
         }
     }
-  
 }

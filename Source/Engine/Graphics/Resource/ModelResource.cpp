@@ -204,18 +204,7 @@ void ModelResource::NodeAnim::serialize(Archive& archive, int version)
 	);
 }
 
-template<class Archive>
-void ModelResource::AnimationEvent::serialize(Archive& archive, int version)
-{
-    archive(CEREAL_NVP(type),
-        CEREAL_NVP(time),
-        CEREAL_NVP(duration),
-        CEREAL_NVP(stringParam),
-        CEREAL_NVP(floatParam),
-        CEREAL_NVP(intParam)
-	);
-}
-      
+ 
 
 template<class Archive>
 void ModelResource::Animation::serialize(Archive& archive, int version)
@@ -223,8 +212,7 @@ void ModelResource::Animation::serialize(Archive& archive, int version)
 	archive(
 		CEREAL_NVP(name),
 		CEREAL_NVP(secondsLength),
-		CEREAL_NVP(nodeAnims), 
-		CEREAL_NVP(events)
+		CEREAL_NVP(nodeAnims)
 	);
 }
 

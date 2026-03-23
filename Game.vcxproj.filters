@@ -993,9 +993,6 @@
     <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltBodySetupSystem.h">
       <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Serialization\ComponentSerializers.h">
-      <Filter>Source\Engine\Serialization</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\GamePlay\Physics\Character\JoltCharacterConfigComponent.h">
       <Filter>Source\Engine\GamePlay\Physics\Character</Filter>
     </ClInclude>
@@ -1040,6 +1037,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltShapeUpdateSystem.h">
       <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimSequence.h">
+      <Filter>Source\Engine\GamePlay\Animation</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1510,9 +1510,6 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\GamePlay\Utils\MiscComponentMeta.cpp">
       <Filter>Source\Engine\GamePlay\Utils\_Meta</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Serialization\ComponentSerializers.cpp">
-      <Filter>Source\Engine\Serialization</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Serialization\ComponentRegistry.cpp">
       <Filter>Source\Engine\Serialization</Filter>

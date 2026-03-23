@@ -11,9 +11,6 @@
 #include "Engine/GamePlay/Core/Scene/SceneManager.h"
 
 #include "Engine/Serialization/Factory/Prefab.h"                 // ★追加
-//#include "Engine/GamePlay/Graphics/Particle/GPUParticleComponent.h" // ★追加
-
-#include "Engine/Serialization/ComponentSerializers.h"
 
 #include "Engine/Audio/Audio.h"
 
@@ -41,8 +38,6 @@ static const int syncInterval = 1;
 Framework::Framework(HWND hWnd)
 	: hWnd(hWnd)
 {
-    // 1. 一番最初にメタ情報を登録し、エンジンにすべての型を教え込む！
-    ComponentSerializers::RegisterAll();
 
     // 音声初期化
     Audio::Instance().Initialize();

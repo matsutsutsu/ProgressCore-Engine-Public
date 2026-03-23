@@ -9,7 +9,7 @@
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
-#include "Engine/Serialization/ComponentSerializers.h"
+// ❌ 削除: #include "Engine/Serialization/ComponentSerializers.h"
 
 #include "Engine/Graphics/Core/GpuResourceUtils.h"
 #include "Engine/Graphics/Core/Graphics.h"
@@ -19,11 +19,11 @@
 // ToneMap Config
 // ============================================================================
 template <> struct ComponentMeta<ToneMapConfigComponent> {
-    static constexpr bool        registered   = true;
-    static constexpr const char *displayName  = "Tone Mapping";
+    static constexpr bool        registered = true;
+    static constexpr const char* displayName = "Tone Mapping";
     static constexpr bool        hasCustomGui = true;
 
-    static bool CustomGui(ToneMapConfigComponent &comp, unsigned long long, void *)
+    static bool CustomGui(ToneMapConfigComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr)
     {
         bool changed = false;
         ImGui::SeparatorText("Exposure Settings");
@@ -31,10 +31,10 @@ template <> struct ComponentMeta<ToneMapConfigComponent> {
         return changed;
     }
 
-    static const std::vector<FieldDescriptor> &Fields()
+    static const std::vector<FieldDescriptor>& Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
-            META_FIELD_FLOAT(ToneMapConfigComponent, exposure, "exposure", "Exposure", 0.05f, 0.0f, 20.0f, "Settings")};
+            META_FIELD_FLOAT(ToneMapConfigComponent, exposure, "exposure", "Exposure", 0.05f, 0.0f, 20.0f, "Settings") };
         return fields;
     }
 };
@@ -43,11 +43,11 @@ template <> struct ComponentMeta<ToneMapConfigComponent> {
 // Bloom Config
 // ============================================================================
 template <> struct ComponentMeta<BloomConfigComponent> {
-    static constexpr bool        registered   = true;
-    static constexpr const char *displayName  = "Bloom Effect";
+    static constexpr bool        registered = true;
+    static constexpr const char* displayName = "Bloom Effect";
     static constexpr bool        hasCustomGui = true;
 
-    static bool CustomGui(BloomConfigComponent &comp, unsigned long long, void *)
+    static bool CustomGui(BloomConfigComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr)
     {
         bool changed = false;
         ImGui::SeparatorText("Toggle");
@@ -65,14 +65,14 @@ template <> struct ComponentMeta<BloomConfigComponent> {
         return changed;
     }
 
-    static const std::vector<FieldDescriptor> &Fields()
+    static const std::vector<FieldDescriptor>& Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
             META_FIELD_BOOL(BloomConfigComponent, enable, "enable", "Enable", "Toggle"),
             META_FIELD_FLOAT(BloomConfigComponent, threshold, "threshold", "Threshold", 0.01f, 0.0f, 10.0f, "Params"),
             META_FIELD_FLOAT(BloomConfigComponent, intensity, "intensity", "Intensity", 0.1f, 0.0f, 40.0f, "Params"),
             META_FIELD_FLOAT(BloomConfigComponent, softKnee, "softKnee", "Soft Knee", 0.01f, 0.0f, 1.0f, "Params"),
-            META_FIELD_FLOAT(BloomConfigComponent, radius, "radius", "Radius", 0.01f, 0.0f, 5.0f, "Params")};
+            META_FIELD_FLOAT(BloomConfigComponent, radius, "radius", "Radius", 0.01f, 0.0f, 5.0f, "Params") };
         return fields;
     }
 };
@@ -81,11 +81,11 @@ template <> struct ComponentMeta<BloomConfigComponent> {
 // Fog Component
 // ============================================================================
 template <> struct ComponentMeta<FogComponent> {
-    static constexpr bool        registered   = true;
-    static constexpr const char *displayName  = "Fog Settings";
+    static constexpr bool        registered = true;
+    static constexpr const char* displayName = "Fog Settings";
     static constexpr bool        hasCustomGui = true;
 
-    static bool CustomGui(FogComponent &comp, unsigned long long, void *)
+    static bool CustomGui(FogComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr)
     {
         bool changed = false;
 
@@ -104,12 +104,12 @@ template <> struct ComponentMeta<FogComponent> {
             ImGui::SameLine();
             if (ImGui::Button("Load...##FogNoise")) {
                 char        filename[256] = {};
-                const char *filter        = "Image Files\0*.png;*.jpg;*.dds\0All Files\0*.*\0";
+                const char* filter = "Image Files\0*.png;*.jpg;*.dds\0All Files\0*.*\0";
                 if (Dialog::OpenFileName(filename,
-                        256,
-                        filter,
-                        "Load Noise",
-                        Graphics::Instance().GetWindowHandle()) == DialogResult::OK) {
+                    256,
+                    filter,
+                    "Load Noise",
+                    Graphics::Instance().GetWindowHandle()) == DialogResult::OK) {
                     strcpy_s(comp.noiseTexturePath, filename);
                     GpuResourceUtils::LoadTexture(Graphics::Instance().GetDevice(),
                         filename,
@@ -119,12 +119,12 @@ template <> struct ComponentMeta<FogComponent> {
             }
 
             if (comp.noiseTextureSRV) {
-                ImGui::Image((void *)comp.noiseTextureSRV.Get(), ImVec2(64, 64));
+                ImGui::Image((void*)comp.noiseTextureSRV.Get(), ImVec2(64, 64));
                 ImGui::SameLine();
                 if (ImGui::Button("Clear##FogNoise")) {
                     comp.noiseTextureSRV.Reset();
                     comp.noiseTexturePath[0] = '\0';
-                    changed                  = true;
+                    changed = true;
                 }
             }
 
@@ -142,7 +142,7 @@ template <> struct ComponentMeta<FogComponent> {
         return changed;
     }
 
-    static const std::vector<FieldDescriptor> &Fields()
+    static const std::vector<FieldDescriptor>& Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
             META_FIELD_BOOL(FogComponent, enabled, "enabled", "Enabled", "Base"),
@@ -159,7 +159,6 @@ template <> struct ComponentMeta<FogComponent> {
             META_FIELD_FLOAT3(FogComponent, rimColor, "rimColor", "Rim Color", 0.01f, "Rim"),
             META_FIELD_FLOAT(FogComponent, rimStrength, "rimStrength", "Rim Strength", 0.1f, 0.0f, 10.0f, "Rim"),
             META_FIELD_FLOAT(FogComponent, rimPower, "rimPower", "Rim Power", 0.1f, 0.0f, 20.0f, "Rim")
-            // ※char配列のパス保存は別対応推奨
         };
         return fields;
     }
@@ -169,11 +168,11 @@ template <> struct ComponentMeta<FogComponent> {
 // ShadowMap Config
 // ============================================================================
 template <> struct ComponentMeta<ShadowMapConfigComponent> {
-    static constexpr bool        registered   = true;
-    static constexpr const char *displayName  = "Shadow Map Config";
+    static constexpr bool        registered = true;
+    static constexpr const char* displayName = "Shadow Map Config";
     static constexpr bool        hasCustomGui = true;
 
-    static bool CustomGui(ShadowMapConfigComponent &c, unsigned long long, void *)
+    static bool CustomGui(ShadowMapConfigComponent& c, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr)
     {
         bool changed = false;
         ImGui::SeparatorText("Shadow Settings");
@@ -183,7 +182,7 @@ template <> struct ComponentMeta<ShadowMapConfigComponent> {
         return changed;
     }
 
-    static const std::vector<FieldDescriptor> &Fields()
+    static const std::vector<FieldDescriptor>& Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
             META_FIELD_FLOAT(
@@ -197,23 +196,15 @@ template <> struct ComponentMeta<ShadowMapConfigComponent> {
                 0.01f,
                 "Settings"),
             META_FIELD_FLOAT4(
-                ShadowMapConfigComponent, shadowColor, "shadowColor", "Shadow Color", 0.01f, "Settings")};
+                ShadowMapConfigComponent, shadowColor, "shadowColor", "Shadow Color", 0.01f, "Settings") };
         return fields;
     }
 };
 
-
-void RegisterEnvironmentMeta()
-{
-    auto &jsonReg = ComponentRegistry::Instance();
-    ComponentMetaJson::RegisterMetaT<ToneMapConfigComponent>(jsonReg, "ToneMapConfig");
-    ComponentMetaJson::RegisterMetaT<BloomConfigComponent>(jsonReg, "BloomConfig");
-    ComponentMetaJson::RegisterMetaT<FogComponent>(jsonReg, "Fog");
-    ComponentMetaJson::RegisterMetaT<ShadowMapConfigComponent>(jsonReg, "ShadowMapConfig");
-
-    auto &guiReg = ComponentGuiRegistry::Instance();
-    ComponentMetaImGui::RegisterGuiMeta<ToneMapConfigComponent>(guiReg);
-    ComponentMetaImGui::RegisterGuiMeta<BloomConfigComponent>(guiReg);
-    ComponentMetaImGui::RegisterGuiMeta<FogComponent>(guiReg);
-    ComponentMetaImGui::RegisterGuiMeta<ShadowMapConfigComponent>(guiReg);
-}
+// ============================================================================
+// 究極の自動化：これだけでJSONとImGuiの両方に登録される
+// ============================================================================
+REGISTER_COMPONENT(ToneMapConfigComponent, "ToneMapConfig")
+REGISTER_COMPONENT(BloomConfigComponent, "BloomConfig")
+REGISTER_COMPONENT(FogComponent, "Fog")
+REGISTER_COMPONENT(ShadowMapConfigComponent, "ShadowMapConfig")

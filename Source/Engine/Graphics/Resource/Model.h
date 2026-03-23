@@ -161,4 +161,3 @@ bool IsMeshInFrustum(const Model::Mesh& mesh, const DirectX::BoundingFrustum& fr
 
 // グローバル関数として定義
 bool IsModelInFrustum(const Model* model, const DirectX::XMFLOAT4X4& worldMatrix, const DirectX::BoundingFrustum& frustum);
-

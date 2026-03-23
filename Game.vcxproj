@@ -225,6 +225,7 @@
     <ClInclude Include="Source\Engine\Core\Time\HighResolutionTimer.h" />
     <ClInclude Include="Source\Engine\GamePlay\Animation\AnimationSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Animation\AnimatorComponent.h" />
+    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimSequence.h" />
     <ClInclude Include="Source\Engine\GamePlay\Camera\CameraBrainSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Camera\VirtualCameraComponents.h" />
     <ClInclude Include="Source\Engine\GamePlay\Camera\VisualCameraSystem.h" />
@@ -328,7 +329,6 @@
     <ClInclude Include="Source\Engine\Scripting\LuaScriptComponent.h" />
     <ClInclude Include="Source\Engine\Scripting\LuaScriptSystem.h" />
     <ClInclude Include="Source\Engine\Serialization\ComponentRegistry.h" />
-    <ClInclude Include="Source\Engine\Serialization\ComponentSerializers.h" />
     <ClInclude Include="Source\Engine\Serialization\Factory\EntityFactory.h" />
     <ClInclude Include="Source\Engine\Serialization\Factory\Prefab.h" />
     <ClInclude Include="Source\Engine\Serialization\Factory\SceneInitializer.h" />
@@ -519,7 +519,6 @@
     <ClCompile Include="Source\Engine\Scripting\Bind\LuaBind_Scene.cpp" />
     <ClCompile Include="Source\Engine\Scripting\LuaScriptSystem.cpp" />
     <ClCompile Include="Source\Engine\Serialization\ComponentRegistry.cpp" />
-    <ClCompile Include="Source\Engine\Serialization\ComponentSerializers.cpp" />
     <ClCompile Include="Source\Engine\Serialization\Factory\Prefab.cpp" />
     <ClCompile Include="Source\Engine\Serialization\Factory\SceneInitializer.cpp" />
     <ClCompile Include="Source\Engine\Serialization\PrefabSerializer.cpp" />

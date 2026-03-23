@@ -38,6 +38,7 @@ void EnemyMoveSystem::Update(float dt) {
             // 現在の速度を取得
             JPH::Vec3 vel = bodyInterface.GetLinearVelocity(handle.bodyID);
             
+
             // 速度がほぼゼロになったら（地面に落ちて転がったら）復活！
             if (vel.LengthSq() < 2.0f) {
                 enemy.isBlownAway = false;

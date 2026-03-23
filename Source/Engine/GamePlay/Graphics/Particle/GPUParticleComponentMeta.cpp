@@ -11,7 +11,7 @@
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
-#include "Engine/Serialization/ComponentSerializers.h"
+// ❌ 削除: #include "Engine/Serialization/ComponentSerializers.h"
 
 using json = nlohmann::json;
 
@@ -19,13 +19,13 @@ using json = nlohmann::json;
 // ローカルヘルパー関数
 // ============================================================================
 namespace {
-    json ConfigToJson(const ParticleSystemConfig &cfg, const char *texPath, const char *rampPath)
+    json ConfigToJson(const ParticleSystemConfig& cfg, const char* texPath, const char* rampPath)
     {
         auto SafeFloat = [](float val) { return std::isfinite(val) ? val : 0.0f; };
         try {
-            std::string safeTexPath  = (texPath && texPath[0] != '\0') ? texPath : "";
+            std::string safeTexPath = (texPath && texPath[0] != '\0') ? texPath : "";
             std::string safeRampPath = (rampPath && rampPath[0] != '\0') ? rampPath : "";
-            return {{"max_particle_count", cfg.max_particle_count},
+            return { {"max_particle_count", cfg.max_particle_count},
                 {"texture_path", safeTexPath},
                 {"color_ramp_path", safeRampPath},
                 {"color_mode", cfg.color_mode},
@@ -59,22 +59,22 @@ namespace {
                 {"velocity_stretch", SafeFloat(cfg.velocity_stretch)},
                 {"anim_mode", cfg.sprite_anim_mode},
                 {"grid_x", cfg.sprite_sheet_grid.x},
-                {"grid_y", cfg.sprite_sheet_grid.y}};
+                {"grid_y", cfg.sprite_sheet_grid.y} };
         }
         catch (...) {
             return json({});
         }
     }
 
-    void JsonToConfig(const json &j, GPUParticleComponent *p)
+    void JsonToConfig(const json& j, GPUParticleComponent* p)
     {
-        auto &cfg = p->config;
+        auto& cfg = p->config;
         if (j.contains("max_particle_count")) {
             int newMax = j["max_particle_count"];
             if (newMax != cfg.max_particle_count) {
-                p->maxParticles        = newMax;
+                p->maxParticles = newMax;
                 cfg.max_particle_count = newMax;
-                p->isInitialized       = false;
+                p->isInitialized = false;
             }
         }
         if (j.contains("texture_path")) {
@@ -107,8 +107,8 @@ namespace {
         if (j.contains("angle_min")) cfg.emission_cone_angle.x = j["angle_min"];
         if (j.contains("angle_max")) cfg.emission_cone_angle.y = j["angle_max"];
         if (j.contains("color")) {
-            auto c           = j["color"];
-            cfg.manual_color = {c[0], c[1], c[2], c[3]};
+            auto c = j["color"];
+            cfg.manual_color = { c[0], c[1], c[2], c[3] };
         }
         if (j.contains("size_start")) cfg.emission_size.x = j["size_start"];
         if (j.contains("size_end")) cfg.emission_size.y = j["size_end"];
@@ -129,47 +129,47 @@ namespace {
 // Component Meta
 // ============================================================================
 template <> struct ComponentMeta<GPUParticleComponent> {
-    static constexpr bool        registered   = true;
-    static constexpr const char *displayName  = "GPU Particle";
+    static constexpr bool        registered = true;
+    static constexpr const char* displayName = "GPU Particle";
     static constexpr bool        hasCustomGui = true;
 
-    static bool CustomGui(GPUParticleComponent &compRef, unsigned long long entityID, void *worldPtr)
+    static bool CustomGui(GPUParticleComponent& compRef, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr)
     {
         bool changed = false;
-        GPUParticleComponent *p = &compRef;
-        auto &cfg = p->config;
+        GPUParticleComponent* p = &compRef;
+        auto& cfg = p->config;
 
         // 1. 管理・システム設定
         if (ImGui::Button(u8"プリセット保存 (Save Preset)")) {
             char filename[256] = {};
             if (Dialog::SaveFileName(filename,
-                    256,
-                    "JSON Files\0*.json\0",
-                    "Save Particle Preset",
-                    "json",
-                    Graphics::Instance().GetWindowHandle()) == DialogResult::OK) {
+                256,
+                "JSON Files\0*.json\0",
+                "Save Particle Preset",
+                "json",
+                Graphics::Instance().GetWindowHandle()) == DialogResult::OK) {
                 std::ofstream o(filename);
                 o << std::setw(4) << ConfigToJson(cfg, p->texturePath, p->colorRampPath)
-                  << std::endl;
+                    << std::endl;
             }
         }
         ImGui::SameLine();
         if (ImGui::Button(u8"プリセット読込 (Load Preset)")) {
             char filename[256] = {};
             if (Dialog::OpenFileName(filename,
-                    256,
-                    "JSON Files\0*.json\0",
-                    "Load Particle Preset",
-                    Graphics::Instance().GetWindowHandle()) == DialogResult::OK) {
+                256,
+                "JSON Files\0*.json\0",
+                "Load Particle Preset",
+                Graphics::Instance().GetWindowHandle()) == DialogResult::OK) {
                 std::ifstream i(filename);
                 if (i.is_open()) {
                     json j;
                     i >> j;
                     JsonToConfig(j, p);
                     cfg.burst_trigger = 0.0f;
-                    p->maxParticles   = cfg.max_particle_count;
-                    p->isInitialized  = false;
-                    changed           = true;
+                    p->maxParticles = cfg.max_particle_count;
+                    p->isInitialized = false;
+                    changed = true;
                 }
             }
         }
@@ -183,23 +183,23 @@ template <> struct ComponentMeta<GPUParticleComponent> {
         int tempMax = cfg.max_particle_count;
         if (ImGui::InputInt(u8"最大許容量 (Max Capacity)", &tempMax, 0, 0)) {
             if (tempMax > 0) {
-                p->maxParticles  = tempMax;
+                p->maxParticles = tempMax;
                 p->isInitialized = false;
-                changed          = true;
+                changed = true;
             }
         }
         if (ImGui::IsItemHovered()) {
             ImGui::SetTooltip(u8"Enterキーで適用します。\n注意: パーティクルが全てリセットされます。");
         }
 
-        const char *typeNames[] = {"Point (Color Only)", "Quad (Texture)"};
+        const char* typeNames[] = { "Point (Color Only)", "Quad (Texture)" };
         if (ImGui::Combo(u8"描画タイプ (Render Type)", &cfg.type, typeNames, IM_ARRAYSIZE(typeNames)))
             changed = true;
         ImGui::Spacing();
 
         // 2. 発生設定 (Emission)
         if (ImGui::TreeNode(u8"発生設定 (Emission)")) {
-            const char *modes[] = {"Continuous (継続)", "Burst (爆発)"};
+            const char* modes[] = { "Continuous (継続)", "Burst (爆発)" };
             if (ImGui::Combo(u8"発生モード (Mode)", &cfg.emission_mode, modes, IM_ARRAYSIZE(modes)))
                 changed = true;
 
@@ -212,7 +212,7 @@ template <> struct ComponentMeta<GPUParticleComponent> {
             }
             else {
                 if (ImGui::DragFloat2(
-                        u8"発生間隔 (Delay Min/Max)", &cfg.spawn_delay.x, 0.001f, 0.0f, 1.0f, "%.4f"))
+                    u8"発生間隔 (Delay Min/Max)", &cfg.spawn_delay.x, 0.001f, 0.0f, 1.0f, "%.4f"))
                     changed = true;
             }
 
@@ -223,10 +223,10 @@ template <> struct ComponentMeta<GPUParticleComponent> {
             if (ImGui::DragFloat2(u8"半径 (Radius Min/Max)", &cfg.emission_offset.x, 0.1f))
                 changed = true;
             if (ImGui::DragFloat(
-                    u8"形状比率 X (Shape Stretch X)", &cfg.emission_stretch_x, 0.01f, 0.0f, 10.0f))
+                u8"形状比率 X (Shape Stretch X)", &cfg.emission_stretch_x, 0.01f, 0.0f, 10.0f))
                 changed = true;
             if (ImGui::DragFloat(
-                    u8"形状比率 Z (Shape Stretch Z)", &cfg.emission_stretch_z, 0.01f, 0.0f, 10.0f))
+                u8"形状比率 Z (Shape Stretch Z)", &cfg.emission_stretch_z, 0.01f, 0.0f, 10.0f))
                 changed = true;
             if (ImGui::DragFloat(u8"高さ範囲 Y (Height Volume)", &cfg.particle_offset_y, 0.1f, 0.0f, 50.0f))
                 changed = true;
@@ -254,19 +254,19 @@ template <> struct ComponentMeta<GPUParticleComponent> {
 
         // 4. 見た目・アニメーション (Appearance)
         if (ImGui::TreeNode(u8"見た目 (Appearance)")) {
-            const char *renderModes[] = {"Additive (Fire/Light)", "Alpha Blend (Smoke/Dark)"};
-            int         currentMode   = p->config.render_mode;
+            const char* renderModes[] = { "Additive (Fire/Light)", "Alpha Blend (Smoke/Dark)" };
+            int         currentMode = p->config.render_mode;
             if (ImGui::Combo(
-                    "Render Mode", &currentMode, renderModes, IM_ARRAYSIZE(renderModes))) {
+                "Render Mode", &currentMode, renderModes, IM_ARRAYSIZE(renderModes))) {
                 p->config.render_mode = currentMode;
-                changed               = true;
+                changed = true;
             }
 
             if (ImGui::ColorEdit4(u8"基本色 (Base Color)", &cfg.manual_color.x)) changed = true;
 
-            const char *colorModes[] = {u8"単色 (Single Color)", u8"カラーランプ (Color Ramp)"};
+            const char* colorModes[] = { u8"単色 (Single Color)", u8"カラーランプ (Color Ramp)" };
             if (ImGui::Combo(
-                    u8"カラーモード (Color Mode)", &cfg.color_mode, colorModes, IM_ARRAYSIZE(colorModes)))
+                u8"カラーモード (Color Mode)", &cfg.color_mode, colorModes, IM_ARRAYSIZE(colorModes)))
                 changed = true;
 
             if (cfg.color_mode == 1) {
@@ -281,7 +281,7 @@ template <> struct ComponentMeta<GPUParticleComponent> {
             ImGui::Separator();
             ImGui::TextDisabled(u8"特殊効果 (Effects)");
             if (ImGui::DragFloat(
-                    u8"速度ストレッチ (Stretch)", &cfg.velocity_stretch, 0.01f, 0.0f, 10.0f))
+                u8"速度ストレッチ (Stretch)", &cfg.velocity_stretch, 0.01f, 0.0f, 10.0f))
                 changed = true;
             if (ImGui::IsItemHovered()) ImGui::SetTooltip(u8"移動方向に引き伸ばします (0.0=無効)");
             if (ImGui::DragFloat2(u8"UVスクロール (UV Scroll)", &cfg.uv_scroll_speed.x, 0.01f))
@@ -289,16 +289,16 @@ template <> struct ComponentMeta<GPUParticleComponent> {
 
             ImGui::Separator();
             ImGui::TextDisabled(u8"スプライトアニメ (Sprite Sheet)");
-            int grid[2] = {(int)cfg.sprite_sheet_grid.x, (int)cfg.sprite_sheet_grid.y};
+            int grid[2] = { (int)cfg.sprite_sheet_grid.x, (int)cfg.sprite_sheet_grid.y };
             if (ImGui::DragInt2(u8"分割数 (Grid X/Y)", grid, 0.1f, 1, 16)) {
                 cfg.sprite_sheet_grid.x = grid[0];
                 cfg.sprite_sheet_grid.y = grid[1];
-                changed                 = true;
+                changed = true;
             }
 
-            const char *animModes[] = {"Random (Fixed)", "Life Cycle (Animate)"};
+            const char* animModes[] = { "Random (Fixed)", "Life Cycle (Animate)" };
             if (ImGui::Combo(
-                    u8"再生モード (Anim Mode)", &cfg.sprite_anim_mode, animModes, IM_ARRAYSIZE(animModes)))
+                u8"再生モード (Anim Mode)", &cfg.sprite_anim_mode, animModes, IM_ARRAYSIZE(animModes)))
                 changed = true;
             ImGui::TreePop();
         }
@@ -314,12 +314,12 @@ template <> struct ComponentMeta<GPUParticleComponent> {
 
             if (ImGui::Button(u8"読込##Main")) {
                 char        filename[256] = {};
-                HWND        hWnd          = Graphics::Instance().GetWindowHandle();
-                const char *filter = "Image Files\0*.png;*.jpg;*.tga;*.bmp;*.dds\0All Files\0*.*\0";
+                HWND        hWnd = Graphics::Instance().GetWindowHandle();
+                const char* filter = "Image Files\0*.png;*.jpg;*.tga;*.bmp;*.dds\0All Files\0*.*\0";
                 if (Dialog::OpenFileName(
-                        filename, sizeof(filename), filter, "Select Texture", hWnd) == DialogResult::OK) {
-                    namespace fs         = std::filesystem;
-                    fs::path absPath     = filename;
+                    filename, sizeof(filename), filter, "Select Texture", hWnd) == DialogResult::OK) {
+                    namespace fs = std::filesystem;
+                    fs::path absPath = filename;
                     fs::path currentPath = fs::current_path();
                     std::error_code ec;
                     fs::path relPath = fs::relative(absPath, currentPath, ec);
@@ -332,13 +332,13 @@ template <> struct ComponentMeta<GPUParticleComponent> {
                         strcpy_s(p->texturePath, sizeof(p->texturePath), filename);
                     }
                     p->isInitialized = false;
-                    changed          = true;
+                    changed = true;
                 }
             }
 
-            ID3D11ShaderResourceView *texSRV = ResourceManager::Instance().GetTexture(p->texture);
+            ID3D11ShaderResourceView* texSRV = ResourceManager::Instance().GetTexture(p->texture);
             if (texSRV) {
-                ImGui::Image((void *)texSRV,
+                ImGui::Image((void*)texSRV,
                     ImVec2(64, 64),
                     ImVec2(0, 0),
                     ImVec2(1, 1),
@@ -348,7 +348,7 @@ template <> struct ComponentMeta<GPUParticleComponent> {
                 if (ImGui::Button(u8"クリア##Main")) {
                     memset(p->texturePath, 0, sizeof(p->texturePath));
                     p->texture = TextureHandle{};
-                    changed    = true;
+                    changed = true;
                 }
             }
 
@@ -363,12 +363,12 @@ template <> struct ComponentMeta<GPUParticleComponent> {
 
             if (ImGui::Button(u8"読込##Ramp")) {
                 char        filename[256] = {};
-                HWND        hWnd          = Graphics::Instance().GetWindowHandle();
-                const char *filter = "Image Files\0*.png;*.jpg;*.tga;*.bmp;*.dds\0All Files\0*.*\0";
+                HWND        hWnd = Graphics::Instance().GetWindowHandle();
+                const char* filter = "Image Files\0*.png;*.jpg;*.tga;*.bmp;*.dds\0All Files\0*.*\0";
                 if (Dialog::OpenFileName(
-                        filename, sizeof(filename), filter, "Select Color Ramp", hWnd) == DialogResult::OK) {
-                    namespace fs         = std::filesystem;
-                    fs::path absPath     = filename;
+                    filename, sizeof(filename), filter, "Select Color Ramp", hWnd) == DialogResult::OK) {
+                    namespace fs = std::filesystem;
+                    fs::path absPath = filename;
                     fs::path currentPath = fs::current_path();
                     std::error_code ec;
                     fs::path relPath = fs::relative(absPath, currentPath, ec);
@@ -381,14 +381,14 @@ template <> struct ComponentMeta<GPUParticleComponent> {
                         strcpy_s(p->colorRampPath, sizeof(p->colorRampPath), filename);
                     }
                     p->isInitialized = false;
-                    changed          = true;
+                    changed = true;
                 }
             }
 
-            ID3D11ShaderResourceView *rampSRV =
+            ID3D11ShaderResourceView* rampSRV =
                 ResourceManager::Instance().GetTexture(p->colorRamp);
             if (rampSRV) {
-                ImGui::Image((void *)rampSRV,
+                ImGui::Image((void*)rampSRV,
                     ImVec2(128, 16),
                     ImVec2(0, 0),
                     ImVec2(1, 1),
@@ -398,7 +398,7 @@ template <> struct ComponentMeta<GPUParticleComponent> {
                 if (ImGui::Button(u8"クリア##Ramp")) {
                     memset(p->colorRampPath, 0, sizeof(p->colorRampPath));
                     p->colorRamp = TextureHandle{};
-                    changed      = true;
+                    changed = true;
                 }
             }
             ImGui::TreePop();
@@ -407,7 +407,7 @@ template <> struct ComponentMeta<GPUParticleComponent> {
         return changed;
     }
 
-    static const std::vector<FieldDescriptor> &Fields()
+    static const std::vector<FieldDescriptor>& Fields()
     {
         // GPUパーティクルは現状プリセットファイルで管理されているため、通常のシーンシリアライズには含めない設計にします。
         static const std::vector<FieldDescriptor> empty;
@@ -415,10 +415,7 @@ template <> struct ComponentMeta<GPUParticleComponent> {
     }
 };
 
-void RegisterParticleMeta()
-{
-    ComponentMetaJson::RegisterMetaT<GPUParticleComponent>(
-        ComponentRegistry::Instance(), "GPUParticle");
-    ComponentMetaImGui::RegisterGuiMeta<GPUParticleComponent>(
-        ComponentGuiRegistry::Instance());
-}
+// ============================================================================
+// 究極の自動化
+// ============================================================================
+REGISTER_COMPONENT(GPUParticleComponent, "GPUParticle")

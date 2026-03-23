@@ -11,34 +11,34 @@
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
-#include "Engine/Serialization/ComponentSerializers.h"
+// ❌ 削除: #include "Engine/Serialization/ComponentSerializers.h"
 
 template <> struct ComponentMeta<MaterialComponent> {
-    static constexpr bool        registered   = true;
-    static constexpr const char *displayName  = "Material";
+    static constexpr bool        registered = true;
+    static constexpr const char* displayName = "Material";
     static constexpr bool        hasCustomGui = true;
 
-    static bool CustomGui(MaterialComponent &compRef, unsigned long long entityID, void *worldPtr)
+    static bool CustomGui(MaterialComponent& compRef, unsigned long long entityID = 0, void* worldPtr = nullptr)
     {
         bool               changed = false;
-        MaterialComponent *comp    = &compRef; // ポインタ化して既存コードとの親和性を高める
-        auto              *world   = static_cast<CCL::ECS::Core::World *>(worldPtr);
+        MaterialComponent* comp = &compRef;
+        auto* world = static_cast<CCL::ECS::Core::World*>(worldPtr);
 
         if (comp->overrideMaterials.empty()) {
             ImGui::TextDisabled("Using Shared Materials (Default)");
             bool hasModel = false;
             if (world) {
-                auto *modelComp =
+                auto* modelComp =
                     world->GetComponent<ModelComponent>(static_cast<CCL::ECS::EntityID>(entityID));
                 if (modelComp && modelComp->modelPtr) {
                     hasModel = true;
                     if (ImGui::Button("Override All Materials (Edit)")) {
-                        const auto &meshes = modelComp->modelPtr->GetMeshes();
+                        const auto& meshes = modelComp->modelPtr->GetMeshes();
                         comp->overrideMaterials.resize(meshes.size());
                         for (size_t i = 0; i < meshes.size(); ++i) {
-                            auto          *originalMat = meshes[i].material;
+                            auto* originalMat = meshes[i].material;
                             MaterialHandle newHandle = ResourceManager::Instance().CreateMaterial();
-                            MaterialData  *newData =
+                            MaterialData* newData =
                                 ResourceManager::Instance().GetMaterial(newHandle);
                             if (originalMat && originalMat->data && newData) {
                                 *newData = *originalMat->data;
@@ -72,7 +72,7 @@ template <> struct ComponentMeta<MaterialComponent> {
         for (size_t i = 0; i < comp->overrideMaterials.size(); ++i) {
             MaterialHandle matHandle = comp->overrideMaterials[i];
             if (!matHandle.IsValid()) continue;
-            MaterialData *matPtr = ResourceManager::Instance().GetMaterial(matHandle);
+            MaterialData* matPtr = ResourceManager::Instance().GetMaterial(matHandle);
             if (!matPtr) continue;
 
             ImGui::PushID((int)i);
@@ -81,23 +81,23 @@ template <> struct ComponentMeta<MaterialComponent> {
                     changed |= ImGui::ColorEdit4("Main Color", &matPtr->colors["materialColor"].x);
                 }
                 else if (ImGui::Button("Add Color Property")) {
-                    matPtr->colors["materialColor"] = {1, 1, 1, 1};
-                    changed                         = true;
+                    matPtr->colors["materialColor"] = { 1, 1, 1, 1 };
+                    changed = true;
                 }
 
                 int currentShader = static_cast<int>(matPtr->shaderId);
                 if (ImGui::Combo("Shader",
-                        &currentShader,
-                        ShaderIdNames,
-                        static_cast<int>(ShaderId::EnumCount))) {
+                    &currentShader,
+                    ShaderIdNames,
+                    static_cast<int>(ShaderId::EnumCount))) {
                     matPtr->shaderId = static_cast<ShaderId>(currentShader);
-                    changed          = true;
+                    changed = true;
                 }
 
                 if (ImGui::TreeNode("Textures")) {
-                    const char *slotNames[] = {
-                        "DiffuseMap", "NormalMap", "EmissiveMap", "RampTexture"};
-                    for (const char *slotName : slotNames) {
+                    const char* slotNames[] = {
+                        "DiffuseMap", "NormalMap", "EmissiveMap", "RampTexture" };
+                    for (const char* slotName : slotNames) {
                         bool hasTexture =
                             (matPtr->textures.find(slotName) != matPtr->textures.end());
                         ImGui::PushID(slotName);
@@ -105,18 +105,18 @@ template <> struct ComponentMeta<MaterialComponent> {
                         ImGui::SameLine();
                         if (ImGui::Button("Load...")) {
                             char        filename[256] = {};
-                            const char *filter =
+                            const char* filter =
                                 "Image Files\0*.png;*.jpg;*.tga;*.bmp\0All Files\0*.*\0";
                             if (Dialog::OpenFileName(filename,
-                                    256,
-                                    filter,
-                                    "Select Texture",
-                                    Graphics::Instance().GetWindowHandle()) == DialogResult::OK) {
+                                256,
+                                filter,
+                                "Select Texture",
+                                Graphics::Instance().GetWindowHandle()) == DialogResult::OK) {
                                 Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv;
                                 if (SUCCEEDED(GpuResourceUtils::LoadTexture(
-                                        Graphics::Instance().GetDevice(),
-                                        filename,
-                                        srv.GetAddressOf()))) {
+                                    Graphics::Instance().GetDevice(),
+                                    filename,
+                                    srv.GetAddressOf()))) {
                                     matPtr->textures[slotName] =
                                         ResourceManager::Instance().RegisterTexture(srv);
                                     changed = true;
@@ -142,7 +142,7 @@ template <> struct ComponentMeta<MaterialComponent> {
                 }
 
                 if (ImGui::TreeNode("Advanced Parameters")) {
-                    for (auto &[name, val] : matPtr->scalars) {
+                    for (auto& [name, val] : matPtr->scalars) {
                         changed |= ImGui::DragFloat(name.c_str(), &val, 0.01f);
                     }
                     ImGui::TreePop();
@@ -154,17 +154,14 @@ template <> struct ComponentMeta<MaterialComponent> {
         return changed;
     }
 
-    // Material
-    // は動的リソースのため、自動JSONシリアライズの対象から外し、専用のシリアライザで処理する設計がAAAでは一般的です。
-    static const std::vector<FieldDescriptor> &Fields()
+    static const std::vector<FieldDescriptor>& Fields()
     {
         static const std::vector<FieldDescriptor> empty;
         return empty;
     }
 };
 
-void RegisterGraphicsMeta()
-{
-    ComponentMetaJson::RegisterMetaT<MaterialComponent>(ComponentRegistry::Instance(), "Material");
-    ComponentMetaImGui::RegisterGuiMeta<MaterialComponent>(ComponentGuiRegistry::Instance());
-}
+// ============================================================================
+// 究極の自動化：これだけでJSONとImGuiの両方に登録される
+// ============================================================================
+REGISTER_COMPONENT(MaterialComponent, "Material")

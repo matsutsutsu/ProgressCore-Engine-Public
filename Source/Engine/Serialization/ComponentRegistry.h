@@ -6,7 +6,12 @@
 #include <json.hpp>
 //#include "ComponentSerializers.h"
 
+// 古い手動シリアライザの代わりに、強力な自動シリアライザを読み込む
+#include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
+// ImGui(インスペクタ)の自動登録に必要なヘッダーをコアで読み込む
+#include "Editor/Inspector/ComponentGuiRegistry.h"
+#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 
 class ComponentRegistry {
 public:
@@ -33,19 +38,16 @@ public:
         info.serialize = [](nlohmann::json& j, const void* ptr) {
             const T* component = static_cast<const T*>(ptr);
 
-            SerializeComponent(j, *component);
+            ComponentMetaJson::Serialize(j, *component);
             };
 
         // [Load用] JSONから一時変数Tを作成し、World::RequestAddComponent<T> にコピーして渡す
         info.deserializeToWorld = [](CCL::ECS::Core::World* world, CCL::ECS::EntityID entity, const nlohmann::json& j) {
-            // 1. 一時変数を作成（ここでデフォルトコンストラクタが走る -> shared_ptrはnullptrになる）
-            T tempComponent;
-            
-            // 2. JSONから値をロード（SetModelなどでshared_ptrに値が入る）
-            DeserializeComponent(j, tempComponent);
+            T temp{}; // ★波括弧で確実に初期化する
 
-            // 3. Worldにコピーして追加（AddComponent<T> がデストラクタ登録まで全部やってくれる）
-            world->AddComponent<T>(entity, std::move(tempComponent));
+            ComponentMetaJson::Deserialize(j, temp);
+
+            world->AddComponent<T>(entity, std::move(temp));
             };
 
         // マップ登録
@@ -87,6 +89,9 @@ template <typename T> struct AutoComponentRegister {
         if (!ComponentRegistry::Instance().GetInfoByName(name)) {
             ComponentRegistry::Instance().Register<T>(name);
         }
+
+        // 2. ImGui(インスペクタ)用の登録
+        ComponentMetaImGui::RegisterGuiMeta<T>(ComponentGuiRegistry::Instance());
     }
 };
 

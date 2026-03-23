@@ -5,44 +5,42 @@
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
-#include "Engine/Serialization/ComponentSerializers.h"
-
+// ❌ 削除: #include "Engine/Serialization/ComponentSerializers.h"
 
 namespace {
     //  クォータニオン -> オイラー角 (Degree) への変換
-    DirectX::XMFLOAT3 QuatToEulerDegrees(const DirectX::XMFLOAT4 &q) {
-      float pitch =
-          std::asin(std::clamp(2.0f * (q.w * q.x - q.y * q.z), -1.0f, 1.0f));
-      float yaw = std::atan2(2.0f * (q.w * q.y + q.z * q.x),
-                             1.0f - 2.0f * (q.x * q.x + q.y * q.y));
-      float roll = std::atan2(2.0f * (q.w * q.z + q.x * q.y),
-                              1.0f - 2.0f * (q.x * q.x + q.z * q.z));
-    
-      return {DirectX::XMConvertToDegrees(pitch), DirectX::XMConvertToDegrees(yaw),
-              DirectX::XMConvertToDegrees(roll)};
+    DirectX::XMFLOAT3 QuatToEulerDegrees(const DirectX::XMFLOAT4& q) {
+        float pitch =
+            std::asin(std::clamp(2.0f * (q.w * q.x - q.y * q.z), -1.0f, 1.0f));
+        float yaw = std::atan2(2.0f * (q.w * q.y + q.z * q.x),
+            1.0f - 2.0f * (q.x * q.x + q.y * q.y));
+        float roll = std::atan2(2.0f * (q.w * q.z + q.x * q.y),
+            1.0f - 2.0f * (q.x * q.x + q.z * q.z));
+
+        return { DirectX::XMConvertToDegrees(pitch), DirectX::XMConvertToDegrees(yaw),
+                DirectX::XMConvertToDegrees(roll) };
     }
-    
+
     //  オイラー角 (Degree) -> クォータニオンへの変換
-    DirectX::XMFLOAT4 EulerDegreesToQuat(const DirectX::XMFLOAT3 &euler) {
-      DirectX::XMVECTOR qVec = DirectX::XMQuaternionRotationRollPitchYaw(
-          DirectX::XMConvertToRadians(euler.x),
-          DirectX::XMConvertToRadians(euler.y),
-          DirectX::XMConvertToRadians(euler.z));
-      DirectX::XMFLOAT4 result;
-      DirectX::XMStoreFloat4(&result, qVec);
-      return result;
+    DirectX::XMFLOAT4 EulerDegreesToQuat(const DirectX::XMFLOAT3& euler) {
+        DirectX::XMVECTOR qVec = DirectX::XMQuaternionRotationRollPitchYaw(
+            DirectX::XMConvertToRadians(euler.x),
+            DirectX::XMConvertToRadians(euler.y),
+            DirectX::XMConvertToRadians(euler.z));
+        DirectX::XMFLOAT4 result;
+        DirectX::XMStoreFloat4(&result, qVec);
+        return result;
     }
 } // namespace
 
-
 template <> struct ComponentMeta<TransformComponent> {
-    static constexpr bool        registered  = true;
-    static constexpr const char *displayName = "Transform";
+    static constexpr bool        registered = true;
+    static constexpr const char* displayName = "Transform";
 
     //  直感的な編集のためカスタムGUIを有効化
     static constexpr bool hasCustomGui = true;
 
-    static bool CustomGui(TransformComponent &comp)
+    static bool CustomGui(TransformComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr)
     {
         bool changed = false;
 
@@ -75,24 +73,18 @@ template <> struct ComponentMeta<TransformComponent> {
     }
 
     //  JSON自動シリアライズ用の定義（親兄弟のIDなどは保存しない）
-    static const std::vector<FieldDescriptor> &Fields()
+    static const std::vector<FieldDescriptor>& Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
             META_FIELD_FLOAT3(TransformComponent, position, "position", "Position", 0.1f, "Transform"),
-            META_FIELD_FLOAT4(TransformComponent, rotation, "rotation", "Rotation", 0.1f, "Transform"), 
+            META_FIELD_FLOAT4(TransformComponent, rotation, "rotation", "Rotation", 0.1f, "Transform"),
             META_FIELD_FLOAT3(TransformComponent, scale, "scale", "Scale", 0.1f, "Transform"),
-            META_FIELD_BOOL(TransformComponent, isStatic, "isStatic", "Is Static", "Transform")};
+            META_FIELD_BOOL(TransformComponent, isStatic, "isStatic", "Is Static", "Transform") };
         return fields;
     }
 };
 
-
-void RegisterTransformMeta()
-{
-    auto &jsonReg = ComponentRegistry::Instance();
-    ComponentMetaJson::RegisterMetaT<TransformComponent>(jsonReg, "Transform");
-
-    auto &guiReg = ComponentGuiRegistry::Instance();
-    ComponentMetaImGui::RegisterGuiMeta<TransformComponent>(guiReg);
-
-}
+// ============================================================================
+// 究極の自動化
+// ============================================================================
+REGISTER_COMPONENT(TransformComponent, "Transform")

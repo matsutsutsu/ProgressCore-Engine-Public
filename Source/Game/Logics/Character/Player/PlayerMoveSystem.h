@@ -24,9 +24,11 @@ class PlayerMoveSystem : public CCL::ECS::IfSystem<PlayerMoveSystem,
 
     void Update(float dt) override;
 
-  private:
-    // アニメーションIDをキャッシュする変数
-    int _animIdIdle   = -1;
-    int _animIdRun    = -1;
-    int _animIdAttack = -1; // 攻撃ID
+private:
+    // int型のインデックスから、台本（AnimSequence）のポインタへ変更
+    const AnimSequence* _seqIdle   = nullptr;
+    const AnimSequence* _seqRun    = nullptr;
+    const AnimSequence* _seqAttack = nullptr;
+
+    bool _isAnimLoaded = false;
 };
