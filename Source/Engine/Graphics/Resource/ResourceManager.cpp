@@ -4,6 +4,10 @@
 #include "Engine/Graphics/Core/GpuResourceUtils.h"
 #include "ResourceManager.h"
 
+// Cereal の JSON アーカイブ用ヘッダー
+#include <fstream>
+#include <cereal/archives/json.hpp>
+
 // 名前空間を省略して使いやすくする
 using namespace CCL::Utils;
 
@@ -181,7 +185,51 @@ void ResourceManager::UnloadRenderTarget(RenderTargetHandle handle)
     m_renderTargetPool.Destroy(handle);
 }
 
+// ============================================================================
+// アニメーション台本（JSON）のロード処理
+// ============================================================================
+const AnimSequence* ResourceManager::LoadAnimSequence(const char* filename)
+{
+    if (!filename || filename[0] == '\0') return nullptr;
 
+    // 1. パスをハッシュ化して高速検索
+    uint32_t hash = CCL::Utils::HashString(filename);
+
+    auto it = m_animSequenceRegistry.find(hash);
+    if (it != m_animSequenceRegistry.end()) {
+        AnimSequence* seq = m_animSequencePool.Get(it->second);
+        if (seq) {
+            return seq; // すでにロード済みならそれを返す（超高速）
+        }
+    }
+
+    // 2. ファイルを開く
+    std::ifstream is(filename);
+    if (!is.is_open()) return nullptr;
+
+    // 3. プールに新しい台本の部屋（メモリ）を確保
+    AnimSequenceHandle handle = m_animSequencePool.Create();
+    AnimSequence* seq = m_animSequencePool.Get(handle);
+
+    // 4. JSONからデータをデシリアライズ
+    try {
+        cereal::JSONInputArchive archive(is);
+        archive(*seq);
+    }
+    catch (...) {
+        // ロードに失敗した場合は確保した部屋を破棄してエラー回避
+        m_animSequencePool.Destroy(handle);
+        return nullptr;
+    }
+
+    // 5. キャッシュに登録
+    m_animSequenceRegistry[hash] = handle;
+#ifdef _DEBUG
+    m_debugNameRegistry[hash] = filename;
+#endif
+
+    return seq;
+}
 
 
 void ResourceManager::DrawDebugGUI()

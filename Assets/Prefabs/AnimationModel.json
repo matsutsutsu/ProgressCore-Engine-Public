@@ -2,11 +2,17 @@
     "entities": [
         {
             "components": {
+                "Animator": {
+                    "isLoop": true,
+                    "playbackSpeed": 1.0
+                },
                 "Material": null,
                 "Model": {
-                    "assetPath": "Assets/Models/Stage/ExampleStage.glb"
+                    "assetPath": "Assets/Models/Enemy/Boss.glb"
                 },
-                "Name": null,
+                "Name": {
+                    "name": "AnimationModel"
+                },
                 "Transform": {
                     "isStatic": false,
                     "position": [
@@ -16,19 +22,19 @@
                     ],
                     "rotation": [
                         0.0,
+                        0.9999619126319885,
                         0.0,
-                        0.0,
-                        1.0
+                        0.008726587519049644
                     ],
                     "scale": [
-                        1.0,
-                        1.0,
-                        1.0
+                        0.30000001192092896,
+                        0.30000001192092896,
+                        0.30000001192092896
                     ]
                 }
             },
-            "id": 4294967302
+            "id": 4294967300
         }
     ],
-    "name": "ExampleStage"
+    "name": "AnimationModel"
 }

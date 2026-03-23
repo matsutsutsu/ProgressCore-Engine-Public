@@ -45,7 +45,7 @@ void RefreshPrefabList(EditorContext &context)
     context.prefabFiles.clear();
 
     // スキャン対象のディレクトリ (必要に応じて変更してください)
-    std::string targetPath = "Assets/GamePlay/Prefabs";
+    std::string targetPath = "Assets/Prefabs";
 
     if (fs::exists(targetPath)) {
         try {

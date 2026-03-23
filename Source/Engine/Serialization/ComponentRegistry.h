@@ -99,4 +99,4 @@ template <typename T> struct AutoComponentRegister {
 // C++17の inline 変数を使うことで、ヘッダーに書いても多重定義エラーにならず、
 // プログラム起動時に自動的に実行されます。
 #define REGISTER_COMPONENT(T, Name)                                                                \
-    inline static AutoComponentRegister<T> g_auto_register_##T(Name);
+    static AutoComponentRegister<T> g_auto_register_##T(Name);

@@ -7,6 +7,8 @@
 
 #include "ECS/System/CCL_SystemRegistry.h"
 
+
+
 void EditorScene::Initialize()
 {
     BaseScene::Initialize(); // 共通初期化
@@ -19,7 +21,7 @@ void EditorScene::Initialize()
     ID3D11Device *device = Graphics::Instance().GetDevice();
     SceneInitializer::SpawnLightStartSet(*_worldPtr, device);
     //SceneInitializer::SpawnGameLightSetting(_world, device);
-    //Prefab::SpawnPrefab(*_worldPtr, "Assets/GamePlay/Prefabs/Camera/FreeCamera.json");
+    //Prefab::SpawnPrefab(*_worldPtr, "Assets/Prefabs/Camera/FreeCamera.json");
 
 
     //SceneInitializer::SpawnTransformLoadTest(*_worldPtr, device, 100000);

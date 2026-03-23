@@ -109,19 +109,25 @@ namespace ImSequencer
 
       ImRect regionRect(canvas_pos, canvas_pos + canvas_size);
 
+      // -----------------------------------------------------
+      // 修正1：パン処理（中ボタンドラッグ）
+      // -----------------------------------------------------
       static bool panningView = false;
       static ImVec2 panningViewSource;
       static int panningViewFrame;
-      if (ImGui::IsWindowFocused() && io.KeyAlt && io.MouseDown[2])
+      // ★変更後: フォーカス判定をやめ、マウスが領域内にあるかだけで判定する
+      if (regionRect.Contains(io.MousePos) && io.MouseDown[2])
       {
-         if (!panningView)
+if (!panningView)
          {
             panningViewSource = io.MousePos;
             panningView = true;
-            panningViewFrame = *firstFrame;
+            panningViewFrame = firstFrame ? *firstFrame : 0;
          }
-         *firstFrame = panningViewFrame - int((io.MousePos.x - panningViewSource.x) / framePixelWidth);
-         *firstFrame = ImClamp(*firstFrame, sequence->GetFrameMin(), sequence->GetFrameMax() - visibleFrameCount);
+         if (firstFrame) {
+             *firstFrame = panningViewFrame - int((io.MousePos.x - panningViewSource.x) / framePixelWidth);
+             *firstFrame = ImClamp(*firstFrame, sequence->GetFrameMin(), sequence->GetFrameMax() - visibleFrameCount);
+         }
       }
       if (panningView && !io.MouseDown[2])
       {
@@ -633,8 +639,32 @@ namespace ImSequencer
 
       ImGui::EndGroup();
 
+      // -----------------------------------------------------
+      // 修正2：ズーム処理（Ctrl + ホイール）
+      // -----------------------------------------------------
       if (regionRect.Contains(io.MousePos))
       {
+         // ===================================================================
+         // ★修正: overCustomDraw (作者のバグ判定) に関係なく、
+         //       最優先でマウスホイールのズーム処理を実行させる！
+         // ===================================================================
+         if (io.KeyCtrl && io.MouseWheel != 0.0f && firstFrame)
+         {
+             float cursorOffset = io.MousePos.x - (canvas_pos.x + legendWidth);
+             float frameOverCursor = *firstFrame + (cursorOffset / framePixelWidth);
+
+             if (io.MouseWheel > FLT_EPSILON)
+                 framePixelWidthTarget *= 1.15f; // 拡大スピード（お好みで調整）
+             else if (io.MouseWheel < -FLT_EPSILON)
+                 framePixelWidthTarget *= 0.85f; // 縮小スピード
+
+             framePixelWidthTarget = ImClamp(framePixelWidthTarget, 0.1f, 50.f);
+
+             // ズーム後もマウス位置のフレームがズレないように firstFrame を補正
+             *firstFrame = (int)(frameOverCursor - (cursorOffset / framePixelWidthTarget));
+             *firstFrame = ImClamp(*firstFrame, sequence->GetFrameMin(), ImMax(sequence->GetFrameMax() - visibleFrameCount, sequence->GetFrameMin()));
+         }
+
          bool overCustomDraw = false;
          for (auto& custom : customDraws)
          {
@@ -643,35 +673,7 @@ namespace ImSequencer
                overCustomDraw = true;
             }
          }
-         if (overCustomDraw)
-         {
-         }
-         else
-         {
-#if 0
-            frameOverCursor = *firstFrame + (int)(visibleFrameCount * ((io.MousePos.x - (float)legendWidth - canvas_pos.x) / (canvas_size.x - legendWidth)));
-            //frameOverCursor = max(min(*firstFrame - visibleFrameCount / 2, frameCount - visibleFrameCount), 0);
-
-            /**firstFrame -= frameOverCursor;
-            *firstFrame *= framePixelWidthTarget / framePixelWidth;
-            *firstFrame += frameOverCursor;*/
-            if (io.MouseWheel < -FLT_EPSILON)
-            {
-               *firstFrame -= frameOverCursor;
-               *firstFrame = int(*firstFrame * 1.1f);
-               framePixelWidthTarget *= 0.9f;
-               *firstFrame += frameOverCursor;
-            }
-
-            if (io.MouseWheel > FLT_EPSILON)
-            {
-               *firstFrame -= frameOverCursor;
-               *firstFrame = int(*firstFrame * 0.9f);
-               framePixelWidthTarget *= 1.1f;
-               *firstFrame += frameOverCursor;
-            }
-#endif
-         }
+         // (※ここにあった作者の #if 0 は完全に削除しました)
       }
 
       if (expanded)

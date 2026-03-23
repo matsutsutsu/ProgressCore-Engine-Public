@@ -10,7 +10,8 @@
 #include "Engine/Platform/Input/Input.h"
 #include "Engine/GamePlay/Core/Scene/SceneManager.h"
 
-#include "Engine/Serialization/Factory/Prefab.h"                 // ★追加
+#include "Engine/Serialization/Factory/Prefab.h"                 
+#include "Engine/Platform/Dialog.h"
 
 #include "Engine/Audio/Audio.h"
 
@@ -46,6 +47,10 @@ Framework::Framework(HWND hWnd)
 	Graphics::Instance().Initialize(hWnd);
 	// IMGUI初期化
 	ImGuiRenderer::Initialize(hWnd, Graphics::Instance().GetDevice(), Graphics::Instance().GetDeviceContext());
+
+	// ダイアログのファイル履歴をロード
+	Dialog::LoadHistory();
+
 	// シーンマネージャー初期化
 	SceneManager::Instance().Initialize();	
 	// Input 初期化
@@ -62,6 +67,9 @@ Framework::~Framework()
 	SceneManager::Instance().Clear();
 	// IMGUI終了化
 	ImGuiRenderer::Finalize();
+
+	// ダイアログのファイル履歴を保存
+	Dialog::SaveHistory();
 
 	// 2. その後に、静的（static）なキャッシュを片付ける
     // これらが「デバイスへの参照」を握っている最後の犯人たちです。

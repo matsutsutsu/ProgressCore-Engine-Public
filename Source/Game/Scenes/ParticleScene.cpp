@@ -16,12 +16,12 @@ void ParticleScene::Initialize()
     ID3D11Device *device = Graphics::Instance().GetDevice();
     SceneInitializer::SpawnLightStartSet(*_worldPtr, device);
 
-    EntityID camera = Prefab::SpawnPrefab(*_worldPtr, "Assets/GamePlay/Prefabs/Camera/FreeCamera");
+    EntityID camera = Prefab::SpawnPrefab(*_worldPtr, "Assets/Prefabs/Camera/FreeCamera");
 
 
 
     // ParticleScene固有: 特定のパーティクルを生成
-    Prefab::SpawnPrefab(*_worldPtr, "Assets/GamePlay/Prefabs/Particles/VFX_Scene_Start");
+    Prefab::SpawnPrefab(*_worldPtr, "Assets/Prefabs/Particles/VFX_Scene_Start");
 }
 
 void ParticleScene::Finalize()

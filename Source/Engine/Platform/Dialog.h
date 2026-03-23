@@ -20,4 +20,8 @@ public:
 
 	// [ファイルを保存]ダイアログボックスを表示
 	static DialogResult SaveFileName(char* filepath, int size, const char* filter = nullptr, const char* title = nullptr, const char* ext = nullptr, HWND hWnd = NULL);
+
+	// 履歴の保存と読み込み
+	static void LoadHistory(const char* settingsFilePath = "EditorPrefs.json");
+	static void SaveHistory(const char* settingsFilePath = "EditorPrefs.json");
 };

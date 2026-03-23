@@ -13,7 +13,7 @@
 TextEditorWindow::TextEditorWindow() : EditorWindow("Text Editor")
 {
     // デフォルトパスの初期化
-    //strcpy_s(_filePath, sizeof(_filePath), "Assets/GamePlay/Weapon/AttachmentMaster.json");
+    //strcpy_s(_filePath, sizeof(_filePath), "Assets/Weapon/AttachmentMaster.json");
     strcpy_s(_filePath, sizeof(_filePath), "Shader/Material/Phong/PhongPS.hlsl");
 
     // 編集用のメモリバッファを大きめに確保（例：1MB = 1024 * 1024 バイト）

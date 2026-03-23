@@ -10,6 +10,7 @@
 #include <string>
 #include <wrl/client.h>
 #include <mutex>
+#include "Engine/GamePlay/Animation/AnimSequence.h"
 
 // コンピュートシェーダー用のバッファ群をまとめた構造体
 struct GpuParticleBufferSet {
@@ -39,6 +40,9 @@ using ParticleBufferHandle = CCL::Handle<GpuParticleBufferSet>;
 
 // レンダーターゲットのハンドル定義
 using RenderTargetHandle = CCL::Handle<RenderTarget>;
+
+// アニメーション用のハンドル
+using AnimSequenceHandle = CCL::Handle<AnimSequence>;
 
 class ResourceManager {
   private:
@@ -94,6 +98,11 @@ class ResourceManager {
     // ハンドルからポインタを取得
     RenderTarget* GetRenderTarget(RenderTargetHandle handle);
     
+
+    // アニメーション台本のロード窓口
+    // AnimatorComponent が直接ポインタを参照する設計のため、constポインタを返します
+    const AnimSequence* LoadAnimSequence(const char* filename);
+
     // 不要になったら破棄
     void UnloadRenderTarget(RenderTargetHandle handle);
 
@@ -110,10 +119,16 @@ class ResourceManager {
     CCL::ResourcePool<GpuParticleBufferSet> m_particleBufferPool; // パーティクル専用アパート
     CCL::ResourcePool<RenderTarget> m_renderTargetPool;     // レンダーターゲット専用アパート
 
+    // アニメーション台本専用のアパート（プール）
+    CCL::ResourcePool<AnimSequence>    m_animSequencePool;
+
     // パスからハンドルを逆引きするためのレジストリ（キャッシュ）
     // unordered_map はハッシュテーブルなので、検索が O(1) で爆速です。
     std::unordered_map<uint32_t, ModelHandle>   m_modelRegistry;
     std::unordered_map<uint32_t, TextureHandle> m_textureRegistry;
+
+    // アニメーション台本のキャッシュ
+    std::unordered_map<uint32_t, AnimSequenceHandle> m_animSequenceRegistry;
 
     // 複数スレッドからの同時アクセスを防ぐ鍵
     std::mutex _mutex;

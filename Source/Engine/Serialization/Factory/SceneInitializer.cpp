@@ -12,10 +12,10 @@ void SceneInitializer::SpawnPlayerTest(
     CCL::ECS::Core::World &world, ID3D11Device *device, int count)
 {
     // 1. プレイヤー生成（JSONパス指定に変更）
-    Prefab::SpawnPrefab(world, "Assets/GamePlay/Prefabs/Player/Player.json");
+    Prefab::SpawnPrefab(world, "Assets/Prefabs/Player/Player.json");
 
     // 2. ステージ生成
-    Prefab::SpawnPrefab(world, "Assets/GamePlay/Prefabs/Stage/Stage.json");
+    Prefab::SpawnPrefab(world, "Assets/Prefabs/Stage/Stage.json");
 }
 
 void SceneInitializer::SpawnPhysicsStressTest(
@@ -27,7 +27,7 @@ void SceneInitializer::SpawnPhysicsStressTest(
 
     for (int i = 0; i < count; ++i) {
         // PhysicsBall -> Primitive/PrimSphere.json で代用 (物理設定がJSONにある前提)
-        auto entity = Prefab::SpawnPrefab(world, "Assets/GamePlay/Prefabs/Primitive/PrimSphere.json");
+        auto entity = Prefab::SpawnPrefab(world, "Assets/Prefabs/Primitive/PrimSphere.json");
 
         if (entity != CCL::ECS::InvalidEntityID) {
             if (auto *t = world.GetComponent<TransformComponent>(entity)) {
@@ -37,7 +37,7 @@ void SceneInitializer::SpawnPhysicsStressTest(
     }
 
     // 床
-    Prefab::SpawnPrefab(world, "Assets/GamePlay/Prefabs/Stage/Map_Floor.json", {0, 0, 0});
+    Prefab::SpawnPrefab(world, "Assets/Prefabs/Stage/Map_Floor.json", {0, 0, 0});
 }
 
 void SceneInitializer::SpawnGridLayoutTest(
@@ -56,27 +56,27 @@ void SceneInitializer::SpawnGridLayoutTest(
         float z = offset + r * spacing;
 
         // RenderModel -> プリミティブの球体などで代用
-        Prefab::SpawnPrefab(world, "Assets/GamePlay/Prefabs/Primitive/PrimSphere.json", {x, 2.0f, z});
+        Prefab::SpawnPrefab(world, "Assets/Prefabs/Primitive/PrimSphere.json", {x, 2.0f, z});
     }
 
-    Prefab::SpawnPrefab(world, "Assets/GamePlay/Prefabs/Stage/Map_Floor.json", {0, 0, 0});
+    Prefab::SpawnPrefab(world, "Assets/Prefabs/Stage/Map_Floor.json", {0, 0, 0});
 }
 
 void SceneInitializer::SpawnCameraTest(
     CCL::ECS::Core::World &world, ID3D11Device *device, int count)
 {
     // プレイヤー
-    EntityID playerID = Prefab::SpawnPrefab(world, "Assets/GamePlay/Prefabs/Player.json", {0, 0, 0});
+    EntityID playerID = Prefab::SpawnPrefab(world, "Assets/Prefabs/Player.json", {0, 0, 0});
 
     // 追従カメラ (ID指定ではなくJSONパス)
     // CameraBrainSystemが入っていれば自動リンクされるが、念のため手動リンクのコードも残しておく例
-    EntityID camID = Prefab::SpawnPrefab(world, "Assets/GamePlay/Prefabs/Camera/FollowCamera.json");
+    EntityID camID = Prefab::SpawnPrefab(world, "Assets/Prefabs/Camera/FollowCamera.json");
 
     // フリーカメラ
-    Prefab::SpawnPrefab(world, "Assets/GamePlay/Prefabs/Camera/FreeCamera.json", {0, 10, -10});
+    Prefab::SpawnPrefab(world, "Assets/Prefabs/Camera/FreeCamera.json", {0, 10, -10});
 
     // 床
-    Prefab::SpawnPrefab(world, "Assets/GamePlay/Prefabs/Stage/Map_Floor.json");
+    Prefab::SpawnPrefab(world, "Assets/Prefabs/Stage/Map_Floor.json");
 }
 
 // ★追加: Transform負荷テストの実装
@@ -101,7 +101,7 @@ void SceneInitializer::SpawnTransformLoadTest(
                     (z - dim / 2.0f) * spacing};
 
                 EntityID entity =
-                    Prefab::SpawnPrefab(world, "Assets/GamePlay/Prefabs/Primitive/PrimBox.json", pos);
+                    Prefab::SpawnPrefab(world, "Assets/Prefabs/Primitive/PrimBox.json", pos);
 
                 if (entity != CCL::ECS::InvalidEntityID) {
                     // 1.
@@ -135,17 +135,17 @@ void SceneInitializer::SpawnTransformLoadTest(
 void SceneInitializer::SpawnLightStartSet(CCL::ECS::Core::World &world, ID3D11Device *device)
 {
     // ライティングセットアップ
-    Prefab::SpawnPrefab(world, "Assets/GamePlay/Prefabs/Light/LightingSetup.json");
+    Prefab::SpawnPrefab(world, "Assets/Prefabs/Light/LightingSetup.json");
 }
 
 void SceneInitializer::SpawnGameLightSetting(CCL::ECS::Core::World &world, ID3D11Device *device)
 {
     // ゲーム用ライティング
-    Prefab::SpawnPrefab(world, "Assets/GamePlay/Prefabs/Light/GameLighting.json");
+    Prefab::SpawnPrefab(world, "Assets/Prefabs/Light/GameLighting.json");
 
     // ポイントライト配置テスト
-    Prefab::SpawnPrefab(world, "Assets/GamePlay/Prefabs/Light/PointLight.json", {0, 3, 0});
-    Prefab::SpawnPrefab(world, "Assets/GamePlay/Prefabs/Light/PointLight.json", {5, 2, 5});
+    Prefab::SpawnPrefab(world, "Assets/Prefabs/Light/PointLight.json", {0, 3, 0});
+    Prefab::SpawnPrefab(world, "Assets/Prefabs/Light/PointLight.json", {5, 2, 5});
 }
 
 void SceneInitializer::SpawnJoltTest(CCL::ECS::Core::World &world, ID3D11Device *device)
@@ -219,7 +219,7 @@ void SceneInitializer::SpawnJoltTest(CCL::ECS::Core::World &world, ID3D11Device 
           .Set(AnimatorComponent{}); // 空の初期化
 
     // 2. カメラの生成とターゲット設定が、一気に書ける！
-    auto camera = EntityFactory::SpawnPrefab(world, "Assets/GamePlay/Prefabs/Camera/PlayerFollowCamera.json");
+    auto camera = EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Camera/PlayerFollowCamera.json");
     
     // player.ID() を渡してメソッドチェーンでPatchする
     camera.Patch<CameraBodyFollow>([pid = player.ID()](auto& body) { body.target = pid; })
@@ -229,9 +229,9 @@ void SceneInitializer::SpawnJoltTest(CCL::ECS::Core::World &world, ID3D11Device 
 
 void SceneInitializer::SpawnAnimationTest(CCL::ECS::Core::World& world, ID3D11Device* device)
 {
-    EntityFactory::SpawnPrefab(world, "Assets/GamePlay/Prefabs/Camera/FreeCamera.json");
-    EntityFactory::SpawnPrefab(world, "Assets/GamePlay/Prefabs/World/ExampleStage.json");
-    //EntityFactory::SpawnPrefab
+    EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Camera/FreeCamera.json");
+    EntityFactory::SpawnPrefab(world, "Assets/Prefabs/World/ExampleStage.json");
+    EntityFactory::SpawnPrefab(world, "Assets/Prefabs/AnimationModel.json");
 }
 
 void SceneInitializer::SpawnEnemySwarmTest(CCL::ECS::Core::World &world, ID3D11Device *device, int count)
@@ -269,7 +269,7 @@ void SceneInitializer::SpawnEnemySwarmTest(CCL::ECS::Core::World &world, ID3D11D
           .Set(AnimatorComponent{}); // 空の初期化
 
     // 2. カメラの生成とターゲット設定が、一気に書ける！
-    auto camera = EntityFactory::SpawnPrefab(world, "Assets/GamePlay/Prefabs/Camera/PlayerFollowCamera.json");
+    auto camera = EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Camera/PlayerFollowCamera.json");
     
     // player.ID() を渡してメソッドチェーンでPatchする
     camera.Patch<CameraBodyFollow>([pid = player.ID()](auto& body) { body.target = pid; })

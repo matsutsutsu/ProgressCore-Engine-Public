@@ -376,13 +376,13 @@ namespace Prefab {
     void PrewarmParticles(Core::World &world)
     {
       /*  std::vector<EntityID> allCreatedIDs;
-        std::string           firePath = "Assets/GamePlay/Prefabs/Particles/VFX_Env_Fire.json";
+        std::string           firePath = "Assets/Prefabs/Particles/VFX_Env_Fire.json";
         for (int i = 0; i < 20; ++i)
             allCreatedIDs.push_back(SpawnParticle(world, firePath, 0, {0, 0, 0}));
-        std::string bulletPath = "Assets/GamePlay/Prefabs/Particles/VFX_Weapon_Bullet.json";
+        std::string bulletPath = "Assets/Prefabs/Particles/VFX_Weapon_Bullet.json";
         for (int i = 0; i < 40; ++i)
             allCreatedIDs.push_back(SpawnParticle(world, bulletPath, 0, {0, 0, 0}));
-        std::string explPath = "Assets/GamePlay/Prefabs/Particles/VFX_Explosion_Base.json";
+        std::string explPath = "Assets/Prefabs/Particles/VFX_Explosion_Base.json";
         for (int i = 0; i < 40; ++i)
             allCreatedIDs.push_back(SpawnParticle(world, explPath, 0, {0, 0, 0}));
 

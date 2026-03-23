@@ -4,7 +4,8 @@
 #include "ImSequencer.h"
 #include "Engine/Graphics/Resource/Model.h"
 #include "Engine/Graphics/Resource/ModelResource.h"
-#include "Engine/GamePlay/Animation/AnimSequence.h" // ★新しい台本データ
+#include "Engine/GamePlay/Animation/AnimSequence.h" 
+#include "Engine/GamePlay/Animation/AnimationSystem.h" // 手動更新用
 
 #include <algorithm>
 #include <cstdio>
@@ -26,7 +27,7 @@ public:
     };
 
     std::vector<EditorEvent> cache;
-    AnimSequence* targetSequence = nullptr; // ★対象がModelResourceではなく台本に！
+    AnimSequence* targetSequence = nullptr; // 対象が台本に！
 
     int mFrameMin = 0;
     int mFrameMax = 60 * 5;
@@ -43,18 +44,18 @@ public:
         for (const auto& evt : targetSequence->events) {
             if (evt.eventName == "HitBox_Start") {
                 pendingHitBoxStart = (int)(evt.time * 60.0f);
-            } 
+            }
             else if (evt.eventName == "HitBox_End") {
                 if (pendingHitBoxStart != -1) {
                     EditorEvent item{ pendingHitBoxStart, (int)(evt.time * 60.0f), 0 };
                     cache.push_back(item);
                     pendingHitBoxStart = -1;
                 }
-            } 
+            }
             else if (evt.eventName == "Play_Sound") {
                 int frame = (int)(evt.time * 60.0f);
                 cache.push_back({ frame, frame + 1, 1 });
-            } 
+            }
             else if (evt.eventName == "Play_Effect") {
                 int frame = (int)(evt.time * 60.0f);
                 cache.push_back({ frame, frame + 1, 2 });
@@ -71,15 +72,15 @@ public:
 
         for (const auto& item : cache) {
             float startSec = (float)item.frameStart / 60.0f;
-            float endSec   = (float)item.frameEnd / 60.0f;
+            float endSec = (float)item.frameEnd / 60.0f;
 
             if (item.type == 0) { // HitBoxブロック -> StartとEndの2つに分解
                 targetSequence->events.push_back({ startSec, "HitBox_Start" });
                 targetSequence->events.push_back({ endSec, "HitBox_End" });
-            } 
+            }
             else if (item.type == 1) {
                 targetSequence->events.push_back({ startSec, "Play_Sound" });
-            } 
+            }
             else if (item.type == 2) {
                 targetSequence->events.push_back({ startSec, "Play_Effect" });
             }
@@ -97,7 +98,7 @@ public:
         if (mFrameMax < 60) mFrameMax = 60;
     }
 
-    // --- ImSequencer Interface (変更なし部分は省略気味に記載) ---
+    // --- ImSequencer Interface ---
     virtual int GetFrameMin() const override { return mFrameMin; }
     virtual int GetFrameMax() const override { return mFrameMax; }
     virtual int GetItemCount() const override { return (int)cache.size(); }
@@ -105,10 +106,10 @@ public:
 
     virtual const char* GetItemTypeName(int typeIndex) const override {
         switch (typeIndex) {
-            case 0: return "HitBox (Attack)";
-            case 1: return "Sound (SE)";
-            case 2: return "Effect (VFX)";
-            default: return "Unknown";
+        case 0: return "HitBox (Attack)";
+        case 1: return "Sound (SE)";
+        case 2: return "Effect (VFX)";
+        default: return "Unknown";
         }
     }
 
@@ -117,10 +118,10 @@ public:
         if (index < 0 || index >= (int)cache.size()) return "";
         const auto& item = cache[index];
         switch (item.type) {
-            case 0: sprintf_s(temp, "[%d] Attack", index); break;
-            case 1: sprintf_s(temp, "[%d] Sound", index); break;
-            case 2: sprintf_s(temp, "[%d] Effect", index); break;
-            default: sprintf_s(temp, "[%d] Event", index); break;
+        case 0: sprintf_s(temp, "[%d] Attack", index); break;
+        case 1: sprintf_s(temp, "[%d] Sound", index); break;
+        case 2: sprintf_s(temp, "[%d] Effect", index); break;
+        default: sprintf_s(temp, "[%d] Event", index); break;
         }
         return temp;
     }
@@ -133,10 +134,10 @@ public:
         if (type) *type = item.type;
         if (color) {
             switch (item.type) {
-                case 0: *color = 0xFF5050D0; break; // 赤
-                case 1: *color = 0xFFD08050; break; // 青
-                case 2: *color = 0xFF50D050; break; // 緑
-                default: *color = 0xFFFFFFFF; break;
+            case 0: *color = 0xFF5050D0; break; // 赤
+            case 1: *color = 0xFFD08050; break; // 青
+            case 2: *color = 0xFF50D050; break; // 緑
+            default: *color = 0xFFFFFFFF; break;
             }
         }
     }
@@ -148,7 +149,7 @@ public:
         item.frameEnd = (type == 0) ? 30 : 1; // HitBoxのみ幅を持たせる
         cache.push_back(item);
     }
-    
+
     virtual void Del(int index) override {
         if (index >= 0 && index < (int)cache.size()) cache.erase(cache.begin() + index);
     }
@@ -164,9 +165,8 @@ public:
 // =============================================================================
 // Window Class Implementation
 // =============================================================================
-// ★エディタウィンドウ内で編集中の「台本」の実体を保持するための変数群
-static AnimSequence g_EditingSequence; 
-static char g_SavePath[256] = "Assets/GamePlay/Animations/Player_Attack.json";
+static AnimSequence g_EditingSequence;
+static char g_SavePath[256] = "Assets/Animations/Player_Attack.json";
 
 AnimationSequencerWindow::AnimationSequencerWindow()
     : EditorWindow("Sequencer"), _expanded(true), _selectedEntry(-1), _firstFrame(0)
@@ -201,9 +201,8 @@ void AnimationSequencerWindow::DrawContents(EditorContext& context)
     // JSON保存・読み込みのUI
     // ---------------------------------------------------------
     ImGui::InputText("Save Path", g_SavePath, sizeof(g_SavePath));
-    
+
     if (ImGui::Button("Save JSON")) {
-        // 現在の編集内容をJSONに書き出す
         std::ofstream os(g_SavePath);
         if (os.is_open()) {
             cereal::JSONOutputArchive archive(os);
@@ -216,31 +215,26 @@ void AnimationSequencerWindow::DrawContents(EditorContext& context)
         if (is.is_open()) {
             cereal::JSONInputArchive archive(is);
             archive(cereal::make_nvp("AnimSequence", g_EditingSequence));
-            _sequencerImpl->SyncFromData(); // 読み込んだらUIを更新
+            _sequencerImpl->SyncFromData();
         }
     }
 
     ImGui::Separator();
 
     // ---------------------------------------------------------
-    // ターゲットの関連付け（エディタ側で選択する設計に変更）
+    // ターゲットの関連付け
     // ---------------------------------------------------------
-    // ModelResourceからアニメーション一覧を取得
     auto& animations = resource->GetAnimationsMutable();
     if (animations.empty()) {
         ImGui::TextDisabled("No animations found in the model.");
         return;
     }
 
-    // エディタ側で「今どのアニメーションの台本を作っているか」を記憶する
     static int s_SelectedAnimIndex = 0;
-    
-    // 安全対策（モデルが切り替わってインデックスがはみ出した場合）
     if (s_SelectedAnimIndex >= (int)animations.size()) {
         s_SelectedAnimIndex = 0;
     }
 
-    // ★アニメーション選択用ドロップダウンメニュー
     if (ImGui::BeginCombo("Target Animation", animations[s_SelectedAnimIndex].name.c_str())) {
         for (int i = 0; i < (int)animations.size(); ++i) {
             bool isSelected = (s_SelectedAnimIndex == i);
@@ -253,22 +247,16 @@ void AnimationSequencerWindow::DrawContents(EditorContext& context)
     }
 
     int idx = s_SelectedAnimIndex;
-    
-    // 選択されたアニメーションの情報を、編集中の「台本」に反映する
-    // ※元のModelResource側が duration という変数名なら .duration に、
-    //   secondsLength という名前なら .secondsLength に合わせてください。
+
     g_EditingSequence.targetAnimName = animations[idx].name;
-    g_EditingSequence.duration       = animations[idx].secondsLength;
-        
+    g_EditingSequence.duration = animations[idx].secondsLength;
+
     _sequencerImpl->targetSequence = &g_EditingSequence;
     _sequencerImpl->UpdateDuration(animations[idx].secondsLength);
 
-    // ★超重要：プレビューモード中（Edit Mode）は、
-    // 役者（Component）の読む台本を、今まさに編集しているこの台本に強制的にすり替える
     if (context.isAnimEditMode) {
         animator->currentSequence = &g_EditingSequence;
     }
-
 
     // ---------------------------------------------------------
     // ツールバー表示 (ボタン類)
@@ -280,11 +268,12 @@ void AnimationSequencerWindow::DrawContents(EditorContext& context)
 
     if (ImGui::Button("+ Attack")) { _sequencerImpl->Add(0); _sequencerImpl->SyncToData(); }
     ImGui::SameLine();
-    if (ImGui::Button("+ Sound"))  { _sequencerImpl->Add(1); _sequencerImpl->SyncToData(); }
+    if (ImGui::Button("+ Sound")) { _sequencerImpl->Add(1); _sequencerImpl->SyncToData(); }
     ImGui::SameLine();
     if (ImGui::Button("+ Effect")) { _sequencerImpl->Add(2); _sequencerImpl->SyncToData(); }
 
     ImGui::Separator();
+
 
     // ---------------------------------------------------------
     // シーケンサー描画
@@ -299,6 +288,8 @@ void AnimationSequencerWindow::DrawContents(EditorContext& context)
             currentFrame = (int)(animator->currentTimer * 60.0f);
         }
 
+        int prevFrame = currentFrame;
+
         _expanded = true;
         bool changed = ImSequencer::Sequencer(_sequencerImpl.get(), &currentFrame, &_expanded, &_selectedEntry, &_firstFrame,
             ImSequencer::SEQUENCER_EDIT_STARTEND | ImSequencer::SEQUENCER_ADD |
@@ -308,7 +299,23 @@ void AnimationSequencerWindow::DrawContents(EditorContext& context)
             _sequencerImpl->SyncToData(); // 編集されたらデータに変換＆ソート
         }
 
-        if (context.isAnimEditMode) {
+        // =========================================================
+        // ★手回し映写機の連動: シークバーを動かした瞬間に骨格を更新
+        // =========================================================
+        if (currentFrame != prevFrame || changed) {
+            float newTime = (float)currentFrame / 60.0f;
+            
+            context.animEditTime = newTime;
+            animator->currentTimer = newTime;
+
+            if (context.systemManager) {
+                auto* animSystem = context.systemManager->GetSystem<AnimationSystem>();
+                if (animSystem) {
+                    animSystem->UpdateManual(entity, newTime);
+                }
+            }
+        }
+        else if (context.isAnimEditMode) {
             context.animEditTime = (float)currentFrame / 60.0f;
         }
     }
