@@ -181,7 +181,7 @@ void BaseScene::Render()
     auto *primitiveRenderer = Graphics::Instance().GetPrimitiveRenderer();
 
     // グリッド描画
-    //primitiveRenderer->DrawGrid(20, 1);
+    primitiveRenderer->DrawGrid(20, 1);
     primitiveRenderer->Render(rc.deviceContext, camera.GetView(), camera.GetProjection());
 
 

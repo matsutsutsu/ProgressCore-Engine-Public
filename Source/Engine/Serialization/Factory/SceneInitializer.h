@@ -37,4 +37,6 @@ class SceneInitializer {
 
     // ジョルトのテスト環境
     static void SpawnJoltTest(CCL::ECS::Core::World &world, ID3D11Device *device);
+
+	static void SpawnAnimationTest(CCL::ECS::Core::World& world, ID3D11Device* device);
 };

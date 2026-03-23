@@ -4,6 +4,7 @@
 #include <string>
 
 #include "Engine/Serialization/Factory/Prefab.h"
+#include "Engine/Serialization/Factory/EntityFactory.h"
 
 
 HierarchyWindow::HierarchyWindow() : EditorWindow("Hierarchy") {}
@@ -19,8 +20,7 @@ void HierarchyWindow::DrawContents(EditorContext &context)
     // ---------------------------------------------------------
     if (ImGui::Button("Spawn Entity")) {
         auto arch   = ArchetypeHelper::Generate<TransformComponent, NameComponent>();
-        auto entity = world->RequestSpawnEntity(arch);
-        world->GetComponent<NameComponent>(entity)->name[0] = '\0';
+		EntityFactory::SpawnNamed(*world, "New Entity ", arch);
     }
 
     ImGui::SameLine();

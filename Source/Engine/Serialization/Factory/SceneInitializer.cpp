@@ -227,6 +227,13 @@ void SceneInitializer::SpawnJoltTest(CCL::ECS::Core::World &world, ID3D11Device 
 
 }
 
+void SceneInitializer::SpawnAnimationTest(CCL::ECS::Core::World& world, ID3D11Device* device)
+{
+    EntityFactory::SpawnPrefab(world, "Assets/GamePlay/Prefabs/Camera/FreeCamera.json");
+    EntityFactory::SpawnPrefab(world, "Assets/GamePlay/Prefabs/World/ExampleStage.json");
+    //EntityFactory::SpawnPrefab
+}
+
 void SceneInitializer::SpawnEnemySwarmTest(CCL::ECS::Core::World &world, ID3D11Device *device, int count)
 {
    

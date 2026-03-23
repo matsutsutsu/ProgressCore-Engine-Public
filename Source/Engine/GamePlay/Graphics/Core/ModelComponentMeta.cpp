@@ -9,6 +9,33 @@
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
+// ============================================================================
+// ★追加: ModelComponent 専用の JSON シリアライズ処理
+// ロード時に単なる文字列コピーではなく、確実に SetModel() を発火させる！
+// ============================================================================
+namespace ComponentMetaJson {
+    // 保存（Save）時の処理
+    template <>
+    inline void Serialize<ModelComponent>(json& j, const ModelComponent& comp)
+    {
+        j["assetPath"] = comp.assetPath;
+    }
+
+    // 読込（Load）時の処理
+    template <>
+    inline void Deserialize<ModelComponent>(const json& j, ModelComponent& comp)
+    {
+        if (j.contains("assetPath") && j["assetPath"].is_string()) {
+            std::string path = j["assetPath"].get<std::string>();
+            // ★ここでただ文字を入れるだけでなく、ロード処理を走らせる！
+            comp.SetModel(path);
+        }
+    }
+}
+
+// ============================================================================
+// Component Meta の定義
+// ============================================================================
 template <> struct ComponentMeta<ModelComponent> {
     static constexpr bool        registered = true;
     static constexpr const char* displayName = "3D Model";
@@ -32,12 +59,11 @@ template <> struct ComponentMeta<ModelComponent> {
         // 実行中の動的ロードボタン
         if (ImGui::Button("Load New Model... (Dynamic)", ImVec2(-1, 0))) {
             char filename[256] = {};
-            // 対応する拡張子（GLTF, GLB, FBX等）を指定
             const char* filter = "Model Files\0*.gltf;*.glb;*.fbx;*.obj\0All Files\0*.*\0";
 
             if (Dialog::OpenFileName(filename, 256, filter, "Select 3D Model", Graphics::Instance().GetWindowHandle()) == DialogResult::OK) {
 
-                // 絶対パスをプロジェクト基準の相対パスに安全に変換
+                // 絶対パスを相対パスに安全に変換
                 namespace fs = std::filesystem;
                 fs::path absPath = filename;
                 fs::path currentPath = fs::current_path();
@@ -46,7 +72,7 @@ template <> struct ComponentMeta<ModelComponent> {
 
                 std::string finalPath = (!ec && !relPath.empty()) ? relPath.generic_string() : filename;
 
-                // ★ここが Data-Driven の真骨頂：パスを渡すだけで瞬時にモデルが切り替わる
+                // モデルを切り替え
                 comp.SetModel(finalPath);
                 changed = true;
             }
@@ -55,7 +81,7 @@ template <> struct ComponentMeta<ModelComponent> {
         // モデルのクリアボタン
         if (!comp.assetPath.empty()) {
             if (ImGui::Button("Clear Model (Remove)", ImVec2(-1, 0))) {
-                comp.SetModel(""); // 空文字を渡すと内部で破棄される
+                comp.SetModel("");
                 changed = true;
             }
         }
@@ -63,26 +89,15 @@ template <> struct ComponentMeta<ModelComponent> {
         return changed;
     }
 
-    // JSONシリアライズの設定
+    // JSON変換は上の特化テンプレートで直接処理するため、汎用リフレクションは空にしておく
     static const std::vector<FieldDescriptor>& Fields()
     {
-        // 文字列 (std::string) 用のマクロが未定義の環境も考慮し、直接構造体を初期化して確実性を担保します
-        static const std::vector<FieldDescriptor> fields = {
-            {
-                "Asset Path",             // name (UI非表示用だが設定)
-                "assetPath",              // jsonName (JSONのキー)
-                FieldKind::String,        // kind (文字列型)
-                offsetof(ModelComponent, assetPath), // offset
-                0.0f, 0.0f, 0.0f,         // UI parameters (文字列には未使用)
-                "Model",                  // category
-                nullptr, 0, true          // enums & serialize flag
-            }
-        };
-        return fields;
+        static const std::vector<FieldDescriptor> empty;
+        return empty;
     }
 };
 
 // ============================================================================
-// 究極の自動化：これだけでJSONとImGuiの両方に登録される
+// 究極の自動化
 // ============================================================================
 REGISTER_COMPONENT(ModelComponent, "Model")
