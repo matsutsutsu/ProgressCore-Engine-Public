@@ -15,7 +15,6 @@
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 
-// ❌ 削除: #include "Engine/Serialization/ComponentSerializers.h"
 
 namespace {
     const char* const MotionTypeNames[] = { "Static", "Kinematic", "Dynamic" };
@@ -32,7 +31,8 @@ template <> struct ComponentMeta<JoltBoxColliderComponent> {
     {
         static const std::vector<FieldDescriptor> fields = {
             META_FIELD_FLOAT3(JoltBoxColliderComponent, halfExtent, "halfExtent", "Half Extent", 0.1f, "Box Collider"),
-            META_FIELD_BOOL(JoltBoxColliderComponent, isDirty, "isDirty", "Apply Size Change (適用)", "Box Collider")
+            META_FIELD_FLOAT3(JoltBoxColliderComponent, localOffset, "localOffset", "Local Offset (位置ズレ)", 0.1f, "Box Collider"),
+            META_FIELD_FLOAT3(JoltBoxColliderComponent, localRotationEuler, "localRotationEuler", "Local Rotation (角度ズレ)", 1.0f, "Box Collider")
         };
         return fields;
     }
@@ -45,7 +45,7 @@ template <> struct ComponentMeta<JoltSphereColliderComponent> {
     {
         static const std::vector<FieldDescriptor> fields = {
             META_FIELD_FLOAT(JoltSphereColliderComponent, radius, "radius", "Radius", 0.1f, 0.0f, 100.0f, "Sphere Collider"),
-            META_FIELD_BOOL(JoltSphereColliderComponent, isDirty, "isDirty", "Apply Size Change (適用)", "Sphere Collider")
+            META_FIELD_FLOAT3(JoltSphereColliderComponent, localOffset, "localOffset", "Local Offset (位置ズレ)", 0.1f, "Sphere Collider")
         };
         return fields;
     }
@@ -59,7 +59,8 @@ template <> struct ComponentMeta<JoltCapsuleColliderComponent> {
         static const std::vector<FieldDescriptor> fields = {
             META_FIELD_FLOAT(JoltCapsuleColliderComponent, halfHeight, "halfHeight", "Half Height", 0.1f, 0.0f, 100.0f, "Capsule Collider"),
             META_FIELD_FLOAT(JoltCapsuleColliderComponent, radius, "radius", "Radius", 0.1f, 0.0f, 100.0f, "Capsule Collider"),
-            META_FIELD_BOOL(JoltCapsuleColliderComponent, isDirty, "isDirty", "Apply Size Change (適用)", "Capsule Collider")
+            META_FIELD_FLOAT3(JoltCapsuleColliderComponent, localOffset, "localOffset", "Local Offset (位置ズレ)", 0.1f, "Capsule Collider"),
+            META_FIELD_FLOAT3(JoltCapsuleColliderComponent, localRotationEuler, "localRotationEuler", "Local Rotation (角度ズレ)", 1.0f, "Capsule Collider")
         };
         return fields;
     }

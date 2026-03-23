@@ -8,6 +8,8 @@
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
+#include "Engine/Platform/Dialog.h"
+
 // ===================================================================
 // 1. コンポーネントの「取扱説明書（メタデータ）」の定義
 // ===================================================================
@@ -26,6 +28,34 @@ template <> struct ComponentMeta<AnimatorComponent> {
         ImGui::DragFloat("Speed", &anim.playbackSpeed, 0.05f, -5.0f, 5.0f);
         if (ImGui::Checkbox("Loop", &anim.isLoop)) changed = true;
         ImGui::Separator();
+
+        // ============================================================
+        // ★追加: アニメーションの動的プレビュー機能
+        // ============================================================
+        //ImGui::TextDisabled("Dynamic Preview");
+        //if (ImGui::Button("Load & Play Sequence... (JSON)", ImVec2(-1, 0))) {
+        //    char filename[256] = {};
+        //    if (Dialog::OpenFileName(filename, 256, "JSON Files\0*.json\0", "Select Anim Sequence", Graphics::Instance().GetWindowHandle()) == DialogResult::OK) {
+        //        
+        //        // 絶対パスを相対パスに変換
+        //        namespace fs = std::filesystem;
+        //        fs::path absPath = filename;
+        //        fs::path currentPath = fs::current_path();
+        //        std::error_code ec;
+        //        fs::path relPath = fs::relative(absPath, currentPath, ec);
+        //        std::string finalPath = (!ec && !relPath.empty()) ? relPath.generic_string() : filename;
+
+        //        // ResourceManager経由で JSON の「台本」をロード
+        //        const AnimSequence* loadedSeq = ResourceManager::Instance().LoadAnimSequence(finalPath.c_str());
+        //        
+        //        if (loadedSeq) {
+        //            // ★ Animator の Play を強制的に呼び出し、今すぐ再生させる！
+        //            anim.Play(loadedSeq, true, 1.0f);
+        //            changed = true;
+        //        }
+        //    }
+        //}
+        //ImGui::Separator();
 
         // 現在の台本情報を表示
         if (anim.currentSequence) {

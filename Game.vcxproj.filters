@@ -1041,6 +1041,9 @@
     <ClInclude Include="Source\Engine\GamePlay\Animation\AnimSequence.h">
       <Filter>Source\Engine\GamePlay\Animation</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltDebugDrawSystem.h">
+      <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -1536,6 +1539,12 @@
       <Filter>Source\Game\Logics\Character\Enemy</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltShapeUpdateSystem.cpp">
+      <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\ModelComponentMeta.cpp">
+      <Filter>Source\Engine\GamePlay\Graphics\Core\_Meta</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltDebugDrawSystem.cpp">
       <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
     </ClCompile>
   </ItemGroup>

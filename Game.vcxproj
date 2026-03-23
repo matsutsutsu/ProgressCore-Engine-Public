@@ -265,6 +265,7 @@
     <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\JoltCollisionEventSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\JoltSphereColliderComponent.h" />
     <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltBodySetupSystem.h" />
+    <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltDebugDrawSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltHandleComponent.h" />
     <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltPushSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltShapeUpdateSystem.h" />
@@ -455,6 +456,7 @@
     <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\EnvironmentComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\EnvironmentSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\MaterialComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\ModelComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\ModelRenderSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\PrimitiveRenderSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Graphics\Lighting\FogSystem.cpp" />
@@ -469,6 +471,7 @@
     <ClCompile Include="Source\Engine\GamePlay\Physics\Character\JoltCharacterUpdateSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Physics\Collision\JoltCollisionEventSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltBodySetupSystem.cpp" />
+    <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltDebugDrawSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltPhysicsComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltPushSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltShapeUpdateSystem.cpp" />

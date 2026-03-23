@@ -11,9 +11,23 @@
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
 #include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
+#include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
+#include <DirectXMath.h>
 
 #include "ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"
+
+using namespace DirectX;
+
+namespace {
+    // ヘルパー：Degree(度)から JoltのQuaternion への変換（UpdateSystemと同じもの）
+    inline JPH::Quat EulerDegreeToJoltQuat(const XMFLOAT3& eulerDegree) {
+        float pitch = XMConvertToRadians(eulerDegree.x);
+        float yaw = XMConvertToRadians(eulerDegree.y);
+        float roll = XMConvertToRadians(eulerDegree.z);
+        return JPH::Quat::sEulerAngles(JPH::Vec3(pitch, yaw, roll));
+    }
+}
 
 void JoltBodySetupSystem::Update(float dt)
 {
@@ -33,21 +47,50 @@ void JoltBodySetupSystem::Update(float dt)
 
         JPH::ShapeRefC shape = nullptr;
 
-        // 1. 形状の作成 (アタッチされているコライダーを調べる)
-        // ※コライダーはBoxかSphereか実行時まで分からないため、ここは動的にチェックする
-        if (auto *box = _world->GetComponent<JoltBoxColliderComponent>(id)) {
-            JPH::BoxShapeSettings shapeSettings(
-                JPH::Vec3(box->halfExtent.x, box->halfExtent.y, box->halfExtent.z));
-            shape = shapeSettings.Create().Get();
+        // =======================================================
+        // 1. Box Collider の生成
+        // =======================================================
+        if (auto* box = _world->GetComponent<JoltBoxColliderComponent>(id)) {
+            JPH::BoxShapeSettings baseSettings(JPH::Vec3(box->halfExtent.x, box->halfExtent.y, box->halfExtent.z));
+            JPH::ShapeRefC baseShape = baseSettings.Create().Get();
+
+            // ★ オフセットと回転を適用したラッパー(包み紙)でくるむ
+            JPH::RotatedTranslatedShapeSettings offsetSettings(
+                JPH::Vec3(box->localOffset.x, box->localOffset.y, box->localOffset.z),
+                EulerDegreeToJoltQuat(box->localRotationEuler),
+                baseShape
+            );
+            shape = offsetSettings.Create().Get();
         }
-        else if (auto *sphere = _world->GetComponent<JoltSphereColliderComponent>(id)) {
-            JPH::SphereShapeSettings shapeSettings(sphere->radius);
-            shape = shapeSettings.Create().Get();
+        // =======================================================
+        // 2. Sphere Collider の生成
+        // =======================================================
+        else if (auto* sphere = _world->GetComponent<JoltSphereColliderComponent>(id)) {
+            JPH::SphereShapeSettings baseSettings(sphere->radius);
+            JPH::ShapeRefC baseShape = baseSettings.Create().Get();
+
+            // ★ 球は回転の影響を受けないため、位置ズレのみ適用
+            JPH::RotatedTranslatedShapeSettings offsetSettings(
+                JPH::Vec3(sphere->localOffset.x, sphere->localOffset.y, sphere->localOffset.z),
+                JPH::Quat::sIdentity(),
+                baseShape
+            );
+            shape = offsetSettings.Create().Get();
         }
-        else if (auto *capsule = _world->GetComponent<JoltCapsuleColliderComponent>(id)) {
-            // Joltには (円柱の半分の高さ, 半径) の順で渡す
-            JPH::CapsuleShapeSettings shapeSettings(capsule->halfHeight, capsule->radius);
-            shape = shapeSettings.Create().Get();
+        // =======================================================
+        // 3. Capsule Collider の生成
+        // =======================================================
+        else if (auto* capsule = _world->GetComponent<JoltCapsuleColliderComponent>(id)) {
+            JPH::CapsuleShapeSettings baseSettings(capsule->halfHeight, capsule->radius);
+            JPH::ShapeRefC baseShape = baseSettings.Create().Get();
+
+            // ★ オフセットと回転を適用
+            JPH::RotatedTranslatedShapeSettings offsetSettings(
+                JPH::Vec3(capsule->localOffset.x, capsule->localOffset.y, capsule->localOffset.z),
+                EulerDegreeToJoltQuat(capsule->localRotationEuler),
+                baseShape
+            );
+            shape = offsetSettings.Create().Get();
         }
 
         // コライダーコンポーネントが一つも無い場合は物理実体を作れないのでスキップ
