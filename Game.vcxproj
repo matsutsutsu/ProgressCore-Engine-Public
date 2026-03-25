@@ -563,9 +563,12 @@
     <None Include="Shader\Common\Common.hlsli" />
     <None Include="Shader\Common\Instancing.hlsli" />
     <None Include="Shader\Common\Lighting.hlsli" />
+    <None Include="Shader\Common\MaterialEffect.hlsli" />
+    <None Include="Shader\Common\PBRLighting.hlsli" />
     <None Include="Shader\Common\RegisterDef.hlsli" />
     <None Include="Shader\Common\Scene.hlsli" />
     <None Include="Shader\Common\Skinning.hlsli" />
+    <None Include="Shader\Common\ToonLighting.hlsli" />
     <None Include="Shader\Common\Transform.hlsli" />
     <None Include="Shader\Compute\GPUParticle\particle.hlsli" />
     <None Include="Shader\Material\Sprite\Sprite.hlsli" />

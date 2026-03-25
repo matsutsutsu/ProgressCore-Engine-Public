@@ -1621,6 +1621,15 @@
     <None Include="Shader\Common\Transform.hlsli">
       <Filter>Shader\Common</Filter>
     </None>
+    <None Include="Shader\Common\PBRLighting.hlsli">
+      <Filter>Shader\Common</Filter>
+    </None>
+    <None Include="Shader\Common\MaterialEffect.hlsli">
+      <Filter>Shader\Common</Filter>
+    </None>
+    <None Include="Shader\Common\ToonLighting.hlsli">
+      <Filter>Shader\Common</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shader\Material\Basic\BasicPS.hlsl">
