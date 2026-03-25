@@ -331,9 +331,6 @@
     <Filter Include="Source\Engine\GamePlay\Physics\Collision\Collider">
       <UniqueIdentifier>{1ac4e9b9-47e1-482d-a82e-d3ad2832ac12}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shader\Compute\Boids">
-      <UniqueIdentifier>{6934a6e4-82a9-4190-b004-f8fa07407019}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Game\Logics\Character\Boids">
       <UniqueIdentifier>{7c3e22d7-bac6-4269-93ef-2df2adad0f48}</UniqueIdentifier>
     </Filter>
@@ -1621,8 +1618,8 @@
     <None Include=".editorconfig">
       <Filter>Build</Filter>
     </None>
-    <None Include="Shader\Compute\Boids\BoidsData.hlsli">
-      <Filter>Shader\Compute\Boids</Filter>
+    <None Include="Shader\Common\Transform.hlsli">
+      <Filter>Shader\Common</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -1694,15 +1691,6 @@
     </FxCompile>
     <FxCompile Include="Shader\Material\PBR\PBR_PS.hlsl">
       <Filter>Shader\Material\PBR</Filter>
-    </FxCompile>
-    <FxCompile Include="Shader\Compute\Boids\BoidsUpdateCS.hlsl">
-      <Filter>Shader\Compute\Boids</Filter>
-    </FxCompile>
-    <FxCompile Include="Shader\Compute\Boids\BoidsVS.hlsl">
-      <Filter>Shader\Compute\Boids</Filter>
-    </FxCompile>
-    <FxCompile Include="Shader\Compute\Boids\BoidsPS.hlsl">
-      <Filter>Shader\Compute\Boids</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Pass\Outline\OutlineVS.hlsl">
       <Filter>Shader\Pass\Outline</Filter>

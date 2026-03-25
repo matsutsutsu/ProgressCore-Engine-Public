@@ -1,8 +1,6 @@
-#include "Shader/Common/Skinning.hlsli"
-#include "Shader/Common/Instancing.hlsli"
 #include "Shader/Common/Common.hlsli"
+#include "Shader/Common/Transform.hlsli"
 
-// PhongVSと全く同じでOKです
 VS_OUT main(
     float4 position : POSITION,
     float4 boneWeights : BONE_WEIGHTS,
@@ -14,33 +12,21 @@ VS_OUT main(
 {
     VS_OUT vout = (VS_OUT) 0;
 
-    // スキニング・インスタンシング判定
-    float weightSum = dot(boneWeights, float4(1, 1, 1, 1));
-    bool isSkinned = (weightSum > 0.5f);
+    // 1. ワールド空間への変換
+    float3 worldTangent;
+    CalculateWorldTransform(
+        position, normal, tangent,
+        boneWeights, boneIndices, instanceID,
+        vout.position, vout.normal, worldTangent
+    );
+    vout.tangent = float4(worldTangent, tangent.w);
 
-    if (isSkinned)
-    {
-        position = SkinningPosition(position, boneWeights, boneIndices);
-        vout.normal = SkinningVector(normal, boneWeights, boneIndices);
-        vout.tangent.xyz = SkinningVector(tangent.xyz, boneWeights, boneIndices);
-    }
-    else
-    {
-        float4x4 world = GetInstanceWorld(instanceID);
-        position = mul(position, world);
-        vout.normal = normalize(mul(float4(normal, 0), world).xyz);
-        vout.tangent.xyz = normalize(mul(float4(tangent.xyz, 0), world).xyz);
-    }
-
-    vout.vertex = mul(position, viewProjection);
+    // 2. カメラ・ライト空間への投影
+    vout.vertex = mul(vout.position, viewProjection);
+    vout.shadowPos = mul(vout.position, light_view_projection);
+    
+    // 3. その他パラメータ
     vout.texcoord = texcoord;
-    vout.tangent.w = tangent.w;
-    vout.position = position;
-    
-    // シャドウマップ座標
-    vout.shadowPos = mul(position, light_view_projection);
-    
-    // インスタンスバッファから customParams を引っこ抜いて封筒に入れる
     vout.customParams = GetInstanceCustomParams(instanceID);
 
     return vout;

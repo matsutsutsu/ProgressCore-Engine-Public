@@ -1,3 +1,6 @@
+#ifndef COMMON_HLSLI
+#define COMMON_HLSLI
+
 #include "Shader/Common/Scene.hlsli"
 #include "Shader/Common/Lighting.hlsli"
 #include "Shader/Pass/ShadowMap/ShadowMap.hlsli"
@@ -62,3 +65,5 @@ float3 ApplyHeightFog(float3 pixelPos, float3 camPos, float3 baseColor, SamplerS
 
     return lerp(baseColor, gFogColor.rgb, rawFogDensity * gFogColor.a);
 }
+
+#endif // COMMON_HLSLI

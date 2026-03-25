@@ -1,4 +1,5 @@
-// Lighting.hlsli
+#ifndef LIGHTING_HLSLI
+#define LIGHTING_HLSLI
 
 // --- 1. 構造体定義 ---
 struct LightResult
@@ -209,3 +210,6 @@ LightResult CalculateAllLights(SurfaceInfo surf, float shadowWeight)
     }
     return res;
 }
+
+
+#endif // LIGHTING_HLSLI

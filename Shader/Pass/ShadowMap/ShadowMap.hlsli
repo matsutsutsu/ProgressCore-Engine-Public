@@ -1,3 +1,6 @@
+#ifndef SHADOWMAP_HLSLI
+#define SHADOWMAP_HLSLI
+
 #include "Shader/Common/RegisterDef.hlsli"
 
 
@@ -67,3 +70,6 @@ float3 ApplyShadowColor(float3 finalColor, float shadowWeight)
     float3 coloredShadow = finalColor * shadow_color.rgb;
     return lerp(coloredShadow, finalColor, shadowWeight);
 }
+
+
+#endif

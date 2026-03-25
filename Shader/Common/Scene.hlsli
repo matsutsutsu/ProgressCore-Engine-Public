@@ -1,3 +1,6 @@
+#ifndef SCENE_HLSLI
+#define SCENE_HLSLI
+
 #include "Shader/Common/RegisterDef.hlsli"
 
 cbuffer CbScene : register(REG_CB_SCENE)
@@ -25,3 +28,5 @@ cbuffer CbFog : register(REG_CB_FOG) // register(b11)
 // ノイズテクスチャ 
 Texture2D gFogNoiseMap : register(REG_SRV_FOG);
 // サンプラは既存の LinearSampler (s0) を使います
+
+#endif // SCENE_HLSLI

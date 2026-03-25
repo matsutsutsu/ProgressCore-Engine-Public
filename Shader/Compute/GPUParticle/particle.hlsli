@@ -1,3 +1,6 @@
+#ifndef PARTICLE_HLSLI
+#define PARTICLE_HLSLI
+
 #include "Shader/Common/RegisterDef.hlsli"
 #include "Shader/Common/Scene.hlsli"
 //=====================================================================
@@ -264,3 +267,6 @@ float fade_out(float duration, float age, float lifespan, float exponent)
     // 残り寿命をもとにフェードアウト
     return pow(smoothstep(0.0, 1.0, (lifespan - age) / duration), exponent);
 }
+
+
+#endif

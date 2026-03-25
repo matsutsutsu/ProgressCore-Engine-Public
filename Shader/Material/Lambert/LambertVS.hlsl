@@ -1,6 +1,5 @@
-#include "Shader/Common/Skinning.hlsli"
-#include "Shader/Common/Instancing.hlsli"
 #include "Shader/Common/Common.hlsli"
+#include "Shader/Common/Transform.hlsli"
 
 VS_OUT main(
     float4 position : POSITION,
@@ -12,24 +11,21 @@ VS_OUT main(
 )
 {
     VS_OUT vout = (VS_OUT) 0;
+    float4 worldPos;
+    float3 worldNormal;
 
-    if (any(boneWeights))
-    {
-        position = SkinningPosition(position, boneWeights, boneIndices);
-        vout.normal = SkinningVector(normal, boneWeights, boneIndices);
-    }
-    else
-    {
-        float4x4 world = GetInstanceWorld(instanceID);
-        position = mul(position, world);
-        vout.normal = normalize(mul(float4(normal, 0), world).xyz);
-    }
+    // 1. オーバーロードによる 位置・法線 のみの変換
+    CalculateWorldTransform(
+        position, normal,
+        boneWeights, boneIndices, instanceID,
+        worldPos, worldNormal
+    );
+    
+    vout.normal = worldNormal;
 
-    vout.vertex = mul(position, viewProjection);
+    // 2. カメラ空間への投影
+    vout.vertex = mul(worldPos, viewProjection);
     vout.texcoord = texcoord;
-
-    // Lambertはタンジェントやワールド位置(vout.position)を出力していない構成なのでこれでOK
-    // もしPSでそれらを使うように変更した場合は、PhongVSと同様に追加してください
 
     return vout;
 }

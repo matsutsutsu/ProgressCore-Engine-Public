@@ -1,6 +1,6 @@
-#include "Shader/Common/Skinning.hlsli"
-#include "Shader/Common/Instancing.hlsli"
+// Shader/Vertex/BasicVS.hlsl
 #include "Shader/Common/Common.hlsli"
+#include "Shader/Common/Transform.hlsli"
 
 VS_OUT main(
     float4 position : POSITION,
@@ -11,18 +11,15 @@ VS_OUT main(
 )
 {
     VS_OUT vout = (VS_OUT) 0;
+    float4 worldPos;
 
-    if (any(boneWeights))
-    {
-        position = SkinningPosition(position, boneWeights, boneIndices);
-    }
-    else
-    {
-        float4x4 world = GetInstanceWorld(instanceID);
-        position = mul(position, world);
-    }
+    // 1. 位置のみのオーバーロード関数が自動的に呼ばれる
+    CalculateWorldTransform(
+        position, boneWeights, boneIndices, instanceID, worldPos
+    );
 
-    vout.vertex = mul(position, viewProjection);
+    // 2. カメラ空間への投影
+    vout.vertex = mul(worldPos, viewProjection);
     vout.texcoord = texcoord;
 
     return vout;

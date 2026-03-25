@@ -1,3 +1,6 @@
+#ifndef BLOOM_HLSLI
+#define BLOOM_HLSLI
+
 #include "Shader/Common/RegisterDef.hlsli"
 
 struct VS_OUT
@@ -25,3 +28,6 @@ Texture2D gInputTexture : register(REG_SRV_MATERIAL_TEX0);
 Texture2D gHighResTexture : register(REG_SRV_MATERIAL_TEX1);
 
 SamplerState LinearSampler : register(REG_SMP_LINEAR);
+
+
+#endif

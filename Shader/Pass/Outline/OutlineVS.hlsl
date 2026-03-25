@@ -1,13 +1,11 @@
-#include "Shader/Common/Skinning.hlsli"
-#include "Shader/Common/Instancing.hlsli"
 #include "Shader/Common/Common.hlsli"
+#include "Shader/Common/Transform.hlsli"
 
-// メッシュ用定数バッファ
+// 定数バッファの定義
 cbuffer CbMesh : register(b0)
 {
     float4 materialColor;
 };
-// アウトライン用定数バッファ
 cbuffer CbOutline : register(b1)
 {
     float4 gOutlineColor;
@@ -26,37 +24,27 @@ VS_OUT main(
 )
 {
     VS_OUT vout = (VS_OUT) 0;
-    
     float4 skinPos;
     float3 skinNormal;
 
-    // --- 1. ワールド座標と法線の計算 ---
-    if (any(boneWeights))
-    {
-        // スキンメッシュ
-        skinPos = SkinningPosition(position, boneWeights, boneIndices);
-        skinNormal = SkinningVector(normal, boneWeights, boneIndices);
-    }
-    else
-    {
-        // インスタンシング（静的メッシュ）
-        float4x4 world = GetInstanceWorld(instanceID);
-        skinPos = mul(position, world);
-        skinNormal = normalize(mul(float4(normal, 0), world).xyz);
-    }
+    // 1. ワールド空間での座標と法線を取得
+    CalculateWorldTransform(
+        position, normal,
+        boneWeights, boneIndices, instanceID,
+        skinPos, skinNormal
+    );
 
-    // --- 2. アウトラインの膨張処理 ---
-    // ワールド空間で法線方向に膨らませる
+    // 2. 本処理：アウトラインの膨張処理 (ワールド空間)
     skinPos.xyz += normalize(skinNormal) * gOutlineSize;
 
-    // --- 3. 座標変換 ---
+    // 3. 座標変換と出力
     vout.vertex = mul(skinPos, viewProjection);
-
-    // その他の情報を埋める
     vout.position = skinPos;
     vout.normal = skinNormal;
     vout.texcoord = texcoord;
-    vout.tangent = float4(0, 0, 0, 0); // アウトラインではタンジェント不要
+    
+    // 不要なデータは0埋め
+    vout.tangent = float4(0, 0, 0, 0);
     vout.shadowPos = float4(0, 0, 0, 0);
 
     return vout;

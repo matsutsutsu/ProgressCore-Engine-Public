@@ -1,3 +1,6 @@
+#ifndef PRIMITIVE_HLSLI
+#define PRIMITIVE_HLSLI
+
 struct VS_IN
 {
 	float4 position : POSITION;
@@ -14,3 +17,5 @@ cbuffer CbScene : register(b0)
 {
 	row_major float4x4	viewProjection;
 };
+
+#endif

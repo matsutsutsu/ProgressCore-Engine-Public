@@ -1,3 +1,6 @@
+#ifndef SKINNING_HLSLI
+#define SKINNING_HLSLI
+
 #include "Shader/Common/RegisterDef.hlsli"
 
 cbuffer CbSkeleton : register(REG_CB_SKELETON)
@@ -28,3 +31,5 @@ float3 SkinningVector(float3 vec, float4 boneWeights, uint4 boneIndices)
 	}
 	return v;
 }
+
+#endif // SKINNING_HLSLI
