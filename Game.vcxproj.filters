@@ -39,9 +39,6 @@
     <Filter Include="Shader\Material\Sprite">
       <UniqueIdentifier>{3507bcf8-30c6-4874-acdd-63af07150527}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shader\Vertex">
-      <UniqueIdentifier>{6c3e3d92-a545-450e-b40f-35a71a0267b8}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Shader\Renderer">
       <UniqueIdentifier>{627c6b60-21df-45c0-b745-ffef10d97ed8}</UniqueIdentifier>
     </Filter>
@@ -1644,24 +1641,6 @@
     <FxCompile Include="Shader\Material\Sprite\SpritePS.hlsl">
       <Filter>Shader\Material\Sprite</Filter>
     </FxCompile>
-    <FxCompile Include="Shader\Vertex\BasicVS.hlsl">
-      <Filter>Shader\Vertex</Filter>
-    </FxCompile>
-    <FxCompile Include="Shader\Vertex\LambertVS.hlsl">
-      <Filter>Shader\Vertex</Filter>
-    </FxCompile>
-    <FxCompile Include="Shader\Vertex\OutlineVS.hlsl">
-      <Filter>Shader\Vertex</Filter>
-    </FxCompile>
-    <FxCompile Include="Shader\Vertex\PhongVS.hlsl">
-      <Filter>Shader\Vertex</Filter>
-    </FxCompile>
-    <FxCompile Include="Shader\Vertex\SpriteVS.hlsl">
-      <Filter>Shader\Vertex</Filter>
-    </FxCompile>
-    <FxCompile Include="Shader\Vertex\ToonVS.hlsl">
-      <Filter>Shader\Vertex</Filter>
-    </FxCompile>
     <FxCompile Include="Shader\Renderer\Shape\ShapeRendererPS.hlsl">
       <Filter>Shader\Renderer\Shape</Filter>
     </FxCompile>
@@ -1713,9 +1692,6 @@
     <FxCompile Include="Shader\Material\Dissolve\DissolvePS.hlsl">
       <Filter>Shader\Material\DissolvePS</Filter>
     </FxCompile>
-    <FxCompile Include="Shader\Vertex\PBR_VS.hlsl">
-      <Filter>Shader\Vertex</Filter>
-    </FxCompile>
     <FxCompile Include="Shader\Material\PBR\PBR_PS.hlsl">
       <Filter>Shader\Material\PBR</Filter>
     </FxCompile>
@@ -1727,6 +1703,27 @@
     </FxCompile>
     <FxCompile Include="Shader\Compute\Boids\BoidsPS.hlsl">
       <Filter>Shader\Compute\Boids</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Pass\Outline\OutlineVS.hlsl">
+      <Filter>Shader\Pass\Outline</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Toon\ToonVS.hlsl">
+      <Filter>Shader\Material\Toon</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Sprite\SpriteVS.hlsl">
+      <Filter>Shader\Material\Sprite</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Phong\PhongVS.hlsl">
+      <Filter>Shader\Material\Phong</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\PBR\PBR_VS.hlsl">
+      <Filter>Shader\Material\PBR</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Lambert\LambertVS.hlsl">
+      <Filter>Shader\Material\Lambert</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Basic\BasicVS.hlsl">
+      <Filter>Shader\Material\Basic</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
