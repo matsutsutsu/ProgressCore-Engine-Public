@@ -5,8 +5,6 @@
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 #include "Engine/GamePlay/Camera/VirtualCameraComponents.h"
 
-// ❌ 削除: #include "Engine/Serialization/ComponentSerializers.h"
-
 #include <algorithm> // std::max用
 
 // ============================================================================

@@ -225,6 +225,7 @@
     <ClInclude Include="Source\Engine\Core\Time\HighResolutionTimer.h" />
     <ClInclude Include="Source\Engine\GamePlay\Animation\AnimationSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Animation\AnimatorComponent.h" />
+    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimEventMessages.h" />
     <ClInclude Include="Source\Engine\GamePlay\Animation\AnimSequence.h" />
     <ClInclude Include="Source\Engine\GamePlay\Camera\CameraBrainSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Camera\VirtualCameraComponents.h" />
@@ -252,6 +253,7 @@
     <ClInclude Include="Source\Engine\GamePlay\Graphics\Particle\GPUParticleRenderSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Graphics\Particle\GPUParticleTypes.h" />
     <ClInclude Include="Source\Engine\GamePlay\Graphics\Particle\GPUParticleUpdateSystem.h" />
+    <ClInclude Include="Source\Engine\GamePlay\Graphics\Particle\ParticleEventSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Graphics\PostProcess\BloomConfigComponent.h" />
     <ClInclude Include="Source\Engine\GamePlay\Graphics\PostProcess\PostProcessSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Graphics\PostProcess\ToneMapConfigComponent.h" />
@@ -350,6 +352,9 @@
     <ClInclude Include="Source\Engine\UI\Widgets\UIText.h" />
     <ClInclude Include="Source\Game\Core\AllComponents.h" />
     <ClInclude Include="Source\Game\Core\SystemPriority.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Boids\BoidsRenderer.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Boids\BoidsSwarmComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Boids\BoidsSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyHitTestSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyMoveSystem.h" />
@@ -466,6 +471,7 @@
     <ClCompile Include="Source\Engine\GamePlay\Graphics\Particle\GPUParticleComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Graphics\Particle\GPUParticleRenderSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Graphics\Particle\GPUParticleUpdateSystem.cpp" />
+    <ClCompile Include="Source\Engine\GamePlay\Graphics\Particle\ParticleEventSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Graphics\PostProcess\PostProcessSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Physics\Character\JoltCharacterSetupSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Physics\Character\JoltCharacterUpdateSystem.cpp" />
@@ -530,6 +536,8 @@
     <ClCompile Include="Source\Engine\UI\UIElement.cpp" />
     <ClCompile Include="Source\Engine\UI\UIManager.cpp" />
     <ClCompile Include="Source\Game\Core\GamePlayComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Boids\BoidsRenderer.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Boids\BoidsSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyHitTestSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyMoveSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerFeedbackSystem.cpp" />
@@ -558,6 +566,7 @@
     <None Include="Shader\Common\RegisterDef.hlsli" />
     <None Include="Shader\Common\Scene.hlsli" />
     <None Include="Shader\Common\Skinning.hlsli" />
+    <None Include="Shader\Compute\Boids\BoidsData.hlsli" />
     <None Include="Shader\Compute\GPUParticle\particle.hlsli" />
     <None Include="Shader\Material\Sprite\Sprite.hlsli" />
     <None Include="Shader\Pass\ShadowMap\ShadowMap.hlsli" />
@@ -566,6 +575,20 @@
     <None Include="Shader\Renderer\Shape\ShapeRenderer.hlsli" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="Shader\Compute\Boids\BoidsPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Compute\Boids\BoidsUpdateCS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Shader\Compute\Boids\BoidsVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
     <FxCompile Include="Shader\Compute\GPUParticle\initialize_particle_cs.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4.0</ShaderModel>

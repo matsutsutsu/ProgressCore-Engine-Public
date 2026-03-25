@@ -19,6 +19,53 @@ struct GpuParticleBufferSet {
     ID3D11ShaderResourceView* particleSRV    = nullptr;
     ID3D11Buffer* constantBuffer = nullptr;
 
+    // -------------------------------------------------------------
+    // 既定のコンストラクタを明示的にコンパイラに作らせる
+    // -------------------------------------------------------------
+    GpuParticleBufferSet() = default;
+
+    // コピーを禁止する (ポインタのコピーによる二重解放を防ぐ)
+    GpuParticleBufferSet(const GpuParticleBufferSet&) = delete;
+    GpuParticleBufferSet& operator=(const GpuParticleBufferSet&) = delete;
+
+    // ムーブコンストラクタ (vectorの拡張時などに呼ばれる)
+    GpuParticleBufferSet(GpuParticleBufferSet&& other) noexcept {
+        particleBuffer = other.particleBuffer;
+        particleUAV = other.particleUAV;
+        particleSRV = other.particleSRV;
+        constantBuffer = other.constantBuffer;
+
+        // 元の所有者のポインタを空にする (これでデストラクタが走ってもReleaseされない)
+        other.particleBuffer = nullptr;
+        other.particleUAV = nullptr;
+        other.particleSRV = nullptr;
+        other.constantBuffer = nullptr;
+    }
+
+    // ムーブ代入演算子
+    GpuParticleBufferSet& operator=(GpuParticleBufferSet&& other) noexcept {
+        if (this != &other) {
+            // 自分が既に持っているなら解放
+            if (particleBuffer) particleBuffer->Release();
+            if (particleUAV) particleUAV->Release();
+            if (particleSRV) particleSRV->Release();
+            if (constantBuffer) constantBuffer->Release();
+
+            // 所有権の移動
+            particleBuffer = other.particleBuffer;
+            particleUAV = other.particleUAV;
+            particleSRV = other.particleSRV;
+            constantBuffer = other.constantBuffer;
+
+            // 元を空に
+            other.particleBuffer = nullptr;
+            other.particleUAV = nullptr;
+            other.particleSRV = nullptr;
+            other.constantBuffer = nullptr;
+        }
+        return *this;
+    }
+
     // プールがDestroyを呼んだ時に自動でReleaseさせる
     ~GpuParticleBufferSet() {
         if (particleBuffer) { particleBuffer->Release(); particleBuffer = nullptr; }

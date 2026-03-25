@@ -334,6 +334,12 @@
     <Filter Include="Source\Engine\GamePlay\Physics\Collision\Collider">
       <UniqueIdentifier>{1ac4e9b9-47e1-482d-a82e-d3ad2832ac12}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shader\Compute\Boids">
+      <UniqueIdentifier>{6934a6e4-82a9-4190-b004-f8fa07407019}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\Character\Boids">
+      <UniqueIdentifier>{7c3e22d7-bac6-4269-93ef-2df2adad0f48}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1044,6 +1050,21 @@
     <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltDebugDrawSystem.h">
       <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimEventMessages.h">
+      <Filter>Source\Engine\GamePlay\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Graphics\Particle\ParticleEventSystem.h">
+      <Filter>Source\Engine\GamePlay\Graphics\Particle</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boids\BoidsSwarmComponent.h">
+      <Filter>Source\Game\Logics\Character\Boids</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boids\BoidsRenderer.h">
+      <Filter>Source\Game\Logics\Character\Boids</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boids\BoidsSystem.h">
+      <Filter>Source\Game\Logics\Character\Boids</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -1547,6 +1568,15 @@
     <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltDebugDrawSystem.cpp">
       <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\Graphics\Particle\ParticleEventSystem.cpp">
+      <Filter>Source\Engine\GamePlay\Graphics\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Boids\BoidsRenderer.cpp">
+      <Filter>Source\Game\Logics\Character\Boids</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Boids\BoidsSystem.cpp">
+      <Filter>Source\Game\Logics\Character\Boids</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shader\Common\Common.hlsli">
@@ -1593,6 +1623,9 @@
     </None>
     <None Include=".editorconfig">
       <Filter>Build</Filter>
+    </None>
+    <None Include="Shader\Compute\Boids\BoidsData.hlsli">
+      <Filter>Shader\Compute\Boids</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -1685,6 +1718,15 @@
     </FxCompile>
     <FxCompile Include="Shader\Material\PBR\PBR_PS.hlsl">
       <Filter>Shader\Material\PBR</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Compute\Boids\BoidsUpdateCS.hlsl">
+      <Filter>Shader\Compute\Boids</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Compute\Boids\BoidsVS.hlsl">
+      <Filter>Shader\Compute\Boids</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Compute\Boids\BoidsPS.hlsl">
+      <Filter>Shader\Compute\Boids</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

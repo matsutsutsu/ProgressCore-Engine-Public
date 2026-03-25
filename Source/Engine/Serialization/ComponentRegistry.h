@@ -82,21 +82,58 @@ private:
 
 
 // 自動登録用のヘルパー構造体
-template <typename T> struct AutoComponentRegister {
-    AutoComponentRegister(const std::string &name)
-    {
-        // 重複登録を防ぐためのガード（念のため）
-        if (!ComponentRegistry::Instance().GetInfoByName(name)) {
-            ComponentRegistry::Instance().Register<T>(name);
-        }
+//template <typename T> struct AutoComponentRegister {
+//    AutoComponentRegister(const std::string &name)
+//    {
+//        // 重複登録を防ぐためのガード（念のため）
+//        if (!ComponentRegistry::Instance().GetInfoByName(name)) {
+//            ComponentRegistry::Instance().Register<T>(name);
+//        }
+//
+//        // 2. ImGui(インスペクタ)用の登録
+//        ComponentMetaImGui::RegisterGuiMeta<T>(ComponentGuiRegistry::Instance());
+//    }
+//};
 
-        // 2. ImGui(インスペクタ)用の登録
-        ComponentMetaImGui::RegisterGuiMeta<T>(ComponentGuiRegistry::Instance());
-    }
-};
+// ── リンカ強制保護 (究極版：COMDAT最適化の完全破壊) ────────────────────────
+// 登録用変数だけが最適化で切り捨てられるのを防ぐため、
+// エクスポート保護されたアンカー変数の中でラムダ式を回し、登録処理を道連れにする。
+// ─────────────────────────────────────────────────────────────────────
 
-// ★これを使うマクロ
-// C++17の inline 変数を使うことで、ヘッダーに書いても多重定義エラーにならず、
-// プログラム起動時に自動的に実行されます。
-#define REGISTER_COMPONENT(T, Name)                                                                \
-    static AutoComponentRegister<T> g_auto_register_##T(Name);
+
+// ── リンカ強制保護 (確実版) ────────────────────────────────────────────────
+// __declspec(dllexport) は EXE ビルドで /OPT:REF に対して不安定。
+// #pragma comment(linker, "/include:X") はリンカの参照グラフに
+// 直接シンボルを追加する唯一の確実な方法。
+// ─────────────────────────────────────────────────────────────────────────
+
+#ifdef _MSC_VER
+    // 2段マクロ展開: T が完全展開された後に文字列化する
+#define _CCL_LINK_IMPL(sym) __pragma(comment(linker, "/include:" #sym))
+#define _CCL_LINK(sym)      _CCL_LINK_IMPL(sym)
+#define _CCL_USED
+#elif defined(__GNUC__) || defined(__clang__)
+    // GCC/Clang: コンパイル段階で削除を阻止する
+#define _CCL_LINK(sym)
+#define _CCL_USED __attribute__((used))
+#else
+#define _CCL_LINK(sym)
+#define _CCL_USED
+#endif
+
+#define REGISTER_COMPONENT(T, Name)                                                         \
+    namespace {                                                                             \
+        struct AutoReg_##T {                                                                \
+            AutoReg_##T() {                                                                 \
+                if (!ComponentRegistry::Instance().GetInfoByName(Name)) {                   \
+                    ComponentRegistry::Instance().Register<T>(Name);                        \
+                }                                                                           \
+                ComponentMetaImGui::RegisterGuiMeta<T>(ComponentGuiRegistry::Instance());   \
+            }                                                                               \
+        };                                                                                  \
+    }                                                                                       \
+    /* ★修正点1: dllexport を廃止し、pragma で確実に参照を付与         */               \
+    /* ★修正点2: static ローカルを廃止し、初期化式に直接コンストラクタを呼ぶ */          \
+    /*   (AutoReg_##T{}, 1) = 一時オブジェクトを構築→登録実行→即破棄、値は 1 */         \
+    extern "C" _CCL_USED int g_MetaAnchor_##T = (AutoReg_##T{}, 1);                        \
+    _CCL_LINK(g_MetaAnchor_##T)

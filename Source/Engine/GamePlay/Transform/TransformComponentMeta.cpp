@@ -5,8 +5,6 @@
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
-// ❌ 削除: #include "Engine/Serialization/ComponentSerializers.h"
-
 namespace {
     //  クォータニオン -> オイラー角 (Degree) への変換
     DirectX::XMFLOAT3 QuatToEulerDegrees(const DirectX::XMFLOAT4& q) {

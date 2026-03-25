@@ -9,11 +9,23 @@
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
-// ❌ 削除: #include "Engine/Serialization/ComponentSerializers.h"
-
 #include "Engine/Graphics/Core/GpuResourceUtils.h"
 #include "Engine/Graphics/Core/Graphics.h"
 #include "Engine/Platform/Dialog.h"
+
+
+// ======================================================
+// ★診断コード: 問題解決後に削除する
+// ======================================================
+#include <Windows.h>
+namespace {
+    struct _DiagEnvMeta {
+        _DiagEnvMeta() {
+            OutputDebugStringA("[CCL_DIAG] EnvironmentComponentMeta.cpp の初期化が走った！\n");
+        }
+    } _diag_env_meta_instance;
+}
+
 
 // ============================================================================
 // ToneMap Config

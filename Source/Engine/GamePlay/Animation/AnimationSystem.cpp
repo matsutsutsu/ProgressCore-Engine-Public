@@ -4,12 +4,11 @@
 #include "ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"
 #include <cmath>
+#include "Engine/Core/Math/StringHash.h"
 
-// イベントを他システムへ伝えるための手紙（必要なら別ヘッダに切り出してください）
-struct AnimNotifyMessage {
-    CCL::ECS::EntityID entity;
-    std::string eventName;
-};
+// 先ほど作成した専用の手紙ヘッダー
+#include "AnimEventMessages.h"
+
 
 AnimationSystem::AnimationSystem() : IfSystem("AnimationSystem") {}
 
@@ -37,11 +36,28 @@ void AnimationSystem::Update(float dt)
                 break;
             }
 
-            // 時間が来たので EventBus に「放送」する
-            AnimNotifyMessage msg;
-            msg.entity = id;
-            msg.eventName = evt.eventName; // "HitBox_Start" 等
-            _world->GetEventBus().Publish(msg);
+            // ここがAAAの設計！
+            // 文字列を数値に変換し、switch文で最速のジャンプを行う
+            // ※実行時にはただの「数値の比較（int == int）」になるため負荷はゼロに等しい
+            uint32_t eventHash = CCL::Utils::HashString(evt.eventName.c_str());
+
+            switch (eventHash) {
+            case  CCL::Utils::HashString("HitBox_Start"):
+                _world->GetEventBus().Publish(AnimEventHitBoxMessage{ id, true });
+                break;
+            case  CCL::Utils::HashString("HitBox_End"):
+                _world->GetEventBus().Publish(AnimEventHitBoxMessage{ id, false });
+                break;
+            case  CCL::Utils::HashString("Play_Sound"):
+                _world->GetEventBus().Publish(AnimEventSoundMessage{ id });
+                break;
+            case  CCL::Utils::HashString("Play_Effect"):
+                _world->GetEventBus().Publish(AnimEventEffectMessage{ id, evt.stringParam });
+                break;
+            default:
+                // 未知のイベントは無視するか、警告を出す
+                break;
+            }
 
             // 栞を次に進める
             animator.nextEventIndex++;

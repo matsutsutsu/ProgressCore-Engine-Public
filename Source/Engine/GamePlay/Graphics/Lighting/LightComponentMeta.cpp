@@ -5,8 +5,6 @@
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 #include "Engine/GamePlay/Graphics/Lighting/LightComponent.h"
 
-// ❌ 削除: #include "Engine/Serialization/ComponentSerializers.h"
-
 // ============================================================================
 // Directional Light
 // ============================================================================
