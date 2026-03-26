@@ -12,10 +12,10 @@
 
 // サンプラー配列（Texture sampling の設定）
 //SamplerState sampler_states[3] : register(REG_SMP_LINEAR);
-SamplerState sampler_linear : register(REG_SMP_LINEAR);
+SamplerState sampler_linear : register(REG_SMP(SLOT_SMP_LINEAR));
 
 // パーティクルのテクスチャ（例：煙・火花などの画像）
-Texture2D color_map : register(REG_SRV_MATERIAL_TEX0);
+Texture2D color_map : register(REG_SRV(SLOT_SRV_MAT_TEX0));
 
 //----------------------------------------------
 // ピクセルごとに実行されるシェーダー

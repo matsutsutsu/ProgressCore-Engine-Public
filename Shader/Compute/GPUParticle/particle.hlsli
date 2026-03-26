@@ -1,14 +1,14 @@
 #ifndef PARTICLE_HLSLI
 #define PARTICLE_HLSLI
 
-#include "Shader/Common/RegisterDef.hlsli"
+#include "Engine/Graphics/Shader/ShaderResources.h"
 #include "Shader/Common/Scene.hlsli"
 //=====================================================================
 //  GPU Particle Initializer Shader
 //  粒子の初期化処理を担当するComputeShader補助コード
 //=====================================================================
 
-cbuffer PARTICLE_SYSTEM_CONSTANTS : register(REG_CB_PARTICLE)
+cbuffer PARTICLE_SYSTEM_CONSTANTS : register(REG_CB(SLOT_CB_PARTICLE))
 {
     // 発生源（エミッタ）の基本パラメータ群
     float4 emission_position;       // 粒子が発生する中心位置（ワールド座標）

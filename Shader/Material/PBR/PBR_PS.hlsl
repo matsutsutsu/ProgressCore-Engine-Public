@@ -3,7 +3,7 @@
 #include "Shader/Common/PBRLighting.hlsli" // 物理演算エンジンをインクルード
 
 // --- 定数バッファ & リソース ---
-cbuffer CbMaterial : register(b0)
+cbuffer CbMesh : register(REG_CB(SLOT_CB_MATERIAL))
 {
     float4 baseColor;
     float3 emissiveColor;
@@ -12,11 +12,13 @@ cbuffer CbMaterial : register(b0)
     float occlusionStrength;
 };
 
-Texture2D AlbedoMap : register(t0);
-Texture2D NormalMap : register(t1);
-Texture2D MetalRoughMap : register(t2);
-Texture2D EmissiveMap : register(t3);
-SamplerState LinearSampler : register(s0);
+Texture2D AlbedoMap : register(REG_SRV(SLOT_SRV_MAT_TEX0));
+Texture2D NormalMap : register(REG_SRV(SLOT_SRV_MAT_TEX1));
+Texture2D MetalRoughMap : register(REG_SRV(SLOT_SRV_MAT_TEX2)); 
+// ※PBRでは4枚目が必要なため、パーティクル用のスロットを間借りするか、SrvMaterialTex3をヘッダに足すのが理想です
+Texture2D EmissiveMap : register(REG_SRV(SLOT_SRV_PARTICLE_BUF)); 
+
+SamplerState LinearSampler : register(REG_SMP(SLOT_SMP_LINEAR));
 
 // ==============================================================================
 // メイン関数

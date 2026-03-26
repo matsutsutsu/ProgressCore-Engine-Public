@@ -1,3 +1,5 @@
+#include "Engine/Graphics/Shader/ShaderResources.h"
+
 cbuffer CbOutline : register(b1)
 {
     float4 gOutlineColor;

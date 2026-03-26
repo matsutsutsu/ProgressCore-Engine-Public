@@ -1,7 +1,7 @@
 #ifndef BLOOM_HLSLI
 #define BLOOM_HLSLI
 
-#include "Shader/Common/RegisterDef.hlsli"
+#include "Engine/Graphics/Shader/ShaderResources.h"
 
 struct VS_OUT
 {
@@ -10,7 +10,7 @@ struct VS_OUT
 };
 
 // 設定用定数バッファ
-cbuffer CbBloom : register(REG_CB_BLOOM)
+cbuffer CbBloom : register(REG_CB(SLOT_CB_BLOOM))
 {
     // 抽出用
     float gThreshold; // 閾値 (1.0)
@@ -23,11 +23,11 @@ cbuffer CbBloom : register(REG_CB_BLOOM)
     float2 gPadding2;
 };
 
-Texture2D gInputTexture : register(REG_SRV_MATERIAL_TEX0);
+Texture2D gInputTexture : register(REG_SRV(SLOT_SRV_MAT_TEX0));
 // アップサンプリング時は「高解像度側のテクスチャ」も必要
-Texture2D gHighResTexture : register(REG_SRV_MATERIAL_TEX1);
+Texture2D gHighResTexture : register(REG_SRV(SLOT_SRV_MAT_TEX1));
 
-SamplerState LinearSampler : register(REG_SMP_LINEAR);
+SamplerState LinearSampler : register(REG_SMP(SLOT_SMP_LINEAR));
 
 
 #endif

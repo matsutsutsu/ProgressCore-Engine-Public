@@ -1,12 +1,12 @@
 // Shader/Material/Dissolve/DissolvePS.hlsl
 
 #include "Shader/Common/Common.hlsli"
-#include "Shader/Common/RegisterDef.hlsli"
+#include "Engine/Graphics/Shader/ShaderResources.h"
 
 // ==========================================================
 // 定数バッファ (Material)
 // ==========================================================
-cbuffer cbMaterial : register(REG_CB_MATERIAL) // b0
+cbuffer CbMaterial : register(REG_CB(SLOT_CB_MATERIAL)) // b0
 {
     float4 materialColor; // Basic/Lambertに合わせて変数名を統一
     
@@ -21,9 +21,9 @@ cbuffer cbMaterial : register(REG_CB_MATERIAL) // b0
 // ==========================================================
 // テクスチャ＆サンプラ
 // ==========================================================
-Texture2D diffuseMap : register(REG_SRV_MATERIAL_TEX0); // t0
-Texture2D noiseMap : register(REG_SRV_MATERIAL_TEX2); // t2 (ディゾルブ用ノイズテクスチャ)
-SamplerState linearSampler : register(REG_SMP_DEFAULT); // s0 (Basic/Lambertの名称に合わせる)
+Texture2D diffuseMap : register(REG_SRV(SLOT_SRV_MAT_TEX0)); // t0
+Texture2D noiseMap : register(REG_SRV(SLOT_SRV_MAT_TEX2)); // t2 (ディゾルブ用ノイズテクスチャ)
+SamplerState linearSampler : register(REG_SMP(SLOT_SMP_DEFAULT)); // s0 (Basic/Lambertの名称に合わせる)
 
 // ==========================================================
 // エントリポイント

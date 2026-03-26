@@ -1,11 +1,11 @@
 #ifndef SHADOWMAP_HLSLI
 #define SHADOWMAP_HLSLI
 
-#include "Shader/Common/RegisterDef.hlsli"
+#include "Engine/Graphics/Shader/ShaderResources.h"
 
 
 // --- データ定義 ---
-cbuffer CbShadow : register(REG_CB_SHADOW)
+cbuffer CbShadow : register(REG_CB(SLOT_CB_SHADOW))
 {
     row_major float4x4 light_view_projection;
     float4 shadow_color;
@@ -15,8 +15,8 @@ cbuffer CbShadow : register(REG_CB_SHADOW)
 };
 
 
-Texture2D ShadowMap : register(REG_SRV_SHADOW);
-SamplerComparisonState ShadowSampler : register(REG_SMP_SHADOW);
+Texture2D ShadowMap : register(REG_SRV(SLOT_SRV_SHADOW));
+SamplerComparisonState ShadowSampler : register(REG_SMP(SLOT_SMP_SHADOW));
 
 // --- 関数定義 ---
 

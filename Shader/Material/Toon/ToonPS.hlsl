@@ -3,23 +3,20 @@
 #include "Shader/Common/ToonLighting.hlsli"
 #include "Shader/Common/MaterialEffect.hlsli"
 
-cbuffer CbMesh : register(b0)
+cbuffer CbToonMaterial : register(REG_CB(SLOT_CB_MATERIAL))
 {
     float4 materialColor;
-};
-cbuffer CbToon : register(b1)
-{
     float4 gRimColor;
     float gRimPower;
     float gRimIntensity;
     float2 gToonPadding;
 };
 
-Texture2D DiffuseMap : register(t0);
-Texture2D NormalMap : register(t1);
-Texture2D ToonRampMap : register(t2);
-Texture2D DissolveNoiseMap : register(REG_SRV_GLOBAL_NOISE);
-SamplerState LinearSampler : register(s0);
+Texture2D DiffuseMap : register(REG_SRV(SLOT_SRV_MAT_TEX0));
+Texture2D NormalMap : register(REG_SRV(SLOT_SRV_MAT_TEX1));
+Texture2D ToonRampMap : register(REG_SRV(SLOT_SRV_MAT_TEX2));
+Texture2D DissolveNoiseMap : register(REG_SRV(SLOT_SRV_GLOBAL_NOISE));
+SamplerState LinearSampler : register(REG_SMP(SLOT_SMP_LINEAR));
 
 float4 main(VS_OUT pin) : SV_TARGET
 {

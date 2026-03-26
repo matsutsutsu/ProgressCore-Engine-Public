@@ -1,7 +1,7 @@
 #include "Shader/Compute/GPUParticle/particle.hlsli"
 
 // GPU上で書き込み可能な粒子バッファ
-RWStructuredBuffer<particle> particle_buffer : register(REG_UAV_PARTICLE_BUF);
+RWStructuredBuffer<particle> particle_buffer : register(REG_UAV(SLOT_UAV_PARTICLE_BUF));
 
 
 // ====================================================

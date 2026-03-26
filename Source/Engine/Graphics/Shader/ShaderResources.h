@@ -1,70 +1,65 @@
-#pragma once
+// Graphics/Shader/ShaderResources.h
 
-namespace ShaderResources {
-    // HLSL側の RegisterDef.hlsli と一致させること！
+#ifndef SHADER_RESOURCES_H
+#define SHADER_RESOURCES_H
 
-    // -----------------------------------------------------------------
-    // Constant Buffers (b)
-    // -----------------------------------------------------------------
-    // 通常描画用
-    constexpr int CbMaterial = 0;
-    constexpr int CbMesh     = 1;
+// ==================================================================
+// 1. 【単一の真実のソース】 レジスタ番号の定義
+// ※ ここに1回書くだけで、C++とHLSLの両方に適用されます。
+// ==================================================================
 
-    // ポストプロセス用 (CbMaterial, CbMesh と場所を共有する)
-    constexpr int CbBloom   = 0;
-    constexpr int CbToneMap = 1;
+// --- Constant Buffers (CB) ---
+#define SLOT_CB_MATERIAL        0
+#define SLOT_CB_MESH            1
+#define SLOT_CB_BLOOM           0
+#define SLOT_CB_TONEMAP         1
+#define SLOT_CB_SCENE           8
+#define SLOT_CB_LIGHT           9
+#define SLOT_CB_SHADOW          10
+#define SLOT_CB_FOG             11
+#define SLOT_CB_SKELETON        12
+#define SLOT_CB_PARTICLE        13
 
-    // システム共通 (b8以降)
-    constexpr int CbScene    = 8;
-    constexpr int CbLight    = 9;
-    constexpr int CbShadow   = 10;
-    constexpr int CbFog      = 11;
-    constexpr int CbSkeleton = 12;
-    constexpr int CbParticle = 13;
+// --- Shader Resources (SRV) ---
+#define SLOT_SRV_MAT_TEX0       0
+#define SLOT_SRV_MAT_TEX1       1
+#define SLOT_SRV_MAT_TEX2       2
+#define SLOT_SRV_PARTICLE_BUF   3
+#define SLOT_SRV_SCENE_DEPTH    4
+#define SLOT_SRV_BLOOM_IN       0
+#define SLOT_SRV_BLOOM_HIGHRES  1
+#define SLOT_SRV_FOG_NOISE      9
+#define SLOT_SRV_SHADOW         10
+#define SLOT_SRV_INSTANCE       11
+#define SLOT_SRV_BONE           12
+#define SLOT_SRV_GLOBAL_NOISE   13
 
-    // -----------------------------------------------------------------
-    // Shader Resources (t)
-    // -----------------------------------------------------------------
-    // マテリアル・パス固有
-    constexpr int SrvMaterialTex0 = 0; // Diffuse
-    constexpr int SrvMaterialTex1 = 1; // Normal
-    constexpr int SrvMaterialTex2 = 2; // Specular
-    constexpr int SrvParticleBuf  = 3; // Particle Buffer
+// --- Unordered Access Views (UAV) ---
+#define SLOT_UAV_PARTICLE_BUF   0
 
-    // シーンの深度バッファを受け取るスロット
-    constexpr int SrvSceneDepth = 4;
+// --- Samplers (SMP) ---
+#define SLOT_SMP_DEFAULT        0
+#define SLOT_SMP_LINEAR         1
+#define SLOT_SMP_ANISOTROPIC    2
+#define SLOT_SMP_SHADOW         10
+#define SLOT_SMP_BLOOM          1
 
-    // ポストプロセス用
-    constexpr int SrvBloomInput   = 0; // SrvMaterialTex0 と同じ
-    constexpr int SrvBloomHighRes = 1; // SrvMaterialTex1 と同じ
 
-    // フォグ用
-    constexpr int SrvFogNoise = 9;
+// ==================================================================
+// 2. 【HLSL専用】 文字結合ギミック (C++コンパイラは無視する)
+// ==================================================================
+#ifndef __cplusplus
+    // マクロ展開の仕様上、数値を "b" などの文字と結合するには
+    // この「2段階クッション」が絶対に必要です。
+    #define REG_CB_IMPL(slot)  b##slot
+    #define REG_SRV_IMPL(slot) t##slot
+    #define REG_UAV_IMPL(slot) u##slot
+    #define REG_SMP_IMPL(slot) s##slot
 
-    // システム共通
-    constexpr int SrvShadow   = 10;
-    constexpr int SrvInstance = 11;
-    constexpr int SrvBone     = 12;
+    #define REG_CB(slot)  REG_CB_IMPL(slot)
+    #define REG_SRV(slot) REG_SRV_IMPL(slot)
+    #define REG_UAV(slot) REG_UAV_IMPL(slot)
+    #define REG_SMP(slot) REG_SMP_IMPL(slot)
+#endif
 
-    // ==========================================
-    // グローバル環境ノイズ (ディゾルブ用など)
-    // ==========================================
-    constexpr int SrvGlobalNoise = 13;
-
-    // -----------------------------------------------------------------
-    // Unordered Access Views (u)
-    // -----------------------------------------------------------------
-    constexpr int UavParticleBuf = 0;
-
-    // -----------------------------------------------------------------
-    // Samplers (s)
-    // -----------------------------------------------------------------
-    constexpr int SmpDefault     = 0;
-    constexpr int SmpLinear      = 1;
-    constexpr int SmpAnisotropic = 2;
-    constexpr int SmpShadow      = 10;
-
-    // Bloom用サンプラー (通常はLinearを使うので1番を割り当て)
-    constexpr int SmpBloom = 1;
-
-} // namespace ShaderResources
+#endif // SHADER_RESOURCES_H

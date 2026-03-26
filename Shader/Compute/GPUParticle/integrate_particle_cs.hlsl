@@ -3,16 +3,16 @@
 void UpdateParticle(inout particle p); // これがプロトタイプ宣言
 
 // GPU上で書き込み可能な粒子バッファ
-RWStructuredBuffer<particle> particle_buffer : register(REG_UAV_PARTICLE_BUF);
+RWStructuredBuffer<particle> particle_buffer : register(REG_UAV(SLOT_UAV_PARTICLE_BUF));
 
 // サンプラー・テクスチャ
 #define POINT 0
 #define LINEAR 1
 #define ANISOTROPIC 2
 //SamplerState sampler_states[3] : register(REG_SMP_LINEAR);
-SamplerState sampler_linear : register(REG_SMP_LINEAR);
-Texture2D color_temper_chart : register(REG_SRV_MATERIAL_TEX1); // パーティクル色の補正用
-Texture3D<float4> noise_3d : register(REG_SRV_MATERIAL_TEX2); // float4に変更推奨
+SamplerState sampler_linear : register(REG_SMP(SLOT_SMP_LINEAR));
+Texture2D color_temper_chart : register(REG_SRV(SLOT_SRV_MAT_TEX1)); // パーティクル色の補正用
+Texture3D<float4> noise_3d : register(REG_SRV(SLOT_SRV_MAT_TEX2)); // float4に変更推奨
 
 // ====================================================
 // Compute Shader のメイン関数（粒子の更新処理）

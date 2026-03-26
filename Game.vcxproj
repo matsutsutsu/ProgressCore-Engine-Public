@@ -88,7 +88,7 @@
       <AssemblerOutput>
       </AssemblerOutput>
       <AssemblerOutputFile>Assets\Shader\%(Filename).cod</AssemblerOutputFile>
-      <AdditionalIncludeDirectories>$(SolutionDir);$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Source\;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </FxCompile>
     <PostBuildEvent>
       <Command>
@@ -129,7 +129,7 @@
       <AssemblerOutput>
       </AssemblerOutput>
       <AssemblerOutputFile>Assets\Shader\%(Filename).cod</AssemblerOutputFile>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Source\;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </FxCompile>
     <PostBuildEvent>
       <Command>
@@ -565,7 +565,6 @@
     <None Include="Shader\Common\Lighting.hlsli" />
     <None Include="Shader\Common\MaterialEffect.hlsli" />
     <None Include="Shader\Common\PBRLighting.hlsli" />
-    <None Include="Shader\Common\RegisterDef.hlsli" />
     <None Include="Shader\Common\Scene.hlsli" />
     <None Include="Shader\Common\Skinning.hlsli" />
     <None Include="Shader\Common\ToonLighting.hlsli" />

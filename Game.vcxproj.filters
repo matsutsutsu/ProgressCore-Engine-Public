@@ -1600,9 +1600,6 @@
     <None Include="Shader\Compute\GPUParticle\particle.hlsli">
       <Filter>Shader\Compute\GPUParticle</Filter>
     </None>
-    <None Include="Shader\Common\RegisterDef.hlsli">
-      <Filter>Shader\Common</Filter>
-    </None>
     <None Include="Shader\Common\Instancing.hlsli">
       <Filter>Shader\Common</Filter>
     </None>

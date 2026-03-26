@@ -2,12 +2,12 @@
 
 
 // シーン画像(HDR)
-Texture2D gSceneTexture : register(REG_SRV_MATERIAL_TEX0);
+Texture2D gSceneTexture : register(REG_SRV(SLOT_SRV_MAT_TEX0));
 // ブルーム画像
-Texture2D gBloomTexture : register(REG_SRV_MATERIAL_TEX1);
+Texture2D gBloomTexture : register(REG_SRV(SLOT_SRV_MAT_TEX1));
 
 // トーンマップ設定
-cbuffer CbToneMap : register(REG_CB_TONE_MAP)
+cbuffer CbToneMap : register(REG_CB(SLOT_CB_TONEMAP))
 {
     float gExposure; // 露出 (1.0)
     float3 ggPadding;

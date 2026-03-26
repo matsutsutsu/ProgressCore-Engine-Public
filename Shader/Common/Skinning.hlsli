@@ -1,9 +1,9 @@
 #ifndef SKINNING_HLSLI
 #define SKINNING_HLSLI
 
-#include "Shader/Common/RegisterDef.hlsli"
+#include "Engine/Graphics/Shader/ShaderResources.h"
 
-cbuffer CbSkeleton : register(REG_CB_SKELETON)
+cbuffer CbSkeleton : register(REG_CB(SLOT_CB_SKELETON))
 {
 	row_major float4x4	boneTransforms[256];
 };

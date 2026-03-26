@@ -33,7 +33,7 @@
 //======================================================================
 // Compute Shader が毎フレーム更新した "particle" 配列をここで読み取る。
 // 各インデックス = 1粒。
-StructuredBuffer<particle> particle_buffer : register(REG_SRV_PARTICLE_BUF);
+StructuredBuffer<particle> particle_buffer : register(REG_SRV(SLOT_SRV_PARTICLE_BUF));
 
 
 //======================================================================
