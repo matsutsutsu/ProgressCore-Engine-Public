@@ -13,6 +13,8 @@
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 
+#include <Windows.h>
+
 class ComponentRegistry {
 public:
     // JSONへ書き出す関数
@@ -121,19 +123,31 @@ private:
 #define _CCL_USED
 #endif
 
-#define REGISTER_COMPONENT(T, Name)                                                         \
-    namespace {                                                                             \
-        struct AutoReg_##T {                                                                \
-            AutoReg_##T() {                                                                 \
-                if (!ComponentRegistry::Instance().GetInfoByName(Name)) {                   \
-                    ComponentRegistry::Instance().Register<T>(Name);                        \
-                }                                                                           \
-                ComponentMetaImGui::RegisterGuiMeta<T>(ComponentGuiRegistry::Instance());   \
-            }                                                                               \
-        };                                                                                  \
-    }                                                                                       \
-    /* ★修正点1: dllexport を廃止し、pragma で確実に参照を付与         */               \
-    /* ★修正点2: static ローカルを廃止し、初期化式に直接コンストラクタを呼ぶ */          \
-    /*   (AutoReg_##T{}, 1) = 一時オブジェクトを構築→登録実行→即破棄、値は 1 */         \
-    extern "C" _CCL_USED int g_MetaAnchor_##T = (AutoReg_##T{}, 1);                        \
+#define REGISTER_COMPONENT(T, Name)                                                                     \
+    namespace {                                                                                         \
+        struct AutoReg_##T {                                                                            \
+            AutoReg_##T() {                                                                             \
+                /* ★詳細診断 */                                                                        \
+                char buf[256];                                                                          \
+                bool alreadyRegistered = (ComponentRegistry::Instance().GetInfoByName(Name) != nullptr);\
+                sprintf_s(buf, "[CCL_DIAG] AutoReg<%s> called. already=%d\n", Name, alreadyRegistered); \
+                OutputDebugStringA(buf);                                                                \
+                if (!alreadyRegistered) {                                                               \
+                    ComponentRegistry::Instance().Register<T>(Name);                                    \
+                }                                                                                       \
+                ComponentMetaImGui::RegisterGuiMeta<T>(ComponentGuiRegistry::Instance());               \
+                OutputDebugStringA("[CCL_DIAG] RegisterGuiMeta done for " Name "\n");                   \
+                                                                                                        \
+                /* ★★ TypeID 確認ログを追加 */                                                          \
+                char buf2[128];                                                                         \
+                sprintf_s(buf2, "[CCL_DIAG_ID] %s -> TypeInfo::ID() = %llu\n",                          \
+                    Name, (unsigned long long)CCL::ECS::TypeInfo<T>::ID());                             \
+                OutputDebugStringA(buf2);                                                               \
+            }                                                                                           \
+        };                                                                                              \
+    }                                                                                                   \
+    /* ★修正点1: dllexport を廃止し、pragma で確実に参照を付与         */                              \
+    /* ★修正点2: static ローカルを廃止し、初期化式に直接コンストラクタを呼ぶ */                         \
+    /* (AutoReg_##T{}, 1) = 一時オブジェクトを構築→登録実行→即破棄、値は 1 */                        \
+    extern "C" _CCL_USED int g_MetaAnchor_##T = (AutoReg_##T{}, 1);                                     \
     _CCL_LINK(g_MetaAnchor_##T)

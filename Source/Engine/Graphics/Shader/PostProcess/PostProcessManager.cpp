@@ -148,7 +148,7 @@ ID3D11ShaderResourceView* PostProcessManager::EndScene(ID3D11DeviceContext* dc, 
     dc->PSSetShader(_toneMapRes->ps.Get(), nullptr, 0);
 
     ID3D11SamplerState* samplers[] = { _toneMapRes->sampler.Get() };
-    dc->PSSetSamplers(ShaderResources::SmpDefault, 1, samplers);
+    dc->PSSetSamplers(SLOT_SMP_DEFAULT, 1, samplers);
 
     // 定数バッファ更新
     CbToneMap cbData;
@@ -157,19 +157,19 @@ ID3D11ShaderResourceView* PostProcessManager::EndScene(ID3D11DeviceContext* dc, 
     dc->Map(_toneMapRes->cbToneMap.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
     memcpy(mapped.pData, &cbData, sizeof(CbToneMap));
     dc->Unmap(_toneMapRes->cbToneMap.Get(), 0);
-    dc->PSSetConstantBuffers(ShaderResources::CbToneMap, 1, _toneMapRes->cbToneMap.GetAddressOf());
+    dc->PSSetConstantBuffers(SLOT_CB_TONEMAP, 1, _toneMapRes->cbToneMap.GetAddressOf());
 
     // テクスチャセット
     // t0: シーン, t1: ブルーム
     ID3D11ShaderResourceView *srvs[] = {sceneHDR->GetSRV(), bloomSRV};
-    dc->PSSetShaderResources(ShaderResources::SrvBloomInput, 2, srvs);
+    dc->PSSetShaderResources(SLOT_SRV_BLOOM_IN, 2, srvs);
 
     // 描画（フルスクリーン）
     dc->Draw(3, 0);
 
     // 解除
     ID3D11ShaderResourceView* nullSRVs[] = { nullptr, nullptr };
-    dc->PSSetShaderResources(ShaderResources::SrvBloomInput, 2, nullSRVs);
+    dc->PSSetShaderResources(SLOT_SRV_BLOOM_IN, 2, nullSRVs);
 
     // 最終的な画像 を返す
     return outputSDR->GetSRV();

@@ -127,7 +127,7 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext *dc)
     // -------------------------------------------------------------
     if (_globalNoiseSRV) {
         ID3D11ShaderResourceView *srvs[] = {_globalNoiseSRV.Get()};
-        dc->PSSetShaderResources(ShaderResources::SrvGlobalNoise, 1, srvs);
+        dc->PSSetShaderResources(SLOT_SRV_GLOBAL_NOISE, 1, srvs);
     }
 
     // -------------------------------------------------------------
@@ -170,12 +170,12 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext *dc)
             dc->Unmap(_fogConstantBuffer.Get(), 0);
         }
 
-        // バッファをスロットに設定 (ShaderResources::CbFog = 11)
-        dc->PSSetConstantBuffers(ShaderResources::CbFog, 1, _fogConstantBuffer.GetAddressOf());
+        // バッファをスロットに設定 (SLOT_CB_FOG = 11)
+        dc->PSSetConstantBuffers(SLOT_CB_FOG, 1, _fogConstantBuffer.GetAddressOf());
     }
 
-    // ノイズテクスチャをスロットに設定 (ShaderResources::SrvFogNoise = 9)
-    dc->PSSetShaderResources(ShaderResources::SrvFogNoise, 1, &fogNoiseSrv);
+    // ノイズテクスチャをスロットに設定 (SLOT_SRV_FOG_NOISE = 9)
+    dc->PSSetShaderResources(SLOT_SRV_FOG_NOISE, 1, &fogNoiseSrv);
 }
 
 REGISTER_RENDER_SYSTEM(EnvironmentSystem, Priority::RenderStage::Environment);

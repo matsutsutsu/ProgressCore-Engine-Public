@@ -46,7 +46,7 @@ private:
     {
         Microsoft::WRL::ComPtr<ID3D11VertexShader> vs;
         Microsoft::WRL::ComPtr<ID3D11PixelShader> ps;
-        Microsoft::WRL::ComPtr<ID3D11Buffer> SLOT_CB_TONEMAP;
+        Microsoft::WRL::ComPtr<ID3D11Buffer> cbToneMap;
         Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler;
     };
     std::unique_ptr<ToneMapResources> _toneMapRes;

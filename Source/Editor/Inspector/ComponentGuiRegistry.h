@@ -2,6 +2,8 @@
 #include <functional>
 #include <unordered_map>
 #include <string>
+#include <typeindex>
+#include <vector>
 #include "ECS/Common/CCL_Common.h"
 #include "ECS/Core/CCL_World.h"
 
@@ -71,48 +73,80 @@ public:
             }
         };
 
-        _registry[CCL::ECS::TypeInfo<T>::ID()] = entry;
+        std::type_index key = typeid(T);
+
+        // ★修正: operator[] は使わず insert で安全に登録（コンパイルエラー解決）
+        _registry.insert({key, entry});
+
+        // ★最強のハック: TypeID の取得を「実行時」まで遅延させる
+        _pendingBindings.push_back([this, key]() {
+            _typeIdToIndex.insert({CCL::ECS::TypeInfo<T>::ID(), key});
+        });
+
     }
 
-    // getter追加
-    const Entry& GetEntry(TypeID id) const { return _registry.at(id); }
+    // 描画前に必ず実行され、保留されていたID紐づけを一気に解決する
+    void ResolveBindings() {
+        if (_isResolved) return;
+        for (auto& bindFunc : _pendingBindings) {
+            bindFunc();
+        }
+        _pendingBindings.clear();
+        _isResolved = true;
+    }
 
-    // IDから登録名を取得（InspectorWindowで使用）
+    const Entry& GetEntry(TypeID id) {
+        ResolveBindings(); // 取得前に解決
+        return _registry.at(_typeIdToIndex.at(id));
+    }
+
     std::string GetName(TypeID id) {
-        auto it = _registry.find(id);
+        ResolveBindings(); // 取得前に解決
+        auto idIt = _typeIdToIndex.find(id);
+        if (idIt == _typeIdToIndex.end())
+            return "Unknown Component (ID: " + std::to_string(id) + ")";
+        auto it = _registry.find(idIt->second);
         if (it != _registry.end()) return it->second.name;
         return "Unknown Component (ID: " + std::to_string(id) + ")";
     }
 
-    // 登録されているすべてのTypeIDをリストで取得（コンポーネント追加用）
-    std::vector<TypeID> GetAllTypeIDs() const {
-        std::vector<TypeID> ids;
-        ids.reserve(_registry.size());
-        for (const auto& [id, entry] : _registry) {
-            ids.push_back(id);
-        }
-
-        // UIでの表示順を安定させるため、IDまたは名前でソートすることをお勧めします
-        std::sort(ids.begin(), ids.end(), [this](TypeID a, TypeID b) {
-            return _registry.at(a).name < _registry.at(b).name;
-            });
-
-        return ids;
-    }
-
-    // エディタから呼び出すための簡略化メソッド
-    void DrawInspector(TypeID id, CCL::ECS::Core::World *world, EntityID entity)
-    {
-        auto it = _registry.find(id);
+    void DrawInspector(TypeID id, CCL::ECS::Core::World* world, EntityID entity) {
+        ResolveBindings(); // 描画前に解決
+        auto idIt = _typeIdToIndex.find(id);
+        if (idIt == _typeIdToIndex.end()) return;
+        auto it = _registry.find(idIt->second);
         if (it != _registry.end() && it->second.drawInspector) {
-            // 見つかったら、ComponentGuiRegistryで予約しておいた「機能」を実行！
             it->second.drawInspector(world, entity);
         }
     }
+
+    std::vector<TypeID> GetAllTypeIDs() {
+        ResolveBindings(); // 取得前に解決
+        std::vector<TypeID> ids;
+        ids.reserve(_typeIdToIndex.size());
+        for (const auto& [id, _] : _typeIdToIndex) {
+            ids.push_back(id);
+        }
+        std::sort(ids.begin(), ids.end(), [this](TypeID a, TypeID b) {
+            auto ia = _typeIdToIndex.at(a);
+            auto ib = _typeIdToIndex.at(b);
+            return _registry.at(ia).name < _registry.at(ib).name;
+            });
+        return ids;
+    }
+
 
     // 描画実行
     void Draw(TypeID id, void* data, EntityID entity, CCL::ECS::Core::World* world);
 
 private:
-    std::unordered_map<TypeID, Entry> _registry;
+    // ★ メインストレージ: type_index → Entry（型に紐づく不変キー）
+    std::unordered_map<std::type_index, Entry>   _registry;
+    // ★ 逆引きマップ: TypeID → type_index（実行時に確定するIDから引く用）
+    std::unordered_map<TypeID, std::type_index>  _typeIdToIndex;
+
+    // ★遅延評価（Lazy Binding）用の変数群
+    std::vector<std::function<void()>> _pendingBindings;
+    bool _isResolved = false;
+
 };

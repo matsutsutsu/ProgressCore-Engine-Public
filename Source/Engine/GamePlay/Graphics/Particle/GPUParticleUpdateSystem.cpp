@@ -180,18 +180,18 @@ void GPUParticleUpdateSystem::DispatchInitCS(ID3D11DeviceContext *dc,
     if (buffers->constantBuffer) {
         dc->UpdateSubresource(buffers->constantBuffer, 0, nullptr, &particle.config, 0, 0);
         ID3D11Buffer *cbs[] = {buffers->constantBuffer};
-        dc->CSSetConstantBuffers(ShaderResources::CbParticle, 1, cbs);
+        dc->CSSetConstantBuffers(SLOT_CB_PARTICLE, 1, cbs);
     }
 
     dc->CSSetShader(initCS.Get(), nullptr, 0);
     ID3D11UnorderedAccessView *uavs[] = {buffers->particleUAV};
-    dc->CSSetUnorderedAccessViews(ShaderResources::UavParticleBuf, 1, uavs, nullptr);
+    dc->CSSetUnorderedAccessViews(SLOT_UAV_PARTICLE_BUF, 1, uavs, nullptr);
 
     UINT groups = (particle.config.max_particle_count + 15) / 16;
     dc->Dispatch(groups, 1, 1);
 
     ID3D11UnorderedAccessView *nullUAV[] = {nullptr};
-    dc->CSSetUnorderedAccessViews(ShaderResources::UavParticleBuf, 1, nullUAV, nullptr);
+    dc->CSSetUnorderedAccessViews(SLOT_UAV_PARTICLE_BUF, 1, nullUAV, nullptr);
 
     particle.needsGpuInit = false;
 }
@@ -209,7 +209,7 @@ void GPUParticleUpdateSystem::DispatchUpdateCS(ID3D11DeviceContext *dc,
     if (buffers->constantBuffer) {
         dc->UpdateSubresource(buffers->constantBuffer, 0, nullptr, &particle.config, 0, 0);
         ID3D11Buffer *cbs[] = {buffers->constantBuffer};
-        dc->CSSetConstantBuffers(ShaderResources::CbParticle, 1, cbs);
+        dc->CSSetConstantBuffers(SLOT_CB_PARTICLE, 1, cbs);
     }
 
     dc->CSSetShader(updateCS.Get(), nullptr, 0);
@@ -217,32 +217,32 @@ void GPUParticleUpdateSystem::DispatchUpdateCS(ID3D11DeviceContext *dc,
     ID3D11ShaderResourceView *rampSRV = ResourceManager::Instance().GetTexture(particle.colorRamp);
     if (rampSRV) {
         ID3D11ShaderResourceView *views[] = {rampSRV};
-        dc->CSSetShaderResources(ShaderResources::SrvMaterialTex1, 1, views);
+        dc->CSSetShaderResources(SLOT_SRV_MAT_TEX1, 1, views);
     }
 
     if (noiseSRV) {
         ID3D11ShaderResourceView *views[] = {noiseSRV.Get()};
-        dc->CSSetShaderResources(ShaderResources::SrvMaterialTex2, 1, views);
+        dc->CSSetShaderResources(SLOT_SRV_MAT_TEX2, 1, views);
     }
 
     if (sampler) {
         ID3D11SamplerState *samplers[] = {sampler.Get()};
-        dc->CSSetSamplers(ShaderResources::SmpLinear, 1, samplers);
+        dc->CSSetSamplers(SLOT_SMP_LINEAR, 1, samplers);
     }
 
     if (buffers->particleUAV) {
         ID3D11UnorderedAccessView *uavs[] = {buffers->particleUAV};
-        dc->CSSetUnorderedAccessViews(ShaderResources::UavParticleBuf, 1, uavs, nullptr);
+        dc->CSSetUnorderedAccessViews(SLOT_UAV_PARTICLE_BUF, 1, uavs, nullptr);
     }
 
     UINT groups = (particle.config.max_particle_count + 15) / 16;
     dc->Dispatch(groups, 1, 1);
 
     ID3D11UnorderedAccessView *nullUAV[] = {nullptr};
-    dc->CSSetUnorderedAccessViews(ShaderResources::UavParticleBuf, 1, nullUAV, nullptr);
+    dc->CSSetUnorderedAccessViews(SLOT_UAV_PARTICLE_BUF, 1, nullUAV, nullptr);
 
     ID3D11ShaderResourceView *nullSRV[] = {nullptr};
-    dc->CSSetShaderResources(ShaderResources::SrvMaterialTex1, 1, nullSRV);
+    dc->CSSetShaderResources(SLOT_SRV_MAT_TEX1, 1, nullSRV);
 
     if (particle.config.emission_mode == 1) {
         particle.config.burst_trigger = 0.0f;

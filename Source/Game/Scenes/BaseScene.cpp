@@ -142,11 +142,11 @@ void BaseScene::Render()
     // 4. ライトとシャドウマップのバインド
     // =========================================================
     if (rc.lightManager) {
-        rc.lightManager->Bind(dc, ShaderResources::CbLight);
+        rc.lightManager->Bind(dc, SLOT_CB_LIGHT);
     }
     if (rc.shadowMap) {
         rc.shadowMap->Bind(
-            dc, ShaderResources::SrvShadow, ShaderResources::SmpShadow, ShaderResources::CbShadow);
+            dc, SLOT_SRV_SHADOW, SLOT_SMP_SHADOW, SLOT_CB_SHADOW);
     }
 
     // 1. 不透明なモデルを一気に描画（Zバッファを作る）

@@ -172,13 +172,17 @@ void JsonToConfig(const json &j, GPUParticleComponent *p)
 
 // Draw関数にも EntityID と World* を追加して渡す
 void ComponentGuiRegistry::Draw(
-    TypeID id, void *data, EntityID entity, CCL::ECS::Core::World *world)
+    TypeID id, void* data, EntityID entity, CCL::ECS::Core::World* world)
 {
-    auto it = _registry.find(id);
+    ResolveBindings(); // ★追加: 描画する直前に、IDマップが未完成なら完成させる
+
+    auto idIt = _typeIdToIndex.find(id);
+    if (idIt == _typeIdToIndex.end()) {
+        ImGui::TextColored(ImVec4(1, 0.5f, 0, 1), "No GUI registered for this ID.");
+        return;
+    }
+    auto it = _registry.find(idIt->second);
     if (it != _registry.end()) {
         it->second.guiFunc(data, entity, world);
-    }
-    else {
-        ImGui::TextColored(ImVec4(1, 0.5f, 0, 1), "No GUI registered for this ID.");
     }
 }

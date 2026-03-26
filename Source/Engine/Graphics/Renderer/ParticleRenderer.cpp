@@ -87,15 +87,15 @@ void ParticleRenderer::Render(ID3D11DeviceContext *dc)
 
     // サンプラー設定
     ID3D11SamplerState *samplers[] = {sampler.Get()};
-    dc->PSSetSamplers(ShaderResources::SmpLinear, 1, samplers);
+    dc->PSSetSamplers(SLOT_SMP_LINEAR, 1, samplers);
 
     // シーン定数バッファ (カメラ情報) を共通でバインド
     ID3D11Buffer *sceneCB = Graphics::Instance().GetSceneConstantBuffer();
     if (sceneCB) {
         ID3D11Buffer *cbs[] = {sceneCB};
-        dc->VSSetConstantBuffers(ShaderResources::CbScene, 1, cbs);
-        dc->GSSetConstantBuffers(ShaderResources::CbScene, 1, cbs);
-        dc->PSSetConstantBuffers(ShaderResources::CbScene, 1, cbs);
+        dc->VSSetConstantBuffers(SLOT_CB_SCENE, 1, cbs);
+        dc->GSSetConstantBuffers(SLOT_CB_SCENE, 1, cbs);
+        dc->PSSetConstantBuffers(SLOT_CB_SCENE, 1, cbs);
     }
 
     // 溜まったコマンドを一気に描画
@@ -115,21 +115,21 @@ void ParticleRenderer::Render(ID3D11DeviceContext *dc)
 
         // バッファバインド
         ID3D11ShaderResourceView *srvs[] = {buffers->particleSRV};
-        dc->VSSetShaderResources(ShaderResources::SrvParticleBuf, 1, srvs);
-        dc->GSSetShaderResources(ShaderResources::SrvParticleBuf, 1, srvs);
+        dc->VSSetShaderResources(SLOT_SRV_PARTICLE_BUF, 1, srvs);
+        dc->GSSetShaderResources(SLOT_SRV_PARTICLE_BUF, 1, srvs);
 
         // パーティクル定数バッファバインド
         if (buffers->constantBuffer) {
             ID3D11Buffer *particleCBs[] = {buffers->constantBuffer};
-            dc->VSSetConstantBuffers(ShaderResources::CbParticle, 1, particleCBs);
-            dc->GSSetConstantBuffers(ShaderResources::CbParticle, 1, particleCBs);
-            dc->PSSetConstantBuffers(ShaderResources::CbParticle, 1, particleCBs);
+            dc->VSSetConstantBuffers(SLOT_CB_PARTICLE, 1, particleCBs);
+            dc->GSSetConstantBuffers(SLOT_CB_PARTICLE, 1, particleCBs);
+            dc->PSSetConstantBuffers(SLOT_CB_PARTICLE, 1, particleCBs);
         }
 
         // テクスチャバインド
         ID3D11ShaderResourceView *mainTexSRV = ResourceManager::Instance().GetTexture(cmd.texture);
         ID3D11ShaderResourceView *texs[]     = {mainTexSRV ? mainTexSRV : defaultTexture.Get()};
-        dc->PSSetShaderResources(ShaderResources::SrvMaterialTex0, 1, texs);
+        dc->PSSetShaderResources(SLOT_SRV_MAT_TEX0, 1, texs);
 
         // 描画実行
         dc->Draw(cmd.max_particle_count, 0);
@@ -137,9 +137,9 @@ void ParticleRenderer::Render(ID3D11DeviceContext *dc)
 
     // クリーンアップ
     ID3D11ShaderResourceView *nullSRVs[] = {nullptr};
-    dc->VSSetShaderResources(ShaderResources::SrvParticleBuf, 1, nullSRVs);
-    dc->GSSetShaderResources(ShaderResources::SrvParticleBuf, 1, nullSRVs);
-    dc->PSSetShaderResources(ShaderResources::SrvMaterialTex0, 1, nullSRVs);
+    dc->VSSetShaderResources(SLOT_SRV_PARTICLE_BUF, 1, nullSRVs);
+    dc->GSSetShaderResources(SLOT_SRV_PARTICLE_BUF, 1, nullSRVs);
+    dc->PSSetShaderResources(SLOT_SRV_MAT_TEX0, 1, nullSRVs);
 
     dc->GSSetShader(nullptr, nullptr, 0);
     dc->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF);

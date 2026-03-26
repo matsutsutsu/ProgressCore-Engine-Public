@@ -106,6 +106,16 @@ void InspectorWindow::DrawContents(EditorContext &context)
         // 1. まずは Registry にカスタム名（表示名）が登録されているか確認
         std::string compName = registry.GetName(typeID);
 
+
+        // ★ 診断ログを追加
+ /*       char diagBuf[256];
+        sprintf_s(diagBuf, "[CCL_DIAG] typeID=%llu, GetName='%s', typeData.name='%s'\n",
+            (unsigned long long)typeID,
+            compName.c_str(),
+            typeData.name ? typeData.name : "(null)");
+        OutputDebugStringA(diagBuf);*/
+
+
         // 2. 未登録（Unknown）の場合、C++が自動取得した型名を使う
         if (compName.find("Unknown") != std::string::npos &&
             typeData.name != nullptr) {

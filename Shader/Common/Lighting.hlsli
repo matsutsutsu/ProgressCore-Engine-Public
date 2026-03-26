@@ -58,7 +58,7 @@ struct SpotLight
 };
 
 // C++側の LightConstantBuffer と完全一致させる
-cbuffer CbLight : register(REG_CB(LIGHT))
+cbuffer CbLight : register(REG_CB(SLOT_CB_LIGHT))
 {
     DirectionalLight gDirLight;   
     PointLight gPointLights[8]; // MAX_POINT_LIGHTS と合わせる

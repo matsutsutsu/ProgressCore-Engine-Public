@@ -73,7 +73,7 @@ protected:
             // 【判定ロジック】
             // システム予約領域 (b8以降: Scene, Light, Shadow, Fog, Skeleton...) は
             // ModelRendererが一括管理しているので、個別のShaderクラスでは作成しない(無視する)。
-            if (cbInfo.bindPoint >= ShaderResources::CbScene) // >= 8
+            if (cbInfo.bindPoint >= SLOT_CB_SCENE) // >= 8
             {
                 // 無視する
                 continue;
@@ -176,11 +176,11 @@ protected:
 
             // グローバルスロット（ShadowMap:t10など）はマテリアルで上書きしない！
             // ここで null をセットしてしまうと、せっかくModelRendererで貼った影が消えます。
-            if (texInfo.bindPoint >= ShaderResources::SrvShadow) // >= 10
+            if (texInfo.bindPoint >= SLOT_SRV_SHADOW) // >= 10
             {
                 continue;
             }
-            if (texInfo.bindPoint >= ShaderResources::SrvFogNoise) // >= 9
+            if (texInfo.bindPoint >= SLOT_SRV_FOG_NOISE) // >= 9
             {
                 continue;
             }

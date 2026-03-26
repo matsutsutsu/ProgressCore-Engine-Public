@@ -111,10 +111,10 @@ void ModelRenderer::Render(const RenderContext &rc)
     ID3D11DeviceContext *dc            = rc.deviceContext;
 
     //// ライト・シャドウマップの一括バインド
-    //if (rc.lightManager) rc.lightManager->Bind(dc, ShaderResources::CbLight);
+    //if (rc.lightManager) rc.lightManager->Bind(dc, SLOT_CB_LIGHT);
     //if (rc.shadowMap)
     //    rc.shadowMap->Bind(
-    //        dc, ShaderResources::SrvShadow, ShaderResources::SmpShadow, ShaderResources::CbShadow);
+    //        dc, SLOT_SRV_SHADOW, SLOT_SMP_SHADOW, SLOT_CB_SHADOW);
 
     // === 2. サンプラステート設定 ===
     ID3D11SamplerState *samplerStates[] = {
@@ -227,7 +227,7 @@ void ModelRenderer::Render(const RenderContext &rc)
         // GPUバッファへ転送
         _instanceBuffer.Write(dc, instanceDataCache);
         // VSの t11 スロットにバインド
-        _instanceBuffer.Bind(dc, ShaderResources::SrvInstance);
+        _instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
 
         // === モデル内の全メッシュを描画 ===
         // 同じモデルなので、メッシュ構造は共通。
@@ -364,7 +364,7 @@ void ModelRenderer::Render(const RenderContext &rc)
         }
 
         // バインド解除
-        _instanceBuffer.Unbind(dc, ShaderResources::SrvInstance);
+        _instanceBuffer.Unbind(dc, SLOT_SRV_INSTANCE);
         shader->End(rc);
     }
 
@@ -422,7 +422,7 @@ void ModelRenderer::Render(const RenderContext &rc)
         _instanceBuffer.Write(dc, temp);
 
         // 3. バインド (t11にセット)
-        _instanceBuffer.Bind(dc, ShaderResources::SrvInstance);
+        _instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
 
         // 4. マテリアル更新
         // （定数バッファの更新などは drawMesh と同じ）
@@ -444,7 +444,7 @@ void ModelRenderer::Render(const RenderContext &rc)
         if (applyOverride) mutableMesh.material = originalMatPtr;
 
         // 6. 後始末
-        _instanceBuffer.Unbind(dc, ShaderResources::SrvInstance);
+        _instanceBuffer.Unbind(dc, SLOT_SRV_INSTANCE);
         shader->End(rc);
     }
 
@@ -508,29 +508,36 @@ void ModelRenderer::UnbindAllResources(ID3D11DeviceContext *dc)
     ID3D11ShaderResourceView *nullSRV     = nullptr;
 
     // 1. グローバル定数バッファの解除
-    for (auto &[name, buffer] : globalConstantBuffers) {
-        UINT slot = buffer.GetBindPoint();
-        dc->VSSetConstantBuffers(slot, 1, &nullCB);
-        dc->PSSetConstantBuffers(slot, 1, &nullCB);
-    }
+    //for (auto &[name, buffer] : globalConstantBuffers) {
+    //    UINT slot = buffer.GetBindPoint();
+    //    dc->VSSetConstantBuffers(slot, 1, &nullCB);
+    //    dc->PSSetConstantBuffers(slot, 1, &nullCB);
+    //}
+
+    // 1. グローバル定数バッファの解除 (マクロで直接指定)
+    dc->VSSetConstantBuffers(SLOT_CB_SCENE, 1, &nullCB);
+    dc->PSSetConstantBuffers(SLOT_CB_SCENE, 1, &nullCB);
+
+    dc->VSSetConstantBuffers(SLOT_CB_SKELETON, 1, &nullCB);
+    dc->PSSetConstantBuffers(SLOT_CB_SKELETON, 1, &nullCB);
 
     // 2. サンプラーステートの解除
     dc->PSSetSamplers(0, 1, &nullSampler);
 
     // ライト・シャドウ関連の解除
     // CbLight (b9)
-    dc->VSSetConstantBuffers(ShaderResources::CbLight, 1, &nullCB);
-    dc->PSSetConstantBuffers(ShaderResources::CbLight, 1, &nullCB);
+    dc->VSSetConstantBuffers(SLOT_CB_LIGHT, 1, &nullCB);
+    dc->PSSetConstantBuffers(SLOT_CB_LIGHT, 1, &nullCB);
 
     // CbShadow (b10)
-    dc->VSSetConstantBuffers(ShaderResources::CbShadow, 1, &nullCB);
-    dc->PSSetConstantBuffers(ShaderResources::CbShadow, 1, &nullCB);
+    dc->VSSetConstantBuffers(SLOT_CB_SHADOW, 1, &nullCB);
+    dc->PSSetConstantBuffers(SLOT_CB_SHADOW, 1, &nullCB);
 
     // SrvShadow (t10)
-    dc->PSSetShaderResources(ShaderResources::SrvShadow, 1, &nullSRV);
+    dc->PSSetShaderResources(SLOT_SRV_SHADOW, 1, &nullSRV);
 
     // SmpShadow (s10)
-    dc->PSSetSamplers(ShaderResources::SmpShadow, 1, &nullSampler);
+    dc->PSSetSamplers(SLOT_SMP_SHADOW, 1, &nullSampler);
 
     // ※ シェーダー固有のリソースは各シェーダーの End() で解除済み
 }
@@ -569,7 +576,7 @@ void ModelRenderer::UpdateSkeletonConstants(ID3D11DeviceContext *dc, const Model
 
     // 更新したバッファを b12 (CbSkeleton) に紐づける
     ID3D11Buffer *buffer = _cbSkeletonBuffer;
-    dc->VSSetConstantBuffers(ShaderResources::CbSkeleton, 1, &buffer);
+    dc->VSSetConstantBuffers(SLOT_CB_SKELETON, 1, &buffer);
 }
 
 void ModelRenderer::UpdateAllGlobalConstantBuffers(ID3D11DeviceContext *dc)
@@ -584,10 +591,23 @@ void ModelRenderer::UpdateAllGlobalConstantBuffers(ID3D11DeviceContext *dc)
 
 void ModelRenderer::BindAllGlobalConstantBuffers(ID3D11DeviceContext *dc)
 {
-    for (auto &[name, buffer] : globalConstantBuffers) {
-        buffer.BindVS(dc);
-        buffer.BindPS(dc);
+    // リフレクションのスロット番号は一切信用せず、マクロの番号に直接バインドする
+    if (globalConstantBuffers.count("CbScene")) {
+        ID3D11Buffer* buf = globalConstantBuffers["CbScene"].GetBuffer();
+        dc->VSSetConstantBuffers(SLOT_CB_SCENE, 1, &buf);
+        dc->PSSetConstantBuffers(SLOT_CB_SCENE, 1, &buf);
     }
+
+    if (globalConstantBuffers.count("CbSkeleton")) {
+        ID3D11Buffer* buf = globalConstantBuffers["CbSkeleton"].GetBuffer();
+        dc->VSSetConstantBuffers(SLOT_CB_SKELETON, 1, &buf);
+        // スケルトンはVSのみで十分ですが、念のためPSにも入れておくなら追加
+    }
+
+    //for (auto &[name, buffer] : globalConstantBuffers) {
+    //    buffer.BindVS(dc);
+    //    buffer.BindPS(dc);
+    //}
 }
 
 void ModelRenderer::DrawAllShaderGUI()
@@ -698,7 +718,7 @@ void ModelRenderer::RenderShadowPass(const RenderContext &rc)
 
         // (3) 頂点シェーダー(VS)にバインド (Slot 10)
         //     ※影生成パスではテクスチャ(SRV)やサンプラーは不要なので -1 を指定
-        shadowMap->Bind(dc, -1, -1, ShaderResources::CbShadow);
+        shadowMap->Bind(dc, -1, -1, SLOT_CB_SHADOW);
     }
 
     // 2. シャドウ用シェーダーを有効化
@@ -788,7 +808,7 @@ void ModelRenderer::RenderShadowPass(const RenderContext &rc)
             _instanceBuffer.Write(dc, chunk);
 
             // VSの指定スロット(t11等)にバインド
-            _instanceBuffer.Bind(dc, ShaderResources::SrvInstance);
+            _instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
 
             // 頂点バッファセット
             UINT stride = sizeof(ModelResource::Vertex);
@@ -813,7 +833,7 @@ void ModelRenderer::RenderShadowPass(const RenderContext &rc)
     shader->End(rc);
 
     // インスタンスバッファのバインド解除（重要）
-    _instanceBuffer.Unbind(dc, ShaderResources::SrvInstance);
+    _instanceBuffer.Unbind(dc, SLOT_SRV_INSTANCE);
 
     // シャドウマップへの書き込み終了
     shadowMap->Deactivate(dc);

@@ -59,17 +59,17 @@ void FogSystem::Update(float dt)
     //    dc->Unmap(_constantBuffer.Get(), 0);
     //}
 
-    //// 4. バッファをスロットに設定 (ShaderResources::CbFog = 11)
+    //// 4. バッファをスロットに設定 (SLOT_CB_FOG = 11)
     //// ピクセルシェーダー用
-    //dc->PSSetConstantBuffers(ShaderResources::CbFog, 1, _constantBuffer.GetAddressOf());
+    //dc->PSSetConstantBuffers(SLOT_CB_FOG, 1, _constantBuffer.GetAddressOf());
 
     // 5. ノイズテクスチャを設定 (Slot 9)
     // テクスチャがある場合はセットし、なければNULLで外す
     // ID3D11ShaderResourceView *srvs[] = {pNoiseSRV};
-    // dc->PSSetShaderResources(ShaderResources::SrvFogNoise, 1, srvs);
+    // dc->PSSetShaderResources(SLOT_SRV_FOG_NOISE, 1, srvs);
 
     // ※もし頂点シェーダーでもフォグ距離計算をしているなら以下も必要
-    // dc->VSSetConstantBuffers(ShaderResources::CbFog, 1, _constantBuffer.GetAddressOf());
+    // dc->VSSetConstantBuffers(SLOT_CB_FOG, 1, _constantBuffer.GetAddressOf());
 }
 
 // ==========================================

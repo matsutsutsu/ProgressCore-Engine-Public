@@ -145,7 +145,7 @@ ID3D11ShaderResourceView* BloomPass::Process(
 
 
     ID3D11SamplerState* samplers[] = { g_bloomResources->sampler.Get() };
-    dc->PSSetSamplers(ShaderResources::SmpBloom, 1, samplers);
+    dc->PSSetSamplers(SLOT_SMP_BLOOM, 1, samplers);
 
     // 定数バッファの基本設定
     BloomResources::CbBloomData cbData;
@@ -168,14 +168,14 @@ ID3D11ShaderResourceView* BloomPass::Process(
         dc->Map(g_bloomResources->cbBloom.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
         memcpy(mapped.pData, &cbData, sizeof(cbData));
         dc->Unmap(g_bloomResources->cbBloom.Get(), 0);
-        dc->PSSetConstantBuffers(ShaderResources::CbBloom, 1, g_bloomResources->cbBloom.GetAddressOf());
+        dc->PSSetConstantBuffers(SLOT_CB_BLOOM, 1, g_bloomResources->cbBloom.GetAddressOf());
 
         // シェーダー設定
         dc->PSSetShader(g_bloomResources->psExtract.Get(), nullptr, 0);
         // 元画像（シーン画像）からまぶしいところだけを抽出する
 
         ID3D11ShaderResourceView* srvs[] = { inputSceneSRV };
-        dc->PSSetShaderResources(ShaderResources::SrvBloomInput, 1, srvs);
+        dc->PSSetShaderResources(SLOT_SRV_BLOOM_IN, 1, srvs);
 
         // 描画 (Target: Down[0])
         down0->Activate(dc);
@@ -183,7 +183,7 @@ ID3D11ShaderResourceView* BloomPass::Process(
 
         // SRV解除
         ID3D11ShaderResourceView* nullSRV[] = { nullptr };
-        dc->PSSetShaderResources(ShaderResources::SrvBloomInput, 1, nullSRV);
+        dc->PSSetShaderResources(SLOT_SRV_BLOOM_IN, 1, nullSRV);
     }
 
     // --- 3. ダウンサンプリングループ (Down[i] -> Down[i+1]) ---
@@ -213,13 +213,13 @@ ID3D11ShaderResourceView* BloomPass::Process(
         // セット & 描画
         // その後に src を SRV (入力) としてセット
         ID3D11ShaderResourceView *srvs[] = {src->GetSRV()};
-        dc->PSSetShaderResources(ShaderResources::SrvBloomInput, 1, srvs);
+        dc->PSSetShaderResources(SLOT_SRV_BLOOM_IN, 1, srvs);
 
         dc->Draw(3, 0);
 
         // 解除
         ID3D11ShaderResourceView* nullSRV[] = { nullptr };
-        dc->PSSetShaderResources(ShaderResources::SrvBloomInput, 1, nullSRV);
+        dc->PSSetShaderResources(SLOT_SRV_BLOOM_IN, 1, nullSRV);
 
         // RTVも解除してパイプラインから完全に剥がす
         ID3D11RenderTargetView *nullRTV[] = {nullptr};
@@ -260,13 +260,13 @@ ID3D11ShaderResourceView* BloomPass::Process(
 
         // セット (t0: 低解像度入力, t1: 加算する高解像度Downバッファ)
         ID3D11ShaderResourceView *srvs[] = {currentInputSRV, highRes->GetSRV()};
-        dc->PSSetShaderResources(ShaderResources::SrvBloomInput, 2, srvs);
+        dc->PSSetShaderResources(SLOT_SRV_BLOOM_IN, 2, srvs);
 
         dc->Draw(3, 0);
 
         // 解除
         ID3D11ShaderResourceView* nullSRV[] = { nullptr, nullptr };
-        dc->PSSetShaderResources(ShaderResources::SrvBloomInput, 2, nullSRV);
+        dc->PSSetShaderResources(SLOT_SRV_BLOOM_IN, 2, nullSRV);
 
         // ★追加: RTVも解除してパイプラインから完全に剥がす
         ID3D11RenderTargetView *nullRTV[] = {nullptr};

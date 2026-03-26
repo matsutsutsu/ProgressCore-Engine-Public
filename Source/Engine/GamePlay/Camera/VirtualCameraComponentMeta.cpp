@@ -44,7 +44,7 @@ template <> struct ComponentMeta<CameraBodyFollow> {
         // Target IDの直接入力
         int targetInt = static_cast<int>(comp.target);
         if (ImGui::InputInt("Target ID", &targetInt)) {
-            comp.target = static_cast<unsigned long long>(std::max(0, targetInt));
+            comp.target = static_cast<unsigned long long>((std::max)(0, targetInt));
             changed = true;
         }
 
@@ -98,7 +98,7 @@ template <> struct ComponentMeta<CameraAimLookAt> {
         // Target IDの直接入力
         int targetInt = static_cast<int>(comp.target);
         if (ImGui::InputInt("Target ID", &targetInt)) {
-            comp.target = static_cast<unsigned long long>(std::max(0, targetInt));
+            comp.target = static_cast<unsigned long long>((std::max)(0, targetInt));
             changed = true;
         }
 

@@ -114,7 +114,7 @@ void ModelRenderSystem::Update(float dt)
         if (!fogView.empty()) {
             auto *fog = _world->GetComponent<FogComponent>(fogView[0]);
             ID3D11ShaderResourceView *srvs[] = {fog ? fog->noiseTextureSRV.Get() : nullptr};
-            dc->PSSetShaderResources(ShaderResources::SrvFogNoise, 1, srvs);
+            dc->PSSetShaderResources(SLOT_SRV_FOG_NOISE, 1, srvs);
         }
         */
 
