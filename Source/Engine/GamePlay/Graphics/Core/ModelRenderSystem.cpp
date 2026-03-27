@@ -92,31 +92,21 @@ void ModelRenderSystem::Update(float dt)
         // シェーダーID決定（リストの先頭を使うなどの簡易判定）
         ShaderId shaderId = ShaderId::Phong;
         // IsValid() でチケットを確認し、実体をもらう
+        // Materialを個別に持っている場合の条件
         if (!mat.overrideMaterials.empty() && mat.overrideMaterials[0].IsValid()) {
             MaterialData *matData =
                 ResourceManager::Instance().GetMaterial(mat.overrideMaterials[0]);
             if (matData) {
                 shaderId = matData->shaderId;
             }
-        }
+		} // 共有マテリアルを使う場合の条件
         else {
             const auto &materials = model.modelPtr->GetMaterials();
-            if (!materials.empty() && materials[0].data) shaderId = materials[0].data->shaderId;
+            if (!materials.empty() && materials[0].data) 
+            {
+                shaderId = materials[0].data->shaderId;
+            }
         }
-
-        // ※ループ内でのFog設定は不要（ループ外で一括設定済み）ですが、
-        // もしエンティティごとにFog設定が変わる仕様ならここで行います。
-        // 提示コードではループ外とループ内の両方にありましたが、
-        // 効率のためループ外の処理を優先し、ここは削除しても動作します。
-        // (念のため元のロジックを尊重して残す場合は以下コメントアウトを外してください)
-        /*
-        auto fogView = _world->View<FogComponent>();
-        if (!fogView.empty()) {
-            auto *fog = _world->GetComponent<FogComponent>(fogView[0]);
-            ID3D11ShaderResourceView *srvs[] = {fog ? fog->noiseTextureSRV.Get() : nullptr};
-            dc->PSSetShaderResources(SLOT_SRV_FOG_NOISE, 1, srvs);
-        }
-        */
 
         // レンダラーへの登録
         renderer->Draw(

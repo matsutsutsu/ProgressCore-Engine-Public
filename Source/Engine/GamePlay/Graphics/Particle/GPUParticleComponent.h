@@ -17,8 +17,8 @@ struct GPUParticleComponent {
     int maxParticles = 1000;
 
     // 文字列は固定長配列にする (std::string廃止)
-    char texturePath[256]   = {};
-    char colorRampPath[256] = {};
+    char texturePath[128] = {};
+    char colorRampPath[128] = {};
 
     // 生のポインタ(ComPtrなど)を捨て、安全なチケットにする
     TextureHandle texture;
@@ -27,7 +27,7 @@ struct GPUParticleComponent {
     // 4つの生ポインタを捨て、これ1つに統合！
     ParticleBufferHandle computeBuffer;
 
-// --- 状態フラグ ---
+    // --- 状態フラグ ---
     bool isInitialized = false; // "false" なら UpdateSystem がリソースを再構築する
     bool needsGpuInit  = true;  // "true" なら InitCS (初期化シェーダー) を走らせる
 

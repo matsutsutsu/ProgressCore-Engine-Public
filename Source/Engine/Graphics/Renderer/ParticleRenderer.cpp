@@ -98,20 +98,44 @@ void ParticleRenderer::Render(ID3D11DeviceContext *dc)
         dc->PSSetConstantBuffers(SLOT_CB_SCENE, 1, cbs);
     }
 
+    // =========================================================================
+    // ★ 改善点：ステート切り替えを最小化するための「ソート（バッチング）」
+    // =========================================================================
+    std::sort(_drawCommands.begin(), _drawCommands.end(), [](const ParticleDrawCommand& a, const ParticleDrawCommand& b) {
+        // 1. まず「ブレンドモード(加算か半透明か)」で分ける
+        if (a.render_mode != b.render_mode) {
+            return a.render_mode < b.render_mode;
+        }
+        // 2. ブレンドモードが同じなら「テクスチャのメモリアドレス（ポインタ）」で分ける
+        // ※ポインタ同士の比較は単なる数値比較なので、CPU負荷は実質ゼロです。
+        ID3D11ShaderResourceView* texA = ResourceManager::Instance().GetTexture(a.texture);
+        ID3D11ShaderResourceView* texB = ResourceManager::Instance().GetTexture(b.texture);
+        return texA < texB;
+        });
+
+    // 状態を記憶するキャッシュ変数
+    int currentRenderMode = -1;
+    // キャッシュ用のポインタ（絶対にあり得ないアドレスで初期化しておく）
+    ID3D11ShaderResourceView* currentTextureSRV = reinterpret_cast<ID3D11ShaderResourceView*>(-1);
+
     // 溜まったコマンドを一気に描画
     for (const auto &cmd : _drawCommands) {
         GpuParticleBufferSet *buffers =
             ResourceManager::Instance().GetParticleBuffer(cmd.computeBuffer);
         if (!buffers || !buffers->particleSRV) continue;
 
-        // render_mode に応じてブレンドステートを切り替える
-        if (cmd.render_mode == 0) {
-            dc->OMSetBlendState(rs->GetBlendState(BlendState::Additive), nullptr, 0xFFFFFFFF);
+        // ★ ステートが変わった時だけ設定を切り替える (GPU負荷激減！)
+        if (currentRenderMode != cmd.render_mode) {
+            if (cmd.render_mode == 0) {
+                dc->OMSetBlendState(rs->GetBlendState(BlendState::Additive), nullptr, 0xFFFFFFFF);
+            }
+            else {
+                dc->OMSetBlendState(rs->GetBlendState(BlendState::Transparency), nullptr, 0xFFFFFFFF);
+            }
+            dc->OMSetDepthStencilState(rs->GetDepthStencilState(DepthState::TestOnly), 0);
+
+            currentRenderMode = cmd.render_mode;
         }
-        else {
-            dc->OMSetBlendState(rs->GetBlendState(BlendState::Transparency), nullptr, 0xFFFFFFFF);
-        }
-        dc->OMSetDepthStencilState(rs->GetDepthStencilState(DepthState::TestOnly), 0);
 
         // バッファバインド
         ID3D11ShaderResourceView *srvs[] = {buffers->particleSRV};
@@ -126,10 +150,18 @@ void ParticleRenderer::Render(ID3D11DeviceContext *dc)
             dc->PSSetConstantBuffers(SLOT_CB_PARTICLE, 1, particleCBs);
         }
 
-        // テクスチャバインド
-        ID3D11ShaderResourceView *mainTexSRV = ResourceManager::Instance().GetTexture(cmd.texture);
-        ID3D11ShaderResourceView *texs[]     = {mainTexSRV ? mainTexSRV : defaultTexture.Get()};
-        dc->PSSetShaderResources(SLOT_SRV_MAT_TEX0, 1, texs);
+        // ★ テクスチャが変わった時だけバインドし直す
+        ID3D11ShaderResourceView* mainTexSRV = ResourceManager::Instance().GetTexture(cmd.texture);
+        // テクスチャが無い場合はデフォルトの白テクスチャを割り当てる
+        ID3D11ShaderResourceView* actualTexSRV = mainTexSRV ? mainTexSRV : defaultTexture.Get();
+
+        // 記録しておいたポインタのアドレスと違っていれば、DirectXに設定を送信する
+        if (currentTextureSRV != actualTexSRV) {
+            ID3D11ShaderResourceView* texs[] = { actualTexSRV };
+            dc->PSSetShaderResources(SLOT_SRV_MAT_TEX0, 1, texs);
+
+            currentTextureSRV = actualTexSRV; // キャッシュを更新
+        }
 
         // 描画実行
         dc->Draw(cmd.max_particle_count, 0);

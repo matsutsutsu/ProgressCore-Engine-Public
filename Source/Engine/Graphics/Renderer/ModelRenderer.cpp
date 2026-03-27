@@ -119,7 +119,7 @@ void ModelRenderer::Render(const RenderContext &rc)
     // === 2. サンプラステート設定 ===
     ID3D11SamplerState *samplerStates[] = {
         rc.renderState->GetSamplerState(SamplerState::LinearWrap)};
-    dc->PSSetSamplers(0, _countof(samplerStates), samplerStates);
+    dc->PSSetSamplers(SLOT_SMP_LINEAR, _countof(samplerStates), samplerStates);
 
     // === 3. レンダーステート設定 ===
     dc->OMSetDepthStencilState(rc.renderState->GetDepthStencilState(DepthState::TestAndWrite), 0);

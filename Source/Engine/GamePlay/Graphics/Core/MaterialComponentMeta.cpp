@@ -11,7 +11,6 @@
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
-// ❌ 削除: #include "Engine/Serialization/ComponentSerializers.h"
 
 template <> struct ComponentMeta<MaterialComponent> {
     static constexpr bool        registered = true;

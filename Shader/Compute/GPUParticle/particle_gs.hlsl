@@ -42,7 +42,7 @@ StructuredBuffer<particle> particle_buffer : register(REG_SRV(SLOT_SRV_PARTICLE_
 // 最大4頂点を出力する → 四角形スプライト1枚分
 // "point" トポロジー（1粒 = 1点）を入力に取り、
 // "TriangleStream" で4頂点のポリゴンを出力する。
-[maxvertexcount(4)]
+[maxvertexcount(4)] // 「1つの点を受け取って、最大4つの頂点（四角形）を作るぞ」という宣言
 void main(point VS_OUT input[1], inout TriangleStream<GS_OUT> output)
 {
     // 四角形スプライトのローカル座標（-1～+1）

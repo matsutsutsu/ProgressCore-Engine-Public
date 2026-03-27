@@ -35,10 +35,10 @@ void GPUParticleUpdateSystem::InitializeParticle(ID3D11Device *device)
         blob->Release();
     }
     
-    // ★追加: ノイズテクスチャ作成
+    // ノイズテクスチャ作成
     CreateNoiseTexture(device);
 
-    // ★追加: サンプラーの作成
+    // サンプラーの作成
     D3D11_SAMPLER_DESC sampDesc = {};
     sampDesc.Filter             = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
     // WRAP にすることで、ノイズ空間が無限に繰り返されるようになります
@@ -66,6 +66,9 @@ void GPUParticleUpdateSystem::Update(float dt)
     dc->PSSetShaderResources(0, 16, nullSRVs);
     dc->CSSetShaderResources(0, 16, nullSRVs); // CS自身の入力も一旦クリア
     dc->GSSetShaderResources(0, 16, nullSRVs);
+
+    // 現在のシェーダーを記憶するキャッシュ変数
+    ID3D11ComputeShader* currentCS = nullptr;
 
     // 各エンティティのパーティクルを更新
     ForEachWithID(
@@ -97,21 +100,39 @@ void GPUParticleUpdateSystem::Update(float dt)
             // 2. 初期化シェーダーの実行判定
             // 「リソースがある」かつ「GPU初期化が必要」なら実行する
             if (particle.isInitialized && particle.needsGpuInit && initCS) {
+                // キャッシュと違えばセット
+                if (currentCS != initCS.Get()) {
+                    dc->CSSetShader(initCS.Get(), nullptr, 0);
+                    currentCS = initCS.Get();
+                }
                 DispatchInitCS(dc, particle, transform, buffers);
             }
 
-            // 4. 通常の更新として UpdateCS を走らせる
+            // 4. 通常の更新シェーダーの実行
             if (particle.isInitialized && !particle.needsGpuInit && updateCS) {
+                // キャッシュと違えばセット
+                if (currentCS != updateCS.Get()) {
+                    dc->CSSetShader(updateCS.Get(), nullptr, 0);
+                    currentCS = updateCS.Get();
+                }
                 DispatchUpdateCS(dc, particle, transform, dt, buffers);
             }
 
-    });
+        });
 }
 
 // =================================================================================
 //  分割されたヘルパー関数群
 // =================================================================================
 
+
+// =================================================================================
+// [WARNING] アーキテクチャ警告：フレームスパイクの危険性
+// この関数 (RebuildParticleBuffer) は内部で DirectX の Buffer を新規作成するため非常に重い。
+// プレイ中に大量のパーティクルが同時にスポーンすると、この関数が連続で呼ばれて画面がカクつく。
+// 将来的には、ResourceManager 側で「空きバッファのオブジェクトプール」を作り、
+// CreateBuffer ではなく「プールからの貸し出し」に変更することを強く推奨する。
+// =================================================================================
 void GPUParticleUpdateSystem::RebuildParticleBuffer(GPUParticleComponent &particle)
 {
     // 古いバッファの破棄
@@ -156,13 +177,6 @@ void GPUParticleUpdateSystem::RebuildParticleBuffer(GPUParticleComponent &partic
         cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
         device->CreateBuffer(&cbDesc, nullptr, &buffers->constantBuffer);
 
-        if (particle.texturePath[0] != '\0') {
-            particle.texture = ResourceManager::Instance().LoadTexture(particle.texturePath);
-        }
-        if (particle.colorRampPath[0] != '\0') {
-            particle.colorRamp = ResourceManager::Instance().LoadTexture(particle.colorRampPath);
-        }
-
         particle.isInitialized = true;
         particle.needsGpuInit  = true;
     }
@@ -183,7 +197,7 @@ void GPUParticleUpdateSystem::DispatchInitCS(ID3D11DeviceContext *dc,
         dc->CSSetConstantBuffers(SLOT_CB_PARTICLE, 1, cbs);
     }
 
-    dc->CSSetShader(initCS.Get(), nullptr, 0);
+    //dc->CSSetShader(initCS.Get(), nullptr, 0);
     ID3D11UnorderedAccessView *uavs[] = {buffers->particleUAV};
     dc->CSSetUnorderedAccessViews(SLOT_UAV_PARTICLE_BUF, 1, uavs, nullptr);
 
@@ -212,7 +226,7 @@ void GPUParticleUpdateSystem::DispatchUpdateCS(ID3D11DeviceContext *dc,
         dc->CSSetConstantBuffers(SLOT_CB_PARTICLE, 1, cbs);
     }
 
-    dc->CSSetShader(updateCS.Get(), nullptr, 0);
+    //dc->CSSetShader(updateCS.Get(), nullptr, 0);
 
     ID3D11ShaderResourceView *rampSRV = ResourceManager::Instance().GetTexture(particle.colorRamp);
     if (rampSRV) {
@@ -235,9 +249,13 @@ void GPUParticleUpdateSystem::DispatchUpdateCS(ID3D11DeviceContext *dc,
         dc->CSSetUnorderedAccessViews(SLOT_UAV_PARTICLE_BUF, 1, uavs, nullptr);
     }
 
+	// Dispatch
+	// ここでは、スレッドグループサイズを16と仮定して、必要なグループ数を計算しています。
     UINT groups = (particle.config.max_particle_count + 15) / 16;
+	// CSをセットしてからDispatchするのを忘れないように！(キャッシュ機構で既にセットされている場合はスキップされる)
     dc->Dispatch(groups, 1, 1);
 
+	// クリーンアップ (SRV/UAVは残しておいても大丈夫な場合が多いですが、念のため)
     ID3D11UnorderedAccessView *nullUAV[] = {nullptr};
     dc->CSSetUnorderedAccessViews(SLOT_UAV_PARTICLE_BUF, 1, nullUAV, nullptr);
 
