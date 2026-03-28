@@ -43,21 +43,8 @@ void ModelRenderSystem::Update(float dt)
     // 【修正】参照(const&)ではなくコピーで受け取り、値を修正できるようにする
     BoundingFrustum frustum = renderer->GetFrustum();
 
-    // 【追加】Frustumのサニタイズ（安全化）処理
-    // クォータニオンの整合性チェック
-    XMVECTOR Q = XMLoadFloat4(&frustum.Orientation);
-
-    // NaNチェック または 非正規化チェック
-    if (XMQuaternionIsNaN(Q) || !IsUnitQuaternion(Q)) {
-        // 値が壊れている場合は正規化を試みる
-        Q = XMQuaternionNormalize(Q);
-
-        // それでもNaNなら（ゼロベクトルだった場合など）、回転なし(Identity)にする
-        if (XMQuaternionIsNaN(Q)) {
-            Q = XMQuaternionIdentity();
-        }
-        XMStoreFloat4(&frustum.Orientation, Q);
-    }
+    // ★最適化1: シングルトンへのアクセス(ロック等のオーバーヘッド)をループの外に出す
+    auto& resManager = ResourceManager::Instance();
 
 
     // TransformComponent と ModelComponent の組を全エンティティ分回す
@@ -71,6 +58,7 @@ void ModelRenderSystem::Update(float dt)
 
         // ここで判定！UpdateTransformを呼ぶ前にチェック
         // モデル全体の境界球（またはAABB）を使って判定
+        // CPUだと限界があるので、いつかGPUカリングにしておく
         if (!IsModelInFrustum(model.modelPtr.get(), transform.worldMatrix, frustum)) {
             return;
              // 画面外なら行列計算も描画登録も一切しない
@@ -95,7 +83,7 @@ void ModelRenderSystem::Update(float dt)
         // Materialを個別に持っている場合の条件
         if (!mat.overrideMaterials.empty() && mat.overrideMaterials[0].IsValid()) {
             MaterialData *matData =
-                ResourceManager::Instance().GetMaterial(mat.overrideMaterials[0]);
+                resManager.GetMaterial(mat.overrideMaterials[0]);
             if (matData) {
                 shaderId = matData->shaderId;
             }

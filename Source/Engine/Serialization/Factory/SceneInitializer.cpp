@@ -6,6 +6,8 @@
 #include <random>
 #include <vector>
 
+#include "Game/Logics/Test/OrbitBenchmarkComponent.h"
+
 using namespace CCL::ECS;
 
 void SceneInitializer::SpawnPlayerTest(
@@ -234,6 +236,7 @@ void SceneInitializer::SpawnAnimationTest(CCL::ECS::Core::World& world, ID3D11De
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/AnimationModel.json");
 }
 
+
 void SceneInitializer::SpawnEnemySwarmTest(CCL::ECS::Core::World &world, ID3D11Device *device, int count)
 {
    
@@ -325,5 +328,54 @@ void SceneInitializer::SpawnEnemySwarmTest(CCL::ECS::Core::World &world, ID3D11D
             })
            .Set(JoltCapsuleColliderComponent{ .halfHeight = 0.5f, .radius = 0.4f })
            .Set(PrimitiveComponent{ .type = PrimitiveType::Capsule, .size = {0.0f, 1.0f, 0.0f}, .radius = 0.4f, .color = {1.0f, 0.0f, 0.0f, 1.0f} });
+    }
+}
+
+
+void SceneInitializer::SpawnECSBenchmarkTest(
+    CCL::ECS::Core::World& world, ID3D11Device* device, int count)
+{
+    // 1. アーキタイプの生成（圧倒的スピードでメモリを確保するため）
+    const auto benchmarkArch = CCL::ECS::ArchetypeHelper::Generate<
+        TransformComponent,
+        ModelComponent,         // キューブ描画用
+        MaterialComponent,         // キューブ描画用
+        OrbitBenchmarkComponent     // 軌道計算用
+    >();
+
+    ModelComponent baseModelComp;
+    baseModelComp.SetModel("Assets/Models/Shape/Sphere.glb");
+    // ※すでにResourceManager等を経由して安全にロードされ、内部の modelPtr にセットされている
+
+
+    std::mt19937 gen(12345);
+    std::uniform_real_distribution<float> radiusDist(5.0f, 150.0f); // 5m〜150mの範囲
+    std::uniform_real_distribution<float> angleDist(0.0f, 6.28318f); // 0〜2π
+    std::uniform_real_distribution<float> speedDist(0.1f, 2.0f);
+    std::uniform_real_distribution<float> waveDist(0.5f, 3.0f);
+
+    for (int i = 0; i < count; ++i) {
+        auto ref = EntityFactory::SpawnNamed(world, "BenchmarkCube", benchmarkArch);
+
+        // 視覚的に綺麗にするため、インデックスからグラデーション色を作る
+        float hue = (float)i / count;
+        DirectX::XMFLOAT4 color = {
+            0.5f + 0.5f * std::sin(hue * 10.0f),
+            0.5f + 0.5f * std::cos(hue * 10.0f),
+            1.0f,
+            1.0f
+        };
+
+
+        // コンポーネントの初期値をセット
+        ref.Set(TransformComponent{ .position = {0,0,0}, .rotation = {0,0,0,1}, .scale = {0.2f, 0.2f, 0.2f} })
+            /*.Set(PrimitiveComponent{ .type = PrimitiveType::Box, .size = {1.0f, 1.0f, 1.0f}, .color = color })*/
+            .Set(ModelComponent{ baseModelComp }) // ★ Primitiveではなくモデルをセット
+            .Set(OrbitBenchmarkComponent{
+                .angle = angleDist(gen),
+                .orbitSpeed = speedDist(gen),
+                .radius = radiusDist(gen),
+                .waveSpeed = waveDist(gen)
+                });
     }
 }

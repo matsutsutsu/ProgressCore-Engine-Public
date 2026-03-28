@@ -39,4 +39,8 @@ class SceneInitializer {
     static void SpawnJoltTest(CCL::ECS::Core::World &world, ID3D11Device *device);
 
 	static void SpawnAnimationTest(CCL::ECS::Core::World& world, ID3D11Device* device);
+
+    // 「ECS限界テスト（ギャラクシー・スウォーム）」環境
+    static void SpawnECSBenchmarkTest(CCL::ECS::Core::World& world, ID3D11Device* device, int count);
+
 };

@@ -122,11 +122,6 @@ void ModelRenderer::Render(const RenderContext &rc)
     int                  drawCallCount = 0;
     ID3D11DeviceContext *dc            = rc.deviceContext;
 
-    //// ライト・シャドウマップの一括バインド
-    //if (rc.lightManager) rc.lightManager->Bind(dc, SLOT_CB_LIGHT);
-    //if (rc.shadowMap)
-    //    rc.shadowMap->Bind(
-    //        dc, SLOT_SRV_SHADOW, SLOT_SMP_SHADOW, SLOT_CB_SHADOW);
 
     // === 2. サンプラステート設定 ===
     ID3D11SamplerState *samplerStates[] = {
@@ -150,32 +145,78 @@ void ModelRenderer::Render(const RenderContext &rc)
     DirectX::XMVECTOR CameraPosition = DirectX::XMLoadFloat3(&rc.camera->GetEye());
     DirectX::XMVECTOR CameraFront    = DirectX::XMLoadFloat3(&rc.camera->GetFront());
 
-  
-    // ソート（シェーダーID順 -> モデル順 -> マテリアルComponentを上書きしているかどうか）
-    // これにより同じモデルが連続して並ぶようになる
-    std::sort(drawInfos.begin(), drawInfos.end(), [](const DrawInfo &a, const DrawInfo &b) {
-        if (a.shaderId != b.shaderId) return a.shaderId < b.shaderId;
-        if (a.model != b.model) return a.model < b.model;
 
-        // 1. まず上書きしている「数」で比較
-        if (a.overrideCount != b.overrideCount) return a.overrideCount < b.overrideCount;
+    // -------------------------------------------------------------------
+    // 1. ソート用の「伝票（カード）」の型を定義する
+    // -------------------------------------------------------------------
+    struct RenderKey {
+        uint64_t value;         // ここに合成した64ビットの数値を入れます
+        uint32_t originalIndex; // 「元の重いデータ」が配列の何番目にあるかのメモ
 
-        // 2. 数が同じなら中身を比較（固定長なのでキャッシュに優しく高速）
-        for (uint8_t i = 0; i < a.overrideCount; ++i) {
-            // MaterialHandleのIDなどを比較
-            // (==演算子がない場合は、内部のハンドルIDで比較してください)
-            if (!(a.overrideMaterials[i] == b.overrideMaterials[i])) {
-                // ここではメモリアドレスの比較ではなく、純粋な値の比較が行われる
-                return a.overrideMaterials[i].index < b.overrideMaterials[i].index;
-            }
+        // ソート時に呼ばれる「大小比較」のルール
+        bool operator<(const RenderKey& rhs) const {
+            // ★ポイント: 複雑なif文やforループは消滅！ ただの整数の比較1回で終わります
+            return value < rhs.value;
         }
-        return false;
-    });
+    };
 
-    // DrawInfo配列を走査
+    // -------------------------------------------------------------------
+    // 2. メモリ再確保によるFPS低下（スパイク）を防ぐための static 宣言
+    // -------------------------------------------------------------------
+    static std::vector<RenderKey> sortKeys;
+    sortKeys.clear();
+    // 毎フレーム「DrawInfoの数」だけ伝票の箱を用意します
+    sortKeys.reserve(drawInfos.size());
+
+    // -------------------------------------------------------------------
+    // 3. 重いデータ（DrawInfo）を見ながら、軽い伝票（RenderKey）を作っていく
+    // -------------------------------------------------------------------
+    for (uint32_t i = 0; i < drawInfos.size(); ++i) {
+        const auto& info = drawInfos[i];
+
+        // 【上位8ビット：シェーダーID】
+        // shaderId (enum) を数字にし、0xFF(255)でマスクして確実に8ビットに収めます
+        uint64_t shaderPart = static_cast<uint64_t>(info.shaderId) & 0xFF;
+
+        // 【中位32ビット：モデルのメモリアドレス】
+        // C++では、メモリのアドレス（ポインタ）は必ず16の倍数などに配置されます。
+        // つまり下位4ビットはどうせ「0000」なので、右に4つずらす(>> 4)ことで無駄を省きます。
+        uint64_t modelPart = (reinterpret_cast<uint64_t>(info.model) >> 4) & 0xFFFFFFFF;
+
+        // 【下位24ビット：マテリアル情報】
+        uint64_t matPart = 0;
+        if (info.overrideCount > 0 && info.overrideMaterials[0].IsValid()) {
+            // マテリアルのID(index)を取り出し、確実に入るように0xFFFFFFでマスクします
+            matPart = info.overrideMaterials[0].index & 0xFFFFFF;
+        }
+
+        // ★魔法の合成（ビットシフト）★
+        // シェーダーを左に56マス、モデルを左に24マスずらし、OR演算(|)でガッチャンコします。
+        uint64_t finalKey = (shaderPart << 56) | (modelPart << 24) | matPart;
+
+        // 出来上がった伝票と、元のインデックス番号(i)をセットにして配列にしまいます
+        sortKeys.push_back({ finalKey, i });
+    }
+
+    // -------------------------------------------------------------------
+    // 4. 軽い伝票（8バイト）の配列だけを超高速で並べ替える！
+    // -------------------------------------------------------------------
+    // 重い DrawInfo には指一本触れません。キャッシュラインに伝票がぎっしり詰まっているので、
+    // CPUはメモリストールを起こすことなく、光の速さでソートを終わらせます。
+    std::sort(sortKeys.begin(), sortKeys.end());
+
+
+    // -------------------------------------------------------------------
+    // 5. 並べ替えた伝票（sortKeys）の順番に従って描画していく
+    // -------------------------------------------------------------------
     size_t i = 0;
-    while (i < drawInfos.size()) {
-        const auto &current = drawInfos[i];
+    while (i < sortKeys.size()) {
+        
+        // 伝票に書かれている「元の番号」を見る
+        uint32_t currentIndex = sortKeys[i].originalIndex;
+        
+        // その番号を使って、初めて重いデータ(DrawInfo)の中身を覗き見る
+        const auto &current = drawInfos[currentIndex];
 
         // シェーダーの準備
         Shader *shader = shaders[static_cast<int>(current.shaderId)].get();
@@ -186,55 +227,44 @@ void ModelRenderer::Render(const RenderContext &rc)
 
         shader->Begin(rc);
 
-        // バッチ処理（同じモデルが連続している範囲を探す）
-        // 開始位置: i
+        // -------------------------------------------------------------------
+        // 6. 究極に最適化されたバッチ判定（同じモデルが何個続くか数える）
+        // -------------------------------------------------------------------
         size_t batchStart = i;
         size_t batchCount = 0;
 
-        // 次の要素が自分と同じモデル・シェーダーである限りカウントアップ
-        while (i < drawInfos.size()) {
-            const auto &next = drawInfos[i];
-            if (next.shaderId != current.shaderId || next.model != current.model ||
-                next.overrideCount != current.overrideCount) // リスト全体を比較
-            {
-                break; // 違うモデルになったらバッチ終了
-            }
+        // 今見ている「基準となる伝票の64ビットの数字」をメモしておく
+        uint64_t currentBatchKey = sortKeys[batchStart].value;
 
-            // マテリアルの完全一致チェック
-            bool sameMaterials = true;
-            for (uint8_t j = 0; j < current.overrideCount; ++j) {
-                if (!(next.overrideMaterials[j] == current.overrideMaterials[j])) {
-                    sameMaterials = false;
-                    break;
-                }
+        // ★ポイント: 昔はここで「モデルは同じか？マテリアルのforループを回して...」とやっていました。
+        // 今は「64ビットの数字が完全に同じか？」を比較するだけで終わります！
+        while (i < sortKeys.size()) {
+            if (sortKeys[i].value != currentBatchKey) {
+                break; // 数字が1ビットでも違えば、別のモデルかマテリアルなので、ここで数えるのをやめる
             }
-            if (!sameMaterials) break; // 中身が一つでも違えばバッチ終了
-
-            batchCount++;
+            batchCount++; // 同じなら「一気に描画する数」を+1する
             i++;
         }
-        // ループ終了時、i は「次のバッチの先頭」を指している
 
-        // --- インスタンスデータの準備 (不透明用) ---
-        // このバッチで使う「行列リスト」を作成してGPUに送る
-        static std::vector<InstanceData>
-            instanceDataCache; // staticにして再利用（メモリ確保回数を減らす）
+        // -------------------------------------------------------------------
+        // 7. GPUに送るための一括データ（インスタンス配列）を作る
+        // -------------------------------------------------------------------
+        static std::vector<InstanceData> instanceDataCache; 
         instanceDataCache.clear();
         instanceDataCache.reserve(batchCount);
 
         for (size_t k = 0; k < batchCount; ++k) {
-            const auto  &info = drawInfos[batchStart + k];
+            // さっき数えた「同じモデルの集まり(batchCount)」の分だけ、
+            // 伝票の順番通りに元の重いデータを取りに行く
+            uint32_t idx = sortKeys[batchStart + k].originalIndex;
+            const auto &info = drawInfos[idx];
+            
+            // 行列などの本当に必要なデータだけをコピーしてGPU転送用の配列に詰める
             InstanceData data;
-            // HLSL用に転置して格納
-            // DirectX::XMStoreFloat4x4(&data.world, DirectX::XMLoadFloat4x4(&info.worldMatrix));
             data.world = info.worldMatrix;
-
-            // 将来ディゾルブ値などを入れるための汎用パラメータ
             data.customParams = info.customParams;
-
             instanceDataCache.push_back(data);
         }
-
         // GPUバッファへ転送
         _instanceBuffer.Write(dc, instanceDataCache);
         // VSの t11 スロットにバインド
@@ -469,6 +499,369 @@ void ModelRenderer::Render(const RenderContext &rc)
     // sprintf_s(buf, "Total Draw Calls: %d\n", drawCallCount);
     // OutputDebugStringA(buf);
 }
+
+
+
+// RenderKeyを使っていないRender関数　なぜかこっちの方が処理が早い
+
+//void ModelRenderer::Render(const RenderContext& rc)
+//{
+//    int                  drawCallCount = 0;
+//    ID3D11DeviceContext* dc = rc.deviceContext;
+//
+//    //// ライト・シャドウマップの一括バインド
+//    //if (rc.lightManager) rc.lightManager->Bind(dc, SLOT_CB_LIGHT);
+//    //if (rc.shadowMap)
+//    //    rc.shadowMap->Bind(
+//    //        dc, SLOT_SRV_SHADOW, SLOT_SMP_SHADOW, SLOT_CB_SHADOW);
+//
+//    // === 2. サンプラステート設定 ===
+//    ID3D11SamplerState* samplerStates[] = {
+//        rc.renderState->GetSamplerState(SamplerState::LinearWrap) };
+//    dc->PSSetSamplers(SLOT_SMP_LINEAR, _countof(samplerStates), samplerStates);
+//
+//    // === 3. レンダーステート設定 ===
+//    // 不透明オブジェクトの描画なので、デフォルトの不透明用ステートを適用
+//    _psoOpaque.Apply(dc, rc.renderState);
+//
+//
+//    // === 4. 視錐台カリングの準備 ===
+//    DirectX::XMMATRIX projection = DirectX::XMLoadFloat4x4(&rc.camera->GetProjection());
+//    DirectX::BoundingFrustum::CreateFromMatrix(m_frustum, projection);
+//
+//    DirectX::XMMATRIX view = DirectX::XMLoadFloat4x4(&rc.camera->GetView());
+//    DirectX::XMMATRIX invView = DirectX::XMMatrixInverse(nullptr, view);
+//    m_frustum.Transform(m_frustum, invView);
+//
+//    // カメラ情報（透明度ソート用）
+//    DirectX::XMVECTOR CameraPosition = DirectX::XMLoadFloat3(&rc.camera->GetEye());
+//    DirectX::XMVECTOR CameraFront = DirectX::XMLoadFloat3(&rc.camera->GetFront());
+//
+//
+//    // ソート（シェーダーID順 -> モデル順 -> マテリアルComponentを上書きしているかどうか）
+//    // これにより同じモデルが連続して並ぶようになる
+//    std::sort(drawInfos.begin(), drawInfos.end(), [](const DrawInfo& a, const DrawInfo& b) {
+//        if (a.shaderId != b.shaderId) return a.shaderId < b.shaderId;
+//        if (a.model != b.model) return a.model < b.model;
+//
+//        // 1. まず上書きしている「数」で比較
+//        if (a.overrideCount != b.overrideCount) return a.overrideCount < b.overrideCount;
+//
+//        // 2. 数が同じなら中身を比較（固定長なのでキャッシュに優しく高速）
+//        for (uint8_t i = 0; i < a.overrideCount; ++i) {
+//            // MaterialHandleのIDなどを比較
+//            // (==演算子がない場合は、内部のハンドルIDで比較してください)
+//            if (!(a.overrideMaterials[i] == b.overrideMaterials[i])) {
+//                // ここではメモリアドレスの比較ではなく、純粋な値の比較が行われる
+//                return a.overrideMaterials[i].index < b.overrideMaterials[i].index;
+//            }
+//        }
+//        return false;
+//        });
+//
+//    // DrawInfo配列を走査
+//    size_t i = 0;
+//    while (i < drawInfos.size()) {
+//        const auto& current = drawInfos[i];
+//
+//        // シェーダーの準備
+//        Shader* shader = shaders[static_cast<int>(current.shaderId)].get();
+//        if (!shader) {
+//            i++;
+//            continue;
+//        }
+//
+//        shader->Begin(rc);
+//
+//        // バッチ処理（同じモデルが連続している範囲を探す）
+//        // 開始位置: i
+//        size_t batchStart = i;
+//        size_t batchCount = 0;
+//
+//        // 次の要素が自分と同じモデル・シェーダーである限りカウントアップ
+//        while (i < drawInfos.size()) {
+//            const auto& next = drawInfos[i];
+//            if (next.shaderId != current.shaderId || next.model != current.model ||
+//                next.overrideCount != current.overrideCount) // リスト全体を比較
+//            {
+//                break; // 違うモデルになったらバッチ終了
+//            }
+//
+//            // マテリアルの完全一致チェック
+//            bool sameMaterials = true;
+//            for (uint8_t j = 0; j < current.overrideCount; ++j) {
+//                if (!(next.overrideMaterials[j] == current.overrideMaterials[j])) {
+//                    sameMaterials = false;
+//                    break;
+//                }
+//            }
+//            if (!sameMaterials) break; // 中身が一つでも違えばバッチ終了
+//
+//            batchCount++;
+//            i++;
+//        }
+//        // ループ終了時、i は「次のバッチの先頭」を指している
+//
+//        // --- インスタンスデータの準備 (不透明用) ---
+//        // このバッチで使う「行列リスト」を作成してGPUに送る
+//        static std::vector<InstanceData>
+//            instanceDataCache; // staticにして再利用（メモリ確保回数を減らす）
+//        instanceDataCache.clear();
+//        instanceDataCache.reserve(batchCount);
+//
+//        for (size_t k = 0; k < batchCount; ++k) {
+//            const auto& info = drawInfos[batchStart + k];
+//            InstanceData data;
+//            // HLSL用に転置して格納
+//            // DirectX::XMStoreFloat4x4(&data.world, DirectX::XMLoadFloat4x4(&info.worldMatrix));
+//            data.world = info.worldMatrix;
+//
+//            // 将来ディゾルブ値などを入れるための汎用パラメータ
+//            data.customParams = info.customParams;
+//
+//            instanceDataCache.push_back(data);
+//        }
+//
+//        // GPUバッファへ転送
+//        _instanceBuffer.Write(dc, instanceDataCache);
+//        // VSの t11 スロットにバインド
+//        _instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
+//
+//        // === モデル内の全メッシュを描画 ===
+//        // 同じモデルなので、メッシュ構造は共通。
+//        // メッシュごとに「インスタンス数」を指定して描画する。
+//        const auto& meshes = current.model->GetMeshes();
+//        for (size_t meshIdx = 0; meshIdx < meshes.size(); ++meshIdx) {
+//            const Model::Mesh& mesh = meshes[meshIdx];
+//
+//            // --- マテリアル差し替えトリック ---
+//            Model::Mesh& mutableMesh = const_cast<Model::Mesh&>(mesh);
+//            Model::Material* originalMatPtr = mutableMesh.material;
+//
+//            // オーバーライド判定
+//            // 「リストがあり」かつ「今のメッシュ番号に対応するデータがあり」かつ「nullptrじゃない」場合
+//            MaterialData* overrideData = nullptr;
+//
+//            if (meshIdx < current.overrideCount) {
+//                // ハンドルを使って実体を取りに行く
+//                MaterialHandle handle = current.overrideMaterials[meshIdx];
+//                if (handle.IsValid()) {
+//                    overrideData = ResourceManager::Instance().GetMaterial(handle);
+//                }
+//            }
+//
+//            Model::Material tempMatWrapper;
+//            bool            applyOverride = (overrideData != nullptr);
+//
+//            if (applyOverride) {
+//                // overrideData は ResourceManager が管理しているポインタなので、
+//                // 勝手に delete されないように「空のデリータ」付き shared_ptr に包んで渡す
+//                tempMatWrapper.data =
+//                    std::shared_ptr<MaterialData>(overrideData, [](MaterialData*) {});
+//                tempMatWrapper.name = "InstanceOverride";
+//                mutableMesh.material = &tempMatWrapper;
+//            }
+//
+//            // マテリアル情報の取得 (差し替えた後のものを見る)
+//            auto& matData = *mutableMesh.material->data;
+//
+//            // 半透明判定
+//            float alpha = 1.0f;
+//            if (matData.colors.count("materialColor")) alpha = matData.colors.at("materialColor").w;
+//            bool isTransparent =
+//                (matData.alphaMode == AlphaMode::Blend || (alpha > 0.01f && alpha < 0.99f));
+//
+//            if (isTransparent) // 半透明の場合
+//            {
+//                // 半透明の場合：インスタンシングできないので、個別にリストに追加して後回し
+//                // バッチ内の全インスタンスについてループ
+//                for (size_t k = 0; k < batchCount; ++k) {
+//                    const auto& info = drawInfos[batchStart + k];
+//
+//                    TransparencyDrawInfo& tInfo = transparencyDrawInfos.emplace_back();
+//                    tInfo.shaderId = current.shaderId;
+//                    tInfo.mesh = &mesh;
+//                    tInfo.worldMatrix = info.worldMatrix; // 行列を保存
+//                    // 対応するマテリアルを渡す
+//                    if (meshIdx < info.overrideCount) {
+//                        tInfo.overrideMaterial = info.overrideMaterials[meshIdx];
+//                    }
+//                    else {
+//                        tInfo.overrideMaterial = MaterialHandle{}; // 正解：空のハンドルを入れる
+//                    }
+//
+//                    // ディゾルブなどの汎用パラメータも半透明キューへ引き継ぐ！
+//                    tInfo.customParams = info.customParams;
+//
+//                    // 距離計算（ソート用）
+//                    DirectX::XMVECTOR WorldPos = DirectX::XMLoadFloat4x4(&info.worldMatrix).r[3];
+//                    // ※mesh.node->transform を加味する場合はここで計算が必要ですが、
+//                    //   簡易的にはモデルの原点(info.worldMatrix)との距離で十分です
+//                    tInfo.distance = DirectX::XMVectorGetX(DirectX::XMVector3Length(
+//                        DirectX::XMVectorSubtract(WorldPos, CameraPosition)));
+//                }
+//            }
+//            else // 不透明の場合
+//            {
+//
+//                // ボーンがある場合はインスタンシングできない（今回はスキップして単体描画にフォールバック）
+//                // ※本格対応するにはボーン行列をテクスチャに焼くなどの高度な実装が必要
+//                bool isSkinned = !mesh.bones.empty();
+//
+//                if (isSkinned) {
+//                    // --- スキンメッシュ：単体描画ループ ---
+//                    // バッチ内の全インスタンスについてループ
+//                    for (size_t k = 0; k < batchCount; ++k) {
+//                        // スケルトン更新（この関数内で cbSkeleton を更新している）
+//                        UpdateSkeletonConstants(dc, mesh);
+//
+//                        // マテリアル更新
+//                        shader->Update(rc, mesh);
+//
+//                        // 描画
+//                        UINT stride = sizeof(ModelResource::Vertex);
+//                        UINT offset = 0;
+//                        dc->IASetVertexBuffers(
+//                            0, 1, mesh.data->vertexBuffer.GetAddressOf(), &stride, &offset);
+//                        dc->IASetIndexBuffer(mesh.data->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+//                        dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+//                        dc->DrawIndexed(static_cast<UINT>(mesh.data->indices.size()), 0, 0);
+//                        drawCallCount++;
+//                    }
+//                }
+//                else {
+//                    // --- 静的メッシュ：インスタンシング描画 ---
+//
+//                    // 1. マテリアル更新（バッチ内で共通）
+//                    shader->Update(rc, mesh);
+//
+//                    // 2. 頂点バッファセット
+//                    UINT stride = sizeof(ModelResource::Vertex);
+//                    UINT offset = 0;
+//                    dc->IASetVertexBuffers(
+//                        0, 1, mesh.data->vertexBuffer.GetAddressOf(), &stride, &offset);
+//                    dc->IASetIndexBuffer(mesh.data->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+//                    dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+//
+//                    // 3. インスタンシング描画発行！
+//                    // 第2引数に「インスタンス数（batchCount）」を渡す
+//                    dc->DrawIndexedInstanced(static_cast<UINT>(mesh.data->indices.size()),
+//                        static_cast<UINT>(batchCount), // ここがポイント！
+//                        0,
+//                        0,
+//                        0);
+//
+//                    drawCallCount++;
+//                }
+//            }
+//
+//            // 元に戻す（重要）
+//            if (applyOverride) {
+//                mutableMesh.material = originalMatPtr;
+//            }
+//        }
+//
+//        // バインド解除
+//        _instanceBuffer.Unbind(dc, SLOT_SRV_INSTANCE);
+//        shader->End(rc);
+//    }
+//
+//    // === 7. 半透明オブジェクトの描画 (変更なし) ===
+//    // 半透明はソート順が命なので、インスタンシング（モデル順ソート）とは相性が悪い。
+//    // そのまま単体描画を行うのが一般的
+//
+//    // 半透明オブジェクトの描画なので、デフォルトの半透明用ステートを適用
+//    _psoTransparent.Apply(dc, rc.renderState);
+//
+//
+//    std::sort(transparencyDrawInfos.begin(),
+//        transparencyDrawInfos.end(),
+//        [](const TransparencyDrawInfo& lhs, const TransparencyDrawInfo& rhs) {
+//            return lhs.distance > rhs.distance;
+//        });
+//
+//    for (const TransparencyDrawInfo& info : transparencyDrawInfos) {
+//        Shader* shader = shaders[static_cast<int>(info.shaderId)].get();
+//        if (!shader) continue;
+//
+//        shader->Begin(rc);
+//
+//        // マテリアル差し替え
+//        const Model::Mesh& mesh = *info.mesh;
+//        Model::Mesh& mutableMesh = const_cast<Model::Mesh&>(mesh);
+//        Model::Material* originalMatPtr = mutableMesh.material;
+//        Model::Material    tempMatWrapper;
+//        // 1. ハンドルが有効かどうかチェック
+//        bool applyOverride = info.overrideMaterial.IsValid();
+//
+//        if (applyOverride) {
+//            // 2. ハンドルから実体（生ポインタ）を取得
+//            MaterialData* ptr = ResourceManager::Instance().GetMaterial(info.overrideMaterial);
+//
+//            if (ptr) {
+//                // 3. 空のデリータ付き shared_ptr に包んで渡す
+//                tempMatWrapper.data = std::shared_ptr<MaterialData>(ptr, [](MaterialData*) {});
+//                tempMatWrapper.name = "TranspOverride";
+//                mutableMesh.material = &tempMatWrapper;
+//            }
+//            else {
+//                applyOverride = false; // ポインタが取れなければ無効化
+//            }
+//        }
+//
+//        // 1. データ作成
+//        InstanceData singleData;
+//        singleData.world = info.worldMatrix;
+//
+//        // 汎用パラメータ初期化
+//        singleData.customParams = info.customParams;
+//
+//        // 2. バッファの0番目に書き込む（vectorのサイズ1で渡せばOK）
+//        // 毎回 Map/Unmap が発生しますが、半透明の数は少ないので許容範囲です
+//        std::vector<InstanceData> temp = { singleData };
+//        _instanceBuffer.Write(dc, temp);
+//
+//        // 3. バインド (t11にセット)
+//        _instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
+//
+//        // 4. マテリアル更新
+//        // （定数バッファの更新などは drawMesh と同じ）
+//        UpdateSkeletonConstants(dc, mesh); // スキンメッシュ対応
+//        shader->Update(rc, mesh);
+//
+//        // 5. 描画
+//        UINT stride = sizeof(ModelResource::Vertex);
+//        UINT offset = 0;
+//        dc->IASetVertexBuffers(0, 1, mesh.data->vertexBuffer.GetAddressOf(), &stride, &offset);
+//        dc->IASetIndexBuffer(mesh.data->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+//        dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+//
+//        // DrawIndexed を呼ぶと instanceID=0 になるので、
+//        // さっき書き込んだ 0番目のデータ が使われる！
+//        dc->DrawIndexed(static_cast<UINT>(mesh.data->indices.size()), 0, 0);
+//
+//        // 復元
+//        if (applyOverride) mutableMesh.material = originalMatPtr;
+//
+//        // 6. 後始末
+//        _instanceBuffer.Unbind(dc, SLOT_SRV_INSTANCE);
+//        shader->End(rc);
+//    }
+//
+//    // === 8. リソース解除 ===
+//    UnbindAllResources(dc);
+//
+//    // デバッグ出力（必要に応じて）
+//    // char buf[128];
+//    // sprintf_s(buf, "Total Draw Calls: %d\n", drawCallCount);
+//    // OutputDebugStringA(buf);
+//}
+
+
+
+
+
+
 
 void ModelRenderer::BeginFrame()
 {

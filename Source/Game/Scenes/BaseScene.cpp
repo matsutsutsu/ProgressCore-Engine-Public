@@ -10,10 +10,12 @@
 #include "Engine/Physics/JoltPhysicsManager.h"
 #include "Game/Logics/Combat/GlobalDamageQueue.h"
 
-
-
-
 #include "Engine/GamePlay/Graphics/Core/EnvironmentSystem.h"
+
+
+#ifdef TRACY_ENABLE
+#include "tracy/Tracy.hpp"
+#endif
 
 void BaseScene::Initialize()
 {
@@ -104,6 +106,10 @@ void BaseScene::FixedUpdate(float fixedTime)
 
 void BaseScene::Render()
 {
+#ifdef TRACY_ENABLE
+    ZoneScopedN("BaseScene::Render Pipeline"); // シーン描画全体
+#endif
+
     auto &graphics = Graphics::Instance();
     auto *dc       = graphics.GetDeviceContext();
 
@@ -123,10 +129,20 @@ void BaseScene::Render()
     rc.lightManager  = &lightManager;
     rc.shadowMap     = graphics.GetShadowMap();
 
-    // 3. メイン描画フロー
-    auto *modelRenderer = graphics.GetModelRenderer();
-    modelRenderer->RenderShadowPass(rc);
 
+	// モデルレンダラーの変数
+    auto* modelRenderer = graphics.GetModelRenderer();
+
+    // -----------------------------------------------------------------
+    // 【フェーズ1：シャドウパス】
+    // -----------------------------------------------------------------
+    {
+#ifdef TRACY_ENABLE
+        ZoneScopedN("1. Shadow Pass");
+#endif     
+        // 3. メイン描画フロー
+        modelRenderer->RenderShadowPass(rc);
+    }
 
     // =========================================================
     // 3. 舞台監督によるグローバルリソースのセット
@@ -149,60 +165,99 @@ void BaseScene::Render()
             dc, SLOT_SRV_SHADOW, SLOT_SMP_SHADOW, SLOT_CB_SHADOW);
     }
 
-    // 1. 不透明なモデルを一気に描画（Zバッファを作る）
-    modelRenderer->Render(rc);
 
-    // 2. 透過物（パーティクル）を一斉描画
-    // Zバッファを参照しながら、手前にあるものだけが正しく描画される
-    auto *particleRenderer = graphics.GetParticleRenderer();
-    if (particleRenderer) {
-        particleRenderer->Render(rc.deviceContext);
+    // -----------------------------------------------------------------
+    // 【フェーズ2：メインの3D描画 (不透明・半透明)】
+    // -----------------------------------------------------------------
+    {
+#ifdef TRACY_ENABLE
+        ZoneScopedN("2. Main Opaque & Transparent");
+#endif
+        // 1. 不透明なモデルを一気に描画（Zバッファを作る）
+        modelRenderer->Render(rc);
+
     }
 
-    // デバッグコリジョン描画
-    // _world.DrawDebugCollision は消滅したので、SystemManagerから直接呼ぶ
-    if (_ecsContext && _ecsContext->GetSystemManager()) {
-        _ecsContext->GetSystemManager()->DrawDebugShape(graphics.GetShapeRenderer());
+
+    // -----------------------------------------------------------------
+    // 【フェーズ3：その他の3D描画 (パーティクル、プリミティブ)】
+    // -----------------------------------------------------------------
+    {
+#ifdef TRACY_ENABLE
+        ZoneScopedN("3. Particles & Primitives");
+#endif
+        // 2. 透過物（パーティクル）を一斉描画
+        // Zバッファを参照しながら、手前にあるものだけが正しく描画される
+        auto* particleRenderer = graphics.GetParticleRenderer();
+        if (particleRenderer) {
+            particleRenderer->Render(rc.deviceContext);
+        }
+
+        // デバッグコリジョン描画
+        // _world.DrawDebugCollision は消滅したので、SystemManagerから直接呼ぶ
+        if (_ecsContext && _ecsContext->GetSystemManager()) {
+            _ecsContext->GetSystemManager()->DrawDebugShape(graphics.GetShapeRenderer());
+        }
+
+        // =========================================================
+        // ShapeRendererが画面に描画される【直前】に、
+        // Joltの当たり判定をShapeRendererのキューに溜め込む
+        // =========================================================
+        //if (_worldPtr->HasResource<JoltPhysicsManager>()) {
+        //    auto &joltManager = _worldPtr->GetResource<JoltPhysicsManager>();
+        //    joltManager.DrawBodies(graphics.GetShapeRenderer());
+        //}
+
+        // DebugShape描画
+        graphics.GetShapeRenderer()->Render(dc, camera.GetView(), camera.GetProjection());
+
+
+        auto* primitiveRenderer = Graphics::Instance().GetPrimitiveRenderer();
+
+        // グリッド描画
+        //primitiveRenderer->DrawGrid(20, 1);
+        primitiveRenderer->Render(rc.deviceContext, camera.GetView(), camera.GetProjection());
+
+
+        // 追加の3D描画 (Grid, Particleなど)
+        OnRender3D(rc);
+
     }
 
-    // =========================================================
-    // ShapeRendererが画面に描画される【直前】に、
-    // Joltの当たり判定をShapeRendererのキューに溜め込む
-    // =========================================================
-    //if (_worldPtr->HasResource<JoltPhysicsManager>()) {
-    //    auto &joltManager = _worldPtr->GetResource<JoltPhysicsManager>();
-    //    joltManager.DrawBodies(graphics.GetShapeRenderer());
-    //}
 
-    // DebugShape描画
-    graphics.GetShapeRenderer()->Render(dc, camera.GetView(), camera.GetProjection());
-
-
-    auto *primitiveRenderer = Graphics::Instance().GetPrimitiveRenderer();
-
-    // グリッド描画
-    //primitiveRenderer->DrawGrid(20, 1);
-    primitiveRenderer->Render(rc.deviceContext, camera.GetView(), camera.GetProjection());
-
-
-    // 追加の3D描画 (Grid, Particleなど)
-    OnRender3D(rc);
-
+    // -----------------------------------------------------------------
+    // 【フェーズ4：ポストプロセス (ブルーム・トーンマップ)】
+    // -----------------------------------------------------------------
+    {
+#ifdef TRACY_ENABLE
+        ZoneScopedN("4. Post Process");
+#endif
+        // 4. ポストプロセス終了
+        _postProcess.EndScene(dc, graphics.GetBackBufferRTV());
+    }
    
-    // 4. ポストプロセス終了
-    _postProcess.EndScene(dc, graphics.GetBackBufferRTV());
 
-    dc->OMSetBlendState(rc.renderState->GetBlendState(BlendState::Transparency), nullptr, 0xffffffff);
+    // -----------------------------------------------------------------
+    // 【フェーズ5：2D UI描画】
+    // -----------------------------------------------------------------
+    {
+#ifdef TRACY_ENABLE
+        ZoneScopedN("5. UI Render");
+#endif
 
-    // =========================================================================
-    // 深度テストを完全にオフにする（DepthState::None）
-    // これにより、Depthが「No Resource」であってもGPUはエラーを出さず、
-    // UIや文字のピクセルをすべて無条件で画面に焼き付けます。
-    // =========================================================================
-    dc->OMSetDepthStencilState(rc.renderState->GetDepthStencilState(DepthState::NoTestNoWrite), 0);
+        dc->OMSetBlendState(rc.renderState->GetBlendState(BlendState::Transparency), nullptr, 0xffffffff);
 
-    // ゲーム内UI (Spriteなど)
-    OnRenderUI();
+        // =========================================================================
+        // 深度テストを完全にオフにする（DepthState::None）
+        // これにより、Depthが「No Resource」であってもGPUはエラーを出さず、
+        // UIや文字のピクセルをすべて無条件で画面に焼き付けます。
+        // =========================================================================
+        dc->OMSetDepthStencilState(rc.renderState->GetDepthStencilState(DepthState::NoTestNoWrite), 0);
+
+        // ゲーム内UI (Spriteなど)
+        OnRenderUI();
+
+    }
 }
 
 void BaseScene::DrawGUI()

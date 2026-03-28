@@ -145,14 +145,20 @@ void Framework::Render(float elapsedTime)
             SceneManager::Instance().Render();
     }
 
-	SceneManager::Instance().DrawGUI();
 
-#if 0
-	// IMGUIデモウインドウ描画（IMGUI機能テスト用）
-	ImGui::ShowDemoWindow();
+	// ImGuiの描画を計測
+	{
+#ifdef TRACY_ENABLE
+		ZoneScopedN("ImGui::Render");
 #endif
-	// IMGUI描画
-	ImGuiRenderer::Render(dc);
+
+		SceneManager::Instance().DrawGUI();
+
+		// IMGUI描画
+		ImGuiRenderer::Render(dc);
+
+
+	}
 
 	{
             // ★超重要: GPUの描画待ち（VSync同期）の時間を計測
@@ -238,7 +244,7 @@ int Framework::Run()
 			// 3. 時間を貯める
 			accumulator += frameTime;
 
-			// ★追加: 1秒ごとの計測処理
+			// 1秒ごとの計測処理
 			m_debugTimer += frameTime;
 			if (m_debugTimer >= 1.0f)
 			{
@@ -254,25 +260,21 @@ int Framework::Run()
 
 			// ループ回数制限用のカウンタ
 			int updateCount = 0;
-			const int MAX_STEPS = 5; // 1フレームに許容する最大更新回数
+			const int MAX_STEPS = 4; // 1フレームに許容する最大更新回数
 
 
-			while (accumulator >= FIXED_DT)
+			while (accumulator >= FIXED_DT && updateCount < MAX_STEPS)
 			{
-				// ★ここで安全装置（もし前の回答の修正を入れていないなら、ここが無限に回っている可能性があります）
-				if (updateCount >= MAX_STEPS) {
-					accumulator = 0; // 諦める
-					break;
-				}
-
 				FixedUpdate(FIXED_DT);
 
 				accumulator -= FIXED_DT;
 				updateCount++;
 
-				// ★追加: カウントアップ
+				// カウントアップ
 				m_fixedUpdateCounter++;
 			}
+
+
 
 			// もし最大回数を超えてまだ時間が余っている場合、
 			// 無理に消化せず捨てる（処理落ち時にゲーム速度がスローになるが、カクつきは防げる）

@@ -19,6 +19,41 @@ namespace CCL::ECS
          // 読み取りロックを取得（Chunk構成を読むため）
         std::shared_lock<std::shared_mutex> lock(cm->GetStructureMutex());
 
+
+        // =========================================================
+        // ★ 厳格なキャッシュ判定（ポインタ配列の完全一致チェック）
+        // =========================================================
+        auto& chunks = cm->GetChunks(); // vector<unique_ptr<Chunk>>&
+        bool isStructureDirty = false;
+
+        // 1. まず「数」が違うなら確実に構造が変化している
+        if (chunks.size() != _cachedChunkPointers.size()) {
+            isStructureDirty = true;
+        }
+        else {
+            // 2. 数が同じでも、中身のチャンク（メモリアドレス）が入れ替わっていないか確認する
+            for (size_t i = 0; i < chunks.size(); ++i) {
+                if (chunks[i].get() != _cachedChunkPointers[i]) {
+                    isStructureDirty = true; // 1つでも違えばDirty
+                    break;
+                }
+            }
+        }
+
+        // 構造に変化がなければ、総当たりのマッチング計算をスキップして即終了！ (0.0ms)
+        if (!isStructureDirty) {
+            return;
+        }
+
+        // --- ここから下は「構造が変わった（エンティティ構成が変化した）時」だけ走る ---
+
+        // キャッシュを最新の状態に更新しておく
+        _cachedChunkPointers.clear();
+        _cachedChunkPointers.reserve(chunks.size());
+        for (auto& chunkPtr : chunks) {
+            _cachedChunkPointers.push_back(chunkPtr.get());
+        }
+
         // =========================================================
         // 1. 全Systemのターゲットチャンクをリセット (Logic & Render)
         // =========================================================
@@ -37,7 +72,6 @@ namespace CCL::ECS
         // =========================================================
         // 2. 全チャンクを走査し、適合するシステムに配る
         // =========================================================
-        auto& chunks = cm->GetChunks(); // vector<unique_ptr<Chunk>>&
         for (auto& upChunk : chunks)
         {
             if (!upChunk) continue;

@@ -262,7 +262,6 @@ namespace CCL::ECS
 
     private:
 
-
         // 優先度（昇順）でシステムを並び替える
         void SortSystems(SystemGroup group) {
             auto& targetList = (group == SystemGroup::Logic) ? _logicSystems : _renderSystems;
@@ -290,6 +289,11 @@ namespace CCL::ECS
         TaskScheduler _logicScheduler;
         TaskScheduler _renderScheduler;
         bool          _isGraphDirty = true; // システムが追加されたらtrueにする
+
+        // ==========================================
+        //  キャッシュ用: 前回分配したチャンクのポインタ配列
+        // ==========================================
+        std::vector<void*> _cachedChunkPointers;
     };
 
 } // namespace CCL::ECS

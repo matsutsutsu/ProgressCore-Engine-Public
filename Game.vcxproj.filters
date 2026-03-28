@@ -334,6 +334,9 @@
     <Filter Include="Source\Game\Logics\Character\Boids">
       <UniqueIdentifier>{7c3e22d7-bac6-4269-93ef-2df2adad0f48}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\Test">
+      <UniqueIdentifier>{7de38b51-de5a-4cbe-a640-02ac89b89766}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1062,6 +1065,12 @@
     <ClInclude Include="Source\Engine\Graphics\Core\PipelineState.h">
       <Filter>Source\Engine\Graphics\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Test\OrbitBenchmarkComponent.h">
+      <Filter>Source\Game\Logics\Test</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Test\ECSBenchmarkSystem.h">
+      <Filter>Source\Game\Logics\Test</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -1573,6 +1582,9 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Boids\BoidsSystem.cpp">
       <Filter>Source\Game\Logics\Character\Boids</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Test\ECSBenchmarkSystem.cpp">
+      <Filter>Source\Game\Logics\Test</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
