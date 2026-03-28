@@ -17,14 +17,6 @@ namespace CCL::ECS::Core {
     {
         _entityGenerations.resize(1024, 1); // 初期サイズ確保
         _nextUnusedIndex = 1;               // インデックス0は予約
-
-        //  ChunkManagerに「何かあったらここに連絡して」と伝える
-        // これでChunkManagerはWorldを知らなくても、この関数を呼べば通知できる
-        _chunkManager.SetEntityMoveCallback([this](EntityID entity, Chunk *chunk, size_t index) {
-            // 報告が来たら、その人の住所だけ書き換える（ここが自動で呼ばれる）
-            // マップを直接書き換え (O(1))
-            _entityCache[entity] = {chunk, index};
-        });
     }
 
     World::~World()
@@ -43,7 +35,6 @@ namespace CCL::ECS::Core {
         _eventBus.Clear();
 
         // 3. キャッシュとID管理情報をリセット
-        _entityCache.clear();
         _entityGenerations.clear();
         _freeIndices.clear();
 
@@ -230,7 +221,6 @@ namespace CCL::ECS::Core {
 
         // 3. IDをリサイクル（世代を上げてフリーリストへ）
         for (EntityID id : deadList) {
-            _entityCache.erase(id); // 削除
             RecycleEntityID(id);
         }
 
@@ -241,6 +231,7 @@ namespace CCL::ECS::Core {
         //  生データコピーなら不要、管理が必要なら工夫がいりますが、一旦メモリ解放優先で)
         _pendingOps.Clear();
         _frameAllocator.Reset(); // ★ 一瞬でリセット
+
         // 構造変更があったことを記録
         _isStructureDirty = true;
     }
@@ -248,16 +239,17 @@ namespace CCL::ECS::Core {
     // GetEntityArchetype の実装
     const Archetype &World::GetEntityArchetype(EntityID entity) const
     {
-        // 1. エンティティの場所を特定
-        auto it = _entityCache.find(entity);
-        if (it == _entityCache.end()) {
+        size_t entityIdx = 0;
+        // ChunkManagerのO(1) vectorアクセスを利用
+        size_t chunkIdx = _chunkManager.SearchEntityIn(entity, &entityIdx);
+
+        if (chunkIdx == InvalidIndex) {
             // 存在しない、または削除済みの場合は空のアーキタイプを返す
             static const Archetype emptyArchetype;
             return emptyArchetype;
         }
 
-        // 2. Chunkからアーキタイプ定義を返す
-        return it->second.chunk->GetArchetype();
+        return _chunkManager.GetChunks()[chunkIdx]->GetArchetype();
     }
 
     bool World::HasComponent(EntityID entity, TypeID tid)

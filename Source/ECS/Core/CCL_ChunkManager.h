@@ -66,6 +66,10 @@ namespace CCL::ECS::Core
         size_t SearchEqualChunk(const Archetype& a) const;
 
         std::vector<std::unique_ptr<Chunk>>& GetChunks() { return _chunks; }
+
+        // const版（読み取り専用の時用）
+        const std::vector<std::unique_ptr<Chunk>>& GetChunks() const { return _chunks; }
+
         // 指定されたEntityIDがどのチャンクに存在し、チャンク内のどのインデックスにあるか検索
         size_t SearchEntityIn(EntityID entity, size_t* entityIndexOut = nullptr) const;
 

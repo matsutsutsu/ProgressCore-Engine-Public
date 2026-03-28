@@ -34,14 +34,12 @@ namespace CCL::ECS {
             // 1. 溜まっていた構造変更（Entity生成/削除）を適用し、データを確定させる
             _world->ScrutinyAndApply();
 
-            // 2. システム側に「チャンク構造が変わったかもしれないから標的を再確認しろ」と指示
-            _systemManager->ResolveTargetChunks(&_world->GetChunkManager());
-
-            // ダーティーフラグで変更があった時だけ再計算する
-            //if (_isStructureDirty) {
-            //    _systemManager->ResolveTargetChunks(&_chunkManager);
-            //    _isStructureDirty = false; // フラグを下ろす
-            //}
+            // 2. 構造変更があったフレームのみターゲットを再解決する
+            if (_world->IsStructureDirty())
+            {
+                _systemManager->ResolveTargetChunks(&_world->GetChunkManager());
+                _world->ResetStructureDirty(); // フラグを下ろす
+            }
 
             // 3. ロジックを回す
             _systemManager->UpdateLogic(dt);

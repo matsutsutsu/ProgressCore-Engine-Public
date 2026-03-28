@@ -225,7 +225,11 @@ namespace CCL::ECS::Core
     size_t Chunk::AddEntity(EntityID entity) {
 
         // 満員でないかチェック
-        assert(_entityCount < _capacity);
+        if (_entityCount >= _capacity)
+        {
+            assert(false && "Chunk is full!");
+            return InvalidIndex; // クラッシュを防ぐ
+        }
 
         // 新しい人の番号（現在の入場者数）
         size_t index = _entityCount;

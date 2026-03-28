@@ -333,12 +333,7 @@ namespace CCL::ECS::Core {
         // 低レベルアクセス（型IDで取得）
         void *GetComponentOfEntity(EntityID entity, TypeID tid);
 
-        // キャッシュ更新用（ChunkManagerから呼ばれる想定）
-        void UpdateEntityCache(EntityID entity, Chunk *chunk, size_t index)
-        {
-            _entityCache[entity] = {chunk, index};
-        }
-        void RemoveEntityCache(EntityID entity) { _entityCache.erase(entity); }
+       
 
         // --------------------------------------------------------
         // Editor / Inspection API
@@ -400,6 +395,10 @@ namespace CCL::ECS::Core {
         // イベントバスへのアクセス窓口
         EventBus &GetEventBus() { return _eventBus; }
 
+        // ★採用: ECSContext最適化のためのダーティフラグ
+        bool IsStructureDirty() const { return _isStructureDirty; }
+        void ResetStructureDirty() { _isStructureDirty = false; }
+
       private:
 
         // デバッグ用取得（キャッシュミス時などのフォールバック）
@@ -411,6 +410,8 @@ namespace CCL::ECS::Core {
 
         // フレームアロケータの実体
         FrameAllocator _frameAllocator;
+
+
 
       private:
         ChunkManager             _chunkManager;
@@ -431,8 +432,6 @@ namespace CCL::ECS::Core {
 
         std::vector<std::unique_ptr<ResourceBase>> _resourcesArray;
 
-        // EntityID をキーに、場所(ChunkとIndex)を即座に引くためのキャッシュマップ
-        std::unordered_map<EntityID, EntityLocation> _entityCache;
     };
 
     // ===========================================================
@@ -490,21 +489,11 @@ namespace CCL::ECS::Core {
 
     template <class T> inline T *World::GetComponent(EntityID entity)
     {
-        // 1. 世代チェック（不正なIDなら即終了）
+        // 世代チェック（不正なIDなら即終了）
         if (!IsEntityValid(entity)) return nullptr;
 
-        // 2. 地図（キャッシュ）を引く
-        auto it = _entityCache.find(entity);
-        if (it == _entityCache.end()) {
-            // 地図にない場合は、念のため従来の遅い探索をフォールバックとして呼ぶ
-            return GetComponentDebug<T>(entity);
-        }
+        return static_cast<T*>(GetComponentOfEntity(entity, TypeInfo<T>::ID()));
 
-        // 3. 高速取得
-        const EntityLocation &loc = it->second;
-        // チャンクから型安全にポインタを取り出す
-        void *ptr = loc.chunk->GetComponentPtrByType(TypeInfo<T>::ID(), loc.index);
-        return static_cast<T *>(ptr);
     }
 
     template <class... Components> inline std::vector<EntityID> World::View()
