@@ -1059,6 +1059,9 @@
     <ClInclude Include="Source\Game\Logics\Character\Boids\BoidsSystem.h">
       <Filter>Source\Game\Logics\Character\Boids</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Core\PipelineState.h">
+      <Filter>Source\Engine\Graphics\Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">

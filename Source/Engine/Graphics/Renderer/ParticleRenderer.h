@@ -4,6 +4,7 @@
 #include <d3d11.h>
 #include <vector>
 #include <wrl/client.h>
+#include "Engine/Graphics/Core/PipelineState.h"
 
 // 描画に必要な情報の「引換券（コマンド）」
 struct ParticleDrawCommand {
@@ -42,4 +43,7 @@ class ParticleRenderer {
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> defaultTexture;
 
     bool _isLoaded = false;
+
+    PipelineState _psoAdditive;    // 加算パーティクル用
+    PipelineState _psoTransparent; // 半透明パーティクル用
 };

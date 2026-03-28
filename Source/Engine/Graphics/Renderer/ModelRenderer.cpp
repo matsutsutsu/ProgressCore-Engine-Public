@@ -32,6 +32,18 @@ ModelRenderer::ModelRenderer(ID3D11Device *device)
     // グローバル定数バッファの初期化
     InitializeGlobalConstantBuffers(device);
 
+
+    // ① 不透明用：デフォルトそのまま
+    _psoOpaque = PipelineState(PipelineStateDesc::DefaultOpaque());
+
+    // ② 半透明用：デフォルトそのまま
+    _psoTransparent = PipelineState(PipelineStateDesc::DefaultTransparent());
+
+    // ③ 影用：不透明をベースにするが、念のため明示的にもう一度上書きしておく
+    PipelineStateDesc shadowDesc = PipelineStateDesc::DefaultOpaque();
+    _psoShadow = PipelineState(shadowDesc);
+
+
     OutputDebugStringA("ModelRenderer: Initialized with shader reflection\n");
 }
 
@@ -122,8 +134,9 @@ void ModelRenderer::Render(const RenderContext &rc)
     dc->PSSetSamplers(SLOT_SMP_LINEAR, _countof(samplerStates), samplerStates);
 
     // === 3. レンダーステート設定 ===
-    dc->OMSetDepthStencilState(rc.renderState->GetDepthStencilState(DepthState::TestAndWrite), 0);
-    dc->RSSetState(rc.renderState->GetRasterizerState(RasterizerState::SolidCullBack));
+	// 不透明オブジェクトの描画なので、デフォルトの不透明用ステートを適用
+    _psoOpaque.Apply(dc, rc.renderState);
+
 
     // === 4. 視錐台カリングの準備 ===
     DirectX::XMMATRIX projection = DirectX::XMLoadFloat4x4(&rc.camera->GetProjection());
@@ -137,9 +150,7 @@ void ModelRenderer::Render(const RenderContext &rc)
     DirectX::XMVECTOR CameraPosition = DirectX::XMLoadFloat3(&rc.camera->GetEye());
     DirectX::XMVECTOR CameraFront    = DirectX::XMLoadFloat3(&rc.camera->GetFront());
 
-    // === 6. 不透明オブジェクトの描画 & 半透明の抽出 ===
-    dc->OMSetBlendState(rc.renderState->GetBlendState(BlendState::Opaque), nullptr, 0xFFFFFFFF);
-
+  
     // ソート（シェーダーID順 -> モデル順 -> マテリアルComponentを上書きしているかどうか）
     // これにより同じモデルが連続して並ぶようになる
     std::sort(drawInfos.begin(), drawInfos.end(), [](const DrawInfo &a, const DrawInfo &b) {
@@ -371,8 +382,10 @@ void ModelRenderer::Render(const RenderContext &rc)
     // === 7. 半透明オブジェクトの描画 (変更なし) ===
     // 半透明はソート順が命なので、インスタンシング（モデル順ソート）とは相性が悪い。
     // そのまま単体描画を行うのが一般的
-    dc->OMSetBlendState(
-        rc.renderState->GetBlendState(BlendState::Transparency), nullptr, 0xFFFFFFFF);
+
+	// 半透明オブジェクトの描画なので、デフォルトの半透明用ステートを適用
+    _psoTransparent.Apply(dc, rc.renderState);
+
 
     std::sort(transparencyDrawInfos.begin(),
         transparencyDrawInfos.end(),
@@ -707,12 +720,7 @@ void ModelRenderer::RenderShadowPass(const RenderContext &rc)
     // 前フレームのUI描画（NoWrite）などの状態を引き継がないよう、
     // ここでシャドウマップ用の「正しい描画ステート」に強制リセットする！
     // =========================================================================
-    // 深度テストと書き込みを有効化 (影の深度を記録するため必須)
-    dc->OMSetDepthStencilState(rc.renderState->GetDepthStencilState(DepthState::TestAndWrite), 0);
-    // 半透明ブレンドを無効化 (影に半透明は不要)
-    dc->OMSetBlendState(rc.renderState->GetBlendState(BlendState::Opaque), nullptr, 0xFFFFFFFF);
-    // 背面カリングを有効化
-    dc->RSSetState(rc.renderState->GetRasterizerState(RasterizerState::SolidCullBack));
+    _psoShadow.Apply(dc, rc.renderState);
 
     // 定数バッファの更新とバインド
     {

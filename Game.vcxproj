@@ -283,6 +283,7 @@
     <ClInclude Include="Source\Engine\Graphics\Core\GpuResourceUtils.h" />
     <ClInclude Include="Source\Engine\Graphics\Core\Graphics.h" />
     <ClInclude Include="Source\Engine\Graphics\Core\Light.h" />
+    <ClInclude Include="Source\Engine\Graphics\Core\PipelineState.h" />
     <ClInclude Include="Source\Engine\Graphics\Core\RenderContext.h" />
     <ClInclude Include="Source\Engine\Graphics\Core\RenderState.h" />
     <ClInclude Include="Source\Engine\Graphics\Core\RenderTarget.h" />

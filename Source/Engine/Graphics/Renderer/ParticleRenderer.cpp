@@ -57,6 +57,22 @@ void ParticleRenderer::Initialize(ID3D11Device *device)
     device->CreateTexture2D(&texDesc, &initData, tex.GetAddressOf());
     device->CreateShaderResourceView(tex.Get(), nullptr, defaultTexture.GetAddressOf());
 
+
+
+    // ★ 金型の事前構築
+    // 半透明ベースをもらってきて、一部（トポロジーとブレンド）だけをパーティクル用に改造する！
+    PipelineStateDesc baseDesc = PipelineStateDesc::DefaultTransparent();
+    baseDesc.topology = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST; // 点に変更
+
+    // ① 加算用
+    baseDesc.blend = BlendState::Additive;
+    _psoAdditive = PipelineState(baseDesc);
+
+    // ② 半透明用
+    baseDesc.blend = BlendState::Transparency;
+    _psoTransparent = PipelineState(baseDesc);
+
+
     _isLoaded = true;
 }
 
@@ -127,10 +143,10 @@ void ParticleRenderer::Render(ID3D11DeviceContext *dc)
         // ★ ステートが変わった時だけ設定を切り替える (GPU負荷激減！)
         if (currentRenderMode != cmd.render_mode) {
             if (cmd.render_mode == 0) {
-                dc->OMSetBlendState(rs->GetBlendState(BlendState::Additive), nullptr, 0xFFFFFFFF);
+                _psoAdditive.Apply(dc, rs);
             }
             else {
-                dc->OMSetBlendState(rs->GetBlendState(BlendState::Transparency), nullptr, 0xFFFFFFFF);
+                _psoTransparent.Apply(dc, rs);
             }
             dc->OMSetDepthStencilState(rs->GetDepthStencilState(DepthState::TestOnly), 0);
 

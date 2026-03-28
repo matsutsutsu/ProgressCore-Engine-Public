@@ -10,6 +10,7 @@
 #include "Engine/Graphics/Shader/ShaderReflection.h"
 #include "Engine/Graphics/Shader/Material/Core/ShaderId.h"
 #include "Engine/Graphics/Renderer/InstanceBuffer.h"
+#include "Engine/Graphics/Core/PipelineState.h"
 
 #include "Engine/Graphics/Resource/ResourceManager.h"
 
@@ -190,6 +191,12 @@ private:
 
     // ビューフラスタム
     DirectX::BoundingFrustum m_frustum = {};
+
+
+    // モデル描画用の3つの金型
+    PipelineState _psoOpaque;
+    PipelineState _psoTransparent;
+    PipelineState _psoShadow;
 
     // グローバル定数バッファの初期化
     void InitializeGlobalConstantBuffers(ID3D11Device* device);
