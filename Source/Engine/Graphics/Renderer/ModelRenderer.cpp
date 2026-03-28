@@ -703,6 +703,17 @@ void ModelRenderer::RenderShadowPass(const RenderContext &rc)
     // 1. シャドウマップへの書き込みを開始
     shadowMap->Activate(dc);
 
+    // =========================================================================
+    // 前フレームのUI描画（NoWrite）などの状態を引き継がないよう、
+    // ここでシャドウマップ用の「正しい描画ステート」に強制リセットする！
+    // =========================================================================
+    // 深度テストと書き込みを有効化 (影の深度を記録するため必須)
+    dc->OMSetDepthStencilState(rc.renderState->GetDepthStencilState(DepthState::TestAndWrite), 0);
+    // 半透明ブレンドを無効化 (影に半透明は不要)
+    dc->OMSetBlendState(rc.renderState->GetBlendState(BlendState::Opaque), nullptr, 0xFFFFFFFF);
+    // 背面カリングを有効化
+    dc->RSSetState(rc.renderState->GetRasterizerState(RasterizerState::SolidCullBack));
+
     // 定数バッファの更新とバインド
     {
         // コンポーネントから受け取った値をShadowMapに適用
@@ -725,6 +736,12 @@ void ModelRenderer::RenderShadowPass(const RenderContext &rc)
     // (ShaderId::ShadowMap に ShadowMapShader が登録されている前提)
     auto &shader = shaders[static_cast<int>(ShaderId::ShadowMap)];
     shader->Begin(rc);
+
+    // =========================================================================
+    // パーティクル(点)やデバッグ(線)のステートを引き継がないよう、
+    // ここで明示的に「三角形(ポリゴン)」にリセットする！
+    // =========================================================================
+    dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     // 3. ソート：メッシュ（マテリアル）単位で並べ替えてバッチ効率を上げる
     std::sort(shadowDrawInfos.begin(),
@@ -791,6 +808,12 @@ void ModelRenderer::RenderShadowPass(const RenderContext &rc)
 
     // --- インスタンシング描画実行 (静的メッシュ) ---
     for (const auto &batch : batches) {
+
+        // =========================================================================
+        // 静的メッシュでも必ずシェーダーのUpdateを呼び、定数バッファをGPUに送る
+        // =========================================================================
+        shader->Update(rc, *batch.mesh);
+
         size_t totalCount = batch.data.size();
         size_t offset     = 0;
 

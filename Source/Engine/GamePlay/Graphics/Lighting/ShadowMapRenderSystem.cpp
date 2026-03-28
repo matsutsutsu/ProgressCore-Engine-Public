@@ -161,7 +161,7 @@ void ShadowMapRenderSystem::RenderShadowMap()
         if (!model.modelPtr) return;
 
         // ライトの視界に入っているかチェック
-        if (!IsModelInFrustum(model.modelPtr.get(), trans.worldMatrix, frustum)) return;
+        //if (!IsModelInFrustum(model.modelPtr.get(), trans.worldMatrix, frustum)) return;
 
         // 全てのメッシュを影描画キューに登録
         for (const auto &mesh : model.modelPtr->GetMeshes()) {

@@ -124,6 +124,9 @@ void ShadowMap::Activate(ID3D11DeviceContext* dc)
 	// 第1引数を0にして、第2引数をnullptrにすることで
 	// 「色は塗らない(RenderTargetなし)、深度情報(Depth)だけを書き込む」ように設定している
     dc->OMSetRenderTargets(0, nullptr, depthStencilView.Get());
+
+
+
 }
 
 // カスケードシャドウマップ用切り替え関数
