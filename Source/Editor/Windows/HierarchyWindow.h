@@ -1,22 +1,41 @@
 #pragma once
 #include "Editor/Core/EditorWindow.h"
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 class HierarchyWindow : public EditorWindow {
-  public:
+public:
     HierarchyWindow();
 
-  protected:
-    void DrawContents(EditorContext &context) override;
+protected:
+    void DrawContents(EditorContext& context) override;
 
-  private:
-    // isFlatSearch: 検索中など、階層を無視してリスト表示する際のフラグ
-    void DrawEntityNode(CCL::ECS::EntityID                                             entityID,
-        EditorContext                                                                 &context,
-        const std::unordered_map<CCL::ECS::EntityID, std::vector<CCL::ECS::EntityID>> &childrenMap,
-        bool isFlatSearch = false);
+private:
+    struct FlatNode {
+        CCL::ECS::EntityID entityID;
+        int depth;
+        bool hasChildren;
+    };
 
-    // 1万体の中から目的のエンティティを探すための検索バッファ
-    char _searchBuffer[256] = {0};
+    std::unordered_set<CCL::ECS::EntityID> _openNodes;
+
+    // ★追加: 毎フレームのメモリ確保を防ぐためのキャッシュ用変数
+    std::vector<CCL::ECS::EntityID> _rootEntities;
+    std::vector<CCL::ECS::EntityID> _allEntities;
+    std::vector<FlatNode>           _flatList;
+    std::unordered_map<CCL::ECS::EntityID, std::vector<CCL::ECS::EntityID>> _childrenMap;
+
+    void FlattenTree(
+        CCL::ECS::EntityID entityID,
+        int depth,
+        const std::unordered_map<CCL::ECS::EntityID, std::vector<CCL::ECS::EntityID>>& childrenMap,
+        std::vector<FlatNode>& outFlatList);
+
+    void DrawFlatNode(
+        const FlatNode& node,
+        EditorContext& context,
+        const std::unordered_map<CCL::ECS::EntityID, std::vector<CCL::ECS::EntityID>>& childrenMap);
+
+    char _searchBuffer[256] = { 0 };
 };

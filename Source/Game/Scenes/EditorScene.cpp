@@ -25,11 +25,11 @@ void EditorScene::Initialize()
 
 
     //SceneInitializer::SpawnTransformLoadTest(*_worldPtr, device, 100000);
-    SceneInitializer::SpawnJoltTest(*_worldPtr, device);
+    //SceneInitializer::SpawnJoltTest(*_worldPtr, device);
     //SceneInitializer::SpawnAnimationTest(*_worldPtr, device);
 
     // 例：10万個のキューブによる銀河の渦を生成
-    //SceneInitializer::SpawnECSBenchmarkTest(*_worldPtr, device, 20000);
+    SceneInitializer::SpawnECSBenchmarkTest(*_worldPtr, device, 20000);
 
     // 1000体の群衆ストレステストを実行！
     //SceneInitializer::SpawnEnemySwarmTest(*_worldPtr, device, 200);
