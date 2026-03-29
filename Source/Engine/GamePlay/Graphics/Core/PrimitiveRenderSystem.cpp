@@ -1,17 +1,12 @@
 #include "PrimitiveRenderSystem.h"
-
-// 実装に必要なヘッダ
 #include "ECS/Core/CCL_World.h"
 #include "Engine/Graphics/Renderer/PrimitiveRenderer.h"
-
-// システムの実行順序の定義ヘッダー
 #include "ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"
 
 #ifdef TRACY_ENABLE
 #include "tracy/Tracy.hpp"
 #endif
-
 
 using namespace CCL::ECS;
 
@@ -20,121 +15,90 @@ PrimitiveRenderSystem::PrimitiveRenderSystem() : IfSystem("PrimitiveRenderSystem
 void PrimitiveRenderSystem::Update(float dt)
 {
     // Worldからレンダラーのポインタを取得
-    if (!_world->HasResource<PrimitiveRenderer *>()) return;
-    auto *renderer = _world->GetResource<PrimitiveRenderer *>();
-
+    if (!_world->HasResource<PrimitiveRenderer*>()) return;
+    auto* renderer = _world->GetResource<PrimitiveRenderer*>();
     if (!renderer) return;
 
     ForEachParallel([&](const TransformComponent& trans, const PrimitiveComponent& prim) {
 
-        DirectX::XMMATRIX finalWorldMat;
-//        {
-//#ifdef TRACY_ENABLE
-//            ZoneScopedN("1. Matrix Math");
-//#endif
-            DirectX::XMMATRIX worldMat = DirectX::XMLoadFloat4x4(&trans.worldMatrix);
-            DirectX::XMMATRIX scaleMat = DirectX::XMMatrixIdentity();
+        DirectX::XMMATRIX worldMat = DirectX::XMLoadFloat4x4(&trans.worldMatrix);
+        DirectX::XMMATRIX scaleMat = DirectX::XMMatrixIdentity();
 
-            // ★防弾：スケールが完全な0になると法線がNaNになり画面が崩壊するため、最小値を保証する
-            float minS = 0.0001f;
+        // ゼロスケールによるNaN爆弾（画面崩壊）を防ぐ安全値
+        float minS = 0.0001f;
+        float r = (std::max)(prim.radius, minS);
+        float h = (std::max)(prim.height, minS);
 
-            // 1. 古い設計(引数3つ)との違い: 
-            // ここで Component が持っているサイズ情報を行列（スケール）に変換してしまいます
-            switch (prim.type) {
-            case PrimitiveType::Box:
-                scaleMat = DirectX::XMMatrixScaling(
-                    (std::max)(prim.size.x, minS),
-                    (std::max)(prim.size.y, minS),
-                    (std::max)(prim.size.z, minS));
-                break;
-            case PrimitiveType::Sphere:
-                scaleMat = DirectX::XMMatrixScaling(
-                    (std::max)(prim.radius, minS),
-                    (std::max)(prim.radius, minS),
-                    (std::max)(prim.radius, minS));
-                break;
-            case PrimitiveType::Cylinder:
-            case PrimitiveType::Capsule:
-            case PrimitiveType::Cone:
-                scaleMat = DirectX::XMMatrixScaling(
-                    (std::max)(prim.radius, minS),
-                    (std::max)(prim.height, minS),
-                    (std::max)(prim.radius, minS));
-                break;
-            }
+        // =========================================================
+        // 1. 図形ごとのスケール計算
+        // =========================================================
+        switch (prim.type) {
+        case PrimitiveType::Box:
+            scaleMat = DirectX::XMMatrixScaling(
+                (std::max)(prim.size.x, minS),
+                (std::max)(prim.size.y, minS),
+                (std::max)(prim.size.z, minS));
+            break;
 
-            // 2. 元の Transform にスケールを掛け合わせる
-            finalWorldMat = scaleMat * worldMat;
+        case PrimitiveType::Sphere:
+            scaleMat = DirectX::XMMatrixScaling(r, r, r);
+            break;
 
-        //}
+        case PrimitiveType::Cylinder:
+        case PrimitiveType::Cone:
+            // 円柱と円錐はそのまま 半径・高さ・半径 を適用
+            scaleMat = DirectX::XMMatrixScaling(r, h, r);
+            break;
 
+        case PrimitiveType::Capsule:
+        {
+            scaleMat = DirectX::XMMatrixIdentity();
+            break;
+        }
+        }
 
-        // ==========================================================
-        // 【フェーズ2：異常検知トラップ（犯人候補）】
-        // ==========================================================
-//        {
-//#ifdef TRACY_ENABLE
-//            ZoneScopedN("2. NaN Check (Trap)");
-//#endif
-            // =========================================================
-            // ★ ここにトラップを仕掛ける（NaN または 異常な巨大数 を検知）
-            // =========================================================
-            DirectX::XMFLOAT4X4 checkMat;
-            DirectX::XMStoreFloat4x4(&checkMat, finalWorldMat);
-
-
-            // 1. 非数(NaN)や無限大(Inf)が混じっていないか？
-            // 2. 座標(4行目)が 100000.0 などの異常に吹き飛んだ値になっていないか？
-            if (std::isnan(checkMat._41) || std::isinf(checkMat._41) || abs(checkMat._41) > 100000.0f ||
-                std::isnan(checkMat._11) || std::isinf(checkMat._11))
-            {
-                // ★ 異常検知！ ここでVisual Studioのデバッガが強制停止します
-                __debugbreak();
-            }
-        //}
-
-
+        // =========================================================
+        // 2. 行列の合成とフラグの埋め込み
+        // =========================================================
+        DirectX::XMMATRIX finalWorldMat = scaleMat * worldMat;
         DirectX::XMFLOAT4X4 finalWorld;
         DirectX::XMStoreFloat4x4(&finalWorld, finalWorldMat);
 
-//        {
-//#ifdef TRACY_ENABLE
-//            ZoneScopedN("3. Renderer Push");
-//#endif
+        // ★究極のハック：行列の使われない空き部屋（右端の1列）にパラメータを直接隠して送る
+        if (prim.type == PrimitiveType::Capsule) {
+            float totalHeight = (std::max)(h, r * 2.0f);
+            float cylinderHeight = totalHeight - (r * 2.0f);
 
-            // 3. レンダラーの呼び出し (引数は finalWorld と color の 2つだけになる！)
+            finalWorld._14 = 1.0f;           // [0].w : カプセルであるというフラグ
+            finalWorld._24 = r;              // [1].w : カプセルの半径 (Radius)
+            finalWorld._34 = cylinderHeight; // [2].w : 円柱部分の長さ (Height)
+        }
+        else {
+            finalWorld._14 = 0.0f;
+        }
+
+        // =========================================================
+        // 3. レンダラーへの描画登録
+        // =========================================================
+        if (prim.isWireframe) {
             switch (prim.type) {
-            case PrimitiveType::Box:
-                if (prim.isWireframe) renderer->DrawWireframeBox(finalWorld, prim.color);
-                else                  renderer->DrawBox(finalWorld, prim.color);
-                break;
-
-            case PrimitiveType::Sphere:
-                if (prim.isWireframe) renderer->DrawWireframeSphere(finalWorld, prim.color);
-                else                  renderer->DrawSphere(finalWorld, prim.color);
-                break;
-
-            case PrimitiveType::Cylinder:
-                if (prim.isWireframe) renderer->DrawWireframeCylinder(finalWorld, prim.color);
-                else                  renderer->DrawCylinder(finalWorld, prim.color);
-                break;
-
-            case PrimitiveType::Capsule:
-                if (prim.isWireframe) renderer->DrawWireframeCapsule(finalWorld, prim.color);
-                else                  renderer->DrawCapsule(finalWorld, prim.color);
-                break;
-
-            case PrimitiveType::Cone:
-                if (prim.isWireframe) renderer->DrawWireframeCone(finalWorld, prim.color);
-                else                  renderer->DrawCone(finalWorld, prim.color);
-                break;
+            case PrimitiveType::Box:      renderer->DrawWireframeBox(finalWorld, prim.color); break;
+            case PrimitiveType::Sphere:   renderer->DrawWireframeSphere(finalWorld, prim.color); break;
+            case PrimitiveType::Cylinder: renderer->DrawWireframeCylinder(finalWorld, prim.color); break;
+            case PrimitiveType::Capsule:  renderer->DrawWireframeCapsule(finalWorld, prim.color); break;
+            case PrimitiveType::Cone:     renderer->DrawWireframeCone(finalWorld, prim.color); break;
             }
-
-        //}
-    });
+        }
+        else {
+            switch (prim.type) {
+            case PrimitiveType::Box:      renderer->DrawBox(finalWorld, prim.color); break;
+            case PrimitiveType::Sphere:   renderer->DrawSphere(finalWorld, prim.color); break;
+            case PrimitiveType::Cylinder: renderer->DrawCylinder(finalWorld, prim.color); break;
+            case PrimitiveType::Capsule:  renderer->DrawCapsule(finalWorld, prim.color); break;
+            case PrimitiveType::Cone:     renderer->DrawCone(finalWorld, prim.color); break;
+            }
+        }
+        });
 }
 
-// ==========================================
-// マクロは必ず .cpp の末尾に1回だけ書く
-// ==========================================
 REGISTER_RENDER_SYSTEM(PrimitiveRenderSystem, Priority::RenderStage::Main);

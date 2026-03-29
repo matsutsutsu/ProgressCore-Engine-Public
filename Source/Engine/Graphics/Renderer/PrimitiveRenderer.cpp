@@ -82,6 +82,7 @@ PrimitiveRenderer::PrimitiveRenderer(ID3D11Device* device)
 	CreateCylinderMesh(device, 1.0f, 1.0f, -0.5f, 1.0f, 16, 1, cylinderBuffer);
 	CreateCylinderMesh(device, 1.0f, 0.0f, 0.0f, 1.0f, 16, 1, coneBuffer);
 	CreateBoxMesh(device, 1.0f, 1.0f, 1.0f, boxBuffer);
+    CreateCapsuleMesh(device, 1.0f, 1.0f, 32, 16);
 }
 
 // =========================================================
@@ -124,9 +125,9 @@ PrimitiveDrawList& PrimitiveRenderer::GetDrawList() {
         // メモリの事前予約（お引越し・mallocを完全に防ぐ！）
         // これを書くだけで、push_back が一切ロックなしの爆速になります。
         // =========================================================
-        newList->opaqueBoxes.reserve(20000);
-        newList->wireframeBoxes.reserve(5000);
-        newList->opaqueSpheres.reserve(20000);
+        //newList->opaqueBoxes.reserve(20000);
+        //newList->wireframeBoxes.reserve(5000);
+        //newList->opaqueSpheres.reserve(20000);
         // ※よく使う図形はあらかじめ巨大な枠を確保しておく
 
         myLocalList = newList.get();
@@ -249,8 +250,8 @@ void PrimitiveRenderer::Render(const RenderContext& rc, const DirectX::XMFLOAT4X
     DrawInstanced(coneBuffer, _psoOpaque, &PrimitiveDrawList::opaqueCones);
     DrawInstanced(coneBuffer, _psoWireframe, &PrimitiveDrawList::wireframeCones);
 
-    DrawInstanced(cylinderBuffer, _psoOpaque, &PrimitiveDrawList::opaqueCapsules);
-    DrawInstanced(cylinderBuffer, _psoWireframe, &PrimitiveDrawList::wireframeCapsules);
+    DrawInstanced(capsuleBuffer, _psoOpaque, &PrimitiveDrawList::opaqueCapsules);
+    DrawInstanced(capsuleBuffer, _psoWireframe, &PrimitiveDrawList::wireframeCapsules);
 
 	// 5. 描画後のクリーンアップ（SRVの解除）
     _instanceBuffer.Unbind(dc, SLOT_SRV_INSTANCE);
@@ -733,4 +734,107 @@ void PrimitiveRenderer::CreateCylinderMesh(ID3D11Device* device, float radius1, 
     device->CreateBuffer(&desc, &subData, buffer.indexBuffer.GetAddressOf());
 
     buffer.indexCount = index_count;
+}
+
+// ====================================================================
+// カプセルメッシュの生成（球の赤道分割アルゴリズム）
+// ====================================================================
+void PrimitiveRenderer::CreateCapsuleMesh(ID3D11Device* device, float radius, float cylinderHeight, int slices, int rings)
+{
+    // 球を綺麗に半分に割るため、リング数は必ず偶数にする
+    if (rings % 2 != 0) rings++;
+
+    float halfHeight = cylinderHeight * 0.5f;
+    int numRings = rings + 2; // 円柱部分を作るため、赤道リングを2つに分裂させる（+2）
+
+    int vertexCount = numRings * (slices + 1);
+    int indexCount = (numRings - 1) * slices * 6;
+
+    std::vector<Vertex> vertices(vertexCount);
+    std::vector<uint32_t> indices(indexCount);
+
+    // ----------------------------------------
+    // 1. 頂点の計算
+    // ----------------------------------------
+    int vIndex = 0;
+    for (int i = 0; i < numRings; ++i)
+    {
+        float phi;
+        float yOffset;
+
+        // 上半球（北半球）の計算
+        if (i <= rings / 2) {
+            phi = (DirectX::XM_PI * i) / rings; // 0 から π/2 まで
+            yOffset = halfHeight;               // 上に持ち上げる
+        }
+        // 下半球（南半球）の計算
+        else {
+            phi = (DirectX::XM_PI * (i - 1)) / rings; // π/2 から π まで
+            yOffset = -halfHeight;                    // 下に押し下げる
+        }
+
+        float y = radius * cosf(phi);
+        float r = radius * sinf(phi);
+
+        for (int j = 0; j <= slices; ++j)
+        {
+            float theta = (DirectX::XM_2PI * j) / slices;
+            float x = r * cosf(theta);
+            float z = r * sinf(theta);
+
+            vertices[vIndex].position = { x, y + yOffset, z };
+
+            // 法線は「オフセット移動する前の球体の向き」をそのまま使う
+            float len = sqrtf(x * x + y * y + z * z);
+            if (len > 0.0001f) {
+                vertices[vIndex].normal = { x / len, y / len, z / len };
+            }
+            else {
+                vertices[vIndex].normal = { 0.0f, 1.0f, 0.0f }; // 頂点の極における安全対策
+            }
+            vIndex++;
+        }
+    }
+
+    // ----------------------------------------
+    // 2. インデックス（面）の計算
+    // ----------------------------------------
+    int iIndex = 0;
+    for (int i = 0; i < numRings - 1; ++i)
+    {
+        for (int j = 0; j < slices; ++j)
+        {
+            int nextI = i + 1;
+            int nextJ = j + 1;
+
+            // 1つ目の三角形
+            indices[iIndex++] = i * (slices + 1) + j;
+            indices[iIndex++] = nextI * (slices + 1) + j;
+            indices[iIndex++] = i * (slices + 1) + nextJ;
+
+            // 2つ目の三角形
+            indices[iIndex++] = i * (slices + 1) + nextJ;
+            indices[iIndex++] = nextI * (slices + 1) + j;
+            indices[iIndex++] = nextI * (slices + 1) + nextJ;
+        }
+    }
+
+    // ----------------------------------------
+    // 3. GPUバッファの作成
+    // ----------------------------------------
+    D3D11_BUFFER_DESC vDesc = {};
+    vDesc.ByteWidth = static_cast<UINT>(sizeof(Vertex) * vertexCount);
+    vDesc.Usage = D3D11_USAGE_IMMUTABLE;
+    vDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    D3D11_SUBRESOURCE_DATA vData = { vertices.data(), 0, 0 };
+    device->CreateBuffer(&vDesc, &vData, &capsuleBuffer.vertexBuffer);
+
+    D3D11_BUFFER_DESC iDesc = {};
+    iDesc.ByteWidth = static_cast<UINT>(sizeof(uint32_t) * indexCount);
+    iDesc.Usage = D3D11_USAGE_IMMUTABLE;
+    iDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+    D3D11_SUBRESOURCE_DATA iData = { indices.data(), 0, 0 };
+    device->CreateBuffer(&iDesc, &iData, &capsuleBuffer.indexBuffer);
+
+    capsuleBuffer.indexCount = indexCount;
 }

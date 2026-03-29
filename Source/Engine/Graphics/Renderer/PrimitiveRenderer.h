@@ -90,6 +90,7 @@ private:
 	GeometryBuffer	boxBuffer;
 	GeometryBuffer	cylinderBuffer;
 	GeometryBuffer	coneBuffer;
+	GeometryBuffer  capsuleBuffer;
 
 	InstanceBuffer _instanceBuffer; // ★ GPUへの転送バッファ
 
@@ -118,4 +119,5 @@ private:
 	void CreateSphereMesh(ID3D11Device* device, float radius, int slices, int stacks, GeometryBuffer& buffer);
 	void CreateHalfSphereMesh(ID3D11Device* device, float radius, int slices, int stacks, GeometryBuffer& buffer);
 	void CreateCylinderMesh(ID3D11Device* device, float radius1, float radius2, float start, float height, int slices, int stacks, GeometryBuffer& buffer);
+	void CreateCapsuleMesh(ID3D11Device* device, float radius, float cylinderHeight, int slices, int rings);
 };

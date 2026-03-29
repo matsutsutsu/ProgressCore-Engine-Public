@@ -8,7 +8,6 @@
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
-// ❌ 削除: #include "Engine/Serialization/ComponentSerializers.h"
 
 // ============================================================================
 // Primitive Component
