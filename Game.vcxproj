@@ -370,6 +370,8 @@
     <ClInclude Include="Source\Game\Logics\GameEvent\GameStateMode.h" />
     <ClInclude Include="Source\Game\Logics\Test\ECSBenchmarkSystem.h" />
     <ClInclude Include="Source\Game\Logics\Test\OrbitBenchmarkComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Test\VoxelOceanComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Test\VoxelOceanSystem.h" />
     <ClInclude Include="Source\Game\Logics\World\Triggers\TriggerComponent.h" />
     <ClInclude Include="Source\Game\Logics\World\Triggers\TriggerSystem.h" />
     <ClInclude Include="Source\Game\Scenes\BaseScene.h" />
@@ -546,6 +548,7 @@
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerMoveSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\HealthSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\ECSBenchmarkSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Test\VoxelOceanSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\World\Triggers\TriggerSystem.cpp" />
     <ClCompile Include="Source\Game\Scenes\BaseScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\EditorScene.cpp" />

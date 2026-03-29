@@ -43,4 +43,10 @@ class SceneInitializer {
     // 「ECS限界テスト（ギャラクシー・スウォーム）」環境
     static void SpawnECSBenchmarkTest(CCL::ECS::Core::World& world, ID3D11Device* device, int count);
 
+    // 「幾何学の海」ベンチマークテスト
+    static void SpawnVoxelOceanTest(CCL::ECS::Core::World& world, ID3D11Device* device, int gridSize);
+
+    // 物理エンジンの極限テスト（数万個の雪崩）
+    static void SpawnPhysicsAvalancheTest(CCL::ECS::Core::World& world, ID3D11Device* device, int count);
+
 };

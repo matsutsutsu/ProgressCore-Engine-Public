@@ -1065,6 +1065,12 @@
     <ClInclude Include="Source\Game\Logics\Test\ECSBenchmarkSystem.h">
       <Filter>Source\Game\Logics\Test</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Test\VoxelOceanComponent.h">
+      <Filter>Source\Game\Logics\Test</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Test\VoxelOceanSystem.h">
+      <Filter>Source\Game\Logics\Test</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -1578,6 +1584,9 @@
       <Filter>Source\Game\Logics\Character\Boids</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Test\ECSBenchmarkSystem.cpp">
+      <Filter>Source\Game\Logics\Test</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Test\VoxelOceanSystem.cpp">
       <Filter>Source\Game\Logics\Test</Filter>
     </ClCompile>
   </ItemGroup>

@@ -380,3 +380,134 @@ void SceneInitializer::SpawnECSBenchmarkTest(
                 });
     }
 }
+
+#include "Game/Logics/Test/VoxelOceanComponent.h"
+
+
+void SceneInitializer::SpawnVoxelOceanTest(
+    CCL::ECS::Core::World& world, ID3D11Device* device, int gridSize){
+    
+    // 1. アーキタイプの生成（圧倒的スピードでメモリを確保）
+    const auto oceanArch = CCL::ECS::ArchetypeHelper::Generate<
+        TransformComponent,
+        PrimitiveComponent,   // ★ ModelComponent から PrimitiveComponent に変更
+        VoxelOceanComponent   // 海の波計算用
+    >();
+
+    float spacing = 1.0f; // キューブとキューブの間隔
+    float offset = (gridSize * spacing) / 2.0f; // 中心を(0,0)に合わせるためのオフセット
+
+    // 海らしい色を定義（青緑系）
+    DirectX::XMFLOAT4 oceanColor = { 0.1f, 0.6f, 0.8f, 1.0f };
+
+    // グリッド状に配置
+    for (int x = 0; x < gridSize; ++x) {
+        for (int z = 0; z < gridSize; ++z) {
+
+            auto ref = EntityFactory::SpawnNamed(world, "OceanVoxel", oceanArch);
+
+            // XとZの座標を計算
+            float posX = (x * spacing) - offset;
+            float posZ = (z * spacing) - offset;
+
+            // コンポーネントの初期値をセット
+            ref.Set(TransformComponent{
+                    .position = {posX, 0.0f, posZ},
+                    .rotation = {0,0,0,1},
+                    .scale = {0.8f, 0.8f, 0.8f} // spacingより少し小さくして隙間を空けると綺麗です
+                })
+                // ★ PrimitiveComponentでBox(キューブ)を指定して色をセット
+                .Set(PrimitiveComponent{ 
+                    .type = PrimitiveType::Box, 
+                    .size = {1.0f, 1.0f, 1.0f}, 
+                    .color = oceanColor 
+                })
+                .Set(VoxelOceanComponent{});
+        }
+    }
+}
+
+
+
+#include <cmath>
+
+void SceneInitializer::SpawnPhysicsAvalancheTest(
+    CCL::ECS::Core::World& world, ID3D11Device* device, int count)
+{
+    // 1. アーキタイプの生成
+    const auto staticArch = CCL::ECS::ArchetypeHelper::Generate<
+        TransformComponent,
+        PrimitiveComponent,
+        JoltRigidbodyComponent,
+        JoltBoxColliderComponent
+    >();
+
+    const auto dynamicArch = CCL::ECS::ArchetypeHelper::Generate<
+        TransformComponent,
+        PrimitiveComponent,
+        JoltRigidbodyComponent,
+        JoltBoxColliderComponent
+    >();
+
+    // -------------------------------------------------------------
+    // 2. 巨大な斜面の生成（受け止める床）
+    // -------------------------------------------------------------
+    auto slope = EntityFactory::SpawnNamed(world, "Slope", staticArch);
+
+    // X軸周りに20度回転させたクォータニオンを作成
+    DirectX::XMVECTOR q = DirectX::XMQuaternionRotationAxis(
+        DirectX::XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f),
+        DirectX::XMConvertToRadians(20.0f)
+    );
+    DirectX::XMFLOAT4 rot;
+    DirectX::XMStoreFloat4(&rot, q);
+
+    slope.Set(TransformComponent{ .position = {0.0f, -10.0f, 30.0f}, .rotation = rot, .scale = {1.0f, 1.0f, 1.0f} })
+        .Set(PrimitiveComponent{ .type = PrimitiveType::Box, .size = {120.0f, 3.0f, 120.0f}, .color = {0.3f, 0.3f, 0.3f, 1.0f} })
+        .Set(JoltBoxColliderComponent{ .halfExtent = {120.0f, 3.0f, 120.0f} }) // sizeの半分
+        .Set(JoltRigidbodyComponent{
+            .motionType = JPH::EMotionType::Static,
+            .objectLayer = PhysicsLayers::NON_MOVING,
+            .friction = 0.5f
+            });
+
+    // -------------------------------------------------------------
+    // 3. 上空から降り注ぐキューブ群の生成
+    // -------------------------------------------------------------
+    // count(例: 50,000)の立方根をとって、3Dのグリッド状に配置する
+    int sideSize = static_cast<int>(std::cbrt(count));
+    float spacing = 5.0f; // 1.0fのキューブに対して少し隙間を空ける
+    float offset = (sideSize * spacing) / 2.0f;
+
+    std::mt19937 gen(12345);
+    std::uniform_real_distribution<float> colorDist(0.5f, 1.0f);
+
+    int spawned = 0;
+    for (int y = 0; y < sideSize && spawned < count; ++y) {
+        for (int x = 0; x < sideSize && spawned < count; ++x) {
+            for (int z = 0; z < sideSize && spawned < count; ++z) {
+
+                auto cube = EntityFactory::SpawnNamed(world, "PhysicsCube", dynamicArch);
+
+                float posX = (x * spacing) - offset;
+                float posY = 160.0f + (y * spacing); // 上空に配置
+                float posZ = (z * spacing) - offset;
+
+                // ランダムな色（視覚的に個体を見分けやすくする）
+                DirectX::XMFLOAT4 color = { colorDist(gen), colorDist(gen), 1.0f, 1.0f };
+
+                cube.Set(TransformComponent{ .position = {posX, posY, posZ}, .rotation = {0,0,0,1}, .scale = {1.0f, 1.0f, 1.0f} })
+                    .Set(PrimitiveComponent{ .type = PrimitiveType::Box, .size = {1.0f, 1.0f, 1.0f}, .color = color })
+                    .Set(JoltBoxColliderComponent{ .halfExtent = {1.0f, 1.0f, 1.0f} })
+                    .Set(JoltRigidbodyComponent{
+                        .motionType = JPH::EMotionType::Dynamic,
+                        .objectLayer = PhysicsLayers::MOVING,
+                        .restitution = 0.2f, // 少し弾む
+                        .friction = 0.3f
+                        });
+
+                spawned++;
+            }
+        }
+    }
+}

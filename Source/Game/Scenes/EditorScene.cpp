@@ -21,7 +21,8 @@ void EditorScene::Initialize()
     ID3D11Device *device = Graphics::Instance().GetDevice();
     SceneInitializer::SpawnLightStartSet(*_worldPtr, device);
     //SceneInitializer::SpawnGameLightSetting(_world, device);
-    Prefab::SpawnPrefab(*_worldPtr, "Assets/Prefabs/Camera/FreeCamera.json");
+    //Prefab::SpawnPrefab(*_worldPtr, "Assets/Prefabs/Camera/FreeCamera.json");
+    Prefab::SpawnPrefab(*_worldPtr, "Assets/Prefabs/Camera/FreeFastCamera.json");
 
 
     //SceneInitializer::SpawnTransformLoadTest(*_worldPtr, device, 100000);
@@ -29,7 +30,12 @@ void EditorScene::Initialize()
     //SceneInitializer::SpawnAnimationTest(*_worldPtr, device);
 
     // 例：10万個のキューブによる銀河の渦を生成
-    SceneInitializer::SpawnECSBenchmarkTest(*_worldPtr, device, 20000);
+    //SceneInitializer::SpawnECSBenchmarkTest(*_worldPtr, device, 100000);
+
+    // 300 x 300 = 90,000 個のキューブの海を生成
+    //SceneInitializer::SpawnVoxelOceanTest(*_worldPtr, device, 500);
+   
+    //SceneInitializer::SpawnPhysicsAvalancheTest(*_worldPtr, device, 10000);
 
     // 1000体の群衆ストレステストを実行！
     //SceneInitializer::SpawnEnemySwarmTest(*_worldPtr, device, 200);
