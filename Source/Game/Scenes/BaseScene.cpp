@@ -117,6 +117,8 @@ void BaseScene::Render()
     graphics.SetRenderTargets(false);
     graphics.Clear(0.65f, 0.65f, 1.0f, 1, false);
 
+    // Clearは重いので、必要なとき以外は呼ばない（例: ポストプロセスの前に一度だけ）
+
     // ブルームなどのポストプロセス開始
     float clearColor[] = {0.11, 0.16f, 0.25f, 1.0f};
     _postProcess.BeginScene(dc, clearColor, graphics.GetDepthStencilView());
@@ -216,7 +218,7 @@ void BaseScene::Render()
 
         // グリッド描画
         //primitiveRenderer->DrawGrid(20, 1);
-        primitiveRenderer->Render(rc.deviceContext, camera.GetView(), camera.GetProjection());
+        primitiveRenderer->Render(rc, camera.GetView(), camera.GetProjection());
 
 
         // 追加の3D描画 (Grid, Particleなど)

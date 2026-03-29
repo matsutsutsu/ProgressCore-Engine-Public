@@ -338,13 +338,14 @@ void SceneInitializer::SpawnECSBenchmarkTest(
     // 1. アーキタイプの生成（圧倒的スピードでメモリを確保するため）
     const auto benchmarkArch = CCL::ECS::ArchetypeHelper::Generate<
         TransformComponent,
-        ModelComponent,         // キューブ描画用
-        MaterialComponent,         // キューブ描画用
+        //ModelComponent,         // キューブ描画用
+        //MaterialComponent,         // キューブ描画用
+        PrimitiveComponent,         // キューブ描画用
         OrbitBenchmarkComponent     // 軌道計算用
     >();
 
-    ModelComponent baseModelComp;
-    baseModelComp.SetModel("Assets/Models/Shape/Sphere.glb");
+    //ModelComponent baseModelComp;
+    //baseModelComp.SetModel("Assets/Models/Shape/Sphere.glb");
     // ※すでにResourceManager等を経由して安全にロードされ、内部の modelPtr にセットされている
 
 
@@ -369,8 +370,8 @@ void SceneInitializer::SpawnECSBenchmarkTest(
 
         // コンポーネントの初期値をセット
         ref.Set(TransformComponent{ .position = {0,0,0}, .rotation = {0,0,0,1}, .scale = {0.2f, 0.2f, 0.2f} })
-            /*.Set(PrimitiveComponent{ .type = PrimitiveType::Box, .size = {1.0f, 1.0f, 1.0f}, .color = color })*/
-            .Set(ModelComponent{ baseModelComp }) // ★ Primitiveではなくモデルをセット
+            .Set(PrimitiveComponent{ .type = PrimitiveType::Box, .size = {1.0f, 1.0f, 1.0f}, .color = color })
+            //.Set(ModelComponent{ baseModelComp }) // ★ Primitiveではなくモデルをセット
             .Set(OrbitBenchmarkComponent{
                 .angle = angleDist(gen),
                 .orbitSpeed = speedDist(gen),

@@ -42,9 +42,6 @@ void ParticleScene::RegisterSystems()
 
 void ParticleScene::OnRender3D(RenderContext &rc)
 {
-    auto* prim = Graphics::Instance().GetPrimitiveRenderer();
-    prim->DrawGrid(20, 1);
-
 
 }
 

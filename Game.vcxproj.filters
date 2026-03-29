@@ -657,12 +657,6 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\ToonShader.h">
       <Filter>Source\Engine\Graphics\Shader\Material</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Shader\Pass\PrimitivePS.h">
-      <Filter>Source\Engine\Graphics\Shader\Pass</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Shader\Pass\PrimitiveVS.h">
-      <Filter>Source\Engine\Graphics\Shader\Pass</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\Pass\ShadowMap.h">
       <Filter>Source\Engine\Graphics\Shader\Pass</Filter>
     </ClInclude>

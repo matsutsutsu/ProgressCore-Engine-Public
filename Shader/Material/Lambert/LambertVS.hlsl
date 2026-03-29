@@ -1,6 +1,9 @@
 #include "Shader/Common/Common.hlsli"
 #include "Shader/Common/Transform.hlsli"
 
+
+
+
 VS_OUT main(
     float4 position : POSITION,
     float4 boneWeights : BONE_WEIGHTS,

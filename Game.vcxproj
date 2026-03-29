@@ -312,8 +312,6 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\PhongShader.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\ShadowMapShader.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\ToonShader.h" />
-    <ClInclude Include="Source\Engine\Graphics\Shader\Pass\PrimitivePS.h" />
-    <ClInclude Include="Source\Engine\Graphics\Shader\Pass\PrimitiveVS.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Pass\ShadowMap.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\BloomPass.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\PostProcessManager.h" />
