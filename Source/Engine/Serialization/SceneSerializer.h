@@ -8,21 +8,24 @@
 using json = nlohmann::json;
 
 class SceneSerializer {
-  public:
-    // シーン全体をファイルに保存
-    static void Serialize(CCL::ECS::Core::World *world, const std::string &filepath);
+public:
+    // =========================================================
+    // プレハブ / サブシーンAPI
+    // =========================================================
 
-    // ファイルから読み込み (シーンロード、Prefabロード兼用)
-    // 戻り値: 生成されたエンティティのIDリスト
+    // 指定したパスにエンティティ群を保存
+    static void Serialize(CCL::ECS::Core::World* world, const std::string& filepath);
+
+    // ファイルから現在の世界に追加で読み込む (Worldはクリアされない)
     static std::vector<CCL::ECS::EntityID> Deserialize(
-        CCL::ECS::Core::World *world, const std::string &filepath);
+        CCL::ECS::Core::World* world, const std::string& filepath);
 
-    // JSONオブジェクトから直接読み込み (LevelLoaderなどで使用)
+    // JSONオブジェクトから直接読み込む
     static std::vector<CCL::ECS::EntityID> DeserializeRaw(
-        CCL::ECS::Core::World *world, const json &entitiesJson);
+        CCL::ECS::Core::World* world, const json& entitiesJson);
 
-  private:
+private:
     // 内部ヘルパー
     static void SerializeEntity(
-        CCL::ECS::Core::World *world, CCL::ECS::EntityID entity, json &outJson);
+        CCL::ECS::Core::World* world, CCL::ECS::EntityID entity, json& outJson);
 };

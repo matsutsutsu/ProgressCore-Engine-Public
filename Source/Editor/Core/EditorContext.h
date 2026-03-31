@@ -21,6 +21,9 @@ struct EditorContext {
     // シーンロード予約パス
     std::string pendingLoadScenePath;
 
+    // シーンセーブ予約パス
+    std::string pendingSaveScenePath;
+
     // アニメーションエディタとの連携用
      bool  isAnimEditMode = false; // これらもポインタではなく実体値にするのが安全です
      float animEditTime   = 0.0f;

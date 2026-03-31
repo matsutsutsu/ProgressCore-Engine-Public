@@ -16,9 +16,13 @@ class HierarchyCleanupSystem : public CCL::ECS::IfSystem<
     // フレームの最後に実行され、タグ付きエンティティと子供を回収する
     void Update(float dt) override;
 
-  private:
+    // 外部（SceneManager等）から強制的にクリーンアップを走らせる関数
+    static void ExecuteCleanup(CCL::ECS::Core::World& world);
+
+private:
     // 再帰的に子供のIDをリストに追加するヘルパー関数
-    void CollectChildrenRecursive(
-        CCL::ECS::EntityID currentID, std::vector<CCL::ECS::EntityID> &outList);
+    // static関数から呼べるように、world を引数で受け取るようにする
+    static void CollectChildrenRecursive(
+        CCL::ECS::Core::World& world, CCL::ECS::EntityID currentID, std::vector<CCL::ECS::EntityID>& outList);
 };
 

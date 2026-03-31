@@ -79,10 +79,8 @@ void BaseScene::Finalize()
 
 void BaseScene::Update(float elapsedTime)
 {
-    // ロード予約チェック
-    if (!_pendingLoadScenePath.empty()) {
-        ExecuteLoadScene();
-    }
+    // ECSシステムが走り出す「前」の、誰もメモリを触っていない安全な瞬間に世界を切り替える！
+    ExecutePendingSceneOperations();
 
     Graphics::Instance().GetModelRenderer()->BeginFrame();
     Graphics::Instance().GetParticleRenderer()->BeginFrame();
@@ -268,18 +266,24 @@ void BaseScene::DrawGUI()
     OnDrawImGui();
 }
 
-void BaseScene::ExecuteLoadScene()
+
+
+// ---------------------------------------------------------
+// 予約されたセーブ/ロード処理の消化 (フレームの先頭で呼ばれる)
+// ---------------------------------------------------------
+void BaseScene::ExecutePendingSceneOperations()
 {
-    // ★拡張ポイント: ロード前処理 (パーティクルリセット等)
-    OnPreLoadScene();
-
-
-    // ファイルがある場合はロード、なければ何もしない(リセットのみ)
+    // ロード予約がある場合
     if (!_pendingLoadScenePath.empty()) {
-        // 拡張子判定などでロード方法を変えるならここで分岐
-        SceneSerializer::Deserialize(_worldPtr, _pendingLoadScenePath);
+        // ★必要であればここでパーティクル等の事前リセット処理 (OnPreLoadScene) を呼ぶ
+
+        SceneManager::Instance().LoadScene(_worldPtr, _pendingLoadScenePath);
+        _pendingLoadScenePath.clear();
     }
 
-
-    _pendingLoadScenePath.clear();
+    // セーブ予約がある場合
+    if (!_pendingSaveScenePath.empty()) {
+        SceneManager::Instance().SaveScene(_worldPtr, _pendingSaveScenePath);
+        _pendingSaveScenePath.clear();
+    }
 }

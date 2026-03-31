@@ -22,12 +22,12 @@ void EditorScene::Initialize()
     SceneInitializer::SpawnLightStartSet(*_worldPtr, device);
     //SceneInitializer::SpawnGameLightSetting(_world, device);
     //Prefab::SpawnPrefab(*_worldPtr, "Assets/Prefabs/Camera/FreeCamera.json");
-    Prefab::SpawnPrefab(*_worldPtr, "Assets/Prefabs/Camera/FreeFastCamera.json");
+    //Prefab::SpawnPrefab(*_worldPtr, "Assets/Prefabs/Camera/FreeFastCamera.json");
 
 
     //SceneInitializer::SpawnTransformLoadTest(*_worldPtr, device, 100000);
     //SceneInitializer::SpawnJoltTest(*_worldPtr, device);
-    //SceneInitializer::SpawnAnimationTest(*_worldPtr, device);
+    SceneInitializer::SpawnAnimationTest(*_worldPtr, device);
 
     // 例：10万個のキューブによる銀河の渦を生成
     //SceneInitializer::SpawnECSBenchmarkTest(*_worldPtr, device, 100000);
@@ -82,6 +82,9 @@ void EditorScene::FixedUpdate(float dt)
 // ★追加: Updateのオーバーライド
 void EditorScene::Update(float dt)
 {
+	// Contextからのリクエストを処理（ロード/セーブ要求など）
+    ProcessContextRequests();
+
     // A. アニメーション編集モード中 (かつエンティティ選択中)
     if (_context.isAnimEditMode && _context.selectedEntity != 0 &&
         _context.selectedEntity != CCL::ECS::InvalidEntityID) {
@@ -109,6 +112,7 @@ void EditorScene::OnDrawImGui()
     _context.world         = _worldPtr;
     _context.systemManager = _ecsContext->GetSystemManager();
 
+
     _windowManager->Draw(_context);
 
     // ロード要求があればBaseSceneのパスに渡す
@@ -123,8 +127,18 @@ void EditorScene::OnDrawImGui()
     }
 }
 
-// ロード前の後始末
-void EditorScene::OnPreLoadScene()
+// =========================================================
+// UIからのリクエスト（予約）を処理する専用関数
+// =========================================================
+void EditorScene::ProcessContextRequests()
 {
-    //selectedEntity = 0;
+    if (!_context.pendingLoadScenePath.empty()) {
+        RequestLoadScene(_context.pendingLoadScenePath);
+        _context.pendingLoadScenePath.clear();
+    }
+
+    if (!_context.pendingSaveScenePath.empty()) {
+        RequestSaveScene(_context.pendingSaveScenePath);
+        _context.pendingSaveScenePath.clear();
+    }
 }

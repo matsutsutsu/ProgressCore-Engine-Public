@@ -5,6 +5,37 @@
 #include <fstream>
 #include <json.hpp>
 
+// =========================================================================
+// Shift-JIS と UTF-8 の相互変換ヘルパー
+// =========================================================================
+static std::string SjisToUtf8(const std::string& sjis) {
+    if (sjis.empty()) return "";
+    int wlen = MultiByteToWideChar(CP_ACP, 0, sjis.c_str(), -1, nullptr, 0);
+    std::wstring wstr(wlen, 0);
+    MultiByteToWideChar(CP_ACP, 0, sjis.c_str(), -1, &wstr[0], wlen);
+
+    int u8len = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, nullptr, 0, nullptr, nullptr);
+    std::string utf8(u8len, 0);
+    WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, &utf8[0], u8len, nullptr, nullptr);
+
+    utf8.resize(strlen(utf8.c_str())); // 末尾のNULL文字を除去
+    return utf8;
+}
+
+static std::string Utf8ToSjis(const std::string& utf8) {
+    if (utf8.empty()) return "";
+    int wlen = MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, nullptr, 0);
+    std::wstring wstr(wlen, 0);
+    MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, &wstr[0], wlen);
+
+    int sjislen = WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), -1, nullptr, 0, nullptr, nullptr);
+    std::string sjis(sjislen, 0);
+    WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), -1, &sjis[0], sjislen, nullptr, nullptr);
+
+    sjis.resize(strlen(sjis.c_str()));
+    return sjis;
+}
+
 // ============================================================================
 // 「ダイアログのタイトル」ごとに別々の履歴を記憶する辞書
 // ============================================================================
@@ -204,7 +235,8 @@ void Dialog::LoadHistory(const char* settingsFilePath)
             file >> j;
             if (j.contains("DialogHistory")) {
                 for (auto& item : j["DialogHistory"].items()) {
-                    s_pathHistory[item.key()] = item.value().get<std::string>();
+                    // JSONのUTF-8を、システム用のShift-JISに戻して記憶する
+                    s_pathHistory[item.key()] = Utf8ToSjis(item.value().get<std::string>());
                 }
             }
         }
@@ -228,8 +260,9 @@ void Dialog::SaveHistory(const char* settingsFilePath)
     }
 
     // 履歴をJSONに書き込む
+    // システムが保持しているShift-JISのパスを、UTF-8に変換してからJSONに書き込む
     for (const auto& pair : s_pathHistory) {
-        j["DialogHistory"][pair.first] = pair.second;
+        j["DialogHistory"][pair.first] = SjisToUtf8(pair.second);
     }
 
     // 整形して保存

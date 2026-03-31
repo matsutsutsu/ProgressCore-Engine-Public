@@ -1,34 +1,10 @@
 #pragma once
 
 #include "Scene.h"
-
 #include <string>
-#include "Game/Logics/Combat/Weapon/Core/GunBuilder.h" // GunBuilderを使うため
 
-// プレイヤーの引き継ぎデータ
-struct PlayerPersistentData {
-    int currentHp = 100;
-    int maxHp     = 100;
-    int money     = 180; // 追加：所持金
-
-    // 現在のステージレベル (初期値1)
-    int stageLevel = 1;
-
-    GunBuilder gunConfig; // 銃のカスタマイズ状態
-
-    bool hasData = false; // データが保存されているかフラグ
-
-    // データをリセットする関数（ゲームオーバー時などに呼ぶ）
-    // これするとプレイヤーの初期設定にならなくね？使うのか？
-    void Reset()
-    {
-        hasData   = false;
-        currentHp = 100;
-        money      = 180;           
-        stageLevel = 1;            // リセット時は1に戻す
-        gunConfig = GunBuilder(); // 初期状態に戻す
-    }
-};
+// World クラスが存在することをコンパイラに教える
+namespace CCL::ECS::Core { class World; }
 
 // シーンマネージャー
 class SceneManager {
@@ -70,16 +46,16 @@ public:
     // インスタンスを直接渡すオーバーロード
     void ChangeScene(Scene *scene);
 
-    // これを経由して money や HP を書き換える
-    PlayerPersistentData &GetPlayerData() { return playerData; }
-
-// ★追加: 現在のシーン名を取得・設定
+    // 現在のシーン名を取得・設定
     const std::string& GetCurrentSceneName() const { return _currentSceneName; }
     void SetCurrentSceneName(const std::string& name) { _currentSceneName = name; }
 
+    // --- ECSデータ駆動のシーン保存・読み込み ---
+    void SaveScene(CCL::ECS::Core::World* world, const std::string& filepath);
+    void LoadScene(CCL::ECS::Core::World* world, const std::string& filepath);
+
 private:
-    // どこからでもアクセスできるプレイヤーデータ
-    PlayerPersistentData playerData;
+
 
     Scene* currentScene = nullptr; // 現在のシーン
     Scene* nextScene = nullptr;    // 次に遷移するシーン

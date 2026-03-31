@@ -630,9 +630,6 @@
     <ClInclude Include="Source\Engine\Graphics\Resource\ModelResource.h">
       <Filter>Source\Engine\Graphics\Resource</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Resource\PrimitiveMesh.h">
-      <Filter>Source\Engine\Graphics\Resource</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Resource\ResourceManager.h">
       <Filter>Source\Engine\Graphics\Resource</Filter>
     </ClInclude>
@@ -1071,6 +1068,12 @@
     <ClInclude Include="Source\Game\Logics\Test\VoxelOceanSystem.h">
       <Filter>Source\Game\Logics\Test</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Core\PersistentTag.h">
+      <Filter>Source\Engine\GamePlay\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltCleanupSystem.h">
+      <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -1308,9 +1311,6 @@
       <Filter>Source\Engine\Graphics\Resource</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Resource\ModelResource.cpp">
-      <Filter>Source\Engine\Graphics\Resource</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Graphics\Resource\PrimitiveMesh.cpp">
       <Filter>Source\Engine\Graphics\Resource</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Resource\ResourceManager.cpp">
@@ -1588,6 +1588,9 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Test\VoxelOceanSystem.cpp">
       <Filter>Source\Game\Logics\Test</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltCleanupSystem.cpp">
+      <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

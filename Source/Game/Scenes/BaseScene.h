@@ -16,6 +16,7 @@
 
 #include "Engine/Graphics/Shader/PostProcess/PostProcessManager.h"
 
+#include "Engine/GamePlay/Core/Scene/SceneManager.h"
 
 class BaseScene : public Scene {
   protected:
@@ -29,8 +30,9 @@ class BaseScene : public Scene {
     PostProcessManager _postProcess;
 
 
-    // ロード待ちのファイルパス
+    // セーブ・ロードの「予約」パス
     std::string _pendingLoadScenePath = "";
+    std::string _pendingSaveScenePath = ""; 
 
 
   public:
@@ -46,6 +48,11 @@ class BaseScene : public Scene {
     virtual void Render() override;  // 共通レンダリングパイプライン
     virtual void DrawGUI() override; // ImGuiエントリポイント
 
+    // =========================================================
+    // 外部（ImGui等）から呼ばれる「安全なリクエスト関数」
+    // =========================================================
+    void RequestLoadScene(const std::string& path) { _pendingLoadScenePath = path; }
+    void RequestSaveScene(const std::string& path) { _pendingSaveScenePath = path; }
   protected:
     // --- 派生クラスでの拡張ポイント ---
 
@@ -61,10 +68,7 @@ class BaseScene : public Scene {
     // ImGui描画 (Window, Inspectorなど)
     virtual void OnDrawImGui() {}
 
-    // ロード実行時の前処理 (パーティクルリセット等)
-    virtual void OnPreLoadScene() {}
-
-    // 実際のロード処理 (共通化)
-    virtual void ExecuteLoadScene();
+    // リクエストを消化する関数
+    void ExecutePendingSceneOperations();
 
 };

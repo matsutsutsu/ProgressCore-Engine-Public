@@ -34,5 +34,7 @@ class EditorScene : public BaseScene {
     // フック関数で固有処理を注入
     void OnRender3D(RenderContext &rc) override;
     void OnDrawImGui() override;
-    void OnPreLoadScene() override; // ロード時のパーティクル破棄用
+
+    //  UIコンテキストからの要求を解釈し、BaseSceneに流し込む専用関数
+    void ProcessContextRequests();
 };

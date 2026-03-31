@@ -106,6 +106,9 @@ template <typename T> struct ComponentMeta {
     // 手動でImGuiのコードを書きたい場合、特殊化する側でこれを true にします。
     static constexpr bool hasCustomGui = false;
 
+    // デフォルトはすべて保存対象（保存したくない場合は特殊化側で false にする）
+    static constexpr bool        isSerializable = true;
+
     // カスタムGUIの実装関数 (hasCustomGui = true のときのみ描画システムから呼ばれる)
     // 戻り値: 値が変更されたら true を返す (Undo/Redoシステムのフラグ用)
     // 外部のエンティティやシステム（World等）にアクセスできるようコンテキストを受け取る

@@ -2,6 +2,7 @@
 #include <functional>
 #include <unordered_map>
 #include <string>
+#include <type_traits>
 #include "ECS/Core/CCL_World.h"
 #include <json.hpp>
 //#include "ComponentSerializers.h"
@@ -15,6 +16,29 @@
 
 #include <Windows.h>
 
+// ==========================================================
+// ★ SFINAE 1: ComponentMeta<T> に isSerializable があるか判定
+// ==========================================================
+template <typename T, typename = void>
+struct HasIsSerializable : std::true_type {};
+
+template <typename T>
+struct HasIsSerializable<T, std::void_t<decltype(ComponentMeta<T>::isSerializable)>>
+    : std::bool_constant<ComponentMeta<T>::isSerializable> {
+};
+
+// ==========================================================
+// ★ SFINAE 2: ComponentMeta<T> に Remap 関数があるか判定
+// ==========================================================
+template <typename T, typename = void>
+struct HasRemap : std::false_type {};
+
+template <typename T>
+struct HasRemap<T, std::void_t<decltype(ComponentMeta<T>::Remap(
+    std::declval<T&>(),
+    std::declval<const std::unordered_map<uint64_t, CCL::ECS::EntityID>&>()))>>
+    : std::true_type {};
+
 class ComponentRegistry {
 public:
     // JSONへ書き出す関数
@@ -22,13 +46,27 @@ public:
     // JSONからWorldへ復元する関数
     using DeserializeToWorldFunc = std::function<void(CCL::ECS::Core::World*, CCL::ECS::EntityID, const nlohmann::json&)>;
 
+    // 復元された実体のIDを翻訳する関数 (キーは uint64_t に対応)
+    using RemapFunc = std::function<void(CCL::ECS::Core::World*, CCL::ECS::EntityID, const std::unordered_map<uint64_t, CCL::ECS::EntityID>&)>;
+
+
     struct MetaInfo {
         std::string name;
         SerializeFunc serialize;
         DeserializeToWorldFunc deserializeToWorld;
+
+        // ★IDリマップ用
+        RemapFunc remap = nullptr;
+
+        // セーブ用の動的チェックと抽出関数
+        std::function<bool(CCL::ECS::Core::World*, CCL::ECS::EntityID)> hasComponent = nullptr;
+        std::function<void(CCL::ECS::Core::World*, CCL::ECS::EntityID, nlohmann::json&)> saveToJSON = nullptr;
     };
 
     static ComponentRegistry &Instance();
+
+    // 登録されているすべてのメタデータを取得する
+    const std::unordered_map<std::string, MetaInfo>& GetAllMeta() const { return _nameToMeta; }
 
     // 型Tを登録する
     template <typename T>
@@ -36,21 +74,46 @@ public:
         MetaInfo info;
         info.name = name;
 
-        // [Save用] void* を T* にキャストして to_json
+        // 1. [Save(旧)用] void* を T* にキャストして to_json
         info.serialize = [](nlohmann::json& j, const void* ptr) {
             const T* component = static_cast<const T*>(ptr);
-
             ComponentMetaJson::Serialize(j, *component);
             };
 
-        // [Load用] JSONから一時変数Tを作成し、World::RequestAddComponent<T> にコピーして渡す
+        // 2. [Load用] JSONから一時変数Tを作成し、World にコピーして渡す
         info.deserializeToWorld = [](CCL::ECS::Core::World* world, CCL::ECS::EntityID entity, const nlohmann::json& j) {
-            T temp{}; // ★波括弧で確実に初期化する
-
+            T temp{}; // 波括弧で確実に初期化
             ComponentMetaJson::Deserialize(j, temp);
-
             world->AddComponent<T>(entity, std::move(temp));
             };
+
+        // 3. [Remap用] ★ if constexpr を使って Remap が存在するときだけ登録する
+        if constexpr (HasRemap<T>::value) {
+            info.remap = [](CCL::ECS::Core::World* world, CCL::ECS::EntityID entity, const std::unordered_map<uint64_t, CCL::ECS::EntityID>& idMap) {
+                if (auto* comp = world->GetComponent<T>(entity)) {
+                    ComponentMeta<T>::Remap(*comp, idMap);
+                }
+                };
+        }
+        else {
+            info.remap = nullptr;
+        }
+
+        // 4. [Scene Save用] 保存除外判定 (isSerializable)
+        // C++17の if constexpr を使い、isSerializable == true の型だけ抽出機能を登録する
+        if constexpr (HasIsSerializable<T>::value) {
+            info.hasComponent = [](CCL::ECS::Core::World* w, CCL::ECS::EntityID e) {
+                return w->HasComponent<T>(e);
+                };
+
+            info.saveToJSON = [](CCL::ECS::Core::World* w, CCL::ECS::EntityID e, nlohmann::json& j) {
+                if (auto* comp = w->GetComponent<T>(e)) {
+                    nlohmann::json compJson;
+                    ComponentMetaJson::Serialize(compJson, *comp);
+                    j[ComponentMeta<T>::displayName] = compJson;
+                }
+                };
+        }
 
         // マップ登録
         _nameToMeta[name] = info;
@@ -82,20 +145,6 @@ private:
     std::unordered_map<CCL::ECS::TypeID, std::string> _typeIdToName;
 };
 
-
-// 自動登録用のヘルパー構造体
-//template <typename T> struct AutoComponentRegister {
-//    AutoComponentRegister(const std::string &name)
-//    {
-//        // 重複登録を防ぐためのガード（念のため）
-//        if (!ComponentRegistry::Instance().GetInfoByName(name)) {
-//            ComponentRegistry::Instance().Register<T>(name);
-//        }
-//
-//        // 2. ImGui(インスペクタ)用の登録
-//        ComponentMetaImGui::RegisterGuiMeta<T>(ComponentGuiRegistry::Instance());
-//    }
-//};
 
 // ── リンカ強制保護 (究極版：COMDAT最適化の完全破壊) ────────────────────────
 // 登録用変数だけが最適化で切り捨てられるのを防ぐため、

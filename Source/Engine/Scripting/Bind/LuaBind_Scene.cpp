@@ -38,20 +38,7 @@ void LuaBind_Scene::Bind(sol::state &lua, CCL::ECS::Core::World *world)
         }
     });
 
-    // ---------------------------------------------------
-    // 2. Playerテーブル (レベル管理など)
-    // ---------------------------------------------------
-    auto player = lua.create_named_table("Player");
-
-    // レベル取得
-    player.set_function("GetLevel", [&sm]() { return sm.GetPlayerData().stageLevel; });
-
-    // レベル設定
-    player.set_function("SetLevel", [&sm](int level) { sm.GetPlayerData().stageLevel = level; });
-
-    // レベルリセット
-    player.set_function("ResetLevel", [&sm]() { sm.GetPlayerData().Reset(); });
-
+  
     // ---------------------------------------------------
     // 3. Gameテーブル (全体システム)
     // ---------------------------------------------------

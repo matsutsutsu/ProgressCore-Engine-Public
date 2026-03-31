@@ -5,6 +5,9 @@
 #include <fstream>
 #include <iomanip>
 
+#include "Engine/GamePlay/Core/DestroyTag.h"
+#include "Engine/GamePlay/Core/PersistentTag.h"
+
 using namespace CCL::ECS;
 using namespace CCL::ECS::Core;
 
@@ -23,6 +26,17 @@ void SceneSerializer::Serialize(World *world, const std::string &filepath)
     for (const auto &upChunk : chunks) {
         if (!upChunk) continue;
         Chunk          *chunk     = upChunk.get();
+
+        // =========================================================
+        // ★ アーキテクトの極意：セーブデータの汚染を物理的に防ぐ
+        // =========================================================
+        // 1. 削除予定の「ゴミ」は保存しない
+        if (chunk->HasComponent<Tag::DestroyTag>()) continue;
+
+        // 2. シーンを跨いで常駐する「システム（BGMやManager等）」は保存しない
+        // （※これらはエンジン起動時に生成されるため、シーンに保存すると二重生成される）
+        if (chunk->HasComponent<Tag::PersistentTag>()) continue;
+
         size_t          count     = chunk->GetEntityCount();
         const EntityID *entityIDs = chunk->GetEntityIDs();
 

@@ -66,6 +66,3 @@ void ParticleScene::OnDrawImGui()
 
 }
 
-void ParticleScene::OnPreLoadScene()
-{
-}

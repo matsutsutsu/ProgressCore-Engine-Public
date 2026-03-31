@@ -20,5 +20,4 @@ class ParticleScene : public BaseScene {
     void RegisterSystems() override;
     void OnRender3D(RenderContext &rc) override;
     void OnDrawImGui() override;
-    void OnPreLoadScene() override;
 };

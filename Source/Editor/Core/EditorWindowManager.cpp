@@ -120,9 +120,14 @@ void EditorWindowManager::DrawMainMenuBar(EditorContext &context)
 
                 if (Dialog::OpenFileName(filename, 256, filter, "Open Scene", hWnd) ==
                     DialogResult::OK) {
-                    // SceneSerializer::Load(filename, world);
+
                     //  即時ロードせず、パスを保存して予約する
                     context.pendingLoadScenePath = std::string(filename);
+
+                    // ★ アーキテクトの極意: 安全装置
+                    // 前のシーンのエンティティはすべて破壊されたため、
+                    // Inspectorが古いIDを参照してクラッシュするのを防ぐために選択を解除する
+                    context.selectedEntity = CCL::ECS::InvalidEntityID;
                 }
             }
 
@@ -133,7 +138,14 @@ void EditorWindowManager::DrawMainMenuBar(EditorContext &context)
 
                 if (Dialog::SaveFileName(filename, 256, filter, "Save Scene", "json", hWnd) ==
                     DialogResult::OK) {
-                    SceneSerializer::Serialize(world, filename);
+
+                    //  即時ロードせず、パスを保存して予約する
+                    context.pendingSaveScenePath = std::string(filename);
+
+                    // ★ アーキテクトの極意: 安全装置
+                    // 前のシーンのエンティティはすべて破壊されたため、
+                    // Inspectorが古いIDを参照してクラッシュするのを防ぐために選択を解除する
+                    context.selectedEntity = CCL::ECS::InvalidEntityID;
                 }
             }
 
