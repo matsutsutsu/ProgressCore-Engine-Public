@@ -10,6 +10,7 @@
 #include "AnimEventMessages.h"
 
 
+
 AnimationSystem::AnimationSystem() : IfSystem("AnimationSystem") {}
 
 void AnimationSystem::Update(float dt)

@@ -6,7 +6,12 @@
 #include "Engine/GamePlay/Physics/Collision/JoltBoxColliderComponent.h"
 #include "Engine/GamePlay/Physics/Collision/JoltSphereColliderComponent.h"
 #include "Engine/GamePlay/Physics/Collision/JoltCapsuleColliderComponent.h"
+#include "Engine/GamePlay/Physics/Collision/JoltMeshColliderComponent.h"
+#include "Engine/GamePlay/Graphics/Core/ModelComponent.h"
 
+
+#include <Jolt/Physics/Collision/Shape/MeshShape.h>
+#include <Jolt/Physics/Collision/Shape/ScaledShape.h> // スケール適用に必須
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
@@ -91,6 +96,57 @@ void JoltBodySetupSystem::Update(float dt)
                 baseShape
             );
             shape = offsetSettings.Create().Get();
+        }
+        // =======================================================
+        // 4. Mesh Collider (地形) の自動抽出と生成
+        // =======================================================
+        else if (auto* meshCol = _world->GetComponent<JoltMeshColliderComponent>(id)) {
+
+            // 1. 同じEntityから、描画用のモデルコンポーネントを取得
+            auto* modelComp = _world->GetComponent<ModelComponent>(id);
+
+            // モデルが無い、ロードされていない、またはタグがOFFならスキップ
+            if (!modelComp || !modelComp->GetModel() || !meshCol->isEnabled) return;
+
+            // リソース（CPU上の頂点データ）にアクセス
+            const ModelResource* res = modelComp->GetModel()->GetResource();
+            if (!res) return;
+
+            JPH::VertexList joltVertices;
+            JPH::IndexedTriangleList joltTriangles;
+
+            // 2. ModelResource内の全メッシュから頂点とインデックスを吸い出す
+            for (const auto& mesh : res->GetMeshes()) {
+                uint32_t vertexOffset = static_cast<uint32_t>(joltVertices.size());
+
+                // 頂点の「位置座標(Position)」だけを抽出 (UVや法線は物理には不要！)
+                for (const auto& v : mesh.vertices) {
+                    joltVertices.push_back(JPH::Float3(v.position.x, v.position.y, v.position.z));
+                }
+
+                // インデックスを抽出（複数のメッシュを1つに合体させるためオフセットを足す）
+                for (size_t i = 0; i < mesh.indices.size(); i += 3) {
+                    joltTriangles.push_back(JPH::IndexedTriangle(
+                        mesh.indices[i + 0] + vertexOffset,
+                        mesh.indices[i + 1] + vertexOffset,
+                        mesh.indices[i + 2] + vertexOffset
+                    ));
+                }
+            }
+
+            if (joltTriangles.empty()) return;
+
+            // 3. Joltの「純粋なメッシュ形状」を作成
+            JPH::MeshShapeSettings meshSettings(joltVertices, joltTriangles);
+            JPH::ShapeRefC rawMeshShape = meshSettings.Create().Get();
+
+            // 4. ★最重要: Transform のスケールを物理メッシュに適用する！
+            // エディタで家を「3倍」に拡大した場合、物理判定も「3倍」に膨らませる
+            JPH::ScaledShapeSettings scaledSettings(
+                rawMeshShape,
+                JPH::Vec3(trans.scale.x, trans.scale.y, trans.scale.z)
+            );
+            shape = scaledSettings.Create().Get();
         }
 
         // コライダーコンポーネントが一つも無い場合は物理実体を作れないのでスキップ

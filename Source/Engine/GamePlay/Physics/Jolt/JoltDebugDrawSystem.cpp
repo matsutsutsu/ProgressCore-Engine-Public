@@ -118,6 +118,62 @@ void JoltCapsuleDebugDrawSystem::OnDrawDebug(ShapeRenderer* renderer) {
     });
 }
 
+
+// ===================================================================================
+// 4. MeshCollider の描画
+// ===================================================================================
+void JoltMeshDebugDrawSystem::OnDrawDebug(ShapeRenderer* renderer) {
+    if (!renderer) return;
+
+    // Transform, Meshタグ, Modelの3つが揃っているエンティティだけを描画
+    ForEach([&](const TransformComponent& trans, 
+                const JoltMeshColliderComponent& meshCol, 
+                const ModelComponent& modelComp) {
+                    
+        // タグがOFF、またはモデルがロードされていない場合はスキップ
+        if (!meshCol.isEnabled || !modelComp.GetModel()) return;
+
+        const ModelResource* res = modelComp.GetModel()->GetResource();
+        if (!res) return;
+
+        // ★ 物理エンジンが JoltBodySetupSystem でやっているのと同じように、
+        // ローカルの頂点データに Transform の「スケール・回転・位置」を適用するための行列を作る
+        XMMATRIX worldScale = XMMatrixScaling(trans.scale.x, trans.scale.y, trans.scale.z);
+        XMMATRIX worldRot   = XMMatrixRotationQuaternion(XMLoadFloat4(&trans.rotation));
+        XMMATRIX worldTrans = XMMatrixTranslation(trans.position.x, trans.position.y, trans.position.z);
+        XMMATRIX worldMat   = worldScale * worldRot * worldTrans;
+
+        // 全メッシュの全ポリゴンをループして三角形を描画
+        for (const auto& mesh : res->GetMeshes()) {
+            
+            // indices は 3つで1つの三角形を構成する
+            for (size_t i = 0; i < mesh.indices.size(); i += 3) {
+                uint32_t i0 = mesh.indices[i + 0];
+                uint32_t i1 = mesh.indices[i + 1];
+                uint32_t i2 = mesh.indices[i + 2];
+
+                // 頂点のローカル座標を取得
+                XMVECTOR v0 = XMLoadFloat3(&mesh.vertices[i0].position);
+                XMVECTOR v1 = XMLoadFloat3(&mesh.vertices[i1].position);
+                XMVECTOR v2 = XMLoadFloat3(&mesh.vertices[i2].position);
+
+                // ワールド空間（実際の画面上の位置）に変換
+                v0 = XMVector3Transform(v0, worldMat);
+                v1 = XMVector3Transform(v1, worldMat);
+                v2 = XMVector3Transform(v2, worldMat);
+
+                XMFLOAT3 p0, p1, p2;
+                XMStoreFloat3(&p0, v0);
+                XMStoreFloat3(&p1, v1);
+                XMStoreFloat3(&p2, v2);
+
+                // 3点を結んで三角形（ワイヤーフレーム）を描画
+                renderer->DrawTriangle(p0, p1, p2, COLLIDER_COLOR);
+            }
+        }
+    });
+}
+
 // ===================================================================================
 // システムの登録
 // ===================================================================================
@@ -125,3 +181,4 @@ void JoltCapsuleDebugDrawSystem::OnDrawDebug(ShapeRenderer* renderer) {
 REGISTER_LOGIC_SYSTEM(JoltBoxDebugDrawSystem,     Priority::LogicStage::Update);
 REGISTER_LOGIC_SYSTEM(JoltSphereDebugDrawSystem,  Priority::LogicStage::Update);
 REGISTER_LOGIC_SYSTEM(JoltCapsuleDebugDrawSystem, Priority::LogicStage::Update);
+REGISTER_LOGIC_SYSTEM(JoltMeshDebugDrawSystem,    Priority::LogicStage::Update);

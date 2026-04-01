@@ -65,6 +65,9 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11PixelShader>	pixelShader;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout>	inputLayout;
 
+	// デバッグ描画用の「常に最前面に描画する（Zテスト無効）」ステート
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_debugDepthState;
+
 	// =========================================================
 	// インスタンシング ＆ マルチスレッド (TLS) 対応
 	// =========================================================

@@ -45,6 +45,15 @@ ShapeRenderer::ShapeRenderer(ID3D11Device* device)
     CreateCylinderMesh(device, 1.0f, 1.0f, -0.5f, 1.0f, 32);
     CreateBoneMesh(device, 1.0f);
     CreateLineMesh(device);
+
+    // Zテストを無効化（常に上書き描画する）ステートの作成
+    D3D11_DEPTH_STENCIL_DESC depthDesc = {};
+    depthDesc.DepthEnable = FALSE; // ★最重要: 深度テストをしない
+    depthDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO; // 深度バッファに書き込まない
+    depthDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;     // 常にテスト通過
+
+    HRESULT hr = device->CreateDepthStencilState(&depthDesc, m_debugDepthState.GetAddressOf());
+    _ASSERT_EXPR(SUCCEEDED(hr), L"Failed to create debug depth stencil state");
 }
 
 // ====================================================================
@@ -466,6 +475,16 @@ void ShapeRenderer::Render(ID3D11DeviceContext* dc, const DirectX::XMFLOAT4X4& v
     XMMATRIX invV = XMMatrixInverse(nullptr, V);
     frustumLocal.Transform(m_frustum, invV);
 
+
+    // 描画前の現在の深度ステートを保存しておく
+    Microsoft::WRL::ComPtr<ID3D11DepthStencilState> oldDepthState;
+    UINT oldStencilRef = 0;
+    dc->OMGetDepthStencilState(oldDepthState.GetAddressOf(), &oldStencilRef);
+
+    // デバッグ用の「透視（Zテスト無効）」ステートをセット！
+    dc->OMSetDepthStencilState(m_debugDepthState.Get(), 0);
+
+
     dc->VSSetShader(vertexShader.Get(), nullptr, 0);
     dc->PSSetShader(pixelShader.Get(), nullptr, 0);
     dc->IASetInputLayout(inputLayout.Get());
@@ -520,4 +539,7 @@ void ShapeRenderer::Render(ID3D11DeviceContext* dc, const DirectX::XMFLOAT4X4& v
     // ステートクリア
     dc->VSSetShader(nullptr, nullptr, 0);
     dc->PSSetShader(nullptr, nullptr, 0);
+
+    // 描画が終わったら、保存しておいた元の深度ステートに戻す（超重要！）
+    dc->OMSetDepthStencilState(oldDepthState.Get(), oldStencilRef);
 }

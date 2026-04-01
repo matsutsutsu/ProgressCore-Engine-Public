@@ -5,6 +5,7 @@
 #include "Engine/GamePlay/Physics/Collision/JoltBoxColliderComponent.h"
 #include "Engine/GamePlay/Physics/Collision/JoltSphereColliderComponent.h"
 #include "Engine/GamePlay/Physics/Collision/JoltCapsuleColliderComponent.h" 
+#include "Engine/GamePlay/Physics/Collision/JoltMeshColliderComponent.h"
 #include "Engine/GamePlay/Physics/RigidBody/JoltRigidbodyComponent.h"
 #include "Engine/GamePlay/Physics/Character/JoltCharacterConfigComponent.h" 
 
@@ -61,6 +62,19 @@ template <> struct ComponentMeta<JoltCapsuleColliderComponent> {
             META_FIELD_FLOAT(JoltCapsuleColliderComponent, radius, "radius", "Radius", 0.1f, 0.0f, 100.0f, "Capsule Collider"),
             META_FIELD_FLOAT3(JoltCapsuleColliderComponent, localOffset, "localOffset", "Local Offset (位置ズレ)", 0.1f, "Capsule Collider"),
             META_FIELD_FLOAT3(JoltCapsuleColliderComponent, localRotationEuler, "localRotationEuler", "Local Rotation (角度ズレ)", 1.0f, "Capsule Collider")
+        };
+        return fields;
+    }
+};
+
+template <> struct ComponentMeta<JoltMeshColliderComponent> {
+    static constexpr bool                      registered = true;
+    static constexpr const char* displayName = "Jolt Mesh Collider";
+    static const std::vector<FieldDescriptor>& Fields()
+    {
+        static const std::vector<FieldDescriptor> fields = {
+            // インスペクタに「メッシュコライダー有効」というチェックボックスだけを出す
+            META_FIELD_BOOL(JoltMeshColliderComponent, isEnabled, "isEnabled", "Enable Mesh Collider", "Mesh Collider")
         };
         return fields;
     }
@@ -127,5 +141,6 @@ template <> struct ComponentMeta<JoltCharacterConfigComponent> {
 REGISTER_COMPONENT(JoltBoxColliderComponent, "JoltBoxCollider")
 REGISTER_COMPONENT(JoltSphereColliderComponent, "JoltSphereCollider")
 REGISTER_COMPONENT(JoltCapsuleColliderComponent, "JoltCapsuleCollider")
+REGISTER_COMPONENT(JoltMeshColliderComponent, "JoltMeshCollider")
 REGISTER_COMPONENT(JoltRigidbodyComponent, "JoltRigidbody")
 REGISTER_COMPONENT(JoltCharacterConfigComponent, "JoltCharacterConfig")

@@ -1074,6 +1074,12 @@
     <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltCleanupSystem.h">
       <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltTransformSyncSystem.h">
+      <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\JoltMeshColliderComponent.h">
+      <Filter>Source\Engine\GamePlay\Physics\Collision\Collider</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -1590,6 +1596,9 @@
       <Filter>Source\Game\Logics\Test</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltCleanupSystem.cpp">
+      <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltTransformSyncSystem.cpp">
       <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
     </ClCompile>
   </ItemGroup>

@@ -266,6 +266,7 @@
     <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\JoltCapsuleColliderComponent.h" />
     <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\JoltCollisionEvent.h" />
     <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\JoltCollisionEventSystem.h" />
+    <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\JoltMeshColliderComponent.h" />
     <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\JoltSphereColliderComponent.h" />
     <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltBodySetupSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltCleanupSystem.h" />
@@ -273,6 +274,7 @@
     <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltHandleComponent.h" />
     <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltPushSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltShapeUpdateSystem.h" />
+    <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltTransformSyncSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltUpdateSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Physics\RigidBody\JoltRigidbodyComponent.h" />
     <ClInclude Include="Source\Engine\GamePlay\Transform\HierarchyCleanupSystem.h" />
@@ -486,6 +488,7 @@
     <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltPhysicsComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltPushSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltShapeUpdateSystem.cpp" />
+    <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltTransformSyncSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltUpdateSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Transform\HierarchyCleanupSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Transform\TransformComponentMeta.cpp" />
