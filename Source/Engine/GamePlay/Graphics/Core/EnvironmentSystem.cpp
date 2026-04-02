@@ -124,7 +124,6 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext *dc)
     if (_world->HasResource<ModelRenderer *>()) {
         if (auto *renderer = _world->GetResource<ModelRenderer *>()) {
             // CbScene 等の最新データをGPUに流し込む
-            renderer->UpdateAllGlobalConstantBuffers(dc);
             renderer->BindAllGlobalConstantBuffers(dc);
         }
     }

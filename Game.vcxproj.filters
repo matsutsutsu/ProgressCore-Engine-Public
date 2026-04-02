@@ -337,6 +337,12 @@
     <Filter Include="Source\Game\Logics\Test">
       <UniqueIdentifier>{7de38b51-de5a-4cbe-a640-02ac89b89766}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Graphics\Renderer\Pipeline">
+      <UniqueIdentifier>{024b7827-59a1-4dfb-acdf-f4d37a8a6bfc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Graphics\Renderer\Pipeline\Pass">
+      <UniqueIdentifier>{1fe879a1-7466-4e5c-bdcd-2cb433ec4b31}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1080,6 +1086,21 @@
     <ClInclude Include="Source\Engine\Graphics\Renderer\RenderQueue.h">
       <Filter>Source\Engine\Graphics\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Renderer\Pipeline\IRenderPass.h">
+      <Filter>Source\Engine\Graphics\Renderer\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Renderer\Pipeline\RenderPipeline.h">
+      <Filter>Source\Engine\Graphics\Renderer\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Renderer\Pipeline\OpaquePass.h">
+      <Filter>Source\Engine\Graphics\Renderer\Pipeline\Pass</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Renderer\Pipeline\ShadowPass.h">
+      <Filter>Source\Engine\Graphics\Renderer\Pipeline\Pass</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Renderer\Pipeline\TransparentPass.h">
+      <Filter>Source\Engine\Graphics\Renderer\Pipeline\Pass</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -1597,6 +1618,15 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltCleanupSystem.cpp">
       <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Renderer\Pipeline\OpaquePass.cpp">
+      <Filter>Source\Engine\Graphics\Renderer\Pipeline\Pass</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Renderer\Pipeline\TransparentPass.cpp">
+      <Filter>Source\Engine\Graphics\Renderer\Pipeline\Pass</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Renderer\Pipeline\ShadowPass.cpp">
+      <Filter>Source\Engine\Graphics\Renderer\Pipeline\Pass</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -30,9 +30,7 @@ namespace {
   
 } // namespace
 
-ModelRenderSystem::ModelRenderSystem() : IfSystem("ModelRenderSystem")
-{
-}
+ModelRenderSystem::ModelRenderSystem() : IfSystem("ModelRenderSystem"){}
 
 void ModelRenderSystem::Update(float dt)
 {

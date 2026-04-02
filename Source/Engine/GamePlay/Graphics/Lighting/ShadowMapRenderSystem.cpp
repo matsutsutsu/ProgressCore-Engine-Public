@@ -10,6 +10,8 @@
 #include "Engine/Graphics/Renderer/ModelRenderer.h"
 #include "Engine/Graphics/Resource/Model.h"
 
+#include "Engine/Graphics/Renderer/RenderQueue.h"
+
 #include <DirectXMath.h>
 #include <cmath>
 
@@ -20,17 +22,7 @@
 using namespace CCL::ECS;
 using namespace DirectX;
 
-namespace {
-    // クォータニオンの正規化チェック用ヘルパー (タイポ修正: Iss -> Is)
-    inline bool IsUnitQuaternion(FXMVECTOR q, float epsilon = 1e-3f)
-    {
-        XMVECTOR lenSq = XMVector4Dot(q, q);
-        float    value = XMVectorGetX(lenSq);
-        return fabsf(value - 1.0f) < epsilon;
-    }
 
-   
-} // namespace
 
 ShadowMapRenderSystem::ShadowMapRenderSystem()
     : IfSystem("ShadowMapRenderSystem")
@@ -63,9 +55,6 @@ void ShadowMapRenderSystem::RenderShadowMap()
     XMFLOAT4 shadowColor = {0.0f, 0.0f, 0.0f, 0.5f};
 
     // 検索（ECSのView機能を使用）
-    // ShadowMapRenderSystemはShadowMapConfigComponentをフィルタに含んでいないため
-    // ここで別途取得するか、System定義を変える必要があります。
-    // 最も簡単なのは、Systemの定義を変えずにWorldから直接探すことです。
     if (_world) {
         auto view = _world->View<ShadowMapConfigComponent>();
         for (auto entity : view) {
@@ -140,33 +129,26 @@ void ShadowMapRenderSystem::RenderShadowMap()
     // レンダラーから最新の視錐台を取得
     BoundingFrustum frustum = renderer->GetFrustum();
 
-    // 【追加】Frustumのサニタイズ（安全化）処理
-    // クォータニオンの整合性チェック
-    XMVECTOR Q = XMLoadFloat4(&frustum.Orientation);
-
-    // NaNチェック または 非正規化チェック
-    if (XMQuaternionIsNaN(Q) || !IsUnitQuaternion(Q)) {
-        // 値が壊れている場合は正規化を試みる
-        Q = XMQuaternionNormalize(Q);
-
-        // それでもNaNなら（ゼロベクトルだった場合など）、回転なし(Identity)にする
-        if (XMQuaternionIsNaN(Q)) {
-            Q = XMQuaternionIdentity();
-        }
-        XMStoreFloat4(&frustum.Orientation, Q);
-    }
+  
+    auto& renderQueue = RenderQueue::Instance();
 
     ForEach([&](const TransformComponent &trans, const ModelComponent &model) {
         // モデルまたはメッシュがない場合はスキップ
         if (!model.modelPtr) return;
 
-        // ライトの視界に入っているかチェック
-        //if (!IsModelInFrustum(model.modelPtr.get(), trans.worldMatrix, frustum)) return;
-
         // 全てのメッシュを影描画キューに登録
-        for (const auto &mesh : model.modelPtr->GetMeshes()) {
-            renderer->DrawShadow(model.modelPtr.get(), &mesh, trans.worldMatrix);
+        for (const auto& mesh : model.modelPtr->GetMeshes()) {
+
+            // 影用の伝票を作成
+            ShadowCommand cmd;
+            cmd.model = model.modelPtr.get();
+            cmd.mesh = &mesh;
+            cmd.worldMatrix = trans.worldMatrix;
+
+            // カウンターに提出
+            renderQueue.SubmitShadow(cmd);
         }
+        
     });
 }
 

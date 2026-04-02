@@ -293,6 +293,11 @@
     <ClInclude Include="Source\Engine\Graphics\Renderer\InstanceBuffer.h" />
     <ClInclude Include="Source\Engine\Graphics\Renderer\ModelRenderer.h" />
     <ClInclude Include="Source\Engine\Graphics\Renderer\ParticleRenderer.h" />
+    <ClInclude Include="Source\Engine\Graphics\Renderer\Pipeline\IRenderPass.h" />
+    <ClInclude Include="Source\Engine\Graphics\Renderer\Pipeline\OpaquePass.h" />
+    <ClInclude Include="Source\Engine\Graphics\Renderer\Pipeline\RenderPipeline.h" />
+    <ClInclude Include="Source\Engine\Graphics\Renderer\Pipeline\ShadowPass.h" />
+    <ClInclude Include="Source\Engine\Graphics\Renderer\Pipeline\TransparentPass.h" />
     <ClInclude Include="Source\Engine\Graphics\Renderer\PrimitiveRenderer.h" />
     <ClInclude Include="Source\Engine\Graphics\Renderer\RenderQueue.h" />
     <ClInclude Include="Source\Engine\Graphics\Renderer\ShapeRenderer.h" />
@@ -502,6 +507,9 @@
     <ClCompile Include="Source\Engine\Graphics\Renderer\ImGuiRenderer.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Renderer\ModelRenderer.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Renderer\ParticleRenderer.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Renderer\Pipeline\OpaquePass.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Renderer\Pipeline\ShadowPass.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Renderer\Pipeline\TransparentPass.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Renderer\PrimitiveRenderer.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Renderer\ShapeRenderer.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Renderer\Sprite.cpp" />

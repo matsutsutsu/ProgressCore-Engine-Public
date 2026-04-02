@@ -29,6 +29,14 @@ struct TransparencyCommand {
     DirectX::XMFLOAT4       customParams;
 };
 
+// シャドウマップ用の伝票（さらにシンプル）
+struct ShadowCommand {
+    const Model* model;
+    const Model::Mesh* mesh;
+    DirectX::XMFLOAT4X4 worldMatrix;
+};
+
+
 // ---------------------------------------------------------
 // ソートキー（整理券：わずか8バイトで超軽量、キャッシュ効率極大）
 // ---------------------------------------------------------
@@ -37,6 +45,7 @@ struct RenderKey {
     uint32_t originalIndex;
     bool operator<(const RenderKey& rhs) const { return value < rhs.value; }
 };
+
 
 // ---------------------------------------------------------
 // カウンター本体（シングルトンでシステム全体からアクセス可能に）
@@ -49,6 +58,8 @@ public:
     void BeginFrame() {
         _opaqueCommands.clear();
         _transparentCommands.clear();
+        _deferredTransparentCommands.clear(); 
+        _shadowCommands.clear();              
         _sortKeys.clear();
     }
 
@@ -59,6 +70,14 @@ public:
 
     void SubmitTransparent(const TransparencyCommand& cmd) {
         _transparentCommands.push_back(cmd);
+    }
+
+    void SubmitDeferredTransparent(const TransparencyCommand& cmd) {
+        _deferredTransparentCommands.push_back(cmd);
+    }
+
+    void SubmitShadow(const ShadowCommand& cmd) {
+        _shadowCommands.push_back(cmd);
     }
 
     // 描画直前に、溜まった伝票を一気にソートしてバッチを構築する
@@ -95,9 +114,14 @@ public:
     const std::vector<RenderCommand>& GetOpaqueCommands() const { return _opaqueCommands; }
     const std::vector<RenderKey>& GetSortedKeys() const { return _sortKeys; }
     const std::vector<TransparencyCommand>& GetTransparentCommands() const { return _transparentCommands; }
+    const std::vector<TransparencyCommand>& GetDeferredTransparentCommands() const { return _deferredTransparentCommands; }
+    const std::vector<ShadowCommand>& GetShadowCommands() const { return _shadowCommands; }
+
 
 private:
     std::vector<RenderCommand>       _opaqueCommands;
     std::vector<RenderKey>           _sortKeys;
     std::vector<TransparencyCommand> _transparentCommands;
+    std::vector<TransparencyCommand> _deferredTransparentCommands; // 不透明パスで弾かれた半透明
+    std::vector<ShadowCommand>       _shadowCommands;
 };
