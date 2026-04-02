@@ -2,6 +2,15 @@
 #include "Engine/Core/Common/Misc.h"
 #include "Engine/Graphics/Core/Camera.h"
 
+#include "Engine/Graphics/Shader/ShaderRegistry.h"
+
+#include "Engine/Graphics/Shader/Material/BasicShader.h"
+#include "Engine/Graphics/Shader/Material/LambertShader.h"
+#include "Engine/Graphics/Shader/Material/OutlineShader.h"
+#include "Engine/Graphics/Shader/Material/PBRShader.h"
+#include "Engine/Graphics/Shader/Material/PhongShader.h"
+#include "Engine/Graphics/Shader/Material/ShadowMapShader.h"
+#include "Engine/Graphics/Shader/Material/ToonShader.h"
 
 // HLSLの CbScene (b8) に合わせた構造体
 struct CbSceneData {
@@ -144,6 +153,16 @@ void Graphics::Initialize(HWND hWnd)
 	shadowMap = std::make_unique<ShadowMap>(device.Get(), 2048, 2048);
 	particleRenderer = std::make_unique<ParticleRenderer>();
     particleRenderer->Initialize(device.Get());
+
+
+	// enum ではなく、文字列のハッシュ値を使ってシェーダーファクトリを登録します
+	ShaderRegistry::Instance().RegisterShader<BasicShader>("Basic"_hash);
+	ShaderRegistry::Instance().RegisterShader<LambertShader>("Lambert"_hash);
+	ShaderRegistry::Instance().RegisterShader<PhongShader>("Phong"_hash);
+	ShaderRegistry::Instance().RegisterShader<ToonShader>("Toon"_hash);
+	ShaderRegistry::Instance().RegisterShader<OutlineShader>("Outline"_hash);
+	ShaderRegistry::Instance().RegisterShader<ShadowMapShader>("ShadowMap"_hash);
+	ShaderRegistry::Instance().RegisterShader<PBRShader>("PBR"_hash);
 
 	// ゲームビュー用RTT作成
 	D3D11_TEXTURE2D_DESC texDesc = {};

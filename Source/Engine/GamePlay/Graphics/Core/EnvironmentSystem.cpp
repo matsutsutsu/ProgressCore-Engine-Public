@@ -70,15 +70,15 @@ void EnvironmentSystem::Update(float dt)
             DirectX::XMStoreFloat4x4(&projMat, P);
             DirectX::XMStoreFloat4x4(&viewProjMat, V * P);
 
-            // リフレクションベースの定数バッファ更新
-            renderer->SetGlobalConstantValue("CbScene", "viewProjection", viewProjMat);
-            renderer->SetGlobalConstantValue("CbScene", "gView", viewMat);
-            renderer->SetGlobalConstantValue("CbScene", "gProjection", projMat);
+            // リフレクションベースの定数バッファ更新（★これらを削除して書き換え）
+            _sceneData.viewProjection = viewProjMat;
+            _sceneData.view = viewMat;
+            _sceneData.projection = projMat;
 
             // カメラのワールド座標
-            DirectX::XMFLOAT3 eye    = mainCamera->GetEye();
-            DirectX::XMFLOAT4 eyePos = {eye.x, eye.y, eye.z, 1.0f};
-            renderer->SetGlobalConstantValue("CbScene", "cameraPosition", eyePos);
+            DirectX::XMFLOAT3 eye = mainCamera->GetEye();
+            DirectX::XMFLOAT4 eyePos = { eye.x, eye.y, eye.z, 1.0f };
+            _sceneData.cameraPosition = eyePos; // ★書き換え
 
             // フラスタムの更新もこの滑らかな行列で行う！
             //renderer->UpdateFrustum(V, P);
@@ -93,15 +93,16 @@ void EnvironmentSystem::Update(float dt)
         if (lightManager) {
             const auto &directionalLight = lightManager->GetDirectionalLight();
 
-            XMFLOAT4 lightDir = {directionalLight.direction.x,
+            // ライト情報の収集 (CbScene用)
+            XMFLOAT4 lightDir = { directionalLight.direction.x,
                 directionalLight.direction.y,
                 directionalLight.direction.z,
-                0.0f};
-            renderer->SetGlobalConstantValue("CbScene", "lightDirection", lightDir);
+                0.0f };
+            _sceneData.lightDirection = lightDir;
 
             XMFLOAT4 lightCol = {
-                directionalLight.color.x, directionalLight.color.y, directionalLight.color.z, 1.0f};
-            renderer->SetGlobalConstantValue("CbScene", "lightColor", lightCol);
+                directionalLight.color.x, directionalLight.color.y, directionalLight.color.z, 1.0f };
+            _sceneData.lightColor = lightCol;
         }
     }
 
@@ -114,6 +115,12 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext *dc)
     // -------------------------------------------------------------
     // 1. 定数バッファのGPU転送とバインド
     // -------------------------------------------------------------
+    // キャッシュしたシーンデータをGPUのバッファに転送（Map/Unmapより軽いUpdateSubresourceを使用）
+    ID3D11Buffer* sceneBuf = Graphics::Instance().GetSceneConstantBuffer();
+    if (sceneBuf) {
+        dc->UpdateSubresource(sceneBuf, 0, nullptr, &_sceneData, 0, 0);
+    }
+
     if (_world->HasResource<ModelRenderer *>()) {
         if (auto *renderer = _world->GetResource<ModelRenderer *>()) {
             // CbScene 等の最新データをGPUに流し込む

@@ -44,8 +44,6 @@ void EditorScene::Initialize()
 void EditorScene::Finalize() 
 {
 
-    //delete _animationSystem;
-
     BaseScene::Finalize(); // 共通終了化
 
 }

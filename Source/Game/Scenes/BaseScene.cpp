@@ -12,6 +12,8 @@
 
 #include "Engine/GamePlay/Graphics/Core/EnvironmentSystem.h"
 
+#include "Engine/Graphics/Renderer/RenderQueue.h"
+
 
 #ifdef TRACY_ENABLE
 #include "tracy/Tracy.hpp"
@@ -72,17 +74,14 @@ void BaseScene::Initialize()
 
 void BaseScene::Start() {}
 
-void BaseScene::Finalize()
-{
- 
-}
+void BaseScene::Finalize() {}
 
 void BaseScene::Update(float elapsedTime)
 {
     // ECSシステムが走り出す「前」の、誰もメモリを触っていない安全な瞬間に世界を切り替える！
     ExecutePendingSceneOperations();
 
-    Graphics::Instance().GetModelRenderer()->BeginFrame();
+    RenderQueue::Instance().BeginFrame();
     Graphics::Instance().GetParticleRenderer()->BeginFrame();
 
     // Graphics定数バッファ更新 (EditorSceneにあった処理を共通化)

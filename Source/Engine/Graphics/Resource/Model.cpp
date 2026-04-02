@@ -9,6 +9,7 @@
 #include "GLTFImporter.h"
 #include "Model.h"
 #include "ResourceManager.h"
+#include "Engine/Core/Math/StringHash.h"
 
 // コンストラクタ
 Model::Model(ID3D11Device* device, const char* filename, float sampleRate)
@@ -93,7 +94,7 @@ Model::Model(ID3D11Device* device, const char* filename, float sampleRate)
         else
             dst.data->shaderId = ShaderId::Toon; // 半透明対応など
         */
-        dst.data->shaderId = ShaderId::Phong; // デフォルト
+        dst.data->shaderHash = "Phong"_hash; // デフォルト
 
         // アルファモードのコピー（型変換）
         dst.data->alphaMode = static_cast<AlphaMode>(src.alphaMode);
@@ -534,7 +535,7 @@ std::shared_ptr<Model> Model::CreateFromData(ID3D11Device *device,
 
     // シェーダーリフレクション用のデフォルト値をセット
     auto &matData                    = model->materials[0].data;
-    matData->shaderId                = ShaderId::Phong;
+    matData->shaderHash              = "Phong"_hash;
     matData->colors["materialColor"] = {1, 1, 1, 1};
     matData->colors["emissiveColor"] = {0, 0, 0, 1};
     matData->colors["rimColor"]      = {1, 1, 1, 1}; // Toon用デフォルト

@@ -20,36 +20,17 @@ public:
     ModelRenderer(ID3D11Device* device);
     ~ModelRenderer() {}
 
-    // 描画登録
-    void Draw(ShaderId                     shaderId,
-        const Model                       *model,
-        const DirectX::XMFLOAT4X4& worldMatrix,
-        const std::vector<MaterialHandle> &overrideMaterials,
-        const DirectX::XMFLOAT4           &customParams = {0.0f, 0.0f, 0.0f, 0.0f}
-    ); 
-
     // 描画実行
     void Render(const RenderContext& rc);
 
-    // 登録されている全シェーダーのGUIを描画する
-    void DrawAllShaderGUI();
-
     // フレームの開始時に呼ぶ（リストのクリア用）
-    void BeginFrame();
+    //void BeginFrame();
 
     // 視錐台を取得
     const DirectX::BoundingFrustum& GetFrustum() const { return m_frustum; }
 
     // === シェーダーリフレクション対応の新しいAPI ===
 
-    // グローバル定数バッファに値を設定（全シェーダーで共有されるCbScene, CbSkeletonなど）
-    template<typename T>
-    bool SetGlobalConstantValue(const std::string& bufferName, const std::string& varName, const T& value)
-    {
-        auto it = globalConstantBuffers.find(bufferName);
-        if (it == globalConstantBuffers.end()) return false;
-        return it->second.SetValue(varName, value);
-    }
 
     // デバッグ：リフレクション情報を出力
     void PrintGlobalReflectionInfo() const;
@@ -135,56 +116,11 @@ private:
     // --- 巨大なデータはスタックに置かず、メンバ変数として再利用する（スクラッチバッファ） ---
     CbSkeleton m_cbSkeletonCache = {};
 
-    struct DrawInfo
-    {
-        ShaderId                shaderId = ShaderId::Phong;
-        const Model        *model       = nullptr;
-        DirectX::XMFLOAT4X4 worldMatrix = {
-                1, 0, 0, 0,
-                0, 1, 0, 0,
-                0, 0, 1, 0,
-                0, 0, 0, 1
-        };
-        // マテリアルオーバーライド用
-        // ゲームの仕様上、1モデルに対するマテリアル上書きは最大4つもあれば十分
-        std::array<MaterialHandle, 4> overrideMaterials;
-        uint8_t                       overrideCount = 0; // 上書きしている数
-
-        // 個体ごとの汎用パラメータ ディゾルブやフラッシュの色など、シェーダー側で用途を決める
-        DirectX::XMFLOAT4 customParams = {0.0f, 0.0f, 0.0f, 0.0f};
-    };
-
-    struct TransparencyDrawInfo
-    {
-        ShaderId            shaderId = ShaderId::Phong;
-        const Model::Mesh*  mesh = nullptr;
-        float               distance = 0.0f;
-        DirectX::XMFLOAT4X4 worldMatrix = {
-                1, 0, 0, 0,
-                0, 1, 0, 0,
-                0, 0, 1, 0,
-                0, 0, 0, 1
-        };
-        MaterialHandle      overrideMaterial;
-
-        // 半透明オブジェクト用の個体パラメータ保持用
-        DirectX::XMFLOAT4 customParams = {0.0f, 0.0f, 0.0f, 0.0f};
-    };
-
-    // シェーダー管理
-    std::unique_ptr<Shader> shaders[static_cast<int>(ShaderId::EnumCount)];
-
-    // 描画キュー
-    std::vector<DrawInfo> drawInfos;
-    std::vector<TransparencyDrawInfo> transparencyDrawInfos;
 
     // === リフレクション対応 ===
 
     // GPUインスタンシング用のデータ
     InstanceBuffer _instanceBuffer;
-
-    // グローバル定数バッファ（全シェーダーで共有）
-    std::map<std::string, ShaderReflect::AutoConstantBuffer> globalConstantBuffers;
 
     // グローバル定数バッファのリフレクション情報
     ShaderReflect::ReflectionData globalReflection;

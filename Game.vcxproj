@@ -205,7 +205,6 @@
     <ClInclude Include="Source\Editor\Core\EditorWindowManager.h" />
     <ClInclude Include="Source\Editor\Inspector\ComponentGuiRegistry.h" />
     <ClInclude Include="Source\Editor\Utils\AssetBrowser.h" />
-    <ClInclude Include="Source\Editor\Utils\MaterialEditor.h" />
     <ClInclude Include="Source\Editor\Utils\ShellIconLoader.h" />
     <ClInclude Include="Source\Editor\Windows\AnimationSequencerWindow.h" />
     <ClInclude Include="Source\Editor\Windows\AssetBrowserWindow.h" />
@@ -274,7 +273,6 @@
     <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltHandleComponent.h" />
     <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltPushSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltShapeUpdateSystem.h" />
-    <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltTransformSyncSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltUpdateSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Physics\RigidBody\JoltRigidbodyComponent.h" />
     <ClInclude Include="Source\Engine\GamePlay\Transform\HierarchyCleanupSystem.h" />
@@ -296,6 +294,7 @@
     <ClInclude Include="Source\Engine\Graphics\Renderer\ModelRenderer.h" />
     <ClInclude Include="Source\Engine\Graphics\Renderer\ParticleRenderer.h" />
     <ClInclude Include="Source\Engine\Graphics\Renderer\PrimitiveRenderer.h" />
+    <ClInclude Include="Source\Engine\Graphics\Renderer\RenderQueue.h" />
     <ClInclude Include="Source\Engine\Graphics\Renderer\ShapeRenderer.h" />
     <ClInclude Include="Source\Engine\Graphics\Renderer\Sprite.h" />
     <ClInclude Include="Source\Engine\Graphics\Resource\GLTFImporter.h" />
@@ -319,6 +318,7 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\BloomPass.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\PostProcessManager.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderReflection.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\ShaderRegistry.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderResources.h" />
     <ClInclude Include="Source\Engine\Physics\JoltContactListener.h" />
     <ClInclude Include="Source\Engine\Physics\JoltDebugRenderer.h" />
@@ -488,7 +488,6 @@
     <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltPhysicsComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltPushSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltShapeUpdateSystem.cpp" />
-    <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltTransformSyncSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltUpdateSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Transform\HierarchyCleanupSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Transform\TransformComponentMeta.cpp" />

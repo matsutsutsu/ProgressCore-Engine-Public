@@ -11,6 +11,8 @@
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
+#include "Engine/Core/Math/StringHash.h"
+
 
 template <> struct ComponentMeta<MaterialComponent> {
     static constexpr bool        registered = true;
@@ -84,12 +86,18 @@ template <> struct ComponentMeta<MaterialComponent> {
                     changed = true;
                 }
 
-                int currentShader = static_cast<int>(matPtr->shaderId);
-                if (ImGui::Combo("Shader",
-                    &currentShader,
-                    ShaderIdNames,
-                    static_cast<int>(ShaderId::EnumCount))) {
-                    matPtr->shaderId = static_cast<ShaderId>(currentShader);
+                // 修正後：文字列ハッシュのリストから選択させる
+                const char* shaderNames[] = { "Basic", "Lambert", "Phong", "Toon", "Outline", "ShadowMap", "PBR" };
+                int currentShaderIdx = 0;
+                // 現在のハッシュ値からインデックスを逆引き
+                for (int i = 0; i < 7; ++i) {
+                    if (matPtr->shaderHash == CCL::Utils::HashString(shaderNames[i])) {
+                        currentShaderIdx = i;
+                        break;
+                    }
+                }
+                if (ImGui::Combo("Shader", &currentShaderIdx, shaderNames, 7)) {
+                    matPtr->shaderHash = CCL::Utils::HashString(shaderNames[currentShaderIdx]);
                     changed = true;
                 }
 

@@ -19,6 +19,17 @@ class EnvironmentSystem : public CCL::ECS::SystemBase {
 
   private:
 
+      // シーン用定数バッファのデータ構造
+      struct CbSceneData {
+          DirectX::XMFLOAT4X4 viewProjection;
+          DirectX::XMFLOAT4   lightDirection;
+          DirectX::XMFLOAT4   lightColor;
+          DirectX::XMFLOAT4   cameraPosition;
+          DirectX::XMFLOAT4X4 view;
+          DirectX::XMFLOAT4X4 projection;
+      };
+      CbSceneData _sceneData = {}; // 計算結果をキャッシュする用
+
     // ★FogSystemから引っ越してきた定数バッファのデータ構造
     struct CbFogData {
         DirectX::XMFLOAT4 color;

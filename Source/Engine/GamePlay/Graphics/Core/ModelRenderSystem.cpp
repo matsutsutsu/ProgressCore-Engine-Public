@@ -8,6 +8,9 @@
 #include "Engine/Graphics/Shader/ShaderResources.h"
 #include <DirectXCollision.h> // 視錐台カリング用
 
+#include "Engine/Graphics/Renderer/RenderQueue.h"
+#include "Engine/Core/Math/StringHash.h"
+
 // システムの実行順序の定義ヘッダー
 #include "ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"
@@ -78,28 +81,44 @@ void ModelRenderSystem::Update(float dt)
         }
 
         // シェーダーID決定（リストの先頭を使うなどの簡易判定）
-        ShaderId shaderId = ShaderId::Phong;
+        uint32_t shaderHash = "Phong"_hash;
+
         // IsValid() でチケットを確認し、実体をもらう
         // Materialを個別に持っている場合の条件
         if (!mat.overrideMaterials.empty() && mat.overrideMaterials[0].IsValid()) {
             MaterialData *matData =
                 resManager.GetMaterial(mat.overrideMaterials[0]);
             if (matData) {
-                shaderId = matData->shaderId;
+                shaderHash = matData->shaderHash; 
             }
 		} // 共有マテリアルを使う場合の条件
         else {
             const auto &materials = model.modelPtr->GetMaterials();
             if (!materials.empty() && materials[0].data) 
             {
-                shaderId = materials[0].data->shaderId;
+                shaderHash = materials[0].data->shaderHash; 
             }
         }
 
-        // レンダラーへの登録
-        renderer->Draw(
-            shaderId, model.modelPtr.get(), transform.worldMatrix, mat.overrideMaterials,
-            mat.customParams);
+        // =========================================================
+        // ★最重要変更：ModelRenderer::Draw() を呼ぶのをやめ、伝票を作って提出！
+        // =========================================================
+        RenderCommand cmd;
+        cmd.shaderHash = shaderHash;
+        cmd.model = model.modelPtr.get();
+        cmd.worldMatrix = transform.worldMatrix;
+
+        // マテリアルオーバーライド配列のコピー
+        cmd.overrideCount = static_cast<uint8_t>((std::min)(mat.overrideMaterials.size(), static_cast<size_t>(4)));
+        for (uint8_t j = 0; j < cmd.overrideCount; ++j) {
+            cmd.overrideMaterials[j] = mat.overrideMaterials[j];
+        }
+
+		cmd.customParams = mat.customParams;
+
+        // RenderQueueのカウンターに提出！
+        RenderQueue::Instance().SubmitOpaque(cmd);
+
     });
 }
 

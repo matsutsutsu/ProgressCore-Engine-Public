@@ -417,9 +417,6 @@
     <ClInclude Include="Source\Editor\Windows\InspectorWindow.h">
       <Filter>Source\Editor\Windows</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Utils\MaterialEditor.h">
-      <Filter>Source\Editor\Utils</Filter>
-    </ClInclude>
     <ClInclude Include="Source\ECS\Core\CCL_FrameAllocator.h">
       <Filter>Source\ECS\Core</Filter>
     </ClInclude>
@@ -1074,11 +1071,14 @@
     <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltCleanupSystem.h">
       <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltTransformSyncSystem.h">
-      <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\JoltMeshColliderComponent.h">
       <Filter>Source\Engine\GamePlay\Physics\Collision\Collider</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Shader\ShaderRegistry.h">
+      <Filter>Source\Engine\Graphics\Shader</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Renderer\RenderQueue.h">
+      <Filter>Source\Engine\Graphics\Renderer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1596,9 +1596,6 @@
       <Filter>Source\Game\Logics\Test</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltCleanupSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltTransformSyncSystem.cpp">
       <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
     </ClCompile>
   </ItemGroup>

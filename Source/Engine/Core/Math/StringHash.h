@@ -15,3 +15,9 @@ namespace CCL::Utils {
         return hash;
     }
 } // namespace CCL::Utils
+
+// namespaceの外にユーザー定義リテラルを配置することで、
+// 文字列リテラルに直接 "_hash" を付けてコンパイル時ハッシュ化が可能になります。
+constexpr uint32_t operator"" _hash(const char* str, size_t) {
+    return CCL::Utils::HashString(str);
+}
