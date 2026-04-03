@@ -47,6 +47,7 @@ void ModelRenderSystem::Update(float dt)
     // ★最適化1: シングルトンへのアクセス(ロック等のオーバーヘッド)をループの外に出す
     auto& resManager = ResourceManager::Instance();
 
+    auto& renderQueue = RenderQueue::Instance();
 
     // TransformComponent と ModelComponent の組を全エンティティ分回す
     ForEach([&](const TransformComponent &transform,
@@ -115,7 +116,7 @@ void ModelRenderSystem::Update(float dt)
 		cmd.customParams = mat.customParams;
 
         // RenderQueueのカウンターに提出！
-        RenderQueue::Instance().SubmitOpaque(cmd);
+        renderQueue.SubmitOpaque(cmd);
 
     });
 }
