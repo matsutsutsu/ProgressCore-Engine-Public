@@ -21,6 +21,18 @@ ModelRenderer::ModelRenderer(ID3D11Device* device)
     OutputDebugStringA("ModelRenderer: Initialized pipeline architecture.\n");
 }
 
+ModelRenderer::~ModelRenderer()
+{
+    // パイプライン（各Pass）を明示的に破棄
+    _pipeline.Clear();
+
+    // 自身が確保したスケルトン用の定数バッファを解放（メモリリーク防止）
+    if (_cbSkeletonBuffer) {
+        _cbSkeletonBuffer->Release();
+        _cbSkeletonBuffer = nullptr;
+    }
+}
+
 void ModelRenderer::InitializeGlobalConstantBuffers(ID3D11Device* device)
 {
     D3D11_BUFFER_DESC desc = {};

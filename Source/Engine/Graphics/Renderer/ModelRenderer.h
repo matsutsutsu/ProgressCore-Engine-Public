@@ -13,7 +13,7 @@ class ModelRenderer
 {
 public:
     ModelRenderer(ID3D11Device* device);
-    ~ModelRenderer() = default;
+    ~ModelRenderer();
 
     // 毎フレームの描画実行（パイプラインを回す）
     void Render(const RenderContext& rc);

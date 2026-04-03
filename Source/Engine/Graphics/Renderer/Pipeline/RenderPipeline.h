@@ -20,6 +20,12 @@ public:
             pass->Execute(rc, queue, renderer);
         }
     }
+
+    // パスを全て破棄する
+    void Clear() {
+        _passes.clear();
+    }
+
 private:
     std::vector<std::shared_ptr<IRenderPass>> _passes;
 };

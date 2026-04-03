@@ -11,6 +11,14 @@ void TransparentPass::Initialize(ID3D11Device* device) {
 
 void TransparentPass::Execute(const RenderContext& rc, RenderQueue& queue, ModelRenderer* renderer) {
     ID3D11DeviceContext* dc = rc.deviceContext;
+
+    // =========================================================
+    // 半透明描画でも影のデータを読み込めるようにセットする
+    // =========================================================
+    if (rc.shadowMap) {
+        rc.shadowMap->Bind(dc, SLOT_SRV_SHADOW, SLOT_SMP_SHADOW, SLOT_CB_SHADOW);
+    }
+
     _psoTransparent.Apply(dc, rc.renderState);
 
     // ECSからの直通分と、OpaquePassからの回し分を合体

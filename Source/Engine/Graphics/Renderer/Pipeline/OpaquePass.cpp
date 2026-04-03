@@ -12,6 +12,14 @@ void OpaquePass::Initialize(ID3D11Device* device) {
 void OpaquePass::Execute(const RenderContext& rc, RenderQueue& queue, ModelRenderer* renderer) {
     ID3D11DeviceContext* dc = rc.deviceContext;
 
+    // =========================================================
+    // ShadowPassで描かれた影のデータを読み込めるようにセットする
+    // =========================================================
+    if (rc.shadowMap) {
+        // SLOT_SRV_SHADOW(t10), SLOT_SMP_SHADOW(s10), SLOT_CB_SHADOW(b10) にバインド
+        rc.shadowMap->Bind(dc, SLOT_SRV_SHADOW, SLOT_SMP_SHADOW, SLOT_CB_SHADOW);
+    }
+
     ID3D11SamplerState* samplerStates[] = { rc.renderState->GetSamplerState(SamplerState::LinearWrap) };
     dc->PSSetSamplers(SLOT_SMP_LINEAR, 1, samplerStates);
 
