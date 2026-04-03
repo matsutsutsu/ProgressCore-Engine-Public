@@ -59,9 +59,6 @@ class BaseScene : public Scene {
     // システム登録 (必須)
     virtual void RegisterSystems() {}
 
-    // 3D描画パスへの追加 (Grid, Gizmos, Particleなど)
-    virtual void OnRender3D(struct RenderContext &rc) {}
-
     // ゲーム内UI描画 (Sprite, HealthBarなど)
     virtual void OnRenderUI() {}
 

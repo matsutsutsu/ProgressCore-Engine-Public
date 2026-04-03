@@ -2,6 +2,7 @@
 #include "Engine/Graphics/Renderer/ModelRenderer.h"
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
 #include "Engine/Graphics/Core/Graphics.h"
+#include "Engine/Graphics/Renderer/RenderQueue.h"
 #include <algorithm>
 
 void ShadowPass::Initialize(ID3D11Device* device) {
@@ -9,8 +10,17 @@ void ShadowPass::Initialize(ID3D11Device* device) {
     _instanceBuffer.Create(device, 8192);
 }
 
-void ShadowPass::Execute(const RenderContext& rc, RenderQueue& queue, ModelRenderer* renderer) {
-    const auto& shadowCommands = queue.GetShadowCommands();
+void ShadowPass::Execute(const RenderContext& rc){
+#ifdef TRACY_ENABLE
+    ZoneScopedN("Pass: Shadow");
+#endif
+
+    RenderQueue* queue = rc.renderQueue;
+    ModelRenderer* renderer = rc.modelRenderer;
+
+    if (!queue || !renderer) return; // 安全対策
+
+    const auto& shadowCommands = queue->GetShadowCommands();
     if (shadowCommands.empty()) return;
 
     ID3D11DeviceContext* dc = rc.deviceContext;

@@ -15,9 +15,9 @@ public:
         }
     }
 
-    void ExecuteAll(const RenderContext& rc, RenderQueue& queue, ModelRenderer* renderer) {
+    void ExecuteAll(const RenderContext& rc) {
         for (auto& pass : _passes) {
-            pass->Execute(rc, queue, renderer);
+            pass->Execute(rc);
         }
     }
 

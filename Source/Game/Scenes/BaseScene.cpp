@@ -112,13 +112,7 @@ void BaseScene::Render()
 
     // 1. 描画準備 & ポストプロセス開始
     graphics.SetRenderTargets(false);
-    graphics.Clear(0.65f, 0.65f, 1.0f, 1, false);
-
-    // Clearは重いので、必要なとき以外は呼ばない（例: ポストプロセスの前に一度だけ）
-
-    // ブルームなどのポストプロセス開始
-    float clearColor[] = {0.11, 0.16f, 0.25f, 1.0f};
-    _postProcess.BeginScene(dc, clearColor, graphics.GetDepthStencilView());
+ 
 
     // 2. 3D描画コンテキスト設定
     RenderContext rc;
@@ -128,13 +122,13 @@ void BaseScene::Render()
     rc.lightManager  = &lightManager;
     rc.shadowMap     = graphics.GetShadowMap();
 
+    rc.modelRenderer = graphics.GetModelRenderer();
+    rc.renderQueue = &RenderQueue::Instance();
+    rc.postProcess = &_postProcess;
+    rc.particleRenderer = graphics.GetParticleRenderer();
+    rc.primitiveRenderer = graphics.GetPrimitiveRenderer();
+    rc.shapeRenderer = graphics.GetShapeRenderer();
 
-	// モデルレンダラーの変数
-    auto* modelRenderer = graphics.GetModelRenderer();
-
-    // -----------------------------------------------------------------
-    // 【フェーズ1：シャドウパス】
-    // -----------------------------------------------------------------
 
 
     // =========================================================
@@ -148,86 +142,20 @@ void BaseScene::Render()
     }
 
     // =========================================================
-    // 4. ライトとシャドウマップのバインド
+    // 4. ライトのバインド
     // =========================================================
     if (rc.lightManager) {
         rc.lightManager->Bind(dc, SLOT_CB_LIGHT);
     }
-    if (rc.shadowMap) {
-        rc.shadowMap->Bind(
-            dc, SLOT_SRV_SHADOW, SLOT_SMP_SHADOW, SLOT_CB_SHADOW);
+
+
+    // =========================================================
+    // 4. パイプラインの一括実行！ (これ1行ですべての3D描画とポストプロセスが完了する)
+    // =========================================================
+    if (rc.modelRenderer) {
+        rc.modelRenderer->Render(rc);
     }
-
-
-    // -----------------------------------------------------------------
-    // 【フェーズ2：メインの3D描画 (不透明・半透明)】
-    // -----------------------------------------------------------------
-    {
-#ifdef TRACY_ENABLE
-        ZoneScopedN("2. Main Opaque & Transparent");
-#endif
-        // 1. 不透明なモデルを一気に描画（Zバッファを作る）
-        modelRenderer->Render(rc);
-
-    }
-
-
-    // -----------------------------------------------------------------
-    // 【フェーズ3：その他の3D描画 (パーティクル、プリミティブ)】
-    // -----------------------------------------------------------------
-    {
-#ifdef TRACY_ENABLE
-        ZoneScopedN("3. Particles & Primitives");
-#endif
-        // 2. 透過物（パーティクル）を一斉描画
-        // Zバッファを参照しながら、手前にあるものだけが正しく描画される
-        auto* particleRenderer = graphics.GetParticleRenderer();
-        if (particleRenderer) {
-            particleRenderer->Render(rc.deviceContext);
-        }
-
-        // デバッグコリジョン描画
-        // _world.DrawDebugCollision は消滅したので、SystemManagerから直接呼ぶ
-        if (_ecsContext && _ecsContext->GetSystemManager()) {
-            _ecsContext->GetSystemManager()->DrawDebugShape(graphics.GetShapeRenderer());
-        }
-
-        // =========================================================
-        // ShapeRendererが画面に描画される【直前】に、
-        // Joltの当たり判定をShapeRendererのキューに溜め込む
-        // =========================================================
-        //if (_worldPtr->HasResource<JoltPhysicsManager>()) {
-        //    auto &joltManager = _worldPtr->GetResource<JoltPhysicsManager>();
-        //    joltManager.DrawBodies(graphics.GetShapeRenderer());
-        //}
-
-        // DebugShape描画
-        graphics.GetShapeRenderer()->Render(dc, camera.GetView(), camera.GetProjection());
-
-
-        auto* primitiveRenderer = Graphics::Instance().GetPrimitiveRenderer();
-
-        // グリッド描画
-        //primitiveRenderer->DrawGrid(20, 1);
-        primitiveRenderer->Render(rc, camera.GetView(), camera.GetProjection());
-
-
-        // 追加の3D描画 (Grid, Particleなど)
-        OnRender3D(rc);
-
-    }
-
-
-    // -----------------------------------------------------------------
-    // 【フェーズ4：ポストプロセス (ブルーム・トーンマップ)】
-    // -----------------------------------------------------------------
-    {
-#ifdef TRACY_ENABLE
-        ZoneScopedN("4. Post Process");
-#endif
-        // 4. ポストプロセス終了
-        _postProcess.EndScene(dc, graphics.GetBackBufferRTV());
-    }
+ 
    
 
     // -----------------------------------------------------------------

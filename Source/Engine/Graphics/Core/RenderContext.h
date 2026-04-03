@@ -1,11 +1,18 @@
 #pragma once
+#include <d3d11.h>
 
-#include "Camera.h"
-#include "RenderState.h"
-#include "Light.h"
-
-//	シャドウマップ用情報
+class Camera;
+class LightManager;
+class RenderState;
 class ShadowMap;
+
+class ModelRenderer;
+class PostProcessManager; 
+class ParticleRenderer;   
+class PrimitiveRenderer;  
+class ShapeRenderer;      
+
+class RenderQueue;
 
 struct RenderContext
 {
@@ -15,4 +22,14 @@ struct RenderContext
 	const Camera* camera = nullptr;
 	LightManager* lightManager = nullptr;
 	ShadowMap* shadowMap = nullptr;
+
+	// パイプライン化に必要なマネージャー群
+	ModelRenderer* modelRenderer = nullptr;
+	PostProcessManager* postProcess = nullptr;
+	ParticleRenderer* particleRenderer = nullptr;
+	PrimitiveRenderer* primitiveRenderer = nullptr;
+	ShapeRenderer* shapeRenderer = nullptr;
+
+	// 伝票カウンター
+	RenderQueue* renderQueue = nullptr;
 };

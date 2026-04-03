@@ -8,6 +8,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include "Engine/Graphics/Core/Camera.h"
 
 struct TextParams {
     std::string       text = "";

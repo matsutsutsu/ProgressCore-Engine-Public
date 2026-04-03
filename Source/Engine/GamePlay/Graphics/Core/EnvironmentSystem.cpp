@@ -7,6 +7,7 @@
 #include "Engine/Graphics/Shader/ShaderResources.h"
 #include "Engine/Graphics/Core/GpuResourceUtils.h"
 #include "Engine/Graphics/Core/Light.h"
+#include "Engine/Graphics/Core/Camera.h"
 
 // 画面サイズ取得のため
 #include "Engine/Graphics/Core/Graphics.h"

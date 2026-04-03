@@ -2,6 +2,7 @@
 #include "Engine/Graphics/Renderer/ModelRenderer.h"
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
 #include "Engine/Graphics/Core/Graphics.h"
+#include "Engine/Graphics/Renderer/RenderQueue.h"
 #include <algorithm>
 
 void TransparentPass::Initialize(ID3D11Device* device) {
@@ -9,8 +10,18 @@ void TransparentPass::Initialize(ID3D11Device* device) {
     _instanceBuffer.Create(device, 8192);
 }
 
-void TransparentPass::Execute(const RenderContext& rc, RenderQueue& queue, ModelRenderer* renderer) {
+void TransparentPass::Execute(const RenderContext& rc){
+#ifdef TRACY_ENABLE
+    ZoneScopedN("Pass: Transparent");
+#endif
+
     ID3D11DeviceContext* dc = rc.deviceContext;
+
+    // ★修正：キューとレンダラーは rc から取り出す
+    RenderQueue* queue = rc.renderQueue;
+    ModelRenderer* renderer = rc.modelRenderer;
+
+    if (!queue || !renderer) return; // 安全対策
 
     // =========================================================
     // 半透明描画でも影のデータを読み込めるようにセットする
@@ -22,8 +33,8 @@ void TransparentPass::Execute(const RenderContext& rc, RenderQueue& queue, Model
     _psoTransparent.Apply(dc, rc.renderState);
 
     // ECSからの直通分と、OpaquePassからの回し分を合体
-    auto allTrans = queue.GetDeferredTransparentCommands();
-    for (const auto& t : queue.GetTransparentCommands()) {
+    auto allTrans = queue->GetDeferredTransparentCommands();
+    for (const auto& t : queue->GetTransparentCommands()) {
         allTrans.push_back(t);
     }
 

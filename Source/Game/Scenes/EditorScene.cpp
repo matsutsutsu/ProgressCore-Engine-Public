@@ -100,8 +100,6 @@ void EditorScene::Update(float dt)
     }
 }
 
-// 3D描画の拡張 (BaseScene::Renderの途中で呼ばれる)
-void EditorScene::OnRender3D(RenderContext &rc){}
 
 
 // GUI描画の拡張 (BaseScene::DrawGUIから呼ばれる)

@@ -40,10 +40,6 @@ void ParticleScene::RegisterSystems()
     CCL::ECS::SystemRegistry::Instance().RegisterAll(sysManager);
 }
 
-void ParticleScene::OnRender3D(RenderContext &rc)
-{
-
-}
 
 void ParticleScene::OnDrawImGui()
 {

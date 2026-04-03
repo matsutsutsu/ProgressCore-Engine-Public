@@ -6,7 +6,7 @@
 class OpaquePass : public IRenderPass {
 public:
     void Initialize(ID3D11Device* device) override;
-    void Execute(const RenderContext& rc, RenderQueue& queue, ModelRenderer* renderer) override;
+    void Execute(const RenderContext& rc)override;
 private:
     PipelineState _psoOpaque;
     InstanceBuffer _instanceBuffer;

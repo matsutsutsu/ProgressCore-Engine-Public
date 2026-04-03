@@ -31,8 +31,6 @@ class EditorScene : public BaseScene {
     void FixedUpdate(float dt) override;
     void Update(float dt) override;
 
-    // フック関数で固有処理を注入
-    void OnRender3D(RenderContext &rc) override;
     void OnDrawImGui() override;
 
     //  UIコンテキストからの要求を解釈し、BaseSceneに流し込む専用関数

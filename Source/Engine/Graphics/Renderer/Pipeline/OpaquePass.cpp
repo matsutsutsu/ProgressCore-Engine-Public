@@ -2,6 +2,8 @@
 #include "Engine/Graphics/Renderer/ModelRenderer.h"
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
 #include "Engine/Graphics/Core/Graphics.h"
+#include "Engine/Graphics/Core/Camera.h" 
+#include "Engine/Graphics/Renderer/RenderQueue.h"
 #include <algorithm>
 
 void OpaquePass::Initialize(ID3D11Device* device) {
@@ -9,8 +11,17 @@ void OpaquePass::Initialize(ID3D11Device* device) {
     _instanceBuffer.Create(device, 8192);
 }
 
-void OpaquePass::Execute(const RenderContext& rc, RenderQueue& queue, ModelRenderer* renderer) {
+void OpaquePass::Execute(const RenderContext& rc){
+#ifdef TRACY_ENABLE
+    ZoneScopedN("Pass: Opaque");
+#endif
+
     ID3D11DeviceContext* dc = rc.deviceContext;
+
+    RenderQueue* queue = rc.renderQueue;
+    ModelRenderer* renderer = rc.modelRenderer;
+
+    if (!queue || !renderer) return; // 安全対策
 
     // =========================================================
     // ShadowPassで描かれた影のデータを読み込めるようにセットする
@@ -29,10 +40,10 @@ void OpaquePass::Execute(const RenderContext& rc, RenderQueue& queue, ModelRende
     DirectX::XMVECTOR CameraPosition = DirectX::XMLoadFloat3(&rc.camera->GetEye());
 
     // カウンターの伝票をソートさせる
-    queue.SortAndBuildBatches();
+    queue->SortAndBuildBatches();
 
-    const auto& sortKeys = queue.GetSortedKeys();
-    const auto& opaqueCommands = queue.GetOpaqueCommands();
+    const auto& sortKeys = queue->GetSortedKeys();
+    const auto& opaqueCommands = queue->GetOpaqueCommands();
 
     size_t i = 0;
     while (i < sortKeys.size()) {
@@ -123,7 +134,7 @@ void OpaquePass::Execute(const RenderContext& rc, RenderQueue& queue, ModelRende
                     tInfo.distance = DirectX::XMVectorGetX(DirectX::XMVector3Length(DirectX::XMVectorSubtract(WorldPos, CameraPosition)));
 
                     // ★次の TransparentPass へ託す！
-                    queue.SubmitDeferredTransparent(tInfo);
+                    queue->SubmitDeferredTransparent(tInfo);
                 }
             }
             else {

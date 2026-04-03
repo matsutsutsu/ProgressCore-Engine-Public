@@ -1,22 +1,49 @@
 #include "ModelRenderer.h"
 #include "Engine/Graphics/Core/Graphics.h"
+#include "Engine/Graphics/Shader/ShaderResources.h" // SLOT定義用
 #include "Engine/Graphics/Renderer/RenderQueue.h"
+
+#include "Engine/Graphics/Renderer/Pipeline/SetupPass.h"
 #include "Engine/Graphics/Renderer/Pipeline/ShadowPass.h"
 #include "Engine/Graphics/Renderer/Pipeline/OpaquePass.h"
 #include "Engine/Graphics/Renderer/Pipeline/TransparentPass.h"
-#include "Engine/Graphics/Shader/ShaderResources.h" // SLOT定義用
+#include "Engine/Graphics/Renderer/Pipeline/ParticlePass.h"
+#include "Engine/Graphics/Renderer/Pipeline/PrimitivePass.h"
+#include "Engine/Graphics/Renderer/Pipeline/PostProcessPass.h"
 
 ModelRenderer::ModelRenderer(ID3D11Device* device)
 {
     // グローバル定数バッファの初期化
     InitializeGlobalConstantBuffers(device);
 
-    // ★ パイプラインの組み立て ★
+    // =========================================================
+    // レンダーパイプライン組み立て
+    // =========================================================
+    
+    // 1. 準備工程 (HDRバッファのクリアとバインド)
+    _pipeline.AddPass(std::make_shared<SetupPass>());
+    
+    // 2. 影の描画 (ライト視点での深度書き込み)
     _pipeline.AddPass(std::make_shared<ShadowPass>());
+    
+    // 3. 不透明オブジェクト (Zバッファと色の書き込み)
     _pipeline.AddPass(std::make_shared<OpaquePass>());
+    
+    // 4. 半透明オブジェクト (Zテストしつつ奥から描画)
     _pipeline.AddPass(std::make_shared<TransparentPass>());
+    
+    // 5. パーティクル (半透明モデルのさらに上に描画)
+    _pipeline.AddPass(std::make_shared<ParticlePass>());
+    
+    // 6. プリミティブ/デバッグ線 (ワールド空間の最後に描く)
+    _pipeline.AddPass(std::make_shared<PrimitivePass>());
+    
+    // 7. ポストプロセス (HDR->SDR変換、ブルーム合成、画面への出力)
+    _pipeline.AddPass(std::make_shared<PostProcessPass>());
 
+    // 全パスの初期化
     _pipeline.InitializeAll(device);
+
 
     OutputDebugStringA("ModelRenderer: Initialized pipeline architecture.\n");
 }
@@ -48,7 +75,7 @@ void ModelRenderer::InitializeGlobalConstantBuffers(ID3D11Device* device)
 void ModelRenderer::Render(const RenderContext& rc)
 {
     // ★ 全ての描画パスを順番に実行 ★
-    _pipeline.ExecuteAll(rc, RenderQueue::Instance(), this);
+    _pipeline.ExecuteAll(rc);
 
     // 最後にリソースのバインドを解除して安全な状態に戻す
     UnbindAllResources(rc.deviceContext);

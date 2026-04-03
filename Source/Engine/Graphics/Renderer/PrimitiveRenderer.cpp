@@ -5,6 +5,7 @@
 #include "Engine/Core/Common/Misc.h"
 #include "Engine/Graphics/Core/GpuResourceUtils.h"
 #include "Engine/Graphics/Core/Graphics.h"
+#include "Engine/Graphics/Core/Light.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 
 #ifdef TRACY_ENABLE

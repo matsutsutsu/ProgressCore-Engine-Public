@@ -1101,6 +1101,18 @@
     <ClInclude Include="Source\Engine\Graphics\Renderer\Pipeline\TransparentPass.h">
       <Filter>Source\Engine\Graphics\Renderer\Pipeline\Pass</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Renderer\Pipeline\SetupPass.h">
+      <Filter>Source\Engine\Graphics\Renderer\Pipeline\Pass</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Renderer\Pipeline\ParticlePass.h">
+      <Filter>Source\Engine\Graphics\Renderer\Pipeline\Pass</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Renderer\Pipeline\PrimitivePass.h">
+      <Filter>Source\Engine\Graphics\Renderer\Pipeline\Pass</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Renderer\Pipeline\PostProcessPass.h">
+      <Filter>Source\Engine\Graphics\Renderer\Pipeline\Pass</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -1626,6 +1638,18 @@
       <Filter>Source\Engine\Graphics\Renderer\Pipeline\Pass</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Renderer\Pipeline\ShadowPass.cpp">
+      <Filter>Source\Engine\Graphics\Renderer\Pipeline\Pass</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Renderer\Pipeline\SetupPass.cpp">
+      <Filter>Source\Engine\Graphics\Renderer\Pipeline\Pass</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Renderer\Pipeline\ParticlePass.cpp">
+      <Filter>Source\Engine\Graphics\Renderer\Pipeline\Pass</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Renderer\Pipeline\PrimitivePass.cpp">
+      <Filter>Source\Engine\Graphics\Renderer\Pipeline\Pass</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Renderer\Pipeline\PostProcessPass.cpp">
       <Filter>Source\Engine\Graphics\Renderer\Pipeline\Pass</Filter>
     </ClCompile>
   </ItemGroup>
