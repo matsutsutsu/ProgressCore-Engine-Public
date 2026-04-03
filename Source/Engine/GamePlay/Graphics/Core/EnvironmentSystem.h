@@ -43,9 +43,16 @@ class EnvironmentSystem : public CCL::ECS::SystemBase {
     // フォグ用の定数バッファ
     Microsoft::WRL::ComPtr<ID3D11Buffer> _fogConstantBuffer;
 
-    // ★追加: Updateで見つけたフォグのテクスチャを保持しておく変数
+    // Updateで見つけたフォグのテクスチャを保持しておく変数
     ID3D11ShaderResourceView *_currentFogNoiseSRV = nullptr;
 
     // エンジン全体で共有するディゾルブ用ノイズテクスチャ
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> _globalNoiseSRV;
+
+    // =========================================================
+    // IBL用のグローバルテクスチャ
+    // =========================================================
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> _irradianceMapSRV;
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> _prefilterMapSRV;
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> _brdfLutSRV;
 };

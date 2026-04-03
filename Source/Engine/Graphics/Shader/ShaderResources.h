@@ -34,6 +34,13 @@
 #define SLOT_SRV_BONE           12
 #define SLOT_SRV_GLOBAL_NOISE   13
 
+// ==========================================
+// IBL用のテクスチャスロット (14, 15, 16)
+// ==========================================
+#define SLOT_SRV_IBL_IRRADIANCE 14
+#define SLOT_SRV_IBL_PREFILTER  15
+#define SLOT_SRV_IBL_BRDFLUT    16
+
 // --- Unordered Access Views (UAV) ---
 #define SLOT_UAV_PARTICLE_BUF   0
 
@@ -41,6 +48,10 @@
 #define SLOT_SMP_DEFAULT        0
 #define SLOT_SMP_LINEAR         1
 #define SLOT_SMP_ANISOTROPIC    2
+// ==========================================
+// IBL専用サンプラスロット (3)
+// ==========================================
+#define SLOT_SMP_IBL            3
 #define SLOT_SMP_SHADOW         10
 #define SLOT_SMP_BLOOM          1
 

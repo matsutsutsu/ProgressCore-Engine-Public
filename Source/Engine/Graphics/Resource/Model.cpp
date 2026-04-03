@@ -102,7 +102,8 @@ Model::Model(ID3D11Device* device, const char* filename, float sampleRate)
 
         // 1. カラー情報
         // シェーダーリフレクションの変数名と一致させる
-        dst.data->colors["materialColor"] = src.baseColor;
+        dst.data->colors["materialColor"] = src.baseColor; // 従来のPhong/Basicシェーダー用
+        dst.data->colors["baseColor"] = src.baseColor; // 新しいPBRシェーダー用
         // emissiveColor (float3) を float4 に変換して格納
         dst.data->colors["emissiveColor"] = { src.emissiveColor.x, src.emissiveColor.y, src.emissiveColor.z, 1.0f };
 
@@ -129,12 +130,40 @@ Model::Model(ID3D11Device* device, const char* filename, float sampleRate)
 
         // 4. テクスチャ情報
         // シェーダーリフレクションのスロット名と一致させる
-        if (src.baseMap)  dst.data->textures["DiffuseMap"] = ResourceManager::Instance().RegisterTexture(src.baseMap);
-        if (src.normalMap) dst.data->textures["NormalMap"] = ResourceManager::Instance().RegisterTexture(src.normalMap);
-        if (src.emissiveMap)dst.data->textures["EmissiveMap"] = ResourceManager::Instance().RegisterTexture(src.emissiveMap);
-        if (src.occlusionMap)dst.data->textures["OcclusionMap"] = ResourceManager::Instance().RegisterTexture(src.occlusionMap);
-        if (src.metalnessRoughnessMap)dst.data->textures["MetalnessRoughnessMap"] = ResourceManager::Instance().RegisterTexture(src.metalnessRoughnessMap);
+        if (src.baseMap) {
+            auto handle = ResourceManager::Instance().RegisterTexture(src.baseMap);
+            dst.data->textures["DiffuseMap"] = handle; // 従来のPhongシェーダー用
+            dst.data->textures["AlbedoMap"] = handle; // 新しいPBRシェーダー用
+            dst.data->scalars["useAlbedoMap"] = 1.0f; // ★フラグON
+        }
+        else {
+            dst.data->scalars["useAlbedoMap"] = 0.0f; // ★フラグOFF
+        }
 
+        if (src.normalMap) {
+            dst.data->textures["NormalMap"] = ResourceManager::Instance().RegisterTexture(src.normalMap);
+        }
+        else {
+            dst.data->scalars["useNormalMap"] = 0.0f;
+        }
+
+        if (src.emissiveMap) {
+            dst.data->textures["EmissiveMap"] = ResourceManager::Instance().RegisterTexture(src.emissiveMap);
+        }
+
+        if (src.occlusionMap) {
+            dst.data->textures["OcclusionMap"] = ResourceManager::Instance().RegisterTexture(src.occlusionMap);
+        }
+
+        if (src.metalnessRoughnessMap) {
+            auto handle = ResourceManager::Instance().RegisterTexture(src.metalnessRoughnessMap);
+            dst.data->textures["MetalnessRoughnessMap"] = handle; // 従来用
+            dst.data->textures["MetalRoughMap"] = handle; // 新しいPBRシェーダー用
+            dst.data->scalars["useMetalRoughMap"] = 1.0f; // ★フラグON
+        }
+        else {
+            dst.data->scalars["useMetalRoughMap"] = 0.0f; // ★フラグOFF
+        }
 
     }
 
@@ -537,10 +566,12 @@ std::shared_ptr<Model> Model::CreateFromData(ID3D11Device *device,
     auto &matData                    = model->materials[0].data;
     matData->shaderHash              = "Phong"_hash;
     matData->colors["materialColor"] = {1, 1, 1, 1};
+    matData->colors["baseColor"]     = { 1, 1, 1, 1 };
     matData->colors["emissiveColor"] = {0, 0, 0, 1};
     matData->colors["rimColor"]      = {1, 1, 1, 1}; // Toon用デフォルト
     matData->scalars["metalness"]    = 0.0f;
     matData->scalars["roughness"]    = 0.8f;
+    matData->scalars["occlusionStrength"] = 0.0f;
     matData->scalars["rimPower"]     = 5.0f;
     matData->scalars["rimIntensity"] = 0.0f;
 

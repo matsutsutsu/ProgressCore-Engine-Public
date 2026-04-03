@@ -35,6 +35,18 @@ EnvironmentSystem::EnvironmentSystem() : SystemBase("EnvironmentSystem")
         _globalNoiseSRV = ResourceManager::Instance().GetTexture(noiseTexHandle);
     }
 
+    // =========================================================
+    // IBLテクスチャのロード
+    // ※パスはあなたのプロジェクトの構成に合わせて変更してください
+    // =========================================================
+    auto irrHandle = ResourceManager::Instance().LoadTexture("Assets/Textures/IBL/ibl_sky_iem.dds");
+    auto preHandle = ResourceManager::Instance().LoadTexture("Assets/Textures/IBL/ibl_sky_pmrem.dds");
+    auto lutHandle = ResourceManager::Instance().LoadTexture("Assets/Textures/IBL/ibl_brdf_lut.png");
+
+    if (irrHandle.IsValid()) _irradianceMapSRV = ResourceManager::Instance().GetTexture(irrHandle);
+    if (preHandle.IsValid()) _prefilterMapSRV = ResourceManager::Instance().GetTexture(preHandle);
+    if (lutHandle.IsValid()) _brdfLutSRV = ResourceManager::Instance().GetTexture(lutHandle);
+
 
     // 2. フォグ用定数バッファの作成
     GpuResourceUtils::CreateDynamicConstantBuffer(
@@ -183,6 +195,21 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext *dc)
 
     // ノイズテクスチャをスロットに設定 (SLOT_SRV_FOG_NOISE = 9)
     dc->PSSetShaderResources(SLOT_SRV_FOG_NOISE, 1, &fogNoiseSrv);
+
+    // =========================================================
+    // IBLリソースのグローバルバインド (スロット t12, t13, t14)
+    // =========================================================
+    ID3D11ShaderResourceView* iblSRVs[3] = { nullptr, nullptr, nullptr };
+    if (_irradianceMapSRV) iblSRVs[0] = _irradianceMapSRV.Get();
+    if (_prefilterMapSRV)  iblSRVs[1] = _prefilterMapSRV.Get();
+    if (_brdfLutSRV)       iblSRVs[2] = _brdfLutSRV.Get();
+
+    dc->PSSetShaderResources(SLOT_SRV_IBL_IRRADIANCE, 3, iblSRVs);
+
+    // IBL用のサンプラ（クランプ）もここで一緒にスロット12(s12)にバインドしておく
+    ID3D11SamplerState* iblSampler = Graphics::Instance().GetRenderState()->GetSamplerState(SamplerState::LinearClamp);
+    dc->PSSetSamplers(SLOT_SMP_IBL, 1, &iblSampler);
+
 }
 
 REGISTER_RENDER_SYSTEM(EnvironmentSystem, Priority::RenderStage::Environment);
