@@ -24,26 +24,26 @@ float3 ACESFilm(float3 x)
     return saturate((x * (a * x + b)) / (x * (c * x + d) + e));
 }
 
+// ToneMapPS.hlsl の main関数
+
 float4 main(VS_OUT input) : SV_TARGET
 {
-    // 1. シーンとブルームをサンプリング
+    // 1. HDRキャンバスから「生の光エネルギー」をサンプリング
     float3 sceneColor = gSceneTexture.Sample(LinearSampler, input.texcoord).rgb;
+    
+    // 2. ボカされた光（Bloom）のエネルギーを「加算」する
     float3 bloomColor = gBloomTexture.Sample(LinearSampler, input.texcoord).rgb;
+    float3 hdrColor = sceneColor + bloomColor;
 
-    // 2. 加算合成 (Bloomを足す)
-    float3 color = sceneColor + bloomColor;
+    // 3. カメラレンズの「露出（Exposure）」を適用して、取り込む光の量を決定
+    hdrColor *= gExposure;
 
-    // 3. 露出調整
-    color *= gExposure;
+    // 4. トーンマッピング (HDRの強烈な光を、白飛びさせずに SDR の 0.0〜1.0 へ滑らかに圧縮)
+    float3 sdrColor = ACESFilm(hdrColor);
 
-    // 4. トーンマッピング (HDR -> SDR)
-    // 1.0を超える輝度を、0.0~1.0の範囲に綺麗に収める
-    color = ACESFilm(color);
+    // 5. ガンマ補正 (Linear -> sRGB空間への変換)
+    // 液晶モニターの「暗い色をより暗く表示してしまう癖」を打ち消すため、あらかじめ暗部を持ち上げる必須処理
+    sdrColor = pow(sdrColor, float3(0.4545f, 0.4545f, 0.4545f));
 
-    // 5. ガンマ補正 (リニア -> sRGB)
-    // モニターで正しく表示するために明るさを持ち上げる
-    const float GAMMA = 2.2;
-    color = pow(color, 1.0 / GAMMA);
-
-    return float4(color, 1.0f);
+    return float4(sdrColor, 1.0f);
 }
