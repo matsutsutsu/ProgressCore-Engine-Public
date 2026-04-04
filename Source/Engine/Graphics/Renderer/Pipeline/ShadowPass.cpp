@@ -2,8 +2,11 @@
 #include "Engine/Graphics/Renderer/ModelRenderer.h"
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
 #include "Engine/Graphics/Core/Graphics.h"
+#include "Engine/Graphics/Core/Camera.h"
 #include "Engine/Graphics/Renderer/RenderQueue.h"
+#include "Engine/Graphics/Shader/Pass/ShadowUtils.h"
 #include <algorithm>
+
 
 void ShadowPass::Initialize(ID3D11Device* device) {
     _psoShadow = PipelineState(PipelineStateDesc::DefaultOpaque());
@@ -26,97 +29,145 @@ void ShadowPass::Execute(const RenderContext& rc){
     ID3D11DeviceContext* dc = rc.deviceContext;
     auto& shadowMap = rc.shadowMap;
 
-    shadowMap->Activate(dc);
-    _psoShadow.Apply(dc, rc.renderState);
+    // 現在のレンダーターゲット（メインのキャンバス）とビューポートを退避
+    Microsoft::WRL::ComPtr<ID3D11RenderTargetView> oldRTV;
+    Microsoft::WRL::ComPtr<ID3D11DepthStencilView> oldDSV;
+    dc->OMGetRenderTargets(1, oldRTV.GetAddressOf(), oldDSV.GetAddressOf());
 
-    shadowMap->params.shadowBias = renderer->GetShadowBias();
-    shadowMap->params.shadowColor = renderer->GetShadowColor();
+    UINT numViewports = 1;
+    D3D11_VIEWPORT oldViewport;
+    dc->RSGetViewports(&numViewports, &oldViewport);
 
-    auto cbData = shadowMap->CreateCbData(renderer->GetShadowLightVP());
-    shadowMap->UpdateConstantBuffer(dc, cbData);
-    shadowMap->Bind(dc, -1, -1, SLOT_CB_SHADOW);
+    // カスケードの数だけ描画を繰り返す
+    for (int cascadeIndex = 0; cascadeIndex < 3; ++cascadeIndex)
+    {
+        // 書き込む対象の層をアクティブにする
+        shadowMap->Activate(dc, cascadeIndex);
 
-    Shader* shader = ShaderRegistry::Instance().GetShader("ShadowMap"_hash, Graphics::Instance().GetDevice());
-    if (!shader) {
-        shadowMap->Deactivate(dc);
-        return;
-    }
+        // 描画ステートの適用
+        _psoShadow.Apply(dc, rc.renderState);
 
-    shader->Begin(rc);
-    dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        DirectX::XMFLOAT3 lightDirection = rc.lightManager->GetDirectionalLight().direction;
 
-    // ソート用のローカル構造体とリスト構築
-    struct ShadowSortItem {
-        const Model::Mesh* mesh;
-        DirectX::XMFLOAT4X4 worldMatrix;
-    };
-    std::vector<ShadowSortItem> sortedItems;
-    sortedItems.reserve(shadowCommands.size());
-    for (const auto& cmd : shadowCommands) {
-        sortedItems.push_back({ cmd.mesh, cmd.worldMatrix });
-    }
+        // 3つの行列を計算して取得する
+        DirectX::XMMATRIX lightVPs[3];
 
-    std::sort(sortedItems.begin(), sortedItems.end(),
-        [](const ShadowSortItem& a, const ShadowSortItem& b) {
-            return a.mesh < b.mesh;
-        });
 
-    struct InstanceBatch {
-        const Model::Mesh* mesh = nullptr;
-        std::vector<InstanceData> data = {};
-    };
-    std::vector<InstanceBatch> batches;
-    batches.reserve(16);
+        // ※ cameraのView行列、FOV、アスペクト比、ライトの方向を取得して渡す
+        CalculateCascadeMatrices(
+            XMLoadFloat4x4(&rc.camera->GetView()),
+            rc.camera->GetFovY(),
+            rc.camera->GetAspect(),
+            lightDirection, // CbSceneから取得しているライト方向
+            shadowMap->params.cascadeSplits,
+            lightVPs
+        );
 
-    for (const auto& info : sortedItems) {
-        if (!info.mesh || !info.mesh->data) continue;
+        // 定数バッファ用データの作成
+        ShadowMap::CbShadow cbData{};
+        XMStoreFloat4x4(&cbData.lightViewProjection[0], lightVPs[0]);
+        XMStoreFloat4x4(&cbData.lightViewProjection[1], lightVPs[1]);
+        XMStoreFloat4x4(&cbData.lightViewProjection[2], lightVPs[2]);
+        cbData.cascadeSplits = { shadowMap->params.cascadeSplits[0], shadowMap->params.cascadeSplits[1], shadowMap->params.cascadeSplits[2], 0.0f };
+        cbData.shadowColor = shadowMap->params.shadowColor;
+        cbData.shadowAttenuation = shadowMap->params.shadowAttenuation;
+        cbData.shadowBias = shadowMap->params.shadowBias;
+        // 今描画している層の番号をセットして定数バッファを更新
+        cbData.currentCascadeIndex = cascadeIndex;
 
-        bool isSkinned = !info.mesh->bones.empty();
-        if (isSkinned) {
-            renderer->UpdateSkeletonConstants(dc, *info.mesh);
-            UINT stride = sizeof(ModelResource::Vertex);
-            UINT offset = 0;
-            dc->IASetVertexBuffers(0, 1, info.mesh->data->vertexBuffer.GetAddressOf(), &stride, &offset);
-            dc->IASetIndexBuffer(info.mesh->data->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-            shader->Update(rc, *info.mesh);
-            dc->DrawIndexed((UINT)info.mesh->data->indices.size(), 0, 0);
+        shadowMap->UpdateConstantBuffer(dc, cbData);
+
+
+        shadowMap->Bind(dc, -1, -1, SLOT_CB_SHADOW);
+
+        Shader* shader = ShaderRegistry::Instance().GetShader("ShadowMap"_hash, Graphics::Instance().GetDevice());
+        if (!shader) {
+            shadowMap->Deactivate(dc);
+            return;
         }
-        else {
-            if (!batches.empty() && batches.back().mesh == info.mesh) {
-                batches.back().data.push_back({ info.worldMatrix });
+
+        shader->Begin(rc);
+        dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+        // ソート用のローカル構造体とリスト構築
+        struct ShadowSortItem {
+            const Model::Mesh* mesh;
+            DirectX::XMFLOAT4X4 worldMatrix;
+        };
+        std::vector<ShadowSortItem> sortedItems;
+        sortedItems.reserve(shadowCommands.size());
+        for (const auto& cmd : shadowCommands) {
+            sortedItems.push_back({ cmd.mesh, cmd.worldMatrix });
+        }
+
+        std::sort(sortedItems.begin(), sortedItems.end(),
+            [](const ShadowSortItem& a, const ShadowSortItem& b) {
+                return a.mesh < b.mesh;
+            });
+
+        struct InstanceBatch {
+            const Model::Mesh* mesh = nullptr;
+            std::vector<InstanceData> data = {};
+        };
+        std::vector<InstanceBatch> batches;
+        batches.reserve(16);
+
+        for (const auto& info : sortedItems) {
+            if (!info.mesh || !info.mesh->data) continue;
+
+            bool isSkinned = !info.mesh->bones.empty();
+            if (isSkinned) {
+                renderer->UpdateSkeletonConstants(dc, *info.mesh);
+                UINT stride = sizeof(ModelResource::Vertex);
+                UINT offset = 0;
+                dc->IASetVertexBuffers(0, 1, info.mesh->data->vertexBuffer.GetAddressOf(), &stride, &offset);
+                dc->IASetIndexBuffer(info.mesh->data->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+                shader->Update(rc, *info.mesh);
+                dc->DrawIndexed((UINT)info.mesh->data->indices.size(), 0, 0);
             }
             else {
-                InstanceBatch newBatch;
-                newBatch.mesh = info.mesh;
-                newBatch.data.push_back({ info.worldMatrix });
-                batches.push_back(newBatch);
+                if (!batches.empty() && batches.back().mesh == info.mesh) {
+                    batches.back().data.push_back({ info.worldMatrix });
+                }
+                else {
+                    InstanceBatch newBatch;
+                    newBatch.mesh = info.mesh;
+                    newBatch.data.push_back({ info.worldMatrix });
+                    batches.push_back(newBatch);
+                }
             }
         }
-    }
 
-    for (const auto& batch : batches) {
-        shader->Update(rc, *batch.mesh);
-        size_t totalCount = batch.data.size();
-        size_t offset = 0;
+        for (const auto& batch : batches) {
+            shader->Update(rc, *batch.mesh);
+            size_t totalCount = batch.data.size();
+            size_t offset = 0;
 
-        while (offset < totalCount) {
-            size_t drawCount = (std::min)(totalCount - offset, InstanceBuffer::MAX_INSTANCES);
-            std::vector<InstanceData> chunk(batch.data.begin() + offset, batch.data.begin() + offset + drawCount);
+            while (offset < totalCount) {
+                size_t drawCount = (std::min)(totalCount - offset, InstanceBuffer::MAX_INSTANCES);
+                std::vector<InstanceData> chunk(batch.data.begin() + offset, batch.data.begin() + offset + drawCount);
 
-            _instanceBuffer.Write(dc, chunk);
-            _instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
+                _instanceBuffer.Write(dc, chunk);
+                _instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
 
-            UINT stride = sizeof(ModelResource::Vertex);
-            UINT zero = 0;
-            dc->IASetVertexBuffers(0, 1, batch.mesh->data->vertexBuffer.GetAddressOf(), &stride, &zero);
-            dc->IASetIndexBuffer(batch.mesh->data->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+                UINT stride = sizeof(ModelResource::Vertex);
+                UINT zero = 0;
+                dc->IASetVertexBuffers(0, 1, batch.mesh->data->vertexBuffer.GetAddressOf(), &stride, &zero);
+                dc->IASetIndexBuffer(batch.mesh->data->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
-            dc->DrawIndexedInstanced((UINT)batch.mesh->data->indices.size(), (UINT)drawCount, 0, 0, 0);
-            offset += drawCount;
+                dc->DrawIndexedInstanced((UINT)batch.mesh->data->indices.size(), (UINT)drawCount, 0, 0, 0);
+                offset += drawCount;
+            }
         }
+
+        shader->End(rc);
+        _instanceBuffer.Unbind(dc, SLOT_SRV_INSTANCE);
+
     }
 
-    shader->End(rc);
-    _instanceBuffer.Unbind(dc, SLOT_SRV_INSTANCE);
-    shadowMap->Deactivate(dc);
+    // =========================================================
+    // ループを抜けたら、退避しておいたメインキャンバスを復元する
+    // =========================================================
+    dc->OMSetRenderTargets(1, oldRTV.GetAddressOf(), oldDSV.Get());
+    dc->RSSetViewports(1, &oldViewport);
 }

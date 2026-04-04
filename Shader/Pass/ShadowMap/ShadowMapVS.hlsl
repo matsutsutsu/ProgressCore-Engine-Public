@@ -12,12 +12,8 @@ float4 main(
 ) : SV_POSITION
 {
     float4 worldPos;
+    CalculateWorldTransform(position, boneWeights, boneIndices, instanceID, worldPos);
 
-    // 1. オーバーロードによる 位置 のみの変換
-    CalculateWorldTransform(
-        position, boneWeights, boneIndices, instanceID, worldPos
-    );
-
-    // 2. ライトから見た座標系に変換
-    return mul(worldPos, light_view_projection);
+    // currentCascadeIndex を使って適切な行列を選択する
+    return mul(worldPos, light_view_projection[currentCascadeIndex]);
 }

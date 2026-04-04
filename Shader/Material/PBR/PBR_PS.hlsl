@@ -69,7 +69,8 @@ float4 main(VS_OUT pin) : SV_TARGET
     // ------------------------------------------------------------
     // 2. 光の計算（物理演算）
     // ------------------------------------------------------------
-    float shadowWeight = CalculateShadowWeight(pin.shadowPos);
+    float viewDepth = length(cameraPosition.xyz - pin.position.xyz);
+    float shadowWeight = CalculateShadowWeight(pin.position, viewDepth);
 
     // 全光源からの直接光を計算
     LightResult light = CalculateAllLightsPBR(surf, shadowWeight);

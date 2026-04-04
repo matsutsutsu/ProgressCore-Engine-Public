@@ -33,7 +33,8 @@ float4 main(VS_OUT pin) : SV_TARGET
     surf.normal = CalculateWorldNormal(pin.normal, pin.tangent, pin.texcoord, NormalMap, LinearSampler);
 
     // ② 光の調理 (Toon専用)
-    float shadowWeight = CalculateShadowWeight(pin.shadowPos);
+    float viewDepth = length(cameraPosition.xyz - pin.position.xyz);
+    float shadowWeight = CalculateShadowWeight(pin.position, viewDepth);
     LightResult lightRes = (LightResult) 0;
     
     CalcToonDirectionalLight(surf, shadowWeight, ToonRampMap, LinearSampler, lightRes);

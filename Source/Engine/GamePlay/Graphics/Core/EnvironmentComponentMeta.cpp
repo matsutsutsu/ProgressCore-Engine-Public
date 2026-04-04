@@ -181,14 +181,18 @@ template <> struct ComponentMeta<FogComponent> {
 // ============================================================================
 template <> struct ComponentMeta<ShadowMapConfigComponent> {
     static constexpr bool        registered = true;
-    static constexpr const char* displayName = "Shadow Map Config";
+    static constexpr const char* displayName = "ShadowMapConfigComponent";
+
     static constexpr bool        hasCustomGui = true;
 
     static bool CustomGui(ShadowMapConfigComponent& c, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr)
     {
         bool changed = false;
         ImGui::SeparatorText("Shadow Settings");
-        changed |= ImGui::DragFloat(u8"Ortho Size (範囲)", &c.orthoSize, 0.5f, 1.0f, 200.0f);
+
+        // &c.cascadeSplits.x を渡すことで、XMFLOAT3 を一気に操作できる
+        changed |= ImGui::DragFloat3(u8"Cascade Splits (Near/Mid/Far)", &c.cascadeSplits.x, 1.0f, 1.0f, 1000.0f);
+
         changed |= ImGui::DragFloat(u8"Bias (縞模様対策)", &c.shadowBias, 0.0001f, 0.0f, 0.01f, "%.5f");
         changed |= ImGui::ColorEdit4(u8"Shadow Color", &c.shadowColor.x);
         return changed;
@@ -197,18 +201,12 @@ template <> struct ComponentMeta<ShadowMapConfigComponent> {
     static const std::vector<FieldDescriptor>& Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
-            META_FIELD_FLOAT(
-                ShadowMapConfigComponent, orthoSize, "orthoSize", "Ortho Size", 0.5f, 1.0f, 200.0f, "Settings"),
-            META_FIELD_FLOAT(ShadowMapConfigComponent,
-                shadowBias,
-                "shadowBias",
-                "Shadow Bias",
-                0.0001f,
-                0.0f,
-                0.01f,
-                "Settings"),
-            META_FIELD_FLOAT4(
-                ShadowMapConfigComponent, shadowColor, "shadowColor", "Shadow Color", 0.01f, "Settings") };
+           META_FIELD_FLOAT(ShadowMapConfigComponent, shadowBias, "shadowBias", "Shadow Bias", 0.0001f, 0.0f, 0.01f, "Settings"),
+            META_FIELD_FLOAT4(ShadowMapConfigComponent, shadowColor, "shadowColor", "Shadow Color", 0.01f, "Settings"),
+
+            // さきほど定義したマクロを使って JSON の保存対象に組み込む
+            META_FIELD_FLOAT3(ShadowMapConfigComponent, cascadeSplits, "cascadeSplits", "Cascade Splits", 1.0f, "Settings")
+        };
         return fields;
     }
 };

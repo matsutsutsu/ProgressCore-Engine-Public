@@ -15,6 +15,7 @@
 #include "ECS/Core/CCL_ECSContext.h"
 
 #include "Engine/Graphics/Shader/PostProcess/PostProcessManager.h"
+//#include "Engine/Graphics/Shader/Pass/ShadowMap.h"
 
 #include "Engine/GamePlay/Core/Scene/SceneManager.h"
 
@@ -28,6 +29,7 @@ class BaseScene : public Scene {
     Camera             camera;
     LightManager       lightManager;
     PostProcessManager _postProcess;
+
 
 
     // セーブ・ロードの「予約」パス

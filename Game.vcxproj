@@ -329,6 +329,7 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\ShadowMapShader.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\ToonShader.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Pass\ShadowMap.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\Pass\ShadowUtils.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\BloomPass.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\PostProcessManager.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderReflection.h" />

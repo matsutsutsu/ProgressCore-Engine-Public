@@ -1,8 +1,11 @@
 #pragma once
 #include <d3d11.h>
-#include <wrl/client.h>
 #include <DirectXMath.h>
+#include <vector>
+#include <wrl/client.h>
 
+// カスケード（層）の数
+constexpr int SHADOW_CASCADE_COUNT = 3;
 
 // ShadowMap.h
 class ShadowMap {
@@ -10,8 +13,7 @@ public:
     ShadowMap(ID3D11Device* device, UINT width = 2048, UINT height = 2048);
 
     // 切り替え関数
-    void Activate(ID3D11DeviceContext* dc);	// シャドウマップに切り替え
-    //void Activate(ID3D11DeviceContext* dc, int cascadeIndex); // カスケードシャドウマップ用
+    void Activate(ID3D11DeviceContext* dc, int cascadeIndex); // カスケードシャドウマップ用
     void Deactivate(ID3D11DeviceContext* dc); // 元に戻す
 
     // ゲッター
@@ -21,15 +23,17 @@ public:
     UINT GetWidth() const { return width; }
     UINT GetHeight() const { return height; }
 
-    void DrawGUI();
+    //void DrawGUI();
 
 	// 定数バッファ構造体
     struct CbShadow {
-        DirectX::XMFLOAT4X4 lightViewProjection;
-        DirectX::XMFLOAT4 shadowColor;
-        float shadowAttenuation;
-        float shadowBias;
-        DirectX::XMFLOAT2 shadowDummy;
+        DirectX::XMFLOAT4X4 lightViewProjection[SHADOW_CASCADE_COUNT]; // 3つの行列
+        DirectX::XMFLOAT4   cascadeSplits;
+        DirectX::XMFLOAT4   shadowColor;
+        float               shadowAttenuation;
+        float               shadowBias;
+        int                 currentCascadeIndex; // 影を書き込む時に使う
+        float               padding;             // 16バイト境界合わせ
     };
 
 
@@ -42,18 +46,9 @@ public:
         float shadowAttenuation = 0.5f;
         DirectX::XMFLOAT4 shadowColor = { 0.0f, 0.0f, 0.0f, 0.5f };
         float shadowBias = 0.0015f; // 初期値は小さめに
-        float orthoSize = 35.0f;
+        float cascadeSplits[SHADOW_CASCADE_COUNT] = { 15.0f, 50.0f, 200.0f }; // 境界距離の初期値
     } params;
 
-    // 現在のパラメータから定数バッファ用データを生成するヘルパー
-    CbShadow CreateCbData(const DirectX::XMFLOAT4X4& lightVP) const {
-        CbShadow cb{};
-        cb.lightViewProjection = lightVP;
-        cb.shadowColor         = params.shadowColor;
-        cb.shadowAttenuation   = params.shadowAttenuation;
-        cb.shadowBias          = params.shadowBias;
-        return cb;
-    }
 
     // デフォルト引数を削除し、リフレクションから取得したスロットを渡す形にする
     void Bind(ID3D11DeviceContext* dc, int srvSlot, int samplerSlot, int cbSlot);
@@ -65,7 +60,8 @@ public:
 private:
     Microsoft::WRL::ComPtr<ID3D11Buffer> constantBuffer;
 
-    Microsoft::WRL::ComPtr<ID3D11DepthStencilView> depthStencilView; // カスケード用
+    // DSVをカスケードの数だけ持つ配列にする
+    std::vector<Microsoft::WRL::ComPtr<ID3D11DepthStencilView>> depthStencilViews;
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> shaderResourceView;
     Microsoft::WRL::ComPtr<ID3D11SamplerState> samplerState;
 
@@ -75,8 +71,8 @@ private:
 
     // 元の状態保存用
     D3D11_VIEWPORT cachedViewport;
-    Microsoft::WRL::ComPtr<ID3D11RenderTargetView> cachedRTV;
-    Microsoft::WRL::ComPtr<ID3D11DepthStencilView> cachedDSV;
+    //Microsoft::WRL::ComPtr<ID3D11RenderTargetView> cachedRTV;
+    //Microsoft::WRL::ComPtr<ID3D11DepthStencilView> cachedDSV;
 
     UINT width, height;
 };

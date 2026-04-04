@@ -24,28 +24,11 @@ public:
     void BindAllGlobalConstantBuffers(ID3D11DeviceContext* dc);
     void UpdateSkeletonConstants(ID3D11DeviceContext* dc, const Model::Mesh& mesh);
 
-    // 影関連のパラメータ設定・取得
-    void SetShadowLightViewProjection(const DirectX::XMFLOAT4X4& vp) { _shadowLightVP = vp; }
-    void SetShadowParams(float bias, const DirectX::XMFLOAT4& color) {
-        _shadowBias = bias;
-        _shadowColor = color;
-    }
-
-    float GetShadowBias() const { return _shadowBias; }
-    const DirectX::XMFLOAT4& GetShadowColor() const { return _shadowColor; }
-    const DirectX::XMFLOAT4X4& GetShadowLightVP() const { return _shadowLightVP; }
-
-
+    
 private:
     RenderPipeline _pipeline; // 全ての描画を司るパイプライン
 
-    // シャドウマップパラメータ
-    float _shadowBias = 0.0015f;
-    DirectX::XMFLOAT4 _shadowColor = { 0.0f, 0.0f, 0.0f, 0.5f };
-    DirectX::XMFLOAT4X4 _shadowLightVP = {
-            1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1
-    };
-
+  
     // スケルトン用定数バッファ
     ID3D11Buffer* _cbSkeletonBuffer = nullptr;
     static const int MAX_BONES = 256;

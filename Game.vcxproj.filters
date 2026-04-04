@@ -1134,6 +1134,9 @@
     <ClInclude Include="Source\Engine\Graphics\Renderer\Pipeline\SkyboxPass.h">
       <Filter>Source\Engine\Graphics\Renderer\Pipeline\Pass</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Shader\Pass\ShadowUtils.h">
+      <Filter>Source\Engine\Graphics\Shader\Pass</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">

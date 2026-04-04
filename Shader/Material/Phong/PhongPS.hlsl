@@ -30,7 +30,8 @@ float4 main(VS_OUT pin) : SV_TARGET
     surf.normal = CalculateWorldNormal(pin.normal, pin.tangent, pin.texcoord, NormalMap, LinearSampler);
 
     // ② 光の調理
-    float shadowWeight = CalculateShadowWeight(pin.shadowPos);
+    float viewDepth = length(cameraPosition.xyz - pin.position.xyz);
+    float shadowWeight = CalculateShadowWeight(pin.position, viewDepth);
     float hemiWeight = surf.normal.y * 0.5f + 0.5f;
     float3 ambient = lerp(gDirLight.gGroundColor.rgb * gDirLight.gGroundColor.a, gDirLight.gSkyColor.rgb * gDirLight.gSkyColor.a, hemiWeight);
     

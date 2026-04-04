@@ -56,16 +56,16 @@ public:
 	const DirectX::BoundingFrustum& GetFrustum() const { return frustum; }
 
 	// 視野角取得
-	const float& GetFovY() { return fovY; }
+	const float& GetFovY() const { return fovY; }
 
 	// アスペクト比取得
-	const float& GetAspect() { return aspect; }
+	const float& GetAspect() const { return aspect; }
 
 	// 近クリップ面までの距離を取得
-	const float& GetNear() { return nearZ; }
+	const float& GetNear() const { return nearZ; }
 
 	// 遠クリップ面までの距離を取得
-	const float& GetFar() { return farZ; }
+	const float& GetFar() const { return farZ; }
 
 private:
 	// カメラの行列が変化したときにFrustumを再計算する内部関数

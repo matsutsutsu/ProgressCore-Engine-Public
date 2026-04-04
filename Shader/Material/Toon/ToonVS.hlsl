@@ -23,7 +23,7 @@ VS_OUT main(
 
     // 2. カメラ・ライト空間への投影
     vout.vertex = mul(vout.position, viewProjection);
-    vout.shadowPos = mul(vout.position, light_view_projection);
+
     
     // 3. その他パラメータ
     vout.texcoord = texcoord;

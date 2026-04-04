@@ -12,6 +12,8 @@
 
 #include "Engine/GamePlay/Graphics/Core/EnvironmentSystem.h"
 
+
+
 #include "Engine/Graphics/Renderer/RenderQueue.h"
 
 
@@ -51,6 +53,7 @@ void BaseScene::Initialize()
     _worldPtr->AddResource<Camera *>(&camera);
     _worldPtr->AddResource<LightManager *>(&lightManager);
     _worldPtr->AddResource<PostProcessManager *>(&_postProcess);
+	_worldPtr->AddResource<ShadowMap*>(graphics.GetShadowMap());
 
     _worldPtr->AddResource<ModelRenderer *>(graphics.GetModelRenderer());
     _worldPtr->AddResource<ParticleRenderer *>(graphics.GetParticleRenderer());

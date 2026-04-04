@@ -32,7 +32,8 @@ float4 main(VS_OUT pin) : SV_TARGET
     // =========================================================
     // 3. 最新のECSライトシステム(CbLight)で全ライトを一括計算！
     // =========================================================
-    float shadowWeight = CalculateShadowWeight(pin.shadowPos); // ※シャドウマップを実装する際にここを書き換えます
+    float viewDepth = length(cameraPosition.xyz - pin.position.xyz);
+    float shadowWeight = CalculateShadowWeight(pin.position, viewDepth);
     
     // 平行光源、点光源、スポットライトの全ての影響が計算されて返ってくる
     LightResult lit = CalculateAllLights(surf, shadowWeight);
