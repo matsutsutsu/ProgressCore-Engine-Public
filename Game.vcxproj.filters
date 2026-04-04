@@ -346,6 +346,9 @@
     <Filter Include="Source\Engine\GamePlay\Graphics\Core\Culling">
       <UniqueIdentifier>{adca7775-84af-4c94-b9a7-a8214c8cfbac}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shader\Pass\SkyBox">
+      <UniqueIdentifier>{7aa7b402-62ad-4c1d-bdb8-5ade6932aa53}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1128,6 +1131,9 @@
     <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\Culling\CullingSetupSystem.h">
       <Filter>Source\Engine\GamePlay\Graphics\Core\Culling</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Renderer\Pipeline\SkyboxPass.h">
+      <Filter>Source\Engine\Graphics\Renderer\Pipeline\Pass</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -1676,6 +1682,9 @@
     <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\Culling\CullingSetupSystem.cpp">
       <Filter>Source\Engine\GamePlay\Graphics\Core\Culling</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Renderer\Pipeline\SkyboxPass.cpp">
+      <Filter>Source\Engine\Graphics\Renderer\Pipeline\Pass</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shader\Common\Common.hlsli">
@@ -1823,6 +1832,12 @@
     </FxCompile>
     <FxCompile Include="Shader\Material\Basic\BasicVS.hlsl">
       <Filter>Shader\Material\Basic</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Pass\SkyBox\SkyboxVS.hlsl">
+      <Filter>Shader\Pass\SkyBox</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Pass\SkyBox\SkyboxPS.hlsl">
+      <Filter>Shader\Pass\SkyBox</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

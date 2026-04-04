@@ -6,6 +6,7 @@
 #include "Engine/Graphics/Renderer/Pipeline/SetupPass.h"
 #include "Engine/Graphics/Renderer/Pipeline/ShadowPass.h"
 #include "Engine/Graphics/Renderer/Pipeline/OpaquePass.h"
+#include "Engine/Graphics/Renderer/Pipeline/SkyboxPass.h"
 #include "Engine/Graphics/Renderer/Pipeline/TransparentPass.h"
 #include "Engine/Graphics/Renderer/Pipeline/ParticlePass.h"
 #include "Engine/Graphics/Renderer/Pipeline/PrimitivePass.h"
@@ -28,6 +29,9 @@ ModelRenderer::ModelRenderer(ID3D11Device* device)
     
     // 3. 不透明オブジェクト (Zバッファと色の書き込み)
     _pipeline.AddPass(std::make_shared<OpaquePass>());
+
+    //  Skybox (Zバッファを参照し、空いている隙間にだけ空を描く)
+    _pipeline.AddPass(std::make_shared<SkyboxPass>());
     
     // 4. 半透明オブジェクト (Zテストしつつ奥から描画)
     _pipeline.AddPass(std::make_shared<TransparentPass>());

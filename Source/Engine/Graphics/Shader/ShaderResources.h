@@ -11,6 +11,8 @@
 // --- Constant Buffers (CB) ---
 #define SLOT_CB_MATERIAL        0
 #define SLOT_CB_MESH            1
+
+#define SLOT_CB_SKYBOX          2
 #define SLOT_CB_BLOOM           0
 #define SLOT_CB_TONEMAP         1
 #define SLOT_CB_SCENE           8
@@ -40,6 +42,8 @@
 #define SLOT_SRV_IBL_IRRADIANCE 14
 #define SLOT_SRV_IBL_PREFILTER  15
 #define SLOT_SRV_IBL_BRDFLUT    16
+// 背景（Skybox）描画専用の超高解像度テクスチャスロット
+#define SLOT_SRV_SKYBOX_BG      17
 
 // --- Unordered Access Views (UAV) ---
 #define SLOT_UAV_PARTICLE_BUF   0

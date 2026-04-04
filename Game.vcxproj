@@ -305,6 +305,7 @@
     <ClInclude Include="Source\Engine\Graphics\Renderer\Pipeline\RenderPipeline.h" />
     <ClInclude Include="Source\Engine\Graphics\Renderer\Pipeline\SetupPass.h" />
     <ClInclude Include="Source\Engine\Graphics\Renderer\Pipeline\ShadowPass.h" />
+    <ClInclude Include="Source\Engine\Graphics\Renderer\Pipeline\SkyboxPass.h" />
     <ClInclude Include="Source\Engine\Graphics\Renderer\Pipeline\TransparentPass.h" />
     <ClInclude Include="Source\Engine\Graphics\Renderer\PrimitiveRenderer.h" />
     <ClInclude Include="Source\Engine\Graphics\Renderer\RenderQueue.h" />
@@ -524,6 +525,7 @@
     <ClCompile Include="Source\Engine\Graphics\Renderer\Pipeline\PrimitivePass.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Renderer\Pipeline\SetupPass.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Renderer\Pipeline\ShadowPass.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Renderer\Pipeline\SkyboxPass.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Renderer\Pipeline\TransparentPass.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Renderer\PrimitiveRenderer.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Renderer\ShapeRenderer.cpp" />
@@ -691,6 +693,14 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
     </FxCompile>
     <FxCompile Include="Shader\Pass\ShadowMap\ShadowMapVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Pass\SkyBox\SkyboxPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Pass\SkyBox\SkyboxVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
     </FxCompile>

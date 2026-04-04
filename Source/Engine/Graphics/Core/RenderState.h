@@ -21,6 +21,7 @@ enum class DepthState
 	TestOnly,
 	WriteOnly,
 	NoTestNoWrite,
+	TestLessEqual, // Z=1.0の奥底に描画するためのステート
 
 	EnumCount
 };
