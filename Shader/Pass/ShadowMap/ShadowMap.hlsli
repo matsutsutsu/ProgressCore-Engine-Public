@@ -22,37 +22,28 @@ SamplerComparisonState ShadowSampler : register(REG_SMP(SLOT_SMP_SHADOW));
 
 // --- 関数定義 ---
 
-// 影の重み (0.0=影, 1.0=日向) を計算する
-// 引数にワールド座標(worldPos)と、カメラからの距離(viewDepth)をもらう
-float CalculateShadowWeight(float4 worldPos, float viewDepth)
+// 1つのカスケード層から影をサンプリングする専用関数
+float SampleCascade(float4 worldPos, int cascadeIndex)
 {
-    // 1. カスケード層（何枚目の紙を使うか）の判定
-    int cascadeIndex = 0;
-    if (viewDepth > cascadeSplits.y)
-        cascadeIndex = 2;
-    else if (viewDepth > cascadeSplits.x)
-        cascadeIndex = 1;
-
-    // 2. 該当する層の行列を使ってライト空間へ変換
     float4 shadowPos = mul(worldPos, light_view_projection[cascadeIndex]);
-    
     float3 shadow_texcoord = shadowPos.xyz / shadowPos.w;
+    
+    // UV座標の変換
     shadow_texcoord.x = shadow_texcoord.x * 0.5f + 0.5f;
     shadow_texcoord.y = shadow_texcoord.y * -0.5f + 0.5f;
 
+    // 範囲外判定
     if (any(shadow_texcoord.xy < 0.0f) || any(shadow_texcoord.xy > 1.0f) || shadow_texcoord.z < 0.0f || shadow_texcoord.z > 1.0f)
         return 1.0f;
 
-    // 3. PCF（ソフトシャドウ）によるサンプリング
     float depth = shadow_texcoord.z - shadow_bias;
     float shadowWeight = 0.0f;
     
-    // テクスチャのサイズを自動取得して1ピクセルの幅を計算
     uint width, height, elements;
     ShadowMap.GetDimensions(width, height, elements);
     float2 texelSize = 1.0f / float2(width, height);
     
-    // 3x3 (計9回) の周辺サンプリングで境界を滑らかにぼかす
+    // 3x3 PCFサンプリング
     [unroll]
     for (int y = -1; y <= 1; ++y)
     {
@@ -65,7 +56,58 @@ float CalculateShadowWeight(float4 worldPos, float viewDepth)
             );
         }
     }
-    shadowWeight /= 9.0f; // 9回サンプリングしたので平均化
+    return shadowWeight / 9.0f;
+}
+
+
+// 影の重み (0.0=影, 1.0=日向) を計算し、境界でブレンドするメイン関数
+float CalculateShadowWeight(float4 worldPos, float viewDepth)
+{
+    int cascadeIndex = 0;
+    int nextCascadeIndex = 0;
+    float blendFactor = 0.0f;
+    
+    // ブレンドを開始する「境界の手前何メートルか」
+    // (数値を大きくするとグラデーションが広がる)
+    const float BLEND_BAND = 5.0f;
+
+    if (viewDepth < cascadeSplits.x)
+    {
+        cascadeIndex = 0;
+        // 次の層(Cascade 1)への距離を測る
+        float distToNext = cascadeSplits.x - viewDepth;
+        if (distToNext < BLEND_BAND)
+        {
+            nextCascadeIndex = 1;
+            // 距離が近いほど、blendFactor が 1.0 に近づく
+            blendFactor = 1.0f - (distToNext / BLEND_BAND);
+        }
+    }
+    else if (viewDepth < cascadeSplits.y)
+    {
+        cascadeIndex = 1;
+        // 次の層(Cascade 2)への距離を測る
+        float distToNext = cascadeSplits.y - viewDepth;
+        if (distToNext < BLEND_BAND)
+        {
+            nextCascadeIndex = 2;
+            blendFactor = 1.0f - (distToNext / BLEND_BAND);
+        }
+    }
+    else
+    {
+        cascadeIndex = 2; // 最終層はブレンド先がない
+    }
+
+    // 1. 現在の層で影をサンプリング（9回）
+    float shadowWeight = SampleCascade(worldPos, cascadeIndex);
+
+    // 2. 境界付近（blendFactor > 0）なら、次の層もサンプリングしてブレンドする
+    if (blendFactor > 0.0f)
+    {
+        float nextShadowWeight = SampleCascade(worldPos, nextCascadeIndex); // さらに9回
+        shadowWeight = lerp(shadowWeight, nextShadowWeight, blendFactor);
+    }
 
     return shadowWeight;
 }
