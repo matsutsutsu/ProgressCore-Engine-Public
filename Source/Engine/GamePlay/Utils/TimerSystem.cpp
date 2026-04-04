@@ -31,4 +31,4 @@ void TimerSystem::Update(float dt)
 // ==========================================
 // マクロは必ず .cpp の末尾に1回だけ書く
 // ==========================================
-REGISTER_LOGIC_SYSTEM(TimerSystem, Priority::LogicStage::Update);
+REGISTER_LOGIC_SYSTEM(TimerSystem, Priority::LogicStage::L02_Update);

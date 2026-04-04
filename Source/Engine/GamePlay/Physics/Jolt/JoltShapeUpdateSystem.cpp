@@ -97,6 +97,6 @@ void JoltCapsuleShapeUpdateSystem::Update(float dt) {
     });
 }
 
-REGISTER_LOGIC_SYSTEM(JoltBoxShapeUpdateSystem,     Priority::LogicStage::PrePhysics);
-REGISTER_LOGIC_SYSTEM(JoltSphereShapeUpdateSystem,  Priority::LogicStage::PrePhysics);
-REGISTER_LOGIC_SYSTEM(JoltCapsuleShapeUpdateSystem, Priority::LogicStage::PrePhysics);
+REGISTER_LOGIC_SYSTEM(JoltBoxShapeUpdateSystem,     Priority::LogicStage::L03_PrePhysics);
+REGISTER_LOGIC_SYSTEM(JoltSphereShapeUpdateSystem,  Priority::LogicStage::L03_PrePhysics);
+REGISTER_LOGIC_SYSTEM(JoltCapsuleShapeUpdateSystem, Priority::LogicStage::L03_PrePhysics);

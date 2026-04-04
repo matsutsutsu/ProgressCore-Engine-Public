@@ -119,4 +119,4 @@ DirectX::XMFLOAT3 LightSystem::CalculateDirection(const DirectX::XMFLOAT4 &rotat
 // ==========================================
 // マクロは必ず .cpp の末尾に1回だけ書く
 // ==========================================
-REGISTER_RENDER_SYSTEM(LightSystem, Priority::RenderStage::Environment);
+REGISTER_RENDER_SYSTEM(LightSystem, Priority::RenderStage::R02_Environment);

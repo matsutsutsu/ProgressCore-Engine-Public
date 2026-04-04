@@ -343,6 +343,9 @@
     <Filter Include="Source\Engine\Graphics\Renderer\Pipeline\Pass">
       <UniqueIdentifier>{1fe879a1-7466-4e5c-bdcd-2cb433ec4b31}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\GamePlay\Graphics\Core\Culling">
+      <UniqueIdentifier>{adca7775-84af-4c94-b9a7-a8214c8cfbac}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1113,6 +1116,18 @@
     <ClInclude Include="Source\Engine\Graphics\Renderer\Pipeline\PostProcessPass.h">
       <Filter>Source\Engine\Graphics\Renderer\Pipeline\Pass</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\Culling\CullingComponents.h">
+      <Filter>Source\Engine\GamePlay\Graphics\Core\Culling</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\Culling\FrustumCullingSystem.h">
+      <Filter>Source\Engine\GamePlay\Graphics\Core\Culling</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\Culling\BoundsUpdateSystem.h">
+      <Filter>Source\Engine\GamePlay\Graphics\Core\Culling</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\Culling\CullingSetupSystem.h">
+      <Filter>Source\Engine\GamePlay\Graphics\Core\Culling</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -1651,6 +1666,15 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Renderer\Pipeline\PostProcessPass.cpp">
       <Filter>Source\Engine\Graphics\Renderer\Pipeline\Pass</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\Culling\FrustumCullingSystem.cpp">
+      <Filter>Source\Engine\GamePlay\Graphics\Core\Culling</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\Culling\BoundsUpdateSystem.cpp">
+      <Filter>Source\Engine\GamePlay\Graphics\Core\Culling</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\Culling\CullingSetupSystem.cpp">
+      <Filter>Source\Engine\GamePlay\Graphics\Core\Culling</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

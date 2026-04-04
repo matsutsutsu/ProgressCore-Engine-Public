@@ -189,4 +189,4 @@ void PlayerInputSystem::Update(float dt)
     });
 }
 
-REGISTER_LOGIC_SYSTEM(PlayerInputSystem, Priority::LogicStage::Input);
+REGISTER_LOGIC_SYSTEM(PlayerInputSystem, Priority::LogicStage::L01_Input);

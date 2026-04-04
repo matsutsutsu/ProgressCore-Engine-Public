@@ -159,4 +159,4 @@ void LuaScriptSystem::LoadScript(CCL::ECS::EntityID id, const std::string &path)
     _scriptDataMap[id] = std::move(data);
 }
 
-REGISTER_LOGIC_SYSTEM(LuaScriptSystem, Priority::LogicStage::Update);
+REGISTER_LOGIC_SYSTEM(LuaScriptSystem, Priority::LogicStage::L02_Update);

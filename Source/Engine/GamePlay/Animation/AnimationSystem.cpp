@@ -123,4 +123,4 @@ void AnimationSystem::UpdateManual(CCL::ECS::EntityID entity, float time)
     }
 }
 
-REGISTER_LOGIC_SYSTEM(AnimationSystem, Priority::RenderStage::Animation);
+REGISTER_LOGIC_SYSTEM(AnimationSystem, Priority::RenderStage::R03_Animation);

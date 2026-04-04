@@ -43,6 +43,6 @@ void JoltPullSystem::Update(float dt)
 }
 
 // 登録順序がすべてを決定する
-REGISTER_LOGIC_SYSTEM(JoltStepSystem, Priority::LogicStage::Physics);
+REGISTER_LOGIC_SYSTEM(JoltStepSystem, Priority::LogicStage::L04_Physics);
 // 物理計算の【後】に同期しなければならないため、新しくPostPhysicsなどのステージを作るか、Collisionの後に配置します
-REGISTER_LOGIC_SYSTEM(JoltPullSystem, Priority::LogicStage::Collision);
+REGISTER_LOGIC_SYSTEM(JoltPullSystem, Priority::LogicStage::L05_Collision);

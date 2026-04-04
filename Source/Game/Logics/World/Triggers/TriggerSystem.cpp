@@ -98,4 +98,4 @@ void TriggerSystem::Update(float dt)
 }
 
 
-REGISTER_LOGIC_SYSTEM(TriggerSystem, Priority::LogicStage::Resolution);
+REGISTER_LOGIC_SYSTEM(TriggerSystem, Priority::LogicStage::L06_Resolution);

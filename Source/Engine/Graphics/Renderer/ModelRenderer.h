@@ -4,7 +4,6 @@
 #include <wrl.h>
 #include <d3d11.h>
 #include <DirectXMath.h>
-#include <DirectXCollision.h> // BoundingFrustum用
 #include "Engine/Graphics/Resource/Model.h"
 #include "Engine/Graphics/Core/RenderContext.h"
 #include "Engine/Graphics/Renderer/Pipeline/RenderPipeline.h"
@@ -36,7 +35,6 @@ public:
     const DirectX::XMFLOAT4& GetShadowColor() const { return _shadowColor; }
     const DirectX::XMFLOAT4X4& GetShadowLightVP() const { return _shadowLightVP; }
 
-    const DirectX::BoundingFrustum& GetFrustum() const { return m_frustum; }
 
 private:
     RenderPipeline _pipeline; // 全ての描画を司るパイプライン
@@ -55,8 +53,6 @@ private:
         DirectX::XMFLOAT4X4 boneTransforms[MAX_BONES];
     };
     CbSkeleton m_cbSkeletonCache = {};
-
-    DirectX::BoundingFrustum m_frustum = {};
 
     // 内部初期化・解放関数
     void InitializeGlobalConstantBuffers(ID3D11Device* device);

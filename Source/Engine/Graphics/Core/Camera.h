@@ -1,6 +1,7 @@
 #pragma once
 
 #include <DirectXMath.h>
+#include <DirectXCollision.h> 
 
 // カメラ
 class Camera
@@ -51,6 +52,8 @@ public:
 	// 正射影設定(シャドウマップに必要)
 	void SetOrthographic(float width, float height, float nearZ, float farZ);
 
+	// 最新の視錐台を取得する
+	const DirectX::BoundingFrustum& GetFrustum() const { return frustum; }
 
 	// 視野角取得
 	const float& GetFovY() { return fovY; }
@@ -65,6 +68,9 @@ public:
 	const float& GetFar() { return farZ; }
 
 private:
+	// カメラの行列が変化したときにFrustumを再計算する内部関数
+	void UpdateFrustum();
+
 	DirectX::XMFLOAT4X4		view;
 	DirectX::XMFLOAT4X4		projection;
 
@@ -79,5 +85,8 @@ private:
 	float aspect;
 	float nearZ;
 	float farZ;
+
+	// カメラ自身の視界
+	DirectX::BoundingFrustum frustum;
 
 };

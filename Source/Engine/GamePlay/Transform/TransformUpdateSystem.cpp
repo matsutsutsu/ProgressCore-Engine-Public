@@ -338,4 +338,4 @@ void TransformUpdateSystem::MarkForDestruction(
 
 
 // 自動登録。SystemGroups.h に書く必要はなくなります
-REGISTER_LOGIC_SYSTEM(TransformUpdateSystem, Priority::LogicStage::Physics);
+REGISTER_LOGIC_SYSTEM(TransformUpdateSystem, Priority::LogicStage::L04_Physics);

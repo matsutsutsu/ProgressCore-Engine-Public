@@ -196,4 +196,4 @@ void JoltBodySetupSystem::Update(float dt)
 }
 
 // 登録順序: 物理計算が始まる前の PrePhysics フェーズで剛体を生成しておく必要がある。
-REGISTER_LOGIC_SYSTEM(JoltBodySetupSystem, Priority::LogicStage::PrePhysics);
+REGISTER_LOGIC_SYSTEM(JoltBodySetupSystem, Priority::LogicStage::L03_PrePhysics);

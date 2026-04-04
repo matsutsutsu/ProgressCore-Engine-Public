@@ -19,7 +19,10 @@ void PrimitiveRenderSystem::Update(float dt)
     auto* renderer = _world->GetResource<PrimitiveRenderer*>();
     if (!renderer) return;
 
-    ForEachParallel([&](const TransformComponent& trans, const PrimitiveComponent& prim) {
+    ForEachParallel([&](const TransformComponent& trans, const PrimitiveComponent& prim, const VisibilityComponent& vis) { // ★追加
+
+        // ここでカリング結果を見てスキップ
+        if (!vis.isVisible) return;
 
         DirectX::XMMATRIX worldMat = DirectX::XMLoadFloat4x4(&trans.worldMatrix);
         DirectX::XMMATRIX scaleMat = DirectX::XMMatrixIdentity();
@@ -101,4 +104,4 @@ void PrimitiveRenderSystem::Update(float dt)
         });
 }
 
-REGISTER_RENDER_SYSTEM(PrimitiveRenderSystem, Priority::RenderStage::Main);
+REGISTER_RENDER_SYSTEM(PrimitiveRenderSystem, Priority::RenderStage::R08_Main);

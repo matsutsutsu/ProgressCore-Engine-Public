@@ -144,20 +144,10 @@ private:
 private:
 	std::string filePath; // 読み込み元ファイルを保存
 
-	// ★変更：shared_ptr を完全に排除し、ModelHandle にする
+	// shared_ptr を完全に排除し、ModelHandle にする
     ModelHandle resource;
 
 	//std::vector<Material>	materials;
 	std::vector<Mesh>		meshes;
 	std::vector<Node>		nodes;
 };
-
-#include <DirectXCollision.h>
-
-bool IsMeshInFrustum(const Model::Mesh& mesh, const DirectX::BoundingFrustum& frustum);
-
-// モデル全体のAABBを取得する関数（仮定）
-//void GetBoundingBox(DirectX::BoundingBox& outAABB) const;
-
-// グローバル関数として定義
-bool IsModelInFrustum(const Model* model, const DirectX::XMFLOAT4X4& worldMatrix, const DirectX::BoundingFrustum& frustum);

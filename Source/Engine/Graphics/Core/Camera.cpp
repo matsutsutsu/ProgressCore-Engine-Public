@@ -48,6 +48,9 @@ void Camera::SetLookAt(const DirectX::XMFLOAT3& eye, const DirectX::XMFLOAT3& fo
 	// 視点、注視点を保存
 	this->eye = eye;
 	this->focus = focus;
+
+	// 行列が変わったのでFrustumを更新
+	UpdateFrustum();
 }
 
 // パースペクティブ設定
@@ -64,6 +67,8 @@ void Camera::SetPerspectiveFov(float fovY, float aspect, float nearZ, float farZ
     this->nearZ  = nearZ;
     this->farZ   = farZ;
 
+	// 行列が変わったのでFrustumを更新
+	UpdateFrustum();
 }
 
 
@@ -80,4 +85,20 @@ void Camera::SetOrthographic(float width, float height, float nearZ, float farZ)
 
 	this->fovY = fovY;
 	this->aspect = aspect;
+}
+
+// ====================================================================
+// ローカルFrustumを作成し、最新のビュー逆行列でワールド空間へ配置する
+// ====================================================================
+void Camera::UpdateFrustum()
+{
+	// 1. プロジェクション行列（画角や遠近感）から、原点ベースの視界（ローカルFrustum）を作成
+	DirectX::BoundingFrustum frustumLocal;
+	DirectX::BoundingFrustum::CreateFromMatrix(frustumLocal, DirectX::XMLoadFloat4x4(&projection));
+
+	// 2. ビュー行列の「逆行列」を計算（カメラのワールドTransformを表す行列）
+	DirectX::XMMATRIX invView = DirectX::XMMatrixInverse(nullptr, DirectX::XMLoadFloat4x4(&view));
+
+	// 3. ローカルFrustumをカメラの位置・角度に合わせてワールド空間に変換
+	frustumLocal.Transform(frustum, invView);
 }

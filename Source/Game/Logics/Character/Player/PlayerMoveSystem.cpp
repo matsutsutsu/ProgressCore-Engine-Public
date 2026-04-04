@@ -133,4 +133,4 @@ void PlayerMoveSystem::Update(float dt)
 }
 
 
-REGISTER_LOGIC_SYSTEM(PlayerMoveSystem, Priority::LogicStage::Update);
+REGISTER_LOGIC_SYSTEM(PlayerMoveSystem, Priority::LogicStage::L02_Update);

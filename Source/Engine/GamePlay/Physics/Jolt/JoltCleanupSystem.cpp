@@ -40,4 +40,4 @@ void JoltCleanupSystem::ExecuteCleanup(CCL::ECS::Core::World& world)
 }
 
 // HierarchyCleanupSystem.cpp の末尾
-REGISTER_LOGIC_SYSTEM(JoltCleanupSystem, Priority::LogicStage::Cleanup);
+REGISTER_LOGIC_SYSTEM(JoltCleanupSystem, Priority::LogicStage::L07_Cleanup);

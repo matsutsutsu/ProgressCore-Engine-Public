@@ -225,7 +225,7 @@ void CameraFreeControlSystem::Update(float dt)
 // =========================================================
 // 自動登録マクロ群（必ず .cpp の末尾に1回だけ書く）
 // =========================================================
-REGISTER_RENDER_SYSTEM(CameraFollowSystem, Priority::RenderStage::Camera);
-REGISTER_RENDER_SYSTEM(CameraLookAtSystem, Priority::RenderStage::Camera);
-REGISTER_RENDER_SYSTEM(CameraShakeSystem, Priority::RenderStage::Camera);
-REGISTER_RENDER_SYSTEM(CameraFreeControlSystem, Priority::RenderStage::Camera);
+REGISTER_RENDER_SYSTEM(CameraFollowSystem, Priority::RenderStage::R01_Camera);
+REGISTER_RENDER_SYSTEM(CameraLookAtSystem, Priority::RenderStage::R01_Camera);
+REGISTER_RENDER_SYSTEM(CameraShakeSystem, Priority::RenderStage::R01_Camera);
+REGISTER_RENDER_SYSTEM(CameraFreeControlSystem, Priority::RenderStage::R01_Camera);

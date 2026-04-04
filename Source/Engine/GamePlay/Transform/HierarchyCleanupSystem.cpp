@@ -114,4 +114,4 @@ void HierarchyCleanupSystem::CollectChildrenRecursive(
 }
 
 // HierarchyCleanupSystem.cpp の末尾
-REGISTER_LOGIC_SYSTEM(HierarchyCleanupSystem, Priority::LogicStage::Cleanup);
+REGISTER_LOGIC_SYSTEM(HierarchyCleanupSystem, Priority::LogicStage::L07_Cleanup);

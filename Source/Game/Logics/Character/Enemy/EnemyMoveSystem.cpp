@@ -77,4 +77,4 @@ void EnemyMoveSystem::Update(float dt) {
 }
 
 // 物理計算が始まる前（Updateフェーズ）にAIの意思決定を終わらせる
-REGISTER_LOGIC_SYSTEM(EnemyMoveSystem, Priority::LogicStage::Update);
+REGISTER_LOGIC_SYSTEM(EnemyMoveSystem, Priority::LogicStage::L02_Update);

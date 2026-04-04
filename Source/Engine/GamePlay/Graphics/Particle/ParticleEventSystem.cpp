@@ -58,4 +58,4 @@ void ParticleEventSystem::OnEffectEvent(const AnimEventEffectMessage& msg)
 
 
 // システムの自動登録
-REGISTER_LOGIC_SYSTEM(ParticleEventSystem, Priority::LogicStage::Update);
+REGISTER_LOGIC_SYSTEM(ParticleEventSystem, Priority::LogicStage::L02_Update);

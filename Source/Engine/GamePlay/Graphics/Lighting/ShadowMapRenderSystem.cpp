@@ -126,9 +126,6 @@ void ShadowMapRenderSystem::RenderShadowMap()
 
     renderer->SetShadowParams(shadowBias, shadowColor);
 
-    // レンダラーから最新の視錐台を取得
-    BoundingFrustum frustum = renderer->GetFrustum();
-
   
     auto& renderQueue = RenderQueue::Instance();
 
@@ -153,4 +150,4 @@ void ShadowMapRenderSystem::RenderShadowMap()
 }
 
 
-REGISTER_RENDER_SYSTEM(ShadowMapRenderSystem, Priority::RenderStage::Shadow);
+REGISTER_RENDER_SYSTEM(ShadowMapRenderSystem, Priority::RenderStage::R06_Shadow);

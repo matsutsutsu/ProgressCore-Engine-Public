@@ -24,4 +24,4 @@ void ECSBenchmarkSystem::Update(float dt)
 }
 
 // Logicグループ（マルチスレッドで並列実行されるフェーズ）に登録
-REGISTER_LOGIC_SYSTEM(ECSBenchmarkSystem, Priority::LogicStage::Update);
+REGISTER_LOGIC_SYSTEM(ECSBenchmarkSystem, Priority::LogicStage::L02_Update);

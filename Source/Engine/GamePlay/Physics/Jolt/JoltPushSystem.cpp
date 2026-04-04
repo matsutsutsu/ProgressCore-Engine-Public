@@ -29,4 +29,4 @@ void JoltPushSystem::Update(float dt) {
 }
 
 // ★物理計算の前にワープを完了させる
-REGISTER_LOGIC_SYSTEM(JoltPushSystem, Priority::LogicStage::PrePhysics);
+REGISTER_LOGIC_SYSTEM(JoltPushSystem, Priority::LogicStage::L03_PrePhysics);

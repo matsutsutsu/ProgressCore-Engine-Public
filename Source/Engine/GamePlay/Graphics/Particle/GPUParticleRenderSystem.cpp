@@ -48,4 +48,4 @@ void GPUParticleRenderSystem::ReleaseAllResources()
 }
 
 // これは手動で管理するのでマクロはやめる
-REGISTER_RENDER_SYSTEM(GPUParticleRenderSystem, Priority::RenderStage::PostMain);
+REGISTER_RENDER_SYSTEM(GPUParticleRenderSystem, Priority::RenderStage::R08_Main);

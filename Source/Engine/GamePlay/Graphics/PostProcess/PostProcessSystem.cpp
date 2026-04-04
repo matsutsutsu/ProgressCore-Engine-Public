@@ -60,4 +60,4 @@ void PostProcessSystem::Update(float dt) {
 }
 
 
-REGISTER_RENDER_SYSTEM(PostProcessSystem, Priority::RenderStage::PostProcess);
+REGISTER_RENDER_SYSTEM(PostProcessSystem, Priority::RenderStage::R09_PostProcess);

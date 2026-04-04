@@ -28,4 +28,4 @@ void JoltCollisionEventSystem::Update(float dt)
 }
 
 // ★絶対のルール：物理計算(Step)が終わった【後】に実行すること！
-REGISTER_LOGIC_SYSTEM(JoltCollisionEventSystem, Priority::LogicStage::Collision);
+REGISTER_LOGIC_SYSTEM(JoltCollisionEventSystem, Priority::LogicStage::L05_Collision);

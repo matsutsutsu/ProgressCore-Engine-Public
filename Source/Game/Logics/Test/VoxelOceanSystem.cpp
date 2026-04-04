@@ -41,4 +41,4 @@ void VoxelOceanSystem::Update(float dt)
 }
 
 // LogicグループのUpdateフェーズで回す
-REGISTER_LOGIC_SYSTEM(VoxelOceanSystem, Priority::LogicStage::Update);
+REGISTER_LOGIC_SYSTEM(VoxelOceanSystem, Priority::LogicStage::L02_Update);

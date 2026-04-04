@@ -81,4 +81,4 @@ void PlayerFeedbackSystem::Update(float dt)
 }
 
 // 演出系のシステムなので、物理やロジックが終わった後（PostUpdate等）に実行するのが安全です
-REGISTER_LOGIC_SYSTEM(PlayerFeedbackSystem, Priority::LogicStage::Resolution);
+REGISTER_LOGIC_SYSTEM(PlayerFeedbackSystem, Priority::LogicStage::L06_Resolution);

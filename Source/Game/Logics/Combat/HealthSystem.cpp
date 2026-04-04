@@ -80,4 +80,4 @@ void HealthSystem::Update(float dt)
 
 }
 
-REGISTER_LOGIC_SYSTEM(HealthSystem, Priority::LogicStage::Resolution);
+REGISTER_LOGIC_SYSTEM(HealthSystem, Priority::LogicStage::L06_Resolution);

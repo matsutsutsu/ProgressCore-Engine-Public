@@ -34,37 +34,22 @@ ModelRenderSystem::ModelRenderSystem() : IfSystem("ModelRenderSystem"){}
 
 void ModelRenderSystem::Update(float dt)
 {
-    // シングルトンではなくWorldから取得する
-    if (!_world->HasResource<ModelRenderer *>()) return;
-    auto *renderer = _world->GetResource<ModelRenderer *>();
 
-    if (!renderer) return;
-
-    // レンダラーから最新の視錐台を取得
-    // 【修正】参照(const&)ではなくコピーで受け取り、値を修正できるようにする
-    BoundingFrustum frustum = renderer->GetFrustum();
-
-    // ★最適化1: シングルトンへのアクセス(ロック等のオーバーヘッド)をループの外に出す
+    // 最適化 シングルトンへのアクセス(ロック等のオーバーヘッド)をループの外に出す
     auto& resManager = ResourceManager::Instance();
-
     auto& renderQueue = RenderQueue::Instance();
 
     // TransformComponent と ModelComponent の組を全エンティティ分回す
-    ForEach([&](const TransformComponent &transform,
-                const ModelComponent      &model,
-                const MaterialComponent   &mat) {
-        if (!model.modelPtr) return;
+    ForEach([&](const TransformComponent& transform,
+        const ModelComponent& model,
+        const MaterialComponent& mat,
+        const VisibilityComponent& vis) { // ★追加
 
-        // 安全対策: マテリアルデータが無い場合はスキップ
-        // if (!mat.data) return;
+            // ★ 最重要：ここでカリング結果を見て、画面外なら即座に処理をスキップ（サボる）
+            if (!vis.isVisible) return;
 
-        // ここで判定！UpdateTransformを呼ぶ前にチェック
-        // モデル全体の境界球（またはAABB）を使って判定
-        // CPUだと限界があるので、いつかGPUカリングにしておく
-        if (!IsModelInFrustum(model.modelPtr.get(), transform.worldMatrix, frustum)) {
-            return;
-             // 画面外なら行列計算も描画登録も一切しない
-        }
+            if (!model.modelPtr) return;
+
 
         // ShadowMapでUpdateTransform行うのでここではやらない
         bool hasBones = false;
@@ -122,4 +107,4 @@ void ModelRenderSystem::Update(float dt)
 }
 
 
-REGISTER_RENDER_SYSTEM(ModelRenderSystem, Priority::RenderStage::Main);
+REGISTER_RENDER_SYSTEM(ModelRenderSystem, Priority::RenderStage::R08_Main);

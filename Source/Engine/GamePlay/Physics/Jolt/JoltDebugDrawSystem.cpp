@@ -178,7 +178,7 @@ void JoltMeshDebugDrawSystem::OnDrawDebug(ShapeRenderer* renderer) {
 // システムの登録
 // ===================================================================================
 // ※ OnDrawDebug はシステムの実行順序に依存しないため、適当なLogicフェーズに登録しておくだけで機能します。
-REGISTER_LOGIC_SYSTEM(JoltBoxDebugDrawSystem,     Priority::LogicStage::Update);
-REGISTER_LOGIC_SYSTEM(JoltSphereDebugDrawSystem,  Priority::LogicStage::Update);
-REGISTER_LOGIC_SYSTEM(JoltCapsuleDebugDrawSystem, Priority::LogicStage::Update);
-REGISTER_LOGIC_SYSTEM(JoltMeshDebugDrawSystem,    Priority::LogicStage::Update);
+REGISTER_LOGIC_SYSTEM(JoltBoxDebugDrawSystem,     Priority::LogicStage::L02_Update);
+REGISTER_LOGIC_SYSTEM(JoltSphereDebugDrawSystem,  Priority::LogicStage::L02_Update);
+REGISTER_LOGIC_SYSTEM(JoltCapsuleDebugDrawSystem, Priority::LogicStage::L02_Update);
+REGISTER_LOGIC_SYSTEM(JoltMeshDebugDrawSystem,    Priority::LogicStage::L02_Update);

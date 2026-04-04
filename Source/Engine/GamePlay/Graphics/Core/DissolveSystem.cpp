@@ -35,4 +35,4 @@ void DissolveSystem::Update(float dt)
 }
 
 
-REGISTER_RENDER_SYSTEM(DissolveSystem, Priority::RenderStage::Main);
+REGISTER_RENDER_SYSTEM(DissolveSystem, Priority::RenderStage::R08_Main);

@@ -235,6 +235,10 @@
     <ClInclude Include="Source\Engine\GamePlay\Core\Scene\Scene.h" />
     <ClInclude Include="Source\Engine\GamePlay\Core\Scene\SceneFactory.h" />
     <ClInclude Include="Source\Engine\GamePlay\Core\Scene\SceneManager.h" />
+    <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\Culling\BoundsUpdateSystem.h" />
+    <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\Culling\CullingComponents.h" />
+    <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\Culling\CullingSetupSystem.h" />
+    <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\Culling\FrustumCullingSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\DissolveComponent.h" />
     <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\DissolveSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\EnvironmentSystem.h" />
@@ -472,6 +476,9 @@
     <ClCompile Include="Source\Engine\GamePlay\Core\CoreComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Core\Scene\SceneFactory.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Core\Scene\SceneManager.cpp" />
+    <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\Culling\BoundsUpdateSystem.cpp" />
+    <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\Culling\CullingSetupSystem.cpp" />
+    <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\Culling\FrustumCullingSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\DissolveSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\EnvironmentComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\EnvironmentSystem.cpp" />

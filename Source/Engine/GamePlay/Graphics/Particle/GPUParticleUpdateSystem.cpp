@@ -310,4 +310,4 @@ void GPUParticleUpdateSystem::CreateNoiseTexture(ID3D11Device *device)
 }
 
 
-REGISTER_RENDER_SYSTEM(GPUParticleUpdateSystem, Priority::RenderStage::PreMain);
+REGISTER_RENDER_SYSTEM(GPUParticleUpdateSystem, Priority::RenderStage::R08_Main);

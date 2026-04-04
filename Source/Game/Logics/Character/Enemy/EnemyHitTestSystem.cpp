@@ -51,4 +51,4 @@ void EnemyHitTestSystem::OnCollision(const JoltCollisionEvent& ev) {
 }
 
 // 登録自体は必要（Initialize()をエンジン側から呼んでもらうため）
-REGISTER_LOGIC_SYSTEM(EnemyHitTestSystem, Priority::LogicStage::Update);
+REGISTER_LOGIC_SYSTEM(EnemyHitTestSystem, Priority::LogicStage::L02_Update);

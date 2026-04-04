@@ -76,4 +76,4 @@ void JoltCharacterSetupSystem::Update(float dt)
 }
 
 // 物理実体が生成される前に呼ばれるようにする
-REGISTER_LOGIC_SYSTEM(JoltCharacterSetupSystem, Priority::LogicStage::PrePhysics);
+REGISTER_LOGIC_SYSTEM(JoltCharacterSetupSystem, Priority::LogicStage::L03_PrePhysics);

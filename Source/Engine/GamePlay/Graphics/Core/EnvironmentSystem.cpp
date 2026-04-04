@@ -212,4 +212,4 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext *dc)
 
 }
 
-REGISTER_RENDER_SYSTEM(EnvironmentSystem, Priority::RenderStage::Environment);
+REGISTER_RENDER_SYSTEM(EnvironmentSystem, Priority::RenderStage::R02_Environment);

@@ -76,4 +76,4 @@ void JoltCharacterUpdateSystem::Update(float dt) {
 }
 
 // 物理のStepが走る前、または同じPhysicsフェーズで実行する
-REGISTER_LOGIC_SYSTEM(JoltCharacterUpdateSystem, Priority::LogicStage::PrePhysics);
+REGISTER_LOGIC_SYSTEM(JoltCharacterUpdateSystem, Priority::LogicStage::L03_PrePhysics);

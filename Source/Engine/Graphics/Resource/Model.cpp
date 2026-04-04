@@ -10,6 +10,7 @@
 #include "Model.h"
 #include "ResourceManager.h"
 #include "Engine/Core/Math/StringHash.h"
+#include <array>
 
 // コンストラクタ
 Model::Model(ID3D11Device* device, const char* filename, float sampleRate)
@@ -585,48 +586,4 @@ std::shared_ptr<Model> Model::CreateFromData(ID3D11Device *device,
     model->meshes[0].node = &model->nodes[0];
 
     return model;
-}
-
-
-
-bool IsMeshInFrustum(const Model::Mesh& mesh, const DirectX::BoundingFrustum& frustum) {
-    // 1. メッシュのローカルAABBを取得 [cite: 160]
-    DirectX::BoundingBox localAABB;
-    DirectX::XMFLOAT3 center;
-    // boundsMin, boundsMax から中心とサイズを計算
-    center.x = (mesh.data->boundsMin.x + mesh.data->boundsMax.x) * 0.5f;
-    center.y = (mesh.data->boundsMin.y + mesh.data->boundsMax.y) * 0.5f;
-    center.z = (mesh.data->boundsMin.z + mesh.data->boundsMax.z) * 0.5f;
-
-    DirectX::XMFLOAT3 extents;
-    extents.x = (mesh.data->boundsMax.x - mesh.data->boundsMin.x) * 0.5f;
-    extents.y = (mesh.data->boundsMax.y - mesh.data->boundsMin.y) * 0.5f;
-    extents.z = (mesh.data->boundsMax.z - mesh.data->boundsMin.z) * 0.5f;
-
-    localAABB.Center = center;
-    localAABB.Extents = extents;
-
-    // 2. ワールド行列を適用してワールド空間のAABBに変換 
-    DirectX::BoundingBox worldAABB;
-    DirectX::XMMATRIX worldTransform = DirectX::XMLoadFloat4x4(&mesh.node->worldTransform);
-    localAABB.Transform(worldAABB, worldTransform);
-
-    // 3. 視錐台との交差判定
-    return frustum.Intersects(worldAABB);
-}
-
-bool IsModelInFrustum(const Model* model, const DirectX::XMFLOAT4X4& worldMatrix, const DirectX::BoundingFrustum& frustum) 
-{
-    if (!model || !model->GetResource()) return false;
-
-    // 1. モデルのローカルAABBを取得
-    DirectX::BoundingBox localAABB = model->GetResource()->GetBoundingBox();
-
-    // 2. ワールド行列でワールド空間へ変換
-    DirectX::BoundingBox worldAABB;
-    DirectX::XMMATRIX worldTransform = DirectX::XMLoadFloat4x4(&worldMatrix);
-    localAABB.Transform(worldAABB, worldTransform);
-
-    // 3. カリング判定
-    return frustum.Intersects(worldAABB);
 }
