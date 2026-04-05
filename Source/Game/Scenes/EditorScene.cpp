@@ -29,9 +29,9 @@ void EditorScene::Initialize()
     //SceneInitializer::SpawnJoltTest(*_worldPtr, device);
 
     // 中では普通にPBRモデル用にしている
-    //SceneInitializer::SpawnAnimationTest(*_worldPtr, device);
+    SceneInitializer::SpawnAnimationTest(*_worldPtr, device);
 
-    SceneInitializer::SpawnShaderTest(*_worldPtr, device);
+    //SceneInitializer::SpawnShaderTest(*_worldPtr, device);
 
     // 例：10万個のキューブによる銀河の渦を生成
     //SceneInitializer::SpawnECSBenchmarkTest(*_worldPtr, device, 100000);

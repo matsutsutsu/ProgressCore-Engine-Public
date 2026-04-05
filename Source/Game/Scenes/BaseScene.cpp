@@ -8,7 +8,9 @@
 
 #include "Engine/Graphics/Core/Graphics.h"
 #include "Engine/Physics/JoltPhysicsManager.h"
-#include "Game/Logics/Combat/GlobalDamageQueue.h"
+
+
+#include "Engine/Platform/Input/Input.h"
 
 #include "Engine/GamePlay/Graphics/Core/EnvironmentSystem.h"
 
@@ -43,11 +45,13 @@ void BaseScene::Initialize()
     _worldPtr   = _ecsContext->GetWorld(); // 互換性用
 
     // リソース登録
-    _worldPtr->AddResource<GlobalDamageQueue>();
+    _worldPtr->AddResource<Input *>(Input::Instance());
+
 
     // WorldのリソースとしてJoltを登録し、初期化する
     _worldPtr->AddResource<JoltPhysicsManager>();
     _worldPtr->GetResource<JoltPhysicsManager>().Initialize();
+
 
     // システムがコンストラクタ引数なしでもアクセスできるようにポインタを登録
     _worldPtr->AddResource<Camera *>(&camera);

@@ -369,9 +369,6 @@
     <ClInclude Include="Source\Engine\UI\Widgets\UIText.h" />
     <ClInclude Include="Source\Game\Core\AllComponents.h" />
     <ClInclude Include="Source\Game\Core\SystemPriority.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Boids\BoidsRenderer.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Boids\BoidsSwarmComponent.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Boids\BoidsSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyHitTestSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyMoveSystem.h" />
@@ -568,8 +565,6 @@
     <ClCompile Include="Source\Engine\UI\UIElement.cpp" />
     <ClCompile Include="Source\Engine\UI\UIManager.cpp" />
     <ClCompile Include="Source\Game\Core\GamePlayComponentMeta.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Boids\BoidsRenderer.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Boids\BoidsSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyHitTestSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyMoveSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerFeedbackSystem.cpp" />

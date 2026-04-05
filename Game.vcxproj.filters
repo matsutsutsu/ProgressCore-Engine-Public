@@ -331,9 +331,6 @@
     <Filter Include="Source\Engine\GamePlay\Physics\Collision\Collider">
       <UniqueIdentifier>{1ac4e9b9-47e1-482d-a82e-d3ad2832ac12}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Game\Logics\Character\Boids">
-      <UniqueIdentifier>{7c3e22d7-bac6-4269-93ef-2df2adad0f48}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Game\Logics\Test">
       <UniqueIdentifier>{7de38b51-de5a-4cbe-a640-02ac89b89766}</UniqueIdentifier>
     </Filter>
@@ -1053,15 +1050,6 @@
     <ClInclude Include="Source\Engine\GamePlay\Graphics\Particle\ParticleEventSystem.h">
       <Filter>Source\Engine\GamePlay\Graphics\Particle</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Boids\BoidsSwarmComponent.h">
-      <Filter>Source\Game\Logics\Character\Boids</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Boids\BoidsRenderer.h">
-      <Filter>Source\Game\Logics\Character\Boids</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Boids\BoidsSystem.h">
-      <Filter>Source\Game\Logics\Character\Boids</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Core\PipelineState.h">
       <Filter>Source\Engine\Graphics\Core</Filter>
     </ClInclude>
@@ -1639,12 +1627,6 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\GamePlay\Graphics\Particle\ParticleEventSystem.cpp">
       <Filter>Source\Engine\GamePlay\Graphics\Particle</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Boids\BoidsRenderer.cpp">
-      <Filter>Source\Game\Logics\Character\Boids</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Boids\BoidsSystem.cpp">
-      <Filter>Source\Game\Logics\Character\Boids</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Test\ECSBenchmarkSystem.cpp">
       <Filter>Source\Game\Logics\Test</Filter>
