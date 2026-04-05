@@ -39,7 +39,6 @@ float4 main(VS_OUT pin) : SV_TARGET
     float3 finalColor = surf.color * (light.diffuse + ambient) + light.specular;
 
     // ③ 飾り付け (エフェクトの適用)
-    finalColor = ApplyShadowColor(finalColor, shadowWeight);
     finalColor = ApplyRimLight(finalColor, surf.normal, surf.viewDir);
     finalColor = ApplyHeightFog(surf.pos, cameraPosition.xyz, finalColor, LinearSampler, surf.normal);
     finalColor = ApplyHitFlash(finalColor, flashIntensity);

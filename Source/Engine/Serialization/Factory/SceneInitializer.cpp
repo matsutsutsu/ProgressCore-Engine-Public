@@ -233,7 +233,14 @@ void SceneInitializer::SpawnAnimationTest(CCL::ECS::Core::World& world, ID3D11De
 {
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Camera/FreeCamera.json");
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/World/ExampleStage.json");
-    //EntityFactory::SpawnPrefab(world, "Assets/Prefabs/AnimationModel.json");
+    EntityFactory::SpawnPrefab(world, "Assets/Prefabs/AnimationModel.json");
+   
+}
+
+void SceneInitializer::SpawnShaderTest(CCL::ECS::Core::World& world, ID3D11Device* device)
+{
+    EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Camera/FreeCamera.json");
+    EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Sponza.json");
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/PBRModel.json");
 }
 

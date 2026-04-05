@@ -67,6 +67,34 @@ template <> struct ComponentMeta<MaterialComponent> {
             return true;
         }
 
+        // ====================================================================
+        //  一括変更（バッチオペレーション）セクション
+        // ====================================================================
+        ImGui::Separator();
+        if (ImGui::CollapsingHeader("Batch Operations (Apply to All)", ImGuiTreeNodeFlags_DefaultOpen)) {
+            const char* shaderNames[] = { "Basic", "Lambert", "Phong", "Toon", "Outline", "ShadowMap", "PBR" };
+            static int batchShaderIdx = 6; // デフォルトをPBRにしておく等の工夫
+
+            // 少し幅を調整してボタンと並べる
+            ImGui::SetNextItemWidth(150.0f);
+            ImGui::Combo("##BatchShader", &batchShaderIdx, shaderNames, 7);
+            ImGui::SameLine();
+
+            // 一括適用ボタン
+            if (ImGui::Button("Apply Shader to All Slots")) {
+                uint32_t targetHash = CCL::Utils::HashString(shaderNames[batchShaderIdx]);
+                for (size_t i = 0; i < comp->overrideMaterials.size(); ++i) {
+                    MaterialHandle handle = comp->overrideMaterials[i];
+                    if (!handle.IsValid()) continue;
+                    MaterialData* matPtr = ResourceManager::Instance().GetMaterial(handle);
+                    if (matPtr) {
+                        matPtr->shaderHash = targetHash;
+                    }
+                }
+                changed = true;
+            }
+        }
+
         ImGui::Separator();
         ImGui::Text("Material Slots:");
 

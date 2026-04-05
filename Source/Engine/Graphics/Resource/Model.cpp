@@ -166,6 +166,7 @@ Model::Model(ID3D11Device* device, const char* filename, float sampleRate)
             dst.data->scalars["useMetalRoughMap"] = 0.0f; // ★フラグOFF
         }
 
+
     }
 
 const std::vector<ModelResource::Mesh>& resMeshes = ResourceManager::Instance().GetModel(resource)->GetMeshes();
@@ -575,6 +576,11 @@ std::shared_ptr<Model> Model::CreateFromData(ID3D11Device *device,
     matData->scalars["occlusionStrength"] = 0.0f;
     matData->scalars["rimPower"]     = 5.0f;
     matData->scalars["rimIntensity"] = 0.0f;
+
+    matData->colors["useAlbedoMap"] = { 0.0f, 0.0f, 0.0f, 0.0f };
+    matData->colors["useNormalMap"] = { 0.0f, 0.0f, 0.0f, 0.0f };
+    matData->colors["useMetalRoughMap"] = { 0.0f, 0.0f, 0.0f, 0.0f };
+    matData->colors["useOcclusionMap"] = { 0.0f, 0.0f, 0.0f, 0.0f };
 
     // --- Meshの同期 ---
     model->meshes.resize(1);

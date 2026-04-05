@@ -17,7 +17,7 @@ cbuffer CbMesh : register(REG_CB(SLOT_CB_MATERIAL))
     float useAlbedoMap;
     float useNormalMap;
     float useMetalRoughMap;
-    float padding; // 16バイト境界合わせ
+    float useOcclusionMap;
 };
 
 Texture2D AlbedoMap : register(REG_SRV(SLOT_SRV_MAT_TEX0));
@@ -61,7 +61,8 @@ float4 main(VS_OUT pin) : SV_TARGET
     
     surf.metalness = metalness * mrSample.b;
     surf.roughness = roughness * mrSample.g;
-    surf.ao = lerp(1.0f, mrSample.r, occlusionStrength);
+    float rawAO = useOcclusionMap > 0.5f ? mrSample.r : 1.0f;
+    surf.ao = lerp(1.0f, rawAO, occlusionStrength);
 
     // F0の決定 (非金属は0.04、金属は自身のアルベド色)
     surf.f0 = lerp(float3(0.04f, 0.04f, 0.04f), surf.albedo, surf.metalness);
@@ -78,6 +79,14 @@ float4 main(VS_OUT pin) : SV_TARGET
     // IBLによる環境光（間接光）を計算
     float3 ambientIBL = CalculateIBL(surf);
     
+    // ==============================================================================
+    // マクロオクルージョン（影の中のIBLを減衰させて、影をクッキリさせる）
+    // shadowWeight が 0.0 (影) のときは IBLを 20% (0.2) に落とし、
+    // shadowWeight が 1.0 (日向) のときは IBLを 100% (1.0) にする。
+    // ==============================================================================
+    float skyOcclusion = lerp(0.2f, 1.0f, shadowWeight);
+    ambientIBL *= skyOcclusion;
+    
     // ------------------------------------------------------------
     // 3. 最終合成とエフェクト
     // ------------------------------------------------------------
@@ -86,9 +95,6 @@ float4 main(VS_OUT pin) : SV_TARGET
     // 直接光 ＋ 環境光 ＋ 発光
     float3 finalColor = ambientIBL + light.diffuse + light.specular + emissive;
     
-    // 影色の適用
-    finalColor = ApplyShadowColor(finalColor, shadowWeight);
-
     // リムライト
     if (gFogRimParams.y > 0.0f)
     {

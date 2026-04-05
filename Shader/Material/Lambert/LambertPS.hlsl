@@ -30,7 +30,7 @@ float4 main(VS_OUT pin) : SV_TARGET
     surf.alpha = baseColor.a;
     
     // =========================================================
-    // 3. 最新のECSライトシステム(CbLight)で全ライトを一括計算！
+    // 3. ECSライトシステム(CbLight)で全ライトを一括計算！
     // =========================================================
     float viewDepth = length(cameraPosition.xyz - pin.position.xyz);
     float shadowWeight = CalculateShadowWeight(pin.position, viewDepth);
