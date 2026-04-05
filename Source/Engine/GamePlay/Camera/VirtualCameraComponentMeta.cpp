@@ -150,9 +150,61 @@ template <> struct ComponentMeta<CameraBodyFree> {
 };
 
 // ============================================================================
+// Camera Body TPS
+// ============================================================================
+template <> struct ComponentMeta<CameraBodyTPS> {
+    static constexpr bool        registered = true;
+    static constexpr const char* displayName = "Camera Body (TPS)";
+    static constexpr bool        hasCustomGui = true;
+
+    static const std::vector<FieldDescriptor>& Fields()
+    {
+        static const std::vector<FieldDescriptor> fields = {
+            META_FIELD_FLOAT(CameraBodyTPS, distance, "distance", "Distance", 0.1f, 1.0f, 100.0f, "TPS Settings"),
+            META_FIELD_FLOAT(CameraBodyTPS, currentPitch, "currentPitch", "Pitch", 1.0f, -85.0f, 85.0f, "TPS Settings"),
+            META_FIELD_FLOAT(CameraBodyTPS, currentYaw, "currentYaw", "Yaw", 1.0f, -360.0f, 360.0f, "TPS Settings"),
+            META_FIELD_FLOAT(CameraBodyTPS, lookSpeedX, "lookSpeedX", "Look Speed X", 1.0f, 0.0f, 500.0f, "TPS Settings"),
+            META_FIELD_FLOAT(CameraBodyTPS, lookSpeedY, "lookSpeedY", "Look Speed Y", 1.0f, 0.0f, 500.0f, "TPS Settings"),
+            META_FIELD_FLOAT3(CameraBodyTPS, targetOffset, "targetOffset", "Target Offset", 0.1f, "TPS Settings")
+        };
+        return fields;
+    }
+
+    // ドラッグ＆ドロップの実装
+    static bool CustomGui(CameraBodyTPS& comp, unsigned long long entityID = 0, void* world = nullptr)
+    {
+        bool changed = false;
+        for (const auto& fd : Fields()) {
+            if (ComponentMetaImGui::DrawField(fd, &comp)) changed = true;
+        }
+
+        ImGui::Separator();
+        ImGui::Text("Follow Target Link");
+
+        std::string label = (comp.targetEntity == 0) ? "(None)" : "Linked Target ID: " + std::to_string(comp.targetEntity);
+        ImGui::Button(label.c_str(), ImVec2(-1, 0));
+
+        // プレイヤーEntityなどをドラッグしてここに落とす
+        if (ImGui::BeginDragDropTarget()) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_ENTITY_ID")) {
+                comp.targetEntity = *(const unsigned long long*)payload->Data;
+                changed = true;
+            }
+            ImGui::EndDragDropTarget();
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("追従するEntityをここにドラッグ");
+
+        return changed;
+    }
+};
+
+
+
+// ============================================================================
 // 究極の自動化：これだけでJSONとImGuiの両方に登録される
 // ============================================================================
 REGISTER_COMPONENT(VirtualCamera, "VirtualCamera")
 REGISTER_COMPONENT(CameraBodyFollow, "CameraBodyFollow")
 REGISTER_COMPONENT(CameraAimLookAt, "CameraAimLookAt")
 REGISTER_COMPONENT(CameraBodyFree, "CameraBodyFree")
+REGISTER_COMPONENT(CameraBodyTPS, "CameraBodyTPS")

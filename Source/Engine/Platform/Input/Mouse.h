@@ -79,6 +79,12 @@ public:
 	// 前回のマウスカーソルY座標取得
 	int GetOldPositionY() const { return positionY[1]; }
 
+	// =========================================================
+	// マウスカーソルの移動量（速度）を取得
+	// =========================================================
+	int GetVelocityX() const { return positionX[0] - positionX[1]; }
+	int GetVelocityY() const { return positionY[0] - positionY[1]; }
+
 	// スクリーン幅設定
 	void SetScreenWidth(int width) { screenWidth = width; }
 

@@ -346,6 +346,12 @@
     <Filter Include="Shader\Pass\SkyBox">
       <UniqueIdentifier>{7aa7b402-62ad-4c1d-bdb8-5ade6932aa53}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\Character\PlayerCar">
+      <UniqueIdentifier>{54b1b67f-81d4-4299-b7c1-3e7a0a3f50b7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\Character\PlayerCar\_Meta">
+      <UniqueIdentifier>{49c1eceb-c993-4721-abbb-5824797ecbae}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1125,6 +1131,15 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\Pass\ShadowUtils.h">
       <Filter>Source\Engine\Graphics\Shader\Pass</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\PlayerCar\PlayerCarComponent.h">
+      <Filter>Source\Game\Logics\Character\PlayerCar</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\PlayerCar\PlayerCarInputSystem.h">
+      <Filter>Source\Game\Logics\Character\PlayerCar</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\PlayerCar\PlayerCarMoveSystem.h">
+      <Filter>Source\Game\Logics\Character\PlayerCar</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -1669,6 +1684,15 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Renderer\Pipeline\SkyboxPass.cpp">
       <Filter>Source\Engine\Graphics\Renderer\Pipeline\Pass</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\PlayerCar\PlayerCarInputSystem.cpp">
+      <Filter>Source\Game\Logics\Character\PlayerCar</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\PlayerCar\PlayerCarMoveSystem.cpp">
+      <Filter>Source\Game\Logics\Character\PlayerCar</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\PlayerCar\PlayerCarComponentMeta.cpp">
+      <Filter>Source\Game\Logics\Character\PlayerCar\_Meta</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

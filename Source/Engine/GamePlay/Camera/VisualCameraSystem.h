@@ -49,3 +49,15 @@ class CameraFreeControlSystem : public CCL::ECS::IfSystem<CameraFreeControlSyste
     CameraFreeControlSystem() : IfSystem("CameraFreeControlSystem") {}
     void Update(float dt) override;
 };
+
+// ---------------------------------------------------------
+// TPS: 三人称視点カメラ
+// ---------------------------------------------------------
+class CameraTPSControlSystem : public CCL::ECS::IfSystem<CameraTPSControlSystem,
+                                    CCL::ECS::Write<VirtualCamera>,
+                                    CCL::ECS::Write<CameraBodyTPS>,
+                                    CCL::ECS::Write<TransformComponent>> {
+  public:
+    CameraTPSControlSystem() : IfSystem("CameraTPSControlSystem") {}
+    void Update(float dt) override;
+};

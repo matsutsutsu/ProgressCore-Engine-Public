@@ -229,6 +229,63 @@ void CameraFreeControlSystem::Update(float dt)
 }
 
 // =========================================================
+// TPS: 三人称視点カメラ
+// =========================================================
+void CameraTPSControlSystem::Update(float dt)
+{
+    if (!_world->HasResource<Input*>()) return;
+    auto* input = _world->GetResource<Input*>();
+
+    // 入力（右スティック ＋ マウス）
+    float lookX = input->GetGamePad().GetAxisRX() + input->GetMouse().GetVelocityX() * 0.1f;
+    float lookY = input->GetGamePad().GetAxisRY() + input->GetMouse().GetVelocityY() * 0.1f;
+
+    ForEach([&](VirtualCamera& vcam, CameraBodyTPS& tps, TransformComponent& trans) {
+
+        // 1. ターゲットの取得
+        if (!_world->IsEntityValid(tps.targetEntity)) return;
+        auto* targetTrans = _world->GetComponent<TransformComponent>(tps.targetEntity);
+        if (!targetTrans) return;
+
+        // 2. 角度の更新
+        tps.currentYaw += -lookX * tps.lookSpeedX * dt;
+        tps.currentPitch += -lookY * tps.lookSpeedY * dt;
+
+        // ジンバルロック防止のためPitchを制限
+        tps.currentPitch = std::clamp(tps.currentPitch, -85.0f, 85.0f);
+
+        float yawRad = XMConvertToRadians(tps.currentYaw);
+        float pitchRad = XMConvertToRadians(tps.currentPitch);
+
+        // 3. カメラの前方ベクトルを計算 (FreeCameraの方式に準拠)
+        Vector3 Front;
+        Front.x = cos(yawRad) * cos(pitchRad);
+        Front.y = sin(pitchRad);
+        Front.z = sin(yawRad) * cos(pitchRad);
+        Front.Normalize();
+
+        // 4. 座標と回転の計算
+        Vector3 targetPos = targetTrans->position + Vector3(tps.targetOffset);
+        trans.position = targetPos - (Front * tps.distance); // ターゲットの「後ろ」に配置
+
+        XMMATRIX lookMat = XMMatrixLookToLH(XMVectorZero(), Front, Vector3(0, 1, 0));
+        XMVECTOR det;
+        XMMATRIX worldRot = XMMatrixInverse(&det, lookMat);
+        trans.rotation = Quaternion::CreateFromRotationMatrix(worldRot);
+
+        // 5. VirtualCameraへの同期
+        vcam.resultPos = trans.position;
+        vcam.resultLookAt = targetPos;
+        vcam.resultUp = Vector3(0, 1, 0);
+        vcam.isValid = true;
+        });
+}
+
+// ファイル末尾に追加
+REGISTER_LOGIC_SYSTEM(CameraTPSControlSystem, Priority::LogicStage::L02_Update);
+
+
+// =========================================================
 // 自動登録マクロ群（必ず .cpp の末尾に1回だけ書く）
 // =========================================================
 REGISTER_RENDER_SYSTEM(CameraFollowSystem, Priority::RenderStage::R01_Camera);

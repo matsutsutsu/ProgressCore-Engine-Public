@@ -46,7 +46,9 @@
 // ゲームロジック
 #include "Game/Logics/Combat/Weapon/Core/BulletContextComponent.h"
 #include "Game/Logics/Combat/Weapon/Core/GunComponent.h"
+
 #include "Game/Logics/Character/Player/PlayerComponent.h"
+#include "Game/Logics/Character/PlayerCar/PlayerCarComponent.h"
 
 
 #include "Game/Logics/Combat/HealthComponent.h"

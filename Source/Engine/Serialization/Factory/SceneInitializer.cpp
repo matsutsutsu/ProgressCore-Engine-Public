@@ -10,59 +10,6 @@
 
 using namespace CCL::ECS;
 
-void SceneInitializer::SpawnPlayerTest(
-    CCL::ECS::Core::World &world, ID3D11Device *device, int count)
-{
-    // 1. プレイヤー生成（JSONパス指定に変更）
-    Prefab::SpawnPrefab(world, "Assets/Prefabs/Player/Player.json");
-
-    // 2. ステージ生成
-    Prefab::SpawnPrefab(world, "Assets/Prefabs/Stage/Stage.json");
-}
-
-void SceneInitializer::SpawnPhysicsStressTest(
-    CCL::ECS::Core::World &world, ID3D11Device *device, int count)
-{
-    std::mt19937                          gen(12345);
-    std::uniform_real_distribution<float> xzDist(-40.0f, 40.0f);
-    std::uniform_real_distribution<float> yDist(10.0f, 100.0f);
-
-    for (int i = 0; i < count; ++i) {
-        // PhysicsBall -> Primitive/PrimSphere.json で代用 (物理設定がJSONにある前提)
-        auto entity = Prefab::SpawnPrefab(world, "Assets/Prefabs/Primitive/PrimSphere.json");
-
-        if (entity != CCL::ECS::InvalidEntityID) {
-            if (auto *t = world.GetComponent<TransformComponent>(entity)) {
-                t->position = {xzDist(gen), yDist(gen), xzDist(gen)};
-            }
-        }
-    }
-
-    // 床
-    Prefab::SpawnPrefab(world, "Assets/Prefabs/Stage/Map_Floor.json", {0, 0, 0});
-}
-
-void SceneInitializer::SpawnGridLayoutTest(
-    CCL::ECS::Core::World &world, ID3D11Device *device, int count)
-{
-    // グリッド状に並べる
-    int   side    = (int)std::ceil(std::sqrt(count));
-    float spacing = 2.0f;
-    float offset  = -((side - 1) * spacing) / 2.0f;
-
-    for (int i = 0; i < count; ++i) {
-        int r = i / side;
-        int c = i % side;
-
-        float x = offset + c * spacing;
-        float z = offset + r * spacing;
-
-        // RenderModel -> プリミティブの球体などで代用
-        Prefab::SpawnPrefab(world, "Assets/Prefabs/Primitive/PrimSphere.json", {x, 2.0f, z});
-    }
-
-    Prefab::SpawnPrefab(world, "Assets/Prefabs/Stage/Map_Floor.json", {0, 0, 0});
-}
 
 void SceneInitializer::SpawnCameraTest(
     CCL::ECS::Core::World &world, ID3D11Device *device, int count)
@@ -81,74 +28,12 @@ void SceneInitializer::SpawnCameraTest(
     Prefab::SpawnPrefab(world, "Assets/Prefabs/Stage/Map_Floor.json");
 }
 
-// ★追加: Transform負荷テストの実装
-void SceneInitializer::SpawnTransformLoadTest(
-    CCL::ECS::Core::World &world, ID3D11Device *device, int count)
-{
-    // 立方体状に配置するための計算
-    // 例: 10000個なら 22x22x22 くらいのブロックを作る
-    int   dim     = (int)std::ceil(std::cbrt(count));
-    float spacing = 1.5f; // 間隔
-
-    int spawnedCount = 0;
-
-    for (int x = 0; x < dim; ++x) {
-        for (int y = 0; y < dim; ++y) {
-            for (int z = 0; z < dim; ++z) {
-                if (spawnedCount >= count) break;
-
-                // 単純なボックスを生成
-                DirectX::XMFLOAT3 pos = {(x - dim / 2.0f) * spacing,
-                    (y - dim / 2.0f) * spacing,
-                    (z - dim / 2.0f) * spacing};
-
-                EntityID entity =
-                    Prefab::SpawnPrefab(world, "Assets/Prefabs/Primitive/PrimBox.json", pos);
-
-                if (entity != CCL::ECS::InvalidEntityID) {
-                    // 1.
-                    // 純粋なTransform負荷を見るため、物理演算(RigidBody/Collider)が付いていれば外す
-                    // （もしPrefabに物理が付いていないならこの処理は無視されますが、念のため）
-                    // ★追加検証: 描画負荷を消してみる
-                    // これで「純粋な計算速度」だけでFPSが出るようになります
-   
-                    //// PrimitiveComponentを使っている場合
-                    //if (world.HasComponent<PrimitiveComponent>(entity)) {
-                    //    world.RequestRemoveComponent<PrimitiveComponent>(entity);
-                    //}
-
-                    // 2. 確実に毎フレーム更新させる
-                    // TransformUpdateSystemは !isStatic なら動かなくても行列計算を行う仕様を利用
-                    world.PatchComponent<TransformComponent>(entity, [](TransformComponent &t) {
-                        t.isStatic = false;
-
-                        // 少し回転させておくと、計算結果が変わるのでデバッグしやすい
-                        // (クォータニオン計算負荷も乗るかも)
-                        // t.rotation = ...;
-                    });
-                }
-
-                spawnedCount++;
-            }
-        }
-    }
-}
-
 void SceneInitializer::SpawnLightStartSet(CCL::ECS::Core::World &world, ID3D11Device *device)
 {
     // ライティングセットアップ
     Prefab::SpawnPrefab(world, "Assets/Prefabs/Light/LightingSetup.json");
 }
 
-void SceneInitializer::SpawnGameLightSetting(CCL::ECS::Core::World &world, ID3D11Device *device)
-{
-    // ゲーム用ライティング
-    Prefab::SpawnPrefab(world, "Assets/Prefabs/Light/GameLighting.json");
-
-    // ポイントライト配置テスト
-    Prefab::SpawnPrefab(world, "Assets/Prefabs/Light/PointLight.json", {0, 3, 0});
-    Prefab::SpawnPrefab(world, "Assets/Prefabs/Light/PointLight.json", {5, 2, 5});
-}
 
 void SceneInitializer::SpawnJoltTest(CCL::ECS::Core::World &world, ID3D11Device *device)
 {
@@ -242,6 +127,113 @@ void SceneInitializer::SpawnShaderTest(CCL::ECS::Core::World& world, ID3D11Devic
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Camera/FreeCamera.json");
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Sponza.json");
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/PBRModel.json");
+}
+
+
+// ============================================================================
+// 球体カーコントローラーのテスト環境
+// ============================================================================
+void SceneInitializer::SpawnPlayerCarTest(CCL::ECS::Core::World& world, ID3D11Device* device)
+{
+    // ──────────────────────────────────────────
+    // 1. 床の生成 (Box)
+    // ──────────────────────────────────────────
+    EntityFactory::SpawnPrefab(world, "Assets/Prefabs/World/JoltExampleStage.json");
+
+    // ========================================================================
+    // 2. アーキタイプ（設計図）の作成
+    // ========================================================================
+    auto sphereArch = ArchetypeHelper::Generate<
+        TransformComponent,
+        JoltSphereColliderComponent,
+        JoltRigidbodyComponent
+    >();
+
+    auto carArch = ArchetypeHelper::Generate<
+        TransformComponent,
+        ModelComponent,
+		MaterialComponent,
+        PlayerCarComponent
+    >();
+
+    auto pinArch = ArchetypeHelper::Generate<
+        TransformComponent,
+        JoltCapsuleColliderComponent,
+        JoltRigidbodyComponent
+    >();
+
+    // ========================================================================
+    // 3. 物理球体（見えないボウリングの球）の生成
+    // ========================================================================
+    auto sphere = EntityFactory::SpawnNamed(world, "PhysicsSphere", sphereArch);
+
+    // ★修正: JoltRigidbodyComponentの定義順（motionType -> objectLayer -> restitution -> friction）を厳守
+    // ※ mass は Jolt が球の大きさ(Radius)から自動計算してくれるため不要です。
+    sphere.Set(TransformComponent{ .position = {0.0f, 5.0f, 0.0f}, .rotation = {0,0,0,1}, .scale = {1.0f, 1.0f, 1.0f} })
+        .Set(JoltSphereColliderComponent{ .radius = 1.0f })
+        .Set(JoltRigidbodyComponent{
+            .motionType = JPH::EMotionType::Dynamic,
+            .objectLayer = PhysicsLayers::MOVING,
+            .restitution = 0.0f,   // 反発係数（跳ねない）
+            .friction = 0.05f   // 摩擦係数（よく滑るように低く）
+            });
+
+    // ========================================================================
+    // 4. 車両（見た目）の生成とリンク
+    // ========================================================================
+    auto car = EntityFactory::SpawnNamed(world, "PlayerCar", carArch);
+
+    // ★修正: PlayerCarComponentの定義順（physicsSphereID -> acceleration -> turnSpeed）を厳守
+    car.Set(TransformComponent{ .position = {0.0f, 5.0f, 0.0f}, .rotation = {0,0,0,1}, .scale = {1.0f, 1.0f, 1.0f} })
+        //.Set(PrimitiveComponent{ .type = PrimitiveType::Sphere, .radius = 1.0f })
+        .Set(ModelComponent("Assets/Models/Player/pony_cartoon.glb"))
+        .Set(PlayerCarComponent{
+            .physicsSphereID = sphere.id,
+            .acceleration = 3000.0f,
+            .turnSpeed = 180.0f
+            });
+
+   // ========================================================================
+    // 5. TPSカメラの生成と追従リンク
+    // ========================================================================
+    auto camArch = ArchetypeHelper::Generate<
+        TransformComponent,
+        VirtualCamera,
+        CameraBodyTPS
+    >();
+
+    auto cam = EntityFactory::SpawnNamed(world, "CarTPSCamera", camArch);
+    
+    cam.Set(TransformComponent{ .position = {0,0,0}, .rotation = {0,0,0,1}, .scale = {1,1,1} })
+       .Set(VirtualCamera{ .priority = 10 })
+       .Set(CameraBodyTPS{
+           .targetEntity = car.id,       // ★ 車のEntityIDをターゲットに設定！
+           .distance     = 12.0f,        // 車体全体が見えるように少し遠めから
+           .currentPitch = 15.0f,        // 少し見下ろす角度
+           .lookSpeedX   = 150.0f,
+           .lookSpeedY   = 100.0f,
+           .targetOffset = {0.0f, 2.0f, 0.0f} // 車の少し上を注視する
+       });
+
+    // ========================================================================
+    // 6. 敵（ボーリングのピン）の生成
+    // ========================================================================
+    for (int i = 0; i < 15; ++i) {
+        auto pin = EntityFactory::SpawnNamed(world, "PinEnemy", pinArch);
+
+        float posX = (float)(i % 5) * 2.5f - 5.0f;
+        float posZ = (float)(i / 5) * 2.5f + 10.0f;
+
+        // ★修正: こちらもRigidBodyの初期化順序を厳守
+        pin.Set(TransformComponent{ .position = {posX, 2.0f, posZ}, .rotation = {0,0,0,1}, .scale = {1.0f, 1.0f, 1.0f} })
+            .Set(JoltCapsuleColliderComponent{ .halfHeight = 1.0f, .radius = 0.4f })
+            .Set(JoltRigidbodyComponent{
+                .motionType = JPH::EMotionType::Dynamic,
+                .objectLayer = PhysicsLayers::MOVING,
+                .restitution = 0.2f,
+                .friction = 0.5f
+                });
+    }
 }
 
 

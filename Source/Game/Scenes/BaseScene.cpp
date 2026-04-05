@@ -45,7 +45,7 @@ void BaseScene::Initialize()
     _worldPtr   = _ecsContext->GetWorld(); // 互換性用
 
     // リソース登録
-    _worldPtr->AddResource<Input *>(Input::Instance());
+    _worldPtr->AddResource<Input *>(&Input::Instance());
 
 
     // WorldのリソースとしてJoltを登録し、初期化する

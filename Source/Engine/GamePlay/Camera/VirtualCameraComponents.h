@@ -66,3 +66,20 @@ struct CameraBodyFree {
     float currentYaw   = 0.0f;  // 現在のY軸回転 (Deg)
     float currentPitch = 0.0f;  // 現在のX軸回転 (Deg)
 };
+
+
+// ===================================================================================
+// TPS（三人称視点）カメラ用コンポーネント
+// ===================================================================================
+struct CameraBodyTPS {
+    CCL::ECS::EntityID targetEntity = CCL::ECS::InvalidEntityID; // 追従するプレイヤーのID
+
+    float distance = 8.0f;  // プレイヤーからカメラまでの距離
+    float currentPitch = 20.0f; // 縦の角度（上下）
+    float currentYaw = 0.0f;  // 横の角度（左右）
+
+    float lookSpeedX = 150.0f; // マウス・右スティックでの横回転スピード
+    float lookSpeedY = 100.0f; // マウス・右スティックでの縦回転スピード
+
+    DirectX::XMFLOAT3 targetOffset = { 0.0f, 1.5f, 0.0f }; // プレイヤーの足元ではなく「頭や肩」を注視するためのズレ
+};
