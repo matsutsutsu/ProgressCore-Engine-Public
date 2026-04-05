@@ -34,6 +34,9 @@ struct ShadowCommand {
     const Model* model;
     const Model::Mesh* mesh;
     DirectX::XMFLOAT4X4 worldMatrix;
+
+    // どのカスケードで描画するかを示すビットマスク (例: 001, 010, 111 等)
+    uint8_t cascadeMask = 0;
 };
 
 

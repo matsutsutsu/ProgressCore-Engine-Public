@@ -93,11 +93,12 @@ void ShadowPass::Execute(const RenderContext& rc){
         struct ShadowSortItem {
             const Model::Mesh* mesh;
             DirectX::XMFLOAT4X4 worldMatrix;
+            uint8_t cascadeMask;
         };
         std::vector<ShadowSortItem> sortedItems;
         sortedItems.reserve(shadowCommands.size());
         for (const auto& cmd : shadowCommands) {
-            sortedItems.push_back({ cmd.mesh, cmd.worldMatrix });
+            sortedItems.push_back({ cmd.mesh, cmd.worldMatrix, cmd.cascadeMask });
         }
 
         std::sort(sortedItems.begin(), sortedItems.end(),
@@ -115,8 +116,15 @@ void ShadowPass::Execute(const RenderContext& rc){
         for (const auto& info : sortedItems) {
             if (!info.mesh || !info.mesh->data) continue;
 
+            // ================================================================
+            // ここが真の最適なカリング位置。
+            // 現在の層(cascadeIndex)の担当外なら、スキンド判定もバッチ登録も全て無視する
+            // ================================================================
+            if ((info.cascadeMask & (1 << cascadeIndex)) == 0) continue;
+
             bool isSkinned = !info.mesh->bones.empty();
             if (isSkinned) {
+                // スキンドメッシュの個別描画
                 renderer->UpdateSkeletonConstants(dc, *info.mesh);
                 UINT stride = sizeof(ModelResource::Vertex);
                 UINT offset = 0;
@@ -126,6 +134,7 @@ void ShadowPass::Execute(const RenderContext& rc){
                 dc->DrawIndexed((UINT)info.mesh->data->indices.size(), 0, 0);
             }
             else {
+                // 静的メッシュのバッチ登録
                 if (!batches.empty() && batches.back().mesh == info.mesh) {
                     batches.back().data.push_back({ info.worldMatrix });
                 }

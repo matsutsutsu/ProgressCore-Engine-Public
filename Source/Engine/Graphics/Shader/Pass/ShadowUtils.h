@@ -5,7 +5,7 @@
 using namespace DirectX;
 
 // ヘルパー関数：指定した View-Projection 行列から、ワールド空間での視錐台の8頂点を取得する
-std::vector<XMFLOAT3> GetFrustumCornersWorldSpace(const XMMATRIX& view, const XMMATRIX& proj)
+inline std::vector<XMFLOAT3> GetFrustumCornersWorldSpace(const XMMATRIX& view, const XMMATRIX& proj)
 {
     XMMATRIX viewProj = view * proj;
     XMMATRIX invViewProj = XMMatrixInverse(nullptr, viewProj);
@@ -32,7 +32,7 @@ std::vector<XMFLOAT3> GetFrustumCornersWorldSpace(const XMMATRIX& view, const XM
 // ※ cameraView: 現在のカメラのView行列
 // ※ fov, aspectRatio: カメラの設定
 // ※ cascadeSplits: float[3] { 15.0f, 50.0f, 200.0f } などの境界値
-void CalculateCascadeMatrices(
+inline void CalculateCascadeMatrices(
     const XMMATRIX& cameraView,
     float fov, float aspectRatio,
     const XMFLOAT3& lightDir,
