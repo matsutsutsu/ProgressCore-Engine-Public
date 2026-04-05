@@ -152,6 +152,12 @@ void CameraFreeControlSystem::Update(float dt)
 
             // ピッチ制限 (-89 ~ 89度)
             body.currentPitch = std::clamp(body.currentPitch, -89.9f, 89.9f);
+
+            // 移動速度調整をここ（右クリック中）に移動する
+            if (wheelDelta != 0) {
+                body.moveSpeed *= (wheelDelta > 0) ? 1.2f : 0.8f;
+                body.moveSpeed = std::clamp(body.moveSpeed, 0.1f, 1000.0f);
+            }
         }
 
         // 度数 -> ラジアン変換
@@ -169,11 +175,11 @@ void CameraFreeControlSystem::Update(float dt)
         // カメラ固有の上方向（移動用にはWorldUpを使うことが多いが、回転同期のために計算）
         XMVECTOR Up = XMVector3Normalize(XMVector3Cross(Front, Right));
 
-        // --- 2. 移動速度調整 (ホイール) ---
-        if (wheelDelta != 0) {
-            body.moveSpeed *= (wheelDelta > 0) ? 1.2f : 0.8f;
-            body.moveSpeed = std::clamp(body.moveSpeed, 0.1f, 1000.0f);
-        }
+        //// --- 2. 移動速度調整 (ホイール) ---
+        //if (wheelDelta != 0) {
+        //    body.moveSpeed *= (wheelDelta > 0) ? 1.2f : 0.8f;
+        //    body.moveSpeed = std::clamp(body.moveSpeed, 0.1f, 1000.0f);
+        //}
 
         // --- 3. 移動計算 ---
         XMVECTOR Pos = XMLoadFloat3(&trans.position);

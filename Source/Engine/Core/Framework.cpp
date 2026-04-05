@@ -3,6 +3,7 @@
 #include <imgui.h>
 #include <algorithm> // min/max用
 #include <string> // std::string, std::to_string用
+#include <windowsx.h>
 
 #include "Framework.h"
 #include "Engine/Graphics/Core/Graphics.h"
@@ -312,6 +313,13 @@ LRESULT CALLBACK Framework::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LP
 
 	switch (msg)
 	{
+	case WM_MOUSEWHEEL:
+	{
+		// 1カリッ（120）を WHEEL_DELTA（120）で割って、+1 または -1 にする
+		int scroll = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
+		Input::Instance().GetMouse().SetWheel(scroll);
+		return 0;
+	}
 	case WM_PAINT:
 	{
 		PAINTSTRUCT ps;
