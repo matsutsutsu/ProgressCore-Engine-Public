@@ -151,6 +151,7 @@ void SceneInitializer::SpawnPlayerCarTest(CCL::ECS::Core::World& world, ID3D11De
 
     auto pinArch = ArchetypeHelper::Generate<
         TransformComponent,
+		PrimitiveComponent,
         JoltCapsuleColliderComponent,
         JoltRigidbodyComponent
     >();
@@ -214,6 +215,7 @@ void SceneInitializer::SpawnPlayerCarTest(CCL::ECS::Core::World& world, ID3D11De
 
         // ★修正: こちらもRigidBodyの初期化順序を厳守
         pin.Set(TransformComponent{ .position = {posX, 2.0f, posZ}, .rotation = {0,0,0,1}, .scale = {1.0f, 1.0f, 1.0f} })
+			.Set(PrimitiveComponent{ .type = PrimitiveType::Capsule, .size = {0.0f, 1.0f, 0.0f}, .radius = 0.4f, .color = {0.8f, 0.8f, 0.2f, 1.0f} })
             .Set(JoltCapsuleColliderComponent{ .halfHeight = 1.0f, .radius = 0.4f })
             .Set(JoltRigidbodyComponent{
                 .motionType = JPH::EMotionType::Dynamic,
