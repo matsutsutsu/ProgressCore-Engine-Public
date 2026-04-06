@@ -29,9 +29,9 @@ void EditorScene::Initialize()
     //SceneInitializer::SpawnJoltTest(*_worldPtr, device);
 
     // 中では普通にPBRモデル用にしている
-    SceneInitializer::SpawnAnimationTest(*_worldPtr, device);
+    //SceneInitializer::SpawnAnimationTest(*_worldPtr, device);
     
-    //SceneInitializer::SpawnPlayerCarTest(*_worldPtr, device);
+    SceneInitializer::SpawnPlayerCarTest(*_worldPtr, device);
 
     //SceneInitializer::SpawnShaderTest(*_worldPtr, device);
 

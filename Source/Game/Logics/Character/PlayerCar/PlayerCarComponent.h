@@ -5,16 +5,23 @@
 struct PlayerCarComponent {
     // --- 抽象化された入力データ (Input State) ---
     struct InputData {
-        float throttle = 0.0f; // アクセル/ブレーキ (-1.0 ~ 1.0)
-        float steering = 0.0f; // ハンドル操作 (-1.0 ~ 1.0)
-        bool jump = false;     // ジャンプやブースト用
+        float throttle = 0.0f;
+        float steering = 0.0f;
+        bool jump = false;
     } input;
 
-    // --- リンクする物理球体の EntityID ---
-    // 見た目の車（このコンポーネントを持つEntity）と、見えないボウリングの球をリンクさせます
     CCL::ECS::EntityID physicsSphereID = CCL::ECS::InvalidEntityID;
 
-    // --- 車両固有のパラメータ ---
-    float acceleration = 2000.0f; // 球体を押し出す力
-    float turnSpeed = 150.0f;  // ハンドルを切る速度（度/秒）
+    float acceleration = 2000.0f;
+    float turnSpeed = 150.0f;
+
+    // =======================================================
+    // 描画モデルのズレ補正 (Visual Offset & Rotation)
+    // =======================================================
+    DirectX::XMFLOAT3 visualOffset = { 0.0f, -1.0f, 0.0f };  // 位置のズレ補正（ローカル空間）
+    DirectX::XMFLOAT3 visualRotation = { 0.0f, 0.0f, 0.0f }; // ★追加: 回転のズレ補正（オイラー角/度数法）
+
+    // --- 内部状態（インスペクタには出さない） ---
+    DirectX::XMFLOAT4 logicRotation = { 0.0f, 0.0f, 0.0f, 1.0f }; // 車の「論理的」な向き（進行方向）
+    bool isLogicRotInitialized = false; // 初期化フラグ
 };

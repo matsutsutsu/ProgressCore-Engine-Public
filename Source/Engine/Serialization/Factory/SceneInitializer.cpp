@@ -149,13 +149,6 @@ void SceneInitializer::SpawnPlayerCarTest(CCL::ECS::Core::World& world, ID3D11De
         JoltRigidbodyComponent
     >();
 
-    auto carArch = ArchetypeHelper::Generate<
-        TransformComponent,
-        ModelComponent,
-		MaterialComponent,
-        PlayerCarComponent
-    >();
-
     auto pinArch = ArchetypeHelper::Generate<
         TransformComponent,
         JoltCapsuleColliderComponent,
@@ -181,17 +174,12 @@ void SceneInitializer::SpawnPlayerCarTest(CCL::ECS::Core::World& world, ID3D11De
     // ========================================================================
     // 4. 車両（見た目）の生成とリンク
     // ========================================================================
-    auto car = EntityFactory::SpawnNamed(world, "PlayerCar", carArch);
+	auto car = EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Player/PlayerCar.json");
 
-    // ★修正: PlayerCarComponentの定義順（physicsSphereID -> acceleration -> turnSpeed）を厳守
-    car.Set(TransformComponent{ .position = {0.0f, 5.0f, 0.0f}, .rotation = {0,0,0,1}, .scale = {1.0f, 1.0f, 1.0f} })
-        //.Set(PrimitiveComponent{ .type = PrimitiveType::Sphere, .radius = 1.0f })
-        .Set(ModelComponent("Assets/Models/Player/pony_cartoon.glb"))
-        .Set(PlayerCarComponent{
-            .physicsSphereID = sphere.id,
-            .acceleration = 3000.0f,
-            .turnSpeed = 180.0f
-            });
+    car.Patch<PlayerCarComponent>([sphereId = sphere.id](auto& comp) {
+        comp.physicsSphereID = sphereId; // 後でsphere.ID()を入れるから、今はダミーで0を入れておく
+		});
+
 
    // ========================================================================
     // 5. TPSカメラの生成と追従リンク

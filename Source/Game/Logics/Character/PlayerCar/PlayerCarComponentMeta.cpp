@@ -19,7 +19,11 @@ template <> struct ComponentMeta<PlayerCarComponent> {
     {
         static const std::vector<FieldDescriptor> fields = {
             META_FIELD_FLOAT(PlayerCarComponent, acceleration, "acceleration", "Acceleration", 50.0f, 0.0f, 20000.0f, "Settings"),
-            META_FIELD_FLOAT(PlayerCarComponent, turnSpeed, "turnSpeed", "Turn Speed", 1.0f, 0.0f, 1000.0f, "Settings")
+            META_FIELD_FLOAT(PlayerCarComponent, turnSpeed, "turnSpeed", "Turn Speed", 1.0f, 0.0f, 1000.0f, "Settings"),
+            META_FIELD_FLOAT3(PlayerCarComponent, visualOffset, "visualOffset", "Visual Offset (位置ズレ)", 0.05f, "Visuals"),
+
+            // ★追加: 回転調整用のスライダー（1度ずつ調整可能）
+            META_FIELD_FLOAT3(PlayerCarComponent, visualRotation, "visualRotation", "Visual Rotation (回転ズレ)", 1.0f, "Visuals")
         };
         return fields;
     }

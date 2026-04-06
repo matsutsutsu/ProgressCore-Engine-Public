@@ -6,7 +6,7 @@
 class PlayerCarMoveSystem 
     : public CCL::ECS::IfSystem<PlayerCarMoveSystem,
                                 CCL::ECS::Write<TransformComponent>,
-                                CCL::ECS::Read<PlayerCarComponent>> {
+                                CCL::ECS::Write<PlayerCarComponent>> { // ★ ReadをWriteに変更！
 public:
     PlayerCarMoveSystem();
     virtual ~PlayerCarMoveSystem() = default;
