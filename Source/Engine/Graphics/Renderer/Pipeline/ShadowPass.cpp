@@ -13,7 +13,7 @@ void ShadowPass::Initialize(ID3D11Device* device) {
     _instanceBuffer.Create(device, 8192);
 }
 
-void ShadowPass::Execute(const RenderContext& rc){
+void ShadowPass::Execute(const RenderContext& rc) {
 #ifdef TRACY_ENABLE
     ZoneScopedN("Pass: Shadow");
 #endif
@@ -21,7 +21,7 @@ void ShadowPass::Execute(const RenderContext& rc){
     RenderQueue* queue = rc.renderQueue;
     ModelRenderer* renderer = rc.modelRenderer;
 
-    if (!queue || !renderer) return; // 安全対策
+    if (!queue || !renderer) return;
 
     const auto& shadowCommands = queue->GetShadowCommands();
     if (shadowCommands.empty()) return;
@@ -29,7 +29,7 @@ void ShadowPass::Execute(const RenderContext& rc){
     ID3D11DeviceContext* dc = rc.deviceContext;
     auto& shadowMap = rc.shadowMap;
 
-    // 現在のレンダーターゲット（メインのキャンバス）とビューポートを退避
+    // 現在のレンダーターゲットとビューポートを退避
     Microsoft::WRL::ComPtr<ID3D11RenderTargetView> oldRTV;
     Microsoft::WRL::ComPtr<ID3D11DepthStencilView> oldDSV;
     dc->OMGetRenderTargets(1, oldRTV.GetAddressOf(), oldDSV.GetAddressOf());
@@ -38,32 +38,23 @@ void ShadowPass::Execute(const RenderContext& rc){
     D3D11_VIEWPORT oldViewport;
     dc->RSGetViewports(&numViewports, &oldViewport);
 
-    // カスケードの数だけ描画を繰り返す
     for (int cascadeIndex = 0; cascadeIndex < 3; ++cascadeIndex)
     {
-        // 書き込む対象の層をアクティブにする
         shadowMap->Activate(dc, cascadeIndex);
-
-        // 描画ステートの適用
         _psoShadow.Apply(dc, rc.renderState);
 
         DirectX::XMFLOAT3 lightDirection = rc.lightManager->GetDirectionalLight().direction;
 
-        // 3つの行列を計算して取得する
         DirectX::XMMATRIX lightVPs[3];
-
-
-        // ※ cameraのView行列、FOV、アスペクト比、ライトの方向を取得して渡す
         CalculateCascadeMatrices(
             XMLoadFloat4x4(&rc.camera->GetView()),
             rc.camera->GetFovY(),
             rc.camera->GetAspect(),
-            lightDirection, // CbSceneから取得しているライト方向
+            lightDirection,
             shadowMap->params.cascadeSplits,
             lightVPs
         );
 
-        // 定数バッファ用データの作成
         ShadowMap::CbShadow cbData{};
         XMStoreFloat4x4(&cbData.lightViewProjection[0], lightVPs[0]);
         XMStoreFloat4x4(&cbData.lightViewProjection[1], lightVPs[1]);
@@ -72,12 +63,9 @@ void ShadowPass::Execute(const RenderContext& rc){
         cbData.shadowColor = shadowMap->params.shadowColor;
         cbData.shadowAttenuation = shadowMap->params.shadowAttenuation;
         cbData.shadowBias = shadowMap->params.shadowBias;
-        // 今描画している層の番号をセットして定数バッファを更新
         cbData.currentCascadeIndex = cascadeIndex;
 
         shadowMap->UpdateConstantBuffer(dc, cbData);
-
-
         shadowMap->Bind(dc, -1, -1, SLOT_CB_SHADOW);
 
         Shader* shader = ShaderRegistry::Instance().GetShader("ShadowMap"_hash, Graphics::Instance().GetDevice());
@@ -89,16 +77,41 @@ void ShadowPass::Execute(const RenderContext& rc){
         shader->Begin(rc);
         dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-        // ソート用のローカル構造体とリスト構築
         struct ShadowSortItem {
             const Model::Mesh* mesh;
-            DirectX::XMFLOAT4X4 worldMatrix;
-            uint8_t cascadeMask;
+            DirectX::XMFLOAT4X4  worldMatrix;  // ★ノード合成済み行列を格納
+            uint8_t               cascadeMask;
         };
+
         std::vector<ShadowSortItem> sortedItems;
         sortedItems.reserve(shadowCommands.size());
+
         for (const auto& cmd : shadowCommands) {
-            sortedItems.push_back({ cmd.mesh, cmd.worldMatrix, cmd.cascadeMask });
+            if (!cmd.mesh) continue;
+
+            ShadowSortItem item;
+            item.mesh = cmd.mesh;
+            item.cascadeMask = cmd.cascadeMask;
+
+            // =========================================================
+            // ★修正：ShadowCommand の worldMatrix はエンティティ行列のみなので、
+            //   OpaquePass と同様に mesh.node->worldTransform を合成する。
+            //
+            //   静的メッシュ：meshNode.worldTransform × entity.worldMatrix
+            //   スキンドメッシュ：UpdateTransform() でボーンに焼き込み済みのため
+            //                     行列合成は不要（描画時に UpdateSkeletonConstants を使用）
+            // =========================================================
+            bool isSkinned = !cmd.mesh->bones.empty();
+            if (!isSkinned && cmd.mesh->node) {
+                DirectX::XMMATRIX meshLocal = DirectX::XMLoadFloat4x4(&cmd.mesh->node->globalTransform);
+                DirectX::XMMATRIX entityWorld = DirectX::XMLoadFloat4x4(&cmd.worldMatrix);
+                DirectX::XMStoreFloat4x4(&item.worldMatrix, meshLocal * entityWorld);
+            }
+            else {
+                item.worldMatrix = cmd.worldMatrix;
+            }
+
+            sortedItems.push_back(item);
         }
 
         std::sort(sortedItems.begin(), sortedItems.end(),
@@ -115,16 +128,11 @@ void ShadowPass::Execute(const RenderContext& rc){
 
         for (const auto& info : sortedItems) {
             if (!info.mesh || !info.mesh->data) continue;
-
-            // ================================================================
-            // ここが真の最適なカリング位置。
-            // 現在の層(cascadeIndex)の担当外なら、スキンド判定もバッチ登録も全て無視する
-            // ================================================================
             if ((info.cascadeMask & (1 << cascadeIndex)) == 0) continue;
 
             bool isSkinned = !info.mesh->bones.empty();
             if (isSkinned) {
-                // スキンドメッシュの個別描画
+                // スキンドメッシュ：個別描画（インスタンシング不可）
                 renderer->UpdateSkeletonConstants(dc, *info.mesh);
                 UINT stride = sizeof(ModelResource::Vertex);
                 UINT offset = 0;
@@ -134,7 +142,7 @@ void ShadowPass::Execute(const RenderContext& rc){
                 dc->DrawIndexed((UINT)info.mesh->data->indices.size(), 0, 0);
             }
             else {
-                // 静的メッシュのバッチ登録
+                // ★静的メッシュ：ノード合成済みの worldMatrix でバッチ登録
                 if (!batches.empty() && batches.back().mesh == info.mesh) {
                     batches.back().data.push_back({ info.worldMatrix });
                 }
@@ -154,7 +162,9 @@ void ShadowPass::Execute(const RenderContext& rc){
 
             while (offset < totalCount) {
                 size_t drawCount = (std::min)(totalCount - offset, InstanceBuffer::MAX_INSTANCES);
-                std::vector<InstanceData> chunk(batch.data.begin() + offset, batch.data.begin() + offset + drawCount);
+                std::vector<InstanceData> chunk(
+                    batch.data.begin() + offset,
+                    batch.data.begin() + offset + drawCount);
 
                 _instanceBuffer.Write(dc, chunk);
                 _instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
@@ -171,12 +181,9 @@ void ShadowPass::Execute(const RenderContext& rc){
 
         shader->End(rc);
         _instanceBuffer.Unbind(dc, SLOT_SRV_INSTANCE);
-
     }
 
-    // =========================================================
-    // ループを抜けたら、退避しておいたメインキャンバスを復元する
-    // =========================================================
+    // 退避しておいたメインキャンバスを復元
     dc->OMSetRenderTargets(1, oldRTV.GetAddressOf(), oldDSV.Get());
     dc->RSSetViewports(1, &oldViewport);
 }

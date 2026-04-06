@@ -230,14 +230,14 @@ void ModelResource::Load(ID3D11Device* device, const char* filename)
 	std::filesystem::path dirpath(filepath.parent_path());
 	std::filesystem::path extension = filepath.extension();
 
-	// 独自形式のモデルファイルの存在確認
-	filepath.replace_extension(".cereal");
-	if (std::filesystem::exists(filepath))
-	{
-		// 独自形式のモデルファイルの読み込み
-		Deserialize(filepath.string().c_str());
-	}
-	else if (extension == ".gltf" || extension == ".glb")
+	//// 独自形式のモデルファイルの存在確認
+	//filepath.replace_extension(".cereal");
+	//if (std::filesystem::exists(filepath))
+	//{
+	//	// 独自形式のモデルファイルの読み込み
+	//	Deserialize(filepath.string().c_str());
+	//}
+	if (extension == ".gltf" || extension == ".glb")
 	{
 		// 汎用モデルファイルの読み込み
 		// GLTFImporterを使用してモデルデータをリソース用に読み込む
@@ -257,7 +257,7 @@ void ModelResource::Load(ID3D11Device* device, const char* filename)
 		importer.LoadAnimations(animations, nodes, 30.0f); //samplerate（第3引数）はお好み
 
 		//独自形式のモデルファイルを保存
-		Serialize(filepath.string().c_str());
+		//Serialize(filepath.string().c_str());
 	}
 	else
 	{

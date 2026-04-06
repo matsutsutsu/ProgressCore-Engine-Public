@@ -285,6 +285,7 @@ void GLTFImporter::LoadMeshes(MeshList& meshes, const NodeList& nodes)
 				}
 				else if (gltfAttribute.first == "JOINTS_0")
 				{
+					int akio = 0;
 					switch (gltfAccessor.componentType)
 					{
 					case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
@@ -324,6 +325,7 @@ void GLTFImporter::LoadMeshes(MeshList& meshes, const NodeList& nodes)
 				}
 				else if (gltfAttribute.first == "WEIGHTS_0")
 				{
+					int akio = 0;
 					switch (gltfAccessor.componentType)
 					{
 					case TINYGLTF_COMPONENT_TYPE_FLOAT:

@@ -60,9 +60,8 @@ void ModelRenderSystem::Update(float dt)
             }
         }
 
-        if (hasBones) {
-            model.modelPtr->UpdateTransform(transform.worldMatrix);
-        }
+        model.modelPtr->UpdateTransform(transform.worldMatrix);
+        
 
         // シェーダーID決定（リストの先頭を使うなどの簡易判定）
         uint32_t shaderHash = "Phong"_hash;
