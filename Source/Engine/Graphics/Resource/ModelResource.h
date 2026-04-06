@@ -27,9 +27,9 @@ public:
 		int					parentIndex = -1;  // 親ノードのインデックス（-1 ならルート）
 
 		// ノードの初期Transform情報（ローカル座標）
-		DirectX::XMFLOAT3	scale;
-		DirectX::XMFLOAT4	rotate;       // クォータニオン
-		DirectX::XMFLOAT3	translate;
+		DirectX::XMFLOAT3	scale = { 1.0f, 1.0f, 1.0f };
+		DirectX::XMFLOAT4	rotate = { 0.0f, 0.0f, 0.0f, 1.0f }; // クォータニオンの単位元
+		DirectX::XMFLOAT3	translate = { 0.0f, 0.0f, 0.0f };
 
 		template<class Archive>
 		void serialize(Archive& archive, int version);
