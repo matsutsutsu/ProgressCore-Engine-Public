@@ -8,6 +8,8 @@
 
 #include "Engine/Graphics/Core/Graphics.h"
 #include "Engine/Physics/JoltPhysicsManager.h"
+#include "Engine/Physics/IPhysicsAPI.h"
+#include "Engine/Physics/JoltPhysicsFacade.h"
 
 
 #include "Engine/Platform/Input/Input.h"
@@ -52,6 +54,9 @@ void BaseScene::Initialize()
     _worldPtr->AddResource<JoltPhysicsManager>();
     _worldPtr->GetResource<JoltPhysicsManager>().Initialize();
 
+    // パターンA：生ポインタで登録
+    auto myFacade = std::make_shared<JoltPhysicsFacade>(_worldPtr);
+    _worldPtr->AddResource<IPhysicsAPI*>(myFacade);
 
     // システムがコンストラクタ引数なしでもアクセスできるようにポインタを登録
     _worldPtr->AddResource<Camera *>(&camera);

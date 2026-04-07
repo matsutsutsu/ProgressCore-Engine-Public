@@ -335,8 +335,10 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderReflection.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderRegistry.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderResources.h" />
+    <ClInclude Include="Source\Engine\Physics\IPhysicsAPI.h" />
     <ClInclude Include="Source\Engine\Physics\JoltContactListener.h" />
     <ClInclude Include="Source\Engine\Physics\JoltDebugRenderer.h" />
+    <ClInclude Include="Source\Engine\Physics\JoltPhysicsFacade.h" />
     <ClInclude Include="Source\Engine\Physics\JoltPhysicsManager.h" />
     <ClInclude Include="Source\Engine\Platform\Dialog.h" />
     <ClInclude Include="Source\Engine\Platform\Input\GamePad.h" />
@@ -549,6 +551,7 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\ShaderReflection.cpp" />
     <ClCompile Include="Source\Engine\Physics\JoltContactListener.cpp" />
     <ClCompile Include="Source\Engine\Physics\JoltDebugRenderer.cpp" />
+    <ClCompile Include="Source\Engine\Physics\JoltPhysicsFacade.cpp" />
     <ClCompile Include="Source\Engine\Physics\JoltPhysicsManager.cpp" />
     <ClCompile Include="Source\Engine\Platform\Dialog.cpp" />
     <ClCompile Include="Source\Engine\Platform\Input\GamePad.cpp" />

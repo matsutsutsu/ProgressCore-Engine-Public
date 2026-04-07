@@ -352,6 +352,9 @@
     <Filter Include="Source\Game\Logics\Character\PlayerCar\_Meta">
       <UniqueIdentifier>{49c1eceb-c993-4721-abbb-5824797ecbae}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Physics\API">
+      <UniqueIdentifier>{b2182144-7934-4bf7-a398-35153ad43535}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1140,6 +1143,12 @@
     <ClInclude Include="Source\Game\Logics\Character\PlayerCar\CarCollisionSystem.h">
       <Filter>Source\Game\Logics\Character\PlayerCar</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\IPhysicsAPI.h">
+      <Filter>Source\Engine\Physics\API</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\JoltPhysicsFacade.h">
+      <Filter>Source\Engine\Physics\API</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -1690,6 +1699,9 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\PlayerCar\CarCollisionSystem.cpp">
       <Filter>Source\Game\Logics\Character\PlayerCar</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Physics\JoltPhysicsFacade.cpp">
+      <Filter>Source\Engine\Physics\API</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

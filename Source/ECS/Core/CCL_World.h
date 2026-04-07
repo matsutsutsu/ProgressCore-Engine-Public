@@ -48,6 +48,7 @@ namespace CCL::ECS::Core {
         static inline uint32_t counter = 0;
 
       public:
+		// 型Tごとに、たった一つだけIDが割り当てられる魔法の関数
         template <typename T> static uint32_t GetID()
         {
             static uint32_t id = counter++;
@@ -55,10 +56,14 @@ namespace CCL::ECS::Core {
         }
     };
 
+	// リソースの型消去用の基底クラス
+	// ResourceBaseを継承したResourceWrapperが、任意の型Tのデータを保持できるようにして
+	// それらをResourceBase*として配列の中に入れて扱うことで、型安全かつ柔軟なリソース管理を実現します。
     struct ResourceBase {
         virtual ~ResourceBase() = default;
     };
 
+	// 型安全なリソースラッパー。ResourceBaseを継承し、任意の型Tのデータを保持できます。
     template <typename T> struct ResourceWrapper : public ResourceBase {
         T data;
         template <typename... Args>
@@ -286,6 +291,8 @@ namespace CCL::ECS::Core {
 
         template <typename T> T &GetResource()
         {
+			// ResourceをIDにしたものを取得して配列のインデックスにすることで
+			// O(1)でリソースにアクセスできるようにします。
             size_t id = ResourceIDGenerator::GetID<T>();
             assert(id < _resourcesArray.size() && _resourcesArray[id] != nullptr &&
                    "Requested resource not found!");
