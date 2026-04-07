@@ -355,6 +355,9 @@
     <Filter Include="Source\Engine\Audio">
       <UniqueIdentifier>{f67d589a-603e-4892-ba9f-e03879675b0e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Platform\Input\API">
+      <UniqueIdentifier>{4b4af58f-7e4b-4bac-82db-825a9ccb9b8f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1149,6 +1152,12 @@
     <ClInclude Include="Source\Engine\Physics\JoltPhysicsFacade.h">
       <Filter>Source\Engine\Physics\API</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Platform\Input\IInputAPI.h">
+      <Filter>Source\Engine\Platform\Input\API</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Platform\Input\InputFacade.h">
+      <Filter>Source\Engine\Platform\Input\API</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -1702,6 +1711,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Physics\JoltPhysicsFacade.cpp">
       <Filter>Source\Engine\Physics\API</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Platform\Input\InputFacade.cpp">
+      <Filter>Source\Engine\Platform\Input\API</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -13,6 +13,7 @@
 
 
 #include "Engine/Platform/Input/Input.h"
+#include "Engine/Platform/Input/InputFacade.h"
 
 #include "Engine/GamePlay/Graphics/Core/EnvironmentSystem.h"
 
@@ -48,6 +49,19 @@ void BaseScene::Initialize()
 
     // リソース登録
     _worldPtr->AddResource<Input *>(&Input::Instance());
+
+    auto inputAPI = std::make_shared<InputFacade>(&Input::Instance());
+
+    // [前進・後退の軸]
+    inputAPI->AddAxisBinding("Throttle", InputDeviceType::Keyboard, 'W', 1.0f);       // Wはプラス
+    inputAPI->AddAxisBinding("Throttle", InputDeviceType::Keyboard, 'S', -1.0f);      // Sはマイナス
+    inputAPI->AddAxisBinding("Throttle", InputDeviceType::GamePad_AxisLY, 0, 1.0f);   // スティックY
+
+    // [攻撃ボタン]
+    inputAPI->AddActionBinding("Attack", InputDeviceType::Mouse_Button, Mouse::BTN_LEFT);
+    inputAPI->AddActionBinding("Attack", InputDeviceType::GamePad_Button, GamePad::BTN_X);
+
+    _worldPtr->AddResource<std::shared_ptr<IInputAPI>>(inputAPI);
 
 
     // WorldのリソースとしてJoltを登録し、初期化する

@@ -342,7 +342,9 @@
     <ClInclude Include="Source\Engine\Physics\JoltPhysicsManager.h" />
     <ClInclude Include="Source\Engine\Platform\Dialog.h" />
     <ClInclude Include="Source\Engine\Platform\Input\GamePad.h" />
+    <ClInclude Include="Source\Engine\Platform\Input\IInputAPI.h" />
     <ClInclude Include="Source\Engine\Platform\Input\Input.h" />
+    <ClInclude Include="Source\Engine\Platform\Input\InputFacade.h" />
     <ClInclude Include="Source\Engine\Platform\Input\Keyboard.h" />
     <ClInclude Include="Source\Engine\Platform\Input\Mouse.h" />
     <ClInclude Include="Source\Engine\Scripting\Bind\LuaBind_Components.h" />
@@ -556,6 +558,7 @@
     <ClCompile Include="Source\Engine\Platform\Dialog.cpp" />
     <ClCompile Include="Source\Engine\Platform\Input\GamePad.cpp" />
     <ClCompile Include="Source\Engine\Platform\Input\Input.cpp" />
+    <ClCompile Include="Source\Engine\Platform\Input\InputFacade.cpp" />
     <ClCompile Include="Source\Engine\Platform\Input\Keyboard.cpp" />
     <ClCompile Include="Source\Engine\Platform\Input\Mouse.cpp" />
     <ClCompile Include="Source\Engine\Scripting\Bind\LuaBind_Components.cpp" />
