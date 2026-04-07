@@ -16,8 +16,6 @@ class SceneInitializer {
     // カメラテスト
     static void SpawnCameraTest(CCL::ECS::Core::World &world, ID3D11Device *device, int count);
 
-    // プレイヤーと大量の追従敵を発生させるストレステスト
-    static void SpawnEnemySwarmTest(CCL::ECS::Core::World &world, ID3D11Device *device, int count);
 
     // ジョルトのテスト環境
     static void SpawnJoltTest(CCL::ECS::Core::World &world, ID3D11Device *device);

@@ -1,6 +1,4 @@
 #pragma once
-
 struct EnemyComponent {
-  float speed       = 5.0f;  // プレイヤーを追いかける速度
-  bool  isBlownAway = false; // 吹き飛ばされ中かどうかのフラグ
+    float hp = 100.0f; // 今回は一撃必殺ですが、将来のために持たせておきます
 };

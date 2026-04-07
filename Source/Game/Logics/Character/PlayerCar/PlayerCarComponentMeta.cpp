@@ -22,8 +22,17 @@ template <> struct ComponentMeta<PlayerCarComponent> {
             META_FIELD_FLOAT(PlayerCarComponent, turnSpeed, "turnSpeed", "Turn Speed", 1.0f, 0.0f, 1000.0f, "Settings"),
             META_FIELD_FLOAT3(PlayerCarComponent, visualOffset, "visualOffset", "Visual Offset (位置ズレ)", 0.05f, "Visuals"),
 
-            // ★追加: 回転調整用のスライダー（1度ずつ調整可能）
-            META_FIELD_FLOAT3(PlayerCarComponent, visualRotation, "visualRotation", "Visual Rotation (回転ズレ)", 1.0f, "Visuals")
+            // サスペンションの設定
+            META_FIELD_FLOAT(PlayerCarComponent, maxPitchAngle, "maxPitchAngle", "Max Pitch (前後傾き)", 0.1f, 0.0f, 45.0f, "Suspension"),
+            META_FIELD_FLOAT(PlayerCarComponent, maxRollAngle, "maxRollAngle", "Max Roll (左右傾き)", 0.1f, 0.0f, 45.0f, "Suspension"),
+            META_FIELD_FLOAT(PlayerCarComponent, suspensionSpeed, "suspensionSpeed", "Suspension Spring (バネの硬さ)", 0.1f, 1.0f, 50.0f, "Suspension"),
+
+            // 回転調整用のスライダー（1度ずつ調整可能）
+            META_FIELD_FLOAT3(PlayerCarComponent, visualRotation, "visualRotation", "Visual Rotation (回転ズレ)", 1.0f, "Visuals"),
+
+            // デバッグ用に接地状態とレイキャストの長さをインスペクタに表示
+            META_FIELD_FLOAT(PlayerCarComponent, raycastLength, "raycastLength", "Raycast Length (レーザーの長さ)", 0.05f, 0.1f, 5.0f, "Physics"),
+            META_FIELD_BOOL(PlayerCarComponent, isGrounded, "isGrounded", "Is Grounded (接地状態)", "Physics")
         };
         return fields;
     }

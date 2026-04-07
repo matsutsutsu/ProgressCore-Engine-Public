@@ -1017,9 +1017,6 @@
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyComponent.h">
       <Filter>Source\Game\Logics\Character\Enemy</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyMoveSystem.h">
-      <Filter>Source\Game\Logics\Character\Enemy</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\JoltCollisionEvent.h">
       <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
     </ClInclude>
@@ -1037,9 +1034,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\JoltCollisionEventSystem.h">
       <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyHitTestSystem.h">
-      <Filter>Source\Game\Logics\Character\Enemy</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltShapeUpdateSystem.h">
       <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
@@ -1138,6 +1132,12 @@
       <Filter>Source\Game\Logics\Character\PlayerCar</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\PlayerCar\PlayerCarMoveSystem.h">
+      <Filter>Source\Game\Logics\Character\PlayerCar</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\PlayerCar\PlayerCarSphereTag.h">
+      <Filter>Source\Game\Logics\Character\PlayerCar</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\PlayerCar\CarCollisionSystem.h">
       <Filter>Source\Game\Logics\Character\PlayerCar</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1619,17 +1619,11 @@
     <ClCompile Include="Source\Engine\GamePlay\Physics\Character\JoltCharacterUpdateSystem.cpp">
       <Filter>Source\Engine\GamePlay\Physics\Character</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyMoveSystem.cpp">
-      <Filter>Source\Game\Logics\Character\Enemy</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Physics\JoltContactListener.cpp">
       <Filter>Source\Engine\Physics\Jolt</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GamePlay\Physics\Collision\JoltCollisionEventSystem.cpp">
       <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyHitTestSystem.cpp">
-      <Filter>Source\Game\Logics\Character\Enemy</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltShapeUpdateSystem.cpp">
       <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
@@ -1693,6 +1687,9 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\PlayerCar\PlayerCarComponentMeta.cpp">
       <Filter>Source\Game\Logics\Character\PlayerCar\_Meta</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\PlayerCar\CarCollisionSystem.cpp">
+      <Filter>Source\Game\Logics\Character\PlayerCar</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

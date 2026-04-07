@@ -130,6 +130,8 @@ void SceneInitializer::SpawnShaderTest(CCL::ECS::Core::World& world, ID3D11Devic
 }
 
 
+#include "Game/Logics/Character/PlayerCar/PlayerCarSphereTag.h"
+
 // ============================================================================
 // 球体カーコントローラーのテスト環境
 // ============================================================================
@@ -146,14 +148,16 @@ void SceneInitializer::SpawnPlayerCarTest(CCL::ECS::Core::World& world, ID3D11De
     auto sphereArch = ArchetypeHelper::Generate<
         TransformComponent,
         JoltSphereColliderComponent,
-        JoltRigidbodyComponent
+        JoltRigidbodyComponent,
+        PlayerCarSphereTag
     >();
 
     auto pinArch = ArchetypeHelper::Generate<
         TransformComponent,
 		PrimitiveComponent,
         JoltCapsuleColliderComponent,
-        JoltRigidbodyComponent
+        JoltRigidbodyComponent,
+        EnemyComponent
     >();
 
     // ========================================================================
@@ -172,6 +176,7 @@ void SceneInitializer::SpawnPlayerCarTest(CCL::ECS::Core::World& world, ID3D11De
             .friction = 0.05f   // 摩擦係数（よく滑るように低く）
             });
 
+
     // ========================================================================
     // 4. 車両（見た目）の生成とリンク
     // ========================================================================
@@ -181,6 +186,7 @@ void SceneInitializer::SpawnPlayerCarTest(CCL::ECS::Core::World& world, ID3D11De
         comp.physicsSphereID = sphereId; // 後でsphere.ID()を入れるから、今はダミーで0を入れておく
 		});
 
+    sphere.Set(PlayerCarSphereTag{ .parentCarID = car.id });
 
    // ========================================================================
     // 5. TPSカメラの生成と追従リンク
@@ -226,100 +232,6 @@ void SceneInitializer::SpawnPlayerCarTest(CCL::ECS::Core::World& world, ID3D11De
     }
 }
 
-
-void SceneInitializer::SpawnEnemySwarmTest(CCL::ECS::Core::World &world, ID3D11Device *device, int count)
-{
-   
-    // ──────────────────────────────────────────
-    // 3. テスト用プレイヤー (CharacterVirtual) の生成
-    // ──────────────────────────────────────────
-    const auto playerArch = ArchetypeHelper::Generate<
-        TransformComponent, 
-        PrimitiveComponent,
-        PlayerComponent,
-        JoltCharacterConfigComponent, // ★修正: パフォーマンス低下を防ぐため設計図に含める
-        JoltCapsuleColliderComponent,
-        JoltRigidbodyComponent,
-        ModelComponent,   
-        AnimatorComponent 
-    >();
-
-    auto player = EntityFactory::SpawnNamed(world, "Test_Player", playerArch);
-
-    // ※ ModelComponent は SetModel() という関数呼び出しが必要なため、一度変数を作ってから流し込む
-    ModelComponent modelComp;
-    modelComp.SetModel("Assets/Models/Player/Player.glb");
-
-    player.Set(TransformComponent{ .position = {0.0f, 5.0f, 0.0f}, .rotation = {0.0f, 0.0f, 0.0f, 1.0f}, .scale = {1.0f, 1.0f, 1.0f} })
-          .Set(PlayerComponent{ .moveSpeed = 6.0f, .turnSpeed = 10.0f })
-          .Set(JoltCharacterConfigComponent{ .maxSlopeAngle = 45.0f, .maxStepHeight = 0.5f, .walkSpeed = 6.0f, .jumpSpeed = 10.0f, .characterMass = 70.0f })
-          .Set(JoltCapsuleColliderComponent{ .halfHeight = 0.5f, .radius = 0.5f })
-          .Set(JoltRigidbodyComponent{
-            .motionType  = JPH::EMotionType::Kinematic, // ★自力で動く無敵の物体
-            .objectLayer = PhysicsLayers::MOVING})
-          .Set(PrimitiveComponent{ .type = PrimitiveType::Capsule, .size = {0.0f, 1.0f, 0.0f}, .radius = 0.5f, .color = {0.2f, 0.8f, 0.2f, 1.0f} })
-          .Set(std::move(modelComp)) // 作っておいた ModelComponent をムーブ（無駄なコピー回避）
-          .Set(AnimatorComponent{}); // 空の初期化
-
-    // 2. カメラの生成とターゲット設定が、一気に書ける！
-    auto camera = EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Camera/PlayerFollowCamera.json");
-    
-    // player.ID() を渡してメソッドチェーンでPatchする
-    camera.Patch<CameraBodyFollow>([pid = player.ID()](auto& body) { body.target = pid; })
-          .Patch<CameraAimLookAt> ([pid = player.ID()](auto& aim)  { aim.target = pid; });
-
-
-    // ──────────────────────────────────────────
-    // 1. 床の生成 (Box)
-    // ──────────────────────────────────────────
-    const auto floorArch = ArchetypeHelper::Generate<
-        TransformComponent,
-        PrimitiveComponent,
-        JoltRigidbodyComponent,
-        JoltBoxColliderComponent
-    >();
-
-    auto floor = EntityFactory::SpawnNamed(world, "Floor_Box", floorArch);
-
-    floor.Set(TransformComponent{ .position = {0.0f, 0.0f, 0.0f}, .rotation = {0.0f, 0.0f, 0.0f, 1.0f}, .scale = {1.0f, 1.0f, 1.0f} })
-         .Set(JoltRigidbodyComponent{ .motionType = JPH::EMotionType::Static, .objectLayer = PhysicsLayers::NON_MOVING })
-         .Set(JoltBoxColliderComponent{ .halfExtent = {50.0f, 1.0f, 50.0f} })
-         .Set(PrimitiveComponent{ .type = PrimitiveType::Box, .size = {50.0f, 1.0f, 50.0f}, .color = {0.5f, 0.5f, 0.5f, 1.0f} });
-
-
-    // ──────────────────────────────────────────
-    // 4. 敵の大群（Swarm）の生成
-    // ──────────────────────────────────────────
-    const auto enemyArch = ArchetypeHelper::Generate<
-        TransformComponent,
-        PrimitiveComponent,         // 描画用（赤色カプセル）
-        JoltRigidbodyComponent,     // 物理の性質
-        JoltCapsuleColliderComponent, // 当たり判定の形
-        EnemyComponent              // 追従AI用
-    >();
-
-    std::mt19937 gen(12345);
-    std::uniform_real_distribution<float> xzDist(-50.0f, 50.0f); 
-
-    // 圧倒的スピードでメモリに叩き込む
-    for (int i = 0; i < count; ++i) {
-        auto ref = EntityFactory::SpawnNamed(world, "SwarmEnemy", enemyArch);
-
-        // ★修正: Transformのrotationを明示し、順番通りにする
-        // ★修正: EnemyComponent の変数は moveSpeed ではなく speed
-        // ★修正: Rigidbodyの restitution(反発) も明示的に書いて警告を防ぐ
-        ref.Set(TransformComponent{ .position = {xzDist(gen), 2.0f, xzDist(gen)}, .rotation = {0.0f, 0.0f, 0.0f, 1.0f}, .scale = {1.0f, 1.0f, 1.0f} })
-           .Set(EnemyComponent{ .speed = (4.0f + (i % 3)) }) // moveSpeed -> speed に修正
-           .Set(JoltRigidbodyComponent{ 
-               .motionType  = JPH::EMotionType::Dynamic, 
-               .objectLayer = PhysicsLayers::MOVING,
-               .restitution = 0.0f,
-               .friction    = 0.0f // 敵同士が渋滞しないように摩擦ゼロ
-            })
-           .Set(JoltCapsuleColliderComponent{ .halfHeight = 0.5f, .radius = 0.4f })
-           .Set(PrimitiveComponent{ .type = PrimitiveType::Capsule, .size = {0.0f, 1.0f, 0.0f}, .radius = 0.4f, .color = {1.0f, 0.0f, 0.0f, 1.0f} });
-    }
-}
 
 
 void SceneInitializer::SpawnECSBenchmarkTest(

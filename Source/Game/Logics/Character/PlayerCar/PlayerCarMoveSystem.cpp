@@ -6,6 +6,11 @@
 #include "ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"
 
+// Joltのレイキャストに必要なヘッダー
+#include <Jolt/Physics/Collision/RayCast.h>
+#include <Jolt/Physics/Collision/CastResult.h>
+#include <Jolt/Physics/Body/BodyFilter.h>
+
 using namespace DirectX;
 using namespace CCL::ECS;
 
@@ -13,7 +18,12 @@ PlayerCarMoveSystem::PlayerCarMoveSystem() : IfSystem("PlayerCarMoveSystem") {}
 
 void PlayerCarMoveSystem::Update(float dt) {
     if (!_world->HasResource<JoltPhysicsManager>()) return;
-    JPH::BodyInterface& bodyInterface = _world->GetResource<JoltPhysicsManager>().GetBodyInterface();
+    auto& physicsManager = _world->GetResource<JoltPhysicsManager>();
+    JPH::BodyInterface& bodyInterface = physicsManager.GetBodyInterface();
+
+    // レイキャストを撃つためのクエリシステムを取得
+    // ※もしGetPhysicsSystem() という関数がない場合は、エラーメッセージを教えてください。
+    const JPH::NarrowPhaseQuery& narrowPhase = physicsManager.GetPhysicsSystem()->GetNarrowPhaseQuery();
 
     // ★注意: car から const を外しています
     ForEach([&](TransformComponent& visualTrans, PlayerCarComponent& car) {
@@ -48,23 +58,60 @@ void PlayerCarMoveSystem::Update(float dt) {
         if (!sphereTrans || !sphereHandle) return;
 
         // =======================================================
-        // 3. 描画用の位置と回転を計算（ローカル・オフセットの完全適用）
+        //  レイキャストによる「接地判定(IsGrounded)」
         // =======================================================
+        JPH::RVec3 rayStart(sphereTrans->position.x, sphereTrans->position.y, sphereTrans->position.z);
+        JPH::RVec3 rayDir(0.0f, -car.raycastLength, 0.0f); // 真下に撃つ
 
-        // [位置] オフセットを「車の向き(logicRot)」に合わせて回転させてから加算
+        JPH::RayCastResult hit;
+        // 自分自身（車の球体）に当たった場合は無視するフィルター
+        JPH::IgnoreSingleBodyFilter ignoreSelf(sphereHandle->bodyID);
+
+        // レーザーを発射！
+        car.isGrounded = narrowPhase.CastRay(
+            JPH::RRayCast(rayStart, rayDir),
+            hit,
+            JPH::BroadPhaseLayerFilter(), // 全ての層を対象
+            JPH::ObjectLayerFilter(),     // 全ての層を対象
+            ignoreSelf                    // 自分は無視
+        );
+
+        // =======================================================
+        // 3. フェイク・サスペンション（慣性の計算）
+        // =======================================================
+        float targetPitch = 0.0f;
+        float targetRoll = 0.0f;
+
+        // ★ 地面にいる時だけ傾く。空中の時は目標値を0(水平)にする！
+        if (car.isGrounded) {
+            targetPitch = car.input.throttle * -car.maxPitchAngle;
+            targetRoll = car.input.steering * -car.maxRollAngle;
+        }
+
+        // 線形補間(Lerp)で、現在の傾きを目標値に向かって滑らかに追従させる（バネの表現）
+        car.currentPitch += (targetPitch - car.currentPitch) * car.suspensionSpeed * dt;
+        car.currentRoll  += (targetRoll  - car.currentRoll)  * car.suspensionSpeed * dt;
+
+        // =======================================================
+        // 4. 描画用の位置と回転を計算（オフセットとサスの完全合成）
+        // =======================================================
+        
+        // [位置]
         XMVECTOR offsetVec = XMLoadFloat3(&car.visualOffset);
         offsetVec = XMVector3Rotate(offsetVec, logicRot);
-
         XMVECTOR spherePos = XMLoadFloat3(&sphereTrans->position);
-        XMVECTOR finalPos = XMVectorAdd(spherePos, offsetVec);
-        XMStoreFloat3(&visualTrans.position, finalPos);
+        XMStoreFloat3(&visualTrans.position, XMVectorAdd(spherePos, offsetVec));
 
-        // [回転] オフセット回転を論理回転に合成して「見た目の回転」とする
+        // [回転] visualRotation(ベース) に currentPitch(動的) を足す！
+        // X軸回転 = Pitch(前後), Z軸回転 = Roll(左右) 
+        // ※モデルのデフォルトの向きによってはXZが逆になる場合があります。違和感があれば入れ替えてください。
         XMVECTOR offsetRot = XMQuaternionRotationRollPitchYaw(
-            XMConvertToRadians(car.visualRotation.x),
+            XMConvertToRadians(car.visualRotation.x + car.currentPitch), 
             XMConvertToRadians(car.visualRotation.y),
-            XMConvertToRadians(car.visualRotation.z)
+            XMConvertToRadians(car.visualRotation.z + car.currentRoll)   
         );
+        
+        // ローカルの傾きを、車の論理的な向き(logicRot)に掛け合わせる
         XMVECTOR finalRot = XMQuaternionMultiply(offsetRot, logicRot);
         XMStoreFloat4(&visualTrans.rotation, finalRot);
 
@@ -97,21 +144,33 @@ void PlayerCarMoveSystem::Update(float dt) {
         // =======================================================
         // 6. アーケード挙動（ドリフト・キャンセラー）
         // =======================================================
-        JPH::Vec3 currentVelJolt = bodyInterface.GetLinearVelocity(sphereHandle->bodyID);
-        XMVECTOR currentVel = XMVectorSet(currentVelJolt.GetX(), currentVelJolt.GetY(), currentVelJolt.GetZ(), 0.0f);
+      // 接地している時（Grounded）だけ実行する！
+        if (car.isGrounded) {
 
-        float rightSpeed = XMVectorGetX(XMVector3Dot(currentVel, rightVec));
+            // 6. アクセル（力計算）
+            if (car.input.throttle != 0.0f) {
+                XMFLOAT3 forward;
+                XMStoreFloat3(&forward, forwardVec);
+                float finalForce = car.acceleration * 100.0f;
+                JPH::Vec3 force(forward.x * car.input.throttle * finalForce, 0.0f, forward.z * car.input.throttle * finalForce);
+                bodyInterface.AddForce(sphereHandle->bodyID, force);
+                bodyInterface.ActivateBody(sphereHandle->bodyID);
+            }
 
-        // 横滑りの速度を 95% 打ち消す
-        XMVECTOR cancelVel = XMVectorScale(rightVec, -rightSpeed * 0.95f);
+            // 7. ドリフトキャンセラー
+            JPH::Vec3 currentVelJolt = bodyInterface.GetLinearVelocity(sphereHandle->bodyID);
+            XMVECTOR currentVel = XMVectorSet(currentVelJolt.GetX(), currentVelJolt.GetY(), currentVelJolt.GetZ(), 0.0f);
+            float rightSpeed = XMVectorGetX(XMVector3Dot(currentVel, rightVec));
 
-        JPH::Vec3 newVel(
-            currentVelJolt.GetX() + XMVectorGetX(cancelVel),
-            currentVelJolt.GetY(),
-            currentVelJolt.GetZ() + XMVectorGetZ(cancelVel)
-        );
-
-        bodyInterface.SetLinearVelocity(sphereHandle->bodyID, newVel);
+            XMVECTOR cancelVel = XMVectorScale(rightVec, -rightSpeed * 0.95f);
+            JPH::Vec3 newVel(
+                currentVelJolt.GetX() + XMVectorGetX(cancelVel),
+                currentVelJolt.GetY(), // Y(重力)はそのまま
+                currentVelJolt.GetZ() + XMVectorGetZ(cancelVel)
+            );
+            bodyInterface.SetLinearVelocity(sphereHandle->bodyID, newVel);
+        }
+        // 空中の場合は何も加算・減速しない（Joltの重力と慣性に完全に身を任せる）
         });
 }
 

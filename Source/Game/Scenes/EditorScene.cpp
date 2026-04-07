@@ -39,7 +39,7 @@ void EditorScene::Initialize()
     //SceneInitializer::SpawnECSBenchmarkTest(*_worldPtr, device, 100000);
 
     // 300 x 300 = 90,000 個のキューブの海を生成
-    //SceneInitializer::SpawnVoxelOceanTest(*_worldPtr, device, 500);
+    //SceneInitializer::SpawnVoxelOceanTest(*_worldPtr, device, 300);
    
     //SceneInitializer::SpawnPhysicsAvalancheTest(*_worldPtr, device, 10000);
 
