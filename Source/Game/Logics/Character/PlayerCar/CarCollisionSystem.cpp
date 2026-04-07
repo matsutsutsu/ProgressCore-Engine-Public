@@ -17,19 +17,12 @@ using namespace CCL::ECS;
 // ============================================================================
 void CarCollisionSystem::Initialize() {
     // 起動時に1回だけ、EventBusにコールバックを登録する
-    m_subID = _world->GetEventBus().Subscribe<JoltCollisionEvent>(
-        [this](const JoltCollisionEvent& ev) {
-            this->OnCollision(ev);
-        }
-    );
+    ListenEvent<JoltCollisionEvent>([this](const auto& ev) {
+        this->OnCollision(ev);
+        });
 }
 
-CarCollisionSystem::~CarCollisionSystem() {
-    // システム破棄時に安全に購読を解除する (RAII)
-    if (_world) {
-        _world->GetEventBus().Unsubscribe<JoltCollisionEvent>(m_subID);
-    }
-}
+CarCollisionSystem::~CarCollisionSystem() {}
 
 // ============================================================================
 // コールバック (別スレッドから呼ばれる可能性があるため最小限にする)

@@ -23,7 +23,9 @@ void PlayerFeedbackSystem::Initialize()
     // =======================================================================
     // 放送局（EventBus）から「ダメージを受けた」というニュースを受信する
     // =======================================================================
-    _world->GetEventBus().Subscribe<DamageTakenEvent>([this](const DamageTakenEvent &e) {
+    // これを書くだけで、基底クラスが裏でチケットを保管し、
+    // システムが破棄されるときに自動的にEventBusから登録を抹消（Unsubscribe）してくれる！
+    ListenEvent<DamageTakenEvent>([this](const DamageTakenEvent& e) {
         // もしダメージを受けたのが「プレイヤー」だったら、各種演出を発動！
         if (e.isPlayer) {
 

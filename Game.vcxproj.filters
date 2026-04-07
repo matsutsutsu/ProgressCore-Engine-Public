@@ -124,9 +124,6 @@
     <Filter Include="Source\Engine">
       <UniqueIdentifier>{7baeed16-5315-40ab-867d-45fc41b6777a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Audio">
-      <UniqueIdentifier>{f67d589a-603e-4892-ba9f-e03879675b0e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\Core">
       <UniqueIdentifier>{003f74cf-d463-499b-b8ab-83530738650d}</UniqueIdentifier>
     </Filter>
@@ -354,6 +351,9 @@
     </Filter>
     <Filter Include="Source\Engine\Physics\API">
       <UniqueIdentifier>{b2182144-7934-4bf7-a398-35153ad43535}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Audio">
+      <UniqueIdentifier>{f67d589a-603e-4892-ba9f-e03879675b0e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

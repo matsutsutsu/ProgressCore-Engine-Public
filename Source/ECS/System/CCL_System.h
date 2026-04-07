@@ -173,9 +173,38 @@ namespace CCL::ECS
             _filter = ArchetypeHelper::Generate<typename AccessTypes::RawType...>();
         }
 
-        virtual ~IfSystem() = default;
+        // システム破棄時に、箱の中の解除コマンドを全部自動で実行する！
+        virtual ~IfSystem() override {
+            for (auto& cleanup : _eventCleanups) {
+                cleanup();
+            }
+            _eventCleanups.clear();
+        }
+
+    private:
+        // 自分が登録したイベントの「購読解除コマンド」をしまっておく箱
+        // std::function にすることで、「何のイベント型か」という情報を隠蔽（型消去）できる
+        std::vector<std::function<void()>> _eventCleanups;
 
     protected:
+
+        // 派生クラスから呼ぶ「超・簡単イベント登録API」
+        template <typename EventType>
+        void ListenEvent(std::function<void(const EventType&)> callback) {
+            if (!_world) return;
+
+            // 1. 普通に EventBus に登録して、チケットIDを受け取る
+            auto ticketID = _world->GetEventBus().Subscribe<EventType>(callback);
+
+            // 2. 「このイベントを解除する」という処理そのものを、ラムダ式でカプセル化して箱にしまう
+            // ※ EventType が何であったかを、このラムダ式の中に焼き付けて保存できるのがC++の強力な点です
+            _eventCleanups.push_back([this, ticketID]() {
+                if (this->_world) {
+                    this->_world->GetEventBus().Unsubscribe<EventType>(ticketID);
+                }
+                });
+        }
+
         /**
          * @brief 仲間が使うための型安全なループヘルパー
          * @param func ラムダ式 (引数に Components&... を受け取る)
