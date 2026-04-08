@@ -17,8 +17,6 @@
 
 #include "Engine/GamePlay/Graphics/Core/EnvironmentSystem.h"
 
-
-
 #include "Engine/Graphics/Renderer/RenderQueue.h"
 
 
@@ -28,6 +26,10 @@
 
 void BaseScene::Initialize()
 {
+#ifdef TRACY_ENABLE
+    ZoneScopedN("BaseScene::Initialize");
+#endif
+
     auto &graphics = Graphics::Instance();
 
     ID3D11Device *device       = graphics.GetDevice();
@@ -52,14 +54,8 @@ void BaseScene::Initialize()
 
     auto inputAPI = std::make_shared<InputFacade>(&Input::Instance());
 
-    // [前進・後退の軸]
-    inputAPI->AddAxisBinding("Throttle", InputDeviceType::Keyboard, 'W', 1.0f);       // Wはプラス
-    inputAPI->AddAxisBinding("Throttle", InputDeviceType::Keyboard, 'S', -1.0f);      // Sはマイナス
-    inputAPI->AddAxisBinding("Throttle", InputDeviceType::GamePad_AxisLY, 0, 1.0f);   // スティックY
-
-    // [攻撃ボタン]
-    inputAPI->AddActionBinding("Attack", InputDeviceType::Mouse_Button, Mouse::BTN_LEFT);
-    inputAPI->AddActionBinding("Attack", InputDeviceType::GamePad_Button, GamePad::BTN_X);
+    // C++に長々と書いていた割り当てが、この1行に集約される！
+    inputAPI->LoadConfig("Assets/Config/InputConfig.json");
 
     _worldPtr->AddResource<std::shared_ptr<IInputAPI>>(inputAPI);
 
@@ -104,6 +100,10 @@ void BaseScene::Finalize() {}
 
 void BaseScene::Update(float elapsedTime)
 {
+#ifdef TRACY_ENABLE
+    ZoneScopedN("BaseScene::Update");
+#endif
+
     // ECSシステムが走り出す「前」の、誰もメモリを触っていない安全な瞬間に世界を切り替える！
     ExecutePendingSceneOperations();
 
@@ -121,6 +121,10 @@ void BaseScene::Update(float elapsedTime)
 
 void BaseScene::FixedUpdate(float fixedTime) 
 { 
+#ifdef TRACY_ENABLE
+    ZoneScopedN("BaseScene::FixedUpdate");
+#endif
+
     // ECSコンテキストに更新を委譲（これだけで全てが正しい順序で回る）
     if (_ecsContext) {
         _ecsContext->UpdateLogic(fixedTime);

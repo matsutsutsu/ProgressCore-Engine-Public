@@ -40,6 +40,9 @@ static const int syncInterval = 1;
 Framework::Framework(HWND hWnd)
 	: hWnd(hWnd)
 {
+#ifdef TRACY_ENABLE
+	ZoneScopedN("Framework::Constructor");
+#endif
 
     // 音声初期化
     Audio::Instance().Initialize();
@@ -64,6 +67,10 @@ Framework::Framework(HWND hWnd)
 // デストラクタ
 Framework::~Framework()
 {
+#ifdef TRACY_ENABLE
+	ZoneScopedN("Framework::Destrucor");
+#endif
+
 	// シーン終了化
 	SceneManager::Instance().Clear();
 	// IMGUI終了化
@@ -111,14 +118,30 @@ void Framework::Update(float elapsedTime)
     ZoneScopedN("Framework::Update");
 #endif
 
-	// IMGUIフレーム開始処理	
-	ImGuiRenderer::NewFrame();
+	{
+#ifdef TRACY_ENABLE
+		ZoneScopedN("Framework::ImGuiRenderer::NewFrame");
+#endif
+		// IMGUIフレーム開始処理	
+		ImGuiRenderer::NewFrame();
+	}
 
-	// インプット更新処理
-	Input::Instance().Update();
+	{
+#ifdef TRACY_ENABLE
+		ZoneScopedN("Framework::Input::Update");
+#endif
+		// インプット更新処理
+		Input::Instance().Update();
 
-	// シーン更新処理
-	SceneManager::Instance().Update(elapsedTime);
+	}
+
+	{
+#ifdef TRACY_ENABLE
+		ZoneScopedN("Framework::SceneManager::Update");
+#endif
+		// シーン更新処理
+		SceneManager::Instance().Update(elapsedTime);
+	}
 }
 
 // 描画処理

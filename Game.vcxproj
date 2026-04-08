@@ -211,6 +211,7 @@
     <ClInclude Include="Source\Editor\Windows\ECSDebugWindow.h" />
     <ClInclude Include="Source\Editor\Windows\GameViewWindow.h" />
     <ClInclude Include="Source\Editor\Windows\HierarchyWindow.h" />
+    <ClInclude Include="Source\Editor\Windows\InputEditorWindow.h" />
     <ClInclude Include="Source\Editor\Windows\InspectorWindow.h" />
     <ClInclude Include="Source\Editor\Windows\TextEditorWindow.h" />
     <ClInclude Include="Source\Editor\Windows\SceneWindow.h" />
@@ -466,6 +467,7 @@
     <ClCompile Include="Source\Editor\Utils\ShellIconLoader.cpp" />
     <ClCompile Include="Source\Editor\Windows\AnimationSequencerWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\HierarchyWindow.cpp" />
+    <ClCompile Include="Source\Editor\Windows\InputEditorWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\InspectorWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\TextEditorWindow.cpp" />
     <ClCompile Include="Source\Engine\Audio\Audio.cpp" />

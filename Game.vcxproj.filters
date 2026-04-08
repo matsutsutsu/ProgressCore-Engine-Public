@@ -1158,6 +1158,9 @@
     <ClInclude Include="Source\Engine\Platform\Input\InputFacade.h">
       <Filter>Source\Engine\Platform\Input\API</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\InputEditorWindow.h">
+      <Filter>Source\Editor\Windows</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -1714,6 +1717,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Platform\Input\InputFacade.cpp">
       <Filter>Source\Engine\Platform\Input\API</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\InputEditorWindow.cpp">
+      <Filter>Source\Editor\Windows</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

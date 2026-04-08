@@ -16,6 +16,10 @@
 #include "Engine/GamePlay/Transform/HierarchyCleanupSystem.h"
 #include "Engine/GamePlay/Physics/Jolt/JoltCleanupSystem.h"
 
+#ifdef TRACY_ENABLE
+#include "tracy/Tracy.hpp"
+#endif
+
 using namespace CCL::ECS::Core;
 
 //初期化
@@ -46,6 +50,7 @@ void SceneManager::FixedUpdate(float fixedTime)
 //更新処理
 void SceneManager::Update(float elapsedTime)
 {
+
 	if (nextScene != nullptr)
 	{
 		//古いシーンを終了処理

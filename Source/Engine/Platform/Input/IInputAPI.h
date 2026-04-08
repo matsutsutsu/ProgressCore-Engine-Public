@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include "Engine/Core/Math/StringHash.h"
 
 // 1. 入力デバイスの種類
 enum class InputDeviceType {
@@ -27,15 +28,35 @@ class IInputAPI {
 public:
     virtual ~IInputAPI() = default;
 
+    // エディタからホットリロードを叩けるようにインターフェースにも公開
+    virtual bool LoadConfig(const std::string& filePath) = 0;
+
     // --- 設定（バインディング） ---
     virtual void AddActionBinding(const std::string& actionName, InputDeviceType device, unsigned int keyCode) = 0;
     virtual void AddAxisBinding(const std::string& axisName, InputDeviceType device, unsigned int keyCode, float scale = 1.0f) = 0;
 
-    // --- デジタル入力（0 か 1） ---
-    virtual bool GetAction(const std::string& actionName) const = 0;
-    virtual bool GetActionTriggered(const std::string& actionName) const = 0;
-    virtual bool GetActionReleased(const std::string& actionName) const = 0;
+    // =======================================================
+    // ★ デジタル・アナログ入力の取得（コア機能：超高速版）
+    // =======================================================
+    virtual bool GetAction(uint32_t actionHash) const = 0;
+    virtual bool GetActionTriggered(uint32_t actionHash) const = 0;
+    virtual bool GetActionReleased(uint32_t actionHash) const = 0;
+    virtual float GetAxis(uint32_t axisHash) const = 0;
 
-    // --- アナログ入力（-1.0f ～ 1.0f） ---
-    virtual float GetAxis(const std::string& axisName) const = 0;
+    // =======================================================
+    // ★ 既存コードを壊さないための安全なヘルパー関数
+    // （純粋仮想関数 '= 0' ではなく、中身を直接ここに書きます）
+    // =======================================================
+    bool GetAction(const char* actionName) const { 
+        return GetAction(CCL::Utils::HashString(actionName)); 
+    }
+    bool GetActionTriggered(const char* actionName) const { 
+        return GetActionTriggered(CCL::Utils::HashString(actionName)); 
+    }
+    bool GetActionReleased(const char* actionName) const { 
+        return GetActionReleased(CCL::Utils::HashString(actionName)); 
+    }
+    float GetAxis(const char* axisName) const { 
+        return GetAxis(CCL::Utils::HashString(axisName)); 
+    }
 };

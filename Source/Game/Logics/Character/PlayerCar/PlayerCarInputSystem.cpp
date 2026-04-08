@@ -1,7 +1,8 @@
 #include "PlayerCarInputSystem.h"
 
 #include "ECS/Core/CCL_Chunk.h"
-#include "Engine/Platform/Input/Input.h"
+// ★修正: 生の Input.h ではなく、抽象化された API をインクルード
+#include "Engine/Platform/Input/IInputAPI.h"
 
 // システムの実行順序の定義ヘッダー
 #include "ECS/System/CCL_SystemRegistry.h"
@@ -16,70 +17,30 @@ PlayerCarInputSystem::PlayerCarInputSystem()
 
 void PlayerCarInputSystem::Update(float dt)
 {
-    // 1. 世界から Input データ (Resource) を受け取る
-    if (!_world->HasResource<Input*>()) return;
-    auto* input = _world->GetResource<Input*>();
-    if (!input) return;
-
-    auto& pad = input->GetGamePad();
-    auto& kb = input->GetKeyboard();
-
+    // 生の Input* ではなく、抽象化された Facade (IInputAPI) をスマートポインタで受け取る
+    if (!_world->HasResource<std::shared_ptr<IInputAPI>>()) return;
+    auto input = _world->GetResource<std::shared_ptr<IInputAPI>>();
 
 
     ForEach([&](PlayerCarComponent& car) {
-        car.input.throttle = 0.0f;
-        car.input.steering = 0.0f;
-        car.input.jump = false;
-        });
 
+        // =======================================================
+        // ★ 魔法の構文 "_hash" を使った超高速・データ駆動入力
+        // Wキーの同時押し対策やスティックの判定は、すべて Facade の中で解決済み！
+        // =======================================================
+
+        // アクセル (前進・後退)
+        car.input.throttle = input->GetAxis("Throttle"_hash);
+
+        // ステアリング (左右)
+        car.input.steering = input->GetAxis("Steer"_hash);
+
+        // ジャンプ (単発ボタン)
+        // ※ GetActionTriggered は「押された瞬間」の判定になります。
+        car.input.jump = input->GetActionTriggered("Jump"_hash);
+
+        });
     
-
-    // Logic用の蓄積入力を取得
-    unsigned int logicPadDown = input->GetPadButtonDownLogic();
-
-    ForEach([&](PlayerCarComponent& car) {
-        float throttle = 0.0f;
-        float steering = 0.0f;
-
-        // キーボード入力の取得
-        bool keyA = kb.IsDown('A');
-        bool keyD = kb.IsDown('D');
-        bool keyW = kb.IsDown('W');
-        bool keyS = kb.IsDown('S');
-
-        // ハンドル (AとD) 同時押し対策
-        if (keyA && keyD) {
-            steering = 0.0f;
-        }
-        else if (keyA) {
-            steering = -1.0f; // 左
-        }
-        else if (keyD) {
-            steering = 1.0f;  // 右
-        }
-        else {
-            steering = pad.GetAxisLX();
-        }
-
-        // アクセル・ブレーキ (WとS) 同時押し対策
-        if (keyW && keyS) {
-            throttle = 0.0f;
-        }
-        else if (keyW) {
-            throttle = 1.0f;  // 前進
-        }
-        else if (keyS) {
-            throttle = -1.0f; // 後退
-        }
-        else {
-            throttle = pad.GetAxisLY();
-        }
-
-        // 抽象化された input 構造体にマッピング
-        car.input.throttle = throttle;
-        car.input.steering = steering;
-        car.input.jump = (logicPadDown & GamePad::BTN_A);
-        });
 }
 
 REGISTER_LOGIC_SYSTEM(PlayerCarInputSystem, Priority::LogicStage::L01_Input);
