@@ -145,9 +145,6 @@
     <ClInclude Include="External\imgui-docking\imstb_rectpack.h" />
     <ClInclude Include="External\imgui-docking\imstb_textedit.h" />
     <ClInclude Include="External\imgui-docking\imstb_truetype.h" />
-    <ClInclude Include="External\ImGuiColorTextEdit\TextEditor.h" />
-    <ClInclude Include="External\ImGuiFileDialog\ImGuiFileDialog.h" />
-    <ClInclude Include="External\ImGuiFileDialog\ImGuiFileDialogConfig.h" />
     <ClInclude Include="External\ImGuizmo\GraphEditor.h" />
     <ClInclude Include="External\ImGuizmo\ImCurveEdit.h" />
     <ClInclude Include="External\ImGuizmo\ImGradient.h" />
@@ -208,6 +205,7 @@
     <ClInclude Include="Source\Editor\Utils\ShellIconLoader.h" />
     <ClInclude Include="Source\Editor\Windows\AnimationSequencerWindow.h" />
     <ClInclude Include="Source\Editor\Windows\AssetBrowserWindow.h" />
+    <ClInclude Include="Source\Editor\Windows\ConsoleWindow.h" />
     <ClInclude Include="Source\Editor\Windows\ECSDebugWindow.h" />
     <ClInclude Include="Source\Editor\Windows\GameViewWindow.h" />
     <ClInclude Include="Source\Editor\Windows\HierarchyWindow.h" />
@@ -215,9 +213,8 @@
     <ClInclude Include="Source\Editor\Windows\InspectorWindow.h" />
     <ClInclude Include="Source\Editor\Windows\TextEditorWindow.h" />
     <ClInclude Include="Source\Editor\Windows\SceneWindow.h" />
-    <ClInclude Include="Source\Engine\Audio\Audio.h" />
-    <ClInclude Include="Source\Engine\Audio\AudioResource.h" />
-    <ClInclude Include="Source\Engine\Audio\AudioSource.h" />
+    <ClInclude Include="Source\Engine\Audio\FmodAudioManager.h" />
+    <ClInclude Include="Source\Engine\Audio\IAudioAPI.h" />
     <ClInclude Include="Source\Engine\Core\Common\Misc.h" />
     <ClInclude Include="Source\Engine\Core\Framework.h" />
     <ClInclude Include="Source\Engine\Core\Math\StringHash.h" />
@@ -348,6 +345,7 @@
     <ClInclude Include="Source\Engine\Platform\Input\InputFacade.h" />
     <ClInclude Include="Source\Engine\Platform\Input\Keyboard.h" />
     <ClInclude Include="Source\Engine\Platform\Input\Mouse.h" />
+    <ClInclude Include="Source\Engine\Platform\Logger.h" />
     <ClInclude Include="Source\Engine\Scripting\Bind\LuaBind_Components.h" />
     <ClInclude Include="Source\Engine\Scripting\Bind\LuaBind_Entity.h" />
     <ClInclude Include="Source\Engine\Scripting\Bind\LuaBind_Scene.h" />
@@ -413,8 +411,6 @@
     <ClCompile Include="External\imgui-docking\imgui_impl_win32.cpp" />
     <ClCompile Include="External\imgui-docking\imgui_tables.cpp" />
     <ClCompile Include="External\imgui-docking\imgui_widgets.cpp" />
-    <ClCompile Include="External\ImGuiColorTextEdit\TextEditor.cpp" />
-    <ClCompile Include="External\ImGuiFileDialog\ImGuiFileDialog.cpp" />
     <ClCompile Include="External\ImGuizmo\GraphEditor.cpp" />
     <ClCompile Include="External\ImGuizmo\ImCurveEdit.cpp" />
     <ClCompile Include="External\ImGuizmo\ImGradient.cpp" />
@@ -466,13 +462,12 @@
     <ClCompile Include="Source\Editor\Utils\AssetBrowser.cpp" />
     <ClCompile Include="Source\Editor\Utils\ShellIconLoader.cpp" />
     <ClCompile Include="Source\Editor\Windows\AnimationSequencerWindow.cpp" />
+    <ClCompile Include="Source\Editor\Windows\ConsoleWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\HierarchyWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\InputEditorWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\InspectorWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\TextEditorWindow.cpp" />
-    <ClCompile Include="Source\Engine\Audio\Audio.cpp" />
-    <ClCompile Include="Source\Engine\Audio\AudioResource.cpp" />
-    <ClCompile Include="Source\Engine\Audio\AudioSource.cpp" />
+    <ClCompile Include="Source\Engine\Audio\FmodAudioManager.cpp" />
     <ClCompile Include="Source\Engine\Core\Framework.cpp" />
     <ClCompile Include="Source\Engine\Core\Main.cpp" />
     <ClCompile Include="Source\Engine\Core\Math\TransformUtils.cpp" />
@@ -563,6 +558,7 @@
     <ClCompile Include="Source\Engine\Platform\Input\InputFacade.cpp" />
     <ClCompile Include="Source\Engine\Platform\Input\Keyboard.cpp" />
     <ClCompile Include="Source\Engine\Platform\Input\Mouse.cpp" />
+    <ClCompile Include="Source\Engine\Platform\Logger.cpp" />
     <ClCompile Include="Source\Engine\Scripting\Bind\LuaBind_Components.cpp" />
     <ClCompile Include="Source\Engine\Scripting\Bind\LuaBind_Entity.cpp" />
     <ClCompile Include="Source\Engine\Scripting\Bind\LuaBind_Scene.cpp" />

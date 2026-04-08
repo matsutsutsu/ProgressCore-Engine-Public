@@ -8,9 +8,9 @@
 
 #include "Engine/Graphics/Core/Graphics.h"
 #include "Engine/Physics/JoltPhysicsManager.h"
-#include "Engine/Physics/IPhysicsAPI.h"
-#include "Engine/Physics/JoltPhysicsFacade.h"
 
+#include "Engine/Physics/JoltPhysicsFacade.h"
+#include "Engine/Audio/FmodAudioManager.h"
 
 #include "Engine/Platform/Input/Input.h"
 #include "Engine/Platform/Input/InputFacade.h"
@@ -58,6 +58,23 @@ void BaseScene::Initialize()
     inputAPI->LoadConfig("Assets/Config/InputConfig.json");
 
     _worldPtr->AddResource<std::shared_ptr<IInputAPI>>(inputAPI);
+
+    // 1. FMODの生成と初期化
+    auto audioAPI = std::make_shared<FmodAudioManager>();
+    audioAPI->Initialize();
+
+    // 2. Bankデータとイベントの登録
+    // ※今はまだ FMOD Studio でデータを作っていないので、コメントアウトしておくか
+    // 読み込み失敗のログが出るだけでスルーされます（安全です）。
+    /*
+    audioAPI->LoadBank("Assets/Audio/Master.bank");
+    audioAPI->LoadBank("Assets/Audio/Master.strings.bank");
+    audioAPI->LoadEvent("event:/SFX/Shoot");
+    audioAPI->LoadEvent("event:/BGM/TitleMusic");
+    */
+
+    // 3. ECSの世界に登録
+    _worldPtr->AddResource<std::shared_ptr<IAudioAPI>>(audioAPI);
 
 
     // WorldのリソースとしてJoltを登録し、初期化する

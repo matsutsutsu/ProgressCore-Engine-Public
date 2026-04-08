@@ -16,6 +16,7 @@
 #include "Editor/Windows/AnimationSequencerWindow.h"
 #include "Editor/Windows/TextEditorWindow.h"
 #include "Editor/Windows/InputEditorWindow.h"
+#include "Editor/Windows/ConsoleWindow.h"
 
 #include "Engine/Serialization/Factory/Prefab.h"
 #include <imgui.h>
@@ -34,9 +35,9 @@ void EditorWindowManager::Initialize()
     RegisterWindow<TextEditorWindow>();
     RegisterWindow<AssetBrowserWindow>();
     RegisterWindow<InputEditorWindow>();
+    RegisterWindow<ConsoleWindow>();
     //RegisterWindow<SceneViewWindow>();
     //RegisterWindow<GameViewWindow>();
-    //RegisterWindow<ConsoleWindow>();
     //  必要に応じて他のウィンドウもここに登録
 }
 

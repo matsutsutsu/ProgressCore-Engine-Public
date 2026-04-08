@@ -2,7 +2,7 @@
 #include "ECS/Common/CCL_Common.h"
 #include <DirectXMath.h>
 
-// ★追加：レイキャストの結果を返すための構造体
+// レイキャストの結果を返すための構造体
 struct PhysicsHitInfo {
     bool hit = false;
     CCL::ECS::EntityID entity = CCL::ECS::InvalidEntityID; // 誰に当たったか

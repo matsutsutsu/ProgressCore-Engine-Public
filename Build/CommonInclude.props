@@ -21,8 +21,6 @@
 				$(SolutionDir)External\tinygltf;
 				$(SolutionDir)External\DirectXTex;
 				$(SolutionDir)External\implot-master;
-				$(SolutionDir)External\ImGuiFileDialog;
-				$(SolutionDir)External\ImGuiColorTextEdit;
 				$(SolutionDir)External\nlohmann;
 				$(SolutionDir)External\DirectXTK-main\Inc;
 				$(SolutionDir)External\Lua\src;
@@ -30,9 +28,11 @@
 				$(SolutionDir)External\Tracy;
 
 				$(SolutionDir)External\JoltPhysics\include;
+				
+				
+				$(SolutionDir)External\FMOD\core\inc;
+				$(SolutionDir)External\FMOD\studio\inc;
 
-				<!-- BVH (madmann91) -->
-				$(SolutionDir)External\tinybvh-main;
 
 				<!-- Inherited -->
 				%(AdditionalIncludeDirectories)
@@ -46,6 +46,10 @@
 
 				$(SolutionDir)External\JoltPhysics\lib\$(Configuration);
 				$(SolutionDir)External\DirectXTK-main\Bin\Desktop_2022\x64\$(Configuration);
+
+				$(SolutionDir)External\FMOD\core\lib\x64;
+				$(SolutionDir)External\FMOD\studio\lib\x64;
+
 
 				%(AdditionalLibraryDirectories)
 
@@ -61,12 +65,22 @@
 				winmm.lib;
 				Jolt.lib;
 
+				fmod_vc.lib;
+				fmodstudio_vc.lib;
+
 				%(AdditionalDependencies)
 
 			</AdditionalDependencies>
 			
 		</Link>
 
+		<PostBuildEvent>
+			<Command>
+				xcopy /y /d "$(SolutionDir)External\FMOD\core\lib\x64\*.dll" "$(TargetDir)"
+				xcopy /y /d "$(SolutionDir)External\FMOD\studio\lib\x64\*.dll" "$(TargetDir)"
+				%(Command)
+			</Command>
+		</PostBuildEvent>
 
 	</ItemDefinitionGroup>
 

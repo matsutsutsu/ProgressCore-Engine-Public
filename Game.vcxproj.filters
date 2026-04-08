@@ -18,9 +18,6 @@
     <Filter Include="External\imgui-docking">
       <UniqueIdentifier>{c85446c9-90d2-4441-add5-5aac511d95ce}</UniqueIdentifier>
     </Filter>
-    <Filter Include="External\ImGuiFileDialog">
-      <UniqueIdentifier>{44f24397-d7cc-487b-8ac3-4c206b004363}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Shader\Common">
       <UniqueIdentifier>{2d28a88d-02f8-4b5b-8c7d-7b51eb07c3b2}</UniqueIdentifier>
     </Filter>
@@ -283,9 +280,6 @@
     <Filter Include="Source\Game\GameEvent">
       <UniqueIdentifier>{6d456466-192c-420e-8be4-6fe0a14e4d5b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="External\ImGuiColorTextEdit">
-      <UniqueIdentifier>{8226849c-f5c8-4f7c-817e-b7d3a0bdd91e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\Serialization\Meta">
       <UniqueIdentifier>{bb611d4c-bc75-4a8d-8a31-1810ea67ad4d}</UniqueIdentifier>
     </Filter>
@@ -389,12 +383,6 @@
     </ClInclude>
     <ClInclude Include="External\imgui-docking\imstb_truetype.h">
       <Filter>External\imgui-docking</Filter>
-    </ClInclude>
-    <ClInclude Include="External\ImGuiFileDialog\ImGuiFileDialog.h">
-      <Filter>External\ImGuiFileDialog</Filter>
-    </ClInclude>
-    <ClInclude Include="External\ImGuiFileDialog\ImGuiFileDialogConfig.h">
-      <Filter>External\ImGuiFileDialog</Filter>
     </ClInclude>
     <ClInclude Include="Source\ECS\Common\CCL_Common.h">
       <Filter>Source\ECS\Common</Filter>
@@ -572,15 +560,6 @@
     </ClInclude>
     <ClInclude Include="Source\Editor\Inspector\ComponentGuiRegistry.h">
       <Filter>Source\Editor\Inspector</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Audio\Audio.h">
-      <Filter>Source\Engine\Audio</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Audio\AudioResource.h">
-      <Filter>Source\Engine\Audio</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Audio\AudioSource.h">
-      <Filter>Source\Engine\Audio</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Framework.h">
       <Filter>Source\Engine\Core</Filter>
@@ -942,9 +921,6 @@
     <ClInclude Include="Source\Editor\Windows\TextEditorWindow.h">
       <Filter>Source\Editor\Windows</Filter>
     </ClInclude>
-    <ClInclude Include="External\ImGuiColorTextEdit\TextEditor.h">
-      <Filter>External\ImGuiColorTextEdit</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Combat\DeadTag.h">
       <Filter>Source\Game\Logics\Combat</Filter>
     </ClInclude>
@@ -1161,6 +1137,18 @@
     <ClInclude Include="Source\Editor\Windows\InputEditorWindow.h">
       <Filter>Source\Editor\Windows</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Audio\IAudioAPI.h">
+      <Filter>Source\Engine\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Audio\FmodAudioManager.h">
+      <Filter>Source\Engine\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Platform\Logger.h">
+      <Filter>Source\Engine\Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\ConsoleWindow.h">
+      <Filter>Source\Editor\Windows</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -1192,9 +1180,6 @@
     </ClCompile>
     <ClCompile Include="External\imgui-docking\imgui_widgets.cpp">
       <Filter>External\imgui-docking</Filter>
-    </ClCompile>
-    <ClCompile Include="External\ImGuiFileDialog\ImGuiFileDialog.cpp">
-      <Filter>External\ImGuiFileDialog</Filter>
     </ClCompile>
     <ClCompile Include="Source\ECS\Core\CCL_Chunk.cpp">
       <Filter>Source\ECS\Core</Filter>
@@ -1342,15 +1327,6 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\Inspector\ComponentGuiRegistry.cpp">
       <Filter>Source\Editor\Inspector</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Audio\Audio.cpp">
-      <Filter>Source\Engine\Audio</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Audio\AudioResource.cpp">
-      <Filter>Source\Engine\Audio</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Audio\AudioSource.cpp">
-      <Filter>Source\Engine\Audio</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\Framework.cpp">
       <Filter>Source\Engine\Core</Filter>
@@ -1544,9 +1520,6 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\PBRShader.cpp">
       <Filter>Source\Engine\Graphics\Shader\Material</Filter>
     </ClCompile>
-    <ClCompile Include="External\ImGuiColorTextEdit\TextEditor.cpp">
-      <Filter>External\ImGuiColorTextEdit</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Editor\Windows\TextEditorWindow.cpp">
       <Filter>Source\Editor\Windows</Filter>
     </ClCompile>
@@ -1719,6 +1692,15 @@
       <Filter>Source\Engine\Platform\Input\API</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\InputEditorWindow.cpp">
+      <Filter>Source\Editor\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Audio\FmodAudioManager.cpp">
+      <Filter>Source\Engine\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Platform\Logger.cpp">
+      <Filter>Source\Engine\Platform</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\ConsoleWindow.cpp">
       <Filter>Source\Editor\Windows</Filter>
     </ClCompile>
   </ItemGroup>

@@ -14,7 +14,7 @@
 #include "Engine/Serialization/Factory/Prefab.h"                 
 #include "Engine/Platform/Dialog.h"
 
-#include "Engine/Audio/Audio.h"
+
 
 #ifdef TRACY_ENABLE
 #include "tracy/Tracy.hpp"
@@ -45,7 +45,7 @@ Framework::Framework(HWND hWnd)
 #endif
 
     // 音声初期化
-    Audio::Instance().Initialize();
+   
 
 	// グラフィックス初期化
 	Graphics::Instance().Initialize(hWnd);
@@ -84,7 +84,7 @@ Framework::~Framework()
     Prefab::Cleanup();
 
 	// 音声終了化
-	Audio::Instance().Finalize();
+
 }
 
 // ---------------------------------------------------------
