@@ -5,6 +5,8 @@
 
 #include "Engine/Serialization/Factory/Prefab.h"
 
+#include "Engine/Platform/Logger.h"
+
 #include "ECS/System/CCL_SystemRegistry.h"
 
 
@@ -45,6 +47,9 @@ void EditorScene::Initialize()
 
     // 1000体の群衆ストレステストを実行！
     //SceneInitializer::SpawnEnemySwarmTest(*_worldPtr, device, 200);
+
+
+    CCL_LOG_INFO(LogCategory::Core, "EditorScene Initialize");
 }
 
 void EditorScene::Finalize() 
@@ -83,9 +88,12 @@ void EditorScene::FixedUpdate(float dt)
     BaseScene::FixedUpdate(dt);
 }
 
-// ★追加: Updateのオーバーライド
+// Updateのオーバーライド
 void EditorScene::Update(float dt)
 {
+
+
+
 	// Contextからのリクエストを処理（ロード/セーブ要求など）
     ProcessContextRequests();
 
