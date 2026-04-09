@@ -1,5 +1,5 @@
 #include "JoltDebugDrawSystem.h"
-#include "Engine/Graphics/Renderer/ShapeRenderer.h" // ★あなたの環境のパスに合わせてください
+#include "Engine/Graphics/Renderer/ShapeRenderer.h"
 #include "ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"
 #include <DirectXMath.h>
@@ -24,8 +24,13 @@ namespace {
 // ===================================================================================
 // 1. BoxCollider の描画
 // ===================================================================================
-void JoltBoxDebugDrawSystem::OnDrawDebug(ShapeRenderer* renderer) {
+void JoltBoxDebugDrawSystem::Update(float dt)
+{
+    if (!isDebugVisible) return;
+    if (!_world->HasResource<ShapeRenderer*>()) return;
+    auto* renderer = _world->GetResource<ShapeRenderer*>();
     if (!renderer) return;
+
 
     ForEach([&](const TransformComponent& trans, const JoltBoxColliderComponent& box) {
         // 1. 本体(Entity)のワールド行列
@@ -65,7 +70,11 @@ void JoltBoxDebugDrawSystem::OnDrawDebug(ShapeRenderer* renderer) {
 // ===================================================================================
 // 2. SphereCollider の描画
 // ===================================================================================
-void JoltSphereDebugDrawSystem::OnDrawDebug(ShapeRenderer* renderer) {
+void JoltSphereDebugDrawSystem::Update(float dt)
+{
+    if (!isDebugVisible) return;
+    if (!_world->HasResource<ShapeRenderer*>()) return;
+    auto* renderer = _world->GetResource<ShapeRenderer*>();
     if (!renderer) return;
 
     ForEach([&](const TransformComponent& trans, const JoltSphereColliderComponent& sphere) {
@@ -92,7 +101,11 @@ void JoltSphereDebugDrawSystem::OnDrawDebug(ShapeRenderer* renderer) {
 // ===================================================================================
 // 3. CapsuleCollider の描画
 // ===================================================================================
-void JoltCapsuleDebugDrawSystem::OnDrawDebug(ShapeRenderer* renderer) {
+void JoltCapsuleDebugDrawSystem::Update(float dt)
+{
+    if (!isDebugVisible) return;
+    if (!_world->HasResource<ShapeRenderer*>()) return;
+    auto* renderer = _world->GetResource<ShapeRenderer*>();
     if (!renderer) return;
 
     ForEach([&](const TransformComponent& trans, const JoltCapsuleColliderComponent& capsule) {
@@ -122,7 +135,11 @@ void JoltCapsuleDebugDrawSystem::OnDrawDebug(ShapeRenderer* renderer) {
 // ===================================================================================
 // 4. MeshCollider の描画
 // ===================================================================================
-void JoltMeshDebugDrawSystem::OnDrawDebug(ShapeRenderer* renderer) {
+void JoltMeshDebugDrawSystem::Update(float dt)
+{
+    if (!isDebugVisible) return;
+    if (!_world->HasResource<ShapeRenderer*>()) return;
+    auto* renderer = _world->GetResource<ShapeRenderer*>();
     if (!renderer) return;
 
     // Transform, Meshタグ, Modelの3つが揃っているエンティティだけを描画

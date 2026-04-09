@@ -94,9 +94,6 @@ namespace CCL::ECS
 		// ImGuiによるデバッグGUI描画 (必要なら派生側でオーバーライド)
         virtual void OnGui() {}
 
-        // デバッグ描画用メソッド（デフォルトは何もしない）
-        virtual void OnDrawDebug(ShapeRenderer* renderer) {}
-
         const std::vector<CCL::ECS::Core::Chunk*>& GetTargetChunks() const { return _targetChunks; }
 
         // Worldをセットするメソッドを追加

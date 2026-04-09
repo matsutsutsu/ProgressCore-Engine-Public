@@ -116,37 +116,11 @@ namespace CCL::ECS
             return ptr;
         }
 
-        // 手動更新システム（Manual System）を登録する関数
-        //  - SystemManagerは更新(Update)を呼びません。
-        //  - ただし、ResolveTargetChunks でデータ（Chunk）は供給します。
-        void RegisterManualSystem(SystemBase *sys)
-        {
-            if (!sys) return;
-
-            // Worldをセット
-            if (_world) sys->SetWorld(_world);
-
-            sys->SetJobSystem(&_jobSystem);
-
-            if (_world) {
-                sys->SetStructureMutex(&_world->GetChunkManager().GetStructureMutex());
-            }
-
-            // 手動システムも自動で初期化を呼ぶ
-            sys->Initialize();
-
-            // リストに追加
-            _manualSystems.push_back(sys);
-        }
 
         // 登録済みの全システムを破棄する
         void SystemClear() {
             _logicSystems.clear();
             _renderSystems.clear();
-            //  手動管理システムもリストから消去する
-            // これをしないと、ParticleSceneで _particleRenderer をリセットした際に
-            // SystemManager内に「死んだポインタ」が残り続け、アクセス違反になります。
-            _manualSystems.clear();
 
             // システムが空になったので、グラフもリセットさせる
             _isGraphDirty = true;
@@ -174,8 +148,7 @@ namespace CCL::ECS
 
 
         // 描画系の更新（Renderから呼ばれる）
-        void UpdateRender(float dt) {
-        
+        void UpdateRender(float dt) {     
 
             // Render側のシステムもスケジューラで実行
             _renderScheduler.Execute(dt, &_jobSystem);
@@ -184,46 +157,11 @@ namespace CCL::ECS
 		// ImGuiによるデバッグGUI描画
         void OnGui();
 
-        // 全システムのデバッグ描画を呼び出す
-        // 使うか？　デバッグ描画に専用のシステムが必要なときにこれを実装する
-        void DrawDebugShape(ShapeRenderer* renderer)
-        {
-            // レンダラーが無ければ何もできないので早期リターン
-            if (!renderer) return;
-
-            // Logic系システムのデバッグ描画
-            for (auto& sys : _logicSystems)
-            {
-                // フラグが false なら描画処理を呼ばない
-                if (!sys->IsDebugVisible()) continue;
-
-                sys->OnDrawDebug(renderer);
-            }
-
-            // Render系システムのデバッグ描画
-            for (auto& sys : _renderSystems)
-            {
-                // フラグが false なら描画処理を呼ばない
-                if (!sys->IsDebugVisible()) continue;
-
-                sys->OnDrawDebug(renderer);
-            }
-
-            // Manual系（パーティクルなど）のデバッグ描画も忘れずに追加
-            for (auto *sys : _manualSystems) {
-                // フラグが false なら描画処理を呼ばない
-                if (!sys->IsDebugVisible()) continue;
-
-                sys->OnDrawDebug(renderer);
-            }
-        }
-
+     
         // 外部（Worldクラスなど）からシステムリストを取得できる関数を追加
         const std::vector<std::unique_ptr<SystemBase>>& GetLogicSystems() const { return _logicSystems; }
         const std::vector<std::unique_ptr<SystemBase>>& GetRenderSystems() const { return _renderSystems; }
 
-        // ★追加: 手動システムリストの取得
-        const std::vector<SystemBase *> &GetManualSystems() const { return _manualSystems; }
 
         // ★追加: 指定した型のシステムを取得する関数
         // 使用例: auto* animSys = systemManager->GetSystem<AnimationSystem>();
@@ -244,12 +182,7 @@ namespace CCL::ECS
                 }
             }
 
-            // 3. Manual Systems から検索
-            for (auto *sys : _manualSystems) {
-                if (T *casted = dynamic_cast<T *>(sys)) {
-                    return casted;
-                }
-            }
+
 
             // 見つからなければ nullptr
             return nullptr;
@@ -280,8 +213,6 @@ namespace CCL::ECS
         std::vector<std::unique_ptr<SystemBase>> _logicSystems;
         std::vector<std::unique_ptr<SystemBase>> _renderSystems;
 
-        // ★追加: 手動更新システムのリスト (所有権は持たず、ポインタだけ管理)
-        std::vector<SystemBase *> _manualSystems;
 
         Core::World* _world = nullptr;
 

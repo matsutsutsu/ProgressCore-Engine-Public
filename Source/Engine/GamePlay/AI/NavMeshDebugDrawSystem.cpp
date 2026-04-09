@@ -4,12 +4,18 @@
 #include <DirectXMath.h>
 #include "ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"
-
-// ShapeRendererのヘッダーをインクルードしてください
 #include "Engine/Graphics/Renderer/ShapeRenderer.h"
 
-void NavMeshDebugDrawSystem::OnDrawDebug(ShapeRenderer* renderer)
+void NavMeshDebugDrawSystem::Update(float dt)
 {
+    // 自身の描画フラグをチェック
+    if (!isDebugVisible) return;
+
+    // レンダラーとNavDataの取得
+    if (!_world->HasResource<ShapeRenderer*>()) return;
+    auto* renderer = _world->GetResource<ShapeRenderer*>();
+    if (!renderer) return;
+
     // Resourceが登録されていない、または描画OFFなら何もしない
     if (!_world->HasResource<NavigationData>()) return;
 
@@ -17,6 +23,7 @@ void NavMeshDebugDrawSystem::OnDrawDebug(ShapeRenderer* renderer)
     if (!navData.navMesh || !navData.showDebugDraw) return;
 
     const dtNavMesh* navMesh = navData.navMesh;
+
 
     // NavMeshの全タイルを走査
     for (int i = 0; i < navMesh->getMaxTiles(); ++i) {
@@ -60,4 +67,4 @@ void NavMeshDebugDrawSystem::OnDrawDebug(ShapeRenderer* renderer)
 
 
 
-//REGISTER_LOGIC_SYSTEM(NavMeshDebugDrawSystem, Priority::LogicStage::L02_Update);
+REGISTER_LOGIC_SYSTEM(NavMeshDebugDrawSystem, Priority::LogicStage::L02_Update);

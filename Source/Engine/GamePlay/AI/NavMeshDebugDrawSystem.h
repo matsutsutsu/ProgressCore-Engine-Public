@@ -9,6 +9,5 @@ public:
         this->isDebugVisible = true;
     }
 
-    void Update(float dt) override {}
-    void OnDrawDebug(ShapeRenderer* renderer) override;
+    void Update(float dt) override;
 };

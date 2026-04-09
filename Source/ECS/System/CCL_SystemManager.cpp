@@ -67,7 +67,7 @@ namespace CCL::ECS
 
         clearTargets(_logicSystems);
         clearTargets(_renderSystems);
-        clearTargets(_manualSystems); // ★追加: 手動システムもリセット
+
 
         // =========================================================
         // 2. 全チャンクを走査し、適合するシステムに配る
@@ -102,7 +102,6 @@ namespace CCL::ECS
             // Logic と Render 両方のシステムに対してマッチングを行う
             matchSystems(_logicSystems);
             matchSystems(_renderSystems);
-            matchSystems(_manualSystems); // ★追加: 手動システムにもチャンクを配る！
         }
     }
 
@@ -118,7 +117,7 @@ namespace CCL::ECS
             if (ImGui::Checkbox("Global Multi-Thread Enable", &globalMultiThreadEnabled)) {
                 for (auto &sys : _logicSystems) sys->enableMultiThread = globalMultiThreadEnabled;
                 for (auto &sys : _renderSystems) sys->enableMultiThread = globalMultiThreadEnabled;
-                for (auto *sys : _manualSystems) sys->enableMultiThread = globalMultiThreadEnabled;
+                
             }
 
             // 補足情報をツールチップで出すと親切
@@ -253,20 +252,7 @@ namespace CCL::ECS
                     ImGui::EndTabItem();
                 }
 
-                // ★追加: Manual Inspectors タブ
-                if (ImGui::BeginTabItem("Manual Inspectors")) {
-                    for (auto *sys : _manualSystems) { // ポインタなので auto*
-                        ImGui::PushID(sys->GetSystemID());
-                        if (ImGui::CollapsingHeader(sys->GetName().c_str())) {
-                            ImGui::Indent();
-                            sys->OnGui(); // パーティクルのインスペクタがここに表示されます
-                            ImGui::Unindent();
-                            ImGui::Spacing();
-                        }
-                        ImGui::PopID();
-                    }
-                    ImGui::EndTabItem();
-                }
+              
 
                 ImGui::EndTabBar();
             }
