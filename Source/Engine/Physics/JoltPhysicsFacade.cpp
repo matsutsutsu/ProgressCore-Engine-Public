@@ -99,6 +99,24 @@ void JoltPhysicsFacade::SetRotation(CCL::ECS::EntityID entity, const XMFLOAT4& r
     bodyInterface.SetRotation(handle->bodyID, JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w), JPH::EActivation::Activate);
 }
 
+void JoltPhysicsFacade::SetLookDirection(CCL::ECS::EntityID entity, const DirectX::XMFLOAT3& direction) {
+    auto* handle = m_world->GetComponent<JoltHandleComponent>(entity);
+    if (!handle) return;
+
+    // 方向ベクトルから、Y軸を軸とした回転（クォータニオン）を計算
+    DirectX::XMVECTOR dir = DirectX::XMLoadFloat3(&direction);
+    dir = DirectX::XMVector3Normalize(dir);
+
+    // Y軸との内積やアークタンジェントから回転を求める（簡易的な実装例）
+    float angle = atan2f(DirectX::XMVectorGetX(dir), DirectX::XMVectorGetZ(dir));
+    DirectX::XMVECTOR q = DirectX::XMQuaternionRotationAxis(DirectX::XMVectorSet(0, 1, 0, 0), angle);
+
+    JPH::Quat joltQuat(DirectX::XMVectorGetX(q), DirectX::XMVectorGetY(q), DirectX::XMVectorGetZ(q), DirectX::XMVectorGetW(q));
+
+    JPH::BodyInterface& bodyInterface = m_world->GetResource<JoltPhysicsManager>().GetBodyInterface();
+    bodyInterface.SetRotation(handle->bodyID, joltQuat, JPH::EActivation::Activate);
+}
+
 // =======================================================
 // 🔴 Queries (レイキャスト)
 // =======================================================

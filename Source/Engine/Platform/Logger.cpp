@@ -81,7 +81,8 @@ void Logger::Log(LogCategory category, LogLevel level, const char* file, int lin
 
     if (_fileStream.is_open()) {
         const char* levelStr = (level == LogLevel::Error) ? "[ERROR] " :
-            (level == LogLevel::Warning) ? "[WARN] " : "[INFO] ";
+            (level == LogLevel::Warning) ? "[WARN] " :
+            (level == LogLevel::Success) ? "[SUCCESS] " : "[INFO] "; 
 
         _fileStream << levelStr << prefix << buffer << "\n";
 

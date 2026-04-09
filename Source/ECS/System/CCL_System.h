@@ -20,7 +20,7 @@
 
 // forward-declare Core::Chunk so System layer can reference it without including core headers
 namespace CCL::ECS::Core { class Chunk; }
-class ShapeRenderer;
+
 
 namespace CCL::ECS
 {

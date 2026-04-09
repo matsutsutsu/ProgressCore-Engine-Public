@@ -373,6 +373,12 @@
     <Filter Include="Source\Engine\GamePlay\AI">
       <UniqueIdentifier>{492f085a-c40b-4836-aeb1-580a9fc007b0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\GamePlay\AI\Navigation">
+      <UniqueIdentifier>{c80c187c-1b9a-4cfe-9ff7-a599286abbc4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\GamePlay\AI\Navigation\_Meta">
+      <UniqueIdentifier>{f481f6d0-e5f8-4a2f-8f4b-1da288f909aa}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1242,14 +1248,23 @@
     <ClInclude Include="External\RecastNavigation\Detour\Include\DetourStatus.h">
       <Filter>External\RecastNavigation\Detour</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\AI\NavMeshDebugDrawSystem.h">
-      <Filter>Source\Engine\GamePlay\AI</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Editor\Utils\NavMeshBuilder.h">
       <Filter>Source\Editor\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\AI\NavigationData.h">
-      <Filter>Source\Engine\GamePlay\AI</Filter>
+    <ClInclude Include="Source\Engine\GamePlay\AI\Navigation\NavigationData.h">
+      <Filter>Source\Engine\GamePlay\AI\Navigation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\AI\Navigation\NavMeshDebugDrawSystem.h">
+      <Filter>Source\Engine\GamePlay\AI\Navigation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\AI\Navigation\NavAgentComponent.h">
+      <Filter>Source\Engine\GamePlay\AI\Navigation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\AI\Navigation\NavPathfindingSystem.h">
+      <Filter>Source\Engine\GamePlay\AI\Navigation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\AI\Navigation\NavSteeringSystem.h">
+      <Filter>Source\Engine\GamePlay\AI\Navigation</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1895,11 +1910,20 @@
     <ClCompile Include="External\RecastNavigation\Detour\Source\DetourNode.cpp">
       <Filter>External\RecastNavigation\Detour</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\AI\NavMeshDebugDrawSystem.cpp">
-      <Filter>Source\Engine\GamePlay\AI</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Editor\Utils\NavMeshBuilder.cpp">
       <Filter>Source\Editor\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\AI\Navigation\NavMeshDebugDrawSystem.cpp">
+      <Filter>Source\Engine\GamePlay\AI\Navigation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\AI\Navigation\NavPathfindingSystem.cpp">
+      <Filter>Source\Engine\GamePlay\AI\Navigation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\AI\Navigation\NavSteeringSystem.cpp">
+      <Filter>Source\Engine\GamePlay\AI\Navigation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\AI\Navigation\NavAgentComponentMeta.cpp">
+      <Filter>Source\Engine\GamePlay\AI\Navigation\_Meta</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

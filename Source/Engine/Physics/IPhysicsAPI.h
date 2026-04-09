@@ -44,6 +44,9 @@ public:
     virtual void SetPosition(CCL::ECS::EntityID entity, const DirectX::XMFLOAT3& position) = 0;
     virtual void SetRotation(CCL::ECS::EntityID entity, const DirectX::XMFLOAT4& rotation) = 0;
 
+    // 特定の方向を向かせるヘルパー関数（Yaw回転）
+    virtual void SetLookDirection(CCL::ECS::EntityID entity, const DirectX::XMFLOAT3& direction) = 0;
+
     // =======================================================
     // 🔴 空間クエリ (Queries)
     // =======================================================

@@ -45,7 +45,7 @@ template <> struct ComponentMeta<JoltSphereColliderComponent> {
     static const std::vector<FieldDescriptor>& Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
-            META_FIELD_FLOAT(JoltSphereColliderComponent, radius, "radius", "Radius", 0.1f, 0.0f, 100.0f, "Sphere Collider"),
+            META_FIELD_FLOAT(JoltSphereColliderComponent, radius, "radius", "Radius", 0.1f, 0.01f, 100.0f, "Sphere Collider"),
             META_FIELD_FLOAT3(JoltSphereColliderComponent, localOffset, "localOffset", "Local Offset (位置ズレ)", 0.1f, "Sphere Collider")
         };
         return fields;
@@ -58,8 +58,8 @@ template <> struct ComponentMeta<JoltCapsuleColliderComponent> {
     static const std::vector<FieldDescriptor>& Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
-            META_FIELD_FLOAT(JoltCapsuleColliderComponent, halfHeight, "halfHeight", "Half Height", 0.1f, 0.0f, 100.0f, "Capsule Collider"),
-            META_FIELD_FLOAT(JoltCapsuleColliderComponent, radius, "radius", "Radius", 0.1f, 0.0f, 100.0f, "Capsule Collider"),
+            META_FIELD_FLOAT(JoltCapsuleColliderComponent, halfHeight, "halfHeight", "Half Height", 0.1f, 0.01f, 100.0f, "Capsule Collider"),
+            META_FIELD_FLOAT(JoltCapsuleColliderComponent, radius, "radius", "Radius", 0.1f, 0.01f, 100.0f, "Capsule Collider"),
             META_FIELD_FLOAT3(JoltCapsuleColliderComponent, localOffset, "localOffset", "Local Offset (位置ズレ)", 0.1f, "Capsule Collider"),
             META_FIELD_FLOAT3(JoltCapsuleColliderComponent, localRotationEuler, "localRotationEuler", "Local Rotation (角度ズレ)", 1.0f, "Capsule Collider")
         };

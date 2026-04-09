@@ -18,6 +18,7 @@ enum class LogCategory {
 // ログの重要度
 enum class LogLevel {
     Info,
+    Success,
     Warning,
     Error
 };
@@ -74,6 +75,7 @@ private:
     // 【Debugビルド】全て記録する
     // ---------------------------------------------------------
 #define CCL_LOG_INFO(category, ...)    Logger::Instance().Log(category, LogLevel::Info, __FILE__, __LINE__, __VA_ARGS__)
+#define CCL_LOG_SUCCESS(category, ...) Logger::Instance().Log(category, LogLevel::Success, __FILE__, __LINE__, __VA_ARGS__)
 #define CCL_LOG_WARN(category, ...)    Logger::Instance().Log(category, LogLevel::Warning, __FILE__, __LINE__, __VA_ARGS__)
 
 #else
@@ -83,6 +85,7 @@ private:
     // ((void)0) はC++における「何もしない安全な構文」です。
     // コンパイラはこれを見ると、処理を丸ごとスキップ（最適化で消去）します。
 #define CCL_LOG_INFO(category, ...)    ((void)0)
+#define CCL_LOG_SUCCESS(category, ...) ((void)0)
 #define CCL_LOG_WARN(category, ...)    ((void)0)
 
 #endif

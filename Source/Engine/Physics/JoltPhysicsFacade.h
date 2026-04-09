@@ -26,6 +26,8 @@ public:
     void SetPosition(CCL::ECS::EntityID entity, const DirectX::XMFLOAT3& position) override;
     void SetRotation(CCL::ECS::EntityID entity, const DirectX::XMFLOAT4& rotation) override;
 
+    void SetLookDirection(CCL::ECS::EntityID entity, const DirectX::XMFLOAT3& direction) override;
+
     // Queries
     bool CheckGrounded(CCL::ECS::EntityID entity, float distance) override;
     PhysicsHitInfo RayCast(const DirectX::XMFLOAT3& origin, const DirectX::XMFLOAT3& direction, float maxDistance, CCL::ECS::EntityID ignoreEntity) override;

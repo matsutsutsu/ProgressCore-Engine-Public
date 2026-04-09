@@ -33,9 +33,9 @@ void EditorScene::Initialize()
     //SceneInitializer::SpawnJoltTest(*_worldPtr, device);
 
     // 中では普通にPBRモデル用にしている
-    //SceneInitializer::SpawnAnimationTest(*_worldPtr, device);
+    SceneInitializer::SpawnAnimationTest(*_worldPtr, device);
     
-    SceneInitializer::SpawnPlayerCarTest(*_worldPtr, device);
+    //SceneInitializer::SpawnPlayerCarTest(*_worldPtr, device);
 
     //SceneInitializer::SpawnShaderTest(*_worldPtr, device);
 
@@ -124,10 +124,22 @@ void EditorScene::OnDrawImGui()
     _context.world         = _worldPtr;
     _context.systemManager = _ecsContext->GetSystemManager();
 
-    if (ImGui::Button("Build NavMesh")) {
-        NavMeshBuildSettings settings;
-        // 必要に応じて settings.agentHeight などを変更
-        NavMeshBuilder::BuildNavMesh(*_worldPtr, settings);
+
+
+    ImGui::SeparatorText("NavMesh Bake Settings");
+
+    // 構造体のインスタンスをstatic（またはEditorクラスのメンバ変数）として保持しておく
+    static NavMeshBuildSettings navSettings;
+
+    // AAAエンジンのように、主要なパラメータをスライダーで調整できるようにする
+    ImGui::DragFloat("Agent Radius (太さ)", &navSettings.agentRadius, 0.05f, 0.1f, 5.0f);
+    ImGui::DragFloat("Agent Height (身長)", &navSettings.agentHeight, 0.1f, 0.1f, 5.0f);
+    ImGui::DragFloat("Max Climb (段差)", &navSettings.agentMaxClimb, 0.05f, 0.0f, 2.0f);
+    ImGui::DragFloat("Max Slope (斜面角度)", &navSettings.agentMaxSlope, 1.0f, 0.0f, 90.0f);
+
+    if (ImGui::Button("Bake NavMesh", ImVec2(-1, 30))) {
+        // 変更した設定を渡してBake実行！
+        NavMeshBuilder::BuildNavMesh(*_worldPtr, navSettings);
     }
 
 

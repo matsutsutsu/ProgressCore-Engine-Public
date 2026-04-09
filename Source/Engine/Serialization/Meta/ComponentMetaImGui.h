@@ -45,20 +45,15 @@ namespace ComponentMetaImGui {
         switch (fd.kind) {
         case FieldKind::Float: {
             float &v = RawField<float>(obj, fd.offset);
-            if (fd.rangeMax != 0.0f || fd.rangeMin != 0.0f)
-                changed = ImGui::SliderFloat(fd.name, &v, fd.rangeMin, fd.rangeMax);
-            else
-                changed = ImGui::DragFloat(fd.name, &v, fd.dragSpeed);
+
+            // 第4引数(min)と第5引数(max)を渡すことで、ドラッグ操作のまま上限・下限をロックできる。
+            changed = ImGui::DragFloat(fd.name, &v, fd.dragSpeed, fd.rangeMin, fd.rangeMax);
             break;
         }
         case FieldKind::Int: {
             int &v = RawField<int>(obj, fd.offset);
-            if (fd.rangeMax != 0.0f || fd.rangeMin != 0.0f) {
-                int lo = (int)fd.rangeMin, hi = (int)fd.rangeMax;
-                changed = ImGui::SliderInt(fd.name, &v, lo, hi);
-            }
-            else
-                changed = ImGui::DragInt(fd.name, &v, (int)fd.dragSpeed);
+
+            changed = ImGui::DragInt(fd.name, &v, fd.dragSpeed, (int)fd.rangeMin, (int)fd.rangeMax);
             break;
         }
         case FieldKind::Bool: {

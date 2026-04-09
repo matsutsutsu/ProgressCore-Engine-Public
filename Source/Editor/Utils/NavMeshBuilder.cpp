@@ -5,7 +5,7 @@
 #include "Engine/Graphics/Resource/Model.h"
 #include "Engine/Platform/Logger.h"
 
-#include "Engine/GamePlay/AI/NavigationData.h"
+#include "Engine/GamePlay/AI/Navigation/NavigationData.h"
 
 // Recast & Detour ライブラリのインクルード
 #include <Recast.h>
@@ -194,6 +194,14 @@ bool NavMeshBuilder::BuildNavMesh(CCL::ECS::Core::World& world, const NavMeshBui
         return false;
     }
 
+    // ポリゴンに「歩行可能」のフラグを立てる
+    for (int i = 0; i < pmesh->npolys; ++i) {
+        if (pmesh->areas[i] == RC_WALKABLE_AREA) {
+            pmesh->areas[i] = 0; // Detourのデフォルトエリア（0）として扱う
+            pmesh->flags[i] = 1; // ★これが超重要！ 1 (0x01) を設定しないとフィルターで無視される
+        }
+    }
+
     // 12. 詳細メッシュ（Detail Mesh）の構築
     // Y軸（高さ）の精度を担保するため、ポリゴンの表面に地形の起伏を焼き付けます。
     // （ランタイムでAIが地面にぴったり足を這わせるために必要です）
@@ -280,6 +288,23 @@ bool NavMeshBuilder::BuildNavMesh(CCL::ECS::Core::World& world, const NavMeshBui
 
     // 生成したNavMeshをシステム全体で共有
     world.GetResource<NavigationData>().navMesh = runtimeNavMesh;
+
+    // ---------------------------------------------------------
+    // 経路探索エンジン(NavMeshQuery)の初期化
+    // ---------------------------------------------------------
+    dtNavMeshQuery* runtimeNavQuery = dtAllocNavMeshQuery();
+    // 2048 は探索時の最大ノード数（A*のオープンリスト/クローズドリストのサイズ）
+    // 数千体の群集AIを動かす場合でも、一般的にはこれで十分です。
+    dtStatus queryStatus = runtimeNavQuery->init(runtimeNavMesh, 2048);
+
+    if (dtStatusFailed(queryStatus)) {
+        CCL_LOG_ERROR(LogCategory::Core, "Failed to init Detour NavMeshQuery");
+        dtFreeNavMeshQuery(runtimeNavQuery);
+        return false;
+    }
+
+    // Queryもシステム全体で共有
+    world.GetResource<NavigationData>().navQuery = runtimeNavQuery;
 
     return true;
 
