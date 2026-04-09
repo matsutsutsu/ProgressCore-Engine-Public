@@ -28,10 +28,16 @@
 				$(SolutionDir)External\Tracy;
 
 				$(SolutionDir)External\JoltPhysics\include;
-				
-				
+
 				$(SolutionDir)External\FMOD\core\inc;
 				$(SolutionDir)External\FMOD\studio\inc;
+
+
+				$(SolutionDir)External\RecastNavigation\Recast\Include;
+				$(SolutionDir)External\RecastNavigation\Detour\Include;
+				$(SolutionDir)External\RecastNavigation\DetourTileCache\Include;
+				$(SolutionDir)External\RecastNavigation\DetourCrowd\Include;
+				$(SolutionDir)External\RecastNavigation\DebugUtils\Include;
 
 
 				<!-- Inherited -->

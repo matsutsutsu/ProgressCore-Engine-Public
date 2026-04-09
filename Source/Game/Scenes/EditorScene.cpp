@@ -9,10 +9,12 @@
 
 #include "ECS/System/CCL_SystemRegistry.h"
 
-
+#include "Editor/Utils/NavMeshBuilder.h"
 
 void EditorScene::Initialize()
 {
+
+
     BaseScene::Initialize(); // 共通初期化
 
     // エディタ固有の初期化
@@ -121,6 +123,12 @@ void EditorScene::OnDrawImGui()
 {
     _context.world         = _worldPtr;
     _context.systemManager = _ecsContext->GetSystemManager();
+
+    if (ImGui::Button("Build NavMesh")) {
+        NavMeshBuildSettings settings;
+        // 必要に応じて settings.agentHeight などを変更
+        NavMeshBuilder::BuildNavMesh(*_worldPtr, settings);
+    }
 
 
     _windowManager->Draw(_context);
