@@ -5,6 +5,7 @@
 #include <imgui.h>
 #include <type_traits> // メタプログラミング用
 #include "Editor/Core/EditorCommandHistory.h"
+#include "Engine/Platform/Logger.h"
 
 namespace ComponentMetaImGui {
 
@@ -144,11 +145,48 @@ namespace ComponentMetaImGui {
         //  自動描画か手動描画かをコンパイル時に分岐
         if constexpr (CheckCustomGui<T>::value) {
             
-            //  SFINAE分岐: 3引数版が存在すればそちらを呼び、なければ1引数版を呼ぶ
+            static bool s_isEditing = false;
+
+            T preState = component; // 描画される前の「過去の状態」をメモ
+            bool guiChanged = false;
+
+            // 実際のカスタムGUIを描画
             if constexpr (Has3ArgsCustomGui<T>::value) {
-                anyChanged = ComponentMeta<T>::CustomGui(component, entity, world);
-            } else {
-                anyChanged = ComponentMeta<T>::CustomGui(component);
+                guiChanged = ComponentMeta<T>::CustomGui(component, entity, world);
+            }
+            else {
+                guiChanged = ComponentMeta<T>::CustomGui(component);
+            }
+
+            // もしカスタムGUIの中で値が変更されたら
+            if (guiChanged) {
+                anyChanged = true;
+
+                // 初めて変更された瞬間に、過去の状態をバックアップとしてロックする
+                if (!s_isEditing) {
+                    s_backupState = preState;
+                    s_isEditing = true;
+                    CCL_LOG_INFO(LogCategory::Editor, "[UndoSystem] CustomGUI Edit Started: %s", ComponentMeta<T>::displayName);
+                }
+            }
+
+            // ユーザーがマウスの左クリックを離した、またはテキスト入力を終えた瞬間の判定
+            if (s_isEditing && !ImGui::IsAnyItemActive()) {
+                if (world && entity != 0) {
+                    auto* ecsWorld = static_cast<CCL::ECS::Core::World*>(world);
+                    auto ecsEntity = static_cast<CCL::ECS::EntityID>(entity);
+
+                    CCL_LOG_INFO(LogCategory::Editor, "[UndoSystem] CustomGUI Edit Finished: %s", ComponentMeta<T>::displayName);
+
+                    // 履歴マネージャーに提出！
+                    EditorCommandHistory::Instance().ExecuteCommand(
+                        std::make_unique<ChangeComponentCommand<T>>(
+                            ecsWorld, ecsEntity, s_backupState, component
+                        )
+                    );
+                }
+                // 編集状態をリセット
+                s_isEditing = false;
             }
             
         }
@@ -185,14 +223,24 @@ namespace ComponentMetaImGui {
 
                     // 1. スライダーをクリックした瞬間（ドラッグ開始前）の値をバックアップ
                     if (ImGui::IsItemActivated()) {
-                        s_backupState = component; 
+                        s_backupState = component;
+
+                        // 🔍 【足跡 1】掴んだ瞬間をログ出力
+                        CCL_LOG_INFO(LogCategory::Editor, "[UndoSystem] Mouse Activated: Backup taken for %s", ComponentMeta<T>::displayName);
                     }
-                    
+
                     // 2. マウスを離した瞬間（編集完了）にコマンドを発行！
                     if (ImGui::IsItemDeactivatedAfterEdit()) {
+
+                        // 🔍 【足跡 2】離した（編集完了）瞬間をログ出力
+                        CCL_LOG_INFO(LogCategory::Editor, "[UndoSystem] Mouse Deactivated: Editing finished for %s", ComponentMeta<T>::displayName);
+
                         if (world && entity != 0) {
                             auto* ecsWorld = static_cast<CCL::ECS::Core::World*>(world);
                             auto ecsEntity = static_cast<CCL::ECS::EntityID>(entity);
+
+                            // 🔍 【足跡 3】コマンドの発行を確認
+                            CCL_LOG_INFO(LogCategory::Editor, "[UndoSystem] Issued ChangeCommand for Entity ID: %llu", ecsEntity);
 
                             EditorCommandHistory::Instance().ExecuteCommand(
                                 std::make_unique<ChangeComponentCommand<T>>(
@@ -200,8 +248,11 @@ namespace ComponentMetaImGui {
                                 )
                             );
                         }
+                        else {
+                            // ⚠️ 異常事態：ポインタが渡ってきていない場合の警告
+                            CCL_LOG_WARN(LogCategory::Editor, "[UndoSystem] Failed to issue command! World or Entity is null.");
+                        }
                     }
-                    
 
                     ImGui::PopID();
                 }

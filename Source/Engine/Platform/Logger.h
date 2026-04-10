@@ -8,6 +8,7 @@
 enum class LogCategory {
     Core,       // エンジン基盤（初期化、シーン遷移など）
     ECS,        // エンティティ・コンポーネント・システム
+    Editor,     // エディタ操作、Undo/Redo、ツール関連
     Physics,    // Joltなどの物理演算
     Render,     // 描画、シェーダー、ライト
     Audio,      // FMODなどのサウンド

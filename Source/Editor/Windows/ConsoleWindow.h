@@ -18,7 +18,7 @@ private:
     // カテゴリごとの表示フラグ（全カテゴリ最初はON）
     // LogCategory::Count を配列のサイズに使うプロのテクニックです
     bool _categoryFilters[(int)LogCategory::Count] = {
-        true, true, true, true, true, true // Core, ECS, Physics, Render, Audio, Game
+            true, true, true, true, true, true, true
     };
 
 };

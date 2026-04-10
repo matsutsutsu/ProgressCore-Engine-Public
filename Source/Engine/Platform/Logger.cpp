@@ -25,6 +25,7 @@ static const char* GetCategoryName(LogCategory category) {
     case LogCategory::Render:  return "Render";
     case LogCategory::Audio:   return "Audio";
     case LogCategory::Game:    return "Game";
+    case LogCategory::Editor:  return "Editor";
     default:                   return "Unknown";
     }
 }
