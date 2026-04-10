@@ -79,12 +79,15 @@ void ShadowPass::Execute(const RenderContext& rc) {
 
         struct ShadowSortItem {
             const Model::Mesh* mesh;
-            DirectX::XMFLOAT4X4  worldMatrix;  // ★ノード合成済み行列を格納
+            DirectX::XMFLOAT4X4  worldMatrix;  // ノード合成済み行列を格納
             uint8_t               cascadeMask;
         };
 
         std::vector<ShadowSortItem> sortedItems;
         sortedItems.reserve(shadowCommands.size());
+
+        // 直前に設定したメッシュを記憶するポインタ
+        const Model::Mesh* lastBoundMesh = nullptr;
 
         for (const auto& cmd : shadowCommands) {
             if (!cmd.mesh) continue;
@@ -94,12 +97,8 @@ void ShadowPass::Execute(const RenderContext& rc) {
             item.cascadeMask = cmd.cascadeMask;
 
             // =========================================================
-            // ★修正：ShadowCommand の worldMatrix はエンティティ行列のみなので、
-            //   OpaquePass と同様に mesh.node->worldTransform を合成する。
-            //
-            //   静的メッシュ：meshNode.worldTransform × entity.worldMatrix
-            //   スキンドメッシュ：UpdateTransform() でボーンに焼き込み済みのため
-            //                     行列合成は不要（描画時に UpdateSkeletonConstants を使用）
+            // ShadowCommand の worldMatrix はエンティティ行列のみなので、
+            // OpaquePass と同様に mesh.node->worldTransform を合成する。
             // =========================================================
             bool isSkinned = !cmd.mesh->bones.empty();
             if (!isSkinned && cmd.mesh->node) {
@@ -134,15 +133,23 @@ void ShadowPass::Execute(const RenderContext& rc) {
             if (isSkinned) {
                 // スキンドメッシュ：個別描画（インスタンシング不可）
                 renderer->UpdateSkeletonConstants(dc, *info.mesh);
-                UINT stride = sizeof(ModelResource::Vertex);
-                UINT offset = 0;
-                dc->IASetVertexBuffers(0, 1, info.mesh->data->vertexBuffer.GetAddressOf(), &stride, &offset);
-                dc->IASetIndexBuffer(info.mesh->data->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-                shader->Update(rc, *info.mesh);
+
+                // =========================================================
+                // ★最適化1：前回と違うメッシュが来た時「だけ」ステートを更新する
+                // =========================================================
+                if (lastBoundMesh != info.mesh) {
+                    UINT stride = sizeof(ModelResource::Vertex);
+                    UINT offset = 0;
+                    dc->IASetVertexBuffers(0, 1, info.mesh->data->vertexBuffer.GetAddressOf(), &stride, &offset);
+                    dc->IASetIndexBuffer(info.mesh->data->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+                    shader->Update(rc, *info.mesh);
+                    lastBoundMesh = info.mesh;
+                }
+
                 dc->DrawIndexed((UINT)info.mesh->data->indices.size(), 0, 0);
             }
             else {
-                // ★静的メッシュ：ノード合成済みの worldMatrix でバッチ登録
+                // 静的メッシュ：ノード合成済みの worldMatrix でバッチ登録
                 if (!batches.empty() && batches.back().mesh == info.mesh) {
                     batches.back().data.push_back({ info.worldMatrix });
                 }
@@ -157,22 +164,25 @@ void ShadowPass::Execute(const RenderContext& rc) {
 
         for (const auto& batch : batches) {
             shader->Update(rc, *batch.mesh);
+
+            // =========================================================
+            // ★最適化2：頂点バッファのセットを while ループの「外」に引き上げる
+            // =========================================================
+            UINT stride = sizeof(ModelResource::Vertex);
+            UINT zero = 0;
+            dc->IASetVertexBuffers(0, 1, batch.mesh->data->vertexBuffer.GetAddressOf(), &stride, &zero);
+            dc->IASetIndexBuffer(batch.mesh->data->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+
             size_t totalCount = batch.data.size();
             size_t offset = 0;
 
             while (offset < totalCount) {
                 size_t drawCount = (std::min)(totalCount - offset, InstanceBuffer::MAX_INSTANCES);
-                std::vector<InstanceData> chunk(
-                    batch.data.begin() + offset,
-                    batch.data.begin() + offset + drawCount);
 
-                _instanceBuffer.Write(dc, chunk);
+                // ポインタのオフセット計算だけで直接GPUに書き込む（光の速さ）
+                _instanceBuffer.Write(dc, batch.data.data() + offset, drawCount);
+
                 _instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
-
-                UINT stride = sizeof(ModelResource::Vertex);
-                UINT zero = 0;
-                dc->IASetVertexBuffers(0, 1, batch.mesh->data->vertexBuffer.GetAddressOf(), &stride, &zero);
-                dc->IASetIndexBuffer(batch.mesh->data->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
                 dc->DrawIndexedInstanced((UINT)batch.mesh->data->indices.size(), (UINT)drawCount, 0, 0, 0);
                 offset += drawCount;

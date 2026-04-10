@@ -85,6 +85,19 @@ public:
         }
     }
 
+    // データの書き込み（ポインタと要素数を直接受け取る高速版）
+    void Write(ID3D11DeviceContext* dc, const InstanceData* data, size_t count)
+    {
+        if (count == 0 || !data) return;
+        size_t writeCount = (std::min)(count, _maxInstances);
+        InstanceData* ptr = Map(dc);
+        if (ptr)
+        {
+            memcpy(ptr, data, sizeof(InstanceData) * writeCount);
+            Unmap(dc);
+        }
+    }
+
     // 頂点シェーダーにバインド
     void Bind(ID3D11DeviceContext* dc, UINT slot)
     {

@@ -177,15 +177,18 @@ void OpaquePass::Execute(const RenderContext& rc) {
             }
             else {
                 if (isSkinned) {
+
+                    shader->Update(rc, mesh);
+                    UINT stride = sizeof(ModelResource::Vertex);
+                    UINT offset = 0;
+                    dc->IASetVertexBuffers(0, 1, mesh.data->vertexBuffer.GetAddressOf(), &stride, &offset);
+                    dc->IASetIndexBuffer(mesh.data->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+                    dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
                     // スキンドメッシュ：インスタンシング不可、1体ずつ描画
                     for (size_t k = 0; k < batchCount; ++k) {
                         renderer->UpdateSkeletonConstants(dc, mesh);
-                        shader->Update(rc, mesh);
-                        UINT stride = sizeof(ModelResource::Vertex);
-                        UINT offset = 0;
-                        dc->IASetVertexBuffers(0, 1, mesh.data->vertexBuffer.GetAddressOf(), &stride, &offset);
-                        dc->IASetIndexBuffer(mesh.data->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-                        dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+                       
                         dc->DrawIndexed(static_cast<UINT>(mesh.data->indices.size()), 0, 0);
                     }
                 }
