@@ -4,9 +4,9 @@
 #include "Engine/Graphics/Core/Camera.h"
 
 void PrimitivePass::Execute(const RenderContext& rc){
-#ifdef TRACY_ENABLE
+
     ZoneScopedN("Pass: Primitive");
-#endif
+
 
     if (!rc.camera) return;
 

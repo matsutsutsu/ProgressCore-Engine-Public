@@ -5,10 +5,9 @@
 #include <cassert>
 #include <cstring>
 
-// ★追加: Tracyのインクルード
-#ifdef TRACY_ENABLE
+// Tracyのインクルード
 #include "tracy/Tracy.hpp"
-#endif
+
 
 namespace CCL::ECS::Core {
     using namespace CCL::ECS;
@@ -204,9 +203,8 @@ namespace CCL::ECS::Core {
     void World::ScrutinyAndApply()
     {
         // 構造変更の適用時間を計測
-#ifdef TRACY_ENABLE
         ZoneScopedN("World::ScrutinyAndApply");
-#endif
+
 
         // 1. 溜まっていた予約（AddComponent, RemoveComponent, Spawn, Destroy）を
         //    ChunkManager に渡して、物理的なメモリ移動や生成を実行させる

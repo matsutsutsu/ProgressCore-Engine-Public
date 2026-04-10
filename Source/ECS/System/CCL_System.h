@@ -12,9 +12,8 @@
 #include "CCL_SystemAccess.h"
 
 // スレッドに名前を付ける
-#ifdef TRACY_ENABLE
 #include "tracy/Tracy.hpp"
-#endif
+
 
 #include <tuple> // 追加
 
@@ -63,10 +62,10 @@ namespace CCL::ECS
 
         virtual void UpdateImpl(float dt)
         {
-#ifdef TRACY_ENABLE
+
             ZoneScoped;
             ZoneName(_name.c_str(), _name.size());
-#endif
+
 
             auto start = std::chrono::high_resolution_clock::now();
 
@@ -286,10 +285,9 @@ namespace CCL::ECS
                 _jobSystem->Execute(
                     [this, i, end, func]() {
 
-                // 計測タグ（Tracy）
-#ifdef TRACY_ENABLE
+                        // 計測タグ（Tracy）
                         ZoneScopedN("System Batch Task");
-#endif
+
                         // --- ここはワーカースレッド ---
                         // 担当範囲のチャンクを全部ループで処理する
                         for (size_t k = i; k < end; ++k) {
@@ -320,9 +318,8 @@ namespace CCL::ECS
 
             // 待機（メインスレッドも暇なら手伝う）
             {
-#ifdef TRACY_ENABLE
                 ZoneScopedN("MainThread Wait");
-#endif
+
                 _jobSystem->WaitForCounter(&counter);
             }
         }
@@ -402,9 +399,9 @@ namespace CCL::ECS
 
                 _jobSystem->Execute(
                     [this, i, end, func]() {
-#ifdef TRACY_ENABLE
+
                         ZoneScopedN("System Batch Task (ID)");
-#endif
+
                         // [真ん中のループ]: 割り当てられた複数のチャンク（体育館）を1つずつ処理する
                         for (size_t k = i; k < end; ++k) {
                             Chunk       *chunk = _targetChunks[k];
@@ -440,9 +437,8 @@ namespace CCL::ECS
             }
 
             {
-#ifdef TRACY_ENABLE
                 ZoneScopedN("MainThread Wait");
-#endif
+
                 _jobSystem->WaitForCounter(&counter);
             }
         }

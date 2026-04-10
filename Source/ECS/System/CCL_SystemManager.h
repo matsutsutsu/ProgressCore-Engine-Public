@@ -15,9 +15,8 @@
 #include "Game/Core/SystemPriority.h"
 #include "CCL_TaskScheduler.h"
 
-#ifdef TRACY_ENABLE
 #include "tracy/Tracy.hpp"
-#endif
+
 
 namespace CCL::ECS
 {

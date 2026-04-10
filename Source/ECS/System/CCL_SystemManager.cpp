@@ -1,5 +1,5 @@
 #include "CCL_SystemManager.h"
-#include "../Core/CCL_Chunk.h"
+#include "ECS/Core/CCL_Chunk.h"
 #include <imgui.h>
 
 
@@ -10,9 +10,8 @@ namespace CCL::ECS
     void SystemManager::ResolveTargetChunks(Core::ChunkManager* cm)
     {
         // チャンク振り分け負荷を計測
-#ifdef TRACY_ENABLE
         ZoneScopedN("SystemManager::ResolveTargetChunks");
-#endif
+
 
         if (!cm) return;
 

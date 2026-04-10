@@ -15,10 +15,8 @@
 #include "Engine/Platform/Dialog.h"
 
 
-
-#ifdef TRACY_ENABLE
 #include "tracy/Tracy.hpp"
-#endif
+
 
 void InitializeDebugLayer(ID3D11Device *device)
 {
@@ -40,9 +38,9 @@ static const int syncInterval = 1;
 Framework::Framework(HWND hWnd)
 	: hWnd(hWnd)
 {
-#ifdef TRACY_ENABLE
+
 	ZoneScopedN("Framework::Constructor");
-#endif
+
 
     // 音声初期化
    
@@ -67,9 +65,9 @@ Framework::Framework(HWND hWnd)
 // デストラクタ
 Framework::~Framework()
 {
-#ifdef TRACY_ENABLE
+
 	ZoneScopedN("Framework::Destrucor");
-#endif
+
 
 	// シーン終了化
 	SceneManager::Instance().Clear();
@@ -95,9 +93,8 @@ void Framework::FixedUpdate(float fixedTime)
 	// ここでは「物理・ロジック系」の更新のみを行う
 	
     // 固定フレームごとの更新時間を計測
-#ifdef TRACY_ENABLE
     ZoneScopedN("Framework::FixedUpdate");
-#endif
+
 
 	// SceneManager に FixedUpdate を追加して呼ぶのが理想
 	// まだ実装していない場合は、一旦コメントアウトかエラー回避しておく
@@ -114,31 +111,29 @@ void Framework::FixedUpdate(float fixedTime)
 void Framework::Update(float elapsedTime)
 {
     // 毎フレームのロジック更新時間を計測
-#ifdef TRACY_ENABLE
     ZoneScopedN("Framework::Update");
-#endif
+
 
 	{
-#ifdef TRACY_ENABLE
 		ZoneScopedN("Framework::ImGuiRenderer::NewFrame");
-#endif
+
 		// IMGUIフレーム開始処理	
 		ImGuiRenderer::NewFrame();
 	}
 
 	{
-#ifdef TRACY_ENABLE
+
 		ZoneScopedN("Framework::Input::Update");
-#endif
+
 		// インプット更新処理
 		Input::Instance().Update();
 
 	}
 
 	{
-#ifdef TRACY_ENABLE
+
 		ZoneScopedN("Framework::SceneManager::Update");
-#endif
+
 		// シーン更新処理
 		SceneManager::Instance().Update(elapsedTime);
 	}
@@ -148,9 +143,8 @@ void Framework::Update(float elapsedTime)
 void Framework::Render(float elapsedTime)
 {
     // 描画コマンド発行全体を計測
-#ifdef TRACY_ENABLE
     ZoneScopedN("Framework::Render");
-#endif
+
 
 	ID3D11DeviceContext* dc = Graphics::Instance().GetDeviceContext();
 
@@ -163,18 +157,16 @@ void Framework::Render(float elapsedTime)
 	// シーンマネージャーを介して現在のシーンを描画
     {
             // シーンの描画（不透明、半透明、パーティクルなど）を細分化して計測
-#ifdef TRACY_ENABLE
             ZoneScopedN("SceneManager::Render");
-#endif
+
             SceneManager::Instance().Render();
     }
 
 
 	// ImGuiの描画を計測
 	{
-#ifdef TRACY_ENABLE
+
 		ZoneScopedN("ImGui::Render");
-#endif
 
 		SceneManager::Instance().DrawGUI();
 
@@ -186,9 +178,8 @@ void Framework::Render(float elapsedTime)
 
 	{
             // ★超重要: GPUの描画待ち（VSync同期）の時間を計測
-#ifdef TRACY_ENABLE
             ZoneScopedN("Graphics::Present (VSync Wait)");
-#endif
+
             // 画面表示
             Graphics::Instance().Present(syncInterval);
     }
@@ -321,9 +312,8 @@ int Framework::Run()
 			Render(frameTime);
 
 			// ここで1フレーム終了をTracyに通知
-#ifdef TRACY_ENABLE
             FrameMark;
-#endif
+
 		}
 	}
 	return static_cast<int>(msg.wParam);

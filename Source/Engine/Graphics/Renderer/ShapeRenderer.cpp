@@ -5,9 +5,8 @@
 #include "Engine/Graphics/Shader/ShaderResources.h"
 #include <algorithm>
 
-#ifdef TRACY_ENABLE
 #include "tracy/Tracy.hpp"
-#endif
+
 
 using namespace DirectX;
 
@@ -550,9 +549,8 @@ void ShapeRenderer::CreateTriangleFaceMesh(ID3D11Device* device)
 // ====================================================================
 void ShapeRenderer::Render(ID3D11DeviceContext* dc, const DirectX::XMFLOAT4X4& view, const DirectX::XMFLOAT4X4& projection)
 {
-#ifdef TRACY_ENABLE
     ZoneScopedN("ShapeRenderer::Render");
-#endif
+
 
     BoundingFrustum frustumLocal;
     BoundingFrustum::CreateFromMatrix(frustumLocal, XMLoadFloat4x4(&projection));

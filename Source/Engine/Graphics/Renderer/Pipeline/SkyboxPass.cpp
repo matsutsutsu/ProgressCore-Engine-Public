@@ -4,9 +4,6 @@
 #include "Engine/Graphics/Core/GpuResourceUtils.h" 
 #include "Engine/Graphics/Shader/ShaderResources.h"
 
-#ifdef TRACY_ENABLE
-#include "tracy/Tracy.hpp"
-#endif
 
 void SkyboxPass::Initialize(ID3D11Device* device) {
     // 1. GpuResourceUtils を使用したシェーダーのロード
@@ -40,9 +37,9 @@ void SkyboxPass::Initialize(ID3D11Device* device) {
 }
 
 void SkyboxPass::Execute(const RenderContext& rc) {
-#ifdef TRACY_ENABLE
+
     ZoneScopedN("Pass: Skybox");
-#endif
+
     if (!rc.camera) return;
 
     ID3D11DeviceContext* dc = rc.deviceContext;

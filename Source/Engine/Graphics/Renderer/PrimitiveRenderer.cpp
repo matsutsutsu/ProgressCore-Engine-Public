@@ -8,9 +8,9 @@
 #include "Engine/Graphics/Core/Light.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 
-#ifdef TRACY_ENABLE
+
 #include "tracy/Tracy.hpp"
-#endif
+
 
 using namespace DirectX;
 
@@ -105,7 +105,7 @@ bool PrimitiveRenderer::IsVisible(const DirectX::BoundingOrientedBox &box)
 
 // 1. バッファの取得と登録（ロックは初回1回のみ）
 PrimitiveDrawList& PrimitiveRenderer::GetDrawList() {
-//#ifdef TRACY_ENABLE
+//
 //    ZoneScopedN("PrimitiveRenderer::GetDrawList"); // シーン描画全体
 //#endif
 
@@ -148,9 +148,8 @@ PrimitiveDrawList& PrimitiveRenderer::GetDrawList() {
 // ====================================================================
 void PrimitiveRenderer::Render(const RenderContext& rc, const DirectX::XMFLOAT4X4& view, const DirectX::XMFLOAT4X4& projection)
 {
-#ifdef TRACY_ENABLE
     ZoneScopedN("PrimitiveRenderer::Render"); // シーン描画全体
-#endif
+
 
 	ID3D11DeviceContext* dc = rc.deviceContext;
 

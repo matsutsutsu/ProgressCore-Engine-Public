@@ -11,9 +11,8 @@ void TransparentPass::Initialize(ID3D11Device* device) {
 }
 
 void TransparentPass::Execute(const RenderContext& rc) {
-#ifdef TRACY_ENABLE
+
     ZoneScopedN("Pass: Transparent");
-#endif
 
     ID3D11DeviceContext* dc = rc.deviceContext;
 

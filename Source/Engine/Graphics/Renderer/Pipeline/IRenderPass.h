@@ -2,9 +2,8 @@
 #include "Engine/Graphics/Core/RenderContext.h"
 
 // 各パスをTracyで追跡できるようにインクルード
-#ifdef TRACY_ENABLE
 #include "tracy/Tracy.hpp"
-#endif
+
 
 class ModelRenderer; // 循環参照を防ぐための前方宣言
 

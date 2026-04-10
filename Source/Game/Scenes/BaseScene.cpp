@@ -20,15 +20,14 @@
 #include "Engine/Graphics/Renderer/RenderQueue.h"
 
 
-#ifdef TRACY_ENABLE
+
 #include "tracy/Tracy.hpp"
-#endif
+
 
 void BaseScene::Initialize()
 {
-#ifdef TRACY_ENABLE
     ZoneScopedN("BaseScene::Initialize");
-#endif
+
 
     auto &graphics = Graphics::Instance();
 
@@ -117,9 +116,8 @@ void BaseScene::Finalize() {}
 
 void BaseScene::Update(float elapsedTime)
 {
-#ifdef TRACY_ENABLE
     ZoneScopedN("BaseScene::Update");
-#endif
+
 
     // ECSシステムが走り出す「前」の、誰もメモリを触っていない安全な瞬間に世界を切り替える！
     ExecutePendingSceneOperations();
@@ -138,9 +136,8 @@ void BaseScene::Update(float elapsedTime)
 
 void BaseScene::FixedUpdate(float fixedTime) 
 { 
-#ifdef TRACY_ENABLE
     ZoneScopedN("BaseScene::FixedUpdate");
-#endif
+
 
     // ECSコンテキストに更新を委譲（これだけで全てが正しい順序で回る）
     if (_ecsContext) {
@@ -150,9 +147,8 @@ void BaseScene::FixedUpdate(float fixedTime)
 
 void BaseScene::Render()
 {
-#ifdef TRACY_ENABLE
     ZoneScopedN("BaseScene::Render Pipeline"); // シーン描画全体
-#endif
+
 
     auto &graphics = Graphics::Instance();
     auto *dc       = graphics.GetDeviceContext();
@@ -209,9 +205,8 @@ void BaseScene::Render()
     // 【フェーズ5：2D UI描画】
     // -----------------------------------------------------------------
     {
-#ifdef TRACY_ENABLE
         ZoneScopedN("5. UI Render");
-#endif
+
 
         dc->OMSetBlendState(rc.renderState->GetBlendState(BlendState::Transparency), nullptr, 0xffffffff);
 
