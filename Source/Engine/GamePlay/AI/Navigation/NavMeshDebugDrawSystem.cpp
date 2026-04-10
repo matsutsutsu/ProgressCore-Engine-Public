@@ -42,10 +42,10 @@ void NavMeshDebugDrawSystem::Update(float dt)
                         float* v1 = &tile->verts[p->verts[(k + 1) % p->vertCount] * 3];
 
                         // Y軸（高さ）をほんの少し上げて、地面に埋まらないようにする
-                        DirectX::XMFLOAT3 p0 = { v0[0], v0[1] + 0.05f, v0[2] };
-                        DirectX::XMFLOAT3 p1 = { v1[0], v1[1] + 0.05f, v1[2] };
+                        DirectX::XMFLOAT3 p0 = { v0[0], v0[1] + 0.08f, v0[2] };
+                        DirectX::XMFLOAT3 p1 = { v1[0], v1[1] + 0.08f, v1[2] };
 
-                        // 黒い線で境界を描画（引数はあなたのエンジンの仕様に合わせてください）
+                        // 黒い線で境界を描画
                         renderer->DrawLine(p0, p1, { 0.0f, 0.0f, 0.0f, 1.0f });
                     }
 
@@ -57,14 +57,17 @@ void NavMeshDebugDrawSystem::Update(float dt)
                         for (int m = 0; m < 3; ++m) {
                             if (t[m] < p->vertCount) {
                                 float* pos = &tile->verts[p->verts[t[m]] * 3];
-                                v[m] = { pos[0], pos[1], pos[2] };
+                                // ★ 面は線より下（+ 0.05f）
+                                v[m] = { pos[0], pos[1] + 0.05f, pos[2] };
                             }
                             else {
                                 float* pos = &tile->detailVerts[(pd->vertBase + t[m] - p->vertCount) * 3];
-                                v[m] = { pos[0], pos[1], pos[2] };
+                                // ★ 面は線より下（+ 0.05f）
+                                v[m] = { pos[0], pos[1] + 0.05f, pos[2] };
                             }
                         }
-                        renderer->DrawTriangle(v[0], v[1], v[2], { 0.0f, 0.5f, 1.0f, 0.4f });
+                        // 面を塗りつぶす
+                        renderer->DrawSolidTriangle(v[0], v[1], v[2], { 0.0f, 0.5f, 1.0f, 0.4f });
                     }
                 }
             }
@@ -94,7 +97,6 @@ void NavMeshDebugDrawSystem::Update(float dt)
         }
 
         // ② AIの物理的な太さ（黄色い円）の描画
-        // ※ここの 0.6f は、Bake時の agentRadius や Joltのコライダー半径に合わせて調整してください。
         float drawRadius = 0.6f;
         int segments = 16;
         for (int i = 0; i < segments; ++i) {
@@ -117,5 +119,4 @@ void NavMeshDebugDrawSystem::Update(float dt)
     }
 }
 
-
-REGISTER_LOGIC_SYSTEM(NavMeshDebugDrawSystem, Priority::LogicStage::L02_Update);
+REGISTER_RENDER_SYSTEM(NavMeshDebugDrawSystem, Priority::RenderStage::R08_Main);

@@ -1266,6 +1266,9 @@
     <ClInclude Include="Source\Engine\GamePlay\AI\Navigation\NavSteeringSystem.h">
       <Filter>Source\Engine\GamePlay\AI\Navigation</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\NavMeshWindow.h">
+      <Filter>Source\Editor\Windows</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -1924,6 +1927,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\GamePlay\AI\Navigation\NavAgentComponentMeta.cpp">
       <Filter>Source\Engine\GamePlay\AI\Navigation\_Meta</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\NavMeshWindow.cpp">
+      <Filter>Source\Editor\Windows</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

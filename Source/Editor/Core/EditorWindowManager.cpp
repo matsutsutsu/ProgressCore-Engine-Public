@@ -17,6 +17,7 @@
 #include "Editor/Windows/TextEditorWindow.h"
 #include "Editor/Windows/InputEditorWindow.h"
 #include "Editor/Windows/ConsoleWindow.h"
+#include "Editor/Windows/NavMeshWindow.h"
 
 #include "Engine/Serialization/Factory/Prefab.h"
 #include <imgui.h>
@@ -36,6 +37,7 @@ void EditorWindowManager::Initialize()
     RegisterWindow<AssetBrowserWindow>();
     RegisterWindow<InputEditorWindow>();
     RegisterWindow<ConsoleWindow>();
+    RegisterWindow<NavMeshWindow>();
     //RegisterWindow<SceneViewWindow>();
     //RegisterWindow<GameViewWindow>();
     //  必要に応じて他のウィンドウもここに登録

@@ -215,10 +215,10 @@ bool NavMeshBuilder::BuildNavMesh(CCL::ECS::Core::World& world, const NavMeshBui
     CCL_LOG_INFO(LogCategory::Core, "NavMesh PolyMesh Generated: %d Polygons", pmesh->npolys);
 
     // ---------------------------------------------------------
-        // 【Step 4】Detourナビゲーション・バイナリのコンパイル
-        // ---------------------------------------------------------
-        // pmesh (ポリゴン) と dmesh (詳細地形) を統合し、
-        // AIが最速でA*探索できるメモリ構造 (Detourデータ) を作ります。
+    // 【Step 4】Detourナビゲーション・バイナリのコンパイル
+    // ---------------------------------------------------------
+    // pmesh (ポリゴン) と dmesh (詳細地形) を統合し、
+    // AIが最速でA*探索できるメモリ構造 (Detourデータ) を作ります。
 
     dtNavMeshCreateParams params;
     memset(&params, 0, sizeof(params));
@@ -255,6 +255,13 @@ bool NavMeshBuilder::BuildNavMesh(CCL::ECS::Core::World& world, const NavMeshBui
     // 最終コンパイル実行
     if (!dtCreateNavMeshData(&params, &navData, &navDataSize)) {
         CCL_LOG_ERROR(LogCategory::Core, "NavMesh Build Failed: Could not build Detour navmesh.");
+
+        // エラーで抜ける前に、必ず一時メモリを解放する
+        rcFreeCompactHeightfield(chf);
+        rcFreeContourSet(cset);
+        rcFreePolyMesh(pmesh);
+        rcFreePolyMeshDetail(dmesh);
+
         return false;
     }
 
@@ -284,6 +291,18 @@ bool NavMeshBuilder::BuildNavMesh(CCL::ECS::Core::World& world, const NavMeshBui
     // あなたのECSの強力なResource機能を使ってWorldに登録する！
     if (!world.HasResource<NavigationData>()) {
         world.AddResource<NavigationData>();
+    }
+    else {
+        // 既にデータが存在する（2回目以降のBake）なら、古いメモリを必ず解放する
+        auto& oldData = world.GetResource<NavigationData>();
+        if (oldData.navQuery) {
+            dtFreeNavMeshQuery(oldData.navQuery);
+            oldData.navQuery = nullptr;
+        }
+        if (oldData.navMesh) {
+            dtFreeNavMesh(oldData.navMesh);
+            oldData.navMesh = nullptr;
+        }
     }
 
     // 生成したNavMeshをシステム全体で共有

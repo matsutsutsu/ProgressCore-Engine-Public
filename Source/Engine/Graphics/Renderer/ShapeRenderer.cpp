@@ -45,6 +45,43 @@ ShapeRenderer::ShapeRenderer(ID3D11Device* device)
     CreateCylinderMesh(device, 1.0f, 1.0f, -0.5f, 1.0f, 32);
     CreateBoneMesh(device, 1.0f);
     CreateLineMesh(device);
+    CreateTriangleFaceMesh(device);
+
+    // 1. 半透明ブレンドステート
+    D3D11_BLEND_DESC blendDesc = {};
+    blendDesc.RenderTarget[0].BlendEnable = TRUE;
+    blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+    blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+    blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+    blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+    blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+    blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+    blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+    device->CreateBlendState(&blendDesc, m_transparentBlendState.GetAddressOf());
+
+    // 2. 深度ステート（Zテストはするが、Z書き込みは絶対にしない）※点滅防止の要
+    D3D11_DEPTH_STENCIL_DESC dsDesc = {};
+    dsDesc.DepthEnable = TRUE;
+    dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO; // ★書き込みOFF
+    dsDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+    device->CreateDepthStencilState(&dsDesc, m_depthTestNoWriteState.GetAddressOf());
+
+    // 3. ラスタライザステート（カリングOFF＝両面描画する）
+    D3D11_RASTERIZER_DESC rsDesc = {};
+    rsDesc.FillMode = D3D11_FILL_SOLID;
+    rsDesc.CullMode = D3D11_CULL_NONE; // ★裏面も描く
+    // =========================================================
+    // ★ここが点滅を完全に殺す魔法のパラメータ
+    // =========================================================
+    // 深度バッファの精度に対して、少しだけカメラ側に引き寄せる（マイナス値）
+    rsDesc.DepthBias = -1000;            // 固定値のオフセット
+    rsDesc.DepthBiasClamp = 0.0f;
+    // 斜めから見下ろした時の誤差を打ち消す（非常に重要）
+    rsDesc.SlopeScaledDepthBias = -2.0f;
+    // =========================================================
+
+    device->CreateRasterizerState(&rsDesc, m_cullNoneRasterizerState.GetAddressOf());
+
 
     // Zテストを無効化（常に上書き描画する）ステートの作成
     D3D11_DEPTH_STENCIL_DESC depthDesc = {};
@@ -328,6 +365,38 @@ void ShapeRenderer::DrawTriangle(const DirectX::XMFLOAT3& v1, const DirectX::XMF
     DrawLine(v1, v2, color); DrawLine(v2, v3, color); DrawLine(v3, v1, color);
 }
 
+// ★最強のトリック：任意の3点を Transform 行列に変換して描画キューに積む
+void ShapeRenderer::DrawSolidTriangle(const DirectX::XMFLOAT3& v0, const DirectX::XMFLOAT3& v1, const DirectX::XMFLOAT3& v2, const DirectX::XMFLOAT4& color)
+{
+    using namespace DirectX;
+    XMVECTOR p0 = XMLoadFloat3(&v0);
+    XMVECTOR p1 = XMLoadFloat3(&v1);
+    XMVECTOR p2 = XMLoadFloat3(&v2);
+
+    // v0 を原点としたときの、2つの辺のベクトル（X軸とZ軸に割り当てる）
+    XMVECTOR X = XMVectorSubtract(p1, p0);
+    XMVECTOR Z = XMVectorSubtract(p2, p0);
+    // 外積でY軸（法線）を作る
+    XMVECTOR Y = XMVector3Cross(Z, X);
+
+    // アフィン変換行列の構築
+    XMMATRIX M;
+    // ====================================================================
+    // ★大修正：XMVectorSelectの罠を避け、安全にW成分を設定する
+    // ====================================================================
+    M.r[0] = XMVectorSetW(X, 0.0f);  // X軸のベクトル (w=0)
+    M.r[1] = XMVectorSetW(Y, 0.0f);  // Y軸のベクトル (w=0)
+    M.r[2] = XMVectorSetW(Z, 0.0f);  // Z軸のベクトル (w=0)
+    M.r[3] = XMVectorSetW(p0, 1.0f); // 平行移動成分   (w=1)
+
+    InstanceData data;
+    XMStoreFloat4x4(&data.world, M);
+    data.customParams = color;
+
+    // TLSリスト（または mutex制御下のリスト）に積む
+    GetDrawList().solidTriangles.push_back(data);
+}
+
 void ShapeRenderer::DrawRay(const DirectX::XMFLOAT3& origin, const DirectX::XMFLOAT3& direction, float length, const DirectX::XMFLOAT4& color) {
     XMVECTOR O = XMLoadFloat3(&origin);
     XMVECTOR D = XMLoadFloat3(&direction);
@@ -460,6 +529,22 @@ void ShapeRenderer::CreateBoneMesh(ID3D11Device* device, float length) {
     CreateMesh(device, vertices, boneMesh);
 }
 
+// ==========================================
+// ShapeRenderer.cpp の金型作成関数
+// ==========================================
+void ShapeRenderer::CreateTriangleFaceMesh(ID3D11Device* device)
+{
+    // ★大修正：余計な Normal などを一切省き、他の図形と全く同じ XMFLOAT3 (12バイト) だけにする！
+    std::vector<DirectX::XMFLOAT3> vertices = {
+        DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f),
+        DirectX::XMFLOAT3(0.0f, 0.0f, 1.0f),
+        DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f)
+    };
+
+    // ★あなたのエンジンに既に用意されている、安全なバッファ生成関数を使う
+    CreateMesh(device, vertices, triangleFaceMesh);
+}
+
 // ====================================================================
 // 描画実行
 // ====================================================================
@@ -482,7 +567,7 @@ void ShapeRenderer::Render(ID3D11DeviceContext* dc, const DirectX::XMFLOAT4X4& v
     dc->OMGetDepthStencilState(oldDepthState.GetAddressOf(), &oldStencilRef);
 
     // デバッグ用の「透視（Zテスト無効）」ステートをセット！
-    dc->OMSetDepthStencilState(m_debugDepthState.Get(), 0);
+    //dc->OMSetDepthStencilState(m_debugDepthState.Get(), 0);
 
 
     dc->VSSetShader(vertexShader.Get(), nullptr, 0);
@@ -533,6 +618,41 @@ void ShapeRenderer::Render(ID3D11DeviceContext* dc, const DirectX::XMFLOAT4X4& v
     DrawInstanced(cylinderMesh, &ShapeDrawList::cylinders);
     DrawInstanced(boneMesh, &ShapeDrawList::bones);
     DrawInstanced(lineMesh, &ShapeDrawList::lines); // デバッグで数万本出ても全く落ちない
+    // =========================================================================
+      // ★ここから下を丸ごと書き換えます（面を描く直前の最強ステート適用）
+      // =========================================================================
+
+      // 1. 他の描画に影響を与えないよう、現在のステートを退避
+    Microsoft::WRL::ComPtr<ID3D11BlendState> oldBlendState;
+    float oldBlendFactor[4];
+    UINT oldSampleMask;
+    dc->OMGetBlendState(&oldBlendState, oldBlendFactor, &oldSampleMask);
+
+    Microsoft::WRL::ComPtr<ID3D11RasterizerState> oldRasterizerState;
+    dc->RSGetState(&oldRasterizerState);
+
+    Microsoft::WRL::ComPtr<ID3D11DepthStencilState> oldDepthStateSolid;
+    UINT oldStencilRefSolid;
+    dc->OMGetDepthStencilState(&oldDepthStateSolid, &oldStencilRefSolid);
+
+    // 2. 半透明 ＆ 両面描画ステートを適用
+    dc->OMSetBlendState(m_transparentBlendState.Get(), nullptr, 0xFFFFFFFF);
+    dc->RSSetState(m_cullNoneRasterizerState.Get());
+
+
+    dc->OMSetDepthStencilState(m_depthTestNoWriteState.Get(), 0); // テストはするが書き込みOFF
+    
+
+    // 4. トポロジを面に変更して、いざ描画！
+    dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    DrawInstanced(triangleFaceMesh, &ShapeDrawList::solidTriangles);
+
+    // 5. 描画が終わったら、退避しておいた元のステートを完全に復元する
+    dc->OMSetBlendState(oldBlendState.Get(), oldBlendFactor, oldSampleMask);
+    dc->RSSetState(oldRasterizerState.Get());
+    dc->OMSetDepthStencilState(oldDepthStateSolid.Get(), oldStencilRefSolid);
+
+    // =========================================================================
 
     _instanceBuffer.Unbind(dc, SLOT_SRV_INSTANCE);
 

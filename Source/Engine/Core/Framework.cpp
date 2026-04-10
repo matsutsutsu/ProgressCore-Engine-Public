@@ -252,12 +252,13 @@ int Framework::Run()
 			float frameTime = timer.TimeInterval();
 
 			// メモリリーク検出を有効化 (すでにあるはず)
-			//_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+			_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 
 			// ★追加: この番号のメモリ確保の瞬間にブレークする
 			// ダンプに出ている番号（例: 2575）を指定します
 			// ※実行するたびに番号が変わる場合は、この方法は使えません
-			//_CrtSetBreakAlloc(2603);
+			//_CrtSetBreakAlloc(115055);
+			 
 			//_CrtSetBreakAlloc(2275584);
 
 			// 2. 「死の螺旋」防止（Safety Cap）

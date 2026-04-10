@@ -27,6 +27,7 @@ public:
 	void DrawBone(const DirectX::XMFLOAT4X4& transform, float length, const DirectX::XMFLOAT4& color);
 	void DrawLine(const DirectX::XMFLOAT3& p1, const DirectX::XMFLOAT3& p2, const DirectX::XMFLOAT4& color);
 	void DrawTriangle(const DirectX::XMFLOAT3& v1, const DirectX::XMFLOAT3& v2, const DirectX::XMFLOAT3& v3, const DirectX::XMFLOAT4& color);
+	void DrawSolidTriangle(const DirectX::XMFLOAT3& v0, const DirectX::XMFLOAT3& v1, const DirectX::XMFLOAT3& v2, const DirectX::XMFLOAT4& color);
 	void DrawRay(const DirectX::XMFLOAT3& origin, const DirectX::XMFLOAT3& direction, float length, const DirectX::XMFLOAT4& color);
 	void DrawGrid(float spacing, int subdivisions, const DirectX::XMFLOAT4& color);
 	void DrawAxis(const DirectX::XMFLOAT4X4& transform, float length);
@@ -52,6 +53,7 @@ private:
 	void CreateCylinderMesh(ID3D11Device* device, float radius1, float radius2, float start, float height, int subdivisions);
 	void CreateBoneMesh(ID3D11Device* device, float length);
 	void CreateLineMesh(ID3D11Device* device);
+	void CreateTriangleFaceMesh(ID3D11Device* device);
 
 private:
 	Mesh boxMesh;
@@ -60,6 +62,7 @@ private:
 	Mesh cylinderMesh;
 	Mesh boneMesh;
 	Mesh lineMesh;
+	Mesh triangleFaceMesh; // 塗りつぶし三角形用の金型
 
 	Microsoft::WRL::ComPtr<ID3D11VertexShader>	vertexShader;
 	Microsoft::WRL::ComPtr<ID3D11PixelShader>	pixelShader;
@@ -67,6 +70,10 @@ private:
 
 	// デバッグ描画用の「常に最前面に描画する（Zテスト無効）」ステート
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_debugDepthState;
+
+	Microsoft::WRL::ComPtr<ID3D11BlendState>        m_transparentBlendState;
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_depthTestNoWriteState;
+	Microsoft::WRL::ComPtr<ID3D11RasterizerState>   m_cullNoneRasterizerState;
 
 	// =========================================================
 	// インスタンシング ＆ マルチスレッド (TLS) 対応
@@ -83,6 +90,7 @@ private:
 		std::vector<InstanceData> cylinders;
 		std::vector<InstanceData> bones;
 		std::vector<InstanceData> lines;
+		std::vector<InstanceData> solidTriangles;
 	};
 
 	std::mutex _listMutex;
