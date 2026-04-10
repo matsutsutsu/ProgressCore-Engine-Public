@@ -1,325 +1,46 @@
 #pragma once
 #include "Editor/Core/EditorWindow.h"
 #include "ECS/Core/CCL_World.h"
-#include "ECS/Core/CCL_Chunk.h"
 #include "ECS/System/CCL_SystemManager.h"
-#include "ECS/Core/CCL_PendingOps.h"
 #include <imgui.h>
-#include <implot.h>
 #include <vector>
 #include <string>
+#include <map>
+
+// =========================================================
+// â˜… ãƒ—ãƒ­ãƒ•ã‚¡ã‚¤ãƒ©ãƒ¼ç”¨ã®å±¥æ­´ä¿æŒãƒãƒƒãƒ•ã‚¡ (ãƒªãƒ³ã‚°ãƒãƒƒãƒ•ã‚¡)
+// =========================================================
+struct ScrollingBuffer {
+    int MaxSize;
+    int Offset;
+    ImVector<ImVec2> Data;
+
+    ScrollingBuffer(int max_size = 600);
+    void AddPoint(float x, float y);
+};
+
+struct SystemProfileData {
+    ScrollingBuffer buffer;
+    ImVec4 color = ImVec4(1, 1, 1, 1); // ç·šã®è‰²
+    bool isVisible = true;             // ã‚°ãƒ©ãƒ•ã«è¡¨ç¤ºã™ã‚‹ã‹ã©ã†ã‹
+    bool isHovered = false;            // ãƒ†ãƒ¼ãƒ–ãƒ«ä¸Šã§ãƒã‚¦ã‚¹ãŒä¹—ã£ã¦ã„ã‚‹ã‹
+};
 
 class ECSDebugWindow : public EditorWindow {
+private:
+    std::map<std::string, SystemProfileData> _systemTimings;
+    float _time = 0.0f;
+    bool  _pauseProfiler = false;
+
 public:
-    ECSDebugWindow() : EditorWindow("ECS Debugger") {}
+    ECSDebugWindow();
 
 protected:
-    void DrawContents(EditorContext& context) override {
-        if (!context.world || !context.systemManager) {
-            ImGui::TextColored(ImVec4(1, 0, 0, 1), "World or SystemManager is not initialized.");
-            return;
-        }
-
-        if (ImGui::BeginTabBar("ECSDebugTabs")) {
-
-            // 1. ÀÛ‚ÌƒLƒƒƒpƒVƒeƒB‚ÉŠî‚Ã‚¢‚½ƒƒ‚ƒŠó‹µ
-            if (ImGui::BeginTabItem("Memory & Chunks")) {
-                DrawMemoryTab(context.world);
-                ImGui::EndTabItem();
-            }
-
-            // 2. ƒVƒXƒeƒ€•‰‰×
-            if (ImGui::BeginTabItem("Systems Profiler")) {
-                DrawSystemsTab(context.systemManager);
-                ImGui::EndTabItem();
-            }
-
-            // 3. ‘Ò‹@‘€ì‚Ì‰Â‹‰»
-            if (ImGui::BeginTabItem("Pending Operations")) {
-                DrawPendingOpsTab(context.world);
-                ImGui::EndTabItem();
-            }
-
-
-
-            ImGui::EndTabBar();
-        }
-    }
+    void DrawContents(EditorContext& context) override;
 
 private:
-    // ƒ†[ƒeƒBƒŠƒeƒBŠÖ”iƒfƒoƒbƒOƒEƒBƒ“ƒhƒEŠO‚Ü‚½‚ÍƒNƒ‰ƒX“à‚É’Ç‰Áj
-    const char* GetFriendlyTypeName(uint32_t id) {
-        // –{—ˆ‚ÍƒRƒ“ƒ|[ƒlƒ“ƒg“o˜^‚É–¼‘O‚ğ•Û‘¶‚µ‚Ä‚¨‚­‚×‚«‚Å‚·‚ªA
-        // b’è“I‚ÉID‚ğ•\¦BŠg’£‚µ‚Ä std::unordered_map<uint32_t, string> “™‚©‚çˆø‚­‚Ì‚ª—‘zB
-        static char buf[32];
-        sprintf_s(buf, "Type:%u", id);
-        return buf;
-    }
-
-    void DrawMemoryTab(CCL::ECS::Core::World* world) {
-        auto& chunks = world->GetChunkManager().GetChunks();
-        static int selectedChunkIdx = -1;
-        static EntityID selectedEntityID = 0;
-
-        ImGui::Columns(2, "MemoryTabSplitter", true);
-        ImGui::SetColumnWidth(0, ImGui::GetWindowWidth() * 0.40f);
-
-        ImGui::TextColored(ImVec4(0, 1, 1, 1), "Chunk Hierarchy");
-        if (ImGui::Button("Refresh Layout")) { /* •K—v‚È‚çÄŒvZ */ }
-        ImGui::Separator();
-
-        if (ImGui::BeginChild("ChunkList")) {
-            for (size_t i = 0; i < chunks.size(); ++i) {
-                auto& chunk = chunks[i];
-                size_t count = chunk->GetEntityCount();
-                size_t cap = chunk->GetCapacity();
-
-                ImGui::PushID((int)i);
-                bool isSelected = (selectedChunkIdx == (int)i);
-
-                // ƒ`ƒƒƒ“ƒNƒwƒbƒ_[
-                char label[128];
-                sprintf_s(label, "Chunk %zu [%zu/%zu]", i, count, cap);
-                if (ImGui::Selectable(label, isSelected)) {
-                    selectedChunkIdx = (int)i;
-                }
-
-                // ƒƒ‚ƒŠ–§“xƒhƒbƒgƒ}ƒbƒv
-                ImDrawList* drawList = ImGui::GetWindowDrawList();
-                ImVec2 p = ImGui::GetCursorScreenPos();
-                float width = ImGui::GetContentRegionAvail().x;
-                float height = 14.0f;
-                float boxWidth = width / (cap > 0 ? cap : 1);
-
-                drawList->AddRectFilled(p, ImVec2(p.x + width, p.y + height), IM_COL32(30, 30, 30, 255), 2.0f);
-
-                for (size_t e = 0; e < count; ++e) {
-                    // ƒGƒ“ƒeƒBƒeƒB‚Ìó‘Ô‚É‰‚¶‚ÄF‚ğ•Ï‚¦‚éi—áFíœ‘Ò‚¿‚ÍƒIƒŒƒ“ƒWA¶‘¶‚Í—Îj
-                    ImU32 color = IM_COL32(0, 200, 100, 255);
-                    drawList->AddRectFilled(
-                        ImVec2(p.x + e * boxWidth + 1, p.y + 1),
-                        ImVec2(p.x + (e + 1) * boxWidth - 1, p.y + height - 1),
-                        color
-                    );
-                }
-
-                ImGui::Dummy(ImVec2(width, height + 6));
-
-                if (ImGui::IsItemHovered()) {
-                    ImGui::BeginTooltip();
-                    ImGui::Text("Archetype Hash: %llu", chunk->GetArchetypeHash());
-                    ImGui::Separator();
-                    for (const auto& td : chunk->GetTypeDatas()) {
-                        ImGui::BulletText("%s (Size: %zu)", GetFriendlyTypeName(td.id), td.typeSize);
-                    }
-                    ImGui::EndTooltip();
-                }
-                ImGui::PopID();
-            }
-        }
-        ImGui::EndChild();
-
-        ImGui::NextColumn();
-
-        // --- ‰EƒJƒ‰ƒ€: ƒGƒ“ƒeƒBƒeƒBEƒRƒ“ƒ|[ƒlƒ“ƒgÚ× ---
-        ImGui::TextColored(ImVec4(0, 1, 1, 1), "Entity Inspector");
-        ImGui::Separator();
-
-        if (selectedChunkIdx >= 0 && selectedChunkIdx < (int)chunks.size()) {
-            auto& chunk = chunks[selectedChunkIdx];
-
-            if (ImGui::BeginChild("EntityDetailList")) {
-                ImGui::Text("Chunk [%d] Archetype", selectedChunkIdx);
-
-                for (size_t e = 0; e < chunk->GetEntityCount(); ++e) {
-                    EntityID id = chunk->GetEntityByIndex(e);
-                    char eLabel[64];
-                    sprintf_s(eLabel, "Slot %zu: Entity ID %u", e, id);
-
-                    if (ImGui::TreeNode(eLabel)) {
-                        for (const auto& td : chunk->GetTypeDatas()) {
-                            if (ImGui::TreeNode((void*)(intptr_t)td.id, "Component: %s", GetFriendlyTypeName(td.id))) {
-                                // ƒƒ‚ƒŠ‚Ì¶ƒf[ƒ^‰Â‹‰»i”ñí‚Éd—vIj
-                                void* data = chunk->GetComponentPtrByType(td.id, e);
-                                if (data) {
-                                    // ‚Æ‚è‚ ‚¦‚¸Å‰‚Ì4ƒoƒCƒg•ª‚ğfloat‚Æint‚Å•\¦iƒfƒoƒbƒO—pj
-                                    float* fv = (float*)data;
-                                    int* iv = (int*)data;
-                                    ImGui::Text("Raw(f): %.3f, %.3f, %.3f", fv[0], fv[1], fv[2]);
-                                    ImGui::Text("Raw(i): %d, %d, %d", iv[0], iv[1], iv[2]);
-
-                                    if (ImGui::Button("Edit Data")) {
-                                        // «—ˆ“I‚É‚Í‚±‚±‚Åê—p‚ÌUI‚ğo‚·
-                                    }
-                                }
-                                ImGui::TreePop();
-                            }
-                        }
-                        ImGui::TreePop();
-                    }
-                }
-            }
-            ImGui::EndChild();
-        }
-        else {
-            ImGui::TextDisabled("Select a chunk to see details.");
-        }
-        ImGui::Columns(1);
-    }
-
-    void DrawSystemsTab(CCL::ECS::SystemManager *manager)
-    {
-
-        // 1. Logic‚ÆRender‚Ì—¼•û‚ÌƒŠƒXƒg‚ğæ“¾
-        const auto &logicSystems  = manager->GetLogicSystems();
-        const auto &renderSystems = manager->GetRenderSystems();
-
-        // 2. •\¦—p‚É1‚Â‚ÌƒŠƒXƒg‚É‚Ü‚Æ‚ß‚éi¶ƒ|ƒCƒ“ƒ^‚Ì”z—ñ‚ğì‚éj
-        std::vector<CCL::ECS::SystemBase*> systems;
-        systems.reserve(logicSystems.size() + renderSystems.size());
-
-        for (const auto& s : logicSystems) systems.push_back(s.get());
-        for (const auto& s : renderSystems) systems.push_back(s.get());
-
-
-        // 1. ‡ŒvŠÔ‚ÌZo
-        float totalMs = 0.0f;
-        for (auto& sys : systems) {
-            totalMs += sys->GetDisplayUpdateTime();
-        }
-
-        // ƒtƒŒ[ƒ€ƒŒ[ƒgŒx•\¦
-        ImGui::Text("Total ECS Frame Time: ");
-        ImGui::SameLine();
-        ImVec4 statusColor = (totalMs > 16.66f) ? ImVec4(1, 0.4f, 0.4f, 1) : ImVec4(0.4f, 1, 0.4f, 1);
-        ImGui::TextColored(statusColor, "%.3f ms (%.1f FPS)", totalMs, (totalMs > 0) ? 1000.0f / totalMs : 0);
-
-        ImGui::Separator();
-
-        // --- í—ª“I‰ü—Ç: ƒXƒ^ƒbƒNŒ^ Workload Distribution Bar ---
-        ImGui::Text("Workload Distribution:");
-
-        // •`‰æ—Ìˆæ‚ÌŠm•Û
-        ImVec2 barSize = ImVec2(ImGui::GetContentRegionAvail().x, 30.0f);
-        ImVec2 screenPos = ImGui::GetCursorScreenPos();
-        ImDrawList* drawList = ImGui::GetWindowDrawList();
-
-        // ”wŒii‹ó‚Ì‚Ìƒx[ƒXj
-        drawList->AddRectFilled(screenPos, ImVec2(screenPos.x + barSize.x, screenPos.y + barSize.y), IM_COL32(45, 45, 48, 255), 4.0f);
-
-        float currentX = 0.0f;
-        if (totalMs > 0.0f) {
-            for (size_t i = 0; i < systems.size(); ++i) {
-                auto& sys = systems[i];
-                float ms = sys->GetDisplayUpdateTime();
-                float ratio = ms / totalMs;
-
-                if (ratio < 0.001f) continue; // 0.1%–¢–‚Í•`‰æƒXƒLƒbƒv
-
-                float segmentWidth = ratio * barSize.x;
-                ImVec2 pMin = ImVec2(screenPos.x + currentX, screenPos.y);
-                ImVec2 pMax = ImVec2(screenPos.x + currentX + segmentWidth, screenPos.y + barSize.y);
-
-                // ƒVƒXƒeƒ€‚²‚Æ‚ÌF•ª‚¯i–¼‘O‚©‚çƒnƒbƒVƒ…‚Å¶¬‚µAÊ“x‚ğ’²®j
-                ImU32 col = ImGui::ColorConvertFloat4ToU32(ImVec4(
-                    (float)((i * 130) % 255) / 255.0f,
-                    (float)((i * 200) % 255) / 255.0f,
-                    (float)((i * 150) % 255) / 255.0f,
-                    1.0f));
-
-                // ÀsŠÔ‚ª’·‚¢i—á‚¦‚Î1ms’´‚¦jê‡‚ÍŒx‚Æ‚µ‚Ä­‚µ–¾“x‚ğã‚°‚é
-                if (ms > 1.0f) col = ImColor(255, 140, 0, 255);
-
-                drawList->AddRectFilled(pMin, pMax, col, (i == 0 || i == systems.size() - 1) ? 4.0f : 0.0f);
-
-                // ƒzƒo[”»’è‚ÆÚ×ƒc[ƒ‹ƒ`ƒbƒv
-                if (ImGui::IsMouseHoveringRect(pMin, pMax)) {
-                    drawList->AddRect(pMin, pMax, IM_COL32(255, 255, 255, 200), 0, 0, 2.0f); // ‹­’²˜g
-                    ImGui::BeginTooltip();
-                    ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "[System: %s]", sys->GetName().c_str());
-                    ImGui::Text("Time : %.4f ms", ms);
-                    ImGui::Text("Ratio: %.1f %%", ratio * 100.0f);
-                    ImGui::EndTooltip();
-                }
-
-                currentX += segmentWidth;
-            }
-        }
-
-        // ImGui‚ÌƒJ[ƒ\ƒ‹‚ğƒo[‚Ì•ª‚¾‚¯i‚ß‚éi‚±‚ê‚ğ–Y‚ê‚é‚Æd‚È‚éj
-        ImGui::Dummy(barSize);
-        ImGui::Spacing();
-
-        // --- „ˆÚƒOƒ‰ƒt (ImPlot) ---
-        if (ImPlot::BeginPlot("System Load Profile", ImVec2(-1, 200), ImPlotFlags_NoMouseText)) {
-            ImPlot::SetupAxes("Systems", "ms");
-            ImPlot::SetupAxisLimits(ImAxis_Y1, 0, (totalMs > 1.0f) ? totalMs * 1.1f : 2.0f, ImGuiCond_Always);
-
-            for (auto& sys : systems) {
-                float val = sys->GetDisplayUpdateTime();
-                ImPlot::PlotBars(sys->GetName().c_str(), &val, 1);
-            }
-            ImPlot::EndPlot();
-        }
-
-        // --- Ú×ƒf[ƒ^ƒe[ƒuƒ‹ ---
-        if (ImGui::BeginTable("SystemsDetailTable", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit)) {
-            ImGui::TableSetupColumn("System Name", ImGuiTableColumnFlags_WidthStretch);
-            ImGui::TableSetupColumn("ms", ImGuiTableColumnFlags_WidthFixed, 70.0f);
-            ImGui::TableSetupColumn("%", ImGuiTableColumnFlags_WidthFixed, 60.0f);
-            ImGui::TableSetupColumn("Load Bar", ImGuiTableColumnFlags_WidthFixed, 120.0f);
-            ImGui::TableHeadersRow();
-
-            for (auto& sys : systems) {
-                float ms = sys->GetDisplayUpdateTime();
-                float ratio = (totalMs > 0) ? (ms / totalMs) : 0;
-
-                ImGui::TableNextRow();
-
-                ImGui::TableSetColumnIndex(0);
-                ImGui::Text("%s", sys->GetName().c_str());
-
-                ImGui::TableSetColumnIndex(1);
-                ImGui::Text("%.3f", ms);
-
-                ImGui::TableSetColumnIndex(2);
-                ImGui::Text("%.1f%%", ratio * 100.0f);
-
-                ImGui::TableSetColumnIndex(3);
-                // •‰‰×‚É‰‚¶‚½“®“I‚Èƒo[iÔ`—Îj
-                ImVec4 barColor = ImVec4(ratio, 1.0f - ratio, 0.3f, 1.0f);
-                ImGui::PushStyleColor(ImGuiCol_PlotHistogram, barColor);
-                ImGui::ProgressBar(ratio, ImVec2(-1, 14), "");
-                ImGui::PopStyleColor();
-            }
-            ImGui::EndTable();
-        }
-    }
-
-    void DrawPendingOpsTab(CCL::ECS::Core::World* world) {
-        auto& pending = world->GetPendingOps();
-        auto& ops = pending.Ops();
-
-        ImGui::Text("Queue Size: %zu", ops.size());
-        if (ImGui::Button("Sync Now (ScrutinyAndApply)")) {
-            world->ScrutinyAndApply();
-        }
-        ImGui::Separator();
-
-        ImGui::BeginChild("OpsLog", ImVec2(0, 0), true);
-        for (const auto& op : ops) {
-            const char* typeName = "Unknown";
-            ImVec4 color = ImVec4(1, 1, 1, 1);
-            switch (op.kind) {
-            case CCL::ECS::Core::PendingOpKind::Spawn:           typeName = "SPAWN";   color = ImVec4(0, 1, 0, 1); break;
-            case CCL::ECS::Core::PendingOpKind::Destroy:         typeName = "DESTROY"; color = ImVec4(1, 0, 0, 1); break;
-            case CCL::ECS::Core::PendingOpKind::AddComponent:    typeName = "ADD";     color = ImVec4(0, 0.7f, 1, 1); break;
-            case CCL::ECS::Core::PendingOpKind::RemoveComponent: typeName = "REMOVE";  color = ImVec4(1, 0.5f, 0, 1); break;
-            }
-            ImGui::TextColored(color, "[%s]", typeName);
-            ImGui::SameLine();
-            ImGui::Text("EntityID: %u | TypeID: %u", op.entity, op.type);
-        }
-        ImGui::EndChild();
-    }
+    // å„ã‚¿ãƒ–ã®æç”»å‡¦ç†ã‚’åˆ†å‰²
+    void DrawMemoryTab(CCL::ECS::Core::World* world);
+    void DrawSystemsTab(CCL::ECS::SystemManager* systemManager);
+    void DrawPendingOpsTab(CCL::ECS::Core::World* world);
 };

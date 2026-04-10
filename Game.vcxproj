@@ -526,6 +526,7 @@
     <ClCompile Include="Source\Editor\Utils\ShellIconLoader.cpp" />
     <ClCompile Include="Source\Editor\Windows\AnimationSequencerWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\ConsoleWindow.cpp" />
+    <ClCompile Include="Source\Editor\Windows\ECSDebugWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\HierarchyWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\InputEditorWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\InspectorWindow.cpp" />

@@ -1934,6 +1934,9 @@
     <ClCompile Include="Source\Editor\Windows\NavMeshWindow.cpp">
       <Filter>Source\Editor\Windows</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\ECSDebugWindow.cpp">
+      <Filter>Source\Editor\Windows</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shader\Common\Common.hlsli">
