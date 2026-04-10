@@ -4,6 +4,7 @@
 #include <cstring>
 #include <imgui.h>
 #include <type_traits> // メタプログラミング用
+#include "Editor/Core/EditorCommandHistory.h"
 
 namespace ComponentMetaImGui {
 
@@ -133,6 +134,10 @@ namespace ComponentMetaImGui {
     {
         bool anyChanged = false;
 
+        // ラッグ開始時の状態を保持するスタティック変数
+        // UI操作は同時に1つしかできないため、staticで安全に保持できます
+        static T s_backupState;
+
         ImGui::PushID(ComponentMeta<T>::displayName);
         ImGui::Indent(4.0f);
 
@@ -171,7 +176,33 @@ namespace ComponentMetaImGui {
                     if (!catOpen) continue;
 
                     ImGui::PushID((int)fd.offset);
-                    if (DrawField(fd, obj)) anyChanged = true;
+
+                    // ==========================================================
+                    // 描画とUndo/Redoフックの統合
+                    // ==========================================================
+                    bool fieldChanged = DrawField(fd, obj);
+                    if (fieldChanged) anyChanged = true;
+
+                    // 1. スライダーをクリックした瞬間（ドラッグ開始前）の値をバックアップ
+                    if (ImGui::IsItemActivated()) {
+                        s_backupState = component; 
+                    }
+                    
+                    // 2. マウスを離した瞬間（編集完了）にコマンドを発行！
+                    if (ImGui::IsItemDeactivatedAfterEdit()) {
+                        if (world && entity != 0) {
+                            auto* ecsWorld = static_cast<CCL::ECS::Core::World*>(world);
+                            auto ecsEntity = static_cast<CCL::ECS::EntityID>(entity);
+
+                            EditorCommandHistory::Instance().ExecuteCommand(
+                                std::make_unique<ChangeComponentCommand<T>>(
+                                    ecsWorld, ecsEntity, s_backupState, component
+                                )
+                            );
+                        }
+                    }
+                    
+
                     ImGui::PopID();
                 }
 

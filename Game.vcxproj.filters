@@ -1269,6 +1269,9 @@
     <ClInclude Include="Source\Editor\Windows\NavMeshWindow.h">
       <Filter>Source\Editor\Windows</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\Core\EditorCommandHistory.h">
+      <Filter>Source\Editor\Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">

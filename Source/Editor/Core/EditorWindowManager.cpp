@@ -5,6 +5,8 @@
 #include "Engine/GamePlay/Core/Scene/SceneManager.h"
 #include "Engine/Platform/Dialog.h"
 
+#include "Editor/Core/EditorCommandHistory.h"
+
 #include "Engine/GamePlay/Transform/TransformComponent.h"
 
 // 各ウィンドウのヘッダをインクルード
@@ -73,6 +75,13 @@ void RefreshPrefabList(EditorContext &context)
 // Draw関数の実装
 void EditorWindowManager::Draw(EditorContext &context)
 {
+    // EditorScene::OnDrawImGui もしくは Update の中で
+    if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Z)) {
+        EditorCommandHistory::Instance().Undo();
+    }
+    if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Y)) {
+        EditorCommandHistory::Instance().Redo();
+    }
 
     // 1. ショートカットキー (F1) で表示切替
     // ImGuiがアクティブでなくても効くようにします

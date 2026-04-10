@@ -221,6 +221,7 @@
     <ClInclude Include="Source\ECS\System\CCL_SystemManager.h" />
     <ClInclude Include="Source\ECS\System\CCL_SystemRegistry.h" />
     <ClInclude Include="Source\ECS\System\CCL_TaskScheduler.h" />
+    <ClInclude Include="Source\Editor\Core\EditorCommandHistory.h" />
     <ClInclude Include="Source\Editor\Core\EditorContext.h" />
     <ClInclude Include="Source\Editor\Core\EditorWindow.h" />
     <ClInclude Include="Source\Editor\Core\EditorWindowManager.h" />
