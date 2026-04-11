@@ -43,4 +43,7 @@ private:
     void DrawMemoryTab(CCL::ECS::Core::World* world);
     void DrawSystemsTab(CCL::ECS::SystemManager* systemManager);
     void DrawPendingOpsTab(CCL::ECS::Core::World* world);
+
+    // 型IDから名前を取得するヘルパー関数の宣言
+    const char* GetFriendlyTypeName(uint32_t id);
 };

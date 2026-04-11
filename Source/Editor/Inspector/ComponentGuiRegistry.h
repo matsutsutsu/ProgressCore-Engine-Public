@@ -136,6 +136,25 @@ public:
     }
 
 
+    // =========================================================
+    //  TypeID からコンポーネント名を取得する逆引き関数
+    // =========================================================
+    const std::string& GetComponentName(TypeID id) {
+        ResolveBindings(); // 取得前に未解決のバインディングを処理
+
+        auto idIt = _typeIdToIndex.find(id);
+        if (idIt != _typeIdToIndex.end()) {
+            auto regIt = _registry.find(idIt->second);
+            if (regIt != _registry.end()) {
+                return regIt->second.name; // 既に保存されている名前を返す！
+            }
+        }
+
+        // 見つからなかった場合用の空文字
+        static const std::string unknown = "";
+        return unknown;
+    }
+
     // 描画実行
     void Draw(TypeID id, void* data, EntityID entity, CCL::ECS::Core::World* world);
 
