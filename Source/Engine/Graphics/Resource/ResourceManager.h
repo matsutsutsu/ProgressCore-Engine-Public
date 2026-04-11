@@ -1,189 +1,142 @@
 #pragma once
 
-#include "ModelResource.h"
-#include "MaterialData.h"
-#include "ResourcePool.h"
-#include "Engine/Graphics/Core/RenderTarget.h"
 #include <d3d11.h>
-#include <unordered_map> // mapの代わりにこれを使う
-#include "Engine/Core/Math/StringHash.h"
-#include <string>
 #include <wrl/client.h>
+#include <string>
 #include <mutex>
+#include <unordered_map>
+
+#include "Engine/Core/Math/StringHash.h"
+#include "ResourcePool.h"
+
+// --- 依存するリソースの先行宣言 & インクルード ---
+#include "ModelResource.h"
+#include "Model.h"
+#include "MaterialData.h"
+#include "Engine/Graphics/Core/RenderTarget.h"
 #include "Engine/GamePlay/Animation/AnimSequence.h"
 
-// コンピュートシェーダー用のバッファ群をまとめた構造体
+// ============================================================================
+// [Data Structures]
+// ============================================================================
+
+// コンピュートシェーダー用のバッファ群
 struct GpuParticleBufferSet {
     ID3D11Buffer* particleBuffer = nullptr;
     ID3D11UnorderedAccessView* particleUAV    = nullptr;
     ID3D11ShaderResourceView* particleSRV    = nullptr;
     ID3D11Buffer* constantBuffer = nullptr;
 
-    // -------------------------------------------------------------
-    // 既定のコンストラクタを明示的にコンパイラに作らせる
-    // -------------------------------------------------------------
     GpuParticleBufferSet() = default;
-
-    // コピーを禁止する (ポインタのコピーによる二重解放を防ぐ)
     GpuParticleBufferSet(const GpuParticleBufferSet&) = delete;
     GpuParticleBufferSet& operator=(const GpuParticleBufferSet&) = delete;
 
-    // ムーブコンストラクタ (vectorの拡張時などに呼ばれる)
-    GpuParticleBufferSet(GpuParticleBufferSet&& other) noexcept {
-        particleBuffer = other.particleBuffer;
-        particleUAV = other.particleUAV;
-        particleSRV = other.particleSRV;
-        constantBuffer = other.constantBuffer;
-
-        // 元の所有者のポインタを空にする (これでデストラクタが走ってもReleaseされない)
-        other.particleBuffer = nullptr;
-        other.particleUAV = nullptr;
-        other.particleSRV = nullptr;
-        other.constantBuffer = nullptr;
-    }
-
-    // ムーブ代入演算子
-    GpuParticleBufferSet& operator=(GpuParticleBufferSet&& other) noexcept {
-        if (this != &other) {
-            // 自分が既に持っているなら解放
-            if (particleBuffer) particleBuffer->Release();
-            if (particleUAV) particleUAV->Release();
-            if (particleSRV) particleSRV->Release();
-            if (constantBuffer) constantBuffer->Release();
-
-            // 所有権の移動
-            particleBuffer = other.particleBuffer;
-            particleUAV = other.particleUAV;
-            particleSRV = other.particleSRV;
-            constantBuffer = other.constantBuffer;
-
-            // 元を空に
-            other.particleBuffer = nullptr;
-            other.particleUAV = nullptr;
-            other.particleSRV = nullptr;
-            other.constantBuffer = nullptr;
-        }
-        return *this;
-    }
-
-    // プールがDestroyを呼んだ時に自動でReleaseさせる
-    ~GpuParticleBufferSet() {
-        if (particleBuffer) { particleBuffer->Release(); particleBuffer = nullptr; }
-        if (particleUAV)    { particleUAV->Release(); particleUAV = nullptr; }
-        if (particleSRV)    { particleSRV->Release(); particleSRV = nullptr; }
-        if (constantBuffer) { constantBuffer->Release(); constantBuffer = nullptr; }
-    }
+    GpuParticleBufferSet(GpuParticleBufferSet&& other) noexcept;
+    GpuParticleBufferSet& operator=(GpuParticleBufferSet&& other) noexcept;
+    ~GpuParticleBufferSet();
 };
 
-
-// ComPtrをプールするための型エイリアス
-using TextureResource = Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>;
-
-// 各種ハンドル定義
-using ModelHandle   = CCL::Handle<ModelResource>;
-using TextureHandle = CCL::Handle<TextureResource>;
-using MaterialHandle = CCL::Handle<MaterialData>;
+// ============================================================================
+// [Handle Definitions]
+// ============================================================================
+using TextureResource      = Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>;
+using TextureHandle        = CCL::Handle<TextureResource>;
+using ModelHandle          = CCL::Handle<ModelResource>;
+using ModelInstanceHandle  = CCL::Handle<Model>;
+using MaterialHandle       = CCL::Handle<MaterialData>;
 using ParticleBufferHandle = CCL::Handle<GpuParticleBufferSet>;
+using RenderTargetHandle   = CCL::Handle<RenderTarget>;
+using AnimSequenceHandle   = CCL::Handle<AnimSequence>;
 
-// レンダーターゲットのハンドル定義
-using RenderTargetHandle = CCL::Handle<RenderTarget>;
 
-// アニメーション用のハンドル
-using AnimSequenceHandle = CCL::Handle<AnimSequence>;
-
+// ============================================================================
+// [ResourceManager]
+// ============================================================================
 class ResourceManager {
-  private:
-    ResourceManager() {}
-    ~ResourceManager() {}
+private:
+    ResourceManager() = default;
+    ~ResourceManager() = default;
 
-  public:
-    static ResourceManager &Instance()
-    {
+public:
+    static ResourceManager& Instance() {
         static ResourceManager instance;
         return instance;
     }
 
-    // --- ロード窓口 ---
-    // 戻り値は生ポインタやスマートポインタではなく、必ずハンドルを返す
-    ModelHandle   LoadModelResource(const char *filename);
-    TextureHandle LoadTexture(const char *filename);
-
+    // ---------------------------------------------------------
+    // [1] Texture (Static)
+    // ---------------------------------------------------------
+    TextureHandle LoadTexture(const char* filename);
     TextureHandle RegisterTexture(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv);
-
-    // 動的生成モデル（PrimitiveやParticleなど）のための空リソース確保
-    ModelHandle AllocateEmptyModelResource();
-
-    // --- アクセス窓口 ---
-    // 描画システム（System層）が、実際に描画コマンドを発行する瞬間のみ呼び出す
-    ModelResource            *GetModel(ModelHandle handle);
-    ID3D11ShaderResourceView *GetTexture(TextureHandle handle);
-
-    // --- 破棄窓口 ---
-    void UnloadModel(ModelHandle handle);
+    ID3D11ShaderResourceView* GetTexture(TextureHandle handle);
     void UnloadTexture(TextureHandle handle);
 
-    // --- マテリアル窓口 ---
+    // ---------------------------------------------------------
+    // [2] Model Resource (Static Data)
+    // ---------------------------------------------------------
+    ModelHandle LoadModelResource(const char* filename);
+    ModelHandle AllocateEmptyModelResource();
+    ModelResource* GetModel(ModelHandle handle);
+    void UnloadModel(ModelHandle handle);
+
+    // ---------------------------------------------------------
+    // [3] Model Instance (Dynamic Data)
+    // ---------------------------------------------------------
+    ModelInstanceHandle CreateModelInstance(const char* filename);
+    Model* GetModelInstance(ModelInstanceHandle handle);
+    void UnloadModelInstance(ModelInstanceHandle handle);
+
+    // ---------------------------------------------------------
+    // [4] Material
+    // ---------------------------------------------------------
     MaterialHandle CreateMaterial();
-    
-    // 既存のマテリアルをコピーして新しいマテリアル（個別の色変更用など）を作る
     MaterialHandle CloneMaterial(MaterialHandle source);
-
-    MaterialData *GetMaterial(MaterialHandle handle);
-
+    MaterialData* GetMaterial(MaterialHandle handle);
     void UnloadMaterial(MaterialHandle handle);
 
-    // --- パーティクルバッファ窓口 ---
-    ParticleBufferHandle CreateParticleBuffer() { return m_particleBufferPool.Create(); }
-    GpuParticleBufferSet* GetParticleBuffer(ParticleBufferHandle handle) { return m_particleBufferPool.Get(handle); }
-    void UnloadParticleBuffer(ParticleBufferHandle handle) { m_particleBufferPool.Destroy(handle); }
-
-
-    // --- レンダーターゲット窓口 ---
-    // 指定したサイズとフォーマットでRTを作成する
-    RenderTargetHandle CreateRenderTarget(int width, int height, DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM);
-    
-    // ハンドルからポインタを取得
-    RenderTarget* GetRenderTarget(RenderTargetHandle handle);
-    
-
-    // アニメーション台本のロード窓口
-    // AnimatorComponent が直接ポインタを参照する設計のため、constポインタを返します
+    // ---------------------------------------------------------
+    // [5] Animation Sequence
+    // ---------------------------------------------------------
     const AnimSequence* LoadAnimSequence(const char* filename);
 
-    // 不要になったら破棄
+    // ---------------------------------------------------------
+    // [6] Render Target (GPU Resource)
+    // ---------------------------------------------------------
+    RenderTargetHandle CreateRenderTarget(int width, int height, DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM);
+    RenderTarget* GetRenderTarget(RenderTargetHandle handle);
     void UnloadRenderTarget(RenderTargetHandle handle);
 
+    // ---------------------------------------------------------
+    // [7] GPU Particle Buffer
+    // ---------------------------------------------------------
+    ParticleBufferHandle CreateParticleBuffer();
+    GpuParticleBufferSet* GetParticleBuffer(ParticleBufferHandle handle);
+    void UnloadParticleBuffer(ParticleBufferHandle handle);
 
-
-
+    // ---------------------------------------------------------
+    // [Debug]
+    // ---------------------------------------------------------
     void DrawDebugGUI();
 
-  private:
-    // メモリを連続配置で管理する実体プール
-    CCL::ResourcePool<ModelResource>   m_modelPool;
-    CCL::ResourcePool<TextureResource> m_texturePool;
-    CCL::ResourcePool<MaterialData>    m_materialPool; // マテリアル専用アパート
-    CCL::ResourcePool<GpuParticleBufferSet> m_particleBufferPool; // パーティクル専用アパート
-    CCL::ResourcePool<RenderTarget> m_renderTargetPool;     // レンダーターゲット専用アパート
+private:
+    // --- Resource Pools (連続メモリ配置) ---
+    CCL::ResourcePool<TextureResource>      m_texturePool;
+    CCL::ResourcePool<ModelResource>        m_modelPool;
+    CCL::ResourcePool<Model>                m_modelInstancePool;
+    CCL::ResourcePool<MaterialData>         m_materialPool;
+    CCL::ResourcePool<AnimSequence>         m_animSequencePool;
+    CCL::ResourcePool<RenderTarget>         m_renderTargetPool;
+    CCL::ResourcePool<GpuParticleBufferSet> m_particleBufferPool;
 
-    // アニメーション台本専用のアパート（プール）
-    CCL::ResourcePool<AnimSequence>    m_animSequencePool;
-
-    // パスからハンドルを逆引きするためのレジストリ（キャッシュ）
-    // unordered_map はハッシュテーブルなので、検索が O(1) で爆速です。
-    std::unordered_map<uint32_t, ModelHandle>   m_modelRegistry;
-    std::unordered_map<uint32_t, TextureHandle> m_textureRegistry;
-
-    // アニメーション台本のキャッシュ
+    // --- Registries (重複ロード防止のキャッシュ) ---
+    std::unordered_map<uint32_t, TextureHandle>      m_textureRegistry;
+    std::unordered_map<uint32_t, ModelHandle>        m_modelRegistry;
     std::unordered_map<uint32_t, AnimSequenceHandle> m_animSequenceRegistry;
 
-    // 複数スレッドからの同時アクセスを防ぐ鍵
+    // スレッドセーフ用ミューテックス
     std::mutex _mutex;
 
-    // デバッグ表示用 (ハッシュ値 -> 元のファイルパス)
-    // これがないとImGuiでファイル名が表示できなくなります
 #ifdef _DEBUG
     std::unordered_map<uint32_t, std::string> m_debugNameRegistry;
 #endif
-
 };

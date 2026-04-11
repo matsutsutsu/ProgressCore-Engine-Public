@@ -10,6 +10,7 @@
 #include "Model.h"
 #include "ResourceManager.h"
 #include "Engine/Core/Math/StringHash.h"
+#include "Engine/Graphics/Resource/ResourceManager.h"
 #include <array>
 
 // コンストラクタ
@@ -438,7 +439,15 @@ void Model::BlendAnimations(
 }
 
 
+const ModelResource* Model::GetResource() const
+{
+    return ResourceManager::Instance().GetModel(resource);
+}
 
+ModelResource* Model::GetResourceMutable()
+{
+    return ResourceManager::Instance().GetModel(resource);
+}
 
 std::shared_ptr<Model> Model::CreateFromData(ID3D11Device *device,
     const std::vector<ModelResource::Vertex>              &vertices,

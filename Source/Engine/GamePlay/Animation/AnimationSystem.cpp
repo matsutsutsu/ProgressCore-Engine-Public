@@ -82,8 +82,8 @@ void AnimationSystem::Update(float dt)
         // ========================================================
         // 4. 描画側(Model)への計算依頼
         // ========================================================
-        if (modelComp.modelPtr) {
-            Model* model = modelComp.modelPtr.get();
+        if (modelComp.GetModel()) {
+            Model* model = modelComp.GetModel();
 
             // 台本に書かれている「アニメーション名」から、Model内部のインデックスを引く
             int animIndex = model->GetAnimationIndex(seq->targetAnimName.c_str());
@@ -105,9 +105,9 @@ void AnimationSystem::UpdateManual(CCL::ECS::EntityID entity, float time)
     auto* animator = _world->GetComponent<AnimatorComponent>(entity);
     auto* modelComp = _world->GetComponent<ModelComponent>(entity);
 
-    if (!animator || !modelComp || !modelComp->modelPtr) return;
+    if (!animator || !modelComp || !modelComp->GetModel()) return;
     
-    Model* model = modelComp->modelPtr.get();
+    Model* model = modelComp->GetModel();
     
     // 2. 現在読んでいる台本（エディタで編集中）を取得
     const AnimSequence* seq = animator->currentSequence;

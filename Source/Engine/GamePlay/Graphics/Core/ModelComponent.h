@@ -1,14 +1,14 @@
 #pragma once
 #include <memory>
 #include "Engine/Graphics/Resource/Model.h" // Modelクラスはソース内に存在します [5]
-#include "Engine/Graphics/Core/Graphics.h"
+#include "Engine/Graphics/Resource/ResourceManager.h"
+#include <string>
 
-// ECSデータとして使用されるModelComponent
-// 注: これはソースには含まれていない仮の定義です。
+
 struct ModelComponent
 {
-	std::shared_ptr<Model> modelPtr;
-	std::string assetPath;
+    ModelInstanceHandle modelHandle;
+    std::string assetPath;
 
 	ModelComponent() = default;
 
@@ -17,35 +17,71 @@ struct ModelComponent
         SetModel(path);
     }
 
-    // パターンB: 既存のポインタから生成（あなたの現在のコードで使用）
-    ModelComponent(std::shared_ptr<Model> model) : modelPtr(model) {
-        if (model) {
-            // Modelクラスの GetPath() を使ってパスを同期する
-            // これをしておかないと、セーブした時にパスが空文字になってしまう
-            assetPath = model->GetPath();
+    // ==============================================================
+        // ★ ECSのChunk移動に耐えるための厳密なライフサイクル管理 (Rule of 5)
+        // ==============================================================
+
+    ~ModelComponent() {
+        if (modelHandle.IsValid()) {
+            ResourceManager::Instance().UnloadModelInstance(modelHandle);
+            modelHandle = ModelInstanceHandle{};
         }
     }
 
-    Model* GetModel() const { return modelPtr.get(); }
+    // コピー構築 (別エンティティとして同じモデルをロードする)
+    ModelComponent(const ModelComponent& other) : assetPath(other.assetPath) {
+        if (!assetPath.empty()) {
+            modelHandle = ResourceManager::Instance().CreateModelInstance(assetPath.c_str());
+        }
+    }
 
+    // コピー代入
+    ModelComponent& operator=(const ModelComponent& other) {
+        if (this != &other) {
+            SetModel(other.assetPath);
+        }
+        return *this;
+    }
+
+    // ムーブ構築 (チャンク間の引っ越しで呼ばれる。所有権を移す)
+    ModelComponent(ModelComponent&& other) noexcept
+        : modelHandle(other.modelHandle), assetPath(std::move(other.assetPath)) {
+        other.modelHandle = ModelInstanceHandle{}; // 元の住人の鍵を取り上げる
+    }
+
+
+    // ムーブ代入
+    ModelComponent& operator=(ModelComponent&& other) noexcept {
+        if (this != &other) {
+            if (modelHandle.IsValid()) {
+                ResourceManager::Instance().UnloadModelInstance(modelHandle);
+            }
+            modelHandle = other.modelHandle;
+            assetPath = std::move(other.assetPath);
+            other.modelHandle = ModelInstanceHandle{};
+        }
+        return *this;
+    }
+
+    // ==============================================================
+
+    // System側から実体へアクセスするためのアクセッサ
+    Model* GetModel() const {
+        return ResourceManager::Instance().GetModelInstance(modelHandle);
+    }
 
     void SetModel(const std::string& path) {
-        // 1. パスを保存（シリアライズ用）
-        assetPath = path;
-
-        if (assetPath.empty()) {
-            modelPtr = nullptr;
-            return;
+        // 既存のリソースがあれば解放
+        if (modelHandle.IsValid()) {
+            ResourceManager::Instance().UnloadModelInstance(modelHandle);
+            modelHandle = ModelInstanceHandle{};
         }
 
-        // 2. GraphicsシステムからDirectXデバイスを取得
-        // ※ Graphics::GetDevice() という関数がある前提です。
-        //    もし名前が違う場合 (GetD3DDeviceなど) は書き換えてください。
-        ID3D11Device* device = Graphics::Instance().GetDevice();
+        assetPath = path;
 
-        // 3. デバイスとパスを渡して Model を生成
-        // Modelのコンストラクタ内で ResourceManager::LoadModelResource が呼ばれ、
-        // 重いデータ（頂点など）は自動的にキャッシュ・共有されます。
-        modelPtr = std::make_shared<Model>(device, assetPath.c_str());
+        if (!assetPath.empty()) {
+            // プールに新しいインスタンスの生成を依頼
+            modelHandle = ResourceManager::Instance().CreateModelInstance(assetPath.c_str());
+        }
     }
 };

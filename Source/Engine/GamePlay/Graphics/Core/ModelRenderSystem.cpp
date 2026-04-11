@@ -41,26 +41,27 @@ void ModelRenderSystem::Update(float dt)
 
     // TransformComponent と ModelComponent の組を全エンティティ分回す
     ForEach([&](const TransformComponent& transform,
-        const ModelComponent& model,
+        const ModelComponent& modelComp,
         const MaterialComponent& mat,
         const VisibilityComponent& vis) { // ★追加
 
             // ★ 最重要：ここでカリング結果を見て、画面外なら即座に処理をスキップ（サボる）
             if (!vis.isVisible) return;
 
-            if (!model.modelPtr) return;
+            Model* model = modelComp.GetModel(); // ハンドルから取得
+            if (!model) return;
 
 
         // ShadowMapでUpdateTransform行うのでここではやらない
         bool hasBones = false;
-        for (const auto &mesh : model.modelPtr->GetMeshes()) {
+        for (const auto &mesh : model->GetMeshes()) {
             if (!mesh.bones.empty()) {
                 hasBones = true;
                 break;
             }
         }
 
-        model.modelPtr->UpdateTransform(transform.worldMatrix);
+        model->UpdateTransform(transform.worldMatrix);
         
 
         // シェーダーID決定（リストの先頭を使うなどの簡易判定）
@@ -76,7 +77,7 @@ void ModelRenderSystem::Update(float dt)
             }
 		} // 共有マテリアルを使う場合の条件
         else {
-            const auto &materials = model.modelPtr->GetMaterials();
+            const auto &materials = model->GetMaterials();
             if (!materials.empty() && materials[0].data) 
             {
                 shaderHash = materials[0].data->shaderHash; 
@@ -88,7 +89,7 @@ void ModelRenderSystem::Update(float dt)
         // =========================================================
         RenderCommand cmd;
         cmd.shaderHash = shaderHash;
-        cmd.model = model.modelPtr.get();
+        cmd.model = model;
         cmd.worldMatrix = transform.worldMatrix;
 
         // マテリアルオーバーライド配列のコピー

@@ -208,12 +208,12 @@ void AnimationSequencerWindow::DrawContents(EditorContext& context)
     auto* animator = context.world->GetComponent<AnimatorComponent>(entity);
     auto* modelComp = context.world->GetComponent<ModelComponent>(entity);
 
-    if (!animator || !modelComp || !modelComp->modelPtr) {
+    if (!animator || !modelComp || !modelComp->GetModel()) {
         ImGui::TextColored(ImVec4(1, 0, 0, 1), "Entity needs Animator and Model components.");
         return;
     }
 
-    Model* model = modelComp->modelPtr.get();
+    Model* model = modelComp->GetModel();
     ModelResource* resource = model->GetResourceMutable();
     if (!resource) return;
 

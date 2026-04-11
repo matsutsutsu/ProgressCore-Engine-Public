@@ -41,9 +41,10 @@ ModelBoundsUpdateSystem::ModelBoundsUpdateSystem() : IfSystem("ModelBoundsUpdate
 
 void ModelBoundsUpdateSystem::Update(float dt)
 {
-    ForEachParallel([&](const TransformComponent& trans, const ModelComponent& model, BoundingBoxComponent& bounds) {
-        if (model.modelPtr && model.modelPtr->GetResource()) {
-            bounds.worldAABB = CalculateAccurateWorldAABB(model.modelPtr->GetResource()->GetBoundingBox(), trans.worldMatrix);
+    ForEachParallel([&](const TransformComponent& trans, const ModelComponent& modelComp, BoundingBoxComponent& bounds) {
+        Model* model = modelComp.GetModel();
+        if (model && model->GetResource()) {
+            bounds.worldAABB = CalculateAccurateWorldAABB(model->GetResource()->GetBoundingBox(), trans.worldMatrix);
         }
         });
 }

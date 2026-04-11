@@ -8,7 +8,7 @@
 #include <memory>
 
 #include "MaterialData.h"
-#include "Engine/Graphics/Resource/ResourceManager.h"
+#include "ResourcePool.h"
 
 class Model
 {
@@ -110,11 +110,8 @@ public:
 	// ファイルパス取得
 	const std::string& GetPath() const { return filePath; }
 
-	// リソース取得
-	const ModelResource* GetResource() const { return ResourceManager::Instance().GetModel(resource); }
-
-	// 書き込み可能 (エディタ用)
-    ModelResource* GetResourceMutable() { return ResourceManager::Instance().GetModel(resource); }
+	const ModelResource* GetResource() const;
+	ModelResource* GetResourceMutable();
 
 	// アニメーション補間処理
 	static void BlendAnimations(
@@ -144,8 +141,8 @@ private:
 private:
 	std::string filePath; // 読み込み元ファイルを保存
 
-	// shared_ptr を完全に排除し、ModelHandle にする
-    ModelHandle resource;
+	// ModelHandle ではなく元の型を直接指定する
+	CCL::Handle<ModelResource> resource;
 
 	//std::vector<Material>	materials;
 	std::vector<Mesh>		meshes;

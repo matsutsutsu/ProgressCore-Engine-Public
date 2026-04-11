@@ -657,9 +657,6 @@
     <ClInclude Include="Source\Engine\Graphics\Resource\ResourceManager.h">
       <Filter>Source\Engine\Graphics\Resource</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Shader\Material\Core\ShaderId.h">
-      <Filter>Source\Engine\Graphics\Shader\Material\Core</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\BasicShader.h">
       <Filter>Source\Engine\Graphics\Shader\Material</Filter>
     </ClInclude>
@@ -1936,6 +1933,9 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\ECSDebugWindow.cpp">
       <Filter>Source\Editor\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Shader\Material\Core\Shader.cpp">
+      <Filter>Source\Engine\Graphics\Shader\Material\Core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

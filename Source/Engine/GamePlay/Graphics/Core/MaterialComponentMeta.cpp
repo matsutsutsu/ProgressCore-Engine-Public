@@ -31,10 +31,10 @@ template <> struct ComponentMeta<MaterialComponent> {
             if (world) {
                 auto* modelComp =
                     world->GetComponent<ModelComponent>(static_cast<CCL::ECS::EntityID>(entityID));
-                if (modelComp && modelComp->modelPtr) {
+                if (modelComp && modelComp->GetModel()) {
                     hasModel = true;
                     if (ImGui::Button("Override All Materials (Edit)")) {
-                        const auto& meshes = modelComp->modelPtr->GetMeshes();
+                        const auto& meshes = modelComp->GetModel()->GetMeshes();
                         comp->overrideMaterials.resize(meshes.size());
                         for (size_t i = 0; i < meshes.size(); ++i) {
                             auto* originalMat = meshes[i].material;

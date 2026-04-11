@@ -2,6 +2,7 @@
 #include "ECS/Core/CCL_World.h"
 #include "Engine/GamePlay/Graphics/Lighting/ShadowMapConfigComponent.h"
 #include "Engine/Graphics/Core/Camera.h"
+#include "Engine/Graphics/Core/Light.h"
 #include "Engine/Graphics/Renderer/ModelRenderer.h"
 #include "Engine/Graphics/Resource/Model.h"
 #include "Engine/Graphics/Renderer/RenderQueue.h"
@@ -81,7 +82,7 @@ void ShadowMapRenderSystem::RenderShadowMap()
 
     // ★修正: 引数に bounds を追加
     ForEach([&](const TransformComponent &trans, const ModelComponent &model, const BoundingBoxComponent &bounds) {
-        if (!model.modelPtr) return;
+        if (!model.GetModel()) return;
 
         // ================================================================
         // 3つのカスケード箱とモデルのAABBの交差判定を行い、マスクを作る
@@ -95,11 +96,11 @@ void ShadowMapRenderSystem::RenderShadowMap()
         if (cascadeMask == 0) return;
 
         // 全てのメッシュを影描画キューに登録
-        for (const auto& mesh : model.modelPtr->GetMeshes()) {
+        for (const auto& mesh : model.GetModel()->GetMeshes()) {
 
             // 影用の伝票を作成
             ShadowCommand cmd;
-            cmd.model = model.modelPtr.get();
+            cmd.model = model.GetModel();
             cmd.mesh = &mesh;
             cmd.worldMatrix = trans.worldMatrix;
 			cmd.cascadeMask = cascadeMask; // どのカスケードで描画するかを示すビットマスクをセット

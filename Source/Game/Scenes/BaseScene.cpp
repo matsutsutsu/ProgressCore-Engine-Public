@@ -18,7 +18,7 @@
 #include "Engine/GamePlay/Graphics/Core/EnvironmentSystem.h"
 
 #include "Engine/Graphics/Renderer/RenderQueue.h"
-
+#include "Engine/Graphics/Shader/ShaderResources.h"
 
 
 #include "tracy/Tracy.hpp"
@@ -74,6 +74,10 @@ void BaseScene::Initialize()
 
     // 3. ECSの世界に登録
     _worldPtr->AddResource<std::shared_ptr<IAudioAPI>>(audioAPI);
+
+	// 実際に使用する際は、システム内で以下のようにスマートポインタ経由でアクセスするだけ！とてもシンプル。
+    //auto audio = _world->GetResource<std::shared_ptr<IAudioAPI>>();
+    //audio->PlayEvent("event:/SFX/Shoot"_hash);
 
 
     // WorldのリソースとしてJoltを登録し、初期化する

@@ -350,7 +350,6 @@
     <ClInclude Include="Source\Engine\Graphics\Resource\ResourceManager.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\BasicShader.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\Core\Shader.h" />
-    <ClInclude Include="Source\Engine\Graphics\Shader\Material\Core\ShaderId.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\DissolveShader.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\LambertShader.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\OutlineShader.h" />
@@ -606,6 +605,7 @@
     <ClCompile Include="Source\Engine\Graphics\Resource\ModelResource.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Resource\ResourceManager.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\BasicShader.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Shader\Material\Core\Shader.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\DissolveShader.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\LambertShader.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\OutlineShader.cpp" />

@@ -3,6 +3,8 @@
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
 #include "Engine/Graphics/Core/Graphics.h"
 #include "Engine/Graphics/Core/Camera.h"
+#include "Engine/Graphics/Core/Light.h"
+#include "Engine/Graphics/Shader/ShaderResources.h"
 #include "Engine/Graphics/Renderer/RenderQueue.h"
 #include "Engine/Graphics/Shader/Pass/ShadowUtils.h"
 #include <algorithm>

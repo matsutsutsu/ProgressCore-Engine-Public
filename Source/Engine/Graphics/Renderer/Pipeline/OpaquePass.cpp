@@ -4,6 +4,7 @@
 #include "Engine/Graphics/Core/Graphics.h"
 #include "Engine/Graphics/Core/Camera.h" 
 #include "Engine/Graphics/Renderer/RenderQueue.h"
+#include "Engine/Graphics/Shader/ShaderResources.h"
 #include <algorithm>
 
 void OpaquePass::Initialize(ID3D11Device* device) {

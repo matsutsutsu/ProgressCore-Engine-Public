@@ -8,6 +8,8 @@
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
+#include "Engine/Graphics/Core/Graphics.h"
+
 #include "Engine/Platform/Dialog.h"
 
 // ===================================================================
