@@ -9,16 +9,20 @@
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
+// ★追加: 逆引き処理のためにResourceManagerをインクルード
+#include "Engine/Graphics/Resource/ResourceManager.h" 
+
 // ============================================================================
-// ★追加: ModelComponent 専用の JSON シリアライズ処理
-// ロード時に単なる文字列コピーではなく、確実に SetModel() を発火させる！
+// ModelComponent 専用の JSON シリアライズ処理
 // ============================================================================
 namespace ComponentMetaJson {
     // 保存（Save）時の処理
     template <>
     inline void Serialize<ModelComponent>(json& j, const ModelComponent& comp)
     {
-        j["assetPath"] = comp.assetPath;
+        // 修正: コンポーネントは文字列を持たないため、Managerからハッシュを元に逆引きして保存する
+        std::string path = ResourceManager::Instance().GetAssetPath(comp.assetHash);
+        j["assetPath"] = path;
     }
 
     // 読込（Load）時の処理
@@ -27,8 +31,8 @@ namespace ComponentMetaJson {
     {
         if (j.contains("assetPath") && j["assetPath"].is_string()) {
             std::string path = j["assetPath"].get<std::string>();
-            // ★ここでただ文字を入れるだけでなく、ロード処理を走らせる！
-            comp.SetModel(path);
+            // 修正: SetModel は const char* を受け取るように変更されたため、.c_str() を渡す
+            comp.SetModel(path.c_str());
         }
     }
 }
@@ -45,13 +49,16 @@ template <> struct ComponentMeta<ModelComponent> {
     {
         bool changed = false;
 
+        // 修正: 表示用に現在のパスをManagerから取得
+        std::string currentPath = ResourceManager::Instance().GetAssetPath(comp.assetHash);
+
         // 現在のモデルパスの表示
         ImGui::TextDisabled("Current Model:");
-        if (comp.assetPath.empty()) {
+        if (currentPath.empty()) {
             ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.5f, 1.0f), "(None / Empty)");
         }
         else {
-            ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.6f, 1.0f), "%s", comp.assetPath.c_str());
+            ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.6f, 1.0f), "%s", currentPath.c_str());
         }
 
         ImGui::Separator();
@@ -63,25 +70,24 @@ template <> struct ComponentMeta<ModelComponent> {
 
             if (Dialog::OpenFileName(filename, 256, filter, "Select 3D Model", Graphics::Instance().GetWindowHandle()) == DialogResult::OK) {
 
-                // 絶対パスを相対パスに安全に変換
                 namespace fs = std::filesystem;
                 fs::path absPath = filename;
-                fs::path currentPath = fs::current_path();
+                fs::path currentPathFs = fs::current_path();
                 std::error_code ec;
-                fs::path relPath = fs::relative(absPath, currentPath, ec);
+                fs::path relPath = fs::relative(absPath, currentPathFs, ec);
 
                 std::string finalPath = (!ec && !relPath.empty()) ? relPath.generic_string() : filename;
 
-                // モデルを切り替え
-                comp.SetModel(finalPath);
+                // モデルを切り替え（.c_str() で渡す）
+                comp.SetModel(finalPath.c_str());
                 changed = true;
             }
         }
 
         // モデルのクリアボタン
-        if (!comp.assetPath.empty()) {
+        if (!currentPath.empty()) {
             if (ImGui::Button("Clear Model (Remove)", ImVec2(-1, 0))) {
-                comp.SetModel("");
+                comp.SetModel(""); // 空文字を渡すことで解放される
                 changed = true;
             }
         }
@@ -89,7 +95,6 @@ template <> struct ComponentMeta<ModelComponent> {
         return changed;
     }
 
-    // JSON変換は上の特化テンプレートで直接処理するため、汎用リフレクションは空にしておく
     static const std::vector<FieldDescriptor>& Fields()
     {
         static const std::vector<FieldDescriptor> empty;
@@ -98,6 +103,6 @@ template <> struct ComponentMeta<ModelComponent> {
 };
 
 // ============================================================================
-// 究極の自動化
+// 自動登録
 // ============================================================================
 REGISTER_COMPONENT(ModelComponent, "Model")

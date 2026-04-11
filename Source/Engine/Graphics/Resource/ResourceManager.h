@@ -79,10 +79,14 @@ public:
     ModelResource* GetModel(ModelHandle handle);
     void UnloadModel(ModelHandle handle);
 
+    // ハッシュからパス文字列を逆引きする機能（GUI/シリアライズ用）
+    std::string GetAssetPath(uint32_t hash);
+
     // ---------------------------------------------------------
     // [3] Model Instance (Dynamic Data)
     // ---------------------------------------------------------
     ModelInstanceHandle CreateModelInstance(const char* filename);
+    ModelInstanceHandle CreateModelInstanceFromHash(uint32_t hash);
     Model* GetModelInstance(ModelInstanceHandle handle);
     void UnloadModelInstance(ModelInstanceHandle handle);
 
@@ -132,6 +136,7 @@ private:
     std::unordered_map<uint32_t, TextureHandle>      m_textureRegistry;
     std::unordered_map<uint32_t, ModelHandle>        m_modelRegistry;
     std::unordered_map<uint32_t, AnimSequenceHandle> m_animSequenceRegistry;
+    std::unordered_map<uint32_t, std::string>        m_assetPathRegistry;
 
     // スレッドセーフ用ミューテックス
     std::mutex _mutex;

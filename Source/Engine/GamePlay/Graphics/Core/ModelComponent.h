@@ -1,25 +1,28 @@
 #pragma once
-#include <memory>
-#include "Engine/Graphics/Resource/Model.h" // Modelクラスはソース内に存在します [5]
+#include <cstdint>
+#include "Engine/Graphics/Resource/Model.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
-#include <string>
-
+#include "Engine/Core/Math/StringHash.h"
 
 struct ModelComponent
 {
-    ModelInstanceHandle modelHandle;
-    std::string assetPath;
+    // =================================================================
+    // [Data Layout]
+    // 合計 12 Bytes の完全な連続メモリ (ヒープアロケーション 0)
+    // =================================================================
+    ModelInstanceHandle modelHandle; // 8 byte (Index 4 + Gen 4)
+    uint32_t assetHash = 0;          // 4 byte (文字列パスのハッシュ)
 
-	ModelComponent() = default;
+    ModelComponent() = default;
 
-    // パターンA: パスから生成（シリアライズやエディタで使用）
-    ModelComponent(const std::string& path) {
+    // パスから初期化
+    ModelComponent(const char* path) {
         SetModel(path);
     }
 
-    // ==============================================================
-    // ★ ECSのChunk移動に耐えるための厳密なライフサイクル管理 (Rule of 5)
-    // ==============================================================
+    // =================================================================
+    // [Rule of 5] ECS Chunk 移動に伴うライフサイクル管理
+    // =================================================================
 
     ~ModelComponent() {
         if (modelHandle.IsValid()) {
@@ -28,27 +31,36 @@ struct ModelComponent
         }
     }
 
-    // コピー構築 (別エンティティとして同じモデルをロードする)
-    ModelComponent(const ModelComponent& other) : assetPath(other.assetPath) {
-        if (!assetPath.empty()) {
-            modelHandle = ResourceManager::Instance().CreateModelInstance(assetPath.c_str());
+    // コピー構築
+    ModelComponent(const ModelComponent& other) : assetHash(other.assetHash) {
+        if (assetHash != 0) {
+            modelHandle = ResourceManager::Instance().CreateModelInstanceFromHash(assetHash);
         }
     }
 
     // コピー代入
     ModelComponent& operator=(const ModelComponent& other) {
         if (this != &other) {
-            SetModel(other.assetPath);
+            if (modelHandle.IsValid()) {
+                ResourceManager::Instance().UnloadModelInstance(modelHandle);
+            }
+            assetHash = other.assetHash;
+            if (assetHash != 0) {
+                modelHandle = ResourceManager::Instance().CreateModelInstanceFromHash(assetHash);
+            }
+            else {
+                modelHandle = ModelInstanceHandle{};
+            }
         }
         return *this;
     }
 
-    // ムーブ構築 (チャンク間の引っ越しで呼ばれる。所有権を移す)
+    // ムーブ構築 (チャンク移動で最も呼ばれる高速パス)
     ModelComponent(ModelComponent&& other) noexcept
-        : modelHandle(other.modelHandle), assetPath(std::move(other.assetPath)) {
-        other.modelHandle = ModelInstanceHandle{}; // 元の住人の鍵を取り上げる
+        : modelHandle(other.modelHandle), assetHash(other.assetHash) {
+        other.modelHandle = ModelInstanceHandle{};
+        other.assetHash = 0;
     }
-
 
     // ムーブ代入
     ModelComponent& operator=(ModelComponent&& other) noexcept {
@@ -57,31 +69,34 @@ struct ModelComponent
                 ResourceManager::Instance().UnloadModelInstance(modelHandle);
             }
             modelHandle = other.modelHandle;
-            assetPath = std::move(other.assetPath);
+            assetHash = other.assetHash;
+
             other.modelHandle = ModelInstanceHandle{};
+            other.assetHash = 0;
         }
         return *this;
     }
 
-    // ==============================================================
+    // =================================================================
+    // [Accessors]
+    // =================================================================
 
-    // System側から実体へアクセスするためのアクセッサ
     Model* GetModel() const {
         return ResourceManager::Instance().GetModelInstance(modelHandle);
     }
 
-    void SetModel(const std::string& path) {
-        // 既存のリソースがあれば解放
+    void SetModel(const char* path) {
         if (modelHandle.IsValid()) {
             ResourceManager::Instance().UnloadModelInstance(modelHandle);
             modelHandle = ModelInstanceHandle{};
         }
 
-        assetPath = path;
-
-        if (!assetPath.empty()) {
-            // プールに新しいインスタンスの生成を依頼
-            modelHandle = ResourceManager::Instance().CreateModelInstance(assetPath.c_str());
+        if (path && path[0] != '\0') {
+            assetHash = CCL::Utils::HashString(path);
+            modelHandle = ResourceManager::Instance().CreateModelInstance(path);
+        }
+        else {
+            assetHash = 0;
         }
     }
 };

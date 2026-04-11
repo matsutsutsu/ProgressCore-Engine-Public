@@ -132,11 +132,53 @@ void ResourceManager::UnloadModel(ModelHandle handle) {
     m_modelPool.Destroy(handle);
 }
 
+std::string ResourceManager::GetAssetPath(uint32_t hash) {
+    if (hash == 0) return "";
+
+    std::lock_guard<std::mutex> lock(_mutex);
+    auto it = m_assetPathRegistry.find(hash);
+    if (it != m_assetPathRegistry.end()) {
+        return it->second;
+    }
+    return "";
+}
+
 // ============================================================================
 // [3] Model Instance
 // ============================================================================
 ModelInstanceHandle ResourceManager::CreateModelInstance(const char* filename) {
+    if (!filename || filename[0] == '\0') return ModelInstanceHandle{};
+
+    uint32_t hash = CCL::Utils::HashString(filename);
+
+    // 文字列実体を中央レジストリに記憶しておく
+    {
+        std::lock_guard<std::mutex> lock(_mutex);
+        m_assetPathRegistry[hash] = filename;
+    }
+
     return m_modelInstancePool.Create(Graphics::Instance().GetDevice(), filename, 60.0f);
+}
+
+// コンポーネントのコピー/ムーブ時に呼ばれる復元関数
+ModelInstanceHandle ResourceManager::CreateModelInstanceFromHash(uint32_t hash) {
+    if (hash == 0) return ModelInstanceHandle{};
+
+    std::string path;
+    {
+        std::lock_guard<std::mutex> lock(_mutex);
+        auto it = m_assetPathRegistry.find(hash);
+        if (it != m_assetPathRegistry.end()) {
+            path = it->second;
+        }
+    }
+
+    // 登録されたパスが見つかれば、そこから生成する
+    if (!path.empty()) {
+        return m_modelInstancePool.Create(Graphics::Instance().GetDevice(), path.c_str(), 60.0f);
+    }
+
+    return ModelInstanceHandle{};
 }
 
 Model* ResourceManager::GetModelInstance(ModelInstanceHandle handle) {
