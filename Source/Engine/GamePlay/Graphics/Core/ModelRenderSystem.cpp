@@ -89,6 +89,7 @@ void ModelRenderSystem::Update(float dt)
         // =========================================================
         RenderCommand cmd;
         cmd.shaderHash = shaderHash;
+        cmd.assetHash = modelComp.assetHash;
         cmd.model = model;
         cmd.worldMatrix = transform.worldMatrix;
 

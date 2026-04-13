@@ -234,6 +234,62 @@ void SceneInitializer::SpawnPlayerCarTest(CCL::ECS::Core::World& world, ID3D11De
 
 
 
+// ============================================================================
+// 指定した数のモデルを並べるテスト環境
+// ============================================================================
+void SceneInitializer::SpawnModelGridTest(
+    CCL::ECS::Core::World& world, ID3D11Device* device, int count)
+{
+    // 1. 空間を見るためのフリーカメラを配置
+    EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Camera/FreeCamera.json");
+
+    // 2. アーキタイプ（設計図）の生成
+    // メモリを連続して確保するため、アーキタイプを事前に定義します
+    const auto modelArch = CCL::ECS::ArchetypeHelper::Generate<
+        TransformComponent,
+        ModelComponent,
+        MaterialComponent
+    >();
+
+    // 3. モデルデータのキャッシュ（★アーキテクトの極意）
+    // ループの中で毎回 SetModel を呼ぶと、数万回もパスの検索とロードが走ってしまいます。
+    // そのため、あらかじめ1つだけ「マスターとなる ModelComponent」を作り、使い回します。
+    ModelComponent baseModelComp;
+    baseModelComp.SetModel("Assets/Models/Test/DamagedHelmet.glb"); // ※お手持ちのモデルのパスに変更してください
+
+    // 4. グリッド配置の計算
+    // count の平方根を切り上げて、XとZの1辺あたりの配置数を決めます
+    int sideSize = static_cast<int>(std::ceil(std::sqrt(count)));
+
+    float spacing = 2.0f; // モデル同士の間隔（モデルの大きさに合わせて調整してください）
+    float offset = (sideSize * spacing) / 2.0f; // 全体の中心を (0,0) に持ってくるためのオフセット
+
+    // 5. 大量生成ループ
+    int spawned = 0;
+    for (int z = 0; z < sideSize && spawned < count; ++z) {
+        for (int x = 0; x < sideSize && spawned < count; ++x) {
+
+            // アーキタイプを使って最速でエンティティを生成
+            auto ref = EntityFactory::SpawnNamed(world, "GridModel", modelArch);
+
+            // 座標の計算
+            float posX = (x * spacing) - offset;
+            float posZ = (z * spacing) - offset;
+
+            // コンポーネントの流し込み
+            ref.Set(TransformComponent{
+                    .position = {posX, 0.0f, posZ},
+                    .rotation = {0.0f, 0.0f, 0.0f, 1.0f},
+                    .scale = {1.0f, 1.0f, 1.0f}
+                })
+                .Set(ModelComponent{ baseModelComp }); // キャッシュしたモデルをコピー
+
+            spawned++;
+        }
+    }
+}
+
+
 void SceneInitializer::SpawnECSBenchmarkTest(
     CCL::ECS::Core::World& world, ID3D11Device* device, int count)
 {
