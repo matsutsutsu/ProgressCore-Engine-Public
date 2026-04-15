@@ -274,6 +274,7 @@
     <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\EnvironmentSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\MaterialComponent.h" />
     <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\ModelComponent.h" />
+    <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\ModelPoseUpdateSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\ModelRenderSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\PrimitiveComponent.h" />
     <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\PrimitiveRenderSystem.h" />
@@ -555,6 +556,7 @@
     <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\EnvironmentSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\MaterialComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\ModelComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\ModelPoseUpdateSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\ModelRenderSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\PrimitiveRenderSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Graphics\Lighting\FogSystem.cpp" />

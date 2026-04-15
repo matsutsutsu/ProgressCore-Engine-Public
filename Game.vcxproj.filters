@@ -1269,6 +1269,9 @@
     <ClInclude Include="Source\Editor\Core\EditorCommandHistory.h">
       <Filter>Source\Editor\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\ModelPoseUpdateSystem.h">
+      <Filter>Source\Engine\GamePlay\Graphics\Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -1936,6 +1939,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\Core\Shader.cpp">
       <Filter>Source\Engine\Graphics\Shader\Material\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\ModelPoseUpdateSystem.cpp">
+      <Filter>Source\Engine\GamePlay\Graphics\Core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

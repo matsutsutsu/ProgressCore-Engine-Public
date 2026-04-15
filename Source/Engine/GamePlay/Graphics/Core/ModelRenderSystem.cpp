@@ -60,8 +60,6 @@ void ModelRenderSystem::Update(float dt)
                 break;
             }
         }
-
-        model->UpdateTransform(transform.worldMatrix);
         
 
         // シェーダーID決定（リストの先頭を使うなどの簡易判定）
