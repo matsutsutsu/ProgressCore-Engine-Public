@@ -31,40 +31,36 @@ void JoltBoxDebugDrawSystem::Update(float dt)
     auto* renderer = _world->GetResource<ShapeRenderer*>();
     if (!renderer) return;
 
-
     ForEach([&](const TransformComponent& trans, const JoltBoxColliderComponent& box) {
-        // 1. 本体(Entity)のワールド行列
-        XMMATRIX worldScale = XMMatrixScaling(trans.scale.x, trans.scale.y, trans.scale.z);
-        XMMATRIX worldRot   = XMMatrixRotationQuaternion(XMLoadFloat4(&trans.rotation));
+        // 1. 本体(Entity)のワールド行列 (★変更: スケールを完全に排除)
+        XMMATRIX worldRot = XMMatrixRotationQuaternion(XMLoadFloat4(&trans.rotation));
         XMMATRIX worldTrans = XMMatrixTranslation(trans.position.x, trans.position.y, trans.position.z);
-        XMMATRIX worldMat   = worldScale * worldRot * worldTrans;
+        XMMATRIX worldMat = worldRot * worldTrans;
 
         // 2. コライダー単体のローカルズレ行列
-        XMMATRIX localRot   = XMMatrixRotationRollPitchYaw(XMConvertToRadians(box.localRotationEuler.x), XMConvertToRadians(box.localRotationEuler.y), XMConvertToRadians(box.localRotationEuler.z));
+        XMMATRIX localRot = XMMatrixRotationRollPitchYaw(XMConvertToRadians(box.localRotationEuler.x), XMConvertToRadians(box.localRotationEuler.y), XMConvertToRadians(box.localRotationEuler.z));
         XMMATRIX localTrans = XMMatrixTranslation(box.localOffset.x, box.localOffset.y, box.localOffset.z);
-        XMMATRIX localMat   = localRot * localTrans;
+        XMMATRIX localMat = localRot * localTrans;
 
         // 3. 結合 (ローカルのズレを適用してから、ワールドに配置する)
         XMMATRIX finalMat = localMat * worldMat;
-        
+
         // 最終的な座標と回転を抽出して描画
         XMVECTOR outScale, outRotQuat, outTrans;
         XMMatrixDecompose(&outScale, &outRotQuat, &outTrans, finalMat);
-        
+
         XMFLOAT3 finalPos, finalEuler;
         XMStoreFloat3(&finalPos, outTrans);
-        
+
         // ShapeRendererのDrawBoxはオイラー角(Radian)を要求するため変換
         XMFLOAT4 q; XMStoreFloat4(&q, outRotQuat);
-        finalEuler = QuatToEulerRadian(q); 
-        
-        DirectX::XMFLOAT3 size = {
-            box.halfExtent.x * trans.scale.x,
-            box.halfExtent.y * trans.scale.y,
-            box.halfExtent.z * trans.scale.z
-        };
+        finalEuler = QuatToEulerRadian(q);
+
+        // ★変更: Transformのスケールを無視し、コライダーの生サイズをそのまま使う
+        DirectX::XMFLOAT3 size = box.halfExtent;
+
         renderer->DrawBox(finalPos, finalEuler, size, COLLIDER_COLOR);
-    });
+        });
 }
 
 // ===================================================================================
@@ -78,24 +74,24 @@ void JoltSphereDebugDrawSystem::Update(float dt)
     if (!renderer) return;
 
     ForEach([&](const TransformComponent& trans, const JoltSphereColliderComponent& sphere) {
-        // 本体ワールド行列
-        XMMATRIX worldRot   = XMMatrixRotationQuaternion(XMLoadFloat4(&trans.rotation));
+        // 本体ワールド行列 (★変更: スケール排除済み)
+        XMMATRIX worldRot = XMMatrixRotationQuaternion(XMLoadFloat4(&trans.rotation));
         XMMATRIX worldTrans = XMMatrixTranslation(trans.position.x, trans.position.y, trans.position.z);
-        XMMATRIX worldMat   = worldRot * worldTrans; // スケールは半径にかけるため行列には含めない
+        XMMATRIX worldMat = worldRot * worldTrans;
 
         // ローカル位置ズレ行列
         XMMATRIX localTrans = XMMatrixTranslation(sphere.localOffset.x, sphere.localOffset.y, sphere.localOffset.z);
-        
+
         XMMATRIX finalMat = localTrans * worldMat;
-        
+
         XMVECTOR outScale, outRot, outTrans;
         XMMatrixDecompose(&outScale, &outRot, &outTrans, finalMat);
         XMFLOAT3 finalPos;
         XMStoreFloat3(&finalPos, outTrans);
 
-        float maxScale = (std::max)({ trans.scale.x, trans.scale.y, trans.scale.z });
-        renderer->DrawSphere(finalPos, sphere.radius * maxScale, COLLIDER_COLOR);
-    });
+        // ★変更: maxScaleの掛け算を削除。生のradiusを使用。
+        renderer->DrawSphere(finalPos, sphere.radius, COLLIDER_COLOR);
+        });
 }
 
 // ===================================================================================
@@ -109,26 +105,25 @@ void JoltCapsuleDebugDrawSystem::Update(float dt)
     if (!renderer) return;
 
     ForEach([&](const TransformComponent& trans, const JoltCapsuleColliderComponent& capsule) {
-        // 本体ワールド行列
-        XMMATRIX worldScale = XMMatrixScaling(trans.scale.x, trans.scale.y, trans.scale.z);
-        XMMATRIX worldRot   = XMMatrixRotationQuaternion(XMLoadFloat4(&trans.rotation));
+        // 本体ワールド行列 (★変更: スケールを完全に排除)
+        XMMATRIX worldRot = XMMatrixRotationQuaternion(XMLoadFloat4(&trans.rotation));
         XMMATRIX worldTrans = XMMatrixTranslation(trans.position.x, trans.position.y, trans.position.z);
-        XMMATRIX worldMat   = worldScale * worldRot * worldTrans;
+        XMMATRIX worldMat = worldRot * worldTrans;
 
         // ローカルズレ行列
-        XMMATRIX localRot   = XMMatrixRotationRollPitchYaw(XMConvertToRadians(capsule.localRotationEuler.x), XMConvertToRadians(capsule.localRotationEuler.y), XMConvertToRadians(capsule.localRotationEuler.z));
+        XMMATRIX localRot = XMMatrixRotationRollPitchYaw(XMConvertToRadians(capsule.localRotationEuler.x), XMConvertToRadians(capsule.localRotationEuler.y), XMConvertToRadians(capsule.localRotationEuler.z));
         XMMATRIX localTrans = XMMatrixTranslation(capsule.localOffset.x, capsule.localOffset.y, capsule.localOffset.z);
-        XMMATRIX localMat   = localRot * localTrans;
+        XMMATRIX localMat = localRot * localTrans;
 
         // 結合
         XMMATRIX finalMat = localMat * worldMat;
-        
+
         XMFLOAT4X4 mat;
         XMStoreFloat4x4(&mat, finalMat);
 
-        float maxScale = (std::max)({ trans.scale.x, trans.scale.y, trans.scale.z });
-        renderer->DrawCapsule(mat, capsule.radius * maxScale, capsule.halfHeight * 2.0f * maxScale, COLLIDER_COLOR);
-    });
+        // ★変更: maxScaleの掛け算を削除。生のradiusとhalfHeightを使用。
+        renderer->DrawCapsule(mat, capsule.radius, capsule.halfHeight * 2.0f, COLLIDER_COLOR);
+        });
 }
 
 
