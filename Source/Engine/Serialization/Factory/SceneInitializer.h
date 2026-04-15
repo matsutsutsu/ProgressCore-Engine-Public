@@ -27,6 +27,11 @@ class SceneInitializer {
     // 球体カーコントローラーのテスト環境
     static void SpawnPlayerCarTest(CCL::ECS::Core::World& world, ID3D11Device* device);
 
+    // =======================================================
+    //  指定した数のモデルをグリッド状に並べるテスト
+    // =======================================================
+    static void SpawnModelGridTest(CCL::ECS::Core::World& world, ID3D11Device* device, int count);
+
 
     // 「ECS限界テスト（ギャラクシー・スウォーム）」環境
     static void SpawnECSBenchmarkTest(CCL::ECS::Core::World& world, ID3D11Device* device, int count);

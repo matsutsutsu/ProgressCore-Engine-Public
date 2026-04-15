@@ -12,6 +12,7 @@
 // ---------------------------------------------------------
 struct RenderCommand {
     uint32_t                shaderHash;
+    uint32_t                assetHash;
     const Model* model;
     DirectX::XMFLOAT4X4     worldMatrix;
     std::array<MaterialHandle, 4> overrideMaterials;
@@ -95,7 +96,7 @@ public:
             uint64_t shaderPart = static_cast<uint64_t>(ShaderRegistry::Instance().GetSortID(cmd.shaderHash)) & 0xFF;
 
             // 2. モデルアドレス (32bit) - アライメントの余分な下位4bitを捨てる
-            uint64_t modelPart = (reinterpret_cast<uint64_t>(cmd.model) >> 4) & 0xFFFFFFFF;
+            uint64_t modelPart = static_cast<uint64_t>(cmd.assetHash) & 0xFFFFFFFF;
 
             // 3. マテリアル情報 (24bit)
             uint64_t matPart = 0;
