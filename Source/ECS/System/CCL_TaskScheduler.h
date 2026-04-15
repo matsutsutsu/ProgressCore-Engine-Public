@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <memory>
 #include <vector>
+#include "ECS/Core/CCL_Chunk.h"
 
 namespace CCL::ECS {
     // システムの依存関係を解析し、並列実行可能なバッチを構築するクラス
@@ -31,26 +32,38 @@ namespace CCL::ECS {
                     auto readsJ  = systems[j]->GetReadTypes();
                     auto writesJ = systems[j]->GetWriteTypes();
 
-                    bool conflict = false;
+
+                    bool typeConflict = false;
 
                     // 競合条件1：自分が Write（書き換える）データが、
-                    // 相手の Read か Write に含まれていたらアウト！
+                    // 相手の Read か Write に含まれていたらアウト！  Chunkレベルの厳密な判定
                     for (auto w : writesI) {
-                        if (Contains(readsJ, w) || Contains(writesJ, w)) conflict = true;
+                        if (Contains(readsJ, w) || Contains(writesJ, w)) typeConflict = true;
                     }
 
                     // 競合条件2：自分が Read（読む）データが、
                     // 相手の Write に含まれていたらアウト！（読んでいる途中で書き換えられたら困る）
                     for (auto r : readsI) {
-                        if (Contains(writesJ, r)) conflict = true;
+                        if (Contains(writesJ, r)) typeConflict = true;
                     }
 
-                    // もし競合（アウト）だったら…
-                    // 競合（依存）がある場合、前のシステム(j)が終わるまで待たなければならない
-                    if (conflict) {
-                        // 相手(j)と同じバッチ（同じタイミング）では絶対に実行できない！
-                        // だから、相手のバッチ番号を覚えておく
-                        maxDependencyBatch = (std::max)(maxDependencyBatch, systemBatchIndex[j]);
+                    bool conflict = false;
+
+                    // 型の競合がある場合のみ、さらに「対象のChunkが被っているか」を調べる
+                    if (typeConflict) {
+                        const auto& chunksI = systems[i]->GetTargetChunks();
+                        const auto& chunksJ = systems[j]->GetTargetChunks();
+
+                        for (CCL::ECS::Core::Chunk* cI : chunksI) {
+                            for (CCL::ECS::Core::Chunk* cJ : chunksJ) {
+                                // 同じチャンクのポインタを両方が持っていたら、本物の競合（データレース）！
+                                if (cI == cJ) {
+                                    conflict = true;
+                                    break;
+                                }
+                            }
+                            if (conflict) break;
+                        }
                     }
                 }
 
