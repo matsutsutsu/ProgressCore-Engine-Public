@@ -379,6 +379,12 @@
     <Filter Include="Source\Engine\GamePlay\AI\Navigation\_Meta">
       <UniqueIdentifier>{f481f6d0-e5f8-4a2f-8f4b-1da288f909aa}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\AI">
+      <UniqueIdentifier>{f451e48b-7ce2-454b-924e-a4f13673ac42}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\AI\_Meta">
+      <UniqueIdentifier>{f92e7382-d177-443e-845f-dd7f35fc0091}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1272,6 +1278,12 @@
     <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\ModelPoseUpdateSystem.h">
       <Filter>Source\Engine\GamePlay\Graphics\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\AIComponents.h">
+      <Filter>Source\Game\Logics\AI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\AIPatrolSystem.h">
+      <Filter>Source\Game\Logics\AI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -1942,6 +1954,12 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\ModelPoseUpdateSystem.cpp">
       <Filter>Source\Engine\GamePlay\Graphics\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\AIPatrolSystem.cpp">
+      <Filter>Source\Game\Logics\AI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\AIComponentsMeta.cpp">
+      <Filter>Source\Game\Logics\AI\_Meta</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -404,6 +404,8 @@
     <ClInclude Include="Source\Engine\UI\Widgets\UIText.h" />
     <ClInclude Include="Source\Game\Core\AllComponents.h" />
     <ClInclude Include="Source\Game\Core\SystemPriority.h" />
+    <ClInclude Include="Source\Game\Logics\AI\AIComponents.h" />
+    <ClInclude Include="Source\Game\Logics\AI\AIPatrolSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\PlayerCar\CarCollisionSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\PlayerCar\PlayerCarComponent.h" />
@@ -643,6 +645,8 @@
     <ClCompile Include="Source\Engine\UI\UIElement.cpp" />
     <ClCompile Include="Source\Engine\UI\UIManager.cpp" />
     <ClCompile Include="Source\Game\Core\GamePlayComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\AIComponentsMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\AIPatrolSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\PlayerCar\CarCollisionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\PlayerCar\PlayerCarComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\PlayerCar\PlayerCarInputSystem.cpp" />
