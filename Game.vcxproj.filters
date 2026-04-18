@@ -385,6 +385,9 @@
     <Filter Include="Source\Game\Logics\AI\_Meta">
       <UniqueIdentifier>{f92e7382-d177-443e-845f-dd7f35fc0091}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\AI\Events">
+      <UniqueIdentifier>{f95c9ba8-4fb9-49d1-b3ac-36951014e133}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1284,6 +1287,18 @@
     <ClInclude Include="Source\Game\Logics\AI\AIPatrolSystem.h">
       <Filter>Source\Game\Logics\AI</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\AIPerceptionSystem.h">
+      <Filter>Source\Game\Logics\AI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Events\AISoundEvent.h">
+      <Filter>Source\Game\Logics\AI\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\AIHearingSystem.h">
+      <Filter>Source\Game\Logics\AI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Test\AISoundDebuggerSystem.h">
+      <Filter>Source\Game\Logics\Test</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -1960,6 +1975,15 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\AIComponentsMeta.cpp">
       <Filter>Source\Game\Logics\AI\_Meta</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\AIPerceptionSystem.cpp">
+      <Filter>Source\Game\Logics\AI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\AIHearingSystem.cpp">
+      <Filter>Source\Game\Logics\AI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Test\AISoundDebuggerSystem.cpp">
+      <Filter>Source\Game\Logics\Test</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

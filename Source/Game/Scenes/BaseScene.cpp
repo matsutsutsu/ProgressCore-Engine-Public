@@ -23,6 +23,8 @@
 
 #include "tracy/Tracy.hpp"
 
+#include "Engine/Platform/Logger.h"
+
 
 void BaseScene::Initialize()
 {
@@ -62,22 +64,12 @@ void BaseScene::Initialize()
     auto audioAPI = std::make_shared<FmodAudioManager>();
     audioAPI->Initialize();
 
-    // 2. Bankデータとイベントの登録
-    // ※今はまだ FMOD Studio でデータを作っていないので、コメントアウトしておくか
-    // 読み込み失敗のログが出るだけでスルーされます（安全です）。
-    /*
-    audioAPI->LoadBank("Assets/Audio/Master.bank");
-    audioAPI->LoadBank("Assets/Audio/Master.strings.bank");
-    audioAPI->LoadEvent("event:/SFX/Shoot");
-    audioAPI->LoadEvent("event:/BGM/TitleMusic");
-    */
+    // 2. 設定ファイルからのデータ駆動ロード（1行に集約！）
+    audioAPI->LoadConfig("Assets/Config/AudioConfig.json");
 
     // 3. ECSの世界に登録
     _worldPtr->AddResource<std::shared_ptr<IAudioAPI>>(audioAPI);
 
-	// 実際に使用する際は、システム内で以下のようにスマートポインタ経由でアクセスするだけ！とてもシンプル。
-    //auto audio = _world->GetResource<std::shared_ptr<IAudioAPI>>();
-    //audio->PlayEvent("event:/SFX/Shoot"_hash);
 
 
     // WorldのリソースとしてJoltを登録し、初期化する

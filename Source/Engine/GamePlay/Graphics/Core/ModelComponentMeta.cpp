@@ -42,7 +42,7 @@ namespace ComponentMetaJson {
 // ============================================================================
 template <> struct ComponentMeta<ModelComponent> {
     static constexpr bool        registered = true;
-    static constexpr const char* displayName = "3D Model";
+    static constexpr const char* displayName = "Model";
     static constexpr bool        hasCustomGui = true;
 
     static bool CustomGui(ModelComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr)
