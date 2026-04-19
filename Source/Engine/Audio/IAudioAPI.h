@@ -111,6 +111,13 @@ public:
      */
     virtual void SetEventParameter(uint32_t playingId, const char* paramName, float value) = 0;
 
+    /**
+     * @brief 継続再生中のイベントの3D座標と向きを更新する。
+     * @param playingId PlayEvent() が返したID
+     * @param pos 最新のワールド座標
+     */
+    virtual void SetEvent3DAttributes(uint32_t playingId, const DirectX::XMFLOAT3& pos) = 0;
+
     // =======================================================
     // 3Dリスナー設定
     // =======================================================

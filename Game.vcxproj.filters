@@ -388,6 +388,9 @@
     <Filter Include="Source\Game\Logics\AI\Events">
       <UniqueIdentifier>{f95c9ba8-4fb9-49d1-b3ac-36951014e133}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Audio\_Meta">
+      <UniqueIdentifier>{7083e5f6-6cef-4b8b-af6a-10e584fd4c40}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1299,6 +1302,15 @@
     <ClInclude Include="Source\Game\Logics\Test\AISoundDebuggerSystem.h">
       <Filter>Source\Game\Logics\Test</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Audio\AudioEmitterComponent.h">
+      <Filter>Source\Engine\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Audio\AudioEvents.h">
+      <Filter>Source\Engine\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Audio\AudioSystem.h">
+      <Filter>Source\Engine\Audio</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -1984,6 +1996,12 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Test\AISoundDebuggerSystem.cpp">
       <Filter>Source\Game\Logics\Test</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Audio\AudioSystem.cpp">
+      <Filter>Source\Engine\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Audio\AudioComponentMeta.cpp">
+      <Filter>Source\Engine\Audio\_Meta</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

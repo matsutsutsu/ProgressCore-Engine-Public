@@ -238,6 +238,17 @@ void FmodAudioManager::SetEventParameter(uint32_t playingId, const char* paramNa
     }
 }
 
+
+void FmodAudioManager::SetEvent3DAttributes(uint32_t playingId, const DirectX::XMFLOAT3& pos) {
+    if (auto inst = FindInstance(playingId)) {
+        FMOD_3D_ATTRIBUTES attributes = { {0} };
+        attributes.position = ToFMOD(pos);
+        attributes.forward = { 0, 0, 1 }; // 必要に応じてエンティティの向きも渡せるように拡張可能
+        attributes.up = { 0, 1, 0 };
+        inst->set3DAttributes(&attributes);
+    }
+}
+
 void FmodAudioManager::SetListenerPosition(const DirectX::XMFLOAT3& pos, const DirectX::XMFLOAT3& forward, const DirectX::XMFLOAT3& up) {
     if (!m_studioSystem) return;
 

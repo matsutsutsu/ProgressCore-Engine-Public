@@ -240,6 +240,9 @@
     <ClInclude Include="Source\Editor\Windows\NavMeshWindow.h" />
     <ClInclude Include="Source\Editor\Windows\TextEditorWindow.h" />
     <ClInclude Include="Source\Editor\Windows\SceneWindow.h" />
+    <ClInclude Include="Source\Engine\Audio\AudioEmitterComponent.h" />
+    <ClInclude Include="Source\Engine\Audio\AudioEvents.h" />
+    <ClInclude Include="Source\Engine\Audio\AudioSystem.h" />
     <ClInclude Include="Source\Engine\Audio\FmodAudioManager.h" />
     <ClInclude Include="Source\Engine\Audio\IAudioAPI.h" />
     <ClInclude Include="Source\Engine\Core\Common\Misc.h" />
@@ -538,6 +541,8 @@
     <ClCompile Include="Source\Editor\Windows\InspectorWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\NavMeshWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\TextEditorWindow.cpp" />
+    <ClCompile Include="Source\Engine\Audio\AudioComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Audio\AudioSystem.cpp" />
     <ClCompile Include="Source\Engine\Audio\FmodAudioManager.cpp" />
     <ClCompile Include="Source\Engine\Core\Framework.cpp" />
     <ClCompile Include="Source\Engine\Core\Main.cpp" />
