@@ -408,6 +408,7 @@
     <ClInclude Include="Source\Game\Core\AllComponents.h" />
     <ClInclude Include="Source\Game\Core\SystemPriority.h" />
     <ClInclude Include="Source\Game\Logics\AI\AIComponents.h" />
+    <ClInclude Include="Source\Game\Logics\AI\AIDebugDrawSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\AIHearingSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\AIPatrolSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\AIPerceptionSystem.h" />
@@ -655,6 +656,7 @@
     <ClCompile Include="Source\Engine\UI\UIManager.cpp" />
     <ClCompile Include="Source\Game\Core\GamePlayComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\AIComponentsMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\AIDebugDrawSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\AIHearingSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\AIPatrolSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\AIPerceptionSystem.cpp" />

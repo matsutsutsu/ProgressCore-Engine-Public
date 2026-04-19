@@ -1311,6 +1311,9 @@
     <ClInclude Include="Source\Engine\Audio\AudioSystem.h">
       <Filter>Source\Engine\Audio</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\AIDebugDrawSystem.h">
+      <Filter>Source\Game\Logics\AI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2002,6 +2005,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Audio\AudioComponentMeta.cpp">
       <Filter>Source\Engine\Audio\_Meta</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\AIDebugDrawSystem.cpp">
+      <Filter>Source\Game\Logics\AI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

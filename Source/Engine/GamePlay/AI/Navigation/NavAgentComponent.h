@@ -14,4 +14,6 @@ struct NavAgentComponent {
 
     // 経路探索を要求したかどうかのフラグ
     bool isPathRequested = false;
+
+
 };

@@ -88,28 +88,30 @@ template <> struct ComponentMeta<AIMemoryComponent> {
 
         ImGui::SeparatorText("Live Memory");
 
-        // 疑心暗鬼度をプログレスバーとして視覚化
-        ImGui::Text("Suspicion Level:");
-        ImGui::ProgressBar(comp.suspicionLevel / 100.0f, ImVec2(-1, 0), "");
+        // 怒りレベルをプログレスバーとして視覚化
+        ImGui::Text("Anger Level:");
+        ImGui::ProgressBar(comp.currentAngerLevel / 100.0f, ImVec2(-1, 0), "");
 
+        // 最後に確認した座標の表示 (lastKnownPlayerPos -> lastKnownPos へ修正)
         ImGui::TextDisabled("Last Known Pos: (%.1f, %.1f, %.1f)",
-            comp.lastKnownPlayerPos.x, comp.lastKnownPlayerPos.y, comp.lastKnownPlayerPos.z);
+            comp.lastKnownPos.x, comp.lastKnownPos.y, comp.lastKnownPos.z);
 
         ImGui::Spacing();
         ImGui::SeparatorText("Adaptation Stats (Learned)");
 
         // デバッグ目的で適応レベルを手動でいじれるようにしておく
-        changed |= ImGui::InputInt("Decoy Thrown Count", &comp.decoyThrowCount);
-        changed |= ImGui::InputInt("Hide Success Count", &comp.hideSuccessCount);
+        // ImGui::InputInt にはラベル名と変数のポインタの2つの引数が必要
+        changed |= ImGui::InputInt("Tricked By Sound", &comp.trickedBySoundCount);
+        changed |= ImGui::InputInt("Duct Usage Observed", &comp.ductUsageObserved);
 
         return changed;
     }
 
     static const std::vector<FieldDescriptor>& Fields() {
         static const std::vector<FieldDescriptor> fields = {
-            // プレイヤーの癖（適応状況）はセーブデータとして永続化する
-            META_FIELD_INT(AIMemoryComponent, decoyThrowCount, "decoyThrowCount", "Decoy Throw Count", 0, 1000, "Adaptation"),
-            META_FIELD_INT(AIMemoryComponent, hideSuccessCount, "hideSuccessCount", "Hide Success Count", 0, 1000, "Adaptation")
+            // 新企画の変数名に合わせたJSONセーブデータのマッピング
+            META_FIELD_INT(AIMemoryComponent, trickedBySoundCount, "trickedBySoundCount", "Tricked By Sound", 0, 1000, "Adaptation"),
+            META_FIELD_INT(AIMemoryComponent, ductUsageObserved, "ductUsageObserved", "Duct Usage Observed", 0, 1000, "Adaptation")
         };
         return fields;
     }

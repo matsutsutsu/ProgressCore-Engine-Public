@@ -7,22 +7,24 @@
 #include <vector>
 #include <mutex>
 
-// 聴覚システム：音イベントを受け取り、AIの状態を調査(Investigate)へ切り替える
-// ★規約準拠: Read/Write は1つずつ独立して記述する
+/**
+ * @brief 空間の音イベントを監視し、AIの聴覚判定を行うシステム。
+ */
 class AIHearingSystem : public CCL::ECS::IfSystem<AIHearingSystem,
-    CCL::ECS::Read<TransformComponent>,
-    CCL::ECS::Read<AIPerceptionComponent>,
-    CCL::ECS::Write<AIMemoryComponent>,
-    CCL::ECS::Write<AIStateComponent>,
-    CCL::ECS::Write<NavAgentComponent>> {
+                               CCL::ECS::Read<TransformComponent>,
+                               CCL::ECS::Read<AIPerceptionComponent>,
+                               CCL::ECS::Write<AIMemoryComponent>,
+                               CCL::ECS::Write<AIStateComponent>,
+                               CCL::ECS::Write<NavAgentComponent>> {
 private:
     std::vector<AISoundEvent> m_frameEvents;
-    std::mutex m_eventMutex;
+    std::mutex                m_eventMutex;
 
 public:
     AIHearingSystem(const std::string& name = "AIHearingSystem") : IfSystem(name) {}
     virtual ~AIHearingSystem() = default;
 
     void Initialize() override;
+
     void Update(float dt) override;
 };
