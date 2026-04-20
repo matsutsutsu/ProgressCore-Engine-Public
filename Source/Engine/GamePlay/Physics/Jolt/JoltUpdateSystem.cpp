@@ -4,6 +4,7 @@
 #include "ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"
 #include <Jolt/Jolt.h>
+#include "Engine/GamePlay/Physics/Character/JoltCharacterHandleComponent.h"
 
 void JoltStepSystem::Update(float dt)
 {
@@ -22,7 +23,17 @@ void JoltPullSystem::Update(float dt)
     JPH::BodyInterface &bodyInterface = joltManager.GetBodyInterface();
 
 
-    ForEachParallel([&](TransformComponent &trans, const JoltHandleComponent &joltBody) {
+    ForEachWithIDParallel([&](CCL::ECS::EntityID id, TransformComponent& trans, const JoltHandleComponent& joltBody) {
+
+        // ========================================================================
+        // 「キャラクター」として操作されているものは、ここで同期してはいけない！
+        // （JoltCharacterUpdateSystem で既に正しい位置が同期されており、
+        //   ここで回転をPullするとゲームロジックと競合してカクカクするため除外する）
+        // ========================================================================
+        if (_world->HasComponent<JoltCharacterHandleComponent>(id)) {
+            return;
+        }
+
         // スリープ状態（止まっている物体）なら、座標コピーの無駄な処理を省く
         if (!bodyInterface.IsActive(joltBody.bodyID)) {
             return;

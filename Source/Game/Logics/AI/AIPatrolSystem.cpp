@@ -8,6 +8,23 @@
 #include "ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"
 
+// ===================================================================================
+// 【 AI意思決定 (散歩) : AIPatrolSystem 】
+//
+// [ 役割 ]
+// 暇なとき（Patrolステート）に、次に向かうべきランダムな目的地を地図(NavMesh)から探し出す。
+//
+// [ ECSデータパイプライン ]
+// 📥 READ  : TransformComponent      (AI自身の位置)
+// 📤 WRITE : AIStateComponent        (目的地での待機時間の計測)
+// 📤 WRITE : NavAgentComponent       (新しいランダムな目標座標のセット、経路計算の要求)
+//
+// [ 内部挙動の直感的な解説 ]
+// AIが「Patrol」状態であり、かつ現在の目的地に到着している場合のみ作動します。
+// 数秒間その場でキョロキョロ（待機）した後、Detour(ナビゲーションライブラリ)の機能を使って、
+// 指定半径内で「確実に歩いていけるランダムな座標」を算出し、神経(NavAgent)に次の目的地として伝達します。
+// ===================================================================================
+
 // Detourのランダム関数用ヘルパー
 static float dtRandom() {
     static std::mt19937 eng(std::random_device{}());
@@ -76,4 +93,4 @@ void AIPatrolSystem::Update(float dt) {
         });
 }
 
-REGISTER_LOGIC_SYSTEM(AIPatrolSystem, Priority::LogicStage::L02_Update);
+REGISTER_LOGIC_SYSTEM(AIPatrolSystem, Priority::LogicStage::L02_AI_Think);

@@ -3,12 +3,30 @@
 #include "Engine/Platform/Logger.h"
 #include "SimpleMath.h"
 
-// 規約に基づき、cppの末尾ではなく適切な位置に登録用マクロを配置
 #include "ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"
 
 using namespace DirectX::SimpleMath;
 using namespace CCL::ECS;
+
+// ===================================================================================
+// 【 AI感覚器 (耳) : AIHearingSystem 】
+//
+// [ 役割 ]
+// 空間で発生した「音の波紋(Event)」を検知し、AIを不審な場所へ向かわせる。
+//
+// [ ECSデータパイプライン ]
+// 📥 READ  : TransformComponent      (AI自身の位置)
+// 📥 READ  : AIPerceptionComponent   (AIの聴力：聞き取れる半径)
+// 📤 WRITE : AIMemoryComponent       (音が鳴った座標を記憶、疑心暗鬼レベルの更新)
+// 📤 WRITE : AIStateComponent        (音を聞いた時に Investigate(調査) へ状態遷移)
+// 📤 WRITE : NavAgentComponent       (目標座標を音が鳴った位置へ更新)
+//
+// [ 内部挙動の直感的な解説 ]
+// プレイヤーや環境が発した AISoundEvent を EventBus 経由で受け取ります。
+// AI自身の座標から音源までの距離を測り、「音の大きさ」と「AIの聴力」の範囲内であれば検知します。
+// 視覚(Chase)が最も優先されるため、既にプレイヤーを追いかけている最中は音を無視します。
+// ===================================================================================
 
 void AIHearingSystem::Initialize() {
     // 空間で発生した音をすべて集約する
@@ -85,4 +103,4 @@ void AIHearingSystem::Update(float dt) {
 }
 
 // 規約に基づき、論理システムとして登録
-REGISTER_LOGIC_SYSTEM(AIHearingSystem, Priority::LogicStage::L02_Update)
+REGISTER_LOGIC_SYSTEM(AIHearingSystem, Priority::LogicStage::L02_AI_Sense)

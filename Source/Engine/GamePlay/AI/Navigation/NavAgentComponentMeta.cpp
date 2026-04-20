@@ -54,6 +54,9 @@ template <> struct ComponentMeta<NavAgentComponent> {
         ImGui::Text("Waypoints Count: %zu", comp.waypoints.size());
         ImGui::Text("Current Index: %d", comp.currentWaypointIndex);
 
+		ImGui::Text("currentDesiredSpeed: %.2f", comp.currentDesiredSpeed);
+		ImGui::Text("stopDistance: %.2f", comp.stopDistance);
+
         return changed;
     }
 

@@ -12,38 +12,50 @@
 // ============================================================================
 template <> struct ComponentMeta<AIStateComponent> {
     static constexpr bool        registered = true;
-    static constexpr const char* displayName = "AI State";
-
-    // デバッグ表示とパラメータ調整を同時に行うためCustomGuiを有効化
+    static constexpr const char* displayName = "AI State / Brain";
     static constexpr bool        hasCustomGui = true;
 
     static bool CustomGui(AIStateComponent& comp, unsigned long long entityID = 0, void* worldPtr = nullptr) {
         bool changed = false;
 
-        ImGui::SeparatorText("Runtime Status (Read Only)");
-
-        // 現在のステートを文字列として表示
-        const char* stateNames[] = { "Idle", "Patrol", "Investigate", "Chase", "Telekinesis" };
+        // --- ランタイム状態の表示 (Read Only) ---
+        ImGui::SeparatorText("Runtime Status");
+        const char* stateNames[] = { "Idle", "Patrol", "Investigate", "Chase", "AttackDoor", "AmbushDuct" };
         int stateIdx = static_cast<int>(comp.currentState);
-
         ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.5f, 1.0f), "Current State: %s", stateNames[stateIdx]);
-        ImGui::TextDisabled("Time in State: %.2f sec", comp.timeInState);
+        ImGui::Text("Time in State: %.2f s", comp.timeInState);
 
         ImGui::Spacing();
-        ImGui::SeparatorText("Patrol Settings (Editable)");
 
-        // デザイナーが調整するパラメータ
-        changed |= ImGui::DragFloat("Wait Time", &comp.patrolWaitTime, 0.1f, 0.0f, 10.0f);
+        // --- パラメータ調整 (Editable) ---
+        ImGui::SeparatorText("Movement Speed Settings");
+
+        // DragFloat を使うことで、細かい単位での調整が可能になります
+        // 速度がマイナスになると物理エンジンが破綻するため、0.0f を最小値に設定します
+        changed |= ImGui::DragFloat("Patrol Speed", &comp.patrolSpeed, 0.05f, 0.0f, 20.0f, "%.2f m/s");
+        changed |= ImGui::DragFloat("Investigate Speed", &comp.investigateSpeed, 0.05f, 0.0f, 20.0f, "%.2f m/s");
+        changed |= ImGui::DragFloat("Chase Speed", &comp.chaseSpeed, 0.05f, 0.0f, 30.0f, "%.2f m/s");
+
+        ImGui::Spacing();
+        ImGui::SeparatorText("Patrol Parameters");
         changed |= ImGui::DragFloat("Patrol Radius", &comp.patrolRadius, 0.5f, 1.0f, 100.0f);
+        changed |= ImGui::DragFloat("Wait Time", &comp.patrolWaitTime, 0.1f, 0.0f, 60.0f);
 
         return changed;
     }
 
     static const std::vector<FieldDescriptor>& Fields() {
         static const std::vector<FieldDescriptor> fields = {
-            // ステートは保存せず、調整パラメータのみをJSONの保存対象にする
-            META_FIELD_FLOAT(AIStateComponent, patrolWaitTime, "patrolWaitTime", "Wait Time", 0.1f, 0.0f, 10.0f, "Settings"),
-            META_FIELD_FLOAT(AIStateComponent, patrolRadius, "patrolRadius", "Patrol Radius", 0.5f, 1.0f, 100.0f, "Settings")
+            // META_FIELD_FLOAT(ClassType, FieldName, JsonName, DisplayName, Speed, Min, Max, Category)
+
+            // --- 移動速度 (Speedを0.05fにして微調整しやすくする) ---
+            META_FIELD_FLOAT(AIStateComponent, patrolSpeed,      "patrolSpeed",      "Patrol Speed",      0.05f, 0.0f, 20.0f, "Movement"),
+            META_FIELD_FLOAT(AIStateComponent, investigateSpeed, "investigateSpeed", "Investigate Speed", 0.05f, 0.0f, 20.0f, "Movement"),
+            META_FIELD_FLOAT(AIStateComponent, chaseSpeed,       "chaseSpeed",       "Chase Speed",       0.05f, 0.0f, 30.0f, "Movement"),
+
+            // --- 巡回ロジック (Radiusは0.5f刻み、時間は0.1秒刻み) ---
+            META_FIELD_FLOAT(AIStateComponent, patrolRadius,     "patrolRadius",     "Patrol Radius",     0.5f,  1.0f, 100.0f, "Logic"),
+            META_FIELD_FLOAT(AIStateComponent, patrolWaitTime,   "patrolWaitTime",   "Wait Time",         0.1f,  0.0f, 60.0f,  "Logic")
         };
         return fields;
     }

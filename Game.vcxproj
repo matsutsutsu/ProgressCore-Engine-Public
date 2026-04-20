@@ -410,9 +410,11 @@
     <ClInclude Include="Source\Game\Logics\AI\AIComponents.h" />
     <ClInclude Include="Source\Game\Logics\AI\AIDebugDrawSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\AIHearingSystem.h" />
+    <ClInclude Include="Source\Game\Logics\AI\AIMovementControlSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\AIPatrolSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\AIPerceptionSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Events\AISoundEvent.h" />
+    <ClInclude Include="Source\Game\Logics\Character\CharacterMovementInputComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\PlayerCar\CarCollisionSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\PlayerCar\PlayerCarComponent.h" />
@@ -658,8 +660,10 @@
     <ClCompile Include="Source\Game\Logics\AI\AIComponentsMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\AIDebugDrawSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\AIHearingSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\AIMovementControlSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\AIPatrolSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\AIPerceptionSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\CharacterMovementInputComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\PlayerCar\CarCollisionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\PlayerCar\PlayerCarComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\PlayerCar\PlayerCarInputSystem.cpp" />

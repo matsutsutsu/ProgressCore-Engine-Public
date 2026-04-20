@@ -4,13 +4,32 @@
 #include "Game/Logics/Character/PlayerCar/PlayerCarComponent.h"
 #include "Engine/Platform/Logger.h"
 
+#include "ECS/System/CCL_SystemRegistry.h"
+#include "Game/Core/SystemPriority.h"
+
 #include "SimpleMath.h"
 using namespace DirectX::SimpleMath;
 using namespace CCL::ECS;
 
-#include "ECS/System/CCL_SystemRegistry.h"
-#include "Game/Core/SystemPriority.h"
-
+// ===================================================================================
+// 【 AI感覚器 (目) : AIPerceptionSystem 】
+//
+// [ 役割 ]
+// 物理世界を観測し、視界内にプレイヤーがいるかを判定してAIの「記憶」と「感情」を上書きする。
+//
+// [ ECSデータパイプライン ]
+// 📥 READ  : TransformComponent      (AI自身の位置・向き、プレイヤーの位置)
+// 📥 READ  : AIPerceptionComponent   (AIの視力：距離・角度)
+// 📥 READ  : PlayerCarComponent      (※追跡対象のタグとして利用)
+// 📤 WRITE : AIMemoryComponent       (最後にプレイヤーを見た座標、怒りレベル)
+// 📤 WRITE : AIStateComponent        (発見時に Chase へ状態遷移)
+// 📤 WRITE : NavAgentComponent       (発見時に 目標座標をプレイヤー位置へ更新)
+//
+// [ 内部挙動の直感的な解説 ]
+// 毎フレーム、AIの正面ベクトル(Forward)とプレイヤーへの方向ベクトルの内積(Dot)を取り、視界の扇形(Cone)に
+// 入っているかを判定します。さらに、Jolt PhysicsのCastRay(光線)を飛ばし、間に壁や障害物がないかを確認します。
+// 全ての条件をクリアした場合、「見えた！」と判断して脳のステートを即座に書き換えます。
+// ===================================================================================
 
 void AIPerceptionSystem::Update(float dt) {
     if (!_world || !_world->HasResource<std::shared_ptr<IPhysicsAPI>>()) return;
@@ -107,4 +126,4 @@ void AIPerceptionSystem::Update(float dt) {
 }
 
 
-REGISTER_LOGIC_SYSTEM(AIPerceptionSystem, Priority::LogicStage::L02_Update)
+REGISTER_LOGIC_SYSTEM(AIPerceptionSystem, Priority::LogicStage::L02_AI_Sense)

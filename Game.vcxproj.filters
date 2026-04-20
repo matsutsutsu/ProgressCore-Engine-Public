@@ -391,6 +391,15 @@
     <Filter Include="Source\Engine\Audio\_Meta">
       <UniqueIdentifier>{7083e5f6-6cef-4b8b-af6a-10e584fd4c40}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\AI\01_Priority">
+      <UniqueIdentifier>{907a29c2-cbfc-42ec-bdbc-a43e4ebbe965}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\AI\02_Priority">
+      <UniqueIdentifier>{5eeb6637-93a0-47a6-94ed-e6191de0b100}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\AI\03_Priority">
+      <UniqueIdentifier>{f4cafca4-a522-4a5d-b00e-d007c57d13ac}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1287,17 +1296,8 @@
     <ClInclude Include="Source\Game\Logics\AI\AIComponents.h">
       <Filter>Source\Game\Logics\AI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\AIPatrolSystem.h">
-      <Filter>Source\Game\Logics\AI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\AIPerceptionSystem.h">
-      <Filter>Source\Game\Logics\AI</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Events\AISoundEvent.h">
       <Filter>Source\Game\Logics\AI\Events</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\AIHearingSystem.h">
-      <Filter>Source\Game\Logics\AI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Test\AISoundDebuggerSystem.h">
       <Filter>Source\Game\Logics\Test</Filter>
@@ -1313,6 +1313,21 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\AIDebugDrawSystem.h">
       <Filter>Source\Game\Logics\AI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\CharacterMovementInputComponent.h">
+      <Filter>Source\Game\Logics\Character</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\AIHearingSystem.h">
+      <Filter>Source\Game\Logics\AI\01_Priority</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\AIPerceptionSystem.h">
+      <Filter>Source\Game\Logics\AI\01_Priority</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\AIPatrolSystem.h">
+      <Filter>Source\Game\Logics\AI\02_Priority</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\AIMovementControlSystem.h">
+      <Filter>Source\Game\Logics\AI\03_Priority</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1985,18 +2000,6 @@
     <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\ModelPoseUpdateSystem.cpp">
       <Filter>Source\Engine\GamePlay\Graphics\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\AIPatrolSystem.cpp">
-      <Filter>Source\Game\Logics\AI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\AIComponentsMeta.cpp">
-      <Filter>Source\Game\Logics\AI\_Meta</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\AIPerceptionSystem.cpp">
-      <Filter>Source\Game\Logics\AI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\AIHearingSystem.cpp">
-      <Filter>Source\Game\Logics\AI</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Game\Logics\Test\AISoundDebuggerSystem.cpp">
       <Filter>Source\Game\Logics\Test</Filter>
     </ClCompile>
@@ -2008,6 +2011,24 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\AIDebugDrawSystem.cpp">
       <Filter>Source\Game\Logics\AI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\AIHearingSystem.cpp">
+      <Filter>Source\Game\Logics\AI\01_Priority</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\AIPerceptionSystem.cpp">
+      <Filter>Source\Game\Logics\AI\01_Priority</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\AIPatrolSystem.cpp">
+      <Filter>Source\Game\Logics\AI\02_Priority</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\AIMovementControlSystem.cpp">
+      <Filter>Source\Game\Logics\AI\03_Priority</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\CharacterMovementInputComponentMeta.cpp">
+      <Filter>Source\Game\Logics\Character</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\AIComponentsMeta.cpp">
+      <Filter>Source\Game\Logics\AI\_Meta</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

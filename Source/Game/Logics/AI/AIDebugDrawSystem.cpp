@@ -8,10 +8,30 @@
 #include "Game/Core/SystemPriority.h"
 
 // 数学ライブラリ
-#include "SimpleMath.h"
+#include <SimpleMath.h>
 
 using namespace DirectX::SimpleMath;
 using namespace CCL::ECS;
+
+// ===================================================================================
+// 【 AI可視化システム : AIDebugDrawSystem 】
+//
+// [ 役割 ]
+// AIの内部データ（視界、聴力、現在のステート）を画面上にグラフィカルに描画し、ロジックの正当性を証明する。
+//
+// [ ECSデータパイプライン ]
+// 📥 READ  : TransformComponent      (AIの位置と向き)
+// 📥 READ  : AIPerceptionComponent   (視界の角度・距離、聴覚の半径)
+// 📥 READ  : AIStateComponent        (現在のステートによる色分け用)
+// 🚫 WRITE : なし (※描画システムはデータに一切の副作用を与えてはならない)
+//
+// [ 内部挙動の直感的な解説 ]
+// RenderStage で動作し、ShapeRenderer を用いてデバッグ用の線や図形をオーバーレイ描画します。
+// ・ステート: 頭上のスフィアの色（緑=巡回、黄=調査、赤=追跡）
+// ・聴力: 地面に這うマゼンタの円
+// ・視力: 正面を向くオレンジ色の扇形（コーン）
+// ECSのViewを用いて連続メモリを高速に舐めるため、多数のAIがいてもゲームのフレームレートを落としません。
+// ===================================================================================
 
 void AIDebugDrawSystem::Update(float dt) {
     if (!isDebugVisible) return;

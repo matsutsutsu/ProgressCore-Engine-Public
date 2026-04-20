@@ -5,6 +5,21 @@
 #include "ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"
 
+// ===================================================================================
+// 【 ナビゲーション (経路探索) : NavPathfindingSystem 】
+//
+// [ 役割 ]
+// Detourライブラリを用い、目的地までの最短経路（Waypoints）を計算する「地図読み」。
+// 
+// [ 実行順序 ]
+// L02_AI_Think (220) : AIが目的地を決定した直後に、その道筋を計算する。
+//
+// [ ECSデータパイプライン ]
+// 📥 READ  : TransformComponent (現在地)
+// 📥 READ  : NavigationData     (NavMeshのリソースデータ)
+// 📤 WRITE : NavAgentComponent  (waypointsリストの更新、isPathRequestedのリセット)
+// ===================================================================================
+
 void NavPathfindingSystem::Update(float dt) {
 
     if (!_world || !_world->HasResource<NavigationData>()) return;
@@ -93,4 +108,4 @@ void NavPathfindingSystem::Update(float dt) {
 }
 
 
-REGISTER_LOGIC_SYSTEM(NavPathfindingSystem, Priority::LogicStage::L02_Update);
+REGISTER_LOGIC_SYSTEM(NavPathfindingSystem, Priority::LogicStage::L02_AI_Think);

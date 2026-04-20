@@ -1,6 +1,18 @@
 #pragma once
 #include <DirectXMath.h>
-#include "SimpleMath.h" 
+#include <SimpleMath.h>
+
+// ===================================================================================
+// 【 AI データ構造 (Components) 定義 】
+//
+// [ アーキテクチャの基本思想 (SoA: Structure of Arrays) ]
+// AIを1つの巨大なクラス（Monsterクラス等）にするのではなく、役割ごとに純粋なデータ（POD）の塊に解体しています。
+// これによりCPUキャッシュヒット率が極限まで高まり、1万体のAIでも処理落ちしない基盤を実現しています。
+//
+// 🧠 AIStateComponent      : 「今何をしているか」（FSMの現在状態とタイマー）
+// 👁️ AIPerceptionComponent : 「感覚器のスペック」（視界の広さ、耳の良さ）
+// 📚 AIMemoryComponent     : 「過去の記憶と適応」（プレイヤーを最後に見た場所、騙された回数など、メタAI用データ）
+// ===================================================================================
 
 // ============================================================================
 // [脳の状態] 現在AIが何を実行しているか (FSM: Finite State Machine)
@@ -18,9 +30,14 @@ struct AIStateComponent {
     AIState currentState = AIState::Patrol;
     float timeInState = 0.0f;
 
-    // パラメータ
+    // パラメータ (待機・索敵用)
     float patrolWaitTime = 2.0f;
     float patrolRadius = 15.0f;
+
+    // 各ステートにおける固有の移動速度 (m/s)
+    float patrolSpeed = 1.5f;       // 巡回時の歩行速度
+    float investigateSpeed = 2.5f;  // 調査時の警戒歩行速度
+    float chaseSpeed = 5.0f;        // 追跡時のダッシュ速度
 };
 
 // ============================================================================
