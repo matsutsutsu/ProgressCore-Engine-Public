@@ -260,6 +260,7 @@
     <ClInclude Include="Source\Engine\GamePlay\Animation\AnimEventMessages.h" />
     <ClInclude Include="Source\Engine\GamePlay\Animation\AnimSequence.h" />
     <ClInclude Include="Source\Engine\GamePlay\Camera\CameraBrainSystem.h" />
+    <ClInclude Include="Source\Engine\GamePlay\Camera\CameraListenerSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Camera\VirtualCameraComponents.h" />
     <ClInclude Include="Source\Engine\GamePlay\Camera\VisualCameraSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Core\DestroyTag.h" />
@@ -414,6 +415,8 @@
     <ClInclude Include="Source\Game\Logics\AI\AIPatrolSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\AIPerceptionSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Events\AISoundEvent.h" />
+    <ClInclude Include="Source\Game\Logics\Audio\DistractionItemComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Audio\DistractionItemSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\CharacterMovementInputComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\PlayerCar\CarCollisionSystem.h" />
@@ -557,6 +560,7 @@
     <ClCompile Include="Source\Engine\GamePlay\Animation\AnimationSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Animation\AnimatorComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Camera\CameraBrainSystem.cpp" />
+    <ClCompile Include="Source\Engine\GamePlay\Camera\CameraListenerSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Camera\VirtualCameraComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Camera\VisualCameraSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Core\CoreComponentMeta.cpp" />
@@ -663,6 +667,8 @@
     <ClCompile Include="Source\Game\Logics\AI\AIMovementControlSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\AIPatrolSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\AIPerceptionSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Audio\DistractionItemComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Audio\DistractionItemSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\CharacterMovementInputComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\PlayerCar\CarCollisionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\PlayerCar\PlayerCarComponentMeta.cpp" />

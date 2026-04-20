@@ -1,12 +1,9 @@
 {
   "StringsBank": "Assets/Audio/Master.strings.bank",
   "Banks": [
-    "Assets/Audio/Master.bank",
-    "Assets/Audio/SFX.bank",
-    "Assets/Audio/BGM.bank"
+    "Assets/Audio/Master.bank"
   ],
   "Events": [
-    "event:/SFX/Shoot",
-    "event:/BGM/TitleMusic"
+    "event:/can_sound"
   ]
 }

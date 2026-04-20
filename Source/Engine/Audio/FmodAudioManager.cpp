@@ -102,7 +102,18 @@ void FmodAudioManager::LoadConfig(const std::string& configFilePath) {
     std::ifstream audioConfigFile(configFilePath);
     if (audioConfigFile.is_open()) {
         nlohmann::json audioConfig;
-        audioConfigFile >> audioConfig;
+
+        // -------------------------------------------------------------
+        //  JSONのパース処理を try-catch で保護し、クラッシュを防ぐ
+        // -------------------------------------------------------------
+        try {
+            audioConfigFile >> audioConfig;
+        }
+        catch (const nlohmann::json::parse_error& e) {
+            // パースエラー発生時、エンジンの実行は止めず、何行目で間違えたかをログに出す
+            CCL_LOG_ERROR(LogCategory::Core, "JSON Parse Error in %s : %s", configFilePath.c_str(), e.what());
+            return;
+        }
 
         // 【最重要】文字列の解決を行う Strings Bank は、他のBankより「絶対に先」にロードしなければならない。
         if (audioConfig.contains("StringsBank")) {

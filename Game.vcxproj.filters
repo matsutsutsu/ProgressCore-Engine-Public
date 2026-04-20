@@ -400,6 +400,9 @@
     <Filter Include="Source\Game\Logics\AI\03_Priority">
       <UniqueIdentifier>{f4cafca4-a522-4a5d-b00e-d007c57d13ac}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\Audio">
+      <UniqueIdentifier>{bd33aae1-4ce7-4c0d-9064-6e2358abc38b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1329,6 +1332,15 @@
     <ClInclude Include="Source\Game\Logics\AI\AIMovementControlSystem.h">
       <Filter>Source\Game\Logics\AI\03_Priority</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Audio\DistractionItemComponent.h">
+      <Filter>Source\Game\Logics\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Audio\DistractionItemSystem.h">
+      <Filter>Source\Game\Logics\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Camera\CameraListenerSystem.h">
+      <Filter>Source\Engine\GamePlay\Camera</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2029,6 +2041,15 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\AIComponentsMeta.cpp">
       <Filter>Source\Game\Logics\AI\_Meta</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Audio\DistractionItemSystem.cpp">
+      <Filter>Source\Game\Logics\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Audio\DistractionItemComponentMeta.cpp">
+      <Filter>Source\Game\Logics\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\Camera\CameraListenerSystem.cpp">
+      <Filter>Source\Engine\GamePlay\Camera</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
