@@ -8,10 +8,10 @@
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-// 髱咏噪繝｡繝ｳ繝仙､画焚縺ｮ螳滉ｽ灘ｮ夂ｾｩ
+// 静的メンバ変数の実体定義
 ImFont *ImGuiRenderer::s_editorFont = nullptr;
 
-// 蛻晄悄蛹・
+// 初期化
 void ImGuiRenderer::Initialize(HWND hWnd, ID3D11Device* device, ID3D11DeviceContext* dc)
 {
 	// Setup Dear ImGui context
@@ -19,23 +19,25 @@ void ImGuiRenderer::Initialize(HWND hWnd, ID3D11Device* device, ID3D11DeviceCont
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
 
-	//縲ImPlot Setup
+	// ImPlot Setup
 	ImPlot::CreateContext();
 
-	// 繝輔か繝ｳ繝医・隱ｭ縺ｿ霎ｼ縺ｿ  
+	// フォントの読み込み
     ImFontConfig config;
     config.MergeMode           = false;
     const ImWchar *glyphRanges = io.Fonts->GetGlyphRangesJapanese();
 
-    // 1縺､逶ｮ: UI蜈ｨ菴薙〒菴ｿ縺・ョ繝輔か繝ｫ繝医ヵ繧ｩ繝ｳ繝・(Windows讓呎ｺ悶・繝｡繧､繝ｪ繧ｪ)
+	// 1つ目: UI全体で使うデフォルトフォント (Windows標準のメイリオ等)
     io.Fonts->AddFontFromFileTTF("Assets/Fonts/ArialUni.ttf", 18.0f, &config, glyphRanges);
     //io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\meiryo.ttc", 16.0f, &config, glyphRanges);
 
-    // 2縺､逶ｮ: 繧ｨ繝・ぅ繧ｿ蟆ら畑縺ｮ遲牙ｹ・ヵ繧ｩ繝ｳ繝・(Ricty) 繧定ｪｭ縺ｿ霎ｼ繧薙〒縲√・繧､繝ｳ繧ｿ繧剃ｿ晄戟縺吶ｋ
+	// 2つ目: エディタ専用の等幅フォント (Ricty等) を読み込んで、ポインタを保持する
     s_editorFont =
-        io.Fonts->AddFontFromFileTTF("Assets/Fonts/ArialUni.ttf", 20.0f, &config, glyphRanges);
+        io.Fonts->AddFontFromFileTTF("Assets/Fonts/ArialUni.ttf", 20.0f, &config, glyphRanges);	
 
 
+	io.IniFilename = "Build/Logs/imgui.ini"; // 設定ファイルの名前を変更 (同じフォルダに保存される)
+	io.LogFilename = "Build/Logs/imgui_log.txt"; // ログファイルの名前を変更 (同じフォルダに保存される)
 
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
@@ -90,7 +92,7 @@ void ImGuiRenderer::Initialize(HWND hWnd, ID3D11Device* device, ID3D11DeviceCont
 	//IM_ASSERT(font != NULL);
 }
 
-// 邨ゆｺ・喧
+// 終了化
 void ImGuiRenderer::Finalize()
 {
 	ImPlot::DestroyContext();
@@ -100,7 +102,7 @@ void ImGuiRenderer::Finalize()
 	ImGui::DestroyContext();
 }
 
-// 繝輔Ξ繝ｼ繝髢句ｧ句・逅・
+// フレーム開始処理
 void ImGuiRenderer::NewFrame()
 {
 	ImGui_ImplDX11_NewFrame();
@@ -152,7 +154,7 @@ void ImGuiRenderer::NewFrame()
 #endif
 }
 
-// 謠冗判
+// 描画実行
 void ImGuiRenderer::Render(ID3D11DeviceContext* context)
 {
 	// Rendering
@@ -169,7 +171,7 @@ void ImGuiRenderer::Render(ID3D11DeviceContext* context)
 	}
 }
 
-// WIN32繝｡繝・そ繝ｼ繧ｸ繝上Φ繝峨Λ繝ｼ
+// WIN32メッセージハンドラー
 LRESULT ImGuiRenderer::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	return ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam);

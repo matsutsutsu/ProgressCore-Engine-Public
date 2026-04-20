@@ -27,28 +27,58 @@ void TransformUpdateSystem::Update(float dt)
     // -----------------------------------------------------------------------
     // 2. 行列更新フェーズ (並列処理可能)
     // -----------------------------------------------------------------------
-
-    // 共通ロジック: ラムダ式で定義して使い回す
-    auto updateLogic = [&](EntityID id, TransformComponent &trans) {
-        // 親がいるEntityは、Rootからの再帰呼び出しの中で処理されるのでスキップ
-        // (起点は常に親を持たないRootエンティティ)
+    auto updateLogic = [&](EntityID id, TransformComponent& trans) {
+        // [Why] 行列計算の起点は常に「親を持たないルートエンティティ」に限定する。
+        // 子エンティティは親からの再帰呼び出しの中で処理されるため、ここで弾く。
         if (trans.parentID != 0) return;
 
-        // 自分がStaticでないなら行列更新
-        if (!trans.isStatic) {
-            trans.UpdateMatrix(XMMatrixIdentity());
+        bool isUpdated = false;
+
+        // [Why] Staticであっても、ロード直後やエディタ操作でDirtyフラグが立っていれば1回だけ計算を通す。
+        // 計算後は必ずフラグを折ることで、次フレーム以降の計算コストをゼロにする（DOD観点での最適化）。
+        if (!trans.isStatic || trans.isDirty) {
+            trans.UpdateMatrix();
+            trans.isDirty = false;
+            isUpdated = true;
         }
 
-        // 子供がいる場合、再帰処理を開始
-        // (自分がStaticでも、子供が動く可能性があるので伝播させる)
-        if (trans.firstChildID != 0) {
-            XMMATRIX myWorldMatrix = XMLoadFloat4x4(&trans.worldMatrix);
-            UpdateTransformRecursive(trans.firstChildID, myWorldMatrix);
-        }
-    };
+        // [Why] 子の階層更新用ラムダ。std::functionを使用するとヒープアロケーション(new)が発生し
+        // 並列処理のパフォーマンスが崩壊するため、C++14の auto& self を用いたゼロ・コスト再帰を使用する。
+        auto updateChildren = [&](auto& self, EntityID childID, const XMMATRIX& parentMatrix, bool forceUpdate) -> void {
+            EntityID currentID = childID;
+            while (currentID != 0) {
+                auto* childTrans = _world->GetComponent<TransformComponent>(currentID);
+                if (!childTrans) break;
 
+                bool childUpdated = false;
 
-    // ★マルチスレッド実行
+                // [Why] 「親が動いた(forceUpdate)」場合は、子がStatic設定であっても強制的に追従させる。
+                // それ以外は、自身が動的であるか、Dirtyである場合に計算する。
+                if (forceUpdate || !childTrans->isStatic || childTrans->isDirty) {
+                    childTrans->UpdateMatrix(parentMatrix);
+                    childTrans->isDirty = false;
+                    childUpdated = true;
+                }
+
+                // 孫がいる場合は、自分の更新状態をさらに下へ伝播させる
+                if (childTrans->firstChildID != 0) {
+                    XMMATRIX nextParentMat = XMLoadFloat4x4(&childTrans->worldMatrix);
+                    self(self, childTrans->firstChildID, nextParentMat, childUpdated);
+                }
+
+                // 次の兄弟へ
+                currentID = childTrans->nextSiblingID;
+            }
+            };
+
+            // 子供がいる場合のみ、再帰処理をキックする
+            if (trans.firstChildID != 0) {
+                XMMATRIX parentMat = XMLoadFloat4x4(&trans.worldMatrix);
+                updateChildren(updateChildren, trans.firstChildID, parentMat, isUpdated);
+            }
+        };
+
+    // 並列実行で全エンティティを一気に処理
     ForEachWithIDParallel(updateLogic);
     
 }

@@ -166,13 +166,20 @@ void Framework::Render(float elapsedTime)
 	// ImGuiの描画を計測
 	{
 
-		ZoneScopedN("ImGui::Render");
+		ZoneScopedN("FrameWork::ImGui");
 
-		SceneManager::Instance().DrawGUI();
+		{
+			ZoneScopedN("FrameWork::SceneManager::DrawGUI");
+			SceneManager::Instance().DrawGUI();
 
-		// IMGUI描画
-		ImGuiRenderer::Render(dc);
+		}
 
+
+		{
+			ZoneScopedN("FrameWork::ImGuiRenderer::Render");
+			// IMGUI描画
+			ImGuiRenderer::Render(dc);
+		}
 
 	}
 
