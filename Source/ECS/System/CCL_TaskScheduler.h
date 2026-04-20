@@ -65,7 +65,14 @@ namespace CCL::ECS {
                             if (conflict) break;
                         }
                     }
+
+                    if (conflict) {
+                        // 競合した先輩のバッチを記憶して、待つようにする
+                        maxDependencyBatch = (std::max)(maxDependencyBatch, systemBatchIndex[j]);
+                    }
                 }
+
+
 
                 // 依存するシステムの次のバッチに配置する
                 systemBatchIndex[i] = maxDependencyBatch + 1;

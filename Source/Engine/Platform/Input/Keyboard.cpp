@@ -5,16 +5,12 @@ void Keyboard::Update()
     // 現在の状態を過去の状態として保存
     memcpy(oldState, currentState, sizeof(currentState));
 
-    // 全キーの状態を取得
-    // GetKeyboardState はメッセージポンプに依存するため、
-    // リアルタイム性の高いゲームでは GetAsyncKeyState をループさせるのが確実です。
-    for (int i = 0; i < 256; i++) {
-        // 最上位ビットが立っていれば押されている
-        if (GetAsyncKeyState(i) & 0x8000) {
-            currentState[i] = 1;
-        }
-        else {
-            currentState[i] = 0;
+    // 修正点：OSから全キーの状態を「1回の呼び出し」で配列として取得
+    BYTE tempState[256];
+    if (GetKeyboardState(tempState)) {
+        for (int i = 0; i < 256; i++) {
+            // GetKeyboardStateは最上位ビット(0x80)が立っていれば押下状態
+            currentState[i] = (tempState[i] & 0x80) ? 1 : 0;
         }
     }
 }

@@ -69,14 +69,7 @@ namespace CCL::ECS
 
             auto start = std::chrono::high_resolution_clock::now();
 
-            // ★読み取りロックを取得（複数スレッド並列OK）
-            if (_structureMutex) {
-                std::shared_lock<std::shared_mutex> lock(*_structureMutex);
-                Update(dt); // ← 実際の処理はこちら
-            }
-            else {
-                Update(dt);
-            }
+            Update(dt);
 
             auto end = std::chrono::high_resolution_clock::now();
             std::chrono::duration<float, std::milli> elapsed = end - start;

@@ -100,8 +100,8 @@
         {
             "components": {
                 "CameraBodyFree": {
-                    "currentPitch": -31.19989013671875,
-                    "currentYaw": 2.199990749359131,
+                    "currentPitch": -48.59992599487305,
+                    "currentYaw": -0.40000712871551514,
                     "lookSpeed": 0.20000000298023224,
                     "moveSpeed": 16.588802337646484
                 },
@@ -111,15 +111,15 @@
                 "Transform": {
                     "isStatic": false,
                     "position": [
-                        -7.544826030731201,
-                        16.58652687072754,
-                        -32.56545639038086
+                        -4.695293426513672,
+                        20.445743560791016,
+                        -31.48035430908203
                     ],
                     "rotation": [
-                        0.2688693106174469,
-                        0.018490182235836983,
-                        -0.005162532441318035,
-                        0.9629853367805481
+                        0.41151121258735657,
+                        -0.003181448671966791,
+                        0.0014364764792844653,
+                        0.9113980531692505
                     ],
                     "scale": [
                         1.0,
@@ -136,6 +136,285 @@
                 }
             },
             "id": 4294967302
+        },
+        {
+            "components": {
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Shape/Sphere.glb"
+                },
+                "Name": {
+                    "name": "NavMeshSphere"
+                },
+                "Transform": {
+                    "isStatic": true,
+                    "position": [
+                        5.800000190734863,
+                        0.0,
+                        9.800000190734863
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        4.0,
+                        4.0,
+                        4.0
+                    ]
+                }
+            },
+            "id": 4294967304
+        },
+        {
+            "components": {
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Shape/Sphere.glb"
+                },
+                "Name": {
+                    "name": "NavMeshSphere"
+                },
+                "Transform": {
+                    "isStatic": true,
+                    "position": [
+                        -7.5,
+                        0.0,
+                        7.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        4.0,
+                        4.0,
+                        4.0
+                    ]
+                }
+            },
+            "id": 4294967303
+        },
+        {
+            "components": {
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Shape/Sphere.glb"
+                },
+                "Name": {
+                    "name": "NavMeshSphere"
+                },
+                "Transform": {
+                    "isStatic": true,
+                    "position": [
+                        -1.5,
+                        0.0,
+                        -3.5
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        4.0,
+                        4.0,
+                        4.0
+                    ]
+                }
+            },
+            "id": 4294967305
+        },
+        {
+            "components": {
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Shape/Sphere.glb"
+                },
+                "Name": {
+                    "name": "NavMeshSphere"
+                },
+                "Transform": {
+                    "isStatic": true,
+                    "position": [
+                        6.900000095367432,
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        4.0,
+                        4.0,
+                        4.0
+                    ]
+                }
+            },
+            "id": 4294967306
+        },
+        {
+            "components": {
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Shape/Sphere.glb"
+                },
+                "Name": {
+                    "name": "NavMeshSphere"
+                },
+                "Transform": {
+                    "isStatic": true,
+                    "position": [
+                        -8.399999618530273,
+                        0.0,
+                        -11.800000190734863
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        4.0,
+                        4.0,
+                        4.0
+                    ]
+                }
+            },
+            "id": 4294967307
+        },
+        {
+            "components": {
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Shape/Sphere.glb"
+                },
+                "Name": {
+                    "name": "NavMeshSphere"
+                },
+                "Transform": {
+                    "isStatic": true,
+                    "position": [
+                        3.0999999046325684,
+                        0.0,
+                        -11.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        4.0,
+                        4.0,
+                        4.0
+                    ]
+                }
+            },
+            "id": 4294967308
+        },
+        {
+            "components": {
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Shape/Sphere.glb"
+                },
+                "Name": {
+                    "name": "NavMeshSphere"
+                },
+                "Transform": {
+                    "isStatic": true,
+                    "position": [
+                        -2.0,
+                        0.0,
+                        14.5
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        4.0,
+                        4.0,
+                        4.0
+                    ]
+                }
+            },
+            "id": 4294967309
+        },
+        {
+            "components": {
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Shape/Sphere.glb"
+                },
+                "Name": {
+                    "name": "NavMeshSphere"
+                },
+                "Transform": {
+                    "isStatic": true,
+                    "position": [
+                        -4.300000190734863,
+                        0.0,
+                        -19.100000381469727
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        4.0,
+                        4.0,
+                        4.0
+                    ]
+                }
+            },
+            "id": 4294967310
+        },
+        {
+            "components": {
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Shape/Sphere.glb"
+                },
+                "Name": {
+                    "name": "NavMeshSphere"
+                },
+                "Transform": {
+                    "isStatic": true,
+                    "position": [
+                        -19.399999618530273,
+                        0.8999999761581421,
+                        -4.599999904632568
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        4.0,
+                        4.0,
+                        4.0
+                    ]
+                }
+            },
+            "id": 4294967311
         },
         {
             "components": {
@@ -229,7 +508,7 @@
                     ]
                 }
             },
-            "id": 4294967304
+            "id": 4294967312
         },
         {
             "components": {
@@ -277,7 +556,7 @@
                     ]
                 }
             },
-            "id": 4294967303
+            "id": 4294967313
         }
     ]
 }
