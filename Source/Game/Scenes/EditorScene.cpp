@@ -14,8 +14,6 @@
 
 void EditorScene::Initialize()
 {
-
-
     BaseScene::Initialize(); // 共通初期化
 
     // エディタ固有の初期化

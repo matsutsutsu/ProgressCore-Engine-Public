@@ -1,5 +1,6 @@
 #include "AIPatrolSystem.h"
 #include "ECS/Core/CCL_World.h"
+#include "Engine/Platform/Logger.h"
 #include "Engine/GamePlay/AI/Navigation/NavigationData.h"
 #include <DetourNavMeshQuery.h>
 #include <random>
@@ -45,6 +46,25 @@ void AIPatrolSystem::Update(float dt) {
     const float extents[3] = { 2.0f, 4.0f, 2.0f };
 
     ForEach([&](const TransformComponent& transform, AIStateComponent& aiState, NavAgentComponent& navAgent) {
+        
+        // =========================================================================
+        // 調査(Investigate)ステートの出口を作る
+        // =========================================================================
+        if (aiState.currentState == AIState::Investigate) {
+            // 目的地に到着したか？
+            bool hasReachedTarget = navAgent.waypoints.empty() ||
+                (navAgent.currentWaypointIndex >= navAgent.waypoints.size());
+            if (hasReachedTarget) {
+                aiState.timeInState += dt;
+                if (aiState.timeInState > 3.0f) { // 3秒間キョロキョロしたら諦める
+                    aiState.currentState = AIState::Patrol;
+                    aiState.timeInState = 0.0f;
+                    navAgent.isPathRequested = true; // 新しい巡回ルートを要求
+                    CCL_LOG_INFO(LogCategory::Core, "AI: Found nothing. Returning to Patrol.");
+                }
+            }
+            return; // Investigate中は以下のPatrol処理を行わない
+        }
 
         // 徘徊ステートでなければ何もしない
         if (aiState.currentState != AIState::Patrol) return;

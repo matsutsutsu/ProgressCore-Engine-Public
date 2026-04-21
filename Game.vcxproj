@@ -416,6 +416,7 @@
     <ClInclude Include="Source\Game\Logics\AI\AIPerceptionSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Events\AISoundEvent.h" />
     <ClInclude Include="Source\Game\Logics\Audio\DistractionItemComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Audio\DistractionItemDebugDrawSystem.h" />
     <ClInclude Include="Source\Game\Logics\Audio\DistractionItemSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\CharacterMovementInputComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyComponent.h" />
@@ -668,6 +669,7 @@
     <ClCompile Include="Source\Game\Logics\AI\AIPatrolSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\AIPerceptionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Audio\DistractionItemComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Audio\DistractionItemDebugDrawSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Audio\DistractionItemSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\CharacterMovementInputComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\PlayerCar\CarCollisionSystem.cpp" />

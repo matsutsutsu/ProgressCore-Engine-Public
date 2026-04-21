@@ -30,24 +30,39 @@ using namespace CCL::ECS;
 
 void AIHearingSystem::Initialize() {
     // 空間で発生した音をすべて集約する
+    // 【解説】 EventBus(郵便局)に対して、
+    // 「AISoundEventという手紙が来たら、この処理(ラムダ式)を実行してね」と契約を結びます。
     ListenEvent<AISoundEvent>([this](const AISoundEvent& e) {
+        // 【解説】 ここは「メインスレッド」ではなく、物理衝突などを処理している「別のワーカースレッド」から突然呼ばれる可能性があります。
+        // そのため、郵便受け（m_frameEvents）を同時に触ってデータが壊れないよう、一時的に鍵（Mutex）をかけます。
         std::lock_guard<std::mutex> lock(m_eventMutex);
+
+        // 【解説】 受け取った手紙(e)を、自身の郵便受けリストの末尾に追加します。
+        // 追加し終わったら関数を抜け、自動的に鍵(Mutex)が解除されます。
         m_frameEvents.push_back(e);
         });
 }
 
 void AIHearingSystem::Update(float dt) {
-    // 1. フレーム内のイベントをスワップしてロック時間を最小化する
+    // 今フレームで処理する手紙を入れる「作業用カバン」を用意します。
     std::vector<AISoundEvent> currentEvents;
     {
+        // 郵便受けを開けるために鍵をかけます。
         std::lock_guard<std::mutex> lock(m_eventMutex);
-        currentEvents = std::move(m_frameEvents);
-        m_frameEvents.clear();
-    }
 
+        // 【解説】 std::move は「中身の所有権の移動（ポインタのすげ替え）」です。
+        // m_frameEvents の中身を、たった数ナノ秒で currentEvents にごっそり移し替えます。
+        currentEvents = std::move(m_frameEvents);
+
+        // 空になった郵便受けをリセットします。
+        m_frameEvents.clear();
+
+    } // ← ここでカッコを抜けるため、一瞬で鍵(Mutex)が解除されます！
+
+    // もし手紙が1通も来ていなければ、AIの思考処理そのものをスキップ（超最適化）
     if (currentEvents.empty()) return;
 
-    // 2. AIごとに聞こえたかどうかを判定 (DOD: Chunk単位の並列処理)
+    // 2. AIごとに聞こえたかどうかを判定 
     ForEachWithID([&](EntityID aiEntity,
         const TransformComponent& transform,
         const AIPerceptionComponent& perception,
@@ -66,13 +81,16 @@ void AIHearingSystem::Update(float dt) {
             Vector3 bestSoundPos = Vector3::Zero;
             float highestPriority = -1.0f;
 
+            // 回収したすべての手紙(音)をチェックする
             for (const auto& ev : currentEvents) {
                 float dist = Vector3::Distance(aiPos, ev.position);
 
-                // 「AIの地獄耳の良さ」と「音の大きさ」の積で判定
-                if (dist <= perception.hearingRadius && dist <= ev.volumeRadius) {
-                    // 最も「気になる（近い）」音を採用する
-                    float priority = perception.hearingRadius - dist;
+                // 【解説】 音の波紋(volumeRadius)の円の中に、AI自身が入っているか？
+                if (dist <= ev.volumeRadius) {
+
+                    // 【解説】 複数の音が同時に鳴った場合、「より近い音」を優先するための計算
+                    // (音の届く限界距離 - 実際の距離) = AIに近いほど値が大きくなる
+                    float priority = ev.volumeRadius - dist;
                     if (priority > highestPriority) {
                         highestPriority = priority;
                         bestSoundPos = ev.position;
@@ -84,18 +102,19 @@ void AIHearingSystem::Update(float dt) {
             // ---------------------------------------------------------
             // 🧠 リアクション: 調査(Investigate)への遷移
             // ---------------------------------------------------------
+           // もし「聞こえた音」が1つでもあった場合のリアクション
             if (heardSound) {
-                // ★修正: 新しい変数名へ変更
+                // 記憶を更新し、怒りゲージを強制的に引き上げる
                 memory.lastKnownPos = bestSoundPos;
-
-                // ★修正: std::max は両辺の型が完全に一致している必要があるため、50.0f と明記する
                 memory.currentAngerLevel = (std::max)(memory.currentAngerLevel, 50.0f);
 
+                // 【解説】 脳のモードを「調査(Investigate)」に切り替え、
+                // 神経(NavAgent)に「この音源座標までのルートを計算して歩け」と命令を下す。
                 state.currentState = AIState::Investigate;
                 state.timeInState = 0.0f;
 
                 navAgent.targetPosition = bestSoundPos;
-                navAgent.isPathRequested = true;
+                navAgent.isPathRequested = true;          
 
                 CCL_LOG_INFO(LogCategory::Core, "AI[%llu] Heard something. Moving to Investigate.", aiEntity);
             }

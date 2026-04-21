@@ -65,7 +65,6 @@ void DistractionItemSystem::Update(float dt) {
     if (currentEvents.empty()) return;
 
     for (const auto& ev : currentEvents) {
-        // ★修正: 引数に relativeVelocity を渡す
         CheckAndTriggerSound(ev.entityA, ev.contactPosition, ev.relativeVelocity);
         CheckAndTriggerSound(ev.entityB, ev.contactPosition, ev.relativeVelocity);
     }

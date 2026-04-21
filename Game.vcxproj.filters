@@ -1341,6 +1341,9 @@
     <ClInclude Include="Source\Engine\GamePlay\Camera\CameraListenerSystem.h">
       <Filter>Source\Engine\GamePlay\Camera</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Audio\DistractionItemDebugDrawSystem.h">
+      <Filter>Source\Game\Logics\Audio</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2050,6 +2053,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\GamePlay\Camera\CameraListenerSystem.cpp">
       <Filter>Source\Engine\GamePlay\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Audio\DistractionItemDebugDrawSystem.cpp">
+      <Filter>Source\Game\Logics\Audio</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

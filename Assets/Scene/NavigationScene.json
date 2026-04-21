@@ -149,9 +149,9 @@
                 "Transform": {
                     "isStatic": true,
                     "position": [
-                        5.800000190734863,
+                        -7.5,
                         0.0,
-                        9.800000190734863
+                        7.0
                     ],
                     "rotation": [
                         0.0,
@@ -180,9 +180,9 @@
                 "Transform": {
                     "isStatic": true,
                     "position": [
-                        -7.5,
+                        5.800000190734863,
                         0.0,
-                        7.0
+                        9.800000190734863
                     ],
                     "rotation": [
                         0.0,
@@ -418,12 +418,60 @@
         },
         {
             "components": {
+                "JoltMeshCollider": {
+                    "isEnabled": true
+                },
+                "JoltRigidbody": {
+                    "friction": 0.20000000298023224,
+                    "gravityFactor": 1.0,
+                    "initialVelocity": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "isSensor": false,
+                    "motionType": 0,
+                    "objectLayer": 0,
+                    "restitution": 0.0,
+                    "useCCD": false
+                },
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Stage/ExampleStage.glb"
+                },
+                "Name": {
+                    "name": "JoltExampleStage1"
+                },
+                "Transform": {
+                    "isStatic": true,
+                    "position": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                }
+            },
+            "id": 4294967313
+        },
+        {
+            "components": {
                 "AIMemory": {
                     "ductUsageObserved": 0,
                     "trickedBySoundCount": 0
                 },
                 "AIPerception": {
-                    "hearingRadius": 10.0,
+                    "hearingRadius": 20.0,
                     "visionAngle": 45.0,
                     "visionRange": 8.5
                 },
@@ -431,7 +479,7 @@
                     "chaseSpeed": 5.0,
                     "investigateSpeed": 2.5,
                     "patrolRadius": 15.0,
-                    "patrolSpeed": 1.5,
+                    "patrolSpeed": 5.0,
                     "patrolWaitTime": 2.0
                 },
                 "Animator": {
@@ -509,54 +557,6 @@
                 }
             },
             "id": 4294967312
-        },
-        {
-            "components": {
-                "JoltMeshCollider": {
-                    "isEnabled": true
-                },
-                "JoltRigidbody": {
-                    "friction": 0.20000000298023224,
-                    "gravityFactor": 1.0,
-                    "initialVelocity": [
-                        0.0,
-                        0.0,
-                        0.0
-                    ],
-                    "isSensor": false,
-                    "motionType": 0,
-                    "objectLayer": 0,
-                    "restitution": 0.0,
-                    "useCCD": false
-                },
-                "Material": null,
-                "Model": {
-                    "assetPath": "Assets/Models/Stage/ExampleStage.glb"
-                },
-                "Name": {
-                    "name": "JoltExampleStage1"
-                },
-                "Transform": {
-                    "isStatic": true,
-                    "position": [
-                        0.0,
-                        0.0,
-                        0.0
-                    ],
-                    "rotation": [
-                        0.0,
-                        0.0,
-                        0.0,
-                        1.0
-                    ],
-                    "scale": [
-                        1.0,
-                        1.0,
-                        1.0
-                    ]
-                }
-            },
-            "id": 4294967313
         }
     ]
 }
