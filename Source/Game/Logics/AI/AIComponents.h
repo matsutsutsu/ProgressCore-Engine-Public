@@ -46,7 +46,6 @@ struct AIStateComponent {
 struct AIPerceptionComponent {
     float visionRange = 0.0f;   // 視界の距離 (m)
     float visionAngle = 45.0f;  // 視界の広さ (度)
-    float hearingRadius = 0.0f; // 音を聞き取れる半径 (m)
 };
 
 // ============================================================================

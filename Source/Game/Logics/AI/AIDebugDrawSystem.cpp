@@ -77,19 +77,6 @@ void AIDebugDrawSystem::Update(float dt) {
         // 頭上にステートの色を示す少し大きめの球を描画
         renderer->DrawSphere(eyePos + Vector3(0.0f, 0.6f, 0.0f), 0.3f, stateColor);
 
-        // ---------------------------------------------------------
-        // 3. 聴覚範囲の描画 (地面に這うワイヤーフレームの円)
-        // ---------------------------------------------------------
-        if (perception->hearingRadius > 0.0f) {
-            Quaternion flatRotation = Quaternion::CreateFromAxisAngle(Vector3::UnitX, DirectX::XM_PIDIV2);
-
-            // ★修正: NavMesh(水色)と見分けるためマゼンタに変更。
-            // また、地面に埋まらないように 0.1f だけ浮かせる
-            DirectX::XMFLOAT4 hearingColor = { 1.0f, 0.0f, 1.0f, 0.8f };
-            Vector3 hearingPos = pos + Vector3(0.0f, 0.1f, 0.0f);
-
-            renderer->DrawWireframeCircle(hearingPos, perception->hearingRadius, hearingColor, flatRotation);
-        }
 
         // ---------------------------------------------------------
         // 4. 視覚コーンの描画 (正面から左右に広がる扇形)

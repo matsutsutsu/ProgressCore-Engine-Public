@@ -100,8 +100,8 @@
         {
             "components": {
                 "CameraBodyFree": {
-                    "currentPitch": -48.59992599487305,
-                    "currentYaw": -0.40000712871551514,
+                    "currentPitch": -42.599910736083984,
+                    "currentYaw": 0.7999929189682007,
                     "lookSpeed": 0.20000000298023224,
                     "moveSpeed": 16.588802337646484
                 },
@@ -112,14 +112,14 @@
                     "isStatic": false,
                     "position": [
                         -4.695293426513672,
-                        20.445743560791016,
+                        20.200908660888672,
                         -31.48035430908203
                     ],
                     "rotation": [
-                        0.41151121258735657,
-                        -0.003181448671966791,
-                        0.0014364764792844653,
-                        0.9113980531692505
+                        0.36324164271354675,
+                        0.006504323333501816,
+                        -0.0025359236169606447,
+                        0.9316688179969788
                     ],
                     "scale": [
                         1.0,
@@ -149,9 +149,9 @@
                 "Transform": {
                     "isStatic": true,
                     "position": [
-                        -7.5,
+                        5.800000190734863,
                         0.0,
-                        7.0
+                        9.800000190734863
                     ],
                     "rotation": [
                         0.0,
@@ -180,9 +180,9 @@
                 "Transform": {
                     "isStatic": true,
                     "position": [
-                        5.800000190734863,
+                        -7.5,
                         0.0,
-                        9.800000190734863
+                        7.0
                     ],
                     "rotation": [
                         0.0,
@@ -418,60 +418,11 @@
         },
         {
             "components": {
-                "JoltMeshCollider": {
-                    "isEnabled": true
-                },
-                "JoltRigidbody": {
-                    "friction": 0.20000000298023224,
-                    "gravityFactor": 1.0,
-                    "initialVelocity": [
-                        0.0,
-                        0.0,
-                        0.0
-                    ],
-                    "isSensor": false,
-                    "motionType": 0,
-                    "objectLayer": 0,
-                    "restitution": 0.0,
-                    "useCCD": false
-                },
-                "Material": null,
-                "Model": {
-                    "assetPath": "Assets/Models/Stage/ExampleStage.glb"
-                },
-                "Name": {
-                    "name": "JoltExampleStage1"
-                },
-                "Transform": {
-                    "isStatic": true,
-                    "position": [
-                        0.0,
-                        0.0,
-                        0.0
-                    ],
-                    "rotation": [
-                        0.0,
-                        0.0,
-                        0.0,
-                        1.0
-                    ],
-                    "scale": [
-                        1.0,
-                        1.0,
-                        1.0
-                    ]
-                }
-            },
-            "id": 4294967313
-        },
-        {
-            "components": {
                 "AIMemory": {
                     "ductUsageObserved": 0,
                     "trickedBySoundCount": 0
                 },
                 "AIPerception": {
-                    "hearingRadius": 20.0,
                     "visionAngle": 45.0,
                     "visionRange": 8.5
                 },
@@ -553,6 +504,54 @@
                         0.30000001192092896,
                         0.30000001192092896,
                         0.30000001192092896
+                    ]
+                }
+            },
+            "id": 4294967313
+        },
+        {
+            "components": {
+                "JoltMeshCollider": {
+                    "isEnabled": true
+                },
+                "JoltRigidbody": {
+                    "friction": 0.20000000298023224,
+                    "gravityFactor": 1.0,
+                    "initialVelocity": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "isSensor": false,
+                    "motionType": 0,
+                    "objectLayer": 0,
+                    "restitution": 0.0,
+                    "useCCD": false
+                },
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Stage/ExampleStage.glb"
+                },
+                "Name": {
+                    "name": "JoltExampleStage1"
+                },
+                "Transform": {
+                    "isStatic": true,
+                    "position": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
                     ]
                 }
             },

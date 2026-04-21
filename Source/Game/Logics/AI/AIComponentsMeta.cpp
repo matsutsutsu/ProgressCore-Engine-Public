@@ -78,7 +78,7 @@ template <> struct ComponentMeta<AIPerceptionComponent> {
         static const std::vector<FieldDescriptor> fields = {
             META_FIELD_FLOAT(AIPerceptionComponent, visionRange, "visionRange", "Vision Range (m)", 0.5f, 0.0f, 100.0f, "Vision"),
             META_FIELD_FLOAT(AIPerceptionComponent, visionAngle, "visionAngle", "Vision Angle (deg)", 1.0f, 0.0f, 360.0f, "Vision"),
-            META_FIELD_FLOAT(AIPerceptionComponent, hearingRadius, "hearingRadius", "Hearing Radius (m)", 0.5f, 0.0f, 100.0f, "Hearing")
+
         };
         return fields;
     }

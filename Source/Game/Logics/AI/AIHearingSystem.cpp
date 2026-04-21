@@ -70,9 +70,6 @@ void AIHearingSystem::Update(float dt) {
         AIStateComponent& state,
         NavAgentComponent& navAgent) {
 
-            // Day1-2 などで聴力が解放されていない場合はスキップ
-            if (perception.hearingRadius <= 0.0f) return;
-
             // 視覚ですでにプレイヤーを追跡中(Chase)なら、音の調査は行わない
             if (state.currentState == AIState::Chase) return;
 
@@ -85,11 +82,12 @@ void AIHearingSystem::Update(float dt) {
             for (const auto& ev : currentEvents) {
                 float dist = Vector3::Distance(aiPos, ev.position);
 
-                // 【解説】 音の波紋(volumeRadius)の円の中に、AI自身が入っているか？
+                // =========================================================================
+                // ★究極のシンプル化: AIと音源の距離が、音の届く範囲(volumeRadius)以下なら聞こえる！
+                // =========================================================================
                 if (dist <= ev.volumeRadius) {
 
-                    // 【解説】 複数の音が同時に鳴った場合、「より近い音」を優先するための計算
-                    // (音の届く限界距離 - 実際の距離) = AIに近いほど値が大きくなる
+                    // 音源に近いほど優先して向かう
                     float priority = ev.volumeRadius - dist;
                     if (priority > highestPriority) {
                         highestPriority = priority;
