@@ -11,6 +11,10 @@
 
 #include "Editor/Utils/NavMeshBuilder.h"
 
+#include <ImGuizmo.h>
+#include "Editor/Core/EditorCommandHistory.h"
+#include "Engine/GamePlay/Transform/TransformComponent.h"
+
 
 void EditorScene::Initialize()
 {
@@ -128,6 +132,9 @@ void EditorScene::OnDrawImGui()
 
     _windowManager->Draw(_context);
 
+
+    DrawGizmo();
+
     // ロード要求があればBaseSceneのパスに渡す
     if (!_context.pendingLoadScenePath.empty()) {
         _pendingLoadScenePath = _context.pendingLoadScenePath;
@@ -137,6 +144,107 @@ void EditorScene::OnDrawImGui()
         ImGui::Begin("System Info");
         _ecsContext->GetSystemManager()->OnGui();
         ImGui::End();
+    }
+}
+
+void EditorScene::DrawGizmo()
+{
+    if (ImGui::IsKeyPressed(ImGuiKey_T)) _context.currentGizmoOperation = ImGuizmo::TRANSLATE;
+    if (ImGui::IsKeyPressed(ImGuiKey_R)) _context.currentGizmoOperation = ImGuizmo::ROTATE;
+    if (ImGui::IsKeyPressed(ImGuiKey_Y)) _context.currentGizmoOperation = ImGuizmo::SCALE;
+
+
+    if (_context.selectedEntity == CCL::ECS::InvalidEntityID) return;
+
+    auto* transform = _worldPtr->GetComponent<TransformComponent>(_context.selectedEntity);
+    if (!transform) return;
+
+    // 1. 描画領域の設定
+    ImGuiIO& io = ImGui::GetIO();
+    ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
+
+    // ★重要: バックグラウンド（3D空間）に確実に描画させるためのロック
+    ImGuizmo::SetDrawlist(ImGui::GetBackgroundDrawList());
+
+    // 2. BaseSceneのカメラから行列を取得
+    DirectX::XMFLOAT4X4 viewFloat, projFloat;
+    viewFloat = camera.GetView();
+    projFloat = camera.GetProjection();
+
+    // =========================================================
+    // 3. ★アーキテクチャ修正: ギズモ用のスケール分離（Scale Stripping）
+    // =========================================================
+    DirectX::XMVECTOR gizmoScale;
+    if (_context.currentGizmoOperation == ImGuizmo::SCALE) {
+        // スケール操作の時だけ、本物のスケールをギズモに渡す
+        gizmoScale = DirectX::XMLoadFloat3(&transform->scale);
+    }
+    else {
+        // 移動・回転の時は、ギズモが歪んで当たり判定が壊れないように 1.0 に偽装する
+        gizmoScale = DirectX::XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f);
+    }
+
+    DirectX::XMMATRIX worldMat = DirectX::XMMatrixAffineTransformation(
+        gizmoScale,
+        DirectX::XMVectorZero(),
+        DirectX::XMLoadFloat4(&transform->rotation),
+        DirectX::XMLoadFloat3(&transform->position)
+    );
+    DirectX::XMFLOAT4X4 worldFloat;
+    DirectX::XMStoreFloat4x4(&worldFloat, worldMat);
+
+    // 4. ギズモの描画と操作
+    ImGuizmo::Manipulate(
+        &viewFloat.m[0][0],
+        &projFloat.m[0][0],
+        _context.currentGizmoOperation,
+        _context.currentGizmoMode,
+        &worldFloat.m[0][0]
+    );
+
+    // =========================================================
+    // 5. 状態検知と Undo/Redo
+    // =========================================================
+    static TransformComponent s_backupTransform;
+    static bool s_isUsingGizmo = false;
+
+    if (ImGuizmo::IsUsing()) {
+        if (!s_isUsingGizmo) {
+            s_backupTransform = *transform;
+            s_isUsingGizmo = true;
+            CCL_LOG_INFO(LogCategory::Editor, "[ImGuizmo] Drag started.");
+        }
+
+        float trans[3], rot[3], scale[3];
+        ImGuizmo::DecomposeMatrixToComponents(&worldFloat.m[0][0], trans, rot, scale);
+
+        transform->position = { trans[0], trans[1], trans[2] };
+
+        // ★修正: スケール操作中の時だけ、ギズモのスケール結果を適用する
+        if (_context.currentGizmoOperation == ImGuizmo::SCALE) {
+            transform->scale = { scale[0], scale[1], scale[2] };
+        }
+
+        DirectX::XMVECTOR quat = DirectX::XMQuaternionRotationRollPitchYaw(
+            DirectX::XMConvertToRadians(rot[0]),
+            DirectX::XMConvertToRadians(rot[1]),
+            DirectX::XMConvertToRadians(rot[2])
+        );
+        DirectX::XMStoreFloat4(&transform->rotation, quat);
+
+        transform->isDirty = true;
+
+    }
+    else {
+        if (s_isUsingGizmo) {
+            EditorCommandHistory::Instance().ExecuteCommand(
+                std::make_unique<ChangeComponentCommand<TransformComponent>>(
+                    _worldPtr, _context.selectedEntity, s_backupTransform, *transform
+                )
+            );
+            CCL_LOG_INFO(LogCategory::Editor, "[ImGuizmo] Drag ended. Command issued.");
+            s_isUsingGizmo = false;
+        }
     }
 }
 

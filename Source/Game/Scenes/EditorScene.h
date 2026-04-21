@@ -33,6 +33,8 @@ class EditorScene : public BaseScene {
 
     void OnDrawImGui() override;
 
+    void DrawGizmo();
+
     //  UIコンテキストからの要求を解釈し、BaseSceneに流し込む専用関数
     void ProcessContextRequests();
 };

@@ -6,6 +6,8 @@
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 #include <imgui.h>
 
+#include "Game/Logics/Character/Player/PlayerComponent.h"
+
 // ============================================================================
 // Player Car Controller
 // ============================================================================
@@ -75,3 +77,28 @@ template <> struct ComponentMeta<PlayerCarComponent> {
 };
 
 REGISTER_COMPONENT(PlayerCarComponent, "PlayerCar")
+
+
+
+// ============================================================================
+// Player  
+// ============================================================================
+template <> struct ComponentMeta<PlayerComponent> {
+    static constexpr bool        registered = true;
+    static constexpr const char* displayName = "Player Component";
+    static constexpr bool        hasCustomGui = false; // ★カスタムGUIを有効化
+
+    // 1. 自動シリアライズ対象のフィールド定義
+    static const std::vector<FieldDescriptor>& Fields()
+    {
+        static const std::vector<FieldDescriptor> fields = {
+            META_FIELD_FLOAT(PlayerComponent, moveSpeed, "moveSpeed", "Move Speed", 10.0f, 0.0f, 20000.0f, "Settings"),
+            META_FIELD_FLOAT(PlayerComponent, turnSpeed, "turnSpeed", "Turn Speed", 1.0f, 0.0f, 1000.0f, "Settings")
+
+        };
+        return fields;
+    }
+};
+
+REGISTER_COMPONENT(PlayerComponent, "PlayerComponent")
+

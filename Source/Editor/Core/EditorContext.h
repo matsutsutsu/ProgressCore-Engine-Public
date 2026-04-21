@@ -5,6 +5,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <ImGuizmo.h>
 
 // エディタ内で共有されるコンテキストデータ
 struct EditorContext {
@@ -27,4 +28,8 @@ struct EditorContext {
     // アニメーションエディタとの連携用
      bool  isAnimEditMode = false; // これらもポインタではなく実体値にするのが安全です
      float animEditTime   = 0.0f;
+
+     // ★ ImGuizmo用の状態管理
+     ImGuizmo::OPERATION currentGizmoOperation = ImGuizmo::TRANSLATE;
+     ImGuizmo::MODE      currentGizmoMode = ImGuizmo::LOCAL;
 };

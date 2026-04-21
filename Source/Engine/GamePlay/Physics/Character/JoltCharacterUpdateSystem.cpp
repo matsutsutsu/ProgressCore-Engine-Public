@@ -69,6 +69,16 @@ void JoltCharacterUpdateSystem::Update(float dt) {
     }
     JPH::IgnoreSingleBodyFilter bodyFilter(ignoreBodyID);
 
+	// キャラクターの現在の速度を取得
+    JPH::Vec3 currentVel = handle.character->GetLinearVelocity();
+
+    // ペダル(input)の踏み込み量を見て、車(Jolt)を動かす
+    handle.character->SetLinearVelocity(JPH::Vec3(
+        input.desiredVelocity.x,
+        currentVel.GetY(), // 重力は維持
+        input.desiredVelocity.z
+    ));
+
 
     // 1. 地形との衝突や段差の乗り越えを計算 (Jolt内部処理)
     handle.character->ExtendedUpdate(
@@ -79,15 +89,6 @@ void JoltCharacterUpdateSystem::Update(float dt) {
         {},
         localTempAllocator);
 
-	// キャラクターの現在の速度を取得
-    JPH::Vec3 currentVel = handle.character->GetLinearVelocity();
-
-    // ペダル(input)の踏み込み量を見て、車(Jolt)を動かす
-    handle.character->SetLinearVelocity(JPH::Vec3(
-        input.desiredVelocity.x,
-        currentVel.GetY(), // 重力は維持
-        input.desiredVelocity.z
-    ));
 
     // 2. 計算後の「位置」だけをECS側のTransformに同期する
     JPH::RVec3 pos = handle.character->GetPosition();
@@ -102,14 +103,11 @@ void JoltCharacterUpdateSystem::Update(float dt) {
     // =======================================================
     if (auto* kinBody = _world->GetComponent<JoltHandleComponent>(id)) {
         JPH::Quat joltRot(trans.rotation.x, trans.rotation.y, trans.rotation.z, trans.rotation.w);
-
-        // ========================================================
-        // 浮動小数点誤差を消し去り、長さを完全に 1.0 にする（正規化）
-        // ========================================================
         joltRot = joltRot.Normalized();
-
         bodyInterface.SetPositionAndRotation(kinBody->bodyID, pos, joltRot, JPH::EActivation::DontActivate);
     }
+
+
   });
 }
 

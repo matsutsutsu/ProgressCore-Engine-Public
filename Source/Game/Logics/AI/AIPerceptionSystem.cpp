@@ -1,7 +1,7 @@
 #include "AIPerceptionSystem.h"
 #include "ECS/Core/CCL_World.h"
 #include "Engine/Physics/IPhysicsAPI.h"
-#include "Game/Logics/Character/PlayerCar/PlayerCarComponent.h"
+#include "Game/Logics/Character/Player/PlayerComponent.h"
 #include "Engine/Platform/Logger.h"
 
 #include "ECS/System/CCL_SystemRegistry.h"
@@ -40,7 +40,7 @@ void AIPerceptionSystem::Update(float dt) {
     EntityID playerEntity = InvalidEntityID;
     Vector3 playerPos = Vector3::Zero;
 
-    auto playerView = _world->View<TransformComponent, PlayerCarComponent>();
+    auto playerView = _world->View<TransformComponent, PlayerComponent>();
     for (auto p : playerView) {
         playerEntity = p;
         playerPos = _world->GetComponent<TransformComponent>(p)->position;
