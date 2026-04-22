@@ -4,6 +4,7 @@
 #include <imgui.h>
 #include <cereal/archives/json.hpp>
 
+#include "Engine/Platform/Logger.h"
 #include "Engine/Graphics/Core/Graphics.h"
 #include "Engine/Graphics/Core/GpuResourceUtils.h"
 
@@ -244,6 +245,47 @@ const AnimSequence* ResourceManager::LoadAnimSequence(const char* filename) {
 #endif
 
     return seq;
+}
+
+const AnimationCurve* ResourceManager::LoadAnimCurve(const char* filepath) {
+    std::lock_guard<std::mutex> lock(_mutex); // スレッドセーフ
+
+    uint32_t hash = CCL::Utils::HashString(filepath);
+
+    // すでにロードされていれば、そのポインタを返す（重複ロード防止）
+    auto it = m_animCurveRegistry.find(hash);
+    if (it != m_animCurveRegistry.end()) {
+        return m_animCurvePool.Get(it->second);
+    }
+
+    // JSONファイルの読み込み
+    std::ifstream is(filepath);
+    if (!is.is_open()) {
+        CCL_LOG_ERROR(LogCategory::Core, "Failed to open curve file: %s", filepath);
+        return nullptr;
+    }
+
+    // プールから空き部屋を確保
+    CCL::Handle<AnimationCurve> handle = m_animCurvePool.Create();
+    AnimationCurve* newCurve = m_animCurvePool.Get(handle);
+
+    try {
+        // ※ CurveEditorWindow で nlohmann/json を使って保存した場合は、ここも nlohmann でパースします
+        nlohmann::json j;
+        is >> j;
+        *newCurve = j.get<AnimationCurve>();
+
+        m_animCurveRegistry[hash] = handle;
+        m_assetPathRegistry[hash] = filepath;
+
+        CCL_LOG_SUCCESS(LogCategory::Core, "Loaded Anim Curve: %s", filepath);
+        return newCurve;
+    }
+    catch (const std::exception& e) {
+        CCL_LOG_ERROR(LogCategory::Core, "Failed to parse curve JSON: %s (%s)", filepath, e.what());
+        m_animCurvePool.Destroy(handle);
+        return nullptr;
+    }
 }
 
 // ============================================================================

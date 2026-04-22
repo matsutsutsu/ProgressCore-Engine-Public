@@ -15,6 +15,7 @@
 #include "MaterialData.h"
 #include "Engine/Graphics/Core/RenderTarget.h"
 #include "Engine/GamePlay/Animation/Data/AnimSequence.h"
+#include "Engine/GamePlay/Animation/Data/AnimationCurve.h"
 
 // ============================================================================
 // [Data Structures]
@@ -102,6 +103,7 @@ public:
     // [5] Animation Sequence
     // ---------------------------------------------------------
     const AnimSequence* LoadAnimSequence(const char* filename);
+    const AnimationCurve* LoadAnimCurve(const char* filepath);
 
     // ---------------------------------------------------------
     // [6] Render Target (GPU Resource)
@@ -131,12 +133,14 @@ private:
     CCL::ResourcePool<AnimSequence>         m_animSequencePool;
     CCL::ResourcePool<RenderTarget>         m_renderTargetPool;
     CCL::ResourcePool<GpuParticleBufferSet> m_particleBufferPool;
+    CCL::ResourcePool<AnimationCurve>       m_animCurvePool; 
 
     // --- Registries (重複ロード防止のキャッシュ) ---
     std::unordered_map<uint32_t, TextureHandle>      m_textureRegistry;
     std::unordered_map<uint32_t, ModelHandle>        m_modelRegistry;
     std::unordered_map<uint32_t, AnimSequenceHandle> m_animSequenceRegistry;
     std::unordered_map<uint32_t, std::string>        m_assetPathRegistry;
+    std::unordered_map<uint32_t, CCL::Handle<AnimationCurve>> m_animCurveRegistry; 
 
     // スレッドセーフ用ミューテックス
     std::mutex _mutex;

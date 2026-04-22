@@ -2,12 +2,16 @@
 #include "ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"
 #include <cmath> // std::abs用
+#include "Engine/Graphics/Resource/ResourceManager.h"
 
 void AnimControllerSystem::Update(float dt)
 {
+    
+    auto& resourceManager = ResourceManager::Instance();
+
     // ForEachWithIDParallel は IfSystem から継承されているため直接呼び出し可能。
     // 引数の EntityID のみにエンジン側の型指定(CCL::ECS::)を行います。
-    ForEachWithIDParallel([](CCL::ECS::EntityID id,
+    ForEachWithIDParallel([&resourceManager](CCL::ECS::EntityID id,
         AnimStateMachineComponent& fsm,
         AnimatorComponent& animator,
         const AnimParametersComponent& params)
@@ -72,10 +76,21 @@ void AnimControllerSystem::Update(float dt)
                         if (nextState.stateHash == transition.targetStateHash) {
 
                             if (nextState.sequence) {
-								// 例: "Attack" という名前のアニメーション台本を再生する
-                               // 固定値(true, 1.0f)ではなく、ノードに設定された値を使用する
-                                animator.Play(nextState.sequence, nextState.isLoop, nextState.playbackSpeed);
-                                // さらに AAA 級なら CrossFade(nextState->blendTime) などの実装へ繋げる
+                                // ========================================================
+                                //  カーブのバインド処理
+                                // ========================================================
+                                const AnimationCurve* curvePtr = nullptr;
+                                
+                                // speedCurveName に文字列（パス）が設定されていればロードする
+                                if (!nextState.speedCurveName.empty()) {
+                                    // ResourceManager は一度ロードしたものはキャッシュから返すので、毎フレーム呼んでも安全です
+                                    // ただし、理想を言えば AnimStateGraph をロードした段階で一括バインドする方がより高速です
+                                    curvePtr = resourceManager.LoadAnimCurve(nextState.speedCurveName.c_str());
+                                }
+
+                                // 固定値ではなく、ノードに設定された値を使用する
+                                // ★第4引数に curvePtr を渡す
+                                animator.Play(nextState.sequence, nextState.isLoop, nextState.playbackSpeed, curvePtr);
                             }
                             break;
                         }
