@@ -1,5 +1,5 @@
 #include "AnimGraphWindow.h"
-#include "Engine/GamePlay/Animation/AnimGraphSerializer.h"
+#include "Engine/GamePlay/Animation/Data/AnimGraphSerializer.h"
 #include "Engine/Core/Math/StringHash.h"
 #include "imgui-node-editor/imgui_node_editor.h"
 
@@ -114,16 +114,19 @@ void AnimGraphWindow::DrawInspector()
         return;
     }
 
+    // 選択されたノード（ステート）を探す
     for (auto& state : _currentGraph.states) {
         if (state.stateHash == _selectedNodeHash) {
-            ImGui::Text("Hash: 0x%X", state.stateHash);
-            char buf[64];
-            strcpy_s(buf, state.sequenceName.c_str());
-            if (ImGui::InputText("Name", buf, sizeof(buf))) {
-                state.sequenceName = buf;
-            }
 
-            // ★ 初期ステートかどうかの表示
+            // --- 1. 基本情報 ---
+            char nameBuf[64];
+            strcpy_s(nameBuf, state.sequenceName.c_str());
+            if (ImGui::InputText("State Name", nameBuf, sizeof(nameBuf))) {
+                state.sequenceName = nameBuf;
+            }
+            ImGui::TextDisabled("Hash ID: 0x%X", state.stateHash);
+
+            // 初期ステートかどうかの表示
             if (_currentGraph.entryStateHash == state.stateHash) {
                 ImGui::TextColored(ImVec4(0.2f, 1.0f, 0.2f, 1.0f), "[ Entry State ]");
             }
@@ -135,22 +138,44 @@ void AnimGraphWindow::DrawInspector()
             ImGui::Separator();
 
             // ==============================================================
-            //  このノードから伸びる「矢印(Transition)」の条件編集
+            // 2. アニメーション品質パラメータの編集 (★拡張部分)
+            // ==============================================================
+            ImGui::Text("Animation Settings");
+
+            // ループ設定
+            ImGui::Checkbox("Loop Animation", &state.isLoop);
+
+            // 基本再生速度の調整 (DOD観点: マイナス値で逆再生も可能なように設計)
+            ImGui::DragFloat("Base Speed", &state.playbackSpeed, 0.01f, -5.0f, 5.0f, "x%.2f");
+
+            // 再生速度カーブの設定
+            // ※本格的なツールではプロジェクト内のカーブファイル一覧からコンボボックスで選ばせますが、
+            // 今回は直接文字列（ファイル名・リソース名）を入力する形式にしています。
+            char curveBuf[128];
+            strcpy_s(curveBuf, state.speedCurveName.c_str());
+            if (ImGui::InputText("Speed Curve Name", curveBuf, sizeof(curveBuf))) {
+                state.speedCurveName = curveBuf;
+            }
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("Enter the name of the Curve Resource (e.g., 'HeavyAttackCurve').\nLeave empty for constant linear speed.");
+            }
+
+            ImGui::Separator();
+
+            // ==============================================================
+            // 3. 遷移ルールの編集
             // ==============================================================
             ImGui::Text("Transitions (Out)");
 
             for (auto& trans : state.transitions) {
-                // 遷移先の名前を探す（表示用）
                 std::string targetName = "Unknown";
                 for (const auto& s : _currentGraph.states) {
                     if (s.stateHash == trans.targetStateHash) targetName = s.sequenceName;
                 }
 
-                // ツリーを開いて条件を編集する
                 if (ImGui::TreeNode((void*)&trans, "To: %s", targetName.c_str())) {
 
                     if (ImGui::Button("+ Add Condition")) {
-                        // デフォルトで「Speed > 0.0」という条件を追加
                         trans.conditions.push_back({ CCL::Utils::HashString("Speed"), AnimConditionOp::Greater, 0.0f });
                     }
 
@@ -160,12 +185,10 @@ void AnimGraphWindow::DrawInspector()
 
                         ImGui::Text("Condition %d", i);
 
-                        // 判定の演算子を変更 (Equal, Greater, Less)
                         int op = (int)cond.op;
                         ImGui::Combo("Op", &op, "Equal\0Greater\0Less\0\0");
                         cond.op = (AnimConditionOp)op;
 
-                        // 閾値を変更
                         ImGui::DragFloat("Threshold", &cond.threshold, 0.1f);
                         ImGui::PopID();
                     }

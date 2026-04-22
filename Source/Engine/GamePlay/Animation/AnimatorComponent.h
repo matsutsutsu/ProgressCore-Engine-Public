@@ -1,7 +1,9 @@
 #pragma once
 #include "Engine/Graphics/Resource/Model.h"
-#include "AnimSequence.h"
+#include "Engine/GamePlay/Animation/Data/AnimSequence.h"
 #include <vector>
+// カーブデータ構造の先行宣言（後で定義します）
+struct AnimationCurve;
 
 // ===================================================================================
 // ファイル: AnimatorComponent.h
@@ -18,6 +20,9 @@ struct AnimatorComponent {
     // --- 再生する台本データ ---
     const AnimSequence* currentSequence = nullptr; // 共有データへのポインタ（8バイト）
 
+    // 再生速度を動的に変化させるカーブのポインタ
+    const AnimationCurve* activeCurve = nullptr;
+
     // --- アニメーション状態（時計） ---
     float currentTimer = 0.0f;
     float playbackSpeed = 1.0f;
@@ -32,7 +37,7 @@ struct AnimatorComponent {
     std::vector<Model::NodePose> poseBufferA;
 
 
-    void Play(const AnimSequence* sequence, bool loop = true, float speed = 1.0f) {
+    void Play(const AnimSequence* sequence, bool loop = true, float speed = 1.0f, const AnimationCurve* curve = nullptr) {
         // 違うアニメーションに切り替える時だけ初期化する
         if (currentSequence != sequence) {
             currentSequence = sequence;
@@ -42,5 +47,6 @@ struct AnimatorComponent {
         }
         isLoop = loop;
         playbackSpeed = speed;
+        activeCurve = curve; // カーブをセット
     }
 };

@@ -239,6 +239,7 @@
     <ClInclude Include="Source\Editor\Windows\AnimGraphWindow.h" />
     <ClInclude Include="Source\Editor\Windows\AssetBrowserWindow.h" />
     <ClInclude Include="Source\Editor\Windows\ConsoleWindow.h" />
+    <ClInclude Include="Source\Editor\Windows\CurveEditorWindow.h" />
     <ClInclude Include="Source\Editor\Windows\ECSDebugWindow.h" />
     <ClInclude Include="Source\Editor\Windows\GameViewWindow.h" />
     <ClInclude Include="Source\Editor\Windows\HierarchyWindow.h" />
@@ -265,11 +266,12 @@
     <ClInclude Include="Source\Engine\GamePlay\Animation\AnimationSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Animation\AnimatorComponent.h" />
     <ClInclude Include="Source\Engine\GamePlay\Animation\AnimControllerSystem.h" />
-    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimEventMessages.h" />
-    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimGraphSerializer.h" />
     <ClInclude Include="Source\Engine\GamePlay\Animation\AnimParametersComponent.h" />
-    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimSequence.h" />
-    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimStateMachine.h" />
+    <ClInclude Include="Source\Engine\GamePlay\Animation\Data\AnimationCurve.h" />
+    <ClInclude Include="Source\Engine\GamePlay\Animation\Data\AnimEventMessages.h" />
+    <ClInclude Include="Source\Engine\GamePlay\Animation\Data\AnimGraphSerializer.h" />
+    <ClInclude Include="Source\Engine\GamePlay\Animation\Data\AnimSequence.h" />
+    <ClInclude Include="Source\Engine\GamePlay\Animation\Data\AnimStateMachine.h" />
     <ClInclude Include="Source\Engine\GamePlay\Camera\CameraBrainSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Camera\CameraListenerSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Camera\VirtualCameraComponents.h" />
@@ -560,6 +562,7 @@
     <ClCompile Include="Source\Editor\Windows\AnimationSequencerWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\AnimGraphWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\ConsoleWindow.cpp" />
+    <ClCompile Include="Source\Editor\Windows\CurveEditorWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\ECSDebugWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\HierarchyWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\InputEditorWindow.cpp" />
@@ -579,7 +582,7 @@
     <ClCompile Include="Source\Engine\GamePlay\Animation\AnimationSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Animation\AnimatorComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Animation\AnimControllerSystem.cpp" />
-    <ClCompile Include="Source\Engine\GamePlay\Animation\AnimGraphSerializer.cpp" />
+    <ClCompile Include="Source\Engine\GamePlay\Animation\Data\AnimGraphSerializer.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Camera\CameraBrainSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Camera\CameraListenerSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Camera\VirtualCameraComponentMeta.cpp" />

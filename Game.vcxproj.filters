@@ -1353,15 +1353,6 @@
     <ClInclude Include="Source\Game\Logics\Test\TestAnimationPlayerComponent.h">
       <Filter>Source\Game\Logics\Test\TestAnimation</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimSequence.h">
-      <Filter>Source\Engine\GamePlay\Animation\Data</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimStateMachine.h">
-      <Filter>Source\Engine\GamePlay\Animation\Data</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimEventMessages.h">
-      <Filter>Source\Engine\GamePlay\Animation\Data</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\GamePlay\Animation\AnimationSystem.h">
       <Filter>Source\Engine\GamePlay\Animation\Systems</Filter>
     </ClInclude>
@@ -1376,9 +1367,6 @@
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\AnimGraphWindow.h">
       <Filter>Source\Editor\Windows</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimGraphSerializer.h">
-      <Filter>Source\Engine\GamePlay\Animation\Data</Filter>
     </ClInclude>
     <ClInclude Include="External\imgui-node-editor\crude_json.h">
       <Filter>External\imgui-node-editor</Filter>
@@ -1397,6 +1385,24 @@
     </ClInclude>
     <ClInclude Include="External\imgui-node-editor\imgui_node_editor_internal.h">
       <Filter>External\imgui-node-editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Animation\Data\AnimationCurve.h">
+      <Filter>Source\Engine\GamePlay\Animation\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Animation\Data\AnimEventMessages.h">
+      <Filter>Source\Engine\GamePlay\Animation\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Animation\Data\AnimGraphSerializer.h">
+      <Filter>Source\Engine\GamePlay\Animation\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Animation\Data\AnimSequence.h">
+      <Filter>Source\Engine\GamePlay\Animation\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Animation\Data\AnimStateMachine.h">
+      <Filter>Source\Engine\GamePlay\Animation\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\CurveEditorWindow.h">
+      <Filter>Source\Editor\Windows</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2120,9 +2126,6 @@
     <ClCompile Include="Source\Editor\Windows\AnimGraphWindow.cpp">
       <Filter>Source\Editor\Windows</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Animation\AnimGraphSerializer.cpp">
-      <Filter>Source\Engine\GamePlay\Animation\Data</Filter>
-    </ClCompile>
     <ClCompile Include="External\imgui-node-editor\crude_json.cpp">
       <Filter>External\imgui-node-editor</Filter>
     </ClCompile>
@@ -2134,6 +2137,12 @@
     </ClCompile>
     <ClCompile Include="External\imgui-node-editor\imgui_node_editor_api.cpp">
       <Filter>External\imgui-node-editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\Animation\Data\AnimGraphSerializer.cpp">
+      <Filter>Source\Engine\GamePlay\Animation\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\CurveEditorWindow.cpp">
+      <Filter>Source\Editor\Windows</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

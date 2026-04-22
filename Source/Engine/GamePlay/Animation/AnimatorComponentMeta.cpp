@@ -1,6 +1,6 @@
 #include "ECS/Core/CCL_World.h"
 #include "Engine/GamePlay/Animation/AnimatorComponent.h"
-#include "Engine/GamePlay/Animation/AnimStateMachine.h"       // ★追加
+#include "Engine/GamePlay/Animation/Data/AnimStateMachine.h"       // ★追加
 #include "Engine/GamePlay/Animation/AnimParametersComponent.h" // ★追加
 #include "Engine/GamePlay/Graphics/Core/ModelComponent.h"
 #include "Editor/Inspector/ComponentGuiRegistry.h"

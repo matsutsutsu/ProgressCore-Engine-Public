@@ -4,7 +4,7 @@
 #include "ImSequencer.h"
 #include "Engine/Graphics/Resource/Model.h"
 #include "Engine/Graphics/Resource/ModelResource.h"
-#include "Engine/GamePlay/Animation/AnimSequence.h" 
+#include "Engine/GamePlay/Animation/Data/AnimSequence.h" 
 #include "Engine/GamePlay/Animation/AnimationSystem.h" // 手動更新用
 
 // ★追加: ファイル選択ダイアログ用

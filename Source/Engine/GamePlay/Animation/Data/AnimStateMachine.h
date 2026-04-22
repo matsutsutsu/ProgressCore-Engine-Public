@@ -3,7 +3,8 @@
 #include <string>
 #include <cstdint>
 #include <json.hpp> // cereal を廃止し json.hpp に切り替え
-#include "Engine/GamePlay/Animation/AnimSequence.h"
+#include "Engine/GamePlay/Animation/Data/AnimSequence.h"
+#include "Engine/GamePlay/Animation/Data/AnimationCurve.h"
 
 // 条件演算子
 // 例: param > threshold なら op は Greater
@@ -33,7 +34,14 @@ struct AnimState {
     uint32_t stateHash;
     std::string sequenceName; 
 
-    // ランタイム用のポインタ (JSONには保存しない)
+    // --- 拡張パラメータ ---
+    bool isLoop = true;
+    float playbackSpeed = 1.0f;
+    std::string speedCurveName; // 空文字ならカーブなし(等速)
+
+    // ロード時に ResourceManager などから取得したポインタを繋ぐ場所
+    const AnimationCurve* speedCurve = nullptr;
+
     const AnimSequence* sequence = nullptr;
 
 	// そのステートから伸びる遷移のリスト
@@ -70,13 +78,23 @@ inline void from_json(const json& j, AnimTransition& t) {
     j.at("conditions").get_to(t.conditions);
 }
 
-// State の変換
+// State の変換 (to_json / from_json に新規パラメータを追加)
 inline void to_json(json& j, const AnimState& s) {
-    j = json{ {"stateHash", s.stateHash}, {"sequenceName", s.sequenceName}, {"transitions", s.transitions} };
+    j = json{
+        {"stateHash", s.stateHash},
+        {"sequenceName", s.sequenceName},
+        {"isLoop", s.isLoop},                    
+        {"playbackSpeed", s.playbackSpeed},      
+        {"speedCurveName", s.speedCurveName},    
+        {"transitions", s.transitions}
+    };
 }
 inline void from_json(const json& j, AnimState& s) {
     j.at("stateHash").get_to(s.stateHash);
     j.at("sequenceName").get_to(s.sequenceName);
+    if (j.contains("isLoop")) j.at("isLoop").get_to(s.isLoop);              
+    if (j.contains("playbackSpeed")) j.at("playbackSpeed").get_to(s.playbackSpeed); 
+    if (j.contains("speedCurveName")) j.at("speedCurveName").get_to(s.speedCurveName); 
     j.at("transitions").get_to(s.transitions);
 }
 

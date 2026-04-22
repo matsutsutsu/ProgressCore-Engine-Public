@@ -7,7 +7,8 @@
 #include "Engine/Core/Math/StringHash.h"
 
 // 先ほど作成した専用の手紙ヘッダー
-#include "AnimEventMessages.h"
+#include "Engine/GamePlay/Animation/Data/AnimEventMessages.h"
+#include "Engine/GamePlay/Animation/Data/AnimationCurve.h"
 
 // ===================================================================================
 // ファイル: AnimationSystem.h
@@ -31,8 +32,23 @@ void AnimationSystem::Update(float dt)
 
         const AnimSequence* seq = animator.currentSequence;
 
-        // 1. 時間を進行させる
-        animator.currentTimer += dt * animator.playbackSpeed;
+        // ========================================================
+        // 1. カーブによる時間の歪み（Time Warping）計算
+        // ========================================================
+        float curveMultiplier = 1.0f;
+
+        if (animator.activeCurve) {
+            // 現在の進捗率 (0.0=最初, 1.0=最後) を計算
+            float progress = animator.currentTimer / seq->duration;
+
+            // 進捗率をキーにして、カーブから現在の速度倍率をサンプリング
+            curveMultiplier = animator.activeCurve->Evaluate(progress);
+        }
+
+        // 時間を進行させる (ベース速度 × カーブによる倍率 を dt に掛ける)
+        animator.currentTimer += dt * animator.playbackSpeed * curveMultiplier;
+
+ 
 
         // ========================================================
         // 2. 高速イベント発火ロジック (O(1)アクセス)

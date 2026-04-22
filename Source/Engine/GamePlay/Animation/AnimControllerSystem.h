@@ -1,6 +1,6 @@
 #pragma once
 #include "ECS/System/CCL_System.h"
-#include "Engine/GamePlay/Animation/AnimStateMachine.h"
+#include "Engine/GamePlay/Animation/Data/AnimStateMachine.h"
 #include "Engine/GamePlay/Animation/AnimParametersComponent.h"
 #include "Engine/GamePlay/Animation/AnimatorComponent.h"
 

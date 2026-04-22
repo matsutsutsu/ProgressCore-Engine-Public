@@ -14,7 +14,7 @@
 #include "Model.h"
 #include "MaterialData.h"
 #include "Engine/Graphics/Core/RenderTarget.h"
-#include "Engine/GamePlay/Animation/AnimSequence.h"
+#include "Engine/GamePlay/Animation/Data/AnimSequence.h"
 
 // ============================================================================
 // [Data Structures]

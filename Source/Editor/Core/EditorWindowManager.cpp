@@ -21,6 +21,7 @@
 #include "Editor/Windows/ConsoleWindow.h"
 #include "Editor/Windows/NavMeshWindow.h"
 #include "Editor/Windows/AnimGraphWindow.h"
+#include "Editor/Windows/CurveEditorWindow.h"
 
 #include "Engine/Serialization/Factory/Prefab.h"
 #include <imgui.h>
@@ -36,12 +37,13 @@ void EditorWindowManager::Initialize()
     RegisterWindow<HierarchyWindow>();
     RegisterWindow<ECSDebugWindow>();
     RegisterWindow<AnimationSequencerWindow>();
-    RegisterWindow<TextEditorWindow>();
+    //RegisterWindow<TextEditorWindow>();
     RegisterWindow<AssetBrowserWindow>();
-    RegisterWindow<InputEditorWindow>();
+    //RegisterWindow<InputEditorWindow>();
     RegisterWindow<ConsoleWindow>();
-    RegisterWindow<NavMeshWindow>();
+    //RegisterWindow<NavMeshWindow>();
 	RegisterWindow<AnimGraphWindow>();
+	RegisterWindow<CurveEditorWindow>();
     //RegisterWindow<SceneViewWindow>();
     //RegisterWindow<GameViewWindow>();
     //  必要に応じて他のウィンドウもここに登録

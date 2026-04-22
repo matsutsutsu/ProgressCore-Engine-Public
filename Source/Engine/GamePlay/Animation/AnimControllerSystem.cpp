@@ -73,7 +73,9 @@ void AnimControllerSystem::Update(float dt)
 
                             if (nextState.sequence) {
 								// 例: "Attack" という名前のアニメーション台本を再生する
-                                animator.Play(nextState.sequence, true, 1.0f);
+                               // 固定値(true, 1.0f)ではなく、ノードに設定された値を使用する
+                                animator.Play(nextState.sequence, nextState.isLoop, nextState.playbackSpeed);
+                                // さらに AAA 級なら CrossFade(nextState->blendTime) などの実装へ繋げる
                             }
                             break;
                         }
