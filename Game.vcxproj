@@ -257,8 +257,11 @@
     <ClInclude Include="Source\Engine\GamePlay\AI\Navigation\NavSteeringSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Animation\AnimationSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Animation\AnimatorComponent.h" />
+    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimControllerSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Animation\AnimEventMessages.h" />
+    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimParametersComponent.h" />
     <ClInclude Include="Source\Engine\GamePlay\Animation\AnimSequence.h" />
+    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimStateMachine.h" />
     <ClInclude Include="Source\Engine\GamePlay\Camera\CameraBrainSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Camera\CameraListenerSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Camera\VirtualCameraComponents.h" />
@@ -439,6 +442,8 @@
     <ClInclude Include="Source\Game\Logics\Test\AISoundDebuggerSystem.h" />
     <ClInclude Include="Source\Game\Logics\Test\ECSBenchmarkSystem.h" />
     <ClInclude Include="Source\Game\Logics\Test\OrbitBenchmarkComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Test\TestAnimationPlayerSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Test\TestAnimationPlayerComponent.h" />
     <ClInclude Include="Source\Game\Logics\Test\VoxelOceanComponent.h" />
     <ClInclude Include="Source\Game\Logics\Test\VoxelOceanSystem.h" />
     <ClInclude Include="Source\Game\Logics\World\Triggers\TriggerComponent.h" />
@@ -560,6 +565,7 @@
     <ClCompile Include="Source\Engine\GamePlay\AI\Navigation\NavSteeringSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Animation\AnimationSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Animation\AnimatorComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\GamePlay\Animation\AnimControllerSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Camera\CameraBrainSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Camera\CameraListenerSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Camera\VirtualCameraComponentMeta.cpp" />
@@ -682,6 +688,7 @@
     <ClCompile Include="Source\Game\Logics\Combat\HealthSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\AISoundDebuggerSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\ECSBenchmarkSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Test\TestAnimationPlayerSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\VoxelOceanSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\World\Triggers\TriggerSystem.cpp" />
     <ClCompile Include="Source\Game\Scenes\BaseScene.cpp" />

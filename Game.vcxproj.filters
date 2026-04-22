@@ -403,6 +403,9 @@
     <Filter Include="Source\Game\Logics\Audio">
       <UniqueIdentifier>{bd33aae1-4ce7-4c0d-9064-6e2358abc38b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\Test\TestAnimation">
+      <UniqueIdentifier>{00716ee6-69ac-43bd-9ea5-b3f334cf8a0d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1344,6 +1347,21 @@
     <ClInclude Include="Source\Game\Logics\Audio\DistractionItemDebugDrawSystem.h">
       <Filter>Source\Game\Logics\Audio</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimParametersComponent.h">
+      <Filter>Source\Engine\GamePlay\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimStateMachine.h">
+      <Filter>Source\Engine\GamePlay\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Test\TestAnimationPlayerSystem.h">
+      <Filter>Source\Game\Logics\Test\TestAnimation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Test\TestAnimationPlayerComponent.h">
+      <Filter>Source\Game\Logics\Test\TestAnimation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimControllerSystem.h">
+      <Filter>Source\Engine\GamePlay\Animation</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2056,6 +2074,12 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Audio\DistractionItemDebugDrawSystem.cpp">
       <Filter>Source\Game\Logics\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Test\TestAnimationPlayerSystem.cpp">
+      <Filter>Source\Game\Logics\Test\TestAnimation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\Animation\AnimControllerSystem.cpp">
+      <Filter>Source\Engine\GamePlay\Animation</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
