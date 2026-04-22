@@ -406,6 +406,15 @@
     <Filter Include="Source\Game\Logics\Test\TestAnimation">
       <UniqueIdentifier>{00716ee6-69ac-43bd-9ea5-b3f334cf8a0d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\GamePlay\Animation\Data">
+      <UniqueIdentifier>{06a1d220-9175-404d-975a-e6f992db4236}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\GamePlay\Animation\Components">
+      <UniqueIdentifier>{6f1287e9-d433-4ffe-9a45-19f158812148}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\GamePlay\Animation\Systems">
+      <UniqueIdentifier>{5f44e74c-6d22-457b-a41c-dd83b377aa5a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -716,12 +725,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderResources.h">
       <Filter>Source\Engine\Graphics\Shader</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimationSystem.h">
-      <Filter>Source\Engine\GamePlay\Animation</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimatorComponent.h">
-      <Filter>Source\Engine\GamePlay\Animation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GamePlay\Camera\CameraBrainSystem.h">
       <Filter>Source\Engine\GamePlay\Camera</Filter>
@@ -1071,14 +1074,8 @@
     <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltShapeUpdateSystem.h">
       <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimSequence.h">
-      <Filter>Source\Engine\GamePlay\Animation</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltDebugDrawSystem.h">
       <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimEventMessages.h">
-      <Filter>Source\Engine\GamePlay\Animation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GamePlay\Graphics\Particle\ParticleEventSystem.h">
       <Filter>Source\Engine\GamePlay\Graphics\Particle</Filter>
@@ -1347,20 +1344,38 @@
     <ClInclude Include="Source\Game\Logics\Audio\DistractionItemDebugDrawSystem.h">
       <Filter>Source\Game\Logics\Audio</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimParametersComponent.h">
-      <Filter>Source\Engine\GamePlay\Animation</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimStateMachine.h">
-      <Filter>Source\Engine\GamePlay\Animation</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Test\TestAnimationPlayerSystem.h">
       <Filter>Source\Game\Logics\Test\TestAnimation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Test\TestAnimationPlayerComponent.h">
       <Filter>Source\Game\Logics\Test\TestAnimation</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimSequence.h">
+      <Filter>Source\Engine\GamePlay\Animation\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimStateMachine.h">
+      <Filter>Source\Engine\GamePlay\Animation\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimEventMessages.h">
+      <Filter>Source\Engine\GamePlay\Animation\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimationSystem.h">
+      <Filter>Source\Engine\GamePlay\Animation\Systems</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\GamePlay\Animation\AnimControllerSystem.h">
-      <Filter>Source\Engine\GamePlay\Animation</Filter>
+      <Filter>Source\Engine\GamePlay\Animation\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimParametersComponent.h">
+      <Filter>Source\Engine\GamePlay\Animation\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimatorComponent.h">
+      <Filter>Source\Engine\GamePlay\Animation\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\AnimGraphWindow.h">
+      <Filter>Source\Editor\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimGraphSerializer.h">
+      <Filter>Source\Engine\GamePlay\Animation\Data</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1739,9 +1754,6 @@
     <ClCompile Include="Source\Game\Logics\Combat\HealthSystem.cpp">
       <Filter>Source\Game\Logics\Combat</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Animation\AnimationSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Animation</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\GamePlay\Camera\VisualCameraSystem.cpp">
       <Filter>Source\Engine\GamePlay\Camera</Filter>
     </ClCompile>
@@ -2078,8 +2090,17 @@
     <ClCompile Include="Source\Game\Logics\Test\TestAnimationPlayerSystem.cpp">
       <Filter>Source\Game\Logics\Test\TestAnimation</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\Animation\AnimationSystem.cpp">
+      <Filter>Source\Engine\GamePlay\Animation\Systems</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\GamePlay\Animation\AnimControllerSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Animation</Filter>
+      <Filter>Source\Engine\GamePlay\Animation\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\AnimGraphWindow.cpp">
+      <Filter>Source\Editor\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GamePlay\Animation\AnimGraphSerializer.cpp">
+      <Filter>Source\Engine\GamePlay\Animation\Data</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

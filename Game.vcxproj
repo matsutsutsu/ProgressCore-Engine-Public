@@ -230,6 +230,7 @@
     <ClInclude Include="Source\Editor\Utils\NavMeshBuilder.h" />
     <ClInclude Include="Source\Editor\Utils\ShellIconLoader.h" />
     <ClInclude Include="Source\Editor\Windows\AnimationSequencerWindow.h" />
+    <ClInclude Include="Source\Editor\Windows\AnimGraphWindow.h" />
     <ClInclude Include="Source\Editor\Windows\AssetBrowserWindow.h" />
     <ClInclude Include="Source\Editor\Windows\ConsoleWindow.h" />
     <ClInclude Include="Source\Editor\Windows\ECSDebugWindow.h" />
@@ -259,6 +260,7 @@
     <ClInclude Include="Source\Engine\GamePlay\Animation\AnimatorComponent.h" />
     <ClInclude Include="Source\Engine\GamePlay\Animation\AnimControllerSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Animation\AnimEventMessages.h" />
+    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimGraphSerializer.h" />
     <ClInclude Include="Source\Engine\GamePlay\Animation\AnimParametersComponent.h" />
     <ClInclude Include="Source\Engine\GamePlay\Animation\AnimSequence.h" />
     <ClInclude Include="Source\Engine\GamePlay\Animation\AnimStateMachine.h" />
@@ -546,6 +548,7 @@
     <ClCompile Include="Source\Editor\Utils\NavMeshBuilder.cpp" />
     <ClCompile Include="Source\Editor\Utils\ShellIconLoader.cpp" />
     <ClCompile Include="Source\Editor\Windows\AnimationSequencerWindow.cpp" />
+    <ClCompile Include="Source\Editor\Windows\AnimGraphWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\ConsoleWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\ECSDebugWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\HierarchyWindow.cpp" />
@@ -566,6 +569,7 @@
     <ClCompile Include="Source\Engine\GamePlay\Animation\AnimationSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Animation\AnimatorComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Animation\AnimControllerSystem.cpp" />
+    <ClCompile Include="Source\Engine\GamePlay\Animation\AnimGraphSerializer.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Camera\CameraBrainSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Camera\CameraListenerSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Camera\VirtualCameraComponentMeta.cpp" />
