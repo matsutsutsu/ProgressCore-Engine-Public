@@ -20,6 +20,7 @@
 #include "Editor/Windows/InputEditorWindow.h"
 #include "Editor/Windows/ConsoleWindow.h"
 #include "Editor/Windows/NavMeshWindow.h"
+#include "Editor/Windows/AnimGraphWindow.h"
 
 #include "Engine/Serialization/Factory/Prefab.h"
 #include <imgui.h>
@@ -40,6 +41,7 @@ void EditorWindowManager::Initialize()
     RegisterWindow<InputEditorWindow>();
     RegisterWindow<ConsoleWindow>();
     RegisterWindow<NavMeshWindow>();
+	RegisterWindow<AnimGraphWindow>();
     //RegisterWindow<SceneViewWindow>();
     //RegisterWindow<GameViewWindow>();
     //  必要に応じて他のウィンドウもここに登録

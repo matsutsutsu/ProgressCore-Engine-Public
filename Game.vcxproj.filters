@@ -415,6 +415,9 @@
     <Filter Include="Source\Engine\GamePlay\Animation\Systems">
       <UniqueIdentifier>{5f44e74c-6d22-457b-a41c-dd83b377aa5a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="External\imgui-node-editor">
+      <UniqueIdentifier>{f1fed5a5-b31c-4a17-a80d-f659d2c8ca2d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1377,6 +1380,24 @@
     <ClInclude Include="Source\Engine\GamePlay\Animation\AnimGraphSerializer.h">
       <Filter>Source\Engine\GamePlay\Animation\Data</Filter>
     </ClInclude>
+    <ClInclude Include="External\imgui-node-editor\crude_json.h">
+      <Filter>External\imgui-node-editor</Filter>
+    </ClInclude>
+    <ClInclude Include="External\imgui-node-editor\imgui_bezier_math.h">
+      <Filter>External\imgui-node-editor</Filter>
+    </ClInclude>
+    <ClInclude Include="External\imgui-node-editor\imgui_canvas.h">
+      <Filter>External\imgui-node-editor</Filter>
+    </ClInclude>
+    <ClInclude Include="External\imgui-node-editor\imgui_extra_math.h">
+      <Filter>External\imgui-node-editor</Filter>
+    </ClInclude>
+    <ClInclude Include="External\imgui-node-editor\imgui_node_editor.h">
+      <Filter>External\imgui-node-editor</Filter>
+    </ClInclude>
+    <ClInclude Include="External\imgui-node-editor\imgui_node_editor_internal.h">
+      <Filter>External\imgui-node-editor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2101,6 +2122,18 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\GamePlay\Animation\AnimGraphSerializer.cpp">
       <Filter>Source\Engine\GamePlay\Animation\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="External\imgui-node-editor\crude_json.cpp">
+      <Filter>External\imgui-node-editor</Filter>
+    </ClCompile>
+    <ClCompile Include="External\imgui-node-editor\imgui_canvas.cpp">
+      <Filter>External\imgui-node-editor</Filter>
+    </ClCompile>
+    <ClCompile Include="External\imgui-node-editor\imgui_node_editor.cpp">
+      <Filter>External\imgui-node-editor</Filter>
+    </ClCompile>
+    <ClCompile Include="External\imgui-node-editor\imgui_node_editor_api.cpp">
+      <Filter>External\imgui-node-editor</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

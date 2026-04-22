@@ -1,51 +1,99 @@
 #pragma once
 #include <vector>
+#include <string>
 #include <cstdint>
-#include "AnimSequence.h"
-
-// ===================================================================================
-// ファイル: AnimStateMachine.h
-// 概要: アニメーションの「ルールブック」と「状態記憶」のデータ構造
-// 
-// [ 役割 ]
-// 1. マスターデータ (AnimStateGraph等): 
-//    「どの条件を満たせば、どのアニメへ遷移するか」のノードネットワークを定義。
-//    JSONからロードされ、全エンティティで共有される。
-// 2. コンポーネント (AnimStateMachineComponent):
-//    各エンティティが「現在どのステート(ノード)にいるか」を記憶する器。
-// ===================================================================================
+#include <json.hpp> // cereal を廃止し json.hpp に切り替え
+#include "Engine/GamePlay/Animation/AnimSequence.h"
 
 // 条件演算子
+// 例: param > threshold なら op は Greater
+// 例: param < threshold なら op は Less
+// 例: param == threshold なら op は Equal
 enum class AnimConditionOp { Equal, Greater, Less };
 
-// 遷移条件 (例: Speed > 0.1)
+// 遷移条件
 struct AnimCondition {
     uint32_t paramHash;
+
+	// 条件演算子（例: param > threshold なら op は Greater）
     AnimConditionOp op;
-    float threshold; // Boolの場合は 1.0f(true) / 0.0f(false) として扱う
+    float threshold;
 };
 
 // 遷移の矢印
 struct AnimTransition {
-    uint32_t targetStateHash;              // 遷移先のステートID
-    std::vector<AnimCondition> conditions; // 全て満たせば遷移する (AND条件)
+    uint32_t targetStateHash;
+
+	// その矢印を進むための条件リスト（複数の条件を全て満たす必要がある）
+    std::vector<AnimCondition> conditions;
 };
 
 // ステート (ノード)
 struct AnimState {
     uint32_t stateHash;
-    const AnimSequence* sequence = nullptr;  // 再生するアニメーションデータ
-    std::vector<AnimTransition> transitions; // ここから伸びる矢印のリスト
+    std::string sequenceName; 
+
+    // ランタイム用のポインタ (JSONには保存しない)
+    const AnimSequence* sequence = nullptr;
+
+	// そのステートから伸びる遷移のリスト
+    std::vector<AnimTransition> transitions;
 };
 
-// グラフ全体 (マスターデータとして使い回す)
+// グラフ全体
 struct AnimStateGraph {
     std::vector<AnimState> states;
-    uint32_t entryStateHash = 0; // 初期ステート
+    uint32_t entryStateHash = 0;
 };
 
-// Entityに持たせるコンポーネント (現在の状態を記憶する)
+// =================================================================
+// nlohmann/json 用のシリアライズ定義 (手動変換により制御を容易にする)
+// =================================================================
+using json = nlohmann::json;
+
+// Condition の変換
+inline void to_json(json& j, const AnimCondition& c) {
+    j = json{ {"paramHash", c.paramHash}, {"op", (int)c.op}, {"threshold", c.threshold} };
+}
+inline void from_json(const json& j, AnimCondition& c) {
+    j.at("paramHash").get_to(c.paramHash);
+    j.at("op").get_to((int&)c.op);
+    j.at("threshold").get_to(c.threshold);
+}
+
+// Transition の変換
+inline void to_json(json& j, const AnimTransition& t) {
+    j = json{ {"targetStateHash", t.targetStateHash}, {"conditions", t.conditions} };
+}
+inline void from_json(const json& j, AnimTransition& t) {
+    j.at("targetStateHash").get_to(t.targetStateHash);
+    j.at("conditions").get_to(t.conditions);
+}
+
+// State の変換
+inline void to_json(json& j, const AnimState& s) {
+    j = json{ {"stateHash", s.stateHash}, {"sequenceName", s.sequenceName}, {"transitions", s.transitions} };
+}
+inline void from_json(const json& j, AnimState& s) {
+    j.at("stateHash").get_to(s.stateHash);
+    j.at("sequenceName").get_to(s.sequenceName);
+    j.at("transitions").get_to(s.transitions);
+}
+
+// Graph の変換
+inline void to_json(json& j, const AnimStateGraph& g) {
+    j = json{ {"entryStateHash", g.entryStateHash}, {"states", g.states} };
+}
+inline void from_json(const json& j, AnimStateGraph& g) {
+    j.at("entryStateHash").get_to(g.entryStateHash);
+    j.at("states").get_to(g.states);
+}
+
 struct AnimStateMachineComponent {
-    const AnimStateGraph* graph = nullptr; // 共有データへのポインタ
-    uint32_t currentStateHash = 0;         // 現在自分がいるステート
+    //　遷移するアニメーションのノード情報のポインタ
+	// ポインタの理由は、同じ敵キャラなら全ての個体で同じグラフを共有するため（マスターデータ）
+    const AnimStateGraph* graph = nullptr;
+
+	// 現在のステートを示すハッシュ値（ノードID）
+    uint32_t currentStateHash = 0;
 };

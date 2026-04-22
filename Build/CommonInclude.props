@@ -16,6 +16,7 @@
 
 				<!-- ===== External Libraries ===== -->
 				$(SolutionDir)External\imgui-docking;
+				$(SolutionDir)External\imgui-node-editor;
 				$(SolutionDir)External\ImGuizmo;
 				$(SolutionDir)External\cereal\include;
 				$(SolutionDir)External\tinygltf;
@@ -26,6 +27,7 @@
 				$(SolutionDir)External\Lua\src;
 				$(SolutionDir)External\sol2\include;
 				$(SolutionDir)External\Tracy;
+
 
 				$(SolutionDir)External\JoltPhysics\include;
 

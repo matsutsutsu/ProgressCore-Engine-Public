@@ -17,7 +17,9 @@ void AnimControllerSystem::Update(float dt)
 
             // 1. 現在のステートを検索
             const AnimState* currentState = nullptr;
+			// 全体のノードをfor文で回す　unoredered_mapでハッシュから直接アクセスする方法もあるが、ノード数が少ない前提でシンプルな線形探索を採用
             for (const auto& state : fsm.graph->states) {
+				// 現在のステートを見つけたらループを抜ける
                 if (state.stateHash == fsm.currentStateHash) {
                     currentState = &state;
                     break;
@@ -30,22 +32,27 @@ void AnimControllerSystem::Update(float dt)
                 return;
             }
 
+
             // 2. 遷移条件（現在ステートから伸びる矢印）を評価
             for (const auto& transition : currentState->transitions) {
                 bool allConditionsMet = true;
 
+				// 条件リストを全てチェック（AND条件）
                 for (const auto& cond : transition.conditions) {
+					// 条件のパラメーター値をAnimParametersComponentから取得
+					// 例: "Speed > 0.5" なら、paramHashは "Speed" のハッシュ値、thresholdは0.5fになる
                     float paramValue = params.GetFloat(cond.paramHash);
 
+					// 条件演算子に応じて、パラメーター値と閾値を比較
+					// cond.op　とは、AnimCondition構造体のメンバで、条件の演算子を表す列挙型（Equal, Greater, Less）です。
                     switch (cond.op) {
-                        // AnimConditionOp が特定の名前空間にある場合は適宜修飾してください
-                    case AnimConditionOp::Greater:
+					case AnimConditionOp::Greater:  // 例: Speed > 0.5
                         if (!(paramValue > cond.threshold)) allConditionsMet = false;
                         break;
-                    case AnimConditionOp::Less:
+					case AnimConditionOp::Less:     // 例: Speed < 0.5
                         if (!(paramValue < cond.threshold)) allConditionsMet = false;
                         break;
-                    case AnimConditionOp::Equal:
+					case AnimConditionOp::Equal:    // 例: IsGrounded == true (boolもfloatも0.0f/1.0fで表現できるので同じコードで処理可能)
                         // 浮動小数点数の厳密比較を避け、許容誤差(Epsilon)を設ける
                         if (std::abs(paramValue - cond.threshold) > 0.0001f) allConditionsMet = false;
                         break;
@@ -56,12 +63,16 @@ void AnimControllerSystem::Update(float dt)
 
                 // 3. 全ての条件を満たした場合、遷移を実行してループを抜ける
                 if (allConditionsMet) {
+					// 遷移先（矢印の先）のステートに切り替える
                     fsm.currentStateHash = transition.targetStateHash;
 
+					// 遷移先のステートを検索して、対応するアニメーションを再生する
                     for (const auto& nextState : fsm.graph->states) {
+						// 遷移先のステートを見つけたら、そのステートに対応するアニメーションを再生してループを抜ける
                         if (nextState.stateHash == transition.targetStateHash) {
 
                             if (nextState.sequence) {
+								// 例: "Attack" という名前のアニメーション台本を再生する
                                 animator.Play(nextState.sequence, true, 1.0f);
                             }
                             break;
