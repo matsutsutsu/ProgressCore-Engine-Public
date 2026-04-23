@@ -27,14 +27,10 @@ AnimGraphWindow::~AnimGraphWindow() {
 
 void AnimGraphWindow::DrawContents(EditorContext& context) {
     ed::SetCurrentEditor(_nodeContext);
-
     DrawToolbar();
-
     ImGui::Columns(2, "AnimGraphColumns");
     ImGui::SetColumnWidth(0, ImGui::GetWindowWidth() * 0.75f);
-
     DrawNodeWorkspace();
-
     ImGui::NextColumn();
     DrawInspector();
     ImGui::Columns(1);
@@ -44,63 +40,94 @@ void AnimGraphWindow::DrawNodeWorkspace()
 {
     ed::Begin("My Anim Node Editor");
 
-    // リンクの張りを0にして直線にする
     ed::PushStyleVar(ed::StyleVar_LinkStrength, 0.0f);
 
-    constexpr float NODE_WIDTH = 130.0f;
+    constexpr float NODE_WIDTH = 150.0f;
 
     // ================================================================
-    // STEP 1: ノードとピンの描画 (変更なし)
+    // 1. Entry ノードの描画
     // ================================================================
-    ed::PushStyleColor(ed::StyleColor_NodeBg, ImVec4(0.42f, 0.26f, 0.00f, 1.0f));
-    ed::PushStyleColor(ed::StyleColor_NodeBorder, ImVec4(1.00f, 0.60f, 0.00f, 1.0f));
-    ed::PushStyleVar(ed::StyleVar_NodeRounding, 6.0f);
-    ed::PushStyleVar(ed::StyleVar_NodePadding, ImVec4(12, 8, 12, 8));
-
+    ed::PushStyleColor(ed::StyleColor_NodeBg, ImVec4(0.3f, 0.2f, 0.1f, 1.0f));
     ed::BeginNode(ENTRY_NODE_ID);
-    ImGui::Dummy(ImVec2(NODE_WIDTH, 0));
-    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (NODE_WIDTH - ImGui::CalcTextSize("Entry").x) * 0.5f);
-    ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.4f, 1.0f), "Entry");
+    
+    ImGui::Dummy(ImVec2(NODE_WIDTH, 5));
+    float ew = ImGui::CalcTextSize("ENTRY").x;
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (NODE_WIDTH - ew) * 0.5f);
+    ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "ENTRY");
+    ImGui::Dummy(ImVec2(NODE_WIDTH, 5));
 
-    ImGui::SameLine(NODE_WIDTH - ImGui::CalcTextSize(">").x);
-    ed::PushStyleVar(ed::StyleVar_PinRadius, 0.0f);
+    ImGui::Separator();
+
+    // ★修正: Buttonを排除し、図形描画で「線を引けるダミーボタン」を作成
     ed::BeginPin(ENTRY_OUT_PIN, ed::PinKind::Output);
-    ImGui::TextDisabled(">");
+    ImVec2 cursorPosE = ImGui::GetCursorScreenPos();
+    ImDrawList* dlE = ImGui::GetWindowDrawList();
+    dlE->AddRectFilled(cursorPosE, ImVec2(cursorPosE.x + NODE_WIDTH, cursorPosE.y + 24), IM_COL32(204, 102, 25, 200), 4.0f);
+    
+    ImGui::Dummy(ImVec2(NODE_WIDTH, 4));
+    float twE = ImGui::CalcTextSize("● 線を伸ばす (Start)").x;
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (NODE_WIDTH - twE) * 0.5f);
+    ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "● 線を伸ばす (Start)");
+    ImGui::Dummy(ImVec2(NODE_WIDTH, 4));
     ed::EndPin();
-    ed::PopStyleVar();
-    ed::EndNode();
-    ed::PopStyleVar(2);
-    ed::PopStyleColor(2);
 
+    ed::EndNode();
+    ed::PopStyleColor();
+
+    // ================================================================
+    // 2. 通常ステートノードの描画
+    // ================================================================
     for (auto& state : _currentGraph.states)
     {
-        const bool isEntry = (_currentGraph.entryStateHash == state.stateHash);
+        // ★修正: 画像の赤いエラー（ID衝突）を完全に防ぐためのPushID
+        ImGui::PushID(state.stateHash); 
 
-        ed::PushStyleColor(ed::StyleColor_NodeBg, isEntry ? ImVec4(0.10f, 0.28f, 0.10f, 1.0f) : ImVec4(0.18f, 0.18f, 0.18f, 1.0f));
-        ed::PushStyleColor(ed::StyleColor_NodeBorder, isEntry ? ImVec4(0.30f, 0.75f, 0.30f, 1.0f) : ImVec4(0.45f, 0.45f, 0.45f, 1.0f));
-        ed::PushStyleVar(ed::StyleVar_NodeRounding, 6.0f);
-        ed::PushStyleVar(ed::StyleVar_NodePadding, ImVec4(12, 8, 12, 8));
+        const bool isEntry = (_currentGraph.entryStateHash == state.stateHash);
+        ed::PushStyleColor(ed::StyleColor_NodeBg, isEntry ? ImVec4(0.15f, 0.3f, 0.15f, 1.0f) : ImVec4(0.2f, 0.2f, 0.2f, 1.0f));
 
         ed::BeginNode(state.stateHash);
 
+        // --- 上部層: 遷移を受け入れるエリア (Input Pin) ---
         ed::BeginPin(state.stateHash + 1, ed::PinKind::Input);
-        ImGui::Dummy(ImVec2(NODE_WIDTH - 20.0f, 0));
+        ImVec2 cursorPosI = ImGui::GetCursorScreenPos();
+        ImDrawList* dlI = ImGui::GetWindowDrawList();
+        dlI->AddRectFilled(cursorPosI, ImVec2(cursorPosI.x + NODE_WIDTH, cursorPosI.y + 24), IM_COL32(51, 153, 51, 200), 4.0f);
+        
+        ImGui::Dummy(ImVec2(NODE_WIDTH, 4));
+        float twI = ImGui::CalcTextSize("▼ ドロップで繋ぐ (In)").x;
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (NODE_WIDTH - twI) * 0.5f);
+        ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "▼ ドロップで繋ぐ (In)");
+        ImGui::Dummy(ImVec2(NODE_WIDTH, 4));
+        ed::EndPin();
+
+        ImGui::Separator();
+
+        // --- 中央層: ノード移動エリア ---
+        ImGui::Dummy(ImVec2(NODE_WIDTH, 8));
         float tw = ImGui::CalcTextSize(state.sequenceName.c_str()).x;
-        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + fmaxf(0.0f, (NODE_WIDTH - 20.0f - tw) * 0.5f));
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (NODE_WIDTH - tw) * 0.5f);
         ImGui::TextUnformatted(state.sequenceName.c_str());
-        ed::EndPin();
+        ImGui::Dummy(ImVec2(NODE_WIDTH, 8));
 
-        ImGui::SameLine(NODE_WIDTH - ImGui::CalcTextSize(">").x);
+        ImGui::Separator();
 
-        ed::PushStyleVar(ed::StyleVar_PinRadius, 0.0f);
+        // --- 下部層: 線を伸ばすエリア (Output Pin) ---
         ed::BeginPin(state.stateHash + 2, ed::PinKind::Output);
-        ImGui::TextDisabled(">");
+        ImVec2 cursorPosO = ImGui::GetCursorScreenPos();
+        ImDrawList* dlO = ImGui::GetWindowDrawList();
+        dlO->AddRectFilled(cursorPosO, ImVec2(cursorPosO.x + NODE_WIDTH, cursorPosO.y + 24), IM_COL32(204, 102, 25, 200), 4.0f);
+        
+        ImGui::Dummy(ImVec2(NODE_WIDTH, 4));
+        float twO = ImGui::CalcTextSize("● 線を伸ばす (Out)").x;
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (NODE_WIDTH - twO) * 0.5f);
+        ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "● 線を伸ばす (Out)");
+        ImGui::Dummy(ImVec2(NODE_WIDTH, 4));
         ed::EndPin();
-        ed::PopStyleVar();
 
         ed::EndNode();
-        ed::PopStyleVar(2);
-        ed::PopStyleColor(2);
+        ed::PopStyleColor();
+
+        ImGui::PopID(); // ★戻す
     }
 
     if (_nodeToPlaceHash != 0) {
@@ -112,115 +139,67 @@ void AnimGraphWindow::DrawNodeWorkspace()
     }
 
     // ================================================================
-    // STEP 2: 論理リンクの登録 (完全に透明にして描画させない)
+    // 3. ネイティブの線をしっかり描画する
     // ================================================================
-    // imgui-node-editor には「接続されている」という事実だけを教え、描画はサボらせる
-    const ImVec4 INVISIBLE_COLOR = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
-
     if (_currentGraph.entryStateHash != 0) {
-        ed::Link(ENTRY_LINK_ID, ENTRY_OUT_PIN, _currentGraph.entryStateHash + 1, INVISIBLE_COLOR, 0.0f);
+        ed::Link(ENTRY_LINK_ID, ENTRY_OUT_PIN, _currentGraph.entryStateHash + 1, ImVec4(1.0f, 0.6f, 0.0f, 1.0f), 2.5f);
     }
 
     int linkId = 0x00000100;
     for (const auto& state : _currentGraph.states) {
         for (const auto& trans : state.transitions) {
-            ed::Link(linkId++, state.stateHash + 2, trans.targetStateHash + 1, INVISIBLE_COLOR, 0.0f);
+            ed::Link(linkId++, state.stateHash + 2, trans.targetStateHash + 1, ImVec4(0.8f, 0.8f, 0.8f, 1.0f), 2.5f);
         }
     }
     ed::PopStyleVar();
 
     // ================================================================
-    // STEP 3: カスタム描画 (外周から外周への直線と矢印)
+    // 4. 矢印を安全にオーバーレイ描画
     // ================================================================
     ed::Suspend();
     {
         ImDrawList* dl = ImGui::GetWindowDrawList();
 
-        auto drawCustomTransition = [&](uint32_t srcId, uint32_t dstId, ImU32 col) {
+        auto drawArrow = [&](uint32_t srcId, uint32_t dstId, ImU32 col) {
             ImVec2 sP = ed::GetNodePosition(srcId), sS = ed::GetNodeSize(srcId);
             ImVec2 dP = ed::GetNodePosition(dstId), dS = ed::GetNodeSize(dstId);
 
-            // ノードの厳密な中心座標
-            ImVec2 sCenter = ImVec2(sP.x + sS.x * 0.5f, sP.y + sS.y * 0.5f);
-            ImVec2 dCenter = ImVec2(dP.x + dS.x * 0.5f, dP.y + dS.y * 0.5f);
+            if (sS.x == 0 || dS.x == 0) return; // 初回レイアウト待機
 
-            // 双方向（A->B と B->A）の遷移が存在するかチェック
-            bool isBidirectional = false;
-            if (srcId != ENTRY_NODE_ID && dstId != ENTRY_NODE_ID) {
-                for (const auto& st : _currentGraph.states) {
-                    if (st.stateHash == dstId) {
-                        for (const auto& tr : st.transitions) {
-                            if (tr.targetStateHash == srcId) isBidirectional = true;
-                        }
-                    }
-                }
-            }
+            // 線の開始地点: ノードの「下部」の中央
+            ImVec2 startCanvas = ImVec2(sP.x + sS.x * 0.5f, sP.y + sS.y);
+            // 線の終了地点: ノードの「上部」の中央
+            ImVec2 endCanvas = ImVec2(dP.x + dS.x * 0.5f, dP.y);
 
-            // 方向ベクトルの計算
-            ImVec2 dir = ImVec2(dCenter.x - sCenter.x, dCenter.y - sCenter.y);
+            ImVec2 dir = ImVec2(endCanvas.x - startCanvas.x, endCanvas.y - startCanvas.y);
             float len = sqrtf(dir.x * dir.x + dir.y * dir.y);
-            if (len < 1.0f) return;
-            dir.x /= len; dir.y /= len;
+            if (len > 1.0f) {
+                dir.x /= len; dir.y /= len;
+                
+                ImVec2 tipCanvas = ImVec2(endCanvas.x - dir.x * 6.0f, endCanvas.y - dir.y * 6.0f);
+                ImVec2 tip = ed::CanvasToScreen(tipCanvas);
 
-            // ★ハック: 双方向の場合は、線を進行方向の右側に少しズラす（重なり回避）
-            if (isBidirectional) {
+                float A = 14.0f;
                 ImVec2 perp = ImVec2(-dir.y, dir.x);
-                float offsetAmt = 8.0f; // ズラす幅
-                sCenter.x += perp.x * offsetAmt; sCenter.y += perp.y * offsetAmt;
-                dCenter.x += perp.x * offsetAmt; dCenter.y += perp.y * offsetAmt;
+                dl->AddTriangleFilled(
+                    tip,
+                    ImVec2(tip.x - dir.x * A + perp.x * A * 0.5f, tip.y - dir.y * A + perp.y * A * 0.5f),
+                    ImVec2(tip.x - dir.x * A - perp.x * A * 0.5f, tip.y - dir.y * A - perp.y * A * 0.5f),
+                    col);
             }
+        };
 
-            // 中心から AABB(矩形) の外周（Perimeter）までの距離を計算するヘルパー
-            auto getPerimeterPoint = [](ImVec2 c, ImVec2 s, ImVec2 d) -> ImVec2 {
-                float hw = s.x * 0.5f;
-                float hh = s.y * 0.5f;
-                float t = 1e9f;
-                // X軸とY軸の境界のうち、近い方を交点とする
-                if (fabsf(d.x) > 1e-4f) t = fminf(t, hw / fabsf(d.x));
-                if (fabsf(d.y) > 1e-4f) t = fminf(t, hh / fabsf(d.y));
-                return ImVec2(c.x + d.x * t, c.y + d.y * t);
-                };
-
-            // 線の開始地点と終了地点を「ノードの外周」に設定
-            ImVec2 pStart = getPerimeterPoint(sCenter, sS, dir);
-            // ターゲット側は逆方向のレイを飛ばして外周を求める
-            ImVec2 pEnd = getPerimeterPoint(dCenter, dS, ImVec2(-dir.x, -dir.y));
-
-            // キャンバス座標からスクリーン座標へ変換
-            ImVec2 screenStart = ed::CanvasToScreen(pStart);
-            ImVec2 screenEnd = ed::CanvasToScreen(pEnd);
-
-            // 1. 直線の描画
-            dl->AddLine(screenStart, screenEnd, col, 2.5f);
-
-            // 2. 矢印の描画 (終点に配置)
-            constexpr float A = 14.0f; // 矢印のサイズ
-            ImVec2 tip = screenEnd;
-            ImVec2 perp = ImVec2(-dir.y, dir.x);
-            dl->AddTriangleFilled(
-                tip,
-                ImVec2(tip.x - dir.x * A + perp.x * A * 0.5f, tip.y - dir.y * A + perp.y * A * 0.5f),
-                ImVec2(tip.x - dir.x * A - perp.x * A * 0.5f, tip.y - dir.y * A - perp.y * A * 0.5f),
-                col);
-            };
-
-        // 描画の実行
         if (_currentGraph.entryStateHash != 0) {
-            drawCustomTransition(ENTRY_NODE_ID, _currentGraph.entryStateHash, IM_COL32(255, 153, 0, 255));
+            drawArrow(ENTRY_NODE_ID, _currentGraph.entryStateHash, IM_COL32(255, 153, 0, 255));
         }
-
         for (const auto& state : _currentGraph.states) {
             for (const auto& trans : state.transitions) {
-                // 選択されているリンクなら色を明るくする等の処理もここで可能
-                drawCustomTransition(state.stateHash, trans.targetStateHash, IM_COL32(200, 200, 200, 255));
+                drawArrow(state.stateHash, trans.targetStateHash, IM_COL32(204, 204, 204, 255));
             }
         }
     }
     ed::Resume();
 
-    // ================================================================
-    // STEP 4: インタラクション (変更なし)
-    // ================================================================
     HandleInteraction();
 
     ed::End();
@@ -232,9 +211,9 @@ void AnimGraphWindow::DrawNodeWorkspace()
     else if (ed::GetSelectedLinks(&selLink, 1) > 0)
         _selectedLinkId = (int)(uintptr_t)selLink.Get();
 }
+
 void AnimGraphWindow::HandleInteraction()
 {
-    // ★ 完璧な配線ロジック (逆引き・不正判定に対応)
     if (ed::BeginCreate()) {
         ed::PinId startPinId, endPinId;
         if (ed::QueryNewLink(&startPinId, &endPinId)) {
@@ -249,8 +228,7 @@ void AnimGraphWindow::HandleInteraction()
 
                 if (startId == ENTRY_OUT_PIN) {
                     isStartInput = false; srcHash = ENTRY_NODE_ID;
-                }
-                else {
+                } else {
                     for (auto& s : _currentGraph.states) {
                         if (startId == s.stateHash + 1) { isStartInput = true; srcHash = s.stateHash; break; }
                         if (startId == s.stateHash + 2) { isStartInput = false; srcHash = s.stateHash; break; }
@@ -259,8 +237,7 @@ void AnimGraphWindow::HandleInteraction()
 
                 if (endId == ENTRY_OUT_PIN) {
                     isEndInput = false; dstHash = ENTRY_NODE_ID;
-                }
-                else {
+                } else {
                     for (auto& s : _currentGraph.states) {
                         if (endId == s.stateHash + 1) { isEndInput = true; dstHash = s.stateHash; break; }
                         if (endId == s.stateHash + 2) { isEndInput = false; dstHash = s.stateHash; break; }
@@ -277,11 +254,9 @@ void AnimGraphWindow::HandleInteraction()
                     if (ed::AcceptNewItem(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), 2.0f)) {
                         if (finalSrc == ENTRY_NODE_ID) {
                             _currentGraph.entryStateHash = finalDst;
-                        }
-                        else {
+                        } else {
                             for (auto& s : _currentGraph.states) {
                                 if (s.stateHash == finalSrc) {
-                                    // 重複接続の防止
                                     bool exists = false;
                                     for (auto& t : s.transitions) {
                                         if (t.targetStateHash == finalDst) { exists = true; break; }
@@ -304,7 +279,6 @@ void AnimGraphWindow::HandleInteraction()
     }
     ed::EndCreate();
 
-    // 削除処理
     if (ed::BeginDelete()) {
         ed::LinkId linkId;
         while (ed::QueryDeletedLink(&linkId)) {
@@ -312,8 +286,7 @@ void AnimGraphWindow::HandleInteraction()
                 int id = (int)(uintptr_t)linkId.Get();
                 if (id == ENTRY_LINK_ID) {
                     _currentGraph.entryStateHash = 0;
-                }
-                else {
+                } else {
                     int currentId = 0x00000100;
                     bool deleted = false;
                     for (auto& s : _currentGraph.states) {
@@ -334,12 +307,10 @@ void AnimGraphWindow::HandleInteraction()
         ed::NodeId nodeId;
         while (ed::QueryDeletedNode(&nodeId)) {
             uint32_t targetHash = (uint32_t)(uintptr_t)nodeId.Get();
-
             if (targetHash == ENTRY_NODE_ID) {
                 ed::RejectDeletedItem();
                 continue;
             }
-
             if (ed::AcceptDeletedItem()) {
                 if (_currentGraph.entryStateHash == targetHash) _currentGraph.entryStateHash = 0;
                 _currentGraph.states.erase(
@@ -351,7 +322,6 @@ void AnimGraphWindow::HandleInteraction()
     }
     ed::EndDelete();
 
-    // 右クリックメニュー
     ed::Suspend();
     if (ed::ShowBackgroundContextMenu()) {
         ImGui::OpenPopup("CanvasContextMenu");
@@ -371,6 +341,7 @@ void AnimGraphWindow::HandleInteraction()
     }
     ed::Resume();
 }
+
 
 void AnimGraphWindow::DrawInspector() {
     ImGui::Text("インスペクタ (Inspector)");
@@ -500,9 +471,6 @@ void AnimGraphWindow::DrawTransitionSettings(int targetLinkId) {
     }
 }
 
-// ====================================================================
-// ツールバー描画 
-// ====================================================================
 void AnimGraphWindow::DrawToolbar() {
     if (ImGui::Button("保存 (Save As...)")) {
         char filename[MAX_PATH] = {};
