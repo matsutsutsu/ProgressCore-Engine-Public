@@ -1,7 +1,7 @@
 #include "ECS/Core/CCL_World.h"
 #include "Engine/GamePlay/Animation/AnimatorComponent.h"
-#include "Engine/GamePlay/Animation/Data/AnimStateMachine.h"       // ★追加
-#include "Engine/GamePlay/Animation/AnimParametersComponent.h" // ★追加
+#include "Engine/GamePlay/Animation/Data/AnimStateMachine.h"     
+#include "Engine/GamePlay/Animation/AnimParametersComponent.h" 
 #include "Engine/GamePlay/Graphics/Core/ModelComponent.h"
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/ComponentRegistry.h"
@@ -9,8 +9,11 @@
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
+#include "Engine/GamePlay/Animation/Data/AnimGraphSerializer.h"
+#include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Graphics/Core/Graphics.h"
 #include "Engine/Platform/Dialog.h"
+#include <filesystem>
 
 // ===================================================================
 // 1. AnimatorComponent (肉体・再生状態) のインスペクタUI
@@ -83,11 +86,42 @@ template <> struct ComponentMeta<AnimStateMachineComponent> {
     static constexpr bool        registered = true;
     static constexpr const char* displayName = "Anim State Machine";
     static constexpr bool        hasCustomGui = true;
-    static constexpr bool        isSerializable = false; // ランタイム状態なので保存しない
+    // true にして、シーン保存時に情報をJSONへ書き出せるようにする
+    static constexpr bool        isSerializable = true;
 
     static bool CustomGui(AnimStateMachineComponent& fsm, unsigned long long entityID, void* worldPtr)
     {
         bool changed = false;
+
+        // =========================================================
+        //  グラフをダイアログからロードするUI
+        // =========================================================
+        ImGui::TextDisabled("Graph File: %s", fsm.graphPath.empty() ? "None" : fsm.graphPath.c_str());
+
+        if (ImGui::Button("Load Anim Graph... (JSON)", ImVec2(-1, 0))) {
+            char filename[MAX_PATH] = {};
+            if (Dialog::OpenFileName(filename, MAX_PATH, "JSON Files\0*.json\0", "Select Anim Graph", Graphics::Instance().GetWindowHandle()) == DialogResult::OK) {
+
+                // 絶対パスを相対パスに変換
+                namespace fs = std::filesystem;
+                fs::path absPath = filename;
+                fs::path currentPath = fs::current_path();
+                std::error_code ec;
+                fs::path relPath = fs::relative(absPath, currentPath, ec);
+                fsm.graphPath = (!ec && !relPath.empty()) ? relPath.generic_string() : filename;
+
+                // 即座にロードしてバインドする
+                if (AnimGraphSerializer::LoadFromJSON(fsm.internalGraph, fsm.graphPath, {})) {
+                    for (auto& state : fsm.internalGraph.states) {
+                        state.sequence = ResourceManager::Instance().LoadAnimSequence(state.sequenceName.c_str());
+                    }
+                    fsm.graph = &fsm.internalGraph;
+                    fsm.currentStateHash = fsm.internalGraph.entryStateHash;
+                    changed = true;
+                }
+            }
+        }
+        ImGui::Separator();
 
         if (!fsm.graph) {
             ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "[Error] No AnimGraph Assigned!");
@@ -129,8 +163,12 @@ template <> struct ComponentMeta<AnimStateMachineComponent> {
         return changed;
     }
 
+    // どの変数をJSONにセーブ・ロードするかをエンジンに教える
     static const std::vector<FieldDescriptor>& Fields() {
-        static const std::vector<FieldDescriptor> fields = {};
+        static const std::vector<FieldDescriptor> fields = {
+            // パス文字列のみをシリアライズ対象とする
+            META_FIELD_STRING(AnimStateMachineComponent, graphPath, "graphPath", "Graph File Path", "General")
+        };
         return fields;
     }
 };

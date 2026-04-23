@@ -4,9 +4,12 @@
 #include <cmath> // std::abs用
 #include "Engine/Graphics/Resource/ResourceManager.h"
 
+#include "Engine/GamePlay/Animation/Data/AnimGraphSerializer.h"
+#include "Engine/Graphics/Resource/ResourceManager.h"
+
+
 void AnimControllerSystem::Update(float dt)
-{
-    
+{  
     auto& resourceManager = ResourceManager::Instance();
 
     // ForEachWithIDParallel は IfSystem から継承されているため直接呼び出し可能。
@@ -16,6 +19,26 @@ void AnimControllerSystem::Update(float dt)
         AnimatorComponent& animator,
         const AnimParametersComponent& params)
         {
+            // ========================================================================
+            // グラフポインタが空だが、パスが設定されているならロードする (復元処理)
+            // ========================================================================
+            if (!fsm.graph && !fsm.graphPath.empty()) {
+                if (AnimGraphSerializer::LoadFromJSON(fsm.internalGraph, fsm.graphPath, {})) {
+
+                    // 各ステートの台本(AnimSequence)をResourceManagerから取得してポインタを繋ぐ
+                    for (auto& state : fsm.internalGraph.states) {
+                        // ※ノードエディタの「状態名」にJSONパスが入力されている前提です
+                        state.sequence = ResourceManager::Instance().LoadAnimSequence(state.sequenceName.c_str());
+                    }
+
+                    fsm.graph = &fsm.internalGraph;
+                    fsm.currentStateHash = fsm.internalGraph.entryStateHash; // 初期状態へ
+                }
+                else {
+                    fsm.graphPath = ""; // ロード失敗時は無限ループを防ぐためクリア
+                }
+            }
+
             // グラフ(マスターデータ)が設定されていなければ処理しない
             if (!fsm.graph) return;
 

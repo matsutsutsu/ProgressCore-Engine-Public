@@ -2,6 +2,8 @@
     "entities": [
         {
             "components": {
+                "AnimParameters": null,
+                "AnimStateMachine": null,
                 "Animator": {
                     "isLoop": true,
                     "playbackSpeed": 1.0

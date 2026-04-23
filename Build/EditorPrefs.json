@@ -1,9 +1,12 @@
 {
     "DialogHistory": {
         "Open Scene": "C:\\Users\\2240209\\Desktop\\ProgressCore-Engine\\Assets\\Scene\\",
+        "Save Anim Graph": "C:\\Users\\2240209\\Desktop\\ProgressCore-Engine\\Assets\\Animations\\",
         "Save Curve File": "C:\\Users\\2240209\\Desktop\\ProgressCore-Engine\\Assets\\Curve\\",
         "Save Prefab": "C:\\Users\\2240209\\Desktop\\ProgressCore-Engine\\Assets\\Prefabs\\",
         "Save Scene": "C:\\Users\\2240209\\Desktop\\ProgressCore-Engine\\Assets\\Scene\\",
-        "Select 3D Model": "C:\\Users\\2240209\\Desktop\\ProgressCore-Engine\\Assets\\Models\\Shape\\"
+        "Select 3D Model": "C:\\Users\\2240209\\Desktop\\ProgressCore-Engine\\Assets\\Models\\Shape\\",
+        "Select Anim Graph": "C:\\Users\\2240209\\Desktop\\ProgressCore-Engine\\Assets\\Animations\\",
+        "Select Anim Graph File": "C:\\Users\\2240209\\Desktop\\ProgressCore-Engine\\Assets\\Animations\\"
     }
 }

@@ -14,11 +14,13 @@ enum class AnimConditionOp { Equal, Greater, Less };
 
 // 遷移条件
 struct AnimCondition {
-    uint32_t paramHash;
+    uint32_t paramHash = 0;
+
+    std::string paramName = "NewParam";     // エディタ表示用の名前 (例: "Speed")
 
 	// 条件演算子（例: param > threshold なら op は Greater）
-    AnimConditionOp op;
-    float threshold;
+    AnimConditionOp op = AnimConditionOp::Equal;
+    float threshold = 0.0f;
 };
 
 // 遷移の矢印
@@ -61,10 +63,25 @@ using json = nlohmann::json;
 
 // Condition の変換
 inline void to_json(json& j, const AnimCondition& c) {
-    j = json{ {"paramHash", c.paramHash}, {"op", (int)c.op}, {"threshold", c.threshold} };
+    j = json{
+        {"paramHash", c.paramHash},
+        {"paramName", c.paramName}, // ★追加: 文字列をJSONへ書き出す
+        {"op", (int)c.op},
+        {"threshold", c.threshold}
+    };
 }
 inline void from_json(const json& j, AnimCondition& c) {
     j.at("paramHash").get_to(c.paramHash);
+
+    // 古いJSONファイルには "paramName" が無い可能性があるため、
+    // contains() で存在チェックをしてから読み込む（後方互換性の担保）
+    if (j.contains("paramName")) {
+        j.at("paramName").get_to(c.paramName);
+    }
+    else {
+        c.paramName = ""; // 古いデータの場合は空文字にしておく
+    }
+
     j.at("op").get_to((int&)c.op);
     j.at("threshold").get_to(c.threshold);
 }
@@ -108,6 +125,12 @@ inline void from_json(const json& j, AnimStateGraph& g) {
 }
 
 struct AnimStateMachineComponent {
+    // エディタで設定したJSONファイルのパスを記憶（シリアライズ対象）
+    std::string graphPath;
+
+    // ロードされたグラフデータの実体（ポインタの指す先）
+    AnimStateGraph internalGraph;
+
     //　遷移するアニメーションのノード情報のポインタ
 	// ポインタの理由は、同じ敵キャラなら全ての個体で同じグラフを共有するため（マスターデータ）
     const AnimStateGraph* graph = nullptr;
