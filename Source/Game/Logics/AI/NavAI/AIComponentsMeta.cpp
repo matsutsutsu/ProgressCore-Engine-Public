@@ -1,4 +1,4 @@
-#include "Game/Logics/AI/AIComponents.h"
+#include "Game/Logics/AI/NavAI/AIComponents.h"
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"

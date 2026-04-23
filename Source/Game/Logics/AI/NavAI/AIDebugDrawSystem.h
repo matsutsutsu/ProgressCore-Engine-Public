@@ -1,7 +1,7 @@
 #pragma once
 #include "ECS/System/CCL_System.h"
 #include "Engine/GamePlay/Transform/TransformComponent.h"
-#include "Game/Logics/AI/AIComponents.h"
+#include "Game/Logics/AI/NavAI/AIComponents.h"
 
 /**
  * @brief AIの内部状態（視界、聴覚範囲、現在のステート）を可視化するデバッグ描画システム。

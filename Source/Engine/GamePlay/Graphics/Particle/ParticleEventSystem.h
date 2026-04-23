@@ -1,6 +1,6 @@
 #pragma once
 #include "ECS/System/CCL_System.h"
-#include "Engine/GamePlay/Animation/AnimEventMessages.h" // 前回作った手紙の定義
+#include "Engine/GamePlay/Animation/Data/AnimEventMessages.h" // 前回作った手紙の定義
 
 class ParticleEventSystem : public CCL::ECS::IfSystem<ParticleEventSystem> {
 public:

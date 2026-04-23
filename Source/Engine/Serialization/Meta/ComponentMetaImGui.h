@@ -71,6 +71,24 @@ namespace ComponentMetaImGui {
             }
             break;
         }
+        case FieldKind::UInt16: {
+            uint16_t &v   = RawField<uint16_t>(obj, fd.offset);
+            int       tmp = (int)v;
+            if (ImGui::DragInt(fd.name, &tmp, 1.0f, 0, 65535)) {
+                v       = (uint16_t)tmp;
+                changed = true;
+            }
+            break;
+        }
+        case FieldKind::UInt32: {
+            uint32_t &v   = RawField<uint32_t>(obj, fd.offset);
+            int       tmp = (int)v;
+            if (ImGui::DragInt(fd.name, &tmp, 1.0f, 0, 4294967295)) {
+                v       = (uint32_t)tmp;
+                changed = true;
+            }
+            break;
+        }
         case FieldKind::EnumU8: {
             uint8_t &v   = RawField<uint8_t>(obj, fd.offset);
             int      cur = (int)v;

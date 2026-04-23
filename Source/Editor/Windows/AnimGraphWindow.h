@@ -3,7 +3,6 @@
 #include "Engine/GamePlay/Animation/Data/AnimStateMachine.h"
 #include <string>
 
-// imgui-node-editor の前方宣言
 namespace ax { namespace NodeEditor { struct EditorContext; } }
 
 class AnimGraphWindow : public EditorWindow {
@@ -19,6 +18,12 @@ private:
     void DrawNodeWorkspace();
     void DrawInspector();
 
+    // ★追加: インスペクタの描画を役割ごとに分割
+    void DrawStateSettings(uint32_t stateHash);
+    void DrawTransitionSettings(int linkId);
+
+    void HandleInteraction();
+
     void LoadGraph(const std::string& path);
     void SaveGraph(const std::string& path);
 
@@ -26,9 +31,12 @@ private:
     AnimStateGraph _currentGraph;
     std::string _currentFilePath = "Assets/Animations/PlayerAnimGraph.json";
 
-    // imgui-node-editor 専用コンテキスト
     ax::NodeEditor::EditorContext* _nodeContext = nullptr;
 
+    // ★修正: ノードとリンクの選択状態を独立して管理
     uint32_t _selectedNodeHash = 0;
+    int _selectedLinkId = 0;
+
+    uint32_t _nodeToPlaceHash = 0;
     char _newStateName[64] = "";
 };

@@ -1,7 +1,7 @@
 #include "AISoundDebuggerSystem.h"
 #include "ECS/Core/CCL_World.h"
 #include "Engine/Audio/IAudioAPI.h"
-#include "Game/Logics/AI/Events/AISoundEvent.h"
+#include "Game/Logics/AI/NavAI/Events/AISoundEvent.h"
 #include "SimpleMath.h"
 
 #include "ECS/System/CCL_SystemRegistry.h"

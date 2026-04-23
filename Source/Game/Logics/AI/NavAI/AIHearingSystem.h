@@ -1,9 +1,9 @@
 #pragma once
 #include "ECS/System/CCL_System.h"
 #include "Engine/GamePlay/Transform/TransformComponent.h"
-#include "Game/Logics/AI/AIComponents.h"
+#include "Game/Logics/AI/NavAI/AIComponents.h"
 #include "Engine/GamePlay/AI/Navigation/NavAgentComponent.h"
-#include "Game/Logics/AI/Events/AISoundEvent.h"
+#include "Game/Logics/AI/NavAI/Events/AISoundEvent.h"
 #include <vector>
 #include <mutex>
 

@@ -1,7 +1,7 @@
 #include "DistractionItemSystem.h"
 #include "ECS/Core/CCL_World.h"
 #include "Engine/Platform/Logger.h"
-#include "Game/Logics/AI/Events/AISoundEvent.h"
+#include "Game/Logics/AI/NavAI/Events/AISoundEvent.h"
 #include "DistractionItemComponent.h" 
 #include "Engine/Audio/AudioEvents.h" 
 #include "ECS/System/CCL_SystemRegistry.h"

@@ -3,6 +3,7 @@
 #include "Engine/GamePlay/Animation/Data/AnimationCurve.h"
 #include <ImCurveEdit.h>
 #include <string>
+#include <algorithm> // std::clamp用
 
 // ===================================================================================
 // カーブデータと ImCurveEdit を繋ぐ通訳クラス
@@ -12,7 +13,7 @@ struct CurveDelegate : public ImCurveEdit::Delegate {
     ImVec2 points[256];
     bool visible[1] = { true };
 
-    // ★追加: グラフの表示範囲（X: 0~1.0, Y: 0~3.0）
+    // グラフの表示範囲（X: 0~1.0, Y: 0~3.0）
     ImVec2 m_min = ImVec2(0.0f, 0.0f);
     ImVec2 m_max = ImVec2(1.0f, 3.0f);
 
@@ -33,12 +34,15 @@ struct CurveDelegate : public ImCurveEdit::Delegate {
     uint32_t GetCurveColor(size_t curveIndex) override { return 0xFF00FF00; }
     ImVec2* GetPoints(size_t curveIndex) override { return points; }
 
-    // ★追加: 不足していた純粋仮想関数の実装
+    // 不足していた純粋仮想関数の実装
     virtual ImVec2& GetMin() override { return m_min; }
     virtual ImVec2& GetMax() override { return m_max; }
     virtual unsigned int GetBackgroundColor() override { return 0xFF202020; }
 
     int EditPoint(size_t curveIndex, int pointIndex, ImVec2 value) override {
+        // X軸(時間)は絶対に 0.0 ~ 1.0 の範囲を越えられないように制限する
+        value.x = std::clamp(value.x, 0.0f, 1.0f);
+
         targetCurve->keys[pointIndex].time = value.x;
         targetCurve->keys[pointIndex].value = value.y;
         UpdatePoints();

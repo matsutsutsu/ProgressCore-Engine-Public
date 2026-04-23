@@ -9,6 +9,8 @@ enum class FieldKind : uint8_t {
     Int,
     Bool,
     UInt8,
+    UInt16, // 16ビット符号なし整数
+    UInt32, // 32ビット符号なし整数
     EnumU8,
     EnumInt,
     Float2,
