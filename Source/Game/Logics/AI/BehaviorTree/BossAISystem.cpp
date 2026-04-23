@@ -1,13 +1,22 @@
-/**
- * @file BossAISystem.cpp
- * @brief Boss AI システムの実装（マルチスレッド並列評価）
- */
 #include "Game/Logics/AI/BehaviorTree/BossAISystem.h"
 #include "Game/Logics/AI/BehaviorTree/BehaviorTreeBuilder.h"
 #include "Engine/Platform/Logger.h"
 #include "Game/Core/SystemPriority.h" // LogicStage等の定義
 #include "ECS/System/CCL_SystemRegistry.h"
 #include "tracy/Tracy.hpp"
+
+/**
+ * @file BossAISystem.cpp
+ * @brief ボスAIシステムの実装
+ * * 役割：
+ * ForEachParallel を用いた超並列AI評価。
+ * * なぜこの設計か（Why）：
+ * 1. 仮想関数を排除した switch 分岐により、CPUパイプラインを停止させない。
+ * 2. 再帰呼び出しを排除し、スタックを自前管理（固定長配列）することで、
+ * 関数呼び出しのオーバーヘッドをゼロにし、メモリ安全性と速度を両立している。
+ * 3. 60fps維持のため、AIは「コマンドを発行するだけ」に留め、
+ * 物理演算やアニメーションとの依存を最小限に抑えている。
+ */
 
  // 規約に基づきcpp側でusing namespace
 using namespace CCL::ECS;
@@ -38,9 +47,6 @@ void BossAISystem::Initialize()
 
 void BossAISystem::Update(float dt)
 {
-    // Tracyプロファイラマクロ（規約に従いそのまま記述）
-    ZoneScoped;
-
     // ★ 並列実行 (ForEachParallel) 
     // テンプレート引数とラムダの引数型を【完全に一致】させなければコンパイルエラーになる
     ForEachParallel([this](BehaviorTreeComponent& btComp, BossCommandComponent& cmdComp) {
@@ -48,7 +54,7 @@ void BossAISystem::Update(float dt)
         // 1. コマンドのリセット（前フレームの出力をクリア）
         cmdComp.requestMeleeAttack = false;
         cmdComp.requestCharge = false;
-        cmdComp.requestGuard = false;
+        //cmdComp.requestGuard = false;
 
         // 2. 該当するアセットを参照してツリー評価
         if (btComp.assetId == m_bossSharedAsset.id) {
@@ -63,14 +69,23 @@ CCL::AI::BTNodeState BossAISystem::EvaluateTreeIterative(
     BossCommandComponent& cmdComp,
     const CCL::AI::BTAsset& asset)
 {
+    // 固定長配列による「自前スタック」。newによるヒープ確保を避け、最速を叩き出す。
+    // 最大深度を16に制限。複雑なAIでも深度16を超えることは稀。
     static constexpr int MAX_STACK_DEPTH = 16;
+
+    // ヒープ(new)を使わず、スタックメモリ上に直接配列を確保（爆速）
     CCL::AI::BTNodeID nodeStack[MAX_STACK_DEPTH];
     int stackTop = 0;
 
-    nodeStack[stackTop++] = rootId;
+    // 最初にルートノード（0番）をスタックに積む
+    nodeStack[stackTop++] = rootId; // ルートを積む
 
+    // スタックに「次にやる仕事」が残っている限りループを回す
     while (stackTop > 0) {
+        // スタックの一番上からノードIDを取り出し、stackTopを減らす (Pop操作)
         CCL::AI::BTNodeID currentNodeId = nodeStack[--stackTop];
+
+        // 配列から実際のノードデータを取得。キャッシュに優しく連続アクセスされる。
         const CCL::AI::BTNode& node = asset.nodes[currentNodeId];
 
         switch (node.type) {
@@ -111,8 +126,8 @@ CCL::AI::BTNodeState BossAISystem::EvaluateTreeIterative(
 bool BossAISystem::EvaluateCondition(CCL::AI::ActionID condId, const BehaviorTreeComponent& btComp)
 {
     switch (condId) {
-    case 1: return btComp.distanceToTarget < 5.0f;
-    case 2: return btComp.healthPercentage < 50.0f;
+    case 1: return btComp.blackboard.distanceToTarget < 5.0f;
+    case 2: return btComp.blackboard.healthPercentage < 50.0f;
     default: return false;
     }
 }
