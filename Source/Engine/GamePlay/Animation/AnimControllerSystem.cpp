@@ -12,7 +12,7 @@ void AnimControllerSystem::Update(float dt)
     ForEachWithIDParallel([&resourceManager](CCL::ECS::EntityID id,
         AnimStateMachineComponent& fsm,
         AnimatorComponent& animator,
-        const AnimParametersComponent& params)
+        AnimParametersComponent& params)
         {
             // ========================================================================
             // 1. グラフのロードと初期化 (ポインタを使わず直接 internalGraph を操作する)
@@ -69,6 +69,27 @@ void AnimControllerSystem::Update(float dt)
                 bool allConditionsMet = true;
 
                 for (const auto& cond : transition.conditions) {
+                    // トリガーの評価
+                    if (cond.op == AnimConditionOp::Trigger) {
+                        if (!params.HasTrigger(cond.paramHash)) {
+                            allConditionsMet = false;
+                        }
+                        if (!allConditionsMet) break;
+                        continue; // トリガーの場合はFloat/Boolの検索をスキップ
+                    }
+
+                    // ==========================================================
+                    // アニメーション再生終了(Finished)の評価
+                    // ==========================================================
+                    if (cond.op == AnimConditionOp::Finished) {
+                        // AnimatorComponent の isFinished フラグが立っていなければ遷移不可
+                        if (!animator.isFinished) {
+                            allConditionsMet = false;
+                        }
+                        if (!allConditionsMet) break;
+                        continue; // Float/Boolの検索をスキップ
+                    }
+
                     float paramValue = 0.0f;
                     bool isFound = false;
 
@@ -110,6 +131,13 @@ void AnimControllerSystem::Update(float dt)
                 // 4. 遷移の実行と再生命令
                 // ========================================================================
                 if (allConditionsMet) {
+                    // 【超重要】この遷移で使用したトリガーを消費(削除)する
+                    for (const auto& cond : transition.conditions) {
+                        if (cond.op == AnimConditionOp::Trigger) {
+                            params.ConsumeTrigger(cond.paramHash);
+                        }
+                    }                
+
                     fsm.currentStateHash = transition.targetStateHash;
 
                     // 遷移先も internalGraph から探す

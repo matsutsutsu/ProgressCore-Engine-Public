@@ -494,16 +494,24 @@ void AnimGraphWindow::DrawTransitionSettings(int targetLinkId) {
                     }
                     ImGui::TextDisabled("ID: 0x%08X", cond.paramHash);
 
+  
                     int op = (int)cond.op;
                     ImGui::SetNextItemWidth(150);
-                    const char* ops[] = { "一致 (Equal)", "より大きい (Greater)", "より小さい (Less)" };
+                    // "再生終了 (Finished)" を選択肢に追加
+                    const char* ops[] = { "一致 (Equal)", "より大きい (Greater)", "より小さい (Less)", "トリガー (Trigger)", "再生終了 (Finished)" };
                     if (ImGui::Combo("条件 (Op)", &op, ops, IM_ARRAYSIZE(ops))) {
                         cond.op = (AnimConditionOp)op;
                     }
 
-                    ImGui::SameLine();
-                    ImGui::SetNextItemWidth(100);
-                    ImGui::DragFloat("閾値 (Value)", &cond.threshold, 0.05f);
+                    // Trigger と Finished の場合は閾値(Value)を非表示にする
+                    if (cond.op != AnimConditionOp::Trigger && cond.op != AnimConditionOp::Finished) {
+                        ImGui::SameLine();
+                        ImGui::SetNextItemWidth(100);
+                        ImGui::DragFloat("閾値 (Value)", &cond.threshold, 0.05f);
+                    }
+                    else {
+                        cond.threshold = 0.0f;
+                    }
 
                     if (ImGui::Button("削除 (Delete)")) {
                         trans.conditions.erase(trans.conditions.begin() + c);

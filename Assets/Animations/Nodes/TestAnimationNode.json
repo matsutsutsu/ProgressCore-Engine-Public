@@ -27,8 +27,8 @@
             ]
         },
         {
-            "isLoop": true,
-            "nodePosX": 349.0,
+            "isLoop": false,
+            "nodePosX": 429.0,
             "nodePosY": -9.0,
             "playbackSpeed": 1.0,
             "sequenceFilePath": "Assets/Animations/Sequencer/Attack.json",
@@ -39,10 +39,10 @@
                 {
                     "conditions": [
                         {
-                            "op": 1,
+                            "op": 4,
                             "paramHash": 174817312,
                             "paramName": "Speed",
-                            "threshold": 1.0
+                            "threshold": 0.0
                         }
                     ],
                     "targetStateHash": 1168775091

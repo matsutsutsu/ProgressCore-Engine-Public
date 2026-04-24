@@ -19,7 +19,7 @@
 class AnimControllerSystem : public CCL::ECS::IfSystem<AnimControllerSystem,
     CCL::ECS::Write<AnimStateMachineComponent>,
     CCL::ECS::Write<AnimatorComponent>,
-    CCL::ECS::Read<AnimParametersComponent>>
+    CCL::ECS::Write<AnimParametersComponent>>
 {
 public:
     // 基底クラスのコンストラクタ呼び出しもフルパスで指定

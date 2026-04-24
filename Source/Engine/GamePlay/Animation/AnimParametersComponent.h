@@ -20,6 +20,7 @@ struct AnimParametersComponent {
 
     std::vector<FloatParam> floats;
     std::vector<BoolParam>  bools;
+    std::vector<uint32_t>   triggers; // 発生したトリガーのIDリスト
 
     void SetFloat(uint32_t hash, float val) {
         for (auto& p : floats) {
@@ -47,5 +48,23 @@ struct AnimParametersComponent {
             if (p.hash == hash) return p.value;
         }
         return false;
+    }
+
+    void SetTrigger(uint32_t hash) {
+        // 既に存在していなければ追加
+        if (std::find(triggers.begin(), triggers.end(), hash) == triggers.end()) {
+            triggers.push_back(hash);
+        }
+    }
+
+    bool HasTrigger(uint32_t hash) const {
+        return std::find(triggers.begin(), triggers.end(), hash) != triggers.end();
+    }
+
+    void ConsumeTrigger(uint32_t hash) {
+        auto it = std::find(triggers.begin(), triggers.end(), hash);
+        if (it != triggers.end()) {
+            triggers.erase(it);
+        }
     }
 };

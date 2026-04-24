@@ -10,7 +10,9 @@
 // 例: param > threshold なら op は Greater
 // 例: param < threshold なら op は Less
 // 例: param == threshold なら op は Equal
-enum class AnimConditionOp { Equal, Greater, Less };
+// 例: トリガーが引かれたかどうかを判定する場合は op は Trigger (この場合 threshold は無視される)
+// 例: アニメーションの再生が終了したかを判定する場合は op は Finished (threshold は無視される)
+enum class AnimConditionOp { Equal, Greater, Less, Trigger, Finished }; 
 
 // 遷移条件
 struct AnimCondition {
