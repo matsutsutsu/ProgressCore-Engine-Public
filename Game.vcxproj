@@ -453,7 +453,6 @@
     <ClInclude Include="Source\Game\Logics\GameEvent\GameEvents.h" />
     <ClInclude Include="Source\Game\Logics\GameEvent\GameOverResource.h" />
     <ClInclude Include="Source\Game\Logics\GameEvent\GameStateMode.h" />
-    <ClInclude Include="Source\Game\Logics\Test\AISoundDebuggerSystem.h" />
     <ClInclude Include="Source\Game\Logics\Test\ECSBenchmarkSystem.h" />
     <ClInclude Include="Source\Game\Logics\Test\OrbitBenchmarkComponent.h" />
     <ClInclude Include="Source\Game\Logics\Test\TestAnimationPlayerSystem.h" />
@@ -710,8 +709,8 @@
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerInputSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerMoveSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\HealthSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Test\AISoundDebuggerSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\ECSBenchmarkSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Test\TestAnimationPlayerComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\TestAnimationPlayerSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\VoxelOceanSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\World\Triggers\TriggerSystem.cpp" />

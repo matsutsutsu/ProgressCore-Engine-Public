@@ -1,0 +1,51 @@
+{
+    "entryPosX": 77.0,
+    "entryPosY": -149.0,
+    "entryStateHash": 3271675795,
+    "states": [
+        {
+            "isLoop": true,
+            "nodePosX": 77.0,
+            "nodePosY": 27.0,
+            "playbackSpeed": 1.0,
+            "sequenceName": "idle",
+            "speedCurveName": "",
+            "stateHash": 3271675795,
+            "transitions": [
+                {
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 174817312,
+                            "paramName": "Speed",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "targetStateHash": 718098122
+                }
+            ]
+        },
+        {
+            "isLoop": true,
+            "nodePosX": 349.0,
+            "nodePosY": 23.0,
+            "playbackSpeed": 1.0,
+            "sequenceName": "run",
+            "speedCurveName": "",
+            "stateHash": 718098122,
+            "transitions": [
+                {
+                    "conditions": [
+                        {
+                            "op": 2,
+                            "paramHash": 174817312,
+                            "paramName": "Speed",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "targetStateHash": 3271675795
+                }
+            ]
+        }
+    ]
+}

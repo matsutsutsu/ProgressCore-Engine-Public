@@ -41,6 +41,10 @@ struct AnimState {
     float playbackSpeed = 1.0f;
     std::string speedCurveName; // 空文字ならカーブなし(等速)
 
+    // エディタ上でのノードの座標
+    float nodePosX = 0.0f;
+    float nodePosY = 0.0f;
+
     // ロード時に ResourceManager などから取得したポインタを繋ぐ場所
     const AnimationCurve* speedCurve = nullptr;
 
@@ -54,6 +58,10 @@ struct AnimState {
 struct AnimStateGraph {
     std::vector<AnimState> states;
     uint32_t entryStateHash = 0;
+
+    // Entryノードの座標
+    float entryPosX = 0.0f;
+    float entryPosY = 0.0f;
 };
 
 // =================================================================
@@ -100,27 +108,44 @@ inline void to_json(json& j, const AnimState& s) {
     j = json{
         {"stateHash", s.stateHash},
         {"sequenceName", s.sequenceName},
-        {"isLoop", s.isLoop},                    
-        {"playbackSpeed", s.playbackSpeed},      
-        {"speedCurveName", s.speedCurveName},    
+        {"isLoop", s.isLoop},
+        {"playbackSpeed", s.playbackSpeed},
+        {"speedCurveName", s.speedCurveName},
+        {"nodePosX", s.nodePosX}, // ★追加
+        {"nodePosY", s.nodePosY}, // ★追加
         {"transitions", s.transitions}
     };
 }
 inline void from_json(const json& j, AnimState& s) {
     j.at("stateHash").get_to(s.stateHash);
     j.at("sequenceName").get_to(s.sequenceName);
-    if (j.contains("isLoop")) j.at("isLoop").get_to(s.isLoop);              
-    if (j.contains("playbackSpeed")) j.at("playbackSpeed").get_to(s.playbackSpeed); 
-    if (j.contains("speedCurveName")) j.at("speedCurveName").get_to(s.speedCurveName); 
+    if (j.contains("isLoop")) j.at("isLoop").get_to(s.isLoop);
+    if (j.contains("playbackSpeed")) j.at("playbackSpeed").get_to(s.playbackSpeed);
+    if (j.contains("speedCurveName")) j.at("speedCurveName").get_to(s.speedCurveName);
+
+    // ★追加: 古いJSONでもクラッシュしないように contains でチェック
+    if (j.contains("nodePosX")) j.at("nodePosX").get_to(s.nodePosX);
+    if (j.contains("nodePosY")) j.at("nodePosY").get_to(s.nodePosY);
+
     j.at("transitions").get_to(s.transitions);
 }
 
 // Graph の変換
 inline void to_json(json& j, const AnimStateGraph& g) {
-    j = json{ {"entryStateHash", g.entryStateHash}, {"states", g.states} };
+    j = json{
+        {"entryStateHash", g.entryStateHash},
+        {"entryPosX", g.entryPosX}, // ★追加
+        {"entryPosY", g.entryPosY}, // ★追加
+        {"states", g.states}
+    };
 }
 inline void from_json(const json& j, AnimStateGraph& g) {
     j.at("entryStateHash").get_to(g.entryStateHash);
+
+    // ★追加
+    if (j.contains("entryPosX")) j.at("entryPosX").get_to(g.entryPosX);
+    if (j.contains("entryPosY")) j.at("entryPosY").get_to(g.entryPosY);
+
     j.at("states").get_to(g.states);
 }
 

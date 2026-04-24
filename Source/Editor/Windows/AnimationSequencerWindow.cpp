@@ -7,8 +7,9 @@
 #include "Engine/GamePlay/Animation/Data/AnimSequence.h" 
 #include "Engine/GamePlay/Animation/AnimationSystem.h" // 手動更新用
 
-// ★追加: ファイル選択ダイアログ用
+// ファイル選択ダイアログ用
 #include "Engine/Platform/Dialog.h"
+#include "Engine/Platform/Logger.h"
 #include "Engine/Graphics/Core/Graphics.h"
 #include <filesystem>
 
@@ -192,7 +193,7 @@ AnimationSequencerWindow::AnimationSequencerWindow()
     : EditorWindow("Sequencer"), _expanded(true), _selectedEntry(-1), _firstFrame(0)
 {
     _sequencerImpl = std::make_unique<AnimationSequenceImpl>();
-    SetOpen(true);
+    SetVisible(true);
 }
 
 AnimationSequencerWindow::~AnimationSequencerWindow() = default;
@@ -222,22 +223,57 @@ void AnimationSequencerWindow::DrawContents(EditorContext& context)
     // ---------------------------------------------------------
     ImGui::InputText("Save Path", g_SavePath, sizeof(g_SavePath));
 
-    if (ImGui::Button("Save JSON")) {
-        std::ofstream os(g_SavePath);
-        if (os.is_open()) {
-            cereal::JSONOutputArchive archive(os);
-            archive(cereal::make_nvp("AnimSequence", g_EditingSequence));
+    // ---------------------------------------------------------
+    // JSON保存・読み込みのUI (ダイアログ対応版に修正)
+    // ---------------------------------------------------------
+    if (ImGui::Button("Save JSON...")) {
+        char filename[MAX_PATH] = {};
+        // 保存ダイアログを開く
+        if (Dialog::SaveFileName(filename, MAX_PATH, "JSON Files\0*.json\0", "Save Anim Sequence", "json", Graphics::Instance().GetWindowHandle()) == DialogResult::OK) {
+            namespace fs = std::filesystem;
+            fs::path absPath = filename;
+            fs::path currentPath = fs::current_path();
+            std::error_code ec;
+            fs::path relPath = fs::relative(absPath, currentPath, ec);
+            std::string finalPath = (!ec && !relPath.empty()) ? relPath.generic_string() : filename;
+
+            strcpy_s(g_SavePath, sizeof(g_SavePath), finalPath.c_str()); // 現在のパスを更新
+
+            std::ofstream os(finalPath);
+            if (os.is_open()) {
+                cereal::JSONOutputArchive archive(os);
+                archive(cereal::make_nvp("AnimSequence", g_EditingSequence));
+                CCL_LOG_INFO(LogCategory::Editor, "Sequence Saved: %s", finalPath.c_str());
+            }
         }
     }
     ImGui::SameLine();
-    if (ImGui::Button("Load JSON")) {
-        std::ifstream is(g_SavePath);
-        if (is.is_open()) {
-            cereal::JSONInputArchive archive(is);
-            archive(cereal::make_nvp("AnimSequence", g_EditingSequence));
-            _sequencerImpl->SyncFromData();
+
+    if (ImGui::Button("Load JSON...")) {
+        char filename[MAX_PATH] = {};
+        // 読み込みダイアログを開く
+        if (Dialog::OpenFileName(filename, MAX_PATH, "JSON Files\0*.json\0", "Load Anim Sequence", Graphics::Instance().GetWindowHandle()) == DialogResult::OK) {
+            namespace fs = std::filesystem;
+            fs::path absPath = filename;
+            fs::path currentPath = fs::current_path();
+            std::error_code ec;
+            fs::path relPath = fs::relative(absPath, currentPath, ec);
+            std::string finalPath = (!ec && !relPath.empty()) ? relPath.generic_string() : filename;
+
+            strcpy_s(g_SavePath, sizeof(g_SavePath), finalPath.c_str()); // 現在のパスを更新
+
+            std::ifstream is(finalPath);
+            if (is.is_open()) {
+                cereal::JSONInputArchive archive(is);
+                archive(cereal::make_nvp("AnimSequence", g_EditingSequence));
+                _sequencerImpl->SyncFromData(); // UIを更新
+                CCL_LOG_INFO(LogCategory::Editor, "Sequence Loaded: %s", finalPath.c_str());
+            }
         }
     }
+
+    ImGui::SameLine();
+    ImGui::TextDisabled("File: %s", g_SavePath[0] == '\0' ? "None" : g_SavePath);
 
     ImGui::Separator();
 

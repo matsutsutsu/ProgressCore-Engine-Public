@@ -7,22 +7,22 @@
 // エディタウィンドウの基底クラス
 class EditorWindow {
 public:
-    EditorWindow(const std::string& name) : _name(name), _isOpen(true) {}
+    EditorWindow(const std::string& name, bool defaultVisible = true) : _name(name), _isVisible(defaultVisible) {}
     virtual ~EditorWindow() = default;
 
     // WindowManagerから呼ばれる描画の入り口
     void Render(EditorContext& context) {
-        if (!_isOpen) return;
+        if (!_isVisible) return;
 
-        if (ImGui::Begin(_name.c_str(), &_isOpen)) {
+        if (ImGui::Begin(_name.c_str(), &_isVisible)) {
             DrawContents(context);
         }
         ImGui::End();
     }
 
     const std::string& GetName() const { return _name; }
-    bool IsOpen() const { return _isOpen; }
-    void SetOpen(bool open) { _isOpen = open; }
+    bool GetVisible() const { return _isVisible; }
+    void SetVisible(bool open) { _isVisible = open; }
 
 protected:
     // 各ウィンドウはこの関数をオーバーライドして中身を書く
@@ -31,5 +31,5 @@ protected:
     // クラスじゃなくてコンテキストにしてもいいかも
 
     std::string _name;
-    bool _isOpen;
+    bool _isVisible;
 };

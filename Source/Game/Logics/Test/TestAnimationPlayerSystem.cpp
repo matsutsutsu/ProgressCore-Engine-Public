@@ -3,8 +3,8 @@
 #include "Engine/Platform/Input/Input.h"
 #include "Engine/Core/Math/StringHash.h" // HashString用
 #include <SimpleMath.h>
-
-namespace CCL::ECS {
+#include "ECS/System/CCL_SystemRegistry.h"
+#include "Game/Core/SystemPriority.h"
 
     using namespace DirectX::SimpleMath;
 
@@ -59,4 +59,5 @@ namespace CCL::ECS {
             });
     }
 
-} // namespace CCL::ECS
+
+REGISTER_LOGIC_SYSTEM(TestAnimationPlayerSystem, Priority::LogicStage::L02_Update);

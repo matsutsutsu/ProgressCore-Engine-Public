@@ -31,22 +31,30 @@ namespace fs = std::filesystem;
 
 void EditorWindowManager::Initialize()
 {
-
-    // ウィンドウの登録
+    // =========================================================
+    // ★ 常に表示しておきたいメインウィンドウ (デフォルトで true)
+    // =========================================================
     RegisterWindow<InspectorWindow>();
     RegisterWindow<HierarchyWindow>();
-    RegisterWindow<ECSDebugWindow>();
-    RegisterWindow<AnimationSequencerWindow>();
-    //RegisterWindow<TextEditorWindow>();
     RegisterWindow<AssetBrowserWindow>();
-    //RegisterWindow<InputEditorWindow>();
+
+    // =========================================================
+    // ★ デフォルトでは「非表示」にするサブウィンドウ
+    // (->SetVisible(false) をつけるだけで、起動時は隠れます)
+    // =========================================================
+    RegisterWindow<ECSDebugWindow>();
     RegisterWindow<ConsoleWindow>();
-    //RegisterWindow<NavMeshWindow>();
-	RegisterWindow<AnimGraphWindow>();
-	RegisterWindow<CurveEditorWindow>();
+    RegisterWindow<AnimationSequencerWindow>();
+    RegisterWindow<AnimGraphWindow>();
+    RegisterWindow<CurveEditorWindow>();
+
+    // ※まだ実装中で完全に読み込みたくない（クラッシュする等の）場合は、
+    // 引き続きコメントアウトで対応してください。
+    RegisterWindow<TextEditorWindow>()->SetVisible(false);
+    RegisterWindow<InputEditorWindow>()->SetVisible(false);
+    RegisterWindow<NavMeshWindow>()->SetVisible(false);
     //RegisterWindow<SceneViewWindow>();
     //RegisterWindow<GameViewWindow>();
-    //  必要に応じて他のウィンドウもここに登録
 }
 
 
@@ -248,9 +256,9 @@ void EditorWindowManager::DrawMainMenuBar(EditorContext &context)
                 ImGui::Separator();
 
                 for (auto &window : _windows) {
-                    bool open = window->IsOpen();
+                    bool open = window->GetVisible();
                     if (ImGui::MenuItem(window->GetName().c_str(), nullptr, &open)) {
-                        window->SetOpen(open);
+                        window->SetVisible(open);
                     }
                 }
                 ImGui::EndMenu();

@@ -1308,9 +1308,6 @@
     <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\ModelPoseUpdateSystem.h">
       <Filter>Source\Engine\GamePlay\Graphics\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Test\AISoundDebuggerSystem.h">
-      <Filter>Source\Game\Logics\Test</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Audio\AudioEmitterComponent.h">
       <Filter>Source\Engine\Audio</Filter>
     </ClInclude>
@@ -2093,9 +2090,6 @@
     <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\ModelPoseUpdateSystem.cpp">
       <Filter>Source\Engine\GamePlay\Graphics\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Test\AISoundDebuggerSystem.cpp">
-      <Filter>Source\Game\Logics\Test</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Audio\AudioSystem.cpp">
       <Filter>Source\Engine\Audio</Filter>
     </ClCompile>
@@ -2173,6 +2167,9 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeComponentMeta.cpp">
       <Filter>Source\Game\Logics\AI\BehaviorTree\_Meta</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Test\TestAnimationPlayerComponentMeta.cpp">
+      <Filter>Source\Game\Logics\Test\TestAnimation</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

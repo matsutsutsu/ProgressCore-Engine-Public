@@ -3,7 +3,9 @@
         {
             "components": {
                 "AnimParameters": null,
-                "AnimStateMachine": null,
+                "AnimStateMachine": {
+                    "graphPath": ""
+                },
                 "Animator": {
                     "isLoop": true,
                     "playbackSpeed": 1.0
@@ -15,18 +17,22 @@
                 "Name": {
                     "name": "AnimationModel"
                 },
+                "TestAnimationPlayer": {
+                    "moveSpeed": 15.0,
+                    "turnSpeed": 10.0
+                },
                 "Transform": {
                     "isStatic": false,
                     "position": [
+                        1.366117238998413,
                         0.0,
-                        0.0,
-                        0.0
+                        0.5983495712280273
                     ],
                     "rotation": [
                         0.0,
-                        0.9999619126319885,
+                        0.03695469722151756,
                         0.0,
-                        0.008726587519049644
+                        0.999316930770874
                     ],
                     "scale": [
                         0.30000001192092896,

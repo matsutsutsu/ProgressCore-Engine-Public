@@ -22,8 +22,11 @@ private:
 
     // ウィンドウの登録
     template<typename T, typename... Args>
-    void RegisterWindow(Args&&... args) {
-        _windows.push_back(std::make_unique<T>(std::forward<Args>(args)...));
+    T* RegisterWindow(Args&&... args) {
+        auto window = std::make_unique<T>(std::forward<Args>(args)...);
+        T* ptr = window.get();
+        _windows.push_back(std::move(window));
+        return ptr; // ★ポインタを返すことで、登録した直後に設定をいじれるようになる
     }
 
     std::vector<std::unique_ptr<EditorWindow>> _windows;

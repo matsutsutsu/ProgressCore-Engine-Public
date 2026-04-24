@@ -4,12 +4,11 @@
 #include "Engine/GamePlay/Animation/AnimParametersComponent.h"
 #include "TestAnimationPlayerComponent.h"
 
-namespace CCL::ECS {
 
-    class TestAnimationPlayerSystem : public IfSystem<TestAnimationPlayerSystem,
-        Write<TransformComponent>,
-        Write<AnimParametersComponent>,
-        Read<TestAnimationPlayerComponent>>
+    class TestAnimationPlayerSystem : public CCL::ECS::IfSystem<TestAnimationPlayerSystem,
+        CCL::ECS::Write<TransformComponent>,
+        CCL::ECS::Write<AnimParametersComponent>,
+        CCL::ECS::Read<TestAnimationPlayerComponent>>
     {
     public:
         TestAnimationPlayerSystem() : IfSystem("TestAnimationPlayerSystem") {}
@@ -17,5 +16,3 @@ namespace CCL::ECS {
 
         void Update(float dt) override;
     };
-
-} // namespace CCL::ECS

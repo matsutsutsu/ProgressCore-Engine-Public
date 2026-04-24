@@ -33,10 +33,13 @@ private:
 
     ax::NodeEditor::EditorContext* _nodeContext = nullptr;
 
-    // ★修正: ノードとリンクの選択状態を独立して管理
+    // ノードとリンクの選択状態を独立して管理
     uint32_t _selectedNodeHash = 0;
     int _selectedLinkId = 0;
 
     uint32_t _nodeToPlaceHash = 0;
     char _newStateName[64] = "";
+
+    // ロード直後に座標を復元するためのフラグ
+    bool _needRestorePositions = false;
 };

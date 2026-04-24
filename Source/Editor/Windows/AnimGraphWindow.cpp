@@ -28,11 +28,27 @@ AnimGraphWindow::~AnimGraphWindow() {
 void AnimGraphWindow::DrawContents(EditorContext& context) {
     ed::SetCurrentEditor(_nodeContext);
     DrawToolbar();
+
+    // カラム幅の強制上書きを初回のみにし、ユーザーが境界線をドラッグできるようにする
+    static bool initColumns = true;
     ImGui::Columns(2, "AnimGraphColumns");
-    ImGui::SetColumnWidth(0, ImGui::GetWindowWidth() * 0.75f);
+    if (initColumns) {
+        ImGui::SetColumnWidth(0, ImGui::GetWindowWidth() * 0.75f);
+        initColumns = false;
+    }
+
+    // ノードエディタの「仮想座標系」が漏れ出さないよう、ChildWindowで完全にカプセル化する
+    ImGui::BeginChild("NodeWorkspaceChild", ImVec2(0, 0), false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     DrawNodeWorkspace();
+    ImGui::EndChild();
+
     ImGui::NextColumn();
+
+    // インスペクタもChildWindowにし、独立したスクロール領域と安全な座標系を持たせる
+    ImGui::BeginChild("InspectorChild", ImVec2(0, 0), false);
     DrawInspector();
+    ImGui::EndChild();
+
     ImGui::Columns(1);
 }
 
@@ -73,6 +89,11 @@ void AnimGraphWindow::DrawNodeWorkspace()
 
     ed::EndNode();
     ed::PopStyleColor();
+
+    // ロード直後なら、保存されていた座標に強制移動させる
+    if (_needRestorePositions) {
+        ed::SetNodePosition(ENTRY_NODE_ID, ImVec2(_currentGraph.entryPosX, _currentGraph.entryPosY));
+    }
 
     // ================================================================
     // 2. 通常ステートノードの描画
@@ -128,6 +149,11 @@ void AnimGraphWindow::DrawNodeWorkspace()
         ed::PopStyleColor();
 
         ImGui::PopID(); // ★戻す
+
+        // ロード直後なら座標を復元
+        if (_needRestorePositions) {
+            ed::SetNodePosition(state.stateHash, ImVec2(state.nodePosX, state.nodePosY));
+        }
     }
 
     if (_nodeToPlaceHash != 0) {
@@ -152,6 +178,12 @@ void AnimGraphWindow::DrawNodeWorkspace()
         }
     }
     ed::PopStyleVar();
+
+    // すべてのノードの位置復元が終わったら、フラグを折って全体をカメラに収める
+    if (_needRestorePositions) {
+        ed::NavigateToContent();
+        _needRestorePositions = false;
+    }
 
     // ================================================================
     // 4. 矢印を安全にオーバーレイ描画
@@ -534,13 +566,28 @@ void AnimGraphWindow::DrawToolbar() {
     }
 }
 
+void AnimGraphWindow::SaveGraph(const std::string& path) {
+    // ★ セーブ直前に、現在のノードエディタ上の座標を取得してデータに反映する
+    if (_nodeContext) {
+        ed::SetCurrentEditor(_nodeContext);
+
+        ImVec2 entryPos = ed::GetNodePosition(ENTRY_NODE_ID);
+        _currentGraph.entryPosX = entryPos.x;
+        _currentGraph.entryPosY = entryPos.y;
+
+        for (auto& state : _currentGraph.states) {
+            ImVec2 pos = ed::GetNodePosition(state.stateHash);
+            state.nodePosX = pos.x;
+            state.nodePosY = pos.y;
+        }
+    }
+    AnimGraphSerializer::SaveToJSON(_currentGraph, path);
+}
+
 void AnimGraphWindow::LoadGraph(const std::string& path) {
     if (AnimGraphSerializer::LoadFromJSON(_currentGraph, path, {})) {
         ed::ClearSelection();
-        ed::NavigateToContent();
+        // ★ ロードが成功したら、次のフレームで座標を復元するフラグを立てる
+        _needRestorePositions = true;
     }
-}
-
-void AnimGraphWindow::SaveGraph(const std::string& path) {
-    AnimGraphSerializer::SaveToJSON(_currentGraph, path);
 }
