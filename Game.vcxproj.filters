@@ -1422,6 +1422,12 @@
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BossAISystem.h">
       <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\TestEnemyActionComponent.h">
+      <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\TestEnemyActionSystem.h">
+      <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2170,6 +2176,12 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Test\TestAnimationPlayerComponentMeta.cpp">
       <Filter>Source\Game\Logics\Test\TestAnimation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\TestEnemyActionSystem.cpp">
+      <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\TestEnemyActionComponentMeta.cpp">
+      <Filter>Source\Game\Logics\AI\BehaviorTree\_Meta</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

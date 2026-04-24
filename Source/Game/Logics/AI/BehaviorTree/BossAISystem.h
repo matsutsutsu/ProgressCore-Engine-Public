@@ -29,28 +29,34 @@ public:
 
 private:
 
-    /**
-    * @brief ビヘイビアツリーのフラット配列を非再帰（Iterative）で走査・評価する
-    * * @param rootId  評価を開始するルートノードの配列インデックス
-    * @param btComp  現在のエンティティが持つAI状態（Blackboardや実行中ノード情報）
-    * @param cmdComp 評価結果（行動要求）を書き込むための出力用コンポーネント
-    * @param asset   全エンティティで共有される、Bake済みのBT静的データ配列
-    * @return CCL::AI::BTNodeState 評価の最終結果（Success, Failure, Running）
-    * * @note 【アーキテクチャ上の注意点】
-    * この関数は再帰呼び出し（Recursive Call）を意図的に排除している。
-    * 代わりに固定長配列（nodeStack）を用いたスタックマシンとして動作する。
-    * * @warning 【パフォーマンスと安全性】
-    * ヒープアロケーション（new/std::vector）は絶対に使用しない。
-    * MAX_STACK_DEPTH は設計上の最大ツリー深度を表す。これを超える深さの
-    * アセットが渡された場合の保護機構は最小限にとどめ、最内ループの速度を最優先している。
+    /*
+    * @param 再起処理で評価する
     */
-    CCL::AI::BTNodeState EvaluateTreeIterative(
-        CCL::AI::BTNodeID rootId,
+    CCL::AI::BTNodeState EvaluateTreeRecursive(
+        CCL::AI::BTNodeID nodeId,
         BehaviorTreeComponent& btComp,
         BossCommandComponent& cmdComp,
         const CCL::AI::BTAsset& asset
     );
+
+    /*
+    * @brief 条件ノードを評価する
+    * @param condId 評価する条件のID
+    * @param btComp 現在のエンティティが持つAI状態（Blackboardや実行中ノード情報）
+    * @return 条件が成立する場合はtrue、そうでない場合はfalse
+    */
     bool EvaluateCondition(CCL::AI::ActionID condId, const BehaviorTreeComponent& btComp);
+
+    /*
+	* @brief 行動ノードを評価する
+	* @param actionId 評価する行動のID
+	* @param btComp  現在のエンティティが持つAI状態（Blackboardや実行中ノード情報）
+	* @param cmdComp 評価結果（行動要求）を書き込むための出力用コンポーネント
+    * @return 行動の評価結果（Success, Failure, Running）
+     * * @note 【設計上の注意点】
+     * この関数は純粋な「評価関数」として設計されている。
+	 * 物理演算やアニメーションのトリガーなどの副作用は、cmdCompへの書き込みに限定されるべきである。
+    */
     CCL::AI::BTNodeState ExecuteAction(CCL::AI::ActionID actionId, BehaviorTreeComponent& btComp, BossCommandComponent& cmdComp);
 
     // （仮）メモリ上に保持するボスAIアセット。

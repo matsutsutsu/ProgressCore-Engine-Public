@@ -7,11 +7,6 @@
         "events": [
             {
                 "time": 0.0,
-                "eventName": "Play_Effect",
-                "stringParam": ""
-            },
-            {
-                "time": 0.0,
                 "eventName": "HitBox_Start",
                 "stringParam": ""
             },

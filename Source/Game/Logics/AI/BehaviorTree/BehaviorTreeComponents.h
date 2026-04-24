@@ -27,6 +27,10 @@ struct BehaviorTreeComponent {
     CCL::AI::AssetID assetId = 0;        // どの知能（BTAsset）を使うか
     CCL::AI::BTNodeID runningNodeId = 0; // 現在実行中のノード
 
+    // ログ出力制御用（前回実行したアクションIDを記憶）
+    // 無効値として 0xFFFF (最大値) を初期値にしておく
+    CCL::AI::ActionID lastLogActionId = 0xFFFF;
+
     // 判断材料をここに内包する（Blackboard）
     AIBlackboard blackboard;
 };
@@ -36,5 +40,7 @@ struct BehaviorTreeComponent {
 struct BossCommandComponent {
     bool requestMeleeAttack = false; // 近接攻撃をしてほしい！
     bool requestCharge = false;      // 突進してほしい！
+    bool requestGuard = false;
+    bool requestMove = false; // ★この1行を追加！
     DirectX::SimpleMath::Vector3 moveTarget; // ここに移動してほしい！
 };

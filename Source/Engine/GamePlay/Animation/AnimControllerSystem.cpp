@@ -4,6 +4,7 @@
 #include <cmath> 
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/GamePlay/Animation/Data/AnimGraphSerializer.h"
+#include "Engine/Platform/Logger.h"
 
 void AnimControllerSystem::Update(float dt)
 {
@@ -128,21 +129,31 @@ void AnimControllerSystem::Update(float dt)
                 }
 
                 // ========================================================================
-                // 4. 遷移の実行と再生命令
-                // ========================================================================
+                 // 4. 遷移の実行と再生命令
+                 // ========================================================================
                 if (allConditionsMet) {
                     // 【超重要】この遷移で使用したトリガーを消費(削除)する
                     for (const auto& cond : transition.conditions) {
                         if (cond.op == AnimConditionOp::Trigger) {
                             params.ConsumeTrigger(cond.paramHash);
+                            // ★改善: ハッシュ値だけでなく、パラメータ名も文字列で出力！
+                            CCL_LOG_INFO(LogCategory::Game, "[AnimController] Consumed Trigger: '%s' (0x%08X)",
+                                cond.paramName.c_str(), cond.paramHash);
                         }
-                    }                
+                    }
+
+                    // 遷移前の状態名を記憶（currentState はステップ2で取得済み）
+                    std::string oldStateName = currentState->sequenceName;
 
                     fsm.currentStateHash = transition.targetStateHash;
 
-                    // 遷移先も internalGraph から探す
+                    // 遷移先を internalGraph から探す
                     for (const auto& nextState : fsm.internalGraph.states) {
                         if (nextState.stateHash == transition.targetStateHash) {
+
+                            // ★改善: [遷移元] -> [遷移先] を分かりやすい文字列で出力！
+                            CCL_LOG_SUCCESS(LogCategory::Game, "[AnimController] Entity %d Transitioned: [%s] -> [%s]",
+                                (int)id, oldStateName.c_str(), nextState.sequenceName.c_str());
 
                             if (nextState.sequence) {
                                 const AnimationCurve* curvePtr = nullptr;

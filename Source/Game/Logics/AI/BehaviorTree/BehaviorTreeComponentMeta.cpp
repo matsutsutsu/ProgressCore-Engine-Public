@@ -45,7 +45,8 @@ template <> struct ComponentMeta<BossCommandComponent> {
             // ※このコンポーネントは isSerializable = false なので末尾は false のままで良い
             { "近接攻撃要求", "requestMeleeAttack", FieldKind::Bool, offsetof(BossCommandComponent, requestMeleeAttack), 1.0f, 0.0f, 0.0f, "Command", nullptr, 0, false },
             { "突進要求", "requestCharge", FieldKind::Bool, offsetof(BossCommandComponent, requestCharge), 1.0f, 0.0f, 0.0f, "Command", nullptr, 0, false },
-            //{ "ガード要求", "requestGuard", FieldKind::Bool, offsetof(BossCommandComponent, requestGuard), 1.0f, 0.0f, 0.0f, "Command", nullptr, 0, false },
+            { "ガード要求", "requestGuard", FieldKind::Bool, offsetof(BossCommandComponent, requestGuard), 1.0f, 0.0f, 0.0f, "Command", nullptr, 0, false },
+            { "移動要求", "requestMove", FieldKind::Bool, offsetof(BossCommandComponent, requestMove), 1.0f, 0.0f, 0.0f, "Command", nullptr, 0, false },
             { "移動目標座標", "moveTarget", FieldKind::Float3, offsetof(BossCommandComponent, moveTarget), 0.1f, 0.0f, 0.0f, "Command", nullptr, 0, false }
         };
         return fields;

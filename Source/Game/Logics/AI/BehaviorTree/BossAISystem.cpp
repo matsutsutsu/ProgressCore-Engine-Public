@@ -3,7 +3,7 @@
 #include "Engine/Platform/Logger.h"
 #include "Game/Core/SystemPriority.h" // LogicStage等の定義
 #include "ECS/System/CCL_SystemRegistry.h"
-#include "tracy/Tracy.hpp"
+
 
 /**
  * @file BossAISystem.cpp
@@ -21,9 +21,20 @@
  // 規約に基づきcpp側でusing namespace
 using namespace CCL::ECS;
 
-BossAISystem::BossAISystem()
-    : IfSystem("BossAISystem")
-{
+BossAISystem::BossAISystem() : IfSystem("BossAISystem") {}
+
+// ==========================================================
+// ボスAI専用のID定義（マジックナンバーの排除）
+// ==========================================================
+namespace BossAI_ID {
+    // 状態遷移のための条件ID
+    inline constexpr CCL::AI::ActionID Cond_PhaseMove = 1;
+    inline constexpr CCL::AI::ActionID Cond_PhaseMelee = 2;
+
+    // 行動の出力ID
+    inline constexpr CCL::AI::ActionID Act_MeleeAttack = 100;
+    inline constexpr CCL::AI::ActionID Act_ChargeAttack = 101;
+    inline constexpr CCL::AI::ActionID Act_Move = 102; // ★移動用アクション追加
 }
 
 void BossAISystem::Initialize()
@@ -32,11 +43,16 @@ void BossAISystem::Initialize()
     CCL::AI::BehaviorTreeBuilder builder;
     builder
         .Selector()
-        .Sequence()
-        .Condition(2) // HP < 50%
-        .Action(101)  // 突進攻撃
-        .End()
-        .Action(100)      // 通常近接攻撃
+            .Sequence() // パターン1：0〜3秒なら移動
+                .Condition(BossAI_ID::Cond_PhaseMove)
+                .Action(BossAI_ID::Act_Move)
+            .End()
+            .Sequence() // パターン2：3〜6秒なら近接攻撃
+                .Condition(BossAI_ID::Cond_PhaseMelee)
+                .Action(BossAI_ID::Act_MeleeAttack)
+            .End()
+            // パターン3：上記以外（6〜9秒）なら突進
+            .Action(BossAI_ID::Act_ChargeAttack) 
         .End();
 
     builder.Bake(m_bossSharedAsset);
@@ -49,96 +65,120 @@ void BossAISystem::Update(float dt)
 {
     // ★ 並列実行 (ForEachParallel) 
     // テンプレート引数とラムダの引数型を【完全に一致】させなければコンパイルエラーになる
-    ForEachParallel([this](BehaviorTreeComponent& btComp, BossCommandComponent& cmdComp) {
+    ForEachParallel([this,dt](BehaviorTreeComponent& btComp, BossCommandComponent& cmdComp) {
 
-        // 1. コマンドのリセット（前フレームの出力をクリア）
+        // 前フレームのフラグを全てリセット
         cmdComp.requestMeleeAttack = false;
         cmdComp.requestCharge = false;
-        //cmdComp.requestGuard = false;
+        cmdComp.requestGuard = false;
+        cmdComp.requestMove = false;
+
+        // ★テストギミック：距離変数を「経過タイマー」として流用（9秒でループ）
+        btComp.blackboard.distanceToTarget += dt;
+        if (btComp.blackboard.distanceToTarget > 15.0f) {
+            btComp.blackboard.distanceToTarget = 0.0f;
+        }
 
         // 2. 該当するアセットを参照してツリー評価
         if (btComp.assetId == m_bossSharedAsset.id) {
-            EvaluateTreeIterative(0, btComp, cmdComp, m_bossSharedAsset);
+            // ★ここを EvaluateTreeRecursive に変更
+            EvaluateTreeRecursive(0, btComp, cmdComp, m_bossSharedAsset);
         }
         });
 }
 
-CCL::AI::BTNodeState BossAISystem::EvaluateTreeIterative(
-    CCL::AI::BTNodeID rootId,
+CCL::AI::BTNodeState BossAISystem::EvaluateTreeRecursive(
+    CCL::AI::BTNodeID nodeId,
     BehaviorTreeComponent& btComp,
     BossCommandComponent& cmdComp,
     const CCL::AI::BTAsset& asset)
 {
-    // 固定長配列による「自前スタック」。newによるヒープ確保を避け、最速を叩き出す。
-    // 最大深度を16に制限。複雑なAIでも深度16を超えることは稀。
-    static constexpr int MAX_STACK_DEPTH = 16;
+    const CCL::AI::BTNode& node = asset.nodes[nodeId];
 
-    // ヒープ(new)を使わず、スタックメモリ上に直接配列を確保（爆速）
-    CCL::AI::BTNodeID nodeStack[MAX_STACK_DEPTH];
-    int stackTop = 0;
-
-    // 最初にルートノード（0番）をスタックに積む
-    nodeStack[stackTop++] = rootId; // ルートを積む
-
-    // スタックに「次にやる仕事」が残っている限りループを回す
-    while (stackTop > 0) {
-        // スタックの一番上からノードIDを取り出し、stackTopを減らす (Pop操作)
-        CCL::AI::BTNodeID currentNodeId = nodeStack[--stackTop];
-
-        // 配列から実際のノードデータを取得。キャッシュに優しく連続アクセスされる。
-        const CCL::AI::BTNode& node = asset.nodes[currentNodeId];
-
-        switch (node.type) {
-        case CCL::AI::BTNodeType::Selector: {
-            for (int i = 0; i < node.childCount; ++i) {
-                nodeStack[stackTop++] = node.firstChildOffset + (node.childCount - 1 - i);
+    switch (node.type) {
+    case CCL::AI::BTNodeType::Selector: {
+        // 左から順番に試し、どれか一つでも「成功(Success)」か「実行中(Running)」なら、そこで終了
+        for (int i = 0; i < node.childCount; ++i) {
+            auto state = EvaluateTreeRecursive(node.firstChildOffset + i, btComp, cmdComp, asset);
+            if (state != CCL::AI::BTNodeState::Failure) {
+                return state;
             }
-            break;
         }
-        case CCL::AI::BTNodeType::Sequence: {
-            for (int i = 0; i < node.childCount; ++i) {
-                nodeStack[stackTop++] = node.firstChildOffset + (node.childCount - 1 - i);
-            }
-            break;
-        }
-        case CCL::AI::BTNodeType::Condition: {
-            if (!EvaluateCondition(node.actionOrConditionId, btComp)) {
-                return CCL::AI::BTNodeState::Failure;
-            }
-            break;
-        }
-        case CCL::AI::BTNodeType::Action: {
-            CCL::AI::BTNodeState actionState = ExecuteAction(node.actionOrConditionId, btComp, cmdComp);
-            if (actionState == CCL::AI::BTNodeState::Running) {
-                btComp.runningNodeId = currentNodeId;
-                return CCL::AI::BTNodeState::Running;
-            }
-            break;
-        }
-        default:
-            CCL_LOG_ERROR(LogCategory::Game, "Invalid BTNode Type detected!");
-            break;
-        }
+        return CCL::AI::BTNodeState::Failure; // 全て失敗したらFailure
     }
-    return CCL::AI::BTNodeState::Success;
+    case CCL::AI::BTNodeType::Sequence: {
+        // 左から順番に試し、途中で「失敗(Failure)」か「実行中(Running)」が出たら、そこで中断
+        for (int i = 0; i < node.childCount; ++i) {
+            auto state = EvaluateTreeRecursive(node.firstChildOffset + i, btComp, cmdComp, asset);
+            if (state != CCL::AI::BTNodeState::Success) {
+                return state;
+            }
+        }
+        return CCL::AI::BTNodeState::Success; // 全て成功したらSuccess
+    }
+    case CCL::AI::BTNodeType::Condition: {
+        // 条件を満たしていればSuccess、ダメならFailure
+        return EvaluateCondition(node.actionOrConditionId, btComp)
+            ? CCL::AI::BTNodeState::Success
+            : CCL::AI::BTNodeState::Failure;
+    }
+    case CCL::AI::BTNodeType::Action: {
+        // 実際のアクションを実行し、状態を返す
+        CCL::AI::BTNodeState actionState = ExecuteAction(node.actionOrConditionId, btComp, cmdComp);
+        if (actionState == CCL::AI::BTNodeState::Running) {
+            btComp.runningNodeId = nodeId;
+        }
+        return actionState;
+    }
+    default:
+        return CCL::AI::BTNodeState::Failure;
+    }
 }
 
+// 条件を評価する関数。条件IDに応じて、Blackboardの情報を参照して真偽を返す。
 bool BossAISystem::EvaluateCondition(CCL::AI::ActionID condId, const BehaviorTreeComponent& btComp)
 {
     switch (condId) {
-    case 1: return btComp.blackboard.distanceToTarget < 5.0f;
-    case 2: return btComp.blackboard.healthPercentage < 50.0f;
+    case BossAI_ID::Cond_PhaseMove:
+        return btComp.blackboard.distanceToTarget < 5.0f; // 0〜5秒の間は成功
+    case BossAI_ID::Cond_PhaseMelee:
+        return btComp.blackboard.distanceToTarget >= 5.0f && btComp.blackboard.distanceToTarget < 10.0f; // 5〜10秒の間は成功
     default: return false;
     }
 }
 
+// 行動を評価する関数。行動IDに応じて、cmdCompに行動要求を書き込む。
 CCL::AI::BTNodeState BossAISystem::ExecuteAction(CCL::AI::ActionID actionId, BehaviorTreeComponent& btComp, BossCommandComponent& cmdComp)
 {
+    // ---------------------------------------------------------
+    // ★ 状態遷移ロギング (エッジ検知)
+    // ---------------------------------------------------------
+    if (btComp.lastLogActionId != actionId) {
+        switch (actionId) {
+        case BossAI_ID::Act_Move:
+            CCL_LOG_INFO(LogCategory::Game, "[BossAI] State Changed -> MOVE (ウロウロ中)");
+            break;
+        case BossAI_ID::Act_MeleeAttack:
+            // 攻撃実行は目立たせるために SUCCESS (緑色) を使用
+            CCL_LOG_SUCCESS(LogCategory::Game, "[BossAI] State Changed -> MELEE ATTACK (近接攻撃！)");
+            break;
+        case BossAI_ID::Act_ChargeAttack:
+            // 突進などの危険行動は WARN (黄色) を使用
+            CCL_LOG_WARN(LogCategory::Game, "[BossAI] State Changed -> CHARGE ATTACK (突進開始！)");
+            break;
+        }
+        // 記憶を更新（これ以降、別の行動になるまでログは沈黙する）
+        btComp.lastLogActionId = actionId;
+    }
+
     switch (actionId) {
-    case 100:
+    case BossAI_ID::Act_Move:
+        cmdComp.requestMove = true;
+        return CCL::AI::BTNodeState::Running;
+    case BossAI_ID::Act_MeleeAttack:
         cmdComp.requestMeleeAttack = true;
         return CCL::AI::BTNodeState::Success;
-    case 101:
+    case BossAI_ID::Act_ChargeAttack:
         cmdComp.requestCharge = true;
         return CCL::AI::BTNodeState::Running;
     default:
