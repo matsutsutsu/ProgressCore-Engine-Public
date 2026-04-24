@@ -16,10 +16,10 @@
                 {
                     "conditions": [
                         {
-                            "op": 0,
+                            "op": 3,
                             "paramHash": 2343121693,
                             "paramName": "Attack",
-                            "threshold": 1.0
+                            "threshold": 0.0
                         }
                     ],
                     "targetStateHash": 2371348074

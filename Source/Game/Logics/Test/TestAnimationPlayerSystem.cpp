@@ -22,8 +22,16 @@
         static const uint32_t HASH_SPEED = CCL::Utils::HashString("Speed");
         static const uint32_t HASH_ATTACK = CCL::Utils::HashString("Attack");
 
-        // ※クリックされた瞬間のみtrueにする関数を使用してください（ここでは仮にIsLeftDownを使用）
-        bool isAttackTriggered = mouse.IsDown(mouse.BTN_LEFT);
+
+        // 押された瞬間（1フレーム）だけを抽出するエッジ検知             
+        static bool wasLeftDown = false; // 前回のフレームの入力状態を記憶する変数
+        bool isLeftDown = mouse.IsDown(mouse.BTN_LEFT);
+
+        // 「今は押されている」 かつ 「前回は押されていなかった」 時のみ true
+        bool isAttackTriggered = isLeftDown && !wasLeftDown;
+
+        wasLeftDown = isLeftDown; // 次のフレームのために、今の状態を記憶しておく
+
 
         // 2. エンティティごとの並列処理
         ForEach([&](TransformComponent& trans,
@@ -55,7 +63,8 @@
                 // --- 掲示板 (AnimParametersComponent) の更新 ---
                 // Animatorの存在を一切知ることなく、ただ事実（パラメータ）だけを書き込む
                 animParams.SetFloat(HASH_SPEED, currentSpeed);
-                animParams.SetBool(HASH_ATTACK, isAttackTriggered);
+                if (isAttackTriggered)  animParams.SetTrigger(HASH_ATTACK);
+
             });
     }
 

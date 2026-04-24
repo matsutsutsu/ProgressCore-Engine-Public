@@ -160,4 +160,5 @@ void AnimControllerSystem::Update(float dt)
         });
 }
 
-REGISTER_LOGIC_SYSTEM(AnimControllerSystem, Priority::LogicStage::L02_Update);
+
+REGISTER_LOGIC_SYSTEM(AnimControllerSystem, Priority::LogicStage::L02_PostUpdate);

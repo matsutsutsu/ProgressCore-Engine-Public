@@ -17,6 +17,8 @@ namespace Priority {
         L02_AI_Think    = 220, // ② State Judgment, Patrol Logic
         L02_AI_Act      = 230, // ③ Movement Control (Speed Setting)
 
+		L02_PostUpdate = 250,  // すべてのUpdate系システムの後に実行される、主にアニメーションの更新と物理への反映をここで行う
+
         L03_PrePhysics  = 300, // 空間分割(Grid)など、物理・衝突判定の準備
         L04_Physics     = 400, // 物理エンジン(積分)とTransform(親子関係)の更新
         L05_Collision   = 500, // 当たり判定 (Broad -> Narrow)
