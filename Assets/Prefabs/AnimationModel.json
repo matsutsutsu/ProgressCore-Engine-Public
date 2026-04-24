@@ -4,7 +4,7 @@
             "components": {
                 "AnimParameters": null,
                 "AnimStateMachine": {
-                    "graphPath": ""
+                    "graphPath": "Assets/Animations/Nodes/TestAnimationNode.json"
                 },
                 "Animator": {
                     "isLoop": true,

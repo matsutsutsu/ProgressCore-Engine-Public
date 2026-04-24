@@ -86,7 +86,6 @@ template <> struct ComponentMeta<AnimStateMachineComponent> {
     static constexpr bool        registered = true;
     static constexpr const char* displayName = "Anim State Machine";
     static constexpr bool        hasCustomGui = true;
-    // true にして、シーン保存時に情報をJSONへ書き出せるようにする
     static constexpr bool        isSerializable = true;
 
     static bool CustomGui(AnimStateMachineComponent& fsm, unsigned long long entityID, void* worldPtr)
@@ -102,7 +101,6 @@ template <> struct ComponentMeta<AnimStateMachineComponent> {
             char filename[MAX_PATH] = {};
             if (Dialog::OpenFileName(filename, MAX_PATH, "JSON Files\0*.json\0", "Select Anim Graph", Graphics::Instance().GetWindowHandle()) == DialogResult::OK) {
 
-                // 絶対パスを相対パスに変換
                 namespace fs = std::filesystem;
                 fs::path absPath = filename;
                 fs::path currentPath = fs::current_path();
@@ -112,10 +110,15 @@ template <> struct ComponentMeta<AnimStateMachineComponent> {
 
                 // 即座にロードしてバインドする
                 if (AnimGraphSerializer::LoadFromJSON(fsm.internalGraph, fsm.graphPath, {})) {
+                    // ★修正1: `fsm.internalGraph` を直接操作し、正しい `sequenceFilePath` からロードする
                     for (auto& state : fsm.internalGraph.states) {
-                        state.sequence = ResourceManager::Instance().LoadAnimSequence(state.sequenceName.c_str());
+                        if (!state.sequenceFilePath.empty()) {
+                            state.sequence = ResourceManager::Instance().LoadAnimSequence(state.sequenceFilePath.c_str());
+                        }
                     }
-                    fsm.graph = &fsm.internalGraph;
+                    // ★修正2: 諸悪の根源であった自己ポインタの代入を削除
+                    // fsm.graph = &fsm.internalGraph; <- これを消滅させました
+
                     fsm.currentStateHash = fsm.internalGraph.entryStateHash;
                     changed = true;
                 }
@@ -123,13 +126,14 @@ template <> struct ComponentMeta<AnimStateMachineComponent> {
         }
         ImGui::Separator();
 
-        if (!fsm.graph) {
+        // ★修正3: `fsm.graph` へのポインタ依存を完全に断ち切る
+        if (fsm.internalGraph.states.empty()) {
             ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "[Error] No AnimGraph Assigned!");
             return false;
         }
 
         std::string currentStateName = "Unknown";
-        for (const auto& state : fsm.graph->states) {
+        for (const auto& state : fsm.internalGraph.states) {
             if (state.stateHash == fsm.currentStateHash) {
                 currentStateName = state.sequenceName;
                 break;
@@ -145,12 +149,11 @@ template <> struct ComponentMeta<AnimStateMachineComponent> {
         ImGui::Text("Available States (Click to force transition):");
 
         ImGui::Indent();
-        for (const auto& state : fsm.graph->states) {
+        for (const auto& state : fsm.internalGraph.states) {
             bool isCurrent = (state.stateHash == fsm.currentStateHash);
 
             if (isCurrent) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 1.0f, 0.2f, 1.0f));
 
-            // クリックによる強制遷移テスト機能
             if (ImGui::Selectable(state.sequenceName.c_str(), isCurrent)) {
                 fsm.currentStateHash = state.stateHash;
                 changed = true;
@@ -163,10 +166,8 @@ template <> struct ComponentMeta<AnimStateMachineComponent> {
         return changed;
     }
 
-    // どの変数をJSONにセーブ・ロードするかをエンジンに教える
     static const std::vector<FieldDescriptor>& Fields() {
         static const std::vector<FieldDescriptor> fields = {
-            // パス文字列のみをシリアライズ対象とする
             META_FIELD_STRING(AnimStateMachineComponent, graphPath, "graphPath", "Graph File Path", "General")
         };
         return fields;
@@ -196,7 +197,7 @@ template <> struct ComponentMeta<AnimParametersComponent> {
             ImGui::Text("ID: 0x%08X", p.hash);
             ImGui::SameLine(120);
             if (ImGui::DragFloat("##val", &p.value, 0.05f)) {
-                changed = true; // マウスで直接書き換えてテスト可能
+                changed = true;
             }
             ImGui::PopID();
         }

@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <utility>
 #include <vector>
+#include <deque>
 
 namespace CCL {
 
@@ -55,7 +56,12 @@ namespace CCL {
         };
 
         // アパートの部屋全体の配列
-        std::vector<Slot>     m_slots;
+        // ===================================================================
+        // ★修正: vector を deque に変更！
+        // これにより、アパートの増築時に住人の「お引越し」が絶対に発生しなくなり、
+        // 外部に配ったポインタ(T*)が永遠に安全に保たれるようになります。
+        // ===================================================================
+        std::deque<Slot>      m_slots;
         // 空き部屋リスト
         // 大挙して空っぽになった部屋の番号(index)を保管する場所
         std::vector<uint32_t> m_freeIndices;

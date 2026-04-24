@@ -5,9 +5,8 @@
 #include "Engine/Graphics/Resource/Model.h"
 #include "Engine/Graphics/Resource/ModelResource.h"
 #include "Engine/GamePlay/Animation/Data/AnimSequence.h" 
-#include "Engine/GamePlay/Animation/AnimationSystem.h" // 手動更新用
+#include "Engine/GamePlay/Animation/AnimationSystem.h" 
 
-// ファイル選択ダイアログ用
 #include "Engine/Platform/Dialog.h"
 #include "Engine/Platform/Logger.h"
 #include "Engine/Graphics/Core/Graphics.h"
@@ -25,24 +24,20 @@
 // =============================================================================
 class AnimationSequenceImpl : public ImSequencer::SequenceInterface {
 public:
-    // UI表示用のキャッシュデータ (ブロック単位)
     struct EditorEvent {
         int frameStart;
         int frameEnd;
         int type;
-        // ★追加: 個別のパス（Prefabや音源）を保持する枠
         char stringParam[256];
     };
 
     std::vector<EditorEvent> cache;
-    AnimSequence* targetSequence = nullptr; // 対象が台本に！
+    AnimSequence* targetSequence = nullptr;
 
     int mFrameMin = 0;
     int mFrameMax = 60 * 5;
 
-    // -------------------------------------------------------------------------
-    // 同期処理: 台本(点) -> UI(ブロック) への変換
-    // ---------------------------------------------------------
+    // 台本(点) -> UI(ブロック) への変換
     void SyncFromData() {
         cache.clear();
         if (!targetSequence) return;
@@ -65,22 +60,21 @@ public:
             }
             else if (evt.eventName == "Play_Sound") {
                 int frame = (int)(evt.time * 60.0f);
-                EditorEvent item{ frame, frame + 1, 1 };
+                // ★修正: 音やエフェクトも10フレーム分の幅を持たせ、マウスで掴みやすくする
+                EditorEvent item{ frame, frame + 10, 1 };
                 strcpy_s(item.stringParam, sizeof(item.stringParam), evt.stringParam.c_str());
                 cache.push_back(item);
             }
             else if (evt.eventName == "Play_Effect") {
                 int frame = (int)(evt.time * 60.0f);
-                EditorEvent item{ frame, frame + 1, 2 };
+                EditorEvent item{ frame, frame + 10, 2 };
                 strcpy_s(item.stringParam, sizeof(item.stringParam), evt.stringParam.c_str());
                 cache.push_back(item);
             }
         }
     }
 
-    // -------------------------------------------------------------------------
-    // 同期処理: UI(ブロック) -> 台本(点) への変換と【自動ソート】
-    // ---------------------------------------------------------
+    // UI(ブロック) -> 台本(点) への変換と自動ソート
     void SyncToData() {
         if (!targetSequence) return;
         targetSequence->events.clear();
@@ -89,8 +83,7 @@ public:
             float startSec = (float)item.frameStart / 60.0f;
             float endSec = (float)item.frameEnd / 60.0f;
 
-            // ★UIで入力された stringParam を台本に書き写す
-            if (item.type == 0) { // HitBoxブロック -> StartとEndの2つに分解
+            if (item.type == 0) {
                 targetSequence->events.push_back({ startSec, "HitBox_Start", item.stringParam });
                 targetSequence->events.push_back({ endSec, "HitBox_End", item.stringParam });
             }
@@ -102,7 +95,6 @@ public:
             }
         }
 
-        // ★絶対条件: O(1)アクセスのため、時間を基準に昇順ソートする
         std::sort(targetSequence->events.begin(), targetSequence->events.end(),
             [](const AnimNotifyEvent& a, const AnimNotifyEvent& b) {
                 return a.time < b.time;
@@ -114,7 +106,6 @@ public:
         if (mFrameMax < 60) mFrameMax = 60;
     }
 
-    // --- ImSequencer Interface ---
     virtual int GetFrameMin() const override { return mFrameMin; }
     virtual int GetFrameMax() const override { return mFrameMax; }
     virtual int GetItemCount() const override { return (int)cache.size(); }
@@ -134,7 +125,6 @@ public:
         if (index < 0 || index >= (int)cache.size()) return "";
         const auto& item = cache[index];
 
-        // ★UI上のブロックの名前を変えて、パスが入力されているか分かりやすくする
         const char* name = (item.stringParam[0] != '\0') ? item.stringParam : "Empty";
 
         switch (item.type) {
@@ -154,9 +144,9 @@ public:
         if (type) *type = item.type;
         if (color) {
             switch (item.type) {
-            case 0: *color = 0xFF5050D0; break; // 赤
-            case 1: *color = 0xFFD08050; break; // 青
-            case 2: *color = 0xFF50D050; break; // 緑
+            case 0: *color = 0xFF5050D0; break;
+            case 1: *color = 0xFFD08050; break;
+            case 2: *color = 0xFF50D050; break;
             default: *color = 0xFFFFFFFF; break;
             }
         }
@@ -166,8 +156,8 @@ public:
         EditorEvent item;
         item.type = type;
         item.frameStart = 0;
-        item.frameEnd = (type == 0) ? 30 : 1; // HitBoxのみ幅を持たせる
-        memset(item.stringParam, 0, sizeof(item.stringParam)); // ★初期化
+        item.frameEnd = (type == 0) ? 30 : 10;
+        memset(item.stringParam, 0, sizeof(item.stringParam));
         cache.push_back(item);
     }
 
@@ -187,7 +177,8 @@ public:
 // Window Class Implementation
 // =============================================================================
 static AnimSequence g_EditingSequence;
-static char g_SavePath[256] = "Assets/Animations/Player_Attack.json";
+static char g_SavePath[256] = "Assets/Animations/NewSequence.json";
+static int s_SelectedAnimIndex = -1; // ターゲットアニメーションのコンボボックス用
 
 AnimationSequencerWindow::AnimationSequencerWindow()
     : EditorWindow("Sequencer"), _expanded(true), _selectedEntry(-1), _firstFrame(0)
@@ -218,26 +209,27 @@ void AnimationSequencerWindow::DrawContents(EditorContext& context)
     ModelResource* resource = model->GetResourceMutable();
     if (!resource) return;
 
+    auto& animations = resource->GetAnimationsMutable();
+    if (animations.empty()) {
+        ImGui::TextDisabled("No animations found in the model.");
+        return;
+    }
+
     // ---------------------------------------------------------
     // JSON保存・読み込みのUI
     // ---------------------------------------------------------
-    ImGui::InputText("Save Path", g_SavePath, sizeof(g_SavePath));
-
-    // ---------------------------------------------------------
-    // JSON保存・読み込みのUI (ダイアログ対応版に修正)
-    // ---------------------------------------------------------
     if (ImGui::Button("Save JSON...")) {
         char filename[MAX_PATH] = {};
-        // 保存ダイアログを開く
         if (Dialog::SaveFileName(filename, MAX_PATH, "JSON Files\0*.json\0", "Save Anim Sequence", "json", Graphics::Instance().GetWindowHandle()) == DialogResult::OK) {
             namespace fs = std::filesystem;
-            fs::path absPath = filename;
-            fs::path currentPath = fs::current_path();
             std::error_code ec;
-            fs::path relPath = fs::relative(absPath, currentPath, ec);
+            fs::path relPath = fs::relative(filename, fs::current_path(), ec);
             std::string finalPath = (!ec && !relPath.empty()) ? relPath.generic_string() : filename;
 
-            strcpy_s(g_SavePath, sizeof(g_SavePath), finalPath.c_str()); // 現在のパスを更新
+            strcpy_s(g_SavePath, sizeof(g_SavePath), finalPath.c_str());
+
+            // ★保存直前に最新のUI状態をデータに書き込む
+            _sequencerImpl->SyncToData();
 
             std::ofstream os(finalPath);
             if (os.is_open()) {
@@ -251,22 +243,31 @@ void AnimationSequencerWindow::DrawContents(EditorContext& context)
 
     if (ImGui::Button("Load JSON...")) {
         char filename[MAX_PATH] = {};
-        // 読み込みダイアログを開く
         if (Dialog::OpenFileName(filename, MAX_PATH, "JSON Files\0*.json\0", "Load Anim Sequence", Graphics::Instance().GetWindowHandle()) == DialogResult::OK) {
             namespace fs = std::filesystem;
-            fs::path absPath = filename;
-            fs::path currentPath = fs::current_path();
             std::error_code ec;
-            fs::path relPath = fs::relative(absPath, currentPath, ec);
+            fs::path relPath = fs::relative(filename, fs::current_path(), ec);
             std::string finalPath = (!ec && !relPath.empty()) ? relPath.generic_string() : filename;
 
-            strcpy_s(g_SavePath, sizeof(g_SavePath), finalPath.c_str()); // 現在のパスを更新
+            strcpy_s(g_SavePath, sizeof(g_SavePath), finalPath.c_str());
 
             std::ifstream is(finalPath);
             if (is.is_open()) {
                 cereal::JSONInputArchive archive(is);
                 archive(cereal::make_nvp("AnimSequence", g_EditingSequence));
+
+                // 読み込んだデータに合わせてターゲットコンボボックスを更新
+                for (int i = 0; i < (int)animations.size(); ++i) {
+                    if (animations[i].name == g_EditingSequence.targetAnimName) {
+                        s_SelectedAnimIndex = i;
+                        break;
+                    }
+                }
+
+                _sequencerImpl->targetSequence = &g_EditingSequence;
+                _sequencerImpl->UpdateDuration(g_EditingSequence.duration);
                 _sequencerImpl->SyncFromData(); // UIを更新
+                _selectedEntry = -1;
                 CCL_LOG_INFO(LogCategory::Editor, "Sequence Loaded: %s", finalPath.c_str());
             }
         }
@@ -274,23 +275,24 @@ void AnimationSequencerWindow::DrawContents(EditorContext& context)
 
     ImGui::SameLine();
     ImGui::TextDisabled("File: %s", g_SavePath[0] == '\0' ? "None" : g_SavePath);
+    ImGui::Separator();
 
+    // ★追加: ノードエディタで使う「Sequence Name」の編集
+    char seqNameBuf[128] = {};
+    strcpy_s(seqNameBuf, sizeof(seqNameBuf), g_EditingSequence.sequenceName.c_str());
+    if (ImGui::InputText("Sequence Name", seqNameBuf, sizeof(seqNameBuf))) {
+        g_EditingSequence.sequenceName = seqNameBuf;
+    }
     ImGui::Separator();
 
     // ---------------------------------------------------------
-    // ターゲットの関連付け
+    // ターゲットの関連付けと初期化
     // ---------------------------------------------------------
-    auto& animations = resource->GetAnimationsMutable();
-    if (animations.empty()) {
-        ImGui::TextDisabled("No animations found in the model.");
-        return;
+    if (s_SelectedAnimIndex < 0 || s_SelectedAnimIndex >= (int)animations.size()) {
+        s_SelectedAnimIndex = 0; // フェールセーフ
     }
 
-    static int s_SelectedAnimIndex = 0;
-    if (s_SelectedAnimIndex >= (int)animations.size()) {
-        s_SelectedAnimIndex = 0;
-    }
-
+    static int prevSelectedIndex = -2;
     if (ImGui::BeginCombo("Target Animation", animations[s_SelectedAnimIndex].name.c_str())) {
         for (int i = 0; i < (int)animations.size(); ++i) {
             bool isSelected = (s_SelectedAnimIndex == i);
@@ -302,13 +304,20 @@ void AnimationSequencerWindow::DrawContents(EditorContext& context)
         ImGui::EndCombo();
     }
 
-    int idx = s_SelectedAnimIndex;
+    // ベースアニメーションが変更された時だけデータをリセットして同期する
+    if (prevSelectedIndex != s_SelectedAnimIndex) {
+        prevSelectedIndex = s_SelectedAnimIndex;
+        int idx = s_SelectedAnimIndex;
 
-    g_EditingSequence.targetAnimName = animations[idx].name;
-    g_EditingSequence.duration = animations[idx].secondsLength;
+        g_EditingSequence.targetAnimName = animations[idx].name;
+        g_EditingSequence.duration = animations[idx].secondsLength;
 
-    _sequencerImpl->targetSequence = &g_EditingSequence;
-    _sequencerImpl->UpdateDuration(animations[idx].secondsLength);
+        _sequencerImpl->targetSequence = &g_EditingSequence;
+        _sequencerImpl->UpdateDuration(animations[idx].secondsLength);
+
+        // ここでのみSyncFromDataを呼ぶことで、ドラッグ中の破壊を防ぐ
+        _sequencerImpl->SyncFromData();
+    }
 
     if (context.isAnimEditMode) {
         animator->currentSequence = &g_EditingSequence;
@@ -317,30 +326,36 @@ void AnimationSequencerWindow::DrawContents(EditorContext& context)
     // ---------------------------------------------------------
     // ツールバー表示 (ボタン類)
     // ---------------------------------------------------------
-    ImGui::Text("Anim: %s (%.2fs)", g_EditingSequence.targetAnimName.c_str(), g_EditingSequence.duration);
+    ImGui::Text("Duration: %.2fs", g_EditingSequence.duration);
     ImGui::Checkbox("Edit Mode (Pause & Preview)", &context.isAnimEditMode);
-
     ImGui::SameLine(); ImGui::Text("|"); ImGui::SameLine();
 
+    int currentFrame = 0;
+    if (context.isAnimEditMode) {
+        currentFrame = (int)(context.animEditTime * 60.0f);
+    }
+    else {
+        currentFrame = (int)(animator->currentTimer * 60.0f);
+    }
+    int prevFrame = currentFrame;
+
     // ====================================================================
-    // イベントを追加した瞬間に、それを自動的に選択状態にする魔法
+    // イベントを追加し、現在再生している位置(Playhead)に配置する
     // ====================================================================
     auto AddAndSelectEvent = [&](int type) {
         _sequencerImpl->Add(type);
-        _sequencerImpl->SyncToData();   // 一旦ソートして台本に反映
-        _sequencerImpl->SyncFromData(); // ソート後の状態をUIに読み直す
-        
-        // 新しく追加された要素（追加直後は必ず frameStart == 0）を探して選択状態にする
-        for (int i = 0; i < _sequencerImpl->GetItemCount(); ++i) {
-            if (_sequencerImpl->cache[i].type == type && _sequencerImpl->cache[i].frameStart == 0) {
-                _selectedEntry = i;
-            }
-        }
-    };
+
+        auto& newItem = _sequencerImpl->cache.back();
+        newItem.frameStart = currentFrame;
+        newItem.frameEnd = currentFrame + ((type == 0) ? 30 : 10);
+
+        _sequencerImpl->SyncToData();
+        _selectedEntry = (int)_sequencerImpl->cache.size() - 1;
+        };
 
     if (ImGui::Button("+ Attack")) { AddAndSelectEvent(0); }
     ImGui::SameLine();
-    if (ImGui::Button("+ Sound"))  { AddAndSelectEvent(1); }
+    if (ImGui::Button("+ Sound")) { AddAndSelectEvent(1); }
     ImGui::SameLine();
     if (ImGui::Button("+ Effect")) { AddAndSelectEvent(2); }
 
@@ -350,19 +365,9 @@ void AnimationSequencerWindow::DrawContents(EditorContext& context)
     // シーケンサー描画
     // ---------------------------------------------------------
     if (_sequencerImpl->targetSequence) {
-        _sequencerImpl->SyncFromData();
-
-        int currentFrame = 0;
-        if (context.isAnimEditMode) {
-            currentFrame = (int)(context.animEditTime * 60.0f);
-        }
-        else {
-            currentFrame = (int)(animator->currentTimer * 60.0f);
-        }
-
-        int prevFrame = currentFrame;
-
         _expanded = true;
+
+        // ★修正: SyncFromData()を毎フレーム呼ぶのをやめたため、ドラッグが安定します
         bool changed = ImSequencer::Sequencer(_sequencerImpl.get(), &currentFrame, &_expanded, &_selectedEntry, &_firstFrame,
             ImSequencer::SEQUENCER_EDIT_STARTEND | ImSequencer::SEQUENCER_ADD |
             ImSequencer::SEQUENCER_DEL | ImSequencer::SEQUENCER_CHANGE_FRAME);
@@ -376,9 +381,8 @@ void AnimationSequencerWindow::DrawContents(EditorContext& context)
 
             auto& selectedItem = _sequencerImpl->cache[_selectedEntry];
 
-            // Effect(2) か Sound(1) の場合にダイアログボタンを表示
-            if (selectedItem.type == 1 || selectedItem.type == 2) {
-                const char* label = (selectedItem.type == 1) ? "Sound File" : "Effect Prefab";
+            if (selectedItem.type == 1 || selectedItem.type == 2 || selectedItem.type == 0) {
+                const char* label = (selectedItem.type == 1) ? "Sound File" : ((selectedItem.type == 2) ? "Effect Prefab" : "Damage Info");
                 const char* filter = (selectedItem.type == 1) ? "Audio Files\0*.wav;*.mp3;*.ogg\0All Files\0*.*\0" : "Prefab Files\0*.json\0All Files\0*.*\0";
 
                 ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 100.0f);
@@ -386,54 +390,31 @@ void AnimationSequencerWindow::DrawContents(EditorContext& context)
                     changed = true;
                 }
 
-                ImGui::SameLine();
-                if (ImGui::Button("Browse...##ParamBrowser")) {
-                    char filename[256] = {};
-                    if (Dialog::OpenFileName(filename, 256, filter, "Select File", Graphics::Instance().GetWindowHandle()) == DialogResult::OK) {
+                if (selectedItem.type == 1 || selectedItem.type == 2) {
+                    ImGui::SameLine();
+                    if (ImGui::Button("Browse...##ParamBrowser")) {
+                        char filename[256] = {};
+                        if (Dialog::OpenFileName(filename, 256, filter, "Select File", Graphics::Instance().GetWindowHandle()) == DialogResult::OK) {
+                            namespace fs = std::filesystem;
+                            std::error_code ec;
+                            fs::path relPath = fs::relative(filename, fs::current_path(), ec);
+                            std::string finalPath = (!ec && !relPath.empty()) ? relPath.generic_string() : filename;
 
-                        // 絶対パスを相対パスに変換して保存
-                        namespace fs = std::filesystem;
-                        fs::path absPath = filename;
-                        fs::path currentPath = fs::current_path();
-                        std::error_code ec;
-                        fs::path relPath = fs::relative(absPath, currentPath, ec);
-                        std::string finalPath = (!ec && !relPath.empty()) ? relPath.generic_string() : filename;
-
-                        strcpy_s(selectedItem.stringParam, sizeof(selectedItem.stringParam), finalPath.c_str());
-                        changed = true;
+                            strcpy_s(selectedItem.stringParam, sizeof(selectedItem.stringParam), finalPath.c_str());
+                            changed = true;
+                        }
                     }
                 }
-            }
-            else if (selectedItem.type == 0) {
-                ImGui::TextDisabled("HitBox properties (Damage, Type, etc...) will be here.");
             }
         }
         ImGui::Separator();
 
         // ====================================================================
-        // 　変更があったら台本に書き戻す (ソートによる選択ズレ防止)
+        // 　変更があったら台本に書き戻す
         // ====================================================================
         if (changed) {
-            // ソートによってインデックスが変わってしまう前に、今選択しているブロックの特徴を記憶する
-            int selectedType = -1;
-            int selectedFrame = -1;
-            if (_selectedEntry >= 0 && _selectedEntry < (int)_sequencerImpl->cache.size()) {
-                selectedType = _sequencerImpl->cache[_selectedEntry].type;
-                selectedFrame = _sequencerImpl->cache[_selectedEntry].frameStart;
-            }
-
-            _sequencerImpl->SyncToData();  // 台本に書き込んで時間順にソートされる
-            _sequencerImpl->SyncFromData(); // ソート後の新しい並び順をロード
-
-            // 記憶しておいた特徴から、ソート後の新しいインデックスを見つけ出して補正する
-            if (selectedType != -1) {
-                for (int i = 0; i < (int)_sequencerImpl->cache.size(); ++i) {
-                    if (_sequencerImpl->cache[i].type == selectedType && _sequencerImpl->cache[i].frameStart == selectedFrame) {
-                        _selectedEntry = i;
-                        break;
-                    }
-                }
-            }
+            // ★修正: SyncFromData()を呼ばないことで、配列の再構築を防ぐ
+            _sequencerImpl->SyncToData();
         }
 
         // =========================================================

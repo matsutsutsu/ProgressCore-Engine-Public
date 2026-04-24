@@ -20,7 +20,7 @@
 
         // 毎フレームのハッシュ計算を避けるため、static変数で事前計算してキャッシュする (DOD的最適化)
         static const uint32_t HASH_SPEED = CCL::Utils::HashString("Speed");
-        static const uint32_t HASH_ATTACK = CCL::Utils::HashString("Trigger_Attack");
+        static const uint32_t HASH_ATTACK = CCL::Utils::HashString("Attack");
 
         // ※クリックされた瞬間のみtrueにする関数を使用してください（ここでは仮にIsLeftDownを使用）
         bool isAttackTriggered = mouse.IsDown(mouse.BTN_LEFT);

@@ -1,0 +1,25 @@
+{
+    "AnimSequence": {
+        "sequenceName": "",
+        "targetModelPath": "",
+        "targetAnimName": "Slash",
+        "duration": 3.000000238418579,
+        "events": [
+            {
+                "time": 0.0,
+                "eventName": "Play_Effect",
+                "stringParam": ""
+            },
+            {
+                "time": 0.0,
+                "eventName": "HitBox_Start",
+                "stringParam": ""
+            },
+            {
+                "time": 0.5,
+                "eventName": "HitBox_End",
+                "stringParam": ""
+            }
+        ]
+    }
+}

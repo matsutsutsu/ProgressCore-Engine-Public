@@ -36,6 +36,9 @@ struct AnimState {
     uint32_t stateHash;
     std::string sequenceName; 
 
+    // 実際に再生するシーケンサーのJSONファイルパス (UnityのMotionにあたるもの)
+    std::string sequenceFilePath;
+
     // --- 拡張パラメータ ---
     bool isLoop = true;
     float playbackSpeed = 1.0f;
@@ -108,6 +111,7 @@ inline void to_json(json& j, const AnimState& s) {
     j = json{
         {"stateHash", s.stateHash},
         {"sequenceName", s.sequenceName},
+        {"sequenceFilePath", s.sequenceFilePath},
         {"isLoop", s.isLoop},
         {"playbackSpeed", s.playbackSpeed},
         {"speedCurveName", s.speedCurveName},
@@ -119,6 +123,7 @@ inline void to_json(json& j, const AnimState& s) {
 inline void from_json(const json& j, AnimState& s) {
     j.at("stateHash").get_to(s.stateHash);
     j.at("sequenceName").get_to(s.sequenceName);
+    if (j.contains("sequenceFilePath")) j.at("sequenceFilePath").get_to(s.sequenceFilePath);
     if (j.contains("isLoop")) j.at("isLoop").get_to(s.isLoop);
     if (j.contains("playbackSpeed")) j.at("playbackSpeed").get_to(s.playbackSpeed);
     if (j.contains("speedCurveName")) j.at("speedCurveName").get_to(s.speedCurveName);
@@ -155,10 +160,6 @@ struct AnimStateMachineComponent {
 
     // ロードされたグラフデータの実体（ポインタの指す先）
     AnimStateGraph internalGraph;
-
-    //　遷移するアニメーションのノード情報のポインタ
-	// ポインタの理由は、同じ敵キャラなら全ての個体で同じグラフを共有するため（マスターデータ）
-    const AnimStateGraph* graph = nullptr;
 
 	// 現在のステートを示すハッシュ値（ノードID）
     uint32_t currentStateHash = 0;

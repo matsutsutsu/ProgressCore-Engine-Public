@@ -406,6 +406,23 @@ void AnimGraphWindow::DrawStateSettings(uint32_t stateHash) {
                 state.sequenceName = nameBuf;
             }
 
+            ImGui::Separator();
+
+            // 2. 再生するアニメーション(Motion)の割り当てUI
+            ImGui::Text("再生ファイル (Motion Sequence):");
+            ImGui::TextDisabled("%s", state.sequenceFilePath.empty() ? "None" : state.sequenceFilePath.c_str());
+            if (ImGui::Button("ファイルを選択 (Browse...)##Motion", ImVec2(-1, 0))) {
+                char filename[MAX_PATH] = {};
+                if (Dialog::OpenFileName(filename, MAX_PATH, "JSON Files\0*.json\0", "Select Anim Sequence", Graphics::Instance().GetWindowHandle()) == DialogResult::OK) {
+                    namespace fs = std::filesystem;
+                    std::error_code ec;
+                    fs::path relPath = fs::relative(filename, fs::current_path(), ec);
+                    state.sequenceFilePath = (!ec && !relPath.empty()) ? relPath.generic_string() : filename;
+                }
+            }
+
+            ImGui::Separator();
+
             ImGui::Checkbox("ループ再生 (Loop Animation)", &state.isLoop);
             ImGui::DragFloat("再生速度 (Playback Speed)", &state.playbackSpeed, 0.05f, 0.0f, 5.0f);
 
