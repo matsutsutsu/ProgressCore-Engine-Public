@@ -2,6 +2,7 @@
 #include <cstdint>
 #include "SimpleMath.h"
 #include "Game/Logics/AI/BehaviorTree/BehaviorTreeData.h"
+#include "Game/Logics/AI/BehaviorTree/Drone/DroneComponent.h"
 
 /**
  * @file BehaviorTreeComponents.h
@@ -35,6 +36,8 @@ struct BehaviorTreeComponent {
     AIBlackboard blackboard;
 };
 
+
+
 // AIシステムからの「出力」を受け取るコンポーネント（毎フレームリセットされる使い捨てデータ）
 // 例えば、AIが「近接攻撃してほしい」「ここに移動してほしい」といった命令をこのコンポーネントに書き込む
 struct BossCommandComponent {
@@ -43,4 +46,7 @@ struct BossCommandComponent {
     bool requestGuard = false;
     bool requestMove = false; // ★この1行を追加！
     DirectX::SimpleMath::Vector3 moveTarget; // ここに移動してほしい！
+
+    DroneFormationType requestFormation = DroneFormationType::Hidden;
+    CCL::ECS::EntityID targetPlayerId = CCL::ECS::InvalidEntityID; // 誰を狙うか
 };

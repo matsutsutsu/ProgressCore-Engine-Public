@@ -421,6 +421,12 @@
     <Filter Include="Source\Game\Logics\AI\BehaviorTree\_Meta">
       <UniqueIdentifier>{8ef38902-d889-483c-9b95-bbfdb73fdd31}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\AI\Drone">
+      <UniqueIdentifier>{ca2ab5f4-c9b8-4bce-8005-98aadbde9f63}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\AI\BehaviorTree\Drone">
+      <UniqueIdentifier>{1dcf7f43-80a3-4026-958c-8d279ef4bbb6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1410,6 +1416,12 @@
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BossAISystem.h">
       <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\TestEnemyActionComponent.h">
+      <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\TestEnemyActionSystem.h">
+      <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Test\LissajousOrbitComponent.h">
       <Filter>Source\Game\Logics\Test</Filter>
     </ClInclude>
@@ -1427,6 +1439,12 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Test\VectorFlowSystem.h">
       <Filter>Source\Game\Logics\Test</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Drone\DroneComponent.h">
+      <Filter>Source\Game\Logics\AI\BehaviorTree\Drone</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Drone\DroneFormationSystem.h">
+      <Filter>Source\Game\Logics\AI\BehaviorTree\Drone</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2174,6 +2192,12 @@
     <ClCompile Include="Source\Game\Logics\Test\TestAnimationPlayerComponentMeta.cpp">
       <Filter>Source\Game\Logics\Test\TestAnimation</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\TestEnemyActionSystem.cpp">
+      <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\TestEnemyActionComponentMeta.cpp">
+      <Filter>Source\Game\Logics\AI\BehaviorTree\_Meta</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Game\Logics\Test\LissajousOrbitSystem.cpp">
       <Filter>Source\Game\Logics\Test</Filter>
     </ClCompile>
@@ -2182,6 +2206,9 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Test\VectorFlowSystem.cpp">
       <Filter>Source\Game\Logics\Test</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Drone\DroneFormationSystem.cpp">
+      <Filter>Source\Game\Logics\AI\BehaviorTree\Drone</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

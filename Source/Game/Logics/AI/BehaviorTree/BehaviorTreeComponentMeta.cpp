@@ -3,6 +3,7 @@
  * @brief AI関連コンポーネントのエディタ/シリアライズ用メタデータ定義
  */
 #include "Game/Logics/AI/BehaviorTree/BehaviorTreeComponents.h"
+#include "Game/Logics/AI/BehaviorTree/Drone/DroneComponent.h"
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
@@ -53,3 +54,29 @@ template <> struct ComponentMeta<BossCommandComponent> {
     }
 };
 REGISTER_COMPONENT(BossCommandComponent, "BossCommandComponent")
+
+
+
+// =======================================================================
+// エディタ（ImGui）およびシリアライズ用メタデータの定義
+// 表示テキストは日本語で記述すること 
+// =======================================================================
+template <> struct ComponentMeta<DroneComponent> {
+    static constexpr bool registered = true;
+    static constexpr const char* displayName = "Drone (ドローン)";
+    static constexpr bool hasCustomGui = false;
+    static constexpr bool isSerializable = true;
+
+    static const std::vector<FieldDescriptor>& Fields() {
+        static const std::vector<FieldDescriptor> fields = {
+            //{ "親ボスID", "ownerBossId", FieldKind::EntityID, offsetof(DroneComponent, ownerBossId), 1.0f, 0.0f, 0.0f, "Hierarchy", nullptr, 0, true },
+            { "ローカルインデックス", "localIndex", FieldKind::UInt16, offsetof(DroneComponent, localIndex), 1.0f, 0.0f, 0.0f, "Formation", nullptr, 0, true },
+            { "総ドローン数", "totalDrones", FieldKind::UInt16, offsetof(DroneComponent, totalDrones), 1.0f, 0.0f, 0.0f, "Formation", nullptr, 0, true },
+            { "目標座標", "targetPosition", FieldKind::Float3, offsetof(DroneComponent, targetPosition), 0.1f, 0.0f, 0.0f, "State", nullptr, 0, false }, // 毎フレーム変わるのでセーブ対象外 
+            { "移動速度", "moveSpeed", FieldKind::Float, offsetof(DroneComponent, moveSpeed), 0.1f, 0.0f, 100.0f, "Stats", nullptr, 0, true },
+            { "旋回半径", "orbitRadius", FieldKind::Float, offsetof(DroneComponent, orbitRadius), 0.1f, 0.0f, 100.0f, "Stats", nullptr, 0, true }
+        };
+        return fields;
+    }
+};
+REGISTER_COMPONENT(DroneComponent, "DroneComponent")
