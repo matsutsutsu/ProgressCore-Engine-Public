@@ -42,4 +42,10 @@ class SceneInitializer {
     // 物理エンジンの極限テスト（数万個の雪崩）
     static void SpawnPhysicsAvalancheTest(CCL::ECS::Core::World& world, ID3D11Device* device, int count);
 
+
+    // 既存の宣言の下に追加
+    static void SpawnLissajousTest(CCL::ECS::Core::World& world, ID3D11Device* device, int count);
+    static void SpawnTornadoTest(CCL::ECS::Core::World& world, ID3D11Device* device, int count);
+    static void SpawnVectorFlowTest(CCL::ECS::Core::World& world, ID3D11Device* device, int count);
+
 };

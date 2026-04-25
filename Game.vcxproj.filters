@@ -250,12 +250,6 @@
     <Filter Include="Source\Engine\GamePlay\Graphics\PostProcess">
       <UniqueIdentifier>{37d31b78-b9b4-4917-9307-3d9ea26d3bf4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Game\Logics\World">
-      <UniqueIdentifier>{06bc2403-42a1-441a-ac76-e1efb592543c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\World\Triggers">
-      <UniqueIdentifier>{a39d9320-0e17-4fdd-85d9-a2dc0011e75e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\UI\Widgets">
       <UniqueIdentifier>{13ca0c60-1e37-4955-a35a-3f3eb232a4f9}</UniqueIdentifier>
     </Filter>
@@ -894,12 +888,6 @@
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerMoveSystem.h">
       <Filter>Source\Game\Logics\Character\Player</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\World\Triggers\TriggerComponent.h">
-      <Filter>Source\Game\Logics\World\Triggers</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\World\Triggers\TriggerSystem.h">
-      <Filter>Source\Game\Logics\World\Triggers</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Scenes\EditorScene.h">
       <Filter>Source\Game\Scenes</Filter>
     </ClInclude>
@@ -1422,11 +1410,23 @@
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BossAISystem.h">
       <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\TestEnemyActionComponent.h">
-      <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
+    <ClInclude Include="Source\Game\Logics\Test\LissajousOrbitComponent.h">
+      <Filter>Source\Game\Logics\Test</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\TestEnemyActionSystem.h">
-      <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
+    <ClInclude Include="Source\Game\Logics\Test\LissajousOrbitSystem.h">
+      <Filter>Source\Game\Logics\Test</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Test\TornadoVortexComponent.h">
+      <Filter>Source\Game\Logics\Test</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Test\TornadoVortexSystem.h">
+      <Filter>Source\Game\Logics\Test</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Test\VectorFlowComponent.h">
+      <Filter>Source\Game\Logics\Test</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Test\VectorFlowSystem.h">
+      <Filter>Source\Game\Logics\Test</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1756,9 +1756,6 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerMoveSystem.cpp">
       <Filter>Source\Game\Logics\Character\Player</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\World\Triggers\TriggerSystem.cpp">
-      <Filter>Source\Game\Logics\World\Triggers</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Scenes\EditorScene.cpp">
       <Filter>Source\Game\Scenes</Filter>
@@ -2177,11 +2174,14 @@
     <ClCompile Include="Source\Game\Logics\Test\TestAnimationPlayerComponentMeta.cpp">
       <Filter>Source\Game\Logics\Test\TestAnimation</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\TestEnemyActionSystem.cpp">
-      <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
+    <ClCompile Include="Source\Game\Logics\Test\LissajousOrbitSystem.cpp">
+      <Filter>Source\Game\Logics\Test</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\TestEnemyActionComponentMeta.cpp">
-      <Filter>Source\Game\Logics\AI\BehaviorTree\_Meta</Filter>
+    <ClCompile Include="Source\Game\Logics\Test\TornadoVortexSystem.cpp">
+      <Filter>Source\Game\Logics\Test</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Test\VectorFlowSystem.cpp">
+      <Filter>Source\Game\Logics\Test</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

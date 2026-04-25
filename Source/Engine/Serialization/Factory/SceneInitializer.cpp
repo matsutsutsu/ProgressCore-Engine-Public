@@ -469,3 +469,82 @@ void SceneInitializer::SpawnPhysicsAvalancheTest(
         }
     }
 }
+
+
+#include "Game/Logics/Test/LissajousOrbitComponent.h"
+#include "Game/Logics/Test/TornadoVortexComponent.h"
+#include "Game/Logics/Test/VectorFlowComponent.h"
+// ※PrimitiveComponent などのインクルードは適宜行ってください
+
+void SceneInitializer::SpawnLissajousTest(CCL::ECS::Core::World& world, ID3D11Device* device, int count) {
+    std::mt19937 gen(1001);
+    std::uniform_real_distribution<float> distPhase(0.0f, DirectX::XM_2PI);
+    std::uniform_real_distribution<float> distAmp(5.0f, 20.0f);
+    std::uniform_real_distribution<float> distFreq(1.0f, 5.0f);
+
+    auto arch = CCL::ECS::ArchetypeHelper::Generate<TransformComponent, PrimitiveComponent, LissajousOrbitComponent>();
+
+    for (int i = 0; i < count; ++i) {
+        auto e = EntityFactory::SpawnNamed(world, "LissajousNode", arch);
+        e.Set(TransformComponent{ .position = {0, 10, 0}, .scale = {0.2f, 0.2f, 0.2f} });
+        e.Set(PrimitiveComponent{ .type = PrimitiveType::Sphere, .color = {0.0f, 1.0f, 1.0f, 1.0f} }); // シアン系
+
+        e.Set(LissajousOrbitComponent{
+            .amplitude = {distAmp(gen), distAmp(gen) * 0.5f, distAmp(gen)},
+            .frequency = {distFreq(gen), distFreq(gen) * 1.5f, distFreq(gen) * 0.8f},
+            .phase = {distPhase(gen), distPhase(gen), distPhase(gen)},
+            .timeAcc = 0.0f,
+            .speed = 0.5f,
+            .centerPos = {0, 15, 0}
+            });
+    }
+}
+
+void SceneInitializer::SpawnTornadoTest(CCL::ECS::Core::World& world, ID3D11Device* device, int count) {
+    std::mt19937 gen(2002);
+    std::uniform_real_distribution<float> distRadius(5.0f, 20.0f);
+    std::uniform_real_distribution<float> distAngle(0.0f, DirectX::XM_2PI);
+    std::uniform_real_distribution<float> distHeight(0.0f, 50.0f);
+
+    auto arch = CCL::ECS::ArchetypeHelper::Generate<TransformComponent, PrimitiveComponent, TornadoVortexComponent>();
+
+    for (int i = 0; i < count; ++i) {
+        auto e = EntityFactory::SpawnNamed(world, "TornadoDebris", arch);
+        e.Set(TransformComponent{ .scale = {1.0f, 1.0f, 1.0f} });
+        e.Set(PrimitiveComponent{ .type = PrimitiveType::Box, .color = {0.8f, 0.2f, 0.8f, 1.0f} }); // 紫系
+
+        e.Set(TornadoVortexComponent{
+            .radius = distRadius(gen),
+            .angle = distAngle(gen),
+            .height = distHeight(gen),
+            .shrinkSpeed = 2.0f,
+            .rotationSpeed = 3.0f + distRadius(gen) * 0.1f, // 外側ほど速い等の調整
+            .riseSpeed = 5.0f + distRadius(gen) * 0.2f,
+            .maxRadius = 25.0f,
+            .centerPos = {20, 0, 20}
+            });
+    }
+}
+
+void SceneInitializer::SpawnVectorFlowTest(CCL::ECS::Core::World& world, ID3D11Device* device, int count) {
+    std::mt19937 gen(3003);
+    std::uniform_real_distribution<float> distPos(-30.0f, 30.0f);
+
+    auto arch = CCL::ECS::ArchetypeHelper::Generate<TransformComponent, PrimitiveComponent, VectorFlowComponent>();
+
+    for (int i = 0; i < count; ++i) {
+        auto e = EntityFactory::SpawnNamed(world, "FlowParticle", arch);
+        e.Set(TransformComponent{
+            .position = {distPos(gen), distPos(gen) + 30.0f, distPos(gen)},
+            .scale = {0.1f, 0.1f, 0.5f} // 進行方向へ長くする(疑似モーションブラー)
+            });
+        e.Set(PrimitiveComponent{ .type = PrimitiveType::Capsule, .color = {0.2f, 1.0f, 0.2f, 0.5f} }); // 半透明の緑
+
+        e.Set(VectorFlowComponent{
+            .timeAcc = distPos(gen), // 個体ごとの時間ズレ
+            .frequency = 0.1f,
+            .amplitude = 15.0f,
+            .baseSpeed = 1.5f
+            });
+    }
+}

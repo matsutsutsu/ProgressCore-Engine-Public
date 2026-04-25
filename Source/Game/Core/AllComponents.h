@@ -44,8 +44,7 @@
 #include "Game/Utils/PooledParticleComponent.h"
 
 // ゲームロジック
-#include "Game/Logics/Combat/Weapon/Core/BulletContextComponent.h"
-#include "Game/Logics/Combat/Weapon/Core/GunComponent.h"
+
 
 #include "Game/Logics/Character/Player/PlayerComponent.h"
 #include "Game/Logics/Character/PlayerCar/PlayerCarComponent.h"
@@ -54,7 +53,6 @@
 #include "Game/Logics/Combat/HealthComponent.h"
 #include "Engine/GamePlay/Utils/TimerComponent.h"
 
-#include "Game/Logics/World/Triggers/TriggerComponent.h"
 
 #include "Engine/Scripting/LuaScriptComponent.h"
 
