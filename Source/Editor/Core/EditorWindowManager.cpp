@@ -45,8 +45,8 @@ void EditorWindowManager::Initialize()
     RegisterWindow<ECSDebugWindow>();
     RegisterWindow<ConsoleWindow>();
     RegisterWindow<AnimationSequencerWindow>();
-    RegisterWindow<AnimGraphWindow>();
-    RegisterWindow<CurveEditorWindow>();
+    RegisterWindow<AnimGraphWindow>()->SetVisible(false);
+    RegisterWindow<CurveEditorWindow>()->SetVisible(false);
 
     // ※まだ実装中で完全に読み込みたくない（クラッシュする等の）場合は、
     // 引き続きコメントアウトで対応してください。

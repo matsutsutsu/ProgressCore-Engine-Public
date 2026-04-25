@@ -29,14 +29,14 @@ void EditorScene::Initialize()
     SceneInitializer::SpawnLightStartSet(*_worldPtr, device);
     //SceneInitializer::SpawnGameLightSetting(_world, device);
     //Prefab::SpawnPrefab(*_worldPtr, "Assets/Prefabs/Camera/FreeCamera.json");
-    //Prefab::SpawnPrefab(*_worldPtr, "Assets/Prefabs/Camera/FreeFastCamera.json");
+    Prefab::SpawnPrefab(*_worldPtr, "Assets/Prefabs/Camera/FreeFastCamera.json");
 
 
     //SceneInitializer::SpawnTransformLoadTest(*_worldPtr, device, 100000);
     //SceneInitializer::SpawnJoltTest(*_worldPtr, device);
 
     // 中では普通にPBRモデル用にしている
-    SceneInitializer::SpawnAnimationTest(*_worldPtr, device);
+    //SceneInitializer::SpawnAnimationTest(*_worldPtr, device);
 
     //SceneInitializer::SpawnModelGridTest(*_worldPtr, device, 500);
     
@@ -54,6 +54,10 @@ void EditorScene::Initialize()
 
     // 1000体の群衆ストレステストを実行！
     //SceneInitializer::SpawnEnemySwarmTest(*_worldPtr, device, 200);
+
+	//SceneInitializer::SpawnTornadoTest(*_worldPtr, device, 1000);
+	//SceneInitializer::SpawnVectorFlowTest(*_worldPtr, device, 1000);
+	//SceneInitializer::SpawnLissajousTest(*_worldPtr, device, 10000);
 
 
     CCL_LOG_INFO(LogCategory::Core, "EditorScene Initialize");

@@ -79,17 +79,7 @@ void LuaBind_Components::Bind(sol::state &lua, CCL::ECS::Core::World *world)
         "team",
         HANDLE_PROP(HealthComponent, team));
 
-    // --- TriggerComponent (Handle) ---
-    lua.new_usertype<ComponentHandle<TriggerComponent>>("Trigger",
-        "IsValid",
-        &ComponentHandle<TriggerComponent>::IsValid,
 
-        "radius",
-        HANDLE_PROP(TriggerComponent, radius),
-        "isOneShot",
-        HANDLE_PROP(TriggerComponent, isOneShot),
-        "hasTriggered",
-        HANDLE_PROP(TriggerComponent, hasTriggered));
 
     // --- PlayerComponent (Handle) ---
     lua.new_usertype<ComponentHandle<PlayerComponent>>("PlayerComp",
@@ -131,9 +121,6 @@ void LuaBind_Components::Bind(sol::state &lua, CCL::ECS::Core::World *world)
 
     entityTable.set_function("GetHealth",
         [world](CCL::ECS::EntityID id) { return world->GetHandle<HealthComponent>(id); });
-
-    entityTable.set_function("GetTrigger",
-        [world](CCL::ECS::EntityID id) { return world->GetHandle<TriggerComponent>(id); });
 
     entityTable.set_function(
         "GetName", [world](CCL::ECS::EntityID id) { return world->GetHandle<NameComponent>(id); });
