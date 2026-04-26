@@ -36,7 +36,8 @@ private:
         BTNodeID nodeId,
         BehaviorTreeComponent& btComp,
         BossCommandComponent& cmdComp,
-        const BTAsset& asset
+        const BTAsset& asset,
+        float dt
     );
 
     /*

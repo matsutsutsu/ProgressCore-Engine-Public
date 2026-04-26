@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <memory>
 #include "SimpleMath.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"
 #include "Game/Logics/AI/BehaviorTree/Drone/DroneComponent.h"
@@ -25,24 +26,25 @@ struct AIBlackboard {
 // AIの内部状態とブラックボード（直列化対象）
 // 例えば、どのノードを実行中か、どのアセットを使うかなどの情報を持つ
 struct BehaviorTreeComponent {
-    // 読み込むJSONのパス
-    std::string assetPath = "Assets/AI/BossAI.json";
-
-    // エンジンが「現在メモリに読み込んでいる」パス
-    std::string loadedAssetPath = "";
+    std::string assetPath = "Assets/AI/BossAI.json";     // 読み込むJSONのパス
+    std::string loadedAssetPath = "";                    // エンジンが「現在メモリに読み込んでいる」パス
 
     AssetID assetId = 0;        // どの知能（BTAsset）を使うか
-    BTNodeID runningNodeId = 0; // 現在実行中のノード
+    BTNodeID runningNodeId = 0; // 現在実行中のノード    
+    ActionID lastLogActionId = 0xFFFF;  // ログ出力制御用（前回実行したアクションIDを記憶）
 
-    // ログ出力制御用（前回実行したアクションIDを記憶）
-    // 無効値として 0xFFFF (最大値) を初期値にしておく
-    ActionID lastLogActionId = 0xFFFF;
-
-    // ロード済みのランタイムデータ（各Entityが個別に持つのを避けるため、本来はManager管理が理想ですが、まずは直接保持）
-    BTAsset runtimeAsset;
+    // 実体ではなく、共有ポインタに変更する（容量削減！）
+    std::shared_ptr<BTAsset> sharedAsset;
 
     // 判断材料をここに内包する（Blackboard）
     AIBlackboard blackboard;
+
+    // エディタ可視化用の状態バッファ (配列サイズは BTAsset のノード数と同じになる)
+    std::vector<BTDebugState> debugNodeStates;
+
+    // デコレーター（クールダウン等）のタイマーを記憶するバッファ
+    std::vector<float> nodeTimers;
+
 };
 
 

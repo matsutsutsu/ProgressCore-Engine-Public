@@ -44,19 +44,21 @@ template <> struct ComponentMeta<BehaviorTreeComponent> {
             if (Dialog::OpenFileName(path, MAX_PATH, "BehaviorTree (*.json)\0*.json\0", "AIを選択") == DialogResult::OK) {
                 comp.assetPath = path;
                 // パスが変わったら即座にリロード！
-                BehaviorTreeLoader::LoadFromJson(comp.assetPath, comp.runtimeAsset);
+                BehaviorTreeLoader::LoadFromJson(comp.assetPath, *comp.sharedAsset);
                 changed = true;
             }
         }
 
         if (ImGui::Button("Reload AI")) {
-            BehaviorTreeLoader::LoadFromJson(comp.assetPath, comp.runtimeAsset);
+            if (!comp.sharedAsset) comp.sharedAsset = std::make_shared<BTAsset>();
+            BehaviorTreeLoader::LoadFromJson(comp.assetPath, *comp.sharedAsset);
             changed = true;
         }
 
         ImGui::Separator();
-        // 他のデバッグ情報表示
-        ImGui::LabelText("Nodes", "%zu", comp.runtimeAsset.nodes.size());
+        // nullチェックを入れてからサイズを表示する
+        size_t nodeCount = comp.sharedAsset ? comp.sharedAsset->nodes.size() : 0;
+        ImGui::LabelText("Nodes", "%zu", nodeCount);
         ImGui::LabelText("Current Node", "%u", comp.runningNodeId);
 
         return changed;

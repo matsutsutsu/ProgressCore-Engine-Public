@@ -70,19 +70,37 @@ void BossAISystem::Update(float dt)
     ForEachParallel([this,dt,activePlayerId](BehaviorTreeComponent& btComp, BossCommandComponent& cmdComp) {
 
         // ========================================================
-        // ★ 差分検知（Dirty Tracking）による1回限りのロード
+        // 1. 動的ロード
         // ========================================================
         if (btComp.assetPath != btComp.loadedAssetPath) {
             
             // パスが書き換わった瞬間（または初回起動時）だけロードを実行
             if (!btComp.assetPath.empty()) {
-                BehaviorTreeLoader::LoadFromJson(btComp.assetPath, btComp.runtimeAsset);
+                BehaviorTreeLoader::LoadFromJson(btComp.assetPath, *btComp.sharedAsset);
             }
             
             // 重要：成功・失敗に関わらず「このパスについては処理した」と記憶させる。
             // これにより、毎フレームの無駄なファイルアクセスとログスパムを完全に遮断する。
             btComp.loadedAssetPath = btComp.assetPath;
         }
+
+        if (!btComp.sharedAsset || btComp.sharedAsset->nodes.empty()) return;
+
+        // ========================================================
+        // 2. メモリバッファの確保（エディタ可視化＆タイマー用）
+        // ========================================================
+        size_t nodeCount = btComp.sharedAsset->nodes.size();
+        if (btComp.debugNodeStates.size() < nodeCount) {
+            btComp.debugNodeStates.resize(nodeCount, BTDebugState::None);
+            btComp.nodeTimers.resize(nodeCount, 0.0f);        
+        }
+
+        // デバッグ状態の初期化と、タイマーの進行（クールダウンの消化）
+        std::fill(btComp.debugNodeStates.begin(), btComp.debugNodeStates.end(), BTDebugState::None);
+        for (float& timer : btComp.nodeTimers) {
+            if (timer > 0.0f) timer -= dt;
+        }
+
 
         // 前フレームのフラグを全てリセット
         cmdComp.requestMeleeAttack = false;
@@ -91,61 +109,102 @@ void BossAISystem::Update(float dt)
         cmdComp.requestMove = false;
         cmdComp.targetPlayerId = activePlayerId;
 
-        // ★ 各Entityが持つアセットで評価を実行
-        if (!btComp.runtimeAsset.nodes.empty()) {
-            EvaluateTreeRecursive(0, btComp, cmdComp, btComp.runtimeAsset);
+
+
+        // ========================================================
+        // 4. ツリーの評価実行
+        // ========================================================
+        btComp.runningNodeId = 0xFFFF; // 評価前にRunning状態をリセット
+        
+        if (btComp.sharedAsset && !btComp.sharedAsset->nodes.empty()) {
+            EvaluateTreeRecursive(0, btComp, cmdComp, *btComp.sharedAsset, dt);
         }
 
 
     });
 }
 
+// ========================================================================
+// ★ カプセル化された再帰評価エンジン（デコレーター＆デバッガー対応版）
+// ========================================================================
 BTNodeState BossAISystem::EvaluateTreeRecursive(
     BTNodeID nodeId,
     BehaviorTreeComponent& btComp,
     BossCommandComponent& cmdComp,
-    const BTAsset& asset)
+    const BTAsset& asset,
+    float dt)
 {
     const BTNode& node = asset.nodes[nodeId];
+    BTNodeState result = BTNodeState::Failure;
 
     switch (node.type) {
     case BTNodeType::Selector: {
-        // 左から順番に試し、どれか一つでも「成功(Success)」か「実行中(Running)」なら、そこで終了
         for (int i = 0; i < node.childCount; ++i) {
-            auto state = EvaluateTreeRecursive(node.firstChildOffset + i, btComp, cmdComp, asset);
-            if (state != BTNodeState::Failure) {
-                return state;
-            }
+            result = EvaluateTreeRecursive(node.firstChildIndex + i, btComp, cmdComp, asset, dt);
+            if (result != BTNodeState::Failure) break;
         }
-        return BTNodeState::Failure; // 全て失敗したらFailure
+        break;
     }
     case BTNodeType::Sequence: {
-        // 左から順番に試し、途中で「失敗(Failure)」か「実行中(Running)」が出たら、そこで中断
         for (int i = 0; i < node.childCount; ++i) {
-            auto state = EvaluateTreeRecursive(node.firstChildOffset + i, btComp, cmdComp, asset);
-            if (state != BTNodeState::Success) {
-                return state;
-            }
+            result = EvaluateTreeRecursive(node.firstChildIndex + i, btComp, cmdComp, asset, dt);
+            if (result != BTNodeState::Success) break;
         }
-        return BTNodeState::Success; // 全て成功したらSuccess
+        break;
     }
     case BTNodeType::Condition: {
-        // 条件を満たしていればSuccess、ダメならFailure
-        return EvaluateCondition(node.actionOrConditionId, btComp)
-            ? BTNodeState::Success
-            : BTNodeState::Failure;
+        result = EvaluateCondition(node.actionOrConditionId, btComp) ? BTNodeState::Success : BTNodeState::Failure;
+        break;
     }
     case BTNodeType::Action: {
-        // 実際のアクションを実行し、状態を返す
-        BTNodeState actionState = ExecuteAction(node.actionOrConditionId, btComp, cmdComp);
-        if (actionState == BTNodeState::Running) {
-            btComp.runningNodeId = nodeId;
+        result = ExecuteAction(node.actionOrConditionId, btComp, cmdComp);
+        break;
+    }
+    case BTNodeType::Decorator: {
+        // クールダウン中なら問答無用でFailureを返す
+        if (node.decoratorType == BTDecoratorType::Cooldown && btComp.nodeTimers[nodeId] > 0.0f) {
+            result = BTNodeState::Failure;
+            break;
         }
-        return actionState;
+
+        if (node.childCount > 0) {
+            // 子ノードを評価
+            result = EvaluateTreeRecursive(node.firstChildIndex, btComp, cmdComp, asset, dt);
+
+            // デコレーターの特殊処理（結果の加工）
+            if (node.decoratorType == BTDecoratorType::Inverter) {
+                if (result == BTNodeState::Success) result = BTNodeState::Failure;
+                else if (result == BTNodeState::Failure) result = BTNodeState::Success;
+            }
+            else if (node.decoratorType == BTDecoratorType::Cooldown && result == BTNodeState::Success) {
+                // 成功した瞬間にクールダウンタイマーをセット
+                btComp.nodeTimers[nodeId] = node.decoratorParam;
+            }
+        }
+        break;
     }
-    default:
-        return BTNodeState::Failure;
     }
+
+    // =========================================================
+    // ★ 修正：BTNodeState (論理型) を BTDebugState (表示型) に安全に変換
+    // =========================================================
+    BTDebugState dbgState = BTDebugState::None;
+    if (result == BTNodeState::Success) {
+        dbgState = BTDebugState::Success;
+    } else if (result == BTNodeState::Failure) {
+        dbgState = BTDebugState::Failure;
+    } else if (result == BTNodeState::Running) {
+        dbgState = BTDebugState::Running;
+    }
+
+    // エディタのデバッガー向けに結果を保存
+    btComp.debugNodeStates[nodeId] = dbgState;
+
+    if (result == BTNodeState::Running) {
+        btComp.runningNodeId = nodeId;
+    }
+
+    return result;
 }
 
 // 条件を評価する関数。条件IDに応じて、Blackboardの情報を参照して真偽を返す。

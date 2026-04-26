@@ -423,6 +423,7 @@
     <ClInclude Include="Source\Game\Core\AllComponents.h" />
     <ClInclude Include="Source\Game\Core\SystemPriority.h" />
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BossAISystem.h" />
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\ActionRegistry.h" />
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeBuilder.h" />
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeComponents.h" />
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeData.h" />

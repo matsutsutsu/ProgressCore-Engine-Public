@@ -11,6 +11,7 @@
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"
 #include <string>
 #include <vector>
+#include <json.hpp>
 
 namespace ax { namespace NodeEditor { struct EditorContext; } }
 
@@ -24,7 +25,8 @@ enum class EditorBTNodeType {
     Sequence,  ///< 複合ノード：子を順番に実行し、1つでも失敗すれば失敗。
     Condition, ///< 葉ノード：Blackboardの値を評価し、真偽を返す。出力ピンを持たない。
     Action,    ///< 葉ノード：実際の行動（攻撃、移動）を行う。出力ピンを持たない。
-    Group      ///< ★追加: コメント用グループノード（機能的な実行順序は持たない）
+    Group,     ///< ★追加: コメント用グループノード（機能的な実行順序は持たない）
+	Decorator  ///< ★追加: デコレータノード（子ノードの挙動を修飾する。例: Inverter, Cooldown, Retryなど）
 };
 
 /**
@@ -79,6 +81,14 @@ struct EditorBTNode {
 
     float paramValue1 = 0.0f; // 例: 突進速度
     std::string targetKey = "Player"; // 例: Blackboardのキー
+
+    // デコレーター設定
+    int decoratorType = 0;
+    float decoratorParam = 0.0f;
+
+    // ランタイムとエディタを紐付ける魔法の変数
+    // Bake時に「フラット配列の何番目になったか」を記憶しておく
+    int runtimeFlatIndex = -1;
 };
 
 /**
@@ -90,12 +100,16 @@ public:
     BehaviorTreeWindow();
     virtual ~BehaviorTreeWindow();
 
+    // Undo/Redo用の内部状態エクスポート/インポート
+    nlohmann::json GetGraphStateAsJson();
+    void RestoreGraphState(const nlohmann::json& state);
+
 protected:
     virtual void DrawContents(EditorContext& context) override;
 
 private:
     void DrawToolbar();
-    void DrawNodeWorkspace();
+    void DrawNodeWorkspace(EditorContext& context);
     void DrawInspector();
 
     // 実際のゲーム開発に必須のUX機能
@@ -117,6 +131,10 @@ private:
 	void LoadGraph(const std::string& path);
 	void SaveGraph(const std::string& path);
 
+    // 変更をコマンド履歴に登録するヘルパー
+    void RecordStateForUndo(const std::string& commandName);
+    nlohmann::json _lastSavedState; // 直前の状態
+
 
 private:
     ax::NodeEditor::EditorContext* _nodeContext = nullptr; ///< Node Editorの内部状態（キャンバスのズーム等）
@@ -127,4 +145,10 @@ private:
 
     std::string _currentFilePath = "Assets/AI/BossAI_Graph.json";
     bool _needInitialZoom = true;     ///< 初回起動時にカメラを全体に合わせるフラグ
+
+    // 毎フレームのループを防ぐためのDirtyフラグ
+    bool _executionOrderDirty = true;
+
+    // CompileAndSave を破棄し、JSON構築用ヘルパー関数に変更
+    nlohmann::json BuildBakedNodes();
 };

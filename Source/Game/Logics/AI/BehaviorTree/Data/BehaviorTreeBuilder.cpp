@@ -79,12 +79,12 @@ void BehaviorTreeBuilder::Bake(BTAsset& outAsset) {
 
         if (edNode->children.empty()) {
             outAsset.nodes[flatIndex].childCount = 0;
-            outAsset.nodes[flatIndex].firstChildOffset = 0;
+            outAsset.nodes[flatIndex].firstChildIndex = 0;
             continue;
         }
 
         BTNodeID firstChildIdx = static_cast<BTNodeID>(outAsset.nodes.size());
-        outAsset.nodes[flatIndex].firstChildOffset = firstChildIdx;
+        outAsset.nodes[flatIndex].firstChildIndex = firstChildIdx;
         outAsset.nodes[flatIndex].childCount = static_cast<uint8_t>(edNode->children.size());
 
         for (auto& childPtr : edNode->children) {

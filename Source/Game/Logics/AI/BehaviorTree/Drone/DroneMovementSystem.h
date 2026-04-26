@@ -10,7 +10,7 @@
 class DroneMovementSystem : public CCL::ECS::IfSystem<
     DroneMovementSystem,
     CCL::ECS::Write<TransformComponent>,
-    CCL::ECS::Read<DroneComponent> // 目標座標を読むだけ
+    CCL::ECS::Write<DroneComponent> // 目標座標を読むだけ
 >
 {
 public:

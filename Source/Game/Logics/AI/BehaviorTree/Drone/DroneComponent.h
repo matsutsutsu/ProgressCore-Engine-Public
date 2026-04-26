@@ -46,4 +46,8 @@ struct DroneComponent {
     // 個体パラメータ
     float moveSpeed = 30.0f;
     float orbitRadius = 8.0f; ///< 展開する円の半径
+
+    // ★追加: 本格的な物理挙動のためのパラメータ
+    DirectX::SimpleMath::Vector3 currentVelocity = { 0,0,0 }; // 現在の移動速度
+    float hoverTimeOffset = 0.0f; // 個体ごとの揺らぎのズレ（初期化時にランダムな値を入れる）
 };

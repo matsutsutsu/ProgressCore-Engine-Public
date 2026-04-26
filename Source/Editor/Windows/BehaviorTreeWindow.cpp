@@ -3,6 +3,9 @@
  * @brief BehaviorTree エディタの実装
  */
 #include "BehaviorTreeWindow.h"
+#include "Editor/Core/EditorCommandHistory.h"
+#include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
+#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"
 #include <imgui_node_editor.h>
 #include <imgui.h>
 #include <algorithm>
@@ -18,21 +21,38 @@ using json = nlohmann::json;
  // 長い名前空間を "ed" に短縮するお作法
 namespace ed = ax::NodeEditor;
 
-// ★ どこか上部（またはヘッダー）で、IDに対応する分かりやすい名前のリストを定義しておく
-static const char* ActionNames[] = {
-    "0: なし (None)",
-    "1: 移動 (Move To Target)",
-    "2: 近接攻撃 (Melee Attack)",
-    "3: 突進 (Charge Attack)"
-};
-static const int ActionNamesCount = IM_ARRAYSIZE(ActionNames);
 
-static const char* ConditionNames[] = {
-    "0: なし (None)",
-    "1: HPが50%以下 (HP < 50)",
-    "2: ターゲットが近い (Target is Near)"
+// グラフの構造変化を記録する専用コマンド
+class BTGraphChangeCommand : public IEditorCommand {
+    BehaviorTreeWindow* _window;
+    nlohmann::json _oldState;
+    nlohmann::json _newState;
+    std::string _name;
+public:
+    BTGraphChangeCommand(BehaviorTreeWindow* window, const std::string& name, const nlohmann::json& oldState, const nlohmann::json& newState)
+        : _window(window), _name(name), _oldState(oldState), _newState(newState) {
+    }
+
+    void Execute() override {
+        _window->RestoreGraphState(_newState);
+        CCL_LOG_INFO(LogCategory::Editor, "[BT Editor] Redo: %s", _name.c_str());
+    }
+    void Undo() override {
+        _window->RestoreGraphState(_oldState);
+        CCL_LOG_INFO(LogCategory::Editor, "[BT Editor] Undo: %s", _name.c_str());
+    }
 };
-static const int ConditionNamesCount = IM_ARRAYSIZE(ConditionNames);
+
+void BehaviorTreeWindow::RecordStateForUndo(const std::string& commandName) {
+    nlohmann::json newState = GetGraphStateAsJson();
+    // 状態が変わっていればコマンドをスタックに積む
+    if (_lastSavedState != newState) {
+        EditorCommandHistory::Instance().ExecuteCommand(
+            std::make_unique<BTGraphChangeCommand>(this, commandName, _lastSavedState, newState)
+        );
+        _lastSavedState = newState;
+    }
+}
 
 
 BehaviorTreeWindow::BehaviorTreeWindow() : EditorWindow("Behavior Tree Editor") {
@@ -46,6 +66,126 @@ BehaviorTreeWindow::~BehaviorTreeWindow() {
     if (_nodeContext) ed::DestroyEditor(_nodeContext);
 }
 
+// ====================================================================
+// Undo / Redo 用：現在のグラフ状態をJSONとして抽出する
+// ====================================================================
+nlohmann::json BehaviorTreeWindow::GetGraphStateAsJson() {
+    nlohmann::json root;
+    if (_nodeContext) {
+        ed::SetCurrentEditor(_nodeContext);
+    }
+
+    nlohmann::json jNodes = nlohmann::json::array();
+    for (auto& node : _nodes) {
+        nlohmann::json jn;
+        jn["id"] = node.id;
+        jn["type"] = static_cast<int>(node.type);
+        jn["name"] = node.name;
+        jn["actionId"] = static_cast<int>(node.actionOrConditionId);
+
+        // ピンのID
+        jn["inputPinId"] = node.inputPin.id;
+        jn["outputPinId"] = node.outputPin.id;
+
+        // 座標情報の取得
+        if (node.positionInitialized) {
+            ImVec2 pos = ed::GetNodePosition(node.id);
+            jn["posX"] = pos.x;
+            jn["posY"] = pos.y;
+        }
+        else {
+            jn["posX"] = node.posX;
+            jn["posY"] = node.posY;
+        }
+
+        // グループ固有のデータ
+        if (node.type == EditorBTNodeType::Group) {
+            jn["width"] = node.width;
+            jn["height"] = node.height;
+        }
+
+        // デコレーター固有のデータ
+        if (node.type == EditorBTNodeType::Decorator) {
+            jn["decoratorType"] = node.decoratorType;
+            jn["decoratorParam"] = node.decoratorParam;
+        }
+
+        jNodes.push_back(jn);
+    }
+    root["editor_nodes"] = jNodes;
+
+    nlohmann::json jLinks = nlohmann::json::array();
+    for (auto& link : _links) {
+        nlohmann::json jl;
+        jl["id"] = link.id;
+        jl["startPin"] = link.startPinId;
+        jl["endPin"] = link.endPinId;
+        jLinks.push_back(jl);
+    }
+    root["editor_links"] = jLinks;
+    root["last_id_counter"] = _idCounter;
+
+    return root;
+}
+
+// ====================================================================
+// Undo / Redo 用：渡されたJSONからグラフ状態を強制復元する
+// ====================================================================
+void BehaviorTreeWindow::RestoreGraphState(const nlohmann::json& state) {
+    if (!state.contains("editor_nodes")) return;
+
+    // 現在の状態を破棄
+    _nodes.clear();
+    _links.clear();
+
+    if (_nodeContext) {
+        ed::SetCurrentEditor(_nodeContext);
+        ed::ClearSelection(); // ゴースト選択状態によるクラッシュを防ぐ
+    }
+
+    _idCounter = state.value("last_id_counter", 1);
+
+    // ノードの復元
+    for (auto& jn : state["editor_nodes"]) {
+        EditorBTNode node;
+        node.id = jn["id"];
+        node.type = static_cast<EditorBTNodeType>(jn["type"].get<int>());
+        node.name = jn.value("name", "Unknown");
+        node.actionOrConditionId = static_cast<ActionID>(jn.value("actionId", 0));
+        node.posX = jn.value("posX", 0.0f);
+        node.posY = jn.value("posY", 0.0f);
+
+        if (node.type == EditorBTNodeType::Group) {
+            node.width = jn.value("width", 300.0f);
+            node.height = jn.value("height", 200.0f);
+        }
+        if (node.type == EditorBTNodeType::Decorator) {
+            node.decoratorType = jn.value("decoratorType", 0);
+            node.decoratorParam = jn.value("decoratorParam", 0.0f);
+        }
+
+        node.inputPin = { jn.value("inputPinId", 0u), node.id, true };
+        node.outputPin = { jn.value("outputPinId", 0u), node.id, false };
+
+        // 座標をキャンバスに再適用させるため false にしておく
+        node.positionInitialized = false;
+
+        _nodes.push_back(node);
+    }
+
+    // リンクの復元
+    if (state.contains("editor_links")) {
+        for (auto& jl : state["editor_links"]) {
+            BTLink link;
+            link.id = jl["id"];
+            link.startPinId = jl["startPin"];
+            link.endPinId = jl["endPin"];
+            _links.push_back(link);
+        }
+    }
+
+    _executionOrderDirty = true;
+}
 void BehaviorTreeWindow::CreateNode(EditorBTNodeType type, const std::string& name, float x, float y) {
     EditorBTNode node;
     node.id = GetNextId();
@@ -82,7 +222,7 @@ void BehaviorTreeWindow::DrawContents(EditorContext& context) {
     if (ImGui::GetColumnWidth(0) < 100.0f) ImGui::SetColumnWidth(0, ImGui::GetWindowWidth() * 0.75f);
 
     DrawToolbar();
-    DrawNodeWorkspace();
+    DrawNodeWorkspace(context);
 
     ImGui::NextColumn();
     DrawInspector();
@@ -163,10 +303,22 @@ void BehaviorTreeWindow::UpdateExecutionOrder() {
 /**
  * @brief ノードエディタ空間（キャンバス）の描画と、リンク操作の監視を行う
  */
-void BehaviorTreeWindow::DrawNodeWorkspace() {
-    UpdateExecutionOrder();
+void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext& context) {
+    // リンクやノードに変更があった時だけソート処理を走らせる
+    if (_executionOrderDirty) {
+        UpdateExecutionOrder();
+        _executionOrderDirty = false;
+    }
 
     ed::Begin("BT_Node_Workspace");
+
+    // =======================================================
+    // ★ 選択中のエンティティから、実行中のAI状態（デバッグ配列）を取得
+    // =======================================================
+    BehaviorTreeComponent* activeAI = nullptr;
+    if (context.selectedEntity != CCL::ECS::InvalidEntityID && context.world) {
+        activeAI = context.world->GetComponent<BehaviorTreeComponent>(context.selectedEntity);
+    }
 
     for (auto& node : _nodes) {
         if (!node.positionInitialized) {
@@ -180,6 +332,32 @@ void BehaviorTreeWindow::DrawNodeWorkspace() {
             ed::PushStyleColor(ed::StyleColor_NodeBorder, ImColor(255, 255, 255, 50)); // 枠線
         }
 
+        // =======================================================
+        // ★ リアルタイム可視化ロジック (色付け)
+        // =======================================================
+        bool popColor = false;
+        if (activeAI && node.runtimeFlatIndex >= 0 && node.runtimeFlatIndex < activeAI->debugNodeStates.size()) {
+            BTDebugState state = activeAI->debugNodeStates[node.runtimeFlatIndex];
+
+            if (state == BTDebugState::Success) {
+                ed::PushStyleColor(ed::StyleColor_NodeBg, ImColor(40, 120, 40, 200)); // 緑色
+                ed::PushStyleColor(ed::StyleColor_NodeBorder, ImColor(80, 200, 80, 255));
+                popColor = true;
+            }
+            else if (state == BTDebugState::Failure) {
+                ed::PushStyleColor(ed::StyleColor_NodeBg, ImColor(120, 40, 40, 200)); // 赤色
+                ed::PushStyleColor(ed::StyleColor_NodeBorder, ImColor(200, 80, 80, 255));
+                popColor = true;
+            }
+            else if (state == BTDebugState::Running) {
+                // Runningは黄色（時間経過で点滅させるとさらにAAAらしい）
+                float blink = (sin(ImGui::GetTime() * 10.0f) * 0.5f) + 0.5f;
+                ed::PushStyleColor(ed::StyleColor_NodeBg, ImColor(150, 150, 20, 200));
+                ed::PushStyleColor(ed::StyleColor_NodeBorder, ImColor(255, 255, 0, static_cast<int>(255 * blink)));
+                popColor = true;
+            }
+        }
+
         ed::BeginNode(node.id);
 
         if (node.executionOrder != -1 && node.type != EditorBTNodeType::Group) {
@@ -187,21 +365,33 @@ void BehaviorTreeWindow::DrawNodeWorkspace() {
             ImGui::SameLine();
         }
 
-        // ★ 修正：ノードの種類に応じて、キャンバス上の表示名を動的に変える
-        if (node.type == EditorBTNodeType::Action && node.actionOrConditionId < ActionNamesCount) {
-            // 例: 「Action」という基本名の下に、具体的な行動名を表示
+        // ★ 修正：完全に排他されたif-elseチェーンにする (Bug #2 解消)
+        if (node.type == EditorBTNodeType::Action) {
             ImGui::TextUnformatted("行動 (Action)");
-            ImGui::TextColored(ImVec4(0.2f, 0.8f, 0.2f, 1.0f), "[ %s ]", ActionNames[node.actionOrConditionId]);
+            const char* actionName = "Unknown";
+            for (int i = 0; i < g_ActionRegistryCount; ++i) {
+                if (g_ActionRegistry[i].id == node.actionOrConditionId) {
+                    actionName = g_ActionRegistry[i].name; break;
+                }
+            }
+            ImGui::TextColored(ImVec4(0.2f, 0.8f, 0.2f, 1.0f), "[ %s ]", actionName);
         }
-        else if (node.type == EditorBTNodeType::Condition && node.actionOrConditionId < ConditionNamesCount) {
+        else if (node.type == EditorBTNodeType::Condition) {
             ImGui::TextUnformatted("条件 (Condition)");
-            ImGui::TextColored(ImVec4(0.2f, 0.6f, 1.0f, 1.0f), "[ %s ]", ConditionNames[node.actionOrConditionId]);
+            const char* condName = "Unknown";
+            for (int i = 0; i < g_ConditionRegistryCount; ++i) {
+                if (g_ConditionRegistry[i].id == node.actionOrConditionId) {
+                    condName = g_ConditionRegistry[i].name; break;
+                }
+            }
+            ImGui::TextColored(ImVec4(0.2f, 0.6f, 1.0f, 1.0f), "[ %s ]", condName);
+        }
+        else if (node.type != EditorBTNodeType::Group) {
+            ImGui::TextUnformatted(node.name.c_str());
         }
         else {
             ImGui::TextUnformatted(node.name.c_str());
         }
-
-        ImGui::TextUnformatted(node.name.c_str());
 
         // ★追加: グループノードの場合は枠を広げる（ピンは描画しない）
         if (node.type == EditorBTNodeType::Group) {
@@ -302,31 +492,71 @@ void BehaviorTreeWindow::DrawInspector() {
                 it->name = nameBuf;
             }
 
-
-
             // ---------------------------------------------------------
             // インスペクタ描画部分
             // ---------------------------------------------------------
+            // ★ 修正：レジストリを使った動的プルダウンの生成
             if (it->type == EditorBTNodeType::Condition) {
-                ImGui::Text("条件設定:");
-                int currentItem = static_cast<int>(it->actionOrConditionId);
+                ImGui::Separator();
+                ImGui::Text("条件設定 (Condition):");
 
-                // 数字入力ではなく、ドロップダウン（Combo）に変更
-                if (ImGui::Combo("条件 (Condition)", &currentItem, ConditionNames, ConditionNamesCount)) {
-                    it->actionOrConditionId = static_cast<ActionID>(currentItem);
+                int currentIndex = 0;
+                const char* names[64]; // 最大64個まで対応
+                for (int i = 0; i < g_ConditionRegistryCount; ++i) {
+                    names[i] = g_ConditionRegistry[i].name;
+                    if (g_ConditionRegistry[i].id == it->actionOrConditionId) {
+                        currentIndex = i;
+                    }
+                }
+
+                if (ImGui::Combo("条件を選ぶ", &currentIndex, names, g_ConditionRegistryCount)) {
+                    it->actionOrConditionId = g_ConditionRegistry[currentIndex].id;
+                    _executionOrderDirty = true;
                 }
             }
             else if (it->type == EditorBTNodeType::Action) {
-                ImGui::Text("行動設定:");
-                int currentItem = static_cast<int>(it->actionOrConditionId);
+                ImGui::Separator();
+                ImGui::Text("行動設定 (Action):");
 
-                // ドロップダウン（Combo）に変更
-                if (ImGui::Combo("行動 (Action)", &currentItem, ActionNames, ActionNamesCount)) {
-                    it->actionOrConditionId = static_cast<ActionID>(currentItem);
+                int currentIndex = 0;
+                const char* names[64];
+                for (int i = 0; i < g_ActionRegistryCount; ++i) {
+                    names[i] = g_ActionRegistry[i].name;
+                    if (g_ActionRegistry[i].id == it->actionOrConditionId) {
+                        currentIndex = i;
+                    }
+                }
+
+                if (ImGui::Combo("行動を選ぶ", &currentIndex, names, g_ActionRegistryCount)) {
+                    it->actionOrConditionId = g_ActionRegistry[currentIndex].id;
+                    _executionOrderDirty = true;
                 }
             }
 
-            // ★機能追加: グループノードの枠サイズ調整
+            if (it->type == EditorBTNodeType::Decorator) {
+                ImGui::Separator();
+                ImGui::Text("デコレーター設定 (Decorator):");
+
+                const char* decNames[] = { "0: 結果反転 (Inverter)", "1: クールダウン (Cooldown)", "2: リトライ (Retry)" };
+                if (ImGui::Combo("タイプ", &it->decoratorType, decNames, IM_ARRAYSIZE(decNames))) {
+                    _executionOrderDirty = true;
+                    RecordStateForUndo("Change Decorator Type");
+                }
+
+                if (it->decoratorType == 1) { // Cooldown
+                    if (ImGui::DragFloat("待機時間 (秒)", &it->decoratorParam, 0.1f, 0.0f, 60.0f)) {
+                        RecordStateForUndo("Change Cooldown Param");
+                    }
+                }
+                else if (it->decoratorType == 2) { // Retry
+                    int retryCount = static_cast<int>(it->decoratorParam);
+                    if (ImGui::DragInt("リトライ回数", &retryCount, 1, 1, 10)) {
+                        it->decoratorParam = static_cast<float>(retryCount);
+                        RecordStateForUndo("Change Retry Param");
+                    }
+                }
+            }
+
             if (it->type == EditorBTNodeType::Group) {
                 ImGui::Separator();
                 ImGui::DragFloat("枠の幅 (Width)", &it->width, 1.0f, 100.0f, 2000.0f);
@@ -443,16 +673,119 @@ void BehaviorTreeWindow::SaveGraph(const std::string& path) {
     root["editor_links"] = jLinks;
     root["last_id_counter"] = _idCounter;
 
-    // 書き出し
+    // =======================================================
+    //  CompileAndSave() を消し、ここで BuildBakedNodes() を呼び出して統合する
+    // =======================================================
+    root["nodes"] = BuildBakedNodes();
+    root["assetId"] = 1;
+
+    // 書き出し（1回だけファイルを開く）
     std::ofstream o(path);
     if (o.is_open()) {
         o << root.dump(4);
-        CCL_LOG_SUCCESS(LogCategory::Editor, "AIグラフを保存しました: %s", path.c_str());
+        CCL_LOG_SUCCESS(LogCategory::Editor, "AIグラフを保存＆Bakeしました: %s", path.c_str());
     }
 
-    // ついでにランタイム用もBakeする
-    CompileAndSave(path);
 }
+
+// =========================================================
+// セーブ処理の統合 (上書きバグ解消)
+// =========================================================
+nlohmann::json BehaviorTreeWindow::BuildBakedNodes() {
+    nlohmann::json jsonNodes = nlohmann::json::array();
+    if (_nodes.empty()) return jsonNodes;
+
+    // 1. Rootノードを探す
+    EditorBTNode* rootNode = nullptr;
+    for (auto& n : _nodes) {
+        if (n.type == EditorBTNodeType::Root) { rootNode = &n; break; }
+    }
+    if (!rootNode) return jsonNodes;
+
+    // ヘルパー：特定の出力ピンから繋がっている子ノードを「Y座標順」に取得する
+    auto getSortedChildren = [&](uint32_t outputPinId) {
+        std::vector<EditorBTNode*> children;
+        for (const auto& link : _links) {
+            if (link.startPinId == outputPinId) {
+                for (auto& n : _nodes) {
+                    if (n.inputPin.id == link.endPinId) {
+                        children.push_back(&n); break;
+                    }
+                }
+            }
+        }
+        std::sort(children.begin(), children.end(), [](EditorBTNode* a, EditorBTNode* b) {
+            return a->posY < b->posY;
+            });
+        return children;
+        };
+
+    auto rootChildren = getSortedChildren(rootNode->outputPin.id);
+    if (rootChildren.empty()) return jsonNodes;
+
+    // 2. BFS（幅優先探索）によるDODフラット配列の構築
+    struct BakeTask { EditorBTNode* editorNode; int flatIndex; };
+    std::queue<BakeTask> tasks;
+
+    auto getRuntimeTypeString = [](EditorBTNodeType type) {
+        switch (type) {
+        case EditorBTNodeType::Selector:  return "Selector";
+        case EditorBTNodeType::Sequence:  return "Sequence";
+        case EditorBTNodeType::Condition: return "Condition";
+        case EditorBTNodeType::Action:    return "Action";
+        default: return "Unknown";
+        }
+        };
+
+    EditorBTNode* actualRoot = rootChildren[0];
+
+    nlohmann::json rootJson;
+    rootJson["type"] = getRuntimeTypeString(actualRoot->type);
+    rootJson["childCount"] = 0;
+    rootJson["firstChildIndex"] = 0; // ★ OffsetからIndexに変更
+    rootJson["actionOrConditionId"] = static_cast<int>(actualRoot->actionOrConditionId);
+    jsonNodes.push_back(rootJson);
+
+    tasks.push({ actualRoot, 0 });
+
+    while (!tasks.empty()) {
+        BakeTask task = tasks.front();
+        tasks.pop();
+
+        auto children = getSortedChildren(task.editorNode->outputPin.id);
+        if (children.empty()) continue;
+
+        // 親ノードのIndexとカウントを確定
+        jsonNodes[task.flatIndex]["childCount"] = children.size();
+        jsonNodes[task.flatIndex]["firstChildIndex"] = jsonNodes.size(); // ★ Indexに変更
+
+        // 子供たちを配列に追加し、次のキューへ
+        for (EditorBTNode* child : children) {
+            nlohmann::json childJson;
+            childJson["type"] = getRuntimeTypeString(child->type);
+            childJson["childCount"] = 0;
+            childJson["firstChildIndex"] = 0;
+            childJson["actionOrConditionId"] = static_cast<int>(child->actionOrConditionId);
+
+            // デコレーター情報のBake
+            if (child->type == EditorBTNodeType::Decorator) {
+                childJson["decoratorType"] = child->decoratorType;
+                childJson["decoratorParam"] = child->decoratorParam;
+            }
+
+            // このエディタノードが、フラット配列の「何番目」になるかを記憶！
+            // これにより、ランタイムの debugNodeStates[index] とエディタノードが完全に紐付く。
+            child->runtimeFlatIndex = jsonNodes.size();
+
+            jsonNodes.push_back(childJson);
+            tasks.push({ child, static_cast<int>(jsonNodes.size() - 1) });
+        }
+    }
+
+    return jsonNodes;
+}
+
+
 
 // ====================================================================
 // ロード処理：ピンIDを生成せず、保存された値で復元する
@@ -699,3 +1032,4 @@ void BehaviorTreeWindow::DuplicateSelectedNodes() {
     ed::ClearSelection();
     CCL_LOG_INFO(LogCategory::Editor, "%d nodes duplicated.", nodeCount);
 }
+

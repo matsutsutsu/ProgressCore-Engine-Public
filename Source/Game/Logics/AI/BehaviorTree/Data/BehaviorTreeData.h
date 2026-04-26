@@ -20,6 +20,22 @@ using BTNodeID = uint16_t;
 using ActionID = uint16_t;
 using AssetID = uint32_t;
 
+// デバッグ用のノード状態（シリアライズ不要、実行時の可視化専用）
+enum class BTDebugState : uint8_t {
+    None = 0,
+    Success,
+    Failure,
+    Running
+};
+
+// デコレーターの種類
+enum class BTDecoratorType : uint8_t {
+    Inverter = 0, // 結果を反転 (Success <-> Failure)
+    Cooldown = 1, // クールダウン (指定秒数経過するまでFailure)
+    Retry = 2     // 失敗しても指定回数リトライする
+};
+
+
 // ノードの種類
 // Selector: 子ノードを順番に評価し、最初に成功した子ノードの結果を返す
 // Sequence: 子ノードを順番に評価し、最初に失敗した子ノードの結果を返す
@@ -29,7 +45,8 @@ enum class BTNodeType : uint8_t {
     Selector,
     Sequence,
     Condition,
-    Action
+    Action,
+    Decorator
 };
 
 // ノードの評価結果
@@ -46,8 +63,12 @@ enum class BTNodeState : uint8_t {
 struct BTNode {
 	BTNodeType type;                // ノードの種類（Selector, Sequence, Condition, Action）
 	uint8_t    childCount;          // 子ノードの数 1バイトで最大255まで対応（Selector/Sequenceのみ使用）
-	BTNodeID   firstChildOffset;    // 子ノードへのオフセット（配列内のインデックス）。子ノードは連続して配置される前提。0なら子なし。
+	BTNodeID   firstChildIndex;    // 子ノードへのオフセット（配列内のインデックス）。子ノードは連続して配置される前提。0なら子なし。
     ActionID   actionOrConditionId; // Action/Conditionの種類を判別するID
+
+    // デコレーター用パラメータ
+    BTDecoratorType decoratorType;
+    float decoratorParam; // クールダウン秒数やリトライ回数など
 };
 
 // 全Entityで共有される不変データ（アセット）
