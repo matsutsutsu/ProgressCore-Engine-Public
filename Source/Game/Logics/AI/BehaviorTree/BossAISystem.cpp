@@ -1,5 +1,5 @@
 #include "Game/Logics/AI/BehaviorTree/BossAISystem.h"
-#include "Game/Logics/AI/BehaviorTree/BehaviorTreeBuilder.h"
+#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeBuilder.h"
 #include "Game/Logics/Character/Player/PlayerComponent.h"
 #include "Engine/GamePlay/Transform/TransformComponent.h"
 #include "Engine/Platform/Logger.h"

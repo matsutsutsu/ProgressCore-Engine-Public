@@ -235,7 +235,7 @@ void SceneInitializer::SpawnPlayerCarTest(CCL::ECS::Core::World& world, ID3D11De
 
 // ※あなたのプロジェクトにおけるDroneComponent等の正しいパスをインクルードしてください
 #include "Game/Logics/AI/BehaviorTree/Drone/DroneComponent.h"
-#include "Game/Logics/AI/BehaviorTree/BehaviorTreeComponents.h"
+#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"
 
 
 // =======================================================

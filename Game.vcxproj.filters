@@ -430,6 +430,18 @@
     <Filter Include="Source\Game\Logics\AI\BehaviorTree\_Data">
       <UniqueIdentifier>{562c3a01-244e-46ab-b064-571c92727868}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Editor\Windows\Animation">
+      <UniqueIdentifier>{42b8635d-e5f6-487b-bf24-ddd18ec772ae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Editor\Windows\Editor">
+      <UniqueIdentifier>{ef23cd50-c075-48c5-8bd0-8cad81f2386b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Editor\Windows\Game">
+      <UniqueIdentifier>{e0489b58-f4ba-4a59-84fc-7914ee325c8b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Editor\Windows\AI">
+      <UniqueIdentifier>{1ff0cdf0-5abd-45cf-ae35-e46ba9c7b987}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -489,26 +501,8 @@
     <ClInclude Include="Source\Editor\Utils\ShellIconLoader.h">
       <Filter>Source\Editor\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\AssetBrowserWindow.h">
-      <Filter>Source\Editor\Windows</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\ECSDebugWindow.h">
-      <Filter>Source\Editor\Windows</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\GameViewWindow.h">
-      <Filter>Source\Editor\Windows</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\HierarchyWindow.h">
-      <Filter>Source\Editor\Windows</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\InspectorWindow.h">
-      <Filter>Source\Editor\Windows</Filter>
-    </ClInclude>
     <ClInclude Include="Source\ECS\Core\CCL_FrameAllocator.h">
       <Filter>Source\ECS\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\SceneWindow.h">
-      <Filter>Source\Editor\Windows</Filter>
     </ClInclude>
     <ClInclude Include="External\sol2\sol\sol.hpp">
       <Filter>External\sol2</Filter>
@@ -596,9 +590,6 @@
     </ClInclude>
     <ClInclude Include="External\Lua\src\lzio.h">
       <Filter>External\Lua</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\AnimationSequencerWindow.h">
-      <Filter>Source\Editor\Windows</Filter>
     </ClInclude>
     <ClInclude Include="External\ImGuizmo\GraphEditor.h">
       <Filter>External\ImGuizmo</Filter>
@@ -981,9 +972,6 @@
     <ClInclude Include="Source\Game\Logics\GameEvent\GameEvents.h">
       <Filter>Source\Game\GameEvent</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\TextEditorWindow.h">
-      <Filter>Source\Editor\Windows</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Combat\DeadTag.h">
       <Filter>Source\Game\Logics\Combat</Filter>
     </ClInclude>
@@ -1191,9 +1179,6 @@
     <ClInclude Include="Source\Engine\Platform\Input\InputFacade.h">
       <Filter>Source\Engine\Platform\Input\API</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\InputEditorWindow.h">
-      <Filter>Source\Editor\Windows</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Audio\IAudioAPI.h">
       <Filter>Source\Engine\Audio</Filter>
     </ClInclude>
@@ -1202,9 +1187,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Platform\Logger.h">
       <Filter>Source\Engine\Platform</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\ConsoleWindow.h">
-      <Filter>Source\Editor\Windows</Filter>
     </ClInclude>
     <ClInclude Include="External\RecastNavigation\Recast\Include\Recast.h">
       <Filter>External\RecastNavigation\Recast</Filter>
@@ -1296,9 +1278,6 @@
     <ClInclude Include="Source\Engine\GamePlay\AI\Navigation\NavSteeringSystem.h">
       <Filter>Source\Engine\GamePlay\AI\Navigation</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\NavMeshWindow.h">
-      <Filter>Source\Editor\Windows</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Editor\Core\EditorCommandHistory.h">
       <Filter>Source\Editor\Core</Filter>
     </ClInclude>
@@ -1347,9 +1326,6 @@
     <ClInclude Include="Source\Engine\GamePlay\Animation\AnimatorComponent.h">
       <Filter>Source\Engine\GamePlay\Animation\Components</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\AnimGraphWindow.h">
-      <Filter>Source\Editor\Windows</Filter>
-    </ClInclude>
     <ClInclude Include="External\imgui-node-editor\crude_json.h">
       <Filter>External\imgui-node-editor</Filter>
     </ClInclude>
@@ -1382,9 +1358,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\GamePlay\Animation\Data\AnimStateMachine.h">
       <Filter>Source\Engine\GamePlay\Animation\Data</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\CurveEditorWindow.h">
-      <Filter>Source\Editor\Windows</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\NavAI\AIHearingSystem.h">
       <Filter>Source\Game\Logics\AI\NavAI\01_Priority</Filter>
@@ -1443,13 +1416,58 @@
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Drone\DroneMovementSystem.h">
       <Filter>Source\Game\Logics\AI\BehaviorTree\Drone</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeBuilder.h">
+    <ClInclude Include="Source\Editor\Windows\AnimationSequencerWindow.h">
+      <Filter>Source\Editor\Windows\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\AnimGraphWindow.h">
+      <Filter>Source\Editor\Windows\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\CurveEditorWindow.h">
+      <Filter>Source\Editor\Windows\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\AssetBrowserWindow.h">
+      <Filter>Source\Editor\Windows\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\ConsoleWindow.h">
+      <Filter>Source\Editor\Windows\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\ECSDebugWindow.h">
+      <Filter>Source\Editor\Windows\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\GameViewWindow.h">
+      <Filter>Source\Editor\Windows\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\HierarchyWindow.h">
+      <Filter>Source\Editor\Windows\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\InspectorWindow.h">
+      <Filter>Source\Editor\Windows\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\SceneWindow.h">
+      <Filter>Source\Editor\Windows\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\InputEditorWindow.h">
+      <Filter>Source\Editor\Windows\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\TextEditorWindow.h">
+      <Filter>Source\Editor\Windows\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\NavMeshWindow.h">
+      <Filter>Source\Editor\Windows\AI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\BehaviorTreeWindow.h">
+      <Filter>Source\Editor\Windows\AI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeLoader.h">
       <Filter>Source\Game\Logics\AI\BehaviorTree\_Data</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeComponents.h">
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeBuilder.h">
       <Filter>Source\Game\Logics\AI\BehaviorTree\_Data</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeData.h">
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeComponents.h">
+      <Filter>Source\Game\Logics\AI\BehaviorTree\_Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeData.h">
       <Filter>Source\Game\Logics\AI\BehaviorTree\_Data</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1501,9 +1519,6 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\Utils\ShellIconLoader.cpp">
       <Filter>Source\Editor\Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\HierarchyWindow.cpp">
-      <Filter>Source\Editor\Windows</Filter>
     </ClCompile>
     <ClCompile Include="External\Lua\src\lapi.c">
       <Filter>External\Lua</Filter>
@@ -1600,9 +1615,6 @@
     </ClCompile>
     <ClCompile Include="External\Lua\src\lzio.c">
       <Filter>External\Lua</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\AnimationSequencerWindow.cpp">
-      <Filter>Source\Editor\Windows</Filter>
     </ClCompile>
     <ClCompile Include="External\ImGuizmo\GraphEditor.cpp">
       <Filter>External\ImGuizmo</Filter>
@@ -1820,9 +1832,6 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\PBRShader.cpp">
       <Filter>Source\Engine\Graphics\Shader\Material</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\TextEditorWindow.cpp">
-      <Filter>Source\Editor\Windows</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Game\Logics\Combat\HealthSystem.cpp">
       <Filter>Source\Game\Logics\Combat</Filter>
     </ClCompile>
@@ -1900,9 +1909,6 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Serialization\ComponentRegistry.cpp">
       <Filter>Source\Engine\Serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\InspectorWindow.cpp">
-      <Filter>Source\Editor\Windows</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GamePlay\Physics\Character\JoltCharacterSetupSystem.cpp">
       <Filter>Source\Engine\GamePlay\Physics\Character</Filter>
@@ -1988,17 +1994,11 @@
     <ClCompile Include="Source\Engine\Platform\Input\InputFacade.cpp">
       <Filter>Source\Engine\Platform\Input\API</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\InputEditorWindow.cpp">
-      <Filter>Source\Editor\Windows</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Audio\FmodAudioManager.cpp">
       <Filter>Source\Engine\Audio</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Platform\Logger.cpp">
       <Filter>Source\Engine\Platform</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\ConsoleWindow.cpp">
-      <Filter>Source\Editor\Windows</Filter>
     </ClCompile>
     <ClCompile Include="External\RecastNavigation\Recast\Source\Recast.cpp">
       <Filter>External\RecastNavigation\Recast</Filter>
@@ -2105,12 +2105,6 @@
     <ClCompile Include="Source\Engine\GamePlay\AI\Navigation\NavAgentComponentMeta.cpp">
       <Filter>Source\Engine\GamePlay\AI\Navigation\_Meta</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\NavMeshWindow.cpp">
-      <Filter>Source\Editor\Windows</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\ECSDebugWindow.cpp">
-      <Filter>Source\Editor\Windows</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\Core\Shader.cpp">
       <Filter>Source\Engine\Graphics\Shader\Material\Core</Filter>
     </ClCompile>
@@ -2147,9 +2141,6 @@
     <ClCompile Include="Source\Engine\GamePlay\Animation\AnimControllerSystem.cpp">
       <Filter>Source\Engine\GamePlay\Animation\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\AnimGraphWindow.cpp">
-      <Filter>Source\Editor\Windows</Filter>
-    </ClCompile>
     <ClCompile Include="External\imgui-node-editor\crude_json.cpp">
       <Filter>External\imgui-node-editor</Filter>
     </ClCompile>
@@ -2164,9 +2155,6 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\GamePlay\Animation\Data\AnimGraphSerializer.cpp">
       <Filter>Source\Engine\GamePlay\Animation\Data</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\CurveEditorWindow.cpp">
-      <Filter>Source\Editor\Windows</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\NavAI\AIComponentsMeta.cpp">
       <Filter>Source\Game\Logics\AI\NavAI\_Meta</Filter>
@@ -2216,7 +2204,43 @@
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Drone\DroneMovementSystem.cpp">
       <Filter>Source\Game\Logics\AI\BehaviorTree\Drone</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeBuilder.cpp">
+    <ClCompile Include="Source\Editor\Windows\AnimationSequencerWindow.cpp">
+      <Filter>Source\Editor\Windows\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\AnimGraphWindow.cpp">
+      <Filter>Source\Editor\Windows\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\CurveEditorWindow.cpp">
+      <Filter>Source\Editor\Windows\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\ConsoleWindow.cpp">
+      <Filter>Source\Editor\Windows\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\ECSDebugWindow.cpp">
+      <Filter>Source\Editor\Windows\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\HierarchyWindow.cpp">
+      <Filter>Source\Editor\Windows\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\InspectorWindow.cpp">
+      <Filter>Source\Editor\Windows\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\InputEditorWindow.cpp">
+      <Filter>Source\Editor\Windows\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\TextEditorWindow.cpp">
+      <Filter>Source\Editor\Windows\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\NavMeshWindow.cpp">
+      <Filter>Source\Editor\Windows\AI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\BehaviorTreeWindow.cpp">
+      <Filter>Source\Editor\Windows\AI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeBuilder.cpp">
+      <Filter>Source\Game\Logics\AI\BehaviorTree\_Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeLoader.cpp">
       <Filter>Source\Game\Logics\AI\BehaviorTree\_Data</Filter>
     </ClCompile>
   </ItemGroup>

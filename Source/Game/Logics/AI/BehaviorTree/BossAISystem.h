@@ -1,7 +1,7 @@
 #pragma once
 #include "ECS/System/CCL_System.h"
-#include "Game/Logics/AI/BehaviorTree/BehaviorTreeComponents.h"
-#include "Game/Logics/AI/BehaviorTree/BehaviorTreeData.h"
+#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"
+#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"
 
 /**
  * @file BossAISystem.h

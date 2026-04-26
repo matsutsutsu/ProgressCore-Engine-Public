@@ -1,6 +1,10 @@
 {
     "DialogHistory": {
+        "AIグラフを保存": "D:\\School_Projects\\ProgressCore-Engine\\Assets\\BehaviorTree\\",
+        "AIグラフを開く": "D:\\School_Projects\\ProgressCore-Engine\\Assets\\BehaviorTree\\",
+        "Open AI Graph": "D:\\School_Projects\\ProgressCore-Engine\\Assets\\BehaviorTree\\",
         "Open Scene": "D:\\School_Projects\\ProgressCore-Engine\\Assets\\Scene\\",
+        "Save AI Graph": "D:\\School_Projects\\ProgressCore-Engine\\Assets\\BehaviorTree\\",
         "Save Anim Graph": "C:\\Users\\2240209\\Desktop\\ProgressCore-Engine\\Assets\\Animations\\Nodes\\",
         "Save Anim Sequence": "C:\\Users\\2240209\\Desktop\\ProgressCore-Engine\\Assets\\Animations\\Sequencer\\",
         "Save Curve File": "C:\\Users\\2240209\\Desktop\\ProgressCore-Engine\\Assets\\Curve\\",

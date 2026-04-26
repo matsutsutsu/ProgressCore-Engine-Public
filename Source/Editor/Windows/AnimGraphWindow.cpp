@@ -1,7 +1,7 @@
 #include "AnimGraphWindow.h"
 #include "Engine/GamePlay/Animation/Data/AnimGraphSerializer.h"
 #include "Engine/Core/Math/StringHash.h"
-#include "imgui-node-editor/imgui_node_editor.h"
+#include <imgui_node_editor.h>
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <string>

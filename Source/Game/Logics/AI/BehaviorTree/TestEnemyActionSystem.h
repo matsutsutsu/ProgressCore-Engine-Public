@@ -6,7 +6,7 @@
 #include "ECS/System/CCL_System.h"
 #include "Engine/GamePlay/Transform/TransformComponent.h"
 #include "Engine/GamePlay/Animation/AnimParametersComponent.h"
-#include "Game/Logics/AI/BehaviorTree/BehaviorTreeComponents.h" // BossCommandComponent用
+#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h" // BossCommandComponent用
 #include "TestEnemyActionComponent.h"
 
  // IfSystemで、必要なコンポーネントが全て揃っているEntityだけを対象にする
