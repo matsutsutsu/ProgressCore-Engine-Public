@@ -76,6 +76,9 @@ struct EditorBTNode {
     // グループノード用のサイズ（インスペクタで変更可能にする）
     float width = 300.0f;
     float height = 200.0f;
+
+    float paramValue1 = 0.0f; // 例: 突進速度
+    std::string targetKey = "Player"; // 例: Blackboardのキー
 };
 
 /**

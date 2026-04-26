@@ -18,6 +18,22 @@ using json = nlohmann::json;
  // 長い名前空間を "ed" に短縮するお作法
 namespace ed = ax::NodeEditor;
 
+// ★ どこか上部（またはヘッダー）で、IDに対応する分かりやすい名前のリストを定義しておく
+static const char* ActionNames[] = {
+    "0: なし (None)",
+    "1: 移動 (Move To Target)",
+    "2: 近接攻撃 (Melee Attack)",
+    "3: 突進 (Charge Attack)"
+};
+static const int ActionNamesCount = IM_ARRAYSIZE(ActionNames);
+
+static const char* ConditionNames[] = {
+    "0: なし (None)",
+    "1: HPが50%以下 (HP < 50)",
+    "2: ターゲットが近い (Target is Near)"
+};
+static const int ConditionNamesCount = IM_ARRAYSIZE(ConditionNames);
+
 
 BehaviorTreeWindow::BehaviorTreeWindow() : EditorWindow("Behavior Tree Editor") {
     _nodeContext = ed::CreateEditor();
@@ -171,6 +187,20 @@ void BehaviorTreeWindow::DrawNodeWorkspace() {
             ImGui::SameLine();
         }
 
+        // ★ 修正：ノードの種類に応じて、キャンバス上の表示名を動的に変える
+        if (node.type == EditorBTNodeType::Action && node.actionOrConditionId < ActionNamesCount) {
+            // 例: 「Action」という基本名の下に、具体的な行動名を表示
+            ImGui::TextUnformatted("行動 (Action)");
+            ImGui::TextColored(ImVec4(0.2f, 0.8f, 0.2f, 1.0f), "[ %s ]", ActionNames[node.actionOrConditionId]);
+        }
+        else if (node.type == EditorBTNodeType::Condition && node.actionOrConditionId < ConditionNamesCount) {
+            ImGui::TextUnformatted("条件 (Condition)");
+            ImGui::TextColored(ImVec4(0.2f, 0.6f, 1.0f, 1.0f), "[ %s ]", ConditionNames[node.actionOrConditionId]);
+        }
+        else {
+            ImGui::TextUnformatted(node.name.c_str());
+        }
+
         ImGui::TextUnformatted(node.name.c_str());
 
         // ★追加: グループノードの場合は枠を広げる（ピンは描画しない）
@@ -272,10 +302,27 @@ void BehaviorTreeWindow::DrawInspector() {
                 it->name = nameBuf;
             }
 
-            if (it->type == EditorBTNodeType::Condition || it->type == EditorBTNodeType::Action) {
-                int val = static_cast<int>(it->actionOrConditionId);
-                if (ImGui::InputInt("Action/Cond ID", &val)) {
-                    it->actionOrConditionId = static_cast<ActionID>(val);
+
+
+            // ---------------------------------------------------------
+            // インスペクタ描画部分
+            // ---------------------------------------------------------
+            if (it->type == EditorBTNodeType::Condition) {
+                ImGui::Text("条件設定:");
+                int currentItem = static_cast<int>(it->actionOrConditionId);
+
+                // 数字入力ではなく、ドロップダウン（Combo）に変更
+                if (ImGui::Combo("条件 (Condition)", &currentItem, ConditionNames, ConditionNamesCount)) {
+                    it->actionOrConditionId = static_cast<ActionID>(currentItem);
+                }
+            }
+            else if (it->type == EditorBTNodeType::Action) {
+                ImGui::Text("行動設定:");
+                int currentItem = static_cast<int>(it->actionOrConditionId);
+
+                // ドロップダウン（Combo）に変更
+                if (ImGui::Combo("行動 (Action)", &currentItem, ActionNames, ActionNamesCount)) {
+                    it->actionOrConditionId = static_cast<ActionID>(currentItem);
                 }
             }
 
