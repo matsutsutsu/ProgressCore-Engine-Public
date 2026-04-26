@@ -11,6 +11,7 @@ enum class FieldKind : uint8_t {
     UInt8,
     UInt16, // 16ビット符号なし整数
     UInt32, // 32ビット符号なし整数
+    EntityID,
     EnumU8,
     EnumInt,
     Float2,

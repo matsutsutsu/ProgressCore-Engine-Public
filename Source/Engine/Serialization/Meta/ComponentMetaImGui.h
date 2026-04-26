@@ -89,6 +89,46 @@ namespace ComponentMetaImGui {
             }
             break;
         }
+        case FieldKind::EntityID: {
+            // 1. RawField関数を使って、コンポーネント内の正しい変数の参照を安全に取得する
+            // ※ fd.offset分だけアドレスを進めて uint32_t として扱う
+            auto& val = RawField<uint32_t>(&obj, fd.offset);
+
+            // 2. UI描画 (InputScalar で 32bit整数として扱う)
+            if (ImGui::InputScalar(fd.name, ImGuiDataType_U32, &val)) {
+                changed = true;
+            }
+
+            // =========================================================
+            // 3. ★ ドラッグ＆ドロップ（ターゲット/受け取り側）の実装
+            // =========================================================
+            // 直前に描画した InputScalar の矩形領域がドロップ判定エリアになる
+            if (ImGui::BeginDragDropTarget()) {
+
+                // ※注意: "ENTITY" の部分は、ヒエラルキービュー（送信側）が
+                // SetDragDropPayload で設定している文字列に合わせる必要がある。
+                // よくある命名例: "ENTITY", "ENTITY_ID", "HIERARCHY_ENTITY" など
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_ENTITY_ID")) {
+
+                    // 安全性確認：送られてきたデータサイズが uint32_t(4バイト) であること
+                    if (payload->DataSize == sizeof(uint32_t)) {
+                        val = *(const uint32_t*)payload->Data;
+                        changed = true;
+
+                        // デバッグ用（不要なら消してよい）
+                        CCL_LOG_INFO(LogCategory::Editor, "[ImGui] EntityID %u dropped into %s", val, fd.name);
+                    }
+                }
+                ImGui::EndDragDropTarget();
+            }
+
+            // ツールチップ（マウスオーバーでD&D可能であることを教える）
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("ドラッグ＆ドロップでエンティティをアタッチ可能");
+            }
+
+            break;
+        }
         case FieldKind::EnumU8: {
             uint8_t &v   = RawField<uint8_t>(obj, fd.offset);
             int      cur = (int)v;

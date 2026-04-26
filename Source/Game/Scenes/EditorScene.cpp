@@ -29,14 +29,20 @@ void EditorScene::Initialize()
     SceneInitializer::SpawnLightStartSet(*_worldPtr, device);
     //SceneInitializer::SpawnGameLightSetting(_world, device);
     //Prefab::SpawnPrefab(*_worldPtr, "Assets/Prefabs/Camera/FreeCamera.json");
-    Prefab::SpawnPrefab(*_worldPtr, "Assets/Prefabs/Camera/FreeFastCamera.json");
+    //Prefab::SpawnPrefab(*_worldPtr, "Assets/Prefabs/Camera/FreeFastCamera.json");
 
 
     //SceneInitializer::SpawnTransformLoadTest(*_worldPtr, device, 100000);
     //SceneInitializer::SpawnJoltTest(*_worldPtr, device);
 
     // 中では普通にPBRモデル用にしている
-    SceneInitializer::SpawnAnimationTest(*_worldPtr, device);
+    //SceneInitializer::SpawnAnimationTest(*_worldPtr, device);
+
+    SceneInitializer::SpawnBossAndDronesTest(*_worldPtr, device);
+
+    // ボスとドローン群のテスト環境を展開
+    //SceneInitializer::SpawnBossAndDronesTest(*_worldPtr, device);
+
 
     //SceneInitializer::SpawnModelGridTest(*_worldPtr, device, 500);
     

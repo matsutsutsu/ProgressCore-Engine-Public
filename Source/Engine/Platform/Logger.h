@@ -13,6 +13,7 @@ enum class LogCategory {
     Render,     // 描画、シェーダー、ライト
     Audio,      // FMODなどのサウンド
     Game,       // ゲームロジック（プレイヤー、敵AIなど）
+	AI,         // AI関連（パスファインディング、ビヘイビアツリーなど）
     Count       // カテゴリの総数（UI作成用ループに使う）
 };
 

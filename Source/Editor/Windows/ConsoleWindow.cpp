@@ -34,7 +34,7 @@ void ConsoleWindow::DrawContents(EditorContext& context)
     ImGui::SameLine();
 
     // カテゴリ名を取得するためのヘルパー配列
-    const char* catNames[] = { "Core","ECS", "Editor", "Physics", "Render", "Audio", "Game"  };
+    const char* catNames[] = { "Core","ECS", "Editor", "Physics", "Render", "Audio", "Game", "AI"};
 
     for (int i = 0; i < (int)LogCategory::Count; ++i) {
         ImGui::Checkbox(catNames[i], &_categoryFilters[i]);

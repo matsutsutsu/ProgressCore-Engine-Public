@@ -3,6 +3,7 @@
 #include "Game/Core/AllComponents.h"
 #include "Engine/Serialization/Factory/Prefab.h"
 #include "Engine/Serialization/Factory/EntityFactory.h"
+#include "Engine/Platform/Logger.h"
 #include <random>
 #include <vector>
 
@@ -232,6 +233,48 @@ void SceneInitializer::SpawnPlayerCarTest(CCL::ECS::Core::World& world, ID3D11De
     }
 }
 
+// ※あなたのプロジェクトにおけるDroneComponent等の正しいパスをインクルードしてください
+#include "Game/Logics/AI/BehaviorTree/Drone/DroneComponent.h"
+#include "Game/Logics/AI/BehaviorTree/BehaviorTreeComponents.h"
+
+
+// =======================================================
+// ボスとドローン群の生成テスト
+// =======================================================
+void SceneInitializer::SpawnBossAndDronesTest(CCL::ECS::Core::World& world, ID3D11Device* device)
+{
+    EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Camera/FreeCamera.json");
+    EntityFactory::SpawnPrefab(world, "Assets/Prefabs/World/ExampleStage.json");
+
+    // 1. ボスの生成（中央に配置）
+    // ※Boss.json がない場合は適当なモデルのプレハブパスに書き換えてください
+    EntityID bossId = Prefab::SpawnPrefab(world, "Assets/Prefabs/Enemy/BossEnemy.json", { 0.0f, 0.0f, 0.0f });
+    auto bossRef = CCL::ECS::Core::EntityRef(&world, bossId);
+
+
+    // 2. ドローン群の生成
+    const uint16_t TOTAL_DRONES = 12; // 12機のドローンを展開
+    for (uint16_t i = 0; i < TOTAL_DRONES; ++i) {
+
+        // ドローンの生成（ボスの少し上にSpawn）
+        // ※Drone.json がない場合は、適当なキューブ等のプレハブを指定してください
+        EntityID droneId = Prefab::SpawnPrefab(world, "Assets/Prefabs/Enemy/Drone.json", { 0.0f, 5.0f, 0.0f });
+        auto droneRef = CCL::ECS::Core::EntityRef(&world, droneId);
+
+        // 操り人形としての「記憶（DroneComponent）」を初期化して付与
+        DroneComponent droneComp;
+        droneComp.ownerBossId = bossId;       // 親は先ほど作ったボス
+        droneComp.localIndex = i;             // 自分が何番目のドローンか（重要！）
+        droneComp.totalDrones = TOTAL_DRONES; // 全体の数（360度を等分するために必要）
+        droneComp.orbitRadius = 10.0f;        // 旋回半径を10mに設定
+        droneComp.moveSpeed = 40.0f;          // 突撃時の最高速度
+
+        // コンポーネントをアタッチ
+        droneRef.Set(droneComp);
+    }
+
+    CCL_LOG_SUCCESS(LogCategory::Game, "[SceneInit] Boss and %d Drones spawned successfully.", TOTAL_DRONES);
+}
 
 
 // ============================================================================

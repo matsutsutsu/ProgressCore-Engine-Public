@@ -427,6 +427,7 @@
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BossAISystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Drone\DroneComponent.h" />
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Drone\DroneFormationSystem.h" />
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Drone\DroneMovementSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\TestEnemyActionComponent.h" />
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\TestEnemyActionSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\NavAI\AIComponents.h" />
@@ -700,6 +701,7 @@
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BossAISystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Drone\DroneFormationSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Drone\DroneMovementSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\TestEnemyActionComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\TestEnemyActionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\NavAI\AIComponentsMeta.cpp" />

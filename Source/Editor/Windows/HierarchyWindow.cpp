@@ -121,6 +121,7 @@ void HierarchyWindow::DrawContents(EditorContext& context)
         }
         ImGui::EndDragDropTarget();
     }
+ 
 
     // 背景クリック時の選択解除
     if (ImGui::IsMouseClicked(0) && ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) {
@@ -169,9 +170,38 @@ void HierarchyWindow::DrawFlatNode(
         else        _openNodes.insert(node.entityID); // 開く
     }
 
-    // アイテム自体（文字部分）をクリックした時の選択処理
-    if (ImGui::IsItemClicked(0) && !ImGui::IsItemToggledOpen()) {
-        context.selectedEntity = node.entityID;
+    // =======================================================================
+    // ★ここから追加: ドラッグ＆ドロップの「送信元（Source）」としての設定
+    // =======================================================================
+    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+
+        // "DND_ENTITY_ID" という識別子で、EntityIDのメモリの塊をペイロードとして積む
+        ImGui::SetDragDropPayload("DND_ENTITY_ID", &node.entityID, sizeof(CCL::ECS::EntityID));
+
+        // ドラッグ中、マウスカーソルの横に表示されるプレビューUI
+        ImGui::Text("Drop Entity: %u", node.entityID);
+
+        ImGui::EndDragDropSource();
+    }
+
+    // =======================================================================
+    // クリック（選択）判定を「スマート・クリック」に進化させる
+    // =======================================================================
+    // 条件1: アイテムの上でマウスがホバーされている
+    // 条件2: マウスの左ボタンが「離された（Released）」瞬間である
+    // 条件3: TreeNodeの開閉ボタン(矢印)が押されたわけではない
+    // 条件4: ★ ドラッグ操作をしていない（閾値以上マウスが移動していない）
+    
+    if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+
+        // ImGuiの標準設定（io.MouseDragThreshold）を超えてドラッグされていないかチェック
+        // MouseDragThreshold はデフォルトで 6.0f 程度に設定されています。
+        if (!ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+            // かつ、矢印（開閉ボタン）を押していない場合のみ選択を切り替える
+            if (!ImGui::IsItemToggledOpen()) {
+                context.selectedEntity = node.entityID;
+            }
+        }
     }
 
     // ポップアップメニューやドラッグ＆ドロップ元の設定など...

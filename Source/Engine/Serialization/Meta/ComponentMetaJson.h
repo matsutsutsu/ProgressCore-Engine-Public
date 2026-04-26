@@ -59,6 +59,7 @@ namespace ComponentMetaJson {
         case FieldKind::UInt8:   j[fd.jsonName] = RawField<const uint8_t>(obj, fd.offset); break;
 		case FieldKind::UInt16:  j[fd.jsonName] = RawField<const uint16_t>(obj, fd.offset); break;
 		case FieldKind::UInt32:  j[fd.jsonName] = RawField<const uint32_t>(obj, fd.offset); break;
+		case FieldKind::EntityID: j[fd.jsonName] = RawField<const uint64_t>(obj, fd.offset); break; // EntityIDはuint64_tとして保存
         case FieldKind::EnumU8:  j[fd.jsonName] = RawField<const uint8_t>(obj, fd.offset); break;
         case FieldKind::EnumInt: j[fd.jsonName] = RawField<const int>(obj, fd.offset); break;
         case FieldKind::Float2:  _MetaJsonDX::F2_to(j[fd.jsonName], RawField<const DirectX::XMFLOAT2>(obj, fd.offset)); break;
@@ -82,6 +83,7 @@ namespace ComponentMetaJson {
         case FieldKind::UInt8:   j[fd.jsonName].get_to(RawField<uint8_t>(obj, fd.offset)); break;
 		case FieldKind::UInt16:  j[fd.jsonName].get_to(RawField<uint16_t>(obj, fd.offset)); break;
 		case FieldKind::UInt32:  j[fd.jsonName].get_to(RawField<uint32_t>(obj, fd.offset)); break;
+        case FieldKind::EntityID: j[fd.jsonName].get_to(RawField<uint64_t>(obj, fd.offset)); break;
         case FieldKind::EnumU8:  j[fd.jsonName].get_to(RawField<uint8_t>(obj, fd.offset)); break;
         case FieldKind::EnumInt: j[fd.jsonName].get_to(RawField<int>(obj, fd.offset)); break;
         case FieldKind::Float2:  _MetaJsonDX::F2_from(j[fd.jsonName], RawField<DirectX::XMFLOAT2>(obj, fd.offset)); break;

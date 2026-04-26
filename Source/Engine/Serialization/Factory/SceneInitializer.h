@@ -27,6 +27,10 @@ class SceneInitializer {
     // 球体カーコントローラーのテスト環境
     static void SpawnPlayerCarTest(CCL::ECS::Core::World& world, ID3D11Device* device);
 
+    // ボスとドローン群の生成テスト環境
+    static void SpawnBossAndDronesTest(CCL::ECS::Core::World& world, ID3D11Device* device);
+
+
     // =======================================================
     //  指定した数のモデルをグリッド状に並べるテスト
     // =======================================================

@@ -427,6 +427,9 @@
     <Filter Include="Source\Game\Logics\AI\BehaviorTree\Drone">
       <UniqueIdentifier>{1dcf7f43-80a3-4026-958c-8d279ef4bbb6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\AI\BehaviorTree\_Data">
+      <UniqueIdentifier>{562c3a01-244e-46ab-b064-571c92727868}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1404,15 +1407,6 @@
     <ClInclude Include="Source\Game\Logics\AI\NavAI\AIDebugDrawSystem.h">
       <Filter>Source\Game\Logics\AI\NavAI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeData.h">
-      <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeComponents.h">
-      <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeBuilder.h">
-      <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BossAISystem.h">
       <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
     </ClInclude>
@@ -1445,6 +1439,18 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Drone\DroneFormationSystem.h">
       <Filter>Source\Game\Logics\AI\BehaviorTree\Drone</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Drone\DroneMovementSystem.h">
+      <Filter>Source\Game\Logics\AI\BehaviorTree\Drone</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeBuilder.h">
+      <Filter>Source\Game\Logics\AI\BehaviorTree\_Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeComponents.h">
+      <Filter>Source\Game\Logics\AI\BehaviorTree\_Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeData.h">
+      <Filter>Source\Game\Logics\AI\BehaviorTree\_Data</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2180,9 +2186,6 @@
     <ClCompile Include="Source\Game\Logics\AI\NavAI\AIDebugDrawSystem.cpp">
       <Filter>Source\Game\Logics\AI\NavAI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeBuilder.cpp">
-      <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BossAISystem.cpp">
       <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
     </ClCompile>
@@ -2209,6 +2212,12 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Drone\DroneFormationSystem.cpp">
       <Filter>Source\Game\Logics\AI\BehaviorTree\Drone</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Drone\DroneMovementSystem.cpp">
+      <Filter>Source\Game\Logics\AI\BehaviorTree\Drone</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeBuilder.cpp">
+      <Filter>Source\Game\Logics\AI\BehaviorTree\_Data</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

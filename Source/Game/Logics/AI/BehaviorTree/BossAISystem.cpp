@@ -1,5 +1,7 @@
 #include "Game/Logics/AI/BehaviorTree/BossAISystem.h"
 #include "Game/Logics/AI/BehaviorTree/BehaviorTreeBuilder.h"
+#include "Game/Logics/Character/Player/PlayerComponent.h"
+#include "Engine/GamePlay/Transform/TransformComponent.h"
 #include "Engine/Platform/Logger.h"
 #include "Game/Core/SystemPriority.h" // LogicStage等の定義
 #include "ECS/System/CCL_SystemRegistry.h"
@@ -63,15 +65,35 @@ void BossAISystem::Initialize()
 
 void BossAISystem::Update(float dt)
 {
+    // =========================================================
+    // 1. ターゲット（プレイヤー）の検索フェーズ（シングルスレッド）
+    // =========================================================
+    EntityID activePlayerId = CCL::ECS::InvalidEntityID;
+
+    auto playerView = _world->View<PlayerComponent,TransformComponent>();
+    for (auto p : playerView) {
+        activePlayerId = p;
+        break;
+    }
+
+    // プレイヤーが見つからなければAIは思考を停止するか、待機する
+    if (activePlayerId == CCL::ECS::InvalidEntityID) return;
+
+
+    // プレイヤーの座標を取得（距離計算用）
+    const auto* playerTrans = _world->GetComponent<TransformComponent>(activePlayerId);
+    if (!playerTrans) return;
+
     // ★ 並列実行 (ForEachParallel) 
     // テンプレート引数とラムダの引数型を【完全に一致】させなければコンパイルエラーになる
-    ForEachParallel([this,dt](BehaviorTreeComponent& btComp, BossCommandComponent& cmdComp) {
+    ForEachParallel([this,dt,activePlayerId](BehaviorTreeComponent& btComp, BossCommandComponent& cmdComp) {
 
         // 前フレームのフラグを全てリセット
         cmdComp.requestMeleeAttack = false;
         cmdComp.requestCharge = false;
         cmdComp.requestGuard = false;
         cmdComp.requestMove = false;
+        cmdComp.targetPlayerId = activePlayerId;
 
         // ★テストギミック：距離変数を「経過タイマー」として流用（9秒でループ）
         btComp.blackboard.distanceToTarget += dt;
@@ -156,15 +178,15 @@ CCL::AI::BTNodeState BossAISystem::ExecuteAction(CCL::AI::ActionID actionId, Beh
     if (btComp.lastLogActionId != actionId) {
         switch (actionId) {
         case BossAI_ID::Act_Move:
-            CCL_LOG_INFO(LogCategory::Game, "[BossAI] State Changed -> MOVE (ウロウロ中)");
+            CCL_LOG_INFO(LogCategory::AI, "[BossAI] State Changed -> MOVE (ウロウロ中)");
             break;
         case BossAI_ID::Act_MeleeAttack:
             // 攻撃実行は目立たせるために SUCCESS (緑色) を使用
-            CCL_LOG_SUCCESS(LogCategory::Game, "[BossAI] State Changed -> MELEE ATTACK (近接攻撃！)");
+            CCL_LOG_SUCCESS(LogCategory::AI, "[BossAI] State Changed -> MELEE ATTACK (近接攻撃！)");
             break;
         case BossAI_ID::Act_ChargeAttack:
             // 突進などの危険行動は WARN (黄色) を使用
-            CCL_LOG_WARN(LogCategory::Game, "[BossAI] State Changed -> CHARGE ATTACK (突進開始！)");
+            CCL_LOG_WARN(LogCategory::AI, "[BossAI] State Changed -> CHARGE ATTACK (突進開始！)");
             break;
         }
         // 記憶を更新（これ以降、別の行動になるまでログは沈黙する）
