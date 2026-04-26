@@ -32,11 +32,11 @@ private:
     /*
     * @param 再起処理で評価する
     */
-    CCL::AI::BTNodeState EvaluateTreeRecursive(
-        CCL::AI::BTNodeID nodeId,
+    BTNodeState EvaluateTreeRecursive(
+        BTNodeID nodeId,
         BehaviorTreeComponent& btComp,
         BossCommandComponent& cmdComp,
-        const CCL::AI::BTAsset& asset
+        const BTAsset& asset
     );
 
     /*
@@ -45,7 +45,7 @@ private:
     * @param btComp 現在のエンティティが持つAI状態（Blackboardや実行中ノード情報）
     * @return 条件が成立する場合はtrue、そうでない場合はfalse
     */
-    bool EvaluateCondition(CCL::AI::ActionID condId, const BehaviorTreeComponent& btComp);
+    bool EvaluateCondition(ActionID condId, const BehaviorTreeComponent& btComp);
 
     /*
 	* @brief 行動ノードを評価する
@@ -57,9 +57,7 @@ private:
      * この関数は純粋な「評価関数」として設計されている。
 	 * 物理演算やアニメーションのトリガーなどの副作用は、cmdCompへの書き込みに限定されるべきである。
     */
-    CCL::AI::BTNodeState ExecuteAction(CCL::AI::ActionID actionId, BehaviorTreeComponent& btComp, BossCommandComponent& cmdComp);
+    BTNodeState ExecuteAction(ActionID actionId, BehaviorTreeComponent& btComp, BossCommandComponent& cmdComp);
 
-    // （仮）メモリ上に保持するボスAIアセット。
-    // ※本来は _world->GetResource<ResourceManager> 等で取得すべき共有データです
-    CCL::AI::BTAsset m_bossSharedAsset;
+
 };

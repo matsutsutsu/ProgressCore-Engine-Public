@@ -57,7 +57,7 @@ struct EditorBTNode {
     std::string name;          ///< UI上に表示される名前
 
     // ランタイム用の設定値（インスペクタで編集する）
-    CCL::AI::ActionID actionOrConditionId = 0;
+    ActionID actionOrConditionId = 0;
 
     // UI用の接続口
     BTPin inputPin;            ///< 親から繋がれる入力ピン

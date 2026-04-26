@@ -3,12 +3,14 @@
  * @brief AI関連コンポーネントのエディタ/シリアライズ用メタデータ定義
  */
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"
+#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeLoader.h"
 #include "Game/Logics/AI/BehaviorTree/Drone/DroneComponent.h"
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
+#include "Engine/Platform/Dialog.h"
 #include <imgui.h>
 
  // =======================================================================
@@ -18,19 +20,51 @@ static const char* DroneFormationNames[] = { "Hidden", "OrbitCircle", "Sequentia
 static const char* DroneStateNames[] = { "Idle", "MoveToTarget", "LockOn", "FireCharge" };
 
 
-// --- BehaviorTreeComponent（保存する） ---
 template <> struct ComponentMeta<BehaviorTreeComponent> {
     static constexpr bool registered = true;
     static constexpr const char* displayName = "Behavior Tree";
-    static constexpr bool hasCustomGui = false;
+    static constexpr bool hasCustomGui = true; // カスタムGUIを有効化
     static constexpr bool isSerializable = true;
+
+    // --- カスタムGUIでロード機能を統合 ---
+    static bool CustomGui(BehaviorTreeComponent& comp, unsigned long long entityID, void* worldPtr) {
+        bool changed = false;
+
+        ImGui::Text("AI Logic Path:");
+        char pathBuf[256];
+        strcpy_s(pathBuf, comp.assetPath.c_str());
+
+        if (ImGui::InputText("##Path", pathBuf, sizeof(pathBuf))) {
+            comp.assetPath = pathBuf;
+            changed = true;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("...")) {
+            char path[MAX_PATH] = "";
+            if (Dialog::OpenFileName(path, MAX_PATH, "BehaviorTree (*.json)\0*.json\0", "AIを選択") == DialogResult::OK) {
+                comp.assetPath = path;
+                // パスが変わったら即座にリロード！
+                BehaviorTreeLoader::LoadFromJson(comp.assetPath, comp.runtimeAsset);
+                changed = true;
+            }
+        }
+
+        if (ImGui::Button("Reload AI")) {
+            BehaviorTreeLoader::LoadFromJson(comp.assetPath, comp.runtimeAsset);
+            changed = true;
+        }
+
+        ImGui::Separator();
+        // 他のデバッグ情報表示
+        ImGui::LabelText("Nodes", "%zu", comp.runtimeAsset.nodes.size());
+        ImGui::LabelText("Current Node", "%u", comp.runningNodeId);
+
+        return changed;
+    }
 
     static const std::vector<FieldDescriptor>& Fields() {
         static const std::vector<FieldDescriptor> fields = {
-            { "アセットID", "assetId", FieldKind::UInt32, offsetof(BehaviorTreeComponent, assetId), 1.0f, 0.0f, 0.0f, "AI", nullptr, 0, true },
-            { "実行中ノード", "runningNodeId", FieldKind::UInt16, offsetof(BehaviorTreeComponent, runningNodeId), 1.0f, 0.0f, 0.0f, "AI", nullptr, 0, true },
-            { "ターゲット距離", "distanceToTarget", FieldKind::Float, offsetof(BehaviorTreeComponent, blackboard.distanceToTarget), 0.1f, 0.0f, 0.0f, "Blackboard", nullptr, 0, true },
-            { "HP(%)", "healthPercentage", FieldKind::Float, offsetof(BehaviorTreeComponent, blackboard.healthPercentage), 0.1f, 0.0f, 100.0f, "Blackboard", nullptr, 0, true }
+            { "AIパス", "assetPath", FieldKind::String, offsetof(BehaviorTreeComponent, assetPath), 0, 0, 0, "File", nullptr, 0, true }
         };
         return fields;
     }

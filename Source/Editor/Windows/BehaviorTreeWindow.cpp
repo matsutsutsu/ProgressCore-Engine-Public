@@ -275,7 +275,7 @@ void BehaviorTreeWindow::DrawInspector() {
             if (it->type == EditorBTNodeType::Condition || it->type == EditorBTNodeType::Action) {
                 int val = static_cast<int>(it->actionOrConditionId);
                 if (ImGui::InputInt("Action/Cond ID", &val)) {
-                    it->actionOrConditionId = static_cast<CCL::AI::ActionID>(val);
+                    it->actionOrConditionId = static_cast<ActionID>(val);
                 }
             }
 
@@ -427,7 +427,7 @@ void BehaviorTreeWindow::LoadGraph(const std::string& path) {
         node.id = jn["id"];
         node.type = static_cast<EditorBTNodeType>(jn["type"].get<int>());
         node.name = jn["name"];
-        node.actionOrConditionId = static_cast<CCL::AI::ActionID>(jn["actionId"].get<int>());
+        node.actionOrConditionId = static_cast<ActionID>(jn["actionId"].get<int>());
         node.posX = jn["posX"];
         node.posY = jn["posY"];
         // ★追加: グループサイズを復元

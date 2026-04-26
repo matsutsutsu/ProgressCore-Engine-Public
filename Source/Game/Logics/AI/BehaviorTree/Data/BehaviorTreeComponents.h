@@ -25,12 +25,21 @@ struct AIBlackboard {
 // AIの内部状態とブラックボード（直列化対象）
 // 例えば、どのノードを実行中か、どのアセットを使うかなどの情報を持つ
 struct BehaviorTreeComponent {
-    CCL::AI::AssetID assetId = 0;        // どの知能（BTAsset）を使うか
-    CCL::AI::BTNodeID runningNodeId = 0; // 現在実行中のノード
+    // 読み込むJSONのパス
+    std::string assetPath = "Assets/AI/BossAI.json";
+
+    // エンジンが「現在メモリに読み込んでいる」パス
+    std::string loadedAssetPath = "";
+
+    AssetID assetId = 0;        // どの知能（BTAsset）を使うか
+    BTNodeID runningNodeId = 0; // 現在実行中のノード
 
     // ログ出力制御用（前回実行したアクションIDを記憶）
     // 無効値として 0xFFFF (最大値) を初期値にしておく
-    CCL::AI::ActionID lastLogActionId = 0xFFFF;
+    ActionID lastLogActionId = 0xFFFF;
+
+    // ロード済みのランタイムデータ（各Entityが個別に持つのを避けるため、本来はManager管理が理想ですが、まずは直接保持）
+    BTAsset runtimeAsset;
 
     // 判断材料をここに内包する（Blackboard）
     AIBlackboard blackboard;
