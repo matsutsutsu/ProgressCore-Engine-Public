@@ -168,8 +168,18 @@ BTNodeState BossAISystem::EvaluateTreeRecursive(
         }
 
         if (node.childCount > 0) {
-            // 子ノードを評価
-            result = EvaluateTreeRecursive(node.firstChildIndex, btComp, cmdComp, asset, dt);
+            // Retryデコレーターの場合は、失敗しても指定回数ループして再評価する
+            if (node.decoratorType == BTDecoratorType::Retry) {
+                int retryCount = static_cast<int>(node.decoratorParam);
+                for (int r = 0; r < retryCount; ++r) {
+                    result = EvaluateTreeRecursive(node.firstChildIndex, btComp, cmdComp, asset, dt);
+                    if (result != BTNodeState::Failure) break; // 成功かRunningならリトライ終了
+                }
+            }
+            else {
+                // 通常の評価
+                result = EvaluateTreeRecursive(node.firstChildIndex, btComp, cmdComp, asset, dt);
+            }
 
             // デコレーターの特殊処理（結果の加工）
             if (node.decoratorType == BTDecoratorType::Inverter) {

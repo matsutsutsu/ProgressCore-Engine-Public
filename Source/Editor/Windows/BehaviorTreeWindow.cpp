@@ -288,9 +288,9 @@ void BehaviorTreeWindow::UpdateExecutionOrder() {
             }
         }
 
-        // 2. Y座標でソート（Bakeロジックと一致させる）
+        // ★ 修正：posY（Y座標）の比較から、posX（X座標）の比較に変更するだけ！
         std::sort(children.begin(), children.end(), [](EditorBTNode* a, EditorBTNode* b) {
-            return a->posY < b->posY;
+            return a->posX < b->posX;
             });
 
         // 3. 順序番号を割り当てる（1から開始）
@@ -358,14 +358,29 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext& context) {
             }
         }
 
+        // 絶対に欠かしてはいけないノード描画の開始宣言！！！
         ed::BeginNode(node.id);
 
+        // =========================================================
+        // 1. 上部：入力ピン（In）の描画
+        // =========================================================
+        if (node.inputPin.id != 0 && node.type != EditorBTNodeType::Group) {
+            // ノードの中央付近にピンを配置するためのオフセット（微調整可能）
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 40.0f);
+
+            ed::BeginPin(node.inputPin.id, ed::PinKind::Input);
+            ImGui::Text("↓ In");
+            ed::EndPin();
+        }
+
+        // =========================================================
+        // 2. 中央：ノード本体の情報（名前や優先度など）
+        // =========================================================
         if (node.executionOrder != -1 && node.type != EditorBTNodeType::Group) {
             ImGui::TextColored(ImVec4(1, 1, 0, 1), "[%d]", node.executionOrder);
             ImGui::SameLine();
         }
 
-        // ★ 修正：完全に排他されたif-elseチェーンにする (Bug #2 解消)
         if (node.type == EditorBTNodeType::Action) {
             ImGui::TextUnformatted("行動 (Action)");
             const char* actionName = "Unknown";
@@ -377,6 +392,7 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext& context) {
             ImGui::TextColored(ImVec4(0.2f, 0.8f, 0.2f, 1.0f), "[ %s ]", actionName);
         }
         else if (node.type == EditorBTNodeType::Condition) {
+            // ... (Conditionの描画処理は元のまま) ...
             ImGui::TextUnformatted("条件 (Condition)");
             const char* condName = "Unknown";
             for (int i = 0; i < g_ConditionRegistryCount; ++i) {
@@ -393,23 +409,21 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext& context) {
             ImGui::TextUnformatted(node.name.c_str());
         }
 
-        // ★追加: グループノードの場合は枠を広げる（ピンは描画しない）
+        // グループノードのサイズ適用
         if (node.type == EditorBTNodeType::Group) {
             ed::Group(ImVec2(node.width, node.height));
         }
-        else {
+
+        // =========================================================
+        // 3. 下部：出力ピン（Out）の描画
+        // =========================================================
+        if (node.outputPin.id != 0 && node.type != EditorBTNodeType::Group) {
             ImGui::Spacing();
-            if (node.inputPin.id != 0) {
-                ed::BeginPin(node.inputPin.id, ed::PinKind::Input);
-                ImGui::Text("-> In");
-                ed::EndPin();
-            }
-            if (node.outputPin.id != 0) {
-                ImGui::SameLine(100.0f);
-                ed::BeginPin(node.outputPin.id, ed::PinKind::Output);
-                ImGui::Text("Out ->");
-                ed::EndPin();
-            }
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 40.0f); // 中央付近へ
+
+            ed::BeginPin(node.outputPin.id, ed::PinKind::Output);
+            ImGui::Text("Out ↓");
+            ed::EndPin();
         }
 
         ed::EndNode();
@@ -491,6 +505,52 @@ void BehaviorTreeWindow::DrawInspector() {
             if (ImGui::InputText("名前 (Name)", nameBuf, sizeof(nameBuf))) {
                 it->name = nameBuf;
             }
+
+            // =========================================================
+            // 最高のUXを実現する「ノードの取扱説明書」UI
+            // =========================================================
+            ImGui::Spacing();
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.2f, 1.0f)); // 黄色テキスト
+            ImGui::Text("[ノードの役割と使い方]");
+            ImGui::PopStyleColor();
+
+            // 自動折り返しを有効にして、ウィンドウ幅に合わせてテキストを改行させる
+            ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + ImGui::GetContentRegionAvail().x);
+
+            switch (it->type) {
+            case EditorBTNodeType::Selector:
+                ImGui::Text("【Selector (セレクター / OR条件)】\n"
+                    "子ノードを左から順に実行し、どれか1つでも「Success(成功)」すれば親にSuccessを返して終了します。\n"
+                    "💡 使い方：優先度の高い行動（左）から順番に試す「行動の分岐点」として使います。");
+                break;
+            case EditorBTNodeType::Sequence:
+                ImGui::Text("【Sequence (シーケンス / AND条件)】\n"
+                    "子ノードを左から順に実行し、1つでも「Failure(失敗)」したら親にFailureを返して終了します。\n"
+                    "💡 使い方：「条件チェック」→「近づく」→「攻撃する」といった、一連のアクションを順番にこなすセットを作るのに使います。");
+                break;
+            case EditorBTNodeType::Condition:
+                ImGui::Text("【Condition (条件)】\n"
+                    "状況（距離やHPなど）を判定し、SuccessかFailureを即座に返します。\n"
+                    "💡 使い方：Sequenceの先頭（一番左）に置いて、その行動セットを実行してよいかの「門番」として使います。");
+                break;
+            case EditorBTNodeType::Action:
+                ImGui::Text("【Action (アクション / 行動)】\n"
+                    "実際にAIを動かす末端の命令です。ゲームのロジックに命令を送ります。\n"
+                    "💡 使い方：移動や攻撃など。実行に時間がかかる行動は「Running(実行中)」を返し続け、次フレームも呼ばれます。");
+                break;
+            case EditorBTNodeType::Decorator:
+                ImGui::Text("【Decorator (デコレーター / 修飾)】\n"
+                    "下に1つだけ子ノードを持ち、その子の結果や実行タイミングを操作します。\n"
+                    "💡 使い方：強力な攻撃に「10秒のクールダウン」をつけたり、失敗時に「2回リトライ」させたりする制限をかけるのに使います。");
+                break;
+            case EditorBTNodeType::Group:
+                ImGui::Text("【Group (グループ / コメント)】\n"
+                    "複数のノードを視覚的に囲んで整理するための枠です。\n"
+                    "💡 使い方：AIの実行ロジックには一切影響を与えません。メモや整理に使ってください。");
+                break;
+            }
+            ImGui::PopTextWrapPos(); // 自動折り返し終了
+            ImGui::Separator();
 
             // ---------------------------------------------------------
             // インスペクタ描画部分
@@ -715,7 +775,7 @@ nlohmann::json BehaviorTreeWindow::BuildBakedNodes() {
             }
         }
         std::sort(children.begin(), children.end(), [](EditorBTNode* a, EditorBTNode* b) {
-            return a->posY < b->posY;
+            return a->posX < b->posX; // ★ ベイク時もX座標（左から右）での比較に変更
             });
         return children;
         };
@@ -834,136 +894,6 @@ void BehaviorTreeWindow::LoadGraph(const std::string& path) {
 
     _needInitialZoom = true;
     CCL_LOG_SUCCESS(LogCategory::Editor, "AIグラフをロードしました: %s", path.c_str());
-}
-
-// ====================================================================
-// グラフのコンパイルと保存（Bake処理）
-// ====================================================================
-void BehaviorTreeWindow::CompileAndSave(const std::string& path) {
-    if (_nodes.empty()) return;
-
-    // 1. Rootノードを探す
-    EditorBTNode* rootNode = nullptr;
-    for (auto& n : _nodes) {
-        if (n.type == EditorBTNodeType::Root) {
-            rootNode = &n;
-            break;
-        }
-    }
-
-    if (!rootNode) {
-        CCL_LOG_ERROR(LogCategory::Editor, "[BT Editor] Root node not found. Bake failed.");
-        return;
-    }
-
-    // ---------------------------------------------------------
-    // ヘルパー：特定の出力ピンから繋がっている子ノードを「Y座標順（上から下）」に取得する
-    // ---------------------------------------------------------
-    auto getSortedChildren = [&](uint32_t outputPinId) {
-        std::vector<EditorBTNode*> children;
-        for (const auto& link : _links) {
-            if (link.startPinId == outputPinId) {
-                for (auto& n : _nodes) {
-                    if (n.inputPin.id == link.endPinId) {
-                        children.push_back(&n);
-                        break;
-                    }
-                }
-            }
-        }
-        // エディタ上のY座標でソート（人間が配置した上からの順番を、実行順序とする）
-        std::sort(children.begin(), children.end(), [](EditorBTNode* a, EditorBTNode* b) {
-            return a->posY < b->posY;
-            });
-        return children;
-        };
-
-    // Rootに繋がっている最初のノード群を取得（通常は1つ。Selector等）
-    auto rootChildren = getSortedChildren(rootNode->outputPin.id);
-    if (rootChildren.empty()) {
-        CCL_LOG_WARN(LogCategory::Editor, "[BT Editor] Root is not connected to anything.");
-        return;
-    }
-
-    // ---------------------------------------------------------
-    // 2. BFS（幅優先探索）によるDODフラット配列の構築
-    // ---------------------------------------------------------
-    nlohmann::json jsonNodes = nlohmann::json::array();
-
-    // BFS用のタスクキュー (対象ノード, 確定したJSON配列のインデックス)
-    struct BakeTask {
-        EditorBTNode* editorNode;
-        int flatIndex;
-    };
-    std::queue<BakeTask> tasks;
-
-    // エディタの型からランタイムの型文字列への変換ヘルパー
-    auto getRuntimeTypeString = [](EditorBTNodeType type) {
-        switch (type) {
-        case EditorBTNodeType::Selector:  return "Selector";
-        case EditorBTNodeType::Sequence:  return "Sequence";
-        case EditorBTNodeType::Condition: return "Condition";
-        case EditorBTNodeType::Action:    return "Action";
-        default: return "Unknown";
-        }
-        };
-
-    // 最初の子（本当のツリーの根）をキューと配列に入れる
-    EditorBTNode* actualRoot = rootChildren[0];
-
-    nlohmann::json rootJson;
-    rootJson["type"] = getRuntimeTypeString(actualRoot->type);
-    rootJson["childCount"] = 0;       // 後で埋める
-    rootJson["firstChildOffset"] = 0; // 後で埋める
-    rootJson["actionOrConditionId"] = static_cast<int>(actualRoot->actionOrConditionId);
-    jsonNodes.push_back(rootJson);
-
-    tasks.push({ actualRoot, 0 });
-
-    // キューが空になるまで階層ごとに処理
-    while (!tasks.empty()) {
-        BakeTask task = tasks.front();
-        tasks.pop();
-
-        // このノードの子供を取得（Y座標でソート済み）
-        auto children = getSortedChildren(task.editorNode->outputPin.id);
-
-        if (children.empty()) continue;
-
-        // 親ノードのオフセットとカウントを「現在の配列サイズ」で確定させる
-        jsonNodes[task.flatIndex]["childCount"] = children.size();
-        jsonNodes[task.flatIndex]["firstChildOffset"] = jsonNodes.size();
-
-        // 子供たちを配列に連続して追加し、次の探索キューに入れる
-        for (EditorBTNode* child : children) {
-            nlohmann::json childJson;
-            childJson["type"] = getRuntimeTypeString(child->type);
-            childJson["childCount"] = 0;
-            childJson["firstChildOffset"] = 0;
-            childJson["actionOrConditionId"] = static_cast<int>(child->actionOrConditionId);
-
-            jsonNodes.push_back(childJson);
-            tasks.push({ child, static_cast<int>(jsonNodes.size() - 1) });
-        }
-    }
-
-    // ---------------------------------------------------------
-    // 3. JSONファイルへの出力
-    // ---------------------------------------------------------
-    nlohmann::json rootDoc;
-    rootDoc["assetId"] = 1; // アセットID（今回は固定）
-    rootDoc["nodes"] = jsonNodes;
-
-    std::ofstream file(path);
-    if (file.is_open()) {
-        file << rootDoc.dump(4); // 4マスのインデントで綺麗に保存
-        file.close();
-        CCL_LOG_SUCCESS(LogCategory::Editor, "[BT Editor] Bake Successful! Saved to: %s", path.c_str());
-        CCL_LOG_INFO(LogCategory::Editor, "[BT Editor] Total Nodes Baked: %zu", jsonNodes.size());
-    }
-    else {
-        CCL_LOG_ERROR(LogCategory::Editor, "[BT Editor] Failed to open file for writing: %s", path.c_str());
-    }
 }
 
 // ====================================================================

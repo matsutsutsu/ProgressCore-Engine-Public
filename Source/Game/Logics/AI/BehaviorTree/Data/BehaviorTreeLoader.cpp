@@ -30,7 +30,7 @@ bool BehaviorTreeLoader::LoadFromJson(const std::string& path, BTAsset& outAsset
             BTNode node;
             node.type = StringToNodeType(jNode.value("type", "Action"));
             node.childCount = jNode.value("childCount", 0);
-            node.firstChildIndex = jNode.value("firstChildOffset", 0);
+            node.firstChildIndex = jNode.value("firstChildIndex", 0);
             node.actionOrConditionId = static_cast<ActionID>(jNode.value("actionOrConditionId", 0));
 
             // デコレーター情報の読み込み

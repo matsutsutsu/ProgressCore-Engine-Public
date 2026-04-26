@@ -25,8 +25,8 @@ enum class EditorBTNodeType {
     Sequence,  ///< 複合ノード：子を順番に実行し、1つでも失敗すれば失敗。
     Condition, ///< 葉ノード：Blackboardの値を評価し、真偽を返す。出力ピンを持たない。
     Action,    ///< 葉ノード：実際の行動（攻撃、移動）を行う。出力ピンを持たない。
-    Group,     ///< ★追加: コメント用グループノード（機能的な実行順序は持たない）
-	Decorator  ///< ★追加: デコレータノード（子ノードの挙動を修飾する。例: Inverter, Cooldown, Retryなど）
+    Group,     ///< コメント用グループノード（機能的な実行順序は持たない）
+	Decorator  ///< デコレータノード（子ノードの挙動を修飾する。例: Inverter, Cooldown, Retryなど）
 };
 
 /**
@@ -100,55 +100,110 @@ public:
     BehaviorTreeWindow();
     virtual ~BehaviorTreeWindow();
 
-    // Undo/Redo用の内部状態エクスポート/インポート
+    /**
+     * @brief 現在のグラフ状態をJSONオブジェクトとして抽出する（Undo/Redo用）
+     * @return シリアライズされたグラフの状態
+     */
     nlohmann::json GetGraphStateAsJson();
+
+    /**
+     * @brief 渡されたJSONオブジェクトからグラフ状態を強制的に復元する（Undo/Redo用）
+     * @param state 復元元のJSON状態
+     */
     void RestoreGraphState(const nlohmann::json& state);
 
 protected:
+    /**
+     * @brief ウィンドウ全体の描画の入り口。ImGuiのColumnsを分けて左右のペインを描画する。
+     */
     virtual void DrawContents(EditorContext& context) override;
 
 private:
+    /**
+     * @brief ウィンドウ上部のツールバーを描画し、保存・ロードなどのボタン入力を処理する
+     */
     void DrawToolbar();
+
+    /**
+     * @brief 左側の広大なノードエディタ空間（キャンバス）を描画し、ピンの接続・切断・ドラッグ操作を処理する
+     * @param context 選択中のEntity情報などを取得するためのエディタコンテキスト
+     */
     void DrawNodeWorkspace(EditorContext& context);
+
+    /**
+     * @brief 右側のインスペクタパネルを描画し、選択中ノードの詳細パラメータを編集させる
+     */
     void DrawInspector();
 
-    // 実際のゲーム開発に必須のUX機能
+    /**
+     * @brief キャンバス上で右クリックした際のコンテキストメニュー（新規ノード追加等）を処理する
+     */
     void HandleContextMenu();
+
+    /**
+     * @brief ノードを削除し、それに繋がっているリンクも安全に連鎖削除する（ダングリング防止）
+     * @param nodeId 削除対象のノードID
+     */
     void DeleteNodeAndLinks(uint32_t nodeId);
 
-    // 実行順序を計算する関数の宣言
+    /**
+     * @brief X座標（左から右）を元に、子ノードの実行優先順序（[1], [2]...）を再計算する
+     */
     void UpdateExecutionOrder();
 
-    // 選択したノードと内部リンクを丸ごとコピーする関数
+    /**
+     * @brief 現在選択されている複数のノードと内部リンクを丸ごと複製（コピー＆ペースト）する
+     */
     void DuplicateSelectedNodes();
 
-    ImVec2 _newNodeSpawnPos = { 0.0f, 0.0f }; ///< 右クリックした瞬間のスクリーン座標
-
+    /**
+     * @brief ユニークな新しいIDを発行する
+     */
     uint32_t GetNextId() { return ++_idCounter; }
+
+    /**
+     * @brief キャンバス上の指定座標に新しいノードを生成する
+     * @param type 生成するノードの種類
+     * @param name デフォルトの表示名
+     * @param x キャンバス上のX座標
+     * @param y キャンバス上のY座標
+     */
     void CreateNode(EditorBTNodeType type, const std::string& name, float x, float y);
-    void CompileAndSave(const std::string& path);
 
-	void LoadGraph(const std::string& path);
-	void SaveGraph(const std::string& path);
+    /**
+     * @brief JSONファイルからエディタのグラフ状態を読み込む
+     */
+    void LoadGraph(const std::string& path);
 
-    // 変更をコマンド履歴に登録するヘルパー
+    /**
+     * @brief 現在のグラフ状態をJSONに保存し、同時にランタイム用の配列（Bake）を統合して書き出す
+     */
+    void SaveGraph(const std::string& path);
+
+    /**
+     * @brief エディタでの操作が行われた際、直前の状態をUndoスタックに記録する
+     * @param commandName 履歴に表示される操作名（"Add Node" など）
+     */
     void RecordStateForUndo(const std::string& commandName);
-    nlohmann::json _lastSavedState; // 直前の状態
 
+    /**
+     * @brief 幅優先探索（BFS）を用いて、エディタのグラフ構造からランタイム向けの高速なフラット配列（JSON）を構築する
+     * @return 構築された "nodes" 配列のJSONオブジェクト
+     */
+    nlohmann::json BuildBakedNodes();
 
 private:
     ax::NodeEditor::EditorContext* _nodeContext = nullptr; ///< Node Editorの内部状態（キャンバスのズーム等）
 
-    std::vector<EditorBTNode> _nodes; ///< 画面上の全付箋
-    std::vector<BTLink> _links;       ///< 画面上の全接続線
+    std::vector<EditorBTNode> _nodes; ///< 画面上の全付箋（ノード）
+    std::vector<BTLink> _links;       ///< 画面上の全接続線（リンク）
     uint32_t _idCounter = 1;          ///< IDを被らせないためのカウンター
 
-    std::string _currentFilePath = "Assets/AI/BossAI_Graph.json";
-    bool _needInitialZoom = true;     ///< 初回起動時にカメラを全体に合わせるフラグ
+    std::string _currentFilePath = "Assets/AI/BossAI_Graph.json"; ///< 現在開いているファイルのパス
+    bool _needInitialZoom = true;     ///< 初回起動時にカメラを全体に合わせるためのフラグ
 
-    // 毎フレームのループを防ぐためのDirtyフラグ
-    bool _executionOrderDirty = true;
+    bool _executionOrderDirty = true; ///< 毎フレームのソートループを防ぐための最適化フラグ
+    nlohmann::json _lastSavedState;   ///< 直前のグラフ状態（Undo判定用）
 
-    // CompileAndSave を破棄し、JSON構築用ヘルパー関数に変更
-    nlohmann::json BuildBakedNodes();
+    ImVec2 _newNodeSpawnPos = { 0.0f, 0.0f }; ///< 右クリックした瞬間のスクリーン座標
 };

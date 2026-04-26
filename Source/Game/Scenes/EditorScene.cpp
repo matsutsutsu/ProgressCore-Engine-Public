@@ -31,7 +31,7 @@ void EditorScene::Initialize()
     //Prefab::SpawnPrefab(*_worldPtr, "Assets/Prefabs/Camera/FreeCamera.json");
     //Prefab::SpawnPrefab(*_worldPtr, "Assets/Prefabs/Camera/FreeFastCamera.json");
 
-    SceneManager::Instance().LoadScene(_worldPtr, "Assets/Scene/DroneEnemyTestScene.json");
+    //SceneManager::Instance().LoadScene(_worldPtr, "Assets/Scene/DroneEnemyTestScene.json");
 
     //SceneInitializer::SpawnTransformLoadTest(*_worldPtr, device, 100000);
     //SceneInitializer::SpawnJoltTest(*_worldPtr, device);
@@ -39,7 +39,7 @@ void EditorScene::Initialize()
     // 中では普通にPBRモデル用にしている
     //SceneInitializer::SpawnAnimationTest(*_worldPtr, device);
 
-    //SceneInitializer::SpawnBossAndDronesTest(*_worldPtr, device);
+    SceneInitializer::SpawnBossAndDronesTest(*_worldPtr, device);
 
 
 
