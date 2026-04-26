@@ -320,125 +320,131 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext& context) {
         activeAI = context.world->GetComponent<BehaviorTreeComponent>(context.selectedEntity);
     }
 
+    // BehaviorTreeWindow.cpp の DrawNodeWorkspace 内
+
     for (auto& node : _nodes) {
         if (!node.positionInitialized) {
             ed::SetNodePosition(node.id, ImVec2(node.posX, node.posY));
             node.positionInitialized = true;
         }
 
-        // ★追加: グループノードの場合の特殊なスタイル適用
-        if (node.type == EditorBTNodeType::Group) {
-            ed::PushStyleColor(ed::StyleColor_NodeBg, ImColor(255, 255, 255, 30));     // 半透明
-            ed::PushStyleColor(ed::StyleColor_NodeBorder, ImColor(255, 255, 255, 50)); // 枠線
+        // =======================================================
+        // 1. スタイリング：ノードの種類に応じた色の決定（UE5準拠）
+        // =======================================================
+        ImColor headerColor;
+        switch (node.type) {
+        case EditorBTNodeType::Root:      headerColor = ImColor(40, 40, 40); break;      // 黒
+        case EditorBTNodeType::Selector:  headerColor = ImColor(120, 30, 30); break;    // 深い赤
+        case EditorBTNodeType::Sequence:  headerColor = ImColor(30, 80, 120); break;    // 深い青
+        case EditorBTNodeType::Decorator: headerColor = ImColor(120, 100, 20); break;   // 金/黄
+        case EditorBTNodeType::Condition: headerColor = ImColor(30, 120, 60); break;    // 緑
+        case EditorBTNodeType::Action:    headerColor = ImColor(40, 100, 150); break;   // 明るい青
+        default:                          headerColor = ImColor(100, 100, 100); break;
         }
 
-        // =======================================================
-        // ★ リアルタイム可視化ロジック (色付け)
-        // =======================================================
-        bool popColor = false;
-        if (activeAI && node.runtimeFlatIndex >= 0 && node.runtimeFlatIndex < activeAI->debugNodeStates.size()) {
-            BTDebugState state = activeAI->debugNodeStates[node.runtimeFlatIndex];
+        // ノード全体の背景を暗く設定
+        ed::PushStyleColor(ed::StyleColor_NodeBg, ImColor(25, 25, 25, 240));
+        ed::PushStyleColor(ed::StyleColor_NodeBorder, ImColor(60, 60, 60, 255));
+        ed::PushStyleVar(ed::StyleVar_NodeRounding, 6.0f);
 
-            if (state == BTDebugState::Success) {
-                ed::PushStyleColor(ed::StyleColor_NodeBg, ImColor(40, 120, 40, 200)); // 緑色
-                ed::PushStyleColor(ed::StyleColor_NodeBorder, ImColor(80, 200, 80, 255));
-                popColor = true;
-            }
-            else if (state == BTDebugState::Failure) {
-                ed::PushStyleColor(ed::StyleColor_NodeBg, ImColor(120, 40, 40, 200)); // 赤色
-                ed::PushStyleColor(ed::StyleColor_NodeBorder, ImColor(200, 80, 80, 255));
-                popColor = true;
-            }
-            else if (state == BTDebugState::Running) {
-                // Runningは黄色（時間経過で点滅させるとさらにAAAらしい）
-                float blink = (sin(ImGui::GetTime() * 10.0f) * 0.5f) + 0.5f;
-                ed::PushStyleColor(ed::StyleColor_NodeBg, ImColor(150, 150, 20, 200));
-                ed::PushStyleColor(ed::StyleColor_NodeBorder, ImColor(255, 255, 0, static_cast<int>(255 * blink)));
-                popColor = true;
-            }
-        }
-
-        // 絶対に欠かしてはいけないノード描画の開始宣言！！！
+        // =========================================================
+        // 2. ノード描画開始
+        // =========================================================
         ed::BeginNode(node.id);
 
-        // =========================================================
-        // 1. 上部：入力ピン（In）の描画
-        // =========================================================
-        if (node.inputPin.id != 0 && node.type != EditorBTNodeType::Group) {
-            // ノードの中央付近にピンを配置するためのオフセット（微調整可能）
-            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 40.0f);
+        const float NODE_WIDTH = 180.0f; // 幅を少し広くしてプロ感を出す
+        ImDrawList* drawList = ImGui::GetWindowDrawList();
 
+        // --- A. 上部入力バー（UE5スタイル） ---
+        if (node.inputPin.id != 0 && node.type != EditorBTNodeType::Group) {
             ed::BeginPin(node.inputPin.id, ed::PinKind::Input);
-            ImGui::Text("↓ In");
+            ImGui::Dummy(ImVec2(NODE_WIDTH, 20.0f)); // ★高さを12→20に拡大し、掴みやすくした
+
+            ImVec2 pMin = ImGui::GetItemRectMin();
+            ImVec2 pMax = ImGui::GetItemRectMax();
+            // 接続バーの描画
+            drawList->AddRectFilled(ImVec2(pMin.x + 2, pMin.y + 14), ImVec2(pMax.x - 2, pMax.y - 2), ImColor(180, 180, 180), 2.0f);
             ed::EndPin();
         }
 
-        // =========================================================
-        // 2. 中央：ノード本体の情報（名前や優先度など）
-        // =========================================================
+        // --- B. ヘッダー（タイトル部分） ---
+        ImGui::BeginGroup();
+        // ヘッダー背景の描画
+        ImVec2 headerStart = ImGui::GetCursorScreenPos();
+        ImGui::Dummy(ImVec2(NODE_WIDTH, 32.0f));
+        ImVec2 headerEnd = ImGui::GetItemRectMax();
+        drawList->AddRectFilled(headerStart, headerEnd, headerColor, 4.0f, ImDrawFlags_RoundCornersTop);
+
+        // タイトル文字の配置
+        ImGui::SetCursorScreenPos(ImVec2(headerStart.x + 10, headerStart.y + 8));
+        ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[0]); // 必要なら太字フォント等に変更
+        ImGui::Text("%s", node.name.c_str());
+        ImGui::PopFont();
+        ImGui::EndGroup();
+
+        // --- C. コンテンツ（詳細情報） ---
+        ImGui::BeginGroup();
+        ImGui::Indent(10.0f);
+        ImGui::Spacing();
+
         if (node.executionOrder != -1 && node.type != EditorBTNodeType::Group) {
-            ImGui::TextColored(ImVec4(1, 1, 0, 1), "[%d]", node.executionOrder);
-            ImGui::SameLine();
+            ImGui::TextColored(ImVec4(1, 1, 0, 0.8f), "Priority: %d", node.executionOrder);
         }
 
         if (node.type == EditorBTNodeType::Action) {
-            ImGui::TextUnformatted("行動 (Action)");
             const char* actionName = "Unknown";
             for (int i = 0; i < g_ActionRegistryCount; ++i) {
                 if (g_ActionRegistry[i].id == node.actionOrConditionId) {
                     actionName = g_ActionRegistry[i].name; break;
                 }
             }
-            ImGui::TextColored(ImVec4(0.2f, 0.8f, 0.2f, 1.0f), "[ %s ]", actionName);
+            ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "> %s", actionName);
         }
         else if (node.type == EditorBTNodeType::Condition) {
-            // ... (Conditionの描画処理は元のまま) ...
-            ImGui::TextUnformatted("条件 (Condition)");
             const char* condName = "Unknown";
             for (int i = 0; i < g_ConditionRegistryCount; ++i) {
                 if (g_ConditionRegistry[i].id == node.actionOrConditionId) {
                     condName = g_ConditionRegistry[i].name; break;
                 }
             }
-            ImGui::TextColored(ImVec4(0.2f, 0.6f, 1.0f, 1.0f), "[ %s ]", condName);
-        }
-        else if (node.type != EditorBTNodeType::Group) {
-            ImGui::TextUnformatted(node.name.c_str());
-        }
-        else {
-            ImGui::TextUnformatted(node.name.c_str());
+            ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "? %s", condName);
         }
 
-        // グループノードのサイズ適用
+        ImGui::Unindent(10.0f);
+        ImGui::Spacing();
+        ImGui::EndGroup();
+
+        // グループノードの特殊処理
         if (node.type == EditorBTNodeType::Group) {
             ed::Group(ImVec2(node.width, node.height));
         }
 
-        // =========================================================
-        // 3. 下部：出力ピン（Out）の描画
-        // =========================================================
+        // --- D. 下部出力バー（UE5スタイル） ---
         if (node.outputPin.id != 0 && node.type != EditorBTNodeType::Group) {
             ImGui::Spacing();
-            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 40.0f); // 中央付近へ
-
             ed::BeginPin(node.outputPin.id, ed::PinKind::Output);
-            ImGui::Text("Out ↓");
+            ImGui::Dummy(ImVec2(NODE_WIDTH, 20.0f)); // ★高さを12→20に拡大
+
+            ImVec2 pMin = ImGui::GetItemRectMin();
+            ImVec2 pMax = ImGui::GetItemRectMax();
+            // 接続バーの描画（少し明るい色にする）
+            drawList->AddRectFilled(ImVec2(pMin.x + 2, pMin.y + 2), ImVec2(pMax.x - 2, pMax.y - 6), ImColor(100, 100, 100), 2.0f);
             ed::EndPin();
         }
 
         ed::EndNode();
+        ed::PopStyleVar();
+        ed::PopStyleColor(2);
 
-        if (node.type == EditorBTNodeType::Group) {
-            ed::PopStyleColor(2);
-        }
-
+        // 座標更新
         ImVec2 p = ed::GetNodePosition(node.id);
         node.posX = p.x;
         node.posY = p.y;
     }
-
+    
+    // 線を太くし、色を真っ白にして可視性を高める
     for (auto& link : _links) {
-        ed::Link(link.id, link.startPinId, link.endPinId);
+        ed::Link(link.id, link.startPinId, link.endPinId, ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 3.0f);
     }
 
     if (ed::BeginCreate()) {
