@@ -24,7 +24,6 @@ public:
     BossAISystem();
     virtual ~BossAISystem() override = default;
 
-    virtual void Initialize() override;
     virtual void Update(float dt) override;
 
 private:

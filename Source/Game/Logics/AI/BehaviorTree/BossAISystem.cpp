@@ -6,6 +6,7 @@
 #include "Engine/Platform/Logger.h"
 #include "Game/Core/SystemPriority.h" // LogicStage等の定義
 #include "ECS/System/CCL_SystemRegistry.h"
+#include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
 
 
 /**
@@ -26,28 +27,6 @@ using namespace CCL::ECS;
 
 BossAISystem::BossAISystem() : IfSystem("BossAISystem") {}
 
-// ==========================================================
-// ボスAI専用のID定義（マジックナンバーの排除）
-// ==========================================================
-namespace BossAI_ID {
-    inline constexpr ActionID Cond_PhaseMove = 1;
-    inline constexpr ActionID Cond_PhaseMelee = 2;
-    inline constexpr ActionID Cond_IsPhase2 = 3; // ★追加
-
-    inline constexpr ActionID Act_MeleeAttack = 100;
-    inline constexpr ActionID Act_ChargeAttack = 101;
-    inline constexpr ActionID Act_Move = 102;
-    inline constexpr ActionID Act_DroneOrbit = 103;     // ★追加
-    inline constexpr ActionID Act_DroneSequential = 104;// ★追加
-    inline constexpr ActionID Act_Wait1s = 105;         // ★追加
-    inline constexpr ActionID Act_Wait3s = 106;         // ★追加
-    inline constexpr ActionID Act_DroneDeathRing = 107;
-    inline constexpr ActionID Act_DroneAegisShield = 108;
-}
-
-void BossAISystem::Initialize()
-{
-}
 
 void BossAISystem::Update(float dt)
 {
@@ -197,7 +176,7 @@ BTNodeState BossAISystem::EvaluateTreeRecursive(
     }
 
     // =========================================================
-    // ★ 修正：BTNodeState (論理型) を BTDebugState (表示型) に安全に変換
+    //  BTNodeState (論理型) を BTDebugState (表示型) に安全に変換
     // =========================================================
     BTDebugState dbgState = BTDebugState::None;
     if (result == BTNodeState::Success) {
@@ -222,9 +201,9 @@ BTNodeState BossAISystem::EvaluateTreeRecursive(
 bool BossAISystem::EvaluateCondition(ActionID condId, const BehaviorTreeComponent& btComp)
 {
     switch (condId) {
-    case BossAI_ID::Cond_PhaseMove:
+    case BossAI_ID::Cond_RangeClose:
         return btComp.blackboard.distanceToTarget < 5.0f; // 0〜5秒の間は成功
-    case BossAI_ID::Cond_PhaseMelee:
+    case BossAI_ID::Cond_RangeMedium:
         return btComp.blackboard.distanceToTarget >= 5.0f && btComp.blackboard.distanceToTarget < 10.0f; // 5〜10秒の間は成功
     case BossAI_ID::Cond_IsPhase2:
         return btComp.blackboard.currentPhase >= 2; // 後半戦かどうか
