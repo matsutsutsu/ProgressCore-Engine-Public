@@ -49,7 +49,25 @@ void AnimationSystem::Update(float dt)
         // 時間を進行させる (ベース速度 × カーブによる倍率 を dt に掛ける)
         animator.currentTimer += dt * animator.playbackSpeed * curveMultiplier;
 
- 
+        // ========================================================
+        //  過去の記憶（ブレンド）のタイマーを進行させる
+        // ========================================================
+        if (animator.isBlending) {
+            animator.currentBlendTime += dt;
+            // 過去のアニメーションも再生し続ける（足がピタッと止まる不自然さを防ぐため）
+            animator.previousTimer += dt * animator.playbackSpeed; 
+
+            if (animator.previousSequence) {
+                // 過去のアニメがループ仕様なら時間を丸め込む
+                animator.previousTimer = fmod(animator.previousTimer, animator.previousSequence->duration);
+            }
+
+            // 指定した秒数が経過したらブレンド終了
+            if (animator.currentBlendTime >= animator.blendDuration) {
+                animator.isBlending = false;
+                animator.previousSequence = nullptr;
+            }
+        }
 
         // ========================================================
         // 2. 高速イベント発火ロジック (O(1)アクセス)
@@ -109,14 +127,40 @@ void AnimationSystem::Update(float dt)
         // ========================================================
         if (modelComp.GetModel()) {
             Model* model = modelComp.GetModel();
-
-            // 台本に書かれている「アニメーション名」から、Model内部のインデックスを引く
             int animIndex = model->GetAnimationIndex(seq->targetAnimName.c_str());
 
             if (animIndex != -1) {
-                // 骨の姿勢を計算させ、キャッシュ(poseBufferA)に保存・適用する
-                model->ComputeAnimation(animIndex, animator.currentTimer, animator.poseBufferA);
-                model->SetNodePoses(animator.poseBufferA);
+                // ブレンド中の場合は2つのアニメーションを計算して混ぜる
+                if (animator.isBlending && animator.previousSequence) {
+                    int prevAnimIndex = model->GetAnimationIndex(animator.previousSequence->targetAnimName.c_str());
+
+                    if (prevAnimIndex != -1) {
+                        // ① 過去の姿勢を B に保存
+                        model->ComputeAnimation(prevAnimIndex, animator.previousTimer, animator.poseBufferB);
+                        // ② 現在の姿勢を A に保存
+                        model->ComputeAnimation(animIndex, animator.currentTimer, animator.poseBufferA);
+
+                        // ③ 補間率 (0.0 ~ 1.0) を算出してクランプ
+                        float blendRate = animator.currentBlendTime / animator.blendDuration;
+                        blendRate = std::fmax(0.0f, std::fmin(blendRate, 1.0f));
+
+                        // ④ BとAを混ぜ合わせ、結果を A に上書きする！
+                        Model::BlendAnimations(animator.poseBufferB, animator.poseBufferA, blendRate, animator.poseBufferA);
+
+                        // ⑤ 混ぜた結果を骨に適用
+                        model->SetNodePoses(animator.poseBufferA);
+                    }
+                    else {
+                        // 過去のデータが見つからなければ通常再生
+                        model->ComputeAnimation(animIndex, animator.currentTimer, animator.poseBufferA);
+                        model->SetNodePoses(animator.poseBufferA);
+                    }
+                }
+                else {
+                    // ★ 通常の単独再生
+                    model->ComputeAnimation(animIndex, animator.currentTimer, animator.poseBufferA);
+                    model->SetNodePoses(animator.poseBufferA);
+                }
             }
         }
         });

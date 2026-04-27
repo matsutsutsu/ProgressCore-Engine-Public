@@ -33,13 +33,34 @@ struct AnimatorComponent {
     // 次にチェックするイベントのインデックス
     int nextEventIndex = 0;
 
+    // =========================================================
+    // クロスフェード・ブレンディング用データ
+    // =========================================================
+    const AnimSequence* previousSequence = nullptr;
+    float previousTimer = 0.0f;
+    float blendDuration = 0.0f;
+    float currentBlendTime = 0.0f;
+    bool isBlending = false;
+
     // --- 計算用キャッシュ (毎フレームのnew/deleteを防ぐマイボウル) ---
     std::vector<Model::NodePose> poseBufferA;
+    std::vector<Model::NodePose> poseBufferB; // 過去のアニメーション用
 
-
-    void Play(const AnimSequence* sequence, bool loop = true, float speed = 1.0f, const AnimationCurve* curve = nullptr) {
-        // 違うアニメーションに切り替える時だけ初期化する
+    void Play(const AnimSequence* sequence, float blendTime = 0.2f, bool loop = true, float speed = 1.0f, const AnimationCurve* curve = nullptr) {
         if (currentSequence != sequence) {
+            // 前のアニメーションを「過去」として記録し、ブレンドを開始する
+            if (currentSequence && blendTime > 0.001f) {
+                previousSequence = currentSequence;
+                previousTimer = currentTimer;
+                isBlending = true;
+                blendDuration = blendTime;
+                currentBlendTime = 0.0f;
+            }
+            else {
+                isBlending = false;
+                previousSequence = nullptr;
+            }
+
             currentSequence = sequence;
             currentTimer = 0.0f;
             nextEventIndex = 0;
@@ -47,6 +68,6 @@ struct AnimatorComponent {
         }
         isLoop = loop;
         playbackSpeed = speed;
-        activeCurve = curve; // カーブをセット
+        activeCurve = curve;
     }
 };

@@ -160,7 +160,7 @@ void AnimControllerSystem::Update(float dt)
                                 if (!nextState.speedCurveName.empty()) {
                                     curvePtr = resourceManager.LoadAnimCurve(nextState.speedCurveName.c_str());
                                 }
-                                animator.Play(nextState.sequence, nextState.isLoop, nextState.playbackSpeed, curvePtr);
+                                animator.Play(nextState.sequence, transition.blendDuration, nextState.isLoop, nextState.playbackSpeed, curvePtr);
                             }
                             break;
                         }

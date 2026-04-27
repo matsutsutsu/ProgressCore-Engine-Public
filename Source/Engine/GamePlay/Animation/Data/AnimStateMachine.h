@@ -29,6 +29,9 @@ struct AnimCondition {
 struct AnimTransition {
     uint32_t targetStateHash;
 
+    // ブレンドにかける時間 (秒)
+    float blendDuration = 0.2f;
+
 	// その矢印を進むための条件リスト（複数の条件を全て満たす必要がある）
     std::vector<AnimCondition> conditions;
 };
@@ -101,10 +104,19 @@ inline void from_json(const json& j, AnimCondition& c) {
 
 // Transition の変換
 inline void to_json(json& j, const AnimTransition& t) {
-    j = json{ {"targetStateHash", t.targetStateHash}, {"conditions", t.conditions} };
+    j = json{ {"targetStateHash", t.targetStateHash},
+            {"blendDuration", t.blendDuration},
+            {"conditions", t.conditions} };
 }
 inline void from_json(const json& j, AnimTransition& t) {
     j.at("targetStateHash").get_to(t.targetStateHash);
+    // 古いセーブデータとの互換性のため contains を使う
+    if (j.contains("blendDuration")) {
+        j.at("blendDuration").get_to(t.blendDuration);
+    }
+    else {
+        t.blendDuration = 0.2f; // デフォルト値
+    }
     j.at("conditions").get_to(t.conditions);
 }
 

@@ -464,6 +464,11 @@ void AnimGraphWindow::DrawTransitionSettings(int targetLinkId) {
                 ImGui::Text("遷移先 (To): %s", targetName.c_str());
                 ImGui::Separator();
 
+                // ブレンド時間の調整UI
+                ImGui::Text("遷移設定 (Transition Settings)");
+                ImGui::DragFloat("ブレンド時間 (Blend Duration)", &trans.blendDuration, 0.01f, 0.0f, 2.0f, "%.2f s");
+                ImGui::Separator();
+
                 ImGui::Text("遷移条件 (Conditions)");
                 if (ImGui::Button("+ 条件を追加 (Add Condition)")) {
                     trans.conditions.push_back({
