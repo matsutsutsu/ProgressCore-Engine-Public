@@ -30,14 +30,19 @@ BossAISystem::BossAISystem() : IfSystem("BossAISystem") {}
 // ボスAI専用のID定義（マジックナンバーの排除）
 // ==========================================================
 namespace BossAI_ID {
-    // 状態遷移のための条件ID
     inline constexpr ActionID Cond_PhaseMove = 1;
     inline constexpr ActionID Cond_PhaseMelee = 2;
+    inline constexpr ActionID Cond_IsPhase2 = 3; // ★追加
 
-    // 行動の出力ID
     inline constexpr ActionID Act_MeleeAttack = 100;
     inline constexpr ActionID Act_ChargeAttack = 101;
-    inline constexpr ActionID Act_Move = 102; // ★移動用アクション追加
+    inline constexpr ActionID Act_Move = 102;
+    inline constexpr ActionID Act_DroneOrbit = 103;     // ★追加
+    inline constexpr ActionID Act_DroneSequential = 104;// ★追加
+    inline constexpr ActionID Act_Wait1s = 105;         // ★追加
+    inline constexpr ActionID Act_Wait3s = 106;         // ★追加
+    inline constexpr ActionID Act_DroneDeathRing = 107;
+    inline constexpr ActionID Act_DroneAegisShield = 108;
 }
 
 void BossAISystem::Initialize()
@@ -60,10 +65,6 @@ void BossAISystem::Update(float dt)
     // プレイヤーが見つからなければAIは思考を停止するか、待機する
     if (activePlayerId == CCL::ECS::InvalidEntityID) return;
 
-
-    // プレイヤーの座標を取得（距離計算用）
-    const auto* playerTrans = _world->GetComponent<TransformComponent>(activePlayerId);
-    if (!playerTrans) return;
 
     // ★ 並列実行 (ForEachParallel) 
     // テンプレート引数とラムダの引数型を【完全に一致】させなければコンパイルエラーになる
@@ -157,7 +158,7 @@ BTNodeState BossAISystem::EvaluateTreeRecursive(
         break;
     }
     case BTNodeType::Action: {
-        result = ExecuteAction(node.actionOrConditionId, btComp, cmdComp);
+        result = ExecuteAction(node.actionOrConditionId, btComp, cmdComp, nodeId, dt);
         break;
     }
     case BTNodeType::Decorator: {
@@ -225,31 +226,50 @@ bool BossAISystem::EvaluateCondition(ActionID condId, const BehaviorTreeComponen
         return btComp.blackboard.distanceToTarget < 5.0f; // 0〜5秒の間は成功
     case BossAI_ID::Cond_PhaseMelee:
         return btComp.blackboard.distanceToTarget >= 5.0f && btComp.blackboard.distanceToTarget < 10.0f; // 5〜10秒の間は成功
+    case BossAI_ID::Cond_IsPhase2:
+        return btComp.blackboard.currentPhase >= 2; // 後半戦かどうか
     default: return false;
     }
 }
 
 // 行動を評価する関数。行動IDに応じて、cmdCompに行動要求を書き込む。
-BTNodeState BossAISystem::ExecuteAction(ActionID actionId, BehaviorTreeComponent& btComp, BossCommandComponent& cmdComp)
+BTNodeState BossAISystem::ExecuteAction(ActionID actionId, BehaviorTreeComponent& btComp, BossCommandComponent& cmdComp, BTNodeID nodeId, float dt)
 {
-    // ---------------------------------------------------------
-    // ★ 状態遷移ロギング (エッジ検知)
-    // ---------------------------------------------------------
+    // Wait（待機）アクションのロジック
+    // デコレーター用に確保した nodeTimers を再利用して待機時間を管理するスマートな設計
+    if (actionId == BossAI_ID::Act_Wait1s || actionId == BossAI_ID::Act_Wait3s) {
+        // 新しくこのノードに入ってきた瞬間（Running開始時）にタイマーをセットする
+        if (btComp.runningNodeId != nodeId) {
+            float waitTime = (actionId == BossAI_ID::Act_Wait3s) ? 3.0f : 1.0f;
+            btComp.nodeTimers[nodeId] = waitTime;
+            CCL_LOG_INFO(LogCategory::AI, "[BossAI] Wait Started: %.1f sec", waitTime);
+        }
+        
+        // 毎フレームタイマーが減っていき、0になったら完了（Success）
+        if (btComp.nodeTimers[nodeId] > 0.0f) {
+            return BTNodeState::Running;
+        }
+        return BTNodeState::Success;
+    }
+
+    // 既存のログ処理
     if (btComp.lastLogActionId != actionId) {
         switch (actionId) {
         case BossAI_ID::Act_Move:
-            CCL_LOG_INFO(LogCategory::AI, "[BossAI] State Changed -> MOVE (ウロウロ中)");
-            break;
+            CCL_LOG_INFO(LogCategory::AI, "[BossAI] State Changed -> MOVE"); break;
         case BossAI_ID::Act_MeleeAttack:
-            // 攻撃実行は目立たせるために SUCCESS (緑色) を使用
-            CCL_LOG_SUCCESS(LogCategory::AI, "[BossAI] State Changed -> MELEE ATTACK (近接攻撃！)");
-            break;
+            CCL_LOG_SUCCESS(LogCategory::AI, "[BossAI] State Changed -> MELEE ATTACK"); break;
         case BossAI_ID::Act_ChargeAttack:
-            // 突進などの危険行動は WARN (黄色) を使用
-            CCL_LOG_WARN(LogCategory::AI, "[BossAI] State Changed -> CHARGE ATTACK (突進開始！)");
-            break;
+            CCL_LOG_WARN(LogCategory::AI, "[BossAI] State Changed -> CHARGE ATTACK"); break;
+        case BossAI_ID::Act_DroneOrbit:
+            CCL_LOG_WARN(LogCategory::AI, "[BossAI] State Changed -> DRONE ORBIT (円陣展開)"); break;
+        case BossAI_ID::Act_DroneSequential:
+            CCL_LOG_WARN(LogCategory::AI, "[BossAI] State Changed -> DRONE SEQUENTIAL (順番突撃)"); break;
+        case BossAI_ID::Act_DroneDeathRing:
+            CCL_LOG_WARN(LogCategory::AI, "[BossAI] State Changed -> DRONE DEATH RING (処刑の輪)"); break;
+        case BossAI_ID::Act_DroneAegisShield:
+            CCL_LOG_WARN(LogCategory::AI, "[BossAI] State Changed -> DRONE AEGIS SHIELD (絶対防衛)"); break;
         }
-        // 記憶を更新（これ以降、別の行動になるまでログは沈黙する）
         btComp.lastLogActionId = actionId;
     }
 
@@ -263,6 +283,19 @@ BTNodeState BossAISystem::ExecuteAction(ActionID actionId, BehaviorTreeComponent
     case BossAI_ID::Act_ChargeAttack:
         cmdComp.requestCharge = true;
         return BTNodeState::Running;
+        // ドローンに対する指示を発行（AIは指示を出すだけで、実際の動作はDroneSystemが行う）
+    case BossAI_ID::Act_DroneOrbit:
+        cmdComp.requestFormation = DroneFormationType::OrbitCircle;
+        return BTNodeState::Success;
+    case BossAI_ID::Act_DroneSequential:
+        cmdComp.requestFormation = DroneFormationType::SequentialAttack;
+        return BTNodeState::Success;
+    case BossAI_ID::Act_DroneDeathRing:
+        cmdComp.requestFormation = DroneFormationType::DeathRing;
+        return BTNodeState::Success;
+    case BossAI_ID::Act_DroneAegisShield:
+        cmdComp.requestFormation = DroneFormationType::AegisShield;
+        return BTNodeState::Success;
     default:
         return BTNodeState::Failure;
     }

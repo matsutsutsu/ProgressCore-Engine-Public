@@ -54,11 +54,12 @@ private:
 	* @param btComp  現在のエンティティが持つAI状態（Blackboardや実行中ノード情報）
 	* @param cmdComp 評価結果（行動要求）を書き込むための出力用コンポーネント
     * @return 行動の評価結果（Success, Failure, Running）
-     * * @note 【設計上の注意点】
-     * この関数は純粋な「評価関数」として設計されている。
-	 * 物理演算やアニメーションのトリガーなどの副作用は、cmdCompへの書き込みに限定されるべきである。
+    * * @note 【設計上の注意点】
+    * この関数は純粋な「評価関数」として設計されている。
+	* 物理演算やアニメーションのトリガーなどの副作用は、cmdCompへの書き込みに限定されるべきである。
+    * タイマー機能（Wait）を利用するため、nodeId と dt を追加
     */
-    BTNodeState ExecuteAction(ActionID actionId, BehaviorTreeComponent& btComp, BossCommandComponent& cmdComp);
+    BTNodeState ExecuteAction(ActionID actionId, BehaviorTreeComponent& btComp, BossCommandComponent& cmdComp, BTNodeID nodeId, float dt);
 
 
 };

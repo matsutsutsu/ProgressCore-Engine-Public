@@ -134,6 +134,17 @@ nlohmann::json BehaviorTreeWindow::GetGraphStateAsJson() {
 void BehaviorTreeWindow::RestoreGraphState(const nlohmann::json& state) {
     if (!state.contains("editor_nodes")) return;
 
+    // =========================================================
+    // 破棄する前に、現在の選択状態を記憶しておく
+    // =========================================================
+    std::vector<ed::NodeId> selectedNodes;
+    if (_nodeContext) {
+        ed::SetCurrentEditor(_nodeContext);
+        selectedNodes.resize(ed::GetSelectedObjectCount());
+        int count = ed::GetSelectedNodes(selectedNodes.data(), static_cast<int>(selectedNodes.size()));
+        selectedNodes.resize(count);
+    }
+
     // 現在の状態を破棄
     _nodes.clear();
     _links.clear();
@@ -181,6 +192,15 @@ void BehaviorTreeWindow::RestoreGraphState(const nlohmann::json& state) {
             link.startPinId = jl["startPin"];
             link.endPinId = jl["endPin"];
             _links.push_back(link);
+        }
+    }
+
+    // =========================================================
+    //  復元が終わったら、記憶していた選択状態を元に戻す
+    // =========================================================
+    if (_nodeContext && !selectedNodes.empty()) {
+        for (auto id : selectedNodes) {
+            ed::SelectNode(id, true); // true = 複数選択のアペンド
         }
     }
 
@@ -263,6 +283,9 @@ void BehaviorTreeWindow::DrawToolbar() {
     ImGui::SameLine();
     if (ImGui::Button("+ アクション (Action)")) 
         CreateNode(EditorBTNodeType::Action, "アクション (Action)", 400, 50);
+    ImGui::SameLine();
+    if (ImGui::Button("+ デコレーター (Decorator)"))
+        CreateNode(EditorBTNodeType::Decorator, "デコレーター (Decorator)", 600, 0);
 }
 
 /**
@@ -313,14 +336,13 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext& context) {
     ed::Begin("BT_Node_Workspace");
 
     // =======================================================
-    // ★ 選択中のエンティティから、実行中のAI状態（デバッグ配列）を取得
+    //  選択中のエンティティから、実行中のAI状態（デバッグ配列）を取得
     // =======================================================
     BehaviorTreeComponent* activeAI = nullptr;
     if (context.selectedEntity != CCL::ECS::InvalidEntityID && context.world) {
         activeAI = context.world->GetComponent<BehaviorTreeComponent>(context.selectedEntity);
     }
 
-    // BehaviorTreeWindow.cpp の DrawNodeWorkspace 内
 
     for (auto& node : _nodes) {
         if (!node.positionInitialized) {
@@ -342,10 +364,39 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext& context) {
         default:                          headerColor = ImColor(100, 100, 100); break;
         }
 
-        // ノード全体の背景を暗く設定
+        // =======================================================
+        //  リアルタイムデバッグ表示（状態による枠線の発光）
+        // =======================================================
+        ImColor borderColor = ImColor(60, 60, 60, 255); // 通常の枠線色
+        float borderWidth = 1.0f;
+
+        // activeAIが存在し、エディタノードがランタイム配列と紐付いている場合のみ状態を見る
+        if (activeAI && node.runtimeFlatIndex >= 0 && node.runtimeFlatIndex < activeAI->debugNodeStates.size()) {
+            BTDebugState state = activeAI->debugNodeStates[node.runtimeFlatIndex];
+
+            if (state == BTDebugState::Running) {
+                // 実行中（Running）は黄色く脈打つ
+                float blink = (sinf(ImGui::GetTime() * 15.0f) * 0.5f) + 0.5f;
+                borderColor = ImColor(255, 200, 0, 200 + static_cast<int>(55 * blink));
+                borderWidth = 3.0f;
+            }
+            else if (state == BTDebugState::Success) {
+                // 成功（Success）は緑色
+                borderColor = ImColor(50, 255, 50, 200);
+                borderWidth = 2.0f;
+            }
+            else if (state == BTDebugState::Failure) {
+                // 失敗（Failure）は赤色
+                borderColor = ImColor(255, 50, 50, 200);
+                borderWidth = 2.0f;
+            }
+        }
+
+        // ノード全体の背景とボーダーを設定
         ed::PushStyleColor(ed::StyleColor_NodeBg, ImColor(25, 25, 25, 240));
-        ed::PushStyleColor(ed::StyleColor_NodeBorder, ImColor(60, 60, 60, 255));
+        ed::PushStyleColor(ed::StyleColor_NodeBorder, borderColor);
         ed::PushStyleVar(ed::StyleVar_NodeRounding, 6.0f);
+        ed::PushStyleVar(ed::StyleVar_NodeBorderWidth, borderWidth); // 枠線の太さを変更可能に
 
         // =========================================================
         // 2. ノード描画開始
@@ -399,6 +450,16 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext& context) {
                 }
             }
             ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "> %s", actionName);
+
+            // =======================================================
+            // Waitアクション時の残り時間リアルタイム表示
+            // =======================================================
+            if (activeAI && node.runtimeFlatIndex >= 0 && node.runtimeFlatIndex < activeAI->nodeTimers.size()) {
+                float currentTimer = activeAI->nodeTimers[node.runtimeFlatIndex];
+                if (currentTimer > 0.0f) {
+                    ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.0f, 1.0f), "Wait: %.1fs", currentTimer);
+                }
+            }
         }
         else if (node.type == EditorBTNodeType::Condition) {
             const char* condName = "Unknown";
@@ -408,6 +469,41 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext& context) {
                 }
             }
             ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "? %s", condName);
+        }
+        // =======================================================
+        //  デコレーターの表示とリアルタイム・プログレスバー
+        // =======================================================
+        else if (node.type == EditorBTNodeType::Decorator) {
+            const char* decName = "Unknown";
+            if (node.decoratorType == 0) decName = "Inverter (反転)";
+            else if (node.decoratorType == 1) decName = "Cooldown (待機)";
+            else if (node.decoratorType == 2) decName = "Retry (再試行)";
+
+            ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "* %s", decName);
+
+            // デバッガー接続時（ゲーム実行中）のみの表示
+            if (activeAI && node.runtimeFlatIndex >= 0 && node.runtimeFlatIndex < activeAI->nodeTimers.size()) {
+                if (node.decoratorType == 1) { // Cooldownの場合
+                    float currentTimer = activeAI->nodeTimers[node.runtimeFlatIndex];
+                    if (currentTimer > 0.0f) {
+                        // クールダウン中は赤文字で残り秒数を表示
+                        ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Cooling: %.1fs", currentTimer);
+
+                        // プログレスバー（ゲージ）の描画
+                        float maxTime = (std::max)(0.001f, node.decoratorParam); // ゼロ除算防止
+                        float fraction = 1.0f - (currentTimer / maxTime); // 0.0(空) 〜 1.0(満タン)
+
+                        // プログレスバーの色を赤っぽくする
+                        ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
+                        ImGui::ProgressBar(fraction, ImVec2(NODE_WIDTH - 20, 6), ""); // ゲージのみ表示
+                        ImGui::PopStyleColor();
+                    }
+                    else {
+                        // 発動可能な時は緑色で Ready と表示
+                        ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "Ready");
+                    }
+                }
+            }
         }
 
         ImGui::Unindent(10.0f);
@@ -433,7 +529,8 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext& context) {
         }
 
         ed::EndNode();
-        ed::PopStyleVar();
+        // PopStyleVarを1から2に変更（NodeBorderWidthを追加したため）
+        ed::PopStyleVar(2);
         ed::PopStyleColor(2);
 
         // 座標更新
@@ -447,16 +544,42 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext& context) {
         ed::Link(link.id, link.startPinId, link.endPinId, ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 3.0f);
     }
 
+
     if (ed::BeginCreate()) {
         ed::PinId startPinId = 0, endPinId = 0;
         if (ed::QueryNewLink(&startPinId, &endPinId)) {
             if (startPinId && endPinId) {
-                if (ed::AcceptNewItem()) {
-                    BTLink newLink;
-                    newLink.id = GetNextId();
-                    newLink.startPinId = startPinId.Get();
-                    newLink.endPinId = endPinId.Get();
-                    _links.push_back(newLink);
+
+                // 1. ピンの属性（InputかOutputか）を特定する
+                bool startIsInput = false;
+                bool endIsInput = false;
+                for (const auto& n : _nodes) {
+                    if (n.inputPin.id == startPinId.Get()) startIsInput = true;
+                    if (n.inputPin.id == endPinId.Get()) endIsInput = true;
+                }
+
+                // 2. Input同士、Output同士の接続は赤線にして拒否する
+                if (startIsInput == endIsInput) {
+                    ed::RejectNewItem(ImColor(255, 0, 0), 2.0f);
+                }
+                else {
+                    if (ed::AcceptNewItem()) {
+                        BTLink newLink;
+                        newLink.id = GetNextId();
+
+                        // 3. ★修正の要：ユーザーのドラッグ方向に依存せず、必ず startPinId に「出力ピン(親)」、endPinId に「入力ピン(子)」を入れる
+                        if (startIsInput) {
+                            newLink.startPinId = endPinId.Get();
+                            newLink.endPinId = startPinId.Get();
+                        }
+                        else {
+                            newLink.startPinId = startPinId.Get();
+                            newLink.endPinId = endPinId.Get();
+                        }
+
+                        _links.push_back(newLink);
+                        _executionOrderDirty = true;
+                    }
                 }
             }
         }
@@ -505,11 +628,24 @@ void BehaviorTreeWindow::DrawInspector() {
         auto it = std::find_if(_nodes.begin(), _nodes.end(), [&](const EditorBTNode& n) { return n.id == selectedId; });
 
         if (it != _nodes.end()) {
+            // =========================================================
+            // Undoを安全に記録するための遅延フラグ
+            // =========================================================
+            bool needsUndo = false;
+            std::string undoMessage = "Inspector Changed";
+
+
             // ★機能追加: ノード名の変更（コメントや整理に必須）
             char nameBuf[256];
             strcpy_s(nameBuf, it->name.c_str());
             if (ImGui::InputText("名前 (Name)", nameBuf, sizeof(nameBuf))) {
                 it->name = nameBuf;
+            }
+
+            // ★ 入力が完了（エンターかフォーカス外れ）した時だけUndo記録
+            if (ImGui::IsItemDeactivatedAfterEdit()) {
+                needsUndo = true;
+                undoMessage = "Change Node Name";
             }
 
             // =========================================================
@@ -559,43 +695,38 @@ void BehaviorTreeWindow::DrawInspector() {
             ImGui::Separator();
 
             // ---------------------------------------------------------
-            // インスペクタ描画部分
+            // 各種プロパティの編集とUndoフラグのセット
             // ---------------------------------------------------------
-            // ★ 修正：レジストリを使った動的プルダウンの生成
             if (it->type == EditorBTNodeType::Condition) {
                 ImGui::Separator();
                 ImGui::Text("条件設定 (Condition):");
-
                 int currentIndex = 0;
-                const char* names[64]; // 最大64個まで対応
+                const char* names[64];
                 for (int i = 0; i < g_ConditionRegistryCount; ++i) {
                     names[i] = g_ConditionRegistry[i].name;
-                    if (g_ConditionRegistry[i].id == it->actionOrConditionId) {
-                        currentIndex = i;
-                    }
+                    if (g_ConditionRegistry[i].id == it->actionOrConditionId) currentIndex = i;
                 }
-
                 if (ImGui::Combo("条件を選ぶ", &currentIndex, names, g_ConditionRegistryCount)) {
                     it->actionOrConditionId = g_ConditionRegistry[currentIndex].id;
                     _executionOrderDirty = true;
+                    needsUndo = true;
+                    undoMessage = "Change Condition";
                 }
             }
             else if (it->type == EditorBTNodeType::Action) {
                 ImGui::Separator();
                 ImGui::Text("行動設定 (Action):");
-
                 int currentIndex = 0;
                 const char* names[64];
                 for (int i = 0; i < g_ActionRegistryCount; ++i) {
                     names[i] = g_ActionRegistry[i].name;
-                    if (g_ActionRegistry[i].id == it->actionOrConditionId) {
-                        currentIndex = i;
-                    }
+                    if (g_ActionRegistry[i].id == it->actionOrConditionId) currentIndex = i;
                 }
-
                 if (ImGui::Combo("行動を選ぶ", &currentIndex, names, g_ActionRegistryCount)) {
                     it->actionOrConditionId = g_ActionRegistry[currentIndex].id;
                     _executionOrderDirty = true;
+                    needsUndo = true;
+                    undoMessage = "Change Action";
                 }
             }
 
@@ -606,19 +737,28 @@ void BehaviorTreeWindow::DrawInspector() {
                 const char* decNames[] = { "0: 結果反転 (Inverter)", "1: クールダウン (Cooldown)", "2: リトライ (Retry)" };
                 if (ImGui::Combo("タイプ", &it->decoratorType, decNames, IM_ARRAYSIZE(decNames))) {
                     _executionOrderDirty = true;
-                    RecordStateForUndo("Change Decorator Type");
+                    needsUndo = true;
+                    undoMessage = "Change Decorator Type";
                 }
 
                 if (it->decoratorType == 1) { // Cooldown
-                    if (ImGui::DragFloat("待機時間 (秒)", &it->decoratorParam, 0.1f, 0.0f, 60.0f)) {
-                        RecordStateForUndo("Change Cooldown Param");
+                    // ★ ドラッグ中は数値を変えるだけ
+                    ImGui::DragFloat("待機時間 (秒)", &it->decoratorParam, 0.1f, 0.0f, 60.0f);
+
+                    // ★ マウスを離した時だけUndo記録
+                    if (ImGui::IsItemDeactivatedAfterEdit()) {
+                        needsUndo = true;
+                        undoMessage = "Change Cooldown Time";
                     }
                 }
                 else if (it->decoratorType == 2) { // Retry
                     int retryCount = static_cast<int>(it->decoratorParam);
                     if (ImGui::DragInt("リトライ回数", &retryCount, 1, 1, 10)) {
                         it->decoratorParam = static_cast<float>(retryCount);
-                        RecordStateForUndo("Change Retry Param");
+                    }
+                    if (ImGui::IsItemDeactivatedAfterEdit()) {
+                        needsUndo = true;
+                        undoMessage = "Change Retry Count";
                     }
                 }
             }
@@ -626,7 +766,18 @@ void BehaviorTreeWindow::DrawInspector() {
             if (it->type == EditorBTNodeType::Group) {
                 ImGui::Separator();
                 ImGui::DragFloat("枠の幅 (Width)", &it->width, 1.0f, 100.0f, 2000.0f);
+                if (ImGui::IsItemDeactivatedAfterEdit()) needsUndo = true;
+
                 ImGui::DragFloat("枠の高さ (Height)", &it->height, 1.0f, 100.0f, 2000.0f);
+                if (ImGui::IsItemDeactivatedAfterEdit()) needsUndo = true;
+            }
+
+            // =========================================================
+            // ★ 修正の要：すべての `it` の使用が終わった「一番最後」にUndoを記録する！
+            // これによりイテレータ無効化によるクラッシュを完全に防ぐ
+            // =========================================================
+            if (needsUndo) {
+                RecordStateForUndo(undoMessage);
             }
         }
     }
@@ -677,14 +828,16 @@ void BehaviorTreeWindow::HandleContextMenu() {
         if (ImGui::MenuItem("セレクター (Selector)")) CreateNode(EditorBTNodeType::Selector, "セレクター (Selector)", canvasPos.x, canvasPos.y);
         if (ImGui::MenuItem("シーケンス (Sequence)")) CreateNode(EditorBTNodeType::Sequence, "シーケンス (Sequence)", canvasPos.x, canvasPos.y);
         ImGui::Separator();
+
+        if (ImGui::MenuItem("デコレーター (Decorator)")) CreateNode(EditorBTNodeType::Decorator, "デコレーター (Decorator)", canvasPos.x, canvasPos.y);
         if (ImGui::MenuItem("コンディション (Condition)")) CreateNode(EditorBTNodeType::Condition, "コンディション (Condition)", canvasPos.x, canvasPos.y);
         if (ImGui::MenuItem("アクション (Action)")) CreateNode(EditorBTNodeType::Action, "アクション (Action)", canvasPos.x, canvasPos.y);
         ImGui::Separator();
-        // ★追加: グループノード生成
+        // グループノード生成
         if (ImGui::MenuItem("コメントグループ (Group)")) CreateNode(EditorBTNodeType::Group, "コメント (Comment)", canvasPos.x, canvasPos.y);
 
         ImGui::Separator();
-        // ★追加: 複数ノードの複製
+        // 複数ノードの複製
         if (ImGui::MenuItem("選択ノードを複製 (Duplicate)")) {
             DuplicateSelectedNodes();
         }
@@ -711,18 +864,24 @@ void BehaviorTreeWindow::SaveGraph(const std::string& path) {
         jn["name"] = node.name;
         jn["actionId"] = static_cast<int>(node.actionOrConditionId);
 
-        // ★ 修正：ピンのIDを保存。これがリンクの復元に不可欠。
+        // ピンのIDを保存。これがリンクの復元に不可欠。
         jn["inputPinId"] = node.inputPin.id;
         jn["outputPinId"] = node.outputPin.id;
 
         ImVec2 pos = ed::GetNodePosition(node.id);
         jn["posX"] = pos.x;
         jn["posY"] = pos.y;
-        // ★追加: グループサイズを保存
+        // グループサイズを保存
         if (node.type == EditorBTNodeType::Group) {
             jn["width"] = node.width;
             jn["height"] = node.height;
         }
+        // デコレーターのパラメータを保存する
+        if (node.type == EditorBTNodeType::Decorator) {
+            jn["decoratorType"] = node.decoratorType;
+            jn["decoratorParam"] = node.decoratorParam;
+        }
+
         jNodes.push_back(jn);
     }
     root["editor_nodes"] = jNodes;
@@ -740,7 +899,7 @@ void BehaviorTreeWindow::SaveGraph(const std::string& path) {
     root["last_id_counter"] = _idCounter;
 
     // =======================================================
-    //  CompileAndSave() を消し、ここで BuildBakedNodes() を呼び出して統合する
+    //  ここで BuildBakedNodes() を呼び出して統合する
     // =======================================================
     root["nodes"] = BuildBakedNodes();
     root["assetId"] = 1;
@@ -799,6 +958,7 @@ nlohmann::json BehaviorTreeWindow::BuildBakedNodes() {
         case EditorBTNodeType::Sequence:  return "Sequence";
         case EditorBTNodeType::Condition: return "Condition";
         case EditorBTNodeType::Action:    return "Action";
+        case EditorBTNodeType::Decorator: return "Decorator";
         default: return "Unknown";
         }
         };
@@ -882,6 +1042,14 @@ void BehaviorTreeWindow::LoadGraph(const std::string& path) {
             node.height = jn.value("height", 200.0f);
         }
 
+        // =======================================================
+        // ★ 追加：デコレーターのパラメータを復元する
+        // =======================================================
+        if (node.type == EditorBTNodeType::Decorator) {
+            node.decoratorType = jn.value("decoratorType", 0);
+            node.decoratorParam = jn.value("decoratorParam", 0.0f);
+        }
+
         // ★ 修正：GetNextId() を使わず、保存されたIDをそのままセットする
         node.inputPin = { jn.value("inputPinId", 0u), node.id, true };
         node.outputPin = { jn.value("outputPinId", 0u), node.id, false };
@@ -897,6 +1065,13 @@ void BehaviorTreeWindow::LoadGraph(const std::string& path) {
         link.endPinId = jl["endPin"];
         _links.push_back(link);
     }
+
+    // =======================================================
+    // ロード完了直後に「空回し」のBakeを実行する！
+    // これにより、わざわざ保存しなくても `runtimeFlatIndex` が計算され、
+    // ロードした瞬間からリアルタイムデバッグが可能になる。
+    // =======================================================
+    BuildBakedNodes();
 
     _needInitialZoom = true;
     CCL_LOG_SUCCESS(LogCategory::Editor, "AIグラフをロードしました: %s", path.c_str());

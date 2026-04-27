@@ -245,6 +245,7 @@ void SceneInitializer::SpawnBossAndDronesTest(CCL::ECS::Core::World& world, ID3D
 {
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Camera/FreeCamera.json");
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/World/ExampleStage.json");
+    EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Enemy/DroneTarget.json");
 
     // 1. ボスの生成（中央に配置）
     // ※Boss.json がない場合は適当なモデルのプレハブパスに書き換えてください

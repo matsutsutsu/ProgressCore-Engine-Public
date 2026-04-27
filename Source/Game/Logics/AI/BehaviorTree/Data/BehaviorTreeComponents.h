@@ -21,6 +21,9 @@ struct AIBlackboard {
     DirectX::SimpleMath::Vector3 targetPosition; // ターゲットの座標
     float distanceToTarget = 0.0f;               // ターゲットとの距離
     float healthPercentage = 100.0f;             // 自分の残りHP
+
+    // ボスの現在のフェーズ（1=前半戦, 2=後半戦）
+    int currentPhase = 1;
 };
 
 // AIの内部状態とブラックボード（直列化対象）

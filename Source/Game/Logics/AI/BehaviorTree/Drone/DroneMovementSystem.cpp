@@ -12,7 +12,6 @@ using namespace DirectX::SimpleMath;
 
 void DroneMovementSystem::Update(float dt) {
 
-    // テンプレート制約通り、TransformをWrite、DroneをReadで受け取る
     ForEachParallel([dt](TransformComponent& trans, DroneComponent& drone) {
 
         drone.hoverTimeOffset += dt;

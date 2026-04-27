@@ -49,5 +49,6 @@ BTNodeType BehaviorTreeLoader::StringToNodeType(const std::string& typeStr) {
     if (typeStr == "Selector")  return BTNodeType::Selector;
     if (typeStr == "Sequence")  return BTNodeType::Sequence;
     if (typeStr == "Condition") return BTNodeType::Condition;
+    if (typeStr == "Decorator") return BTNodeType::Decorator;
     return BTNodeType::Action;
 }

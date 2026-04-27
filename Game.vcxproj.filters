@@ -418,17 +418,8 @@
     <Filter Include="Source\Game\Logics\AI\BehaviorTree">
       <UniqueIdentifier>{8dd7befc-98d6-4365-99c8-9534556837c6}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Game\Logics\AI\BehaviorTree\_Meta">
-      <UniqueIdentifier>{8ef38902-d889-483c-9b95-bbfdb73fdd31}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\AI\Drone">
-      <UniqueIdentifier>{ca2ab5f4-c9b8-4bce-8005-98aadbde9f63}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Game\Logics\AI\BehaviorTree\Drone">
       <UniqueIdentifier>{1dcf7f43-80a3-4026-958c-8d279ef4bbb6}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\AI\BehaviorTree\_Data">
-      <UniqueIdentifier>{562c3a01-244e-46ab-b064-571c92727868}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Editor\Windows\Animation">
       <UniqueIdentifier>{42b8635d-e5f6-487b-bf24-ddd18ec772ae}</UniqueIdentifier>
@@ -441,6 +432,12 @@
     </Filter>
     <Filter Include="Source\Editor\Windows\AI">
       <UniqueIdentifier>{1ff0cdf0-5abd-45cf-ae35-e46ba9c7b987}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\AI\BehaviorTree\__Meta">
+      <UniqueIdentifier>{8ef38902-d889-483c-9b95-bbfdb73fdd31}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\AI\BehaviorTree\Data">
+      <UniqueIdentifier>{562c3a01-244e-46ab-b064-571c92727868}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -1459,19 +1456,19 @@
       <Filter>Source\Editor\Windows\AI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeLoader.h">
-      <Filter>Source\Game\Logics\AI\BehaviorTree\_Data</Filter>
+      <Filter>Source\Game\Logics\AI\BehaviorTree\Data</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeBuilder.h">
-      <Filter>Source\Game\Logics\AI\BehaviorTree\_Data</Filter>
+      <Filter>Source\Game\Logics\AI\BehaviorTree\Data</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeComponents.h">
-      <Filter>Source\Game\Logics\AI\BehaviorTree\_Data</Filter>
+      <Filter>Source\Game\Logics\AI\BehaviorTree\Data</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeData.h">
-      <Filter>Source\Game\Logics\AI\BehaviorTree\_Data</Filter>
+      <Filter>Source\Game\Logics\AI\BehaviorTree\Data</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\ActionRegistry.h">
-      <Filter>Source\Game\Logics\AI\BehaviorTree\_Data</Filter>
+      <Filter>Source\Game\Logics\AI\BehaviorTree\Data</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2181,7 +2178,7 @@
       <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeComponentMeta.cpp">
-      <Filter>Source\Game\Logics\AI\BehaviorTree\_Meta</Filter>
+      <Filter>Source\Game\Logics\AI\BehaviorTree\__Meta</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Test\TestAnimationPlayerComponentMeta.cpp">
       <Filter>Source\Game\Logics\Test\TestAnimation</Filter>
@@ -2190,7 +2187,7 @@
       <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\TestEnemyActionComponentMeta.cpp">
-      <Filter>Source\Game\Logics\AI\BehaviorTree\_Meta</Filter>
+      <Filter>Source\Game\Logics\AI\BehaviorTree\__Meta</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Test\LissajousOrbitSystem.cpp">
       <Filter>Source\Game\Logics\Test</Filter>
@@ -2241,10 +2238,10 @@
       <Filter>Source\Editor\Windows\AI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeBuilder.cpp">
-      <Filter>Source\Game\Logics\AI\BehaviorTree\_Data</Filter>
+      <Filter>Source\Game\Logics\AI\BehaviorTree\Data</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeLoader.cpp">
-      <Filter>Source\Game\Logics\AI\BehaviorTree\_Data</Filter>
+      <Filter>Source\Game\Logics\AI\BehaviorTree\Data</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

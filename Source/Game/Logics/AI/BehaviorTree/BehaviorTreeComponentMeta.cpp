@@ -11,12 +11,14 @@
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 #include "Engine/Platform/Dialog.h"
+#include "Engine/Graphics/Core/Graphics.h"
 #include <imgui.h>
+#include <filesystem>
 
  // =======================================================================
  // エディタ表示用のEnum文字列定義（プルダウンメニュー用）
  // =======================================================================
-static const char* DroneFormationNames[] = { "Hidden", "OrbitCircle", "SequentialAttack" };
+static const char* DroneFormationNames[] = { "Hidden", "OrbitCircle", "SequentialAttack", "DeathRing", "AegisShield" };
 static const char* DroneStateNames[] = { "Idle", "MoveToTarget", "LockOn", "FireCharge" };
 
 
@@ -30,25 +32,44 @@ template <> struct ComponentMeta<BehaviorTreeComponent> {
     static bool CustomGui(BehaviorTreeComponent& comp, unsigned long long entityID, void* worldPtr) {
         bool changed = false;
 
-        ImGui::Text("AI Logic Path:");
-        char pathBuf[256];
-        strcpy_s(pathBuf, comp.assetPath.c_str());
+        // ★ AnimStateMachineComponent を踏襲した現在のパス表示
+        ImGui::TextDisabled("BT File: %s", comp.assetPath.empty() ? "None" : comp.assetPath.c_str());
 
-        if (ImGui::InputText("##Path", pathBuf, sizeof(pathBuf))) {
-            comp.assetPath = pathBuf;
-            changed = true;
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("...")) {
-            char path[MAX_PATH] = "";
-            if (Dialog::OpenFileName(path, MAX_PATH, "BehaviorTree (*.json)\0*.json\0", "AIを選択") == DialogResult::OK) {
-                comp.assetPath = path;
-                // パスが変わったら即座にリロード！
+        // ★ 幅いっぱいの押しやすいロードボタン
+        if (ImGui::Button("Load Behavior Tree... (JSON)", ImVec2(-1, 0))) {
+            char filename[MAX_PATH] = {};
+            // ウィンドウハンドルを渡してダイアログを親ウィンドウの中央に出す
+            if (Dialog::OpenFileName(filename, MAX_PATH, "JSON Files\0*.json\0", "Select Behavior Tree", Graphics::Instance().GetWindowHandle()) == DialogResult::OK) {
+
+                // 絶対パスからプロジェクト相対パスへの変換処理（チーム開発対応）
+                namespace fs = std::filesystem;
+                fs::path absPath = filename;
+                fs::path currentPath = fs::current_path();
+                std::error_code ec;
+                fs::path relPath = fs::relative(absPath, currentPath, ec);
+
+                // 変換に成功したら相対パスを、失敗したら絶対パスをそのまま保存
+                comp.assetPath = (!ec && !relPath.empty()) ? relPath.generic_string() : filename;
+
+                // メモリバッファが無ければ確保
+                if (!comp.sharedAsset) {
+                    comp.sharedAsset = std::make_shared<BTAsset>();
+                }
+
+                // ★ 即座にロードしてバインドする
                 BehaviorTreeLoader::LoadFromJson(comp.assetPath, *comp.sharedAsset);
+
+                // BossAISystem が「ファイルが書き換わった」と勘違いして再ロードするのを防ぐため、
+                // 読み込み完了済みのパスとしても登録しておく
+                comp.loadedAssetPath = comp.assetPath;
+
                 changed = true;
             }
         }
 
+        ImGui::Separator();
+
+        // 外部のエディタで上書き保存したとき用の手動リロードボタン
         if (ImGui::Button("Reload AI")) {
             if (!comp.sharedAsset) comp.sharedAsset = std::make_shared<BTAsset>();
             BehaviorTreeLoader::LoadFromJson(comp.assetPath, *comp.sharedAsset);
@@ -56,6 +77,7 @@ template <> struct ComponentMeta<BehaviorTreeComponent> {
         }
 
         ImGui::Separator();
+
         // nullチェックを入れてからサイズを表示する
         size_t nodeCount = comp.sharedAsset ? comp.sharedAsset->nodes.size() : 0;
         ImGui::LabelText("Nodes", "%zu", nodeCount);
@@ -73,6 +95,7 @@ template <> struct ComponentMeta<BehaviorTreeComponent> {
 };
 REGISTER_COMPONENT(BehaviorTreeComponent, "BehaviorTreeComponent")
 
+// ... (以下 BossCommandComponent と DroneComponent の定義はそのまま) ...
 
 // --- BossCommandComponent（保存しない） ---
 template <> struct ComponentMeta<BossCommandComponent> {
@@ -89,7 +112,7 @@ template <> struct ComponentMeta<BossCommandComponent> {
             { "移動目標座標", "moveTarget", FieldKind::Float3, offsetof(BossCommandComponent, moveTarget), 0.1f, 0.0f, 0.0f, "Movement", nullptr, 0, false },
 
             // ★追加: ドローンに対するフォーメーション要求とターゲットID
-            { "フォーメーション要求", "requestFormation", FieldKind::EnumU8, offsetof(BossCommandComponent, requestFormation), 1.0f, 0.0f, 0.0f, "Drone Control", DroneFormationNames, 3, false },
+            { "フォーメーション要求", "requestFormation", FieldKind::EnumU8, offsetof(BossCommandComponent, requestFormation), 1.0f, 0.0f, 0.0f, "Drone Control", DroneFormationNames, 5, false },
             { "ターゲット(Player)ID", "targetPlayerId", FieldKind::EntityID, offsetof(BossCommandComponent, targetPlayerId), 1.0f, 0.0f, 0.0f, "Drone Control", nullptr, 0, false }
         };
         return fields;
@@ -113,7 +136,7 @@ template <> struct ComponentMeta<DroneComponent> {
             { "総ドローン数", "totalDrones", FieldKind::UInt16, offsetof(DroneComponent, totalDrones), 1.0f, 0.0f, 0.0f, "Formation", nullptr, 0, true },
 
             // ★追加: 現在のフォーメーションとステートをプルダウン表示
-            { "現在の指示", "currentFormation", FieldKind::EnumU8, offsetof(DroneComponent, currentFormation), 1.0f, 0.0f, 0.0f, "State", DroneFormationNames, 3, false },
+            { "現在の指示", "currentFormation", FieldKind::EnumU8, offsetof(DroneComponent, currentFormation), 1.0f, 0.0f, 0.0f, "State", DroneFormationNames, 5, false },
             { "現在ステート", "currentState", FieldKind::EnumU8, offsetof(DroneComponent, currentState), 1.0f, 0.0f, 0.0f, "State", DroneStateNames, 4, false },
             { "状態タイマー", "stateTimer", FieldKind::Float, offsetof(DroneComponent, stateTimer), 0.1f, 0.0f, 0.0f, "State", nullptr, 0, false },
 

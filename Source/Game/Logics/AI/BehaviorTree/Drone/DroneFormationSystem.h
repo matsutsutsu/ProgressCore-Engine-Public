@@ -47,4 +47,14 @@ private:
      * @brief 順番攻撃フォーメーションの目標座標と状態を計算する
      */
     inline void CalculateSequentialAttack(DroneComponent& drone, const BossCommandComponent& bossCmd, float dt);
+
+    /**
+	 * @brief 死の輪フォーメーションの目標座標を計算する
+    */
+    inline void CalculateDeathRing(DroneComponent& drone, const BossCommandComponent& bossCmd, float currentTime);
+
+    /**
+     * @brief 絶対防衛陣形の目標座標を計算する
+     */
+    inline void CalculateAegisShield(DroneComponent& drone, const TransformComponent& bossTrans, const BossCommandComponent& bossCmd);
 };
