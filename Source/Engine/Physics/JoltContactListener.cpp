@@ -1,5 +1,5 @@
 #include "JoltContactListener.h"
-#include <Jolt/Physics/Body/Body.h> // ★追加：Bodyの中身(完全な型)を知るために絶対に必要
+#include <Jolt/Physics/Body/Body.h> // Bodyの中身(完全な型)を知るために絶対に必要
 
 void JoltContactListener::OnContactAdded(const JPH::Body& inBody1, const JPH::Body& inBody2,
                                          const JPH::ContactManifold& inManifold,

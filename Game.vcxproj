@@ -454,10 +454,12 @@
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerFeedbackSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerInputSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerMoveSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Combat\DamageResolutionSystem.h" />
     <ClInclude Include="Source\Game\Logics\Combat\DeadTag.h" />
-    <ClInclude Include="Source\Game\Logics\Combat\GlobalDamageQueue.h" />
+    <ClInclude Include="Source\Game\Logics\Combat\CombatComponents.h" />
     <ClInclude Include="Source\Game\Logics\Combat\HealthComponent.h" />
     <ClInclude Include="Source\Game\Logics\Combat\HealthSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Combat\HitboxCollisionSystem.h" />
     <ClInclude Include="Source\Game\Logics\GameEvent\GameEvents.h" />
     <ClInclude Include="Source\Game\Logics\GameEvent\GameOverResource.h" />
     <ClInclude Include="Source\Game\Logics\GameEvent\GameStateMode.h" />
@@ -726,7 +728,9 @@
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerFeedbackSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerInputSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerMoveSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Combat\DamageResolutionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\HealthSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Combat\HitboxCollisionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\ECSBenchmarkSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\LissajousOrbitSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\TestAnimationPlayerComponentMeta.cpp" />

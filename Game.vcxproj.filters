@@ -993,7 +993,7 @@
     <ClInclude Include="Source\Engine\Serialization\Meta\ComponentMetaImGui.h">
       <Filter>Source\Engine\Serialization\Meta</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\GlobalDamageQueue.h">
+    <ClInclude Include="Source\Game\Logics\Combat\CombatComponents.h">
       <Filter>Source\Game\Logics\Combat</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerFeedbackSystem.h">
@@ -1469,6 +1469,12 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\ActionRegistry.h">
       <Filter>Source\Game\Logics\AI\BehaviorTree\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Combat\HitboxCollisionSystem.h">
+      <Filter>Source\Game\Logics\Combat</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Combat\DamageResolutionSystem.h">
+      <Filter>Source\Game\Logics\Combat</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2242,6 +2248,12 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeLoader.cpp">
       <Filter>Source\Game\Logics\AI\BehaviorTree\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Combat\HitboxCollisionSystem.cpp">
+      <Filter>Source\Game\Logics\Combat</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Combat\DamageResolutionSystem.cpp">
+      <Filter>Source\Game\Logics\Combat</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

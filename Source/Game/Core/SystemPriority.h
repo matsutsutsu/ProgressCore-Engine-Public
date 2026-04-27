@@ -22,7 +22,12 @@ namespace Priority {
         L03_PrePhysics  = 300, // 空間分割(Grid)など、物理・衝突判定の準備
         L04_Physics     = 400, // 物理エンジン(積分)とTransform(親子関係)の更新
         L05_Collision   = 500, // 当たり判定 (Broad -> Narrow)
+
         L06_Resolution  = 600, // 衝突の解決 (めり込み押し出し、ダメージ計算)
+        L06_DamageApply = 610, // ① ダメージイベントの消費とHP減算 (DamageResolutionSystem)
+        L06_StatusEffect = 620, // ② 毒やバフの適用 (将来用)
+        L06_HealthManagement = 630, // ③ HPの最終確認と死亡判定 (HealthSystem)
+
         L07_Cleanup     = 700  // 死亡エンティティの回収、メモリ整理
     };
 
