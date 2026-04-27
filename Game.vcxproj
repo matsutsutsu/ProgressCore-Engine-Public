@@ -455,6 +455,7 @@
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerFeedbackSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerInputSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerMoveSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Combat\CombatRosterComponent.h" />
     <ClInclude Include="Source\Game\Logics\Combat\DamageResolutionSystem.h" />
     <ClInclude Include="Source\Game\Logics\Combat\DeadTag.h" />
     <ClInclude Include="Source\Game\Logics\Combat\CombatComponents.h" />

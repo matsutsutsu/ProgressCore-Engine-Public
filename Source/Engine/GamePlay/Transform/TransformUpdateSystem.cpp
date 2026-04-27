@@ -2,15 +2,99 @@
 #include "ECS/Core/CCL_World.h"
 
 #include "Engine/GamePlay/Transform/PendingParentComponent.h"
+#include "BoneAttachmentComponent.h"      
+// ★ Animatorではなく、Modelから計算済みのボーン行列を取得する
+#include "Engine/GamePlay/Graphics/Core/ModelComponent.h" 
+#include "Engine/Graphics/Resource/Model.h"
 
 // 各システムの .cpp ファイルの上部に追加
 #include "ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"
 
+#include "Engine/Platform/Logger.h"
+
 using namespace CCL::ECS;
 using namespace DirectX;
 
 TransformUpdateSystem::TransformUpdateSystem() : IfSystem("TransformUpdateSystem") {}
+
+
+// ----------------------------------------------------------------------------
+// ★ DODスタイル: 外部の静的関数として定義（クラスメンバにしない）
+// これにより、ヘッダー(.h)を汚さず、コンパイルも高速になり、インライン化も効きやすくなる。
+// ----------------------------------------------------------------------------
+static void UpdateTransformRecursiveHelper(Core::World* world, EntityID entity, const XMMATRIX& parentWorldMatrix, bool isParentUpdated) {
+    auto* trans = world->GetComponent<TransformComponent>(entity);
+    if (!trans) return;
+
+    bool isUpdated = isParentUpdated || trans->isDirty;
+    XMMATRIX finalParentMatrix = parentWorldMatrix;
+
+    // --- ボーンアタッチメントの評価 ---
+    if (auto* boneAttach = world->GetComponent<BoneAttachmentComponent>(entity)) {
+
+        // ★ AnimatorComponentではなく、ModelComponent から Model 本体にアクセスする
+        if (auto* modelComp = world->GetComponent<ModelComponent>(trans->parentID)) {
+
+            // 【注意】以下の `modelComp->model` の部分は、あなたのプロジェクトの 
+            // ModelComponent が Modelクラス を保持している変数名（pModel や resource 等）に合わせてください。
+            Model* model = modelComp->GetModel();
+
+            if (model) {
+                // 初回のみインデックスを検索してキャッシュ
+                if (boneAttach->cachedBoneIndex == -1) {
+                    boneAttach->cachedBoneIndex = model->GetNodeIndex(boneAttach->boneName);
+                }
+
+                if (boneAttach->cachedBoneIndex != -1) {
+                    // Model::Node の globalTransform (モデル空間での計算済み行列) を取得
+                    const auto& nodes = model->GetNodes();
+
+                    // XMFLOAT4X4 を XMMATRIX にロードする（エラー解消）
+                    XMMATRIX boneMatrix = XMLoadFloat4x4(&nodes[boneAttach->cachedBoneIndex].globalTransform);
+
+                    finalParentMatrix = boneMatrix * parentWorldMatrix;
+                    isUpdated = true; // ボーンは毎フレーム動くので強制更新
+                }
+            }
+        }
+    }
+
+    // --- 自分自身のワールド行列の計算 ---
+    if (isUpdated && !trans->isStatic) {
+        XMMATRIX localMat = XMMatrixAffineTransformation(
+            XMLoadFloat3(&trans->scale),
+            XMVectorZero(),
+            XMLoadFloat4(&trans->rotation),
+            XMLoadFloat3(&trans->position)
+        );
+
+        XMMATRIX worldMat = localMat * finalParentMatrix;
+
+        // ★ XMMATRIX を XMFLOAT4X4 に保存する（エラー解消）
+        XMStoreFloat4x4(&trans->worldMatrix, worldMat);
+        trans->isDirty = false;
+    }
+
+    // --- 子エンティティへ再帰伝播 ---
+    EntityID childID = trans->firstChildID;
+    while (childID != 0) {
+        auto* childTrans = world->GetComponent<TransformComponent>(childID);
+        if (childTrans) {
+            EntityID nextChild = childTrans->nextSiblingID;
+
+            // 親（自分）の XMFLOAT4X4 を XMMATRIX にロードして子供に渡す
+            XMMATRIX transWorldMat = XMLoadFloat4x4(&trans->worldMatrix);
+            UpdateTransformRecursiveHelper(world, childID, transWorldMat, isUpdated);
+
+            childID = nextChild;
+        }
+        else {
+            break;
+        }
+    }
+}
+
 
 void TransformUpdateSystem::Update(float dt)
 {
@@ -27,59 +111,39 @@ void TransformUpdateSystem::Update(float dt)
     // -----------------------------------------------------------------------
     // 2. 行列更新フェーズ (並列処理可能)
     // -----------------------------------------------------------------------
-    auto updateLogic = [&](EntityID id, TransformComponent& trans) {
-        // [Why] 行列計算の起点は常に「親を持たないルートエンティティ」に限定する。
-        // 子エンティティは親からの再帰呼び出しの中で処理されるため、ここで弾く。
-        if (trans.parentID != 0) return;
+    ForEachWithID([this](EntityID id, TransformComponent& trans) {
+        if (trans.parentID != 0) return; // ルートのみ
 
-        bool isUpdated = false;
-
-        // [Why] Staticであっても、ロード直後やエディタ操作でDirtyフラグが立っていれば1回だけ計算を通す。
-        // 計算後は必ずフラグを折ることで、次フレーム以降の計算コストをゼロにする（DOD観点での最適化）。
-        if (!trans.isStatic || trans.isDirty) {
-            trans.UpdateMatrix();
+        bool isUpdated = trans.isDirty;
+        if (isUpdated && !trans.isStatic) {
+            XMMATRIX localMat = XMMatrixAffineTransformation(
+                XMLoadFloat3(&trans.scale),
+                XMVectorZero(),
+                XMLoadFloat4(&trans.rotation),
+                XMLoadFloat3(&trans.position)
+            );
+            XMStoreFloat4x4(&trans.worldMatrix, localMat);
             trans.isDirty = false;
-            isUpdated = true;
         }
 
-        // [Why] 子の階層更新用ラムダ。std::functionを使用するとヒープアロケーション(new)が発生し
-        // 並列処理のパフォーマンスが崩壊するため、C++14の auto& self を用いたゼロ・コスト再帰を使用する。
-        auto updateChildren = [&](auto& self, EntityID childID, const XMMATRIX& parentMatrix, bool forceUpdate) -> void {
-            EntityID currentID = childID;
-            while (currentID != 0) {
-                auto* childTrans = _world->GetComponent<TransformComponent>(currentID);
-                if (!childTrans) break;
+        // ルートから子へ伝播
+        EntityID childID = trans.firstChildID;
+        while (childID != 0) {
+            auto* childTrans = _world->GetComponent<TransformComponent>(childID);
+            if (childTrans) {
+                EntityID nextChild = childTrans->nextSiblingID;
 
-                bool childUpdated = false;
+                // ルートの XMFLOAT4X4 を XMMATRIX にロードして投げる
+                XMMATRIX rootWorldMat = XMLoadFloat4x4(&trans.worldMatrix);
+                UpdateTransformRecursiveHelper(_world, childID, rootWorldMat, isUpdated);
 
-                // [Why] 「親が動いた(forceUpdate)」場合は、子がStatic設定であっても強制的に追従させる。
-                // それ以外は、自身が動的であるか、Dirtyである場合に計算する。
-                if (forceUpdate || !childTrans->isStatic || childTrans->isDirty) {
-                    childTrans->UpdateMatrix(parentMatrix);
-                    childTrans->isDirty = false;
-                    childUpdated = true;
-                }
-
-                // 孫がいる場合は、自分の更新状態をさらに下へ伝播させる
-                if (childTrans->firstChildID != 0) {
-                    XMMATRIX nextParentMat = XMLoadFloat4x4(&childTrans->worldMatrix);
-                    self(self, childTrans->firstChildID, nextParentMat, childUpdated);
-                }
-
-                // 次の兄弟へ
-                currentID = childTrans->nextSiblingID;
+                childID = nextChild;
             }
-            };
-
-            // 子供がいる場合のみ、再帰処理をキックする
-            if (trans.firstChildID != 0) {
-                XMMATRIX parentMat = XMLoadFloat4x4(&trans.worldMatrix);
-                updateChildren(updateChildren, trans.firstChildID, parentMat, isUpdated);
+            else {
+                break;
             }
-        };
-
-    // 並列実行で全エンティティを一気に処理
-    ForEachWithIDParallel(updateLogic);
+        }
+    });
     
 }
 
@@ -145,43 +209,6 @@ void TransformUpdateSystem::RepairBrokenLinks()
     });
 }
 
-void TransformUpdateSystem::UpdateTransformRecursive(
-    EntityID currentID, const XMMATRIX &parentMatrix)
-{
-
-
-   // 子要素を「兄弟(Sibling)リンク」を使って横に走査するループ
-    EntityID entityItr = currentID;
-
-    // 安全対策: 無限ループ防止 (循環参照対策)
-    int       safetyCount  = 0;
-    const int MAX_SIBLINGS = 10000;
-
-    while (entityItr != 0) {
-        if (++safetyCount > MAX_SIBLINGS) break;
-
-        auto *trans = _world->GetComponent<TransformComponent>(entityItr);
-        if (!trans) break; // エラーガード
-
-        // 更新処理をする「前」に、次の人を確保しておく
-        // もし再帰処理中に構造が変わっても、ループだけは安全に回せるようにするため
-        EntityID nextEntity = trans->nextSiblingID;
-
-        // 1. 自分（子）の行列更新
-        // ★重要: 子は親の影響を受けるため、自身のisStaticに関わらず行列計算を行うのが一般的
-        // もし「子は絶対動かない」という仕様なら弾くが、通常は親につくなら動くべき
-        trans->UpdateMatrix(parentMatrix);
-
-        // 2. さらにその子（孫）がいれば深さ優先で再帰
-        if (trans->firstChildID != 0) {
-            XMMATRIX myWorld = XMLoadFloat4x4(&trans->worldMatrix);
-            UpdateTransformRecursive(trans->firstChildID, myWorld);
-        }
-
-        // 3. 次の兄弟へ移動
-        entityItr = nextEntity;
-    }
-}
 
 // ---------------------------------------------------------
 // ヘルパー関数: 親子関係の構築

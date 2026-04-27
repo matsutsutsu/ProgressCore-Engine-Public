@@ -70,4 +70,5 @@ struct AnimatorComponent {
         playbackSpeed = speed;
         activeCurve = curve;
     }
+
 };

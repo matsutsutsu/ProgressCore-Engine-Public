@@ -41,10 +41,7 @@ class TransformUpdateSystem : public CCL::ECS::IfSystem<TransformUpdateSystem,CC
         CCL::ECS::Core::World &world, CCL::ECS::EntityID entity, bool destroyChildren = true);
 
   private:
-    // 再帰更新処理
-    void UpdateTransformRecursive(
-        CCL::ECS::EntityID currentID, const DirectX::XMMATRIX &parentMatrix);
-
+ 
     // 保留中の親子関係を適用する関数
     void ProcessPendingParents();
 
