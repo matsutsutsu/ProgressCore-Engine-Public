@@ -149,6 +149,7 @@ void TransformUpdateSystem::UpdateTransformRecursive(
     EntityID currentID, const XMMATRIX &parentMatrix)
 {
 
+
    // 子要素を「兄弟(Sibling)リンク」を使って横に走査するループ
     EntityID entityItr = currentID;
 

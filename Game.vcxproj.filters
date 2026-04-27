@@ -1476,6 +1476,9 @@
     <ClInclude Include="Source\Game\Logics\Combat\DamageResolutionSystem.h">
       <Filter>Source\Game\Logics\Combat</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\GamePlay\Transform\BoneAttachmentComponent.h">
+      <Filter>Source\Engine\GamePlay\Transform</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
