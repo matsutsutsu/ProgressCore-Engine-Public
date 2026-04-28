@@ -187,9 +187,21 @@ void OpaquePass::Execute(const RenderContext& rc) {
 
                     // スキンドメッシュ：インスタンシング不可、1体ずつ描画
                     for (size_t k = 0; k < batchCount; ++k) {
-                        renderer->UpdateSkeletonConstants(dc, mesh);
-                       
-                        dc->DrawIndexed(static_cast<UINT>(mesh.data->indices.size()), 0, 0);
+                        // ★ 修正1: 実際のコマンド配列から、k番目のエンティティの情報を取得する
+                        const auto& cmd = opaqueCommands[sortKeys[batchStart + k].originalIndex];
+
+                        // ★ 修正1: 直前で勝手に instData を作らず、上で正しく作ったキャッシュを使う！
+                          // (スキンドメッシュ用の単位行列 + カスタムパラメータが確実に入っています)
+                        _instanceBuffer.Write(dc, &instanceDataCache[k], 1);
+                        _instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
+
+                        // ★ 修正2: 1体目の mesh ではなく、現在の描画対象である cmd.model (k体目) の
+                        // 正しいメッシュから「自分のボーン行列」を取り出してGPUに送る！
+                        const Model::Mesh& instanceMesh = cmd.model->GetMeshes()[meshIdx];
+                        renderer->UpdateSkeletonConstants(dc, instanceMesh);
+
+                        // ★ 修正2: 1体だけインスタンス描画する (SV_InstanceID を機能させるため)
+                        dc->DrawIndexedInstanced(static_cast<UINT>(mesh.data->indices.size()), 1, 0, 0, 0);
                     }
                 }
                 else {
@@ -200,9 +212,36 @@ void OpaquePass::Execute(const RenderContext& rc) {
                     dc->IASetVertexBuffers(0, 1, mesh.data->vertexBuffer.GetAddressOf(), &stride, &offset);
                     dc->IASetIndexBuffer(mesh.data->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
                     dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-                    dc->DrawIndexedInstanced(
-                        static_cast<UINT>(mesh.data->indices.size()),
-                        static_cast<UINT>(batchCount), 0, 0, 0);
+
+                    // ★ 修正2: 配列の型を XMFLOAT4X4 から InstanceData に変更する
+                    static std::vector<InstanceData> instanceDataCache;
+                    if (instanceDataCache.size() < batchCount) {
+                        instanceDataCache.resize(batchCount);
+                    }
+
+                    for (size_t k = 0; k < batchCount; ++k) {
+                        const auto& cmd = opaqueCommands[sortKeys[batchStart + k].originalIndex];
+                        // ★ 修正3: InstanceData の world メンバに行列を代入
+                        instanceDataCache[k].world = cmd.worldMatrix;
+                        // instanceDataCache[k].customParams = ... ; // マテリアルパラメータ等
+                    }
+
+                    // ★ 修正3: 抽出した行列配列を使って、MAX_INSTANCES(8192)ごとに切り分けて一括描画
+                    size_t currentOffset = 0;
+                    while (currentOffset < batchCount) {
+                        size_t drawCount = (std::min)(batchCount - currentOffset, (size_t)InstanceBuffer::MAX_INSTANCES);
+
+                        // GPUに行列の配列を一括転送
+                        _instanceBuffer.Write(dc, instanceDataCache.data() + currentOffset, drawCount);
+                        _instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
+
+                        // まとめて描画！
+                        dc->DrawIndexedInstanced(
+                            static_cast<UINT>(mesh.data->indices.size()),
+                            static_cast<UINT>(drawCount), 0, 0, 0);
+
+                        currentOffset += drawCount;
+                    }
                 }
             }
 

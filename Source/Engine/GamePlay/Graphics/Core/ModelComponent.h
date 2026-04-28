@@ -31,7 +31,7 @@ struct ModelComponent
         }
     }
 
-    // コピー構築
+    // 2. コピーコンストラクタ（★重要：複製されたら必ず新しい部屋を作る！）
     ModelComponent(const ModelComponent& other) : assetHash(other.assetHash) {
         if (assetHash != 0) {
             modelHandle = ResourceManager::Instance().CreateModelInstanceFromHash(assetHash);
@@ -55,10 +55,12 @@ struct ModelComponent
         return *this;
     }
 
-    // ムーブ構築 (チャンク移動で最も呼ばれる高速パス)
+    // 4. ムーブコンストラクタ（★超重要：noexcept を付ける！）
+        // std::vector等がメモリ拡張で引っ越しをする際、noexceptがあればコピーではなくこれが呼ばれます。
+        // 古い部屋を解約せず、所有権だけを安全に移動させます。
     ModelComponent(ModelComponent&& other) noexcept
         : modelHandle(other.modelHandle), assetHash(other.assetHash) {
-        other.modelHandle = ModelInstanceHandle{};
+        other.modelHandle = ModelInstanceHandle{}; // 元の所有権を剥奪
         other.assetHash = 0;
     }
 
