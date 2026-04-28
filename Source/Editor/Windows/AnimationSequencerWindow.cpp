@@ -9,6 +9,8 @@
 
 // ボスが持っている武器の名簿を読むためにインクルード
 #include "Game/Logics/Combat/CombatRosterComponent.h"
+#include "Engine/GamePlay/Transform/TransformComponent.h"
+#include "Engine/GamePlay/Transform/PendingParentComponent.h"
 
 #include "Engine/Platform/Dialog.h"
 #include "Engine/Platform/Logger.h"
@@ -299,7 +301,17 @@ void AnimationSequencerWindow::DrawContents(EditorContext& context)
         _sequencerImpl->UpdateDuration(g_EditingSequence.duration);
         _sequencerImpl->SyncFromData();
     }
-    if (context.isAnimEditMode) animator->currentSequence = &g_EditingSequence;
+    // =========================================================
+    // ★改良: Edit Mode の制御（AIの妨害をブロックする）
+    // =========================================================
+    if (context.isAnimEditMode) {
+        // AIによる上書きを防ぎ、エディタの台本を強制セット
+        animator->isEditorOverride = true;
+        animator->currentSequence = &g_EditingSequence;
+    } else {
+        // Edit Modeを抜けたらAIに制御を返す
+        animator->isEditorOverride = false;
+    }
 
     ImGui::Separator();
 
@@ -319,29 +331,32 @@ void AnimationSequencerWindow::DrawContents(EditorContext& context)
 
         // エディタ上での再生/停止コントロール
         static bool s_isPlaying = false;
+        static bool s_wasEditMode = false; // EditModeに入った瞬間を検知するため
 
         if (context.isAnimEditMode) {
+            // ★改良: Edit Mode に入った瞬間、ゲームの現在時間をシークバーに引き継ぐ（0秒リセットによる固まりを防止）
+            if (!s_wasEditMode) {
+                context.animEditTime = animator->currentTimer;
+                s_wasEditMode = true;
+            }
+
             if (s_isPlaying) {
-                // 再生中なら時間を進める
                 float dt = ImGui::GetIO().DeltaTime;
                 context.animEditTime += dt * animator->playbackSpeed;
-
-                // ループ処理
                 if (context.animEditTime > g_EditingSequence.duration) {
                     context.animEditTime = animator->isLoop ? fmod(context.animEditTime, g_EditingSequence.duration) : g_EditingSequence.duration;
                 }
-                // シーケンサーUIを追従させる
                 animator->currentTimer = context.animEditTime;
             }
 
-            // 再生/ポーズ トグルボタン
             if (ImGui::Button(s_isPlaying ? "|| Pause" : "> Play")) {
                 s_isPlaying = !s_isPlaying;
             }
             ImGui::SameLine();
         }
         else {
-            s_isPlaying = false; // EditModeを抜けたらリセット
+            s_isPlaying = false;
+            s_wasEditMode = false;
         }
 
         auto AddAndSelectEvent = [&](int type) {
@@ -369,19 +384,25 @@ void AnimationSequencerWindow::DrawContents(EditorContext& context)
 
             if (changed) _sequencerImpl->SyncToData();
 
-            // ★改良: ユーザーがシークバー(上部の目盛り)を直接ドラッグした瞬間
+            // ★シークバーをドラッグした瞬間
             if (currentFrame != prevFrame) {
-                s_isPlaying = false; // ドラッグした瞬間、強制的にポーズ（一時停止）させる
-
+                s_isPlaying = false;
                 float newTime = (float)currentFrame / 60.0f;
                 context.animEditTime = newTime;
                 animator->currentTimer = newTime;
             }
 
-            // 常に最新の animEditTime で画面を強制更新する
+            // 常に最新の animEditTime で骨格と描画を強制更新する
             if (context.isAnimEditMode && context.systemManager) {
                 if (auto* animSystem = context.systemManager->GetSystem<AnimationSystem>()) {
+                    // ポーズの計算 (ローカル)
                     animSystem->UpdateManual(entity, context.animEditTime);
+
+                    // ★最重要: 計算したポーズを描画用(ワールド)に即座に反映させる！
+                    // これがないと描画システムに頂点移動が伝わらず画面がおかしくなる
+                    if (auto* transform = context.world->GetComponent<TransformComponent>(entity)) {
+                        model->UpdateTransform(transform->worldMatrix);
+                    }
                 }
             }
         }

@@ -2,6 +2,8 @@
 #include "Game/Core/AllComponents.h"
 #include <algorithm>
 #include <string>
+#include "Engine/GamePlay/Transform/PendingParentComponent.h"
+#include "Engine/Platform/Logger.h"
 
 #include "Engine/Serialization/Factory/Prefab.h"
 #include "Engine/Serialization/Factory/EntityFactory.h"
@@ -14,6 +16,15 @@ void HierarchyWindow::DrawContents(EditorContext& context)
     auto* world = context.world;
     auto& chunkManager = world->GetChunkManager();
     auto& chunks = chunkManager.GetChunks();
+
+    // =========================================================================
+    // ★ 究極の修正: 毎フレーム必ずキャッシュを空にする！
+    // これを忘れると過去の親子関係が蓄積し、全てが循環参照と誤認されます。
+    // =========================================================================
+    _rootEntities.clear();
+    _allEntities.clear();
+    _flatList.clear();
+    _childrenMap.clear();
 
     // ---------------------------------------------------------
     // ツールバー (生成 ＆ 検索)  ※ここが消えていた部分です！
@@ -122,7 +133,26 @@ void HierarchyWindow::DrawContents(EditorContext& context)
         ImGui::EndDragDropTarget();
     }
  
+    // =========================================================================
+    // ★ 追加: ヒエラルキーの背景へのドロップ判定 (親の解除 / ルート化)
+    // =========================================================================
+    // 残りのウィンドウ領域をダミーアイテムで埋めて、ドロップ判定を有効にする
+    ImGui::Dummy(ImGui::GetContentRegionAvail());
+    if (ImGui::BeginDragDropTarget()) {
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_ENTITY_ID")) {
+            CCL::ECS::EntityID draggedEntity = *(const CCL::ECS::EntityID*)payload->Data;
 
+            // 親を 0（なし）に設定して予約
+            if (context.world->HasComponent<PendingParentComponent>(draggedEntity)) {
+                context.world->GetComponent<PendingParentComponent>(draggedEntity)->parentID = 0;
+            }
+            else {
+                context.world->AddComponent<PendingParentComponent>(draggedEntity);
+            }
+            CCL_LOG_INFO(LogCategory::Editor, "Unparenting: Entity %u is now root", draggedEntity);
+        }
+        ImGui::EndDragDropTarget();
+    }
     // 背景クリック時の選択解除
     if (ImGui::IsMouseClicked(0) && ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) {
         context.selectedEntity = CCL::ECS::InvalidEntityID;
@@ -154,6 +184,8 @@ void HierarchyWindow::DrawFlatNode(
     // これにより、ImGuiの内部スタックを汚さず、単なる「見た目だけ」のツリーノードになります。
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
+
+
     if (!node.hasChildren) flags |= ImGuiTreeNodeFlags_Leaf;
     if (context.selectedEntity == node.entityID) flags |= ImGuiTreeNodeFlags_Selected;
 
@@ -184,6 +216,38 @@ void HierarchyWindow::DrawFlatNode(
         ImGui::EndDragDropSource();
     }
 
+    // =========================================================================
+    // ★ 追加: ドラッグ＆ドロップ：受信先 (親子関係の設定)
+    // =========================================================================
+    if (ImGui::BeginDragDropTarget()) {
+        // "DND_ENTITY_ID" タグの荷物を受け取る
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_ENTITY_ID")) {
+            CCL::ECS::EntityID draggedEntity = *(const CCL::ECS::EntityID*)payload->Data;
+            CCL::ECS::EntityID targetParent = node.entityID;
+
+            // ① 自分自身には入れられない
+            // ② ドロップ先(targetParent)が、ドラッグしている奴(draggedEntity)の子供や孫であってはならない
+            if (draggedEntity != targetParent && !IsDescendantOf(targetParent, draggedEntity, childrenMap)) {
+                // PendingParentComponent を使用して親子関係を予約
+                if (context.world->HasComponent<PendingParentComponent>(draggedEntity)) {
+                    context.world->GetComponent<PendingParentComponent>(draggedEntity)->parentID = targetParent;
+                }
+                else {
+					PendingParentComponent ppc;
+					ppc.parentID = targetParent;
+                    context.world->AddComponent<PendingParentComponent>(draggedEntity, ppc);
+                }
+                CCL_LOG_INFO(LogCategory::Editor, "Parenting: Entity %u is now child of %u", draggedEntity, targetParent);
+            }
+        }
+        else {
+            // ブロックされた場合は警告を出す
+            CCL_LOG_WARN(LogCategory::Editor, "Parenting Failed: Circular reference or self-parenting detected!");
+        }
+        
+        ImGui::EndDragDropTarget();
+    }
+
     // =======================================================================
     // クリック（選択）判定を「スマート・クリック」に進化させる
     // =======================================================================
@@ -204,8 +268,23 @@ void HierarchyWindow::DrawFlatNode(
         }
     }
 
-    // ポップアップメニューやドラッグ＆ドロップ元の設定など...
+    // ---------------------------------------------------------
+    //  右クリックメニュー (独立/Unparent 機能の追加)
+    // ---------------------------------------------------------
     if (ImGui::BeginPopupContextItem()) {
+        
+        // 追加: 親から外れてルートに戻るボタン
+        if (ImGui::MenuItem("Unparent (Make Root)")) {
+            if (context.world->HasComponent<PendingParentComponent>(node.entityID)) {
+                context.world->GetComponent<PendingParentComponent>(node.entityID)->parentID = 0;
+            } else {
+                context.world->AddComponent<PendingParentComponent>(node.entityID); // 0は親なしを意味する
+            }
+            CCL_LOG_INFO(LogCategory::Editor, "Entity %u unparented.", node.entityID);
+        }
+        
+        ImGui::Separator(); // 区切り線
+
         if (ImGui::MenuItem("Delete Entity")) {
             context.world->Destroy(node.entityID);
             if (context.selectedEntity == node.entityID) context.selectedEntity = CCL::ECS::InvalidEntityID;
@@ -227,7 +306,10 @@ void HierarchyWindow::FlattenTree(
     const std::unordered_map<CCL::ECS::EntityID, std::vector<CCL::ECS::EntityID>>& childrenMap,
     std::vector<FlatNode>& outFlatList)
 {
-    bool hasChildren = childrenMap.count(entityID) > 0;
+    // =========================================================================
+    //  単にキーが存在するかだけでなく、「本当に中身(子供)がいるか」を確認する
+    // =========================================================================
+    bool hasChildren = childrenMap.count(entityID) > 0 && !childrenMap.at(entityID).empty();
 
     // まず自分自身をリストに追加する
     outFlatList.push_back({ entityID, depth, hasChildren });
@@ -239,4 +321,25 @@ void HierarchyWindow::FlattenTree(
             FlattenTree(childID, depth + 1, childrenMap, outFlatList);
         }
     }
+}
+
+// =========================================================================
+//  循環参照チェックの実装 (ファイルの末尾などに追加)
+// =========================================================================
+bool HierarchyWindow::IsDescendantOf(CCL::ECS::EntityID targetEntity, CCL::ECS::EntityID ancestorEntity, const std::unordered_map<CCL::ECS::EntityID, std::vector<CCL::ECS::EntityID>>& childrenMap)
+{
+    // 自分自身へのドロップも循環とみなす
+    if (targetEntity == ancestorEntity) return true;
+
+    // 先祖の子供リストを取得
+    auto it = childrenMap.find(ancestorEntity);
+    if (it != childrenMap.end()) {
+        for (auto child : it->second) {
+            // 子供、あるいはそのさらに子供がターゲットなら true (危険)
+            if (IsDescendantOf(targetEntity, child, childrenMap)) {
+                return true;
+            }
+        }
+    }
+    return false; // 安全
 }

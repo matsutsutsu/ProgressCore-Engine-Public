@@ -1,0 +1,90 @@
+{
+    "entities": [
+        {
+            "components": {
+                "AnimParameters": null,
+                "AnimStateMachine": {
+                    "graphPath": "Assets/Animations/Nodes/TestAnimationNode.json"
+                },
+                "Animator": {
+                    "isLoop": true,
+                    "playbackSpeed": 1.0
+                },
+                "CombatRosterComponent": null,
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Enemy/Boss.glb"
+                },
+                "Name": {
+                    "name": "AnimationModel"
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "position": [
+                        1.366117238998413,
+                        0.0,
+                        1.3483495712280273
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.9986966848373413,
+                        0.0,
+                        0.051037319004535675
+                    ],
+                    "scale": [
+                        0.30000001192092896,
+                        0.30000001192092896,
+                        0.30000001192092896
+                    ]
+                }
+            },
+            "id": 4294967305
+        },
+        {
+            "components": {
+                "BoneAttachmentComponent": null,
+                "Name": {
+                    "name": "primitive"
+                },
+                "Primitive": {
+                    "color": [
+                        0.800000011920929,
+                        0.20000000298023224,
+                        0.20000000298023224,
+                        1.0
+                    ],
+                    "height": 1.0,
+                    "isWireframe": false,
+                    "radius": 0.5,
+                    "size": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "type": 1
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "position": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        4.0,
+                        4.0,
+                        4.0
+                    ]
+                }
+            },
+            "id": 4294967304
+        }
+    ],
+    "name": "AnimationModel"
+}

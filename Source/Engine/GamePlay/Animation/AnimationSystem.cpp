@@ -31,6 +31,9 @@ void AnimationSystem::Update(float dt)
         // 台本（Sequence）がセットされていなければ何もしない
         if (!animator.currentSequence) return;
 
+        // エディタで操作中の場合は、通常の時間進行とイベント発火をストップする
+        if (animator.isEditorOverride) return;
+
         const AnimSequence* seq = animator.currentSequence;
 
         // ========================================================
@@ -199,4 +202,5 @@ void AnimationSystem::UpdateManual(CCL::ECS::EntityID entity, float time)
     }
 }
 
-REGISTER_LOGIC_SYSTEM(AnimationSystem, Priority::RenderStage::R03_Animation);
+// 修正後 (L02_Update でAIや移動と共にアニメーション時間を進める)
+REGISTER_LOGIC_SYSTEM(AnimationSystem, Priority::LogicStage::L02_Update);

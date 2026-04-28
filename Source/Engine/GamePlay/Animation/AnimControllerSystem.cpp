@@ -15,6 +15,9 @@ void AnimControllerSystem::Update(float dt)
         AnimatorComponent& animator,
         AnimParametersComponent& params)
         {
+            // エディタで操作中の場合は、ステートマシンからの再生命令（干渉）を完全に遮断する
+            if (animator.isEditorOverride) return;
+
             // ========================================================================
             // 1. グラフのロードと初期化 (ポインタを使わず直接 internalGraph を操作する)
             // ========================================================================

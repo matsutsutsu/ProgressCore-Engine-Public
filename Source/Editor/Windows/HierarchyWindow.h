@@ -37,5 +37,11 @@ private:
         EditorContext& context,
         const std::unordered_map<CCL::ECS::EntityID, std::vector<CCL::ECS::EntityID>>& childrenMap);
 
+    // ターゲットが、あるエンティティの子孫かどうかを判定する
+    bool IsDescendantOf(
+        CCL::ECS::EntityID targetEntity,
+        CCL::ECS::EntityID ancestorEntity,
+        const std::unordered_map<CCL::ECS::EntityID, std::vector<CCL::ECS::EntityID>>& childrenMap);
+
     char _searchBuffer[256] = { 0 };
 };

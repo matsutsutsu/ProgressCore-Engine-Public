@@ -3,6 +3,10 @@
 #include "ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"
 
+// Joltのモーションタイプ判定用
+#include <Jolt/Jolt.h>
+#include <Jolt/Physics/Body/BodyInterface.h>
+
 void JoltPushSystem::Update(float dt) {
   if (!_world->HasResource<JoltPhysicsManager>())
     return;
@@ -12,18 +16,45 @@ void JoltPushSystem::Update(float dt) {
   // 並列処理で全エンティティを最速チェック
   ForEachParallel(
       [&](TransformComponent &trans, const JoltHandleComponent &joltBody) {
-        // ★フラグが立っているものだけワープを実行
+        // ====================================================================
+        //  ローカル座標ではなく、最新のワールド(絶対)座標を抽出する
+        // ====================================================================
+        DirectX::XMFLOAT3 worldPos = trans.GetWorldPosition();
+        DirectX::XMFLOAT4 worldRot = trans.GetWorldRotation();
+        
+        JPH::RVec3 joltPos(worldPos.x, worldPos.y, worldPos.z);
+        JPH::Quat  joltRot(worldRot.x, worldRot.y, worldRot.z, worldRot.w);
+
+        // ====================================================================
+        // 処理A: フラグが立った時の「強制ワープ」
+        // ====================================================================
         if (trans.isTeleported) {
           bodyInterface.SetPositionAndRotation(
               joltBody.bodyID,
-              JPH::RVec3(trans.position.x, trans.position.y, trans.position.z),
-              JPH::Quat(trans.rotation.x, trans.rotation.y, trans.rotation.z,
-                        trans.rotation.w),
-              JPH::EActivation::
-                  Activate); // ワープ後に物理シミュレーションを再開するためにActivateを指定
+              joltPos,
+              joltRot,
+              JPH::EActivation::Activate); 
 
-          // ワープが済んだらフラグを下ろす（以降のフレームは無視される）
           trans.isTeleported = false;
+        }
+        // ====================================================================
+        //  アニメーションで動く物体（Kinematic剛体）の「毎フレーム同期」
+        // ====================================================================
+        else {
+            // この剛体が「Kinematic（プログラム/アニメーション駆動）」なら、
+            // 毎フレームECS側の最新のワールド座標を物理エンジンに押し付ける
+            if (bodyInterface.GetMotionType(joltBody.bodyID) == JPH::EMotionType::Kinematic) {
+                
+                // SetPositionAndRotation を使うことで、アニメーションの動きに合わせて
+                // 正確にJoltのコリジョン枠が追従します。
+                // (もし他の剛体を押しのけたい場合は bodyInterface.MoveKinematic を使います)
+                bodyInterface.SetPositionAndRotation(
+                    joltBody.bodyID,
+                    joltPos,
+                    joltRot,
+                    JPH::EActivation::Activate
+                );
+            }
         }
       });
 }

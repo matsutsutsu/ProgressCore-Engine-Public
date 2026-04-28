@@ -1,0 +1,257 @@
+{
+    "entities": [
+        {
+            "components": {
+                "BloomConfig": {
+                    "enable": true,
+                    "intensity": 1.0,
+                    "radius": 1.0,
+                    "softKnee": 0.5,
+                    "threshold": 1.0
+                },
+                "DirectionalLight": {
+                    "color": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "groundColor": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.5333333611488342
+                    ],
+                    "intensity": 0.8999999761581421,
+                    "skyColor": [
+                        0.0,
+                        0.10309933125972748,
+                        0.35135138034820557,
+                        1.0
+                    ]
+                },
+                "Fog": {
+                    "color": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "enabled": true,
+                    "end": 500.0,
+                    "heightDensity": 0.5,
+                    "heightStart": 0.0,
+                    "noiseScale": 0.10000000149011612,
+                    "noiseSpeed": [
+                        0.10000000149011612,
+                        0.05000000074505806
+                    ],
+                    "noiseStrength": 0.0,
+                    "rimColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "rimPower": 3.0,
+                    "rimStrength": 0.0,
+                    "start": 40.0
+                },
+                "Name": {
+                    "name": "LightingSetup"
+                },
+                "ShadowMapConfig": {
+                    "cascadeSplits": [
+                        15.0,
+                        50.0,
+                        200.0
+                    ],
+                    "shadowBias": 0.001500000013038516,
+                    "shadowColor": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.5
+                    ]
+                },
+                "ToneMapConfig": {
+                    "exposure": 0.4000000059604645
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "position": [
+                        0.0,
+                        5.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.699999988079071,
+                        0.0,
+                        -0.5,
+                        0.9200000166893005
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                }
+            },
+            "id": 4294967297
+        },
+        {
+            "components": {
+                "CameraBodyFree": {
+                    "currentPitch": -21.999967575073242,
+                    "currentYaw": -0.7999966144561768,
+                    "lookSpeed": 0.20000000298023224,
+                    "moveSpeed": 8.0
+                },
+                "Name": {
+                    "name": "FreeCamera"
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "position": [
+                        1.4278203248977661,
+                        7.131634712219238,
+                        -14.635908126831055
+                    ],
+                    "rotation": [
+                        0.19080407917499542,
+                        -0.006852966267615557,
+                        0.0013320797588676214,
+                        0.9816033244132996
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "VirtualCamera": {
+                    "blendTime": 2.0,
+                    "farClip": 1000.0,
+                    "fov": 60.29999923706055,
+                    "nearClip": 0.10000000149011612,
+                    "priority": 100
+                }
+            },
+            "id": 4294967298
+        },
+        {
+            "components": {
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Stage/ExampleStage.glb"
+                },
+                "Name": {
+                    "name": "ExampleStage"
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "position": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                }
+            },
+            "id": 4294967299
+        },
+        {
+            "components": {
+                "BoneAttachmentComponent": null,
+                "Name": {
+                    "name": "primitive"
+                },
+                "Primitive": {
+                    "color": [
+                        0.800000011920929,
+                        0.20000000298023224,
+                        0.20000000298023224,
+                        1.0
+                    ],
+                    "height": 1.0,
+                    "isWireframe": false,
+                    "radius": 0.5,
+                    "size": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "type": 1
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "position": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        4.0,
+                        4.0,
+                        4.0
+                    ]
+                }
+            },
+            "id": 8589934598
+        },
+        {
+            "components": {
+                "AnimParameters": null,
+                "AnimStateMachine": {
+                    "graphPath": "Assets/Animations/Nodes/TestAnimationNode.json"
+                },
+                "Animator": {
+                    "isLoop": true,
+                    "playbackSpeed": 1.0
+                },
+                "CombatRosterComponent": null,
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Enemy/Boss.glb"
+                },
+                "Name": {
+                    "name": "AnimationModel"
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "position": [
+                        1.366117238998413,
+                        0.0,
+                        1.3483495712280273
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.9986966848373413,
+                        0.0,
+                        0.051037319004535675
+                    ],
+                    "scale": [
+                        0.30000001192092896,
+                        0.30000001192092896,
+                        0.30000001192092896
+                    ]
+                }
+            },
+            "id": 4294967300
+        }
+    ]
+}

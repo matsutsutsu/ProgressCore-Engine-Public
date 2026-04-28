@@ -7,6 +7,9 @@
 #include "Engine/GamePlay/Graphics/Core/ModelComponent.h" 
 #include "Engine/Graphics/Resource/Model.h"
 
+// ★ AnimatorComponent をインクルード（アニメーション再生中かの検知用）
+#include "Engine/GamePlay/Animation/AnimatorComponent.h"
+
 // 各システムの .cpp ファイルの上部に追加
 #include "ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"
@@ -30,63 +33,57 @@ static void UpdateTransformRecursiveHelper(Core::World* world, EntityID entity, 
     bool isUpdated = isParentUpdated || trans->isDirty;
     XMMATRIX finalParentMatrix = parentWorldMatrix;
 
-    // --- ボーンアタッチメントの評価 ---
+    // --- 1. ボーンアタッチメントの評価 ---
     if (auto* boneAttach = world->GetComponent<BoneAttachmentComponent>(entity)) {
-
-        // ★ AnimatorComponentではなく、ModelComponent から Model 本体にアクセスする
         if (auto* modelComp = world->GetComponent<ModelComponent>(trans->parentID)) {
-
-            // 【注意】以下の `modelComp->model` の部分は、あなたのプロジェクトの 
-            // ModelComponent が Modelクラス を保持している変数名（pModel や resource 等）に合わせてください。
             Model* model = modelComp->GetModel();
-
             if (model) {
-                // 初回のみインデックスを検索してキャッシュ
                 if (boneAttach->cachedBoneIndex == -1) {
                     boneAttach->cachedBoneIndex = model->GetNodeIndex(boneAttach->boneName);
                 }
-
                 if (boneAttach->cachedBoneIndex != -1) {
-                    // Model::Node の globalTransform (モデル空間での計算済み行列) を取得
                     const auto& nodes = model->GetNodes();
-
-                    // XMFLOAT4X4 を XMMATRIX にロードする（エラー解消）
-                    XMMATRIX boneMatrix = XMLoadFloat4x4(&nodes[boneAttach->cachedBoneIndex].globalTransform);
-
+                    XMMATRIX boneMatrix = XMLoadFloat4x4(
+                        &nodes[boneAttach->cachedBoneIndex].globalTransform);
                     finalParentMatrix = boneMatrix * parentWorldMatrix;
-                    isUpdated = true; // ボーンは毎フレーム動くので強制更新
+                    isUpdated = true;
+
+                    // ボーンは毎フレーム動くため、
+                    //   worldMatrix が更新された後に JoltPushSystem へ同期を促す。
+                    //   isTeleported = true にしないと JoltPushSystem はこのエンティティを無視する。
+                    trans->isTeleported = true;
                 }
             }
         }
     }
 
-    // --- 自分自身のワールド行列の計算 ---
+    // =======================================================================
+    //  ここが丸ごと抜けていました！（2. 自分のワールド行列計算）
+    // =======================================================================
     if (isUpdated && !trans->isStatic) {
-        XMMATRIX localMat = XMMatrixAffineTransformation(
-            XMLoadFloat3(&trans->scale),
-            XMVectorZero(),
-            XMLoadFloat4(&trans->rotation),
-            XMLoadFloat3(&trans->position)
-        );
-
-        XMMATRIX worldMat = localMat * finalParentMatrix;
-
-        // ★ XMMATRIX を XMFLOAT4X4 に保存する（エラー解消）
-        XMStoreFloat4x4(&trans->worldMatrix, worldMat);
+        // 親の行列(finalParentMatrix)を渡し、自分のローカル座標と掛け合わせて worldMatrix を上書きする
+        trans->UpdateMatrix(finalParentMatrix);
         trans->isDirty = false;
     }
 
-    // --- 子エンティティへ再帰伝播 ---
+    // --- 3. 【重要】自分の行列が確定した直後に、自分のModelの骨格行列を最新にベイクする ---
+    if (isUpdated) {
+        if (auto* modelComp = world->GetComponent<ModelComponent>(entity)) {
+            if (Model* model = modelComp->GetModel()) {
+                // モデルに対して「今の自分の座標」を教え、全ボーンの空間座標を更新させる
+                model->UpdateTransform(trans->worldMatrix);
+            }
+        }
+    }
+
+    // --- 4. 子エンティティへ再帰伝播 ---
     EntityID childID = trans->firstChildID;
     while (childID != 0) {
         auto* childTrans = world->GetComponent<TransformComponent>(childID);
         if (childTrans) {
             EntityID nextChild = childTrans->nextSiblingID;
-
-            // 親（自分）の XMFLOAT4X4 を XMMATRIX にロードして子供に渡す
             XMMATRIX transWorldMat = XMLoadFloat4x4(&trans->worldMatrix);
             UpdateTransformRecursiveHelper(world, childID, transWorldMat, isUpdated);
-
             childID = nextChild;
         }
         else {
@@ -115,6 +112,16 @@ void TransformUpdateSystem::Update(float dt)
         if (trans.parentID != 0) return; // ルートのみ
 
         bool isUpdated = trans.isDirty;
+
+        // ★【重要】ルートエンティティが立ち止まっていても、アニメーションが再生中なら
+        // 骨が動いているため、強制的に isUpdated = true にして子供（剣）に伝播させなければならない
+        if (auto* animator = _world->GetComponent<AnimatorComponent>(id)) {
+            if (animator->currentSequence != nullptr && animator->playbackSpeed > 0.0f) {
+                isUpdated = true;
+            }
+        }
+
+        // ルートのワールド行列計算
         if (isUpdated && !trans.isStatic) {
             XMMATRIX localMat = XMMatrixAffineTransformation(
                 XMLoadFloat3(&trans.scale),
@@ -126,24 +133,30 @@ void TransformUpdateSystem::Update(float dt)
             trans.isDirty = false;
         }
 
+        // ルートの骨格行列をベイク
+        if (isUpdated) {
+            if (auto* modelComp = _world->GetComponent<ModelComponent>(id)) {
+                if (Model* model = modelComp->GetModel()) {
+                    model->UpdateTransform(trans.worldMatrix);
+                }
+            }
+        }
+
         // ルートから子へ伝播
         EntityID childID = trans.firstChildID;
         while (childID != 0) {
             auto* childTrans = _world->GetComponent<TransformComponent>(childID);
             if (childTrans) {
                 EntityID nextChild = childTrans->nextSiblingID;
-
-                // ルートの XMFLOAT4X4 を XMMATRIX にロードして投げる
                 XMMATRIX rootWorldMat = XMLoadFloat4x4(&trans.worldMatrix);
                 UpdateTransformRecursiveHelper(_world, childID, rootWorldMat, isUpdated);
-
                 childID = nextChild;
             }
             else {
                 break;
             }
         }
-    });
+        });
     
 }
 
@@ -165,12 +178,34 @@ void TransformUpdateSystem::ProcessPendingParents()
 
     for (auto id : pendingEntities) {
         auto *pending = _world->GetComponent<PendingParentComponent>(id);
-        if (pending && pending->parentID != InvalidEntityID) {
+        // ★ 究極の修正: pending->parentID != InvalidEntityID という「無効化チェック」を削除！
+         // 予約票が付いている時点で、必ず何らかの処理を行う。
+        if (pending) {
 
-            // 親と子が存在するか確認 (1フレーム経過していれば存在するはず)
-            if (_world->IsEntityValid(pending->parentID) && _world->IsEntityValid(id)) {
-                // 親子付け実行！
-                SetParent(*_world, id, pending->parentID);
+            // ================================================================
+            // parentID が 0 または InvalidEntityID の場合は「親の解除 (Unparent)」
+            // ================================================================
+            if (pending->parentID == 0 || pending->parentID == InvalidEntityID) {
+                // ルートへの移動（親の解除）
+                if (_world->IsEntityValid(id)) {
+                    DetachChild(*_world, id);
+
+                    // 階層が変わったのでワールド行列の再計算を要求する
+                    if (auto* trans = _world->GetComponent<TransformComponent>(id)) {
+                        trans->isDirty = true;
+                    }
+                }
+            }
+            else {
+                // 通常の親子付け (親も子も実在するエンティティの場合)
+                if (_world->IsEntityValid(pending->parentID) && _world->IsEntityValid(id)) {
+                    SetParent(*_world, id, pending->parentID);
+
+                    // 階層が変わったのでワールド行列の再計算を要求する
+                    if (auto* trans = _world->GetComponent<TransformComponent>(id)) {
+                        trans->isDirty = true;
+                    }
+                }
             }
         }
 
@@ -396,4 +431,4 @@ void TransformUpdateSystem::MarkForDestruction(
 
 
 // 自動登録。SystemGroups.h に書く必要はなくなります
-REGISTER_LOGIC_SYSTEM(TransformUpdateSystem, Priority::LogicStage::L04_Physics);
+REGISTER_LOGIC_SYSTEM(TransformUpdateSystem, Priority::LogicStage::L02_PostUpdate);

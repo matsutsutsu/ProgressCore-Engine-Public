@@ -78,6 +78,9 @@ template <> struct ComponentMeta<TransformComponent> {
             META_FIELD_FLOAT4(TransformComponent, rotation, "rotation", "Rotation", 0.1f, "Transform"),
             META_FIELD_FLOAT3(TransformComponent, scale, "scale", "Scale", 0.1f, "Transform"),
             META_FIELD_BOOL(TransformComponent, isStatic, "isStatic", "Is Static", "Transform") };
+          
+
+
         return fields;
     }
 };

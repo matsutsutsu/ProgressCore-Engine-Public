@@ -5,6 +5,9 @@
 #include <fstream>
 #include <iomanip>
 
+#include "Engine/GamePlay/Transform/PendingParentComponent.h"
+#include "Engine/GamePlay/Transform/TransformComponent.h"
+
 #include "Engine/GamePlay/Core/DestroyTag.h"
 #include "Engine/GamePlay/Core/PersistentTag.h"
 
@@ -170,6 +173,38 @@ std::vector<EntityID> SceneSerializer::DeserializeRaw(World *world, const json &
                     meta->deserializeToWorld(world, newID, data);
                 }
             }
+        }
+    }
+
+    // =========================================================================
+      //  Pass 3 親子関係の完全な再構築（TransformUpdateSystemへの委譲）
+      // =========================================================================
+    for (EntityID newID : createdEntities) {
+        auto* trans = world->GetComponent<TransformComponent>(newID);
+        if (trans) {
+            // Pass 2 で、SerializationContext によって既に「新しいID」に
+            // 翻訳された親IDが trans->parentID に入っている。
+            EntityID mappedParentID = trans->parentID;
+
+            // ① 親が存在する場合のみ、予約票 (PendingParent) を発行する
+            if (mappedParentID != 0 && mappedParentID != CCL::ECS::InvalidEntityID) {
+                if (world->HasComponent<PendingParentComponent>(newID)) {
+                    world->GetComponent<PendingParentComponent>(newID)->parentID = mappedParentID;
+                }
+                else {
+                    PendingParentComponent pendingParent;
+                    pendingParent.parentID = mappedParentID;
+                    world->AddComponent<PendingParentComponent>(newID, pendingParent);
+                }
+            }
+
+            // ② ★超重要★ リンクの初期化 (白紙に戻す)
+            // 不完全なポインタが残っていると TransformUpdateSystem がクラッシュするため、
+            // 予約票だけを持たせて、物理的なリンクはすべて断ち切った状態で生成を終える。
+            trans->parentID = 0;
+            trans->firstChildID = 0;
+            trans->nextSiblingID = 0;
+            trans->prevSiblingID = 0;
         }
     }
 

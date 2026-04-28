@@ -75,6 +75,17 @@ struct TransformComponent {
         return DirectX::XMFLOAT3(worldMatrix._41, worldMatrix._42, worldMatrix._43);
     }
 
+    // ワールド回転 (絶対回転) を取得する
+    DirectX::XMFLOAT4 GetWorldRotation() const
+    {
+        DirectX::XMVECTOR scale, rotQuat, trans;
+        DirectX::XMMatrixDecompose(&scale, &rotQuat, &trans, DirectX::XMLoadFloat4x4(&worldMatrix));
+
+        DirectX::XMFLOAT4 outRot;
+        DirectX::XMStoreFloat4(&outRot, rotQuat);
+        return outRot;
+    }
+
     // ワールド空間での「前方」ベクトルを取得（弾の発射方向などで使用）
     // ※Z+方向を前方とする一般的なDirectX座標系の場合
     DirectX::XMFLOAT3 GetForward() const

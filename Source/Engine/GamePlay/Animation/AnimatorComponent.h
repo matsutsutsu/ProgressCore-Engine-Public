@@ -46,6 +46,9 @@ struct AnimatorComponent {
     std::vector<Model::NodePose> poseBufferA;
     std::vector<Model::NodePose> poseBufferB; // 過去のアニメーション用
 
+    // エディタからの強制制御フラグ
+    bool isEditorOverride = false;
+
     void Play(const AnimSequence* sequence, float blendTime = 0.2f, bool loop = true, float speed = 1.0f, const AnimationCurve* curve = nullptr) {
         if (currentSequence != sequence) {
             // 前のアニメーションを「過去」として記録し、ブレンドを開始する
