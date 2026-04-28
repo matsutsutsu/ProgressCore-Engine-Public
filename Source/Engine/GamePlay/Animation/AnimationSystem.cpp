@@ -76,35 +76,42 @@ void AnimationSystem::Update(float dt)
             const auto& evt = seq->events[animator.nextEventIndex];
 
             // まだイベントの時間に達していなければ、これ以上の走査は不要
-            if (animator.currentTimer < evt.time) {
-                break;
+            // 点のイベント（音を鳴らす、エフェクトを出す）は開始時間になった瞬間に1回だけ発火する
+            if (animator.currentTimer >= evt.startTime) {
+
+                // ここがAAAの設計！
+                // 文字列を数値に変換し、switch文で最速のジャンプを行う
+                // ※実行時にはただの「数値の比較（int == int）」になるため負荷はゼロに等しい
+                uint32_t eventHash = CCL::Utils::HashString(evt.eventName.c_str());
+
+                switch (eventHash) {
+                case  CCL::Utils::HashString("HitBox_Start"):
+                    _world->GetEventBus().Publish(AnimEventHitBoxMessage{ id, true });
+                    break;
+                case  CCL::Utils::HashString("HitBox_End"):
+                    _world->GetEventBus().Publish(AnimEventHitBoxMessage{ id, false });
+                    break;
+                case  CCL::Utils::HashString("Play_Sound"):
+                    _world->GetEventBus().Publish(AnimEventSoundMessage{ id });
+                    break;
+                case  CCL::Utils::HashString("Play_Effect"):
+                    _world->GetEventBus().Publish(AnimEventEffectMessage{ id, evt.stringParam });
+                    break;
+				case CCL::Utils::HashString("HitBox"):  // 状態を持つイベントはシステム側で検知するのでイベントはいらない
+                    // [重要] Hitbox は CombatAnimationSyncSystem が直接「状態」として
+                    // 読み取って処理するため、イベントバスに投げる必要はない。無視してよい。
+                    break;
+                default:
+                    // 未知のイベントは無視するか、警告を出す
+                    break;
+                }
+
+                // 栞を次に進める
+                animator.nextEventIndex++;
             }
-
-            // ここがAAAの設計！
-            // 文字列を数値に変換し、switch文で最速のジャンプを行う
-            // ※実行時にはただの「数値の比較（int == int）」になるため負荷はゼロに等しい
-            uint32_t eventHash = CCL::Utils::HashString(evt.eventName.c_str());
-
-            switch (eventHash) {
-            case  CCL::Utils::HashString("HitBox_Start"):
-                _world->GetEventBus().Publish(AnimEventHitBoxMessage{ id, true });
-                break;
-            case  CCL::Utils::HashString("HitBox_End"):
-                _world->GetEventBus().Publish(AnimEventHitBoxMessage{ id, false });
-                break;
-            case  CCL::Utils::HashString("Play_Sound"):
-                _world->GetEventBus().Publish(AnimEventSoundMessage{ id });
-                break;
-            case  CCL::Utils::HashString("Play_Effect"):
-                _world->GetEventBus().Publish(AnimEventEffectMessage{ id, evt.stringParam });
-                break;
-            default:
-                // 未知のイベントは無視するか、警告を出す
-                break;
+            else {
+                break; // まだ時間が来ていないイベントに当たったらループを抜ける
             }
-
-            // 栞を次に進める
-            animator.nextEventIndex++;
         }
 
         // ========================================================

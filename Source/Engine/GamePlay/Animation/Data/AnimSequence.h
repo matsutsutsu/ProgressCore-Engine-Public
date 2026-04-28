@@ -19,13 +19,14 @@
 
 // 1つのイベント通知 (エンジンが読み取る点)
 struct AnimNotifyEvent {
-    float time;              // 発火時間（秒）
+    float startTime;         // 発火開始時間（秒）
+    float endTime;           // 発火終了時間（秒） - 点イベントの場合は startTime と同じ値にする
     std::string eventName;   // "HitBox_Start", "HitBox_End", "Play_Sound" など
     std::string stringParam; // "Assets/Prefabs/Effects/SwordSlash.json" などのパスを書く欄
 
     template<class Archive>
     void serialize(Archive& archive) {
-        archive(CEREAL_NVP(time), CEREAL_NVP(eventName), CEREAL_NVP(stringParam));
+        archive(CEREAL_NVP(startTime), CEREAL_NVP(endTime), CEREAL_NVP(eventName), CEREAL_NVP(stringParam));
     }
 };
 
@@ -33,6 +34,7 @@ struct AnimNotifyEvent {
 struct AnimNotifyMessage {
     CCL::ECS::EntityID entity;
     std::string eventName;
+    std::string stringParam; // 他システムへパラメータ（パスや部位名）を渡すための変数
 };
 
 

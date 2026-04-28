@@ -7,6 +7,9 @@
 #include "Engine/GamePlay/Animation/Data/AnimSequence.h" 
 #include "Engine/GamePlay/Animation/AnimationSystem.h" 
 
+// ボスが持っている武器の名簿を読むためにインクルード
+#include "Game/Logics/Combat/CombatRosterComponent.h"
+
 #include "Engine/Platform/Dialog.h"
 #include "Engine/Platform/Logger.h"
 #include "Engine/Graphics/Core/Graphics.h"
@@ -37,44 +40,49 @@ public:
     int mFrameMin = 0;
     int mFrameMax = 60 * 5;
 
-    // 台本(点) -> UI(ブロック) への変換
+    // =========================================================================
+    // 台本(ECSデータ) -> UI(ブロック) への変換
+    // ※データが区間(Start/End)を持ったため、以前のような結合処理は不要になりました
+    // =========================================================================
     void SyncFromData() {
         cache.clear();
         if (!targetSequence) return;
 
-        int pendingHitBoxStart = -1;
-        std::string pendingHitBoxParam = "";
-
         for (const auto& evt : targetSequence->events) {
-            if (evt.eventName == "HitBox_Start") {
-                pendingHitBoxStart = (int)(evt.time * 60.0f);
-                pendingHitBoxParam = evt.stringParam;
-            }
-            else if (evt.eventName == "HitBox_End") {
-                if (pendingHitBoxStart != -1) {
-                    EditorEvent item{ pendingHitBoxStart, (int)(evt.time * 60.0f), 0 };
-                    strcpy_s(item.stringParam, sizeof(item.stringParam), pendingHitBoxParam.c_str());
-                    cache.push_back(item);
-                    pendingHitBoxStart = -1;
-                }
+            EditorEvent item{};
+            item.frameStart = (int)(evt.startTime * 60.0f);
+            item.frameEnd = (int)(evt.endTime * 60.0f);
+
+            // 安全な文字列コピー
+            strcpy_s(item.stringParam, sizeof(item.stringParam), evt.stringParam.c_str());
+
+            if (evt.eventName == "HitBox") {
+                item.type = 0;
+                cache.push_back(item);
             }
             else if (evt.eventName == "Play_Sound") {
-                int frame = (int)(evt.time * 60.0f);
-                // ★修正: 音やエフェクトも10フレーム分の幅を持たせ、マウスで掴みやすくする
-                EditorEvent item{ frame, frame + 10, 1 };
-                strcpy_s(item.stringParam, sizeof(item.stringParam), evt.stringParam.c_str());
+                item.type = 1;
                 cache.push_back(item);
             }
             else if (evt.eventName == "Play_Effect") {
-                int frame = (int)(evt.time * 60.0f);
-                EditorEvent item{ frame, frame + 10, 2 };
-                strcpy_s(item.stringParam, sizeof(item.stringParam), evt.stringParam.c_str());
+                item.type = 2;
+                cache.push_back(item);
+            }
+            // 過去のデータの互換性維持（もしJSONに古いHitBox_Startが残っていた場合のフェールセーフ）
+            else if (evt.eventName == "HitBox_Start") {
+                item.type = 0;
+                item.frameEnd = item.frameStart + 10; // 適当な長さを付与
                 cache.push_back(item);
             }
         }
     }
 
-    // UI(ブロック) -> 台本(点) への変換と自動ソート
+ 
+  
+
+    // =========================================================================
+    // UI(ブロック) -> 台本(ECSデータ) への変換と自動ソート
+    // =========================================================================
     void SyncToData() {
         if (!targetSequence) return;
         targetSequence->events.clear();
@@ -83,21 +91,22 @@ public:
             float startSec = (float)item.frameStart / 60.0f;
             float endSec = (float)item.frameEnd / 60.0f;
 
+            // push_back に { startTime, endTime, eventName, stringParam } の4つを渡す
             if (item.type == 0) {
-                targetSequence->events.push_back({ startSec, "HitBox_Start", item.stringParam });
-                targetSequence->events.push_back({ endSec, "HitBox_End", item.stringParam });
+                targetSequence->events.push_back({ startSec, endSec, "HitBox", item.stringParam });
             }
             else if (item.type == 1) {
-                targetSequence->events.push_back({ startSec, "Play_Sound", item.stringParam });
+                targetSequence->events.push_back({ startSec, endSec, "Play_Sound", item.stringParam });
             }
             else if (item.type == 2) {
-                targetSequence->events.push_back({ startSec, "Play_Effect", item.stringParam });
+                targetSequence->events.push_back({ startSec, endSec, "Play_Effect", item.stringParam });
             }
         }
 
+        // ソート基準も time から startTime に変更
         std::sort(targetSequence->events.begin(), targetSequence->events.end(),
             [](const AnimNotifyEvent& a, const AnimNotifyEvent& b) {
-                return a.time < b.time;
+                return a.startTime < b.startTime;
             });
     }
 
@@ -210,14 +219,11 @@ void AnimationSequencerWindow::DrawContents(EditorContext& context)
     if (!resource) return;
 
     auto& animations = resource->GetAnimationsMutable();
-    if (animations.empty()) {
-        ImGui::TextDisabled("No animations found in the model.");
-        return;
-    }
+    if (animations.empty()) return;
 
-    // ---------------------------------------------------------
-    // JSON保存・読み込みのUI
-    // ---------------------------------------------------------
+    // =========================================================
+    // 1. トップツールバー (セーブ・ロード・基本設定)
+    // =========================================================
     if (ImGui::Button("Save JSON...")) {
         char filename[MAX_PATH] = {};
         if (Dialog::SaveFileName(filename, MAX_PATH, "JSON Files\0*.json\0", "Save Anim Sequence", "json", Graphics::Instance().GetWindowHandle()) == DialogResult::OK) {
@@ -227,8 +233,6 @@ void AnimationSequencerWindow::DrawContents(EditorContext& context)
             std::string finalPath = (!ec && !relPath.empty()) ? relPath.generic_string() : filename;
 
             strcpy_s(g_SavePath, sizeof(g_SavePath), finalPath.c_str());
-
-            // ★保存直前に最新のUI状態をデータに書き込む
             _sequencerImpl->SyncToData();
 
             std::ofstream os(finalPath);
@@ -240,7 +244,6 @@ void AnimationSequencerWindow::DrawContents(EditorContext& context)
         }
     }
     ImGui::SameLine();
-
     if (ImGui::Button("Load JSON...")) {
         char filename[MAX_PATH] = {};
         if (Dialog::OpenFileName(filename, MAX_PATH, "JSON Files\0*.json\0", "Load Anim Sequence", Graphics::Instance().GetWindowHandle()) == DialogResult::OK) {
@@ -256,185 +259,203 @@ void AnimationSequencerWindow::DrawContents(EditorContext& context)
                 cereal::JSONInputArchive archive(is);
                 archive(cereal::make_nvp("AnimSequence", g_EditingSequence));
 
-                // 読み込んだデータに合わせてターゲットコンボボックスを更新
                 for (int i = 0; i < (int)animations.size(); ++i) {
                     if (animations[i].name == g_EditingSequence.targetAnimName) {
-                        s_SelectedAnimIndex = i;
-                        break;
+                        s_SelectedAnimIndex = i; break;
                     }
                 }
-
                 _sequencerImpl->targetSequence = &g_EditingSequence;
                 _sequencerImpl->UpdateDuration(g_EditingSequence.duration);
-                _sequencerImpl->SyncFromData(); // UIを更新
+                _sequencerImpl->SyncFromData();
                 _selectedEntry = -1;
-                CCL_LOG_INFO(LogCategory::Editor, "Sequence Loaded: %s", finalPath.c_str());
             }
         }
     }
+    ImGui::SameLine(); ImGui::TextDisabled("File: %s", g_SavePath[0] == '\0' ? "None" : g_SavePath);
 
-    ImGui::SameLine();
-    ImGui::TextDisabled("File: %s", g_SavePath[0] == '\0' ? "None" : g_SavePath);
-    ImGui::Separator();
-
-    // ★追加: ノードエディタで使う「Sequence Name」の編集
     char seqNameBuf[128] = {};
     strcpy_s(seqNameBuf, sizeof(seqNameBuf), g_EditingSequence.sequenceName.c_str());
-    if (ImGui::InputText("Sequence Name", seqNameBuf, sizeof(seqNameBuf))) {
-        g_EditingSequence.sequenceName = seqNameBuf;
-    }
-    ImGui::Separator();
+    ImGui::SetNextItemWidth(200.0f);
+    if (ImGui::InputText("Sequence Name", seqNameBuf, sizeof(seqNameBuf))) g_EditingSequence.sequenceName = seqNameBuf;
 
-    // ---------------------------------------------------------
-    // ターゲットの関連付けと初期化
-    // ---------------------------------------------------------
-    if (s_SelectedAnimIndex < 0 || s_SelectedAnimIndex >= (int)animations.size()) {
-        s_SelectedAnimIndex = 0; // フェールセーフ
-    }
-
+    ImGui::SameLine();
+    if (s_SelectedAnimIndex < 0 || s_SelectedAnimIndex >= (int)animations.size()) s_SelectedAnimIndex = 0;
     static int prevSelectedIndex = -2;
+    ImGui::SetNextItemWidth(250.0f);
     if (ImGui::BeginCombo("Target Animation", animations[s_SelectedAnimIndex].name.c_str())) {
         for (int i = 0; i < (int)animations.size(); ++i) {
             bool isSelected = (s_SelectedAnimIndex == i);
-            if (ImGui::Selectable(animations[i].name.c_str(), isSelected)) {
-                s_SelectedAnimIndex = i;
-            }
+            if (ImGui::Selectable(animations[i].name.c_str(), isSelected)) s_SelectedAnimIndex = i;
             if (isSelected) ImGui::SetItemDefaultFocus();
         }
         ImGui::EndCombo();
     }
 
-    // ベースアニメーションが変更された時だけデータをリセットして同期する
     if (prevSelectedIndex != s_SelectedAnimIndex) {
         prevSelectedIndex = s_SelectedAnimIndex;
-        int idx = s_SelectedAnimIndex;
-
-        g_EditingSequence.targetAnimName = animations[idx].name;
-        g_EditingSequence.duration = animations[idx].secondsLength;
-
+        g_EditingSequence.targetAnimName = animations[s_SelectedAnimIndex].name;
+        g_EditingSequence.duration = animations[s_SelectedAnimIndex].secondsLength;
         _sequencerImpl->targetSequence = &g_EditingSequence;
-        _sequencerImpl->UpdateDuration(animations[idx].secondsLength);
-
-        // ここでのみSyncFromDataを呼ぶことで、ドラッグ中の破壊を防ぐ
+        _sequencerImpl->UpdateDuration(g_EditingSequence.duration);
         _sequencerImpl->SyncFromData();
     }
-
-    if (context.isAnimEditMode) {
-        animator->currentSequence = &g_EditingSequence;
-    }
-
-    // ---------------------------------------------------------
-    // ツールバー表示 (ボタン類)
-    // ---------------------------------------------------------
-    ImGui::Text("Duration: %.2fs", g_EditingSequence.duration);
-    ImGui::Checkbox("Edit Mode (Pause & Preview)", &context.isAnimEditMode);
-    ImGui::SameLine(); ImGui::Text("|"); ImGui::SameLine();
-
-    int currentFrame = 0;
-    if (context.isAnimEditMode) {
-        currentFrame = (int)(context.animEditTime * 60.0f);
-    }
-    else {
-        currentFrame = (int)(animator->currentTimer * 60.0f);
-    }
-    int prevFrame = currentFrame;
-
-    // ====================================================================
-    // イベントを追加し、現在再生している位置(Playhead)に配置する
-    // ====================================================================
-    auto AddAndSelectEvent = [&](int type) {
-        _sequencerImpl->Add(type);
-
-        auto& newItem = _sequencerImpl->cache.back();
-        newItem.frameStart = currentFrame;
-        newItem.frameEnd = currentFrame + ((type == 0) ? 30 : 10);
-
-        _sequencerImpl->SyncToData();
-        _selectedEntry = (int)_sequencerImpl->cache.size() - 1;
-        };
-
-    if (ImGui::Button("+ Attack")) { AddAndSelectEvent(0); }
-    ImGui::SameLine();
-    if (ImGui::Button("+ Sound")) { AddAndSelectEvent(1); }
-    ImGui::SameLine();
-    if (ImGui::Button("+ Effect")) { AddAndSelectEvent(2); }
+    if (context.isAnimEditMode) animator->currentSequence = &g_EditingSequence;
 
     ImGui::Separator();
 
-    // ---------------------------------------------------------
-    // シーケンサー描画
-    // ---------------------------------------------------------
-    if (_sequencerImpl->targetSequence) {
-        _expanded = true;
+    // =========================================================
+    // 2. メインレイアウト (左右2ペイン構造)
+    // =========================================================
+    // Tableを使って画面を 75% : 25% に分割する
+    if (ImGui::BeginTable("SequencerLayout", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV)) {
+        ImGui::TableSetupColumn("Timeline", ImGuiTableColumnFlags_WidthStretch, 0.75f);
+        ImGui::TableSetupColumn("Inspector", ImGuiTableColumnFlags_WidthStretch, 0.25f);
+        ImGui::TableNextRow();
 
-        // ★修正: SyncFromData()を毎フレーム呼ぶのをやめたため、ドラッグが安定します
-        bool changed = ImSequencer::Sequencer(_sequencerImpl.get(), &currentFrame, &_expanded, &_selectedEntry, &_firstFrame,
-            ImSequencer::SEQUENCER_EDIT_STARTEND | ImSequencer::SEQUENCER_ADD |
-            ImSequencer::SEQUENCER_DEL | ImSequencer::SEQUENCER_CHANGE_FRAME);
+        // -----------------------------------------------------
+        // 左カラム: タイムラインと追加ボタン
+        // -----------------------------------------------------
+        ImGui::TableSetColumnIndex(0);
 
-        // ====================================================================
-        // 　選択されたブロックのインスペクタ (プロパティ編集UI)
-        // ====================================================================
-        if (_selectedEntry >= 0 && _selectedEntry < (int)_sequencerImpl->cache.size()) {
-            ImGui::Separator();
-            ImGui::TextColored(ImVec4(0.5f, 1.0f, 0.5f, 1.0f), "Selected Event Properties");
+        // エディタ上での再生/停止コントロール
+        static bool s_isPlaying = false;
 
-            auto& selectedItem = _sequencerImpl->cache[_selectedEntry];
+        if (context.isAnimEditMode) {
+            if (s_isPlaying) {
+                // 再生中なら時間を進める
+                float dt = ImGui::GetIO().DeltaTime;
+                context.animEditTime += dt * animator->playbackSpeed;
 
-            if (selectedItem.type == 1 || selectedItem.type == 2 || selectedItem.type == 0) {
-                const char* label = (selectedItem.type == 1) ? "Sound File" : ((selectedItem.type == 2) ? "Effect Prefab" : "Damage Info");
-                const char* filter = (selectedItem.type == 1) ? "Audio Files\0*.wav;*.mp3;*.ogg\0All Files\0*.*\0" : "Prefab Files\0*.json\0All Files\0*.*\0";
-
-                ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 100.0f);
-                if (ImGui::InputText(label, selectedItem.stringParam, sizeof(selectedItem.stringParam))) {
-                    changed = true;
+                // ループ処理
+                if (context.animEditTime > g_EditingSequence.duration) {
+                    context.animEditTime = animator->isLoop ? fmod(context.animEditTime, g_EditingSequence.duration) : g_EditingSequence.duration;
                 }
+                // シーケンサーUIを追従させる
+                animator->currentTimer = context.animEditTime;
+            }
 
-                if (selectedItem.type == 1 || selectedItem.type == 2) {
-                    ImGui::SameLine();
-                    if (ImGui::Button("Browse...##ParamBrowser")) {
-                        char filename[256] = {};
-                        if (Dialog::OpenFileName(filename, 256, filter, "Select File", Graphics::Instance().GetWindowHandle()) == DialogResult::OK) {
-                            namespace fs = std::filesystem;
-                            std::error_code ec;
-                            fs::path relPath = fs::relative(filename, fs::current_path(), ec);
-                            std::string finalPath = (!ec && !relPath.empty()) ? relPath.generic_string() : filename;
+            // 再生/ポーズ トグルボタン
+            if (ImGui::Button(s_isPlaying ? "|| Pause" : "> Play")) {
+                s_isPlaying = !s_isPlaying;
+            }
+            ImGui::SameLine();
+        }
+        else {
+            s_isPlaying = false; // EditModeを抜けたらリセット
+        }
 
-                            strcpy_s(selectedItem.stringParam, sizeof(selectedItem.stringParam), finalPath.c_str());
-                            changed = true;
+        auto AddAndSelectEvent = [&](int type) {
+            _sequencerImpl->Add(type);
+            auto& newItem = _sequencerImpl->cache.back();
+            newItem.frameStart = context.isAnimEditMode ? (int)(context.animEditTime * 60.0f) : 0;
+            newItem.frameEnd = newItem.frameStart + ((type == 0) ? 30 : 10);
+            _sequencerImpl->SyncToData();
+            _selectedEntry = (int)_sequencerImpl->cache.size() - 1;
+            };
+
+        if (ImGui::Button("+ Attack (HitBox)")) AddAndSelectEvent(0);
+        ImGui::SameLine();
+        if (ImGui::Button("+ Sound (SE)")) AddAndSelectEvent(1);
+        ImGui::SameLine();
+        if (ImGui::Button("+ Effect (VFX)")) AddAndSelectEvent(2);
+
+        int currentFrame = context.isAnimEditMode ? (int)(context.animEditTime * 60.0f) : (int)(animator->currentTimer * 60.0f);
+        int prevFrame = currentFrame;
+
+        if (_sequencerImpl->targetSequence) {
+            _expanded = true;
+            bool changed = ImSequencer::Sequencer(_sequencerImpl.get(), &currentFrame, &_expanded, &_selectedEntry, &_firstFrame,
+                ImSequencer::SEQUENCER_EDIT_STARTEND | ImSequencer::SEQUENCER_ADD | ImSequencer::SEQUENCER_DEL | ImSequencer::SEQUENCER_CHANGE_FRAME);
+
+            if (changed) _sequencerImpl->SyncToData();
+
+            // ★改良: ユーザーがシークバー(上部の目盛り)を直接ドラッグした瞬間
+            if (currentFrame != prevFrame) {
+                s_isPlaying = false; // ドラッグした瞬間、強制的にポーズ（一時停止）させる
+
+                float newTime = (float)currentFrame / 60.0f;
+                context.animEditTime = newTime;
+                animator->currentTimer = newTime;
+            }
+
+            // 常に最新の animEditTime で画面を強制更新する
+            if (context.isAnimEditMode && context.systemManager) {
+                if (auto* animSystem = context.systemManager->GetSystem<AnimationSystem>()) {
+                    animSystem->UpdateManual(entity, context.animEditTime);
+                }
+            }
+        }
+
+        // -----------------------------------------------------
+        // 右カラム: 選択中イベントのプロパティ (Inspector)
+        // -----------------------------------------------------
+        ImGui::TableSetColumnIndex(1);
+
+        ImGui::Text("Duration: %.2fs", g_EditingSequence.duration);
+        ImGui::Checkbox("Edit Mode (Preview)", &context.isAnimEditMode);
+        ImGui::Separator();
+
+        ImGui::TextColored(ImVec4(0.5f, 1.0f, 0.5f, 1.0f), "Selected Event");
+        ImGui::Spacing();
+
+        if (_selectedEntry >= 0 && _selectedEntry < (int)_sequencerImpl->cache.size()) {
+            auto& selectedItem = _sequencerImpl->cache[_selectedEntry];
+            bool propChanged = false;
+
+            ImGui::TextDisabled("Type: %s", _sequencerImpl->GetItemTypeName(selectedItem.type));
+            ImGui::Text("Time: %.2fs - %.2fs", selectedItem.frameStart / 60.0f, selectedItem.frameEnd / 60.0f);
+            ImGui::Spacing();
+
+            // HitBox のプロパティ
+            if (selectedItem.type == 0) {
+                auto* roster = context.world->GetComponent<CombatRosterComponent>(entity);
+                if (roster && roster->count > 0) {
+                    ImGui::Text("Target Weapon Tag:");
+                    const char* currentPreview = selectedItem.stringParam[0] != '\0' ? selectedItem.stringParam : "Select Tag...";
+                    ImGui::SetNextItemWidth(-1);
+                    if (ImGui::BeginCombo("##HitboxTag", currentPreview)) {
+                        for (int i = 0; i < roster->count; ++i) {
+                            bool isSelected = (strcmp(selectedItem.stringParam, roster->entries[i].tag) == 0);
+                            if (ImGui::Selectable(roster->entries[i].tag, isSelected)) {
+                                strcpy_s(selectedItem.stringParam, sizeof(selectedItem.stringParam), roster->entries[i].tag);
+                                propChanged = true;
+                            }
+                            if (isSelected) ImGui::SetItemDefaultFocus();
                         }
+                        ImGui::EndCombo();
+                    }
+                }
+                else {
+                    ImGui::TextColored(ImVec4(1, 1, 0, 1), "[Warning] No Roster");
+                    ImGui::SetNextItemWidth(-1);
+                    if (ImGui::InputText("##DamageTag", selectedItem.stringParam, sizeof(selectedItem.stringParam))) propChanged = true;
+                }
+            }
+            // 音・エフェクトのプロパティ
+            else if (selectedItem.type == 1 || selectedItem.type == 2) {
+                ImGui::Text(selectedItem.type == 1 ? "Audio File Path:" : "Prefab File Path:");
+                ImGui::SetNextItemWidth(-1);
+                if (ImGui::InputText("##FilePath", selectedItem.stringParam, sizeof(selectedItem.stringParam))) propChanged = true;
+
+                if (ImGui::Button("Browse...", ImVec2(-1, 0))) {
+                    const char* filter = (selectedItem.type == 1) ? "Audio Files\0*.wav;*.mp3;*.ogg\0All Files\0*.*\0" : "Prefab Files\0*.json\0All Files\0*.*\0";
+                    char filename[256] = {};
+                    if (Dialog::OpenFileName(filename, 256, filter, "Select File", Graphics::Instance().GetWindowHandle()) == DialogResult::OK) {
+                        namespace fs = std::filesystem;
+                        std::error_code ec;
+                        std::string finalPath = fs::relative(filename, fs::current_path(), ec).generic_string();
+                        strcpy_s(selectedItem.stringParam, sizeof(selectedItem.stringParam), finalPath.c_str());
+                        propChanged = true;
                     }
                 }
             }
-        }
-        ImGui::Separator();
 
-        // ====================================================================
-        // 　変更があったら台本に書き戻す
-        // ====================================================================
-        if (changed) {
-            // ★修正: SyncFromData()を呼ばないことで、配列の再構築を防ぐ
-            _sequencerImpl->SyncToData();
+            if (propChanged) _sequencerImpl->SyncToData();
+        }
+        else {
+            ImGui::TextDisabled("No event block selected.\nClick a block on the timeline.");
         }
 
-        // =========================================================
-        // ★手回し映写機の連動: シークバーを動かした瞬間に骨格を更新
-        // =========================================================
-        if (currentFrame != prevFrame || changed) {
-            float newTime = (float)currentFrame / 60.0f;
-
-            context.animEditTime = newTime;
-            animator->currentTimer = newTime;
-
-            if (context.systemManager) {
-                auto* animSystem = context.systemManager->GetSystem<AnimationSystem>();
-                if (animSystem) {
-                    animSystem->UpdateManual(entity, newTime);
-                }
-            }
-        }
-        else if (context.isAnimEditMode) {
-            context.animEditTime = (float)currentFrame / 60.0f;
-        }
+        ImGui::EndTable();
     }
 }

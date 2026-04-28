@@ -15,6 +15,7 @@
 #include "Editor/Core/EditorCommandHistory.h"
 #include "Engine/GamePlay/Transform/TransformComponent.h"
 
+#include "Engine/GamePlay/Transform/TransformUpdateSystem.h"
 
 void EditorScene::Initialize()
 {
@@ -37,9 +38,9 @@ void EditorScene::Initialize()
     //SceneInitializer::SpawnJoltTest(*_worldPtr, device);
 
     // 中では普通にPBRモデル用にしている
-    //SceneInitializer::SpawnAnimationTest(*_worldPtr, device);
+    SceneInitializer::SpawnAnimationTest(*_worldPtr, device);
 
-    SceneInitializer::SpawnBossAndDronesTest(*_worldPtr, device);
+    //SceneInitializer::SpawnBossAndDronesTest(*_worldPtr, device);
 
 
     // ボスとドローン群のテスト環境を展開
@@ -97,7 +98,17 @@ void EditorScene::FixedUpdate(float dt)
     if (_context.isAnimEditMode && _context.selectedEntity != 0 &&
         _context.selectedEntity != CCL::ECS::InvalidEntityID) 
     {
-        // ロジック更新（物理、AI、移動など）を一切行わない
+      
+        // ★重要: ゲーム全体（AIや重力など）は止めるが、
+        // 階層（Transform）の更新だけは手動で回す！
+        // これを行わないと、手動でアニメーションを動かした時に武器が追従せず画面が破綻する。
+        if (_ecsContext && _ecsContext->GetSystemManager()) {
+            auto* transformSystem = _ecsContext->GetSystemManager()->GetSystem<TransformUpdateSystem>();
+            if (transformSystem) {
+                transformSystem->Update(0.0f); // 0秒経過として親子関係だけを強制計算
+            }
+        }
+
         // BaseScene::FixedUpdate を呼ばずに return します。
         return;
     }
@@ -110,8 +121,6 @@ void EditorScene::FixedUpdate(float dt)
 // Updateのオーバーライド
 void EditorScene::Update(float dt)
 {
-
-
 
 	// Contextからのリクエストを処理（ロード/セーブ要求など）
     ProcessContextRequests();

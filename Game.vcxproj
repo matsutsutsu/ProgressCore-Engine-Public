@@ -268,6 +268,7 @@
     <ClInclude Include="Source\Engine\GamePlay\Animation\AnimatorComponent.h" />
     <ClInclude Include="Source\Engine\GamePlay\Animation\AnimControllerSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Animation\AnimParametersComponent.h" />
+    <ClInclude Include="Source\Engine\GamePlay\Animation\CombatAnimationSyncSystem.h" />
     <ClInclude Include="Source\Engine\GamePlay\Animation\Data\AnimationCurve.h" />
     <ClInclude Include="Source\Engine\GamePlay\Animation\Data\AnimEventMessages.h" />
     <ClInclude Include="Source\Engine\GamePlay\Animation\Data\AnimGraphSerializer.h" />
@@ -602,6 +603,7 @@
     <ClCompile Include="Source\Engine\GamePlay\Animation\AnimationSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Animation\AnimatorComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Animation\AnimControllerSystem.cpp" />
+    <ClCompile Include="Source\Engine\GamePlay\Animation\CombatAnimationSyncSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Animation\Data\AnimGraphSerializer.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Camera\CameraBrainSystem.cpp" />
     <ClCompile Include="Source\Engine\GamePlay\Camera\CameraListenerSystem.cpp" />
@@ -730,6 +732,7 @@
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerFeedbackSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerInputSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerMoveSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Combat\CombatComponentsMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\DamageResolutionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\HealthSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\HitboxCollisionSystem.cpp" />
