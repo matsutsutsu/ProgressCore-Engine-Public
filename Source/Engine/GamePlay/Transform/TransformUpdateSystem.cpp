@@ -38,8 +38,9 @@ static void UpdateTransformRecursiveHelper(Core::World* world, EntityID entity, 
         if (auto* modelComp = world->GetComponent<ModelComponent>(trans->parentID)) {
             Model* model = modelComp->GetModel();
             if (model) {
-                if (boneAttach->cachedBoneIndex == -1) {
-                    boneAttach->cachedBoneIndex = model->GetNodeIndex(boneAttach->boneName);
+                if (boneAttach->cachedBoneIndex == -1 && !boneAttach->boneName.empty()) { // ★ .empty() でチェック
+                    // std::string をそのまま渡す (もし GetNodeIndex が const char* を要求するなら .c_str() をつける)
+                    boneAttach->cachedBoneIndex = model->GetNodeIndex(boneAttach->boneName.c_str());
                 }
                 if (boneAttach->cachedBoneIndex != -1) {
                     const auto& nodes = model->GetNodes();
@@ -48,9 +49,6 @@ static void UpdateTransformRecursiveHelper(Core::World* world, EntityID entity, 
                     finalParentMatrix = boneMatrix * parentWorldMatrix;
                     isUpdated = true;
 
-                    // ボーンは毎フレーム動くため、
-                    //   worldMatrix が更新された後に JoltPushSystem へ同期を促す。
-                    //   isTeleported = true にしないと JoltPushSystem はこのエンティティを無視する。
                     trans->isTeleported = true;
                 }
             }

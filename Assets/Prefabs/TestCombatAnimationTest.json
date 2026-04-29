@@ -10,26 +10,27 @@
                     "isLoop": true,
                     "playbackSpeed": 1.0
                 },
+                "CombatRosterComponent": null,
                 "Material": null,
                 "Model": {
                     "assetPath": "Assets/Models/Enemy/Boss.glb"
                 },
                 "Name": {
-                    "name": "AnimationModel"
+                    "name": "BoneAttachmentTest"
                 },
                 "Transform": {
                     "Parent Entity ID": 0,
                     "isStatic": false,
                     "position": [
-                        1.366117238998413,
+                        0.23199999332427979,
                         0.0,
-                        0.8483495712280273
+                        -0.31065845489501953
                     ],
                     "rotation": [
                         0.0,
-                        0.9972027540206909,
-                        0.0,
-                        0.0747438296675682
+                        1.0,
+                        -0.0,
+                        -6.229854676575997e-08
                     ],
                     "scale": [
                         0.30000001192092896,
@@ -48,44 +49,44 @@
                 },
                 "Primitive": {
                     "color": [
-                        0.0,
+                        0.14671826362609863,
                         1.0,
-                        0.1081080436706543,
+                        0.0,
                         1.0
                     ],
-                    "height": 1.0,
-                    "isWireframe": false,
-                    "radius": 0.5,
+                    "height": 17.600000381469727,
+                    "isWireframe": true,
+                    "radius": 1.0,
                     "size": [
                         1.0,
                         1.0,
                         1.0
                     ],
-                    "type": 1
+                    "type": 3
                 },
                 "Transform": {
                     "Parent Entity ID": 4294967300,
                     "isStatic": false,
                     "position": [
                         0.0,
-                        0.0,
-                        0.0
+                        -0.699999988079071,
+                        -6.400000095367432
                     ],
                     "rotation": [
-                        0.0,
-                        0.0,
-                        0.0,
-                        1.0
+                        0.6558151245117188,
+                        -0.012310614809393883,
+                        0.012310633435845375,
+                        0.7547208070755005
                     ],
                     "scale": [
-                        4.0,
-                        4.0,
-                        4.0
+                        1.0,
+                        1.0,
+                        1.0
                     ]
                 }
             },
             "id": 4294967301
         }
     ],
-    "name": "AnimationModel"
+    "name": "BoneAttachmentTest"
 }

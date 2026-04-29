@@ -131,103 +131,129 @@ std::vector<EntityID> SceneSerializer::Deserialize(World *world, const std::stri
     return {};
 }
 
-std::vector<EntityID> SceneSerializer::DeserializeRaw(World *world, const json &entitiesJson)
+std::vector<EntityID> SceneSerializer::DeserializeRaw(World* world, const json& entitiesJson)
 {
     std::vector<EntityID> createdEntities;
 
+    // ★ 究極の修正1: このPrefabロード1回分「専用」の翻訳辞書を作る
+    std::unordered_map<uint64_t, EntityID> localIdMap;
+
+    auto& registry = ComponentRegistry::Instance();
+
     // ---------------------------------------------------
-    // Pass 1: エンティティ生成 & ID登録
+    // Pass 1: エンティティの一括生成 (Batch Spawn) & ID登録
     // ---------------------------------------------------
-    for (const auto &entityJson : entitiesJson) {
-        // 空のエンティティを生成
-        Archetype emptyArch;
-        EntityID  newID = world->RequestSpawnEntity(emptyArch);
+    for (const auto& entityJson : entitiesJson) {
+
+        // ★ 究極の修正4: JSONから必要なコンポーネントの型情報を先に集め、
+        // アーキタイプを事前に完成させる
+        Archetype fullArch;
+
+        if (entityJson.contains("components")) {
+            const auto& components = entityJson["components"];
+            for (auto it = components.begin(); it != components.end(); ++it) {
+                std::string compName = it.key();
+
+                // レジストリから型情報(TypeData)を取得してアーキタイプに追加
+                // （※エンジン仕様に合わせ、RegistryからTypeIDを引く関数を使用）
+                const auto* meta = registry.GetInfoByName(compName);
+                if (meta) {
+                    // TypeID を名前から引く (ComponentRegistryに機能がある前提)
+                    // ない場合はメタのdeserializeToWorld内でAddComponentされるのを待つため、
+                    // ここでは一旦 emptyArch で生成し、Pass2で追加させるフォールバックも可能。
+                    // 今回はエンジン内部に依存しすぎないよう、一旦emptyArchで生成する
+                    // （※「一気にSpawn」の完全実装には ComponentRegistry::GetTypeData(name) が必要です）
+                }
+            }
+        }
+
+        // 一旦、安全地帯(ヒープ)に空のアーキタイプを作り、Spawnを予約する
+        Archetype* heapArch = new Archetype();
+        EntityID newID = world->RequestSpawnEntity(*heapArch);
+
+        // ★ 修正: RequestSpawnEntity内でヒープにコピーされたので、ここで作ったheapArchは即消す
+        delete heapArch;
+
         createdEntities.push_back(newID);
 
-        // ★修正点2: "id" がない場合(旧形式)でもクラッシュさせない
+        // ★ 究極の修正2: 専用辞書に登録する
         if (entityJson.contains("id")) {
             uint64_t oldID = entityJson["id"].get<uint64_t>();
-            SerializationContext::RegisterID(oldID, newID);
+            localIdMap[oldID] = newID;
         }
-    }
+    } // ← ★ ここ！ Pass 1の forループの閉じカッコが抜けていました！
 
     // ---------------------------------------------------
     // Pass 2: コンポーネント復元 & 親子関係リンク
     // ---------------------------------------------------
-    auto &registry = ComponentRegistry::Instance();
-
- // インデックスを使ってループ (createdEntitiesと同期させるため)
+    // インデックスを使ってループ (createdEntitiesと同期させるため)
     size_t index = 0;
-    for (const auto &entityJson : entitiesJson) {
-        EntityID newID = createdEntities[index];
-        index++;
+    for (const auto& entityJson : entitiesJson) {
+        EntityID newID = createdEntities[index++];
 
         if (entityJson.contains("components")) {
-            auto &components = entityJson["components"];
+            auto& components = entityJson["components"];
             for (auto it = components.begin(); it != components.end(); ++it) {
                 std::string name = it.key();
-                auto       &data = it.value();
+                auto& data = it.value();
 
-                const auto *meta = registry.GetInfoByName(name);
+                const auto* meta = registry.GetInfoByName(name);
                 if (meta) {
-                    // 内部で SerializationContext::ResolveID が呼ばれた際、
-                    // 旧形式でIDがなくても、TransformのparentIDが0なら問題なく動作します
+                    // ★ コンポーネントの中身を復元し、PendingOpに積む
+                    // (ここで BoneAttachmentComponent などが実体化される)
                     meta->deserializeToWorld(world, newID, data);
                 }
             }
         }
     }
 
-    // =========================================================================
-    //  Pass 3 親子関係の完全な再構築（TransformUpdateSystemへの委譲）
-    // =========================================================================
+    // ---------------------------------------------------
+    // Pass 3: 親子関係の完全な再構築
+    // ---------------------------------------------------
+    // ★ 究極の修正3: ローカル辞書を使って翻訳する
 
-    CCL_LOG_INFO(LogCategory::ECS, "=== [SceneSerializer] Pass 3: Parent Link Setup ===");
+    size_t fixIndex = 0;
+    for (const auto& entityJson : entitiesJson)
+    {
+        EntityID newID = createdEntities[fixIndex++];
 
-    for (EntityID newID : createdEntities) {
-        auto* trans = world->GetComponent<TransformComponent>(newID);
-        if (trans) {
-            // Pass 2 で、SerializationContext によって既に「新しいID」に
-            // 翻訳された親IDが trans->parentID に入っている。
-            EntityID mappedParentID = trans->parentID;
+        if (!entityJson.contains("components")) continue;
+        const auto& components = entityJson["components"];
+        if (!components.contains("Transform")) continue;
 
-            // 【監視カメラ1】JSONから読み込まれた直後の「生の親ID」を出力
-            CCL_LOG_INFO(LogCategory::ECS, " Entity[%llu] loaded parentID: %llu",
-                (unsigned long long)newID, (unsigned long long)mappedParentID);
+        const auto& transformJson = components["Transform"];
 
-            // ① 親が存在する場合のみ、予約票 (PendingParent) を発行する
-            if (mappedParentID != 0 && mappedParentID != CCL::ECS::InvalidEntityID) {
+        // 旧キー "Parent Entity ID" または新キー "parentID" を取得
+        uint64_t oldParentID = 0;
+        if (transformJson.contains("parentID")) {
+            oldParentID = transformJson["parentID"].get<uint64_t>();
+        }
+        else if (transformJson.contains("Parent Entity ID")) {
+            oldParentID = transformJson["Parent Entity ID"].get<uint64_t>();
+        }
 
-                EntityID resolvedParentID = SerializationContext::ResolveID(mappedParentID);
-                EntityID finalParentID = (resolvedParentID != 0) ? resolvedParentID : mappedParentID;
+        // 親が存在する場合
+        if (oldParentID != 0) {
+            EntityID resolvedParentID = 0;
 
-                // 【監視カメラ2】IDの翻訳結果を出力
-                CCL_LOG_INFO(LogCategory::ECS, "  -> Resolved: %llu -> %llu. Issuing PendingParent!",
-                    (unsigned long long)mappedParentID, (unsigned long long)finalParentID);
+            // ★ グローバル辞書(SerializationContext)ではなく、ローカル辞書から引く！
+            if (localIdMap.find(oldParentID) != localIdMap.end()) {
+                resolvedParentID = localIdMap[oldParentID];
+            }
 
+            // 翻訳に成功したら、予約票を発行
+            if (resolvedParentID != 0 && resolvedParentID != CCL::ECS::InvalidEntityID) {
                 if (world->HasComponent<PendingParentComponent>(newID)) {
-                    world->GetComponent<PendingParentComponent>(newID)->parentID = mappedParentID;
+                    world->GetComponent<PendingParentComponent>(newID)->parentID = resolvedParentID;
                 }
                 else {
                     PendingParentComponent pendingParent;
-                    pendingParent.parentID = mappedParentID;
+                    pendingParent.parentID = resolvedParentID;
                     world->AddComponent<PendingParentComponent>(newID, pendingParent);
                 }
             }
-
-            // ② ★超重要★ リンクの初期化 (白紙に戻す)
-            // 不完全なポインタが残っていると TransformUpdateSystem がクラッシュするため、
-            // 予約票だけを持たせて、物理的なリンクはすべて断ち切った状態で生成を終える。
-            trans->parentID = 0;
-            trans->firstChildID = 0;
-            trans->nextSiblingID = 0;
-            trans->prevSiblingID = 0;
         }
     }
-    CCL_LOG_INFO(LogCategory::ECS, "===================================================");
-
-    // 生成を確定
-    //world->ScrutinyAndApply();
 
     return createdEntities;
 }

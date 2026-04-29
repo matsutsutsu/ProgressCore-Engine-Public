@@ -552,19 +552,14 @@ namespace CCL::ECS::Core
 
             // srcChunkを基準にするかSpawnで新規作成するか
             // opsの中に Spawn があるか探す
-            for (auto* op : ops) {
-                if (op->kind == PendingOpKind::Spawn) {
-                    // 復元する
-                    Archetype* sourceArch = reinterpret_cast<Archetype*>(op->data);
-
-                    // 実体を安全にコピー
-                    nextArch = *sourceArch;
+            for (auto* op : ops)
+            {
+                if (op->kind == PendingOpKind::Spawn)
+                {
+                    // spawnArchetype は PendingOp のメンバ（値）なので、
+                    // FrameAllocator のライフタイムに無関係。常に安全にアクセスできる。
+                    nextArch = op->spawnArchetype;
                     isNewSpawn = true;
-
-                    // ★最重要: 使い終わった Archetype をヒープから削除（メモリリーク防止）
-                    delete sourceArch;
-                    op->data = nullptr; // 二度と触れないように安全装置をかける
-
                     break;
                 }
             }

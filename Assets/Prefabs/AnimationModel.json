@@ -17,22 +17,19 @@
                 "Name": {
                     "name": "AnimationModel"
                 },
-                "TestAnimationPlayer": {
-                    "moveSpeed": 15.0,
-                    "turnSpeed": 10.0
-                },
                 "Transform": {
+                    "Parent Entity ID": 0,
                     "isStatic": false,
                     "position": [
-                        1.366117238998413,
+                        0.23199999332427979,
                         0.0,
-                        0.5983495712280273
+                        -0.31065845489501953
                     ],
                     "rotation": [
                         0.0,
-                        0.03695469722151756,
-                        0.0,
-                        0.999316930770874
+                        1.0,
+                        -0.0,
+                        -6.229854676575997e-08
                     ],
                     "scale": [
                         0.30000001192092896,

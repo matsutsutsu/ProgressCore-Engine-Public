@@ -57,7 +57,7 @@ REGISTER_COMPONENT(HurtboxComponent, "HurtboxComponent");
 template <> struct ComponentMeta<BoneAttachmentComponent> {
     static constexpr bool registered = true;
     static constexpr const char* displayName = "Bone Attachment (ボーン追従)";
-    static constexpr bool hasCustomGui = true; // ★自動生成GUIを切り、自前で描画する
+    static constexpr bool hasCustomGui = true;
     static constexpr bool isSerializable = true;
 
     static bool CustomGui(BoneAttachmentComponent& comp, unsigned long long entityID, void* worldPtr) {
@@ -65,8 +65,6 @@ template <> struct ComponentMeta<BoneAttachmentComponent> {
         auto* world = static_cast<CCL::ECS::Core::World*>(worldPtr);
         if (!world) return false;
 
-        // 1. 親エンティティのIDを探す
-        // （既に親子関係が解決済みなら Transform に、生成直後なら PendingParent に入っている）
         CCL::ECS::EntityID parentID = 0;
         if (auto* trans = world->GetComponent<TransformComponent>(entityID)) {
             parentID = trans->parentID;
@@ -80,46 +78,52 @@ template <> struct ComponentMeta<BoneAttachmentComponent> {
         ImGui::Text("Target Bone Name:");
         ImGui::SetNextItemWidth(-1);
 
-        // 2. 親が見つかった場合、ボーンリストを抽出してプルダウンを描画する
         if (parentID != 0) {
             if (auto* modelComp = world->GetComponent<ModelComponent>(parentID)) {
                 if (Model* model = modelComp->GetModel()) {
                     const auto& nodes = model->GetNodes();
                     if (!nodes.empty()) {
 
-                        // 現在の選択状態を表示
-                        const char* currentPreview = comp.boneName[0] != '\0' ? comp.boneName : "Select Bone...";
+                        // std::string の empty() で判定
+                        const char* currentPreview = !comp.boneName.empty() ? comp.boneName.c_str() : "Select Bone...";
 
                         if (ImGui::BeginCombo("##BoneCombo", currentPreview)) {
-                            // 「追従を解除する」ための None オプション
-                            if (ImGui::Selectable("None", comp.boneName[0] == '\0')) {
-                                comp.boneName[0] = '\0';
-                                comp.cachedBoneIndex = -1; // キャッシュをリセット
+
+                            // "None" の選択
+                            if (ImGui::Selectable("None", comp.boneName.empty())) {
+                                comp.boneName = "";
+                                comp.cachedBoneIndex = -1;
                                 changed = true;
                             }
 
-                            // 取得したボーン(ノード)を全てリストアップ
                             for (int i = 0; i < nodes.size(); ++i) {
-                                bool isSelected = (strcmp(comp.boneName, nodes[i].name.c_str()) == 0);
+                                // std::string の == 演算子で比較
+                                bool isSelected = (comp.boneName == nodes[i].name);
                                 if (ImGui::Selectable(nodes[i].name.c_str(), isSelected)) {
-                                    strcpy_s(comp.boneName, sizeof(comp.boneName), nodes[i].name.c_str());
-                                    comp.cachedBoneIndex = -1; // 名前が変わったら検索キャッシュを必ず破棄する
+                                    // std::string の代入演算子を使用
+                                    comp.boneName = nodes[i].name;
+                                    comp.cachedBoneIndex = -1;
                                     changed = true;
                                 }
                                 if (isSelected) ImGui::SetItemDefaultFocus();
                             }
                             ImGui::EndCombo();
                         }
-                        return changed; // プルダウンを描画できたらここで終了
+                        return changed;
                     }
                 }
             }
         }
 
-        // 3. 例外処理（親がいない、または親がモデルを持っていない場合の手打ちフォールバック）
         ImGui::TextColored(ImVec4(1, 1, 0, 1), "[Warning] Parent Model not found.");
-        if (ImGui::InputText("##BoneNameInput", comp.boneName, sizeof(comp.boneName))) {
-            comp.cachedBoneIndex = -1; // 手打ちで変更された場合もキャッシュを破棄
+
+        // ★ ImGui::InputText と std::string の連携
+        // バッファにコピーして編集し、終わったら書き戻す
+        char buffer[256];
+        strncpy_s(buffer, sizeof(buffer), comp.boneName.c_str(), _TRUNCATE);
+        if (ImGui::InputText("##BoneNameInput", buffer, sizeof(buffer))) {
+            comp.boneName = buffer;
+            comp.cachedBoneIndex = -1;
             changed = true;
         }
 
@@ -127,11 +131,12 @@ template <> struct ComponentMeta<BoneAttachmentComponent> {
     }
 
     static const std::vector<FieldDescriptor>& Fields() {
-        static const std::vector<FieldDescriptor> fields = {}; // CustomGui で処理するため空でOK
+        static const std::vector<FieldDescriptor> fields = {};
         return fields;
     }
 };
 REGISTER_COMPONENT(BoneAttachmentComponent, "BoneAttachmentComponent");
+
 
 // ===================================================================
 // 4. CombatRosterComponent (武器・部位名簿)
