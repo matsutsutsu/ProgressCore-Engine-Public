@@ -134,14 +134,18 @@ namespace CCL::ECS::Core {
         EntityID id = EntityHandle::Combine(index, generation);
 
         // --- Phase 2: PendingOp への登録 ---
-        // アーキタイプ情報はコピーしてヒープに置く（ポインタで渡すため）
-        // ★修正: new Archetype(...) をフレームアロケータに
-        Archetype *heapArch = _frameAllocator.New<Archetype>(archetype);
+        // ❌ 変更前（危険）:
+        // Archetype* heapArch = _frameAllocator.New<Archetype>(archetype);
+
+        // ⭕ 変更後（安全地帯に実体を作る）:
+        Archetype* heapArch = new Archetype(archetype);
 
         PendingOp op;
         op.kind   = PendingOpKind::Spawn;
         op.entity = id; // 新しい世代付きIDをセット
-        op.data   = reinterpret_cast<void *>(heapArch);
+        //op.data   = reinterpret_cast<void *>(heapArch);
+        op.data = reinterpret_cast<void*>(heapArch); // 絶対に上書きされないポインタ
+
 
         _pendingOps.Add(op);
 

@@ -554,11 +554,17 @@ namespace CCL::ECS::Core
             // opsの中に Spawn があるか探す
             for (auto* op : ops) {
                 if (op->kind == PendingOpKind::Spawn) {
-                    // ① void*から本来の型を復元
-                    // PendingOpは汎用構造体、型情報を持たないため明示的に戻す
-                    // Spawn時はこのEntityは最初からこのArchetypeですと確定させる
-                    nextArch = *(reinterpret_cast<Archetype*>(op->data)); // Archetypeデータを復元
+                    // 復元する
+                    Archetype* sourceArch = reinterpret_cast<Archetype*>(op->data);
+
+                    // 実体を安全にコピー
+                    nextArch = *sourceArch;
                     isNewSpawn = true;
+
+                    // ★最重要: 使い終わった Archetype をヒープから削除（メモリリーク防止）
+                    delete sourceArch;
+                    op->data = nullptr; // 二度と触れないように安全装置をかける
+
                     break;
                 }
             }

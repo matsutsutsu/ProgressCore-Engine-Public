@@ -11,6 +11,8 @@
 #include "Engine/GamePlay/Core/DestroyTag.h"
 #include "Engine/GamePlay/Core/PersistentTag.h"
 
+#include "Engine/Platform/Logger.h"
+
 using namespace CCL::ECS;
 using namespace CCL::ECS::Core;
 
@@ -177,8 +179,11 @@ std::vector<EntityID> SceneSerializer::DeserializeRaw(World *world, const json &
     }
 
     // =========================================================================
-      //  Pass 3 親子関係の完全な再構築（TransformUpdateSystemへの委譲）
-      // =========================================================================
+    //  Pass 3 親子関係の完全な再構築（TransformUpdateSystemへの委譲）
+    // =========================================================================
+
+    CCL_LOG_INFO(LogCategory::ECS, "=== [SceneSerializer] Pass 3: Parent Link Setup ===");
+
     for (EntityID newID : createdEntities) {
         auto* trans = world->GetComponent<TransformComponent>(newID);
         if (trans) {
@@ -186,8 +191,20 @@ std::vector<EntityID> SceneSerializer::DeserializeRaw(World *world, const json &
             // 翻訳された親IDが trans->parentID に入っている。
             EntityID mappedParentID = trans->parentID;
 
+            // 【監視カメラ1】JSONから読み込まれた直後の「生の親ID」を出力
+            CCL_LOG_INFO(LogCategory::ECS, " Entity[%llu] loaded parentID: %llu",
+                (unsigned long long)newID, (unsigned long long)mappedParentID);
+
             // ① 親が存在する場合のみ、予約票 (PendingParent) を発行する
             if (mappedParentID != 0 && mappedParentID != CCL::ECS::InvalidEntityID) {
+
+                EntityID resolvedParentID = SerializationContext::ResolveID(mappedParentID);
+                EntityID finalParentID = (resolvedParentID != 0) ? resolvedParentID : mappedParentID;
+
+                // 【監視カメラ2】IDの翻訳結果を出力
+                CCL_LOG_INFO(LogCategory::ECS, "  -> Resolved: %llu -> %llu. Issuing PendingParent!",
+                    (unsigned long long)mappedParentID, (unsigned long long)finalParentID);
+
                 if (world->HasComponent<PendingParentComponent>(newID)) {
                     world->GetComponent<PendingParentComponent>(newID)->parentID = mappedParentID;
                 }
@@ -207,6 +224,7 @@ std::vector<EntityID> SceneSerializer::DeserializeRaw(World *world, const json &
             trans->prevSiblingID = 0;
         }
     }
+    CCL_LOG_INFO(LogCategory::ECS, "===================================================");
 
     // 生成を確定
     //world->ScrutinyAndApply();

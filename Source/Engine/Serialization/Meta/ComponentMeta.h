@@ -35,6 +35,8 @@ struct FieldDescriptor {
 };
 
 // --- インライン生成関数 ---
+
+// TODO: なんかUint8から文法がバラバラだから後で統一する
 inline FieldDescriptor FD_Float(const char *name, const char *jsonName, size_t offset, float speed = 0.05f, float rangeMin = 0.0f, float rangeMax = 0.0f, const char *category = nullptr) {
     FieldDescriptor d{}; d.name = name; d.jsonName = jsonName; d.kind = FieldKind::Float; d.offset = offset; d.dragSpeed = speed; d.rangeMin = rangeMin; d.rangeMax = rangeMax; d.category = category; return d;
 }
@@ -43,6 +45,21 @@ inline FieldDescriptor FD_Int(const char *name, const char *jsonName, size_t off
 }
 inline FieldDescriptor FD_Bool(const char *name, const char *jsonName, size_t offset, const char *category = nullptr) {
     FieldDescriptor d{}; d.name = name; d.jsonName = jsonName; d.kind = FieldKind::Bool; d.offset = offset; d.category = category; return d;
+}
+inline FieldDescriptor FD_UInt8(const char* name, const char* jsonName, size_t offset, float speed = 1.0f, float rangeMin = 0.0f, float rangeMax = 0.0f, const char* category = nullptr, bool serialize = true) {
+    return { name, jsonName, FieldKind::UInt8, offset, speed, rangeMin, rangeMax, category, nullptr, 0, serialize };
+}
+
+inline FieldDescriptor FD_UInt16(const char* name, const char* jsonName, size_t offset, float speed = 1.0f, float rangeMin = 0.0f, float rangeMax = 0.0f, const char* category = nullptr, bool serialize = true) {
+    return { name, jsonName, FieldKind::UInt16, offset, speed, rangeMin, rangeMax, category, nullptr, 0, serialize };
+}
+
+inline FieldDescriptor FD_UInt32(const char* name, const char* jsonName, size_t offset, float speed = 1.0f, float rangeMin = 0.0f, float rangeMax = 0.0f, const char* category = nullptr, bool serialize = true) {
+    return { name, jsonName, FieldKind::UInt32, offset, speed, rangeMin, rangeMax, category, nullptr, 0, serialize };
+}
+
+inline FieldDescriptor FD_EntityID(const char* name, const char* jsonName, size_t offset, const char* category = nullptr, bool serialize = true) {
+    return { name, jsonName, FieldKind::EntityID, offset, 0.0f, 0.0f, 0.0f, category, nullptr, 0, serialize };
 }
 inline FieldDescriptor FD_EnumU8(const char *name, const char *jsonName, size_t offset, const char *const *enumNames, int enumCount, const char *category = nullptr) {
     FieldDescriptor d{}; d.name = name; d.jsonName = jsonName; d.kind = FieldKind::EnumU8; d.offset = offset; d.enumNames = enumNames; d.enumCount = enumCount; d.category = category; return d;
@@ -78,6 +95,18 @@ inline FieldDescriptor FD_String(const char *name, const char *jsonName, size_t 
 
 #define META_FIELD_BOOL(ClassType, FieldName, JsonName, DisplayName, Category) \
     FD_Bool(DisplayName, JsonName, offsetof(ClassType, FieldName), Category)
+
+#define META_FIELD_UINT8(Comp, Field, Name, JsonName, Speed, Category) \
+    FD_UInt8(Name, JsonName, offsetof(Comp, Field), Speed, 0.0f, 0.0f, Category)
+
+#define META_FIELD_UINT16(Comp, Field, Name, JsonName, Speed, Category) \
+    FD_UInt16(Name, JsonName, offsetof(Comp, Field), Speed, 0.0f, 0.0f, Category)
+
+#define META_FIELD_UINT32(Comp, Field, Name, JsonName, Speed, Category) \
+    FD_UInt32(Name, JsonName, offsetof(Comp, Field), Speed, 0.0f, 0.0f, Category)
+
+#define META_FIELD_ENTITY_ID(Comp, Field, Name, JsonName, Category) \
+    FD_EntityID(Name, JsonName, offsetof(Comp, Field), Category)
 
 #define META_FIELD_ENUM_U8(ClassType, FieldName, JsonName, DisplayName, EnumNames, EnumCount, Category) \
     FD_EnumU8(DisplayName, JsonName, offsetof(ClassType, FieldName), EnumNames, EnumCount, Category)
