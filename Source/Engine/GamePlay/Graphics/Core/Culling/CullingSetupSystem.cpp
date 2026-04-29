@@ -14,19 +14,24 @@ ModelCullingSetupSystem::ModelCullingSetupSystem() : IfSystem("ModelCullingSetup
 
 void ModelCullingSetupSystem::Update(float dt)
 {
-    // イテレータの破壊を防ぐため、追加対象のIDリストを作る
-    std::vector<EntityID> targetEntities;
+    std::vector<EntityID> needsBoundingBox;
+    std::vector<EntityID> needsVisibility;
 
-    // 1. ループで追加対象を検索
+    // 1. 足りないコンポーネントを【個別に】調査する
     ForEachWithID([&](EntityID id, const ModelComponent& model) {
         if (!_world->HasComponent<BoundingBoxComponent>(id)) {
-            targetEntities.push_back(id);
+            needsBoundingBox.push_back(id);
+        }
+        if (!_world->HasComponent<VisibilityComponent>(id)) {
+            needsVisibility.push_back(id);
         }
         });
 
-    // 2. ループ外で安全にコンポーネントを付与（構造的変更）
-    for (auto id : targetEntities) {
+    // 2. 足りないものだけを【個別に】付与する
+    for (auto id : needsBoundingBox) {
         _world->AddComponent<BoundingBoxComponent>(id);
+    }
+    for (auto id : needsVisibility) {
         _world->AddComponent<VisibilityComponent>(id);
     }
 }
@@ -38,19 +43,24 @@ PrimitiveCullingSetupSystem::PrimitiveCullingSetupSystem() : IfSystem("Primitive
 
 void PrimitiveCullingSetupSystem::Update(float dt)
 {
-    // イテレータの破壊を防ぐため、追加対象のIDリストを作る
-    std::vector<EntityID> targetEntities;
+    std::vector<EntityID> needsBoundingBox;
+    std::vector<EntityID> needsVisibility;
 
-    // 1. ループで追加対象を検索
+    // 1. 足りないコンポーネントを【個別に】調査する
     ForEachWithID([&](EntityID id, const PrimitiveComponent& prim) {
         if (!_world->HasComponent<BoundingBoxComponent>(id)) {
-            targetEntities.push_back(id);
+            needsBoundingBox.push_back(id);
+        }
+        if (!_world->HasComponent<VisibilityComponent>(id)) {
+            needsVisibility.push_back(id);
         }
         });
 
-    // 2. ループ外で安全にコンポーネントを付与（構造的変更）
-    for (auto id : targetEntities) {
+    // 2. 足りないものだけを【個別に】付与する
+    for (auto id : needsBoundingBox) {
         _world->AddComponent<BoundingBoxComponent>(id);
+    }
+    for (auto id : needsVisibility) {
         _world->AddComponent<VisibilityComponent>(id);
     }
 }
