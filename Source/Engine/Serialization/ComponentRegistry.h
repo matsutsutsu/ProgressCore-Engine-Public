@@ -81,10 +81,20 @@ public:
             };
 
         // 2. [Load用] JSONから一時変数Tを作成し、World にコピーして渡す
-        info.deserializeToWorld = [](CCL::ECS::Core::World* world, CCL::ECS::EntityID entity, const nlohmann::json& j) {
-            T temp{}; // 波括弧で確実に初期化
-            ComponentMetaJson::Deserialize(j, temp);
-            world->AddComponent<T>(entity, std::move(temp));
+        info.deserializeToWorld = [](CCL::ECS::Core::World* world,
+            CCL::ECS::EntityID entity,
+            const nlohmann::json& j)
+            {
+                // ★ HasCustomSerialize を見て分岐する
+                if constexpr (ComponentMetaJson::HasCustomSerialize<T>::value) {
+                    // カスタム実装がある型はそちらに委譲
+                    ComponentMeta<T>::deserializeToWorld(world, entity, j);
+                }
+                else {
+                    T temp{};
+                    ComponentMetaJson::Deserialize(j, temp);
+                    world->AddComponent<T>(entity, std::move(temp));
+                }
             };
 
         // 3. [Remap用] ★ if constexpr を使って Remap が存在するときだけ登録する

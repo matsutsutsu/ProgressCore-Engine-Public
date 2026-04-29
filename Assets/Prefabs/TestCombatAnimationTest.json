@@ -10,7 +10,15 @@
                     "isLoop": true,
                     "playbackSpeed": 1.0
                 },
-                "CombatRosterComponent": null,
+                "CombatRosterComponent": {
+                    "count": 1,
+                    "entries": [
+                        {
+                            "id": 4294967302,
+                            "tag": "RightHand"
+                        }
+                    ]
+                },
                 "Material": null,
                 "Model": {
                     "assetPath": "Assets/Models/Enemy/Boss.glb"
@@ -22,9 +30,9 @@
                     "Parent Entity ID": 0,
                     "isStatic": false,
                     "position": [
-                        0.23199999332427979,
                         0.0,
-                        -0.31065845489501953
+                        0.0,
+                        0.0
                     ],
                     "rotation": [
                         0.0,

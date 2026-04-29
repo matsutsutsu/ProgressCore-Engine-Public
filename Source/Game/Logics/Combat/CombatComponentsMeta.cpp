@@ -143,6 +143,11 @@ template <> struct ComponentMeta<BoneAttachmentComponent> {
 };
 REGISTER_COMPONENT(BoneAttachmentComponent, "BoneAttachmentComponent");
 
+// ComponentMetaJson.h の Serialize / Deserialize が
+// このコンポーネントだけカスタム実装を呼ぶようになる
+template <>
+struct ComponentMetaJson::HasCustomSerialize<CombatRosterComponent> : std::true_type {};
+
 
 // ===================================================================
 // 4. CombatRosterComponent (武器・部位名簿)
@@ -152,6 +157,8 @@ template <> struct ComponentMeta<CombatRosterComponent> {
     static constexpr const char* displayName = "Combat Roster (部位名簿)";
     static constexpr bool hasCustomGui = true;
     static constexpr bool isSerializable = true;
+    static constexpr bool        hasCustomSerialize = true;
+
 
     static bool CustomGui(CombatRosterComponent& comp, unsigned long long entityID, void* worldPtr) {
         bool changed = false;
@@ -265,62 +272,81 @@ template <> struct ComponentMeta<CombatRosterComponent> {
         return changed;
     }
 
-    // ★ 究極の修正2: 自動マクロ (Fields) ではなく、複雑な配列を持つコンポーネント用に
-     // nlohmann::json の生APIを使って完璧なセーブ・ロードロジックを自作する。
+    // ★ カスタム保存
+    static void serialize(nlohmann::json& j, const void* ptr)
+    {
+        const auto& comp = *static_cast<const CombatRosterComponent*>(ptr);
+        j["count"] = comp.count;
 
-     // (注意: 現在のエンジンの設計上、serialize / deserialize を特殊化(オーバーライド)して
-     // 対応できる構造か確認が必要です。もしエンジンが Fields() のみに依存している場合は、
-     // 以下のようにダミーの Field を登録した上で、特殊化関数を追加します)
-
-    static const std::vector<FieldDescriptor>& Fields() {
-        static const std::vector<FieldDescriptor> fields = {}; // 手動シリアライズする場合は空でOK
-        return fields;
-    }
-
-    // JSON への保存 (シリアライズ)
-    static void serialize(nlohmann::json& j, const void* ptr) {
-        const auto* comp = static_cast<const CombatRosterComponent*>(ptr);
-        j["count"] = comp->count;
-
-        nlohmann::json entriesArray = nlohmann::json::array();
-        for (int i = 0; i < comp->count; ++i) {
+        j["entries"] = nlohmann::json::array();
+        for (int i = 0; i < comp.count; ++i)
+        {
             nlohmann::json entry;
-            entry["tag"] = std::string(comp->entries[i].tag); // char配列をstringに変換して保存
-            entry["id"] = (uint64_t)comp->entries[i].id;      // EntityIDを保存
-            entriesArray.push_back(entry);
+            entry["tag"] = comp.entries[i].tag;
+            entry["id"] = static_cast<uint64_t>(comp.entries[i].id);
+            j["entries"].push_back(entry);
         }
-        j["entries"] = entriesArray;
     }
 
-    // JSON からの復元 (デシリアライズ)
-    static void deserializeToWorld(CCL::ECS::Core::World* world, CCL::ECS::EntityID entity, const nlohmann::json& j) {
-        CombatRosterComponent temp{};
+    // ★ カスタム読み込み  ← ここが今まで存在しなかった部分
+    static void deserializeToWorld(
+        CCL::ECS::Core::World* world,
+        CCL::ECS::EntityID           entity,
+        const nlohmann::json& j)
+    {
+        CombatRosterComponent comp{};
 
-        if (j.contains("count")) temp.count = j["count"].get<int>();
+        if (j.contains("count"))
+        {
+            comp.count = j["count"].get<int>();
+            // 安全のため上限を超えないようにクランプ
+            if (comp.count > 4) comp.count = 4;
+        }
 
-        if (j.contains("entries") && j["entries"].is_array()) {
-            int i = 0;
-            for (const auto& entryJson : j["entries"]) {
-                if (i >= 4) break; // 最大4つまでの安全装置
+        if (j.contains("entries") && j["entries"].is_array())
+        {
+            int idx = 0;
+            for (const auto& entry : j["entries"])
+            {
+                if (idx >= comp.count) break;
 
-                if (entryJson.contains("tag")) {
-                    std::string tagStr = entryJson["tag"].get<std::string>();
-                    strncpy_s(temp.entries[i].tag, sizeof(temp.entries[i].tag), tagStr.c_str(), _TRUNCATE);
+                // tag (char[32]) の復元
+                if (entry.contains("tag"))
+                {
+                    std::string tag = entry["tag"].get<std::string>();
+                    strncpy_s(
+                        comp.entries[idx].tag,
+                        sizeof(comp.entries[idx].tag),
+                        tag.c_str(),
+                        _TRUNCATE);
                 }
 
-                if (entryJson.contains("id")) {
-                    // ★ 究極の修正: Pass 2の段階では翻訳しない！
-                    // 相手（子エンティティ）がまだロードされていない可能性があるので、
-                    // JSONに書かれている「旧ID」をそのまま一時的に格納しておく。
-                    temp.entries[i].id = static_cast<CCL::ECS::EntityID>(entryJson["id"].get<uint64_t>());
+                // id の復元
+                // ※ EntityID のリマップは SceneSerializer の Pass3 が行うので、
+                //   ここでは JSON の生の値をそのまま入れておく
+                if (entry.contains("id"))
+                {
+                    comp.entries[idx].id = static_cast<CCL::ECS::EntityID>(
+                        entry["id"].get<uint64_t>());
                 }
-                i++;
+
+                ++idx;
             }
         }
-        world->AddComponent<CombatRosterComponent>(entity, std::move(temp));
+
+        world->AddComponent<CombatRosterComponent>(entity, std::move(comp));
     }
+
+    static const std::vector<FieldDescriptor>& Fields()
+    {
+        // カスタムシリアライズのため空でよい
+        static const std::vector<FieldDescriptor> empty;
+        return empty;
+    }
+
 };
 REGISTER_COMPONENT(CombatRosterComponent, "CombatRosterComponent");
+
 
 // ===================================================================
 // 5. DamageEventComponent (ダメージイベント)

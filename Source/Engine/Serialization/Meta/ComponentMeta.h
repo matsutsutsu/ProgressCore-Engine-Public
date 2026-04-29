@@ -141,6 +141,9 @@ template <typename T> struct ComponentMeta {
     // デフォルトはすべて保存対象（保存したくない場合は特殊化側で false にする）
     static constexpr bool        isSerializable = true;
 
+    // ★ 究極の綺麗な設計: カスタムシリアライズを行うかどうかの明示的フラグ
+    static constexpr bool hasCustomSerialize = false;
+
     // カスタムGUIの実装関数 (hasCustomGui = true のときのみ描画システムから呼ばれる)
     // 戻り値: 値が変更されたら true を返す (Undo/Redoシステムのフラグ用)
     // 外部のエンティティやシステム（World等）にアクセスできるようコンテキストを受け取る
