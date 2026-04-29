@@ -39,11 +39,13 @@
                     ]
                 }
             },
-            "id": 4294967300
+            "id": 4294967301
         },
         {
             "components": {
-                "BoneAttachmentComponent": null,
+                "BoneAttachmentComponent": {
+                    "boneName": "hand_R"
+                },
                 "Name": {
                     "name": "prim"
                 },
@@ -65,7 +67,7 @@
                     "type": 3
                 },
                 "Transform": {
-                    "Parent Entity ID": 4294967300,
+                    "Parent Entity ID": 4294967301,
                     "isStatic": false,
                     "position": [
                         0.0,
@@ -85,7 +87,7 @@
                     ]
                 }
             },
-            "id": 4294967301
+            "id": 4294967302
         }
     ],
     "name": "BoneAttachmentTest"

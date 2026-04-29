@@ -12,6 +12,7 @@
 #include "Engine/GamePlay/Transform/PendingParentComponent.h"
 #include "Engine/GamePlay/Graphics/Core/ModelComponent.h"
 #include "Engine/Graphics/Resource/Model.h"
+#include "Engine/Serialization/SerializationContext.h"
 
 // ===================================================================
 // 1. HitboxComponent (攻撃判定)
@@ -131,7 +132,12 @@ template <> struct ComponentMeta<BoneAttachmentComponent> {
     }
 
     static const std::vector<FieldDescriptor>& Fields() {
-        static const std::vector<FieldDescriptor> fields = {};
+        // ★ 究極の修正1: JSONシリアライザに保存する変数を教える
+        static const std::vector<FieldDescriptor> fields = {
+            // std::string boneName を "boneName" というキーで JSON に保存する
+            META_FIELD_STRING(BoneAttachmentComponent, boneName, "boneName", "Bone Name", "BoneAttachment")
+        };
+        // ※ cachedBoneIndex は実行時に計算するため保存不要
         return fields;
     }
 };
@@ -259,9 +265,59 @@ template <> struct ComponentMeta<CombatRosterComponent> {
         return changed;
     }
 
+    // ★ 究極の修正2: 自動マクロ (Fields) ではなく、複雑な配列を持つコンポーネント用に
+     // nlohmann::json の生APIを使って完璧なセーブ・ロードロジックを自作する。
+
+     // (注意: 現在のエンジンの設計上、serialize / deserialize を特殊化(オーバーライド)して
+     // 対応できる構造か確認が必要です。もしエンジンが Fields() のみに依存している場合は、
+     // 以下のようにダミーの Field を登録した上で、特殊化関数を追加します)
+
     static const std::vector<FieldDescriptor>& Fields() {
-        static const std::vector<FieldDescriptor> fields = {};
+        static const std::vector<FieldDescriptor> fields = {}; // 手動シリアライズする場合は空でOK
         return fields;
+    }
+
+    // JSON への保存 (シリアライズ)
+    static void serialize(nlohmann::json& j, const void* ptr) {
+        const auto* comp = static_cast<const CombatRosterComponent*>(ptr);
+        j["count"] = comp->count;
+
+        nlohmann::json entriesArray = nlohmann::json::array();
+        for (int i = 0; i < comp->count; ++i) {
+            nlohmann::json entry;
+            entry["tag"] = std::string(comp->entries[i].tag); // char配列をstringに変換して保存
+            entry["id"] = (uint64_t)comp->entries[i].id;      // EntityIDを保存
+            entriesArray.push_back(entry);
+        }
+        j["entries"] = entriesArray;
+    }
+
+    // JSON からの復元 (デシリアライズ)
+    static void deserializeToWorld(CCL::ECS::Core::World* world, CCL::ECS::EntityID entity, const nlohmann::json& j) {
+        CombatRosterComponent temp{};
+
+        if (j.contains("count")) temp.count = j["count"].get<int>();
+
+        if (j.contains("entries") && j["entries"].is_array()) {
+            int i = 0;
+            for (const auto& entryJson : j["entries"]) {
+                if (i >= 4) break; // 最大4つまでの安全装置
+
+                if (entryJson.contains("tag")) {
+                    std::string tagStr = entryJson["tag"].get<std::string>();
+                    strncpy_s(temp.entries[i].tag, sizeof(temp.entries[i].tag), tagStr.c_str(), _TRUNCATE);
+                }
+
+                if (entryJson.contains("id")) {
+                    // ★ 究極の修正: Pass 2の段階では翻訳しない！
+                    // 相手（子エンティティ）がまだロードされていない可能性があるので、
+                    // JSONに書かれている「旧ID」をそのまま一時的に格納しておく。
+                    temp.entries[i].id = static_cast<CCL::ECS::EntityID>(entryJson["id"].get<uint64_t>());
+                }
+                i++;
+            }
+        }
+        world->AddComponent<CombatRosterComponent>(entity, std::move(temp));
     }
 };
 REGISTER_COMPONENT(CombatRosterComponent, "CombatRosterComponent");

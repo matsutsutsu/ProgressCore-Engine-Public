@@ -7,6 +7,7 @@
 
 #include "Engine/GamePlay/Transform/PendingParentComponent.h"
 #include "Engine/GamePlay/Transform/TransformComponent.h"
+#include "Game/Logics/Combat/CombatRosterComponent.h"
 
 #include "Engine/GamePlay/Core/DestroyTag.h"
 #include "Engine/GamePlay/Core/PersistentTag.h"
@@ -184,9 +185,8 @@ std::vector<EntityID> SceneSerializer::DeserializeRaw(World* world, const json& 
     } // ← ★ ここ！ Pass 1の forループの閉じカッコが抜けていました！
 
     // ---------------------------------------------------
-    // Pass 2: コンポーネント復元 & 親子関係リンク
+    // Pass 2: コンポーネント復元 (PendingOpに積む)
     // ---------------------------------------------------
-    // インデックスを使ってループ (createdEntitiesと同期させるため)
     size_t index = 0;
     for (const auto& entityJson : entitiesJson) {
         EntityID newID = createdEntities[index++];
@@ -196,22 +196,20 @@ std::vector<EntityID> SceneSerializer::DeserializeRaw(World* world, const json& 
             for (auto it = components.begin(); it != components.end(); ++it) {
                 std::string name = it.key();
                 auto& data = it.value();
-
                 const auto* meta = registry.GetInfoByName(name);
                 if (meta) {
-                    // ★ コンポーネントの中身を復元し、PendingOpに積む
-                    // (ここで BoneAttachmentComponent などが実体化される)
                     meta->deserializeToWorld(world, newID, data);
                 }
             }
         }
     }
 
-    // ---------------------------------------------------
-    // Pass 3: 親子関係の完全な再構築
-    // ---------------------------------------------------
-    // ★ 究極の修正3: ローカル辞書を使って翻訳する
+    // ★ 究極の修正A: Pass 3 で GetComponent するために、ここで一度実体化させる！
+    world->ScrutinyAndApply();
 
+    // ---------------------------------------------------
+    // Pass 3: 親子関係とリンクの完全な再構築
+    // ---------------------------------------------------
     size_t fixIndex = 0;
     for (const auto& entityJson : entitiesJson)
     {
@@ -219,41 +217,53 @@ std::vector<EntityID> SceneSerializer::DeserializeRaw(World* world, const json& 
 
         if (!entityJson.contains("components")) continue;
         const auto& components = entityJson["components"];
-        if (!components.contains("Transform")) continue;
 
-        const auto& transformJson = components["Transform"];
-
-        // 旧キー "Parent Entity ID" または新キー "parentID" を取得
-        uint64_t oldParentID = 0;
-        if (transformJson.contains("parentID")) {
-            oldParentID = transformJson["parentID"].get<uint64_t>();
-        }
-        else if (transformJson.contains("Parent Entity ID")) {
-            oldParentID = transformJson["Parent Entity ID"].get<uint64_t>();
-        }
-
-        // 親が存在する場合
-        if (oldParentID != 0) {
-            EntityID resolvedParentID = 0;
-
-            // ★ グローバル辞書(SerializationContext)ではなく、ローカル辞書から引く！
-            if (localIdMap.find(oldParentID) != localIdMap.end()) {
-                resolvedParentID = localIdMap[oldParentID];
+        // ★ 究極の修正B: continue をやめて独立した if ブロックにする
+        // ① Transformの解決
+        if (components.contains("Transform")) {
+            const auto& transformJson = components["Transform"];
+            uint64_t oldParentID = 0;
+            if (transformJson.contains("parentID")) {
+                oldParentID = transformJson["parentID"].get<uint64_t>();
+            }
+            else if (transformJson.contains("Parent Entity ID")) {
+                oldParentID = transformJson["Parent Entity ID"].get<uint64_t>();
             }
 
-            // 翻訳に成功したら、予約票を発行
-            if (resolvedParentID != 0 && resolvedParentID != CCL::ECS::InvalidEntityID) {
-                if (world->HasComponent<PendingParentComponent>(newID)) {
-                    world->GetComponent<PendingParentComponent>(newID)->parentID = resolvedParentID;
+            if (oldParentID != 0) {
+                EntityID resolvedParentID = 0;
+                if (localIdMap.find(oldParentID) != localIdMap.end()) {
+                    resolvedParentID = localIdMap[oldParentID];
                 }
-                else {
+                if (resolvedParentID != 0 && resolvedParentID != CCL::ECS::InvalidEntityID) {
                     PendingParentComponent pendingParent;
                     pendingParent.parentID = resolvedParentID;
                     world->AddComponent<PendingParentComponent>(newID, pendingParent);
                 }
             }
         }
+
+        // ② CombatRosterComponent の解決
+        if (components.contains("CombatRosterComponent")) {
+            auto* roster = world->GetComponent<CombatRosterComponent>(newID);
+            if (roster) {
+                for (int i = 0; i < roster->count; ++i) {
+                    uint64_t oldLinkedID = static_cast<uint64_t>(roster->entries[i].id);
+                    if (oldLinkedID != 0) {
+                        if (localIdMap.find(oldLinkedID) != localIdMap.end()) {
+                            roster->entries[i].id = localIdMap[oldLinkedID];
+                        }
+                        else {
+                            roster->entries[i].id = 0;
+                        }
+                    }
+                }
+            }
+        }
     }
+
+    // ★ 最後に PendingParent などを適用して階層を完成させる
+    world->ScrutinyAndApply();
 
     return createdEntities;
 }

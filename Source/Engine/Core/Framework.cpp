@@ -255,7 +255,11 @@ int Framework::Run()
 			// ★追加: この番号のメモリ確保の瞬間にブレークする
 			// ダンプに出ている番号（例: 2575）を指定します
 			// ※実行するたびに番号が変わる場合は、この方法は使えません
-			//_CrtSetBreakAlloc(115055);
+
+			// TODO:シャドウマップでメモリリーク
+			//_CrtSetBreakAlloc(121715);
+			//_CrtSetBreakAlloc(121457);
+			//_CrtSetBreakAlloc(121196);
 			 
 			//_CrtSetBreakAlloc(2275584);
 
