@@ -45,6 +45,12 @@ void ECSDebugWindow::DrawContents(EditorContext& context) {
             ImGui::EndTabItem();
         }
 
+        // 実行グラフのタブ
+        if (ImGui::BeginTabItem("Execution Graph")) {
+            DrawExecutionGraphTab(context.systemManager);
+            ImGui::EndTabItem();
+        }
+
         if (ImGui::BeginTabItem("Pending Ops")) {
             DrawPendingOpsTab(context.world);
             ImGui::EndTabItem();
@@ -240,6 +246,28 @@ static void DrawHexDump(const void* data, size_t size) {
 // =========================================================
 void ECSDebugWindow::DrawMemoryTab(CCL::ECS::Core::World* world) {
     auto& chunks = world->GetChunkManager().GetChunks();
+
+    // =======================================================
+    // チャンクの全体統計
+    // =======================================================
+    size_t totalEntities = 0;
+    size_t totalCapacity = 0;
+    size_t totalMemory = 0;
+
+    for (const auto& chunk : chunks) {
+        if (!chunk) continue;
+        totalEntities += chunk->GetEntityCount();
+        totalCapacity += chunk->GetCapacity();
+        totalMemory += chunk->GetChunkSize() * chunk->GetCapacity();
+    }
+
+    ImGui::Text("Active Chunks: %zu", chunks.size());
+    ImGui::SameLine(200);
+    ImGui::Text("Total Entities: %zu / %zu", totalEntities, totalCapacity);
+    ImGui::SameLine(450);
+    ImGui::Text("Est. Component Memory: %.3f MB", (float)totalMemory / (1024.0f * 1024.0f));
+    ImGui::Spacing();
+
     static int selectedChunkIdx = -1;
 
     ImGui::Columns(2, "MemoryTabSplitter", true);
@@ -415,4 +443,34 @@ void ECSDebugWindow::DrawPendingOpsTab(CCL::ECS::Core::World* world) {
         }
     }
     ImGui::EndChild();
+}
+
+// ---------------------------------------------------------
+//  実行グラフの可視化
+// ---------------------------------------------------------
+void ECSDebugWindow::DrawExecutionGraphTab(CCL::ECS::SystemManager* systemManager) {
+    ImGui::TextWrapped("Shows the current parallel execution batches resolved by the TaskScheduler.");
+    ImGui::Spacing();
+
+    auto drawGraph = [](const char* title, const CCL::ECS::TaskScheduler& scheduler) {
+        ImGui::SeparatorText(title);
+        const auto& batches = scheduler.GetBatches();
+        if (batches.empty()) {
+            ImGui::TextDisabled("Graph not built yet or no systems registered.");
+            return;
+        }
+        for (size_t i = 0; i < batches.size(); ++i) {
+            ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Batch %zu (Parallel):", i);
+            ImGui::Indent();
+            for (auto* sys : batches[i]) {
+                ImGui::BulletText("%s", sys->GetName().c_str());
+            }
+            ImGui::Unindent();
+            ImGui::Spacing();
+        }
+        };
+
+    drawGraph("Logic Systems Graph", systemManager->GetLogicScheduler());
+    ImGui::Spacing();
+    drawGraph("Render Systems Graph", systemManager->GetRenderScheduler());
 }

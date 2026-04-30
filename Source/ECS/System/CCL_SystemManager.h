@@ -161,6 +161,9 @@ namespace CCL::ECS
         const std::vector<std::unique_ptr<SystemBase>>& GetLogicSystems() const { return _logicSystems; }
         const std::vector<std::unique_ptr<SystemBase>>& GetRenderSystems() const { return _renderSystems; }
 
+        // 外部（エディタ）からタスクスケジューラを読み取るための関数
+        const TaskScheduler& GetLogicScheduler() const { return _logicScheduler; }
+        const TaskScheduler& GetRenderScheduler() const { return _renderScheduler; }
 
         // ★追加: 指定した型のシステムを取得する関数
         // 使用例: auto* animSys = systemManager->GetSystem<AnimationSystem>();

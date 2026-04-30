@@ -3,12 +3,19 @@
 #include <algorithm>
 #include <memory>
 #include <vector>
+#include <string>
 #include "ECS/Core/CCL_Chunk.h"
+#include "Engine/Platform/Logger.h"
 
 namespace CCL::ECS {
     // システムの依存関係を解析し、並列実行可能なバッチを構築するクラス
     class TaskScheduler {
       public:
+         //  外部（ImGui）からバッチ構成を読み取るためのAPI
+         const std::vector<std::vector<SystemBase*>>& GetBatches() const {
+             return _executionBatches;
+         }
+
         // システムのリストを解析して実行計画（グラフ）を作る
         void BuildGraph(const std::vector<std::unique_ptr<SystemBase>> &systems)
         {
@@ -29,45 +36,46 @@ namespace CCL::ECS {
 
                 // 自分より前にあるシステム j と「競合」しないか全部チェックする！
                 for (size_t j = 0; j < i; ++j) {
-                    auto readsJ  = systems[j]->GetReadTypes();
-                    auto writesJ = systems[j]->GetWriteTypes();
-
-
-                    bool typeConflict = false;
-
-                    // 競合条件1：自分が Write（書き換える）データが、
-                    // 相手の Read か Write に含まれていたらアウト！  Chunkレベルの厳密な判定
-                    for (auto w : writesI) {
-                        if (Contains(readsJ, w) || Contains(writesJ, w)) typeConflict = true;
-                    }
-
-                    // 競合条件2：自分が Read（読む）データが、
-                    // 相手の Write に含まれていたらアウト！（読んでいる途中で書き換えられたら困る）
-                    for (auto r : readsI) {
-                        if (Contains(writesJ, r)) typeConflict = true;
-                    }
-
                     bool conflict = false;
 
-                    // 型の競合がある場合のみ、さらに「対象のChunkが被っているか」を調べる
-                    if (typeConflict) {
-                        const auto& chunksI = systems[i]->GetTargetChunks();
-                        const auto& chunksJ = systems[j]->GetTargetChunks();
+                    // ==========================================================
+                    // ★ 究極の修正: ステージ（優先度）の境界線を「絶対の壁」にする
+                    // 優先度（Enumの値）が違うシステム同士は、データに関係なく必ず順番を待つ！
+                    // ==========================================================
+                    if (systems[i]->GetPriority() != systems[j]->GetPriority()) {
+                        conflict = true;
+                    }
+                    else {
+                        // --- 優先度（ステージ）が同じ場合のみ、データ競合をチェックして並列化を試みる ---
+                        auto readsJ = systems[j]->GetReadTypes();
+                        auto writesJ = systems[j]->GetWriteTypes();
 
-                        for (CCL::ECS::Core::Chunk* cI : chunksI) {
-                            for (CCL::ECS::Core::Chunk* cJ : chunksJ) {
-                                // 同じチャンクのポインタを両方が持っていたら、本物の競合（データレース）！
-                                if (cI == cJ) {
-                                    conflict = true;
-                                    break;
+                        bool typeConflict = false;
+                        for (auto w : writesI) {
+                            if (Contains(readsJ, w) || Contains(writesJ, w)) typeConflict = true;
+                        }
+                        for (auto r : readsI) {
+                            if (Contains(writesJ, r)) typeConflict = true;
+                        }
+
+                        if (typeConflict) {
+                            const auto& chunksI = systems[i]->GetTargetChunks();
+                            const auto& chunksJ = systems[j]->GetTargetChunks();
+
+                            for (CCL::ECS::Core::Chunk* cI : chunksI) {
+                                for (CCL::ECS::Core::Chunk* cJ : chunksJ) {
+                                    if (cI == cJ) {
+                                        conflict = true;
+                                        break;
+                                    }
                                 }
+                                if (conflict) break;
                             }
-                            if (conflict) break;
                         }
                     }
 
+                    // 競合（またはステージの違い）があった場合、その先輩のバッチ以降に配置する
                     if (conflict) {
-                        // 競合した先輩のバッチを記憶して、待つようにする
                         maxDependencyBatch = (std::max)(maxDependencyBatch, systemBatchIndex[j]);
                     }
                 }
@@ -86,6 +94,19 @@ namespace CCL::ECS {
                 // バッチにシステムを登録
                 _executionBatches[systemBatchIndex[i]].push_back(systems[i].get());
             }
+
+            // 構築されたバッチ（実行順序）をLoggerに出力する
+            CCL_LOG_INFO(LogCategory::ECS, "=== TaskScheduler: Execution Graph Built ===");
+            for (size_t i = 0; i < _executionBatches.size(); ++i) {
+                std::string batchInfo = "Batch " + std::to_string(i) + ": [";
+                for (size_t j = 0; j < _executionBatches[i].size(); ++j) {
+                    batchInfo += _executionBatches[i][j]->GetName();
+                    if (j < _executionBatches[i].size() - 1) batchInfo += ", ";
+                }
+                batchInfo += "]";
+                CCL_LOG_INFO(LogCategory::ECS, "%s", batchInfo.c_str());
+            }
+            CCL_LOG_INFO(LogCategory::ECS, "============================================");
         }
 
         // 構築されたバッチ順に実行する
