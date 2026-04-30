@@ -76,6 +76,7 @@
                     "exposure": 0.4000000059604645
                 },
                 "Transform": {
+                    "Parent Entity ID": 0,
                     "isStatic": false,
                     "position": [
                         0.0,
@@ -95,31 +96,32 @@
                     ]
                 }
             },
-            "id": 4294967297
+            "id": 8589934596
         },
         {
             "components": {
                 "CameraBodyFree": {
-                    "currentPitch": -21.999967575073242,
-                    "currentYaw": -0.7999966144561768,
+                    "currentPitch": -22.799957275390625,
+                    "currentYaw": 41.399967193603516,
                     "lookSpeed": 0.20000000298023224,
-                    "moveSpeed": 8.0
+                    "moveSpeed": 8.153728485107422
                 },
                 "Name": {
                     "name": "FreeCamera"
                 },
                 "Transform": {
+                    "Parent Entity ID": 0,
                     "isStatic": false,
                     "position": [
-                        1.4278203248977661,
-                        7.131634712219238,
-                        -14.635908126831055
+                        -6.821428298950195,
+                        5.003211975097656,
+                        -12.284862518310547
                     ],
                     "rotation": [
-                        0.19080407917499542,
-                        -0.006852966267615557,
-                        0.0013320797588676214,
-                        0.9816033244132996
+                        0.18489708006381989,
+                        0.3465009927749634,
+                        -0.06986671686172485,
+                        0.9169890284538269
                     ],
                     "scale": [
                         1.0,
@@ -135,7 +137,7 @@
                     "priority": 100
                 }
             },
-            "id": 4294967298
+            "id": 8589934595
         },
         {
             "components": {
@@ -147,6 +149,7 @@
                     "name": "ExampleStage"
                 },
                 "Transform": {
+                    "Parent Entity ID": 0,
                     "isStatic": false,
                     "position": [
                         0.0,
@@ -166,52 +169,74 @@
                     ]
                 }
             },
-            "id": 4294967299
+            "id": 8589934594
+        },
+        {
+            "components": {},
+            "id": 4294967304
         },
         {
             "components": {
-                "BoneAttachmentComponent": null,
-                "Name": {
-                    "name": "primitive"
+                "BoneAttachmentComponent": {
+                    "boneName": "hand_R"
                 },
-                "Primitive": {
-                    "color": [
-                        0.800000011920929,
-                        0.20000000298023224,
-                        0.20000000298023224,
-                        1.0
-                    ],
-                    "height": 1.0,
-                    "isWireframe": false,
-                    "radius": 0.5,
-                    "size": [
-                        1.0,
-                        1.0,
-                        1.0
-                    ],
-                    "type": 1
+                "HitboxComponent": {
+                    "判定アクティブ(Debug)": true,
+                    "基礎ダメージ量": 18.0
                 },
-                "Transform": {
-                    "isStatic": false,
-                    "position": [
+                "JoltCapsuleCollider": {
+                    "halfHeight": 3.0999999046325684,
+                    "localOffset": [
                         0.0,
                         0.0,
                         0.0
                     ],
+                    "localRotationEuler": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "radius": 0.5099999904632568
+                },
+                "JoltRigidbody": {
+                    "friction": 0.20000000298023224,
+                    "gravityFactor": 1.0,
+                    "initialVelocity": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "isSensor": true,
+                    "motionType": 1,
+                    "objectLayer": 1,
+                    "restitution": 0.0,
+                    "useCCD": false
+                },
+                "Name": {
+                    "name": "Sword"
+                },
+                "Transform": {
+                    "Parent Entity ID": 8589934593,
+                    "isStatic": false,
+                    "position": [
+                        -0.25099998712539673,
+                        -0.21400000154972076,
+                        -6.203999996185303
+                    ],
                     "rotation": [
-                        0.0,
-                        0.0,
-                        0.0,
-                        1.0
+                        0.029130272567272186,
+                        -0.7109823822975159,
+                        -0.7018606662750244,
+                        -0.032356590032577515
                     ],
                     "scale": [
-                        4.0,
-                        4.0,
-                        4.0
+                        1.0,
+                        1.0,
+                        1.0
                     ]
                 }
             },
-            "id": 8589934598
+            "id": 4294967307
         },
         {
             "components": {
@@ -223,26 +248,35 @@
                     "isLoop": true,
                     "playbackSpeed": 1.0
                 },
-                "CombatRosterComponent": null,
+                "CombatRosterComponent": {
+                    "count": 1,
+                    "entries": [
+                        {
+                            "id": 4294967307,
+                            "tag": "RightHand"
+                        }
+                    ]
+                },
                 "Material": null,
                 "Model": {
                     "assetPath": "Assets/Models/Enemy/Boss.glb"
                 },
                 "Name": {
-                    "name": "AnimationModel"
+                    "name": "BoneAttachmentTest"
                 },
                 "Transform": {
+                    "Parent Entity ID": 0,
                     "isStatic": false,
                     "position": [
-                        1.366117238998413,
                         0.0,
-                        1.3483495712280273
+                        0.0,
+                        0.0
                     ],
                     "rotation": [
                         0.0,
-                        0.9986966848373413,
-                        0.0,
-                        0.051037319004535675
+                        1.0,
+                        -0.0,
+                        -6.229854676575997e-08
                     ],
                     "scale": [
                         0.30000001192092896,
@@ -251,7 +285,66 @@
                     ]
                 }
             },
-            "id": 4294967300
+            "id": 8589934593
+        },
+        {
+            "components": {
+                "HealthComponent": {
+                    "currentHealth": 46.0,
+                    "invincibilityDuration": 0.5,
+                    "maxHealth": 100.0,
+                    "team": 1
+                },
+                "HurtboxComponent": {
+                    "ダメージ倍率 (弱点等)": 1.0
+                },
+                "JoltRigidbody": {
+                    "friction": 0.20000000298023224,
+                    "gravityFactor": 1.0,
+                    "initialVelocity": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "isSensor": true,
+                    "motionType": 1,
+                    "objectLayer": 1,
+                    "restitution": 0.0,
+                    "useCCD": false
+                },
+                "JoltSphereCollider": {
+                    "localOffset": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "radius": 2.299999952316284
+                },
+                "Name": {
+                    "name": "HurtCollision"
+                },
+                "Transform": {
+                    "Parent Entity ID": 0,
+                    "isStatic": false,
+                    "position": [
+                        0.8999999761581421,
+                        2.4000000953674316,
+                        -4.900000095367432
+                    ],
+                    "rotation": [
+                        -0.0,
+                        0.0,
+                        -0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                }
+            },
+            "id": 4294967308
         }
     ]
 }

@@ -1,19 +1,20 @@
 {
-    "entryPosX": 77.0,
-    "entryPosY": -149.0,
+    "entryPosX": 0.0,
+    "entryPosY": 0.0,
     "entryStateHash": 1168775091,
     "states": [
         {
             "isLoop": true,
-            "nodePosX": 77.0,
-            "nodePosY": -5.0,
+            "nodePosX": -3.0,
+            "nodePosY": 183.0,
             "playbackSpeed": 1.0,
             "sequenceFilePath": "Assets/Animations/Sequencer/Move.json",
-            "sequenceName": "Move",
+            "sequenceName": "Idle",
             "speedCurveName": "",
             "stateHash": 1168775091,
             "transitions": [
                 {
+                    "blendDuration": 0.20000000298023224,
                     "conditions": [
                         {
                             "op": 3,
@@ -22,21 +23,22 @@
                             "threshold": 0.0
                         }
                     ],
-                    "targetStateHash": 2371348074
+                    "targetStateHash": 2343121693
                 }
             ]
         },
         {
             "isLoop": false,
-            "nodePosX": 429.0,
-            "nodePosY": -9.0,
+            "nodePosX": 317.0,
+            "nodePosY": 183.0,
             "playbackSpeed": 1.0,
             "sequenceFilePath": "Assets/Animations/Sequencer/Attack.json",
             "sequenceName": "Attack",
             "speedCurveName": "",
-            "stateHash": 2371348074,
+            "stateHash": 2343121693,
             "transitions": [
                 {
+                    "blendDuration": 0.20000000298023224,
                     "conditions": [
                         {
                             "op": 4,

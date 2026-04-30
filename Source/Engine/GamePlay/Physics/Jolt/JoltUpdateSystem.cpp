@@ -34,6 +34,13 @@ void JoltPullSystem::Update(float dt)
             return;
         }
 
+        // Kinematic (アニメーション駆動) の剛体はPullしてはいけない！
+        // Kinematicの「正しい座標」は常にECS側(TransformUpdate)にあるため、Joltから上書きさせない。
+        if (bodyInterface.GetMotionType(joltBody.bodyID) == JPH::EMotionType::Kinematic) {
+            return;
+        }
+
+
         // スリープ状態（止まっている物体）なら、座標コピーの無駄な処理を省く
         if (!bodyInterface.IsActive(joltBody.bodyID)) {
             return;

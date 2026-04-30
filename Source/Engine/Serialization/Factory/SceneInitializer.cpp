@@ -389,6 +389,8 @@ void SceneInitializer::SpawnECSBenchmarkTest(
 void SceneInitializer::SpawnVoxelOceanTest(
     CCL::ECS::Core::World& world, ID3D11Device* device, int gridSize){
     
+
+    Prefab::SpawnPrefab(world, "Assets/Prefabs/Camera/FreeCamera.json");
     // 1. アーキタイプの生成（圧倒的スピードでメモリを確保）
     const auto oceanArch = CCL::ECS::ArchetypeHelper::Generate<
         TransformComponent,

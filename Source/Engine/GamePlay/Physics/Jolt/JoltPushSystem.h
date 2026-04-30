@@ -3,7 +3,7 @@
 #include "Engine/Physics/JoltPhysicsManager.h"
 #include "Engine/GamePlay/Physics/Jolt/JoltHandleComponent.h"
 #include "Engine/GamePlay/Transform/TransformComponent.h"
-
+#include "Engine/GamePlay/Physics/RigidBody/JoltRigidbodyComponent.h"
 
 // ===================================================================================
 // ファイル名: JoltPushSystem.h
@@ -23,9 +23,10 @@
 
 
 class JoltPushSystem
-    : public CCL::ECS::IfSystem<JoltPushSystem,
+  : public CCL::ECS::IfSystem<JoltPushSystem,
                                 CCL::ECS::Write<TransformComponent>,
-                                CCL::ECS::Read<JoltHandleComponent>> {
+                                CCL::ECS::Read<JoltHandleComponent>,
+                                CCL::ECS::Read<JoltRigidbodyComponent>> { 
   public:
     JoltPushSystem() : IfSystem("JoltPushSystem") {}
     void Update(float dt) override;

@@ -6,14 +6,10 @@
         "duration": 3.000000238418579,
         "events": [
             {
-                "time": 0.0,
-                "eventName": "HitBox_Start",
-                "stringParam": ""
-            },
-            {
-                "time": 0.5,
-                "eventName": "HitBox_End",
-                "stringParam": ""
+                "startTime": 1.2833333015441895,
+                "endTime": 1.7833333015441895,
+                "eventName": "HitBox",
+                "stringParam": "RightHand"
             }
         ]
     }

@@ -9,7 +9,7 @@
 struct HitboxComponent {
     CCL::ECS::EntityID ownerID;     // 誰の攻撃か（剣ならプレイヤーのID）
     float damageAmount;   // 基礎ダメージ量
-    bool isActive;        // 判定が生きているか（アニメーションからON/OFFする）
+    bool isActive = false;        // 判定が生きているか（アニメーションからON/OFFする）
 
     // ★多段ヒット防止用の固定長配列
     static constexpr uint8_t MAX_HIT_TARGETS = 8;
@@ -22,7 +22,7 @@ struct HitboxComponent {
 
 // --- 2. 被弾側の判定データ ---
 struct HurtboxComponent {
-    float damageMultiplier; // 弱点なら2.0など
+    float damageMultiplier = 1.0f; // 弱点なら2.0など
 };
 
 // --- 3. ダメージイベント・エンティティ用コンポーネント（★重要） ---

@@ -153,9 +153,16 @@ void JoltBodySetupSystem::Update(float dt)
         if (shape == nullptr) return;
 
         // 2. Jolt剛体の生成 (Rigidbodyコンポーネントの設定値を流し込む)
+        //  ローカル座標(trans.position)ではなく、絶対座標(WorldPosition)で生成する！
+        DirectX::XMFLOAT3 worldPos = trans.GetWorldPosition();
+        DirectX::XMFLOAT4 worldRot = trans.GetWorldRotation();
+
+        JPH::Quat initRot(worldRot.x, worldRot.y, worldRot.z, worldRot.w);
+        initRot = initRot.Normalized(); // ★Joltが荒ぶるのを防ぐための必須処理(正規化)
+
         JPH::BodyCreationSettings bodySettings(shape,
-            JPH::RVec3(trans.position.x, trans.position.y, trans.position.z),
-            JPH::Quat(trans.rotation.x, trans.rotation.y, trans.rotation.z, trans.rotation.w),
+            JPH::RVec3(worldPos.x, worldPos.y, worldPos.z),
+            initRot,
             rigid.motionType,
             rigid.objectLayer);
         bodySettings.mRestitution = rigid.restitution;

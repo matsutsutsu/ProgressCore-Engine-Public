@@ -8,6 +8,7 @@
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
+#include "Game/Logics/Combat/HealthComponent.h" // ※環境に合わせて適宜パスを調整してください
 #include "Engine/GamePlay/Transform/TransformComponent.h"
 #include "Engine/GamePlay/Transform/PendingParentComponent.h"
 #include "Engine/GamePlay/Graphics/Core/ModelComponent.h"
@@ -364,3 +365,111 @@ template <> struct ComponentMeta<DamageEventComponent> {
     }
 };
 REGISTER_COMPONENT(DamageEventComponent, "DamageEventComponent");
+
+// ===================================================================
+// 6. HealthComponent (体力・陣営データ)
+// ===================================================================
+
+// JSONシリアライザにカスタム関数を使用することを通知
+template <>
+struct ComponentMetaJson::HasCustomSerialize<HealthComponent> : std::true_type {};
+
+template <> struct ComponentMeta<HealthComponent> {
+    static constexpr bool registered = true;
+    static constexpr const char* displayName = "Health (体力・陣営)";
+    static constexpr bool hasCustomGui = true;
+    static constexpr bool isSerializable = true;
+    static constexpr bool hasCustomSerialize = true;
+
+    static bool CustomGui(HealthComponent& comp, unsigned long long entityID, void* worldPtr) {
+        bool changed = false;
+
+        // -----------------------------------------------------------
+        // 1. 陣営 (TeamID) のプルダウン選択
+        // -----------------------------------------------------------
+        const char* teamNames[] = { "Player (プレイヤー)", "Enemy (敵)", "Neutral (中立)" };
+        int currentTeam = static_cast<int>(comp.team);
+
+        ImGui::Text("Team / Faction:");
+        ImGui::SetNextItemWidth(-1);
+        if (ImGui::Combo("##TeamCombo", &currentTeam, teamNames, IM_ARRAYSIZE(teamNames))) {
+            comp.team = static_cast<TeamID>(currentTeam);
+            changed = true;
+        }
+
+        ImGui::Separator();
+
+        // -----------------------------------------------------------
+        // 2. 体力バーとエディタ
+        // -----------------------------------------------------------
+        ImGui::Text("Health Status:");
+
+        // プログレスバーによる視覚的な体力表示
+        float healthRatio = comp.maxHealth > 0.0f ? (comp.currentHealth / comp.maxHealth) : 0.0f;
+        char overlay[32];
+        sprintf_s(overlay, "%.1f / %.1f", comp.currentHealth, comp.maxHealth);
+        ImGui::ProgressBar(healthRatio, ImVec2(-1.f, 0.f), overlay);
+
+        // 最大値と現在値の安全なスライダー入力
+        if (ImGui::DragFloat("Max Health", &comp.maxHealth, 1.0f, 1.0f, 99999.0f)) {
+            // 最大HPを下げた際、現在HPが飛び出さないように自動クランプする
+            if (comp.currentHealth > comp.maxHealth) {
+                comp.currentHealth = comp.maxHealth;
+            }
+            changed = true;
+        }
+        if (ImGui::DragFloat("Current Health", &comp.currentHealth, 1.0f, 0.0f, comp.maxHealth)) {
+            changed = true;
+        }
+
+        ImGui::Separator();
+
+        // -----------------------------------------------------------
+        // 3. 無敵時間の設定と、ランタイム状態のモニタリング
+        // -----------------------------------------------------------
+        ImGui::Text("Invincibility (無敵設定):");
+        if (ImGui::DragFloat("Duration (sec)", &comp.invincibilityDuration, 0.05f, 0.0f, 10.0f)) {
+            changed = true;
+        }
+
+        // デバッグ表示: ゲーム実行中に無敵タイマーが動いているかを視覚化
+        if (comp.invincibilityTimer > 0.0f) {
+            ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), ">> Invincible! (%.2f sec left) <<", comp.invincibilityTimer);
+        }
+        else {
+            ImGui::TextDisabled("Not Invincible");
+        }
+
+        return changed;
+    }
+
+    // ★ カスタム保存 (タイマーなどの不要なランタイム状態は保存しない)
+    static void serialize(nlohmann::json& j, const void* ptr) {
+        const auto& comp = *static_cast<const HealthComponent*>(ptr);
+
+        j["maxHealth"] = comp.maxHealth;
+        j["currentHealth"] = comp.currentHealth;
+        j["invincibilityDuration"] = comp.invincibilityDuration;
+        j["team"] = static_cast<int>(comp.team); // Enum は int として保存
+
+        // ※ invincibilityTimer は絶対に保存しない（ロード直後に無敵になるバグを防ぐため）
+    }
+
+    // ★ カスタム読み込み
+    static void deserializeToWorld(CCL::ECS::Core::World* world, CCL::ECS::EntityID entity, const nlohmann::json& j) {
+        HealthComponent comp{};
+
+        if (j.contains("maxHealth"))             comp.maxHealth = j["maxHealth"].get<float>();
+        if (j.contains("currentHealth"))         comp.currentHealth = j["currentHealth"].get<float>();
+        if (j.contains("invincibilityDuration")) comp.invincibilityDuration = j["invincibilityDuration"].get<float>();
+        if (j.contains("team"))                  comp.team = static_cast<TeamID>(j["team"].get<int>());
+
+        world->AddComponent<HealthComponent>(entity, std::move(comp));
+    }
+
+    static const std::vector<FieldDescriptor>& Fields() {
+        static const std::vector<FieldDescriptor> empty;
+        return empty;
+    }
+};
+REGISTER_COMPONENT(HealthComponent, "HealthComponent");
