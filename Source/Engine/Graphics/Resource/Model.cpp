@@ -96,7 +96,7 @@ Model::Model(ID3D11Device* device, const char* filename, float sampleRate)
         else
             dst.data->shaderId = ShaderId::Toon; // 半透明対応など
         */
-        dst.data->shaderHash = "Phong"_hash; // デフォルト
+        dst.data->shaderHash = "PBR"_hash; // デフォルト
 
         // アルファモードのコピー（型変換）
         dst.data->alphaMode = static_cast<AlphaMode>(src.alphaMode);
@@ -567,38 +567,29 @@ std::shared_ptr<Model> Model::CreateFromData(ID3D11Device *device,
         model->materials[0].data = baseMaterial;
     }
     else {
-        // フォールバック（白）
-        model->materials[0].data                          = std::make_shared<MaterialData>();
-        model->materials[0].data->colors["materialColor"] = {1, 1, 1, 1};
+        // マテリアルが無い場合（フォールバック）のみ、光りすぎないPBR初期値を設定する
+        auto matData = std::make_shared<MaterialData>();
+
+        matData->shaderHash = "PBR"_hash;
+        matData->colors["materialColor"] = { 1.0f, 1.0f, 1.0f, 1.0f };
+        matData->colors["baseColor"] = { 1.0f, 1.0f, 1.0f, 1.0f };
+        matData->colors["emissiveColor"] = { 0.0f, 0.0f, 0.0f, 1.0f };
+
+        // PBRの「ちょうどいい」デフォルト値
+        matData->scalars["metalness"] = 0.0f; // 非金属
+        matData->scalars["roughness"] = 0.8f; // 光りすぎないよう、少しざらつかせる
+        matData->scalars["occlusionStrength"] = 1.0f;
+        matData->scalars["rimPower"] = 5.0f;
+        matData->scalars["rimIntensity"] = 0.0f;
+
+        // テクスチャは無いので全てオフ
+        matData->colors["useAlbedoMap"] = { 0.0f, 0.0f, 0.0f, 0.0f };
+        matData->colors["useNormalMap"] = { 0.0f, 0.0f, 0.0f, 0.0f };
+        matData->colors["useMetalRoughMap"] = { 0.0f, 0.0f, 0.0f, 0.0f };
+        matData->colors["useOcclusionMap"] = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+        model->materials[0].data = matData;
     }
-
-
-    // シェーダーリフレクション用のデフォルト値をセット
-    auto &matData                    = model->materials[0].data;
-    matData->shaderHash              = "Phong"_hash;
-    matData->colors["materialColor"] = {1, 1, 1, 1};
-    matData->colors["baseColor"]     = { 1, 1, 1, 1 };
-    matData->colors["emissiveColor"] = {0, 0, 0, 1};
-    matData->colors["rimColor"]      = {1, 1, 1, 1}; // Toon用デフォルト
-    matData->scalars["metalness"]    = 0.0f;
-    matData->scalars["roughness"]    = 0.8f;
-    matData->scalars["occlusionStrength"] = 0.0f;
-    matData->scalars["rimPower"]     = 5.0f;
-    matData->scalars["rimIntensity"] = 0.0f;
-
-    matData->colors["useAlbedoMap"] = { 0.0f, 0.0f, 0.0f, 0.0f };
-    matData->colors["useNormalMap"] = { 0.0f, 0.0f, 0.0f, 0.0f };
-    matData->colors["useMetalRoughMap"] = { 0.0f, 0.0f, 0.0f, 0.0f };
-    matData->colors["useOcclusionMap"] = { 0.0f, 0.0f, 0.0f, 0.0f };
-
-    // --- Meshの同期 ---
-    model->meshes.resize(1);
-    // リソース内のメッシュへのポインタ
-    model->meshes[0].data = &res->GetMeshes()[0];
-    // マテリアルへのポインタ
-    model->meshes[0].material = &model->materials[0];
-    // ノードへのポインタ
-    model->meshes[0].node = &model->nodes[0];
 
     return model;
 }
