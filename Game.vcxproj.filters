@@ -1488,6 +1488,9 @@
     <ClInclude Include="Source\Engine\GamePlay\Animation\CombatAnimationSyncSystem.h">
       <Filter>Source\Engine\GamePlay\Animation\Systems</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Core\EngineServices.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">

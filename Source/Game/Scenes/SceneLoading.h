@@ -31,6 +31,9 @@ class SceneLoading : public BaseScene {
     void OnRenderUI() override;
     void OnDrawImGui() override;
 
+    CCL::ECS::Core::World* GetWorld() override { return _worldPtr; }
+    CCL::ECS::SystemManager* GetSystemManager() override { return _ecsContext->GetSystemManager(); }
+
     float time = 0.0f;
   private:
     // スレッドで実行する関数

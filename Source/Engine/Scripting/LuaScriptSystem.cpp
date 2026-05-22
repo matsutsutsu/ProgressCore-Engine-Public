@@ -51,7 +51,7 @@ void LuaScriptSystem::Initialize()
     // 3. ★バインダーを使って機能を登録
     //    ここがエントリーポイントになります
     LuaBind_Entity::Bind(lua, _world);
-    LuaBind_Scene::Bind(lua, _world);
+    //LuaBind_Scene::Bind(lua, _world);
     LuaBind_Components::Bind(lua, _world);
 
     // 他のバインダーもここで呼ぶ

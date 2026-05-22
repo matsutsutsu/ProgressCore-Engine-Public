@@ -24,6 +24,8 @@ class EditorScene : public BaseScene {
     void Finalize() override;
     // Finalize, Update, Render, FixedUpdate は BaseScene をそのまま使うため削除！
 
+    CCL::ECS::Core::World* GetWorld() override { return _worldPtr; }
+    CCL::ECS::SystemManager* GetSystemManager() override { return _ecsContext->GetSystemManager(); }
   protected:
     void RegisterSystems() override;
 

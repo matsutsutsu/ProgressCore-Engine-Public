@@ -55,6 +55,9 @@ class BaseScene : public Scene {
     // =========================================================
     void RequestLoadScene(const std::string& path) { _pendingLoadScenePath = path; }
     void RequestSaveScene(const std::string& path) { _pendingSaveScenePath = path; }
+
+    CCL::ECS::Core::World* GetWorld() override { return _worldPtr; }
+    CCL::ECS::SystemManager* GetSystemManager() override { return _ecsContext->GetSystemManager(); }
   protected:
     // --- 派生クラスでの拡張ポイント ---
 

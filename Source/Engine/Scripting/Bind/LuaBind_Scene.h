@@ -1,14 +1,14 @@
-#pragma once
-
-#include <sol/sol.hpp>
-
-// WorldƒNƒ‰ƒX‚Ì‘O•ûéŒ¾
-namespace CCL::ECS::Core {
-    class World;
-}
-
-class LuaBind_Scene {
-  public:
-    // ‚±‚ÌŠÖ”‚Å Entity ƒe[ƒuƒ‹‚ÉŠÖ”‚ğ“o˜^‚·‚é
-    static void Bind(sol::state &lua, CCL::ECS::Core::World *world);
-};
+//#pragma once
+//
+//#include <sol/sol.hpp>
+//
+//// Worldã‚¯ãƒ©ã‚¹ã®å‰æ–¹å®£è¨€
+//namespace CCL::ECS::Core {
+//    class World;
+//}
+//
+//class LuaBind_Scene {
+//  public:
+//    // ã“ã®é–¢æ•°ã§ Entity ãƒ†ãƒ¼ãƒ–ãƒ«ã«é–¢æ•°ã‚’ç™»éŒ²ã™ã‚‹
+//    static void Bind(sol::state &lua, CCL::ECS::Core::World *world);
+//};

@@ -20,11 +20,13 @@
 #include "Engine/Graphics/Renderer/RenderQueue.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 
+#include "Engine/Core/Framework.h"
 
 #include "tracy/Tracy.hpp"
 
 #include "Engine/Platform/Logger.h"
 
+#include "Engine/Core/EngineServices.h"
 
 void BaseScene::Initialize()
 {
@@ -53,32 +55,25 @@ void BaseScene::Initialize()
     // リソース登録
     _worldPtr->AddResource<Input *>(&Input::Instance());
 
-    auto inputAPI = std::make_shared<InputFacade>(&Input::Instance());
+    // =========================================================
+    // ★ 修正：仲介役（EngineServices）からポインタをもらい、Worldに接続するだけ。
+    // 絶対にここでは make_shared(再生成) しない！
+    // =========================================================
+    auto& services = EngineServices::Instance();
 
-    // C++に長々と書いていた割り当てが、この1行に集約される！
-    inputAPI->LoadConfig("Assets/Config/InputConfig.json");
+    // 1. InputとAudioは、そのままResourceに登録
+    _worldPtr->AddResource<std::shared_ptr<IInputAPI>>(services.inputFacade);
+    _worldPtr->AddResource<std::shared_ptr<IAudioAPI>>(services.audioManager);
 
-    _worldPtr->AddResource<std::shared_ptr<IInputAPI>>(inputAPI);
-
-    // 1. FMODの生成と初期化
-    auto audioAPI = std::make_shared<FmodAudioManager>();
-    audioAPI->Initialize();
-
-    // 2. 設定ファイルからのデータ駆動ロード（1行に集約！）
-    audioAPI->LoadConfig("Assets/Config/AudioConfig.json");
-
-    // 3. ECSの世界に登録
-    _worldPtr->AddResource<std::shared_ptr<IAudioAPI>>(audioAPI);
-
-
-
-    // WorldのリソースとしてJoltを登録し、初期化する
-    _worldPtr->AddResource<JoltPhysicsManager>();
-    _worldPtr->GetResource<JoltPhysicsManager>().Initialize();
+    // 2. Physics (Jolt)
+    // JoltPhysicsManager 本体はEngineServicesのものを使う
+    _worldPtr->AddResource<JoltPhysicsManager*>(services.physicsManager.get());
 
     // 箱の型として「IPhysicsAPIのshared_ptr」を明示し、中身として「Joltのshared_ptr」を渡す
     auto myFacade = std::make_shared<JoltPhysicsFacade>(_worldPtr);
     _worldPtr->AddResource<std::shared_ptr<IPhysicsAPI>>(myFacade);
+
+
 
     // システムがコンストラクタ引数なしでもアクセスできるようにポインタを登録
     _worldPtr->AddResource<Camera *>(&camera);

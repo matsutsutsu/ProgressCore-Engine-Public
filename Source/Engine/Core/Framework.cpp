@@ -11,9 +11,16 @@
 #include "Engine/Platform/Input/Input.h"
 #include "Engine/GamePlay/Core/Scene/SceneManager.h"
 
+// ★ 必要なヘッダをインクルード
+#include "Engine/Audio/FmodAudioManager.h"
+#include "Engine/Physics/JoltPhysicsManager.h"
+#include "Engine/Platform/Input/InputFacade.h"
+#include "Engine/Platform/Input/Input.h"
+
 #include "Engine/Serialization/Factory/Prefab.h"                 
 #include "Engine/Platform/Dialog.h"
 
+#include "EngineServices.h"
 
 #include "tracy/Tracy.hpp"
 
@@ -38,27 +45,44 @@ static const int syncInterval = 1;
 Framework::Framework(HWND hWnd)
 	: hWnd(hWnd)
 {
-
 	ZoneScopedN("Framework::Constructor");
 
 
-    // 音声初期化
-   
 
 	// グラフィックス初期化
 	Graphics::Instance().Initialize(hWnd);
 	// IMGUI初期化
 	ImGuiRenderer::Initialize(hWnd, Graphics::Instance().GetDevice(), Graphics::Instance().GetDeviceContext());
-
 	// ダイアログのファイル履歴をロード
 	Dialog::LoadHistory();
-
-	// シーンマネージャー初期化
-	SceneManager::Instance().Initialize();	
 	// Input 初期化
 	Input::Instance().Initialize(hWnd);
 
 
+	// =========================================================
+	//  システムを生成・初期化し、仲介役に預ける
+	// =========================================================
+	auto& services = EngineServices::Instance();
+
+	services.inputFacade = std::make_shared<InputFacade>(&Input::Instance());
+	services.inputFacade->LoadConfig("Assets/Config/InputConfig.json");
+
+	services.audioManager = std::make_shared<FmodAudioManager>();
+	services.audioManager->Initialize();
+	services.audioManager->LoadConfig("Assets/Config/AudioConfig.json");
+
+	services.physicsManager = std::make_shared<JoltPhysicsManager>();
+	services.physicsManager->Initialize();
+
+
+	// シーンマネージャー初期化
+	SceneManager::Instance().Initialize();	
+
+#ifdef ENABLE_EDITOR
+	// エディタの初期化をフレームワーク層で行う
+	m_editorWindowManager = std::make_unique<EditorWindowManager>();
+	m_editorWindowManager->Initialize();
+#endif
 
 }
 
@@ -68,20 +92,21 @@ Framework::~Framework()
 
 	ZoneScopedN("Framework::Destrucor");
 
+#ifdef ENABLE_EDITOR
+	// エディタの解放を明示的に行う（スマートポインタなので自動解放されるが順序の担保として）
+	m_editorWindowManager.reset();
+#endif
 
 	// シーン終了化
 	SceneManager::Instance().Clear();
 	// IMGUI終了化
 	ImGuiRenderer::Finalize();
-
 	// ダイアログのファイル履歴を保存
 	Dialog::SaveHistory();
-
 	// 2. その後に、静的（static）なキャッシュを片付ける
     // これらが「デバイスへの参照」を握っている最後の犯人たちです。
     Prefab::Cleanup();
 
-	// 音声終了化
 
 }
 
@@ -137,6 +162,30 @@ void Framework::Update(float elapsedTime)
 		// シーン更新処理
 		SceneManager::Instance().Update(elapsedTime);
 	}
+
+#ifdef ENABLE_EDITOR
+	{
+		ZoneScopedN("Framework::EditorUpdate");
+
+		// ★ 重要: 現在アクティブなシーンの情報をエディタに供給する（オブザーバー的アプローチ）
+		// ※ SceneManager に GetCurrentScene() などのアクセス関数を追加する必要があります
+		auto* currentScene = SceneManager::Instance().GetCurrentScene();
+		if (currentScene) {
+			m_editorContext.world = currentScene->GetWorld();
+			m_editorContext.systemManager = currentScene->GetSystemManager();
+		}
+		else {
+			m_editorContext.world = nullptr;
+			m_editorContext.systemManager = nullptr;
+		}
+
+		// UIからのリクエスト（シーン遷移など）があれば、ここでFrameworkやSceneManagerに指示を出す
+		if (!m_editorContext.pendingLoadScenePath.empty()) {
+			// 例: SceneManager::Instance().LoadScene(m_editorContext.pendingLoadScenePath);
+			m_editorContext.pendingLoadScenePath.clear();
+		}
+	}
+#endif
 }
 
 // 描画処理
@@ -145,12 +194,10 @@ void Framework::Render(float elapsedTime)
     // 描画コマンド発行全体を計測
     ZoneScopedN("Framework::Render");
 
-
 	ID3D11DeviceContext* dc = Graphics::Instance().GetDeviceContext();
 
 	// 画面クリア
 	Graphics::Instance().Clear(0.5f, 0.5f, 0.5f, 1,false);
-
 	// レンダーターゲット設定
 	Graphics::Instance().SetRenderTargets(false);
 
@@ -174,6 +221,15 @@ void Framework::Render(float elapsedTime)
 
 		}
 
+#ifdef ENABLE_EDITOR
+		{
+			ZoneScopedN("FrameWork::EditorUI::Render");
+			// ゲームUIの後に、覆いかぶさるようにエディタUIを描画する
+			if (m_editorWindowManager) {
+				m_editorWindowManager->Draw(m_editorContext);
+			}
+		}
+#endif
 
 		{
 			ZoneScopedN("FrameWork::ImGuiRenderer::Render");

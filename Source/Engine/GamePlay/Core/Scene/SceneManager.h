@@ -54,6 +54,9 @@ public:
     void SaveScene(CCL::ECS::Core::World* world, const std::string& filepath);
     void LoadScene(CCL::ECS::Core::World* world, const std::string& filepath);
 
+	Scene* GetCurrentScene() const { return dynamic_cast<Scene*>(currentScene); }
+
+
 private:
 
 

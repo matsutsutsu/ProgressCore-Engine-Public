@@ -255,6 +255,7 @@
     <ClInclude Include="Source\Engine\Audio\FmodAudioManager.h" />
     <ClInclude Include="Source\Engine\Audio\IAudioAPI.h" />
     <ClInclude Include="Source\Engine\Core\Common\Misc.h" />
+    <ClInclude Include="Source\Engine\Core\EngineServices.h" />
     <ClInclude Include="Source\Engine\Core\Framework.h" />
     <ClInclude Include="Source\Engine\Core\Math\StringHash.h" />
     <ClInclude Include="Source\Engine\Core\Math\TransformUtils.h" />
