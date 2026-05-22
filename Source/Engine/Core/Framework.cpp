@@ -121,9 +121,21 @@ void Framework::FixedUpdate(float fixedTime)
     ZoneScopedN("Framework::FixedUpdate");
 
 
-	// SceneManager に FixedUpdate を追加して呼ぶのが理想
-	// まだ実装していない場合は、一旦コメントアウトかエラー回避しておく
-	 SceneManager::Instance().FixedUpdate(fixedTime); 
+	bool shouldUpdateLogic = true;
+
+#ifdef ENABLE_EDITOR
+	// エディタが有効な場合、Play状態の時だけロジックを回す
+	if (m_editorContext.playState != EditorPlayState::Playing) {
+		shouldUpdateLogic = false;
+	}
+#endif
+
+	// ★ 関所：shouldUpdateLogic が true の時だけゲーム内時間が進む
+	if (shouldUpdateLogic) {
+		// SceneManager に FixedUpdate を追加して呼ぶのが理想
+		// まだ実装していない場合は、一旦コメントアウトかエラー回避しておく
+		SceneManager::Instance().FixedUpdate(fixedTime);
+	}
 
 
 	 // 使い終わった入力フラグをここでリセット

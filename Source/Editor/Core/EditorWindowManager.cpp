@@ -23,6 +23,7 @@
 #include "Editor/Windows/AnimGraphWindow.h"
 #include "Editor/Windows/CurveEditorWindow.h"
 #include "Editor/Windows/BehaviorTreeWindow.h"
+#include "Editor/Windows/MainToolbarWindow.h"
 
 #include "Engine/Serialization/Factory/Prefab.h"
 #include <imgui.h>
@@ -35,6 +36,7 @@ void EditorWindowManager::Initialize()
     // =========================================================
     // ★ 常に表示しておきたいメインウィンドウ (デフォルトで true)
     // =========================================================
+	//RegisterWindow<MainToolbarWindow>();
     RegisterWindow<InspectorWindow>();
     RegisterWindow<HierarchyWindow>();
     RegisterWindow<AssetBrowserWindow>();
