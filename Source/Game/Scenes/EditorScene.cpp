@@ -21,10 +21,6 @@ void EditorScene::Initialize()
 {
     BaseScene::Initialize(); // 共通初期化
 
-    // エディタ固有の初期化
-    _windowManager = std::make_unique<EditorWindowManager>();
-    _windowManager->Initialize();
-
 
     ID3D11Device *device = Graphics::Instance().GetDevice();
     SceneInitializer::SpawnLightStartSet(*_worldPtr, device);
@@ -88,31 +84,10 @@ void EditorScene::RegisterSystems()
     auto &sysManager = *(_ecsContext->GetSystemManager());
     CCL::ECS::SystemRegistry::Instance().RegisterAll(sysManager);
 
-    // AnimationSystemを取得しておく (SystemGroups内で登録されている前提)
-    _animationSystem = sysManager.GetSystem<AnimationSystem>();
 }
 
 void EditorScene::FixedUpdate(float dt) 
 {
-    // A. アニメーション編集モード中
-    if (_context.isAnimEditMode && _context.selectedEntity != 0 &&
-        _context.selectedEntity != CCL::ECS::InvalidEntityID) 
-    {
-      
-        // ★重要: ゲーム全体（AIや重力など）は止めるが、
-        // 階層（Transform）の更新だけは手動で回す！
-        // これを行わないと、手動でアニメーションを動かした時に武器が追従せず画面が破綻する。
-        if (_ecsContext && _ecsContext->GetSystemManager()) {
-            auto* transformSystem = _ecsContext->GetSystemManager()->GetSystem<TransformUpdateSystem>();
-            if (transformSystem) {
-                transformSystem->Update(0.0f); // 0秒経過として親子関係だけを強制計算
-            }
-        }
-
-        // BaseScene::FixedUpdate を呼ばずに return します。
-        return;
-    }
-
     // B. 通常プレイ中
     // 親クラスの処理を呼んで、通常通り世界を動かす
     BaseScene::FixedUpdate(dt);
@@ -121,62 +96,9 @@ void EditorScene::FixedUpdate(float dt)
 // Updateのオーバーライド
 void EditorScene::Update(float dt)
 {
-
-	// Contextからのリクエストを処理（ロード/セーブ要求など）
-    ProcessContextRequests();
-
-    // A. アニメーション編集モード中 (かつエンティティ選択中)
-    if (_context.isAnimEditMode && _context.selectedEntity != 0 &&
-        _context.selectedEntity != CCL::ECS::InvalidEntityID) {
-        // 1. ゲームロジックは止める
-        BaseScene::Update(0.0f);
-
-        // 2. アニメーションだけ手動更新
-        if (_animationSystem) {
-            _animationSystem->UpdateManual(_context.selectedEntity, _context.animEditTime);
-        }
-    }
-    // B. 通常プレイ中
-    else {
-        BaseScene::Update(dt);
-    }
+    BaseScene::Update(dt);
+    
 }
 
 
 
-// GUI描画の拡張 (BaseScene::DrawGUIから呼ばれる)
-void EditorScene::OnDrawImGui()
-{
-    _context.world         = _worldPtr;
-    _context.systemManager = _ecsContext->GetSystemManager();
-
-
-    _windowManager->Draw(_context);
-
-    // ロード要求があればBaseSceneのパスに渡す
-    if (!_context.pendingLoadScenePath.empty()) {
-        _pendingLoadScenePath = _context.pendingLoadScenePath;
-    }
-
-    if (_windowManager->IsVisible()) {
-        ImGui::Begin("System Info");
-        _ecsContext->GetSystemManager()->OnGui();
-        ImGui::End();
-    }
-}
-
-// =========================================================
-// UIからのリクエスト（予約）を処理する専用関数
-// =========================================================
-void EditorScene::ProcessContextRequests()
-{
-    if (!_context.pendingLoadScenePath.empty()) {
-        RequestLoadScene(_context.pendingLoadScenePath);
-        _context.pendingLoadScenePath.clear();
-    }
-
-    if (!_context.pendingSaveScenePath.empty()) {
-        RequestSaveScene(_context.pendingSaveScenePath);
-        _context.pendingSaveScenePath.clear();
-    }
-}
