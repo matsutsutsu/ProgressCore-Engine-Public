@@ -58,7 +58,7 @@ void EditorWindowManager::Initialize()
     RegisterWindow<InputEditorWindow>()->SetVisible(false);
     RegisterWindow<NavMeshWindow>()->SetVisible(false);
     //RegisterWindow<SceneViewWindow>();
-    //RegisterWindow<GameViewWindow>();
+    RegisterWindow<GameViewWindow>();
 }
 
 

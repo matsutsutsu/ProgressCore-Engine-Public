@@ -12,15 +12,13 @@ class EditorScene : public BaseScene {
 
     void Initialize() override;
     void Finalize() override;
-    // Finalize, Update, Render, FixedUpdate は BaseScene をそのまま使うため削除！
-
-    CCL::ECS::Core::World* GetWorld() override { return _worldPtr; }
-    CCL::ECS::SystemManager* GetSystemManager() override { return _ecsContext->GetSystemManager(); }
-  protected:
-    void RegisterSystems() override;
-
-    // BaseSceneのUpdateをオーバーライドする
     void FixedUpdate(float dt) override;
     void Update(float dt) override;
+    void Render() override;
+
+    void RegisterSystems() override;
+   
+    CCL::ECS::Core::World* GetWorld() override { return _worldPtr; }
+    CCL::ECS::SystemManager* GetSystemManager() override { return _ecsContext->GetSystemManager(); }
 
 };

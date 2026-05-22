@@ -1443,9 +1443,6 @@
     <ClInclude Include="Source\Editor\Windows\InspectorWindow.h">
       <Filter>Source\Editor\Windows\Editor</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\SceneWindow.h">
-      <Filter>Source\Editor\Windows\Editor</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Editor\Windows\InputEditorWindow.h">
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClInclude>
@@ -2280,6 +2277,9 @@
       <Filter>Source\Game\Logics\Combat\_Meta</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\MainToolbarWindow.cpp">
+      <Filter>Source\Editor\Windows\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\GameViewWindow.cpp">
       <Filter>Source\Editor\Windows\Editor</Filter>
     </ClCompile>
   </ItemGroup>

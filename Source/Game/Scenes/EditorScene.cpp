@@ -100,5 +100,10 @@ void EditorScene::Update(float dt)
     
 }
 
+void EditorScene::Render()
+{
+    BaseScene::Render();
+}
+
 
 

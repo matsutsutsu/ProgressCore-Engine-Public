@@ -44,5 +44,6 @@ struct EditorContext {
      ImGuizmo::OPERATION currentGizmoOperation = ImGuizmo::TRANSLATE;
      ImGuizmo::MODE      currentGizmoMode = ImGuizmo::LOCAL;
 
-  
+     // ★ ImGuiに渡すためのゲーム画面テクスチャ
+     void* gameSRV = nullptr;
 };
