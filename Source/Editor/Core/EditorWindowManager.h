@@ -20,6 +20,17 @@ private:
 
     void DrawMainMenuBar(EditorContext& context);
 
+    // =========================================================
+    // ★ 追加: メニューバーを構成する各部品を関数に分割
+    // =========================================================
+    void DrawFileMenu(EditorContext& context);
+    void DrawEntityMenu(EditorContext& context);
+    void DrawPrefabMenu(EditorContext& context);
+    void DrawSceneMenu(EditorContext& context);
+    void DrawWindowMenu(EditorContext& context);
+    void DrawPlayControlBar(EditorContext& context);
+
+
     // ウィンドウの登録
     template<typename T, typename... Args>
     T* RegisterWindow(Args&&... args) {

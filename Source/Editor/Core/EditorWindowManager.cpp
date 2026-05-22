@@ -108,19 +108,30 @@ void EditorWindowManager::Draw(EditorContext &context)
         RefreshPrefabList(context);
     }
 
-    // UI非表示モードなら、ここで処理を終了（=ウィンドウを描画しない）
-    // これによりバックバッファに描画されているゲーム画面だけが見える状態になります
+    // =========================================================
+     // ★ 修正: F1非表示時は、背景キャンバスにゲーム画面をフルスクリーン描画する
+     // =========================================================
     if (!_isVisible) {
-        // ヒントとして左上に小さく戻し方を表示しておくと親切です（不要なら削除可）
-        ImGui::SetNextWindowPos(ImVec2(10, 30));
-        ImGui::SetNextWindowBgAlpha(0.3f); // 半透明
-        ImGui::Begin("HiddenOverlay",
-            nullptr,
-            ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
-                ImGuiWindowFlags_NoInputs);
-        ImGui::TextColored(ImVec4(1, 1, 0, 1), "Press F1 to Show UI");
+        if (context.gameSRV) {
+            // ImGuiの描画可能領域全体（画面サイズ）を取得
+            ImVec2 displaySize = ImGui::GetIO().DisplaySize;
+
+            // UIの後ろの壁紙としてゲーム画面を直接焼き付ける
+            ImGui::GetBackgroundDrawList()->AddImage(
+                context.gameSRV,
+                ImVec2(0, 0),         // 左上
+                displaySize           // 右下
+            );
+        }
+
+        // ヒントUI
+        ImGui::SetNextWindowPos(ImVec2(10, 10));
+        ImGui::SetNextWindowBgAlpha(0.3f);
+        ImGui::Begin("HiddenOverlay", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoNav);
+        ImGui::TextColored(ImVec4(1, 1, 0, 1), "[F1] Show Editor UI");
         ImGui::End();
-        return;
+
+        return; // ウィンドウ群やメニューバーは描画せずに終了
     }
 
     // 3. 表示状態なら描画実行
@@ -135,187 +146,158 @@ void EditorWindowManager::Draw(EditorContext &context)
 
 void EditorWindowManager::DrawMainMenuBar(EditorContext &context)
 {
-    auto &world = context.world;
-
+    // この関数は全体を統括する「目次」に徹する
     if (ImGui::BeginMainMenuBar()) {
-        // --- File Menu ---
-        if (ImGui::BeginMenu("File")) {
+        DrawFileMenu(context);
+        DrawEntityMenu(context);
+        DrawPrefabMenu(context);
+        DrawSceneMenu(context);
+        DrawWindowMenu(context);
+        DrawPlayControlBar(context);
 
-            if (ImGui::MenuItem("Open Scene...", "Ctrl+O")) {
-                char               filename[256] = {0};
-                HWND               hWnd          = Graphics::Instance().GetWindowHandle();
-                static const char *filter = "Scene Files (*.json)\0*.json\0All Files (*.*)\0*.*\0";
-
-                if (Dialog::OpenFileName(filename, 256, filter, "Open Scene", hWnd) ==
-                    DialogResult::OK) {
-
-                    //  即時ロードせず、パスを保存して予約する
-                    context.pendingLoadScenePath = std::string(filename);
-
-                    // ★ アーキテクトの極意: 安全装置
-                    // 前のシーンのエンティティはすべて破壊されたため、
-                    // Inspectorが古いIDを参照してクラッシュするのを防ぐために選択を解除する
-                    context.selectedEntity = CCL::ECS::InvalidEntityID;
-                }
-            }
-
-            if (ImGui::MenuItem("Save Scene", "Ctrl+S")) {
-                char               filename[256] = {};
-                HWND               hWnd          = Graphics::Instance().GetWindowHandle();
-                static const char *filter = "Scene Files (*.json)\0*.json\0All Files (*.*)\0*.*\0";
-
-                if (Dialog::SaveFileName(filename, 256, filter, "Save Scene", "json", hWnd) ==
-                    DialogResult::OK) {
-
-                    //  即時ロードせず、パスを保存して予約する
-                    context.pendingSaveScenePath = std::string(filename);
-
-                    // ★ アーキテクトの極意: 安全装置
-                    // 前のシーンのエンティティはすべて破壊されたため、
-                    // Inspectorが古いIDを参照してクラッシュするのを防ぐために選択を解除する
-                    context.selectedEntity = CCL::ECS::InvalidEntityID;
-                }
-            }
-
-            if (ImGui::MenuItem("Exit")) {
-                PostQuitMessage(0);
-            }
-            ImGui::EndMenu();
-        }
-
-        // --- Entity Menu ---
-        if (ImGui::BeginMenu("Entity")) {
-            if (ImGui::MenuItem("Add Empty Entity")) {
-                Archetype arch = ArchetypeHelper::Generate<TransformComponent>();
-                world->RequestSpawnEntity(arch);
-            }
-            ImGui::EndMenu();
-        }
-
-
-        // --- Prefab Menu ---
-        if (ImGui::BeginMenu("Prefab")) {
-
-            // リスト更新ボタン
-            if (ImGui::MenuItem("Refresh List")) {
-                RefreshPrefabList(context);
-            }
-            ImGui::Separator();
-
-            if (context.prefabFiles.empty()) {
-                ImGui::TextDisabled("No prefabs found");
-            }
-            else {
-                // ListBoxを廃止し、MenuItemの連続に変更する
-                for (size_t i = 0; i < context.prefabFiles.size(); ++i) {
-                    // フルパスだと長すぎるため、ファイル名だけを抽出して表示
-                    std::filesystem::path p        = context.prefabFiles[i];
-                    std::string           filename = p.filename().string();
-
-                    // メニューアイテムがクリックされたら即座にSpawnする
-                    if (ImGui::MenuItem(filename.c_str())) {
-                        if (context.world) {
-                            // TODO:
-                            // 将来的にはカメラの注視点や、選択中のオブジェクトの場所に生成する
-                            DirectX::XMFLOAT3 spawnPos = {0, 5, 0};
-                            Prefab::SpawnPrefab(*context.world, context.prefabFiles[i], spawnPos);
-                        }
-                    }
-                }
-            }
-
-            ImGui::EndMenu();
-        }
-
-
-        // シーン移行 メニュー
-        if (ImGui::BeginMenu("Scene")) {
-
-            if (ImGui::MenuItem("Title Scene")) SceneManager::Instance().ChangeScene("Title");
-            if (ImGui::MenuItem("Game Scene")) SceneManager::Instance().ChangeScene("Game");
-
-            if (ImGui::MenuItem("Particle Scene")) {
-                SceneManager::Instance().ChangeScene("Particle");
-            }
-            if (ImGui::MenuItem("Editor Scene")) {
-                SceneManager::Instance().ChangeScene("Editor");
-            }
-            if (ImGui::MenuItem("Shop Scene")) SceneManager::Instance().ChangeScene("Shop");
-
-
-              ImGui::EndMenu();
-        }
-
-            // --- Window / View Menu (将来用) ---
-            if (ImGui::BeginMenu("Window")) {
-
-                // ここでも切り替えられるようにする (F1キーの案内も兼ねる)
-                // MenuItemの第3引数にboolポインタを渡すと、チェック状態が連動します
-                if (ImGui::MenuItem("Show UI", "F1", &_isVisible)) {
-                    // クリックされたら自動で _isVisible が反転します
-                }
-
-                ImGui::Separator();
-
-                for (auto &window : _windows) {
-                    bool open = window->GetVisible();
-                    if (ImGui::MenuItem(window->GetName().c_str(), nullptr, &open)) {
-                        window->SetVisible(open);
-                    }
-                }
-                ImGui::EndMenu();
-            }
-
-
-            // =========================================================
-        // ★ 追加: メニューバー中央に Play / Stop ボタンを配置
-        // =========================================================
-            float menuBarWidth = ImGui::GetWindowWidth();
-            float buttonWidth = 50.0f;
-            // ボタン2個分の幅 + 隙間
-            float totalButtonsWidth = buttonWidth * 2.0f + ImGui::GetStyle().ItemSpacing.x;
-
-            // メニューバーの中央座標へカーソルを移動
-            ImGui::SameLine(menuBarWidth * 0.5f - totalButtonsWidth * 0.5f);
-
-            // ImVec2(幅, 0) とすると、高さがメニューバーに自動でフィットします
-            ImVec2 btnSize = ImVec2(buttonWidth, 0);
-
-            // 停止 (Stop) ボタン
-            if (context.playState != EditorPlayState::Stopped) {
-                if (ImGui::Button("Stop", btnSize)) {
-                    context.playState = EditorPlayState::Stopped;
-                    context.pendingLoadScenePath = context.tempBackupScenePath;
-                    CCL_LOG_INFO(LogCategory::Editor, "Play In Editor: Stopped and Restored.");
-                }
-            }
-            else {
-                ImGui::BeginDisabled();
-                ImGui::Button("Stop", btnSize);
-                ImGui::EndDisabled();
-            }
-
-            ImGui::SameLine();
-
-            // 再生 (Play) / 一時停止 (Pause) ボタン
-            if (context.playState == EditorPlayState::Stopped) {
-                if (ImGui::Button("Play", btnSize)) {
-                    context.pendingSaveScenePath = context.tempBackupScenePath;
-                    context.playState = EditorPlayState::Playing;
-                    CCL_LOG_INFO(LogCategory::Editor, "Play In Editor: Started.");
-                }
-            }
-            else if (context.playState == EditorPlayState::Playing) {
-                if (ImGui::Button("Pause", btnSize)) {
-                    context.playState = EditorPlayState::Paused;
-                }
-            }
-            else if (context.playState == EditorPlayState::Paused) {
-                if (ImGui::Button("Resume", btnSize)) {
-                    context.playState = EditorPlayState::Playing;
-                }
-            }
-        
         ImGui::EndMainMenuBar();
+    }
+}
+
+
+void EditorWindowManager::DrawFileMenu(EditorContext& context)
+{
+    if (ImGui::BeginMenu("File")) {
+        if (ImGui::MenuItem("Open Scene...", "Ctrl+O")) {
+            char filename[256] = { 0 };
+            HWND hWnd = Graphics::Instance().GetWindowHandle();
+            static const char* filter = "Scene Files (*.json)\0*.json\0All Files (*.*)\0*.*\0";
+            if (Dialog::OpenFileName(filename, 256, filter, "Open Scene", hWnd) == DialogResult::OK) {
+                context.pendingLoadScenePath = std::string(filename);
+                context.selectedEntity = CCL::ECS::InvalidEntityID;
+            }
+        }
+        if (ImGui::MenuItem("Save Scene", "Ctrl+S")) {
+            char filename[256] = {};
+            HWND hWnd = Graphics::Instance().GetWindowHandle();
+            static const char* filter = "Scene Files (*.json)\0*.json\0All Files (*.*)\0*.*\0";
+            if (Dialog::SaveFileName(filename, 256, filter, "Save Scene", "json", hWnd) == DialogResult::OK) {
+                context.pendingSaveScenePath = std::string(filename);
+                context.selectedEntity = CCL::ECS::InvalidEntityID;
+            }
+        }
+        ImGui::Separator();
+        if (ImGui::MenuItem("Exit")) {
+            PostQuitMessage(0);
+        }
+        ImGui::EndMenu();
+    }
+}
+
+void EditorWindowManager::DrawEntityMenu(EditorContext& context)
+{
+    if (ImGui::BeginMenu("Entity")) {
+        if (ImGui::MenuItem("Add Empty Entity")) {
+            Archetype arch = ArchetypeHelper::Generate<TransformComponent>();
+            context.world->RequestSpawnEntity(arch);
+        }
+        ImGui::EndMenu();
+    }
+}
+
+void EditorWindowManager::DrawPrefabMenu(EditorContext& context)
+{
+    if (ImGui::BeginMenu("Prefab")) {
+        if (ImGui::MenuItem("Refresh List")) {
+            RefreshPrefabList(context);
+        }
+        ImGui::Separator();
+
+        if (context.prefabFiles.empty()) {
+            ImGui::TextDisabled("No prefabs found");
+        }
+        else {
+            for (const auto& pathStr : context.prefabFiles) {
+                std::string filename = std::filesystem::path(pathStr).filename().string();
+                if (ImGui::MenuItem(filename.c_str())) {
+                    if (context.world) {
+                        DirectX::XMFLOAT3 spawnPos = { 0, 5, 0 };
+                        Prefab::SpawnPrefab(*context.world, pathStr, spawnPos);
+                    }
+                }
+            }
+        }
+        ImGui::EndMenu();
+    }
+}
+
+void EditorWindowManager::DrawSceneMenu(EditorContext& context)
+{
+    if (ImGui::BeginMenu("Scene")) {
+        if (ImGui::MenuItem("Title Scene")) SceneManager::Instance().ChangeScene("Title");
+        if (ImGui::MenuItem("Game Scene")) SceneManager::Instance().ChangeScene("Game");
+        if (ImGui::MenuItem("Particle Scene")) SceneManager::Instance().ChangeScene("Particle");
+        if (ImGui::MenuItem("Editor Scene")) SceneManager::Instance().ChangeScene("Editor");
+        if (ImGui::MenuItem("Shop Scene")) SceneManager::Instance().ChangeScene("Shop");
+        ImGui::EndMenu();
+    }
+}
+
+void EditorWindowManager::DrawWindowMenu(EditorContext& context)
+{
+    if (ImGui::BeginMenu("Window")) {
+        if (ImGui::MenuItem("Show UI", "F1", &_isVisible)) {
+            // 変数に紐付いているのでクリックで自動トグルされる
+        }
+        ImGui::Separator();
+        for (auto& window : _windows) {
+            bool open = window->GetVisible();
+            if (ImGui::MenuItem(window->GetName().c_str(), nullptr, &open)) {
+                window->SetVisible(open);
+            }
+        }
+        ImGui::EndMenu();
+    }
+}
+
+void EditorWindowManager::DrawPlayControlBar(EditorContext& context)
+{
+    float menuBarWidth = ImGui::GetWindowWidth();
+    float buttonWidth = 50.0f;
+    float totalButtonsWidth = buttonWidth * 2.0f + ImGui::GetStyle().ItemSpacing.x;
+
+    // 中央寄せ
+    ImGui::SameLine(menuBarWidth * 0.5f - totalButtonsWidth * 0.5f);
+
+    ImVec2 btnSize = ImVec2(buttonWidth, 0);
+
+    // Stop
+    if (context.playState != EditorPlayState::Stopped) {
+        if (ImGui::Button("Stop", btnSize)) {
+            context.playState = EditorPlayState::Stopped;
+            context.pendingLoadScenePath = context.tempBackupScenePath;
+            CCL_LOG_INFO(LogCategory::Editor, "Play In Editor: Stopped and Restored.");
+        }
+    }
+    else {
+        ImGui::BeginDisabled();
+        ImGui::Button("Stop", btnSize);
+        ImGui::EndDisabled();
+    }
+
+    ImGui::SameLine();
+
+    // Play / Pause / Resume
+    if (context.playState == EditorPlayState::Stopped) {
+        if (ImGui::Button("Play", btnSize)) {
+            context.pendingSaveScenePath = context.tempBackupScenePath;
+            context.playState = EditorPlayState::Playing;
+            CCL_LOG_INFO(LogCategory::Editor, "Play In Editor: Started.");
+        }
+    }
+    else if (context.playState == EditorPlayState::Playing) {
+        if (ImGui::Button("Pause", btnSize)) {
+            context.playState = EditorPlayState::Paused;
+        }
+    }
+    else if (context.playState == EditorPlayState::Paused) {
+        if (ImGui::Button("Resume", btnSize)) {
+            context.playState = EditorPlayState::Playing;
+        }
     }
 }
