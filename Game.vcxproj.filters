@@ -1488,9 +1488,6 @@
     <ClInclude Include="Source\Engine\Core\EngineServices.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\MainToolbarWindow.h">
-      <Filter>Source\Editor\Windows\Editor</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2275,9 +2272,6 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Combat\CombatComponentsMeta.cpp">
       <Filter>Source\Game\Logics\Combat\_Meta</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\MainToolbarWindow.cpp">
-      <Filter>Source\Editor\Windows\Editor</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\GameViewWindow.cpp">
       <Filter>Source\Editor\Windows\Editor</Filter>

@@ -1,6 +1,6 @@
 #include "PostProcessPass.h"
 #include "Engine/Graphics/Shader/PostProcess/PostProcessManager.h"
-#include "Engine/Graphics/Core/Graphics.h"
+
 
 void PostProcessPass::Execute(const RenderContext& rc){
 
@@ -10,5 +10,5 @@ void PostProcessPass::Execute(const RenderContext& rc){
     if (!rc.postProcess) return;
 
     // HDRバッファにブルームとトーンマップをかけ、バックバッファ（画面）に出力する
-    rc.postProcess->EndScene(rc.deviceContext, Graphics::Instance().GetBackBufferRTV());
+    rc.postProcess->EndScene(rc.deviceContext, rc.targetRTV);
 }

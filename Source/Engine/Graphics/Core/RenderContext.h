@@ -32,4 +32,9 @@ struct RenderContext
 
 	// 伝票カウンター
 	RenderQueue* renderQueue = nullptr;
+
+	// =========================================================
+	//  パイプラインの最終出力先 (PostProcessがここに絵を返す)
+	// =========================================================
+	ID3D11RenderTargetView* targetRTV = nullptr;
 };

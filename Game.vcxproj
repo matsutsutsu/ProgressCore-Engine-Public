@@ -246,7 +246,6 @@
     <ClInclude Include="Source\Editor\Windows\HierarchyWindow.h" />
     <ClInclude Include="Source\Editor\Windows\InputEditorWindow.h" />
     <ClInclude Include="Source\Editor\Windows\InspectorWindow.h" />
-    <ClInclude Include="Source\Editor\Windows\MainToolbarWindow.h" />
     <ClInclude Include="Source\Editor\Windows\NavMeshWindow.h" />
     <ClInclude Include="Source\Editor\Windows\TextEditorWindow.h" />
     <ClInclude Include="Source\Engine\Audio\AudioEmitterComponent.h" />
@@ -590,7 +589,6 @@
     <ClCompile Include="Source\Editor\Windows\HierarchyWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\InputEditorWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\InspectorWindow.cpp" />
-    <ClCompile Include="Source\Editor\Windows\MainToolbarWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\NavMeshWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\TextEditorWindow.cpp" />
     <ClCompile Include="Source\Engine\Audio\AudioComponentMeta.cpp" />

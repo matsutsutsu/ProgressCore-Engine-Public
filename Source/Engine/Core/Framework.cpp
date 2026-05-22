@@ -15,7 +15,6 @@
 #include "Engine/Audio/FmodAudioManager.h"
 #include "Engine/Physics/JoltPhysicsManager.h"
 #include "Engine/Platform/Input/InputFacade.h"
-#include "Engine/Platform/Input/Input.h"
 
 #include "Engine/Serialization/Factory/Prefab.h"                 
 #include "Engine/Platform/Dialog.h"
@@ -209,13 +208,10 @@ void Framework::Render(float elapsedTime)
 	ID3D11DeviceContext* dc = Graphics::Instance().GetDeviceContext();
 
 	// 画面クリア
-	//Graphics::Instance().Clear(0.5f, 0.5f, 0.5f, 1,true);
+	Graphics::Instance().Clear(0.5f, 0.5f, 0.5f, 1,true);
 	// レンダーターゲット設定
-	//Graphics::Instance().SetRenderTargets(true);
-	// 画面クリア
-	Graphics::Instance().Clear(0.5f, 0.5f, 0.5f, 1, false);
-	// レンダーターゲット設定
-	Graphics::Instance().SetRenderTargets(false);
+	Graphics::Instance().SetRenderTargets(true);
+
 
 	// シーンマネージャーを介して現在のシーンを描画
     {
@@ -230,8 +226,8 @@ void Framework::Render(float elapsedTime)
 	// 2. エディタ(UI)の描画（実際の画面＝バックバッファへ）
 	// =========================================================
 	// ★ false を渡して行き先をモニターに出力する実際の画面に戻す
-	//Graphics::Instance().Clear(0.1f, 0.1f, 0.1f, 1.0f, false);
-	//Graphics::Instance().SetRenderTargets(false);
+	Graphics::Instance().Clear(0.1f, 0.1f, 0.1f, 1.0f, false);
+	Graphics::Instance().SetRenderTargets(false);
 
 	// ImGuiの描画を計測
 	{
@@ -252,6 +248,10 @@ void Framework::Render(float elapsedTime)
 				// ★ ここで完成したゲーム画面のテクスチャをUIに渡す！
 				m_editorContext.gameSRV = (void*)Graphics::Instance().GetGameSRV();
 				m_editorWindowManager->Draw(m_editorContext);
+
+				if (m_editorWindowManager->IsVisible()) {
+					m_editorContext.systemManager->OnGui();
+				}
 			}
 		}
 #endif

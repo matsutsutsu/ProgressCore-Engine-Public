@@ -23,7 +23,6 @@
 #include "Editor/Windows/AnimGraphWindow.h"
 #include "Editor/Windows/CurveEditorWindow.h"
 #include "Editor/Windows/BehaviorTreeWindow.h"
-#include "Editor/Windows/MainToolbarWindow.h"
 
 #include "Engine/Serialization/Factory/Prefab.h"
 #include <imgui.h>
@@ -36,7 +35,6 @@ void EditorWindowManager::Initialize()
     // =========================================================
     // ★ 常に表示しておきたいメインウィンドウ (デフォルトで true)
     // =========================================================
-	//RegisterWindow<MainToolbarWindow>();
     RegisterWindow<InspectorWindow>();
     RegisterWindow<HierarchyWindow>();
     RegisterWindow<AssetBrowserWindow>();
@@ -268,6 +266,55 @@ void EditorWindowManager::DrawMainMenuBar(EditorContext &context)
                 ImGui::EndMenu();
             }
 
+
+            // =========================================================
+        // ★ 追加: メニューバー中央に Play / Stop ボタンを配置
+        // =========================================================
+            float menuBarWidth = ImGui::GetWindowWidth();
+            float buttonWidth = 50.0f;
+            // ボタン2個分の幅 + 隙間
+            float totalButtonsWidth = buttonWidth * 2.0f + ImGui::GetStyle().ItemSpacing.x;
+
+            // メニューバーの中央座標へカーソルを移動
+            ImGui::SameLine(menuBarWidth * 0.5f - totalButtonsWidth * 0.5f);
+
+            // ImVec2(幅, 0) とすると、高さがメニューバーに自動でフィットします
+            ImVec2 btnSize = ImVec2(buttonWidth, 0);
+
+            // 停止 (Stop) ボタン
+            if (context.playState != EditorPlayState::Stopped) {
+                if (ImGui::Button("Stop", btnSize)) {
+                    context.playState = EditorPlayState::Stopped;
+                    context.pendingLoadScenePath = context.tempBackupScenePath;
+                    CCL_LOG_INFO(LogCategory::Editor, "Play In Editor: Stopped and Restored.");
+                }
+            }
+            else {
+                ImGui::BeginDisabled();
+                ImGui::Button("Stop", btnSize);
+                ImGui::EndDisabled();
+            }
+
+            ImGui::SameLine();
+
+            // 再生 (Play) / 一時停止 (Pause) ボタン
+            if (context.playState == EditorPlayState::Stopped) {
+                if (ImGui::Button("Play", btnSize)) {
+                    context.pendingSaveScenePath = context.tempBackupScenePath;
+                    context.playState = EditorPlayState::Playing;
+                    CCL_LOG_INFO(LogCategory::Editor, "Play In Editor: Started.");
+                }
+            }
+            else if (context.playState == EditorPlayState::Playing) {
+                if (ImGui::Button("Pause", btnSize)) {
+                    context.playState = EditorPlayState::Paused;
+                }
+            }
+            else if (context.playState == EditorPlayState::Paused) {
+                if (ImGui::Button("Resume", btnSize)) {
+                    context.playState = EditorPlayState::Playing;
+                }
+            }
         
         ImGui::EndMainMenuBar();
     }

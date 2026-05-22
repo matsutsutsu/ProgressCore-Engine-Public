@@ -143,9 +143,6 @@ void BaseScene::Render()
 
     auto &graphics = Graphics::Instance();
     auto *dc       = graphics.GetDeviceContext();
-
-    // 1. 描画準備 & ポストプロセス開始
-    graphics.SetRenderTargets(false);
  
 
     // 2. 3D描画コンテキスト設定
@@ -163,7 +160,16 @@ void BaseScene::Render()
     rc.primitiveRenderer = graphics.GetPrimitiveRenderer();
     rc.shapeRenderer = graphics.GetShapeRenderer();
 
-
+    // =========================================================
+    // ★ 追加: 最終出力先の決定
+    // ENABLE_EDITOR が有効ならゲーム用テクスチャに描き込み、
+    // そうでなければ実際のモニター画面（バックバッファ）に描き込む
+    // =========================================================
+#ifdef ENABLE_EDITOR
+    rc.targetRTV = graphics.GetGameRTV();
+#else
+    rc.targetRTV = graphics.GetBackBufferRTV();
+#endif
 
     // =========================================================
     // 3. 舞台監督によるグローバルリソースのセット
