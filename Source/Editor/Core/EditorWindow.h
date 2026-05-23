@@ -3,7 +3,7 @@
 #include <string>
 #include "EditorContext.h"
 
-#if ENABLE_EDITOR
+#if defined(ENABLE_EDITOR)
 #include <imgui.h>
 #endif
 
@@ -17,7 +17,7 @@ public:
     void Render(EditorContext& context) {
         if (!_isVisible) return;
 
-#if ENABLE_EDITOR
+#if defined(ENABLE_EDITOR)
 
 
         if (ImGui::Begin(_name.c_str(), &_isVisible)) {
