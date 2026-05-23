@@ -1,6 +1,7 @@
 #pragma once
 #include <DirectXMath.h>
 #include "ECS/Common/CCL_Common.h"
+#include "Engine/Serialization/EntityLink.h" 
 
 // ===================================================================================
 // TransformComponent 物理同期に関するルール
@@ -43,12 +44,41 @@ struct TransformComponent {
     // ※手動では書き換えず、TransformUpdateSystemに計算させる
     DirectX::XMFLOAT4X4 worldMatrix = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
 
-	// 親子関係データ
-    // リンク情報
-    CCL::ECS::EntityID parentID      = 0; // 親
+
+    // =========================================================
+    // 親子関係データ
+    //
+    // ★ parentID だけ EntityLink に変更。
+    //   これによりシリアライザが自動でローカルインデックス変換を行う。
+    //
+    // firstChildID / prevSiblingID / nextSiblingID は
+    // HierarchySystem が毎フレーム計算するランタイム値なので
+    // 保存対象外 (serialize = false)。
+    //   → META_FIELD_ENTITY_LINK に serialize=false 引数を追加すれば
+    //     FieldDescriptor には載るが JSON 書き出しはスキップされる。
+    //   → もしくは Fields() に含めなければ最初からスキップ。
+    //     (現状実装では Fields() に含めない方が明快)
+    // =========================================================
+    CCL::Serialization::EntityLink parent;         // ★ 保存対象: 親エンティティ参照
+
     CCL::ECS::EntityID firstChildID  = 0; // 最初の子 (リストの先頭)
     CCL::ECS::EntityID prevSiblingID = 0; // 前の兄弟
     CCL::ECS::EntityID nextSiblingID = 0; // 次の兄弟
+
+    // =========================================================
+    // 互換性ヘルパー
+    //   旧コードが t->parentID を直接使っている箇所に対して、
+    //   コンパイルエラーを出して移行を促す。
+    //   参照にしないことで代入/比較の両方を拾える。
+    // =========================================================
+    // 移行が完了したらこのヘルパーは削除して良い。
+    // 「parentID」という名前でアクセスしたい既存コードがあれば
+    // 下記コメントを外して一時的に互換 setter/getter を使う。
+    //
+    // CCL::ECS::EntityID get_parentID() const { return parent.id; }
+    // void set_parentID(CCL::ECS::EntityID id) { parent.id = id; }
+
+
 
     // =========================================================
     // ★開発体験(DX)を最高にするための直感的Setter

@@ -1,31 +1,46 @@
-// Editor/Serialization/SceneSerializer.h
+// =====================================================================
+// SceneSerializer.h
+//   シーン (= ワールド全体のスナップショット) の JSON ⇔ メモリ変換。
+//
+//   旧版との主な違い:
+//     1. EntityID は raw uint64_t ではなく「ローカルインデックス」で書き出す
+//     2. 親子・リンクのリマップはハードコード分岐ではなく、
+//        FieldKind::EntityLink による自動処理
+//     3. ヘッダにバージョン情報を持たせる (将来の互換性のため)
+//
+//   依存:
+//     <json_fwd.hpp> 経由で前方宣言のみ。本体は .cpp で include。
+// =====================================================================
 #pragma once
 #include "ECS/Core/CCL_World.h"
-#include <json.hpp>
 #include <string>
 #include <vector>
+#include <json_fwd.hpp>
 
-using json = nlohmann::json;
+namespace CCL::Serialization { class SaveContext; class LoadContext; }
 
 class SceneSerializer {
 public:
-    // =========================================================
-    // プレハブ / サブシーンAPI
-    // =========================================================
+    // ---- 保存 ----
+    // ファイルに書き出す。失敗時 false を返す。
+    static bool Serialize(CCL::ECS::Core::World* world, const std::string& filepath);
 
-    // 指定したパスにエンティティ群を保存
-    static void Serialize(CCL::ECS::Core::World* world, const std::string& filepath);
-
-    // ファイルから現在の世界に追加で読み込む (Worldはクリアされない)
+    // ---- 読み込み ----
+    // 結果として生成された EntityID リストを返す (Prefab 化したい時など便利)。
+    // 失敗時は空 vector。
     static std::vector<CCL::ECS::EntityID> Deserialize(
         CCL::ECS::Core::World* world, const std::string& filepath);
 
-    // JSONオブジェクトから直接読み込む
+    // JSON オブジェクトから直接ロード (Prefab 内で使う / 通信ペイロードから等)。
+    // entitiesJson は配列を想定 (root["entities"] と同等)。
     static std::vector<CCL::ECS::EntityID> DeserializeRaw(
-        CCL::ECS::Core::World* world, const json& entitiesJson);
+        CCL::ECS::Core::World* world, const nlohmann::json& entitiesJson);
 
 private:
-    // 内部ヘルパー
+    // 1 エンティティ分の書き出し
     static void SerializeEntity(
-        CCL::ECS::Core::World* world, CCL::ECS::EntityID entity, json& outJson);
+        CCL::ECS::Core::World* world,
+        CCL::ECS::EntityID entity,
+        nlohmann::json& outJson,
+        CCL::Serialization::SaveContext& saveCtx);
 };

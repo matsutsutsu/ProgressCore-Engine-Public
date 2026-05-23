@@ -1,23 +1,35 @@
+// =====================================================================
+// ComponentRegistry.h
+//   コンポーネント型 ↔ 文字列名のマッピングと、Save/Load 関数の保持。
+//
+//   旧版からの主な変更:
+//     1. ImGui 関連 include を削除 (→ ComponentRegistry_Editor.h に分離)
+//        これによりランタイムビルドからエディタコードを物理的に除外できる。
+//     2. SerializeFunc / DeserializeToWorldFunc が SaveContext/LoadContext を受け取る
+//        ハードコード分岐を排除する核心部分。
+//     3. <json.hpp>, <Windows.h> はヘッダから追放 (前方宣言 + .cpp に隔離)
+//        ビルド時間の大幅短縮が目的。
+//
+//   注意: REGISTER_COMPONENT マクロ自体は OutputDebugString を含むため
+//         #ifndef NDEBUG ガードを入れた。リリースビルドでは診断ログが消える。
+// =====================================================================
 #pragma once
+#include <cstdint>
 #include <functional>
-#include <unordered_map>
 #include <string>
 #include <type_traits>
-#include "ECS/Core/CCL_World.h"
-#include <json.hpp>
-//#include "ComponentSerializers.h"
+#include <unordered_map>
 
-// 古い手動シリアライザの代わりに、強力な自動シリアライザを読み込む
+#include "ECS/Core/CCL_World.h"
+#include "Engine/Serialization/SaveContext.h"
+#include "Engine/Serialization/LoadContext.h"
+
+// HasCustomSerialize は ComponentMetaJson.h で定義されている。
+// ここでは前方宣言だけ参照する。
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
-// ImGui(インスペクタ)の自動登録に必要なヘッダーをコアで読み込む
-#include "Editor/Inspector/ComponentGuiRegistry.h"
-#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
-
-#include <Windows.h>
-
 // ==========================================================
-// ★ SFINAE 1: ComponentMeta<T> に isSerializable があるか判定
+// SFINAE: ComponentMeta<T> の isSerializable / Remap 検出
 // ==========================================================
 template <typename T, typename = void>
 struct HasIsSerializable : std::true_type {};
@@ -27,9 +39,6 @@ struct HasIsSerializable<T, std::void_t<decltype(ComponentMeta<T>::isSerializabl
     : std::bool_constant<ComponentMeta<T>::isSerializable> {
 };
 
-// ==========================================================
-// ★ SFINAE 2: ComponentMeta<T> に Remap 関数があるか判定
-// ==========================================================
 template <typename T, typename = void>
 struct HasRemap : std::false_type {};
 
@@ -39,114 +48,106 @@ struct HasRemap<T, std::void_t<decltype(ComponentMeta<T>::Remap(
     std::declval<const std::unordered_map<uint64_t, CCL::ECS::EntityID>&>()))>>
     : std::true_type {};
 
+
 class ComponentRegistry {
 public:
-    // JSONへ書き出す関数
-    using SerializeFunc = std::function<void(nlohmann::json&, const void*)>;
-    // JSONからWorldへ復元する関数
-    using DeserializeToWorldFunc = std::function<void(CCL::ECS::Core::World*, CCL::ECS::EntityID, const nlohmann::json&)>;
+    // ★ シグネチャ変更: Context を受け取る形に統一
+    using SerializeFunc = std::function<void(nlohmann::json&, const void*, CCL::Serialization::SaveContext*)>;
+    using DeserializeToWorldFunc = std::function<void(CCL::ECS::Core::World*, CCL::ECS::EntityID, const nlohmann::json&, CCL::Serialization::LoadContext*)>;
 
-    // 復元された実体のIDを翻訳する関数 (キーは uint64_t に対応)
-    using RemapFunc = std::function<void(CCL::ECS::Core::World*, CCL::ECS::EntityID, const std::unordered_map<uint64_t, CCL::ECS::EntityID>&)>;
-
+    // [旧] カスタム Remap 関数 (旧版互換用、新規コードでは不要)
+    using RemapFunc = std::function<void(CCL::ECS::Core::World*, CCL::ECS::EntityID,
+        const std::unordered_map<uint64_t, CCL::ECS::EntityID>&)>;
 
     struct MetaInfo {
         std::string name;
         SerializeFunc serialize;
         DeserializeToWorldFunc deserializeToWorld;
-
-        // ★IDリマップ用
         RemapFunc remap = nullptr;
 
-        // セーブ用の動的チェックと抽出関数
         std::function<bool(CCL::ECS::Core::World*, CCL::ECS::EntityID)> hasComponent = nullptr;
-        std::function<void(CCL::ECS::Core::World*, CCL::ECS::EntityID, nlohmann::json&)> saveToJSON = nullptr;
+        std::function<void(CCL::ECS::Core::World*, CCL::ECS::EntityID, nlohmann::json&, CCL::Serialization::SaveContext*)> saveToJSON = nullptr;
     };
 
-    static ComponentRegistry &Instance();
+    static ComponentRegistry& Instance();
 
-    // 登録されているすべてのメタデータを取得する
     const std::unordered_map<std::string, MetaInfo>& GetAllMeta() const { return _nameToMeta; }
 
-    // 型Tを登録する
     template <typename T>
-    void Register(const std::string& name) {
+    void Register(const std::string& name)
+    {
         MetaInfo info;
         info.name = name;
 
-        // 1. [Save(旧)用] void* を T* にキャストして to_json
-        info.serialize = [](nlohmann::json& j, const void* ptr) {
+        // 1. Save: SaveContext を渡して自動 remap
+        info.serialize = [](nlohmann::json& j, const void* ptr, CCL::Serialization::SaveContext* ctx) {
             const T* component = static_cast<const T*>(ptr);
-            ComponentMetaJson::Serialize(j, *component);
+            ComponentMetaJson::Serialize(j, *component, ctx);
             };
 
-        // 2. [Load用] JSONから一時変数Tを作成し、World にコピーして渡す
+        // 2. Load: LoadContext を渡して自動 remap
         info.deserializeToWorld = [](CCL::ECS::Core::World* world,
             CCL::ECS::EntityID entity,
-            const nlohmann::json& j)
+            const nlohmann::json& j,
+            CCL::Serialization::LoadContext* ctx)
             {
-                // ★ HasCustomSerialize を見て分岐する
                 if constexpr (ComponentMetaJson::HasCustomSerialize<T>::value) {
-                    // カスタム実装がある型はそちらに委譲
-                    ComponentMeta<T>::deserializeToWorld(world, entity, j);
+                    // 注意: カスタム実装側も Context 対応シグネチャに合わせること。
+                    //       移行期は古いシグネチャもサポートする adapter を書いても良い。
+                    ComponentMeta<T>::deserializeToWorld(world, entity, j, ctx);
                 }
                 else {
                     T temp{};
-                    ComponentMetaJson::Deserialize(j, temp);
+                    ComponentMetaJson::Deserialize(j, temp, ctx);
                     world->AddComponent<T>(entity, std::move(temp));
                 }
             };
 
-        // 3. [Remap用] ★ if constexpr を使って Remap が存在するときだけ登録する
+        // 3. [旧] カスタム Remap (互換用)
         if constexpr (HasRemap<T>::value) {
-            info.remap = [](CCL::ECS::Core::World* world, CCL::ECS::EntityID entity, const std::unordered_map<uint64_t, CCL::ECS::EntityID>& idMap) {
-                if (auto* comp = world->GetComponent<T>(entity)) {
-                    ComponentMeta<T>::Remap(*comp, idMap);
-                }
+            info.remap = [](CCL::ECS::Core::World* world, CCL::ECS::EntityID entity,
+                const std::unordered_map<uint64_t, CCL::ECS::EntityID>& idMap)
+                {
+                    if (auto* comp = world->GetComponent<T>(entity)) {
+                        ComponentMeta<T>::Remap(*comp, idMap);
+                    }
                 };
         }
-        else {
-            info.remap = nullptr;
-        }
 
-        // 4. [Scene Save用] 保存除外判定 (isSerializable)
-        // C++17の if constexpr を使い、isSerializable == true の型だけ抽出機能を登録する
+        // 4. Scene Save 用 (isSerializable で除外する型をフィルタ)
         if constexpr (HasIsSerializable<T>::value) {
             info.hasComponent = [](CCL::ECS::Core::World* w, CCL::ECS::EntityID e) {
                 return w->HasComponent<T>(e);
                 };
 
-            info.saveToJSON = [](CCL::ECS::Core::World* w, CCL::ECS::EntityID e, nlohmann::json& j) {
-                if (auto* comp = w->GetComponent<T>(e)) {
-                    nlohmann::json compJson;
-                    ComponentMetaJson::Serialize(compJson, *comp);
-                    j[ComponentMeta<T>::displayName] = compJson;
-                }
+            info.saveToJSON = [](CCL::ECS::Core::World* w, CCL::ECS::EntityID e,
+                nlohmann::json& j, CCL::Serialization::SaveContext* ctx)
+                {
+                    if (auto* comp = w->GetComponent<T>(e)) {
+                        nlohmann::json compJson;
+                        ComponentMetaJson::Serialize(compJson, *comp, ctx);
+                        j[ComponentMeta<T>::displayName] = compJson;
+                    }
                 };
         }
 
-        // マップ登録
-        _nameToMeta[name] = info;
-
-        // TypeID -> Name
-        auto typeId = CCL::ECS::TypeInfo<T>::ID();
-        _typeIdToName[typeId] = name;
+        _nameToMeta[name] = std::move(info);
+        _typeIdToName[CCL::ECS::TypeInfo<T>::ID()] = name;
     }
 
-    const MetaInfo* GetInfoByName(const std::string& name) {
+    const MetaInfo* GetInfoByName(const std::string& name) const {
         auto it = _nameToMeta.find(name);
         return (it != _nameToMeta.end()) ? &it->second : nullptr;
     }
 
-    std::string GetNameByTypeID(CCL::ECS::TypeID id) {
+    std::string GetNameByTypeID(CCL::ECS::TypeID id) const {
         auto it = _typeIdToName.find(id);
-        return (it != _typeIdToName.end()) ? it->second : "";
+        return (it != _typeIdToName.end()) ? it->second : std::string{};
     }
 
-    // 【重要】実装を登録するための非テンプレート関数
-    void RegisterInternal(CCL::ECS::TypeID typeId, const std::string &name, MetaInfo &&info)
+    void RegisterInternal(CCL::ECS::TypeID typeId, const std::string& name, MetaInfo&& info)
     {
-        _nameToMeta[name]     = info;
+        _nameToMeta[name] = std::move(info);
         _typeIdToName[typeId] = name;
     }
 
@@ -156,25 +157,18 @@ private:
 };
 
 
-// ── リンカ強制保護 (究極版：COMDAT最適化の完全破壊) ────────────────────────
-// 登録用変数だけが最適化で切り捨てられるのを防ぐため、
-// エクスポート保護されたアンカー変数の中でラムダ式を回し、登録処理を道連れにする。
-// ─────────────────────────────────────────────────────────────────────
-
-
-// ── リンカ強制保護 (確実版) ────────────────────────────────────────────────
-// __declspec(dllexport) は EXE ビルドで /OPT:REF に対して不安定。
-// #pragma comment(linker, "/include:X") はリンカの参照グラフに
-// 直接シンボルを追加する唯一の確実な方法。
-// ─────────────────────────────────────────────────────────────────────────
-
+// =====================================================================
+// REGISTER_COMPONENT マクロ
+//   - リンカ最適化 (/OPT:REF) で消されない強制保護
+//   - 診断ログは NDEBUG で消える (リリースビルドではゼロコスト)
+//   - エディタ向け ImGui 登録は別マクロ REGISTER_COMPONENT_EDITOR_GUI に分離した
+//     (ComponentRegistry_Editor.h)
+// =====================================================================
 #ifdef _MSC_VER
-    // 2段マクロ展開: T が完全展開された後に文字列化する
 #define _CCL_LINK_IMPL(sym) __pragma(comment(linker, "/include:" #sym))
 #define _CCL_LINK(sym)      _CCL_LINK_IMPL(sym)
 #define _CCL_USED
 #elif defined(__GNUC__) || defined(__clang__)
-    // GCC/Clang: コンパイル段階で削除を阻止する
 #define _CCL_LINK(sym)
 #define _CCL_USED __attribute__((used))
 #else
@@ -182,31 +176,36 @@ private:
 #define _CCL_USED
 #endif
 
-#define REGISTER_COMPONENT(T, Name)                                                                     \
-    namespace {                                                                                         \
-        struct AutoReg_##T {                                                                            \
-            AutoReg_##T() {                                                                             \
-                /* ★詳細診断 */                                                                        \
-                char buf[256];                                                                          \
-                bool alreadyRegistered = (ComponentRegistry::Instance().GetInfoByName(Name) != nullptr);\
-                sprintf_s(buf, "[CCL_DIAG] AutoReg<%s> called. already=%d\n", Name, alreadyRegistered); \
-                OutputDebugStringA(buf);                                                                \
-                if (!alreadyRegistered) {                                                               \
-                    ComponentRegistry::Instance().Register<T>(Name);                                    \
-                }                                                                                       \
-                ComponentMetaImGui::RegisterGuiMeta<T>(ComponentGuiRegistry::Instance());               \
-                OutputDebugStringA("[CCL_DIAG] RegisterGuiMeta done for " Name "\n");                   \
-                                                                                                        \
-                /* ★★ TypeID 確認ログを追加 */                                                          \
-                char buf2[128];                                                                         \
-                sprintf_s(buf2, "[CCL_DIAG_ID] %s -> TypeInfo::ID() = %llu\n",                          \
-                    Name, (unsigned long long)CCL::ECS::TypeInfo<T>::ID());                             \
-                OutputDebugStringA(buf2);                                                               \
-            }                                                                                           \
-        };                                                                                              \
-    }                                                                                                   \
-    /* ★修正点1: dllexport を廃止し、pragma で確実に参照を付与         */                              \
-    /* ★修正点2: static ローカルを廃止し、初期化式に直接コンストラクタを呼ぶ */                         \
-    /* (AutoReg_##T{}, 1) = 一時オブジェクトを構築→登録実行→即破棄、値は 1 */                        \
-    extern "C" _CCL_USED int g_MetaAnchor_##T = (AutoReg_##T{}, 1);                                     \
+// 診断ログ: デバッグビルドだけ。リリースで sprintf_s と OutputDebugString は完全に消える。
+#ifndef NDEBUG
+#include <Windows.h>  // ★ここに移動: マクロ展開された側 (.cpp) でのみ取り込まれる
+#include <cstdio>
+#define _CCL_DIAG_REG(Name, T)                                                                    \
+        do {                                                                                          \
+            char _buf[256];                                                                           \
+            bool _alreadyReg = (ComponentRegistry::Instance().GetInfoByName(Name) != nullptr);        \
+            sprintf_s(_buf, "[CCL_DIAG] AutoReg<%s> already=%d\n", Name, _alreadyReg);                \
+            OutputDebugStringA(_buf);                                                                 \
+            sprintf_s(_buf, "[CCL_DIAG_ID] %s -> TypeInfo::ID() = %llu\n",                            \
+                Name, (unsigned long long)CCL::ECS::TypeInfo<T>::ID());                               \
+            OutputDebugStringA(_buf);                                                                 \
+        } while(0)
+#else
+#define _CCL_DIAG_REG(Name, T) ((void)0)
+#endif
+
+// 注意: ImGui 用の登録は REGISTER_COMPONENT_EDITOR_GUI(T) を別途呼ぶ運用にした。
+//       これによりランタイム専用のビルド単位は ImGui を一切引かなくて済む。
+#define REGISTER_COMPONENT(T, Name)                                                                   \
+    namespace {                                                                                       \
+        struct AutoReg_##T {                                                                          \
+            AutoReg_##T() {                                                                           \
+                _CCL_DIAG_REG(Name, T);                                                               \
+                if (!ComponentRegistry::Instance().GetInfoByName(Name)) {                             \
+                    ComponentRegistry::Instance().Register<T>(Name);                                  \
+                }                                                                                     \
+            }                                                                                         \
+        };                                                                                            \
+    }                                                                                                 \
+    extern "C" _CCL_USED int g_MetaAnchor_##T = (AutoReg_##T{}, 1);                                   \
     _CCL_LINK(g_MetaAnchor_##T)

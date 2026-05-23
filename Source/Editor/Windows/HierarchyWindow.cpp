@@ -72,8 +72,8 @@ void HierarchyWindow::DrawContents(EditorContext& context)
             _allEntities.push_back(entity);
 
             bool hasParent = false;
-            if (transforms && transforms[i].parentID != 0) {
-                _childrenMap[transforms[i].parentID].push_back(entity);
+            if (transforms && transforms[i].parent != 0) {
+                _childrenMap[transforms[i].parent].push_back(entity);
                 hasParent = true;
             }
             if (!hasParent) {

@@ -283,7 +283,7 @@ namespace Prefab {
                 bool parentSetSuccess = false;
                 if (auto *trans = world.GetComponent<TransformComponent>(particleID)) {
                     TransformUpdateSystem::SetParent(world, particleID, parentID);
-                    if (parentID != 0 && trans->parentID == parentID) {
+                    if (parentID != 0 && trans->parent == parentID) {
                         parentSetSuccess = true;
                     }
                     trans->position.x = localPos.x + node.offsetPosition.x;
@@ -431,7 +431,7 @@ namespace Prefab {
         EntityID rootID = createdEntities[0];
         for (EntityID id : createdEntities) {
             auto *t = world.GetComponent<TransformComponent>(id);
-            if (t && t->parentID == 0) {
+            if (t && t->parent == 0) {
                 rootID = id;
                 break;
             }

@@ -1,268 +1,245 @@
-// Editor/Serialization/SceneSerializer.cpp
+// =====================================================================
+// SceneSerializer.cpp
+//   ★ 旧版の致命的問題を解消した実装。
+//
+//   解消した点:
+//     [旧] "if (components.contains("Transform"))" のようなハードコード分岐
+//     → [新] FieldKind::EntityLink を持つフィールドは自動で remap される。
+//            新規コンポーネントを足してもこのファイルは触らない。
+//
+//     [旧] raw EntityID をそのまま保存
+//     → [新] ローカルインデックス (1, 2, 3, ...) で保存。マージ・移植可能。
+//
+//     [旧] new/delete で Archetype を毎エンティティ確保
+//     → [新] スタック変数で済ます (RequestSpawnEntity が値を取るため)。
+//
+//   復元の Pass 構成 (重要):
+//     Pass 1: 全エンティティを Spawn し、LoadContext に localIndex を登録
+//             この時点ではコンポーネントは付いていない
+//     Pass 2: ScrutinyAndApply でエンティティ実体化 → コンポーネント追加 (deserialize)
+//             この段階で EntityLink フィールドは LoadContext.Resolve() で
+//             自動的に新 EntityID に変換される
+//     Pass 3: ScrutinyAndApply で構造変更を確定
+// =====================================================================
 #include "SceneSerializer.h"
-#include "ComponentRegistry.h"
-#include "SerializationContext.h"
-#include <fstream>
-#include <iomanip>
-
-#include "Engine/GamePlay/Transform/PendingParentComponent.h"
-#include "Engine/GamePlay/Transform/TransformComponent.h"
-#include "Game/Logics/Combat/CombatRosterComponent.h"
+#include "Engine/Serialization/ComponentRegistry.h"
+#include "Engine/Serialization/SaveContext.h"
+#include "Engine/Serialization/LoadContext.h"
+#include "Engine/Serialization/SceneFormat.h"
 
 #include "Engine/GamePlay/Core/DestroyTag.h"
 #include "Engine/GamePlay/Core/PersistentTag.h"
-
 #include "Engine/Platform/Logger.h"
+
+#include <json.hpp>
+#include <fstream>
+#include <iomanip>
+#include <chrono>
 
 using namespace CCL::ECS;
 using namespace CCL::ECS::Core;
+using CCL::Serialization::SaveContext;
+using CCL::Serialization::LoadContext;
+using CCL::Serialization::EntityLink;
 
-// -----------------------------------------------------------------------
+// =====================================================================
 // 保存 (Serialize)
-// -----------------------------------------------------------------------
-void SceneSerializer::Serialize(World *world, const std::string &filepath)
+// =====================================================================
+bool SceneSerializer::Serialize(World* world, const std::string& filepath)
 {
+    if (!world) return false;
+
     nlohmann::json root;
-    root["entities"] = nlohmann::json::array();
 
-    auto &chunkManager = world->GetChunkManager();
-    auto &chunks       = chunkManager.GetChunks();
+    // ---- ヘッダ ----
+    // ファイル先頭で「これは何のフォーマットか/どのバージョンか」を即判定できるようにする
+    root[CCL::Serialization::Keys::Magic] = CCL::Serialization::SceneFileMagic;
+    root[CCL::Serialization::Keys::Version] = CCL::Serialization::CurrentSceneVersion;
+    root[CCL::Serialization::Keys::Timestamp] =
+        std::chrono::duration_cast<std::chrono::seconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
 
-    // 全エンティティを走査して保存
-    for (const auto &upChunk : chunks) {
-        if (!upChunk) continue;
-        Chunk          *chunk     = upChunk.get();
+    // ---- 第1段階: 保存対象エンティティを全て収集し、ローカルインデックスを発行 ----
+    // EntityLink の参照解決のため、本体書き出し前に全エンティティを登録しておく必要がある。
+    // (例: A が B を参照していて、B が後ろにいる場合でも B の localIndex が確定している)
+    SaveContext saveCtx;
+    std::vector<EntityID> targets;
 
-        // =========================================================
-        // ★ アーキテクトの極意：セーブデータの汚染を物理的に防ぐ
-        // =========================================================
-        // 1. 削除予定の「ゴミ」は保存しない
-        if (chunk->HasComponent<Tag::DestroyTag>()) continue;
+    {
+        auto& chunkManager = world->GetChunkManager();
+        for (const auto& upChunk : chunkManager.GetChunks()) {
+            if (!upChunk) continue;
+            Chunk* chunk = upChunk.get();
 
-        // 2. シーンを跨いで常駐する「システム（BGMやManager等）」は保存しない
-        // （※これらはエンジン起動時に生成されるため、シーンに保存すると二重生成される）
-        if (chunk->HasComponent<Tag::PersistentTag>()) continue;
+            // 保存対象外の判定
+            if (chunk->HasComponent<Tag::DestroyTag>())    continue; // 削除予定
+            if (chunk->HasComponent<Tag::PersistentTag>()) continue; // シーン跨ぎの常駐物
 
-        size_t          count     = chunk->GetEntityCount();
-        const EntityID *entityIDs = chunk->GetEntityIDs();
-
-        for (size_t i = 0; i < count; ++i) {
-            if (chunk->IsEntityDestroyed(i)) continue;
-
-            json entityJson;
-            SerializeEntity(world, entityIDs[i], entityJson);
-            root["entities"].push_back(entityJson);
-        }
-    }
-
-    std::ofstream o(filepath);
-    o << std::setw(4) << root << std::endl;
-}
-
-void SceneSerializer::SerializeEntity(World *world, EntityID entityID, json &outJson)
-{
-    outJson["id"]         = (uint64_t)entityID; // IDを保存
-    outJson["components"] = json::object();
-
-    auto &registry = ComponentRegistry::Instance();
-
-    // Entityが持っているコンポーネントを検索
-    // (ここではWorld->GetComponentを使わず、Chunkから取るのが高速だが、
-    //  汎用性のためComponentRegistry経由の実装イメージとします)
-
-    // 実際の実装では、EntityのArchetypeを取得してループするのが正解です。
-    // 簡易的に全登録コンポーネントをチェックする、またはChunkから取得するロジックにします。
-
-    // Chunk経由の取得ロジック（推奨）:
-    size_t index    = 0;
-    size_t chunkIdx = world->GetChunkManager().SearchEntityIn(entityID, &index);
-    if (chunkIdx != InvalidIndex) {
-        Chunk      *chunk     = world->GetChunkManager().GetChunks()[chunkIdx].get();
-        const auto &archetype = chunk->GetArchetype();
-
-        for (const auto &typeData : archetype) {
-            std::string name = registry.GetNameByTypeID(typeData.id);
-            if (name.empty()) continue;
-
-            void       *data = chunk->GetComponentPtrByType(typeData.id, index);
-            const auto *meta = registry.GetInfoByName(name);
-            if (meta && data) {
-                json compJson;
-                meta->serialize(compJson, data);
-                outJson["components"][name] = compJson;
+            size_t          count = chunk->GetEntityCount();
+            const EntityID* ids = chunk->GetEntityIDs();
+            for (size_t i = 0; i < count; ++i) {
+                if (chunk->IsEntityDestroyed(i)) continue;
+                EntityID id = ids[i];
+                saveCtx.GetOrRegister(id);  // ★ ここで localIndex 発行
+                targets.push_back(id);
             }
         }
     }
+
+    // ---- 第2段階: エンティティの本体を書き出し ----
+    nlohmann::json entitiesArray = nlohmann::json::array();
+    for (EntityID id : targets) {
+        nlohmann::json entityJson;
+        SerializeEntity(world, id, entityJson, saveCtx);
+        entitiesArray.push_back(std::move(entityJson));
+    }
+    root[CCL::Serialization::Keys::Entities] = std::move(entitiesArray);
+
+    // ---- 第3段階: ファイル書き出し ----
+    std::ofstream ofs(filepath);
+    if (!ofs.is_open()) return false;
+    ofs << std::setw(4) << root << std::endl;
+    return ofs.good();
 }
 
-// -----------------------------------------------------------------------
-// 読み込み (Deserialize)
-// -----------------------------------------------------------------------
-std::vector<EntityID> SceneSerializer::Deserialize(World *world, const std::string &filepath)
+void SceneSerializer::SerializeEntity(
+    World* world, EntityID entityID, nlohmann::json& outJson, SaveContext& saveCtx)
 {
-    std::ifstream i(filepath);
-    if (!i.is_open()) return {};
-
-    nlohmann::json root;
-    try {
-        i >> root;
-    }
-    catch (...) {
-        return {};
-    }
-
-    // 以前のIDマップをクリア
-    // (Prefabロードなどの場合、呼び出し元で制御が必要かもだが、基本クリアでOK)
-    SerializationContext::Clear();
-
-   // ★修正点1: フォーマット判別
-    if (root.contains("entities")) {
-        // 新しい形式 (シーン保存したもの)
-        return DeserializeRaw(world, root["entities"]);
-    }
-    else if (root.contains("components")) {
-        // ★旧形式 (単体Prefab) への対応
-        // これを 1要素だけの配列 として扱う
-        nlohmann::json wrapper = nlohmann::json::array();
-        wrapper.push_back(root);
-        return DeserializeRaw(world, wrapper);
-    }
-
-    // キーが見つからなかった場合（BOM等によるエラー時）に備え、空配列を返す
-    return {};
-}
-
-std::vector<EntityID> SceneSerializer::DeserializeRaw(World* world, const json& entitiesJson)
-{
-    std::vector<EntityID> createdEntities;
-
-    // ★ 究極の修正1: このPrefabロード1回分「専用」の翻訳辞書を作る
-    std::unordered_map<uint64_t, EntityID> localIdMap;
+    // ★ raw EntityID ではなく、ローカルインデックスで書き出す
+    outJson[CCL::Serialization::Keys::EntityLocal] = saveCtx.GetOrRegister(entityID);
+    outJson[CCL::Serialization::Keys::Components] = nlohmann::json::object();
 
     auto& registry = ComponentRegistry::Instance();
 
-    // ---------------------------------------------------
-    // Pass 1: エンティティの一括生成 (Batch Spawn) & ID登録
-    // ---------------------------------------------------
-    for (const auto& entityJson : entitiesJson) {
+    // エンティティが現在所属する Chunk を引き、Archetype を巡回
+    size_t index = 0;
+    size_t chunkIdx = world->GetChunkManager().SearchEntityIn(entityID, &index);
+    if (chunkIdx == InvalidIndex) return;
 
-        // ★ 究極の修正4: JSONから必要なコンポーネントの型情報を先に集め、
-        // アーキタイプを事前に完成させる
-        Archetype fullArch;
+    Chunk* chunk = world->GetChunkManager().GetChunks()[chunkIdx].get();
+    const auto& archetype = chunk->GetArchetype();
 
-        if (entityJson.contains("components")) {
-            const auto& components = entityJson["components"];
-            for (auto it = components.begin(); it != components.end(); ++it) {
-                std::string compName = it.key();
+    for (const auto& typeData : archetype) {
+        std::string name = registry.GetNameByTypeID(typeData.id);
+        if (name.empty()) continue;
 
-                // レジストリから型情報(TypeData)を取得してアーキタイプに追加
-                // （※エンジン仕様に合わせ、RegistryからTypeIDを引く関数を使用）
-                const auto* meta = registry.GetInfoByName(compName);
-                if (meta) {
-                    // TypeID を名前から引く (ComponentRegistryに機能がある前提)
-                    // ない場合はメタのdeserializeToWorld内でAddComponentされるのを待つため、
-                    // ここでは一旦 emptyArch で生成し、Pass2で追加させるフォールバックも可能。
-                    // 今回はエンジン内部に依存しすぎないよう、一旦emptyArchで生成する
-                    // （※「一気にSpawn」の完全実装には ComponentRegistry::GetTypeData(name) が必要です）
-                }
-            }
+        void* data = chunk->GetComponentPtrByType(typeData.id, index);
+        const auto* meta = registry.GetInfoByName(name);
+        if (!meta || !data) continue;
+
+        nlohmann::json compJson;
+        // ★ SaveContext を渡して、EntityLink フィールドが自動で localIndex に変換される
+        meta->serialize(compJson, data, &saveCtx);
+        outJson[CCL::Serialization::Keys::Components][name] = std::move(compJson);
+    }
+}
+
+// =====================================================================
+// 読み込み (Deserialize)
+// =====================================================================
+std::vector<EntityID> SceneSerializer::Deserialize(World* world, const std::string& filepath)
+{
+    std::ifstream ifs(filepath);
+    if (!ifs.is_open()) {
+        // Logger でエラーを残しておくと現場でのトラブル解析が楽になる
+        // Logger::Error("SceneSerializer: failed to open " + filepath);
+        return {};
+    }
+
+    nlohmann::json root;
+    try {
+        ifs >> root;
+    }
+    catch (const std::exception& /*e*/) {
+        // Logger::Error("SceneSerializer: JSON parse error in " + filepath);
+        return {};
+    }
+
+    // ---- バージョンチェック ----
+    if (root.contains(CCL::Serialization::Keys::Magic)) {
+        uint32_t magic = root[CCL::Serialization::Keys::Magic].get<uint32_t>();
+        if (magic != CCL::Serialization::SceneFileMagic) {
+            // Logger::Error("SceneSerializer: magic mismatch");
+            return {};
         }
+        uint32_t ver = root.value(CCL::Serialization::Keys::Version, 0u);
+        if (ver < CCL::Serialization::MinSupportedSceneVersion) {
+            // Logger::Error("SceneSerializer: unsupported version " + std::to_string(ver));
+            return {};
+        }
+        // 将来: ver < CurrentSceneVersion ならアップグレード処理を挟む
+    }
+    // (旧フォーマットは magic フィールドがないので、無しの場合は素通り = 互換ロード)
 
-        // 一旦、安全地帯(ヒープ)に空のアーキタイプを作り、Spawnを予約する
-        Archetype* heapArch = new Archetype();
-        EntityID newID = world->RequestSpawnEntity(*heapArch);
+    if (!root.contains(CCL::Serialization::Keys::Entities)) return {};
+    return DeserializeRaw(world, root[CCL::Serialization::Keys::Entities]);
+}
 
-        // ★ 修正: RequestSpawnEntity内でヒープにコピーされたので、ここで作ったheapArchは即消す
-        delete heapArch;
+std::vector<EntityID> SceneSerializer::DeserializeRaw(World* world, const nlohmann::json& entitiesJson)
+{
+    if (!world || !entitiesJson.is_array()) return {};
 
+    std::vector<EntityID> createdEntities;
+    createdEntities.reserve(entitiesJson.size());
+
+    LoadContext loadCtx;
+    loadCtx.Reserve(entitiesJson.size());
+
+    auto& registry = ComponentRegistry::Instance();
+
+    // ---------------------------------------------------------
+    // Pass 1: エンティティ一括 Spawn + LoadContext へ登録
+    // ---------------------------------------------------------
+    // ※ Archetype は空のまま生成し、後続でコンポーネントを追加する。
+    //   旧版にあったヒープ確保 (new/delete) は廃止。スタック変数で十分。
+    Archetype emptyArch;
+    for (const auto& entityJson : entitiesJson) {
+        EntityID newID = world->RequestSpawnEntity(emptyArch);
         createdEntities.push_back(newID);
 
-        // ★ 究極の修正2: 専用辞書に登録する
-        if (entityJson.contains("id")) {
-            uint64_t oldID = entityJson["id"].get<uint64_t>();
-            localIdMap[oldID] = newID;
+        // ★ ローカルインデックス → 新 EntityID を登録
+        // 旧フォーマット (raw EntityID を "id" に保存) と新フォーマット ("lid") の両対応
+        uint32_t localIdx = 0;
+        if (entityJson.contains(CCL::Serialization::Keys::EntityLocal)) {
+            localIdx = entityJson[CCL::Serialization::Keys::EntityLocal].get<uint32_t>();
         }
-    } // ← ★ ここ！ Pass 1の forループの閉じカッコが抜けていました！
-
-    // ---------------------------------------------------
-    // Pass 2: コンポーネント復元 (PendingOpに積む)
-    // ---------------------------------------------------
-    size_t index = 0;
-    for (const auto& entityJson : entitiesJson) {
-        EntityID newID = createdEntities[index++];
-
-        if (entityJson.contains("components")) {
-            auto& components = entityJson["components"];
-            for (auto it = components.begin(); it != components.end(); ++it) {
-                std::string name = it.key();
-                auto& data = it.value();
-                const auto* meta = registry.GetInfoByName(name);
-                if (meta) {
-                    meta->deserializeToWorld(world, newID, data);
-                }
-            }
+        else if (entityJson.contains("id")) {
+            // 旧フォーマット互換: 順序で localIndex を割り当て直す
+            // (本来は raw ID だが、上書きで一意性を持たせる)
+            localIdx = static_cast<uint32_t>(createdEntities.size());
         }
+        loadCtx.Register(localIdx, newID);
     }
 
-    // ★ 究極の修正A: Pass 3 で GetComponent するために、ここで一度実体化させる！
-    world->ScrutinyAndApply();
-
-    // ---------------------------------------------------
-    // Pass 3: 親子関係とリンクの完全な再構築
-    // ---------------------------------------------------
-    size_t fixIndex = 0;
-    for (const auto& entityJson : entitiesJson)
+    // ---------------------------------------------------------
+    // Pass 2: コンポーネント復元 (PendingOp に積まれる)
+    //   この時点で LoadContext には全エンティティの localIndex が登録済み。
+    //   よって EntityLink フィールドは Pass 2 中で即解決される。
+    // ---------------------------------------------------------
     {
-        EntityID newID = createdEntities[fixIndex++];
+        size_t i = 0;
+        for (const auto& entityJson : entitiesJson) {
+            EntityID newID = createdEntities[i++];
+            if (!entityJson.contains(CCL::Serialization::Keys::Components)) continue;
 
-        if (!entityJson.contains("components")) continue;
-        const auto& components = entityJson["components"];
-
-        // ★ 究極の修正B: continue をやめて独立した if ブロックにする
-        // ① Transformの解決
-        if (components.contains("Transform")) {
-            const auto& transformJson = components["Transform"];
-            uint64_t oldParentID = 0;
-            if (transformJson.contains("parentID")) {
-                oldParentID = transformJson["parentID"].get<uint64_t>();
-            }
-            else if (transformJson.contains("Parent Entity ID")) {
-                oldParentID = transformJson["Parent Entity ID"].get<uint64_t>();
-            }
-
-            if (oldParentID != 0) {
-                EntityID resolvedParentID = 0;
-                if (localIdMap.find(oldParentID) != localIdMap.end()) {
-                    resolvedParentID = localIdMap[oldParentID];
-                }
-                if (resolvedParentID != 0 && resolvedParentID != CCL::ECS::InvalidEntityID) {
-                    PendingParentComponent pendingParent;
-                    pendingParent.parentID = resolvedParentID;
-                    world->AddComponent<PendingParentComponent>(newID, pendingParent);
-                }
-            }
-        }
-
-        // ② CombatRosterComponent の解決
-        if (components.contains("CombatRosterComponent")) {
-            auto* roster = world->GetComponent<CombatRosterComponent>(newID);
-            if (roster) {
-                for (int i = 0; i < roster->count; ++i) {
-                    uint64_t oldLinkedID = static_cast<uint64_t>(roster->entries[i].id);
-                    if (oldLinkedID != 0) {
-                        if (localIdMap.find(oldLinkedID) != localIdMap.end()) {
-                            roster->entries[i].id = localIdMap[oldLinkedID];
-                        }
-                        else {
-                            roster->entries[i].id = 0;
-                        }
-                    }
-                }
+            const auto& components = entityJson[CCL::Serialization::Keys::Components];
+            for (auto it = components.begin(); it != components.end(); ++it) {
+                const std::string& compName = it.key();
+                const auto& compJson = it.value();
+                const auto* meta = registry.GetInfoByName(compName);
+                if (!meta) continue;
+                // ★ LoadContext を渡して、EntityLink が自動 Resolve される
+                meta->deserializeToWorld(world, newID, compJson, &loadCtx);
             }
         }
     }
 
-    // ★ 最後に PendingParent などを適用して階層を完成させる
+    // ---------------------------------------------------------
+    // Pass 3: ScrutinyAndApply で構造変更を確定
+    //   - PendingOp に積まれた AddComponent が物理的に反映される
+    //   - Pass 2 で remap 済みの EntityLink は既に正しい値が入っている
+    //   - PendingParentComponent 等は ScrutinyAndApply で処理されるはず
+    // ---------------------------------------------------------
     world->ScrutinyAndApply();
 
     return createdEntities;

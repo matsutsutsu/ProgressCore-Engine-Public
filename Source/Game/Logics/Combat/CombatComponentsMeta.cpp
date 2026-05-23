@@ -69,7 +69,7 @@ template <> struct ComponentMeta<BoneAttachmentComponent> {
 
         CCL::ECS::EntityID parentID = 0;
         if (auto* trans = world->GetComponent<TransformComponent>(entityID)) {
-            parentID = trans->parentID;
+            parentID = trans->parent;
         }
         if (parentID == 0) {
             if (auto* pending = world->GetComponent<PendingParentComponent>(entityID)) {

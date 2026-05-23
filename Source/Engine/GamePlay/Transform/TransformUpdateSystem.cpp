@@ -35,7 +35,7 @@ static void UpdateTransformRecursiveHelper(Core::World* world, EntityID entity, 
 
     // --- 1. ボーンアタッチメントの評価 ---
     if (auto* boneAttach = world->GetComponent<BoneAttachmentComponent>(entity)) {
-        if (auto* modelComp = world->GetComponent<ModelComponent>(trans->parentID)) {
+        if (auto* modelComp = world->GetComponent<ModelComponent>(trans->parent)) {
             Model* model = modelComp->GetModel();
             if (model) {
                 if (boneAttach->cachedBoneIndex == -1 && !boneAttach->boneName.empty()) { // ★ .empty() でチェック
@@ -107,7 +107,7 @@ void TransformUpdateSystem::Update(float dt)
     // 2. 行列更新フェーズ (並列処理可能)
     // -----------------------------------------------------------------------
     ForEachWithID([this](EntityID id, TransformComponent& trans) {
-        if (trans.parentID != 0) return; // ルートのみ
+        if (trans.parent != 0) return; // ルートのみ
 
         bool isUpdated = trans.isDirty;
 
@@ -218,8 +218,8 @@ void TransformUpdateSystem::RepairBrokenLinks()
     // 構造を変更する可能性があるのでシングルスレッド(ForEach)で実行
     ForEachWithID([&](EntityID id, TransformComponent &trans) {
         // 親が設定されている場合のみチェック
-        if (trans.parentID != 0) {
-            auto *parentTrans = _world->GetComponent<TransformComponent>(trans.parentID);
+        if (trans.parent != 0) {
+            auto *parentTrans = _world->GetComponent<TransformComponent>(trans.parent);
 
             // 親が存在するのに、親から認識されていない（リンク切れ）場合を判定
             bool isOrphan = false;
@@ -236,7 +236,7 @@ void TransformUpdateSystem::RepairBrokenLinks()
 
             if (isOrphan) {
                 // 自動修復: 正しい親子関係を結び直す (書き込み発生)
-                SetParent(*_world, id, trans.parentID);
+                SetParent(*_world, id, trans.parent);
             }
         }
     });
@@ -266,7 +266,7 @@ void TransformUpdateSystem::SetParent(Core::World &world, EntityID childID, Enti
     if (!childTrans || !parentTrans) return;
 
     // 2. 新しい親を設定
-    childTrans->parentID = newParentID;
+    childTrans->parent = newParentID;
 
     // 3. 親の子リストの「先頭」に自分を挿入する (Insert Head)
     //    双方向リストへの挿入処理: O(1)
@@ -293,9 +293,9 @@ void TransformUpdateSystem::SetParent(Core::World &world, EntityID childID, Enti
 void TransformUpdateSystem::DetachChild(Core::World &world, EntityID childID)
 {
     auto *childTrans = world.GetComponent<TransformComponent>(childID);
-    if (!childTrans || childTrans->parentID == 0) return;
+    if (!childTrans || childTrans->parent == 0) return;
 
-    EntityID parentID    = childTrans->parentID;
+    EntityID parentID    = childTrans->parent;
     auto    *parentTrans = world.GetComponent<TransformComponent>(parentID);
 
     // 1. 親から見たリンクの修正
@@ -324,7 +324,7 @@ void TransformUpdateSystem::DetachChild(Core::World &world, EntityID childID)
     }
 
     // 3. 自分のリンク情報をクリア
-    childTrans->parentID      = 0;
+    childTrans->parent      = 0;
     childTrans->prevSiblingID = 0;
     childTrans->nextSiblingID = 0;
 }

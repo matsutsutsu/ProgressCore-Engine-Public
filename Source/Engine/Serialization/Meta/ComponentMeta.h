@@ -11,7 +11,8 @@ enum class FieldKind : uint8_t {
     UInt8,
     UInt16, // 16ビット符号なし整数
     UInt32, // 32ビット符号なし整数
-    EntityID,
+    EntityID,    // [DEPRECATED] 旧形式 (生 uint64_t)。新コードでは EntityLink を使う
+    EntityLink,  // ★ NEW: シリアライズ時にローカルインデックスに自動変換される
     EnumU8,
     EnumInt,
     Float2,
@@ -21,8 +22,8 @@ enum class FieldKind : uint8_t {
 };
 
 struct FieldDescriptor {
-    const char        *name      = nullptr; // ★UIでの表示名 (DisplayName)
-    const char        *jsonName  = nullptr; // ★JSONでの保存キー (JsonName) 追加
+    const char        *name      = nullptr; // UIでの表示名 (DisplayName)
+    const char        *jsonName  = nullptr; // JSONでの保存キー (JsonName) 追加
     FieldKind          kind      = FieldKind::Float;
     size_t             offset    = 0;
     float              dragSpeed = 0.05f;
@@ -58,9 +59,16 @@ inline FieldDescriptor FD_UInt32(const char* name, const char* jsonName, size_t 
     return { name, jsonName, FieldKind::UInt32, offset, speed, rangeMin, rangeMax, category, nullptr, 0, serialize };
 }
 
+// [旧] 生 EntityID をそのまま保存する。新規コードでは FD_EntityLink を使うこと。
 inline FieldDescriptor FD_EntityID(const char* name, const char* jsonName, size_t offset, const char* category = nullptr, bool serialize = true) {
     return { name, jsonName, FieldKind::EntityID, offset, 0.0f, 0.0f, 0.0f, category, nullptr, 0, serialize };
 }
+
+// ★ NEW: EntityLink を「参照」として扱う。自動でローカルインデックス変換される。
+inline FieldDescriptor FD_EntityLink(const char* name, const char* jsonName, size_t offset, const char* category = nullptr, bool serialize = true) {
+    return { name, jsonName, FieldKind::EntityLink, offset, 0.0f, 0.0f, 0.0f, category, nullptr, 0, serialize };
+}
+
 inline FieldDescriptor FD_EnumU8(const char *name, const char *jsonName, size_t offset, const char *const *enumNames, int enumCount, const char *category = nullptr) {
     FieldDescriptor d{}; d.name = name; d.jsonName = jsonName; d.kind = FieldKind::EnumU8; d.offset = offset; d.enumNames = enumNames; d.enumCount = enumCount; d.category = category; return d;
 }
@@ -105,8 +113,14 @@ inline FieldDescriptor FD_String(const char *name, const char *jsonName, size_t 
 #define META_FIELD_UINT32(Comp, Field, Name, JsonName, Speed, Category) \
     FD_UInt32(Name, JsonName, offsetof(Comp, Field), Speed, 0.0f, 0.0f, Category)
 
+// [旧] 生 EntityID。互換のため残置。
 #define META_FIELD_ENTITY_ID(Comp, Field, Name, JsonName, Category) \
     FD_EntityID(Name, JsonName, offsetof(Comp, Field), Category)
+
+// ★ NEW: 自動 remap される参照フィールドとして宣言する。
+// 使用例: META_FIELD_ENTITY_LINK(TransformComponent, parent, "parent", "Parent", "Hierarchy")
+#define META_FIELD_ENTITY_LINK(Comp, Field, Name, JsonName, Category) \
+    FD_EntityLink(Name, JsonName, offsetof(Comp, Field), Category)
 
 #define META_FIELD_ENUM_U8(ClassType, FieldName, JsonName, DisplayName, EnumNames, EnumCount, Category) \
     FD_EnumU8(DisplayName, JsonName, offsetof(ClassType, FieldName), EnumNames, EnumCount, Category)
@@ -134,15 +148,16 @@ template <typename T> struct ComponentMeta {
     static constexpr bool        registered  = false;
     static constexpr const char *displayName = "(unregistered)";
 
-    // 【カスタムGUIフック】
     // 手動でImGuiのコードを書きたい場合、特殊化する側でこれを true にします。
     static constexpr bool hasCustomGui = false;
-
     // デフォルトはすべて保存対象（保存したくない場合は特殊化側で false にする）
     static constexpr bool        isSerializable = true;
-
-    // ★ 究極の綺麗な設計: カスタムシリアライズを行うかどうかの明示的フラグ
+    // カスタムシリアライズを行うかどうかの明示的フラグ
     static constexpr bool hasCustomSerialize = false;
+    
+    // ★ NEW: フォーマットバージョン (互換性破壊変更時に +1 する)
+    // 旧形式のロード時にこの値とファイル内のバージョン値を比較して Upgrade を判断する。
+    static constexpr uint32_t version = 1;
 
     // カスタムGUIの実装関数 (hasCustomGui = true のときのみ描画システムから呼ばれる)
     // 戻り値: 値が変更されたら true を返す (Undo/Redoシステムのフラグ用)

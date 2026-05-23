@@ -17,7 +17,7 @@ void GPUParticleRenderSystem::Update(float dt)
         // --- 1. 描画をスキップする条件のチェック ---
 
         // プール待機中（親ID=0）のものは描画しない
-        if (transform.parentID == 0) return;
+        if (transform.parent == 0) return;
 
 
         // リソースが未初期化、またはバッファが存在しない場合はスキップ

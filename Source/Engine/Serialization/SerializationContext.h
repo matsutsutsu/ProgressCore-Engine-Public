@@ -1,35 +1,32 @@
 #pragma once
 #include <unordered_map>
+#include <cstdint>
 #include "ECS/Common/CCL_Common.h"
 
+// ★ ロード（デシリアライズ）ごとに生成され、IDの翻訳を行うコンテキスト
 class SerializationContext {
 public:
-    // マップへのアクセス
-    // 修正: Key (昔のID) を uint64_t にする
-    // EntityID型だと32bitの場合に溢れる可能性があるため
-    static std::unordered_map<uint64_t, CCL::ECS::EntityID>& GetIdMap() {
-        static std::unordered_map<uint64_t, CCL::ECS::EntityID> map;
-        return map;
+    std::unordered_map<uint64_t, CCL::ECS::EntityID> idMap;
+
+    void Clear() {
+        idMap.clear();
     }
 
-    // ロード開始時に必ず呼ぶ
-    static void Clear() {
-        GetIdMap().clear();
-    }
-
-    // マッピングを登録 (旧ID -> 新ID)
-    static void RegisterID(uint64_t oldID, CCL::ECS::EntityID newID) {
-        GetIdMap()[oldID] = newID;
-    }
-
-    // 古いIDを新しいIDに変換して返す
-    static CCL::ECS::EntityID ResolveID(uint64_t oldID) {
-        if (oldID == 0) return 0;
-
-        auto& map = GetIdMap();
-        if (map.find(oldID) != map.end()) {
-            return map[oldID];
+    // 読み込んだファイルのID(oldID) と、新しく確保した実体ID(newID) を紐付ける
+    void RegisterID(uint64_t oldID, CCL::ECS::EntityID newID) {
+        if (oldID != 0) {
+            idMap[oldID] = newID;
         }
-        return 0;
+    }
+
+    // 古いIDを渡して、現在の世界における正しい実体IDを返す
+    CCL::ECS::EntityID ResolveID(uint64_t oldID) const {
+        if (oldID == 0) return CCL::ECS::InvalidEntityID;
+
+        auto it = idMap.find(oldID);
+        if (it != idMap.end()) {
+            return it->second;
+        }
+        return CCL::ECS::InvalidEntityID;
     }
 };
