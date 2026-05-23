@@ -398,11 +398,6 @@
     <ClInclude Include="Source\Engine\Platform\Input\Keyboard.h" />
     <ClInclude Include="Source\Engine\Platform\Input\Mouse.h" />
     <ClInclude Include="Source\Engine\Platform\Logger.h" />
-    <ClInclude Include="Source\Engine\Scripting\Bind\LuaBind_Components.h" />
-    <ClInclude Include="Source\Engine\Scripting\Bind\LuaBind_Entity.h" />
-    <ClInclude Include="Source\Engine\Scripting\Bind\LuaBind_Scene.h" />
-    <ClInclude Include="Source\Engine\Scripting\LuaScriptComponent.h" />
-    <ClInclude Include="Source\Engine\Scripting\LuaScriptSystem.h" />
     <ClInclude Include="Source\Engine\Serialization\ComponentRegistry.h" />
     <ClInclude Include="Source\Engine\Serialization\ComponentRegistry_Editor.h" />
     <ClInclude Include="Source\Engine\Serialization\EntityLink.h" />
@@ -700,10 +695,6 @@
     <ClCompile Include="Source\Engine\Platform\Input\Keyboard.cpp" />
     <ClCompile Include="Source\Engine\Platform\Input\Mouse.cpp" />
     <ClCompile Include="Source\Engine\Platform\Logger.cpp" />
-    <ClCompile Include="Source\Engine\Scripting\Bind\LuaBind_Components.cpp" />
-    <ClCompile Include="Source\Engine\Scripting\Bind\LuaBind_Entity.cpp" />
-    <ClCompile Include="Source\Engine\Scripting\Bind\LuaBind_Scene.cpp" />
-    <ClCompile Include="Source\Engine\Scripting\LuaScriptSystem.cpp" />
     <ClCompile Include="Source\Engine\Serialization\ComponentRegistry.cpp" />
     <ClCompile Include="Source\Engine\Serialization\Factory\Prefab.cpp" />
     <ClCompile Include="Source\Engine\Serialization\Factory\SceneInitializer.cpp" />

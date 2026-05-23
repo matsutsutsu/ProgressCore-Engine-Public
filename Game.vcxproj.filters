@@ -199,12 +199,6 @@
     <Filter Include="Source\Engine\GamePlay\Utils">
       <UniqueIdentifier>{45fb08b4-8a8a-40f0-98cd-73d7b37519c2}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Scripting">
-      <UniqueIdentifier>{eb3efe94-ceb5-44e0-88ff-94047d1a779c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\Scripting\Bind">
-      <UniqueIdentifier>{7cb6cd35-7f28-498c-9978-21460d973680}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\Serialization">
       <UniqueIdentifier>{340b74ea-9d49-4c0d-b73b-eee7ab4a7c11}</UniqueIdentifier>
     </Filter>
@@ -827,21 +821,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\GamePlay\Utils\TimerSystem.h">
       <Filter>Source\Engine\GamePlay\Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Scripting\LuaScriptComponent.h">
-      <Filter>Source\Engine\Scripting</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Scripting\LuaScriptSystem.h">
-      <Filter>Source\Engine\Scripting</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Scripting\Bind\LuaBind_Components.h">
-      <Filter>Source\Engine\Scripting\Bind</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Scripting\Bind\LuaBind_Entity.h">
-      <Filter>Source\Engine\Scripting\Bind</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Scripting\Bind\LuaBind_Scene.h">
-      <Filter>Source\Engine\Scripting\Bind</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Platform\Input\GamePad.h">
       <Filter>Source\Engine\Platform\Input</Filter>
@@ -1780,18 +1759,6 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\GamePlay\Transform\TransformUpdateSystem.cpp">
       <Filter>Source\Engine\GamePlay\Transform</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Scripting\LuaScriptSystem.cpp">
-      <Filter>Source\Engine\Scripting</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Scripting\Bind\LuaBind_Components.cpp">
-      <Filter>Source\Engine\Scripting\Bind</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Scripting\Bind\LuaBind_Entity.cpp">
-      <Filter>Source\Engine\Scripting\Bind</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Scripting\Bind\LuaBind_Scene.cpp">
-      <Filter>Source\Engine\Scripting\Bind</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Platform\Input\GamePad.cpp">
       <Filter>Source\Engine\Platform\Input</Filter>
