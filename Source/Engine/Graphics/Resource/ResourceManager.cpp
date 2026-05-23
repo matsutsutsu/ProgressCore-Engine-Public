@@ -1,12 +1,15 @@
 #include "ResourceManager.h"
 #include <filesystem>
 #include <fstream>
-#include <imgui.h>
 #include <cereal/archives/json.hpp>
 
 #include "Engine/Platform/Logger.h"
 #include "Engine/Graphics/Core/Graphics.h"
 #include "Engine/Graphics/Core/GpuResourceUtils.h"
+
+#if ENABLE_EDITOR
+#include <imgui.h>
+#endif
 
 using namespace CCL::Utils;
 
@@ -334,6 +337,7 @@ void ResourceManager::UnloadParticleBuffer(ParticleBufferHandle handle) {
 // Debug
 // ============================================================================
 void ResourceManager::DrawDebugGUI() {
+
     if (ImGui::CollapsingHeader("Resource", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Text("Models:");
         for (auto& pair : m_modelRegistry) {

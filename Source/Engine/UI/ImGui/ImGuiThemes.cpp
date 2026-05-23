@@ -1,5 +1,8 @@
 #include "ImGuiThemes.h"
+#if ENABLE_EDITOR
+
 #include <imgui.h>
+#endif
 
 void ImGuiThemes::ApplyLight()
 {

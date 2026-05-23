@@ -1,8 +1,8 @@
 #include "CCL_JobSystem.h"
 
-
+#if TRACY_ENABLE
 #include "tracy/Tracy.hpp"
-
+#endif
 
 
 namespace CCL::ECS::Core {
@@ -126,9 +126,10 @@ namespace CCL::ECS::Core {
     // =======================================================================
     void JobSystem::WorkerLoop()
     {
+#if TRACY_ENABLE
         // スレッドに名前を付ける
         tracy::SetThreadName("Worker Thread");
-
+#endif
 
 
         while (true) {              // 基本的に死ぬまで働く無限ループ

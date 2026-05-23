@@ -1,8 +1,11 @@
 // EditorWindow.h
 #pragma once
 #include <string>
-#include <imgui.h>
 #include "EditorContext.h"
+
+#if ENABLE_EDITOR
+#include <imgui.h>
+#endif
 
 // エディタウィンドウの基底クラス
 class EditorWindow {
@@ -14,10 +17,15 @@ public:
     void Render(EditorContext& context) {
         if (!_isVisible) return;
 
+#if ENABLE_EDITOR
+
+
         if (ImGui::Begin(_name.c_str(), &_isVisible)) {
             DrawContents(context);
         }
         ImGui::End();
+
+#endif
     }
 
     const std::string& GetName() const { return _name; }
