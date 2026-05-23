@@ -4,8 +4,8 @@
 #include "Engine/Serialization/Meta/ComponentMeta.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
-// ImGui は WITH_EDITOR の場合のみ引く
-#ifdef WITH_EDITOR
+// ImGui は ENABLE_EDITOR の場合のみ引く
+#ifdef ENABLE_EDITOR
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #endif
@@ -34,7 +34,7 @@ template <> struct ComponentMeta<TransformComponent> {
     static constexpr const char* displayName = "Transform";
     static constexpr bool        hasCustomGui = true;
 
-#ifdef WITH_EDITOR
+#ifdef ENABLE_EDITOR
     static bool CustomGui(TransformComponent& comp,
         unsigned long long /*entityID*/ = 0,
         void* /*worldPtr*/ = nullptr)
@@ -105,7 +105,7 @@ template <> struct ComponentMeta<TransformComponent> {
 // ============================================================================
 // 登録
 //   REGISTER_COMPONENT      : ランタイム / エディタ 共通 (ComponentRegistry)
-//   REGISTER_COMPONENT_EDITOR_GUI : WITH_EDITOR のみ有効 (ImGui インスペクタ)
+//   REGISTER_COMPONENT_EDITOR_GUI : ENABLE_EDITOR のみ有効 (ImGui インスペクタ)
 // ============================================================================
 REGISTER_COMPONENT(TransformComponent, "Transform")
 REGISTER_COMPONENT_EDITOR_GUI(TransformComponent)

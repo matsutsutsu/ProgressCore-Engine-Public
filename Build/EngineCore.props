@@ -2,84 +2,56 @@
 <Project ToolsVersion="4.0"
          xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
+	<!-- ========================================== -->
+	<!-- 全構成共通の基本設定 -->
+	<!-- ========================================== -->
 	<ItemDefinitionGroup>
-
-		<!-- ===== C++ Compile ===== -->
+		<!-- ===== C++ Compile (ゲームコアのみ) ===== -->
 		<ClCompile>
+			<PreprocessorDefinitions>
+				_WINDOWS;
+				%(PreprocessorDefinitions)
+			</PreprocessorDefinitions>
+
 			<AdditionalIncludeDirectories>
-
-				<!-- ===== Project Sources ===== -->
 				$(SolutionDir)Source;
-
-				<!-- ===== Editor Only ===== -->
-				$(SolutionDir)Source\Editor;
-
-				<!-- ===== External Libraries ===== -->
-				$(SolutionDir)External\imgui-docking;
-				$(SolutionDir)External\imgui-node-editor;
-				$(SolutionDir)External\ImGuizmo;
 				$(SolutionDir)External\cereal\include;
 				$(SolutionDir)External\tinygltf;
 				$(SolutionDir)External\DirectXTex;
-				$(SolutionDir)External\implot-master;
 				$(SolutionDir)External\nlohmann;
 				$(SolutionDir)External\DirectXTK-main\Inc;
 				$(SolutionDir)External\Lua\src;
 				$(SolutionDir)External\sol2\include;
-				$(SolutionDir)External\Tracy;
-
-
 				$(SolutionDir)External\JoltPhysics\include;
-
 				$(SolutionDir)External\FMOD\core\inc;
 				$(SolutionDir)External\FMOD\studio\inc;
-
-
 				$(SolutionDir)External\RecastNavigation\Recast\Include;
 				$(SolutionDir)External\RecastNavigation\Detour\Include;
 				$(SolutionDir)External\RecastNavigation\DetourTileCache\Include;
 				$(SolutionDir)External\RecastNavigation\DetourCrowd\Include;
 				$(SolutionDir)External\RecastNavigation\DebugUtils\Include;
-
-
-				<!-- Inherited -->
 				%(AdditionalIncludeDirectories)
-
 			</AdditionalIncludeDirectories>
 		</ClCompile>
 
-		<!-- ===== Linker ===== -->
+		<!-- ===== Linker (ゲームコアのみ) ===== -->
 		<Link>
 			<AdditionalLibraryDirectories>
-
 				$(SolutionDir)External\JoltPhysics\lib\$(Configuration);
 				$(SolutionDir)External\DirectXTK-main\Bin\Desktop_2022\x64\$(Configuration);
-
 				$(SolutionDir)External\FMOD\core\lib\x64;
 				$(SolutionDir)External\FMOD\studio\lib\x64;
-
-
 				%(AdditionalLibraryDirectories)
-
 			</AdditionalLibraryDirectories>
-
 			<AdditionalDependencies>
-
 				d3d11.lib;
 				DirectXTK.lib;
-				dxgi.lib;
-				xinput.lib;
-				xaudio2.lib;
-				winmm.lib;
-				Jolt.lib;
-
-				fmod_vc.lib;
+				dxgi.lib;xinput.lib;
+				xaudio2.lib;winmm.lib;
+				Jolt.lib;fmod_vc.lib;
 				fmodstudio_vc.lib;
-
 				%(AdditionalDependencies)
-
 			</AdditionalDependencies>
-			
 		</Link>
 
 		<PostBuildEvent>

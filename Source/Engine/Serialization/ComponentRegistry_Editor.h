@@ -14,14 +14,14 @@
 //       REGISTER_COMPONENT_EDITOR_GUI(MyComp);          // エディタビルドのみ
 //
 //   ビルド構成:
-//     - WITH_EDITOR が定義されているプロジェクト  : 両方有効
+//     - ENABLE_EDITOR が定義されているプロジェクト  : 両方有効
 //     - 定義されていないプロジェクト              : EDITOR_GUI 側は空マクロ
 // =====================================================================
 #pragma once
 
 #include "Engine/Serialization/ComponentRegistry.h"
 
-#ifdef WITH_EDITOR
+#ifdef ENABLE_EDITOR
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 

@@ -436,6 +436,9 @@
     <Filter Include="Source\Game\Logics\Combat\_Meta">
       <UniqueIdentifier>{0a94ac07-4f26-4cc2-a563-eb0d04156a23}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Build\props">
+      <UniqueIdentifier>{70918abd-a317-48e7-9e20-3ef9d838100a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -2293,9 +2296,6 @@
     <None Include="Shader\PostProcess\Bloom.hlsli">
       <Filter>Shader\PostProcess</Filter>
     </None>
-    <None Include="Build\CommonInclude.props">
-      <Filter>Build</Filter>
-    </None>
     <None Include=".clang-formatt">
       <Filter>Build</Filter>
     </None>
@@ -2313,6 +2313,15 @@
     </None>
     <None Include="Shader\Common\ToonLighting.hlsli">
       <Filter>Shader\Common</Filter>
+    </None>
+    <None Include="Build\EditorTooling.props">
+      <Filter>Build\props</Filter>
+    </None>
+    <None Include="Build\EngineCore.props">
+      <Filter>Build\props</Filter>
+    </None>
+    <None Include="Build\ShippingOptimize.props">
+      <Filter>Build\props</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

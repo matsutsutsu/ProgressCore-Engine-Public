@@ -53,19 +53,39 @@ void HierarchyWindow::DrawContents(EditorContext& context)
     _rootEntities.clear();
     _allEntities.clear();
     _flatList.clear();
-    // マップ内のベクターも容量を維持してクリアする
     for (auto& pair : _childrenMap) pair.second.clear();
+    _validEntitiesSet.clear(); // ★ 追加
 
+
+
+    // =========================================================
+    // ★ Pass 1: 現在のWorldに実在するすべてのエンティティを名簿に登録
+    // =========================================================
+    for (auto& chunkPtr : chunks) {
+        if (!chunkPtr) continue;
+        auto* chunk = chunkPtr.get();
+        for (size_t i = 0; i < chunk->GetEntityCount(); ++i) {
+            if (chunk->IsEntityDestroyed(i)) continue; // 削除済みのゴミは無視
+            CCL::ECS::EntityID entity = chunk->GetEntityByIndex(i);
+            if (entity != CCL::ECS::InvalidEntityID) {
+                _validEntitiesSet.insert(entity);
+            }
+        }
+    }
+
+    // =========================================================
+    // ★ Pass 2: 階層の構築（防波堤付き）
+    // =========================================================
     for (auto& chunkPtr : chunks) {
         if (!chunkPtr) continue;
         CCL::ECS::Core::Chunk* chunk = chunkPtr.get();
         const size_t           count = chunk->GetEntityCount();
 
         TransformComponent* transforms = chunk->HasComponent<TransformComponent>()
-            ? chunk->GetComponentArray<TransformComponent>()
-            : nullptr;
+            ? chunk->GetComponentArray<TransformComponent>() : nullptr;
 
         for (size_t i = 0; i < count; ++i) {
+            if (chunk->IsEntityDestroyed(i)) continue; // 削除済みのゴミは無視
             CCL::ECS::EntityID entity = chunk->GetEntityByIndex(i);
             if (entity == CCL::ECS::InvalidEntityID) continue;
 
@@ -73,8 +93,15 @@ void HierarchyWindow::DrawContents(EditorContext& context)
 
             bool hasParent = false;
             if (transforms && transforms[i].parent != 0) {
-                _childrenMap[transforms[i].parent].push_back(entity);
-                hasParent = true;
+                // ★ 究極の防波堤: その親は本当に今の世界に生きているか？
+                if (_validEntitiesSet.count(transforms[i].parent) > 0) {
+                    _childrenMap[transforms[i].parent].push_back(entity);
+                    hasParent = true;
+                }
+                else {
+                    // 親が死んでいる、またはデタラメなID（ロード直後など）の場合は親を強制解除する
+                    transforms[i].parent = 0;
+                }
             }
             if (!hasParent) {
                 _rootEntities.push_back(entity);

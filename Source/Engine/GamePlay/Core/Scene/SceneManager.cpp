@@ -8,7 +8,7 @@
 
 #include "Engine/Serialization/SceneSerializer.h"
 #include "Engine/Serialization/ComponentRegistry.h"
-#include "Engine/Serialization/SerializationContext.h"
+
 
 // タグとシステム
 #include "Engine/GamePlay/Core/PersistentTag.h"
@@ -164,25 +164,22 @@ void SceneManager::LoadScene(World* world, const std::string& filepath)
     // ③ 世界に溜まった RequestDestroy を「今すぐ確定」させる
     world->ScrutinyAndApply();
 
-    // ③ 【超重要】世界に溜まった RequestDestroy を「今すぐ確定」させ、メモリを完全に解放する！
-    world->ScrutinyAndApply();
+
+
 
     // ==========================================================
-    // 3. まっさらな世界にシーンを構築 (Build)
+    // 3. シーン構築
+    //   ★ 旧版にあった「手動 ID リマップ」ブロックを削除。
+    //
+    //   削除した理由:
+    //     - SerializationContext::GetIdMap() はそもそも実装されていなかった仮コード
+    //     - 新版 SceneSerializer::Deserialize は内部で LoadContext を使い、
+    //       EntityLink フィールドを Pass 2 時点で自動解決する
+    //     - 外から remap を呼ぶ必要がなくなった
+    //
     // ==========================================================
-    std::vector<CCL::ECS::EntityID> createdEntities = SceneSerializer::Deserialize(world, filepath);
+    SceneSerializer::Deserialize(world, filepath);
 
-    // ==========================================================
-    // 4. 記憶の翻訳 (ID Remapping)
-    // ==========================================================
-    auto idMap = SerializationContext::GetIdMap(); // (※辞書を取得する仕組みを想定)
-    for (CCL::ECS::EntityID newEntity : createdEntities) {
-        for (const auto& pair : ComponentRegistry::Instance().GetAllMeta()) {
-            if (pair.second.remap) {
-                pair.second.remap(world, newEntity, idMap);
-            }
-        }
-    }
 }
 
 

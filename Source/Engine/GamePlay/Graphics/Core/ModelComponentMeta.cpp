@@ -3,97 +3,105 @@
 #include "Engine/Platform/Dialog.h"
 #include <filesystem>
 
-#include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/ComponentRegistry.h"
+#include "Engine/Serialization/ComponentRegistry_Editor.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
-#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
-// ★追加: 逆引き処理のためにResourceManagerをインクルード
-#include "Engine/Graphics/Resource/ResourceManager.h" 
+#ifdef ENABLE_EDITOR
+#include "Editor/Inspector/ComponentGuiRegistry.h"
+#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
+#endif
+
+#include "Engine/Graphics/Resource/ResourceManager.h"
 
 // ============================================================================
-// ModelComponent 専用の JSON シリアライズ処理
+// ModelComponent 専用 JSON シリアライズ (明示的テンプレート特化)
+//
+//   ★ 修正点: 旧シグネチャ
+//       Serialize<ModelComponent>(json& j, const ModelComponent& comp)
+//     を新シグネチャに合わせる:
+//       Serialize<ModelComponent>(json& j, const ModelComponent& comp, SaveContext* ctx)
+//
+//   ctx は使わないが、プライマリテンプレートのシグネチャと一致しないと
+//   「テンプレートの特化ではありません」エラーになる。
 // ============================================================================
 namespace ComponentMetaJson {
-    // 保存（Save）時の処理
+
     template <>
-    inline void Serialize<ModelComponent>(json& j, const ModelComponent& comp)
+    void Serialize<ModelComponent>(json& j, const ModelComponent& comp, SaveContext* /*ctx*/)
     {
-        // 修正: コンポーネントは文字列を持たないため、Managerからハッシュを元に逆引きして保存する
         std::string path = ResourceManager::Instance().GetAssetPath(comp.assetHash);
         j["assetPath"] = path;
     }
 
-    // 読込（Load）時の処理
     template <>
-    inline void Deserialize<ModelComponent>(const json& j, ModelComponent& comp)
+    void Deserialize<ModelComponent>(const json& j, ModelComponent& comp, LoadContext* /*ctx*/)
     {
+        // ModelComponent は EntityLink を持たないため ctx は不要
         if (j.contains("assetPath") && j["assetPath"].is_string()) {
-            std::string path = j["assetPath"].get<std::string>();
-            // 修正: SetModel は const char* を受け取るように変更されたため、.c_str() を渡す
-            comp.SetModel(path.c_str());
+            comp.SetModel(j["assetPath"].get<std::string>().c_str());
         }
     }
-}
+
+} // namespace ComponentMetaJson
 
 // ============================================================================
-// Component Meta の定義
+// ComponentMeta<ModelComponent>
 // ============================================================================
 template <> struct ComponentMeta<ModelComponent> {
     static constexpr bool        registered = true;
     static constexpr const char* displayName = "Model";
     static constexpr bool        hasCustomGui = true;
+    // ★ Fields() が空で、上の explicit specialization が Serialize/Deserialize を
+    //    直接上書きする。HasCustomSerialize は false のまま。
+    //    (explicit specialization は HasCustomSerialize フラグを見ず、
+    //     直接そのシグネチャを呼ぶため)
 
-    static bool CustomGui(ModelComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr)
+#ifdef ENABLE_EDITOR
+    static bool CustomGui(ModelComponent& comp,
+        unsigned long long /*entityID*/ = 0,
+        void* /*worldPtr*/ = nullptr)
     {
         bool changed = false;
 
-        // 修正: 表示用に現在のパスをManagerから取得
         std::string currentPath = ResourceManager::Instance().GetAssetPath(comp.assetHash);
 
-        // 現在のモデルパスの表示
         ImGui::TextDisabled("Current Model:");
-        if (currentPath.empty()) {
+        if (currentPath.empty())
             ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.5f, 1.0f), "(None / Empty)");
-        }
-        else {
+        else
             ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.6f, 1.0f), "%s", currentPath.c_str());
-        }
 
         ImGui::Separator();
 
-        // 実行中の動的ロードボタン
-        if (ImGui::Button("Load New Model... (Dynamic)", ImVec2(-1, 0))) {
+        if (ImGui::Button("Load New Model...", ImVec2(-1, 0))) {
             char filename[256] = {};
             const char* filter = "Model Files\0*.gltf;*.glb;*.fbx;*.obj\0All Files\0*.*\0";
 
-            if (Dialog::OpenFileName(filename, 256, filter, "Select 3D Model", Graphics::Instance().GetWindowHandle()) == DialogResult::OK) {
-
+            if (Dialog::OpenFileName(filename, 256, filter, "Select 3D Model",
+                Graphics::Instance().GetWindowHandle()) == DialogResult::OK)
+            {
                 namespace fs = std::filesystem;
-                fs::path absPath = filename;
-                fs::path currentPathFs = fs::current_path();
                 std::error_code ec;
-                fs::path relPath = fs::relative(absPath, currentPathFs, ec);
-
-                std::string finalPath = (!ec && !relPath.empty()) ? relPath.generic_string() : filename;
-
-                // モデルを切り替え（.c_str() で渡す）
+                fs::path relPath = fs::relative(fs::path(filename), fs::current_path(), ec);
+                std::string finalPath = (!ec && !relPath.empty())
+                    ? relPath.generic_string() : filename;
                 comp.SetModel(finalPath.c_str());
                 changed = true;
             }
         }
 
-        // モデルのクリアボタン
-        if (!currentPath.empty()) {
-            if (ImGui::Button("Clear Model (Remove)", ImVec2(-1, 0))) {
-                comp.SetModel(""); // 空文字を渡すことで解放される
-                changed = true;
-            }
+        if (!currentPath.empty() && ImGui::Button("Clear Model", ImVec2(-1, 0))) {
+            comp.SetModel("");
+            changed = true;
         }
 
         return changed;
     }
+#else
+    static bool CustomGui(ModelComponent&, unsigned long long, void*) { return false; }
+#endif
 
     static const std::vector<FieldDescriptor>& Fields()
     {
@@ -103,6 +111,7 @@ template <> struct ComponentMeta<ModelComponent> {
 };
 
 // ============================================================================
-// 自動登録
+// 登録
 // ============================================================================
 REGISTER_COMPONENT(ModelComponent, "Model")
+REGISTER_COMPONENT_EDITOR_GUI(ModelComponent)

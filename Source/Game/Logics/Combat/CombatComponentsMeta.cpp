@@ -15,6 +15,9 @@
 #include "Engine/Graphics/Resource/Model.h"
 #include "Engine/Serialization/SerializationContext.h"
 
+#include "Engine/Serialization/SaveContext.h"
+#include "Engine/Serialization/LoadContext.h"
+
 // ===================================================================
 // 1. HitboxComponent (攻撃判定)
 // ===================================================================
@@ -273,8 +276,10 @@ template <> struct ComponentMeta<CombatRosterComponent> {
         return changed;
     }
 
-    // ★ カスタム保存
-    static void serialize(nlohmann::json& j, const void* ptr)
+    // =========================================================
+    // ★ カスタム保存（引数に SaveContext* を追加）
+    // =========================================================
+    static void serialize(nlohmann::json& j, const void* ptr, CCL::Serialization::SaveContext* ctx = nullptr)
     {
         const auto& comp = *static_cast<const CombatRosterComponent*>(ptr);
         j["count"] = comp.count;
@@ -284,23 +289,33 @@ template <> struct ComponentMeta<CombatRosterComponent> {
         {
             nlohmann::json entry;
             entry["tag"] = comp.entries[i].tag;
-            entry["id"] = static_cast<uint64_t>(comp.entries[i].id);
+
+            // ★ Context があればローカルIDに翻訳して保存する
+            if (ctx) {
+                entry["id"] = ctx->GetOrRegister(comp.entries[i].id);
+            }
+            else {
+                entry["id"] = static_cast<uint64_t>(comp.entries[i].id);
+            }
+
             j["entries"].push_back(entry);
         }
     }
 
-    // ★ カスタム読み込み  ← ここが今まで存在しなかった部分
+    // =========================================================
+    // ★ カスタム読み込み（引数に LoadContext* を追加）
+    // =========================================================
     static void deserializeToWorld(
         CCL::ECS::Core::World* world,
         CCL::ECS::EntityID           entity,
-        const nlohmann::json& j)
+        const nlohmann::json& j,
+        CCL::Serialization::LoadContext* ctx = nullptr)
     {
         CombatRosterComponent comp{};
 
         if (j.contains("count"))
         {
             comp.count = j["count"].get<int>();
-            // 安全のため上限を超えないようにクランプ
             if (comp.count > 4) comp.count = 4;
         }
 
@@ -311,30 +326,26 @@ template <> struct ComponentMeta<CombatRosterComponent> {
             {
                 if (idx >= comp.count) break;
 
-                // tag (char[32]) の復元
                 if (entry.contains("tag"))
                 {
                     std::string tag = entry["tag"].get<std::string>();
-                    strncpy_s(
-                        comp.entries[idx].tag,
-                        sizeof(comp.entries[idx].tag),
-                        tag.c_str(),
-                        _TRUNCATE);
+                    strncpy_s(comp.entries[idx].tag, sizeof(comp.entries[idx].tag), tag.c_str(), _TRUNCATE);
                 }
 
-                // id の復元
-                // ※ EntityID のリマップは SceneSerializer の Pass3 が行うので、
-                //   ここでは JSON の生の値をそのまま入れておく
                 if (entry.contains("id"))
                 {
-                    comp.entries[idx].id = static_cast<CCL::ECS::EntityID>(
-                        entry["id"].get<uint64_t>());
+                    uint64_t rawId = entry["id"].get<uint64_t>();
+                    // ★ Context があればローカルIDから実際のEntityIDへ翻訳して復元
+                    if (ctx) {
+                        comp.entries[idx].id = ctx->Resolve(rawId);
+                    }
+                    else {
+                        comp.entries[idx].id = static_cast<CCL::ECS::EntityID>(rawId);
+                    }
                 }
-
                 ++idx;
             }
         }
-
         world->AddComponent<CombatRosterComponent>(entity, std::move(comp));
     }
 
@@ -443,20 +454,27 @@ template <> struct ComponentMeta<HealthComponent> {
         return changed;
     }
 
-    // ★ カスタム保存 (タイマーなどの不要なランタイム状態は保存しない)
-    static void serialize(nlohmann::json& j, const void* ptr) {
+    // =========================================================
+    // ★ カスタム保存（引数に SaveContext* を追加）
+    // =========================================================
+    static void serialize(nlohmann::json& j, const void* ptr, CCL::Serialization::SaveContext* ctx = nullptr) {
         const auto& comp = *static_cast<const HealthComponent*>(ptr);
 
         j["maxHealth"] = comp.maxHealth;
         j["currentHealth"] = comp.currentHealth;
         j["invincibilityDuration"] = comp.invincibilityDuration;
-        j["team"] = static_cast<int>(comp.team); // Enum は int として保存
-
-        // ※ invincibilityTimer は絶対に保存しない（ロード直後に無敵になるバグを防ぐため）
+        j["team"] = static_cast<int>(comp.team);
     }
 
-    // ★ カスタム読み込み
-    static void deserializeToWorld(CCL::ECS::Core::World* world, CCL::ECS::EntityID entity, const nlohmann::json& j) {
+    // =========================================================
+    // ★ カスタム読み込み（引数に LoadContext* を追加）
+    // =========================================================
+    static void deserializeToWorld(
+        CCL::ECS::Core::World* world,
+        CCL::ECS::EntityID entity,
+        const nlohmann::json& j,
+        CCL::Serialization::LoadContext* ctx = nullptr)
+    {
         HealthComponent comp{};
 
         if (j.contains("maxHealth"))             comp.maxHealth = j["maxHealth"].get<float>();

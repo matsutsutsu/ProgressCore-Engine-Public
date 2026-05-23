@@ -33,7 +33,7 @@ struct EditorContext {
     std::string pendingSaveScenePath;
 
     // 再生状態とバックアップ用パス
-    EditorPlayState playState = EditorPlayState::Stopped;
+    EditorPlayState playState = EditorPlayState::Playing;
     std::string tempBackupScenePath = "Assets/Scene/_TempPlayBackup.json";
 
     // アニメーションエディタとの連携用

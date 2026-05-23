@@ -53,8 +53,5 @@
 #include "Game/Logics/Combat/HealthComponent.h"
 #include "Engine/GamePlay/Utils/TimerComponent.h"
 
-
-#include "Engine/Scripting/LuaScriptComponent.h"
-
 #include "Engine/GamePlay/Transform/PendingParentComponent.h"
 

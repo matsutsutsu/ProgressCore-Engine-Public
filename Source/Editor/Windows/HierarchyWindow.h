@@ -25,6 +25,9 @@ private:
     std::vector<CCL::ECS::EntityID> _allEntities;
     std::vector<FlatNode>           _flatList;
     std::unordered_map<CCL::ECS::EntityID, std::vector<CCL::ECS::EntityID>> _childrenMap;
+    
+    // エンティティの実在確認用セット（毎フレームのメモリ確保を防ぐ）
+    std::unordered_set<CCL::ECS::EntityID> _validEntitiesSet;
 
     void FlattenTree(
         CCL::ECS::EntityID entityID,
