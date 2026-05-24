@@ -226,9 +226,6 @@
     <Filter Include="Source\Game\Logics\Character\Player">
       <UniqueIdentifier>{ed9c166e-35f2-4b23-87b8-78bb1571fccb}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Game\Script">
-      <UniqueIdentifier>{03df5b05-b96f-45fb-b20c-0c2d76a6f604}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\Core\Common">
       <UniqueIdentifier>{80b3325d-d1a4-4ca0-b68a-831de17b9637}</UniqueIdentifier>
     </Filter>
@@ -438,6 +435,9 @@
     </Filter>
     <Filter Include="Build\props">
       <UniqueIdentifier>{70918abd-a317-48e7-9e20-3ef9d838100a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Serialization\Reflection">
+      <UniqueIdentifier>{71d559ab-f949-4a0d-bea5-9be420f939de}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -1484,6 +1484,12 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\ComponentRegistry_Editor.h">
       <Filter>Source\Engine\Serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Serialization\ComponentDefine.h">
+      <Filter>Source\Engine\Serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Serialization\Reflection\Reflection.h">
+      <Filter>Source\Engine\Serialization\Reflection</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

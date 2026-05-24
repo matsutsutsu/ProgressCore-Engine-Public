@@ -464,6 +464,7 @@
     <ClInclude Include="Source\Engine\Platform\Input\Keyboard.h" />
     <ClInclude Include="Source\Engine\Platform\Input\Mouse.h" />
     <ClInclude Include="Source\Engine\Platform\Logger.h" />
+    <ClInclude Include="Source\Engine\Serialization\ComponentDefine.h" />
     <ClInclude Include="Source\Engine\Serialization\ComponentRegistry.h" />
     <ClInclude Include="Source\Engine\Serialization\ComponentRegistry_Editor.h" />
     <ClInclude Include="Source\Engine\Serialization\EntityLink.h" />
@@ -475,6 +476,7 @@
     <ClInclude Include="Source\Engine\Serialization\Meta\ComponentMetaImGui.h" />
     <ClInclude Include="Source\Engine\Serialization\Meta\ComponentMetaJson.h" />
     <ClInclude Include="Source\Engine\Serialization\PrefabSerializer.h" />
+    <ClInclude Include="Source\Engine\Serialization\Reflection\Reflection.h" />
     <ClInclude Include="Source\Engine\Serialization\SaveContext.h" />
     <ClInclude Include="Source\Engine\Serialization\SceneFormat.h" />
     <ClInclude Include="Source\Engine\Serialization\SceneSerializer.h" />
