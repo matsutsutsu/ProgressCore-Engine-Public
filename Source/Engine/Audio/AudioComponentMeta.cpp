@@ -5,7 +5,7 @@
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 #include "Engine/Core/Math/StringHash.h" // ※プロジェクトのHashString関数
-#include <imgui.h>
+
 
 // =======================================================================
 // メタデータ定義 (インスペクタ/シリアライズ用)
@@ -31,6 +31,7 @@ template <> struct ComponentMeta<AudioEmitterComponent> {
     // =======================================================================
     // インスペクタ用 カスタムGUI描画処理
     // =======================================================================
+#if ENABLE_EDITOR
     static bool CustomGui(AudioEmitterComponent& comp, unsigned long long entityID, void* world) {
         bool changed = false;
 
@@ -74,6 +75,7 @@ template <> struct ComponentMeta<AudioEmitterComponent> {
 
         return changed;
     }
+#endif
 };
 
 // マクロによるメタデータの自動登録

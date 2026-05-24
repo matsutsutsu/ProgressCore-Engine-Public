@@ -1,13 +1,11 @@
 #include <memory>
 #include <sstream>
-#include <imgui.h>
 #include <algorithm> // min/max用
 #include <string> // std::string, std::to_string用
 #include <windowsx.h>
 
 #include "Framework.h"
 #include "Engine/Graphics/Core/Graphics.h"
-#include "Engine/Graphics/Renderer/ImGuiRenderer.h"
 #include "Engine/Platform/Input/Input.h"
 #include "Engine/GamePlay/Core/Scene/SceneManager.h"
 
@@ -21,8 +19,14 @@
 
 #include "EngineServices.h"
 
-#include "tracy/Tracy.hpp"
+#if ENABLE_EDITOR
+#include <imgui.h>
+#include "Engine/Graphics/Renderer/ImGuiRenderer.h"
+#endif
 
+#if TRACY_ENABLE
+#include "tracy/Tracy.hpp"
+#endif
 
 void InitializeDebugLayer(ID3D11Device *device)
 {
@@ -44,14 +48,17 @@ static const int syncInterval = 1;
 Framework::Framework(HWND hWnd)
 	: hWnd(hWnd)
 {
+#if TRACY_ENABLE
 	ZoneScopedN("Framework::Constructor");
-
+#endif
 
 
 	// グラフィックス初期化
 	Graphics::Instance().Initialize(hWnd);
+#if ENABLE_EDITOR
 	// IMGUI初期化
 	ImGuiRenderer::Initialize(hWnd, Graphics::Instance().GetDevice(), Graphics::Instance().GetDeviceContext());
+#endif
 	// ダイアログのファイル履歴をロード
 	Dialog::LoadHistory();
 	// Input 初期化
@@ -88,8 +95,9 @@ Framework::Framework(HWND hWnd)
 // デストラクタ
 Framework::~Framework()
 {
-
+#if TRACY_ENABLE
 	ZoneScopedN("Framework::Destrucor");
+#endif
 
 #ifdef ENABLE_EDITOR
 	// エディタの解放を明示的に行う（スマートポインタなので自動解放されるが順序の担保として）
@@ -98,8 +106,10 @@ Framework::~Framework()
 
 	// シーン終了化
 	SceneManager::Instance().Clear();
+#if ENABLE_EDITOR
 	// IMGUI終了化
 	ImGuiRenderer::Finalize();
+#endif
 	// ダイアログのファイル履歴を保存
 	Dialog::SaveHistory();
 	// 2. その後に、静的（static）なキャッシュを片付ける
@@ -115,10 +125,10 @@ Framework::~Framework()
 void Framework::FixedUpdate(float fixedTime)
 {
 	// ここでは「物理・ロジック系」の更新のみを行う
-	
+#if TRACY_ENABLE
     // 固定フレームごとの更新時間を計測
     ZoneScopedN("Framework::FixedUpdate");
-
+#endif
 
 	bool shouldUpdateLogic = true;
 
@@ -146,20 +156,26 @@ void Framework::FixedUpdate(float fixedTime)
 // ---------------------------------------------------------
 void Framework::Update(float elapsedTime)
 {
+#if TRACY_ENABLE
     // 毎フレームのロジック更新時間を計測
     ZoneScopedN("Framework::Update");
+#endif
 
-
+#if ENABLE_EDITOR
 	{
+#if TRACY_ENABLE
 		ZoneScopedN("Framework::ImGuiRenderer::NewFrame");
+#endif
 
 		// IMGUIフレーム開始処理	
 		ImGuiRenderer::NewFrame();
 	}
+#endif
 
 	{
-
+#if TRACY_ENABLE
 		ZoneScopedN("Framework::Input::Update");
+#endif
 
 		// インプット更新処理
 		Input::Instance().Update();
@@ -167,8 +183,9 @@ void Framework::Update(float elapsedTime)
 	}
 
 	{
-
+#if TRACY_ENABLE
 		ZoneScopedN("Framework::SceneManager::Update");
+#endif
 
 		// シーン更新処理
 		SceneManager::Instance().Update(elapsedTime);
@@ -176,7 +193,9 @@ void Framework::Update(float elapsedTime)
 
 #ifdef ENABLE_EDITOR
 	{
+#if TRACY_ENABLE
 		ZoneScopedN("Framework::EditorUpdate");
+#endif
 
 		// ★ 重要: 現在アクティブなシーンの情報をエディタに供給する（オブザーバー的アプローチ）
 		// ※ SceneManager に GetCurrentScene() などのアクセス関数を追加する必要があります
@@ -202,26 +221,43 @@ void Framework::Update(float elapsedTime)
 // 描画処理
 void Framework::Render(float elapsedTime)
 {
+#if TRACY_ENABLE
     // 描画コマンド発行全体を計測
     ZoneScopedN("Framework::Render");
+#endif
 
 	ID3D11DeviceContext* dc = Graphics::Instance().GetDeviceContext();
 
+	// =========================================================
+	// ★ 構成による描画先の切り替え
+	// =========================================================
+#ifdef ENABLE_EDITOR
+	// 【エディタあり (Development)】: ゲームは裏画面(gameRTV)に描画する
+	bool useGameRTV = true;
+#else
+	// 【エディタなし (Shipping)】: ゲームは直接実際の画面(バックバッファ)に描画する
+	bool useGameRTV = false;
+#endif
+
 	// 画面クリア
-	Graphics::Instance().Clear(0.5f, 0.5f, 0.5f, 1,true);
+	Graphics::Instance().Clear(0.5f, 0.5f, 0.5f, 1, useGameRTV);
 	// レンダーターゲット設定
-	Graphics::Instance().SetRenderTargets(true);
+	Graphics::Instance().SetRenderTargets(useGameRTV);
 
 
 	// シーンマネージャーを介して現在のシーンを描画
     {
+#if TRACY_ENABLE
             // シーンの描画（不透明、半透明、パーティクルなど）を細分化して計測
             ZoneScopedN("SceneManager::Render");
+#endif
 
             SceneManager::Instance().Render();
     }
 
 
+
+#if ENABLE_EDITOR
 	// =========================================================
 	// 2. エディタ(UI)の描画（実際の画面＝バックバッファへ）
 	// =========================================================
@@ -231,18 +267,23 @@ void Framework::Render(float elapsedTime)
 
 	// ImGuiの描画を計測
 	{
-
+	#if TRACY_ENABLE
 		ZoneScopedN("FrameWork::ImGui");
+	#endif
 
 		{
+		#if TRACY_ENABLE
 			ZoneScopedN("FrameWork::SceneManager::DrawGUI");
+		#endif
 			SceneManager::Instance().DrawGUI();
 
 		}
 
-#ifdef ENABLE_EDITOR
 		{
+		#if TRACY_ENABLE
 			ZoneScopedN("FrameWork::EditorUI::Render");
+		#endif
+
 			// ゲームUIの後に、覆いかぶさるようにエディタUIを描画する
 			if (m_editorWindowManager) {
 				// ★ ここで完成したゲーム画面のテクスチャをUIに渡す！
@@ -254,19 +295,24 @@ void Framework::Render(float elapsedTime)
 				}
 			}
 		}
-#endif
 
 		{
+		#if TRACY_ENABLE
 			ZoneScopedN("FrameWork::ImGuiRenderer::Render");
+		#endif
 			// IMGUI描画
 			ImGuiRenderer::Render(dc);
 		}
 
 	}
 
+#endif
+
 	{
+#if TRACY_ENABLE
             // ★超重要: GPUの描画待ち（VSync同期）の時間を計測
             ZoneScopedN("Graphics::Present (VSync Wait)");
+#endif
 
             // 画面表示
             Graphics::Instance().Present(syncInterval);
@@ -356,10 +402,12 @@ int Framework::Run()
 			m_debugTimer += frameTime;
 			if (m_debugTimer >= 1.0f)
 			{
+#if ENABLE_EDITOR
 				// ウィンドウタイトルにFPSとFixedUpdate回数を表示
 				std::string title = "FPS: " + std::to_string(ImGui::GetIO().Framerate) +
 					" | Fixed Updates: " + std::to_string(m_fixedUpdateCounter);
 				SetWindowTextA(hWnd, title.c_str());
+#endif
 
 				// カウンタをリセット
 				m_fixedUpdateCounter = 0;
@@ -403,8 +451,10 @@ int Framework::Run()
 			Update(frameTime);
 			Render(frameTime);
 
+#if TRACY_ENABLE
 			// ここで1フレーム終了をTracyに通知
             FrameMark;
+#endif
 
 		}
 	}
@@ -414,8 +464,10 @@ int Framework::Run()
 // メッセージハンドラ
 LRESULT CALLBACK Framework::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+#if ENABLE_EDITOR
 	if (ImGuiRenderer::HandleMessage(hWnd, msg, wParam, lParam))
 		return true;
+#endif
 
 	switch (msg)
 	{

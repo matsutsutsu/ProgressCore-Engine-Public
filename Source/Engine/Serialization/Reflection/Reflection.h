@@ -59,7 +59,7 @@
 
 // ---------------------------------------------------------------------
 // Enum フィールド
-//
+//r
 //   static const char* kMyEnumNames[] = { "Idle", "Run", "Attack" };
 //
 //   CCL_FIELD_ENUM_U8("State", kMyEnumNames, 3, "AI")

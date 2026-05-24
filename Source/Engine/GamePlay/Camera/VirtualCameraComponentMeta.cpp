@@ -1,11 +1,13 @@
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
-#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 #include "Engine/GamePlay/Camera/VirtualCameraComponents.h"
-
 #include <algorithm> // std::max用
+
+#if ENABLE_EDITOR
+#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
+#endif
 
 // ============================================================================
 // Virtual Camera Base
@@ -35,6 +37,7 @@ template <> struct ComponentMeta<CameraBodyFollow> {
     static constexpr const char* displayName = "Camera Body (Follow)";
     static constexpr bool        hasCustomGui = true; // カスタムGUIを有効化
 
+#if ENABLE_EDITOR
     static bool CustomGui(CameraBodyFollow& comp, unsigned long long /*entityID*/ = 0, void* /*world*/ = nullptr)
     {
         bool changed = false;
@@ -69,6 +72,7 @@ template <> struct ComponentMeta<CameraBodyFollow> {
 
         return changed;
     }
+#endif
 
     static const std::vector<FieldDescriptor>& Fields()
     {
@@ -89,6 +93,7 @@ template <> struct ComponentMeta<CameraAimLookAt> {
     static constexpr const char* displayName = "Camera Aim (LookAt)";
     static constexpr bool        hasCustomGui = true; // カスタムGUIを有効化
 
+#if ENABLE_EDITOR
     static bool CustomGui(CameraAimLookAt& comp, unsigned long long /*entityID*/ = 0, void* /*world*/ = nullptr)
     {
         bool changed = false;
@@ -119,6 +124,7 @@ template <> struct ComponentMeta<CameraAimLookAt> {
 
         return changed;
     }
+#endif
 
     static const std::vector<FieldDescriptor>& Fields()
     {
@@ -170,6 +176,7 @@ template <> struct ComponentMeta<CameraBodyTPS> {
         return fields;
     }
 
+#if ENABLE_EDITOR
     // ドラッグ＆ドロップの実装
     static bool CustomGui(CameraBodyTPS& comp, unsigned long long entityID = 0, void* world = nullptr)
     {
@@ -196,6 +203,8 @@ template <> struct ComponentMeta<CameraBodyTPS> {
 
         return changed;
     }
+#endif
+
 };
 
 

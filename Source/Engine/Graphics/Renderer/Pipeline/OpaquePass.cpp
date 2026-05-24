@@ -13,8 +13,9 @@ void OpaquePass::Initialize(ID3D11Device* device) {
 }
 
 void OpaquePass::Execute(const RenderContext& rc) {
-
+#if TRACY_ENABLE
     ZoneScopedN("Pass: Opaque");
+#endif
 
     ID3D11DeviceContext* dc = rc.deviceContext;
 

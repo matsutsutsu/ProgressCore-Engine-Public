@@ -5,7 +5,6 @@
 #include "Engine/Graphics/Core/Graphics.h"
 #include "Engine/Platform/Input/Input.h"
 #include <SimpleMath.h>
-#include <imgui.h>
 
 // システムの実行順序の定義ヘッダー
 #include "ECS/System/CCL_SystemRegistry.h"

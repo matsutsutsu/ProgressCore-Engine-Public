@@ -6,13 +6,15 @@
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
-#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
 #include "Engine/Graphics/Core/GpuResourceUtils.h"
 #include "Engine/Graphics/Core/Graphics.h"
 #include "Engine/Platform/Dialog.h"
 
+#if ENABLE_EDITOR
+#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
+#endif
 
 // ======================================================
 // ★診断コード: 問題解決後に削除する
@@ -35,6 +37,7 @@ template <> struct ComponentMeta<ToneMapConfigComponent> {
     static constexpr const char* displayName = "Tone Mapping";
     static constexpr bool        hasCustomGui = true;
 
+#if ENABLE_EDITOR
     static bool CustomGui(ToneMapConfigComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr)
     {
         bool changed = false;
@@ -42,6 +45,7 @@ template <> struct ComponentMeta<ToneMapConfigComponent> {
         changed |= ImGui::DragFloat(u8"Exposure (露出)", &comp.exposure, 0.05f, 0.0f, 20.0f);
         return changed;
     }
+#endif
 
     static const std::vector<FieldDescriptor>& Fields()
     {
@@ -59,6 +63,7 @@ template <> struct ComponentMeta<BloomConfigComponent> {
     static constexpr const char* displayName = "Bloom Effect";
     static constexpr bool        hasCustomGui = true;
 
+#if ENABLE_EDITOR
     static bool CustomGui(BloomConfigComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr)
     {
         bool changed = false;
@@ -76,6 +81,7 @@ template <> struct ComponentMeta<BloomConfigComponent> {
         }
         return changed;
     }
+#endif
 
     static const std::vector<FieldDescriptor>& Fields()
     {
@@ -97,6 +103,7 @@ template <> struct ComponentMeta<FogComponent> {
     static constexpr const char* displayName = "Fog Settings";
     static constexpr bool        hasCustomGui = true;
 
+#if ENABLE_EDITOR
     static bool CustomGui(FogComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr)
     {
         bool changed = false;
@@ -153,6 +160,7 @@ template <> struct ComponentMeta<FogComponent> {
 
         return changed;
     }
+#endif
 
     static const std::vector<FieldDescriptor>& Fields()
     {
@@ -185,6 +193,7 @@ template <> struct ComponentMeta<ShadowMapConfigComponent> {
 
     static constexpr bool        hasCustomGui = true;
 
+#if ENABLE_EDITOR
     static bool CustomGui(ShadowMapConfigComponent& c, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr)
     {
         bool changed = false;
@@ -197,6 +206,7 @@ template <> struct ComponentMeta<ShadowMapConfigComponent> {
         changed |= ImGui::ColorEdit4(u8"Shadow Color", &c.shadowColor.x);
         return changed;
     }
+#endif
 
     static const std::vector<FieldDescriptor>& Fields()
     {

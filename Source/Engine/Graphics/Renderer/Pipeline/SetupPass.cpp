@@ -3,9 +3,9 @@
 #include "Engine/Graphics/Core/Graphics.h"
 
 void SetupPass::Execute(const RenderContext& rc){
-
+#if TRACY_ENABLE
     ZoneScopedN("Pass: Setup");
-
+#endif
 
     if (!rc.postProcess) return;
 

@@ -5,8 +5,6 @@
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
-#include <imgui.h>
-
 // ===================================================================================
 // 【 キャラクター入力モニター : CharacterMovementInputComponentMeta 】
 //
@@ -27,6 +25,7 @@ template <> struct ComponentMeta<CharacterMovementInputComponent> {
     // リアルタイムに入力値をデバッグ表示するためにCustomGuiを有効化
     static constexpr bool        hasCustomGui = true;
 
+#if ENABLE_EDITOR
     static bool CustomGui(CharacterMovementInputComponent& comp, unsigned long long entityID = 0, void* worldPtr = nullptr) {
         bool changed = false;
 
@@ -48,6 +47,7 @@ template <> struct ComponentMeta<CharacterMovementInputComponent> {
 
         return changed; // ReadOnlyなので常にfalseを返す
     }
+#endif
 
     static const std::vector<FieldDescriptor>& Fields() {
         static const std::vector<FieldDescriptor> fields = {

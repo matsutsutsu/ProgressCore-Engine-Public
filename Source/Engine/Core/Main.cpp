@@ -44,7 +44,7 @@ LRESULT CALLBACK fnWndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 INT WINAPI wWinMain(HINSTANCE instance, HINSTANCE prev_instance, LPWSTR cmd_line, INT cmd_show)
 {
-#if defined(DEBUG) | defined(_DEBUG)
+#if defined(DEBUG) || defined(_DEBUG)
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 	//_CrtSetBreakAlloc(237);
 #endif
@@ -86,21 +86,28 @@ INT WINAPI wWinMain(HINSTANCE instance, HINSTANCE prev_instance, LPWSTR cmd_line
 	}
 	else
 	{
-		RECT rc = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
-		AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
-		hWnd = CreateWindow(
+		// ---------------------------------------------------------
+		// ボーダーレスウィンドウの実装
+		// ---------------------------------------------------------
+		// 1. 画面サイズをシステムから取得
+		int screenW = GetSystemMetrics(SM_CXSCREEN);
+		int screenH = GetSystemMetrics(SM_CYSCREEN);
+
+		// 2. ボーダーレス用のスタイル (タイトルバーなし、枠なし)
+		DWORD style = WS_POPUP | WS_VISIBLE;
+
+		// 3. ウィンドウ作成 (枠がないため AdjustedWindowRect は不要)
+		hWnd = CreateWindowEx(
+			0,
 			_T("Game"),
-			_T("Game"),        // ここに表示したい文字を入れる
-			WS_OVERLAPPEDWINDOW | WS_VISIBLE, // 標準的なウィンドウ形式に固定
-			CW_USEDEFAULT,
-			CW_USEDEFAULT,
-			rc.right - rc.left,
-			rc.bottom - rc.top,
-			NULL,
-			NULL,
-			instance,
-			NULL
+			_T("RuneForge"),
+			style,
+			0, 0,           // X, Y座標
+			screenW,        // 幅
+			screenH,        // 高さ
+			NULL, NULL, instance, NULL
 		);
+
 	}
 
 	Framework f(hWnd);

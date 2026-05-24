@@ -8,9 +8,9 @@
 #include "Engine/Graphics/Core/Light.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 
-
+#if TRACY_ENABLE
 #include "tracy/Tracy.hpp"
-
+#endif
 
 using namespace DirectX;
 
@@ -148,8 +148,9 @@ PrimitiveDrawList& PrimitiveRenderer::GetDrawList() {
 // ====================================================================
 void PrimitiveRenderer::Render(const RenderContext& rc, const DirectX::XMFLOAT4X4& view, const DirectX::XMFLOAT4X4& projection)
 {
+#if TRACY_ENABLE
     ZoneScopedN("PrimitiveRenderer::Render"); // シーン描画全体
-
+#endif
 
 	ID3D11DeviceContext* dc = rc.deviceContext;
 

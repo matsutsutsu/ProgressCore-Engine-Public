@@ -1,7 +1,10 @@
 #include "Light.h"
 #include "GpuResourceUtils.h"
-#include <imgui.h>
 #include <string>
+
+#if ENABLE_EDITOR
+#include <imgui.h>
+#endif
 
 // 初期化：定数バッファの作成
 void LightManager::Initialize(ID3D11Device* device)
@@ -68,6 +71,7 @@ void LightManager::Bind(ID3D11DeviceContext* dc, int slot)
 // GUI描画
 void LightManager::DrawGUI()
 {
+#if ENABLE_EDITOR
     if (ImGui::CollapsingHeader(u8"Light Manager (ライト管理)"))
     {
         // --- Ambient Light (環境光/半球ライティング) ---
@@ -198,4 +202,5 @@ void LightManager::DrawGUI()
             ImGui::TreePop();
         }
     }
+#endif
 }

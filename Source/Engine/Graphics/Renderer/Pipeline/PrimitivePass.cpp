@@ -5,8 +5,9 @@
 
 void PrimitivePass::Execute(const RenderContext& rc){
 
+#if TRACY_ENABLE
     ZoneScopedN("Pass: Primitive");
-
+#endif
 
     if (!rc.camera) return;
 

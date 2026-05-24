@@ -8,10 +8,11 @@
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
-#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
-// ❌ 削除: #include "Engine/Serialization/ComponentSerializers.h"
+#if ENABLE_EDITOR
+#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
+#endif
 
 using json = nlohmann::json;
 
@@ -133,6 +134,7 @@ template <> struct ComponentMeta<GPUParticleComponent> {
     static constexpr const char* displayName = "GPU Particle";
     static constexpr bool        hasCustomGui = true;
 
+#if ENABLE_EDITOR
     static bool CustomGui(GPUParticleComponent& compRef, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr)
     {
         bool changed = false;
@@ -406,6 +408,7 @@ template <> struct ComponentMeta<GPUParticleComponent> {
 
         return changed;
     }
+#endif
 
     static const std::vector<FieldDescriptor>& Fields()
     {

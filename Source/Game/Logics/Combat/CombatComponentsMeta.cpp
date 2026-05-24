@@ -5,7 +5,6 @@
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
-#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
 #include "Game/Logics/Combat/HealthComponent.h" // ※環境に合わせて適宜パスを調整してください
@@ -14,6 +13,10 @@
 #include "Engine/GamePlay/Graphics/Core/ModelComponent.h"
 #include "Engine/Graphics/Resource/Model.h"
 #include "Engine/Serialization/SerializationContext.h"
+
+#if ENABLE_EDITOR
+#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
+#endif
 
 #include "Engine/Serialization/SaveContext.h"
 #include "Engine/Serialization/LoadContext.h"
@@ -65,6 +68,7 @@ template <> struct ComponentMeta<BoneAttachmentComponent> {
     static constexpr bool hasCustomGui = true;
     static constexpr bool isSerializable = true;
 
+#if ENABLE_EDITOR
     static bool CustomGui(BoneAttachmentComponent& comp, unsigned long long entityID, void* worldPtr) {
         bool changed = false;
         auto* world = static_cast<CCL::ECS::Core::World*>(worldPtr);
@@ -134,6 +138,7 @@ template <> struct ComponentMeta<BoneAttachmentComponent> {
 
         return changed;
     }
+#endif
 
     static const std::vector<FieldDescriptor>& Fields() {
         // ★ 究極の修正1: JSONシリアライザに保存する変数を教える
@@ -163,7 +168,7 @@ template <> struct ComponentMeta<CombatRosterComponent> {
     static constexpr bool isSerializable = true;
     static constexpr bool        hasCustomSerialize = true;
 
-
+#if ENABLE_EDITOR
     static bool CustomGui(CombatRosterComponent& comp, unsigned long long entityID, void* worldPtr) {
         bool changed = false;
         auto* world = static_cast<CCL::ECS::Core::World*>(worldPtr);
@@ -275,6 +280,7 @@ template <> struct ComponentMeta<CombatRosterComponent> {
 
         return changed;
     }
+#endif
 
     // =========================================================
     // ★ カスタム保存（引数に SaveContext* を追加）
@@ -392,6 +398,7 @@ template <> struct ComponentMeta<HealthComponent> {
     static constexpr bool isSerializable = true;
     static constexpr bool hasCustomSerialize = true;
 
+#if ENABLE_EDITOR
     static bool CustomGui(HealthComponent& comp, unsigned long long entityID, void* worldPtr) {
         bool changed = false;
 
@@ -453,6 +460,7 @@ template <> struct ComponentMeta<HealthComponent> {
 
         return changed;
     }
+#endif
 
     // =========================================================
     // ★ カスタム保存（引数に SaveContext* を追加）

@@ -6,7 +6,6 @@
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
-#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
 #include "Engine/GamePlay/Animation/Data/AnimGraphSerializer.h"
@@ -14,6 +13,9 @@
 #include "Engine/Graphics/Core/Graphics.h"
 #include "Engine/Platform/Dialog.h"
 #include <filesystem>
+#if ENABLE_EDITOR
+#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
+#endif
 
 // ===================================================================
 // 1. AnimatorComponent (肉体・再生状態) のインスペクタUI
@@ -23,6 +25,7 @@ template <> struct ComponentMeta<AnimatorComponent> {
     static constexpr const char* displayName = "Animator";
     static constexpr bool        hasCustomGui = true;
 
+#if ENABLE_EDITOR
     static bool CustomGui(AnimatorComponent& anim, unsigned long long entityID, void* worldPtr)
     {
         bool changed = false;
@@ -66,6 +69,7 @@ template <> struct ComponentMeta<AnimatorComponent> {
 
         return changed;
     }
+#endif
 
     static const std::vector<FieldDescriptor>& Fields()
     {
@@ -88,6 +92,7 @@ template <> struct ComponentMeta<AnimStateMachineComponent> {
     static constexpr bool        hasCustomGui = true;
     static constexpr bool        isSerializable = true;
 
+#if ENABLE_EDITOR
     static bool CustomGui(AnimStateMachineComponent& fsm, unsigned long long entityID, void* worldPtr)
     {
         bool changed = false;
@@ -165,6 +170,7 @@ template <> struct ComponentMeta<AnimStateMachineComponent> {
 
         return changed;
     }
+#endif
 
     static const std::vector<FieldDescriptor>& Fields() {
         static const std::vector<FieldDescriptor> fields = {
@@ -185,6 +191,7 @@ template <> struct ComponentMeta<AnimParametersComponent> {
     static constexpr bool        hasCustomGui = true;
     static constexpr bool        isSerializable = false; // 毎フレーム上書きされるため保存しない
 
+#if ENABLE_EDITOR
     static bool CustomGui(AnimParametersComponent& params, unsigned long long entityID, void* worldPtr)
     {
         bool changed = false;
@@ -222,6 +229,7 @@ template <> struct ComponentMeta<AnimParametersComponent> {
 
         return changed;
     }
+#endif
 
     static const std::vector<FieldDescriptor>& Fields() {
         static const std::vector<FieldDescriptor> fields = {};

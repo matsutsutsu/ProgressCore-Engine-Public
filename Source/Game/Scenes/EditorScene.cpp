@@ -1,7 +1,6 @@
 #include "EditorScene.h"
 #include "Engine/Serialization/Factory/SceneInitializer.h"
 #include "Engine/Graphics/Core/Graphics.h"
-#include <imgui.h>
 
 #include "Engine/Serialization/Factory/Prefab.h"
 
@@ -9,9 +8,6 @@
 
 #include "ECS/System/CCL_SystemRegistry.h"
 
-#include "Editor/Utils/NavMeshBuilder.h"
-
-#include <ImGuizmo.h>
 #include "Editor/Core/EditorCommandHistory.h"
 #include "Engine/GamePlay/Transform/TransformComponent.h"
 

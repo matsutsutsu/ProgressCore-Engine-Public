@@ -2,10 +2,11 @@
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
-#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
-
+#if ENABLE_EDITOR
+#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
+#endif
 
 template <> struct ComponentMeta<NavAgentComponent> {
     static constexpr bool        registered = true;
@@ -14,6 +15,7 @@ template <> struct ComponentMeta<NavAgentComponent> {
     // カスタムGUIを有効にして、デバッグ情報やボタンを描画する
     static constexpr bool        hasCustomGui = true;
 
+#if ENABLE_EDITOR
     // ========================================================================
     // インスペクター（ImGui）上の描画ロジック
     // ========================================================================
@@ -59,6 +61,7 @@ template <> struct ComponentMeta<NavAgentComponent> {
 
         return changed;
     }
+#endif
 
     // ========================================================================
     // JSONセーブデータに保存する項目 (シリアライズ対象)

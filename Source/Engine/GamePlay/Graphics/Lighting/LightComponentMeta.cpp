@@ -1,9 +1,12 @@
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
-#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 #include "Engine/GamePlay/Graphics/Lighting/LightComponent.h"
+
+#if ENABLE_EDITOR
+#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
+#endif
 
 // ============================================================================
 // Directional Light
@@ -14,6 +17,7 @@ template <> struct ComponentMeta<DirectionalLightComponent> {
 
     static constexpr bool hasCustomGui = true;
 
+#if ENABLE_EDITOR
     static bool CustomGui(DirectionalLightComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr)
     {
         bool changed = false;
@@ -24,6 +28,7 @@ template <> struct ComponentMeta<DirectionalLightComponent> {
         changed |= ImGui::ColorEdit4("Ground Color", &comp.groundColor.x);
         return changed;
     }
+#endif
 
     static const std::vector<FieldDescriptor>& Fields()
     {
@@ -45,6 +50,7 @@ template <> struct ComponentMeta<PointLightComponent> {
 
     static constexpr bool hasCustomGui = true;
 
+#if ENABLE_EDITOR
     static bool CustomGui(PointLightComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr)
     {
         bool changed = false;
@@ -58,6 +64,7 @@ template <> struct ComponentMeta<PointLightComponent> {
         changed |= ImGui::DragFloat("Quadratic", &comp.quadratic, 0.001f, 0.0f, 1.0f);
         return changed;
     }
+#endif
 
     static const std::vector<FieldDescriptor>& Fields()
     {
@@ -81,6 +88,7 @@ template <> struct ComponentMeta<SpotLightComponent> {
 
     static constexpr bool hasCustomGui = true;
 
+#if ENABLE_EDITOR
     static bool CustomGui(SpotLightComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr)
     {
         bool changed = false;
@@ -103,6 +111,7 @@ template <> struct ComponentMeta<SpotLightComponent> {
 
         return changed;
     }
+#endif
 
     static const std::vector<FieldDescriptor>& Fields()
     {

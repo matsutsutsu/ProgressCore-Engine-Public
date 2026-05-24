@@ -4,7 +4,7 @@
 #include "Engine/Serialization/Meta/ComponentMeta.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
-#include <imgui.h>
+
 
 #include "Game/Logics/Character/Player/PlayerComponent.h"
 
@@ -39,6 +39,7 @@ template <> struct ComponentMeta<PlayerCarComponent> {
         return fields;
     }
 
+#if ENABLE_EDITOR
     // 2. カスタムGUIによる「ドラッグ＆ドロップ」の実装
     static bool CustomGui(PlayerCarComponent& comp, unsigned long long entityID = 0, void* world = nullptr)
     {
@@ -74,6 +75,8 @@ template <> struct ComponentMeta<PlayerCarComponent> {
 
         return changed;
     }
+#endif
+
 };
 
 REGISTER_COMPONENT(PlayerCarComponent, "PlayerCar")

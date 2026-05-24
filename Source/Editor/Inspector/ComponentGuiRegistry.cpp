@@ -1,7 +1,10 @@
 #include "ComponentGuiRegistry.h"
 #include "ECS/Core/CCL_World.h" // Worldへのアクセスに必要
 #include "Game/Core/AllComponents.h"
+
+#if ENABLE_EDITOR
 #include <imgui.h>
+#endif
 
 #include "Engine/Graphics/Core/GpuResourceUtils.h" // テクスチャロード用
 #include "Engine/Graphics/Core/Graphics.h"         // デバイス取得用
@@ -176,7 +179,9 @@ void ComponentGuiRegistry::Draw(
 
     auto idIt = _typeIdToIndex.find(id);
     if (idIt == _typeIdToIndex.end()) {
+#if ENABLE_EDITOR
         ImGui::TextColored(ImVec4(1, 0.5f, 0, 1), "No GUI registered for this ID.");
+#endif
         return;
     }
     auto it = _registry.find(idIt->second);

@@ -16,9 +16,9 @@
 #include "Engine/GamePlay/Transform/HierarchyCleanupSystem.h"
 #include "Engine/GamePlay/Physics/Jolt/JoltCleanupSystem.h"
 
-
+#if TRACY_ENABLE
 #include "tracy/Tracy.hpp"
-
+#endif
 
 using namespace CCL::ECS::Core;
 

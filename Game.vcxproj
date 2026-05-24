@@ -203,29 +203,75 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="External\imgui-docking\imconfig.h" />
-    <ClInclude Include="External\imgui-docking\imgui.h" />
-    <ClInclude Include="External\imgui-docking\imgui_impl_dx11.h" />
-    <ClInclude Include="External\imgui-docking\imgui_impl_win32.h" />
-    <ClInclude Include="External\imgui-docking\imgui_internal.h" />
-    <ClInclude Include="External\imgui-docking\imstb_rectpack.h" />
-    <ClInclude Include="External\imgui-docking\imstb_textedit.h" />
-    <ClInclude Include="External\imgui-docking\imstb_truetype.h" />
-    <ClInclude Include="External\imgui-node-editor\crude_json.h" />
-    <ClInclude Include="External\imgui-node-editor\imgui_bezier_math.h" />
-    <ClInclude Include="External\imgui-node-editor\imgui_canvas.h" />
-    <ClInclude Include="External\imgui-node-editor\imgui_extra_math.h" />
-    <ClInclude Include="External\imgui-node-editor\imgui_node_editor.h" />
-    <ClInclude Include="External\imgui-node-editor\imgui_node_editor_internal.h" />
-    <ClInclude Include="External\ImGuizmo\GraphEditor.h" />
-    <ClInclude Include="External\ImGuizmo\ImCurveEdit.h" />
-    <ClInclude Include="External\ImGuizmo\ImGradient.h" />
-    <ClInclude Include="External\ImGuizmo\ImGuizmo.h" />
-    <ClInclude Include="External\ImGuizmo\ImLightRig.h" />
-    <ClInclude Include="External\ImGuizmo\ImSequencer.h" />
-    <ClInclude Include="External\ImGuizmo\ImZoomSlider.h" />
-    <ClInclude Include="External\implot-master\implot.h" />
-    <ClInclude Include="External\implot-master\implot_internal.h" />
+    <ClInclude Include="External\imgui-docking\imconfig.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\imgui-docking\imgui.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\imgui-docking\imgui_impl_dx11.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\imgui-docking\imgui_impl_win32.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\imgui-docking\imgui_internal.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\imgui-docking\imstb_rectpack.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\imgui-docking\imstb_textedit.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\imgui-docking\imstb_truetype.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\imgui-node-editor\crude_json.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\imgui-node-editor\imgui_bezier_math.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\imgui-node-editor\imgui_canvas.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\imgui-node-editor\imgui_extra_math.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\imgui-node-editor\imgui_node_editor.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\imgui-node-editor\imgui_node_editor_internal.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\ImGuizmo\GraphEditor.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\ImGuizmo\ImCurveEdit.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\ImGuizmo\ImGradient.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\ImGuizmo\ImGuizmo.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\ImGuizmo\ImLightRig.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\ImGuizmo\ImSequencer.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\ImGuizmo\ImZoomSlider.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\implot-master\implot.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\implot-master\implot_internal.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="External\Lua\src\lapi.h" />
     <ClInclude Include="External\Lua\src\lauxlib.h" />
     <ClInclude Include="External\Lua\src\lcode.h" />
@@ -293,27 +339,67 @@
     <ClInclude Include="Source\ECS\System\CCL_SystemManager.h" />
     <ClInclude Include="Source\ECS\System\CCL_SystemRegistry.h" />
     <ClInclude Include="Source\ECS\System\CCL_TaskScheduler.h" />
-    <ClInclude Include="Source\Editor\Core\EditorCommandHistory.h" />
-    <ClInclude Include="Source\Editor\Core\EditorContext.h" />
-    <ClInclude Include="Source\Editor\Core\EditorWindow.h" />
-    <ClInclude Include="Source\Editor\Core\EditorWindowManager.h" />
+    <ClInclude Include="Source\Editor\Core\EditorCommandHistory.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Core\EditorContext.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Core\EditorWindow.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Core\EditorWindowManager.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="Source\Editor\Inspector\ComponentGuiRegistry.h" />
-    <ClInclude Include="Source\Editor\Utils\AssetBrowser.h" />
-    <ClInclude Include="Source\Editor\Utils\NavMeshBuilder.h" />
-    <ClInclude Include="Source\Editor\Utils\ShellIconLoader.h" />
-    <ClInclude Include="Source\Editor\Windows\AnimationSequencerWindow.h" />
-    <ClInclude Include="Source\Editor\Windows\AnimGraphWindow.h" />
-    <ClInclude Include="Source\Editor\Windows\AssetBrowserWindow.h" />
-    <ClInclude Include="Source\Editor\Windows\BehaviorTreeWindow.h" />
-    <ClInclude Include="Source\Editor\Windows\ConsoleWindow.h" />
-    <ClInclude Include="Source\Editor\Windows\CurveEditorWindow.h" />
-    <ClInclude Include="Source\Editor\Windows\ECSDebugWindow.h" />
-    <ClInclude Include="Source\Editor\Windows\GameViewWindow.h" />
-    <ClInclude Include="Source\Editor\Windows\HierarchyWindow.h" />
-    <ClInclude Include="Source\Editor\Windows\InputEditorWindow.h" />
-    <ClInclude Include="Source\Editor\Windows\InspectorWindow.h" />
-    <ClInclude Include="Source\Editor\Windows\NavMeshWindow.h" />
-    <ClInclude Include="Source\Editor\Windows\TextEditorWindow.h" />
+    <ClInclude Include="Source\Editor\Utils\AssetBrowser.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Utils\NavMeshBuilder.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Utils\ShellIconLoader.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\AnimationSequencerWindow.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\AnimGraphWindow.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\AssetBrowserWindow.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\BehaviorTreeWindow.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\ConsoleWindow.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\CurveEditorWindow.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\ECSDebugWindow.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\GameViewWindow.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\HierarchyWindow.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\InputEditorWindow.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\InspectorWindow.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\NavMeshWindow.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\TextEditorWindow.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Audio\AudioEmitterComponent.h" />
     <ClInclude Include="Source\Engine\Audio\AudioEvents.h" />
     <ClInclude Include="Source\Engine\Audio\AudioSystem.h" />
@@ -410,7 +496,9 @@
     <ClInclude Include="Source\Engine\Graphics\Core\RenderContext.h" />
     <ClInclude Include="Source\Engine\Graphics\Core\RenderState.h" />
     <ClInclude Include="Source\Engine\Graphics\Core\RenderTarget.h" />
-    <ClInclude Include="Source\Engine\Graphics\Renderer\ImGuiRenderer.h" />
+    <ClInclude Include="Source\Engine\Graphics\Renderer\ImGuiRenderer.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Renderer\InstanceBuffer.h" />
     <ClInclude Include="Source\Engine\Graphics\Renderer\ModelRenderer.h" />
     <ClInclude Include="Source\Engine\Graphics\Renderer\ParticleRenderer.h" />
@@ -453,7 +541,6 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderResources.h" />
     <ClInclude Include="Source\Engine\Physics\IPhysicsAPI.h" />
     <ClInclude Include="Source\Engine\Physics\JoltContactListener.h" />
-    <ClInclude Include="Source\Engine\Physics\JoltDebugRenderer.h" />
     <ClInclude Include="Source\Engine\Physics\JoltPhysicsFacade.h" />
     <ClInclude Include="Source\Engine\Physics\JoltPhysicsManager.h" />
     <ClInclude Include="Source\Engine\Platform\Dialog.h" />
@@ -473,7 +560,9 @@
     <ClInclude Include="Source\Engine\Serialization\Factory\SceneInitializer.h" />
     <ClInclude Include="Source\Engine\Serialization\LoadContext.h" />
     <ClInclude Include="Source\Engine\Serialization\Meta\ComponentMeta.h" />
-    <ClInclude Include="Source\Engine\Serialization\Meta\ComponentMetaImGui.h" />
+    <ClInclude Include="Source\Engine\Serialization\Meta\ComponentMetaImGui.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\Meta\ComponentMetaJson.h" />
     <ClInclude Include="Source\Engine\Serialization\PrefabSerializer.h" />
     <ClInclude Include="Source\Engine\Serialization\Reflection\Reflection.h" />
@@ -555,25 +644,63 @@
     <ClInclude Include="Source\Game\Utils\PooledParticleComponent.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="External\imgui-docking\imgui.cpp" />
-    <ClCompile Include="External\imgui-docking\imgui_demo.cpp" />
-    <ClCompile Include="External\imgui-docking\imgui_draw.cpp" />
-    <ClCompile Include="External\imgui-docking\imgui_impl_dx11.cpp" />
-    <ClCompile Include="External\imgui-docking\imgui_impl_win32.cpp" />
-    <ClCompile Include="External\imgui-docking\imgui_tables.cpp" />
-    <ClCompile Include="External\imgui-docking\imgui_widgets.cpp" />
-    <ClCompile Include="External\imgui-node-editor\crude_json.cpp" />
-    <ClCompile Include="External\imgui-node-editor\imgui_canvas.cpp" />
-    <ClCompile Include="External\imgui-node-editor\imgui_node_editor.cpp" />
-    <ClCompile Include="External\imgui-node-editor\imgui_node_editor_api.cpp" />
-    <ClCompile Include="External\ImGuizmo\GraphEditor.cpp" />
-    <ClCompile Include="External\ImGuizmo\ImCurveEdit.cpp" />
-    <ClCompile Include="External\ImGuizmo\ImGradient.cpp" />
-    <ClCompile Include="External\ImGuizmo\ImGuizmo.cpp" />
-    <ClCompile Include="External\ImGuizmo\ImSequencer.cpp" />
-    <ClCompile Include="External\implot-master\implot.cpp" />
-    <ClCompile Include="External\implot-master\implot_demo.cpp" />
-    <ClCompile Include="External\implot-master\implot_items.cpp" />
+    <ClCompile Include="External\imgui-docking\imgui.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\imgui-docking\imgui_demo.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\imgui-docking\imgui_draw.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\imgui-docking\imgui_impl_dx11.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\imgui-docking\imgui_impl_win32.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\imgui-docking\imgui_tables.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\imgui-docking\imgui_widgets.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\imgui-node-editor\crude_json.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\imgui-node-editor\imgui_canvas.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\imgui-node-editor\imgui_node_editor.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\imgui-node-editor\imgui_node_editor_api.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\ImGuizmo\GraphEditor.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\ImGuizmo\ImCurveEdit.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\ImGuizmo\ImGradient.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\ImGuizmo\ImGuizmo.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\ImGuizmo\ImSequencer.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\implot-master\implot.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\implot-master\implot_demo.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\implot-master\implot_items.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="External\Lua\src\lapi.c" />
     <ClCompile Include="External\Lua\src\lauxlib.c" />
     <ClCompile Include="External\Lua\src\lbaselib.c" />
@@ -642,23 +769,55 @@
     <ClCompile Include="Source\ECS\Core\CCL_World.cpp" />
     <ClCompile Include="Source\ECS\Core\CCL_JobSystem.cpp" />
     <ClCompile Include="Source\ECS\System\CCL_SystemManager.cpp" />
-    <ClCompile Include="Source\Editor\Core\EditorWindowManager.cpp" />
+    <ClCompile Include="Source\Editor\Core\EditorWindowManager.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Source\Editor\Inspector\ComponentGuiRegistry.cpp" />
-    <ClCompile Include="Source\Editor\Utils\AssetBrowser.cpp" />
-    <ClCompile Include="Source\Editor\Utils\NavMeshBuilder.cpp" />
-    <ClCompile Include="Source\Editor\Utils\ShellIconLoader.cpp" />
-    <ClCompile Include="Source\Editor\Windows\AnimationSequencerWindow.cpp" />
-    <ClCompile Include="Source\Editor\Windows\AnimGraphWindow.cpp" />
-    <ClCompile Include="Source\Editor\Windows\BehaviorTreeWindow.cpp" />
-    <ClCompile Include="Source\Editor\Windows\ConsoleWindow.cpp" />
-    <ClCompile Include="Source\Editor\Windows\CurveEditorWindow.cpp" />
-    <ClCompile Include="Source\Editor\Windows\ECSDebugWindow.cpp" />
-    <ClCompile Include="Source\Editor\Windows\GameViewWindow.cpp" />
-    <ClCompile Include="Source\Editor\Windows\HierarchyWindow.cpp" />
-    <ClCompile Include="Source\Editor\Windows\InputEditorWindow.cpp" />
-    <ClCompile Include="Source\Editor\Windows\InspectorWindow.cpp" />
-    <ClCompile Include="Source\Editor\Windows\NavMeshWindow.cpp" />
-    <ClCompile Include="Source\Editor\Windows\TextEditorWindow.cpp" />
+    <ClCompile Include="Source\Editor\Utils\AssetBrowser.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Utils\NavMeshBuilder.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Utils\ShellIconLoader.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\AnimationSequencerWindow.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\AnimGraphWindow.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\BehaviorTreeWindow.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\ConsoleWindow.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\CurveEditorWindow.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\ECSDebugWindow.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\GameViewWindow.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\HierarchyWindow.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\InputEditorWindow.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\InspectorWindow.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\NavMeshWindow.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\TextEditorWindow.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Audio\AudioComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Audio\AudioSystem.cpp" />
     <ClCompile Include="Source\Engine\Audio\FmodAudioManager.cpp" />
@@ -721,7 +880,9 @@
     <ClCompile Include="Source\Engine\Graphics\Core\Graphics.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Core\Light.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Core\RenderState.cpp" />
-    <ClCompile Include="Source\Engine\Graphics\Renderer\ImGuiRenderer.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Renderer\ImGuiRenderer.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Renderer\ModelRenderer.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Renderer\ParticleRenderer.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Renderer\Pipeline\OpaquePass.cpp" />
@@ -753,7 +914,6 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\PostProcessManager.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\ShaderReflection.cpp" />
     <ClCompile Include="Source\Engine\Physics\JoltContactListener.cpp" />
-    <ClCompile Include="Source\Engine\Physics\JoltDebugRenderer.cpp" />
     <ClCompile Include="Source\Engine\Physics\JoltPhysicsFacade.cpp" />
     <ClCompile Include="Source\Engine\Physics\JoltPhysicsManager.cpp" />
     <ClCompile Include="Source\Engine\Platform\Dialog.cpp" />

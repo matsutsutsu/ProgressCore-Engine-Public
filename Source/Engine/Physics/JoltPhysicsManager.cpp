@@ -196,23 +196,3 @@ void JoltPhysicsManager::Step(float deltaTime)
     m_physicsSystem->Update(deltaTime, cCollisionSteps, m_tempAllocator.get(), m_jobSystem.get());
 }
 
-void JoltPhysicsManager::DrawBodies(ShapeRenderer *shapeRenderer)
-{
-    if (!m_isInitialized || !shapeRenderer) return;
-
-    // レンダラーがまだ作られていなければ生成する
-    if (!m_debugRenderer) {
-        m_debugRenderer = std::make_unique<JoltDebugRenderer>(shapeRenderer);
-    }
-
-    // Joltの描画設定（何を描画するか）
-    JPH::BodyManager::DrawSettings settings;
-    settings.mDrawBoundingBox = false; // 四角い大枠（AABB）を描画するか
-    settings.mDrawShape       = true;  // 本当の当たり判定を描画するか
-    settings.mDrawVelocity    = false; // 速度の矢印を描画するか
-
-    // 物理空間内の全ボディを描画する命令を、ShapeRendererに向けて発行！
-    m_physicsSystem->DrawBodies(settings, m_debugRenderer.get());
-}
-
-

@@ -2,10 +2,13 @@
 #include "Editor/Core/EditorWindow.h"
 #include "ECS/Core/CCL_World.h"
 #include "ECS/System/CCL_SystemManager.h"
-#include <imgui.h>
 #include <vector>
 #include <string>
 #include <map>
+
+#if ENABLE_EDITOR
+#include <imgui.h>
+#endif
 
 // =========================================================
 // ★ プロファイラー用の履歴保持バッファ (リングバッファ)

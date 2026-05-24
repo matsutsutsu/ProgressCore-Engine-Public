@@ -1,7 +1,9 @@
 #include "CCL_SystemManager.h"
 #include "ECS/Core/CCL_Chunk.h"
-#include <imgui.h>
 
+#if ENABLE_EDITOR
+#include <imgui.h>
+#endif
 
 namespace CCL::ECS
 {
@@ -9,9 +11,10 @@ namespace CCL::ECS
 
     void SystemManager::ResolveTargetChunks(Core::ChunkManager* cm)
     {
+#if TRACY_ENABLE
         // チャンク振り分け負荷を計測
         ZoneScopedN("SystemManager::ResolveTargetChunks");
-
+#endif
 
         if (!cm) return;
 
@@ -107,6 +110,7 @@ namespace CCL::ECS
 
    void SystemManager::OnGui()
     {
+#if ENABLE_EDITOR
         if (ImGui::Begin("System Manager")) {
 
             // ----------------------------------------------------
@@ -257,7 +261,7 @@ namespace CCL::ECS
             }
         }
         ImGui::End();
+#endif
     }
-
 
 }

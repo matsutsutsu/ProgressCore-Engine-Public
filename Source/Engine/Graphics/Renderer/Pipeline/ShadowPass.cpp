@@ -16,8 +16,9 @@ void ShadowPass::Initialize(ID3D11Device* device) {
 }
 
 void ShadowPass::Execute(const RenderContext& rc) {
-
+#if TRACY_ENABLE
     ZoneScopedN("Pass: Shadow");
+#endif
 
     RenderQueue* queue = rc.renderQueue;
     ModelRenderer* renderer = rc.modelRenderer;

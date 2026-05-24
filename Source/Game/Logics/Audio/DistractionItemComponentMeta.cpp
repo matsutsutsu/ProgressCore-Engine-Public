@@ -6,13 +6,14 @@
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 #include "Engine/Core/Math/StringHash.h" // プロジェクトのHashString関数
 
-#include <imgui.h>
+
 
 template <> struct ComponentMeta<DistractionItemComponent> {
     static constexpr bool        registered = true;
     static constexpr const char* displayName = "Distraction Item (Sound)";
     static constexpr bool        hasCustomGui = true;
 
+#if ENABLE_EDITOR
     static bool CustomGui(DistractionItemComponent& comp, unsigned long long entityID = 0, void* worldPtr = nullptr) {
         bool changed = false;
 
@@ -57,6 +58,7 @@ template <> struct ComponentMeta<DistractionItemComponent> {
 
         return changed;
     }
+#endif
 
     static const std::vector<FieldDescriptor>& Fields() {
         static const std::vector<FieldDescriptor> fields = {

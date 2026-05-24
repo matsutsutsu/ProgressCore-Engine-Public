@@ -3,14 +3,6 @@
 #include <windows.h>
 #include "Engine/Core/Time/HighResolutionTimer.h"
 
-// =========================================================
-// ★ アーキテクトの極意: 開発ビルドと製品ビルドの分離
-// 実際のプロジェクトでは、Visual Studioのプロジェクトプロパティ
-// (C/C++ -> プリプロセッサ) で _EDITOR などを定義して切り替えます。
-// 今回はテスト用にここで定義しておきます。
-// =========================================================
-#define ENABLE_EDITOR 
-
 #ifdef ENABLE_EDITOR
 #include "Editor/Core/EditorWindowManager.h"
 #include "Editor/Core/EditorContext.h"

@@ -1,11 +1,13 @@
 #pragma once
+#if ENABLE_EDITOR
+
 #include "ComponentMeta.h"
 #include <DirectXMath.h>
 #include <cstring>
-#include <imgui.h>
 #include <type_traits> // メタプログラミング用
 #include "Editor/Core/EditorCommandHistory.h"
 #include "Engine/Platform/Logger.h"
+#include <imgui.h>
 
 namespace ComponentMetaImGui {
 
@@ -353,3 +355,5 @@ namespace ComponentMetaImGui {
     }
 
 } // namespace ComponentMetaImGui
+
+#endif

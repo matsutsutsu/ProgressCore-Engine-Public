@@ -337,7 +337,7 @@ void ResourceManager::UnloadParticleBuffer(ParticleBufferHandle handle) {
 // Debug
 // ============================================================================
 void ResourceManager::DrawDebugGUI() {
-
+#if ENABLE_EDITOR
     if (ImGui::CollapsingHeader("Resource", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Text("Models:");
         for (auto& pair : m_modelRegistry) {
@@ -365,4 +365,6 @@ void ResourceManager::DrawDebugGUI() {
 #endif
         }
     }
+
+#endif
 }

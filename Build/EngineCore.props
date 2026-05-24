@@ -3,15 +3,61 @@
          xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
 	<!-- ========================================== -->
-	<!-- 全構成共通の基本設定 -->
+	<!--  外部ライブラリ用パスの自動ルーティング -->
+	<!-- ========================================== -->
+	<PropertyGroup Condition="$(Configuration.Contains('Debug'))">
+		<ExtLibDirName>Debug</ExtLibDirName>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)'=='Shipping'">
+		<!-- Shipping構成の時は Distribution フォルダを見に行く -->
+		<ExtLibDirName>Distribution</ExtLibDirName>
+	</PropertyGroup>
+	<PropertyGroup Condition="!$(Configuration.Contains('Debug'))">
+		<ExtLibDirName>Release</ExtLibDirName>
+	</PropertyGroup>
+	
+	<!-- ========================================== -->
+	<!--  全構成共通の基本設定 -->
 	<!-- ========================================== -->
 	<ItemDefinitionGroup>
 		<!-- ===== C++ Compile (ゲームコアのみ) ===== -->
 		<ClCompile>
-			<PreprocessorDefinitions>
+			<!-- ========================================================= -->
+			<!-- ★ Debug と Development の時は Joltのデバッグマクロを入れる -->
+			<!-- ========================================================= -->
+			<PreprocessorDefinitions Condition="'$(Configuration)'!='Shipping'">
 				_WINDOWS;
+				JPH_FLOATING_POINT_EXCEPTIONS_ENABLED;
+				JPH_PROFILE_ENABLED;
+				JPH_DEBUG_RENDERER;
+				JPH_OBJECT_STREAM;
 				%(PreprocessorDefinitions)
 			</PreprocessorDefinitions>
+
+			<!-- ========================================================= -->
+			<!-- 2. Development 構成 (アサートなし / Release DLL / JoltデバッグON) -->
+			<!-- ========================================================= -->
+			<PreprocessorDefinitions Condition="!$(Configuration.Contains('Debug')) and '$(Configuration)'!='Shipping'">
+				_WINDOWS;
+				NDEBUG;
+				JPH_FLOATING_POINT_EXCEPTIONS_ENABLED;
+				JPH_PROFILE_ENABLED;
+				JPH_DEBUG_RENDERER;
+				JPH_OBJECT_STREAM;
+				%(PreprocessorDefinitions)
+			</PreprocessorDefinitions>
+			<RuntimeLibrary Condition="!$(Configuration.Contains('Debug')) and '$(Configuration)'!='Shipping'">MultiThreadedDLL</RuntimeLibrary>
+
+			<!-- ========================================================= -->
+			<!-- ★ Shipping の時は Joltのデバッグマクロを全て外す -->
+			<!-- ========================================================= -->
+			<PreprocessorDefinitions Condition="'$(Configuration)'=='Shipping'">
+				_WINDOWS;
+				NDEBUG;
+				%(PreprocessorDefinitions)
+			</PreprocessorDefinitions>
+			
+			
 
 			<AdditionalIncludeDirectories>
 				$(SolutionDir)Source;
@@ -37,8 +83,9 @@
 		<!-- ===== Linker (ゲームコアのみ) ===== -->
 		<Link>
 			<AdditionalLibraryDirectories>
-				$(SolutionDir)External\JoltPhysics\lib\$(Configuration);
-				$(SolutionDir)External\DirectXTK-main\Bin\Desktop_2022\x64\$(Configuration);
+				<!-- $(Configuration) ではなく $(ExtLibDirName) を使用する -->
+				$(SolutionDir)External\JoltPhysics\lib\$(ExtLibDirName);
+				$(SolutionDir)External\DirectXTK-main\Bin\Desktop_2022\x64\$(ExtLibDirName);
 				$(SolutionDir)External\FMOD\core\lib\x64;
 				$(SolutionDir)External\FMOD\studio\lib\x64;
 				%(AdditionalLibraryDirectories)

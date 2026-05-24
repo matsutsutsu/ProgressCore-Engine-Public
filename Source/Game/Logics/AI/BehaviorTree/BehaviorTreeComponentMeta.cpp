@@ -8,12 +8,13 @@
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
-#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 #include "Engine/Platform/Dialog.h"
 #include "Engine/Graphics/Core/Graphics.h"
-#include <imgui.h>
 #include <filesystem>
+#if ENABLE_EDITOR
+#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
+#endif
 
  // =======================================================================
  // エディタ表示用のEnum文字列定義（プルダウンメニュー用）
@@ -28,6 +29,7 @@ template <> struct ComponentMeta<BehaviorTreeComponent> {
     static constexpr bool hasCustomGui = true; // カスタムGUIを有効化
     static constexpr bool isSerializable = true;
 
+#if ENABLE_EDITOR
     // --- カスタムGUIでロード機能を統合 ---
     static bool CustomGui(BehaviorTreeComponent& comp, unsigned long long entityID, void* worldPtr) {
         bool changed = false;
@@ -85,6 +87,7 @@ template <> struct ComponentMeta<BehaviorTreeComponent> {
 
         return changed;
     }
+#endif
 
     static const std::vector<FieldDescriptor>& Fields() {
         static const std::vector<FieldDescriptor> fields = {

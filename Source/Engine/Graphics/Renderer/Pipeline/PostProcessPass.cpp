@@ -4,8 +4,9 @@
 
 void PostProcessPass::Execute(const RenderContext& rc){
 
+#if TRACY_ENABLE
     ZoneScopedN("Pass: PostProcess");
-
+#endif
 
     if (!rc.postProcess) return;
 

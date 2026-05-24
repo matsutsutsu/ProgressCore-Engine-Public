@@ -5,9 +5,11 @@
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
-#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
+#if ENABLE_EDITOR
+#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
+#endif
 
 // ============================================================================
 // Primitive Component
@@ -17,6 +19,7 @@ template <> struct ComponentMeta<PrimitiveComponent> {
     static constexpr const char* displayName = "Primitive Shape";
     static constexpr bool        hasCustomGui = true;
 
+#if ENABLE_EDITOR
     static bool CustomGui(PrimitiveComponent& p, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr)
     {
         bool changed = false;
@@ -50,6 +53,7 @@ template <> struct ComponentMeta<PrimitiveComponent> {
         }
         return changed;
     }
+#endif
 
     static const std::vector<FieldDescriptor>& Fields()
     {
@@ -72,6 +76,7 @@ template <> struct ComponentMeta<DissolveComponent> {
     static constexpr const char* displayName = "Dissolve Effect";
     static constexpr bool        hasCustomGui = true;
 
+#if ENABLE_EDITOR
     static bool CustomGui(DissolveComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr)
     {
         bool changed = false;
@@ -80,6 +85,7 @@ template <> struct ComponentMeta<DissolveComponent> {
         changed |= ImGui::DragFloat("Dissolve Speed", &comp.dissolveSpeed, 0.01f, 0.0f, 10.0f);
         return changed;
     }
+#endif
 
     static const std::vector<FieldDescriptor>& Fields()
     {
@@ -100,6 +106,7 @@ template <> struct ComponentMeta<TimerComponent> {
     static constexpr const char* displayName = "Timer Component";
     static constexpr bool        hasCustomGui = true;
 
+#if ENABLE_EDITOR
     static bool CustomGui(TimerComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr)
     {
         bool changed = false;
@@ -120,6 +127,7 @@ template <> struct ComponentMeta<TimerComponent> {
 
         return changed;
     }
+#endif
 
     static const std::vector<FieldDescriptor>& Fields()
     {

@@ -8,17 +8,20 @@
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
-#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
 #include "Engine/Core/Math/StringHash.h"
 
+#if ENABLE_EDITOR
+#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
+#endif
 
 template <> struct ComponentMeta<MaterialComponent> {
     static constexpr bool        registered = true;
     static constexpr const char* displayName = "Material";
     static constexpr bool        hasCustomGui = true;
 
+#if ENABLE_EDITOR
     static bool CustomGui(MaterialComponent& compRef, unsigned long long entityID = 0, void* worldPtr = nullptr)
     {
         bool               changed = false;
@@ -188,6 +191,7 @@ template <> struct ComponentMeta<MaterialComponent> {
         }
         return changed;
     }
+#endif
 
     static const std::vector<FieldDescriptor>& Fields()
     {
