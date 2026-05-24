@@ -59,8 +59,10 @@ Framework::Framework(HWND hWnd)
 	// IMGUI初期化
 	ImGuiRenderer::Initialize(hWnd, Graphics::Instance().GetDevice(), Graphics::Instance().GetDeviceContext());
 #endif
-	// ダイアログのファイル履歴をロード
-	Dialog::LoadHistory();
+	// ★ FileDialog を一括初期化
+	//    プリセット登録 + 前回の履歴ロードがここで完結する
+	Engine::FileDialog::Initialize();
+
 	// Input 初期化
 	Input::Instance().Initialize(hWnd);
 
@@ -110,8 +112,9 @@ Framework::~Framework()
 	// IMGUI終了化
 	ImGuiRenderer::Finalize();
 #endif
-	// ダイアログのファイル履歴を保存
-	Dialog::SaveHistory();
+	// ★ ダイアログ履歴を保存
+	Engine::FileDialog::SaveHistory();
+
 	// 2. その後に、静的（static）なキャッシュを片付ける
     // これらが「デバイスへの参照」を握っている最後の犯人たちです。
     Prefab::Cleanup();

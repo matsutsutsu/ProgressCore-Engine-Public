@@ -122,13 +122,10 @@ template <> struct ComponentMeta<FogComponent> {
             ImGui::Text(u8"Noise Texture:");
             ImGui::SameLine();
             if (ImGui::Button("Load...##FogNoise")) {
-                char        filename[256] = {};
-                const char* filter = "Image Files\0*.png;*.jpg;*.dds\0All Files\0*.*\0";
-                if (Dialog::OpenFileName(filename,
-                    256,
-                    filter,
-                    "Load Noise",
-                    Graphics::Instance().GetWindowHandle()) == DialogResult::OK) {
+                if (auto path = Engine::FileDialog::OpenPreset("Texture", "Select Texture",
+                    Graphics::Instance().GetWindowHandle()))
+                {
+					const auto& filename = path->string().c_str();
                     strcpy_s(comp.noiseTexturePath, filename);
                     GpuResourceUtils::LoadTexture(Graphics::Instance().GetDevice(),
                         filename,

@@ -125,6 +125,19 @@ namespace {
         if (j.contains("grid_x")) cfg.sprite_sheet_grid.x = j["grid_x"];
         if (j.contains("grid_y")) cfg.sprite_sheet_grid.y = j["grid_y"];
     }
+
+    /**
+    * @brief 絶対パスをカレントディレクトリからの相対パス文字列に変換する
+    * @details 変換に失敗した場合は generic_string() 形式の絶対パスをそのまま返す
+    */
+    std::string ToRelativePath(const std::filesystem::path& absPath)
+    {
+        std::error_code ec;
+        auto rel = std::filesystem::relative(absPath, std::filesystem::current_path(), ec);
+        if (!ec && !rel.empty()) return rel.generic_string();
+        return absPath.generic_string();
+    }
+
 } // namespace
 
 // ============================================================================
@@ -141,30 +154,27 @@ template <> struct ComponentMeta<GPUParticleComponent> {
         bool changed = false;
         GPUParticleComponent* p = &compRef;
         auto& cfg = p->config;
+        HWND hWnd = Graphics::Instance().GetWindowHandle();
 
-        // 1. 管理・システム設定
+
+        // ----------------------------------------------------------------
+        // 1. プリセット保存 / 読込
+        // ----------------------------------------------------------------
         if (ImGui::Button(u8"プリセット保存 (Save Preset)")) {
-            char filename[256] = {};
-            if (Dialog::SaveFileName(filename,
-                256,
-                "JSON Files\0*.json\0",
-                "Save Particle Preset",
-                "json",
-                Graphics::Instance().GetWindowHandle()) == DialogResult::OK) {
-                std::ofstream o(filename);
+            if (auto path = Engine::FileDialog::SavePreset(
+                "GPUParticlePreset", u8"Save Particle Preset", {}, hWnd))
+            {
+                std::ofstream o(*path);
                 o << std::setw(4) << ConfigToJson(cfg, p->texturePath, p->colorRampPath)
                     << std::endl;
             }
         }
         ImGui::SameLine();
         if (ImGui::Button(u8"プリセット読込 (Load Preset)")) {
-            char filename[256] = {};
-            if (Dialog::OpenFileName(filename,
-                256,
-                "JSON Files\0*.json\0",
-                "Load Particle Preset",
-                Graphics::Instance().GetWindowHandle()) == DialogResult::OK) {
-                std::ifstream i(filename);
+            if (auto path = Engine::FileDialog::OpenPreset(
+                "GPUParticlePreset", u8"Load Particle Preset", hWnd))
+            {
+                std::ifstream i(*path);
                 if (i.is_open()) {
                     json j;
                     i >> j;
@@ -316,24 +326,9 @@ template <> struct ComponentMeta<GPUParticleComponent> {
             ImGui::SameLine();
 
             if (ImGui::Button(u8"読込##Main")) {
-                char        filename[256] = {};
-                HWND        hWnd = Graphics::Instance().GetWindowHandle();
-                const char* filter = "Image Files\0*.png;*.jpg;*.tga;*.bmp;*.dds\0All Files\0*.*\0";
-                if (Dialog::OpenFileName(
-                    filename, sizeof(filename), filter, "Select Texture", hWnd) == DialogResult::OK) {
-                    namespace fs = std::filesystem;
-                    fs::path absPath = filename;
-                    fs::path currentPath = fs::current_path();
-                    std::error_code ec;
-                    fs::path relPath = fs::relative(absPath, currentPath, ec);
-                    if (!ec && !relPath.empty()) {
-                        strcpy_s(p->texturePath,
-                            sizeof(p->texturePath),
-                            relPath.generic_string().c_str());
-                    }
-                    else {
-                        strcpy_s(p->texturePath, sizeof(p->texturePath), filename);
-                    }
+                if (auto path = Engine::FileDialog::OpenPreset("Texture", "Select Texture", hWnd)) {
+                    strcpy_s(p->texturePath, sizeof(p->texturePath),
+                        ToRelativePath(*path).c_str());
                     p->isInitialized = false;
                     changed = true;
                 }
@@ -365,24 +360,9 @@ template <> struct ComponentMeta<GPUParticleComponent> {
             ImGui::SameLine();
 
             if (ImGui::Button(u8"読込##Ramp")) {
-                char        filename[256] = {};
-                HWND        hWnd = Graphics::Instance().GetWindowHandle();
-                const char* filter = "Image Files\0*.png;*.jpg;*.tga;*.bmp;*.dds\0All Files\0*.*\0";
-                if (Dialog::OpenFileName(
-                    filename, sizeof(filename), filter, "Select Color Ramp", hWnd) == DialogResult::OK) {
-                    namespace fs = std::filesystem;
-                    fs::path absPath = filename;
-                    fs::path currentPath = fs::current_path();
-                    std::error_code ec;
-                    fs::path relPath = fs::relative(absPath, currentPath, ec);
-                    if (!ec && !relPath.empty()) {
-                        strcpy_s(p->colorRampPath,
-                            sizeof(p->colorRampPath),
-                            relPath.generic_string().c_str());
-                    }
-                    else {
-                        strcpy_s(p->colorRampPath, sizeof(p->colorRampPath), filename);
-                    }
+                if (auto path = Engine::FileDialog::OpenPreset("Texture", "Select Color Ramp", hWnd)) {
+                    strcpy_s(p->colorRampPath, sizeof(p->colorRampPath),
+                        ToRelativePath(*path).c_str());
                     p->isInitialized = false;
                     changed = true;
                 }

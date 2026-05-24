@@ -76,18 +76,10 @@ template <> struct ComponentMeta<ModelComponent> {
         ImGui::Separator();
 
         if (ImGui::Button("Load New Model...", ImVec2(-1, 0))) {
-            char filename[256] = {};
-            const char* filter = "Model Files\0*.gltf;*.glb;*.fbx;*.obj\0All Files\0*.*\0";
-
-            if (Dialog::OpenFileName(filename, 256, filter, "Select 3D Model",
-                Graphics::Instance().GetWindowHandle()) == DialogResult::OK)
+            if (auto path = Engine::FileDialog::OpenPreset("Model", "Select Model",
+                Graphics::Instance().GetWindowHandle()))
             {
-                namespace fs = std::filesystem;
-                std::error_code ec;
-                fs::path relPath = fs::relative(fs::path(filename), fs::current_path(), ec);
-                std::string finalPath = (!ec && !relPath.empty())
-                    ? relPath.generic_string() : filename;
-                comp.SetModel(finalPath.c_str());
+                comp.SetModel(path->string().c_str());
                 changed = true;
             }
         }

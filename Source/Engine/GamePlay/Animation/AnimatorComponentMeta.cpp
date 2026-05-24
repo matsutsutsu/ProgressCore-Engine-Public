@@ -37,16 +37,15 @@ template <> struct ComponentMeta<AnimatorComponent> {
         // アニメーションの動的プレビュー機能
         ImGui::TextDisabled("Dynamic Preview");
         if (ImGui::Button("Load & Play Sequence... (JSON)", ImVec2(-1, 0))) {
-            char filename[256] = {};
-            if (Dialog::OpenFileName(filename, 256, "JSON Files\0*.json\0", "Select Anim Sequence", Graphics::Instance().GetWindowHandle()) == DialogResult::OK) {
-
+            if (auto path = Engine::FileDialog::OpenPreset("AnimSequence", "Select Anim Sequence",
+                Graphics::Instance().GetWindowHandle()))
+            {
                 namespace fs = std::filesystem;
-                fs::path absPath = filename;
+                fs::path absPath = path->string();
                 fs::path currentPath = fs::current_path();
                 std::error_code ec;
                 fs::path relPath = fs::relative(absPath, currentPath, ec);
-                std::string finalPath = (!ec && !relPath.empty()) ? relPath.generic_string() : filename;
-
+                std::string finalPath = (!ec && !relPath.empty()) ? relPath.generic_string() : path->string();
                 const AnimSequence* loadedSeq = ResourceManager::Instance().LoadAnimSequence(finalPath.c_str());
 
                 if (loadedSeq) {
@@ -103,16 +102,16 @@ template <> struct ComponentMeta<AnimStateMachineComponent> {
         ImGui::TextDisabled("Graph File: %s", fsm.graphPath.empty() ? "None" : fsm.graphPath.c_str());
 
         if (ImGui::Button("Load Anim Graph... (JSON)", ImVec2(-1, 0))) {
-            char filename[MAX_PATH] = {};
-            if (Dialog::OpenFileName(filename, MAX_PATH, "JSON Files\0*.json\0", "Select Anim Graph", Graphics::Instance().GetWindowHandle()) == DialogResult::OK) {
+            if (auto path = Engine::FileDialog::OpenPreset("AnimNodes", "Select Anim Nodes",
+                Graphics::Instance().GetWindowHandle()))
+            {
 
                 namespace fs = std::filesystem;
-                fs::path absPath = filename;
+                fs::path absPath = path->string();
                 fs::path currentPath = fs::current_path();
                 std::error_code ec;
                 fs::path relPath = fs::relative(absPath, currentPath, ec);
-                fsm.graphPath = (!ec && !relPath.empty()) ? relPath.generic_string() : filename;
-
+                fsm.graphPath = (!ec && !relPath.empty()) ? relPath.generic_string() : path->string();
                 // 即座にロードしてバインドする
                 if (AnimGraphSerializer::LoadFromJSON(fsm.internalGraph, fsm.graphPath, {})) {
                     // ★修正1: `fsm.internalGraph` を直接操作し、正しい `sequenceFilePath` からロードする

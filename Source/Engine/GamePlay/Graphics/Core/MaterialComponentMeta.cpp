@@ -142,18 +142,14 @@ template <> struct ComponentMeta<MaterialComponent> {
                         ImGui::Text("%s: %s", slotName, hasTexture ? "[Set]" : "[Empty]");
                         ImGui::SameLine();
                         if (ImGui::Button("Load...")) {
-                            char        filename[256] = {};
-                            const char* filter =
-                                "Image Files\0*.png;*.jpg;*.tga;*.bmp\0All Files\0*.*\0";
-                            if (Dialog::OpenFileName(filename,
-                                256,
-                                filter,
-                                "Select Texture",
-                                Graphics::Instance().GetWindowHandle()) == DialogResult::OK) {
+                            if (auto path = Engine::FileDialog::OpenPreset("Texture", "Select Texture",
+                                Graphics::Instance().GetWindowHandle()))
+                            {
+                                const auto s = path->string();
                                 Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv;
                                 if (SUCCEEDED(GpuResourceUtils::LoadTexture(
                                     Graphics::Instance().GetDevice(),
-                                    filename,
+                                    s.c_str(),
                                     srv.GetAddressOf()))) {
                                     matPtr->textures[slotName] =
                                         ResourceManager::Instance().RegisterTexture(srv);

@@ -162,20 +162,20 @@ void EditorWindowManager::DrawFileMenu(EditorContext& context)
 {
     if (ImGui::BeginMenu("File")) {
         if (ImGui::MenuItem("Open Scene...", "Ctrl+O")) {
-            char filename[256] = { 0 };
+
             HWND hWnd = Graphics::Instance().GetWindowHandle();
-            static const char* filter = "Scene Files (*.json)\0*.json\0All Files (*.*)\0*.*\0";
-            if (Dialog::OpenFileName(filename, 256, filter, "Open Scene", hWnd) == DialogResult::OK) {
-                context.pendingLoadScenePath = std::string(filename);
+          
+            if (auto path = Engine::FileDialog::OpenPreset("Scene", "Open Scene", hWnd)) {
+                context.pendingLoadScenePath = path->string();
                 context.selectedEntity = CCL::ECS::InvalidEntityID;
             }
         }
         if (ImGui::MenuItem("Save Scene", "Ctrl+S")) {
-            char filename[256] = {};
+
             HWND hWnd = Graphics::Instance().GetWindowHandle();
-            static const char* filter = "Scene Files (*.json)\0*.json\0All Files (*.*)\0*.*\0";
-            if (Dialog::SaveFileName(filename, 256, filter, "Save Scene", "json", hWnd) == DialogResult::OK) {
-                context.pendingSaveScenePath = std::string(filename);
+            if (auto path = Engine::FileDialog::SavePreset("Scene", "Save Scene", {}
+                ,hWnd)) {
+                context.pendingSaveScenePath = path->string();
                 context.selectedEntity = CCL::ECS::InvalidEntityID;
             }
         }
