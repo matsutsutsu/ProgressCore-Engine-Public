@@ -30,6 +30,7 @@
 #include "Engine/GamePlay/Core/DestroyTag.h"
 #include "Engine/GamePlay/Core/PersistentTag.h"
 #include "Engine/Platform/Logger.h"
+#include "Engine/Platform/FileSystem.h"
 
 #include <json.hpp>
 #include <fstream>
@@ -96,10 +97,8 @@ bool SceneSerializer::Serialize(World* world, const std::string& filepath)
     root[CCL::Serialization::Keys::Entities] = std::move(entitiesArray);
 
     // ---- 第3段階: ファイル書き出し ----
-    std::ofstream ofs(filepath);
-    if (!ofs.is_open()) return false;
-    ofs << std::setw(4) << root << std::endl;
-    return ofs.good();
+    std::string jsonStr = root.dump(4); // インデント4で文字列化
+    return FileSystem::WriteAllText(filepath, jsonStr);
 }
 
 void SceneSerializer::SerializeEntity(
@@ -139,19 +138,17 @@ void SceneSerializer::SerializeEntity(
 // =====================================================================
 std::vector<EntityID> SceneSerializer::Deserialize(World* world, const std::string& filepath)
 {
-    std::ifstream ifs(filepath);
-    if (!ifs.is_open()) {
-        // Logger でエラーを残しておくと現場でのトラブル解析が楽になる
-        // Logger::Error("SceneSerializer: failed to open " + filepath);
+    // ★ 変更後:
+    std::string jsonStr = FileSystem::ReadAllText(filepath);
+    if (jsonStr.empty()) {
         return {};
     }
 
     nlohmann::json root;
     try {
-        ifs >> root;
+        root = nlohmann::json::parse(jsonStr);
     }
     catch (const std::exception& /*e*/) {
-        // Logger::Error("SceneSerializer: JSON parse error in " + filepath);
         return {};
     }
 

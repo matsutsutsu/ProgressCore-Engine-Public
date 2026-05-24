@@ -9,6 +9,7 @@
 #include "Engine/Serialization/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
+#include "Engine/Platform/FileSystem.h"
 
 #if ENABLE_EDITOR
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"

@@ -363,20 +363,23 @@
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\AnimationSequencerWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\AnimGraphWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\AssetBrowserWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\BehaviorTreeWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\ConsoleWindow.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\CurveEditorWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\ECSDebugWindow.h">
@@ -544,6 +547,7 @@
     <ClInclude Include="Source\Engine\Physics\JoltPhysicsFacade.h" />
     <ClInclude Include="Source\Engine\Physics\JoltPhysicsManager.h" />
     <ClInclude Include="Source\Engine\Platform\Dialog.h" />
+    <ClInclude Include="Source\Engine\Platform\FileSystem.h" />
     <ClInclude Include="Source\Engine\Platform\Input\GamePad.h" />
     <ClInclude Include="Source\Engine\Platform\Input\IInputAPI.h" />
     <ClInclude Include="Source\Engine\Platform\Input\Input.h" />
@@ -581,17 +585,61 @@
     <ClInclude Include="Source\Engine\UI\Widgets\UIText.h" />
     <ClInclude Include="Source\Game\Core\AllComponents.h" />
     <ClInclude Include="Source\Game\Core\SystemPriority.h" />
-    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BossAISystem.h" />
-    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\ActionRegistry.h" />
-    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeBuilder.h" />
-    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeComponents.h" />
-    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeData.h" />
-    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeLoader.h" />
-    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Drone\DroneComponent.h" />
-    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Drone\DroneFormationSystem.h" />
-    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Drone\DroneMovementSystem.h" />
-    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\TestEnemyActionComponent.h" />
-    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\TestEnemyActionSystem.h" />
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BossActionComponent.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BossActionSystem.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BossAISystem.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\ActionRegistry.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeBuilder.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeComponents.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeData.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeLoader.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Drone\DroneComponent.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Drone\DroneFormationSystem.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Drone\DroneMovementSystem.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\NavAI\AIComponents.h" />
     <ClInclude Include="Source\Game\Logics\AI\NavAI\AIDebugDrawSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\NavAI\AIHearingSystem.h" />
@@ -784,17 +832,20 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\AnimationSequencerWindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\AnimGraphWindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\BehaviorTreeWindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\ConsoleWindow.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\CurveEditorWindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\ECSDebugWindow.cpp">
@@ -917,6 +968,7 @@
     <ClCompile Include="Source\Engine\Physics\JoltPhysicsFacade.cpp" />
     <ClCompile Include="Source\Engine\Physics\JoltPhysicsManager.cpp" />
     <ClCompile Include="Source\Engine\Platform\Dialog.cpp" />
+    <ClCompile Include="Source\Engine\Platform\FileSystem.cpp" />
     <ClCompile Include="Source\Engine\Platform\Input\GamePad.cpp" />
     <ClCompile Include="Source\Engine\Platform\Input\Input.cpp" />
     <ClCompile Include="Source\Engine\Platform\Input\InputFacade.cpp" />
@@ -932,14 +984,46 @@
     <ClCompile Include="Source\Engine\UI\UIElement.cpp" />
     <ClCompile Include="Source\Engine\UI\UIManager.cpp" />
     <ClCompile Include="Source\Game\Core\GamePlayComponentMeta.cpp" />
-    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeComponentMeta.cpp" />
-    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BossAISystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeBuilder.cpp" />
-    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeLoader.cpp" />
-    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Drone\DroneFormationSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Drone\DroneMovementSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\TestEnemyActionComponentMeta.cpp" />
-    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\TestEnemyActionSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeComponentMeta.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BossActionComponentMeta.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BossActionSystem.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BossAISystem.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeBuilder.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeLoader.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Drone\DroneFormationSystem.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Drone\DroneMovementSystem.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\NavAI\AIComponentsMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\NavAI\AIDebugDrawSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\NavAI\AIHearingSystem.cpp" />

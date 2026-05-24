@@ -21,7 +21,6 @@
 #include "Editor/Windows/ConsoleWindow.h"
 #include "Editor/Windows/NavMeshWindow.h"
 #include "Editor/Windows/AnimGraphWindow.h"
-#include "Editor/Windows/CurveEditorWindow.h"
 #include "Editor/Windows/BehaviorTreeWindow.h"
 
 #include "Engine/Serialization/Factory/Prefab.h"
@@ -45,10 +44,9 @@ void EditorWindowManager::Initialize()
     // =========================================================
     RegisterWindow<ECSDebugWindow>();
     RegisterWindow<ConsoleWindow>();
-    RegisterWindow<AnimationSequencerWindow>();
-    RegisterWindow<AnimGraphWindow>()->SetVisible(false);
-    RegisterWindow<CurveEditorWindow>()->SetVisible(false);
-	RegisterWindow<BehaviorTreeWindow>();
+    //RegisterWindow<AnimationSequencerWindow>();
+    //RegisterWindow<AnimGraphWindow>()->SetVisible(false);
+	//RegisterWindow<BehaviorTreeWindow>();
 
     // ※まだ実装中で完全に読み込みたくない（クラッシュする等の）場合は、
     // 引き続きコメントアウトで対応してください。

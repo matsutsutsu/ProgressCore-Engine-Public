@@ -18,6 +18,7 @@
 #include "Engine/Serialization/SceneSerializer.h"
 #include "Game/Core/AllComponents.h"
 #include "Engine/GamePlay/Transform/TransformUpdateSystem.h"
+#include "Engine/Platform/FileSystem.h"
 
 #include <DirectXMath.h>
 #include <SimpleMath.h>
@@ -220,12 +221,13 @@ namespace Prefab {
         CompositeBlueprint LoadBlueprint(const std::string& path)
         {
             CompositeBlueprint bp;
-            std::ifstream ifs(path);
-            if (!ifs.is_open()) return bp;
+            // ★ 変更後: VFS経由で文字列として読み込む
+            std::string jsonStr = FileSystem::ReadAllText(path);
+            if (jsonStr.empty()) return bp;
 
             json root;
             try {
-                ifs >> root;
+                root = json::parse(jsonStr); // 文字列からパース
             }
             catch (const std::exception&) {
                 OutputDebugStringA(("[Prefab] JSON parse failed: " + path + "\n").c_str());
@@ -503,7 +505,7 @@ namespace Prefab {
         if (fullPath.find(".json") == std::string::npos) fullPath += ".json";
 
         // 存在チェック (アセット欠落は実機で見つけにくい不具合の上位なので必ず警告)
-        if (!std::filesystem::exists(fullPath)) {
+        if (!FileSystem::Exists(fullPath)) {
             OutputDebugStringA(("[Prefab] Not Found: " + fullPath + "\n").c_str());
             return 0;
         }

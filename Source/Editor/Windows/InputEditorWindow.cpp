@@ -1,5 +1,6 @@
 #include "InputEditorWindow.h"
 #include "Engine/Platform/Input/IInputAPI.h"
+#include "Engine/Platform/FileSystem.h"
 #include <imgui.h>
 #include <fstream>
 #include <json.hpp>
@@ -17,12 +18,13 @@ void InputEditorWindow::LoadFromJson()
     _actions.clear();
     _axes.clear();
 
-    std::ifstream file(_configPath);
-    if (!file.is_open()) return;
+    // ★ 修正: VFSから読み込み
+    std::string jsonStr = FileSystem::ReadAllText(_configPath);
+    if (jsonStr.empty()) return;
 
     json doc;
     try {
-        file >> doc;
+        doc = json::parse(jsonStr);
 
         if (doc.contains("Actions")) {
             for (const auto& act : doc["Actions"]) {
@@ -77,10 +79,7 @@ void InputEditorWindow::SaveToJson()
         doc["Axes"].push_back(jAx);
     }
 
-    std::ofstream file(_configPath);
-    if (file.is_open()) {
-        file << doc.dump(4); // インデント付きで綺麗に保存
-    }
+    FileSystem::WriteAllText(_configPath, doc.dump(4));
 }
 
 void InputEditorWindow::DrawContents(EditorContext& context)

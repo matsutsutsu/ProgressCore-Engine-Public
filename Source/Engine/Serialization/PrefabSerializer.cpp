@@ -22,6 +22,8 @@
 #include "Engine/Serialization/SaveContext.h"
 #include "Engine/Serialization/SceneFormat.h"
 #include "Engine/GamePlay/Transform/TransformComponent.h"
+#include "Engine/Platform/FileSystem.h"
+
 
 #include <json.hpp>
 #include <fstream>
@@ -148,8 +150,6 @@ bool PrefabSerializer::Save(
     }
 
     // ---- 5. ファイル書き出し ----
-    std::ofstream ofs(filepath);
-    if (!ofs.is_open()) return false;
-    ofs << std::setw(4) << root << std::endl;
-    return ofs.good();
+    std::string jsonStr = root.dump(4);
+    return FileSystem::WriteAllText(filepath, jsonStr);
 }

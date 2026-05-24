@@ -1365,12 +1365,6 @@
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BossAISystem.h">
       <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\TestEnemyActionComponent.h">
-      <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\TestEnemyActionSystem.h">
-      <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Test\LissajousOrbitComponent.h">
       <Filter>Source\Game\Logics\Test</Filter>
     </ClInclude>
@@ -1402,9 +1396,6 @@
       <Filter>Source\Editor\Windows\Animation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\AnimGraphWindow.h">
-      <Filter>Source\Editor\Windows\Animation</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\CurveEditorWindow.h">
       <Filter>Source\Editor\Windows\Animation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\AssetBrowserWindow.h">
@@ -1490,6 +1481,15 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\Meta\ComponentDefine.h">
       <Filter>Source\Engine\Serialization\Meta</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Platform\FileSystem.h">
+      <Filter>Source\Engine\Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BossActionComponent.h">
+      <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BossActionSystem.h">
+      <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2189,12 +2189,6 @@
     <ClCompile Include="Source\Game\Logics\Test\TestAnimationPlayerComponentMeta.cpp">
       <Filter>Source\Game\Logics\Test\TestAnimation</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\TestEnemyActionSystem.cpp">
-      <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\TestEnemyActionComponentMeta.cpp">
-      <Filter>Source\Game\Logics\AI\BehaviorTree\__Meta</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Game\Logics\Test\LissajousOrbitSystem.cpp">
       <Filter>Source\Game\Logics\Test</Filter>
     </ClCompile>
@@ -2214,9 +2208,6 @@
       <Filter>Source\Editor\Windows\Animation</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\AnimGraphWindow.cpp">
-      <Filter>Source\Editor\Windows\Animation</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\CurveEditorWindow.cpp">
       <Filter>Source\Editor\Windows\Animation</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\ConsoleWindow.cpp">
@@ -2266,6 +2257,15 @@
     </ClCompile>
     <ClCompile Include="Source\_generated\_all_meta.cpp">
       <Filter>Source\Engine\_Meta</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Platform\FileSystem.cpp">
+      <Filter>Source\Engine\Platform</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BossActionSystem.cpp">
+      <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BossActionComponentMeta.cpp">
+      <Filter>Source\Game\Logics\AI\BehaviorTree\__Meta</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
