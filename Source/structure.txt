@@ -1,10 +1,12 @@
 [Project Structure] 
  
-Folder PATH listing for volume Windows
-Volume serial number is 0255-C8DA
-C:.
+Folder PATH listing for volume Data
+Volume serial number is 0000006D BC57:0174
+D:.
+│   ECSプロジェクトファイル指示テキスト.txt
 │   structure.txt
 │   _dump_structure.bat
+│   設計指示プロンプト.txt
 │   
 ├───ECS
 │   │   export_to_text.bat
@@ -25,6 +27,8 @@ C:.
 │   │       CCL_PendingOps.h
 │   │       CCL_World.cpp
 │   │       CCL_World.h
+│   │       ECSCoremerged.txt
+│   │       merge_command.bat
 │   │       
 │   └───System
 │           CCL_System.h
@@ -36,6 +40,7 @@ C:.
 │           
 ├───Editor
 │   ├───Core
+│   │       EditorCommandHistory.h
 │   │       EditorContext.h
 │   │       EditorWindow.h
 │   │       EditorWindowManager.cpp
@@ -48,20 +53,35 @@ C:.
 │   ├───Utils
 │   │       AssetBrowser.cpp
 │   │       AssetBrowser.h
+│   │       NavMeshBuilder.cpp
+│   │       NavMeshBuilder.h
 │   │       ShellIconLoader.cpp
 │   │       ShellIconLoader.h
 │   │       
 │   └───Windows
 │           AnimationSequencerWindow.cpp
 │           AnimationSequencerWindow.h
+│           AnimGraphWindow.cpp
+│           AnimGraphWindow.h
 │           AssetBrowserWindow.h
+│           BehaviorTreeWindow.cpp
+│           BehaviorTreeWindow.h
+│           ConsoleWindow.cpp
+│           ConsoleWindow.h
+│           CurveEditorWindow.cpp
+│           CurveEditorWindow.h
+│           ECSDebugWindow.cpp
 │           ECSDebugWindow.h
+│           GameViewWindow.cpp
 │           GameViewWindow.h
 │           HierarchyWindow.cpp
 │           HierarchyWindow.h
+│           InputEditorWindow.cpp
+│           InputEditorWindow.h
 │           InspectorWindow.cpp
 │           InspectorWindow.h
-│           SceneWindow.h
+│           NavMeshWindow.cpp
+│           NavMeshWindow.h
 │           TextEditorWindow.cpp
 │           TextEditorWindow.h
 │           
@@ -70,14 +90,17 @@ C:.
 │   │   _dump_structure.bat
 │   │   
 │   ├───Audio
-│   │       Audio.cpp
-│   │       Audio.h
-│   │       AudioResource.cpp
-│   │       AudioResource.h
-│   │       AudioSource.cpp
-│   │       AudioSource.h
+│   │       AudioComponentMeta.cpp
+│   │       AudioEmitterComponent.h
+│   │       AudioEvents.h
+│   │       AudioSystem.cpp
+│   │       AudioSystem.h
+│   │       FmodAudioManager.cpp
+│   │       FmodAudioManager.h
+│   │       IAudioAPI.h
 │   │       
 │   ├───Core
+│   │   │   EngineServices.h
 │   │   │   Framework.cpp
 │   │   │   Framework.h
 │   │   │   Main.cpp
@@ -94,17 +117,42 @@ C:.
 │   │           HighResolutionTimer.h
 │   │           
 │   ├───GamePlay
+│   │   ├───AI
+│   │   │   └───Navigation
+│   │   │           NavAgentComponent.h
+│   │   │           NavAgentComponentMeta.cpp
+│   │   │           NavigationData.h
+│   │   │           NavMeshDebugDrawSystem.cpp
+│   │   │           NavMeshDebugDrawSystem.h
+│   │   │           NavPathfindingSystem.cpp
+│   │   │           NavPathfindingSystem.h
+│   │   │           NavSteeringSystem.cpp
+│   │   │           NavSteeringSystem.h
+│   │   │           
 │   │   ├───Animation
-│   │   │       AnimationSystem.cpp
-│   │   │       AnimationSystem.h
-│   │   │       AnimatorComponent.h
-│   │   │       AnimatorComponentMeta.cpp
-│   │   │       AnimEventMessages.h
-│   │   │       AnimSequence.h
-│   │   │       
+│   │   │   │   AnimationSystem.cpp
+│   │   │   │   AnimationSystem.h
+│   │   │   │   AnimatorComponent.h
+│   │   │   │   AnimatorComponentMeta.cpp
+│   │   │   │   AnimControllerSystem.cpp
+│   │   │   │   AnimControllerSystem.h
+│   │   │   │   AnimParametersComponent.h
+│   │   │   │   CombatAnimationSyncSystem.cpp
+│   │   │   │   CombatAnimationSyncSystem.h
+│   │   │   │   
+│   │   │   └───Data
+│   │   │           AnimationCurve.h
+│   │   │           AnimEventMessages.h
+│   │   │           AnimGraphSerializer.cpp
+│   │   │           AnimGraphSerializer.h
+│   │   │           AnimSequence.h
+│   │   │           AnimStateMachine.h
+│   │   │           
 │   │   ├───Camera
 │   │   │       CameraBrainSystem.cpp
 │   │   │       CameraBrainSystem.h
+│   │   │       CameraListenerSystem.cpp
+│   │   │       CameraListenerSystem.h
 │   │   │       VirtualCameraComponentMeta.cpp
 │   │   │       VirtualCameraComponents.h
 │   │   │       VisualCameraSystem.cpp
@@ -137,6 +185,8 @@ C:.
 │   │   │   │   │   MaterialComponentMeta.cpp
 │   │   │   │   │   ModelComponent.h
 │   │   │   │   │   ModelComponentMeta.cpp
+│   │   │   │   │   ModelPoseUpdateSystem.cpp
+│   │   │   │   │   ModelPoseUpdateSystem.h
 │   │   │   │   │   ModelRenderSystem.cpp
 │   │   │   │   │   ModelRenderSystem.h
 │   │   │   │   │   PrimitiveComponent.h
@@ -216,9 +266,10 @@ C:.
 │   │   │   │       JoltUpdateSystem.h
 │   │   │   │       
 │   │   │   └───RigidBody
-│   │   │           JoltRigidBodyComponent.h
+│   │   │           JoltRigidbodyComponent.h
 │   │   │           
 │   │   ├───Transform
+│   │   │       BoneAttachmentComponent.h
 │   │   │       HierarchyCleanupSystem.cpp
 │   │   │       HierarchyCleanupSystem.h
 │   │   │       PendingParentComponent.h
@@ -290,6 +341,7 @@ C:.
 │   │   │       GLTFImporter.h
 │   │   │       GraphicsTypes.h
 │   │   │       MaterialData.h
+│   │   │       merge_command.bat
 │   │   │       Model.cpp
 │   │   │       Model.h
 │   │   │       ModelResource.cpp
@@ -323,8 +375,8 @@ C:.
 │   │       │   │   ToonShader.h
 │   │       │   │   
 │   │       │   └───Core
+│   │       │           Shader.cpp
 │   │       │           Shader.h
-│   │       │           ShaderId.h
 │   │       │           
 │   │       ├───Pass
 │   │       │       ShadowMap.cpp
@@ -341,8 +393,6 @@ C:.
 │   │       IPhysicsAPI.h
 │   │       JoltContactListener.cpp
 │   │       JoltContactListener.h
-│   │       JoltDebugRenderer.cpp
-│   │       JoltDebugRenderer.h
 │   │       JoltPhysicsFacade.cpp
 │   │       JoltPhysicsFacade.h
 │   │       JoltPhysicsManager.cpp
@@ -351,6 +401,8 @@ C:.
 │   ├───Platform
 │   │   │   Dialog.cpp
 │   │   │   Dialog.h
+│   │   │   Logger.cpp
+│   │   │   Logger.h
 │   │   │   
 │   │   └───Input
 │   │           GamePad.cpp
@@ -365,24 +417,17 @@ C:.
 │   │           Mouse.cpp
 │   │           Mouse.h
 │   │           
-│   ├───Scripting
-│   │   │   LuaScriptComponent.h
-│   │   │   LuaScriptSystem.cpp
-│   │   │   LuaScriptSystem.h
-│   │   │   
-│   │   └───Bind
-│   │           LuaBind_Components.cpp
-│   │           LuaBind_Components.h
-│   │           LuaBind_Entity.cpp
-│   │           LuaBind_Entity.h
-│   │           LuaBind_Scene.cpp
-│   │           LuaBind_Scene.h
-│   │           
 │   ├───Serialization
+│   │   │   ComponentDefine.h
 │   │   │   ComponentRegistry.cpp
 │   │   │   ComponentRegistry.h
+│   │   │   ComponentRegistry_Editor.h
+│   │   │   EntityLink.h
+│   │   │   LoadContext.h
 │   │   │   PrefabSerializer.cpp
 │   │   │   PrefabSerializer.h
+│   │   │   SaveContext.h
+│   │   │   SceneFormat.h
 │   │   │   SceneSerializer.cpp
 │   │   │   SceneSerializer.h
 │   │   │   SerializationContext.h
@@ -394,10 +439,13 @@ C:.
 │   │   │       SceneInitializer.cpp
 │   │   │       SceneInitializer.h
 │   │   │       
-│   │   └───Meta
-│   │           ComponentMeta.h
-│   │           ComponentMetaImGui.h
-│   │           ComponentMetaJson.h
+│   │   ├───Meta
+│   │   │       ComponentMeta.h
+│   │   │       ComponentMetaImGui.h
+│   │   │       ComponentMetaJson.h
+│   │   │       
+│   │   └───Reflection
+│   │           Reflection.h
 │   │           
 │   └───UI
 │       │   UIContext.h
@@ -419,149 +467,168 @@ C:.
 │               UIProgressBar.h
 │               UIText.h
 │               
-└───Game
-    │   structure.txt
-    │   _dump_structure.bat
-    │   
-    ├───Core
-    │       AllComponents.h
-    │       GamePlayComponentMeta.cpp
-    │       SystemPriority.h
-    │       
-    ├───Logics
-    │   │   GamePlayComponentMeta.cpp
-    │   │   structure.txt
-    │   │   _dump_structure.bat
-    │   │   
-    │   ├───Character
-    │   │   ├───Boids
-    │   │   │       BoidsRenderer.cpp
-    │   │   │       BoidsRenderer.h
-    │   │   │       BoidsSwarmComponent.h
-    │   │   │       BoidsSystem.cpp
-    │   │   │       BoidsSystem.h
-    │   │   │       
-    │   │   ├───Enemy
-    │   │   │       EnemyComponent.h
-    │   │   │       
-    │   │   ├───Player
-    │   │   │       PlayerComponent.h
-    │   │   │       PlayerFeedbackSystem.cpp
-    │   │   │       PlayerFeedbackSystem.h
-    │   │   │       PlayerInputSystem.cpp
-    │   │   │       PlayerInputSystem.h
-    │   │   │       PlayerMoveSystem.cpp
-    │   │   │       PlayerMoveSystem.h
-    │   │   │       
-    │   │   └───PlayerCar
-    │   │           CarCollisionSystem.cpp
-    │   │           CarCollisionSystem.h
-    │   │           PlayerCarComponent.h
-    │   │           PlayerCarComponentMeta.cpp
-    │   │           PlayerCarInputSystem.cpp
-    │   │           PlayerCarInputSystem.h
-    │   │           PlayerCarMoveSystem.cpp
-    │   │           PlayerCarMoveSystem.h
-    │   │           PlayerCarSphereTag.h
-    │   │           
-    │   ├───Combat
-    │   │   │   DeadTag.h
-    │   │   │   GlobalDamageQueue.h
-    │   │   │   HealthComponent.h
-    │   │   │   HealthSystem.cpp
-    │   │   │   HealthSystem.h
-    │   │   │   
-    │   │   ├───Loot
-    │   │   │       CoinComponent.h
-    │   │   │       CoinSystem.cpp
-    │   │   │       CoinSystem.h
-    │   │   │       HitFlashComponent.h
-    │   │   │       HitFlashSystem.cpp
-    │   │   │       HitFlashSystem.h
-    │   │   │       
-    │   │   └───Weapon
-    │   │       ├───Attachments
-    │   │       │       AttachmentComponents.h
-    │   │       │       AttachmentLogics.cpp
-    │   │       │       AttachmentLogics.h
-    │   │       │       AttachmentMasterData.cpp
-    │   │       │       AttachmentMasterData.h
-    │   │       │       AttachmentRegistry.cpp
-    │   │       │       AttachmentRegistry.h
-    │   │       │       BulletHitStateComponent.h
-    │   │       │       OnHitSystems.cpp
-    │   │       │       OnHitSystems.h
-    │   │       │       TravelSystems.cpp
-    │   │       │       TravelSystems.h
-    │   │       │       
-    │   │       ├───BaseSystems
-    │   │       │       BulletCollisionSystem.cpp
-    │   │       │       BulletCollisionSystem.h
-    │   │       │       BulletRaycastSystem.cpp
-    │   │       │       BulletRaycastSystem.h
-    │   │       │       BulletUpdateSystem.cpp
-    │   │       │       BulletUpdateSystem.h
-    │   │       │       
-    │   │       └───Core
-    │   │               BulletBlueprint.h
-    │   │               BulletBlueprintBuilder.cpp
-    │   │               BulletBlueprintBuilder.h
-    │   │               BulletBlueprintLibrary.h
-    │   │               BulletContextComponent.h
-    │   │               BulletEnums.h
-    │   │               GunBuilder.cpp
-    │   │               GunBuilder.h
-    │   │               GunComponent.h
-    │   │               
-    │   ├───GameEvent
-    │   │       GameEvents.h
-    │   │       GameOverResource.h
-    │   │       GameStateMode.h
-    │   │       
-    │   ├───Test
-    │   │       ECSBenchmarkSystem.cpp
-    │   │       ECSBenchmarkSystem.h
-    │   │       OrbitBenchmarkComponent.h
-    │   │       VoxelOceanComponent.h
-    │   │       VoxelOceanSystem.cpp
-    │   │       VoxelOceanSystem.h
-    │   │       
-    │   └───World
-    │       ├───Generation
-    │       │       MapGenerator.cpp
-    │       │       MapGenerator.h
-    │       │       RoomTemplateManager.cpp
-    │       │       RoomTemplateManager.h
-    │       │       RoomTemplates.h
-    │       │       
-    │       ├───Systems
-    │       │       MapDebugSystem.cpp
-    │       │       MapDebugSystem.h
-    │       │       MeshBatcher.cpp
-    │       │       MeshBatcher.h
-    │       │       StruckRescueSystem.cpp
-    │       │       StruckRescueSystem.h
-    │       │       
-    │       └───Triggers
-    │               TriggerComponent.h
-    │               TriggerSystem.cpp
-    │               TriggerSystem.h
-    │               
-    ├───Scenes
-    │       BaseScene.cpp
-    │       BaseScene.h
-    │       EditorScene.cpp
-    │       EditorScene.h
-    │       ParticleScene.cpp
-    │       ParticleScene.h
-    │       SceneLoading.cpp
-    │       SceneLoading.h
-    │       
-    ├───UI
-    │       FloatingTextComponent.h
-    │       FloatingTextSystem.cpp
-    │       FloatingTextSystem.h
-    │       
-    └───Utils
-            PooledParticleComponent.h
-            
+├───Game
+│   │   structure.txt
+│   │   _dump_structure.bat
+│   │   
+│   ├───Core
+│   │       AllComponents.h
+│   │       GamePlayComponentMeta.cpp
+│   │       SystemPriority.h
+│   │       
+│   ├───Logics
+│   │   │   GamePlayComponentMeta.cpp
+│   │   │   structure.txt
+│   │   │   _dump_structure.bat
+│   │   │   
+│   │   ├───AI
+│   │   │   ├───BehaviorTree
+│   │   │   │   │   BehaviorTreeComponentMeta.cpp
+│   │   │   │   │   BossAISystem.cpp
+│   │   │   │   │   BossAISystem.h
+│   │   │   │   │   TestEnemyActionComponent.h
+│   │   │   │   │   TestEnemyActionComponentMeta.cpp
+│   │   │   │   │   TestEnemyActionSystem.cpp
+│   │   │   │   │   TestEnemyActionSystem.h
+│   │   │   │   │   
+│   │   │   │   ├───Data
+│   │   │   │   │       ActionRegistry.h
+│   │   │   │   │       BehaviorTreeBuilder.cpp
+│   │   │   │   │       BehaviorTreeBuilder.h
+│   │   │   │   │       BehaviorTreeComponents.h
+│   │   │   │   │       BehaviorTreeData.h
+│   │   │   │   │       BehaviorTreeLoader.cpp
+│   │   │   │   │       BehaviorTreeLoader.h
+│   │   │   │   │       
+│   │   │   │   └───Drone
+│   │   │   │           DroneComponent.h
+│   │   │   │           DroneFormationSystem.cpp
+│   │   │   │           DroneFormationSystem.h
+│   │   │   │           DroneMovementSystem.cpp
+│   │   │   │           DroneMovementSystem.h
+│   │   │   │           
+│   │   │   └───NavAI
+│   │   │       │   AIComponents.h
+│   │   │       │   AIComponentsMeta.cpp
+│   │   │       │   AIDebugDrawSystem.cpp
+│   │   │       │   AIDebugDrawSystem.h
+│   │   │       │   AIHearingSystem.cpp
+│   │   │       │   AIHearingSystem.h
+│   │   │       │   AIMovementControlSystem.cpp
+│   │   │       │   AIMovementControlSystem.h
+│   │   │       │   AIPatrolSystem.cpp
+│   │   │       │   AIPatrolSystem.h
+│   │   │       │   AIPerceptionSystem.cpp
+│   │   │       │   AIPerceptionSystem.h
+│   │   │       │   
+│   │   │       └───Events
+│   │   │               AISoundEvent.h
+│   │   │               
+│   │   ├───Audio
+│   │   │       DistractionItemComponent.h
+│   │   │       DistractionItemComponentMeta.cpp
+│   │   │       DistractionItemDebugDrawSystem.cpp
+│   │   │       DistractionItemDebugDrawSystem.h
+│   │   │       DistractionItemSystem.cpp
+│   │   │       DistractionItemSystem.h
+│   │   │       
+│   │   ├───Character
+│   │   │   │   CharacterMovementInputComponent.h
+│   │   │   │   CharacterMovementInputComponentMeta.cpp
+│   │   │   │   
+│   │   │   ├───Boids
+│   │   │   │       BoidsRenderer.cpp
+│   │   │   │       BoidsRenderer.h
+│   │   │   │       BoidsSwarmComponent.h
+│   │   │   │       BoidsSystem.cpp
+│   │   │   │       BoidsSystem.h
+│   │   │   │       
+│   │   │   ├───Enemy
+│   │   │   │       EnemyComponent.h
+│   │   │   │       
+│   │   │   ├───Player
+│   │   │   │       PlayerComponent.h
+│   │   │   │       PlayerFeedbackSystem.cpp
+│   │   │   │       PlayerFeedbackSystem.h
+│   │   │   │       PlayerInputSystem.cpp
+│   │   │   │       PlayerInputSystem.h
+│   │   │   │       PlayerMoveSystem.cpp
+│   │   │   │       PlayerMoveSystem.h
+│   │   │   │       
+│   │   │   └───PlayerCar
+│   │   │           CarCollisionSystem.cpp
+│   │   │           CarCollisionSystem.h
+│   │   │           PlayerCarComponent.h
+│   │   │           PlayerCarComponentMeta.cpp
+│   │   │           PlayerCarInputSystem.cpp
+│   │   │           PlayerCarInputSystem.h
+│   │   │           PlayerCarMoveSystem.cpp
+│   │   │           PlayerCarMoveSystem.h
+│   │   │           PlayerCarSphereTag.h
+│   │   │           
+│   │   ├───Combat
+│   │   │   │   CombatComponents.h
+│   │   │   │   CombatComponentsMeta.cpp
+│   │   │   │   CombatRosterComponent.h
+│   │   │   │   DamageResolutionSystem.cpp
+│   │   │   │   DamageResolutionSystem.h
+│   │   │   │   DeadTag.h
+│   │   │   │   HealthComponent.h
+│   │   │   │   HealthSystem.cpp
+│   │   │   │   HealthSystem.h
+│   │   │   │   HitboxCollisionSystem.cpp
+│   │   │   │   HitboxCollisionSystem.h
+│   │   │   │   
+│   │   │   └───Loot
+│   │   │           HitFlashComponent.h
+│   │   │           HitFlashSystem.cpp
+│   │   │           HitFlashSystem.h
+│   │   │           
+│   │   ├───GameEvent
+│   │   │       GameEvents.h
+│   │   │       GameOverResource.h
+│   │   │       GameStateMode.h
+│   │   │       
+│   │   └───Test
+│   │           ECSBenchmarkSystem.cpp
+│   │           ECSBenchmarkSystem.h
+│   │           LissajousOrbitComponent.h
+│   │           LissajousOrbitSystem.cpp
+│   │           LissajousOrbitSystem.h
+│   │           OrbitBenchmarkComponent.h
+│   │           TestAnimationPlayerComponent.h
+│   │           TestAnimationPlayerComponentMeta.cpp
+│   │           TestAnimationPlayerSystem.cpp
+│   │           TestAnimationPlayerSystem.h
+│   │           TornadoVortexComponent.h
+│   │           TornadoVortexSystem.cpp
+│   │           TornadoVortexSystem.h
+│   │           VectorFlowComponent.h
+│   │           VectorFlowSystem.cpp
+│   │           VectorFlowSystem.h
+│   │           VoxelOceanComponent.h
+│   │           VoxelOceanSystem.cpp
+│   │           VoxelOceanSystem.h
+│   │           
+│   ├───Scenes
+│   │       BaseScene.cpp
+│   │       BaseScene.h
+│   │       EditorScene.cpp
+│   │       EditorScene.h
+│   │       ParticleScene.cpp
+│   │       ParticleScene.h
+│   │       SceneLoading.cpp
+│   │       SceneLoading.h
+│   │       
+│   ├───Script
+│   ├───UI
+│   │       FloatingTextComponent.h
+│   │       FloatingTextSystem.cpp
+│   │       FloatingTextSystem.h
+│   │       
+│   └───Utils
+│           PooledParticleComponent.h
+│           
+└───_generated
+        _all_meta.cpp
+        

@@ -21,6 +21,8 @@
 #include "Engine/Serialization/SaveContext.h"
 #include "Engine/Serialization/LoadContext.h"
 
+#include "Engine/Serialization/Reflection/Reflection.h"
+
 // ===================================================================
 // 1. HitboxComponent (攻撃判定)
 // ===================================================================

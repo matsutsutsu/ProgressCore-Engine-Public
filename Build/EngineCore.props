@@ -101,10 +101,18 @@
 			</AdditionalDependencies>
 		</Link>
 
-		<PostBuildEvent>
+		<PreBuildEvent>
+			<Command>
+				py -3 "$(SolutionDir)Tools\python\ccl_codegen.py" --src "$(SolutionDir)Source" --out "$(SolutionDir)Source\_generated" --include-root "$(SolutionDir)Source"
+				%(Command)
+			</Command>
+		</PreBuildEvent>
+
+			<PostBuildEvent>
 			<Command>
 				xcopy /y /d "$(SolutionDir)External\FMOD\core\lib\x64\*.dll" "$(TargetDir)"
 				xcopy /y /d "$(SolutionDir)External\FMOD\studio\lib\x64\*.dll" "$(TargetDir)"
+
 				%(Command)
 			</Command>
 		</PostBuildEvent>

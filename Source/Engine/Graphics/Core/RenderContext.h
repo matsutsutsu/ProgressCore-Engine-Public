@@ -13,7 +13,11 @@ class PrimitiveRenderer;
 class ShapeRenderer;      
 
 class RenderQueue;
+class ResourceManager;
+class ShaderRegistry;
 
+
+// これワールド経由で取らせる？
 struct RenderContext
 {
 	// 全てのポインタを nullptr で初期化
@@ -32,6 +36,8 @@ struct RenderContext
 
 	// 伝票カウンター
 	RenderQueue* renderQueue = nullptr;
+	ResourceManager* resourceManager; // リソース管理
+	ShaderRegistry* shaderRegistry;  // シェーダー管理
 
 	// =========================================================
 	//  パイプラインの最終出力先 (PostProcessがここに絵を返す)

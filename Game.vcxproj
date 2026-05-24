@@ -551,7 +551,6 @@
     <ClInclude Include="Source\Engine\Platform\Input\Keyboard.h" />
     <ClInclude Include="Source\Engine\Platform\Input\Mouse.h" />
     <ClInclude Include="Source\Engine\Platform\Logger.h" />
-    <ClInclude Include="Source\Engine\Serialization\ComponentDefine.h" />
     <ClInclude Include="Source\Engine\Serialization\ComponentRegistry.h" />
     <ClInclude Include="Source\Engine\Serialization\ComponentRegistry_Editor.h" />
     <ClInclude Include="Source\Engine\Serialization\EntityLink.h" />
@@ -559,6 +558,7 @@
     <ClInclude Include="Source\Engine\Serialization\Factory\Prefab.h" />
     <ClInclude Include="Source\Engine\Serialization\Factory\SceneInitializer.h" />
     <ClInclude Include="Source\Engine\Serialization\LoadContext.h" />
+    <ClInclude Include="Source\Engine\Serialization\Meta\ComponentDefine.h" />
     <ClInclude Include="Source\Engine\Serialization\Meta\ComponentMeta.h" />
     <ClInclude Include="Source\Engine\Serialization\Meta\ComponentMetaImGui.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
@@ -973,6 +973,7 @@
     <ClCompile Include="Source\Game\Scenes\ParticleScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\SceneLoading.cpp" />
     <ClCompile Include="Source\Game\UI\FloatingTextSystem.cpp" />
+    <ClCompile Include="Source\_generated\_all_meta.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="External\DirectXTex\DirectXTex_Desktop_2022.vcxproj">

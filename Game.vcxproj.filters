@@ -439,6 +439,9 @@
     <Filter Include="Source\Engine\Serialization\Reflection">
       <UniqueIdentifier>{71d559ab-f949-4a0d-bea5-9be420f939de}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\_Meta">
+      <UniqueIdentifier>{8a565a3a-ae3a-41b2-ab68-c99b8ff213a9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1482,11 +1485,11 @@
     <ClInclude Include="Source\Engine\Serialization\ComponentRegistry_Editor.h">
       <Filter>Source\Engine\Serialization</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Serialization\ComponentDefine.h">
-      <Filter>Source\Engine\Serialization</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\Reflection\Reflection.h">
       <Filter>Source\Engine\Serialization\Reflection</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Serialization\Meta\ComponentDefine.h">
+      <Filter>Source\Engine\Serialization\Meta</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2260,6 +2263,9 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\GameViewWindow.cpp">
       <Filter>Source\Editor\Windows\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\_generated\_all_meta.cpp">
+      <Filter>Source\Engine\_Meta</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
