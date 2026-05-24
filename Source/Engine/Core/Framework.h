@@ -4,10 +4,11 @@
 #include "Engine/Core/Time/HighResolutionTimer.h"
 
 #ifdef ENABLE_EDITOR
-#include "Editor/Core/EditorWindowManager.h"
 #include "Editor/Core/EditorContext.h"
 #endif
 
+class EditorWindowManager;
+class ImGuiBufferSink;
 
 class Framework
 {
@@ -44,6 +45,7 @@ private:
 	float m_debugTimer = 0.0f;         // 1秒経過計測用
 	int m_displayFixedCount = 0;       // 表示用の確定値
 
+	std::shared_ptr<ImGuiBufferSink> m_consoleLogSink; // コンソールウィンドウと共有するログシンク
 
 // =========================================================
 // エディタ層のインスタンス群

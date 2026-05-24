@@ -1,100 +1,176 @@
 #pragma once
-#include <string>
-#include <vector>
-#include <mutex>
-#include <fstream> // ファイル出力
+//==============================================================================
+// Logger.h
+//
+// 販売エンジン向けロガー
+//
+// 主な特徴:
+//   - LogCategory は X-Macro で一元定義 → 追加時の修正は1箇所だけ
+//   - Sink (出力先) を差し替え可能 (Debug出力 / ファイル / ImGui / ネットワーク...)
+//   - std::source_location で __FILE__/__LINE__ を自動取得
+//   - タイムスタンプ + スレッドID を必ず記録
+//   - Error は Release でも残し、即フラッシュ
+//==============================================================================
 
-// ログの発生元カテゴリ（エンジンが拡張されたらここを増やす）
-enum class LogCategory {
-    Core,       // エンジン基盤（初期化、シーン遷移など）
-    ECS,        // エンティティ・コンポーネント・システム
-    Editor,     // エディタ操作、Undo/Redo、ツール関連
-    Physics,    // Joltなどの物理演算
-    Render,     // 描画、シェーダー、ライト
-    Audio,      // FMODなどのサウンド
-    Game,       // ゲームロジック（プレイヤー、敵AIなど）
-	AI,         // AI関連（パスファインディング、ビヘイビアツリーなど）
-    Count       // カテゴリの総数（UI作成用ループに使う）
+#include <chrono>
+#include <cstdint>
+#include <memory>
+#include <mutex>
+#include <source_location>
+#include <string>
+#include <thread>
+#include <vector>
+
+//==============================================================================
+// LogCategory - X-Macro で一元定義
+//   追加するときは下の LIST に 1行追加するだけ
+//==============================================================================
+#define CCL_LOG_CATEGORY_LIST(X) \
+    X(Core,    "Core")    \
+    X(ECS,     "ECS")     \
+    X(Editor,  "Editor")  \
+    X(Physics, "Physics") \
+    X(Render,  "Render")  \
+    X(Audio,   "Audio")   \
+    X(Game,    "Game")    \
+    X(AI,      "AI")
+
+/**
+ * @brief ログのカテゴリ。新しいカテゴリは CCL_LOG_CATEGORY_LIST に追加する
+ */
+enum class LogCategory : uint8_t
+{
+#define CCL_X(name, str) name,
+    CCL_LOG_CATEGORY_LIST(CCL_X)
+#undef CCL_X
+    Count
 };
 
-// ログの重要度
-enum class LogLevel {
+/**
+ * @brief LogCategory を表示用文字列に変換する
+ */
+constexpr const char* GetLogCategoryName(LogCategory c) noexcept
+{
+    constexpr const char* kNames[] = {
+#define CCL_X(name, str) str,
+        CCL_LOG_CATEGORY_LIST(CCL_X)
+#undef CCL_X
+    };
+    const auto i = static_cast<size_t>(c);
+    return (i < static_cast<size_t>(LogCategory::Count)) ? kNames[i] : "Unknown";
+}
+
+//==============================================================================
+// LogLevel
+//==============================================================================
+enum class LogLevel : uint8_t
+{
     Info,
     Success,
     Warning,
-    Error
+    Error,
 };
 
-// 1件のログデータ
-struct LogMessage {
-    LogCategory category;
-    LogLevel level;
-    std::string file; // 発生元ファイル名
-    int line;         // 発生元行番号
-    std::string text;
+//==============================================================================
+// LogMessage - 1件分のログデータ
+//==============================================================================
+struct LogMessage
+{
+    LogCategory                           category = LogCategory::Core;
+    LogLevel                              level = LogLevel::Info;
+    std::chrono::system_clock::time_point time{};
+    std::thread::id                       threadId{};
+    std::string                           file;       ///< ファイル名 (フルパスではなく短縮済み)
+    int                                   line = 0;
+    std::string                           text;
 };
 
-// =========================================================
-// ログ管理コア (シングルトン)
-// =========================================================
-class Logger {
+//==============================================================================
+// ILogSink - 出力先の抽象インターフェース
+//
+// 実装例: DebugStreamSink (OutputDebugString), FileSink, ImGuiBufferSink, etc
+//==============================================================================
+class ILogSink
+{
 public:
-    static Logger& Instance() {
-        static Logger instance;
-        return instance;
-    }
+    virtual ~ILogSink() = default;
 
-    // フォーマット付きでログを記録する関数 (printfと同じ使い方)
-    void Log(LogCategory category, LogLevel level, const char* file, int line, const char* fmt, ...);
+    /// @brief ログ1件を受け取り、シンク固有の方法で出力する
+    virtual void Write(const LogMessage& msg) = 0;
 
-    // GUI描画用に蓄積されたログを取得
-    const std::vector<LogMessage>& GetMessages() const { return _messages; }
+    /// @brief 出力をフラッシュする (ファイルバッファを書き出す等)
+    virtual void Flush() {}
 
-    // ログの消去
+    /// @brief 履歴をクリアする (ImGuiBufferSink等で使用、不要なシンクは何もしなくて良い)
+    virtual void Clear() {}
+};
+
+//==============================================================================
+// Logger - 中央ハブ
+//
+// 各シンクへログを配信する。Logger 自身は履歴を持たない。
+// UI 表示が必要な場合は ImGuiBufferSink を AddSink して、そのスナップショットを使う。
+//==============================================================================
+class Logger
+{
+public:
+    /// @brief シングルトンアクセス
+    static Logger& Instance();
+
+    /// @brief シンクを登録する (起動時に推奨)
+    void AddSink(std::shared_ptr<ILogSink> sink);
+
+    /// @brief シンクを除去する
+    void RemoveSink(const std::shared_ptr<ILogSink>& sink);
+
+    /// @brief 全シンクをクリアする
+    void ClearSinks();
+
+    /**
+     * @brief printf スタイルでログを記録する
+     * @param category  ログカテゴリ
+     * @param level     重要度
+     * @param loc       呼び出し元情報 (マクロから std::source_location::current() が渡される)
+     * @param fmt       printf 形式の書式文字列
+     */
+    void Log(LogCategory category, LogLevel level,
+        const std::source_location& loc, const char* fmt, ...);
+
+    /// @brief 全シンクの履歴クリアを要求 (ImGuiBufferSink等のみ反応)
     void Clear();
 
+    /// @brief 全シンクのフラッシュを要求
+    void Flush();
+
 private:
-    Logger();  
-    ~Logger(); 
+    Logger() = default;
+    ~Logger();
+    Logger(const Logger&) = delete;
+    Logger& operator=(const Logger&) = delete;
 
-    std::vector<LogMessage> _messages;
-    std::mutex _mutex; // 物理スレッドなど別スレッドから呼ばれてもクラッシュしないための鍵
-    
-    std::ofstream _fileStream; // ログファイルへのストリーム
-
-    const size_t MAX_LOG_COUNT = 1000; // メモリ爆発を防ぐ上限
+    mutable std::mutex                     _mutex;
+    std::vector<std::shared_ptr<ILogSink>> _sinks;
 };
 
-
-
-// ==============================================================================
-//  Releaseビルド時の自動消去と、ERRORの生存戦略
-// ==============================================================================
-
-// _DEBUG は、Visual StudioがDebugビルドの時に自動で定義してくれる隠しフラグです
+//==============================================================================
+// マクロ群
+//
+// Debug ビルド:   INFO / SUCCESS / WARN は記録される
+// Release ビルド: INFO / SUCCESS / WARN は完全に消滅 ((void)0)
+// ERROR は常に記録される (販売後のクラッシュ解析の生命線)
+//==============================================================================
 #ifdef _DEBUG
-    // ---------------------------------------------------------
-    // 【Debugビルド】全て記録する
-    // ---------------------------------------------------------
-#define CCL_LOG_INFO(category, ...)    Logger::Instance().Log(category, LogLevel::Info, __FILE__, __LINE__, __VA_ARGS__)
-#define CCL_LOG_SUCCESS(category, ...) Logger::Instance().Log(category, LogLevel::Success, __FILE__, __LINE__, __VA_ARGS__)
-#define CCL_LOG_WARN(category, ...)    Logger::Instance().Log(category, LogLevel::Warning, __FILE__, __LINE__, __VA_ARGS__)
-
+#define CCL_LOG_INFO(category, ...)    \
+        Logger::Instance().Log((category), LogLevel::Info,    std::source_location::current(), __VA_ARGS__)
+#define CCL_LOG_SUCCESS(category, ...) \
+        Logger::Instance().Log((category), LogLevel::Success, std::source_location::current(), __VA_ARGS__)
+#define CCL_LOG_WARN(category, ...)    \
+        Logger::Instance().Log((category), LogLevel::Warning, std::source_location::current(), __VA_ARGS__)
 #else
-    // ---------------------------------------------------------
-    // 【Releaseビルド】INFO と WARN を「無」にする（処理負荷ゼロ）
-    // ---------------------------------------------------------
-    // ((void)0) はC++における「何もしない安全な構文」です。
-    // コンパイラはこれを見ると、処理を丸ごとスキップ（最適化で消去）します。
 #define CCL_LOG_INFO(category, ...)    ((void)0)
 #define CCL_LOG_SUCCESS(category, ...) ((void)0)
 #define CCL_LOG_WARN(category, ...)    ((void)0)
-
 #endif
 
-// ---------------------------------------------------------
-// ★ アーキテクトの絶対ルール：ERROR は Release でも消さない！
-// ---------------------------------------------------------
-// プレイヤーの環境でゲームがクラッシュした際、原因究明の唯一の手がかり（ダイイングメッセージ）
-// となるため、ERRORだけはビルド設定に関わらず常にファイルへ書き出します。
-#define CCL_LOG_ERROR(category, ...)   Logger::Instance().Log(category, LogLevel::Error, __FILE__, __LINE__, __VA_ARGS__)
+#define CCL_LOG_ERROR(category, ...) \
+    Logger::Instance().Log((category), LogLevel::Error, std::source_location::current(), __VA_ARGS__)

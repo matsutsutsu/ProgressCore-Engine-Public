@@ -16,6 +16,21 @@ public:
 
     bool IsVisible() const { return _isVisible; }
 
+
+    template<typename T>
+    T* GetWindow()
+    {
+        for (auto& window : _windows)
+        {
+            if (auto* ptr = dynamic_cast<T*>(window.get()))
+            {
+                return ptr;
+            }
+        }
+
+        return nullptr;
+    }
+
 private:
 
     void DrawMainMenuBar(EditorContext& context);
@@ -39,6 +54,8 @@ private:
         _windows.push_back(std::move(window));
         return ptr; // ★ポインタを返すことで、登録した直後に設定をいじれるようになる
     }
+
+ 
 
     std::vector<std::unique_ptr<EditorWindow>> _windows;
 

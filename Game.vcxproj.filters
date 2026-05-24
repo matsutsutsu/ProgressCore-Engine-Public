@@ -1491,6 +1491,9 @@
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BossActionSystem.h">
       <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Platform\LogSinks.h">
+      <Filter>Source\Engine\Platform</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">

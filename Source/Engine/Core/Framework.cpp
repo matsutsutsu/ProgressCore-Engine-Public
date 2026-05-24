@@ -16,11 +16,17 @@
 
 #include "Engine/Serialization/Factory/Prefab.h"                 
 #include "Engine/Platform/Dialog.h"
+#include "Engine/Platform/Logger.h"
+#include "Engine/Platform/LogSinks.h"
+#include "Editor/Windows/ConsoleWindow.h"
 
 #include "EngineServices.h"
 
+
 #if ENABLE_EDITOR
 #include <imgui.h>
+#include "Editor/Core/EditorWindowManager.h"
+#include "Editor/Core/EditorContext.h"
 #include "Engine/Graphics/Renderer/ImGuiRenderer.h"
 #endif
 
@@ -51,6 +57,13 @@ Framework::Framework(HWND hWnd)
 #if TRACY_ENABLE
 	ZoneScopedN("Framework::Constructor");
 #endif
+
+	// ★ 最初にLoggerをセットアップ (他システムが起動時に CCL_LOG を呼ぶため)
+	Logger::Instance().AddSink(std::make_shared<DebugStreamSink>());
+	Logger::Instance().AddSink(std::make_shared<FileSink>(
+		"Build/Logs/Engine.log", 10ull * 1024 * 1024, 3));
+	m_consoleLogSink = std::make_shared<ImGuiBufferSink>(2000);
+	Logger::Instance().AddSink(m_consoleLogSink);
 
 
 	// グラフィックス初期化
@@ -90,6 +103,10 @@ Framework::Framework(HWND hWnd)
 	// エディタの初期化をフレームワーク層で行う
 	m_editorWindowManager = std::make_unique<EditorWindowManager>();
 	m_editorWindowManager->Initialize();
+
+	// ConsoleWindow に Sink を渡す
+	if (auto* console = m_editorWindowManager->GetWindow<ConsoleWindow>())
+		console->SetBufferSink(m_consoleLogSink);
 #endif
 
 }
@@ -119,6 +136,8 @@ Framework::~Framework()
     // これらが「デバイスへの参照」を握っている最後の犯人たちです。
     Prefab::Cleanup();
 
+	Logger::Instance().Flush();
+	Logger::Instance().ClearSinks(); // shared_ptr 循環参照防止
 
 }
 

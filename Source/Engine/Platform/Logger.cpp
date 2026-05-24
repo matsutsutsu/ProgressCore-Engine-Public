@@ -1,108 +1,112 @@
+//==============================================================================
+// Logger.cpp
+//==============================================================================
 #include "Logger.h"
+
+#include <algorithm>
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
-#include <Windows.h>
-#include <filesystem>
 
-// =========================================================
-// フルパスからファイル名だけを抽出するヘルパー
-// 理由: __FILE__ は "C:\MyGame\Engine\Scene.cpp" のような
-// 超長い絶対パスを返すため、UIが見にくくなるのを防ぐ。
-// =========================================================
-static const char* ExtractFileName(const char* fullPath) {
-    const char* file = strrchr(fullPath, '\\');
-    if (!file) file = strrchr(fullPath, '/');
-    return file ? file + 1 : fullPath;
-}
-
-// Enum から文字列に変換するヘルパー関数
-static const char* GetCategoryName(LogCategory category) {
-    switch (category) {
-    case LogCategory::Core:    return "Core";
-    case LogCategory::ECS:     return "ECS";
-    case LogCategory::Physics: return "Physics";
-    case LogCategory::Render:  return "Render";
-    case LogCategory::Audio:   return "Audio";
-    case LogCategory::Game:    return "Game";
-    case LogCategory::AI:      return "AI";
-    case LogCategory::Editor:  return "Editor";
-    default:                   return "Unknown";
-    }
-}
-
-// コンストラクタ：エンジンの起動時に1回だけ呼ばれる
-Logger::Logger()
+namespace
 {
-    // ★ 改良: ログ専用のフォルダパスを定義
-    std::string logDir = "Build/Logs";
-    std::string logFile = logDir + "/EngineDebug_Log.txt";
-
-    // フォルダが存在しなければ、自動で作成する（超便利）
-    std::filesystem::create_directories(logDir);
-
-    // そのフォルダの中にファイルを作る
-    _fileStream.open(logFile, std::ios::out | std::ios::trunc);
-
-    if (_fileStream.is_open()) {
-        _fileStream << "=== Engine Log Started ===" << std::endl;
+    /// フルパスからファイル名のみを抽出する
+    const char* ExtractFileName(const char* fullPath) noexcept
+    {
+        if (!fullPath) return "";
+        const char* file = std::strrchr(fullPath, '\\');
+        if (!file)  file = std::strrchr(fullPath, '/');
+        return file ? file + 1 : fullPath;
     }
 }
 
-// デストラクタ
+Logger& Logger::Instance()
+{
+    static Logger instance;
+    return instance;
+}
+
 Logger::~Logger()
 {
-    if (_fileStream.is_open()) {
-        _fileStream << "=== Engine Log Closed ===" << std::endl;
-        _fileStream.close();
-    }
+    // 終了時に必ずフラッシュ (取りこぼし防止)
+    Flush();
 }
 
-void Logger::Log(LogCategory category, LogLevel level, const char* file, int line, const char* fmt, ...)
+void Logger::AddSink(std::shared_ptr<ILogSink> sink)
 {
-    // 1. フォーマット文字列の展開
+    if (!sink) return;
+    std::lock_guard lock(_mutex);
+    _sinks.push_back(std::move(sink));
+}
+
+void Logger::RemoveSink(const std::shared_ptr<ILogSink>& sink)
+{
+    std::lock_guard lock(_mutex);
+    _sinks.erase(std::remove(_sinks.begin(), _sinks.end(), sink), _sinks.end());
+}
+
+void Logger::ClearSinks()
+{
+    std::lock_guard lock(_mutex);
+    _sinks.clear();
+}
+
+void Logger::Log(LogCategory category, LogLevel level,
+    const std::source_location& loc, const char* fmt, ...)
+{
+    // 1. メッセージ展開
     char buffer[2048];
     va_list args;
     va_start(args, fmt);
-    vsnprintf(buffer, sizeof(buffer), fmt, args);
+    std::vsnprintf(buffer, sizeof(buffer), fmt ? fmt : "", args);
     va_end(args);
 
-    // カテゴリ名をプレフィックスに含める
-    const char* shortFile = ExtractFileName(file);
-    char prefix[256];
-    // 出力例: [Physics] [JoltPhysicsManager.cpp:142]
-    snprintf(prefix, sizeof(prefix), "[%s] [%s:%d] ", GetCategoryName(category), shortFile, line);
+    // 2. LogMessage 構築
+    LogMessage msg;
+    msg.category = category;
+    msg.level = level;
+    msg.time = std::chrono::system_clock::now();
+    msg.threadId = std::this_thread::get_id();
+    msg.file = ExtractFileName(loc.file_name());
+    msg.line = static_cast<int>(loc.line());
+    msg.text = buffer;
 
-    // 2. Visual Studioの「出力」ウィンドウに流す
-    OutputDebugStringA(prefix);
-    OutputDebugStringA(buffer);
-    OutputDebugStringA("\n");
-
-    // 3. スレッドセーフ区間
-    std::lock_guard<std::mutex> lock(_mutex);
-
-    if (_fileStream.is_open()) {
-        const char* levelStr = (level == LogLevel::Error) ? "[ERROR] " :
-            (level == LogLevel::Warning) ? "[WARN] " :
-            (level == LogLevel::Success) ? "[SUCCESS] " : "[INFO] "; 
-
-        _fileStream << levelStr << prefix << buffer << "\n";
-
-        if (level == LogLevel::Error) {
-            _fileStream.flush();
-        }
+    // 3. 各シンクへ配信
+    std::lock_guard lock(_mutex);
+    for (const auto& sink : _sinks)
+    {
+        // シンクの例外で他シンクが止まらないようにする
+        try { sink->Write(msg); }
+        catch (...) {}
     }
 
-    // category をコンストラクタに追加
-    _messages.push_back({ category, level, std::string(shortFile), line, std::string(buffer) });
-
-    if (_messages.size() > MAX_LOG_COUNT) {
-        _messages.erase(_messages.begin());
+    // 4. Error は即フラッシュ (クラッシュ直前の取りこぼし防止)
+    if (level == LogLevel::Error)
+    {
+        for (const auto& sink : _sinks)
+        {
+            try { sink->Flush(); }
+            catch (...) {}
+        }
     }
 }
 
 void Logger::Clear()
 {
-    std::lock_guard<std::mutex> lock(_mutex);
-    _messages.clear();
+    std::lock_guard lock(_mutex);
+    for (const auto& sink : _sinks)
+    {
+        try { sink->Clear(); }
+        catch (...) {}
+    }
+}
+
+void Logger::Flush()
+{
+    std::lock_guard lock(_mutex);
+    for (const auto& sink : _sinks)
+    {
+        try { sink->Flush(); }
+        catch (...) {}
+    }
 }

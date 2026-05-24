@@ -555,6 +555,7 @@
     <ClInclude Include="Source\Engine\Platform\Input\Keyboard.h" />
     <ClInclude Include="Source\Engine\Platform\Input\Mouse.h" />
     <ClInclude Include="Source\Engine\Platform\Logger.h" />
+    <ClInclude Include="Source\Engine\Platform\LogSinks.h" />
     <ClInclude Include="Source\Engine\Serialization\ComponentRegistry.h" />
     <ClInclude Include="Source\Engine\Serialization\ComponentRegistry_Editor.h" />
     <ClInclude Include="Source\Engine\Serialization\EntityLink.h" />
