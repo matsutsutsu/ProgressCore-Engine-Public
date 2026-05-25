@@ -1,5 +1,5 @@
 #include "HierarchyCleanupSystem.h"
-#include "Engine/GamePlay/Transform/TransformUpdateSystem.h" // DetachChildを使うため
+#include "Engine/Transform/Systems/TransformUpdateSystem.h" // DetachChildを使うため
 #include "Engine/ECS/Core/CCL_World.h"
 #include <algorithm> // for std::unique if needed
 #include "Engine/Serialization/Factory/Prefab.h" // ReturnParticleToPoolを使うため

@@ -1,6 +1,6 @@
-#include "Engine/GamePlay/Transform/TransformComponent.h"
-#include "Engine/Serialization/ComponentRegistry.h"
-#include "Engine/Serialization/ComponentRegistry_Editor.h"
+#include "Engine/Transform/Components/TransformComponent.h"
+#include "Engine/Serialization/Registry/ComponentRegistry.h"
+#include "Engine/Serialization/Registry/ComponentRegistry_Editor.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 

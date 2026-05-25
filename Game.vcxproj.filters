@@ -460,6 +460,15 @@
     <Filter Include="Source\Game\Logics\AI\BehaviorTree\_Meta">
       <UniqueIdentifier>{8ef38902-d889-483c-9b95-bbfdb73fdd31}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Transform">
+      <UniqueIdentifier>{e93fa87e-0ab4-4452-a394-951efe2500a8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Transform\Components">
+      <UniqueIdentifier>{7be7ab98-ffc3-40e7-babe-a9d634b50a71}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Transform\Systems">
+      <UniqueIdentifier>{9043fe89-8d6c-4828-b724-29c0ad26b338}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1479,6 +1488,33 @@
     <ClInclude Include="Source\Engine\Scene\SceneManager.h">
       <Filter>Source\Engine\Scene</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\JoltIntegration\IPhysicsAPI.h">
+      <Filter>Source\Engine\Physics\JoltIntegration</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltContactListener.h">
+      <Filter>Source\Engine\Physics\JoltIntegration</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsFacade.h">
+      <Filter>Source\Engine\Physics\JoltIntegration</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsManager.h">
+      <Filter>Source\Engine\Physics\JoltIntegration</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Transform\Components\BoneAttachmentComponent.h">
+      <Filter>Source\Engine\Transform\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Transform\Components\PendingParentComponent.h">
+      <Filter>Source\Engine\Transform\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Transform\Components\TransformComponent.h">
+      <Filter>Source\Engine\Transform\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Transform\Systems\HierarchyCleanupSystem.h">
+      <Filter>Source\Engine\Transform\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Transform\Systems\TransformUpdateSystem.h">
+      <Filter>Source\Engine\Transform\Systems</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2227,6 +2263,24 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Scene\SceneManager.cpp">
       <Filter>Source\Engine\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltContactListener.cpp">
+      <Filter>Source\Engine\Physics\JoltIntegration</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsFacade.cpp">
+      <Filter>Source\Engine\Physics\JoltIntegration</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsManager.cpp">
+      <Filter>Source\Engine\Physics\JoltIntegration</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Transform\Components\TransformComponentMeta.cpp">
+      <Filter>Source\Engine\Transform\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Transform\Systems\HierarchyCleanupSystem.cpp">
+      <Filter>Source\Engine\Transform\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Transform\Systems\TransformUpdateSystem.cpp">
+      <Filter>Source\Engine\Transform\Systems</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

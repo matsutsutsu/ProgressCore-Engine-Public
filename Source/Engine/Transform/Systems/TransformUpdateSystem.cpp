@@ -1,20 +1,20 @@
 #include "TransformUpdateSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
 
-#include "Engine/GamePlay/Transform/PendingParentComponent.h"
-#include "BoneAttachmentComponent.h"      
+#include "Engine/Transform/Components/PendingParentComponent.h"
+#include "Engine/Transform/Components/BoneAttachmentComponent.h"      
 // ★ Animatorではなく、Modelから計算済みのボーン行列を取得する
-#include "Engine/GamePlay/Graphics/Core/ModelComponent.h" 
+#include "Engine/Graphics/Components/Core/ModelComponent.h" 
 #include "Engine/Graphics/Resource/Model.h"
 
 // ★ AnimatorComponent をインクルード（アニメーション再生中かの検知用）
-#include "Engine/GamePlay/Animation/AnimatorComponent.h"
+#include "Engine/Animation/Components/AnimatorComponent.h"
 
 // 各システムの .cpp ファイルの上部に追加
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"
 
-#include "Engine/Platform/Logger.h"
+#include "Engine/Platform/Core/Logger.h"
 
 using namespace CCL::ECS;
 using namespace DirectX;

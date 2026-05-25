@@ -523,6 +523,10 @@
     <ClInclude Include="Source\Engine\Physics\Components\Collision\JoltSphereColliderComponent.h" />
     <ClInclude Include="Source\Engine\Physics\Components\Jolt\JoltHandleComponent.h" />
     <ClInclude Include="Source\Engine\Physics\Components\RigidBody\JoltRigidBodyComponent.h" />
+    <ClInclude Include="Source\Engine\Physics\JoltIntegration\IPhysicsAPI.h" />
+    <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltContactListener.h" />
+    <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsFacade.h" />
+    <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsManager.h" />
     <ClInclude Include="Source\Engine\Physics\Systems\Character\JoltCharacterSetupSystem.h" />
     <ClInclude Include="Source\Engine\Physics\Systems\Character\JoltCharacterUpdateSystem.h" />
     <ClInclude Include="Source\Engine\Physics\Systems\Collision\JoltCollisionEventSystem.h" />
@@ -566,6 +570,11 @@
     <ClInclude Include="Source\Engine\Serialization\Registry\ComponentRegistry_Editor.h" />
     <ClInclude Include="Source\Engine\Serialization\Serializer\PrefabSerializer.h" />
     <ClInclude Include="Source\Engine\Serialization\Serializer\SceneSerializer.h" />
+    <ClInclude Include="Source\Engine\Transform\Components\BoneAttachmentComponent.h" />
+    <ClInclude Include="Source\Engine\Transform\Components\PendingParentComponent.h" />
+    <ClInclude Include="Source\Engine\Transform\Components\TransformComponent.h" />
+    <ClInclude Include="Source\Engine\Transform\Systems\HierarchyCleanupSystem.h" />
+    <ClInclude Include="Source\Engine\Transform\Systems\TransformUpdateSystem.h" />
     <ClInclude Include="Source\Engine\UI\ImGui\ImGuiThemes.h" />
     <ClInclude Include="Source\Engine\UI\Text\BitmapFont.h" />
     <ClInclude Include="Source\Engine\UI\Text\TextManager.h" />
@@ -939,6 +948,9 @@
     <ClCompile Include="Source\Engine\Graphics\Systems\Particle\ParticleEventSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\PostProcess\PostProcessSystem.cpp" />
     <ClCompile Include="Source\Engine\Physics\Components\Jolt\JoltPhysicsComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltContactListener.cpp" />
+    <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsFacade.cpp" />
+    <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsManager.cpp" />
     <ClCompile Include="Source\Engine\Physics\Systems\Character\JoltCharacterSetupSystem.cpp" />
     <ClCompile Include="Source\Engine\Physics\Systems\Character\JoltCharacterUpdateSystem.cpp" />
     <ClCompile Include="Source\Engine\Physics\Systems\Collision\JoltCollisionEventSystem.cpp" />
@@ -963,6 +975,9 @@
     <ClCompile Include="Source\Engine\Serialization\Registry\ComponentRegistry.cpp" />
     <ClCompile Include="Source\Engine\Serialization\Serializer\PrefabSerializer.cpp" />
     <ClCompile Include="Source\Engine\Serialization\Serializer\SceneSerializer.cpp" />
+    <ClCompile Include="Source\Engine\Transform\Components\TransformComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Transform\Systems\HierarchyCleanupSystem.cpp" />
+    <ClCompile Include="Source\Engine\Transform\Systems\TransformUpdateSystem.cpp" />
     <ClCompile Include="Source\Engine\UI\ImGui\ImGuiThemes.cpp" />
     <ClCompile Include="Source\Engine\UI\UIElement.cpp" />
     <ClCompile Include="Source\Engine\UI\UIManager.cpp" />

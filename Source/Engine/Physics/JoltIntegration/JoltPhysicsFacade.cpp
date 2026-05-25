@@ -1,7 +1,7 @@
-#include "Engine/Physics/JoltPhysicsFacade.h"
-#include "Engine/Physics/JoltPhysicsManager.h"
-#include "Engine/GamePlay/Physics/Jolt/JoltHandleComponent.h"
-#include "Engine/GamePlay/Transform/TransformComponent.h"
+#include "Engine/Physics/JoltIntegration/JoltPhysicsFacade.h"
+#include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"
+#include "Engine/Physics/Components/Jolt/JoltHandleComponent.h"
+#include "Engine/Transform/Components/TransformComponent.h"
 
 #include <Jolt/Physics/Collision/RayCast.h>
 #include <Jolt/Physics/Collision/CastResult.h>
