@@ -1,5 +1,5 @@
 #include "CarCollisionSystem.h"
-#include "ECS/Core/CCL_World.h"
+#include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Physics/JoltPhysicsManager.h"
 #include "Engine/GamePlay/Physics/Jolt/JoltHandleComponent.h"
 #include "Engine/GamePlay/Core/DestroyTag.h"
@@ -7,7 +7,7 @@
 #include "PlayerCarSphereTag.h"
 #include "Game/Logics/Character/Enemy/EnemyComponent.h" // パスは適宜合わせてください
 
-#include "ECS/System/CCL_SystemRegistry.h"
+#include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"
 
 using namespace CCL::ECS;

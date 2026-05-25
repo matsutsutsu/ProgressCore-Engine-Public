@@ -8,11 +8,11 @@
 #include "Engine/GamePlay/Core/Scene/Scene.h"
 
 // ECS関連
-#include "ECS/Common/CCL_Common.h"
-#include "ECS/Core/CCL_PendingOps.h"
-#include "ECS/Core/CCL_World.h"
-#include "ECS/System/CCL_SystemManager.h"
-#include "ECS/Core/CCL_ECSContext.h"
+#include "Engine/ECS/Common/CCL_Common.h"
+#include "Engine/ECS/Core/CCL_PendingOps.h"
+#include "Engine/ECS/Core/CCL_World.h"
+#include "Engine/ECS/System/CCL_SystemManager.h"
+#include "Engine/ECS/Core/CCL_ECSContext.h"
 
 #include "Engine/Graphics/Shader/PostProcess/PostProcessManager.h"
 //#include "Engine/Graphics/Shader/Pass/ShadowMap.h"

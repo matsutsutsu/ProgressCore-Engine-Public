@@ -1,5 +1,5 @@
 #pragma once
-#include "ECS/Core/CCL_World.h"
+#include "Engine/ECS/Core/CCL_World.h"
 
 // モデルクラスのパスは適宜合わせてください
 #include <d3d11.h>

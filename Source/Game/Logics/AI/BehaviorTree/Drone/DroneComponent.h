@@ -10,7 +10,7 @@
 #include <cstdint>
 #include "SimpleMath.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
-#include "ECS/Common/CCL_Common.h"
+#include "Engine/ECS/Common/CCL_Common.h"
 
  // ボスからドローン群への指示（※BossCommandComponent側でもこれを利用する）
 enum class DroneFormationType : uint8_t {

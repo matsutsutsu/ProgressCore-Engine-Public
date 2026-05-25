@@ -1,5 +1,5 @@
 #include "ComponentGuiRegistry.h"
-#include "ECS/Core/CCL_World.h" // Worldへのアクセスに必要
+#include "Engine/ECS/Core/CCL_World.h" // Worldへのアクセスに必要
 #include "Game/Core/AllComponents.h"
 
 #if ENABLE_EDITOR

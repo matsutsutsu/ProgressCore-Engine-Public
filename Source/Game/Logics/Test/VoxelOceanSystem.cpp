@@ -1,5 +1,5 @@
 #include "VoxelOceanSystem.h"
-#include "ECS/System/CCL_SystemRegistry.h"
+#include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"
 
 void VoxelOceanSystem::Update(float dt)

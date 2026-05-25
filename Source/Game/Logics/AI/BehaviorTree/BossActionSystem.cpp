@@ -4,7 +4,7 @@
 //#include "BossActionSystem.h"
 //#include "Engine/Core/Math/StringHash.h"
 //#include "Game/Core/SystemPriority.h"
-//#include "ECS/System/CCL_SystemRegistry.h"
+//#include "Engine/ECS/System/CCL_SystemRegistry.h"
 //#include "Game/Logic/AI/BehaviorTree/Data/ActionRegistry.h"
 //#include "Engine/Serialization/Factory/Prefab.h"
 //#include <cmath>

@@ -1,13 +1,13 @@
 #include "PlayerInputSystem.h"
 
-#include "ECS/Core/CCL_Chunk.h"
+#include "Engine/ECS/Core/CCL_Chunk.h"
 #include "Engine/Graphics/Core/Camera.h"
 #include "Engine/Graphics/Core/Graphics.h"
 #include "Engine/Platform/Input/Input.h"
 #include <SimpleMath.h>
 
 // システムの実行順序の定義ヘッダー
-#include "ECS/System/CCL_SystemRegistry.h"
+#include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"
 
 // 必要に応じてWindows.hをインクルードしてください

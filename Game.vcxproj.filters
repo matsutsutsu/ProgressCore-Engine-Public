@@ -97,18 +97,6 @@
     <Filter Include="Source\Editor\Utils">
       <UniqueIdentifier>{60ef720e-bd36-459c-9412-2e6afd85512e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\ECS">
-      <UniqueIdentifier>{b04a1fd8-59e1-4abc-b928-720dd27819e3}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\ECS\System">
-      <UniqueIdentifier>{5f5622c7-eead-4b14-9ead-04ec3e1e78a2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\ECS\Common">
-      <UniqueIdentifier>{0684f97e-4436-42a9-aeb4-7b429cb2af3e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\ECS\Core">
-      <UniqueIdentifier>{464f43f8-87c4-4139-b326-4dc51d677e5e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="External\Lua">
       <UniqueIdentifier>{15050559-562a-4842-b055-0311184a821c}</UniqueIdentifier>
     </Filter>
@@ -157,48 +145,6 @@
     <Filter Include="Source\Engine\Platform\Input">
       <UniqueIdentifier>{18faaeec-27c4-4e11-8c64-a14471446364}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\GamePlay">
-      <UniqueIdentifier>{3e59e09c-bd2b-4220-936b-bc0dd44688ca}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\GamePlay\Animation">
-      <UniqueIdentifier>{47c35c0a-7b4e-440b-8349-a0bc4ec094f4}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\GamePlay\Camera">
-      <UniqueIdentifier>{7c833493-7d3d-47c6-93f4-08d38813736d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\GamePlay\Graphics">
-      <UniqueIdentifier>{0ed09887-c01b-4502-b5a0-05bf833f1873}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\GamePlay\Graphics\Lighting">
-      <UniqueIdentifier>{24f32f56-3e21-4d84-a9a9-87a42fd286e5}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\GamePlay\Graphics\Core">
-      <UniqueIdentifier>{3758ae99-c5a9-48af-864f-6aa65f153cfd}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\GamePlay\Graphics\Particle">
-      <UniqueIdentifier>{f668baf0-1c66-4a39-bdba-590a1c438ae9}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\GamePlay\Physics">
-      <UniqueIdentifier>{5867363d-e015-45b4-8806-ac05815c4a66}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\GamePlay\Physics\Collision">
-      <UniqueIdentifier>{35b600d3-9438-4066-8a6c-e137df15f993}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\GamePlay\Physics\RigidBody">
-      <UniqueIdentifier>{2f0f6898-8b63-479e-a6a8-e7997c76568e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\GamePlay\Transform">
-      <UniqueIdentifier>{32f804d4-4680-4b5b-8634-a9e396b9132e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\GamePlay\Core">
-      <UniqueIdentifier>{2c8feedf-ec76-4dec-843c-81efed3972ac}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\GamePlay\Core\Scene">
-      <UniqueIdentifier>{e94af8fe-db15-4df2-85b0-3097e57d9329}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\GamePlay\Utils">
-      <UniqueIdentifier>{45fb08b4-8a8a-40f0-98cd-73d7b37519c2}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\Serialization">
       <UniqueIdentifier>{340b74ea-9d49-4c0d-b73b-eee7ab4a7c11}</UniqueIdentifier>
     </Filter>
@@ -238,9 +184,6 @@
     <Filter Include="Source\Engine\Graphics\Shader\Material\Core">
       <UniqueIdentifier>{779d8e01-5e16-4efa-90a1-ff81ed628896}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\GamePlay\Graphics\PostProcess">
-      <UniqueIdentifier>{37d31b78-b9b4-4917-9307-3d9ea26d3bf4}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\UI\Widgets">
       <UniqueIdentifier>{13ca0c60-1e37-4955-a35a-3f3eb232a4f9}</UniqueIdentifier>
     </Filter>
@@ -268,44 +211,8 @@
     <Filter Include="Source\Engine\Serialization\Meta">
       <UniqueIdentifier>{bb611d4c-bc75-4a8d-8a31-1810ea67ad4d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\GamePlay\Physics\Jolt">
-      <UniqueIdentifier>{b8bd7308-0343-4a22-9cfa-3c895298950a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\Physics\Jolt">
       <UniqueIdentifier>{bcbda7cc-2567-497f-b2ca-c7f409adbf23}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\GamePlay\Physics\Jolt\_Meta">
-      <UniqueIdentifier>{5484d16a-68cd-425b-a595-7999825c74e9}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\GamePlay\Graphics\Lighting\_Meta">
-      <UniqueIdentifier>{5bd1e528-5b2c-430b-b075-56ef6f072374}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\GamePlay\Core\_Meta">
-      <UniqueIdentifier>{c157df11-ee2b-43f2-9610-1a89dfaf3934}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\GamePlay\Transform\_Meta">
-      <UniqueIdentifier>{89c00020-3473-455c-91ea-df56e6404c41}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\GamePlay\Camera\_Meta">
-      <UniqueIdentifier>{0263adb9-a846-4730-a309-6dde5d6dc4e0}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\GamePlay\Graphics\Core\_Meta">
-      <UniqueIdentifier>{8d586a4d-792b-4b5a-b533-6a605696e3ab}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\GamePlay\Animation\_Meta">
-      <UniqueIdentifier>{c9653b6e-1b17-404c-9a2f-9fb577b96b61}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\GamePlay\Graphics\Particle\_Meta">
-      <UniqueIdentifier>{7bbf421e-4aa1-4a14-aa69-2ff2e47e3adb}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\GamePlay\Utils\_Meta">
-      <UniqueIdentifier>{eefff5ce-d3c2-469c-8cc1-3d17df82f778}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\GamePlay\Physics\Character">
-      <UniqueIdentifier>{bf65d56c-dc30-4b2c-ac52-ca503e360bff}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\GamePlay\Physics\Collision\Collider">
-      <UniqueIdentifier>{1ac4e9b9-47e1-482d-a82e-d3ad2832ac12}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Game\Logics\Test">
       <UniqueIdentifier>{7de38b51-de5a-4cbe-a640-02ac89b89766}</UniqueIdentifier>
@@ -315,9 +222,6 @@
     </Filter>
     <Filter Include="Source\Engine\Graphics\Renderer\Pipeline\Pass">
       <UniqueIdentifier>{1fe879a1-7466-4e5c-bdcd-2cb433ec4b31}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\GamePlay\Graphics\Core\Culling">
-      <UniqueIdentifier>{adca7775-84af-4c94-b9a7-a8214c8cfbac}</UniqueIdentifier>
     </Filter>
     <Filter Include="Shader\Pass\SkyBox">
       <UniqueIdentifier>{7aa7b402-62ad-4c1d-bdb8-5ade6932aa53}</UniqueIdentifier>
@@ -355,15 +259,6 @@
     <Filter Include="External\RecastNavigation\DebugUtils">
       <UniqueIdentifier>{9660ad6a-8b49-44c6-aeb5-836fe3459bf8}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\GamePlay\AI">
-      <UniqueIdentifier>{492f085a-c40b-4836-aeb1-580a9fc007b0}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\GamePlay\AI\Navigation">
-      <UniqueIdentifier>{c80c187c-1b9a-4cfe-9ff7-a599286abbc4}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\GamePlay\AI\Navigation\_Meta">
-      <UniqueIdentifier>{f481f6d0-e5f8-4a2f-8f4b-1da288f909aa}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Game\Logics\AI">
       <UniqueIdentifier>{f451e48b-7ce2-454b-924e-a4f13673ac42}</UniqueIdentifier>
     </Filter>
@@ -375,15 +270,6 @@
     </Filter>
     <Filter Include="Source\Game\Logics\Test\TestAnimation">
       <UniqueIdentifier>{00716ee6-69ac-43bd-9ea5-b3f334cf8a0d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\GamePlay\Animation\Data">
-      <UniqueIdentifier>{06a1d220-9175-404d-975a-e6f992db4236}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\GamePlay\Animation\Components">
-      <UniqueIdentifier>{6f1287e9-d433-4ffe-9a45-19f158812148}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\GamePlay\Animation\Systems">
-      <UniqueIdentifier>{5f44e74c-6d22-457b-a41c-dd83b377aa5a}</UniqueIdentifier>
     </Filter>
     <Filter Include="External\imgui-node-editor">
       <UniqueIdentifier>{f1fed5a5-b31c-4a17-a80d-f659d2c8ca2d}</UniqueIdentifier>
@@ -442,6 +328,18 @@
     <Filter Include="Source\Engine\_Meta">
       <UniqueIdentifier>{8a565a3a-ae3a-41b2-ab68-c99b8ff213a9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\ECS">
+      <UniqueIdentifier>{b04a1fd8-59e1-4abc-b928-720dd27819e3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\ECS\System">
+      <UniqueIdentifier>{5f5622c7-eead-4b14-9ead-04ec3e1e78a2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\ECS\Common">
+      <UniqueIdentifier>{0684f97e-4436-42a9-aeb4-7b429cb2af3e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\ECS\Core">
+      <UniqueIdentifier>{464f43f8-87c4-4139-b326-4dc51d677e5e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -474,35 +372,11 @@
     <ClInclude Include="External\imgui-docking\imstb_truetype.h">
       <Filter>External\imgui-docking</Filter>
     </ClInclude>
-    <ClInclude Include="Source\ECS\Common\CCL_Common.h">
-      <Filter>Source\ECS\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\ECS\Core\CCL_Chunk.h">
-      <Filter>Source\ECS\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\ECS\Core\CCL_ChunkManager.h">
-      <Filter>Source\ECS\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\ECS\Core\CCL_PendingOps.h">
-      <Filter>Source\ECS\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\ECS\Core\CCL_World.h">
-      <Filter>Source\ECS\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\ECS\System\CCL_System.h">
-      <Filter>Source\ECS\System</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\ECS\System\CCL_SystemManager.h">
-      <Filter>Source\ECS\System</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Editor\Utils\AssetBrowser.h">
       <Filter>Source\Editor\Utils</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Utils\ShellIconLoader.h">
       <Filter>Source\Editor\Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\ECS\Core\CCL_FrameAllocator.h">
-      <Filter>Source\ECS\Core</Filter>
     </ClInclude>
     <ClInclude Include="External\sol2\sol\sol.hpp">
       <Filter>External\sol2</Filter>
@@ -611,9 +485,6 @@
     </ClInclude>
     <ClInclude Include="External\ImGuizmo\ImZoomSlider.h">
       <Filter>External\ImGuizmo</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\ECS\Core\CCL_JobSystem.h">
-      <Filter>Source\ECS\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Core\SystemPriority.h">
       <Filter>Source\Game\Core</Filter>
@@ -732,102 +603,6 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderResources.h">
       <Filter>Source\Engine\Graphics\Shader</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Camera\CameraBrainSystem.h">
-      <Filter>Source\Engine\GamePlay\Camera</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Camera\VirtualCameraComponents.h">
-      <Filter>Source\Engine\GamePlay\Camera</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Camera\VisualCameraSystem.h">
-      <Filter>Source\Engine\GamePlay\Camera</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\MaterialComponent.h">
-      <Filter>Source\Engine\GamePlay\Graphics\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\ModelComponent.h">
-      <Filter>Source\Engine\GamePlay\Graphics\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\ModelRenderSystem.h">
-      <Filter>Source\Engine\GamePlay\Graphics\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\PrimitiveComponent.h">
-      <Filter>Source\Engine\GamePlay\Graphics\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\PrimitiveRenderSystem.h">
-      <Filter>Source\Engine\GamePlay\Graphics\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Graphics\Lighting\FogComponent.h">
-      <Filter>Source\Engine\GamePlay\Graphics\Lighting</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Graphics\Lighting\FogSystem.h">
-      <Filter>Source\Engine\GamePlay\Graphics\Lighting</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Graphics\Lighting\LightComponent.h">
-      <Filter>Source\Engine\GamePlay\Graphics\Lighting</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Graphics\Lighting\LightSystem.h">
-      <Filter>Source\Engine\GamePlay\Graphics\Lighting</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Graphics\Lighting\ShadowMapConfigComponent.h">
-      <Filter>Source\Engine\GamePlay\Graphics\Lighting</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Graphics\Lighting\ShadowMapRenderSystem.h">
-      <Filter>Source\Engine\GamePlay\Graphics\Lighting</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Graphics\Particle\GPUParticleComponent.h">
-      <Filter>Source\Engine\GamePlay\Graphics\Particle</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Graphics\Particle\GPUParticleRenderSystem.h">
-      <Filter>Source\Engine\GamePlay\Graphics\Particle</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Graphics\Particle\GPUParticleTypes.h">
-      <Filter>Source\Engine\GamePlay\Graphics\Particle</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Graphics\Particle\GPUParticleUpdateSystem.h">
-      <Filter>Source\Engine\GamePlay\Graphics\Particle</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Graphics\PostProcess\BloomConfigComponent.h">
-      <Filter>Source\Engine\GamePlay\Graphics\PostProcess</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Graphics\PostProcess\PostProcessSystem.h">
-      <Filter>Source\Engine\GamePlay\Graphics\PostProcess</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Graphics\PostProcess\ToneMapConfigComponent.h">
-      <Filter>Source\Engine\GamePlay\Graphics\PostProcess</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Core\Scene\Scene.h">
-      <Filter>Source\Engine\GamePlay\Core\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Core\Scene\SceneFactory.h">
-      <Filter>Source\Engine\GamePlay\Core\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Core\Scene\SceneManager.h">
-      <Filter>Source\Engine\GamePlay\Core\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Core\DestroyTag.h">
-      <Filter>Source\Engine\GamePlay\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Core\NameComponent.h">
-      <Filter>Source\Engine\GamePlay\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Transform\HierarchyCleanupSystem.h">
-      <Filter>Source\Engine\GamePlay\Transform</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Transform\PendingParentComponent.h">
-      <Filter>Source\Engine\GamePlay\Transform</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Transform\TransformComponent.h">
-      <Filter>Source\Engine\GamePlay\Transform</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Transform\TransformUpdateSystem.h">
-      <Filter>Source\Engine\GamePlay\Transform</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Utils\TimerComponent.h">
-      <Filter>Source\Engine\GamePlay\Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Utils\TimerSystem.h">
-      <Filter>Source\Engine\GamePlay\Utils</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Platform\Input\GamePad.h">
       <Filter>Source\Engine\Platform\Input</Filter>
     </ClInclude>
@@ -930,23 +705,11 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\DissolveShader.h">
       <Filter>Source\Engine\Graphics\Shader\Material</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\DissolveComponent.h">
-      <Filter>Source\Engine\GamePlay\Graphics\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\DissolveSystem.h">
-      <Filter>Source\Engine\GamePlay\Graphics\Core</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Resource\ResourcePool.h">
       <Filter>Source\Engine\Graphics\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\PBRShader.h">
       <Filter>Source\Engine\Graphics\Shader\Material</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\ECS\Core\CCL_ECSContext.h">
-      <Filter>Source\ECS\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\ECS\Core\CCL_EventBus.h">
-      <Filter>Source\ECS\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\GameEvent\GameOverResource.h">
       <Filter>Source\Game\GameEvent</Filter>
@@ -963,15 +726,6 @@
     <ClInclude Include="Source\Game\Logics\Combat\HealthSystem.h">
       <Filter>Source\Game\Logics\Combat</Filter>
     </ClInclude>
-    <ClInclude Include="Source\ECS\System\CCL_SystemAccess.h">
-      <Filter>Source\ECS\System</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\ECS\System\CCL_SystemRegistry.h">
-      <Filter>Source\ECS\System</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\ECS\System\CCL_TaskScheduler.h">
-      <Filter>Source\ECS\System</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\Meta\ComponentMeta.h">
       <Filter>Source\Engine\Serialization\Meta</Filter>
     </ClInclude>
@@ -987,44 +741,14 @@
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerFeedbackSystem.h">
       <Filter>Source\Game\Logics\Character\Player</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\EnvironmentSystem.h">
-      <Filter>Source\Engine\GamePlay\Graphics\Core</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Renderer\ParticleRenderer.h">
       <Filter>Source\Engine\Graphics\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Utils\PooledParticleComponent.h">
       <Filter>Source\Game\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltUpdateSystem.h">
-      <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Physics\JoltPhysicsManager.h">
       <Filter>Source\Engine\Physics\Jolt</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltPushSystem.h">
-      <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltHandleComponent.h">
-      <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\RigidBody\JoltRigidbodyComponent.h">
-      <Filter>Source\Engine\GamePlay\Physics\RigidBody</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltBodySetupSystem.h">
-      <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\Character\JoltCharacterConfigComponent.h">
-      <Filter>Source\Engine\GamePlay\Physics\Character</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\Character\JoltCharacterHandleComponent.h">
-      <Filter>Source\Engine\GamePlay\Physics\Character</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\Character\JoltCharacterSetupSystem.h">
-      <Filter>Source\Engine\GamePlay\Physics\Character</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\Character\JoltCharacterUpdateSystem.h">
-      <Filter>Source\Engine\GamePlay\Physics\Character</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\Factory\EntityFactory.h">
       <Filter>Source\Engine\Serialization\Factory</Filter>
@@ -1032,32 +756,8 @@
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyComponent.h">
       <Filter>Source\Game\Logics\Character\Enemy</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\JoltCollisionEvent.h">
-      <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\JoltBoxColliderComponent.h">
-      <Filter>Source\Engine\GamePlay\Physics\Collision\Collider</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\JoltCapsuleColliderComponent.h">
-      <Filter>Source\Engine\GamePlay\Physics\Collision\Collider</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\JoltSphereColliderComponent.h">
-      <Filter>Source\Engine\GamePlay\Physics\Collision\Collider</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Physics\JoltContactListener.h">
       <Filter>Source\Engine\Physics\Jolt</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\JoltCollisionEventSystem.h">
-      <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltShapeUpdateSystem.h">
-      <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltDebugDrawSystem.h">
-      <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Graphics\Particle\ParticleEventSystem.h">
-      <Filter>Source\Engine\GamePlay\Graphics\Particle</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Core\PipelineState.h">
       <Filter>Source\Engine\Graphics\Core</Filter>
@@ -1073,15 +773,6 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Test\VoxelOceanSystem.h">
       <Filter>Source\Game\Logics\Test</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Core\PersistentTag.h">
-      <Filter>Source\Engine\GamePlay\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\Jolt\JoltCleanupSystem.h">
-      <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Physics\Collision\JoltMeshColliderComponent.h">
-      <Filter>Source\Engine\GamePlay\Physics\Collision\Collider</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderRegistry.h">
       <Filter>Source\Engine\Graphics\Shader</Filter>
@@ -1115,18 +806,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Renderer\Pipeline\PostProcessPass.h">
       <Filter>Source\Engine\Graphics\Renderer\Pipeline\Pass</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\Culling\CullingComponents.h">
-      <Filter>Source\Engine\GamePlay\Graphics\Core\Culling</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\Culling\FrustumCullingSystem.h">
-      <Filter>Source\Engine\GamePlay\Graphics\Core\Culling</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\Culling\BoundsUpdateSystem.h">
-      <Filter>Source\Engine\GamePlay\Graphics\Core\Culling</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\Culling\CullingSetupSystem.h">
-      <Filter>Source\Engine\GamePlay\Graphics\Core\Culling</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Renderer\Pipeline\SkyboxPass.h">
       <Filter>Source\Engine\Graphics\Renderer\Pipeline\Pass</Filter>
@@ -1245,26 +924,8 @@
     <ClInclude Include="Source\Editor\Utils\NavMeshBuilder.h">
       <Filter>Source\Editor\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\AI\Navigation\NavigationData.h">
-      <Filter>Source\Engine\GamePlay\AI\Navigation</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\AI\Navigation\NavMeshDebugDrawSystem.h">
-      <Filter>Source\Engine\GamePlay\AI\Navigation</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\AI\Navigation\NavAgentComponent.h">
-      <Filter>Source\Engine\GamePlay\AI\Navigation</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\AI\Navigation\NavPathfindingSystem.h">
-      <Filter>Source\Engine\GamePlay\AI\Navigation</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\AI\Navigation\NavSteeringSystem.h">
-      <Filter>Source\Engine\GamePlay\AI\Navigation</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Editor\Core\EditorCommandHistory.h">
       <Filter>Source\Editor\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Graphics\Core\ModelPoseUpdateSystem.h">
-      <Filter>Source\Engine\GamePlay\Graphics\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Audio\AudioEmitterComponent.h">
       <Filter>Source\Engine\Audio</Filter>
@@ -1284,9 +945,6 @@
     <ClInclude Include="Source\Game\Logics\Audio\DistractionItemSystem.h">
       <Filter>Source\Game\Logics\Audio</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Camera\CameraListenerSystem.h">
-      <Filter>Source\Engine\GamePlay\Camera</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Audio\DistractionItemDebugDrawSystem.h">
       <Filter>Source\Game\Logics\Audio</Filter>
     </ClInclude>
@@ -1295,18 +953,6 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Test\TestAnimationPlayerComponent.h">
       <Filter>Source\Game\Logics\Test\TestAnimation</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimationSystem.h">
-      <Filter>Source\Engine\GamePlay\Animation\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimControllerSystem.h">
-      <Filter>Source\Engine\GamePlay\Animation\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimParametersComponent.h">
-      <Filter>Source\Engine\GamePlay\Animation\Components</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Animation\AnimatorComponent.h">
-      <Filter>Source\Engine\GamePlay\Animation\Components</Filter>
     </ClInclude>
     <ClInclude Include="External\imgui-node-editor\crude_json.h">
       <Filter>External\imgui-node-editor</Filter>
@@ -1325,21 +971,6 @@
     </ClInclude>
     <ClInclude Include="External\imgui-node-editor\imgui_node_editor_internal.h">
       <Filter>External\imgui-node-editor</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Animation\Data\AnimationCurve.h">
-      <Filter>Source\Engine\GamePlay\Animation\Data</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Animation\Data\AnimEventMessages.h">
-      <Filter>Source\Engine\GamePlay\Animation\Data</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Animation\Data\AnimGraphSerializer.h">
-      <Filter>Source\Engine\GamePlay\Animation\Data</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Animation\Data\AnimSequence.h">
-      <Filter>Source\Engine\GamePlay\Animation\Data</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Animation\Data\AnimStateMachine.h">
-      <Filter>Source\Engine\GamePlay\Animation\Data</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\NavAI\AIHearingSystem.h">
       <Filter>Source\Game\Logics\AI\NavAI\01_Priority</Filter>
@@ -1449,14 +1080,8 @@
     <ClInclude Include="Source\Game\Logics\Combat\DamageResolutionSystem.h">
       <Filter>Source\Game\Logics\Combat</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Transform\BoneAttachmentComponent.h">
-      <Filter>Source\Engine\GamePlay\Transform</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Combat\CombatRosterComponent.h">
       <Filter>Source\Game\Logics\Combat</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GamePlay\Animation\CombatAnimationSyncSystem.h">
-      <Filter>Source\Engine\GamePlay\Animation\Systems</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\EngineServices.h">
       <Filter>Source\Engine\Core</Filter>
@@ -1494,6 +1119,48 @@
     <ClInclude Include="Source\Engine\Platform\LogSinks.h">
       <Filter>Source\Engine\Platform</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\ECS\Common\CCL_Common.h">
+      <Filter>Source\Engine\ECS\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\ECS\Core\CCL_Chunk.h">
+      <Filter>Source\Engine\ECS\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\ECS\Core\CCL_ChunkManager.h">
+      <Filter>Source\Engine\ECS\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\ECS\Core\CCL_ECSContext.h">
+      <Filter>Source\Engine\ECS\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\ECS\Core\CCL_EventBus.h">
+      <Filter>Source\Engine\ECS\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\ECS\Core\CCL_FrameAllocator.h">
+      <Filter>Source\Engine\ECS\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\ECS\Core\CCL_JobSystem.h">
+      <Filter>Source\Engine\ECS\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\ECS\Core\CCL_PendingOps.h">
+      <Filter>Source\Engine\ECS\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\ECS\Core\CCL_World.h">
+      <Filter>Source\Engine\ECS\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\ECS\System\CCL_System.h">
+      <Filter>Source\Engine\ECS\System</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\ECS\System\CCL_SystemAccess.h">
+      <Filter>Source\Engine\ECS\System</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\ECS\System\CCL_SystemManager.h">
+      <Filter>Source\Engine\ECS\System</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\ECS\System\CCL_SystemRegistry.h">
+      <Filter>Source\Engine\ECS\System</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\ECS\System\CCL_TaskScheduler.h">
+      <Filter>Source\Engine\ECS\System</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -1525,18 +1192,6 @@
     </ClCompile>
     <ClCompile Include="External\imgui-docking\imgui_widgets.cpp">
       <Filter>External\imgui-docking</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\ECS\Core\CCL_Chunk.cpp">
-      <Filter>Source\ECS\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\ECS\Core\CCL_ChunkManager.cpp">
-      <Filter>Source\ECS\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\ECS\Core\CCL_World.cpp">
-      <Filter>Source\ECS\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\ECS\System\CCL_SystemManager.cpp">
-      <Filter>Source\ECS\System</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Utils\AssetBrowser.cpp">
       <Filter>Source\Editor\Utils</Filter>
@@ -1658,9 +1313,6 @@
     <ClCompile Include="External\Tracy\TracyClient.cpp">
       <Filter>External\Tracy</Filter>
     </ClCompile>
-    <ClCompile Include="Source\ECS\Core\CCL_JobSystem.cpp">
-      <Filter>Source\ECS\Core</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Editor\Core\EditorWindowManager.cpp">
       <Filter>Source\Editor\Core</Filter>
     </ClCompile>
@@ -1748,30 +1400,6 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\ShaderReflection.cpp">
       <Filter>Source\Engine\Graphics\Shader</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Camera\CameraBrainSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Camera</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Graphics\Particle\GPUParticleRenderSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Graphics\Particle</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Graphics\Particle\GPUParticleUpdateSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Graphics\Particle</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Graphics\PostProcess\PostProcessSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Graphics\PostProcess</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Core\Scene\SceneFactory.cpp">
-      <Filter>Source\Engine\GamePlay\Core\Scene</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Core\Scene\SceneManager.cpp">
-      <Filter>Source\Engine\GamePlay\Core\Scene</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Transform\HierarchyCleanupSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Transform</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Transform\TransformUpdateSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Transform</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Platform\Input\GamePad.cpp">
       <Filter>Source\Engine\Platform\Input</Filter>
     </ClCompile>
@@ -1817,12 +1445,6 @@
     <ClCompile Include="Source\Game\Scenes\ParticleScene.cpp">
       <Filter>Source\Game\Scenes\HokaScene</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Graphics\Lighting\ShadowMapRenderSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Graphics\Lighting</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\ModelRenderSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Graphics\Core</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\UI\UIElement.cpp">
       <Filter>Source\Engine\UI</Filter>
     </ClCompile>
@@ -1838,119 +1460,35 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\DissolveShader.cpp">
       <Filter>Source\Engine\Graphics\Shader\Material</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\DissolveSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Graphics\Core</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\PBRShader.cpp">
       <Filter>Source\Engine\Graphics\Shader\Material</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Combat\HealthSystem.cpp">
       <Filter>Source\Game\Logics\Combat</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Camera\VisualCameraSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Camera</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\PrimitiveRenderSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Graphics\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Graphics\Lighting\FogSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Graphics\Lighting</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Graphics\Lighting\LightSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Graphics\Lighting</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Utils\TimerSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Utils</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerFeedbackSystem.cpp">
       <Filter>Source\Game\Logics\Character\Player</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\EnvironmentSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Graphics\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Renderer\ParticleRenderer.cpp">
       <Filter>Source\Engine\Graphics\Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltUpdateSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Physics\JoltPhysicsManager.cpp">
       <Filter>Source\Engine\Physics\Jolt</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltPushSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltBodySetupSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltPhysicsComponentMeta.cpp">
-      <Filter>Source\Engine\GamePlay\Physics\Jolt\_Meta</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Transform\TransformComponentMeta.cpp">
-      <Filter>Source\Engine\GamePlay\Transform\_Meta</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Core\CoreComponentMeta.cpp">
-      <Filter>Source\Engine\GamePlay\Core\_Meta</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Graphics\Lighting\LightComponentMeta.cpp">
-      <Filter>Source\Engine\GamePlay\Graphics\Lighting\_Meta</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Camera\VirtualCameraComponentMeta.cpp">
-      <Filter>Source\Engine\GamePlay\Camera\_Meta</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\EnvironmentComponentMeta.cpp">
-      <Filter>Source\Engine\GamePlay\Graphics\Core\_Meta</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Core\GamePlayComponentMeta.cpp">
       <Filter>Source\Game\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Animation\AnimatorComponentMeta.cpp">
-      <Filter>Source\Engine\GamePlay\Animation\_Meta</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\MaterialComponentMeta.cpp">
-      <Filter>Source\Engine\GamePlay\Graphics\Core\_Meta</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Graphics\Particle\GPUParticleComponentMeta.cpp">
-      <Filter>Source\Engine\GamePlay\Graphics\Particle\_Meta</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Utils\MiscComponentMeta.cpp">
-      <Filter>Source\Engine\GamePlay\Utils\_Meta</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Serialization\ComponentRegistry.cpp">
       <Filter>Source\Engine\Serialization</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Physics\Character\JoltCharacterSetupSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Physics\Character</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Physics\Character\JoltCharacterUpdateSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Physics\Character</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Physics\JoltContactListener.cpp">
       <Filter>Source\Engine\Physics\Jolt</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Physics\Collision\JoltCollisionEventSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Physics\Collision</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltShapeUpdateSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\ModelComponentMeta.cpp">
-      <Filter>Source\Engine\GamePlay\Graphics\Core\_Meta</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltDebugDrawSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Graphics\Particle\ParticleEventSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Graphics\Particle</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Test\ECSBenchmarkSystem.cpp">
       <Filter>Source\Game\Logics\Test</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Test\VoxelOceanSystem.cpp">
       <Filter>Source\Game\Logics\Test</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Physics\Jolt\JoltCleanupSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Physics\Jolt</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Renderer\Pipeline\OpaquePass.cpp">
       <Filter>Source\Engine\Graphics\Renderer\Pipeline\Pass</Filter>
@@ -1972,15 +1510,6 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Renderer\Pipeline\PostProcessPass.cpp">
       <Filter>Source\Engine\Graphics\Renderer\Pipeline\Pass</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\Culling\FrustumCullingSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Graphics\Core\Culling</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\Culling\BoundsUpdateSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Graphics\Core\Culling</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\Culling\CullingSetupSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Graphics\Core\Culling</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Renderer\Pipeline\SkyboxPass.cpp">
       <Filter>Source\Engine\Graphics\Renderer\Pipeline\Pass</Filter>
@@ -2102,29 +1631,11 @@
     <ClCompile Include="Source\Editor\Utils\NavMeshBuilder.cpp">
       <Filter>Source\Editor\Utils</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\AI\Navigation\NavMeshDebugDrawSystem.cpp">
-      <Filter>Source\Engine\GamePlay\AI\Navigation</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\AI\Navigation\NavPathfindingSystem.cpp">
-      <Filter>Source\Engine\GamePlay\AI\Navigation</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\AI\Navigation\NavSteeringSystem.cpp">
-      <Filter>Source\Engine\GamePlay\AI\Navigation</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\AI\Navigation\NavAgentComponentMeta.cpp">
-      <Filter>Source\Engine\GamePlay\AI\Navigation\_Meta</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\Core\Shader.cpp">
       <Filter>Source\Engine\Graphics\Shader\Material\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Graphics\Core\ModelPoseUpdateSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Graphics\Core</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Audio\AudioSystem.cpp">
       <Filter>Source\Engine\Audio</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Audio\AudioComponentMeta.cpp">
-      <Filter>Source\Engine\Audio\_Meta</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\CharacterMovementInputComponentMeta.cpp">
       <Filter>Source\Game\Logics\Character</Filter>
@@ -2135,20 +1646,11 @@
     <ClCompile Include="Source\Game\Logics\Audio\DistractionItemComponentMeta.cpp">
       <Filter>Source\Game\Logics\Audio</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Camera\CameraListenerSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Camera</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Game\Logics\Audio\DistractionItemDebugDrawSystem.cpp">
       <Filter>Source\Game\Logics\Audio</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Test\TestAnimationPlayerSystem.cpp">
       <Filter>Source\Game\Logics\Test\TestAnimation</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Animation\AnimationSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Animation\Systems</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Animation\AnimControllerSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Animation\Systems</Filter>
     </ClCompile>
     <ClCompile Include="External\imgui-node-editor\crude_json.cpp">
       <Filter>External\imgui-node-editor</Filter>
@@ -2161,9 +1663,6 @@
     </ClCompile>
     <ClCompile Include="External\imgui-node-editor\imgui_node_editor_api.cpp">
       <Filter>External\imgui-node-editor</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Animation\Data\AnimGraphSerializer.cpp">
-      <Filter>Source\Engine\GamePlay\Animation\Data</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\NavAI\AIComponentsMeta.cpp">
       <Filter>Source\Game\Logics\AI\NavAI\_Meta</Filter>
@@ -2249,9 +1748,6 @@
     <ClCompile Include="Source\Game\Logics\Combat\DamageResolutionSystem.cpp">
       <Filter>Source\Game\Logics\Combat</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\GamePlay\Animation\CombatAnimationSyncSystem.cpp">
-      <Filter>Source\Engine\GamePlay\Animation\Systems</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Game\Logics\Combat\CombatComponentsMeta.cpp">
       <Filter>Source\Game\Logics\Combat\_Meta</Filter>
     </ClCompile>
@@ -2269,6 +1765,21 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BossActionComponentMeta.cpp">
       <Filter>Source\Game\Logics\AI\BehaviorTree\__Meta</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\ECS\Core\CCL_Chunk.cpp">
+      <Filter>Source\Engine\ECS\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\ECS\Core\CCL_ChunkManager.cpp">
+      <Filter>Source\Engine\ECS\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\ECS\Core\CCL_JobSystem.cpp">
+      <Filter>Source\Engine\ECS\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\ECS\Core\CCL_World.cpp">
+      <Filter>Source\Engine\ECS\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\ECS\System\CCL_SystemManager.cpp">
+      <Filter>Source\Engine\ECS\System</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

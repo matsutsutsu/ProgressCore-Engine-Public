@@ -1,6 +1,6 @@
 #pragma once
-#include "ECS/Core/CCL_World.h"
-#include "ECS/System/CCL_SystemManager.h"
+#include "Engine/ECS/Core/CCL_World.h"
+#include "Engine/ECS/System/CCL_SystemManager.h"
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include <map>
 #include <string>

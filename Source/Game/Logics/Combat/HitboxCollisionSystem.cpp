@@ -1,9 +1,9 @@
 #include "HitboxCollisionSystem.h"
 #include "Engine/GamePlay/Physics/Collision/JoltCollisionEvent.h"
 #include "CombatComponents.h"
-#include "ECS/Core/CCL_World.h"
-#include "ECS/Core/CCL_PendingOps.h"
-#include "ECS/System/CCL_SystemRegistry.h"
+#include "Engine/ECS/Core/CCL_World.h"
+#include "Engine/ECS/Core/CCL_PendingOps.h"
+#include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Platform/Logger.h"
 
 /**

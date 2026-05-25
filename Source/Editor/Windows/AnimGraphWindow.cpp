@@ -10,7 +10,7 @@
 #include "Engine/Platform/Logger.h"
 //#include "Engine/Graphics/Core/Graphics.h"
 #include <filesystem>
-#include "ECS/Core/CCL_World.h"
+#include "Engine/ECS/Core/CCL_World.h"
 #include <cmath> // sinf用
 #include <unordered_map>
 #include <sstream>

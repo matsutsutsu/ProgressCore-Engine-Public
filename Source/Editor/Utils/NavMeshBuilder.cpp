@@ -1,5 +1,5 @@
 #include "NavMeshBuilder.h"
-#include "ECS/Core/CCL_World.h"
+#include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/GamePlay/Transform/TransformComponent.h"
 #include "Engine/GamePlay/Graphics/Core/ModelComponent.h"
 #include "Engine/Graphics/Resource/Model.h"

@@ -3,7 +3,7 @@
 #include "Engine/Graphics/Core/Graphics.h"
 #include "Engine/Serialization/Factory/SceneInitializer.h"
 
-#include "ECS/System/CCL_SystemRegistry.h"
+#include "Engine/ECS/System/CCL_SystemRegistry.h"
 
 
 void ParticleScene::Initialize()

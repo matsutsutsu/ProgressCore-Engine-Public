@@ -1,9 +1,9 @@
 #include "TestAnimationPlayerSystem.h"
-#include "ECS/Core/CCL_World.h"
+#include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Platform/Input/Input.h"
 #include "Engine/Core/Math/StringHash.h" // HashString用
 #include <SimpleMath.h>
-#include "ECS/System/CCL_SystemRegistry.h"
+#include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"
 
     using namespace DirectX::SimpleMath;

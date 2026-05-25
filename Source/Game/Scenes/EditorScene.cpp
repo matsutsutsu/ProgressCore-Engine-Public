@@ -6,7 +6,7 @@
 
 #include "Engine/Platform/Logger.h"
 
-#include "ECS/System/CCL_SystemRegistry.h"
+#include "Engine/ECS/System/CCL_SystemRegistry.h"
 
 #include "Editor/Core/EditorCommandHistory.h"
 #include "Engine/GamePlay/Transform/TransformComponent.h"

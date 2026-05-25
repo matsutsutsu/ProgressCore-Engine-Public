@@ -1,9 +1,10 @@
 [Project Structure] 
  
-Folder PATH listing for volume Data
-Volume serial number is 0000006D BC57:0174
-D:.
+Folder PATH listing for volume Windows
+Volume serial number is 000000E4 0255:C8DA
+C:.
 │   ECSプロジェクトファイル指示テキスト.txt
+│   Metaファイル実装方法指示テキスト.txt
 │   structure.txt
 │   _dump_structure.bat
 │   設計指示プロンプト.txt
@@ -68,8 +69,6 @@ D:.
 │           BehaviorTreeWindow.h
 │           ConsoleWindow.cpp
 │           ConsoleWindow.h
-│           CurveEditorWindow.cpp
-│           CurveEditorWindow.h
 │           ECSDebugWindow.cpp
 │           ECSDebugWindow.h
 │           GameViewWindow.cpp
@@ -208,6 +207,7 @@ D:.
 │   │   │   │       FogSystem.h
 │   │   │   │       LightComponent.h
 │   │   │   │       LightComponentMeta.cpp
+│   │   │   │       LightComponentMeta.generated.cpp
 │   │   │   │       LightSystem.cpp
 │   │   │   │       LightSystem.h
 │   │   │   │       ShadowMapConfigComponent.h
@@ -266,7 +266,7 @@ D:.
 │   │   │   │       JoltUpdateSystem.h
 │   │   │   │       
 │   │   │   └───RigidBody
-│   │   │           JoltRigidbodyComponent.h
+│   │   │           JoltRigidBodyComponent.h
 │   │   │           
 │   │   ├───Transform
 │   │   │       BoneAttachmentComponent.h
@@ -401,8 +401,11 @@ D:.
 │   ├───Platform
 │   │   │   Dialog.cpp
 │   │   │   Dialog.h
+│   │   │   FileSystem.cpp
+│   │   │   FileSystem.h
 │   │   │   Logger.cpp
 │   │   │   Logger.h
+│   │   │   LogSinks.h
 │   │   │   
 │   │   └───Input
 │   │           GamePad.cpp
@@ -418,7 +421,6 @@ D:.
 │   │           Mouse.h
 │   │           
 │   ├───Serialization
-│   │   │   ComponentDefine.h
 │   │   │   ComponentRegistry.cpp
 │   │   │   ComponentRegistry.h
 │   │   │   ComponentRegistry_Editor.h
@@ -440,6 +442,7 @@ D:.
 │   │   │       SceneInitializer.h
 │   │   │       
 │   │   ├───Meta
+│   │   │       ComponentDefine.h
 │   │   │       ComponentMeta.h
 │   │   │       ComponentMetaImGui.h
 │   │   │       ComponentMetaJson.h
@@ -484,12 +487,12 @@ D:.
 │   │   ├───AI
 │   │   │   ├───BehaviorTree
 │   │   │   │   │   BehaviorTreeComponentMeta.cpp
+│   │   │   │   │   BossActionComponent.h
+│   │   │   │   │   BossActionComponentMeta.cpp
+│   │   │   │   │   BossActionSystem.cpp
+│   │   │   │   │   BossActionSystem.h
 │   │   │   │   │   BossAISystem.cpp
 │   │   │   │   │   BossAISystem.h
-│   │   │   │   │   TestEnemyActionComponent.h
-│   │   │   │   │   TestEnemyActionComponentMeta.cpp
-│   │   │   │   │   TestEnemyActionSystem.cpp
-│   │   │   │   │   TestEnemyActionSystem.h
 │   │   │   │   │   
 │   │   │   │   ├───Data
 │   │   │   │   │       ActionRegistry.h
@@ -620,7 +623,6 @@ D:.
 │   │       SceneLoading.cpp
 │   │       SceneLoading.h
 │   │       
-│   ├───Script
 │   ├───UI
 │   │       FloatingTextComponent.h
 │   │       FloatingTextSystem.cpp

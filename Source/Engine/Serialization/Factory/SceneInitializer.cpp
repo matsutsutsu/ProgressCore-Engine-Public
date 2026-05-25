@@ -1,5 +1,5 @@
 #include "SceneInitializer.h"
-#include "ECS/Common/CCL_Common.h"
+#include "Engine/ECS/Common/CCL_Common.h"
 #include "Game/Core/AllComponents.h"
 #include "Engine/Serialization/Factory/Prefab.h"
 #include "Engine/Serialization/Factory/EntityFactory.h"

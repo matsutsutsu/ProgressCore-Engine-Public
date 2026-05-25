@@ -1,5 +1,5 @@
 #pragma once
-#include "ECS/System/CCL_System.h"
+#include "Engine/ECS/System/CCL_System.h"
 #include "Engine/GamePlay/Transform/TransformComponent.h"
 #include "LissajousOrbitComponent.h" // ※Componentの構造体定義ヘッダー
 #include <cmath>

@@ -5,7 +5,7 @@
 //#include "Engine/GamePlay/Transform/TransformComponent.h"
 //#include "Engine/Platform/Logger.h"
 //#include "Game/Core/SystemPriority.h" // LogicStage等の定義
-//#include "ECS/System/CCL_SystemRegistry.h"
+//#include "Engine/ECS/System/CCL_SystemRegistry.h"
 //#include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
 //#include <SimpleMath.h>
 //#include <imgui.h>

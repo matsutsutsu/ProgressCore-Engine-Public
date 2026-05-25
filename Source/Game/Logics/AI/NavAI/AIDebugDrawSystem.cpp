@@ -1,10 +1,10 @@
 #include "AIDebugDrawSystem.h"
-#include "ECS/Core/CCL_World.h"
+#include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Graphics/Renderer/ShapeRenderer.h"
 #include "Engine/Platform/Logger.h"
 
 // ECS実行順序のマクロ
-#include "ECS/System/CCL_SystemRegistry.h"
+#include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"
 
 // 数学ライブラリ

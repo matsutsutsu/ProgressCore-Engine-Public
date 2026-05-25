@@ -1,5 +1,5 @@
 #pragma once
-#include "ECS/System/CCL_System.h" 
+#include "Engine/ECS/System/CCL_System.h" 
 
 // 必要なコンポーネントだけを残す
 #include "Engine/GamePlay/Transform/TransformComponent.h"

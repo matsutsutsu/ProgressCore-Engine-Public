@@ -1,7 +1,7 @@
 #pragma once
 #include "Editor/Core/EditorWindow.h"
-#include "ECS/Core/CCL_World.h"
-#include "ECS/System/CCL_SystemManager.h"
+#include "Engine/ECS/Core/CCL_World.h"
+#include "Engine/ECS/System/CCL_SystemManager.h"
 #include <vector>
 #include <string>
 #include <map>
