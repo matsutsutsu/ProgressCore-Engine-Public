@@ -1,9 +1,9 @@
 #pragma once
 #include "Engine/ECS/System/CCL_System.h"
-#include "Engine/GamePlay/Graphics/Core/ModelComponent.h"
-#include "Engine/GamePlay/Graphics/Core/PrimitiveComponent.h"
-#include "Engine/GamePlay/Transform/TransformComponent.h"
-#include "CullingComponents.h"
+#include "Engine/Graphics/Components/Core/ModelComponent.h"
+#include "Engine/Graphics/Components/Core/PrimitiveComponent.h"
+#include "Engine/Transform/Components/TransformComponent.h"
+#include "Engine/Graphics/Components/Culling/CullingComponents.h"
 
 // ====================================================================
 // Model用のAABB更新システム

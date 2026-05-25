@@ -1,17 +1,17 @@
 #include "EditorScene.h"
 #include "Engine/Serialization/Factory/SceneInitializer.h"
-#include "Engine/Graphics/Core/Graphics.h"
+#include "Engine/Graphics/RHI/Graphics.h"
 
 #include "Engine/Serialization/Factory/Prefab.h"
 
-#include "Engine/Platform/Logger.h"
+#include "Engine/Platform/Core/Logger.h"
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 
 #include "Editor/Core/EditorCommandHistory.h"
-#include "Engine/GamePlay/Transform/TransformComponent.h"
+#include "Engine/Transform/Components/TransformComponent.h"
 
-#include "Engine/GamePlay/Transform/TransformUpdateSystem.h"
+#include "Engine/Transform/Systems/TransformUpdateSystem.h"
 
 void EditorScene::Initialize()
 {

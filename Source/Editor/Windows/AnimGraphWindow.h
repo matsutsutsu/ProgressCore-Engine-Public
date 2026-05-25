@@ -1,6 +1,6 @@
 #pragma once
 #include "Editor/Core/EditorWindow.h"
-#include "Engine/GamePlay/Animation/Data/AnimStateMachine.h"
+#include "Engine/Animation/Core/AnimStateMachine.h"
 #include <string>
 
 namespace ax { namespace NodeEditor { struct EditorContext; } }

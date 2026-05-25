@@ -6,7 +6,7 @@
 #include <cstring>
 #include <type_traits> // メタプログラミング用
 #include "Editor/Core/EditorCommandHistory.h"
-#include "Engine/Platform/Logger.h"
+#include "Engine/Platform/Core/Logger.h"
 #include <imgui.h>
 
 namespace ComponentMetaImGui {

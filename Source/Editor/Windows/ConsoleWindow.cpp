@@ -9,7 +9,7 @@
 //   - 行ダブルクリックで Visual Studio に該当行ジャンプ
 //==============================================================================
 #include "ConsoleWindow.h"
-#include "Engine/Platform/LogSinks.h"
+#include "Engine/Platform/Core/LogSinks.h"
 
 #include <Windows.h>
 #include <cstdio>

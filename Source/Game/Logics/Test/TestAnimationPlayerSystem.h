@@ -1,7 +1,7 @@
 #pragma once
 #include "Engine/ECS/System/CCL_System.h"
-#include "Engine/GamePlay/Transform/TransformComponent.h"
-#include "Engine/GamePlay/Animation/AnimParametersComponent.h"
+#include "Engine/Transform/Components/TransformComponent.h"
+#include "Engine/Animation/Components/AnimParametersComponent.h"
 #include "TestAnimationPlayerComponent.h"
 
 

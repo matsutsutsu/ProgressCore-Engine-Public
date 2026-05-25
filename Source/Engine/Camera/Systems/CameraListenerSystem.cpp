@@ -1,7 +1,7 @@
 #include "CameraListenerSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
-#include "Engine/Graphics/Core/Camera.h"
-#include "Engine/Audio/IAudioAPI.h"
+#include "Engine/Graphics/RHI/Camera.h"
+#include "Engine/Audio/FmodIntegration/IAudioAPI.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"
 

@@ -1,5 +1,5 @@
 #pragma once
-#include "Engine/Graphics/Renderer/Pipeline/IRenderPass.h"
+#include "Engine/Graphics/Pipeline/IRenderPass.h"
 
 class ParticlePass : public IRenderPass {
 public:

@@ -18,11 +18,11 @@
 //       現状は保存時のみ一時構築するが、これだけでも実用上は十分速い。
 // =====================================================================
 #include "PrefabSerializer.h"
-#include "Engine/Serialization/ComponentRegistry.h"
-#include "Engine/Serialization/SaveContext.h"
-#include "Engine/Serialization/SceneFormat.h"
-#include "Engine/GamePlay/Transform/TransformComponent.h"
-#include "Engine/Platform/FileSystem.h"
+#include "Engine/Serialization/Registry/ComponentRegistry.h"
+#include "Engine/Serialization/Core/SaveContext.h"
+#include "Engine/Serialization/Core/SceneFormat.h"
+#include "Engine/Transform/Components/TransformComponent.h"
+#include "Engine/Platform/Core/FileSystem.h"
 
 
 #include <json.hpp>

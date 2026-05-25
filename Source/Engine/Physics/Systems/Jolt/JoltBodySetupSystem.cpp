@@ -1,13 +1,13 @@
 #include "JoltBodySetupSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
-#include "Engine/Physics/JoltPhysicsManager.h"
+#include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"
 
-#include "Engine/GamePlay/Physics/Jolt/JoltHandleComponent.h"
-#include "Engine/GamePlay/Physics/Collision/JoltBoxColliderComponent.h"
-#include "Engine/GamePlay/Physics/Collision/JoltSphereColliderComponent.h"
-#include "Engine/GamePlay/Physics/Collision/JoltCapsuleColliderComponent.h"
-#include "Engine/GamePlay/Physics/Collision/JoltMeshColliderComponent.h"
-#include "Engine/GamePlay/Graphics/Core/ModelComponent.h"
+#include "Engine/Physics/Components/Jolt/JoltHandleComponent.h"
+#include "Engine/Physics/Components/Collision/JoltBoxColliderComponent.h"
+#include "Engine/Physics/Components/Collision/JoltSphereColliderComponent.h"
+#include "Engine/Physics/Components/Collision/JoltCapsuleColliderComponent.h"
+#include "Engine/Physics/Components/Collision/JoltMeshColliderComponent.h"
+#include "Engine/Graphics/Components/Core/ModelComponent.h"
 
 
 #include <Jolt/Physics/Collision/Shape/MeshShape.h>

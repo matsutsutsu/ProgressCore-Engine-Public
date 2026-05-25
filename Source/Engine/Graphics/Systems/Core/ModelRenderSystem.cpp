@@ -1,8 +1,8 @@
 #include "ModelRenderSystem.h"
 
 // 実装詳細で必要なインクルード
-#include "Engine/GamePlay/Graphics/Lighting/FogComponent.h"
-#include "Engine/Graphics/Core/Graphics.h" // DeviceContext取得用
+#include "Engine/Graphics/Components/Lighting/FogComponent.h"
+#include "Engine/Graphics/RHI/Graphics.h" // DeviceContext取得用
 #include "Engine/Graphics/Renderer/ModelRenderer.h"
 #include "Engine/Graphics/Resource/Model.h" // Modelポインタ用
 #include "Engine/Graphics/Shader/ShaderResources.h"

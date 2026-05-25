@@ -5,7 +5,7 @@
 // 必要に応じて、あなたのエンジンのマネージャー類をインクルードしてください
 
 // ★カメラのコンポーネントを使うためにインクルードを追加
-#include "Engine/GamePlay/Camera/VirtualCameraComponents.h"
+#include "Engine/Camera/Components/VirtualCameraComponents.h"
 
 // #include "Engine/Platform/Input/Input.h"
 // #include "Engine/Audio/AudioManager.h"

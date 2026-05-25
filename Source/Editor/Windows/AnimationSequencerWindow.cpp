@@ -1,20 +1,20 @@
 #include "AnimationSequencerWindow.h"
-#include "Engine/GamePlay/Animation/AnimatorComponent.h"
-#include "Engine/GamePlay/Graphics/Core/ModelComponent.h"
+#include "Engine/Animation/Components/AnimatorComponent.h"
+#include "Engine/Graphics/Components/Core/ModelComponent.h"
 #include "ImSequencer.h"
 #include "Engine/Assets/Model.h"
 #include "Engine/Assets/ModelResource.h"
-#include "Engine/GamePlay/Animation/Data/AnimSequence.h" 
-#include "Engine/GamePlay/Animation/AnimationSystem.h" 
+#include "Engine/Animation/Core/AnimSequence.h" 
+#include "Engine/Animation/Systems/AnimationSystem.h" 
 
 // ボスが持っている武器の名簿を読むためにインクルード
 #include "Game/Logics/Combat/CombatRosterComponent.h"
-#include "Engine/GamePlay/Transform/TransformComponent.h"
-#include "Engine/GamePlay/Transform/PendingParentComponent.h"
+#include "Engine/Transform/Components/TransformComponent.h"
+#include "Engine/Transform/Components/PendingParentComponent.h"
 #include "Game/Logics/Combat/Shader/TrailComponent.h"
 
-#include "Engine/Platform/Dialog.h"
-#include "Engine/Platform/Logger.h"
+#include "Engine/Platform/Core/Dialog.h"
+#include "Engine/Platform/Core/Logger.h"
 
 #include <filesystem>
 

@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "Engine/Graphics/Renderer/Sprite.h"
-#include "Engine/Graphics/Core/Graphics.h"
+#include "Engine/Graphics/RHI/Graphics.h"
 
 
 class BitmapFont : public Sprite {

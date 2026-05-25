@@ -1,9 +1,9 @@
 #include "DistractionItemSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
-#include "Engine/Platform/Logger.h"
+#include "Engine/Platform/Core/Logger.h"
 #include "Game/Logics/AI/NavAI/Events/AISoundEvent.h"
 #include "DistractionItemComponent.h" 
-#include "Engine/Audio/AudioEvents.h" 
+#include "Engine/Audio/Components/AudioEvents.h" 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"
 

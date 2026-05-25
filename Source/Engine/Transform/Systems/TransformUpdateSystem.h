@@ -1,11 +1,11 @@
 #pragma once
 
 #include "Engine/ECS/System/CCL_System.h"
-#include "Engine/GamePlay/Transform/TransformComponent.h"
+#include "Engine/Transform/Components/TransformComponent.h" 
 #include <DirectXMath.h>
-#include "Engine/GamePlay/Core/DestroyTag.h"
+#include "Engine/Core/Components/DestroyTag.h"
 
-#include "PendingParentComponent.h"
+#include "Engine/Transform/Components/PendingParentComponent.h" 
 
 // 前方宣言
 namespace CCL::ECS::Core {

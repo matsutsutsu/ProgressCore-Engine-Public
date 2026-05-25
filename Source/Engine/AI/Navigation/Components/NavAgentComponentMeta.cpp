@@ -1,6 +1,6 @@
-#include "Engine/GamePlay/AI/Navigation/NavAgentComponent.h"
+#include "Engine/AI/Navigation/Components/NavAgentComponent.h"
 #include "Editor/Inspector/ComponentGuiRegistry.h"
-#include "Engine/Serialization/ComponentRegistry.h"
+#include "Engine/Serialization/Registry/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 

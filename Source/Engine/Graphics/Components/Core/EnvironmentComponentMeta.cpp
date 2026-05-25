@@ -1,16 +1,16 @@
-#include "Engine/GamePlay/Graphics/Lighting/FogComponent.h"
-#include "Engine/GamePlay/Graphics/Lighting/ShadowMapConfigComponent.h"
-#include "Engine/GamePlay/Graphics/PostProcess/BloomConfigComponent.h"
-#include "Engine/GamePlay/Graphics/PostProcess/ToneMapConfigComponent.h"
+#include "Engine/Graphics/Components/Lighting/FogComponent.h"
+#include "Engine/Graphics/Components/Lighting/ShadowMapConfigComponent.h"
+#include "Engine/Graphics/Components/PostProcess/BloomConfigComponent.h"
+#include "Engine/Graphics/Components/PostProcess/ToneMapConfigComponent.h"
 
 #include "Editor/Inspector/ComponentGuiRegistry.h"
-#include "Engine/Serialization/ComponentRegistry.h"
+#include "Engine/Serialization/Registry/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
-#include "Engine/Graphics/Core/GpuResourceUtils.h"
-#include "Engine/Graphics/Core/Graphics.h"
-#include "Engine/Platform/Dialog.h"
+#include "Engine/Graphics/RHI/GpuResourceUtils.h"
+#include "Engine/Graphics/RHI/Graphics.h"
+#include "Engine/Platform/Core/Dialog.h"
 
 #if ENABLE_EDITOR
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"

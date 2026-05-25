@@ -3,9 +3,9 @@
 #include <memory>
 #include <string>
 
-#include "Engine/Graphics/Core/Camera.h"
-#include "Engine/Graphics/Core/Light.h"
-#include "Engine/GamePlay/Core/Scene/Scene.h"
+#include "Engine/Graphics/RHI/Camera.h"
+#include "Engine/Graphics/RHI/Light.h"
+#include "Engine/Scene/Scene.h"
 
 // ECS関連
 #include "Engine/ECS/Common/CCL_Common.h"
@@ -17,7 +17,7 @@
 #include "Engine/Graphics/Shader/PostProcess/PostProcessManager.h"
 //#include "Engine/Graphics/Shader/Pass/ShadowMap.h"
 
-#include "Engine/GamePlay/Core/Scene/SceneManager.h"
+#include "Engine/Scene/SceneManager.h"
 
 class BaseScene : public Scene {
   protected:

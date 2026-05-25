@@ -7,8 +7,8 @@
 #include "Engine/Core/Math/StringHash.h"
 
 // 先ほど作成した専用の手紙ヘッダー
-#include "Engine/GamePlay/Animation/Data/AnimEventMessages.h"
-#include "Engine/GamePlay/Animation/Data/AnimationCurve.h"
+#include "Engine/Animation/Core/AnimEventMessages.h"
+#include "Engine/Animation/Core/AnimationCurve.h"
 
 
 // ===================================================================================

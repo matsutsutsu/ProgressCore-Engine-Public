@@ -10,8 +10,8 @@
 #include <memory>  // ★追加
 #include <atomic>  // ★追加
 #include "Engine/Graphics/Renderer/InstanceBuffer.h" // ★インスタンスバッファ用
-#include "Engine/Graphics/Core/PipelineState.h"  // ★PSO（金型）
-#include "Engine/Graphics/Core/RenderContext.h"      // ★RenderContext
+#include "Engine/Graphics/RHI/PipelineState.h"  // ★PSO（金型）
+#include "Engine/Graphics/RHI/RenderContext.h"      // ★RenderContext
 
 // 頂点とインデックスのバッファをまとめる構造体
 struct GeometryBuffer

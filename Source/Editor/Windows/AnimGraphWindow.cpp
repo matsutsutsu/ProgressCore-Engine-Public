@@ -1,14 +1,14 @@
 #include "AnimGraphWindow.h"
-#include "Engine/GamePlay/Animation/Data/AnimGraphSerializer.h"
+#include "Engine/Animation/Core/AnimGraphSerializer.h"
 #include "Engine/Core/Math/StringHash.h"
 #include <imgui_node_editor.h>
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <string>
 
-#include "Engine/Platform/Dialog.h"
-#include "Engine/Platform/Logger.h"
-//#include "Engine/Graphics/Core/Graphics.h"
+#include "Engine/Platform/Core/Dialog.h"
+#include "Engine/Platform/Core/Logger.h"
+//#include "Engine/Graphics/RHI/Graphics.h"
 #include <filesystem>
 #include "Engine/ECS/Core/CCL_World.h"
 #include <cmath> // sinf用

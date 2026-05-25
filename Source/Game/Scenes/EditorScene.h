@@ -3,7 +3,7 @@
 #include "Game/Scenes/BaseScene.h"
 
 
-#include "Engine/GamePlay/Animation/AnimationSystem.h"
+#include "Engine/Animation/Systems/AnimationSystem.h"
 
 class EditorScene : public BaseScene {
   public:

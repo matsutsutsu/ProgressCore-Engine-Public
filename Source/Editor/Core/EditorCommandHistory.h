@@ -2,7 +2,7 @@
 #include <vector>
 #include <memory>
 #include "Engine/ECS/Core/CCL_World.h"
-#include "Engine/Platform/Logger.h"
+#include "Engine/Platform/Core/Logger.h"
 
 // =========================================================
 // 1. 命令書の基本インターフェース

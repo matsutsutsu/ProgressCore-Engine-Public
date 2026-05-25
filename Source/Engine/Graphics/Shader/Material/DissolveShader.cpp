@@ -1,6 +1,6 @@
 #include "DissolveShader.h"
-#include "Engine/Core/Common/Misc.h"
-#include "Engine/Graphics/Core/GpuResourceUtils.h"
+#include "Engine/Core/Math/Misc.h"
+#include "Engine/Graphics/RHI/GpuResourceUtils.h"
 
 DissolveShader::DissolveShader(ID3D11Device *device)
 {

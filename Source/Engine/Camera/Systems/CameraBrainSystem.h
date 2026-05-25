@@ -1,6 +1,6 @@
 #pragma once
 #include "Engine/ECS/System/CCL_System.h"
-#include "Engine/GamePlay/Camera/VirtualCameraComponents.h"
+#include "Engine/Camera/Components/VirtualCameraComponents.h"
 #include <DirectXMath.h>
 #include <vector>
 

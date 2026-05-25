@@ -1,10 +1,10 @@
 #include "ParticleEventSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
-#include "Engine/GamePlay/Graphics/Particle/GPUParticleComponent.h"
+#include "Engine/Graphics/Components/Particle/GPUParticleComponent.h"
 #include "Engine/Serialization/Factory/Prefab.h"
 
-#include "Engine/GamePlay/Transform/TransformComponent.h"
-#include "Engine/GamePlay/Transform/PendingParentComponent.h"
+#include "Engine/Transform/Components/TransformComponent.h"
+#include "Engine/Transform/Components/PendingParentComponent.h"
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"

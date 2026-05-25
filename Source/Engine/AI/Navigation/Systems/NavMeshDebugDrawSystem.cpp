@@ -1,5 +1,5 @@
 #include "NavMeshDebugDrawSystem.h"
-#include "NavigationData.h"
+#include "Engine/AI/Navigation/Core/NavigationData.h"
 #include <DetourNavMesh.h>
 #include <DirectXMath.h>
 #include <cmath> // 円の計算用
@@ -9,8 +9,8 @@
 #include "Engine/Graphics/Renderer/ShapeRenderer.h"
 
 // ★AIエージェントの情報を読み取るためにインクルード
-#include "Engine/GamePlay/Transform/TransformComponent.h"
-#include "Engine/GamePlay/AI/Navigation/NavAgentComponent.h"
+#include "Engine/Transform/Components/TransformComponent.h"
+#include "Engine/AI/Navigation/Components/NavAgentComponent.h"
 
 void NavMeshDebugDrawSystem::Update(float dt)
 {

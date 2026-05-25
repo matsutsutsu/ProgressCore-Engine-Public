@@ -1,11 +1,11 @@
 #pragma once
 #include "Engine/ECS/System/CCL_System.h"
-#include "Engine/GamePlay/Transform/TransformComponent.h"
-#include "Engine/GamePlay/Physics/Collision/JoltBoxColliderComponent.h"
-#include "Engine/GamePlay/Physics/Collision/JoltSphereColliderComponent.h"
-#include "Engine/GamePlay/Physics/Collision/JoltCapsuleColliderComponent.h"
-#include "Engine/GamePlay/Physics/Collision/JoltMeshColliderComponent.h"
-#include "Engine/GamePlay/Graphics/Core/ModelComponent.h"
+#include "Engine/Transform/Components/TransformComponent.h"
+#include "Engine/Physics/Components/Collision/JoltBoxColliderComponent.h"
+#include "Engine/Physics/Components/Collision/JoltSphereColliderComponent.h"
+#include "Engine/Physics/Components/Collision/JoltCapsuleColliderComponent.h"
+#include "Engine/Physics/Components/Collision/JoltMeshColliderComponent.h"
+#include "Engine/Graphics/Components/Core/ModelComponent.h"
 
 // 1. BoxCollider 可視化システム
 class JoltBoxDebugDrawSystem : public CCL::ECS::IfSystem<JoltBoxDebugDrawSystem,

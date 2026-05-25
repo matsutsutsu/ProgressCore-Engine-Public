@@ -1,6 +1,6 @@
 // --- JoltCleanupSystem.cpp ---
 #include "JoltCleanupSystem.h"
-#include "Engine/Physics/JoltPhysicsManager.h"
+#include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"
 #include "Engine/ECS/Core/CCL_World.h"
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"

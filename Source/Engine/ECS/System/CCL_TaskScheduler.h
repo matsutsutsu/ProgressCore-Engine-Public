@@ -5,7 +5,7 @@
 #include <vector>
 #include <string>
 #include "Engine/ECS/Core/CCL_Chunk.h"
-#include "Engine/Platform/Logger.h"
+#include "Engine/Platform/Core/Logger.h"
 
 namespace CCL::ECS {
     // システムの依存関係を解析し、並列実行可能なバッチを構築するクラス

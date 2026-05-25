@@ -1,8 +1,8 @@
 #pragma once
 #include "Engine/ECS/System/CCL_System.h"
-#include "Engine/GamePlay/Animation/Data/AnimStateMachine.h"
-#include "Engine/GamePlay/Animation/AnimParametersComponent.h"
-#include "Engine/GamePlay/Animation/AnimatorComponent.h"
+#include "Engine/Animation/Core/AnimStateMachine.h"
+#include "Engine/Animation/Components/AnimParametersComponent.h"
+#include "Engine/Animation/Components/AnimatorComponent.h"
 
 // ===================================================================================
 // ファイル: AnimControllerSystem.h

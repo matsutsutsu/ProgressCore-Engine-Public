@@ -1,6 +1,6 @@
 #include "Graphics.h"
-#include "Engine/Core/Common/Misc.h"
-#include "Engine/Graphics/Core/Camera.h"
+#include "Engine/Core/Math/Misc.h"
+#include "Engine/Graphics/RHI/Camera.h"
 
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
 

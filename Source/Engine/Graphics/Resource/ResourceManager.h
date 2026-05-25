@@ -13,9 +13,9 @@
 #include "ModelResource.h"
 #include "Model.h"
 #include "MaterialData.h"
-#include "Engine/Graphics/Core/RenderTarget.h"
-#include "Engine/GamePlay/Animation/Data/AnimSequence.h"
-#include "Engine/GamePlay/Animation/Data/AnimationCurve.h"
+#include "Engine/Graphics/RHI/RenderTarget.h"
+#include "Engine/Animation/Core/AnimSequence.h"
+#include "Engine/Animation/Core/AnimationCurve.h"
 
 // ============================================================================
 // [Data Structures]

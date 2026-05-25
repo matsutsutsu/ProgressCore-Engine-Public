@@ -1,7 +1,7 @@
 #include "SkyboxPass.h"
-#include "Engine/Graphics/Core/Graphics.h"
-#include "Engine/Graphics/Core/Camera.h"
-#include "Engine/Graphics/Core/GpuResourceUtils.h" 
+#include "Engine/Graphics/RHI/Graphics.h"
+#include "Engine/Graphics/RHI/Camera.h"
+#include "Engine/Graphics/RHI/GpuResourceUtils.h" 
 #include "Engine/Graphics/Shader/ShaderResources.h"
 
 

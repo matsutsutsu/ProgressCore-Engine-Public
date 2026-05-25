@@ -2,7 +2,7 @@
 #include <fstream>
 #include <wrl.h>
 #include <DirectXTex.h>
-#include "Engine/Core/Common/Misc.h"
+#include "Engine/Core/Math/Misc.h"
 #include "GpuResourceUtils.h"
 #include <windows.h>
 

@@ -3,9 +3,9 @@
 #include <fstream>
 #include <cereal/archives/json.hpp>
 
-#include "Engine/Platform/Logger.h"
-#include "Engine/Graphics/Core/Graphics.h"
-#include "Engine/Graphics/Core/GpuResourceUtils.h"
+#include "Engine/Platform/Core/Logger.h"
+#include "Engine/Graphics/RHI/Graphics.h"
+#include "Engine/Graphics/RHI/GpuResourceUtils.h"
 
 #if ENABLE_EDITOR
 #include <imgui.h>

@@ -21,8 +21,8 @@
 #include <unordered_map>
 
 #include "Engine/ECS/Core/CCL_World.h"
-#include "Engine/Serialization/SaveContext.h"
-#include "Engine/Serialization/LoadContext.h"
+#include "Engine/Serialization/Core/SaveContext.h"
+#include "Engine/Serialization/Core/LoadContext.h"
 
 // HasCustomSerialize は ComponentMetaJson.h で定義されている。
 // ここでは前方宣言だけ参照する。

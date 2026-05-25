@@ -1,7 +1,7 @@
 #pragma once
 #include "Engine/ECS/System/CCL_System.h"
-#include "Engine/GamePlay/Transform/TransformComponent.h"
-#include "Engine/GamePlay/AI/Navigation/NavAgentComponent.h"
+#include "Engine/Transform/Components/TransformComponent.h"
+#include "Engine/AI/Navigation/Components/NavAgentComponent.h"
 
 // 経路探索が必要なAIを見つけ出し、ウェイポイントを計算するシステム
 class NavPathfindingSystem : public CCL::ECS::IfSystem<NavPathfindingSystem, 

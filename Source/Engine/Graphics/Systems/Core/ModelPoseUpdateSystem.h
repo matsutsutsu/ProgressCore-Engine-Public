@@ -1,7 +1,7 @@
 #pragma once
 #include "Engine/ECS/System/CCL_System.h"
-#include "Engine/GamePlay/Transform/TransformComponent.h"
-#include "Engine/GamePlay/Graphics/Core/ModelComponent.h"
+#include "Engine/Transform/Components/TransformComponent.h"
+#include "Engine/Graphics/Components/Core/ModelComponent.h"
 
 
 // モデルのノード行列やボーン行列を描画前に確定させるシステム

@@ -1,6 +1,6 @@
 #pragma once
 #include "Editor/Core/EditorWindow.h"
-#include "Engine/Platform/Logger.h"
+#include "Engine/Platform/Core/Logger.h"
 
 #include <memory>
 #include <string>

@@ -1,8 +1,8 @@
 // --- JoltCleanupSystem.h ---
 #pragma once
 #include "Engine/ECS/System/CCL_System.h"
-#include "Engine/GamePlay/Core/DestroyTag.h"
-#include "Engine/GamePlay/Physics/Jolt/JoltHandleComponent.h"
+#include "Engine/Core/Components/DestroyTag.h"
+#include "Engine/Physics/Components/Jolt/JoltHandleComponent.h"
 
 class JoltCleanupSystem : public CCL::ECS::IfSystem<JoltCleanupSystem,
     CCL::ECS::Read<Tag::DestroyTag>, CCL::ECS::Read<JoltHandleComponent>> {

@@ -1,8 +1,8 @@
-#include "Engine/Serialization/ComponentRegistry.h"
-#include "Engine/Serialization/ComponentRegistry_Editor.h"
+#include "Engine/Serialization/Registry/ComponentRegistry.h"
+#include "Engine/Serialization/Registry/ComponentRegistry_Editor.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
-#include "Engine/GamePlay/Core/NameComponent.h"
+#include "Engine/Core/Components/NameComponent.h"
 
 #ifdef ENABLE_EDITOR
 #include "Editor/Inspector/ComponentGuiRegistry.h"

@@ -1,4 +1,4 @@
-#include "Engine/Core/Common/Misc.h"
+#include "Engine/Core/Math/Misc.h"
 #include "RenderState.h"
 
 // コンストラクタ

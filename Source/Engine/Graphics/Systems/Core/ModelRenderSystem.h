@@ -2,10 +2,10 @@
 #include "Engine/ECS/System/CCL_System.h" // IfSystemの継承元
 
 // テンプレート引数で使用するコンポーネント
-#include "Engine/GamePlay/Graphics/Core/MaterialComponent.h"
-#include "Engine/GamePlay/Graphics/Core/ModelComponent.h"
-#include "Engine/GamePlay/Graphics/Core/Culling/CullingComponents.h"
-#include "Engine/GamePlay/Transform/TransformComponent.h"
+#include "Engine/Graphics/Components/Core/MaterialComponent.h"
+#include "Engine/Graphics/Components/Core/ModelComponent.h"
+#include "Engine/Graphics/Components//Culling/CullingComponents.h"
+#include "Engine/Transform/Components/TransformComponent.h"
 
 // 前方宣言
 class ModelRenderer;

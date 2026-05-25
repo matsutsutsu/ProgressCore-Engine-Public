@@ -5,8 +5,8 @@
 //#pragma once
 //#include "Engine/ECS/System/CCL_System.h"
 //#include "Game/Logics/AI/BehaviorTree/Drone/DroneComponent.h"
-//#include "Engine/GamePlay/Transform/TransformComponent.h"
-//#include "Engine/GamePlay/Core/Time/TimeState.h"
+//#include "Engine/Transform/Components/TransformComponent.h"
+//#include "Engine/Core/Time/TimeState.h"
 //
 //
 //class DroneMovementSystem : public CCL::ECS::IfSystem<

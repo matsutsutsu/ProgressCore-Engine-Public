@@ -1,8 +1,8 @@
 #include "OpaquePass.h"
 #include "Engine/Graphics/Renderer/ModelRenderer.h"
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
-#include "Engine/Graphics/Core/Graphics.h"
-#include "Engine/Graphics/Core/Camera.h" 
+#include "Engine/Graphics/RHI/Graphics.h"
+#include "Engine/Graphics/RHI/Camera.h" 
 #include "Engine/Graphics/Renderer/RenderQueue.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 #include <algorithm>

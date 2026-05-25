@@ -1,5 +1,5 @@
 #include "UIManager.h"
-#include "Engine/Graphics/Core/Graphics.h" // 画面サイズ取得用
+#include "Engine/Graphics/RHI/Graphics.h" // 画面サイズ取得用
 #include "UIContext.h"
 #include "UIElement.h"
 #include <iostream>

@@ -1,8 +1,8 @@
 #include "PlayerInputSystem.h"
 
 #include "Engine/ECS/Core/CCL_Chunk.h"
-#include "Engine/Graphics/Core/Camera.h"
-#include "Engine/Graphics/Core/Graphics.h"
+#include "Engine/Graphics/RHI/Camera.h"
+#include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Platform/Input/Input.h"
 #include <SimpleMath.h>
 

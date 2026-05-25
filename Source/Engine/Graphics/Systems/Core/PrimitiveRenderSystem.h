@@ -1,8 +1,8 @@
 #pragma once
 #include "Engine/ECS/System/CCL_System.h"
-#include "Engine/GamePlay/Graphics/Core/PrimitiveComponent.h"
-#include "Engine/GamePlay/Graphics/Core/Culling/CullingComponents.h"
-#include "Engine/GamePlay/Transform/TransformComponent.h"
+#include "Engine/Graphics/Components/Core/PrimitiveComponent.h"
+#include "Engine/Graphics/Components//Culling/CullingComponents.h"
+#include "Engine/Transform/Components/TransformComponent.h"
 
 class PrimitiveRenderSystem : public CCL::ECS::IfSystem<PrimitiveRenderSystem,
                                   CCL::ECS::Read<TransformComponent>,

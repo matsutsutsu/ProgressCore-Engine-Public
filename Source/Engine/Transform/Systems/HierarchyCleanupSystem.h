@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Engine/GamePlay/Core/DestroyTag.h"
-#include "Engine/GamePlay/Transform/TransformComponent.h"
+#include "Engine/Core/Components/DestroyTag.h"
+#include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/ECS/System/CCL_System.h"
 #include <vector>
 

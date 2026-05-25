@@ -1,33 +1,33 @@
 #include "BaseScene.h"
 
 
-#include "Engine/Serialization/SceneSerializer.h"
+#include "Engine/Serialization/Serializer/SceneSerializer.h"
 #include "Engine/Serialization/Factory/Prefab.h"
 #include "Engine/Serialization/Factory/SceneInitializer.h"
 
-#include "Engine/Graphics/Core/Graphics.h"
-#include "Engine/Physics/JoltPhysicsManager.h"
+#include "Engine/Graphics/RHI/Graphics.h"
+#include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"
 
-#include "Engine/Physics/JoltPhysicsFacade.h"
-#include "Engine/Audio/FmodAudioManager.h"
+#include "Engine/Physics/JoltIntegration/JoltPhysicsFacade.h"
+#include "Engine/Audio/FmodIntegration/FmodAudioManager.h"
 
 #include "Engine/Platform/Input/Input.h"
 #include "Engine/Platform/Input/InputFacade.h"
 
-#include "Engine/GamePlay/Graphics/Core/EnvironmentSystem.h"
+#include "Engine/Graphics/Systems/Core/EnvironmentSystem.h"
 
 #include "Engine/Graphics/Renderer/RenderQueue.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 
-#include "Engine/Core/Framework.h"
+#include "Engine/Core/App/Framework.h"
+#include "Engine/Core/App/EngineServices.h"
 
 #if TRACY_ENABLE
 #include "tracy/Tracy.hpp"
 #endif
 
-#include "Engine/Platform/Logger.h"
+#include "Engine/Platform/Core/Logger.h"
 
-#include "Engine/Core/EngineServices.h"
 
 void BaseScene::Initialize()
 {

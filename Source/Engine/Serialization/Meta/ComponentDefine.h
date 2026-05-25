@@ -36,9 +36,9 @@
 // =====================================================================
 #pragma once
 #include "Engine/Serialization/Meta/ComponentMeta.h"
-#include "Engine/Serialization/EntityLink.h"
-#include "Engine/Serialization/ComponentRegistry.h"
-#include "Engine/Serialization/ComponentRegistry_Editor.h"
+#include "Engine/Serialization/Core/EntityLink.h"
+#include "Engine/Serialization/Registry/ComponentRegistry.h"
+#include "Engine/Serialization/Registry/ComponentRegistry_Editor.h"
 #include <DirectXMath.h>
 #include <string>
 #include <type_traits>

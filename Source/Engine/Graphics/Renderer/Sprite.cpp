@@ -1,7 +1,7 @@
 #include <fstream>
 #include "Sprite.h"
-#include "Engine/Core/Common/Misc.h"
-#include "Engine/Graphics/Core/GpuResourceUtils.h"
+#include "Engine/Core/Math/Misc.h"
+#include "Engine/Graphics/RHI/GpuResourceUtils.h"
 
 // コンストラクタ
 Sprite::Sprite(ID3D11Device* device)

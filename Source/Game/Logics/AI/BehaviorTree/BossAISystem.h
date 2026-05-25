@@ -3,8 +3,8 @@
 //#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"
 //#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"
 //#include "Game/Logics/AI/BehaviorTree/BossActionComponent.h"      
-//#include "Engine/GamePlay/Transform/TransformComponent.h" 
-//#include "Engine/GamePlay/Core/Time/TimeState.h"
+//#include "Engine/Transform/Components/TransformComponent.h" 
+//#include "Engine/Core/Time/TimeState.h"
 //#include "Game/Logics/Combat/HealthComponent.h"
 //
 ///**

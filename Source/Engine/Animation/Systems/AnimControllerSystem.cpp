@@ -3,8 +3,8 @@
 #include "Game/Core/SystemPriority.h"
 #include <cmath> 
 #include "Engine/Graphics/Resource/ResourceManager.h"
-#include "Engine/GamePlay/Animation/Data/AnimGraphSerializer.h"
-#include "Engine/Platform/Logger.h"
+#include "Engine/Animation/Core/AnimGraphSerializer.h"
+#include "Engine/Platform/Core/Logger.h"
 
 void AnimControllerSystem::Update(float dt)
 {

@@ -3,7 +3,7 @@
 #include "Game/Core/AllComponents.h"
 #include "Engine/Serialization/Factory/Prefab.h"
 #include "Engine/Serialization/Factory/EntityFactory.h"
-#include "Engine/Platform/Logger.h"
+#include "Engine/Platform/Core/Logger.h"
 #include <random>
 #include <vector>
 

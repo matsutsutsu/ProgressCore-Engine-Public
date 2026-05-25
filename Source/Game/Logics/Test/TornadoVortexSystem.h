@@ -1,6 +1,6 @@
 #pragma once
 #include "Engine/ECS/System/CCL_System.h"
-#include "Engine/GamePlay/Transform/TransformComponent.h"
+#include "Engine/Transform/Components/TransformComponent.h"
 #include "TornadoVortexComponent.h"
 #include <cmath>
 

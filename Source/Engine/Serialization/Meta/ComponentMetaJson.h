@@ -12,9 +12,9 @@
 // =====================================================================
 #pragma once
 #include "ComponentMeta.h"
-#include "Engine/Serialization/EntityLink.h"
-#include "Engine/Serialization/SaveContext.h"
-#include "Engine/Serialization/LoadContext.h"
+#include "Engine/Serialization/Core/EntityLink.h"
+#include "Engine/Serialization/Core/SaveContext.h"
+#include "Engine/Serialization/Core/LoadContext.h"
 #include <DirectXMath.h>
 #include <json.hpp>
 #include <type_traits>

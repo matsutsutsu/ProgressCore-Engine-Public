@@ -1,5 +1,5 @@
 #include "GPUParticleRenderSystem.h"
-#include "Engine/Graphics/Core/Graphics.h"
+#include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Graphics/Renderer/ParticleRenderer.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
 

@@ -1,6 +1,6 @@
 #include "ParticleScene.h"
 #include "Engine/Serialization/Factory/Prefab.h"
-#include "Engine/Graphics/Core/Graphics.h"
+#include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Serialization/Factory/SceneInitializer.h"
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"

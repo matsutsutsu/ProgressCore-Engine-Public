@@ -22,15 +22,15 @@
 //     Pass 3: ScrutinyAndApply で構造変更を確定
 // =====================================================================
 #include "SceneSerializer.h"
-#include "Engine/Serialization/ComponentRegistry.h"
-#include "Engine/Serialization/SaveContext.h"
-#include "Engine/Serialization/LoadContext.h"
-#include "Engine/Serialization/SceneFormat.h"
+#include "Engine/Serialization/Registry/ComponentRegistry.h"
+#include "Engine/Serialization/Core/SaveContext.h"
+#include "Engine/Serialization/Core/LoadContext.h"
+#include "Engine/Serialization/Core/SceneFormat.h"
 
-#include "Engine/GamePlay/Core/DestroyTag.h"
-#include "Engine/GamePlay/Core/PersistentTag.h"
-#include "Engine/Platform/Logger.h"
-#include "Engine/Platform/FileSystem.h"
+#include "Engine/Core/Components/DestroyTag.h"
+#include "Engine/Core/Components/PersistentTag.h"
+#include "Engine/Platform/Core/Logger.h"
+#include "Engine/Platform/Core/FileSystem.h"
 
 #include <json.hpp>
 #include <fstream>

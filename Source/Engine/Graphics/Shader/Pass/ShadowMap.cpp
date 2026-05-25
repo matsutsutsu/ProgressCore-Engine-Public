@@ -1,7 +1,7 @@
 // ShadowMap.cpp
 #include "ShadowMap.h"
-#include "Engine/Core/Common/Misc.h"
-#include "Engine/Graphics/Core/GpuResourceUtils.h"
+#include "Engine/Core/Math/Misc.h"
+#include "Engine/Graphics/RHI/GpuResourceUtils.h"
 
 
 

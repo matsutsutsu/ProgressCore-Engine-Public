@@ -1,7 +1,7 @@
 #pragma once
 #include "Engine/ECS/System/CCL_System.h"
-#include "Engine/GamePlay/Graphics/Core/MaterialComponent.h"
-#include "DissolveComponent.h"
+#include "Engine/Graphics/Components/Core/MaterialComponent.h"
+#include "Engine/Graphics/Components/Core/DissolveComponent.h"
 
 // ディゾルブ演出の進行と、完了時のエンティティ破棄を専任で行うシステム
 class DissolveSystem : public CCL::ECS::IfSystem<DissolveSystem,

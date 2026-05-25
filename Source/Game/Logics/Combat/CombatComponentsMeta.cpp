@@ -1,25 +1,25 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Game/Logics/Combat/CombatComponents.h"
 #include "Game/Logics/Combat/CombatRosterComponent.h"
-#include "Engine/GamePlay/Transform/BoneAttachmentComponent.h"
+#include "Engine/Transform/Components/BoneAttachmentComponent.h"
 #include "Editor/Inspector/ComponentGuiRegistry.h"
-#include "Engine/Serialization/ComponentRegistry.h"
+#include "Engine/Serialization/Registry/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
 #include "Game/Logics/Combat/HealthComponent.h" // ※環境に合わせて適宜パスを調整してください
-#include "Engine/GamePlay/Transform/TransformComponent.h"
-#include "Engine/GamePlay/Transform/PendingParentComponent.h"
-#include "Engine/GamePlay/Graphics/Core/ModelComponent.h"
+#include "Engine/Transform/Components/TransformComponent.h"
+#include "Engine/Transform/Components/PendingParentComponent.h"
+#include "Engine/Graphics/Components/Core/ModelComponent.h"
 #include "Engine/Graphics/Resource/Model.h"
-#include "Engine/Serialization/SerializationContext.h"
+#include "Engine/Serialization/Core/SerializationContext.h"
 
 #if ENABLE_EDITOR
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #endif
 
-#include "Engine/Serialization/SaveContext.h"
-#include "Engine/Serialization/LoadContext.h"
+#include "Engine/Serialization/Core/SaveContext.h"
+#include "Engine/Serialization/Core/LoadContext.h"
 
 #include "Engine/Serialization/Reflection/Reflection.h"
 

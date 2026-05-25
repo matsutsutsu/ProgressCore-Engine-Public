@@ -10,8 +10,8 @@
 //#include <cmath>
 //#include "Game/Core/PrefabSpawnQueue.h"
 //
-//#include "Engine/GamePlay/Camera/VirtualCameraComponents.h"
-//#include "Engine/GamePlay/Camera/CameraSpringArmComponent.h"
+//#include "Engine/Camera/Components/VirtualCameraComponents.h"
+//#include "Engine/Camera/CameraSpringArmComponent.h"
 //
 //using namespace CCL::ECS;
 //using namespace DirectX::SimpleMath;

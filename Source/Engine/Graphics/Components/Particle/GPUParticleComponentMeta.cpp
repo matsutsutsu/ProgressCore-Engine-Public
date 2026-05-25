@@ -1,15 +1,15 @@
-#include "Engine/GamePlay/Graphics/Particle/GPUParticleComponent.h"
-#include "Engine/Graphics/Core/Graphics.h"
-#include "Engine/Platform/Dialog.h"
+#include "Engine/Graphics/Components/Particle/GPUParticleComponent.h"
+#include "Engine/Graphics/RHI/Graphics.h"
+#include "Engine/Platform/Core/Dialog.h"
 #include <filesystem>
 #include <fstream>
 #include <json.hpp>
 
 #include "Editor/Inspector/ComponentGuiRegistry.h"
-#include "Engine/Serialization/ComponentRegistry.h"
+#include "Engine/Serialization/Registry/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
-#include "Engine/Platform/FileSystem.h"
+#include "Engine/Platform/Core/FileSystem.h"
 
 #if ENABLE_EDITOR
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"

@@ -1,5 +1,5 @@
 #pragma once
-#include "Engine/Physics/IPhysicsAPI.h"
+#include "Engine/Physics/JoltIntegration/IPhysicsAPI.h"
 #include "Engine/ECS/Core/CCL_World.h"
 
 class JoltPhysicsFacade : public IPhysicsAPI {

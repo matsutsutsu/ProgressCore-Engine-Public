@@ -1,6 +1,6 @@
 #pragma once
 #include "Engine/Graphics/Resource/Model.h"
-#include "Engine/GamePlay/Animation/Data/AnimSequence.h"
+#include "Engine/Animation/Core/AnimSequence.h"
 #include <vector>
 // カーブデータ構造の先行宣言（後で定義します）
 struct AnimationCurve;

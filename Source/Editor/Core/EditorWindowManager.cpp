@@ -1,13 +1,13 @@
 #include "EditorWindowManager.h"
 
-#include "Engine/Serialization/SceneSerializer.h"
-#include "Engine/Graphics/Core/Graphics.h"
-#include "Engine/GamePlay/Core/Scene/SceneManager.h"
-#include "Engine/Platform/Dialog.h"
+#include "Engine/Serialization/Serializer/SceneSerializer.h"
+#include "Engine/Graphics/RHI/Graphics.h"
+#include "Engine/Scene/SceneManager.h"
+#include "Engine/Platform/Core/Dialog.h"
 
 #include "Editor/Core/EditorCommandHistory.h"
 
-#include "Engine/GamePlay/Transform/TransformComponent.h"
+#include "Engine/Transform/Components/TransformComponent.h"
 
 // 各ウィンドウのヘッダをインクルード
 #include "Editor/Windows/AssetBrowserWindow.h"

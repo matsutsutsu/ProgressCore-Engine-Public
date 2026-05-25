@@ -1,6 +1,6 @@
 #include "SceneLoading.h"
-#include "Engine/Graphics/Core/Graphics.h"
-#include "Engine/GamePlay/Core/Scene/SceneManager.h"
+#include "Engine/Graphics/RHI/Graphics.h"
+#include "Engine/Scene/SceneManager.h"
 #include <wrl/client.h> // CoInitialize用
 
 SceneLoading::SceneLoading(Scene *nextScene) : _nextScene(nextScene) {}

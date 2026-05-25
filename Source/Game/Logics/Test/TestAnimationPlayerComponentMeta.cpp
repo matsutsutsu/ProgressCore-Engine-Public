@@ -1,5 +1,5 @@
 #include "TestAnimationPlayerComponent.h"
-#include "Engine/Serialization/ComponentRegistry.h"
+#include "Engine/Serialization/Registry/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"

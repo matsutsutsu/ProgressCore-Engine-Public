@@ -1,7 +1,7 @@
 #pragma once
 #include "Engine/ECS/System/CCL_System.h"
-#include "GPUParticleComponent.h"
-#include "Engine/GamePlay/Transform/TransformComponent.h"
+#include "Engine/Graphics/Components/Particle/GPUParticleComponent.h"
+#include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Graphics/Shader/ShaderReflection.h"
 
 // パーティクルのシミュレーションを行うシステム

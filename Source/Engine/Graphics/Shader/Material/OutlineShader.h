@@ -1,5 +1,5 @@
 #pragma once
-#include "Engine/Graphics/Shader/Material/Core/Shader.h"
+#include "Engine/Graphics/Shader/Core/Shader.h"
 
 class OutlineShader : public Shader
 {

@@ -4,7 +4,7 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"
 #include <Jolt/Jolt.h>
-#include "Engine/GamePlay/Physics/Character/JoltCharacterHandleComponent.h"
+#include "Engine/Physics/Components/Character/JoltCharacterHandleComponent.h"
 
 void JoltStepSystem::Update(float dt)
 {

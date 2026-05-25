@@ -1,9 +1,9 @@
 #pragma once
 #include "Engine/ECS/System/CCL_System.h"
-#include "Engine/GamePlay/Physics/Jolt/JoltHandleComponent.h"
-#include "Engine/GamePlay/Physics/Collision/JoltBoxColliderComponent.h"
-#include "Engine/GamePlay/Physics/Collision/JoltSphereColliderComponent.h"
-#include "Engine/GamePlay/Physics/Collision/JoltCapsuleColliderComponent.h"
+#include "Engine/Physics/Components/Jolt/JoltHandleComponent.h"
+#include "Engine/Physics/Components/Collision/JoltBoxColliderComponent.h"
+#include "Engine/Physics/Components/Collision/JoltSphereColliderComponent.h"
+#include "Engine/Physics/Components/Collision/JoltCapsuleColliderComponent.h"
 
 // ===================================================================================
 // 実行時にコライダーの形状変更(isDirty)を検知し、Joltの剛体に「外科手術」を行うシステム群。

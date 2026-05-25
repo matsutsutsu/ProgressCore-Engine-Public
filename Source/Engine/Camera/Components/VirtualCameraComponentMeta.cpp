@@ -1,8 +1,8 @@
 #include "Editor/Inspector/ComponentGuiRegistry.h"
-#include "Engine/Serialization/ComponentRegistry.h"
+#include "Engine/Serialization/Registry/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
-#include "Engine/GamePlay/Camera/VirtualCameraComponents.h"
+#include "Engine/Camera/Components/VirtualCameraComponents.h"
 #include <algorithm> // std::max用
 
 #if ENABLE_EDITOR

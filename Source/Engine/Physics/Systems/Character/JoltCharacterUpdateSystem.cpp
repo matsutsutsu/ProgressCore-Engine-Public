@@ -1,7 +1,7 @@
 #include "JoltCharacterUpdateSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
-#include "Engine/Physics/JoltPhysicsManager.h"
-#include "Engine/GamePlay/Physics/Jolt/JoltHandleComponent.h"
+#include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"
+#include "Engine/Physics/Components/Jolt/JoltHandleComponent.h"
 #include <Jolt/Physics/Body/BodyFilter.h>
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"

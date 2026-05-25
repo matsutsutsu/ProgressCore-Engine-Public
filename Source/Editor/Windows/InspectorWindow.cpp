@@ -5,9 +5,9 @@
 #include <string>
 #include <windows.h>
 
-#include "Engine/Graphics/Core/Graphics.h"
-#include "Engine/Platform/Dialog.h"
-#include "Engine/Serialization/PrefabSerializer.h"
+#include "Engine/Graphics/RHI/Graphics.h"
+#include "Engine/Platform/Core/Dialog.h"
+#include "Engine/Serialization/Serializer/PrefabSerializer.h"
 #include "Game/Core/AllComponents.h"
 
 InspectorWindow::InspectorWindow() : EditorWindow("Inspector") {}

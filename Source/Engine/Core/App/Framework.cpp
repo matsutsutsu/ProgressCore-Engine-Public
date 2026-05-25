@@ -5,19 +5,19 @@
 #include <windowsx.h>
 
 #include "Framework.h"
-#include "Engine/Graphics/Core/Graphics.h"
+#include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Platform/Input/Input.h"
-#include "Engine/GamePlay/Core/Scene/SceneManager.h"
+#include "Engine/Scene/SceneManager.h"
 
 // ★ 必要なヘッダをインクルード
-#include "Engine/Audio/FmodAudioManager.h"
-#include "Engine/Physics/JoltPhysicsManager.h"
+#include "Engine/Audio/FmodIntegration/FmodAudioManager.h"
+#include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"
 #include "Engine/Platform/Input/InputFacade.h"
 
 #include "Engine/Serialization/Factory/Prefab.h"                 
-#include "Engine/Platform/Dialog.h"
-#include "Engine/Platform/Logger.h"
-#include "Engine/Platform/LogSinks.h"
+#include "Engine/Platform/Core/Dialog.h"
+#include "Engine/Platform/Core/Logger.h"
+#include "Engine/Platform/Core/LogSinks.h"
 #include "Editor/Windows/ConsoleWindow.h"
 
 #include "EngineServices.h"

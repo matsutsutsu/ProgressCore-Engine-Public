@@ -1,10 +1,10 @@
 #include "HitboxCollisionSystem.h"
-#include "Engine/GamePlay/Physics/Collision/JoltCollisionEvent.h"
+#include "Engine/Physics/Components/Collision/JoltCollisionEvent.h"
 #include "CombatComponents.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/Core/CCL_PendingOps.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
-#include "Engine/Platform/Logger.h"
+#include "Engine/Platform/Core/Logger.h"
 
 /**
  * @file HitboxCollisionSystem.cpp（※各システム名に読み替える）

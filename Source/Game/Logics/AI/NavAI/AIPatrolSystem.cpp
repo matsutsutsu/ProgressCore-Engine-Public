@@ -1,7 +1,7 @@
 #include "AIPatrolSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
-#include "Engine/Platform/Logger.h"
-#include "Engine/GamePlay/AI/Navigation/NavigationData.h"
+#include "Engine/Platform/Core/Logger.h"
+#include "Engine/AI/Navigation/Core/NavigationData.h"
 #include <DetourNavMeshQuery.h>
 #include <random>
 

@@ -1,5 +1,5 @@
 #include "PBRShader.h"
-#include "Engine/Graphics/Core/GpuResourceUtils.h"
+#include "Engine/Graphics/RHI/GpuResourceUtils.h"
 #include "Engine/Graphics/Resource/ModelResource.h"
 
 PBRShader::PBRShader(ID3D11Device *device)

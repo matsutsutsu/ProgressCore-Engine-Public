@@ -12,9 +12,9 @@
 #include <queue>
 #include <fstream>
 #include <json.hpp>
-#include "Engine/Platform/Logger.h"
-#include "Engine/Platform/Dialog.h"
-#include "Engine/Platform/FileSystem.h"
+#include "Engine/Platform/Core/Logger.h"
+#include "Engine/Platform/Core/Dialog.h"
+#include "Engine/Platform/Core/FileSystem.h"
 
 
 using json = nlohmann::json;

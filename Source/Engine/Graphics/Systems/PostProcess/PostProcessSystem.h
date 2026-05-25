@@ -1,8 +1,8 @@
 #pragma once
 #include "Engine/ECS/System/CCL_System.h"
 
-#include "Engine/GamePlay/Graphics/PostProcess/BloomConfigComponent.h"
-#include "Engine/GamePlay/Graphics/PostProcess/ToneMapConfigComponent.h"
+#include "Engine/Graphics/Components/PostProcess/BloomConfigComponent.h"
+#include "Engine/Graphics/Components/PostProcess/ToneMapConfigComponent.h"
 
 // 前方宣言
 class PostProcessManager;

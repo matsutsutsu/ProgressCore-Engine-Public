@@ -1,7 +1,7 @@
 #pragma once
 #include "GPUParticleTypes.h"
-#include "Engine/Graphics/Core/GpuResourceUtils.h"
-//#include "Engine/Graphics/Core/Graphics.h"
+#include "Engine/Graphics/RHI/GpuResourceUtils.h"
+//#include "Engine/Graphics/RHI/Graphics.h"
 #include <cstring> // strcpy_s, memset用
 #include <d3d11.h>
 #include "Engine/Graphics/Resource/ResourceManager.h"

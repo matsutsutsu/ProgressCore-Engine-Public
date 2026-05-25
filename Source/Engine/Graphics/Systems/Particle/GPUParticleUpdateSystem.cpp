@@ -1,5 +1,5 @@
 #include "GPUParticleUpdateSystem.h"
-#include "Engine/Graphics/Core/Graphics.h"
+#include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 #include <d3dcompiler.h>
 #include <random>

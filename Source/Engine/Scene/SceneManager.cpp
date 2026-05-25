@@ -6,15 +6,15 @@
 #include "Game/Scenes/ParticleScene.h"
 
 
-#include "Engine/Serialization/SceneSerializer.h"
-#include "Engine/Serialization/ComponentRegistry.h"
+#include "Engine/Serialization/Serializer/SceneSerializer.h"
+#include "Engine/Serialization/Registry/ComponentRegistry.h"
 
 
 // タグとシステム
-#include "Engine/GamePlay/Core/PersistentTag.h"
-#include "Engine/GamePlay/Transform/TransformUpdateSystem.h"
-#include "Engine/GamePlay/Transform/HierarchyCleanupSystem.h"
-#include "Engine/GamePlay/Physics/Jolt/JoltCleanupSystem.h"
+#include "Engine/Core/Components/PersistentTag.h"
+#include "Engine/Transform/Systems/TransformUpdateSystem.h"
+#include "Engine/Transform/Systems/HierarchyCleanupSystem.h"
+#include "Engine/Physics/Systems/Jolt/JoltCleanupSystem.h"
 
 #if TRACY_ENABLE
 #include "tracy/Tracy.hpp"

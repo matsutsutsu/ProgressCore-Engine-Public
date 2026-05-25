@@ -3,8 +3,8 @@
 #include <string>
 #include <cstdint>
 #include <json.hpp> // cereal を廃止し json.hpp に切り替え
-#include "Engine/GamePlay/Animation/Data/AnimSequence.h"
-#include "Engine/GamePlay/Animation/Data/AnimationCurve.h"
+#include "Engine/Animation/Core/AnimSequence.h"
+#include "Engine/Animation/Core/AnimationCurve.h"
 
 // 条件演算子
 // 例: param > threshold なら op は Greater

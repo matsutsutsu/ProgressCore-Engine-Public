@@ -14,7 +14,7 @@
 #include <functional> // std::functionのために明示的にインクルード
 #include <memory>
 
-#include "Engine/GamePlay/Core/DestroyTag.h"
+#include "Engine/Core/Components/DestroyTag.h"
 
 
 namespace CCL::ECS::Core {

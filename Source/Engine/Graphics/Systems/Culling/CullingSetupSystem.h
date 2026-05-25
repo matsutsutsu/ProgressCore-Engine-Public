@@ -1,8 +1,8 @@
 #pragma once
 #include "Engine/ECS/System/CCL_System.h"
-#include "Engine/GamePlay/Graphics/Core/ModelComponent.h"
-#include "Engine/GamePlay/Graphics/Core/PrimitiveComponent.h"
-#include "CullingComponents.h"
+#include "Engine/Graphics/Components/Core/ModelComponent.h"
+#include "Engine/Graphics/Components/Core/PrimitiveComponent.h"
+#include "Engine/Graphics/Components/Culling/CullingComponents.h"
 
 // Modelコンポーネントを持っているが、カリング用コンポーネントを持たないエンティティに
 // 自動的に付与を行うシステム

@@ -5,17 +5,17 @@
 #include "Engine/Graphics/Renderer/ModelRenderer.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
-#include "Engine/Graphics/Core/GpuResourceUtils.h"
-#include "Engine/Graphics/Core/Light.h"
-#include "Engine/Graphics/Core/Camera.h"
+#include "Engine/Graphics/RHI/GpuResourceUtils.h"
+#include "Engine/Graphics/RHI/Light.h"
+#include "Engine/Graphics/RHI/Camera.h"
 
 // 画面サイズ取得のため
-#include "Engine/Graphics/Core/Graphics.h"
+#include "Engine/Graphics/RHI/Graphics.h"
 
 // 環境を構成するコンポーネント
-#include "Engine/GamePlay/Camera/VirtualCameraComponents.h"
-#include "Engine/GamePlay/Graphics/Lighting/FogComponent.h"
-#include "Engine/GamePlay/Transform/TransformComponent.h"
+#include "Engine/Camera/Components/VirtualCameraComponents.h"
+#include "Engine/Graphics/Components/Lighting/FogComponent.h"
+#include "Engine/Transform/Components/TransformComponent.h"
 
 // システムの実行順序の定義ヘッダー
 #include "Engine/ECS/System/CCL_SystemRegistry.h"

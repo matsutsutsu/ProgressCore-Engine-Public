@@ -1,5 +1,5 @@
 #include "FileSystem.h"
-#include "Engine/Platform/Logger.h" // ログ機能 (CCL_LOG等) に合わせて変更してください
+#include "Engine/Platform/Core/Logger.h" // ログ機能 (CCL_LOG等) に合わせて変更してください
 #include <fstream>
 #include <sstream>
 

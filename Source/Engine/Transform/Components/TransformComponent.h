@@ -1,7 +1,7 @@
 #pragma once
 #include <DirectXMath.h>
 #include "Engine/ECS/Common/CCL_Common.h"
-#include "Engine/Serialization/EntityLink.h" 
+#include "Engine/Serialization/Core/EntityLink.h" 
 
 // ===================================================================================
 // TransformComponent 物理同期に関するルール

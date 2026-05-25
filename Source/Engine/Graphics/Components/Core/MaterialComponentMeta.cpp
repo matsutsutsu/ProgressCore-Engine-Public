@@ -1,12 +1,12 @@
 #include "Engine/ECS/Core/CCL_World.h"
-#include "Engine/GamePlay/Graphics/Core/MaterialComponent.h"
-#include "Engine/GamePlay/Graphics/Core/ModelComponent.h"
-#include "Engine/Graphics/Core/GpuResourceUtils.h"
-#include "Engine/Graphics/Core/Graphics.h"
-#include "Engine/Platform/Dialog.h"
+#include "Engine/Graphics/Components/Core/MaterialComponent.h"
+#include "Engine/Graphics/Components/Core/ModelComponent.h"
+#include "Engine/Graphics/RHI/GpuResourceUtils.h"
+#include "Engine/Graphics/RHI/Graphics.h"
+#include "Engine/Platform/Core/Dialog.h"
 
 #include "Editor/Inspector/ComponentGuiRegistry.h"
-#include "Engine/Serialization/ComponentRegistry.h"
+#include "Engine/Serialization/Registry/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 

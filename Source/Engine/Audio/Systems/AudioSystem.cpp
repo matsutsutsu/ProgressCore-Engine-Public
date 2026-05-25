@@ -1,8 +1,8 @@
 #include "AudioSystem.h"
-#include "Engine/Audio/IAudioAPI.h"
-#include "Engine/Audio/AudioEvents.h"
+#include "Engine/Audio/FmodIntegration/IAudioAPI.h"
+#include "Engine/Audio/Components/AudioEvents.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
-#include "Engine/Platform/Logger.h" // 厳格なロギング仕様に従う
+#include "Engine/Platform/Core/Logger.h" // 厳格なロギング仕様に従う
 
 // 指示書通り、cppファイルのインクルード直後で using namespace を使用する
 using namespace CCL::ECS;

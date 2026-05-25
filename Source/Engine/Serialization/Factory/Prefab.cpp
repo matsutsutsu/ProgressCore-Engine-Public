@@ -15,10 +15,10 @@
 //     - SpawnParticle のロジックを 3 つの小関数に分割
 // =====================================================================
 #include "Prefab.h"
-#include "Engine/Serialization/SceneSerializer.h"
+#include "Engine/Serialization/Serializer/SceneSerializer.h"
 #include "Game/Core/AllComponents.h"
-#include "Engine/GamePlay/Transform/TransformUpdateSystem.h"
-#include "Engine/Platform/FileSystem.h"
+#include "Engine/Transform/Systems/TransformUpdateSystem.h"
+#include "Engine/Platform/Core/FileSystem.h"
 
 #include <DirectXMath.h>
 #include <SimpleMath.h>

@@ -1,7 +1,7 @@
 #pragma once
 #include "Engine/ECS/System/CCL_System.h"
-#include "Engine/GamePlay/Transform/TransformComponent.h"
-#include "JoltCharacterHandleComponent.h"
+#include "Engine/Transform/Components/TransformComponent.h"
+#include "Engine/Physics/Components/Character/JoltCharacterHandleComponent.h"
 #include "Game/Logics/Character/CharacterMovementInputComponent.h"
 
 // ===================================================================================

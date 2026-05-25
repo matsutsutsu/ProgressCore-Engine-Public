@@ -2,14 +2,14 @@
 // JoltPhysicsComponentMeta.cpp
 // ============================================================================
 
-#include "Engine/GamePlay/Physics/Collision/JoltBoxColliderComponent.h"
-#include "Engine/GamePlay/Physics/Collision/JoltSphereColliderComponent.h"
-#include "Engine/GamePlay/Physics/Collision/JoltCapsuleColliderComponent.h" 
-#include "Engine/GamePlay/Physics/Collision/JoltMeshColliderComponent.h"
-#include "Engine/GamePlay/Physics/RigidBody/JoltRigidbodyComponent.h"
-#include "Engine/GamePlay/Physics/Character/JoltCharacterConfigComponent.h" 
+#include "Engine/Physics/Components/Collision/JoltBoxColliderComponent.h"
+#include "Engine/Physics/Components/Collision/JoltSphereColliderComponent.h"
+#include "Engine/Physics/Components/Collision/JoltCapsuleColliderComponent.h" 
+#include "Engine/Physics/Components/Collision/JoltMeshColliderComponent.h"
+#include "Engine/Physics/Components/RigidBody/JoltRigidbodyComponent.h"
+#include "Engine/Physics/Components/Character/JoltCharacterConfigComponent.h" 
 
-#include "Engine/Serialization/ComponentRegistry.h"
+#include "Engine/Serialization/Registry/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 

@@ -2,8 +2,8 @@
 //#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeBuilder.h"
 //#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeLoader.h"
 //#include "Game/Logics/Character/Player/TPS/TPSPlayerComponent.h"
-//#include "Engine/GamePlay/Transform/TransformComponent.h"
-//#include "Engine/Platform/Logger.h"
+//#include "Engine/Transform/Components/TransformComponent.h"
+//#include "Engine/Platform/Core/Logger.h"
 //#include "Game/Core/SystemPriority.h" // LogicStage等の定義
 //#include "Engine/ECS/System/CCL_SystemRegistry.h"
 //#include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"

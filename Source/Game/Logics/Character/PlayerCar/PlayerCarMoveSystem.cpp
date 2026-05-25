@@ -5,7 +5,7 @@
 #include "Game/Core/SystemPriority.h"
 
 // ★ Joltのインクルードは一切不要！純粋なAPI窓口だけを呼ぶ
-#include "Engine/Physics/IPhysicsAPI.h" 
+#include "Engine/Physics/JoltIntegration/IPhysicsAPI.h" 
 #include <memory>
 
 using namespace DirectX;

@@ -1,7 +1,7 @@
 #pragma once
 #include "Engine/ECS/System/CCL_System.h"
-#include "Engine/GamePlay/Graphics/Core/ModelComponent.h"
-#include "Engine/GamePlay/Animation/AnimatorComponent.h"
+#include "Engine/Graphics/Components/Core/ModelComponent.h"
+#include "Engine/Animation/Components/AnimatorComponent.h"
 
 // ===================================================================================
 // ファイル: AnimationSystem.h

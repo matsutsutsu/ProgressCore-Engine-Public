@@ -1,6 +1,6 @@
 #include "SetupPass.h"
 #include "Engine/Graphics/Shader/PostProcess/PostProcessManager.h"
-#include "Engine/Graphics/Core/Graphics.h"
+#include "Engine/Graphics/RHI/Graphics.h"
 
 void SetupPass::Execute(const RenderContext& rc){
 #if TRACY_ENABLE

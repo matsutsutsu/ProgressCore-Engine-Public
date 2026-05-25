@@ -1,7 +1,7 @@
 #pragma once
 #include "Engine/ECS/System/CCL_System.h"
 #include "Game/Logics/AI/NavAI/AIComponents.h"
-#include "Engine/GamePlay/AI/Navigation/NavAgentComponent.h"
+#include "Engine/AI/Navigation/Components/NavAgentComponent.h"
 
 class AIMovementControlSystem : public CCL::ECS::IfSystem<AIMovementControlSystem,
     CCL::ECS::Read<AIStateComponent>,

@@ -1,10 +1,10 @@
 #include "BloomPass.h"
-#include "Engine/Graphics/Core/GpuResourceUtils.h"
+#include "Engine/Graphics/RHI/GpuResourceUtils.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 #include <algorithm> // for max
 #include <memory>
 
-#include "Engine/Graphics/Core/Graphics.h"
+#include "Engine/Graphics/RHI/Graphics.h"
 
 
 // --- シェーダー管理用内部クラス ---

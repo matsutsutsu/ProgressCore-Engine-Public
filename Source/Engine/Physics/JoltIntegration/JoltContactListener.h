@@ -10,7 +10,7 @@
 #include <Jolt/Physics/Collision/ContactListener.h>
 #include <mutex>
 #include <vector>
-#include "Engine/GamePlay/Physics/Collision/JoltCollisionEvent.h"
+#include "Engine/Physics/Components/Collision/JoltCollisionEvent.h"
 
 class JoltContactListener : public JPH::ContactListener {
 public:

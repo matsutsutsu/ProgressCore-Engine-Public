@@ -1,8 +1,8 @@
 #pragma once
 #include "Engine/ECS/System/CCL_System.h"
 #include "Engine/ECS/System/CCL_SystemAccess.h"
-#include "Engine/Audio/AudioEmitterComponent.h"
-#include "Engine/GamePlay/Transform/TransformComponent.h" 
+#include "Engine/Audio/Components/AudioEmitterComponent.h"
+#include "Engine/Transform/Components/TransformComponent.h" 
 
 class IAudioAPI; // 前方宣言
 

@@ -2,7 +2,7 @@
 #include <unordered_map>
 #include <functional>
 #include <memory>
-#include "Engine/Graphics/Shader/Material/Core/Shader.h"
+#include "Engine/Graphics/Shader/Core/Shader.h"
 #include "Engine/Core/Math/StringHash.h"
 
 class ShaderRegistry {

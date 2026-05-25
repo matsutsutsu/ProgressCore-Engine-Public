@@ -1,8 +1,8 @@
 #include "TextEditorWindow.h"
 
-#include "Engine/Graphics/Core/Graphics.h"
-#include "Engine/Platform/Dialog.h"
-#include "Engine/Platform/FileSystem.h"
+#include "Engine/Graphics/RHI/Graphics.h"
+#include "Engine/Platform/Core/Dialog.h"
+#include "Engine/Platform/Core/FileSystem.h"
 #include "Engine/Graphics/Renderer/ImGuiRenderer.h"
 
 #include <imgui.h>

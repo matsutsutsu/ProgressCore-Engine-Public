@@ -3,8 +3,8 @@
 // 実装で必要なヘッダ群
 #include "Engine/ECS/Core/CCL_Chunk.h"
 #include "Engine/ECS/Core/CCL_World.h"
-#include "Engine/Graphics/Core/GpuResourceUtils.h"
-#include "Engine/Graphics/Core/Graphics.h"
+#include "Engine/Graphics/RHI/GpuResourceUtils.h"
+#include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 
 // システムの実行順序の定義ヘッダー

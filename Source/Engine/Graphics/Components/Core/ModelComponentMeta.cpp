@@ -1,10 +1,10 @@
-#include "Engine/GamePlay/Graphics/Core/ModelComponent.h"
-#include "Engine/Graphics/Core/Graphics.h"
-#include "Engine/Platform/Dialog.h"
+#include "Engine/Graphics/Components/Core/ModelComponent.h"
+#include "Engine/Graphics/RHI/Graphics.h"
+#include "Engine/Platform/Core/Dialog.h"
 #include <filesystem>
 
-#include "Engine/Serialization/ComponentRegistry.h"
-#include "Engine/Serialization/ComponentRegistry_Editor.h"
+#include "Engine/Serialization/Registry/ComponentRegistry.h"
+#include "Engine/Serialization/Registry/ComponentRegistry_Editor.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 

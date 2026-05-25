@@ -1,5 +1,5 @@
 #pragma once
-#include "Engine/Physics/JoltPhysicsManager.h" // PhysicsLayers用
+#include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h" // PhysicsLayers用
 #include <Jolt/Jolt.h>
 #include <Jolt/Physics/Body/MotionType.h>
 

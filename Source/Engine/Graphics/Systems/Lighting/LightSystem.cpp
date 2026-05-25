@@ -2,7 +2,7 @@
 
 // 実装で必要なヘッダ群
 #include "Engine/ECS/Core/CCL_World.h"
-#include "Engine/Graphics/Core/Light.h"
+#include "Engine/Graphics/RHI/Light.h"
 #include "Game/Core/AllComponents.h" // 必要に応じて個別のコンポーネントに細分化推奨
 
 // システムの実行順序の定義ヘッダー

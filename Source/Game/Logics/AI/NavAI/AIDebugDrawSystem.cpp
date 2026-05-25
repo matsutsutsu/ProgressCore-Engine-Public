@@ -1,7 +1,7 @@
 #include "AIDebugDrawSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Graphics/Renderer/ShapeRenderer.h"
-#include "Engine/Platform/Logger.h"
+#include "Engine/Platform/Core/Logger.h"
 
 // ECS実行順序のマクロ
 #include "Engine/ECS/System/CCL_SystemRegistry.h"

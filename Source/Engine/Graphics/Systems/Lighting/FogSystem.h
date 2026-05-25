@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Engine/ECS/System/CCL_System.h"
-#include "Engine/GamePlay/Graphics/Lighting/FogComponent.h"
+#include "Engine/Graphics/Components/Lighting/FogComponent.h"
 #include <wrl.h>
 
 // 前方宣言

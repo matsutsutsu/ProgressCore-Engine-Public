@@ -1,9 +1,9 @@
 #pragma once
 #include "Engine/ECS/System/CCL_System.h"
-#include "Engine/Physics/JoltPhysicsManager.h"
-#include "Engine/GamePlay/Physics/Jolt/JoltHandleComponent.h"
-#include "Engine/GamePlay/Transform/TransformComponent.h"
-#include "Engine/GamePlay/Physics/RigidBody/JoltRigidbodyComponent.h"
+#include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"
+#include "Engine/Physics/Components/Jolt/JoltHandleComponent.h"
+#include "Engine/Transform/Components/TransformComponent.h"
+#include "Engine/Physics/Components/RigidBody/JoltRigidbodyComponent.h"
 
 // ===================================================================================
 // ファイル名: JoltPushSystem.h

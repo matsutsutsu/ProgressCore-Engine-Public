@@ -1,6 +1,6 @@
 #include "JoltShapeUpdateSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
-#include "Engine/Physics/JoltPhysicsManager.h"
+#include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"
 
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>

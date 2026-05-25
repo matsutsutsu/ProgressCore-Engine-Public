@@ -2,8 +2,8 @@
 #include "Game/Core/AllComponents.h"
 #include <algorithm>
 #include <string>
-#include "Engine/GamePlay/Transform/PendingParentComponent.h"
-#include "Engine/Platform/Logger.h"
+#include "Engine/Transform/Components/PendingParentComponent.h"
+#include "Engine/Platform/Core/Logger.h"
 
 #include "Engine/Serialization/Factory/Prefab.h"
 #include "Engine/Serialization/Factory/EntityFactory.h"

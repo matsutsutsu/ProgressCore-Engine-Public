@@ -1,7 +1,7 @@
 #pragma once
 #include "Engine/ECS/System/CCL_System.h"
-#include "Engine/GamePlay/Camera/VirtualCameraComponents.h"
-#include "Engine/GamePlay/Transform/TransformComponent.h"
+#include "Engine/Camera/Components/VirtualCameraComponents.h"
+#include "Engine/Transform/Components/TransformComponent.h"
 
 // ※ Input.h や SimpleMath.h などはここではインクルード不要になります
 
