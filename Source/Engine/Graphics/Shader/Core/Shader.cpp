@@ -131,3 +131,12 @@ std::filesystem::file_time_type Shader::GetLastWriteTime(const std::string& file
     }
     return (std::filesystem::file_time_type::min)();
 }
+
+void Shader::ResetReflection()
+{
+    _constantBuffers.clear();
+    _textureSlots.clear();
+    _samplerSlots.clear();
+    _usedTextureSlots.clear();
+    _reflection = ShaderReflect::ReflectionData();
+}

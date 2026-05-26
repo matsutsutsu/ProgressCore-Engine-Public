@@ -53,4 +53,6 @@ protected:
     void UnbindResources(ID3D11DeviceContext* dc);
     void UpdateMaterialProperties(ID3D11DeviceContext* dc, const MaterialData& mat);
     std::filesystem::file_time_type GetLastWriteTime(const std::string& filepath);
+    // ホットリロード時に古い情報を全て消し去るための関数
+    void ResetReflection();
 };

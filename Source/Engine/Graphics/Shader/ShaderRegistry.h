@@ -22,15 +22,22 @@ public:
     }
 
     // =======================================================
-    // ★追加: 汎用マテリアルシェーダー用の登録関数
+    // 汎用マテリアルシェーダー用の登録関数
     // =======================================================
-    void RegisterMaterialShader(uint32_t shaderHash, const std::string& vsPath, const std::string& psPath) {
-        _factories[shaderHash] = [vsPath, psPath](ID3D11Device* device) {
-            // パスをキャプチャして MaterialShader を生成する
-            return std::make_unique<MaterialShader>(device, vsPath, psPath);
+    void RegisterMaterialShader(uint32_t shaderHash,
+        const std::string& vsCso, const std::wstring& vsHlsl,
+        const std::string& psCso, const std::wstring& psHlsl) {
+        _factories[shaderHash] = [vsCso, vsHlsl, psCso, psHlsl](ID3D11Device* device) {
+            return std::make_unique<MaterialShader>(device, vsCso, vsHlsl, psCso, psHlsl);
             };
-
         _shaderSortIDs[shaderHash] = _nextSortID++;
+    }
+
+    // 全シェーダーの監視を一斉実行する関数
+    void UpdateHotReload(ID3D11Device* device) {
+        for (auto& pair : _shaders) {
+            if (pair.second) pair.second->CheckAndReload(device);
+        }
     }
 
     // 必要な時に生成、あるいはキャッシュを返す
