@@ -1,60 +1,97 @@
+/**
+ * @file   CCL_SystemRegistry.h
+ * @brief  Systemの自動登録支援ヘッダ
+ *
+ * @details
+ *  ゲーム側で多数のSystemを定義する際、main()でひとつずつ RegisterSystem<T>()
+ *  を呼ぶのは煩雑です。本ヘッダの CCL_REGISTER_SYSTEM マクロを使うと、
+ *  System.cpp 内で 1行記述するだけで自動登録されます。
+ *
+ *  @par 使用例
+ *  @code
+ *      // MovementSystem.cpp
+ *      #include "CCL_SystemRegistry.h"
+ *      class MovementSystem : public IfSystem<...> { ... };
+ *
+ *      CCL_REGISTER_SYSTEM(MovementSystem);
+ *  @endcode
+ *
+ *  @par 仕組み
+ *  グローバル変数の初期化を利用して、登録関数を s_pendingRegistrations へ追加します。
+ *  ECSContext::FlushPendingSystemRegistrations() を起動時に呼ぶことで、全登録が確定します。
+ *
+ *  @note Steam版のリリース用ビルドではグローバル静的初期化順問題に注意してください。
+ *        別TU(翻訳単位)に登録があっても順序は不定なので、SystemPriorityで実行順序を制御してください。
+ *
+ *  【依存】
+ *   - CCL_SystemManager.h
+ *
+ * @author CCL ECS Library
+ */
 #pragma once
+
 #include "CCL_SystemManager.h"
+
 #include <functional>
 #include <vector>
 
-namespace CCL::ECS {
 
-    // 全システムの登録手続きを一時的に溜め込む受付窓口
-    class SystemRegistry {
-      public:
-        using RegisterFunc = std::function<void(SystemManager &)>;
+namespace CCL::ECS
+{
+    /**
+     * @class SystemRegistry
+     * @brief プログラム開始時に登録される「Systemインスタンス化関数」のリスト
+     */
+    class SystemRegistry
+    {
+    public:
+        using Registrar = std::function<void(SystemManager&)>;
 
-        // シングルトン（mainより前にアクセスされるため、静的ローカル変数で安全に初期化）
-        static SystemRegistry &Instance()
+        /// @brief 登録関数を追加(マクロから呼ばれる)
+        static void Add(Registrar r)
         {
-            static SystemRegistry instance;
-            return instance;
+            Registrations().emplace_back(std::move(r));
         }
 
-        void AddRegistration(RegisterFunc func) { _registrations.push_back(func); }
-
-        // ゲーム起動時に1回だけ呼ばれる
-        void RegisterAll(SystemManager &manager)
+        /// @brief 蓄積された登録関数を全てSystemManagerに流し込む
+        static void FlushTo(SystemManager& manager)
         {
-            for (auto &reg : _registrations) {
-                reg(manager); // 溜め込んだ登録処理を一斉に実行
-            }
+            for (auto& r : Registrations()) r(manager);
+            Registrations().clear();
         }
 
-      private:
-        std::vector<RegisterFunc> _registrations;
-    };
-
-    // グローバル変数の初期化タイミングを利用して受付を済ませるためのヘルパー
-    struct SystemRegistrar {
-        SystemRegistrar(SystemRegistry::RegisterFunc func)
+    private:
+        /// @brief プロセス内グローバルな登録リスト
+        static std::vector<Registrar>& Registrations()
         {
-            SystemRegistry::Instance().AddRegistration(func);
+            static std::vector<Registrar> s_list;
+            return s_list;
         }
     };
+
 } // namespace CCL::ECS
 
-// =========================================================================
-// 自動登録用マクロ
-// 各システムの .cpp ファイルの末尾にこれを書くだけで登録が完了する。
-// ※タスクグラフが完成するまでは、過渡期としてStage（優先度）を引数に残しておく。
-// =========================================================================
-#define REGISTER_LOGIC_SYSTEM(SystemClass, Stage)                                                  \
-    namespace {                                                                                    \
-        static CCL::ECS::SystemRegistrar const auto_reg_##SystemClass(                             \
-            [](CCL::ECS::SystemManager &m) { m.RegisterSystem<SystemClass>(Stage); });             \
-    }
 
-#define REGISTER_RENDER_SYSTEM(SystemClass, Stage, ...)                                            \
-    namespace {                                                                                    \
-        static CCL::ECS::SystemRegistrar const auto_reg_##SystemClass(                             \
-            [](CCL::ECS::SystemManager &m) {                                                       \
-                m.RegisterSystem<SystemClass>(Stage, __VA_ARGS__);                                 \
-            });                                                                                    \
+// =============================================================================
+//  CCL_REGISTER_SYSTEM マクロ
+// =============================================================================
+
+/**
+ * @def    CCL_REGISTER_SYSTEM
+ * @brief  ファイルスコープで System を自動登録する
+ *
+ * @param TYPE 登録するSystemクラス名 (デフォルトコンストラクト可能であること)
+ *
+ * @details
+ *  内部で匿名namespace変数を作って初期化時に登録関数を呼ばせます。
+ *  リンク時に弾かれないよう、cppでマクロを呼ぶことを推奨します。
+ */
+#define CCL_REGISTER_SYSTEM(TYPE)                                              \
+    namespace {                                                                \
+        const bool s_ccl_register_##TYPE = []{                                 \
+            CCL::ECS::SystemRegistry::Add(                                     \
+                [](CCL::ECS::SystemManager& m){ m.RegisterSystem<TYPE>(); }    \
+            );                                                                 \
+            return true;                                                       \
+        }();                                                                   \
     }

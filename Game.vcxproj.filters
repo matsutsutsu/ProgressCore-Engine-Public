@@ -1110,16 +1110,10 @@
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BossActionSystem.h">
       <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\ECS\Common\CCL_Common.h">
-      <Filter>Source\Engine\ECS\Common</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\ECS\Core\CCL_Chunk.h">
       <Filter>Source\Engine\ECS\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\ECS\Core\CCL_ChunkManager.h">
-      <Filter>Source\Engine\ECS\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\ECS\Core\CCL_ECSContext.h">
       <Filter>Source\Engine\ECS\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\ECS\Core\CCL_EventBus.h">
@@ -1514,6 +1508,27 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Transform\Systems\TransformUpdateSystem.h">
       <Filter>Source\Engine\Transform\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\ECS\Common\CCL_Archetype.h">
+      <Filter>Source\Engine\ECS\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\ECS\Common\CCL_Destructor.h">
+      <Filter>Source\Engine\ECS\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\ECS\Common\CCL_IDs.h">
+      <Filter>Source\Engine\ECS\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\ECS\Common\CCL_TypeData.h">
+      <Filter>Source\Engine\ECS\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\ECS\CCL_ECSContext.h">
+      <Filter>Source\Engine\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\ECS\System\CCL_IfSystem.h">
+      <Filter>Source\Engine\ECS\System</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\ECS\System\CCL_SystemBase.h">
+      <Filter>Source\Engine\ECS\System</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2282,6 +2297,9 @@
     <ClCompile Include="Source\Engine\Transform\Systems\TransformUpdateSystem.cpp">
       <Filter>Source\Engine\Transform\Systems</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\ECS\System\CCL_SystemBase.cpp">
+      <Filter>Source\Engine\ECS\System</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shader\Common\Common.hlsli">
@@ -2343,6 +2361,9 @@
     </None>
     <None Include="Build\ShippingOptimize.props">
       <Filter>Build\props</Filter>
+    </None>
+    <None Include="Source\Engine\ECS\README.md">
+      <Filter>Source\Engine\ECS</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

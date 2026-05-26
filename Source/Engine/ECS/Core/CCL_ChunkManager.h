@@ -1,145 +1,237 @@
+/**
+ * @file   CCL_ChunkManager.h
+ * @brief  Archetypeごとに作られたChunk群を統括し、Entityの配置・遷移・破棄を管理する
+ *
+ * @details
+ *  ChunkManagerはECSの「住宅地」のように、Archetypeごとに建てられた
+ *  Chunk(倉庫)を保有します。Entityを正しいChunkに割り当て、コンポーネント
+ *  追加削除によるArchetype遷移をしたら別Chunkへ引越しさせます。
+ *
+ *  @par 主要API
+ *   - CreateChunk        : Archetypeに対応するChunkを新規作成
+ *   - FinalizeAll        : 全Chunkを解体
+ *   - ApplyPendingOperations : PendingOpsをまとめて適用
+ *   - SearchEntityIn     : EntityIDからChunkとインデックスを取得 (O(1))
+ *
+ *  【スレッドセーフ性】
+ *  std::shared_mutex で構造変更を保護:
+ *   - System実行中 (読み取り) : shared_lock (並列OK)
+ *   - 構造変更 (書き込み)     : unique_lock (排他)
+ *
+ *  【依存】
+ *   - CCL_Chunk.h, CCL_PendingOps.h
+ *   - \<memory\>, \<vector\>, \<shared_mutex\>
+ *
+ * @author CCL ECS Library
+ */
 #pragma once
-#include <vector>
-#include <memory>
-#include "../Common/CCL_Common.h"
+
 #include "CCL_Chunk.h"
 #include "CCL_PendingOps.h"
+
+#include <memory>
+#include <vector>
 #include <functional>
-#include <unordered_map> 
 #include <shared_mutex>
+
 
 namespace CCL::ECS::Core
 {
     using namespace CCL::ECS;
 
-    //1. ChunkManager の役割（概要）
-    //   ECSにおいて、エンティティはコンポーネントが追加・削除されるたびに、
-    // 　その構成（アーキタイプ）が変わります。 ChunkManager の最大の仕事は、
-    // 「エンティティをその時々の構成に最適な Chunk（倉庫）へ振り分け、移動させること」
-	//  です。
+    /**
+     * @class ChunkManager
+     * @brief Chunk群の所有・検索・構造変更を担う
+     */
     class ChunkManager
     {
     public:
-        ChunkManager() = default;
+        ChunkManager()  = default;
         ~ChunkManager() = default;
 
-        // 指定されたArchetypeに対応する新しいChunkを作成して_chunkに追加する
+        ChunkManager(const ChunkManager&)            = delete;
+        ChunkManager& operator=(const ChunkManager&) = delete;
+
+
+        // =====================================================================
+        //  Chunk生成/破棄
+        // =====================================================================
+
+        /**
+         * @brief 指定Archetype用のChunkを必要なら新規作成
+         * @param archetype 作成したい構成
+         * @note 同じArchetypeのChunkが既にあれば何もしません
+         */
         void CreateChunk(const Archetype& archetype);
-        // 管理下の全チャンクに対してFinalizeを呼び出し全てのEntityとデータを破棄する
+
+        /**
+         * @brief 全Chunkを解体(全Entityのデストラクタを呼ぶ)
+         */
         void FinalizeAll();
 
-        // 新しいエンティティを生成し、指定されたArchetypeに対応するチャンクに挿入
+
+        // =====================================================================
+        //  Entity 直接操作 (主にPendingOps経由を推奨)
+        // =====================================================================
+
+        /**
+         * @brief 既に発行されたEntityIDをChunkへ挿入
+         * @param entity     EntityID
+         * @param archetype  挿入先のArchetype
+         */
         void AddEntity(EntityID entity, const Archetype& archetype);
-        // 指定されたエンティティを破棄リストに入れる
+
+        /**
+         * @brief Entityを削除(デストラクタを呼んでスロットを無効化)
+         * @param entity EntityID
+         */
         void DestroyEntity(EntityID entity);
 
-        // ECS処理中に発生した変更リスト(PendingOps）を受け取り
-        //（Entityの追加、削除、コンポーネント変更）を一括処理する
+
+        // =====================================================================
+        //  検索
+        // =====================================================================
+
+        /**
+         * @brief EntityIDからChunkインデックスとEntity内インデックスを取得 (O(1))
+         * @param entity         EntityID
+         * @param outEntityIndex (out) Chunk内インデックス
+         * @return Chunk配列内のインデックス。存在しなければ InvalidIndex
+         */
+        std::size_t SearchEntityIn(EntityID entity, std::size_t* outEntityIndex = nullptr) const;
+
+        /**
+         * @brief 指定Archetypeと完全一致するChunkを検索 (O(N))
+         * @return Chunkインデックス。なければ InvalidIndex
+         */
+        std::size_t SearchEqualChunk(const Archetype& a) const;
+
+
+        // =====================================================================
+        //  まとめ適用
+        // =====================================================================
+
+        /**
+         * @brief 蓄積されたPendingOpsを一括適用する
+         * @param pendingOps 適用対象
+         * @return 今回実際に削除されたEntityIDのリスト(World側のID再利用に使う)
+         */
         std::vector<EntityID> ApplyPendingOperations(PendingOps& pendingOps);
 
-        // Archetype遷移の中核ロジック
-        // ソースチャンクからEntityのデータをコピー→デストラクタを呼び、
-        // 新しいチャンクにコピー構築して移動を完了する
-#pragma region MoveEntityBetweenChunks概要
-        // これが ECSの中で最も重要かつ複雑な処理 です。 例えば、
-        // あるエンティティに Velocity（速度）コンポーネントが追加された場合、
-        // 以下の手順で「引越し」をさせます。
 
-        //１，今の倉庫（位置のみ）からデータを取り出す。
+        // =====================================================================
+        //  アクセサ
+        // =====================================================================
 
-        //２，新しい倉庫（位置＋速度）に席を確保する。
-
-        //３，共通するデータ（位置）だけを新しい倉庫にコピーする。
-
-        //４，新しく追加されたデータ（速度）を書き込む。
-
-        //５，古い倉庫の席を空ける（削除する）。
-#pragma endregion
-        bool MoveEntityBetweenChunks(
-            Chunk& srcChunk, size_t srcIndex,
-            Chunk& dstChunk, EntityID entity,
-            const std::vector<PendingOp*>& addOps,
-            const std::vector<TypeID>& removeTypeIDs
-        );
-
-        // 指定されたArchetypeと完全に一致するチャンクが既に存在しているか検索
-        size_t SearchEqualChunk(const Archetype& a) const;
-
-        std::vector<std::unique_ptr<Chunk>>& GetChunks() { return _chunks; }
-
-        // const版（読み取り専用の時用）
+        std::vector<std::unique_ptr<Chunk>>&       GetChunks()       { return _chunks; }
         const std::vector<std::unique_ptr<Chunk>>& GetChunks() const { return _chunks; }
 
-        // 指定されたEntityIDがどのチャンクに存在し、チャンク内のどのインデックスにあるか検索
-        size_t SearchEntityIn(EntityID entity, size_t* entityIndexOut = nullptr) const;
+        /**
+         * @brief Entityが別Chunkへ移動した際の通知コールバック型
+         * @details (EntityID, Chunk*, 新インデックス) を受け取る
+         */
+        using EntityMoveCallback = std::function<void(EntityID, Chunk*, std::size_t)>;
 
-        // Worldから「キャッシュ更新関数」を受け取る
-        using EntityMoveCallback = std::function<void(EntityID, Chunk *, size_t)>;
-        void SetEntityMoveCallback(EntityMoveCallback cb) { _onEntityMove = cb; }
+        /// @brief Entity移動通知のコールバックを設定
+        void SetEntityMoveCallback(EntityMoveCallback cb) { _onEntityMove = std::move(cb); }
 
-        // 構造変更用のmutexを取得（SystemManagerから使用される）
-        std::shared_mutex       &GetStructureMutex() { return _structureMutex; }
-        const std::shared_mutex &GetStructureMutex() const { return _structureMutex; }
-    
+
+        // =====================================================================
+        //  共有Mutex (System並列実行のための読み取りロック取得用)
+        // =====================================================================
+
+        std::shared_mutex&       GetStructureMutex()       { return _structureMutex; }
+        const std::shared_mutex& GetStructureMutex() const { return _structureMutex; }
 
 
     private:
-        // 指定したアーキタイプで、かつ空きがあるチャンクを返す（なければ作る）
-        Chunk& GetOrCreateAvailableChunk(const Archetype& archetype);
+        // =====================================================================
+        //  Entity位置マップ用構造体
+        // =====================================================================
 
-		// 新しいエンティティを指定されたチャンクに挿入し、コンポーネントデータを初期化する
-        void InsertNewEntity(
-			Chunk& dstChunk,    // 挿入先チャンク
-			EntityID entity,    // 挿入するエンティティID
-			const std::vector<PendingOp*>& addOps   // 今回の移動で新しく追加されるコンポーネントの初期データ
-        );
+        /**
+         * @struct EntityLocation
+         * @brief EntityID→Chunk位置 のキャッシュエントリ
+         */
+        struct EntityLocation
+        {
+            std::size_t chunkIndex  = InvalidIndex;
+            std::size_t entityIndex = InvalidIndex;
 
-         // Entityの位置情報をキャッシュするための構造体
-        struct EntityLocation {
-            size_t chunkIndex;  // どのChunkにいるか
-            size_t entityIndex; // Chunk内のどのインデックスか
-
-            EntityLocation() : chunkIndex(InvalidIndex), entityIndex(InvalidIndex) {}
-            EntityLocation(size_t ci, size_t ei) : chunkIndex(ci), entityIndex(ei) {}
+            EntityLocation() = default;
+            EntityLocation(std::size_t ci, std::size_t ei) : chunkIndex(ci), entityIndex(ei) {}
         };
 
-        // Entityの位置を更新する内部ヘルパー
-        void UpdateEntityLocation(EntityID entity, size_t chunkIdx, size_t entityIdx);
 
-        // Entityの位置情報を削除する内部ヘルパー
+        // =====================================================================
+        //  内部ヘルパ
+        // =====================================================================
+
+        /// @brief 空きがあるArchetype対応Chunkを取得(なければ新規作成)
+        Chunk& GetOrCreateAvailableChunk(const Archetype& archetype);
+
+        /// @brief 新Entityを挿入し、各コンポーネントを初期化
+        void InsertNewEntity(Chunk& dstChunk, EntityID entity,
+                             const std::vector<PendingOp*>& addOps);
+
+        /**
+         * @brief Archetype遷移を伴うEntity引越し
+         * @param srcChunk      元Chunk
+         * @param srcIndex      元Chunkでのインデックス
+         * @param dstChunk      新Chunk
+         * @param entity        EntityID
+         * @param addOps        追加される初期データ群
+         * @param removeTypeIDs 削除される型ID群
+         * @return 成功 true / 失敗 false
+         */
+        bool MoveEntityBetweenChunks(
+            Chunk& srcChunk, std::size_t srcIndex,
+            Chunk& dstChunk, EntityID entity,
+            const std::vector<PendingOp*>& addOps,
+            const std::vector<TypeID>& removeTypeIDs);
+
+
+        // =====================================================================
+        //  Entity位置キャッシュ操作
+        // =====================================================================
+
+        void UpdateEntityLocation(EntityID entity, std::size_t chunkIdx, std::size_t entityIdx);
         void RemoveEntityLocation(EntityID entity);
 
-        // ChunkポインタからChunk配列内のインデックスを取得
-        size_t GetChunkIndex(const Chunk *chunk) const;
+        /// @brief ChunkインデックスをChunkポインタから取得 (O(1): Chunk::GetSelfIndex使用)
+        std::size_t GetChunkIndex(const Chunk* chunk) const;
 
-      
+
+        // =====================================================================
+        //  Chunk容量計算
+        // =====================================================================
+
+        /// @brief Archetypeに対する Chunk1つの収容Entity数を計算
+        std::size_t CalculateChunkCapacity(const Archetype& archetype) const;
+
+
     private:
-		// このChunkManagerが管理する全チャンクのリスト
-		// ・外側のvector: チャンクごと
-		// ・内側のunique_ptr: チャンク本体
-        // 「位置情報だけを持つ倉庫」「位置と速度を持つ倉庫」など
-        // アーキタイプごとに作成された倉庫を全て保持している
-        std::vector<std::unique_ptr<Chunk>> _chunks;
+        // =====================================================================
+        //  メンバ
+        // =====================================================================
 
+        std::vector<std::unique_ptr<Chunk>> _chunks; ///< 全Chunk
 
-        // チャンク1つあたりの固定メモリサイズ（例: 16KB = 16384 バイト）
-        // ※ 16KBはL1/L2キャッシュに収まりやすく、バランスの良い標準サイズです
-        // なぜ16000ではなく16384かというと、16384は2の14乗であり、コンピュータのメモリ管理において効率的なサイズだから
-        static constexpr size_t CHUNK_SIZE_BYTES = 16384;
+        /**
+         * @brief Chunk1つあたりの目標バイト数(16KB)
+         * @details L1/L2キャッシュに収まりやすい標準的なサイズ。
+         */
+        static constexpr std::size_t CHUNK_SIZE_BYTES = 16 * 1024;
 
-        // アーキタイプ（構成）から、このチャンクに何人入れるか（定員）を計算する
-        size_t CalculateChunkCapacity(const Archetype &archetype) const;
+        EntityMoveCallback _onEntityMove = nullptr; ///< Entity移動通知
 
+        std::vector<EntityLocation> _entityLocationMap; ///< EntityID(index)→位置 のキャッシュ
 
-        EntityMoveCallback _onEntityMove = nullptr;
-
-        // EntityID → (ChunkIndex, EntityIndex) の高速検索マップ     
-        std::vector<EntityLocation> _entityLocationMap;
-
-        // 構造変更用の共有ミューテックス
-        // - 読み取り（System実行）: shared_lock（複数スレッド並列OK）
-        // - 書き込み（ApplyPendingOperations）: unique_lock（排他的）
+        /**
+         * @brief 構造変更用の共有Mutex
+         * @details 読み(System): shared_lock, 書き(変更適用): unique_lock
+         */
         mutable std::shared_mutex _structureMutex;
-
     };
-}
+
+} // namespace CCL::ECS::Core

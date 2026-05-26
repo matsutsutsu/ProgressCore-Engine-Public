@@ -1,136 +1,199 @@
+/**
+ * @file   CCL_EventBus.h
+ * @brief  ECS内外をつなぐ汎用イベントバス(型消去 + ID基盤)
+ *
+ * @details
+ *  ECSのSystem間通信や、ECS外のUI/サウンド/実績システムへの通知を仲介します。
+ *  典型的な使い方は「Systemが Publish<EventType>(data) で発火、
+ *  別Systemや外部Managerが Subscribe<EventType>(callback) で受け取る」です。
+ *
+ *  購読解除のために EventSubscriptionID(チケット番号)を返します。
+ *  System破棄時に自動Unsubscribeしたい場合は IfSystem::ListenEvent を推奨。
+ *
+ *  【設計上の特徴】
+ *   - typeid 不使用: 軽量な「型ごとに+1されるID」で型を区別
+ *   - 型消去: 各 EventType ごとに専用Wrapper(IEventWrapper派生)を内部生成
+ *
+ *  【依存】
+ *   - 標準C++のみ
+ *
+ * @author CCL ECS Library
+ */
 #pragma once
-#include <algorithm>
+
 #include <cstdint>
 #include <functional>
 #include <memory>
 #include <unordered_map>
 #include <vector>
+#include <atomic>
+#include <algorithm>
 
-/**
- * @brief イベントバス (EventBus) の主な役割は、異なるシステム間でのイベント通信を管理することです。
- * 
- * イベントバスは、特定のイベント型に対して購読者を登録し、イベントが発生した際に全ての購読者に通知します。
- * これにより、システム間の依存関係を減らし、柔軟で拡張可能なアーキテクチャを実現します。
- * 主に「ECSの世界」と「それ以外の世界」をつなぐ橋渡し役として機能します
- * 例：UI更新・サウンド再生・実績の解除など、ECSの外部に影響を与えるイベントを発行するために使う
- */
 
-namespace CCL::ECS::Core {
+namespace CCL::ECS::Core
+{
+    // =========================================================================
+    //  EventTypeIDGenerator
+    // =========================================================================
 
-    // =======================================================
-    // 1. 型IDジェネレータ (重い typeid を排除する魔法)
-    // =======================================================
-    class EventTypeIDGenerator {
-        static inline uint32_t counter = 0;
-
-      public:
-        template <typename T> static uint32_t GetID()
+    /**
+     * @class EventTypeIDGenerator
+     * @brief 各イベント型に対し、軽量な連番IDを発行する
+     */
+    class EventTypeIDGenerator
+    {
+    public:
+        template <typename T>
+        static std::uint32_t GetID() noexcept
         {
-            // 型 T ごとに、この static 変数が「たった一つだけ」作られる
-            static uint32_t id = counter++;
+            static const std::uint32_t id = NextID();
             return id;
+        }
+
+    private:
+        static std::uint32_t NextID() noexcept
+        {
+            static std::atomic<std::uint32_t> s_counter{0};
+            return s_counter.fetch_add(1, std::memory_order_relaxed);
         }
     };
 
-    // 購読解除用のチケット
-    using EventSubscriptionID = uint64_t;
 
-    // =======================================================
-    // 2. イベントの箱 (型の消失 / 型消去)
-    // =======================================================
-    class IEventWrapper {
-      public:
+    /// @brief Subscribe時に返される購読解除用チケットID
+    using EventSubscriptionID = std::uint64_t;
+
+
+    // =========================================================================
+    //  IEventWrapper / EventWrapper<T>
+    // =========================================================================
+
+    /// @brief 型消去用の基底クラス
+    class IEventWrapper
+    {
+    public:
         virtual ~IEventWrapper() = default;
     };
 
-    template <typename EventType> class EventWrapper : public IEventWrapper {
-      public:
-        using CallbackType = std::function<void(const EventType &)>;
+    /**
+     * @class EventWrapper
+     * @brief 型Tのイベントに対する購読者リストを保持する
+     */
+    template <typename EventType>
+    class EventWrapper : public IEventWrapper
+    {
+    public:
+        using CallbackType = std::function<void(const EventType&)>;
 
-        // 誰の関数かを特定するために、チケットIDと一緒に保存する
-        struct Subscriber {
+        struct Subscriber
+        {
             EventSubscriptionID id;
             CallbackType        callback;
         };
 
-        std::vector<Subscriber> subscribers;
-        EventSubscriptionID     nextId = 1;
-
-        // 関数を登録し、キャンセル用のチケットを返す
+        /// @brief コールバックを追加(チケットIDを返す)
         EventSubscriptionID Add(CallbackType cb)
         {
-            EventSubscriptionID id = nextId++;
-            subscribers.push_back({id, cb});
+            const EventSubscriptionID id = _nextId++;
+            _subscribers.push_back({id, std::move(cb)});
             return id;
         }
 
-        // チケットを使って特定の関数だけを削除する
+        /// @brief 指定IDの購読を解除
         void Remove(EventSubscriptionID id)
         {
-            auto it = std::remove_if(subscribers.begin(),
-                subscribers.end(),
-                [id](const Subscriber &s) { return s.id == id; });
-            if (it != subscribers.end()) {
-                subscribers.erase(it, subscribers.end());
+            auto it = std::remove_if(_subscribers.begin(), _subscribers.end(),
+                [id](const Subscriber& s){ return s.id == id; });
+            _subscribers.erase(it, _subscribers.end());
+        }
+
+        /// @brief 全購読者にイベントを通知
+        void Trigger(const EventType& data) const
+        {
+            for (const auto& s : _subscribers) {
+                if (s.callback) s.callback(data);
             }
         }
 
-        // 全員に手紙を配る (イベント発火)
-        void Trigger(const EventType &eventData)
-        {
-            for (auto &s : subscribers) {
-                s.callback(eventData);
-            }
-        }
+    private:
+        std::vector<Subscriber> _subscribers;
+        EventSubscriptionID     _nextId = 1;
     };
 
-    // =======================================================
-    // 3. 郵便局本体 (EventBus)
-    // =======================================================
-    class EventBus {
-      private:
-        // 「型のID」と「そのイベント専用の箱」のペアを管理する名簿
-        std::unordered_map<uint32_t, std::unique_ptr<IEventWrapper>> _subscribers;
 
-      public:
-        // 購読する (手紙が欲しいと登録する)
+    // =========================================================================
+    //  EventBus
+    // =========================================================================
+
+    /**
+     * @class EventBus
+     * @brief イベント型ごとに購読/発行を行う中央バス
+     */
+    class EventBus
+    {
+    public:
+        EventBus()  = default;
+        ~EventBus() = default;
+
+        EventBus(const EventBus&)            = delete;
+        EventBus& operator=(const EventBus&) = delete;
+
+        /**
+         * @brief イベント型EventTypeを購読する
+         * @tparam EventType 受信したいイベント型
+         * @param  callback  発行時に呼ばれる関数
+         * @return 購読解除用チケットID
+         */
         template <typename EventType>
-        EventSubscriptionID Subscribe(std::function<void(const EventType &)> callback)
+        EventSubscriptionID Subscribe(std::function<void(const EventType&)> callback)
         {
-            uint32_t typeId = EventTypeIDGenerator::GetID<EventType>();
+            const std::uint32_t typeId = EventTypeIDGenerator::GetID<EventType>();
 
-            if (_subscribers.find(typeId) == _subscribers.end()) {
+            auto it = _subscribers.find(typeId);
+            if (it == _subscribers.end()) {
                 _subscribers[typeId] = std::make_unique<EventWrapper<EventType>>();
             }
 
-            auto wrapper = static_cast<EventWrapper<EventType> *>(_subscribers[typeId].get());
-            return wrapper->Add(callback);
+            auto* wrapper = static_cast<EventWrapper<EventType>*>(_subscribers[typeId].get());
+            return wrapper->Add(std::move(callback));
         }
 
-        // 購読を解除する (もう手紙は要らないと伝える)
-        template <typename EventType> void Unsubscribe(EventSubscriptionID subId)
+        /**
+         * @brief 購読を解除する
+         * @tparam EventType 購読時の型
+         * @param  subId Subscribeが返したチケットID
+         */
+        template <typename EventType>
+        void Unsubscribe(EventSubscriptionID subId)
         {
-            uint32_t typeId = EventTypeIDGenerator::GetID<EventType>();
+            const std::uint32_t typeId = EventTypeIDGenerator::GetID<EventType>();
+            auto it = _subscribers.find(typeId);
+            if (it == _subscribers.end()) return;
 
-            if (_subscribers.find(typeId) != _subscribers.end()) {
-                auto wrapper = static_cast<EventWrapper<EventType> *>(_subscribers[typeId].get());
-                wrapper->Remove(subId);
-            }
+            auto* wrapper = static_cast<EventWrapper<EventType>*>(it->second.get());
+            wrapper->Remove(subId);
         }
 
-        // 手紙を投函する (全員に配る)
-        template <typename EventType> void Publish(const EventType &eventData)
+        /**
+         * @brief イベントを全購読者に通知
+         * @tparam EventType 発行する型
+         * @param  data 通知するデータ
+         */
+        template <typename EventType>
+        void Publish(const EventType& data) const
         {
-            uint32_t typeId = EventTypeIDGenerator::GetID<EventType>();
+            const std::uint32_t typeId = EventTypeIDGenerator::GetID<EventType>();
+            auto it = _subscribers.find(typeId);
+            if (it == _subscribers.end()) return;
 
-            if (_subscribers.find(typeId) != _subscribers.end()) {
-                auto wrapper = static_cast<EventWrapper<EventType> *>(_subscribers[typeId].get());
-                wrapper->Trigger(eventData);
-            }
+            const auto* wrapper = static_cast<const EventWrapper<EventType>*>(it->second.get());
+            wrapper->Trigger(data);
         }
 
-        // 世界がリセットされる時に名簿を空にする
+        /// @brief 全購読を解除
         void Clear() { _subscribers.clear(); }
+
+    private:
+        std::unordered_map<std::uint32_t, std::unique_ptr<IEventWrapper>> _subscribers;
     };
 
 } // namespace CCL::ECS::Core
