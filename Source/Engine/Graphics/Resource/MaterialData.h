@@ -6,6 +6,19 @@
 #include "Engine/Graphics/Resource/GraphicsTypes.h"
 #include "Engine/Graphics/Resource/ResourcePool.h"
 
+// シリアライズ用のインクルード
+#include <cereal/cereal.hpp>
+#include <cereal/types/vector.hpp>
+#include <cereal/types/string.hpp>
+
+// DirectXMath のシリアライズヘルパー
+namespace DirectX {
+    template<class Archive>
+    void serialize(Archive& archive, XMFLOAT4& v) {
+        archive(cereal::make_nvp("x", v.x), cereal::make_nvp("y", v.y), cereal::make_nvp("z", v.z), cereal::make_nvp("w", v.w));
+    }
+}
+
 // TextureHandle が何者であるかを、ここで直接定義する
 using TextureResource = Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>;
 using TextureHandle = CCL::Handle<TextureResource>;
@@ -14,16 +27,26 @@ using TextureHandle = CCL::Handle<TextureResource>;
 struct MaterialScalar {
     uint32_t nameHash;
     float value;
+    template<class Archive> void serialize(Archive& archive) { archive(CEREAL_NVP(nameHash), CEREAL_NVP(value)); }
 };
 
 struct MaterialColor {
     uint32_t nameHash;
     DirectX::XMFLOAT4 value;
+    template<class Archive> void serialize(Archive& archive) { archive(CEREAL_NVP(nameHash), CEREAL_NVP(value)); }
 };
 
 struct MaterialTextureRef {
     uint32_t nameHash;
-    TextureHandle handle;
+    TextureHandle handle;  // 実行時のみ有効
+    std::string assetPath; // ★保存用（ファイルパス）
+
+    template<class Archive> void save(Archive& archive) const {
+        archive(CEREAL_NVP(nameHash), CEREAL_NVP(assetPath));
+    }
+    template<class Archive> void load(Archive& archive) {
+        archive(CEREAL_NVP(nameHash), CEREAL_NVP(assetPath));
+    }
 };
 
 // 完全に連続したメモリレイアウトを持つ新生 MaterialData
@@ -58,11 +81,16 @@ struct MaterialData {
         colors.push_back({ hash, value });
     }
 
-    void SetTexture(uint32_t hash, TextureHandle handle) {
+    // テクスチャのパスも受け取って保存できるようにする
+    void SetTexture(uint32_t hash, TextureHandle handle, const std::string& path = "") {
         for (auto& prop : textures) {
-            if (prop.nameHash == hash) { prop.handle = handle; return; }
+            if (prop.nameHash == hash) {
+                prop.handle = handle;
+                if (!path.empty()) prop.assetPath = path;
+                return;
+            }
         }
-        textures.push_back({ hash, handle });
+        textures.push_back({ hash, handle, path });
     }
 
     // =======================================================
@@ -87,5 +115,11 @@ struct MaterialData {
             if (prop.nameHash == hash) { outHandle = prop.handle; return true; }
         }
         return false;
+    }
+
+    // ★追加: 構造体全体のシリアライズ
+    template<class Archive>
+    void serialize(Archive& archive) {
+        archive(CEREAL_NVP(shaderHash), CEREAL_NVP(alphaMode), CEREAL_NVP(alphaCutoff), CEREAL_NVP(scalars), CEREAL_NVP(colors), CEREAL_NVP(textures));
     }
 };

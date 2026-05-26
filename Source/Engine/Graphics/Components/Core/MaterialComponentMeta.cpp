@@ -119,6 +119,26 @@ template <> struct ComponentMeta<MaterialComponent> {
             // 作成した動的な文字列を TreeNode に渡す
             if (ImGui::TreeNode(nodeName)) {
 
+                // =========================================================
+                // ★追加: マテリアルの保存・ロードボタン
+                // =========================================================
+                if (ImGui::Button("Save as .mat.json")) {
+                    if (auto path = Engine::FileDialog::SavePreset("Material", "Assets/Materials", "mat.json", Graphics::Instance().GetWindowHandle())) {
+                        ResourceManager::Instance().SaveMaterialAsset(matHandle, path->string());
+                    }
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Load .mat.json")) {
+                    if (auto path = Engine::FileDialog::OpenPreset("Material", "Select Material", Graphics::Instance().GetWindowHandle())) {
+                        MaterialHandle newHandle = ResourceManager::Instance().LoadMaterialAsset(path->string());
+                        if (newHandle.IsValid()) {
+                            comp->SetData(i, newHandle); // 読み込んだマテリアルに差し替え！
+                            changed = true;
+                        }
+                    }
+                }
+                ImGui::Separator();
+
                 DirectX::XMFLOAT4 mainColor;
                 if (matPtr->GetColor("materialColor"_hash, mainColor)) {
                     if (ImGui::ColorEdit4("Main Color", &mainColor.x)) {
@@ -161,11 +181,9 @@ template <> struct ComponentMeta<MaterialComponent> {
                             if (auto path = Engine::FileDialog::OpenPreset("Texture", "Select Texture", Graphics::Instance().GetWindowHandle()))
                             {
                                 const auto s = path->string();
-                                Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv;
-                                if (SUCCEEDED(GpuResourceUtils::LoadTexture(Graphics::Instance().GetDevice(), s.c_str(), srv.GetAddressOf()))) {
-                                    matPtr->SetTexture(slotHash, ResourceManager::Instance().RegisterTexture(srv));
-                                    changed = true;
-                                }
+                                // ★修正: テクスチャをセットする際、第3引数にパスを渡して保存対象にする
+                                matPtr->SetTexture(slotHash, ResourceManager::Instance().LoadTexture(s.c_str()), s);
+                                changed = true;
                             }
                         }
                         if (!hasTexture && std::string(slotName) == "DiffuseMap") {

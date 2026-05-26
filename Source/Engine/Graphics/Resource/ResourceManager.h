@@ -98,6 +98,8 @@ public:
     MaterialHandle CloneMaterial(MaterialHandle source);
     MaterialData* GetMaterial(MaterialHandle handle);
     void UnloadMaterial(MaterialHandle handle);
+    MaterialHandle LoadMaterialAsset(const std::string& virtualPath);
+    bool SaveMaterialAsset(MaterialHandle handle, const std::string& virtualPath);
 
     // ---------------------------------------------------------
     // [5] Animation Sequence

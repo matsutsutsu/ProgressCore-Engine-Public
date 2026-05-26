@@ -7,6 +7,10 @@
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 
+#include "Engine/Platform/Core/FileSystem.h" // ユーザー指定のパス
+#include <cereal/archives/json.hpp>
+#include <sstream>
+
 #if ENABLE_EDITOR
 #include <imgui.h>
 #endif
@@ -367,4 +371,50 @@ void ResourceManager::DrawDebugGUI() {
     }
 
 #endif
+}
+
+MaterialHandle ResourceManager::LoadMaterialAsset(const std::string& virtualPath)
+{
+    std::string jsonStr = FileSystem::ReadAllText(virtualPath);
+    if (jsonStr.empty()) return MaterialHandle{}; // ロード失敗
+
+    MaterialHandle handle = m_materialPool.Create();
+    MaterialData* mat = m_materialPool.Get(handle);
+
+    std::istringstream is(jsonStr);
+    try {
+        cereal::JSONInputArchive archive(is);
+        archive(cereal::make_nvp("Material", *mat));
+
+        // ★重要: JSONから読み込んだファイルパスを使って、実際のテクスチャをロードしてHandleを復旧させる
+        for (auto& texRef : mat->textures) {
+            if (!texRef.assetPath.empty()) {
+                texRef.handle = LoadTexture(texRef.assetPath.c_str());
+            }
+        }
+        return handle;
+    }
+    catch (...) {
+        CCL_LOG_ERROR(LogCategory::Core, "Failed to parse material json: %s", virtualPath.c_str());
+        m_materialPool.Destroy(handle);
+        return MaterialHandle{};
+    }
+}
+
+bool ResourceManager::SaveMaterialAsset(MaterialHandle handle, const std::string& virtualPath)
+{
+    MaterialData* mat = m_materialPool.Get(handle);
+    if (!mat) return false;
+
+    std::ostringstream os;
+    try {
+        cereal::JSONOutputArchive archive(os);
+        archive(cereal::make_nvp("Material", *mat));
+    }
+    catch (...) {
+        return false;
+    }
+
+    // FileSystemを経由して書き込み
+    return FileSystem::WriteAllText(virtualPath, os.str());
 }
