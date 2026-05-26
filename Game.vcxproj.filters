@@ -1515,6 +1515,21 @@
     <ClInclude Include="Source\Engine\Transform\Systems\TransformUpdateSystem.h">
       <Filter>Source\Engine\Transform\Systems</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\ECS\Common\CCL_Archetype.h">
+      <Filter>Source\Engine\ECS\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\ECS\Common\CCL_IDEmitter.h">
+      <Filter>Source\Engine\ECS\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\ECS\Common\CCL_TypeErasure.h">
+      <Filter>Source\Engine\ECS\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\ECS\Common\CCL_TypeInfo.h">
+      <Filter>Source\Engine\ECS\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\ECS\Common\CCL_Types.h">
+      <Filter>Source\Engine\ECS\Common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">

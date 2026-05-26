@@ -422,7 +422,12 @@
     <ClInclude Include="Source\Engine\Core\Math\StringHash.h" />
     <ClInclude Include="Source\Engine\Core\Math\TransformUtils.h" />
     <ClInclude Include="Source\Engine\Core\Time\HighResolutionTimer.h" />
+    <ClInclude Include="Source\Engine\ECS\Common\CCL_Archetype.h" />
     <ClInclude Include="Source\Engine\ECS\Common\CCL_Common.h" />
+    <ClInclude Include="Source\Engine\ECS\Common\CCL_IDEmitter.h" />
+    <ClInclude Include="Source\Engine\ECS\Common\CCL_TypeErasure.h" />
+    <ClInclude Include="Source\Engine\ECS\Common\CCL_TypeInfo.h" />
+    <ClInclude Include="Source\Engine\ECS\Common\CCL_Types.h" />
     <ClInclude Include="Source\Engine\ECS\Core\CCL_Chunk.h" />
     <ClInclude Include="Source\Engine\ECS\Core\CCL_ChunkManager.h" />
     <ClInclude Include="Source\Engine\ECS\Core\CCL_ECSContext.h" />
