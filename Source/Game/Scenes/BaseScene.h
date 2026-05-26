@@ -12,7 +12,7 @@
 #include "Engine/ECS/Core/CCL_PendingOps.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemManager.h"
-#include "Engine/ECS/Core/CCL_ECSContext.h"
+#include "Engine/ECS/CCL_ECSContext.h"
 
 #include "Engine/Graphics/Shader/PostProcess/PostProcessManager.h"
 //#include "Engine/Graphics/Shader/Pass/ShadowMap.h"

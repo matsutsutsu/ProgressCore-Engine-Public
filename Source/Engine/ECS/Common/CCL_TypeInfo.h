@@ -35,13 +35,6 @@ namespace CCL::ECS
      * 型を直接比較するのではなく数値 ID で比較することで、Archetype の
      * 一致判定やコンポーネント配置オフセット計算を最速化します。
      *
-     * 仕組み:
-     *   `inline static const TypeID s_id = ID_Emitter::EmitTypeID();`
-     *   C++17 の inline static 変数機能により、複数の .cpp に散らばっても
-     *   リンカが必ず単一インスタンスにマージします。結果として、ある型 T に
-     *   ついて s_id が初期化されるのは「プロセス全体で1度きり」となり、
-     *   100% 衝突しないユニーク ID が手に入ります。
-     *
      * @code
      *   TypeInfo<Position>::ID();   // 例: 1
      *   TypeInfo<Velocity>::ID();   // 例: 2

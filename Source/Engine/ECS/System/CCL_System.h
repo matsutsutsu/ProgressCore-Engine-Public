@@ -7,7 +7,7 @@
 #include <type_traits>
 #include "Engine/ECS/Common/CCL_Common.h"
 #include "Engine/ECS/Core/CCL_World.h"
-#include "Engine/ECS/Core/CCL_JobSystem.h"
+#include "Engine/ECS/Jobs/CCL_JobSystem.h"
 
 #include "CCL_SystemAccess.h"
 
