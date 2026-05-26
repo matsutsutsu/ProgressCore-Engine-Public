@@ -3,7 +3,9 @@
 #include <functional>
 #include <memory>
 #include "Engine/Graphics/Shader/Core/Shader.h"
+#include "Engine/Graphics/Shader/Material/MaterialShader.h"
 #include "Engine/Core/Math/StringHash.h"
+
 
 class ShaderRegistry {
 public:
@@ -16,6 +18,18 @@ public:
             return std::make_unique<T>(device);
             };
         // 新しいシェーダーが登録されるたびに、0から順にソート用の連番IDを割り当てる
+        _shaderSortIDs[shaderHash] = _nextSortID++;
+    }
+
+    // =======================================================
+    // ★追加: 汎用マテリアルシェーダー用の登録関数
+    // =======================================================
+    void RegisterMaterialShader(uint32_t shaderHash, const std::string& vsPath, const std::string& psPath) {
+        _factories[shaderHash] = [vsPath, psPath](ID3D11Device* device) {
+            // パスをキャプチャして MaterialShader を生成する
+            return std::make_unique<MaterialShader>(device, vsPath, psPath);
+            };
+
         _shaderSortIDs[shaderHash] = _nextSortID++;
     }
 

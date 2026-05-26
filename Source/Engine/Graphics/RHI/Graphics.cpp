@@ -155,14 +155,18 @@ void Graphics::Initialize(HWND hWnd)
     particleRenderer->Initialize(device.Get());
 
 
-	// enum ではなく、文字列のハッシュ値を使ってシェーダーファクトリを登録します
-	ShaderRegistry::Instance().RegisterShader<BasicShader>("Basic"_hash);
-	ShaderRegistry::Instance().RegisterShader<LambertShader>("Lambert"_hash);
-	ShaderRegistry::Instance().RegisterShader<PhongShader>("Phong"_hash);
-	ShaderRegistry::Instance().RegisterShader<ToonShader>("Toon"_hash);
+	// ⭕ 変更後: C++クラス不要！ パスを書くだけでどんなシェーダーも追加可能
+	auto& registry = ShaderRegistry::Instance();
+	
+	registry.RegisterMaterialShader("PBR"_hash,      "Assets/Shader/PBR_VS.cso",      "Assets/Shader/PBR_PS.cso");
+	registry.RegisterMaterialShader("Phong"_hash,    "Assets/Shader/PhongVS.cso",     "Assets/Shader/PhongPS.cso");
+	registry.RegisterMaterialShader("Lambert"_hash,  "Assets/Shader/LambertVS.cso",   "Assets/Shader/LambertPS.cso");
+	registry.RegisterMaterialShader("Basic"_hash,    "Assets/Shader/BasicVS.cso",     "Assets/Shader/BasicPS.cso");
+	registry.RegisterMaterialShader("Toon"_hash,     "Assets/Shader/ToonVS.cso",      "Assets/Shader/ToonPS.cso");
+
+
 	ShaderRegistry::Instance().RegisterShader<OutlineShader>("Outline"_hash);
 	ShaderRegistry::Instance().RegisterShader<ShadowMapShader>("ShadowMap"_hash);
-	ShaderRegistry::Instance().RegisterShader<PBRShader>("PBR"_hash);
 
 	// ゲームビュー用RTT作成
 	D3D11_TEXTURE2D_DESC texDesc = {};
