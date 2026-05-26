@@ -104,7 +104,13 @@ void OpaquePass::Execute(const RenderContext& rc) {
             // --- 透明判定 ---
             auto& matData = *mutableMesh.material->data;
             float alpha = 1.0f;
-            if (matData.colors.count("materialColor")) alpha = matData.colors.at("materialColor").w;
+
+            DirectX::XMFLOAT4 matColor;
+
+            // ⭕ 修正: GetColor が true なら（見つかったら）、alpha に w 成分を入れる
+            if (matData.GetColor("materialColor"_hash, matColor)) {
+                alpha = matColor.w;
+            }
             bool isTransparent = (matData.alphaMode == AlphaMode::Blend || (alpha > 0.01f && alpha < 0.99f));
             bool isSkinned = !mesh.bones.empty();
 

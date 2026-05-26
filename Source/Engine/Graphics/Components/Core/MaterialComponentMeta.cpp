@@ -11,6 +11,7 @@
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
 #include "Engine/Core/Math/StringHash.h"
+#include "Engine/Graphics/Shader/ShaderRegistry.h"
 
 #if ENABLE_EDITOR
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
@@ -45,8 +46,8 @@ template <> struct ComponentMeta<MaterialComponent> {
                             MaterialData* newData =
                                 ResourceManager::Instance().GetMaterial(newHandle);
                             if (originalMat && originalMat->data && newData) {
+                                // ★ データを丸ごとコピー (最速のメモリコピー)
                                 *newData = *originalMat->data;
-                                newData->name += " (Instance)";
                             }
                             comp->SetData(i, newHandle);
                         }
@@ -108,51 +109,61 @@ template <> struct ComponentMeta<MaterialComponent> {
             if (!matPtr) continue;
 
             ImGui::PushID((int)i);
-            if (ImGui::TreeNode(matPtr->name.c_str())) {
-                if (matPtr->colors.count("materialColor")) {
-                    changed |= ImGui::ColorEdit4("Main Color", &matPtr->colors["materialColor"].x);
+
+            // =======================================================
+            // ⭕ 修正: 文字列メンバを持たないので、表示用の名前をその場で作る
+            // =======================================================
+            char nodeName[64];
+            sprintf_s(nodeName, "Material [%zu]", i);
+
+            // 作成した動的な文字列を TreeNode に渡す
+            if (ImGui::TreeNode(nodeName)) {
+
+                DirectX::XMFLOAT4 mainColor;
+                if (matPtr->GetColor("materialColor"_hash, mainColor)) {
+                    if (ImGui::ColorEdit4("Main Color", &mainColor.x)) {
+                        matPtr->SetColor("materialColor"_hash, mainColor);
+                        changed = true;
+                    }
                 }
                 else if (ImGui::Button("Add Color Property")) {
-                    matPtr->colors["materialColor"] = { 1, 1, 1, 1 };
+                    matPtr->SetColor("materialColor"_hash, { 1, 1, 1, 1 });
                     changed = true;
                 }
 
-                // 修正後：文字列ハッシュのリストから選択させる
-                const char* shaderNames[] = { "Basic", "Lambert", "Phong", "Toon", "Outline", "ShadowMap", "PBR" };
+                // 文字列ハッシュのリストから選択させる
+                const char* shaderNames[] = { "Basic", "Lambert", "Phong", "Toon", "Outline", "ShadowMap", "PBR", "Trail" };
                 int currentShaderIdx = 0;
-                // 現在のハッシュ値からインデックスを逆引き
-                for (int i = 0; i < 7; ++i) {
-                    if (matPtr->shaderHash == CCL::Utils::HashString(shaderNames[i])) {
-                        currentShaderIdx = i;
+                for (int s = 0; s < 8; ++s) {
+                    if (matPtr->shaderHash == CCL::Utils::HashString(shaderNames[s])) {
+                        currentShaderIdx = s;
                         break;
                     }
                 }
-                if (ImGui::Combo("Shader", &currentShaderIdx, shaderNames, 7)) {
+                if (ImGui::Combo("Shader", &currentShaderIdx, shaderNames, 8)) {
                     matPtr->shaderHash = CCL::Utils::HashString(shaderNames[currentShaderIdx]);
                     changed = true;
                 }
 
                 if (ImGui::TreeNode("Textures")) {
-                    const char* slotNames[] = {
-                        "DiffuseMap", "NormalMap", "EmissiveMap", "RampTexture" };
+                    const char* slotNames[] = { "DiffuseMap", "NormalMap", "EmissiveMap", "RampTexture" };
+
                     for (const char* slotName : slotNames) {
-                        bool hasTexture =
-                            (matPtr->textures.find(slotName) != matPtr->textures.end());
+                        uint32_t slotHash = CCL::Utils::HashString(slotName);
+                        TextureHandle texHandle;
+                        bool hasTexture = matPtr->GetTexture(slotHash, texHandle) && texHandle.IsValid();
+
                         ImGui::PushID(slotName);
                         ImGui::Text("%s: %s", slotName, hasTexture ? "[Set]" : "[Empty]");
                         ImGui::SameLine();
+
                         if (ImGui::Button("Load...")) {
-                            if (auto path = Engine::FileDialog::OpenPreset("Texture", "Select Texture",
-                                Graphics::Instance().GetWindowHandle()))
+                            if (auto path = Engine::FileDialog::OpenPreset("Texture", "Select Texture", Graphics::Instance().GetWindowHandle()))
                             {
                                 const auto s = path->string();
                                 Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv;
-                                if (SUCCEEDED(GpuResourceUtils::LoadTexture(
-                                    Graphics::Instance().GetDevice(),
-                                    s.c_str(),
-                                    srv.GetAddressOf()))) {
-                                    matPtr->textures[slotName] =
-                                        ResourceManager::Instance().RegisterTexture(srv);
+                                if (SUCCEEDED(GpuResourceUtils::LoadTexture(Graphics::Instance().GetDevice(), s.c_str(), srv.GetAddressOf()))) {
+                                    matPtr->SetTexture(slotHash, ResourceManager::Instance().RegisterTexture(srv));
                                     changed = true;
                                 }
                             }
@@ -161,12 +172,8 @@ template <> struct ComponentMeta<MaterialComponent> {
                             ImGui::SameLine();
                             if (ImGui::Button("Set White")) {
                                 Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> whiteTex;
-                                GpuResourceUtils::CreateDummyTexture(
-                                    Graphics::Instance().GetDevice(),
-                                    0xFFFFFFFF,
-                                    whiteTex.GetAddressOf());
-                                matPtr->textures[slotName] =
-                                    ResourceManager::Instance().RegisterTexture(whiteTex);
+                                GpuResourceUtils::CreateDummyTexture(Graphics::Instance().GetDevice(), 0xFFFFFFFF, whiteTex.GetAddressOf());
+                                matPtr->SetTexture(slotHash, ResourceManager::Instance().RegisterTexture(whiteTex));
                                 changed = true;
                             }
                         }
@@ -175,9 +182,41 @@ template <> struct ComponentMeta<MaterialComponent> {
                     ImGui::TreePop();
                 }
 
+                // =========================================================
+                // ⭕ 修正後: シェーダー側の変数リストを基準にしてUIを作る
+                // =========================================================
                 if (ImGui::TreeNode("Advanced Parameters")) {
-                    for (auto& [name, val] : matPtr->scalars) {
-                        changed |= ImGui::DragFloat(name.c_str(), &val, 0.01f);
+                    Shader* shader = ShaderRegistry::Instance().GetShader(matPtr->shaderHash, Graphics::Instance().GetDevice());
+                    if (shader) {
+                        const auto& cbs = shader->GetReflection().GetConstantBuffers();
+                        for (const auto& cbInfo : cbs) {
+                            for (const auto& varInfo : cbInfo.variables) {
+
+                                // スカラー値 (float) のUI
+                                if (varInfo.type == D3D_SVT_FLOAT) {
+                                    float val = 0.0f;
+                                    if (matPtr->GetScalar(varInfo.nameHash, val)) {
+                                        if (ImGui::DragFloat(varInfo.name.c_str(), &val, 0.01f)) {
+                                            matPtr->SetScalar(varInfo.nameHash, val);
+                                            changed = true;
+                                        }
+                                    }
+                                }
+                                // カラー値 (float4) のUI
+                                else if (varInfo.type == D3D_SVT_FLOAT && varInfo.columns == 4) {
+                                    DirectX::XMFLOAT4 val = { 1, 1, 1, 1 };
+                                    if (matPtr->GetColor(varInfo.nameHash, val)) {
+                                        if (ImGui::ColorEdit4(varInfo.name.c_str(), &val.x)) {
+                                            matPtr->SetColor(varInfo.nameHash, val);
+                                            changed = true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else {
+                        ImGui::TextDisabled("Shader not loaded.");
                     }
                     ImGui::TreePop();
                 }
