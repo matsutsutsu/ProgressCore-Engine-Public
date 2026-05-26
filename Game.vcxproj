@@ -422,22 +422,17 @@
     <ClInclude Include="Source\Engine\Core\Math\StringHash.h" />
     <ClInclude Include="Source\Engine\Core\Math\TransformUtils.h" />
     <ClInclude Include="Source\Engine\Core\Time\HighResolutionTimer.h" />
-    <ClInclude Include="Source\Engine\ECS\CCL_ECSContext.h" />
-    <ClInclude Include="Source\Engine\ECS\Common\CCL_Archetype.h" />
-    <ClInclude Include="Source\Engine\ECS\Common\CCL_Destructor.h" />
-    <ClInclude Include="Source\Engine\ECS\Common\CCL_IDs.h" />
-    <ClInclude Include="Source\Engine\ECS\Common\CCL_TypeData.h" />
+    <ClInclude Include="Source\Engine\ECS\Common\CCL_Common.h" />
     <ClInclude Include="Source\Engine\ECS\Core\CCL_Chunk.h" />
     <ClInclude Include="Source\Engine\ECS\Core\CCL_ChunkManager.h" />
+    <ClInclude Include="Source\Engine\ECS\Core\CCL_ECSContext.h" />
     <ClInclude Include="Source\Engine\ECS\Core\CCL_EventBus.h" />
     <ClInclude Include="Source\Engine\ECS\Core\CCL_FrameAllocator.h" />
     <ClInclude Include="Source\Engine\ECS\Core\CCL_JobSystem.h" />
     <ClInclude Include="Source\Engine\ECS\Core\CCL_PendingOps.h" />
     <ClInclude Include="Source\Engine\ECS\Core\CCL_World.h" />
-    <ClInclude Include="Source\Engine\ECS\System\CCL_IfSystem.h" />
     <ClInclude Include="Source\Engine\ECS\System\CCL_System.h" />
     <ClInclude Include="Source\Engine\ECS\System\CCL_SystemAccess.h" />
-    <ClInclude Include="Source\Engine\ECS\System\CCL_SystemBase.h" />
     <ClInclude Include="Source\Engine\ECS\System\CCL_SystemManager.h" />
     <ClInclude Include="Source\Engine\ECS\System\CCL_SystemRegistry.h" />
     <ClInclude Include="Source\Engine\ECS\System\CCL_TaskScheduler.h" />
@@ -892,7 +887,6 @@
     <ClCompile Include="Source\Engine\ECS\Core\CCL_ChunkManager.cpp" />
     <ClCompile Include="Source\Engine\ECS\Core\CCL_JobSystem.cpp" />
     <ClCompile Include="Source\Engine\ECS\Core\CCL_World.cpp" />
-    <ClCompile Include="Source\Engine\ECS\System\CCL_SystemBase.cpp" />
     <ClCompile Include="Source\Engine\ECS\System\CCL_SystemManager.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Core\EnvironmentComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Core\MaterialComponentMeta.cpp" />
@@ -1087,7 +1081,6 @@
     <None Include="Shader\PostProcess\Bloom.hlsli" />
     <None Include="Shader\Renderer\Primitive\PrimitiveRenderer.hlsli" />
     <None Include="Shader\Renderer\Shape\ShapeRenderer.hlsli" />
-    <None Include="Source\Engine\ECS\README.md" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shader\Compute\GPUParticle\initialize_particle_cs.hlsl">
