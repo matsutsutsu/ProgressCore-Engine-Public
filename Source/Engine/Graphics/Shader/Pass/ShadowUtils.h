@@ -68,12 +68,12 @@ inline void CalculateCascadeMatrices(
             // 頂点をライト空間に変換
             XMVECTOR lightSpaceV = XMVector3TransformCoord(v, lightView);
 
-            minX = min(minX, XMVectorGetX(lightSpaceV));
-            maxX = max(maxX, XMVectorGetX(lightSpaceV));
-            minY = min(minY, XMVectorGetY(lightSpaceV));
-            maxY = max(maxY, XMVectorGetY(lightSpaceV));
-            minZ = min(minZ, XMVectorGetZ(lightSpaceV));
-            maxZ = max(maxZ, XMVectorGetZ(lightSpaceV));
+            minX = (std::min)(minX, XMVectorGetX(lightSpaceV));
+            maxX = (std::max)(maxX, XMVectorGetX(lightSpaceV));
+            minY = (std::min)(minY, XMVectorGetY(lightSpaceV));
+            maxY = (std::max)(maxY, XMVectorGetY(lightSpaceV));
+            minZ = (std::min)(minZ, XMVectorGetZ(lightSpaceV));
+            maxZ = (std::max)(maxZ, XMVectorGetZ(lightSpaceV));
         }
 
         // シャドウが欠けないようにZの範囲に余裕を持たせる（Z-Pullback現象対策）

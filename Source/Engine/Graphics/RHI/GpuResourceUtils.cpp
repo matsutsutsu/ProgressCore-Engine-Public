@@ -70,7 +70,7 @@ HRESULT GpuResourceUtils::LoadVertexShader(
 	fseek(fp, 0, SEEK_SET);
 
 	// メモリ上に頂点シェーダーデータを格納する領域を用意する
-	std::unique_ptr<u_char[]> data = std::make_unique<u_char[]>(size);
+	std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(size);
 	fread(data.get(), size, 1, fp);
 	fclose(fp);
 
@@ -105,7 +105,7 @@ HRESULT GpuResourceUtils::LoadPixelShader(
 	fseek(fp, 0, SEEK_SET);
 
 	// メモリ上に頂点シェーダーデータを格納する領域を用意する
-	std::unique_ptr<u_char[]> data = std::make_unique<u_char[]>(size);
+	std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(size);
 	fread(data.get(), size, 1, fp);
 	fclose(fp);
 

@@ -76,6 +76,9 @@
 				$(SolutionDir)External\RecastNavigation\DetourTileCache\Include;
 				$(SolutionDir)External\RecastNavigation\DetourCrowd\Include;
 				$(SolutionDir)External\RecastNavigation\DebugUtils\Include;
+
+				$(ProjectDir)Engine\Core;
+				
 				%(AdditionalIncludeDirectories)
 			</AdditionalIncludeDirectories>
 		</ClCompile>

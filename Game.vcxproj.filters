@@ -1542,6 +1542,9 @@
     <ClInclude Include="Source\Engine\ECS\Jobs\CCL_JobSystem.h">
       <Filter>Source\Engine\ECS\Jobs</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Core\pch.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2308,6 +2311,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\ECS\Jobs\CCL_JobSystem.cpp">
       <Filter>Source\Engine\ECS\Jobs</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Core\pch.cpp">
+      <Filter>Source\Engine\Core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
