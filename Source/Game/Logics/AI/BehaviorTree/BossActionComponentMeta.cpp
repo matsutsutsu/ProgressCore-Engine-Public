@@ -2,10 +2,15 @@
  * @file BossActionComponentMeta.cpp
  */
 #include "BossActionComponent.h"
-#include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/Registry/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
 #include <iterator> // std::size用
+
+#include "Engine/Serialization/Registry/ComponentRegistry_Editor.h"
+#ifdef ENABLE_EDITOR
+#include "Editor/Inspector/ComponentGuiRegistry.h"
+#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
+#endif
 
  // ============================================================================
  // ★修正: 状態のプルダウン表示用に「JumpAttack」「Evade」「Flinch」を追加
@@ -58,3 +63,4 @@ template <> struct ComponentMeta<BossActionComponent> {
 };
 
 REGISTER_COMPONENT(BossActionComponent, "BossActionComponent")
+REGISTER_COMPONENT_EDITOR_GUI(BossActionComponent)

@@ -12,7 +12,9 @@
 
 #include "Engine/Core/Math/StringHash.h"
 
-#if ENABLE_EDITOR
+#include "Engine/Serialization/Registry/ComponentRegistry_Editor.h"
+#ifdef ENABLE_EDITOR
+#include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #endif
 
@@ -200,3 +202,4 @@ template <> struct ComponentMeta<MaterialComponent> {
 // 究極の自動化：これだけでJSONとImGuiの両方に登録される
 // ============================================================================
 REGISTER_COMPONENT(MaterialComponent, "Material")
+REGISTER_COMPONENT_EDITOR_GUI(MaterialComponent)

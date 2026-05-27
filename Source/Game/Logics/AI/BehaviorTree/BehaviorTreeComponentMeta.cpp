@@ -5,7 +5,6 @@
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeLoader.h"
 #include "Game/Logics/AI/BehaviorTree/Drone/DroneComponent.h"
-#include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/Registry/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
@@ -14,6 +13,12 @@
 #include <imgui.h>
 #include <filesystem>
 #include <iterator>
+
+#include "Engine/Serialization/Registry/ComponentRegistry_Editor.h"
+#ifdef ENABLE_EDITOR
+#include "Editor/Inspector/ComponentGuiRegistry.h"
+#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
+#endif
 
  // =======================================================================
  // エディタ表示用のEnum文字列定義（プルダウンメニュー用）
@@ -153,3 +158,4 @@ template <> struct ComponentMeta<DroneComponent> {
     }
 };
 REGISTER_COMPONENT(DroneComponent, "DroneComponent")
+REGISTER_COMPONENT_EDITOR_GUI(DroneComponent)

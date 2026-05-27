@@ -13,7 +13,9 @@
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Platform/Core/Dialog.h"
 #include <filesystem>
-#if ENABLE_EDITOR
+#include "Engine/Serialization/Registry/ComponentRegistry_Editor.h"
+#ifdef ENABLE_EDITOR
+#include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #endif
 
@@ -80,7 +82,7 @@ template <> struct ComponentMeta<AnimatorComponent> {
     }
 };
 REGISTER_COMPONENT(AnimatorComponent, "Animator")
-
+REGISTER_COMPONENT_EDITOR_GUI(AnimatorComponent)
 
 // ===================================================================
 // 2. AnimStateMachineComponent (ルールと状態) のインスペクタUI
@@ -179,7 +181,7 @@ template <> struct ComponentMeta<AnimStateMachineComponent> {
     }
 };
 REGISTER_COMPONENT(AnimStateMachineComponent, "AnimStateMachine")
-
+REGISTER_COMPONENT_EDITOR_GUI(AnimStateMachineComponent)
 
 // ===================================================================
 // 3. AnimParametersComponent (掲示板パラメータ) のインスペクタUI
@@ -236,3 +238,4 @@ template <> struct ComponentMeta<AnimParametersComponent> {
     }
 };
 REGISTER_COMPONENT(AnimParametersComponent, "AnimParameters")
+REGISTER_COMPONENT_EDITOR_GUI(AnimParametersComponent)

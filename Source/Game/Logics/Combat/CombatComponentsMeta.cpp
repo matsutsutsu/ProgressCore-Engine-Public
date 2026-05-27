@@ -2,7 +2,6 @@
 #include "Game/Logics/Combat/CombatComponents.h"
 #include "Game/Logics/Combat/CombatRosterComponent.h"
 #include "Engine/Transform/Components/BoneAttachmentComponent.h"
-#include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/Registry/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
@@ -14,7 +13,9 @@
 #include "Engine/Graphics/Resource/Model.h"
 #include "Engine/Serialization/Core/SerializationContext.h"
 
-#if ENABLE_EDITOR
+#include "Engine/Serialization/Registry/ComponentRegistry_Editor.h"
+#ifdef ENABLE_EDITOR
+#include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #endif
 
@@ -42,6 +43,7 @@ template <> struct ComponentMeta<HitboxComponent> {
     }
 };
 REGISTER_COMPONENT(HitboxComponent, "HitboxComponent");
+REGISTER_COMPONENT_EDITOR_GUI(HitboxComponent)
 
 // ===================================================================
 // 2. HurtboxComponent (被弾判定)
@@ -60,6 +62,7 @@ template <> struct ComponentMeta<HurtboxComponent> {
     }
 };
 REGISTER_COMPONENT(HurtboxComponent, "HurtboxComponent");
+REGISTER_COMPONENT_EDITOR_GUI(HurtboxComponent)
 
 // ===================================================================
 // 3. BoneAttachmentComponent (骨格追従)
@@ -153,6 +156,7 @@ template <> struct ComponentMeta<BoneAttachmentComponent> {
     }
 };
 REGISTER_COMPONENT(BoneAttachmentComponent, "BoneAttachmentComponent");
+REGISTER_COMPONENT_EDITOR_GUI(BoneAttachmentComponent)
 
 // ComponentMetaJson.h の Serialize / Deserialize が
 // このコンポーネントだけカスタム実装を呼ぶようになる
@@ -366,6 +370,7 @@ template <> struct ComponentMeta<CombatRosterComponent> {
 
 };
 REGISTER_COMPONENT(CombatRosterComponent, "CombatRosterComponent");
+REGISTER_COMPONENT_EDITOR_GUI(CombatRosterComponent)
 
 
 // ===================================================================
@@ -384,6 +389,7 @@ template <> struct ComponentMeta<DamageEventComponent> {
     }
 };
 REGISTER_COMPONENT(DamageEventComponent, "DamageEventComponent");
+REGISTER_COMPONENT_EDITOR_GUI(DamageEventComponent)
 
 // ===================================================================
 // 6. HealthComponent (体力・陣営データ)
@@ -501,3 +507,4 @@ template <> struct ComponentMeta<HealthComponent> {
     }
 };
 REGISTER_COMPONENT(HealthComponent, "HealthComponent");
+REGISTER_COMPONENT_EDITOR_GUI(HealthComponent)

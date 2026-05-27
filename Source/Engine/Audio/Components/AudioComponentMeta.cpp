@@ -1,11 +1,16 @@
 #include "Engine/Audio/Components/AudioEmitterComponent.h"
 #include "Editor/Inspector/ComponentGuiRegistry.h"
-#include "Engine/Serialization/Registry/ComponentRegistry.h"
+
 #include "Engine/Serialization/Meta/ComponentMeta.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 #include "Engine/Core/Math/StringHash.h" // ※プロジェクトのHashString関数
 
+#include "Engine/Serialization/Registry/ComponentRegistry_Editor.h"
+#ifdef ENABLE_EDITOR
+#include "Editor/Inspector/ComponentGuiRegistry.h"
+#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
+#endif
 
 // =======================================================================
 // メタデータ定義 (インスペクタ/シリアライズ用)
@@ -80,3 +85,4 @@ template <> struct ComponentMeta<AudioEmitterComponent> {
 
 // マクロによるメタデータの自動登録
 REGISTER_COMPONENT(AudioEmitterComponent, "AudioEmitterComponent")
+REGISTER_COMPONENT_EDITOR_GUI(AudioEmitterComponent)

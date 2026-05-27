@@ -3,7 +3,7 @@
 #include "Engine/Graphics/Components/PostProcess/BloomConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/ToneMapConfigComponent.h"
 
-#include "Editor/Inspector/ComponentGuiRegistry.h"
+
 #include "Engine/Serialization/Registry/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
@@ -12,7 +12,9 @@
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Platform/Core/Dialog.h"
 
-#if ENABLE_EDITOR
+#include "Engine/Serialization/Registry/ComponentRegistry_Editor.h"
+#ifdef ENABLE_EDITOR
+#include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #endif
 
@@ -225,3 +227,8 @@ REGISTER_COMPONENT(ToneMapConfigComponent, "ToneMapConfig")
 REGISTER_COMPONENT(BloomConfigComponent, "BloomConfig")
 REGISTER_COMPONENT(FogComponent, "Fog")
 REGISTER_COMPONENT(ShadowMapConfigComponent, "ShadowMapConfig")
+
+REGISTER_COMPONENT_EDITOR_GUI(ToneMapConfigComponent)
+REGISTER_COMPONENT_EDITOR_GUI(BloomConfigComponent)
+REGISTER_COMPONENT_EDITOR_GUI(FogComponent)
+REGISTER_COMPONENT_EDITOR_GUI(ShadowMapConfigComponent)

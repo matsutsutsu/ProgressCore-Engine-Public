@@ -1,9 +1,13 @@
 #include "Game/Logics/AI/NavAI/AIComponents.h"
-#include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/Registry/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
-#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
+
+#include "Engine/Serialization/Registry/ComponentRegistry_Editor.h"
+#ifdef ENABLE_EDITOR
+#include "Editor/Inspector/ComponentGuiRegistry.h"
+#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
+#endif
 
 // ============================================================================
 // 1. 脳の状態 (AI State)
@@ -132,3 +136,4 @@ template <> struct ComponentMeta<AIMemoryComponent> {
 };
 
 REGISTER_COMPONENT(AIMemoryComponent, "AIMemory")
+REGISTER_COMPONENT_EDITOR_GUI(AIMemoryComponent)

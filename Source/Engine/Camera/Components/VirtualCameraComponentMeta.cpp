@@ -1,11 +1,12 @@
-#include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/Registry/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 #include "Engine/Camera/Components/VirtualCameraComponents.h"
 #include <algorithm> // std::max用
 
-#if ENABLE_EDITOR
+#include "Engine/Serialization/Registry/ComponentRegistry_Editor.h"
+#ifdef ENABLE_EDITOR
+#include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #endif
 
@@ -217,3 +218,9 @@ REGISTER_COMPONENT(CameraBodyFollow, "CameraBodyFollow")
 REGISTER_COMPONENT(CameraAimLookAt, "CameraAimLookAt")
 REGISTER_COMPONENT(CameraBodyFree, "CameraBodyFree")
 REGISTER_COMPONENT(CameraBodyTPS, "CameraBodyTPS")
+
+REGISTER_COMPONENT_EDITOR_GUI(VirtualCamera)
+REGISTER_COMPONENT_EDITOR_GUI(CameraBodyFollow)
+REGISTER_COMPONENT_EDITOR_GUI(CameraAimLookAt)
+REGISTER_COMPONENT_EDITOR_GUI(CameraBodyFree)
+REGISTER_COMPONENT_EDITOR_GUI(CameraBodyTPS)

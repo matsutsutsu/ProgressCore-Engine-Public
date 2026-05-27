@@ -5,13 +5,15 @@
 #include <fstream>
 #include <json.hpp>
 
-#include "Editor/Inspector/ComponentGuiRegistry.h"
+
 #include "Engine/Serialization/Registry/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 #include "Engine/Platform/Core/FileSystem.h"
 
-#if ENABLE_EDITOR
+#include "Engine/Serialization/Registry/ComponentRegistry_Editor.h"
+#ifdef ENABLE_EDITOR
+#include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #endif
 
@@ -403,3 +405,4 @@ template <> struct ComponentMeta<GPUParticleComponent> {
 // 究極の自動化
 // ============================================================================
 REGISTER_COMPONENT(GPUParticleComponent, "GPUParticle")
+REGISTER_COMPONENT_EDITOR_GUI(GPUParticleComponent)

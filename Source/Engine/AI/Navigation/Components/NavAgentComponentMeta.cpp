@@ -4,7 +4,9 @@
 #include "Engine/Serialization/Meta/ComponentMeta.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
-#if ENABLE_EDITOR
+#include "Engine/Serialization/Registry/ComponentRegistry_Editor.h"
+#ifdef ENABLE_EDITOR
+#include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #endif
 
@@ -81,3 +83,4 @@ template <> struct ComponentMeta<NavAgentComponent> {
 // 究極の自動化：これだけでJSONとImGuiの両方に登録される
 // ============================================================================
 REGISTER_COMPONENT(NavAgentComponent, "NavAgent")
+REGISTER_COMPONENT_EDITOR_GUI(NavAgentComponent)
