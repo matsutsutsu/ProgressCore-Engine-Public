@@ -1,18 +1,22 @@
 #include "DistractionItemComponent.h"
-#include "Editor/Inspector/ComponentGuiRegistry.h"
-#include "Engine/Serialization/ComponentRegistry.h"
+#include "Engine/Serialization/Registry/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
-#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 #include "Engine/Core/Math/StringHash.h" // プロジェクトのHashString関数
 
-#include <imgui.h>
+#include "Engine/Serialization/Registry/ComponentRegistry_Editor.h"
+#ifdef ENABLE_EDITOR
+#include "Editor/Inspector/ComponentGuiRegistry.h"
+#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
+#endif
+
 
 template <> struct ComponentMeta<DistractionItemComponent> {
     static constexpr bool        registered = true;
     static constexpr const char* displayName = "Distraction Item (Sound)";
     static constexpr bool        hasCustomGui = true;
 
+#if ENABLE_EDITOR
     static bool CustomGui(DistractionItemComponent& comp, unsigned long long entityID = 0, void* worldPtr = nullptr) {
         bool changed = false;
 
@@ -57,6 +61,7 @@ template <> struct ComponentMeta<DistractionItemComponent> {
 
         return changed;
     }
+#endif
 
     static const std::vector<FieldDescriptor>& Fields() {
         static const std::vector<FieldDescriptor> fields = {
@@ -73,3 +78,4 @@ template <> struct ComponentMeta<DistractionItemComponent> {
 };
 
 REGISTER_COMPONENT(DistractionItemComponent, "DistractionItem")
+REGISTER_COMPONENT_EDITOR_GUI(DistractionItemComponent)

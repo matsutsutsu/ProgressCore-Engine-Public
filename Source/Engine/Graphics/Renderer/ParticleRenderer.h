@@ -1,10 +1,10 @@
 #pragma once
-#include "Engine/GamePlay/Graphics/Particle/GPUParticleComponent.h"
+#include "Engine/Graphics/Components/Particle/GPUParticleComponent.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include <d3d11.h>
 #include <vector>
 #include <wrl/client.h>
-#include "Engine/Graphics/Core/PipelineState.h"
+#include "Engine/Graphics/RHI/PipelineState.h"
 
 // 描画に必要な情報の「引換券（コマンド）」
 struct ParticleDrawCommand {

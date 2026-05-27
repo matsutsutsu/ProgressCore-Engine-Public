@@ -1,35 +1,39 @@
 #include "BaseScene.h"
-#include <imgui.h>
 
 
-#include "Engine/Serialization/SceneSerializer.h"
+#include "Engine/Serialization/Serializer/SceneSerializer.h"
 #include "Engine/Serialization/Factory/Prefab.h"
 #include "Engine/Serialization/Factory/SceneInitializer.h"
 
-#include "Engine/Graphics/Core/Graphics.h"
-#include "Engine/Physics/JoltPhysicsManager.h"
+#include "Engine/Graphics/RHI/Graphics.h"
+#include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"
 
-#include "Engine/Physics/JoltPhysicsFacade.h"
-#include "Engine/Audio/FmodAudioManager.h"
+#include "Engine/Physics/JoltIntegration/JoltPhysicsFacade.h"
+#include "Engine/Audio/FmodIntegration/FmodAudioManager.h"
 
 #include "Engine/Platform/Input/Input.h"
 #include "Engine/Platform/Input/InputFacade.h"
 
-#include "Engine/GamePlay/Graphics/Core/EnvironmentSystem.h"
+#include "Engine/Graphics/Systems/Core/EnvironmentSystem.h"
 
 #include "Engine/Graphics/Renderer/RenderQueue.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 
+#include "Engine/Core/App/Framework.h"
+#include "Engine/Core/App/EngineServices.h"
 
+#if TRACY_ENABLE
 #include "tracy/Tracy.hpp"
+#endif
 
-#include "Engine/Platform/Logger.h"
+#include "Engine/Platform/Core/Logger.h"
 
 
 void BaseScene::Initialize()
 {
+#if TRACY_ENABLE
     ZoneScopedN("BaseScene::Initialize");
-
+#endif
 
     auto &graphics = Graphics::Instance();
 
@@ -53,32 +57,25 @@ void BaseScene::Initialize()
     // リソース登録
     _worldPtr->AddResource<Input *>(&Input::Instance());
 
-    auto inputAPI = std::make_shared<InputFacade>(&Input::Instance());
+    // =========================================================
+    // ★ 修正：仲介役（EngineServices）からポインタをもらい、Worldに接続するだけ。
+    // 絶対にここでは make_shared(再生成) しない！
+    // =========================================================
+    auto& services = EngineServices::Instance();
 
-    // C++に長々と書いていた割り当てが、この1行に集約される！
-    inputAPI->LoadConfig("Assets/Config/InputConfig.json");
+    // 1. InputとAudioは、そのままResourceに登録
+    _worldPtr->AddResource<std::shared_ptr<IInputAPI>>(services.inputFacade);
+    _worldPtr->AddResource<std::shared_ptr<IAudioAPI>>(services.audioManager);
 
-    _worldPtr->AddResource<std::shared_ptr<IInputAPI>>(inputAPI);
-
-    // 1. FMODの生成と初期化
-    auto audioAPI = std::make_shared<FmodAudioManager>();
-    audioAPI->Initialize();
-
-    // 2. 設定ファイルからのデータ駆動ロード（1行に集約！）
-    audioAPI->LoadConfig("Assets/Config/AudioConfig.json");
-
-    // 3. ECSの世界に登録
-    _worldPtr->AddResource<std::shared_ptr<IAudioAPI>>(audioAPI);
-
-
-
-    // WorldのリソースとしてJoltを登録し、初期化する
-    _worldPtr->AddResource<JoltPhysicsManager>();
-    _worldPtr->GetResource<JoltPhysicsManager>().Initialize();
+    // 2. Physics (Jolt)
+    // JoltPhysicsManager 本体はEngineServicesのものを使う
+    _worldPtr->AddResource<JoltPhysicsManager*>(services.physicsManager.get());
 
     // 箱の型として「IPhysicsAPIのshared_ptr」を明示し、中身として「Joltのshared_ptr」を渡す
     auto myFacade = std::make_shared<JoltPhysicsFacade>(_worldPtr);
     _worldPtr->AddResource<std::shared_ptr<IPhysicsAPI>>(myFacade);
+
+
 
     // システムがコンストラクタ引数なしでもアクセスできるようにポインタを登録
     _worldPtr->AddResource<Camera *>(&camera);
@@ -112,8 +109,9 @@ void BaseScene::Finalize() {}
 
 void BaseScene::Update(float elapsedTime)
 {
+#if TRACY_ENABLE
     ZoneScopedN("BaseScene::Update");
-
+#endif
 
     // ECSシステムが走り出す「前」の、誰もメモリを触っていない安全な瞬間に世界を切り替える！
     ExecutePendingSceneOperations();
@@ -132,8 +130,9 @@ void BaseScene::Update(float elapsedTime)
 
 void BaseScene::FixedUpdate(float fixedTime) 
 { 
+#if TRACY_ENABLE
     ZoneScopedN("BaseScene::FixedUpdate");
-
+#endif
 
     // ECSコンテキストに更新を委譲（これだけで全てが正しい順序で回る）
     if (_ecsContext) {
@@ -143,14 +142,12 @@ void BaseScene::FixedUpdate(float fixedTime)
 
 void BaseScene::Render()
 {
+#if TRACY_ENABLE
     ZoneScopedN("BaseScene::Render Pipeline"); // シーン描画全体
-
+#endif
 
     auto &graphics = Graphics::Instance();
     auto *dc       = graphics.GetDeviceContext();
-
-    // 1. 描画準備 & ポストプロセス開始
-    graphics.SetRenderTargets(false);
  
 
     // 2. 3D描画コンテキスト設定
@@ -168,7 +165,16 @@ void BaseScene::Render()
     rc.primitiveRenderer = graphics.GetPrimitiveRenderer();
     rc.shapeRenderer = graphics.GetShapeRenderer();
 
-
+    // =========================================================
+    // ★ 追加: 最終出力先の決定
+    // ENABLE_EDITOR が有効ならゲーム用テクスチャに描き込み、
+    // そうでなければ実際のモニター画面（バックバッファ）に描き込む
+    // =========================================================
+#ifdef ENABLE_EDITOR
+    rc.targetRTV = graphics.GetGameRTV();
+#else
+    rc.targetRTV = graphics.GetBackBufferRTV();
+#endif
 
     // =========================================================
     // 3. 舞台監督によるグローバルリソースのセット
@@ -201,8 +207,9 @@ void BaseScene::Render()
     // 【フェーズ5：2D UI描画】
     // -----------------------------------------------------------------
     {
+#if TRACY_ENABLE
         ZoneScopedN("5. UI Render");
-
+#endif
 
         dc->OMSetBlendState(rc.renderState->GetBlendState(BlendState::Transparency), nullptr, 0xffffffff);
 

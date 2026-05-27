@@ -1,0 +1,41 @@
+[Project Structure] 
+ 
+Folder PATH listing for volume Windows
+Volume serial number is 00000049 0255:C8DA
+C:.
+„    export_to_text.bat
+„    structure.txt
+„    _dump_structure.bat
+„    
+„¥„Ÿ„Ÿ„ŸCommon
+„        CCL_Archetype.h
+„        CCL_Common.h
+„        CCL_IDEmitter.h
+„        CCL_TypeErasure.h
+„        CCL_TypeInfo.h
+„        CCL_Types.h
+„        
+„¥„Ÿ„Ÿ„ŸCore
+„        CCL_Chunk.cpp
+„        CCL_Chunk.h
+„        CCL_ChunkManager.cpp
+„        CCL_ChunkManager.h
+„        CCL_ECSContext.h
+„        CCL_EventBus.h
+„        CCL_FrameAllocator.h
+„        CCL_JobSystem.cpp
+„        CCL_JobSystem.h
+„        CCL_PendingOps.h
+„        CCL_World.cpp
+„        CCL_World.h
+„        ECSCoremerged.txt
+„        merge_command.bat
+„        
+„¤„Ÿ„Ÿ„ŸSystem
+        CCL_System.h
+        CCL_SystemAccess.h
+        CCL_SystemManager.cpp
+        CCL_SystemManager.h
+        CCL_SystemRegistry.h
+        CCL_TaskScheduler.h
+        

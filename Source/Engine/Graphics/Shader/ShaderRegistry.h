@@ -2,8 +2,10 @@
 #include <unordered_map>
 #include <functional>
 #include <memory>
-#include "Engine/Graphics/Shader/Material/Core/Shader.h"
+#include "Engine/Graphics/Shader/Core/Shader.h"
+#include "Engine/Graphics/Shader/Material/MaterialShader.h"
 #include "Engine/Core/Math/StringHash.h"
+
 
 class ShaderRegistry {
 public:
@@ -17,6 +19,25 @@ public:
             };
         // 新しいシェーダーが登録されるたびに、0から順にソート用の連番IDを割り当てる
         _shaderSortIDs[shaderHash] = _nextSortID++;
+    }
+
+    // =======================================================
+    // 汎用マテリアルシェーダー用の登録関数
+    // =======================================================
+    void RegisterMaterialShader(uint32_t shaderHash,
+        const std::string& vsCso, const std::wstring& vsHlsl,
+        const std::string& psCso, const std::wstring& psHlsl) {
+        _factories[shaderHash] = [vsCso, vsHlsl, psCso, psHlsl](ID3D11Device* device) {
+            return std::make_unique<MaterialShader>(device, vsCso, vsHlsl, psCso, psHlsl);
+            };
+        _shaderSortIDs[shaderHash] = _nextSortID++;
+    }
+
+    // 全シェーダーの監視を一斉実行する関数
+    void UpdateHotReload(ID3D11Device* device) {
+        for (auto& pair : _shaders) {
+            if (pair.second) pair.second->CheckAndReload(device);
+        }
     }
 
     // 必要な時に生成、あるいはキャッシュを返す

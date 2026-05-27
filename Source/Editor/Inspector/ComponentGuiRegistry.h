@@ -4,8 +4,8 @@
 #include <string>
 #include <typeindex>
 #include <vector>
-#include "ECS/Common/CCL_Common.h"
-#include "ECS/Core/CCL_World.h"
+#include "Engine/ECS/Common/CCL_Common.h"
+#include "Engine/ECS/Core/CCL_World.h"
 
 using namespace CCL::ECS;
 

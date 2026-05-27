@@ -1,8 +1,8 @@
 #pragma once
-#include "ECS/System/CCL_System.h"
-#include "Engine/GamePlay/Transform/TransformComponent.h"
+#include "Engine/ECS/System/CCL_System.h"
+#include "Engine/Transform/Components/TransformComponent.h"
 #include "Game/Logics/AI/NavAI/AIComponents.h"
-#include "Engine/GamePlay/AI/Navigation/NavAgentComponent.h"
+#include "Engine/AI/Navigation/Components/NavAgentComponent.h"
 
 
 // 視覚システム：トランスフォームと知覚設定を読み取り、記憶・状態・ナビを書き換える

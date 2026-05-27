@@ -1,9 +1,8 @@
 #include "TestAnimationPlayerComponent.h"
-#include "Engine/Serialization/ComponentRegistry.h"
+#include "Engine/Serialization/Registry/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
-#include <imgui.h>
 
 // ===================================================================
 // TestAnimationPlayerComponent のインスペクタUIおよびシリアライズ定義
@@ -20,6 +19,7 @@ template <> struct ComponentMeta<TestAnimationPlayerComponent> {
     // シーン保存時にデータをJSONに書き出すかどうか
     static constexpr bool        isSerializable = true;
 
+#if ENABLE_EDITOR
     // インスペクタでの描画処理
     static bool CustomGui(TestAnimationPlayerComponent& player, unsigned long long entityID, void* worldPtr)
     {
@@ -43,6 +43,7 @@ template <> struct ComponentMeta<TestAnimationPlayerComponent> {
 
         return changed;
     }
+#endif
 
     // シリアライズ（JSON保存/読込）する変数の定義
     static const std::vector<FieldDescriptor>& Fields()

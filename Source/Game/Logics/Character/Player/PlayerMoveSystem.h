@@ -1,8 +1,8 @@
 #pragma once
-#include "ECS/System/CCL_System.h" 
+#include "Engine/ECS/System/CCL_System.h" 
 
 // 必要なコンポーネントだけを残す
-#include "Engine/GamePlay/Transform/TransformComponent.h"
+#include "Engine/Transform/Components/TransformComponent.h"
 #include "Game/Logics/Character/Player/PlayerComponent.h"
 #include "Game/Logics/Character/CharacterMovementInputComponent.h"
 

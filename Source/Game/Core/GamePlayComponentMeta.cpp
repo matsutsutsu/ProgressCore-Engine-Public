@@ -1,9 +1,9 @@
 //// (必要なヘッダーをインクルードしてください。Health, Player, Trigger, LuaScript 等)
 //#include "Editor/Inspector/ComponentGuiRegistry.h"
-//#include "Engine/Graphics/Core/Graphics.h"
-//#include "Engine/Platform/Dialog.h"
+//#include "Engine/Graphics/RHI/Graphics.h"
+//#include "Engine/Platform/Core/Dialog.h"
 //#include "Engine/Scripting/LuaScriptComponent.h"
-//#include "Engine/Serialization/ComponentRegistry.h"
+//#include "Engine/Serialization/Registry/ComponentRegistry.h"
 //#include "Engine/Serialization/Meta/ComponentMeta.h"
 //#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 //#include "Engine/Serialization/Meta/ComponentMetaJson.h"

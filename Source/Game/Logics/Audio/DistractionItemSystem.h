@@ -1,6 +1,6 @@
 #pragma once
-#include "ECS/System/CCL_System.h"
-#include "Engine/GamePlay/Physics/Collision/JoltCollisionEvent.h"
+#include "Engine/ECS/System/CCL_System.h"
+#include "Engine/Physics/Components/Collision/JoltCollisionEvent.h"
 #include <vector>
 #include <mutex>
 

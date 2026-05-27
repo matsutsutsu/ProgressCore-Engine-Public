@@ -1,7 +1,7 @@
 #include "ECSDebugWindow.h"
 #include <implot.h>
-#include "ECS/Core/CCL_Chunk.h"
-#include "ECS/Core/CCL_PendingOps.h"
+#include "Engine/ECS/Core/CCL_Chunk.h"
+#include "Engine/ECS/Core/CCL_PendingOps.h"
 
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 

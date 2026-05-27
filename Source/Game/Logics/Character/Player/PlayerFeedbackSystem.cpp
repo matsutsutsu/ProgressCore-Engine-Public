@@ -1,17 +1,17 @@
 #include "PlayerFeedbackSystem.h"
-#include "ECS/Core/CCL_World.h"
+#include "Engine/ECS/Core/CCL_World.h"
 #include "Game/Logics/GameEvent/GameEvents.h"
 
 // 必要に応じて、あなたのエンジンのマネージャー類をインクルードしてください
 
 // ★カメラのコンポーネントを使うためにインクルードを追加
-#include "Engine/GamePlay/Camera/VirtualCameraComponents.h"
+#include "Engine/Camera/Components/VirtualCameraComponents.h"
 
 // #include "Engine/Platform/Input/Input.h"
 // #include "Engine/Audio/AudioManager.h"
 
 // システムの実行順序の定義ヘッダー
-#include "ECS/System/CCL_SystemRegistry.h"
+#include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"
 
 PlayerFeedbackSystem::PlayerFeedbackSystem() : IfSystem("PlayerFeedbackSystem") {}

@@ -16,9 +16,35 @@ public:
 
     bool IsVisible() const { return _isVisible; }
 
+
+    template<typename T>
+    T* GetWindow()
+    {
+        for (auto& window : _windows)
+        {
+            if (auto* ptr = dynamic_cast<T*>(window.get()))
+            {
+                return ptr;
+            }
+        }
+
+        return nullptr;
+    }
+
 private:
 
     void DrawMainMenuBar(EditorContext& context);
+
+    // =========================================================
+    // ★ 追加: メニューバーを構成する各部品を関数に分割
+    // =========================================================
+    void DrawFileMenu(EditorContext& context);
+    void DrawEntityMenu(EditorContext& context);
+    void DrawPrefabMenu(EditorContext& context);
+    void DrawSceneMenu(EditorContext& context);
+    void DrawWindowMenu(EditorContext& context);
+    void DrawPlayControlBar(EditorContext& context);
+
 
     // ウィンドウの登録
     template<typename T, typename... Args>
@@ -28,6 +54,8 @@ private:
         _windows.push_back(std::move(window));
         return ptr; // ★ポインタを返すことで、登録した直後に設定をいじれるようになる
     }
+
+ 
 
     std::vector<std::unique_ptr<EditorWindow>> _windows;
 

@@ -1,7 +1,7 @@
 #include "ECSBenchmarkSystem.h"
 
 // システムの実行順序の定義ヘッダー
-#include "ECS/System/CCL_SystemRegistry.h"
+#include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"
 
 void ECSBenchmarkSystem::Update(float dt)

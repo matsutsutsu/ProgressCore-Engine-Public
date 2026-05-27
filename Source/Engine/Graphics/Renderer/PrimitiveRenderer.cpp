@@ -2,15 +2,15 @@
 #include <stdio.h>
 #include <math.h> // std::isnan用
 #include <memory>
-#include "Engine/Core/Common/Misc.h"
-#include "Engine/Graphics/Core/GpuResourceUtils.h"
-#include "Engine/Graphics/Core/Graphics.h"
-#include "Engine/Graphics/Core/Light.h"
+#include "Engine/Core/Math/Misc.h"
+#include "Engine/Graphics/RHI/GpuResourceUtils.h"
+#include "Engine/Graphics/RHI/Graphics.h"
+#include "Engine/Graphics/RHI/Light.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 
-
+#if TRACY_ENABLE
 #include "tracy/Tracy.hpp"
-
+#endif
 
 using namespace DirectX;
 
@@ -148,8 +148,9 @@ PrimitiveDrawList& PrimitiveRenderer::GetDrawList() {
 // ====================================================================
 void PrimitiveRenderer::Render(const RenderContext& rc, const DirectX::XMFLOAT4X4& view, const DirectX::XMFLOAT4X4& projection)
 {
+#if TRACY_ENABLE
     ZoneScopedN("PrimitiveRenderer::Render"); // シーン描画全体
-
+#endif
 
 	ID3D11DeviceContext* dc = rc.deviceContext;
 

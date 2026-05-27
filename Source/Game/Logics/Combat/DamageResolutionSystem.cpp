@@ -4,10 +4,10 @@
 #include "DamageResolutionSystem.h"
 #include "Game/Logics/Combat/CombatComponents.h"
 #include "Game/Logics/Combat/HealthComponent.h"
-#include "ECS/Core/CCL_World.h"
-#include "ECS/System/CCL_SystemRegistry.h"
+#include "Engine/ECS/Core/CCL_World.h"
+#include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"
-#include "Engine/Platform/Logger.h"
+#include "Engine/Platform/Core/Logger.h"
 
 using namespace CCL::ECS;
 

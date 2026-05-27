@@ -3,7 +3,7 @@
  * @brief 戦闘に関する判定（Hitbox/Hurtbox）とダメージイベントのデータ構造
  */
 #pragma once
-#include "ECS/Common/CCL_Common.h"
+#include "Engine/ECS/Common/CCL_Common.h"
 
  // --- 1. 攻撃側の判定データ ---
 struct HitboxComponent {

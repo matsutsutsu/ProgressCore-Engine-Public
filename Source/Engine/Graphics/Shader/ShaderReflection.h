@@ -7,6 +7,9 @@
 #include <unordered_map>
 #include <DirectXMath.h>
 
+// ハッシュ値を使用するためにインクルード
+#include "Engine/Core/Math/StringHash.h"
+
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "d3dcompiler.lib")
 
@@ -16,6 +19,7 @@ namespace ShaderReflect
     struct VariableInfo
     {
         std::string name;
+        uint32_t nameHash = 0;                  // 名前のハッシュ値
         UINT offset = 0;                        // バッファ内のオフセット
         UINT size = 0;                          // 変数のサイズ(バイト)
         // 規定値として最も一般的な float を指定、または 0 で初期化
@@ -33,14 +37,9 @@ namespace ShaderReflect
         std::vector<VariableInfo> variables;        // 含まれる変数のリスト
 
         // 名前で変数を検索
-        const VariableInfo* FindVariable(const std::string& varName) const
-        {
-            for (const auto& var : variables)
-            {
-                if (var.name == varName) return &var;
-            }
-            return nullptr;
-        }
+        const VariableInfo* FindVariable(const std::string& varName) const;
+        // ★追加：ハッシュ値で変数を検索（爆速）
+        const VariableInfo* FindVariable(uint32_t nameHash) const;
     };
 
     // UAV情報（RWStructuredBufferなど）
@@ -54,6 +53,7 @@ namespace ShaderReflect
     struct TextureInfo
     {
         std::string name;
+        uint32_t nameHash = 0;                  // ★追加
         UINT bindPoint = 0;                     // レジスタ番号 (t0, t1, ...)
         // シェーダーリソースビュー(SRV)をデフォルトとして想定
         D3D_SHADER_INPUT_TYPE type = D3D_SIT_CBUFFER;
@@ -65,6 +65,7 @@ namespace ShaderReflect
     struct SamplerInfo
     {
         std::string name;
+        uint32_t nameHash = 0;                  // ★追加
         UINT bindPoint = 0;                 // レジスタ番号 (s0, s1, ...)
     };
 
@@ -149,6 +150,22 @@ namespace ShaderReflect
             // ★2: CPU側の作業台(cpuBuffer)の適切な位置に、データをメモリコピーする
             memcpy(cpuBuffer.data() + varInfo->offset, &value, sizeof(T));
             isDirty = true; // 「更新されたよ」というフラグを立てる
+            return true;
+        }
+
+        // =======================================================
+        // ★追加：ハッシュ値 (uint32_t) で直接設定する関数
+        // =======================================================
+        template<typename T>
+        bool SetValue(uint32_t nameHash, const T& value)
+        {
+            // ハッシュ値を使ってバッファ内の位置を探す
+            const VariableInfo* varInfo = bufferInfo.FindVariable(nameHash);
+            if (!varInfo) return false;
+            if (sizeof(T) > varInfo->size) return false;
+
+            memcpy(cpuBuffer.data() + varInfo->offset, &value, sizeof(T));
+            isDirty = true;
             return true;
         }
 

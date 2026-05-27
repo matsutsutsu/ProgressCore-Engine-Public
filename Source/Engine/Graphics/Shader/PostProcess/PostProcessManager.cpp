@@ -1,5 +1,5 @@
 #include "PostProcessManager.h"
-#include "Engine/Graphics/Core/GpuResourceUtils.h"
+#include "Engine/Graphics/RHI/GpuResourceUtils.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 
 struct CbToneMap {

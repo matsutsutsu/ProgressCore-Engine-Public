@@ -1,12 +1,16 @@
 #include "PlayerCarComponent.h"
-#include "Editor/Inspector/ComponentGuiRegistry.h"
-#include "Engine/Serialization/ComponentRegistry.h"
+#include "Engine/Serialization/Registry/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
-#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
-#include <imgui.h>
-
 #include "Game/Logics/Character/Player/PlayerComponent.h"
+
+#include "Engine/Serialization/Registry/ComponentRegistry_Editor.h"
+#ifdef ENABLE_EDITOR
+#include "Editor/Inspector/ComponentGuiRegistry.h"
+#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
+#endif
+
+
 
 // ============================================================================
 // Player Car Controller
@@ -39,6 +43,7 @@ template <> struct ComponentMeta<PlayerCarComponent> {
         return fields;
     }
 
+#if ENABLE_EDITOR
     // 2. カスタムGUIによる「ドラッグ＆ドロップ」の実装
     static bool CustomGui(PlayerCarComponent& comp, unsigned long long entityID = 0, void* world = nullptr)
     {
@@ -74,6 +79,8 @@ template <> struct ComponentMeta<PlayerCarComponent> {
 
         return changed;
     }
+#endif
+
 };
 
 REGISTER_COMPONENT(PlayerCarComponent, "PlayerCar")
@@ -101,4 +108,4 @@ template <> struct ComponentMeta<PlayerComponent> {
 };
 
 REGISTER_COMPONENT(PlayerComponent, "PlayerComponent")
-
+REGISTER_COMPONENT_EDITOR_GUI(PlayerComponent)

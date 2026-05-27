@@ -1,19 +1,28 @@
-#include "ECS/Core/CCL_World.h"
+#include "Engine/ECS/Core/CCL_World.h"
 #include "Game/Logics/Combat/CombatComponents.h"
 #include "Game/Logics/Combat/CombatRosterComponent.h"
-#include "Engine/GamePlay/Transform/BoneAttachmentComponent.h"
-#include "Editor/Inspector/ComponentGuiRegistry.h"
-#include "Engine/Serialization/ComponentRegistry.h"
+#include "Engine/Transform/Components/BoneAttachmentComponent.h"
+#include "Engine/Serialization/Registry/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
-#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
 #include "Game/Logics/Combat/HealthComponent.h" // ※環境に合わせて適宜パスを調整してください
-#include "Engine/GamePlay/Transform/TransformComponent.h"
-#include "Engine/GamePlay/Transform/PendingParentComponent.h"
-#include "Engine/GamePlay/Graphics/Core/ModelComponent.h"
+#include "Engine/Transform/Components/TransformComponent.h"
+#include "Engine/Transform/Components/PendingParentComponent.h"
+#include "Engine/Graphics/Components/Core/ModelComponent.h"
 #include "Engine/Graphics/Resource/Model.h"
-#include "Engine/Serialization/SerializationContext.h"
+#include "Engine/Serialization/Core/SerializationContext.h"
+
+#include "Engine/Serialization/Registry/ComponentRegistry_Editor.h"
+#ifdef ENABLE_EDITOR
+#include "Editor/Inspector/ComponentGuiRegistry.h"
+#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
+#endif
+
+#include "Engine/Serialization/Core/SaveContext.h"
+#include "Engine/Serialization/Core/LoadContext.h"
+
+#include "Engine/Serialization/Reflection/Reflection.h"
 
 // ===================================================================
 // 1. HitboxComponent (攻撃判定)
@@ -34,6 +43,7 @@ template <> struct ComponentMeta<HitboxComponent> {
     }
 };
 REGISTER_COMPONENT(HitboxComponent, "HitboxComponent");
+REGISTER_COMPONENT_EDITOR_GUI(HitboxComponent)
 
 // ===================================================================
 // 2. HurtboxComponent (被弾判定)
@@ -52,6 +62,7 @@ template <> struct ComponentMeta<HurtboxComponent> {
     }
 };
 REGISTER_COMPONENT(HurtboxComponent, "HurtboxComponent");
+REGISTER_COMPONENT_EDITOR_GUI(HurtboxComponent)
 
 // ===================================================================
 // 3. BoneAttachmentComponent (骨格追従)
@@ -62,6 +73,7 @@ template <> struct ComponentMeta<BoneAttachmentComponent> {
     static constexpr bool hasCustomGui = true;
     static constexpr bool isSerializable = true;
 
+#if ENABLE_EDITOR
     static bool CustomGui(BoneAttachmentComponent& comp, unsigned long long entityID, void* worldPtr) {
         bool changed = false;
         auto* world = static_cast<CCL::ECS::Core::World*>(worldPtr);
@@ -69,7 +81,7 @@ template <> struct ComponentMeta<BoneAttachmentComponent> {
 
         CCL::ECS::EntityID parentID = 0;
         if (auto* trans = world->GetComponent<TransformComponent>(entityID)) {
-            parentID = trans->parentID;
+            parentID = trans->parent;
         }
         if (parentID == 0) {
             if (auto* pending = world->GetComponent<PendingParentComponent>(entityID)) {
@@ -131,6 +143,7 @@ template <> struct ComponentMeta<BoneAttachmentComponent> {
 
         return changed;
     }
+#endif
 
     static const std::vector<FieldDescriptor>& Fields() {
         // ★ 究極の修正1: JSONシリアライザに保存する変数を教える
@@ -143,6 +156,7 @@ template <> struct ComponentMeta<BoneAttachmentComponent> {
     }
 };
 REGISTER_COMPONENT(BoneAttachmentComponent, "BoneAttachmentComponent");
+REGISTER_COMPONENT_EDITOR_GUI(BoneAttachmentComponent)
 
 // ComponentMetaJson.h の Serialize / Deserialize が
 // このコンポーネントだけカスタム実装を呼ぶようになる
@@ -160,7 +174,7 @@ template <> struct ComponentMeta<CombatRosterComponent> {
     static constexpr bool isSerializable = true;
     static constexpr bool        hasCustomSerialize = true;
 
-
+#if ENABLE_EDITOR
     static bool CustomGui(CombatRosterComponent& comp, unsigned long long entityID, void* worldPtr) {
         bool changed = false;
         auto* world = static_cast<CCL::ECS::Core::World*>(worldPtr);
@@ -272,9 +286,12 @@ template <> struct ComponentMeta<CombatRosterComponent> {
 
         return changed;
     }
+#endif
 
-    // ★ カスタム保存
-    static void serialize(nlohmann::json& j, const void* ptr)
+    // =========================================================
+    // ★ カスタム保存（引数に SaveContext* を追加）
+    // =========================================================
+    static void serialize(nlohmann::json& j, const void* ptr, CCL::Serialization::SaveContext* ctx = nullptr)
     {
         const auto& comp = *static_cast<const CombatRosterComponent*>(ptr);
         j["count"] = comp.count;
@@ -284,23 +301,33 @@ template <> struct ComponentMeta<CombatRosterComponent> {
         {
             nlohmann::json entry;
             entry["tag"] = comp.entries[i].tag;
-            entry["id"] = static_cast<uint64_t>(comp.entries[i].id);
+
+            // ★ Context があればローカルIDに翻訳して保存する
+            if (ctx) {
+                entry["id"] = ctx->GetOrRegister(comp.entries[i].id);
+            }
+            else {
+                entry["id"] = static_cast<uint64_t>(comp.entries[i].id);
+            }
+
             j["entries"].push_back(entry);
         }
     }
 
-    // ★ カスタム読み込み  ← ここが今まで存在しなかった部分
+    // =========================================================
+    // ★ カスタム読み込み（引数に LoadContext* を追加）
+    // =========================================================
     static void deserializeToWorld(
         CCL::ECS::Core::World* world,
         CCL::ECS::EntityID           entity,
-        const nlohmann::json& j)
+        const nlohmann::json& j,
+        CCL::Serialization::LoadContext* ctx = nullptr)
     {
         CombatRosterComponent comp{};
 
         if (j.contains("count"))
         {
             comp.count = j["count"].get<int>();
-            // 安全のため上限を超えないようにクランプ
             if (comp.count > 4) comp.count = 4;
         }
 
@@ -311,30 +338,26 @@ template <> struct ComponentMeta<CombatRosterComponent> {
             {
                 if (idx >= comp.count) break;
 
-                // tag (char[32]) の復元
                 if (entry.contains("tag"))
                 {
                     std::string tag = entry["tag"].get<std::string>();
-                    strncpy_s(
-                        comp.entries[idx].tag,
-                        sizeof(comp.entries[idx].tag),
-                        tag.c_str(),
-                        _TRUNCATE);
+                    strncpy_s(comp.entries[idx].tag, sizeof(comp.entries[idx].tag), tag.c_str(), _TRUNCATE);
                 }
 
-                // id の復元
-                // ※ EntityID のリマップは SceneSerializer の Pass3 が行うので、
-                //   ここでは JSON の生の値をそのまま入れておく
                 if (entry.contains("id"))
                 {
-                    comp.entries[idx].id = static_cast<CCL::ECS::EntityID>(
-                        entry["id"].get<uint64_t>());
+                    uint64_t rawId = entry["id"].get<uint64_t>();
+                    // ★ Context があればローカルIDから実際のEntityIDへ翻訳して復元
+                    if (ctx) {
+                        comp.entries[idx].id = ctx->Resolve(rawId);
+                    }
+                    else {
+                        comp.entries[idx].id = static_cast<CCL::ECS::EntityID>(rawId);
+                    }
                 }
-
                 ++idx;
             }
         }
-
         world->AddComponent<CombatRosterComponent>(entity, std::move(comp));
     }
 
@@ -347,6 +370,7 @@ template <> struct ComponentMeta<CombatRosterComponent> {
 
 };
 REGISTER_COMPONENT(CombatRosterComponent, "CombatRosterComponent");
+REGISTER_COMPONENT_EDITOR_GUI(CombatRosterComponent)
 
 
 // ===================================================================
@@ -365,6 +389,7 @@ template <> struct ComponentMeta<DamageEventComponent> {
     }
 };
 REGISTER_COMPONENT(DamageEventComponent, "DamageEventComponent");
+REGISTER_COMPONENT_EDITOR_GUI(DamageEventComponent)
 
 // ===================================================================
 // 6. HealthComponent (体力・陣営データ)
@@ -381,6 +406,7 @@ template <> struct ComponentMeta<HealthComponent> {
     static constexpr bool isSerializable = true;
     static constexpr bool hasCustomSerialize = true;
 
+#if ENABLE_EDITOR
     static bool CustomGui(HealthComponent& comp, unsigned long long entityID, void* worldPtr) {
         bool changed = false;
 
@@ -442,21 +468,29 @@ template <> struct ComponentMeta<HealthComponent> {
 
         return changed;
     }
+#endif
 
-    // ★ カスタム保存 (タイマーなどの不要なランタイム状態は保存しない)
-    static void serialize(nlohmann::json& j, const void* ptr) {
+    // =========================================================
+    // ★ カスタム保存（引数に SaveContext* を追加）
+    // =========================================================
+    static void serialize(nlohmann::json& j, const void* ptr, CCL::Serialization::SaveContext* ctx = nullptr) {
         const auto& comp = *static_cast<const HealthComponent*>(ptr);
 
         j["maxHealth"] = comp.maxHealth;
         j["currentHealth"] = comp.currentHealth;
         j["invincibilityDuration"] = comp.invincibilityDuration;
-        j["team"] = static_cast<int>(comp.team); // Enum は int として保存
-
-        // ※ invincibilityTimer は絶対に保存しない（ロード直後に無敵になるバグを防ぐため）
+        j["team"] = static_cast<int>(comp.team);
     }
 
-    // ★ カスタム読み込み
-    static void deserializeToWorld(CCL::ECS::Core::World* world, CCL::ECS::EntityID entity, const nlohmann::json& j) {
+    // =========================================================
+    // ★ カスタム読み込み（引数に LoadContext* を追加）
+    // =========================================================
+    static void deserializeToWorld(
+        CCL::ECS::Core::World* world,
+        CCL::ECS::EntityID entity,
+        const nlohmann::json& j,
+        CCL::Serialization::LoadContext* ctx = nullptr)
+    {
         HealthComponent comp{};
 
         if (j.contains("maxHealth"))             comp.maxHealth = j["maxHealth"].get<float>();
@@ -473,3 +507,4 @@ template <> struct ComponentMeta<HealthComponent> {
     }
 };
 REGISTER_COMPONENT(HealthComponent, "HealthComponent");
+REGISTER_COMPONENT_EDITOR_GUI(HealthComponent)

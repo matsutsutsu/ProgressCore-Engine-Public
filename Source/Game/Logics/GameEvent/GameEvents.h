@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ECS/Common/CCL_Common.h" // CCL::ECS::EntityID を使うため
+#include "Engine/ECS/Common/CCL_Common.h" // CCL::ECS::EntityID を使うため
 #include <DirectXMath.h>           // DirectX::XMFLOAT3 を使うため
 
 // GameEvents.h

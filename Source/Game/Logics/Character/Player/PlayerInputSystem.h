@@ -1,5 +1,5 @@
 #pragma once
-#include "ECS/System/CCL_System.h"                  // IfSystemの継承元
+#include "Engine/ECS/System/CCL_System.h"                  // IfSystemの継承元
 #include "Game/Logics/Character/Player/PlayerComponent.h" // テンプレート引数で必要
 #include "Game/Logics/GameEvent/GameStateMode.h"  //ゲームのステート状態
 

@@ -1,6 +1,6 @@
 #include "ParticleRenderer.h"
-#include "Engine/Graphics/Core/Graphics.h"
-#include "Engine/Graphics/Core/RenderState.h"
+#include "Engine/Graphics/RHI/Graphics.h"
+#include "Engine/Graphics/RHI/RenderState.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 #include <d3dcompiler.h>
 

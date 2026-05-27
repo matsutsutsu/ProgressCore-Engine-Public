@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0"
+         xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+	<!-- ========================================== -->
+	<!--  外部ライブラリ用パスの自動ルーティング -->
+	<!-- ========================================== -->
+	<PropertyGroup Condition="$(Configuration.Contains('Debug'))">
+		<ExtLibDirName>Debug</ExtLibDirName>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)'=='Shipping'">
+		<!-- Shipping構成の時は Distribution フォルダを見に行く -->
+		<ExtLibDirName>Distribution</ExtLibDirName>
+	</PropertyGroup>
+	<PropertyGroup Condition="!$(Configuration.Contains('Debug'))">
+		<ExtLibDirName>Release</ExtLibDirName>
+	</PropertyGroup>
+	
+	<!-- ========================================== -->
+	<!--  全構成共通の基本設定 -->
+	<!-- ========================================== -->
+	<ItemDefinitionGroup>
+		<!-- ===== C++ Compile (ゲームコアのみ) ===== -->
+		<ClCompile>
+			<!-- ========================================================= -->
+			<!-- ★ Debug と Development の時は Joltのデバッグマクロを入れる -->
+			<!-- ========================================================= -->
+			<PreprocessorDefinitions Condition="'$(Configuration)'!='Shipping'">
+				_WINDOWS;
+				JPH_FLOATING_POINT_EXCEPTIONS_ENABLED;
+				JPH_PROFILE_ENABLED;
+				JPH_DEBUG_RENDERER;
+				JPH_OBJECT_STREAM;
+				%(PreprocessorDefinitions)
+			</PreprocessorDefinitions>
+
+			<!-- ========================================================= -->
+			<!-- 2. Development 構成 (アサートなし / Release DLL / JoltデバッグON) -->
+			<!-- ========================================================= -->
+			<PreprocessorDefinitions Condition="!$(Configuration.Contains('Debug')) and '$(Configuration)'!='Shipping'">
+				_WINDOWS;
+				NDEBUG;
+				JPH_FLOATING_POINT_EXCEPTIONS_ENABLED;
+				JPH_PROFILE_ENABLED;
+				JPH_DEBUG_RENDERER;
+				JPH_OBJECT_STREAM;
+				%(PreprocessorDefinitions)
+			</PreprocessorDefinitions>
+			<RuntimeLibrary Condition="!$(Configuration.Contains('Debug')) and '$(Configuration)'!='Shipping'">MultiThreadedDLL</RuntimeLibrary>
+
+			<!-- ========================================================= -->
+			<!-- ★ Shipping の時は Joltのデバッグマクロを全て外す -->
+			<!-- ========================================================= -->
+			<PreprocessorDefinitions Condition="'$(Configuration)'=='Shipping'">
+				_WINDOWS;
+				NDEBUG;
+				%(PreprocessorDefinitions)
+			</PreprocessorDefinitions>
+			
+			
+
+			<AdditionalIncludeDirectories>
+				$(SolutionDir)Source;
+				$(SolutionDir)External\cereal\include;
+				$(SolutionDir)External\tinygltf;
+				$(SolutionDir)External\DirectXTex;
+				$(SolutionDir)External\nlohmann;
+				$(SolutionDir)External\DirectXTK-main\Inc;
+				$(SolutionDir)External\Lua\src;
+				$(SolutionDir)External\sol2\include;
+				$(SolutionDir)External\JoltPhysics\include;
+				$(SolutionDir)External\FMOD\core\inc;
+				$(SolutionDir)External\FMOD\studio\inc;
+				$(SolutionDir)External\RecastNavigation\Recast\Include;
+				$(SolutionDir)External\RecastNavigation\Detour\Include;
+				$(SolutionDir)External\RecastNavigation\DetourTileCache\Include;
+				$(SolutionDir)External\RecastNavigation\DetourCrowd\Include;
+				$(SolutionDir)External\RecastNavigation\DebugUtils\Include;
+
+				$(ProjectDir)Engine\Core;
+				
+				%(AdditionalIncludeDirectories)
+			</AdditionalIncludeDirectories>
+		</ClCompile>
+
+		<!-- ===== Linker (ゲームコアのみ) ===== -->
+		<Link>
+			<AdditionalLibraryDirectories>
+				<!-- $(Configuration) ではなく $(ExtLibDirName) を使用する -->
+				$(SolutionDir)External\JoltPhysics\lib\$(ExtLibDirName);
+				$(SolutionDir)External\DirectXTK-main\Bin\Desktop_2022\x64\$(ExtLibDirName);
+				$(SolutionDir)External\FMOD\core\lib\x64;
+				$(SolutionDir)External\FMOD\studio\lib\x64;
+				%(AdditionalLibraryDirectories)
+			</AdditionalLibraryDirectories>
+			<AdditionalDependencies>
+				d3d11.lib;
+				DirectXTK.lib;
+				dxgi.lib;xinput.lib;
+				xaudio2.lib;winmm.lib;
+				Jolt.lib;fmod_vc.lib;
+				fmodstudio_vc.lib;
+				%(AdditionalDependencies)
+			</AdditionalDependencies>
+		</Link>
+
+		<PreBuildEvent>
+			<Command>
+				py -3 "$(SolutionDir)Tools\python\ccl_codegen.py" --src "$(SolutionDir)Source" --out "$(SolutionDir)Source\_generated" --include-root "$(SolutionDir)Source"
+				%(Command)
+			</Command>
+		</PreBuildEvent>
+
+			<PostBuildEvent>
+			<Command>
+				xcopy /y /d "$(SolutionDir)External\FMOD\core\lib\x64\*.dll" "$(TargetDir)"
+				xcopy /y /d "$(SolutionDir)External\FMOD\studio\lib\x64\*.dll" "$(TargetDir)"
+
+				%(Command)
+			</Command>
+		</PostBuildEvent>
+
+	</ItemDefinitionGroup>
+
+</Project>

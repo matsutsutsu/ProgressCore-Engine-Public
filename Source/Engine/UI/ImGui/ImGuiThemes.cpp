@@ -1,5 +1,8 @@
 #include "ImGuiThemes.h"
+#if ENABLE_EDITOR
+
 #include <imgui.h>
+
 
 void ImGuiThemes::ApplyLight()
 {
@@ -88,3 +91,6 @@ void ImGuiThemes::ApplyVisualStudioDark()
     colors[ImGuiCol_TitleBg] = ImVec4(0.08f, 0.08f, 0.08f, 1.0f);
     colors[ImGuiCol_TitleBgActive] = ImVec4(0.13f, 0.13f, 0.13f, 1.0f);
 }
+
+
+#endif

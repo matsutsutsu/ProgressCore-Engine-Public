@@ -26,7 +26,8 @@ enum class EditorBTNodeType {
     Condition, ///< 葉ノード：Blackboardの値を評価し、真偽を返す。出力ピンを持たない。
     Action,    ///< 葉ノード：実際の行動（攻撃、移動）を行う。出力ピンを持たない。
     Group,     ///< コメント用グループノード（機能的な実行順序は持たない）
-	Decorator  ///< デコレータノード（子ノードの挙動を修飾する。例: Inverter, Cooldown, Retryなど）
+    Decorator, ///< デコレータノード（子ノードの挙動を修飾する。例: Inverter, Cooldown, Retryなど）
+    RandomSelector ///< ランダムセレクター
 };
 
 /**
@@ -76,8 +77,8 @@ struct EditorBTNode {
     int executionOrder = -1;
 
     // グループノード用のサイズ（インスペクタで変更可能にする）
-    float width = 300.0f;
-    float height = 200.0f;
+    float width = 400.0f;
+    float height = 400.0f;
 
     float paramValue1 = 0.0f; // 例: 突進速度
     std::string targetKey = "Player"; // 例: Blackboardのキー
@@ -201,9 +202,13 @@ private:
 
     std::string _currentFilePath = "Assets/AI/BossAI_Graph.json"; ///< 現在開いているファイルのパス
     bool _needInitialZoom = true;     ///< 初回起動時にカメラを全体に合わせるためのフラグ
+    int _framesSinceOpen = 0; // ウィンドウを開いてからのフレーム数を数える
 
     bool _executionOrderDirty = true; ///< 毎フレームのソートループを防ぐための最適化フラグ
     nlohmann::json _lastSavedState;   ///< 直前のグラフ状態（Undo判定用）
 
     ImVec2 _newNodeSpawnPos = { 0.0f, 0.0f }; ///< 右クリックした瞬間のスクリーン座標
+
+    bool _autoFollow = false;         ///< 実行中ノードへの自動追従フラグ
+    uint32_t _lastTrackedNodeId = 0;  ///< 最後にカメラが追従したノードID
 };

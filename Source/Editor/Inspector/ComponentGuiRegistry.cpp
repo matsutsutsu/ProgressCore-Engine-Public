@@ -1,11 +1,14 @@
 #include "ComponentGuiRegistry.h"
-#include "ECS/Core/CCL_World.h" // Worldへのアクセスに必要
+#include "Engine/ECS/Core/CCL_World.h" // Worldへのアクセスに必要
 #include "Game/Core/AllComponents.h"
-#include <imgui.h>
 
-#include "Engine/Graphics/Core/GpuResourceUtils.h" // テクスチャロード用
-#include "Engine/Graphics/Core/Graphics.h"         // デバイス取得用
-#include "Engine/Platform/Dialog.h"              // ファイル選択ダイアログ用
+#if ENABLE_EDITOR
+#include <imgui.h>
+#endif
+
+#include "Engine/Graphics/RHI/GpuResourceUtils.h" // テクスチャロード用
+#include "Engine/Graphics/RHI/Graphics.h"         // デバイス取得用
+#include "Engine/Platform/Core/Dialog.h"              // ファイル選択ダイアログ用
 
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 
@@ -176,7 +179,9 @@ void ComponentGuiRegistry::Draw(
 
     auto idIt = _typeIdToIndex.find(id);
     if (idIt == _typeIdToIndex.end()) {
+#if ENABLE_EDITOR
         ImGui::TextColored(ImVec4(1, 0.5f, 0, 1), "No GUI registered for this ID.");
+#endif
         return;
     }
     auto it = _registry.find(idIt->second);

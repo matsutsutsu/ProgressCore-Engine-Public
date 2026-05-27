@@ -1,7 +1,7 @@
 #pragma once
 #include "Editor/Core/EditorWindow.h"
 #include "Editor/Utils/AssetBrowser.h"       
-#include "Engine/Graphics/Core/Graphics.h"   
+#include "Engine/Graphics/RHI/Graphics.h"   
 #include <memory>
 
 class AssetBrowserWindow : public EditorWindow {

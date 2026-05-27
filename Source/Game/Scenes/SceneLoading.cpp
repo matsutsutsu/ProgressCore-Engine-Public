@@ -1,7 +1,6 @@
 #include "SceneLoading.h"
-#include "Engine/Graphics/Core/Graphics.h"
-#include "Engine/GamePlay/Core/Scene/SceneManager.h"
-#include <imgui.h>
+#include "Engine/Graphics/RHI/Graphics.h"
+#include "Engine/Scene/SceneManager.h"
 #include <wrl/client.h> // CoInitialize用
 
 SceneLoading::SceneLoading(Scene *nextScene) : _nextScene(nextScene) {}
@@ -94,9 +93,5 @@ void SceneLoading::OnRenderUI()
 
 void SceneLoading::OnDrawImGui()
 {
-    // デバッグ用表示
-    ImGui::SetNextWindowPos(ImVec2(100, 100));
-    ImGui::Begin("Now Loading...", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-    ImGui::Text("Loading next scene...");
-    ImGui::End();
+
 }

@@ -3,9 +3,9 @@
 #include <wrl/client.h>
 #include <DirectXMath.h>
 #include <vector>
-#include "Engine/GamePlay/Graphics/PostProcess/BloomConfigComponent.h"
+#include "Engine/Graphics/Components/PostProcess/BloomConfigComponent.h"
 #include "Engine/Graphics/Resource/ResourceManager.h" 
-#include "Engine/Graphics/Core/RenderTarget.h" 
+#include "Engine/Graphics/RHI/RenderTarget.h" 
 
 class BloomPass {
 public:

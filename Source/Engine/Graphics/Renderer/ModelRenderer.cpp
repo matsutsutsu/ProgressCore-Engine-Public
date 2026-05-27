@@ -1,16 +1,16 @@
 #include "ModelRenderer.h"
-#include "Engine/Graphics/Core/Graphics.h"
+#include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Graphics/Shader/ShaderResources.h" // SLOT定義用
 #include "Engine/Graphics/Renderer/RenderQueue.h"
 
-#include "Engine/Graphics/Renderer/Pipeline/SetupPass.h"
-#include "Engine/Graphics/Renderer/Pipeline/ShadowPass.h"
-#include "Engine/Graphics/Renderer/Pipeline/OpaquePass.h"
-#include "Engine/Graphics/Renderer/Pipeline/SkyboxPass.h"
-#include "Engine/Graphics/Renderer/Pipeline/TransparentPass.h"
-#include "Engine/Graphics/Renderer/Pipeline/ParticlePass.h"
-#include "Engine/Graphics/Renderer/Pipeline/PrimitivePass.h"
-#include "Engine/Graphics/Renderer/Pipeline/PostProcessPass.h"
+#include "Engine/Graphics/Pipeline/SetupPass.h"
+#include "Engine/Graphics/Pipeline/ShadowPass.h"
+#include "Engine/Graphics/Pipeline/OpaquePass.h"
+#include "Engine/Graphics/Pipeline/SkyboxPass.h"
+#include "Engine/Graphics/Pipeline/TransparentPass.h"
+#include "Engine/Graphics/Pipeline/ParticlePass.h"
+#include "Engine/Graphics/Pipeline/PrimitivePass.h"
+#include "Engine/Graphics/Pipeline/PostProcessPass.h"
 
 ModelRenderer::ModelRenderer(ID3D11Device* device)
 {

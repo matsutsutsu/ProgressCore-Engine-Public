@@ -1,11 +1,13 @@
 #include "Game/Logics/Character/CharacterMovementInputComponent.h"
-#include "Editor/Inspector/ComponentGuiRegistry.h"
-#include "Engine/Serialization/ComponentRegistry.h"
+#include "Engine/Serialization/Registry/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
-#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
-#include <imgui.h>
+#include "Engine/Serialization/Registry/ComponentRegistry_Editor.h"
+#ifdef ENABLE_EDITOR
+#include "Editor/Inspector/ComponentGuiRegistry.h"
+#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
+#endif
 
 // ===================================================================================
 // 【 キャラクター入力モニター : CharacterMovementInputComponentMeta 】
@@ -27,6 +29,7 @@ template <> struct ComponentMeta<CharacterMovementInputComponent> {
     // リアルタイムに入力値をデバッグ表示するためにCustomGuiを有効化
     static constexpr bool        hasCustomGui = true;
 
+#if ENABLE_EDITOR
     static bool CustomGui(CharacterMovementInputComponent& comp, unsigned long long entityID = 0, void* worldPtr = nullptr) {
         bool changed = false;
 
@@ -48,6 +51,7 @@ template <> struct ComponentMeta<CharacterMovementInputComponent> {
 
         return changed; // ReadOnlyなので常にfalseを返す
     }
+#endif
 
     static const std::vector<FieldDescriptor>& Fields() {
         static const std::vector<FieldDescriptor> fields = {
@@ -61,3 +65,4 @@ template <> struct ComponentMeta<CharacterMovementInputComponent> {
 };
 
 REGISTER_COMPONENT(CharacterMovementInputComponent, "CharacterMovementInput")
+REGISTER_COMPONENT_EDITOR_GUI(CharacterMovementInputComponent)

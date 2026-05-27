@@ -4,8 +4,8 @@
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/types/vector.hpp>
-#include "Engine/Core/Common/Misc.h"
-#include "Engine/Graphics/Core/GpuResourceUtils.h"
+#include "Engine/Core/Math/Misc.h"
+#include "Engine/Graphics/RHI/GpuResourceUtils.h"
 #include "GLTFImporter.h"
 #include "Model.h"
 #include "ResourceManager.h"
@@ -103,68 +103,64 @@ Model::Model(ID3D11Device* device, const char* filename, float sampleRate)
         dst.data->alphaCutoff = src.alphaCutoff;
 
         // 1. カラー情報
-        // シェーダーリフレクションの変数名と一致させる
-        dst.data->colors["materialColor"] = src.baseColor; // 従来のPhong/Basicシェーダー用
-        dst.data->colors["baseColor"] = src.baseColor; // 新しいPBRシェーダー用
+        dst.data->SetColor("materialColor"_hash, src.baseColor); // 従来のPhong/Basicシェーダー用
+        dst.data->SetColor("baseColor"_hash, src.baseColor);     // 新しいPBRシェーダー用
         // emissiveColor (float3) を float4 に変換して格納
-        dst.data->colors["emissiveColor"] = { src.emissiveColor.x, src.emissiveColor.y, src.emissiveColor.z, 1.0f };
+        dst.data->SetColor("emissiveColor"_hash, { src.emissiveColor.x, src.emissiveColor.y, src.emissiveColor.z, 1.0f });
 
         // 2. スカラー情報
-        dst.data->scalars["metalness"] = src.metalness;
-        dst.data->scalars["roughness"] = src.roughness;
-        dst.data->scalars["occlusionStrength"] = src.occlusionStrength;
-        dst.data->scalars["alphaCutoff"] = src.alphaCutoff; // シェーダー用にも辞書に入れておく
+        dst.data->SetScalar("metalness"_hash, src.metalness);
+        dst.data->SetScalar("roughness"_hash, src.roughness);
+        dst.data->SetScalar("occlusionStrength"_hash, src.occlusionStrength);
+        dst.data->SetScalar("alphaCutoff"_hash, src.alphaCutoff);
 
-      
         // 3. ToonShader用のデフォルト値（これがないと黒くなる）
-        dst.data->colors["rimColor"] = { 1.0f, 1.0f, 1.0f, 1.0f };
-        dst.data->scalars["rimPower"] = 5.0f;
-        dst.data->scalars["rimIntensity"] = 1.0f;
+        dst.data->SetColor("rimColor"_hash, { 1.0f, 1.0f, 1.0f, 1.0f });
+        dst.data->SetScalar("rimPower"_hash, 5.0f);
+        dst.data->SetScalar("rimIntensity"_hash, 1.0f);
 
-        // トゥーン用デフォルトランプを辞書に登録
-        // キー名 "RampTexture" は HLSL の Texture2D 変数名と一致させること！
-        // 今のところこれをやったところで誤差だから問題ない、気になるなら後でデータ駆動にして修正する     
-        dst.data->textures["RampTexture"] = ResourceManager::Instance().LoadTexture("Assets/Textures/Shader/ramp.png");
+        // トゥーン用デフォルトランプを登録
+        dst.data->SetTexture("RampTexture"_hash, ResourceManager::Instance().LoadTexture("Assets/Textures/Shader/ramp.png"));
 
         // OutlineShader用のデフォルト値
-        dst.data->colors["color"] = { 0.0f, 0.0f, 0.0f, 1.0f }; // 黒い線
-        dst.data->scalars["size"] = 0.02f;                      // 太さ
+        dst.data->SetColor("color"_hash, { 0.0f, 0.0f, 0.0f, 1.0f }); // 黒い線
+        dst.data->SetScalar("size"_hash, 0.02f);                      // 太さ
 
         // 4. テクスチャ情報
-        // シェーダーリフレクションのスロット名と一致させる
         if (src.baseMap) {
             auto handle = ResourceManager::Instance().RegisterTexture(src.baseMap);
-            dst.data->textures["DiffuseMap"] = handle; // 従来のPhongシェーダー用
-            dst.data->textures["AlbedoMap"] = handle; // 新しいPBRシェーダー用
-            dst.data->scalars["useAlbedoMap"] = 1.0f; // ★フラグON
+            dst.data->SetTexture("DiffuseMap"_hash, handle);
+            dst.data->SetTexture("AlbedoMap"_hash, handle);
+            dst.data->SetScalar("useAlbedoMap"_hash, 1.0f); // ★フラグON
         }
         else {
-            dst.data->scalars["useAlbedoMap"] = 0.0f; // ★フラグOFF
+            dst.data->SetScalar("useAlbedoMap"_hash, 0.0f); // ★フラグOFF
         }
 
         if (src.normalMap) {
-            dst.data->textures["NormalMap"] = ResourceManager::Instance().RegisterTexture(src.normalMap);
+            dst.data->SetTexture("NormalMap"_hash, ResourceManager::Instance().RegisterTexture(src.normalMap));
+            dst.data->SetScalar("useNormalMap"_hash, 1.0f);
         }
         else {
-            dst.data->scalars["useNormalMap"] = 0.0f;
+            dst.data->SetScalar("useNormalMap"_hash, 0.0f);
         }
 
         if (src.emissiveMap) {
-            dst.data->textures["EmissiveMap"] = ResourceManager::Instance().RegisterTexture(src.emissiveMap);
+            dst.data->SetTexture("EmissiveMap"_hash, ResourceManager::Instance().RegisterTexture(src.emissiveMap));
         }
 
         if (src.occlusionMap) {
-            dst.data->textures["OcclusionMap"] = ResourceManager::Instance().RegisterTexture(src.occlusionMap);
+            dst.data->SetTexture("OcclusionMap"_hash, ResourceManager::Instance().RegisterTexture(src.occlusionMap));
         }
 
         if (src.metalnessRoughnessMap) {
             auto handle = ResourceManager::Instance().RegisterTexture(src.metalnessRoughnessMap);
-            dst.data->textures["MetalnessRoughnessMap"] = handle; // 従来用
-            dst.data->textures["MetalRoughMap"] = handle; // 新しいPBRシェーダー用
-            dst.data->scalars["useMetalRoughMap"] = 1.0f; // ★フラグON
+            dst.data->SetTexture("MetalnessRoughnessMap"_hash, handle);
+            dst.data->SetTexture("MetalRoughMap"_hash, handle);
+            dst.data->SetScalar("useMetalRoughMap"_hash, 1.0f); // ★フラグON
         }
         else {
-            dst.data->scalars["useMetalRoughMap"] = 0.0f; // ★フラグOFF
+            dst.data->SetScalar("useMetalRoughMap"_hash, 0.0f); // ★フラグOFF
         }
 
 
@@ -562,7 +558,6 @@ std::shared_ptr<Model> Model::CreateFromData(ID3D11Device *device,
     model->materials[0].name = "BatchMaterial";
 
     // ★修正: 引数で渡されたマテリアルデータを共有する！
-    // これによりテクスチャやシェーダー設定がそのまま引き継がれます
     if (baseMaterial) {
         model->materials[0].data = baseMaterial;
     }
@@ -571,22 +566,22 @@ std::shared_ptr<Model> Model::CreateFromData(ID3D11Device *device,
         auto matData = std::make_shared<MaterialData>();
 
         matData->shaderHash = "PBR"_hash;
-        matData->colors["materialColor"] = { 1.0f, 1.0f, 1.0f, 1.0f };
-        matData->colors["baseColor"] = { 1.0f, 1.0f, 1.0f, 1.0f };
-        matData->colors["emissiveColor"] = { 0.0f, 0.0f, 0.0f, 1.0f };
+        matData->SetColor("materialColor"_hash, { 1.0f, 1.0f, 1.0f, 1.0f });
+        matData->SetColor("baseColor"_hash, { 1.0f, 1.0f, 1.0f, 1.0f });
+        matData->SetColor("emissiveColor"_hash, { 0.0f, 0.0f, 0.0f, 1.0f });
 
         // PBRの「ちょうどいい」デフォルト値
-        matData->scalars["metalness"] = 0.0f; // 非金属
-        matData->scalars["roughness"] = 0.8f; // 光りすぎないよう、少しざらつかせる
-        matData->scalars["occlusionStrength"] = 1.0f;
-        matData->scalars["rimPower"] = 5.0f;
-        matData->scalars["rimIntensity"] = 0.0f;
+        matData->SetScalar("metalness"_hash, 0.0f); // 非金属
+        matData->SetScalar("roughness"_hash, 0.8f); // 光りすぎないよう、少しざらつかせる
+        matData->SetScalar("occlusionStrength"_hash, 1.0f);
+        matData->SetScalar("rimPower"_hash, 5.0f);
+        matData->SetScalar("rimIntensity"_hash, 0.0f);
 
         // テクスチャは無いので全てオフ
-        matData->colors["useAlbedoMap"] = { 0.0f, 0.0f, 0.0f, 0.0f };
-        matData->colors["useNormalMap"] = { 0.0f, 0.0f, 0.0f, 0.0f };
-        matData->colors["useMetalRoughMap"] = { 0.0f, 0.0f, 0.0f, 0.0f };
-        matData->colors["useOcclusionMap"] = { 0.0f, 0.0f, 0.0f, 0.0f };
+        matData->SetScalar("useAlbedoMap"_hash, 0.0f);
+        matData->SetScalar("useNormalMap"_hash, 0.0f);
+        matData->SetScalar("useMetalRoughMap"_hash, 0.0f);
+        matData->SetScalar("useOcclusionMap"_hash, 0.0f);
 
         model->materials[0].data = matData;
     }

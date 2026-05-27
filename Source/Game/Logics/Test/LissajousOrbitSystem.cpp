@@ -1,5 +1,5 @@
 #include "LissajousOrbitSystem.h"
-#include "ECS/System/CCL_SystemRegistry.h"
+#include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"
 
 void LissajousOrbitSystem::Update(float dt)

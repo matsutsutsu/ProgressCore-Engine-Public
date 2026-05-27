@@ -1,3 +1,4 @@
+#if ENABLE_EDITOR
 #include <imgui_impl_win32.h>
 #include <imgui_impl_dx11.h>
 #include <ImGuizmo.h>
@@ -5,6 +6,7 @@
 #include "implot.h"
 
 #include"Engine/UI/ImGui/ImGuiThemes.h"
+#endif
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -56,8 +58,8 @@ void ImGuiRenderer::Initialize(HWND hWnd, ID3D11Device* device, ID3D11DeviceCont
 	// Setup Dear ImGui style
 
 	//ImGuiThemes::ApplyDark();
-	//ImGuiThemes::ApplyDarcula();
-	ImGuiThemes::ApplySkeltonDarcula();
+	ImGuiThemes::ApplyDarcula();
+	//ImGuiThemes::ApplySkeltonDarcula();
 	//ImGuiThemes::ApplyLight();
 	//ImGuiThemes::ApplyUnityDark();
 	//ImGuiThemes::ApplyVisualStudioDark();

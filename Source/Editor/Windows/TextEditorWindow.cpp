@@ -1,7 +1,8 @@
 #include "TextEditorWindow.h"
 
-#include "Engine/Graphics/Core/Graphics.h"
-#include "Engine/Platform/Dialog.h"
+#include "Engine/Graphics/RHI/Graphics.h"
+#include "Engine/Platform/Core/Dialog.h"
+#include "Engine/Platform/Core/FileSystem.h"
 #include "Engine/Graphics/Renderer/ImGuiRenderer.h"
 
 #include <imgui.h>
@@ -29,19 +30,11 @@ void TextEditorWindow::DrawContents(EditorContext &context)
     ImGui::InputText("File Path", _filePath, sizeof(_filePath));
     ImGui::SameLine();
     if (ImGui::Button("Browse...")) {
-        char filename[256] = {0};
-        HWND hWnd          = Graphics::Instance().GetWindowHandle();
-
-        // 対応フォーマットを増やしたフィルタ
-        const char *filter = "Supported Files\0*.json;*.lua;*.cpp;*.h;*.hlsl;*.hlsli\0"
-                             "HLSL Shaders\0*.hlsl;*.hlsli\0"
-                             "JSON Files\0*.json\0"
-                             "Lua Scripts\0*.lua\0"
-                             "All Files\0*.*\0";
-
-        if (Dialog::OpenFileName(filename, 256, filter, "Select File to Edit", hWnd) ==
-            DialogResult::OK) {
-            strcpy_s(_filePath, sizeof(_filePath), filename);
+        if (auto path = Engine::FileDialog::OpenPreset("TextEditor", "Select File to Edit",
+            Graphics::Instance().GetWindowHandle()))
+        {
+            const auto s = path->string();
+            strcpy_s(_filePath, sizeof(_filePath), s.c_str());
             LoadFile(_filePath);
         }
     }
@@ -106,22 +99,21 @@ void TextEditorWindow::DrawContents(EditorContext &context)
     }
 }
 
-void TextEditorWindow::LoadFile(const char *path)
+/**
+ * @brief 指定されたテキストファイルをメモリバッファにロードします。
+ * @param path 読み込むファイルの仮想パス
+ */
+void TextEditorWindow::LoadFile(const char* path)
 {
-    std::ifstream ifs(path);
-    if (ifs.is_open()) {
-        std::stringstream ss;
-        ss << ifs.rdbuf();
-
-        // ファイルから読み込んだ文字列
-        std::string rawText = ss.str();
-
-        // もし読み込んだファイルがバッファ(1MB)よりデカかったら、バッファを拡張する安全設計
+    // ★ 修正: VFSから読み込み
+    std::string rawText = FileSystem::ReadAllText(path);
+    if (!rawText.empty()) {
+        // もし読み込んだファイルがバッファよりデカかったら拡張する安全設計
         if (rawText.size() >= _textBuffer.size()) {
             _textBuffer.resize(rawText.size() * 2, '\0');
         }
 
-        // 古い文字列のゴミが残らないように、バッファ全体をゼロ('\0')でクリア
+        // 古い文字列のゴミが残らないようにクリア
         std::fill(_textBuffer.begin(), _textBuffer.end(), '\0');
 
         // バッファに文字列をコピー
@@ -129,11 +121,12 @@ void TextEditorWindow::LoadFile(const char *path)
     }
 }
 
-void TextEditorWindow::SaveFile(const char *path)
+/**
+ * @brief メモリバッファのテキストデータを指定されたファイルに保存します。
+ * @param path 保存先の仮想パス
+ */
+void TextEditorWindow::SaveFile(const char* path)
 {
-    std::ofstream ofs(path);
-    if (ofs.is_open()) {
-        // バッファの中身をそのままC文字列としてファイルに書き出す
-        ofs << _textBuffer.data();
-    }
+    // ★ 修正: VFSへ書き込み (バッファの生ポインタを渡す)
+    FileSystem::WriteAllText(path, _textBuffer.data());
 }

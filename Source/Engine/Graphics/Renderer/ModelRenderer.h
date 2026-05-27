@@ -5,8 +5,8 @@
 #include <d3d11.h>
 #include <DirectXMath.h>
 #include "Engine/Graphics/Resource/Model.h"
-#include "Engine/Graphics/Core/RenderContext.h"
-#include "Engine/Graphics/Renderer/Pipeline/RenderPipeline.h"
+#include "Engine/Graphics/RHI/RenderContext.h"
+#include "Engine/Graphics/Pipeline/RenderPipeline.h"
 
 class ModelRenderer
 {

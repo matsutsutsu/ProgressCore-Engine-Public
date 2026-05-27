@@ -3,9 +3,9 @@
 #include <d3d11.h>
 #include <wrl/client.h>
 #include "BloomPass.h"
-#include "Engine/Graphics/Core/RenderTarget.h"
+#include "Engine/Graphics/RHI/RenderTarget.h"
 #include "Engine/Graphics/Resource/ResourceManager.h" 
-#include "Engine/GamePlay/Graphics/PostProcess/ToneMapConfigComponent.h" // インクルード追加
+#include "Engine/Graphics/Components/PostProcess/ToneMapConfigComponent.h" // インクルード追加
 
 // ポストプロセス全体を管理するクラス
 class PostProcessManager

@@ -1,11 +1,11 @@
 #include "PlayerCarMoveSystem.h"
-#include "ECS/Core/CCL_World.h"
+#include "Engine/ECS/Core/CCL_World.h"
 #include <DirectXMath.h>
-#include "ECS/System/CCL_SystemRegistry.h"
+#include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"
 
 // ★ Joltのインクルードは一切不要！純粋なAPI窓口だけを呼ぶ
-#include "Engine/Physics/IPhysicsAPI.h" 
+#include "Engine/Physics/JoltIntegration/IPhysicsAPI.h" 
 #include <memory>
 
 using namespace DirectX;

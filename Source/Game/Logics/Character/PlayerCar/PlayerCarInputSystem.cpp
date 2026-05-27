@@ -1,11 +1,11 @@
 #include "PlayerCarInputSystem.h"
 
-#include "ECS/Core/CCL_Chunk.h"
+#include "Engine/ECS/Core/CCL_Chunk.h"
 // ★修正: 生の Input.h ではなく、抽象化された API をインクルード
 #include "Engine/Platform/Input/IInputAPI.h"
 
 // システムの実行順序の定義ヘッダー
-#include "ECS/System/CCL_SystemRegistry.h"
+#include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"
 
 using namespace CCL::ECS;

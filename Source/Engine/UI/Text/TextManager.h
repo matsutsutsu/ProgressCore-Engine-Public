@@ -1,14 +1,14 @@
 #pragma once
 
 #include "BitmapFont.h"
-#include "Engine/Graphics/Core/Graphics.h"
+#include "Engine/Graphics/RHI/Graphics.h"
 #include <algorithm>
 #include <memory>
 #include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "Engine/Graphics/Core/Camera.h"
+#include "Engine/Graphics/RHI/Camera.h"
 
 struct TextParams {
     std::string       text = "";

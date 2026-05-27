@@ -1,11 +1,11 @@
 #include "NavMeshBuilder.h"
-#include "ECS/Core/CCL_World.h"
-#include "Engine/GamePlay/Transform/TransformComponent.h"
-#include "Engine/GamePlay/Graphics/Core/ModelComponent.h"
+#include "Engine/ECS/Core/CCL_World.h"
+#include "Engine/Transform/Components/TransformComponent.h"
+#include "Engine/Graphics/Components/Core/ModelComponent.h"
 #include "Engine/Graphics/Resource/Model.h"
-#include "Engine/Platform/Logger.h"
+#include "Engine/Platform/Core/Logger.h"
 
-#include "Engine/GamePlay/AI/Navigation/NavigationData.h"
+#include "Engine/AI/Navigation/Core/NavigationData.h"
 
 // Recast & Detour ライブラリのインクルード
 #include <Recast.h>

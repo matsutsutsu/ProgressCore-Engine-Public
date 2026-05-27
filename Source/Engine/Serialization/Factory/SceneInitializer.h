@@ -1,5 +1,5 @@
 #pragma once
-#include "ECS/Core/CCL_World.h"
+#include "Engine/ECS/Core/CCL_World.h"
 
 // モデルクラスのパスは適宜合わせてください
 #include <d3d11.h>
@@ -15,7 +15,7 @@ class SceneInitializer {
 
     // カメラテスト
     static void SpawnCameraTest(CCL::ECS::Core::World &world, ID3D11Device *device, int count);
-
+    
 
     // ジョルトのテスト環境
     static void SpawnJoltTest(CCL::ECS::Core::World &world, ID3D11Device *device);

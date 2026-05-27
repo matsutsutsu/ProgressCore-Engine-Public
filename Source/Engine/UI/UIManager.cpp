@@ -1,9 +1,12 @@
 #include "UIManager.h"
-#include "Engine/Graphics/Core/Graphics.h" // 画面サイズ取得用
+#include "Engine/Graphics/RHI/Graphics.h" // 画面サイズ取得用
 #include "UIContext.h"
 #include "UIElement.h"
-#include <imgui.h>
 #include <iostream>
+
+#if ENABLE_EDITOR
+#include <imgui.h>
+#endif
 
 // ===========================================================================
 // File: UIManager.h / .cpp
@@ -124,6 +127,8 @@ void UIManager::Render()
 
 void UIManager::DrawDebugGUI()
 {
+
+#if ENABLE_EDITOR
     if (ImGui::Begin("UI Manager Debug")) {
         ImGui::Text("Global Scale: %.2f", GetGlobalScale());
         ImGui::Text("Root Elements: %d", (int)m_rootElements.size());
@@ -136,4 +141,6 @@ void UIManager::DrawDebugGUI()
         }
     }
     ImGui::End();
+
+#endif
 }

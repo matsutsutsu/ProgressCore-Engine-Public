@@ -1,12 +1,12 @@
 #include "AIPatrolSystem.h"
-#include "ECS/Core/CCL_World.h"
-#include "Engine/Platform/Logger.h"
-#include "Engine/GamePlay/AI/Navigation/NavigationData.h"
+#include "Engine/ECS/Core/CCL_World.h"
+#include "Engine/Platform/Core/Logger.h"
+#include "Engine/AI/Navigation/Core/NavigationData.h"
 #include <DetourNavMeshQuery.h>
 #include <random>
 
 // システムの実行順序の定義ヘッダー
-#include "ECS/System/CCL_SystemRegistry.h"
+#include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"
 
 // ===================================================================================
