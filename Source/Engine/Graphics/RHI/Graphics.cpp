@@ -4,13 +4,9 @@
 
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
 
-#include "Engine/Graphics/Shader/Material/BasicShader.h"
-#include "Engine/Graphics/Shader/Material/LambertShader.h"
 #include "Engine/Graphics/Shader/Material/OutlineShader.h"
-#include "Engine/Graphics/Shader/Material/PBRShader.h"
-#include "Engine/Graphics/Shader/Material/PhongShader.h"
 #include "Engine/Graphics/Shader/Material/ShadowMapShader.h"
-#include "Engine/Graphics/Shader/Material/ToonShader.h"
+
 
 // HLSLの CbScene (b8) に合わせた構造体
 struct CbSceneData {
@@ -155,14 +151,31 @@ void Graphics::Initialize(HWND hWnd)
     particleRenderer->Initialize(device.Get());
 
 
-	// enum ではなく、文字列のハッシュ値を使ってシェーダーファクトリを登録します
-	ShaderRegistry::Instance().RegisterShader<BasicShader>("Basic"_hash);
-	ShaderRegistry::Instance().RegisterShader<LambertShader>("Lambert"_hash);
-	ShaderRegistry::Instance().RegisterShader<PhongShader>("Phong"_hash);
-	ShaderRegistry::Instance().RegisterShader<ToonShader>("Toon"_hash);
+	// ⭕ 変更後: C++クラス不要！ パスを書くだけでどんなシェーダーも追加可能
+	auto& registry = ShaderRegistry::Instance();
+	
+	registry.RegisterMaterialShader("PBR"_hash,
+		"Assets/Shader/PBR_VS.cso", L"Shader/Material/PBR/PBR_VS.hlsl",
+		"Assets/Shader/PBR_PS.cso", L"Shader/Material/PBR/PBR_PS.hlsl");
+
+	registry.RegisterMaterialShader("Phong"_hash,
+		"Assets/Shader/PhongVS.cso", L"Shader/Material/Phong/PhongVS.hlsl",
+		"Assets/Shader/PhongPS.cso", L"Shader/Material/Phong/PhongPS.hlsl");
+
+	registry.RegisterMaterialShader("Lambert"_hash,
+		"Assets/Shader/LambertVS.cso", L"Shader/Material/Lambert/LambertVS.hlsl",
+		"Assets/Shader/LambertPS.cso", L"Shader/Material/Lambert/LambertPS.hlsl");
+
+	registry.RegisterMaterialShader("Basic"_hash,
+		"Assets/Shader/BasicVS.cso", L"Shader/Material/Basic/BasicVS.hlsl",
+		"Assets/Shader/BasicPS.cso", L"Shader/Material/Basic/BasicPS.hlsl");
+
+	registry.RegisterMaterialShader("Toon"_hash,
+		"Assets/Shader/ToonVS.cso", L"Shader/Material/Toon/ToonVS.hlsl",
+		"Assets/Shader/ToonPS.cso", L"Shader/Material/Toon/ToonPS.hlsl");
+
 	ShaderRegistry::Instance().RegisterShader<OutlineShader>("Outline"_hash);
 	ShaderRegistry::Instance().RegisterShader<ShadowMapShader>("ShadowMap"_hash);
-	ShaderRegistry::Instance().RegisterShader<PBRShader>("PBR"_hash);
 
 	// ゲームビュー用RTT作成
 	D3D11_TEXTURE2D_DESC texDesc = {};
@@ -201,6 +214,12 @@ void Graphics::Initialize(HWND hWnd)
 // 毎フレーム呼び出す更新処理
 void Graphics::Update(Camera* camera)
 {
+
+	// 開発中のみ、毎フレームシェーダーのファイル更新を監視する
+#if defined(_DEBUG) || defined(ENABLE_EDITOR)
+	ShaderRegistry::Instance().UpdateHotReload(GetDevice());
+#endif
+
     // カメラ情報の更新
     if (_sceneConstantBuffer && camera) {
         CbSceneData data;

@@ -4,6 +4,34 @@
 
 namespace ShaderReflect
 {
+    // =======================================================
+    // ★追加：ハッシュ値による検索の実装
+    // =======================================================
+    const VariableInfo* ConstantBufferInfo::FindVariable(uint32_t nameHash) const
+    {
+        for (const auto& var : variables)
+        {
+            if (var.nameHash == nameHash)
+            {
+                return &var;
+            }
+        }
+        return nullptr;
+    }
+
+    // (既存) 文字列による検索の実装
+    const VariableInfo* ConstantBufferInfo::FindVariable(const std::string& name) const
+    {
+        for (const auto& var : variables)
+        {
+            if (var.name == name)
+            {
+                return &var;
+            }
+        }
+        return nullptr;
+    }
+
     // .csoファイルから読み込み
     bool ReflectionData::LoadFromCompiledFile(const char* filename)
     {
@@ -98,6 +126,7 @@ namespace ShaderReflect
 
                 VariableInfo varInfo;
                 varInfo.name = varDesc.Name;
+                varInfo.nameHash = CCL::Utils::HashString(varDesc.Name);
                 varInfo.offset = varDesc.StartOffset;
                 varInfo.size = varDesc.Size;
                 varInfo.type = typeDesc.Type;
@@ -141,6 +170,7 @@ namespace ShaderReflect
             {
                 TextureInfo texInfo;
                 texInfo.name = bindDesc.Name;
+				texInfo.nameHash = CCL::Utils::HashString(bindDesc.Name);
                 texInfo.bindPoint = bindDesc.BindPoint;
                 texInfo.type = bindDesc.Type;
                 texInfo.dimension = bindDesc.Dimension;
@@ -160,6 +190,7 @@ namespace ShaderReflect
             {
                 SamplerInfo sampInfo;
                 sampInfo.name = bindDesc.Name;
+                sampInfo.nameHash = CCL::Utils::HashString(bindDesc.Name);
                 sampInfo.bindPoint = bindDesc.BindPoint;
 
                 samplers.push_back(sampInfo);

@@ -76,12 +76,18 @@ void Shader::UpdateMaterialProperties(ID3D11DeviceContext* dc, const MaterialDat
         auto& cb = cbPair.second;
         bool isUpdated = false;
 
+        // ========================================================
+        // ① 定数バッファへの値の流し込み（ループの修正）
+        // ========================================================
+        // ⭕ 修正後: nameHash と value にアクセスする
         for (const auto& prop : mat.scalars) {
-            if (cb.SetValue(prop.first, prop.second)) isUpdated = true;
+            // ※もし cb.SetValue が uint32_t (ハッシュ) を受け付けない場合は、
+            // AutoConstantBuffer側の SetValue の引数を std::string から uint32_t に変更する必要があります。
+            if (cb.SetValue(prop.nameHash, prop.value)) isUpdated = true;
         }
 
         for (const auto& prop : mat.colors) {
-            if (cb.SetValue(prop.first, prop.second)) isUpdated = true;
+            if (cb.SetValue(prop.nameHash, prop.value)) isUpdated = true;
         }
 
         if (isUpdated) {
@@ -89,18 +95,22 @@ void Shader::UpdateMaterialProperties(ID3D11DeviceContext* dc, const MaterialDat
         }
     }
 
+    // ========================================================
+    // ② テクスチャのバインド（findの修正）
+    // ========================================================
     const auto& shaderTextures = _reflection.GetTextures();
 
     for (const auto& texInfo : shaderTextures) {
         if (texInfo.bindPoint >= SLOT_SRV_SHADOW) continue;
         if (texInfo.bindPoint >= SLOT_SRV_FOG_NOISE) continue;
 
-        auto it = mat.textures.find(texInfo.name);
         UINT slot = texInfo.bindPoint;
+        TextureHandle texHandle;
 
-        if (it != mat.textures.end() && it->second.IsValid()) {
+        // ⭕ 究極の最適化: 実行時のハッシュ計算すら不要。ロード時に計算済みの texInfo.nameHash を使う！
+        if (mat.GetTexture(texInfo.nameHash, texHandle) && texHandle.IsValid()) {
             // ★cppに分けたことで、ここでResourceManagerを安全に呼び出せる
-            ID3D11ShaderResourceView* srv = ResourceManager::Instance().GetTexture(it->second);
+            ID3D11ShaderResourceView* srv = ResourceManager::Instance().GetTexture(texHandle);
             dc->PSSetShaderResources(slot, 1, &srv);
 
             if (std::find(_usedTextureSlots.begin(), _usedTextureSlots.end(), slot) == _usedTextureSlots.end()) {
@@ -120,4 +130,13 @@ std::filesystem::file_time_type Shader::GetLastWriteTime(const std::string& file
         return std::filesystem::last_write_time(filepath);
     }
     return (std::filesystem::file_time_type::min)();
+}
+
+void Shader::ResetReflection()
+{
+    _constantBuffers.clear();
+    _textureSlots.clear();
+    _samplerSlots.clear();
+    _usedTextureSlots.clear();
+    _reflection = ShaderReflect::ReflectionData();
 }

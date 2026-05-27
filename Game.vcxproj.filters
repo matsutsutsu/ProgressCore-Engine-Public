@@ -678,22 +678,10 @@
     <ClInclude Include="Source\Engine\Graphics\Resource\ResourceManager.h">
       <Filter>Source\Engine\Graphics\Resource</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Shader\Material\BasicShader.h">
-      <Filter>Source\Engine\Graphics\Shader\Material</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Shader\Material\LambertShader.h">
-      <Filter>Source\Engine\Graphics\Shader\Material</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\OutlineShader.h">
       <Filter>Source\Engine\Graphics\Shader\Material</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Shader\Material\PhongShader.h">
-      <Filter>Source\Engine\Graphics\Shader\Material</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\ShadowMapShader.h">
-      <Filter>Source\Engine\Graphics\Shader\Material</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Shader\Material\ToonShader.h">
       <Filter>Source\Engine\Graphics\Shader\Material</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\Pass\ShadowMap.h">
@@ -792,14 +780,8 @@
     <ClInclude Include="Source\Engine\Core\Math\StringHash.h">
       <Filter>Source\Engine\Core\Math</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Shader\Material\DissolveShader.h">
-      <Filter>Source\Engine\Graphics\Shader\Material</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Resource\ResourcePool.h">
       <Filter>Source\Engine\Graphics\Resource</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Shader\Material\PBRShader.h">
-      <Filter>Source\Engine\Graphics\Shader\Material</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\GameEvent\GameOverResource.h">
       <Filter>Source\Game\GameEvent</Filter>
@@ -1545,6 +1527,9 @@
     <ClInclude Include="Source\Engine\Core\pch.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Shader\Material\MaterialShader.h">
+      <Filter>Source\Engine\Graphics\Shader\Material</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -1733,22 +1718,10 @@
     <ClCompile Include="Source\Engine\Graphics\Resource\ResourceManager.cpp">
       <Filter>Source\Engine\Graphics\Resource</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Graphics\Shader\Material\BasicShader.cpp">
-      <Filter>Source\Engine\Graphics\Shader\Material</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Graphics\Shader\Material\LambertShader.cpp">
-      <Filter>Source\Engine\Graphics\Shader\Material</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\OutlineShader.cpp">
       <Filter>Source\Engine\Graphics\Shader\Material</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Graphics\Shader\Material\PhongShader.cpp">
-      <Filter>Source\Engine\Graphics\Shader\Material</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\ShadowMapShader.cpp">
-      <Filter>Source\Engine\Graphics\Shader\Material</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Graphics\Shader\Material\ToonShader.cpp">
       <Filter>Source\Engine\Graphics\Shader\Material</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Shader\Pass\ShadowMap.cpp">
@@ -1810,12 +1783,6 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\UI\ImGui\ImGuiThemes.cpp">
       <Filter>Source\Engine\UI\ImGui</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Graphics\Shader\Material\DissolveShader.cpp">
-      <Filter>Source\Engine\Graphics\Shader\Material</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Graphics\Shader\Material\PBRShader.cpp">
-      <Filter>Source\Engine\Graphics\Shader\Material</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Combat\HealthSystem.cpp">
       <Filter>Source\Game\Logics\Combat</Filter>
@@ -2308,6 +2275,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Transform\Systems\TransformUpdateSystem.cpp">
       <Filter>Source\Engine\Transform\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Shader\Material\MaterialShader.cpp">
+      <Filter>Source\Engine\Graphics\Shader\Material</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\ECS\Jobs\CCL_JobSystem.cpp">
       <Filter>Source\Engine\ECS\Jobs</Filter>
