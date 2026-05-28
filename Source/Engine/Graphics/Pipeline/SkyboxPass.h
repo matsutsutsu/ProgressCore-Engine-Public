@@ -3,17 +3,24 @@
 #include <wrl.h>
 #include <DirectXMath.h>
 
-class SkyboxPass : public IRenderPass {
+/**
+ * @brief フルスクリーン三角形でスカイボックスを描画するパス。
+ * @details
+ *  頂点バッファなし・Z=1.0 専用ステートを使い、
+ *  不透明パスが描いた「空き領域」にだけ空を描く。
+ */
+class SkyboxPass : public IRenderPass
+{
 public:
-    void Initialize(ID3D11Device* device) override;
-    void Execute(const RenderContext& rc) override;
-private:
-    // 以下のメンバ変数を追加
-    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> _skyboxTex;
+    void Initialize(const RenderServices& services) override;
+    void Execute(const RenderFrameContext& ctx) override;
+    const char* GetName() const override { return "SkyboxPass"; }
 
-    Microsoft::WRL::ComPtr<ID3D11VertexShader> _vertexShader;
-    Microsoft::WRL::ComPtr<ID3D11PixelShader> _pixelShader;
-    Microsoft::WRL::ComPtr<ID3D11Buffer> _cbSkybox;
+private:
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> _skyboxTex;
+    Microsoft::WRL::ComPtr<ID3D11VertexShader>       _vertexShader;
+    Microsoft::WRL::ComPtr<ID3D11PixelShader>        _pixelShader;
+    Microsoft::WRL::ComPtr<ID3D11Buffer>             _cbSkybox;
 
     struct CbSkybox {
         DirectX::XMFLOAT4X4 invViewProj;

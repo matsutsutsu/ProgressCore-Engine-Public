@@ -1,17 +1,18 @@
 #include "SetupPass.h"
 #include "Engine/Graphics/Shader/PostProcess/PostProcessManager.h"
-#include "Engine/Graphics/RHI/Graphics.h"
 
-void SetupPass::Execute(const RenderContext& rc){
+void SetupPass::Execute(const RenderFrameContext& ctx)
+{
 #if TRACY_ENABLE
     ZoneScopedN("Pass: Setup");
 #endif
 
+    RenderContext rc = MakeLegacyContext(*_services, ctx);
     if (!rc.postProcess) return;
 
-    // 背景色（BaseSceneにあったもの）
     float clearColor[] = { 0.11f, 0.16f, 0.25f, 1.0f };
 
-    // HDRバッファのバインドとクリア
-    rc.postProcess->BeginScene(rc.deviceContext, clearColor, Graphics::Instance().GetDepthStencilView());
+    // Graphics::Instance().GetDepthStencilView() → ctx.targetDSV に変更。
+    // targetDSV はフレームコンテキストに含まれるため、シングルトンアクセス不要。
+    rc.postProcess->BeginScene(ctx.dc, clearColor, ctx.targetDSV);
 }

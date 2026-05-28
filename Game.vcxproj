@@ -465,7 +465,6 @@
     <ClInclude Include="Source\Engine\Graphics\Pipeline\ParticlePass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\PostProcessPass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\PrimitivePass.h" />
-    <ClInclude Include="Source\Engine\Graphics\Pipeline\RenderPipeline.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\SetupPass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\ShadowPass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\SkyboxPass.h" />

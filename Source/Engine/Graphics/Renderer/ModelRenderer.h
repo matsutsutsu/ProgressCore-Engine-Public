@@ -1,43 +1,116 @@
 #pragma once
-#include <memory>
-#include <vector>
 #include <wrl.h>
 #include <d3d11.h>
 #include <DirectXMath.h>
 #include "Engine/Graphics/Resource/Model.h"
 #include "Engine/Graphics/RHI/RenderContext.h"
-#include "Engine/Graphics/Pipeline/RenderPipeline.h"
+#include "Engine/Graphics/Pipeline/Core/RenderPipeline.h"
 
+/**
+ * @brief レンダリングパイプラインのオーナー兼スケルトン定数バッファの管理者。
+ *
+ * @details
+ *  【2フェーズ初期化】
+ *  Graphics の各サブシステムが互いを参照する循環依存を回避するため、
+ *  初期化を 2 段階に分割する。
+ *
+ *  - Phase 1 : ModelRenderer(device)
+ *              軽量。スケルトン定数バッファのみ確保。
+ *              Graphics::Initialize 内で他システムと並んで生成される。
+ *
+ *  - Phase 2 : SetupPipeline(services)
+ *              全サブシステム確保後に Graphics から 1 回だけ呼ぶ。
+ *              _pipeline.Initialize → AddPass<T>() の順序を保証する。
+ *
+ *  【Render の移行パス】
+ *  - 旧コード（移行期ブリッジ） : Render(const RenderContext& rc)
+ *  - 新コード（将来の標準）     : Render(const RenderFrameContext& ctx)
+ *    呼び出し側を移行し終えたら旧 Render を削除する。
+ */
 class ModelRenderer
 {
 public:
-    ModelRenderer(ID3D11Device* device);
+    /**
+     * @brief Phase 1：スケルトン定数バッファのみ確保する。
+     * @param device DirectX デバイス。
+     * @note  パイプライン未構築。SetupPipeline を呼ぶまで Render は不可。
+     */
+    explicit ModelRenderer(ID3D11Device* device);
+
+    /**
+     * @brief パイプラインを Shutdown し、全 GPU リソースを解放する。
+     */
     ~ModelRenderer();
 
-    // 毎フレームの描画実行（パイプラインを回す）
+    ModelRenderer(const ModelRenderer&) = delete;
+    ModelRenderer& operator=(const ModelRenderer&) = delete;
+
+    /**
+     * @brief Phase 2：パイプラインを組み立てる。全サブシステム生成後に 1 回だけ呼ぶ。
+     * @param services 全フィールドが設定済みの永続サービス群。
+     *                 エンジン終了まで全ポインタが有効であること。
+     * @details
+     *  内部で _pipeline.Initialize(services) を先に呼んでから AddPass するため、
+     *  services の各ポインタが揃っていない状態で呼ぶと各パスの Initialize が
+     *  null 参照で落ちる。呼び出し元（Graphics）で全て埋めてから渡すこと。
+     *
+     *  @code
+     *    // Graphics::Initialize の末尾で：
+     *    RenderServices svc;
+     *    svc.device        = device.Get();
+     *    svc.renderState   = renderState.get();
+     *    // ... 全フィールドを設定 ...
+     *    modelRenderer->SetupPipeline(svc);
+     *  @endcode
+     */
+    void SetupPipeline(const RenderServices& services);
+
+    /**
+     * @brief 毎フレームの描画実行（新 API）。
+     * @param ctx フレーム単位の揮発コンテキスト。
+     */
+    void Render(const RenderFrameContext& ctx);
+
+    /**
+     * @brief 毎フレームの描画実行（旧 API ブリッジ、移行期のみ）。
+     * @deprecated 呼び出し側を RenderFrameContext 版に移行したら削除する。
+     * @note RenderContext に targetDSV が存在しないため、
+     *       ブリッジ内部で Graphics::Instance() から DSV を取得している。
+     *       これが唯一の残存シングルトンアクセス。
+     */
     void Render(const RenderContext& rc);
 
-    // =========================================================
-    // 舞台監督 (EnvironmentSystem) や 各Pass から呼ばれるAPI
-    // =========================================================
+    // ================================================================
+    //  EnvironmentSystem や各 Pass から呼ばれる API
+    // ================================================================
 
+    /**
+     * @brief CbScene・CbSkeleton 等のグローバル定数バッファを全ステージにバインドする。
+     * @note CbScene の取得に Graphics::Instance() を使用中（残存シングルトン）。
+     *       CbScene を RenderServices / RenderFrameContext に移したら除去する。
+     */
     void BindAllGlobalConstantBuffers(ID3D11DeviceContext* dc);
+
+    /**
+     * @brief メッシュのボーン行列を GPU へ転送し、VS スロット SLOT_CB_SKELETON にバインドする。
+     * @param dc デバイスコンテキスト。
+     * @param mesh ボーン情報を含むメッシュ（bones が空でも安全）。
+     */
     void UpdateSkeletonConstants(ID3D11DeviceContext* dc, const Model::Mesh& mesh);
 
-    
 private:
-    RenderPipeline _pipeline; // 全ての描画を司るパイプライン
+    RenderPipeline _pipeline; ///< 全描画パスを管理するパイプライン
 
-  
-    // スケルトン用定数バッファ
-    ID3D11Buffer* _cbSkeletonBuffer = nullptr;
-    static const int MAX_BONES = 256;
+    /// スケルトン定数バッファ（ComPtr 所有、手動 Release 不要）
+    Microsoft::WRL::ComPtr<ID3D11Buffer> _cbSkeletonBuffer;
+
+    static constexpr int MAX_BONES = 256;
+
     struct CbSkeleton {
         DirectX::XMFLOAT4X4 boneTransforms[MAX_BONES];
     };
-    CbSkeleton m_cbSkeletonCache = {};
+    CbSkeleton _cbSkeletonCache = {};
 
-    // 内部初期化・解放関数
     void InitializeGlobalConstantBuffers(ID3D11Device* device);
     void UnbindAllResources(ID3D11DeviceContext* dc);
 };

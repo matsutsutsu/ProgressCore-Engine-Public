@@ -4,8 +4,8 @@
 #include <utility>
 #include <vector>
 
-#include "IRenderPass.h"
-#include "RenderContext.h"
+#include "Engine/Graphics/Pipeline/IRenderPass.h"
+#include "Engine/Graphics/RHI/RenderContext.h"
 
 /**
  * @brief 複数の RenderPass を順序付きで実行するパイプライン。
@@ -17,12 +17,10 @@
  *  典型的な使い方：
  *  @code
  *    RenderPipeline pipeline;
- *    pipeline.Initialize(services);
+ *    pipeline.Initialize(services);          // ← 必ず AddPass より前に呼ぶ
  *    pipeline.AddPass<ShadowMapPass>();
  *    pipeline.AddPass<OpaqueGeometryPass>();
- *    pipeline.AddPass<TransparentPass>();
  *    pipeline.AddPass<PostProcessPass>();
- *
  *    // 毎フレーム
  *    pipeline.Execute(frameCtx);
  *  @endcode
@@ -37,26 +35,22 @@ public:
     RenderPipeline& operator=(const RenderPipeline&) = delete;
 
     /**
-     * @brief パイプラインを初期化する。
-     * @details
-     *  AddPass で渡すサービス群をここで保持する。
-     *  以降の AddPass / Execute / OnResize より前に必ず 1 回呼ぶこと。
+     * @brief パイプラインを初期化する。AddPass より前に必ず 1 回呼ぶこと。
+     * @details 以降の AddPass に渡すサービス群をここで保持する。
      */
     void Initialize(const RenderServices& services);
 
     /**
-     * @brief 全パスを Shutdown して破棄する。
-     * @details パスは追加と逆順で破棄される（依存関係対策）。
+     * @brief 全パスを Shutdown して破棄する。パスは追加と逆順で破棄される。
      */
     void Shutdown();
 
     /**
      * @brief パスを末尾に追加し、その場で Initialize まで実行する。
-     * @tparam T IRenderPass の派生型
+     * @tparam T   IRenderPass の派生型
      * @tparam Args T のコンストラクタ引数
      * @return 追加されたパスへの非所有ポインタ（所有権は RenderPipeline）
-     *
-     * @note 戻り値はパスのプロパティ調整等に使う。寿命管理は RenderPipeline が行う。
+     * @note  戻り値はパスのプロパティ調整等に使う。寿命管理は RenderPipeline が行う。
      */
     template <typename T, typename... Args>
     T* AddPass(Args&&... args)
@@ -66,7 +60,7 @@ public:
 
         auto pass = std::make_unique<T>(std::forward<Args>(args)...);
         T* raw = pass.get();
-        pass->Initialize(_services);
+        pass->Initialize(_services);        // _services は Initialize() 後にのみ有効
         _passes.push_back(std::move(pass));
         return raw;
     }
@@ -75,7 +69,7 @@ public:
      * @brief 登録された全パスを順番に実行する。
      * @details
      *  - enabled == false のパスはスキップ
-     *  - Debug ビルドでは ID3DUserDefinedAnnotation で各パスを Begin/End マーカーで囲む
+     *  - Debug/Profile ビルドでは ID3DUserDefinedAnnotation で各パスを囲む
      */
     void Execute(const RenderFrameContext& ctx);
 

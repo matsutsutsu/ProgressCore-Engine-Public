@@ -1,7 +1,10 @@
 #pragma once
 #include "Engine/Graphics/Pipeline/IRenderPass.h"
 
-class PrimitivePass : public IRenderPass {
+/// @brief ShapeRenderer / PrimitiveRenderer によるデバッグ描画パス（ワールド空間の末尾）。
+class PrimitivePass : public IRenderPass
+{
 public:
-    void Execute(const RenderContext& rc)override;
+    void Execute(const RenderFrameContext& ctx) override;
+    const char* GetName() const override { return "PrimitivePass"; }
 };

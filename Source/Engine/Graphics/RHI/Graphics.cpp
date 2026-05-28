@@ -3,6 +3,8 @@
 #include "Engine/Graphics/RHI/Camera.h"
 
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
+#include "Engine/Graphics/Resource/ResourceManager.h"  
+#include "Engine/Graphics/Renderer/RenderQueue.h"      
 
 #include "Engine/Graphics/Shader/Material/OutlineShader.h"
 #include "Engine/Graphics/Shader/Material/ShadowMapShader.h"
@@ -209,6 +211,28 @@ void Graphics::Initialize(HWND hWnd)
             // エラーハンドリング (OutputDebugStringなど)
         }
     }
+
+	// ================================================================
+//  RenderPipeline 最終セットアップ
+//  全サブシステム生成後に 1 回だけ実行する。
+//  この時点で全ポインタが有効であること。
+// ================================================================
+	{
+		RenderServices svc;
+		svc.device = device.Get();
+		svc.renderState = renderState.get();
+		svc.resources = &ResourceManager::Instance();
+		svc.shaders = &ShaderRegistry::Instance();
+		svc.modelRenderer = modelRenderer.get();
+		svc.primitiveRenderer = primitiveRenderer.get();
+		svc.shapeRenderer = shapeRenderer.get();
+		svc.particleRenderer = particleRenderer.get();
+		svc.shadowMap = shadowMap.get();
+		svc.renderQueue = &RenderQueue::Instance();
+		// TODO: svc.lightManager = ...;  LightManager 実装後に追加
+		// TODO: svc.postProcess  = ...;  PostProcessManager 実装後に追加
+		modelRenderer->SetupPipeline(svc);
+	}
 }
 
 // 毎フレーム呼び出す更新処理

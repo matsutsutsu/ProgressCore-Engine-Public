@@ -1,7 +1,12 @@
 #pragma once
 #include "Engine/Graphics/Pipeline/IRenderPass.h"
 
-class SetupPass : public IRenderPass {
+/**
+ * @brief フレーム冒頭で HDR バッファをクリアし、出力先としてバインドするパス。
+ */
+class SetupPass : public IRenderPass
+{
 public:
-    void Execute(const RenderContext& rc)override;
+    void Execute(const RenderFrameContext& ctx) override;
+    const char* GetName() const override { return "SetupPass"; }
 };

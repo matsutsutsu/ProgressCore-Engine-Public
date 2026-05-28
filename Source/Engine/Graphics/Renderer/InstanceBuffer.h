@@ -111,6 +111,9 @@ public:
         dc->VSSetShaderResources(slot, 1, &nullSRV);
     }
 
+    // InstanceBuffer.h に追加
+    size_t GetMaxInstances() const { return _maxInstances; }
+
 private:
     Microsoft::WRL::ComPtr<ID3D11Buffer> _buffer;
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> _srv;

@@ -1257,9 +1257,6 @@
     <ClInclude Include="Source\Engine\Graphics\Pipeline\PrimitivePass.h">
       <Filter>Source\Engine\Graphics\Pipeline</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Pipeline\RenderPipeline.h">
-      <Filter>Source\Engine\Graphics\Pipeline</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Pipeline\SetupPass.h">
       <Filter>Source\Engine\Graphics\Pipeline</Filter>
     </ClInclude>
