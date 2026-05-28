@@ -475,6 +475,9 @@
     <Filter Include="Source\Engine\ECS\Events">
       <UniqueIdentifier>{9a63c3c7-ee50-4e0f-9a72-72728f71e63f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Graphics\Pipeline\Core">
+      <UniqueIdentifier>{8664d2cd-5353-4f0c-ae14-f865b1feb1de}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1242,9 +1245,6 @@
     <ClInclude Include="Source\Engine\Graphics\RHI\RenderTarget.h">
       <Filter>Source\Engine\Graphics\RHI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Pipeline\IRenderPass.h">
-      <Filter>Source\Engine\Graphics\Pipeline</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Pipeline\OpaquePass.h">
       <Filter>Source\Engine\Graphics\Pipeline</Filter>
     </ClInclude>
@@ -1529,6 +1529,12 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\MaterialShader.h">
       <Filter>Source\Engine\Graphics\Shader\Material</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Pipeline\IRenderPass.h">
+      <Filter>Source\Engine\Graphics\Pipeline\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Pipeline\Core\RenderPipeline.h">
+      <Filter>Source\Engine\Graphics\Pipeline\Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2284,6 +2290,12 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\pch.cpp">
       <Filter>Source\Engine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Pipeline\Core\RenderPipeline.cpp">
+      <Filter>Source\Engine\Graphics\Pipeline\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\RHI\RenderTarget.cpp">
+      <Filter>Source\Engine\Graphics\RHI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
