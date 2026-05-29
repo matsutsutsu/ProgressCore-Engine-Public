@@ -8,24 +8,6 @@
 
 /**
  * @brief レンダリングパイプラインのオーナー兼スケルトン定数バッファの管理者。
- *
- * @details
- *  【2フェーズ初期化】
- *  Graphics の各サブシステムが互いを参照する循環依存を回避するため、
- *  初期化を 2 段階に分割する。
- *
- *  - Phase 1 : ModelRenderer(device)
- *              軽量。スケルトン定数バッファのみ確保。
- *              Graphics::Initialize 内で他システムと並んで生成される。
- *
- *  - Phase 2 : SetupPipeline(services)
- *              全サブシステム確保後に Graphics から 1 回だけ呼ぶ。
- *              _pipeline.Initialize → AddPass<T>() の順序を保証する。
- *
- *  【Render の移行パス】
- *  - 旧コード（移行期ブリッジ） : Render(const RenderContext& rc)
- *  - 新コード（将来の標準）     : Render(const RenderFrameContext& ctx)
- *    呼び出し側を移行し終えたら旧 Render を削除する。
  */
 class ModelRenderer
 {
@@ -70,6 +52,17 @@ public:
      * @param ctx フレーム単位の揮発コンテキスト。
      */
     void Render(const RenderFrameContext& ctx);
+
+    /**
+    * @brief パイプラインに渡された RenderServices への const 参照を返す。
+    * @details EnvironmentSystem 等のパイプライン外システムが
+    *          `Graphics::Instance()` を使わずに services に到達するための唯一の入口。
+    *  @code
+    *    const RenderServices& svc = gfx.GetModelRenderer()->GetServices();
+    *    envSystem->BindGlobalResources(dc, svc);
+    *  @endcode
+    */
+    const RenderServices& GetServices() const noexcept;
 
 
     // ================================================================

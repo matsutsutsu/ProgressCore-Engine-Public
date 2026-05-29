@@ -18,7 +18,6 @@ void TransparentPass::Execute(const RenderFrameContext& ctx)
 #if TRACY_ENABLE
     ZoneScopedN("Pass: Transparent");
 #endif
-    // MakeLegacyContext 不要: _services / ctx を直接参照
     ID3D11DeviceContext* dc = ctx.dc;
     RenderQueue* queue = _services->renderQueue;
     ModelRenderer* renderer = _services->modelRenderer;
@@ -44,19 +43,14 @@ void TransparentPass::Execute(const RenderFrameContext& ctx)
         shader->Begin(dc, *_services, ctx);
 
         const Model::Mesh& mesh = *info.mesh;
-        Model::Mesh& mutableMesh = const_cast<Model::Mesh&>(mesh);
-        Model::Material* origMat = mutableMesh.material;
-        Model::Material  tempWrapper;
 
-        bool applyOverride = info.overrideMaterial.IsValid();
-        if (applyOverride) {
-            MaterialData* ptr = _services->resources->GetMaterial(info.overrideMaterial);
-            if (ptr) {
-                tempWrapper.data = std::shared_ptr<MaterialData>(ptr, [](MaterialData*) {});
-                tempWrapper.name = "TranspOverride";
-                mutableMesh.material = &tempWrapper;
-            }
-            else { applyOverride = false; }
+        // =========================================================
+        // ★ F: const_cast 廃止
+        //    override は引数として取得し、mesh.material を書き換えない。
+        // =========================================================
+        MaterialData* overrideMat = nullptr;
+        if (info.overrideMaterial.IsValid()) {
+            overrideMat = _services->resources->GetMaterial(info.overrideMaterial);
         }
 
         const bool isSkinned = !mesh.bones.empty();
@@ -75,7 +69,8 @@ void TransparentPass::Execute(const RenderFrameContext& ctx)
 
         if (isSkinned) renderer->UpdateSkeletonConstants(dc, mesh);
 
-        shader->Update(dc, mesh);
+        // override を明示的に渡す（mesh.material への書き込みゼロ）
+        shader->Update(dc, mesh, overrideMat);
 
         UINT stride = sizeof(ModelResource::Vertex), offset = 0;
         dc->IASetVertexBuffers(0, 1, mesh.data->vertexBuffer.GetAddressOf(), &stride, &offset);
@@ -83,7 +78,7 @@ void TransparentPass::Execute(const RenderFrameContext& ctx)
         dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         dc->DrawIndexed(static_cast<UINT>(mesh.data->indices.size()), 0, 0);
 
-        if (applyOverride) mutableMesh.material = origMat;
+        // ★ const_cast による restore 行 完全削除
         _instanceBuffer.Unbind(dc, SLOT_SRV_INSTANCE);
         shader->End(dc, *_services);
     }

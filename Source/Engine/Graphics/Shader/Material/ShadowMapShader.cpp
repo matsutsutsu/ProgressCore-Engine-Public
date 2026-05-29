@@ -29,9 +29,10 @@ void ShadowMapShader::Begin(ID3D11DeviceContext* dc,
     }
 }
 
-void ShadowMapShader::Update(ID3D11DeviceContext* /*dc*/, const Model::Mesh& /*mesh*/)
+void ShadowMapShader::Update(ID3D11DeviceContext* /*dc*/, const Model::Mesh& /*mesh*/,
+    const MaterialData* /*overrideMaterial*/)
 {
-    // 影生成パスでは色・テクスチャ不要（アルファテストが必要な場合のみ実装を追加）
+    // 影生成パスではマテリアル色・テクスチャ不要（アルファテストが必要な場合のみ実装を追加）
 }
 
 void ShadowMapShader::End(ID3D11DeviceContext* dc, const RenderServices& /*s*/)

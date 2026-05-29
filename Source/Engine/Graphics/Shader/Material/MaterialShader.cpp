@@ -35,11 +35,17 @@ void MaterialShader::Begin(ID3D11DeviceContext* dc,
     ApplyShaderPipeline(dc, vertexShader.Get(), pixelShader.Get(), inputLayout.Get());
 }
 
-void MaterialShader::Update(ID3D11DeviceContext* dc, const Model::Mesh& mesh)
+
+void MaterialShader::Update(ID3D11DeviceContext* dc,
+    const Model::Mesh& mesh,
+    const MaterialData* overrideMaterial)
 {
-    if (mesh.material && mesh.material->data) {
-        UpdateMaterialProperties(dc, *mesh.material->data);
-    }
+    // overrideMaterial が非 null ならそちらを優先する。
+    // mesh.material を書き換えない（const_cast 廃止）。
+    const MaterialData* mat = overrideMaterial
+        ? overrideMaterial : (mesh.material && mesh.material->data ? mesh.material->data.get() : nullptr);
+
+    if (mat) UpdateMaterialProperties(dc, *mat);
 }
 
 void MaterialShader::End(ID3D11DeviceContext* dc, const RenderServices& /*s*/)

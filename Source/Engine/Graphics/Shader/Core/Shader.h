@@ -39,11 +39,13 @@ public:
 
     /**
      * @brief メッシュごとのマテリアル・定数転送。
-     * @param dc   デバイスコンテキスト。
-     * @param mesh 描画対象メッシュ（マテリアルデータを含む）。
+     * @param overrideMaterial nullptr なら mesh.material を使用する。
+     *        const_cast で mesh.material を書き換えてはいけない（アセット汚染防止）。
      */
     virtual void Update(ID3D11DeviceContext* dc,
-        const Model::Mesh& mesh) = 0;
+        const Model::Mesh& mesh,
+        const MaterialData* overrideMaterial = nullptr) = 0;
+
 
     /**
      * @brief シェーダーリソースの解除。

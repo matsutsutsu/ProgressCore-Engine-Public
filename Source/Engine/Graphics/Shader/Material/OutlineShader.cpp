@@ -31,11 +31,12 @@ void OutlineShader::Begin(ID3D11DeviceContext* dc,
     dc->RSSetState(m_rasterizerState.Get());
 }
 
-void OutlineShader::Update(ID3D11DeviceContext* dc, const Model::Mesh& mesh)
+void OutlineShader::Update(ID3D11DeviceContext* dc, const Model::Mesh& mesh, const MaterialData* overrideMaterial)
 {
-    if (mesh.material && mesh.material->data) {
-        UpdateMaterialProperties(dc, *mesh.material->data);
-    }
+    const MaterialData* mat = overrideMaterial
+        ? overrideMaterial
+        : (mesh.material && mesh.material->data ? mesh.material->data.get() : nullptr);
+    if (mat) UpdateMaterialProperties(dc, *mat);
 }
 
 void OutlineShader::End(ID3D11DeviceContext* dc, const RenderServices& s)

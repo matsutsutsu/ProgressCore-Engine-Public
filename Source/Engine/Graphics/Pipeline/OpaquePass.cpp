@@ -19,7 +19,6 @@ void OpaquePass::Execute(const RenderFrameContext& ctx)
 #if TRACY_ENABLE
     ZoneScopedN("Pass: Opaque");
 #endif
-    // MakeLegacyContext 不要: _services / ctx を直接参照
     ID3D11DeviceContext* dc = ctx.dc;
     if (!dc) return;
 
@@ -30,7 +29,6 @@ void OpaquePass::Execute(const RenderFrameContext& ctx)
     if (_services->shadowMap) {
         _services->shadowMap->Bind(dc, SLOT_SRV_SHADOW, SLOT_SMP_SHADOW, SLOT_CB_SHADOW);
     }
-
     ID3D11SamplerState* samplers[] = {
         _services->renderState->GetSamplerState(SamplerState::LinearWrap)
     };
@@ -40,7 +38,6 @@ void OpaquePass::Execute(const RenderFrameContext& ctx)
     const DirectX::XMVECTOR cameraPos = DirectX::XMLoadFloat3(&ctx.camera->GetEye());
 
     queue->SortAndBuildBatches();
-
     const auto& sortKeys = queue->GetSortedKeys();
     const auto& opaqueCommands = queue->GetOpaqueCommands();
 
@@ -52,43 +49,39 @@ void OpaquePass::Execute(const RenderFrameContext& ctx)
         Shader* shader = _services->shaders->GetShader(current.shaderHash, _services->device);
         if (!shader) { ++i; continue; }
 
-        // 新シェーダー API: Begin(dc, services, ctx)
         shader->Begin(dc, *_services, ctx);
 
         const size_t   batchStart = i;
         size_t         batchCount = 0;
         const uint64_t currentBatchKey = sortKeys[batchStart].value;
-        while (i < sortKeys.size() && sortKeys[i].value == currentBatchKey) {
-            ++batchCount; ++i;
-        }
+        while (i < sortKeys.size() && sortKeys[i].value == currentBatchKey) { ++batchCount; ++i; }
 
         const auto& meshes = current.model->GetMeshes();
         for (size_t meshIdx = 0; meshIdx < meshes.size(); ++meshIdx) {
             const Model::Mesh& mesh = meshes[meshIdx];
 
-            Model::Mesh& mutableMesh = const_cast<Model::Mesh&>(mesh);
-            Model::Material* origMat = mutableMesh.material;
-            MaterialData* overrideData = nullptr;
-
+            // =========================================================
+            // ★ F: const_cast 廃止
+            //    override を引数として取得し、mesh.material は一切書き換えない。
+            // =========================================================
+            MaterialData* overrideMat = nullptr;
             if (meshIdx < current.overrideCount) {
                 MaterialHandle h = current.overrideMaterials[meshIdx];
-                if (h.IsValid()) overrideData = _services->resources->GetMaterial(h);
+                if (h.IsValid()) overrideMat = _services->resources->GetMaterial(h);
             }
 
-            Model::Material tempWrapper;
-            const bool applyOverride = (overrideData != nullptr);
-            if (applyOverride) {
-                tempWrapper.data = std::shared_ptr<MaterialData>(overrideData, [](MaterialData*) {});
-                tempWrapper.name = "InstanceOverride";
-                mutableMesh.material = &tempWrapper;
-            }
+            // 有効なマテリアル（override 優先）を決定する
+            const MaterialData* activeMat = overrideMat
+                ? overrideMat
+                : (mesh.material && mesh.material->data ? mesh.material->data.get() : nullptr);
 
-            auto& matData = *mutableMesh.material->data;
+            if (!activeMat) continue; // マテリアルなし：スキップ
+
+            // 透明判定（activeMat を直接参照。mesh への書き込みゼロ）
             float alpha = 1.0f;
             DirectX::XMFLOAT4 matColor;
-            if (matData.GetColor("materialColor"_hash, matColor)) alpha = matColor.w;
-
-            const bool isTransparent = (matData.alphaMode == AlphaMode::Blend ||
+            if (activeMat->GetColor("materialColor"_hash, matColor)) alpha = matColor.w;
+            const bool isTransparent = (activeMat->alphaMode == AlphaMode::Blend ||
                 (alpha > 0.01f && alpha < 0.99f));
             const bool isSkinned = !mesh.bones.empty();
 
@@ -135,8 +128,8 @@ void OpaquePass::Execute(const RenderFrameContext& ctx)
                 }
             }
             else if (isSkinned) {
-                // 新シェーダー API: Update(dc, mesh)
-                shader->Update(dc, mesh);
+                // override を shader->Update に明示的に渡す（mesh.material を書き換えない）
+                shader->Update(dc, mesh, overrideMat);
                 UINT stride = sizeof(ModelResource::Vertex), offset = 0;
                 dc->IASetVertexBuffers(0, 1, mesh.data->vertexBuffer.GetAddressOf(), &stride, &offset);
                 dc->IASetIndexBuffer(mesh.data->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
@@ -146,12 +139,11 @@ void OpaquePass::Execute(const RenderFrameContext& ctx)
                     _instanceBuffer.Write(dc, &_instanceScratch[k], 1);
                     _instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
                     renderer->UpdateSkeletonConstants(dc, cmd.model->GetMeshes()[meshIdx]);
-                    dc->DrawIndexedInstanced(
-                        static_cast<UINT>(mesh.data->indices.size()), 1, 0, 0, 0);
+                    dc->DrawIndexedInstanced(static_cast<UINT>(mesh.data->indices.size()), 1, 0, 0, 0);
                 }
             }
             else {
-                shader->Update(dc, mesh);
+                shader->Update(dc, mesh, overrideMat);
                 UINT stride = sizeof(ModelResource::Vertex), offset = 0;
                 dc->IASetVertexBuffers(0, 1, mesh.data->vertexBuffer.GetAddressOf(), &stride, &offset);
                 dc->IASetIndexBuffer(mesh.data->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
@@ -162,18 +154,14 @@ void OpaquePass::Execute(const RenderFrameContext& ctx)
                         batchCount - curOffset, _instanceBuffer.GetMaxInstances());
                     _instanceBuffer.Write(dc, _instanceScratch.data() + curOffset, drawCount);
                     _instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
-                    dc->DrawIndexedInstanced(
-                        static_cast<UINT>(mesh.data->indices.size()),
+                    dc->DrawIndexedInstanced(static_cast<UINT>(mesh.data->indices.size()),
                         static_cast<UINT>(drawCount), 0, 0, 0);
                     curOffset += drawCount;
                 }
             }
-
-            if (applyOverride) mutableMesh.material = origMat;
+            // ★ const_cast による restore 行 完全削除
             _instanceBuffer.Unbind(dc, SLOT_SRV_INSTANCE);
         }
-
-        // 新シェーダー API: End(dc, services)
         shader->End(dc, *_services);
     }
 }

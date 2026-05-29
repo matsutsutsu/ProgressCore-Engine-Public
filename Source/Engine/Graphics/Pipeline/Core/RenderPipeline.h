@@ -82,6 +82,15 @@ public:
     /// 登録されているパス数を返す（デバッグ・テスト用）。
     size_t GetPassCount() const noexcept { return _passes.size(); }
 
+    /**
+    * @brief 初期化時に渡されたサービス群への const 参照を返す。
+    * @details EnvironmentSystem 等のパイプライン外システムが services を
+    *          参照できるようにするアクセサ。ModelRenderer::GetServices() 経由で公開する。
+    */
+    const RenderServices& GetServices() const noexcept { return _services; }
+
+
+
 private:
     RenderServices                            _services{};
     std::vector<std::unique_ptr<IRenderPass>> _passes;

@@ -140,11 +140,12 @@ void BaseScene::Render()
     auto& gfx = Graphics::Instance();
     auto* dc = gfx.GetDeviceContext();
 
-    // EnvironmentSystem: CbScene のバインド、フォグ、ノイズテクスチャを設定する。
-    // lightManager->Bind は Graphics::Update() で完了済みのため不要。
+    // EnvironmentSystem: CbScene, フォグ, IBL, ノイズをバインドする。
+        // BindGlobalResources に RenderServices を渡すことで Graphics::Instance() を除去した。
     if (_ecsContext && _ecsContext->GetSystemManager()) {
         if (auto* env = _ecsContext->GetSystemManager()->GetSystem<EnvironmentSystem>()) {
-            env->BindGlobalResources(dc);
+            const RenderServices& svc = gfx.GetModelRenderer()->GetServices();
+            env->BindGlobalResources(dc, svc);
         }
     }
 

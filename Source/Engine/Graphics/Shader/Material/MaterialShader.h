@@ -13,7 +13,12 @@ public:
     ~MaterialShader() override = default;
 
     void Begin(ID3D11DeviceContext* dc, const RenderServices& s, const RenderFrameContext& ctx) override;
-    void Update(ID3D11DeviceContext* dc, const Model::Mesh& mesh) override;
+    /**
+    * @brief overrideMaterial が非 null の場合はそちらを優先してプロパティを転送する。
+    *        mesh.material を一切書き換えない。
+    */
+    void Update(ID3D11DeviceContext* dc, const Model::Mesh& mesh,
+        const MaterialData* overrideMaterial = nullptr) override;
     void End(ID3D11DeviceContext* dc, const RenderServices& s) override;
 
     // ファイルの更新を監視し、再コンパイルを実行する

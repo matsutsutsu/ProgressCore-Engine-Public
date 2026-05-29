@@ -72,6 +72,11 @@ void ModelRenderer::Render(const RenderFrameContext& ctx)
     UnbindAllResources(ctx.dc);
 }
 
+const RenderServices& ModelRenderer::GetServices() const noexcept
+{
+    return _pipeline.GetServices();
+}
+
 
 // ============================================================
 //  内部初期化
