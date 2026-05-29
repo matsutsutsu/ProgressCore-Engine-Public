@@ -42,8 +42,18 @@ public:
 	~PrimitiveRenderer() {}
 
 public:
-	// 描画実行
-	void Render(const RenderContext& rc, const DirectX::XMFLOAT4X4& view, const DirectX::XMFLOAT4X4& projection);
+	/**
+	 * @brief 積まれた描画コマンドを一括インスタンシング描画する。
+	 * @param dc   デバイスコンテキスト。
+	 * @param s    永続サービス（renderState, sceneConstantBuffer を参照）。
+	 *             Graphics::Instance() を完全除去した。
+	 * @param view 視点行列。視錐台カリング更新にも使用する。
+	 * @param projection 投影行列。視錐台構築に使用する。
+	 */
+	void Render(ID3D11DeviceContext* dc,
+		const RenderServices& s,
+		const DirectX::XMFLOAT4X4& view,
+		const DirectX::XMFLOAT4X4& projection);
 
 	// カリングの有効/無効切り替え（デバッグで全部見たい時などに使う）
     void SetCullingEnabled(bool enable) { m_cullingEnabled = enable; }
@@ -68,11 +78,11 @@ public:
 
 
 private:
-	// ★追加: カリング判定用ヘルパー
+	// カリング判定用ヘルパー
 	bool IsVisible(const DirectX::BoundingSphere& sphere);
 	bool IsVisible(const DirectX::BoundingOrientedBox& box);
 
-	// ★追加: 視錐台データ
+	// 視錐台データ
 	DirectX::BoundingFrustum m_frustum;
 	bool                     m_cullingEnabled = true;
 
@@ -80,7 +90,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11PixelShader>		pixelShader;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout>		inputLayout;
 
-	// ★ バラバラだったステートを廃止し、2つの「金型」に集約
+	// バラバラだったステートを廃止し、2つの「金型」に集約
 	PipelineState _psoOpaque;
 	PipelineState _psoWireframe;
 

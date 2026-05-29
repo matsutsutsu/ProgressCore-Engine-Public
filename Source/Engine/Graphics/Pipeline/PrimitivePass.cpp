@@ -15,12 +15,11 @@ void PrimitivePass::Execute(const RenderFrameContext& ctx)
             ctx.dc, ctx.camera->GetView(), ctx.camera->GetProjection());
     }
 
-    // PrimitiveRenderer::Render がまだ RenderContext を受け取る旧 API のため、
-    // ここだけ MakeLegacyContext を使用する。
-    // PrimitiveRenderer 側を (dc, view, proj) 形式に更新したら削除する。
+    // PrimitiveRenderer が新 API に移行したため MakeLegacyContext 不要。
+      // RenderContext 依存がこのパスから完全に消滅した。
     if (_services->primitiveRenderer) {
-        RenderContext legacyCtx = MakeLegacyContext(*_services, ctx);
         _services->primitiveRenderer->Render(
-            legacyCtx, ctx.camera->GetView(), ctx.camera->GetProjection());
+            ctx.dc, *_services,
+            ctx.camera->GetView(), ctx.camera->GetProjection());
     }
 }

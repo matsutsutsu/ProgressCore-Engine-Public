@@ -4,8 +4,6 @@
 #include <memory>
 #include "Engine/Core/Math/Misc.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
-#include "Engine/Graphics/RHI/Graphics.h"
-#include "Engine/Graphics/RHI/Light.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 
 #if TRACY_ENABLE
@@ -146,125 +144,91 @@ PrimitiveDrawList& PrimitiveRenderer::GetDrawList() {
 // ====================================================================
 // 一括描画処理（インスタンシング ＆ PSO）
 // ====================================================================
-void PrimitiveRenderer::Render(const RenderContext& rc, const DirectX::XMFLOAT4X4& view, const DirectX::XMFLOAT4X4& projection)
+void PrimitiveRenderer::Render(ID3D11DeviceContext* dc,
+    const RenderServices& s,
+    const DirectX::XMFLOAT4X4& view,
+    const DirectX::XMFLOAT4X4& projection)
 {
 #if TRACY_ENABLE
-    ZoneScopedN("PrimitiveRenderer::Render"); // シーン描画全体
+    ZoneScopedN("PrimitiveRenderer::Render");
 #endif
 
-	ID3D11DeviceContext* dc = rc.deviceContext;
+    // 1. 次フレームのカリング用に視錐台を更新
+    BoundingFrustum frustumLocal;
+    BoundingFrustum::CreateFromMatrix(frustumLocal, XMLoadFloat4x4(&projection));
+    XMMATRIX V = XMLoadFloat4x4(&view);
+    XMMATRIX invV = XMMatrixInverse(nullptr, V);
+    frustumLocal.Transform(m_frustum, invV);
 
-	// 1. 次のフレームのカリング用に視錐台を更新
-	BoundingFrustum frustumLocal;
-	BoundingFrustum::CreateFromMatrix(frustumLocal, XMLoadFloat4x4(&projection));
-	XMMATRIX V = XMLoadFloat4x4(&view);
-	XMMATRIX invV = XMMatrixInverse(nullptr, V);
-	frustumLocal.Transform(m_frustum, invV);
+    // 2. 共通シェーダー設定
+    dc->VSSetShader(vertexShader.Get(), nullptr, 0);
+    dc->PSSetShader(pixelShader.Get(), nullptr, 0);
+    dc->IASetInputLayout(inputLayout.Get());
 
-	// 2. 共通シェーダーの設定
-	dc->VSSetShader(vertexShader.Get(), nullptr, 0);
-	dc->PSSetShader(pixelShader.Get(), nullptr, 0);
-	dc->IASetInputLayout(inputLayout.Get());
-
-	// ★ Graphicsから全シーン共通の定数バッファ(CbScene)をもらってセット
-	ID3D11Buffer* sceneCB = Graphics::Instance().GetSceneConstantBuffer();
-	if (sceneCB) {
-		dc->VSSetConstantBuffers(SLOT_CB_SCENE, 1, &sceneCB);
-		dc->PSSetConstantBuffers(SLOT_CB_SCENE, 1, &sceneCB);
-	}
-
-    // ====================================================================
-    //  ライトマネージャーに「最新のライト情報(CbLight)を送ってくれ」と頼む
-    // ====================================================================
-    if (rc.lightManager) {
-        // SLOT_CB_LIGHT (通常は9番) に、ライトマネージャー自身がバインドしてくれる！
-        rc.lightManager->Bind(dc, SLOT_CB_LIGHT); 
+    // 3. CbScene (b8) をバインド
+    //    Graphics::Instance() を廃止し s.sceneConstantBuffer を使用する。
+    //    CbScene は Graphics::Update() で内容更新済み、EnvironmentSystem でもバインド済みだが、
+    //    PrimitiveRenderer が pipeline 外から呼ばれる場合に備えて安全のため再バインドする。
+    if (s.sceneConstantBuffer) {
+        ID3D11Buffer* sceneCB = s.sceneConstantBuffer;
+        dc->VSSetConstantBuffers(SLOT_CB_SCENE, 1, &sceneCB);
+        dc->PSSetConstantBuffers(SLOT_CB_SCENE, 1, &sceneCB);
     }
-    
 
-	// 3. インスタンシング描画用のラムダ式ヘルパー
-    auto DrawInstanced = [&](GeometryBuffer& geo, const PipelineState& pso, std::vector<InstanceData> PrimitiveDrawList::* memberPtr) 
+    // 4. lightManager->Bind を除去：Graphics::Update() で既に実行済み。
+    //    pipeline 内での呼び出しでは冗長。直接呼び出す場合は呼び出し元で Bind すること。
+
+    // 5. インスタンシング描画ヘルパー（rc.renderState → s.renderState に変更）
+    auto DrawInstanced = [&](GeometryBuffer& geo, const PipelineState& pso,
+        std::vector<InstanceData> PrimitiveDrawList::* memberPtr)
         {
+            pso.Apply(dc, s.renderState);  // ← Graphics::Instance() / rc.renderState を除去
 
-		// ★ PSO（金型）の適用：これでBlendもDepthもRasterizerも完璧に設定される
-		pso.Apply(dc, rc.renderState);
+            UINT stride = sizeof(Vertex), offset = 0;
+            dc->IASetVertexBuffers(0, 1, geo.vertexBuffer.GetAddressOf(), &stride, &offset);
+            dc->IASetIndexBuffer(geo.indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
-		// 頂点・インデックスのセット (POSITION:12byte + NORMAL:12byte = 24byte)
-		UINT stride = sizeof(Vertex);
-		UINT offset = 0;
-		dc->IASetVertexBuffers(0, 1, geo.vertexBuffer.GetAddressOf(), &stride, &offset);
-		dc->IASetIndexBuffer(geo.indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+            std::lock_guard<std::mutex> lock(_listMutex);
+            for (auto& listPtr : _drawLists) {
+                std::vector<InstanceData>& instances = (*listPtr).*memberPtr;
+                if (instances.empty()) continue;
 
-        // =========================================================
-        // ★最重要修正：Render中に他スレッドが名簿を破壊するのを防ぐ！
-        // =========================================================
-        std::lock_guard<std::mutex> lock(_listMutex);
+                size_t totalCount = instances.size();
+                if (totalCount > 100000) { instances.clear(); continue; }
 
-        // 名簿に載っている全スレッドのバッファを巡回して描画
-        for (auto& listPtr : _drawLists) {
-            // unique_ptr から生ポインタを取り出し、メンバポインタ演算子を適用する
-            // 同時に、参照(instances)の宣言と初期化を一行で行う
-            std::vector<InstanceData>& instances = (*listPtr).*memberPtr;
-
-            if (instances.empty()) continue;
-
-            size_t totalCount = instances.size();
-
-            // ★防弾：もし totalCount が異常な数（数千万など）になっていたらメモリが壊れているのでスキップ
-            if (totalCount > 100000) {
+                size_t drawOffset = 0;
+                while (drawOffset < totalCount) {
+                    size_t drawCount = (std::min)(totalCount - drawOffset, InstanceBuffer::MAX_INSTANCES);
+                    std::vector<InstanceData> chunk(
+                        instances.begin() + drawOffset,
+                        instances.begin() + drawOffset + drawCount);
+                    _instanceBuffer.Write(dc, chunk);
+                    _instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
+                    dc->DrawIndexedInstanced(geo.indexCount, static_cast<UINT>(drawCount), 0, 0, 0);
+                    drawOffset += drawCount;
+                }
                 instances.clear();
-                continue;
             }
+        };
 
-            size_t drawOffset = 0;
-
-            while (drawOffset < totalCount) {
-                // InstanceBufferの限界数(4096)を超えないようにチャンク分け
-                size_t drawCount = (std::min)(totalCount - drawOffset, InstanceBuffer::MAX_INSTANCES);
-
-                // 一時的なスライス作成
-                std::vector<InstanceData> chunk(instances.begin() + drawOffset, instances.begin() + drawOffset + drawCount);
-
-                // GPUへ書き込みとバインド
-                _instanceBuffer.Write(dc, chunk);
-                _instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
-
-                dc->DrawIndexedInstanced(geo.indexCount, (UINT)drawCount, 0, 0, 0);
-
-                drawOffset += drawCount;
-            }
-            // 描画が完了したバッファをリセット
-            instances.clear();
-        }
-		};
-
-	// 4. 全ての図形を一気に描画
+    // 6. 全図形を一気に描画
     DrawInstanced(boxBuffer, _psoOpaque, &PrimitiveDrawList::opaqueBoxes);
     DrawInstanced(boxBuffer, _psoWireframe, &PrimitiveDrawList::wireframeBoxes);
-
     DrawInstanced(sphereBuffer, _psoOpaque, &PrimitiveDrawList::opaqueSpheres);
     DrawInstanced(sphereBuffer, _psoWireframe, &PrimitiveDrawList::wireframeSpheres);
-
     DrawInstanced(cylinderBuffer, _psoOpaque, &PrimitiveDrawList::opaqueCylinders);
     DrawInstanced(cylinderBuffer, _psoWireframe, &PrimitiveDrawList::wireframeCylinders);
-
     DrawInstanced(coneBuffer, _psoOpaque, &PrimitiveDrawList::opaqueCones);
     DrawInstanced(coneBuffer, _psoWireframe, &PrimitiveDrawList::wireframeCones);
-
     DrawInstanced(capsuleBuffer, _psoOpaque, &PrimitiveDrawList::opaqueCapsules);
     DrawInstanced(capsuleBuffer, _psoWireframe, &PrimitiveDrawList::wireframeCapsules);
 
-	// 5. 描画後のクリーンアップ（SRVの解除）
+    // 7. クリーンアップ
     _instanceBuffer.Unbind(dc, SLOT_SRV_INSTANCE);
-
-    // =========================================================
-    // ステート・リークの防止（GPUの設定をデフォルトに戻す）
-    // =========================================================
-    dc->RSSetState(nullptr); // ラスタライザ（カリング等）のリセット
-    dc->OMSetDepthStencilState(nullptr, 0); // 深度テストのリセット
-    dc->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF); // ブレンドのリセット
-
-    dc->VSSetShader(nullptr, nullptr, 0); // シェーダーの解除
+    dc->RSSetState(nullptr);
+    dc->OMSetDepthStencilState(nullptr, 0);
+    dc->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF);
+    dc->VSSetShader(nullptr, nullptr, 0);
     dc->PSSetShader(nullptr, nullptr, 0);
 }
 
