@@ -22,7 +22,7 @@ void RenderPipeline::Execute(const RenderFrameContext& ctx)
 {
     if (!ctx.dc) return;
 
-#if defined(_DEBUG) || defined(PROFILE)
+#if defined(ENABLE_EDITOR)
     // GPU マーカー：Pix / RenderDoc 上でパス境界を識別可能にする。
     // 取得失敗時はマーカーなしで続行（リリースモードと同じ動作）。
     Microsoft::WRL::ComPtr<ID3DUserDefinedAnnotation> annotation;
@@ -32,7 +32,7 @@ void RenderPipeline::Execute(const RenderFrameContext& ctx)
     for (auto& pass : _passes) {
         if (!pass->enabled) continue;
 
-#if defined(_DEBUG) || defined(PROFILE)
+#if defined(ENABLE_EDITOR)
         if (annotation) {
             wchar_t wname[64] = {};
             MultiByteToWideChar(CP_UTF8, 0, pass->GetName(), -1, wname, 64);
@@ -42,7 +42,7 @@ void RenderPipeline::Execute(const RenderFrameContext& ctx)
 
         pass->Execute(ctx);
 
-#if defined(_DEBUG) || defined(PROFILE)
+#if defined(ENABLE_EDITOR) 
         if (annotation) {
             annotation->EndEvent();
         }

@@ -1533,6 +1533,9 @@
     <ClInclude Include="Source\Engine\Graphics\Pipeline\Core\RenderPipeline.h">
       <Filter>Source\Engine\Graphics\Pipeline\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\RHI\GraphicsDevice.h">
+      <Filter>Source\Engine\Graphics\RHI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2292,6 +2295,9 @@
       <Filter>Source\Engine\Graphics\Pipeline\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\RHI\RenderTarget.cpp">
+      <Filter>Source\Engine\Graphics\RHI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\RHI\GraphicsDevice.cpp">
       <Filter>Source\Engine\Graphics\RHI</Filter>
     </ClCompile>
   </ItemGroup>

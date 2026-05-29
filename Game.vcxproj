@@ -489,6 +489,7 @@
     <ClInclude Include="Source\Engine\Graphics\RHI\Camera.h" />
     <ClInclude Include="Source\Engine\Graphics\RHI\GpuResourceUtils.h" />
     <ClInclude Include="Source\Engine\Graphics\RHI\Graphics.h" />
+    <ClInclude Include="Source\Engine\Graphics\RHI\GraphicsDevice.h" />
     <ClInclude Include="Source\Engine\Graphics\RHI\Light.h" />
     <ClInclude Include="Source\Engine\Graphics\RHI\PipelineState.h" />
     <ClInclude Include="Source\Engine\Graphics\RHI\RenderContext.h" />
@@ -1249,6 +1250,7 @@
     <ClCompile Include="Source\Engine\Graphics\RHI\Camera.cpp" />
     <ClCompile Include="Source\Engine\Graphics\RHI\GpuResourceUtils.cpp" />
     <ClCompile Include="Source\Engine\Graphics\RHI\Graphics.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\RHI\GraphicsDevice.cpp" />
     <ClCompile Include="Source\Engine\Graphics\RHI\Light.cpp" />
     <ClCompile Include="Source\Engine\Graphics\RHI\RenderState.cpp" />
     <ClCompile Include="Source\Engine\Graphics\RHI\RenderTarget.cpp" />

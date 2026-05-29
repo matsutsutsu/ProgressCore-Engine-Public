@@ -72,6 +72,7 @@ void BaseScene::Initialize()
 
     // Graphics が所有するサブシステムを ECS へ接続する。
     // ECS システムがライトを変更すれば Graphics::Update() の Bind に反映される。
+    _worldPtr->AddResource<Camera*>(&camera);
     _worldPtr->AddResource<LightManager*>(gfx.GetLightManager());
     _worldPtr->AddResource<PostProcessManager*>(gfx.GetPostProcessManager());
     _worldPtr->AddResource<ShadowMap*>(gfx.GetShadowMap());
@@ -140,24 +141,23 @@ void BaseScene::Render()
     auto& gfx = Graphics::Instance();
     auto* dc = gfx.GetDeviceContext();
 
-    // EnvironmentSystem: CbScene, フォグ, IBL, ノイズをバインドする。
-        // BindGlobalResources に RenderServices を渡すことで Graphics::Instance() を除去した。
+    // EnvironmentSystem: フォグ / IBL / ノイズのバインド + CbScene のバインド
+ // ★ CbScene の中身は触らない（Graphics::Update() が書き込み済み）
     if (_ecsContext && _ecsContext->GetSystemManager()) {
         if (auto* env = _ecsContext->GetSystemManager()->GetSystem<EnvironmentSystem>()) {
-            const RenderServices& svc = gfx.GetModelRenderer()->GetServices();
+            const RenderServices& svc = gfx.GetRenderServices();
             env->BindGlobalResources(dc, svc);
         }
     }
 
     // MakeFrameContext でフレームコンテキストを構築し、パイプラインを一括実行する。
-    // 旧 RenderContext 手動構築（50+ 行）が以下の数行に集約される。
 #ifdef ENABLE_EDITOR
     auto ctx = gfx.MakeFrameContext(&camera, gfx.GetGameRTV());
 #else
     auto ctx = gfx.MakeFrameContext(&camera, gfx.GetBackBufferRTV());
 #endif
 
-    gfx.GetModelRenderer()->Render(ctx);
+    gfx.Render(ctx); // ← Graphics が直接パイプラインを回す
  
 
    

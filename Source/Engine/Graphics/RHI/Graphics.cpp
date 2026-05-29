@@ -3,386 +3,227 @@
 #include "Engine/Graphics/RHI/Camera.h"
 
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
-#include "Engine/Graphics/Resource/ResourceManager.h"  
-#include "Engine/Graphics/Renderer/RenderQueue.h"      
-#include "Engine/Graphics/Shader/ShaderResources.h"    
+#include "Engine/Graphics/Resource/ResourceManager.h"
+#include "Engine/Graphics/Renderer/RenderQueue.h"
+#include "Engine/Graphics/Shader/ShaderResources.h"
+
 #include "Engine/Graphics/Shader/Material/OutlineShader.h"
 #include "Engine/Graphics/Shader/Material/ShadowMapShader.h"
 
+// パス登録用
+#include "Engine/Graphics/Pipeline/SetupPass.h"
+#include "Engine/Graphics/Pipeline/ShadowPass.h"
+#include "Engine/Graphics/Pipeline/OpaquePass.h"
+#include "Engine/Graphics/Pipeline/SkyboxPass.h"
+#include "Engine/Graphics/Pipeline/TransparentPass.h"
+#include "Engine/Graphics/Pipeline/ParticlePass.h"
+#include "Engine/Graphics/Pipeline/PrimitivePass.h"
+#include "Engine/Graphics/Pipeline/PostProcessPass.h"
 
 // ============================================================
-//  シーン定数バッファ構造体 (HLSL: CbScene b8)
-//  XMMATRIX メンバを含むため alignas(16) が必須。
-//  ない場合コンパイラがパディングを挿入し GPU が壊れた値を読む恐れがある。
+//  CbScene 構造体 (HLSL: CbScene b8)
+//  alignas(16) + XMMATRIX を含む → 240 バイト
+//  ★ 唯一の権威あるソース。EnvironmentSystem は上書きしない。
 // ============================================================
 struct alignas(16) CbSceneData
 {
-	DirectX::XMMATRIX viewProjection;
-	DirectX::XMFLOAT4 lightDirection;
-	DirectX::XMFLOAT4 lightColor;
-	DirectX::XMFLOAT4 cameraPosition;
-	DirectX::XMMATRIX view;
-	DirectX::XMMATRIX projection;
+    DirectX::XMMATRIX viewProjection; // offset:   0, size: 64
+    DirectX::XMFLOAT4 lightDirection; // offset:  64, size: 16
+    DirectX::XMFLOAT4 lightColor;     // offset:  80, size: 16
+    DirectX::XMFLOAT4 cameraPosition; // offset:  96, size: 16
+    DirectX::XMMATRIX view;           // offset: 112, size: 64
+    DirectX::XMMATRIX projection;     // offset: 176, size: 64
 };
+static_assert(sizeof(CbSceneData) == 240,
+    "CbSceneData size mismatch — GraphicsDevice.cpp の ByteWidth=240 と一致させること");
 
-// 初期化
+// ============================================================
+//  Initialize
+// ============================================================
 void Graphics::Initialize(HWND hWnd)
 {
-	this->hWnd = hWnd;
-	// 画面のサイズを取得する。
-	RECT rc;
-	GetClientRect(hWnd, &rc);
-	UINT screenWidth = rc.right - rc.left;
-	UINT screenHeight = rc.bottom - rc.top;
+    // ---- Phase 1: D3D11 RHI 層 ----
+    _gfxDevice.Initialize(hWnd);
+    ID3D11Device* device = _gfxDevice.GetDevice();
 
-	this->screenWidth = static_cast<float>(screenWidth);
-	this->screenHeight = static_cast<float>(screenHeight);
+    // ---- Phase 2: 描画サブシステム生成 ----
+    _renderState = std::make_unique<RenderState>(device);
+    _primitiveRenderer = std::make_unique<PrimitiveRenderer>(device);
+    _shapeRenderer = std::make_unique<ShapeRenderer>(device);
+    _modelRenderer = std::make_unique<ModelRenderer>(device);
+    _shadowMap = std::make_unique<ShadowMap>(device, 2048, 2048);
+    _particleRenderer = std::make_unique<ParticleRenderer>();
+    _particleRenderer->Initialize(device);
+    _lightManager = std::make_unique<LightManager>();
+    _lightManager->Initialize(device);
+    _postProcess = std::make_unique<PostProcessManager>();
+    _postProcess->Initialize(device, _gfxDevice.GetWidthU(), _gfxDevice.GetHeightU());
 
-	HRESULT hr = S_OK;
+    // ModelRenderer に CbScene ポインタを渡す（BindAllGlobalConstantBuffers 用）
+    _modelRenderer->SetSceneConstantBuffer(_gfxDevice.GetSceneConstantBuffer());
 
-	// デバイス＆スワップチェーンの生成
-	{
-		UINT createDeviceFlags = 0;
-#if defined(DEBUG) || defined(_DEBUG)
-		createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
-#endif
-		D3D_FEATURE_LEVEL featureLevels[] =
-		{
-			D3D_FEATURE_LEVEL_11_0,
-			D3D_FEATURE_LEVEL_10_1,
-			D3D_FEATURE_LEVEL_10_0,
-			D3D_FEATURE_LEVEL_9_3,
-			D3D_FEATURE_LEVEL_9_2,
-			D3D_FEATURE_LEVEL_9_1,
-		};
+    // ---- Phase 3: シェーダー登録 ----
+    auto& reg = ShaderRegistry::Instance();
+    reg.RegisterMaterialShader("PBR"_hash,
+        "Assets/Shader/PBR_VS.cso", L"Shader/Material/PBR/PBR_VS.hlsl",
+        "Assets/Shader/PBR_PS.cso", L"Shader/Material/PBR/PBR_PS.hlsl");
+    reg.RegisterMaterialShader("Phong"_hash,
+        "Assets/Shader/PhongVS.cso", L"Shader/Material/Phong/PhongVS.hlsl",
+        "Assets/Shader/PhongPS.cso", L"Shader/Material/Phong/PhongPS.hlsl");
+    reg.RegisterMaterialShader("Lambert"_hash,
+        "Assets/Shader/LambertVS.cso", L"Shader/Material/Lambert/LambertVS.hlsl",
+        "Assets/Shader/LambertPS.cso", L"Shader/Material/Lambert/LambertPS.hlsl");
+    reg.RegisterMaterialShader("Basic"_hash,
+        "Assets/Shader/BasicVS.cso", L"Shader/Material/Basic/BasicVS.hlsl",
+        "Assets/Shader/BasicPS.cso", L"Shader/Material/Basic/BasicPS.hlsl");
+    reg.RegisterMaterialShader("Toon"_hash,
+        "Assets/Shader/ToonVS.cso", L"Shader/Material/Toon/ToonVS.hlsl",
+        "Assets/Shader/ToonPS.cso", L"Shader/Material/Toon/ToonPS.hlsl");
+    reg.RegisterShader<OutlineShader>("Outline"_hash);
+    reg.RegisterShader<ShadowMapShader>("ShadowMap"_hash);
 
-		// スワップチェーンを作成するための設定オプション
-		DXGI_SWAP_CHAIN_DESC swapchainDesc;
-		{
-			swapchainDesc.BufferDesc.Width = screenWidth;
-			swapchainDesc.BufferDesc.Height = screenHeight;
-			swapchainDesc.BufferDesc.RefreshRate.Numerator = 60;
-			swapchainDesc.BufferDesc.RefreshRate.Denominator = 1;
-			swapchainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-			swapchainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-			swapchainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-			swapchainDesc.SampleDesc.Count = 1;
-			swapchainDesc.SampleDesc.Quality = 0;
-			swapchainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-			swapchainDesc.BufferCount = 2;
-			swapchainDesc.OutputWindow = hWnd;
-			swapchainDesc.Windowed = TRUE;
-			swapchainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-			swapchainDesc.Flags = 0;
-		}
-
-		D3D_FEATURE_LEVEL featureLevel;
-
-		// デバイス＆スワップチェーンの生成
-		hr = D3D11CreateDeviceAndSwapChain(
-			nullptr,
-			D3D_DRIVER_TYPE_HARDWARE,
-			nullptr,
-			createDeviceFlags,
-			featureLevels,
-			ARRAYSIZE(featureLevels),
-			D3D11_SDK_VERSION,
-			&swapchainDesc,
-			swapchain.GetAddressOf(),
-			device.GetAddressOf(),
-			&featureLevel,
-			immediateContext.GetAddressOf()
-		);
-		_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
-	}
-
-	// レンダーターゲットビューの生成
-	{
-		// スワップチェーンからバックバッファテクスチャを取得する。
-		// ※スワップチェーンに内包されているバックバッファテクスチャは'色'を書き込むテクスチャ。
-		Microsoft::WRL::ComPtr<ID3D11Texture2D> texture2d;
-		hr = swapchain->GetBuffer(
-			0,
-			__uuidof(ID3D11Texture2D),
-			reinterpret_cast<void**>(texture2d.GetAddressOf()));
-		_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
-
-		// バックバッファテクスチャへの書き込みの窓口となるレンダーターゲットビューを生成する。
-		hr = device->CreateRenderTargetView(texture2d.Get(), nullptr, renderTargetView.GetAddressOf());
-		_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
-	}
-
-	// 深度ステンシルビューの生成
-	{
-		// 深度ステンシル情報を書き込むためのテクスチャを作成する。
-		Microsoft::WRL::ComPtr<ID3D11Texture2D> texture2d;
-		D3D11_TEXTURE2D_DESC texture2dDesc;
-		texture2dDesc.Width = screenWidth;
-		texture2dDesc.Height = screenHeight;
-		texture2dDesc.MipLevels = 1;
-		texture2dDesc.ArraySize = 1;
-		texture2dDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-		texture2dDesc.SampleDesc.Count = 1;
-		texture2dDesc.SampleDesc.Quality = 0;
-		texture2dDesc.Usage = D3D11_USAGE_DEFAULT;
-		texture2dDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-		texture2dDesc.CPUAccessFlags = 0;
-		texture2dDesc.MiscFlags = 0;
-		hr = device->CreateTexture2D(&texture2dDesc, nullptr, texture2d.GetAddressOf());
-		_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
-
-		// 深度ステンシルテクスチャへの書き込みに窓口になる深度ステンシルビューを作成する。
-		hr = device->CreateDepthStencilView(texture2d.Get(), nullptr, depthStencilView.GetAddressOf());
-		_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
-	}
-
-	// ビューポート
-	{
-		viewport.Width = static_cast<float>(screenWidth);
-		viewport.Height = static_cast<float>(screenHeight);
-		viewport.MinDepth = 0.0f;
-		viewport.MaxDepth = 1.0f;
-		viewport.TopLeftX = 0.0f;
-		viewport.TopLeftY = 0.0f;
-	}
-
-	// レンダーステート生成
-	renderState = std::make_unique<RenderState>(device.Get());
-
-	// レンダラ生成
-	primitiveRenderer = std::make_unique<PrimitiveRenderer>(device.Get());
-	shapeRenderer = std::make_unique<ShapeRenderer>(device.Get());
-	modelRenderer = std::make_unique<ModelRenderer>(device.Get());
-	shadowMap = std::make_unique<ShadowMap>(device.Get(), 2048, 2048);
-	particleRenderer = std::make_unique<ParticleRenderer>();
-    particleRenderer->Initialize(device.Get());
-	// (B) LightManager 生成・初期化
-	lightManager = std::make_unique<LightManager>();
-	lightManager->Initialize(device.Get());
-
-	// (A) PostProcessManager 生成・初期化
-	postProcess = std::make_unique<PostProcessManager>();
-	postProcess->Initialize(device.Get(), screenWidth, screenHeight);
-	// リサイズ時は Graphics::OnResize (未実装) → postProcess->Resize(...) を呼ぶこと
-
-
-	// ⭕ 変更後: C++クラス不要！ パスを書くだけでどんなシェーダーも追加可能
-	auto& registry = ShaderRegistry::Instance();
-	
-	registry.RegisterMaterialShader("PBR"_hash,
-		"Assets/Shader/PBR_VS.cso", L"Shader/Material/PBR/PBR_VS.hlsl",
-		"Assets/Shader/PBR_PS.cso", L"Shader/Material/PBR/PBR_PS.hlsl");
-
-	registry.RegisterMaterialShader("Phong"_hash,
-		"Assets/Shader/PhongVS.cso", L"Shader/Material/Phong/PhongVS.hlsl",
-		"Assets/Shader/PhongPS.cso", L"Shader/Material/Phong/PhongPS.hlsl");
-
-	registry.RegisterMaterialShader("Lambert"_hash,
-		"Assets/Shader/LambertVS.cso", L"Shader/Material/Lambert/LambertVS.hlsl",
-		"Assets/Shader/LambertPS.cso", L"Shader/Material/Lambert/LambertPS.hlsl");
-
-	registry.RegisterMaterialShader("Basic"_hash,
-		"Assets/Shader/BasicVS.cso", L"Shader/Material/Basic/BasicVS.hlsl",
-		"Assets/Shader/BasicPS.cso", L"Shader/Material/Basic/BasicPS.hlsl");
-
-	registry.RegisterMaterialShader("Toon"_hash,
-		"Assets/Shader/ToonVS.cso", L"Shader/Material/Toon/ToonVS.hlsl",
-		"Assets/Shader/ToonPS.cso", L"Shader/Material/Toon/ToonPS.hlsl");
-
-	ShaderRegistry::Instance().RegisterShader<OutlineShader>("Outline"_hash);
-	ShaderRegistry::Instance().RegisterShader<ShadowMapShader>("ShadowMap"_hash);
-
-	// ゲームビュー用RTT作成
-	D3D11_TEXTURE2D_DESC texDesc = {};
-	texDesc.Width = (UINT)screenWidth;
-	texDesc.Height = (UINT)screenHeight;
-	texDesc.MipLevels = 1;
-	texDesc.ArraySize = 1;
-	texDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	texDesc.SampleDesc.Count = 1;
-	texDesc.Usage = D3D11_USAGE_DEFAULT;
-	texDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-
-	device->CreateTexture2D(&texDesc, nullptr, gameTex.GetAddressOf());
-	device->CreateRenderTargetView(gameTex.Get(), nullptr, gameRTV.GetAddressOf());
-	device->CreateShaderResourceView(gameTex.Get(), nullptr, gameSRV.GetAddressOf());
-
-	// シーン定数バッファ作成 (b8用)
-    if (!_sceneConstantBuffer) {
-        D3D11_BUFFER_DESC desc = {};
-        desc.ByteWidth         = sizeof(CbSceneData);
-        // 16バイトアライメント調整
-        if (desc.ByteWidth % 16 != 0) desc.ByteWidth = ((desc.ByteWidth + 15) / 16) * 16;
-
-        desc.Usage          = D3D11_USAGE_DEFAULT;
-        desc.BindFlags      = D3D11_BIND_CONSTANT_BUFFER;
-        desc.CPUAccessFlags = 0;
-
-		// device変数はメンバ変数を使用
-        HRESULT hr = device->CreateBuffer(&desc, nullptr, _sceneConstantBuffer.GetAddressOf());
-        if (FAILED(hr)) {
-            // エラーハンドリング (OutputDebugStringなど)
-        }
-    }
-
-	// ================================================================
-	//  RenderPipeline 最終セットアップ
-	//  全サブシステム生成後に 1 回だけ実行する。
-	//  この時点で全ポインタが有効であること。
-	// ================================================================
-	{
-		RenderServices svc;
-		svc.device = device.Get();
-		svc.sceneConstantBuffer = _sceneConstantBuffer.Get(); // ← 追加: singleton除去
-
-		svc.renderState = renderState.get();
-		svc.resources = &ResourceManager::Instance();
-		svc.shaders = &ShaderRegistry::Instance();
-		svc.modelRenderer = modelRenderer.get();
-		svc.primitiveRenderer = primitiveRenderer.get();
-		svc.shapeRenderer = shapeRenderer.get();
-		svc.particleRenderer = particleRenderer.get();
-		svc.shadowMap = shadowMap.get();
-		svc.renderQueue = &RenderQueue::Instance();
-		svc.lightManager = lightManager.get();   // (B) 接続
-		svc.postProcess = postProcess.get();    // (A) 接続
-		modelRenderer->SetupPipeline(svc);
-	}
+    // ---- Phase 4: レンダリングパイプライン構築 ----
+    SetupRenderPipeline();
 }
 
-// 毎フレーム呼び出す更新処理
+void Graphics::SetupRenderPipeline()
+{
+    // RenderServices を構築してキャッシュ
+    _renderServices.device = _gfxDevice.GetDevice();
+    _renderServices.sceneConstantBuffer = _gfxDevice.GetSceneConstantBuffer();
+    _renderServices.renderState = _renderState.get();
+    _renderServices.resources = &ResourceManager::Instance();
+    _renderServices.shaders = &ShaderRegistry::Instance();
+    _renderServices.modelRenderer = _modelRenderer.get();
+    _renderServices.primitiveRenderer = _primitiveRenderer.get();
+    _renderServices.shapeRenderer = _shapeRenderer.get();
+    _renderServices.particleRenderer = _particleRenderer.get();
+    _renderServices.shadowMap = _shadowMap.get();
+    _renderServices.renderQueue = &RenderQueue::Instance();
+    _renderServices.lightManager = _lightManager.get();
+    _renderServices.postProcess = _postProcess.get();
+
+    // (I) RenderQueue に ShaderRegistry を注入（ホットパス singleton ゼロ）
+    RenderQueue::Instance().Initialize(_renderServices.shaders);
+
+    // パイプライン初期化（AddPass の前に必ず呼ぶ）
+    _pipeline.Initialize(_renderServices);
+
+    // 描画パスを実行順に登録
+    _pipeline.AddPass<SetupPass>();       // 1. HDR バッファのクリアとバインド
+    _pipeline.AddPass<ShadowPass>();      // 2. シャドウマップ生成
+    _pipeline.AddPass<OpaquePass>();      // 3. 不透明ジオメトリ
+    _pipeline.AddPass<SkyboxPass>();      // 4. スカイボックス
+    _pipeline.AddPass<TransparentPass>(); // 5. 半透明
+    _pipeline.AddPass<ParticlePass>();    // 6. パーティクル
+    _pipeline.AddPass<PrimitivePass>();   // 7. デバッグプリミティブ
+    _pipeline.AddPass<PostProcessPass>(); // 8. ポストプロセス・最終出力
+
+    OutputDebugStringA("[Graphics] RenderPipeline initialized.\n");
+}
+
+// ============================================================
+//  Update（毎フレーム）
+//  ★ CbScene の書き込み権限はここのみ。EnvironmentSystem は上書きしない。
+// ============================================================
 void Graphics::Update(Camera* camera)
 {
-	// 開発中のみ、毎フレームシェーダーのファイル更新を監視する
 #if defined(_DEBUG) || defined(ENABLE_EDITOR)
-	ShaderRegistry::Instance().UpdateHotReload(GetDevice());
+    ShaderRegistry::Instance().UpdateHotReload(_gfxDevice.GetDevice());
 #endif
 
-	// (B) CbLight (b9) を GPU へ転送しパイプラインにバインドする。
-	//     シーン側で GetLightManager()->SetDirectionalLight(...) を先に呼ぶこと。
-	lightManager->Bind(immediateContext.Get(), SLOT_CB_LIGHT);
+    // CbLight (b9) を GPU に転送・バインド（毎フレーム最初に実行）
+    if (_lightManager) {
+        _lightManager->Bind(_gfxDevice.GetContext(), SLOT_CB_LIGHT);
+    }
 
-	if (!_sceneConstantBuffer || !camera) return;
+    if (!_gfxDevice.GetSceneConstantBuffer() || !camera) return;
 
-	CbSceneData data{};
+    // ★ CbScene を構築（唯一の書き込み箇所）
+    CbSceneData data{};
 
-	// --- 行列 ---
-	const DirectX::XMFLOAT4X4 vp = camera->GetViewProjectionMatrix();
-	data.viewProjection = DirectX::XMLoadFloat4x4(&vp);
-	data.view = DirectX::XMLoadFloat4x4(&camera->GetView());
-	data.projection = DirectX::XMLoadFloat4x4(&camera->GetProjection());
+    const DirectX::XMFLOAT4X4 vp = camera->GetViewProjectionMatrix();
+    data.viewProjection = DirectX::XMLoadFloat4x4(&vp);
+    data.view = DirectX::XMLoadFloat4x4(&camera->GetView());
+    data.projection = DirectX::XMLoadFloat4x4(&camera->GetProjection());
 
-	// --- カメラ位置 ---
-	const auto& pos = camera->GetEye();
-	data.cameraPosition = { pos.x, pos.y, pos.z, 1.0f };
+    const auto& pos = camera->GetEye();
+    data.cameraPosition = { pos.x, pos.y, pos.z, 1.0f };
 
-	// (B) CbScene のライト情報を LightManager から取得（ハードコード廃止）。
-	//     ShadowPass 等が rc.lightManager->GetDirectionalLight() と同じ値を参照する。
-	{
-		const DirectionalLight& dir = lightManager->GetDirectionalLight();
-		data.lightDirection = { dir.direction.x, dir.direction.y, dir.direction.z, 0.0f };
-		data.lightColor = { dir.color.x,     dir.color.y,     dir.color.z, dir.intensity };
-	}
+    if (_lightManager) {
+        const DirectionalLight& dir = _lightManager->GetDirectionalLight();
+        data.lightDirection = { dir.direction.x, dir.direction.y, dir.direction.z, 0.0f };
+        data.lightColor = { dir.color.x, dir.color.y, dir.color.z, dir.intensity };
+    }
 
-	immediateContext->UpdateSubresource(
-		_sceneConstantBuffer.Get(), 0, nullptr, &data, 0, 0);
+    _gfxDevice.UpdateSceneConstantBuffer(&data, sizeof(data));
 }
 
 // ============================================================
-//  MakeFrameContext — Render(RenderContext) ブリッジ廃止後の呼び出し側向け
+//  Render（毎フレーム） ← 旧 ModelRenderer::Render
+// ============================================================
+void Graphics::Render(const RenderFrameContext& ctx)
+{
+    _pipeline.Execute(ctx);
+    UnbindAllResources(ctx.dc);
+}
+
+// ============================================================
+//  MakeFrameContext
 // ============================================================
 RenderFrameContext Graphics::MakeFrameContext(const Camera* camera,
-	ID3D11RenderTargetView* overrideRTV) noexcept
+    ID3D11RenderTargetView* overrideRTV) noexcept
 {
-	RenderFrameContext ctx;
-	ctx.dc = immediateContext.Get();
-	ctx.camera = camera;
-	ctx.targetRTV = (overrideRTV != nullptr) ? overrideRTV : gameRTV.Get();
-	ctx.targetDSV = depthStencilView.Get();
-	ctx.viewportW = static_cast<uint32_t>(screenWidth);
-	ctx.viewportH = static_cast<uint32_t>(screenHeight);
-	return ctx;
+    RenderFrameContext ctx;
+    ctx.dc = _gfxDevice.GetContext();
+    ctx.camera = camera;
+    ctx.targetRTV = (overrideRTV != nullptr) ? overrideRTV : _gfxDevice.GetGameRTV();
+    ctx.targetDSV = _gfxDevice.GetDepthStencilView();
+    ctx.viewportW = _gfxDevice.GetWidthU();
+    ctx.viewportH = _gfxDevice.GetHeightU();
+    return ctx;
 }
 
-// クリア
-void Graphics::Clear(float r, float g, float b, float a,bool useGameRTV)
+// ============================================================
+//  UnbindAllResources（パイプライン実行後のクリーンアップ）
+// ============================================================
+void Graphics::UnbindAllResources(ID3D11DeviceContext* dc)
 {
-	float color[4]{ r, g, b, a };
+    ID3D11Buffer* nullCB = nullptr;
+    ID3D11SamplerState* nullSampler = nullptr;
+    ID3D11ShaderResourceView* nullSRV = nullptr;
 
-	if (useGameRTV)
-		immediateContext->ClearRenderTargetView(gameRTV.Get(), color);
-	else
-		immediateContext->ClearRenderTargetView(renderTargetView.Get(), color);
-
-	immediateContext->ClearDepthStencilView(depthStencilView.Get(),
-		D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    dc->VSSetConstantBuffers(SLOT_CB_SCENE, 1, &nullCB);
+    dc->PSSetConstantBuffers(SLOT_CB_SCENE, 1, &nullCB);
+    dc->VSSetConstantBuffers(SLOT_CB_SKELETON, 1, &nullCB);
+    dc->PSSetConstantBuffers(SLOT_CB_SKELETON, 1, &nullCB);
+    dc->VSSetConstantBuffers(SLOT_CB_LIGHT, 1, &nullCB);
+    dc->PSSetConstantBuffers(SLOT_CB_LIGHT, 1, &nullCB);
+    dc->VSSetConstantBuffers(SLOT_CB_SHADOW, 1, &nullCB);
+    dc->PSSetConstantBuffers(SLOT_CB_SHADOW, 1, &nullCB);
+    dc->PSSetSamplers(0, 1, &nullSampler);
+    dc->PSSetSamplers(SLOT_SMP_SHADOW, 1, &nullSampler);
+    dc->PSSetShaderResources(SLOT_SRV_SHADOW, 1, &nullSRV);
 }
-
-// レンダーターゲット設定
-void Graphics::SetRenderTargets(bool useGameRTV)
-{
-	if (useGameRTV)
-		immediateContext->OMSetRenderTargets(1, gameRTV.GetAddressOf(), depthStencilView.Get());
-	else
-		immediateContext->OMSetRenderTargets(1, renderTargetView.GetAddressOf(), depthStencilView.Get());
-
-	immediateContext->RSSetViewports(1, &viewport);
-}
-
-// 画面表示
-void Graphics::Present(UINT syncInterval)
-{
-	swapchain->Present(syncInterval, 0);
-}
-
-
 
 // ============================================================
 //  Shutdown
-//  生成と逆順に解放する。
-//  modelRenderer を先頭にすることで _pipeline.Shutdown() が
-//  他サブシステムよりも前に完了することを保証する。
 // ============================================================
 void Graphics::Shutdown()
 {
-	if (immediateContext) {
-		immediateContext->ClearState();
-		immediateContext->Flush();
-	}
+    // パイプラインを最初に解放（各パスの Shutdown が走る）
+    _pipeline.Shutdown();
 
-	// デバッグ用ライブオブジェクトレポート（必要時に有効化）
-	if (device) {
-		Microsoft::WRL::ComPtr<ID3D11Debug> debug;
-		if (SUCCEEDED(device.As(&debug))) {
-			// debug->ReportLiveObjects(D3D11_RLDO_DETAIL | D3D11_RLDO_IGNORE_INTERNAL);
-		}
-	}
+    // 描画サブシステムを生成の逆順に解放
+    _postProcess.reset();
+    _lightManager.reset();
+    _particleRenderer.reset();
+    _shadowMap.reset();
+    _shapeRenderer.reset();
+    _primitiveRenderer.reset();
+    _modelRenderer.reset();
+    _renderState.reset();
 
-	// ---- GPU リソースの解放（生成と逆順） ----
-	_sceneConstantBuffer.Reset();
-	gameSRV.Reset();
-	gameRTV.Reset();
-	gameTex.Reset();
-
-	// パイプラインを最初に解放（各パスの Shutdown が走る）
-	modelRenderer.reset();
-
-	// ポストプロセス（ResourceManager 経由で RenderTarget を解放する）
-	postProcess.reset();
-
-	// その他サブシステム（生成と逆順）
-	lightManager.reset();
-	particleRenderer.reset();   // ← 漏れを修正
-	shadowMap.reset();
-	shapeRenderer.reset();
-	primitiveRenderer.reset();
-
-	// レンダーステートは全パス解放後（パスが Shutdown でアクセスする可能性を排除）
-	renderState.reset();
-
-	depthStencilView.Reset();
-	renderTargetView.Reset();
-	swapchain.Reset();
-	immediateContext.Reset();
-	device.Reset();
+    // D3D11 RHI 層を最後に解放
+    _gfxDevice.Shutdown();
 }

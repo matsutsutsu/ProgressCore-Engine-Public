@@ -1,157 +1,134 @@
 #pragma once
-
-#include <d3d11.h>
-#include <wrl.h>
 #include <memory>
-#include "RenderState.h"
 #include <string>
+
+#include "Engine/Graphics/RHI/GraphicsDevice.h"
+#include "Engine/Graphics/RHI/RenderState.h"
+#include "Engine/Graphics/RHI/RenderContext.h"      // RenderServices / RenderFrameContext
+#include "Engine/Graphics/Pipeline/Core/RenderPipeline.h" // ← Graphics が直接所有
+#include "Engine/Graphics/Renderer/ModelRenderer.h"
 #include "Engine/Graphics/Renderer/PrimitiveRenderer.h"
 #include "Engine/Graphics/Renderer/ShapeRenderer.h"
-#include "Engine/Graphics/Renderer/ModelRenderer.h"
 #include "Engine/Graphics/Renderer/ParticleRenderer.h"
 #include "Engine/Graphics/Shader/Pass/ShadowMap.h"
-#include "Engine/Graphics/RHI/Light.h"                              // LightManager (B)
-#include "Engine/Graphics/Shader/PostProcess/PostProcessManager.h" // PostProcessManager (A)
-#include "Engine/Graphics/RHI/RenderContext.h"                     // RenderFrameContext (C)
+#include "Engine/Graphics/RHI/Light.h"
+#include "Engine/Graphics/Shader/PostProcess/PostProcessManager.h"
 
 class Camera;
 
-
-// D3Dオブジェクトに名前を付けるヘルパー関数
-template <typename T> void SetDebugName(T *child, const std::string &name)
+template <typename T>
+void SetDebugName(T* child, const std::string& name)
 {
-    if (child) {
-        child->SetPrivateData(WKPDID_D3DDebugObjectName, (UINT)name.size(), name.c_str());
-    }
+    if (child)
+        child->SetPrivateData(WKPDID_D3DDebugObjectName,
+            static_cast<UINT>(name.size()), name.c_str());
 }
 
 /**
- * @brief グラフィクスシステム全体を管理するシングルトン。
- * @details
- *  デバイス/スワップチェーン/RT/サブシステムの生成・破棄を担う。
- *  【2フェーズ初期化】Initialize → SetupPipeline（ModelRenderer経由）
+ * @brief 描画サブシステムのコーディネーター（シングルトン）。
  *
- *  呼び出し例：
- *  @code
- *    // シーンのレンダリングループ
- *    auto ctx = Graphics::Instance().MakeFrameContext(camera);
- *    Graphics::Instance().GetModelRenderer()->Render(ctx);
- *  @endcode
+ * @details
+ *  【分離後の責務】
+ *  - GraphicsDevice（_gfxDevice）: D3D11 デバイス/コンテキスト/RT/CbScene を管理
+ *  - Graphics 本体             : サブシステム所有 / シェーダー登録 / フレーム更新
+ *
+ *  公開 API は変更していないため既存の呼び出しコードは無修正でよい。
  */
 class Graphics
 {
 private:
-	Graphics() = default;
-	~Graphics() = default;
+    Graphics() = default;
+    ~Graphics() = default;
 
 public:
-	// インスタンス取得
-	static Graphics& Instance()
-	{
-		static Graphics instance;
-		return instance;
-	}
+    static Graphics& Instance()
+    {
+        static Graphics instance;
+        return instance;
+    }
 
-	// 初期化
-	void Initialize(HWND hWnd);
+    void Initialize(HWND hWnd);
+    void Shutdown();
 
-	/**
-	 * @brief カメラ・ライト情報を GPU 定数バッファに転送し、CbLight をパイプラインにバインドする。
-	 * @details ライト情報は内部の LightManager から取得する。
-	 *          シーン側で GetLightManager()->SetDirectionalLight(...) した後に呼ぶこと。
-	 */
+    /**
+     * @brief カメラ行列・ライト情報を CbScene / CbLight として GPU に転送する。
+     * @details LightManager::Bind はここで呼ばれる。シーン側が
+     *          GetLightManager()->SetDirectionalLight() を先に呼ぶこと。
+     */
     void Update(Camera* camera);
 
-	// クリア
-	void Clear(float r, float g, float b, float a,bool useGameRTV);
+    /**
+    * @brief 登録された全パスを順番に実行する（旧 modelRenderer->Render）。
+    * @details パイプラインが Graphics に移ったため、ModelRenderer を介さず直接実行できる。
+    */
+    void Render(const RenderFrameContext& ctx);
 
-	// レンダーターゲット設定
-	void SetRenderTargets(bool useGameRTV);
+    // ----------------------------------------------------------------
+    //  D3D 操作（GraphicsDevice への薄いデリゲート）
+    // ----------------------------------------------------------------
+    void Clear(float r, float g, float b, float a, bool useGameRTV) { _gfxDevice.Clear(r, g, b, a, useGameRTV); }
+    void SetRenderTargets(bool useGameRTV) { _gfxDevice.SetRenderTargets(useGameRTV); }
+    void Present(UINT syncInterval) { _gfxDevice.Present(syncInterval); }
 
-	// 画面表示
-	void Present(UINT syncInterval);
+    // ----------------------------------------------------------------
+    //  アクセサ（GraphicsDevice デリゲート）
+    // ----------------------------------------------------------------
+    HWND                      GetWindowHandle()       noexcept { return _gfxDevice.GetWindowHandle(); }
+    ID3D11Device*             GetDevice()             noexcept { return _gfxDevice.GetDevice(); }
+    ID3D11DeviceContext*      GetDeviceContext()       noexcept { return _gfxDevice.GetContext(); }
+    float                     GetScreenWidth()   const noexcept { return _gfxDevice.GetWidth(); }
+    float                     GetScreenHeight()  const noexcept { return _gfxDevice.GetHeight(); }
+    ID3D11DepthStencilView*   GetDepthStencilView()   noexcept { return _gfxDevice.GetDepthStencilView(); }
+    ID3D11RenderTargetView*   GetBackBufferRTV()       noexcept { return _gfxDevice.GetBackBufferRTV(); }
+    ID3D11Buffer*             GetSceneConstantBuffer() noexcept { return _gfxDevice.GetSceneConstantBuffer(); }
+    ID3D11RenderTargetView*   GetGameRTV()             noexcept { return _gfxDevice.GetGameRTV(); }
+    ID3D11ShaderResourceView* GetGameSRV()             noexcept { return _gfxDevice.GetGameSRV(); }
+ 
 
-	// ---- 新 API ヘルパー（ブリッジ廃止後の呼び出し側向け） ----
+    // ----------------------------------------------------------------
+    //  アクセサ（描画サブシステム）
+    // ----------------------------------------------------------------
+    RenderState*        GetRenderState()                    { return _renderState.get(); }
+    ModelRenderer*      GetModelRenderer()      const       { return _modelRenderer.get(); }
+    PrimitiveRenderer*  GetPrimitiveRenderer()  const       { return _primitiveRenderer.get(); }
+    ShapeRenderer*      GetShapeRenderer()      const       { return _shapeRenderer.get(); }
+    ParticleRenderer*   GetParticleRenderer()   const       { return _particleRenderer.get(); }
+    ShadowMap*          GetShadowMap()          const       { return _shadowMap.get(); }
+    LightManager*       GetLightManager()       const       { return _lightManager.get(); }
+    PostProcessManager* GetPostProcessManager() const       { return _postProcess.get(); }
 
-	/**
-	 * @brief 現在の Graphics 状態から RenderFrameContext を構築する。
-	 * @param camera     描画に使用するカメラ。
-	 * @param overrideRTV 出力 RTV を上書きしたい場合に指定。nullptr なら gameRTV を使用。
-	 * @details
-	 *  旧 Render(RenderContext) ブリッジを削除した後の呼び出し方：
-	 *  @code
-	 *    auto ctx = Graphics::Instance().MakeFrameContext(camera);
-	 *    modelRenderer->Render(ctx);
-	 *    // バックバッファに直接出力したい場合:
-	 *    auto ctx = Graphics::Instance().MakeFrameContext(camera, GetBackBufferRTV());
-	 *  @endcode
-	 */
-	RenderFrameContext MakeFrameContext(const Camera* camera,
-		ID3D11RenderTargetView* overrideRTV = nullptr) noexcept;
+    /**
+     * @brief パイプラインに渡された RenderServices への const 参照を返す。
+     * @details EnvironmentSystem 等の pipeline 外システム向けアクセサ。
+     */
+    const RenderServices& GetRenderServices() const noexcept { return _pipeline.GetServices(); }
+ 
 
-	// ---- アクセサ ----
-
-	HWND GetWindowHandle() { return hWnd; }
-	ID3D11Device* GetDevice() { return device.Get(); }
-	ID3D11DeviceContext* GetDeviceContext() { return immediateContext.Get(); }
-
-	float GetScreenWidth() const { return screenWidth; }
-	float GetScreenHeight() const { return screenHeight; }
-
-	RenderState* GetRenderState() { return renderState.get(); }
-	PrimitiveRenderer* GetPrimitiveRenderer() const { return primitiveRenderer.get(); }
-	ShapeRenderer* GetShapeRenderer() const { return shapeRenderer.get(); }
-	ModelRenderer* GetModelRenderer() const { return modelRenderer.get(); }
-	ParticleRenderer *GetParticleRenderer() const { return particleRenderer.get(); }
-	ShadowMap* GetShadowMap() const { return shadowMap.get(); }
-	/// @brief LightManager へのアクセス。シーン側でライトを設定する際に使用する。
-	LightManager* GetLightManager()      const { return lightManager.get(); }
-	/// @brief PostProcessManager へのアクセス。ブルーム等のパラメータ設定に使用する。
-	PostProcessManager* GetPostProcessManager() const { return postProcess.get(); }
-
-	// 深度ステンシルビューの取得 (これで解決！)
-	ID3D11DepthStencilView* GetDepthStencilView() { return depthStencilView.Get(); }
-
-	// バックバッファ(画面)のRTV取得 (ポストプロセスの最終出力先に使う)
-	ID3D11RenderTargetView* GetBackBufferRTV() { return renderTargetView.Get(); }
-
-	// シーン定数バッファ (b8: CbScene) を取得する関数
-    ID3D11Buffer *GetSceneConstantBuffer() const { return _sceneConstantBuffer.Get(); }
-
-	ID3D11RenderTargetView* GetGameRTV() { return gameRTV.Get(); }
-	ID3D11ShaderResourceView* GetGameSRV() { return gameSRV.Get(); }
-
-
-    void Shutdown(); // これを追加
+    /**
+     * @brief 現在の Graphics 状態から RenderFrameContext を構築するヘルパー。
+     * @param overrideRTV nullptr なら gameRTV を使用。
+     */
+    RenderFrameContext MakeFrameContext(const Camera* camera,
+        ID3D11RenderTargetView* overrideRTV = nullptr) noexcept;
 
 private:
-	HWND											hWnd = nullptr;
-	Microsoft::WRL::ComPtr<ID3D11Device>			device;
-	Microsoft::WRL::ComPtr<ID3D11DeviceContext>		immediateContext;
-	Microsoft::WRL::ComPtr<IDXGISwapChain>			swapchain;
-	Microsoft::WRL::ComPtr<ID3D11RenderTargetView>	renderTargetView;
-	Microsoft::WRL::ComPtr<ID3D11DepthStencilView>	depthStencilView;
-	D3D11_VIEWPORT									viewport = {};
+    // ---- D3D11 RHI 層（H で分離） ----
+    GraphicsDevice _gfxDevice;
 
-	float	screenWidth = 0;
-	float	screenHeight = 0;
+    // ---- レンダリングパイプライン（Graphics が直接所有） ----
+    RenderPipeline  _pipeline;
+    RenderServices  _renderServices; ///< パイプライン構築後にキャッシュ
 
-	std::unique_ptr<RenderState>					renderState;
-	std::unique_ptr<PrimitiveRenderer>				primitiveRenderer;
-	std::unique_ptr<ShapeRenderer>					shapeRenderer;
-	std::unique_ptr<ModelRenderer>					modelRenderer;
-    std::unique_ptr<ParticleRenderer>               particleRenderer;
-	std::unique_ptr<ShadowMap> shadowMap;
-	std::unique_ptr<LightManager>      lightManager;   ///< (B) ライト管理
-	std::unique_ptr<PostProcessManager> postProcess;   ///< (A) ポストプロセス
+    // ---- 描画サブシステム ----
+    std::unique_ptr<RenderState>        _renderState;
+    std::unique_ptr<PrimitiveRenderer>  _primitiveRenderer;
+    std::unique_ptr<ShapeRenderer>      _shapeRenderer;
+    std::unique_ptr<ModelRenderer>      _modelRenderer;
+    std::unique_ptr<ParticleRenderer>   _particleRenderer;
+    std::unique_ptr<ShadowMap>          _shadowMap;
+    std::unique_ptr<LightManager>       _lightManager;
+    std::unique_ptr<PostProcessManager> _postProcess;
 
-	// シーン情報用定数バッファ (b8)
-	Microsoft::WRL::ComPtr<ID3D11Buffer> _sceneConstantBuffer;
-
-	// --- ゲームビュー用追加 ---
-	Microsoft::WRL::ComPtr<ID3D11Texture2D> gameTex;
-	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> gameRTV;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> gameSRV;
-
-
+    void SetupRenderPipeline();
+    void UnbindAllResources(ID3D11DeviceContext* dc);
 };

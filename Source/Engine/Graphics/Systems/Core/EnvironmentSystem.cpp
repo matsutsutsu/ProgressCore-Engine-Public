@@ -5,28 +5,23 @@
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
-#include "Engine/Graphics/RHI/Light.h"
-#include "Engine/Graphics/RHI/Camera.h"
 
-// コンストラクタでの device 取得にのみ使用（ECS 構造上、constructor に device を渡せないため残存）
-// TODO: ECS の Initialize(device) パターンが整備されたら除去する
+// TODO: ECS に Initialize(device) が追加されたら除去する
 #include "Engine/Graphics/RHI/Graphics.h"
 
-#include "Engine/Camera/Components/VirtualCameraComponents.h"
 #include "Engine/Graphics/Components/Lighting/FogComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Game/Core/SystemPriority.h"
 
-using namespace DirectX;
-
 EnvironmentSystem::EnvironmentSystem() : SystemBase("EnvironmentSystem")
 {
-    TextureHandle noiseTexHandle =
-        ResourceManager::Instance().LoadTexture("Assets/Textures/Shader/Noise.png");
-    if (noiseTexHandle.IsValid())
-        _globalNoiseSRV = ResourceManager::Instance().GetTexture(noiseTexHandle);
+    // グローバルノイズテクスチャ
+    auto noiseHandle = ResourceManager::Instance().LoadTexture("Assets/Textures/Shader/Noise.png");
+    if (noiseHandle.IsValid())
+        _globalNoiseSRV = ResourceManager::Instance().GetTexture(noiseHandle);
 
+    // IBL テクスチャ
     auto irrHandle = ResourceManager::Instance().LoadTexture("Assets/Textures/IBL/ibl_sky_iem.dds");
     auto preHandle = ResourceManager::Instance().LoadTexture("Assets/Textures/IBL/ibl_sky_pmrem.dds");
     auto lutHandle = ResourceManager::Instance().LoadTexture("Assets/Textures/IBL/ibl_brdf_lut.png");
@@ -34,66 +29,38 @@ EnvironmentSystem::EnvironmentSystem() : SystemBase("EnvironmentSystem")
     if (preHandle.IsValid()) _prefilterMapSRV = ResourceManager::Instance().GetTexture(preHandle);
     if (lutHandle.IsValid()) _brdfLutSRV = ResourceManager::Instance().GetTexture(lutHandle);
 
-    // TODO: ECS が Initialize(device) を持つようになったら Graphics::Instance() を除去する
+    // フォグ用定数バッファ
+    // TODO: ECS に Initialize(device) が追加されたら除去する
     GpuResourceUtils::CreateDynamicConstantBuffer(
         Graphics::Instance().GetDevice(), sizeof(CbFogData), _fogConstantBuffer.GetAddressOf());
 }
 
 std::vector<CCL::ECS::TypeID> EnvironmentSystem::GetReadTypes() const
 {
-    return { CCL::ECS::TypeInfo<VirtualCamera>::ID(),
-             CCL::ECS::TypeInfo<FogComponent>::ID(),
+    return { CCL::ECS::TypeInfo<FogComponent>::ID(),
              CCL::ECS::TypeInfo<TransformComponent>::ID() };
 }
 
-void EnvironmentSystem::Update(float dt)
+void EnvironmentSystem::Update(float /*dt*/)
 {
-    if (!_world || !_world->HasResource<ModelRenderer*>()) return;
-    ModelRenderer* renderer = _world->GetResource<ModelRenderer*>();
-    if (!renderer) return;
-
-    if (_world->HasResource<Camera*>()) {
-        Camera* mainCamera = _world->GetResource<Camera*>();
-        if (mainCamera) {
-            DirectX::XMMATRIX V = DirectX::XMLoadFloat4x4(&mainCamera->GetView());
-            DirectX::XMMATRIX P = DirectX::XMLoadFloat4x4(&mainCamera->GetProjection());
-
-            DirectX::XMFLOAT4X4 viewMat, projMat, viewProjMat;
-            DirectX::XMStoreFloat4x4(&viewMat, V);
-            DirectX::XMStoreFloat4x4(&projMat, P);
-            DirectX::XMStoreFloat4x4(&viewProjMat, V * P);
-
-            _sceneData.viewProjection = viewProjMat;
-            _sceneData.view = viewMat;
-            _sceneData.projection = projMat;
-
-            DirectX::XMFLOAT3 eye = mainCamera->GetEye();
-            _sceneData.cameraPosition = { eye.x, eye.y, eye.z, 1.0f };
-        }
-    }
-
-    if (_world->HasResource<LightManager*>()) {
-        auto* lightManager = _world->GetResource<LightManager*>();
-        if (lightManager) {
-            const auto& dir = lightManager->GetDirectionalLight();
-            _sceneData.lightDirection = { dir.direction.x, dir.direction.y, dir.direction.z, 0.0f };
-            _sceneData.lightColor = { dir.color.x, dir.color.y, dir.color.z, 1.0f };
-        }
-    }
+    // EnvironmentSystem::Update はフォグ・IBL コンポーネントの読み取りのみ担当。
+    // CbScene（カメラ行列・ライト情報）は Graphics::Update() が管理するため、
+    // ここでは一切触れない。
 }
 
 void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext* dc, const RenderServices& s)
 {
     if (!_world) return;
 
-    // =========================================================
-    // 1. CbScene の GPU 転送とバインド
-    //    Graphics::Instance() → s.sceneConstantBuffer に変更（singleton 除去）
-    // =========================================================
-    if (s.sceneConstantBuffer) {
-        dc->UpdateSubresource(s.sceneConstantBuffer, 0, nullptr, &_sceneData, 0, 0);
-    }
+    // =================================================================
+    // ★ Bug Fix: CbScene の UpdateSubresource をここから削除した。
+    //   Graphics::Update() が正しい行列データを書き込んだ後、
+    //   EnvironmentSystem が古い / 未更新の _sceneData で上書きすると
+    //   InstanceData がゼロ、CbScene の行列が壊れる等の描画バグを引き起こす。
+    //   ここでは BindAllGlobalConstantBuffers でバインドするだけ。
+    // =================================================================
 
+    // 1. CbScene (b8) / CbSkeleton (b12) をパイプラインにバインドする
     if (_world->HasResource<ModelRenderer*>()) {
         if (auto* renderer = _world->GetResource<ModelRenderer*>()) {
             renderer->BindAllGlobalConstantBuffers(dc);
@@ -106,7 +73,7 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext* dc, const Rende
         dc->PSSetShaderResources(SLOT_SRV_GLOBAL_NOISE, 1, srvs);
     }
 
-    // 3. フォグ定数バッファ
+    // 3. フォグ定数バッファ (b11)
     CbFogData fogData = { {0.5f,0.5f,0.5f,1.0f},{0.0f,1000.0f,10.0f,0.0f},{},{},{},{} };
     ID3D11ShaderResourceView* fogNoiseSrv = nullptr;
 
@@ -142,11 +109,9 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext* dc, const Rende
     dc->PSSetShaderResources(SLOT_SRV_IBL_IRRADIANCE, 3, iblSRVs);
 
     // 5. IBL 用サンプラ (s3)
-    //    Graphics::Instance().GetRenderState() → s.renderState に変更（singleton 除去）
     if (s.renderState) {
-        ID3D11SamplerState* iblSampler =
-            s.renderState->GetSamplerState(SamplerState::LinearClamp);
-        dc->PSSetSamplers(SLOT_SMP_IBL, 1, &iblSampler);
+        ID3D11SamplerState* smp = s.renderState->GetSamplerState(SamplerState::LinearClamp);
+        dc->PSSetSamplers(SLOT_SMP_IBL, 1, &smp);
     }
 }
 
