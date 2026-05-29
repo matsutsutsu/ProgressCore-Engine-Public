@@ -46,6 +46,11 @@ void Graphics::Initialize(HWND hWnd)
     _gfxDevice.Initialize(hWnd);
     ID3D11Device* device = _gfxDevice.GetDevice();
 
+    // Camera::Camera() がデフォルト値で初期化済み。
+    // アスペクト比だけ実際のウィンドウサイズで上書きする（BaseScene が後でゲーム固有値を設定する）。
+    float aspect = _gfxDevice.GetWidth() / _gfxDevice.GetHeight();
+    _mainCamera.SetPerspectiveFov(DirectX::XMConvertToRadians(45.0f), aspect, 0.1f, 1000.0f);
+
     // ---- Phase 2: 描画サブシステム生成 ----
     _renderState = std::make_unique<RenderState>(device);
     _primitiveRenderer = std::make_unique<PrimitiveRenderer>(device);
@@ -126,7 +131,7 @@ void Graphics::SetupRenderPipeline()
 //  Update（毎フレーム）
 //  ★ CbScene の書き込み権限はここのみ。EnvironmentSystem は上書きしない。
 // ============================================================
-void Graphics::Update(Camera* camera)
+void Graphics::Update()
 {
 #if defined(_DEBUG) || defined(ENABLE_EDITOR)
     ShaderRegistry::Instance().UpdateHotReload(_gfxDevice.GetDevice());
@@ -137,23 +142,23 @@ void Graphics::Update(Camera* camera)
         _lightManager->Bind(_gfxDevice.GetContext(), SLOT_CB_LIGHT);
     }
 
-    if (!_gfxDevice.GetSceneConstantBuffer() || !camera) return;
+    if (!_gfxDevice.GetSceneConstantBuffer()) return;
 
     // ★ CbScene を構築（唯一の書き込み箇所）
     CbSceneData data{};
 
-    const DirectX::XMFLOAT4X4 vp = camera->GetViewProjectionMatrix();
+    const DirectX::XMFLOAT4X4 vp = _mainCamera.GetViewProjectionMatrix();
     data.viewProjection = DirectX::XMLoadFloat4x4(&vp);
-    data.view = DirectX::XMLoadFloat4x4(&camera->GetView());
-    data.projection = DirectX::XMLoadFloat4x4(&camera->GetProjection());
+    data.view = DirectX::XMLoadFloat4x4(&_mainCamera.GetView());
+    data.projection = DirectX::XMLoadFloat4x4(&_mainCamera.GetProjection());
 
-    const auto& pos = camera->GetEye();
+    const DirectX::XMFLOAT3& pos = _mainCamera.GetEye();
     data.cameraPosition = { pos.x, pos.y, pos.z, 1.0f };
 
     if (_lightManager) {
         const DirectionalLight& dir = _lightManager->GetDirectionalLight();
         data.lightDirection = { dir.direction.x, dir.direction.y, dir.direction.z, 0.0f };
-        data.lightColor = { dir.color.x, dir.color.y, dir.color.z, dir.intensity };
+        data.lightColor = { dir.color.x,     dir.color.y,     dir.color.z, dir.intensity };
     }
 
     _gfxDevice.UpdateSceneConstantBuffer(&data, sizeof(data));
@@ -171,12 +176,11 @@ void Graphics::Render(const RenderFrameContext& ctx)
 // ============================================================
 //  MakeFrameContext
 // ============================================================
-RenderFrameContext Graphics::MakeFrameContext(const Camera* camera,
-    ID3D11RenderTargetView* overrideRTV) noexcept
+RenderFrameContext Graphics::MakeFrameContext(ID3D11RenderTargetView* overrideRTV) noexcept
 {
     RenderFrameContext ctx;
     ctx.dc = _gfxDevice.GetContext();
-    ctx.camera = camera;
+    ctx.camera = &_mainCamera; // ← 直接参照
     ctx.targetRTV = (overrideRTV != nullptr) ? overrideRTV : _gfxDevice.GetGameRTV();
     ctx.targetDSV = _gfxDevice.GetDepthStencilView();
     ctx.viewportW = _gfxDevice.GetWidthU();

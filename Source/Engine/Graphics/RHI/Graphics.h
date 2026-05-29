@@ -12,6 +12,7 @@
 #include "Engine/Graphics/Renderer/ParticleRenderer.h"
 #include "Engine/Graphics/Shader/Pass/ShadowMap.h"
 #include "Engine/Graphics/RHI/Light.h"
+#include "Engine/Graphics/RHI/Camera.h"
 #include "Engine/Graphics/Shader/PostProcess/PostProcessManager.h"
 
 class Camera;
@@ -51,11 +52,11 @@ public:
     void Shutdown();
 
     /**
-     * @brief カメラ行列・ライト情報を CbScene / CbLight として GPU に転送する。
-     * @details LightManager::Bind はここで呼ばれる。シーン側が
-     *          GetLightManager()->SetDirectionalLight() を先に呼ぶこと。
+     * @brief CbScene・CbLight を GPU に転送する（カメラパラメータ不要）。
+     * @details _mainCamera を直接参照するため引数なし。
+     *          CameraBrainSystem が先に _mainCamera に書き込んでいること。
      */
-    void Update(Camera* camera);
+    void Update();
 
     /**
     * @brief 登録された全パスを順番に実行する（旧 modelRenderer->Render）。
@@ -96,6 +97,7 @@ public:
     ShadowMap*          GetShadowMap()          const       { return _shadowMap.get(); }
     LightManager*       GetLightManager()       const       { return _lightManager.get(); }
     PostProcessManager* GetPostProcessManager() const       { return _postProcess.get(); }
+    Camera*             GetMainCamera()         noexcept    { return &_mainCamera; }
 
     /**
      * @brief パイプラインに渡された RenderServices への const 参照を返す。
@@ -108,10 +110,15 @@ public:
      * @brief 現在の Graphics 状態から RenderFrameContext を構築するヘルパー。
      * @param overrideRTV nullptr なら gameRTV を使用。
      */
-    RenderFrameContext MakeFrameContext(const Camera* camera,
-        ID3D11RenderTargetView* overrideRTV = nullptr) noexcept;
+    RenderFrameContext MakeFrameContext(ID3D11RenderTargetView* overrideRTV = nullptr) noexcept;
 
 private:
+
+    // ---- カメラ（Graphics が唯一の所有者） ----
+	// ユニークポインタにしない理由は、ECS システムが毎フレームこの Camera の内容を書き換えるため。参照の安定性を保ちたい。
+	// ユニークにするとNullの可能性が出てきて面倒
+    Camera _mainCamera; ///< Camera() がデフォルト値で初期化。ECS システムが毎フレーム書き込む。
+
     // ---- D3D11 RHI 層（H で分離） ----
     GraphicsDevice _gfxDevice;
 

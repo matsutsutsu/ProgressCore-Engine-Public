@@ -39,10 +39,19 @@ void BaseScene::Initialize()
     float screenHeight = gfx.GetScreenHeight();
 
 
-    // カメラ基本設定
-    camera.SetPerspectiveFov(
-        DirectX::XMConvertToRadians(45), screenWidth / screenHeight, 0.1f, 1000.0f);
-    camera.SetLookAt({0, 10, -10}, {0, 0, 0}, {0, 1, 0});
+    // =========================================================
+    // カメラ初期設定
+    //   Graphics が _mainCamera を所有。BaseScene はここで初期値を書き込み、
+    //   以降は CameraBrainSystem に全て任せる。
+    // =========================================================
+    Camera* cam = gfx.GetMainCamera();
+    cam->SetPerspectiveFov(
+        DirectX::XMConvertToRadians(45.0f),
+        gfx.GetScreenWidth() / gfx.GetScreenHeight(),
+        0.1f, 1000.0f);
+    cam->SetLookAt({ 0.0f, 10.0f, -10.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f });
+
+
 
     Prefab::Initialize(device);
 
@@ -72,7 +81,7 @@ void BaseScene::Initialize()
 
     // Graphics が所有するサブシステムを ECS へ接続する。
     // ECS システムがライトを変更すれば Graphics::Update() の Bind に反映される。
-    _worldPtr->AddResource<Camera*>(&camera);
+    _worldPtr->AddResource<Camera*>(cam);
     _worldPtr->AddResource<LightManager*>(gfx.GetLightManager());
     _worldPtr->AddResource<PostProcessManager*>(gfx.GetPostProcessManager());
     _worldPtr->AddResource<ShadowMap*>(gfx.GetShadowMap());
@@ -110,7 +119,7 @@ void BaseScene::Update(float elapsedTime)
 
     // カメラ行列・CbScene の更新と CbLight のバインドを行う。
     // lightManager->Bind は Graphics::Update 内で実行される。
-    Graphics::Instance().Update(&camera);
+    Graphics::Instance().Update();
 
 
     if (_ecsContext) {
@@ -152,9 +161,9 @@ void BaseScene::Render()
 
     // MakeFrameContext でフレームコンテキストを構築し、パイプラインを一括実行する。
 #ifdef ENABLE_EDITOR
-    auto ctx = gfx.MakeFrameContext(&camera, gfx.GetGameRTV());
+    auto ctx = gfx.MakeFrameContext(gfx.GetGameRTV());
 #else
-    auto ctx = gfx.MakeFrameContext(&camera, gfx.GetBackBufferRTV());
+    auto ctx = gfx.MakeFrameContext(gfx.GetBackBufferRTV());
 #endif
 
     gfx.Render(ctx); // ← Graphics が直接パイプラインを回す

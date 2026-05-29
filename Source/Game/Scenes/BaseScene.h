@@ -3,7 +3,6 @@
 #include <memory>
 #include <string>
 
-#include "Engine/Graphics/RHI/Camera.h"
 #include "Engine/Scene/Scene.h"
 
 // ECS関連
@@ -19,8 +18,6 @@ class BaseScene : public Scene {
   protected:
     std::unique_ptr<CCL::ECS::ECSContext> _ecsContext;
     CCL::ECS::Core::World *_worldPtr = nullptr;
-
-    Camera             camera;
 
     // セーブ・ロードの「予約」パス
     std::string _pendingLoadScenePath = "";
