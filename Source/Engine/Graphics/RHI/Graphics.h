@@ -10,6 +10,9 @@
 #include "Engine/Graphics/Renderer/ModelRenderer.h"
 #include "Engine/Graphics/Renderer/ParticleRenderer.h"
 #include "Engine/Graphics/Shader/Pass/ShadowMap.h"
+#include "Engine/Graphics/RHI/Light.h"                              // LightManager (B)
+#include "Engine/Graphics/Shader/PostProcess/PostProcessManager.h" // PostProcessManager (A)
+#include "Engine/Graphics/RHI/RenderContext.h"                     // RenderFrameContext (C)
 
 class Camera;
 
@@ -22,7 +25,19 @@ template <typename T> void SetDebugName(T *child, const std::string &name)
     }
 }
 
-// グラフィックス
+/**
+ * @brief グラフィクスシステム全体を管理するシングルトン。
+ * @details
+ *  デバイス/スワップチェーン/RT/サブシステムの生成・破棄を担う。
+ *  【2フェーズ初期化】Initialize → SetupPipeline（ModelRenderer経由）
+ *
+ *  呼び出し例：
+ *  @code
+ *    // シーンのレンダリングループ
+ *    auto ctx = Graphics::Instance().MakeFrameContext(camera);
+ *    Graphics::Instance().GetModelRenderer()->Render(ctx);
+ *  @endcode
+ */
 class Graphics
 {
 private:
@@ -40,7 +55,11 @@ public:
 	// 初期化
 	void Initialize(HWND hWnd);
 
-	// 毎フレーム呼び出してシーン情報を更新する
+	/**
+	 * @brief カメラ・ライト情報を GPU 定数バッファに転送し、CbLight をパイプラインにバインドする。
+	 * @details ライト情報は内部の LightManager から取得する。
+	 *          シーン側で GetLightManager()->SetDirectionalLight(...) した後に呼ぶこと。
+	 */
     void Update(Camera* camera);
 
 	// クリア
@@ -52,38 +71,43 @@ public:
 	// 画面表示
 	void Present(UINT syncInterval);
 
-	// ウインドウハンドル取得
+	// ---- 新 API ヘルパー（ブリッジ廃止後の呼び出し側向け） ----
+
+	/**
+	 * @brief 現在の Graphics 状態から RenderFrameContext を構築する。
+	 * @param camera     描画に使用するカメラ。
+	 * @param overrideRTV 出力 RTV を上書きしたい場合に指定。nullptr なら gameRTV を使用。
+	 * @details
+	 *  旧 Render(RenderContext) ブリッジを削除した後の呼び出し方：
+	 *  @code
+	 *    auto ctx = Graphics::Instance().MakeFrameContext(camera);
+	 *    modelRenderer->Render(ctx);
+	 *    // バックバッファに直接出力したい場合:
+	 *    auto ctx = Graphics::Instance().MakeFrameContext(camera, GetBackBufferRTV());
+	 *  @endcode
+	 */
+	RenderFrameContext MakeFrameContext(const Camera* camera,
+		ID3D11RenderTargetView* overrideRTV = nullptr) noexcept;
+
+	// ---- アクセサ ----
+
 	HWND GetWindowHandle() { return hWnd; }
-
-	// デバイス取得
 	ID3D11Device* GetDevice() { return device.Get(); }
-
-	// デバイスコンテキスト取得
 	ID3D11DeviceContext* GetDeviceContext() { return immediateContext.Get(); }
 
-	// スクリーン幅取得
 	float GetScreenWidth() const { return screenWidth; }
-
-	// スクリーン高さ取得
 	float GetScreenHeight() const { return screenHeight; }
 
-	// レンダーステート取得
 	RenderState* GetRenderState() { return renderState.get(); }
-
-	// プリミティブレンダラ取得
 	PrimitiveRenderer* GetPrimitiveRenderer() const { return primitiveRenderer.get(); }
-
-	// シェイプレンダラ取得
 	ShapeRenderer* GetShapeRenderer() const { return shapeRenderer.get(); }
-
-	// モデルレンダラ取得
 	ModelRenderer* GetModelRenderer() const { return modelRenderer.get(); }
-
-	// パーティクルレンダラ取得
 	ParticleRenderer *GetParticleRenderer() const { return particleRenderer.get(); }
-
-	// シャドウマップ取得
 	ShadowMap* GetShadowMap() const { return shadowMap.get(); }
+	/// @brief LightManager へのアクセス。シーン側でライトを設定する際に使用する。
+	LightManager* GetLightManager()      const { return lightManager.get(); }
+	/// @brief PostProcessManager へのアクセス。ブルーム等のパラメータ設定に使用する。
+	PostProcessManager* GetPostProcessManager() const { return postProcess.get(); }
 
 	// 深度ステンシルビューの取得 (これで解決！)
 	ID3D11DepthStencilView* GetDepthStencilView() { return depthStencilView.Get(); }
@@ -98,7 +122,7 @@ public:
 	ID3D11ShaderResourceView* GetGameSRV() { return gameSRV.Get(); }
 
 
-        void Shutdown(); // これを追加
+    void Shutdown(); // これを追加
 
 private:
 	HWND											hWnd = nullptr;
@@ -117,8 +141,9 @@ private:
 	std::unique_ptr<ShapeRenderer>					shapeRenderer;
 	std::unique_ptr<ModelRenderer>					modelRenderer;
     std::unique_ptr<ParticleRenderer>               particleRenderer;
-
 	std::unique_ptr<ShadowMap> shadowMap;
+	std::unique_ptr<LightManager>      lightManager;   ///< (B) ライト管理
+	std::unique_ptr<PostProcessManager> postProcess;   ///< (A) ポストプロセス
 
 	// シーン情報用定数バッファ (b8)
 	Microsoft::WRL::ComPtr<ID3D11Buffer> _sceneConstantBuffer;

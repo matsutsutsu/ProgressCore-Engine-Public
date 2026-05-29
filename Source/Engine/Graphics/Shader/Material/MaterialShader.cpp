@@ -27,23 +27,26 @@ MaterialShader::MaterialShader(ID3D11Device* device,
     _psLastWriteTime = GetLastWriteTime(_psHlslPath);
 }
 
-void MaterialShader::Begin(const RenderContext& rc)
+
+void MaterialShader::Begin(ID3D11DeviceContext* dc,
+    const RenderServices& /*s*/,
+    const RenderFrameContext& /*ctx*/)
 {
-    ApplyShaderPipeline(rc.deviceContext, vertexShader.Get(), pixelShader.Get(), inputLayout.Get());
+    ApplyShaderPipeline(dc, vertexShader.Get(), pixelShader.Get(), inputLayout.Get());
 }
 
-void MaterialShader::Update(const RenderContext& rc, const Model::Mesh& mesh)
+void MaterialShader::Update(ID3D11DeviceContext* dc, const Model::Mesh& mesh)
 {
-    // マテリアルのパラメータをハッシュベースで定数バッファへ超高速転送
     if (mesh.material && mesh.material->data) {
-        UpdateMaterialProperties(rc.deviceContext, *mesh.material->data);
+        UpdateMaterialProperties(dc, *mesh.material->data);
     }
 }
 
-void MaterialShader::End(const RenderContext& rc)
+void MaterialShader::End(ID3D11DeviceContext* dc, const RenderServices& /*s*/)
 {
-    UnbindResources(rc.deviceContext);
+    UnbindResources(dc);
 }
+
 
 std::filesystem::file_time_type MaterialShader::GetLastWriteTime(const std::wstring& path) {
     if (std::filesystem::exists(path)) {

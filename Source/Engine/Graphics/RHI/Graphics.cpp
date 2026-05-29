@@ -5,19 +5,24 @@
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"  
 #include "Engine/Graphics/Renderer/RenderQueue.h"      
-
+#include "Engine/Graphics/Shader/ShaderResources.h"    
 #include "Engine/Graphics/Shader/Material/OutlineShader.h"
 #include "Engine/Graphics/Shader/Material/ShadowMapShader.h"
 
 
-// HLSLの CbScene (b8) に合わせた構造体
-struct CbSceneData {
-    DirectX::XMMATRIX viewProjection;
-    DirectX::XMFLOAT4 lightDirection;
-    DirectX::XMFLOAT4 lightColor;
-    DirectX::XMFLOAT4 cameraPosition;
-    DirectX::XMMATRIX view;
-    DirectX::XMMATRIX projection;
+// ============================================================
+//  シーン定数バッファ構造体 (HLSL: CbScene b8)
+//  XMMATRIX メンバを含むため alignas(16) が必須。
+//  ない場合コンパイラがパディングを挿入し GPU が壊れた値を読む恐れがある。
+// ============================================================
+struct alignas(16) CbSceneData
+{
+	DirectX::XMMATRIX viewProjection;
+	DirectX::XMFLOAT4 lightDirection;
+	DirectX::XMFLOAT4 lightColor;
+	DirectX::XMFLOAT4 cameraPosition;
+	DirectX::XMMATRIX view;
+	DirectX::XMMATRIX projection;
 };
 
 // 初期化
@@ -151,6 +156,14 @@ void Graphics::Initialize(HWND hWnd)
 	shadowMap = std::make_unique<ShadowMap>(device.Get(), 2048, 2048);
 	particleRenderer = std::make_unique<ParticleRenderer>();
     particleRenderer->Initialize(device.Get());
+	// (B) LightManager 生成・初期化
+	lightManager = std::make_unique<LightManager>();
+	lightManager->Initialize(device.Get());
+
+	// (A) PostProcessManager 生成・初期化
+	postProcess = std::make_unique<PostProcessManager>();
+	postProcess->Initialize(device.Get(), screenWidth, screenHeight);
+	// リサイズ時は Graphics::OnResize (未実装) → postProcess->Resize(...) を呼ぶこと
 
 
 	// ⭕ 変更後: C++クラス不要！ パスを書くだけでどんなシェーダーも追加可能
@@ -213,13 +226,15 @@ void Graphics::Initialize(HWND hWnd)
     }
 
 	// ================================================================
-//  RenderPipeline 最終セットアップ
-//  全サブシステム生成後に 1 回だけ実行する。
-//  この時点で全ポインタが有効であること。
-// ================================================================
+	//  RenderPipeline 最終セットアップ
+	//  全サブシステム生成後に 1 回だけ実行する。
+	//  この時点で全ポインタが有効であること。
+	// ================================================================
 	{
 		RenderServices svc;
 		svc.device = device.Get();
+		svc.sceneConstantBuffer = _sceneConstantBuffer.Get(); // ← 追加: singleton除去
+
 		svc.renderState = renderState.get();
 		svc.resources = &ResourceManager::Instance();
 		svc.shaders = &ShaderRegistry::Instance();
@@ -229,8 +244,8 @@ void Graphics::Initialize(HWND hWnd)
 		svc.particleRenderer = particleRenderer.get();
 		svc.shadowMap = shadowMap.get();
 		svc.renderQueue = &RenderQueue::Instance();
-		// TODO: svc.lightManager = ...;  LightManager 実装後に追加
-		// TODO: svc.postProcess  = ...;  PostProcessManager 実装後に追加
+		svc.lightManager = lightManager.get();   // (B) 接続
+		svc.postProcess = postProcess.get();    // (A) 接続
 		modelRenderer->SetupPipeline(svc);
 	}
 }
@@ -238,35 +253,55 @@ void Graphics::Initialize(HWND hWnd)
 // 毎フレーム呼び出す更新処理
 void Graphics::Update(Camera* camera)
 {
-
 	// 開発中のみ、毎フレームシェーダーのファイル更新を監視する
 #if defined(_DEBUG) || defined(ENABLE_EDITOR)
 	ShaderRegistry::Instance().UpdateHotReload(GetDevice());
 #endif
 
-    // カメラ情報の更新
-    if (_sceneConstantBuffer && camera) {
-        CbSceneData data;
+	// (B) CbLight (b9) を GPU へ転送しパイプラインにバインドする。
+	//     シーン側で GetLightManager()->SetDirectionalLight(...) を先に呼ぶこと。
+	lightManager->Bind(immediateContext.Get(), SLOT_CB_LIGHT);
 
-        // --- 行列のコピー ---
-        // 引数の camera から取得
-        DirectX::XMFLOAT4X4 vp = camera->GetViewProjectionMatrix();
-        data.viewProjection    = DirectX::XMLoadFloat4x4(&vp);
+	if (!_sceneConstantBuffer || !camera) return;
 
-        data.view       = DirectX::XMLoadFloat4x4(&camera->GetView());
-        data.projection = DirectX::XMLoadFloat4x4(&camera->GetProjection());
+	CbSceneData data{};
 
-        // --- カメラ位置 ---
-        const auto &pos     = camera->GetEye();
-        data.cameraPosition = DirectX::XMFLOAT4(pos.x, pos.y, pos.z, 1.0f);
+	// --- 行列 ---
+	const DirectX::XMFLOAT4X4 vp = camera->GetViewProjectionMatrix();
+	data.viewProjection = DirectX::XMLoadFloat4x4(&vp);
+	data.view = DirectX::XMLoadFloat4x4(&camera->GetView());
+	data.projection = DirectX::XMLoadFloat4x4(&camera->GetProjection());
 
-        // --- ライト情報 (仮) ---
-        data.lightDirection = DirectX::XMFLOAT4(0.5f, -1.0f, 0.5f, 0.0f);
-        data.lightColor     = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	// --- カメラ位置 ---
+	const auto& pos = camera->GetEye();
+	data.cameraPosition = { pos.x, pos.y, pos.z, 1.0f };
 
-        // GPUへ転送
-        immediateContext->UpdateSubresource(_sceneConstantBuffer.Get(), 0, nullptr, &data, 0, 0);
-    }
+	// (B) CbScene のライト情報を LightManager から取得（ハードコード廃止）。
+	//     ShadowPass 等が rc.lightManager->GetDirectionalLight() と同じ値を参照する。
+	{
+		const DirectionalLight& dir = lightManager->GetDirectionalLight();
+		data.lightDirection = { dir.direction.x, dir.direction.y, dir.direction.z, 0.0f };
+		data.lightColor = { dir.color.x,     dir.color.y,     dir.color.z, dir.intensity };
+	}
+
+	immediateContext->UpdateSubresource(
+		_sceneConstantBuffer.Get(), 0, nullptr, &data, 0, 0);
+}
+
+// ============================================================
+//  MakeFrameContext — Render(RenderContext) ブリッジ廃止後の呼び出し側向け
+// ============================================================
+RenderFrameContext Graphics::MakeFrameContext(const Camera* camera,
+	ID3D11RenderTargetView* overrideRTV) noexcept
+{
+	RenderFrameContext ctx;
+	ctx.dc = immediateContext.Get();
+	ctx.camera = camera;
+	ctx.targetRTV = (overrideRTV != nullptr) ? overrideRTV : gameRTV.Get();
+	ctx.targetDSV = depthStencilView.Get();
+	ctx.viewportW = static_cast<uint32_t>(screenWidth);
+	ctx.viewportH = static_cast<uint32_t>(screenHeight);
+	return ctx;
 }
 
 // クリア
@@ -301,46 +336,53 @@ void Graphics::Present(UINT syncInterval)
 }
 
 
+
+// ============================================================
+//  Shutdown
+//  生成と逆順に解放する。
+//  modelRenderer を先頭にすることで _pipeline.Shutdown() が
+//  他サブシステムよりも前に完了することを保証する。
+// ============================================================
 void Graphics::Shutdown()
 {
-    // 1. デバイスコンテキストのステートをクリア (Refcount: 0 の原因を消す)
-    if (immediateContext) {
-        immediateContext->ClearState();
-        immediateContext->Flush();
-    }
+	if (immediateContext) {
+		immediateContext->ClearState();
+		immediateContext->Flush();
+	}
 
-    // 2. ライブオブジェクトのレポート
-    if (device) {
-        Microsoft::WRL::ComPtr<ID3D11Debug> debug;
-        // デバッグインターフェースを取得
-        HRESULT hr = device.As(&debug);
-        if (SUCCEEDED(hr)) {
-            // 詳細を出力しつつ、内部オブジェクト(Ignore Internal)は無視する
-            //debug->ReportLiveObjects(D3D11_RLDO_DETAIL | D3D11_RLDO_IGNORE_INTERNAL);
-        }
-    }
+	// デバッグ用ライブオブジェクトレポート（必要時に有効化）
+	if (device) {
+		Microsoft::WRL::ComPtr<ID3D11Debug> debug;
+		if (SUCCEEDED(device.As(&debug))) {
+			// debug->ReportLiveObjects(D3D11_RLDO_DETAIL | D3D11_RLDO_IGNORE_INTERNAL);
+		}
+	}
 
-    // 3. メンバ変数のComPtrをリセット (明示的に解放)
-    // これをやらないと、Graphicsのデストラクタが走るまでDeviceが生き残り、
-    // Reportの時点で「Deviceが生きてる」と言われてしまいます。
+	// ---- GPU リソースの解放（生成と逆順） ----
+	_sceneConstantBuffer.Reset();
+	gameSRV.Reset();
+	gameRTV.Reset();
+	gameTex.Reset();
 
-    // 生成と逆順に消していくのが行儀が良いです
-    _sceneConstantBuffer.Reset();
-    gameSRV.Reset();
-    gameRTV.Reset();
-    gameTex.Reset();
+	// パイプラインを最初に解放（各パスの Shutdown が走る）
+	modelRenderer.reset();
 
-    shadowMap.reset();
-    modelRenderer.reset();
-    shapeRenderer.reset();
-    primitiveRenderer.reset();
-    renderState.reset();
+	// ポストプロセス（ResourceManager 経由で RenderTarget を解放する）
+	postProcess.reset();
 
-    depthStencilView.Reset();
-    renderTargetView.Reset();
-    swapchain.Reset();
-    immediateContext.Reset();
+	// その他サブシステム（生成と逆順）
+	lightManager.reset();
+	particleRenderer.reset();   // ← 漏れを修正
+	shadowMap.reset();
+	shapeRenderer.reset();
+	primitiveRenderer.reset();
 
-    // 最後にデバイスを離す
-    device.Reset();
+	// レンダーステートは全パス解放後（パスが Shutdown でアクセスする可能性を排除）
+	renderState.reset();
+
+	depthStencilView.Reset();
+	renderTargetView.Reset();
+	swapchain.Reset();
+	immediateContext.Reset();
+	device.Reset();
 }

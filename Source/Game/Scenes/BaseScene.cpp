@@ -7,7 +7,6 @@
 
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"
-
 #include "Engine/Physics/JoltIntegration/JoltPhysicsFacade.h"
 #include "Engine/Audio/FmodIntegration/FmodAudioManager.h"
 
@@ -15,7 +14,6 @@
 #include "Engine/Platform/Input/InputFacade.h"
 
 #include "Engine/Graphics/Systems/Core/EnvironmentSystem.h"
-
 #include "Engine/Graphics/Renderer/RenderQueue.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 
@@ -35,11 +33,10 @@ void BaseScene::Initialize()
     ZoneScopedN("BaseScene::Initialize");
 #endif
 
-    auto &graphics = Graphics::Instance();
-
-    ID3D11Device *device       = graphics.GetDevice();
-    float         screenWidth  = graphics.GetScreenWidth();
-    float         screenHeight = graphics.GetScreenHeight();
+    auto& gfx = Graphics::Instance();
+    ID3D11Device* device = gfx.GetDevice();
+    float screenWidth = gfx.GetScreenWidth();
+    float screenHeight = gfx.GetScreenHeight();
 
 
     // カメラ基本設定
@@ -47,7 +44,6 @@ void BaseScene::Initialize()
         DirectX::XMConvertToRadians(45), screenWidth / screenHeight, 0.1f, 1000.0f);
     camera.SetLookAt({0, 10, -10}, {0, 0, 0}, {0, 1, 0});
 
-    lightManager.Initialize(device);
     Prefab::Initialize(device);
 
     // ECSコンテキストの生成
@@ -57,10 +53,7 @@ void BaseScene::Initialize()
     // リソース登録
     _worldPtr->AddResource<Input *>(&Input::Instance());
 
-    // =========================================================
-    // ★ 修正：仲介役（EngineServices）からポインタをもらい、Worldに接続するだけ。
-    // 絶対にここでは make_shared(再生成) しない！
-    // =========================================================
+
     auto& services = EngineServices::Instance();
 
     // 1. InputとAudioは、そのままResourceに登録
@@ -77,16 +70,15 @@ void BaseScene::Initialize()
 
 
 
-    // システムがコンストラクタ引数なしでもアクセスできるようにポインタを登録
-    _worldPtr->AddResource<Camera *>(&camera);
-    _worldPtr->AddResource<LightManager *>(&lightManager);
-    _worldPtr->AddResource<PostProcessManager *>(&_postProcess);
-	_worldPtr->AddResource<ShadowMap*>(graphics.GetShadowMap());
-
-    _worldPtr->AddResource<ModelRenderer *>(graphics.GetModelRenderer());
-    _worldPtr->AddResource<ParticleRenderer *>(graphics.GetParticleRenderer());
-    _worldPtr->AddResource<PrimitiveRenderer *>(graphics.GetPrimitiveRenderer());
-    _worldPtr->AddResource<ShapeRenderer *>(graphics.GetShapeRenderer());
+    // Graphics が所有するサブシステムを ECS へ接続する。
+    // ECS システムがライトを変更すれば Graphics::Update() の Bind に反映される。
+    _worldPtr->AddResource<LightManager*>(gfx.GetLightManager());
+    _worldPtr->AddResource<PostProcessManager*>(gfx.GetPostProcessManager());
+    _worldPtr->AddResource<ShadowMap*>(gfx.GetShadowMap());
+    _worldPtr->AddResource<ModelRenderer*>(gfx.GetModelRenderer());
+    _worldPtr->AddResource<ParticleRenderer*>(gfx.GetParticleRenderer());
+    _worldPtr->AddResource<PrimitiveRenderer*>(gfx.GetPrimitiveRenderer());
+    _worldPtr->AddResource<ShapeRenderer*>(gfx.GetShapeRenderer());
 
     // TriggerSystem 等がアクセスできるように、SystemManager のポインタをリソースとして登録
     _worldPtr->AddResource<CCL::ECS::SystemManager *>(_ecsContext->GetSystemManager());
@@ -94,13 +86,9 @@ void BaseScene::Initialize()
     // システム登録 (派生クラスの処理が走る)
     RegisterSystems();
 
-    _postProcess.Initialize(device, (int)screenWidth, (int)screenHeight);
-
     // GPUパーティクル事前準備　オブジェクトプール用に最初に確保しておく
-    Prefab::PrewarmParticles(*_worldPtr);
+    //Prefab::PrewarmParticles(*_worldPtr);
 
-    
-   
 }
 
 void BaseScene::Start() {}
@@ -119,8 +107,10 @@ void BaseScene::Update(float elapsedTime)
     RenderQueue::Instance().BeginFrame();
     Graphics::Instance().GetParticleRenderer()->BeginFrame();
 
-    // Graphics定数バッファ更新 (EditorSceneにあった処理を共通化)
+    // カメラ行列・CbScene の更新と CbLight のバインドを行う。
+    // lightManager->Bind は Graphics::Update 内で実行される。
     Graphics::Instance().Update(&camera);
+
 
     if (_ecsContext) {
        _ecsContext->UpdateRender(elapsedTime);
@@ -146,84 +136,43 @@ void BaseScene::Render()
     ZoneScopedN("BaseScene::Render Pipeline"); // シーン描画全体
 #endif
 
-    auto &graphics = Graphics::Instance();
-    auto *dc       = graphics.GetDeviceContext();
- 
 
-    // 2. 3D描画コンテキスト設定
-    RenderContext rc;
-    rc.deviceContext = dc;
-    rc.renderState   = graphics.GetRenderState();
-    rc.camera        = &camera;
-    rc.lightManager  = &lightManager;
-    rc.shadowMap     = graphics.GetShadowMap();
+    auto& gfx = Graphics::Instance();
+    auto* dc = gfx.GetDeviceContext();
 
-    rc.modelRenderer = graphics.GetModelRenderer();
-    rc.renderQueue = &RenderQueue::Instance();
-    rc.postProcess = &_postProcess;
-    rc.particleRenderer = graphics.GetParticleRenderer();
-    rc.primitiveRenderer = graphics.GetPrimitiveRenderer();
-    rc.shapeRenderer = graphics.GetShapeRenderer();
-
-    // =========================================================
-    // ★ 追加: 最終出力先の決定
-    // ENABLE_EDITOR が有効ならゲーム用テクスチャに描き込み、
-    // そうでなければ実際のモニター画面（バックバッファ）に描き込む
-    // =========================================================
-#ifdef ENABLE_EDITOR
-    rc.targetRTV = graphics.GetGameRTV();
-#else
-    rc.targetRTV = graphics.GetBackBufferRTV();
-#endif
-
-    // =========================================================
-    // 3. 舞台監督によるグローバルリソースのセット
-    // =========================================================
+    // EnvironmentSystem: CbScene のバインド、フォグ、ノイズテクスチャを設定する。
+    // lightManager->Bind は Graphics::Update() で完了済みのため不要。
     if (_ecsContext && _ecsContext->GetSystemManager()) {
-        if (auto *envSystem = _ecsContext->GetSystemManager()->GetSystem<EnvironmentSystem>()) {
-            // ここで CbScene の転送、フォグ、ノイズがセットされる
-            envSystem->BindGlobalResources(dc);
+        if (auto* env = _ecsContext->GetSystemManager()->GetSystem<EnvironmentSystem>()) {
+            env->BindGlobalResources(dc);
         }
     }
 
-    // =========================================================
-    // 4. ライトのバインド
-    // =========================================================
-    if (rc.lightManager) {
-        rc.lightManager->Bind(dc, SLOT_CB_LIGHT);
-    }
-
-
-    // =========================================================
-    // 4. パイプラインの一括実行！ (これ1行ですべての3D描画とポストプロセスが完了する)
-    // =========================================================
-    if (rc.modelRenderer) {
-        rc.modelRenderer->Render(rc);
-    }
- 
-   
-
-    // -----------------------------------------------------------------
-    // 【フェーズ5：2D UI描画】
-    // -----------------------------------------------------------------
-    {
-#if TRACY_ENABLE
-        ZoneScopedN("5. UI Render");
+    // MakeFrameContext でフレームコンテキストを構築し、パイプラインを一括実行する。
+    // 旧 RenderContext 手動構築（50+ 行）が以下の数行に集約される。
+#ifdef ENABLE_EDITOR
+    auto ctx = gfx.MakeFrameContext(&camera, gfx.GetGameRTV());
+#else
+    auto ctx = gfx.MakeFrameContext(&camera, gfx.GetBackBufferRTV());
 #endif
 
-        dc->OMSetBlendState(rc.renderState->GetBlendState(BlendState::Transparency), nullptr, 0xffffffff);
+    gfx.GetModelRenderer()->Render(ctx);
+ 
 
-        // =========================================================================
-        // 深度テストを完全にオフにする（DepthState::None）
-        // これにより、Depthが「No Resource」であってもGPUはエラーを出さず、
-        // UIや文字のピクセルをすべて無条件で画面に焼き付けます。
-        // =========================================================================
-        dc->OMSetDepthStencilState(rc.renderState->GetDepthStencilState(DepthState::NoTestNoWrite), 0);
+   
+    // 2D UI
+    {
+#if TRACY_ENABLE
+        ZoneScopedN("UI Render");
+#endif
+        dc->OMSetBlendState(
+            gfx.GetRenderState()->GetBlendState(BlendState::Transparency), nullptr, 0xffffffff);
+        dc->OMSetDepthStencilState(
+            gfx.GetRenderState()->GetDepthStencilState(DepthState::NoTestNoWrite), 0);
 
-        // ゲーム内UI (Spriteなど)
         OnRenderUI();
-
     }
+
 }
 
 void BaseScene::DrawGUI()

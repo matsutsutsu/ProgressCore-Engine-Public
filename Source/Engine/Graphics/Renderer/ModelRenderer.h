@@ -71,14 +71,6 @@ public:
      */
     void Render(const RenderFrameContext& ctx);
 
-    /**
-     * @brief 毎フレームの描画実行（旧 API ブリッジ、移行期のみ）。
-     * @deprecated 呼び出し側を RenderFrameContext 版に移行したら削除する。
-     * @note RenderContext に targetDSV が存在しないため、
-     *       ブリッジ内部で Graphics::Instance() から DSV を取得している。
-     *       これが唯一の残存シングルトンアクセス。
-     */
-    void Render(const RenderContext& rc);
 
     // ================================================================
     //  EnvironmentSystem や各 Pass から呼ばれる API
@@ -86,8 +78,7 @@ public:
 
     /**
      * @brief CbScene・CbSkeleton 等のグローバル定数バッファを全ステージにバインドする。
-     * @note CbScene の取得に Graphics::Instance() を使用中（残存シングルトン）。
-     *       CbScene を RenderServices / RenderFrameContext に移したら除去する。
+     * @details services.sceneConstantBuffer を使用するためシングルトン不要。
      */
     void BindAllGlobalConstantBuffers(ID3D11DeviceContext* dc);
 
@@ -103,6 +94,10 @@ private:
 
     /// スケルトン定数バッファ（ComPtr 所有、手動 Release 不要）
     Microsoft::WRL::ComPtr<ID3D11Buffer> _cbSkeletonBuffer;
+
+    /// CbScene バッファへの非所有ポインタ。Graphics が所有し、SetupPipeline で受け取る。
+    /// BindAllGlobalConstantBuffers で使用する（Graphics::Instance() 排除）。
+    ID3D11Buffer* _sceneCB = nullptr;
 
     static constexpr int MAX_BONES = 256;
 

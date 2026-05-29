@@ -6,10 +6,7 @@ void ParticlePass::Execute(const RenderFrameContext& ctx)
 #if TRACY_ENABLE
     ZoneScopedN("Pass: Particle");
 #endif
-
-    RenderContext rc = MakeLegacyContext(*_services, ctx);
-
-    if (rc.particleRenderer) {
-        rc.particleRenderer->Render(rc.deviceContext);
+    if (_services->particleRenderer) {
+        _services->particleRenderer->Render(ctx.dc);
     }
 }

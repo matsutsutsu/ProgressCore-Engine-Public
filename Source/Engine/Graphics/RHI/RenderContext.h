@@ -32,6 +32,9 @@ struct RenderServices
 {
     // ---- RHI / アセット ----
     ID3D11Device* device = nullptr;
+    /// @brief CbScene 定数バッファ (b8)。Graphics が所有し lifetime を管理する。
+    ID3D11Buffer* sceneConstantBuffer = nullptr;
+
     ResourceManager* resources = nullptr;
     ShaderRegistry* shaders = nullptr;
     const RenderState* renderState = nullptr;

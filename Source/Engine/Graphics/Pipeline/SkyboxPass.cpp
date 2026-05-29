@@ -41,14 +41,13 @@ void SkyboxPass::Execute(const RenderFrameContext& ctx)
     ZoneScopedN("Pass: Skybox");
 #endif
 
-    RenderContext rc = MakeLegacyContext(*_services, ctx);
-    if (!rc.camera) return;
+    if (!ctx.camera) return;
+    ID3D11DeviceContext* dc = ctx.dc;
 
-    ID3D11DeviceContext* dc = rc.deviceContext;
 
     // 逆 View-Projection 行列を計算
-    const DirectX::XMMATRIX V = DirectX::XMLoadFloat4x4(&rc.camera->GetView());
-    const DirectX::XMMATRIX P = DirectX::XMLoadFloat4x4(&rc.camera->GetProjection());
+    const DirectX::XMMATRIX V = DirectX::XMLoadFloat4x4(&ctx.camera->GetView());
+    const DirectX::XMMATRIX P = DirectX::XMLoadFloat4x4(&ctx.camera->GetProjection());
     const DirectX::XMMATRIX invVP = DirectX::XMMatrixInverse(nullptr, V * P);
 
     D3D11_MAPPED_SUBRESOURCE mapped;
@@ -68,12 +67,14 @@ void SkyboxPass::Execute(const RenderFrameContext& ctx)
     dc->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
     dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    dc->OMSetDepthStencilState(rc.renderState->GetDepthStencilState(DepthState::TestLessEqual), 0);
-    dc->RSSetState(rc.renderState->GetRasterizerState(RasterizerState::SolidCullNone));
+    const RenderState* rs = _services->renderState;
+
+    dc->OMSetDepthStencilState(rs->GetDepthStencilState(DepthState::TestLessEqual), 0);
+    dc->RSSetState(rs->GetRasterizerState(RasterizerState::SolidCullNone));
 
     dc->Draw(3, 0);
 
     // ステート復元
-    dc->OMSetDepthStencilState(rc.renderState->GetDepthStencilState(DepthState::TestAndWrite), 0);
-    dc->RSSetState(rc.renderState->GetRasterizerState(RasterizerState::SolidCullBack));
+    dc->OMSetDepthStencilState(rs->GetDepthStencilState(DepthState::TestAndWrite), 0);
+    dc->RSSetState(rs->GetRasterizerState(RasterizerState::SolidCullBack));
 }

@@ -11,17 +11,53 @@
 #include <vector>
 #include <filesystem>
 
+
+/**
+ * @brief 全描画シェーダーの抽象基底クラス。
+ *  各パスの呼び出し方：
+ *  @code
+ *    shader->Begin (dc, *_services, ctx);
+ *    shader->Update(dc, mesh);
+ *    shader->End  (dc, *_services);
+ *  @endcode
+ */
 class Shader
 {
 public:
     Shader() {}
     virtual ~Shader() {}
 
-    virtual void Begin(const RenderContext& rc) = 0;
-    virtual void Update(const RenderContext& rc, const Model::Mesh& mesh) = 0;
-    virtual void End(const RenderContext& rc) = 0;
+    /**
+      * @brief シェーダー・ステートのバインド。
+      * @param dc  デバイスコンテキスト。
+      * @param s   永続サービス（renderState, lightManager 等の参照に使う）。
+      * @param ctx フレームコンテキスト（camera 等）。
+      */
+    virtual void Begin(ID3D11DeviceContext* dc,
+        const RenderServices& s,
+        const RenderFrameContext& ctx) = 0;
 
-    // === リフレクション情報へのアクセス ===
+    /**
+     * @brief メッシュごとのマテリアル・定数転送。
+     * @param dc   デバイスコンテキスト。
+     * @param mesh 描画対象メッシュ（マテリアルデータを含む）。
+     */
+    virtual void Update(ID3D11DeviceContext* dc,
+        const Model::Mesh& mesh) = 0;
+
+    /**
+     * @brief シェーダーリソースの解除。
+     * @param dc デバイスコンテキスト。
+     * @param s  永続サービス（ステート復元等に使う）。
+     */
+    virtual void End(ID3D11DeviceContext* dc,
+        const RenderServices& s) = 0;
+
+
+    // ================================================================
+    //  共通機能
+    // ================================================================
+
     const ShaderReflect::ReflectionData& GetReflection() const { return _reflection; }
     const std::map<std::string, ShaderReflect::AutoConstantBuffer>& GetConstantBuffers() const { return _constantBuffers; }
 

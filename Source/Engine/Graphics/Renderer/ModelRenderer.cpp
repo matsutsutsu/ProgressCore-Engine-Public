@@ -1,5 +1,4 @@
 #include "ModelRenderer.h"
-#include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 #include "Engine/Graphics/Renderer/RenderQueue.h"
 
@@ -46,6 +45,10 @@ void ModelRenderer::SetupPipeline(const RenderServices& services)
     //   Initialize より前に AddPass すると _services が空のまま渡ってクラッシュする。
     _pipeline.Initialize(services);
 
+    // CbScene バッファを services から受け取りキャッシュする。
+    // BindAllGlobalConstantBuffers で使用する（Graphics::Instance() 不要）。
+    _sceneCB = services.sceneConstantBuffer;
+
     // ---- 描画パスを実行順に登録 ----
     _pipeline.AddPass<SetupPass>();       // 1. HDR バッファのクリアとバインド
     _pipeline.AddPass<ShadowPass>();      // 2. 影（ライト視点の深度書き込み）
@@ -69,24 +72,6 @@ void ModelRenderer::Render(const RenderFrameContext& ctx)
     UnbindAllResources(ctx.dc);
 }
 
-// ============================================================
-//  Render ― 旧 API ブリッジ（移行期のみ。呼び出し側が切り替わったら削除する）
-// ============================================================
-
-void ModelRenderer::Render(const RenderContext& rc)
-{
-    RenderFrameContext ctx;
-    ctx.dc = rc.deviceContext;
-    ctx.camera = rc.camera;
-    ctx.targetRTV = rc.targetRTV;
-
-    // RenderContext に targetDSV が存在しないため Graphics から取得する。
-    // このブリッジ関数内のみで許容するシングルトンアクセス。
-    // 呼び出し側を RenderFrameContext に移行したらブリッジごと削除する。
-    ctx.targetDSV = Graphics::Instance().GetDepthStencilView();
-
-    Render(ctx); // 新 API へ委譲
-}
 
 // ============================================================
 //  内部初期化
@@ -145,10 +130,10 @@ void ModelRenderer::UpdateSkeletonConstants(ID3D11DeviceContext* dc, const Model
 
 void ModelRenderer::BindAllGlobalConstantBuffers(ID3D11DeviceContext* dc)
 {
-    ID3D11Buffer* sceneBuf = Graphics::Instance().GetSceneConstantBuffer();
-    if (sceneBuf) {
-        dc->VSSetConstantBuffers(SLOT_CB_SCENE, 1, &sceneBuf);
-        dc->PSSetConstantBuffers(SLOT_CB_SCENE, 1, &sceneBuf);
+    // _sceneCB は SetupPipeline で services.sceneConstantBuffer から受け取る。
+    if (_sceneCB) {
+        dc->VSSetConstantBuffers(SLOT_CB_SCENE, 1, &_sceneCB);
+        dc->PSSetConstantBuffers(SLOT_CB_SCENE, 1, &_sceneCB);
     }
 
     if (_cbSkeletonBuffer) {

@@ -8,18 +8,19 @@ void PrimitivePass::Execute(const RenderFrameContext& ctx)
 #if TRACY_ENABLE
     ZoneScopedN("Pass: Primitive");
 #endif
+    if (!ctx.camera) return;
 
-    RenderContext rc = MakeLegacyContext(*_services, ctx);
-    if (!rc.camera) return;
-
-    if (rc.shapeRenderer) {
-        rc.shapeRenderer->Render(rc.deviceContext,
-            rc.camera->GetView(),
-            rc.camera->GetProjection());
+    if (_services->shapeRenderer) {
+        _services->shapeRenderer->Render(
+            ctx.dc, ctx.camera->GetView(), ctx.camera->GetProjection());
     }
-    if (rc.primitiveRenderer) {
-        rc.primitiveRenderer->Render(rc,
-            rc.camera->GetView(),
-            rc.camera->GetProjection());
+
+    // PrimitiveRenderer::Render がまだ RenderContext を受け取る旧 API のため、
+    // ここだけ MakeLegacyContext を使用する。
+    // PrimitiveRenderer 側を (dc, view, proj) 形式に更新したら削除する。
+    if (_services->primitiveRenderer) {
+        RenderContext legacyCtx = MakeLegacyContext(*_services, ctx);
+        _services->primitiveRenderer->Render(
+            legacyCtx, ctx.camera->GetView(), ctx.camera->GetProjection());
     }
 }

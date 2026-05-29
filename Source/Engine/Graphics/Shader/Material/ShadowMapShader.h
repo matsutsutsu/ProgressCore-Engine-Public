@@ -1,16 +1,17 @@
 #pragma once
 #include "Engine/Graphics/Shader/Core/Shader.h"
 
-class ShadowMapShader : public Shader {
+class ShadowMapShader : public Shader
+{
 public:
     ShadowMapShader(ID3D11Device* device);
     ~ShadowMapShader() override = default;
 
-    void Begin(const RenderContext& rc) override;
-    void Update(const RenderContext& rc, const Model::Mesh& mesh) override;
-    void End(const RenderContext& rc) override;
+    void Begin(ID3D11DeviceContext* dc, const RenderServices& s, const RenderFrameContext& ctx) override;
+    void Update(ID3D11DeviceContext* dc, const Model::Mesh& mesh) override;
+    void End(ID3D11DeviceContext* dc, const RenderServices& s) override;
 
 private:
-    Microsoft::WRL::ComPtr<ID3D11VertexShader>  vertexShader;
-    Microsoft::WRL::ComPtr<ID3D11InputLayout>   inputLayout;
+    Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
+    Microsoft::WRL::ComPtr<ID3D11InputLayout>  inputLayout;
 };
