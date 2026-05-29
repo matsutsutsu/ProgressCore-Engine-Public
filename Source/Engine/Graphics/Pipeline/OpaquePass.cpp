@@ -1,262 +1,167 @@
 #include "OpaquePass.h"
 #include "Engine/Graphics/Renderer/ModelRenderer.h"
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
-#include "Engine/Graphics/RHI/Graphics.h"
-#include "Engine/Graphics/RHI/Camera.h" 
+#include "Engine/Graphics/RHI/Camera.h"
 #include "Engine/Graphics/Renderer/RenderQueue.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
+#include "Engine/Graphics/Shader/Pass/ShadowMap.h"
 #include <algorithm>
 
-void OpaquePass::Initialize(ID3D11Device* device) {
+void OpaquePass::Initialize(const RenderServices& services)
+{
+    IRenderPass::Initialize(services);
     _psoOpaque = PipelineState(PipelineStateDesc::DefaultOpaque());
-    _instanceBuffer.Create(device, 8192);
+    _instanceBuffer.Create(services.device, 8192);
 }
 
-void OpaquePass::Execute(const RenderContext& rc) {
+void OpaquePass::Execute(const RenderFrameContext& ctx)
+{
 #if TRACY_ENABLE
     ZoneScopedN("Pass: Opaque");
 #endif
+    ID3D11DeviceContext* dc = ctx.dc;
+    if (!dc) return;
 
-    ID3D11DeviceContext* dc = rc.deviceContext;
-
-    RenderQueue* queue = rc.renderQueue;
-    ModelRenderer* renderer = rc.modelRenderer;
-
+    RenderQueue* queue = _services->renderQueue;
+    ModelRenderer* renderer = _services->modelRenderer;
     if (!queue || !renderer) return;
 
-    if (rc.shadowMap) {
-        rc.shadowMap->Bind(dc, SLOT_SRV_SHADOW, SLOT_SMP_SHADOW, SLOT_CB_SHADOW);
+    if (_services->shadowMap) {
+        _services->shadowMap->Bind(dc, SLOT_SRV_SHADOW, SLOT_SMP_SHADOW, SLOT_CB_SHADOW);
     }
+    ID3D11SamplerState* samplers[] = {
+        _services->renderState->GetSamplerState(SamplerState::LinearWrap)
+    };
+    dc->PSSetSamplers(SLOT_SMP_LINEAR, 1, samplers);
+    _psoOpaque.Apply(dc, _services->renderState);
 
-    ID3D11SamplerState* samplerStates[] = { rc.renderState->GetSamplerState(SamplerState::LinearWrap) };
-    dc->PSSetSamplers(SLOT_SMP_LINEAR, 1, samplerStates);
-
-    _psoOpaque.Apply(dc, rc.renderState);
-
-    DirectX::XMVECTOR CameraPosition = DirectX::XMLoadFloat3(&rc.camera->GetEye());
+    const DirectX::XMVECTOR cameraPos = DirectX::XMLoadFloat3(&ctx.camera->GetEye());
 
     queue->SortAndBuildBatches();
-
     const auto& sortKeys = queue->GetSortedKeys();
     const auto& opaqueCommands = queue->GetOpaqueCommands();
 
-    // メッシュごとのインスタンスデータ再構築用キャッシュ
-    static std::vector<InstanceData> instanceDataCache;
-
     size_t i = 0;
     while (i < sortKeys.size()) {
-        uint32_t currentIndex = sortKeys[i].originalIndex;
+        const uint32_t currentIndex = sortKeys[i].originalIndex;
         const auto& current = opaqueCommands[currentIndex];
 
-        Shader* shader = ShaderRegistry::Instance().GetShader(current.shaderHash, Graphics::Instance().GetDevice());
-        if (!shader) {
-            i++;
-            continue;
-        }
+        Shader* shader = _services->shaders->GetShader(current.shaderHash, _services->device);
+        if (!shader) { ++i; continue; }
 
-        shader->Begin(rc);
+        shader->Begin(dc, *_services, ctx);
 
-        size_t batchStart = i;
-        size_t batchCount = 0;
-        uint64_t currentBatchKey = sortKeys[batchStart].value;
+        const size_t   batchStart = i;
+        size_t         batchCount = 0;
+        const uint64_t currentBatchKey = sortKeys[batchStart].value;
+        while (i < sortKeys.size() && sortKeys[i].value == currentBatchKey) { ++batchCount; ++i; }
 
-        while (i < sortKeys.size()) {
-            if (sortKeys[i].value != currentBatchKey) break;
-            batchCount++;
-            i++;
-        }
-
-        // =========================================================
-        // ★修正：インスタンスバッファの構築をメッシュループ内に移動。
-        //   各メッシュが持つ mesh.node->worldTransform（GLTFノード階層で
-        //   定義されたモデル内オフセット）を entity の worldMatrix に
-        //   掛け合わせることで、パーツが正しい位置に描画される。
-        //
-        //   旧コード：ループ外で1回だけ entity.worldMatrix をセット
-        //            → 全メッシュが同じ座標に描画されてしまう
-        //   新コード：ループ内でメッシュごとに
-        //            meshNode.worldTransform × entity.worldMatrix を合成
-        // =========================================================
         const auto& meshes = current.model->GetMeshes();
         for (size_t meshIdx = 0; meshIdx < meshes.size(); ++meshIdx) {
             const Model::Mesh& mesh = meshes[meshIdx];
 
-            // --- マテリアルオーバーライド ---
-            Model::Mesh& mutableMesh = const_cast<Model::Mesh&>(mesh);
-            Model::Material* originalMatPtr = mutableMesh.material;
-            MaterialData* overrideData = nullptr;
-
+            // =========================================================
+            // ★ F: const_cast 廃止
+            //    override を引数として取得し、mesh.material は一切書き換えない。
+            // =========================================================
+            MaterialData* overrideMat = nullptr;
             if (meshIdx < current.overrideCount) {
-                MaterialHandle handle = current.overrideMaterials[meshIdx];
-                if (handle.IsValid()) {
-                    overrideData = ResourceManager::Instance().GetMaterial(handle);
-                }
+                MaterialHandle h = current.overrideMaterials[meshIdx];
+                if (h.IsValid()) overrideMat = _services->resources->GetMaterial(h);
             }
 
-            Model::Material tempMatWrapper;
-            bool applyOverride = (overrideData != nullptr);
-            if (applyOverride) {
-                tempMatWrapper.data = std::shared_ptr<MaterialData>(overrideData, [](MaterialData*) {});
-                tempMatWrapper.name = "InstanceOverride";
-                mutableMesh.material = &tempMatWrapper;
-            }
+            // 有効なマテリアル（override 優先）を決定する
+            const MaterialData* activeMat = overrideMat
+                ? overrideMat
+                : (mesh.material && mesh.material->data ? mesh.material->data.get() : nullptr);
 
-            // --- 透明判定 ---
-            auto& matData = *mutableMesh.material->data;
+            if (!activeMat) continue; // マテリアルなし：スキップ
+
+            // 透明判定（activeMat を直接参照。mesh への書き込みゼロ）
             float alpha = 1.0f;
-
             DirectX::XMFLOAT4 matColor;
+            if (activeMat->GetColor("materialColor"_hash, matColor)) alpha = matColor.w;
+            const bool isTransparent = (activeMat->alphaMode == AlphaMode::Blend ||
+                (alpha > 0.01f && alpha < 0.99f));
+            const bool isSkinned = !mesh.bones.empty();
 
-            // ⭕ 修正: GetColor が true なら（見つかったら）、alpha に w 成分を入れる
-            if (matData.GetColor("materialColor"_hash, matColor)) {
-                alpha = matColor.w;
-            }
-            bool isTransparent = (matData.alphaMode == AlphaMode::Blend || (alpha > 0.01f && alpha < 0.99f));
-            bool isSkinned = !mesh.bones.empty();
-
-            // ★ メッシュごとにインスタンスバッファを再構築
-            instanceDataCache.clear();
-            instanceDataCache.reserve(batchCount);
-
+            _instanceScratch.clear();
+            _instanceScratch.reserve(batchCount);
             for (size_t k = 0; k < batchCount; ++k) {
-                uint32_t idx = sortKeys[batchStart + k].originalIndex;
-                const auto& cmd = opaqueCommands[idx];
-
+                const auto& cmd = opaqueCommands[sortKeys[batchStart + k].originalIndex];
                 InstanceData data;
                 data.customParams = cmd.customParams;
-
                 if (isSkinned) {
-                    // スキンドメッシュ：UpdateTransform() でエンティティの worldMatrix が
-                    // すでにボーン行列に焼き込まれている。シェーダー側の Skinning() が
-                    // ワールド座標まで完結するため、インスタンス行列は単位行列でよい。
                     DirectX::XMStoreFloat4x4(&data.world, DirectX::XMMatrixIdentity());
                 }
-                else {
-                    // 静的メッシュ：mesh.node->worldTransform（モデル内ノードオフセット）×
-                    //               entity.worldMatrix（ECS ワールド行列）を合成する
-                    if (mesh.node) {
-                        DirectX::XMMATRIX meshLocal = DirectX::XMLoadFloat4x4(&mesh.node->globalTransform);
-                        DirectX::XMMATRIX entityWorld = DirectX::XMLoadFloat4x4(&cmd.worldMatrix);
-                        DirectX::XMStoreFloat4x4(&data.world, meshLocal * entityWorld);
-                    }
-                    else {
-                        // node が null のフォールバック（通常は発生しない）
-                        data.world = cmd.worldMatrix;
-                    }
+                else if (mesh.node) {
+                    const DirectX::XMMATRIX ml = DirectX::XMLoadFloat4x4(&mesh.node->globalTransform);
+                    const DirectX::XMMATRIX ew = DirectX::XMLoadFloat4x4(&cmd.worldMatrix);
+                    DirectX::XMStoreFloat4x4(&data.world, ml * ew);
                 }
-                instanceDataCache.push_back(data);
+                else { data.world = cmd.worldMatrix; }
+                _instanceScratch.push_back(data);
             }
 
-            _instanceBuffer.Write(dc, instanceDataCache);
+            _instanceBuffer.Write(dc, _instanceScratch);
             _instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
 
-            // --- 描画 ---
             if (isTransparent) {
-                // 半透明メッシュは TransparentPass へ転送
                 for (size_t k = 0; k < batchCount; ++k) {
                     const auto& info = opaqueCommands[sortKeys[batchStart + k].originalIndex];
-
                     TransparencyCommand tInfo;
                     tInfo.shaderHash = current.shaderHash;
                     tInfo.mesh = &mesh;
                     tInfo.customParams = info.customParams;
-
-                    if (meshIdx < info.overrideCount) tInfo.overrideMaterial = info.overrideMaterials[meshIdx];
-                    else                               tInfo.overrideMaterial = MaterialHandle{};
-
-                    // ★ 半透明コマンドにもノード合成済みの行列を格納する
+                    tInfo.overrideMaterial = (meshIdx < info.overrideCount)
+                        ? info.overrideMaterials[meshIdx] : MaterialHandle{};
                     if (!isSkinned && mesh.node) {
-                        DirectX::XMMATRIX meshLocal = DirectX::XMLoadFloat4x4(&mesh.node->globalTransform);
-                        DirectX::XMMATRIX entityWorld = DirectX::XMLoadFloat4x4(&info.worldMatrix);
-                        DirectX::XMStoreFloat4x4(&tInfo.worldMatrix, meshLocal * entityWorld);
+                        const DirectX::XMMATRIX ml = DirectX::XMLoadFloat4x4(&mesh.node->globalTransform);
+                        const DirectX::XMMATRIX ew = DirectX::XMLoadFloat4x4(&info.worldMatrix);
+                        DirectX::XMStoreFloat4x4(&tInfo.worldMatrix, ml * ew);
                     }
-                    else {
-                        tInfo.worldMatrix = info.worldMatrix;
-                    }
-
-                    // ソート用の距離はノード合成後の座標から算出
-                    DirectX::XMVECTOR WorldPos = DirectX::XMLoadFloat4x4(&tInfo.worldMatrix).r[3];
+                    else { tInfo.worldMatrix = info.worldMatrix; }
+                    const DirectX::XMVECTOR wp = DirectX::XMLoadFloat4x4(&tInfo.worldMatrix).r[3];
                     tInfo.distance = DirectX::XMVectorGetX(
-                        DirectX::XMVector3Length(DirectX::XMVectorSubtract(WorldPos, CameraPosition)));
-
+                        DirectX::XMVector3Length(DirectX::XMVectorSubtract(wp, cameraPos)));
                     queue->SubmitDeferredTransparent(tInfo);
                 }
             }
-            else {
-                if (isSkinned) {
-
-                    shader->Update(rc, mesh);
-                    UINT stride = sizeof(ModelResource::Vertex);
-                    UINT offset = 0;
-                    dc->IASetVertexBuffers(0, 1, mesh.data->vertexBuffer.GetAddressOf(), &stride, &offset);
-                    dc->IASetIndexBuffer(mesh.data->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-                    dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-                    // スキンドメッシュ：インスタンシング不可、1体ずつ描画
-                    for (size_t k = 0; k < batchCount; ++k) {
-                        // ★ 修正1: 実際のコマンド配列から、k番目のエンティティの情報を取得する
-                        const auto& cmd = opaqueCommands[sortKeys[batchStart + k].originalIndex];
-
-                        // ★ 修正1: 直前で勝手に instData を作らず、上で正しく作ったキャッシュを使う！
-                          // (スキンドメッシュ用の単位行列 + カスタムパラメータが確実に入っています)
-                        _instanceBuffer.Write(dc, &instanceDataCache[k], 1);
-                        _instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
-
-                        // ★ 修正2: 1体目の mesh ではなく、現在の描画対象である cmd.model (k体目) の
-                        // 正しいメッシュから「自分のボーン行列」を取り出してGPUに送る！
-                        const Model::Mesh& instanceMesh = cmd.model->GetMeshes()[meshIdx];
-                        renderer->UpdateSkeletonConstants(dc, instanceMesh);
-
-                        // ★ 修正2: 1体だけインスタンス描画する (SV_InstanceID を機能させるため)
-                        dc->DrawIndexedInstanced(static_cast<UINT>(mesh.data->indices.size()), 1, 0, 0, 0);
-                    }
-                }
-                else {
-                    // 静的メッシュ：インスタンシング描画
-                    shader->Update(rc, mesh);
-                    UINT stride = sizeof(ModelResource::Vertex);
-                    UINT offset = 0;
-                    dc->IASetVertexBuffers(0, 1, mesh.data->vertexBuffer.GetAddressOf(), &stride, &offset);
-                    dc->IASetIndexBuffer(mesh.data->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-                    dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-                    // ★ 修正2: 配列の型を XMFLOAT4X4 から InstanceData に変更する
-                    static std::vector<InstanceData> instanceDataCache;
-                    if (instanceDataCache.size() < batchCount) {
-                        instanceDataCache.resize(batchCount);
-                    }
-
-                    for (size_t k = 0; k < batchCount; ++k) {
-                        const auto& cmd = opaqueCommands[sortKeys[batchStart + k].originalIndex];
-                        // ★ 修正3: InstanceData の world メンバに行列を代入
-                        instanceDataCache[k].world = cmd.worldMatrix;
-                        // instanceDataCache[k].customParams = ... ; // マテリアルパラメータ等
-                    }
-
-                    // ★ 修正3: 抽出した行列配列を使って、MAX_INSTANCES(8192)ごとに切り分けて一括描画
-                    size_t currentOffset = 0;
-                    while (currentOffset < batchCount) {
-                        size_t drawCount = (std::min)(batchCount - currentOffset, (size_t)InstanceBuffer::MAX_INSTANCES);
-
-                        // GPUに行列の配列を一括転送
-                        _instanceBuffer.Write(dc, instanceDataCache.data() + currentOffset, drawCount);
-                        _instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
-
-                        // まとめて描画！
-                        dc->DrawIndexedInstanced(
-                            static_cast<UINT>(mesh.data->indices.size()),
-                            static_cast<UINT>(drawCount), 0, 0, 0);
-
-                        currentOffset += drawCount;
-                    }
+            else if (isSkinned) {
+                // override を shader->Update に明示的に渡す（mesh.material を書き換えない）
+                shader->Update(dc, mesh, overrideMat);
+                UINT stride = sizeof(ModelResource::Vertex), offset = 0;
+                dc->IASetVertexBuffers(0, 1, mesh.data->vertexBuffer.GetAddressOf(), &stride, &offset);
+                dc->IASetIndexBuffer(mesh.data->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+                dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+                for (size_t k = 0; k < batchCount; ++k) {
+                    const auto& cmd = opaqueCommands[sortKeys[batchStart + k].originalIndex];
+                    _instanceBuffer.Write(dc, &_instanceScratch[k], 1);
+                    _instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
+                    renderer->UpdateSkeletonConstants(dc, cmd.model->GetMeshes()[meshIdx]);
+                    dc->DrawIndexedInstanced(static_cast<UINT>(mesh.data->indices.size()), 1, 0, 0, 0);
                 }
             }
-
-            if (applyOverride) mutableMesh.material = originalMatPtr;
-
+            else {
+                shader->Update(dc, mesh, overrideMat);
+                UINT stride = sizeof(ModelResource::Vertex), offset = 0;
+                dc->IASetVertexBuffers(0, 1, mesh.data->vertexBuffer.GetAddressOf(), &stride, &offset);
+                dc->IASetIndexBuffer(mesh.data->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+                dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+                size_t curOffset = 0;
+                while (curOffset < batchCount) {
+                    const size_t drawCount = (std::min)(
+                        batchCount - curOffset, _instanceBuffer.GetMaxInstances());
+                    _instanceBuffer.Write(dc, _instanceScratch.data() + curOffset, drawCount);
+                    _instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
+                    dc->DrawIndexedInstanced(static_cast<UINT>(mesh.data->indices.size()),
+                        static_cast<UINT>(drawCount), 0, 0, 0);
+                    curOffset += drawCount;
+                }
+            }
+            // ★ const_cast による restore 行 完全削除
             _instanceBuffer.Unbind(dc, SLOT_SRV_INSTANCE);
         }
-
-        shader->End(rc);
+        shader->End(dc, *_services);
     }
 }

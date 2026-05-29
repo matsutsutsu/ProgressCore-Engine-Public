@@ -12,9 +12,14 @@ public:
         const std::string& psCsoPath, const std::wstring& psHlslPath);
     ~MaterialShader() override = default;
 
-    void Begin(const RenderContext& rc) override;
-    void Update(const RenderContext& rc, const Model::Mesh& mesh) override;
-    void End(const RenderContext& rc) override;
+    void Begin(ID3D11DeviceContext* dc, const RenderServices& s, const RenderFrameContext& ctx) override;
+    /**
+    * @brief overrideMaterial が非 null の場合はそちらを優先してプロパティを転送する。
+    *        mesh.material を一切書き換えない。
+    */
+    void Update(ID3D11DeviceContext* dc, const Model::Mesh& mesh,
+        const MaterialData* overrideMaterial = nullptr) override;
+    void End(ID3D11DeviceContext* dc, const RenderServices& s) override;
 
     // ファイルの更新を監視し、再コンパイルを実行する
     void CheckAndReload(ID3D11Device* device) override;

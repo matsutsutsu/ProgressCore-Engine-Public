@@ -58,6 +58,14 @@ class RenderQueue {
 public:
     static RenderQueue& Instance() { static RenderQueue instance; return instance; }
 
+    /**
+    * @brief ShaderRegistry を注入する。Graphics::Initialize から 1 回だけ呼ぶ。
+    * @details これにより SortAndBuildBatches が ShaderRegistry::Instance() を
+    *          叩かなくなり、ホットパスの singleton 依存がゼロになる。
+    */
+    void Initialize(ShaderRegistry* shaders) { _shaderRegistry = shaders; }
+
+
     // フレーム開始時にリストを空にする（メモリ再確保を防ぐため clear のみ）
     void BeginFrame() {
         _opaqueCommands.clear();
@@ -84,33 +92,31 @@ public:
         _shadowCommands.push_back(cmd);
     }
 
-    // 描画直前に、溜まった伝票を一気にソートしてバッチを構築する
-    void SortAndBuildBatches() {
+    /**
+     * @brief コマンドをソートしてバッチを構築する。
+     * @details Initialize で注入された ShaderRegistry を使用する（runtime singleton ゼロ）。
+     *          Initialize が未呼び出しの場合は shaderPart が常に 0 になる（安全フォールバック）。
+     */
+    void SortAndBuildBatches()
+    {
         _sortKeys.clear();
         _sortKeys.reserve(_opaqueCommands.size());
 
-        for (uint32_t i = 0; i < _opaqueCommands.size(); ++i) {
+        for (uint32_t i = 0; i < static_cast<uint32_t>(_opaqueCommands.size()); ++i) {
             const auto& cmd = _opaqueCommands[i];
 
-            // 1. シェーダーソートID (8bit) - Registryから確実な連番を取得
-            uint64_t shaderPart = static_cast<uint64_t>(ShaderRegistry::Instance().GetSortID(cmd.shaderHash)) & 0xFF;
+            // (I) ShaderRegistry::Instance() を廃止 → 注入済みポインタを使用
+            uint64_t shaderPart = (_shaderRegistry != nullptr)
+                ? static_cast<uint64_t>(_shaderRegistry->GetSortID(cmd.shaderHash)) & 0xFF
+                : 0;
 
-            // 2. モデルアドレス (32bit) - アライメントの余分な下位4bitを捨てる
             uint64_t modelPart = static_cast<uint64_t>(cmd.assetHash) & 0xFFFFFFFF;
-
-            // 3. マテリアル情報 (24bit)
             uint64_t matPart = 0;
-            if (cmd.overrideCount > 0 && cmd.overrideMaterials[0].IsValid()) {
+            if (cmd.overrideCount > 0 && cmd.overrideMaterials[0].IsValid())
                 matPart = cmd.overrideMaterials[0].index & 0xFFFFFF;
-            }
 
-            // 魔法の合成（シフト演算とORによるガッチャンコ）
-            uint64_t finalKey = (shaderPart << 56) | (modelPart << 24) | matPart;
-
-            _sortKeys.push_back({ finalKey, i });
+            _sortKeys.push_back({ (shaderPart << 56) | (modelPart << 24) | matPart, i });
         }
-
-        // 重いコマンド本体には一切触れず、8バイトのキー配列だけを光の速さでソートする
         std::sort(_sortKeys.begin(), _sortKeys.end());
     }
 
@@ -123,6 +129,8 @@ public:
 
 
 private:
+    ShaderRegistry* _shaderRegistry = nullptr;
+
     std::vector<RenderCommand>       _opaqueCommands;
     std::vector<RenderKey>           _sortKeys;
     std::vector<TransparencyCommand> _transparentCommands;

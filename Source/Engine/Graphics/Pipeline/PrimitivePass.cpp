@@ -3,18 +3,23 @@
 #include "Engine/Graphics/Renderer/ShapeRenderer.h"
 #include "Engine/Graphics/RHI/Camera.h"
 
-void PrimitivePass::Execute(const RenderContext& rc){
-
+void PrimitivePass::Execute(const RenderFrameContext& ctx)
+{
 #if TRACY_ENABLE
     ZoneScopedN("Pass: Primitive");
 #endif
+    if (!ctx.camera) return;
 
-    if (!rc.camera) return;
-
-    if (rc.shapeRenderer) {
-        rc.shapeRenderer->Render(rc.deviceContext, rc.camera->GetView(), rc.camera->GetProjection());
+    if (_services->shapeRenderer) {
+        _services->shapeRenderer->Render(
+            ctx.dc, ctx.camera->GetView(), ctx.camera->GetProjection());
     }
-    if (rc.primitiveRenderer) {
-        rc.primitiveRenderer->Render(rc, rc.camera->GetView(), rc.camera->GetProjection());
+
+    // PrimitiveRenderer が新 API に移行したため MakeLegacyContext 不要。
+      // RenderContext 依存がこのパスから完全に消滅した。
+    if (_services->primitiveRenderer) {
+        _services->primitiveRenderer->Render(
+            ctx.dc, *_services,
+            ctx.camera->GetView(), ctx.camera->GetProjection());
     }
 }

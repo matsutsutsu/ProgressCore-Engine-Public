@@ -1,7 +1,10 @@
 #pragma once
 #include "Engine/Graphics/Pipeline/IRenderPass.h"
 
-class PostProcessPass : public IRenderPass {
+/// @brief HDR→SDR 変換・ブルーム合成を行い、最終出力先（targetRTV）に書き出すパス。
+class PostProcessPass : public IRenderPass
+{
 public:
-    void Execute(const RenderContext& rc)override;
+    void Execute(const RenderFrameContext& ctx) override;
+    const char* GetName() const override { return "PostProcessPass"; }
 };

@@ -459,12 +459,12 @@
     <ClInclude Include="Source\Engine\Graphics\Components\Particle\GPUParticleTypes.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\BloomConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\ToneMapConfigComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Pipeline\Core\RenderPipeline.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\IRenderPass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\OpaquePass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\ParticlePass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\PostProcessPass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\PrimitivePass.h" />
-    <ClInclude Include="Source\Engine\Graphics\Pipeline\RenderPipeline.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\SetupPass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\ShadowPass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\SkyboxPass.h" />
@@ -489,6 +489,7 @@
     <ClInclude Include="Source\Engine\Graphics\RHI\Camera.h" />
     <ClInclude Include="Source\Engine\Graphics\RHI\GpuResourceUtils.h" />
     <ClInclude Include="Source\Engine\Graphics\RHI\Graphics.h" />
+    <ClInclude Include="Source\Engine\Graphics\RHI\GraphicsDevice.h" />
     <ClInclude Include="Source\Engine\Graphics\RHI\Light.h" />
     <ClInclude Include="Source\Engine\Graphics\RHI\PipelineState.h" />
     <ClInclude Include="Source\Engine\Graphics\RHI\RenderContext.h" />
@@ -1225,6 +1226,7 @@
     <ClCompile Include="Source\Engine\Graphics\Components\Lighting\LightComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Lighting\LightComponentMeta.generated.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Particle\GPUParticleComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Pipeline\Core\RenderPipeline.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\OpaquePass.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\ParticlePass.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\PostProcessPass.cpp" />
@@ -1248,8 +1250,10 @@
     <ClCompile Include="Source\Engine\Graphics\RHI\Camera.cpp" />
     <ClCompile Include="Source\Engine\Graphics\RHI\GpuResourceUtils.cpp" />
     <ClCompile Include="Source\Engine\Graphics\RHI\Graphics.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\RHI\GraphicsDevice.cpp" />
     <ClCompile Include="Source\Engine\Graphics\RHI\Light.cpp" />
     <ClCompile Include="Source\Engine\Graphics\RHI\RenderState.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\RHI\RenderTarget.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\Core\Shader.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\MaterialShader.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\OutlineShader.cpp" />

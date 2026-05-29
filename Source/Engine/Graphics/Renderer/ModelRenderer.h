@@ -1,43 +1,69 @@
 #pragma once
-#include <memory>
-#include <vector>
 #include <wrl.h>
 #include <d3d11.h>
 #include <DirectXMath.h>
 #include "Engine/Graphics/Resource/Model.h"
-#include "Engine/Graphics/RHI/RenderContext.h"
-#include "Engine/Graphics/Pipeline/RenderPipeline.h"
 
+/**
+ * @brief モデル描画に特化した GPU リソース管理クラス。
+ *
+ * @details
+ *  【設計の責務】
+ *   - スケルトン定数バッファ（CbSkeleton）の所有・更新
+ *   - CbScene / CbSkeleton のパイプラインへのバインド
+ *
+ *  【責務外】
+ *   - レンダリングパイプラインの管理  → Graphics が担う
+ *   - パスの登録・実行               → Graphics が担う
+ *
+ *  @code
+ *   // 呼び出し側（パスから）
+ *   renderer->UpdateSkeletonConstants(dc, mesh);
+ *
+ *   // グローバルリソースのバインド（EnvironmentSystem から）
+ *   renderer->BindAllGlobalConstantBuffers(dc);
+ *  @endcode
+ */
 class ModelRenderer
 {
 public:
-    ModelRenderer(ID3D11Device* device);
-    ~ModelRenderer();
+    /**
+     * @brief スケルトン定数バッファを生成する。
+     * @note  パイプラインは別途 Graphics::SetupRenderPipeline() で構築する。
+     */
+    explicit ModelRenderer(ID3D11Device* device);
+    ~ModelRenderer() = default;
 
-    // 毎フレームの描画実行（パイプラインを回す）
-    void Render(const RenderContext& rc);
+    ModelRenderer(const ModelRenderer&) = delete;
+    ModelRenderer& operator=(const ModelRenderer&) = delete;
 
-    // =========================================================
-    // 舞台監督 (EnvironmentSystem) や 各Pass から呼ばれるAPI
-    // =========================================================
+    /**
+     * @brief CbScene バッファポインタをキャッシュする（Graphics から 1 回だけ呼ぶ）。
+     * @details Graphics が所有する buffer を非所有ポインタとして保持する。
+     */
+    void SetSceneConstantBuffer(ID3D11Buffer* sceneCB) noexcept { _sceneCB = sceneCB; }
 
+    /**
+     * @brief CbScene・CbSkeleton を VS/PS の全スロットにバインドする。
+     * @details EnvironmentSystem::BindGlobalResources() から呼ばれる。
+     */
     void BindAllGlobalConstantBuffers(ID3D11DeviceContext* dc);
+
+    /**
+     * @brief メッシュのボーン行列を GPU へ転送し、VS スロット SLOT_CB_SKELETON にバインドする。
+     * @param mesh スキンドメッシュ（bones が空でも安全）。
+     */
     void UpdateSkeletonConstants(ID3D11DeviceContext* dc, const Model::Mesh& mesh);
 
-    
 private:
-    RenderPipeline _pipeline; // 全ての描画を司るパイプライン
+    Microsoft::WRL::ComPtr<ID3D11Buffer> _cbSkeletonBuffer; ///< CbSkeleton (b12)
 
-  
-    // スケルトン用定数バッファ
-    ID3D11Buffer* _cbSkeletonBuffer = nullptr;
-    static const int MAX_BONES = 256;
+    /// CbScene (b8) への非所有ポインタ。Graphics が所有し SetSceneConstantBuffer で受け取る。
+    ID3D11Buffer* _sceneCB = nullptr;
+
+    static constexpr int MAX_BONES = 256;
     struct CbSkeleton {
         DirectX::XMFLOAT4X4 boneTransforms[MAX_BONES];
     };
-    CbSkeleton m_cbSkeletonCache = {};
-
-    // 内部初期化・解放関数
-    void InitializeGlobalConstantBuffers(ID3D11Device* device);
-    void UnbindAllResources(ID3D11DeviceContext* dc);
+    CbSkeleton _cbSkeletonCache = {};
 };

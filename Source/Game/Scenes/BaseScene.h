@@ -3,8 +3,6 @@
 #include <memory>
 #include <string>
 
-#include "Engine/Graphics/RHI/Camera.h"
-#include "Engine/Graphics/RHI/Light.h"
 #include "Engine/Scene/Scene.h"
 
 // ECS関連
@@ -14,28 +12,16 @@
 #include "Engine/ECS/System/CCL_SystemManager.h"
 #include "Engine/ECS/CCL_ECSContext.h"
 
-#include "Engine/Graphics/Shader/PostProcess/PostProcessManager.h"
-//#include "Engine/Graphics/Shader/Pass/ShadowMap.h"
-
 #include "Engine/Scene/SceneManager.h"
 
 class BaseScene : public Scene {
   protected:
     std::unique_ptr<CCL::ECS::ECSContext> _ecsContext;
-
-    // 派生クラス（EditorScene等）の既存コードを壊さないための参照ポインタ
     CCL::ECS::Core::World *_worldPtr = nullptr;
-
-    Camera             camera;
-    LightManager       lightManager;
-    PostProcessManager _postProcess;
-
-
 
     // セーブ・ロードの「予約」パス
     std::string _pendingLoadScenePath = "";
     std::string _pendingSaveScenePath = ""; 
-
 
   public:
     BaseScene()                   = default;

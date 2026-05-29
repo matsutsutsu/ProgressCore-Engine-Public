@@ -1,15 +1,13 @@
 #include "PostProcessPass.h"
 #include "Engine/Graphics/Shader/PostProcess/PostProcessManager.h"
 
-
-void PostProcessPass::Execute(const RenderContext& rc){
-
+void PostProcessPass::Execute(const RenderFrameContext& ctx)
+{
 #if TRACY_ENABLE
     ZoneScopedN("Pass: PostProcess");
 #endif
+    if (!_services->postProcess) return;
 
-    if (!rc.postProcess) return;
-
-    // HDRバッファにブルームとトーンマップをかけ、バックバッファ（画面）に出力する
-    rc.postProcess->EndScene(rc.deviceContext, rc.targetRTV);
+    // HDR バッファをトーンマップして ctx.targetRTV（最終出力先）に書き出す。
+    _services->postProcess->EndScene(ctx.dc, ctx.targetRTV);
 }

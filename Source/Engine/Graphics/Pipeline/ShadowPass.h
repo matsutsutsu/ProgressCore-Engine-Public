@@ -3,11 +3,17 @@
 #include "Engine/Graphics/RHI/PipelineState.h"
 #include "Engine/Graphics/Renderer/InstanceBuffer.h"
 
-class ShadowPass : public IRenderPass {
+/**
+ * @brief ライト視点でシャドウマップ（カスケード 3 枚）を生成するパス。
+ */
+class ShadowPass : public IRenderPass
+{
 public:
-    void Initialize(ID3D11Device* device) override;
-    void Execute(const RenderContext& rc)override;
+    void Initialize(const RenderServices& services) override;
+    void Execute(const RenderFrameContext& ctx) override;
+    const char* GetName() const override { return "ShadowPass"; }
+
 private:
-    PipelineState _psoShadow;
+    PipelineState  _psoShadow;
     InstanceBuffer _instanceBuffer;
 };
