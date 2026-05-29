@@ -36,9 +36,6 @@ namespace CCL::ECS
     /// @brief コンポーネント型（クラス）を識別するID（Position(1), Velocity(2)など）
     using TypeID      = unsigned short;
 
-    /// @brief コンポーネントの「実体」を識別するID（型ではなくインスタンス用）
-    using ComponentID = unsigned long long;
-
     /// @brief 個々のシステムを識別するID
     using SystemID    = unsigned short;
 
@@ -60,9 +57,6 @@ namespace CCL::ECS
 
     /// @brief 無効な TypeID（全ビット1）
     constexpr TypeID      InvalidTypeID      = static_cast<TypeID>(-1);
-
-    /// @brief 無効な ComponentID（全ビット1）
-    constexpr ComponentID InvalidComponentID = static_cast<ComponentID>(-1);
 
     /// @brief 無効な SystemID（全ビット1）
     constexpr SystemID    InvalidSystemID    = static_cast<SystemID>(-1);
@@ -92,6 +86,8 @@ namespace CCL::ECS
     struct EntityHandle
     {
         /// @brief 下位32bit抽出用マスク
+		/// @details 0xFFFFFFFFULLは下位32bitが1で上位32bitが0の64bit定数
+		///          論理積（AND）を取ることで、EntityIDの下位32bit（配列インデックス）だけを取り出せる
         static constexpr EntityID INDEX_MASK = 0xFFFFFFFFULL;
 
         /// @brief 世代部のシフト量（32bit分上にずらす）
@@ -100,18 +96,25 @@ namespace CCL::ECS
         /// @brief EntityID から配列インデックス部を取り出す
         static uint32_t GetIndex(EntityID id)
         {
+			// 64bitのEntityIDをINDEX_MASKとビットANDすることで、
+            // 下位32bitのインデックスだけが残る
+            // & は両方のビットが1の場合だけ１を返す
             return static_cast<uint32_t>(id & INDEX_MASK);
         }
 
         /// @brief EntityID から世代カウンタ部を取り出す
         static uint32_t GetGeneration(EntityID id)
         {
+			// 32bit右シフトすることで、上位32bitの世代カウンタだけが残る
+			// 例えば、EntityIDが0x00000002 / 00000003の場合、右シフトすると0x00000002になり、これが世代カウンタとなる
             return static_cast<uint32_t>(id >> GEN_SHIFT);
         }
 
         /// @brief Index と Generation から EntityID を合成する
         static EntityID Combine(uint32_t index, uint32_t gen)
         {
+            // 世代のbitを左に32bitずらして上位32bitの位置にセットする
+			// | はビット単位の論理和演算子で、これにより世代とインデックスが1つの64bit整数にパックされる
             return (static_cast<EntityID>(gen) << GEN_SHIFT)
                  |  static_cast<EntityID>(index);
         }

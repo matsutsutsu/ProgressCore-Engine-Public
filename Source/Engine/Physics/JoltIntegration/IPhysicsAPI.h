@@ -54,5 +54,5 @@ public:
     virtual bool CheckGrounded(CCL::ECS::EntityID entity, float distance) = 0;
     
     // 追加：任意の場所から任意の方向へレーザーを撃つ（銃の弾や、敵の視界判定に使う）
-    virtual PhysicsHitInfo RayCast(const DirectX::XMFLOAT3& origin, const DirectX::XMFLOAT3& direction, float maxDistance, CCL::ECS::EntityID ignoreEntity = CCL::ECS::InvalidComponentID) = 0;
+    virtual PhysicsHitInfo RayCast(const DirectX::XMFLOAT3& origin, const DirectX::XMFLOAT3& direction, float maxDistance, CCL::ECS::EntityID ignoreEntity = CCL::ECS::InvalidEntityID) = 0;
 };
