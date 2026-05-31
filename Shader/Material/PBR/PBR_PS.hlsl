@@ -23,7 +23,7 @@ cbuffer CbMesh : register(REG_CB(SLOT_CB_MATERIAL))
 Texture2D AlbedoMap : register(REG_SRV(SLOT_SRV_MAT_TEX0));
 Texture2D NormalMap : register(REG_SRV(SLOT_SRV_MAT_TEX1));
 Texture2D MetalRoughMap : register(REG_SRV(SLOT_SRV_MAT_TEX2));
-Texture2D EmissiveMap : register(REG_SRV(SLOT_SRV_PARTICLE_BUF)); 
+Texture2D EmissiveMap : register(REG_SRV(SLOT_SRV_MAT_TEX3)); 
 
 SamplerState LinearSampler : register(REG_SMP(SLOT_SMP_LINEAR));
 

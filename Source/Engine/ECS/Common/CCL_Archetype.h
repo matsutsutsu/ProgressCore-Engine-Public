@@ -84,6 +84,7 @@ namespace CCL::ECS
             );
 
             // 既に同じ TypeID があれば追加せず、その位置を返す
+            // これよくわからん
             if (it != _data.end() && it->id == typeData.id) {
                 return std::distance(_data.begin(), it);
             }
@@ -207,6 +208,7 @@ namespace CCL::ECS
         static Archetype Generate()
         {
             Archetype a;
+			// ... のTypesを順に展開して a.Add<Types>() を呼び出す fold expression
             (a.Add<Types>(), ...);
             return a;
         }

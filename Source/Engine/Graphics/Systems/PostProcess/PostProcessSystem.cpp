@@ -1,5 +1,6 @@
 #include "PostProcessSystem.h"
 #include "Engine/Graphics/Shader/PostProcess/PostProcessManager.h"
+#include "Engine/Graphics/Shader/PostProcess/BloomEffect.h"
 
 
 
@@ -55,7 +56,13 @@ void PostProcessSystem::Update(float dt) {
     // -------------------------------------------------------
     // 4. マネージャーへ一括転送
     // -------------------------------------------------------
-    postProcess->bloomConfig = finalBloom;
+    if (auto* bloom = postProcess->GetEffect<BloomEffect>()) {
+        bloom->SetEnabled(finalBloom.enable);
+        bloom->threshold = finalBloom.threshold;
+        bloom->softKnee = finalBloom.softKnee;
+        bloom->intensity = finalBloom.intensity;
+        bloom->radius = finalBloom.radius;
+    }
     postProcess->toneMapConfig = finalToneMap;
 }
 
