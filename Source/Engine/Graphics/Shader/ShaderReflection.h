@@ -29,6 +29,8 @@ namespace ShaderReflect
     };
 
     // 定数バッファ情報
+    // これでVariableInfoの変数情報をまとめて持つことで
+	// 「定数バッファの内容をCPU側で更新するための情報」として使える
     struct ConstantBufferInfo
     {
         std::string name;
@@ -38,7 +40,7 @@ namespace ShaderReflect
 
         // 名前で変数を検索
         const VariableInfo* FindVariable(const std::string& varName) const;
-        // ★追加：ハッシュ値で変数を検索（爆速）
+        // ハッシュ値で変数を検索（爆速）
         const VariableInfo* FindVariable(uint32_t nameHash) const;
     };
 
@@ -53,7 +55,7 @@ namespace ShaderReflect
     struct TextureInfo
     {
         std::string name;
-        uint32_t nameHash = 0;                  // ★追加
+        uint32_t nameHash = 0;               
         UINT bindPoint = 0;                     // レジスタ番号 (t0, t1, ...)
         // シェーダーリソースビュー(SRV)をデフォルトとして想定
         D3D_SHADER_INPUT_TYPE type = D3D_SIT_CBUFFER;
@@ -65,7 +67,7 @@ namespace ShaderReflect
     struct SamplerInfo
     {
         std::string name;
-        uint32_t nameHash = 0;                  // ★追加
+        uint32_t nameHash = 0;                 
         UINT bindPoint = 0;                 // レジスタ番号 (s0, s1, ...)
     };
 

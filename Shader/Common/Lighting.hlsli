@@ -1,6 +1,9 @@
 #ifndef LIGHTING_HLSLI
 #define LIGHTING_HLSLI
 
+// ライト構造体と定数バッファは ShaderShared.h に移動（C++と共有）
+#include "Engine/Graphics/Shader/ShaderShared.h"
+
 // --- 1. 構造体定義 ---
 struct LightResult
 {
@@ -15,57 +18,6 @@ struct SurfaceInfo
     float3 viewDir; // 視点への方向
     float3 color; // テクスチャ×マテリアル色
     float  alpha; // 透明度
-};
-
-// --- 2. ライト用定数バッファ ---
-struct DirectionalLight
-{
-    float3 direction;
-    float intensity;
-    float3 color;
-    float padding;
-    // 半球ライティング用
-    float4 gSkyColor; // rgb:色, a:強度
-    float4 gGroundColor; // rgb:色, a:強度
-};
-struct PointLight
-{
-    float3 position;
-    float range;
-    float3 color;
-    float intensity;
-    float constantAttenuation;
-    float linearAttenuation;
-    float quadraticAttenuation;
-    float active;
-};
-struct SpotLight
-{
-    float3 position;
-    float range;
-    float3 direction;
-    float innerCos;
-    float3 color;
-    float outerCos;
-    float intensity;
-    float active;
-    float padding1;
-    float padding2;
-    float constantAttenuation;
-    float linearAttenuation;
-    float quadraticAttenuation;
-    float padding;
-};
-
-// C++側の LightConstantBuffer と完全一致させる
-cbuffer CbLight : register(REG_CB(SLOT_CB_LIGHT))
-{
-    DirectionalLight gDirLight;   
-    PointLight gPointLights[8]; // MAX_POINT_LIGHTS と合わせる
-    SpotLight gSpotLights[8]; // MAX_SPOT_LIGHTS と合わせる
-    int gPointLightCount;
-    int gSpotLightCount;
-    float2 gPadding;
 };
 
 // --- 3. 反射計算関数 ---

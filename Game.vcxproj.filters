@@ -690,7 +690,7 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\Pass\ShadowMap.h">
       <Filter>Source\Engine\Graphics\Shader\Pass</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\BloomPass.h">
+    <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\BloomEffect.h">
       <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\PostProcessManager.h">
@@ -1091,9 +1091,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\Reflection\Reflection.h">
       <Filter>Source\Engine\Serialization\Reflection</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Serialization\Meta\ComponentDefine.h">
-      <Filter>Source\Engine\Serialization\Meta</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BossActionComponent.h">
       <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
@@ -1536,6 +1533,21 @@
     <ClInclude Include="Source\Engine\Graphics\RHI\GraphicsDevice.h">
       <Filter>Source\Engine\Graphics\RHI</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\IPostEffect.h">
+      <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\ECS\System\CCL_IfSystem.h">
+      <Filter>Source\Engine\ECS\System</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\ECS\System\CCL_SystemBase.h">
+      <Filter>Source\Engine\ECS\System</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Serialization\Meta\ComponentDefine.h">
+      <Filter>Source\Engine\Serialization\Factory</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Shader\ShaderShared.h">
+      <Filter>Source\Engine\Graphics\Shader</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -1733,7 +1745,7 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\Pass\ShadowMap.cpp">
       <Filter>Source\Engine\Graphics\Shader\Pass</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\BloomPass.cpp">
+    <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\BloomEffect.cpp">
       <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\PostProcessManager.cpp">
@@ -2338,9 +2350,6 @@
     <None Include=".clang-formatt">
       <Filter>Build</Filter>
     </None>
-    <None Include=".editorconfig">
-      <Filter>Build</Filter>
-    </None>
     <None Include="Shader\Common\Transform.hlsli">
       <Filter>Shader\Common</Filter>
     </None>
@@ -2361,6 +2370,9 @@
     </None>
     <None Include="Build\ShippingOptimize.props">
       <Filter>Build\props</Filter>
+    </None>
+    <None Include=".editorconfig">
+      <Filter>Build</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -2459,6 +2471,9 @@
     </FxCompile>
     <FxCompile Include="Shader\Pass\SkyBox\SkyboxPS.hlsl">
       <Filter>Shader\Pass\SkyBox</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\PostProcess\BloomCompositePS.hlsl">
+      <Filter>Shader\PostProcess</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

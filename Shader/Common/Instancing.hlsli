@@ -1,15 +1,8 @@
 #ifndef INSTANCING_HLSLI
 #define INSTANCING_HLSLI
 
-#include "Engine/Graphics/Shader/ShaderResources.h"
-
-
-// インスタンスデータ構造 (C++側の InstanceData と一致させる)
-struct InstanceData
-{
-    row_major float4x4 World;
-    float4 customParams; // x=ディゾルブ進行度などに使う
-};
+// 構造体は ShaderShared.h に移動（C++と共有）
+#include "Engine/Graphics/Shader/ShaderShared.h"
 
 // t11 にバインドされたインスタンスバッファ
 StructuredBuffer<InstanceData> g_InstanceData : register(REG_SRV(SLOT_SRV_INSTANCE));

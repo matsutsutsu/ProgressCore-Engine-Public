@@ -3,6 +3,7 @@
 #include <d3d11.h>
 #include <DirectXMath.h>
 #include "Engine/Graphics/Resource/Model.h"
+#include "Engine/Graphics/Shader/ShaderShared.h"
 
 /**
  * @brief モデル描画に特化した GPU リソース管理クラス。
@@ -61,7 +62,6 @@ private:
     /// CbScene (b8) への非所有ポインタ。Graphics が所有し SetSceneConstantBuffer で受け取る。
     ID3D11Buffer* _sceneCB = nullptr;
 
-    static constexpr int MAX_BONES = 256;
     struct CbSkeleton {
         DirectX::XMFLOAT4X4 boneTransforms[MAX_BONES];
     };
