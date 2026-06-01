@@ -478,6 +478,9 @@
     <Filter Include="Source\Engine\Graphics\Pipeline\Core">
       <UniqueIdentifier>{8664d2cd-5353-4f0c-ae14-f865b1feb1de}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Graphics\Shader\Material\Particle">
+      <UniqueIdentifier>{7cb9b737-559a-4d3e-9a13-ed4492caa832}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1296,9 +1299,6 @@
     <ClInclude Include="Source\Engine\Graphics\Components\Particle\GPUParticleComponent.h">
       <Filter>Source\Engine\Graphics\Components\Particle</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Components\Particle\GPUParticleTypes.h">
-      <Filter>Source\Engine\Graphics\Components\Particle</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\BloomConfigComponent.h">
       <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
     </ClInclude>
@@ -1548,8 +1548,11 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderShared.h">
       <Filter>Source\Engine\Graphics\Shader</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Shader\Material\ParticleComputeShader.h">
+      <Filter>Source\Engine\Graphics\Shader\Material\Particle</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\ParticleShader.h">
-      <Filter>Source\Engine\Graphics\Shader\Material</Filter>
+      <Filter>Source\Engine\Graphics\Shader\Material\Particle</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2315,8 +2318,11 @@
     <ClCompile Include="Source\Engine\Graphics\RHI\GraphicsDevice.cpp">
       <Filter>Source\Engine\Graphics\RHI</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Shader\Material\ParticleComputeShader.cpp">
+      <Filter>Source\Engine\Graphics\Shader\Material\Particle</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\ParticleShader.cpp">
-      <Filter>Source\Engine\Graphics\Shader\Material</Filter>
+      <Filter>Source\Engine\Graphics\Shader\Material\Particle</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

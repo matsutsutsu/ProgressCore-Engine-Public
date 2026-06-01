@@ -509,3 +509,40 @@ bool GpuResourceUtils::CompileGeometryShader(ID3D11Device* device,
 	if (outShaderBlob) *outShaderBlob = shaderBlob.Detach();
 	return true;
 }
+
+// コンピュートシェーダーの動的コンパイル (.hlsl)
+bool GpuResourceUtils::CompileComputeShader(ID3D11Device* device,
+	const std::wstring& hlslPath, const char* entryPoint, const char* shaderModel,
+	ID3D11ComputeShader** computeShader, ID3DBlob** outShaderBlob)
+{
+	Microsoft::WRL::ComPtr<ID3DBlob> shaderBlob = nullptr;
+	Microsoft::WRL::ComPtr<ID3DBlob> errorBlob = nullptr;
+	RootInclude rootInclude;
+
+	// HLSLファイルのコンパイル
+	HRESULT hr = D3DCompileFromFile(hlslPath.c_str(), nullptr, &rootInclude,
+		entryPoint, shaderModel, D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG, 0, &shaderBlob, &errorBlob);
+
+	// エラーハンドリング
+	if (FAILED(hr)) {
+		if (errorBlob) {
+			OutputDebugStringA("\n[Compute Shader Compile Error]\n");
+			OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+		}
+		else {
+			OutputDebugStringA("\n[Compute Shader Compile Error] File not found: ");
+			OutputDebugStringW(hlslPath.c_str());
+			OutputDebugStringA("\n");
+		}
+		return false;
+	}
+
+	// デバイス上にコンピュートシェーダーを作成
+	hr = device->CreateComputeShader(shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), nullptr, computeShader);
+	if (FAILED(hr)) return false;
+
+	// 必要に応じてコンパイル済みバイナリ（Blob）を返す
+	if (outShaderBlob) *outShaderBlob = shaderBlob.Detach();
+
+	return true;
+}

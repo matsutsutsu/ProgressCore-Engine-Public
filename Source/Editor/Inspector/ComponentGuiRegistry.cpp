@@ -11,6 +11,7 @@
 #include "Engine/Platform/Core/Dialog.h"              // ファイル選択ダイアログ用
 
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
+#include "Engine/Graphics/Shader/ShaderShared.h"
 
 // JSONとファイル入出力
 #include <fstream>
@@ -33,7 +34,7 @@ ComponentGuiRegistry &ComponentGuiRegistry::Instance()
 // -----------------------------------------------------------------------
 
 // Config -> JSON
-json ConfigToJson(const ParticleSystemConfig &cfg, const char *texPath, const char *rampPath)
+json ConfigToJson(const GpuData::CbParticle &cfg, const char *texPath, const char *rampPath)
 {
     // ★安全対策ヘルパー (数値が壊れていたら 0.0f にする)
     auto SafeFloat = [](float val) { return std::isfinite(val) ? val : 0.0f; };

@@ -4,7 +4,7 @@
 #include <filesystem>
 #include <fstream>
 #include <json.hpp>
-
+#include "Engine/Graphics/Shader/ShaderShared.h"
 
 #include "Engine/Serialization/Registry/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
@@ -23,7 +23,7 @@ using json = nlohmann::json;
 // ローカルヘルパー関数
 // ============================================================================
 namespace {
-    json ConfigToJson(const ParticleSystemConfig& cfg, const char* texPath, const char* rampPath)
+    json ConfigToJson(const GpuData::CbParticle& cfg, const char* texPath, const char* rampPath)
     {
         auto SafeFloat = [](float val) { return std::isfinite(val) ? val : 0.0f; };
         try {

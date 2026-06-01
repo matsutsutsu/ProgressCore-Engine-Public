@@ -1,5 +1,5 @@
 #pragma once
-#include "GPUParticleTypes.h"
+#include "Engine/Graphics/Shader/ShaderShared.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 //#include "Engine/Graphics/RHI/Graphics.h"
 #include <cstring> // strcpy_s, memset用
@@ -11,7 +11,7 @@
 // ComPtr, string, vector (AutoConstantBuffer) を排除して PODライクにする
 struct GPUParticleComponent {
     // 設定データ
-    ParticleSystemConfig config;
+    GpuData::CbParticle config;
 
     // 保存用 (デフォルト1万)
     int maxParticles = 1000;
@@ -36,7 +36,7 @@ struct GPUParticleComponent {
     {
         std::memset(texturePath, 0, sizeof(texturePath));
         std::memset(colorRampPath, 0, sizeof(colorRampPath));
-        config = ParticleSystemConfig();
+        config = GpuData::CbParticle();
     }
 
     GPUParticleComponent(int count) : GPUParticleComponent()

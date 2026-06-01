@@ -20,6 +20,8 @@
 #include "Engine/Transform/Systems/TransformUpdateSystem.h"
 #include "Engine/Platform/Core/FileSystem.h"
 
+#include "Engine/Graphics/Shader/ShaderShared.h"
+
 #include <DirectXMath.h>
 #include <SimpleMath.h>
 
@@ -48,7 +50,7 @@ namespace {
     inline float SafeFloat(float v) { return std::isfinite(v) ? v : 0.0f; }
 }
 
-void to_json(json& j, const ParticleSystemConfig& c)
+void to_json(json& j, const GpuData::CbParticle& c)
 {
     j = json{
         {"max_particle_count",  c.max_particle_count},
@@ -81,7 +83,7 @@ void to_json(json& j, const ParticleSystemConfig& c)
     j["particle_scale"] = { SafeFloat(c.particle_scale.x),          SafeFloat(c.particle_scale.y) };
 }
 
-void from_json(const json& j, ParticleSystemConfig& c)
+void from_json(const json& j, GpuData::CbParticle& c)
 {
     // 安全に配列値を読み込むテンプレート (Float2 / Float4 両対応)
     auto Read = [&](const char* key, auto& vec, int dims) {
@@ -143,7 +145,7 @@ namespace Prefab {
          * CompositeBlueprint::nodes に複数並ぶ。
          */
         struct ParticleNode {
-            ParticleSystemConfig config;
+            GpuData::CbParticle config;
             std::string          texturePath;
             std::string          colorRampPath;
             DirectX::XMFLOAT3    offsetPosition{ 0, 0, 0 };
@@ -244,7 +246,9 @@ namespace Prefab {
                 ParticleNode node;
                 const auto& pData = comps["GPUParticle"];
 
-                if (pData.contains("config")) pData["config"].get_to(node.config);
+
+				// TODO: ここも将来的には ComponentRegistry 経由で任意コンポーネントを読めるようにすべきだが、現状は GPUParticle のみハードコードで読み出す。
+                //if (pData.contains("config")) pData["config"].get_to(node.config);
                 if (pData.contains("maxParticles")) {
                     node.config.max_particle_count = pData["maxParticles"];
                 }

@@ -100,4 +100,12 @@ public:
 		ID3D11GeometryShader** geometryShader,
 		ID3DBlob** outShaderBlob = nullptr);
 
+	// コンピュートシェーダーの動的コンパイル (.hlsl)
+	static bool CompileComputeShader(ID3D11Device* device,
+		const std::wstring& hlslPath,
+		const char* entryPoint,
+		const char* shaderModel,
+		ID3D11ComputeShader** computeShader,
+		ID3DBlob** outShaderBlob = nullptr);
+
 };
