@@ -39,13 +39,6 @@ namespace CCL::ECS
             return s_nextTypeID++;
         }
 
-        /// @brief 新しい ComponentID を採番して返す
-        static ComponentID EmitComponentID()
-        {
-            static ComponentID s_nextComponentID = 0;
-            return s_nextComponentID++;
-        }
-
         /// @brief 新しい SystemID を採番して返す
         static SystemID EmitSystemID()
         {
