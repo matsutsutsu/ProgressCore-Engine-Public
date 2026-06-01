@@ -34,6 +34,5 @@ private:
     std::filesystem::file_time_type _vsLastWriteTime;
     std::filesystem::file_time_type _psLastWriteTime;
 
-    // ヘルパー関数: ファイルの最終更新日時を取得
-    std::filesystem::file_time_type GetLastWriteTime(const std::wstring& path);
+
 };

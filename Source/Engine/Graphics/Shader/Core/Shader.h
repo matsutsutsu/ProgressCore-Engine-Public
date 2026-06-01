@@ -11,6 +11,18 @@
 #include <vector>
 #include <filesystem>
 
+// Shaderクラスの役割
+// １．HotReload（動的更新）：HLSLが書き換えられたら検知して再コンパイル（CheckAndReload）
+// ２．Reflection（自動解析）：定数バッファやテクスチャの要求スロットを自動で読み取る（_reflection）
+// ３．PipelineControl（状態管理）：Begin/Update/Endで描画パイプラインの状態を管理する
+// なので、マテリアルでもパーティクルでもポストプロセスでも
+// 「HLSLを使ってGPUに描画させるもの」なら、Shaderクラスを継承して実装すればOK
+
+// 派生クラス, 何を描画するか, Update() の使われ方
+// MaterialShader, モデル（3Dメッシュ）, メッシュの頂点バッファと、マテリアルの色やテクスチャをバインドする。
+// ParticleShader, パーティクル（点群）, 使わない（空にする）。 パーティクルのバッファは ParticleRenderer 側で直接バインドするから。
+// PostProcessShader, 画面全体（2Dポリゴン）, 使わない（空にする）。 画面サイズのテクスチャをバインドするだけだから。
+
 
 /**
  * @brief 全描画シェーダーの抽象基底クラス。
@@ -90,7 +102,7 @@ protected:
     void ApplyShaderPipeline(ID3D11DeviceContext* dc, ID3D11VertexShader* vs, ID3D11PixelShader* ps, ID3D11InputLayout* layout);
     void UnbindResources(ID3D11DeviceContext* dc);
     void UpdateMaterialProperties(ID3D11DeviceContext* dc, const MaterialData& mat);
-    std::filesystem::file_time_type GetLastWriteTime(const std::string& filepath);
+    std::filesystem::file_time_type GetLastWriteTime(const std::wstring& filepath);
     // ホットリロード時に古い情報を全て消し去るための関数
     void ResetReflection();
 };

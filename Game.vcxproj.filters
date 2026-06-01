@@ -1548,6 +1548,9 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderShared.h">
       <Filter>Source\Engine\Graphics\Shader</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Shader\Material\ParticleShader.h">
+      <Filter>Source\Engine\Graphics\Shader\Material</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2311,6 +2314,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\RHI\GraphicsDevice.cpp">
       <Filter>Source\Engine\Graphics\RHI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Shader\Material\ParticleShader.cpp">
+      <Filter>Source\Engine\Graphics\Shader\Material</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

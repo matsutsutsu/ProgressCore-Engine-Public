@@ -1,7 +1,7 @@
 #include "Shader/Compute/GPUParticle/particle.hlsli"
 
 // GPU上で書き込み可能な粒子バッファ
-RWStructuredBuffer<particle> particle_buffer : register(REG_UAV(SLOT_UAV_PARTICLE_BUF));
+RWStructuredBuffer<GpuParticle> particle_buffer : register(REG_UAV(SLOT_UAV_PARTICLE_BUF));
 
 
 // ====================================================
@@ -14,7 +14,7 @@ void main(uint3 dtid : SV_DispatchThreadID)
     uint id = dtid.x;
 
 	// 現在の粒子データを取得
-    particle p = particle_buffer[id];
+    GpuParticle p = particle_buffer[id];
 	
 	// --------------------------------------
 	// 粒子を初期化

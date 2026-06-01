@@ -2,36 +2,14 @@
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Graphics/RHI/RenderState.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
+#include "Engine/Graphics/Shader/ShaderRegistry.h"
+#include "Engine/Core/Math/StringHash.h" // "_hash" リテラル用
 #include <d3dcompiler.h>
 
 #pragma comment(lib, "d3dcompiler.lib")
 
 void ParticleRenderer::Initialize(ID3D11Device *device)
 {
-    ID3DBlob *blob = nullptr;
-
-    // 1. シェーダーロード
-    D3DReadFileToBlob(L"Assets/Shader/particle_vs.cso", &blob);
-    if (blob) {
-        device->CreateVertexShader(
-            blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, vs.GetAddressOf());
-        blob->Release();
-    }
-
-    D3DReadFileToBlob(L"Assets/Shader/particle_gs.cso", &blob);
-    if (blob) {
-        device->CreateGeometryShader(
-            blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, gs.GetAddressOf());
-        blob->Release();
-    }
-
-    D3DReadFileToBlob(L"Assets/Shader/particle_ps.cso", &blob);
-    if (blob) {
-        device->CreatePixelShader(
-            blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, ps.GetAddressOf());
-        blob->Release();
-    }
-
     // 2. サンプラー作成
     D3D11_SAMPLER_DESC sampDesc = {};
     sampDesc.Filter             = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
@@ -56,7 +34,6 @@ void ParticleRenderer::Initialize(ID3D11Device *device)
     Microsoft::WRL::ComPtr<ID3D11Texture2D> tex;
     device->CreateTexture2D(&texDesc, &initData, tex.GetAddressOf());
     device->CreateShaderResourceView(tex.Get(), nullptr, defaultTexture.GetAddressOf());
-
 
 
     // ★ 金型の事前構築
@@ -86,110 +63,103 @@ void ParticleRenderer::Draw(const ParticleDrawCommand &cmd)
     _drawCommands.push_back(cmd); // バケツに積むだけ
 }
 
-void ParticleRenderer::Render(ID3D11DeviceContext *dc)
+void ParticleRenderer::Render(const RenderServices& services, const RenderFrameContext& frameCtx)
 {
     if (!_isLoaded || _drawCommands.empty()) return;
 
-    RenderState *rs = Graphics::Instance().GetRenderState();
+    ID3D11DeviceContext* dc = frameCtx.dc;
+    const RenderState* rs = services.renderState;
+
+    // =========================================================
+    // ★ 修正: Registryからシェーダーを取得し、Begin()を委譲
+    // =========================================================
+    Shader* shader = services.shaders->GetShader("Particle"_hash, services.device);
+    if (!shader) return;
+
+    shader->Begin(dc, services, frameCtx);
 
     // 入力アセンブリ設定
     dc->IASetInputLayout(nullptr);
     dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
-    // シェーダー設定
-    dc->VSSetShader(vs.Get(), nullptr, 0);
-    dc->GSSetShader(gs.Get(), nullptr, 0);
-    dc->PSSetShader(ps.Get(), nullptr, 0);
-
     // サンプラー設定
-    ID3D11SamplerState *samplers[] = {sampler.Get()};
+    ID3D11SamplerState* samplers[] = { sampler.Get() };
     dc->PSSetSamplers(SLOT_SMP_LINEAR, 1, samplers);
 
     // シーン定数バッファ (カメラ情報) を共通でバインド
-    ID3D11Buffer *sceneCB = Graphics::Instance().GetSceneConstantBuffer();
-    if (sceneCB) {
-        ID3D11Buffer *cbs[] = {sceneCB};
+    if (services.sceneConstantBuffer) {
+        ID3D11Buffer* cbs[] = { services.sceneConstantBuffer };
         dc->VSSetConstantBuffers(SLOT_CB_SCENE, 1, cbs);
         dc->GSSetConstantBuffers(SLOT_CB_SCENE, 1, cbs);
         dc->PSSetConstantBuffers(SLOT_CB_SCENE, 1, cbs);
     }
 
     // =========================================================================
-    // ★ 改善点：ステート切り替えを最小化するための「ソート（バッチング）」
+    // ★ 修正: ソート処理のラムダ内で、シングルトンではなく services を参照する
     // =========================================================================
-    std::sort(_drawCommands.begin(), _drawCommands.end(), [](const ParticleDrawCommand& a, const ParticleDrawCommand& b) {
-        // 1. まず「ブレンドモード(加算か半透明か)」で分ける
+    std::sort(_drawCommands.begin(), _drawCommands.end(), [&services](const ParticleDrawCommand& a, const ParticleDrawCommand& b) {
         if (a.render_mode != b.render_mode) {
             return a.render_mode < b.render_mode;
         }
-        // 2. ブレンドモードが同じなら「テクスチャのメモリアドレス（ポインタ）」で分ける
-        // ※ポインタ同士の比較は単なる数値比較なので、CPU負荷は実質ゼロです。
-        ID3D11ShaderResourceView* texA = ResourceManager::Instance().GetTexture(a.texture);
-        ID3D11ShaderResourceView* texB = ResourceManager::Instance().GetTexture(b.texture);
+        ID3D11ShaderResourceView* texA = services.resources->GetTexture(a.texture);
+        ID3D11ShaderResourceView* texB = services.resources->GetTexture(b.texture);
         return texA < texB;
         });
 
-    // 状態を記憶するキャッシュ変数
     int currentRenderMode = -1;
-    // キャッシュ用のポインタ（絶対にあり得ないアドレスで初期化しておく）
     ID3D11ShaderResourceView* currentTextureSRV = reinterpret_cast<ID3D11ShaderResourceView*>(-1);
 
     // 溜まったコマンドを一気に描画
-    for (const auto &cmd : _drawCommands) {
-        GpuParticleBufferSet *buffers =
-            ResourceManager::Instance().GetParticleBuffer(cmd.computeBuffer);
+    for (const auto& cmd : _drawCommands) {
+        // ★ 修正: ResourceManager::Instance() を排除
+        GpuParticleBufferSet* buffers = services.resources->GetParticleBuffer(cmd.computeBuffer);
         if (!buffers || !buffers->particleSRV) continue;
 
-        // ★ ステートが変わった時だけ設定を切り替える (GPU負荷激減！)
         if (currentRenderMode != cmd.render_mode) {
-            if (cmd.render_mode == 0) {
-                _psoAdditive.Apply(dc, rs);
-            }
-            else {
-                _psoTransparent.Apply(dc, rs);
-            }
-            dc->OMSetDepthStencilState(rs->GetDepthStencilState(DepthState::TestOnly), 0);
+            if (cmd.render_mode == 0) _psoAdditive.Apply(dc, rs);
+            else                      _psoTransparent.Apply(dc, rs);
 
+            dc->OMSetDepthStencilState(rs->GetDepthStencilState(DepthState::TestOnly), 0);
             currentRenderMode = cmd.render_mode;
         }
 
         // バッファバインド
-        ID3D11ShaderResourceView *srvs[] = {buffers->particleSRV};
+        ID3D11ShaderResourceView* srvs[] = { buffers->particleSRV };
         dc->VSSetShaderResources(SLOT_SRV_PARTICLE_BUF, 1, srvs);
         dc->GSSetShaderResources(SLOT_SRV_PARTICLE_BUF, 1, srvs);
 
         // パーティクル定数バッファバインド
         if (buffers->constantBuffer) {
-            ID3D11Buffer *particleCBs[] = {buffers->constantBuffer};
+            ID3D11Buffer* particleCBs[] = { buffers->constantBuffer };
             dc->VSSetConstantBuffers(SLOT_CB_PARTICLE, 1, particleCBs);
             dc->GSSetConstantBuffers(SLOT_CB_PARTICLE, 1, particleCBs);
             dc->PSSetConstantBuffers(SLOT_CB_PARTICLE, 1, particleCBs);
         }
 
-        // ★ テクスチャが変わった時だけバインドし直す
-        ID3D11ShaderResourceView* mainTexSRV = ResourceManager::Instance().GetTexture(cmd.texture);
-        // テクスチャが無い場合はデフォルトの白テクスチャを割り当てる
+        // テクスチャバインド
+        ID3D11ShaderResourceView* mainTexSRV = services.resources->GetTexture(cmd.texture);
         ID3D11ShaderResourceView* actualTexSRV = mainTexSRV ? mainTexSRV : defaultTexture.Get();
 
-        // 記録しておいたポインタのアドレスと違っていれば、DirectXに設定を送信する
         if (currentTextureSRV != actualTexSRV) {
             ID3D11ShaderResourceView* texs[] = { actualTexSRV };
             dc->PSSetShaderResources(SLOT_SRV_MAT_TEX0, 1, texs);
-
-            currentTextureSRV = actualTexSRV; // キャッシュを更新
+            currentTextureSRV = actualTexSRV;
         }
 
-        // 描画実行
         dc->Draw(cmd.max_particle_count, 0);
     }
 
-    // クリーンアップ
-    ID3D11ShaderResourceView *nullSRVs[] = {nullptr};
+    // =========================================================
+    // ★ 修正: シェーダーの後始末を End() に委譲
+    // =========================================================
+    shader->End(dc, services);
+
+    // 固有のクリーンアップ（GSSetShaderの解除等はEnd()で行われます）
+    ID3D11ShaderResourceView* nullSRVs[] = { nullptr };
     dc->VSSetShaderResources(SLOT_SRV_PARTICLE_BUF, 1, nullSRVs);
     dc->GSSetShaderResources(SLOT_SRV_PARTICLE_BUF, 1, nullSRVs);
     dc->PSSetShaderResources(SLOT_SRV_MAT_TEX0, 1, nullSRVs);
 
-    dc->GSSetShader(nullptr, nullptr, 0);
     dc->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF);
     dc->OMSetDepthStencilState(nullptr, 0);
 }

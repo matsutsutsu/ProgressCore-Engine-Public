@@ -1,9 +1,9 @@
 #include "Shader/Compute/GPUParticle/particle.hlsli"
 
-void UpdateParticle(inout particle p); // これがプロトタイプ宣言
+void UpdateParticle(inout GpuParticle p); // これがプロトタイプ宣言
 
 // GPU上で書き込み可能な粒子バッファ
-RWStructuredBuffer<particle> particle_buffer : register(REG_UAV(SLOT_UAV_PARTICLE_BUF));
+RWStructuredBuffer<GpuParticle> particle_buffer : register(REG_UAV(SLOT_UAV_PARTICLE_BUF));
 
 // サンプラー・テクスチャ
 #define POINT 0
@@ -24,7 +24,7 @@ void main(uint3 dtid : SV_DispatchThreadID)
     uint id = dtid.x; // このスレッドが担当する粒子のインデックス
 
 	// 現在の粒子データを取得
-    particle p = particle_buffer[id];
+    GpuParticle p = particle_buffer[id];
 	
     p.type = type; // 将来拡張用にタイプをセット（現状は固定）
 
@@ -97,7 +97,7 @@ void main(uint3 dtid : SV_DispatchThreadID)
 // ====================================================
 // パーティクル更新処理を関数化
 // ====================================================
-void UpdateParticle(inout particle p)
+void UpdateParticle(inout GpuParticle p)
 {
     float3 force = 0;
     

@@ -33,7 +33,7 @@
 //======================================================================
 // Compute Shader が毎フレーム更新した "particle" 配列をここで読み取る。
 // 各インデックス = 1粒。
-StructuredBuffer<particle> particle_buffer : register(REG_SRV(SLOT_SRV_PARTICLE_BUF));
+StructuredBuffer<GpuParticle> particle_buffer : register(REG_SRV(SLOT_SRV_PARTICLE_BUF));
 
 
 //======================================================================
@@ -64,14 +64,17 @@ void main(point VS_OUT input[1], inout TriangleStream<GS_OUT> output)
     };
 
     // パーティクル情報の取得
-    particle p = particle_buffer[input[0].vertex_id];
+    GpuParticle p = particle_buffer[input[0].vertex_id];
 
     // 寿命チェック
     if (p.age <= 0.0 || p.age >= p.lifespan)
         return;
 
     // アスペクト比補正
-    const float aspect_ratio = 1280.0 / 720.0;
+    // ビュープロジェクション行列からアスペクト比を自動抽出
+    // プロジェクション行列の _m11 / _m00 要素には、常に正確な画面アスペクト比が含まれています。
+    // C++側からわざわざ画面サイズを送る必要すらありません。
+    const float aspect_ratio = viewProjection._m11 / viewProjection._m00;
 
     // --- サイズ計算 ---
     // ここで計算した size を全モードで使用します

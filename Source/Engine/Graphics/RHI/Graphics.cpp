@@ -10,6 +10,7 @@
 
 #include "Engine/Graphics/Shader/Material/OutlineShader.h"
 #include "Engine/Graphics/Shader/Material/ShadowMapShader.h"
+#include "Engine/Graphics/Shader/Material/ParticleShader.h"
 
 // パス登録用
 #include "Engine/Graphics/Pipeline/SetupPass.h"
@@ -70,6 +71,9 @@ void Graphics::Initialize(HWND hWnd)
         "Assets/Shader/ToonPS.cso", L"Shader/Material/Toon/ToonPS.hlsl");
     reg.RegisterShader<OutlineShader>("Outline"_hash);
     reg.RegisterShader<ShadowMapShader>("ShadowMap"_hash);
+
+    // Graphics.cpp の Phase 3 に追加
+    reg.RegisterShader<ParticleShader>("Particle"_hash);
 
     // ---- Phase 4: レンダリングパイプライン構築 ----
     SetupRenderPipeline();

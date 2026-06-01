@@ -124,7 +124,7 @@ void Shader::UpdateMaterialProperties(ID3D11DeviceContext* dc, const MaterialDat
     }
 }
 
-std::filesystem::file_time_type Shader::GetLastWriteTime(const std::string& filepath)
+std::filesystem::file_time_type Shader::GetLastWriteTime(const std::wstring& filepath)
 {
     if (std::filesystem::exists(filepath)) {
         return std::filesystem::last_write_time(filepath);

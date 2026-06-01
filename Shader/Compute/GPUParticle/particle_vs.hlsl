@@ -4,7 +4,7 @@
 // → CPUとGPUでデータ構造を共有するため。
 
 // 定義のみ（VSではVertexIDを使うのでアクセスはしないが、スロットを予約しておく）
-StructuredBuffer<particle> particle_buffer : register(REG_SRV(SLOT_SRV_PARTICLE_BUF));
+StructuredBuffer<GpuParticle> particle_buffer : register(REG_SRV(SLOT_SRV_PARTICLE_BUF));
 
 //============================================
 // 頂点シェーダ（Vertex Shader）

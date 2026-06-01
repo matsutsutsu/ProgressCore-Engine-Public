@@ -116,6 +116,30 @@ HRESULT GpuResourceUtils::LoadPixelShader(
 	return hr;
 }
 
+// ジオメトリシェーダー読み込み (.cso)
+HRESULT GpuResourceUtils::LoadGeometryShader(
+	ID3D11Device* device,
+	const char* filename,
+	ID3D11GeometryShader** geometryShader)
+{
+	FILE* fp = nullptr;
+	fopen_s(&fp, filename, "rb");
+	_ASSERT_EXPR_A(fp, "Geometry Shader File not found");
+
+	fseek(fp, 0, SEEK_END);
+	long size = ftell(fp);
+	fseek(fp, 0, SEEK_SET);
+
+	std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(size);
+	fread(data.get(), size, 1, fp);
+	fclose(fp);
+
+	HRESULT hr = device->CreateGeometryShader(data.get(), size, nullptr, geometryShader);
+	_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+
+	return hr;
+}
+
 // テクスチャ読み込み
 HRESULT GpuResourceUtils::LoadTexture(
 	ID3D11Device* device,
@@ -427,4 +451,61 @@ bool GpuResourceUtils::CompilePixelShader(ID3D11Device *device,
     }
 
     return true;
+}
+
+// 頂点シェーダーの動的コンパイル (.hlsl)
+bool GpuResourceUtils::CompileVertexShader(ID3D11Device* device,
+	const std::wstring& hlslPath, const char* entryPoint, const char* shaderModel,
+	ID3D11VertexShader** vertexShader, ID3D11InputLayout** inputLayout,
+	const D3D11_INPUT_ELEMENT_DESC* inputElementDescs, UINT inputElementCount,
+	ID3DBlob** outShaderBlob)
+{
+	Microsoft::WRL::ComPtr<ID3DBlob> shaderBlob = nullptr;
+	Microsoft::WRL::ComPtr<ID3DBlob> errorBlob = nullptr;
+	RootInclude rootInclude;
+
+	HRESULT hr = D3DCompileFromFile(hlslPath.c_str(), nullptr, &rootInclude,
+		entryPoint, shaderModel, D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG, 0, &shaderBlob, &errorBlob);
+
+	if (FAILED(hr)) {
+		if (errorBlob) OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+		return false;
+	}
+
+	hr = device->CreateVertexShader(shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), nullptr, vertexShader);
+	if (FAILED(hr)) return false;
+
+	// 入力レイアウトが要求されていれば作成
+	if (inputLayout && inputElementDescs && inputElementCount > 0) {
+		hr = device->CreateInputLayout(inputElementDescs, inputElementCount,
+			shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), inputLayout);
+		if (FAILED(hr)) return false;
+	}
+
+	if (outShaderBlob) *outShaderBlob = shaderBlob.Detach();
+	return true;
+}
+
+// ジオメトリシェーダーの動的コンパイル (.hlsl)
+bool GpuResourceUtils::CompileGeometryShader(ID3D11Device* device,
+	const std::wstring& hlslPath, const char* entryPoint, const char* shaderModel,
+	ID3D11GeometryShader** geometryShader, ID3DBlob** outShaderBlob)
+{
+	Microsoft::WRL::ComPtr<ID3DBlob> shaderBlob = nullptr;
+	Microsoft::WRL::ComPtr<ID3DBlob> errorBlob = nullptr;
+	RootInclude rootInclude;
+
+	HRESULT hr = D3DCompileFromFile(hlslPath.c_str(), nullptr, &rootInclude,
+		entryPoint, shaderModel, D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG, 0, &shaderBlob, &errorBlob);
+
+	if (FAILED(hr)) {
+		if (errorBlob) OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+		return false;
+	}
+
+	hr = device->CreateGeometryShader(shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), nullptr, geometryShader);
+	if (FAILED(hr)) return false;
+
+	if (outShaderBlob) *outShaderBlob = shaderBlob.Detach();
+	return true;
 }

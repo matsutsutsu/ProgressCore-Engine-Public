@@ -2,59 +2,13 @@
 #define PARTICLE_HLSLI
 
 #include "Engine/Graphics/Shader/ShaderResources.h"
+#include "Engine/Graphics/Shader/ShaderShared.h"
 #include "Shader/Common/Scene.hlsli"
 //=====================================================================
 //  GPU Particle Initializer Shader
 //  粒子の初期化処理を担当するComputeShader補助コード
 //=====================================================================
 
-cbuffer PARTICLE_SYSTEM_CONSTANTS : register(REG_CB(SLOT_CB_PARTICLE))
-{
-    // 発生源（エミッタ）の基本パラメータ群
-    float4 emission_position;       // 粒子が発生する中心位置（ワールド座標）
-    float4 emission_rotation;       // エミッタの回転
-    float2 emission_offset;         // 発生範囲（半径）x:最小, y:最大
-    float2 emission_size;           // サイズ設定 x:出現時, y:消滅時
-    float2 emission_cone_angle;     // 放出角度範囲（ラジアン）
-    float2 emission_speed;          // 初速度範囲
-    float2 emission_angular_speed;  // 角速度範囲（回転演出）
-    float2 lifespan;                // 寿命（秒）範囲
-    float2 spawn_delay;             // 出現遅延（秒）範囲
-    float2 fade_duration;           // フェード時間（in/out）
-    float4 manual_color;            // 手動カラー補正（RGBA乗算）
-
-    // シミュレーション共通値
-    float time;                     // 経過時間（フレーム全体）
-    float delta_time;               // 1フレームあたりの経過秒数
-    float noise_scale;              // 位置ノイズや乱流演出に使うスケール
-    float noise_strength;           // ノイズ影響力
-    
-    float gravity;                  // 重力加速度（マイナス値で下向き）
-    float velocity_stretch;
-    float2 uv_scroll_speed;
-    
-    int sprite_anim_mode;
-    int render_mode;
-    float2 padding1;
-
-    uint2 sprite_sheet_grid;        // スプライトアニメの分割数（列×行）
-    float2 particle_scale;          // パーティクルの大きさ
-    
-    float3 world_position;          //実際のエミッタ位置（ワールド座標）
-    int color_mode; // カラーテンパーモード（将来拡張用）
-    
-    int max_particle_count;        // システム全体の粒子数
-    int type;                      // ← 0=Point, 1=Quad を指定
-    int emission_mode = 0;         // 0: 継続放出, 1: バースト(一時的)
-    int burst_count = 100;         // バースト時に一度に放出する数
-
-    float burst_trigger = 0.0f;     // >0でバースト発動
-    float particle_offset_y = 0.0f; // Y方向の発生オフセット（未使用）
-    float emission_stretch_x; // X方向のオフセットストレッチ係数
-    float emission_stretch_z; // Z方向のオフセットストレッチ係数
-    
-
-}
 
 //--------------------------------------------
 // 頂点シェーダー出力構造体
@@ -75,32 +29,6 @@ struct GS_OUT
     uint type : TEXCOORD1; // パーティクルタイプ（0=Point, 1=Quad）
 };
 
-//--------------------------------------------
-// 粒子1個あたりのデータ構造
-//--------------------------------------------
-struct particle
-{
-    int state; // 状態（0:未使用, 1:生存, 2:消滅など）
-    float angle; // 回転角
-    int pad0[2];
-
-    float4 color; // 色（RGBA）
-
-    float3 position; // ワールド空間上の座標
-    float mass; // 質量（風や重力計算用）
-
-    float angular_speed; // 回転速度
-    float3 velocity; // 速度ベクトル
-
-    float lifespan; // 総寿命
-    float age; // 経過時間（負ならまだ発生前）
-    float2 size; // x:出現サイズ, y:消滅サイズ    スケール比率固定
-
-
-    uint chip; // 使用スプライトのインデックス
-    uint type; // 矩形か球体かなどのタイプ識別用（将来拡張用）
-    float2 scale;   // パーティクルの大きさ       スケール比率設定
-};
 
 //--------------------------------------------
 // 定数
@@ -150,7 +78,7 @@ float3 RotateVector(float3 v, float4 q)
 // 粒子生成関数： spawn()
 // 各スレッドが1つの粒子を担当し、初期パラメータを設定する
 //=====================================================================
-void spawn(in uint id, inout particle p)
+void spawn(in uint id, inout GpuParticle p)
 {
     // 独立乱数を十分に確保（用途ごとに分ける）
     float r_rand = randUint(id * 1000u + 1u); // 位置（半径）用
@@ -242,7 +170,6 @@ void spawn(in uint id, inout particle p)
         p.chip = (uint) (chip_rand * count);
     }
     
-    p.chip = (uint) (chip_rand * count);
     p.type = type;
     p.scale = particle_scale;
 }

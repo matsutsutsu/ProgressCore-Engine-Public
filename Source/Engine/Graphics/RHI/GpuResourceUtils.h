@@ -23,6 +23,12 @@ public:
 		const char* filename,
 		ID3D11PixelShader** pixelShader);
 
+	// --- Load 系 (コンパイル済み .cso の読み込み) ---
+	static HRESULT LoadGeometryShader(
+		ID3D11Device* device,
+		const char* filename,
+		ID3D11GeometryShader** geometryShader);
+
 	// テクスチャ読み込み
 	static HRESULT LoadTexture(
 		ID3D11Device* device,
@@ -75,5 +81,23 @@ public:
         const char                              *shaderModel,
         ID3D11PixelShader                      **pixelShader,
         ID3DBlob                               **outShaderBlob = nullptr);
+
+	// --- Compile 系 (HLSLからの動的コンパイル) ---
+	static bool CompileVertexShader(ID3D11Device* device,
+		const std::wstring& hlslPath,
+		const char* entryPoint,
+		const char* shaderModel,
+		ID3D11VertexShader** vertexShader,
+		ID3D11InputLayout** inputLayout = nullptr,
+		const D3D11_INPUT_ELEMENT_DESC* inputElementDescs = nullptr,
+		UINT inputElementCount = 0,
+		ID3DBlob** outShaderBlob = nullptr);
+
+	static bool CompileGeometryShader(ID3D11Device* device,
+		const std::wstring& hlslPath,
+		const char* entryPoint,
+		const char* shaderModel,
+		ID3D11GeometryShader** geometryShader,
+		ID3DBlob** outShaderBlob = nullptr);
 
 };

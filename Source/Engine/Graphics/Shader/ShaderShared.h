@@ -25,10 +25,14 @@
 // ==================================================================
 // 型エイリアスと修飾子（C++ / HLSL の差を吸収する）
 // ==================================================================
+
+// 今コンパイルをしているのがC++側かHLSL側かを判定するマクロ
+// trueならC++、falseならHLSLとみなす
 #ifdef __cplusplus
 #include <DirectXMath.h>
 #include <cstdint>
 
+// C++の場合はfloat2などないのでusingで定義する
 namespace GpuData {
 
     using float2 = DirectX::XMFLOAT2;
@@ -36,11 +40,18 @@ namespace GpuData {
     using float4 = DirectX::XMFLOAT4;
     using float4x4 = DirectX::XMFLOAT4X4;   // 行優先ストレージ = HLSL の row_major と一致
     using uint = uint32_t;
+	using uint2 = DirectX::XMUINT2;
 
 #define ROW_MAJOR                                 // HLSLのrow_major、C++では無し
-#define CB_STRUCT(name, slot) struct name         // C++では普通のstruct
+    // C++では普通のstructになる
+	// struct "name" { ... } と定義されるので、Shader::name でアクセスできる
+#define CB_STRUCT(name, slot) struct name         
+
+	// HLSLの場合はfloat2などの型があるのでそのまま使う
 #else
 #define ROW_MAJOR row_major
+
+// HLSLでは cbuffer "name" : register(bN) と定義される
 #define CB_STRUCT(name, slot) cbuffer name : register(REG_CB(slot))
 #endif
 
@@ -162,11 +173,95 @@ CB_STRUCT(CbFog, SLOT_CB_FOG)
     float4 gFogRimParams;   // x:power y:strength
 };
 
+
+// ==================================================================
+// GPUパーティクルデータ（1粒ごとの情報）
+// ==================================================================
+struct GpuParticle              // HLSL側の "GpuParticle" に対応
+{
+    int    state;           // 状態 (0: 死亡/待機, 1: 生存中)
+    float  angle;           // 現在の回転角度（ラジアン）
+    int    pad0[2];         // (パディング)
+    float4 color;           // 現在のカラー (RGBA)
+    float3 position;        // 現在のワールド座標
+    float  mass;            // 質量（重力や風などの影響の受けやすさ）
+    float  angular_speed;   // 角速度（回転の速さ）
+    float3 velocity;        // 現在の移動速度ベクトル
+    float  lifespan;        // 最大寿命（秒）
+    float  age;             // 生まれてからの経過時間（秒）
+    float2 size;            // 現在のサイズ (幅, 高さ)
+    uint   chip;            // スプライトシートの現在のコマ番号
+    uint   type;            // パーティクルタイプ (0: Point, 1: Quad)
+    float2 scale;           // 全体スケール乗数
+};
+
+// ==================================================================
+// パーティクル定数バッファ（エミッタ全体の設定）
+// ==================================================================
+CB_STRUCT(CbParticle, SLOT_CB_PARTICLE)
+{
+    // ---- 発生源（エミッタ）の基本パラメータ群 ----
+    float4 emission_position;       // 粒子が発生する中心位置（ワールド座標）
+    float4 emission_rotation;       // エミッタの回転（クォータニオン）
+    float2 emission_offset;         // 発生範囲（半径）x:最小, y:最大
+    float2 emission_size;           // サイズ設定 x:出現時, y:消滅時
+    float2 emission_cone_angle;     // 放出角度範囲（ラジアン）
+    float2 emission_speed;          // 初速度範囲
+    float2 emission_angular_speed;  // 角速度範囲（回転演出）
+    float2 lifespan;                // 寿命（秒）範囲
+    float2 spawn_delay;             // 出現遅延（秒）範囲
+    float2 fade_duration;           // フェード時間（x:フェードイン, y:フェードアウト）
+    float4 manual_color;            // 手動カラー補正（RGBA乗算）
+
+    // ---- シミュレーション共通値 ----
+    float  time;                    // 経過時間（フレーム全体）
+    float  delta_time;              // 1フレームの経過時間
+    float  noise_scale;             // 乱流ノイズの細かさ
+    float  noise_strength;          // 乱流ノイズの強さ
+
+    float  gravity;                 // 重力の強さ（マイナスで下方向）
+    float  velocity_stretch;        // 速度に応じた引き伸ばし係数
+    float2 uv_scroll_speed;         // UVアニメーションのスクロール速度
+
+    int    sprite_anim_mode;        // スプライト進行 (0: ランダム, 1: 寿命に合わせる)
+    int    render_mode;             // 描画モード (0: 加算, 1: 半透明)
+    float2 padding1;                // (パディング)
+
+    uint2  sprite_sheet_grid;       // スプライトシートの分割数 (x: 列, y: 行)
+    float2 particle_scale;          // 全体のスケール乗数
+
+    float3 world_position;          // エミッタのワールド座標
+    int    color_mode;              // カラーモード (0: 手動, 1: 温度チャート参照)
+
+    int    max_particle_count;      // 粒子の最大発生数
+    int    type;                    // 種類
+    int    emission_mode;           // 放出モード (0: 継続, 1: バースト)
+    int    burst_count;             // バースト時の瞬間発生数
+
+    float  burst_trigger;           // バースト発動トリガー (> 0 で発動)
+    float  particle_offset_y;       // 発生位置のYオフセット
+    float  emission_stretch_x;      // X方向の広がり
+    float  emission_stretch_z;      // Z方向の広がり
+};
+
+
 // ==================================================================
 // C++ 側のみ: レイアウト検証
 //   フィールドを足して padding を忘れたら、ここで即コンパイルエラーになる。
 //   = 「動くのに色が壊れる」系バグがビルド時に止まる。
 // ==================================================================
+
+// static_assert は C++11 以降で使えるコンパイル時アサーション。
+// 条件が false ならコンパイルエラーになる。
+// sizeof(StructType) はその構造体のサイズをバイト単位で返す演算子。
+
+// なぜあるのか：
+// 一つしかないのになぜassertを定義するのかというと
+// C++とHLSL側でのパッキングのルールが違うから
+// 例えばCbLight側でfloatを１個追加したら
+// C++ではsizeof(CbLight)が1108になるけど、HLSL側ではパディングが入って1120になる
+// このHLSLのパディングは、定数バッファの要素が16バイト境界に揃うようにするためのもので、
+// C++側では自動的に入らないため、サイズがずれてしまう
 #ifdef __cplusplus
 static_assert(sizeof(DirectionalLight) == 64, "DirectionalLight size mismatch vs HLSL");
 static_assert(sizeof(PointLight) == 48, "PointLight size mismatch vs HLSL");
@@ -177,6 +272,8 @@ static_assert(sizeof(CbSkeleton) == 16384, "CbSkeleton size mismatch vs HLSL");
 static_assert(sizeof(CbScene) == 240, "CbScene size mismatch vs HLSL");
 static_assert(sizeof(CbShadow) == 240, "CbShadow size mismatch vs HLSL");
 static_assert(sizeof(CbFog) == 96, "CbFog size mismatch vs HLSL");
+static_assert(sizeof(GpuParticle) == 96, "GpuParticle size mismatch vs HLSL");
+static_assert(sizeof(CbParticle) == 224, "CbParticle size mismatch vs HLSL");
 
 
 } // namespace GpuData
