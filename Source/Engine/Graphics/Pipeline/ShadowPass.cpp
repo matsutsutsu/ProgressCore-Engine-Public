@@ -4,6 +4,7 @@
 #include "Engine/Graphics/RHI/Camera.h"
 #include "Engine/Graphics/RHI/Light.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
+#include "Engine/Graphics/Shader/ShaderShared.h"
 #include "Engine/Graphics/Renderer/RenderQueue.h"
 #include "Engine/Graphics/Shader/Pass/ShadowUtils.h"
 #include "Engine/Graphics/Shader/Pass/ShadowMap.h"
@@ -56,16 +57,17 @@ void ShadowPass::Execute(const RenderFrameContext& ctx)
             shadowMap->params.cascadeSplits,
             lightVPs);
 
-        ShadowMap::CbShadow cbData{};
-        XMStoreFloat4x4(&cbData.lightViewProjection[0], lightVPs[0]);
-        XMStoreFloat4x4(&cbData.lightViewProjection[1], lightVPs[1]);
-        XMStoreFloat4x4(&cbData.lightViewProjection[2], lightVPs[2]);
+        GpuData::CbShadow cbData{};
+        XMStoreFloat4x4(&cbData.light_view_projection[0], lightVPs[0]);
+        XMStoreFloat4x4(&cbData.light_view_projection[1], lightVPs[1]);
+        XMStoreFloat4x4(&cbData.light_view_projection[2], lightVPs[2]);
         cbData.cascadeSplits = { shadowMap->params.cascadeSplits[0],
                                      shadowMap->params.cascadeSplits[1],
                                      shadowMap->params.cascadeSplits[2], 0.0f };
-        cbData.shadowColor = shadowMap->params.shadowColor;
-        cbData.shadowAttenuation = shadowMap->params.shadowAttenuation;
-        cbData.shadowBias = shadowMap->params.shadowBias;
+
+        cbData.shadow_color = shadowMap->params.shadowColor;
+        cbData.shadow_attenuation = shadowMap->params.shadowAttenuation;
+        cbData.shadow_bias = shadowMap->params.shadowBias;
         cbData.currentCascadeIndex = cascadeIndex;
         shadowMap->UpdateConstantBuffer(dc, cbData);
         shadowMap->Bind(dc, -1, -1, SLOT_CB_SHADOW);

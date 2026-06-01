@@ -1,14 +1,9 @@
 #include "GraphicsDevice.h"
-#include "Engine/Core/Math/Misc.h"  // _ASSERT_EXPR, HRTrace
+#include "Engine/Core/Math/Misc.h"
+#include "Engine/Graphics/Shader/ShaderShared.h"  // _ASSERT_EXPR, HRTrace
 
 // CbScene 構造体（GraphicsDevice が物理バッファを持ち、Graphics が内容を埋める）
 // バッファサイズだけ知れればよいため private static constexpr で宣言
-namespace {
-    // HLSL CbScene (b8) と一致する構造体サイズ
-    // ※ Graphics.cpp の CbSceneData と完全一致させること
-    static constexpr UINT kCbSceneSize = 224; // XMMATRIX×3(192) + XMFLOAT4×3(48) = 240... 実際はalignasで240
-    // 実際には Graphics 側から UpdateSceneConstantBuffer(data, sizeof(data)) で渡される
-}
 
 void GraphicsDevice::Initialize(HWND hWnd)
 {
@@ -105,7 +100,7 @@ void GraphicsDevice::Initialize(HWND hWnd)
     // alignas(16) CbSceneData = XMMATRIX×3 + XMFLOAT4×3 = 192+48 = 240 bytes
     {
         D3D11_BUFFER_DESC bd{};
-        bd.ByteWidth = 240; // sizeof(CbSceneData) @ Graphics.cpp
+        bd.ByteWidth = sizeof(GpuData::CbScene); // ShaderShared.h で定義
         bd.Usage = D3D11_USAGE_DEFAULT;
         bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
         hr = _device->CreateBuffer(&bd, nullptr, _sceneConstantBuffer.GetAddressOf());

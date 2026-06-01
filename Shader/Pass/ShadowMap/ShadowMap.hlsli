@@ -1,21 +1,10 @@
 #ifndef SHADOWMAP_HLSLI
 #define SHADOWMAP_HLSLI
 
-#include "Engine/Graphics/Shader/ShaderResources.h"
-
+// 定数バッファは ShaderShared.h に移動（C++と共有）
+#include "Engine/Graphics/Shader/ShaderShared.h"
 
 // --- データ定義 ---
-cbuffer CbShadow : register(REG_CB(SLOT_CB_SHADOW))
-{
-    row_major float4x4 light_view_projection[3]; // 3層の行列
-    float4 cascadeSplits;
-    float4 shadow_color;
-    float shadow_attenuation;
-    float shadow_bias;
-    int currentCascadeIndex; // 書き込み用
-    float shadow_padding;
-};
-
 
 Texture2DArray ShadowMap : register(REG_SRV(SLOT_SRV_SHADOW));
 SamplerComparisonState ShadowSampler : register(REG_SMP(SLOT_SMP_SHADOW));
@@ -58,7 +47,6 @@ float SampleCascade(float4 worldPos, int cascadeIndex)
     }
     return shadowWeight / 9.0f;
 }
-
 
 // 影の重み (0.0=影, 1.0=日向) を計算し、境界でブレンドするメイン関数
 float CalculateShadowWeight(float4 worldPos, float viewDepth)

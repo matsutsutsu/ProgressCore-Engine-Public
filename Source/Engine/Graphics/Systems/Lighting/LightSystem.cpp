@@ -44,8 +44,8 @@ void LightSystem::Update(float dt)
         gfxLight.intensity = lightComp->intensity;
 
         // 環境光のコピー
-        gfxLight.skyColor    = lightComp->skyColor;
-        gfxLight.groundColor = lightComp->groundColor;
+        gfxLight.gSkyColor    = lightComp->skyColor;
+        gfxLight.gGroundColor = lightComp->groundColor;
 
         // 向きは Transform の回転から計算して詰める
         gfxLight.direction = CalculateDirection(transComp->rotation);

@@ -6,6 +6,7 @@
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Graphics/Renderer/RenderQueue.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
+#include "Engine/Graphics/Shader/ShaderShared.h"
 
 #include "Engine/Graphics/Shader/Material/OutlineShader.h"
 #include "Engine/Graphics/Shader/Material/ShadowMapShader.h"
@@ -19,23 +20,6 @@
 #include "Engine/Graphics/Pipeline/ParticlePass.h"
 #include "Engine/Graphics/Pipeline/PrimitivePass.h"
 #include "Engine/Graphics/Pipeline/PostProcessPass.h"
-
-// ============================================================
-//  CbScene 構造体 (HLSL: CbScene b8)
-//  alignas(16) + XMMATRIX を含む → 240 バイト
-//  ★ 唯一の権威あるソース。EnvironmentSystem は上書きしない。
-// ============================================================
-struct alignas(16) CbSceneData
-{
-    DirectX::XMMATRIX viewProjection; // offset:   0, size: 64
-    DirectX::XMFLOAT4 lightDirection; // offset:  64, size: 16
-    DirectX::XMFLOAT4 lightColor;     // offset:  80, size: 16
-    DirectX::XMFLOAT4 cameraPosition; // offset:  96, size: 16
-    DirectX::XMMATRIX view;           // offset: 112, size: 64
-    DirectX::XMMATRIX projection;     // offset: 176, size: 64
-};
-static_assert(sizeof(CbSceneData) == 240,
-    "CbSceneData size mismatch — GraphicsDevice.cpp の ByteWidth=240 と一致させること");
 
 // ============================================================
 //  Initialize
@@ -145,12 +129,12 @@ void Graphics::Update()
     if (!_gfxDevice.GetSceneConstantBuffer()) return;
 
     // ★ CbScene を構築（唯一の書き込み箇所）
-    CbSceneData data{};
+    GpuData::CbScene data{};
 
-    const DirectX::XMFLOAT4X4 vp = _mainCamera.GetViewProjectionMatrix();
-    data.viewProjection = DirectX::XMLoadFloat4x4(&vp);
-    data.view = DirectX::XMLoadFloat4x4(&_mainCamera.GetView());
-    data.projection = DirectX::XMLoadFloat4x4(&_mainCamera.GetProjection());
+    // XMFLOAT4X4 は row_major ストレージ = HLSL の row_major float4x4 と一致
+    data.viewProjection = _mainCamera.GetViewProjectionMatrix();
+    data.gView          = _mainCamera.GetView();
+    data.gProjection    = _mainCamera.GetProjection();
 
     const DirectX::XMFLOAT3& pos = _mainCamera.GetEye();
     data.cameraPosition = { pos.x, pos.y, pos.z, 1.0f };

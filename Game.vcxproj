@@ -509,6 +509,7 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderReflection.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderRegistry.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderResources.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\ShaderShared.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Core\DissolveSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Core\EnvironmentSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Core\ModelPoseUpdateSystem.h" />

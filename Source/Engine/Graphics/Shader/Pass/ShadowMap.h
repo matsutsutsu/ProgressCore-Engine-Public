@@ -1,11 +1,11 @@
 #pragma once
 #include <d3d11.h>
 #include <DirectXMath.h>
+#include "Engine/Graphics/Shader/ShaderShared.h"
 #include <vector>
 #include <wrl/client.h>
 
 // カスケード（層）の数
-constexpr int SHADOW_CASCADE_COUNT = 3;
 
 // ShadowMap.h
 class ShadowMap {
@@ -25,21 +25,8 @@ public:
 
     //void DrawGUI();
 
-	// 定数バッファ構造体
-    struct CbShadow {
-        DirectX::XMFLOAT4X4 lightViewProjection[SHADOW_CASCADE_COUNT]; // 3つの行列
-        DirectX::XMFLOAT4   cascadeSplits;
-        DirectX::XMFLOAT4   shadowColor;
-        float               shadowAttenuation;
-        float               shadowBias;
-        int                 currentCascadeIndex; // 影を書き込む時に使う
-        float               padding;             // 16バイト境界合わせ
-    };
-
-
-    // 定数バッファのデータを更新するための関数
-    void UpdateConstantBuffer(ID3D11DeviceContext* dc, const CbShadow& data);
-
+      // 定数バッファのデータを更新するための関数
+    void UpdateConstantBuffer(ID3D11DeviceContext* dc, const GpuData::CbShadow& data);
 
     // ImGuiで操作したいパラメータを構造体にまとめる
     struct Parameters {
@@ -48,7 +35,6 @@ public:
         float shadowBias = 0.0015f; // 初期値は小さめに
         float cascadeSplits[SHADOW_CASCADE_COUNT] = { 15.0f, 50.0f, 200.0f }; // 境界距離の初期値
     } params;
-
 
     // デフォルト引数を削除し、リフレクションから取得したスロットを渡す形にする
     void Bind(ID3D11DeviceContext* dc, int srvSlot, int samplerSlot, int cbSlot);

@@ -118,7 +118,7 @@ namespace ComponentMetaImGui {
                         changed = true;
 
                         // デバッグ用（不要なら消してよい）
-                        CCL_LOG_INFO(LogCategory::Editor, "[ImGui] EntityID %u dropped into %s", val, fd.name);
+                        //CCL_LOG_INFO(LogCategory::Editor, "[ImGui] EntityID %u dropped into %s", val, fd.name);
                     }
                 }
                 ImGui::EndDragDropTarget();
@@ -226,7 +226,7 @@ namespace ComponentMetaImGui {
                 if (!s_isEditing) {
                     s_backupState = preState;
                     s_isEditing = true;
-                    CCL_LOG_INFO(LogCategory::Editor, "[UndoSystem] CustomGUI Edit Started: %s", ComponentMeta<T>::displayName);
+                    //CCL_LOG_INFO(LogCategory::Editor, "[UndoSystem] CustomGUI Edit Started: %s", ComponentMeta<T>::displayName);
                 }
             }
 
@@ -236,7 +236,7 @@ namespace ComponentMetaImGui {
                     auto* ecsWorld = static_cast<CCL::ECS::Core::World*>(world);
                     auto ecsEntity = static_cast<CCL::ECS::EntityID>(entity);
 
-                    CCL_LOG_INFO(LogCategory::Editor, "[UndoSystem] CustomGUI Edit Finished: %s", ComponentMeta<T>::displayName);
+                    //CCL_LOG_INFO(LogCategory::Editor, "[UndoSystem] CustomGUI Edit Finished: %s", ComponentMeta<T>::displayName);
 
                     // 履歴マネージャーに提出！
                     EditorCommandHistory::Instance().ExecuteCommand(
@@ -286,21 +286,21 @@ namespace ComponentMetaImGui {
                         s_backupState = component;
 
                         // 🔍 【足跡 1】掴んだ瞬間をログ出力
-                        CCL_LOG_INFO(LogCategory::Editor, "[UndoSystem] Mouse Activated: Backup taken for %s", ComponentMeta<T>::displayName);
+                        //CCL_LOG_INFO(LogCategory::Editor, "[UndoSystem] Mouse Activated: Backup taken for %s", ComponentMeta<T>::displayName);
                     }
 
                     // 2. マウスを離した瞬間（編集完了）にコマンドを発行！
                     if (ImGui::IsItemDeactivatedAfterEdit()) {
 
                         // 🔍 【足跡 2】離した（編集完了）瞬間をログ出力
-                        CCL_LOG_INFO(LogCategory::Editor, "[UndoSystem] Mouse Deactivated: Editing finished for %s", ComponentMeta<T>::displayName);
+                        //CCL_LOG_INFO(LogCategory::Editor, "[UndoSystem] Mouse Deactivated: Editing finished for %s", ComponentMeta<T>::displayName);
 
                         if (world && entity != 0) {
                             auto* ecsWorld = static_cast<CCL::ECS::Core::World*>(world);
                             auto ecsEntity = static_cast<CCL::ECS::EntityID>(entity);
 
                             // 🔍 【足跡 3】コマンドの発行を確認
-                            CCL_LOG_INFO(LogCategory::Editor, "[UndoSystem] Issued ChangeCommand for Entity ID: %llu", ecsEntity);
+                            //CCL_LOG_INFO(LogCategory::Editor, "[UndoSystem] Issued ChangeCommand for Entity ID: %llu", ecsEntity);
 
                             EditorCommandHistory::Instance().ExecuteCommand(
                                 std::make_unique<ChangeComponentCommand<T>>(

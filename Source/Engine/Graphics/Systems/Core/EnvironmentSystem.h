@@ -2,6 +2,7 @@
 #include "Engine/ECS/System/CCL_System.h"
 #include "Engine/Graphics/RHI/RenderContext.h"  // RenderServices
 #include <d3d11.h>
+#include "Engine/Graphics/Shader/ShaderShared.h"
 #include <vector>
 #include <wrl.h>
 #include <DirectXMath.h>
@@ -40,15 +41,7 @@ public:
     void BindGlobalResources(ID3D11DeviceContext* dc, const RenderServices& s);
 
 private:
-    // フォグ用定数バッファ
-    struct CbFogData {
-        DirectX::XMFLOAT4 color;
-        DirectX::XMFLOAT4 params;
-        DirectX::XMFLOAT4 center;
-        DirectX::XMFLOAT4 noiseParams;
-        DirectX::XMFLOAT4 rimColor;
-        DirectX::XMFLOAT4 rimParams;
-    };
+
     Microsoft::WRL::ComPtr<ID3D11Buffer> _fogConstantBuffer;
 
     // グローバルテクスチャ

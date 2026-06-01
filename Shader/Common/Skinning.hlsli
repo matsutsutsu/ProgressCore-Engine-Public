@@ -1,12 +1,8 @@
 #ifndef SKINNING_HLSLI
 #define SKINNING_HLSLI
 
-#include "Engine/Graphics/Shader/ShaderResources.h"
-
-cbuffer CbSkeleton : register(REG_CB(SLOT_CB_SKELETON))
-{
-	row_major float4x4	boneTransforms[256];
-};
+// 定数バッファは ShaderShared.h に移動（C++と共有）
+#include "Engine/Graphics/Shader/ShaderShared.h"
 
 float4 SkinningPosition(float4 position, float4 boneWeights, uint4 boneIndices)
 {

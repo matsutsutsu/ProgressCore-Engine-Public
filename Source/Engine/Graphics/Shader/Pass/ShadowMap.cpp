@@ -1,5 +1,6 @@
 // ShadowMap.cpp
 #include "ShadowMap.h"
+#include "Engine/Graphics/Shader/ShaderShared.h"
 #include "Engine/Core/Math/Misc.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 
@@ -68,7 +69,7 @@ ShadowMap::ShadowMap(ID3D11Device* device, UINT width, UINT height)
     sampDesc.BorderColor[3] = 1.0f;
     device->CreateSamplerState(&sampDesc, samplerState.GetAddressOf());
 
-    GpuResourceUtils::CreateDynamicConstantBuffer(device, sizeof(CbShadow), constantBuffer.GetAddressOf());
+    GpuResourceUtils::CreateDynamicConstantBuffer(device, sizeof(GpuData::CbShadow), constantBuffer.GetAddressOf());
 
     viewport.Width = (float)width;
     viewport.Height = (float)height;
@@ -98,31 +99,6 @@ void ShadowMap::Deactivate(ID3D11DeviceContext* dc)
     dc->OMSetRenderTargets(0, nullptr, nullptr);
 }
 
-
-//void ShadowMap::DrawGUI() {
-//    if (ImGui::CollapsingHeader(u8"ShadowMap 設定 (Control)")) {
-//
-//        // 影の浮き・縞模様の調整
-//        ImGui::DragFloat(u8"影のバイアス (Bias)", &params.shadowBias, 0.0001f, 0.0f, 0.05f, "%.4f");
-//        ImGui::Separator();
-//
-//        // 影の濃さ・境界の減衰
-//        ImGui::DragFloat(u8"影の減衰 (Attenuation)", &params.shadowAttenuation, 0.01f, 0.0f, 2.0f);
-//        ImGui::ColorEdit4(u8"影の色 (Shadow Color)", &params.shadowColor.x);
-//        ImGui::Separator();
-//
-//        // ライトが照らす範囲
-//        ImGui::DragFloat(u8"ライトの投影範囲 (Ortho Size)", &params.orthoSize, 0.1f, 1.0f, 100.0f);
-//
-//        if (shaderResourceView) {
-//            ImGui::Text(u8"シャドウマップ・バッファの確認:");
-//            // 深度値が見えやすいようにプレビュー表示
-//            ImGui::Image((void*)shaderResourceView.Get(), ImVec2(256, 256),
-//                ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
-//        }
-//    }
-//}
-
 void ShadowMap::Bind(ID3D11DeviceContext* dc, int srvSlot, int samplerSlot, int cbSlot)
 {
     // 1. テクスチャのバインド
@@ -146,13 +122,14 @@ void ShadowMap::Bind(ID3D11DeviceContext* dc, int srvSlot, int samplerSlot, int 
     }
 }
 
-void ShadowMap::UpdateConstantBuffer(ID3D11DeviceContext* dc, const CbShadow& data)
+
+void ShadowMap::UpdateConstantBuffer(ID3D11DeviceContext* dc, const GpuData::CbShadow& data)
 {
     if (!constantBuffer) return;
 
     // GPUリソースをマップして書き込み可能にする
     D3D11_MAPPED_SUBRESOURCE mappedResource;
-	// D3D11_MAP_WRITE_DISCARD を使って、古いデータは破棄する
+    // D3D11_MAP_WRITE_DISCARD を使って、古いデータは破棄する
     HRESULT hr = dc->Map(
         constantBuffer.Get(),
         0,
@@ -164,7 +141,7 @@ void ShadowMap::UpdateConstantBuffer(ID3D11DeviceContext* dc, const CbShadow& da
     if (SUCCEEDED(hr))
     {
         // CPU上の構造体データをGPUバッファへコピー
-        memcpy(mappedResource.pData, &data, sizeof(CbShadow));
+        memcpy(mappedResource.pData, &data, sizeof(GpuData::CbShadow));
 
         // アンマップしてGPU側のアクセスを再開
         dc->Unmap(constantBuffer.Get(), 0);

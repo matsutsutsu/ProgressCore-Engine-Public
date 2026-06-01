@@ -30,16 +30,16 @@ void LightManager::Bind(ID3D11DeviceContext* dc, int slot)
     if (!constantBuffer || slot < 0) return;
 
     // 1. vectorのデータを定数バッファ用の固定長配列にコピー（詰め替え）
-    cbData.pointLightCount = static_cast<int>(pointLights.size());
-    for (int i = 0; i < cbData.pointLightCount; ++i)
+    cbData.gPointLightCount = static_cast<int>(pointLights.size());
+    for (int i = 0; i < cbData.gPointLightCount; ++i)
     {
-        cbData.pointLights[i] = pointLights[i];
+        cbData.gPointLights[i] = pointLights[i];
     }
 
-    cbData.spotLightCount = static_cast<int>(spotLights.size());
-    for (int i = 0; i < cbData.spotLightCount; ++i)
+    cbData.gSpotLightCount = static_cast<int>(spotLights.size());
+    for (int i = 0; i < cbData.gSpotLightCount; ++i)
     {
-        cbData.spotLights[i] = spotLights[i];
+        cbData.gSpotLights[i] = spotLights[i];
     }
 
     // 2. GPUメモリへの転送
@@ -78,9 +78,9 @@ void LightManager::DrawGUI()
         if (ImGui::TreeNode(u8"Ambient Light (環境光 - 半球ライティング)"))
         {
             // gSkyColor に対応
-            ImGui::ColorEdit4(u8"skyColor (空の色/強度)", &cbData.dirLight.skyColor.x);
+            ImGui::ColorEdit4(u8"skyColor (空の色/強度)", &cbData.gDirLight.gSkyColor.x);
             // gGroundColor に対応
-            ImGui::ColorEdit4(u8"groundColor (地面の色/強度)", &cbData.dirLight.groundColor.x);
+            ImGui::ColorEdit4(u8"groundColor (地面の色/強度)", &cbData.gDirLight.gGroundColor.x);
 
             ImGui::TreePop();
         }
@@ -95,9 +95,9 @@ void LightManager::DrawGUI()
         if (ImGui::TreeNode(u8"Directional Light (平行光源)"))
         {
             // gDirLight に対応
-            ImGui::DragFloat3(u8"Direction (向き)", &cbData.dirLight.direction.x, 0.01f, -1.0f, 1.0f);
-            ImGui::ColorEdit3(u8"Color (色)", &cbData.dirLight.color.x);
-            ImGui::DragFloat(u8"Intensity (強度)", &cbData.dirLight.intensity, 0.01f, 0.0f, 10.0f);
+            ImGui::DragFloat3(u8"Direction (向き)", &cbData.gDirLight.direction.x, 0.01f, -1.0f, 1.0f);
+            ImGui::ColorEdit3(u8"Color (色)", &cbData.gDirLight.color.x);
+            ImGui::DragFloat(u8"Intensity (強度)", &cbData.gDirLight.intensity, 0.01f, 0.0f, 10.0f);
             ImGui::TreePop();
         }
 

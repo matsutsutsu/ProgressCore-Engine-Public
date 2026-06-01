@@ -4,6 +4,7 @@
 #include "Engine/Graphics/Renderer/ModelRenderer.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
+#include "Engine/Graphics/Shader/ShaderShared.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 
 // TODO: ECS に Initialize(device) が追加されたら除去する
@@ -32,7 +33,7 @@ EnvironmentSystem::EnvironmentSystem() : SystemBase("EnvironmentSystem")
     // フォグ用定数バッファ
     // TODO: ECS に Initialize(device) が追加されたら除去する
     GpuResourceUtils::CreateDynamicConstantBuffer(
-        Graphics::Instance().GetDevice(), sizeof(CbFogData), _fogConstantBuffer.GetAddressOf());
+        Graphics::Instance().GetDevice(), sizeof(GpuData::CbFog), _fogConstantBuffer.GetAddressOf());
 }
 
 std::vector<CCL::ECS::TypeID> EnvironmentSystem::GetReadTypes() const
@@ -74,19 +75,19 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext* dc, const Rende
     }
 
     // 3. フォグ定数バッファ (b11)
-    CbFogData fogData = { {0.5f,0.5f,0.5f,1.0f},{0.0f,1000.0f,10.0f,0.0f},{},{},{},{} };
+    GpuData::CbFog fogData = { {0.5f,0.5f,0.5f,1.0f},{0.0f,1000.0f,10.0f,0.0f},{},{},{},{} };
     ID3D11ShaderResourceView* fogNoiseSrv = nullptr;
 
     auto fogView = _world->View<FogComponent>();
     if (!fogView.empty()) {
         if (auto* fog = _world->GetComponent<FogComponent>(fogView[0])) {
-            fogData.color = fog->color;
-            fogData.params = { fog->start, fog->end, fog->heightStart, fog->heightDensity };
-            fogData.center = fog->center;
-            fogData.noiseParams = { fog->noiseScale, fog->noiseStrength,
+            fogData.gFogColor = fog->color;
+            fogData.gFogParams = { fog->start, fog->end, fog->heightStart, fog->heightDensity };
+            fogData.gFogCenter = fog->center;
+            fogData.gFogNoiseParams = { fog->noiseScale, fog->noiseStrength,
                                     fog->noiseSpeed.x, fog->noiseSpeed.y };
-            fogData.rimColor = { fog->rimColor.x, fog->rimColor.y, fog->rimColor.z, 1.0f };
-            fogData.rimParams = { fog->rimPower, fog->rimStrength, 0.0f, 0.0f };
+            fogData.gFogRimColor = { fog->rimColor.x, fog->rimColor.y, fog->rimColor.z, 1.0f };
+            fogData.gFogRimParams = { fog->rimPower, fog->rimStrength, 0.0f, 0.0f };
             fogNoiseSrv = fog->noiseTextureSRV.Get();
         }
     }
@@ -94,12 +95,13 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext* dc, const Rende
     if (_fogConstantBuffer) {
         D3D11_MAPPED_SUBRESOURCE mapped;
         if (SUCCEEDED(dc->Map(_fogConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {
-            memcpy(mapped.pData, &fogData, sizeof(CbFogData));
+            memcpy(mapped.pData, &fogData, sizeof(GpuData::CbFog));
             dc->Unmap(_fogConstantBuffer.Get(), 0);
         }
         dc->PSSetConstantBuffers(SLOT_CB_FOG, 1, _fogConstantBuffer.GetAddressOf());
     }
     dc->PSSetShaderResources(SLOT_SRV_FOG_NOISE, 1, &fogNoiseSrv);
+
 
     // 4. IBL テクスチャ (t14, t15, t16)
     ID3D11ShaderResourceView* iblSRVs[3] = { nullptr, nullptr, nullptr };

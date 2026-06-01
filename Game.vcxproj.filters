@@ -1092,9 +1092,6 @@
     <ClInclude Include="Source\Engine\Serialization\Reflection\Reflection.h">
       <Filter>Source\Engine\Serialization\Reflection</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Serialization\Meta\ComponentDefine.h">
-      <Filter>Source\Engine\Serialization\Meta</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BossActionComponent.h">
       <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
     </ClInclude>
@@ -1544,6 +1541,12 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\ECS\System\CCL_SystemBase.h">
       <Filter>Source\Engine\ECS\System</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Serialization\Meta\ComponentDefine.h">
+      <Filter>Source\Engine\Serialization\Factory</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Shader\ShaderShared.h">
+      <Filter>Source\Engine\Graphics\Shader</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2347,9 +2350,6 @@
     <None Include=".clang-formatt">
       <Filter>Build</Filter>
     </None>
-    <None Include=".editorconfig">
-      <Filter>Build</Filter>
-    </None>
     <None Include="Shader\Common\Transform.hlsli">
       <Filter>Shader\Common</Filter>
     </None>
@@ -2370,6 +2370,9 @@
     </None>
     <None Include="Build\ShippingOptimize.props">
       <Filter>Build\props</Filter>
+    </None>
+    <None Include=".editorconfig">
+      <Filter>Build</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
