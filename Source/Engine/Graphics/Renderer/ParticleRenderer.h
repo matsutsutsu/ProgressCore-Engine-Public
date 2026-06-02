@@ -11,9 +11,10 @@
 struct ParticleDrawCommand {
     ParticleBufferHandle computeBuffer;
     TextureHandle        texture;
-    int                  max_particle_count;
-    int                  render_mode; // 0: 加算, 1: 半透明
+    int                  maxCount;    
+    int                  renderMode;  // 0:加算 1:半透明
 };
+
 
 // パーティクルの描画を専任で行うクラス
 class ParticleRenderer {

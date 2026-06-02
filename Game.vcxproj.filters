@@ -481,6 +481,9 @@
     <Filter Include="Source\Engine\Graphics\Shader\Material\Particle">
       <UniqueIdentifier>{7cb9b737-559a-4d3e-9a13-ed4492caa832}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Graphics\Shader\Particle">
+      <UniqueIdentifier>{7331b261-1c5e-4858-beb7-97a5a94cb0a9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1553,6 +1556,12 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\ParticleShader.h">
       <Filter>Source\Engine\Graphics\Shader\Material\Particle</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Shader\ParticleShared.h">
+      <Filter>Source\Engine\Graphics\Shader</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Components\Particle\GPUParticleBuffer.h">
+      <Filter>Source\Engine\Graphics\Components\Particle</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -1,199 +1,147 @@
 #ifndef PARTICLE_HLSLI
 #define PARTICLE_HLSLI
 
-#include "Engine/Graphics/Shader/ShaderResources.h"
-#include "Engine/Graphics/Shader/ShaderShared.h"
-#include "Shader/Common/Scene.hlsli"
-//=====================================================================
-//  GPU Particle Initializer Shader
-//  粒子の初期化処理を担当するComputeShader補助コード
-//=====================================================================
+// ===========================================================================
+// ParticleShared.h が GpuParticle / CbParticleStatic / CbParticleDynamic を定義する。
+// このファイルには HLSL 固有の型定義・ヘルパー関数のみを置く。
+// ===========================================================================
+#include "Engine/Graphics/Shader/ParticleShared.h"
+#include "Shader/Common/Scene.hlsli"   // CbScene (viewProjection, gProjection 等)
 
-
-//--------------------------------------------
-// 頂点シェーダー出力構造体
-//--------------------------------------------
-struct VS_OUT
-{
-    uint vertex_id : VERTEXID;
-};
+// C++ 側は GpuData::GpuParticle、HLSL 内コードは "particle" で統一
+typedef GpuParticle particle;
 
 //--------------------------------------------
-// ジオメトリシェーダー出力構造体
+// VS → GS 受け渡し
+//--------------------------------------------
+struct VS_OUT { uint vertex_id : VERTEXID; };
+
+//--------------------------------------------
+// GS → PS 受け渡し
 //--------------------------------------------
 struct GS_OUT
 {
-    float4 position : SV_POSITION; // スクリーン座標
-    float4 color : COLOR; // 色
-    float2 texcoord : TEXCOORD; // テクスチャ座標
-    uint type : TEXCOORD1; // パーティクルタイプ（0=Point, 1=Quad）
+    float4 position : SV_POSITION;
+    float4 color    : COLOR;
+    float2 texcoord : TEXCOORD;
+    uint   type     : TEXCOORD1;  // 0:Point 1:Quad
 };
-
 
 //--------------------------------------------
 // 定数
 //--------------------------------------------
-#define PI 3.14159265358979
-#define NUMTHREADS_X 16 // ComputeShaderスレッド数（X方向）
-
-// パーティクルの状態定義
-#define STATE_DEAD 0      // 死亡/未使用
-#define STATE_ALIVE 1     // 生存中
+#define PI           3.14159265358979f
+#define NUMTHREADS_X 16
+#define STATE_DEAD   0
+#define STATE_ALIVE  1
 
 //=====================================================================
-// 疑似乱数関数（スレッドID依存）
+// 疑似乱数 (Wang Hash ベース、高品質・独立ストリーム)
 //=====================================================================
-float rand(float n)
-{
-    // 簡易的なハッシュ型乱数。0.0～1.0の範囲で返す。
-    return frac(sin(n) * 43758.5453123);
-}
-
-// 高品質・独立乱数（Wang Hash）
 uint wangHash(uint s)
 {
-    s = (s ^ 61) ^ (s >> 16);
-    s *= 9;
-    s = s ^ (s >> 4);
-    s *= 0x27d4eb2d;
-    s = s ^ (s >> 15);
+    s = (s ^ 61u) ^ (s >> 16u);
+    s *= 9u;
+    s = s ^ (s >> 4u);
+    s *= 0x27d4eb2du;
+    s = s ^ (s >> 15u);
     return s;
 }
 
+// [0, 1) の float に変換
 float randUint(uint s)
 {
-    return (wangHash(s) & 0x00FFFFFF) / 16777216.0;
+    return (wangHash(s) & 0x00FFFFFFu) / 16777216.0f;
 }
 
-// --------------------------------------------------------
-// クォータニオン(q)でベクトル(v)を回転させる関数
-// --------------------------------------------------------
-float3 RotateVector(float3 v, float4 q)
+// クォータニオン回転
+float3 RotateByQuat(float3 v, float4 q)
 {
-    // クォータニオン回転の標準公式: v + 2 * cross(q.xyz, cross(q.xyz, v) + q.w * v)
-    return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
+    return v + 2.0f * cross(q.xyz, cross(q.xyz, v) + q.w * v);
 }
 
 //=====================================================================
-// 粒子生成関数： spawn()
-// 各スレッドが1つの粒子を担当し、初期パラメータを設定する
+// spawn() — 粒子1個を初期化する
+//
+// particle_scale は誕生/消滅サイズにベイクして p.scale フィールドを廃止。
+// p.seed を per-particle 安定シードとして設定。
 //=====================================================================
-void spawn(in uint id, inout GpuParticle p)
+void spawn(in uint id, inout particle p)
 {
-    // 独立乱数を十分に確保（用途ごとに分ける）
-    float r_rand = randUint(id * 1000u + 1u); // 位置（半径）用
-    float a_rand = randUint(id * 1000u + 2u); // 角度用
-    float speed_rand = randUint(id * 1000u + 3u); // 速度大きさ用
-    float life_rand = randUint(id * 1000u + 4u); // 寿命用（ここが重要）
-    float size_rand = randUint(id * 1000u + 5u); // サイズ用
-    float chip_rand = randUint(id * 1000u + 6u); // スプライト用
-    float ang_rand = randUint(id * 1000u + 7u); // 回転用
-    float y_rand = randUint(id * 1000u + 8u); // Yオフセット用
+    // per-particle 安定シード (id を基底とした独立ストリーム)
+    p.seed = wangHash(id);
 
-    // -------------------------
-    // 位置（均一楕円）
-    // -------------------------
-    float u = r_rand;
-    float angle = a_rand * 2.0 * PI;
-    float rMin = emission_offset.x;
-    float rMax = emission_offset.y;
-    float r = sqrt(lerp(rMin * rMin, rMax * rMax, u));
-    float sx = emission_stretch_x;
-    float sz = emission_stretch_z;
+    float r_rand     = randUint(p.seed +  1u);
+    float a_rand     = randUint(p.seed +  2u);
+    float speed_rand = randUint(p.seed +  3u);
+    float life_rand  = randUint(p.seed +  4u);
+    float size_rand  = randUint(p.seed +  5u);
+    float chip_rand  = randUint(p.seed +  6u);
+    float ang_rand   = randUint(p.seed +  7u);
+    float y_rand     = randUint(p.seed +  8u);
+
+    // ---- 発生位置（均一楕円） ----
+    float angle = a_rand * 2.0f * PI;
+    float r     = sqrt(lerp(emit_radius.x * emit_radius.x,
+                            emit_radius.y * emit_radius.y, r_rand));
+
     float3 offset;
-    offset.x = r * cos(angle) * sx;
-    offset.z = r * sin(angle) * sz;
-    offset.y = particle_offset_y * (y_rand * 2.0 - 1.0);
-    p.position = world_position + emission_position.xyz + offset;
+    offset.x = r * cos(angle) * emit_stretch.x;   // X 軸倍率
+    offset.z = r * sin(angle) * emit_stretch.y;   // Z 軸倍率
+    // emit_local_offset.w: Y 方向発生揺らぎ幅
+    offset.y = emit_local_offset.w * (y_rand * 2.0f - 1.0f);
 
-    // -------------------------
-    // 方向（円錐）と速度
-    // -------------------------
-    // 方向の角は別乱数（ここは a_rand or another one）
-    float phi = 2.0 * PI * randUint(id * 1000u + 9u); // 独立角度
-    float theta = lerp(emission_cone_angle.x, emission_cone_angle.y, randUint(id * 1000u + 10u));
+    // emit_rotation / world_position は CbParticleDynamic から
+    p.position = world_position + emit_local_offset.xyz + offset;
+
+    // ---- 速度（円錐放出） ----
+    float phi       = 2.0f * PI * randUint(p.seed + 9u);
+    float theta     = lerp(cone_angle.x, cone_angle.y, randUint(p.seed + 10u));
     float sin_theta = sin(theta);
     float cos_theta = cos(theta);
-    
-    // 1. まずローカル空間での速度ベクトルを作成 (Y軸基準)
-    float3 localVelocity;
-    localVelocity.x = sin_theta * cos(phi);
-    localVelocity.y = cos_theta; // Y-Up
-    localVelocity.z = sin_theta * sin(phi);
 
-    // 速度の大きさをランダムに決定
-    float speed = lerp(emission_speed.x, emission_speed.y, speed_rand);
-    localVelocity *= speed;
+    float3 localVel;
+    localVel.x = sin_theta * cos(phi);
+    localVel.y = cos_theta;
+    localVel.z = sin_theta * sin(phi);
+    localVel  *= lerp(emit_speed.x, emit_speed.y, speed_rand);
 
-    // ---------------------------------------------------------
-    // ローカル速度をエミッターの回転に合わせて回す！
-    // ---------------------------------------------------------
-    p.velocity = RotateVector(localVelocity, emission_rotation);
+    p.velocity     = RotateByQuat(localVel, emit_rotation);
+    p.angular_speed = lerp(emit_angular_speed.x, emit_angular_speed.y, randUint(p.seed + 11u));
+    p.mass          = 1.0f;
+    p.angle         = PI * ang_rand;
+    p.color         = float4(1, 1, 1, 1);
 
-    // -------------------------
-    // 見た目・回転
-    // -------------------------
-    p.color = float4(1, 1, 1, 1);
-    p.mass = 1.0f;
-    p.angle = PI * ang_rand;
-    p.angular_speed = lerp(emission_angular_speed.x, emission_angular_speed.y, randUint(id * 1000u + 11u));
-
-    // -------------------------
-    // 寿命　← ここを独立させる（重要）
-    // -------------------------
+    // ---- 寿命 / 年齢 ----
     p.lifespan = lerp(lifespan.x, lifespan.y, life_rand);
+    p.age      = (emit_mode == 1)
+                 ? 0.0f
+                 : -lerp(spawn_delay.x, spawn_delay.y, randUint(p.seed + 12u));
+    p.state    = STATE_ALIVE;
 
-    if (emission_mode == 1)
-        p.age = 0.0f;
-    else
-        p.age = -lerp(spawn_delay.x, spawn_delay.y, randUint(id * 1000u + 12u));
+    // ---- サイズ (particle_scale をベイク) ----
+    // size.x: 誕生時サイズ, size.y: 消滅時サイズ
+    p.size.x = emit_size.x * size_rand               * particle_scale.x;
+    p.size.y = emit_size.y * randUint(p.seed + 13u)  * particle_scale.y;
 
-    p.state = STATE_ALIVE;
-
-    // -------------------------
-    // サイズ・チップなど
-    // -------------------------
-    p.size.x = emission_size.x * size_rand;
-    p.size.y = emission_size.y * randUint(id * 1000u + 13u);
-
-    int count = sprite_sheet_grid.x * sprite_sheet_grid.y;
-    
-    // アニメーションモードによって初期チップを変える
+    // ---- スプライトシート初期コマ ----
+    int total = (int)(sprite_sheet_grid.x * sprite_sheet_grid.y);
     if (sprite_anim_mode == 1)
-    {
-        // Lifeモードなら、必ず「最初のコマ」からスタート
-        p.chip = 0;
-    }
+        p.chip = 0;                              // Life モード: 最初のコマから
     else
-    {
-        // Randomモードなら、ランダムなコマを選ぶ
-        p.chip = (uint) (chip_rand * count);
-    }
-    
-    p.type = type;
-    p.scale = particle_scale;
+        p.chip = (uint)(chip_rand * (float)total); // Random モード
 }
 
-
 //=====================================================================
-// フェードイン補間関数
+// フェード補間
 //=====================================================================
-// age: 経過時間, duration: フェードにかかる時間, exponent: 補間カーブ
 float fade_in(float duration, float age, float exponent)
 {
-    // smoothstep: 0→1間で滑らかに補間、powでカーブを制御
-    return pow(smoothstep(0.0, 1.0, age / duration), exponent);
+    return pow(smoothstep(0.0f, 1.0f, age / duration), exponent);
 }
-
-//=====================================================================
-// フェードアウト補間関数
-//=====================================================================
-// lifespan: 全寿命, age: 現在の生存時間
-float fade_out(float duration, float age, float lifespan, float exponent)
+float fade_out(float duration, float age, float ls, float exponent)
 {
-    // 残り寿命をもとにフェードアウト
-    return pow(smoothstep(0.0, 1.0, (lifespan - age) / duration), exponent);
+    return pow(smoothstep(0.0f, 1.0f, (ls - age) / duration), exponent);
 }
 
-
-#endif
+#endif // PARTICLE_HLSLI

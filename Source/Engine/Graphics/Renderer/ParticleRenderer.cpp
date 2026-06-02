@@ -94,72 +94,62 @@ void ParticleRenderer::Render(const RenderServices& services, const RenderFrameC
         dc->PSSetConstantBuffers(SLOT_CB_SCENE, 1, cbs);
     }
 
-    // =========================================================================
-    // ★ 修正: ソート処理のラムダ内で、シングルトンではなく services を参照する
-    // =========================================================================
-    std::sort(_drawCommands.begin(), _drawCommands.end(), [&services](const ParticleDrawCommand& a, const ParticleDrawCommand& b) {
-        if (a.render_mode != b.render_mode) {
-            return a.render_mode < b.render_mode;
-        }
-        ID3D11ShaderResourceView* texA = services.resources->GetTexture(a.texture);
-        ID3D11ShaderResourceView* texB = services.resources->GetTexture(b.texture);
-        return texA < texB;
+    // ソート: renderMode → テクスチャポインタ (ステート切替最小化)
+    std::sort(_drawCommands.begin(), _drawCommands.end(),
+        [&services](const ParticleDrawCommand& a, const ParticleDrawCommand& b) {
+            if (a.renderMode != b.renderMode) return a.renderMode < b.renderMode;
+            auto* ta = services.resources->GetTexture(a.texture);
+            auto* tb = services.resources->GetTexture(b.texture);
+            return ta < tb;
         });
 
-    int currentRenderMode = -1;
-    ID3D11ShaderResourceView* currentTextureSRV = reinterpret_cast<ID3D11ShaderResourceView*>(-1);
 
-    // 溜まったコマンドを一気に描画
+    int                       curRenderMode = -1;
+    ID3D11ShaderResourceView* curTexSRV = reinterpret_cast<ID3D11ShaderResourceView*>(-1);
+
     for (const auto& cmd : _drawCommands) {
-        // ★ 修正: ResourceManager::Instance() を排除
-        GpuParticleBufferSet* buffers = services.resources->GetParticleBuffer(cmd.computeBuffer);
+        GPUParticleBufferSet* buffers = services.resources->GetParticleBuffer(cmd.computeBuffer);
         if (!buffers || !buffers->particleSRV) continue;
 
-        if (currentRenderMode != cmd.render_mode) {
-            if (cmd.render_mode == 0) _psoAdditive.Apply(dc, rs);
-            else                      _psoTransparent.Apply(dc, rs);
-
+        // PSO 切り替え (renderMode が変わった時のみ)
+        if (curRenderMode != cmd.renderMode) {
+            (cmd.renderMode == 0 ? _psoAdditive : _psoTransparent).Apply(dc, rs);
             dc->OMSetDepthStencilState(rs->GetDepthStencilState(DepthState::TestOnly), 0);
-            currentRenderMode = cmd.render_mode;
+            curRenderMode = cmd.renderMode;
         }
 
-        // バッファバインド
+        // 粒子バッファ SRV
         ID3D11ShaderResourceView* srvs[] = { buffers->particleSRV };
         dc->VSSetShaderResources(SLOT_SRV_PARTICLE_BUF, 1, srvs);
         dc->GSSetShaderResources(SLOT_SRV_PARTICLE_BUF, 1, srvs);
 
-        // パーティクル定数バッファバインド
-        if (buffers->constantBuffer) {
-            ID3D11Buffer* particleCBs[] = { buffers->constantBuffer };
-            dc->VSSetConstantBuffers(SLOT_CB_PARTICLE, 1, particleCBs);
-            dc->GSSetConstantBuffers(SLOT_CB_PARTICLE, 1, particleCBs);
-            dc->PSSetConstantBuffers(SLOT_CB_PARTICLE, 1, particleCBs);
+        // ★ staticCB(b6) + dynamicCB(b7) を一括バインド
+        // ★ 旧: constantBuffer (単一 CB) → 新: staticCB + dynamicCB (2CB)
+        if (buffers->staticCB && buffers->dynamicCB) {
+            ID3D11Buffer* cbs[2] = { buffers->staticCB, buffers->dynamicCB };
+            dc->VSSetConstantBuffers(SLOT_CB_PARTICLE_STATIC, 2, cbs);
+            dc->GSSetConstantBuffers(SLOT_CB_PARTICLE_STATIC, 2, cbs);
+            dc->PSSetConstantBuffers(SLOT_CB_PARTICLE_STATIC, 2, cbs);
         }
 
-        // テクスチャバインド
-        ID3D11ShaderResourceView* mainTexSRV = services.resources->GetTexture(cmd.texture);
-        ID3D11ShaderResourceView* actualTexSRV = mainTexSRV ? mainTexSRV : defaultTexture.Get();
-
-        if (currentTextureSRV != actualTexSRV) {
-            ID3D11ShaderResourceView* texs[] = { actualTexSRV };
+        // テクスチャ (変わった時のみ)
+        auto* mainSRV = services.resources->GetTexture(cmd.texture);
+        auto* actualSRV = mainSRV ? mainSRV : defaultTexture.Get();
+        if (curTexSRV != actualSRV) {
+            ID3D11ShaderResourceView* texs[] = { actualSRV };
             dc->PSSetShaderResources(SLOT_SRV_MAT_TEX0, 1, texs);
-            currentTextureSRV = actualTexSRV;
+            curTexSRV = actualSRV;
         }
 
-        dc->Draw(cmd.max_particle_count, 0);
+        dc->Draw(static_cast<UINT>(cmd.maxCount), 0);
     }
 
-    // =========================================================
-    // ★ 修正: シェーダーの後始末を End() に委譲
-    // =========================================================
     shader->End(dc, services);
 
-    // 固有のクリーンアップ（GSSetShaderの解除等はEnd()で行われます）
-    ID3D11ShaderResourceView* nullSRVs[] = { nullptr };
-    dc->VSSetShaderResources(SLOT_SRV_PARTICLE_BUF, 1, nullSRVs);
-    dc->GSSetShaderResources(SLOT_SRV_PARTICLE_BUF, 1, nullSRVs);
-    dc->PSSetShaderResources(SLOT_SRV_MAT_TEX0, 1, nullSRVs);
-
+    ID3D11ShaderResourceView* nullSRV[] = { nullptr };
+    dc->VSSetShaderResources(SLOT_SRV_PARTICLE_BUF, 1, nullSRV);
+    dc->GSSetShaderResources(SLOT_SRV_PARTICLE_BUF, 1, nullSRV);
+    dc->PSSetShaderResources(SLOT_SRV_MAT_TEX0, 1, nullSRV);
     dc->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF);
     dc->OMSetDepthStencilState(nullptr, 0);
 }

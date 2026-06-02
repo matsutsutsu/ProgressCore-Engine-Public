@@ -457,6 +457,7 @@
     <ClInclude Include="Source\Engine\Graphics\Components\Lighting\FogComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\Lighting\LightComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\Lighting\ShadowMapConfigComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\Particle\GPUParticleBuffer.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\Particle\GPUParticleComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\BloomConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\ToneMapConfigComponent.h" />
@@ -502,6 +503,7 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\ParticleComputeShader.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\ParticleShader.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\ShadowMapShader.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\ParticleShared.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Pass\ShadowMap.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Pass\ShadowUtils.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\BloomEffect.h" />

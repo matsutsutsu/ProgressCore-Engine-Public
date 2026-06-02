@@ -1,6 +1,7 @@
 #pragma once
 #include "Engine/ECS/System/CCL_System.h"
 #include "Engine/Graphics/Components/Particle/GPUParticleComponent.h"
+#include "Engine/Graphics/Components/Particle/GPUParticleBuffer.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Graphics/Shader/ShaderReflection.h"
 
@@ -31,12 +32,12 @@ class GPUParticleUpdateSystem : public CCL::ECS::IfSystem<GPUParticleUpdateSyste
     /// @brief 1エミッタ分の初期化CSをDispatch。終了後 needsGpuInit を false にする。
     void DispatchInitCS(ID3D11DeviceContext* dc, ParticleComputeShader* cs,
         GPUParticleComponent& particle, const TransformComponent& transform,
-        GpuParticleBufferSet* buffers);
+        GPUParticleBufferSet* buffers);
 
     /// @brief 1エミッタ分の更新CSをDispatch。CB更新・ランプ/ノイズ/サンプラーをバインド。
     void DispatchUpdateCS(ID3D11DeviceContext* dc, ParticleComputeShader* cs,
         GPUParticleComponent& particle, const TransformComponent& transform,
-        GpuParticleBufferSet* buffers, float dt);
+        GPUParticleBufferSet* buffers, float dt);
 
 private:
 

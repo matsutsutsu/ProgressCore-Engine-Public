@@ -13,6 +13,7 @@
 #include "ModelResource.h"
 #include "Model.h"
 #include "MaterialData.h"
+#include "Engine/Graphics/Components/Particle/GPUParticleBuffer.h"
 #include "Engine/Graphics/RHI/RenderTarget.h"
 #include "Engine/Animation/Core/AnimSequence.h"
 #include "Engine/Animation/Core/AnimationCurve.h"
@@ -21,21 +22,7 @@
 // [Data Structures]
 // ============================================================================
 
-// コンピュートシェーダー用のバッファ群
-struct GpuParticleBufferSet {
-    ID3D11Buffer* particleBuffer = nullptr;
-    ID3D11UnorderedAccessView* particleUAV    = nullptr;
-    ID3D11ShaderResourceView* particleSRV    = nullptr;
-    ID3D11Buffer* constantBuffer = nullptr;
 
-    GpuParticleBufferSet() = default;
-    GpuParticleBufferSet(const GpuParticleBufferSet&) = delete;
-    GpuParticleBufferSet& operator=(const GpuParticleBufferSet&) = delete;
-
-    GpuParticleBufferSet(GpuParticleBufferSet&& other) noexcept;
-    GpuParticleBufferSet& operator=(GpuParticleBufferSet&& other) noexcept;
-    ~GpuParticleBufferSet();
-};
 
 // ============================================================================
 // [Handle Definitions]
@@ -45,7 +32,7 @@ using TextureHandle        = CCL::Handle<TextureResource>;
 using ModelHandle          = CCL::Handle<ModelResource>;
 using ModelInstanceHandle  = CCL::Handle<Model>;
 using MaterialHandle       = CCL::Handle<MaterialData>;
-using ParticleBufferHandle = CCL::Handle<GpuParticleBufferSet>;
+using ParticleBufferHandle = CCL::Handle<GPUParticleBufferSet>;
 using RenderTargetHandle   = CCL::Handle<RenderTarget>;
 using AnimSequenceHandle   = CCL::Handle<AnimSequence>;
 
@@ -118,7 +105,7 @@ public:
     // [7] GPU Particle Buffer
     // ---------------------------------------------------------
     ParticleBufferHandle CreateParticleBuffer();
-    GpuParticleBufferSet* GetParticleBuffer(ParticleBufferHandle handle);
+    GPUParticleBufferSet* GetParticleBuffer(ParticleBufferHandle handle);
     void UnloadParticleBuffer(ParticleBufferHandle handle);
 
     // ---------------------------------------------------------
@@ -134,7 +121,7 @@ private:
     CCL::ResourcePool<MaterialData>         m_materialPool;
     CCL::ResourcePool<AnimSequence>         m_animSequencePool;
     CCL::ResourcePool<RenderTarget>         m_renderTargetPool;
-    CCL::ResourcePool<GpuParticleBufferSet> m_particleBufferPool;
+    CCL::ResourcePool<GPUParticleBufferSet> m_particleBufferPool;
     CCL::ResourcePool<AnimationCurve>       m_animCurvePool; 
 
     // --- Registries (重複ロード防止のキャッシュ) ---

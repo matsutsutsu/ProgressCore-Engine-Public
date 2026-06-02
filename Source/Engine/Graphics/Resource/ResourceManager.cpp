@@ -18,48 +18,6 @@
 using namespace CCL::Utils;
 
 // ============================================================================
-// GpuParticleBufferSet ライフサイクル実装
-// ============================================================================
-GpuParticleBufferSet::GpuParticleBufferSet(GpuParticleBufferSet&& other) noexcept {
-    particleBuffer = other.particleBuffer;
-    particleUAV = other.particleUAV;
-    particleSRV = other.particleSRV;
-    constantBuffer = other.constantBuffer;
-
-    other.particleBuffer = nullptr;
-    other.particleUAV = nullptr;
-    other.particleSRV = nullptr;
-    other.constantBuffer = nullptr;
-}
-
-GpuParticleBufferSet& GpuParticleBufferSet::operator=(GpuParticleBufferSet&& other) noexcept {
-    if (this != &other) {
-        if (particleBuffer) particleBuffer->Release();
-        if (particleUAV)    particleUAV->Release();
-        if (particleSRV)    particleSRV->Release();
-        if (constantBuffer) constantBuffer->Release();
-
-        particleBuffer = other.particleBuffer;
-        particleUAV = other.particleUAV;
-        particleSRV = other.particleSRV;
-        constantBuffer = other.constantBuffer;
-
-        other.particleBuffer = nullptr;
-        other.particleUAV = nullptr;
-        other.particleSRV = nullptr;
-        other.constantBuffer = nullptr;
-    }
-    return *this;
-}
-
-GpuParticleBufferSet::~GpuParticleBufferSet() {
-    if (particleBuffer) { particleBuffer->Release(); particleBuffer = nullptr; }
-    if (particleUAV) { particleUAV->Release();    particleUAV = nullptr; }
-    if (particleSRV) { particleSRV->Release();    particleSRV = nullptr; }
-    if (constantBuffer) { constantBuffer->Release(); constantBuffer = nullptr; }
-}
-
-// ============================================================================
 // [1] Texture
 // ============================================================================
 TextureHandle ResourceManager::LoadTexture(const char* filename) {
@@ -329,7 +287,7 @@ ParticleBufferHandle ResourceManager::CreateParticleBuffer() {
     return m_particleBufferPool.Create();
 }
 
-GpuParticleBufferSet* ResourceManager::GetParticleBuffer(ParticleBufferHandle handle) {
+GPUParticleBufferSet* ResourceManager::GetParticleBuffer(ParticleBufferHandle handle) {
     return m_particleBufferPool.Get(handle);
 }
 

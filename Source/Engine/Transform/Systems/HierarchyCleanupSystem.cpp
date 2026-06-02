@@ -75,7 +75,7 @@ void HierarchyCleanupSystem::ExecuteCleanup(CCL::ECS::Core::World& world)
         }
 
         if (isPooled) {
-            Prefab::ReturnParticleToPool(world, targetID);
+            //Prefab::ReturnParticleToPool(world, targetID);
             world.RequestRemoveComponent<Tag::DestroyTag>(targetID);
         }
         else {

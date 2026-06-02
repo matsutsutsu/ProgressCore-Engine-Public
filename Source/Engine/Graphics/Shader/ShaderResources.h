@@ -41,7 +41,13 @@
 
 // --- Per-object (ModelRenderer がバインド) ---
 #define SLOT_CB_SKELETON        12  // boneTransforms[256]
-#define SLOT_CB_PARTICLE        13
+
+// --- Per-emitter (GPUParticleUpdateSystem / ParticleRenderer がバインド) ---
+// Static : Desc 由来の設定値。変更時のみ upload (176 bytes)
+// Dynamic: ランタイム値。毎フレーム upload (48 bytes)
+// ★ 2スロットを連続して取得し、SetConstantBuffers(STATIC, 2, ...) で一括バインド可能
+#define SLOT_CB_PARTICLE_STATIC  6   // 旧 13
+#define SLOT_CB_PARTICLE_DYNAMIC 7   // 旧 14 (範囲外だった)
 
 // ==================================================================
 // Shader Resources (SRV)

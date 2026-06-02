@@ -132,10 +132,6 @@ Framework::~Framework()
 	// ★ ダイアログ履歴を保存
 	Engine::FileDialog::SaveHistory();
 
-	// 2. その後に、静的（static）なキャッシュを片付ける
-    // これらが「デバイスへの参照」を握っている最後の犯人たちです。
-    Prefab::Cleanup();
-
 	Logger::Instance().Flush();
 	Logger::Instance().ClearSinks(); // shared_ptr 循環参照防止
 

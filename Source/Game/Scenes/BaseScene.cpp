@@ -51,10 +51,6 @@ void BaseScene::Initialize()
         0.1f, 1000.0f);
     cam->SetLookAt({ 0.0f, 10.0f, -10.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f });
 
-
-
-    Prefab::Initialize(device);
-
     // ECSコンテキストの生成
     _ecsContext = std::make_unique<CCL::ECS::ECSContext>();
     _worldPtr   = _ecsContext->GetWorld(); // 互換性用
