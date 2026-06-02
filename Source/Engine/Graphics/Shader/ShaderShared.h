@@ -175,74 +175,108 @@ CB_STRUCT(CbFog, SLOT_CB_FOG)
 
 
 // ==================================================================
-// GPUパーティクルデータ（1粒ごとの情報）
+// GPUパーティクルデータ（StructuredBuffer の1要素 / 粒子1個の状態）
+//
+// ★ HLSL 側の struct particle と完全一致させること。
+//    フィールドを追加する場合は particle.hlsli も同時に更新し、
+//    下の static_assert を必ず更新すること。
 // ==================================================================
-struct GpuParticle              // HLSL側の "GpuParticle" に対応
+struct GpuParticle
 {
-    int    state;           // 状態 (0: 死亡/待機, 1: 生存中)
-    float  angle;           // 現在の回転角度（ラジアン）
-    int    pad0[2];         // (パディング)
+    int    state;           // 0:死亡/待機  1:生存中
+    float  angle;           // 現在の回転角度 (rad)
+    int    pad0[2];
     float4 color;           // 現在のカラー (RGBA)
-    float3 position;        // 現在のワールド座標
-    float  mass;            // 質量（重力や風などの影響の受けやすさ）
-    float  angular_speed;   // 角速度（回転の速さ）
-    float3 velocity;        // 現在の移動速度ベクトル
-    float  lifespan;        // 最大寿命（秒）
-    float  age;             // 生まれてからの経過時間（秒）
-    float2 size;            // 現在のサイズ (幅, 高さ)
-    uint   chip;            // スプライトシートの現在のコマ番号
-    uint   type;            // パーティクルタイプ (0: Point, 1: Quad)
+    float3 position;        // ワールド座標
+    float  mass;            // 質量（重力・ノイズの受けやすさ）
+    float  angular_speed;   // 角速度 (rad/s)
+    float3 velocity;        // 移動速度ベクトル
+    float  lifespan;        // 最大寿命 (秒)
+    float  age;             // 経過時間 (秒、負=発生前待機)
+    float2 size;            // x:出現サイズ, y:消滅サイズ
+    uint   chip;            // スプライトシートのコマ番号
+    uint   type;            // 0:Point 1:Quad
     float2 scale;           // 全体スケール乗数
 };
 
 // ==================================================================
 // パーティクル定数バッファ（エミッタ全体の設定）
+//
+// フィールドは「権威データ (Desc 由来)」と「ランタイム値」に分類される。
+// C++ 側は ParticleEmitterDesc + ランタイム値から毎フレーム組み立てる。
+// HLSL 側は particle.hlsli に同名フィールドを持つ cbuffer として宣言される。
+//
+// 【レイアウト変更履歴】
+//   - emission_position  → emission_local_offset (xyz: ローカルオフセット, w: offsetY)
+//   - particle_offset_y  → emission_local_offset.w に統合（フィールド削減）
+//   - emission_stretch_x/z → float2 emission_stretch に統合（last row 整理）
+//   - 最終16バイト: emission_stretch(8) + burst_trigger(4) + _pad_end(4)
+//
+// 【将来: 静的/動的 CB 分割（TODO）】
+//   エミッタ数が多くなった場合のパフォーマンス最適化として、
+//   以下の2つに分割すること。実装時は ShaderResources.h に
+//   SLOT_CB_PARTICLE_DYN を追加し、GpuParticleBufferSet に
+//   dynamicCB を追加する。
+//
+//   CbParticleStatic  (b13) — Desc 由来。変更時のみ upload。
+//   CbParticleDynamic (b14) — world_position / time / delta_time /
+//                              burst_trigger / emission_rotation。
+//                              毎フレーム upload (32 bytes 程度)。
 // ==================================================================
 CB_STRUCT(CbParticle, SLOT_CB_PARTICLE)
 {
-    // ---- 発生源（エミッタ）の基本パラメータ群 ----
-    float4 emission_position;       // 粒子が発生する中心位置（ワールド座標）
-    float4 emission_rotation;       // エミッタの回転（クォータニオン）
-    float2 emission_offset;         // 発生範囲（半径）x:最小, y:最大
-    float2 emission_size;           // サイズ設定 x:出現時, y:消滅時
-    float2 emission_cone_angle;     // 放出角度範囲（ラジアン）
-    float2 emission_speed;          // 初速度範囲
-    float2 emission_angular_speed;  // 角速度範囲（回転演出）
-    float2 lifespan;                // 寿命（秒）範囲
-    float2 spawn_delay;             // 出現遅延（秒）範囲
-    float2 fade_duration;           // フェード時間（x:フェードイン, y:フェードアウト）
-    float4 manual_color;            // 手動カラー補正（RGBA乗算）
+    // ---- Desc 由来（変更時のみ更新） ----
 
-    // ---- シミュレーション共通値 ----
-    float  time;                    // 経過時間（フレーム全体）
-    float  delta_time;              // 1フレームの経過時間
-    float  noise_scale;             // 乱流ノイズの細かさ
-    float  noise_strength;          // 乱流ノイズの強さ
+    // 発生位置ローカルオフセット (xyz) + Y方向揺らぎ幅 (w)
+    //   world_position (ランタイム) に加算して粒子初期位置を決める
+    float4 emission_local_offset;       // offset   0
 
-    float  gravity;                 // 重力の強さ（マイナスで下方向）
-    float  velocity_stretch;        // 速度に応じた引き伸ばし係数
-    float2 uv_scroll_speed;         // UVアニメーションのスクロール速度
+    // ★ ランタイム ---- エミッタのワールド回転 (クォータニオン)
+    float4 emission_rotation;           // offset  16
 
-    int    sprite_anim_mode;        // スプライト進行 (0: ランダム, 1: 寿命に合わせる)
-    int    render_mode;             // 描画モード (0: 加算, 1: 半透明)
-    float2 padding1;                // (パディング)
+    float2 emission_offset;             // offset  32  発生半径 min/max
+    float2 emission_size;               // offset  40  サイズ x:出現 y:消滅
+    float2 emission_cone_angle;         // offset  48  放出角度範囲 (rad)
+    float2 emission_speed;              // offset  56  初速度範囲
+    float2 emission_angular_speed;      // offset  64  角速度範囲
+    float2 lifespan;                    // offset  72  寿命範囲 (秒)
+    float2 spawn_delay;                 // offset  80  出現遅延範囲 (秒)
+    float2 fade_duration;               // offset  88  フェード in/out (秒)
+    float4 manual_color;                // offset  96  手動カラー (RGBA 乗算)
 
-    uint2  sprite_sheet_grid;       // スプライトシートの分割数 (x: 列, y: 行)
-    float2 particle_scale;          // 全体のスケール乗数
+    // ★ ランタイム ----
+    float  time;                        // offset 112  累積経過時間 (秒)
+    float  delta_time;                  // offset 116  1フレームの秒数
+    float  noise_scale;                 // offset 120  乱流ノイズスケール
+    float  noise_strength;              // offset 124  乱流ノイズ強度
 
-    float3 world_position;          // エミッタのワールド座標
-    int    color_mode;              // カラーモード (0: 手動, 1: 温度チャート参照)
+    float  gravity;                     // offset 128  重力 (マイナス=下方向)
+    float  velocity_stretch;            // offset 132  速度ストレッチ係数
+    float2 uv_scroll_speed;             // offset 136  UVスクロール速度
 
-    int    max_particle_count;      // 粒子の最大発生数
-    int    type;                    // 種類
-    int    emission_mode;           // 放出モード (0: 継続, 1: バースト)
-    int    burst_count;             // バースト時の瞬間発生数
+    int    sprite_anim_mode;            // offset 144  0:ランダム 1:寿命連動
+    int    render_mode;                 // offset 148  0:加算 1:半透明
+    float2 padding1;                    // offset 152
 
-    float  burst_trigger;           // バースト発動トリガー (> 0 で発動)
-    float  particle_offset_y;       // 発生位置のYオフセット
-    float  emission_stretch_x;      // X方向の広がり
-    float  emission_stretch_z;      // Z方向の広がり
+    uint2  sprite_sheet_grid;           // offset 160  スプライトシート分割数 (列, 行)
+    float2 particle_scale;              // offset 168  全体スケール乗数
+
+    // ★ ランタイム ----
+    float3 world_position;              // offset 176  エミッタのワールド座標 (Transformから)
+    int    color_mode;                  // offset 188  0:手動 1:テンパーチャート
+
+    int    max_particle_count;          // offset 192  粒子の最大数
+    int    type;                        // offset 196  0:Point 1:Quad
+    int    emission_mode;               // offset 200  0:継続 1:バースト
+    int    burst_count;                 // offset 204  バースト時の発生数
+
+    // 最終行 (offset 208-223) ── 整列ルール: float2(8B) は 8B 境界から開始
+    float2 emission_stretch;            // offset 208  XZ 方向ストレッチ (x:X軸, y:Z軸)
+    // ★ ランタイム ----
+    float  burst_trigger;               // offset 216  >0 でバースト発動
+    float  _pad_end;                    // offset 220  padding
 };
+// 合計: 224 bytes
 
 
 // ==================================================================
