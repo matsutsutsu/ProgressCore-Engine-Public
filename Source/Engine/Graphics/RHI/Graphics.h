@@ -70,7 +70,12 @@ public:
     // ----------------------------------------------------------------
     void Clear(float r, float g, float b, float a, bool useGameRTV) { _gfxDevice.Clear(r, g, b, a, useGameRTV); }
     void SetRenderTargets(bool useGameRTV) { _gfxDevice.SetRenderTargets(useGameRTV); }
-    void Present(UINT syncInterval) { _gfxDevice.Present(syncInterval); }
+
+    /**
+     * @brief スワップチェーンを提示する。デバイスロスト検出時は false を返す。
+     * @return デバイスロストなら false。呼び出し元は IsDeviceLost() を確認すること。
+     */
+    bool Present(UINT syncInterval);
 
     // ----------------------------------------------------------------
     //  アクセサ（GraphicsDevice デリゲート）
@@ -99,6 +104,23 @@ public:
     LightManager*       GetLightManager()       const       { return _lightManager.get(); }
     PostProcessManager* GetPostProcessManager() const       { return _postProcess.get(); }
     Camera*             GetMainCamera()         noexcept    { return &_mainCamera; }
+
+    // ----------------------------------------------------------------
+    //  デバイスロスト対応
+    // ----------------------------------------------------------------
+    /**
+     * @brief デバイスロスト状態かどうかを返す。
+     *        Present() が false を返した後にセットされる。
+     */
+    bool IsDeviceLost() const noexcept { return _deviceLost; }
+ 
+    /**
+     * @brief デバイスロストからの復帰を試みる。
+     *        内部で Shutdown() → Initialize(hWnd) を再実行する。
+     *        復帰後は ShaderRegistry と ResourceManager のリセットが完了している。
+     * @return 復帰成功なら true。失敗したらプロセスを終了すること。
+     */
+    bool RecoverFromDeviceLost();
 
     /**
      * @brief パイプラインに渡された RenderServices への const 参照を返す。
@@ -139,4 +161,7 @@ private:
 
     void SetupRenderPipeline();
     void UnbindAllResources(ID3D11DeviceContext* dc);
+
+    bool _deviceLost = false; ///< Present() がデバイスロストを検出するとセットされる
+
 };

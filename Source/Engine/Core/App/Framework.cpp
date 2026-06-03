@@ -8,6 +8,7 @@
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Platform/Input/Input.h"
 #include "Engine/Scene/SceneManager.h"
+#include "Game/Scenes/BaseScene.h"
 
 // ★ 必要なヘッダをインクルード
 #include "Engine/Audio/FmodIntegration/FmodAudioManager.h"
@@ -338,7 +339,13 @@ void Framework::Render(float elapsedTime)
 #endif
 
             // 画面表示
-            Graphics::Instance().Present(syncInterval);
+			if (!Graphics::Instance().Present(syncInterval)) {
+				// ① GPU リソース再構築（Shutdown → Initialize）
+				Graphics::Instance().RecoverFromDeviceLost();
+				// ② 現在のシーンに通知（ECS ワールドを作り直してリソースを再ロード）
+				if (auto* scene = dynamic_cast<BaseScene*>(SceneManager::Instance().GetCurrentScene()))
+					scene->OnDeviceRecreated();
+			}
     }
 	
 }

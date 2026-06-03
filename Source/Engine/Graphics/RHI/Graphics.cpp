@@ -234,3 +234,91 @@ void Graphics::Shutdown()
     // D3D11 RHI 層を最後に解放
     _gfxDevice.Shutdown();
 }
+
+
+
+// ============================================================
+//  Present（デバイスロスト検出付き）
+// ============================================================
+/**
+ * @brief スワップチェーンを提示する。
+ *        DXGI_ERROR_DEVICE_REMOVED / DEVICE_RESET を受け取ったら
+ *        _deviceLost フラグをセットして false を返す。
+ *        呼び出し元は IsDeviceLost() を確認し RecoverFromDeviceLost() を呼ぶこと。
+ */
+bool Graphics::Present(UINT syncInterval)
+{
+    HRESULT hr = _gfxDevice.Present(syncInterval);
+
+    // ウィンドウが完全に隠れている状態: 描画はスキップされるが正常
+    if (hr == DXGI_STATUS_OCCLUDED) return true;
+
+    // ===== デバイスロスト検出 =====
+    if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
+    {
+        // 実際の原因コードをログに残す
+        const HRESULT reason = _gfxDevice.GetDeviceRemovedReason();
+        char buf[128];
+        sprintf_s(buf,
+            "[Graphics] !!! Device lost detected. Reason=0x%08X "
+            "(HUNG=0x887A0006 RESET=0x887A0007 REMOVED=0x887A0005 DRIVER=0x887A0020)\n",
+            static_cast<unsigned int>(reason));
+        OutputDebugStringA(buf);
+
+        _deviceLost = true;
+        return false;
+    }
+
+    _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+    return true;
+}
+
+// ============================================================
+//  RecoverFromDeviceLost
+// ============================================================
+/**
+ * @brief デバイスロストからの完全復帰。
+ *
+ * @details 復帰の流れ:
+ *  1. HWND を保存（Shutdown 後も _gfxDevice._hWnd は生きている）
+ *  2. Shutdown()   → 全 D3D リソースを解放
+ *  3. ShaderRegistry・ResourceManager のキャッシュをクリア
+ *  4. Initialize() → 新しいデバイスで全リソースを再生成
+ *
+ * @note 復帰後、ゲームシーンが持つテクスチャ・メッシュは再ロードが必要です。
+ *       BaseScene::OnDeviceRecreated() 等を追加してシーン側に通知してください。
+ *
+ * @return 復帰成功なら true。失敗した場合はアプリを終了してください。
+ */
+bool Graphics::RecoverFromDeviceLost()
+{
+    OutputDebugStringA("[Graphics] ===== Device Lost Recovery: START =====\n");
+
+    // ---- Step 1: HWND の保存 ----
+    // Shutdown() を呼んでも GraphicsDevice._hWnd はリセットされないため安全
+    HWND hWnd = _gfxDevice.GetWindowHandle();
+    if (!hWnd)
+    {
+        OutputDebugStringA("[Graphics] RecoverFromDeviceLost: HWND が無効です。復帰失敗。\n");
+        return false;
+    }
+
+    // ---- Step 2: 全 D3D リソース解放 ----
+    // Shutdown() は以下をまとめて行う:
+    //   - ResourceManager::ClearAll()   テクスチャ・メッシュなど全 GPU リソース
+    //   - ShaderRegistry::ClearAll()    シェーダーキャッシュとファクトリ
+    //   - _pipeline → サブシステム → _gfxDevice の順で解放
+    Shutdown();
+    _deviceLost = false;
+
+    // ---- Step 3: 新しいデバイスで全リソースを再生成 ----
+    // Initialize() は以下を行う:
+    //   - GraphicsDevice → 新しい D3D11 デバイス・スワップチェーンを生成
+    //   - RegisterMaterialShader / RegisterShader → ファクトリを再登録
+    //   - SetupRenderPipeline() → パイプライン・パスを再構築
+    // シェーダーインスタンスは GetShader() が初回呼び出し時に.csoからロードし直す
+    Initialize(hWnd);
+
+    OutputDebugStringA("[Graphics] ===== Device Lost Recovery: COMPLETE =====\n");
+    return true;
+}

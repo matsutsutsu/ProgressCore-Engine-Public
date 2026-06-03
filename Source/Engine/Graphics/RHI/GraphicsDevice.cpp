@@ -175,7 +175,17 @@ void GraphicsDevice::SetRenderTargets(bool useGameRTV)
     _context->RSSetViewports(1, &_viewport);
 }
 
-void GraphicsDevice::Present(UINT syncInterval)
+
+HRESULT GraphicsDevice::Present(UINT syncInterval)
 {
-    _swapChain->Present(syncInterval, 0);
+    return _swapChain->Present(syncInterval, 0);
+}
+
+/**
+ * @brief デバイスが失われた原因コードを返す。
+ *        DXGI_ERROR_DEVICE_HUNG / _RESET / _REMOVED / DXGI_ERROR_DRIVER_INTERNAL_ERROR など
+ */
+HRESULT GraphicsDevice::GetDeviceRemovedReason() const noexcept
+{
+    return _device ? _device->GetDeviceRemovedReason() : DXGI_ERROR_DEVICE_REMOVED;
 }

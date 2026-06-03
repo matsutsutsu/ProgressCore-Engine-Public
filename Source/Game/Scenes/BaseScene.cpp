@@ -208,3 +208,39 @@ void BaseScene::ExecutePendingSceneOperations()
         _pendingSaveScenePath.clear();
     }
 }
+
+// ============================================================
+//  OnDeviceRecreated（デバイスロスト復帰後）
+// ============================================================
+/**
+ * @brief GPU デバイス復帰後に Framework から呼ばれるデフォルト実装。
+ *
+ * @details
+ *  Graphics::RecoverFromDeviceLost() が内部で Shutdown → Initialize を行い、
+ *  D3D パイプライン・シェーダー・PostProcessManager はすべて再構築済みの状態でここに来る。
+ *
+ *  この実装では ECS ワールドを作り直して Initialize → Start を再呼び出しする。
+ *  これにより ResourceManager にロードし直された新しいリソースで正常動作する。
+ *
+ *  ⚠️ ゲームの進行状態（エンティティ位置・HP など）はリセットされる。
+ *  状態を保持したい場合は派生クラスでオーバーライドし、
+ *  セーブデータから復元するなどの処理を追加してください。
+ */
+void BaseScene::OnDeviceRecreated()
+{
+	CCL_LOG_INFO(LogCategory::Core,"[BaseScene] OnDeviceRecreated: Device lost recovered. Reinitializing scene...\n");
+    
+    // --- 旧 ECS ワールドを安全に破棄 ---
+    // _ecsContext がリセットされると、内部のすべてのエンティティ・コンポーネント・
+    // システムが解放される。この時点で旧リソースのハンドルも無効になる。
+    _ecsContext.reset();
+    _worldPtr = nullptr;
+
+    // --- シーンを完全に再初期化 ---
+    // Initialize() でECSインフラを再構築 → RegisterSystems() で全システムを再登録
+    // シーンファイルのロードが必要な場合は派生クラスの Initialize() または Start() で行う
+    Initialize();
+    Start();
+
+    CCL_LOG_INFO(LogCategory::Core, "[BaseScene] OnDeviceRecreated: Complete.");
+}
