@@ -5,6 +5,7 @@
 #include <vector>
 #include <algorithm>
 #include <filesystem>
+#include "Engine/Graphics/RHI/Graphics.h"
 
 using namespace Microsoft::WRL;
 namespace fs = std::filesystem;
@@ -130,6 +131,8 @@ ComPtr<ID3D11ShaderResourceView> ShellIconLoader::CreateSRVFromHICON(
 
     ComPtr<ID3D11ShaderResourceView> srv;
     device->CreateShaderResourceView(texture.Get(), nullptr, &srv);
+
+	//SetDebugName(srv.Get(), L"ShellIcon");
 
     DeleteObject(iconInfo.hbmColor);
     DeleteObject(iconInfo.hbmMask);

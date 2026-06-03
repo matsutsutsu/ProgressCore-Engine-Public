@@ -17,6 +17,30 @@
 
 using namespace CCL::Utils;
 
+void ResourceManager::ClearAll()
+{
+    // マルチスレッド対応の場合はロックをかける
+    std::lock_guard<std::mutex> lock(_mutex);
+
+    // 1. キャッシュ（Registry）のクリア
+    m_textureRegistry.clear();
+    m_modelRegistry.clear();
+    m_animSequenceRegistry.clear();
+    m_assetPathRegistry.clear();
+    m_animCurveRegistry.clear();
+
+    // 2. 実体（Pool）のクリア
+    // ※ 内部の ComPtr がここで一斉に Release() されます
+    m_texturePool.Clear();
+    m_modelPool.Clear();
+    m_modelInstancePool.Clear();
+    m_materialPool.Clear();
+    m_animSequencePool.Clear();
+    m_renderTargetPool.Clear();
+    m_particleBufferPool.Clear();
+    m_animCurvePool.Clear();
+}
+
 // ============================================================================
 // [1] Texture
 // ============================================================================
@@ -38,6 +62,12 @@ TextureHandle ResourceManager::LoadTexture(const char* filename) {
     GpuResourceUtils::LoadTexture(Graphics::Instance().GetDevice(), filename, srv.GetAddressOf());
 
     if (srv) {
+
+        // ==========================================================
+        // ★ 名札付けを追加：どのファイル名のテクスチャか一目でわかるようにする
+        // ==========================================================
+        SetDebugName(srv.Get(), std::string("Tex_") + filename);
+
         // 3. 登録の瞬間だけ再度ロックする
         std::lock_guard<std::mutex> lock(_mutex);
 
@@ -51,6 +81,12 @@ TextureHandle ResourceManager::LoadTexture(const char* filename) {
 
 TextureHandle ResourceManager::RegisterTexture(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv) {
     if (!srv) return TextureHandle{};
+
+    // ==========================================================
+    // ★ 抜け道(裏口)から登録された SRV にも名札を付ける！
+    // ==========================================================
+    SetDebugName(srv.Get(), "RegisteredTexture_UnknownSource");
+
     return m_texturePool.Create(srv);
 }
 
@@ -283,8 +319,60 @@ void ResourceManager::UnloadRenderTarget(RenderTargetHandle handle) {
 // ============================================================================
 // [7] GPU Particle Buffer
 // ============================================================================
-ParticleBufferHandle ResourceManager::CreateParticleBuffer() {
-    return m_particleBufferPool.Create();
+ParticleBufferHandle ResourceManager::CreateParticleBuffer(ID3D11Device* device, int maxParticles) {
+    ParticleBufferHandle handle = m_particleBufferPool.Create();
+    GPUParticleBufferSet* buffers = m_particleBufferPool.Get(handle);
+    if (!buffers) return handle;
+
+    HRESULT hr;
+
+    // ① 構造化バッファ (Structured Buffer)
+    D3D11_BUFFER_DESC bufDesc = {};
+    bufDesc.ByteWidth = sizeof(GpuData::GpuParticle) * maxParticles;
+    bufDesc.Usage = D3D11_USAGE_DEFAULT;
+    bufDesc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+    bufDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+    bufDesc.StructureByteStride = sizeof(GpuData::GpuParticle);
+    hr = device->CreateBuffer(&bufDesc, nullptr, buffers->particleBuffer.ReleaseAndGetAddressOf());
+
+    // ② UAV (Compute Shader 書き込み用)
+    D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+    uavDesc.Format = DXGI_FORMAT_UNKNOWN;
+    uavDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+    uavDesc.Buffer.NumElements = maxParticles;
+    hr = device->CreateUnorderedAccessView(buffers->particleBuffer.Get(), &uavDesc, buffers->particleUAV.ReleaseAndGetAddressOf());
+
+    // ③ SRV (Vertex/Geometry Shader 読み取り用)
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+    srvDesc.Buffer.NumElements = maxParticles;
+    hr = device->CreateShaderResourceView(buffers->particleBuffer.Get(), &srvDesc, buffers->particleSRV.ReleaseAndGetAddressOf());
+
+    // ④ 定数バッファ (staticCB & dynamicCB)
+    // ※DirectXのルールで定数バッファのサイズは16の倍数である必要があるため、アライメント計算を入れる
+    D3D11_BUFFER_DESC cbDesc = {};
+    cbDesc.Usage = D3D11_USAGE_DEFAULT;
+    cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+
+    // -- staticCB の作成 --
+    cbDesc.ByteWidth = sizeof(GpuData::CbParticleStatic);
+    cbDesc.ByteWidth = (cbDesc.ByteWidth + 15) / 16 * 16;
+    hr = device->CreateBuffer(&cbDesc, nullptr, buffers->staticCB.ReleaseAndGetAddressOf());
+
+    // -- dynamicCB の作成 --
+    cbDesc.ByteWidth = sizeof(GpuData::CbParticleDynamic);
+    cbDesc.ByteWidth = (cbDesc.ByteWidth + 15) / 16 * 16;
+    hr = device->CreateBuffer(&cbDesc, nullptr, buffers->dynamicCB.ReleaseAndGetAddressOf());
+
+    // ⑤ 究極のデバッグ武器：名札付け
+    SetDebugName(buffers->particleBuffer.Get(), "Particle_StructuredBuffer");
+    SetDebugName(buffers->particleUAV.Get(), "Particle_UAV");
+    SetDebugName(buffers->particleSRV.Get(), "Particle_SRV");
+    SetDebugName(buffers->staticCB.Get(), "Particle_StaticCB");
+    SetDebugName(buffers->dynamicCB.Get(), "Particle_DynamicCB");
+
+    return handle;
 }
 
 GPUParticleBufferSet* ResourceManager::GetParticleBuffer(ParticleBufferHandle handle) {

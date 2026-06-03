@@ -51,6 +51,9 @@ public:
         return instance;
     }
 
+    // 全リソースの強制解放
+    void ClearAll();
+
     // ---------------------------------------------------------
     // [1] Texture (Static)
     // ---------------------------------------------------------
@@ -104,7 +107,7 @@ public:
     // ---------------------------------------------------------
     // [7] GPU Particle Buffer
     // ---------------------------------------------------------
-    ParticleBufferHandle CreateParticleBuffer();
+    ParticleBufferHandle CreateParticleBuffer(ID3D11Device* device, int maxParticles);
     GPUParticleBufferSet* GetParticleBuffer(ParticleBufferHandle handle);
     void UnloadParticleBuffer(ParticleBufferHandle handle);
 

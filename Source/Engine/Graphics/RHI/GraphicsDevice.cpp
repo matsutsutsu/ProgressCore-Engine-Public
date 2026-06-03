@@ -1,6 +1,7 @@
 #include "GraphicsDevice.h"
 #include "Engine/Core/Math/Misc.h"
 #include "Engine/Graphics/Shader/ShaderShared.h"  // _ASSERT_EXPR, HRTrace
+#include "Engine/Graphics/RHI/Graphics.h"
 
 // CbScene 構造体（GraphicsDevice が物理バッファを持ち、Graphics が内容を埋める）
 // バッファサイズだけ知れればよいため private static constexpr で宣言
@@ -93,6 +94,7 @@ void GraphicsDevice::Initialize(HWND hWnd)
         _device->CreateTexture2D(&t, nullptr, _gameTex.GetAddressOf());
         _device->CreateRenderTargetView(_gameTex.Get(), nullptr, _gameRTV.GetAddressOf());
         _device->CreateShaderResourceView(_gameTex.Get(), nullptr, _gameSRV.GetAddressOf());
+        SetDebugName(_gameSRV.Get(), "GameView_SRV");
     }
 
     // ---- CbScene 定数バッファ (b8) ----
@@ -116,15 +118,9 @@ void GraphicsDevice::Shutdown()
         _context->Flush();
     }
 
-    // ② ライブオブジェクトレポート（必要時に有効化）
-    if (_device) {
-        Microsoft::WRL::ComPtr<ID3D11Debug> debug;
-        if (SUCCEEDED(_device.As(&debug))) {
-            // debug->ReportLiveObjects(D3D11_RLDO_DETAIL | D3D11_RLDO_IGNORE_INTERNAL);
-        }
-    }
 
-    // ③ 生成逆順に解放
+
+    // ② GraphicsDevice 自身が持っているリソースを【先に】全て手放す！
     _sceneConstantBuffer.Reset();
     _gameSRV.Reset();
     _gameRTV.Reset();
@@ -133,6 +129,22 @@ void GraphicsDevice::Shutdown()
     _backBufferRTV.Reset();
     _swapChain.Reset();
     _context.Reset();
+
+    // ③ この時点でデバイス（_device）に残っているものは「真のリーク（犯人）」だけ！
+    // ここでレポートを出力する デバッグ時のみ
+#if ENABLE_EDITOR
+    if (_device) {
+        Microsoft::WRL::ComPtr<ID3D11Debug> debug;
+        if (SUCCEEDED(_device.As(&debug))) {
+            OutputDebugStringA("\n================= D3D11 LEAK REPORT =================\n");
+            // これで、出力ウィンドウに「Texture2D」や「Buffer」などの名前がバッチリ出ます
+            debug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL | D3D11_RLDO_IGNORE_INTERNAL);
+            OutputDebugStringA("=====================================================\n\n");
+        }
+    }
+#endif
+
+    // ④ 最後にデバイス本体を破壊
     _device.Reset();
 }
 

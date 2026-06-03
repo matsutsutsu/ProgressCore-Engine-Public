@@ -1,5 +1,6 @@
 #include "ParticleComputeShader.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
+#include "Engine/Platform/Core/Logger.h"
 
 ParticleComputeShader::ParticleComputeShader(ID3D11Device* device)
     : _initCsPath(L"Shader/Compute/GPUParticle/initialize_particle_cs.hlsl")
@@ -39,7 +40,8 @@ void ParticleComputeShader::CheckAndReload(ID3D11Device* device)
 
     if (curInit > _initCsTime || curUpdate > _updateCsTime) {
         LoadShaders(device);
-        OutputDebugStringA("[HotReload] Particle Compute Shaders reloaded.\n");
+        // ホットリロード成功時に CCL_LOG_SUCCESS を使用
+        CCL_LOG_SUCCESS(LogCategory::Render, "Particle Compute Shaders Hot-Reloaded.");
     }
 #endif
 }

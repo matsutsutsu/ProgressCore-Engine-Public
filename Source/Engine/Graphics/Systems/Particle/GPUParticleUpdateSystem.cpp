@@ -103,8 +103,8 @@ void GPUParticleUpdateSystem::Update(float dt)
         GPUParticleComponent& particle,
         const TransformComponent& transform)
         {
-            if (auto* pooled = _world->GetComponent<PooledParticleComponent>(id))
-                if (pooled->isSleeping) return;
+            //if (auto* pooled = _world->GetComponent<PooledParticleComponent>(id))
+                //if (pooled->isSleeping) return;
 
             if (!particle.isInitialized)
                 RebuildParticleBuffer(particle);
@@ -136,44 +136,8 @@ void GPUParticleUpdateSystem::RebuildParticleBuffer(GPUParticleComponent& partic
     ID3D11Device* device = Graphics::Instance().GetDevice();
     if (!device || particle.desc.maxCount <= 0) return;
 
-    particle.computeBuffer = ResourceManager::Instance().CreateParticleBuffer();
-    GPUParticleBufferSet* buf =
-        ResourceManager::Instance().GetParticleBuffer(particle.computeBuffer);
-    if (!buf) return;
-
-    const UINT count = static_cast<UINT>(particle.desc.maxCount);
-
-    // StructuredBuffer (粒子配列)
-    D3D11_BUFFER_DESC sb = {};
-    sb.ByteWidth = sizeof(GpuData::GpuParticle) * count;
-    sb.Usage = D3D11_USAGE_DEFAULT;
-    sb.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
-    sb.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-    sb.StructureByteStride = sizeof(GpuData::GpuParticle);
-    device->CreateBuffer(&sb, nullptr, &buf->particleBuffer);
-
-    D3D11_UNORDERED_ACCESS_VIEW_DESC uavd = {};
-    uavd.Format = DXGI_FORMAT_UNKNOWN;
-    uavd.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
-    uavd.Buffer.NumElements = count;
-    device->CreateUnorderedAccessView(buf->particleBuffer, &uavd, &buf->particleUAV);
-
-    D3D11_SHADER_RESOURCE_VIEW_DESC srvd = {};
-    srvd.Format = DXGI_FORMAT_UNKNOWN;
-    srvd.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
-    srvd.Buffer.NumElements = count;
-    device->CreateShaderResourceView(buf->particleBuffer, &srvd, &buf->particleSRV);
-
-    // Static CB (176 bytes)
-    D3D11_BUFFER_DESC cbd = {};
-    cbd.ByteWidth = (sizeof(GpuData::CbParticleStatic) + 15) & ~15u;
-    cbd.Usage = D3D11_USAGE_DEFAULT;
-    cbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-    device->CreateBuffer(&cbd, nullptr, &buf->staticCB);
-
-    // Dynamic CB (48 bytes)
-    cbd.ByteWidth = (sizeof(GpuData::CbParticleDynamic) + 15) & ~15u;
-    device->CreateBuffer(&cbd, nullptr, &buf->dynamicCB);
+    // ★ 重いバッファ生成処理は全て ResourceManager に任せる（ゾンビコードの削除）
+    particle.computeBuffer = ResourceManager::Instance().CreateParticleBuffer(device, particle.desc.maxCount);
 
     particle.isInitialized = true;
     particle.needsGpuInit = true;
@@ -193,21 +157,23 @@ void GPUParticleUpdateSystem::DispatchInitCS(
 {
     if (!cs || !buf) return;
 
-    // Static CB: 初回は必ず upload
+    // Static CB: 初回は必ず upload (★ .Get() を追加)
     auto staticCb = BuildStaticCb(particle.desc);
-    dc->UpdateSubresource(buf->staticCB, 0, nullptr, &staticCb, 0, 0);
+    dc->UpdateSubresource(buf->staticCB.Get(), 0, nullptr, &staticCb, 0, 0);
     particle._staticDirty = false;
 
-    // Dynamic CB (InitCS では dt は 0.016f で代替)
+    // Dynamic CB (InitCS では dt は 0.016f で代替) (★ .Get() を追加)
     auto dynCb = BuildDynamicCb(transform, particle.time, 0.016f, particle.burstTrigger);
-    dc->UpdateSubresource(buf->dynamicCB, 0, nullptr, &dynCb, 0, 0);
+    dc->UpdateSubresource(buf->dynamicCB.Get(), 0, nullptr, &dynCb, 0, 0);
 
-    // b13, b14 を一括バインド
-    ID3D11Buffer* cbs[2] = { buf->staticCB, buf->dynamicCB };
+    // b13, b14 を一括バインド (★ .Get() を追加)
+    ID3D11Buffer* cbs[2] = { buf->staticCB.Get(), buf->dynamicCB.Get() };
     dc->CSSetConstantBuffers(SLOT_CB_PARTICLE_STATIC, 2, cbs);
 
     dc->CSSetShader(cs->GetInitCS(), nullptr, 0);
-    ID3D11UnorderedAccessView* uavs[] = { buf->particleUAV };
+
+    // UAV バインド (★ .Get() を追加)
+    ID3D11UnorderedAccessView* uavs[] = { buf->particleUAV.Get() };
     dc->CSSetUnorderedAccessViews(SLOT_UAV_PARTICLE_BUF, 1, uavs, nullptr);
 
     UINT groups = (static_cast<UINT>(particle.desc.maxCount) + 15) / 16;
@@ -234,19 +200,19 @@ void GPUParticleUpdateSystem::DispatchUpdateCS(
 
     particle.time += dt;
 
-    // Static CB: desc が変更された時のみ upload (デフォルトは毎フレームスキップ)
+    // Static CB: desc が変更された時のみ upload (★ .Get() を追加)
     if (particle._staticDirty) {
         auto staticCb = BuildStaticCb(particle.desc);
-        dc->UpdateSubresource(buf->staticCB, 0, nullptr, &staticCb, 0, 0);
+        dc->UpdateSubresource(buf->staticCB.Get(), 0, nullptr, &staticCb, 0, 0);
         particle._staticDirty = false;
     }
 
-    // Dynamic CB: 毎フレーム upload (48 bytes のみ)
+    // Dynamic CB: 毎フレーム upload (★ .Get() を追加)
     auto dynCb = BuildDynamicCb(transform, particle.time, dt, particle.burstTrigger);
-    dc->UpdateSubresource(buf->dynamicCB, 0, nullptr, &dynCb, 0, 0);
+    dc->UpdateSubresource(buf->dynamicCB.Get(), 0, nullptr, &dynCb, 0, 0);
 
-    // b13, b14 を一括バインド
-    ID3D11Buffer* cbs[2] = { buf->staticCB, buf->dynamicCB };
+    // b13, b14 を一括バインド (★ .Get() を追加)
+    ID3D11Buffer* cbs[2] = { buf->staticCB.Get(), buf->dynamicCB.Get() };
     dc->CSSetConstantBuffers(SLOT_CB_PARTICLE_STATIC, 2, cbs);
 
     dc->CSSetShader(cs->GetUpdateCS(), nullptr, 0);
@@ -267,7 +233,8 @@ void GPUParticleUpdateSystem::DispatchUpdateCS(
         dc->CSSetSamplers(SLOT_SMP_LINEAR, 1, s);
     }
 
-    ID3D11UnorderedAccessView* uavs[] = { buf->particleUAV };
+    // UAV バインド (★ .Get() を追加)
+    ID3D11UnorderedAccessView* uavs[] = { buf->particleUAV.Get() };
     dc->CSSetUnorderedAccessViews(SLOT_UAV_PARTICLE_BUF, 1, uavs, nullptr);
 
     UINT groups = (static_cast<UINT>(particle.desc.maxCount) + 15) / 16;
@@ -280,7 +247,6 @@ void GPUParticleUpdateSystem::DispatchUpdateCS(
     dc->CSSetShaderResources(SLOT_SRV_MAT_TEX1, 1, nullSRV);
     dc->CSSetShaderResources(SLOT_SRV_MAT_TEX2, 1, nullSRV);
 
-    // バースト発動は1フレームで消費
     if (particle.desc.emitMode == 1)
         particle.burstTrigger = 0.0f;
 }
@@ -309,6 +275,8 @@ void GPUParticleUpdateSystem::CreateNoiseTexture(ID3D11Device* device)
     init.SysMemSlicePitch = size * size * sizeof(float) * 4;
     device->CreateTexture3D(&desc, &init, _noiseTexture.GetAddressOf());
     device->CreateShaderResourceView(_noiseTexture.Get(), nullptr, _noiseSRV.GetAddressOf());
+
+    SetDebugName(_noiseSRV.Get(), "GPUParticleUpdateSystem_NoiseSRV");
 }
 
 REGISTER_RENDER_SYSTEM(GPUParticleUpdateSystem, Priority::RenderStage::R07_PreMain);

@@ -4,7 +4,7 @@
 #include <wrl/client.h>
 #include <iostream>
 #include <algorithm> // std::sort
-
+#include "Engine/Graphics/RHI/Graphics.h"
 #include <imgui_internal.h>
 
 #include"ShellIconLoader.h"
@@ -191,7 +191,7 @@ AssetBrowser::IconTexture AssetBrowser::LoadIcon(ID3D11Device* device, const std
         std::wcerr << L"Failed to create SRV for icon: " << path << std::endl;
         return icon;
     }
-
+    //SetDebugName(*tmpSrv, "Icon_SRV");
     icon.srv = tmpSrv; // ComPtr をコピー -> 参照カウントを保持
     icon.width = static_cast<int>(metadata.width);
     icon.height = static_cast<int>(metadata.height);

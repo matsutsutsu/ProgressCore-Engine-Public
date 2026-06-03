@@ -3,7 +3,7 @@
 #include "Engine/Graphics/Shader/ShaderShared.h"
 #include "Engine/Core/Math/Misc.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
-
+#include "Engine/Graphics/RHI/Graphics.h"
 
 
 // コンストラクタ
@@ -55,6 +55,8 @@ ShadowMap::ShadowMap(ID3D11Device* device, UINT width, UINT height)
 
     hr = device->CreateShaderResourceView(depthBuffer.Get(), &srvDesc, shaderResourceView.GetAddressOf());
     _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+
+    SetDebugName(shaderResourceView.Get(), "ShadowMap_SRV");
 
     // サンプラと定数バッファの作成は既存のまま
     D3D11_SAMPLER_DESC sampDesc{};

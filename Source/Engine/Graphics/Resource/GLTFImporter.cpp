@@ -6,6 +6,7 @@
 
 #include "Engine/Core/Math/Misc.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
+#include "Engine/Graphics/RHI/Graphics.h"
 #include "GLTFImporter.h"
 #include "Engine/Graphics/Resource/GraphicsTypes.h"
 
@@ -472,6 +473,7 @@ void GLTFImporter::LoadMaterials(MaterialList& materials, ID3D11Device* device)
 								_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 
 								hr = device->CreateShaderResourceView(texture.Get(), nullptr, srv);
+								SetDebugName(*srv, "ModelMaterial_SRV");
 								_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 							}
 						}

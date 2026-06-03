@@ -11,6 +11,13 @@ class ShaderRegistry {
 public:
     static ShaderRegistry& Instance() { static ShaderRegistry instance; return instance; }
 
+    // シングルトンの寿命が尽きる前に、明示的にリソースを手放す
+    void ClearAll() {
+        _shaders.clear();
+        _factories.clear();
+        _shaderSortIDs.clear();
+    }
+
     // エンジン起動時等にシェーダーを登録する関数
     template<typename T>
     void RegisterShader(uint32_t shaderHash) {

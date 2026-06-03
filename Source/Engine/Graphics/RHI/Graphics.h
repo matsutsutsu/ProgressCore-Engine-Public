@@ -17,6 +17,7 @@
 
 class Camera;
 
+// D3D デバッグレイヤーでオブジェクト名を設定するヘルパー関数
 template <typename T>
 void SetDebugName(T* child, const std::string& name)
 {

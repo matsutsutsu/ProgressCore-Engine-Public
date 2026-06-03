@@ -203,8 +203,23 @@ void Graphics::UnbindAllResources(ID3D11DeviceContext* dc)
 // ============================================================
 void Graphics::Shutdown()
 {
-    // パイプラインを最初に解放（各パスの Shutdown が走る）
+    // ==============================================================
+    // 1. マネージャー群（シングルトン）が握っているGPUリソースを強制解放
+    // （絶対にデバイスを破壊する「前」に行うこと！）
+    // ==============================================================
+    ResourceManager::Instance().ClearAll();
+    ShaderRegistry::Instance().ClearAll();
+
+    // ==============================================================
+    // 2. パイプライン・パスの破棄
+    // ==============================================================
+    if (_gfxDevice.GetContext()) {
+        UnbindAllResources(_gfxDevice.GetContext());
+    }
+
+    // パイプラインを解放（各パスの Shutdown が走る）
     _pipeline.Shutdown();
+
 
     // 描画サブシステムを生成の逆順に解放
     _postProcess.reset();

@@ -36,7 +36,7 @@ void EditorWindowManager::Initialize()
     // =========================================================
     RegisterWindow<InspectorWindow>();
     RegisterWindow<HierarchyWindow>();
-    RegisterWindow<AssetBrowserWindow>();
+    //RegisterWindow<AssetBrowserWindow>();
 
     // =========================================================
     // ★ デフォルトでは「非表示」にするサブウィンドウ

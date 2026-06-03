@@ -34,7 +34,7 @@ void ParticleRenderer::Initialize(ID3D11Device *device)
     Microsoft::WRL::ComPtr<ID3D11Texture2D> tex;
     device->CreateTexture2D(&texDesc, &initData, tex.GetAddressOf());
     device->CreateShaderResourceView(tex.Get(), nullptr, defaultTexture.GetAddressOf());
-
+    SetDebugName(defaultTexture.Get(), "Particle_DefaultTexture_SRV");
 
     // ★ 金型の事前構築
     // 半透明ベースをもらってきて、一部（トポロジーとブレンド）だけをパーティクル用に改造する！
@@ -118,15 +118,14 @@ void ParticleRenderer::Render(const RenderServices& services, const RenderFrameC
             curRenderMode = cmd.renderMode;
         }
 
-        // 粒子バッファ SRV
-        ID3D11ShaderResourceView* srvs[] = { buffers->particleSRV };
+        // 粒子バッファ SRV (★ .Get() を追加)
+        ID3D11ShaderResourceView* srvs[] = { buffers->particleSRV.Get() };
         dc->VSSetShaderResources(SLOT_SRV_PARTICLE_BUF, 1, srvs);
         dc->GSSetShaderResources(SLOT_SRV_PARTICLE_BUF, 1, srvs);
 
-        // ★ staticCB(b6) + dynamicCB(b7) を一括バインド
-        // ★ 旧: constantBuffer (単一 CB) → 新: staticCB + dynamicCB (2CB)
+        // ★ staticCB(b6) + dynamicCB(b7) を一括バインド (★ .Get() を追加)
         if (buffers->staticCB && buffers->dynamicCB) {
-            ID3D11Buffer* cbs[2] = { buffers->staticCB, buffers->dynamicCB };
+            ID3D11Buffer* cbs[2] = { buffers->staticCB.Get(), buffers->dynamicCB.Get() };
             dc->VSSetConstantBuffers(SLOT_CB_PARTICLE_STATIC, 2, cbs);
             dc->GSSetConstantBuffers(SLOT_CB_PARTICLE_STATIC, 2, cbs);
             dc->PSSetConstantBuffers(SLOT_CB_PARTICLE_STATIC, 2, cbs);

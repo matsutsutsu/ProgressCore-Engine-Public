@@ -269,7 +269,7 @@ void HierarchyWindow::DrawFlatNode(
         }
         else {
             // ブロックされた場合は警告を出す
-            CCL_LOG_WARN(LogCategory::Editor, "Parenting Failed: Circular reference or self-parenting detected!");
+            //CCL_LOG_WARN(LogCategory::Editor, "Parenting Failed: Circular reference or self-parenting detected!");
         }
         
         ImGui::EndDragDropTarget();

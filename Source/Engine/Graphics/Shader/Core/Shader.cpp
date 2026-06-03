@@ -1,19 +1,24 @@
 #include "Shader.h"
-#include "Engine/Graphics/Resource/ResourceManager.h" // ★ここでManagerを知る
+#include "Engine/Graphics/Resource/ResourceManager.h" 
 #include "Engine/Graphics/Shader/Pass/ShadowMap.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 #include <algorithm>
 
 bool Shader::InitializeReflection(ID3D11Device* device, const std::string& csoPath)
 {
+	// csoファイルからリフレクション情報をロードし、定数バッファの自動生成を行う
     if (!_reflection.LoadFromCompiledFile(csoPath.c_str())) return false;
 
+	// 定数バッファの取得
     const auto& cbs = _reflection.GetConstantBuffers();
     for (const auto& cbInfo : cbs)
     {
+		// SLOT_CB_SCENE(slot8)以降はシステム予約領域なので、
+        // ユーザー定数バッファのみを自動生成する
         if (cbInfo.bindPoint >= SLOT_CB_SCENE) {
             continue; // システム予約領域は無視
         }
+		// AutoConstantBuffer を生成してマップに保存
         _constantBuffers[cbInfo.name].Create(device, cbInfo);
     }
     return true;
@@ -40,10 +45,12 @@ int Shader::FetchSamplerSlot(const std::string& name)
 
 void Shader::ApplyShaderPipeline(ID3D11DeviceContext* dc, ID3D11VertexShader* vs, ID3D11PixelShader* ps, ID3D11InputLayout* layout)
 {
+	// シェーダーと入力レイアウトをセット
     dc->IASetInputLayout(layout);
     dc->VSSetShader(vs, nullptr, 0);
     dc->PSSetShader(ps, nullptr, 0);
 
+	// 定数バッファをバインド
     for (auto& pair : _constantBuffers) {
         pair.second.BindVS(dc);
         pair.second.BindPS(dc);
@@ -70,8 +77,10 @@ void Shader::UnbindResources(ID3D11DeviceContext* dc)
     dc->IASetInputLayout(nullptr);
 }
 
+// マテリアルのプロパティを定数バッファに転送し、テクスチャをバインドする
 void Shader::UpdateMaterialProperties(ID3D11DeviceContext* dc, const MaterialData& mat)
 {
+	// 定数バッファにマテリアルのスカラー値とカラー値を流し込む
     for (auto& cbPair : _constantBuffers) {
         auto& cb = cbPair.second;
         bool isUpdated = false;
@@ -79,10 +88,9 @@ void Shader::UpdateMaterialProperties(ID3D11DeviceContext* dc, const MaterialDat
         // ========================================================
         // ① 定数バッファへの値の流し込み（ループの修正）
         // ========================================================
-        // ⭕ 修正後: nameHash と value にアクセスする
+
         for (const auto& prop : mat.scalars) {
-            // ※もし cb.SetValue が uint32_t (ハッシュ) を受け付けない場合は、
-            // AutoConstantBuffer側の SetValue の引数を std::string から uint32_t に変更する必要があります。
+           
             if (cb.SetValue(prop.nameHash, prop.value)) isUpdated = true;
         }
 
@@ -96,14 +104,16 @@ void Shader::UpdateMaterialProperties(ID3D11DeviceContext* dc, const MaterialDat
     }
 
     // ========================================================
-    // ② テクスチャのバインド（findの修正）
+    // ② テクスチャのバインド
     // ========================================================
     const auto& shaderTextures = _reflection.GetTextures();
 
     for (const auto& texInfo : shaderTextures) {
-        if (texInfo.bindPoint >= SLOT_SRV_SHADOW) continue;
+		// SLOT_SRV_FOG_NOISE(slot9)以降はシステム予約領域なので、
+        // ユーザー定義テクスチャのみを処理する
         if (texInfo.bindPoint >= SLOT_SRV_FOG_NOISE) continue;
 
+		// テクスチャのスロット番号を取得　レジスタ番号
         UINT slot = texInfo.bindPoint;
         TextureHandle texHandle;
 

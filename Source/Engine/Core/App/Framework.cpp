@@ -135,6 +135,11 @@ Framework::~Framework()
 	Logger::Instance().Flush();
 	Logger::Instance().ClearSinks(); // shared_ptr 循環参照防止
 
+	// ④ 描画パイプラインの破棄 (ここで ResourceManager のクリアも行われる)
+	// 最後に残ったGPUの親玉を破壊します。
+	// ここでついに、あの「ReportLiveDeviceObjects」のレポートが出力されます！
+	Graphics::Instance().Shutdown();
+
 }
 
 // ---------------------------------------------------------
