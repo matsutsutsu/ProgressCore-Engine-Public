@@ -35,7 +35,7 @@ public:
     RenderPipeline& operator=(const RenderPipeline&) = delete;
 
     /**
-     * @brief パイプラインを初期化する。AddPass より前に必ず 1 回呼ぶこと。
+     * @brief パイプラインを初期化する。AddPass より前に必ず1回呼ぶこと。
      * @details 以降の AddPass に渡すサービス群をここで保持する。
      */
     void Initialize(const RenderServices& services);

@@ -389,6 +389,7 @@
     <ClInclude Include="Source\Editor\Windows\NavMeshWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\StateTreeWindow.h" />
     <ClInclude Include="Source\Editor\Windows\TextEditorWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
@@ -584,6 +585,9 @@
     <ClInclude Include="Source\Engine\Serialization\Registry\ComponentRegistry_Editor.h" />
     <ClInclude Include="Source\Engine\Serialization\Serializer\PrefabSerializer.h" />
     <ClInclude Include="Source\Engine\Serialization\Serializer\SceneSerializer.h" />
+    <ClInclude Include="Source\Engine\Timer\TimeScaleSetupSystem.h" />
+    <ClInclude Include="Source\Engine\Timer\TimeScaleSystem.h" />
+    <ClInclude Include="Source\Engine\Timer\TimeState.h" />
     <ClInclude Include="Source\Engine\Transform\Components\BoneAttachmentComponent.h" />
     <ClInclude Include="Source\Engine\Transform\Components\PendingParentComponent.h" />
     <ClInclude Include="Source\Engine\Transform\Components\TransformComponent.h" />
@@ -662,6 +666,9 @@
     <ClInclude Include="Source\Game\Logics\AI\NavAI\AIPatrolSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\NavAI\AIPerceptionSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\NavAI\Events\AISoundEvent.h" />
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeComponents.h" />
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeData.h" />
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeSystem.h" />
     <ClInclude Include="Source\Game\Logics\Audio\DistractionItemComponent.h" />
     <ClInclude Include="Source\Game\Logics\Audio\DistractionItemDebugDrawSystem.h" />
     <ClInclude Include="Source\Game\Logics\Audio\DistractionItemSystem.h" />
@@ -1194,6 +1201,7 @@
     <ClCompile Include="Source\Editor\Windows\NavMeshWindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\StateTreeWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\TextEditorWindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
@@ -1314,6 +1322,9 @@
     <ClCompile Include="Source\Engine\Serialization\Registry\ComponentRegistry.cpp" />
     <ClCompile Include="Source\Engine\Serialization\Serializer\PrefabSerializer.cpp" />
     <ClCompile Include="Source\Engine\Serialization\Serializer\SceneSerializer.cpp" />
+    <ClCompile Include="Source\Engine\Timer\TimeComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Timer\TimeScaleSetupSystem.cpp" />
+    <ClCompile Include="Source\Engine\Timer\TimeScaleSystem.cpp" />
     <ClCompile Include="Source\Engine\Transform\Components\TransformComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Transform\Systems\HierarchyCleanupSystem.cpp" />
     <ClCompile Include="Source\Engine\Transform\Systems\TransformUpdateSystem.cpp" />
@@ -1367,6 +1378,7 @@
     <ClCompile Include="Source\Game\Logics\AI\NavAI\AIMovementControlSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\NavAI\AIPatrolSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\NavAI\AIPerceptionSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\StateTree\StateTreeSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Audio\DistractionItemComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Audio\DistractionItemDebugDrawSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Audio\DistractionItemSystem.cpp" />

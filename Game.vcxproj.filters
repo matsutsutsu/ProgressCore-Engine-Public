@@ -484,6 +484,12 @@
     <Filter Include="Source\Engine\Graphics\Shader\Particle">
       <UniqueIdentifier>{7331b261-1c5e-4858-beb7-97a5a94cb0a9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\AI\StateTree">
+      <UniqueIdentifier>{b7c28ac1-c302-46fc-943a-869af40a6ac0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Timer">
+      <UniqueIdentifier>{7a88023c-be1b-4e90-9f95-822c9f974cc6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1563,6 +1569,27 @@
     <ClInclude Include="Source\Engine\Graphics\Components\Particle\GPUParticleBuffer.h">
       <Filter>Source\Engine\Graphics\Components\Particle</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeData.h">
+      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeComponents.h">
+      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\StateTreeWindow.h">
+      <Filter>Source\Editor\Windows\AI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeSystem.h">
+      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Timer\TimeScaleSetupSystem.h">
+      <Filter>Source\Engine\Timer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Timer\TimeScaleSystem.h">
+      <Filter>Source\Engine\Timer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Timer\TimeState.h">
+      <Filter>Source\Engine\Timer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2332,6 +2359,21 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\ParticleShader.cpp">
       <Filter>Source\Engine\Graphics\Shader\Material\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\StateTreeWindow.cpp">
+      <Filter>Source\Editor\Windows\AI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\StateTree\StateTreeSystem.cpp">
+      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Timer\TimeComponentMeta.cpp">
+      <Filter>Source\Engine\Timer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Timer\TimeScaleSetupSystem.cpp">
+      <Filter>Source\Engine\Timer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Timer\TimeScaleSystem.cpp">
+      <Filter>Source\Engine\Timer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
