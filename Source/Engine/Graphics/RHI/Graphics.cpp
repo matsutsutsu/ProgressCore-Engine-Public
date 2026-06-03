@@ -12,15 +12,7 @@
 #include "Engine/Graphics/Shader/Material/ShadowMapShader.h"
 #include "Engine/Graphics/Shader/Material/ParticleShader.h"
 
-// パス登録用
-#include "Engine/Graphics/Pipeline/SetupPass.h"
-#include "Engine/Graphics/Pipeline/ShadowPass.h"
-#include "Engine/Graphics/Pipeline/OpaquePass.h"
-#include "Engine/Graphics/Pipeline/SkyboxPass.h"
-#include "Engine/Graphics/Pipeline/TransparentPass.h"
-#include "Engine/Graphics/Pipeline/ParticlePass.h"
-#include "Engine/Graphics/Pipeline/PrimitivePass.h"
-#include "Engine/Graphics/Pipeline/PostProcessPass.h"
+
 
 // ============================================================
 //  Initialize
@@ -102,16 +94,9 @@ void Graphics::SetupRenderPipeline()
     // パイプライン初期化（AddPass の前に必ず呼ぶ）
     _pipeline.Initialize(_renderServices);
 
-    // 描画パスを実行順に登録
-    _pipeline.AddPass<SetupPass>();       // 1. HDR バッファのクリアとバインド
-    _pipeline.AddPass<ShadowPass>();      // 2. シャドウマップ生成
-    _pipeline.AddPass<OpaquePass>();      // 3. 不透明ジオメトリ
-    _pipeline.AddPass<SkyboxPass>();      // 4. スカイボックス
-    _pipeline.AddPass<TransparentPass>(); // 5. 半透明
-    _pipeline.AddPass<ParticlePass>();    // 6. パーティクル
-    _pipeline.AddPass<PrimitivePass>();   // 7. デバッグプリミティブ
-    _pipeline.AddPass<PostProcessPass>(); // 8. ポストプロセス・最終出力
-
+    // レンダーパスの構築
+	_pipeline.BuildDefaultPipeline();
+   
     OutputDebugStringA("[Graphics] RenderPipeline initialized.\n");
 }
 
@@ -292,6 +277,7 @@ bool Graphics::Present(UINT syncInterval)
  */
 bool Graphics::RecoverFromDeviceLost()
 {
+
     OutputDebugStringA("[Graphics] ===== Device Lost Recovery: START =====\n");
 
     // ---- Step 1: HWND の保存 ----

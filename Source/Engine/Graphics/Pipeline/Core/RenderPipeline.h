@@ -40,6 +40,10 @@ public:
      */
     void Initialize(const RenderServices& services);
 
+    // デフォルトの３Ｄシーンの構築用レンダーパス登録関数
+    // TODO: 今後ローディング画面用に最低限のパス関数を作成してシーンによって変更したりする
+    void BuildDefaultPipeline();
+
     /**
      * @brief 全パスを Shutdown して破棄する。パスは追加と逆順で破棄される。
      */
