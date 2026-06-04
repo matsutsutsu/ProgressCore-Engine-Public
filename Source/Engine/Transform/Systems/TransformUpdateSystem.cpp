@@ -93,6 +93,23 @@ static void UpdateTransformRecursiveHelper(Core::World* world, EntityID entity, 
 
 void TransformUpdateSystem::Update(float dt)
 {
+    // =========================================================================
+    // ★ 追加: 自己修復フェーズ (Ghost Link のパージ)
+    // シーンロード時などで「すでに死んでいる親」を指しているエンティティを検知し、
+    // 安全なルートエンティティへと強制復帰させる。
+    // =========================================================================
+    ForEachParallel([this](TransformComponent& trans) {
+        // 親を持っているが、その親がワールドに存在しない場合
+        if (trans.parent != 0 && !_world->IsEntityValid(trans.parent)) {
+            trans.parent = 0;          // 親なし（ルート）に昇格
+            trans.nextSiblingID = 0;   // 兄弟リンクもリセット
+            trans.prevSiblingID = 0;
+            trans.isDirty = true;      // 行列の再計算を要求
+
+            // CCL_LOG_WARN(LogCategory::Core, "Repaired Ghost Link for an Entity!");
+        }
+        });
+
     // -----------------------------------------------------------------------
     // 1. 構造変更フェーズ (メインスレッド必須)
     // -----------------------------------------------------------------------

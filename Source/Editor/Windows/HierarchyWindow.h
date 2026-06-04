@@ -26,10 +26,10 @@ private:
     std::vector<FlatNode>           _flatList;
 
     // 関数の宣言を以下のように World* を受け取るように変更
-    void FlattenTree(
-        CCL::ECS::EntityID entityID,
+    void FlattenChildren(
+        CCL::ECS::EntityID firstChildID,
         int depth,
-        CCL::ECS::Core::World* world, // ← childrenMap の代わりに World を渡す
+        CCL::ECS::Core::World* world,
         std::vector<FlatNode>& outFlatList);
 
     void DrawFlatNode(

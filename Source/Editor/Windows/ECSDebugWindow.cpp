@@ -417,58 +417,60 @@ void ECSDebugWindow::DrawMemoryTab(CCL::ECS::Core::World* world) {
 
     if (selectedChunkIdx >= 0 && selectedChunkIdx < (int)chunks.size()) {
         auto& chunk = chunks[selectedChunkIdx];
-        if (chunk && ImGui::BeginChild("EntityDetailList")) {
+        if (chunk) { // まずチャンクの存在確認
+            if (ImGui::BeginChild("EntityDetailList")) {
 
-            // チャンクに含まれるコンポーネントの種類を上部に表示
-            ImGui::Text("Components in this chunk:");
-            for (const auto& td : chunk->GetTypeDatas()) {
-                ImGui::BulletText("%s (%zu bytes)", GetFriendlyTypeName(td.id), td.typeSize);
-            }
-            ImGui::Separator();
-            ImGui::Spacing();
+                // チャンクに含まれるコンポーネントの種類を上部に表示
+                ImGui::Text("Components in this chunk:");
+                for (const auto& td : chunk->GetTypeDatas()) {
+                    ImGui::BulletText("%s (%zu bytes)", GetFriendlyTypeName(td.id), td.typeSize);
+                }
+                ImGui::Separator();
+                ImGui::Spacing();
 
-            for (size_t e = 0; e < chunk->GetEntityCount(); ++e) {
-                // ★ 改良: 削除済みのエンティティはスキップするか、目立たなくする
-                if (chunk->HasDestroyedEntities() && chunk->IsEntityDestroyed(e)) continue;
+                for (size_t e = 0; e < chunk->GetEntityCount(); ++e) {
+                    // ★ 改良: 削除済みのエンティティはスキップするか、目立たなくする
+                    if (chunk->HasDestroyedEntities() && chunk->IsEntityDestroyed(e)) continue;
 
-                CCL::ECS::EntityID id = chunk->GetEntityByIndex(e);
-                char eLabel[64];
-                snprintf(eLabel, sizeof(eLabel), "Slot %zu: Entity ID %llu", e, id);
+                    CCL::ECS::EntityID id = chunk->GetEntityByIndex(e);
+                    char eLabel[64];
+                    snprintf(eLabel, sizeof(eLabel), "Slot %zu: Entity ID %llu", e, id);
 
-                if (ImGui::TreeNode(eLabel)) {
-                    for (const auto& td : chunk->GetTypeDatas()) {
-                        if (ImGui::TreeNode((void*)(intptr_t)td.id, "Component: %s", GetFriendlyTypeName(td.id))) {
-                            void* data = chunk->GetComponentPtrByType(td.id, e);
-                            if (data) {
+                    if (ImGui::TreeNode(eLabel)) {
+                        for (const auto& td : chunk->GetTypeDatas()) {
+                            if (ImGui::TreeNode((void*)(intptr_t)td.id, "Component: %s", GetFriendlyTypeName(td.id))) {
+                                void* data = chunk->GetComponentPtrByType(td.id, e);
+                                if (data) {
 
-                                // =========================================================
-                                // ★ 究極の進化: あなたの構築したGUIレジストリを呼び出すだけ！
-                                // =========================================================
-                                // これにより、TransformならPosition(x,y,z)などのスライダーが自動生成されます。
-                                // Undo/Redo のフックも ComponentMetaImGui 内で自動処理されます。
-                                ComponentGuiRegistry::Instance().Draw(td.id, data, id, world);
+                                    // =========================================================
+                                    // ★ 究極の進化: あなたの構築したGUIレジストリを呼び出すだけ！
+                                    // =========================================================
+                                    // これにより、TransformならPosition(x,y,z)などのスライダーが自動生成されます。
+                                    // Undo/Redo のフックも ComponentMetaImGui 内で自動処理されます。
+                                    ComponentGuiRegistry::Instance().Draw(td.id, data, id, world);
 
 
-                                ImGui::Spacing();
+                                    ImGui::Spacing();
 
-                                // =========================================================
-                                // 既存のHexダンプは「Advanced (詳細)」として折りたたんで残す
-                                // =========================================================
-                                if (ImGui::TreeNodeEx("Raw Memory (Hex Dump)")) {
-                                    ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[0]);
-                                    DrawHexDump(data, td.typeSize);
-                                    ImGui::PopFont();
-                                    ImGui::TreePop();
+                                    // =========================================================
+                                    // 既存のHexダンプは「Advanced (詳細)」として折りたたんで残す
+                                    // =========================================================
+                                    if (ImGui::TreeNodeEx("Raw Memory (Hex Dump)")) {
+                                        ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[0]);
+                                        DrawHexDump(data, td.typeSize);
+                                        ImGui::PopFont();
+                                        ImGui::TreePop();
+                                    }
                                 }
+                                ImGui::TreePop();
                             }
-                            ImGui::TreePop();
                         }
+                        ImGui::TreePop();
                     }
-                    ImGui::TreePop();
                 }
             }
+            ImGui::EndChild();
         }
-        ImGui::EndChild();
     }
     else {
         ImGui::TextDisabled("Select a chunk on the left to see details.");
