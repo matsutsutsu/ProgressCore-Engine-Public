@@ -4,9 +4,6 @@
 
 using namespace CCL::ECS;
 
-
-TimeScaleSetupSystem::TimeScaleSetupSystem() : IfSystem("TimeScaleSetupSystem") {}
-
 void TimeScaleSetupSystem::Update(float dt)
 {
     // 追加対象のIDを一時保存するリスト（Foreach中の構造変更を避けるため）

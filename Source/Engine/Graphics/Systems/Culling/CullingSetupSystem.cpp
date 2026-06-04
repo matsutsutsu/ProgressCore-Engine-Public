@@ -10,7 +10,6 @@ using namespace CCL::ECS;
 // =======================================================================
 // Modelのセットアップ
 // =======================================================================
-ModelCullingSetupSystem::ModelCullingSetupSystem() : IfSystem("ModelCullingSetupSystem") {}
 
 void ModelCullingSetupSystem::Update(float dt)
 {
@@ -39,7 +38,6 @@ void ModelCullingSetupSystem::Update(float dt)
 // =======================================================================
 // Primitiveのセットアップ
 // =======================================================================
-PrimitiveCullingSetupSystem::PrimitiveCullingSetupSystem() : IfSystem("PrimitiveCullingSetupSystem") {}
 
 void PrimitiveCullingSetupSystem::Update(float dt)
 {

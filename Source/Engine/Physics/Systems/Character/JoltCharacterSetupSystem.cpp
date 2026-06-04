@@ -3,7 +3,7 @@
 #include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"
 
 #include "Engine/Physics/Components/Collision/JoltCapsuleColliderComponent.h" // カプセルコライダーを使用前提
-#include "Engine/Physics/Components/Character/JoltCharacterHandleComponent.h"
+
 #include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
 #include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
 

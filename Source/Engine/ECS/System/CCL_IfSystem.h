@@ -138,6 +138,32 @@ namespace CCL::ECS
             });
         }
 
+        /**
+         * @brief 除外コンポーネントを設定する（コンストラクタ内で呼ぶ想定）。
+         *
+         * ここで指定した型を「1つでも持つ」Entity は、このSystemの処理対象から
+         * 外れます。
+         *
+         * @tparam ExcludeTypes 除外したいコンポーネント型（可変長）
+         *
+         * @code
+         *   class MovementSystem
+         *     : public IfSystem<MovementSystem, Write<Position>, Read<Velocity>>
+         *   {
+         *   public:
+         *       MovementSystem() : IfSystem("MovementSystem") {
+         *           // DeadTag か Frozen を持つ Entity は動かさない
+         *           SetExclude<DeadTag, Frozen>();
+         *       }
+         *   };
+         * @endcode
+         */
+        template <typename... ExcludeTypes>
+        void SetExclude()
+        {
+            _excludeFilter = ArchetypeHelper::Generate<ExcludeTypes...>();
+        }
+
 
         // ============================================================
         // ForEach（シングルスレッド）

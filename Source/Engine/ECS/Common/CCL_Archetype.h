@@ -214,32 +214,63 @@ namespace CCL::ECS
         }
 
         /**
-         * @brief Archetype l が Archetype r を「全て包含している」かを判定する。
+         * @brief Archetype chunk_L が Archetype filter_R を「全て包含している」かを判定する。
          *
          * SystemMatcher（システムフィルタの適合判定）に使用します。
-         *   - 例: l = [Position, Velocity, Render], r = [Position, Velocity] → true
-         *   - 例: l = [Position, Velocity], r = [Position, Velocity, Render] → false
+         *   - 例: chunk_L = [Position, Velocity, Render], filter_R = [Position, Velocity] → true
+         *   - 例: chunk_L = [Position, Velocity], filter_R = [Position, Velocity, Render] → false
          *
          * 両者ソート済みなので `std::includes` で O(N+M) 判定が可能です。
          *
-         * @param l  チャンク側 Archetype（包含する側）
-         * @param r  フィルタ側 Archetype（包含される側）
-         * @return r が l に包含されていれば true
+         * @param chunk_L  チャンク側 Archetype（包含する側）
+         * @param filter_R  フィルタ側 Archetype（包含される側）
+         * @return filter_R が chunk_L に包含されていれば true
          */
-        static bool LhasR(const Archetype& l, const Archetype& r)
+        static bool LhasR(const Archetype& chunk_L, const Archetype& filter_R)
         {
-            // フィルタ r が空なら、無条件で全チャンクが対象
-            if (r.size() == 0) return true;
-            // チャンク l の方が少ない要素しか持たないなら絶対に包含不可
-            if (l.size() < r.size()) return false;
+            // フィルタ filter_R が空なら、無条件で全チャンクが対象
+            if (filter_R.size() == 0) return true;
+            // チャンク chunk_L の方が少ない要素しか持たないなら絶対に包含不可
+            if (chunk_L.size() < filter_R.size()) return false;
 
             return std::includes(
-                l.begin(), l.end(),
-                r.begin(), r.end(),
+                chunk_L.begin(), chunk_L.end(),
+                filter_R.begin(), filter_R.end(),
                 [](const TypeData& a, const TypeData& b) {
                     return a.id < b.id;
                 });
         }
+
+        /**
+         * @brief Archetype l が、除外集合 exclude のコンポーネントを「1つも含まない」かを判定する。
+         *
+         * Exclude（除外）フィルタの中核。System が「このコンポーネントを持つ
+         * Entity は処理対象から外したい」場合に使用します。
+         *
+         *   - 例: l = {Position, Velocity}, exclude = {DeadTag}     → true  (DeadTagを持たない)
+         *   - 例: l = {Position, DeadTag},  exclude = {DeadTag}     → false (DeadTagを持つ)
+         *
+         * @param l        チャンク側 Archetype
+         * @param exclude  除外したいコンポーネント集合
+         * @return exclude のどれも l に含まれていなければ true
+         */
+        static bool LExcludesR(const Archetype& l, const Archetype& exclude)
+        {
+            // 除外指定が無ければ常にOK（誰も弾かれない）
+            if (exclude.empty()) return true;
+
+            // exclude の各型について、l が1つでも持っていたら除外（false）
+            for (const TypeData& ex : exclude)
+            {
+                // GetComponentIndex は O(log N) の二分探索
+                if (l.GetComponentIndex(ex.id) != InvalidIndex)
+                {
+                    return false; // 1つでも持っていたら対象外
+                }
+            }
+            return true; // どれも持っていなかった → 対象
+        }
+
     };
 
     // ------------------------------------------------------------------

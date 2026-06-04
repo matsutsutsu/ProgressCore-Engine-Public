@@ -9,7 +9,11 @@ class TimeScaleSetupSystem : public CCL::ECS::IfSystem<TimeScaleSetupSystem,
     CCL::ECS::Read<TransformComponent>>
 {
 public:
-    TimeScaleSetupSystem();
+    TimeScaleSetupSystem() : IfSystem("TimeScaleSetupSystem") 
+    {    
+        SetExclude<TimeStateComponent>();
+    }
+
     virtual ~TimeScaleSetupSystem() = default;
 
     void Update(float dt) override;
