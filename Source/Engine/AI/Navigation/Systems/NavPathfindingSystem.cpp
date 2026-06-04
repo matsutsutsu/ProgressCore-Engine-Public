@@ -3,7 +3,7 @@
 #include <DetourNavMeshQuery.h>
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
-#include "Game/Core/SystemPriority.h"
+#include "Engine/Core/Systems/SystemPriority.h"
 
 // ===================================================================================
 // 【 ナビゲーション (経路探索) : NavPathfindingSystem 】

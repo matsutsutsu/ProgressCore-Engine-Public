@@ -7,7 +7,7 @@
 #include "Engine/Graphics/Resource/Model.h"
 #include "Engine/Graphics/Renderer/RenderQueue.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
-#include "Game/Core/SystemPriority.h"
+#include "Engine/Core/Systems/SystemPriority.h"
 
 // ShadowMapリソースへのアクセス用
 #include "Engine/Graphics/Shader/Pass/ShadowMap.h"

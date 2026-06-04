@@ -225,6 +225,9 @@ namespace CCL::ECS
                 // --------------------------------------------------------
                 if (ImGui::BeginTabItem("Logic Inspectors")) {
                     for (auto &sys : _logicSystems) {
+                        // GUIを持っていないシステムはスキップ！
+                        if (!sys->hasGui) continue;
+
                         ImGui::PushID(sys->GetSystemID());
                         // 折りたたみヘッダーの中にシステムのGUIを表示
                         if (ImGui::CollapsingHeader(sys->GetName().c_str())) {
@@ -243,6 +246,9 @@ namespace CCL::ECS
                 // --------------------------------------------------------
                 if (ImGui::BeginTabItem("Render Inspectors")) {
                     for (auto &sys : _renderSystems) {
+                        // GUIを持っていないシステムはスキップ！
+                        if (!sys->hasGui) continue;
+
                         ImGui::PushID(sys->GetSystemID());
                         if (ImGui::CollapsingHeader(sys->GetName().c_str())) {
                             ImGui::Indent();

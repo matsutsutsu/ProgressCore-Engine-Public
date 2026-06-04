@@ -1,7 +1,6 @@
 #include "TimeScaleSetupSystem.h"
-#include "ECS/Core/CCL_World.h"
-#include "ECS/System/CCL_SystemRegistry.h"
-#include "Game/Core/SystemPriority.h"
+#include "Engine/ECS/System/CCL_SystemRegistry.h"
+#include "Engine/Core/Systems/SystemPriority.h"
 
 using namespace CCL::ECS;
 
@@ -15,7 +14,7 @@ void TimeScaleSetupSystem::Update(float dt)
 
     // 1. Transformを持つが TimeState を持たないエンティティを抽出
     ForEachWithID([&](EntityID id, const TransformComponent& transform) {
-        if (!_world->HasComponent<TimeState>(id)) {
+        if (!_world->HasComponent<TimeStateComponent>(id)) {
             needsTimeState.push_back(id);
         }
         });
@@ -24,7 +23,7 @@ void TimeScaleSetupSystem::Update(float dt)
     // ※これはプレハブ側の設定漏れに対する救済措置であり、
     // 実行中に頻発する場合はエディタ側でPrefabを修正すべきです。
     for (auto id : needsTimeState) {
-        _world->AddComponent<TimeState>(id);
+        _world->AddComponent<TimeStateComponent>(id);
 
         // 警告ログを出すことで、プログラマにプレハブの修正を促す（DODの観点から重要）
         CCL_LOG_WARN(LogCategory::Game,

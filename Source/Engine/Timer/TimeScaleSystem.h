@@ -1,9 +1,9 @@
 #pragma once
-#include "ECS/System/CCL_System.h"
+#include "Engine/ECS/System/CCL_System.h"
 #include "TimeState.h"
 
 // Write<TimeState> を宣言。これによりTaskSchedulerが依存関係を正確に把握する
-class TimeScaleSystem : public CCL::ECS::IfSystem<TimeScaleSystem, CCL::ECS::Write<TimeState>>
+class TimeScaleSystem : public CCL::ECS::IfSystem<TimeScaleSystem, CCL::ECS::Write<TimeStateComponent>>
 {
 public:
     TimeScaleSystem();

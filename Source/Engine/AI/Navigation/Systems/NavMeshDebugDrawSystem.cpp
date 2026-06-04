@@ -5,7 +5,7 @@
 #include <cmath> // 円の計算用
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
-#include "Game/Core/SystemPriority.h"
+#include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Graphics/Renderer/ShapeRenderer.h"
 
 // ★AIエージェントの情報を読み取るためにインクルード

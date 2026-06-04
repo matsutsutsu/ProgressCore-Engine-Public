@@ -8,7 +8,7 @@
 #include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h> // ★必須
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
-#include "Game/Core/SystemPriority.h"
+#include "Engine/Core/Systems/SystemPriority.h"
 #include <DirectXMath.h> // 角度変換用
 
 using namespace DirectX;

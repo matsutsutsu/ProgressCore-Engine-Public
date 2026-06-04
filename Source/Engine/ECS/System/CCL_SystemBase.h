@@ -132,6 +132,9 @@ namespace CCL::ECS
 
         bool IsDebugVisible() const { return isDebugVisible; }
 
+        // このシステムがエディタ用のGUIを持っているかどうか
+        bool hasGui = false;
+
         /// @brief ImGui によるインスペクタ描画（必要なら派生側で override）
         virtual void OnGui() {}
 

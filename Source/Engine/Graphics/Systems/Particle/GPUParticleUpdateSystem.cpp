@@ -6,7 +6,7 @@
 #include "Engine/Graphics/Shader/Material/ParticleComputeShader.h"
 #include "Engine/Graphics/Components/Particle/GPUParticleBuffer.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
-#include "Game/Core/SystemPriority.h"
+#include "Engine/Core/Systems/SystemPriority.h"
 #include <random>
 
 #include "Game/Utils/PooledParticleComponent.h"

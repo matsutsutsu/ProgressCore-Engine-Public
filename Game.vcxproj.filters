@@ -636,9 +636,6 @@
     <ClInclude Include="External\ImGuizmo\ImZoomSlider.h">
       <Filter>External\ImGuizmo</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Core\SystemPriority.h">
-      <Filter>Source\Game\Core</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Editor\Core\EditorContext.h">
       <Filter>Source\Editor\Core</Filter>
     </ClInclude>
@@ -1589,6 +1586,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Timer\TimeState.h">
       <Filter>Source\Engine\Timer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Systems\SystemPriority.h">
+      <Filter>Source\Engine\Core\Systems</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

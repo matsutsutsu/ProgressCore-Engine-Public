@@ -12,7 +12,7 @@
 #include "Engine/ECS/Jobs/CCL_JobSystem.h"
 
 // Priority定義を知る必要がある
-#include "Game/Core/SystemPriority.h"
+#include "Engine/Core/Systems/SystemPriority.h"
 #include "CCL_TaskScheduler.h"
 
 

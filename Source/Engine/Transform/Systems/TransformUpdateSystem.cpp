@@ -12,7 +12,7 @@
 
 // 各システムの .cpp ファイルの上部に追加
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
-#include "Game/Core/SystemPriority.h"
+#include "Engine/Core/Systems/SystemPriority.h"
 
 #include "Engine/Platform/Core/Logger.h"
 
