@@ -386,6 +386,7 @@
     <ClInclude Include="Source\Editor\Windows\InspectorWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\MemoryAnalyzerWindow.h" />
     <ClInclude Include="Source\Editor\Windows\NavMeshWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
@@ -490,6 +491,7 @@
     <ClInclude Include="Source\Engine\Graphics\Resource\ModelResource.h" />
     <ClInclude Include="Source\Engine\Graphics\Resource\ResourcePool.h" />
     <ClInclude Include="Source\Engine\Graphics\Resource\ResourceManager.h" />
+    <ClInclude Include="Source\Engine\Graphics\Resource\ResourceTypes.h" />
     <ClInclude Include="Source\Engine\Graphics\RHI\Camera.h" />
     <ClInclude Include="Source\Engine\Graphics\RHI\GpuResourceUtils.h" />
     <ClInclude Include="Source\Engine\Graphics\RHI\Graphics.h" />
@@ -1189,6 +1191,7 @@
     <ClCompile Include="Source\Editor\Windows\InspectorWindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\MemoryAnalyzerWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\NavMeshWindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>

@@ -1554,6 +1554,12 @@
     <ClInclude Include="Source\Engine\Graphics\Systems\Culling\AABBDebugDrawSystem.h">
       <Filter>Source\Engine\Graphics\Systems\Culling</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\MemoryAnalyzerWindow.h">
+      <Filter>Source\Editor\Windows\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Resource\ResourceTypes.h">
+      <Filter>Source\Engine\Graphics\Resource</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2314,6 +2320,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Systems\Culling\AABBDebugDrawSystem.cpp">
       <Filter>Source\Engine\Graphics\Systems\Culling</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\MemoryAnalyzerWindow.cpp">
+      <Filter>Source\Editor\Windows\Editor</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -53,6 +53,12 @@ namespace CCL {
             // reinterpret_castは「このバイトの塊を、強制的に型Tのポインタ
             // として解釈して返す」 翻訳機
             T *GetPtr() { return reinterpret_cast<T *>(data); }
+
+            // =========================================================
+            // ★ 追加: 読み取り専用(const)でプールを走査された時用のGetPtr
+            // これがないと const 関数である ForEachActive から呼び出せません
+            // =========================================================
+            const T* GetPtr() const { return reinterpret_cast<const T*>(data); }
         };
 
         // アパートの部屋全体の配列
@@ -147,6 +153,18 @@ namespace CCL {
             m_slots.clear();       // アパートの配列自体を空にする
             m_freeIndices.clear(); // 空き部屋リストもリセット
         }
+
+
+        template <typename Func>
+        void ForEachActive(Func&& func) const {
+            for (size_t i = 0; i < m_slots.size(); ++i) {
+                if (m_slots[i].active) {
+                    // ラムダ式に実体（T）を渡す
+                    func(*m_slots[i].GetPtr());
+                }
+            }
+        }
+
     };
 
 } // namespace CCL

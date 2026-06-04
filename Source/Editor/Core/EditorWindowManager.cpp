@@ -22,10 +22,13 @@
 #include "Editor/Windows/NavMeshWindow.h"
 #include "Editor/Windows/AnimGraphWindow.h"
 #include "Editor/Windows/BehaviorTreeWindow.h"
+#include "Editor/Windows/MemoryAnalyzerWindow.h"
 
 #include "Engine/Serialization/Factory/Prefab.h"
 #include <imgui.h>
 #include <filesystem>
+#include <windows.h>
+#include <shellapi.h> // ShellExecuteA を使用するために必要
 
 namespace fs = std::filesystem;
 
@@ -44,6 +47,7 @@ void EditorWindowManager::Initialize()
     // =========================================================
     RegisterWindow<ECSDebugWindow>();
     RegisterWindow<ConsoleWindow>();
+    RegisterWindow<MemoryAnalyzerWindow>();
     //RegisterWindow<AnimationSequencerWindow>();
     //RegisterWindow<AnimGraphWindow>()->SetVisible(false);
 	//RegisterWindow<BehaviorTreeWindow>();
@@ -153,6 +157,8 @@ void EditorWindowManager::DrawMainMenuBar(EditorContext &context)
         DrawPrefabMenu(context);
         DrawSceneMenu(context);
         DrawWindowMenu(context);
+
+        DrawToolsMenu(context);
 
         // 中央寄せのプレイボタン
         DrawPlayControlBar(context);
@@ -370,5 +376,40 @@ void EditorWindowManager::DrawPerformanceStatsBar(EditorContext& context)
             ImGui::TextDisabled("Active Chunks:");   ImGui::SameLine(); ImGui::Text("%zu", activeChunks);
         }
         ImGui::EndTooltip();
+    }
+}
+
+// =========================================================
+//  Tools メニューの実装
+// =========================================================
+void EditorWindowManager::DrawToolsMenu(EditorContext& context)
+{
+    if (ImGui::BeginMenu("Tools")) {
+
+        if (ImGui::MenuItem("Launch Tracy Profiler")) {
+            // Windows APIを使用して外部のexeを非同期起動する
+            // カレントディレクトリ（通常はslnのある場所）からの相対パスを指定
+            HINSTANCE result = ShellExecuteA(
+                nullptr,
+                "open",
+                "Tools\\Tracy\\tracy-profiler.exe",
+                nullptr, // コマンドライン引数
+                nullptr, // ワーキングディレクトリ (nullptrで現在のディレクトリを引き継ぐ)
+                SW_SHOW  // 通常のウィンドウとして表示
+            );
+
+            // 戻り値が32以下の場合はエラー発生
+            if ((INT_PTR)result <= 32) {
+                CCL_LOG_ERROR(LogCategory::Editor, "Failed to launch Tracy. Verify path: Tools\\Tracy\\tracy-profiler.exe");
+            }
+            else {
+                CCL_LOG_INFO(LogCategory::Editor, "Tracy Profiler launched successfully.");
+            }
+        }
+
+        // 💡 将来的に RenderDoc などを追加する場合はここに追記していく
+        // if (ImGui::MenuItem("Launch RenderDoc")) { ... }
+
+        ImGui::EndMenu();
     }
 }

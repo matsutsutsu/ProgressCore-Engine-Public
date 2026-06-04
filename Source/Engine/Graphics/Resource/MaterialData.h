@@ -6,6 +6,9 @@
 #include "Engine/Graphics/Resource/GraphicsTypes.h"
 #include "Engine/Graphics/Resource/ResourcePool.h"
 
+// ★ 追加: 新しく作った型定義専用ヘッダーを読み込む
+#include "ResourceTypes.h"
+
 // シリアライズ用のインクルード
 #include <cereal/cereal.hpp>
 #include <cereal/types/vector.hpp>
@@ -19,9 +22,6 @@ namespace DirectX {
     }
 }
 
-// TextureHandle が何者であるかを、ここで直接定義する
-using TextureResource = Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>;
-using TextureHandle = CCL::Handle<TextureResource>;
 
 // 1つのプロパティを表現する最小単位の構造体
 struct MaterialScalar {

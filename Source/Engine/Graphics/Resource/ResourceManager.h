@@ -8,6 +8,8 @@
 
 #include "Engine/Core/Math/StringHash.h"
 #include "ResourcePool.h"
+// ★ 追加: 新しく作った型定義専用ヘッダーを読み込む
+#include "ResourceTypes.h"
 
 // --- 依存するリソースの先行宣言 & インクルード ---
 #include "ModelResource.h"
@@ -17,24 +19,6 @@
 #include "Engine/Graphics/RHI/RenderTarget.h"
 #include "Engine/Animation/Core/AnimSequence.h"
 #include "Engine/Animation/Core/AnimationCurve.h"
-
-// ============================================================================
-// [Data Structures]
-// ============================================================================
-
-
-
-// ============================================================================
-// [Handle Definitions]
-// ============================================================================
-using TextureResource      = Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>;
-using TextureHandle        = CCL::Handle<TextureResource>;
-using ModelHandle          = CCL::Handle<ModelResource>;
-using ModelInstanceHandle  = CCL::Handle<Model>;
-using MaterialHandle       = CCL::Handle<MaterialData>;
-using ParticleBufferHandle = CCL::Handle<GPUParticleBufferSet>;
-using RenderTargetHandle   = CCL::Handle<RenderTarget>;
-using AnimSequenceHandle   = CCL::Handle<AnimSequence>;
 
 
 // ============================================================================
@@ -60,7 +44,10 @@ public:
     TextureHandle LoadTexture(const char* filename);
     TextureHandle RegisterTexture(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv);
     ID3D11ShaderResourceView* GetTexture(TextureHandle handle);
+    size_t CalculateTotalVramUsage() const;
+    std::vector<std::pair<std::string, size_t>> GetSortedTextureList() const;
     void UnloadTexture(TextureHandle handle);
+    const CCL::ResourcePool<TextureResource>& GetTexturePool() const { return m_texturePool; }
 
     // ---------------------------------------------------------
     // [2] Model Resource (Static Data)

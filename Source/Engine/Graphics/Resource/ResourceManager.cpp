@@ -62,17 +62,37 @@ TextureHandle ResourceManager::LoadTexture(const char* filename) {
     GpuResourceUtils::LoadTexture(Graphics::Instance().GetDevice(), filename, srv.GetAddressOf());
 
     if (srv) {
-
-        // ==========================================================
-        // ★ 名札付けを追加：どのファイル名のテクスチャか一目でわかるようにする
-        // ==========================================================
         SetDebugName(srv.Get(), std::string("Tex_") + filename);
 
-        // 3. 登録の瞬間だけ再度ロックする
         std::lock_guard<std::mutex> lock(_mutex);
 
-        // （※別スレッドが同じファイルを先にロード完了していた場合の二重登録チェックが理想的ですがここでは割愛）
+        // 1. プールに空き部屋を作り、互換コンストラクタ経由で登録
         TextureHandle handle = m_texturePool.Create(srv);
+        TextureResource* asset = m_texturePool.Get(handle);
+
+        if (asset) {
+            // 2. メタデータの自動解析とインライン・キャッシュの実行
+            asset->debugPath = filename;
+
+            Microsoft::WRL::ComPtr<ID3D11Resource> resource;
+            srv->GetResource(resource.GetAddressOf());
+
+            Microsoft::WRL::ComPtr<ID3D11Texture2D> texture2D;
+            if (SUCCEEDED(resource.As(&texture2D))) {
+                D3D11_TEXTURE2D_DESC desc;
+                texture2D->GetDesc(&desc);
+
+                asset->width = desc.Width;
+                asset->height = desc.Height;
+
+                // ミップマップの容量も含めて算出 (2Dテクスチャは全ミップ合計で約1.33倍(4/3)のサイズになります)
+                size_t mipMultiplier = (desc.MipLevels == 0 || desc.MipLevels > 1) ? 4 : 3;
+
+                // 1ピクセルあたり4バイト(RGBA)としてVRAMアロケーションサイズを擬似計算
+                asset->byteSize = (desc.Width * desc.Height * 4 * mipMultiplier) / 3;
+            }
+        }
+
         m_textureRegistry[hash] = handle;
         return handle;
     }
@@ -90,9 +110,46 @@ TextureHandle ResourceManager::RegisterTexture(Microsoft::WRL::ComPtr<ID3D11Shad
     return m_texturePool.Create(srv);
 }
 
+// --- ResourceManager.cpp ---
+
+size_t ResourceManager::CalculateTotalVramUsage() const
+{
+    size_t totalBytes = 0;
+
+    // テクスチャプールを一直線に走査（DOD配置なので爆速）
+    m_texturePool.ForEachActive([&](const TextureResource& tex) {
+        totalBytes += tex.byteSize;
+        });
+
+    // レンダーターゲット（RT）のプールも同様に加算
+    m_renderTargetPool.ForEachActive([&](const RenderTarget& rt) {
+        // 例: width * height * 4バイト (RGBA) などの計算値を加算
+        // totalBytes += rt.GetMemorySize(); 
+        });
+
+    return totalBytes;
+}
+
+// アクティブな詳細アセットリストをエディタUIに引き渡すための関数
+std::vector<std::pair<std::string, size_t>> ResourceManager::GetSortedTextureList() const
+{
+    std::vector<std::pair<std::string, size_t>> list;
+
+    m_texturePool.ForEachActive([&](const TextureResource& tex) {
+        list.push_back({ tex.debugPath, tex.byteSize });
+        });
+
+    // 重い順（降順）にソートして、エディタで「メモリ泥棒」を一瞬で見つけられるようにする
+    std::sort(list.begin(), list.end(), [](const auto& a, const auto& b) {
+        return a.second > b.second;
+        });
+
+    return list;
+}
+
 ID3D11ShaderResourceView* ResourceManager::GetTexture(TextureHandle handle) {
     TextureResource* tex = m_texturePool.Get(handle);
-    return tex ? tex->Get() : nullptr;
+    return tex ? tex->srv.Get() : nullptr;
 }
 
 void ResourceManager::UnloadTexture(TextureHandle handle) {
