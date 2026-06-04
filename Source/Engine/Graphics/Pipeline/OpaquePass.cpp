@@ -16,9 +16,8 @@ void OpaquePass::Initialize(const RenderServices& services)
 
 void OpaquePass::Execute(const RenderFrameContext& ctx)
 {
-#if TRACY_ENABLE
     ZoneScopedN("Pass: Opaque");
-#endif
+
     ID3D11DeviceContext* dc = ctx.dc;
     if (!dc) return;
 

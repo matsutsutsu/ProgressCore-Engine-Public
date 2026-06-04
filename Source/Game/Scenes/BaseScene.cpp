@@ -20,18 +20,17 @@
 #include "Engine/Core/App/Framework.h"
 #include "Engine/Core/App/EngineServices.h"
 
-#if TRACY_ENABLE
+ 
 #include "tracy/Tracy.hpp"
-#endif
+
 
 #include "Engine/Platform/Core/Logger.h"
 
 
 void BaseScene::Initialize()
 {
-#if TRACY_ENABLE
     ZoneScopedN("BaseScene::Initialize");
-#endif
+
 
     auto& gfx = Graphics::Instance();
     ID3D11Device* device = gfx.GetDevice();
@@ -103,9 +102,8 @@ void BaseScene::Finalize() {}
 
 void BaseScene::Update(float elapsedTime)
 {
-#if TRACY_ENABLE
     ZoneScopedN("BaseScene::Update");
-#endif
+
 
     // ECSシステムが走り出す「前」の、誰もメモリを触っていない安全な瞬間に世界を切り替える！
     ExecutePendingSceneOperations();
@@ -125,10 +123,9 @@ void BaseScene::Update(float elapsedTime)
 }
 
 void BaseScene::FixedUpdate(float fixedTime) 
-{ 
-#if TRACY_ENABLE
+{  
     ZoneScopedN("BaseScene::FixedUpdate");
-#endif
+
 
     // ECSコンテキストに更新を委譲（これだけで全てが正しい順序で回る）
     if (_ecsContext) {
@@ -138,9 +135,8 @@ void BaseScene::FixedUpdate(float fixedTime)
 
 void BaseScene::Render()
 {
-#if TRACY_ENABLE
     ZoneScopedN("BaseScene::Render Pipeline"); // シーン描画全体
-#endif
+
 
 
     auto& gfx = Graphics::Instance();
@@ -168,9 +164,8 @@ void BaseScene::Render()
    
     // 2D UI
     {
-#if TRACY_ENABLE
         ZoneScopedN("UI Render");
-#endif
+
         dc->OMSetBlendState(
             gfx.GetRenderState()->GetBlendState(BlendState::Transparency), nullptr, 0xffffffff);
         dc->OMSetDepthStencilState(

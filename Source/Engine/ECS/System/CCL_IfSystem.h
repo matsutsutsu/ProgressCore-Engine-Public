@@ -46,9 +46,9 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/Jobs/CCL_JobSystem.h"
 
-#if TRACY_ENABLE
+ 
 #include "tracy/Tracy.hpp"
-#endif
+
 
 
 namespace CCL::ECS
@@ -244,9 +244,9 @@ namespace CCL::ECS
 
                 _jobSystem->Execute(
                     [this, i, end, func]() {
-#if TRACY_ENABLE
+ 
                         ZoneScopedN("System Batch Task");
-#endif
+
 
                         // --- ワーカースレッド内 ---
                         // [中ループ]: 担当範囲の Chunk を順に処理
@@ -280,9 +280,9 @@ namespace CCL::ECS
 
             // 全ジョブ完了待ち（メインスレッドも暇なら手伝う設計）
             {
-#if TRACY_ENABLE
+ 
                 ZoneScopedN("MainThread Wait");
-#endif
+
                 _jobSystem->WaitForCounter(&counter);
             }
         }
@@ -375,9 +375,9 @@ namespace CCL::ECS
 
                 _jobSystem->Execute(
                     [this, i, end, func]() {
-#if TRACY_ENABLE
+ 
                         ZoneScopedN("System Batch Task (ID)");
-#endif
+
 
                         for (size_t k = i; k < end; ++k) {
                             Chunk*       chunk = _targetChunks[k];
@@ -410,9 +410,9 @@ namespace CCL::ECS
             }
 
             {
-#if TRACY_ENABLE
+ 
                 ZoneScopedN("MainThread Wait");
-#endif
+
                 _jobSystem->WaitForCounter(&counter);
             }
         }

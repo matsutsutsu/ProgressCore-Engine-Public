@@ -15,9 +15,8 @@ void TransparentPass::Initialize(const RenderServices& services)
 
 void TransparentPass::Execute(const RenderFrameContext& ctx)
 {
-#if TRACY_ENABLE
     ZoneScopedN("Pass: Transparent");
-#endif
+
     ID3D11DeviceContext* dc = ctx.dc;
     RenderQueue* queue = _services->renderQueue;
     ModelRenderer* renderer = _services->modelRenderer;

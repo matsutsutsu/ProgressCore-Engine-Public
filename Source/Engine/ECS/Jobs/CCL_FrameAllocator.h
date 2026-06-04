@@ -4,9 +4,9 @@
 #include <cstdint>
 #include <vector>
 
-#if TRACY_ENABLE
+ 
 #include "tracy/Tracy.hpp"
-#endif
+
 
 namespace CCL::ECS::Core {
 
@@ -29,10 +29,10 @@ namespace CCL::ECS::Core {
             RunDestructors();
 
             for (auto *p : _pages) {
-#if TRACY_ENABLE
+ 
                 // ★追加: OSにメモリを返す瞬間をTracyに通知
                 TracyFree(p);
-#endif
+
                 ::operator delete(p);
             }
         }
@@ -103,12 +103,12 @@ namespace CCL::ECS::Core {
             RunDestructors();
 
             
-#if TRACY_ENABLE
+ 
             // このフレームで「実際に消費したバイト数」をグラフにプロット
             size_t totalUsed = (_pageIndex * _pageSize) + _offset;
             // "FrameAllocator Usage" という名前の折れ線グラフがTracy上に作成されます
             TracyPlot("FrameAllocator Usage", static_cast<int64_t>(totalUsed));
-#endif
+
 
 
             //ここが最強のポイントです。
@@ -148,10 +148,10 @@ namespace CCL::ECS::Core {
                 _pages.push_back(ptr);
                 _currentPage = ptr;
 
-#if TRACY_ENABLE
+ 
                 // OSから新たに「ページ」という物理メモリを確保した瞬間を通知
                 TracyAlloc(ptr, sizeToAlloc);
-#endif
+
             }
             _offset = 0;  // 新しいページなので、書き込み位置は0から
         }

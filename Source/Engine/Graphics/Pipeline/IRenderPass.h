@@ -3,9 +3,8 @@
 #include "Engine/Graphics/RHI/RenderContext.h"
 
 // 各パスをTracyで追跡できるようにインクルード
-#if TRACY_ENABLE
 #include "tracy/Tracy.hpp"
-#endif
+
 
 
 /**

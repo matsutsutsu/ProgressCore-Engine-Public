@@ -34,9 +34,8 @@ namespace CCL::ECS::Core {
 }
 
 // Tracy（プロファイラ）は UpdateImpl 内のインライン実装で参照される
-#if TRACY_ENABLE
 #include "tracy/Tracy.hpp"
-#endif
+
 
 
 namespace CCL::ECS
@@ -110,10 +109,8 @@ namespace CCL::ECS
          */
         virtual void UpdateImpl(float dt)
         {
-#if TRACY_ENABLE
             ZoneScoped;
             ZoneName(_name.c_str(), _name.size());
-#endif
 
             auto start = std::chrono::high_resolution_clock::now();
 

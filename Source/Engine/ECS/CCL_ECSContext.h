@@ -26,10 +26,10 @@ namespace CCL::ECS {
         // 物理・ロジックの更新（FixedUpdate等で呼ぶ）
         void UpdateLogic(float dt)
         {
-#if TRACY_ENABLE
+ 
             //  FixedUpdate全体を計測
             ZoneScopedN("World::FixedUpdate");
-#endif
+
 
             // 1. 溜まっていた構造変更（Entity生成/削除）を適用し、データを確定させる
             _world->ScrutinyAndApply();
@@ -48,10 +48,9 @@ namespace CCL::ECS {
         // 描画系の更新（RenderUpdate等で呼ぶ）
         void UpdateRender(float dt) 
         {
-#if TRACY_ENABLE
+ 
             // RenderUpdate全体を計測         
             ZoneScopedN("World::RenderUpdate");
-#endif
         
 
             _systemManager->UpdateRender(dt); 

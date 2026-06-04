@@ -11,10 +11,8 @@ namespace CCL::ECS
 
     void SystemManager::ResolveTargetChunks(Core::ChunkManager* cm)
     {
-#if TRACY_ENABLE
         // チャンク振り分け負荷を計測
         ZoneScopedN("SystemManager::ResolveTargetChunks");
-#endif
 
         if (!cm) return;
 
