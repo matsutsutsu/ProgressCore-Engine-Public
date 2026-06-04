@@ -45,6 +45,8 @@ private:
     void DrawWindowMenu(EditorContext& context);
     void DrawPlayControlBar(EditorContext& context);
 
+    void DrawPerformanceStatsBar(EditorContext& context);
+
 
     // ウィンドウの登録
     template<typename T, typename... Args>

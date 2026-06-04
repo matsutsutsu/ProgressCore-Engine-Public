@@ -87,6 +87,8 @@ void RefreshPrefabList(EditorContext &context)
 // Draw関数の実装
 void EditorWindowManager::Draw(EditorContext &context)
 {
+    ZoneScopedN("EditorWindowManager::Draw");
+
     // EditorScene::OnDrawImGui もしくは Update の中で
     if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Z)) {
         EditorCommandHistory::Instance().Undo();
@@ -151,7 +153,12 @@ void EditorWindowManager::DrawMainMenuBar(EditorContext &context)
         DrawPrefabMenu(context);
         DrawSceneMenu(context);
         DrawWindowMenu(context);
+
+        // 中央寄せのプレイボタン
         DrawPlayControlBar(context);
+
+        // 最後に右端へ飛ばしてFPSを描画
+        DrawPerformanceStatsBar(context);
 
         ImGui::EndMainMenuBar();
     }
@@ -297,5 +304,71 @@ void EditorWindowManager::DrawPlayControlBar(EditorContext& context)
         if (ImGui::Button("Resume", btnSize)) {
             context.playState = EditorPlayState::Playing;
         }
+    }
+}
+
+void EditorWindowManager::DrawPerformanceStatsBar(EditorContext& context)
+{
+    ImGuiIO& io = ImGui::GetIO();
+    float fps = io.Framerate;
+    // 0除算防止を入れつつ、ミリ秒(ms)を計算
+    float ms = 1000.0f / (fps > 0.0f ? fps : 1.0f);
+
+    // 表示するテキストをフォーマット
+    char textBuffer[128];
+    snprintf(textBuffer, sizeof(textBuffer), "%.1f FPS (%.2f ms)", fps, ms);
+
+    // テキストの描画幅を計算し、右端からのオフセットを決定
+    float textWidth = ImGui::CalcTextSize(textBuffer).x;
+    float rightMargin = 20.0f; // 右端の余白
+
+    // 現在のカーソル位置から、ウィンドウ右端へ一気にジャンプ
+    ImGui::SameLine(ImGui::GetWindowWidth() - textWidth - rightMargin);
+
+    // 直感的に状況がわかるよう、60FPSを基準に信号色（緑→黄→赤）で色分け
+    ImVec4 color;
+    if (fps >= 55.0f)      color = ImVec4(0.4f, 1.0f, 0.4f, 1.0f); // 快適（緑）
+    else if (fps >= 30.0f) color = ImVec4(1.0f, 1.0f, 0.4f, 1.0f); // 警告（黄）
+    else                   color = ImVec4(1.0f, 0.4f, 0.4f, 1.0f); // 危険（赤）
+
+    ImGui::TextColored(color, "%s", textBuffer);
+
+    // =========================================================
+    // ★ おすすめの追加UX: マウスホバーで詳細なプロファイルを表示
+    // =========================================================
+    if (ImGui::IsItemHovered()) {
+        ImGui::BeginTooltip();
+        ImGui::Text("Performance & ECS Status");
+        ImGui::Separator();
+
+        // ImGui::PlotLines に渡すための自作リングバッファ（履歴配列）
+        static float frameTimes[120] = { 0 };
+        static int frameTimeIdx = 0;
+
+        // 現在のフレームタイム(ms)を配列に記録し、インデックスを進める
+        frameTimes[frameTimeIdx] = ms;
+        frameTimeIdx = (frameTimeIdx + 1) % 120;
+
+        // グラフの描画
+        // 引数: ラベル, 配列, 要素数, オフセット位置, テキスト, Y軸最小, Y軸最大, グラフのサイズ
+        // ※Y軸の最大値を 33.3f (30FPS相当のms) に固定することで、重い処理（スパイク）が飛び抜けて視覚化されます。
+        ImGui::PlotLines("Frame Time(ms)", frameTimes, 120, frameTimeIdx, "ms", 0.0f, 33.3f, ImVec2(200, 50));
+
+        if (context.world) {
+            ImGui::Spacing();
+
+            // 現在のエンティティ数やチャンク数をサッと確認できるようにする
+            size_t totalEntities = 0;
+            size_t activeChunks = 0;
+            for (const auto& chunk : context.world->GetChunkManager().GetChunks()) {
+                if (chunk) {
+                    totalEntities += chunk->GetEntityCount();
+                    activeChunks++;
+                }
+            }
+            ImGui::TextDisabled("Active Entities:"); ImGui::SameLine(); ImGui::Text("%zu", totalEntities);
+            ImGui::TextDisabled("Active Chunks:");   ImGui::SameLine(); ImGui::Text("%zu", activeChunks);
+        }
+        ImGui::EndTooltip();
     }
 }

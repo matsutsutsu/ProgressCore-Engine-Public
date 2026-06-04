@@ -270,8 +270,14 @@ namespace CCL::ECS
 
                 _jobSystem->Execute(
                     [this, i, end, func]() {
- 
-                        ZoneScopedN("System Batch Task");
+                        // 1. まず標準のスコープを作る（関数名がデフォルトになる）
+                        ZoneScoped;
+
+                        // 2. SystemBaseの _name 変数を使って、Tracyに動的文字列をコピーさせる
+                        // ※ "MovementSystem [Batch]" のように末尾にバッチ処理であることを明示すると
+                        // 通常のUpdateの負荷(メインスレッド)と見分けがつきやすくなります。
+                        std::string batchName = " [Batch]" + _name;
+                        ZoneName(batchName.c_str(), batchName.size());
 
 
                         // --- ワーカースレッド内 ---
@@ -401,8 +407,14 @@ namespace CCL::ECS
 
                 _jobSystem->Execute(
                     [this, i, end, func]() {
- 
-                        ZoneScopedN("System Batch Task (ID)");
+                        // 1. まず標準のスコープを作る（関数名がデフォルトになる）
+                        ZoneScoped;
+
+                        // 2. SystemBaseの _name 変数を使って、Tracyに動的文字列をコピーさせる
+                        // ※ "MovementSystem [Batch]" のように末尾にバッチ処理であることを明示すると
+                        // 通常のUpdateの負荷(メインスレッド)と見分けがつきやすくなります。
+                        std::string batchName = " [ Batch ] " + _name;
+                        ZoneName(batchName.c_str(), batchName.size());
 
 
                         for (size_t k = i; k < end; ++k) {

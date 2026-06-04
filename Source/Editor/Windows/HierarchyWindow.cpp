@@ -24,7 +24,7 @@ void HierarchyWindow::DrawContents(EditorContext& context)
     _rootEntities.clear();
     _allEntities.clear();
     _flatList.clear();
-    _childrenMap.clear();
+
 
     // ---------------------------------------------------------
     // ツールバー (生成 ＆ 検索)  ※ここが消えていた部分です！
@@ -46,64 +46,25 @@ void HierarchyWindow::DrawContents(EditorContext& context)
 
     ImGui::Separator();
 
-    // ---------------------------------------------------------
-    // 1. データ収集フェーズ (★ゼロ・アロケーション化)
-    // ---------------------------------------------------------
-    // ベクターやマップの「容量」は維持したまま、中身の要素数だけを0に戻す（超高速）
-    _rootEntities.clear();
-    _allEntities.clear();
-    _flatList.clear();
-    for (auto& pair : _childrenMap) pair.second.clear();
-    _validEntitiesSet.clear(); // ★ 追加
-
-
-
     // =========================================================
-    // ★ Pass 1: 現在のWorldに実在するすべてのエンティティを名簿に登録
-    // =========================================================
-    for (auto& chunkPtr : chunks) {
-        if (!chunkPtr) continue;
-        auto* chunk = chunkPtr.get();
-        for (size_t i = 0; i < chunk->GetEntityCount(); ++i) {
-            if (chunk->IsEntityDestroyed(i)) continue; // 削除済みのゴミは無視
-            CCL::ECS::EntityID entity = chunk->GetEntityByIndex(i);
-            if (entity != CCL::ECS::InvalidEntityID) {
-                _validEntitiesSet.insert(entity);
-            }
-        }
-    }
-
-    // =========================================================
-    // ★ Pass 2: 階層の構築（防波堤付き）
+    // ★ 超高速 Pass: ルートエンティティの抽出だけを行う
     // =========================================================
     for (auto& chunkPtr : chunks) {
         if (!chunkPtr) continue;
         CCL::ECS::Core::Chunk* chunk = chunkPtr.get();
-        const size_t           count = chunk->GetEntityCount();
 
         TransformComponent* transforms = chunk->HasComponent<TransformComponent>()
             ? chunk->GetComponentArray<TransformComponent>() : nullptr;
 
-        for (size_t i = 0; i < count; ++i) {
-            if (chunk->IsEntityDestroyed(i)) continue; // 削除済みのゴミは無視
+        for (size_t i = 0; i < chunk->GetEntityCount(); ++i) {
+            if (chunk->IsEntityDestroyed(i)) continue;
             CCL::ECS::EntityID entity = chunk->GetEntityByIndex(i);
             if (entity == CCL::ECS::InvalidEntityID) continue;
 
             _allEntities.push_back(entity);
 
-            bool hasParent = false;
-            if (transforms && transforms[i].parent != 0) {
-                // ★ 究極の防波堤: その親は本当に今の世界に生きているか？
-                if (_validEntitiesSet.count(transforms[i].parent) > 0) {
-                    _childrenMap[transforms[i].parent].push_back(entity);
-                    hasParent = true;
-                }
-                else {
-                    // 親が死んでいる、またはデタラメなID（ロード直後など）の場合は親を強制解除する
-                    transforms[i].parent = 0;
-                }
-            }
-            if (!hasParent) {
+            // Transformを持たない、または親がいない(0)場合はルート
+            if (!transforms || transforms[i].parent == 0) {
                 _rootEntities.push_back(entity);
             }
         }
@@ -126,7 +87,7 @@ void HierarchyWindow::DrawContents(EditorContext& context)
     }
     else {
         for (auto root : _rootEntities) {
-            FlattenTree(root, 0, _childrenMap, _flatList);
+            FlattenTree(root, 0, world, _flatList);
         }
     }
 
@@ -139,7 +100,7 @@ void HierarchyWindow::DrawContents(EditorContext& context)
     clipper.Begin((int)_flatList.size());
     while (clipper.Step()) {
         for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i) {
-            DrawFlatNode(_flatList[i], context, _childrenMap);
+            DrawFlatNode(_flatList[i], context); // 引数を減らす
         }
     }
     clipper.End();
@@ -192,8 +153,7 @@ void HierarchyWindow::DrawContents(EditorContext& context)
 // =========================================================================
 void HierarchyWindow::DrawFlatNode(
     const FlatNode& node,
-    EditorContext& context,
-    const std::unordered_map<CCL::ECS::EntityID, std::vector<CCL::ECS::EntityID>>& childrenMap)
+    EditorContext& context)
 {
     // =========================================================
     // ★遅延評価: 画面に映る「たった40個」に対してだけ名前を生成する！
@@ -254,7 +214,7 @@ void HierarchyWindow::DrawFlatNode(
 
             // ① 自分自身には入れられない
             // ② ドロップ先(targetParent)が、ドラッグしている奴(draggedEntity)の子供や孫であってはならない
-            if (draggedEntity != targetParent && !IsDescendantOf(targetParent, draggedEntity, childrenMap)) {
+            if (draggedEntity != targetParent && !IsDescendantOf(targetParent, draggedEntity, context.world)) {
                 // PendingParentComponent を使用して親子関係を予約
                 if (context.world->HasComponent<PendingParentComponent>(draggedEntity)) {
                     context.world->GetComponent<PendingParentComponent>(draggedEntity)->parentID = targetParent;
@@ -330,43 +290,43 @@ void HierarchyWindow::DrawFlatNode(
 void HierarchyWindow::FlattenTree(
     CCL::ECS::EntityID entityID,
     int depth,
-    const std::unordered_map<CCL::ECS::EntityID, std::vector<CCL::ECS::EntityID>>& childrenMap,
+    CCL::ECS::Core::World* world,
     std::vector<FlatNode>& outFlatList)
 {
-    // =========================================================================
-    //  単にキーが存在するかだけでなく、「本当に中身(子供)がいるか」を確認する
-    // =========================================================================
-    bool hasChildren = childrenMap.count(entityID) > 0 && !childrenMap.at(entityID).empty();
+    // ★ Transformを取得し、子供(firstChildID)がいるかを直接確認する
+    auto* trans = world->GetComponent<TransformComponent>(entityID);
+    bool hasChildren = (trans != nullptr && trans->firstChildID != 0);
 
-    // まず自分自身をリストに追加する
     outFlatList.push_back({ entityID, depth, hasChildren });
 
-    // ★もし自分に子供がいて、かつ「開かれている」状態なら、子供も再帰的にリストに追加する
+    // 開かれている状態なら、兄弟リンク(nextSiblingID)を辿って再帰
     if (hasChildren && _openNodes.count(entityID) > 0) {
-        const auto& children = childrenMap.at(entityID);
-        for (auto childID : children) {
-            FlattenTree(childID, depth + 1, childrenMap, outFlatList);
+        CCL::ECS::EntityID childID = trans->firstChildID;
+        while (childID != 0) {
+            FlattenTree(childID, depth + 1, world, outFlatList);
+            // 次の兄弟へ進む
+            auto* childTrans = world->GetComponent<TransformComponent>(childID);
+            childID = childTrans ? childTrans->nextSiblingID : 0;
         }
     }
 }
 
-// =========================================================================
-//  循環参照チェックの実装 (ファイルの末尾などに追加)
-// =========================================================================
-bool HierarchyWindow::IsDescendantOf(CCL::ECS::EntityID targetEntity, CCL::ECS::EntityID ancestorEntity, const std::unordered_map<CCL::ECS::EntityID, std::vector<CCL::ECS::EntityID>>& childrenMap)
+bool HierarchyWindow::IsDescendantOf(
+    CCL::ECS::EntityID targetEntity,
+    CCL::ECS::EntityID ancestorEntity,
+    CCL::ECS::Core::World* world)
 {
-    // 自分自身へのドロップも循環とみなす
     if (targetEntity == ancestorEntity) return true;
 
-    // 先祖の子供リストを取得
-    auto it = childrenMap.find(ancestorEntity);
-    if (it != childrenMap.end()) {
-        for (auto child : it->second) {
-            // 子供、あるいはそのさらに子供がターゲットなら true (危険)
-            if (IsDescendantOf(targetEntity, child, childrenMap)) {
-                return true;
-            }
-        }
+    auto* trans = world->GetComponent<TransformComponent>(ancestorEntity);
+    if (!trans) return false;
+
+    // 子供とその兄弟たちをチェック
+    CCL::ECS::EntityID childID = trans->firstChildID;
+    while (childID != 0) {
+        if (IsDescendantOf(targetEntity, childID, world)) return true;
+        auto* childTrans = world->GetComponent<TransformComponent>(childID);
+        childID = childTrans ? childTrans->nextSiblingID : 0;
     }
-    return false; // 安全
+    return false;
 }
