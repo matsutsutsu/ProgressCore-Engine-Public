@@ -1,9 +1,9 @@
 #pragma once
-
-#include "Engine/Core/Components/DestroyTag.h"
-#include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/ECS/System/CCL_System.h"
 #include <vector>
+#include "Engine/Core/Components/DestroyTag.h"
+#include "Engine/Transform/Components/TransformComponent.h"
+
 
 
 class HierarchyCleanupSystem : public CCL::ECS::IfSystem<

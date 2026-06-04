@@ -1,9 +1,6 @@
 #include "HealthSystem.h"
 #include "Game/Logics/Combat/DeadTag.h"
 #include "Game/Logics/GameEvent/GameEvents.h"
-
-
-#include "Game/Logics/Character/Player/PlayerComponent.h"
 #include <algorithm>
 
 // システムの実行順序の定義ヘッダー
@@ -16,7 +13,10 @@ void HealthSystem::Update(float dt)
     // =======================================================================
     // フェーズ2：毎日の健康診断（全エンティティの定期更新）
     // =======================================================================
-    ForEachWithID([&](CCL::ECS::EntityID id, HealthComponent &health) {
+    ForEachWithID([&](CCL::ECS::EntityID id, HealthComponent &health,const TimeStateComponent& time) {
+        // 各自の時計を使用（ヒットストップ中は無敵時間の消費もピタッと止まる）
+        float dt = time.localDt;
+
         // 1. 無敵時間のカウントダウン
         if (health.invincibilityTimer > 0.0f) {
             health.invincibilityTimer -= dt;

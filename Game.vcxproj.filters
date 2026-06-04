@@ -208,12 +208,6 @@
     <Filter Include="Shader\Pass\SkyBox">
       <UniqueIdentifier>{7aa7b402-62ad-4c1d-bdb8-5ade6932aa53}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Game\Logics\Character\PlayerCar">
-      <UniqueIdentifier>{54b1b67f-81d4-4299-b7c1-3e7a0a3f50b7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\Character\PlayerCar\_Meta">
-      <UniqueIdentifier>{49c1eceb-c993-4721-abbb-5824797ecbae}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\Audio">
       <UniqueIdentifier>{f67d589a-603e-4892-ba9f-e03879675b0e}</UniqueIdentifier>
     </Filter>
@@ -240,9 +234,6 @@
     </Filter>
     <Filter Include="Source\Game\Logics\AI">
       <UniqueIdentifier>{f451e48b-7ce2-454b-924e-a4f13673ac42}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\Audio">
-      <UniqueIdentifier>{bd33aae1-4ce7-4c0d-9064-6e2358abc38b}</UniqueIdentifier>
     </Filter>
     <Filter Include="External\imgui-node-editor">
       <UniqueIdentifier>{f1fed5a5-b31c-4a17-a80d-f659d2c8ca2d}</UniqueIdentifier>
@@ -858,21 +849,6 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\Pass\ShadowUtils.h">
       <Filter>Source\Engine\Graphics\Shader\Pass</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\PlayerCar\PlayerCarComponent.h">
-      <Filter>Source\Game\Logics\Character\PlayerCar</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\PlayerCar\PlayerCarInputSystem.h">
-      <Filter>Source\Game\Logics\Character\PlayerCar</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\PlayerCar\PlayerCarMoveSystem.h">
-      <Filter>Source\Game\Logics\Character\PlayerCar</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\PlayerCar\PlayerCarSphereTag.h">
-      <Filter>Source\Game\Logics\Character\PlayerCar</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\PlayerCar\CarCollisionSystem.h">
-      <Filter>Source\Game\Logics\Character\PlayerCar</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Platform\Input\IInputAPI.h">
       <Filter>Source\Engine\Platform\Input\API</Filter>
     </ClInclude>
@@ -959,15 +935,6 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\CharacterMovementInputComponent.h">
       <Filter>Source\Game\Logics\Character</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Audio\DistractionItemComponent.h">
-      <Filter>Source\Game\Logics\Audio</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Audio\DistractionItemSystem.h">
-      <Filter>Source\Game\Logics\Audio</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Audio\DistractionItemDebugDrawSystem.h">
-      <Filter>Source\Game\Logics\Audio</Filter>
     </ClInclude>
     <ClInclude Include="External\imgui-node-editor\crude_json.h">
       <Filter>External\imgui-node-editor</Filter>
@@ -1311,9 +1278,6 @@
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\ToneMapConfigComponent.h">
       <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Systems\Core\DissolveSystem.h">
-      <Filter>Source\Engine\Graphics\Systems\Core</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Systems\Core\EnvironmentSystem.h">
       <Filter>Source\Engine\Graphics\Systems\Core</Filter>
     </ClInclude>
@@ -1334,9 +1298,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Systems\Culling\FrustumCullingSystem.h">
       <Filter>Source\Engine\Graphics\Systems\Culling</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Systems\Lighting\FogSystem.h">
-      <Filter>Source\Engine\Graphics\Systems\Lighting</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Systems\Lighting\LightSystem.h">
       <Filter>Source\Engine\Graphics\Systems\Lighting</Filter>
@@ -1589,6 +1550,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Systems\SystemPriority.h">
       <Filter>Source\Engine\Core\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Systems\Culling\AABBDebugDrawSystem.h">
+      <Filter>Source\Engine\Graphics\Systems\Culling</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1862,18 +1826,6 @@
     <ClCompile Include="Source\Game\Logics\Test\VoxelOceanSystem.cpp">
       <Filter>Source\Game\Logics\Test</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\PlayerCar\PlayerCarInputSystem.cpp">
-      <Filter>Source\Game\Logics\Character\PlayerCar</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\PlayerCar\PlayerCarMoveSystem.cpp">
-      <Filter>Source\Game\Logics\Character\PlayerCar</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\PlayerCar\PlayerCarComponentMeta.cpp">
-      <Filter>Source\Game\Logics\Character\PlayerCar\_Meta</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\PlayerCar\CarCollisionSystem.cpp">
-      <Filter>Source\Game\Logics\Character\PlayerCar</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Platform\Input\InputFacade.cpp">
       <Filter>Source\Engine\Platform\Input\API</Filter>
     </ClCompile>
@@ -1972,15 +1924,6 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\CharacterMovementInputComponentMeta.cpp">
       <Filter>Source\Game\Logics\Character</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Audio\DistractionItemSystem.cpp">
-      <Filter>Source\Game\Logics\Audio</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Audio\DistractionItemComponentMeta.cpp">
-      <Filter>Source\Game\Logics\Audio</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Audio\DistractionItemDebugDrawSystem.cpp">
-      <Filter>Source\Game\Logics\Audio</Filter>
     </ClCompile>
     <ClCompile Include="External\imgui-node-editor\crude_json.cpp">
       <Filter>External\imgui-node-editor</Filter>
@@ -2219,9 +2162,6 @@
     <ClCompile Include="Source\Engine\Graphics\Components\Particle\GPUParticleComponentMeta.cpp">
       <Filter>Source\Engine\Graphics\Components\Particle</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Graphics\Systems\Core\DissolveSystem.cpp">
-      <Filter>Source\Engine\Graphics\Systems\Core</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Systems\Core\EnvironmentSystem.cpp">
       <Filter>Source\Engine\Graphics\Systems\Core</Filter>
     </ClCompile>
@@ -2242,9 +2182,6 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Systems\Culling\FrustumCullingSystem.cpp">
       <Filter>Source\Engine\Graphics\Systems\Culling</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Graphics\Systems\Lighting\FogSystem.cpp">
-      <Filter>Source\Engine\Graphics\Systems\Lighting</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Systems\Lighting\LightSystem.cpp">
       <Filter>Source\Engine\Graphics\Systems\Lighting</Filter>
@@ -2374,6 +2311,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Timer\TimeScaleSystem.cpp">
       <Filter>Source\Engine\Timer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Systems\Culling\AABBDebugDrawSystem.cpp">
+      <Filter>Source\Engine\Graphics\Systems\Culling</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -1,6 +1,7 @@
 #pragma once
 #include "Engine/ECS/System/CCL_System.h"
 #include "Game/Logics/Combat/HealthComponent.h"
+#include "Engine/Timer/TimeState.h"
 
 /**
  * @file HealthSystem.h
@@ -29,9 +30,11 @@
  * この HealthSystem のコードは一切変更せずに機能する。
  */
 
+
 // 【解決】HPの増減と死亡判定（Tagの付与）のみを行うシステム
 class HealthSystem : public CCL::ECS::IfSystem<HealthSystem,
-                         CCL::ECS::Write<HealthComponent>> {
+                         CCL::ECS::Write<HealthComponent>,
+                         CCL::ECS::Read<TimeStateComponent>> {
   public:
     HealthSystem() : IfSystem("HealthSystem") {}
     void Update(float dt) override;

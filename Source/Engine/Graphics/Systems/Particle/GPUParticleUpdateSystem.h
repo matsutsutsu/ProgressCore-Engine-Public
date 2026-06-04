@@ -3,15 +3,17 @@
 #include "Engine/Graphics/Components/Particle/GPUParticleComponent.h"
 #include "Engine/Graphics/Components/Particle/GPUParticleBuffer.h"
 #include "Engine/Transform/Components/TransformComponent.h"
-#include "Engine/Graphics/Shader/ShaderReflection.h"
+#include "Engine/Timer/TimeState.h"
 
 class ParticleComputeShader; // 前方宣言
+struct GPUParticleBufferSet;
 
 // パーティクルのシミュレーションを行うシステム
 // SystemPriority::Render グループで実行推奨 (描画前)
 class GPUParticleUpdateSystem : public CCL::ECS::IfSystem<GPUParticleUpdateSystem,
                                     CCL::ECS::Write<GPUParticleComponent>,
-                                    CCL::ECS::Read<TransformComponent>> {
+                                    CCL::ECS::Read<TransformComponent>,
+                                    CCL::ECS::Read<TimeStateComponent>> {
   public:
     GPUParticleUpdateSystem() : IfSystem("GPUParticleUpdateSystem") {}
     ~GPUParticleUpdateSystem();   // ★unique_ptr<前方宣言型> のため .cpp で = default

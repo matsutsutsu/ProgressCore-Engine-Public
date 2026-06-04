@@ -4,10 +4,12 @@
 #include "Engine/Graphics/Shader/ShaderResources.h"
 #include "Engine/Graphics/Shader/ParticleShared.h"
 #include "Engine/Graphics/Shader/Material/ParticleComputeShader.h"
-#include "Engine/Graphics/Components/Particle/GPUParticleBuffer.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include <random>
+
+
+#include "Engine/Graphics/Shader/ShaderReflection.h"
 
 #include "Game/Utils/PooledParticleComponent.h"
 
@@ -101,7 +103,8 @@ void GPUParticleUpdateSystem::Update(float dt)
 
     ForEachWithID([&](CCL::ECS::EntityID id,
         GPUParticleComponent& particle,
-        const TransformComponent& transform)
+        const TransformComponent& transform,
+        const TimeStateComponent& rawDt)
         {
             //if (auto* pooled = _world->GetComponent<PooledParticleComponent>(id))
                 //if (pooled->isSleeping) return;
@@ -116,7 +119,7 @@ void GPUParticleUpdateSystem::Update(float dt)
             if (particle.needsGpuInit)
                 DispatchInitCS(dc, _computeShader.get(), particle, transform, buffers);
             else
-                DispatchUpdateCS(dc, _computeShader.get(), particle, transform, buffers, dt);
+                DispatchUpdateCS(dc, _computeShader.get(), particle, transform, buffers, rawDt.localDt);
         });
 
     dc->CSSetShader(nullptr, nullptr, 0);
