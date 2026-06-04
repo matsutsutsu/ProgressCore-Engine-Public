@@ -3,7 +3,6 @@
 
 void SetupPass::Execute(const RenderFrameContext& ctx)
 {
-    ZoneScopedN("Pass: Setup");
 
     // MakeLegacyContext 不要: _services / ctx を直接参照
     if (!_services->postProcess) return;

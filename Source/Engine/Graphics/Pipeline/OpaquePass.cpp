@@ -16,7 +16,6 @@ void OpaquePass::Initialize(const RenderServices& services)
 
 void OpaquePass::Execute(const RenderFrameContext& ctx)
 {
-    ZoneScopedN("Pass: Opaque");
 
     ID3D11DeviceContext* dc = ctx.dc;
     if (!dc) return;

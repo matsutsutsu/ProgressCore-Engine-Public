@@ -15,7 +15,6 @@ void TransparentPass::Initialize(const RenderServices& services)
 
 void TransparentPass::Execute(const RenderFrameContext& ctx)
 {
-    ZoneScopedN("Pass: Transparent");
 
     ID3D11DeviceContext* dc = ctx.dc;
     RenderQueue* queue = _services->renderQueue;

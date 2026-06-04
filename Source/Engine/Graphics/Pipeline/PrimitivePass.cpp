@@ -5,7 +5,6 @@
 
 void PrimitivePass::Execute(const RenderFrameContext& ctx)
 { 
-    ZoneScopedN("Pass: Primitive");
 
     if (!ctx.camera) return;
 

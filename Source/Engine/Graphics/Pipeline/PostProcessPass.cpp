@@ -3,7 +3,6 @@
 
 void PostProcessPass::Execute(const RenderFrameContext& ctx)
 {
-    ZoneScopedN("Pass: PostProcess");
 
     if (!_services->postProcess) return;
 

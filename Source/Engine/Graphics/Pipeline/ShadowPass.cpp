@@ -19,7 +19,6 @@ void ShadowPass::Initialize(const RenderServices& services)
 
 void ShadowPass::Execute(const RenderFrameContext& ctx)
 {
-    ZoneScopedN("Pass: Shadow");
 
     // MakeLegacyContext 不要: _services / ctx を直接参照
     RenderQueue* queue = _services->renderQueue;

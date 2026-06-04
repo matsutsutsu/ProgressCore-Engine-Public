@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <string>
 #include "Engine/Graphics/RHI/RenderContext.h"
 
 // 各パスをTracyで追跡できるようにインクルード
@@ -21,6 +22,12 @@ class IRenderPass
 {
 public:
     virtual ~IRenderPass() = default;
+
+    // =========================================================
+    //  TracyとUI表示用の自動キャッシュ名
+    // =========================================================
+    std::string _passName = "Unknown Pass";
+    std::string _tracyZoneName = "Pass: Unknown";
 
     /**
      * @brief 初期化。Services を保持し、必要に応じて GPU リソースを生成する。

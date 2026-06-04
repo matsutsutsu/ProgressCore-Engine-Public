@@ -37,7 +37,6 @@ void SkyboxPass::Initialize(const RenderServices& services)
 
 void SkyboxPass::Execute(const RenderFrameContext& ctx)
 {
-    ZoneScopedN("Pass: Skybox");
 
 
     if (!ctx.camera) return;

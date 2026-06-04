@@ -57,11 +57,19 @@ void RenderPipeline::Execute(const RenderFrameContext& ctx)
     for (auto& pass : _passes) {
         if (!pass->enabled) continue;
 
+        // =========================================================
+        // 各PassのCPU実行時間をTracyで計測
+        // アロケーションを防ぐため、キャッシュ済みの _tracyZoneName を直接渡す
+        // =========================================================
+        ZoneScoped;
+        ZoneName(pass->_tracyZoneName.c_str(), pass->_tracyZoneName.size());
+
 #if defined(ENABLE_EDITOR)
         if (annotation) {
-            wchar_t wname[64] = {};
-            MultiByteToWideChar(CP_UTF8, 0, pass->GetName(), -1, wname, 64);
-            annotation->BeginEvent(wname);
+            int len = MultiByteToWideChar(CP_UTF8, 0, pass->_passName.c_str(), -1, nullptr, 0);
+            std::wstring wname(len, 0);
+            MultiByteToWideChar(CP_UTF8, 0, pass->_passName.c_str(), -1, &wname[0], len);
+            annotation->BeginEvent(wname.c_str());
         }
 #endif
 

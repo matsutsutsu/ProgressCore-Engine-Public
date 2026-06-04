@@ -3,6 +3,8 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+#include <typeinfo> 
+#include <string>   
 
 #include "Engine/Graphics/Pipeline/IRenderPass.h"
 #include "Engine/Graphics/RHI/RenderContext.h"
@@ -64,6 +66,18 @@ public:
 
         auto pass = std::make_unique<T>(std::forward<Args>(args)...);
         T* raw = pass.get();
+
+        // =========================================================================
+        // クラスの型情報(typeid)から名前を自動抽出し、キャッシュする
+        // MSVCの場合、typeid(T).name() は "class ShadowPass" のように prefix が付くので除去する
+        // =========================================================================
+        std::string name = typeid(T).name();
+        if (name.find("class ") == 0)  name = name.substr(6);
+        if (name.find("struct ") == 0) name = name.substr(7);
+
+        raw->_passName = name;
+        raw->_tracyZoneName = "Pass: " + name;
+
         pass->Initialize(_services);        // _services は Initialize() 後にのみ有効
         _passes.push_back(std::move(pass));
         return raw;
