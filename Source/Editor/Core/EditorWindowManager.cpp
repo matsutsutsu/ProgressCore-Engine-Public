@@ -47,7 +47,6 @@ void EditorWindowManager::Initialize()
     // =========================================================
     RegisterWindow<ECSDebugWindow>();
     RegisterWindow<ConsoleWindow>();
-    RegisterWindow<MemoryAnalyzerWindow>();
     //RegisterWindow<AnimationSequencerWindow>();
     //RegisterWindow<AnimGraphWindow>()->SetVisible(false);
 	//RegisterWindow<BehaviorTreeWindow>();
@@ -57,6 +56,7 @@ void EditorWindowManager::Initialize()
     RegisterWindow<TextEditorWindow>()->SetVisible(false);
     RegisterWindow<InputEditorWindow>()->SetVisible(false);
     RegisterWindow<NavMeshWindow>()->SetVisible(false);
+    RegisterWindow<MemoryAnalyzerWindow>()->SetVisible(false);
     //RegisterWindow<SceneViewWindow>();
     RegisterWindow<GameViewWindow>();
 }

@@ -30,7 +30,7 @@ void EditorScene::Initialize()
     //SceneInitializer::SpawnJoltTest(*_worldPtr, device);
 
     // 中では普通にPBRモデル用にしている
-    SceneInitializer::SpawnAnimationTest(*_worldPtr, device);
+    //SceneInitializer::SpawnAnimationTest(*_worldPtr, device);
 
 
     //SceneInitializer::SpawnModelGridTest(*_worldPtr, device, 500);
@@ -43,7 +43,7 @@ void EditorScene::Initialize()
     //SceneInitializer::SpawnECSBenchmarkTest(*_worldPtr, device, 100000);
 
     // 300 x 300 = 90,000 個のキューブの海を生成
-    //SceneInitializer::SpawnVoxelOceanTest(*_worldPtr, device, 300);
+    SceneInitializer::SpawnVoxelOceanTest(*_worldPtr, device, 400);
     //SceneInitializer::SpawnVoxelOceanTest(*_worldPtr, device, 100);
    
     //SceneInitializer::SpawnPhysicsAvalancheTest(*_worldPtr, device, 10000);

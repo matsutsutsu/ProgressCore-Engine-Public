@@ -481,6 +481,9 @@
     <Filter Include="Source\Engine\Timer">
       <UniqueIdentifier>{7a88023c-be1b-4e90-9f95-822c9f974cc6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Transform\Core">
+      <UniqueIdentifier>{6bbbd955-4bdc-4d09-a45f-dda2d10e4270}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1560,6 +1563,12 @@
     <ClInclude Include="Source\Engine\Graphics\Resource\ResourceTypes.h">
       <Filter>Source\Engine\Graphics\Resource</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Transform\Core\TransformHierarchyCache.h">
+      <Filter>Source\Engine\Transform\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Transform\Systems\BoneAttachmentSystem.h">
+      <Filter>Source\Engine\Transform\Systems</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2323,6 +2332,12 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\MemoryAnalyzerWindow.cpp">
       <Filter>Source\Editor\Windows\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Transform\Core\TransformHierarchyCache.cpp">
+      <Filter>Source\Engine\Transform\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Transform\Systems\BoneAttachmentSystem.cpp">
+      <Filter>Source\Engine\Transform\Systems</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

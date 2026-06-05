@@ -167,4 +167,16 @@ struct TransformComponent {
 
         XMStoreFloat4x4(&worldMatrix, world);
     }
+
+    /**
+     * @brief TRS からローカル行列（S * R * T）を合成する。
+     * @note 親変換は含まない純粋なローカル。階層解決・ボーン追従で共用。
+     */
+    DirectX::XMMATRIX ComposeLocalMatrix() const {
+        using namespace DirectX;
+        return XMMatrixAffineTransformation(
+            XMLoadFloat3(&scale), XMVectorZero(),
+            XMLoadFloat4(&rotation), XMLoadFloat3(&position));
+    }
+
 };
