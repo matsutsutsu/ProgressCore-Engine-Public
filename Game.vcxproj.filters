@@ -283,12 +283,6 @@
     <Filter Include="Build\props">
       <UniqueIdentifier>{70918abd-a317-48e7-9e20-3ef9d838100a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Serialization\Reflection">
-      <UniqueIdentifier>{71d559ab-f949-4a0d-bea5-9be420f939de}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\_Meta">
-      <UniqueIdentifier>{8a565a3a-ae3a-41b2-ab68-c99b8ff213a9}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\ECS">
       <UniqueIdentifier>{b04a1fd8-59e1-4abc-b928-720dd27819e3}</UniqueIdentifier>
     </Filter>
@@ -489,6 +483,9 @@
     </Filter>
     <Filter Include="Source\Game\Logics\Wand\_Data">
       <UniqueIdentifier>{02afee24-d971-4567-903c-cde378324414}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shader\Compute\Boids">
+      <UniqueIdentifier>{7f01f78f-5e12-4472-9745-513f6f592a59}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -1052,9 +1049,6 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Combat\CombatRosterComponent.h">
       <Filter>Source\Game\Logics\Combat</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Serialization\Reflection\Reflection.h">
-      <Filter>Source\Engine\Serialization\Reflection</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BossActionComponent.h">
       <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
@@ -2047,9 +2041,6 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\GameViewWindow.cpp">
       <Filter>Source\Editor\Windows\Editor</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\_generated\_all_meta.cpp">
-      <Filter>Source\Engine\_Meta</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BossActionSystem.cpp">
       <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>

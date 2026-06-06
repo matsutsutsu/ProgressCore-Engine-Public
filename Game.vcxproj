@@ -584,7 +584,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\Meta\ComponentMetaJson.h" />
-    <ClInclude Include="Source\Engine\Serialization\Reflection\Reflection.h" />
     <ClInclude Include="Source\Engine\Serialization\Registry\ComponentRegistry.h" />
     <ClInclude Include="Source\Engine\Serialization\Registry\ComponentRegistry_Editor.h" />
     <ClInclude Include="Source\Engine\Serialization\Serializer\PrefabSerializer.h" />
@@ -1409,7 +1408,6 @@
     <ClCompile Include="Source\Game\Scenes\ParticleScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\SceneLoading.cpp" />
     <ClCompile Include="Source\Game\UI\FloatingTextSystem.cpp" />
-    <ClCompile Include="Source\_generated\_all_meta.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="External\DirectXTex\DirectXTex_Desktop_2022.vcxproj">

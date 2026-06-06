@@ -106,7 +106,7 @@
 
 		<PreBuildEvent>
 			<Command>
-				py -3 "$(SolutionDir)Tools\python\ccl_codegen.py" --src "$(SolutionDir)Source" --out "$(SolutionDir)Source\_generated" --include-root "$(SolutionDir)Source"
+				
 				%(Command)
 			</Command>
 		</PreBuildEvent>
