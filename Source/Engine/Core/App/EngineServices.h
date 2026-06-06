@@ -6,7 +6,7 @@ class FmodAudioManager;
 class JoltPhysicsManager;
 class InputFacade;
 
-// ★ 追加: 描画関連の前方宣言
+// 描画関連の前方宣言
 class Camera;
 class LightManager;
 class PostProcessManager;

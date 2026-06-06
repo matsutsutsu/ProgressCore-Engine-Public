@@ -12,42 +12,9 @@
                 }
             ],
             "Name": "Attack"
-        },
-        {
-            "Bindings": [
-                {
-                    "Device": "Keyboard",
-                    "Key": "SPACE"
-                },
-                {
-                    "Device": "GamePad_Button",
-                    "Key": "BTN_A"
-                }
-            ],
-            "Name": "Jump"
         }
     ],
     "Axes": [
-        {
-            "Bindings": [
-                {
-                    "Device": "Keyboard",
-                    "Key": "W",
-                    "Scale": 1.0
-                },
-                {
-                    "Device": "Keyboard",
-                    "Key": "S",
-                    "Scale": -1.0
-                },
-                {
-                    "Device": "GamePad_AxisLY",
-                    "Key": "NONE",
-                    "Scale": 1.0
-                }
-            ],
-            "Name": "Throttle"
-        },
         {
             "Bindings": [
                 {
@@ -66,7 +33,27 @@
                     "Scale": 1.0
                 }
             ],
-            "Name": "Steer"
+            "Name": "MoveX"
+        },
+        {
+            "Bindings": [
+                {
+                    "Device": "Keyboard",
+                    "Key": "W",
+                    "Scale": 1.0
+                },
+                {
+                    "Device": "Keyboard",
+                    "Key": "S",
+                    "Scale": -1.0
+                },
+                {
+                    "Device": "GamePad_AxisLY",
+                    "Key": "NONE",
+                    "Scale": 1.0
+                }
+            ],
+            "Name": "MoveY"
         }
     ]
 }

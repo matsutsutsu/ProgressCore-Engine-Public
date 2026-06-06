@@ -12,7 +12,7 @@
 #include "Engine/Serialization/Factory/EntityFactory.h"
 #include "Game/Logics/AI/BehaviorTree/BossActionComponent.h"
 #include <mutex>
-#include "Game/Logics/Character/CharacterMovementInputComponent.h"
+#include "Engine/Physics/Components/Character/CharacterMovementInputComponent.h"
 
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;

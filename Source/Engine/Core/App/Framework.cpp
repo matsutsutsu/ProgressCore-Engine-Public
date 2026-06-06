@@ -10,7 +10,7 @@
 #include "Engine/Scene/SceneManager.h"
 #include "Game/Scenes/BaseScene.h"
 
-// ★ 必要なヘッダをインクルード
+// APIファイルをインクルード
 #include "Engine/Audio/FmodIntegration/FmodAudioManager.h"
 #include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"
 #include "Engine/Platform/Input/InputFacade.h"
@@ -194,16 +194,6 @@ void Framework::Update(float elapsedTime)
 		ImGuiRenderer::NewFrame();
 	}
 #endif
-
-	{
- 
-		ZoneScopedN("Framework::Input::Update");
-
-
-		// インプット更新処理
-		Input::Instance().Update();
-
-	}
 
 	{
  
@@ -408,7 +398,7 @@ int Framework::Run()
 			// メモリリーク検出を有効化 (すでにあるはず)
 			_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 
-			// ★追加: この番号のメモリ確保の瞬間にブレークする
+			// この番号のメモリ確保の瞬間にブレークする
 			// ダンプに出ている番号（例: 2575）を指定します
 			// ※実行するたびに番号が変わる場合は、この方法は使えません
 
@@ -442,6 +432,15 @@ int Framework::Run()
 				m_fixedUpdateCounter = 0;
 				m_debugTimer = 0.0f;
 			}
+
+			// =========================================================
+			//  ループ(FixedUpdate)に入る前に、必ず最新のハードウェア入力を取得する
+			// =========================================================
+			{
+				ZoneScopedN("Framework::Input::Update");
+				Input::Instance().Update(frameTime);
+			}
+
 
 			// ループ回数制限用のカウンタ
 			int updateCount = 0;

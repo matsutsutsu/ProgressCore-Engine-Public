@@ -64,7 +64,7 @@ void NavSteeringSystem::Update(float dt) {
             if (distToTarget > 0.001f && speed > 0.0f) {
                 dirToTarget.Normalize();
                 input.desiredVelocity = dirToTarget * speed;
-                input.desiredLookDir = dirToTarget;
+                //input.desiredLookDir = dirToTarget;
 
                 // AIの視線を滑らかに回転させる (Y軸回転)
                 // atan2f を使って、XとZのベクトルから「向くべき角度(Yaw)」を計算

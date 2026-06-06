@@ -32,7 +32,7 @@ public:
 	~GamePad() {}
 
 	// 更新
-	void Update();
+	void Update(float dt);
 
 	// スロット設定
 	void SetSlot(int slot) { this->slot = slot; }
@@ -81,6 +81,9 @@ public:
 
 	void ForceBottonUp(GamePadButton btn);
 
+	// ECSシステムから呼ばれる窓口
+	void SetVibration(float left, float right, float duration);
+
 private:
 	GamePadButton		buttonState[2] = { 0 };
 	GamePadButton		buttonDown = 0;
@@ -92,5 +95,12 @@ private:
 	float				triggerL = 0.0f;
 	float				triggerR = 0.0f;
 	int					slot = 0;
-	int					retryDelayTimer = 0;
+
+private:
+	float m_vibrationTimer = 0.0f;
+	float m_currentLeft = 0.0f;
+	float m_currentRight = 0.0f;
+
+	// 実際にXInputに命令を送る（内部用）
+	void ApplyVibrationHardware(float left, float right);
 };

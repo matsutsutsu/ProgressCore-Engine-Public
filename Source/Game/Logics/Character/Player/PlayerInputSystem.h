@@ -1,20 +1,25 @@
+#pragma once
+/// @file PlayerInputSystem.h
+/// @brief プレイヤーの入力デバイスの状態を読み取り、移動・攻撃の「意思データ」としてコンポーネントに書き込むシステム。
+/// @note ハードウェア依存（InputFacade）はすべてこのシステムに集約させる。
 
-// inputAPIを使用していためコメントアウト
+#include "Engine/ECS/System/CCL_IfSystem.h"
+#include "Game/Logics/Character/Player/PlayerComponent.h"
+#include "Engine/Physics/Components/Character/CharacterMovementInputComponent.h"
 
-//#pragma once
-//#include "Engine/ECS/System/CCL_System.h"                  // IfSystemの継承元
-//
-//// 前方宣言 (インクルード削減のため)
-//class Camera;
-//struct PlayerComponent;
-//
-//class PlayerInputSystem
-//    : public CCL::ECS::IfSystem<PlayerInputSystem, CCL::ECS::Write<PlayerComponent>> {
-//  public:
-//    // コンストラクタ
-//    PlayerInputSystem();
-//    virtual ~PlayerInputSystem() = default;
-//
-//    // 更新処理
-//    void Update(float dt) override;
-//};
+// ※ 名前空間で囲まない (ガイドライン準拠)
+class PlayerInputSystem : public CCL::ECS::IfSystem<
+    PlayerInputSystem,
+    CCL::ECS::Write<CharacterMovementInputComponent>,
+    CCL::ECS::Read<PlayerComponent>>
+{
+public:
+    PlayerInputSystem();
+    virtual ~PlayerInputSystem() = default;
+
+    void Update(float dt) override;
+
+private:
+    // マウスのスクリーン座標をワールド平面(Y=0)に変換するヘルパー
+    DirectX::SimpleMath::Vector3 GetMouseWorldPositionIntersection();
+};

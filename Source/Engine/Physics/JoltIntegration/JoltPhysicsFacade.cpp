@@ -1,6 +1,7 @@
 #include "Engine/Physics/JoltIntegration/JoltPhysicsFacade.h"
 #include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"
 #include "Engine/Physics/Components/Jolt/JoltHandleComponent.h"
+#include "Engine/Physics/Components/Character/JoltCharacterHandleComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 
 #include <Jolt/Physics/Collision/RayCast.h>
@@ -130,7 +131,7 @@ void JoltPhysicsFacade::SetLookDirection(CCL::ECS::EntityID entity, const Direct
 }
 
 // =======================================================
-// 🔴 Queries (レイキャスト)
+// 🔴 Queries (レイキャスト・接地)
 // =======================================================
 bool JoltPhysicsFacade::CheckGrounded(CCL::ECS::EntityID entity, float distance) {
     auto* handle = m_world->GetComponent<JoltHandleComponent>(entity);
@@ -196,4 +197,17 @@ PhysicsHitInfo JoltPhysicsFacade::RayCast(const XMFLOAT3& origin, const XMFLOAT3
         }
     }
     return info;
+}
+
+// =======================================================
+// 🟣 Character Queries (CharacterVirtual)
+// =======================================================
+bool JoltPhysicsFacade::IsCharacterGrounded(CCL::ECS::EntityID entity) {
+    // CharacterVirtual の内部状態を直接参照する。
+    // レイキャスト(CheckGrounded)と違い、段差・坂・床速度を考慮した正確な接地判定。
+    auto* handle = m_world->GetComponent<JoltCharacterHandleComponent>(entity);
+    if (!handle || !handle->character) return false;
+
+    return handle->character->GetGroundState()
+        == JPH::CharacterVirtual::EGroundState::OnGround;
 }

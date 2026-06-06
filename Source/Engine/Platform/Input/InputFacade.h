@@ -13,6 +13,18 @@ private:
     std::unordered_map<uint32_t, std::vector<InputBinding>> m_axisBindings;
 
 public:
+    // UI用：現在のアクティブなデバイスを取得する
+    ActiveDeviceType GetActiveDeviceType() const override {
+        return m_rawInput ? m_rawInput->GetActiveDeviceType() : ActiveDeviceType::KeyboardMouse;
+    }
+
+    // GUI用：現在登録されている全アクション名を取得
+    const std::vector<std::string>& GetActionNames() const { return m_actionNames; }
+    const std::vector<std::string>& GetAxisNames() const { return m_axisNames; }
+private:
+    std::vector<std::string> m_actionNames;
+    std::vector<std::string> m_axisNames;
+public:
     InputFacade(Input* rawInput) : m_rawInput(rawInput) {}
     virtual ~InputFacade() = default;
 
@@ -27,4 +39,6 @@ public:
     bool GetActionTriggered(uint32_t actionHash) const override;
     bool GetActionReleased(uint32_t actionHash) const override;
     float GetAxis(uint32_t axisHash) const override;
+
+    void SetVibration(float leftMotor, float rightMotor, float duration) override;
 };

@@ -484,6 +484,12 @@
     <Filter Include="Source\Engine\Transform\Core">
       <UniqueIdentifier>{6bbbd955-4bdc-4d09-a45f-dda2d10e4270}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\Wand">
+      <UniqueIdentifier>{b7ec1194-21ea-451b-a241-e49b51dce98f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\Wand\_Data">
+      <UniqueIdentifier>{02afee24-d971-4567-903c-cde378324414}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -705,18 +711,6 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderResources.h">
       <Filter>Source\Engine\Graphics\Shader</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Platform\Input\GamePad.h">
-      <Filter>Source\Engine\Platform\Input</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Platform\Input\Input.h">
-      <Filter>Source\Engine\Platform\Input</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Platform\Input\Keyboard.h">
-      <Filter>Source\Engine\Platform\Input</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Platform\Input\Mouse.h">
-      <Filter>Source\Engine\Platform\Input</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\Factory\Prefab.h">
       <Filter>Source\Engine\Serialization\Factory</Filter>
     </ClInclude>
@@ -852,12 +846,6 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\Pass\ShadowUtils.h">
       <Filter>Source\Engine\Graphics\Shader\Pass</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Platform\Input\IInputAPI.h">
-      <Filter>Source\Engine\Platform\Input\API</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Platform\Input\InputFacade.h">
-      <Filter>Source\Engine\Platform\Input\API</Filter>
-    </ClInclude>
     <ClInclude Include="External\RecastNavigation\Recast\Include\Recast.h">
       <Filter>External\RecastNavigation\Recast</Filter>
     </ClInclude>
@@ -935,9 +923,6 @@
     </ClInclude>
     <ClInclude Include="Source\Editor\Core\EditorCommandHistory.h">
       <Filter>Source\Editor\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\CharacterMovementInputComponent.h">
-      <Filter>Source\Game\Logics\Character</Filter>
     </ClInclude>
     <ClInclude Include="External\imgui-node-editor\crude_json.h">
       <Filter>External\imgui-node-editor</Filter>
@@ -1569,6 +1554,45 @@
     <ClInclude Include="Source\Engine\Transform\Systems\BoneAttachmentSystem.h">
       <Filter>Source\Engine\Transform\Systems</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\RF_AttachmentEffects.h">
+      <Filter>Source\Game\Logics\Wand</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\RF_BulletComponents.h">
+      <Filter>Source\Game\Logics\Wand</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\RF_WandComponents.h">
+      <Filter>Source\Game\Logics\Wand</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\RF_WandProgram.h">
+      <Filter>Source\Game\Logics\Wand</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\RF_PhaseTypes.h">
+      <Filter>Source\Game\Logics\Wand\_Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\RF_BulletEvents.h">
+      <Filter>Source\Game\Logics\Wand\_Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\Components\Character\CharacterMovementInputComponent.h">
+      <Filter>Source\Engine\Physics\Components\Character</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Platform\Input\GamePad.h">
+      <Filter>Source\Engine\Platform\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Platform\Input\Input.h">
+      <Filter>Source\Engine\Platform\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Platform\Input\Keyboard.h">
+      <Filter>Source\Engine\Platform\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Platform\Input\Mouse.h">
+      <Filter>Source\Engine\Platform\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Platform\Input\IInputAPI.h">
+      <Filter>Source\Engine\Platform\Input\API</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Platform\Input\InputFacade.h">
+      <Filter>Source\Engine\Platform\Input\API</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -1775,18 +1799,6 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\ShaderReflection.cpp">
       <Filter>Source\Engine\Graphics\Shader</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Platform\Input\GamePad.cpp">
-      <Filter>Source\Engine\Platform\Input</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Platform\Input\Input.cpp">
-      <Filter>Source\Engine\Platform\Input</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Platform\Input\Keyboard.cpp">
-      <Filter>Source\Engine\Platform\Input</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Platform\Input\Mouse.cpp">
-      <Filter>Source\Engine\Platform\Input</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Serialization\Factory\Prefab.cpp">
       <Filter>Source\Engine\Serialization\Factory</Filter>
     </ClCompile>
@@ -1840,9 +1852,6 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Test\VoxelOceanSystem.cpp">
       <Filter>Source\Game\Logics\Test</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Platform\Input\InputFacade.cpp">
-      <Filter>Source\Engine\Platform\Input\API</Filter>
     </ClCompile>
     <ClCompile Include="External\RecastNavigation\Recast\Source\Recast.cpp">
       <Filter>External\RecastNavigation\Recast</Filter>
@@ -1936,9 +1945,6 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\Utils\NavMeshBuilder.cpp">
       <Filter>Source\Editor\Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\CharacterMovementInputComponentMeta.cpp">
-      <Filter>Source\Game\Logics\Character</Filter>
     </ClCompile>
     <ClCompile Include="External\imgui-node-editor\crude_json.cpp">
       <Filter>External\imgui-node-editor</Filter>
@@ -2171,9 +2177,6 @@
     <ClCompile Include="Source\Engine\Graphics\Components\Lighting\LightComponentMeta.cpp">
       <Filter>Source\Engine\Graphics\Components\Lighting</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Graphics\Components\Lighting\LightComponentMeta.generated.cpp">
-      <Filter>Source\Engine\Graphics\Components\Lighting</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Components\Particle\GPUParticleComponentMeta.cpp">
       <Filter>Source\Engine\Graphics\Components\Particle</Filter>
     </ClCompile>
@@ -2338,6 +2341,48 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Transform\Systems\BoneAttachmentSystem.cpp">
       <Filter>Source\Engine\Transform\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Wand\RF_AttachmentEffects.cpp">
+      <Filter>Source\Game\Logics\Wand</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Wand\RF_BulletHitSystem.cpp">
+      <Filter>Source\Game\Logics\Wand</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Wand\RF_BulletLifetimeSystem.cpp">
+      <Filter>Source\Game\Logics\Wand</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Wand\RF_BulletTravelSystem.cpp">
+      <Filter>Source\Game\Logics\Wand</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Wand\RF_WandBuildCompileSystem.cpp">
+      <Filter>Source\Game\Logics\Wand</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Wand\RF_WandFireSystem.cpp">
+      <Filter>Source\Game\Logics\Wand</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Platform\Input\GamePad.cpp">
+      <Filter>Source\Engine\Platform\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Platform\Input\Input.cpp">
+      <Filter>Source\Engine\Platform\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Platform\Input\Keyboard.cpp">
+      <Filter>Source\Engine\Platform\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Platform\Input\Mouse.cpp">
+      <Filter>Source\Engine\Platform\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Platform\Input\InputFacade.cpp">
+      <Filter>Source\Engine\Platform\Input\API</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Player\PlayerComponentMeta.cpp">
+      <Filter>Source\Game\Logics\Character\Player</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Physics\Components\Character\JoltCharacterConfigComponentMeta.cpp">
+      <Filter>Source\Engine\Physics\Components\Character</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Physics\Components\Character\CharacterMovementInputComponentMeta.cpp">
+      <Filter>Source\Engine\Physics\Components\Character</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

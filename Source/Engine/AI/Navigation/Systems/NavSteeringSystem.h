@@ -2,7 +2,7 @@
 #include "Engine/ECS/System/CCL_System.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/AI/Navigation/Components/NavAgentComponent.h"
-#include "Game/Logics/Character/CharacterMovementInputComponent.h"
+#include "Engine/Physics/Components/Character/CharacterMovementInputComponent.h"
 
 // 経路(waypoints)に従って、物理エンジン(Jolt)経由でAIを動かすシステム
 class NavSteeringSystem : public CCL::ECS::IfSystem<NavSteeringSystem,

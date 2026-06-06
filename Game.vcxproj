@@ -531,6 +531,7 @@
     <ClInclude Include="Source\Engine\Graphics\Systems\Particle\GPUParticleUpdateSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Particle\ParticleEventSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\PostProcess\PostProcessSystem.h" />
+    <ClInclude Include="Source\Engine\Physics\Components\Character\CharacterMovementInputComponent.h" />
     <ClInclude Include="Source\Engine\Physics\Components\Character\JoltCharacterConfigComponent.h" />
     <ClInclude Include="Source\Engine\Physics\Components\Character\JoltCharacterHandleComponent.h" />
     <ClInclude Include="Source\Engine\Physics\Components\Collision\JoltBoxColliderComponent.h" />
@@ -672,7 +673,6 @@
     <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeComponents.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeData.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Character\CharacterMovementInputComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerFeedbackSystem.h" />
@@ -698,6 +698,12 @@
     <ClInclude Include="Source\Game\Logics\Test\VectorFlowSystem.h" />
     <ClInclude Include="Source\Game\Logics\Test\VoxelOceanComponent.h" />
     <ClInclude Include="Source\Game\Logics\Test\VoxelOceanSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\RF_AttachmentEffects.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\RF_BulletComponents.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\RF_BulletEvents.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\RF_PhaseTypes.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\RF_WandComponents.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\RF_WandProgram.h" />
     <ClInclude Include="Source\Game\Scenes\BaseScene.h" />
     <ClInclude Include="Source\Game\Scenes\EditorScene.h" />
     <ClInclude Include="Source\Game\Scenes\ParticleScene.h" />
@@ -1235,7 +1241,6 @@
     <ClCompile Include="Source\Engine\Graphics\Components\Core\MaterialComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Core\ModelComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Lighting\LightComponentMeta.cpp" />
-    <ClCompile Include="Source\Engine\Graphics\Components\Lighting\LightComponentMeta.generated.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Particle\GPUParticleComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\Core\RenderPipeline.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\OpaquePass.cpp" />
@@ -1289,6 +1294,8 @@
     <ClCompile Include="Source\Engine\Graphics\Systems\Particle\GPUParticleUpdateSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Particle\ParticleEventSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\PostProcess\PostProcessSystem.cpp" />
+    <ClCompile Include="Source\Engine\Physics\Components\Character\CharacterMovementInputComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Physics\Components\Character\JoltCharacterConfigComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Physics\Components\Jolt\JoltPhysicsComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltContactListener.cpp" />
     <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsFacade.cpp" />
@@ -1376,7 +1383,7 @@
     <ClCompile Include="Source\Game\Logics\AI\NavAI\AIPatrolSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\NavAI\AIPerceptionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\StateTree\StateTreeSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\CharacterMovementInputComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\PlayerComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerFeedbackSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerInputSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerMoveSystem.cpp" />
@@ -1389,6 +1396,12 @@
     <ClCompile Include="Source\Game\Logics\Test\TornadoVortexSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\VectorFlowSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\VoxelOceanSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Wand\RF_AttachmentEffects.cpp" />
+    <ClCompile Include="Source\Game\Logics\Wand\RF_BulletHitSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Wand\RF_BulletLifetimeSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Wand\RF_BulletTravelSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Wand\RF_WandBuildCompileSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Wand\RF_WandFireSystem.cpp" />
     <ClCompile Include="Source\Game\Scenes\BaseScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\EditorScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\ParticleScene.cpp" />

@@ -6,8 +6,7 @@
 #include "Engine/Physics/Components/Collision/JoltSphereColliderComponent.h"
 #include "Engine/Physics/Components/Collision/JoltCapsuleColliderComponent.h" 
 #include "Engine/Physics/Components/Collision/JoltMeshColliderComponent.h"
-#include "Engine/Physics/Components/RigidBody/JoltRigidbodyComponent.h"
-#include "Engine/Physics/Components/Character/JoltCharacterConfigComponent.h" 
+#include "Engine/Physics/Components/RigidBody/JoltRigidbodyComponent.h" 
 
 #include "Engine/Serialization/Registry/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
@@ -111,29 +110,6 @@ template <> struct ComponentMeta<JoltRigidbodyComponent> {
     }
 };
 
-// ============================================================================
-// Character Config
-// ============================================================================
-template <> struct ComponentMeta<JoltCharacterConfigComponent> {
-    static constexpr bool                      registered = true;
-    static constexpr const char* displayName = "Jolt Character Config";
-    static const std::vector<FieldDescriptor>& Fields()
-    {
-        static const std::vector<FieldDescriptor> fields = {
-            META_FIELD_FLOAT(JoltCharacterConfigComponent,
-                maxSlopeAngle, "maxSlopeAngle", "Max Slope Angle", 1.0f, 0.0f, 89.0f, "Character Settings"),
-            META_FIELD_FLOAT(JoltCharacterConfigComponent,
-                maxStepHeight, "maxStepHeight", "Max Step Height", 0.1f, 0.0f, 5.0f, "Character Settings"),
-            META_FIELD_FLOAT(JoltCharacterConfigComponent,
-                walkSpeed, "walkSpeed", "Walk Speed", 0.5f, 0.0f, 100.0f, "Character Settings"),
-            META_FIELD_FLOAT(JoltCharacterConfigComponent,
-                jumpSpeed, "jumpSpeed", "Jump Speed", 0.5f, 0.0f, 100.0f, "Character Settings"),
-            META_FIELD_FLOAT(JoltCharacterConfigComponent,
-                characterMass, "characterMass", "Character Mass", 1.0f, 0.1f, 1000.0f, "Character Settings")
-        };
-        return fields;
-    }
-};
 
 // ============================================================================
 // 究極の自動化
@@ -143,4 +119,3 @@ REGISTER_COMPONENT(JoltSphereColliderComponent, "JoltSphereCollider")
 REGISTER_COMPONENT(JoltCapsuleColliderComponent, "JoltCapsuleCollider")
 REGISTER_COMPONENT(JoltMeshColliderComponent, "JoltMeshCollider")
 REGISTER_COMPONENT(JoltRigidbodyComponent, "JoltRigidbody")
-REGISTER_COMPONENT(JoltCharacterConfigComponent, "JoltCharacterConfig")
