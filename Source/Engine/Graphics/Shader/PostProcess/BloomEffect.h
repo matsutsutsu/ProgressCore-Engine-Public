@@ -50,9 +50,10 @@ public:
      * @param inputSRV シーン HDR テクスチャ
      * @return シーン + Bloom グロー の合成済み HDR SRV（次のエフェクトの入力）
      */
-    ID3D11ShaderResourceView* Process(
+    void Process(
         ID3D11DeviceContext* dc,
-        ID3D11ShaderResourceView* inputSRV) override;
+        ID3D11ShaderResourceView* inputSRV,
+        ID3D11RenderTargetView* outputRTV) override;
 
     const char* GetName() const override { return "Bloom"; }
 
@@ -94,8 +95,7 @@ private:
     // RT チェーン
     std::vector<RenderTargetHandle> _downChain;
     std::vector<RenderTargetHandle> _upChain;
-    RenderTargetHandle              _compositeRT{}; // フルサイズ合成結果 (HDR)
-
+  
     void CreateChains(UINT width, UINT height);
     void ReleaseChains();
     void UpdateCbBloom(ID3D11DeviceContext* dc, const CbBloomData& data);

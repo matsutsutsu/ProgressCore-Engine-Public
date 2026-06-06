@@ -2,29 +2,25 @@
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 
-struct CbToneMap {
-    float exposure;
-    float padding[3];
-};
+#include <d3d11_1.h> // GPUマーカー用
+
+// 各種エフェクトクラスのインクルード
+#include "BloomEffect.h"
+
 
 void PostProcessManager::Initialize(ID3D11Device* device, UINT width, UINT height)
 {
     _device = device;
 
-    _toneMapRes = std::make_unique<ToneMapResources>();
-    GpuResourceUtils::LoadVertexShader(device, "Assets/Shader/FullscreenVS.cso",
-        nullptr, 0, nullptr, _toneMapRes->vs.GetAddressOf());
-    GpuResourceUtils::LoadPixelShader(device, "Assets/Shader/ToneMapPS.cso",
-        _toneMapRes->ps.GetAddressOf());
-    GpuResourceUtils::CreateDynamicConstantBuffer(device, sizeof(CbToneMap),
-        _toneMapRes->cbToneMap.GetAddressOf());
+    _toneMapEffect = std::make_unique<ToneMapEffect>();
+    _toneMapEffect->Initialize(device);
+  
+    // ==========================================================
+    // 2. エフェクトの生産ラインを構築
+    // ==========================================================
 
-    D3D11_SAMPLER_DESC sampDesc = {};
-    sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-    sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-    sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-    sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-    device->CreateSamplerState(&sampDesc, _toneMapRes->sampler.GetAddressOf());
+    AddEffect<BloomEffect>();
+
 
     Resize(device, width, height);
 }
@@ -33,7 +29,8 @@ PostProcessManager::~PostProcessManager()
 {
     _effects.clear(); // 各 IPostEffect が自前の RT を解放する
 
-    if (_sceneHDR.IsValid())  ResourceManager::Instance().UnloadRenderTarget(_sceneHDR);
+    if (_hdrBuffers[0].IsValid()) ResourceManager::Instance().UnloadRenderTarget(_hdrBuffers[0]);
+    if (_hdrBuffers[1].IsValid()) ResourceManager::Instance().UnloadRenderTarget(_hdrBuffers[1]);
     if (_outputSDR.IsValid()) ResourceManager::Instance().UnloadRenderTarget(_outputSDR);
 }
 
@@ -43,13 +40,14 @@ void PostProcessManager::Resize(ID3D11Device* device, UINT width, UINT height)
     _width = width;
     _height = height;
 
-    if (_sceneHDR.IsValid())  ResourceManager::Instance().UnloadRenderTarget(_sceneHDR);
+    if(_hdrBuffers[0].IsValid()) ResourceManager::Instance().UnloadRenderTarget(_hdrBuffers[0]);
+    if (_hdrBuffers[1].IsValid()) ResourceManager::Instance().UnloadRenderTarget(_hdrBuffers[1]);
     if (_outputSDR.IsValid()) ResourceManager::Instance().UnloadRenderTarget(_outputSDR);
 
-    _sceneHDR = ResourceManager::Instance().CreateRenderTarget(
-        width, height, DXGI_FORMAT_R16G16B16A16_FLOAT);
-    _outputSDR = ResourceManager::Instance().CreateRenderTarget(
-        width, height, DXGI_FORMAT_R8G8B8A8_UNORM);
+    // ★ フル解像度の HDR キャンバスを2枚確保
+    _hdrBuffers[0] = ResourceManager::Instance().CreateRenderTarget(width, height, DXGI_FORMAT_R16G16B16A16_FLOAT);
+    _hdrBuffers[1] = ResourceManager::Instance().CreateRenderTarget(width, height, DXGI_FORMAT_R16G16B16A16_FLOAT);
+    _outputSDR = ResourceManager::Instance().CreateRenderTarget(width, height, DXGI_FORMAT_R8G8B8A8_UNORM);
 
     // 全エフェクトの中間 RT もリサイズ
     for (auto& effect : _effects) {
@@ -61,7 +59,8 @@ void PostProcessManager::BeginScene(ID3D11DeviceContext* dc,
     const float          clearColor[4],
     ID3D11DepthStencilView* dsv)
 {
-    RenderTarget* sceneHDR = ResourceManager::Instance().GetRenderTarget(_sceneHDR);
+    // 初期描画は A (_hdrBuffers[0]) に行う
+    RenderTarget* sceneHDR = ResourceManager::Instance().GetRenderTarget(_hdrBuffers[0]);
     if (!sceneHDR) return;
 
     float w = static_cast<float>(sceneHDR->GetWidth());
@@ -80,78 +79,79 @@ void PostProcessManager::BeginScene(ID3D11DeviceContext* dc,
     dc->RSSetViewports(1, &vp);
 }
 
-ID3D11ShaderResourceView* PostProcessManager::EndScene(ID3D11DeviceContext* dc,
-    ID3D11RenderTargetView* targetRTV)
+ID3D11ShaderResourceView* PostProcessManager::EndScene(ID3D11DeviceContext* dc, ID3D11RenderTargetView* targetRTV)
 {
-    RenderTarget* sceneHDR = ResourceManager::Instance().GetRenderTarget(_sceneHDR);
     RenderTarget* outputSDR = ResourceManager::Instance().GetRenderTarget(_outputSDR);
-    if (!sceneHDR || !outputSDR) return nullptr;
+    if (!outputSDR) return nullptr;
 
-    float outW = static_cast<float>(outputSDR->GetWidth());
-    float outH = static_cast<float>(outputSDR->GetHeight());
-    if (outW <= 0.0f || outW > 16384.0f || outH <= 0.0f || outH > 16384.0f) return nullptr;
-
-    // HDR RT を SRV として読むために RTV 登録を解除
+    // RTV 登録を解除
     ID3D11RenderTargetView* nullRTV = nullptr;
     dc->OMSetRenderTargets(1, &nullRTV, nullptr);
 
     // ================================================================
-    // エフェクトチェーン実行（BloomEffect を含む全 IPostEffect）
-    //   - sceneHDR から始まり、各エフェクトが processedHDR を更新する
-    //   - BloomEffect は「scene + glow 合成済み HDR」を返すので
-    //     ToneMap は 1 入力のみで完結する
+    // ★ 究極のエコシステム: Ping-Pong 実行
     // ================================================================
-    ID3D11ShaderResourceView* processedHDR = sceneHDR->GetSRV();
+    int readIdx = 0;
+    int writeIdx = 1;
+
+
+    // 描画ループの直前・直後でこれを確認してください
+    D3D11_VIEWPORT vpHDR = {};
+    vpHDR.Width = static_cast<float>(_width);  // メンバ変数の幅
+    vpHDR.Height = static_cast<float>(_height); // メンバ変数の高さ
+    vpHDR.MinDepth = 0.0f;
+    vpHDR.MaxDepth = 1.0f;
+    dc->RSSetViewports(1, &vpHDR);
+
+
+#if defined(ENABLE_EDITOR)
+    // 1回だけ Query して、存在する場合のみポインタを保持
+    Microsoft::WRL::ComPtr<ID3DUserDefinedAnnotation> annotation;
+    dc->QueryInterface(IID_PPV_ARGS(annotation.GetAddressOf()));
+#endif
 
     for (auto& effect : _effects) {
         if (!effect->IsEnabled()) continue;
-        if (auto* result = effect->Process(dc, processedHDR)) {
-            processedHDR = result;
+
+        // ★ GPUマーカー（デバッグビルド時のみ）
+#if defined(ENABLE_EDITOR)
+        if (annotation) {
+            std::wstring wname(effect->GetName(), effect->GetName() + strlen(effect->GetName()));
+            annotation->BeginEvent(wname.c_str());
         }
-        // nullptr が返った場合はそのエフェクトをスキップして引き継ぐ
+#endif
+
+        RenderTarget* readRT = ResourceManager::Instance().GetRenderTarget(_hdrBuffers[readIdx]);
+        RenderTarget* writeRT = ResourceManager::Instance().GetRenderTarget(_hdrBuffers[writeIdx]);
+
+        dc->RSSetViewports(1, &vpHDR);
+
+        // A を読み込み B に書く
+        effect->Process(dc, readRT->GetSRV(), writeRT->GetRTV());
+
+        // ★ マーカー終了
+#if defined(ENABLE_EDITOR)
+        if (annotation) annotation->EndEvent();
+#endif
+
+        // 次のエフェクトのために RTV を解除し、A と B を入れ替える (Ping-Pong)
+        dc->OMSetRenderTargets(1, &nullRTV, nullptr);
+        std::swap(readIdx, writeIdx);
     }
+
+    // 最終的な HDR 結果は readIdx のキャンバスに入っている
+    RenderTarget* finalHDR = ResourceManager::Instance().GetRenderTarget(_hdrBuffers[readIdx]);
 
     // ================================================================
-    // ToneMapping（1 入力のみ）
-    //   旧: {processedHDR, bloomSRV} の 2 入力
-    //   新: {processedHDR} の 1 入力（BloomEffect が合成済み）
+    // ToneMapping (分離したクラスに委譲)
     // ================================================================
-    if (targetRTV) {
-        dc->OMSetRenderTargets(1, &targetRTV, nullptr);
+    D3D11_VIEWPORT vpSDR = { 0, 0, (float)outputSDR->GetWidth(), (float)outputSDR->GetHeight(), 0.0f, 1.0f };
+    dc->RSSetViewports(1, &vpSDR);
 
-        D3D11_VIEWPORT vp = {};
-        vp.Width = outW;
-        vp.Height = outH;
-        vp.MaxDepth = 1.0f;
-        dc->RSSetViewports(1, &vp);
-    }
-    else {
-        outputSDR->Activate(dc);
-    }
+    ID3D11RenderTargetView* finalRTV = targetRTV ? targetRTV : outputSDR->GetRTV();
 
-    dc->IASetInputLayout(nullptr);
-    dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    dc->VSSetShader(_toneMapRes->vs.Get(), nullptr, 0);
-    dc->PSSetShader(_toneMapRes->ps.Get(), nullptr, 0);
-
-    ID3D11SamplerState* smp = _toneMapRes->sampler.Get();
-    dc->PSSetSamplers(SLOT_SMP_DEFAULT, 1, &smp);
-
-    CbToneMap cbData{ toneMapConfig.exposure };
-    D3D11_MAPPED_SUBRESOURCE mapped;
-    if (SUCCEEDED(dc->Map(_toneMapRes->cbToneMap.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {
-        memcpy(mapped.pData, &cbData, sizeof(cbData));
-        dc->Unmap(_toneMapRes->cbToneMap.Get(), 0);
-    }
-    dc->PSSetConstantBuffers(SLOT_CB_TONEMAP, 1, _toneMapRes->cbToneMap.GetAddressOf());
-
-    // ★ 1 入力のみ（旧: 2 入力）
-    dc->PSSetShaderResources(SLOT_SRV_BLOOM_IN, 1, &processedHDR);
-    dc->Draw(3, 0);
-
-    // クリーンアップ
-    ID3D11ShaderResourceView* nullSRV = nullptr;
-    dc->PSSetShaderResources(SLOT_SRV_BLOOM_IN, 1, &nullSRV);
+    // ハードコードが消え、スッキリ1行に！
+    _toneMapEffect->Process(dc, finalHDR->GetSRV(), finalRTV, toneMapConfig.exposure);
 
     return outputSDR->GetSRV();
 }

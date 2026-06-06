@@ -1,5 +1,5 @@
 #pragma once
-#include "IRenderPass.h"
+#include "Engine/Graphics/Pipeline/Core/IRenderPass.h"
 #include "Engine/Graphics/RHI/PipelineState.h"
 #include "Engine/Graphics/Renderer/InstanceBuffer.h"
 

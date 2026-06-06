@@ -6,7 +6,7 @@
 #include <typeinfo> 
 #include <string>   
 
-#include "Engine/Graphics/Pipeline/IRenderPass.h"
+#include "Engine/Graphics/Pipeline/Core/IRenderPass.h"
 #include "Engine/Graphics/RHI/RenderContext.h"
 
 /**

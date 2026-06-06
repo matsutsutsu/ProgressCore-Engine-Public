@@ -1,5 +1,5 @@
 #pragma once
-#include "Engine/Graphics/Pipeline/IRenderPass.h"
+#include "Engine/Graphics/Pipeline/Core/IRenderPass.h"
 
 /**
  * @brief フレーム冒頭で HDR バッファをクリアし、出力先としてバインドするパス。

@@ -1,5 +1,5 @@
 #pragma once
-#include "Engine/Graphics/Pipeline/IRenderPass.h"
+#include "Engine/Graphics/Pipeline/Core/IRenderPass.h"
 #include <wrl.h>
 #include <DirectXMath.h>
 

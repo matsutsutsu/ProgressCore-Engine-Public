@@ -1479,9 +1479,6 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\MaterialShader.h">
       <Filter>Source\Engine\Graphics\Shader\Material</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Pipeline\IRenderPass.h">
-      <Filter>Source\Engine\Graphics\Pipeline\Core</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Pipeline\Core\RenderPipeline.h">
       <Filter>Source\Engine\Graphics\Pipeline\Core</Filter>
     </ClInclude>
@@ -1592,6 +1589,12 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Platform\Input\InputFacade.h">
       <Filter>Source\Engine\Platform\Input\API</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\ToneMapEffect.h">
+      <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Pipeline\Core\IRenderPass.h">
+      <Filter>Source\Engine\Graphics\Pipeline\Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2383,6 +2386,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Physics\Components\Character\CharacterMovementInputComponentMeta.cpp">
       <Filter>Source\Engine\Physics\Components\Character</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\ToneMapEffect.cpp">
+      <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
