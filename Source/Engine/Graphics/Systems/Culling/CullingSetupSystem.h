@@ -10,7 +10,11 @@ class ModelCullingSetupSystem : public CCL::ECS::IfSystem<ModelCullingSetupSyste
     CCL::ECS::Read<ModelComponent>>
 {
 public:
-    ModelCullingSetupSystem();
+    ModelCullingSetupSystem() : IfSystem("ModelCullingSetupSystem") 
+    {    
+		SetExclude<BoundingBoxComponent, VisibilityComponent>();
+    }
+
     virtual ~ModelCullingSetupSystem() = default;
 
     void Update(float dt) override;
@@ -22,7 +26,11 @@ class PrimitiveCullingSetupSystem : public CCL::ECS::IfSystem<PrimitiveCullingSe
     CCL::ECS::Read<PrimitiveComponent>>
 {
 public:
-    PrimitiveCullingSetupSystem();
+    PrimitiveCullingSetupSystem() : IfSystem("PrimitiveCullingSetupSystem") 
+    {
+        SetExclude<BoundingBoxComponent, VisibilityComponent>();
+    }
+
     virtual ~PrimitiveCullingSetupSystem() = default;
 
     void Update(float dt) override;

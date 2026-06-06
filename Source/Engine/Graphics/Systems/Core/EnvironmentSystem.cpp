@@ -9,11 +9,15 @@
 
 // TODO: ECS に Initialize(device) が追加されたら除去する
 #include "Engine/Graphics/RHI/Graphics.h"
+#include "Engine/Graphics/RHI/RenderContext.h"  // RenderServices
+#include "Engine/Graphics/Shader/ShaderShared.h"
 
 #include "Engine/Graphics/Components/Lighting/FogComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
-#include "Game/Core/SystemPriority.h"
+#include "Engine/Core/Systems/SystemPriority.h"
+
+
 
 EnvironmentSystem::EnvironmentSystem() : SystemBase("EnvironmentSystem")
 {

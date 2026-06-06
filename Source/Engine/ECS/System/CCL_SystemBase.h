@@ -34,9 +34,8 @@ namespace CCL::ECS::Core {
 }
 
 // Tracy（プロファイラ）は UpdateImpl 内のインライン実装で参照される
-#if TRACY_ENABLE
 #include "tracy/Tracy.hpp"
-#endif
+
 
 
 namespace CCL::ECS
@@ -75,6 +74,9 @@ namespace CCL::ECS
         /// @brief アーキタイプフィルタ（このSystemが必要とするコンポーネント構成）
         const Archetype& GetFilter() const { return _filter; }
 
+        /// @brief 除外フィルタ（このコンポーネントを持つEntityは処理対象外にする）
+        const Archetype& GetExcludeFilter() const { return _excludeFilter; }
+
         /// @brief このフレームで処理対象とする Chunk を追加（SystemManager から呼ばれる）
         void AddTargetChunk(CCL::ECS::Core::Chunk* chunk)
         {
@@ -110,10 +112,8 @@ namespace CCL::ECS
          */
         virtual void UpdateImpl(float dt)
         {
-#if TRACY_ENABLE
             ZoneScoped;
             ZoneName(_name.c_str(), _name.size());
-#endif
 
             auto start = std::chrono::high_resolution_clock::now();
 
@@ -131,6 +131,9 @@ namespace CCL::ECS
         bool isDebugVisible = false;
 
         bool IsDebugVisible() const { return isDebugVisible; }
+
+        // このシステムがエディタ用のGUIを持っているかどうか
+        bool hasGui = false;
 
         /// @brief ImGui によるインスペクタ描画（必要なら派生側で override）
         virtual void OnGui() {}
@@ -205,6 +208,9 @@ namespace CCL::ECS
 
         /// @brief 必要 Component 構成（派生側で IfSystem コンストラクタが自動設定）
         Archetype _filter;
+
+        /// @brief 除外コンポーネント構成（IfSystem::SetExclude で設定）
+        Archetype _excludeFilter;
 
         /// @brief ユニークな SystemID
         SystemID _systemID = InvalidSystemID;

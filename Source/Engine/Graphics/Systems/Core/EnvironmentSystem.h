@@ -1,11 +1,12 @@
 #pragma once
 #include "Engine/ECS/System/CCL_System.h"
-#include "Engine/Graphics/RHI/RenderContext.h"  // RenderServices
 #include <d3d11.h>
-#include "Engine/Graphics/Shader/ShaderShared.h"
 #include <vector>
 #include <wrl.h>
 #include <DirectXMath.h>
+
+// 前方宣言
+struct RenderServices;
 
 /**
  * @brief フォグ・IBL・グローバルノイズ等の「環境」リソースを GPU にバインドする舞台監督。

@@ -1,53 +1,56 @@
 #pragma once
 #include "Engine/ECS/System/CCL_System.h"
 #include "Engine/Graphics/Components/Particle/GPUParticleComponent.h"
+#include "Engine/Graphics/Components/Particle/GPUParticleBuffer.h"
 #include "Engine/Transform/Components/TransformComponent.h"
-#include "Engine/Graphics/Shader/ShaderReflection.h"
+#include "Engine/Timer/TimeState.h"
+
+class ParticleComputeShader; // 前方宣言
+struct GPUParticleBufferSet;
 
 // パーティクルのシミュレーションを行うシステム
 // SystemPriority::Render グループで実行推奨 (描画前)
 class GPUParticleUpdateSystem : public CCL::ECS::IfSystem<GPUParticleUpdateSystem,
                                     CCL::ECS::Write<GPUParticleComponent>,
-                                    CCL::ECS::Read<TransformComponent>> {
+                                    CCL::ECS::Read<TransformComponent>,
+                                    CCL::ECS::Read<TimeStateComponent>> {
   public:
     GPUParticleUpdateSystem() : IfSystem("GPUParticleUpdateSystem") {}
+    ~GPUParticleUpdateSystem();   // ★unique_ptr<前方宣言型> のため .cpp で = default
 
-    void InitializeParticle(ID3D11Device *device);
+
     void Update(float dt) override;
 
   private:
-    // シェーダー
-    Microsoft::WRL::ComPtr<ID3D11ComputeShader> initCS;
-    Microsoft::WRL::ComPtr<ID3D11ComputeShader> updateCS;
-    Microsoft::WRL::ComPtr<ID3D11SamplerState>  sampler;
 
-    // ノイズテクスチャのリソース
-    Microsoft::WRL::ComPtr<ID3D11Texture3D>          noiseTexture;
-    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> noiseSRV;
+    /// @brief 初回のみ呼ばれる。CS管理クラス・サンプラー・ノイズ生成。
+    void InitializeParticle(ID3D11Device* device);
 
-    // ノイズ生成関数
-    void CreateNoiseTexture(ID3D11Device *device);
+    /// @brief StructuredBuffer / UAV / SRV / 定数バッファ一式を作り直す（重い処理）。
+    void RebuildParticleBuffer(GPUParticleComponent& particle);
 
-    // ロード済みチェック
-    bool isLoaded = false;
+    void CreateNoiseTexture(ID3D11Device* device);
 
-    // =======================================================
-    // 可読性を上げるためのヘルパー関数群
-    // =======================================================
+    /// @brief 1エミッタ分の初期化CSをDispatch。終了後 needsGpuInit を false にする。
+    void DispatchInitCS(ID3D11DeviceContext* dc, ParticleComputeShader* cs,
+        GPUParticleComponent& particle, const TransformComponent& transform,
+        GPUParticleBufferSet* buffers);
 
-    // 1. バッファの再構築処理
-    void RebuildParticleBuffer(GPUParticleComponent &particle);
+    /// @brief 1エミッタ分の更新CSをDispatch。CB更新・ランプ/ノイズ/サンプラーをバインド。
+    void DispatchUpdateCS(ID3D11DeviceContext* dc, ParticleComputeShader* cs,
+        GPUParticleComponent& particle, const TransformComponent& transform,
+        GPUParticleBufferSet* buffers, float dt);
 
-    // 2. 初期化シェーダー(InitCS)の実行処理
-    void DispatchInitCS(ID3D11DeviceContext *dc,
-        GPUParticleComponent                &particle,
-        const TransformComponent            &transform,
-        GpuParticleBufferSet                *buffers);
+private:
 
-    // 3. 更新シェーダー(UpdateCS)の実行処理
-    void DispatchUpdateCS(ID3D11DeviceContext *dc,
-        GPUParticleComponent                  &particle,
-        const TransformComponent              &transform,
-        float                                  dt,
-        GpuParticleBufferSet                  *buffers);
+    ID3D11Device* _device = nullptr;
+    bool          _isLoaded = false;
+
+    std::unique_ptr<ParticleComputeShader> _computeShader; // Init/Update CS（HotReload対応）
+
+    Microsoft::WRL::ComPtr<ID3D11SamplerState>       _sampler;
+    Microsoft::WRL::ComPtr<ID3D11Texture3D>          _noiseTexture;
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> _noiseSRV;
+
+
 };

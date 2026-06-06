@@ -3,34 +3,53 @@
 
 	<Type Name="CCL::ECS::Archetype">
 		<DisplayString Condition="_data.size() == 0">Empty Archetype</DisplayString>
-		<DisplayString>Archetype (Size={_data.size()})</DisplayString>
+		<DisplayString>Archetype (Types={_data.size()})</DisplayString>
 		<Expand>
-			<Item Name="[Type List]">_data</Item>
+			<CustomListItems>
+				<Variable Name="i" InitialValue="0" />
+				<Size>_data.size()</Size>
+				<Loop>
+					<Item Name="[{i}]">_data[i].name,s</Item>
+					<Exec>i++</Exec>
+				</Loop>
+			</CustomListItems>
 		</Expand>
 	</Type>
 
 	<Type Name="CCL::ECS::TypeData">
-		<DisplayString>{name,s} (ID={id}, Size={typeSize})</DisplayString>
+		<DisplayString>{name,s} (Size={typeSize})</DisplayString>
 	</Type>
 
 	<Type Name="CCL::ECS::Core::Chunk">
 		<DisplayString>Chunk | Entities: {_entityCount}/{_capacity}</DisplayString>
 		<Expand>
 			<Item Name="[Archetype]">_archetype</Item>
+			<Item Name="[Entities (Owner IDs)]">_ownerEntities</Item>
 
-			<Item Name="[Entities]">_ownerEntities</Item>
-
+			<Synthetic Name="[Component Data Streams]">
+				<DisplayString>SoA Byte Arrays</DisplayString>
+				<Expand>
+					<CustomListItems>
+						<Variable Name="i" InitialValue="0" />
+						<Size>_archetype._data.size()</Size>
+						<Loop>
+							<Item Name="[{_archetype._data[i].name,s}]">_components[i]</Item>
+							<Exec>i++</Exec>
+						</Loop>
+					</CustomListItems>
+				</Expand>
+			</Synthetic>
+			<Item Name="[Destroyed Queue]">_destroyedEntities</Item>
 		</Expand>
 	</Type>
 
 	<Type Name="CCL::ECS::Core::World">
-		<DisplayString>World</DisplayString>
+		<DisplayString>World (Active Entities: {_entityGenerations.size()})</DisplayString>
 		<Expand>
-			<Item Name="[Entity Count]">_entityGenerations.size()</Item>
 			<Item Name="[Chunks]">_chunkManager._chunks</Item>
+			<Item Name="[Entity Map]">_chunkManager._entityToIndex</Item>
+			<Item Name="[Pending Operations]">_pendingOps</Item>
 			<Item Name="[System Manager]">_systemManager</Item>
-
-			<Item Name="[Entity Cache]">_entityCache</Item>
 		</Expand>
 	</Type>
 
@@ -40,6 +59,18 @@
 			<Item Name="[Target Chunks]">_targetChunks</Item>
 			<Item Name="[Filter]">_filter</Item>
 			<Item Name="[Priority]">_priority</Item>
+		</Expand>
+	</Type>
+
+	<Type Name="CCL::ECS::Core::EntityRef">
+		<DisplayString>EntityRef (ID={_id})</DisplayString>
+	</Type>
+
+	<Type Name="CCL::ECS::Core::ComponentHandle&lt;*&gt;">
+		<DisplayString>ComponentHandle&lt;{"$T1",s}&gt; (Target Entity={_entityID})</DisplayString>
+		<Expand>
+			<Item Name="[World Ptr]">_world</Item>
+			<Item Name="[Entity ID]">_entityID</Item>
 		</Expand>
 	</Type>
 

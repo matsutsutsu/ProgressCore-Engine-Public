@@ -77,6 +77,34 @@ void ECSDebugWindow::DrawSystemsTab(CCL::ECS::SystemManager* systemManager) {
         for (auto& pair : _systemTimings) pair.second.isVisible = true;
     }
 
+    ImGui::SameLine();
+
+    // =========================================================
+    // 「Top 5 Heaviest」ソロ表示ボタンの追加
+    // 一瞬でノイズを削ぎ落とし、重い処理だけをグラフに浮き彫りにします。
+    // =========================================================
+    if (ImGui::Button("Solo Top 5 Heaviest", ImVec2(150, 0))) {
+        std::vector<std::pair<std::string, float>> heavySystems;
+        for (auto& pair : _systemTimings) {
+            float latestTime = 0.0f;
+            if (!pair.second.buffer.Data.empty()) {
+                int latestIdx = (pair.second.buffer.Offset == 0) ? pair.second.buffer.MaxSize - 1 : pair.second.buffer.Offset - 1;
+                latestTime = pair.second.buffer.Data[latestIdx].y;
+            }
+            heavySystems.push_back({ pair.first, latestTime });
+            pair.second.isVisible = false; // 一旦全非表示
+        }
+        // 降順ソート
+        std::sort(heavySystems.begin(), heavySystems.end(), [](const auto& a, const auto& b) {
+            return a.second > b.second;
+            });
+        // 上位5つだけ表示ON
+        for (size_t i = 0; i < std::min<size_t>(5, heavySystems.size()); ++i) {
+            _systemTimings[heavySystems[i].first].isVisible = true;
+        }
+    }
+
+
     // ★ UX改善 2: グラフのY軸上限を手動で固定するスライダー
     // これにより、グラフが勝手に伸び縮みして目が回るのを防ぎます
     static float yAxisMax = 16.66f; // デフォルトは60fps(16.6ms)のライン
@@ -85,8 +113,11 @@ void ECSDebugWindow::DrawSystemsTab(CCL::ECS::SystemManager* systemManager) {
     ImGui::SliderFloat("Y-Axis Max (ms)", &yAxisMax, 1.0f, 60.0f, "%.1f");
 
 
-    // データの記録用ヘルパー (前回と同じ)
+    // データの記録用ヘルパー
     auto addData = [&](const std::string& name, float timeMs) {
+        // ★ 安全対策: 計測値がNaNや無限大になっていたら0に補正する（ズーム時のクラッシュ原因を排除）
+        if (std::isnan(timeMs) || std::isinf(timeMs) || timeMs < 0.0f) timeMs = 0.0f;
+
         auto& data = _systemTimings[name];
         if (data.buffer.Data.empty()) {
             float hue = fmod(_systemTimings.size() * 0.618033988749895f, 1.0f);
@@ -111,23 +142,35 @@ void ECSDebugWindow::DrawSystemsTab(CCL::ECS::SystemManager* systemManager) {
     // =======================================================
     // 3. ImPlot による折れ線グラフの描画
     // =======================================================
-    if (ImPlot::BeginPlot("System Execution Times (ms)", ImVec2(-1, 250))) {
 
-        // ★ UX改善 2の適用: Y軸の最大値をスライダーの値で「完全に固定」する
-        ImPlot::SetupAxes("Time (s)", "Execution Time (ms)", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_Lock);
-        ImPlot::SetupAxisLimits(ImAxis_X1, _time - 5.0, _time, ImGuiCond_Always);
-        ImPlot::SetupAxisLimits(ImAxis_Y1, 0.0, yAxisMax, ImGuiCond_Always); // ★ Y軸を固定
+    // ★ 修正 1: 実行中はプロット全体のマウス入力(スクロールやドラッグ)を完全に遮断する
+    // これにより、内部計算の衝突によるクラッシュを物理的に防ぎます。
+    // Pause中は NoInputs が解除され、ホバーやスクロールが自由に行えるようになります。
+    ImPlotFlags plotFlags = _pauseProfiler ? ImPlotFlags_None : ImPlotFlags_NoInputs;
+
+    if (ImPlot::BeginPlot("System Execution Times (ms)", ImVec2(-1, 250), plotFlags)) {
+
+        // ★ 修正 2: 軸のロックフラグは外し、デフォルト設定に戻す
+        ImPlot::SetupAxes("Time (s)", "Execution Time (ms)", ImPlotAxisFlags_None, ImPlotAxisFlags_None);
+
+        // ★ 修正 3: Pause中は何もしない（ユーザーにカメラ操作を委ねる）、実行中のみ強制スクロール
+        if (!_pauseProfiler) {
+            ImPlot::SetupAxisLimits(ImAxis_X1, _time - 5.0, _time, ImGuiCond_Always);
+            ImPlot::SetupAxisLimits(ImAxis_Y1, 0.0, yAxisMax, ImGuiCond_Always);
+        }
 
         for (auto& pair : _systemTimings) {
-            if (!pair.second.isVisible || pair.second.buffer.Data.empty()) continue;
+            // ★ 修正 4: データが2点未満なら描画をスキップ（ImPlot内部での描画エラー防止）
+            if (!pair.second.isVisible || pair.second.buffer.Data.size() < 2) continue;
 
             float thickness = pair.second.isHovered ? 3.0f : 1.0f;
             ImPlot::SetNextLineStyle(pair.second.color, thickness);
+
             ImPlot::PlotLine(pair.first.c_str(),
                 &pair.second.buffer.Data[0].x,
                 &pair.second.buffer.Data[0].y,
                 pair.second.buffer.Data.size(),
-                0,
+                0, // flags
                 pair.second.buffer.Offset,
                 sizeof(ImVec2));
         }
@@ -146,31 +189,44 @@ void ECSDebugWindow::DrawSystemsTab(CCL::ECS::SystemManager* systemManager) {
         ImGui::TableSetupColumn("Load Bar", ImGuiTableColumnFlags_WidthFixed, 150.0f);
         ImGui::TableHeadersRow();
 
+        // =========================================================
+        //  std::map（アルファベット順）を、負荷の高い順に並び替えてから描画する
+        // =========================================================
+        std::vector<std::pair<std::string, SystemProfileData*>> sortedData;
         for (auto& pair : _systemTimings) {
-            if (pair.second.buffer.Data.empty()) continue;
+            sortedData.push_back({ pair.first, &pair.second });
+        }
 
-            int latestIdx = 0;
-            if (pair.second.buffer.Data.size() < pair.second.buffer.MaxSize) {
-                latestIdx = pair.second.buffer.Data.size() - 1;
-            }
-            else {
-                latestIdx = (pair.second.buffer.Offset == 0) ? pair.second.buffer.MaxSize - 1 : pair.second.buffer.Offset - 1;
-            }
-            float latestTime = pair.second.buffer.Data[latestIdx].y;
+        // ラムダ式で最新時間を取得して降順ソート
+        std::sort(sortedData.begin(), sortedData.end(), [](const auto& a, const auto& b) {
+            auto getLatestTime = [](const SystemProfileData* data) {
+                if (data->buffer.Data.empty()) return 0.0f;
+                int idx = (data->buffer.Offset == 0) ? data->buffer.MaxSize - 1 : data->buffer.Offset - 1;
+                return data->buffer.Data[idx].y;
+                };
+            return getLatestTime(a.second) > getLatestTime(b.second);
+            });
+
+        // 並び替えたリストでテーブルを描画
+        for (auto& pair : sortedData) {
+            SystemProfileData& data = *pair.second;
+            if (data.buffer.Data.empty()) continue;
+
+            int latestIdx = (data.buffer.Offset == 0) ? data.buffer.MaxSize - 1 : data.buffer.Offset - 1;
+            float latestTime = data.buffer.Data[latestIdx].y;
 
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
 
             ImGui::PushID(pair.first.c_str());
-            ImGui::Checkbox("##vis", &pair.second.isVisible);
+            ImGui::Checkbox("##vis", &data.isVisible);
             ImGui::SameLine();
 
-            ImGui::ColorButton("##col", pair.second.color, ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoDragDrop, ImVec2(14, 14));
+            ImGui::ColorButton("##col", data.color, ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoDragDrop, ImVec2(14, 14));
             ImGui::SameLine();
 
-            // ★ UX改善 4: Selectableの引数を修正し、クリック時の違和感（点滅や入力奪取）を消滅させました
             ImGui::Selectable(pair.first.c_str(), false, ImGuiSelectableFlags_SpanAllColumns);
-            pair.second.isHovered = ImGui::IsItemHovered();
+            data.isHovered = ImGui::IsItemHovered();
 
             ImGui::PopID();
 
@@ -178,7 +234,7 @@ void ECSDebugWindow::DrawSystemsTab(CCL::ECS::SystemManager* systemManager) {
             ImGui::Text("%.3f ms", latestTime);
 
             ImGui::TableNextColumn();
-            float ratio = latestTime / 16.666f;
+            float ratio = latestTime / yAxisMax; // 16.666f固定ではなくスライダーの最大値を基準にする
             ImVec4 barColor = (ratio > 0.5f) ? ImVec4(1, 0, 0, 1) : ImVec4(0, 1, 0, 1);
             ImGui::PushStyleColor(ImGuiCol_PlotHistogram, barColor);
             ImGui::ProgressBar(ratio, ImVec2(-1, 14), "");
@@ -290,9 +346,23 @@ void ECSDebugWindow::DrawMemoryTab(CCL::ECS::Core::World* world) {
             uint64_t hash = pair.first;
             const auto& chunkIndices = pair.second;
 
-            // ツリーノードの表示（例: Archetype [1284912] (3 Chunks) ）
-            char archLabel[128];
-            snprintf(archLabel, sizeof(archLabel), "Archetype [%llu] (%zu Chunks)", hash, chunkIndices.size());
+            // =========================================================
+            //  アーキタイプを構成するコンポーネント名を抽出して連結する
+            // =========================================================
+            std::string componentNames = "";
+            if (!chunkIndices.empty() && chunks[chunkIndices[0]]) {
+                auto& firstChunk = chunks[chunkIndices[0]];
+                for (const auto& td : firstChunk->GetTypeDatas()) {
+                    if (!componentNames.empty()) componentNames += ", ";
+                    // プレフィックス(Component等)が長すぎる場合は、ここで置換・省略処理を入れるとさらに綺麗になります
+                    componentNames += GetFriendlyTypeName(td.id);
+                }
+            }
+
+            // ツリーノードの表示（例: [TransformComponent, VelocityComponent] (3 Chunks) ）
+            // ImGuiの仕様上、名前被りを防ぐために末尾に ##ハッシュ値 をつけて隠しIDにします
+            char archLabel[1024];
+            snprintf(archLabel, sizeof(archLabel), "[%s] (%zu Chunks)##%llu", componentNames.c_str(), chunkIndices.size(), hash);
 
             if (ImGui::TreeNode(archLabel)) {
                 for (int idx : chunkIndices) {
@@ -347,58 +417,60 @@ void ECSDebugWindow::DrawMemoryTab(CCL::ECS::Core::World* world) {
 
     if (selectedChunkIdx >= 0 && selectedChunkIdx < (int)chunks.size()) {
         auto& chunk = chunks[selectedChunkIdx];
-        if (chunk && ImGui::BeginChild("EntityDetailList")) {
+        if (chunk) { // まずチャンクの存在確認
+            if (ImGui::BeginChild("EntityDetailList")) {
 
-            // チャンクに含まれるコンポーネントの種類を上部に表示
-            ImGui::Text("Components in this chunk:");
-            for (const auto& td : chunk->GetTypeDatas()) {
-                ImGui::BulletText("%s (%zu bytes)", GetFriendlyTypeName(td.id), td.typeSize);
-            }
-            ImGui::Separator();
-            ImGui::Spacing();
+                // チャンクに含まれるコンポーネントの種類を上部に表示
+                ImGui::Text("Components in this chunk:");
+                for (const auto& td : chunk->GetTypeDatas()) {
+                    ImGui::BulletText("%s (%zu bytes)", GetFriendlyTypeName(td.id), td.typeSize);
+                }
+                ImGui::Separator();
+                ImGui::Spacing();
 
-            for (size_t e = 0; e < chunk->GetEntityCount(); ++e) {
-                // ★ 改良: 削除済みのエンティティはスキップするか、目立たなくする
-                if (chunk->HasDestroyedEntities() && chunk->IsEntityDestroyed(e)) continue;
+                for (size_t e = 0; e < chunk->GetEntityCount(); ++e) {
+                    // ★ 改良: 削除済みのエンティティはスキップするか、目立たなくする
+                    if (chunk->HasDestroyedEntities() && chunk->IsEntityDestroyed(e)) continue;
 
-                CCL::ECS::EntityID id = chunk->GetEntityByIndex(e);
-                char eLabel[64];
-                snprintf(eLabel, sizeof(eLabel), "Slot %zu: Entity ID %llu", e, id);
+                    CCL::ECS::EntityID id = chunk->GetEntityByIndex(e);
+                    char eLabel[64];
+                    snprintf(eLabel, sizeof(eLabel), "Slot %zu: Entity ID %llu", e, id);
 
-                if (ImGui::TreeNode(eLabel)) {
-                    for (const auto& td : chunk->GetTypeDatas()) {
-                        if (ImGui::TreeNode((void*)(intptr_t)td.id, "Component: %s", GetFriendlyTypeName(td.id))) {
-                            void* data = chunk->GetComponentPtrByType(td.id, e);
-                            if (data) {
+                    if (ImGui::TreeNode(eLabel)) {
+                        for (const auto& td : chunk->GetTypeDatas()) {
+                            if (ImGui::TreeNode((void*)(intptr_t)td.id, "Component: %s", GetFriendlyTypeName(td.id))) {
+                                void* data = chunk->GetComponentPtrByType(td.id, e);
+                                if (data) {
 
-                                // =========================================================
-                                // ★ 究極の進化: あなたの構築したGUIレジストリを呼び出すだけ！
-                                // =========================================================
-                                // これにより、TransformならPosition(x,y,z)などのスライダーが自動生成されます。
-                                // Undo/Redo のフックも ComponentMetaImGui 内で自動処理されます。
-                                ComponentGuiRegistry::Instance().Draw(td.id, data, id, world);
+                                    // =========================================================
+                                    // ★ 究極の進化: あなたの構築したGUIレジストリを呼び出すだけ！
+                                    // =========================================================
+                                    // これにより、TransformならPosition(x,y,z)などのスライダーが自動生成されます。
+                                    // Undo/Redo のフックも ComponentMetaImGui 内で自動処理されます。
+                                    ComponentGuiRegistry::Instance().Draw(td.id, data, id, world);
 
 
-                                ImGui::Spacing();
+                                    ImGui::Spacing();
 
-                                // =========================================================
-                                // 既存のHexダンプは「Advanced (詳細)」として折りたたんで残す
-                                // =========================================================
-                                if (ImGui::TreeNodeEx("Raw Memory (Hex Dump)")) {
-                                    ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[0]);
-                                    DrawHexDump(data, td.typeSize);
-                                    ImGui::PopFont();
-                                    ImGui::TreePop();
+                                    // =========================================================
+                                    // 既存のHexダンプは「Advanced (詳細)」として折りたたんで残す
+                                    // =========================================================
+                                    if (ImGui::TreeNodeEx("Raw Memory (Hex Dump)")) {
+                                        ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[0]);
+                                        DrawHexDump(data, td.typeSize);
+                                        ImGui::PopFont();
+                                        ImGui::TreePop();
+                                    }
                                 }
+                                ImGui::TreePop();
                             }
-                            ImGui::TreePop();
                         }
+                        ImGui::TreePop();
                     }
-                    ImGui::TreePop();
                 }
             }
+            ImGui::EndChild();
         }
-        ImGui::EndChild();
     }
     else {
         ImGui::TextDisabled("Select a chunk on the left to see details.");

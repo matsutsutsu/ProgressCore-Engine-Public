@@ -2,7 +2,7 @@
 #include "Engine/Graphics/RHI/Camera.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
-#include "Game/Core/SystemPriority.h"
+#include "Engine/Core/Systems/SystemPriority.h"
 
 
 using namespace CCL::ECS;

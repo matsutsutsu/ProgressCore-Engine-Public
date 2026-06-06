@@ -4,7 +4,7 @@
 //#include "Game/Logics/Character/Player/TPS/TPSPlayerComponent.h"
 //#include "Engine/Transform/Components/TransformComponent.h"
 //#include "Engine/Platform/Core/Logger.h"
-//#include "Game/Core/SystemPriority.h" // LogicStage等の定義
+//#include "Engine/Core/Systems/SystemPriority.h" // LogicStage等の定義
 //#include "Engine/ECS/System/CCL_SystemRegistry.h"
 //#include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
 //#include <SimpleMath.h>

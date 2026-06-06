@@ -1,16 +1,12 @@
 #pragma once
-
 #include "Engine/ECS/System/CCL_System.h"
-#include "Engine/Transform/Components/TransformComponent.h" 
-#include <DirectXMath.h>
+#include "Engine/Transform/Core/TransformHierarchyCache.h"  
+#include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Core/Components/DestroyTag.h"
 
-#include "Engine/Transform/Components/PendingParentComponent.h" 
-
 // 前方宣言
-namespace CCL::ECS::Core {
-    class World;
-}
+namespace CCL::ECS::Core { class World; }
+
 
 class TransformUpdateSystem : public CCL::ECS::IfSystem<TransformUpdateSystem,CCL::ECS::Write<TransformComponent>> {
   public:
@@ -41,11 +37,20 @@ class TransformUpdateSystem : public CCL::ECS::IfSystem<TransformUpdateSystem,CC
         CCL::ECS::Core::World &world, CCL::ECS::EntityID entity, bool destroyChildren = true);
 
   private:
- 
     // 保留中の親子関係を適用する関数
     void ProcessPendingParents();
 
     // リンク切れを修復する関数（メインスレッド実行用）
     void RepairBrokenLinks();
 
+    /// @brief Chunk 線形 1 パス。compose は行わず、トポロジ変化検出とゴースト修復のみ。
+    bool ScanDetectTopology();
+
+    /// @brief ルート（parent==0）を並列・インプレースで計算。フラットな大多数はここで完結。
+    void ComputeRootsParallel();
+
+    /// @brief 非ルート（少数）を depth 順に compose×親world で解決し、その場で書き戻す。
+    void SolveHierarchy();
+
+    TransformHierarchyCache _cache;
 };

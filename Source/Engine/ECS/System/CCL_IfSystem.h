@@ -46,9 +46,9 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/Jobs/CCL_JobSystem.h"
 
-#if TRACY_ENABLE
+ 
 #include "tracy/Tracy.hpp"
-#endif
+
 
 
 namespace CCL::ECS
@@ -136,6 +136,32 @@ namespace CCL::ECS
                     this->_world->GetEventBus().Unsubscribe<EventType>(ticketID);
                 }
             });
+        }
+
+        /**
+         * @brief 除外コンポーネントを設定する（コンストラクタ内で呼ぶ想定）。
+         *
+         * ここで指定した型を「1つでも持つ」Entity は、このSystemの処理対象から
+         * 外れます。
+         *
+         * @tparam ExcludeTypes 除外したいコンポーネント型（可変長）
+         *
+         * @code
+         *   class MovementSystem
+         *     : public IfSystem<MovementSystem, Write<Position>, Read<Velocity>>
+         *   {
+         *   public:
+         *       MovementSystem() : IfSystem("MovementSystem") {
+         *           // DeadTag か Frozen を持つ Entity は動かさない
+         *           SetExclude<DeadTag, Frozen>();
+         *       }
+         *   };
+         * @endcode
+         */
+        template <typename... ExcludeTypes>
+        void SetExclude()
+        {
+            _excludeFilter = ArchetypeHelper::Generate<ExcludeTypes...>();
         }
 
 
@@ -244,9 +270,15 @@ namespace CCL::ECS
 
                 _jobSystem->Execute(
                     [this, i, end, func]() {
-#if TRACY_ENABLE
-                        ZoneScopedN("System Batch Task");
-#endif
+                        // 1. まず標準のスコープを作る（関数名がデフォルトになる）
+                        ZoneScoped;
+
+                        // 2. SystemBaseの _name 変数を使って、Tracyに動的文字列をコピーさせる
+                        // ※ "MovementSystem [Batch]" のように末尾にバッチ処理であることを明示すると
+                        // 通常のUpdateの負荷(メインスレッド)と見分けがつきやすくなります。
+                        std::string batchName = " [Batch]" + _name;
+                        ZoneName(batchName.c_str(), batchName.size());
+
 
                         // --- ワーカースレッド内 ---
                         // [中ループ]: 担当範囲の Chunk を順に処理
@@ -280,9 +312,9 @@ namespace CCL::ECS
 
             // 全ジョブ完了待ち（メインスレッドも暇なら手伝う設計）
             {
-#if TRACY_ENABLE
+ 
                 ZoneScopedN("MainThread Wait");
-#endif
+
                 _jobSystem->WaitForCounter(&counter);
             }
         }
@@ -375,9 +407,15 @@ namespace CCL::ECS
 
                 _jobSystem->Execute(
                     [this, i, end, func]() {
-#if TRACY_ENABLE
-                        ZoneScopedN("System Batch Task (ID)");
-#endif
+                        // 1. まず標準のスコープを作る（関数名がデフォルトになる）
+                        ZoneScoped;
+
+                        // 2. SystemBaseの _name 変数を使って、Tracyに動的文字列をコピーさせる
+                        // ※ "MovementSystem [Batch]" のように末尾にバッチ処理であることを明示すると
+                        // 通常のUpdateの負荷(メインスレッド)と見分けがつきやすくなります。
+                        std::string batchName = " [ Batch ] " + _name;
+                        ZoneName(batchName.c_str(), batchName.size());
+
 
                         for (size_t k = i; k < end; ++k) {
                             Chunk*       chunk = _targetChunks[k];
@@ -410,9 +448,9 @@ namespace CCL::ECS
             }
 
             {
-#if TRACY_ENABLE
+ 
                 ZoneScopedN("MainThread Wait");
-#endif
+
                 _jobSystem->WaitForCounter(&counter);
             }
         }

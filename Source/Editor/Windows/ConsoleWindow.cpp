@@ -119,62 +119,63 @@ void ConsoleWindow::DrawContents(EditorContext& /*context*/)
     }
     ImGui::Separator();
 
-    // --------------------------------------------------------------------
-    // 3. スナップショット取得 + フィルタリング
-    //    (Sink からコピーを取るのでロックを長く持たない)
-    // --------------------------------------------------------------------
-    const auto messages = _bufferSink->Snapshot();
+    // ====================================================================
+    // ★ 究極の修正: 毎フレームの Snapshot (ディープコピー) を防ぐキャッシュ機構
+    // ====================================================================
+    static std::vector<LogMessage> s_cachedMessages;
+    static std::vector<int>        s_cachedFiltered;
+    static float s_updateTimer = 0.0f;
 
-    std::vector<int> filtered;
-    filtered.reserve(messages.size());
+    // ImGuiのDeltaTimeを使ってタイマーを進行
+    s_updateTimer += ImGui::GetIO().DeltaTime;
 
-    const bool hasSearch = (_searchBuf[0] != '\0');
-    for (int i = 0; i < static_cast<int>(messages.size()); ++i)
-    {
-        const auto& m = messages[i];
+    // 前回の更新から0.1秒経過、または「Clear」ボタン等で強制更新が必要な場合のみコピーを走らせる
+    if (s_updateTimer > 0.1f) {
+        s_cachedMessages = _bufferSink->Snapshot();
+        s_cachedFiltered.clear();
+        s_cachedFiltered.reserve(s_cachedMessages.size());
 
-        switch (m.level)
+        const bool hasSearch = (_searchBuf[0] != '\0');
+        for (int i = 0; i < static_cast<int>(s_cachedMessages.size()); ++i)
         {
-        case LogLevel::Info:    if (!_showInfo)    continue; break;
-        case LogLevel::Success: if (!_showSuccess) continue; break;
-        case LogLevel::Warning: if (!_showWarning) continue; break;
-        case LogLevel::Error:   if (!_showError)   continue; break;
+            const auto& m = s_cachedMessages[i];
+
+            // フィルタ条件のチェック...
+            switch (m.level) {
+            case LogLevel::Info:    if (!_showInfo)    continue; break;
+            case LogLevel::Success: if (!_showSuccess) continue; break;
+            case LogLevel::Warning: if (!_showWarning) continue; break;
+            case LogLevel::Error:   if (!_showError)   continue; break;
+            }
+            if (!_categoryFilters[static_cast<int>(m.category)]) continue;
+
+            if (hasSearch) {
+                if (m.text.find(_searchBuf) == std::string::npos &&
+                    m.file.find(_searchBuf) == std::string::npos) continue;
+            }
+
+            s_cachedFiltered.push_back(i);
         }
-
-        if (!_categoryFilters[static_cast<int>(m.category)]) continue;
-
-        if (hasSearch)
-        {
-            // 単純な大文字小文字無視の包含検索
-            // (高頻度用途ではないので strstr で十分。必要なら正規表現に拡張)
-            if (m.text.find(_searchBuf) == std::string::npos &&
-                m.file.find(_searchBuf) == std::string::npos) continue;
-        }
-
-        filtered.push_back(i);
+        s_updateTimer = 0.0f; // タイマーリセット
     }
 
-    // --------------------------------------------------------------------
-    // 4. Copy All - LogToClipboard を正しく使う
-    //    (ImGui::Text* の出力をクリップボードへリダイレクトするモード)
-    // --------------------------------------------------------------------
-    ImGui::BeginChild("LogRegion", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
-
-    if (copyAllRequested)
-    {
-        ImGui::LogToClipboard();
-    }
+    // ====================================================================
+    // ★ 追加: スクロール可能なログ領域の開始（これが消えていたのが原因）
+    // ====================================================================
+    ImGui::BeginChild("LogScrollRegion", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
 
     // --------------------------------------------------------------------
     // 5. 描画 (Clipper で高速化)
     // --------------------------------------------------------------------
+    // ★ 以降の描画処理は、毎フレーム計算するのではなく、キャッシュされた s_cachedFiltered と s_cachedMessages を使う
     ImGuiListClipper clipper;
-    clipper.Begin(static_cast<int>(filtered.size()));
+    clipper.Begin(static_cast<int>(s_cachedFiltered.size()));
     while (clipper.Step())
     {
         for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i)
         {
-            const auto& m = messages[filtered[i]];
+            // キャッシュから読み出し
+            const auto& m = s_cachedMessages[s_cachedFiltered[i]];
             const auto  color = LevelColor(m.level);
             const auto* catName = GetLogCategoryName(m.category);
 

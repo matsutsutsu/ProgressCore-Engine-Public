@@ -8,6 +8,7 @@
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Platform/Input/Input.h"
 #include "Engine/Scene/SceneManager.h"
+#include "Game/Scenes/BaseScene.h"
 
 // ★ 必要なヘッダをインクルード
 #include "Engine/Audio/FmodIntegration/FmodAudioManager.h"
@@ -30,9 +31,8 @@
 #include "Engine/Graphics/Renderer/ImGuiRenderer.h"
 #endif
 
-#if TRACY_ENABLE
 #include "tracy/Tracy.hpp"
-#endif
+
 
 void InitializeDebugLayer(ID3D11Device *device)
 {
@@ -54,9 +54,9 @@ static const int syncInterval = 1;
 Framework::Framework(HWND hWnd)
 	: hWnd(hWnd)
 {
-#if TRACY_ENABLE
+ 
 	ZoneScopedN("Framework::Constructor");
-#endif
+
 
 	// ★ 最初にLoggerをセットアップ (他システムが起動時に CCL_LOG を呼ぶため)
 	Logger::Instance().AddSink(std::make_shared<DebugStreamSink>());
@@ -114,9 +114,9 @@ Framework::Framework(HWND hWnd)
 // デストラクタ
 Framework::~Framework()
 {
-#if TRACY_ENABLE
+ 
 	ZoneScopedN("Framework::Destrucor");
-#endif
+
 
 #ifdef ENABLE_EDITOR
 	// エディタの解放を明示的に行う（スマートポインタなので自動解放されるが順序の担保として）
@@ -132,12 +132,13 @@ Framework::~Framework()
 	// ★ ダイアログ履歴を保存
 	Engine::FileDialog::SaveHistory();
 
-	// 2. その後に、静的（static）なキャッシュを片付ける
-    // これらが「デバイスへの参照」を握っている最後の犯人たちです。
-    Prefab::Cleanup();
-
 	Logger::Instance().Flush();
 	Logger::Instance().ClearSinks(); // shared_ptr 循環参照防止
+
+	// ④ 描画パイプラインの破棄 (ここで ResourceManager のクリアも行われる)
+	// 最後に残ったGPUの親玉を破壊します。
+	// ここでついに、あの「ReportLiveDeviceObjects」のレポートが出力されます！
+	Graphics::Instance().Shutdown();
 
 }
 
@@ -147,10 +148,10 @@ Framework::~Framework()
 void Framework::FixedUpdate(float fixedTime)
 {
 	// ここでは「物理・ロジック系」の更新のみを行う
-#if TRACY_ENABLE
+ 
     // 固定フレームごとの更新時間を計測
     ZoneScopedN("Framework::FixedUpdate");
-#endif
+
 
 	bool shouldUpdateLogic = true;
 
@@ -178,16 +179,16 @@ void Framework::FixedUpdate(float fixedTime)
 // ---------------------------------------------------------
 void Framework::Update(float elapsedTime)
 {
-#if TRACY_ENABLE
+ 
     // 毎フレームのロジック更新時間を計測
     ZoneScopedN("Framework::Update");
-#endif
+
 
 #if ENABLE_EDITOR
 	{
-#if TRACY_ENABLE
+ 
 		ZoneScopedN("Framework::ImGuiRenderer::NewFrame");
-#endif
+
 
 		// IMGUIフレーム開始処理	
 		ImGuiRenderer::NewFrame();
@@ -195,9 +196,9 @@ void Framework::Update(float elapsedTime)
 #endif
 
 	{
-#if TRACY_ENABLE
+ 
 		ZoneScopedN("Framework::Input::Update");
-#endif
+
 
 		// インプット更新処理
 		Input::Instance().Update();
@@ -205,9 +206,9 @@ void Framework::Update(float elapsedTime)
 	}
 
 	{
-#if TRACY_ENABLE
+ 
 		ZoneScopedN("Framework::SceneManager::Update");
-#endif
+
 
 		// シーン更新処理
 		SceneManager::Instance().Update(elapsedTime);
@@ -215,9 +216,9 @@ void Framework::Update(float elapsedTime)
 
 #ifdef ENABLE_EDITOR
 	{
-#if TRACY_ENABLE
+ 
 		ZoneScopedN("Framework::EditorUpdate");
-#endif
+
 
 		// ★ 重要: 現在アクティブなシーンの情報をエディタに供給する（オブザーバー的アプローチ）
 		// ※ SceneManager に GetCurrentScene() などのアクセス関数を追加する必要があります
@@ -243,10 +244,10 @@ void Framework::Update(float elapsedTime)
 // 描画処理
 void Framework::Render(float elapsedTime)
 {
-#if TRACY_ENABLE
+ 
     // 描画コマンド発行全体を計測
     ZoneScopedN("Framework::Render");
-#endif
+
 
 	ID3D11DeviceContext* dc = Graphics::Instance().GetDeviceContext();
 
@@ -269,10 +270,10 @@ void Framework::Render(float elapsedTime)
 
 	// シーンマネージャーを介して現在のシーンを描画
     {
-#if TRACY_ENABLE
+ 
             // シーンの描画（不透明、半透明、パーティクルなど）を細分化して計測
             ZoneScopedN("SceneManager::Render");
-#endif
+
 
             SceneManager::Instance().Render();
     }
@@ -289,22 +290,22 @@ void Framework::Render(float elapsedTime)
 
 	// ImGuiの描画を計測
 	{
-	#if TRACY_ENABLE
+	 
 		ZoneScopedN("FrameWork::ImGui");
-	#endif
+
 
 		{
-		#if TRACY_ENABLE
+		 
 			ZoneScopedN("FrameWork::SceneManager::DrawGUI");
-		#endif
+
 			SceneManager::Instance().DrawGUI();
 
 		}
 
 		{
-		#if TRACY_ENABLE
+		 
 			ZoneScopedN("FrameWork::EditorUI::Render");
-		#endif
+
 
 			// ゲームUIの後に、覆いかぶさるようにエディタUIを描画する
 			if (m_editorWindowManager) {
@@ -319,9 +320,9 @@ void Framework::Render(float elapsedTime)
 		}
 
 		{
-		#if TRACY_ENABLE
+		 
 			ZoneScopedN("FrameWork::ImGuiRenderer::Render");
-		#endif
+
 			// IMGUI描画
 			ImGuiRenderer::Render(dc);
 		}
@@ -331,13 +332,19 @@ void Framework::Render(float elapsedTime)
 #endif
 
 	{
-#if TRACY_ENABLE
+ 
             // ★超重要: GPUの描画待ち（VSync同期）の時間を計測
             ZoneScopedN("Graphics::Present (VSync Wait)");
-#endif
+
 
             // 画面表示
-            Graphics::Instance().Present(syncInterval);
+			if (!Graphics::Instance().Present(syncInterval)) {
+				// ① GPU リソース再構築（Shutdown → Initialize）
+				Graphics::Instance().RecoverFromDeviceLost();
+				// ② 現在のシーンに通知（ECS ワールドを作り直してリソースを再ロード）
+				if (auto* scene = dynamic_cast<BaseScene*>(SceneManager::Instance().GetCurrentScene()))
+					scene->OnDeviceRecreated();
+			}
     }
 	
 }
@@ -473,10 +480,10 @@ int Framework::Run()
 			Update(frameTime);
 			Render(frameTime);
 
-#if TRACY_ENABLE
+ 
 			// ここで1フレーム終了をTracyに通知
             FrameMark;
-#endif
+
 
 		}
 	}

@@ -1,6 +1,6 @@
 #include "VoxelOceanSystem.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
-#include "Game/Core/SystemPriority.h"
+#include "Engine/Core/Systems/SystemPriority.h"
 
 void VoxelOceanSystem::Update(float dt)
 {
@@ -37,6 +37,8 @@ void VoxelOceanSystem::Update(float dt)
         // クォータニオンをEuler角から簡易生成して代入 (※エンジンの仕様に合わせてください)
         // ここでは簡単な見栄えのための擬似的な回転です
         // もし重ければ回転計算は削除しても波としては成立します
+            
+		trans.isDirty = true; // 行列の再計算を要求  
         });
 }
 

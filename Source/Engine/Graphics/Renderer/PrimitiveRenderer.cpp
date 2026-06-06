@@ -6,9 +6,8 @@
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 
-#if TRACY_ENABLE
 #include "tracy/Tracy.hpp"
-#endif
+
 
 using namespace DirectX;
 
@@ -148,10 +147,9 @@ void PrimitiveRenderer::Render(ID3D11DeviceContext* dc,
     const RenderServices& s,
     const DirectX::XMFLOAT4X4& view,
     const DirectX::XMFLOAT4X4& projection)
-{
-#if TRACY_ENABLE
+{ 
     ZoneScopedN("PrimitiveRenderer::Render");
-#endif
+
 
     // 1. 次フレームのカリング用に視錐台を更新
     BoundingFrustum frustumLocal;

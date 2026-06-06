@@ -1,17 +1,37 @@
+// =====================================================================
+// GPUParticleComponentMeta.cpp  (手書き / 自動生成しない)
+//
+//   パーティクルを「普通のシリアライズ可能コンポーネント」にする Meta。
+//
+//   設計:
+//     1. desc <-> json 変換を 1 箇所 (DescCodec) に集約 = 唯一の真実
+//     2. Serialize/Deserialize<GPUParticleComponent> = CustomSerialize
+//        → シーン保存・Prefab・プリセットが全部この 1 つを共有
+//     3. プリセット保存/読込は FileSystem 経由で同じ Serialize を再利用
+//     4. Fields() は空 (CustomSerialize なので使わない)
+//
+//   現行構造への対応:
+//     - 旧 comp.config(CbParticle) / comp.maxParticles を廃止
+//     - すべて comp.desc (ParticleEmitterDesc) に集約
+//     - GUI 編集後は MarkDescChanged() で staticCB 再アップロードを要求
+//     - maxCount 変更時のみ isInitialized=false (バッファ再構築)
+//     - テクスチャは選択時に即ロード (バッファ再構築は不要)
+// =====================================================================
 #include "Engine/Graphics/Components/Particle/GPUParticleComponent.h"
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Platform/Core/Dialog.h"
-#include <filesystem>
-#include <fstream>
-#include <json.hpp>
-
-
-#include "Engine/Serialization/Registry/ComponentRegistry.h"
-#include "Engine/Serialization/Meta/ComponentMeta.h"
-#include "Engine/Serialization/Meta/ComponentMetaJson.h"
 #include "Engine/Platform/Core/FileSystem.h"
 
+#include "Engine/Serialization/Registry/ComponentRegistry.h"
 #include "Engine/Serialization/Registry/ComponentRegistry_Editor.h"
+#include "Engine/Serialization/Meta/ComponentMeta.h"
+#include "Engine/Serialization/Meta/ComponentMetaJson.h"
+
+#include <json.hpp>
+#include <cmath>
+#include <filesystem>
+#include <string>
+
 #ifdef ENABLE_EDITOR
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
@@ -19,334 +39,333 @@
 
 using json = nlohmann::json;
 
-// ============================================================================
-// ローカルヘルパー関数
-// ============================================================================
+// =====================================================================
+// ★ 唯一の変換ロジック: ParticleEmitterDesc <-> json
+//   ここだけを真実とする。他のどこにも desc の JSON 化を書かない。
+// =====================================================================
 namespace {
-    json ConfigToJson(const ParticleSystemConfig& cfg, const char* texPath, const char* rampPath)
+
+    inline float SafeF(float v) { return std::isfinite(v) ? v : 0.0f; }
+
+    // ---- desc -> json ----------------------------------------------
+    void WriteDescToJson(json& j, const ParticleEmitterDesc& d)
     {
-        auto SafeFloat = [](float val) { return std::isfinite(val) ? val : 0.0f; };
-        try {
-            std::string safeTexPath = (texPath && texPath[0] != '\0') ? texPath : "";
-            std::string safeRampPath = (rampPath && rampPath[0] != '\0') ? rampPath : "";
-            return { {"max_particle_count", cfg.max_particle_count},
-                {"texture_path", safeTexPath},
-                {"color_ramp_path", safeRampPath},
-                {"color_mode", cfg.color_mode},
-                {"type", cfg.type},
-                {"emission_mode", cfg.emission_mode},
-                {"burst_count", cfg.burst_count},
-                {"spawn_delay_min", SafeFloat(cfg.spawn_delay.x)},
-                {"spawn_delay_max", SafeFloat(cfg.spawn_delay.y)},
-                {"lifespan_min", SafeFloat(cfg.lifespan.x)},
-                {"lifespan_max", SafeFloat(cfg.lifespan.y)},
-                {"speed_min", SafeFloat(cfg.emission_speed.x)},
-                {"speed_max", SafeFloat(cfg.emission_speed.y)},
-                {"gravity", SafeFloat(cfg.gravity)},
-                {"radius_min", SafeFloat(cfg.emission_offset.x)},
-                {"radius_max", SafeFloat(cfg.emission_offset.y)},
-                {"angle_min", SafeFloat(cfg.emission_cone_angle.x)},
-                {"angle_max", SafeFloat(cfg.emission_cone_angle.y)},
-                {"color",
-                    {SafeFloat(cfg.manual_color.x),
-                        SafeFloat(cfg.manual_color.y),
-                        SafeFloat(cfg.manual_color.z),
-                        SafeFloat(cfg.manual_color.w)}},
-                {"size_start", SafeFloat(cfg.emission_size.x)},
-                {"size_end", SafeFloat(cfg.emission_size.y)},
-                {"fade_in", SafeFloat(cfg.fade_duration.x)},
-                {"fade_out", SafeFloat(cfg.fade_duration.y)},
-                {"noise_scale", SafeFloat(cfg.noise_scale)},
-                {"noise_strength", SafeFloat(cfg.noise_strength)},
-                {"uv_scroll_x", SafeFloat(cfg.uv_scroll_speed.x)},
-                {"uv_scroll_y", SafeFloat(cfg.uv_scroll_speed.y)},
-                {"velocity_stretch", SafeFloat(cfg.velocity_stretch)},
-                {"anim_mode", cfg.sprite_anim_mode},
-                {"grid_x", cfg.sprite_sheet_grid.x},
-                {"grid_y", cfg.sprite_sheet_grid.y} };
-        }
-        catch (...) {
-            return json({});
-        }
+        // ベクトル系
+        j["emitRadius"] = { SafeF(d.emitRadius.x),   SafeF(d.emitRadius.y) };
+        j["emitSize"] = { SafeF(d.emitSize.x),     SafeF(d.emitSize.y) };
+        j["coneAngle"] = { SafeF(d.coneAngle.x),    SafeF(d.coneAngle.y) };
+        j["emitSpeed"] = { SafeF(d.emitSpeed.x),    SafeF(d.emitSpeed.y) };
+        j["angularSpeed"] = { SafeF(d.angularSpeed.x), SafeF(d.angularSpeed.y) };
+        j["lifespan"] = { SafeF(d.lifespan.x),     SafeF(d.lifespan.y) };
+        j["spawnDelay"] = { SafeF(d.spawnDelay.x),   SafeF(d.spawnDelay.y) };
+        j["fadeDuration"] = { SafeF(d.fadeDuration.x), SafeF(d.fadeDuration.y) };
+        j["localOffset"] = { SafeF(d.localOffset.x),  SafeF(d.localOffset.y), SafeF(d.localOffset.z) };
+        j["emitStretch"] = { SafeF(d.emitStretch.x),  SafeF(d.emitStretch.y) };
+        j["uvScrollSpeed"] = { SafeF(d.uvScrollSpeed.x),SafeF(d.uvScrollSpeed.y) };
+        j["scale"] = { SafeF(d.scale.x),        SafeF(d.scale.y) };
+        j["color"] = { SafeF(d.color.x), SafeF(d.color.y), SafeF(d.color.z), SafeF(d.color.w) };
+        j["spriteGrid"] = { d.spriteGrid.x, d.spriteGrid.y };
+
+        // スカラー (float)
+        j["localOffsetY"] = SafeF(d.localOffsetY);
+        j["gravity"] = SafeF(d.gravity);
+        j["velocityStretch"] = SafeF(d.velocityStretch);
+        j["noiseScale"] = SafeF(d.noiseScale);
+        j["noiseStrength"] = SafeF(d.noiseStrength);
+
+        // スカラー (int)
+        j["colorMode"] = d.colorMode;
+        j["renderMode"] = d.renderMode;
+        j["spriteMode"] = d.spriteMode;
+        j["maxCount"] = d.maxCount;
+        j["particleType"] = d.particleType;
+        j["emitMode"] = d.emitMode;
+        j["burstCount"] = d.burstCount;
+
+        // パス
+        j["texturePath"] = std::string(d.texturePath);
+        j["colorRampPath"] = std::string(d.colorRampPath);
     }
 
-    void JsonToConfig(const json& j, GPUParticleComponent* p)
+    // ---- json -> desc ----------------------------------------------
+    void ReadDescFromJson(const json& j, ParticleEmitterDesc& d)
     {
-        auto& cfg = p->config;
-        if (j.contains("max_particle_count")) {
-            int newMax = j["max_particle_count"];
-            if (newMax != cfg.max_particle_count) {
-                p->maxParticles = newMax;
-                cfg.max_particle_count = newMax;
-                p->isInitialized = false;
-            }
+        auto F = [&](const char* k, float& dst) { if (j.contains(k) && j[k].is_number()) dst = j[k].get<float>(); };
+        auto I = [&](const char* k, int& dst) { if (j.contains(k) && j[k].is_number()) dst = j[k].get<int>(); };
+        auto F2 = [&](const char* k, GpuData::float2& v) {
+            if (j.contains(k) && j[k].is_array() && j[k].size() >= 2) { v.x = j[k][0].get<float>(); v.y = j[k][1].get<float>(); }
+            };
+        auto F3 = [&](const char* k, GpuData::float3& v) {
+            if (j.contains(k) && j[k].is_array() && j[k].size() >= 3) { v.x = j[k][0].get<float>(); v.y = j[k][1].get<float>(); v.z = j[k][2].get<float>(); }
+            };
+        auto F4 = [&](const char* k, GpuData::float4& v) {
+            if (j.contains(k) && j[k].is_array() && j[k].size() >= 4) { v.x = j[k][0].get<float>(); v.y = j[k][1].get<float>(); v.z = j[k][2].get<float>(); v.w = j[k][3].get<float>(); }
+            };
+        auto STR = [&](const char* k, char* dst, size_t cap) {
+            if (j.contains(k) && j[k].is_string()) strcpy_s(dst, cap, j[k].get<std::string>().c_str());
+            };
+
+        F2("emitRadius", d.emitRadius);
+        F2("emitSize", d.emitSize);
+        F2("coneAngle", d.coneAngle);
+        F2("emitSpeed", d.emitSpeed);
+        F2("angularSpeed", d.angularSpeed);
+        F2("lifespan", d.lifespan);
+        F2("spawnDelay", d.spawnDelay);
+        F2("fadeDuration", d.fadeDuration);
+        F3("localOffset", d.localOffset);
+        F2("emitStretch", d.emitStretch);
+        F2("uvScrollSpeed", d.uvScrollSpeed);
+        F2("scale", d.scale);
+        F4("color", d.color);
+
+        F("localOffsetY", d.localOffsetY);
+        F("gravity", d.gravity);
+        F("velocityStretch", d.velocityStretch);
+        F("noiseScale", d.noiseScale);
+        F("noiseStrength", d.noiseStrength);
+
+        I("colorMode", d.colorMode);
+        I("renderMode", d.renderMode);
+        I("spriteMode", d.spriteMode);
+        I("maxCount", d.maxCount);
+        I("particleType", d.particleType);
+        I("emitMode", d.emitMode);
+        I("burstCount", d.burstCount);
+
+        if (j.contains("spriteGrid") && j["spriteGrid"].is_array() && j["spriteGrid"].size() >= 2) {
+            d.spriteGrid.x = j["spriteGrid"][0].get<uint32_t>();
+            d.spriteGrid.y = j["spriteGrid"][1].get<uint32_t>();
         }
-        if (j.contains("texture_path")) {
-            std::string path = j["texture_path"];
-            if (!path.empty()) {
-                strcpy_s(p->texturePath, sizeof(p->texturePath), path.c_str());
-                p->isInitialized = false;
-            }
-        }
-        if (j.contains("color_ramp_path")) {
-            std::string path = j["color_ramp_path"];
-            if (!path.empty()) {
-                strcpy_s(p->colorRampPath, sizeof(p->colorRampPath), path.c_str());
-                p->isInitialized = false;
-            }
-        }
-        if (j.contains("color_mode")) cfg.color_mode = j["color_mode"];
-        if (j.contains("type")) cfg.type = j["type"];
-        if (j.contains("emission_mode")) cfg.emission_mode = j["emission_mode"];
-        if (j.contains("burst_count")) cfg.burst_count = j["burst_count"];
-        if (j.contains("spawn_delay_min")) cfg.spawn_delay.x = j["spawn_delay_min"];
-        if (j.contains("spawn_delay_max")) cfg.spawn_delay.y = j["spawn_delay_max"];
-        if (j.contains("lifespan_min")) cfg.lifespan.x = j["lifespan_min"];
-        if (j.contains("lifespan_max")) cfg.lifespan.y = j["lifespan_max"];
-        if (j.contains("speed_min")) cfg.emission_speed.x = j["speed_min"];
-        if (j.contains("speed_max")) cfg.emission_speed.y = j["speed_max"];
-        if (j.contains("gravity")) cfg.gravity = j["gravity"];
-        if (j.contains("radius_min")) cfg.emission_offset.x = j["radius_min"];
-        if (j.contains("radius_max")) cfg.emission_offset.y = j["radius_max"];
-        if (j.contains("angle_min")) cfg.emission_cone_angle.x = j["angle_min"];
-        if (j.contains("angle_max")) cfg.emission_cone_angle.y = j["angle_max"];
-        if (j.contains("color")) {
-            auto c = j["color"];
-            cfg.manual_color = { c[0], c[1], c[2], c[3] };
-        }
-        if (j.contains("size_start")) cfg.emission_size.x = j["size_start"];
-        if (j.contains("size_end")) cfg.emission_size.y = j["size_end"];
-        if (j.contains("fade_in")) cfg.fade_duration.x = j["fade_in"];
-        if (j.contains("fade_out")) cfg.fade_duration.y = j["fade_out"];
-        if (j.contains("noise_scale")) cfg.noise_scale = j["noise_scale"];
-        if (j.contains("noise_strength")) cfg.noise_strength = j["noise_strength"];
-        if (j.contains("uv_scroll_x")) cfg.uv_scroll_speed.x = j["uv_scroll_x"];
-        if (j.contains("uv_scroll_y")) cfg.uv_scroll_speed.y = j["uv_scroll_y"];
-        if (j.contains("velocity_stretch")) cfg.velocity_stretch = j["velocity_stretch"];
-        if (j.contains("anim_mode")) cfg.sprite_anim_mode = j["anim_mode"];
-        if (j.contains("grid_x")) cfg.sprite_sheet_grid.x = j["grid_x"];
-        if (j.contains("grid_y")) cfg.sprite_sheet_grid.y = j["grid_y"];
+
+        STR("texturePath", d.texturePath, sizeof(d.texturePath));
+        STR("colorRampPath", d.colorRampPath, sizeof(d.colorRampPath));
     }
 
-    /**
-    * @brief 絶対パスをカレントディレクトリからの相対パス文字列に変換する
-    * @details 変換に失敗した場合は generic_string() 形式の絶対パスをそのまま返す
-    */
     std::string ToRelativePath(const std::filesystem::path& absPath)
     {
         std::error_code ec;
         auto rel = std::filesystem::relative(absPath, std::filesystem::current_path(), ec);
-        if (!ec && !rel.empty()) return rel.generic_string();
-        return absPath.generic_string();
+        return (!ec && !rel.empty()) ? rel.generic_string() : absPath.generic_string();
     }
 
 } // namespace
 
-// ============================================================================
-// Component Meta
-// ============================================================================
+// =====================================================================
+// ★ CustomSerialize: GPUParticleComponent の唯一のシリアライズ経路
+//   シーン・Prefab・プリセット全部で使われる。
+// =====================================================================
+namespace ComponentMetaJson {
+
+    template <>
+    void Serialize<GPUParticleComponent>(json& j, const GPUParticleComponent& comp, SaveContext*)
+    {
+        WriteDescToJson(j, comp.desc);
+    }
+
+    template <>
+    void Deserialize<GPUParticleComponent>(const json& j, GPUParticleComponent& comp, LoadContext*)
+    {
+        ReadDescFromJson(j, comp.desc);
+
+        // パスからテクスチャ Handle を復元
+        auto& rm = ResourceManager::Instance();
+        comp.texture = (comp.desc.texturePath[0] != '\0') ? rm.LoadTexture(comp.desc.texturePath) : TextureHandle{};
+        comp.colorRamp = (comp.desc.colorRampPath[0] != '\0') ? rm.LoadTexture(comp.desc.colorRampPath) : TextureHandle{};
+
+        // GPU リソース再構築 + staticCB 再アップロードを要求
+        comp.isInitialized = false;
+        comp.needsGpuInit = true;
+        comp._staticDirty = true;
+        comp.burstTrigger = 0.0f;
+    }
+
+} // namespace ComponentMetaJson
+
+// =====================================================================
+// プリセット保存/読込ヘルパー (FileSystem 経由・上の Serialize を再利用)
+//   → シーン保存と完全に同じスキーマになる
+// =====================================================================
+namespace {
+
+    bool SavePreset(const std::string& path, const GPUParticleComponent& comp)
+    {
+        json j;
+        ComponentMetaJson::Serialize<GPUParticleComponent>(j, comp, nullptr);
+        return FileSystem::WriteAllText(path, j.dump(4));
+    }
+
+    bool LoadPreset(const std::string& path, GPUParticleComponent& comp)
+    {
+        if (!FileSystem::Exists(path)) return false;
+        const std::string text = FileSystem::ReadAllText(path);
+        if (text.empty()) return false;
+        try {
+            json j = json::parse(text);
+            ComponentMetaJson::Deserialize<GPUParticleComponent>(j, comp, nullptr);
+            return true;
+        }
+        catch (...) { return false; }
+    }
+
+} // namespace
+
+// =====================================================================
+// ComponentMeta<GPUParticleComponent>
+// =====================================================================
 template <> struct ComponentMeta<GPUParticleComponent> {
     static constexpr bool        registered = true;
     static constexpr const char* displayName = "GPU Particle";
     static constexpr bool        hasCustomGui = true;
 
-#if ENABLE_EDITOR
-    static bool CustomGui(GPUParticleComponent& compRef, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr)
+#ifdef ENABLE_EDITOR
+    static bool CustomGui(GPUParticleComponent& compRef, unsigned long long = 0, void* = nullptr)
     {
-        bool changed = false;
-        GPUParticleComponent* p = &compRef;
-        auto& cfg = p->config;
-        HWND hWnd = Graphics::Instance().GetWindowHandle();
+        bool  changed = false;
+        auto* p = &compRef;
+        auto& d = p->desc;                 // ★ すべて desc を編集
+        auto& rm = ResourceManager::Instance();
+        HWND  hWnd = Graphics::Instance().GetWindowHandle();
 
-
-        // ----------------------------------------------------------------
-        // 1. プリセット保存 / 読込
-        // ----------------------------------------------------------------
-        if (ImGui::Button(u8"プリセット保存 (Save Preset)")) {
-            if (auto path = Engine::FileDialog::SavePreset(
-                "GPUParticlePreset", u8"Save Particle Preset", {}, hWnd))
-            {
-                std::ofstream o(*path);
-                o << std::setw(4) << ConfigToJson(cfg, p->texturePath, p->colorRampPath)
-                    << std::endl;
+        // ---- テクスチャ即ロード用ヘルパー ----------------------------
+        auto pickTexture = [&](char* dst, size_t cap, TextureHandle& handle, const char* title) {
+            if (auto path = Engine::FileDialog::OpenPreset("Texture", title, hWnd)) {
+                strcpy_s(dst, cap, ToRelativePath(*path).c_str());
+                handle = rm.LoadTexture(dst);     // ★ 選択時に即ロード (バッファ再構築は不要)
+                changed = true;
             }
+            };
+
+        // ================================================================
+        // プリセット保存 / 読込
+        // ================================================================
+        if (ImGui::Button(u8"プリセット保存 (Save Preset)")) {
+            if (auto path = Engine::FileDialog::SavePreset("GPUParticlePreset", u8"Save Particle Preset", {}, hWnd))
+                SavePreset(path->string(), *p);
         }
         ImGui::SameLine();
         if (ImGui::Button(u8"プリセット読込 (Load Preset)")) {
-            if (auto path = Engine::FileDialog::OpenPreset(
-                "GPUParticlePreset", u8"Load Particle Preset", hWnd))
-            {
-                std::ifstream i(*path);
-                if (i.is_open()) {
-                    json j;
-                    i >> j;
-                    JsonToConfig(j, p);
-                    cfg.burst_trigger = 0.0f;
-                    p->maxParticles = cfg.max_particle_count;
-                    p->isInitialized = false;
-                    changed = true;
-                }
-            }
+            if (auto path = Engine::FileDialog::OpenPreset("GPUParticlePreset", u8"Load Particle Preset", hWnd))
+                if (LoadPreset(path->string(), *p)) changed = true;
         }
-
         ImGui::Separator();
 
-        // システム設定
+        // ================================================================
+        // システム設定 (System)
+        // ================================================================
         ImGui::TextDisabled(u8"システム設定 (System)");
-        ImGui::Text(u8"稼働数 (Active): %d", cfg.max_particle_count);
+        ImGui::Text(u8"現在の最大数 (Max): %d", d.maxCount);
 
-        int tempMax = cfg.max_particle_count;
+        // ★ InputInt + Enter 確定。ドラッグ中に毎フレーム再構築しないための工夫。
+        int tempMax = d.maxCount;
         if (ImGui::InputInt(u8"最大許容量 (Max Capacity)", &tempMax, 0, 0)) {
-            if (tempMax > 0) {
-                p->maxParticles = tempMax;
-                p->isInitialized = false;
+            if (tempMax > 0 && tempMax != d.maxCount) {
+                d.maxCount = tempMax;
+                p->isInitialized = false;     // ★ maxCount 変更時のみバッファ再構築
                 changed = true;
             }
         }
-        if (ImGui::IsItemHovered()) {
+        if (ImGui::IsItemHovered())
             ImGui::SetTooltip(u8"Enterキーで適用します。\n注意: パーティクルが全てリセットされます。");
-        }
 
         const char* typeNames[] = { "Point (Color Only)", "Quad (Texture)" };
-        if (ImGui::Combo(u8"描画タイプ (Render Type)", &cfg.type, typeNames, IM_ARRAYSIZE(typeNames)))
+        if (ImGui::Combo(u8"描画タイプ (Render Type)", &d.particleType, typeNames, IM_ARRAYSIZE(typeNames)))
             changed = true;
         ImGui::Spacing();
 
-        // 2. 発生設定 (Emission)
+        // ================================================================
+        // 発生設定 (Emission)
+        // ================================================================
         if (ImGui::TreeNode(u8"発生設定 (Emission)")) {
             const char* modes[] = { "Continuous (継続)", "Burst (爆発)" };
-            if (ImGui::Combo(u8"発生モード (Mode)", &cfg.emission_mode, modes, IM_ARRAYSIZE(modes)))
-                changed = true;
+            if (ImGui::Combo(u8"発生モード (Mode)", &d.emitMode, modes, IM_ARRAYSIZE(modes))) changed = true;
 
-            if (cfg.emission_mode == 1) {
-                if (ImGui::DragInt(u8"発生数 (Count)", &cfg.burst_count, 1, 0, 10000)) changed = true;
-                if (ImGui::Button(u8"発火テスト (Trigger)", ImVec2(-1, 0))) {
-                    p->TriggerBurst();
-                    changed = true;
-                }
+            if (d.emitMode == 1) {
+                if (ImGui::DragInt(u8"発生数 (Count)", &d.burstCount, 1, 0, 10000)) changed = true;
+                if (ImGui::Button(u8"発火テスト (Trigger)", ImVec2(-1, 0))) p->TriggerBurst();
             }
             else {
-                if (ImGui::DragFloat2(
-                    u8"発生間隔 (Delay Min/Max)", &cfg.spawn_delay.x, 0.001f, 0.0f, 1.0f, "%.4f"))
-                    changed = true;
+                if (ImGui::DragFloat2(u8"発生間隔 (Delay Min/Max)", &d.spawnDelay.x, 0.001f, 0.0f, 5.0f, "%.4f")) changed = true;
             }
 
             ImGui::Separator();
             ImGui::TextDisabled(u8"形状と位置 (Shape & Position)");
-            if (ImGui::DragFloat4(u8"位置オフセット (Pos Offset)", &cfg.emission_position.x, 0.1f))
-                changed = true;
-            if (ImGui::DragFloat2(u8"半径 (Radius Min/Max)", &cfg.emission_offset.x, 0.1f))
-                changed = true;
-            if (ImGui::DragFloat(
-                u8"形状比率 X (Shape Stretch X)", &cfg.emission_stretch_x, 0.01f, 0.0f, 10.0f))
-                changed = true;
-            if (ImGui::DragFloat(
-                u8"形状比率 Z (Shape Stretch Z)", &cfg.emission_stretch_z, 0.01f, 0.0f, 10.0f))
-                changed = true;
-            if (ImGui::DragFloat(u8"高さ範囲 Y (Height Volume)", &cfg.particle_offset_y, 0.1f, 0.0f, 50.0f))
-                changed = true;
-            if (ImGui::DragFloat2(u8"角度 (Angle Min/Max)", &cfg.emission_cone_angle.x, 0.1f))
-                changed = true;
+            if (ImGui::DragFloat3(u8"位置オフセット (Pos Offset)", &d.localOffset.x, 0.1f))                changed = true;
+            if (ImGui::DragFloat(u8"高さ範囲 Y (Height Volume)", &d.localOffsetY, 0.1f, 0.0f, 50.0f))     changed = true;
+            if (ImGui::DragFloat2(u8"半径 (Radius Min/Max)", &d.emitRadius.x, 0.1f))                       changed = true;
+            if (ImGui::DragFloat2(u8"形状比率 XZ (Shape Stretch)", &d.emitStretch.x, 0.01f, 0.0f, 10.0f))  changed = true;
+            if (ImGui::DragFloat2(u8"角度 (Angle Min/Max)", &d.coneAngle.x, 0.1f))                          changed = true;
             ImGui::TreePop();
         }
 
-        // 3. 挙動・物理設定 (Movement & Physics)
+        // ================================================================
+        // 挙動・物理 (Movement & Physics)
+        // ================================================================
         if (ImGui::TreeNode(u8"挙動・物理 (Movement)")) {
-            if (ImGui::DragFloat(u8"重力 (Gravity)", &cfg.gravity, 0.1f)) changed = true;
-            if (ImGui::DragFloat2(u8"速度 (Speed Min/Max)", &cfg.emission_speed.x, 0.1f))
-                changed = true;
-            if (ImGui::DragFloat2(u8"回転速度 (Rot Speed Min/Max)", &cfg.emission_angular_speed.x, 0.1f))
-                changed = true;
-            if (ImGui::DragFloat2(u8"寿命 (Life Min/Max)", &cfg.lifespan.x, 0.1f)) changed = true;
+            if (ImGui::DragFloat(u8"重力 (Gravity)", &d.gravity, 0.1f))                                  changed = true;
+            if (ImGui::DragFloat2(u8"速度 (Speed Min/Max)", &d.emitSpeed.x, 0.1f))                        changed = true;
+            if (ImGui::DragFloat2(u8"回転速度 (Rot Speed Min/Max)", &d.angularSpeed.x, 0.1f))             changed = true;
+            if (ImGui::DragFloat2(u8"寿命 (Life Min/Max)", &d.lifespan.x, 0.1f, 0.0f, 60.0f))             changed = true;
 
             ImGui::Separator();
             ImGui::TextDisabled(u8"乱流・ノイズ (Turbulence)");
-            if (ImGui::DragFloat(u8"ノイズ強度 (Strength)", &cfg.noise_strength, 0.1f))
-                changed = true;
-            if (ImGui::DragFloat(u8"ノイズサイズ (Scale)", &cfg.noise_scale, 0.01f)) changed = true;
+            if (ImGui::DragFloat(u8"ノイズ強度 (Strength)", &d.noiseStrength, 0.1f))                      changed = true;
+            if (ImGui::DragFloat(u8"ノイズサイズ (Scale)", &d.noiseScale, 0.01f))                         changed = true;
             ImGui::TreePop();
         }
 
-        // 4. 見た目・アニメーション (Appearance)
+        // ================================================================
+        // 見た目・アニメーション (Appearance)
+        // ================================================================
         if (ImGui::TreeNode(u8"見た目 (Appearance)")) {
             const char* renderModes[] = { "Additive (Fire/Light)", "Alpha Blend (Smoke/Dark)" };
-            int         currentMode = p->config.render_mode;
-            if (ImGui::Combo(
-                "Render Mode", &currentMode, renderModes, IM_ARRAYSIZE(renderModes))) {
-                p->config.render_mode = currentMode;
-                changed = true;
-            }
+            if (ImGui::Combo(u8"描画ブレンド (Render Mode)", &d.renderMode, renderModes, IM_ARRAYSIZE(renderModes))) changed = true;
 
-            if (ImGui::ColorEdit4(u8"基本色 (Base Color)", &cfg.manual_color.x)) changed = true;
+            if (ImGui::ColorEdit4(u8"基本色 (Base Color)", &d.color.x)) changed = true;
 
             const char* colorModes[] = { u8"単色 (Single Color)", u8"カラーランプ (Color Ramp)" };
-            if (ImGui::Combo(
-                u8"カラーモード (Color Mode)", &cfg.color_mode, colorModes, IM_ARRAYSIZE(colorModes)))
-                changed = true;
+            if (ImGui::Combo(u8"カラーモード (Color Mode)", &d.colorMode, colorModes, IM_ARRAYSIZE(colorModes))) changed = true;
+            if (d.colorMode == 1) ImGui::TextDisabled(u8"※ テクスチャ項目の Color Ramp が使用されます");
 
-            if (cfg.color_mode == 1) {
-                ImGui::TextDisabled(u8"※テクスチャ項目の Color Ramp が使用されます");
-            }
-
-            if (ImGui::DragFloat2(u8"サイズ (Size Start/End)", &cfg.emission_size.x, 0.1f))
-                changed = true;
-            if (ImGui::DragFloat2(u8"フェード (Fade In/Out)", &cfg.fade_duration.x, 0.01f))
-                changed = true;
+            if (ImGui::DragFloat2(u8"サイズ (Size Start/End)", &d.emitSize.x, 0.01f, 0.0f, 100.0f))       changed = true;
+            if (ImGui::DragFloat2(u8"全体スケール (Particle Scale)", &d.scale.x, 0.01f, 0.0f, 100.0f))    changed = true;
+            if (ImGui::DragFloat2(u8"フェード (Fade In/Out)", &d.fadeDuration.x, 0.01f, 0.0f, 10.0f))     changed = true;
 
             ImGui::Separator();
             ImGui::TextDisabled(u8"特殊効果 (Effects)");
-            if (ImGui::DragFloat(
-                u8"速度ストレッチ (Stretch)", &cfg.velocity_stretch, 0.01f, 0.0f, 10.0f))
-                changed = true;
+            if (ImGui::DragFloat(u8"速度ストレッチ (Stretch)", &d.velocityStretch, 0.01f, 0.0f, 10.0f))   changed = true;
             if (ImGui::IsItemHovered()) ImGui::SetTooltip(u8"移動方向に引き伸ばします (0.0=無効)");
-            if (ImGui::DragFloat2(u8"UVスクロール (UV Scroll)", &cfg.uv_scroll_speed.x, 0.01f))
-                changed = true;
+            if (ImGui::DragFloat2(u8"UVスクロール (UV Scroll)", &d.uvScrollSpeed.x, 0.01f))               changed = true;
 
             ImGui::Separator();
             ImGui::TextDisabled(u8"スプライトアニメ (Sprite Sheet)");
-            int grid[2] = { (int)cfg.sprite_sheet_grid.x, (int)cfg.sprite_sheet_grid.y };
+            int grid[2] = { (int)d.spriteGrid.x, (int)d.spriteGrid.y };
             if (ImGui::DragInt2(u8"分割数 (Grid X/Y)", grid, 0.1f, 1, 16)) {
-                cfg.sprite_sheet_grid.x = grid[0];
-                cfg.sprite_sheet_grid.y = grid[1];
+                d.spriteGrid.x = (uint32_t)(grid[0] < 1 ? 1 : grid[0]);
+                d.spriteGrid.y = (uint32_t)(grid[1] < 1 ? 1 : grid[1]);
                 changed = true;
             }
-
             const char* animModes[] = { "Random (Fixed)", "Life Cycle (Animate)" };
-            if (ImGui::Combo(
-                u8"再生モード (Anim Mode)", &cfg.sprite_anim_mode, animModes, IM_ARRAYSIZE(animModes)))
-                changed = true;
+            if (ImGui::Combo(u8"再生モード (Anim Mode)", &d.spriteMode, animModes, IM_ARRAYSIZE(animModes))) changed = true;
             ImGui::TreePop();
         }
 
-        // 5. テクスチャ設定 (Textures)
+        // ================================================================
+        // テクスチャ設定 (Textures)
+        // ================================================================
         if (ImGui::TreeNode(u8"テクスチャ (Textures)")) {
-            // メインテクスチャ
+            // --- メインテクスチャ ---
             ImGui::TextDisabled(u8"メインテクスチャ (Main Texture)");
             ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 65.0f);
-            if (ImGui::InputText("##texPath", p->texturePath, sizeof(p->texturePath)))
-                changed = true;
+            if (ImGui::InputText("##texPath", d.texturePath, sizeof(d.texturePath))) changed = true;
             ImGui::SameLine();
+            if (ImGui::Button(u8"読込##Main")) pickTexture(d.texturePath, sizeof(d.texturePath), p->texture, "Select Texture");
 
-            if (ImGui::Button(u8"読込##Main")) {
-                if (auto path = Engine::FileDialog::OpenPreset("Texture", "Select Texture", hWnd)) {
-                    strcpy_s(p->texturePath, sizeof(p->texturePath),
-                        ToRelativePath(*path).c_str());
-                    p->isInitialized = false;
-                    changed = true;
-                }
-            }
-
-            ID3D11ShaderResourceView* texSRV = ResourceManager::Instance().GetTexture(p->texture);
-            if (texSRV) {
-                ImGui::Image((void*)texSRV,
-                    ImVec2(64, 64),
-                    ImVec2(0, 0),
-                    ImVec2(1, 1),
-                    ImVec4(1, 1, 1, 1),
-                    ImVec4(1, 1, 1, 0.5f));
+            if (ID3D11ShaderResourceView* srv = rm.GetTexture(p->texture)) {
+                ImGui::Image((void*)srv, ImVec2(64, 64), ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 0.5f));
                 ImGui::SameLine();
                 if (ImGui::Button(u8"クリア##Main")) {
-                    memset(p->texturePath, 0, sizeof(p->texturePath));
+                    memset(d.texturePath, 0, sizeof(d.texturePath));
                     p->texture = TextureHandle{};
                     changed = true;
                 }
@@ -354,34 +373,18 @@ template <> struct ComponentMeta<GPUParticleComponent> {
 
             ImGui::Separator();
 
-            // カラーランプ
+            // --- カラーランプ ---
             ImGui::TextDisabled(u8"カラーランプ (Color Ramp)");
             ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 65.0f);
-            if (ImGui::InputText("##rampPath", p->colorRampPath, sizeof(p->colorRampPath)))
-                changed = true;
+            if (ImGui::InputText("##rampPath", d.colorRampPath, sizeof(d.colorRampPath))) changed = true;
             ImGui::SameLine();
+            if (ImGui::Button(u8"読込##Ramp")) pickTexture(d.colorRampPath, sizeof(d.colorRampPath), p->colorRamp, "Select Color Ramp");
 
-            if (ImGui::Button(u8"読込##Ramp")) {
-                if (auto path = Engine::FileDialog::OpenPreset("Texture", "Select Color Ramp", hWnd)) {
-                    strcpy_s(p->colorRampPath, sizeof(p->colorRampPath),
-                        ToRelativePath(*path).c_str());
-                    p->isInitialized = false;
-                    changed = true;
-                }
-            }
-
-            ID3D11ShaderResourceView* rampSRV =
-                ResourceManager::Instance().GetTexture(p->colorRamp);
-            if (rampSRV) {
-                ImGui::Image((void*)rampSRV,
-                    ImVec2(128, 16),
-                    ImVec2(0, 0),
-                    ImVec2(1, 1),
-                    ImVec4(1, 1, 1, 1),
-                    ImVec4(1, 1, 1, 0.5f));
+            if (ID3D11ShaderResourceView* srv = rm.GetTexture(p->colorRamp)) {
+                ImGui::Image((void*)srv, ImVec2(128, 16), ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 0.5f));
                 ImGui::SameLine();
                 if (ImGui::Button(u8"クリア##Ramp")) {
-                    memset(p->colorRampPath, 0, sizeof(p->colorRampPath));
+                    memset(d.colorRampPath, 0, sizeof(d.colorRampPath));
                     p->colorRamp = TextureHandle{};
                     changed = true;
                 }
@@ -389,20 +392,24 @@ template <> struct ComponentMeta<GPUParticleComponent> {
             ImGui::TreePop();
         }
 
+        // ★ どれか1つでも編集されたら staticCB 再アップロードを要求 (1箇所で集約)
+        if (changed) p->MarkDescChanged();
         return changed;
     }
+#else
+    static bool CustomGui(GPUParticleComponent&, unsigned long long, void*) { return false; }
 #endif
 
+    // CustomSerialize を使うので Fields は空でよい
     static const std::vector<FieldDescriptor>& Fields()
     {
-        // GPUパーティクルは現状プリセットファイルで管理されているため、通常のシーンシリアライズには含めない設計にします。
         static const std::vector<FieldDescriptor> empty;
         return empty;
     }
 };
 
-// ============================================================================
-// 究極の自動化
-// ============================================================================
+// =====================================================================
+// 登録
+// =====================================================================
 REGISTER_COMPONENT(GPUParticleComponent, "GPUParticle")
 REGISTER_COMPONENT_EDITOR_GUI(GPUParticleComponent)

@@ -4,6 +4,8 @@
 #include <DirectXTex.h>
 #include "Engine/Core/Math/Misc.h"
 #include "GpuResourceUtils.h"
+#include "Engine/Platform/Core/Logger.h"
+#include "Engine/Graphics/RHI/Graphics.h"
 #include <windows.h>
 
 // D3DCompiler ライブラリのリンク
@@ -14,37 +16,53 @@
 // 常にプロジェクトルートから #include を探す最強のハンドラ
 // ==========================================================
 class RootInclude : public ID3DInclude {
-  public:
-    HRESULT __stdcall Open(D3D_INCLUDE_TYPE IncludeType,
-        LPCSTR                              pFileName,
-        LPCVOID                             pParentData,
-        LPCVOID                            *ppData,
-        UINT                               *pBytes) override
-    {
-        // pFileName には HLSL 内で書いた "#include" の中身がそのまま入ってくる
-        // 例: "Shader/Common/Scene.hlsli"
+public:
+	HRESULT __stdcall Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID* ppData, UINT* pBytes) override
+	{
+		std::vector<std::string> searchPaths = {
+			pFileName,
+			std::string("Source/") + pFileName,
+			std::string("Assets/") + pFileName
+		};
 
-        // 常に実行ディレクトリ（プロジェクトルート）から直接ファイルを開く
-        std::ifstream file(pFileName, std::ios::binary | std::ios::ate);
-        if (!file.is_open()) return E_FAIL;
+		std::ifstream file;
+		for (const auto& path : searchPaths) {
+			file.open(path, std::ios::binary | std::ios::ate);
+			if (file.is_open()) break;
+		}
 
-        size_t size = file.tellg();
-        file.seekg(0, std::ios::beg);
+		if (!file.is_open()) {
+			char currentDir[MAX_PATH];
+			GetCurrentDirectoryA(MAX_PATH, currentDir);
 
-        char *buf = new char[size];
-        file.read(buf, size);
-        file.close();
+			std::string pathsInfo;
+			for (const auto& path : searchPaths) {
+				pathsInfo += "  - " + path + "\n";
+			}
 
-        *ppData = buf;
-        *pBytes = static_cast<UINT>(size);
-        return S_OK;
-    }
+			// ★ 修正：CCL_LOG_ERRORマクロを使用
+			CCL_LOG_ERROR(LogCategory::Render, "HLSL Include Failed!\nRequested File: %s\nCurrent Dir: %s\nChecked Paths:\n%s",
+				pFileName, currentDir, pathsInfo.c_str());
 
-    HRESULT __stdcall Close(LPCVOID pData) override
-    {
-        delete[] static_cast<const char *>(pData);
-        return S_OK;
-    }
+			return E_FAIL;
+		}
+
+		size_t size = file.tellg();
+		file.seekg(0, std::ios::beg);
+		char* buf = new char[size];
+		file.read(buf, size);
+		file.close();
+
+		*ppData = buf;
+		*pBytes = static_cast<UINT>(size);
+		return S_OK;
+	}
+
+	HRESULT __stdcall Close(LPCVOID pData) override
+	{
+		delete[] static_cast<const char*>(pData);
+		return S_OK;
+	}
 };
 
 // ==========================================================
@@ -116,6 +134,30 @@ HRESULT GpuResourceUtils::LoadPixelShader(
 	return hr;
 }
 
+// ジオメトリシェーダー読み込み (.cso)
+HRESULT GpuResourceUtils::LoadGeometryShader(
+	ID3D11Device* device,
+	const char* filename,
+	ID3D11GeometryShader** geometryShader)
+{
+	FILE* fp = nullptr;
+	fopen_s(&fp, filename, "rb");
+	_ASSERT_EXPR_A(fp, "Geometry Shader File not found");
+
+	fseek(fp, 0, SEEK_END);
+	long size = ftell(fp);
+	fseek(fp, 0, SEEK_SET);
+
+	std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(size);
+	fread(data.get(), size, 1, fp);
+	fclose(fp);
+
+	HRESULT hr = device->CreateGeometryShader(data.get(), size, nullptr, geometryShader);
+	_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+
+	return hr;
+}
+
 // テクスチャ読み込み
 HRESULT GpuResourceUtils::LoadTexture(
 	ID3D11Device* device,
@@ -172,6 +214,9 @@ HRESULT GpuResourceUtils::LoadTexture(
 	hr = DirectX::CreateShaderResourceView(device, scratch_image.GetImages(), scratch_image.GetImageCount(),
 		metadata, shaderResourceView);
 	_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+	
+	// デバッグ名設定
+	SetDebugName(*shaderResourceView, "Texture_SRV");
 
 	// テクスチャ情報取得
 	if (texture2dDesc != nullptr)
@@ -242,6 +287,10 @@ HRESULT GpuResourceUtils::LoadTexture(
 	// シェーダーリソースビュー作成
 	hr = DirectX::CreateShaderResourceView(device, scratch_image.GetImages(), scratch_image.GetImageCount(),
 		metadata, shaderResourceView);
+	
+	// デバッグ名設定
+	SetDebugName(*shaderResourceView, "Texture_SRV");
+
 	_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 
 	// テクスチャ情報取得
@@ -287,6 +336,9 @@ HRESULT GpuResourceUtils::CreateDummyTexture(
 
 	hr = device->CreateShaderResourceView(texture.Get(), nullptr, shaderResourceView);
 	_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+
+	// デバッグ名設定
+	SetDebugName(*shaderResourceView, "DummyTexture_SRV");
 
 	// テクスチャ情報取得
 	if (texture2dDesc != nullptr)
@@ -427,4 +479,98 @@ bool GpuResourceUtils::CompilePixelShader(ID3D11Device *device,
     }
 
     return true;
+}
+
+// 頂点シェーダーの動的コンパイル (.hlsl)
+bool GpuResourceUtils::CompileVertexShader(ID3D11Device* device,
+	const std::wstring& hlslPath, const char* entryPoint, const char* shaderModel,
+	ID3D11VertexShader** vertexShader, ID3D11InputLayout** inputLayout,
+	const D3D11_INPUT_ELEMENT_DESC* inputElementDescs, UINT inputElementCount,
+	ID3DBlob** outShaderBlob)
+{
+	Microsoft::WRL::ComPtr<ID3DBlob> shaderBlob = nullptr;
+	Microsoft::WRL::ComPtr<ID3DBlob> errorBlob = nullptr;
+	RootInclude rootInclude;
+
+	HRESULT hr = D3DCompileFromFile(hlslPath.c_str(), nullptr, &rootInclude,
+		entryPoint, shaderModel, D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG, 0, &shaderBlob, &errorBlob);
+
+	if (FAILED(hr)) {
+		if (errorBlob) OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+		return false;
+	}
+
+	hr = device->CreateVertexShader(shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), nullptr, vertexShader);
+	if (FAILED(hr)) return false;
+
+	// 入力レイアウトが要求されていれば作成
+	if (inputLayout && inputElementDescs && inputElementCount > 0) {
+		hr = device->CreateInputLayout(inputElementDescs, inputElementCount,
+			shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), inputLayout);
+		if (FAILED(hr)) return false;
+	}
+
+	if (outShaderBlob) *outShaderBlob = shaderBlob.Detach();
+	return true;
+}
+
+// ジオメトリシェーダーの動的コンパイル (.hlsl)
+bool GpuResourceUtils::CompileGeometryShader(ID3D11Device* device,
+	const std::wstring& hlslPath, const char* entryPoint, const char* shaderModel,
+	ID3D11GeometryShader** geometryShader, ID3DBlob** outShaderBlob)
+{
+	Microsoft::WRL::ComPtr<ID3DBlob> shaderBlob = nullptr;
+	Microsoft::WRL::ComPtr<ID3DBlob> errorBlob = nullptr;
+	RootInclude rootInclude;
+
+	HRESULT hr = D3DCompileFromFile(hlslPath.c_str(), nullptr, &rootInclude,
+		entryPoint, shaderModel, D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG, 0, &shaderBlob, &errorBlob);
+
+	if (FAILED(hr)) {
+		if (errorBlob) OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+		return false;
+	}
+
+	hr = device->CreateGeometryShader(shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), nullptr, geometryShader);
+	if (FAILED(hr)) return false;
+
+	if (outShaderBlob) *outShaderBlob = shaderBlob.Detach();
+	return true;
+}
+
+// コンピュートシェーダーの動的コンパイル (.hlsl)
+bool GpuResourceUtils::CompileComputeShader(ID3D11Device* device,
+	const std::wstring& hlslPath, const char* entryPoint, const char* shaderModel,
+	ID3D11ComputeShader** computeShader, ID3DBlob** outShaderBlob)
+{
+	Microsoft::WRL::ComPtr<ID3DBlob> shaderBlob = nullptr;
+	Microsoft::WRL::ComPtr<ID3DBlob> errorBlob = nullptr;
+	RootInclude rootInclude;
+
+	// HLSLファイルのコンパイル
+	HRESULT hr = D3DCompileFromFile(hlslPath.c_str(), nullptr, &rootInclude,
+		entryPoint, shaderModel, D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG, 0, &shaderBlob, &errorBlob);
+
+	// エラーハンドリング
+	if (FAILED(hr)) {
+		if (errorBlob) {
+			// ★ 修正：エラー内容をログに出力 (%ls は std::wstring 用のフォーマット指定子)
+			CCL_LOG_ERROR(LogCategory::Render, "Compute Shader Compile Error [%ls]\n%s",
+				hlslPath.c_str(), (char*)errorBlob->GetBufferPointer());
+		}
+		else {
+			// ★ 修正：ファイルが見つからない場合
+			CCL_LOG_ERROR(LogCategory::Render, "Compute Shader File not found or cannot be opened: %ls", hlslPath.c_str());
+		}
+		return false;
+	}
+
+	// デバイス上にコンピュートシェーダーを作成
+	hr = device->CreateComputeShader(shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), nullptr, computeShader);
+	if (FAILED(hr)) return false;
+
+	// 必要に応じてコンパイル済みバイナリ（Blob）を返す
+	if (outShaderBlob) *outShaderBlob = shaderBlob.Detach();
+
+	return true;
 }

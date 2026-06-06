@@ -8,7 +8,7 @@
 
 // 各システムの .cpp ファイルの上部に追加
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
-#include "Game/Core/SystemPriority.h"
+#include "Engine/Core/Systems/SystemPriority.h"
 
 using namespace CCL::ECS;
 using namespace CCL::ECS::Core;
@@ -64,18 +64,47 @@ void HierarchyCleanupSystem::ExecuteCleanup(CCL::ECS::Core::World& world)
     executionList.erase(std::unique(executionList.begin(), executionList.end()), executionList.end());
 
     // 3. 実際の削除処理・プールへの返却
+    // リストに溜まったIDを処理する
     for (EntityID targetID : executionList) {
-        if (!world.IsEntityValid(targetID)) continue;
-
         bool isPooled = world.HasComponent<PooledParticleComponent>(targetID);
 
-        // 親子関係の解除 (プールに戻す場合も、削除する場合も、リンクは切る必要がある)
+        // Transformを持っている場合は、階層構造から自身を安全に切り離す
         if (world.HasComponent<TransformComponent>(targetID)) {
+            auto* trans = world.GetComponent<TransformComponent>(targetID);
+
+            // =====================================================================
+            // ★ 究極の修正：自分が死ぬ前に、子供たちを「親なし（ルート）」にして野に放つ
+            // これがないと、子供の parent に死んだ自分のIDが残り続け、世界が崩壊する
+            // =====================================================================
+            if (trans && trans->firstChildID != 0) {
+                EntityID childID = trans->firstChildID;
+                while (childID != 0) {
+                    auto* childTrans = world.GetComponent<TransformComponent>(childID);
+                    if (childTrans) {
+                        EntityID nextChild = childTrans->nextSiblingID;
+
+                        // 子供のリンクを完全に断ち切り、ルートエンティティにする
+                        childTrans->parent = 0;
+                        childTrans->prevSiblingID = 0;
+                        childTrans->nextSiblingID = 0;
+                        childTrans->isDirty = true; // 行列の再計算を促す
+
+                        childID = nextChild;
+                    }
+                    else {
+                        break;
+                    }
+                }
+                // 自分自身の子供リストも空にする
+                trans->firstChildID = 0;
+            }
+
+            // 自分自身を親のリストから切り離す (既存の処理)
             TransformUpdateSystem::DetachChild(world, targetID);
         }
 
         if (isPooled) {
-            Prefab::ReturnParticleToPool(world, targetID);
+            //Prefab::ReturnParticleToPool(world, targetID);
             world.RequestRemoveComponent<Tag::DestroyTag>(targetID);
         }
         else {

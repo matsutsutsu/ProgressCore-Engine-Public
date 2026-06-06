@@ -11,10 +11,8 @@ namespace CCL::ECS
 
     void SystemManager::ResolveTargetChunks(Core::ChunkManager* cm)
     {
-#if TRACY_ENABLE
         // チャンク振り分け負荷を計測
         ZoneScopedN("SystemManager::ResolveTargetChunks");
-#endif
 
         if (!cm) return;
 
@@ -85,16 +83,22 @@ namespace CCL::ECS
                 for (auto& sysPtr : systems)
                 {
                     const Archetype& filter = sysPtr->GetFilter();
+                    const Archetype& exclude = sysPtr->GetExcludeFilter();  
 
                     // フィルタ無し → 無条件で対象にする
                     if (filter.empty())
                     {
-                        sysPtr->AddTargetChunk(chunk);
+                        //  exclude を持たない場合のみ対象に追加
+                        if (ArchetypeHelper::LExcludesR(chunkArch, exclude))
+                        {
+                            sysPtr->AddTargetChunk(chunk);
+                        }
                         continue;
                     }
 
-                    // Archetype一致判定 (ChunkがFilterの要件を満たしているか)
-                    if (ArchetypeHelper::LhasR(chunkArch, filter))
+                    // ★ Include（必須）AND Exclude（除外）の両方を満たす場合のみ対象
+                    if (ArchetypeHelper::LhasR(chunkArch, filter) &&
+                        ArchetypeHelper::LExcludesR(chunkArch, exclude))
                     {
                         sysPtr->AddTargetChunk(chunk);
                     }
@@ -225,6 +229,9 @@ namespace CCL::ECS
                 // --------------------------------------------------------
                 if (ImGui::BeginTabItem("Logic Inspectors")) {
                     for (auto &sys : _logicSystems) {
+                        // GUIを持っていないシステムはスキップ！
+                        if (!sys->hasGui) continue;
+
                         ImGui::PushID(sys->GetSystemID());
                         // 折りたたみヘッダーの中にシステムのGUIを表示
                         if (ImGui::CollapsingHeader(sys->GetName().c_str())) {
@@ -243,6 +250,9 @@ namespace CCL::ECS
                 // --------------------------------------------------------
                 if (ImGui::BeginTabItem("Render Inspectors")) {
                     for (auto &sys : _renderSystems) {
+                        // GUIを持っていないシステムはスキップ！
+                        if (!sys->hasGui) continue;
+
                         ImGui::PushID(sys->GetSystemID());
                         if (ImGui::CollapsingHeader(sys->GetName().c_str())) {
                             ImGui::Indent();

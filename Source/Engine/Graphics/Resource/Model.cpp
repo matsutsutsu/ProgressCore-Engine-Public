@@ -8,7 +8,6 @@
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 #include "GLTFImporter.h"
 #include "Model.h"
-#include "ResourceManager.h"
 #include "Engine/Core/Math/StringHash.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include <array>

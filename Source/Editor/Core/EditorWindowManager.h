@@ -43,7 +43,12 @@ private:
     void DrawPrefabMenu(EditorContext& context);
     void DrawSceneMenu(EditorContext& context);
     void DrawWindowMenu(EditorContext& context);
+
+    // 外部ツール起動用のメニュー
+    void DrawToolsMenu(EditorContext& context);
+
     void DrawPlayControlBar(EditorContext& context);
+    void DrawPerformanceStatsBar(EditorContext& context);
 
 
     // ウィンドウの登録

@@ -2,7 +2,7 @@
 #include "Engine/ECS/System/CCL_System.h"
 #include "Engine/Physics/Components/RigidBody/JoltRigidbodyComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
-
+#include "Engine/Physics/Components/Jolt/JoltHandleComponent.h"
 
 // ===================================================================================
 // ファイル名: JoltBodySetupSystem.h
@@ -27,7 +27,10 @@ class JoltBodySetupSystem : public CCL::ECS::IfSystem<JoltBodySetupSystem,
                                 CCL::ECS::Read<TransformComponent>,
                                 CCL::ECS::Read<JoltRigidbodyComponent>> {
   public:
-    JoltBodySetupSystem() : IfSystem("JoltBodySetupSystem") {}
+    JoltBodySetupSystem() : IfSystem("JoltBodySetupSystem") 
+    {
+		SetExclude<JoltHandleComponent>(); // JoltHandleComponent を持つ Entity は処理対象外
+    }
     virtual ~JoltBodySetupSystem() = default;
 
     void Update(float dt) override;

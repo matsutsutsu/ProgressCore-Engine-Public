@@ -1,6 +1,6 @@
 #include "ModelPoseUpdateSystem.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
-#include "Game/Core/SystemPriority.h"
+#include "Engine/Core/Systems/SystemPriority.h"
 
 using namespace CCL::ECS;
 
@@ -18,4 +18,4 @@ void ModelPoseUpdateSystem::Update(float dt) {
 }
 
 // ロジックフェーズ、かつトランスフォーム更新の直後あたりに登録
-//REGISTER_LOGIC_SYSTEM(ModelPoseUpdateSystem, Priority::LogicStage::L02_Update);
+REGISTER_LOGIC_SYSTEM(ModelPoseUpdateSystem, Priority::LogicStage::L02_PostUpdate);

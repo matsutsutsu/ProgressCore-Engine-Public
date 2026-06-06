@@ -3,9 +3,7 @@
 
 void SetupPass::Execute(const RenderFrameContext& ctx)
 {
-#if TRACY_ENABLE
-    ZoneScopedN("Pass: Setup");
-#endif
+
     // MakeLegacyContext 不要: _services / ctx を直接参照
     if (!_services->postProcess) return;
 

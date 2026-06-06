@@ -1,9 +1,8 @@
 // Engine/GamePlay/Physics/Jolt/JoltUpdateSystem.cpp
 #include "JoltUpdateSystem.h"
-#include "Engine/ECS/Core/CCL_World.h"
-#include "Engine/ECS/System/CCL_SystemRegistry.h"
-#include "Game/Core/SystemPriority.h"
 #include <Jolt/Jolt.h>
+#include "Engine/ECS/System/CCL_SystemRegistry.h"
+#include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Physics/Components/Character/JoltCharacterHandleComponent.h"
 
 void JoltStepSystem::Update(float dt)

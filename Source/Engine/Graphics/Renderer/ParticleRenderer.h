@@ -1,6 +1,7 @@
 #pragma once
 #include "Engine/Graphics/Components/Particle/GPUParticleComponent.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
+#include "Engine/Graphics/RHI/RenderContext.h"
 #include <d3d11.h>
 #include <vector>
 #include <wrl/client.h>
@@ -10,9 +11,10 @@
 struct ParticleDrawCommand {
     ParticleBufferHandle computeBuffer;
     TextureHandle        texture;
-    int                  max_particle_count;
-    int                  render_mode; // 0: 加算, 1: 半透明
+    int                  maxCount;    
+    int                  renderMode;  // 0:加算 1:半透明
 };
+
 
 // パーティクルの描画を専任で行うクラス
 class ParticleRenderer {
@@ -28,17 +30,15 @@ class ParticleRenderer {
     // システムから呼ばれ、バケツにコマンドを積むだけ（ここではDrawしない！）
     void Draw(const ParticleDrawCommand &cmd);
 
-    // シーンの最後に一気に描画する
-    void Render(ID3D11DeviceContext *dc);
+    // =========================================================
+    // 最新のコンテキスト分離（Services / FrameCtx）に対応
+    // =========================================================
+    void Render(const RenderServices& services, const RenderFrameContext& frameCtx);
 
   private:
     std::vector<ParticleDrawCommand> _drawCommands;
 
     // --- 描画用リソース ---
-    Microsoft::WRL::ComPtr<ID3D11VertexShader>   vs;
-    Microsoft::WRL::ComPtr<ID3D11GeometryShader> gs;
-    Microsoft::WRL::ComPtr<ID3D11PixelShader>    ps;
-
     Microsoft::WRL::ComPtr<ID3D11SamplerState>       sampler;
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> defaultTexture;
 

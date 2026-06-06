@@ -24,27 +24,22 @@ private:
     std::vector<CCL::ECS::EntityID> _rootEntities;
     std::vector<CCL::ECS::EntityID> _allEntities;
     std::vector<FlatNode>           _flatList;
-    std::unordered_map<CCL::ECS::EntityID, std::vector<CCL::ECS::EntityID>> _childrenMap;
-    
-    // エンティティの実在確認用セット（毎フレームのメモリ確保を防ぐ）
-    std::unordered_set<CCL::ECS::EntityID> _validEntitiesSet;
 
-    void FlattenTree(
-        CCL::ECS::EntityID entityID,
+    // 関数の宣言を以下のように World* を受け取るように変更
+    void FlattenChildren(
+        CCL::ECS::EntityID firstChildID,
         int depth,
-        const std::unordered_map<CCL::ECS::EntityID, std::vector<CCL::ECS::EntityID>>& childrenMap,
+        CCL::ECS::Core::World* world,
         std::vector<FlatNode>& outFlatList);
 
     void DrawFlatNode(
         const FlatNode& node,
-        EditorContext& context,
-        const std::unordered_map<CCL::ECS::EntityID, std::vector<CCL::ECS::EntityID>>& childrenMap);
+        EditorContext& context);
 
-    // ターゲットが、あるエンティティの子孫かどうかを判定する
     bool IsDescendantOf(
         CCL::ECS::EntityID targetEntity,
         CCL::ECS::EntityID ancestorEntity,
-        const std::unordered_map<CCL::ECS::EntityID, std::vector<CCL::ECS::EntityID>>& childrenMap);
+        CCL::ECS::Core::World* world); // ← ここも World に変更
 
     char _searchBuffer[256] = { 0 };
 };

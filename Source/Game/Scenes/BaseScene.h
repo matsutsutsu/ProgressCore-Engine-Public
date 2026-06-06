@@ -44,6 +44,15 @@ class BaseScene : public Scene {
 
     CCL::ECS::Core::World* GetWorld() override { return _worldPtr; }
     CCL::ECS::SystemManager* GetSystemManager() override { return _ecsContext->GetSystemManager(); }
+
+    /**
+     * @brief GPU デバイスロストからの復帰後に Framework から呼ばれる。
+     * @details デフォルト実装は ECS ワールドをリセットして Initialize() + Start() を
+     *          再実行する（完全な再ロード）。
+     *          ゲームの進行状態を保ちたい場合は派生クラスでオーバーライドすること。
+     */
+    virtual void OnDeviceRecreated();
+
   protected:
     // --- 派生クラスでの拡張ポイント ---
 

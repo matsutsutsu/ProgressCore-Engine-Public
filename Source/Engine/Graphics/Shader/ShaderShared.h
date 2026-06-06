@@ -1,9 +1,9 @@
 // Graphics/Shader/ShaderShared.h
 //
 // 【C++ と HLSL で共有する構造体レイアウトの単一ソース】
-// ShaderResources.h がスロット番号を共有するのと同じ仕組みを、
-// 構造体のフィールド配置と配列サイズに広げたもの。
-// これで「C++側とHLSL側でフィールドがズレて無言で壊れる」事故を構造的に防ぐ。
+// ★ スコープ : エンジン全体で使われる構造体のみを定義する。
+//    特定システム固有の構造体は各システムの SharedHeader に分ける。
+//    例: パーティクル → Particle/ParticleShared.h
 //
 // 使い方:
 //   C++  : #include ".../ShaderShared.h"  → Shader::CbLight などが使える
@@ -25,10 +25,14 @@
 // ==================================================================
 // 型エイリアスと修飾子（C++ / HLSL の差を吸収する）
 // ==================================================================
+
+// 今コンパイルをしているのがC++側かHLSL側かを判定するマクロ
+// trueならC++、falseならHLSLとみなす
 #ifdef __cplusplus
 #include <DirectXMath.h>
 #include <cstdint>
 
+// C++の場合はfloat2などないのでusingで定義する
 namespace GpuData {
 
     using float2 = DirectX::XMFLOAT2;
@@ -36,11 +40,18 @@ namespace GpuData {
     using float4 = DirectX::XMFLOAT4;
     using float4x4 = DirectX::XMFLOAT4X4;   // 行優先ストレージ = HLSL の row_major と一致
     using uint = uint32_t;
+	using uint2 = DirectX::XMUINT2;
 
 #define ROW_MAJOR                                 // HLSLのrow_major、C++では無し
-#define CB_STRUCT(name, slot) struct name         // C++では普通のstruct
+    // C++では普通のstructになる
+	// struct "name" { ... } と定義されるので、Shader::name でアクセスできる
+#define CB_STRUCT(name, slot) struct name         
+
+	// HLSLの場合はfloat2などの型があるのでそのまま使う
 #else
 #define ROW_MAJOR row_major
+
+// HLSLでは cbuffer "name" : register(bN) と定義される
 #define CB_STRUCT(name, slot) cbuffer name : register(REG_CB(slot))
 #endif
 
@@ -167,6 +178,18 @@ CB_STRUCT(CbFog, SLOT_CB_FOG)
 //   フィールドを足して padding を忘れたら、ここで即コンパイルエラーになる。
 //   = 「動くのに色が壊れる」系バグがビルド時に止まる。
 // ==================================================================
+
+// static_assert は C++11 以降で使えるコンパイル時アサーション。
+// 条件が false ならコンパイルエラーになる。
+// sizeof(StructType) はその構造体のサイズをバイト単位で返す演算子。
+
+// なぜあるのか：
+// 一つしかないのになぜassertを定義するのかというと
+// C++とHLSL側でのパッキングのルールが違うから
+// 例えばCbLight側でfloatを１個追加したら
+// C++ではsizeof(CbLight)が1108になるけど、HLSL側ではパディングが入って1120になる
+// このHLSLのパディングは、定数バッファの要素が16バイト境界に揃うようにするためのもので、
+// C++側では自動的に入らないため、サイズがずれてしまう
 #ifdef __cplusplus
 static_assert(sizeof(DirectionalLight) == 64, "DirectionalLight size mismatch vs HLSL");
 static_assert(sizeof(PointLight) == 48, "PointLight size mismatch vs HLSL");
@@ -177,7 +200,6 @@ static_assert(sizeof(CbSkeleton) == 16384, "CbSkeleton size mismatch vs HLSL");
 static_assert(sizeof(CbScene) == 240, "CbScene size mismatch vs HLSL");
 static_assert(sizeof(CbShadow) == 240, "CbShadow size mismatch vs HLSL");
 static_assert(sizeof(CbFog) == 96, "CbFog size mismatch vs HLSL");
-
 
 } // namespace GpuData
 

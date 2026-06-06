@@ -2,7 +2,7 @@
 #include "Engine/ECS/Core/CCL_World.h"
 //#include "Engine/Graphics/Resource/Model.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
-#include "Game/Core/SystemPriority.h"
+#include "Engine/Core/Systems/SystemPriority.h"
 #include <cmath>
 #include "Engine/Core/Math/StringHash.h"
 
@@ -10,6 +10,10 @@
 #include "Engine/Animation/Core/AnimEventMessages.h"
 #include "Engine/Animation/Core/AnimationCurve.h"
 
+
+#include "Engine/Graphics/Components/Core/ModelComponent.h"
+#include "Engine/Animation/Components/AnimatorComponent.h"
+#include "Engine/Timer/TimeState.h"
 
 // ===================================================================================
 // ファイル: AnimationSystem.h
@@ -26,10 +30,11 @@ AnimationSystem::AnimationSystem() : IfSystem("AnimationSystem") {}
 void AnimationSystem::Update(float dt)
 {
     // ★超並列処理: ECSの真骨頂。数千体の計算を全コアに分散させる
-    ForEachWithIDParallel([dt, this](CCL::ECS::EntityID id, AnimatorComponent& animator, ModelComponent& modelComp) {
+    ForEachWithID([this](CCL::ECS::EntityID id, AnimatorComponent& animator, ModelComponent& modelComp, const TimeStateComponent& time) {
 
         // 台本（Sequence）がセットされていなければ何もしない
         if (!animator.currentSequence) return;
+
 
         // エディタで操作中の場合は、通常の時間進行とイベント発火をストップする
         if (animator.isEditorOverride) return;
@@ -49,20 +54,29 @@ void AnimationSystem::Update(float dt)
             curveMultiplier = animator.activeCurve->Evaluate(progress);
         }
 
-        // 時間を進行させる (ベース速度 × カーブによる倍率 を dt に掛ける)
-        animator.currentTimer += dt * animator.playbackSpeed * curveMultiplier;
+        float prevTimeForDelta = animator.currentTimer;
 
-        // ========================================================
+        // 時間を進行させる (ベース速度 × カーブによる倍率 を dt に掛ける)
+        animator.currentTimer += time.localDt * animator.playbackSpeed * curveMultiplier;
+
+        float currTimeForDelta = animator.currentTimer;
+
+        // ループを跨いでいたら、Delta計算を0にする
+        if (currTimeForDelta < prevTimeForDelta) {
+            prevTimeForDelta = currTimeForDelta;
+        }
+
+         // ========================================================
         //  過去の記憶（ブレンド）のタイマーを進行させる
         // ========================================================
         if (animator.isBlending) {
-            animator.currentBlendTime += dt;
-            // 過去のアニメーションも再生し続ける（足がピタッと止まる不自然さを防ぐため）
-            animator.previousTimer += dt * animator.playbackSpeed; 
+            animator.currentBlendTime += time.localDt;
+            // 現在のアニメ速度ではなく、記憶しておいた過去のアニメ速度で進める
+            animator.previousTimer += time.localDt * animator.playbackSpeed;
 
             if (animator.previousSequence) {
-                // 過去のアニメがループ仕様なら時間を丸め込む
-                animator.previousTimer = fmod(animator.previousTimer, animator.previousSequence->duration);
+
+                animator.previousTimer = fmod(animator.previousTimer, animator.previousSequence->duration);  
             }
 
             // 指定した秒数が経過したらブレンド終了

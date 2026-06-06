@@ -71,7 +71,9 @@ public:
     // ---- Frame operations ----
     void Clear(float r, float g, float b, float a, bool useGameRTV);
     void SetRenderTargets(bool useGameRTV);
-    void Present(UINT syncInterval);
+    HRESULT Present(UINT syncInterval);
+
+    HRESULT GetDeviceRemovedReason() const noexcept;
 
 private:
     HWND _hWnd = nullptr;

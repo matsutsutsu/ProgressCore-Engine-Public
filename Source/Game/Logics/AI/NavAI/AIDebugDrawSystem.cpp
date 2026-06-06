@@ -5,7 +5,7 @@
 
 // ECS実行順序のマクロ
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
-#include "Game/Core/SystemPriority.h"
+#include "Engine/Core/Systems/SystemPriority.h"
 
 // 数学ライブラリ
 #include <SimpleMath.h>
@@ -116,4 +116,4 @@ void AIDebugDrawSystem::Update(float dt) {
     }
 }
 
-REGISTER_RENDER_SYSTEM(AIDebugDrawSystem, Priority::RenderStage::R08_Main)
+//REGISTER_RENDER_SYSTEM(AIDebugDrawSystem, Priority::RenderStage::R08_Main)

@@ -208,12 +208,6 @@
     <Filter Include="Shader\Pass\SkyBox">
       <UniqueIdentifier>{7aa7b402-62ad-4c1d-bdb8-5ade6932aa53}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Game\Logics\Character\PlayerCar">
-      <UniqueIdentifier>{54b1b67f-81d4-4299-b7c1-3e7a0a3f50b7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\Character\PlayerCar\_Meta">
-      <UniqueIdentifier>{49c1eceb-c993-4721-abbb-5824797ecbae}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\Audio">
       <UniqueIdentifier>{f67d589a-603e-4892-ba9f-e03879675b0e}</UniqueIdentifier>
     </Filter>
@@ -240,9 +234,6 @@
     </Filter>
     <Filter Include="Source\Game\Logics\AI">
       <UniqueIdentifier>{f451e48b-7ce2-454b-924e-a4f13673ac42}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\Audio">
-      <UniqueIdentifier>{bd33aae1-4ce7-4c0d-9064-6e2358abc38b}</UniqueIdentifier>
     </Filter>
     <Filter Include="External\imgui-node-editor">
       <UniqueIdentifier>{f1fed5a5-b31c-4a17-a80d-f659d2c8ca2d}</UniqueIdentifier>
@@ -478,6 +469,21 @@
     <Filter Include="Source\Engine\Graphics\Pipeline\Core">
       <UniqueIdentifier>{8664d2cd-5353-4f0c-ae14-f865b1feb1de}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Graphics\Shader\Material\Particle">
+      <UniqueIdentifier>{7cb9b737-559a-4d3e-9a13-ed4492caa832}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Graphics\Shader\Particle">
+      <UniqueIdentifier>{7331b261-1c5e-4858-beb7-97a5a94cb0a9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\AI\StateTree">
+      <UniqueIdentifier>{b7c28ac1-c302-46fc-943a-869af40a6ac0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Timer">
+      <UniqueIdentifier>{7a88023c-be1b-4e90-9f95-822c9f974cc6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Transform\Core">
+      <UniqueIdentifier>{6bbbd955-4bdc-4d09-a45f-dda2d10e4270}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -623,9 +629,6 @@
     </ClInclude>
     <ClInclude Include="External\ImGuizmo\ImZoomSlider.h">
       <Filter>External\ImGuizmo</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Core\SystemPriority.h">
-      <Filter>Source\Game\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Core\EditorContext.h">
       <Filter>Source\Editor\Core</Filter>
@@ -849,21 +852,6 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\Pass\ShadowUtils.h">
       <Filter>Source\Engine\Graphics\Shader\Pass</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\PlayerCar\PlayerCarComponent.h">
-      <Filter>Source\Game\Logics\Character\PlayerCar</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\PlayerCar\PlayerCarInputSystem.h">
-      <Filter>Source\Game\Logics\Character\PlayerCar</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\PlayerCar\PlayerCarMoveSystem.h">
-      <Filter>Source\Game\Logics\Character\PlayerCar</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\PlayerCar\PlayerCarSphereTag.h">
-      <Filter>Source\Game\Logics\Character\PlayerCar</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\PlayerCar\CarCollisionSystem.h">
-      <Filter>Source\Game\Logics\Character\PlayerCar</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Platform\Input\IInputAPI.h">
       <Filter>Source\Engine\Platform\Input\API</Filter>
     </ClInclude>
@@ -950,15 +938,6 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\CharacterMovementInputComponent.h">
       <Filter>Source\Game\Logics\Character</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Audio\DistractionItemComponent.h">
-      <Filter>Source\Game\Logics\Audio</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Audio\DistractionItemSystem.h">
-      <Filter>Source\Game\Logics\Audio</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Audio\DistractionItemDebugDrawSystem.h">
-      <Filter>Source\Game\Logics\Audio</Filter>
     </ClInclude>
     <ClInclude Include="External\imgui-node-editor\crude_json.h">
       <Filter>External\imgui-node-editor</Filter>
@@ -1296,17 +1275,11 @@
     <ClInclude Include="Source\Engine\Graphics\Components\Particle\GPUParticleComponent.h">
       <Filter>Source\Engine\Graphics\Components\Particle</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Components\Particle\GPUParticleTypes.h">
-      <Filter>Source\Engine\Graphics\Components\Particle</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\BloomConfigComponent.h">
       <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\ToneMapConfigComponent.h">
       <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Systems\Core\DissolveSystem.h">
-      <Filter>Source\Engine\Graphics\Systems\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Systems\Core\EnvironmentSystem.h">
       <Filter>Source\Engine\Graphics\Systems\Core</Filter>
@@ -1328,9 +1301,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Systems\Culling\FrustumCullingSystem.h">
       <Filter>Source\Engine\Graphics\Systems\Culling</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Systems\Lighting\FogSystem.h">
-      <Filter>Source\Engine\Graphics\Systems\Lighting</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Systems\Lighting\LightSystem.h">
       <Filter>Source\Engine\Graphics\Systems\Lighting</Filter>
@@ -1547,6 +1517,57 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderShared.h">
       <Filter>Source\Engine\Graphics\Shader</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Shader\Material\ParticleComputeShader.h">
+      <Filter>Source\Engine\Graphics\Shader\Material\Particle</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Shader\Material\ParticleShader.h">
+      <Filter>Source\Engine\Graphics\Shader\Material\Particle</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Shader\ParticleShared.h">
+      <Filter>Source\Engine\Graphics\Shader</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Components\Particle\GPUParticleBuffer.h">
+      <Filter>Source\Engine\Graphics\Components\Particle</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeData.h">
+      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeComponents.h">
+      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\StateTreeWindow.h">
+      <Filter>Source\Editor\Windows\AI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeSystem.h">
+      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Timer\TimeScaleSetupSystem.h">
+      <Filter>Source\Engine\Timer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Timer\TimeScaleSystem.h">
+      <Filter>Source\Engine\Timer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Timer\TimeState.h">
+      <Filter>Source\Engine\Timer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Systems\SystemPriority.h">
+      <Filter>Source\Engine\Core\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Systems\Culling\AABBDebugDrawSystem.h">
+      <Filter>Source\Engine\Graphics\Systems\Culling</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\MemoryAnalyzerWindow.h">
+      <Filter>Source\Editor\Windows\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Resource\ResourceTypes.h">
+      <Filter>Source\Engine\Graphics\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Transform\Core\TransformHierarchyCache.h">
+      <Filter>Source\Engine\Transform\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Transform\Systems\BoneAttachmentSystem.h">
+      <Filter>Source\Engine\Transform\Systems</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1820,18 +1841,6 @@
     <ClCompile Include="Source\Game\Logics\Test\VoxelOceanSystem.cpp">
       <Filter>Source\Game\Logics\Test</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\PlayerCar\PlayerCarInputSystem.cpp">
-      <Filter>Source\Game\Logics\Character\PlayerCar</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\PlayerCar\PlayerCarMoveSystem.cpp">
-      <Filter>Source\Game\Logics\Character\PlayerCar</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\PlayerCar\PlayerCarComponentMeta.cpp">
-      <Filter>Source\Game\Logics\Character\PlayerCar\_Meta</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\PlayerCar\CarCollisionSystem.cpp">
-      <Filter>Source\Game\Logics\Character\PlayerCar</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Platform\Input\InputFacade.cpp">
       <Filter>Source\Engine\Platform\Input\API</Filter>
     </ClCompile>
@@ -1930,15 +1939,6 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\CharacterMovementInputComponentMeta.cpp">
       <Filter>Source\Game\Logics\Character</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Audio\DistractionItemSystem.cpp">
-      <Filter>Source\Game\Logics\Audio</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Audio\DistractionItemComponentMeta.cpp">
-      <Filter>Source\Game\Logics\Audio</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Audio\DistractionItemDebugDrawSystem.cpp">
-      <Filter>Source\Game\Logics\Audio</Filter>
     </ClCompile>
     <ClCompile Include="External\imgui-node-editor\crude_json.cpp">
       <Filter>External\imgui-node-editor</Filter>
@@ -2177,9 +2177,6 @@
     <ClCompile Include="Source\Engine\Graphics\Components\Particle\GPUParticleComponentMeta.cpp">
       <Filter>Source\Engine\Graphics\Components\Particle</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Graphics\Systems\Core\DissolveSystem.cpp">
-      <Filter>Source\Engine\Graphics\Systems\Core</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Systems\Core\EnvironmentSystem.cpp">
       <Filter>Source\Engine\Graphics\Systems\Core</Filter>
     </ClCompile>
@@ -2200,9 +2197,6 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Systems\Culling\FrustumCullingSystem.cpp">
       <Filter>Source\Engine\Graphics\Systems\Culling</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Graphics\Systems\Lighting\FogSystem.cpp">
-      <Filter>Source\Engine\Graphics\Systems\Lighting</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Systems\Lighting\LightSystem.cpp">
       <Filter>Source\Engine\Graphics\Systems\Lighting</Filter>
@@ -2311,6 +2305,39 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\RHI\GraphicsDevice.cpp">
       <Filter>Source\Engine\Graphics\RHI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Shader\Material\ParticleComputeShader.cpp">
+      <Filter>Source\Engine\Graphics\Shader\Material\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Shader\Material\ParticleShader.cpp">
+      <Filter>Source\Engine\Graphics\Shader\Material\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\StateTreeWindow.cpp">
+      <Filter>Source\Editor\Windows\AI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\StateTree\StateTreeSystem.cpp">
+      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Timer\TimeComponentMeta.cpp">
+      <Filter>Source\Engine\Timer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Timer\TimeScaleSetupSystem.cpp">
+      <Filter>Source\Engine\Timer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Timer\TimeScaleSystem.cpp">
+      <Filter>Source\Engine\Timer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Systems\Culling\AABBDebugDrawSystem.cpp">
+      <Filter>Source\Engine\Graphics\Systems\Culling</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\MemoryAnalyzerWindow.cpp">
+      <Filter>Source\Editor\Windows\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Transform\Core\TransformHierarchyCache.cpp">
+      <Filter>Source\Engine\Transform\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Transform\Systems\BoneAttachmentSystem.cpp">
+      <Filter>Source\Engine\Transform\Systems</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

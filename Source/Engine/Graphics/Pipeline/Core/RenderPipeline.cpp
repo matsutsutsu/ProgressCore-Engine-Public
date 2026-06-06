@@ -4,9 +4,34 @@
 #include <wrl/client.h>
 #include <Windows.h> // MultiByteToWideChar
 
+// パス登録用
+#include "Engine/Graphics/Pipeline/SetupPass.h"
+#include "Engine/Graphics/Pipeline/ShadowPass.h"
+#include "Engine/Graphics/Pipeline/OpaquePass.h"
+#include "Engine/Graphics/Pipeline/SkyboxPass.h"
+#include "Engine/Graphics/Pipeline/TransparentPass.h"
+#include "Engine/Graphics/Pipeline/ParticlePass.h"
+#include "Engine/Graphics/Pipeline/PrimitivePass.h"
+#include "Engine/Graphics/Pipeline/PostProcessPass.h"
+
 void RenderPipeline::Initialize(const RenderServices& services)
 {
     _services = services;
+}
+
+void RenderPipeline::BuildDefaultPipeline()
+{
+
+    // 描画パスを実行順に登録
+    AddPass<SetupPass>();       // 1. HDR バッファのクリアとバインド
+    AddPass<ShadowPass>();      // 2. シャドウマップ生成
+    AddPass<OpaquePass>();      // 3. 不透明ジオメトリ
+    AddPass<SkyboxPass>();      // 4. スカイボックス
+    AddPass<TransparentPass>(); // 5. 半透明
+    AddPass<ParticlePass>();    // 6. パーティクル
+    AddPass<PrimitivePass>();   // 7. デバッグプリミティブ
+    AddPass<PostProcessPass>(); // 8. ポストプロセス・最終出力
+
 }
 
 void RenderPipeline::Shutdown()
@@ -32,11 +57,19 @@ void RenderPipeline::Execute(const RenderFrameContext& ctx)
     for (auto& pass : _passes) {
         if (!pass->enabled) continue;
 
+        // =========================================================
+        // 各PassのCPU実行時間をTracyで計測
+        // アロケーションを防ぐため、キャッシュ済みの _tracyZoneName を直接渡す
+        // =========================================================
+        ZoneScoped;
+        ZoneName(pass->_tracyZoneName.c_str(), pass->_tracyZoneName.size());
+
 #if defined(ENABLE_EDITOR)
         if (annotation) {
-            wchar_t wname[64] = {};
-            MultiByteToWideChar(CP_UTF8, 0, pass->GetName(), -1, wname, 64);
-            annotation->BeginEvent(wname);
+            int len = MultiByteToWideChar(CP_UTF8, 0, pass->_passName.c_str(), -1, nullptr, 0);
+            std::wstring wname(len, 0);
+            MultiByteToWideChar(CP_UTF8, 0, pass->_passName.c_str(), -1, &wname[0], len);
+            annotation->BeginEvent(wname.c_str());
         }
 #endif
 

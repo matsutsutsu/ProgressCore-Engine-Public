@@ -3,9 +3,11 @@
 #include <string>
 #include "EditorContext.h"
 
-#if defined(ENABLE_EDITOR)
+#if ENABLE_EDITOR
 #include <imgui.h>
 #endif
+
+#include "tracy/Tracy.hpp"
 
 // エディタウィンドウの基底クラス
 class EditorWindow {
@@ -17,14 +19,18 @@ public:
     void Render(EditorContext& context) {
         if (!_isVisible) return;
 
-#if defined(ENABLE_EDITOR)
+		
+        ZoneScoped; // 無名スコープを作成
+        // Tracy上で見つけやすいようにプレフィックスを付ける
+        std::string zoneName = "UI Window: " + _name;
+        ZoneName(zoneName.c_str(), zoneName.size());
 
+#if ENABLE_EDITOR
 
         if (ImGui::Begin(_name.c_str(), &_isVisible)) {
             DrawContents(context);
         }
         ImGui::End();
-
 #endif
     }
 

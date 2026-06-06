@@ -20,18 +20,17 @@
 #include "Engine/Core/App/Framework.h"
 #include "Engine/Core/App/EngineServices.h"
 
-#if TRACY_ENABLE
+ 
 #include "tracy/Tracy.hpp"
-#endif
+
 
 #include "Engine/Platform/Core/Logger.h"
 
 
 void BaseScene::Initialize()
 {
-#if TRACY_ENABLE
     ZoneScopedN("BaseScene::Initialize");
-#endif
+
 
     auto& gfx = Graphics::Instance();
     ID3D11Device* device = gfx.GetDevice();
@@ -50,10 +49,6 @@ void BaseScene::Initialize()
         gfx.GetScreenWidth() / gfx.GetScreenHeight(),
         0.1f, 1000.0f);
     cam->SetLookAt({ 0.0f, 10.0f, -10.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f });
-
-
-
-    Prefab::Initialize(device);
 
     // ECSコンテキストの生成
     _ecsContext = std::make_unique<CCL::ECS::ECSContext>();
@@ -107,9 +102,8 @@ void BaseScene::Finalize() {}
 
 void BaseScene::Update(float elapsedTime)
 {
-#if TRACY_ENABLE
     ZoneScopedN("BaseScene::Update");
-#endif
+
 
     // ECSシステムが走り出す「前」の、誰もメモリを触っていない安全な瞬間に世界を切り替える！
     ExecutePendingSceneOperations();
@@ -129,10 +123,9 @@ void BaseScene::Update(float elapsedTime)
 }
 
 void BaseScene::FixedUpdate(float fixedTime) 
-{ 
-#if TRACY_ENABLE
+{  
     ZoneScopedN("BaseScene::FixedUpdate");
-#endif
+
 
     // ECSコンテキストに更新を委譲（これだけで全てが正しい順序で回る）
     if (_ecsContext) {
@@ -142,9 +135,8 @@ void BaseScene::FixedUpdate(float fixedTime)
 
 void BaseScene::Render()
 {
-#if TRACY_ENABLE
     ZoneScopedN("BaseScene::Render Pipeline"); // シーン描画全体
-#endif
+
 
 
     auto& gfx = Graphics::Instance();
@@ -172,9 +164,8 @@ void BaseScene::Render()
    
     // 2D UI
     {
-#if TRACY_ENABLE
         ZoneScopedN("UI Render");
-#endif
+
         dc->OMSetBlendState(
             gfx.GetRenderState()->GetBlendState(BlendState::Transparency), nullptr, 0xffffffff);
         dc->OMSetDepthStencilState(
@@ -211,4 +202,40 @@ void BaseScene::ExecutePendingSceneOperations()
         SceneManager::Instance().SaveScene(_worldPtr, _pendingSaveScenePath);
         _pendingSaveScenePath.clear();
     }
+}
+
+// ============================================================
+//  OnDeviceRecreated（デバイスロスト復帰後）
+// ============================================================
+/**
+ * @brief GPU デバイス復帰後に Framework から呼ばれるデフォルト実装。
+ *
+ * @details
+ *  Graphics::RecoverFromDeviceLost() が内部で Shutdown → Initialize を行い、
+ *  D3D パイプライン・シェーダー・PostProcessManager はすべて再構築済みの状態でここに来る。
+ *
+ *  この実装では ECS ワールドを作り直して Initialize → Start を再呼び出しする。
+ *  これにより ResourceManager にロードし直された新しいリソースで正常動作する。
+ *
+ *  ⚠️ ゲームの進行状態（エンティティ位置・HP など）はリセットされる。
+ *  状態を保持したい場合は派生クラスでオーバーライドし、
+ *  セーブデータから復元するなどの処理を追加してください。
+ */
+void BaseScene::OnDeviceRecreated()
+{
+	CCL_LOG_INFO(LogCategory::Core,"[BaseScene] OnDeviceRecreated: Device lost recovered. Reinitializing scene...\n");
+    
+    // --- 旧 ECS ワールドを安全に破棄 ---
+    // _ecsContext がリセットされると、内部のすべてのエンティティ・コンポーネント・
+    // システムが解放される。この時点で旧リソースのハンドルも無効になる。
+    _ecsContext.reset();
+    _worldPtr = nullptr;
+
+    // --- シーンを完全に再初期化 ---
+    // Initialize() でECSインフラを再構築 → RegisterSystems() で全システムを再登録
+    // シーンファイルのロードが必要な場合は派生クラスの Initialize() または Start() で行う
+    Initialize();
+    Start();
+
+    CCL_LOG_INFO(LogCategory::Core, "[BaseScene] OnDeviceRecreated: Complete.");
 }

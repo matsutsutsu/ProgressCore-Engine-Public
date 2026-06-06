@@ -37,9 +37,7 @@ void SkyboxPass::Initialize(const RenderServices& services)
 
 void SkyboxPass::Execute(const RenderFrameContext& ctx)
 {
-#if TRACY_ENABLE
-    ZoneScopedN("Pass: Skybox");
-#endif
+
 
     if (!ctx.camera) return;
     ID3D11DeviceContext* dc = ctx.dc;

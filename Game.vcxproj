@@ -386,9 +386,11 @@
     <ClInclude Include="Source\Editor\Windows\InspectorWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\MemoryAnalyzerWindow.h" />
     <ClInclude Include="Source\Editor\Windows\NavMeshWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\StateTreeWindow.h" />
     <ClInclude Include="Source\Editor\Windows\TextEditorWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
@@ -425,6 +427,7 @@
     <ClInclude Include="Source\Engine\Core\Math\StringHash.h" />
     <ClInclude Include="Source\Engine\Core\Math\TransformUtils.h" />
     <ClInclude Include="Source\Engine\Core\pch.h" />
+    <ClInclude Include="Source\Engine\Core\Systems\SystemPriority.h" />
     <ClInclude Include="Source\Engine\Core\Time\HighResolutionTimer.h" />
     <ClInclude Include="Source\Engine\ECS\Common\CCL_Archetype.h" />
     <ClInclude Include="Source\Engine\ECS\Common\CCL_Common.h" />
@@ -457,8 +460,8 @@
     <ClInclude Include="Source\Engine\Graphics\Components\Lighting\FogComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\Lighting\LightComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\Lighting\ShadowMapConfigComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\Particle\GPUParticleBuffer.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\Particle\GPUParticleComponent.h" />
-    <ClInclude Include="Source\Engine\Graphics\Components\Particle\GPUParticleTypes.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\BloomConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\ToneMapConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\Core\RenderPipeline.h" />
@@ -488,6 +491,7 @@
     <ClInclude Include="Source\Engine\Graphics\Resource\ModelResource.h" />
     <ClInclude Include="Source\Engine\Graphics\Resource\ResourcePool.h" />
     <ClInclude Include="Source\Engine\Graphics\Resource\ResourceManager.h" />
+    <ClInclude Include="Source\Engine\Graphics\Resource\ResourceTypes.h" />
     <ClInclude Include="Source\Engine\Graphics\RHI\Camera.h" />
     <ClInclude Include="Source\Engine\Graphics\RHI\GpuResourceUtils.h" />
     <ClInclude Include="Source\Engine\Graphics\RHI\Graphics.h" />
@@ -500,7 +504,10 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\Core\Shader.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\MaterialShader.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\OutlineShader.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\Material\ParticleComputeShader.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\Material\ParticleShader.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\ShadowMapShader.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\ParticleShared.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Pass\ShadowMap.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Pass\ShadowUtils.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\BloomEffect.h" />
@@ -510,15 +517,14 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderRegistry.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderResources.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderShared.h" />
-    <ClInclude Include="Source\Engine\Graphics\Systems\Core\DissolveSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Core\EnvironmentSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Core\ModelPoseUpdateSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Core\ModelRenderSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Core\PrimitiveRenderSystem.h" />
+    <ClInclude Include="Source\Engine\Graphics\Systems\Culling\AABBDebugDrawSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Culling\BoundsUpdateSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Culling\CullingSetupSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Culling\FrustumCullingSystem.h" />
-    <ClInclude Include="Source\Engine\Graphics\Systems\Lighting\FogSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Lighting\LightSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Lighting\ShadowMapRenderSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Particle\GPUParticleRenderSystem.h" />
@@ -581,9 +587,14 @@
     <ClInclude Include="Source\Engine\Serialization\Registry\ComponentRegistry_Editor.h" />
     <ClInclude Include="Source\Engine\Serialization\Serializer\PrefabSerializer.h" />
     <ClInclude Include="Source\Engine\Serialization\Serializer\SceneSerializer.h" />
+    <ClInclude Include="Source\Engine\Timer\TimeScaleSetupSystem.h" />
+    <ClInclude Include="Source\Engine\Timer\TimeScaleSystem.h" />
+    <ClInclude Include="Source\Engine\Timer\TimeState.h" />
     <ClInclude Include="Source\Engine\Transform\Components\BoneAttachmentComponent.h" />
     <ClInclude Include="Source\Engine\Transform\Components\PendingParentComponent.h" />
     <ClInclude Include="Source\Engine\Transform\Components\TransformComponent.h" />
+    <ClInclude Include="Source\Engine\Transform\Core\TransformHierarchyCache.h" />
+    <ClInclude Include="Source\Engine\Transform\Systems\BoneAttachmentSystem.h" />
     <ClInclude Include="Source\Engine\Transform\Systems\HierarchyCleanupSystem.h" />
     <ClInclude Include="Source\Engine\Transform\Systems\TransformUpdateSystem.h" />
     <ClInclude Include="Source\Engine\UI\ImGui\ImGuiThemes.h" />
@@ -596,7 +607,6 @@
     <ClInclude Include="Source\Engine\UI\Widgets\UIProgressBar.h" />
     <ClInclude Include="Source\Engine\UI\Widgets\UIText.h" />
     <ClInclude Include="Source\Game\Core\AllComponents.h" />
-    <ClInclude Include="Source\Game\Core\SystemPriority.h" />
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BossActionComponent.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -659,16 +669,11 @@
     <ClInclude Include="Source\Game\Logics\AI\NavAI\AIPatrolSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\NavAI\AIPerceptionSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\NavAI\Events\AISoundEvent.h" />
-    <ClInclude Include="Source\Game\Logics\Audio\DistractionItemComponent.h" />
-    <ClInclude Include="Source\Game\Logics\Audio\DistractionItemDebugDrawSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Audio\DistractionItemSystem.h" />
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeComponents.h" />
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeData.h" />
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\CharacterMovementInputComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyComponent.h" />
-    <ClInclude Include="Source\Game\Logics\Character\PlayerCar\CarCollisionSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Character\PlayerCar\PlayerCarComponent.h" />
-    <ClInclude Include="Source\Game\Logics\Character\PlayerCar\PlayerCarInputSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Character\PlayerCar\PlayerCarMoveSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Character\PlayerCar\PlayerCarSphereTag.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerFeedbackSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerInputSystem.h" />
@@ -1188,9 +1193,11 @@
     <ClCompile Include="Source\Editor\Windows\InspectorWindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\MemoryAnalyzerWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\NavMeshWindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\StateTreeWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\TextEditorWindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
@@ -1261,20 +1268,21 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\Core\Shader.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\MaterialShader.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\OutlineShader.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Shader\Material\ParticleComputeShader.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Shader\Material\ParticleShader.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\ShadowMapShader.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\Pass\ShadowMap.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\BloomEffect.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\PostProcessManager.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\ShaderReflection.cpp" />
-    <ClCompile Include="Source\Engine\Graphics\Systems\Core\DissolveSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Core\EnvironmentSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Core\ModelPoseUpdateSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Core\ModelRenderSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Core\PrimitiveRenderSystem.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Systems\Culling\AABBDebugDrawSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Culling\BoundsUpdateSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Culling\CullingSetupSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Culling\FrustumCullingSystem.cpp" />
-    <ClCompile Include="Source\Engine\Graphics\Systems\Lighting\FogSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Lighting\LightSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Lighting\ShadowMapRenderSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Particle\GPUParticleRenderSystem.cpp" />
@@ -1309,7 +1317,12 @@
     <ClCompile Include="Source\Engine\Serialization\Registry\ComponentRegistry.cpp" />
     <ClCompile Include="Source\Engine\Serialization\Serializer\PrefabSerializer.cpp" />
     <ClCompile Include="Source\Engine\Serialization\Serializer\SceneSerializer.cpp" />
+    <ClCompile Include="Source\Engine\Timer\TimeComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Timer\TimeScaleSetupSystem.cpp" />
+    <ClCompile Include="Source\Engine\Timer\TimeScaleSystem.cpp" />
     <ClCompile Include="Source\Engine\Transform\Components\TransformComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Transform\Core\TransformHierarchyCache.cpp" />
+    <ClCompile Include="Source\Engine\Transform\Systems\BoneAttachmentSystem.cpp" />
     <ClCompile Include="Source\Engine\Transform\Systems\HierarchyCleanupSystem.cpp" />
     <ClCompile Include="Source\Engine\Transform\Systems\TransformUpdateSystem.cpp" />
     <ClCompile Include="Source\Engine\UI\ImGui\ImGuiThemes.cpp" />
@@ -1362,14 +1375,8 @@
     <ClCompile Include="Source\Game\Logics\AI\NavAI\AIMovementControlSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\NavAI\AIPatrolSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\NavAI\AIPerceptionSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Audio\DistractionItemComponentMeta.cpp" />
-    <ClCompile Include="Source\Game\Logics\Audio\DistractionItemDebugDrawSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Audio\DistractionItemSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\StateTree\StateTreeSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\CharacterMovementInputComponentMeta.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\PlayerCar\CarCollisionSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\PlayerCar\PlayerCarComponentMeta.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\PlayerCar\PlayerCarInputSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\PlayerCar\PlayerCarMoveSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerFeedbackSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerInputSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerMoveSystem.cpp" />

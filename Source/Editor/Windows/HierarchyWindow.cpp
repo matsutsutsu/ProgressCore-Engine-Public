@@ -13,6 +13,8 @@ HierarchyWindow::HierarchyWindow() : EditorWindow("Hierarchy") {}
 
 void HierarchyWindow::DrawContents(EditorContext& context)
 {
+    ZoneScopedN("HierarchyWindow::DrawContents");
+
     auto* world = context.world;
     auto& chunkManager = world->GetChunkManager();
     auto& chunks = chunkManager.GetChunks();
@@ -21,10 +23,17 @@ void HierarchyWindow::DrawContents(EditorContext& context)
     // ★ 究極の修正: 毎フレーム必ずキャッシュを空にする！
     // これを忘れると過去の親子関係が蓄積し、全てが循環参照と誤認されます。
     // =========================================================================
-    _rootEntities.clear();
-    _allEntities.clear();
-    _flatList.clear();
-    _childrenMap.clear();
+    {
+        ZoneScopedN("Hierarchy [1]: Clear & Alloc");
+
+        _rootEntities.clear();
+        _allEntities.clear();
+        _flatList.clear();
+
+        // リアロケーション防止のため、あらかじめ1万体分のメモリを確保（推容疑者Cの対策）
+        _flatList.reserve(10000);
+        _allEntities.reserve(10000);
+    }
 
     // ---------------------------------------------------------
     // ツールバー (生成 ＆ 検索)  ※ここが消えていた部分です！
@@ -46,106 +55,105 @@ void HierarchyWindow::DrawContents(EditorContext& context)
 
     ImGui::Separator();
 
-    // ---------------------------------------------------------
-    // 1. データ収集フェーズ (★ゼロ・アロケーション化)
-    // ---------------------------------------------------------
-    // ベクターやマップの「容量」は維持したまま、中身の要素数だけを0に戻す（超高速）
-    _rootEntities.clear();
-    _allEntities.clear();
-    _flatList.clear();
-    for (auto& pair : _childrenMap) pair.second.clear();
-    _validEntitiesSet.clear(); // ★ 追加
+    {
+        // =========================================================================
+        // ★ 計測プローブ 2: チャンク走査とツリー構築フェーズ
+        // ここが重い場合、_openNodes.count() か IsEntityDestroyed() が犯人です
+        // =========================================================================
+        ZoneScopedN("Hierarchy [2]: Chunk Scan & Build");
 
+        // =========================================================
+        // ★ 超高速 Pass: ルートエンティティの抽出だけを行う
+        // =========================================================
+        for (auto& chunkPtr : chunks) {
+            if (!chunkPtr) continue;
+            CCL::ECS::Core::Chunk* chunk = chunkPtr.get();
 
+            TransformComponent* transforms = chunk->HasComponent<TransformComponent>()
+                ? chunk->GetComponentArray<TransformComponent>() : nullptr;
 
-    // =========================================================
-    // ★ Pass 1: 現在のWorldに実在するすべてのエンティティを名簿に登録
-    // =========================================================
-    for (auto& chunkPtr : chunks) {
-        if (!chunkPtr) continue;
-        auto* chunk = chunkPtr.get();
-        for (size_t i = 0; i < chunk->GetEntityCount(); ++i) {
-            if (chunk->IsEntityDestroyed(i)) continue; // 削除済みのゴミは無視
-            CCL::ECS::EntityID entity = chunk->GetEntityByIndex(i);
-            if (entity != CCL::ECS::InvalidEntityID) {
-                _validEntitiesSet.insert(entity);
-            }
-        }
-    }
+            for (size_t i = 0; i < chunk->GetEntityCount(); ++i) {
+                if (chunk->IsEntityDestroyed(i)) continue;
+                CCL::ECS::EntityID entity = chunk->GetEntityByIndex(i);
+                if (entity == CCL::ECS::InvalidEntityID) continue;
 
-    // =========================================================
-    // ★ Pass 2: 階層の構築（防波堤付き）
-    // =========================================================
-    for (auto& chunkPtr : chunks) {
-        if (!chunkPtr) continue;
-        CCL::ECS::Core::Chunk* chunk = chunkPtr.get();
-        const size_t           count = chunk->GetEntityCount();
-
-        TransformComponent* transforms = chunk->HasComponent<TransformComponent>()
-            ? chunk->GetComponentArray<TransformComponent>() : nullptr;
-
-        for (size_t i = 0; i < count; ++i) {
-            if (chunk->IsEntityDestroyed(i)) continue; // 削除済みのゴミは無視
-            CCL::ECS::EntityID entity = chunk->GetEntityByIndex(i);
-            if (entity == CCL::ECS::InvalidEntityID) continue;
-
-            _allEntities.push_back(entity);
-
-            bool hasParent = false;
-            if (transforms && transforms[i].parent != 0) {
-                // ★ 究極の防波堤: その親は本当に今の世界に生きているか？
-                if (_validEntitiesSet.count(transforms[i].parent) > 0) {
-                    _childrenMap[transforms[i].parent].push_back(entity);
-                    hasParent = true;
+                // ★ 修正1: 無駄な毎フレームのアロケーションを防ぐため、検索時のみリストに追加する
+                if (isSearching) {
+                    _allEntities.push_back(entity);
                 }
-                else {
-                    // 親が死んでいる、またはデタラメなID（ロード直後など）の場合は親を強制解除する
-                    transforms[i].parent = 0;
+
+                // 親がいない(0)場合はルート
+                if (!transforms || transforms[i].parent == 0) {
+                    if (isSearching) {
+                        _rootEntities.push_back(entity); // 検索ロジック用に一応残す
+                    }
+                    else {
+                        // ====================================================================
+                        // ★ 究極のDOD最適化: GetComponentを回避し、キャッシュから直接読む！
+                        // ====================================================================
+                        bool hasChildren = (transforms != nullptr && transforms[i].firstChildID != 0);
+
+                        // 直接UI用のフラットリストに追加
+                        _flatList.push_back({ entity, 0, hasChildren });
+
+                        // 子供がいて、かつ「このノードが開かれている」場合のみ、子供の再帰探索を走らせる
+                        // （※閉じていれば、この先の重い処理は一切走らない！）
+                        if (hasChildren && _openNodes.count(entity) > 0) {
+                            FlattenChildren(transforms[i].firstChildID, 1, world, _flatList);
+                        }
+                    }
                 }
             }
-            if (!hasParent) {
-                _rootEntities.push_back(entity);
+        }
+    }
+
+
+    {
+        // =========================================================================
+        // ★ 計測プローブ 3: 検索文字列処理フェーズ
+        // =========================================================================
+        ZoneScopedN("Hierarchy [3]: Search String Process");
+
+        // ---------------------------------------------------------
+        // 2. 平坦化フェーズ 
+        // ---------------------------------------------------------
+        if (isSearching) {
+            for (auto e : _allEntities) {
+                // ★検索中のみ、重い文字列処理を行う
+                auto* nameComp = world->GetComponent<NameComponent>(e);
+                std::string nameLower = (nameComp && strlen(nameComp->name) > 0) ? nameComp->name : "entity " + std::to_string(e);
+                std::transform(nameLower.begin(), nameLower.end(), nameLower.begin(), ::tolower);
+
+                if (nameLower.find(searchStr) != std::string::npos) {
+                    _flatList.push_back({ e, 0, false });
+                }
             }
         }
     }
 
-    // ---------------------------------------------------------
-    // 2. 平坦化フェーズ 
-    // ---------------------------------------------------------
-    if (isSearching) {
-        for (auto e : _allEntities) {
-            // ★検索中のみ、重い文字列処理を行う
-            auto* nameComp = world->GetComponent<NameComponent>(e);
-            std::string nameLower = (nameComp && strlen(nameComp->name) > 0) ? nameComp->name : "entity " + std::to_string(e);
-            std::transform(nameLower.begin(), nameLower.end(), nameLower.begin(), ::tolower);
+    {
+        // =========================================================================
+        // ★ 計測プローブ 3: 検索文字列処理フェーズ
+        // =========================================================================
+        ZoneScopedN("Hierarchy [3]: Search String Process");
 
-            if (nameLower.find(searchStr) != std::string::npos) {
-                _flatList.push_back({ e, 0, false });
+        // ---------------------------------------------------------
+        // 3. 描画フェーズ 
+        // ---------------------------------------------------------
+        ImGui::BeginChild("HierarchyTree", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
+
+        ImGuiListClipper clipper;
+        clipper.Begin((int)_flatList.size());
+        while (clipper.Step()) {
+            for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i) {
+                DrawFlatNode(_flatList[i], context); // 引数を減らす
             }
         }
+        clipper.End();
+
+        ImGui::EndChild();
+
     }
-    else {
-        for (auto root : _rootEntities) {
-            FlattenTree(root, 0, _childrenMap, _flatList);
-        }
-    }
-
-    // ---------------------------------------------------------
-    // 3. 描画フェーズ 
-    // ---------------------------------------------------------
-    ImGui::BeginChild("HierarchyTree", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
-
-    ImGuiListClipper clipper;
-    clipper.Begin((int)_flatList.size());
-    while (clipper.Step()) {
-        for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i) {
-            DrawFlatNode(_flatList[i], context, _childrenMap);
-        }
-    }
-    clipper.End();
-
-    ImGui::EndChild();
-
     // ---------------------------------------------------------
     // 4. ドラッグ＆ドロップ受け入れ処理と選択解除
     // ---------------------------------------------------------
@@ -192,8 +200,7 @@ void HierarchyWindow::DrawContents(EditorContext& context)
 // =========================================================================
 void HierarchyWindow::DrawFlatNode(
     const FlatNode& node,
-    EditorContext& context,
-    const std::unordered_map<CCL::ECS::EntityID, std::vector<CCL::ECS::EntityID>>& childrenMap)
+    EditorContext& context)
 {
     // =========================================================
     // ★遅延評価: 画面に映る「たった40個」に対してだけ名前を生成する！
@@ -254,7 +261,7 @@ void HierarchyWindow::DrawFlatNode(
 
             // ① 自分自身には入れられない
             // ② ドロップ先(targetParent)が、ドラッグしている奴(draggedEntity)の子供や孫であってはならない
-            if (draggedEntity != targetParent && !IsDescendantOf(targetParent, draggedEntity, childrenMap)) {
+            if (draggedEntity != targetParent && !IsDescendantOf(targetParent, draggedEntity, context.world)) {
                 // PendingParentComponent を使用して親子関係を予約
                 if (context.world->HasComponent<PendingParentComponent>(draggedEntity)) {
                     context.world->GetComponent<PendingParentComponent>(draggedEntity)->parentID = targetParent;
@@ -269,7 +276,7 @@ void HierarchyWindow::DrawFlatNode(
         }
         else {
             // ブロックされた場合は警告を出す
-            CCL_LOG_WARN(LogCategory::Editor, "Parenting Failed: Circular reference or self-parenting detected!");
+            //CCL_LOG_WARN(LogCategory::Editor, "Parenting Failed: Circular reference or self-parenting detected!");
         }
         
         ImGui::EndDragDropTarget();
@@ -324,49 +331,48 @@ void HierarchyWindow::DrawFlatNode(
 }
 
 
-// =========================================================================
-// ツリーを1次元の配列に押しつぶすアルゴリズム (非常に高速)
-// =========================================================================
-void HierarchyWindow::FlattenTree(
-    CCL::ECS::EntityID entityID,
+// ★ 古い FlattenTree を丸ごと消して、これに差し替える
+void HierarchyWindow::FlattenChildren(
+    CCL::ECS::EntityID firstChildID,
     int depth,
-    const std::unordered_map<CCL::ECS::EntityID, std::vector<CCL::ECS::EntityID>>& childrenMap,
+    CCL::ECS::Core::World* world,
     std::vector<FlatNode>& outFlatList)
 {
-    // =========================================================================
-    //  単にキーが存在するかだけでなく、「本当に中身(子供)がいるか」を確認する
-    // =========================================================================
-    bool hasChildren = childrenMap.count(entityID) > 0 && !childrenMap.at(entityID).empty();
+    CCL::ECS::EntityID childID = firstChildID;
 
-    // まず自分自身をリストに追加する
-    outFlatList.push_back({ entityID, depth, hasChildren });
+    // 兄弟リンク(nextSiblingID)を辿って全子供をリスト化
+    while (childID != 0) {
+        auto* childTrans = world->GetComponent<TransformComponent>(childID);
+        if (!childTrans) break;
 
-    // ★もし自分に子供がいて、かつ「開かれている」状態なら、子供も再帰的にリストに追加する
-    if (hasChildren && _openNodes.count(entityID) > 0) {
-        const auto& children = childrenMap.at(entityID);
-        for (auto childID : children) {
-            FlattenTree(childID, depth + 1, childrenMap, outFlatList);
+        bool hasChildren = (childTrans->firstChildID != 0);
+        outFlatList.push_back({ childID, depth, hasChildren });
+
+        // この子供も開かれていたら、さらに孫を再帰探索する
+        if (hasChildren && _openNodes.count(childID) > 0) {
+            FlattenChildren(childTrans->firstChildID, depth + 1, world, outFlatList);
         }
+
+        childID = childTrans->nextSiblingID;
     }
 }
 
-// =========================================================================
-//  循環参照チェックの実装 (ファイルの末尾などに追加)
-// =========================================================================
-bool HierarchyWindow::IsDescendantOf(CCL::ECS::EntityID targetEntity, CCL::ECS::EntityID ancestorEntity, const std::unordered_map<CCL::ECS::EntityID, std::vector<CCL::ECS::EntityID>>& childrenMap)
+bool HierarchyWindow::IsDescendantOf(
+    CCL::ECS::EntityID targetEntity,
+    CCL::ECS::EntityID ancestorEntity,
+    CCL::ECS::Core::World* world)
 {
-    // 自分自身へのドロップも循環とみなす
     if (targetEntity == ancestorEntity) return true;
 
-    // 先祖の子供リストを取得
-    auto it = childrenMap.find(ancestorEntity);
-    if (it != childrenMap.end()) {
-        for (auto child : it->second) {
-            // 子供、あるいはそのさらに子供がターゲットなら true (危険)
-            if (IsDescendantOf(targetEntity, child, childrenMap)) {
-                return true;
-            }
-        }
+    auto* trans = world->GetComponent<TransformComponent>(ancestorEntity);
+    if (!trans) return false;
+
+    // 子供とその兄弟たちをチェック
+    CCL::ECS::EntityID childID = trans->firstChildID;
+    while (childID != 0) {
+        if (IsDescendantOf(targetEntity, childID, world)) return true;
+        auto* childTrans = world->GetComponent<TransformComponent>(childID);
+        childID = childTrans ? childTrans->nextSiblingID : 0;
     }
-    return false; // 安全
+    return false;
 }

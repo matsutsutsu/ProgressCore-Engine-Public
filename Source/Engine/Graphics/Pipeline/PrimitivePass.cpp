@@ -4,10 +4,8 @@
 #include "Engine/Graphics/RHI/Camera.h"
 
 void PrimitivePass::Execute(const RenderFrameContext& ctx)
-{
-#if TRACY_ENABLE
-    ZoneScopedN("Pass: Primitive");
-#endif
+{ 
+
     if (!ctx.camera) return;
 
     if (_services->shapeRenderer) {

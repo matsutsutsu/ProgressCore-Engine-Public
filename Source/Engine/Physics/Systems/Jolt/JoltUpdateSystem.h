@@ -1,5 +1,4 @@
 #pragma once
-#include <Jolt/Jolt.h>
 #include "Engine/ECS/System/CCL_System.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"

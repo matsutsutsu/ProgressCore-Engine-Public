@@ -54,13 +54,6 @@ void MaterialShader::End(ID3D11DeviceContext* dc, const RenderServices& /*s*/)
 }
 
 
-std::filesystem::file_time_type MaterialShader::GetLastWriteTime(const std::wstring& path) {
-    if (std::filesystem::exists(path)) {
-        return std::filesystem::last_write_time(path);
-    }
-    return (std::filesystem::file_time_type::min)();
-}
-
 void MaterialShader::CheckAndReload(ID3D11Device* device)
 {
 #if defined(_DEBUG) || defined(ENABLE_EDITOR) // 本番ビルドでは走らせない
