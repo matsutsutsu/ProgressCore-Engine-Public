@@ -481,14 +481,8 @@
     <Filter Include="Source\Game\Logics\Wand">
       <UniqueIdentifier>{b7ec1194-21ea-451b-a241-e49b51dce98f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Game\Logics\Wand\_Data">
-      <UniqueIdentifier>{02afee24-d971-4567-903c-cde378324414}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Shader\Compute\Boids">
       <UniqueIdentifier>{7f01f78f-5e12-4472-9745-513f6f592a59}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\Wand\_Meta">
-      <UniqueIdentifier>{0627d4f9-9679-4682-b5ec-54544125d107}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -1548,24 +1542,6 @@
     <ClInclude Include="Source\Engine\Transform\Systems\BoneAttachmentSystem.h">
       <Filter>Source\Engine\Transform\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\RF_AttachmentEffects.h">
-      <Filter>Source\Game\Logics\Wand</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\RF_BulletComponents.h">
-      <Filter>Source\Game\Logics\Wand</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\RF_WandComponents.h">
-      <Filter>Source\Game\Logics\Wand</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\RF_WandProgram.h">
-      <Filter>Source\Game\Logics\Wand</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\RF_PhaseTypes.h">
-      <Filter>Source\Game\Logics\Wand\_Data</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\RF_BulletEvents.h">
-      <Filter>Source\Game\Logics\Wand\_Data</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Physics\Components\Character\CharacterMovementInputComponent.h">
       <Filter>Source\Engine\Physics\Components\Character</Filter>
     </ClInclude>
@@ -1595,6 +1571,18 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerAttackSystem.h">
       <Filter>Source\Game\Logics\Character\Player</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\WandTypes.h">
+      <Filter>Source\Game\Logics\Wand</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\CompiledWandProgram.h">
+      <Filter>Source\Game\Logics\Wand</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\WandBuildComponent.h">
+      <Filter>Source\Game\Logics\Wand</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\BulletComponents.h">
+      <Filter>Source\Game\Logics\Wand</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2342,21 +2330,6 @@
     <ClCompile Include="Source\Engine\Transform\Systems\BoneAttachmentSystem.cpp">
       <Filter>Source\Engine\Transform\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Wand\RF_BulletHitSystem.cpp">
-      <Filter>Source\Game\Logics\Wand</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Wand\RF_BulletLifetimeSystem.cpp">
-      <Filter>Source\Game\Logics\Wand</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Wand\RF_BulletTravelSystem.cpp">
-      <Filter>Source\Game\Logics\Wand</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Wand\RF_WandBuildCompileSystem.cpp">
-      <Filter>Source\Game\Logics\Wand</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Wand\RF_WandFireSystem.cpp">
-      <Filter>Source\Game\Logics\Wand</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Platform\Input\GamePad.cpp">
       <Filter>Source\Engine\Platform\Input</Filter>
     </ClCompile>
@@ -2386,21 +2359,6 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerAttackSystem.cpp">
       <Filter>Source\Game\Logics\Character\Player</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Wand\RF_AttachmentEffects.cpp">
-      <Filter>Source\Game\Logics\Wand</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Wand\BulletProgramRefMeta.cpp">
-      <Filter>Source\Game\Logics\Wand\_Meta</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Wand\BulletStateMeta.cpp">
-      <Filter>Source\Game\Logics\Wand\_Meta</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Wand\WandBuildComponentMeta.cpp">
-      <Filter>Source\Game\Logics\Wand\_Meta</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Wand\WandComponentMeta.cpp">
-      <Filter>Source\Game\Logics\Wand\_Meta</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
