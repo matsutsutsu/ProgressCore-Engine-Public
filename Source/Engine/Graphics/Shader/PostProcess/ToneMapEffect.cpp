@@ -1,6 +1,7 @@
 #include "ToneMapEffect.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
+#include "Engine/Graphics/Components/PostProcess/ToneMapConfigComponent.h"
 
 void ToneMapEffect::Initialize(ID3D11Device* device)
 {
@@ -16,7 +17,10 @@ void ToneMapEffect::Initialize(ID3D11Device* device)
     device->CreateSamplerState(&sampDesc, _sampler.GetAddressOf());
 }
 
-void ToneMapEffect::Process(ID3D11DeviceContext* dc, ID3D11ShaderResourceView* inputHDR, ID3D11RenderTargetView* outputSDR, float exposure)
+void ToneMapEffect::Process(ID3D11DeviceContext* dc,
+    ID3D11ShaderResourceView* inputHDR,
+    ID3D11RenderTargetView* outputSDR,
+    ToneMapConfigComponent& config)
 {
     // 出力先をバインド (Viewport は Manager 側で設定済み)
     dc->OMSetRenderTargets(1, &outputSDR, nullptr);
@@ -29,7 +33,12 @@ void ToneMapEffect::Process(ID3D11DeviceContext* dc, ID3D11ShaderResourceView* i
     ID3D11SamplerState* smp = _sampler.Get();
     dc->PSSetSamplers(SLOT_SMP_DEFAULT, 1, &smp);
 
-    CbToneMap cbData{ exposure };
+    CbToneMap cbData{
+        config.exposure, 
+        config.chromaticAberration,
+        {0.0f, 0.0f},
+        {config.colorTint.x, config.colorTint.y, config.colorTint.z, 0.0f}
+    };
     D3D11_MAPPED_SUBRESOURCE mapped;
     if (SUCCEEDED(dc->Map(_cbToneMap.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {
         memcpy(mapped.pData, &cbData, sizeof(cbData));

@@ -40,11 +40,11 @@ template <> struct ComponentMeta<ToneMapConfigComponent> {
     static constexpr bool        hasCustomGui = true;
 
 #if ENABLE_EDITOR
-    static bool CustomGui(ToneMapConfigComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr)
-    {
+    static bool CustomGui(ToneMapConfigComponent& comp, unsigned long long /* entityID */ = 0, void* /* worldPtr */ = nullptr) {
         bool changed = false;
-        ImGui::SeparatorText("Exposure Settings");
-        changed |= ImGui::DragFloat(u8"Exposure (露出)", &comp.exposure, 0.05f, 0.0f, 20.0f);
+        changed |= ImGui::DragFloat("Exposure", &comp.exposure, 0.01f, 0.0f, 10.0f);
+        changed |= ImGui::DragFloat("Chromatic Aberration", &comp.chromaticAberration, 0.001f, -0.1f, 0.1f);
+        changed |= ImGui::ColorEdit3("Color Tint", &comp.colorTint.x);
         return changed;
     }
 #endif

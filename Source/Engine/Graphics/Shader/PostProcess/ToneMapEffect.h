@@ -1,6 +1,9 @@
 #pragma once
 #include <d3d11.h>
 #include <wrl/client.h>
+#include <DirectXMath.h>
+
+struct ToneMapConfigComponent;
 
 // ToneMapEffect: HDR 画像を SDR に焼き付けるためのシェーダー効果クラス
 // ToneMapはIPostEffectを継承しない。
@@ -18,12 +21,16 @@ public:
     void Process(ID3D11DeviceContext* dc,
         ID3D11ShaderResourceView* inputHDR,
         ID3D11RenderTargetView* outputSDR,
-        float exposure);
+        ToneMapConfigComponent& config);
 
 private:
+    // 【重要】HLSLの定数バッファと完全にアライメントを一致させる
+    // 合計32バイト (16バイト x 2行)
     struct CbToneMap {
         float exposure;
-        float padding[3];
+        float chromaticAberration;
+        float padding[2];           // 16バイト境界へのパディング
+        DirectX::XMFLOAT4 colorTint; // RGBはTint, Wは未使用パッド
     };
 
     Microsoft::WRL::ComPtr<ID3D11VertexShader>  _vs;

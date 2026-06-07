@@ -151,7 +151,7 @@ ID3D11ShaderResourceView* PostProcessManager::EndScene(ID3D11DeviceContext* dc, 
     ID3D11RenderTargetView* finalRTV = targetRTV ? targetRTV : outputSDR->GetRTV();
 
     // ハードコードが消え、スッキリ1行に！
-    _toneMapEffect->Process(dc, finalHDR->GetSRV(), finalRTV, toneMapConfig.exposure);
+    _toneMapEffect->Process(dc, finalHDR->GetSRV(), finalRTV, toneMapConfig);
 
     return outputSDR->GetSRV();
 }
