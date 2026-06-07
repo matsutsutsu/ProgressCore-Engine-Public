@@ -40,17 +40,14 @@ void ShadowMapRenderSystem::RenderShadowMap()
 
     // 2. View を使ったデータの同期 (Single Source of Truth)
     // テンプレートシグネチャに縛られず、設定コンポーネントだけを検索してパラメータを上書きする
-    auto view = _world->View<ShadowMapConfigComponent>();
-    for (auto entity : view) {
-        auto* config = _world->GetComponent<ShadowMapConfigComponent>(entity);
-        if (config) {
-            shadowMap->params.shadowBias = config->shadowBias;
-            shadowMap->params.shadowColor = config->shadowColor;
-            shadowMap->params.cascadeSplits[0] = config->cascadeSplits.x;
-            shadowMap->params.cascadeSplits[1] = config->cascadeSplits.y;
-            shadowMap->params.cascadeSplits[2] = config->cascadeSplits.z;
-            break; // 設定を持つエンティティは1つだけのはずなので、見つけたら即終了（高速化）
-        }
+    if (auto* config = _world->GetSingletonComponent<ShadowMapConfigComponent>()) {
+        shadowMap->params.shadowBias = config->shadowBias;
+        shadowMap->params.shadowColor = config->shadowColor;
+        shadowMap->params.cascadeSplits[0] = config->cascadeSplits.x;
+        shadowMap->params.cascadeSplits[1] = config->cascadeSplits.y;
+        shadowMap->params.cascadeSplits[2] = config->cascadeSplits.z;
+        
+        
     }
 
   

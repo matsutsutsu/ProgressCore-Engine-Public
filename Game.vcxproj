@@ -674,6 +674,7 @@
     <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeData.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\PlayerAttackSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerFeedbackSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerInputSystem.h" />
@@ -1384,6 +1385,7 @@
     <ClCompile Include="Source\Game\Logics\AI\NavAI\AIPatrolSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\NavAI\AIPerceptionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\StateTree\StateTreeSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\PlayerAttackSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerFeedbackSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerInputSystem.cpp" />
@@ -1397,12 +1399,16 @@
     <ClCompile Include="Source\Game\Logics\Test\TornadoVortexSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\VectorFlowSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\VoxelOceanSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Wand\BulletProgramRefMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Wand\BulletStateMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Wand\RF_AttachmentEffects.cpp" />
     <ClCompile Include="Source\Game\Logics\Wand\RF_BulletHitSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Wand\RF_BulletLifetimeSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Wand\RF_BulletTravelSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Wand\RF_WandBuildCompileSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Wand\RF_WandFireSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Wand\WandBuildComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Wand\WandComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Scenes\BaseScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\EditorScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\ParticleScene.cpp" />

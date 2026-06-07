@@ -82,18 +82,16 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext* dc, const Rende
     GpuData::CbFog fogData = { {0.5f,0.5f,0.5f,1.0f},{0.0f,1000.0f,10.0f,0.0f},{},{},{},{} };
     ID3D11ShaderResourceView* fogNoiseSrv = nullptr;
 
-    auto fogView = _world->View<FogComponent>();
-    if (!fogView.empty()) {
-        if (auto* fog = _world->GetComponent<FogComponent>(fogView[0])) {
-            fogData.gFogColor = fog->color;
-            fogData.gFogParams = { fog->start, fog->end, fog->heightStart, fog->heightDensity };
-            fogData.gFogCenter = fog->center;
-            fogData.gFogNoiseParams = { fog->noiseScale, fog->noiseStrength,
-                                    fog->noiseSpeed.x, fog->noiseSpeed.y };
-            fogData.gFogRimColor = { fog->rimColor.x, fog->rimColor.y, fog->rimColor.z, 1.0f };
-            fogData.gFogRimParams = { fog->rimPower, fog->rimStrength, 0.0f, 0.0f };
-            fogNoiseSrv = fog->noiseTextureSRV.Get();
-        }
+    if (auto* fog = _world->GetSingletonComponent<FogComponent>()) {
+       fogData.gFogColor = fog->color;
+       fogData.gFogParams = { fog->start, fog->end, fog->heightStart, fog->heightDensity };
+       fogData.gFogCenter = fog->center;
+       fogData.gFogNoiseParams = { fog->noiseScale, fog->noiseStrength,
+                               fog->noiseSpeed.x, fog->noiseSpeed.y };
+       fogData.gFogRimColor = { fog->rimColor.x, fog->rimColor.y, fog->rimColor.z, 1.0f };
+       fogData.gFogRimParams = { fog->rimPower, fog->rimStrength, 0.0f, 0.0f };
+       fogNoiseSrv = fog->noiseTextureSRV.Get();
+        
     }
 
     if (_fogConstantBuffer) {

@@ -29,10 +29,7 @@ void PostProcessSystem::Update(float dt) {
     // -------------------------------------------------------
     // ※ 本来は「GlobalVolume」タグやカメラ位置判定を行うが、
     //    ここではシンプルに「有効になっているものが見つかったら採用」する
-    auto bloomView = _world->View<BloomConfigComponent>();
-    for (auto entity : bloomView)
-    {
-        const auto* comp = _world->GetComponent<BloomConfigComponent>(entity);
+    if(auto* comp = _world->GetSingletonComponent<BloomConfigComponent>()) {
 
         // 有効な設定が見つかったら上書き（後勝ち）
         if (comp && comp->enable) {
@@ -43,10 +40,7 @@ void PostProcessSystem::Update(float dt) {
     // -------------------------------------------------------
     // 3. ToneMapConfigComponent を検索
     // -------------------------------------------------------
-    auto toneMapView = _world->View<ToneMapConfigComponent>();
-    for (auto entity : toneMapView)
-    {
-        const auto* comp = _world->GetComponent<ToneMapConfigComponent>(entity);
+    if (auto* comp = _world->GetSingletonComponent<ToneMapConfigComponent>()) {
 
         if (comp) {
             finalToneMap = *comp;

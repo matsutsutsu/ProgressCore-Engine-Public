@@ -487,6 +487,9 @@
     <Filter Include="Shader\Compute\Boids">
       <UniqueIdentifier>{7f01f78f-5e12-4472-9745-513f6f592a59}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\Wand\_Meta">
+      <UniqueIdentifier>{0627d4f9-9679-4682-b5ec-54544125d107}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1590,6 +1593,9 @@
     <ClInclude Include="Source\Engine\Graphics\Pipeline\Core\IRenderPass.h">
       <Filter>Source\Engine\Graphics\Pipeline\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Player\PlayerAttackSystem.h">
+      <Filter>Source\Game\Logics\Character\Player</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2336,9 +2342,6 @@
     <ClCompile Include="Source\Engine\Transform\Systems\BoneAttachmentSystem.cpp">
       <Filter>Source\Engine\Transform\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Wand\RF_AttachmentEffects.cpp">
-      <Filter>Source\Game\Logics\Wand</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Game\Logics\Wand\RF_BulletHitSystem.cpp">
       <Filter>Source\Game\Logics\Wand</Filter>
     </ClCompile>
@@ -2380,6 +2383,24 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\ToneMapEffect.cpp">
       <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Player\PlayerAttackSystem.cpp">
+      <Filter>Source\Game\Logics\Character\Player</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Wand\RF_AttachmentEffects.cpp">
+      <Filter>Source\Game\Logics\Wand</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Wand\BulletProgramRefMeta.cpp">
+      <Filter>Source\Game\Logics\Wand\_Meta</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Wand\BulletStateMeta.cpp">
+      <Filter>Source\Game\Logics\Wand\_Meta</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Wand\WandBuildComponentMeta.cpp">
+      <Filter>Source\Game\Logics\Wand\_Meta</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Wand\WandComponentMeta.cpp">
+      <Filter>Source\Game\Logics\Wand\_Meta</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
