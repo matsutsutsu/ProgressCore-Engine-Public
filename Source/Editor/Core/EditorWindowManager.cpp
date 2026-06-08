@@ -113,8 +113,8 @@ void EditorWindowManager::Draw(EditorContext &context)
     }
 
     // =========================================================
-     // ★ 修正: F1非表示時は、背景キャンバスにゲーム画面をフルスクリーン描画する
-     // =========================================================
+    //  F1非表示時は、背景キャンバスにゲーム画面をフルスクリーン描画する
+    // =========================================================
     if (!_isVisible) {
         if (context.gameSRV) {
             // ImGuiの描画可能領域全体（画面サイズ）を取得
@@ -129,11 +129,11 @@ void EditorWindowManager::Draw(EditorContext &context)
         }
 
         // ヒントUI
-        ImGui::SetNextWindowPos(ImVec2(10, 10));
-        ImGui::SetNextWindowBgAlpha(0.3f);
-        ImGui::Begin("HiddenOverlay", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoNav);
-        ImGui::TextColored(ImVec4(1, 1, 0, 1), "[F1] Show Editor UI");
-        ImGui::End();
+        //ImGui::SetNextWindowPos(ImVec2(10, 10));
+        //ImGui::SetNextWindowBgAlpha(0.3f);
+        //ImGui::Begin("HiddenOverlay", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoNav);
+        //ImGui::TextColored(ImVec4(1, 1, 0, 1), "[F1] Show Editor UI");
+        //ImGui::End();
 
         return; // ウィンドウ群やメニューバーは描画せずに終了
     }
