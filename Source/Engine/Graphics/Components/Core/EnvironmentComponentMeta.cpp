@@ -2,6 +2,7 @@
 #include "Engine/Graphics/Components/Lighting/ShadowMapConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/BloomConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/ToneMapConfigComponent.h"
+#include "Engine/Graphics/Components/PostProcess/DistortionConfigComponent.h"
 
 
 #include "Engine/Serialization/Registry/ComponentRegistry.h"
@@ -13,23 +14,12 @@
 #include "Engine/Platform/Core/Dialog.h"
 
 #include "Engine/Serialization/Registry/ComponentRegistry_Editor.h"
+#include "Engine/Serialization/Meta/ComponentDefine.h"
+
 #ifdef ENABLE_EDITOR
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #endif
-
-// ======================================================
-// ★診断コード: 問題解決後に削除する
-// ======================================================
-#include <Windows.h>
-namespace {
-    struct _DiagEnvMeta {
-        _DiagEnvMeta() {
-            OutputDebugStringA("[CCL_DIAG] EnvironmentComponentMeta.cpp の初期化が走った！\n");
-        }
-    } _diag_env_meta_instance;
-}
-
 
 // ============================================================================
 // ToneMap Config
@@ -59,45 +49,28 @@ template <> struct ComponentMeta<ToneMapConfigComponent> {
     }
 };
 
-// ============================================================================
-// Bloom Config
-// ============================================================================
-template <> struct ComponentMeta<BloomConfigComponent> {
-    static constexpr bool        registered = true;
-    static constexpr const char* displayName = "Bloom Effect";
-    static constexpr bool        hasCustomGui = true;
 
-#if ENABLE_EDITOR
-    static bool CustomGui(BloomConfigComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr)
-    {
-        bool changed = false;
-        ImGui::SeparatorText("Toggle");
-        changed |= ImGui::Checkbox("Enable Bloom", &comp.enable);
+// -----------------------------------------------------------------------------------
+// [2] BloomConfigComponent
+// -----------------------------------------------------------------------------------
+COMPONENT_META_BEGIN(BloomConfigComponent, "BloomConfig")
+CFIELD(enable, "Enable", "Setup")
+CFIELD(data.threshold, "Threshold", "Filter")
+CFIELD(data.softKnee, "Soft Knee", "Filter")
+CFIELD(data.intensity, "Intensity", "Glow")
+CFIELD(data.radius, "Radius", "Glow")
+COMPONENT_META_END(BloomConfigComponent)
 
-        if (comp.enable) {
-            ImGui::SeparatorText("Parameters");
-            ImGui::Indent();
-            changed |= ImGui::DragFloat(u8"Threshold (閾値)", &comp.data.threshold, 0.01f, 0.0f, 10.0f);
-            changed |= ImGui::DragFloat(u8"Intensity (強度)", &comp.data.intensity, 0.1f, 0.0f, 40.0f);
-            changed |= ImGui::DragFloat(u8"Soft Knee (滑らかさ)", &comp.data.softKnee, 0.01f, 0.0f, 1.0f);
-            changed |= ImGui::DragFloat(u8"Radius (広がり)", &comp.data.radius, 0.01f, 0.0f, 5.0f);
-            ImGui::Unindent();
-        }
-        return changed;
-    }
-#endif
-
-    static const std::vector<FieldDescriptor>& Fields()
-    {
-        static const std::vector<FieldDescriptor> fields = {
-            META_FIELD_BOOL(BloomConfigComponent, enable, "enable", "Enable", "Toggle"),
-            META_FIELD_FLOAT(BloomConfigComponent, data.threshold, "threshold", "Threshold", 0.01f, 0.0f, 10.0f, "Params"),
-            META_FIELD_FLOAT(BloomConfigComponent, data.intensity, "intensity", "Intensity", 0.1f, 0.0f, 40.0f, "Params"),
-            META_FIELD_FLOAT(BloomConfigComponent, data.softKnee, "softKnee", "Soft Knee", 0.01f, 0.0f, 1.0f, "Params"),
-            META_FIELD_FLOAT(BloomConfigComponent, data.radius, "radius", "Radius", 0.01f, 0.0f, 5.0f, "Params") };
-        return fields;
-    }
-};
+// -----------------------------------------------------------------------------------
+// [3] DistortionConfigComponent （★ 新規実装：歪みエフェクト用）
+// 入れ子構造体（data.time 等）であっても、C++標準の offsetof に準拠しているため
+// ドットラムダ展開形式でそのままシリアライズ対象に指定可能です。
+// -----------------------------------------------------------------------------------
+COMPONENT_META_BEGIN(DistortionConfigComponent, "DistortionConfig")
+CFIELD(enable, "Enable", "Setup")
+CFIELD(data.time, "Time Multiplier", "Animation")
+CFIELD(data.strength, "Distort Strength", "Parameters")
+COMPONENT_META_END(DistortionConfigComponent)
 
 // ============================================================================
 // Fog Component
@@ -226,11 +199,9 @@ template <> struct ComponentMeta<ShadowMapConfigComponent> {
 // 究極の自動化：これだけでJSONとImGuiの両方に登録される
 // ============================================================================
 REGISTER_COMPONENT(ToneMapConfigComponent, "ToneMapConfig")
-REGISTER_COMPONENT(BloomConfigComponent, "BloomConfig")
 REGISTER_COMPONENT(FogComponent, "Fog")
 REGISTER_COMPONENT(ShadowMapConfigComponent, "ShadowMapConfig")
 
 REGISTER_COMPONENT_EDITOR_GUI(ToneMapConfigComponent)
-REGISTER_COMPONENT_EDITOR_GUI(BloomConfigComponent)
 REGISTER_COMPONENT_EDITOR_GUI(FogComponent)
 REGISTER_COMPONENT_EDITOR_GUI(ShadowMapConfigComponent)

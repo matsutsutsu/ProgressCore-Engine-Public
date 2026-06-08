@@ -1,6 +1,7 @@
 #include "PostProcessSystem.h"
 #include "Engine/Graphics/Shader/PostProcess/PostProcessManager.h"
 #include "Engine/Graphics/Shader/PostProcess/BloomEffect.h"
+#include "Engine/Graphics/Shader/PostProcess/DistortionEffect.h"
 
 
 
@@ -46,6 +47,17 @@ void PostProcessSystem::Update(float dt) {
     // -------------------------------------------------------
     // 4. マネージャーへ一括転送
     // -------------------------------------------------------
+
+    // ★ Distortion の転送処理を追加
+    if (auto *comp =
+            _world->GetSingletonComponent<DistortionConfigComponent>()) {
+      if (auto *distortion = postProcess->GetEffect<DistortionEffect>()) {
+        distortion->SetEnabled(comp->enable);
+        comp->data.time += dt; // システム側でアニメーション時間を進める
+        distortion->UpdateParams(comp->data);
+      }
+    }
+
     if (auto* bloom = postProcess->GetEffect<BloomEffect>()) {
         bloom->SetEnabled(finalBloom.enable);
         bloom->UpdateParams(finalBloom.data);

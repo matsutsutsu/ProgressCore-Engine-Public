@@ -1593,6 +1593,12 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\Shared\ShaderShared.h">
       <Filter>Source\Engine\Graphics\Shader\_Shared</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\DistortionConfigComponent.h">
+      <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\DistortionEffect.h">
+      <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2369,6 +2375,9 @@
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerAttackSystem.cpp">
       <Filter>Source\Game\Logics\Character\Player</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\DistortionEffect.cpp">
+      <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shader\Common\Common.hlsli">
@@ -2530,6 +2539,9 @@
       <Filter>Shader\Pass\SkyBox</Filter>
     </FxCompile>
     <FxCompile Include="Shader\PostProcess\BloomCompositePS.hlsl">
+      <Filter>Shader\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\PostProcess\DistortionPS.hlsl">
       <Filter>Shader\PostProcess</Filter>
     </FxCompile>
   </ItemGroup>

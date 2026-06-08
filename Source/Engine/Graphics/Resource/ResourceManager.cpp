@@ -359,7 +359,28 @@ RenderTargetHandle ResourceManager::CreateRenderTarget(int width, int height, DX
     return handle;
 }
 
-RenderTarget* ResourceManager::GetRenderTarget(RenderTargetHandle handle) {
+RenderTargetHandle ResourceManager::LoadRenderTarget(const std::string& name, ID3D11Device* device, UINT width, UINT height, DXGI_FORMAT format)
+{
+    // 1. プールから空き枠を確保
+    RenderTargetHandle handle = m_renderTargetPool.Create();
+    RenderTarget* rt = m_renderTargetPool.Get(handle);
+
+    // 2. RenderTarget 自体の Create 処理（GPU リソースの生成）
+    if (rt && rt->Create(device, width, height, format)) {
+//#ifdef _DEBUG
+//        // デバッグ名が登録できればしておく（PixやRenderDocで便利）
+//        m_debugNameRegistry[handle.GetIndex()] = name;
+//#endif
+        return handle;
+    }
+
+    // 失敗した場合は即座に破棄して無効なハンドルを返す
+    m_renderTargetPool.Destroy(handle);
+    CCL_LOG_ERROR(LogCategory::Render, "Failed to create RenderTarget: %s", name.c_str());
+    return RenderTargetHandle{};
+}
+
+RenderTarget *ResourceManager::GetRenderTarget(RenderTargetHandle handle) {
     std::lock_guard<std::mutex> lock(_mutex);
     return m_renderTargetPool.Get(handle);
 }

@@ -6,6 +6,7 @@
 
 // 各種エフェクトクラスのインクルード
 #include "BloomEffect.h"
+#include "DistortionEffect.h"
 
 
 void PostProcessManager::Initialize(ID3D11Device* device, UINT width, UINT height)
@@ -19,6 +20,7 @@ void PostProcessManager::Initialize(ID3D11Device* device, UINT width, UINT heigh
     // 2. エフェクトの生産ラインを構築
     // ==========================================================
 
+    AddEffect<DistortionEffect>();
     AddEffect<BloomEffect>();
 
 

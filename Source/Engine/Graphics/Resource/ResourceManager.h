@@ -88,6 +88,8 @@ public:
     // [6] Render Target (GPU Resource)
     // ---------------------------------------------------------
     RenderTargetHandle CreateRenderTarget(int width, int height, DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM);
+    // 新しい RenderTarget を生成し、プールに登録してハンドルを返す
+    RenderTargetHandle LoadRenderTarget(const std::string& name, ID3D11Device* device, UINT width, UINT height, DXGI_FORMAT format);
     RenderTarget* GetRenderTarget(RenderTargetHandle handle);
     void UnloadRenderTarget(RenderTargetHandle handle);
 
