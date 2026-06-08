@@ -16,28 +16,25 @@
 
 #include "WandTypes.h"
 
-namespace RuneForge
+
+/**
+ * @brief 杖の装着構成。フェーズ×スロットに EffectType を並べた編集用データ。
+ *
+ * @note isDirty が true の間は未コンパイル。コンパイルSystem(後工程)が検知して
+ *       Registry へ登録し cachedProgramId を更新し、isDirty を下ろす。
+ */
+struct WandBuildComponent
 {
-    /**
-     * @brief 杖の装着構成。フェーズ×スロットに EffectType を並べた編集用データ。
-     *
-     * @note isDirty が true の間は未コンパイル。コンパイルSystem(後工程)が検知して
-     *       Registry へ登録し cachedProgramId を更新し、isDirty を下ろす。
-     */
-    struct WandBuildComponent
-    {
-        /// @brief [フェーズ][スロット] の装着概念。None は空きスロット。
-        EffectType slots[static_cast<int>(WandPhase::Count)][MAX_SLOTS_PER_PHASE] = {};
+    /// @brief [フェーズ][スロット] の装着概念。None は空きスロット。
+    EffectType slots[static_cast<int>(WandPhase::Count)][MAX_SLOTS_PER_PHASE] = {};
 
-        /// @brief 各フェーズの有効スロット数（ショップ解放で増加）。
-        uint8_t slotCounts[static_cast<int>(WandPhase::Count)] = { 0, 0, 0, 0 };
+    /// @brief 各フェーズの有効スロット数（ショップ解放で増加）。
+    uint8_t slotCounts[static_cast<int>(WandPhase::Count)] = { 0, 0, 0, 0 };
 
-        float baseLifetime = 3.0f;  ///< 寿命(秒)
-        float baseSpeed = 20.0f; ///< 基準初速
-        float cooldown = 0.30f; ///< 発射クールダウン(秒)
+    float baseLifetime = 3.0f;  ///< 寿命(秒)
+    float baseSpeed = 20.0f; ///< 基準初速
+    float cooldown = 0.30f; ///< 発射クールダウン(秒)
 
-        ProgramID cachedProgramId = InvalidProgramID; ///< コンパイル結果のキャッシュ
-        bool      isDirty = true;             ///< 要再コンパイルフラグ
-    };
-
-} // namespace RuneForge
+    ProgramID cachedProgramId = InvalidProgramID; ///< コンパイル結果のキャッシュ
+    bool      isDirty = true;             ///< 要再コンパイルフラグ
+};

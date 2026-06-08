@@ -429,6 +429,7 @@
     <ClInclude Include="Source\Engine\Core\pch.h" />
     <ClInclude Include="Source\Engine\Core\Systems\SystemPriority.h" />
     <ClInclude Include="Source\Engine\Core\Time\HighResolutionTimer.h" />
+    <ClInclude Include="Source\Engine\ECS\CCL_ECSContext.h" />
     <ClInclude Include="Source\Engine\ECS\Common\CCL_Archetype.h" />
     <ClInclude Include="Source\Engine\ECS\Common\CCL_Common.h" />
     <ClInclude Include="Source\Engine\ECS\Common\CCL_IDEmitter.h" />
@@ -1409,7 +1410,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include=".clang-formatt" />
+    <None Include=".clang-format" />
     <None Include=".editorconfig" />
     <None Include="Build\EditorTooling.props" />
     <None Include="Build\EngineCore.props" />

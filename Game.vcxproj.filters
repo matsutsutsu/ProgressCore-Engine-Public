@@ -1584,6 +1584,9 @@
     <ClInclude Include="Source\Game\Logics\Wand\BulletComponents.h">
       <Filter>Source\Game\Logics\Wand</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\ECS\CCL_ECSContext.h">
+      <Filter>Source\Engine\ECS</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2395,7 +2398,7 @@
     <None Include="Shader\PostProcess\Bloom.hlsli">
       <Filter>Shader\PostProcess</Filter>
     </None>
-    <None Include=".clang-formatt">
+    <None Include=".clang-format">
       <Filter>Build</Filter>
     </None>
     <None Include="Shader\Common\Transform.hlsli">
