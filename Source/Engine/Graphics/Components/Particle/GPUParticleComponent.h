@@ -1,5 +1,5 @@
 #pragma once
-#include "Engine/Graphics/Shader/ParticleShared.h"
+#include "Engine/Graphics/Shader/Shared/ParticleShared.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include <cstring>
 #include <d3d11.h>

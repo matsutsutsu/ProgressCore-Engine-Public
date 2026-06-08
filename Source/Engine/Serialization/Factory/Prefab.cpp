@@ -20,7 +20,7 @@
 #include "Engine/Transform/Systems/TransformUpdateSystem.h"
 #include "Engine/Platform/Core/FileSystem.h"
 
-#include "Engine/Graphics/Shader/ShaderShared.h"
+#include "Engine/Graphics/Shader/Shared/ShaderShared.h"
 
 #include <DirectXMath.h>
 #include <SimpleMath.h>

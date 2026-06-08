@@ -11,7 +11,7 @@
 #include "Engine/Platform/Core/Dialog.h"              // ファイル選択ダイアログ用
 
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
-#include "Engine/Graphics/Shader/ShaderShared.h"
+#include "Engine/Graphics/Shader/Shared/ShaderShared.h"
 
 // JSONとファイル入出力
 #include <fstream>

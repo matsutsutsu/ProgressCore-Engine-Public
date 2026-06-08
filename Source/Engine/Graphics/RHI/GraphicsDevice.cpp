@@ -1,6 +1,6 @@
 #include "GraphicsDevice.h"
 #include "Engine/Core/Math/Misc.h"
-#include "Engine/Graphics/Shader/ShaderShared.h"  // _ASSERT_EXPR, HRTrace
+#include "Engine/Graphics/Shader/Shared/ShaderShared.h"  // _ASSERT_EXPR, HRTrace
 #include "Engine/Graphics/RHI/Graphics.h"
 
 // CbScene 構造体（GraphicsDevice が物理バッファを持ち、Graphics が内容を埋める）

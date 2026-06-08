@@ -6,7 +6,7 @@
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Graphics/Renderer/RenderQueue.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
-#include "Engine/Graphics/Shader/ShaderShared.h"
+#include "Engine/Graphics/Shader/Shared/ShaderShared.h"
 
 #include "Engine/Graphics/Shader/Material/OutlineShader.h"
 #include "Engine/Graphics/Shader/Material/ShadowMapShader.h"

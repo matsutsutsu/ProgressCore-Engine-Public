@@ -1,7 +1,7 @@
 #pragma once
 #include <d3d11.h>
 #include <DirectXMath.h>
-#include "Engine/Graphics/Shader/ShaderShared.h"
+#include "Engine/Graphics/Shader/Shared/ShaderShared.h"
 #include <vector>
 #include <wrl/client.h>
 

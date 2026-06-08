@@ -484,6 +484,9 @@
     <Filter Include="Shader\Compute\Boids">
       <UniqueIdentifier>{7f01f78f-5e12-4472-9745-513f6f592a59}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Graphics\Shader\_Shared">
+      <UniqueIdentifier>{18957b19-91a2-477b-b87c-fa95d9ba54d2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1488,17 +1491,11 @@
     <ClInclude Include="Source\Engine\Serialization\Meta\ComponentDefine.h">
       <Filter>Source\Engine\Serialization\Factory</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Shader\ShaderShared.h">
-      <Filter>Source\Engine\Graphics\Shader</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\ParticleComputeShader.h">
       <Filter>Source\Engine\Graphics\Shader\Material\Particle</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\ParticleShader.h">
       <Filter>Source\Engine\Graphics\Shader\Material\Particle</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Shader\ParticleShared.h">
-      <Filter>Source\Engine\Graphics\Shader</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Components\Particle\GPUParticleBuffer.h">
       <Filter>Source\Engine\Graphics\Components\Particle</Filter>
@@ -1586,6 +1583,15 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\ECS\CCL_ECSContext.h">
       <Filter>Source\Engine\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Shader\Shared\PostProcessShared.h">
+      <Filter>Source\Engine\Graphics\Shader\_Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Shader\Shared\ParticleShared.h">
+      <Filter>Source\Engine\Graphics\Shader\_Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Shader\Shared\ShaderShared.h">
+      <Filter>Source\Engine\Graphics\Shader\_Shared</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -2,7 +2,7 @@
 #define SKINNING_HLSLI
 
 // 定数バッファは ShaderShared.h に移動（C++と共有）
-#include "Engine/Graphics/Shader/ShaderShared.h"
+#include "Engine/Graphics/Shader/Shared/ShaderShared.h"
 
 float4 SkinningPosition(float4 position, float4 boneWeights, uint4 boneIndices)
 {

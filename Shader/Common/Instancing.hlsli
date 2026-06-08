@@ -2,7 +2,7 @@
 #define INSTANCING_HLSLI
 
 // 構造体は ShaderShared.h に移動（C++と共有）
-#include "Engine/Graphics/Shader/ShaderShared.h"
+#include "Engine/Graphics/Shader/Shared/ShaderShared.h"
 
 // t11 にバインドされたインスタンスバッファ
 StructuredBuffer<InstanceData> g_InstanceData : register(REG_SRV(SLOT_SRV_INSTANCE));

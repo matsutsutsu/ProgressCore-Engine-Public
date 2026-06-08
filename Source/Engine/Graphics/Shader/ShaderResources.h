@@ -32,6 +32,7 @@
 //     ※ b0/b1 は per-material と物理スロットを共有（時間的に排他）
 #define SLOT_CB_BLOOM           0
 #define SLOT_CB_TONEMAP         1
+#define SLOT_CB_DISTORTION      2   // ディストーション用のスロットを確保
 
 // --- Per-frame (Graphics / EnvironmentSystem がバインド) ---
 #define SLOT_CB_SCENE           8   // viewProjection, camera, dirLight ... ★Graphics::Update のみ書込
@@ -68,6 +69,7 @@
 //     ※ t0/t1 は per-material と物理スロットを共有（時間的に排他）
 #define SLOT_SRV_BLOOM_IN       0
 #define SLOT_SRV_BLOOM_HIGHRES  1
+#define SLOT_SRV_PP_DISTORTION_MAP 2 // 将来的に歪みテクスチャを刺すスロット
 
 // --- Per-frame グローバルリソース (Graphics / EnvironmentSystem) ---
 #define SLOT_SRV_FOG_NOISE      9

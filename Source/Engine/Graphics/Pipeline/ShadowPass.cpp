@@ -4,7 +4,7 @@
 #include "Engine/Graphics/RHI/Camera.h"
 #include "Engine/Graphics/RHI/Light.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
-#include "Engine/Graphics/Shader/ShaderShared.h"
+#include "Engine/Graphics/Shader/Shared/ShaderShared.h"
 #include "Engine/Graphics/Renderer/RenderQueue.h"
 #include "Engine/Graphics/Shader/Pass/ShadowUtils.h"
 #include "Engine/Graphics/Shader/Pass/ShadowMap.h"

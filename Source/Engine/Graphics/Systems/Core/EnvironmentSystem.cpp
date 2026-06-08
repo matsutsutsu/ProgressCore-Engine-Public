@@ -4,13 +4,13 @@
 #include "Engine/Graphics/Renderer/ModelRenderer.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
-#include "Engine/Graphics/Shader/ShaderShared.h"
+#include "Engine/Graphics/Shader/Shared/ShaderShared.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 
 // TODO: ECS に Initialize(device) が追加されたら除去する
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Graphics/RHI/RenderContext.h"  // RenderServices
-#include "Engine/Graphics/Shader/ShaderShared.h"
+#include "Engine/Graphics/Shader/Shared/ShaderShared.h"
 
 #include "Engine/Graphics/Components/Lighting/FogComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"

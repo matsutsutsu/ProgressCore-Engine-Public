@@ -2,7 +2,7 @@
 #define SHADOWMAP_HLSLI
 
 // 定数バッファは ShaderShared.h に移動（C++と共有）
-#include "Engine/Graphics/Shader/ShaderShared.h"
+#include "Engine/Graphics/Shader/Shared/ShaderShared.h"
 
 // --- データ定義 ---
 

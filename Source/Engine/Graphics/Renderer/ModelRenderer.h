@@ -3,7 +3,7 @@
 #include <d3d11.h>
 #include <DirectXMath.h>
 #include "Engine/Graphics/Resource/Model.h"
-#include "Engine/Graphics/Shader/ShaderShared.h"
+#include "Engine/Graphics/Shader/Shared/ShaderShared.h"
 
 /**
  * @brief モデル描画に特化した GPU リソース管理クラス。
