@@ -2,6 +2,7 @@
 #include <d3d11.h>
 #include <wrl/client.h>
 #include <DirectXMath.h>
+#include "Engine/Graphics/Shader/Shared/PostProcessShared.h"
 
 struct ToneMapConfigComponent;
 
@@ -24,14 +25,6 @@ public:
         ToneMapConfigComponent& config);
 
 private:
-    // 【重要】HLSLの定数バッファと完全にアライメントを一致させる
-    // 合計32バイト (16バイト x 2行)
-    struct CbToneMap {
-        float exposure;
-        float chromaticAberration;
-        float padding[2];           // 16バイト境界へのパディング
-        DirectX::XMFLOAT4 colorTint; // RGBはTint, Wは未使用パッド
-    };
 
     Microsoft::WRL::ComPtr<ID3D11VertexShader>  _vs;
     Microsoft::WRL::ComPtr<ID3D11PixelShader>   _ps;

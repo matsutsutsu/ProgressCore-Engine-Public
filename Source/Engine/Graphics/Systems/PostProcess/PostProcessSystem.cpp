@@ -21,8 +21,7 @@ void PostProcessSystem::Update(float dt) {
     finalBloom.enable = false;
 
     ToneMapConfigComponent finalToneMap;
-    finalToneMap.exposure = 1.0f;
-
+    finalToneMap.data.exposure = 1.0f;
 
     // -------------------------------------------------------
     // 2. BloomConfigComponent を検索
@@ -40,11 +39,8 @@ void PostProcessSystem::Update(float dt) {
     // -------------------------------------------------------
     // 3. ToneMapConfigComponent を検索
     // -------------------------------------------------------
-    if (auto* comp = _world->GetSingletonComponent<ToneMapConfigComponent>()) {
-
-        if (comp) {
-            finalToneMap = *comp;
-        }
+    if (auto* comp = _world->GetSingletonComponent<ToneMapConfigComponent>()) {      
+        finalToneMap = *comp;
     }
 
     // -------------------------------------------------------
@@ -52,10 +48,7 @@ void PostProcessSystem::Update(float dt) {
     // -------------------------------------------------------
     if (auto* bloom = postProcess->GetEffect<BloomEffect>()) {
         bloom->SetEnabled(finalBloom.enable);
-        bloom->threshold = finalBloom.threshold;
-        bloom->softKnee = finalBloom.softKnee;
-        bloom->intensity = finalBloom.intensity;
-        bloom->radius = finalBloom.radius;
+        bloom->UpdateParams(finalBloom.data);
     }
     postProcess->toneMapConfig = finalToneMap;
 }

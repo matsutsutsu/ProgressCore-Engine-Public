@@ -38,13 +38,32 @@
                     ],
                     "enabled": true,
                     "end": 500.0,
+                    "heightDensity": 0.5,
+                    "heightStart": 0.0,
+                    "noiseScale": 0.10000000149011612,
+                    "noiseSpeed": [
+                        0.10000000149011612,
+                        0.05000000074505806
+                    ],
+                    "noiseStrength": 0.0,
+                    "rimColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "rimPower": 3.0,
+                    "rimStrength": 0.0,
                     "start": 40.0
                 },
                 "Name": {
                     "name": "LightingSetup"
                 },
                 "ShadowMapConfig": {
-                    "orthoSize": 100.0,
+                    "cascadeSplits": [
+                        15.0,
+                        50.0,
+                        200.0
+                    ],
                     "shadowBias": 0.001500000013038516,
                     "shadowColor": [
                         0.0,
@@ -54,9 +73,18 @@
                     ]
                 },
                 "ToneMapConfig": {
-                    "exposure": 0.40000000298023224
+                    "chromaticAberration": 0.0,
+                    "colorTint": [
+                        1.0,
+                        1.0,
+                        1.0,
+                        0.0
+                    ],
+                    "exposure": 0.4000000059604645
                 },
                 "Transform": {
+                    "Parent": 2,
+                    "isStatic": false,
                     "position": [
                         0.0,
                         5.0,
@@ -75,8 +103,10 @@
                     ]
                 }
             },
-            "id": 4294967423
+            "lid": 1
         }
     ],
-    "name": "DirectionalLight"
+    "magic": 1397506883,
+    "name": "LightingSetup",
+    "version": 1
 }

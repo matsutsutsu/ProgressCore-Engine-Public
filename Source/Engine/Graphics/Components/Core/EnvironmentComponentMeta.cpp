@@ -42,9 +42,9 @@ template <> struct ComponentMeta<ToneMapConfigComponent> {
 #if ENABLE_EDITOR
     static bool CustomGui(ToneMapConfigComponent& comp, unsigned long long /* entityID */ = 0, void* /* worldPtr */ = nullptr) {
         bool changed = false;
-        changed |= ImGui::DragFloat("Exposure", &comp.exposure, 0.01f, 0.0f, 10.0f);
-        changed |= ImGui::DragFloat("Chromatic Aberration", &comp.chromaticAberration, 0.001f, -0.1f, 0.1f);
-        changed |= ImGui::ColorEdit3("Color Tint", &comp.colorTint.x);
+        changed |= ImGui::DragFloat("Exposure", &comp.data.exposure, 0.01f, 0.0f, 10.0f);
+        changed |= ImGui::DragFloat("Chromatic Aberration", &comp.data.chromaticAberration, 0.001f, -0.1f, 0.1f);
+        changed |= ImGui::ColorEdit3("Color Tint", &comp.data.colorTint.x);
         return changed;
     }
 #endif
@@ -52,7 +52,9 @@ template <> struct ComponentMeta<ToneMapConfigComponent> {
     static const std::vector<FieldDescriptor>& Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
-            META_FIELD_FLOAT(ToneMapConfigComponent, exposure, "exposure", "Exposure", 0.05f, 0.0f, 20.0f, "Settings") };
+        META_FIELD_FLOAT(ToneMapConfigComponent, data.exposure, "exposure", "Exposure", 0.05f, 0.0f, 20.0f, "Settings"),
+        META_FIELD_FLOAT(ToneMapConfigComponent, data.chromaticAberration,"chromaticAberration", "Chromatic Aberration", 0.001f, -0.1f, 0.1f, "Settings"),
+        META_FIELD_FLOAT4(ToneMapConfigComponent, data.colorTint, "colorTint", "Color Tint",0.1f, "Settings") };
         return fields;
     }
 };
@@ -75,10 +77,10 @@ template <> struct ComponentMeta<BloomConfigComponent> {
         if (comp.enable) {
             ImGui::SeparatorText("Parameters");
             ImGui::Indent();
-            changed |= ImGui::DragFloat(u8"Threshold (閾値)", &comp.threshold, 0.01f, 0.0f, 10.0f);
-            changed |= ImGui::DragFloat(u8"Intensity (強度)", &comp.intensity, 0.1f, 0.0f, 40.0f);
-            changed |= ImGui::DragFloat(u8"Soft Knee (滑らかさ)", &comp.softKnee, 0.01f, 0.0f, 1.0f);
-            changed |= ImGui::DragFloat(u8"Radius (広がり)", &comp.radius, 0.01f, 0.0f, 5.0f);
+            changed |= ImGui::DragFloat(u8"Threshold (閾値)", &comp.data.threshold, 0.01f, 0.0f, 10.0f);
+            changed |= ImGui::DragFloat(u8"Intensity (強度)", &comp.data.intensity, 0.1f, 0.0f, 40.0f);
+            changed |= ImGui::DragFloat(u8"Soft Knee (滑らかさ)", &comp.data.softKnee, 0.01f, 0.0f, 1.0f);
+            changed |= ImGui::DragFloat(u8"Radius (広がり)", &comp.data.radius, 0.01f, 0.0f, 5.0f);
             ImGui::Unindent();
         }
         return changed;
@@ -89,10 +91,10 @@ template <> struct ComponentMeta<BloomConfigComponent> {
     {
         static const std::vector<FieldDescriptor> fields = {
             META_FIELD_BOOL(BloomConfigComponent, enable, "enable", "Enable", "Toggle"),
-            META_FIELD_FLOAT(BloomConfigComponent, threshold, "threshold", "Threshold", 0.01f, 0.0f, 10.0f, "Params"),
-            META_FIELD_FLOAT(BloomConfigComponent, intensity, "intensity", "Intensity", 0.1f, 0.0f, 40.0f, "Params"),
-            META_FIELD_FLOAT(BloomConfigComponent, softKnee, "softKnee", "Soft Knee", 0.01f, 0.0f, 1.0f, "Params"),
-            META_FIELD_FLOAT(BloomConfigComponent, radius, "radius", "Radius", 0.01f, 0.0f, 5.0f, "Params") };
+            META_FIELD_FLOAT(BloomConfigComponent, data.threshold, "threshold", "Threshold", 0.01f, 0.0f, 10.0f, "Params"),
+            META_FIELD_FLOAT(BloomConfigComponent, data.intensity, "intensity", "Intensity", 0.1f, 0.0f, 40.0f, "Params"),
+            META_FIELD_FLOAT(BloomConfigComponent, data.softKnee, "softKnee", "Soft Knee", 0.01f, 0.0f, 1.0f, "Params"),
+            META_FIELD_FLOAT(BloomConfigComponent, data.radius, "radius", "Radius", 0.01f, 0.0f, 5.0f, "Params") };
         return fields;
     }
 };

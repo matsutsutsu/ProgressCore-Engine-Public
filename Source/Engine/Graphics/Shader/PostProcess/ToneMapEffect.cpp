@@ -7,7 +7,7 @@ void ToneMapEffect::Initialize(ID3D11Device* device)
 {
     GpuResourceUtils::LoadVertexShader(device, "Assets/Shader/FullscreenVS.cso", nullptr, 0, nullptr, _vs.GetAddressOf());
     GpuResourceUtils::LoadPixelShader(device, "Assets/Shader/ToneMapPS.cso", _ps.GetAddressOf());
-    GpuResourceUtils::CreateDynamicConstantBuffer(device, sizeof(CbToneMap), _cbToneMap.GetAddressOf());
+    GpuResourceUtils::CreateDynamicConstantBuffer(device, sizeof(GpuData::CbToneMapData), _cbToneMap.GetAddressOf());
 
     D3D11_SAMPLER_DESC sampDesc = {};
     sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
@@ -33,11 +33,11 @@ void ToneMapEffect::Process(ID3D11DeviceContext* dc,
     ID3D11SamplerState* smp = _sampler.Get();
     dc->PSSetSamplers(SLOT_SMP_DEFAULT, 1, &smp);
 
-    CbToneMap cbData{
-        config.exposure, 
-        config.chromaticAberration,
+    GpuData::CbToneMapData cbData{
+        config.data.exposure, 
+        config.data.chromaticAberration,
         {0.0f, 0.0f},
-        {config.colorTint.x, config.colorTint.y, config.colorTint.z, 0.0f}
+        {config.data.colorTint.x, config.data.colorTint.y, config.data.colorTint.z, 0.0f}
     };
     D3D11_MAPPED_SUBRESOURCE mapped;
     if (SUCCEEDED(dc->Map(_cbToneMap.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {

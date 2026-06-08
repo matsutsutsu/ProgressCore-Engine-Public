@@ -26,7 +26,7 @@ void BloomEffect::Initialize(ID3D11Device* device, UINT width, UINT height)
     GpuResourceUtils::LoadPixelShader(device, "Assets/Shader/BloomCompositePS.cso",
         _res->psComposite.GetAddressOf());
 
-    GpuResourceUtils::CreateDynamicConstantBuffer(device, sizeof(CbBloomData),
+    GpuResourceUtils::CreateDynamicConstantBuffer(device, sizeof(GpuData::CbBloomData),
         _res->cbBloom.GetAddressOf());
 
     D3D11_SAMPLER_DESC sampDesc = {};
@@ -80,7 +80,7 @@ void BloomEffect::ReleaseChains()
 
 }
 
-void BloomEffect::UpdateCbBloom(ID3D11DeviceContext* dc, const CbBloomData& data)
+void BloomEffect::UpdateCbBloom(ID3D11DeviceContext* dc, const GpuData::CbBloomData& data)
 {
     D3D11_MAPPED_SUBRESOURCE mapped;
     if (SUCCEEDED(dc->Map(_res->cbBloom.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {
@@ -108,12 +108,6 @@ void BloomEffect::Process(
 
     ID3D11SamplerState* samplers[] = { _res->sampler.Get() };
     dc->PSSetSamplers(SLOT_SMP_BLOOM, 1, samplers);
-
-    CbBloomData cbData;
-    cbData.threshold = threshold;
-    cbData.softKnee = softKnee;
-    cbData.intensity = intensity;
-    cbData.padding = 0.f;
 
     // =================================================================
     // 1. 輝度抽出 (inputSRV → _downChain[0])
@@ -174,8 +168,8 @@ void BloomEffect::Process(
         RenderTarget* highRes = ResourceManager::Instance().GetRenderTarget(_downChain[i]);
         if (!dst || !highRes) continue;
 
-        cbData.texelWidth = (1.0f / dst->GetWidth()) * radius;
-        cbData.texelHeight = (1.0f / dst->GetHeight()) * radius;
+        cbData.texelWidth = (1.0f / dst->GetWidth()) * cbData.radius;
+        cbData.texelHeight = (1.0f / dst->GetHeight()) * cbData.radius;
         UpdateCbBloom(dc, cbData);
 
         dst->Activate(dc);
