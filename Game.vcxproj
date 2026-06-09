@@ -706,7 +706,11 @@
     <ClInclude Include="Source\Game\Logics\Test\VoxelOceanSystem.h" />
     <ClInclude Include="Source\Game\Logics\Wand\BulletComponents.h" />
     <ClInclude Include="Source\Game\Logics\Wand\CompiledWandProgram.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\RuneDatabase.h" />
     <ClInclude Include="Source\Game\Logics\Wand\WandBuildComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\WandCompiler.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\WandCompileSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\WandProgramRegistry.h" />
     <ClInclude Include="Source\Game\Logics\Wand\WandTypes.h" />
     <ClInclude Include="Source\Game\Scenes\BaseScene.h" />
     <ClInclude Include="Source\Game\Scenes\EditorScene.h" />
@@ -1404,6 +1408,9 @@
     <ClCompile Include="Source\Game\Logics\Test\TornadoVortexSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\VectorFlowSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\VoxelOceanSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Wand\RuneDatabase.cpp" />
+    <ClCompile Include="Source\Game\Logics\Wand\WandCompiler.cpp" />
+    <ClCompile Include="Source\Game\Logics\Wand\WandCompileSystem.cpp" />
     <ClCompile Include="Source\Game\Scenes\BaseScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\EditorScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\ParticleScene.cpp" />

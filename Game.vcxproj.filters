@@ -1605,6 +1605,18 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\ErrorShader.h">
       <Filter>Source\Engine\Graphics\Shader\Material</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\RuneDatabase.h">
+      <Filter>Source\Game\Logics\Wand</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\WandCompiler.h">
+      <Filter>Source\Game\Logics\Wand</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\WandProgramRegistry.h">
+      <Filter>Source\Game\Logics\Wand</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\WandCompileSystem.h">
+      <Filter>Source\Game\Logics\Wand</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2386,6 +2398,15 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\ErrorShader.cpp">
       <Filter>Source\Engine\Graphics\Shader\Material</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Wand\RuneDatabase.cpp">
+      <Filter>Source\Game\Logics\Wand</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Wand\WandCompiler.cpp">
+      <Filter>Source\Game\Logics\Wand</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Wand\WandCompileSystem.cpp">
+      <Filter>Source\Game\Logics\Wand</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
