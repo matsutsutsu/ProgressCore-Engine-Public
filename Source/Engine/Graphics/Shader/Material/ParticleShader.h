@@ -9,7 +9,6 @@ public:
     ~ParticleShader() override = default;
 
     void Begin(ID3D11DeviceContext* dc, const RenderServices& s, const RenderFrameContext& ctx) override;
-    void Update(ID3D11DeviceContext* dc, const Model::Mesh& mesh, const MaterialData* overrideMaterial = nullptr) override {}
     void End(ID3D11DeviceContext* dc, const RenderServices& s) override;
 
     void CheckAndReload(ID3D11Device* device) override;

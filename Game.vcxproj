@@ -504,6 +504,7 @@
     <ClInclude Include="Source\Engine\Graphics\RHI\RenderState.h" />
     <ClInclude Include="Source\Engine\Graphics\RHI\RenderTarget.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Core\Shader.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\Material\ErrorShader.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\MaterialShader.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\OutlineShader.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\ParticleComputeShader.h" />
@@ -1274,6 +1275,7 @@
     <ClCompile Include="Source\Engine\Graphics\RHI\RenderState.cpp" />
     <ClCompile Include="Source\Engine\Graphics\RHI\RenderTarget.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\Core\Shader.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Shader\Material\ErrorShader.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\MaterialShader.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\OutlineShader.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\ParticleComputeShader.cpp" />
@@ -1525,6 +1527,16 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
     </FxCompile>
     <FxCompile Include="Shader\Material\Toon\ToonVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Pass\Error\ErrorPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Pass\Error\ErrorVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>

@@ -12,6 +12,9 @@
 #include "Engine/Graphics/Shader/Material/ShadowMapShader.h"
 #include "Engine/Graphics/Shader/Material/ParticleShader.h"
 
+// デバッグ用のエラーシェーダー（シェーダーコンパイル失敗時にこれを描画する）
+#include "Engine/Graphics/Shader/Material/ErrorShader.h"
+
 
 
 // ============================================================
@@ -46,6 +49,9 @@ void Graphics::Initialize(HWND hWnd)
 
     // ---- Phase 3: シェーダー登録 ----
     auto& reg = ShaderRegistry::Instance();
+
+    reg.RegisterShader<ErrorShader>("Error"_hash);  
+
     reg.RegisterMaterialShader("PBR"_hash,
         "Assets/Shader/PBR_VS.cso", L"Shader/Material/PBR/PBR_VS.hlsl",
         "Assets/Shader/PBR_PS.cso", L"Shader/Material/PBR/PBR_PS.hlsl");

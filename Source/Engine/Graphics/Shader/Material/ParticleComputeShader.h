@@ -12,7 +12,6 @@ public:
 
     // Shader基底のインターフェースを満たすための実装
     void Begin(ID3D11DeviceContext* dc, const RenderServices& s, const RenderFrameContext& ctx) override;
-    void Update(ID3D11DeviceContext* dc, const Model::Mesh& mesh, const MaterialData* overrideMaterial = nullptr) override {}
     void End(ID3D11DeviceContext* dc, const RenderServices& s) override;
 
     // 毎フレーム ShaderRegistry から呼ばれ、HLSLが更新されていたら自動再コンパイル

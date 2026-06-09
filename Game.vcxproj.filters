@@ -487,6 +487,9 @@
     <Filter Include="Source\Engine\Graphics\Shader\_Shared">
       <UniqueIdentifier>{18957b19-91a2-477b-b87c-fa95d9ba54d2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shader\Pass\Error">
+      <UniqueIdentifier>{dea43f46-2574-4dff-ab31-f548204c8040}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1599,6 +1602,9 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\DistortionEffect.h">
       <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Shader\Material\ErrorShader.h">
+      <Filter>Source\Engine\Graphics\Shader\Material</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2378,6 +2384,9 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\DistortionEffect.cpp">
       <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Shader\Material\ErrorShader.cpp">
+      <Filter>Source\Engine\Graphics\Shader\Material</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shader\Common\Common.hlsli">
@@ -2543,6 +2552,12 @@
     </FxCompile>
     <FxCompile Include="Shader\PostProcess\DistortionPS.hlsl">
       <Filter>Shader\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Pass\Error\ErrorPS.hlsl">
+      <Filter>Shader\Pass\Error</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Pass\Error\ErrorVS.hlsl">
+      <Filter>Shader\Pass\Error</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

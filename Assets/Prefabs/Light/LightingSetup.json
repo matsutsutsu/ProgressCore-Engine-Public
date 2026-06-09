@@ -3,11 +3,11 @@
         {
             "components": {
                 "BloomConfig": {
-                    "enable": true,
-                    "intensity": 1.0,
-                    "radius": 1.0,
-                    "softKnee": 0.5,
-                    "threshold": 1.0
+                    "data.intensity": 1.0,
+                    "data.radius": 1.0,
+                    "data.softKnee": 0.2,
+                    "data.threshold": 1.0,
+                    "enable": true
                 },
                 "DirectionalLight": {
                     "color": [

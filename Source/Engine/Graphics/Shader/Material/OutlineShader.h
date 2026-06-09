@@ -1,7 +1,7 @@
 #pragma once
 #include "Engine/Graphics/Shader/Core/Shader.h"
 
-class OutlineShader : public Shader
+class OutlineShader : public IMaterialShader
 {
 public:
     OutlineShader(ID3D11Device* device);
