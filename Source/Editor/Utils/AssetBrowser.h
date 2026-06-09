@@ -14,8 +14,15 @@ class AssetBrowser
 {
 public:
     AssetBrowser(const std::string& rootPath, ID3D11Device* device);
+	~AssetBrowser();
 
     void Draw();
+
+    /**
+     * @brief フォルダ構成を再読み込みし、ツリーを構築し直します。
+     * @details ファイルを追加・削除した際や、更新ボタンを押した際に手動で呼び出します。
+     */
+    void Refresh();
 
 private:
     struct AssetNode 

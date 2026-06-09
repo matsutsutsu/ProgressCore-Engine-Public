@@ -39,6 +39,12 @@ Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ShellIconLoader::GetIconSRV(
     return srv;
 }
 
+void ShellIconLoader::ClearCache()
+{
+    cache.clear();
+    folderCache.clear();
+}
+
 // ファイル専用アイコン
 ComPtr<ID3D11ShaderResourceView> ShellIconLoader::LoadShellIconSRV(
     const std::wstring& filePath, ID3D11Device* device)
