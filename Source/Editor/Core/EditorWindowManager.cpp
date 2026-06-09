@@ -29,6 +29,51 @@
 #include <filesystem>
 #include <windows.h>
 #include <shellapi.h> // ShellExecuteA を使用するために必要
+#include <map>
+#include <sstream>
+
+// =========================================================
+// ★ プレハブのフォルダ階層をメニュー化するためのヘルパー
+// =========================================================
+namespace {
+    struct PrefabNode {
+        bool isFile = false;
+        std::string fullPath;
+        std::map<std::string, std::unique_ptr<PrefabNode>> children;
+    };
+
+    // 再帰的にメニューを描画する関数
+    void DrawPrefabNodeTree(const std::string& nodeName, const PrefabNode& node, EditorContext& context)
+    {
+        if (node.isFile) {
+            // ファイルの場合：拡張子(.json)を消して見た目を綺麗にする
+            std::string displayName = std::filesystem::path(nodeName).stem().string();
+            std::string menuText = "  " + displayName; // 少しインデントしてアイコンっぽく
+
+            if (ImGui::MenuItem(menuText.c_str())) {
+                if (context.world) {
+                    DirectX::XMFLOAT3 spawnPos = { 0, 5, 0 };
+                    Prefab::SpawnPrefab(*context.world, node.fullPath, spawnPos);
+                    CCL_LOG_INFO(LogCategory::Editor, "Spawned Prefab: %s", displayName.c_str());
+                }
+            }
+        }
+        else {
+            // フォルダの場合：サブメニューを作成
+            std::string menuText = "[+] " + nodeName;
+            if (ImGui::BeginMenu(menuText.c_str())) {
+                // UX向上: フォルダを先に、ファイルを後に並べる
+                for (const auto& [childName, childNode] : node.children) {
+                    if (!childNode->isFile) DrawPrefabNodeTree(childName, *childNode, context);
+                }
+                for (const auto& [childName, childNode] : node.children) {
+                    if (childNode->isFile) DrawPrefabNodeTree(childName, *childNode, context);
+                }
+                ImGui::EndMenu();
+            }
+        }
+    }
+}
 
 namespace fs = std::filesystem;
 
@@ -223,14 +268,59 @@ void EditorWindowManager::DrawPrefabMenu(EditorContext& context)
             ImGui::TextDisabled("No prefabs found");
         }
         else {
+            // =========================================================
+            // 1. パスを解析してツリー構造（フォルダ階層）を構築する
+            // =========================================================
+            PrefabNode rootNode;
+            std::string basePrefix = "Assets/Prefabs";
+            std::replace(basePrefix.begin(), basePrefix.end(), '\\', '/');
+
             for (const auto& pathStr : context.prefabFiles) {
-                std::string filename = std::filesystem::path(pathStr).filename().string();
-                if (ImGui::MenuItem(filename.c_str())) {
-                    if (context.world) {
-                        DirectX::XMFLOAT3 spawnPos = { 0, 5, 0 };
-                        Prefab::SpawnPrefab(*context.world, pathStr, spawnPos);
+                std::string relativePath = pathStr;
+                std::replace(relativePath.begin(), relativePath.end(), '\\', '/');
+
+                // "Assets/Prefabs/" の部分を取り除く
+                size_t pos = relativePath.find(basePrefix);
+                if (pos == 0) {
+                    relativePath = relativePath.substr(basePrefix.length());
+                    // 先頭の '/' を取り除く
+                    if (!relativePath.empty() && relativePath[0] == '/') {
+                        relativePath = relativePath.substr(1);
                     }
                 }
+
+                // スラッシュで分割してノードを作成
+                std::stringstream ss(relativePath);
+                std::string token;
+                PrefabNode* current = &rootNode;
+
+                std::vector<std::string> parts;
+                while (std::getline(ss, token, '/')) {
+                    parts.push_back(token);
+                }
+
+                for (size_t i = 0; i < parts.size(); ++i) {
+                    const auto& part = parts[i];
+                    if (current->children.find(part) == current->children.end()) {
+                        current->children[part] = std::make_unique<PrefabNode>();
+                    }
+                    current = current->children[part].get();
+
+                    if (i == parts.size() - 1) { // 最後の要素（ファイル本体）
+                        current->isFile = true;
+                        current->fullPath = pathStr;
+                    }
+                }
+            }
+
+            // =========================================================
+            // 2. ツリーを描画する（フォルダを上、ファイルを下に表示）
+            // =========================================================
+            for (const auto& [childName, childNode] : rootNode.children) {
+                if (!childNode->isFile) DrawPrefabNodeTree(childName, *childNode, context);
+            }
+            for (const auto& [childName, childNode] : rootNode.children) {
+                if (childNode->isFile) DrawPrefabNodeTree(childName, *childNode, context);
             }
         }
         ImGui::EndMenu();

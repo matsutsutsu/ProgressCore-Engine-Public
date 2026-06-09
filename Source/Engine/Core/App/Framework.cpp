@@ -234,7 +234,6 @@ void Framework::Update(float elapsedTime)
 // 描画処理
 void Framework::Render(float elapsedTime)
 {
- 
     // 描画コマンド発行全体を計測
     ZoneScopedN("Framework::Render");
 
@@ -271,12 +270,18 @@ void Framework::Render(float elapsedTime)
 
 
 #if ENABLE_EDITOR
-	// =========================================================
-	// 2. エディタ(UI)の描画（実際の画面＝バックバッファへ）
-	// =========================================================
-	// ★ false を渡して行き先をモニターに出力する実際の画面に戻す
-	Graphics::Instance().Clear(0.1f, 0.1f, 0.1f, 1.0f, false);
-	Graphics::Instance().SetRenderTargets(false);
+
+	{
+		ZoneScopedN("Framework::Clear SetRenderTargets");
+
+		// =========================================================
+		// 2. エディタ(UI)の描画（実際の画面＝バックバッファへ）
+		// =========================================================
+		// ★ false を渡して行き先をモニターに出力する実際の画面に戻す
+		Graphics::Instance().Clear(0.1f, 0.1f, 0.1f, 1.0f, false);
+		Graphics::Instance().SetRenderTargets(false);
+
+	}
 
 	// ImGuiの描画を計測
 	{
