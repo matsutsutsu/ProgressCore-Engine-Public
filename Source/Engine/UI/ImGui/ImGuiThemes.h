@@ -19,8 +19,13 @@ namespace ImGuiThemes
     void ApplySkeltonDarcula();
     void ApplyLight();
     void ApplyClassic();
+    void ApplyAAATheme();
 
     void ApplyUnityDark();
     void ApplyVisualStudioDark();
 
+    void ApplyCatppuccinMocha();
+    void ApplyTokyoNight();
+    void ApplyDracula();
+    void ApplyNord();
 }

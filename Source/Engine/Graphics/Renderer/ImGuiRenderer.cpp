@@ -64,6 +64,11 @@ void ImGuiRenderer::Initialize(HWND hWnd, ID3D11Device* device, ID3D11DeviceCont
 	//ImGuiThemes::ApplyUnityDark();
 	//ImGuiThemes::ApplyVisualStudioDark();
 
+	//ImGuiThemes::ApplyAAATheme();
+	//ImGuiThemes::ApplyCatppuccinMocha();
+	//ImGuiThemes::ApplyTokyoNight();
+	//ImGuiThemes::ApplyDracula();
+	//ImGuiThemes::ApplyNord();
 
 	// When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
 	ImGuiStyle& style = ImGui::GetStyle();
