@@ -80,6 +80,30 @@ namespace ShaderReflect
         return true;
     }
 
+    // 既存情報を保持しつつ、別ステージのリフレクションを名前単位で合成する
+    void ReflectionData::MergeFromBytecode(const void* bytecode, size_t bytecodeSize)
+    {
+        // いったん一時オブジェクトへ抽出してから、名前で重複排除しつつ取り込む。
+        // （LoadFromBytecode は内部で clear するため、直接呼ぶと上書きになってしまう）
+        ReflectionData tmp;
+        if (!tmp.LoadFromBytecode(bytecode, bytecodeSize)) return;
+
+        auto mergeByName = [](auto& dst, const auto& src) {
+            for (const auto& s : src) {
+                bool exists = false;
+                for (const auto& d : dst) {
+                    if (d.name == s.name) { exists = true; break; }
+                }
+                if (!exists) dst.push_back(s);
+            }
+            };
+
+        mergeByName(constantBuffers, tmp.constantBuffers);
+        mergeByName(textures, tmp.textures);
+        mergeByName(samplers, tmp.samplers);
+        mergeByName(uavs, tmp.uavs);
+    }
+
     // リフレクション情報を抽出
     void ReflectionData::ExtractReflectionInfo(ID3D11ShaderReflection* reflection)
     {

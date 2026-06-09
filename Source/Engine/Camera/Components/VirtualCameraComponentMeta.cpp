@@ -38,7 +38,7 @@ template <> struct ComponentMeta<CameraBodyFollow> {
     static constexpr const char* displayName = "Camera Body (Follow)";
     static constexpr bool        hasCustomGui = true; // カスタムGUIを有効化
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
     static bool CustomGui(CameraBodyFollow& comp, unsigned long long /*entityID*/ = 0, void* /*world*/ = nullptr)
     {
         bool changed = false;
@@ -55,7 +55,7 @@ template <> struct ComponentMeta<CameraBodyFollow> {
         //  ドラッグ＆ドロップの「受け皿」の魔法
         if (ImGui::BeginDragDropTarget()) {
             // HierarchyWindowから投げられた "HIERARCHY_ENTITY" というタグのデータを受け取る
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_ENTITY_ID")) {
                 unsigned long long droppedID = *(const unsigned long long*)payload->Data;
                 comp.target = droppedID;
                 changed = true;
@@ -94,7 +94,7 @@ template <> struct ComponentMeta<CameraAimLookAt> {
     static constexpr const char* displayName = "Camera Aim (LookAt)";
     static constexpr bool        hasCustomGui = true; // カスタムGUIを有効化
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
     static bool CustomGui(CameraAimLookAt& comp, unsigned long long /*entityID*/ = 0, void* /*world*/ = nullptr)
     {
         bool changed = false;
@@ -110,7 +110,7 @@ template <> struct ComponentMeta<CameraAimLookAt> {
 
         //  ドラッグ＆ドロップの「受け皿」
         if (ImGui::BeginDragDropTarget()) {
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_ENTITY_ID")) {
                 unsigned long long droppedID = *(const unsigned long long*)payload->Data;
                 comp.target = droppedID;
                 changed = true;
@@ -177,7 +177,7 @@ template <> struct ComponentMeta<CameraBodyTPS> {
         return fields;
     }
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
     // ドラッグ＆ドロップの実装
     static bool CustomGui(CameraBodyTPS& comp, unsigned long long entityID = 0, void* world = nullptr)
     {

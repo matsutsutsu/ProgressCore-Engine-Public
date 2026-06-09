@@ -11,7 +11,7 @@
 #include <cereal/archives/json.hpp>
 #include <sstream>
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
 #include <imgui.h>
 #endif
 
@@ -465,7 +465,7 @@ void ResourceManager::UnloadParticleBuffer(ParticleBufferHandle handle) {
 // Debug
 // ============================================================================
 void ResourceManager::DrawDebugGUI() {
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
     if (ImGui::CollapsingHeader("Resource", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Text("Models:");
         for (auto& pair : m_modelRegistry) {

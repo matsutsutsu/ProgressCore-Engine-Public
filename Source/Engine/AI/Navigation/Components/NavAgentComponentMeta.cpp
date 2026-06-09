@@ -17,7 +17,7 @@ template <> struct ComponentMeta<NavAgentComponent> {
     // カスタムGUIを有効にして、デバッグ情報やボタンを描画する
     static constexpr bool        hasCustomGui = true;
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
     // ========================================================================
     // インスペクター（ImGui）上の描画ロジック
     // ========================================================================

@@ -27,7 +27,7 @@ template <> struct ComponentMeta<AnimatorComponent> {
     static constexpr const char* displayName = "Animator";
     static constexpr bool        hasCustomGui = true;
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
     static bool CustomGui(AnimatorComponent& anim, unsigned long long entityID, void* worldPtr)
     {
         bool changed = false;
@@ -93,7 +93,7 @@ template <> struct ComponentMeta<AnimStateMachineComponent> {
     static constexpr bool        hasCustomGui = true;
     static constexpr bool        isSerializable = true;
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
     static bool CustomGui(AnimStateMachineComponent& fsm, unsigned long long entityID, void* worldPtr)
     {
         bool changed = false;
@@ -192,7 +192,7 @@ template <> struct ComponentMeta<AnimParametersComponent> {
     static constexpr bool        hasCustomGui = true;
     static constexpr bool        isSerializable = false; // 毎フレーム上書きされるため保存しない
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
     static bool CustomGui(AnimParametersComponent& params, unsigned long long entityID, void* worldPtr)
     {
         bool changed = false;

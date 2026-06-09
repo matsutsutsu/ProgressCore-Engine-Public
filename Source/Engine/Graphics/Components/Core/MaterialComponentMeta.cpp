@@ -24,7 +24,7 @@ template <> struct ComponentMeta<MaterialComponent> {
     static constexpr const char* displayName = "Material";
     static constexpr bool        hasCustomGui = true;
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
     static bool CustomGui(MaterialComponent& compRef, unsigned long long entityID = 0, void* worldPtr = nullptr)
     {
         bool               changed = false;

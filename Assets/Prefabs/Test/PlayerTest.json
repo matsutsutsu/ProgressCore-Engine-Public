@@ -1,0 +1,66 @@
+{
+    "entities": [
+        {
+            "components": {
+                "AnimParameters": null,
+                "AnimStateMachine": {
+                    "graphPath": "Assets/Animations/Nodes/TestAnimationNode.json"
+                },
+                "Animator": {
+                    "isLoop": true,
+                    "playbackSpeed": 1.0
+                },
+                "Character Movement Input": {
+                    "desiredVelocity": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "isAttackRequested": false,
+                    "jumpRequested": false,
+                    "lookTargetPos": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "Material": null,
+                "Model": {
+                    "assetPath": "C:\\Users\\2240209\\Desktop\\ProgressCore-Engine\\Assets\\Models\\Player\\Player.glb"
+                },
+                "Name": {
+                    "name": "PlayerModel"
+                },
+                "Player Component": {
+                    "moveSpeed": 30.0,
+                    "padSlot": 0,
+                    "turnSpeed": 10.0
+                },
+                "Transform": {
+                    "Parent": 2,
+                    "isStatic": false,
+                    "position": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        0.029999999329447746,
+                        0.029999999329447746,
+                        0.029999999329447746
+                    ]
+                }
+            },
+            "lid": 1
+        }
+    ],
+    "magic": 1397506883,
+    "name": "PlayerModel",
+    "version": 1
+}

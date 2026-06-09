@@ -1,7 +1,7 @@
 #include "CCL_SystemManager.h"
 #include "Engine/ECS/Core/CCL_Chunk.h"
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
 #include <imgui.h>
 #endif
 
@@ -114,7 +114,7 @@ namespace CCL::ECS
 
    void SystemManager::OnGui()
     {
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
         if (ImGui::Begin("System Manager")) {
 
             // ----------------------------------------------------

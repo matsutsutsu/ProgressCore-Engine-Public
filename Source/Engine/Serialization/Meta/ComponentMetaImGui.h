@@ -1,5 +1,5 @@
 #pragma once
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
 
 #include "ComponentMeta.h"
 #include <DirectXMath.h>

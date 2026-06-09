@@ -1,5 +1,5 @@
 #include "ImGuiThemes.h"
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
 
 #include <imgui.h>
 

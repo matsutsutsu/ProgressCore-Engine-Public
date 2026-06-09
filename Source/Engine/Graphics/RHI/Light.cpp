@@ -2,7 +2,7 @@
 #include "GpuResourceUtils.h"
 #include <string>
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
 #include <imgui.h>
 #endif
 
@@ -71,7 +71,7 @@ void LightManager::Bind(ID3D11DeviceContext* dc, int slot)
 // GUI描画
 void LightManager::DrawGUI()
 {
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
     if (ImGui::CollapsingHeader(u8"Light Manager (ライト管理)"))
     {
         // --- Ambient Light (環境光/半球ライティング) ---

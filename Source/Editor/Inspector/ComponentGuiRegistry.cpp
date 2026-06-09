@@ -2,7 +2,7 @@
 #include "Engine/ECS/Core/CCL_World.h" // Worldへのアクセスに必要
 #include "Game/Core/AllComponents.h"
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
 #include <imgui.h>
 #endif
 
@@ -38,7 +38,7 @@ void ComponentGuiRegistry::Draw(
 
     auto idIt = _typeIdToIndex.find(id);
     if (idIt == _typeIdToIndex.end()) {
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
         ImGui::TextColored(ImVec4(1, 0.5f, 0, 1), "No GUI registered for this ID.");
 #endif
         return;

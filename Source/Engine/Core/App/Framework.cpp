@@ -24,7 +24,7 @@
 #include "EngineServices.h"
 
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
 #include <imgui.h>
 #include "Editor/Core/EditorWindowManager.h"
 #include "Editor/Core/EditorContext.h"
@@ -68,7 +68,7 @@ Framework::Framework(HWND hWnd)
 
 	// グラフィックス初期化
 	Graphics::Instance().Initialize(hWnd);
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
 	// IMGUI初期化
 	ImGuiRenderer::Initialize(hWnd, Graphics::Instance().GetDevice(), Graphics::Instance().GetDeviceContext());
 #endif
@@ -125,7 +125,7 @@ Framework::~Framework()
 
 	// シーン終了化
 	SceneManager::Instance().Clear();
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
 	// IMGUI終了化
 	ImGuiRenderer::Finalize();
 #endif
@@ -184,7 +184,7 @@ void Framework::Update(float elapsedTime)
     ZoneScopedN("Framework::Update");
 
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
 	{
  
 		ZoneScopedN("Framework::ImGuiRenderer::NewFrame");
@@ -269,7 +269,7 @@ void Framework::Render(float elapsedTime)
 
 
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
 
 	{
 		ZoneScopedN("Framework::Clear SetRenderTargets");
@@ -426,7 +426,7 @@ int Framework::Run()
 			m_debugTimer += frameTime;
 			if (m_debugTimer >= 1.0f)
 			{
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
 				// ウィンドウタイトルにFPSとFixedUpdate回数を表示
 				std::string title = "FPS: " + std::to_string(ImGui::GetIO().Framerate) +
 					" | Fixed Updates: " + std::to_string(m_fixedUpdateCounter);
@@ -497,7 +497,7 @@ int Framework::Run()
 // メッセージハンドラ
 LRESULT CALLBACK Framework::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
 	if (ImGuiRenderer::HandleMessage(hWnd, msg, wParam, lParam))
 		return true;
 #endif

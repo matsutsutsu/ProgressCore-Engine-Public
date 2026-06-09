@@ -16,7 +16,7 @@ template <> struct ComponentMeta<DistractionItemComponent> {
     static constexpr const char* displayName = "Distraction Item (Sound)";
     static constexpr bool        hasCustomGui = true;
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
     static bool CustomGui(DistractionItemComponent& comp, unsigned long long entityID = 0, void* worldPtr = nullptr) {
         bool changed = false;
 

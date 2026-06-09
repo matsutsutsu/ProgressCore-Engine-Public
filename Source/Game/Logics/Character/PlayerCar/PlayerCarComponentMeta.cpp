@@ -43,7 +43,7 @@ template <> struct ComponentMeta<PlayerCarComponent> {
         return fields;
     }
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
     // 2. カスタムGUIによる「ドラッグ＆ドロップ」の実装
     static bool CustomGui(PlayerCarComponent& comp, unsigned long long entityID = 0, void* world = nullptr)
     {

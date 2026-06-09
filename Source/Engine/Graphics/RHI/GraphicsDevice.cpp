@@ -132,7 +132,7 @@ void GraphicsDevice::Shutdown()
 
     // ③ この時点でデバイス（_device）に残っているものは「真のリーク（犯人）」だけ！
     // ここでレポートを出力する デバッグ時のみ
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
     if (_device) {
         Microsoft::WRL::ComPtr<ID3D11Debug> debug;
         if (SUCCEEDED(_device.As(&debug))) {

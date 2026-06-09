@@ -17,7 +17,7 @@ template <> struct ComponentMeta<AIStateComponent> {
     static constexpr const char* displayName = "AI State / Brain";
     static constexpr bool        hasCustomGui = true;
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
     static bool CustomGui(AIStateComponent& comp, unsigned long long entityID = 0, void* worldPtr = nullptr) {
         bool changed = false;
 
@@ -99,7 +99,7 @@ template <> struct ComponentMeta<AIMemoryComponent> {
     static constexpr const char* displayName = "AI Memory (Meta)";
     static constexpr bool        hasCustomGui = true;
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
     static bool CustomGui(AIMemoryComponent& comp, unsigned long long entityID = 0, void* worldPtr = nullptr) {
         bool changed = false;
 

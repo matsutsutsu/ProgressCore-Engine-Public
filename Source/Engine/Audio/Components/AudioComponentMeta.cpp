@@ -36,7 +36,7 @@ template <> struct ComponentMeta<AudioEmitterComponent> {
     // =======================================================================
     // インスペクタ用 カスタムGUI描画処理
     // =======================================================================
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
     static bool CustomGui(AudioEmitterComponent& comp, unsigned long long entityID, void* world) {
         bool changed = false;
 

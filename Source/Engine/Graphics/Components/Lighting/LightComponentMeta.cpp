@@ -22,7 +22,7 @@ template <> struct ComponentMeta<DirectionalLightComponent> {
     static constexpr bool        hasCustomSerialize = false;
     static constexpr uint32_t    version = 1;
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
     static bool CustomGui(DirectionalLightComponent& comp, unsigned long long = 0, void* = nullptr) {
         bool changed = false;
         changed |= ImGui::ColorEdit3("Light Color", &comp.color.x);
@@ -60,7 +60,7 @@ template <> struct ComponentMeta<PointLightComponent> {
     static constexpr bool        hasCustomSerialize = false;
     static constexpr uint32_t    version = 1;
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
     static bool CustomGui(PointLightComponent& comp, unsigned long long = 0, void* = nullptr) {
         bool changed = false;
         changed |= ImGui::ColorEdit3("Light Color", &comp.color.x);
@@ -103,7 +103,7 @@ template <> struct ComponentMeta<SpotLightComponent> {
     static constexpr bool        hasCustomSerialize = false;
     static constexpr uint32_t    version = 1;
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
     static bool CustomGui(SpotLightComponent& comp, unsigned long long = 0, void* = nullptr) {
         bool changed = false;
         changed |= ImGui::ColorEdit3("Light Color", &comp.color.x);

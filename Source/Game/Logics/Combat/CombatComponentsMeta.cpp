@@ -73,7 +73,7 @@ template <> struct ComponentMeta<BoneAttachmentComponent> {
     static constexpr bool hasCustomGui = true;
     static constexpr bool isSerializable = true;
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
     static bool CustomGui(BoneAttachmentComponent& comp, unsigned long long entityID, void* worldPtr) {
         bool changed = false;
         auto* world = static_cast<CCL::ECS::Core::World*>(worldPtr);
@@ -174,7 +174,7 @@ template <> struct ComponentMeta<CombatRosterComponent> {
     static constexpr bool isSerializable = true;
     static constexpr bool        hasCustomSerialize = true;
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
     static bool CustomGui(CombatRosterComponent& comp, unsigned long long entityID, void* worldPtr) {
         bool changed = false;
         auto* world = static_cast<CCL::ECS::Core::World*>(worldPtr);
@@ -406,7 +406,7 @@ template <> struct ComponentMeta<HealthComponent> {
     static constexpr bool isSerializable = true;
     static constexpr bool hasCustomSerialize = true;
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
     static bool CustomGui(HealthComponent& comp, unsigned long long entityID, void* worldPtr) {
         bool changed = false;
 

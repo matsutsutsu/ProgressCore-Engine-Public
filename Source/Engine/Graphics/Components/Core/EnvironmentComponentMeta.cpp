@@ -29,7 +29,7 @@ template <> struct ComponentMeta<ToneMapConfigComponent> {
     static constexpr const char* displayName = "Tone Mapping";
     static constexpr bool        hasCustomGui = true;
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
     static bool CustomGui(ToneMapConfigComponent& comp, unsigned long long /* entityID */ = 0, void* /* worldPtr */ = nullptr) {
         bool changed = false;
         changed |= ImGui::DragFloat("Exposure", &comp.data.exposure, 0.01f, 0.0f, 10.0f);
@@ -80,7 +80,7 @@ template <> struct ComponentMeta<FogComponent> {
     static constexpr const char* displayName = "Fog Settings";
     static constexpr bool        hasCustomGui = true;
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
     static bool CustomGui(FogComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr)
     {
         bool changed = false;
@@ -167,7 +167,7 @@ template <> struct ComponentMeta<ShadowMapConfigComponent> {
 
     static constexpr bool        hasCustomGui = true;
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
     static bool CustomGui(ShadowMapConfigComponent& c, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr)
     {
         bool changed = false;
