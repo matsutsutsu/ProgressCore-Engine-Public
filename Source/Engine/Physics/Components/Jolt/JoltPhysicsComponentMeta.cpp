@@ -9,11 +9,14 @@
 #include "Engine/Physics/Components/RigidBody/JoltRigidbodyComponent.h" 
 
 #include "Engine/Serialization/Registry/ComponentRegistry.h"
+#include "Engine/Serialization/Registry/ComponentRegistry_Editor.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
+#ifdef ENABLE_EDITOR
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
+#endif
 
 
 namespace {
@@ -119,3 +122,9 @@ REGISTER_COMPONENT(JoltSphereColliderComponent, "JoltSphereCollider")
 REGISTER_COMPONENT(JoltCapsuleColliderComponent, "JoltCapsuleCollider")
 REGISTER_COMPONENT(JoltMeshColliderComponent, "JoltMeshCollider")
 REGISTER_COMPONENT(JoltRigidbodyComponent, "JoltRigidbody")
+
+REGISTER_COMPONENT_EDITOR_GUI(JoltBoxColliderComponent)
+REGISTER_COMPONENT_EDITOR_GUI(JoltSphereColliderComponent)
+REGISTER_COMPONENT_EDITOR_GUI(JoltCapsuleColliderComponent)
+REGISTER_COMPONENT_EDITOR_GUI(JoltMeshColliderComponent)
+REGISTER_COMPONENT_EDITOR_GUI(JoltRigidbodyComponent)

@@ -17,8 +17,8 @@ void JoltCollisionEventSystem::Update(float dt)
     // リソースの存在確認（初期化前などのクラッシュ防止）
     if (!_world->HasResource<JoltPhysicsManager>()) return;
 
-    auto& joltManager = _world->GetResource<JoltPhysicsManager>();
-    JoltContactListener* listener = joltManager.GetContactListener();
+    auto& joltManager = _world->GetResource<JoltPhysicsManager*>();
+    JoltContactListener* listener = joltManager->GetContactListener();
     if (!listener) return;
 
     // 1. 【一括回収】ポストから全ての手紙を取り出し、ポストを空にする。

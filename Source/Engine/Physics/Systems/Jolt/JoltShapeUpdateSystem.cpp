@@ -27,7 +27,7 @@ inline JPH::Quat EulerDegreeToJoltQuat(const XMFLOAT3& eulerDegree) {
 // ===================================================================================
 void JoltBoxShapeUpdateSystem::Update(float dt) {
     if (!_world->HasResource<JoltPhysicsManager>()) return;
-    JPH::BodyInterface &bodyInterface = _world->GetResource<JoltPhysicsManager>().GetBodyInterface();
+    JPH::BodyInterface &bodyInterface = _world->GetResource<JoltPhysicsManager*>()->GetBodyInterface();
 
     ForEachWithID([&](CCL::ECS::EntityID id, const JoltHandleComponent &handle, JoltBoxColliderComponent &box) {
         if (!box.isDirty) return; 
@@ -53,7 +53,7 @@ void JoltBoxShapeUpdateSystem::Update(float dt) {
 // ===================================================================================
 void JoltSphereShapeUpdateSystem::Update(float dt) {
     if (!_world->HasResource<JoltPhysicsManager>()) return;
-    JPH::BodyInterface &bodyInterface = _world->GetResource<JoltPhysicsManager>().GetBodyInterface();
+    JPH::BodyInterface &bodyInterface = _world->GetResource<JoltPhysicsManager*>()->GetBodyInterface();
 
     ForEachWithID([&](CCL::ECS::EntityID id, const JoltHandleComponent &handle, JoltSphereColliderComponent &sphere) {
         if (!sphere.isDirty) return; 
@@ -78,7 +78,7 @@ void JoltSphereShapeUpdateSystem::Update(float dt) {
 // ===================================================================================
 void JoltCapsuleShapeUpdateSystem::Update(float dt) {
     if (!_world->HasResource<JoltPhysicsManager>()) return;
-    JPH::BodyInterface &bodyInterface = _world->GetResource<JoltPhysicsManager>().GetBodyInterface();
+    JPH::BodyInterface &bodyInterface = _world->GetResource<JoltPhysicsManager*>()->GetBodyInterface();
 
     ForEachWithID([&](CCL::ECS::EntityID id, const JoltHandleComponent &handle, JoltCapsuleColliderComponent &capsule) {
         if (!capsule.isDirty) return; 

@@ -13,8 +13,8 @@
 void JoltCharacterSetupSystem::Update(float dt)
 {
     if (!_world->HasResource<JoltPhysicsManager>()) return;
-    auto               &joltManager   = _world->GetResource<JoltPhysicsManager>();
-    JPH::PhysicsSystem *physicsSystem = joltManager.GetPhysicsSystem();
+    auto               &joltManager   = _world->GetResource<JoltPhysicsManager*>();
+    JPH::PhysicsSystem *physicsSystem = joltManager->GetPhysicsSystem();
 
     ForEachWithID([&](CCL::ECS::EntityID                  id,
                       const TransformComponent           &trans,

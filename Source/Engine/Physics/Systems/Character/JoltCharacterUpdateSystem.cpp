@@ -42,9 +42,9 @@ void JoltCharacterUpdateSystem::Update(float dt) {
     if (!_world->HasResource<JoltPhysicsManager>())
         return;
 
-    auto& joltManager = _world->GetResource<JoltPhysicsManager>();
-    JPH::PhysicsSystem* physicsSystem = joltManager.GetPhysicsSystem();
-    JPH::BodyInterface& bodyInterface = joltManager.GetBodyInterface();
+    auto& joltManager = _world->GetResource<JoltPhysicsManager*>();
+    JPH::PhysicsSystem* physicsSystem = joltManager->GetPhysicsSystem();
+    JPH::BodyInterface& bodyInterface = joltManager->GetBodyInterface();
 
     const JPH::Vec3 gravity = physicsSystem->GetGravity();
     const JPH::Vec3 up(0.0f, 1.0f, 0.0f);
@@ -127,7 +127,7 @@ void JoltCharacterUpdateSystem::Update(float dt) {
                 physicsSystem->GetDefaultLayerFilter(PhysicsLayers::MOVING),
                 bodyFilter,
                 {},
-                *joltManager.GetTempAllocator());
+                *joltManager->GetTempAllocator());
 
             // ===============================================================
             // 結果の同期：位置のみ Transform へ書き戻す（回転は同期しない）

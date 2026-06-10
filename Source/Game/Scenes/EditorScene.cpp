@@ -30,7 +30,9 @@ void EditorScene::Initialize()
     //SceneInitializer::SpawnJoltTest(*_worldPtr, device);
 
     // 中では普通にPBRモデル用にしている
-    SceneInitializer::SpawnAnimationTest(*_worldPtr, device);
+    //SceneInitializer::SpawnAnimationTest(*_worldPtr, device);
+
+    SceneInitializer::SpawnEnemySwarmTest(*_worldPtr, device,1000);
 
 
     //SceneInitializer::SpawnModelGridTest(*_worldPtr, device, 500);

@@ -17,8 +17,7 @@ void WandCompileSystem::Update(float /*dt*/)
     // Resource 未登録なら何もしない（World 初期化時に AddResource<WandProgramRegistry>() が必須）。
     if (!_world->HasResource<WandProgramRegistry>())
     {
-        CCL_LOG_ERROR(LogCategory::Game,
-            "WandProgramRegistry が未登録です。World 初期化で AddResource してください。");
+        //CCL_LOG_ERROR(LogCategory::Game,"WandProgramRegistry が未登録です。World 初期化で AddResource してください。");
         return;
     }
 

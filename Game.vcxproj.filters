@@ -1617,6 +1617,9 @@
     <ClInclude Include="Source\Game\Logics\Wand\WandCompileSystem.h">
       <Filter>Source\Game\Logics\Wand</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyTrackingSystem.h">
+      <Filter>Source\Game\Logics\Character\Enemy</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2407,6 +2410,9 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Wand\WandCompileSystem.cpp">
       <Filter>Source\Game\Logics\Wand</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyTrackingSystem.cpp">
+      <Filter>Source\Game\Logics\Character\Enemy</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -131,152 +131,61 @@ void SceneInitializer::SpawnShaderTest(CCL::ECS::Core::World& world, ID3D11Devic
 }
 
 
-#include "Game/Logics/Character/PlayerCar/PlayerCarSphereTag.h"
+#include "Game/Logics/Character/Player/PlayerComponent.h"
+#include "Game/Logics/Character/Enemy/EnemyComponent.h"
 
-// ============================================================================
-// 球体カーコントローラーのテスト環境
-// ============================================================================
-void SceneInitializer::SpawnPlayerCarTest(CCL::ECS::Core::World& world, ID3D11Device* device)
+
+void SceneInitializer::SpawnEnemySwarmTest(CCL::ECS::Core::World& world, ID3D11Device* device, int count)
 {
-    // ──────────────────────────────────────────
-    // 1. 床の生成 (Box)
-    // ──────────────────────────────────────────
+    // 1. 床の生成 (物理判定付きのステージ)
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/World/JoltExampleStage.json");
 
-    // ========================================================================
-    // 2. アーキタイプ（設計図）の作成
-    // ========================================================================
-    auto sphereArch = ArchetypeHelper::Generate<
-        TransformComponent,
-        JoltSphereColliderComponent,
-        JoltRigidbodyComponent,
-        PlayerCarSphereTag
-    >();
-
-    auto pinArch = ArchetypeHelper::Generate<
-        TransformComponent,
-		PrimitiveComponent,
-        JoltCapsuleColliderComponent,
-        JoltRigidbodyComponent,
-        EnemyComponent
-    >();
-
-    // ========================================================================
-    // 3. 物理球体（見えないボウリングの球）の生成
-    // ========================================================================
-    auto sphere = EntityFactory::SpawnNamed(world, "PhysicsSphere", sphereArch);
-
-    // ★修正: JoltRigidbodyComponentの定義順（motionType -> objectLayer -> restitution -> friction）を厳守
-    // ※ mass は Jolt が球の大きさ(Radius)から自動計算してくれるため不要です。
-    sphere.Set(TransformComponent{ .position = {0.0f, 5.0f, 0.0f}, .rotation = {0,0,0,1}, .scale = {1.0f, 1.0f, 1.0f} })
-        .Set(JoltSphereColliderComponent{ .radius = 1.0f })
-        .Set(JoltRigidbodyComponent{
-            .motionType = JPH::EMotionType::Dynamic,
-            .objectLayer = PhysicsLayers::MOVING,
-            .restitution = 0.0f,   // 反発係数（跳ねない）
-            .friction = 0.05f   // 摩擦係数（よく滑るように低く）
-            });
-
-
-    // ========================================================================
-    // 4. 車両（見た目）の生成とリンク
-    // ========================================================================
-	auto car = EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Player/PlayerCar.json");
-
-    car.Patch<PlayerCarComponent>([sphereId = sphere.id](auto& comp) {
-        comp.physicsSphereID = sphereId; // 後でsphere.ID()を入れるから、今はダミーで0を入れておく
-		});
-
-    sphere.Set(PlayerCarSphereTag{ .parentCarID = car.id });
-
-   // ========================================================================
-    // 5. TPSカメラの生成と追従リンク
-    // ========================================================================
-    auto camArch = ArchetypeHelper::Generate<
-        TransformComponent,
-        VirtualCamera,
-        CameraBodyTPS
-    >();
-
-    auto cam = EntityFactory::SpawnNamed(world, "CarTPSCamera", camArch);
+    auto camera = EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Camera/FollowCamera.json");
+    auto player = EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Test/PlayerTest.json");
     
-    cam.Set(TransformComponent{ .position = {0,0,0}, .rotation = {0,0,0,1}, .scale = {1,1,1} })
-       .Set(VirtualCamera{ .priority = 10 })
-       .Set(CameraBodyTPS{
-           .targetEntity = car.id,       // ★ 車のEntityIDをターゲットに設定！
-           .distance     = 12.0f,        // 車体全体が見えるように少し遠めから
-           .currentPitch = 15.0f,        // 少し見下ろす角度
-           .lookSpeedX   = 150.0f,
-           .lookSpeedY   = 100.0f,
-           .targetOffset = {0.0f, 2.0f, 0.0f} // 車の少し上を注視する
-       });
+    // player.ID() を渡してメソッドチェーンでPatchする
+    camera.Patch<CameraBodyFollow>([pid = player.ID()](auto& body) { body.target = pid; })
+        .Patch<CameraAimLookAt>([pid = player.ID()](auto& aim) { aim.target = pid; });
 
-    // ========================================================================
-    // 6. 敵（ボーリングのピン）の生成
-    // ========================================================================
-    for (int i = 0; i < 15; ++i) {
-        auto pin = EntityFactory::SpawnNamed(world, "PinEnemy", pinArch);
 
-        float posX = (float)(i % 5) * 2.5f - 5.0f;
-        float posZ = (float)(i / 5) * 2.5f + 10.0f;
 
-        // ★修正: こちらもRigidBodyの初期化順序を厳守
-        pin.Set(TransformComponent{ .position = {posX, 2.0f, posZ}, .rotation = {0,0,0,1}, .scale = {1.0f, 1.0f, 1.0f} })
-			.Set(PrimitiveComponent{ .type = PrimitiveType::Capsule, .size = {0.0f, 1.0f, 0.0f}, .radius = 0.4f, .color = {0.8f, 0.8f, 0.2f, 1.0f} })
-            .Set(JoltCapsuleColliderComponent{ .halfHeight = 1.0f, .radius = 0.4f })
+
+    // 4. エネミーのアーキタイプ (★物理判定 JoltRigidbody を追加)
+    const auto enemyArch = CCL::ECS::ArchetypeHelper::Generate<
+        TransformComponent,
+        PrimitiveComponent,
+        EnemyComponent,
+        JoltRigidbodyComponent,
+        JoltSphereColliderComponent
+    >();
+
+    std::mt19937 gen(42);
+    // プレイヤーの周囲 10m 〜 60m の範囲にドーナツ状に配置する
+    std::uniform_real_distribution<float> distAngle(0.0f, DirectX::XM_2PI);
+    std::uniform_real_distribution<float> distRadius(10.0f, 60.0f);
+
+    for (int i = 0; i < count; ++i) {
+        auto enemy = EntityFactory::SpawnNamed(world, "PhysicsEnemy", enemyArch);
+
+        float angle = distAngle(gen);
+        float radius = distRadius(gen);
+        float posX = std::cos(angle) * radius;
+        float posZ = std::sin(angle) * radius;
+        float posY = 5.0f + (i % 10); // 重なりを避けるため少しずつ高さを変えて降らせる
+
+        enemy.Set(TransformComponent{ .position = {posX, posY, posZ}, .rotation = {0.0f, 0.0f, 0.0f, 1.0f}, .scale = {1.0f, 1.0f, 1.0f} })
+            .Set(EnemyComponent{})
+            .Set(PrimitiveComponent{ .type = PrimitiveType::Sphere, .radius = 1.0f, .color = {1.0f, 0.1f, 0.1f, 1.0f} })
+            .Set(JoltSphereColliderComponent{ .radius = 1.0f })
+            // 動的剛体として設定（転がりながら向かってくる）
             .Set(JoltRigidbodyComponent{
                 .motionType = JPH::EMotionType::Dynamic,
                 .objectLayer = PhysicsLayers::MOVING,
-                .restitution = 0.2f,
-                .friction = 0.5f
+                .restitution = 0.1f, // あまり跳ねない
+                .friction = 0.2f     // 摩擦
                 });
     }
 }
-
-// ※あなたのプロジェクトにおけるDroneComponent等の正しいパスをインクルードしてください
-#include "Game/Logics/AI/BehaviorTree/Drone/DroneComponent.h"
-#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"
-
-
-// =======================================================
-// ボスとドローン群の生成テスト
-// =======================================================
-void SceneInitializer::SpawnBossAndDronesTest(CCL::ECS::Core::World& world, ID3D11Device* device)
-{
-    EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Camera/FreeCamera.json");
-    EntityFactory::SpawnPrefab(world, "Assets/Prefabs/World/ExampleStage.json");
-    EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Enemy/DroneTarget.json");
-
-    // 1. ボスの生成（中央に配置）
-    // ※Boss.json がない場合は適当なモデルのプレハブパスに書き換えてください
-    EntityID bossId = Prefab::SpawnPrefab(world, "Assets/Prefabs/Enemy/BossEnemy.json", { 0.0f, 0.0f, 0.0f });
-    auto bossRef = CCL::ECS::Core::EntityRef(&world, bossId);
-
-
-    // 2. ドローン群の生成
-    const uint16_t TOTAL_DRONES = 12; // 12機のドローンを展開
-    for (uint16_t i = 0; i < TOTAL_DRONES; ++i) {
-
-        // ドローンの生成（ボスの少し上にSpawn）
-        // ※Drone.json がない場合は、適当なキューブ等のプレハブを指定してください
-        EntityID droneId = Prefab::SpawnPrefab(world, "Assets/Prefabs/Enemy/Drone.json", { 0.0f, 5.0f, 0.0f });
-        auto droneRef = CCL::ECS::Core::EntityRef(&world, droneId);
-
-        // 操り人形としての「記憶（DroneComponent）」を初期化して付与
-        DroneComponent droneComp;
-        droneComp.ownerBossId = bossId;       // 親は先ほど作ったボス
-        droneComp.localIndex = i;             // 自分が何番目のドローンか（重要！）
-        droneComp.totalDrones = TOTAL_DRONES; // 全体の数（360度を等分するために必要）
-        droneComp.orbitRadius = 10.0f;        // 旋回半径を10mに設定
-        droneComp.moveSpeed = 40.0f;          // 突撃時の最高速度
-
-        // コンポーネントをアタッチ
-        droneRef.Set(droneComp);
-    }
-
-    CCL_LOG_SUCCESS(LogCategory::Game, "[SceneInit] Boss and %d Drones spawned successfully.", TOTAL_DRONES);
-}
-
 
 // ============================================================================
 // 指定した数のモデルを並べるテスト環境
