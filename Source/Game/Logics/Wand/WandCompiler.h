@@ -25,7 +25,7 @@ struct WandBuildComponent; // 前方宣言（実体は WandBuildComponent.h、.c
 struct WandCompiler
 {
     /**
-     * @brief ビルド構成をコンパイルして実行時プログラムを生成する。
+     * @brief ビルド構成を​コンパイルして​実行時の​最適化された​情報に​変換する​
      * @param build オーサリング構成
      * @return コンパイル済みプログラム（POD の値返し。コピーは安価）
      */
