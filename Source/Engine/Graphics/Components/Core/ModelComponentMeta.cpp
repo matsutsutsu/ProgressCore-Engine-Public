@@ -53,10 +53,7 @@ template <> struct ComponentMeta<ModelComponent> {
     static constexpr bool        registered = true;
     static constexpr const char* displayName = "Model";
     static constexpr bool        hasCustomGui = true;
-    // ★ Fields() が空で、上の explicit specialization が Serialize/Deserialize を
-    //    直接上書きする。HasCustomSerialize は false のまま。
-    //    (explicit specialization は HasCustomSerialize フラグを見ず、
-    //     直接そのシグネチャを呼ぶため)
+    static constexpr bool        hasCustomSerialize = true;
 
 #ifdef ENABLE_EDITOR
     static bool CustomGui(ModelComponent& comp,
@@ -79,7 +76,9 @@ template <> struct ComponentMeta<ModelComponent> {
             if (auto path = Engine::FileDialog::OpenPreset("Model", "Select Model",
                 Graphics::Instance().GetWindowHandle()))
             {
-                comp.SetModel(path->string().c_str());
+                std::filesystem::path workDir = std::filesystem::current_path();
+                std::filesystem::path relativePath = std::filesystem::relative(*path, workDir);
+                comp.SetModel(relativePath.generic_string().c_str());
                 changed = true;
             }
         }

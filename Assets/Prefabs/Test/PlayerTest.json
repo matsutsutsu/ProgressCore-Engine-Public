@@ -26,7 +26,7 @@
                 },
                 "Material": null,
                 "Model": {
-                    "assetPath": "C:\\Users\\2240209\\Desktop\\ProgressCore-Engine\\Assets\\Models\\Player\\Player.glb"
+                    "assetPath": "Assets/Models/Player/Player.glb"
                 },
                 "Name": {
                     "name": "PlayerModel"
