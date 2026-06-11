@@ -11,7 +11,7 @@
 #include "Engine/Transform/Components/PendingParentComponent.h"
 #include "Engine/Graphics/Components/Core/ModelComponent.h"
 #include "Engine/Graphics/Resource/Model.h"
-#include "Engine/Serialization/Core/SerializationContext.h"
+
 
 #include "Engine/Serialization/Registry/ComponentRegistry_Editor.h"
 #ifdef ENABLE_EDITOR
