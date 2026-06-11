@@ -1,38 +1,21 @@
 // =====================================================================
 // ComponentDefine.h
-//   コンポーネントメタ定義の DSL (Domain-Specific Language)。
+//   コンポーネントメタ定義の DSL。
 //
-//   目的:
-//     - 「コンポーネントを追加する」作業を 1 ファイル数行で完結させる
-//     - 型を毎回手書きする (META_FIELD_FLOAT3 等) のをやめる
-//     - decltype による自動型推論で書き間違いを排除する
+//   フィールド宣言は CFIELD 系マクロに一本化 (旧 META_FIELD_* は撤去)。
 //
 //   使い分け:
 //     ┌─────────────────────────────────┬───────────────────────────────────┐
 //     │ シンプルなコンポーネント        │ COMPONENT_META_BEGIN/END で完結    │
 //     │ (フィールドのみ・GUI 自動生成)  │ → CFIELD だけ書く                  │
 //     ├─────────────────────────────────┼───────────────────────────────────┤
-//     │ カスタム GUI が必要             │ ComponentMeta<T> を手書きするが    │
-//     │ (Transform, Model 等)           │ Fields() 内では CFIELD を使える    │
+//     │ カスタム GUI が必要             │ ComponentMeta<T> を手書きする。    │
+//     │ (Transform 等)                  │ 冒頭に CCL_META_USING_THIS(T) を   │
+//     │                                 │ 書けば Fields() 内で CFIELD 可。   │
 //     └─────────────────────────────────┴───────────────────────────────────┘
 //
-//   使用例 (シンプル):
-//
-//     #include "MyComponent.h"
-//     #include "Engine/Serialization/Meta/ComponentDefine.h"
-//
-//     COMPONENT_META_BEGIN(MyComponent, "MyComponent")
-//         CFIELD(speed,    "Speed",    "Movement")
-//         CFIELD(position, "Position", "Movement")
-//         CFIELD(target,   "Target",   "Combat")
-//     COMPONENT_META_END(MyComponent)
-//
-//   これで:
-//     - JSON シリアライズ
-//     - ImGui インスペクタ表示
-//     - ComponentRegistry への自動登録
-//     - エディタ ↔ ランタイム分離
-//   すべてが自動で組み立てられる。
+//   カスタムシリアライズが要る場合は ComponentMetaJson::ComponentSerializer<T>
+//   を特殊化する (ComponentMetaJson.h を参照)。このマクロ群とは独立。
 // =====================================================================
 #pragma once
 #include "Engine/Serialization/Meta/ComponentMeta.h"
@@ -47,10 +30,8 @@
 namespace ComponentMetaHelpers {
 
     // -----------------------------------------------------------------
-    // フィールド型 → FieldDescriptor の自動マッピング
-    //
-    //   if constexpr で型ごとに分岐し、適切な FD_* を返す。
-    //   未対応型はコンパイル時に明示エラーにする (静的アサート)。
+    // フィールド型 → FieldDescriptor の自動マッピング。
+    //   if constexpr で型ごとに分岐。未対応型はコンパイル時エラー。
     // -----------------------------------------------------------------
     template <typename ClassT, typename FieldT>
     constexpr FieldDescriptor MakeFieldAuto(
@@ -93,11 +74,11 @@ namespace ComponentMetaHelpers {
             return FD_EntityLink(displayName, jsonName, offset, category);
         }
         else {
-            // 未対応型: 明示的なマクロ (CFIELD_ENUM_U8 等) を使うよう指示する
             static_assert(!sizeof(FieldT*),
                 "[CFIELD] Unsupported field type. Use CFIELD_ENUM_U8 / CFIELD_ENUM_INT / "
                 "CFIELD_FLOAT_RANGED / CFIELD_INT_RANGED for special cases, "
-                "or extend MakeFieldAuto for new built-in types.");
+                "extend MakeFieldAuto for new built-in types, or specialize "
+                "ComponentMetaJson::ComponentSerializer<T> for fully custom data.");
         }
     }
 
@@ -105,28 +86,21 @@ namespace ComponentMetaHelpers {
 
 
 // =====================================================================
-// ★ メインの DSL マクロ
+// CFIELD: 自動型推論で 1 フィールドを宣言する。
+//   使い方: CFIELD(fieldName, "Display Name", "Category")
+//   推論可能型: float / int / bool / uint8_t / uint16_t / uint32_t /
+//               XMFLOAT2 / XMFLOAT3 / XMFLOAT4 / std::string / EntityLink
+//   ※ ThisType に依存するため、COMPONENT_META_BEGIN か CCL_META_USING_THIS の
+//     文脈でのみ使用できる。
 // =====================================================================
-
-/**
- * @brief 自動型推論で 1 フィールドを宣言する。
- *
- * 使い方: `CFIELD(fieldName, "Display Name", "Category")`
- *
- * 推論可能な型:
- *   float / int / bool / uint8_t / uint16_t / uint32_t /
- *   XMFLOAT2 / XMFLOAT3 / XMFLOAT4 / std::string / EntityLink
- *
- * 推論できない型 (enum 等) は CFIELD_ENUM_U8 などの専用マクロを使う。
- */
 #define CFIELD(Field, Display, Category)                                                        \
     ComponentMetaHelpers::MakeFieldAuto<ThisType,                                               \
         std::remove_cv_t<std::remove_reference_t<decltype(std::declval<ThisType&>().Field)>>>(  \
         Display, #Field, offsetof(ThisType, Field), Category),
 
- // --- 細かい制御が必要な特殊版 (デフォルト推論を上書き) -----------------------
+// --- 細かい制御が必要な特殊版 (デフォルト推論を上書き) -----------------------
 
- /** @brief range / drag speed を指定する float */
+/** @brief range / drag speed を指定する float */
 #define CFIELD_FLOAT_RANGED(Field, Display, Speed, Min, Max, Category)                          \
     FD_Float(Display, #Field, offsetof(ThisType, Field), Speed, Min, Max, Category),
 
@@ -146,53 +120,29 @@ namespace ComponentMetaHelpers {
 #define CFIELD_FLOAT3_FAST(Field, Display, Speed, Category)                                     \
     FD_Float3(Display, #Field, offsetof(ThisType, Field), Speed, Category),
 
-/** @brief 旧形式の生 EntityID (新規には使わない。移行期の互換用) */
-#define CFIELD_ENTITY_ID(Field, Display, Category)                                              \
-    FD_EntityID(Display, #Field, offsetof(ThisType, Field), Category),
-
 
 // =====================================================================
-// シンプルなコンポーネント定義の BEGIN/END
+// COMPONENT_META_BEGIN / END
+//   シンプルなコンポーネントを 1 ブロックで完結させる。
+//     1. ComponentMeta<T> の特殊化
+//     2. Fields() の自動生成
+//     3. REGISTER_COMPONENT (ランタイム登録)
+//     4. REGISTER_COMPONENT_EDITOR_GUI (エディタのみ)
 //
-// 1 ブロックで以下をすべて行う:
-//   1. ComponentMeta<T> の特殊化
-//   2. Fields() の自動生成
-//   3. REGISTER_COMPONENT (ランタイム)
-//   4. REGISTER_COMPONENT_EDITOR_GUI (エディタのみ)
-//
-//   注意: COMPONENT_META_BEGIN は ComponentMeta<T> を「特殊化」するため、
-//         同じ T を別の翻訳単位で特殊化しないこと (ODR 違反)。
-//         通常は 1 コンポーネント = 1 cpp ファイルなので問題ない。
+//   ※ 同じ T を別の翻訳単位で特殊化しないこと (ODR)。
+//     通常は 1 コンポーネント = 1 cpp なので問題ない。
 // =====================================================================
-
-/**
- * @brief シンプルなコンポーネントメタ定義の開始。
- *
- * @param T       コンポーネント型
- * @param NameStr エディタ / JSON に出る表示名 (文字列リテラル)
- *
- * 続けて CFIELD(...) を必要数並べ、最後に COMPONENT_META_END(T) で閉じる。
- *
- * カスタム GUI が必要な場合はこのマクロを使わず、ComponentMeta<T> を
- * 手書きすること (ただし Fields() 内では CFIELD を使える)。
- */
 #define COMPONENT_META_BEGIN(T, NameStr)                                                        \
     template <> struct ComponentMeta<T> {                                                       \
         using ThisType = T;                                                                     \
-        static constexpr bool        registered     = true;                                     \
         static constexpr const char* displayName    = NameStr;                                  \
-        static constexpr bool        hasCustomGui   = false;                                    \
-        static constexpr bool        isSerializable = true;                                     \
-        static bool CustomGui(T&, unsigned long long = 0, void* = nullptr) { return false; }   \
+        static constexpr bool        hasCustomGui    = false;                                   \
+        static constexpr bool        isSerializable  = true;                                    \
+        static bool CustomGui(T&, unsigned long long = 0, void* = nullptr) { return false; }    \
         static const std::vector<FieldDescriptor>& Fields() {                                   \
             static const std::vector<FieldDescriptor> fields = {
 
- /**
-  * @brief コンポーネントメタ定義の終了 + 自動登録。
-  *
-  * @param T コンポーネント型 (BEGIN と同じ型を渡す)
-  */
- #define COMPONENT_META_END(T)                                                                   \
+#define COMPONENT_META_END(T)                                                                   \
             };                                                                                  \
             return fields;                                                                      \
         }                                                                                       \
@@ -201,38 +151,9 @@ namespace ComponentMetaHelpers {
     REGISTER_COMPONENT_EDITOR_GUI(T)
 
 
-  // =====================================================================
-  // カスタム GUI を持つコンポーネントを「手書き」する場合のヘルパー
-  //
-  //   ComponentMeta<T> を自分で書くが、Fields() 内では CFIELD を使えるように
-  //   ThisType エイリアスを宣言するヘルパー。
-  //
-  //   使い方:
-  //
-  //     template <> struct ComponentMeta<TransformComponent> {
-  //         CCL_META_USING_THIS(TransformComponent)        // ← これを書くと CFIELD が使える
-  //         static constexpr const char* displayName = "Transform";
-  //         static constexpr bool hasCustomGui = true;
-  //
-  //         static bool CustomGui(TransformComponent& comp, ...) {
-  //             // 自作 GUI
-  //         }
-  //
-  //         static const std::vector<FieldDescriptor>& Fields() {
-  //             static const std::vector<FieldDescriptor> fields = {
-  //                 CFIELD(position, "Position", "Transform")    // ← CFIELD が使える
-  //                 CFIELD(rotation, "Rotation", "Transform")
-  //                 CFIELD(scale,    "Scale",    "Transform")
-  //                 CFIELD(parent,   "Parent",   "Hierarchy")
-  //             };
-  //             return fields;
-  //         }
-  //     };
-  //     REGISTER_COMPONENT(TransformComponent, "Transform")
-  //     REGISTER_COMPONENT_EDITOR_GUI(TransformComponent)
-  // =====================================================================
-
-  /** @brief CFIELD マクロが参照する ThisType エイリアスを宣言する */
-#define CCL_META_USING_THIS(T)                          \
-    using ThisType = T;                                 \
-    static constexpr bool registered = true;
+// =====================================================================
+// CCL_META_USING_THIS
+//   手書きの ComponentMeta<T> 特殊化の中で CFIELD を使えるようにする。
+//   ComponentMeta<T> の冒頭に書く。
+// =====================================================================
+#define CCL_META_USING_THIS(T)  using ThisType = T;

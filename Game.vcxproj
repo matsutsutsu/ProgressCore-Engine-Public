@@ -579,7 +579,6 @@
     <ClInclude Include="Source\Engine\Serialization\Core\LoadContext.h" />
     <ClInclude Include="Source\Engine\Serialization\Core\SaveContext.h" />
     <ClInclude Include="Source\Engine\Serialization\Core\SceneFormat.h" />
-    <ClInclude Include="Source\Engine\Serialization\Core\SerializationContext.h" />
     <ClInclude Include="Source\Engine\Serialization\Factory\EntityFactory.h" />
     <ClInclude Include="Source\Engine\Serialization\Factory\Prefab.h" />
     <ClInclude Include="Source\Engine\Serialization\Factory\SceneInitializer.h" />

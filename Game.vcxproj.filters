@@ -1398,9 +1398,6 @@
     <ClInclude Include="Source\Engine\Serialization\Core\SceneFormat.h">
       <Filter>Source\Engine\Serialization\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Serialization\Core\SerializationContext.h">
-      <Filter>Source\Engine\Serialization\Core</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\Serializer\PrefabSerializer.h">
       <Filter>Source\Engine\Serialization\Serializer</Filter>
     </ClInclude>
@@ -1502,9 +1499,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\ECS\System\CCL_SystemBase.h">
       <Filter>Source\Engine\ECS\System</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Serialization\Meta\ComponentDefine.h">
-      <Filter>Source\Engine\Serialization\Factory</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\ParticleComputeShader.h">
       <Filter>Source\Engine\Graphics\Shader\Material\Particle</Filter>
@@ -1643,6 +1637,9 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Wand\Systems\BulletLifetimeSystem.h">
       <Filter>Source\Game\Logics\Wand\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Serialization\Meta\ComponentDefine.h">
+      <Filter>Source\Engine\Serialization\Meta</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
