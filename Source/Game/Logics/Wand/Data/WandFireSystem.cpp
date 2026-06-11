@@ -8,8 +8,11 @@
 #include "Game/Logics/Wand/Registry/WandProgramRegistry.h"
 #include "Game/Logics/Wand/Data/CompiledWandProgram.h"
 #include "BulletComponents.h"
-#include "Engine/Transform/Components/TransformComponent.h" // ※TransformComponent のパスに合わせる
-#include "Engine/ECS/System/CCL_SystemRegistry.h"      // REGISTER_LOGIC_SYSTEM ※パス確認
+#include "Engine/Transform/Components/TransformComponent.h"
+#include "Engine/Physics/Components/Collision/JoltSphereColliderComponent.h"
+#include "Engine/Physics/Components/RigidBody/JoltRigidBodyComponent.h"
+
+#include "Engine/ECS/System/CCL_SystemRegistry.h"    
 #include "Engine/Platform/Core/Logger.h"
 
 using namespace CCL::ECS;
@@ -93,7 +96,8 @@ void WandFireSystem::Update(float /*dt*/)
     // 全弾が共有する単一 Archetype。毎フレーム作らずキャッシュ（初回のみ構築）。
     // ★ RuntimeOnlyTag が存在するなら、ここに足してシリアライザに弾を無視させると良い。
     static const Archetype bulletArch = ArchetypeHelper::Generate<
-        TransformComponent, BulletProgramRef, BulletStateComponent, BulletTag > ();
+        TransformComponent, JoltSphereColliderComponent, JoltRigidbodyComponent,
+        BulletProgramRef, BulletStateComponent, BulletTag > ();
 
     // Spawn は共有 PendingOps に積むため並列化しない（直列 ForEach）。
     ForEach([&](WandRuntimeComponent& rt,

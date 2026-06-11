@@ -33,7 +33,7 @@ void EditorScene::Initialize()
     //SceneInitializer::SpawnAnimationTest(*_worldPtr, device);
 
     //SceneInitializer::SpawnEnemySwarmTest(*_worldPtr, device,1000);
-    SceneInitializer::SpawnEnemySwarmTest(*_worldPtr, device,10);
+    SceneInitializer::SpawnEnemySwarmTest(*_worldPtr, device,0);
 
 
     //SceneInitializer::SpawnModelGridTest(*_worldPtr, device, 500);

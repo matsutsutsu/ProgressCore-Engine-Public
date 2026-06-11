@@ -1638,6 +1638,12 @@
     <ClInclude Include="Source\Game\Logics\Wand\Data\WandFireSystem.h">
       <Filter>Source\Game\Logics\Wand\Systems</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Systems\BulletTravelSystem.h">
+      <Filter>Source\Game\Logics\Wand\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Systems\BulletLifetimeSystem.h">
+      <Filter>Source\Game\Logics\Wand\Systems</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2434,6 +2440,21 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Wand\Data\WandFireSystem.cpp">
       <Filter>Source\Game\Logics\Wand\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Wand\Systems\BulletTravelSystem.cpp">
+      <Filter>Source\Game\Logics\Wand\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Wand\Systems\BulletLifetimeSystem.cpp">
+      <Filter>Source\Game\Logics\Wand\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Wand\Data\WandBuildComponentMeta.cpp">
+      <Filter>Source\Game\Logics\Wand\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Wand\Data\WandRuntimeComponentsMeta.cpp">
+      <Filter>Source\Game\Logics\Wand\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Wand\Data\BulletComponentsMeta.cpp">
+      <Filter>Source\Game\Logics\Wand\Data</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

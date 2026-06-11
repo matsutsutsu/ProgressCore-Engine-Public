@@ -23,8 +23,8 @@
  
 #include "tracy/Tracy.hpp"
 
-
 #include "Engine/Platform/Core/Logger.h"
+#include "Game/Logics/Wand/Registry/WandProgramRegistry.h"
 
 
 void BaseScene::Initialize()
@@ -72,8 +72,6 @@ void BaseScene::Initialize()
     auto myFacade = std::make_shared<JoltPhysicsFacade>(_worldPtr);
     _worldPtr->AddResource<std::shared_ptr<IPhysicsAPI>>(myFacade);
 
-
-
     // Graphics が所有するサブシステムを ECS へ接続する。
     // ECS システムがライトを変更すれば Graphics::Update() の Bind に反映される。
     _worldPtr->AddResource<Camera*>(cam);
@@ -85,8 +83,13 @@ void BaseScene::Initialize()
     _worldPtr->AddResource<PrimitiveRenderer*>(gfx.GetPrimitiveRenderer());
     _worldPtr->AddResource<ShapeRenderer*>(gfx.GetShapeRenderer());
 
-    // TriggerSystem 等がアクセスできるように、SystemManager のポインタをリソースとして登録
-    _worldPtr->AddResource<CCL::ECS::SystemManager *>(_ecsContext->GetSystemManager());
+    // SystemManager のポインタをリソースとして登録
+    //_worldPtr->AddResource<CCL::ECS::SystemManager *>(_ecsContext->GetSystemManager());
+
+
+    // ゲームシステム用のリソース登録
+    _worldPtr->AddResource<WandProgramRegistry>();
+
 
     // システム登録 (派生クラスの処理が走る)
     RegisterSystems();

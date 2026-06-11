@@ -714,6 +714,8 @@
     <ClInclude Include="Source\Game\Logics\Wand\Data\WandRuntimeComponents.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Data\WandTypes.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Registry\WandProgramRegistry.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Systems\BulletLifetimeSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Systems\BulletTravelSystem.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Systems\WandCompileSystem.h" />
     <ClInclude Include="Source\Game\Scenes\BaseScene.h" />
     <ClInclude Include="Source\Game\Scenes\EditorScene.h" />
@@ -1414,7 +1416,12 @@
     <ClCompile Include="Source\Game\Logics\Test\VoxelOceanSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Wand\Compiler\RuneDatabase.cpp" />
     <ClCompile Include="Source\Game\Logics\Wand\Compiler\WandCompiler.cpp" />
+    <ClCompile Include="Source\Game\Logics\Wand\Data\BulletComponentsMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Wand\Data\WandBuildComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Wand\Data\WandFireSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Wand\Data\WandRuntimeComponentsMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Wand\Systems\BulletLifetimeSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Wand\Systems\BulletTravelSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Wand\Systems\WandCompileSystem.cpp" />
     <ClCompile Include="Source\Game\Scenes\BaseScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\EditorScene.cpp" />
