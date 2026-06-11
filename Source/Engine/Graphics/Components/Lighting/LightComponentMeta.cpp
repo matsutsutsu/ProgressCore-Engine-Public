@@ -1,11 +1,9 @@
-// LightComponentMeta.cpp
-#include "Engine/Serialization/Registry/ComponentRegistry.h"
-#include "Engine/Serialization/Meta/ComponentMeta.h"
-#include "Engine/Serialization/Meta/ComponentMetaJson.h"
+/// @file  LightComponentMeta.cpp
+/// @brief ライト関連コンポーネント (Directional, Point, Spot) のシリアライズ/インスペクタ定義。
+
 #include "Engine/Graphics/Components/Lighting/LightComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 
-#include "Engine/Serialization/Registry/ComponentRegistry_Editor.h"
 #ifdef ENABLE_EDITOR
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
@@ -16,14 +14,12 @@
 // ============================================================================
 template <> struct ComponentMeta<DirectionalLightComponent> {
     CCL_META_USING_THIS(DirectionalLightComponent)
-        static constexpr const char* displayName = "DirectionalLight"; // ★ スペース削除
+        static constexpr const char* displayName = "DirectionalLight";
     static constexpr bool        hasCustomGui = true;
     static constexpr bool        isSerializable = true;
-    static constexpr bool        hasCustomSerialize = false;
-    static constexpr uint32_t    version = 1;
 
 #ifdef ENABLE_EDITOR
-    static bool CustomGui(DirectionalLightComponent& comp, unsigned long long = 0, void* = nullptr) {
+    static bool CustomGui(DirectionalLightComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr) {
         bool changed = false;
         changed |= ImGui::ColorEdit3("Light Color", &comp.color.x);
         changed |= ImGui::DragFloat("Intensity", &comp.intensity, 0.05f, 0.0f, 100.0f);
@@ -52,16 +48,12 @@ template <> struct ComponentMeta<DirectionalLightComponent> {
 // ============================================================================
 template <> struct ComponentMeta<PointLightComponent> {
     CCL_META_USING_THIS(PointLightComponent)
-        static constexpr const char* displayName = "PointLight"; // ★ スペース削除
+        static constexpr const char* displayName = "PointLight";
     static constexpr bool        hasCustomGui = true;
-
-    // ★ 追加: フラグを絶対に忘れない！
     static constexpr bool        isSerializable = true;
-    static constexpr bool        hasCustomSerialize = false;
-    static constexpr uint32_t    version = 1;
 
 #ifdef ENABLE_EDITOR
-    static bool CustomGui(PointLightComponent& comp, unsigned long long = 0, void* = nullptr) {
+    static bool CustomGui(PointLightComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr) {
         bool changed = false;
         changed |= ImGui::ColorEdit3("Light Color", &comp.color.x);
         changed |= ImGui::DragFloat("Intensity", &comp.intensity, 0.05f, 0.0f, 100.0f);
@@ -95,16 +87,12 @@ template <> struct ComponentMeta<PointLightComponent> {
 // ============================================================================
 template <> struct ComponentMeta<SpotLightComponent> {
     CCL_META_USING_THIS(SpotLightComponent)
-        static constexpr const char* displayName = "SpotLight"; // ★ スペース削除
+        static constexpr const char* displayName = "SpotLight";
     static constexpr bool        hasCustomGui = true;
-
-    // ★ 追加: フラグを絶対に忘れない！
     static constexpr bool        isSerializable = true;
-    static constexpr bool        hasCustomSerialize = false;
-    static constexpr uint32_t    version = 1;
 
 #ifdef ENABLE_EDITOR
-    static bool CustomGui(SpotLightComponent& comp, unsigned long long = 0, void* = nullptr) {
+    static bool CustomGui(SpotLightComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr) {
         bool changed = false;
         changed |= ImGui::ColorEdit3("Light Color", &comp.color.x);
         changed |= ImGui::DragFloat("Intensity", &comp.intensity, 0.05f, 0.0f, 100.0f);
@@ -123,23 +111,20 @@ template <> struct ComponentMeta<SpotLightComponent> {
     static const std::vector<FieldDescriptor>& Fields() {
         static const std::vector<FieldDescriptor> fields = {
             CFIELD(color,     "Color",             "Lighting")
-            CFIELD(intensity, "Intensity",          "Lighting")
-            CFIELD(range,     "Range",              "Lighting")
-            CFIELD(innerCos,  "Inner Cone (Cos)",   "Cone")
-            CFIELD(outerCos,  "Outer Cone (Cos)",   "Cone")
+            CFIELD(intensity, "Intensity",         "Lighting")
+            CFIELD(range,     "Range",             "Lighting")
+            CFIELD(innerCos,  "Inner Cone (Cos)",  "Cone")
+            CFIELD(outerCos,  "Outer Cone (Cos)",  "Cone")
         };
         return fields;
     }
 };
 
-// ============================================================================
-// ★ ここで登録を行う！
-// ============================================================================
-REGISTER_COMPONENT(DirectionalLightComponent, "DirectionalLight") // ★ スペース削除
+REGISTER_COMPONENT(DirectionalLightComponent, "DirectionalLight")
 REGISTER_COMPONENT_EDITOR_GUI(DirectionalLightComponent)
 
-REGISTER_COMPONENT(PointLightComponent, "PointLight") // ★ スペース削除
+REGISTER_COMPONENT(PointLightComponent, "PointLight")
 REGISTER_COMPONENT_EDITOR_GUI(PointLightComponent)
 
-REGISTER_COMPONENT(SpotLightComponent, "SpotLight") // ★ スペース削除
+REGISTER_COMPONENT(SpotLightComponent, "SpotLight")
 REGISTER_COMPONENT_EDITOR_GUI(SpotLightComponent)

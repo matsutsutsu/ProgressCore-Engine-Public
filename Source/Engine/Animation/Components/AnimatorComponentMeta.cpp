@@ -73,7 +73,7 @@ template <> struct ComponentMeta<AnimatorComponent> {
 
     static const std::vector<FieldDescriptor>& Fields() {
         static const std::vector<FieldDescriptor> fields = {
-            CFIELD_FLOAT_RANGED(playbackSpeed, "Playback Speed", 0.05f, -5.0f, 5.0f, "Playback"),
+            CFIELD_FLOAT_RANGED(playbackSpeed, "Playback Speed", 0.05f, -5.0f, 5.0f, "Playback")
             CFIELD(isLoop, "Loop", "Playback")
         };
         return fields;

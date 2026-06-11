@@ -1,74 +1,64 @@
-//#include "Editor/Inspector/ComponentGuiRegistry.h"
-//#include "Engine/Serialization/ComponentRegistry.h"
-//#include "Engine/Serialization/Meta/ComponentMeta.h"
-//#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
-//#include "Engine/Serialization/Meta/ComponentMetaJson.h"
-// #include "Engine/Serialization/Registry/ComponentRegistry_Editor.h"
-//#include "TimeState.h"
-//
-//
-//// ============================================================================
-//// TimeState 専用の JSON シリアライズ処理
-//// ============================================================================
-//namespace ComponentMetaJson {
-//    template <>
-//    inline void Serialize<TimeState>(json& j, const TimeState& comp)
-//    {
-//        j["localDt"] = comp.localDt;
-//        j["hitStopTimer"] = comp.hitStopTimer;
-//        j["freezeScale"] = comp.freezeScale;
-//        j["group"] = static_cast<uint8_t>(comp.group);
-//    }
-//
-//    template <>
-//    inline void Deserialize<TimeState>(const json& j, TimeState& comp)
-//    {
-//        if (j.contains("localDt"))      comp.localDt = j["localDt"].get<float>();
-//        if (j.contains("hitStopTimer")) comp.hitStopTimer = j["hitStopTimer"].get<float>();
-//        if (j.contains("freezeScale"))  comp.freezeScale = j["freezeScale"].get<float>();
-//        if (j.contains("group"))        comp.group = static_cast<TimeGroup>(j["group"].get<uint8_t>());
-//    }
-//}
-//
-//// ============================================================================
-//// TimeState の Inspector GUI 定義
-//// ============================================================================
-//template <> struct ComponentMeta<TimeState> {
-//    static constexpr bool        registered = true;
-//    static constexpr const char* displayName = "Time State";
-//
-//    // enum のプルダウン等を使うためカスタムGUIを有効化
-//    static constexpr bool hasCustomGui = true;
-//
-//    static bool CustomGui(TimeState& comp, unsigned long long /*entityID*/ = 0, void* /*world*/ = nullptr)
-//    {
-//        bool changed = false;
-//
-//        // 計算済みの実効dt（リードオンリー表示）
-//        ImGui::Text("Local Dt: %.4f", comp.localDt);
-//        ImGui::Spacing();
-//
-//        // TimeGroup のプルダウン選択
-//        const char* groupNames[] = { "None", "Player", "Enemy", "Environment", "UI" };
-//        int currentGroup = static_cast<int>(comp.group);
-//        if (ImGui::Combo("Time Group", &currentGroup, groupNames, IM_ARRAYSIZE(groupNames))) {
-//            comp.group = static_cast<TimeGroup>(currentGroup);
-//            changed = true;
-//        }
-//
-//        // デバッグ・テスト用のヒットストップ手動設定
-//        if (ImGui::DragFloat("HitStop Timer", &comp.hitStopTimer, 0.01f, 0.0f, 5.0f)) changed = true;
-//        if (ImGui::SliderFloat("Freeze Scale", &comp.freezeScale, 0.0f, 1.0f)) changed = true;
-//
-//        return changed;
-//    }
-//
-//    static const std::vector<FieldDescriptor>& Fields()
-//    {
-//        static const std::vector<FieldDescriptor> empty_fields;
-//        return empty_fields; // カスタムGUIとJSONシリアライズを全自作したためリフレクションは不要
-//    }
-//};
-//
-//// コンポーネント登録マクロ（システムが起動時に認識するために必須）
-//REGISTER_COMPONENT(TimeState,"Time State");
+/// @file  TimeComponentMeta.cpp
+/// @brief TimeStateComponent のシリアライズ/インスペクタ定義。
+
+#include "TimeState.h"
+#include "Engine/Serialization/Meta/ComponentDefine.h"
+
+#ifdef ENABLE_EDITOR
+#include "Editor/Inspector/ComponentGuiRegistry.h"
+#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
+#endif
+
+namespace {
+    // 列挙型 TimeGroup の文字列配列 (CFIELD_ENUM_U8 用)
+    const char* const TimeGroupNames[] = { "None", "Player", "Enemy", "Environment", "UI" };
+}
+
+// ============================================================================
+// TimeState の Inspector GUI / シリアライズ定義 (パターンB)
+// ============================================================================
+template <> struct ComponentMeta<TimeStateComponent> {
+    CCL_META_USING_THIS(TimeStateComponent)
+        static constexpr const char* displayName = "Time State";
+    static constexpr bool        hasCustomGui = true;
+    static constexpr bool        isSerializable = true;
+
+#ifdef ENABLE_EDITOR
+    static bool CustomGui(TimeStateComponent& comp, unsigned long long /*entityID*/ = 0, void* /*world*/ = nullptr) {
+        bool changed = false;
+
+        ImGui::Text("Local Dt: %.4f", comp.localDt);
+        ImGui::Spacing();
+
+        int currentGroup = static_cast<int>(comp.group);
+        if (ImGui::Combo("Time Group", &currentGroup, TimeGroupNames, 5)) {
+            comp.group = static_cast<TimeGroup>(currentGroup);
+            changed = true;
+        }
+
+        changed |= ImGui::DragFloat("HitStop Timer", &comp.hitStopTimer, 0.01f, 0.0f, 5.0f);
+        changed |= ImGui::DragFloat("Freeze Scale", &comp.freezeScale, 0.01f, 0.0f, 1.0f);
+        changed |= ImGui::DragFloat("Buff Scale", &comp.buffScale, 0.01f, 0.0f, 5.0f);
+        changed |= ImGui::DragFloat("Cinematic Scale", &comp.cinematicScale, 0.01f, 0.0f, 5.0f);
+
+        return changed;
+    }
+#else
+    static bool CustomGui(TimeStateComponent&, unsigned long long, void*) { return false; }
+#endif
+
+    static const std::vector<FieldDescriptor>& Fields() {
+        static const std::vector<FieldDescriptor> fields = {
+            CFIELD(localDt, "Local Dt", "State")
+            CFIELD_FLOAT_RANGED(hitStopTimer, "HitStop Timer", 0.01f, 0.0f, 5.0f, "State")
+            CFIELD_FLOAT_RANGED(freezeScale, "Freeze Scale", 0.01f, 0.0f, 1.0f, "State")
+            CFIELD_FLOAT_RANGED(buffScale, "Buff Scale", 0.01f, 0.0f, 5.0f, "State")
+            CFIELD_FLOAT_RANGED(cinematicScale, "Cinematic Scale", 0.01f, 0.0f, 5.0f, "State")
+            CFIELD_ENUM_U8(group, "Time Group", TimeGroupNames, 5, "State")
+        };
+        return fields;
+    }
+};
+
+REGISTER_COMPONENT(TimeStateComponent, "TimeState")
+REGISTER_COMPONENT_EDITOR_GUI(TimeStateComponent)
