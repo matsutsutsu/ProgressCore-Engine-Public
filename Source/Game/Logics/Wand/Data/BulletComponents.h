@@ -17,7 +17,7 @@
 // @note いずれも実行時専用。既存の RuntimeOnlyTag を併用してシリアライザに弾をスキップさせる。
 // ===========================================================================
 
-#include "WandTypes.h"
+#include "Game/Logics/Wand/Data/WandTypes.h"
 #include "SimpleMath.h"                   // DirectX::SimpleMath::Vector3
 #include "Engine/ECS/Common/CCL_Types.h" // EntityID / InvalidEntityID（※実際のパスは要確認）
 

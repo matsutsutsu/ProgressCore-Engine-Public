@@ -5,8 +5,8 @@
 // @brief WandCompileSystem の実体。dirty なビルドをコンパイルして Registry に登録する。
 // ===========================================================================
 #include "WandCompileSystem.h"
-#include "WandCompiler.h"
-#include "WandProgramRegistry.h"
+#include "Game/Logics/Wand/Compiler/WandCompiler.h"
+#include "Game/Logics/Wand/Registry/WandProgramRegistry.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h" // REGISTER_LOGIC_SYSTEM ※パス確認
 #include "Engine/Platform/Core/Logger.h"
 
@@ -25,16 +25,19 @@ void WandCompileSystem::Update(float /*dt*/)
 
     // Resource(共有データ)を書き換えるため並列化しない。ForEach は直列実行。
     ForEach([&registry](WandBuildComponent& build)
-        {
-            if (!build.isDirty) return; // コンパイル不要
+    {
+        if (!build.isDirty) return; // コンパイル不要
 
-            const CompiledWandProgram prog = WandCompiler::Compile(build);
-            build.cachedProgramId = registry.RegisterOrUpdate(build.cachedProgramId, prog);
-            build.isDirty = false;
+        // WandBuildComponentの情報を実行時の最適化された情報に変換する
+        const CompiledWandProgram prog = WandCompiler::Compile(build);
 
-            CCL_LOG_INFO(LogCategory::Game,
-                "杖ビルドをコンパイルしました (ProgramID=%u)", build.cachedProgramId);
-        });
+        // 最適化された杖の情報をWandProgramRegistryのResourceに登録させる
+        // cachedProgramIdはその杖情報をアクセスするための整数
+        build.cachedProgramId = registry.RegisterOrUpdate(build.cachedProgramId, prog);
+        build.isDirty = false;
+
+        CCL_LOG_INFO(LogCategory::Game, "杖ビルドをコンパイルしました (ProgramID=%u)", build.cachedProgramId);
+    });
 }
 
 // ファイル末尾で自動登録（弾発射 L02 より前の L01 ステージで実行）

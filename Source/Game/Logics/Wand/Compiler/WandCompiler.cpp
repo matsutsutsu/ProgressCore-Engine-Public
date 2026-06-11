@@ -4,8 +4,8 @@
 // @file
 // @brief WandCompiler の実体。重ねがけ(同概念の複数装着)を stackCount に畳み込む。
 // ===========================================================================
-#include "WandCompiler.h"
-#include "WandBuildComponent.h"
+#include "Game/Logics/Wand/Compiler/WandCompiler.h"
+#include "Game/Logics/Wand/Data/WandBuildComponent.h"
 #include "RuneDatabase.h"
 
 
@@ -28,11 +28,14 @@ CompiledWandProgram WandCompiler::Compile(const WandBuildComponent& build)
 
     // １フェーズ分のスロット列をEffectOpsのフェーズ配列に変換して
     // spawnOpsの配列変数に格納する
+
+    // slots[フェーズ][アタッチメントスロット数]
     prog.spawnCount = CompilePhase(
-        build.slots[kSpawn],
-        build.slotCounts[kSpawn],
-        WandPhase::Spawn,
-        prog.spawnOps);
+        build.slots[kSpawn],       // ① 「Spawnフェーズの横1列（スロット8個分）のデータを渡すから...」
+        build.slotCounts[kSpawn],  // ② 「そのうち、有効なスロットの数（例えば3つ）だけを見て...」
+        WandPhase::Spawn,          // ③ 「Spawnフェーズ用の初期パラメータを使って...」
+        prog.spawnOps              // ④ 「結果をこの戦闘用配列（spawnOps）に書き込んでね！」
+    );
 
     prog.travelCount = CompilePhase(
         build.slots[kTravel],

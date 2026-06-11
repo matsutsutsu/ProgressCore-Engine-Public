@@ -17,8 +17,8 @@
 
 #include <vector>
 #include <cassert>
-#include "WandTypes.h"
-#include "CompiledWandProgram.h"
+#include "Game/Logics/Wand/Data/WandTypes.h"
+#include "Game/Logics/Wand/Data/CompiledWandProgram.h"
 
 /**
  * @brief コンパイル済み杖プログラムの集中管理庫（World Resource として登録する）。
@@ -27,10 +27,10 @@ class WandProgramRegistry
 {
 public:
     /**
-     * @brief プログラムを新規登録、または既存スロットを上書き更新する。
+     * @brief プログラムをRegistry配列に新規登録、または既存スロットを上書き更新する。
      *
-     * existing が有効なら同じスロットを再利用する（戦闘外更新のためメモリの無制限増加を防ぐ）。
-     * 無効なら末尾に追加し、新しい ProgramID を発番する。
+     * existing（その杖の番号） が有効なら同じスロットを再利用する（戦闘外更新のためメモリの無制限増加を防ぐ）。
+     * 無効（登録されていない）なら末尾に追加し、新しい ProgramID を発番する。
      *
      * @param existing 既存の ProgramID（無ければ InvalidProgramID）
      * @param prog     登録するコンパイル済みプログラム
@@ -38,11 +38,14 @@ public:
      */
     ProgramID RegisterOrUpdate(ProgramID existing, const CompiledWandProgram& prog)
     {
+        // 登録する際にすでにRegistryに登録されていたら上書きをする
         if (existing != InvalidProgramID && existing < _programs.size())
         {
             _programs[existing] = prog; // スロット再利用
             return existing;
         }
+        
+        // 登録されていない場合Registryに登録をしてそのIDを返す
         _programs.push_back(prog);
         return static_cast<ProgramID>(_programs.size() - 1);
     }

@@ -490,6 +490,18 @@
     <Filter Include="Shader\Pass\Error">
       <UniqueIdentifier>{dea43f46-2574-4dff-ab31-f548204c8040}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\Wand\Data">
+      <UniqueIdentifier>{dec61766-6bfd-4cd7-b7b2-7558258dc391}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\Wand\Compiler">
+      <UniqueIdentifier>{c8c7893e-50a2-46e5-a832-c80f75a05e2a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\Wand\Registry">
+      <UniqueIdentifier>{7cd473cd-f5f3-4fed-bce1-3fd35e9108d8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\Wand\Systems">
+      <UniqueIdentifier>{c749956a-b108-45af-abd7-409d02f61d34}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1572,18 +1584,6 @@
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerAttackSystem.h">
       <Filter>Source\Game\Logics\Character\Player</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\WandTypes.h">
-      <Filter>Source\Game\Logics\Wand</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\CompiledWandProgram.h">
-      <Filter>Source\Game\Logics\Wand</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\WandBuildComponent.h">
-      <Filter>Source\Game\Logics\Wand</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\BulletComponents.h">
-      <Filter>Source\Game\Logics\Wand</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\ECS\CCL_ECSContext.h">
       <Filter>Source\Engine\ECS</Filter>
     </ClInclude>
@@ -1605,20 +1605,38 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\ErrorShader.h">
       <Filter>Source\Engine\Graphics\Shader\Material</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\RuneDatabase.h">
-      <Filter>Source\Game\Logics\Wand</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\WandCompiler.h">
-      <Filter>Source\Game\Logics\Wand</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\WandProgramRegistry.h">
-      <Filter>Source\Game\Logics\Wand</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\WandCompileSystem.h">
-      <Filter>Source\Game\Logics\Wand</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyTrackingSystem.h">
       <Filter>Source\Game\Logics\Character\Enemy</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Data\BulletComponents.h">
+      <Filter>Source\Game\Logics\Wand\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Data\CompiledWandProgram.h">
+      <Filter>Source\Game\Logics\Wand\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Data\WandBuildComponent.h">
+      <Filter>Source\Game\Logics\Wand\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Data\WandTypes.h">
+      <Filter>Source\Game\Logics\Wand\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Compiler\RuneDatabase.h">
+      <Filter>Source\Game\Logics\Wand\Compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Compiler\WandCompiler.h">
+      <Filter>Source\Game\Logics\Wand\Compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Registry\WandProgramRegistry.h">
+      <Filter>Source\Game\Logics\Wand\Registry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Systems\WandCompileSystem.h">
+      <Filter>Source\Game\Logics\Wand\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Data\WandRuntimeComponents.h">
+      <Filter>Source\Game\Logics\Wand\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Data\WandFireSystem.h">
+      <Filter>Source\Game\Logics\Wand\Systems</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2402,17 +2420,20 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\ErrorShader.cpp">
       <Filter>Source\Engine\Graphics\Shader\Material</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Wand\RuneDatabase.cpp">
-      <Filter>Source\Game\Logics\Wand</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Wand\WandCompiler.cpp">
-      <Filter>Source\Game\Logics\Wand</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Wand\WandCompileSystem.cpp">
-      <Filter>Source\Game\Logics\Wand</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyTrackingSystem.cpp">
       <Filter>Source\Game\Logics\Character\Enemy</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Wand\Compiler\RuneDatabase.cpp">
+      <Filter>Source\Game\Logics\Wand\Compiler</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Wand\Compiler\WandCompiler.cpp">
+      <Filter>Source\Game\Logics\Wand\Compiler</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Wand\Systems\WandCompileSystem.cpp">
+      <Filter>Source\Game\Logics\Wand\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Wand\Data\WandFireSystem.cpp">
+      <Filter>Source\Game\Logics\Wand\Systems</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

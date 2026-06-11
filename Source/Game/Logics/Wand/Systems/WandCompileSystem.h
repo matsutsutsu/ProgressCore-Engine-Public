@@ -12,7 +12,7 @@
 // ===========================================================================
 
 #include "Engine/ECS/System/CCL_IfSystem.h" // ※include パスはプロジェクト構成に合わせる
-#include "WandBuildComponent.h"
+#include "Game/Logics/Wand/Data/WandBuildComponent.h"
 
 /**
  * @brief 杖ビルドのコンパイル駆動System。書き込み対象は WandBuildComponent。

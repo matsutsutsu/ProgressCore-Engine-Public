@@ -14,7 +14,7 @@
 //       実行時の弾は本コンポーネントを持たず、ProgramID のみを保持する。
 // ===========================================================================
 
-#include "WandTypes.h"
+#include "Game/Logics/Wand/Data/WandTypes.h"
 
 
 /**
