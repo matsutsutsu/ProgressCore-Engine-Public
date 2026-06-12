@@ -24,6 +24,8 @@
 #include "Editor/Windows/BehaviorTreeWindow.h"
 #include "Editor/Windows/MemoryAnalyzerWindow.h"
 
+#include "Editor/Windows/DungeonGeneratorWindow.h"
+
 #include "Engine/Serialization/Factory/Prefab.h"
 #include <imgui.h>
 #include <filesystem>
@@ -95,6 +97,7 @@ void EditorWindowManager::Initialize()
     //RegisterWindow<AnimationSequencerWindow>();
     //RegisterWindow<AnimGraphWindow>()->SetVisible(false);
 	//RegisterWindow<BehaviorTreeWindow>();
+    RegisterWindow<DungeonGeneratorWindow>();
 
     // ※まだ実装中で完全に読み込みたくない（クラッシュする等の）場合は、
     // 引き続きコメントアウトで対応してください。
@@ -104,6 +107,7 @@ void EditorWindowManager::Initialize()
     RegisterWindow<MemoryAnalyzerWindow>()->SetVisible(false);
     //RegisterWindow<SceneViewWindow>();
     RegisterWindow<GameViewWindow>();
+
 }
 
 

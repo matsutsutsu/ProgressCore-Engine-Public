@@ -77,6 +77,7 @@ public:
     void UnloadMaterial(MaterialHandle handle);
     MaterialHandle LoadMaterialAsset(const std::string& virtualPath);
     bool SaveMaterialAsset(MaterialHandle handle, const std::string& virtualPath);
+    ModelInstanceHandle RegisterModelInstance(std::shared_ptr<Model> model);
 
     // ---------------------------------------------------------
     // [5] Animation Sequence

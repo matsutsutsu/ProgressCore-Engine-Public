@@ -8,8 +8,129 @@
 #include <vector>
 
 #include "Game/Logics/Test/OrbitBenchmarkComponent.h"
+#include "Engine/Timer/TimeState.h"
 
 using namespace CCL::ECS;
+
+// ダンジョン生成ロジック（配置先に合わせてパス調整）
+#include "Game/Logics/LevelGen/DungeonGenerator.h"
+#include "Game/Logics/LevelGen/DungeonMeshBatcher.h"
+
+#include <DirectXMath.h>
+
+using namespace CCL::ECS;
+using namespace RuneForge::Dungeon;
+
+
+namespace
+{
+    // 床・壁マップチップモデルのパス（プロジェクトに合わせて調整）
+    constexpr const char* kFloorModelPath = "Assets/Models/MapChip/Floor.glb";
+    constexpr const char* kWallModelPath = "Assets/Models/MapChip/Wall.glb";
+
+    // 1チャンクの一辺（セル数）。前回チームは 20。16〜20 が目安。
+    constexpr int kChunkSize = 16;
+}
+
+void SceneInitializer::SpawnDungeonTest(
+    CCL::ECS::Core::World& world, ID3D11Device* device,
+    uint32_t seed, int floorIndex)
+{
+    // device 未指定なら Graphics から取得してもよいが、呼び出し側で渡す前提。
+    if (!device)
+    {
+        CCL_LOG_WARN(LogCategory::Core, "[Dungeon] device is null; abort spawn.");
+        return;
+    }
+
+    // ----------------------------------------------------------------
+    // 1. 生成（決定的）＋ ASCII デバッグ出力
+    // ----------------------------------------------------------------
+    DungeonGenerateResult result = DungeonGenerator::Generate(seed, floorIndex);
+    DungeonGenerator::DebugPrintGrid(result);
+
+    CCL_LOG_INFO(LogCategory::Core,
+        "[Dungeon] Building floor %d seed=%u grid=%dx%d (chunk=%d)",
+        floorIndex, result.usedSeed, result.width, result.depth, kChunkSize);
+
+    // ----------------------------------------------------------------
+    // 2. マップチップモデルをロード（チャンク間で共有）
+    //    CreateFromData に渡す baseMaterial もこのモデルから取る。
+    // ----------------------------------------------------------------
+    auto floorModel = std::make_shared<Model>(device, kFloorModelPath);
+    auto wallModel = std::make_shared<Model>(device, kWallModelPath);
+
+    // baseMaterial（無ければ CreateFromData 側でデフォルトPBRが入る）
+    std::shared_ptr<MaterialData> floorMat, wallMat;
+    if (!floorModel->GetMaterials().empty()) floorMat = floorModel->GetMaterials()[0].data;
+    if (!wallModel->GetMaterials().empty())  wallMat = wallModel->GetMaterials()[0].data;
+    // 床・壁が混在する1メッシュなので、代表マテリアルは壁を優先（無ければ床）
+    std::shared_ptr<MaterialData> chunkMat = wallMat ? wallMat : floorMat;
+
+    // ----------------------------------------------------------------
+    // 3. チャンクループ：床＋壁を1バッチ→1Model→1エンティティ
+    // ----------------------------------------------------------------
+    const auto chunkArch = ArchetypeHelper::Generate<
+        TransformComponent,
+        ModelComponent,
+        MaterialComponent
+    >();
+
+    int chunkCount = 0;
+    long totalVerts = 0, totalTris = 0;
+
+    for (int cj = 0; cj < result.depth; cj += kChunkSize)
+    {
+        for (int ci = 0; ci < result.width; ci += kChunkSize)
+        {
+            // 床＋壁を1メッシュに結合
+            auto batch = DungeonMeshBatcher::BuildChunk(
+                result, ci, cj, kChunkSize, kChunkSize, floorModel, wallModel);
+
+            if (batch.vertices.empty()) continue;
+
+            // ランタイムModel生成
+            auto chunkModel = Model::CreateFromData(
+                device, batch.vertices, batch.indices, chunkMat);
+            if (!chunkModel) continue;
+
+            // プール登録してハンドル化
+            ModelInstanceHandle handle =
+                ResourceManager::Instance().RegisterModelInstance(chunkModel);
+            if (!handle.IsValid()) continue;
+
+            // エンティティ生成（Transform はワールド原点。頂点が既にワールド座標）
+            auto e = EntityFactory::SpawnNamed(world, "DungeonChunk", chunkArch);
+
+            TransformComponent trans{};
+            trans.position = { 0.0f, 0.0f, 0.0f };
+            trans.rotation = { 0.0f, 0.0f, 0.0f, 1.0f };
+            trans.scale = { 1.0f, 1.0f, 1.0f };
+            trans.isStatic = true;  // 動かないので毎フレーム更新不要
+
+            ModelComponent mc{};
+            mc.SetRuntimeModel(handle); // ★ ランタイム生成ハンドルを安全に差し込む
+            // （isRuntime=true / ownsHandle=true がセットされ、コピーされても
+            //   二重解放しない。assetHash=0 のままでも消えない）
+
+            e.Set(std::move(trans))
+                .Set(std::move(mc));
+
+            ++chunkCount;
+            totalVerts += (long)batch.vertices.size();
+            totalTris += (long)batch.indices.size() / 3;
+        }
+    }
+
+    CCL_LOG_INFO(LogCategory::Core,
+        "[Dungeon] Done. chunks=%d verts=%ld tris=%ld  Start=(%d,%d) Portal=(%d,%d)",
+        chunkCount, totalVerts, totalTris,
+        result.startCell.i, result.startCell.j,
+        result.portalCell.i, result.portalCell.j);
+
+    // ※ 構造変更を即時反映させたい場合は呼び出し側で world.ScrutinyAndApply() 済みの
+    //    タイミングか、フレーム境界に任せる。SpawnNamed は PendingOps 経由。
+}
 
 
 void SceneInitializer::SpawnCameraTest(

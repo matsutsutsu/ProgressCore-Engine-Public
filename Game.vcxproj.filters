@@ -1653,6 +1653,21 @@
     <ClInclude Include="Source\Game\Logics\Wand\Systems\WandFireSystem.h">
       <Filter>Source\Game\Logics\Wand\Systems</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\LevelGen\DungeonTypes.h">
+      <Filter>Source\Game\Logics\LevelGen</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\LevelGen\RoomTemplateTable.h">
+      <Filter>Source\Game\Logics\LevelGen</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\LevelGen\DungeonGenerator.h">
+      <Filter>Source\Game\Logics\LevelGen</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\DungeonGeneratorWindow.h">
+      <Filter>Source\Editor\Windows\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\LevelGen\DungeonMeshBatcher.h">
+      <Filter>Source\Game\Logics\LevelGen</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2470,6 +2485,18 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Wand\Systems\WandFireSystem.cpp">
       <Filter>Source\Game\Logics\Wand\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\LevelGen\RoomTemplateTable.cpp">
+      <Filter>Source\Game\Logics\LevelGen</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\LevelGen\DungeonGenerator.cpp">
+      <Filter>Source\Game\Logics\LevelGen</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\DungeonGeneratorWindow.cpp">
+      <Filter>Source\Editor\Windows\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\LevelGen\DungeonMeshBatcher.cpp">
+      <Filter>Source\Game\Logics\LevelGen</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
