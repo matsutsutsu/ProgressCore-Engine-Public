@@ -1632,19 +1632,25 @@
     <ClInclude Include="Source\Game\Logics\Wand\Data\WandRuntimeComponents.h">
       <Filter>Source\Game\Logics\Wand\Data</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\Data\WandFireSystem.h">
-      <Filter>Source\Game\Logics\Wand\Systems</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Wand\Systems\BulletTravelSystem.h">
       <Filter>Source\Game\Logics\Wand\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\Systems\BulletLifetimeSystem.h">
+    <ClInclude Include="Source\Game\Logics\Wand\Systems\BulletInheritanceSystem.h">
       <Filter>Source\Game\Logics\Wand\Systems</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\Meta\ComponentDefine.h">
       <Filter>Source\Engine\Serialization\Meta</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Wand\Systems\BulletCollisionSystem.h">
+      <Filter>Source\Game\Logics\Wand\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Registry\MagicBulletPool.h">
+      <Filter>Source\Game\Logics\Wand\Registry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Systems\BulletSpawn.h">
+      <Filter>Source\Game\Logics\Wand\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Systems\WandFireSystem.h">
       <Filter>Source\Game\Logics\Wand\Systems</Filter>
     </ClInclude>
   </ItemGroup>
@@ -2441,13 +2447,10 @@
     <ClCompile Include="Source\Game\Logics\Wand\Systems\WandCompileSystem.cpp">
       <Filter>Source\Game\Logics\Wand\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Wand\Data\WandFireSystem.cpp">
-      <Filter>Source\Game\Logics\Wand\Systems</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Game\Logics\Wand\Systems\BulletTravelSystem.cpp">
       <Filter>Source\Game\Logics\Wand\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Wand\Systems\BulletLifetimeSystem.cpp">
+    <ClCompile Include="Source\Game\Logics\Wand\Systems\BulletInheritanceSystem.cpp">
       <Filter>Source\Game\Logics\Wand\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Wand\Data\WandBuildComponentMeta.cpp">
@@ -2460,6 +2463,12 @@
       <Filter>Source\Game\Logics\Wand\Data</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Wand\Systems\BulletCollisionSystem.cpp">
+      <Filter>Source\Game\Logics\Wand\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Wand\Systems\BulletSpawn.cpp">
+      <Filter>Source\Game\Logics\Wand\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Wand\Systems\WandFireSystem.cpp">
       <Filter>Source\Game\Logics\Wand\Systems</Filter>
     </ClCompile>
   </ItemGroup>

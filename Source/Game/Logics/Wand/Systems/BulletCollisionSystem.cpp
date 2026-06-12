@@ -7,6 +7,7 @@
 #include "Game/Logics/Wand/Systems/BulletCollisionSystem.h"
 #include "Game/Logics/Wand/Registry/WandProgramRegistry.h"
 #include "Game/Logics/Wand/Data/CompiledWandProgram.h"
+#include "Game/Logics/Wand/Registry/MagicBulletPool.h"
 #include "Game/Logics/Combat/HealthComponent.h"
 #include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"
 #include "Engine/Physics/Components/Jolt/JoltHandleComponent.h"
@@ -113,11 +114,10 @@ namespace
 void BulletCollisionSystem::Update(float /*dt*/)
 {
     if (!_world->HasResource<WandProgramRegistry>())   return;
-    if (!_world->HasResource<JoltPhysicsManager*>())
-    {
-        CCL_LOG_ERROR(LogCategory::Game, "JoltPhysicsManager 未登録。衝突判定をスキップします。");
-        return;
-    }
+    if (!_world->HasResource<JoltPhysicsManager*>())   return;  
+    if (!_world->HasResource<MagicBulletPool>())       return;
+
+    MagicBulletPool& pool = _world->GetResource<MagicBulletPool>();
     const WandProgramRegistry& registry = _world->GetResource<WandProgramRegistry>();
     JoltPhysicsManager* mgr = _world->GetResource<JoltPhysicsManager*>();
 
@@ -159,7 +159,10 @@ void BulletCollisionSystem::Update(float /*dt*/)
 
             // 貫通でなければ弾を破棄（破棄は遅延適用）。
             if (!r.pierce)
+            {
+                pool.Unregister(id);  
                 _world->Destroy(id);
+            }
         });
 }
 

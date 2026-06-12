@@ -49,12 +49,12 @@ CompiledWandProgram WandCompiler::Compile(const WandBuildComponent& build)
         WandPhase::OnHit,
         prog.onHitOps);
 
-    // Inheritance: 現状はスロット内容のデータ捕捉のみ。
-    // 「継承スロット→新弾の生成スロットへ焼き直す」正確な意味付けは Step 6 で実装する。
+
+    // Inheritance: 継承スロットは「次弾の生成」として焼く。phaseは Spawn を渡す。
     prog.inheritanceCount = CompilePhase(
         build.slots[kInherit],
         build.slotCounts[kInherit],
-        WandPhase::Inheritance,
+        WandPhase::Spawn,
         prog.inheritanceOps);
 
     return prog;

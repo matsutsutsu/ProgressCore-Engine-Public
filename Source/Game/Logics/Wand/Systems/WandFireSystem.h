@@ -12,7 +12,7 @@
 
 #include "Engine/ECS/System/CCL_IfSystem.h"            // ※include パスはプロジェクト構成に合わせる
 #include "Game/Logics/Wand/Data/WandBuildComponent.h"
-#include "WandRuntimeComponents.h"
+#include "Game/Logics/Wand/Data/WandRuntimeComponents.h"
 #include "Engine/Timer/TimeState.h" // ※TimeStateComponent のパスに合わせる
 
 /**
