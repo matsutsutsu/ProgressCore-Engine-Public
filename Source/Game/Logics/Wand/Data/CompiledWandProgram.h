@@ -35,6 +35,7 @@ struct CompiledWandProgram
     uint8_t onHitCount = 0; ///< onHitOps の有効数
     uint8_t inheritanceCount = 0; ///< inheritanceOps の有効数
 
+    float baseDamage = 10.0f; ///< 1ヒットの基礎ダメージ
     float baseLifetime = 3.0f;  ///< 寿命(秒)。age がこれを超えると Inheritance 発動
     float baseSpeed = 20.0f; ///< 基準初速
     float cooldown = 0.30f; ///< 杖の発射クールダウン(秒)

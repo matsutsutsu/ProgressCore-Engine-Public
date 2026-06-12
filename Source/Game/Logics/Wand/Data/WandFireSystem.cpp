@@ -61,7 +61,7 @@ namespace
      */
     void SpawnOneBullet(Core::World* world, const Archetype& arch, ProgramID pid,
         const CompiledWandProgram& prog, const Vector3& muzzle,
-        const SpawnParams& sp)
+        const SpawnParams& sp, EntityID ownerId)
     {
         BulletStateComponent state;
         state.direction = sp.direction;
@@ -69,6 +69,8 @@ namespace
         state.age = 0.0f;
         state.lifetime = prog.baseLifetime;
         state.inheritanceDepth = 0;
+        state.owner = ownerId;  // ★撃ち主
+        state.prevPosition = muzzle;   // ★初回の線分長を0にし、誤ヒットを防ぐ
         state.lastHitTarget = InvalidEntityID;
 
         world->Spawn(arch)
@@ -100,7 +102,8 @@ void WandFireSystem::Update(float /*dt*/)
         BulletProgramRef, BulletStateComponent, BulletTag > ();
 
     // Spawn は共有 PendingOps に積むため並列化しない（直列 ForEach）。
-    ForEach([&](WandRuntimeComponent& rt,
+    ForEachWithID([&](EntityID id,
+        WandRuntimeComponent& rt,
         const WandBuildComponent& build,
         const WandFireIntentComponent& intent,
         const TimeStateComponent& time)
@@ -125,7 +128,7 @@ void WandFireSystem::Update(float /*dt*/)
 
             // 弾生成（現状1発。Split による複数化・拡散は後工程）。
             SpawnOneBullet(_world, bulletArch, build.cachedProgramId, prog,
-                intent.muzzlePosition, sp);
+                intent.muzzlePosition, sp, id);
 
             // 次弾までのクールダウンを再設定。
             rt.cooldownTimer = prog.cooldown;

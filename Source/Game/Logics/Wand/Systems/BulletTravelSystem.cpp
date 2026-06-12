@@ -58,6 +58,7 @@ void BulletTravelSystem::Update(float /*dt*/)
         const BulletTag&               /*tag*/,
         const TimeStateComponent& time)
         {
+            st.prevPosition = t.position; // ★移動前の位置を記録（衝突判定の線分始点）
             const float dt = time.localDt;
 
             // 1. Travelフェーズ命令（速度・向きの変化）。ID不正時はスキップ（保険）。

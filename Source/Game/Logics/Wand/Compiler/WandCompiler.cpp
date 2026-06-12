@@ -16,6 +16,7 @@ CompiledWandProgram WandCompiler::Compile(const WandBuildComponent& build)
     CompiledWandProgram prog;
 
     // 杖全体のスカラ設定を引き継ぐ
+    prog.baseDamage = build.baseDamage; // baseSpeed 等と並べてコピー
     prog.baseLifetime = build.baseLifetime;
     prog.baseSpeed = build.baseSpeed;
     prog.cooldown = build.cooldown;

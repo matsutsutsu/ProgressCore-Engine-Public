@@ -162,7 +162,6 @@ template <> struct ComponentMeta<CameraBodyTPS> {
         ImGui::Separator();
         ImGui::Text("Follow Target Link");
 
-        // ★ 修正
         std::string label = (comp.targetEntity.id == 0) ? "(None)" : "Linked Target ID: " + std::to_string(comp.targetEntity.id);
         ImGui::Button(label.c_str(), ImVec2(-1, 0));
 

@@ -31,6 +31,7 @@ struct WandBuildComponent
     /// @brief 各フェーズの有効スロット数（ショップ解放で増加）。
     uint8_t slotCounts[static_cast<int>(WandPhase::Count)] = { 0, 0, 0, 0 };
 
+    float baseDamage = 10.0f; ///< 1ヒットの基礎ダメージ（Chaos等で後に倍率変動）
     float baseLifetime = 3.0f;  ///< 寿命(秒)
     float baseSpeed = 20.0f; ///< 基準初速
     float cooldown = 0.30f; ///< 発射クールダウン(秒)

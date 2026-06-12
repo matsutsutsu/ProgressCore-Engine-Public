@@ -78,6 +78,7 @@ template <> struct ComponentMeta<WandBuildComponent> {
 
     static const std::vector<FieldDescriptor>& Fields() {
         static const std::vector<FieldDescriptor> fields = {
+            CFIELD(baseDamage,   "Base Damage",   "Wand")
             CFIELD(baseSpeed,    "Base Speed",    "Wand")
             CFIELD(baseLifetime, "Base Lifetime", "Wand")
             CFIELD(cooldown,     "Cooldown",      "Wand")

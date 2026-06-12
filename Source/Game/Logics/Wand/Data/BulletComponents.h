@@ -45,7 +45,15 @@ struct BulletStateComponent
     float    age = 0.0f; ///< 経過時間(秒)
     float    lifetime = 3.0f; ///< 寿命(秒)。age>=lifetime で Inheritance 発動
     uint8_t  inheritanceDepth = 0;    ///< 継承で生成された世代深度（暴走防止・デバッグ用）
-    CCL::ECS::EntityID lastHitTarget = CCL::ECS::InvalidEntityID; ///< 直近ヒット対象(多段ヒット制御)
+
+    /// @brief 前フレームの位置。衝突判定はこの点→現在位置の線分をRayCastする。
+    DirectX::SimpleMath::Vector3 prevPosition = {};
+
+    /// @brief この弾を撃ったエンティティ。RayCastで自分を無視する＆ダメージ帰属に使う。
+    CCL::ECS::EntityID owner = CCL::ECS::InvalidEntityID;
+
+    /// @brief 直近ヒット対象（貫通時に同じ敵を多重ヒットしないため）。
+    CCL::ECS::EntityID lastHitTarget = CCL::ECS::InvalidEntityID;
 };
 
 /// @brief 「これは魔法弾である」ことを示す空タグ（System フィルタ用）。

@@ -1641,6 +1641,9 @@
     <ClInclude Include="Source\Engine\Serialization\Meta\ComponentDefine.h">
       <Filter>Source\Engine\Serialization\Meta</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Systems\BulletCollisionSystem.h">
+      <Filter>Source\Game\Logics\Wand\Systems</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2452,6 +2455,9 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Wand\Data\BulletComponentsMeta.cpp">
       <Filter>Source\Game\Logics\Wand\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Wand\Systems\BulletCollisionSystem.cpp">
+      <Filter>Source\Game\Logics\Wand\Systems</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

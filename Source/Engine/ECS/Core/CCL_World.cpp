@@ -74,7 +74,7 @@ namespace CCL::ECS::Core {
         op.constructor = copyCtor;
         op.assigner    = assigner;
         op.mover       = mover;
-        op.name = name; // カプセルに名前を入れる
+        op.name        = name; // カプセルに名前を入れる
 
         // ここでコンストラクタを即時実行せず、factoryに保存する
         if (ctor) {
