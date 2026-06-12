@@ -502,6 +502,9 @@
     <Filter Include="Source\Game\Logics\Wand\Systems">
       <UniqueIdentifier>{c749956a-b108-45af-abd7-409d02f61d34}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\LevelGen">
+      <UniqueIdentifier>{ec091a90-2dde-4c1b-ab6d-bf2c35d16dfd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">

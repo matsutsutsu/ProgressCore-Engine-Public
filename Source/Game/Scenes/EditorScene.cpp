@@ -22,7 +22,6 @@ void EditorScene::Initialize()
     SceneInitializer::SpawnLightStartSet(*_worldPtr, device);
     //SceneInitializer::SpawnGameLightSetting(_world, device);
     //Prefab::SpawnPrefab(*_worldPtr, "Assets/Prefabs/Camera/FreeCamera.json");
-    //Prefab::SpawnPrefab(*_worldPtr, "Assets/Prefabs/Camera/FreeFastCamera.json");
 
     //SceneManager::Instance().LoadScene(_worldPtr, "Assets/Scene/DroneEnemyTestScene.json");
 
@@ -33,14 +32,12 @@ void EditorScene::Initialize()
     //SceneInitializer::SpawnAnimationTest(*_worldPtr, device);
 
     //SceneInitializer::SpawnEnemySwarmTest(*_worldPtr, device,1000);
-    //SceneInitializer::SpawnEnemySwarmTest(*_worldPtr, device,0);
+    SceneInitializer::SpawnEnemySwarmTest(*_worldPtr, device,0);
 
 
     //SceneInitializer::SpawnModelGridTest(*_worldPtr, device, 500);
     
-    //SceneInitializer::SpawnPlayerCarTest(*_worldPtr, device);
 
-    //SceneInitializer::SpawnShaderTest(*_worldPtr, device);
 
     // 例：10万個のキューブによる銀河の渦を生成
     //SceneInitializer::SpawnECSBenchmarkTest(*_worldPtr, device, 100000);
@@ -49,7 +46,7 @@ void EditorScene::Initialize()
     //SceneInitializer::SpawnVoxelOceanTest(*_worldPtr, device, 400);
     //SceneInitializer::SpawnVoxelOceanTest(*_worldPtr, device, 100);
    
-    SceneInitializer::SpawnPhysicsAvalancheTest(*_worldPtr, device, 10000);
+    //SceneInitializer::SpawnPhysicsAvalancheTest(*_worldPtr, device, 10000);
 
     // 1000体の群衆ストレステストを実行！
     //SceneInitializer::SpawnEnemySwarmTest(*_worldPtr, device, 200);

@@ -1,7 +1,6 @@
 #pragma once
 #include <DirectXMath.h>
-#include <d3d11.h>
-#include <wrl.h>
+#include "Engine/Graphics/Resource/ResourceTypes.h"
 
 struct FogComponent {
     DirectX::XMFLOAT4 color{0.7f, 0.7f, 0.8f, 1.0f};
@@ -14,8 +13,11 @@ struct FogComponent {
     float heightStart   = 0.0f; // 霧が発生する地面の高さ
     float heightDensity = 0.5f; // 高さによる霧の濃さ
 
-    // --- ノイズフォグ (今回追加) ---
+    // --- ノイズフォグ  ---
     char              noiseTexturePath[256] = {};   // テクスチャパス
+
+    TextureHandle     noiseTextureHandle;
+
     float             noiseScale            = 0.1f; // ノイズの粗さ (UVスケール)
     float             noiseStrength         = 0.0f; // ノイズの影響度 (0.0=無効)
     DirectX::XMFLOAT2 noiseSpeed{0.1f, 0.05f};      // 流れる速度
@@ -29,6 +31,4 @@ struct FogComponent {
     bool              enabled = true;
     DirectX::XMFLOAT4 center{0.0f, 0.0f, 0.0f, 1.0f}; // プレイヤー中心座標
 
-    // ランタイム用リソース (保存しない)
-    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> noiseTextureSRV;
 };

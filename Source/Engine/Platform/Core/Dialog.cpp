@@ -382,6 +382,34 @@ namespace Engine
         return selected;
     }
 
+    std::string FileDialog::ConvertToRelativePath(const std::filesystem::path& absolutePath)
+    {
+        if (absolutePath.empty()) return "";
+
+        std::error_code ec;
+        // 現在の作業ディレクトリ（通常はプロジェクトのルート、または実行ファイルのある場所）を取得
+        std::filesystem::path currentPath = std::filesystem::current_path(ec);
+
+        if (ec) {
+            // カレントディレクトリの取得に失敗した場合は、UTF-8文字列としてそのまま返す
+            return WideToUtf8(absolutePath.wstring());
+        }
+
+        // absolutePath を currentPath を基準とした相対パスに変換する
+        std::filesystem::path relativePath = std::filesystem::proximate(absolutePath, currentPath, ec);
+
+        if (ec) {
+            // 別のドライブ（C: と D: など）に跨っている等の理由で変換に失敗した場合
+            return WideToUtf8(absolutePath.wstring());
+        }
+
+        // Windows特有のバックスラッシュ '\\' を、Unreal/Unity等でも一般的なスラッシュ '/' に正規化する
+        std::string relativeStr = WideToUtf8(relativePath.wstring());
+        std::replace(relativeStr.begin(), relativeStr.end(), '\\', '/');
+
+        return relativeStr;
+    }
+
     //--- プリセット ---------------------------------------------------------
 
     void FileDialog::RegisterPreset(std::string_view contextId, const FileDialogPreset& preset)

@@ -94,24 +94,35 @@ template <> struct ComponentMeta<FogComponent> {
             ImGui::SameLine();
             if (ImGui::Button("Load...##FogNoise")) {
                 if (auto path = Engine::FileDialog::OpenPreset("Texture", "Select Texture", Graphics::Instance().GetWindowHandle())) {
-                    const auto& filename = path->string().c_str();
-                    strcpy_s(comp.noiseTexturePath, filename);
-                    GpuResourceUtils::LoadTexture(Graphics::Instance().GetDevice(), filename, comp.noiseTextureSRV.ReleaseAndGetAddressOf());
+
+                   // 絶対パスを相対パスに変換する
+                    std::string relativePath = Engine::FileDialog::ConvertToRelativePath(*path);
+
+                    strcpy_s(comp.noiseTexturePath, relativePath.c_str());
+                    comp.noiseTextureHandle = TextureHandle{}; // ハンドルをリセットして再ロードを促す
                     changed = true;
                 }
             }
 
-            if (comp.noiseTextureSRV) {
-                ImGui::Image((void*)comp.noiseTextureSRV.Get(), ImVec2(64, 64));
+            ID3D11ShaderResourceView* previewSRV = nullptr;
+            if (comp.noiseTextureHandle.IsValid()) {
+                previewSRV = ResourceManager::Instance().GetTexture(comp.noiseTextureHandle);
+            }
+
+            // プレビュー表示とリセット処理
+            if (previewSRV) {
+                // ImGui::Imageに安全に生ポインタを渡す
+                ImGui::Image((void*)previewSRV, ImVec2(64, 64));
                 ImGui::SameLine();
                 if (ImGui::Button("Clear##FogNoise")) {
-                    comp.noiseTextureSRV.Reset();
+                    // ⭕ ハンドルとパスの両方を安全にクリア
+                    comp.noiseTextureHandle = TextureHandle{};
                     comp.noiseTexturePath[0] = '\0';
                     changed = true;
                 }
             }
 
-            changed |= ImGui::DragFloat("Strength", &comp.noiseStrength, 0.01f, 0.0f, 1.0f);
+            changed |= ImGui::DragFloat("NoiseStrength", &comp.noiseStrength, 0.01f, 0.0f, 1.0f);
             changed |= ImGui::DragFloat("Scale", &comp.noiseScale, 0.001f);
             changed |= ImGui::DragFloat2("Scroll Speed", &comp.noiseSpeed.x, 0.01f);
         }

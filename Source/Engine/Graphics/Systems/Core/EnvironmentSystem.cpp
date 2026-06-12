@@ -90,7 +90,24 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext* dc, const Rende
                                fog->noiseSpeed.x, fog->noiseSpeed.y };
        fogData.gFogRimColor = { fog->rimColor.x, fog->rimColor.y, fog->rimColor.z, 1.0f };
        fogData.gFogRimParams = { fog->rimPower, fog->rimStrength, 0.0f, 0.0f };
-       fogNoiseSrv = fog->noiseTextureSRV.Get();
+       // --------------------------------------------------------
+       // 【遅延ロードとバインド準備】
+       // --------------------------------------------------------
+       // UIで新しいテクスチャパスが設定された（ハンドルが無効）場合、ResourceManager経由でロードする
+       if (fog->noiseTexturePath[0] != '\0' && !fog->noiseTextureHandle.IsValid()) {
+           fog->noiseTextureHandle = ResourceManager::Instance().LoadTexture(fog->noiseTexturePath);
+       }
+
+       // ハンドルから実体（SRV）を安全に取得
+       ID3D11ShaderResourceView* fogNoiseSrv = nullptr;
+       if (fog->noiseTextureHandle.IsValid()) {
+           fogNoiseSrv = ResourceManager::Instance().GetTexture(fog->noiseTextureHandle);
+       }
+
+       // 万が一ロードに失敗した場合や未設定時のフェールセーフ（デフォルトノイズの使用）
+       if (!fogNoiseSrv && _globalNoiseSRV) {
+           fogNoiseSrv = _globalNoiseSRV.Get();
+       }
         
     }
 
