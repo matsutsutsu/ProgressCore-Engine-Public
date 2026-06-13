@@ -146,7 +146,7 @@ void BaseScene::Render()
     auto* dc = gfx.GetDeviceContext();
 
     // EnvironmentSystem: フォグ / IBL / ノイズのバインド + CbScene のバインド
- // ★ CbScene の中身は触らない（Graphics::Update() が書き込み済み）
+    // ★ CbScene の中身は触らない（Graphics::Update() が書き込み済み）
     if (_ecsContext && _ecsContext->GetSystemManager()) {
         if (auto* env = _ecsContext->GetSystemManager()->GetSystem<EnvironmentSystem>()) {
             const RenderServices& svc = gfx.GetRenderServices();

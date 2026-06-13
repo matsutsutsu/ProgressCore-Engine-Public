@@ -27,6 +27,10 @@ namespace RuneForge::Dungeon
         {
             std::vector<ModelResource::Vertex> vertices;
             std::vector<uint32_t>              indices;
+            // このチャンクのワールド原点（頂点はこの原点からのローカル座標）。
+            // エンティティの TransformComponent.position にこれを入れる。
+            float originX = 0.0f;
+            float originZ = 0.0f;
         };
 
         // 1チャンク分（[startI,startI+sizeI) x [startJ,startJ+sizeJ)）の

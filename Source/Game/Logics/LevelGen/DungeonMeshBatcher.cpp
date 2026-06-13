@@ -67,9 +67,15 @@ namespace RuneForge::Dungeon
 
         const float cs = result.cellSize;
 
-        // セル中心のワールド座標（worldX = originX + i*cellSize の規約に +0.5 セル）
-        auto centerX = [&](int i) { return result.originX + (i + 0.5f) * cs; };
-        auto centerZ = [&](int j) { return result.originZ + (j + 0.5f) * cs; };
+        // このチャンクのワールド原点（チャンク左下セルの隅）。
+        // 頂点はこの原点からのローカル座標で作る → エンティティ Transform で配置。
+        out.originX = result.originX + startI * cs;
+        out.originZ = result.originZ + startJ * cs;
+
+        // セル中心の「チャンクローカル」座標。
+        //   ワールド絶対 = out.originX + ローカル。ローカル = (i - startI + 0.5) * cs。
+        auto localX = [&](int i) { return (i - startI + 0.5f) * cs; };
+        auto localZ = [&](int j) { return (j - startJ + 0.5f) * cs; };
 
         const int i1 = (std::min)(startI + sizeI, result.width);
         const int j1 = (std::min)(startJ + sizeJ, result.depth);
@@ -84,7 +90,7 @@ namespace RuneForge::Dungeon
                 const std::shared_ptr<Model>& model = solid ? wallModel : floorModel;
                 if (!model) continue;
 
-                AppendModelAt(out, model, centerX(i), 0.0f, centerZ(j), indexOffset);
+                AppendModelAt(out, model, localX(i), 0.0f, localZ(j), indexOffset);
             }
         }
 

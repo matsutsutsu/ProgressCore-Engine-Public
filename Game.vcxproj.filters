@@ -1668,6 +1668,9 @@
     <ClInclude Include="Source\Game\Logics\LevelGen\DungeonMeshBatcher.h">
       <Filter>Source\Game\Logics\LevelGen</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Systems\Core\MaterialSetupSystem.h">
+      <Filter>Source\Engine\Graphics\Systems\Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2497,6 +2500,9 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\LevelGen\DungeonMeshBatcher.cpp">
       <Filter>Source\Game\Logics\LevelGen</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Systems\Core\MaterialSetupSystem.cpp">
+      <Filter>Source\Engine\Graphics\Systems\Core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

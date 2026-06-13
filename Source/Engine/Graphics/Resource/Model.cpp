@@ -585,5 +585,57 @@ std::shared_ptr<Model> Model::CreateFromData(ID3D11Device *device,
         model->materials[0].data = matData;
     }
 
+    // =================================================================
+    // ★ 追加: Model 側メッシュ（描画ループが参照する vector）を構築する
+    //    OpaquePass 等は model->GetMeshes()（= Model::meshes）を走査するため、
+    //    ここを埋めないとドローコールが呼ばれない。
+    //    通常コンストラクタの「参照を保存」処理と同じことを行う。
+    // =================================================================
+    {
+        // この時点で res(ModelResource) には Mesh/Material が登録済み、
+        // model->nodes / model->materials も上で構築済み。
+        const std::vector<ModelResource::Mesh>& resMeshes = res->GetMeshes();
+        model->meshes.resize(resMeshes.size());
+        for (size_t i = 0; i < resMeshes.size(); ++i)
+        {
+            const ModelResource::Mesh& src = resMeshes[i];
+            Model::Mesh& dst = model->meshes[i];
+ 
+            // ---- 参照を保存（描画ループが mesh.data->vertexBuffer を使う）----
+            dst.data = &src;
+ 
+            // マテリアル参照（materialIndex 範囲チェック）
+            if (src.materialIndex >= 0 &&
+                src.materialIndex < (int)model->materials.size())
+            {
+                dst.material = &model->materials.at(src.materialIndex);
+            }
+            else if (!model->materials.empty())
+            {
+                dst.material = &model->materials.at(0);
+            }
+            else
+            {
+                dst.material = nullptr;
+            }
+ 
+            // ノード参照（CreateFromData はルート1ノードのみ）
+            if (src.nodeIndex >= 0 && src.nodeIndex < (int)model->nodes.size())
+            {
+                dst.node = &model->nodes.at(src.nodeIndex);
+            }
+            else if (!model->nodes.empty())
+            {
+                dst.node = &model->nodes.at(0);
+            }
+            else
+            {
+                dst.node = nullptr;
+            }
+ 
+            // ボーンは無し（静的バッチメッシュ）。dst.bones は空のまま。
+        }
+    }
+
     return model;
 }

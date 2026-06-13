@@ -87,7 +87,20 @@ void ModelRenderSystem::Update(float dt)
         // =========================================================
         RenderCommand cmd;
         cmd.shaderHash = shaderHash;
-        cmd.assetHash = modelComp.assetHash;
+
+        // ★ ランタイム生成モデルにバッチ用の一意 identity を与える。
+        //    assetHash==0 の実体ハンドルは modelHandle.index で区別する。
+        //    上位ビット(0x80000000)で通常の assetHash 空間と分離。
+        if (modelComp.assetHash == 0 && modelComp.isRuntime &&
+            modelComp.modelHandle.IsValid())
+        {
+            cmd.assetHash = 0x80000000u | (modelComp.modelHandle.index & 0x7FFFFFFFu);
+        }
+        else
+        {
+            cmd.assetHash = modelComp.assetHash; // ファイル由来は従来どおり
+        }
+
         cmd.model = model;
         cmd.worldMatrix = transform.worldMatrix;
 

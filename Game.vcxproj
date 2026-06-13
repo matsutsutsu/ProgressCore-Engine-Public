@@ -525,6 +525,7 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\Shared\PostProcessShared.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Shared\ShaderShared.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Core\EnvironmentSystem.h" />
+    <ClInclude Include="Source\Engine\Graphics\Systems\Core\MaterialSetupSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Core\ModelPoseUpdateSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Core\ModelRenderSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Core\PrimitiveRenderSystem.h" />
@@ -1305,6 +1306,7 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\ToneMapEffect.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\ShaderReflection.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Core\EnvironmentSystem.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Systems\Core\MaterialSetupSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Core\ModelPoseUpdateSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Core\ModelRenderSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Core\PrimitiveRenderSystem.cpp" />

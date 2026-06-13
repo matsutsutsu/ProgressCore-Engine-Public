@@ -32,6 +32,9 @@ namespace
     constexpr int kChunkSize = 16;
 }
 
+
+
+
 void SceneInitializer::SpawnDungeonTest(
     CCL::ECS::Core::World& world, ID3D11Device* device,
     uint32_t seed, int floorIndex)
@@ -60,6 +63,28 @@ void SceneInitializer::SpawnDungeonTest(
     auto floorModel = std::make_shared<Model>(device, kFloorModelPath);
     auto wallModel = std::make_shared<Model>(device, kWallModelPath);
 
+    // ---- 診断: モデルがちゃんとメッシュを持っているか確認 ----
+    auto countVerts = [](const std::shared_ptr<Model>& m) -> size_t {
+        if (!m) return 0;
+        const ModelResource* res = m->GetResource();
+        if (!res) return 0;
+        size_t v = 0;
+        for (const auto& mesh : res->GetMeshes()) v += mesh.vertices.size();
+        return v;
+        };
+    size_t floorVerts = countVerts(floorModel);
+    size_t wallVerts = countVerts(wallModel);
+    CCL_LOG_INFO(LogCategory::Core,
+        "[Dungeon] chip models loaded: floor='%s' verts=%zu | wall='%s' verts=%zu",
+        kFloorModelPath, floorVerts, kWallModelPath, wallVerts);
+
+    if (floorVerts == 0 && wallVerts == 0) {
+        CCL_LOG_ERROR(LogCategory::Core,
+            "[Dungeon] ABORT: both chip models have 0 vertices. "
+            "Check that the .glb paths exist relative to the working directory.");
+        return;
+    }
+
     // baseMaterial（無ければ CreateFromData 側でデフォルトPBRが入る）
     std::shared_ptr<MaterialData> floorMat, wallMat;
     if (!floorModel->GetMaterials().empty()) floorMat = floorModel->GetMaterials()[0].data;
@@ -72,12 +97,13 @@ void SceneInitializer::SpawnDungeonTest(
     // ----------------------------------------------------------------
     const auto chunkArch = ArchetypeHelper::Generate<
         TransformComponent,
-        ModelComponent,
-        MaterialComponent
+        ModelComponent
     >();
 
     int chunkCount = 0;
     long totalVerts = 0, totalTris = 0;
+    EntityID firstChunkId{};            // 診断用
+    ModelInstanceHandle firstHandle{};  // 診断用
 
     for (int cj = 0; cj < result.depth; cj += kChunkSize)
     {
@@ -94,27 +120,64 @@ void SceneInitializer::SpawnDungeonTest(
                 device, batch.vertices, batch.indices, chunkMat);
             if (!chunkModel) continue;
 
+            // ★★ 診断: 全チャンクの「リソース同一性」と「頂点座標」を出す。
+            //    全部同じ形に見える原因が、リソース共有なのか頂点座標なのかを切り分ける。
+            {
+                const ModelResource* res = chunkModel->GetResource();
+                const auto& mm = chunkModel->GetMeshes();
+                const void* dataPtr = (!mm.empty()) ? (const void*)mm[0].data : nullptr;
+                // バッチ先頭頂点の座標（チャンクごとに違うはず）
+                float vx = batch.vertices.empty() ? -999 : batch.vertices.front().position.x;
+                float vz = batch.vertices.empty() ? -999 : batch.vertices.front().position.z;
+                CCL_LOG_INFO(LogCategory::Core,
+                    "[Dungeon][DIAG] chunk(%d,%d): ModelPtr=%p Resource=%p mesh.data=%p "
+                    "modelMeshes=%zu firstVert=(%.1f,%.1f)",
+                    ci, cj, (void*)chunkModel.get(), (const void*)res, dataPtr,
+                    mm.size(), vx, vz);
+            }
+
             // プール登録してハンドル化
             ModelInstanceHandle handle =
                 ResourceManager::Instance().RegisterModelInstance(chunkModel);
             if (!handle.IsValid()) continue;
 
+            // ★ 診断: 登録直後のハンドルと、プールから引けるか
+            if (chunkCount == 0) {
+                Model* check = ResourceManager::Instance().GetModelInstance(handle);
+                CCL_LOG_INFO(LogCategory::Core,
+                    "[Dungeon][DIAG] after Register: handle.index=%u gen=%u valid=%d "
+                    "GetModelInstance=%p  meshesViaPool=%zu",
+                    handle.index, handle.generation, handle.IsValid(),
+                    (void*)check, check ? check->GetMeshes().size() : 0);
+            }
+
             // エンティティ生成（Transform はワールド原点。頂点が既にワールド座標）
             auto e = EntityFactory::SpawnNamed(world, "DungeonChunk", chunkArch);
 
             TransformComponent trans{};
-            trans.position = { 0.0f, 0.0f, 0.0f };
+            trans.position = { batch.originX, 0.0f, batch.originZ }; // ★ チャンクのワールド原点
             trans.rotation = { 0.0f, 0.0f, 0.0f, 1.0f };
             trans.scale = { 1.0f, 1.0f, 1.0f };
             trans.isStatic = true;  // 動かないので毎フレーム更新不要
+            trans.isDirty = true;  // 生成直後に1回 worldMatrix を計算させる
 
             ModelComponent mc{};
             mc.SetRuntimeModel(handle); // ★ ランタイム生成ハンドルを安全に差し込む
-            // （isRuntime=true / ownsHandle=true がセットされ、コピーされても
-            //   二重解放しない。assetHash=0 のままでも消えない）
 
+            // ★ 診断: Set する直前の mc のハンドル
+            if (chunkCount == 0) {
+                CCL_LOG_INFO(LogCategory::Core,
+                    "[Dungeon][DIAG] before Set: mc.modelHandle.index=%u valid=%d "
+                    "isRuntime=%d ownsHandle=%d",
+                    mc.modelHandle.index, mc.modelHandle.IsValid(),
+                    mc.isRuntime, mc.ownsHandle);
+            }
+
+            EntityID chunkId = e; // 暗黙変換で EntityID を保存
             e.Set(std::move(trans))
                 .Set(std::move(mc));
+
+            if (chunkCount == 0) { firstChunkId = chunkId; firstHandle = handle; }
 
             ++chunkCount;
             totalVerts += (long)batch.vertices.size();
@@ -128,9 +191,36 @@ void SceneInitializer::SpawnDungeonTest(
         result.startCell.i, result.startCell.j,
         result.portalCell.i, result.portalCell.j);
 
-    // ※ 構造変更を即時反映させたい場合は呼び出し側で world.ScrutinyAndApply() 済みの
-    //    タイミングか、フレーム境界に任せる。SpawnNamed は PendingOps 経由。
+    // ★ 診断: 構造変更を今すぐ適用し、実チャンクに入った ModelComponent を読み戻す。
+    //    ここで handle が生きていれば SpawnDungeonTest 側は正しく、描画/その後の
+    //    コピーで失われているなら ModelComponent のライフサイクル側が原因と分かる。
+    world.ScrutinyAndApply();
+
+    if (chunkCount > 0) {
+        ModelComponent* applied = world.GetComponent<ModelComponent>(firstChunkId);
+        if (!applied) {
+            CCL_LOG_ERROR(LogCategory::Core,
+                "[Dungeon][DIAG] POST-APPLY: GetComponent<ModelComponent> returned null "
+                "(entity %u has no ModelComponent in its archetype?)", firstChunkId);
+        }
+        else {
+            Model* m = applied->GetModel();
+            CCL_LOG_INFO(LogCategory::Core,
+                "[Dungeon][DIAG] POST-APPLY: entity=%u  storedHandle.index=%u valid=%d "
+                "isRuntime=%d ownsHandle=%d  GetModel=%p  (registered was index=%u)",
+                firstChunkId, applied->modelHandle.index, applied->modelHandle.IsValid(),
+                applied->isRuntime, applied->ownsHandle, (void*)m, firstHandle.index);
+            if (!applied->modelHandle.IsValid()) {
+                CCL_LOG_ERROR(LogCategory::Core,
+                    "[Dungeon][DIAG] >>> handle LOST during PendingOps apply. "
+                    "The component was COPIED (not moved) and the copy path cleared it, "
+                    "OR a temporary's destructor unloaded the instance.");
+            }
+        }
+    }
 }
+
+
 
 
 void SceneInitializer::SpawnCameraTest(
