@@ -2504,6 +2504,9 @@
     <ClCompile Include="Source\Engine\Graphics\Systems\Core\MaterialSetupSystem.cpp">
       <Filter>Source\Engine\Graphics\Systems\Core</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Components\Culling\CullingComponentsMeta.cpp">
+      <Filter>Source\Engine\Graphics\Components\Culling</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shader\Common\Common.hlsli">

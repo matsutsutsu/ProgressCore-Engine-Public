@@ -1262,6 +1262,7 @@
     <ClCompile Include="Source\Engine\Graphics\Components\Core\EnvironmentComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Core\MaterialComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Core\ModelComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Components\Culling\CullingComponentsMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Lighting\LightComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Particle\GPUParticleComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\Core\RenderPipeline.cpp" />
