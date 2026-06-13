@@ -13,6 +13,8 @@
 
 #include "Engine/Transform/Systems/TransformUpdateSystem.h"
 
+#include "Game/Logics/LevelGen/DungeonLevelBuilder.h"
+
 void EditorScene::Initialize()
 {
     BaseScene::Initialize(); // 共通初期化
@@ -34,7 +36,17 @@ void EditorScene::Initialize()
     //SceneInitializer::SpawnEnemySwarmTest(*_worldPtr, device,1000);
     //SceneInitializer::SpawnEnemySwarmTest(*_worldPtr, device,0);
 
-    SceneInitializer::SpawnDungeonTest(*_worldPtr, device, 2024, 1); // seed=2024, 第1層
+    //SceneInitializer::SpawnDungeonTest(*_worldPtr, device, 2024, 1); // seed=2024, 第1層
+
+
+    DungeonLevelBuilder::BuildParams p;
+    p.seed = 2024;
+    p.spawnPrefabs = false;
+    //p.enemyPrefab = "Assets/Prefabs/Enemy/Slime.json";
+    //p.portalPrefab = "Assets/Prefabs/Portal/ExitPortal.json";
+    // パスを空文字にすればその種類は配置しない
+    DungeonLevelBuilder::Build(*_worldPtr, device, p);
+
 
     //SceneInitializer::SpawnModelGridTest(*_worldPtr, device, 500);
     
