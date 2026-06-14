@@ -23,7 +23,7 @@ void EditorScene::Initialize()
     ID3D11Device *device = Graphics::Instance().GetDevice();
     SceneInitializer::SpawnLightStartSet(*_worldPtr, device);
     //SceneInitializer::SpawnGameLightSetting(_world, device);
-    Prefab::SpawnPrefab(*_worldPtr, "Assets/Prefabs/Camera/FreeCamera.json");
+    //Prefab::SpawnPrefab(*_worldPtr, "Assets/Prefabs/Camera/FreeCamera.json");
 
     //SceneManager::Instance().LoadScene(_worldPtr, "Assets/Scene/DroneEnemyTestScene.json");
 
@@ -42,15 +42,17 @@ void EditorScene::Initialize()
     DungeonLevelBuilder::BuildParams p;
     p.seed = 2024;
     p.spawnPrefabs = false;
+    //p.playerPrefab = "Assets/Prefabs/Player/PlayerTest.json";
     //p.enemyPrefab = "Assets/Prefabs/Enemy/Slime.json";
     //p.portalPrefab = "Assets/Prefabs/Portal/ExitPortal.json";
     // パスを空文字にすればその種類は配置しない
     DungeonLevelBuilder::Build(*_worldPtr, device, p);
 
+    // プレイヤーをスタート地点に生成（カメラもセット）
+    DungeonLevelBuilder::SpawnPlayerAtStart(*_worldPtr);
 
     //SceneInitializer::SpawnModelGridTest(*_worldPtr, device, 500);
     
-
 
     // 例：10万個のキューブによる銀河の渦を生成
     //SceneInitializer::SpawnECSBenchmarkTest(*_worldPtr, device, 100000);

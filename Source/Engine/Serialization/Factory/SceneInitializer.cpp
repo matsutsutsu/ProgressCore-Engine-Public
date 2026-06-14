@@ -352,7 +352,7 @@ void SceneInitializer::SpawnEnemySwarmTest(CCL::ECS::Core::World& world, ID3D11D
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/World/JoltExampleStage.json");
 
     auto camera = EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Camera/FollowCamera.json");
-    auto player = EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Test/PlayerTest.json");
+    auto player = EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Player/PlayerTest.json");
     
     // player.ID() を渡してメソッドチェーンでPatchする
     camera.Patch<CameraBodyFollow>([pid = player.ID()](auto& body) { body.target = pid; })

@@ -19,6 +19,8 @@
 #include "Game/Logics/LevelGen/DungeonGrid.h"
 #include "Engine/Serialization/Factory/Prefab.h"
 
+#include "Engine/Camera/Components/VirtualCameraComponents.h"
+
 #include <memory>
 #include <vector>
 
@@ -246,3 +248,70 @@ void DungeonLevelBuilder::SpawnMarkers(CCL::ECS::Core::World& world,
         "[Dungeon] Spawned %d prefabs from markers (%d skipped: no path).",
         spawned, skipped);
 }
+
+
+//============================================================================
+//  プレイヤー生成（ダンジョンとは別ライフサイクル）
+//============================================================================
+
+CCL::ECS::EntityID DungeonLevelBuilder::SpawnPlayerAtStart(
+    CCL::ECS::Core::World& world, const PlayerSpawnParams& params)
+{
+    using namespace RuneForge::Dungeon;
+
+    // スタート地点はグリッドリソースから取得（Build で登録済みの想定）
+    if (!world.HasResource<DungeonGrid>())
+    {
+        CCL_LOG_WARN(LogCategory::Core,
+            "[Dungeon] SpawnPlayerAtStart: DungeonGrid resource not found. "
+            "Call Build() first (with registerGridResource=true).");
+        return CCL::ECS::InvalidEntityID;
+    }
+
+    auto& grid = world.GetResource<DungeonGrid>();
+    const CellPos s = grid.StartCell();
+    const float wx = grid.CellCenterWorldX(s.i);
+    const float wz = grid.CellCenterWorldZ(s.j);
+
+    return SpawnPlayerAt(world, wx, params.spawnYOffset, wz, params);
+}
+
+CCL::ECS::EntityID DungeonLevelBuilder::SpawnPlayerAt(
+    CCL::ECS::Core::World& world,
+    float worldX, float worldY, float worldZ,
+    const PlayerSpawnParams& params)
+{
+    if (params.playerPrefab.empty())
+    {
+        CCL_LOG_WARN(LogCategory::Core, "[Dungeon] SpawnPlayerAt: playerPrefab is empty.");
+        return CCL::ECS::InvalidEntityID;
+    }
+
+    // --- プレイヤーを Prefab から生成し、スタート地点へ配置 ---
+    //   EntityFactory::SpawnPrefab は位置引数を取らないので、生成後に
+    //   TransformComponent の位置を Patch で設定する。
+    auto player = EntityFactory::SpawnPrefab(world, params.playerPrefab.c_str());
+    const CCL::ECS::EntityID playerId = player.ID();
+
+    player.Patch<TransformComponent>(
+        [worldX, worldY, worldZ](auto& t) {
+            t.position = { worldX, worldY, worldZ };
+            t.isDirty = true; // worldMatrix を再計算させる
+        });
+
+    CCL_LOG_INFO(LogCategory::Core,
+        "[Dungeon] Player spawned at world (%.1f, %.1f, %.1f) entity=%u",
+        worldX, worldY, worldZ, playerId);
+
+    // --- フォローカメラもセットで生成し、ターゲットをプレイヤーに向ける ---
+    if (params.spawnCamera && !params.cameraPrefab.empty())
+    {
+        auto camera = EntityFactory::SpawnPrefab(world, params.cameraPrefab.c_str());
+        // SceneInitializer と同じ連携パターン
+        camera.Patch<CameraBodyFollow>([pid = playerId](auto& body) { body.target = pid; })
+            .Patch<CameraAimLookAt>([pid = playerId](auto& aim) { aim.target = pid; });
+    }
+
+    return playerId;
+}
+

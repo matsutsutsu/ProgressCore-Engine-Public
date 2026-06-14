@@ -63,6 +63,46 @@ public:
     // 既存のダンジョンチャンクを全削除する（再生成前に呼ぶ）。
     static void Clear(CCL::ECS::Core::World& world);
 
+    // ------------------------------------------------------------------
+   // プレイヤー生成（ダンジョンとは別ライフサイクル）
+   //   Build() ではプレイヤーを生成しない（特殊生成や層遷移で持ち越すため）。
+   //   通常プレイ開始時にこれを呼んでスタート地点にプレイヤーを配置する。
+   //
+   //   グリッドのスタートセル（DungeonGrid::StartCell）のワールド座標に
+   //   Player.json を生成し、フォローカメラもセットで生成・ターゲット設定する。
+   //
+   //   戻り値: 生成したプレイヤーの EntityID（失敗時は InvalidEntityID）。
+   // ------------------------------------------------------------------
+    struct PlayerSpawnParams
+    {
+        std::string playerPrefab = "Assets/Prefabs/Player/PlayerTest.json";
+        std::string cameraPrefab = "Assets/Prefabs/Camera/FollowCamera.json";
+        bool        spawnCamera = true;   // フォローカメラもセットで生成するか
+        float       spawnYOffset = 1.0f;   // 床から少し浮かせる（埋まり防止）
+    };
+
+    // DungeonGrid リソースを使ってスタート地点に配置（Build 後に呼ぶ）。
+    static CCL::ECS::EntityID SpawnPlayerAtStart(
+        CCL::ECS::Core::World& world, const PlayerSpawnParams& params);
+
+    // 既定パラメータ版
+    static CCL::ECS::EntityID SpawnPlayerAtStart(CCL::ECS::Core::World& world)
+    {
+        return SpawnPlayerAtStart(world, PlayerSpawnParams{});
+    }
+
+    // 任意のワールド座標に配置（スタート以外に出したいとき用）。
+    static CCL::ECS::EntityID SpawnPlayerAt(
+        CCL::ECS::Core::World& world,
+        float worldX, float worldY, float worldZ,
+        const PlayerSpawnParams& params);
+    // 既定パラメータ版
+    static CCL::ECS::EntityID SpawnPlayerAt(
+        CCL::ECS::Core::World& world, float worldX, float worldY, float worldZ)
+    {
+        return SpawnPlayerAt(world, worldX, worldY, worldZ, PlayerSpawnParams{});
+    }
+
     // 診断ログの ON/OFF（既定 false）。デバッグ時のみ true にする。
     static void SetDiagnosticLogging(bool enabled) { s_diagnosticLogging = enabled; }
     static bool IsDiagnosticLogging() { return s_diagnosticLogging; }
