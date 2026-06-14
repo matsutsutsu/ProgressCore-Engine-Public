@@ -16,9 +16,9 @@
 // =====================================================================
 #include "Prefab.h"
 #include "Engine/Serialization/Serializer/SceneSerializer.h"
-#include "Game/Core/AllComponents.h"
 #include "Engine/Transform/Systems/TransformUpdateSystem.h"
 #include "Engine/Platform/Core/FileSystem.h"
+#include "Engine/Platform/Core/Logger.h"
 
 #include "Engine/Graphics/Shader/Shared/ShaderShared.h"
 
@@ -70,7 +70,8 @@ namespace Prefab {
 
         // 存在チェック (アセット欠落は実機で見つけにくい不具合の上位なので必ず警告)
         if (!FileSystem::Exists(fullPath)) {
-            OutputDebugStringA(("[Prefab] Not Found: " + fullPath + "\n").c_str());
+            CCL_LOG_ERROR(LogCategory::Core, "[Prefab] Not Found: %s", fullPath.c_str());
+
             return 0;
         }
 

@@ -1,7 +1,7 @@
 #pragma once
 #include "Engine/ECS/Core/CCL_World.h"
-#include "Game/Core/AllComponents.h"
 #include "Engine/Serialization/Factory/Prefab.h"
+#include "Engine/Core/Components/NameComponent.h"
 
 // ゲームレイヤー専用のユーティリティ名前空間
 namespace EntityFactory {

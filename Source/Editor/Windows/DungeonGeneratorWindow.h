@@ -5,13 +5,13 @@
 //
 //  ※ 仕様書では「ToolWindowBase 継承などの枠は別ファイルで提供」とあったが、
 //     本プロジェクトの実体は EditorWindow（DrawContents(EditorContext&)）。
-//     そちらに合わせて実装してある。
 //
 //  登録方法（EditorWindowManager::Initialize 内）:
 //      RegisterWindow<DungeonGeneratorWindow>();
 //============================================================================
 #include "Editor/Core/EditorWindow.h"
-#include "Game/Logics/LevelGen/DungeonGenerator.h"   // パスはプロジェクト構成に合わせて調整
+#include "Game/Logics/LevelGen/DungeonGenerator.h"     // 2Dプレビュー用
+#include "Game/Logics/LevelGen/DungeonLevelBuilder.h"  // 3Dビルド用
 
 class DungeonGeneratorWindow : public EditorWindow
 {
@@ -23,10 +23,11 @@ protected:
 
 private:
     // UI 状態
-    int  _seed = 12345;
-    int  _floor = 1;
-    bool _hasResult = false;
-    float _zoom = 8.0f; // 1セルあたりのピクセル
+    int   _seed = 12345;
+    int   _floor = 1;
+    bool  _hasResult = false;
+    float _zoom = 8.0f;             // 1セルあたりのピクセル
+    bool  _clearBeforeBuild = true; // 3D生成前に既存チャンクを消すか
 
     RuneForge::Dungeon::DungeonGenerateResult _lastResult;
 
@@ -34,6 +35,6 @@ private:
     void DrawGridCanvas();
     void DrawRoomList();
 
-    // 現在の生成結果を 3D でシーンに建てる（context.world を使う）
-    void SpawnToScene(EditorContext& context);
+    // 現在のシード・層で 3D ダンジョンをシーンに構築する（context.world を使う）
+    void BuildInScene(EditorContext& context);
 };

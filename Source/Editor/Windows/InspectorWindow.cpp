@@ -5,10 +5,11 @@
 #include <string>
 #include <windows.h>
 
+#include "Engine/Core/Components/NameComponent.h"
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Platform/Core/Dialog.h"
 #include "Engine/Serialization/Serializer/PrefabSerializer.h"
-#include "Game/Core/AllComponents.h"
+
 
 InspectorWindow::InspectorWindow() : EditorWindow("Inspector") {}
 

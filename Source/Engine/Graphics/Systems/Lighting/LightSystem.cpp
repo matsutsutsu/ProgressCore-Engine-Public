@@ -3,11 +3,13 @@
 // 実装で必要なヘッダ群
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Graphics/RHI/Light.h"
-#include "Game/Core/AllComponents.h" // 必要に応じて個別のコンポーネントに細分化推奨
 
 // システムの実行順序の定義ヘッダー
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
+
+#include "Engine/Graphics/Components/Lighting/LightComponent.h"
+#include "Engine/Transform/Components/TransformComponent.h"
 
 LightSystem::LightSystem() : SystemBase("LightSystem") {}
 

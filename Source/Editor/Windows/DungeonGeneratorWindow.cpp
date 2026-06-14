@@ -1,10 +1,10 @@
 //============================================================================
 //  DungeonGeneratorWindow.cpp
-//  ImGui で「シード入力・生成・グリッド可視化・部屋リスト」を提供（仕様書 §8）
+//  ImGui で「シード入力・2Dプレビュー・3D構築・部屋リスト」を提供（仕様書 §8）
 //============================================================================
 #include "DungeonGeneratorWindow.h"
 
-#include "Engine/Serialization/Factory/SceneInitializer.h" // SpawnDungeonTest を呼ぶため
+#include "Engine/Graphics/RHI/Graphics.h"   // device 取得用
 
 #if ENABLE_EDITOR
 #include <imgui.h>
@@ -40,55 +40,60 @@ DungeonGeneratorWindow::DungeonGeneratorWindow()
 
 void DungeonGeneratorWindow::Regenerate()
 {
+    // 2Dプレビュー用の生成（軽量、決定的）
     _lastResult = DungeonGenerator::Generate(static_cast<uint32_t>(_seed), _floor);
     _hasResult = true;
-    // コンソールにも ASCII を出しておく（デバッグ用シード確認）
     DungeonGenerator::DebugPrintGrid(_lastResult);
 }
 
-void DungeonGeneratorWindow::SpawnToScene(EditorContext& context)
+void DungeonGeneratorWindow::BuildInScene(EditorContext& context)
 {
     if (!context.world) return;
-    // 現在のシード・層でシーンに 3D 生成する。
-    // （SpawnDungeonTest 内部でも Generate を呼ぶので決定的に同じ結果になる）
-    SceneInitializer::SpawnDungeonTest(
-        *context.world, nullptr,
-        static_cast<uint32_t>(_seed), _floor);
+
+    ID3D11Device* device = Graphics::Instance().GetDevice();
+
+    // 既存のダンジョンチャンクを消してから再構築（再生成のたびに重複しないように）
+    if (_clearBeforeBuild)
+        DungeonLevelBuilder::Clear(*context.world);
+
+    // 現在のシード・層で 3D 構築。2Dプレビューと同じシードなので結果は一致する。
+    DungeonLevelBuilder::BuildParams params;
+    params.seed = static_cast<uint32_t>(_seed);
+    params.floorIndex = _floor;
+    DungeonLevelBuilder::Build(*context.world, device, params);
 }
 
 void DungeonGeneratorWindow::DrawContents(EditorContext& context)
 {
 #if ENABLE_EDITOR
-    // ---------------------------------------------------------------
     // 1. シード入力
-    // ---------------------------------------------------------------
     ImGui::InputInt("Seed", &_seed);
     ImGui::SameLine();
     if (ImGui::Button("Random Seed"))
-    {
-        // ImGui のフレームカウンタ等から雑にシードを振る（決定性は Generate 側で担保）
         _seed = static_cast<int>(ImGui::GetTime() * 1000.0) ^ (_seed * 2654435761u);
-    }
 
-    // ---------------------------------------------------------------
     // 2. 層番号選択 (1〜5)
-    // ---------------------------------------------------------------
     ImGui::SliderInt("Floor", &_floor, 1, 5);
 
-    // ---------------------------------------------------------------
-    // 3. 生成ボタン
-    // ---------------------------------------------------------------
-    if (ImGui::Button("Generate", ImVec2(120, 0)))
-    {
+    // 3. 生成（2Dプレビュー）
+    if (ImGui::Button("Generate (Preview)", ImVec2(160, 0)))
         Regenerate();
-    }
+
     ImGui::SameLine();
-    // 3D シーンに建てる（要 Generate 済み or 押下時に内部で生成）
-    if (ImGui::Button("Spawn to Scene", ImVec2(140, 0)))
+    // 3D シーンに構築（DungeonLevelBuilder 経由）
+    if (ImGui::Button("Build in Scene", ImVec2(140, 0)))
     {
         if (!_hasResult) Regenerate();
-        SpawnToScene(context);
+        BuildInScene(context);
     }
+
+    ImGui::SameLine();
+    if (ImGui::Button("Clear Scene"))
+    {
+        if (context.world) DungeonLevelBuilder::Clear(*context.world);
+    }
+
+    ImGui::Checkbox("Clear before build", &_clearBeforeBuild);
     ImGui::SameLine();
     if (ImGui::Button("Copy Seed"))
     {
@@ -103,7 +108,7 @@ void DungeonGeneratorWindow::DrawContents(EditorContext& context)
     if (!_hasResult)
     {
         ImGui::Separator();
-        ImGui::TextDisabled("Press \"Generate\" to build a dungeon.");
+        ImGui::TextDisabled("Press \"Generate (Preview)\" to preview a dungeon.");
         return;
     }
 
@@ -115,14 +120,12 @@ void DungeonGeneratorWindow::DrawContents(EditorContext& context)
         _lastResult.startCell.i, _lastResult.startCell.j,
         _lastResult.portalCell.i, _lastResult.portalCell.j);
 
-    // ---------------------------------------------------------------
-    // 4. グリッド可視化 + 5. 部屋リスト を左右分割
-    // ---------------------------------------------------------------
+    // 4. グリッド可視化 + 5. 部屋リスト
     DrawGridCanvas();
     ImGui::Separator();
     DrawRoomList();
 #else
-    (void)0;
+    (void)context;
 #endif
 }
 
@@ -135,22 +138,20 @@ void DungeonGeneratorWindow::DrawGridCanvas()
     const float cell = _zoom;
     const ImVec2 canvasSize(r.width * cell, r.depth * cell);
 
-    // スクロール可能な子ウィンドウ内に描画
     ImGui::BeginChild("DungeonCanvas", ImVec2(0, 360), true,
         ImGuiWindowFlags_HorizontalScrollbar);
 
     ImDrawList* dl = ImGui::GetWindowDrawList();
     const ImVec2 origin = ImGui::GetCursorScreenPos();
 
-    // 色（仕様書 §8）
-    const ImU32 colWall = IM_COL32(90, 90, 90, 255); // 壁=グレー
-    const ImU32 colFloor = IM_COL32(15, 15, 18, 255); // 床=黒
-    const ImU32 colStart = IM_COL32(60, 200, 80, 255); // スタート=緑
-    const ImU32 colPortal = IM_COL32(60, 120, 230, 255); // ポータル=青
-    const ImU32 colBoss = IM_COL32(220, 60, 60, 255); // ボス=赤
-    const ImU32 colShop = IM_COL32(220, 200, 60, 255); // ショップ=黄
+    const ImU32 colWall = IM_COL32(90, 90, 90, 255);
+    const ImU32 colFloor = IM_COL32(15, 15, 18, 255);
+    const ImU32 colStart = IM_COL32(60, 200, 80, 255);
+    const ImU32 colPortal = IM_COL32(60, 120, 230, 255);
+    const ImU32 colBoss = IM_COL32(220, 60, 60, 255);
+    const ImU32 colShop = IM_COL32(220, 200, 60, 255);
 
-    // j（Z）が大きいほど上に来るよう、画面 Y は反転して描く。
+    // j(Z) が大きいほど上に来るよう画面Yを反転
     auto cellRectMin = [&](int i, int j) -> ImVec2
         {
             float x = origin.x + i * cell;
@@ -158,7 +159,6 @@ void DungeonGeneratorWindow::DrawGridCanvas()
             return ImVec2(x, y);
         };
 
-    // 床/壁を一括描画
     for (int i = 0; i < r.width; ++i)
         for (int j = 0; j < r.depth; ++j)
         {
@@ -167,9 +167,7 @@ void DungeonGeneratorWindow::DrawGridCanvas()
             dl->AddRectFilled(a, b, r.solid[i][j] ? colWall : colFloor);
         }
 
-    // 部屋のスポーンマーカー（ショップ/ボス）を色付け
     for (const auto& room : r.rooms)
-    {
         for (const auto& m : room.spawnMarkers)
         {
             ImU32 c = 0;
@@ -178,13 +176,10 @@ void DungeonGeneratorWindow::DrawGridCanvas()
             if (c)
             {
                 ImVec2 a = cellRectMin(m.cell.i, m.cell.j);
-                ImVec2 b(a.x + cell, a.y + cell);
-                dl->AddRectFilled(a, b, c);
+                dl->AddRectFilled(a, ImVec2(a.x + cell, a.y + cell), c);
             }
         }
-    }
 
-    // スタート（緑）・ポータル（青）
     {
         ImVec2 a = cellRectMin(r.startCell.i, r.startCell.j);
         dl->AddRectFilled(a, ImVec2(a.x + cell, a.y + cell), colStart);
@@ -192,11 +187,9 @@ void DungeonGeneratorWindow::DrawGridCanvas()
         dl->AddRectFilled(p, ImVec2(p.x + cell, p.y + cell), colPortal);
     }
 
-    // 子ウィンドウのスクロール領域を確保するためダミーを置く
     ImGui::Dummy(canvasSize);
     ImGui::EndChild();
 
-    // 凡例
     ImGui::TextDisabled("Legend:");
     ImGui::SameLine(); ImGui::TextColored(ImVec4(0.24f, 0.78f, 0.31f, 1), "Start");
     ImGui::SameLine(); ImGui::TextColored(ImVec4(0.24f, 0.47f, 0.90f, 1), "Portal");

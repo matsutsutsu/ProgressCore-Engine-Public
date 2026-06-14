@@ -5,7 +5,9 @@
 #include "DungeonChunkTag.h"
 
 #include "Engine/ECS/Common/CCL_Common.h"
-#include "Game/Core/AllComponents.h"                      // TransformComponent / ModelComponent / MaterialComponent
+#include "Engine/Transform/Components/TransformComponent.h"
+#include "Engine/Graphics/Components/Core/ModelComponent.h"
+#include "Engine/Graphics/Components/Core/MaterialComponent.h"
 #include "Engine/Serialization/Factory/EntityFactory.h"
 #include "Engine/Platform/Core/Logger.h"
 
