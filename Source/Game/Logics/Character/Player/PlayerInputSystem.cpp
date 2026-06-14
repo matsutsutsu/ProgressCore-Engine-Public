@@ -20,10 +20,10 @@ void PlayerInputSystem::Update(float dt)
 {
     // 1. ループ外での入力デバイスの一括取得 (キャッシュ効率の最大化)
     if (!_world->HasResource<std::shared_ptr<IInputAPI>>()) return;
-    if (!_world->HasResource<Camera>()) return;
+    if (!_world->HasResource<Camera*>()) return;
 
     auto inputAPI = _world->GetResource<std::shared_ptr<IInputAPI>>();
-    const Camera& camera = _world->GetResource<Camera>();
+    Camera* mainCamera = _world->GetResource<Camera*>();
 
     // Axis / Action から入力を抽出 (JSONでバインド済みと想定)
     float moveX = inputAPI->GetAxis("MoveX");
@@ -43,7 +43,7 @@ void PlayerInputSystem::Update(float dt)
 
     // 2. ユーティリティを使ってワールド座標を算出
     Vector3 mouseWorldPos = ScreenToWorld::GetRayIntersectionY0(
-        mouseX, mouseY, screenWidth, screenHeight, camera
+        mouseX, mouseY, screenWidth, screenHeight, *mainCamera
     );
 
     // 2. エンティティ群への意思の書き込み (SoAによる超高速ループ)
