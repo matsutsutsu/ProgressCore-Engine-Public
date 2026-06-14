@@ -24,9 +24,10 @@
 #include "tracy/Tracy.hpp"
 
 #include "Engine/Platform/Core/Logger.h"
-#include "Game/Logics/Wand/Registry/WandProgramRegistry.h"
-#include "Game/Logics/Wand/Registry/MagicBulletPool.h"
-#include "Game/Logics/Wand/Registry/BulletSpatialHash.h"
+
+#include "Game/Logics/Wand/Bullet/MagicBulletPool.h"
+#include "Game/Logics/Wand/Compiler/WandProgramRegistry.h"
+#include "Game/Logics/Wand/Collision/BulletSpatialHash.h"
 
 
 

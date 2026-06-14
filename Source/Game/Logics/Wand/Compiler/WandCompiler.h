@@ -14,8 +14,8 @@
 //       の責務であり、本クラスは「変換」だけに専念する（テスト容易性のため）。
 // ===========================================================================
 
-#include "Game/Logics/Wand/Data/WandTypes.h"
-#include "Game/Logics/Wand/Data/CompiledWandProgram.h"
+#include "Game/Logics/Wand/Core/WandTypes.h"
+#include "Game/Logics/Wand/Compiler/CompiledWandProgram.h"
 
 struct WandBuildComponent; // 前方宣言（実体は WandBuildComponent.h、.cpp 側で include）
 

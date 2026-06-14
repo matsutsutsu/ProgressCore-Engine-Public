@@ -5,8 +5,9 @@
 // @brief WandCompiler の実体。重ねがけ(同概念の複数装着)を stackCount に畳み込む。
 // ===========================================================================
 #include "Game/Logics/Wand/Compiler/WandCompiler.h"
-#include "Game/Logics/Wand/Data/WandBuildComponent.h"
-#include "RuneDatabase.h"
+#include "Game/Logics/Wand/Compiler/WandBuildComponent.h"
+#include "Game/Logics/Wand/Core/WandTypes.h"
+#include "Game/Logics/Wand/Core/RuneDatabase.h"
 
 
 // ビルド構成をコンパイルして実行時の最適化された情報に変換する
