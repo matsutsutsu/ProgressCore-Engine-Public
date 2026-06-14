@@ -27,23 +27,22 @@ void BulletInheritanceSystem::Update(float /*dt*/)
         const BulletProgramRef& ref,
         const BulletTag&        /*tag*/)
         {
-            if (st.age < st.lifetime) return; // まだ寿命内
+            // age >= lifetime の行を以下に置き換える
+            if (st.age < st.lifetime && !st.hitWall && !st.hitEnemy) return; // まだ生きている
 
-            // 継承：深度0かつ継承命令があれば、死ぬ直前に新弾を再射出。
-            // 新弾は同じ programId（travel/onHit はそのまま継承）、spawn効果に inheritanceOps を使い、深度1で生む。
-            if (st.inheritanceDepth == 0 && registry.IsValid(ref.programId))
+            // 継承判定（寿命切れのみ。壁/敵ヒットは継承しない）
+            if (!st.hitWall && !st.hitEnemy &&
+                st.inheritanceDepth == 0 && registry.IsValid(ref.programId))
             {
                 const CompiledWandProgram& prog = registry.Get(ref.programId);
                 if (prog.inheritanceCount > 0)
                 {
                     BulletSpawn::Spawn(_world, pool, ref.programId, prog,
                         prog.inheritanceOps, prog.inheritanceCount,
-                        t.position, st.direction, st.owner,
-                        /*inheritanceDepth=*/1);
+                        t.position, st.direction, st.owner, 1);
                 }
             }
 
-            // 寿命切れ弾を回収（プールからも解除）。
             pool.Unregister(id);
             _world->Destroy(id);
         });

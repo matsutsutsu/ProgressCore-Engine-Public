@@ -46,6 +46,9 @@ struct BulletStateComponent
     float    lifetime = 3.0f; ///< 寿命(秒)。age>=lifetime で Inheritance 発動
     uint8_t  inheritanceDepth = 0;    ///< 継承で生成された世代深度（暴走防止・デバッグ用）
 
+    bool hitWall = false; ///< 壁に当たった（L06が立てる→L07が見て破棄/継承）
+    bool hitEnemy = false; ///< 敵に当たった（L06が立てる→L07が見て破棄/継承）
+
     /// @brief 前フレームの位置。衝突判定はこの点→現在位置の線分をRayCastする。
     DirectX::SimpleMath::Vector3 prevPosition = {};
 

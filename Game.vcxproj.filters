@@ -505,6 +505,9 @@
     <Filter Include="Source\Game\Logics\LevelGen">
       <UniqueIdentifier>{ec091a90-2dde-4c1b-ab6d-bf2c35d16dfd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\Wand\Systems\Collision">
+      <UniqueIdentifier>{186f2261-38b0-4821-a8f9-e766459966b9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1680,6 +1683,21 @@
     <ClInclude Include="Source\Game\Logics\LevelGen\DungeonGrid.h">
       <Filter>Source\Game\Logics\LevelGen</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Registry\BulletSpatialHash.h">
+      <Filter>Source\Game\Logics\Wand\Registry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Systems\EnemySpatialHashSystem.h">
+      <Filter>Source\Game\Logics\Wand\Systems\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Systems\BulletWallCollisionSystem.h">
+      <Filter>Source\Game\Logics\Wand\Systems\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Systems\BulletEnemyCollisionSystem.h">
+      <Filter>Source\Game\Logics\Wand\Systems\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Systems\CharacterWallSlideSystem.h">
+      <Filter>Source\Game\Logics\Wand\Systems\Collision</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2518,6 +2536,18 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\LevelGen\DungeonLevelBuilder.cpp">
       <Filter>Source\Game\Logics\LevelGen</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Wand\Systems\EnemySpatialHashSystem.cpp">
+      <Filter>Source\Game\Logics\Wand\Systems\Collision</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Wand\Systems\BulletWallCollisionSystem.cpp">
+      <Filter>Source\Game\Logics\Wand\Systems\Collision</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Wand\Systems\BulletEnemyCollisionSystem.cpp">
+      <Filter>Source\Game\Logics\Wand\Systems\Collision</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Wand\Systems\CharacterWallSlideSystem.cpp">
+      <Filter>Source\Game\Logics\Wand\Systems\Collision</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
