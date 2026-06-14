@@ -5,6 +5,8 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
+#include "Engine/Core/Math/ScreenToWorld.h"
+
 // ※ 実装ファイル内でのみ展開する
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
@@ -18,8 +20,10 @@ void PlayerInputSystem::Update(float dt)
 {
     // 1. ループ外での入力デバイスの一括取得 (キャッシュ効率の最大化)
     if (!_world->HasResource<std::shared_ptr<IInputAPI>>()) return;
+    if (!_world->HasResource<Camera>()) return;
 
     auto inputAPI = _world->GetResource<std::shared_ptr<IInputAPI>>();
+    const Camera& camera = _world->GetResource<Camera>();
 
     // Axis / Action から入力を抽出 (JSONでバインド済みと想定)
     float moveX = inputAPI->GetAxis("MoveX");
@@ -31,8 +35,16 @@ void PlayerInputSystem::Update(float dt)
         moveDir.Normalize();
     }
 
-    // マウスのワールド座標を取得（レイキャスト）
-    Vector3 mouseWorldPos = GetMouseWorldPositionIntersection();
+    // 1. 動的な画面サイズとマウス座標の取得
+    float mouseX = inputAPI->GetMouseX();
+    float mouseY = inputAPI->GetMouseY();
+    float screenWidth = inputAPI->GetScreenWidth();
+    float screenHeight = inputAPI->GetScreenHeight();
+
+    // 2. ユーティリティを使ってワールド座標を算出
+    Vector3 mouseWorldPos = ScreenToWorld::GetRayIntersectionY0(
+        mouseX, mouseY, screenWidth, screenHeight, camera
+    );
 
     // 2. エンティティ群への意思の書き込み (SoAによる超高速ループ)
     ForEach([&](CharacterMovementInputComponent& inputData, const PlayerComponent& player) {
@@ -46,12 +58,6 @@ void PlayerInputSystem::Update(float dt)
         });
 }
 
-Vector3 PlayerInputSystem::GetMouseWorldPositionIntersection()
-{
-    // ※ 注意: カメラのView/Proj行列から逆変換してY=0平面との交点を出す数学的処理がここに必要。
-    // 現状はコンパイルを通すためのモックを返す。
-    return Vector3::Zero;
-}
 
 // ステージ L01: 全ての物理・移動処理の「前」に入力を確定させる
 REGISTER_LOGIC_SYSTEM(PlayerInputSystem, Priority::LogicStage::L01_Input);

@@ -425,6 +425,7 @@
     <ClInclude Include="Source\Engine\Core\Components\NameComponent.h" />
     <ClInclude Include="Source\Engine\Core\Components\PersistentTag.h" />
     <ClInclude Include="Source\Engine\Core\Math\Misc.h" />
+    <ClInclude Include="Source\Engine\Core\Math\ScreenToWorld.h" />
     <ClInclude Include="Source\Engine\Core\Math\StringHash.h" />
     <ClInclude Include="Source\Engine\Core\Math\TransformUtils.h" />
     <ClInclude Include="Source\Engine\Core\pch.h" />
@@ -1256,6 +1257,7 @@
     <ClCompile Include="Source\Engine\Core\App\Framework.cpp" />
     <ClCompile Include="Source\Engine\Core\App\Main.cpp" />
     <ClCompile Include="Source\Engine\Core\Components\CoreComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Core\Math\ScreenToWorld.cpp" />
     <ClCompile Include="Source\Engine\Core\Math\TransformUtils.cpp" />
     <ClCompile Include="Source\Engine\Core\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Create</PrecompiledHeader>

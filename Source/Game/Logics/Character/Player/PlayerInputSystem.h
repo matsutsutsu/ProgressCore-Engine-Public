@@ -19,7 +19,4 @@ public:
 
     void Update(float dt) override;
 
-private:
-    // マウスのスクリーン座標をワールド平面(Y=0)に変換するヘルパー
-    DirectX::SimpleMath::Vector3 GetMouseWorldPositionIntersection();
 };

@@ -1698,6 +1698,9 @@
     <ClInclude Include="Source\Game\Logics\Character\Collision\CharacterWallSlideSystem.h">
       <Filter>Source\Game\Logics\Character\Collision</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Math\ScreenToWorld.h">
+      <Filter>Source\Engine\Core\Math</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2548,6 +2551,9 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Collision\CharacterWallComponentsMeta.cpp">
       <Filter>Source\Game\Logics\Character\Collision</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Core\Math\ScreenToWorld.cpp">
+      <Filter>Source\Engine\Core\Math</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

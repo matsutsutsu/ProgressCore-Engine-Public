@@ -41,6 +41,12 @@ public:
     // 現在使用中のデバイスカテゴリを取得
     virtual ActiveDeviceType GetActiveDeviceType() const = 0;
 
+    // マウスとスクリーン情報の取得
+    virtual float GetMouseX() const = 0;
+    virtual float GetMouseY() const = 0;
+    virtual float GetScreenWidth() const = 0;
+    virtual float GetScreenHeight() const = 0;
+
     // --- 設定（バインディング） ---
     virtual void AddActionBinding(const std::string& actionName, InputDeviceType device, unsigned int keyCode) = 0;
     virtual void AddAxisBinding(const std::string& axisName, InputDeviceType device, unsigned int keyCode, float scale = 1.0f) = 0;

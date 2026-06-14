@@ -31,6 +31,20 @@ public:
     // 外部JSONファイルからバインディングを読み込む
     bool LoadConfig(const std::string& filePath) override;
 
+    // InputFacade.h の public セクションでオーバーライド
+    float GetMouseX() const override {
+        return static_cast<float>(m_rawInput->GetMouse().GetPositionX());
+    }
+    float GetMouseY() const override {
+        return static_cast<float>(m_rawInput->GetMouse().GetPositionY());
+    }
+    float GetScreenWidth() const override {
+        return static_cast<float>(m_rawInput->GetMouse().GetScreenWidth());
+    }
+    float GetScreenHeight() const override {
+        return static_cast<float>(m_rawInput->GetMouse().GetScreenHeight());
+    }
+
     void AddActionBinding(const std::string& actionName, InputDeviceType device, unsigned int keyCode) override;
     void AddAxisBinding(const std::string& axisName, InputDeviceType device, unsigned int keyCode, float scale = 1.0f) override;
 
