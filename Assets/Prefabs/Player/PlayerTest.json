@@ -10,6 +10,18 @@
                     "isLoop": true,
                     "playbackSpeed": 1.0
                 },
+                "Bounding Box": {
+                    "worldAABB.Center": [
+                        11.787250518798828,
+                        2.4210691452026367,
+                        9.99102783203125
+                    ],
+                    "worldAABB.Extents": [
+                        1.6607871055603027,
+                        1.4303332567214966,
+                        1.6301493644714355
+                    ]
+                },
                 "Character Movement Input": {
                     "desiredVelocity": [
                         0.0,
@@ -24,6 +36,9 @@
                         0.0
                     ]
                 },
+                "CharacterRadius": {
+                    "radius": 1.3700000047683716
+                },
                 "Material": null,
                 "Model": {
                     "assetPath": "Assets/Models/Player/Player.glb"
@@ -36,19 +51,27 @@
                     "padSlot": 0,
                     "turnSpeed": 10.0
                 },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01600000075995922
+                },
                 "Transform": {
-                    "Parent": 2,
                     "isStatic": false,
+                    "parent": 2,
                     "position": [
-                        0.1064753532409668,
-                        0.0,
-                        -11.331167221069336
+                        11.89059066772461,
+                        1.0,
+                        9.866487503051758
                     ],
                     "rotation": [
                         0.0,
-                        -0.004698185250163078,
+                        -0.9051427245140076,
                         0.0,
-                        0.9999886751174927
+                        0.4251081943511963
                     ],
                     "scale": [
                         0.029999999329447746,
@@ -56,7 +79,12 @@
                         0.029999999329447746
                     ]
                 },
+                "Visibility": {
+                    "isVisible": true
+                },
+                "WallSlideTag": null,
                 "Wand Build": {
+                    "baseDamage": 10.0,
                     "baseLifetime": 3.0,
                     "baseSpeed": 20.0,
                     "cooldown": 0.30000001192092896

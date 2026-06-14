@@ -10,18 +10,13 @@
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Transform/Components/TransformComponent.h"
-
-/// @brief 壁スライド押し出しを受けるキャラに付けるタグ。
-struct WallSlideTag {};
-
-/// @brief キャラの当たり判定半径（XZ平面の円）。
-struct CharacterRadiusComponent { float radius = 0.4f; };
+#include "CharacterWallComponents.h"
 
 class CharacterWallSlideSystem
     : public CCL::ECS::IfSystem<CharacterWallSlideSystem,
     CCL::ECS::Write<TransformComponent>,
     CCL::ECS::Read<WallSlideTag>,
-    CCL::ECS::Read<CharacterRadiusComponent>>
+    CCL::ECS::Read<CharacterWallRadiusComponent>>
 {
 public:
     CharacterWallSlideSystem() : IfSystem("CharacterWallSlideSystem") {}

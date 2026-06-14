@@ -679,7 +679,8 @@
     <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeComponents.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeData.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Character\CharacterWallSlideSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Collision\CharacterWallComponents.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Collision\CharacterWallSlideSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemySpatialHashSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyTrackingSystem.h" />
@@ -1417,7 +1418,8 @@
     <ClCompile Include="Source\Game\Logics\AI\NavAI\AIPatrolSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\NavAI\AIPerceptionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\StateTree\StateTreeSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\CharacterWallSlideSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Collision\CharacterWallComponentsMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Collision\CharacterWallSlideSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemySpatialHashSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyTrackingSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerAttackSystem.cpp" />

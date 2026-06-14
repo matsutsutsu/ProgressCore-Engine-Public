@@ -17,7 +17,7 @@ void CharacterWallSlideSystem::Update(float /*dt*/)
 
     ForEach([&grid, cs](TransformComponent& t,
         const WallSlideTag&              /*tag*/,
-        const CharacterRadiusComponent& cr)
+        const CharacterWallRadiusComponent& cr)
         {
             const float r = cr.radius;
             float px = t.position.x;
