@@ -2,8 +2,8 @@
 // RuneDatabase.cpp
 // ----------------
 // @file
-// @brief ルーンのフェーズ別既定パラメータの実体定義。
-//        ★ここの params コメントが、後工程のハンドラとの「契約(仕様)」となる。
+// @brief ルーンのフェーズ別既定パラメータの実体定義（パラメータの唯一の置き場=SSOT）。
+//        ★ここの params コメントが、各 <Name><Phase> ハンドラとの「契約(仕様)」。
 // ===========================================================================
 #include "RuneDatabase.h"
 
@@ -16,34 +16,49 @@ EffectOp RuneDatabase::GetDefaultOp(EffectType type, WandPhase phase)
     switch (type)
     {
         // -------------------------------------------------------------------
-        // Accelerate : 速度・運動（Step 3 で全フェーズ実装する先行定義）
+        // Accelerate : 速度・運動
         // -------------------------------------------------------------------
     case EffectType::Accelerate:
         switch (phase)
         {
-        case WandPhase::Spawn:
-            op.params[0] = 1.8f; // params[0] = 初速倍率
-            break;
-        case WandPhase::Travel:
-            op.params[0] = 1.5f; // params[0] = 1秒あたりの加速率 (speed *= 1 + rate*dt)
-            op.params[1] = 0.5f; // params[1] = 旋回抵抗（向き変更のしにくさ。0で無効）
-            break;
-        case WandPhase::OnHit:
-            op.params[0] = 1.2f; // params[0] = 貫通時の加速倍率
-            break;
-        default:
-            break; // Inheritance は別途 Spawn として焼き直すため個別定義不要
+        case WandPhase::Spawn:  op.params[0] = 1.8f; break;                 // 初速倍率
+        case WandPhase::Travel: op.params[0] = 1.5f; op.params[1] = 0.5f; break; // 加速率 / 旋回抵抗
+        case WandPhase::OnHit:  op.params[0] = 1.2f; break;                 // 貫通時の加速倍率
+        default: break;
         }
         break;
 
         // -------------------------------------------------------------------
-        // 以降は実装フェーズで順次定義（現状は type のみ・params=0 のプレースホルダ）
+        // Split : 増殖・拡散
+        //   Spawn:  params[0] = 1スタックあたり加算本数, params[1] = 1発あたり扇角[度]
+        // -------------------------------------------------------------------
+    case EffectType::Split:
+        switch (phase)
+        {
+        case WandPhase::Spawn: op.params[0] = 2.0f; op.params[1] = 10.0f; break;
+        default: break;
+        }
+        break;
+
+        // -------------------------------------------------------------------
+        // Focus : 精密・一点突破
+        //   Spawn:  params[0] = 扇角の倍率(<1で絞る/0.0で真っ直ぐ), params[1] = 初速倍率
+        //   OnHit:  (Step2) 貫通フラグ
+        // -------------------------------------------------------------------
+    case EffectType::Focus:
+        switch (phase)
+        {
+        case WandPhase::Spawn: op.params[0] = 0.3f; op.params[1] = 1.5f; break; // 扇を30%に絞る / 初速1.5倍
+        default: break;
+        }
+        break;
+
+        // -------------------------------------------------------------------
+        // 以降は実装フェーズで順次定義（現状 placeholder）
         // -------------------------------------------------------------------
     case EffectType::Slow:
-    case EffectType::Focus:
     case EffectType::Homing:
     case EffectType::Explosion:
-    case EffectType::Split:
     case EffectType::Reflection:
     case EffectType::Chaos:
     default:

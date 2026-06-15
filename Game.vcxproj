@@ -683,7 +683,6 @@
     <ClInclude Include="Source\Game\Logics\Character\Collision\CharacterWallComponents.h" />
     <ClInclude Include="Source\Game\Logics\Character\Collision\CharacterWallSlideSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyComponent.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemySpatialHashSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyTrackingSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerAttackSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerComponent.h" />
@@ -724,8 +723,7 @@
     <ClInclude Include="Source\Game\Logics\Wand\Bullet\MagicBulletPool.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Bullet\WandFireSystem.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Bullet\WandRuntimeComponents.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Collision\BulletEnemyCollisionSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Collision\BulletSpatialHash.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Collision\BulletHitResponseSystem.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Collision\BulletWallCollisionSystem.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Compiler\CompiledWandProgram.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Compiler\WandBuildComponent.h" />
@@ -1426,7 +1424,6 @@
     <ClCompile Include="Source\Game\Logics\AI\StateTree\StateTreeSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Collision\CharacterWallComponentsMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Collision\CharacterWallSlideSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemySpatialHashSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyTrackingSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerAttackSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerComponentMeta.cpp" />
@@ -1452,7 +1449,7 @@
     <ClCompile Include="Source\Game\Logics\Wand\Bullet\BulletTravelSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Wand\Bullet\WandFireSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Wand\Bullet\WandRuntimeComponentsMeta.cpp" />
-    <ClCompile Include="Source\Game\Logics\Wand\Collision\BulletEnemyCollisionSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Wand\Collision\BulletHitResponseSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Wand\Collision\BulletWallCollisionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Wand\Compiler\WandBuildComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Wand\Compiler\WandCompiler.cpp" />

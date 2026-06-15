@@ -2,19 +2,17 @@
 // ===========================================================================
 // Effects/Effect_Split.h
 // ----------------------
-// @file
-// @brief アタッチメント「Split(増殖・拡散)」のフェーズ別ハンドラ集約。
+// @file @brief 「Split(増殖・拡散)」のフェーズ別ハンドラ集約。
 // ===========================================================================
 #include "Game/Logics/Wand/Core/WandTypes.h"
 #include "Game/Logics/Wand/Effects/SpawnResolution.h"
 
+/// @brief Spawn: 本数と扇角を「足し算アキュムレータ」へ積む。
+///        params[0]=1スタックあたり加算本数, params[1]=1発あたり扇角[度]。
 inline void SplitSpawn(const EffectOp& op, SpawnResolution& r)
 {
-    // Databaseで決めた params[0](=2.0f) を使って、お盆(r)の弾数を増やす
-    r.volleyCount += static_cast<int>(op.params[0] * op.stackCount);
-
-    // Databaseで決めた params[1](=10.0f) を使って、お盆(r)の角度を広げる
-    r.spreadDeg += op.params[1];
+    r.bonusVolley += static_cast<int>(op.params[0] * op.stackCount);
+    r.spreadAddDeg += op.params[1]; // 1発あたり角度。本数が増えれば総扇幅は自動で広がる
 }
 
-// TODO(後工程): SplitOnHit(着弾で分裂) を同ファイルに追加。
+// TODO(後工程): SplitOnHit(着弾で分裂)

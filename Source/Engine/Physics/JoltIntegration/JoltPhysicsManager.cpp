@@ -52,6 +52,8 @@ BPLayerInterfaceImpl::BPLayerInterfaceImpl()
     // 「ObjectLayerのMOVING」を持った奴は、「BroadPhaseのMOVINGバケツ」に入れろ！という指示
     mObjectToBroadPhase[PhysicsLayers::NON_MOVING] = BroadPhaseLayers::NON_MOVING;
     mObjectToBroadPhase[PhysicsLayers::MOVING]     = BroadPhaseLayers::MOVING;
+    mObjectToBroadPhase[PhysicsLayers::ENEMY]      = BroadPhaseLayers::MOVING;
+    mObjectToBroadPhase[PhysicsLayers::BULLET]     = BroadPhaseLayers::MOVING;
 }
 uint BPLayerInterfaceImpl::GetNumBroadPhaseLayers() const { return BroadPhaseLayers::NUM_LAYERS; }
 BroadPhaseLayer BPLayerInterfaceImpl::GetBroadPhaseLayer(ObjectLayer inLayer) const
@@ -70,27 +72,55 @@ const char *BPLayerInterfaceImpl::GetBroadPhaseLayerName(BroadPhaseLayer inLayer
 }
 #endif
 
+// --- (2) ObjectVsBroadPhaseLayerFilterImpl ---
+//     BULLET は NON_MOVING(壁) のバケツとは照合しない（壁判定はDDAでやるため）。
 bool ObjectVsBroadPhaseLayerFilterImpl::ShouldCollide(
     ObjectLayer inLayer1, BroadPhaseLayer inLayer2) const
 {
     switch (inLayer1) {
     case PhysicsLayers::NON_MOVING: return inLayer2 == BroadPhaseLayers::MOVING;
-    case PhysicsLayers::MOVING: return true;
-    default: JPH_ASSERT(false); return false;
+    case PhysicsLayers::MOVING:     return true;                                  // キャラは全バケツと照合
+    case PhysicsLayers::ENEMY:      return true;                                  // 敵は弾(MOVINGバケツ)等と照合する
+    case PhysicsLayers::BULLET:     return inLayer2 == BroadPhaseLayers::MOVING;  // 弾は動くものバケツのみ（壁バケツは見ない）
+    default: JPH_ASSERT(false);     return false;
     }
 }
 
+
+// --- (3) ObjectLayerPairFilterImpl ---  ★命中ルールの確定版
+//     BULLET × ENEMY = true（命中）。
+//     BULLET × BULLET = false（弾同士は当たらない＝O(n²)回避）。
+//     BULLET × MOVING(プレイヤー等) = false（弾はプレイヤーに当たらない＝今回の決定）。
+//     BULLET × NON_MOVING(壁) = false（壁はDDA）。
 bool ObjectLayerPairFilterImpl::ShouldCollide(ObjectLayer inObject1, ObjectLayer inObject2) const
 {
     switch (inObject1) {
-    case PhysicsLayers::NON_MOVING: 
-        return inObject2 == PhysicsLayers::MOVING; // 壁は、動くモノ(MOVING)とだけ当たる
-    case PhysicsLayers::MOVING: 
-        return true;                               // 動くモノは、全員と当たる
-    default: JPH_ASSERT(false); 
+    case PhysicsLayers::NON_MOVING:
+        // 壁は「キャラ(MOVING)」とだけ当たる（弾とは当たらない）
+        return inObject2 == PhysicsLayers::MOVING;
+
+    case PhysicsLayers::MOVING:
+        // キャラ(プレイヤー)は 壁・他キャラ・敵 と当たる。弾とは当たらない。
+        return inObject2 == PhysicsLayers::NON_MOVING
+            || inObject2 == PhysicsLayers::MOVING
+            || inObject2 == PhysicsLayers::ENEMY;
+
+    case PhysicsLayers::ENEMY:
+        // 敵は キャラ(プレイヤー)・他の敵・弾 と当たる。
+        return inObject2 == PhysicsLayers::MOVING
+            || inObject2 == PhysicsLayers::ENEMY
+            || inObject2 == PhysicsLayers::BULLET;
+
+    case PhysicsLayers::BULLET:
+        // 弾は「敵」とだけ当たる。弾同士・プレイヤー・壁とは当たらない。
+        return inObject2 == PhysicsLayers::ENEMY;
+
+    default:
+        JPH_ASSERT(false);
         return false;
     }
 }
+
 
 // --- JoltPhysicsManager 実装 ---
 

@@ -27,7 +27,6 @@
 
 #include "Game/Logics/Wand/Bullet/MagicBulletPool.h"
 #include "Game/Logics/Wand/Compiler/WandProgramRegistry.h"
-#include "Game/Logics/Wand/Collision/BulletSpatialHash.h"
 
 
 
@@ -94,7 +93,6 @@ void BaseScene::Initialize()
     // ゲームシステム用のリソース登録
     _worldPtr->AddResource<WandProgramRegistry>();
     _worldPtr->AddResource<MagicBulletPool>(); // 既定 capacity=8192
-    _worldPtr->AddResource<BulletSpatialHash>();
 
     // システム登録 (派生クラスの処理が走る)
     RegisterSystems();

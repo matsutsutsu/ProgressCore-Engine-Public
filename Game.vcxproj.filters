@@ -1641,9 +1641,6 @@
     <ClInclude Include="Source\Game\Logics\LevelGen\DungeonGrid.h">
       <Filter>Source\Game\Logics\LevelGen</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemySpatialHashSystem.h">
-      <Filter>Source\Game\Logics\Character\Enemy</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Wand\Core\RuneDatabase.h">
       <Filter>Source\Game\Logics\Wand\Core</Filter>
     </ClInclude>
@@ -1664,12 +1661,6 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Wand\Compiler\WandProgramRegistry.h">
       <Filter>Source\Game\Logics\Wand\Compiler</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\Collision\BulletEnemyCollisionSystem.h">
-      <Filter>Source\Game\Logics\Wand\Collision</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\Collision\BulletSpatialHash.h">
-      <Filter>Source\Game\Logics\Wand\Collision</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Wand\Collision\BulletWallCollisionSystem.h">
       <Filter>Source\Game\Logics\Wand\Collision</Filter>
@@ -1715,6 +1706,9 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Wand\Effects\SpawnResolution.h">
       <Filter>Source\Game\Logics\Wand\Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Collision\BulletHitResponseSystem.h">
+      <Filter>Source\Game\Logics\Wand\Collision</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2522,9 +2516,6 @@
     <ClCompile Include="Source\Game\Logics\LevelGen\DungeonLevelBuilder.cpp">
       <Filter>Source\Game\Logics\LevelGen</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemySpatialHashSystem.cpp">
-      <Filter>Source\Game\Logics\Character\Enemy</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Game\Logics\Wand\Core\RuneDatabase.cpp">
       <Filter>Source\Game\Logics\Wand\Core</Filter>
     </ClCompile>
@@ -2536,9 +2527,6 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Wand\Compiler\WandCompileSystem.cpp">
       <Filter>Source\Game\Logics\Wand\Compiler</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Wand\Collision\BulletEnemyCollisionSystem.cpp">
-      <Filter>Source\Game\Logics\Wand\Collision</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Wand\Collision\BulletWallCollisionSystem.cpp">
       <Filter>Source\Game\Logics\Wand\Collision</Filter>
@@ -2569,6 +2557,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\Math\ScreenToWorld.cpp">
       <Filter>Source\Engine\Core\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Wand\Collision\BulletHitResponseSystem.cpp">
+      <Filter>Source\Game\Logics\Wand\Collision</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -16,10 +16,13 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/Common/CCL_Archetype.h"              // Archetype / ArchetypeHelper ※パス確認
 #include "Engine/Transform/Components/TransformComponent.h"
-#include "Engine/Physics/Components/Collision/JoltSphereColliderComponent.h"
-#include "Engine/Physics/Components/RigidBody/JoltRigidBodyComponent.h"
 #include "Engine/Timer/TimeState.h"
 #include "Engine/ECS/Core/CCL_EntityRef.h"
+// --- Jolt 連携（弾を物理空間のセンサーとして生成する）---
+#include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"      // PhysicsLayers
+#include "Engine/Physics/Components/RigidBody/JoltRigidBodyComponent.h"
+#include "Engine/Physics/Components/Collision/JoltSphereColliderComponent.h"
+
 
 // アタッチメント特有処理（命名規則: <Name>Spawn）
 #include "Game/Logics/Wand/Effects/SpawnResolution.h"
@@ -110,10 +113,23 @@ namespace
         state.prevPosition = position;
         state.lastHitTarget = InvalidEntityID;
 
+        // 弾の物理プロファイル：Kinematic（位置はECS駆動）＋センサー＋無重力＋CCD。
+        JoltRigidbodyComponent rb;
+        rb.motionType = JPH::EMotionType::Kinematic;     // 移動はBulletTravelSystem。Joltは判定だけ。
+        rb.objectLayer = PhysicsLayers::BULLET;          // 敵とだけ当たる（弾同士・壁・プレイヤーは当たらない）
+        rb.isSensor = true;                              // 物理的に押し合わない（ヒット検知のみ）
+        rb.gravityFactor = 0.0f;                         // 落下しない
+        rb.useCCD = true;                                // 高速弾のすり抜け防止（敵との掃引はJolt CCDに任せる）
+
+        JoltSphereColliderComponent col;
+        col.radius = 0.5f;
+
         Core::EntityRef ref = world->Spawn(bulletArch);
         const EntityID newId = ref.ID(); // ※EntityRefのID取得APIに合わせる
         ref.Set(BulletProgramRef{ programId })
             .Set(state)
+            .Set(rb)
+            .Set(col)
             .Patch<TransformComponent>([&](TransformComponent& t)
                 {
                     t.position = position;
@@ -134,11 +150,13 @@ namespace BulletSpawn
     {
         // 1) Spawn命令を解決（集約＋シナジー）
         const SpawnResolution res = ResolveSpawn(spawnOps, spawnOpCount);
-        const float finalSpeed = prog.baseSpeed * res.speedMult;
+        const float finalSpeed  = res.FinalSpeed(prog.baseSpeed);
+        const int   volleyCount = res.FinalVolleyCount();
+        const float spreadDeg   = res.FinalSpreadDeg();
 
         // 2) 扇方向を生成（spreadDeg は Synergy_Focus_Split 補正済み）
         Vector3 dirs[32];
-        const int n = BuildFan(baseDirection, res.volleyCount, res.spreadDeg, dirs, 32);
+        const int n = BuildFan(baseDirection, volleyCount, spreadDeg, dirs, 32);
 
         // 3) 1発ずつ生成
         for (int i = 0; i < n; ++i)

@@ -51,12 +51,12 @@ COMPONENT_META_END(JoltMeshColliderComponent)
 namespace {
     // 列挙型用 (CFIELD_ENUM_U8) の文字列配列は、ODR違反を防ぐため無名名前空間に配置
     const char* const MotionTypeNames[] = { "Static", "Kinematic", "Dynamic" };
-    const char* const ObjectLayerNames[] = { "NON_MOVING", "MOVING" };
+    const char* const ObjectLayerNames[] = { "NON_MOVING", "MOVING","ENEMY","BULLET"};
 } // namespace
 
 COMPONENT_META_BEGIN(JoltRigidbodyComponent, "Jolt Rigidbody")
 CFIELD_ENUM_U8(motionType, "Motion Type", MotionTypeNames, 3, "Physics")
-CFIELD_ENUM_U8(objectLayer, "Object Layer", ObjectLayerNames, 2, "Physics")
+CFIELD_ENUM_U8(objectLayer, "Object Layer", ObjectLayerNames, 4, "Physics")
 
 CFIELD_FLOAT_RANGED(restitution, "Restitution (反発)", 0.05f, 0.0f, 1.0f, "Material")
 CFIELD_FLOAT_RANGED(friction, "Friction (摩擦)", 0.05f, 0.0f, 1.0f, "Material")
