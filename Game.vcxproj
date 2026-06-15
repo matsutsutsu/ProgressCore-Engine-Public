@@ -734,6 +734,10 @@
     <ClInclude Include="Source\Game\Logics\Wand\Compiler\WandProgramRegistry.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Core\RuneDatabase.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Core\WandTypes.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Accelerate.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Focus.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Split.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Effects\SpawnResolution.h" />
     <ClInclude Include="Source\Game\Scenes\BaseScene.h" />
     <ClInclude Include="Source\Game\Scenes\EditorScene.h" />
     <ClInclude Include="Source\Game\Scenes\ParticleScene.h" />

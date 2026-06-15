@@ -157,9 +157,6 @@
     <Filter Include="Source\Game\Logics">
       <UniqueIdentifier>{53aa2d14-6b15-468a-b742-3922efcacbbc}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Game\Logics\Combat">
-      <UniqueIdentifier>{f9e98694-67ee-43f9-8feb-4ed9c3cab61a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Game\Logics\Character">
       <UniqueIdentifier>{f65da97b-1737-4ea7-aae7-9a3744c10e2c}</UniqueIdentifier>
     </Filter>
@@ -276,9 +273,6 @@
     </Filter>
     <Filter Include="Source\Game\Logics\AI\BehaviorTree\Data">
       <UniqueIdentifier>{562c3a01-244e-46ab-b064-571c92727868}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\Combat\_Meta">
-      <UniqueIdentifier>{0a94ac07-4f26-4cc2-a563-eb0d04156a23}</UniqueIdentifier>
     </Filter>
     <Filter Include="Build\props">
       <UniqueIdentifier>{70918abd-a317-48e7-9e20-3ef9d838100a}</UniqueIdentifier>
@@ -507,6 +501,15 @@
     </Filter>
     <Filter Include="Source\Game\Logics\Character\Collision">
       <UniqueIdentifier>{d414556c-64b0-45d5-b0d3-53e69d557215}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\Combat">
+      <UniqueIdentifier>{f9e98694-67ee-43f9-8feb-4ed9c3cab61a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\Combat\_Meta">
+      <UniqueIdentifier>{0a94ac07-4f26-4cc2-a563-eb0d04156a23}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\Wand\Effects">
+      <UniqueIdentifier>{7f3dd646-4b74-493f-9501-a1a6460b025d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -1700,6 +1703,18 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Math\ScreenToWorld.h">
       <Filter>Source\Engine\Core\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Accelerate.h">
+      <Filter>Source\Game\Logics\Wand\Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Split.h">
+      <Filter>Source\Game\Logics\Wand\Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Focus.h">
+      <Filter>Source\Game\Logics\Wand\Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Effects\SpawnResolution.h">
+      <Filter>Source\Game\Logics\Wand\Effects</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

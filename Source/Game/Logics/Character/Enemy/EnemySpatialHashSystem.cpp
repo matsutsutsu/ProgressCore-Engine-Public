@@ -1,8 +1,8 @@
-// ===========================================================================
+// ==================================
 // Systems/EnemySpatialHashSystem.cpp
 // ----------------------------------
 #include "EnemySpatialHashSystem.h"
-#include "Game/Logics/Wand/Registry/BulletSpatialHash.h"
+#include "Game/Logics/Wand/Collision/BulletSpatialHash.h"
 #include "Game/Logics/LevelGen/DungeonGrid.h"
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"

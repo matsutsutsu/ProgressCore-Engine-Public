@@ -1,11 +1,16 @@
 #pragma once
 // ===========================================================================
-// Systems/BulletSpawn.h
-// ---------------------
+// Bullet/BulletSpawn.h
+// --------------------
 // @file
-// @brief 弾を1発生成する共有ロジック。通常発射と継承の両方から呼ぶ。
-//        渡された spawn命令列(通常=spawnOps / 継承=inheritanceOps)を適用し、
-//        プール上限を尊重して弾を生成する。
+// @brief プログラムに従って弾を生成する共有ロジック（通常発射・継承の両方から呼ぶ）。
+//        公開APIは Spawn 1本。Spawn命令(spawnOps / 継承=inheritanceOps)を解釈し、
+//        Split に応じた本数を生成する。呼び出し側は「いつ撃つか」だけを判断する。
+//
+//   内部構造（BulletSpawn.cpp）:
+//     ResolveSpawn  … <Name>Spawn ハンドラ群で集約(Pass1) + Synergy_*(Pass2)
+//     BuildFan      … 確定本数・角度から扇方向を生成（純粋ジオメトリ）
+//     SpawnOne      … 最終 dir/speed で弾を1発生成するプリミティブ
 // ===========================================================================
 
 #include "Game/Logics/Wand/Core/WandTypes.h"
@@ -19,14 +24,14 @@ class MagicBulletPool;
 namespace BulletSpawn
 {
     /**
-     * @brief spawn命令列を適用しつつ弾を1発生成する（MagicBulletPool の上限を尊重）。
-     * @param spawnOps        spawn時に解釈する命令列（通常=prog.spawnOps / 継承=prog.inheritanceOps）
+     * @brief spawn命令列を解釈し、Splitに応じた本数の弾を生成する。
+     * @param spawnOps        spawn命令列（通常=prog.spawnOps / 継承=prog.inheritanceOps）
      * @param spawnOpCount    上記の有効数
-     * @param baseDirection   進行方向（未正規化可）
-     * @param inheritanceDepth 0=通常発射, 1=継承で再射出された弾（再継承防止のため）
-     * @return 生成した弾の EntityID
+     * @param baseDirection   照準の中心方向（未正規化可）
+     * @param inheritanceDepth 0=通常発射, 1=継承で再射出された弾（再継承防止）
+     * @return 実際に生成した弾数（Splitなしなら1）
      */
-    CCL::ECS::EntityID Spawn(
+    int Spawn(
         CCL::ECS::Core::World* world,
         MagicBulletPool& pool,
         ProgramID programId,

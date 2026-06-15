@@ -17,11 +17,8 @@ using namespace CCL::ECS;
 void WandFireSystem::Update(float /*dt*/)
 {
     if (!_world->HasResource<WandProgramRegistry>()) return;
-    if (!_world->HasResource<MagicBulletPool>())
-    {
-        CCL_LOG_ERROR(LogCategory::Game, "MagicBulletPool 未登録。発射をスキップします。");
-        return;
-    }
+    if (!_world->HasResource<MagicBulletPool>())     return;
+  
     const WandProgramRegistry& registry = _world->GetResource<WandProgramRegistry>();
     MagicBulletPool& pool = _world->GetResource<MagicBulletPool>();
 
@@ -31,13 +28,15 @@ void WandFireSystem::Update(float /*dt*/)
         const WandFireIntentComponent& intent,
         const TimeStateComponent& time)
         {
+            // クールタイムを減らす
             if (rt.cooldownTimer > 0.0f) rt.cooldownTimer -= time.localDt;
 
-            if (!intent.wantFire)                          return;
-            if (rt.cooldownTimer > 0.0f)                   return;
-            if (build.cachedProgramId == InvalidProgramID) return;
-            if (!registry.IsValid(build.cachedProgramId))  return;
+            if (!intent.wantFire)                          return; // 発射したかどうか
+            if (rt.cooldownTimer > 0.0f)                   return; // クールタイム中かどうか
+            if (build.cachedProgramId == InvalidProgramID) return; // 杖情報が無効な値かどうか
+            if (!registry.IsValid(build.cachedProgramId))  return; // 杖情報が存在しているか
 
+            // 杖の情報を取得
             const CompiledWandProgram& prog = registry.Get(build.cachedProgramId);
 
             // 通常発射：spawnOps を適用、継承深度0。Split実装後はここを弾数ぶんループする。
