@@ -106,8 +106,9 @@ void GPUParticleUpdateSystem::Update(float dt)
         const TransformComponent& transform,
         const TimeStateComponent& rawDt)
         {
-            //if (auto* pooled = _world->GetComponent<PooledParticleComponent>(id))
-                //if (pooled->isSleeping) return;
+            // プール休眠中のエミッタはGPU更新しない（Dispatchを丸ごと省く）。
+            if (auto* pooled = _world->GetComponent<PooledParticleComponent>(id))
+                if (pooled->isSleeping) return;
 
             if (!particle.isInitialized)
                 RebuildParticleBuffer(particle);

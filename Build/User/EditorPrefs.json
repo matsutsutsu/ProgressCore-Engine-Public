@@ -1,24 +1,3 @@
 {
-    "DialogHistory": {
-        "AIを選択": "Assets\\BehaviorTree",
-        "AIグラフを保存": "Assets\\BehaviorTree",
-        "AIグラフを開く": "Assets\\BehaviorTree",
-        "Model": "",
-        "Open AI Graph": "",
-        "Open Scene": "Assets\\Scene",
-        "Prefab": "",
-        "Save AI Graph": "",
-        "Save Anim Graph": "Assets\\Animations\\Nodes",
-        "Save Anim Sequence": "Assets\\Animations\\Sequencer",
-        "Save Curve File": "Assets\\Curve\\",
-        "Save Prefab": "",
-        "Save Scene": "Assets\\Scene",
-        "Scene": "Assets\\Scene",
-        "Select 3D Model": "Assets\\Models\\Shape",
-        "Select Anim Graph": "Assets\\Animations\\Nodes",
-        "Select Anim Graph File": "Assets\\Animations\\Nodes",
-        "Select Anim Sequence": "Assets\\Animations\\Sequencer",
-        "Select Behavior Tree": "Assets\\BehaviorTree",
-        "Texture": "Assets\\Textures\\VFX"
-    }
+    "DialogHistory": {}
 }

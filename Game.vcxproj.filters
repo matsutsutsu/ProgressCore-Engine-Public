@@ -1719,6 +1719,12 @@
     <ClInclude Include="Source\Game\Logics\Combat\KnockbackSystem.h">
       <Filter>Source\Game\Logics\Combat</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Utils\ParticlePool.h">
+      <Filter>Source\Game\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Bullet\BulletVisualSystem.h">
+      <Filter>Source\Game\Logics\Wand\Bullet</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2572,6 +2578,9 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Combat\KnockbackSystem.cpp">
       <Filter>Source\Game\Logics\Combat</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Wand\Bullet\BulletVisualSystem.cpp">
+      <Filter>Source\Game\Logics\Wand\Bullet</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

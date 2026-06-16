@@ -2,24 +2,26 @@
 // ===========================================================================
 // BulletComponents.h
 // ------------------
-// @file
-// @brief 全ての魔法弾が共有する「単一 Archetype」を構成するランタイムコンポーネント群。
+// 役割:
+//   全ての魔法弾が共有する「単一 Archetype」を構成するランタイムコンポーネント群。
 //
-// 重要原則:
-//   弾の見た目・挙動の多様性は【ProgramID が指す CompiledWandProgram のデータ】が
-//   全て担う。コンポーネント構成(Archetype)は弾ごとに一切変えない。
-//   → 全弾が同一 Chunk に密集 → SoA キャッシュ効率最大・ForEachParallel が全開。
+// 責務:
+//   - 弾の参照先プログラム(BulletProgramRef)、飛行状態(BulletStateComponent)、
+//     識別タグ(BulletTag)の保持。
 //
-// 単一弾 Archetype（想定構成）:
-//   { TransformComponent, BulletProgramRef, BulletStateComponent,
-//     BulletTag, RuntimeOnlyTag, (衝突用コンポーネント:後工程) }
+// アーキテクチャ上の位置付け:
+//   弾の見た目・挙動の多様性は ProgramID が指す CompiledWandProgram のデータが担い、
+//   コンポーネント構成は弾ごとに一切変えない。全弾が同一 Chunk に密集することで
+//   SoA キャッシュ効率が最大化し ForEachParallel が全開になる。
 //
-// @note いずれも実行時専用。既存の RuntimeOnlyTag を併用してシリアライザに弾をスキップさせる。
+// 設計方針:
+//   - いずれも実行時専用(弾は毎フレーム生滅)。RuntimeOnlyTag 併用でシリアライズ対象外。
+//   - 状態の追加は「弾全体で共通の固定フィールド」に限る(個別Archetype分岐を作らない)。
 // ===========================================================================
 
 #include "Game/Logics/Wand/Core/WandTypes.h"
 #include "SimpleMath.h"                   // DirectX::SimpleMath::Vector3
-#include "Engine/ECS/Common/CCL_Types.h" // EntityID / InvalidEntityID（※実際のパスは要確認）
+#include "Engine/ECS/Common/CCL_Types.h" // EntityID / InvalidEntityID
 
 
 /**
@@ -48,6 +50,9 @@ struct BulletStateComponent
 
     bool hitWall = false; ///< 壁に当たった（L06が立てる→L07が見て破棄/継承）
     bool hitEnemy = false; ///< 敵に当たった（L06が立てる→L07が見て破棄/継承）
+
+    /// @brief 飛翔中の見た目VFXを既に貼ったか。BulletVisualSystem が二重付与を防ぐために使う。
+    bool visualAttached = false;
 
     /// @brief 前フレームの位置。衝突判定はこの点→現在位置の線分をRayCastする。
     DirectX::SimpleMath::Vector3 prevPosition = {};

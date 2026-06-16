@@ -1,22 +1,34 @@
-// =====================================================================
+// ===========================================================================
 // Prefab.cpp
-//   プレハブ (= 永続化されたエンティティテンプレート) のスポーン処理。
+// ----------
+// 役割:
+//   プレハブ(永続化されたEntityテンプレート)のスポーン処理。
+//   公開APIは2系統:
+//     SpawnPrefab   : 汎用(SceneSerializer経由でフルロード)
+//     SpawnParticle : パーティクル専用(ParticlePoolで階層ごと借りて高速再利用)
 //
-//   公開 API は 2 系統:
-//     SpawnPrefab    : 汎用 (SceneSerializer 経由でフルロード)
-//     SpawnParticle  : パーティクル専用 (プール再利用で高速生成)
+// 責務:
+//   - JSONからのEntity階層生成と、座標/回転の初期適用。
+//   - 複数エミッタ構成のパーティクル階層を「emitterRootごと」プールから貸し出し/返却する。
 //
-//   修正履歴 v3:
-//     - json 修飾子の欠落バグを修正 (json → nlohmann::json)
-//     - 内部構造を internal namespace に集約
-//     - ParticlePool を class 化 (テスト容易性 / Clear の確実化)
-//     - 死コード PathToRelativeUtf8 を削除
-//     - <iostream>, <sstream> 等の不要 include を削除
-//     - SpawnParticle のロジックを 3 つの小関数に分割
-// =====================================================================
+// アーキテクチャ上の位置付け:
+//   プールの空きリストは World Resource(ParticlePool)。SpawnParticle が借り、
+//   弾などの子として SetParent で接ぐ。返却は HierarchyCleanupSystem(L07) が
+//   死亡Entityの子に対して ReturnParticleToPool を呼ぶ形で行う。
+//
+// 設計方針:
+//   - パーティクルは「複数エミッタ階層」を1単位としてプールする(1弾1エミッタに制限しない)。
+//   - 借りる/返すは Entity を破棄せず isSleeping のオン/オフと親子付け替えだけで行い、
+//     高頻度生滅(最大8192発の弾)でも構造変更・JSONロードを最小化する。
+//   - SpawnPrefab(JSONロード)はプール拡張時(空きが尽きた初回)だけ発生する。
+// ===========================================================================
 #include "Prefab.h"
 #include "Engine/Serialization/Serializer/SceneSerializer.h"
+#include "Game/Utils/ParticlePool.h"
 #include "Engine/Transform/Systems/TransformUpdateSystem.h"
+#include "Engine/Transform/Components/TransformComponent.h"
+#include "Engine/Graphics/Components/Particle/GPUParticleComponent.h"
+#include "Game/Utils/PooledParticleComponent.h"
 #include "Engine/Platform/Core/FileSystem.h"
 #include "Engine/Platform/Core/Logger.h"
 
@@ -25,60 +37,163 @@
 #include <DirectXMath.h>
 #include <SimpleMath.h>
 
-#include <fstream>
-#include <json.hpp>
-#include <unordered_map>
 #include <vector>
-#include <filesystem>
-#include <cmath>
-#include <Windows.h>   // OutputDebugStringA のみで使用
 
 using namespace DirectX::SimpleMath;
-using nlohmann::json;   // ★ ここで一度だけ修飾子を解放 (旧 Prefab.cpp 内の json 未定義バグの根本対策)
 
-// =====================================================================
-// JSON ADL ヘルパー (ParticleSystemConfig)
-//
-//   ★ グローバル名前空間に置く必要がある。
-//      nlohmann::json は ADL (引数依存検索) で to_json/from_json を見つけるため、
-//      ParticleSystemConfig と同じ名前空間 (= グローバル) に配置する。
-//      namespace の中に入れると ADL が効かなくなり、リンクは通るが
-//      実行時にデフォルト変換が走って値が空になる落とし穴がある。
-// =====================================================================
-
-
-// =====================================================================
-// Prefab 名前空間 - 実装
-// =====================================================================
 namespace Prefab {
 
-    // =================================================================
-    // 汎用 SpawnPrefab (SceneSerializer を使う)
-    // =================================================================
+    using namespace CCL::ECS;
 
-    /**
-     * @brief JSON プレハブをロードし、ルートエンティティの ID を返す。
-     *
-     * 1 ファイル中に複数エンティティがある場合、parent == 0 のものを「ルート」と判断する。
-     * 見つからない場合は配列先頭をルートとみなす。
-     */
+    // =====================================================================
+    // 内部ヘルパー
+    // =====================================================================
+    namespace {
+
+        /// @brief ParticlePool(World Resource)を取得。未登録なら遅延生成する。
+        ParticlePool& GetOrCreatePool(Core::World& world)
+        {
+            if (!world.HasResource<ParticlePool>())
+                world.AddResource<ParticlePool>();
+            return world.GetResource<ParticlePool>();
+        }
+
+        /// @brief root を起点に階層(root含む)の全EntityIDを集める(読み取りのみ)。
+        /// @note  走査(読み)と変更(書き)を分離するためここでIDを確定させる。
+        void CollectSubtree(Core::World& world, EntityID root, std::vector<EntityID>& out)
+        {
+            out.push_back(root);
+            auto* t = world.GetComponent<TransformComponent>(root);
+            if (!t) return;
+
+            EntityID child = t->firstChildID;
+            while (child != 0) {
+                auto* ct = world.GetComponent<TransformComponent>(child);
+                if (!ct) break;
+                EntityID next = ct->nextSiblingID; // 再帰前に次兄弟を退避
+                CollectSubtree(world, child, out);
+                child = next;
+            }
+        }
+
+    } // namespace
+
+    // =====================================================================
+    // ライフサイクル
+    // =====================================================================
+    void Initialize(ID3D11Device* /*device*/)
+    {
+        // 現状プールは World Resource 側が寿命を握るため、ここでの保持は不要。
+        // 将来デバイス依存の事前生成が必要になったらここで行う。
+    }
+
+    void Cleanup()
+    {
+        // プールの実体は World Resource(ParticlePool)であり World と共に破棄される。
+        // ここで個別に解放するグローバル状態は持たない(設計上の意図)。
+    }
+
+    void PrewarmParticles(Core::World& /*world*/)
+    {
+        // TODO: ゲーム設定から「事前生成するVFXパスと個数」を受け取り、
+        //       SpawnParticle→ReturnParticleToPool を繰り返してプールを温める。
+        //       使用VFXの一覧が固まってから実装する(今は空でも破綻しない)。
+    }
+
+    // =====================================================================
+    // パーティクル: プールから階層ごと借りて parent の子に接ぐ
+    // =====================================================================
+    EntityID SpawnParticle(Core::World& world, const std::string& path,
+        EntityID parentID, const DirectX::XMFLOAT3& localPos)
+    {
+        ParticlePool& pool = GetOrCreatePool(world);
+
+        // 1) 休眠インスタンスを借りる。無ければJSONから新規生成(プール拡張)。
+        EntityID root = pool.Acquire(path);
+        if (root == InvalidEntityID) {
+            root = SpawnPrefab(world, path); // 重い:空きが尽きた時のみ
+            if (root == InvalidEntityID) {
+                CCL_LOG_ERROR(LogCategory::Core, "[Prefab] SpawnParticle failed: %s", path.c_str());
+                return InvalidEntityID;
+            }
+            // 新規生成階層の全Entityを「このプールキーの所属」として印付け。
+            std::vector<EntityID> subtree;
+            CollectSubtree(world, root, subtree);
+            for (EntityID id : subtree) {
+                if (auto* pooled = world.GetComponent<PooledParticleComponent>(id)) {
+                    pooled->SetKey(path);
+                }
+                else {
+                    PooledParticleComponent newComp;
+                    newComp.SetKey(path);
+                    world.AddComponent<PooledParticleComponent>(id, newComp); // 遅延適用
+                }
+            }
+        }
+
+        // 2) parent(弾など)の子へ接ぐ + ローカル位置を設定。
+        TransformUpdateSystem::SetParent(world, root, parentID);
+        world.PatchComponent<TransformComponent>(root, [localPos](TransformComponent& t) {
+            t.position = { localPos.x, localPos.y, localPos.z };
+            t.isDirty = true;
+            });
+
+        // 3) 階層を起こす(休眠解除 + GPU再初期化で粒子を撒き直す)。
+        std::vector<EntityID> subtree;
+        CollectSubtree(world, root, subtree);
+        for (EntityID id : subtree) {
+            if (auto* pooled = world.GetComponent<PooledParticleComponent>(id))
+                pooled->isSleeping = false;
+            if (auto* gp = world.GetComponent<GPUParticleComponent>(id)) {
+                gp->needsGpuInit = true; // InitCSで粒子をリセットして再放出
+                gp->time = 0.0f;
+            }
+        }
+        return root;
+    }
+
+    // =====================================================================
+    // パーティクル: 階層ごとプールへ返す(破棄しない)
+    //   HierarchyCleanupSystem(L07) が死亡Entityの子(emitterRoot)に対して呼ぶ。
+    // =====================================================================
+    void ReturnParticleToPool(Core::World& world, EntityID rootId)
+    {
+        if (rootId == InvalidEntityID) return;
+
+        auto* pooled = world.GetComponent<PooledParticleComponent>(rootId);
+        if (!pooled) return; // プール対象でなければ何もしない(保険)
+
+        // 1) 親(弾)から切り離してルート化。
+        TransformUpdateSystem::DetachChild(world, rootId);
+
+        // 2) 配下を全休眠(Update/Renderのスキップ対象になる)。
+        std::vector<EntityID> subtree;
+        CollectSubtree(world, rootId, subtree);
+        for (EntityID id : subtree) {
+            if (auto* p = world.GetComponent<PooledParticleComponent>(id))
+                p->isSleeping = true;
+        }
+
+        // 3) 空きリストへ返す(Entityは破棄せず再利用待ちにする)。
+        GetOrCreatePool(world).Release(pooled->poolKey, rootId);
+    }
+
+    // =====================================================================
+    // 汎用 SpawnPrefab (SceneSerializer を使う)
+    // =====================================================================
     EntityID SpawnPrefab(Core::World& world, const std::string& prefabPath)
     {
-        // 拡張子補完
         std::string fullPath = prefabPath;
         if (fullPath.find(".json") == std::string::npos) fullPath += ".json";
 
-        // 存在チェック (アセット欠落は実機で見つけにくい不具合の上位なので必ず警告)
         if (!FileSystem::Exists(fullPath)) {
             CCL_LOG_ERROR(LogCategory::Core, "[Prefab] Not Found: %s", fullPath.c_str());
-
             return 0;
         }
 
         std::vector<EntityID> created = SceneSerializer::Deserialize(&world, fullPath);
         if (created.empty()) return 0;
 
-        // ルート探し: parent == 0 のエンティティを優先
         EntityID rootID = created[0];
         for (EntityID id : created) {
             auto* t = world.GetComponent<TransformComponent>(id);

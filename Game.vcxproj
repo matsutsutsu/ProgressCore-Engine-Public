@@ -723,6 +723,7 @@
     <ClInclude Include="Source\Game\Logics\Wand\Bullet\BulletInheritanceSystem.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Bullet\BulletSpawn.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Bullet\BulletTravelSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Bullet\BulletVisualSystem.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Bullet\MagicBulletPool.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Bullet\WandFireSystem.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Bullet\WandRuntimeComponents.h" />
@@ -745,6 +746,7 @@
     <ClInclude Include="Source\Game\Scenes\SceneLoading.h" />
     <ClInclude Include="Source\Game\UI\FloatingTextComponent.h" />
     <ClInclude Include="Source\Game\UI\FloatingTextSystem.h" />
+    <ClInclude Include="Source\Game\Utils\ParticlePool.h" />
     <ClInclude Include="Source\Game\Utils\PooledParticleComponent.h" />
   </ItemGroup>
   <ItemGroup>
@@ -1451,6 +1453,7 @@
     <ClCompile Include="Source\Game\Logics\Wand\Bullet\BulletInheritanceSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Wand\Bullet\BulletSpawn.cpp" />
     <ClCompile Include="Source\Game\Logics\Wand\Bullet\BulletTravelSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Wand\Bullet\BulletVisualSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Wand\Bullet\WandFireSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Wand\Bullet\WandRuntimeComponentsMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Wand\Collision\BulletHitResponseSystem.cpp" />
