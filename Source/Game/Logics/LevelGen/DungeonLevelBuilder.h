@@ -17,7 +17,8 @@
 //    DungeonLevelBuilder::Build(world, device, p);
 //============================================================================
 #include "Engine/ECS/Core/CCL_World.h"
-#include "Game/Logics/LevelGen/DungeonTypes.h"   // DungeonGenerateResult
+#include "Game/Logics/LevelGen/DungeonTypes.h"      // DungeonGenerateResult
+#include "Game/Logics/LevelGen/DungeonGenerator.h"  // DungeonGenParams
 #include <cstdint>
 #include <string>
 
@@ -32,6 +33,10 @@ public:
         uint32_t    seed = 12345;
         int         floorIndex = 1;
         int         chunkSize = 16;   // 1チャンクの一辺（セル数）
+
+        // ★ 生成アルゴリズムのパラメータ（部屋数・分岐・通路幅をデバッグ調整）
+        RuneForge::Dungeon::DungeonGenParams gen;
+
         std::string floorModelPath = "Assets/Models/MapChip/Floor.glb";
         std::string wallModelPath = "Assets/Models/MapChip/Wall.glb";
         bool        applyImmediately = true; // 末尾で world.ScrutinyAndApply() するか
@@ -64,15 +69,15 @@ public:
     static void Clear(CCL::ECS::Core::World& world);
 
     // ------------------------------------------------------------------
-   // プレイヤー生成（ダンジョンとは別ライフサイクル）
-   //   Build() ではプレイヤーを生成しない（特殊生成や層遷移で持ち越すため）。
-   //   通常プレイ開始時にこれを呼んでスタート地点にプレイヤーを配置する。
-   //
-   //   グリッドのスタートセル（DungeonGrid::StartCell）のワールド座標に
-   //   Player.json を生成し、フォローカメラもセットで生成・ターゲット設定する。
-   //
-   //   戻り値: 生成したプレイヤーの EntityID（失敗時は InvalidEntityID）。
-   // ------------------------------------------------------------------
+    // プレイヤー生成（ダンジョンとは別ライフサイクル）
+    //   Build() ではプレイヤーを生成しない（特殊生成や層遷移で持ち越すため）。
+    //   通常プレイ開始時にこれを呼んでスタート地点にプレイヤーを配置する。
+    //
+    //   グリッドのスタートセル（DungeonGrid::StartCell）のワールド座標に
+    //   Player.json を生成し、フォローカメラもセットで生成・ターゲット設定する。
+    //
+    //   戻り値: 生成したプレイヤーの EntityID（失敗時は InvalidEntityID）。
+    // ------------------------------------------------------------------
     struct PlayerSpawnParams
     {
         std::string playerPrefab = "Assets/Prefabs/Player/PlayerTest.json";
@@ -84,7 +89,6 @@ public:
     // DungeonGrid リソースを使ってスタート地点に配置（Build 後に呼ぶ）。
     static CCL::ECS::EntityID SpawnPlayerAtStart(
         CCL::ECS::Core::World& world, const PlayerSpawnParams& params);
-
     // 既定パラメータ版
     static CCL::ECS::EntityID SpawnPlayerAtStart(CCL::ECS::Core::World& world)
     {

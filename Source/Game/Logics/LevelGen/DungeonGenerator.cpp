@@ -1,6 +1,10 @@
 //============================================================================
 //  DungeonGenerator.cpp
-//  フェーズ A: グラフ生成 / B: テンプレート選択 / C: 物理配置 / D: 通路接続
+//  グリッドグロース型生成（Enter the Gungeon 風）
+//    A: グラフ成長（仮想グリッド上で上下左右に部屋を生やす）
+//    B: 各ノードにテンプレート割り当て（回転込み）
+//    C: 部屋セル → 実タイルグリッドへ展開（焼き込み）
+//    D: 隣接部屋を通路で接続
 //============================================================================
 #include "DungeonGenerator.h"
 #include "RoomTemplateTable.h"
@@ -10,8 +14,8 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <queue>
 
-// Logger は任意。プロジェクト側に存在すれば使い、無ければ printf にフォールバック。
 #if defined(RUNEFORGE_HAS_LOGGER)
 #include "Engine/Platform/Core/Logger.h"
 #endif
@@ -19,136 +23,45 @@
 namespace RuneForge::Dungeon
 {
     //========================================================================
-    //  決定的乱数 (splitmix64 ベース)。同一シードで完全再現。
+    //  決定的乱数 (splitmix64)
     //========================================================================
     class Rng
     {
     public:
         explicit Rng(uint64_t seed) : _state(seed ? seed : 0x9E3779B97F4A7C15ull) {}
-
         uint32_t NextU32()
         {
-            // splitmix64
             uint64_t z = (_state += 0x9E3779B97F4A7C15ull);
             z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ull;
             z = (z ^ (z >> 27)) * 0x94D049BB133111EBull;
             z = z ^ (z >> 31);
             return (uint32_t)(z >> 32);
         }
-        // [0, n)
-        int RangeInt(int n)
-        {
-            if (n <= 0) return 0;
-            return (int)(NextU32() % (uint32_t)n);
-        }
-        // [lo, hi]
-        int RangeInt(int lo, int hi)
-        {
-            if (hi <= lo) return lo;
-            return lo + RangeInt(hi - lo + 1);
-        }
-        template<typename T>
-        const T& Pick(const std::vector<T>& v) { return v[RangeInt((int)v.size())]; }
-
+        int RangeInt(int n) { if (n <= 0) return 0; return (int)(NextU32() % (uint32_t)n); }
+        int RangeInt(int lo, int hi) { if (hi <= lo) return lo; return lo + RangeInt(hi - lo + 1); }
+        float Next01() { return (NextU32() & 0xFFFFFF) / (float)0x1000000; }
+        template<typename T> const T& Pick(const std::vector<T>& v) { return v[RangeInt((int)v.size())]; }
     private:
         uint64_t _state;
     };
 
     //========================================================================
-    //  内部: 配置済みの部屋（テンプレートをグリッド上に置いた結果）
-    //========================================================================
-    struct PlacedRoom
-    {
-        RoomType     type;
-        int          offI = 0, offJ = 0;       // グリッド上の左下オフセット
-        RoomTemplate tpl;                       // 回転適用後のテンプレート
-        int          graphDepth = 0;            // スタートからのグラフ距離
-        std::vector<DoorInfo> worldDoors;       // グリッド絶対座標のドア
-        std::vector<SpawnMarker> worldSpawns;   // グリッド絶対座標のスポーン
-
-        int Width()  const { return tpl.width; }
-        int Height() const { return tpl.height; }
-    };
-
-    //========================================================================
-    //  フェーズA: 部屋グラフ（必須部屋を必ず含む線形＋分岐の系列）
-    //
-    //  各層を「スタート → 戦闘群 → ... → ポータル（最深部）」の主系列とし、
-    //  ショップ/鍛冶/宝物庫/エリートを分岐として差し込む。
-    //  第5層はポータルの前にボス部屋を最深部として置く。
-    //========================================================================
-    struct GraphNode
-    {
-        RoomType type;
-        int      depth;   // 主系列上の深さ（大きいほど奥）
-        bool     onMainPath; // true=主系列、false=分岐（袋小路）
-        int      parent;  // 親ノードのインデックス（-1=ルート）
-    };
-
-    static std::vector<GraphNode> BuildRoomGraph(Rng& rng, int floorIndex)
-    {
-        std::vector<GraphNode> g;
-
-        auto add = [&](RoomType t, int depth, bool main, int parent) -> int
-            {
-                g.push_back({ t, depth, main, parent });
-                return (int)g.size() - 1;
-            };
-
-        // --- 主系列 ---
-        int prev = add(RoomType::Start, 0, true, -1);  // depth0: スタート
-        int depth = 1;
-
-        // 戦闘部屋の数（層が深いほど多め）
-        int combatCount = 2 + floorIndex; // 層1で3, 層5で7
-        // 主系列上の戦闘部屋。分岐は途中の戦闘部屋にぶら下げる。
-        std::vector<int> mainCombat;
-        for (int c = 0; c < combatCount; ++c)
-        {
-            int node = add(RoomType::Combat, depth, true, prev);
-            mainCombat.push_back(node);
-            prev = node;
-            depth++;
-        }
-
-        // --- 必須分岐部屋を主系列の戦闘部屋にぶら下げる ---
-        auto attachBranch = [&](RoomType t)
-            {
-                if (mainCombat.empty()) { add(t, depth, false, 0); return; }
-                int host = mainCombat[rng.RangeInt((int)mainCombat.size())];
-                add(t, g[host].depth, false, host);
-            };
-
-        attachBranch(RoomType::Shop);      // ショップ x1
-        attachBranch(RoomType::Forge);     // 鍛冶 x1
-        attachBranch(RoomType::Treasury);  // 宝物庫 x1
-        if (rng.RangeInt(2) == 0)          // 宝物庫は1〜2
-            attachBranch(RoomType::Treasury);
-        attachBranch(RoomType::Elite);     // エリート x1
-
-        // --- 第5層: ボス部屋を最深部に。その後ポータル ---
-        if (floorIndex >= 5)
-        {
-            int boss = add(RoomType::Boss, depth, true, prev);
-            prev = boss;
-            depth++;
-        }
-
-        // --- ポータル部屋（最深部）---
-        add(RoomType::Portal, depth, true, prev);
-
-        return g;
-    }
-
-    //========================================================================
-    //  フェーズB: 各グラフノードにテンプレートを割り当て（回転込み）
+    //  フェーズB: テンプレート選択（型に合うものから1つ選び、許可された回転を適用）
     //========================================================================
     static RoomTemplate SelectTemplate(Rng& rng, RoomType type)
     {
-        std::vector<int> cands = GetTemplatesForType(type);
+        std::vector<int> candidates = GetTemplatesForType(type);
         const auto& table = GetRoomTemplateTable();
-        const RoomTemplate& base =
-            cands.empty() ? table[0] : table[cands[rng.RangeInt((int)cands.size())]];
+
+        if (candidates.empty())
+        {
+            // フォールバック: 該当なしなら最初のテンプレートを使う
+            RoomTemplate t = table.empty() ? RoomTemplate{} : table[0];
+            return t;
+        }
+
+        int pick = candidates[rng.RangeInt((int)candidates.size())];
+        const RoomTemplate& base = table[pick];
 
         // 許可された回転からランダムに選ぶ
         int rot = 0;
@@ -158,76 +71,221 @@ namespace RuneForge::Dungeon
     }
 
     //========================================================================
-    //  フェーズC: 物理配置
-    //
-    //  単純で堅牢な「行レイアウト」：主系列を Z+ 方向に積み、各深さで
-    //  X 方向に部屋を並べる。部屋同士・通路に余白(gap)を取り重なりを防ぐ。
-    //  これにより「重ならない」「ポータルが最深部(Z最大)」を保証する。
+    //  フェーズA: グリッドグロース型グラフ生成
     //========================================================================
-    struct GenContext
+    struct RoomNode
     {
-        std::vector<PlacedRoom> placed;
-        int gridW = 0;
-        int gridH = 0;
+        RoomType type = RoomType::Combat;
+        int rx = 0, ry = 0;             // 部屋セル座標（仮想グリッド）
+        int distFromStart = -1;         // BFS距離（ゴール選定用）
+        std::vector<int> neighbors;     // 接続先ノードidx
     };
 
-    static void PlaceRooms(Rng& rng, const std::vector<GraphNode>& graph, GenContext& ctx)
+    struct RoomGraph
     {
-        const int margin = 2;       // 外周マージン
-        const int rowGap = 4;       // 行間（Z方向の通路余白）
-        const int colGap = 4;       // 列間（X方向の通路余白）
+        std::vector<RoomNode> nodes;
+        int startIdx = 0;
+        int goalIdx = 0;
+        int minRX = 0, maxRX = 0, minRY = 0, maxRY = 0;
+    };
 
-        // 深さごとにノードをまとめる
-        int maxDepth = 0;
-        for (auto& n : graph) maxDepth = std::max(maxDepth, n.depth);
+    static const int kDX[4] = { 1, -1, 0, 0 };
+    static const int kDY[4] = { 0, 0, 1, -1 };
 
-        std::vector<std::vector<int>> byDepth(maxDepth + 1);
-        for (int i = 0; i < (int)graph.size(); ++i)
-            byDepth[graph[i].depth].push_back(i);
+    static RoomGraph BuildRoomGraph(Rng& rng, int floorIndex, const DungeonGenParams& p)
+    {
+        RoomGraph G;
 
-        // まず各ノードのテンプレートを確定（回転込み）。インデックス対応で保持。
-        std::vector<RoomTemplate> tpls(graph.size());
-        for (int i = 0; i < (int)graph.size(); ++i)
-            tpls[i] = SelectTemplate(rng, graph[i].type);
+        // 部屋セルの占有マップ（簡易: 線形探索でも 8〜12 部屋なら十分軽い）
+        auto findAt = [&](int x, int y) -> int {
+            for (int i = 0; i < (int)G.nodes.size(); ++i)
+                if (G.nodes[i].rx == x && G.nodes[i].ry == y) return i;
+            return -1;
+            };
 
-        // 行ごとの高さ（Z方向）と、その行の開始 J を求める
-        int curJ = margin;
-        int maxI = 0;
+        // 層ごとに部屋数を増やす
+        int bonus = (floorIndex - 1) * p.roomsPerFloorBonus;
+        int lo = p.minRooms + bonus;
+        int hi = p.maxRooms + bonus;
+        int target = lo + rng.RangeInt(hi - lo + 1);
+        target = std::max(2, target);
 
-        // 後で絶対 J を決めるため、行高さを先に算出
-        for (int d = 0; d <= maxDepth; ++d)
+        // スタートを原点に
+        G.nodes.push_back({ RoomType::Start, 0, 0, 0, {} });
+
+        std::queue<int> frontier;
+        frontier.push(0);
+
+        while ((int)G.nodes.size() < target && !frontier.empty())
         {
-            auto& nodes = byDepth[d];
-            if (nodes.empty()) continue;
+            int cur = frontier.front(); frontier.pop();
+            int cx = G.nodes[cur].rx, cy = G.nodes[cur].ry;
 
-            int rowHeight = 0;
-            for (int idx : nodes) rowHeight = std::max(rowHeight, tpls[idx].height);
+            // この部屋から伸ばす方向数（バランス型）
+            int sprouts = 1 + ((rng.Next01() < p.branchChance) ? 1 : 0);
+            sprouts = std::clamp(sprouts, 1, p.maxBranchPerRoom);
 
-            // この行を X 方向に並べる
-            int curI = margin;
-            for (int idx : nodes)
+            // 方向シャッフル
+            int dirs[4] = { 0,1,2,3 };
+            for (int i = 3; i > 0; --i) { int j = rng.RangeInt(i + 1); std::swap(dirs[i], dirs[j]); }
+
+            int made = 0;
+            for (int d = 0; d < 4 && made < sprouts && (int)G.nodes.size() < target; ++d)
             {
-                PlacedRoom pr;
-                pr.type = graph[idx].type;
-                pr.tpl = tpls[idx];
-                pr.graphDepth = graph[idx].depth;
-                pr.offI = curI;
-                // 行内で縦センタリング（見栄え＆通路接続のため上下中央寄せ）
-                pr.offJ = curJ + (rowHeight - pr.tpl.height) / 2;
-
-                ctx.placed.push_back(pr);
-                curI += pr.tpl.width + colGap;
+                int nx = cx + kDX[dirs[d]], ny = cy + kDY[dirs[d]];
+                if (findAt(nx, ny) >= 0) continue; // 既に部屋がある
+                int idx = (int)G.nodes.size();
+                G.nodes.push_back({ RoomType::Combat, nx, ny, -1, {} });
+                G.nodes[cur].neighbors.push_back(idx);
+                G.nodes[idx].neighbors.push_back(cur);
+                frontier.push(idx);
+                ++made;
             }
-            maxI = std::max(maxI, curI - colGap + margin);
-            curJ += rowHeight + rowGap;
+            // まだ伸ばせる余地があれば自身を frontier に戻す（成長を均す）
+            if (made > 0 && rng.Next01() < p.regrowChance) frontier.push(cur);
         }
 
-        ctx.gridW = std::max(maxI, margin * 2 + 1);
-        ctx.gridH = curJ - rowGap + margin;
+        // BFS距離
+        for (auto& n : G.nodes) n.distFromStart = -1;
+        G.nodes[0].distFromStart = 0;
+        std::queue<int> bfs; bfs.push(0);
+        while (!bfs.empty())
+        {
+            int c = bfs.front(); bfs.pop();
+            for (int nb : G.nodes[c].neighbors)
+                if (G.nodes[nb].distFromStart < 0)
+                {
+                    G.nodes[nb].distFromStart = G.nodes[c].distFromStart + 1;
+                    bfs.push(nb);
+                }
+        }
+
+        // ゴール = スタートから最遠ノード
+        int goal = 0, maxd = -1;
+        for (int i = 0; i < (int)G.nodes.size(); ++i)
+            if (G.nodes[i].distFromStart > maxd) { maxd = G.nodes[i].distFromStart; goal = i; }
+        G.startIdx = 0;
+        G.goalIdx = goal;
+
+        // ゴール部屋の型: 第5層はボス、それ以外はポータル
+        bool isBossFloor = (floorIndex >= 5);
+        G.nodes[goal].type = isBossFloor ? RoomType::Boss : RoomType::Portal;
+
+        // 第5層はボスの「隣（スタート寄り）」にポータルを置きたいが、簡易にゴールをボスにして
+        // ゴールの最遠の隣をポータルにする。ここではゴール=ボスとし、別途ポータルを最遠の
+        // 2番目に割り当てる。
+        if (isBossFloor)
+        {
+            int portal = -1, pd = -1;
+            for (int i = 0; i < (int)G.nodes.size(); ++i)
+                if (i != goal && G.nodes[i].distFromStart > pd) { pd = G.nodes[i].distFromStart; portal = i; }
+            if (portal >= 0) G.nodes[portal].type = RoomType::Portal;
+        }
+
+        // --- 必須部屋（ショップ/鍛冶/宝物庫/エリート）を、Start/Goal/Portal以外の
+        //     行き止まり（neighbors==1）や中間ノードに割り当てる ---
+        if (p.placeSpecialRooms)
+        {
+            std::vector<int> assignable;
+            for (int i = 0; i < (int)G.nodes.size(); ++i)
+            {
+                if (i == G.startIdx || i == G.goalIdx) continue;
+                if (G.nodes[i].type != RoomType::Combat) continue; // 既に特殊型は除外
+                assignable.push_back(i);
+            }
+            // 行き止まりを優先（袋小路に宝物庫やショップがあると探索の意味が出る）
+            std::sort(assignable.begin(), assignable.end(), [&](int a, int b) {
+                return G.nodes[a].neighbors.size() < G.nodes[b].neighbors.size();
+                });
+
+            auto assign = [&](RoomType t) {
+                if (assignable.empty()) return;
+                int idx = assignable.front();
+                assignable.erase(assignable.begin());
+                G.nodes[idx].type = t;
+                };
+            assign(RoomType::Shop);
+            assign(RoomType::Forge);
+            assign(RoomType::Treasury);
+            if (rng.RangeInt(2) == 0) assign(RoomType::Treasury);
+            assign(RoomType::Elite);
+        }
+
+        // 範囲
+        G.minRX = G.maxRX = G.minRY = G.maxRY = 0;
+        for (auto& n : G.nodes)
+        {
+            G.minRX = std::min(G.minRX, n.rx); G.maxRX = std::max(G.maxRX, n.rx);
+            G.minRY = std::min(G.minRY, n.ry); G.maxRY = std::max(G.maxRY, n.ry);
+        }
+        return G;
     }
 
     //========================================================================
-    //  グリッドへ焼き込み + ドア/スポーンの絶対座標化
+    //  配置済み部屋（実タイルグリッド上）
+    //========================================================================
+    struct PlacedRoom
+    {
+        RoomType type;
+        int offI = 0, offJ = 0;     // 実グリッド左下オフセット
+        RoomTemplate tpl;
+        int nodeIdx = -1;           // 対応するグラフノード
+        std::vector<SpawnMarker> worldSpawns;
+    };
+
+    struct GenContext
+    {
+        std::vector<PlacedRoom> placed;   // graph.nodes と同順
+        int gridW = 0, gridH = 0;
+        int startNode = 0, goalNode = 0;
+    };
+
+    static CellPos RoomCenter(const PlacedRoom& pr)
+    {
+        return { pr.offI + pr.tpl.width / 2, pr.offJ + pr.tpl.height / 2 };
+    }
+
+    //========================================================================
+    //  フェーズC: 部屋セル → 実タイルグリッドへ展開
+    //========================================================================
+    static void PlaceRooms(Rng& rng, const RoomGraph& graph, const DungeonGenParams& p,
+        GenContext& ctx)
+    {
+        const int cellW = p.cellTilesW + p.cellGap; // 1部屋セルが占める実タイル幅
+        const int cellH = p.cellTilesH + p.cellGap;
+        const int margin = 2;
+
+        int spanX = (graph.maxRX - graph.minRX + 1);
+        int spanY = (graph.maxRY - graph.minRY + 1);
+        ctx.gridW = margin * 2 + spanX * cellW;
+        ctx.gridH = margin * 2 + spanY * cellH;
+        ctx.startNode = graph.startIdx;
+        ctx.goalNode = graph.goalIdx;
+
+        ctx.placed.resize(graph.nodes.size());
+        for (int i = 0; i < (int)graph.nodes.size(); ++i)
+        {
+            const RoomNode& n = graph.nodes[i];
+            RoomTemplate tpl = SelectTemplate(rng, n.type);
+
+            // 部屋セルの左下（実タイル）。セル内でテンプレを中央寄せ。
+            int cellOriginI = margin + (n.rx - graph.minRX) * cellW;
+            int cellOriginJ = margin + (n.ry - graph.minRY) * cellH;
+            int offI = cellOriginI + (p.cellTilesW - tpl.width) / 2;
+            int offJ = cellOriginJ + (p.cellTilesH - tpl.height) / 2;
+
+            PlacedRoom pr;
+            pr.type = n.type;
+            pr.tpl = tpl;
+            pr.offI = offI;
+            pr.offJ = offJ;
+            pr.nodeIdx = i;
+            ctx.placed[i] = pr;
+        }
+    }
+
+    //========================================================================
+    //  焼き込み + スポーン絶対座標化
     //========================================================================
     static void StampRooms(GenContext& ctx, DungeonGenerateResult& out)
     {
@@ -241,26 +299,19 @@ namespace RuneForge::Dungeon
             for (int x = 0; x < tpl.width; ++x)
                 for (int z = 0; z < tpl.height; ++z)
                 {
-                    int gi = pr.offI + x;
-                    int gj = pr.offJ + z;
+                    int gi = pr.offI + x, gj = pr.offJ + z;
                     if (gi < 0 || gj < 0 || gi >= out.width || gj >= out.depth) continue;
-                    out.solid[gi][gj] = tpl.solidMask[x][z];
+                    if (x < (int)tpl.solidMask.size() && z < (int)tpl.solidMask[x].size())
+                        out.solid[gi][gj] = tpl.solidMask[x][z];
                 }
 
-            // ドア絶対座標
-            for (auto& d : tpl.doors)
-                pr.worldDoors.push_back({ { pr.offI + d.cell.i, pr.offJ + d.cell.j }, d.direction });
-            // スポーン絶対座標
             for (auto& m : tpl.spawnMarkers)
                 pr.worldSpawns.push_back({ { pr.offI + m.cell.i, pr.offJ + m.cell.j }, m.type });
         }
     }
 
     //========================================================================
-    //  フェーズD: 通路接続
-    //   行レイアウトなので「深さ d の各部屋」から「深さ d+1 の部屋」へ
-    //   L字通路を引く。主系列が必ず繋がるようにし、分岐もホストへ繋ぐ。
-    //   通路幅 corridorWidth をパラメータ化。
+    //  フェーズD: 隣接部屋を通路で接続
     //========================================================================
     static void CarveRect(DungeonGenerateResult& out, int i0, int j0, int i1, int j1)
     {
@@ -272,67 +323,31 @@ namespace RuneForge::Dungeon
                     out.solid[i][j] = false;
     }
 
-    static CellPos RoomCenter(const PlacedRoom& pr)
+    static void ConnectCorridors(GenContext& ctx, const RoomGraph& graph,
+        DungeonGenerateResult& out, const DungeonGenParams& p)
     {
-        return { pr.offI + pr.tpl.width / 2, pr.offJ + pr.tpl.height / 2 };
-    }
+        int half = std::max(0, (p.corridorWidth - 1) / 2);
+        int extra = (p.corridorWidth - 1) - half;
 
-    static void ConnectCorridors(GenContext& ctx, DungeonGenerateResult& out,
-        const std::vector<GraphNode>& graph, int corridorWidth)
-    {
-        int half = std::max(0, (corridorWidth - 1) / 2);
-        int extra = (corridorWidth - 1) - half; // 偶数幅対応
-
-        // placed[i] は graph[i] に1:1対応（PlaceRooms で同順 push の前提が崩れるため、
-        // ここでは graphDepth + 親子関係ではなく「親ノードのcenter」へ引く方式に統一する）。
-        // placed と graph の対応を作る:
-        // PlaceRooms は byDepth 順で push しているため index がずれる。
-        // よって ctx.placed をタイプ/深さで graph と突き合わせるのではなく、
-        // 「中心座標どうしを親子で結ぶ」ために graph 順の placed を別途構築する。
-
-        // graph 順に並んだ placed への参照表を作る。
-        // PlaceRooms と同じ走査順序を再現して index を引き当てる。
-        int maxDepth = 0;
-        for (auto& n : graph) maxDepth = std::max(maxDepth, n.depth);
-        std::vector<std::vector<int>> byDepth(maxDepth + 1);
-        for (int i = 0; i < (int)graph.size(); ++i)
-            byDepth[graph[i].depth].push_back(i);
-
-        std::vector<int> placedOfGraph(graph.size(), -1);
-        int p = 0;
-        for (int d = 0; d <= maxDepth; ++d)
-            for (int gIdx : byDepth[d])
-                placedOfGraph[gIdx] = p++;
-
-        auto carveCorridor = [&](CellPos a, CellPos b)
+        auto carve = [&](CellPos a, CellPos b)
             {
-                // L字: まず X 方向、その後 Z 方向。幅を持たせる。
-                int i0 = a.i, j0 = a.j, i1 = b.i, j1 = b.j;
-                // 水平セグメント (j0 固定)
-                CarveRect(out, i0, j0 - half, i1, j0 + extra);
-                // 垂直セグメント (i1 固定)
-                CarveRect(out, i1 - half, j0, i1 + extra, j1);
+                // L字: X 方向→Z 方向。幅を持たせる。
+                CarveRect(out, a.i, a.j - half, b.i, a.j + extra);
+                CarveRect(out, b.i - half, a.j, b.i + extra, b.j);
             };
 
-        // 親子をすべて接続（主系列・分岐ともに）
-        for (int gi = 0; gi < (int)graph.size(); ++gi)
-        {
-            int parent = graph[gi].parent;
-            if (parent < 0) continue;
-            int pa = placedOfGraph[parent];
-            int pb = placedOfGraph[gi];
-            if (pa < 0 || pb < 0) continue;
-            carveCorridor(RoomCenter(ctx.placed[pa]), RoomCenter(ctx.placed[pb]));
-        }
+        // グラフの各エッジ（重複を避けるため i<nb のみ）を接続
+        for (int i = 0; i < (int)graph.nodes.size(); ++i)
+            for (int nb : graph.nodes[i].neighbors)
+                if (i < nb)
+                    carve(RoomCenter(ctx.placed[i]), RoomCenter(ctx.placed[nb]));
     }
 
     //========================================================================
-    //  ルームメタ情報 / グローバル情報の収集
+    //  メタ収集（部屋情報 + Start/Portal セル）
     //========================================================================
-    static void CollectMeta(GenContext& ctx, DungeonGenerateResult& out)
+    static void CollectMeta(GenContext& ctx, const RoomGraph& graph, DungeonGenerateResult& out)
     {
-        bool startSet = false, portalSet = false;
-
         for (auto& pr : ctx.placed)
         {
             RoomMeta meta;
@@ -341,35 +356,44 @@ namespace RuneForge::Dungeon
             meta.minJ = pr.offJ;
             meta.maxI = pr.offI + pr.tpl.width - 1;
             meta.maxJ = pr.offJ + pr.tpl.height - 1;
-            meta.doors = pr.worldDoors;
             meta.spawnMarkers = pr.worldSpawns;
             out.rooms.push_back(meta);
-
-            // グローバル情報
-            for (auto& m : pr.worldSpawns)
-            {
-                if (m.type == SpawnMarkerType::StartPoint && !startSet)
-                {
-                    out.startCell = m.cell; startSet = true;
-                }
-                if (m.type == SpawnMarkerType::Portal && !portalSet)
-                {
-                    out.portalCell = m.cell; portalSet = true;
-                }
-            }
         }
 
-        // フォールバック: スタート/ポータルが取れない場合は部屋中心で代用
-        if (!startSet && !ctx.placed.empty())
-            out.startCell = RoomCenter(ctx.placed.front());
-        if (!portalSet && !ctx.placed.empty())
-            out.portalCell = RoomCenter(ctx.placed.back());
+        // Start / Portal セルはグラフのノードから直接決める（確実）
+        out.startCell = RoomCenter(ctx.placed[graph.startIdx]);
+
+        // Portal 型のノードを探す。無ければゴールノード。
+        int portalNode = -1;
+        for (int i = 0; i < (int)graph.nodes.size(); ++i)
+            if (graph.nodes[i].type == RoomType::Portal) { portalNode = i; break; }
+        if (portalNode < 0) portalNode = graph.goalIdx;
+        out.portalCell = RoomCenter(ctx.placed[portalNode]);
+
+        // スポーンマーカーに Start/Portal を必ず1つ入れておく（呼び出し側が使う）
+        bool hasStart = false, hasPortal = false;
+        for (auto& room : out.rooms)
+            for (auto& m : room.spawnMarkers)
+            {
+                if (m.type == SpawnMarkerType::StartPoint) hasStart = true;
+                if (m.type == SpawnMarkerType::Portal)     hasPortal = true;
+            }
+        if (!hasStart && !out.rooms.empty())
+            out.rooms[graph.startIdx].spawnMarkers.push_back({ out.startCell, SpawnMarkerType::StartPoint });
+        if (!hasPortal && portalNode >= 0)
+            out.rooms[portalNode].spawnMarkers.push_back({ out.portalCell, SpawnMarkerType::Portal });
     }
 
     //========================================================================
     //  Generate 本体
     //========================================================================
     DungeonGenerateResult DungeonGenerator::Generate(uint32_t seed, int floorIndex)
+    {
+        return Generate(seed, floorIndex, DungeonGenParams{});
+    }
+
+    DungeonGenerateResult DungeonGenerator::Generate(uint32_t seed, int floorIndex,
+        const DungeonGenParams& params)
     {
         floorIndex = std::clamp(floorIndex, 1, 5);
 
@@ -379,28 +403,16 @@ namespace RuneForge::Dungeon
         out.originX = 0.0f;
         out.originZ = 0.0f;
 
-        // シードと層番号を混ぜて層ごとに別レイアウトにする
         uint64_t mixed = ((uint64_t)seed << 8) ^ (uint64_t)(floorIndex * 0x9E37u + 1);
         Rng rng(mixed);
 
-        // 通路幅（推奨 2〜3）
-        const int corridorWidth = 3;
+        RoomGraph graph = BuildRoomGraph(rng, floorIndex, params);
 
-        // A: グラフ
-        std::vector<GraphNode> graph = BuildRoomGraph(rng, floorIndex);
-
-        // C: 物理配置（B のテンプレート選択は PlaceRooms 内で実施）
         GenContext ctx;
-        PlaceRooms(rng, graph, ctx);
-
-        // 焼き込み
+        PlaceRooms(rng, graph, params, ctx);
         StampRooms(ctx, out);
-
-        // D: 通路
-        ConnectCorridors(ctx, out, graph, corridorWidth);
-
-        // メタ収集
-        CollectMeta(ctx, out);
+        ConnectCorridors(ctx, graph, out, params);
+        CollectMeta(ctx, graph, out);
 
         return out;
     }
@@ -410,7 +422,6 @@ namespace RuneForge::Dungeon
     //========================================================================
     std::string DungeonGenerator::BuildAsciiArt(const DungeonGenerateResult& result)
     {
-        // 行 = j（Z）、列 = i（X）。Z+ が上に来るように上から下へ j=depth-1..0 で描く。
         std::string s;
         s.reserve((size_t)(result.width + 1) * result.depth);
 
@@ -433,7 +444,6 @@ namespace RuneForge::Dungeon
     void DungeonGenerator::DebugPrintGrid(const DungeonGenerateResult& result)
     {
         std::string art = BuildAsciiArt(result);
-
 #if defined(RUNEFORGE_HAS_LOGGER)
         CCL_LOG_INFO(LogCategory::Core,
             "[Dungeon] seed=%u  size=%dx%d  rooms=%zu\n%s",

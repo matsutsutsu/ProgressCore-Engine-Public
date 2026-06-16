@@ -29,6 +29,9 @@ private:
     float _zoom = 8.0f;             // 1セルあたりのピクセル
     bool  _clearBeforeBuild = true; // 3D生成前に既存チャンクを消すか
 
+    // ★ デバッグ調整用の生成パラメータ
+    RuneForge::Dungeon::DungeonGenParams _gen;
+
     RuneForge::Dungeon::DungeonGenerateResult _lastResult;
 
     void Regenerate();

@@ -41,7 +41,7 @@ DungeonGeneratorWindow::DungeonGeneratorWindow()
 void DungeonGeneratorWindow::Regenerate()
 {
     // 2Dプレビュー用の生成（軽量、決定的）
-    _lastResult = DungeonGenerator::Generate(static_cast<uint32_t>(_seed), _floor);
+    _lastResult = DungeonGenerator::Generate(static_cast<uint32_t>(_seed), _floor, _gen);
     _hasResult = true;
     DungeonGenerator::DebugPrintGrid(_lastResult);
 }
@@ -60,6 +60,7 @@ void DungeonGeneratorWindow::BuildInScene(EditorContext& context)
     DungeonLevelBuilder::BuildParams params;
     params.seed = static_cast<uint32_t>(_seed);
     params.floorIndex = _floor;
+    params.gen = _gen; // ★ デバッグ調整したパラメータを反映
     DungeonLevelBuilder::Build(*context.world, device, params);
 }
 
@@ -104,6 +105,26 @@ void DungeonGeneratorWindow::DrawContents(EditorContext& context)
     ImGui::SameLine();
     ImGui::SetNextItemWidth(120);
     ImGui::SliderFloat("Zoom", &_zoom, 2.0f, 24.0f, "%.0f px");
+
+    // ★ 生成パラメータ調整（デバッグ）
+    if (ImGui::CollapsingHeader("Generation Params"))
+    {
+        ImGui::Indent();
+        ImGui::SliderInt("Min Rooms", &_gen.minRooms, 2, 30);
+        ImGui::SliderInt("Max Rooms", &_gen.maxRooms, _gen.minRooms, 40);
+        ImGui::SliderInt("Rooms/Floor Bonus", &_gen.roomsPerFloorBonus, 0, 5);
+        ImGui::SliderFloat("Branch Chance", &_gen.branchChance, 0.0f, 1.0f, "%.2f");
+        ImGui::SliderInt("Max Branch/Room", &_gen.maxBranchPerRoom, 1, 4);
+        ImGui::SliderFloat("Regrow Chance", &_gen.regrowChance, 0.0f, 1.0f, "%.2f");
+        ImGui::Separator();
+        ImGui::SliderInt("Corridor Width", &_gen.corridorWidth, 1, 5);
+        ImGui::SliderInt("Cell Tiles W", &_gen.cellTilesW, 5, 25);
+        ImGui::SliderInt("Cell Tiles H", &_gen.cellTilesH, 5, 25);
+        ImGui::SliderInt("Cell Gap", &_gen.cellGap, 1, 8);
+        ImGui::Checkbox("Place Special Rooms", &_gen.placeSpecialRooms);
+        ImGui::TextDisabled("Branch 0=linear, 0.35=balanced, 0.6+=maze");
+        ImGui::Unindent();
+    }
 
     if (!_hasResult)
     {

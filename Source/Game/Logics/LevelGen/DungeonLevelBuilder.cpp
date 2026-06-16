@@ -1,13 +1,17 @@
 //============================================================================
 //  DungeonLevelBuilder.cpp
 //============================================================================
-#include "DungeonLevelBuilder.h"
-#include "DungeonChunkTag.h"
+#include "Game/Logics/LevelGen/DungeonLevelBuilder.h"
+#include "Game/Logics/LevelGen/DungeonChunkTag.h"
 
 #include "Engine/ECS/Common/CCL_Common.h"
+
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Graphics/Components/Core/ModelComponent.h"
 #include "Engine/Graphics/Components/Core/MaterialComponent.h"
+#include "Engine/Camera/Components/VirtualCameraComponents.h"
+#include "Engine/Timer/TimeState.h"
+
 #include "Engine/Serialization/Factory/EntityFactory.h"
 #include "Engine/Platform/Core/Logger.h"
 
@@ -19,7 +23,9 @@
 #include "Game/Logics/LevelGen/DungeonGrid.h"
 #include "Engine/Serialization/Factory/Prefab.h"
 
-#include "Engine/Camera/Components/VirtualCameraComponents.h"
+// プレイヤー＋フォローカメラ生成用
+//   ※ カメラ連携コンポーネントのパスはプロジェクト構成に合わせて調整
+//#include "Game/Logics/Camera/CameraFollowComponents.h"  // CameraBodyFollow / CameraAimLookAt
 
 #include <memory>
 #include <vector>
@@ -73,7 +79,7 @@ void DungeonLevelBuilder::Build(CCL::ECS::Core::World& world, ID3D11Device* devi
     // 1. 生成（決定的）
     // ------------------------------------------------------------------
     DungeonGenerateResult result =
-        DungeonGenerator::Generate(params.seed, params.floorIndex);
+        DungeonGenerator::Generate(params.seed, params.floorIndex, params.gen);
 
     if (DungeonLevelBuilder::IsDiagnosticLogging())
         DungeonGenerator::DebugPrintGrid(result);
@@ -123,6 +129,7 @@ void DungeonLevelBuilder::Build(CCL::ECS::Core::World& world, ID3D11Device* devi
         TransformComponent,
         ModelComponent,
         MaterialComponent,
+        TimeStateComponent,
         DungeonChunkTag        // ★ Clear() で識別するためのタグ
     >();
 
@@ -249,7 +256,6 @@ void DungeonLevelBuilder::SpawnMarkers(CCL::ECS::Core::World& world,
         spawned, skipped);
 }
 
-
 //============================================================================
 //  プレイヤー生成（ダンジョンとは別ライフサイクル）
 //============================================================================
@@ -314,4 +320,3 @@ CCL::ECS::EntityID DungeonLevelBuilder::SpawnPlayerAt(
 
     return playerId;
 }
-
