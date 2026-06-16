@@ -23,15 +23,6 @@
 
 using namespace CCL::ECS;
 
-namespace
-{
-    // ★★★ テスト用フォールバック ★★★
-    // CompiledWandProgram.bulletVfxPath がまだ空(WandCompiler未対応)でも描画パスを
-    // 確認できるよう、空のときだけこの固定パスを使う。
-    // ↓↓↓ あなたがエディタで作った実在するパーティクルPrefabのJSONパスに置き換える ↓↓↓
-    constexpr const char* kDebugFallbackVfx = "Assets/Prefabs/Particles/TestParticle.json";
-    // 恒久対応(WandCompilerがパスを焼く)が済んだら、このフォールバックは削除してよい。
-}
 
 void BulletVisualSystem::Update(float /*dt*/)
 {
@@ -57,15 +48,9 @@ void BulletVisualSystem::Update(float /*dt*/)
     {
         if (!registry.IsValid(p.program)) continue;
         const CompiledWandProgram& prog = registry.Get(p.program);
+        if (prog.bulletVfxPath[0] == '\0') continue; // VFX未指定の弾は見た目なし
 
-        // VFXパスを決定（空ならテスト用フォールバック）。
-        const char* vfxPath = (prog.bulletVfxPath[0] != '\0')
-            ? prog.bulletVfxPath
-            : kDebugFallbackVfx;
-
-        if (vfxPath == nullptr || vfxPath[0] == '\0') continue;
-
-        Prefab::SpawnParticle(*_world, vfxPath, p.bullet,
+        Prefab::SpawnParticle(*_world, prog.bulletVfxPath, p.bullet,
             DirectX::XMFLOAT3{ 0.0f, 0.0f, 0.0f }); // 弾の中心から発生
     }
 }

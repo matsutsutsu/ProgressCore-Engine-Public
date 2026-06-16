@@ -27,6 +27,7 @@
 
 #include "Game/Logics/Wand/Bullet/MagicBulletPool.h"
 #include "Game/Logics/Wand/Compiler/WandProgramRegistry.h"
+#include "Engine/Timer/TimeState.h"
 
 
 
@@ -89,6 +90,7 @@ void BaseScene::Initialize()
     // SystemManager のポインタをリソースとして登録
     //_worldPtr->AddResource<CCL::ECS::SystemManager *>(_ecsContext->GetSystemManager());
 
+    _worldPtr->AddResource<TimeContext>();
 
     // ゲームシステム用のリソース登録
     _worldPtr->AddResource<WandProgramRegistry>();

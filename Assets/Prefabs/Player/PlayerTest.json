@@ -12,14 +12,14 @@
                 },
                 "Bounding Box": {
                     "worldAABB.Center": [
-                        11.787250518798828,
+                        12.557985305786133,
                         2.4210691452026367,
-                        9.99102783203125
+                        11.242411613464355
                     ],
                     "worldAABB.Extents": [
-                        1.6607871055603027,
+                        1.6603846549987793,
                         1.4303332567214966,
-                        1.6301493644714355
+                        1.619873046875
                     ]
                 },
                 "Character Movement Input": {
@@ -31,9 +31,9 @@
                     "isAttackRequested": false,
                     "jumpRequested": false,
                     "lookTargetPos": [
+                        39.92898941040039,
                         0.0,
-                        0.0,
-                        0.0
+                        32.80985641479492
                     ]
                 },
                 "CharacterRadius": {
@@ -57,21 +57,21 @@
                     "freezeScale": 0.0,
                     "group": 0,
                     "hitStopTimer": 0.0,
-                    "localDt": 0.01600000075995922
+                    "localDt": 0.01666666753590107
                 },
                 "Transform": {
                     "isStatic": false,
                     "parent": 2,
                     "position": [
-                        11.89059066772461,
+                        12.458430290222168,
                         1.0,
-                        9.866487503051758
+                        11.369998931884766
                     ],
                     "rotation": [
                         0.0,
-                        -0.9051427245140076,
+                        -0.4386504888534546,
                         0.0,
-                        0.4251081943511963
+                        -0.8986576795578003
                     ],
                     "scale": [
                         0.029999999329447746,
@@ -84,14 +84,66 @@
                 },
                 "WallSlideTag": null,
                 "Wand Build": {
+                    "baseCritMult": 2.0,
+                    "baseCritRate": 0.05000000074505806,
                     "baseDamage": 10.0,
+                    "baseKnockback": 0.0,
                     "baseLifetime": 3.0,
-                    "baseSpeed": 20.0,
-                    "cooldown": 0.30000001192092896
+                    "baseSpeed": 14.0,
+                    "bulletVfxPath": "Assets/Prefabs/Particles/BulletParticle.json",
+                    "cooldown": 0.6100000143051147,
+                    "slotCounts": [
+                        0,
+                        0,
+                        0,
+                        0
+                    ],
+                    "slots": [
+                        [
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0
+                        ],
+                        [
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0
+                        ],
+                        [
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0
+                        ],
+                        [
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0
+                        ]
+                    ]
                 },
                 "Wand Fire Intent": null,
                 "Wand Runtime": {
-                    "cooldownTimer": -0.0040000323206186295
+                    "cooldownTimer": 0.04333324730396271
                 }
             },
             "lid": 1

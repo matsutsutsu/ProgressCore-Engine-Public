@@ -98,7 +98,7 @@ void ImGuiRenderer::Initialize(HWND hWnd, ID3D11Device* device, ID3D11DeviceCont
 	// ImGui::DragFloat などの数値スライダーにおいて、1クリックするだけで即座に直接テキスト入力モードに移行する。
 	// （デフォルトは「Ctrl+クリック」または「ダブルクリック」が必要）。
 	// レベルデザイナー等の数値入力の手間を半減させる、強力な作業効率化フラグです。
-	io.ConfigDragClickToInputText = true;
+	//io.ConfigDragClickToInputText = true;
 
 
 	// =========================================================================

@@ -9,18 +9,27 @@
 #include "Game/Logics/Wand/Core/WandTypes.h"
 #include "Game/Logics/Wand/Core/RuneDatabase.h"
 
+#include <cstring> // strcpy_s
 
 // ビルド構成をコンパイルして実行時の最適化された情報に変換する
 CompiledWandProgram WandCompiler::Compile(const WandBuildComponent& build)
 {
-    // 
     CompiledWandProgram prog;
 
-    // 杖全体のスカラ設定を引き継ぐ
-    prog.baseDamage = build.baseDamage; // baseSpeed 等と並べてコピー
+    // --- 杖全体のスカラ設定をそのまま写す（加工しない） ---
     prog.baseLifetime = build.baseLifetime;
     prog.baseSpeed = build.baseSpeed;
     prog.cooldown = build.cooldown;
+
+    // 戦闘の基礎値
+    prog.baseDamage = build.baseDamage;
+    prog.baseKnockback = build.baseKnockback;
+    prog.baseCritRate = build.baseCritRate;
+    prog.baseCritMult = build.baseCritMult;
+
+    // 見た目VFXパス（固定長char配列のコピー）
+    strcpy_s(prog.bulletVfxPath, sizeof(prog.bulletVfxPath), build.bulletVfxPath);
+
 
     // フェーズを整数に変換する処理
     constexpr int kSpawn   = static_cast<int>(WandPhase::Spawn);
