@@ -1,32 +1,32 @@
 #pragma once
+// ===========================================================================
+// HitboxCollisionSystem.h
+// -----------------------
+// 役割:
+//   物理衝突(JoltCollisionEvent)を受け、Hitbox×Hurtbox の交差から
+//   ダメージイベント(DamageEventComponent)を生成する「判定」システム。
+//
+// 責務:
+//   - 攻撃側Hitboxと被弾側Hurtboxの成立確認、多段ヒット防止。
+//   - クリティカル判定(CombatRng)と最終ダメージ・ノックバック方向の確定。
+//   - 結果を DamageEvent として一時エンティティに載せるところまで(HPは触らない)。
+//
+// アーキテクチャ上の位置付け(戦闘パイプライン):
+//   [Jolt] 物理衝突 → EventBus
+//     │
+//   L05 HitboxCollisionSystem  ← 本ファイル(判定・イベント生成)
+//     ▼
+//   L06 DamageResolutionSystem (HP減算＋ノックバック付与)
+//     ▼
+//   L06 HealthSystem           (無敵更新・死亡判定)
+//
+// 設計方針:
+//   - 状態(HP・無敵)は一切変更しない。出来事(Event)をデータとして並べるのみ(DOD)。
+//   - クリ乱数は CombatRng(World Resource)を使い、DungeonRng とは分離する。
+//   - ノックバック方向は攻撃者→被弾者の Transform から算出(XZ平面)。位置が取れない
+//     場合は強さ0として無効化する(安全側)。
+// ===========================================================================
 #include "Engine/ECS/System/CCL_System.h"
-
-/**
- * @file HitboxCollisionSystem.h
- * @brief 物理衝突からダメージイベントを生成する「判定」システム
- *
- * =================================================================================
- * 【戦闘・ダメージ処理パイプライン 全体フロー】
- * * [Jolt Physics] (物理的な重なりを検知し、EventBusへ送信)
- * │
- * [ Phase 1: 判定 ] ★ HitboxCollisionSystem (L05_Collision) <--- [現在地]
- * │  - Hitbox と Hurtbox の交差を検証。
- * │  - 多段ヒットを防止しつつ、一時的な「DamageEventComponent」エンティティを生成。
- * ▼
- * [ Phase 2: 解決 ] DamageResolutionSystem (L06_Resolution)
- * │  - DamageEvent をシーケンシャルに収集。
- * │  - ターゲットの無敵時間を加味して Health の HP を減算し、イベントを破棄。
- * ▼
- * [ Phase 3: 管理 ] HealthSystem (L06_Resolution)
- * - Health の無敵タイマーを更新。
- * - HPが0以下の対象に DeadTag を付与。
- * =================================================================================
- *
- * @note
- * このシステムは対象の状態（HPや無敵）を一切直接変更しない。
- * 「誰が誰にどれだけのダメージを与えるか」という純粋な「出来事（Event）」を
- * メモリ上にデータとして並べることのみに特化している（DODの原則）。
- */
 
 class HitboxCollisionSystem : public CCL::ECS::IfSystem<HitboxCollisionSystem> {
 public:
@@ -36,5 +36,10 @@ public:
     void Update(float dt) override;
 
 private:
-    void CheckAndSpawnDamageEvent(CCL::ECS::EntityID entityA, CCL::ECS::EntityID entityB);
+    /// @brief attacker候補→victim候補の一方向で命中を検証し、成立すればDamageEventを生成する。
+    /// @param attackerCandidate 攻撃側になり得るエンティティ(Hitbox所持を確認する)
+    /// @param victimCandidate   被弾側になり得るエンティティ(Hurtbox所持を確認する)
+    /// @note  双方向(A→B, B→A)は呼び出し側で2回呼ぶことで担保する。
+    void CheckAndSpawnDamageEvent(CCL::ECS::EntityID attackerCandidate,
+        CCL::ECS::EntityID victimCandidate);
 };

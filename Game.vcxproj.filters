@@ -1710,6 +1710,15 @@
     <ClInclude Include="Source\Game\Logics\Wand\Collision\BulletHitResponseSystem.h">
       <Filter>Source\Game\Logics\Wand\Collision</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Combat\KnockbackComponent.h">
+      <Filter>Source\Game\Logics\Combat</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Combat\GameRng.h">
+      <Filter>Source\Game\Logics\Combat</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Combat\KnockbackSystem.h">
+      <Filter>Source\Game\Logics\Combat</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2560,6 +2569,9 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Wand\Collision\BulletHitResponseSystem.cpp">
       <Filter>Source\Game\Logics\Wand\Collision</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Combat\KnockbackSystem.cpp">
+      <Filter>Source\Game\Logics\Combat</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

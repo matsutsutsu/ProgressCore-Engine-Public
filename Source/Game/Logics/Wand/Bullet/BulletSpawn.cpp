@@ -22,6 +22,7 @@
 #include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"      // PhysicsLayers
 #include "Engine/Physics/Components/RigidBody/JoltRigidBodyComponent.h"
 #include "Engine/Physics/Components/Collision/JoltSphereColliderComponent.h"
+#include "Game/Logics/Combat/CombatComponents.h"
 
 
 // アタッチメント特有処理（命名規則: <Name>Spawn）
@@ -94,7 +95,7 @@ namespace
     {
         // 全弾共有の単一Archetype（初回のみ構築してキャッシュ）。
         static const Archetype bulletArch = ArchetypeHelper::Generate<
-            TransformComponent, JoltSphereColliderComponent, JoltRigidbodyComponent,
+            TransformComponent, JoltSphereColliderComponent, JoltRigidbodyComponent, HitboxComponent,
             BulletProgramRef, BulletStateComponent, BulletTag, TimeStateComponent>();
 
         // 上限ガバナに枠を要求。満杯なら最古弾を退役（破棄要求）。
@@ -124,12 +125,24 @@ namespace
         JoltSphereColliderComponent col;
         col.radius = 0.5f;
 
+        // 弾の戦闘ステータスをプログラムから焼き込む(全弾共通の基礎値)。
+        // これにより既存 HitboxCollisionSystem が弾の命中を拾い、DamageEventを生む。
+        HitboxComponent hitbox{};
+        hitbox.ownerID      = owner;
+        hitbox.damageAmount = prog.baseDamage;
+        hitbox.isActive     = true;             // 弾は常時アクティブ
+        hitbox.critRate     = prog.baseCritRate;
+        hitbox.critMult     = prog.baseCritMult;
+        hitbox.knockback    = prog.baseKnockback;
+        hitbox.hitCount     = 0;
+ 
         Core::EntityRef ref = world->Spawn(bulletArch);
-        const EntityID newId = ref.ID(); // ※EntityRefのID取得APIに合わせる
+        const EntityID newId = ref.ID();
         ref.Set(BulletProgramRef{ programId })
             .Set(state)
             .Set(rb)
             .Set(col)
+            .Set(hitbox)
             .Patch<TransformComponent>([&](TransformComponent& t)
                 {
                     t.position = position;

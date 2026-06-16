@@ -689,6 +689,7 @@
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerFeedbackSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerInputSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerMoveSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Combat\GameRng.h" />
     <ClInclude Include="Source\Game\Logics\Combat\CombatRosterComponent.h" />
     <ClInclude Include="Source\Game\Logics\Combat\DamageResolutionSystem.h" />
     <ClInclude Include="Source\Game\Logics\Combat\DeadTag.h" />
@@ -696,6 +697,8 @@
     <ClInclude Include="Source\Game\Logics\Combat\HealthComponent.h" />
     <ClInclude Include="Source\Game\Logics\Combat\HealthSystem.h" />
     <ClInclude Include="Source\Game\Logics\Combat\HitboxCollisionSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Combat\KnockbackComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Combat\KnockbackSystem.h" />
     <ClInclude Include="Source\Game\Logics\GameEvent\GameEvents.h" />
     <ClInclude Include="Source\Game\Logics\GameEvent\GameOverResource.h" />
     <ClInclude Include="Source\Game\Logics\GameEvent\GameStateMode.h" />
@@ -1434,6 +1437,7 @@
     <ClCompile Include="Source\Game\Logics\Combat\DamageResolutionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\HealthSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\HitboxCollisionSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Combat\KnockbackSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\LevelGen\DungeonGenerator.cpp" />
     <ClCompile Include="Source\Game\Logics\LevelGen\DungeonLevelBuilder.cpp" />
     <ClCompile Include="Source\Game\Logics\LevelGen\DungeonMeshBatcher.cpp" />

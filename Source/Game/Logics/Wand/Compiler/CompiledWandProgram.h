@@ -36,6 +36,9 @@ struct CompiledWandProgram
     uint8_t inheritanceCount = 0; ///< inheritanceOps の有効数
 
     float baseDamage    = 10.0f; ///< 1ヒットの基礎ダメージ
+    float baseKnockback = 0.0f;    // ノックバックの強さ（速度インパルス量）
+    float baseCritRate  = 0.05f;   // クリティカル率（0.0〜1.0）
+    float baseCritMult  = 2.0f;    // クリティカル時のダメージ倍率
     float baseLifetime  = 3.0f;  ///< 寿命(秒)。age がこれを超えると Inheritance 発動
     float baseSpeed     = 20.0f; ///< 基準初速
     float cooldown      = 0.30f; ///< 杖の発射クールダウン(秒)
