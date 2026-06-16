@@ -103,6 +103,8 @@ Framework::Framework(HWND hWnd)
 	// エディタの初期化をフレームワーク層で行う
 	m_editorWindowManager = std::make_unique<EditorWindowManager>();
 	m_editorWindowManager->Initialize();
+	// 2. 状態の復元 
+	m_editorWindowManager->LoadLayout("Assets/Editor/Layout.json");
 
 	// ConsoleWindow に Sink を渡す
 	if (auto* console = m_editorWindowManager->GetWindow<ConsoleWindow>())
@@ -119,6 +121,8 @@ Framework::~Framework()
 
 
 #ifdef ENABLE_EDITOR
+	// 終了時に必ず保存
+	m_editorWindowManager->SaveLayout("Assets/Editor/Layout.json");
 	// エディタの解放を明示的に行う（スマートポインタなので自動解放されるが順序の担保として）
 	m_editorWindowManager.reset();
 #endif

@@ -27,12 +27,49 @@
 #include "Editor/Windows/DungeonGeneratorWindow.h"
 
 #include "Engine/Serialization/Factory/Prefab.h"
+#include "Engine/Platform/Core/FileSystem.h" // 既存のJSONライブラリ利用
+#include <fstream>
+#include <json.hpp> // nlohmann/json を利用
 #include <imgui.h>
 #include <filesystem>
 #include <windows.h>
 #include <shellapi.h> // ShellExecuteA を使用するために必要
 #include <map>
 #include <sstream>
+
+namespace fs = std::filesystem;
+
+void EditorWindowManager::Initialize()
+{
+    // =========================================================
+    // ★ 常に表示しておきたいメインウィンドウ (デフォルトで true)
+    // =========================================================
+    RegisterWindow<InspectorWindow>();
+    RegisterWindow<HierarchyWindow>();
+    RegisterWindow<AssetBrowserWindow>();
+
+    // =========================================================
+    // ★ デフォルトでは「非表示」にするサブウィンドウ
+    // (->SetVisible(false) をつけるだけで、起動時は隠れます)
+    // =========================================================
+    RegisterWindow<ECSDebugWindow>();
+    RegisterWindow<ConsoleWindow>();
+    //RegisterWindow<AnimationSequencerWindow>();
+    //RegisterWindow<AnimGraphWindow>();
+	//RegisterWindow<BehaviorTreeWindow>();
+    RegisterWindow<DungeonGeneratorWindow>();
+
+    // ※まだ実装中で完全に読み込みたくない（クラッシュする等の）場合は、
+    // 引き続きコメントアウトで対応してください。
+    RegisterWindow<TextEditorWindow>();
+    RegisterWindow<InputEditorWindow>();
+    RegisterWindow<NavMeshWindow>();
+    RegisterWindow<MemoryAnalyzerWindow>();
+    //RegisterWindow<SceneViewWindow>();
+    RegisterWindow<GameViewWindow>();
+
+}
+
 
 // =========================================================
 // ★ プレハブのフォルダ階層をメニュー化するためのヘルパー
@@ -75,39 +112,6 @@ namespace {
             }
         }
     }
-}
-
-namespace fs = std::filesystem;
-
-void EditorWindowManager::Initialize()
-{
-    // =========================================================
-    // ★ 常に表示しておきたいメインウィンドウ (デフォルトで true)
-    // =========================================================
-    RegisterWindow<InspectorWindow>();
-    RegisterWindow<HierarchyWindow>();
-    RegisterWindow<AssetBrowserWindow>();
-
-    // =========================================================
-    // ★ デフォルトでは「非表示」にするサブウィンドウ
-    // (->SetVisible(false) をつけるだけで、起動時は隠れます)
-    // =========================================================
-    RegisterWindow<ECSDebugWindow>();
-    RegisterWindow<ConsoleWindow>();
-    //RegisterWindow<AnimationSequencerWindow>();
-    //RegisterWindow<AnimGraphWindow>()->SetVisible(false);
-	//RegisterWindow<BehaviorTreeWindow>();
-    RegisterWindow<DungeonGeneratorWindow>();
-
-    // ※まだ実装中で完全に読み込みたくない（クラッシュする等の）場合は、
-    // 引き続きコメントアウトで対応してください。
-    RegisterWindow<TextEditorWindow>()->SetVisible(false);
-    RegisterWindow<InputEditorWindow>()->SetVisible(false);
-    RegisterWindow<NavMeshWindow>()->SetVisible(false);
-    RegisterWindow<MemoryAnalyzerWindow>()->SetVisible(false);
-    //RegisterWindow<SceneViewWindow>();
-    RegisterWindow<GameViewWindow>();
-
 }
 
 
@@ -505,5 +509,47 @@ void EditorWindowManager::DrawToolsMenu(EditorContext& context)
         // if (ImGui::MenuItem("Launch RenderDoc")) { ... }
 
         ImGui::EndMenu();
+    }
+}
+
+void EditorWindowManager::SaveLayout(const std::string& path)
+{
+    nlohmann::json j;
+    j["windows"] = nlohmann::json::array();
+
+    for (auto& window : _windows) {
+        j["windows"].push_back({
+            {"name", window->GetName()},
+            {"visible", window->GetVisible()}
+            });
+    }
+
+    FileSystem::WriteAllText(path, j.dump(4));
+    CCL_LOG_INFO(LogCategory::Editor, "Layout saved: %s", path.c_str());
+}
+
+void EditorWindowManager::LoadLayout(const std::string& path)
+{
+    std::string data = FileSystem::ReadAllText(path);
+    if (data.empty()) return;
+
+    try {
+        auto j = nlohmann::json::parse(data);
+        for (const auto& item : j["windows"]) {
+            std::string name = item["name"];
+            bool visible = item["visible"];
+
+            // 名前で検索して状態を適用
+            for (auto& window : _windows) {
+                if (window->GetName() == name) {
+                    window->SetVisible(visible);
+                    break;
+                }
+            }
+        }
+        CCL_LOG_INFO(LogCategory::Editor, "Layout loaded: %s", path.c_str());
+    }
+    catch (...) {
+        CCL_LOG_ERROR(LogCategory::Editor, "Failed to load layout.");
     }
 }
