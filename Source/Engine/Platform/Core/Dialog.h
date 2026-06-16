@@ -180,13 +180,13 @@ namespace Engine
          * @brief 履歴をJSONファイルから読み込む
          * @param settingsPath 設定ファイルのパス
          */
-        static void LoadHistory(const std::filesystem::path& settingsPath = "Build/EditorPrefs.json");
+        static void LoadHistory(const std::filesystem::path& settingsPath = "Build/User/EditorPrefs.json");
 
         /**
          * @brief 履歴をJSONファイルに書き込む
          * @param settingsPath 設定ファイルのパス
          */
-        static void SaveHistory(const std::filesystem::path& settingsPath = "Build/EditorPrefs.json");
+        static void SaveHistory(const std::filesystem::path& settingsPath = "Build/User/EditorPrefs.json");
 
         /**
          * @brief 履歴をクリアする
