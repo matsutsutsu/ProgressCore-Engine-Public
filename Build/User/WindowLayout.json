@@ -22,7 +22,7 @@
         },
         {
             "name": "Dungeon Generator",
-            "visible": true
+            "visible": false
         },
         {
             "name": "Text Editor",
