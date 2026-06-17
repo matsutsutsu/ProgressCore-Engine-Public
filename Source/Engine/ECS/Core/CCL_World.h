@@ -399,6 +399,28 @@ namespace CCL::ECS::Core
         inline std::vector<EntityID> View();
 
 
+		// --------------------------------------------------------
+		// Singleton Component Access
+		// --------------------------------------------------------
+
+        /**
+         * @brief シングルトンコンポーネントを取得する。
+         *
+         * シングルトンコンポーネントはエンティティが1つだけ存在することを前提としています。
+         * 複数存在する場合は開発ビルドで警告されます。
+         */
+        template<typename T>
+        T* GetSingletonComponent() {
+            auto view = View<T>();
+            if (view.empty()) return nullptr;
+            // 開発ビルドでは複数存在を警告（シングルトン契約の明示）
+            #ifdef ENABLE_EDITOR
+             //CCL_ASSERT(view.size() == 1, "Singleton component has multiple instances");
+            #endif
+            return GetComponent<T>(view[0]);
+        }
+
+
         // --------------------------------------------------------
         // 内部実装用（テンプレートでない方の AddComponent ルート）
         // --------------------------------------------------------

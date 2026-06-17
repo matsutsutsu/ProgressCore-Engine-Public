@@ -1,7 +1,7 @@
 #pragma once
+#include "Engine/Graphics/Shader/Shared/PostProcessShared.h"
 
 struct ToneMapConfigComponent {
-    float exposure = 0.2f;     // 露出 (デフォルト1.0)
-    // float gamma = 2.2f;     // 将来用
-    // int type = 0;           // 将来用 (0:ACES, 1:Reinhard...)
+  bool                   enable = true; // 一貫性のためにenableを追加
+  GpuData::CbToneMapData data;          // 構造体をそのまま内包
 };

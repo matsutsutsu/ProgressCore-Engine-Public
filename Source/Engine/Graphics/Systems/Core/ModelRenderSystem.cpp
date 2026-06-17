@@ -18,18 +18,6 @@
 using namespace CCL::ECS;
 using namespace DirectX;
 
-namespace {
-    // クォータニオンの正規化チェック用ヘルパー
-    inline bool IsUnitQuaternion(FXMVECTOR q, float epsilon = 1e-3f)
-    {
-        XMVECTOR lenSq = XMVector4Dot(q, q);
-        float    value = XMVectorGetX(lenSq);
-        return fabsf(value - 1.0f) < epsilon;
-    }
-
-  
-} // namespace
-
 ModelRenderSystem::ModelRenderSystem() : IfSystem("ModelRenderSystem"){}
 
 void ModelRenderSystem::Update(float dt)
@@ -43,13 +31,13 @@ void ModelRenderSystem::Update(float dt)
     ForEach([&](const TransformComponent& transform,
         const ModelComponent& modelComp,
         const MaterialComponent& mat,
-        const VisibilityComponent& vis) { // ★追加
+        const VisibilityComponent& vis) { 
 
-            // ★ 最重要：ここでカリング結果を見て、画面外なら即座に処理をスキップ（サボる）
-            if (!vis.isVisible) return;
+        // ★ 最重要：ここでカリング結果を見て、画面外なら即座に処理をスキップ（サボる）
+        if (!vis.isVisible) return;
 
-            Model* model = modelComp.GetModel(); // ハンドルから取得
-            if (!model) return;
+        Model* model = modelComp.GetModel(); // ハンドルから取得
+        if (!model) return;
 
 
         // ShadowMapでUpdateTransform行うのでここではやらない
@@ -87,7 +75,20 @@ void ModelRenderSystem::Update(float dt)
         // =========================================================
         RenderCommand cmd;
         cmd.shaderHash = shaderHash;
-        cmd.assetHash = modelComp.assetHash;
+
+        // ★ ランタイム生成モデルにバッチ用の一意 identity を与える。
+        //    assetHash==0 の実体ハンドルは modelHandle.index で区別する。
+        //    上位ビット(0x80000000)で通常の assetHash 空間と分離
+        if (modelComp.assetHash == 0 && modelComp.isRuntime &&
+            modelComp.modelHandle.IsValid())
+        {
+            cmd.assetHash = 0x80000000u | (modelComp.modelHandle.index & 0x7FFFFFFFu);
+        }
+        else
+        {
+            cmd.assetHash = modelComp.assetHash; // ファイル由来は従来どおり
+        }
+
         cmd.model = model;
         cmd.worldMatrix = transform.worldMatrix;
 

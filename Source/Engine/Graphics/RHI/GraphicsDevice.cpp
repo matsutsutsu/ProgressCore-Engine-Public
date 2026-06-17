@@ -1,6 +1,6 @@
 #include "GraphicsDevice.h"
 #include "Engine/Core/Math/Misc.h"
-#include "Engine/Graphics/Shader/ShaderShared.h"  // _ASSERT_EXPR, HRTrace
+#include "Engine/Graphics/Shader/Shared/ShaderShared.h"  // _ASSERT_EXPR, HRTrace
 #include "Engine/Graphics/RHI/Graphics.h"
 
 // CbScene 構造体（GraphicsDevice が物理バッファを持ち、Graphics が内容を埋める）
@@ -132,7 +132,7 @@ void GraphicsDevice::Shutdown()
 
     // ③ この時点でデバイス（_device）に残っているものは「真のリーク（犯人）」だけ！
     // ここでレポートを出力する デバッグ時のみ
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
     if (_device) {
         Microsoft::WRL::ComPtr<ID3D11Debug> debug;
         if (SUCCEEDED(_device.As(&debug))) {

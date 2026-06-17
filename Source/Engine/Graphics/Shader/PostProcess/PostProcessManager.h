@@ -10,6 +10,9 @@
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Graphics/Components/PostProcess/ToneMapConfigComponent.h"
 
+// PostProcessが直接ToneMapを保持して最後に使うためインクルード
+#include "ToneMapEffect.h"
+
 /**
  * @brief HDR → SDR パイプライン全体を管理するクラス。
  *
@@ -101,18 +104,13 @@ private:
     UINT          _width = 0;
     UINT          _height = 0;
 
-    RenderTargetHandle _sceneHDR{};  // シーン描画先 (HDR)
-    RenderTargetHandle _outputSDR{}; // ToneMap 出力 (SDR, ImGui 用)
+    //  HDR キャンバスを 2枚 用意する（Ping-Pong用）
+    RenderTargetHandle _hdrBuffers[2];
+    RenderTargetHandle _outputSDR{};
 
     std::vector<std::unique_ptr<IPostEffect>> _effects;
 
     // ToneMap は常に最終ステップとして PostProcessManager が保持
     // BloomEffect が合成済み HDR を返すため 1 入力のみになった
-    struct ToneMapResources {
-        Microsoft::WRL::ComPtr<ID3D11VertexShader>  vs;
-        Microsoft::WRL::ComPtr<ID3D11PixelShader>   ps;
-        Microsoft::WRL::ComPtr<ID3D11Buffer>        cbToneMap;
-        Microsoft::WRL::ComPtr<ID3D11SamplerState>  sampler;
-    };
-    std::unique_ptr<ToneMapResources> _toneMapRes;
+    std::unique_ptr<ToneMapEffect> _toneMapEffect;
 };

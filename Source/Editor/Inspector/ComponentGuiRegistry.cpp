@@ -1,8 +1,7 @@
 #include "ComponentGuiRegistry.h"
 #include "Engine/ECS/Core/CCL_World.h" // Worldへのアクセスに必要
-#include "Game/Core/AllComponents.h"
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
 #include <imgui.h>
 #endif
 
@@ -11,7 +10,7 @@
 #include "Engine/Platform/Core/Dialog.h"              // ファイル選択ダイアログ用
 
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
-#include "Engine/Graphics/Shader/ShaderShared.h"
+#include "Engine/Graphics/Shader/Shared/ShaderShared.h"
 
 // JSONとファイル入出力
 #include <fstream>
@@ -38,7 +37,7 @@ void ComponentGuiRegistry::Draw(
 
     auto idIt = _typeIdToIndex.find(id);
     if (idIt == _typeIdToIndex.end()) {
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
         ImGui::TextColored(ImVec4(1, 0.5f, 0, 1), "No GUI registered for this ID.");
 #endif
         return;

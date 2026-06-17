@@ -5,7 +5,7 @@
 // ParticleShared.h が GpuParticle / CbParticleStatic / CbParticleDynamic を定義する。
 // このファイルには HLSL 固有の型定義・ヘルパー関数のみを置く。
 // ===========================================================================
-#include "Engine/Graphics/Shader/ParticleShared.h"
+#include "Engine/Graphics/Shader/Shared/ParticleShared.h"
 #include "Shader/Common/Scene.hlsli"   // CbScene (viewProjection, gProjection 等)
 
 // C++ 側は GpuData::GpuParticle、HLSL 内コードは "particle" で統一

@@ -5,10 +5,11 @@
 #include <string>
 #include <windows.h>
 
+#include "Engine/Core/Components/NameComponent.h"
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Platform/Core/Dialog.h"
 #include "Engine/Serialization/Serializer/PrefabSerializer.h"
-#include "Game/Core/AllComponents.h"
+
 
 InspectorWindow::InspectorWindow() : EditorWindow("Inspector") {}
 
@@ -107,16 +108,6 @@ void InspectorWindow::DrawContents(EditorContext &context)
         // 1. まずは Registry にカスタム名（表示名）が登録されているか確認
         std::string compName = registry.GetName(typeID);
 
-
-        // ★ 診断ログを追加
- /*       char diagBuf[256];
-        sprintf_s(diagBuf, "[CCL_DIAG] typeID=%llu, GetName='%s', typeData.name='%s'\n",
-            (unsigned long long)typeID,
-            compName.c_str(),
-            typeData.name ? typeData.name : "(null)");
-        OutputDebugStringA(diagBuf);*/
-
-
         // 2. 未登録（Unknown）の場合、C++が自動取得した型名を使う
         if (compName.find("Unknown") != std::string::npos &&
             typeData.name != nullptr) {
@@ -137,21 +128,59 @@ void InspectorWindow::DrawContents(EditorContext &context)
         }
 
         ImGui::PushID((int)typeID);
+
+        // -------------------------------------------------------
+        // ① コンポーネント間の明確な「黒いスリット(隙間)」
+        // -------------------------------------------------------
+        ImGui::Dummy(ImVec2(0.0f, 6.0f));
+
+        ImGui::PushStyleColor(ImGuiCol_Separator, ImVec4(0.05f, 0.05f, 0.05f, 1.0f));
+        ImGui::Separator();
+        ImGui::PopStyleColor();
+
+        ImGui::Dummy(ImVec2(0.0f, 2.0f));
+
+        // -------------------------------------------------------
+        // ② ヘッダーバーのコントラスト強化
+        // -------------------------------------------------------
+        ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.22f, 0.22f, 0.22f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.28f, 0.28f, 0.28f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.32f, 0.32f, 0.32f, 1.0f));
+
         bool headerOpen = ImGui::CollapsingHeader(
             compName.c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap);
 
+        ImGui::PopStyleColor(3);
+
+        // -------------------------------------------------------
+        // ③ 削除ボタンのステルス化 (ヘッダーに溶け込ませる)
+        // -------------------------------------------------------
         float buttonSize = 20.0f;
-        ImGui::SameLine(ImGui::GetWindowWidth() - buttonSize - 20);
+        ImGui::SameLine(ImGui::GetWindowWidth() - buttonSize - 16.0f);
+
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.2f, 0.2f, 0.5f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.9f, 0.1f, 0.1f, 0.8f));
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.2f, 0.2f, 1.0f));
+
         if (ImGui::Button("x", ImVec2(buttonSize, 18))) {
             world->RequestRemoveComponent(selected, typeID);
         }
+        ImGui::PopStyleColor(4);
 
+        // -------------------------------------------------------
+        // ④ 中身のプロパティのインデント処理
+        // -------------------------------------------------------
         if (headerOpen) {
-            ImGui::Indent();
+            ImGui::Spacing();
+            ImGui::Indent(12.0f);
+
             registry.DrawInspector(typeID, world, selected);
-            ImGui::Unindent();
+
+            ImGui::Unindent(12.0f);
             ImGui::Spacing();
         }
+
         ImGui::PopID();
     }
 

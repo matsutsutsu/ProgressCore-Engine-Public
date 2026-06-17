@@ -23,13 +23,29 @@ struct InputBinding {
     float           scale = 1.0f; // 軸の方向や感度（Wなら1.0、Sなら-1.0等）
 };
 
+// 2.5 アクティブな操作デバイス（UIのアイコン表示切り替え用）
+enum class ActiveDeviceType {
+    KeyboardMouse,
+    GamePad
+};
+
 // 3. 純粋な入力API
-class IInputAPI {
+class IInputAPI 
+{
 public:
     virtual ~IInputAPI() = default;
 
     // エディタからホットリロードを叩けるようにインターフェースにも公開
     virtual bool LoadConfig(const std::string& filePath) = 0;
+
+    // 現在使用中のデバイスカテゴリを取得
+    virtual ActiveDeviceType GetActiveDeviceType() const = 0;
+
+    // マウスとスクリーン情報の取得
+    virtual float GetMouseX() const = 0;
+    virtual float GetMouseY() const = 0;
+    virtual float GetScreenWidth() const = 0;
+    virtual float GetScreenHeight() const = 0;
 
     // --- 設定（バインディング） ---
     virtual void AddActionBinding(const std::string& actionName, InputDeviceType device, unsigned int keyCode) = 0;
@@ -59,4 +75,7 @@ public:
     float GetAxis(const char* axisName) const { 
         return GetAxis(CCL::Utils::HashString(axisName)); 
     }
+
+    // コントローラーを振動させる (0.0f ~ 1.0f)
+    virtual void SetVibration(float leftMotor, float rightMotor, float duration) = 0;
 };

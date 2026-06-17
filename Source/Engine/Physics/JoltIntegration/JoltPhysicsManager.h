@@ -39,9 +39,11 @@
 // --- 1. 住人の種類 (ObjectLayer) ---
 // ObjectLayer は「この物体が何者か」を定義するためのレイヤーです。
 namespace PhysicsLayers {
-    static constexpr JPH::ObjectLayer NON_MOVING = 0; // 静的オブジェクト（壁、床）
-    static constexpr JPH::ObjectLayer MOVING     = 1; // 動的オブジェクト（キャラ、弾）
-    static constexpr JPH::ObjectLayer NUM_LAYERS = 2;
+    static constexpr JPH::ObjectLayer NON_MOVING = 0; // 壁・床（※本作では弾の壁判定はDDA。Joltの壁は基本使わない）
+    static constexpr JPH::ObjectLayer MOVING     = 1; // キャラ（プレイヤー・敵など押し合う動的アクター）
+    static constexpr JPH::ObjectLayer ENEMY      = 2; // 敵専用（弾の命中対象）
+    static constexpr JPH::ObjectLayer BULLET     = 3; // 弾専用（敵とだけ当たる・弾同士は当たらない）
+    static constexpr JPH::ObjectLayer NUM_LAYERS = 4;
 } // namespace PhysicsLayers
 
 // --- 2. 空間のバケツ (BroadPhaseLayer) ---
@@ -49,7 +51,7 @@ namespace PhysicsLayers {
 // 普通になんの性質を持っているかのレイヤーの区分
 namespace BroadPhaseLayers {
     static constexpr JPH::BroadPhaseLayer NON_MOVING(0);
-    static constexpr JPH::BroadPhaseLayer MOVING(1);
+    static constexpr JPH::BroadPhaseLayer MOVING(1);     // 動くもの全般（MOVING/ENEMY/BULLET をまとめる）
     static constexpr JPH::uint            NUM_LAYERS(2);
 } // namespace BroadPhaseLayers
 

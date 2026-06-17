@@ -36,9 +36,9 @@ namespace {
 
 void JoltBodySetupSystem::Update(float dt)
 {
-    if (!_world->HasResource<JoltPhysicsManager>()) return;
-    auto               &joltManager   = _world->GetResource<JoltPhysicsManager>();
-    JPH::BodyInterface &bodyInterface = joltManager.GetBodyInterface();
+    if (!_world->HasResource<JoltPhysicsManager*>()) return;
+    auto               &joltManager   = _world->GetResource<JoltPhysicsManager*>();
+    JPH::BodyInterface &bodyInterface = joltManager->GetBodyInterface();
 
     // ★あなたのエンジンの IfSystem の恩恵により、
     // Transform と Rigidbody を持っているエンティティ「だけ」がここに流れてくる！

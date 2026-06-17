@@ -24,11 +24,18 @@
 #include "Editor/Windows/BehaviorTreeWindow.h"
 #include "Editor/Windows/MemoryAnalyzerWindow.h"
 
+#include "Editor/Windows/DungeonGeneratorWindow.h"
+
 #include "Engine/Serialization/Factory/Prefab.h"
+#include "Engine/Platform/Core/FileSystem.h" // 既存のJSONライブラリ利用
+#include <fstream>
+#include <json.hpp> // nlohmann/json を利用
 #include <imgui.h>
 #include <filesystem>
 #include <windows.h>
 #include <shellapi.h> // ShellExecuteA を使用するために必要
+#include <map>
+#include <sstream>
 
 namespace fs = std::filesystem;
 
@@ -39,7 +46,7 @@ void EditorWindowManager::Initialize()
     // =========================================================
     RegisterWindow<InspectorWindow>();
     RegisterWindow<HierarchyWindow>();
-    //RegisterWindow<AssetBrowserWindow>();
+    RegisterWindow<AssetBrowserWindow>();
 
     // =========================================================
     // ★ デフォルトでは「非表示」にするサブウィンドウ
@@ -48,17 +55,63 @@ void EditorWindowManager::Initialize()
     RegisterWindow<ECSDebugWindow>();
     RegisterWindow<ConsoleWindow>();
     //RegisterWindow<AnimationSequencerWindow>();
-    //RegisterWindow<AnimGraphWindow>()->SetVisible(false);
+    //RegisterWindow<AnimGraphWindow>();
 	//RegisterWindow<BehaviorTreeWindow>();
+    RegisterWindow<DungeonGeneratorWindow>();
 
     // ※まだ実装中で完全に読み込みたくない（クラッシュする等の）場合は、
     // 引き続きコメントアウトで対応してください。
-    RegisterWindow<TextEditorWindow>()->SetVisible(false);
-    RegisterWindow<InputEditorWindow>()->SetVisible(false);
-    RegisterWindow<NavMeshWindow>()->SetVisible(false);
-    RegisterWindow<MemoryAnalyzerWindow>()->SetVisible(false);
+    RegisterWindow<TextEditorWindow>();
+    RegisterWindow<InputEditorWindow>();
+    RegisterWindow<NavMeshWindow>();
+    RegisterWindow<MemoryAnalyzerWindow>();
     //RegisterWindow<SceneViewWindow>();
     RegisterWindow<GameViewWindow>();
+
+}
+
+
+// =========================================================
+// ★ プレハブのフォルダ階層をメニュー化するためのヘルパー
+// =========================================================
+namespace {
+    struct PrefabNode {
+        bool isFile = false;
+        std::string fullPath;
+        std::map<std::string, std::unique_ptr<PrefabNode>> children;
+    };
+
+    // 再帰的にメニューを描画する関数
+    void DrawPrefabNodeTree(const std::string& nodeName, const PrefabNode& node, EditorContext& context)
+    {
+        if (node.isFile) {
+            // ファイルの場合：拡張子(.json)を消して見た目を綺麗にする
+            std::string displayName = std::filesystem::path(nodeName).stem().string();
+            std::string menuText = "  " + displayName; // 少しインデントしてアイコンっぽく
+
+            if (ImGui::MenuItem(menuText.c_str())) {
+                if (context.world) {
+                    DirectX::XMFLOAT3 spawnPos = { 0, 5, 0 };
+                    Prefab::SpawnPrefab(*context.world, node.fullPath, spawnPos);
+                    CCL_LOG_INFO(LogCategory::Editor, "Spawned Prefab: %s", displayName.c_str());
+                }
+            }
+        }
+        else {
+            // フォルダの場合：サブメニューを作成
+            std::string menuText = "[+] " + nodeName;
+            if (ImGui::BeginMenu(menuText.c_str())) {
+                // UX向上: フォルダを先に、ファイルを後に並べる
+                for (const auto& [childName, childNode] : node.children) {
+                    if (!childNode->isFile) DrawPrefabNodeTree(childName, *childNode, context);
+                }
+                for (const auto& [childName, childNode] : node.children) {
+                    if (childNode->isFile) DrawPrefabNodeTree(childName, *childNode, context);
+                }
+                ImGui::EndMenu();
+            }
+        }
+    }
 }
 
 
@@ -113,8 +166,8 @@ void EditorWindowManager::Draw(EditorContext &context)
     }
 
     // =========================================================
-     // ★ 修正: F1非表示時は、背景キャンバスにゲーム画面をフルスクリーン描画する
-     // =========================================================
+    //  F1非表示時は、背景キャンバスにゲーム画面をフルスクリーン描画する
+    // =========================================================
     if (!_isVisible) {
         if (context.gameSRV) {
             // ImGuiの描画可能領域全体（画面サイズ）を取得
@@ -129,11 +182,11 @@ void EditorWindowManager::Draw(EditorContext &context)
         }
 
         // ヒントUI
-        ImGui::SetNextWindowPos(ImVec2(10, 10));
-        ImGui::SetNextWindowBgAlpha(0.3f);
-        ImGui::Begin("HiddenOverlay", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoNav);
-        ImGui::TextColored(ImVec4(1, 1, 0, 1), "[F1] Show Editor UI");
-        ImGui::End();
+        //ImGui::SetNextWindowPos(ImVec2(10, 10));
+        //ImGui::SetNextWindowBgAlpha(0.3f);
+        //ImGui::Begin("HiddenOverlay", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoNav);
+        //ImGui::TextColored(ImVec4(1, 1, 0, 1), "[F1] Show Editor UI");
+        //ImGui::End();
 
         return; // ウィンドウ群やメニューバーは描画せずに終了
     }
@@ -223,14 +276,59 @@ void EditorWindowManager::DrawPrefabMenu(EditorContext& context)
             ImGui::TextDisabled("No prefabs found");
         }
         else {
+            // =========================================================
+            // 1. パスを解析してツリー構造（フォルダ階層）を構築する
+            // =========================================================
+            PrefabNode rootNode;
+            std::string basePrefix = "Assets/Prefabs";
+            std::replace(basePrefix.begin(), basePrefix.end(), '\\', '/');
+
             for (const auto& pathStr : context.prefabFiles) {
-                std::string filename = std::filesystem::path(pathStr).filename().string();
-                if (ImGui::MenuItem(filename.c_str())) {
-                    if (context.world) {
-                        DirectX::XMFLOAT3 spawnPos = { 0, 5, 0 };
-                        Prefab::SpawnPrefab(*context.world, pathStr, spawnPos);
+                std::string relativePath = pathStr;
+                std::replace(relativePath.begin(), relativePath.end(), '\\', '/');
+
+                // "Assets/Prefabs/" の部分を取り除く
+                size_t pos = relativePath.find(basePrefix);
+                if (pos == 0) {
+                    relativePath = relativePath.substr(basePrefix.length());
+                    // 先頭の '/' を取り除く
+                    if (!relativePath.empty() && relativePath[0] == '/') {
+                        relativePath = relativePath.substr(1);
                     }
                 }
+
+                // スラッシュで分割してノードを作成
+                std::stringstream ss(relativePath);
+                std::string token;
+                PrefabNode* current = &rootNode;
+
+                std::vector<std::string> parts;
+                while (std::getline(ss, token, '/')) {
+                    parts.push_back(token);
+                }
+
+                for (size_t i = 0; i < parts.size(); ++i) {
+                    const auto& part = parts[i];
+                    if (current->children.find(part) == current->children.end()) {
+                        current->children[part] = std::make_unique<PrefabNode>();
+                    }
+                    current = current->children[part].get();
+
+                    if (i == parts.size() - 1) { // 最後の要素（ファイル本体）
+                        current->isFile = true;
+                        current->fullPath = pathStr;
+                    }
+                }
+            }
+
+            // =========================================================
+            // 2. ツリーを描画する（フォルダを上、ファイルを下に表示）
+            // =========================================================
+            for (const auto& [childName, childNode] : rootNode.children) {
+                if (!childNode->isFile) DrawPrefabNodeTree(childName, *childNode, context);
+            }
+            for (const auto& [childName, childNode] : rootNode.children) {
+                if (childNode->isFile) DrawPrefabNodeTree(childName, *childNode, context);
             }
         }
         ImGui::EndMenu();
@@ -411,5 +509,47 @@ void EditorWindowManager::DrawToolsMenu(EditorContext& context)
         // if (ImGui::MenuItem("Launch RenderDoc")) { ... }
 
         ImGui::EndMenu();
+    }
+}
+
+void EditorWindowManager::SaveLayout(const std::string& path)
+{
+    nlohmann::json j;
+    j["windows"] = nlohmann::json::array();
+
+    for (auto& window : _windows) {
+        j["windows"].push_back({
+            {"name", window->GetName()},
+            {"visible", window->GetVisible()}
+            });
+    }
+
+    FileSystem::WriteAllText(path, j.dump(4));
+    CCL_LOG_INFO(LogCategory::Editor, "Layout saved: %s", path.c_str());
+}
+
+void EditorWindowManager::LoadLayout(const std::string& path)
+{
+    std::string data = FileSystem::ReadAllText(path);
+    if (data.empty()) return;
+
+    try {
+        auto j = nlohmann::json::parse(data);
+        for (const auto& item : j["windows"]) {
+            std::string name = item["name"];
+            bool visible = item["visible"];
+
+            // 名前で検索して状態を適用
+            for (auto& window : _windows) {
+                if (window->GetName() == name) {
+                    window->SetVisible(visible);
+                    break;
+                }
+            }
+        }
+        CCL_LOG_INFO(LogCategory::Editor, "Layout loaded: %s", path.c_str());
+    }
+    catch (...) {
+        CCL_LOG_ERROR(LogCategory::Editor, "Failed to load layout.");
     }
 }

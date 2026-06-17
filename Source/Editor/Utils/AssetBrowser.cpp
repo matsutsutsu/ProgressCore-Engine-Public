@@ -8,6 +8,7 @@
 #include <imgui_internal.h>
 
 #include"ShellIconLoader.h"
+#include "Engine/Platform/Core/Logger.h" // ログ用
 
 
 using namespace DirectX;
@@ -100,11 +101,30 @@ AssetBrowser::AssetBrowser(const std::string& rootPath, ID3D11Device* device)
 
     LoadIcons(device);
 
-    rootNode.name = rootPath;
+    // 初期化時に1回だけフォルダツリーを構築する
+    Refresh();
+}
+
+AssetBrowser::~AssetBrowser()
+{
+	ShellIconLoader::ClearCache();
+}
+
+void AssetBrowser::Refresh()
+{
+    // ツリーをリセット
+    rootNode.children.clear();
     rootNode.path = rootPath;
+    rootNode.name = "Assets";
     rootNode.isDirectory = true;
 
+    // ディレクトリ走査を実行
     LoadDirectory(rootPath, rootNode);
+
+    // 選択フォルダをルートに戻す（安全のため）
+    selectedFolder = &rootNode;
+
+    CCL_LOG_INFO(LogCategory::Editor, "[AssetBrowser] Refreshed directory tree.");
 }
 
 
@@ -438,6 +458,12 @@ void AssetBrowser::Draw()
 {
     ImGui::Begin("Asset Browser");
 
+    // 上部ツールバー (更新ボタンや検索バー)
+        // ---------------------------------------------------------
+    if (ImGui::Button(u8"更新 (Refresh)")) {
+        Refresh();
+    }
+    ImGui::SameLine();
     DrawSearchBar();
 
 	static float leftWidth = 200.0f;  //左ペインの初期幅

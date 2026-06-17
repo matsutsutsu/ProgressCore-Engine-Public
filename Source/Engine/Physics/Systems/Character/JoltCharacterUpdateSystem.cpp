@@ -14,102 +14,143 @@
 // 「誰が運転しているか」を一切気にせず、入力された速度でキャラクターを地形に沿わせて動かす「運び屋」。
 //
 // [ ECSデータパイプライン ]
-// 📥 READ  : CharacterMovementInputComponent (AIやプレイヤーが書き込んだ「希望する移動速度」)
-// 📥 READ  : JoltCharacterHandleComponent    (Jolt側のキャラクター実体ID)
-// 📤 WRITE : TransformComponent              (地形干渉を計算した後の、最終的なワールド座標)
+// 📥 READ  : CharacterMovementInputComponent (希望する移動速度 / ジャンプ要求)
+// 📥 READ  : JoltCharacterHandleComponent    (Jolt側のキャラクター実体)
+// 📥 READ  : JoltCharacterConfigComponent     (jumpSpeed / maxStepHeight 等の性能値)
+// 📤 WRITE : TransformComponent              (地形干渉を計算した後の最終ワールド座標)
 //
-// [ 内部挙動の直感的な解説 ]
-// 脳（PlayerMoveSystem や NavSteeringSystem）が決定した「動きたい速度ベクトル」をペダルとして受け取り、
-// Jolt Physics の仮想キャラクター（CharacterVirtual）のエンジンに流し込みます。
-// 重力落下、壁ずり、段差の乗り越えといった複雑な物理計算はすべて Jolt 内部で完結し、
-// システムの最後で計算された「正しい物理座標」だけを ECS の Transform に書き戻して画面に反映させます。
+// [ 重力に関する重要事項 ]
+// JPH::CharacterVirtual::ExtendedUpdate は重力を速度へ積分しない。
+// 第2引数 inGravity は階段昇降・床吸着の「下方向」を知るためだけに使われる。
+// よって呼び出し側で gravity * dt を毎フレーム速度に加算する必要がある。
 // ===================================================================================
 
 
+/**
+ * @brief CharacterVirtual に重力・接地・ジャンプを正しく積分して移動させる。
+ * @param dt フレーム時間（秒）。
+ * @details
+ *  - 重力は ExtendedUpdate が積分しないため、本関数で gravity*dt を加算する。
+ *  - 接地判定は GetGroundState() を唯一の真実とする（レイキャストは使わない）。
+ *  - 接地中の下向き速度蓄積をリセットし、坂のガタつきと過剰落下を防止する。
+ *  - jumpRequested は接地時のみ受理し、jumpSpeed を初速として与える。
+ *  - 計算結果は位置のみ Transform に書き戻す（回転は PlayerMoveSystem 側の責務）。
+ * @note 並列実行（ForEachWithIDParallel）禁止。ループ内で非ロック版 BodyInterface
+ *       へ書き込むため、並列化するとデータ競合でクラッシュする。
+ */
 void JoltCharacterUpdateSystem::Update(float dt) {
     if (!_world->HasResource<JoltPhysicsManager>())
-      return;
-    auto &joltManager = _world->GetResource<JoltPhysicsManager>();
-    JPH::PhysicsSystem *physicsSystem = joltManager.GetPhysicsSystem();
-    //JPH::TempAllocator *tempAllocator = joltManager.GetTempAllocator();
-    JPH::BodyInterface &bodyInterface = joltManager.GetBodyInterface();
+        return;
 
-    JPH::TempAllocatorMalloc localTempAllocator;
+    auto& joltManager = _world->GetResource<JoltPhysicsManager*>();
+    JPH::PhysicsSystem* physicsSystem = joltManager->GetPhysicsSystem();
+    JPH::BodyInterface& bodyInterface = joltManager->GetBodyInterface();
 
-    // キャラクターのアップデート設定（重力に対する姿勢制御など）
-    JPH::CharacterVirtual::ExtendedUpdateSettings updateSettings;
+    const JPH::Vec3 gravity = physicsSystem->GetGravity();
+    const JPH::Vec3 up(0.0f, 1.0f, 0.0f);
 
-    // 全コアを使って並列でキャラクターの衝突計算を行う
-    ForEachWithID([&](CCL::ECS::EntityID id, TransformComponent &trans,
-                              const JoltCharacterHandleComponent &handle,
-                              const CharacterMovementInputComponent &input) {
-    if (!handle.character) return;
+    // ※ Filter（IfSystem テンプレート）の宣言順 = ラムダ引数順。
+    //    Write<Transform>, Read<Handle>, Read<Input>, Read<Config> の順に受け取る。
+    ForEachWithID([&](CCL::ECS::EntityID id,
+        TransformComponent& trans,
+        const JoltCharacterHandleComponent& handle,
+        const CharacterMovementInputComponent& input,
+        const JoltCharacterConfigComponent& config) {
+            if (!handle.character) return;
+            JPH::CharacterVirtual* ch = handle.character.GetPtr();
 
-    // =======================================================
-    // プレイヤーの強制ワープ処理
-    // =======================================================
-    if (trans.isTeleported) {
-      handle.character->SetPosition(
-          JPH::RVec3(trans.position.x, trans.position.y, trans.position.z));
-      handle.character->SetRotation(
-          JPH::Quat(trans.rotation.x, trans.rotation.y, trans.rotation.z,
-                    trans.rotation.w));
+            // ===============================================================
+            // 自己無視フィルタ
+            // ---------------------------------------------------------------
+            // 本キャラは「CharacterVirtual（仮想）」と「JoltHandleComponent（実体の
+            // Kinematic剛体＝幽霊）」の二重実体を持つ。CharacterVirtual の衝突計算が
+            // 自分自身の幽霊剛体と当たらないよう、ここで除外する。
+            // ※将来的には CharacterVirtualSettings::mInnerBodyShape による内部剛体の
+            //   自動生成・自動同期へ寄せると、この手動同期と無視フィルタを撤廃できる。
+            // ===============================================================
+            JoltHandleComponent* kinBody = _world->GetComponent<JoltHandleComponent>(id);
+            JPH::BodyID          ignoreBodyID = kinBody ? kinBody->bodyID : JPH::BodyID();
+            JPH::IgnoreSingleBodyFilter bodyFilter(ignoreBodyID);
 
-      // フラグを下ろす
-      trans.isTeleported = false;
-    }
- 
+            // ===============================================================
+            // 強制ワープ（リスポーン等）
+            // ===============================================================
+            if (trans.isTeleported) {
+                ch->SetPosition(JPH::RVec3(trans.position.x, trans.position.y, trans.position.z));
+                ch->SetRotation(JPH::Quat(trans.rotation.x, trans.rotation.y,
+                    trans.rotation.z, trans.rotation.w));
+                trans.isTeleported = false;
+            }
 
-    // =======================================================
-    // 自分自身の分身（Kinematic剛体）を無視するフィルターを作成
-    // =======================================================
-    JPH::BodyID ignoreBodyID;
-    if (auto *kinBody = _world->GetComponent<JoltHandleComponent>(id)) {
-      ignoreBodyID = kinBody->bodyID;
-    }
-    JPH::IgnoreSingleBodyFilter bodyFilter(ignoreBodyID);
+            // ===============================================================
+            // 速度の構築：水平＝入力、鉛直＝重力積分＋接地リセット＋ジャンプ
+            // ===============================================================
+            const bool onGround =
+                ch->GetGroundState() == JPH::CharacterVirtual::EGroundState::OnGround;
 
-	// キャラクターの現在の速度を取得
-    JPH::Vec3 currentVel = handle.character->GetLinearVelocity();
+            // 現在の鉛直速度成分を取り出す（水平は input で完全上書きするため）
+            JPH::Vec3 cur = ch->GetLinearVelocity();
+            float     vy = cur.Dot(up);
 
-    // ペダル(input)の踏み込み量を見て、車(Jolt)を動かす
-    handle.character->SetLinearVelocity(JPH::Vec3(
-        input.desiredVelocity.x,
-        currentVel.GetY(), // 重力は維持
-        input.desiredVelocity.z
-    ));
+            // 接地中の下向き蓄積をリセット（坂でのガタつき・めり込みを防止）
+            if (onGround && vy < 0.0f) {
+                vy = 0.0f;
+            }
 
+            // ジャンプは接地時のみ受理（空中2段ジャンプを防止）
+            if (input.jumpRequested && onGround) {
+                vy = config.jumpSpeed;
+            }
 
-    // 1. 地形との衝突や段差の乗り越えを計算 (Jolt内部処理)
-    handle.character->ExtendedUpdate(
-        dt, physicsSystem->GetGravity(), updateSettings,
-        physicsSystem->GetDefaultBroadPhaseLayerFilter(PhysicsLayers::MOVING),
-        physicsSystem->GetDefaultLayerFilter(PhysicsLayers::MOVING),
-        bodyFilter,
-        {},
-        localTempAllocator);
+            // 重力積分（★ ExtendedUpdate はやってくれないので必須）
+            vy += gravity.GetY() * dt;
 
+            // 水平は「ペダル(input)」で完全上書き ＝ フル空中制御。
+            // 慣性や加速カーブを入れたい場合は、ここで現在の水平速度とブレンドする。
+            JPH::Vec3 newVel(input.desiredVelocity.x, vy, input.desiredVelocity.z);
+            ch->SetLinearVelocity(newVel);
 
-    // 2. 計算後の「位置」だけをECS側のTransformに同期する
-    JPH::RVec3 pos = handle.character->GetPosition();
-    trans.position = {pos.GetX(), pos.GetY(), pos.GetZ()};
+            // ===============================================================
+            // 地形干渉計算（壁ずり・段差乗り越え・床吸着）
+            // ---------------------------------------------------------------
+            // ・段差乗り越え高さ(maxStepHeight)を Config から反映し、死にパラメータ化を防ぐ。
+            // ・TempAllocator は Manager が事前確保した1個を再利用する。
+            //   ExtendedUpdate はこの呼び出し内で alloc/free を完結（LIFO）するため、
+            //   シングルスレッド実行であれば毎フレーム malloc する必要はない。
+            // ===============================================================
+            JPH::CharacterVirtual::ExtendedUpdateSettings updateSettings;
+            updateSettings.mWalkStairsStepUp = JPH::Vec3(0.0f, config.maxStepHeight, 0.0f);
 
-    // ※回転（trans.rotation）は上書きしない！
-    // Joltのカプセルは常に直立しており、振り向く処理はPlayerMoveSystem側で行うため。
-    trans.isStatic = false; // 行列の再計算を要求
+            ch->ExtendedUpdate(
+                dt, gravity, updateSettings,
+                physicsSystem->GetDefaultBroadPhaseLayerFilter(PhysicsLayers::MOVING),
+                physicsSystem->GetDefaultLayerFilter(PhysicsLayers::MOVING),
+                bodyFilter,
+                {},
+                *joltManager->GetTempAllocator());
 
-    // =======================================================
-    // プレイヤーの「幽霊」を実体化させる同期処理
-    // =======================================================
-    if (auto* kinBody = _world->GetComponent<JoltHandleComponent>(id)) {
-        JPH::Quat joltRot(trans.rotation.x, trans.rotation.y, trans.rotation.z, trans.rotation.w);
-        joltRot = joltRot.Normalized();
-        bodyInterface.SetPositionAndRotation(kinBody->bodyID, pos, joltRot, JPH::EActivation::DontActivate);
-    }
+            // ===============================================================
+            // 結果の同期：位置のみ Transform へ書き戻す（回転は同期しない）
+            // ===============================================================
+            JPH::RVec3 pos = ch->GetPosition();
+            trans.position = { pos.GetX(), pos.GetY(), pos.GetZ() };
+            trans.isStatic = false; // 行列の再計算を要求
 
-
-  });
+            // ===============================================================
+            // 内部Kinematic剛体（幽霊）を CharacterVirtual に追従させる
+            // ---------------------------------------------------------------
+            // 他の動的剛体・レイキャストがこのキャラに当たれるようにするための実体。
+            // 回転は PlayerMoveSystem が決めた trans.rotation を使う（直立カプセルの向き）。
+            // ===============================================================
+            if (kinBody) {
+                JPH::Quat joltRot(trans.rotation.x, trans.rotation.y,
+                    trans.rotation.z, trans.rotation.w);
+                joltRot = joltRot.Normalized();
+                bodyInterface.SetPositionAndRotation(
+                    kinBody->bodyID, pos, joltRot, JPH::EActivation::DontActivate);
+            }
+        });
 }
 
-// 物理のStepが走る前、または同じPhysicsフェーズで実行する
+// 物理の Step が走る前に終わらせる（PrePhysics）
 REGISTER_LOGIC_SYSTEM(JoltCharacterUpdateSystem, Priority::LogicStage::L03_PrePhysics);

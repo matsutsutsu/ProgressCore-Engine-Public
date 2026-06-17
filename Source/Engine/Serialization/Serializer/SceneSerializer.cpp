@@ -31,6 +31,7 @@
 #include "Engine/Core/Components/PersistentTag.h"
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/Platform/Core/FileSystem.h"
+#include "Engine/Transform/Components/PendingParentComponent.h"
 
 #include <json.hpp>
 #include <fstream>
@@ -210,8 +211,6 @@ std::vector<EntityID> SceneSerializer::DeserializeRaw(World* world, const nlohma
 
     // ---------------------------------------------------------
     // Pass 2: コンポーネント復元 (PendingOp に積まれる)
-    //   この時点で LoadContext には全エンティティの localIndex が登録済み。
-    //   よって EntityLink フィールドは Pass 2 中で即解決される。
     // ---------------------------------------------------------
     {
         size_t i = 0;
@@ -225,8 +224,28 @@ std::vector<EntityID> SceneSerializer::DeserializeRaw(World* world, const nlohma
                 const auto& compJson = it.value();
                 const auto* meta = registry.GetInfoByName(compName);
                 if (!meta) continue;
-                // ★ LoadContext を渡して、EntityLink が自動 Resolve される
+                // 通常のデシリアライズ（ここでゴミの parentID が入る可能性がある）
                 meta->deserializeToWorld(world, newID, compJson, &loadCtx);
+            }
+
+            // =====================================================================
+            // ★ 追加: 確実な親子関係の復元 (PendingParentComponent の活用)
+            // 自動リマップの盲点をバイパスし、確実に実EntityIDを解決して予約する
+            // =====================================================================
+            if (components.contains("Transform")) {
+                const auto& transJson = components["Transform"];
+                if (transJson.contains("Parent")) {
+                    auto localIdx = transJson["Parent"].get<CCL::Serialization::SaveContext::LocalIndex>();
+                    EntityID resolvedParent = loadCtx.Resolve(localIdx);
+
+                    // プレハブ内に存在する正しい親が見つかった場合のみ
+                    if (resolvedParent != CCL::ECS::InvalidEntityID) {
+                        // 次のフレームで安全に SetParent させるための予約コンポーネントを付与
+                        PendingParentComponent ppc;
+                        ppc.parentID = resolvedParent;
+                        world->AddComponent<PendingParentComponent>(newID, ppc);
+                    }
+                }
             }
         }
     }

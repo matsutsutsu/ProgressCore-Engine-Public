@@ -371,6 +371,7 @@
     <ClInclude Include="Source\Editor\Windows\ConsoleWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\DungeonGeneratorWindow.h" />
     <ClInclude Include="Source\Editor\Windows\ECSDebugWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
@@ -424,11 +425,13 @@
     <ClInclude Include="Source\Engine\Core\Components\NameComponent.h" />
     <ClInclude Include="Source\Engine\Core\Components\PersistentTag.h" />
     <ClInclude Include="Source\Engine\Core\Math\Misc.h" />
+    <ClInclude Include="Source\Engine\Core\Math\ScreenToWorld.h" />
     <ClInclude Include="Source\Engine\Core\Math\StringHash.h" />
     <ClInclude Include="Source\Engine\Core\Math\TransformUtils.h" />
     <ClInclude Include="Source\Engine\Core\pch.h" />
     <ClInclude Include="Source\Engine\Core\Systems\SystemPriority.h" />
     <ClInclude Include="Source\Engine\Core\Time\HighResolutionTimer.h" />
+    <ClInclude Include="Source\Engine\ECS\CCL_ECSContext.h" />
     <ClInclude Include="Source\Engine\ECS\Common\CCL_Archetype.h" />
     <ClInclude Include="Source\Engine\ECS\Common\CCL_Common.h" />
     <ClInclude Include="Source\Engine\ECS\Common\CCL_IDEmitter.h" />
@@ -463,9 +466,10 @@
     <ClInclude Include="Source\Engine\Graphics\Components\Particle\GPUParticleBuffer.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\Particle\GPUParticleComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\BloomConfigComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\DistortionConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\ToneMapConfigComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Pipeline\Core\IRenderPass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\Core\RenderPipeline.h" />
-    <ClInclude Include="Source\Engine\Graphics\Pipeline\IRenderPass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\OpaquePass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\ParticlePass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\PostProcessPass.h" />
@@ -502,22 +506,27 @@
     <ClInclude Include="Source\Engine\Graphics\RHI\RenderState.h" />
     <ClInclude Include="Source\Engine\Graphics\RHI\RenderTarget.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Core\Shader.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\Material\ErrorShader.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\MaterialShader.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\OutlineShader.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\ParticleComputeShader.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\ParticleShader.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\ShadowMapShader.h" />
-    <ClInclude Include="Source\Engine\Graphics\Shader\ParticleShared.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Pass\ShadowMap.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Pass\ShadowUtils.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\BloomEffect.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\DistortionEffect.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\IPostEffect.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\PostProcessManager.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\ToneMapEffect.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderReflection.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderRegistry.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderResources.h" />
-    <ClInclude Include="Source\Engine\Graphics\Shader\ShaderShared.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\Shared\ParticleShared.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\Shared\PostProcessShared.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\Shared\ShaderShared.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Core\EnvironmentSystem.h" />
+    <ClInclude Include="Source\Engine\Graphics\Systems\Core\MaterialSetupSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Core\ModelPoseUpdateSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Core\ModelRenderSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Core\PrimitiveRenderSystem.h" />
@@ -531,6 +540,7 @@
     <ClInclude Include="Source\Engine\Graphics\Systems\Particle\GPUParticleUpdateSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Particle\ParticleEventSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\PostProcess\PostProcessSystem.h" />
+    <ClInclude Include="Source\Engine\Physics\Components\Character\CharacterMovementInputComponent.h" />
     <ClInclude Include="Source\Engine\Physics\Components\Character\JoltCharacterConfigComponent.h" />
     <ClInclude Include="Source\Engine\Physics\Components\Character\JoltCharacterHandleComponent.h" />
     <ClInclude Include="Source\Engine\Physics\Components\Collision\JoltBoxColliderComponent.h" />
@@ -572,7 +582,6 @@
     <ClInclude Include="Source\Engine\Serialization\Core\LoadContext.h" />
     <ClInclude Include="Source\Engine\Serialization\Core\SaveContext.h" />
     <ClInclude Include="Source\Engine\Serialization\Core\SceneFormat.h" />
-    <ClInclude Include="Source\Engine\Serialization\Core\SerializationContext.h" />
     <ClInclude Include="Source\Engine\Serialization\Factory\EntityFactory.h" />
     <ClInclude Include="Source\Engine\Serialization\Factory\Prefab.h" />
     <ClInclude Include="Source\Engine\Serialization\Factory\SceneInitializer.h" />
@@ -582,7 +591,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\Meta\ComponentMetaJson.h" />
-    <ClInclude Include="Source\Engine\Serialization\Reflection\Reflection.h" />
     <ClInclude Include="Source\Engine\Serialization\Registry\ComponentRegistry.h" />
     <ClInclude Include="Source\Engine\Serialization\Registry\ComponentRegistry_Editor.h" />
     <ClInclude Include="Source\Engine\Serialization\Serializer\PrefabSerializer.h" />
@@ -672,12 +680,16 @@
     <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeComponents.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeData.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Character\CharacterMovementInputComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Collision\CharacterWallComponents.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Collision\CharacterWallSlideSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyTrackingSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\PlayerAttackSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerFeedbackSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerInputSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerMoveSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Combat\GameRng.h" />
     <ClInclude Include="Source\Game\Logics\Combat\CombatRosterComponent.h" />
     <ClInclude Include="Source\Game\Logics\Combat\DamageResolutionSystem.h" />
     <ClInclude Include="Source\Game\Logics\Combat\DeadTag.h" />
@@ -685,9 +697,18 @@
     <ClInclude Include="Source\Game\Logics\Combat\HealthComponent.h" />
     <ClInclude Include="Source\Game\Logics\Combat\HealthSystem.h" />
     <ClInclude Include="Source\Game\Logics\Combat\HitboxCollisionSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Combat\KnockbackComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Combat\KnockbackSystem.h" />
     <ClInclude Include="Source\Game\Logics\GameEvent\GameEvents.h" />
     <ClInclude Include="Source\Game\Logics\GameEvent\GameOverResource.h" />
     <ClInclude Include="Source\Game\Logics\GameEvent\GameStateMode.h" />
+    <ClInclude Include="Source\Game\Logics\LevelGen\DungeonChunkTag.h" />
+    <ClInclude Include="Source\Game\Logics\LevelGen\DungeonGenerator.h" />
+    <ClInclude Include="Source\Game\Logics\LevelGen\DungeonGrid.h" />
+    <ClInclude Include="Source\Game\Logics\LevelGen\DungeonLevelBuilder.h" />
+    <ClInclude Include="Source\Game\Logics\LevelGen\DungeonMeshBatcher.h" />
+    <ClInclude Include="Source\Game\Logics\LevelGen\DungeonTypes.h" />
+    <ClInclude Include="Source\Game\Logics\LevelGen\RoomTemplateTable.h" />
     <ClInclude Include="Source\Game\Logics\Test\ECSBenchmarkSystem.h" />
     <ClInclude Include="Source\Game\Logics\Test\LissajousOrbitComponent.h" />
     <ClInclude Include="Source\Game\Logics\Test\LissajousOrbitSystem.h" />
@@ -698,12 +719,34 @@
     <ClInclude Include="Source\Game\Logics\Test\VectorFlowSystem.h" />
     <ClInclude Include="Source\Game\Logics\Test\VoxelOceanComponent.h" />
     <ClInclude Include="Source\Game\Logics\Test\VoxelOceanSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Bullet\BulletComponents.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Bullet\BulletInheritanceSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Bullet\BulletSpawn.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Bullet\BulletTravelSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Bullet\BulletVisualSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Bullet\MagicBulletPool.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Bullet\WandFireSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Bullet\WandRuntimeComponents.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Collision\BulletHitResponseSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Collision\BulletWallCollisionSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Compiler\CompiledWandProgram.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Compiler\WandBuildComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Compiler\WandCompiler.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Compiler\WandCompileSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Compiler\WandProgramRegistry.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Core\RuneDatabase.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Core\WandTypes.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Accelerate.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Focus.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Split.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Effects\SpawnResolution.h" />
     <ClInclude Include="Source\Game\Scenes\BaseScene.h" />
     <ClInclude Include="Source\Game\Scenes\EditorScene.h" />
     <ClInclude Include="Source\Game\Scenes\ParticleScene.h" />
     <ClInclude Include="Source\Game\Scenes\SceneLoading.h" />
     <ClInclude Include="Source\Game\UI\FloatingTextComponent.h" />
     <ClInclude Include="Source\Game\UI\FloatingTextSystem.h" />
+    <ClInclude Include="Source\Game\Utils\ParticlePool.h" />
     <ClInclude Include="Source\Game\Utils\PooledParticleComponent.h" />
   </ItemGroup>
   <ItemGroup>
@@ -1178,6 +1221,7 @@
     <ClCompile Include="Source\Editor\Windows\ConsoleWindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\DungeonGeneratorWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\ECSDebugWindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
@@ -1220,6 +1264,7 @@
     <ClCompile Include="Source\Engine\Core\App\Framework.cpp" />
     <ClCompile Include="Source\Engine\Core\App\Main.cpp" />
     <ClCompile Include="Source\Engine\Core\Components\CoreComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Core\Math\ScreenToWorld.cpp" />
     <ClCompile Include="Source\Engine\Core\Math\TransformUtils.cpp" />
     <ClCompile Include="Source\Engine\Core\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Create</PrecompiledHeader>
@@ -1234,8 +1279,8 @@
     <ClCompile Include="Source\Engine\Graphics\Components\Core\EnvironmentComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Core\MaterialComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Core\ModelComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Components\Culling\CullingComponentsMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Lighting\LightComponentMeta.cpp" />
-    <ClCompile Include="Source\Engine\Graphics\Components\Lighting\LightComponentMeta.generated.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Particle\GPUParticleComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\Core\RenderPipeline.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\OpaquePass.cpp" />
@@ -1266,6 +1311,7 @@
     <ClCompile Include="Source\Engine\Graphics\RHI\RenderState.cpp" />
     <ClCompile Include="Source\Engine\Graphics\RHI\RenderTarget.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\Core\Shader.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Shader\Material\ErrorShader.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\MaterialShader.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\OutlineShader.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\ParticleComputeShader.cpp" />
@@ -1273,9 +1319,12 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\ShadowMapShader.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\Pass\ShadowMap.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\BloomEffect.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\DistortionEffect.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\PostProcessManager.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\ToneMapEffect.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\ShaderReflection.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Core\EnvironmentSystem.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Systems\Core\MaterialSetupSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Core\ModelPoseUpdateSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Core\ModelRenderSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Core\PrimitiveRenderSystem.cpp" />
@@ -1289,6 +1338,8 @@
     <ClCompile Include="Source\Engine\Graphics\Systems\Particle\GPUParticleUpdateSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Particle\ParticleEventSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\PostProcess\PostProcessSystem.cpp" />
+    <ClCompile Include="Source\Engine\Physics\Components\Character\CharacterMovementInputComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Physics\Components\Character\JoltCharacterConfigComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Physics\Components\Jolt\JoltPhysicsComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltContactListener.cpp" />
     <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsFacade.cpp" />
@@ -1376,7 +1427,11 @@
     <ClCompile Include="Source\Game\Logics\AI\NavAI\AIPatrolSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\NavAI\AIPerceptionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\StateTree\StateTreeSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\CharacterMovementInputComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Collision\CharacterWallComponentsMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Collision\CharacterWallSlideSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyTrackingSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\PlayerAttackSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\PlayerComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerFeedbackSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerInputSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerMoveSystem.cpp" />
@@ -1384,17 +1439,34 @@
     <ClCompile Include="Source\Game\Logics\Combat\DamageResolutionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\HealthSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\HitboxCollisionSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Combat\KnockbackSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\LevelGen\DungeonGenerator.cpp" />
+    <ClCompile Include="Source\Game\Logics\LevelGen\DungeonLevelBuilder.cpp" />
+    <ClCompile Include="Source\Game\Logics\LevelGen\DungeonMeshBatcher.cpp" />
+    <ClCompile Include="Source\Game\Logics\LevelGen\RoomTemplateTable.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\ECSBenchmarkSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\LissajousOrbitSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\TornadoVortexSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\VectorFlowSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\VoxelOceanSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Wand\Bullet\BulletComponentsMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Wand\Bullet\BulletInheritanceSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Wand\Bullet\BulletSpawn.cpp" />
+    <ClCompile Include="Source\Game\Logics\Wand\Bullet\BulletTravelSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Wand\Bullet\BulletVisualSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Wand\Bullet\WandFireSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Wand\Bullet\WandRuntimeComponentsMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Wand\Collision\BulletHitResponseSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Wand\Collision\BulletWallCollisionSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Wand\Compiler\WandBuildComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Wand\Compiler\WandCompiler.cpp" />
+    <ClCompile Include="Source\Game\Logics\Wand\Compiler\WandCompileSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Wand\Core\RuneDatabase.cpp" />
     <ClCompile Include="Source\Game\Scenes\BaseScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\EditorScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\ParticleScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\SceneLoading.cpp" />
     <ClCompile Include="Source\Game\UI\FloatingTextSystem.cpp" />
-    <ClCompile Include="Source\_generated\_all_meta.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="External\DirectXTex\DirectXTex_Desktop_2022.vcxproj">
@@ -1402,7 +1474,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include=".clang-formatt" />
+    <None Include=".clang-format" />
     <None Include=".editorconfig" />
     <None Include="Build\EditorTooling.props" />
     <None Include="Build\EngineCore.props" />
@@ -1517,6 +1589,16 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
     </FxCompile>
+    <FxCompile Include="Shader\Pass\Error\ErrorPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Pass\Error\ErrorVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+    </FxCompile>
     <FxCompile Include="Shader\Pass\Outline\OutlinePS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
@@ -1558,6 +1640,11 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
     </FxCompile>
     <FxCompile Include="Shader\PostProcess\BloomUpSamplePS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\PostProcess\DistortionPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>

@@ -8,10 +8,10 @@
 #include <Jolt/Physics/Body/BodyInterface.h>
 
 void JoltPushSystem::Update(float dt) {
-  if (!_world->HasResource<JoltPhysicsManager>())
+  if (!_world->HasResource<JoltPhysicsManager*>())
     return;
-  auto &joltManager = _world->GetResource<JoltPhysicsManager>();
-  JPH::BodyInterface &bodyInterface = joltManager.GetBodyInterface();
+  auto &joltManager = _world->GetResource<JoltPhysicsManager*>();
+  JPH::BodyInterface &bodyInterface = joltManager->GetBodyInterface();
 
   // 並列処理で全エンティティを最速チェック
   ForEachParallel(

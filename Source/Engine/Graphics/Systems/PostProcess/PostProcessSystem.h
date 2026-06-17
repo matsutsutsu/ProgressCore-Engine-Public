@@ -3,6 +3,7 @@
 
 #include "Engine/Graphics/Components/PostProcess/BloomConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/ToneMapConfigComponent.h"
+#include "Engine/Graphics/Components/PostProcess/DistortionConfigComponent.h"
 
 // 前方宣言
 class PostProcessManager;
@@ -19,7 +20,8 @@ public:
     std::vector<CCL::ECS::TypeID> GetReadTypes() const override
     {
         return {CCL::ECS::TypeInfo<BloomConfigComponent>::ID(),
-            CCL::ECS::TypeInfo<ToneMapConfigComponent>::ID()};
+            CCL::ECS::TypeInfo<ToneMapConfigComponent>::ID(),
+            CCL::ECS::TypeInfo<DistortionConfigComponent>::ID()};
     }
 
     void Update(float dt) override;

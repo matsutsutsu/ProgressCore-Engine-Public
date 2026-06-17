@@ -8,8 +8,219 @@
 #include <vector>
 
 #include "Game/Logics/Test/OrbitBenchmarkComponent.h"
+#include "Engine/Timer/TimeState.h"
 
 using namespace CCL::ECS;
+
+// ダンジョン生成ロジック（配置先に合わせてパス調整）
+#include "Game/Logics/LevelGen/DungeonGenerator.h"
+#include "Game/Logics/LevelGen/DungeonMeshBatcher.h"
+
+#include <DirectXMath.h>
+
+using namespace CCL::ECS;
+using namespace RuneForge::Dungeon;
+
+
+namespace
+{
+    // 床・壁マップチップモデルのパス（プロジェクトに合わせて調整）
+    constexpr const char* kFloorModelPath = "Assets/Models/MapChip/Floor.glb";
+    constexpr const char* kWallModelPath = "Assets/Models/MapChip/Wall.glb";
+
+    // 1チャンクの一辺（セル数）。前回チームは 20。16〜20 が目安。
+    constexpr int kChunkSize = 16;
+}
+
+
+
+
+void SceneInitializer::SpawnDungeonTest(
+    CCL::ECS::Core::World& world, ID3D11Device* device,
+    uint32_t seed, int floorIndex)
+{
+    // device 未指定なら Graphics から取得してもよいが、呼び出し側で渡す前提。
+    if (!device)
+    {
+        CCL_LOG_WARN(LogCategory::Core, "[Dungeon] device is null; abort spawn.");
+        return;
+    }
+
+    // ----------------------------------------------------------------
+    // 1. 生成（決定的）＋ ASCII デバッグ出力
+    // ----------------------------------------------------------------
+    DungeonGenerateResult result = DungeonGenerator::Generate(seed, floorIndex);
+    DungeonGenerator::DebugPrintGrid(result);
+
+    CCL_LOG_INFO(LogCategory::Core,
+        "[Dungeon] Building floor %d seed=%u grid=%dx%d (chunk=%d)",
+        floorIndex, result.usedSeed, result.width, result.depth, kChunkSize);
+
+    // ----------------------------------------------------------------
+    // 2. マップチップモデルをロード（チャンク間で共有）
+    //    CreateFromData に渡す baseMaterial もこのモデルから取る。
+    // ----------------------------------------------------------------
+    auto floorModel = std::make_shared<Model>(device, kFloorModelPath);
+    auto wallModel = std::make_shared<Model>(device, kWallModelPath);
+
+    // ---- 診断: モデルがちゃんとメッシュを持っているか確認 ----
+    auto countVerts = [](const std::shared_ptr<Model>& m) -> size_t {
+        if (!m) return 0;
+        const ModelResource* res = m->GetResource();
+        if (!res) return 0;
+        size_t v = 0;
+        for (const auto& mesh : res->GetMeshes()) v += mesh.vertices.size();
+        return v;
+        };
+    size_t floorVerts = countVerts(floorModel);
+    size_t wallVerts = countVerts(wallModel);
+    CCL_LOG_INFO(LogCategory::Core,
+        "[Dungeon] chip models loaded: floor='%s' verts=%zu | wall='%s' verts=%zu",
+        kFloorModelPath, floorVerts, kWallModelPath, wallVerts);
+
+    if (floorVerts == 0 && wallVerts == 0) {
+        CCL_LOG_ERROR(LogCategory::Core,
+            "[Dungeon] ABORT: both chip models have 0 vertices. "
+            "Check that the .glb paths exist relative to the working directory.");
+        return;
+    }
+
+    // baseMaterial（無ければ CreateFromData 側でデフォルトPBRが入る）
+    std::shared_ptr<MaterialData> floorMat, wallMat;
+    if (!floorModel->GetMaterials().empty()) floorMat = floorModel->GetMaterials()[0].data;
+    if (!wallModel->GetMaterials().empty())  wallMat = wallModel->GetMaterials()[0].data;
+    // 床・壁が混在する1メッシュなので、代表マテリアルは壁を優先（無ければ床）
+    std::shared_ptr<MaterialData> chunkMat = wallMat ? wallMat : floorMat;
+
+    // ----------------------------------------------------------------
+    // 3. チャンクループ：床＋壁を1バッチ→1Model→1エンティティ
+    // ----------------------------------------------------------------
+    const auto chunkArch = ArchetypeHelper::Generate<
+        TransformComponent,
+        ModelComponent
+    >();
+
+    int chunkCount = 0;
+    long totalVerts = 0, totalTris = 0;
+    EntityID firstChunkId{};            // 診断用
+    ModelInstanceHandle firstHandle{};  // 診断用
+
+    for (int cj = 0; cj < result.depth; cj += kChunkSize)
+    {
+        for (int ci = 0; ci < result.width; ci += kChunkSize)
+        {
+            // 床＋壁を1メッシュに結合
+            auto batch = DungeonMeshBatcher::BuildChunk(
+                result, ci, cj, kChunkSize, kChunkSize, floorModel, wallModel);
+
+            if (batch.vertices.empty()) continue;
+
+            // ランタイムModel生成
+            auto chunkModel = Model::CreateFromData(
+                device, batch.vertices, batch.indices, chunkMat);
+            if (!chunkModel) continue;
+
+            // ★★ 診断: 全チャンクの「リソース同一性」と「頂点座標」を出す。
+            //    全部同じ形に見える原因が、リソース共有なのか頂点座標なのかを切り分ける。
+            {
+                const ModelResource* res = chunkModel->GetResource();
+                const auto& mm = chunkModel->GetMeshes();
+                const void* dataPtr = (!mm.empty()) ? (const void*)mm[0].data : nullptr;
+                // バッチ先頭頂点の座標（チャンクごとに違うはず）
+                float vx = batch.vertices.empty() ? -999 : batch.vertices.front().position.x;
+                float vz = batch.vertices.empty() ? -999 : batch.vertices.front().position.z;
+                CCL_LOG_INFO(LogCategory::Core,
+                    "[Dungeon][DIAG] chunk(%d,%d): ModelPtr=%p Resource=%p mesh.data=%p "
+                    "modelMeshes=%zu firstVert=(%.1f,%.1f)",
+                    ci, cj, (void*)chunkModel.get(), (const void*)res, dataPtr,
+                    mm.size(), vx, vz);
+            }
+
+            // プール登録してハンドル化
+            ModelInstanceHandle handle =
+                ResourceManager::Instance().RegisterModelInstance(chunkModel);
+            if (!handle.IsValid()) continue;
+
+            // ★ 診断: 登録直後のハンドルと、プールから引けるか
+            if (chunkCount == 0) {
+                Model* check = ResourceManager::Instance().GetModelInstance(handle);
+                CCL_LOG_INFO(LogCategory::Core,
+                    "[Dungeon][DIAG] after Register: handle.index=%u gen=%u valid=%d "
+                    "GetModelInstance=%p  meshesViaPool=%zu",
+                    handle.index, handle.generation, handle.IsValid(),
+                    (void*)check, check ? check->GetMeshes().size() : 0);
+            }
+
+            // エンティティ生成（Transform はワールド原点。頂点が既にワールド座標）
+            auto e = EntityFactory::SpawnNamed(world, "DungeonChunk", chunkArch);
+
+            TransformComponent trans{};
+            trans.position = { batch.originX, 0.0f, batch.originZ }; // ★ チャンクのワールド原点
+            trans.rotation = { 0.0f, 0.0f, 0.0f, 1.0f };
+            trans.scale = { 1.0f, 1.0f, 1.0f };
+            trans.isStatic = true;  // 動かないので毎フレーム更新不要
+            trans.isDirty = true;  // 生成直後に1回 worldMatrix を計算させる
+
+            ModelComponent mc{};
+            mc.SetRuntimeModel(handle); // ★ ランタイム生成ハンドルを安全に差し込む
+
+            // ★ 診断: Set する直前の mc のハンドル
+            if (chunkCount == 0) {
+                CCL_LOG_INFO(LogCategory::Core,
+                    "[Dungeon][DIAG] before Set: mc.modelHandle.index=%u valid=%d "
+                    "isRuntime=%d ownsHandle=%d",
+                    mc.modelHandle.index, mc.modelHandle.IsValid(),
+                    mc.isRuntime, mc.ownsHandle);
+            }
+
+            EntityID chunkId = e; // 暗黙変換で EntityID を保存
+            e.Set(std::move(trans))
+                .Set(std::move(mc));
+
+            if (chunkCount == 0) { firstChunkId = chunkId; firstHandle = handle; }
+
+            ++chunkCount;
+            totalVerts += (long)batch.vertices.size();
+            totalTris += (long)batch.indices.size() / 3;
+        }
+    }
+
+    CCL_LOG_INFO(LogCategory::Core,
+        "[Dungeon] Done. chunks=%d verts=%ld tris=%ld  Start=(%d,%d) Portal=(%d,%d)",
+        chunkCount, totalVerts, totalTris,
+        result.startCell.i, result.startCell.j,
+        result.portalCell.i, result.portalCell.j);
+
+    // ★ 診断: 構造変更を今すぐ適用し、実チャンクに入った ModelComponent を読み戻す。
+    //    ここで handle が生きていれば SpawnDungeonTest 側は正しく、描画/その後の
+    //    コピーで失われているなら ModelComponent のライフサイクル側が原因と分かる。
+    world.ScrutinyAndApply();
+
+    if (chunkCount > 0) {
+        ModelComponent* applied = world.GetComponent<ModelComponent>(firstChunkId);
+        if (!applied) {
+            CCL_LOG_ERROR(LogCategory::Core,
+                "[Dungeon][DIAG] POST-APPLY: GetComponent<ModelComponent> returned null "
+                "(entity %u has no ModelComponent in its archetype?)", firstChunkId);
+        }
+        else {
+            Model* m = applied->GetModel();
+            CCL_LOG_INFO(LogCategory::Core,
+                "[Dungeon][DIAG] POST-APPLY: entity=%u  storedHandle.index=%u valid=%d "
+                "isRuntime=%d ownsHandle=%d  GetModel=%p  (registered was index=%u)",
+                firstChunkId, applied->modelHandle.index, applied->modelHandle.IsValid(),
+                applied->isRuntime, applied->ownsHandle, (void*)m, firstHandle.index);
+            if (!applied->modelHandle.IsValid()) {
+                CCL_LOG_ERROR(LogCategory::Core,
+                    "[Dungeon][DIAG] >>> handle LOST during PendingOps apply. "
+                    "The component was COPIED (not moved) and the copy path cleared it, "
+                    "OR a temporary's destructor unloaded the instance.");
+            }
+        }
+    }
+}
+
+
 
 
 void SceneInitializer::SpawnCameraTest(
@@ -131,152 +342,61 @@ void SceneInitializer::SpawnShaderTest(CCL::ECS::Core::World& world, ID3D11Devic
 }
 
 
-#include "Game/Logics/Character/PlayerCar/PlayerCarSphereTag.h"
+#include "Game/Logics/Character/Player/PlayerComponent.h"
+#include "Game/Logics/Character/Enemy/EnemyComponent.h"
 
-// ============================================================================
-// 球体カーコントローラーのテスト環境
-// ============================================================================
-void SceneInitializer::SpawnPlayerCarTest(CCL::ECS::Core::World& world, ID3D11Device* device)
+
+void SceneInitializer::SpawnEnemySwarmTest(CCL::ECS::Core::World& world, ID3D11Device* device, int count)
 {
-    // ──────────────────────────────────────────
-    // 1. 床の生成 (Box)
-    // ──────────────────────────────────────────
+    // 1. 床の生成 (物理判定付きのステージ)
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/World/JoltExampleStage.json");
 
-    // ========================================================================
-    // 2. アーキタイプ（設計図）の作成
-    // ========================================================================
-    auto sphereArch = ArchetypeHelper::Generate<
-        TransformComponent,
-        JoltSphereColliderComponent,
-        JoltRigidbodyComponent,
-        PlayerCarSphereTag
-    >();
-
-    auto pinArch = ArchetypeHelper::Generate<
-        TransformComponent,
-		PrimitiveComponent,
-        JoltCapsuleColliderComponent,
-        JoltRigidbodyComponent,
-        EnemyComponent
-    >();
-
-    // ========================================================================
-    // 3. 物理球体（見えないボウリングの球）の生成
-    // ========================================================================
-    auto sphere = EntityFactory::SpawnNamed(world, "PhysicsSphere", sphereArch);
-
-    // ★修正: JoltRigidbodyComponentの定義順（motionType -> objectLayer -> restitution -> friction）を厳守
-    // ※ mass は Jolt が球の大きさ(Radius)から自動計算してくれるため不要です。
-    sphere.Set(TransformComponent{ .position = {0.0f, 5.0f, 0.0f}, .rotation = {0,0,0,1}, .scale = {1.0f, 1.0f, 1.0f} })
-        .Set(JoltSphereColliderComponent{ .radius = 1.0f })
-        .Set(JoltRigidbodyComponent{
-            .motionType = JPH::EMotionType::Dynamic,
-            .objectLayer = PhysicsLayers::MOVING,
-            .restitution = 0.0f,   // 反発係数（跳ねない）
-            .friction = 0.05f   // 摩擦係数（よく滑るように低く）
-            });
-
-
-    // ========================================================================
-    // 4. 車両（見た目）の生成とリンク
-    // ========================================================================
-	auto car = EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Player/PlayerCar.json");
-
-    car.Patch<PlayerCarComponent>([sphereId = sphere.id](auto& comp) {
-        comp.physicsSphereID = sphereId; // 後でsphere.ID()を入れるから、今はダミーで0を入れておく
-		});
-
-    sphere.Set(PlayerCarSphereTag{ .parentCarID = car.id });
-
-   // ========================================================================
-    // 5. TPSカメラの生成と追従リンク
-    // ========================================================================
-    auto camArch = ArchetypeHelper::Generate<
-        TransformComponent,
-        VirtualCamera,
-        CameraBodyTPS
-    >();
-
-    auto cam = EntityFactory::SpawnNamed(world, "CarTPSCamera", camArch);
+    auto camera = EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Camera/FollowCamera.json");
+    auto player = EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Player/PlayerTest.json");
     
-    cam.Set(TransformComponent{ .position = {0,0,0}, .rotation = {0,0,0,1}, .scale = {1,1,1} })
-       .Set(VirtualCamera{ .priority = 10 })
-       .Set(CameraBodyTPS{
-           .targetEntity = car.id,       // ★ 車のEntityIDをターゲットに設定！
-           .distance     = 12.0f,        // 車体全体が見えるように少し遠めから
-           .currentPitch = 15.0f,        // 少し見下ろす角度
-           .lookSpeedX   = 150.0f,
-           .lookSpeedY   = 100.0f,
-           .targetOffset = {0.0f, 2.0f, 0.0f} // 車の少し上を注視する
-       });
+    // player.ID() を渡してメソッドチェーンでPatchする
+    camera.Patch<CameraBodyFollow>([pid = player.ID()](auto& body) { body.target = pid; })
+        .Patch<CameraAimLookAt>([pid = player.ID()](auto& aim) { aim.target = pid; });
 
-    // ========================================================================
-    // 6. 敵（ボーリングのピン）の生成
-    // ========================================================================
-    for (int i = 0; i < 15; ++i) {
-        auto pin = EntityFactory::SpawnNamed(world, "PinEnemy", pinArch);
 
-        float posX = (float)(i % 5) * 2.5f - 5.0f;
-        float posZ = (float)(i / 5) * 2.5f + 10.0f;
 
-        // ★修正: こちらもRigidBodyの初期化順序を厳守
-        pin.Set(TransformComponent{ .position = {posX, 2.0f, posZ}, .rotation = {0,0,0,1}, .scale = {1.0f, 1.0f, 1.0f} })
-			.Set(PrimitiveComponent{ .type = PrimitiveType::Capsule, .size = {0.0f, 1.0f, 0.0f}, .radius = 0.4f, .color = {0.8f, 0.8f, 0.2f, 1.0f} })
-            .Set(JoltCapsuleColliderComponent{ .halfHeight = 1.0f, .radius = 0.4f })
+
+    // 4. エネミーのアーキタイプ (★物理判定 JoltRigidbody を追加)
+    const auto enemyArch = CCL::ECS::ArchetypeHelper::Generate<
+        TransformComponent,
+        PrimitiveComponent,
+        EnemyComponent,
+        JoltRigidbodyComponent,
+        JoltSphereColliderComponent
+    >();
+
+    std::mt19937 gen(42);
+    // プレイヤーの周囲 10m 〜 60m の範囲にドーナツ状に配置する
+    std::uniform_real_distribution<float> distAngle(0.0f, DirectX::XM_2PI);
+    std::uniform_real_distribution<float> distRadius(10.0f, 60.0f);
+
+    for (int i = 0; i < count; ++i) {
+        auto enemy = EntityFactory::SpawnNamed(world, "PhysicsEnemy", enemyArch);
+
+        float angle = distAngle(gen);
+        float radius = distRadius(gen);
+        float posX = std::cos(angle) * radius;
+        float posZ = std::sin(angle) * radius;
+        float posY = 5.0f + (i % 10); // 重なりを避けるため少しずつ高さを変えて降らせる
+
+        enemy.Set(TransformComponent{ .position = {posX, posY, posZ}, .rotation = {0.0f, 0.0f, 0.0f, 1.0f}, .scale = {1.0f, 1.0f, 1.0f} })
+            .Set(EnemyComponent{})
+            .Set(PrimitiveComponent{ .type = PrimitiveType::Sphere, .radius = 1.0f, .color = {1.0f, 0.1f, 0.1f, 1.0f} })
+            .Set(JoltSphereColliderComponent{ .radius = 1.0f })
+            // 動的剛体として設定（転がりながら向かってくる）
             .Set(JoltRigidbodyComponent{
                 .motionType = JPH::EMotionType::Dynamic,
                 .objectLayer = PhysicsLayers::MOVING,
-                .restitution = 0.2f,
-                .friction = 0.5f
+                .restitution = 0.1f, // あまり跳ねない
+                .friction = 0.2f     // 摩擦
                 });
     }
 }
-
-// ※あなたのプロジェクトにおけるDroneComponent等の正しいパスをインクルードしてください
-#include "Game/Logics/AI/BehaviorTree/Drone/DroneComponent.h"
-#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"
-
-
-// =======================================================
-// ボスとドローン群の生成テスト
-// =======================================================
-void SceneInitializer::SpawnBossAndDronesTest(CCL::ECS::Core::World& world, ID3D11Device* device)
-{
-    EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Camera/FreeCamera.json");
-    EntityFactory::SpawnPrefab(world, "Assets/Prefabs/World/ExampleStage.json");
-    EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Enemy/DroneTarget.json");
-
-    // 1. ボスの生成（中央に配置）
-    // ※Boss.json がない場合は適当なモデルのプレハブパスに書き換えてください
-    EntityID bossId = Prefab::SpawnPrefab(world, "Assets/Prefabs/Enemy/BossEnemy.json", { 0.0f, 0.0f, 0.0f });
-    auto bossRef = CCL::ECS::Core::EntityRef(&world, bossId);
-
-
-    // 2. ドローン群の生成
-    const uint16_t TOTAL_DRONES = 12; // 12機のドローンを展開
-    for (uint16_t i = 0; i < TOTAL_DRONES; ++i) {
-
-        // ドローンの生成（ボスの少し上にSpawn）
-        // ※Drone.json がない場合は、適当なキューブ等のプレハブを指定してください
-        EntityID droneId = Prefab::SpawnPrefab(world, "Assets/Prefabs/Enemy/Drone.json", { 0.0f, 5.0f, 0.0f });
-        auto droneRef = CCL::ECS::Core::EntityRef(&world, droneId);
-
-        // 操り人形としての「記憶（DroneComponent）」を初期化して付与
-        DroneComponent droneComp;
-        droneComp.ownerBossId = bossId;       // 親は先ほど作ったボス
-        droneComp.localIndex = i;             // 自分が何番目のドローンか（重要！）
-        droneComp.totalDrones = TOTAL_DRONES; // 全体の数（360度を等分するために必要）
-        droneComp.orbitRadius = 10.0f;        // 旋回半径を10mに設定
-        droneComp.moveSpeed = 40.0f;          // 突撃時の最高速度
-
-        // コンポーネントをアタッチ
-        droneRef.Set(droneComp);
-    }
-
-    CCL_LOG_SUCCESS(LogCategory::Game, "[SceneInit] Boss and %d Drones spawned successfully.", TOTAL_DRONES);
-}
-
 
 // ============================================================================
 // 指定した数のモデルを並べるテスト環境

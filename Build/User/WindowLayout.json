@@ -1,0 +1,48 @@
+{
+    "windows": [
+        {
+            "name": "Inspector",
+            "visible": true
+        },
+        {
+            "name": "Hierarchy",
+            "visible": true
+        },
+        {
+            "name": "Asset Browser",
+            "visible": true
+        },
+        {
+            "name": "ECS Debugger",
+            "visible": true
+        },
+        {
+            "name": "Console",
+            "visible": true
+        },
+        {
+            "name": "Dungeon Generator",
+            "visible": false
+        },
+        {
+            "name": "Text Editor",
+            "visible": false
+        },
+        {
+            "name": "Input Mapping Editor",
+            "visible": false
+        },
+        {
+            "name": "NavMesh Builder",
+            "visible": false
+        },
+        {
+            "name": "Memory Analyzer",
+            "visible": false
+        },
+        {
+            "name": "Game View",
+            "visible": true
+        }
+    ]
+}

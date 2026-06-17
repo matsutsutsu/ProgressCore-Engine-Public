@@ -4,7 +4,7 @@
 #include "Engine/Graphics/RHI/Camera.h"
 #include "Engine/Graphics/RHI/Light.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
-#include "Engine/Graphics/Shader/ShaderShared.h"
+#include "Engine/Graphics/Shader/Shared/ShaderShared.h"
 #include "Engine/Graphics/Renderer/RenderQueue.h"
 #include "Engine/Graphics/Shader/Pass/ShadowUtils.h"
 #include "Engine/Graphics/Shader/Pass/ShadowMap.h"
@@ -119,7 +119,7 @@ void ShadowPass::Execute(const RenderFrameContext& ctx)
                     UINT stride = sizeof(ModelResource::Vertex), offset = 0;
                     dc->IASetVertexBuffers(0, 1, info.mesh->data->vertexBuffer.GetAddressOf(), &stride, &offset);
                     dc->IASetIndexBuffer(info.mesh->data->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-                    shader->Update(dc, *info.mesh);
+
                     lastBound = info.mesh;
                 }
                 dc->DrawIndexed(static_cast<UINT>(info.mesh->data->indices.size()), 0, 0);
@@ -137,7 +137,7 @@ void ShadowPass::Execute(const RenderFrameContext& ctx)
         }
 
         for (const auto& batch : batches) {
-            shader->Update(dc, *batch.mesh);
+
             UINT stride = sizeof(ModelResource::Vertex), zero = 0;
             dc->IASetVertexBuffers(0, 1, batch.mesh->data->vertexBuffer.GetAddressOf(), &stride, &zero);
             dc->IASetIndexBuffer(batch.mesh->data->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);

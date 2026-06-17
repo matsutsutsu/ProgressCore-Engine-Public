@@ -84,6 +84,13 @@ namespace ShaderReflect
         // バイトコードからリフレクション情報を取得
         bool LoadFromBytecode(const void* bytecode, size_t bytecodeSize);
 
+        /// @brief 既存の情報を保持したまま、別ステージの bytecode を「合成」する。
+        /// @details VS と PS を1つの ReflectionData にまとめる用途。
+        ///          CB/テクスチャ/サンプラ/UAV は「名前」で重複排除する
+        ///          （同名は同一リソースとみなし、先に入っている方を優先）。
+        void MergeFromBytecode(const void* bytecode, size_t bytecodeSize);
+
+
         // 情報取得
         const std::vector<ConstantBufferInfo>& GetConstantBuffers() const { return constantBuffers; }
         const std::vector<TextureInfo>& GetTextures() const { return textures; }
@@ -156,7 +163,7 @@ namespace ShaderReflect
         }
 
         // =======================================================
-        // ★追加：ハッシュ値 (uint32_t) で直接設定する関数
+        // ハッシュ値 (uint32_t) で直接設定する関数
         // =======================================================
         template<typename T>
         bool SetValue(uint32_t nameHash, const T& value)

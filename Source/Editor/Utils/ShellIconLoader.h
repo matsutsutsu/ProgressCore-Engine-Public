@@ -11,7 +11,8 @@ public:
     static Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetIconSRV(
         const std::wstring& filePath, ID3D11Device* device);
 
-
+    // エンジン終了時（デバイス破棄前）に必ず呼ぶ
+    static void ClearCache();
 
 private:
     static Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> LoadShellIconSRV(

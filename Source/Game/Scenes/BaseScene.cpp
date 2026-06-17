@@ -23,8 +23,12 @@
  
 #include "tracy/Tracy.hpp"
 
-
 #include "Engine/Platform/Core/Logger.h"
+
+#include "Game/Logics/Wand/Bullet/MagicBulletPool.h"
+#include "Game/Logics/Wand/Compiler/WandProgramRegistry.h"
+#include "Engine/Timer/TimeState.h"
+
 
 
 void BaseScene::Initialize()
@@ -72,8 +76,6 @@ void BaseScene::Initialize()
     auto myFacade = std::make_shared<JoltPhysicsFacade>(_worldPtr);
     _worldPtr->AddResource<std::shared_ptr<IPhysicsAPI>>(myFacade);
 
-
-
     // Graphics が所有するサブシステムを ECS へ接続する。
     // ECS システムがライトを変更すれば Graphics::Update() の Bind に反映される。
     _worldPtr->AddResource<Camera*>(cam);
@@ -85,8 +87,14 @@ void BaseScene::Initialize()
     _worldPtr->AddResource<PrimitiveRenderer*>(gfx.GetPrimitiveRenderer());
     _worldPtr->AddResource<ShapeRenderer*>(gfx.GetShapeRenderer());
 
-    // TriggerSystem 等がアクセスできるように、SystemManager のポインタをリソースとして登録
-    _worldPtr->AddResource<CCL::ECS::SystemManager *>(_ecsContext->GetSystemManager());
+    // SystemManager のポインタをリソースとして登録
+    //_worldPtr->AddResource<CCL::ECS::SystemManager *>(_ecsContext->GetSystemManager());
+
+    _worldPtr->AddResource<TimeContext>();
+
+    // ゲームシステム用のリソース登録
+    _worldPtr->AddResource<WandProgramRegistry>();
+    _worldPtr->AddResource<MagicBulletPool>(); // 既定 capacity=8192
 
     // システム登録 (派生クラスの処理が走る)
     RegisterSystems();
@@ -143,7 +151,7 @@ void BaseScene::Render()
     auto* dc = gfx.GetDeviceContext();
 
     // EnvironmentSystem: フォグ / IBL / ノイズのバインド + CbScene のバインド
- // ★ CbScene の中身は触らない（Graphics::Update() が書き込み済み）
+    // ★ CbScene の中身は触らない（Graphics::Update() が書き込み済み）
     if (_ecsContext && _ecsContext->GetSystemManager()) {
         if (auto* env = _ecsContext->GetSystemManager()->GetSystem<EnvironmentSystem>()) {
             const RenderServices& svc = gfx.GetRenderServices();

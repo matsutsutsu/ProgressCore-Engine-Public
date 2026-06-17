@@ -8,6 +8,7 @@
 #include <iomanip>
 #include <unordered_map>
 #include <json.hpp>
+#include <filesystem> // std::filesystem を使用
 
 namespace Engine
 {
@@ -144,6 +145,22 @@ namespace Engine
         {
             for (auto& c : s) if (c == L'/') c = L'\\';
             return s;
+        }
+
+        // --- パス変換ユーティリティ ---
+        // 絶対パスをカレントパス基準の相対パスに変換
+        std::filesystem::path MakeRelative(const std::filesystem::path& p) {
+            if (p.is_relative()) return p;
+            try {
+                return std::filesystem::relative(p, std::filesystem::current_path());
+            }
+            catch (...) { return p; }
+        }
+
+        // 相対パスを絶対パスへ復元
+        std::filesystem::path MakeAbsolute(const std::filesystem::path& p) {
+            if (p.is_absolute()) return p;
+            return std::filesystem::absolute(p);
         }
 
         //--- 共通ダイアログ起動 (Open) ---------------------------------------
@@ -382,6 +399,34 @@ namespace Engine
         return selected;
     }
 
+    std::string FileDialog::ConvertToRelativePath(const std::filesystem::path& absolutePath)
+    {
+        if (absolutePath.empty()) return "";
+
+        std::error_code ec;
+        // 現在の作業ディレクトリ（通常はプロジェクトのルート、または実行ファイルのある場所）を取得
+        std::filesystem::path currentPath = std::filesystem::current_path(ec);
+
+        if (ec) {
+            // カレントディレクトリの取得に失敗した場合は、UTF-8文字列としてそのまま返す
+            return WideToUtf8(absolutePath.wstring());
+        }
+
+        // absolutePath を currentPath を基準とした相対パスに変換する
+        std::filesystem::path relativePath = std::filesystem::proximate(absolutePath, currentPath, ec);
+
+        if (ec) {
+            // 別のドライブ（C: と D: など）に跨っている等の理由で変換に失敗した場合
+            return WideToUtf8(absolutePath.wstring());
+        }
+
+        // Windows特有のバックスラッシュ '\\' を、Unreal/Unity等でも一般的なスラッシュ '/' に正規化する
+        std::string relativeStr = WideToUtf8(relativePath.wstring());
+        std::replace(relativeStr.begin(), relativeStr.end(), '\\', '/');
+
+        return relativeStr;
+    }
+
     //--- プリセット ---------------------------------------------------------
 
     void FileDialog::RegisterPreset(std::string_view contextId, const FileDialogPreset& preset)
@@ -434,9 +479,9 @@ namespace Engine
             {
                 for (auto& item : j["DialogHistory"].items())
                 {
-                    // JSONはUTF-8。Wide経由でpath化する事でANSI解釈を避ける
-                    const auto utf8 = item.value().get<std::string>();
-                    s_history[item.key()] = std::filesystem::path(Utf8ToWide(utf8));
+                    std::string utf8 = item.value().get<std::string>();
+                    // 保存されている相対パスを絶対パスに戻す
+                    s_history[item.key()] = MakeAbsolute(std::filesystem::path(Utf8ToWide(utf8)));
                 }
             }
         }
@@ -464,8 +509,8 @@ namespace Engine
         j["DialogHistory"] = nlohmann::json::object();
         for (const auto& [key, path] : s_history)
         {
-            // path -> wide -> UTF-8 に揃える
-            j["DialogHistory"][key] = WideToUtf8(path.wstring());
+            // 絶対パスを相対パスに変換してから保存
+            j["DialogHistory"][key] = WideToUtf8(MakeRelative(path).wstring());
         }
 
         // 出力先ディレクトリを保証

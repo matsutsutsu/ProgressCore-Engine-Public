@@ -133,6 +133,13 @@ namespace Engine
          */
         static std::optional<std::filesystem::path> Save(const FileDialogParams& params);
 
+        /**
+         * @brief 絶対パスをプロジェクトのルート（または実行ファイル位置）からの相対パスに変換する
+         * @param absolutePath ダイアログ等で取得した絶対パス
+         * @return 変換後の相対パス（文字列）。変換に失敗した場合（別ドライブ等）はそのまま返す。
+         */
+        static std::string ConvertToRelativePath(const std::filesystem::path& absolutePath);
+
         //------------------------------------------------------------------
         // プリセット - 呼び出し側を簡潔にする
         //------------------------------------------------------------------
@@ -173,13 +180,13 @@ namespace Engine
          * @brief 履歴をJSONファイルから読み込む
          * @param settingsPath 設定ファイルのパス
          */
-        static void LoadHistory(const std::filesystem::path& settingsPath = "Build/EditorPrefs.json");
+        static void LoadHistory(const std::filesystem::path& settingsPath = "Build/User/EditorPrefs.json");
 
         /**
          * @brief 履歴をJSONファイルに書き込む
          * @param settingsPath 設定ファイルのパス
          */
-        static void SaveHistory(const std::filesystem::path& settingsPath = "Build/EditorPrefs.json");
+        static void SaveHistory(const std::filesystem::path& settingsPath = "Build/User/EditorPrefs.json");
 
         /**
          * @brief 履歴をクリアする

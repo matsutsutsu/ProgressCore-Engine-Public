@@ -1,4 +1,6 @@
 #include <fstream>
+#include <windows.h>    // OutputDebugStringA 用
+#include <filesystem>   // パス検証用
 #define TINYGLTF_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -23,6 +25,31 @@ bool LoadImageData(tinygltf::Image*, const int, std::string*,
 GLTFImporter::GLTFImporter(const char* filename)
 	: filepath(filename)
 {
+	// =====================================================================
+	// ★ デバッグ用：OSレベルでファイルが見えているかを「絶対パス」で検証
+	// =====================================================================
+	//std::filesystem::path absolutePath = std::filesystem::absolute(filepath);
+
+	//// std::filesystem::exists は Windows OS に直接「このファイルある？」と聞く関数
+	//if (!std::filesystem::exists(filepath)) {
+	//	char errBuf[2048];
+	//	snprintf(errBuf, sizeof(errBuf),
+	//		"\n=======================================================\n"
+	//		"[GLTF FATAL ERROR] OSからモデルファイルが見えません！\n"
+	//		"  指定されたパス : %s\n"
+	//		"  探した絶対パス : %s\n"
+	//		"  現在の作業DIR  : %s\n"
+	//		"=======================================================\n\n",
+	//		filename,
+	//		absolutePath.string().c_str(),
+	//		std::filesystem::current_path().string().c_str()
+	//	);
+	//	OutputDebugStringA(errBuf); // Visual Studio の出力ウィンドウに強制表示
+
+	//	// ファイルが無いのに tinygltf に渡すとバグるため、ここで安全に終了する
+	//	return;
+	//}
+
 	// 拡張子取得
 	std::string extension = filepath.extension().string();
 	std::transform(extension.begin(), extension.end(), extension.begin(), tolower);	// 小文字化
@@ -36,11 +63,11 @@ GLTFImporter::GLTFImporter(const char* filename)
 	bool result = false;
 	if (extension == ".glb")
 	{
-		result = gltf.LoadBinaryFromFile(&gltfModel, &error, &warning, filepath.u8string());
+		result = gltf.LoadBinaryFromFile(&gltfModel, &error, &warning, filepath.generic_string());
 	}
 	else if (extension == ".gltf")
 	{
-		result = gltf.LoadASCIIFromFile(&gltfModel, &error, &warning, filepath.u8string());
+		result = gltf.LoadASCIIFromFile(&gltfModel, &error, &warning, filepath.generic_string());
 	}
 	if (!warning.empty())
 	{

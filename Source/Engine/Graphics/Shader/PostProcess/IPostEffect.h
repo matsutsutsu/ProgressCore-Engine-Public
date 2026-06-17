@@ -39,9 +39,10 @@ public:
      * @param inputSRV 前エフェクトの出力（先頭はシーン HDR テクスチャ）
      * @return 処理済み SRV。nullptr を返すと PostProcessManager が inputSRV をそのまま引き継ぐ。
      */
-    virtual ID3D11ShaderResourceView* Process(
+    virtual void Process(
         ID3D11DeviceContext* dc,
-        ID3D11ShaderResourceView* inputSRV) = 0;
+        ID3D11ShaderResourceView* inputSRV,
+        ID3D11RenderTargetView* outputRTV) = 0;
 
     /** ImGui 等で表示するエフェクト名 */
     virtual const char* GetName() const = 0;

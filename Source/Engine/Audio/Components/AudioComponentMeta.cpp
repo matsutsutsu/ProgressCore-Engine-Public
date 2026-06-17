@@ -1,62 +1,38 @@
+/// @file  AudioComponentMeta.cpp
+/// @brief AudioEmitterComponent のシリアライズ/インスペクタ定義。
+///        FMODイベントの再生制御と、パスのハッシュ化UIを提供する。
+
 #include "Engine/Audio/Components/AudioEmitterComponent.h"
-#include "Editor/Inspector/ComponentGuiRegistry.h"
+#include "Engine/Serialization/Meta/ComponentDefine.h"
+#include "Engine/Core/Math/StringHash.h"
 
-#include "Engine/Serialization/Meta/ComponentMeta.h"
-#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
-#include "Engine/Serialization/Meta/ComponentMetaJson.h"
-#include "Engine/Core/Math/StringHash.h" // ※プロジェクトのHashString関数
-
-#include "Engine/Serialization/Registry/ComponentRegistry_Editor.h"
 #ifdef ENABLE_EDITOR
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #endif
 
-// =======================================================================
-// メタデータ定義 (インスペクタ/シリアライズ用)
-// =======================================================================
 template <> struct ComponentMeta<AudioEmitterComponent> {
-    static constexpr bool registered = true;
-    static constexpr const char* displayName = "Audio Emitter";
+    CCL_META_USING_THIS(AudioEmitterComponent)
 
-    // ★最重要: デフォルトの描画を捨て、CustomGui() の呼び出しをエンジンに要求する
-    static constexpr bool hasCustomGui = true;
+        static constexpr const char* displayName = "Audio Emitter";
+    static constexpr bool        hasCustomGui = true;
+    static constexpr bool        isSerializable = true;
 
-    static constexpr bool isSerializable = true;
-
-    // シリアライズ（JSON保存）の対象は設定値のみ
-    static const std::vector<FieldDescriptor>& Fields() {
-        static const std::vector<FieldDescriptor> fields = {
-            { "Event Hash", "eventHash", FieldKind::Int, offsetof(AudioEmitterComponent, eventHash), 1.0f, 0.0f, 0.0f, "Audio", nullptr, 0, true },
-            { "Auto Play", "autoPlay", FieldKind::Bool, offsetof(AudioEmitterComponent, autoPlay), 1.0f, 0.0f, 0.0f, "Audio", nullptr, 0, true }
-        };
-        return fields;
-    }
-
-    // =======================================================================
-    // インスペクタ用 カスタムGUI描画処理
-    // =======================================================================
-#if ENABLE_EDITOR
-    static bool CustomGui(AudioEmitterComponent& comp, unsigned long long entityID, void* world) {
+#ifdef ENABLE_EDITOR
+    static bool CustomGui(AudioEmitterComponent& comp, unsigned long long /*entityID*/ = 0, void* /*world*/ = nullptr) {
         bool changed = false;
 
         ImGui::PushID("AudioEmitterComponent_UI");
 
-        // 1. 現在のハッシュ値をデバッグ表示（読み取り専用）
         ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "Hash ID: 0x%08X", comp.eventHash);
 
-        // 2. 文字列からハッシュを生成するためのテキスト入力フィールド
         static char pathBuffer[256] = "";
 
-        // UX向上: テキスト入力フィールド
         ImGui::Text("FMOD Event Path");
         if (ImGui::InputText("##FMODPath", pathBuffer, sizeof(pathBuffer), ImGuiInputTextFlags_EnterReturnsTrue)) {
-            // エンターキーが押された瞬間、文字列をハッシュ化してPODな数値として保存する
             if (strlen(pathBuffer) > 0) {
                 comp.eventHash = CCL::Utils::HashString(pathBuffer);
                 changed = true;
-
-                // 次の入力のためにバッファをクリアしておく（好みに応じて残しても良い）
                 pathBuffer[0] = '\0';
             }
         }
@@ -66,12 +42,10 @@ template <> struct ComponentMeta<AudioEmitterComponent> {
 
         ImGui::Spacing();
 
-        // 3. その他のプロパティ (AutoPlay等) の描画
         if (ImGui::Checkbox("Auto Play on Spawn", &comp.autoPlay)) {
             changed = true;
         }
 
-        // デバッグ用: 現在の再生状態（シリアライズはされないが、エディタで確認できると便利）
         ImGui::BeginDisabled();
         ImGui::Checkbox("Is Playing (Runtime)", &comp.isPlaying);
         ImGui::EndDisabled();
@@ -80,9 +54,18 @@ template <> struct ComponentMeta<AudioEmitterComponent> {
 
         return changed;
     }
+#else
+    static bool CustomGui(AudioEmitterComponent&, unsigned long long, void*) { return false; }
 #endif
+
+    static const std::vector<FieldDescriptor>& Fields() {
+        static const std::vector<FieldDescriptor> fields = {
+            CFIELD(eventHash, "Event Hash", "Audio")
+            CFIELD(autoPlay,  "Auto Play",  "Audio")
+        };
+        return fields;
+    }
 };
 
-// マクロによるメタデータの自動登録
 REGISTER_COMPONENT(AudioEmitterComponent, "AudioEmitterComponent")
 REGISTER_COMPONENT_EDITOR_GUI(AudioEmitterComponent)

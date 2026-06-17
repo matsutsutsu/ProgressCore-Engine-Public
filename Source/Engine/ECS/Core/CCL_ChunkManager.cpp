@@ -152,14 +152,22 @@ namespace CCL::ECS::Core
                 if (op->type == td.id)
                 {
                     // factory があれば直接構築 (Emplace)
-                    // コピー禁止型もここで Move 構築される
+                     // コピー禁止型もここで Move 構築される
                     if (op->factory) {
                         op->factory(dstPtr);
                     }
-                    // constructor を使用（未初期化メモリに構築）
-                    if (op->data && td.constructor)
+                    // ★ 修正: 一時メモリからの移送はムーブを最優先する。
+                    //    （元の構造を保ち、constructor の if だけを mover 優先に変更）
+                    //    mover があれば op->data を「抜け殻」にしてムーブ構築。
+                    //    これにより後段の PendingOps::Clear で元を destructor しても
+                    //    RAII リソース（ModelInstanceHandle 等）が解放されない。
+                    if (op->data && td.mover)
                     {
-                        td.constructor(dstPtr, op->data);
+                        td.mover(dstPtr, op->data);       // ムーブ構築（元は無効化される）
+                    }
+                    else if (op->data && td.constructor)
+                    {
+                        td.constructor(dstPtr, op->data); // フォールバック: コピー構築
                     }
                     else if (op->data)
                     {
@@ -167,6 +175,18 @@ namespace CCL::ECS::Core
                     }
                     filled = true;
                     break;
+
+
+                    //  ----------------------------------------------------------------------------
+                    //  補足: op->data の型について
+                    //    PendingOp::data は void*（非const）。td.mover の引数も (void* dst, void* src)
+                    //    なのでそのまま渡せる。constructor は (void*, const void*) だが、現状の
+                    //    呼び出しは op->data を const として渡しているだけで実体は非const。問題なし。
+                    //
+                    //  補足: MoveEntityBetweenChunks（チャンク間移動）側は既に 297 行目で
+                    //    tdDst.mover を優先しているため修正不要。今回の不具合は「新規 AddComponent
+                    //    適用」経路（InsertNewEntity）だけが constructor を使っていたことが原因。
+                    //============================================================================
                 }
             }
 

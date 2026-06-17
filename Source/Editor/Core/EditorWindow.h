@@ -3,7 +3,7 @@
 #include <string>
 #include "EditorContext.h"
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
 #include <imgui.h>
 #endif
 
@@ -25,7 +25,7 @@ public:
         std::string zoneName = "UI Window: " + _name;
         ZoneName(zoneName.c_str(), zoneName.size());
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
 
         if (ImGui::Begin(_name.c_str(), &_isVisible)) {
             DrawContents(context);

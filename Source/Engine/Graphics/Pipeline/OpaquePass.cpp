@@ -45,9 +45,10 @@ void OpaquePass::Execute(const RenderFrameContext& ctx)
         const auto& current = opaqueCommands[currentIndex];
 
         Shader* shader = _services->shaders->GetShader(current.shaderHash, _services->device);
-        if (!shader) { ++i; continue; }
+        IMaterialShader* matShader = shader ? shader->AsMaterial() : nullptr;
 
-        shader->Begin(dc, *_services, ctx);
+        if (!matShader) { ++i; continue; }   // 不透明パスはマテリアルシェーダー必須
+        matShader->Begin(dc, *_services, ctx);
 
         const size_t   batchStart = i;
         size_t         batchCount = 0;
@@ -127,7 +128,7 @@ void OpaquePass::Execute(const RenderFrameContext& ctx)
             }
             else if (isSkinned) {
                 // override を shader->Update に明示的に渡す（mesh.material を書き換えない）
-                shader->Update(dc, mesh, overrideMat);
+                matShader->Update(dc, mesh, overrideMat);
                 UINT stride = sizeof(ModelResource::Vertex), offset = 0;
                 dc->IASetVertexBuffers(0, 1, mesh.data->vertexBuffer.GetAddressOf(), &stride, &offset);
                 dc->IASetIndexBuffer(mesh.data->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
@@ -141,7 +142,7 @@ void OpaquePass::Execute(const RenderFrameContext& ctx)
                 }
             }
             else {
-                shader->Update(dc, mesh, overrideMat);
+                matShader->Update(dc, mesh, overrideMat);
                 UINT stride = sizeof(ModelResource::Vertex), offset = 0;
                 dc->IASetVertexBuffers(0, 1, mesh.data->vertexBuffer.GetAddressOf(), &stride, &offset);
                 dc->IASetIndexBuffer(mesh.data->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
@@ -160,6 +161,6 @@ void OpaquePass::Execute(const RenderFrameContext& ctx)
             // ★ const_cast による restore 行 完全削除
             _instanceBuffer.Unbind(dc, SLOT_SRV_INSTANCE);
         }
-        shader->End(dc, *_services);
+        matShader->End(dc, *_services);
     }
 }

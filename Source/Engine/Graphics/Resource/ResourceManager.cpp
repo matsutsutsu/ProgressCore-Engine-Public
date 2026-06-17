@@ -11,7 +11,7 @@
 #include <cereal/archives/json.hpp>
 #include <sstream>
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
 #include <imgui.h>
 #endif
 
@@ -359,7 +359,28 @@ RenderTargetHandle ResourceManager::CreateRenderTarget(int width, int height, DX
     return handle;
 }
 
-RenderTarget* ResourceManager::GetRenderTarget(RenderTargetHandle handle) {
+RenderTargetHandle ResourceManager::LoadRenderTarget(const std::string& name, ID3D11Device* device, UINT width, UINT height, DXGI_FORMAT format)
+{
+    // 1. プールから空き枠を確保
+    RenderTargetHandle handle = m_renderTargetPool.Create();
+    RenderTarget* rt = m_renderTargetPool.Get(handle);
+
+    // 2. RenderTarget 自体の Create 処理（GPU リソースの生成）
+    if (rt && rt->Create(device, width, height, format)) {
+//#ifdef _DEBUG
+//        // デバッグ名が登録できればしておく（PixやRenderDocで便利）
+//        m_debugNameRegistry[handle.GetIndex()] = name;
+//#endif
+        return handle;
+    }
+
+    // 失敗した場合は即座に破棄して無効なハンドルを返す
+    m_renderTargetPool.Destroy(handle);
+    CCL_LOG_ERROR(LogCategory::Render, "Failed to create RenderTarget: %s", name.c_str());
+    return RenderTargetHandle{};
+}
+
+RenderTarget *ResourceManager::GetRenderTarget(RenderTargetHandle handle) {
     std::lock_guard<std::mutex> lock(_mutex);
     return m_renderTargetPool.Get(handle);
 }
@@ -444,7 +465,7 @@ void ResourceManager::UnloadParticleBuffer(ParticleBufferHandle handle) {
 // Debug
 // ============================================================================
 void ResourceManager::DrawDebugGUI() {
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
     if (ImGui::CollapsingHeader("Resource", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Text("Models:");
         for (auto& pair : m_modelRegistry) {
@@ -520,4 +541,36 @@ bool ResourceManager::SaveMaterialAsset(MaterialHandle handle, const std::string
 
     // FileSystemを経由して書き込み
     return FileSystem::WriteAllText(virtualPath, os.str());
+}
+
+//  目的:
+//    Model::CreateFromData() が返す shared_ptr<Model>（ランタイム生成メッシュ）を
+//    インスタンスプールに登録し、ModelComponent が持てる ModelInstanceHandle を返す。
+//
+//  背景:
+//    現プロジェクトの ModelComponent は ModelInstanceHandle で Model を参照する。
+//    既存の CreateModelInstance(filename) はファイルパスからしか生成できないため、
+//    ランタイム生成 Model をプールに預ける口をここで足す。
+//
+//  なぜムーブで安全か:
+//    Model::CreateFromData は ModelResource 側にメッシュを構築し、Model::meshes
+//    （Mesh::node / material といった自己参照ポインタを持つ vector）は空のまま返す。
+//    描画も MeshBatcher も model->GetResource()->GetMeshes() を参照するため、
+//    Model 自体をムーブしても自己参照ポインタ問題は描画経路に影響しない。
+//    （resource は CCL::Handle<ModelResource> = ただの index/gen 値なのでムーブ安全）
+//
+//  組み込み:
+//    ResourceManager.h の [3] Model Instance に下記を追加:
+//
+//        // 構築済み Model をプール登録してハンドル化（ランタイム生成メッシュ用）
+//        ModelInstanceHandle RegisterModelInstance(std::shared_ptr<Model> model);
+//============================================================================
+ModelInstanceHandle ResourceManager::RegisterModelInstance(std::shared_ptr<Model> model)
+{
+    if (!model) return ModelInstanceHandle{};
+
+    std::lock_guard<std::mutex> lock(_mutex);
+    // ResourcePool<Model>::Create(Args&&...) は内部で placement-new Model(args...)。
+    // Model のムーブコンストラクタ（暗黙 or 既存）でプールへ収める。
+    return m_modelInstancePool.Create(std::move(*model));
 }

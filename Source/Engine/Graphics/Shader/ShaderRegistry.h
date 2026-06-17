@@ -5,6 +5,8 @@
 #include "Engine/Graphics/Shader/Core/Shader.h"
 #include "Engine/Graphics/Shader/Material/MaterialShader.h"
 #include "Engine/Core/Math/StringHash.h"
+#include <unordered_set>
+#include "Engine/Platform/Core/Logger.h"
 
 
 class ShaderRegistry {
@@ -16,6 +18,7 @@ public:
         _shaders.clear();
         _factories.clear();
         _shaderSortIDs.clear();
+        _warnedMissing.clear();
     }
 
     // エンジン起動時等にシェーダーを登録する関数
@@ -47,19 +50,34 @@ public:
         }
     }
 
-    // 必要な時に生成、あるいはキャッシュを返す
+    // 必要な時に生成、あるいはキャッシュを返す。未登録なら ErrorShader を返す。
     Shader* GetShader(uint32_t shaderHash, ID3D11Device* device) {
-        // すでにインスタンスがあればそれを返す
+        // 1. すでにインスタンスがあればそれを返す
         auto it = _shaders.find(shaderHash);
         if (it != _shaders.end()) return it->second.get();
 
-        // なければファクトリから生成
+        // 2. ファクトリから生成
         auto factoryIt = _factories.find(shaderHash);
         if (factoryIt != _factories.end()) {
             _shaders[shaderHash] = factoryIt->second(device);
             return _shaders[shaderHash].get();
         }
-        return nullptr; // 見つからなかった場合（紫の警告シェーダー等を返しても良い）
+
+        // 3. フォールバック：未登録ハッシュはマゼンタの ErrorShader で代替する
+        //    Error 自身が未登録の場合のみ nullptr
+        if (shaderHash != "Error"_hash) {
+            // 毎フレーム呼ばれ得るので、同一ハッシュは一度だけ警告（スパム防止）
+            if (_warnedMissing.insert(shaderHash).second) {
+                CCL_LOG_WARN(LogCategory::Core,
+                    "ShaderRegistry: 未登録シェーダー要求 (hash=0x%08X)。ErrorShader(マゼンタ)で代替。",
+                    shaderHash);
+            }
+            return GetShader("Error"_hash, device);
+        }
+
+        CCL_LOG_ERROR(LogCategory::Core,
+            "ShaderRegistry: ErrorShader 自体が未登録です。Graphics.cpp で登録してください。");
+        return nullptr;
     }
 
     // ハッシュ値から、8bitに収まる小さな連番IDを取得する
@@ -75,5 +93,7 @@ private:
     // ソートID管理用
     uint8_t _nextSortID = 0;
     std::unordered_map<uint32_t, uint8_t> _shaderSortIDs;
+
+    std::unordered_set<uint32_t> _warnedMissing; // 警告済みハッシュ（once-warn）
 
 };

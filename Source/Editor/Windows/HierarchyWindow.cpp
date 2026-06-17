@@ -1,5 +1,6 @@
 #include "Editor/Windows/HierarchyWindow.h"
-#include "Game/Core/AllComponents.h"
+#include "Engine/Transform/Components/TransformComponent.h"
+#include "Engine/Core/Components/NameComponent.h"
 #include <algorithm>
 #include <string>
 #include "Engine/Transform/Components/PendingParentComponent.h"

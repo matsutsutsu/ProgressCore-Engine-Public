@@ -7,19 +7,19 @@
 
 void JoltStepSystem::Update(float dt)
 {
-    if (!_world->HasResource<JoltPhysicsManager>()) return;
-    auto &joltManager = _world->GetResource<JoltPhysicsManager>();
+    if (!_world->HasResource<JoltPhysicsManager*>()) return;
+    auto &joltManager = _world->GetResource<JoltPhysicsManager*>();
 
     // 物理の時間を dt 秒だけ進める
-    joltManager.Step(dt); // ここでJolt内部の並列計算が走る
+    joltManager->Step(dt); // ここでJolt内部の並列計算が走る
 }
 
 void JoltPullSystem::Update(float dt)
 {
-    if (!_world->HasResource<JoltPhysicsManager>()) return;
+    if (!_world->HasResource<JoltPhysicsManager*>()) return;
 
-    auto               &joltManager   = _world->GetResource<JoltPhysicsManager>();
-    JPH::BodyInterface &bodyInterface = joltManager.GetBodyInterface();
+    auto               &joltManager   = _world->GetResource<JoltPhysicsManager*>();
+    JPH::BodyInterface &bodyInterface = joltManager->GetBodyInterface();
 
 
     ForEachWithIDParallel([&](CCL::ECS::EntityID id, TransformComponent& trans, const JoltHandleComponent& joltBody) {

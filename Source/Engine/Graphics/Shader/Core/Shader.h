@@ -11,28 +11,25 @@
 #include <vector>
 #include <filesystem>
 
-// Shaderクラスの役割
-// １．HotReload（動的更新）：HLSLが書き換えられたら検知して再コンパイル（CheckAndReload）
-// ２．Reflection（自動解析）：定数バッファやテクスチャの要求スロットを自動で読み取る（_reflection）
-// ３．PipelineControl（状態管理）：Begin/Update/Endで描画パイプラインの状態を管理する
-// なので、マテリアルでもパーティクルでもポストプロセスでも
-// 「HLSLを使ってGPUに描画させるもの」なら、Shaderクラスを継承して実装すればOK
+class IMaterialShader; // 前方宣言（AsMaterial の戻り値型に使う）
 
-// 派生クラス, 何を描画するか, Update() の使われ方
-// MaterialShader, モデル（3Dメッシュ）, メッシュの頂点バッファと、マテリアルの色やテクスチャをバインドする。
-// ParticleShader, パーティクル（点群）, 使わない（空にする）。 パーティクルのバッファは ParticleRenderer 側で直接バインドするから。
-// PostProcessShader, 画面全体（2Dポリゴン）, 使わない（空にする）。 画面サイズのテクスチャをバインドするだけだから。
-
-
-/**
- * @brief 全描画シェーダーの抽象基底クラス。
- *  各パスの呼び出し方：
- *  @code
- *    shader->Begin (dc, *_services, ctx);
- *    shader->Update(dc, mesh);
- *    shader->End  (dc, *_services);
- *  @endcode
- */
+// ============================================================================
+// Shader : 全描画シェーダーの基底（パイプライン制御層）
+// ----------------------------------------------------------------------------
+//  役割:
+//   1. HotReload   : HLSL が更新されたら再コンパイル（CheckAndReload）
+//   2. Reflection  : 定数バッファ/テクスチャの要求スロットを自動解析（_reflection）
+//   3. PipelineCtrl: Begin / End で描画パイプラインの状態を管理
+//
+//  「メッシュ単位のマテリアル転送（Update）」が必要なものは、この基底ではなく
+//  IMaterialShader を継承すること（MaterialShader のみ該当）。
+//
+//  派生クラスと種別:
+//   MaterialShader        … マテリアルシェーダー（Update を持つ → IMaterialShader）
+//   ShadowMapShader       … パイプラインのみ（Update 不要）
+//   ParticleShader        … パイプラインのみ（バッファは ParticleRenderer が直接バインド）
+//   ParticleComputeShader … パイプラインのみ（Dispatch はシステム側）
+// ============================================================================
 class Shader
 {
 public:
@@ -50,16 +47,6 @@ public:
         const RenderFrameContext& ctx) = 0;
 
     /**
-     * @brief メッシュごとのマテリアル・定数転送。
-     * @param overrideMaterial nullptr なら mesh.material を使用する。
-     *        const_cast で mesh.material を書き換えてはいけない（アセット汚染防止）。
-     */
-    virtual void Update(ID3D11DeviceContext* dc,
-        const Model::Mesh& mesh,
-        const MaterialData* overrideMaterial = nullptr) = 0;
-
-
-    /**
      * @brief シェーダーリソースの解除。
      * @param dc デバイスコンテキスト。
      * @param s  永続サービス（ステート復元等に使う）。
@@ -67,6 +54,14 @@ public:
     virtual void End(ID3D11DeviceContext* dc,
         const RenderServices& s) = 0;
 
+    virtual void CheckAndReload(ID3D11Device* device) {}
+
+    /**
+     * @brief 安全なダウンキャスト（RTTI 不要）。
+     *        マテリアル転送が可能なシェーダーのみ非 null を返す。
+     *        IMaterialShader 側で override して this を返す。
+     */
+    virtual IMaterialShader* AsMaterial() { return nullptr; }
 
     // ================================================================
     //  共通機能
@@ -84,7 +79,6 @@ public:
         return it->second.SetValue(varName, value);
     }
 
-    virtual void CheckAndReload(ID3D11Device* device) {}
 
 protected:
     // --- 共通機能：データメンバ ---
@@ -105,4 +99,27 @@ protected:
     std::filesystem::file_time_type GetLastWriteTime(const std::wstring& filepath);
     // ホットリロード時に古い情報を全て消し去るための関数
     void ResetReflection();
+};
+
+
+// ============================================================================
+// IMaterialShader : メッシュ単位のマテリアル転送を持つシェーダー
+// ----------------------------------------------------------------------------
+//  OpaquePass / TransparentPass はこの型を要求する。
+//  Shader::AsMaterial() を override して this を返すことで、
+//  RTTI なしで安全に Shader* → IMaterialShader* のダウンキャストができる。
+// ============================================================================
+class IMaterialShader : public Shader
+{
+public:
+    /**
+     * @brief メッシュごとのマテリアル・定数転送。
+     * @param overrideMaterial nullptr なら mesh.material を使用する。
+     *        mesh.material は書き換えない（アセット汚染防止）。
+     */
+    virtual void Update(ID3D11DeviceContext* dc,
+        const Model::Mesh& mesh,
+        const MaterialData* overrideMaterial = nullptr) = 0;
+
+    IMaterialShader* AsMaterial() override { return this; }
 };

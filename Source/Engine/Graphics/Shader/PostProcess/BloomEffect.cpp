@@ -26,7 +26,7 @@ void BloomEffect::Initialize(ID3D11Device* device, UINT width, UINT height)
     GpuResourceUtils::LoadPixelShader(device, "Assets/Shader/BloomCompositePS.cso",
         _res->psComposite.GetAddressOf());
 
-    GpuResourceUtils::CreateDynamicConstantBuffer(device, sizeof(CbBloomData),
+    GpuResourceUtils::CreateDynamicConstantBuffer(device, sizeof(GpuData::CbBloomData),
         _res->cbBloom.GetAddressOf());
 
     D3D11_SAMPLER_DESC sampDesc = {};
@@ -68,22 +68,19 @@ void BloomEffect::CreateChains(UINT width, UINT height)
             w, h, DXGI_FORMAT_R16G16B16A16_FLOAT));
     }
 
-    // 合成結果 RT はフルサイズ
-    _compositeRT = ResourceManager::Instance().CreateRenderTarget(
-        width, height, DXGI_FORMAT_R16G16B16A16_FLOAT);
 }
 
 void BloomEffect::ReleaseChains()
 {
     for (auto h : _downChain) ResourceManager::Instance().UnloadRenderTarget(h);
     for (auto h : _upChain)   ResourceManager::Instance().UnloadRenderTarget(h);
-    if (_compositeRT.IsValid()) ResourceManager::Instance().UnloadRenderTarget(_compositeRT);
+    
     _downChain.clear();
     _upChain.clear();
-    _compositeRT = {};
+
 }
 
-void BloomEffect::UpdateCbBloom(ID3D11DeviceContext* dc, const CbBloomData& data)
+void BloomEffect::UpdateCbBloom(ID3D11DeviceContext* dc, const GpuData::CbBloomData& data)
 {
     D3D11_MAPPED_SUBRESOURCE mapped;
     if (SUCCEEDED(dc->Map(_res->cbBloom.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {
@@ -92,11 +89,12 @@ void BloomEffect::UpdateCbBloom(ID3D11DeviceContext* dc, const CbBloomData& data
     }
 }
 
-ID3D11ShaderResourceView* BloomEffect::Process(
+void BloomEffect::Process(
     ID3D11DeviceContext* dc,
-    ID3D11ShaderResourceView* inputSRV)
+    ID3D11ShaderResourceView* inputSRV,
+    ID3D11RenderTargetView* outputRTV) 
 {
-    if (!_res || _downChain.empty() || !inputSRV) return nullptr;
+    if (!_res || _downChain.empty() || !inputSRV) return;
 
     // ---- 共通ステート ----
     dc->IASetInputLayout(nullptr);
@@ -111,18 +109,12 @@ ID3D11ShaderResourceView* BloomEffect::Process(
     ID3D11SamplerState* samplers[] = { _res->sampler.Get() };
     dc->PSSetSamplers(SLOT_SMP_BLOOM, 1, samplers);
 
-    CbBloomData cbData;
-    cbData.threshold = threshold;
-    cbData.softKnee = softKnee;
-    cbData.intensity = intensity;
-    cbData.padding = 0.f;
-
     // =================================================================
     // 1. 輝度抽出 (inputSRV → _downChain[0])
     // =================================================================
     {
         RenderTarget* down0 = ResourceManager::Instance().GetRenderTarget(_downChain[0]);
-        if (!down0) return nullptr;
+        if (!down0) return;
 
         cbData.texelWidth = 1.0f / (down0->GetWidth() * 2.0f);
         cbData.texelHeight = 1.0f / (down0->GetHeight() * 2.0f);
@@ -176,8 +168,8 @@ ID3D11ShaderResourceView* BloomEffect::Process(
         RenderTarget* highRes = ResourceManager::Instance().GetRenderTarget(_downChain[i]);
         if (!dst || !highRes) continue;
 
-        cbData.texelWidth = (1.0f / dst->GetWidth()) * radius;
-        cbData.texelHeight = (1.0f / dst->GetHeight()) * radius;
+        cbData.texelWidth = (1.0f / dst->GetWidth()) * cbData.radius;
+        cbData.texelHeight = (1.0f / dst->GetHeight()) * cbData.radius;
         UpdateCbBloom(dc, cbData);
 
         dst->Activate(dc);
@@ -195,36 +187,39 @@ ID3D11ShaderResourceView* BloomEffect::Process(
 
     // _upChain[0] = bloom グロー (half-res)
     RenderTarget* finalGlow = ResourceManager::Instance().GetRenderTarget(_upChain[0]);
-    if (!finalGlow) return nullptr;
+    if (!finalGlow) return;
 
     // =================================================================
-    // 4. 合成 (scene + glow → _compositeRT, フル解像度 HDR)
-    //    旧: Tone Mapper が 2 入力 (scene, glow) で合成していた
-    //    新: BloomEffect が合成済み HDR を返す → Tone Mapper は 1 入力
-    //    ハードウェアのバイリニアフィルタが half-res グローを自動補間
+    // 4. 合成 (scene + glow → Managerから指定された outputRTV へ直接書く！)
     // =================================================================
     {
-        RenderTarget* compRT = ResourceManager::Instance().GetRenderTarget(_compositeRT);
-        if (!compRT) return nullptr;
-
-        // cbData.intensity がシェーダーで参照される
         UpdateCbBloom(dc, cbData);
         dc->PSSetConstantBuffers(SLOT_CB_BLOOM, 1, _res->cbBloom.GetAddressOf());
-
         dc->PSSetShader(_res->psComposite.Get(), nullptr, 0);
-        compRT->Activate(dc);
 
-        // t0 = 元シーン HDR, t1 = ブルームグロー (half-res → GPU が bilinear で補間)
+        // 合成描画の前に、出力先(outputRTV)に対応する解像度でViewportを再設定する
+        // ※幅と高さは inputSRV (sceneHDR) のサイズと同じはずです
+        D3D11_TEXTURE2D_DESC desc;
+        Microsoft::WRL::ComPtr<ID3D11Resource> res;
+        inputSRV->GetResource(&res);
+        Microsoft::WRL::ComPtr<ID3D11Texture2D> tex;
+        res.As(&tex);
+        tex->GetDesc(&desc);
+
+        D3D11_VIEWPORT vp = {};
+        vp.Width = static_cast<float>(desc.Width);
+        vp.Height = static_cast<float>(desc.Height);
+        vp.MaxDepth = 1.0f;
+        dc->RSSetViewports(1, &vp);
+
+        dc->OMSetRenderTargets(1, &outputRTV, nullptr);
+
         ID3D11ShaderResourceView* srvs[] = { inputSRV, finalGlow->GetSRV() };
         dc->PSSetShaderResources(SLOT_SRV_BLOOM_IN, 2, srvs);
         dc->Draw(3, 0);
 
         ID3D11ShaderResourceView* nullSRVs[] = { nullptr, nullptr };
         dc->PSSetShaderResources(SLOT_SRV_BLOOM_IN, 2, nullSRVs);
-        ID3D11RenderTargetView* nullRTV = nullptr;
-        dc->OMSetRenderTargets(1, &nullRTV, nullptr);
+        // ここでの OMSetRenderTargets の解除は Manager 側でやるので不要
     }
-
-    RenderTarget* compRT = ResourceManager::Instance().GetRenderTarget(_compositeRT);
-    return compRT ? compRT->GetSRV() : nullptr;
 }

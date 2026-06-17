@@ -2,6 +2,7 @@
 #include "IPostEffect.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Graphics/RHI/RenderTarget.h"
+#include "Engine/Graphics/Shader/Shared/PostProcessShared.h"
 #include <d3d11.h>
 #include <wrl/client.h>
 #include <vector>
@@ -50,31 +51,20 @@ public:
      * @param inputSRV シーン HDR テクスチャ
      * @return シーン + Bloom グロー の合成済み HDR SRV（次のエフェクトの入力）
      */
-    ID3D11ShaderResourceView* Process(
+    void Process(
         ID3D11DeviceContext* dc,
-        ID3D11ShaderResourceView* inputSRV) override;
+        ID3D11ShaderResourceView* inputSRV,
+        ID3D11RenderTargetView* outputRTV) override;
 
     const char* GetName() const override { return "Bloom"; }
 
-    // ---- パラメータ（ECS や ImGui から直接書き込む）----
-    float threshold = 1.0f;  ///< グローを発生させる最低輝度
-    float softKnee = 0.5f;  ///< 閾値のソフトエッジ幅
-    float intensity = 1.0f;  ///< グローの加算強度
-    float radius = 1.0f;  ///< アップサンプル時の拡散半径倍率
+   void UpdateParams(const GpuData::CbBloomData& data) { cbData = data; } // ECSからのデータ受け取り用
 
 private:
     static constexpr int kMaxIterations = 6;
 
-    // ---- GPU 定数バッファレイアウト（HLSL の CbBloom と一致させる）----
-    struct CbBloomData {
-        float threshold;
-        float softKnee;
-        float intensity;
-        float padding;
-        float texelWidth;
-        float texelHeight;
-        float pad2[2];
-    };
+    // 最新のパラメータを保持しておく
+    GpuData::CbBloomData cbData{};
 
     // ---- GPU リソース（旧 static グローバルをメンバに移動）----
     struct BloomResources {
@@ -94,9 +84,8 @@ private:
     // RT チェーン
     std::vector<RenderTargetHandle> _downChain;
     std::vector<RenderTargetHandle> _upChain;
-    RenderTargetHandle              _compositeRT{}; // フルサイズ合成結果 (HDR)
-
+  
     void CreateChains(UINT width, UINT height);
     void ReleaseChains();
-    void UpdateCbBloom(ID3D11DeviceContext* dc, const CbBloomData& data);
+    void UpdateCbBloom(ID3D11DeviceContext* dc, const GpuData::CbBloomData& data);
 };

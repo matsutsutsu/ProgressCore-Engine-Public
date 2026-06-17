@@ -1,6 +1,7 @@
 #include "PostProcessSystem.h"
 #include "Engine/Graphics/Shader/PostProcess/PostProcessManager.h"
 #include "Engine/Graphics/Shader/PostProcess/BloomEffect.h"
+#include "Engine/Graphics/Shader/PostProcess/DistortionEffect.h"
 
 
 
@@ -21,18 +22,14 @@ void PostProcessSystem::Update(float dt) {
     finalBloom.enable = false;
 
     ToneMapConfigComponent finalToneMap;
-    finalToneMap.exposure = 1.0f;
-
+    finalToneMap.data.exposure = 1.0f;
 
     // -------------------------------------------------------
     // 2. BloomConfigComponent を検索
     // -------------------------------------------------------
     // ※ 本来は「GlobalVolume」タグやカメラ位置判定を行うが、
     //    ここではシンプルに「有効になっているものが見つかったら採用」する
-    auto bloomView = _world->View<BloomConfigComponent>();
-    for (auto entity : bloomView)
-    {
-        const auto* comp = _world->GetComponent<BloomConfigComponent>(entity);
+    if(auto* comp = _world->GetSingletonComponent<BloomConfigComponent>()) {
 
         // 有効な設定が見つかったら上書き（後勝ち）
         if (comp && comp->enable) {
@@ -43,25 +40,27 @@ void PostProcessSystem::Update(float dt) {
     // -------------------------------------------------------
     // 3. ToneMapConfigComponent を検索
     // -------------------------------------------------------
-    auto toneMapView = _world->View<ToneMapConfigComponent>();
-    for (auto entity : toneMapView)
-    {
-        const auto* comp = _world->GetComponent<ToneMapConfigComponent>(entity);
-
-        if (comp) {
-            finalToneMap = *comp;
-        }
+    if (auto* comp = _world->GetSingletonComponent<ToneMapConfigComponent>()) {      
+        finalToneMap = *comp;
     }
 
     // -------------------------------------------------------
     // 4. マネージャーへ一括転送
     // -------------------------------------------------------
+
+    // ★ Distortion の転送処理を追加
+    if (auto *comp =
+            _world->GetSingletonComponent<DistortionConfigComponent>()) {
+      if (auto *distortion = postProcess->GetEffect<DistortionEffect>()) {
+        distortion->SetEnabled(comp->enable);
+        comp->data.time += dt; // システム側でアニメーション時間を進める
+        distortion->UpdateParams(comp->data);
+      }
+    }
+
     if (auto* bloom = postProcess->GetEffect<BloomEffect>()) {
         bloom->SetEnabled(finalBloom.enable);
-        bloom->threshold = finalBloom.threshold;
-        bloom->softKnee = finalBloom.softKnee;
-        bloom->intensity = finalBloom.intensity;
-        bloom->radius = finalBloom.radius;
+        bloom->UpdateParams(finalBloom.data);
     }
     postProcess->toneMapConfig = finalToneMap;
 }

@@ -4,13 +4,13 @@
 #include "Engine/Graphics/Renderer/ModelRenderer.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
-#include "Engine/Graphics/Shader/ShaderShared.h"
+#include "Engine/Graphics/Shader/Shared/ShaderShared.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 
 // TODO: ECS に Initialize(device) が追加されたら除去する
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Graphics/RHI/RenderContext.h"  // RenderServices
-#include "Engine/Graphics/Shader/ShaderShared.h"
+#include "Engine/Graphics/Shader/Shared/ShaderShared.h"
 
 #include "Engine/Graphics/Components/Lighting/FogComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
@@ -82,18 +82,33 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext* dc, const Rende
     GpuData::CbFog fogData = { {0.5f,0.5f,0.5f,1.0f},{0.0f,1000.0f,10.0f,0.0f},{},{},{},{} };
     ID3D11ShaderResourceView* fogNoiseSrv = nullptr;
 
-    auto fogView = _world->View<FogComponent>();
-    if (!fogView.empty()) {
-        if (auto* fog = _world->GetComponent<FogComponent>(fogView[0])) {
-            fogData.gFogColor = fog->color;
-            fogData.gFogParams = { fog->start, fog->end, fog->heightStart, fog->heightDensity };
-            fogData.gFogCenter = fog->center;
-            fogData.gFogNoiseParams = { fog->noiseScale, fog->noiseStrength,
-                                    fog->noiseSpeed.x, fog->noiseSpeed.y };
-            fogData.gFogRimColor = { fog->rimColor.x, fog->rimColor.y, fog->rimColor.z, 1.0f };
-            fogData.gFogRimParams = { fog->rimPower, fog->rimStrength, 0.0f, 0.0f };
-            fogNoiseSrv = fog->noiseTextureSRV.Get();
-        }
+    if (auto* fog = _world->GetSingletonComponent<FogComponent>()) {
+       fogData.gFogColor = fog->color;
+       fogData.gFogParams = { fog->start, fog->end, fog->heightStart, fog->heightDensity };
+       fogData.gFogCenter = fog->center;
+       fogData.gFogNoiseParams = { fog->noiseScale, fog->noiseStrength,
+                               fog->noiseSpeed.x, fog->noiseSpeed.y };
+       fogData.gFogRimColor = { fog->rimColor.x, fog->rimColor.y, fog->rimColor.z, 1.0f };
+       fogData.gFogRimParams = { fog->rimPower, fog->rimStrength, 0.0f, 0.0f };
+       // --------------------------------------------------------
+       // 【遅延ロードとバインド準備】
+       // --------------------------------------------------------
+       // UIで新しいテクスチャパスが設定された（ハンドルが無効）場合、ResourceManager経由でロードする
+       if (fog->noiseTexturePath[0] != '\0' && !fog->noiseTextureHandle.IsValid()) {
+           fog->noiseTextureHandle = ResourceManager::Instance().LoadTexture(fog->noiseTexturePath);
+       }
+
+       // ハンドルから実体（SRV）を安全に取得
+       ID3D11ShaderResourceView* fogNoiseSrv = nullptr;
+       if (fog->noiseTextureHandle.IsValid()) {
+           fogNoiseSrv = ResourceManager::Instance().GetTexture(fog->noiseTextureHandle);
+       }
+
+       // 万が一ロードに失敗した場合や未設定時のフェールセーフ（デフォルトノイズの使用）
+       if (!fogNoiseSrv && _globalNoiseSRV) {
+           fogNoiseSrv = _globalNoiseSRV.Get();
+       }
+        
     }
 
     if (_fogConstantBuffer) {

@@ -2,34 +2,6 @@
     "entities": [
         {
             "components": {
-                "Name": {
-                    "name": "ParticleEmitter"
-                },
-                "Transform": {
-                    "Parent": 3,
-                    "isStatic": false,
-                    "position": [
-                        -8.100000381469727,
-                        0.0,
-                        0.0
-                    ],
-                    "rotation": [
-                        0.0,
-                        0.0,
-                        0.0,
-                        1.0
-                    ],
-                    "scale": [
-                        1.0,
-                        1.0,
-                        1.0
-                    ]
-                }
-            },
-            "lid": 1
-        },
-        {
-            "components": {
                 "GPUParticle": {
                     "angularSpeed": [
                         0.0,
@@ -108,9 +80,17 @@
                 "Name": {
                     "name": "GPUParticle"
                 },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
                 "Transform": {
-                    "Parent": 1,
                     "isStatic": false,
+                    "parent": 2,
                     "position": [
                         0.0,
                         0.0,
@@ -129,10 +109,10 @@
                     ]
                 }
             },
-            "lid": 2
+            "lid": 1
         }
     ],
     "magic": 1397506883,
-    "name": "ParticleEmitter",
+    "name": "GPUParticle",
     "version": 1
 }

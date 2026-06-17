@@ -34,7 +34,9 @@
          if (str.length() == 1 && str[0] >= 'A' && str[0] <= 'Z') return str[0];
          if (str == "SPACE") return VK_SPACE;
          if (str == "ESC")   return VK_ESCAPE;
+         if (str == "BACK")  return VK_BACK;
          if (str == "UP")    return VK_UP;
+         if (str == "SHIFT") return VK_SHIFT;
          if (str == "DOWN")  return VK_DOWN;
          if (str == "LEFT")  return VK_LEFT;
          if (str == "RIGHT") return VK_RIGHT;
@@ -49,10 +51,18 @@
          if (str == "BTN_B") return GamePad::BTN_B;
          if (str == "BTN_X") return GamePad::BTN_X;
          if (str == "BTN_Y") return GamePad::BTN_Y;
-         if (str == "BTN_RIGHT_TRIGGER")  return GamePad::BTN_RIGHT_TRIGGER;
-         if (str == "BTN_LEFT_TRIGGER")   return GamePad::BTN_LEFT_TRIGGER;
-         if (str == "BTN_RIGHT_SHOULDER") return GamePad::BTN_RIGHT_SHOULDER;
-         if (str == "BTN_LEFT_SHOULDER")  return GamePad::BTN_LEFT_SHOULDER;
+         if (str == "BTN_LEFT_SHOULDER")  return GamePad::BTN_LEFT_SHOULDER; // L1
+         if (str == "BTN_RIGHT_SHOULDER") return GamePad::BTN_RIGHT_SHOULDER;// R1
+         if (str == "BTN_LEFT_TRIGGER")   return GamePad::BTN_LEFT_TRIGGER;  // L2ボタン割り当て時
+         if (str == "BTN_RIGHT_TRIGGER")  return GamePad::BTN_RIGHT_TRIGGER; // R2ボタン割り当て時
+         if (str == "BTN_BACK")           return GamePad::BTN_BACK;          // セレクト / ビュー
+         if (str == "BTN_START")          return GamePad::BTN_START;         // スタート / メニュー
+         if (str == "BTN_LEFT_THUMB")     return GamePad::BTN_LEFT_THUMB;    // 左スティック押し込み
+         if (str == "BTN_RIGHT_THUMB")    return GamePad::BTN_RIGHT_THUMB;   // 右スティック押し込み
+         if (str == "BTN_DPAD_UP")        return GamePad::BTN_UP;       // 十字キー上
+         if (str == "BTN_DPAD_DOWN")      return GamePad::BTN_DOWN;     // 十字キー下
+         if (str == "BTN_DPAD_LEFT")      return GamePad::BTN_LEFT;     // 十字キー左
+         if (str == "BTN_DPAD_RIGHT")     return GamePad::BTN_RIGHT;    // 十字キー右
 
          // 未知のキーは一旦0を返す。必要に応じて追加してください
          return 0;
@@ -82,11 +92,14 @@
      // 既存のバインディングをクリア（再読み込みに対応するため）
      m_actionBindings.clear();
      m_axisBindings.clear();
+     m_actionNames.clear(); // 名前リストもクリア
+     m_axisNames.clear();
 
      // 1. Actions の読み込み
      if (doc.contains("Actions")) {
          for (const auto& actionJson : doc["Actions"]) {
              std::string name = actionJson["Name"].get<std::string>();
+
              for (const auto& bindJson : actionJson["Bindings"]) {
                  InputDeviceType device = StringToDeviceType(bindJson["Device"].get<std::string>());
                  unsigned int keyCode = StringToKeyCode(bindJson["Key"].get<std::string>());
@@ -100,6 +113,7 @@
      if (doc.contains("Axes")) {
          for (const auto& axisJson : doc["Axes"]) {
              std::string name = axisJson["Name"].get<std::string>();
+
              for (const auto& bindJson : axisJson["Bindings"]) {
                  InputDeviceType device = StringToDeviceType(bindJson["Device"].get<std::string>());
                  unsigned int keyCode = StringToKeyCode(bindJson["Key"].get<std::string>());
@@ -119,11 +133,21 @@
  // =======================================================
  void InputFacade::AddActionBinding(const std::string& actionName, InputDeviceType device, unsigned int keyCode) {
      uint32_t hash = CCL::Utils::HashString(actionName);
+
+     // エディタ等から動的に呼ばれた場合のために名前をチェック
+     m_actionNames.push_back(actionName);
+
      m_actionBindings[hash].push_back({ device, keyCode, 1.0f });
  }
 
  void InputFacade::AddAxisBinding(const std::string& axisName, InputDeviceType device, unsigned int keyCode, float scale) {
      uint32_t hash = CCL::Utils::HashString(axisName);
+
+     // エディタ等から動的に呼ばれた場合のために名前をチェック
+     if (std::find(m_axisNames.begin(), m_axisNames.end(), axisName) == m_axisNames.end()) {
+         m_axisNames.push_back(axisName);
+     }
+
      m_axisBindings[hash].push_back({ device, keyCode, scale });
  }
 
@@ -153,9 +177,24 @@
 
      for (const auto& bind : it->second) {
          switch (bind.deviceType) {
-         case InputDeviceType::Keyboard:       if (m_rawInput->GetKeyboard().IsTriggered(bind.keyCode)) return true; break;
-         case InputDeviceType::Mouse_Button:   if (m_rawInput->GetMouse().IsTriggered(bind.keyCode)) return true; break;
-         case InputDeviceType::GamePad_Button: if (m_rawInput->GetGamePad().IsTriggered(bind.keyCode)) return true; break;
+         case InputDeviceType::Keyboard:
+             // 蓄積バッファを参照
+             // Fixed用の蓄積バッファではなく、毎フレームの「生のトリガー」を取得する
+             if (m_rawInput->GetLogicKeyTriggered(bind.keyCode)) return true;
+             break;
+
+         case InputDeviceType::Mouse_Button:
+             // bind.keyCode が Mouse::BTN_LEFT などのビットフラグ(定数)である前提
+             // ★ 修正: 毎フレームのマウスボタン「押下瞬間」を取得する
+             if ((m_rawInput->GetLogicMouseButtonDown() & bind.keyCode) != 0) return true;
+             break;
+
+         case InputDeviceType::GamePad_Button:
+             // bind.keyCode が GamePad::BTN_A などのビットフラグである前提
+             // ★ 修正: 毎フレームのパッドボタン「押下瞬間」を取得する
+             if ((m_rawInput->GetLogicPadButtonDown() & bind.keyCode) != 0) return true;
+             break;
+
          default: break;
          }
      }
@@ -207,4 +246,11 @@
      }
 
      return std::clamp(finalValue, -1.0f, 1.0f);
+ }
+
+ void InputFacade::SetVibration(float leftMotor, float rightMotor, float duration) {
+     // アクティブなデバイスがGamePadの時のみ振動させる（マウスキーボード時は無視）
+     if (m_rawInput && GetActiveDeviceType() == ActiveDeviceType::GamePad) {
+         m_rawInput->GetGamePad().SetVibration(leftMotor, rightMotor, duration);
+     }
  }

@@ -9,7 +9,7 @@
 // ライト構造体の定義は ShaderShared.h に移動（C++ / HLSL 共有）
 // ここでは型エイリアスで後方互換を確保する
 // ==========================================================================
-#include "Engine/Graphics/Shader/ShaderShared.h"
+#include "Engine/Graphics/Shader/Shared/ShaderShared.h"
 
 // --- 後方互換エイリアス ---
 // 旧 struct DirectionalLight → GpuData::DirectionalLight

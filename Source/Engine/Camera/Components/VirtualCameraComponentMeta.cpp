@@ -1,118 +1,109 @@
-#include "Engine/Serialization/Registry/ComponentRegistry.h"
-#include "Engine/Serialization/Meta/ComponentMeta.h"
-#include "Engine/Serialization/Meta/ComponentMetaJson.h"
+/// @file  VirtualCameraComponentMeta.cpp
+/// @brief VirtualCamera関連コンポーネントのシリアライズ/インスペクタ定義。
+
 #include "Engine/Camera/Components/VirtualCameraComponents.h"
+#include "Engine/Serialization/Meta/ComponentDefine.h"
 #include <algorithm> // std::max用
 
-#include "Engine/Serialization/Registry/ComponentRegistry_Editor.h"
 #ifdef ENABLE_EDITOR
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #endif
 
 // ============================================================================
-// Virtual Camera Base
+// Virtual Camera Base (パターンA: 全自動)
 // ============================================================================
-template <> struct ComponentMeta<VirtualCamera> {
-    static constexpr bool        registered = true;
-    static constexpr const char* displayName = "Virtual Camera";
-
-    static const std::vector<FieldDescriptor>& Fields()
-    {
-        static const std::vector<FieldDescriptor> fields = {
-            META_FIELD_INT(VirtualCamera, priority, "priority", "Priority", -100, 100, "Camera Settings"),
-            META_FIELD_FLOAT(
-                VirtualCamera, blendTime, "blendTime", "Blend Time (s)", 0.1f, 0.0f, 10.0f, "Camera Settings"),
-            META_FIELD_FLOAT(VirtualCamera, fov, "fov", "Field of View (FOV)", 0.5f, 1.0f, 179.0f, "Lens"),
-            META_FIELD_FLOAT(VirtualCamera, nearClip, "nearClip", "Near Clip", 0.01f, 0.001f, 1000.0f, "Lens"),
-            META_FIELD_FLOAT(VirtualCamera, farClip, "farClip", "Far Clip", 10.0f, 1.0f, 100000.0f, "Lens") };
-        return fields;
-    }
-};
+COMPONENT_META_BEGIN(VirtualCamera, "VirtualCamera")
+CFIELD_INT_RANGED(priority, "Priority", -100, 100, "Camera Settings")
+CFIELD_FLOAT_RANGED(blendTime, "Blend Time (s)", 0.1f, 0.0f, 10.0f, "Camera Settings")
+CFIELD_FLOAT_RANGED(fov, "Field of View (FOV)", 0.5f, 1.0f, 179.0f, "Lens")
+CFIELD_FLOAT_RANGED(nearClip, "Near Clip", 0.01f, 0.001f, 1000.0f, "Lens")
+CFIELD_FLOAT_RANGED(farClip, "Far Clip", 10.0f, 1.0f, 100000.0f, "Lens")
+COMPONENT_META_END(VirtualCamera)
 
 // ============================================================================
-// Camera Body Follow (D&D対応)
+// Camera Body Follow (パターンB: カスタムGUI)
 // ============================================================================
 template <> struct ComponentMeta<CameraBodyFollow> {
-    static constexpr bool        registered = true;
-    static constexpr const char* displayName = "Camera Body (Follow)";
-    static constexpr bool        hasCustomGui = true; // カスタムGUIを有効化
+    CCL_META_USING_THIS(CameraBodyFollow)
+        static constexpr const char* displayName = "Camera Body (Follow)";
+    static constexpr bool        hasCustomGui = true;
+    static constexpr bool        isSerializable = true;
 
-#if ENABLE_EDITOR
-    static bool CustomGui(CameraBodyFollow& comp, unsigned long long /*entityID*/ = 0, void* /*world*/ = nullptr)
-    {
+#ifdef ENABLE_EDITOR
+    static bool CustomGui(CameraBodyFollow& comp, unsigned long long /*entityID*/ = 0, void* /*world*/ = nullptr) {
         bool changed = false;
 
         ImGui::SeparatorText("Target Link");
 
-        // Target IDの直接入力
-        int targetInt = static_cast<int>(comp.target);
+        // ★ EntityLink の .id へアクセスするよう修正
+        int targetInt = static_cast<int>(comp.target.id);
         if (ImGui::InputInt("Target ID", &targetInt)) {
-            comp.target = static_cast<unsigned long long>((std::max)(0, targetInt));
+            comp.target.id = static_cast<unsigned long long>((std::max)(0, targetInt));
             changed = true;
         }
 
-        //  ドラッグ＆ドロップの「受け皿」の魔法
         if (ImGui::BeginDragDropTarget()) {
-            // HierarchyWindowから投げられた "HIERARCHY_ENTITY" というタグのデータを受け取る
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_ENTITY_ID")) {
                 unsigned long long droppedID = *(const unsigned long long*)payload->Data;
-                comp.target = droppedID;
+                comp.target.id = droppedID; // ★ 修正
                 changed = true;
             }
             ImGui::EndDragDropTarget();
         }
 
-        // ユーザーへの視覚的ヒント
         ImGui::TextColored(ImVec4(0.5f, 0.8f, 1.0f, 1.0f), "[ Drop Entity Here from Hierarchy ]");
 
         ImGui::SeparatorText("Follow Settings");
         changed |= ImGui::DragFloat3("Follow Offset", &comp.offset.x, 0.1f);
-        changed |= ImGui::DragFloat("Damping (遅延)", &comp.damping, 0.1f, 0.0f, 100.0f);
+        changed |= ImGui::DragFloat("Damping", &comp.damping, 0.1f, 0.0f, 100.0f);
         changed |= ImGui::Checkbox("Lock Y Height", &comp.lockY);
 
         return changed;
     }
+#else
+    static bool CustomGui(CameraBodyFollow&, unsigned long long, void*) { return false; }
 #endif
 
-    static const std::vector<FieldDescriptor>& Fields()
-    {
+    static const std::vector<FieldDescriptor>& Fields() {
         static const std::vector<FieldDescriptor> fields = {
-            META_FIELD_INT(CameraBodyFollow, target, "target", "Target Entity ID", 0, 999999, "Follow Settings"),
-            META_FIELD_FLOAT3(CameraBodyFollow, offset, "offset", "Follow Offset", 0.1f, "Follow Settings"),
-            META_FIELD_FLOAT(CameraBodyFollow, damping, "damping", "Damping (遅延)", 0.1f, 0.0f, 100.0f, "Follow Settings"),
-            META_FIELD_BOOL(CameraBodyFollow, lockY, "lockY", "Lock Y Height", "Follow Settings") };
+            CFIELD(target, "Target Entity ID", "Follow Settings")
+            CFIELD(offset, "Follow Offset", "Follow Settings")
+            CFIELD_FLOAT_RANGED(damping, "Damping", 0.1f, 0.0f, 100.0f, "Follow Settings")
+            CFIELD(lockY, "Lock Y Height", "Follow Settings")
+        };
         return fields;
     }
 };
+REGISTER_COMPONENT(CameraBodyFollow, "CameraBodyFollow")
+REGISTER_COMPONENT_EDITOR_GUI(CameraBodyFollow)
 
 // ============================================================================
-// Camera Aim LookAt (D&D対応)
+// Camera Aim LookAt (パターンB: カスタムGUI)
 // ============================================================================
 template <> struct ComponentMeta<CameraAimLookAt> {
-    static constexpr bool        registered = true;
-    static constexpr const char* displayName = "Camera Aim (LookAt)";
-    static constexpr bool        hasCustomGui = true; // カスタムGUIを有効化
+    CCL_META_USING_THIS(CameraAimLookAt)
+        static constexpr const char* displayName = "Camera Aim (LookAt)";
+    static constexpr bool        hasCustomGui = true;
+    static constexpr bool        isSerializable = true;
 
-#if ENABLE_EDITOR
-    static bool CustomGui(CameraAimLookAt& comp, unsigned long long /*entityID*/ = 0, void* /*world*/ = nullptr)
-    {
+#ifdef ENABLE_EDITOR
+    static bool CustomGui(CameraAimLookAt& comp, unsigned long long /*entityID*/ = 0, void* /*world*/ = nullptr) {
         bool changed = false;
 
         ImGui::SeparatorText("Target Link");
 
-        // Target IDの直接入力
-        int targetInt = static_cast<int>(comp.target);
+        // ★ 修正
+        int targetInt = static_cast<int>(comp.target.id);
         if (ImGui::InputInt("Target ID", &targetInt)) {
-            comp.target = static_cast<unsigned long long>((std::max)(0, targetInt));
+            comp.target.id = static_cast<unsigned long long>((std::max)(0, targetInt));
             changed = true;
         }
 
-        //  ドラッグ＆ドロップの「受け皿」
         if (ImGui::BeginDragDropTarget()) {
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_ENTITY_ID")) {
                 unsigned long long droppedID = *(const unsigned long long*)payload->Data;
-                comp.target = droppedID;
+                comp.target.id = droppedID; // ★ 修正
                 changed = true;
             }
             ImGui::EndDragDropTarget();
@@ -121,67 +112,49 @@ template <> struct ComponentMeta<CameraAimLookAt> {
 
         ImGui::SeparatorText("Aim Settings");
         changed |= ImGui::DragFloat3("LookAt Offset", &comp.offset.x, 0.1f);
-        changed |= ImGui::DragFloat("Damping (遅延)", &comp.damping, 0.1f, 0.0f, 100.0f);
+        changed |= ImGui::DragFloat("Damping", &comp.damping, 0.1f, 0.0f, 100.0f);
 
         return changed;
     }
+#else
+    static bool CustomGui(CameraAimLookAt&, unsigned long long, void*) { return false; }
 #endif
 
-    static const std::vector<FieldDescriptor>& Fields()
-    {
+    static const std::vector<FieldDescriptor>& Fields() {
         static const std::vector<FieldDescriptor> fields = {
-            META_FIELD_INT(CameraAimLookAt, target, "target", "Target Entity ID", 0, 999999, "Aim Settings"),
-            META_FIELD_FLOAT3(CameraAimLookAt, offset, "offset", "LookAt Offset", 0.1f, "Aim Settings"),
-            META_FIELD_FLOAT(CameraAimLookAt, damping, "damping", "Damping (遅延)", 0.1f, 0.0f, 100.0f, "Aim Settings") };
-        return fields;
-    }
-};
-
-// ============================================================================
-// Camera Body Free
-// ============================================================================
-template <> struct ComponentMeta<CameraBodyFree> {
-    static constexpr bool        registered = true;
-    static constexpr const char* displayName = "Camera Body (Free)";
-
-    static const std::vector<FieldDescriptor>& Fields()
-    {
-        static const std::vector<FieldDescriptor> fields = {
-            META_FIELD_FLOAT(CameraBodyFree, moveSpeed, "moveSpeed", "Move Speed", 0.1f, 0.0f, 100.0f, "Settings"),
-            META_FIELD_FLOAT(CameraBodyFree, lookSpeed, "lookSpeed", "Look Speed", 0.01f, 0.0f, 10.0f, "Settings"),
-            META_FIELD_FLOAT(CameraBodyFree, currentPitch, "currentPitch", "Current Pitch", 0.1f, -89.0f, 89.0f, "State"),
-            META_FIELD_FLOAT(CameraBodyFree, currentYaw, "currentYaw", "Current Yaw", 0.1f, -360.0f, 360.0f, "State")
+            CFIELD(target, "Target Entity ID", "Aim Settings")
+            CFIELD(offset, "LookAt Offset", "Aim Settings")
+            CFIELD_FLOAT_RANGED(damping, "Damping", 0.1f, 0.0f, 100.0f, "Aim Settings")
         };
         return fields;
     }
 };
+REGISTER_COMPONENT(CameraAimLookAt, "CameraAimLookAt")
+REGISTER_COMPONENT_EDITOR_GUI(CameraAimLookAt)
 
 // ============================================================================
-// Camera Body TPS
+// Camera Body Free (パターンA: 全自動)
+// ============================================================================
+COMPONENT_META_BEGIN(CameraBodyFree, "CameraBodyFree")
+CFIELD_FLOAT_RANGED(moveSpeed, "Move Speed", 0.1f, 0.0f, 100.0f, "Settings")
+CFIELD_FLOAT_RANGED(lookSpeed, "Look Speed", 0.01f, 0.0f, 10.0f, "Settings")
+CFIELD_FLOAT_RANGED(currentPitch, "Current Pitch", 0.1f, -89.0f, 89.0f, "State")
+CFIELD_FLOAT_RANGED(currentYaw, "Current Yaw", 0.1f, -360.0f, 360.0f, "State")
+COMPONENT_META_END(CameraBodyFree)
+
+// ============================================================================
+// Camera Body TPS (パターンB: カスタムGUI)
 // ============================================================================
 template <> struct ComponentMeta<CameraBodyTPS> {
-    static constexpr bool        registered = true;
-    static constexpr const char* displayName = "Camera Body (TPS)";
+    CCL_META_USING_THIS(CameraBodyTPS)
+        static constexpr const char* displayName = "Camera Body (TPS)";
     static constexpr bool        hasCustomGui = true;
+    static constexpr bool        isSerializable = true;
 
-    static const std::vector<FieldDescriptor>& Fields()
-    {
-        static const std::vector<FieldDescriptor> fields = {
-            META_FIELD_FLOAT(CameraBodyTPS, distance, "distance", "Distance", 0.1f, 1.0f, 100.0f, "TPS Settings"),
-            META_FIELD_FLOAT(CameraBodyTPS, currentPitch, "currentPitch", "Pitch", 1.0f, -85.0f, 85.0f, "TPS Settings"),
-            META_FIELD_FLOAT(CameraBodyTPS, currentYaw, "currentYaw", "Yaw", 1.0f, -360.0f, 360.0f, "TPS Settings"),
-            META_FIELD_FLOAT(CameraBodyTPS, lookSpeedX, "lookSpeedX", "Look Speed X", 1.0f, 0.0f, 500.0f, "TPS Settings"),
-            META_FIELD_FLOAT(CameraBodyTPS, lookSpeedY, "lookSpeedY", "Look Speed Y", 1.0f, 0.0f, 500.0f, "TPS Settings"),
-            META_FIELD_FLOAT3(CameraBodyTPS, targetOffset, "targetOffset", "Target Offset", 0.1f, "TPS Settings")
-        };
-        return fields;
-    }
-
-#if ENABLE_EDITOR
-    // ドラッグ＆ドロップの実装
-    static bool CustomGui(CameraBodyTPS& comp, unsigned long long entityID = 0, void* world = nullptr)
-    {
+#ifdef ENABLE_EDITOR
+    static bool CustomGui(CameraBodyTPS& comp, unsigned long long /*entityID*/ = 0, void* /*world*/ = nullptr) {
         bool changed = false;
+
         for (const auto& fd : Fields()) {
             if (ComponentMetaImGui::DrawField(fd, &comp)) changed = true;
         }
@@ -189,13 +162,12 @@ template <> struct ComponentMeta<CameraBodyTPS> {
         ImGui::Separator();
         ImGui::Text("Follow Target Link");
 
-        std::string label = (comp.targetEntity == 0) ? "(None)" : "Linked Target ID: " + std::to_string(comp.targetEntity);
+        std::string label = (comp.targetEntity.id == 0) ? "(None)" : "Linked Target ID: " + std::to_string(comp.targetEntity.id);
         ImGui::Button(label.c_str(), ImVec2(-1, 0));
 
-        // プレイヤーEntityなどをドラッグしてここに落とす
         if (ImGui::BeginDragDropTarget()) {
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_ENTITY_ID")) {
-                comp.targetEntity = *(const unsigned long long*)payload->Data;
+                comp.targetEntity.id = *(const unsigned long long*)payload->Data; // ★ 修正
                 changed = true;
             }
             ImGui::EndDragDropTarget();
@@ -204,23 +176,22 @@ template <> struct ComponentMeta<CameraBodyTPS> {
 
         return changed;
     }
+#else
+    static bool CustomGui(CameraBodyTPS&, unsigned long long, void*) { return false; }
 #endif
 
+    static const std::vector<FieldDescriptor>& Fields() {
+        static const std::vector<FieldDescriptor> fields = {
+            CFIELD_FLOAT_RANGED(distance, "Distance", 0.1f, 1.0f, 100.0f, "TPS Settings")
+            CFIELD_FLOAT_RANGED(currentPitch, "Pitch", 1.0f, -85.0f, 85.0f, "TPS Settings")
+            CFIELD_FLOAT_RANGED(currentYaw, "Yaw", 1.0f, -360.0f, 360.0f, "TPS Settings")
+            CFIELD_FLOAT_RANGED(lookSpeedX, "Look Speed X", 1.0f, 0.0f, 500.0f, "TPS Settings")
+            CFIELD_FLOAT_RANGED(lookSpeedY, "Look Speed Y", 1.0f, 0.0f, 500.0f, "TPS Settings")
+            CFIELD(targetOffset, "Target Offset", "TPS Settings")
+            CFIELD(targetEntity, "Target Entity ID", "TPS Settings") // ★ CFIELDでEntityLink型と自動認識される
+        };
+        return fields;
+    }
 };
-
-
-
-// ============================================================================
-// 究極の自動化：これだけでJSONとImGuiの両方に登録される
-// ============================================================================
-REGISTER_COMPONENT(VirtualCamera, "VirtualCamera")
-REGISTER_COMPONENT(CameraBodyFollow, "CameraBodyFollow")
-REGISTER_COMPONENT(CameraAimLookAt, "CameraAimLookAt")
-REGISTER_COMPONENT(CameraBodyFree, "CameraBodyFree")
 REGISTER_COMPONENT(CameraBodyTPS, "CameraBodyTPS")
-
-REGISTER_COMPONENT_EDITOR_GUI(VirtualCamera)
-REGISTER_COMPONENT_EDITOR_GUI(CameraBodyFollow)
-REGISTER_COMPONENT_EDITOR_GUI(CameraAimLookAt)
-REGISTER_COMPONENT_EDITOR_GUI(CameraBodyFree)
 REGISTER_COMPONENT_EDITOR_GUI(CameraBodyTPS)

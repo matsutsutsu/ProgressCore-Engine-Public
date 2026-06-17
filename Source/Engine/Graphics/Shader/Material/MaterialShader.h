@@ -3,7 +3,7 @@
 #include <string>
 
 // すべてのモデル描画用シェーダーを統合する汎用クラス
-class MaterialShader : public Shader {
+class MaterialShader : public IMaterialShader {
 public:
     // CSOファイルのパスを受け取るコンストラクタ
 	// ホットリロード対応でhlslファイルのパスも受け取るように拡張

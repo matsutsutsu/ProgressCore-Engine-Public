@@ -1,6 +1,6 @@
 // ShadowMap.cpp
 #include "ShadowMap.h"
-#include "Engine/Graphics/Shader/ShaderShared.h"
+#include "Engine/Graphics/Shader/Shared/ShaderShared.h"
 #include "Engine/Core/Math/Misc.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 #include "Engine/Graphics/RHI/Graphics.h"

@@ -1,4 +1,4 @@
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
 #include <imgui_impl_win32.h>
 #include <imgui_impl_dx11.h>
 #include <ImGuizmo.h>
@@ -34,22 +34,86 @@ void ImGuiRenderer::Initialize(HWND hWnd, ID3D11Device* device, ID3D11DeviceCont
     //io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\meiryo.ttc", 16.0f, &config, glyphRanges);
 
 	// 2つ目: エディタ専用の等幅フォント (Ricty等) を読み込んで、ポインタを保持する
-    s_editorFont =
-        io.Fonts->AddFontFromFileTTF("Assets/Fonts/ArialUni.ttf", 20.0f, &config, glyphRanges);	
+    //s_editorFont =  io.Fonts->AddFontFromFileTTF("Assets/Fonts/ArialUni.ttf", 20.0f, &config, glyphRanges);	
 
 
 	io.IniFilename = "Build/Logs/imgui.ini"; // 設定ファイルの名前を変更 (同じフォルダに保存される)
 	io.LogFilename = "Build/Logs/imgui_log.txt"; // ログファイルの名前を変更 (同じフォルダに保存される)
 
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
-	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
-	//io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
+
+	// =========================================================================
+	// [1] コア機能の有効化 (Core Features)
+	// =========================================================================
+
+	// 【ナビゲーション】
+	// キーボードによるUI操作（Tabキーでのフォーカス移動、Enterでの決定など）を有効化。
+	// エディタ作業の生産性（マウスとキーボードの往復を減らす）のために通常は有効化します。
+	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; 
+
+	// ゲームパッド（XInput等）でのUI操作を有効化。
+	// エディタではなく、ゲーム本編のデバッグUIやプレイヤー向けUIを構築する際に使用します。
+	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+
+	// 【ドッキング】
+	// ウィンドウ同士を結合（Docking）したり、画面分割するための機能を有効化。
+	// AAAエンジンのような複雑なレイアウト（Scene, Game, Inspector等の配置）に必須です。
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+	// 【マルチビューポート】
+	// ImGuiのウィンドウを、メインのDirectXウィンドウ（OSのウィンドウ）の外へドラッグし、
+	// 独立した別のOSウィンドウとして切り離せるようにします。デュアルモニター開発環境で必須です。
+	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+
+
+	// =========================================================================
+	// [2] マルチビューポートの詳細挙動 (Viewport Behaviors)
+	// ※ io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; が有効な場合のみ機能
+	// =========================================================================
+
+	// 外に切り離した独立ウィンドウ同士が重なった際、自動的に1つのウィンドウに結合（マージ）させない。
+	// 意図せずウィンドウがくっつく煩わしさを防ぎたい場合に有効化します。
 	//io.ConfigViewportsNoAutoMerge = true;
+
+	// 外に切り離した独立ウィンドウを、Windowsのタスクバーに個別のアイコンとして表示しない。
+	// ツールバーがUIウィンドウで埋め尽くされるのを防ぐため、通常は有効化（true）を推奨します。
 	//io.ConfigViewportsNoTaskBarIcon = true;
+
+	// 独立ウィンドウをメインウィンドウの「子」として扱わない。
+	// 有効にすると、メインウィンドウを最小化しても独立したUIウィンドウは画面に残るようになります。
 	//io.ConfigViewportsNoDefaultParent = true;
+
+
+	// =========================================================================
+	// [3] ドッキングの詳細挙動と操作性 (Docking & Interaction)
+	// =========================================================================
+
+	// 1つのウィンドウ単体で存在している場合でも、常に上部にタブバー（見出し）を表示する。
+	// Webブラウザのような視覚的ルールに統一し、どこを掴めばドッキングできるかを明示します。
 	//io.ConfigDockingAlwaysTabBar = true;
-	//io.ConfigDockingTransparentPayload = true;
+
+	// ウィンドウをドラッグして別の場所にドッキングさせようとしている最中、
+	// 掴んでいるウィンドウ（Payload）を半透明にして、ドロップ先のUIを隠さないようにします。
+	io.ConfigDockingTransparentPayload = true;
+
+	// ImGui::DragFloat などの数値スライダーにおいて、1クリックするだけで即座に直接テキスト入力モードに移行する。
+	// （デフォルトは「Ctrl+クリック」または「ダブルクリック」が必要）。
+	// レベルデザイナー等の数値入力の手間を半減させる、強力な作業効率化フラグです。
+	//io.ConfigDragClickToInputText = true;
+
+
+	// =========================================================================
+	// [4] スタイルと視覚的調整 (Style & Visuals)
+	// =========================================================================
+	ImGuiStyle& style = ImGui::GetStyle();
+
+	// ウィンドウ左上にデフォルトで存在する「▼（折りたたみ/Collapse）」ボタンを完全に非表示にする。
+	// 誤操作によってウィンドウがタイトルバーだけになり、エディタのレイアウトが崩れたように見える事故を防ぎます。
+	style.WindowMenuButtonPosition = ImGuiDir_None;
+
+	// ウィンドウをドッキングした際の、境界線（区切り・セパレータ）の当たり判定と描画の太さを設定。
+	// ダークテーマ適用時など、境界線が見づらくサイズ調整のドラッグがしにくい問題を解消します。
+	style.SeparatorTextBorderSize = 2.0f; // ※必要に応じて値を調整
+
 #if 0
 	io.ConfigFlags |= ImGuiConfigFlags_DpiEnableScaleFonts;     // FIXME-DPI: THIS CURRENTLY DOESN'T WORK AS EXPECTED. DON'T USE IN USER APP!
 	io.ConfigFlags |= ImGuiConfigFlags_DpiEnableScaleViewports; // FIXME-DPI
@@ -64,9 +128,13 @@ void ImGuiRenderer::Initialize(HWND hWnd, ID3D11Device* device, ID3D11DeviceCont
 	//ImGuiThemes::ApplyUnityDark();
 	//ImGuiThemes::ApplyVisualStudioDark();
 
+	//ImGuiThemes::ApplyAAATheme();
+	//ImGuiThemes::ApplyCatppuccinMocha();
+	//ImGuiThemes::ApplyTokyoNight();
+	//ImGuiThemes::ApplyDracula();
+	//ImGuiThemes::ApplyNord();
 
 	// When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
-	ImGuiStyle& style = ImGui::GetStyle();
 	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 	{
 		style.WindowRounding = 0.0f;

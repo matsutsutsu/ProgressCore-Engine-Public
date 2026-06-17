@@ -10,6 +10,7 @@
                     "name": "ExampleStage"
                 },
                 "Transform": {
+                    "Parent": 2,
                     "isStatic": false,
                     "position": [
                         0.0,
@@ -29,8 +30,10 @@
                     ]
                 }
             },
-            "id": 4294967299
+            "lid": 1
         }
     ],
-    "name": "ExampleStage"
+    "magic": 1397506883,
+    "name": "ExampleStage",
+    "version": 1
 }

@@ -24,17 +24,18 @@ class SceneInitializer {
 
 	static void SpawnShaderTest(CCL::ECS::Core::World& world, ID3D11Device* device);
 
-    // 球体カーコントローラーのテスト環境
-    static void SpawnPlayerCarTest(CCL::ECS::Core::World& world, ID3D11Device* device);
 
-    // ボスとドローン群の生成テスト環境
-    static void SpawnBossAndDronesTest(CCL::ECS::Core::World& world, ID3D11Device* device);
-
+    // 物理判定付きの大量のエネミーがプレイヤーを追跡するスウォームテスト
+    static void SpawnEnemySwarmTest(CCL::ECS::Core::World& world, ID3D11Device* device, int count);
 
     // =======================================================
     //  指定した数のモデルをグリッド状に並べるテスト
     // =======================================================
     static void SpawnModelGridTest(CCL::ECS::Core::World& world, ID3D11Device* device, int count);
+
+
+    static void SpawnDungeonTest(CCL::ECS::Core::World& world, ID3D11Device* device,
+        uint32_t seed = 12345, int floorIndex = 1);
 
 
     // 「ECS限界テスト（ギャラクシー・スウォーム）」環境

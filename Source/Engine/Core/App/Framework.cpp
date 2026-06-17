@@ -10,7 +10,7 @@
 #include "Engine/Scene/SceneManager.h"
 #include "Game/Scenes/BaseScene.h"
 
-// ★ 必要なヘッダをインクルード
+// APIファイルをインクルード
 #include "Engine/Audio/FmodIntegration/FmodAudioManager.h"
 #include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"
 #include "Engine/Platform/Input/InputFacade.h"
@@ -24,7 +24,7 @@
 #include "EngineServices.h"
 
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
 #include <imgui.h>
 #include "Editor/Core/EditorWindowManager.h"
 #include "Editor/Core/EditorContext.h"
@@ -68,7 +68,7 @@ Framework::Framework(HWND hWnd)
 
 	// グラフィックス初期化
 	Graphics::Instance().Initialize(hWnd);
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
 	// IMGUI初期化
 	ImGuiRenderer::Initialize(hWnd, Graphics::Instance().GetDevice(), Graphics::Instance().GetDeviceContext());
 #endif
@@ -103,6 +103,8 @@ Framework::Framework(HWND hWnd)
 	// エディタの初期化をフレームワーク層で行う
 	m_editorWindowManager = std::make_unique<EditorWindowManager>();
 	m_editorWindowManager->Initialize();
+	// 2. 状態の復元 
+	m_editorWindowManager->LoadLayout("Build/User/WindowLayout.json");
 
 	// ConsoleWindow に Sink を渡す
 	if (auto* console = m_editorWindowManager->GetWindow<ConsoleWindow>())
@@ -119,13 +121,15 @@ Framework::~Framework()
 
 
 #ifdef ENABLE_EDITOR
+	// 終了時に必ず保存
+	m_editorWindowManager->SaveLayout("Build/User/WindowLayout.json");
 	// エディタの解放を明示的に行う（スマートポインタなので自動解放されるが順序の担保として）
 	m_editorWindowManager.reset();
 #endif
 
 	// シーン終了化
 	SceneManager::Instance().Clear();
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
 	// IMGUI終了化
 	ImGuiRenderer::Finalize();
 #endif
@@ -184,7 +188,7 @@ void Framework::Update(float elapsedTime)
     ZoneScopedN("Framework::Update");
 
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
 	{
  
 		ZoneScopedN("Framework::ImGuiRenderer::NewFrame");
@@ -194,16 +198,6 @@ void Framework::Update(float elapsedTime)
 		ImGuiRenderer::NewFrame();
 	}
 #endif
-
-	{
- 
-		ZoneScopedN("Framework::Input::Update");
-
-
-		// インプット更新処理
-		Input::Instance().Update();
-
-	}
 
 	{
  
@@ -244,7 +238,6 @@ void Framework::Update(float elapsedTime)
 // 描画処理
 void Framework::Render(float elapsedTime)
 {
- 
     // 描画コマンド発行全体を計測
     ZoneScopedN("Framework::Render");
 
@@ -280,13 +273,19 @@ void Framework::Render(float elapsedTime)
 
 
 
-#if ENABLE_EDITOR
-	// =========================================================
-	// 2. エディタ(UI)の描画（実際の画面＝バックバッファへ）
-	// =========================================================
-	// ★ false を渡して行き先をモニターに出力する実際の画面に戻す
-	Graphics::Instance().Clear(0.1f, 0.1f, 0.1f, 1.0f, false);
-	Graphics::Instance().SetRenderTargets(false);
+#ifdef ENABLE_EDITOR
+
+	{
+		ZoneScopedN("Framework::Clear SetRenderTargets");
+
+		// =========================================================
+		// 2. エディタ(UI)の描画（実際の画面＝バックバッファへ）
+		// =========================================================
+		// ★ false を渡して行き先をモニターに出力する実際の画面に戻す
+		Graphics::Instance().Clear(0.1f, 0.1f, 0.1f, 1.0f, false);
+		Graphics::Instance().SetRenderTargets(false);
+
+	}
 
 	// ImGuiの描画を計測
 	{
@@ -408,7 +407,7 @@ int Framework::Run()
 			// メモリリーク検出を有効化 (すでにあるはず)
 			_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 
-			// ★追加: この番号のメモリ確保の瞬間にブレークする
+			// この番号のメモリ確保の瞬間にブレークする
 			// ダンプに出ている番号（例: 2575）を指定します
 			// ※実行するたびに番号が変わる場合は、この方法は使えません
 
@@ -431,7 +430,7 @@ int Framework::Run()
 			m_debugTimer += frameTime;
 			if (m_debugTimer >= 1.0f)
 			{
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
 				// ウィンドウタイトルにFPSとFixedUpdate回数を表示
 				std::string title = "FPS: " + std::to_string(ImGui::GetIO().Framerate) +
 					" | Fixed Updates: " + std::to_string(m_fixedUpdateCounter);
@@ -442,6 +441,15 @@ int Framework::Run()
 				m_fixedUpdateCounter = 0;
 				m_debugTimer = 0.0f;
 			}
+
+			// =========================================================
+			//  ループ(FixedUpdate)に入る前に、必ず最新のハードウェア入力を取得する
+			// =========================================================
+			{
+				ZoneScopedN("Framework::Input::Update");
+				Input::Instance().Update(frameTime);
+			}
+
 
 			// ループ回数制限用のカウンタ
 			int updateCount = 0;
@@ -493,7 +501,7 @@ int Framework::Run()
 // メッセージハンドラ
 LRESULT CALLBACK Framework::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
 	if (ImGuiRenderer::HandleMessage(hWnd, msg, wParam, lParam))
 		return true;
 #endif

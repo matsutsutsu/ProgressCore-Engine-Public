@@ -36,9 +36,10 @@ void TransparentPass::Execute(const RenderFrameContext& ctx)
 
     for (const TransparencyCommand& info : allTrans) {
         Shader* shader = _services->shaders->GetShader(info.shaderHash, _services->device);
-        if (!shader) continue;
+        IMaterialShader* matShader = shader ? shader->AsMaterial() : nullptr;
 
-        shader->Begin(dc, *_services, ctx);
+        if (!matShader) continue;
+        matShader->Begin(dc, *_services, ctx);
 
         const Model::Mesh& mesh = *info.mesh;
 
@@ -68,7 +69,7 @@ void TransparentPass::Execute(const RenderFrameContext& ctx)
         if (isSkinned) renderer->UpdateSkeletonConstants(dc, mesh);
 
         // override を明示的に渡す（mesh.material への書き込みゼロ）
-        shader->Update(dc, mesh, overrideMat);
+        matShader->Update(dc, mesh, overrideMat);
 
         UINT stride = sizeof(ModelResource::Vertex), offset = 0;
         dc->IASetVertexBuffers(0, 1, mesh.data->vertexBuffer.GetAddressOf(), &stride, &offset);
@@ -78,6 +79,6 @@ void TransparentPass::Execute(const RenderFrameContext& ctx)
 
         // ★ const_cast による restore 行 完全削除
         _instanceBuffer.Unbind(dc, SLOT_SRV_INSTANCE);
-        shader->End(dc, *_services);
+        matShader->End(dc, *_services);
     }
 }

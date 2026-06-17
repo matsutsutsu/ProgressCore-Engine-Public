@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
 #include <ImGuizmo.h>
 #endif
 
@@ -43,7 +43,7 @@ struct EditorContext {
      bool  isAnimEditMode = false; // これらもポインタではなく実体値にするのが安全です
      float animEditTime   = 0.0f;
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
      // ★ ImGuizmo用の状態管理
      ImGuizmo::OPERATION currentGizmoOperation = ImGuizmo::TRANSLATE;
      ImGuizmo::MODE      currentGizmoMode = ImGuizmo::LOCAL;

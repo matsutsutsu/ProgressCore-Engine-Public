@@ -2,7 +2,7 @@
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
-#include "Engine/Graphics/Shader/ParticleShared.h"
+#include "Engine/Graphics/Shader/Shared/ParticleShared.h"
 #include "Engine/Graphics/Shader/Material/ParticleComputeShader.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
@@ -106,8 +106,9 @@ void GPUParticleUpdateSystem::Update(float dt)
         const TransformComponent& transform,
         const TimeStateComponent& rawDt)
         {
-            //if (auto* pooled = _world->GetComponent<PooledParticleComponent>(id))
-                //if (pooled->isSleeping) return;
+            // プール休眠中のエミッタはGPU更新しない（Dispatchを丸ごと省く）。
+            if (auto* pooled = _world->GetComponent<PooledParticleComponent>(id))
+                if (pooled->isSleeping) return;
 
             if (!particle.isInitialized)
                 RebuildParticleBuffer(particle);

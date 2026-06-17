@@ -1,146 +1,68 @@
-// ============================================================================
-// JoltPhysicsComponentMeta.cpp
-// ============================================================================
+/// @file  JoltPhysicsComponentMeta.cpp
+/// @brief Jolt Physics 関連コンポーネント (Collider, Rigidbody) のメタ定義。
+///        すべて標準的なデータ構造のため、パターンA (全自動マクロ) でシリアライズとGUIを構築する。
 
 #include "Engine/Physics/Components/Collision/JoltBoxColliderComponent.h"
 #include "Engine/Physics/Components/Collision/JoltSphereColliderComponent.h"
 #include "Engine/Physics/Components/Collision/JoltCapsuleColliderComponent.h" 
 #include "Engine/Physics/Components/Collision/JoltMeshColliderComponent.h"
-#include "Engine/Physics/Components/RigidBody/JoltRigidbodyComponent.h"
-#include "Engine/Physics/Components/Character/JoltCharacterConfigComponent.h" 
+#include "Engine/Physics/Components/RigidBody/JoltRigidbodyComponent.h" 
 
-#include "Engine/Serialization/Registry/ComponentRegistry.h"
-#include "Engine/Serialization/Meta/ComponentMeta.h"
-#include "Engine/Serialization/Meta/ComponentMetaJson.h"
+// マクロDSLの必須ヘッダのみをインクルード (レジストリやImGuiの直includeは不要)
+#include "Engine/Serialization/Meta/ComponentDefine.h"
 
-#include "Editor/Inspector/ComponentGuiRegistry.h"
-#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
+// ============================================================================
+// Jolt Box Collider
+// ============================================================================
+COMPONENT_META_BEGIN(JoltBoxColliderComponent, "Jolt Box Collider")
+CFIELD_FLOAT3_FAST(halfExtent, "Half Extent", 0.1f, "Box Collider")
+CFIELD_FLOAT3_FAST(localOffset, "Local Offset (位置ズレ)", 0.1f, "Box Collider")
+CFIELD_FLOAT3_FAST(localRotationEuler, "Local Rotation (角度ズレ)", 1.0f, "Box Collider")
+COMPONENT_META_END(JoltBoxColliderComponent)
 
+// ============================================================================
+// Jolt Sphere Collider
+// ============================================================================
+COMPONENT_META_BEGIN(JoltSphereColliderComponent, "Jolt Sphere Collider")
+CFIELD_FLOAT_RANGED(radius, "Radius", 0.1f, 0.01f, 100.0f, "Sphere Collider")
+CFIELD_FLOAT3_FAST(localOffset, "Local Offset (位置ズレ)", 0.1f, "Sphere Collider")
+COMPONENT_META_END(JoltSphereColliderComponent)
 
+// ============================================================================
+// Jolt Capsule Collider
+// ============================================================================
+COMPONENT_META_BEGIN(JoltCapsuleColliderComponent, "Jolt Capsule Collider")
+CFIELD_FLOAT_RANGED(halfHeight, "Half Height", 0.1f, 0.01f, 100.0f, "Capsule Collider")
+CFIELD_FLOAT_RANGED(radius, "Radius", 0.1f, 0.01f, 100.0f, "Capsule Collider")
+CFIELD_FLOAT3_FAST(localOffset, "Local Offset (位置ズレ)", 0.1f, "Capsule Collider")
+CFIELD_FLOAT3_FAST(localRotationEuler, "Local Rotation (角度ズレ)", 1.0f, "Capsule Collider")
+COMPONENT_META_END(JoltCapsuleColliderComponent)
+
+// ============================================================================
+// Jolt Mesh Collider
+// ============================================================================
+COMPONENT_META_BEGIN(JoltMeshColliderComponent, "Jolt Mesh Collider")
+CFIELD(isEnabled, "Enable Mesh Collider", "Mesh Collider")
+COMPONENT_META_END(JoltMeshColliderComponent)
+
+// ============================================================================
+// Jolt Rigidbody
+// ============================================================================
 namespace {
+    // 列挙型用 (CFIELD_ENUM_U8) の文字列配列は、ODR違反を防ぐため無名名前空間に配置
     const char* const MotionTypeNames[] = { "Static", "Kinematic", "Dynamic" };
-    const char* const ObjectLayerNames[] = { "NON_MOVING", "MOVING" };
+    const char* const ObjectLayerNames[] = { "NON_MOVING", "MOVING","ENEMY","BULLET"};
 } // namespace
 
-// ============================================================================
-// Box / Sphere / Capsule Collider
-// ============================================================================
-template <> struct ComponentMeta<JoltBoxColliderComponent> {
-    static constexpr bool                      registered = true;
-    static constexpr const char* displayName = "Jolt Box Collider";
-    static const std::vector<FieldDescriptor>& Fields()
-    {
-        static const std::vector<FieldDescriptor> fields = {
-            META_FIELD_FLOAT3(JoltBoxColliderComponent, halfExtent, "halfExtent", "Half Extent", 0.1f, "Box Collider"),
-            META_FIELD_FLOAT3(JoltBoxColliderComponent, localOffset, "localOffset", "Local Offset (位置ズレ)", 0.1f, "Box Collider"),
-            META_FIELD_FLOAT3(JoltBoxColliderComponent, localRotationEuler, "localRotationEuler", "Local Rotation (角度ズレ)", 1.0f, "Box Collider")
-        };
-        return fields;
-    }
-};
+COMPONENT_META_BEGIN(JoltRigidbodyComponent, "Jolt Rigidbody")
+CFIELD_ENUM_U8(motionType, "Motion Type", MotionTypeNames, 3, "Physics")
+CFIELD_ENUM_U8(objectLayer, "Object Layer", ObjectLayerNames, 4, "Physics")
 
-template <> struct ComponentMeta<JoltSphereColliderComponent> {
-    static constexpr bool                      registered = true;
-    static constexpr const char* displayName = "Jolt Sphere Collider";
-    static const std::vector<FieldDescriptor>& Fields()
-    {
-        static const std::vector<FieldDescriptor> fields = {
-            META_FIELD_FLOAT(JoltSphereColliderComponent, radius, "radius", "Radius", 0.1f, 0.01f, 100.0f, "Sphere Collider"),
-            META_FIELD_FLOAT3(JoltSphereColliderComponent, localOffset, "localOffset", "Local Offset (位置ズレ)", 0.1f, "Sphere Collider")
-        };
-        return fields;
-    }
-};
+CFIELD_FLOAT_RANGED(restitution, "Restitution (反発)", 0.05f, 0.0f, 1.0f, "Material")
+CFIELD_FLOAT_RANGED(friction, "Friction (摩擦)", 0.05f, 0.0f, 1.0f, "Material")
 
-template <> struct ComponentMeta<JoltCapsuleColliderComponent> {
-    static constexpr bool                      registered = true;
-    static constexpr const char* displayName = "Jolt Capsule Collider";
-    static const std::vector<FieldDescriptor>& Fields()
-    {
-        static const std::vector<FieldDescriptor> fields = {
-            META_FIELD_FLOAT(JoltCapsuleColliderComponent, halfHeight, "halfHeight", "Half Height", 0.1f, 0.01f, 100.0f, "Capsule Collider"),
-            META_FIELD_FLOAT(JoltCapsuleColliderComponent, radius, "radius", "Radius", 0.1f, 0.01f, 100.0f, "Capsule Collider"),
-            META_FIELD_FLOAT3(JoltCapsuleColliderComponent, localOffset, "localOffset", "Local Offset (位置ズレ)", 0.1f, "Capsule Collider"),
-            META_FIELD_FLOAT3(JoltCapsuleColliderComponent, localRotationEuler, "localRotationEuler", "Local Rotation (角度ズレ)", 1.0f, "Capsule Collider")
-        };
-        return fields;
-    }
-};
-
-template <> struct ComponentMeta<JoltMeshColliderComponent> {
-    static constexpr bool                      registered = true;
-    static constexpr const char* displayName = "Jolt Mesh Collider";
-    static const std::vector<FieldDescriptor>& Fields()
-    {
-        static const std::vector<FieldDescriptor> fields = {
-            // インスペクタに「メッシュコライダー有効」というチェックボックスだけを出す
-            META_FIELD_BOOL(JoltMeshColliderComponent, isEnabled, "isEnabled", "Enable Mesh Collider", "Mesh Collider")
-        };
-        return fields;
-    }
-};
-
-// ============================================================================
-// Rigidbody (拡張パラメータを追加)
-// ============================================================================
-template <> struct ComponentMeta<JoltRigidbodyComponent> {
-    static constexpr bool                      registered = true;
-    static constexpr const char* displayName = "Jolt Rigidbody";
-    static const std::vector<FieldDescriptor>& Fields()
-    {
-        static const std::vector<FieldDescriptor> fields = {
-            META_FIELD_ENUM_U8(JoltRigidbodyComponent,
-                motionType, "motionType", "Motion Type", MotionTypeNames, 3, "Physics"),
-            META_FIELD_ENUM_U8(JoltRigidbodyComponent,
-                objectLayer, "objectLayer", "Object Layer", ObjectLayerNames, 2, "Physics"),
-            META_FIELD_FLOAT(JoltRigidbodyComponent,
-                restitution, "restitution", "Restitution (反発)", 0.05f, 0.0f, 1.0f, "Material"),
-            META_FIELD_FLOAT(JoltRigidbodyComponent,
-                friction, "friction", "Friction (摩擦)", 0.05f, 0.0f, 1.0f, "Material"),
-
-            META_FIELD_FLOAT3(JoltRigidbodyComponent,
-                initialVelocity, "initialVelocity", "Initial Velocity", 0.5f, "Physics Extended"),
-            META_FIELD_FLOAT(JoltRigidbodyComponent,
-                gravityFactor, "gravityFactor", "Gravity Factor", 0.1f, -10.0f, 10.0f, "Physics Extended"),
-            META_FIELD_BOOL(JoltRigidbodyComponent,
-                isSensor, "isSensor", "Is Sensor (すり抜け)", "Physics Extended"),
-            META_FIELD_BOOL(JoltRigidbodyComponent,
-                useCCD, "useCCD", "Use CCD (壁抜け防止)", "Physics Extended")
-        };
-        return fields;
-    }
-};
-
-// ============================================================================
-// Character Config
-// ============================================================================
-template <> struct ComponentMeta<JoltCharacterConfigComponent> {
-    static constexpr bool                      registered = true;
-    static constexpr const char* displayName = "Jolt Character Config";
-    static const std::vector<FieldDescriptor>& Fields()
-    {
-        static const std::vector<FieldDescriptor> fields = {
-            META_FIELD_FLOAT(JoltCharacterConfigComponent,
-                maxSlopeAngle, "maxSlopeAngle", "Max Slope Angle", 1.0f, 0.0f, 89.0f, "Character Settings"),
-            META_FIELD_FLOAT(JoltCharacterConfigComponent,
-                maxStepHeight, "maxStepHeight", "Max Step Height", 0.1f, 0.0f, 5.0f, "Character Settings"),
-            META_FIELD_FLOAT(JoltCharacterConfigComponent,
-                walkSpeed, "walkSpeed", "Walk Speed", 0.5f, 0.0f, 100.0f, "Character Settings"),
-            META_FIELD_FLOAT(JoltCharacterConfigComponent,
-                jumpSpeed, "jumpSpeed", "Jump Speed", 0.5f, 0.0f, 100.0f, "Character Settings"),
-            META_FIELD_FLOAT(JoltCharacterConfigComponent,
-                characterMass, "characterMass", "Character Mass", 1.0f, 0.1f, 1000.0f, "Character Settings")
-        };
-        return fields;
-    }
-};
-
-// ============================================================================
-// 究極の自動化
-// ============================================================================
-REGISTER_COMPONENT(JoltBoxColliderComponent, "JoltBoxCollider")
-REGISTER_COMPONENT(JoltSphereColliderComponent, "JoltSphereCollider")
-REGISTER_COMPONENT(JoltCapsuleColliderComponent, "JoltCapsuleCollider")
-REGISTER_COMPONENT(JoltMeshColliderComponent, "JoltMeshCollider")
-REGISTER_COMPONENT(JoltRigidbodyComponent, "JoltRigidbody")
-REGISTER_COMPONENT(JoltCharacterConfigComponent, "JoltCharacterConfig")
+CFIELD_FLOAT3_FAST(initialVelocity, "Initial Velocity", 0.5f, "Physics Extended")
+CFIELD_FLOAT_RANGED(gravityFactor, "Gravity Factor", 0.1f, -10.0f, 10.0f, "Physics Extended")
+CFIELD(isSensor, "Is Sensor (すり抜け)", "Physics Extended")
+CFIELD(useCCD, "Use CCD (壁抜け防止)", "Physics Extended")
+COMPONENT_META_END(JoltRigidbodyComponent)

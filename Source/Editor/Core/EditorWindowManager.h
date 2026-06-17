@@ -31,6 +31,10 @@ public:
         return nullptr;
     }
 
+    // Windowの可視状態をデータ化
+    void SaveLayout(const std::string& path);
+    void LoadLayout(const std::string& path);
+
 private:
 
     void DrawMainMenuBar(EditorContext& context);

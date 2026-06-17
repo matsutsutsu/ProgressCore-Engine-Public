@@ -6,7 +6,7 @@
 #include <string>
 #include <map>
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
 #include <imgui.h>
 #endif
 

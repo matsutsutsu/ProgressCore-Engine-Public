@@ -4,7 +4,7 @@
 #include "UIElement.h"
 #include <iostream>
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
 #include <imgui.h>
 #endif
 
@@ -128,7 +128,7 @@ void UIManager::Render()
 void UIManager::DrawDebugGUI()
 {
 
-#if ENABLE_EDITOR
+#ifdef ENABLE_EDITOR
     if (ImGui::Begin("UI Manager Debug")) {
         ImGui::Text("Global Scale: %.2f", GetGlobalScale());
         ImGui::Text("Root Elements: %d", (int)m_rootElements.size());
