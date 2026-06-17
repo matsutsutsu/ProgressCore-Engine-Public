@@ -1725,6 +1725,9 @@
     <ClInclude Include="Source\Game\Logics\Wand\Bullet\BulletVisualSystem.h">
       <Filter>Source\Game\Logics\Wand\Bullet</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\LevelGen\DungeonLayout.h">
+      <Filter>Source\Game\Logics\LevelGen</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2581,6 +2584,9 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Wand\Bullet\BulletVisualSystem.cpp">
       <Filter>Source\Game\Logics\Wand\Bullet</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\LevelGen\DungeonLayout.cpp">
+      <Filter>Source\Game\Logics\LevelGen</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

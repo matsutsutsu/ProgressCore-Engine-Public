@@ -23,10 +23,6 @@
 #include "Game/Logics/LevelGen/DungeonGrid.h"
 #include "Engine/Serialization/Factory/Prefab.h"
 
-// プレイヤー＋フォローカメラ生成用
-//   ※ カメラ連携コンポーネントのパスはプロジェクト構成に合わせて調整
-//#include "Game/Logics/Camera/CameraFollowComponents.h"  // CameraBodyFollow / CameraAimLookAt
-
 #include <memory>
 #include <vector>
 
@@ -52,6 +48,7 @@ void DungeonLevelBuilder::Build(CCL::ECS::Core::World& world, ID3D11Device* devi
     Build(world, device, params);
 }
 
+
 //----------------------------------------------------------------------------
 void DungeonLevelBuilder::Clear(CCL::ECS::Core::World& world)
 {
@@ -65,6 +62,7 @@ void DungeonLevelBuilder::Clear(CCL::ECS::Core::World& world)
     DUNGEON_DIAG("[Dungeon] Clear: requested destroy of %zu chunks", targets.size());
 }
 
+
 //----------------------------------------------------------------------------
 void DungeonLevelBuilder::Build(CCL::ECS::Core::World& world, ID3D11Device* device,
     const BuildParams& params)
@@ -76,23 +74,43 @@ void DungeonLevelBuilder::Build(CCL::ECS::Core::World& world, ID3D11Device* devi
     }
 
     // ------------------------------------------------------------------
-    // 1. 生成（決定的）
+    // 1. 生成（決定的）→ あとは共通パイプライン（BuildFromResult）へ
     // ------------------------------------------------------------------
     DungeonGenerateResult result =
         DungeonGenerator::Generate(params.seed, params.floorIndex, params.gen);
+
+    BuildFromResult(world, device, result, params);
+}
+
+//----------------------------------------------------------------------------
+//  共通の構築パイプライン。
+//  自動生成・手作りマップ（DungeonLayout::ToResult）のどちらの結果でもここを通す。
+//----------------------------------------------------------------------------
+void DungeonLevelBuilder::BuildFromResult(CCL::ECS::Core::World& world, ID3D11Device* device,
+    const DungeonGenerateResult& result,
+    const BuildParams& params)
+{
+    if (!device)
+    {
+        CCL_LOG_WARN(LogCategory::Core, "[Dungeon] device is null; abort build.");
+        return;
+    }
 
     if (DungeonLevelBuilder::IsDiagnosticLogging())
         DungeonGenerator::DebugPrintGrid(result);
 
     CCL_LOG_INFO(LogCategory::Core,
-        "[Dungeon] Building floor %d seed=%u grid=%dx%d (chunk=%d)",
-        params.floorIndex, result.usedSeed, result.width, result.depth, params.chunkSize);
+        "[Dungeon] Building grid=%dx%d (chunk=%d)  Start=(%d,%d) Portal=(%d,%d)",
+        result.width, result.depth, params.chunkSize,
+        result.startCell.i, result.startCell.j,
+        result.portalCell.i, result.portalCell.j);
 
     // ------------------------------------------------------------------
     // 2. マップチップモデルをロード（チャンク間で共有）
     // ------------------------------------------------------------------
     auto floorModel = std::make_shared<Model>(device, params.floorModelPath.c_str());
     auto wallModel = std::make_shared<Model>(device, params.wallModelPath.c_str());
+
 
     auto countVerts = [](const std::shared_ptr<Model>& m) -> size_t {
         if (!m) return 0;
@@ -209,6 +227,7 @@ void DungeonLevelBuilder::Build(CCL::ECS::Core::World& world, ID3D11Device* devi
     if (params.applyImmediately)
         world.ScrutinyAndApply();
 }
+
 
 //----------------------------------------------------------------------------
 // スポーンマーカー → Prefab 配置

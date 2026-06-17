@@ -12,6 +12,7 @@
 #include "Editor/Core/EditorWindow.h"
 #include "Game/Logics/LevelGen/DungeonGenerator.h"     // 2Dプレビュー用
 #include "Game/Logics/LevelGen/DungeonLevelBuilder.h"  // 3Dビルド用
+#include "Game/Logics/LevelGen/DungeonLayout.h"        // 手作りマップ
 
 class DungeonGeneratorWindow : public EditorWindow
 {
@@ -22,6 +23,10 @@ protected:
     void DrawContents(EditorContext& context) override;
 
 private:
+    // 生成モード（自動生成 / 手作り）
+    enum class Mode { Procedural, HandMade };
+    Mode _mode = Mode::Procedural;
+
     // UI 状態
     int   _seed = 12345;
     int   _floor = 1;
@@ -32,6 +37,12 @@ private:
     // ★ デバッグ調整用の生成パラメータ
     RuneForge::Dungeon::DungeonGenParams _gen;
 
+    // 手作りマップ
+    RuneForge::Dungeon::DungeonLayout _layout;
+    char  _savePath[256] = "Assets/DebugMaps/test1.json";
+    int   _editTool = 0;   // 0=壁/床, 1=スタート, 2=ポータル, 3=敵, 4=宝箱
+    int   _resizeW = 21, _resizeH = 21;
+
     RuneForge::Dungeon::DungeonGenerateResult _lastResult;
 
     void Regenerate();
@@ -40,4 +51,9 @@ private:
 
     // 現在のシード・層で 3D ダンジョンをシーンに構築する（context.world を使う）
     void BuildInScene(EditorContext& context);
+
+    // 手作りモード用
+    void DrawHandMadeControls(EditorContext& context);
+    void DrawLayoutCanvas();   // クリックで壁/床/マーカーを編集
+    void BuildLayoutInScene(EditorContext& context);
 };

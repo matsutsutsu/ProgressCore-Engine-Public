@@ -48,6 +48,12 @@ void EditorScene::Initialize()
     // パスを空文字にすればその種類は配置しない
     DungeonLevelBuilder::Build(*_worldPtr, device, p);
 
+
+    // 手作りマップ（テスト用固定マップ）
+    //DungeonLayout layout;
+    //layout.LoadFromJson("Assets/DebugMaps/test1.json");
+    //DungeonLevelBuilder::BuildFromResult(*_worldPtr, device, layout.ToResult(), p);
+
     // プレイヤーをスタート地点に生成（カメラもセット）
     DungeonLevelBuilder::SpawnPlayerAtStart(*_worldPtr);
 

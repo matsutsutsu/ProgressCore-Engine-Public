@@ -67,6 +67,19 @@ void DungeonGeneratorWindow::BuildInScene(EditorContext& context)
 void DungeonGeneratorWindow::DrawContents(EditorContext& context)
 {
 #if ENABLE_EDITOR
+    // モード切り替え（自動生成 / 手作り）
+    if (ImGui::RadioButton("Procedural", _mode == Mode::Procedural)) _mode = Mode::Procedural;
+    ImGui::SameLine();
+    if (ImGui::RadioButton("Hand-Made (Debug)", _mode == Mode::HandMade)) _mode = Mode::HandMade;
+    ImGui::Separator();
+
+    if (_mode == Mode::HandMade)
+    {
+        DrawHandMadeControls(context);
+        return;
+    }
+
+    // ===== 以下、自動生成モード =====
     // 1. シード入力
     ImGui::InputInt("Seed", &_seed);
     ImGui::SameLine();
@@ -252,5 +265,181 @@ void DungeonGeneratorWindow::DrawRoomList()
             ImGui::Unindent();
         }
     }
+#endif
+}
+
+//============================================================================
+//  手作りマップ（デバッグ）モード
+//============================================================================
+void DungeonGeneratorWindow::BuildLayoutInScene(EditorContext& context)
+{
+#if ENABLE_EDITOR
+    if (!context.world) return;
+    ID3D11Device* device = Graphics::Instance().GetDevice();
+
+    if (_clearBeforeBuild)
+        DungeonLevelBuilder::Clear(*context.world);
+
+    // 手作りレイアウト → DungeonGenerateResult → 共通パイプライン
+    DungeonGenerateResult result = _layout.ToResult(/*tagSeed*/ 1);
+
+    DungeonLevelBuilder::BuildParams params;
+    // 手作りマップ用に Prefab スポーンはマーカー任せ（敵/宝箱など）
+    params.enemyPrefab = "Assets/Prefabs/Enemy/Slime.json";
+    params.chestPrefab = "Assets/Prefabs/Item/Chest.json";
+    params.portalPrefab = "Assets/Prefabs/Portal/ExitPortal.json";
+    DungeonLevelBuilder::BuildFromResult(*context.world, device, result, params);
+#endif
+}
+
+void DungeonGeneratorWindow::DrawHandMadeControls(EditorContext& context)
+{
+#if ENABLE_EDITOR
+    // --- サイズ変更 / 新規 ---
+    ImGui::SetNextItemWidth(80); ImGui::InputInt("W", &_resizeW); ImGui::SameLine();
+    ImGui::SetNextItemWidth(80); ImGui::InputInt("H", &_resizeH); ImGui::SameLine();
+    if (ImGui::Button("New / Resize"))
+    {
+        _resizeW = (_resizeW < 3) ? 3 : _resizeW;
+        _resizeH = (_resizeH < 3) ? 3 : _resizeH;
+        _layout.Reset(_resizeW, _resizeH);
+    }
+
+    // --- 保存 / 読み込み（FileSystem 経由）---
+    ImGui::SetNextItemWidth(280);
+    ImGui::InputText("Path", _savePath, sizeof(_savePath));
+    if (ImGui::Button("Save"))  _layout.SaveToJson(_savePath);
+    ImGui::SameLine();
+    if (ImGui::Button("Load"))
+    {
+        if (_layout.LoadFromJson(_savePath)) { _resizeW = _layout.width; _resizeH = _layout.depth; }
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Build in Scene"))
+    {
+        BuildLayoutInScene(context);
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Clear Scene"))
+    {
+        if (context.world) DungeonLevelBuilder::Clear(*context.world);
+    }
+    ImGui::Checkbox("Clear before build", &_clearBeforeBuild);
+
+    // --- 編集ツール選択 ---
+    ImGui::Separator();
+    ImGui::Text("Edit Tool:");
+    ImGui::RadioButton("Wall/Floor", &_editTool, 0); ImGui::SameLine();
+    ImGui::RadioButton("Start", &_editTool, 1); ImGui::SameLine();
+    ImGui::RadioButton("Portal", &_editTool, 2); ImGui::SameLine();
+    ImGui::RadioButton("Enemy", &_editTool, 3); ImGui::SameLine();
+    ImGui::RadioButton("Chest", &_editTool, 4);
+
+    ImGui::SetNextItemWidth(120);
+    ImGui::SliderFloat("Zoom", &_zoom, 6.0f, 32.0f, "%.0f px");
+
+    ImGui::Separator();
+    DrawLayoutCanvas();
+#endif
+}
+
+void DungeonGeneratorWindow::DrawLayoutCanvas()
+{
+#if ENABLE_EDITOR
+    auto& L = _layout;
+    if (L.width <= 0 || L.depth <= 0) return;
+
+    const float cell = _zoom;
+    const ImVec2 canvasSize(L.width * cell, L.depth * cell);
+
+    ImGui::BeginChild("LayoutCanvas", ImVec2(0, 420), true,
+        ImGuiWindowFlags_HorizontalScrollbar);
+
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    const ImVec2 origin = ImGui::GetCursorScreenPos();
+
+    const ImU32 colWall = IM_COL32(90, 90, 90, 255);
+    const ImU32 colFloor = IM_COL32(25, 25, 30, 255);
+    const ImU32 colGridLn = IM_COL32(50, 50, 55, 255);
+    const ImU32 colStart = IM_COL32(60, 200, 80, 255);
+    const ImU32 colPortal = IM_COL32(60, 120, 230, 255);
+    const ImU32 colEnemy = IM_COL32(220, 80, 80, 255);
+    const ImU32 colChest = IM_COL32(220, 200, 60, 255);
+
+    auto cellMin = [&](int i, int j) -> ImVec2 {
+        return ImVec2(origin.x + i * cell, origin.y + (L.depth - 1 - j) * cell);
+        };
+
+    // セル描画
+    for (int i = 0; i < L.width; ++i)
+        for (int j = 0; j < L.depth; ++j)
+        {
+            ImVec2 a = cellMin(i, j);
+            ImVec2 b(a.x + cell, a.y + cell);
+            dl->AddRectFilled(a, b, L.solid[i][j] ? colWall : colFloor);
+            dl->AddRect(a, b, colGridLn);
+        }
+
+    // マーカー描画
+    for (const auto& m : L.markers)
+    {
+        ImU32 c = (m.type == SpawnMarkerType::Enemy) ? colEnemy
+            : (m.type == SpawnMarkerType::Chest) ? colChest : 0;
+        if (c)
+        {
+            ImVec2 a = cellMin(m.cell.i, m.cell.j);
+            dl->AddRectFilled(ImVec2(a.x + cell * 0.25f, a.y + cell * 0.25f),
+                ImVec2(a.x + cell * 0.75f, a.y + cell * 0.75f), c);
+        }
+    }
+    // スタート / ポータル
+    {
+        ImVec2 s = cellMin(L.startCell.i, L.startCell.j);
+        dl->AddRectFilled(s, ImVec2(s.x + cell, s.y + cell), colStart);
+        ImVec2 p = cellMin(L.portalCell.i, L.portalCell.j);
+        dl->AddRectFilled(p, ImVec2(p.x + cell, p.y + cell), colPortal);
+    }
+
+    // クリック編集（キャンバス上のセルを判定）
+    if (ImGui::IsWindowHovered() && ImGui::IsMouseDown(0))
+    {
+        ImVec2 mp = ImGui::GetMousePos();
+        int ci = (int)((mp.x - origin.x) / cell);
+        int rj = (int)((mp.y - origin.y) / cell);
+        int cj = (L.depth - 1) - rj; // Y反転
+        if (L.InBounds(ci, cj))
+        {
+            switch (_editTool)
+            {
+            case 0: // 壁/床トグル（押している間に塗れるよう、クリック時のみ反転）
+                if (ImGui::IsMouseClicked(0))
+                    L.solid[ci][cj] = !L.solid[ci][cj];
+                break;
+            case 1: L.startCell = { ci, cj }; L.solid[ci][cj] = false; break;
+            case 2: L.portalCell = { ci, cj }; L.solid[ci][cj] = false; break;
+            case 3:
+                if (ImGui::IsMouseClicked(0)) {
+                    L.solid[ci][cj] = false;
+                    L.markers.push_back({ { ci, cj }, SpawnMarkerType::Enemy });
+                }
+                break;
+            case 4:
+                if (ImGui::IsMouseClicked(0)) {
+                    L.solid[ci][cj] = false;
+                    L.markers.push_back({ { ci, cj }, SpawnMarkerType::Chest });
+                }
+                break;
+            }
+        }
+    }
+
+    ImGui::Dummy(canvasSize);
+    ImGui::EndChild();
+
+    ImGui::TextDisabled("Left-drag to paint walls. Start=green Portal=blue Enemy=red Chest=yellow");
+    ImGui::Text("Size: %d x %d  markers=%zu  Start=(%d,%d) Portal=(%d,%d)",
+        L.width, L.depth, L.markers.size(),
+        L.startCell.i, L.startCell.j, L.portalCell.i, L.portalCell.j);
+    if (ImGui::Button("Clear Markers")) L.markers.clear();
 #endif
 }
