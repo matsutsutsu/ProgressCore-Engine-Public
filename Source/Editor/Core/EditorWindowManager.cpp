@@ -23,6 +23,7 @@
 #include "Editor/Windows/AnimGraphWindow.h"
 #include "Editor/Windows/BehaviorTreeWindow.h"
 #include "Editor/Windows/MemoryAnalyzerWindow.h"
+#include "Editor/Windows/TestLauncherWindow.h"
 
 #include "Editor/Windows/DungeonGeneratorWindow.h"
 
@@ -65,6 +66,7 @@ void EditorWindowManager::Initialize()
     RegisterWindow<InputEditorWindow>();
     RegisterWindow<NavMeshWindow>();
     RegisterWindow<MemoryAnalyzerWindow>();
+    RegisterWindow<TestLauncherWindow>();
     //RegisterWindow<SceneViewWindow>();
     RegisterWindow<GameViewWindow>();
 

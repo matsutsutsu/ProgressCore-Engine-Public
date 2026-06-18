@@ -1728,6 +1728,9 @@
     <ClInclude Include="Source\Game\Logics\LevelGen\DungeonLayout.h">
       <Filter>Source\Game\Logics\LevelGen</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\TestLauncherWindow.h">
+      <Filter>Source\Editor\Windows\Game</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2590,6 +2593,9 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Combat\KnockbackComponentMeta.cpp">
       <Filter>Source\Game\Logics\Combat\_Meta</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\TestLauncherWindow.cpp">
+      <Filter>Source\Editor\Windows\Game</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
