@@ -1731,6 +1731,21 @@
     <ClInclude Include="Source\Editor\Windows\TestLauncherWindow.h">
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Effects\TravelResolution.h">
+      <Filter>Source\Game\Logics\Wand\Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Slow.h">
+      <Filter>Source\Game\Logics\Wand\Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Homing.h">
+      <Filter>Source\Game\Logics\Wand\Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Combat\TargetRegistry.h">
+      <Filter>Source\Game\Logics\Combat</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Combat\TargetRegistrySystem.h">
+      <Filter>Source\Game\Logics\Combat</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2596,6 +2611,9 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\TestLauncherWindow.cpp">
       <Filter>Source\Editor\Windows\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Combat\TargetRegistrySystem.cpp">
+      <Filter>Source\Game\Logics\Combat</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

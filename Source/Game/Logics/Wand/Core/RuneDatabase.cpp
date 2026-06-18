@@ -58,6 +58,12 @@ EffectOp RuneDatabase::GetDefaultOp(EffectType type, WandPhase phase)
         // -------------------------------------------------------------------
     case EffectType::Slow:
     case EffectType::Homing:
+        switch (phase)
+        {
+        case WandPhase::Travel: op.params[0] = 5.0f; break; // 1秒あたりの旋回率(大きいほど急追尾)
+        default: break;
+        }
+        break;
     case EffectType::Explosion:
     case EffectType::Reflection:
     case EffectType::Chaos:

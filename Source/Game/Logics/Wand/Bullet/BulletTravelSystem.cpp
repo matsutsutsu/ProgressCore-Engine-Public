@@ -1,78 +1,144 @@
 // ===========================================================================
 // Systems/BulletTravelSystem.cpp
 // ------------------------------
-// @file
-// @brief BulletTravelSystem の実体。Travel命令解釈と直進移動。
+// 役割:
+//   飛行中の弾を毎フレーム更新する(Travelフェーズ)。Travel命令を TravelResolution へ
+//   集約し、結果を弾の speed / direction へ適用してから直進移動・寿命加算を行う。
+//
+// 実装の意図(Why):
+//   - Spawn と同じ「<Name>Travel ハンドラ → Resolution 集約 → 適用」の構造に揃える。
+//   - Homing は敵探索(World/Resource依存)が要るためハンドラを純粋に保てない。そこで
+//     「System が最寄り敵方向を確定 → HomingTravel に渡す」分担にする。探索は Homing を
+//     含む弾だけ・1弾1回に限定し、TargetRegistry(平坦配列)を線形走査する。
+//   - 探索コストを避けるため、travelOps に Homing が含まれるかを先に判定し、含む弾だけ
+//     FindNearest する(直進弾は探索ゼロ)。
+//
+// 並列性:
+//   TargetRegistry は読み取り専用参照。各弾の書き込みは per-entity のみ。構造変更なし。
+//   よって ForEachParallel のまま安全(リストは L02_PreUpdate で構築済み)。
 // ===========================================================================
 #include "BulletTravelSystem.h"
 #include "Game/Logics/Wand/Compiler/WandProgramRegistry.h"
 #include "Game/Logics/Wand/Compiler/CompiledWandProgram.h"
+#include "Game/Logics/Combat/TargetRegistry.h"
 #include "Engine/Platform/Core/Logger.h"
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
+// Travel フェーズの解決結果とハンドラ群
+#include "Game/Logics/Wand/Effects/TravelResolution.h"
+#include "Game/Logics/Wand/Effects/Effect_Accelerate.h" // AccelerateTravel
+#include "Game/Logics/Wand/Effects/Effect_Slow.h"       // SlowTravel
+#include "Game/Logics/Wand/Effects/Effect_Homing.h"     // HomingTravel
+
 using namespace CCL::ECS;
+using DirectX::SimpleMath::Vector3;
 
 namespace
 {
-    /**
-     * @brief Travelフェーズの命令列を解釈し、弾の速度・向きを更新する。
-     * @param dt このフレームの localDt（ヒットストップ追従済み）。
-     * @note 現状は Accelerate のみ。他概念はこの switch に case を足すだけで拡張可能。
-     */
-    void ApplyTravelOps(const CompiledWandProgram& prog, BulletStateComponent& st, float dt)
+    /// @brief travelOps に Homing が含まれるか（含む弾だけ敵探索する）。
+    bool HasHoming(const CompiledWandProgram& prog)
     {
+        for (uint8_t i = 0; i < prog.travelCount; ++i)
+            if (prog.travelOps[i].type == EffectType::Homing) return true;
+        return false;
+    }
+
+    /// @brief Travelフェーズ集約器。各 <Name>Travel が Resolution に積むだけ。
+    /// @param targetDir  最寄り敵への方向（Homingが無い/敵が居ない場合は Zero）。
+    /// @param hasTarget  有効な目標方向があるか。
+    TravelResolution ResolveTravel(const CompiledWandProgram& prog, float dt,
+        const Vector3& targetDir, bool hasTarget)
+    {
+        TravelResolution r;
         for (uint8_t i = 0; i < prog.travelCount; ++i)
         {
             const EffectOp& op = prog.travelOps[i];
             switch (op.type)
             {
-            case EffectType::Accelerate:
-                // params[0] = 1秒あたりの加速率。毎フレーム speed *= (1 + rate*dt)（複利的に加速）。
-                for (uint16_t s = 0; s < op.stackCount; ++s)
-                    st.speed *= (1.0f + op.params[0] * dt);
-                // params[1] = 旋回抵抗。Homing 実装時に「向きの変えにくさ」として使用（現状未使用）。
+            case EffectType::Accelerate: AccelerateTravel(op, r, dt); break;
+            case EffectType::Slow:       SlowTravel(op, r, dt);       break;
+            case EffectType::Homing:
+                // 目標が無ければ追尾しない（敵不在 → 直進。Q3の仕様）。
+                if (hasTarget) HomingTravel(op, targetDir, r, dt);
                 break;
+            default: break;
+            }
+        }
+        return r;
+    }
 
-                // TODO(後工程): Slow(急減速→空中停止), Homing(最近敵へ向き補正), Explosion(間欠小爆発),
-                //               Split(0.3秒後に左右分裂), Reflection(壁反射), Chaos(向き/速度急変)...
-            default:
-                break;
+    /// @brief 解決結果を弾の状態へ適用する（speed倍率・向き補間）。
+    void ApplyTravel(const TravelResolution& r, BulletStateComponent& st)
+    {
+        st.speed *= r.speedMult;
+
+        if (r.hasSteering && r.targetDir.LengthSquared() > 1e-6f)
+        {
+            Vector3 dir = Vector3::Lerp(st.direction, r.targetDir, r.steerLerp);
+            dir.y = 0.0f;
+            if (dir.LengthSquared() > 1e-6f)
+            {
+                dir.Normalize();
+                st.direction = dir;
             }
         }
     }
-
-} // anonymous namespace
+}
 
 void BulletTravelSystem::Update(float /*dt*/)
 {
     if (!_world->HasResource<WandProgramRegistry>()) return;
-    
     const WandProgramRegistry& registry = _world->GetResource<WandProgramRegistry>();
 
-    // per-entity 書き込み + Registry読み取りのみ。構造変更しないので並列実行が安全。
-    ForEachParallel([&registry](TransformComponent& t,
+    // ターゲットリスト（無ければ nullptr 扱い＝Homing無効）。読み取り専用。
+    const TargetRegistry* targets =
+        _world->HasResource<TargetRegistry>() ? &_world->GetResource<TargetRegistry>() : nullptr;
+
+    ForEachParallel([&](TransformComponent& t,
         BulletStateComponent& st,
         const BulletProgramRef& ref,
         const BulletTag&               /*tag*/,
         const TimeStateComponent& time)
         {
-            st.prevPosition = t.position; // ★移動前の位置を記録（衝突判定の線分始点）
+            st.prevPosition = t.position; // 衝突判定の線分始点
             const float dt = time.localDt;
 
-            // 1. Travelフェーズ命令（速度・向きの変化）。ID不正時はスキップ（保険）。
             if (registry.IsValid(ref.programId))
             {
                 const CompiledWandProgram& prog = registry.Get(ref.programId);
-                ApplyTravelOps(prog, st, dt);
+
+                // Homing を含む弾だけ最寄り敵を探索（直進弾は探索ゼロ）。
+                Vector3 targetDir = Vector3::Zero;
+                bool    hasTarget = false;
+                if (targets && !targets->Empty() && HasHoming(prog))
+                {
+                    Vector3 enemyPos;
+                    const EntityID nearest =
+                        targets->FindNearest(t.position, st.owner, enemyPos);
+                    if (nearest != InvalidEntityID)
+                    {
+                        Vector3 d = enemyPos - t.position;
+                        d.y = 0.0f;
+                        if (d.LengthSquared() > 1e-6f)
+                        {
+                            d.Normalize();
+                            targetDir = d;
+                            hasTarget = true;
+                        }
+                    }
+                }
+
+                const TravelResolution r = ResolveTravel(prog, dt, targetDir, hasTarget);
+                ApplyTravel(r, st);
             }
 
-            // 2. 直進移動（向き×速さ×localDt）。
-            t.position = t.position + st.direction * st.speed * dt; // ※position のフィールド名は実装に合わせる
-            t.isDirty = true;                          // ※dirty 契約がある場合のみ
+            // 直進移動。
+            t.position = t.position + st.direction * st.speed * dt;
+            t.isDirty = true;
 
-            // 3. 寿命カウント。実際の破棄は L07 の BulletLifetimeSystem が行う。
+            // 寿命カウント。
             st.age += dt;
         });
 }

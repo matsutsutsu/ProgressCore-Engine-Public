@@ -700,6 +700,8 @@
     <ClInclude Include="Source\Game\Logics\Combat\HitboxCollisionSystem.h" />
     <ClInclude Include="Source\Game\Logics\Combat\KnockbackComponent.h" />
     <ClInclude Include="Source\Game\Logics\Combat\KnockbackSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Combat\TargetRegistry.h" />
+    <ClInclude Include="Source\Game\Logics\Combat\TargetRegistrySystem.h" />
     <ClInclude Include="Source\Game\Logics\GameEvent\GameEvents.h" />
     <ClInclude Include="Source\Game\Logics\GameEvent\GameOverResource.h" />
     <ClInclude Include="Source\Game\Logics\GameEvent\GameStateMode.h" />
@@ -740,8 +742,11 @@
     <ClInclude Include="Source\Game\Logics\Wand\Core\WandTypes.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Accelerate.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Focus.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Homing.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Slow.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Split.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Effects\SpawnResolution.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Effects\TravelResolution.h" />
     <ClInclude Include="Source\Game\Scenes\BaseScene.h" />
     <ClInclude Include="Source\Game\Scenes\EditorScene.h" />
     <ClInclude Include="Source\Game\Scenes\ParticleScene.h" />
@@ -1444,6 +1449,7 @@
     <ClCompile Include="Source\Game\Logics\Combat\HitboxCollisionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\KnockbackComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\KnockbackSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Combat\TargetRegistrySystem.cpp" />
     <ClCompile Include="Source\Game\Logics\LevelGen\DungeonGenerator.cpp" />
     <ClCompile Include="Source\Game\Logics\LevelGen\DungeonLayout.cpp" />
     <ClCompile Include="Source\Game\Logics\LevelGen\DungeonLevelBuilder.cpp" />
