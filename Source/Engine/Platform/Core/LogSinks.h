@@ -73,9 +73,19 @@ public:
     void Write(const LogMessage& msg) override
     {
         const std::string line = LogFormat::Format(msg) + '\n';
-        ::OutputDebugStringA(line.c_str());
+
+        // UTF-8 → UTF-16 変換
+        int len = MultiByteToWideChar(CP_UTF8, 0, line.c_str(), -1, nullptr, 0);
+        if (len <= 0) return;
+
+        std::wstring wline(len, L'\0');
+        MultiByteToWideChar(CP_UTF8, 0, line.c_str(), -1, wline.data(), len);
+
+        // Wide 文字でデバッグ出力
+        ::OutputDebugStringW(wline.c_str());
     }
 };
+
 
 //==============================================================================
 // FileSink
