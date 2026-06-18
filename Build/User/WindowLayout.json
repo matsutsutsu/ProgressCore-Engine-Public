@@ -41,6 +41,10 @@
             "visible": false
         },
         {
+            "name": "Test Launcher",
+            "visible": true
+        },
+        {
             "name": "Game View",
             "visible": true
         }
