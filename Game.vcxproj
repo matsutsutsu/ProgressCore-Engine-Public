@@ -740,6 +740,7 @@
     <ClInclude Include="Source\Game\Logics\Wand\Compiler\WandCompileSystem.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Compiler\WandProgramRegistry.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Core\RuneDatabase.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Core\RuneStackCurve.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Core\WandTypes.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Accelerate.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Focus.h" />

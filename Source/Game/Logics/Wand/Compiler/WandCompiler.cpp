@@ -11,6 +11,19 @@
 
 #include <cstring> // strcpy_s
 
+namespace
+{
+    /// @brief 倍率系カーブを乗算で畳み込む。At(0)*At(1)*...*At(stack-1)。
+    /// @note  「N個重ねたときの合計倍率」を1つの値にする。倍率の逓減はカーブが表現する。
+    float FoldMultiplicative(const RuneStackCurve& curve, uint16_t stackCount)
+    {
+        float acc = 1.0f;
+        for (uint16_t s = 0; s < stackCount; ++s)
+            acc *= curve.At(static_cast<int>(s));
+        return acc;
+    }
+}
+
 // ビルド構成をコンパイルして実行時の最適化された情報に変換する
 CompiledWandProgram WandCompiler::Compile(const WandBuildComponent& build)
 {
@@ -95,26 +108,36 @@ uint8_t WandCompiler::CompilePhase(const EffectType* slots, uint8_t slotCount,
         counts[static_cast<int>(t)]++;
     }
 
-    // 2. enum 昇順で EffectOp を生成（順序を決定的にしておくとデバッグ・再現性に有利）。
+    // 2. enum 昇順で EffectOp を生成。
     uint8_t opCount = 0;
     for (int t = 1; t < static_cast<int>(EffectType::Count); ++t) // 0 = None はスキップ
     {
-        // 上の処理でアタッチメント装着数が１つでも入っていたら内部処理に進む
         if (counts[t] == 0) continue;
-        if (opCount >= MAX_OPS_PER_PHASE) break; // 安全弁（概念数 < 容量なので通常到達しない）
+        if (opCount >= MAX_OPS_PER_PHASE) break;
 
-        // アタッチメントの初期パラメータをセット
-        EffectOp op   = RuneDatabase::GetDefaultOp(static_cast<EffectType>(t), phase);
-        op.stackCount = counts[t]; // 装着数を畳んで格納
-        // 最後はそのフェーズのEffectOpの配列変数に今のアタッチメント情報を格納する
+        const EffectType type = static_cast<EffectType>(t);
+        const uint16_t   stack = counts[t];
+
+        EffectOp op = RuneDatabase::GetDefaultOp(type, phase);
+
+        // --- スタックカーブを持つ概念は、コンパイル時にカーブを畳み込む ---
+        if (RuneDatabase::HasStackCurve(type, phase))
+        {
+            const RuneStackCurve curve = RuneDatabase::GetStackCurve(type, phase);
+
+            // 倍率系：全スタック分を乗算で畳み込み、params[0] へ焼く。
+            // ハンドラ側は stackCount=1 で params[0] を1回適用するだけになる。
+            op.params[0] = FoldMultiplicative(curve, stack);
+            op.stackCount = 1; // 畳み込み済みなのでループは1回でよい
+        }
+        else
+        {
+            // カーブ非対応：従来通り装着数を stackCount に詰める。
+            op.stackCount = stack;
+        }
+
         outOps[opCount++] = op;
     }
-
-    //【出力: outOps】（圧縮された戦闘用データ）
-    //outOps[0] = { type: Accelerate, stackCount : 2, params : [...] }
-    //outOps[1] = { type: Split,      stackCount : 1, params : [...] }
-    //
-    //戻り値(opCount) = 2  （有効な命令は 2 個だけですよ、と伝える）
 
     return opCount;
 }

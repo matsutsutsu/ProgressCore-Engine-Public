@@ -1758,6 +1758,9 @@
     <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Reflection.h">
       <Filter>Source\Game\Logics\Wand\Effects</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Core\RuneStackCurve.h">
+      <Filter>Source\Game\Logics\Wand\Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
