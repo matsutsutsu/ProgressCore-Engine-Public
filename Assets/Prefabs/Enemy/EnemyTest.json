@@ -20,7 +20,7 @@
                     "moveSpeed": 5.0
                 },
                 "HealthComponent": {
-                    "currentHealth": 100.0,
+                    "currentHealth": 1000.0,
                     "invincibilityDuration": 0.5,
                     "maxHealth": 1000.0,
                     "team": 1

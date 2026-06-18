@@ -1731,9 +1731,6 @@
     <ClInclude Include="Source\Editor\Windows\TestLauncherWindow.h">
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\Effects\TravelResolution.h">
-      <Filter>Source\Game\Logics\Wand\Effects</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Slow.h">
       <Filter>Source\Game\Logics\Wand\Effects</Filter>
     </ClInclude>
@@ -1745,6 +1742,21 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Combat\TargetRegistrySystem.h">
       <Filter>Source\Game\Logics\Combat</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Effects\OnHitResolution.h">
+      <Filter>Source\Game\Logics\Wand\Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Effects\TravelResolution.h">
+      <Filter>Source\Game\Logics\Wand\Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Effects\ResolveOnHit.h">
+      <Filter>Source\Game\Logics\Wand\Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Collision\BulletEnemyCollisionSystem.h">
+      <Filter>Source\Game\Logics\Wand\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Reflection.h">
+      <Filter>Source\Game\Logics\Wand\Effects</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2614,6 +2626,9 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Combat\TargetRegistrySystem.cpp">
       <Filter>Source\Game\Logics\Combat</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Wand\Collision\BulletEnemyCollisionSystem.cpp">
+      <Filter>Source\Game\Logics\Wand\Collision</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -731,6 +731,7 @@
     <ClInclude Include="Source\Game\Logics\Wand\Bullet\MagicBulletPool.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Bullet\WandFireSystem.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Bullet\WandRuntimeComponents.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Collision\BulletEnemyCollisionSystem.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Collision\BulletHitResponseSystem.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Collision\BulletWallCollisionSystem.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Compiler\CompiledWandProgram.h" />
@@ -743,8 +744,11 @@
     <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Accelerate.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Focus.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Homing.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Reflection.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Slow.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Split.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Effects\OnHitResolution.h" />
+    <ClInclude Include="Source\Game\Logics\Wand\Effects\ResolveOnHit.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Effects\SpawnResolution.h" />
     <ClInclude Include="Source\Game\Logics\Wand\Effects\TravelResolution.h" />
     <ClInclude Include="Source\Game\Scenes\BaseScene.h" />
@@ -1467,6 +1471,7 @@
     <ClCompile Include="Source\Game\Logics\Wand\Bullet\BulletVisualSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Wand\Bullet\WandFireSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Wand\Bullet\WandRuntimeComponentsMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Wand\Collision\BulletEnemyCollisionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Wand\Collision\BulletHitResponseSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Wand\Collision\BulletWallCollisionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Wand\Compiler\WandBuildComponentMeta.cpp" />
