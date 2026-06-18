@@ -39,7 +39,7 @@
  *       へ書き込むため、並列化するとデータ競合でクラッシュする。
  */
 void JoltCharacterUpdateSystem::Update(float dt) {
-    if (!_world->HasResource<JoltPhysicsManager>())
+    if (!_world->HasResource<JoltPhysicsManager*>())
         return;
 
     auto& joltManager = _world->GetResource<JoltPhysicsManager*>();

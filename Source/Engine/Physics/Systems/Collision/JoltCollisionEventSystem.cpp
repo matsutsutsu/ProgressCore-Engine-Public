@@ -15,7 +15,7 @@ using namespace CCL::ECS;
 void JoltCollisionEventSystem::Update(float dt)
 {
     // リソースの存在確認（初期化前などのクラッシュ防止）
-    if (!_world->HasResource<JoltPhysicsManager>()) return;
+    if (!_world->HasResource<JoltPhysicsManager*>()) return;
 
     auto& joltManager = _world->GetResource<JoltPhysicsManager*>();
     JoltContactListener* listener = joltManager->GetContactListener();

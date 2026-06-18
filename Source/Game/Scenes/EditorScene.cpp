@@ -90,8 +90,6 @@ void EditorScene::Finalize()
 
 void EditorScene::RegisterSystems()
 {
-    ID3D11Device *device = Graphics::Instance().GetDevice();
-
     // SystemManagerへのアクセスを _ecsContext 経由に変更
     // (SystemGroupsの関数が参照を受け取る仕様であると推測されるため、ポインタをデリファレンスしています)
     auto &sysManager = *(_ecsContext->GetSystemManager());

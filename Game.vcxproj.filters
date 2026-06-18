@@ -1979,9 +1979,6 @@
     <ClCompile Include="Source\Engine\Graphics\Renderer\ParticleRenderer.cpp">
       <Filter>Source\Engine\Graphics\Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Core\GamePlayComponentMeta.cpp">
-      <Filter>Source\Game\Core</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Game\Logics\Test\ECSBenchmarkSystem.cpp">
       <Filter>Source\Game\Logics\Test</Filter>
     </ClCompile>
@@ -2587,6 +2584,12 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\LevelGen\DungeonLayout.cpp">
       <Filter>Source\Game\Logics\LevelGen</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyComponentMeta.cpp">
+      <Filter>Source\Game\Logics\Character\Enemy</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Combat\KnockbackComponentMeta.cpp">
+      <Filter>Source\Game\Logics\Combat</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

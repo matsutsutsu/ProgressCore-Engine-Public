@@ -1380,7 +1380,6 @@
     <ClCompile Include="Source\Engine\UI\ImGui\ImGuiThemes.cpp" />
     <ClCompile Include="Source\Engine\UI\UIElement.cpp" />
     <ClCompile Include="Source\Engine\UI\UIManager.cpp" />
-    <ClCompile Include="Source\Game\Core\GamePlayComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeComponentMeta.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -1430,6 +1429,7 @@
     <ClCompile Include="Source\Game\Logics\AI\StateTree\StateTreeSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Collision\CharacterWallComponentsMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Collision\CharacterWallSlideSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyTrackingSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerAttackSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerComponentMeta.cpp" />
@@ -1440,6 +1440,7 @@
     <ClCompile Include="Source\Game\Logics\Combat\DamageResolutionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\HealthSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\HitboxCollisionSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Combat\KnockbackComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\KnockbackSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\LevelGen\DungeonGenerator.cpp" />
     <ClCompile Include="Source\Game\Logics\LevelGen\DungeonLayout.cpp" />
