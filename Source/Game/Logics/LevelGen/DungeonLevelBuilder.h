@@ -47,7 +47,7 @@ public:
         // ★ スポーンマーカーから Prefab を配置するか
         bool        spawnPrefabs = true;
         // 各マーカー種に対応する Prefab パス（空なら配置しない）
-        std::string enemyPrefab = "Assets/Prefabs/Enemy/Enemy.json";
+        std::string enemyPrefab = "Assets/Prefabs/Enemy/EnemyTest.json";
         std::string chestPrefab = "Assets/Prefabs/Item/Chest.json";
         std::string shopPrefab = "Assets/Prefabs/Shop/Shop.json";
         std::string forgePrefab = "Assets/Prefabs/Forge/Forge.json";

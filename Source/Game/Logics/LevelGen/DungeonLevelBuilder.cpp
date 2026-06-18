@@ -261,7 +261,9 @@ void DungeonLevelBuilder::SpawnMarkers(CCL::ECS::Core::World& world,
     {
         for (const SpawnMarker& m : room.spawnMarkers)
         {
-            const std::string& path = pathFor(m.type);
+            // マーカー固有のカスタムパスを最優先し、無ければ pathFor の既定値を使う
+            const std::string& path = !m.customPrefab.empty() ? m.customPrefab : pathFor(m.type);
+
             if (path.empty()) { ++skipped; continue; } // パス未設定はスキップ
 
             DirectX::XMFLOAT3 pos{ worldX(m.cell.i), 0.0f, worldZ(m.cell.j) };

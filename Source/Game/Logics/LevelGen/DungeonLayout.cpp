@@ -80,6 +80,11 @@ namespace RuneForge::Dungeon
             mj["i"] = m.cell.i;
             mj["j"] = m.cell.j;
             mj["type"] = MarkerTypeToStr(m.type);
+
+            // ★追加: カスタムプレハブが設定されていれば保存
+            if (!m.customPrefab.empty()) {
+                mj["prefab"] = m.customPrefab;
+            }
             ms.push_back(mj);
         }
         j["markers"] = ms;
@@ -154,6 +159,8 @@ namespace RuneForge::Dungeon
                 m.cell.i = mj.value("i", 0);
                 m.cell.j = mj.value("j", 0);
                 m.type = StrToMarkerType(mj.value("type", std::string("Enemy")));
+                // JSONにプレハブ指定があれば読み込む
+                m.customPrefab = mj.value("prefab", std::string(""));
                 markers.push_back(m);
             }
         }

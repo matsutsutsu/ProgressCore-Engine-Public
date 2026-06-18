@@ -42,9 +42,9 @@ void EditorScene::Initialize()
 
     DungeonLevelBuilder::BuildParams p;
     p.seed = 2024;
-    p.spawnPrefabs = false;
+    p.spawnPrefabs = true;
     //p.playerPrefab = "Assets/Prefabs/Player/PlayerTest.json";
-    //p.enemyPrefab = "Assets/Prefabs/Enemy/Slime.json";
+    p.enemyPrefab = "Assets/Prefabs/Enemy/EnemyTest.json";
     //p.portalPrefab = "Assets/Prefabs/Portal/ExitPortal.json";
     // パスを空文字にすればその種類は配置しない
     //DungeonLevelBuilder::Build(*_worldPtr, device, p);

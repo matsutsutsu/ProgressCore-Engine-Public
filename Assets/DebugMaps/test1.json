@@ -4,15 +4,16 @@
   "markers": [
     {
       "i": 14,
-      "j": 16,
+      "j": 11,
+      "prefab": "Assets/Prefabs/Enemy/EnemyTest.json",
       "type": "Enemy"
     }
   ],
   "originX": 0.0,
   "originZ": 0.0,
   "portal": [
-    13,
-    25
+    16,
+    26
   ],
   "solid": [
     "##############################",
