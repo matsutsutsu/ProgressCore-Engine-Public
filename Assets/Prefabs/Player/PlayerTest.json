@@ -12,14 +12,14 @@
                 },
                 "Bounding Box": {
                     "worldAABB.Center": [
-                        12.557985305786133,
+                        27.72183609008789,
                         2.4210691452026367,
-                        11.242411613464355
+                        9.493074417114258
                     ],
                     "worldAABB.Extents": [
-                        1.6603846549987793,
+                        1.6568098068237305,
                         1.4303332567214966,
-                        1.619873046875
+                        1.6468262672424316
                     ]
                 },
                 "Character Movement Input": {
@@ -31,9 +31,9 @@
                     "isAttackRequested": false,
                     "jumpRequested": false,
                     "lookTargetPos": [
-                        39.92898941040039,
+                        51.2962760925293,
                         0.0,
-                        32.80985641479492
+                        32.079166412353516
                     ]
                 },
                 "CharacterRadius": {
@@ -63,15 +63,15 @@
                     "isStatic": false,
                     "parent": 2,
                     "position": [
-                        12.458430290222168,
+                        27.61090850830078,
                         1.0,
-                        11.369998931884766
+                        9.610908508300781
                     ],
                     "rotation": [
                         0.0,
-                        -0.4386504888534546,
+                        0.3965854048728943,
                         0.0,
-                        -0.8986576795578003
+                        0.9179955720901489
                     ],
                     "scale": [
                         0.029999999329447746,
@@ -87,8 +87,8 @@
                     "baseCritMult": 2.0,
                     "baseCritRate": 0.05000000074505806,
                     "baseDamage": 10.0,
-                    "baseKnockback": 0.0,
-                    "baseLifetime": 3.0,
+                    "baseKnockback": 3.5999999046325684,
+                    "baseLifetime": 5.400000095367432,
                     "baseSpeed": 14.0,
                     "bulletVfxPath": "Assets/Prefabs/Particles/BulletParticle.json",
                     "cooldown": 0.6100000143051147,
@@ -143,7 +143,7 @@
                 },
                 "Wand Fire Intent": null,
                 "Wand Runtime": {
-                    "cooldownTimer": 0.04333324730396271
+                    "cooldownTimer": 0.5266667604446411
                 }
             },
             "lid": 1

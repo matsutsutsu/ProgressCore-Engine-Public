@@ -1725,6 +1725,42 @@
     <ClInclude Include="Source\Game\Logics\Wand\Bullet\BulletVisualSystem.h">
       <Filter>Source\Game\Logics\Wand\Bullet</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\LevelGen\DungeonLayout.h">
+      <Filter>Source\Game\Logics\LevelGen</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\TestLauncherWindow.h">
+      <Filter>Source\Editor\Windows\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Slow.h">
+      <Filter>Source\Game\Logics\Wand\Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Homing.h">
+      <Filter>Source\Game\Logics\Wand\Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Combat\TargetRegistry.h">
+      <Filter>Source\Game\Logics\Combat</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Combat\TargetRegistrySystem.h">
+      <Filter>Source\Game\Logics\Combat</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Effects\OnHitResolution.h">
+      <Filter>Source\Game\Logics\Wand\Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Effects\TravelResolution.h">
+      <Filter>Source\Game\Logics\Wand\Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Effects\ResolveOnHit.h">
+      <Filter>Source\Game\Logics\Wand\Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Collision\BulletEnemyCollisionSystem.h">
+      <Filter>Source\Game\Logics\Wand\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Reflection.h">
+      <Filter>Source\Game\Logics\Wand\Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Wand\Core\RuneStackCurve.h">
+      <Filter>Source\Game\Logics\Wand\Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -1975,9 +2011,6 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Renderer\ParticleRenderer.cpp">
       <Filter>Source\Engine\Graphics\Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Core\GamePlayComponentMeta.cpp">
-      <Filter>Source\Game\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Test\ECSBenchmarkSystem.cpp">
       <Filter>Source\Game\Logics\Test</Filter>
@@ -2581,6 +2614,24 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Wand\Bullet\BulletVisualSystem.cpp">
       <Filter>Source\Game\Logics\Wand\Bullet</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\LevelGen\DungeonLayout.cpp">
+      <Filter>Source\Game\Logics\LevelGen</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyComponentMeta.cpp">
+      <Filter>Source\Game\Logics\Character\Enemy</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Combat\KnockbackComponentMeta.cpp">
+      <Filter>Source\Game\Logics\Combat\_Meta</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\TestLauncherWindow.cpp">
+      <Filter>Source\Editor\Windows\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Combat\TargetRegistrySystem.cpp">
+      <Filter>Source\Game\Logics\Combat</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Wand\Collision\BulletEnemyCollisionSystem.cpp">
+      <Filter>Source\Game\Logics\Wand\Collision</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

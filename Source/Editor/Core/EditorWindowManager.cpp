@@ -23,6 +23,7 @@
 #include "Editor/Windows/AnimGraphWindow.h"
 #include "Editor/Windows/BehaviorTreeWindow.h"
 #include "Editor/Windows/MemoryAnalyzerWindow.h"
+#include "Editor/Windows/TestLauncherWindow.h"
 
 #include "Editor/Windows/DungeonGeneratorWindow.h"
 
@@ -65,6 +66,7 @@ void EditorWindowManager::Initialize()
     RegisterWindow<InputEditorWindow>();
     RegisterWindow<NavMeshWindow>();
     RegisterWindow<MemoryAnalyzerWindow>();
+    RegisterWindow<TestLauncherWindow>();
     //RegisterWindow<SceneViewWindow>();
     RegisterWindow<GameViewWindow>();
 
@@ -338,11 +340,11 @@ void EditorWindowManager::DrawPrefabMenu(EditorContext& context)
 void EditorWindowManager::DrawSceneMenu(EditorContext& context)
 {
     if (ImGui::BeginMenu("Scene")) {
-        if (ImGui::MenuItem("Title Scene")) SceneManager::Instance().ChangeScene("Title");
-        if (ImGui::MenuItem("Game Scene")) SceneManager::Instance().ChangeScene("Game");
+        //if (ImGui::MenuItem("Title Scene")) SceneManager::Instance().ChangeScene("Title");
+        //if (ImGui::MenuItem("Game Scene")) SceneManager::Instance().ChangeScene("Game");
         if (ImGui::MenuItem("Particle Scene")) SceneManager::Instance().ChangeScene("Particle");
         if (ImGui::MenuItem("Editor Scene")) SceneManager::Instance().ChangeScene("Editor");
-        if (ImGui::MenuItem("Shop Scene")) SceneManager::Instance().ChangeScene("Shop");
+        //if (ImGui::MenuItem("Shop Scene")) SceneManager::Instance().ChangeScene("Shop");
         ImGui::EndMenu();
     }
 }

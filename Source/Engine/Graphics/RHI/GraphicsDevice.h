@@ -2,6 +2,9 @@
 #include <d3d11.h>
 #include <wrl.h>
 
+// TracyのD3D11用ヘッダー
+#include "tracy/TracyD3D11.hpp"
+
 /**
  * @brief D3D11 デバイス・スワップチェーン・RT・定数バッファを所有する RHI 層。
  * @details
@@ -51,6 +54,9 @@ public:
     ID3D11RenderTargetView* GetGameRTV()          const noexcept { return _gameRTV.Get(); }
     ID3D11ShaderResourceView* GetGameSRV()          const noexcept { return _gameSRV.Get(); }
 
+    // Tracyコンテキストへのアクセサ
+    tracy::D3D11Ctx* GetTracyContext() const noexcept { return _tracyD3D11Ctx; }
+
     // ---- CbScene 定数バッファ ----
     ID3D11Buffer* GetSceneConstantBuffer() const noexcept { return _sceneConstantBuffer.Get(); }
 
@@ -90,4 +96,7 @@ private:
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> _gameSRV;
     Microsoft::WRL::ComPtr<ID3D11Buffer>             _sceneConstantBuffer;
     D3D11_VIEWPORT                                   _viewport{};
+
+    // Tracy D3D11 コンテキストのポインタ
+    tracy::D3D11Ctx* _tracyD3D11Ctx = nullptr;
 };

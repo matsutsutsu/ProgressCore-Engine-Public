@@ -79,6 +79,41 @@ void UpdateParticle(inout particle p)
     // 力 → 加速度 → 速度更新
     p.velocity += force / p.mass * delta_time;
 
+    // ---- Force Field (引力/斥力/渦) ----
+    if (force_flags & 1u)
+    {
+        float3 center = (force_flags & 2u) ? (world_position + attractor_pos.xyz)
+                                             : attractor_pos.xyz;
+        float3 toCenter = center - p.position;
+        float dist = length(toCenter) + 1e-4f;
+        float3 dir = toCenter / dist;
+
+        // 半径フォールオフ (0=無限。>0 なら端で滑らかに 0 へ)
+        float falloff = 1.0f;
+        if (attractor_radius > 0.0f)
+        {
+            float nd = saturate(dist / attractor_radius);
+            falloff = (1.0f - nd) * (1.0f - nd);
+        }
+
+        // 引力/斥力: w(=強さ)>0 で中心へ吸い込み、<0 で外へ弾く
+        p.velocity += dir * attractor_pos.w * falloff * delta_time;
+
+        // 渦: 中心軸(Y)まわりの接線方向（魔法陣に巻き込む旋回）
+        if (abs(vortex_strength) > 1e-5f)
+        {
+            float3 t = cross(float3(0.0f, 1.0f, 0.0f), toCenter);
+            float tl = length(t);
+            if (tl > 1e-4f)
+                p.velocity += (t / tl) * vortex_strength * falloff * delta_time;
+        }
+    }
+
+    // ---- ドラッグ (空気抵抗。引力で集めた粒子を中心に沈めるのに有効) ----
+    if (drag > 0.0f)
+        p.velocity *= saturate(1.0f - drag * delta_time);
+
+
     // 速度クランプ
     float spd = length(p.velocity);
     const float max_speed = 10.0f;

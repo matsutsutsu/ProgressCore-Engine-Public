@@ -124,6 +124,13 @@ CB_PARTICLE_STRUCT(CbParticleStatic, SLOT_CB_PARTICLE_STATIC)
     int    emit_mode;               // offset 164: 0:継続 1:バースト
     int    burst_count;             // offset 168: バースト時の発生数
     float  _pad_static;             // offset 172
+
+    // ---- Force Field ---- (offset 176-207)
+    float4 attractor_pos;           // offset 176: xyz=中心, w=強さ(正:引力 負:斥力)
+    float  attractor_radius;        // offset 192: 影響半径 (0=無限)
+    float  vortex_strength;         // offset 196: 中心軸(Y)まわりの渦
+    float  drag;                    // offset 200: 速度減衰 (1/s)
+    uint   force_flags;             // offset 204: bit0=引力/渦 有効, bit1=local空間
 };
 // 合計: 176 bytes
 
@@ -151,7 +158,7 @@ CB_PARTICLE_STRUCT(CbParticleDynamic, SLOT_CB_PARTICLE_DYNAMIC)
 // ==================================================================
 #ifdef __cplusplus
 static_assert(sizeof(GpuParticle) == 80, "GpuParticle size mismatch");
-static_assert(sizeof(CbParticleStatic) == 176, "CbParticleStatic size mismatch");
+static_assert(sizeof(CbParticleStatic) == 208, "CbParticleStatic size mismatch");
 static_assert(sizeof(CbParticleDynamic) == 48, "CbParticleDynamic size mismatch");
 
 } // namespace GpuData

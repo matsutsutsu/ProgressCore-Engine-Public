@@ -21,8 +21,8 @@
             "visible": true
         },
         {
-            "name": "Dungeon Generator",
-            "visible": false
+            "name": "Dungeon Architect Tool",
+            "visible": true
         },
         {
             "name": "Text Editor",
@@ -39,6 +39,10 @@
         {
             "name": "Memory Analyzer",
             "visible": false
+        },
+        {
+            "name": "Test Launcher",
+            "visible": true
         },
         {
             "name": "Game View",

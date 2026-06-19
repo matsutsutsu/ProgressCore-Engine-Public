@@ -47,6 +47,17 @@ static GpuData::CbParticleStatic BuildStaticCb(const ParticleEmitterDesc& d)
     cb.max_count = d.maxCount;
     cb.emit_mode = d.emitMode;
     cb.burst_count = d.burstCount;
+
+    // ---- Force Field ----
+    cb.attractor_pos = { d.attractorPos.x, d.attractorPos.y, d.attractorPos.z, d.attractorStrength };
+    cb.attractor_radius = d.attractorRadius;
+    cb.vortex_strength = d.vortexStrength;
+    cb.drag = d.drag;
+    uint32_t flags = 0u;
+    if (d.attractorStrength != 0.0f || d.vortexStrength != 0.0f) flags |= 1u; // 引力/渦 有効
+    if (d.attractorLocal)                                        flags |= 2u; // local 空間
+    cb.force_flags = flags;
+
     return cb;
 }
 

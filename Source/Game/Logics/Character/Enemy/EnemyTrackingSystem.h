@@ -4,10 +4,10 @@
 #include "EnemyComponent.h"
 #include "../Player/PlayerComponent.h" // パスは適宜合わせてください
 
-// ★修正: Transformは現在位置を読むだけ(Read)にし、移動自体はPhysicsAPIに任せる
+// ★修正: Transform を直接書き換えるため Write<TransformComponent> に変更
 class EnemyTrackingSystem : public CCL::ECS::IfSystem<
     EnemyTrackingSystem,
-    CCL::ECS::Read<TransformComponent>,
+    CCL::ECS::Write<TransformComponent>,
     CCL::ECS::Read<EnemyComponent>>
 {
 public:

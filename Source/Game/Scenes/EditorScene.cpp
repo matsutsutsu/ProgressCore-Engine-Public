@@ -14,6 +14,7 @@
 #include "Engine/Transform/Systems/TransformUpdateSystem.h"
 
 #include "Game/Logics/LevelGen/DungeonLevelBuilder.h"
+#include "Game/Logics/LevelGen/DungeonLayout.h"
 
 void EditorScene::Initialize()
 {
@@ -41,12 +42,18 @@ void EditorScene::Initialize()
 
     DungeonLevelBuilder::BuildParams p;
     p.seed = 2024;
-    p.spawnPrefabs = false;
+    p.spawnPrefabs = true;
     //p.playerPrefab = "Assets/Prefabs/Player/PlayerTest.json";
-    //p.enemyPrefab = "Assets/Prefabs/Enemy/Slime.json";
+    p.enemyPrefab = "Assets/Prefabs/Enemy/EnemyTest.json";
     //p.portalPrefab = "Assets/Prefabs/Portal/ExitPortal.json";
     // パスを空文字にすればその種類は配置しない
-    DungeonLevelBuilder::Build(*_worldPtr, device, p);
+    //DungeonLevelBuilder::Build(*_worldPtr, device, p);
+
+
+    // 手作りマップ（テスト用固定マップ）
+    RuneForge::Dungeon::DungeonLayout layout;
+    layout.LoadFromJson("Assets/DebugMaps/test1.json");
+    DungeonLevelBuilder::BuildFromResult(*_worldPtr, device, layout.ToResult(), p);
 
     // プレイヤーをスタート地点に生成（カメラもセット）
     DungeonLevelBuilder::SpawnPlayerAtStart(*_worldPtr);
@@ -83,8 +90,6 @@ void EditorScene::Finalize()
 
 void EditorScene::RegisterSystems()
 {
-    ID3D11Device *device = Graphics::Instance().GetDevice();
-
     // SystemManagerへのアクセスを _ecsContext 経由に変更
     // (SystemGroupsの関数が参照を受け取る仕様であると推測されるため、ポインタをデリファレンスしています)
     auto &sysManager = *(_ecsContext->GetSystemManager());

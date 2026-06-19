@@ -223,11 +223,25 @@ public:
         {
             uint32_t k = RingIndex(i);
             UINT64 timestamp = 0;
-            if (m_immediateDevCtx->GetData(m_queries[k], &timestamp, sizeof(timestamp), 0) != S_OK)
+
+            HRESULT hr;
+            // S_FALSE は「エラーではなく、まだ書き込み中」という意味。S_OKになるまでほんの少し待つ。
+            while ((hr = m_immediateDevCtx->GetData(m_queries[k], &timestamp, sizeof(timestamp), 0)) == S_FALSE)
             {
-                TracyD3D11Panic("timestamp expected to be ready, but it was not!");
+                // ドライバのラグを吸収するための空ループ（数マイクロ秒で抜けます）
+            }
+
+            if (hr != S_OK)
+            {
+                // デバイスロストなど、S_FALSE以外の致命的なエラーが起きた場合のみ安全に抜ける
                 break;
             }
+
+            //if (m_immediateDevCtx->GetData(m_queries[k], &timestamp, sizeof(timestamp), 0) != S_OK)
+            //{
+            //    TracyD3D11Panic("timestamp expected to be ready, but it was not!");
+            //    break;
+            //}
             timestamp *= (1000000000ull / disjoint.Frequency);
             auto* item = Profiler::QueueSerial();
             MemWrite(&item->hdr.type, QueueType::GpuTime);

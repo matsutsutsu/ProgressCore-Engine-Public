@@ -180,6 +180,11 @@ void JoltBodySetupSystem::Update(float dt)
             bodySettings.mMotionQuality = JPH::EMotionQuality::LinearCast;
         }
 
+        // センサー（弾）が、Kinematicな敵に当たった時にもコールバックを発生させる設定
+        if (rigid.isSensor && rigid.motionType == JPH::EMotionType::Kinematic) {
+            bodySettings.mCollideKinematicVsNonDynamic = true;
+        }
+
         // =========================================================
         // 　Jolt剛体の記憶に、ECSのEntityIDを刻み込む！
         // =========================================================

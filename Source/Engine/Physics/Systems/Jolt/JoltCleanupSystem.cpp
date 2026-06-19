@@ -13,8 +13,8 @@ void JoltCleanupSystem::Update(float dt) {
 // 直接チャンクを回して確実に剛体を消去する関数
 void JoltCleanupSystem::ExecuteCleanup(CCL::ECS::Core::World& world)
 {
-    bool hasJolt = world.HasResource<JoltPhysicsManager>();
-    JoltPhysicsManager* joltManager = hasJolt ? &world.GetResource<JoltPhysicsManager>() : nullptr;
+    bool hasJolt = world.HasResource<JoltPhysicsManager*>();
+    JoltPhysicsManager* joltManager = hasJolt ? world.GetResource<JoltPhysicsManager*>() : nullptr;
     if (!joltManager) return;
 
     JPH::BodyInterface& bodyInterface = joltManager->GetBodyInterface();
@@ -28,13 +28,31 @@ void JoltCleanupSystem::ExecuteCleanup(CCL::ECS::Core::World& world)
         if (!chunk->HasComponent<Tag::DestroyTag>() || !chunk->HasComponent<JoltHandleComponent>()) continue;
 
         size_t count = chunk->GetEntityCount();
-        const auto* joltHandles = chunk->GetComponentArray<JoltHandleComponent>();
+
+        // 破棄した証拠を書き込むため、const を外す
+        auto* joltHandles = chunk->GetComponentArray<JoltHandleComponent>();
 
         for (size_t i = 0; i < count; ++i) {
             if (chunk->IsEntityDestroyed(i)) continue;
 
-            bodyInterface.RemoveBody(joltHandles[i].bodyID);
-            bodyInterface.DestroyBody(joltHandles[i].bodyID);
+            JPH::BodyID& bodyID = joltHandles[i].bodyID;
+
+            // ★ 防波堤1: すでに破棄済み（無効なID）、または未初期化なら絶対にJoltへ渡さない
+            if (bodyID.IsInvalid()) continue;
+
+            // ★ 防波堤2: Jolt空間に「追加(Add)」されている場合のみRemoveする
+            // (CreateはしたがAddしていない剛体をRemoveすると別のアサートが鳴るため)
+            if (bodyInterface.IsAdded(bodyID)) {
+                bodyInterface.RemoveBody(bodyID);
+            }
+
+            // 剛体の完全消去
+            bodyInterface.DestroyBody(bodyID);
+
+            // ★ 究極の修正: Joltから消し去った証拠として、コンポーネント側のIDを無効化する！
+            // これにより、もしこのエンティティが次フレームまで生き残ってループに入っても、
+            // 防波堤1で安全に弾かれるようになります。
+            bodyID = JPH::BodyID(); // デフォルトコンストラクタは無効なID(cInvalidBodyID)を生成する
         }
     }
 }

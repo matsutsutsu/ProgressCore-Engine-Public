@@ -4,6 +4,9 @@
 #include <wrl/client.h>
 #include <Windows.h> // MultiByteToWideChar
 
+#include "Engine/Graphics/RHI/Graphics.h"
+#include "tracy/TracyD3D11.hpp"
+
 // パス登録用
 #include "Engine/Graphics/Pipeline/SetupPass.h"
 #include "Engine/Graphics/Pipeline/ShadowPass.h"
@@ -21,7 +24,6 @@ void RenderPipeline::Initialize(const RenderServices& services)
 
 void RenderPipeline::BuildDefaultPipeline()
 {
-
     // 描画パスを実行順に登録
     AddPass<SetupPass>();       // 1. HDR バッファのクリアとバインド
     AddPass<ShadowPass>();      // 2. シャドウマップ生成
@@ -31,7 +33,6 @@ void RenderPipeline::BuildDefaultPipeline()
     AddPass<ParticlePass>();    // 6. パーティクル
     AddPass<PrimitivePass>();   // 7. デバッグプリミティブ
     AddPass<PostProcessPass>(); // 8. ポストプロセス・最終出力
-
 }
 
 void RenderPipeline::Shutdown()
@@ -73,7 +74,30 @@ void RenderPipeline::Execute(const RenderFrameContext& ctx)
         }
 #endif
 
+        // =========================================================
+        // ★修正: マクロを使わず、キャッシュした固有タグでGPU計測を実行する
+        // =========================================================
+#if defined(TRACY_ENABLE)
+        if (auto tracyCtx = Graphics::Instance().GetTracyContext()) {
+
+            // ★ 究極のハック:
+            // TracyD3D11Zone マクロの内部実装を直接展開して、
+            // 作成済みの pass->_gpuSourceLocation を渡す。
+            // 変数名の重複を避けるため、一意なローカル変数を定義する。
+            tracy::D3D11ZoneScope __tracy_gpu_zone(tracyCtx, pass->_gpuSourceLocation, true);
+
+            // ※もし上記で「true が多すぎる（引数エラー）」が出た場合は、
+            //   tracy::D3D11ZoneScope __tracy_gpu_zone(tracyCtx, pass->_gpuSourceLocation); 
+            //   に戻しつつ、以下の #else のブロックを使ってください。
+
+            pass->Execute(ctx);
+        }
+        else {
+            pass->Execute(ctx);
+        }
+#else
         pass->Execute(ctx);
+#endif
 
 #if defined(ENABLE_EDITOR) 
         if (annotation) {

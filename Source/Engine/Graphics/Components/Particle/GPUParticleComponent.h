@@ -3,6 +3,7 @@
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include <cstring>
 #include <d3d11.h>
+#include <wrl/client.h>   // ComPtr (proceduralRampSRV 用)
 
 // =========================================================================
 // ParticleEmitterDesc — 権威データ（デザイナーが編集・シリアライズ対象）
@@ -56,6 +57,14 @@ struct ParticleEmitterDesc
     int             emitMode          = 0;                  // emit_mode 0:継続 1:バースト
     int             burstCount        = 0;                  // burst_count
 
+    // ---- Force Field (引力/斥力/渦/ドラッグ。全て 0/既定 = 無効で従来挙動) ----
+    GpuData::float3 attractorPos      = { 0, 0, 0 };   // 中心 (attractorLocal=true なら emitter 相対)
+    float           attractorStrength = 0.0f;          // 正:引力 負:斥力 (中心での加速度 u/s^2)
+    float           attractorRadius   = 0.0f;          // 影響半径 (0=無限, >0 で滑らかに減衰)
+    float           vortexStrength    = 0.0f;          // 中心軸まわりの渦 (0=無し。引力と併用推奨)
+    float           drag              = 0.0f;          // 速度減衰 1/s (0=無し)
+    bool            attractorLocal    = true;          // true:emitter相対 false:world絶対
+
     // ---- アセット参照（POD 維持のため固定長配列） ----
     char            texturePath[128]  = {};
     char            colorRampPath[128]= {};
@@ -65,6 +74,11 @@ struct ParticleEmitterDesc
         std::memset(texturePath,    0, sizeof(texturePath));
         std::memset(colorRampPath,  0, sizeof(colorRampPath));
     }
+
+    /// @brief desc を変更した後に呼ぶ。次フレームで staticCB が再 upload される。
+    //void MarkDescChanged() { _staticDirty = true; }   // ★ step1から修正: _rampDirty を分離
+    /// @brief gradientStops を変更した後に呼ぶ。次フレームで手続きランプを再ベイク。
+    //void MarkGradientChanged() { _rampDirty = true; }
 };
 
 // =========================================================================

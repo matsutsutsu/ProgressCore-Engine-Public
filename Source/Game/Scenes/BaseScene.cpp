@@ -20,6 +20,9 @@
 #include "Engine/Core/App/Framework.h"
 #include "Engine/Core/App/EngineServices.h"
 
+#include "Engine/Transform/Systems/TransformUpdateSystem.h"
+#include "Engine/Transform/Systems/HierarchyCleanupSystem.h"
+#include "Engine/Physics/Systems/Jolt/JoltCleanupSystem.h"
  
 #include "tracy/Tracy.hpp"
 
@@ -106,7 +109,35 @@ void BaseScene::Initialize()
 
 void BaseScene::Start() {}
 
-void BaseScene::Finalize() {}
+void BaseScene::Finalize()
+{
+    // C++シーンそのものが消滅する前に、物理空間を安全に掃除する
+    if (_worldPtr) {
+        // 全エンティティに破壊予約をつける
+        // (ここでは PersistentTag も関係なく全て破壊してよい。世界が終わるため)
+        auto& chunks = _worldPtr->GetChunkManager().GetChunks();
+        for (auto& chunkPtr : chunks) {
+            if (!chunkPtr) continue;
+            auto* chunk = chunkPtr.get();
+            for (size_t i = 0; i < chunk->GetEntityCount(); ++i) {
+                CCL::ECS::EntityID entity = chunk->GetEntityByIndex(i);
+                if (entity != CCL::ECS::InvalidEntityID) {
+                    TransformUpdateSystem::MarkForDestruction(*_worldPtr, entity, true);
+                }
+            }
+        }
+
+        // Jolt剛体の即時消去
+        JoltCleanupSystem::ExecuteCleanup(*_worldPtr);
+        HierarchyCleanupSystem::ExecuteCleanup(*_worldPtr);
+
+        // ゴミ箱を空にする
+        _worldPtr->ScrutinyAndApply();
+    }
+
+    // この直後、SceneManager側のClear()によって _ecsContext が破棄され、
+    // Worldもシステムも完全にメモリから解放されます。
+}
 
 void BaseScene::Update(float elapsedTime)
 {

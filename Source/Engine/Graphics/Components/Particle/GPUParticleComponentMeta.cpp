@@ -58,6 +58,13 @@ namespace {
         j["emitMode"] = d.emitMode;
         j["burstCount"] = d.burstCount;
 
+        j["attractorPos"]      = { d.attractorPos.x, d.attractorPos.y, d.attractorPos.z };
+        j["attractorStrength"] = d.attractorStrength;
+        j["attractorRadius"]   = d.attractorRadius;
+        j["vortexStrength"]    = d.vortexStrength;
+        j["drag"]              = d.drag;
+        j["attractorLocal"]    = d.attractorLocal;
+
         j["texturePath"] = std::string(d.texturePath);
         j["colorRampPath"] = std::string(d.colorRampPath);
     }
@@ -105,11 +112,19 @@ namespace {
         I("particleType", d.particleType);
         I("emitMode", d.emitMode);
         I("burstCount", d.burstCount);
+        d.attractorLocal = j.value("attractorLocal", true);
 
         if (j.contains("spriteGrid") && j["spriteGrid"].is_array() && j["spriteGrid"].size() >= 2) {
             d.spriteGrid.x = j["spriteGrid"][0].get<uint32_t>();
             d.spriteGrid.y = j["spriteGrid"][1].get<uint32_t>();
         }
+
+        F3("attractorPos", d.attractorPos);
+        F("attractorStrength", d.attractorStrength);
+        F("attractorRadius", d.attractorRadius);
+        F("vortexStrength", d.vortexStrength);
+        F("drag", d.drag);
+
 
         STR("texturePath", d.texturePath, sizeof(d.texturePath));
         STR("colorRampPath", d.colorRampPath, sizeof(d.colorRampPath));
@@ -256,6 +271,17 @@ template <> struct ComponentMeta<GPUParticleComponent> {
             ImGui::TextDisabled(u8"乱流・ノイズ (Turbulence)");
             if (ImGui::DragFloat(u8"ノイズ強度 (Strength)", &d.noiseStrength, 0.1f))                      changed = true;
             if (ImGui::DragFloat(u8"ノイズサイズ (Scale)", &d.noiseScale, 0.01f))                         changed = true;
+            ImGui::TreePop();
+        }
+
+        if (ImGui::TreeNode("引力・斥力（Force Field）")) {
+
+            if (ImGui::Checkbox("オフセット 　true:emitter相対 false:world絶対（Local Space）", &d.attractorLocal))  changed = true;
+            if (ImGui::DragFloat3("中心位置（Center）", &d.attractorPos.x, 0.05f))  changed = true;
+            if (ImGui::DragFloat("正:引力 負:斥力 （Strength）", &d.attractorStrength, 0.1f)) changed = true; // +:引力 -:斥力
+            if (ImGui::DragFloat("影響半径 （Radius）", &d.attractorRadius, 0.05f, 0.0f, 100.0f)) changed = true;
+            if (ImGui::DragFloat("中心軸まわりの渦 (0=無し。引力と併用推奨)（Vortex）", &d.vortexStrength, 0.1f)) changed = true;
+            if (ImGui::DragFloat("速度減衰 1/s (0=無し)（Drag）", &d.drag, 0.05f, 0.0f, 20.0f)) changed = true;
             ImGui::TreePop();
         }
 

@@ -345,57 +345,68 @@ void SceneInitializer::SpawnShaderTest(CCL::ECS::Core::World& world, ID3D11Devic
 #include "Game/Logics/Character/Player/PlayerComponent.h"
 #include "Game/Logics/Character/Enemy/EnemyComponent.h"
 
+//============================================================================
+// SceneInitializer.cpp または 任意のテスト用クラス
+//============================================================================
+#include "Game/Logics/LevelGen/DungeonGrid.h"
+#include "Engine/Serialization/Factory/EntityFactory.h"
+#include "Engine/Transform/Components/TransformComponent.h"
+#include <random>
 
 void SceneInitializer::SpawnEnemySwarmTest(CCL::ECS::Core::World& world, ID3D11Device* device, int count)
 {
-    // 1. 床の生成 (物理判定付きのステージ)
-    EntityFactory::SpawnPrefab(world, "Assets/Prefabs/World/JoltExampleStage.json");
+    using namespace RuneForge::Dungeon;
 
-    auto camera = EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Camera/FollowCamera.json");
-    auto player = EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Player/PlayerTest.json");
-    
-    // player.ID() を渡してメソッドチェーンでPatchする
-    camera.Patch<CameraBodyFollow>([pid = player.ID()](auto& body) { body.target = pid; })
-        .Patch<CameraAimLookAt>([pid = player.ID()](auto& aim) { aim.target = pid; });
-
-
-
-
-    // 4. エネミーのアーキタイプ (★物理判定 JoltRigidbody を追加)
-    const auto enemyArch = CCL::ECS::ArchetypeHelper::Generate<
-        TransformComponent,
-        PrimitiveComponent,
-        EnemyComponent,
-        JoltRigidbodyComponent,
-        JoltSphereColliderComponent
-    >();
-
-    std::mt19937 gen(42);
-    // プレイヤーの周囲 10m 〜 60m の範囲にドーナツ状に配置する
-    std::uniform_real_distribution<float> distAngle(0.0f, DirectX::XM_2PI);
-    std::uniform_real_distribution<float> distRadius(10.0f, 60.0f);
-
-    for (int i = 0; i < count; ++i) {
-        auto enemy = EntityFactory::SpawnNamed(world, "PhysicsEnemy", enemyArch);
-
-        float angle = distAngle(gen);
-        float radius = distRadius(gen);
-        float posX = std::cos(angle) * radius;
-        float posZ = std::sin(angle) * radius;
-        float posY = 5.0f + (i % 10); // 重なりを避けるため少しずつ高さを変えて降らせる
-
-        enemy.Set(TransformComponent{ .position = {posX, posY, posZ}, .rotation = {0.0f, 0.0f, 0.0f, 1.0f}, .scale = {1.0f, 1.0f, 1.0f} })
-            .Set(EnemyComponent{})
-            .Set(PrimitiveComponent{ .type = PrimitiveType::Sphere, .radius = 1.0f, .color = {1.0f, 0.1f, 0.1f, 1.0f} })
-            .Set(JoltSphereColliderComponent{ .radius = 1.0f })
-            // 動的剛体として設定（転がりながら向かってくる）
-            .Set(JoltRigidbodyComponent{
-                .motionType = JPH::EMotionType::Dynamic,
-                .objectLayer = PhysicsLayers::MOVING,
-                .restitution = 0.1f, // あまり跳ねない
-                .friction = 0.2f     // 摩擦
-                });
+    // 1. ダンジョン空間の真実である DungeonGrid リソースを取得
+    if (!world.HasResource<DungeonGrid>())
+    {
+        CCL_LOG_ERROR(LogCategory::Core, "DungeonGrid is missing! Please call DungeonLevelBuilder::Build first.");
+        return;
     }
+
+    auto& grid = world.GetResource<DungeonGrid>();
+    std::mt19937 gen(42); // 固定シードで再現性を担保
+
+    // 2. ダンジョンのグリッド幅・奥行きの範囲で乱数を生成
+    // ※ width/depth が private の場合は grid.GetWidth() 等に適宜変更してください
+    std::uniform_int_distribution<int> distI(0, grid.Width() - 1);
+    std::uniform_int_distribution<int> distJ(0, grid.Depth() - 1);
+
+    // 密集を防ぐための微小な座標ブレ（ジッター）
+    float halfCell = grid.CellSize() * 0.4f;
+    std::uniform_real_distribution<float> jitter(-halfCell, halfCell);
+
+    int spawned = 0;
+    int maxAttempts = count * 10; // 空きマスが見つからず無限ループに陥るのを防ぐ安全装置
+
+    for (int attempts = 0; attempts < maxAttempts && spawned < count; ++attempts)
+    {
+        int i = distI(gen);
+        int j = distJ(gen);
+
+        // 3. 【最重要】そこが「壁」ならスキップしてやり直す
+        if (grid.IsWall(i, j)) continue;
+
+        // 4. セルの中心ワールド座標を取得し、ジッター（ブレ）を加えて散らす
+        float posX = grid.CellCenterWorldX(i) + jitter(gen);
+        float posZ = grid.CellCenterWorldZ(j) + jitter(gen);
+        float posY = 1.0f;
+
+        // 5. ECS へのエンティティ登録
+        auto enemy = EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Enemy/EnemyTest.json");
+
+        // 生成直後に安全に Transform を書き換える (Patchを使用)
+        enemy.Patch<TransformComponent>([posX, posY, posZ](auto& t) {
+            t.position = { posX, posY, posZ };
+            t.rotation = { 0.0f, 0.0f, 0.0f, 1.0f };
+            t.scale = { 0.2f, 0.2f, 0.2f };
+            t.isDirty = true; // 行列の再計算を要求
+            });
+
+        spawned++;
+    }
+
+    CCL_LOG_INFO(LogCategory::Core, "SpawnEnemySwarmTest: Successfully spawned %d enemies.", spawned);
 }
 
 // ============================================================================

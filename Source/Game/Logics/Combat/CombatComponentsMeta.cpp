@@ -22,16 +22,37 @@
 #include <json.hpp>
 using json = nlohmann::json;
 
-// ===================================================================
-// 1. Hitbox / Hurtbox (パターンA)
-// ===================================================================
+// ===========================================================================
+// 1. HitboxComponent メタデータ定義 (パターンA: 全自動)
+// ===========================================================================
 COMPONENT_META_BEGIN(HitboxComponent, "Hitbox (攻撃判定)")
-CFIELD_FLOAT_RANGED(damageAmount, "基礎ダメージ量", 1.0f, 0.0f, 9999.0f, "Combat")
-CFIELD(isActive, "判定アクティブ(Debug)", "Combat")
+
+// 基礎ダメージ量（スライダー/ドラッグで調整可能）
+CFIELD_FLOAT_RANGED(damageAmount, "Damage Amount", 1.0f, 0.0f, 9999.0f, "Base")
+// 判定の稼働フラグ（bool型は自動推論）
+CFIELD(isActive, "Is Active", "State")
+// クリティカル率 [0.0 ~ 1.0] の範囲で制限
+CFIELD_FLOAT_RANGED(critRate, "Critical Rate", 0.01f, 0.0f, 1.0f, "Combat Stats")
+// クリティカルダメージ倍率（下限 1.0 倍）
+CFIELD_FLOAT_RANGED(critMult, "Critical Multiplier", 0.05f, 1.0f, 10.0f, "Combat Stats")
+// ノックバックの強さ（ご要望のコアパラメータ）
+CFIELD_FLOAT_RANGED(knockback, "Knockback Force", 0.1f, 0.0f, 500.0f, "Combat Stats")
+
+// 【アーキテクチャ解説】
+// ownerID(EntityID) や hitTargets(固定長配列), hitCount は、
+// 完全に実行時のシステム間（Jolt ⇔ HitboxCollisionSystem）の同期・多段ヒット防止制御用データであり、
+// シーンファイルへの永続化やエディタによる手動書き換えの対象外（DODの非シリアライズ原則）とするため、
+// 意図的に Fields の定義から除外しています。これによりデータ破損を防ぎます。
+
 COMPONENT_META_END(HitboxComponent)
 
+
+// ===========================================================================
+// 2. HurtboxComponent メタデータ定義 (パターンA: 全自動)
+// ===========================================================================
 COMPONENT_META_BEGIN(HurtboxComponent, "Hurtbox (被弾判定)")
-CFIELD_FLOAT_RANGED(damageMultiplier, "ダメージ倍率 (弱点等)", 0.1f, 0.0f, 10.0f, "Combat")
+// 被ダメージ倍率（弱点部位なら 2.0f、耐性なら 0.5f などにエディタから調整可能）
+CFIELD_FLOAT_RANGED(damageMultiplier, "Damage Multiplier", 0.05f, 0.0f, 10.0f, "Defense")
 COMPONENT_META_END(HurtboxComponent)
 
 // ===================================================================

@@ -47,7 +47,7 @@ public:
         // ★ スポーンマーカーから Prefab を配置するか
         bool        spawnPrefabs = true;
         // 各マーカー種に対応する Prefab パス（空なら配置しない）
-        std::string enemyPrefab = "Assets/Prefabs/Enemy/Enemy.json";
+        std::string enemyPrefab = "Assets/Prefabs/Enemy/EnemyTest.json";
         std::string chestPrefab = "Assets/Prefabs/Item/Chest.json";
         std::string shopPrefab = "Assets/Prefabs/Shop/Shop.json";
         std::string forgePrefab = "Assets/Prefabs/Forge/Forge.json";
@@ -64,6 +64,13 @@ public:
     // 詳細版
     static void Build(CCL::ECS::Core::World& world, ID3D11Device* device,
         const BuildParams& params);
+
+    // 既に作られた DungeonGenerateResult を直接構築する（共通パイプライン）。
+    //   自動生成・手作りマップ（DungeonLayout::ToResult）のどちらも最終的にここを通る。
+    //   手作りマップを建てたいときはこれを呼ぶ。
+    static void BuildFromResult(CCL::ECS::Core::World& world, ID3D11Device* device,
+                      const RuneForge::Dungeon::DungeonGenerateResult& result,
+                      const BuildParams& params);
 
     // 既存のダンジョンチャンクを全削除する（再生成前に呼ぶ）。
     static void Clear(CCL::ECS::Core::World& world);
