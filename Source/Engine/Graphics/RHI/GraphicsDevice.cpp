@@ -2,6 +2,7 @@
 #include "Engine/Core/Math/Misc.h"
 #include "Engine/Graphics/Shader/Shared/ShaderShared.h"  // _ASSERT_EXPR, HRTrace
 #include "Engine/Graphics/RHI/Graphics.h"
+#include "Engine/Platform/Core/Logger.h"
 
 // CbScene 構造体（GraphicsDevice が物理バッファを持ち、Graphics が内容を埋める）
 // バッファサイズだけ知れればよいため private static constexpr で宣言
@@ -108,6 +109,13 @@ void GraphicsDevice::Initialize(HWND hWnd)
         hr = _device->CreateBuffer(&bd, nullptr, _sceneConstantBuffer.GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
+
+    // デバイスとコンテキストの準備が完了した最後に Tracy コンテキストを生成
+    if (_device && _context) {
+        _tracyD3D11Ctx = TracyD3D11Context(_device.Get(), _context.Get());
+        CCL_LOG_INFO(LogCategory::Render,"[GraphicsDevice] Tracy D3D11 Context initialized.");
+        
+    }
 }
 
 void GraphicsDevice::Shutdown()
@@ -118,7 +126,12 @@ void GraphicsDevice::Shutdown()
         _context->Flush();
     }
 
-
+    // デバイス本体が破壊される「前」に Tracy コンテキストを破棄する
+    if (_tracyD3D11Ctx) {
+        TracyD3D11Destroy(_tracyD3D11Ctx);
+        _tracyD3D11Ctx = nullptr;
+        CCL_LOG_INFO(LogCategory::Render, "[GraphicsDevice] Tracy D3D11 Context destroyed.");
+    }
 
     // ② GraphicsDevice 自身が持っているリソースを【先に】全て手放す！
     _sceneConstantBuffer.Reset();

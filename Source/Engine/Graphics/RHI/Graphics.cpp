@@ -15,7 +15,7 @@
 // デバッグ用のエラーシェーダー（シェーダーコンパイル失敗時にこれを描画する）
 #include "Engine/Graphics/Shader/Material/ErrorShader.h"
 
-
+#include "tracy/TracyD3D11.hpp"
 
 // ============================================================
 //  Initialize
@@ -148,6 +148,9 @@ void Graphics::Update()
 // ============================================================
 void Graphics::Render(const RenderFrameContext& ctx)
 {
+    // このスコープ内の D3D11 描画コマンド群を GPU タイムラインとして記録する
+    TracyD3D11Zone(_gfxDevice.GetTracyContext(), "Graphics::Render Pipeline (GPU)");
+
     _pipeline.Execute(ctx);
     UnbindAllResources(ctx.dc);
 }

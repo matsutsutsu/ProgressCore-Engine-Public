@@ -29,6 +29,13 @@ public:
     std::string _passName = "Unknown Pass";
     std::string _tracyZoneName = "Pass: Unknown";
 
+    // =========================================================
+    // テンプレートで自動生成される固有のGPUタグを保持する
+    // =========================================================
+#if defined(TRACY_ENABLE)
+    const tracy::SourceLocationData* _gpuSourceLocation = nullptr;
+#endif
+
     /**
      * @brief 初期化。Services を保持し、必要に応じて GPU リソースを生成する。
      * @param services 永続サービス群。ポインタはエンジン終了まで有効。

@@ -32,6 +32,7 @@
 #endif
 
 #include "tracy/Tracy.hpp"
+#include "tracy/TracyD3D11.hpp"
 
 
 void InitializeDebugLayer(ID3D11Device *device)
@@ -238,6 +239,15 @@ void Framework::Update(float elapsedTime)
 // 描画処理
 void Framework::Render(float elapsedTime)
 {
+	// =========================================================
+	// ★ 究極の修正: 【一番最初】にTracyを回収する
+	// 前フレームの Present と Flush から最も時間が経過しているこの瞬間が、
+	// GPUのタイムスタンプ書き込みが完了している確率が最も高い安全地帯です。
+	// =========================================================
+	if (auto tracyCtx = Graphics::Instance().GetTracyContext()) {
+		TracyD3D11Collect(tracyCtx);
+	}
+
     // 描画コマンド発行全体を計測
     ZoneScopedN("Framework::Render");
 
@@ -262,13 +272,12 @@ void Framework::Render(float elapsedTime)
 
 
 	// シーンマネージャーを介して現在のシーンを描画
-    {
- 
-            // シーンの描画（不透明、半透明、パーティクルなど）を細分化して計測
-            ZoneScopedN("SceneManager::Render");
+    { 
+        // シーンの描画（不透明、半透明、パーティクルなど）を細分化して計測
+        ZoneScopedN("SceneManager::Render");
 
 
-            SceneManager::Instance().Render();
+        SceneManager::Instance().Render();
     }
 
 
@@ -318,9 +327,13 @@ void Framework::Render(float elapsedTime)
 			}
 		}
 
-		{
-		 
+		{	 
 			ZoneScopedN("FrameWork::ImGuiRenderer::Render");
+
+			// GPU側のImGui処理時間も計測する
+			if (auto tracyCtx = Graphics::Instance().GetTracyContext()) {
+				TracyD3D11Zone(tracyCtx, "ImGui Pass (GPU)");
+			}
 
 			// IMGUI描画
 			ImGuiRenderer::Render(dc);
@@ -331,20 +344,24 @@ void Framework::Render(float elapsedTime)
 #endif
 
 	{
- 
-            // ★超重要: GPUの描画待ち（VSync同期）の時間を計測
-            ZoneScopedN("Graphics::Present (VSync Wait)");
-
-
-            // 画面表示
-			if (!Graphics::Instance().Present(syncInterval)) {
-				// ① GPU リソース再構築（Shutdown → Initialize）
-				Graphics::Instance().RecoverFromDeviceLost();
-				// ② 現在のシーンに通知（ECS ワールドを作り直してリソースを再ロード）
-				if (auto* scene = dynamic_cast<BaseScene*>(SceneManager::Instance().GetCurrentScene()))
-					scene->OnDeviceRecreated();
-			}
+        // ★超重要: GPUの描画待ち（VSync同期）の時間を計測
+        ZoneScopedN("Graphics::Present (VSync Wait)");
+		
+		// 画面表示
+		if (Graphics::Instance().Present(syncInterval)) {
+			// ★ 成功時のみ: GPUのキューを確実に押し出す
+			if (dc) dc->Flush();
+		}
+		else {
+			// ★ 失敗時(デバイスロスト等): 絶対に Flush や Collect を呼んではいけない
+			// ① GPU リソース再構築
+			Graphics::Instance().RecoverFromDeviceLost();
+			// ② 現在のシーンに通知
+			if (auto* scene = dynamic_cast<BaseScene*>(SceneManager::Instance().GetCurrentScene()))
+				scene->OnDeviceRecreated();
+		}
     }
+
 	
 }
 
