@@ -46,4 +46,7 @@ private:
     int   _editTool = 0;            // 0=壁/床, 1=Start, 2=Portal, 3=Enemy, 4=Chest
     int   _resizeW = 21;
     int   _resizeH = 21;
+
+
+    int _swarmTestCount = 0; // 0なら何もしない、数値があればその数だけ出す
 };

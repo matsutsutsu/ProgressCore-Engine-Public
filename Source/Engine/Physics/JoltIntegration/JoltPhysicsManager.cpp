@@ -108,7 +108,7 @@ bool ObjectLayerPairFilterImpl::ShouldCollide(ObjectLayer inObject1, ObjectLayer
     case PhysicsLayers::ENEMY:
         // 敵は キャラ(プレイヤー)・他の敵・弾 と当たる。
         return inObject2 == PhysicsLayers::MOVING
-            || inObject2 == PhysicsLayers::ENEMY
+            //|| inObject2 == PhysicsLayers::ENEMY
             || inObject2 == PhysicsLayers::BULLET;
 
     case PhysicsLayers::BULLET:

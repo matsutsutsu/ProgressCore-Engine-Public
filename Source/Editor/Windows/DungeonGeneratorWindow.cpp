@@ -8,6 +8,7 @@
 #include "Engine/Platform/Core/Dialog.h" // プロジェクトのファイルダイアログ
 #include "Engine/Platform/Core/Logger.h"
 
+#include "Engine/Serialization/Factory/SceneInitializer.h"
 
 #include <imgui.h>
 
@@ -269,6 +270,20 @@ void DungeonGeneratorWindow::DrawHandMadeTab(EditorContext& context)
         else
         {
             CCL_LOG_ERROR(LogCategory::Editor, "[DungeonEditor] context.world is null!");
+        }
+    }
+
+    ImGui::Separator();
+    ImGui::Text("Stress Test:");
+    ImGui::SliderInt("Swarm Count", &_swarmTestCount, 0, 5000);
+
+    if (ImGui::Button("Swarm Test", ImVec2(-1, 40)))
+    {
+        // ★ ビルド完了直後に UI からの指示数でスウォームを発生させる
+        if (_swarmTestCount > 0)
+        {
+            ID3D11Device* debug = nullptr;
+            SceneInitializer::SpawnEnemySwarmTest(*context.world, debug, _swarmTestCount);
         }
     }
 

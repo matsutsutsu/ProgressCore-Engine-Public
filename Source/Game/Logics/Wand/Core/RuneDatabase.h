@@ -3,42 +3,40 @@
 // RuneDatabase.h
 // --------------
 // 役割:
-//   ルーン(概念)ごとの「フェーズ別デフォルト挙動パラメータ」と「スタックカーブ」の
-//   唯一の置き場(SSOT)。
+//   ルーン(概念)ごとの「フェーズ別デフォルトパラメータ」「スタックカーブ」
+//   「カーブの畳み込み方」の唯一の置き場(SSOT)。
 //
 // 責務:
-//   - (EffectType, WandPhase) → EffectOp デフォルト値（GetDefaultOp）。
-//   - (EffectType, WandPhase) → スタックカーブ（GetStackCurve）。カーブを持つ概念のみ。
+//   - GetDefaultOp  : (type, phase) → EffectOp の既定値
+//   - HasStackCurve : (type, phase) → カーブを持つか
+//   - GetStackCurve : (type, phase) → RuneStackCurve
+//   - GetCurveFoldType : (type, phase) → 畳み込み方(倍率系/加算系)
 //
 // 設計方針:
-//   - 調整値を各ハンドラ/コンパイラに散らさず、ここに一元化する。
-//   - スタックカーブは「カーブを持つ概念だけ」定義する段階導入。HasStackCurve が
-//     false の概念は従来通り params の累乗で扱う（既存挙動を壊さない）。
+//   コンパイラ(WandCompiler)はRuneDatabaseに問い合わせるだけ。
+//   「どう畳むか」の知識はRuneDatabaseに閉じ、コンパイラは汎用ロジックのみ持つ。
 // ===========================================================================
-
 #include "Game/Logics/Wand/Core/WandTypes.h"
 #include "Game/Logics/Wand/Core/RuneStackCurve.h"
 
-/**
- * @brief ルーンのフェーズ別デフォルト挙動・スタックカーブを引く静的テーブル。
- */
+/// @brief カーブの畳み込み方。RuneDatabase が概念ごとに返す。
+enum class CurveFoldType
+{
+    Multiplicative, ///< 倍率系：At(0)*At(1)*... 掛け算で畳む（初速倍率など）
+    Additive,       ///< 加算系：At(0)+At(1)*... 足し算で畳む（本数加算など）
+};
+
 struct RuneDatabase
 {
-    /**
-     * @brief 指定概念・指定フェーズの既定 EffectOp を返す。
-     * @return params を既定値で埋めた EffectOp（stackCount は呼び出し側が上書き）。
-     */
+    /// @brief (type, phase) の既定 EffectOp を返す。stackCount は呼び出し側が上書き。
     static EffectOp GetDefaultOp(EffectType type, WandPhase phase);
 
-    /**
-     * @brief 指定概念・指定フェーズがスタックカーブを持つか。
-     * @return true ならカーブで効果量を調整する。false なら従来の params 累乗。
-     */
+    /// @brief (type, phase) がスタックカーブを持つか。
     static bool HasStackCurve(EffectType type, WandPhase phase);
 
-    /**
-     * @brief 指定概念・指定フェーズのスタックカーブを返す。
-     * @note  HasStackCurve が true の組み合わせでのみ意味を持つ。
-     */
+    /// @brief (type, phase) のスタックカーブを返す。
     static RuneStackCurve GetStackCurve(EffectType type, WandPhase phase);
+
+    /// @brief (type, phase) のカーブ畳み込み方を返す。HasStackCurve が true の時だけ呼ぶ。
+    static CurveFoldType GetCurveFoldType(EffectType type, WandPhase phase);
 };

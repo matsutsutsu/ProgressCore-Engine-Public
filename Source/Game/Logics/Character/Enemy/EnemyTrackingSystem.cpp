@@ -4,10 +4,6 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
-// ★追加: 物理APIを使うためのインクルード
-#include "Engine/Physics/JoltIntegration/IPhysicsAPI.h"
-// ※ もし EngineServices などから取得する場合は適宜インクルードしてください
-
 using namespace CCL::ECS;
 using namespace DirectX;
 
@@ -34,79 +30,58 @@ void EnemyTrackingSystem::Update(float dt)
     if (!foundPlayer) return;
 
     XMVECTOR vPlayerPos = XMLoadFloat3(&playerPos);
-    float moveSpeed = 100.0f; // ★ 物理用に少し速めに設定
 
     // ==============================================================
-    // 2. 物理APIの取得 
+    // 2. 全エネミーの Transform を直接書き換えて移動・回転させる
     // ==============================================================
-    // 1. Facade(IPhysicsAPI)がResourceに登録されているかチェック
-    if (!_world->HasResource<std::shared_ptr<IPhysicsAPI>>()) return;
 
-    // shared_ptrを取り出してローカルに保持
-    auto physicsAPI = _world->GetResource<std::shared_ptr<IPhysicsAPI>>();
-
-    // ==============================================================
-    // 3. 全エネミーを物理エンジン経由で移動させる
-    // ==============================================================
-    // EntityID を受け取るパターンの ForEach を使用します。
-   // --- EnemyTrackingSystem.cpp の ForEachWithID 内部を書き換え ---
-
+    // ★修正: TransformComponent に & (非const参照) を付け、書き換え可能にする
     ForEachWithID(
-        [&](EntityID entity, const TransformComponent& trans, const EnemyComponent& enemy) {
+        [&](EntityID entity, TransformComponent& trans, const EnemyComponent& enemy) {
 
             XMVECTOR vPos = XMLoadFloat3(&trans.position);
             XMVECTOR vDir = XMVectorSubtract(vPlayerPos, vPos);
 
-            // Y軸(高さ)への追跡を無視
+            // ★ Y軸(高さ)への追跡を無視し、地面を這うようにする
             vDir = XMVectorSetY(vDir, 0.0f);
 
             XMVECTOR vLength = XMVector3Length(vDir);
             float length;
             XMStoreFloat(&length, vLength);
 
+            // プレイヤーと重ならないよう手前で停止（1.0f は適宜調整してください）
             if (length > 1.0f) {
-                // プレイヤーの方向ベクトル（正規化）
+                // 方向ベクトルを正規化（長さ1にする）
                 vDir = XMVector3Normalize(vDir);
 
-                // 1. 現在の水平速度を取得
-                XMFLOAT3 currentVel = physicsAPI->GetLinearVelocity(entity);
-                XMVECTOR vCurrentVel = XMVectorSet(currentVel.x, 0.0f, currentVel.z, 0.0f);
+                // ----------------------------------------------------
+                // [移動処理] 現在位置 + (方向 × スピード × デルタタイム)
+                // ----------------------------------------------------
+                XMVECTOR vMove = XMVectorScale(vDir, enemy.moveSpeed * dt);
+                XMVECTOR vNewPos = XMVectorAdd(vPos, vMove);
 
-                // 2. 目標とする理想の速度
-                XMVECTOR vDesiredVel = XMVectorScale(vDir, moveSpeed);
+                // Transformの座標を直接上書き
+                XMStoreFloat3(&trans.position, vNewPos);
 
-                // 3. 理想と現実の「差分（足りない速度）」を計算
-                XMVECTOR vVelocityDiff = XMVectorSubtract(vDesiredVel, vCurrentVel);
+                // ----------------------------------------------------
+                // [回転処理] プレイヤーの方向を向かせる（Y軸回転）
+                // ----------------------------------------------------
+                XMFLOAT3 dirFloat;
+                XMStoreFloat3(&dirFloat, vDir);
 
-                // 4. 差分に比例した「力(Force)」を加える（ステアリング・フォース）
-                // 係数(50.0fなど)が大きいほど機敏に追従し、小さいほど慣性が残って滑る
-                float forceMultiplier = 500.0f;
-                XMFLOAT3 force;
-                XMStoreFloat3(&force, XMVectorScale(vVelocityDiff, forceMultiplier));
+                // Z軸を前方とした時の、X軸との角度を atan2 で計算
+                float angleY = atan2f(dirFloat.x, dirFloat.z);
 
-                // 速度を上書きせず、力を加えることで「横に広がる余地」をJoltに残す
-                physicsAPI->AddForce(entity, force);
+                // Y軸(Upベクトル)を軸にしたクォータニオン(回転値)を作成
+                XMVECTOR vUp = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+                XMVECTOR vQuat = XMQuaternionRotationAxis(vUp, angleY);
 
-                // 向きは常にプレイヤーの方を向かせる
-                XMFLOAT3 lookDir;
-                XMStoreFloat3(&lookDir, vDir);
-                physicsAPI->SetLookDirection(entity, lookDir);
-            }
-            else {
-                // プレイヤーに密着した場合のブレーキ処理（目標速度をゼロにして力を加える）
-                XMFLOAT3 currentVel = physicsAPI->GetLinearVelocity(entity);
-                XMVECTOR vCurrentVel = XMVectorSet(currentVel.x, 0.0f, currentVel.z, 0.0f);
-                XMVECTOR vDesiredVel = XMVectorZero();
-                XMVECTOR vVelocityDiff = XMVectorSubtract(vDesiredVel, vCurrentVel);
-
-                float brakeMultiplier = 50.0f;
-                XMFLOAT3 force;
-                XMStoreFloat3(&force, XMVectorScale(vVelocityDiff, brakeMultiplier));
-
-                physicsAPI->AddForce(entity, force);
+                // Transformの回転を上書き
+                XMStoreFloat4(&trans.rotation, vQuat);
             }
         }
     );
 }
 
-REGISTER_LOGIC_SYSTEM(EnemyTrackingSystem,Priority::LogicStage::L02_Update)
+
+REGISTER_LOGIC_SYSTEM(EnemyTrackingSystem, Priority::LogicStage::L02_Update)
