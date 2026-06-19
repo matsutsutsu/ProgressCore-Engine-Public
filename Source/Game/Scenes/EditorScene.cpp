@@ -16,6 +16,9 @@
 #include "Game/Logics/LevelGen/DungeonLevelBuilder.h"
 #include "Game/Logics/LevelGen/DungeonLayout.h"
 
+#include "Game/Logics/AI/StateTree/EnemyAI.h"
+#include "Game/Logics/AI/StateTree/StateTreeRegistry.h"
+
 void EditorScene::Initialize()
 {
     BaseScene::Initialize(); // 共通初期化
@@ -23,21 +26,7 @@ void EditorScene::Initialize()
 
     ID3D11Device *device = Graphics::Instance().GetDevice();
     SceneInitializer::SpawnLightStartSet(*_worldPtr, device);
-    //SceneInitializer::SpawnGameLightSetting(_world, device);
     //Prefab::SpawnPrefab(*_worldPtr, "Assets/Prefabs/Camera/FreeCamera.json");
-
-    //SceneManager::Instance().LoadScene(_worldPtr, "Assets/Scene/DroneEnemyTestScene.json");
-
-    //SceneInitializer::SpawnTransformLoadTest(*_worldPtr, device, 100000);
-    //SceneInitializer::SpawnJoltTest(*_worldPtr, device);
-
-    // 中では普通にPBRモデル用にしている
-    //SceneInitializer::SpawnAnimationTest(*_worldPtr, device);
-
-    //SceneInitializer::SpawnEnemySwarmTest(*_worldPtr, device,1000);
-    //SceneInitializer::SpawnEnemySwarmTest(*_worldPtr, device,0);
-
-    //SceneInitializer::SpawnDungeonTest(*_worldPtr, device, 2024, 1); // seed=2024, 第1層
 
 
     DungeonLevelBuilder::BuildParams p;
@@ -58,24 +47,14 @@ void EditorScene::Initialize()
     // プレイヤーをスタート地点に生成（カメラもセット）
     DungeonLevelBuilder::SpawnPlayerAtStart(*_worldPtr);
 
-    //SceneInitializer::SpawnModelGridTest(*_worldPtr, device, 500);
-    
 
-    // 例：10万個のキューブによる銀河の渦を生成
-    //SceneInitializer::SpawnECSBenchmarkTest(*_worldPtr, device, 100000);
-
-    // 300 x 300 = 90,000 個のキューブの海を生成
-    //SceneInitializer::SpawnVoxelOceanTest(*_worldPtr, device, 400);
-    //SceneInitializer::SpawnVoxelOceanTest(*_worldPtr, device, 100);
+    // (a) ノード種別を登録
+    static auto enemyIds = EnemyAI::RegisterNodes();   // アプリ起動中1回でOK
+  
+    _worldPtr->AddResource<CCL::AI::StateTreeRegistry>();          // 空で生成
+    auto& stReg = _worldPtr->GetResource<CCL::AI::StateTreeRegistry>();
+    auto enemyHandle = stReg.Register(EnemyAI::BuildEnemyAsset(enemyIds, 12.0f));
    
-    //SceneInitializer::SpawnPhysicsAvalancheTest(*_worldPtr, device, 10000);
-
-    // 1000体の群衆ストレステストを実行！
-    //SceneInitializer::SpawnEnemySwarmTest(*_worldPtr, device, 200);
-
-	//SceneInitializer::SpawnTornadoTest(*_worldPtr, device, 1000);
-	//SceneInitializer::SpawnVectorFlowTest(*_worldPtr, device, 1000);
-	//SceneInitializer::SpawnLissajousTest(*_worldPtr, device, 10000);
 
 
     CCL_LOG_INFO(LogCategory::Core, "EditorScene Initialize");

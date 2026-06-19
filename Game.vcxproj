@@ -671,6 +671,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\FlowField\NavFlowFieldSystem.h" />
+    <ClInclude Include="Source\Game\Logics\AI\FlowField\NavGridFlowField.h" />
     <ClInclude Include="Source\Game\Logics\AI\NavAI\AIComponents.h" />
     <ClInclude Include="Source\Game\Logics\AI\NavAI\AIDebugDrawSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\NavAI\AIHearingSystem.h" />
@@ -678,12 +680,21 @@
     <ClInclude Include="Source\Game\Logics\AI\NavAI\AIPatrolSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\NavAI\AIPerceptionSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\NavAI\Events\AISoundEvent.h" />
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeComponents.h" />
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeData.h" />
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\AttackIntentComponent.h" />
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\EnemyAI.h" />
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\MoveIntentComponent.h" />
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\NodeRegistry.h" />
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\PerceptionComponent.h" />
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeAsset.h" />
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeComponent.h" />
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeNode.h" />
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeRegistry.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Collision\CharacterWallComponents.h" />
     <ClInclude Include="Source\Game\Logics\Character\Collision\CharacterWallSlideSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyMovementSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyPerceptionSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyTrackingSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerAttackSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerComponent.h" />
@@ -1432,16 +1443,20 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\FlowField\NavFlowFieldSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\NavAI\AIComponentsMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\NavAI\AIDebugDrawSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\NavAI\AIHearingSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\NavAI\AIMovementControlSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\NavAI\AIPatrolSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\NavAI\AIPerceptionSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\StateTree\StateTreeComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\StateTree\StateTreeSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Collision\CharacterWallComponentsMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Collision\CharacterWallSlideSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyMovementSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyPerceptionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyTrackingSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerAttackSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\PlayerComponentMeta.cpp" />

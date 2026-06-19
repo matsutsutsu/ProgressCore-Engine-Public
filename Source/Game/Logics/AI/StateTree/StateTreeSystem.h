@@ -1,35 +1,68 @@
-//#pragma once
-//#include "Engine/ECS/System/CCL_System.h"
-//#include "Game/Logics/AI/StateTree/StateTreeComponents.h"
-//#include "Game/Logics/AI/StateTree/StateTreeData.h"
-//#include "Game/Logics/AI/BehaviorTree/BossActionComponent.h"
-//#include "Engine/Transform/Components/TransformComponent.h"
-//#include "Engine/Core/Time/TimeState.h"
-//
-//// namespaceの全体囲みは禁止規約に従い除外
-//
-//class StateTreeSystem : public CCL::ECS::IfSystem<
-//    StateTreeSystem,
-//    CCL::ECS::Write<StateTreeComponent>,
-//    CCL::ECS::Write<BossCommandComponent>,
-//    CCL::ECS::Read<TransformComponent>,
-//    CCL::ECS::Read<TimeState>
-//>
-//{
-//public:
-//    StateTreeSystem() : IfSystem("StateTreeSystem") {}
-//    virtual ~StateTreeSystem() override = default;
-//
-//    virtual void Update(float dt) override;
-//
-//private:
-//    // 遷移条件の評価（BTのConditionと同等）
-//    bool EvaluateCondition(ActionID condId, const StateTreeComponent& stComp, const TransformComponent& trans);
-//
-//    // タスクの実行（Enter / Tick / Exit）
-//    void ExecuteTasks(StateTreeComponent& stComp, BossCommandComponent& cmdComp,
-//        const StateTreeAsset& asset, StateID stateId, StateTaskType execType, float dt);
-//
-//    // 最小共通祖先(LCA)を見つける関数
-//    StateID FindLCA(const StateTreeAsset& asset, StateID source, StateID target);
-//};
+/// @file  StateTreeSystem.h
+/// @brief StateTree の評価・タスク実行を担う ECS システム（真の汎用・並列駆動版）。
+///
+/// 設計方針（デカップリング）:
+///   Filter 条件を AI の意思決定に必要な最小データのみに絞り込むことで、
+///   雑魚敵、ボス、トラップ、NPC など、StateTreeComponent を持つすべての
+///   エンティティを単一のシステムで汎用的に処理可能にします。
+///
+/// 依存（スケジューラが順序解決）:
+///   Write StateTreeComponent   … 状態管理
+///   Read  TimeStateComponent   … ローカルタイムスケール（ヒットストップ対応）
+#pragma once
+#include "Engine/ECS/System/CCL_IfSystem.h"
+
+#include "StateTreeComponent.h"
+#include "Engine/Timer/TimeState.h"
+
+// 前方宣言
+namespace CCL::AI { struct StateTreeAsset; }
+
+class StateTreeSystem : public CCL::ECS::IfSystem<
+    StateTreeSystem,
+    CCL::ECS::Write<StateTreeComponent>,
+    CCL::ECS::Read<TimeStateComponent>>
+{
+public:
+    StateTreeSystem() : IfSystem("StateTreeSystem") {}
+
+    void Initialize() override;
+    void Update(float dt) override;
+
+private:
+    // 1 Entity の評価メイン
+    void TickStateTree(const CCL::AI::StateTreeAsset& asset,
+                       StateTreeComponent&            st,
+                       CCL::ECS::EntityID             entity,
+                       float                          dt);
+
+    /// @brief ルートから葉まで選択し、結果を outPath/outDepth に格納する。
+    bool SelectStates(const CCL::AI::StateTreeAsset& asset,
+                      CCL::ECS::EntityID             entity,
+                      uint16_t                       outPath[StateTreeComponent::MAX_DEPTH],
+                      uint8_t&                       outDepth);
+
+    /// @brief 1状態の入場条件を全評価。
+    bool EvaluateEnterConditions(const CCL::AI::StateTreeAsset& asset,
+                                 uint16_t                       stateIdx,
+                                 CCL::ECS::EntityID             entity);
+
+    /// @brief 1状態のタスクに EnterState を呼ぶ。
+    void EnterState(const CCL::AI::StateTreeAsset& asset,
+                    StateTreeComponent&            st,
+                    uint16_t                       stateIdx,
+                    CCL::ECS::EntityID             entity);
+
+    /// @brief 1状態のタスクに ExitState を呼ぶ。
+    void ExitState(const CCL::AI::StateTreeAsset& asset,
+                   StateTreeComponent&            st,
+                   uint16_t                       stateIdx,
+                   CCL::ECS::EntityID             entity);
+
+    /// @brief 1状態のタスクを Tick する。
+    void TickTasks(const CCL::AI::StateTreeAsset& asset,
+                   StateTreeComponent&            st,
+                   uint16_t                       stateIdx,
+                   CCL::ECS::EntityID             entity,
+                   float                          dt);
+};

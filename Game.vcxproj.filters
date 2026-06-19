@@ -511,6 +511,9 @@
     <Filter Include="Source\Game\Logics\Wand\Effects">
       <UniqueIdentifier>{7f3dd646-4b74-493f-9501-a1a6460b025d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\AI\FlowField">
+      <UniqueIdentifier>{178d9d97-d69d-42b8-995e-320e262d6a28}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1518,17 +1521,8 @@
     <ClInclude Include="Source\Engine\Graphics\Components\Particle\GPUParticleBuffer.h">
       <Filter>Source\Engine\Graphics\Components\Particle</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeData.h">
-      <Filter>Source\Game\Logics\AI\StateTree</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeComponents.h">
-      <Filter>Source\Game\Logics\AI\StateTree</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Editor\Windows\StateTreeWindow.h">
       <Filter>Source\Editor\Windows\AI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeSystem.h">
-      <Filter>Source\Game\Logics\AI\StateTree</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Timer\TimeScaleSetupSystem.h">
       <Filter>Source\Engine\Timer</Filter>
@@ -1760,6 +1754,48 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Wand\Core\RuneStackCurve.h">
       <Filter>Source\Game\Logics\Wand\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\AttackIntentComponent.h">
+      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\MoveIntentComponent.h">
+      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\NodeRegistry.h">
+      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeAsset.h">
+      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeComponent.h">
+      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeNode.h">
+      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeRegistry.h">
+      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeSystem.h">
+      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\PerceptionComponent.h">
+      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyPerceptionSystem.h">
+      <Filter>Source\Game\Logics\Character\Enemy</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyMovementSystem.h">
+      <Filter>Source\Game\Logics\Character\Enemy</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\EnemyAI.h">
+      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\FlowField\NavGridFlowField.h">
+      <Filter>Source\Game\Logics\AI\FlowField</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\FlowField\NavFlowFieldSystem.h">
+      <Filter>Source\Game\Logics\AI\FlowField</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2480,9 +2516,6 @@
     <ClCompile Include="Source\Editor\Windows\StateTreeWindow.cpp">
       <Filter>Source\Editor\Windows\AI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\StateTree\StateTreeSystem.cpp">
-      <Filter>Source\Game\Logics\AI\StateTree</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Timer\TimeComponentMeta.cpp">
       <Filter>Source\Engine\Timer</Filter>
     </ClCompile>
@@ -2632,6 +2665,21 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Wand\Collision\BulletEnemyCollisionSystem.cpp">
       <Filter>Source\Game\Logics\Wand\Collision</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\StateTree\StateTreeComponentMeta.cpp">
+      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\StateTree\StateTreeSystem.cpp">
+      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyPerceptionSystem.cpp">
+      <Filter>Source\Game\Logics\Character\Enemy</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyMovementSystem.cpp">
+      <Filter>Source\Game\Logics\Character\Enemy</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\FlowField\NavFlowFieldSystem.cpp">
+      <Filter>Source\Game\Logics\AI\FlowField</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

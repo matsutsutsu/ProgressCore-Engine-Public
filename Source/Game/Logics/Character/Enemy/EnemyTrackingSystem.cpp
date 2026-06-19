@@ -84,4 +84,4 @@ void EnemyTrackingSystem::Update(float dt)
 }
 
 
-REGISTER_LOGIC_SYSTEM(EnemyTrackingSystem, Priority::LogicStage::L02_Update)
+//REGISTER_LOGIC_SYSTEM(EnemyTrackingSystem, Priority::LogicStage::L02_Update)
