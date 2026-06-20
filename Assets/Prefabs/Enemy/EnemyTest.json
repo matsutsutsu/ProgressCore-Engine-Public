@@ -2,17 +2,17 @@
     "entities": [
         {
             "components": {
-                "AI": null,
+                "AttackIntentComponent": null,
                 "Bounding Box": {
                     "worldAABB.Center": [
-                        29.346179962158203,
+                        29.274307250976563,
                         3.7081642150878906,
-                        21.34637451171875
+                        22.84455108642578
                     ],
                     "worldAABB.Extents": [
-                        4.484588623046875,
+                        4.484589576721191,
                         3.4793663024902344,
-                        5.697897434234619
+                        5.697897911071777
                     ]
                 },
                 "Enemy": {
@@ -64,9 +64,11 @@
                 "Model": {
                     "assetPath": "Assets/Models/Enemy/Boss.glb"
                 },
+                "MoveIntentComponent": null,
                 "Name": {
                     "name": "EnemyTest"
                 },
+                "PerceptionComponent": null,
                 "StateTree": {
                     "assetName": "Enemy"
                 },
@@ -82,9 +84,9 @@
                     "isStatic": false,
                     "parent": 2,
                     "position": [
-                        29.071874618530273,
+                        29.0,
                         0.0,
-                        21.501821517944336
+                        23.0
                     ],
                     "rotation": [
                         0.0,

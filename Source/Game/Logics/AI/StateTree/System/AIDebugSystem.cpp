@@ -198,4 +198,4 @@ void AIDebugSystem::Update(float dt)
         "============================================================");
 }
 
-REGISTER_LOGIC_SYSTEM(AIDebugSystem, Priority::LogicStage::L02_Update)
+//REGISTER_LOGIC_SYSTEM(AIDebugSystem, Priority::LogicStage::L02_Update)
