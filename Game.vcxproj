@@ -692,6 +692,7 @@
     <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeDef.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeNode.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeRegistry.h" />
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeResolveSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeSerializer.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Collision\CharacterWallComponents.h" />
@@ -1457,6 +1458,7 @@
     <ClCompile Include="Source\Game\Logics\AI\StateTree\AIDebugSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\StateTree\AILogicComponentsMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\StateTree\StateTreeComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\StateTree\StateTreeResolveSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\StateTree\StateTreeSerializer.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\StateTree\StateTreeSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Collision\CharacterWallComponentsMeta.cpp" />

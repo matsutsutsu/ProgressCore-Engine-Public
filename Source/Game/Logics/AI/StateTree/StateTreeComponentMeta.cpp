@@ -1,15 +1,21 @@
 /// @file  StateTreeComponentMeta.cpp
-/// @brief StateTreeComponent のシリアライズ・インスペクタ定義。
+/// @brief StateTreeComponent のシリアライズ / インスペクタ定義。
 ///
-/// パターン B (カスタム GUI) を採用:
-///   - assetHandle はパス文字列として保存したいので Fields() で assetHandle.value を
-///     直接保存するのではなく、カスタムシリアライズ (パターン C への移行も視野) とする。
-///   - M1 時点では最小限の GUI のみ。エディタ強化は M5 フェーズで行う。
+/// パターンC（カスタムシリアライズ）を採用:
+///   Save : assetName だけ JSON に書き出す
+///   Load : assetName を読み込むだけ（Handle 解決は LoadContext に world がないため不可）
 ///
-/// ★ activeStates / scratch / activeDepth / needsReselect は
-///   「実行時の一時データ」なので Fields() に含めない（保存対象外）。
+/// Handle 解決のタイミング:
+///   LoadContext は LocalIndex ↔ EntityID の変換しか持たず、World にアクセスできない。
+///   そのため assetName → Handle の解決は StateTreeResolveSystem（L01_Input）が担う。
+///   「Load でアセット名だけ復元 → ResolveSystem が最初のフレームで Handle をセット」
+///   という 2 段階になる。
+
 #include "StateTreeComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
+#include "Engine/Serialization/Meta/ComponentMetaJson.h"
+
+#include "Engine/Platform/Core/Logger.h"
 
 #ifdef ENABLE_EDITOR
 #include "Editor/Inspector/ComponentGuiRegistry.h"
@@ -17,48 +23,86 @@
 #include <imgui.h>
 #endif
 
-template<>
-struct ComponentMeta<StateTreeComponent>
+
+// ================================================================
+// パターンC: カスタムシリアライズ
+// ================================================================
+namespace ComponentMetaJson
+{
+    template <>
+    struct ComponentSerializer<StateTreeComponent>
+    {
+        // --- Save: assetName だけ書き出す ---
+        static void Save(json& j, const StateTreeComponent& c, SaveContext* /*ctx*/)
+        {
+            j["assetName"] = c.assetName;
+            // assetHandle / activeStates / scratch は実行時専用なので保存しない
+        }
+
+        // --- Load: assetName を読むだけ。Handle 解決は ResolveSystem に任せる ---
+        static void Load(const json& j, StateTreeComponent& c, LoadContext* /*ctx*/)
+        {
+            if (j.contains("assetName"))
+                c.assetName = j["assetName"].get<std::string>();
+
+            // assetHandle は初期値（無効）のまま。
+            // StateTreeResolveSystem が L01_Input で assetName → Handle を解決する。
+        }
+    };
+} // namespace ComponentMetaJson
+
+
+// ================================================================
+// ComponentMeta<T> 本体
+// ================================================================
+template <> struct ComponentMeta<StateTreeComponent>
 {
     CCL_META_USING_THIS(StateTreeComponent)
 
-    static constexpr const char* displayName   = "State Tree";
-    static constexpr bool        hasCustomGui   = true;
+        static constexpr const char* displayName = "StateTree";
+    static constexpr bool        hasCustomGui = true;
     static constexpr bool        isSerializable = true;
 
 #ifdef ENABLE_EDITOR
     static bool CustomGui(StateTreeComponent& comp,
-                          unsigned long long entityID = 0, void* world = nullptr)
+        unsigned long long /*entityID*/ = 0,
+        void* /*world*/ = nullptr)
     {
         bool changed = false;
 
-        // --- アセットハンドル ---
-        ImGui::Text("Asset Handle: %u", comp.assetHandle.value);
+        // --- アセット名の直接入力 ---
+        char buf[128];
+        std::snprintf(buf, sizeof(buf), "%s", comp.assetName.c_str());
+        ImGui::SetNextItemWidth(200.0f);
+        if (ImGui::InputText("Asset Name", buf, sizeof(buf)))
+        {
+            comp.assetName = buf;
+            // 名前が変わったら Handle を無効化して再解決させる
+            comp.assetHandle = CCL::AI::StateTreeHandle{};
+            changed = true;
+        }
+        ImGui::SameLine();
+        ImGui::TextDisabled("(例: Enemy / Boss)");
 
-        // --- 現在の状態パス（実行時デバッグ表示）---
+        // --- Handle の状態表示 ---
+        if (comp.assetHandle.IsValid())
+            ImGui::TextColored({ 0.4f, 1.0f, 0.4f, 1.0f },
+                "Handle: %u  OK", comp.assetHandle.value);
+        else
+            ImGui::TextColored({ 1.0f, 0.5f, 0.3f, 1.0f },
+                "Handle: 未解決  (ResolveSystem が次フレームでセット)");
+
+        // --- アクティブ状態の表示（実行中デバッグ用）---
+        ImGui::Separator();
         if (comp.activeDepth > 0)
         {
-            ImGui::Text("Active Depth: %u", (unsigned)comp.activeDepth);
-            for (int i = 0; i < comp.activeDepth; ++i)
-            {
-                ImGui::Text("  [%d] state %u", i, (unsigned)comp.activeStates[i]);
-            }
+            ImGui::TextDisabled("Active States:");
+            for (int d = 0; d < (int)comp.activeDepth; ++d)
+                ImGui::Text("  [%d] states[%u]", d, (unsigned)comp.activeStates[d]);
         }
         else
         {
-            ImGui::TextDisabled("No active state");
-        }
-
-        // --- scratch 使用量 ---
-        ImGui::Text("Scratch: %d bytes capacity", StateTreeComponent::SCRATCH_SIZE);
-
-        // --- 強制リセットボタン（デバッグ用）---
-        if (ImGui::Button("Force Reselect"))
-        {
-            comp.needsReselect = true;
-            comp.activeDepth   = 0;
-            comp.ClearScratch();
-            changed = true;
+            ImGui::TextDisabled("Active: (none)");
         }
 
         return changed;
@@ -67,15 +111,11 @@ struct ComponentMeta<StateTreeComponent>
     static bool CustomGui(StateTreeComponent&, unsigned long long, void*) { return false; }
 #endif
 
-    // 保存対象フィールド:
-    //   assetHandle.value のみ（uint32_t として保存・ロード）。
-    //   実行時状態（activeStates, scratch など）は保存しない。
+    // パターンC なので Fields() は空
     static const std::vector<FieldDescriptor>& Fields()
     {
-        static const std::vector<FieldDescriptor> fields = {
-            CFIELD(assetHandle.value, "Asset Handle", "StateTree")
-        };
-        return fields;
+        static const std::vector<FieldDescriptor> empty;
+        return empty;
     }
 };
 

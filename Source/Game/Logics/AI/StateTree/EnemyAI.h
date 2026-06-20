@@ -211,7 +211,7 @@ namespace EnemyAI
     /// @brief 標準的な敵の StateTreeAsset をハードコードで組み立てる。
     /// @param detectRange 索敵範囲（メートル）。Chase 入場の閾値。
     inline CCL::AI::StateTreeAsset BuildEnemyAsset(const RegisteredIDs& ids,
-        float detectRange = 12.0f)
+        float detectRange = 52.0f)
     {
         using namespace CCL::AI;
         StateTreeAsset asset;

@@ -22,7 +22,7 @@
         },
         {
             "name": "Dungeon Architect Tool",
-            "visible": true
+            "visible": false
         },
         {
             "name": "State Tree Editor",
@@ -46,7 +46,7 @@
         },
         {
             "name": "Test Launcher",
-            "visible": true
+            "visible": false
         },
         {
             "name": "Game View",

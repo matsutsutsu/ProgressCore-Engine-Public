@@ -1809,6 +1809,9 @@
     <ClInclude Include="Source\Game\Logics\AI\StateTree\AIDebugSystem.h">
       <Filter>Source\Game\Logics\AI\StateTree</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeResolveSystem.h">
+      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2700,6 +2703,9 @@
       <Filter>Source\Game\Logics\AI\StateTree</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\StateTree\AIDebugSystem.cpp">
+      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\StateTree\StateTreeResolveSystem.cpp">
       <Filter>Source\Game\Logics\AI\StateTree</Filter>
     </ClCompile>
   </ItemGroup>
