@@ -16,8 +16,8 @@
 #include "Game/Logics/LevelGen/DungeonLevelBuilder.h"
 #include "Game/Logics/LevelGen/DungeonLayout.h"
 
-#include "Game/Logics/AI/StateTree/EnemyAI.h"
-#include "Game/Logics/AI/StateTree/StateTreeRegistry.h"
+#include "Game/Logics/AI/StateTree/EnemyAI/EnemyAI.h"
+#include "Game/Logics/AI/StateTree/Core/StateTreeRegistry.h"
 
 void EditorScene::Initialize()
 {

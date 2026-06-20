@@ -11,7 +11,7 @@
 ///   「Load でアセット名だけ復元 → ResolveSystem が最初のフレームで Handle をセット」
 ///   という 2 段階になる。
 
-#include "StateTreeComponent.h"
+#include "Game/Logics/AI/StateTree/Core/StateTreeComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 

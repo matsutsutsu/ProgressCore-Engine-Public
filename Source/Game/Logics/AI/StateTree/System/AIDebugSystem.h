@@ -16,9 +16,9 @@
 ///   STAGE-7: MoveIntent が書かれているか
 #pragma once
 #include "Engine/ECS/System/CCL_IfSystem.h"
-#include "Game/Logics/AI/StateTree/StateTreeComponent.h"
-#include "Game/Logics/AI/StateTree/PerceptionComponent.h"
-#include "Game/Logics/AI/StateTree/MoveIntentComponent.h"
+#include "Game/Logics/AI/StateTree/Core/StateTreeComponent.h"
+#include "Game/Logics/Character/Enemy/PerceptionComponent.h"
+#include "Game/Logics/Character/Enemy/MoveIntentComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 
 class AIDebugSystem : public CCL::ECS::IfSystem<

@@ -10,7 +10,7 @@
 ///   - 選択 Entity の実行中アクティブ状態のデバッグ表示
 #pragma once
 #include "Editor/Core/EditorWindow.h"   // パスは環境に合わせて調整
-#include "Game/Logics/AI/StateTree/StateTreeDef.h"
+#include "Game/Logics/AI/StateTree/Serialization/StateTreeDef.h"
 #include <string>
 #include <vector>
 

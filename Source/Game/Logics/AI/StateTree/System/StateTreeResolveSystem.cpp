@@ -1,7 +1,7 @@
 /// @file  StateTreeResolveSystem.cpp
 #include "StateTreeResolveSystem.h"
 
-#include "Game/Logics/AI/StateTree/StateTreeRegistry.h"
+#include "Game/Logics/AI/StateTree/Core/StateTreeRegistry.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"

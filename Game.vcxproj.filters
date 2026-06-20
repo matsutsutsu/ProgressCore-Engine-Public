@@ -514,6 +514,18 @@
     <Filter Include="Source\Game\Logics\AI\FlowField">
       <UniqueIdentifier>{178d9d97-d69d-42b8-995e-320e262d6a28}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\AI\StateTree\Core">
+      <UniqueIdentifier>{22b60c6b-b385-492f-a70c-b2c726f3d987}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\AI\StateTree\EnemyAI">
+      <UniqueIdentifier>{a1e50118-138c-4929-9ec5-a175c5b7cc23}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\AI\StateTree\Serialization">
+      <UniqueIdentifier>{a32cdd2f-a91a-4919-b36e-523cc7758841}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\AI\StateTree\System">
+      <UniqueIdentifier>{f31dd04f-c457-4af4-a232-8466a46c1cb3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1602,9 +1614,6 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\ErrorShader.h">
       <Filter>Source\Engine\Graphics\Shader\Material</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyTrackingSystem.h">
-      <Filter>Source\Game\Logics\Character\Enemy</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\Meta\ComponentDefine.h">
       <Filter>Source\Engine\Serialization\Meta</Filter>
     </ClInclude>
@@ -1755,41 +1764,11 @@
     <ClInclude Include="Source\Game\Logics\Wand\Core\RuneStackCurve.h">
       <Filter>Source\Game\Logics\Wand\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\AttackIntentComponent.h">
-      <Filter>Source\Game\Logics\AI\StateTree</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\MoveIntentComponent.h">
-      <Filter>Source\Game\Logics\AI\StateTree</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\NodeRegistry.h">
-      <Filter>Source\Game\Logics\AI\StateTree</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeAsset.h">
-      <Filter>Source\Game\Logics\AI\StateTree</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeComponent.h">
-      <Filter>Source\Game\Logics\AI\StateTree</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeNode.h">
-      <Filter>Source\Game\Logics\AI\StateTree</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeRegistry.h">
-      <Filter>Source\Game\Logics\AI\StateTree</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeSystem.h">
-      <Filter>Source\Game\Logics\AI\StateTree</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\PerceptionComponent.h">
-      <Filter>Source\Game\Logics\AI\StateTree</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyPerceptionSystem.h">
       <Filter>Source\Game\Logics\Character\Enemy</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyMovementSystem.h">
       <Filter>Source\Game\Logics\Character\Enemy</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\EnemyAI.h">
-      <Filter>Source\Game\Logics\AI\StateTree</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\FlowField\NavGridFlowField.h">
       <Filter>Source\Game\Logics\AI\FlowField</Filter>
@@ -1797,20 +1776,41 @@
     <ClInclude Include="Source\Game\Logics\AI\FlowField\NavFlowFieldSystem.h">
       <Filter>Source\Game\Logics\AI\FlowField</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\NodeParamField.h">
-      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\NodeParamField.h">
+      <Filter>Source\Game\Logics\AI\StateTree\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeDef.h">
-      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\NodeRegistry.h">
+      <Filter>Source\Game\Logics\AI\StateTree\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeSerializer.h">
-      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\StateTreeAsset.h">
+      <Filter>Source\Game\Logics\AI\StateTree\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\AIDebugSystem.h">
-      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\StateTreeComponent.h">
+      <Filter>Source\Game\Logics\AI\StateTree\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeResolveSystem.h">
-      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\StateTreeNode.h">
+      <Filter>Source\Game\Logics\AI\StateTree\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\StateTreeRegistry.h">
+      <Filter>Source\Game\Logics\AI\StateTree\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\EnemyAI\EnemyAI.h">
+      <Filter>Source\Game\Logics\AI\StateTree\EnemyAI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\Serialization\StateTreeDef.h">
+      <Filter>Source\Game\Logics\AI\StateTree\Serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\Serialization\StateTreeSerializer.h">
+      <Filter>Source\Game\Logics\AI\StateTree\Serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\System\AIDebugSystem.h">
+      <Filter>Source\Game\Logics\AI\StateTree\System</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\System\StateTreeResolveSystem.h">
+      <Filter>Source\Game\Logics\AI\StateTree\System</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\System\StateTreeSystem.h">
+      <Filter>Source\Game\Logics\AI\StateTree\System</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2588,9 +2588,6 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\ErrorShader.cpp">
       <Filter>Source\Engine\Graphics\Shader\Material</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyTrackingSystem.cpp">
-      <Filter>Source\Game\Logics\Character\Enemy</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Game\Logics\LevelGen\RoomTemplateTable.cpp">
       <Filter>Source\Game\Logics\LevelGen</Filter>
     </ClCompile>
@@ -2681,12 +2678,6 @@
     <ClCompile Include="Source\Game\Logics\Wand\Collision\BulletEnemyCollisionSystem.cpp">
       <Filter>Source\Game\Logics\Wand\Collision</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\StateTree\StateTreeComponentMeta.cpp">
-      <Filter>Source\Game\Logics\AI\StateTree</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\StateTree\StateTreeSystem.cpp">
-      <Filter>Source\Game\Logics\AI\StateTree</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyPerceptionSystem.cpp">
       <Filter>Source\Game\Logics\Character\Enemy</Filter>
     </ClCompile>
@@ -2696,17 +2687,23 @@
     <ClCompile Include="Source\Game\Logics\AI\FlowField\NavFlowFieldSystem.cpp">
       <Filter>Source\Game\Logics\AI\FlowField</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\StateTree\StateTreeSerializer.cpp">
-      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    <ClCompile Include="Source\Game\Logics\AI\StateTree\Core\AILogicComponentsMeta.cpp">
+      <Filter>Source\Game\Logics\AI\StateTree\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\StateTree\AILogicComponentsMeta.cpp">
-      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    <ClCompile Include="Source\Game\Logics\AI\StateTree\Core\StateTreeComponentMeta.cpp">
+      <Filter>Source\Game\Logics\AI\StateTree\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\StateTree\AIDebugSystem.cpp">
-      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    <ClCompile Include="Source\Game\Logics\AI\StateTree\Serialization\StateTreeSerializer.cpp">
+      <Filter>Source\Game\Logics\AI\StateTree\Serialization</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\StateTree\StateTreeResolveSystem.cpp">
-      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    <ClCompile Include="Source\Game\Logics\AI\StateTree\System\AIDebugSystem.cpp">
+      <Filter>Source\Game\Logics\AI\StateTree\System</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\StateTree\System\StateTreeResolveSystem.cpp">
+      <Filter>Source\Game\Logics\AI\StateTree\System</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\StateTree\System\StateTreeSystem.cpp">
+      <Filter>Source\Game\Logics\AI\StateTree\System</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

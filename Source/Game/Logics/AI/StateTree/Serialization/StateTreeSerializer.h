@@ -5,7 +5,7 @@
 #include <json.hpp>
 
 #include "StateTreeDef.h"
-#include "StateTreeAsset.h"
+#include "Game/Logics/AI/StateTree/Core/StateTreeAsset.h"
 
 namespace CCL::AI
 {

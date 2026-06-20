@@ -2,9 +2,9 @@
 /// @brief StateTreeSystem の実装（真の汎用・並列駆動版）。
 #include "StateTreeSystem.h"
 
-#include "StateTreeAsset.h"
-#include "StateTreeRegistry.h"
-#include "NodeRegistry.h"
+#include "Game/Logics/AI/StateTree/Core/StateTreeAsset.h"
+#include "Game/Logics/AI/StateTree/Core/StateTreeRegistry.h"
+#include "Game/Logics/AI/StateTree/Core/NodeRegistry.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"

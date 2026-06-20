@@ -2,10 +2,10 @@
 /// @brief StateTreeWindow の実装（コア ImGui のみ・外部ノードエディタ不要）。
 #include "StateTreeWindow.h"
 
-#include "Game/Logics/AI/StateTree/NodeRegistry.h"
-#include "Game/Logics/AI/StateTree/StateTreeSerializer.h"
-#include "Game/Logics/AI/StateTree/StateTreeRegistry.h"
-#include "Game/Logics/AI/StateTree/StateTreeComponent.h"
+#include "Game/Logics/AI/StateTree/Core/NodeRegistry.h"
+#include "Game/Logics/AI/StateTree/Serialization/StateTreeSerializer.h"
+#include "Game/Logics/AI/StateTree/Core/StateTreeRegistry.h"
+#include "Game/Logics/AI/StateTree/Core/StateTreeComponent.h"
 
 #include "Engine/Platform/Core/Dialog.h"          // Engine::FileDialog（パスは適宜）
 #include "Engine/ECS/Core/CCL_World.h"

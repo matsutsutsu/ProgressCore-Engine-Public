@@ -9,7 +9,7 @@
 ///   このシステムが L01_Input で毎フレーム未解決分を拾って解決する。
 #pragma once
 #include "Engine/ECS/System/CCL_IfSystem.h"
-#include "Game/Logics/AI/StateTree/StateTreeComponent.h"
+#include "Game/Logics/AI/StateTree/Core/StateTreeComponent.h"
 
 class StateTreeResolveSystem : public CCL::ECS::IfSystem<
     StateTreeResolveSystem,

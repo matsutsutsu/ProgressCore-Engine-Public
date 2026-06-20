@@ -15,14 +15,14 @@
 ///     [3] Idle    enterCond: なし(フォールバック)             task: Idle
 ///   ※ 子の順序が優先順位。Attack を先頭に置くことで「近ければ攻撃」が最優先になる。
 #pragma once
-#include "StateTreeAsset.h"
-#include "StateTreeNode.h"
-#include "NodeRegistry.h"
+#include "Game/Logics/AI/StateTree/Core/StateTreeAsset.h"
+#include "Game/Logics/AI/StateTree/Core/StateTreeNode.h"
+#include "Game/Logics/AI/StateTree/Core/NodeRegistry.h"
 
 #include "Game/Logics/Character/Enemy/EnemyComponent.h"
-#include "PerceptionComponent.h"
-#include "MoveIntentComponent.h"
-#include "AttackIntentComponent.h"
+#include "Game/Logics/Character/Enemy/PerceptionComponent.h"
+#include "Game/Logics/Character/Enemy/MoveIntentComponent.h"
+#include "Game/Logics/Character/Enemy/AttackIntentComponent.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Platform/Core/Logger.h"

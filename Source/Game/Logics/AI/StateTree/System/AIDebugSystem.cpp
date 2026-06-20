@@ -2,8 +2,8 @@
 /// @brief AI パイプライン診断システムの実装。
 #include "AIDebugSystem.h"
 
-#include "Game/Logics/AI/StateTree/StateTreeRegistry.h"
-#include "Game/Logics/AI/StateTree/NodeRegistry.h"
+#include "Game/Logics/AI/StateTree/Core/StateTreeRegistry.h"
+#include "Game/Logics/AI/StateTree/Core/NodeRegistry.h"
 #include "Game/Logics/LevelGen/DungeonGrid.h"          // パスは環境に合わせる
 #include "Game/Logics/AI/FlowField/NavGridFlowField.h"           // パスは環境に合わせる
 

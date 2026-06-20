@@ -12,7 +12,7 @@
 #pragma once
 #include "Engine/ECS/System/CCL_IfSystem.h"
 
-#include "StateTreeComponent.h"
+#include "Game/Logics/AI/StateTree/Core/StateTreeComponent.h"
 #include "Engine/Timer/TimeState.h"
 
 // 前方宣言
