@@ -1797,6 +1797,18 @@
     <ClInclude Include="Source\Game\Logics\AI\FlowField\NavFlowFieldSystem.h">
       <Filter>Source\Game\Logics\AI\FlowField</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\NodeParamField.h">
+      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeDef.h">
+      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\StateTreeSerializer.h">
+      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\AIDebugSystem.h">
+      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2680,6 +2692,15 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\FlowField\NavFlowFieldSystem.cpp">
       <Filter>Source\Game\Logics\AI\FlowField</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\StateTree\StateTreeSerializer.cpp">
+      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\StateTree\AILogicComponentsMeta.cpp">
+      <Filter>Source\Game\Logics\AI\StateTree</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\StateTree\AIDebugSystem.cpp">
+      <Filter>Source\Game\Logics\AI\StateTree</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

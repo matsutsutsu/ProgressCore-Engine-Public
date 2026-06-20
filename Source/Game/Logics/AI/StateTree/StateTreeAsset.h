@@ -30,6 +30,8 @@
 
 namespace CCL::AI
 {
+    // @brief 敵自身がどのStateTreeのデータを参照するかのハンドル
+    // @details 
     struct StateTreeHandle
     {
         uint32_t value = 0xFFFFFFFF;
@@ -42,10 +44,10 @@ namespace CCL::AI
     // 基本定数・型
     // ====================================================================
 
-    /// @brief アセットのインデックスとして無効値を表す定数。
+    // アセットのインデックスとして無効値を表す定数。
     constexpr uint16_t ST_INVALID = 0xFFFF;
 
-    /// @brief NodeRegistry が発行するノード種別 ID。
+    // NodeRegistry が発行するノード種別 ID。
     using NodeTypeID = uint32_t;
     constexpr NodeTypeID ST_INVALID_NODE_TYPE = 0xFFFFFFFF;
 
@@ -101,16 +103,24 @@ namespace CCL::AI
     // ====================================================================
 
     /// @brief NodeRegistry に登録された種別へのハンドル + パラメータ位置。
-    ///
+    /// @details どのタスク/条件を、どのパラメータで実行するか
     /// ITask* / ICondition* はここには持たない。
     /// 実行時に NodeRegistry::GetTask(typeId) で取得する（シングルトン共有）。
     struct NodeRef
     {
-        NodeTypeID typeId       = ST_INVALID_NODE_TYPE; ///< NodeRegistry が発行した種別 ID
-        uint32_t   paramOffset  = 0;    ///< paramBlob 内のパラメータ先頭 (バイト)
+        // ノードのタスクのID
+        // 例：１番の攻撃タスクを指定する
+        NodeTypeID typeId       = ST_INVALID_NODE_TYPE; ///< 種別 ID
+        
+        // --- マニュアル（固定設定）の読み込み位置 ---
+        // 例：攻撃タスクの威力をOffsetのSizeの領域に書いてあるからそれを見る
+        uint32_t   paramOffset  = 0;    ///< paramBlob 内のパラメータ先頭
         uint32_t   paramSize    = 0;    ///< パラメータのバイト数
-        uint32_t   instanceOffset = 0;  ///< StateTreeComponent::scratch 内のオフセット
-        uint32_t   instanceSize   = 0;  ///< このノードが使うインスタンスデータバイト数
+        
+        // --- メモ帳（変動データ）の書き込み位置 ---
+        // 例：攻撃にかかった時間は scratchの４行目（Offset）に書き込む
+        uint32_t   instanceOffset = 0;  ///< scratch 内のオフセット
+        uint32_t   instanceSize   = 0;
     };
 
 
@@ -155,7 +165,9 @@ namespace CCL::AI
         std::string name;  ///< "Goblin", "Boss" など（デバッグ・エディタ用）
 
         // --- 木の骨格 ---
+        // 一つのステートノードのこと
         std::vector<StateNode>  states;       ///< [0] = ルート
+        // どのタスクと条件をどういったパラメータで行うか
         std::vector<NodeRef>    tasks;        ///< 全ノードのタスク参照
         std::vector<NodeRef>    conditions;   ///< 全ノードの条件参照
         std::vector<Transition> transitions;  ///< 全ノードの遷移ルール

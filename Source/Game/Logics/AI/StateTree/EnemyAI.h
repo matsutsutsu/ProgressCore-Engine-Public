@@ -129,6 +129,16 @@ namespace EnemyAI
             if (auto* ai = ctx.world->GetComponent<AttackIntentComponent>(ctx.entity))
                 ai->requested = false;
         }
+
+        static const std::vector<CCL::AI::NodeParamField>& ParamFields()
+        {
+            static const std::vector<CCL::AI::NodeParamField> f = {
+                NODE_PARAM_FLOAT(Params, animDuration, "Anim Duration", 0.6f, 0.0f, 5.0f),
+                NODE_PARAM_FLOAT(Params, cooldown,     "Cooldown",      1.2f, 0.0f, 10.0f),
+            };
+            return f;
+        }
+
     };
 
 
@@ -140,6 +150,15 @@ namespace EnemyAI
     struct IsTargetInRangeCondition : public CCL::AI::ICondition
     {
         struct Params { float range = 12.0f; };
+
+        static const std::vector<CCL::AI::NodeParamField>& ParamFields()
+        {
+            static const std::vector<CCL::AI::NodeParamField> f = {
+                NODE_PARAM_FLOAT(Params, range, "Detect Range", 12.0f, 0.0f, 50.0f),
+            };
+            return f;
+        }
+
         bool Evaluate(CCL::AI::ExecContext& ctx) override
         {
             const auto* p = static_cast<const Params*>(ctx.params);
@@ -148,6 +167,8 @@ namespace EnemyAI
             return perc->target != CCL::ECS::InvalidEntityID
                 && perc->distance <= p->range;
         }
+
+
     };
 
     /// @brief 攻撃射程内にプレイヤーがいるか。射程は EnemyComponent.attackRange。

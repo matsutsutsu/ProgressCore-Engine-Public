@@ -68,27 +68,8 @@ namespace CCL::AI
     // ====================================================================
 
     /// @brief 「状態に滞在している間、毎フレーム実行されるロジック」の基底。
-    ///
-    /// 実装ガイド:
-    ///   1. Params 構造体と Instance 構造体をネストして定義する。
-    ///   2. InstanceDataSize() で sizeof(Instance) を返す。
-    ///   3. Tick() でコンポーネントを「直接変更」しない。
-    ///      必ず MoveIntentComponent / AttackIntentComponent などの
-    ///      「意図コンポーネント」に書き込む（意図・実行の分離原則）。
-    ///
-    /// @code
-    ///   struct MoveToTargetTask : public ITask {
-    ///       struct Params   { float speed = 3.0f; float acceptRadius = 1.5f; };
-    ///       struct Instance { float elapsed = 0.0f; };
-    ///
-    ///       uint32_t  InstanceDataSize() const override { return sizeof(Instance); }
-    ///       RunStatus Tick(ExecContext& ctx) override {
-    ///           auto* p = static_cast<const Params*>(ctx.params);
-    ///           auto* inst = static_cast<Instance*>(ctx.instance);
-    ///           // … MoveIntentComponent を書く …
-    ///       }
-    ///   };
-    /// @endcode
+    /// @details ITaskは全員で１個を共有する設計、敵ごとに一つITaskではなく
+    ///          敵全員が１個のITaskを共有する。
     struct ITask
     {
         virtual ~ITask() = default;

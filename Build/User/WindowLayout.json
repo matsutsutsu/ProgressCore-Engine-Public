@@ -25,6 +25,10 @@
             "visible": true
         },
         {
+            "name": "State Tree Editor",
+            "visible": false
+        },
+        {
             "name": "Text Editor",
             "visible": false
         },
