@@ -526,6 +526,9 @@
     <Filter Include="Source\Game\Logics\AI\StateTree\System">
       <UniqueIdentifier>{f31dd04f-c457-4af4-a232-8466a46c1cb3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\Character\Enemy\Combat">
+      <UniqueIdentifier>{51ebfc95-f636-416f-9a70-55bc25dbcd11}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1811,6 +1814,15 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\StateTree\System\StateTreeSystem.h">
       <Filter>Source\Game\Logics\AI\StateTree\System</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Enemy\MoveIntentComponent.h">
+      <Filter>Source\Game\Logics\Character\Enemy\Combat</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Enemy\AttackIntentComponent.h">
+      <Filter>Source\Game\Logics\Character\Enemy\Combat</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Enemy\PerceptionComponent.h">
+      <Filter>Source\Game\Logics\Character\Enemy\Combat</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

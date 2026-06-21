@@ -694,9 +694,12 @@
     <ClInclude Include="Source\Game\Logics\AI\StateTree\System\StateTreeSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Collision\CharacterWallComponents.h" />
     <ClInclude Include="Source\Game\Logics\Character\Collision\CharacterWallSlideSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Enemy\AttackIntentComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyMovementSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyPerceptionSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Enemy\MoveIntentComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Enemy\PerceptionComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerAttackSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerFeedbackSystem.h" />

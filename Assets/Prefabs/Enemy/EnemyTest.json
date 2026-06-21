@@ -62,7 +62,7 @@
                 },
                 "Material": null,
                 "Model": {
-                    "assetPath": "Assets/Models/Enemy/Boss.glb"
+                    "assetPath": "Assets/Models/Enemy/Enemy_Pawn.glb"
                 },
                 "MoveIntentComponent": null,
                 "Name": {
@@ -95,9 +95,9 @@
                         0.1261691004037857
                     ],
                     "scale": [
-                        0.4000000059604645,
-                        0.4000000059604645,
-                        0.4000000059604645
+                        0.1,
+                        0.1,
+                        0.1
                     ]
                 },
                 "Visibility": {

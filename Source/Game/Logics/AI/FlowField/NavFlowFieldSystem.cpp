@@ -46,6 +46,15 @@ void NavFlowFieldSystem::Update(float /*dt*/)
     }
     if (!found) { field.valid = false; return; }
 
+    // ========================================================
+    // ★ 改善策1: プレイヤーのマスが変わっていなければ計算をサボる
+    // ========================================================
+    if (pi == _lastPlayerI && pj == _lastPlayerJ && field.valid) {
+        return; // 何もせず前回の field(距離場) を使い回す！
+    }
+    _lastPlayerI = pi;
+    _lastPlayerJ = pj;
+
     // ------------------------------------------------------------
     // 3. 距離場を初期化（バッファは再利用：同サイズなら再確保されない）
     // ------------------------------------------------------------
@@ -73,11 +82,22 @@ void NavFlowFieldSystem::Update(float /*dt*/)
     const int dj[4] = { 0, 0, 1, -1 };
 
     size_t head = 0;
+
+    // ★ 探索の最大歩数（この範囲を超えたら追跡を諦める）
+    const int MAX_SEARCH_DIST = 30;
+
     while (head < _bfsQueue.size()) {
         const int cur = _bfsQueue[head++];
         const int ci = cur / d;
         const int cj = cur % d;
         const int cd = field.dist[cur];
+
+        // ========================================================
+        // ★ 改善策2: 探索範囲の打ち切り（Local Flow Field）
+        // ========================================================
+        if (cd >= MAX_SEARCH_DIST) {
+            continue; // これ以上遠くには波紋を広げない
+        }
 
         for (int k = 0; k < 4; ++k) {
             const int ni = ci + di[k];
