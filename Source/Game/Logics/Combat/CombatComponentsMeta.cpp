@@ -25,7 +25,7 @@ using json = nlohmann::json;
 // ===========================================================================
 // 1. HitboxComponent メタデータ定義 (パターンA: 全自動)
 // ===========================================================================
-COMPONENT_META_BEGIN(HitboxComponent, "Hitbox (攻撃判定)")
+COMPONENT_META_BEGIN(HitboxComponent, "Hitbox")
 
 // 基礎ダメージ量（スライダー/ドラッグで調整可能）
 CFIELD_FLOAT_RANGED(damageAmount, "Damage Amount", 1.0f, 0.0f, 9999.0f, "Base")
@@ -50,7 +50,7 @@ COMPONENT_META_END(HitboxComponent)
 // ===========================================================================
 // 2. HurtboxComponent メタデータ定義 (パターンA: 全自動)
 // ===========================================================================
-COMPONENT_META_BEGIN(HurtboxComponent, "Hurtbox (被弾判定)")
+COMPONENT_META_BEGIN(HurtboxComponent, "Hurtbox")
 // 被ダメージ倍率（弱点部位なら 2.0f、耐性なら 0.5f などにエディタから調整可能）
 CFIELD_FLOAT_RANGED(damageMultiplier, "Damage Multiplier", 0.05f, 0.0f, 10.0f, "Defense")
 COMPONENT_META_END(HurtboxComponent)

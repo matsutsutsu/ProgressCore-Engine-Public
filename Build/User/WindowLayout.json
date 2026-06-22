@@ -25,6 +25,10 @@
             "visible": true
         },
         {
+            "name": "State Tree Editor",
+            "visible": false
+        },
+        {
             "name": "Text Editor",
             "visible": false
         },
@@ -42,7 +46,7 @@
         },
         {
             "name": "Test Launcher",
-            "visible": true
+            "visible": false
         },
         {
             "name": "Game View",

@@ -26,6 +26,7 @@
 #include "Editor/Windows/TestLauncherWindow.h"
 
 #include "Editor/Windows/DungeonGeneratorWindow.h"
+#include "Editor/Windows/StateTreeWindow.h"
 
 #include "Engine/Serialization/Factory/Prefab.h"
 #include "Engine/Platform/Core/FileSystem.h" // 既存のJSONライブラリ利用
@@ -59,6 +60,7 @@ void EditorWindowManager::Initialize()
     //RegisterWindow<AnimGraphWindow>();
 	//RegisterWindow<BehaviorTreeWindow>();
     RegisterWindow<DungeonGeneratorWindow>();
+    RegisterWindow<StateTreeWindow>();
 
     // ※まだ実装中で完全に読み込みたくない（クラッシュする等の）場合は、
     // 引き続きコメントアウトで対応してください。

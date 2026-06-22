@@ -2,16 +2,17 @@
     "entities": [
         {
             "components": {
+                "AttackIntentComponent": null,
                 "Bounding Box": {
                     "worldAABB.Center": [
-                        29.332019805908203,
+                        29.274307250976563,
                         3.7081642150878906,
-                        25.536611557006836
+                        22.84455108642578
                     ],
                     "worldAABB.Extents": [
-                        3.333232879638672,
+                        4.484589576721191,
                         3.4793663024902344,
-                        5.02345085144043
+                        5.697897911071777
                     ]
                 },
                 "Enemy": {
@@ -20,7 +21,7 @@
                     "moveSpeed": 5.0
                 },
                 "HealthComponent": {
-                    "currentHealth": 1000.0,
+                    "currentHealth": 990.0,
                     "invincibilityDuration": 0.5,
                     "maxHealth": 1000.0,
                     "team": 1
@@ -61,10 +62,15 @@
                 },
                 "Material": null,
                 "Model": {
-                    "assetPath": "Assets/Models/Enemy/Boss.glb"
+                    "assetPath": "Assets/Models/Enemy/Enemy_Pawn.glb"
                 },
+                "MoveIntentComponent": null,
                 "Name": {
                     "name": "EnemyTest"
+                },
+                "PerceptionComponent": null,
+                "StateTree": {
+                    "assetName": "Enemy"
                 },
                 "TimeState": {
                     "buffScale": 1.0,
@@ -78,20 +84,20 @@
                     "isStatic": false,
                     "parent": 2,
                     "position": [
-                        29.105358123779297,
+                        29.0,
                         0.0,
-                        25.755775451660156
+                        23.0
                     ],
                     "rotation": [
-                        -1.305450222332982e-16,
-                        1.0,
-                        -2.095474682661802e-09,
-                        -6.229854676575997e-08
+                        0.0,
+                        0.9920087456703186,
+                        0.0,
+                        0.1261691004037857
                     ],
                     "scale": [
-                        0.4000000059604645,
-                        0.4000000059604645,
-                        0.4000000059604645
+                        0.1,
+                        0.1,
+                        0.1
                     ]
                 },
                 "Visibility": {
