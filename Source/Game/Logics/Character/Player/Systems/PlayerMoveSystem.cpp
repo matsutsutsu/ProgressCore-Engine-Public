@@ -13,14 +13,33 @@ void PlayerMoveSystem::Update(float rawDt)
 {
     ForEachWithID([&](EntityID id,
         TransformComponent& trans,
-        const CharacterMovementInputComponent& inputData,
+        CharacterMovementInputComponent& inputData,
         const JoltCharacterConfigComponent& config,
         const JoltCharacterHandleComponent& joltHandle,
-        const PlayerComponent& player,
+        PlayerComponent& player,
         const TimeStateComponent& time)
         {
             if (_world->HasComponent<Tag::DeadTag>(id)) return;
             if (!joltHandle.character) return; // Jolt実体が無い場合はスキップ
+
+            // =========================================================
+            // 1. 2段ジャンプの入力トリガーおよび回数管理の統合
+            // =========================================================
+            bool isGrounded = (joltHandle.character->GetGroundState() == JPH::CharacterVirtual::EGroundState::OnGround);
+            if (isGrounded) {
+                player.currentJumpCount = 0; // 接地時は回数リセット
+            }
+
+            // ボタンが「押しっぱなし」ではなく「今押された瞬間」だけを検知（エッジトリガー）
+            bool isPressedThisFrame = inputData.jumpRequested && !player.wasJumpButtonPressed;
+            player.wasJumpButtonPressed = inputData.jumpRequested; // 状態の保存
+
+            if (isPressedThisFrame && player.currentJumpCount < player.maxJumps) {
+                player.currentJumpCount++;
+                inputData.jumpRequested = true; // 物理システムへジャンプの実行を命じるチケットを発行
+            } else {
+                inputData.jumpRequested = false; // 条件を満たさない、または押しっぱなしなら要求を取り下げる
+            }
 
             // =========================================================
             // モデルの振り向き (TPS仕様) のみ担当する

@@ -4,14 +4,14 @@
             "components": {
                 "Bounding Box": {
                     "worldAABB.Center": [
-                        1.252985954284668,
-                        2.3142833709716797,
-                        -25.357389450073242
+                        0.8400129675865173,
+                        2.316091299057007,
+                        -15.598356246948242
                     ],
                     "worldAABB.Extents": [
-                        1.8918421268463135,
-                        2.3838887214660645,
-                        2.2547264099121094
+                        1.9837431907653809,
+                        2.3838889598846436,
+                        2.326941967010498
                     ]
                 },
                 "Character Movement Input": {
@@ -34,9 +34,9 @@
                     "currentTimer": -0.006666665896773338,
                     "dashCooldown": 0.1599999964237213,
                     "dashDirection": [
-                        -0.0032646399922668934,
+                        -1.0,
                         0.0,
-                        -0.999994695186615
+                        -4.408160947377837e-08
                     ],
                     "dashDuration": 0.1599999964237213,
                     "dashSpeed": 114.0,
@@ -59,7 +59,9 @@
                 },
                 "Jolt Character Config": {
                     "characterMass": 148.0,
-                    "jumpSpeed": 10.0,
+                    "fallGravityScale": 10.399999618530273,
+                    "gravityScale": 6.300000190734863,
+                    "jumpSpeed": 30.0,
                     "maxSlopeAngle": 45.0,
                     "maxStepHeight": 0.5,
                     "walkSpeed": 43.599998474121094
@@ -75,8 +77,10 @@
                     "name": "Player"
                 },
                 "Player Component": {
-                    "padSlot": 0,
-                    "turnSpeed": 10.0
+                    "currentJumpCount": 0,
+                    "maxJumps": 2,
+                    "turnSpeed": 10.0,
+                    "wasJumpButtonPressed": false
                 },
                 "TimeState": {
                     "buffScale": 1.0,
@@ -90,15 +94,15 @@
                     "isStatic": false,
                     "parent": 2,
                     "position": [
-                        1.5221047401428223,
-                        -0.05416519567370415,
-                        -25.339378356933594
+                        0.5720226168632507,
+                        -0.05235720053315163,
+                        -15.567852020263672
                     ],
                     "rotation": [
                         0.0,
-                        0.9994418621063232,
+                        0.0566389337182045,
                         0.0,
-                        0.03340775519609451
+                        0.9983947277069092
                     ],
                     "scale": [
                         0.05000000074505806,

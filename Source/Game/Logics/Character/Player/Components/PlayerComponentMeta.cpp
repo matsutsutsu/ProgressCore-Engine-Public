@@ -1,4 +1,4 @@
-/// @file PlayerComponent.cpp
+/// @file PlayerComponentMeta.cpp
 /// @brief PlayerComponentのシリアライズおよびインスペクタGUI用のメタデータ定義
 
 #include "PlayerComponent.h"
@@ -9,11 +9,12 @@
 // ===========================================================================
 COMPONENT_META_BEGIN(PlayerComponent, "Player Component")
 
-// 移動関連のパラメータ
-// CFIELD(変数名, "インスペクタ表示名", "カテゴリ名")
-CFIELD(turnSpeed, "Turn Speed", "Movement")
+// 回転・システム関連のパラメータ
+CFIELD(turnSpeed, u8"旋回速度 (turnSpeed)", "Movement")
 
-// 入力・システム関連のパラメータ
-CFIELD(padSlot, "Pad Slot", "Input")
+// 2段ジャンプ設定・状態
+CFIELD(maxJumps, u8"最大ジャンプ回数 (maxJumps)", "Jump Settings")
+CFIELD(currentJumpCount, u8"現在のジャンプ回数 (currentJumpCount)", "Jump State")
+CFIELD(wasJumpButtonPressed, u8"前フレームボタン状態 (wasJumpButtonPressed)", "Jump State")
 
 COMPONENT_META_END(PlayerComponent)

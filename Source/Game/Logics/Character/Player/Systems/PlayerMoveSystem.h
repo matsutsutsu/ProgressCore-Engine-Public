@@ -13,10 +13,10 @@
 class PlayerMoveSystem : public CCL::ECS::IfSystem<
     PlayerMoveSystem,
     CCL::ECS::Write<TransformComponent>, // ★モデルの回転(Yaw)反映のためWriteを維持
-    CCL::ECS::Read<CharacterMovementInputComponent>,
+    CCL::ECS::Write<CharacterMovementInputComponent>,
     CCL::ECS::Read<JoltCharacterConfigComponent>,
     CCL::ECS::Read<JoltCharacterHandleComponent>, // ★Jolt実体へのアクセス
-    CCL::ECS::Read<PlayerComponent>,
+    CCL::ECS::Write<PlayerComponent>,
     CCL::ECS::Read<TimeStateComponent>>
 {
 public:

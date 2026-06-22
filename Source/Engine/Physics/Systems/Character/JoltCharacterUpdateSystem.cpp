@@ -103,8 +103,12 @@ void JoltCharacterUpdateSystem::Update(float rawDt) {
                 vy = 0.0f;
             }
 
-            // ジャンプは接地時のみ受理（空中2段ジャンプを防止）
-            if (input.jumpRequested && onGround) {
+            // ===============================================================
+            // 1. ジャンプ処理（2段ジャンプ対応）
+            // ===============================================================
+            // DoubleJumpSystemが「飛べ(jumpRequested=true)」と言ってきたら、
+            // 空中であろうと無条件で上方向の初速を上書き(セット)する。
+            if (input.jumpRequested) {
                 vy = config.jumpSpeed;
             }
 
@@ -114,8 +118,12 @@ void JoltCharacterUpdateSystem::Update(float rawDt) {
             // ===============================================================
             float safeDt = (std::min)(rawDt, 0.0333f);
 
-            // 重力積分 (安全なdtを使用)
-            vy += gravity.GetY() * safeDt;
+        
+            // 現在のY速度がマイナス（落下中）なら強化重力を、プラス（上昇中）なら通常重力を選択
+            float currentGravityScale = (vy < 0.0f) ? config.fallGravityScale : config.gravityScale;
+
+            // ローカル時間で重力積分（safeDt を使用）
+            vy += physicsSystem->GetGravity().GetY() * currentGravityScale * safeDt;
 
             // ===============================================================
             // ★追加: アクション層から速度上書き要求があればそれを優先する
