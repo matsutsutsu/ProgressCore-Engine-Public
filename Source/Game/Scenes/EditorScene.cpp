@@ -19,6 +19,9 @@
 #include "Game/Logics/AI/StateTree/EnemyAI/EnemyAI.h"
 #include "Game/Logics/AI/StateTree/Core/StateTreeRegistry.h"
 
+
+// RuneForgeの処理を削除します
+
 void EditorScene::Initialize()
 {
     BaseScene::Initialize(); // 共通初期化
