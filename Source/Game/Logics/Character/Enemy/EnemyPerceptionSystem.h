@@ -12,7 +12,7 @@
 #include "Engine/ECS/System/CCL_System.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "EnemyComponent.h"
-#include "Game/Logics/AI/StateTree/PerceptionComponent.h"
+#include "Game/Logics/Character/Enemy/PerceptionComponent.h"
 
 // ※ namespace で囲まない（プロジェクト規約）
 class EnemyPerceptionSystem : public CCL::ECS::IfSystem<
