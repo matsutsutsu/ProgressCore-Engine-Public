@@ -116,6 +116,8 @@ void SceneInitializer::SpawnJoltTest(CCL::ECS::Core::World &world, ID3D11Device 
 
 }
 
+#include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"
+
 void SceneInitializer::SpawnAnimationTest(CCL::ECS::Core::World& world, ID3D11Device* device)
 {
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Camera/FreeCamera.json");
@@ -127,7 +129,7 @@ void SceneInitializer::SpawnAnimationTest(CCL::ECS::Core::World& world, ID3D11De
     auto camera = EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Player/PlayerFollowCamera.json");
 
     // player.ID() を渡してメソッドチェーンでPatchする
-    camera.Patch<CameraBodyFollow>([pid = player.ID()](auto &body) { body.target = pid; })
+    camera.Patch<CameraBodyTPSComponent>([pid = player.ID()](auto &body) { body.target = pid; })
         .Patch<CameraAimLookAt>([pid = player.ID()](auto &aim) { aim.target = pid; });
    
 }
