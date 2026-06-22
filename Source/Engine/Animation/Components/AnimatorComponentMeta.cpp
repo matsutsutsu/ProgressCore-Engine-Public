@@ -48,7 +48,7 @@ template <> struct ComponentMeta<AnimatorComponent> {
                 const AnimSequence* loadedSeq = ResourceManager::Instance().LoadAnimSequence(finalPath.c_str());
 
                 if (loadedSeq) {
-                    anim.Play(loadedSeq, true, 1.0f);
+                    anim.Play(loadedSeq, { .blendTime = 0.2f, .loop = true, .speed = 1.0f });
                     changed = true;
                 }
             }
