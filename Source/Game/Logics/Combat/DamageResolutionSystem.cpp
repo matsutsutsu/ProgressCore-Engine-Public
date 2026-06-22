@@ -14,7 +14,6 @@
 #include "DamageResolutionSystem.h"
 #include "Game/Logics/Combat/CombatComponents.h"
 #include "Game/Logics/Combat/HealthComponent.h"
-#include "Game/Logics/Combat/KnockbackComponent.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
@@ -41,15 +40,15 @@ void DamageResolutionSystem::Update(float dt) {
                     event.isCritical ? " (CRITICAL)" : "",
                     health->currentHealth);
 
-                // --- ノックバック付与(常設コンポーネントに書き込むだけ。構造変更なし) ---
-                // KnockbackComponent を持つ対象のみ反応する。持たない相手(壁等)は無視。
-                if (event.knockbackForce > 0.0f) {
-                    if (auto* kb = _world->GetComponent<KnockbackComponent>(event.targetID)) {
-                        // 連続被弾の暴走を避けるため最新の一撃で上書き(加算しない)。
-                        kb->velocity = event.knockbackDir * event.knockbackForce;
-                        kb->isActive = true;
-                    }
-                }
+                //// --- ノックバック付与(常設コンポーネントに書き込むだけ。構造変更なし) ---
+                //// KnockbackComponent を持つ対象のみ反応する。持たない相手(壁等)は無視。
+                //if (event.knockbackForce > 0.0f) {
+                //    if (auto* kb = _world->GetComponent<KnockbackComponent>(event.targetID)) {
+                //        // 連続被弾の暴走を避けるため最新の一撃で上書き(加算しない)。
+                //        kb->velocity = event.knockbackDir * event.knockbackForce;
+                //        kb->isActive = true;
+                //    }
+                //}
             }
         }
 

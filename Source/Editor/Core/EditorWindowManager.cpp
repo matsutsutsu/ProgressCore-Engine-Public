@@ -25,7 +25,6 @@
 #include "Editor/Windows/MemoryAnalyzerWindow.h"
 #include "Editor/Windows/TestLauncherWindow.h"
 
-#include "Editor/Windows/DungeonGeneratorWindow.h"
 #include "Editor/Windows/StateTreeWindow.h"
 
 #include "Engine/Serialization/Factory/Prefab.h"
@@ -59,7 +58,6 @@ void EditorWindowManager::Initialize()
     //RegisterWindow<AnimationSequencerWindow>();
     //RegisterWindow<AnimGraphWindow>();
 	//RegisterWindow<BehaviorTreeWindow>();
-    RegisterWindow<DungeonGeneratorWindow>();
     RegisterWindow<StateTreeWindow>();
 
     // ※まだ実装中で完全に読み込みたくない（クラッシュする等の）場合は、

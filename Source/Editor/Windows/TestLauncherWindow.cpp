@@ -19,11 +19,10 @@ TestLauncherWindow::TestLauncherWindow() : EditorWindow("Test Launcher")
     // 2. パフォーマンステスト (名前, デフォルトのCount, 関数)
     _perfTests.push_back({ "Galaxy Swarm", 100000, SceneInitializer::SpawnECSBenchmarkTest });
     _perfTests.push_back({ "Voxel Ocean", 400, SceneInitializer::SpawnVoxelOceanTest });
-    _perfTests.push_back({ "Enemy Swarm", 200, SceneInitializer::SpawnEnemySwarmTest });
+
     _perfTests.push_back({ "Model Grid", 500, SceneInitializer::SpawnModelGridTest });
 
-    // 3. ダンジョンテスト (名前, デフォルトSeed, デフォルトFloor, 関数)
-    _dungeonTests.push_back({ "Dungeon Gen", 12345, 1, SceneInitializer::SpawnDungeonTest });
+   
 }
 
 void TestLauncherWindow::CleanupAndInitializeEnv(EditorContext& context)
@@ -77,33 +76,6 @@ void TestLauncherWindow::DrawContents(EditorContext& context)
             // ★ 個数を弄れるスライダー
             ImGui::SetNextItemWidth(120.0f);
             ImGui::DragInt("Count", &test.count, 10.0f, 1, 1000000);
-
-            ImGui::SameLine();
-            ImGui::Text(" | %s", test.name.c_str());
-            ImGui::PopID();
-        }
-    }
-
-    // =======================================================
-    // カテゴリ2: ゲームロジック (Dungeon等)
-    // =======================================================
-    if (ImGui::CollapsingHeader("Game Logic Tests", ImGuiTreeNodeFlags_DefaultOpen)) {
-        for (auto& test : _dungeonTests) {
-            ImGui::PushID(test.name.c_str());
-
-            if (ImGui::Button("Launch", ImVec2(80, 0))) {
-                CleanupAndInitializeEnv(context);
-                test.callback(*world, device, test.seed, test.floor); // SeedとFloorを渡す
-                world->ScrutinyAndApply();
-            }
-            ImGui::SameLine();
-
-            // ★ Seed値と階層を入力できるボックス
-            ImGui::SetNextItemWidth(100.0f);
-            ImGui::InputInt("Seed", &test.seed);
-            ImGui::SameLine();
-            ImGui::SetNextItemWidth(80.0f);
-            ImGui::InputInt("Floor", &test.floor);
 
             ImGui::SameLine();
             ImGui::Text(" | %s", test.name.c_str());

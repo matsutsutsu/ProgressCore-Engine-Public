@@ -472,9 +472,6 @@
     <Filter Include="Source\Engine\Transform\Core">
       <UniqueIdentifier>{6bbbd955-4bdc-4d09-a45f-dda2d10e4270}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Game\Logics\Wand">
-      <UniqueIdentifier>{b7ec1194-21ea-451b-a241-e49b51dce98f}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Shader\Compute\Boids">
       <UniqueIdentifier>{7f01f78f-5e12-4472-9745-513f6f592a59}</UniqueIdentifier>
     </Filter>
@@ -484,32 +481,11 @@
     <Filter Include="Shader\Pass\Error">
       <UniqueIdentifier>{dea43f46-2574-4dff-ab31-f548204c8040}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Game\Logics\Wand\Compiler">
-      <UniqueIdentifier>{c8c7893e-50a2-46e5-a832-c80f75a05e2a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\LevelGen">
-      <UniqueIdentifier>{ec091a90-2dde-4c1b-ab6d-bf2c35d16dfd}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\Wand\Collision">
-      <UniqueIdentifier>{44744121-0089-4fe9-be5a-13d81448150b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\Wand\Bullet">
-      <UniqueIdentifier>{6e9d6e59-d0c5-4168-be27-70bfdf3ccc56}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\Wand\Core">
-      <UniqueIdentifier>{1d12c822-84fa-4bcc-846b-be02077b138d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\Character\Collision">
-      <UniqueIdentifier>{d414556c-64b0-45d5-b0d3-53e69d557215}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Game\Logics\Combat">
       <UniqueIdentifier>{f9e98694-67ee-43f9-8feb-4ed9c3cab61a}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Game\Logics\Combat\_Meta">
       <UniqueIdentifier>{0a94ac07-4f26-4cc2-a563-eb0d04156a23}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\Wand\Effects">
-      <UniqueIdentifier>{7f3dd646-4b74-493f-9501-a1a6460b025d}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Game\Logics\AI\FlowField">
       <UniqueIdentifier>{178d9d97-d69d-42b8-995e-320e262d6a28}</UniqueIdentifier>
@@ -1620,152 +1596,17 @@
     <ClInclude Include="Source\Engine\Serialization\Meta\ComponentDefine.h">
       <Filter>Source\Engine\Serialization\Meta</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\LevelGen\DungeonTypes.h">
-      <Filter>Source\Game\Logics\LevelGen</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\LevelGen\RoomTemplateTable.h">
-      <Filter>Source\Game\Logics\LevelGen</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\LevelGen\DungeonGenerator.h">
-      <Filter>Source\Game\Logics\LevelGen</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\DungeonGeneratorWindow.h">
-      <Filter>Source\Editor\Windows\Game</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\LevelGen\DungeonMeshBatcher.h">
-      <Filter>Source\Game\Logics\LevelGen</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Systems\Core\MaterialSetupSystem.h">
       <Filter>Source\Engine\Graphics\Systems\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\LevelGen\DungeonLevelBuilder.h">
-      <Filter>Source\Game\Logics\LevelGen</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\LevelGen\DungeonChunkTag.h">
-      <Filter>Source\Game\Logics\LevelGen</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\LevelGen\DungeonGrid.h">
-      <Filter>Source\Game\Logics\LevelGen</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\Core\RuneDatabase.h">
-      <Filter>Source\Game\Logics\Wand\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\Core\WandTypes.h">
-      <Filter>Source\Game\Logics\Wand\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\Compiler\CompiledWandProgram.h">
-      <Filter>Source\Game\Logics\Wand\Compiler</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\Compiler\WandBuildComponent.h">
-      <Filter>Source\Game\Logics\Wand\Compiler</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\Compiler\WandCompiler.h">
-      <Filter>Source\Game\Logics\Wand\Compiler</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\Compiler\WandCompileSystem.h">
-      <Filter>Source\Game\Logics\Wand\Compiler</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\Compiler\WandProgramRegistry.h">
-      <Filter>Source\Game\Logics\Wand\Compiler</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\Collision\BulletWallCollisionSystem.h">
-      <Filter>Source\Game\Logics\Wand\Collision</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\Bullet\BulletComponents.h">
-      <Filter>Source\Game\Logics\Wand\Bullet</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\Bullet\BulletInheritanceSystem.h">
-      <Filter>Source\Game\Logics\Wand\Bullet</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\Bullet\BulletSpawn.h">
-      <Filter>Source\Game\Logics\Wand\Bullet</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\Bullet\BulletTravelSystem.h">
-      <Filter>Source\Game\Logics\Wand\Bullet</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\Bullet\MagicBulletPool.h">
-      <Filter>Source\Game\Logics\Wand\Bullet</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\Bullet\WandFireSystem.h">
-      <Filter>Source\Game\Logics\Wand\Bullet</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\Bullet\WandRuntimeComponents.h">
-      <Filter>Source\Game\Logics\Wand\Bullet</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Collision\CharacterWallComponents.h">
-      <Filter>Source\Game\Logics\Character\Collision</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Collision\CharacterWallSlideSystem.h">
-      <Filter>Source\Game\Logics\Character\Collision</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Math\ScreenToWorld.h">
       <Filter>Source\Engine\Core\Math</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Accelerate.h">
-      <Filter>Source\Game\Logics\Wand\Effects</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Split.h">
-      <Filter>Source\Game\Logics\Wand\Effects</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Focus.h">
-      <Filter>Source\Game\Logics\Wand\Effects</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\Effects\SpawnResolution.h">
-      <Filter>Source\Game\Logics\Wand\Effects</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\Collision\BulletHitResponseSystem.h">
-      <Filter>Source\Game\Logics\Wand\Collision</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\KnockbackComponent.h">
-      <Filter>Source\Game\Logics\Combat</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\GameRng.h">
-      <Filter>Source\Game\Logics\Combat</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\KnockbackSystem.h">
-      <Filter>Source\Game\Logics\Combat</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Utils\ParticlePool.h">
       <Filter>Source\Game\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\Bullet\BulletVisualSystem.h">
-      <Filter>Source\Game\Logics\Wand\Bullet</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\LevelGen\DungeonLayout.h">
-      <Filter>Source\Game\Logics\LevelGen</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Editor\Windows\TestLauncherWindow.h">
       <Filter>Source\Editor\Windows\Game</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Slow.h">
-      <Filter>Source\Game\Logics\Wand\Effects</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Homing.h">
-      <Filter>Source\Game\Logics\Wand\Effects</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\TargetRegistry.h">
-      <Filter>Source\Game\Logics\Combat</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\TargetRegistrySystem.h">
-      <Filter>Source\Game\Logics\Combat</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\Effects\OnHitResolution.h">
-      <Filter>Source\Game\Logics\Wand\Effects</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\Effects\TravelResolution.h">
-      <Filter>Source\Game\Logics\Wand\Effects</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\Effects\ResolveOnHit.h">
-      <Filter>Source\Game\Logics\Wand\Effects</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\Collision\BulletEnemyCollisionSystem.h">
-      <Filter>Source\Game\Logics\Wand\Collision</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Reflection.h">
-      <Filter>Source\Game\Logics\Wand\Effects</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Wand\Core\RuneStackCurve.h">
-      <Filter>Source\Game\Logics\Wand\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyPerceptionSystem.h">
       <Filter>Source\Game\Logics\Character\Enemy</Filter>
@@ -2600,95 +2441,20 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\ErrorShader.cpp">
       <Filter>Source\Engine\Graphics\Shader\Material</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\LevelGen\RoomTemplateTable.cpp">
-      <Filter>Source\Game\Logics\LevelGen</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\LevelGen\DungeonGenerator.cpp">
-      <Filter>Source\Game\Logics\LevelGen</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\DungeonGeneratorWindow.cpp">
-      <Filter>Source\Editor\Windows\Game</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\LevelGen\DungeonMeshBatcher.cpp">
-      <Filter>Source\Game\Logics\LevelGen</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Systems\Core\MaterialSetupSystem.cpp">
       <Filter>Source\Engine\Graphics\Systems\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Components\Culling\CullingComponentsMeta.cpp">
       <Filter>Source\Engine\Graphics\Components\Culling</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\LevelGen\DungeonLevelBuilder.cpp">
-      <Filter>Source\Game\Logics\LevelGen</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Wand\Core\RuneDatabase.cpp">
-      <Filter>Source\Game\Logics\Wand\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Wand\Compiler\WandBuildComponentMeta.cpp">
-      <Filter>Source\Game\Logics\Wand\Compiler</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Wand\Compiler\WandCompiler.cpp">
-      <Filter>Source\Game\Logics\Wand\Compiler</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Wand\Compiler\WandCompileSystem.cpp">
-      <Filter>Source\Game\Logics\Wand\Compiler</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Wand\Collision\BulletWallCollisionSystem.cpp">
-      <Filter>Source\Game\Logics\Wand\Collision</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Wand\Bullet\BulletComponentsMeta.cpp">
-      <Filter>Source\Game\Logics\Wand\Bullet</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Wand\Bullet\BulletInheritanceSystem.cpp">
-      <Filter>Source\Game\Logics\Wand\Bullet</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Wand\Bullet\BulletSpawn.cpp">
-      <Filter>Source\Game\Logics\Wand\Bullet</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Wand\Bullet\BulletTravelSystem.cpp">
-      <Filter>Source\Game\Logics\Wand\Bullet</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Wand\Bullet\WandFireSystem.cpp">
-      <Filter>Source\Game\Logics\Wand\Bullet</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Wand\Bullet\WandRuntimeComponentsMeta.cpp">
-      <Filter>Source\Game\Logics\Wand\Bullet</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Collision\CharacterWallSlideSystem.cpp">
-      <Filter>Source\Game\Logics\Character\Collision</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Collision\CharacterWallComponentsMeta.cpp">
-      <Filter>Source\Game\Logics\Character\Collision</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Core\Math\ScreenToWorld.cpp">
       <Filter>Source\Engine\Core\Math</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Wand\Collision\BulletHitResponseSystem.cpp">
-      <Filter>Source\Game\Logics\Wand\Collision</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Combat\KnockbackSystem.cpp">
-      <Filter>Source\Game\Logics\Combat</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Wand\Bullet\BulletVisualSystem.cpp">
-      <Filter>Source\Game\Logics\Wand\Bullet</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\LevelGen\DungeonLayout.cpp">
-      <Filter>Source\Game\Logics\LevelGen</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyComponentMeta.cpp">
       <Filter>Source\Game\Logics\Character\Enemy</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Combat\KnockbackComponentMeta.cpp">
-      <Filter>Source\Game\Logics\Combat\_Meta</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Editor\Windows\TestLauncherWindow.cpp">
       <Filter>Source\Editor\Windows\Game</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Combat\TargetRegistrySystem.cpp">
-      <Filter>Source\Game\Logics\Combat</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Wand\Collision\BulletEnemyCollisionSystem.cpp">
-      <Filter>Source\Game\Logics\Wand\Collision</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyPerceptionSystem.cpp">
       <Filter>Source\Game\Logics\Character\Enemy</Filter>

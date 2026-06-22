@@ -28,8 +28,6 @@
 
 #include "Engine/Platform/Core/Logger.h"
 
-#include "Game/Logics/Wand/Bullet/MagicBulletPool.h"
-#include "Game/Logics/Wand/Compiler/WandProgramRegistry.h"
 #include "Engine/Timer/TimeState.h"
 
 
@@ -95,9 +93,6 @@ void BaseScene::Initialize()
 
     _worldPtr->AddResource<TimeContext>();
 
-    // ゲームシステム用のリソース登録
-    _worldPtr->AddResource<WandProgramRegistry>();
-    _worldPtr->AddResource<MagicBulletPool>(); // 既定 capacity=8192
 
     // システム登録 (派生クラスの処理が走る)
     RegisterSystems();

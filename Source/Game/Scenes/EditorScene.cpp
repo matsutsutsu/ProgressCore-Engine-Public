@@ -13,8 +13,6 @@
 
 #include "Engine/Transform/Systems/TransformUpdateSystem.h"
 
-#include "Game/Logics/LevelGen/DungeonLevelBuilder.h"
-#include "Game/Logics/LevelGen/DungeonLayout.h"
 
 #include "Game/Logics/AI/StateTree/EnemyAI/EnemyAI.h"
 #include "Game/Logics/AI/StateTree/Core/StateTreeRegistry.h"
@@ -32,23 +30,6 @@ void EditorScene::Initialize()
     //Prefab::SpawnPrefab(*_worldPtr, "Assets/Prefabs/Camera/FreeCamera.json");
 
 
-    DungeonLevelBuilder::BuildParams p;
-    p.seed = 2024;
-    p.spawnPrefabs = true;
-    //p.playerPrefab = "Assets/Prefabs/Player/PlayerTest.json";
-    p.enemyPrefab = "Assets/Prefabs/Enemy/EnemyTest.json";
-    //p.portalPrefab = "Assets/Prefabs/Portal/ExitPortal.json";
-    // パスを空文字にすればその種類は配置しない
-    //DungeonLevelBuilder::Build(*_worldPtr, device, p);
-
-
-    // 手作りマップ（テスト用固定マップ）
-    RuneForge::Dungeon::DungeonLayout layout;
-    layout.LoadFromJson("Assets/DebugMaps/test1.json");
-    DungeonLevelBuilder::BuildFromResult(*_worldPtr, device, layout.ToResult(), p);
-
-    // プレイヤーをスタート地点に生成（カメラもセット）
-    DungeonLevelBuilder::SpawnPlayerAtStart(*_worldPtr);
 
 
     // (a) ノード種別を登録

@@ -371,7 +371,6 @@
     <ClInclude Include="Source\Editor\Windows\ConsoleWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\DungeonGeneratorWindow.h" />
     <ClInclude Include="Source\Editor\Windows\ECSDebugWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
@@ -692,8 +691,6 @@
     <ClInclude Include="Source\Game\Logics\AI\StateTree\System\AIDebugSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\System\StateTreeResolveSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\System\StateTreeSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Collision\CharacterWallComponents.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Collision\CharacterWallSlideSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Enemy\AttackIntentComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyMovementSystem.h" />
@@ -705,7 +702,6 @@
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerFeedbackSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerInputSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\PlayerMoveSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Combat\GameRng.h" />
     <ClInclude Include="Source\Game\Logics\Combat\CombatRosterComponent.h" />
     <ClInclude Include="Source\Game\Logics\Combat\DamageResolutionSystem.h" />
     <ClInclude Include="Source\Game\Logics\Combat\DeadTag.h" />
@@ -713,21 +709,9 @@
     <ClInclude Include="Source\Game\Logics\Combat\HealthComponent.h" />
     <ClInclude Include="Source\Game\Logics\Combat\HealthSystem.h" />
     <ClInclude Include="Source\Game\Logics\Combat\HitboxCollisionSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Combat\KnockbackComponent.h" />
-    <ClInclude Include="Source\Game\Logics\Combat\KnockbackSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Combat\TargetRegistry.h" />
-    <ClInclude Include="Source\Game\Logics\Combat\TargetRegistrySystem.h" />
     <ClInclude Include="Source\Game\Logics\GameEvent\GameEvents.h" />
     <ClInclude Include="Source\Game\Logics\GameEvent\GameOverResource.h" />
     <ClInclude Include="Source\Game\Logics\GameEvent\GameStateMode.h" />
-    <ClInclude Include="Source\Game\Logics\LevelGen\DungeonChunkTag.h" />
-    <ClInclude Include="Source\Game\Logics\LevelGen\DungeonGenerator.h" />
-    <ClInclude Include="Source\Game\Logics\LevelGen\DungeonGrid.h" />
-    <ClInclude Include="Source\Game\Logics\LevelGen\DungeonLayout.h" />
-    <ClInclude Include="Source\Game\Logics\LevelGen\DungeonLevelBuilder.h" />
-    <ClInclude Include="Source\Game\Logics\LevelGen\DungeonMeshBatcher.h" />
-    <ClInclude Include="Source\Game\Logics\LevelGen\DungeonTypes.h" />
-    <ClInclude Include="Source\Game\Logics\LevelGen\RoomTemplateTable.h" />
     <ClInclude Include="Source\Game\Logics\Test\ECSBenchmarkSystem.h" />
     <ClInclude Include="Source\Game\Logics\Test\LissajousOrbitComponent.h" />
     <ClInclude Include="Source\Game\Logics\Test\LissajousOrbitSystem.h" />
@@ -738,35 +722,6 @@
     <ClInclude Include="Source\Game\Logics\Test\VectorFlowSystem.h" />
     <ClInclude Include="Source\Game\Logics\Test\VoxelOceanComponent.h" />
     <ClInclude Include="Source\Game\Logics\Test\VoxelOceanSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Bullet\BulletComponents.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Bullet\BulletInheritanceSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Bullet\BulletSpawn.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Bullet\BulletTravelSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Bullet\BulletVisualSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Bullet\MagicBulletPool.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Bullet\WandFireSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Bullet\WandRuntimeComponents.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Collision\BulletEnemyCollisionSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Collision\BulletHitResponseSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Collision\BulletWallCollisionSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Compiler\CompiledWandProgram.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Compiler\WandBuildComponent.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Compiler\WandCompiler.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Compiler\WandCompileSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Compiler\WandProgramRegistry.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Core\RuneDatabase.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Core\RuneStackCurve.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Core\WandTypes.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Accelerate.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Focus.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Homing.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Reflection.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Slow.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Split.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Effects\OnHitResolution.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Effects\ResolveOnHit.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Effects\SpawnResolution.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Effects\TravelResolution.h" />
     <ClInclude Include="Source\Game\Scenes\BaseScene.h" />
     <ClInclude Include="Source\Game\Scenes\EditorScene.h" />
     <ClInclude Include="Source\Game\Scenes\ParticleScene.h" />
@@ -1248,7 +1203,6 @@
     <ClCompile Include="Source\Editor\Windows\ConsoleWindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\DungeonGeneratorWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\ECSDebugWindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
@@ -1460,8 +1414,6 @@
     <ClCompile Include="Source\Game\Logics\AI\StateTree\System\AIDebugSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\StateTree\System\StateTreeResolveSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\StateTree\System\StateTreeSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Collision\CharacterWallComponentsMeta.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Collision\CharacterWallSlideSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyMovementSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyPerceptionSystem.cpp" />
@@ -1474,33 +1426,11 @@
     <ClCompile Include="Source\Game\Logics\Combat\DamageResolutionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\HealthSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\HitboxCollisionSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Combat\KnockbackComponentMeta.cpp" />
-    <ClCompile Include="Source\Game\Logics\Combat\KnockbackSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Combat\TargetRegistrySystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\LevelGen\DungeonGenerator.cpp" />
-    <ClCompile Include="Source\Game\Logics\LevelGen\DungeonLayout.cpp" />
-    <ClCompile Include="Source\Game\Logics\LevelGen\DungeonLevelBuilder.cpp" />
-    <ClCompile Include="Source\Game\Logics\LevelGen\DungeonMeshBatcher.cpp" />
-    <ClCompile Include="Source\Game\Logics\LevelGen\RoomTemplateTable.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\ECSBenchmarkSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\LissajousOrbitSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\TornadoVortexSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\VectorFlowSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\VoxelOceanSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Wand\Bullet\BulletComponentsMeta.cpp" />
-    <ClCompile Include="Source\Game\Logics\Wand\Bullet\BulletInheritanceSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Wand\Bullet\BulletSpawn.cpp" />
-    <ClCompile Include="Source\Game\Logics\Wand\Bullet\BulletTravelSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Wand\Bullet\BulletVisualSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Wand\Bullet\WandFireSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Wand\Bullet\WandRuntimeComponentsMeta.cpp" />
-    <ClCompile Include="Source\Game\Logics\Wand\Collision\BulletEnemyCollisionSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Wand\Collision\BulletHitResponseSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Wand\Collision\BulletWallCollisionSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Wand\Compiler\WandBuildComponentMeta.cpp" />
-    <ClCompile Include="Source\Game\Logics\Wand\Compiler\WandCompiler.cpp" />
-    <ClCompile Include="Source\Game\Logics\Wand\Compiler\WandCompileSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Wand\Core\RuneDatabase.cpp" />
     <ClCompile Include="Source\Game\Scenes\BaseScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\EditorScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\ParticleScene.cpp" />
