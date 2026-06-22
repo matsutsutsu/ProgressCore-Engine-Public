@@ -100,7 +100,7 @@ void SceneInitializer::SpawnJoltTest(CCL::ECS::Core::World &world, ID3D11Device 
     modelComp.SetModel("Assets/Models/Player/Player.glb");
 
     player.Set(TransformComponent{ .position = {0.0f, 5.0f, 0.0f}, .rotation = {0.0f, 0.0f, 0.0f, 1.0f}, .scale = {1.0f, 1.0f, 1.0f} })
-          .Set(PlayerComponent{ .moveSpeed = 6.0f, .turnSpeed = 10.0f })
+          .Set(PlayerComponent{ .turnSpeed = 10.0f })
           .Set(JoltCharacterConfigComponent{ .maxSlopeAngle = 45.0f, .maxStepHeight = 0.5f, .walkSpeed = 6.0f, .jumpSpeed = 10.0f, .characterMass = 70.0f })
           .Set(JoltCapsuleColliderComponent{ .halfHeight = 0.5f, .radius = 0.5f })
           .Set(PrimitiveComponent{ .type = PrimitiveType::Capsule, .size = {0.0f, 1.0f, 0.0f}, .radius = 0.5f, .color = {0.2f, 0.8f, 0.2f, 1.0f} })
@@ -119,7 +119,7 @@ void SceneInitializer::SpawnJoltTest(CCL::ECS::Core::World &world, ID3D11Device 
 void SceneInitializer::SpawnAnimationTest(CCL::ECS::Core::World& world, ID3D11Device* device)
 {
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Camera/FreeCamera.json");
-    EntityFactory::SpawnPrefab(world, "Assets/Prefabs/World/ExampleStage.json");
+    EntityFactory::SpawnPrefab(world, "Assets/Prefabs/World/JoltExampleStage.json");
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/AnimationModel.json");
    
 }

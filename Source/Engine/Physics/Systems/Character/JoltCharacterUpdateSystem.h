@@ -4,6 +4,7 @@
 #include "Engine/Physics/Components/Character/JoltCharacterHandleComponent.h"
 #include "Engine/Physics/Components/Character/JoltCharacterConfigComponent.h"
 #include "Engine/Physics/Components/Character/CharacterMovementInputComponent.h"
+#include "Engine/Timer/TimeState.h"
 
 // ===================================================================================
 // ファイル名: JoltCharacterUpdateSystem.h
@@ -35,7 +36,8 @@ class JoltCharacterUpdateSystem
     CCL::ECS::Write<TransformComponent>,
     CCL::ECS::Read<JoltCharacterHandleComponent>,
     CCL::ECS::Read<CharacterMovementInputComponent>,
-    CCL::ECS::Read<JoltCharacterConfigComponent>> {
+    CCL::ECS::Read<JoltCharacterConfigComponent>,
+    CCL::ECS::Read<TimeStateComponent>> {
 public:
     JoltCharacterUpdateSystem() : IfSystem("JoltCharacterUpdateSystem") {}
     virtual ~JoltCharacterUpdateSystem() = default;

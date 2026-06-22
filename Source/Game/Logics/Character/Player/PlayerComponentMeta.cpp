@@ -11,7 +11,6 @@ COMPONENT_META_BEGIN(PlayerComponent, "Player Component")
 
 // 移動関連のパラメータ
 // CFIELD(変数名, "インスペクタ表示名", "カテゴリ名")
-CFIELD(moveSpeed, "Move Speed", "Movement")
 CFIELD(turnSpeed, "Turn Speed", "Movement")
 
 // 入力・システム関連のパラメータ

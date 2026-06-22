@@ -3,7 +3,7 @@
 #pragma once
 
 struct PlayerComponent {
-    float moveSpeed = 30.0f;
+
     float turnSpeed = 10.0f;
     int padSlot = 0;
 };

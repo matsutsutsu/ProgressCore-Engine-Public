@@ -38,9 +38,8 @@
  * @note 並列実行（ForEachWithIDParallel）禁止。ループ内で非ロック版 BodyInterface
  *       へ書き込むため、並列化するとデータ競合でクラッシュする。
  */
-void JoltCharacterUpdateSystem::Update(float dt) {
-    if (!_world->HasResource<JoltPhysicsManager*>())
-        return;
+void JoltCharacterUpdateSystem::Update(float rawDt) {
+    if (!_world->HasResource<JoltPhysicsManager*>())  return;
 
     auto& joltManager = _world->GetResource<JoltPhysicsManager*>();
     JPH::PhysicsSystem* physicsSystem = joltManager->GetPhysicsSystem();
@@ -55,9 +54,13 @@ void JoltCharacterUpdateSystem::Update(float dt) {
         TransformComponent& trans,
         const JoltCharacterHandleComponent& handle,
         const CharacterMovementInputComponent& input,
-        const JoltCharacterConfigComponent& config) {
+        const JoltCharacterConfigComponent& config,
+        const TimeStateComponent& time) {
             if (!handle.character) return;
             JPH::CharacterVirtual* ch = handle.character.GetPtr();
+
+            // ※ゼロ除算を防止し、現在のスケール比率を計算する
+            float timeScale = (rawDt > 0.0001f) ? (time.localDt / rawDt) : 0.0f;
 
             // ===============================================================
             // 自己無視フィルタ
@@ -102,12 +105,17 @@ void JoltCharacterUpdateSystem::Update(float dt) {
                 vy = config.jumpSpeed;
             }
 
-            // 重力積分（★ ExtendedUpdate はやってくれないので必須）
-            vy += gravity.GetY() * dt;
+            // 重力積分（論理的な速度の増分なので localDt で積分する）
+            vy += gravity.GetY() * time.localDt;
+
+            // 方向(-1.0~1.0) に Configの歩行速度 を掛けて本来の速度を出す
+            float moveVx = input.desiredVelocity.x * config.walkSpeed;
+            float moveVz = input.desiredVelocity.z * config.walkSpeed;
 
             // 水平は「ペダル(input)」で完全上書き ＝ フル空中制御。
             // 慣性や加速カーブを入れたい場合は、ここで現在の水平速度とブレンドする。
-            JPH::Vec3 newVel(input.desiredVelocity.x, vy, input.desiredVelocity.z);
+            // 最終速度に TimeScale を乗算して物理空間へ注入（これで距離が縮む）
+            JPH::Vec3 newVel(moveVx * timeScale, vy * timeScale, moveVz * timeScale);
             ch->SetLinearVelocity(newVel);
 
             // ===============================================================
@@ -122,7 +130,7 @@ void JoltCharacterUpdateSystem::Update(float dt) {
             updateSettings.mWalkStairsStepUp = JPH::Vec3(0.0f, config.maxStepHeight, 0.0f);
 
             ch->ExtendedUpdate(
-                dt, gravity, updateSettings,
+                rawDt, gravity, updateSettings,
                 physicsSystem->GetDefaultBroadPhaseLayerFilter(PhysicsLayers::MOVING),
                 physicsSystem->GetDefaultLayerFilter(PhysicsLayers::MOVING),
                 bodyFilter,

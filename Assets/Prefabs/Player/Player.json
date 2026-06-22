@@ -1,0 +1,101 @@
+{
+    "entities": [
+        {
+            "components": {
+                "Bounding Box": {
+                    "worldAABB.Center": [
+                        -0.42352133989334106,
+                        2.313857316970825,
+                        -20.792640686035156
+                    ],
+                    "worldAABB.Extents": [
+                        1.9829037189483643,
+                        2.3838889598846436,
+                        2.3262901306152344
+                    ]
+                },
+                "Character Movement Input": {
+                    "desiredVelocity": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "isAttackRequested": false,
+                    "jumpRequested": false,
+                    "lookTargetPos": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "Jolt Capsule Collider": {
+                    "halfHeight": 0.5,
+                    "localOffset": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "localRotationEuler": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "radius": 0.5
+                },
+                "Jolt Character Config": {
+                    "characterMass": 70.0,
+                    "jumpSpeed": 10.0,
+                    "maxSlopeAngle": 45.0,
+                    "maxStepHeight": 0.5,
+                    "walkSpeed": 19.600000381469727
+                },
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Player/Player.glb"
+                },
+                "Name": {
+                    "name": "Player"
+                },
+                "Player Component": {
+                    "padSlot": 0,
+                    "turnSpeed": 10.0
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 2,
+                    "position": [
+                        -0.6915249824523926,
+                        -0.0545911006629467,
+                        -20.823028564453125
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.056421827524900436,
+                        0.0,
+                        -0.9984070062637329
+                    ],
+                    "scale": [
+                        0.05000000074505806,
+                        0.05000000074505806,
+                        0.05000000074505806
+                    ]
+                },
+                "Visibility": {
+                    "isVisible": true
+                }
+            },
+            "lid": 1
+        }
+    ],
+    "magic": 1397506883,
+    "name": "Player",
+    "version": 1
+}

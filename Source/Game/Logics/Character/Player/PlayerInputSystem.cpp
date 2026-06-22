@@ -18,43 +18,44 @@ PlayerInputSystem::PlayerInputSystem()
 
 void PlayerInputSystem::Update(float dt)
 {
-    // 1. ループ外での入力デバイスの一括取得 (キャッシュ効率の最大化)
     if (!_world->HasResource<std::shared_ptr<IInputAPI>>()) return;
     if (!_world->HasResource<Camera*>()) return;
 
     auto inputAPI = _world->GetResource<std::shared_ptr<IInputAPI>>();
     Camera* mainCamera = _world->GetResource<Camera*>();
 
-    // Axis / Action から入力を抽出 (JSONでバインド済みと想定)
+    // 1. デバイスからの入力取得
     float moveX = inputAPI->GetAxis("MoveX");
-    float moveY = inputAPI->GetAxis("MoveY"); // WASDの上下
+    float moveY = inputAPI->GetAxis("MoveY");
     bool isAttacking = inputAPI->GetAction("Attack");
+    bool isJumping = inputAPI->GetAction("Jump"); // ★TPS用に追加
 
-    Vector3 moveDir(moveX, 0.0f, moveY);
+    // 2. カメラ空間ベースのベクトル生成 (TPS特有の処理)
+    // ※Cameraクラスの仕様に合わせて GetForward() 等の関数名は適宜読み替えること
+    Vector3 camForward = mainCamera->GetFront();
+    Vector3 camRight = mainCamera->GetRight();
+
+    // 水平移動にするためY軸の傾きを潰し、再正規化する
+    camForward.y = 0.0f;
+    camRight.y = 0.0f;
+    camForward.Normalize();
+    camRight.Normalize();
+
+    // 3. 入力値とカメラベクトルを合成してワールド進行方向を決定
+    Vector3 moveDir = (camRight * moveX) + (camForward * moveY);
     if (moveDir.LengthSquared() > 0.001f) {
         moveDir.Normalize();
     }
 
-    // 1. 動的な画面サイズとマウス座標の取得
-    float mouseX = inputAPI->GetMouseX();
-    float mouseY = inputAPI->GetMouseY();
-    float screenWidth = inputAPI->GetScreenWidth();
-    float screenHeight = inputAPI->GetScreenHeight();
-
-    // 2. ユーティリティを使ってワールド座標を算出
-    Vector3 mouseWorldPos = ScreenToWorld::GetRayIntersectionY0(
-        mouseX, mouseY, screenWidth, screenHeight, *mainCamera
-    );
-
-    // 2. エンティティ群への意思の書き込み (SoAによる超高速ループ)
+    // 4. Chunk一括更新 (SoA)
     ForEach([&](CharacterMovementInputComponent& inputData, const PlayerComponent& player) {
-
-        // プレイヤーの速度ステータスを掛け合わせ、最終的な要求速度としてペダルにセット
-        inputData.desiredVelocity = moveDir * player.moveSpeed;
-
-        // 攻撃とエイム先の更新
+        // 要求速度、攻撃意思、ジャンプ意思の書き込み
+        inputData.desiredVelocity = moveDir;
         inputData.isAttackRequested = isAttacking;
-        inputData.lookTargetPos = mouseWorldPos;
+        inputData.jumpRequested = isJumping;
+
+        // TPSにおけるエイム先は「カメラの中心」となるため、マウス交差計算は撤廃。
+        // 必要に応じてカメラの RayCast などの結果をここに流し込む設計とする。
         });
 }
 

@@ -1,0 +1,69 @@
+{
+    "entities": [
+        {
+            "components": {
+                "CameraAimLookAt": {
+                    "damping": 10.0,
+                    "offset": [
+                        -0.10000000149011612,
+                        0.0,
+                        6.699999809265137
+                    ],
+                    "target": 3
+                },
+                "CameraBodyFollow": {
+                    "damping": 5.0,
+                    "lockY": false,
+                    "offset": [
+                        0.0,
+                        6.300000190734863,
+                        -10.199999809265137
+                    ],
+                    "target": 3
+                },
+                "Name": {
+                    "name": "FollowCamera"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 2,
+                    "position": [
+                        0.0,
+                        5.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "VirtualCamera": {
+                    "blendTime": 1.0,
+                    "farClip": 1000.0,
+                    "fov": 70.5,
+                    "nearClip": 0.10000000149011612,
+                    "priority": 200
+                }
+            },
+            "lid": 1
+        }
+    ],
+    "magic": 1397506883,
+    "name": "FollowCamera",
+    "version": 1
+}

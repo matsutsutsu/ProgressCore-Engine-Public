@@ -21,10 +21,6 @@
             "visible": true
         },
         {
-            "name": "Dungeon Architect Tool",
-            "visible": true
-        },
-        {
             "name": "State Tree Editor",
             "visible": false
         },

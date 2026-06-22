@@ -4,6 +4,7 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include <cmath>
+#include <algorithm>
 
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
@@ -13,44 +14,34 @@ void PlayerMoveSystem::Update(float rawDt)
     ForEachWithID([&](EntityID id,
         TransformComponent& trans,
         const CharacterMovementInputComponent& inputData,
+        const JoltCharacterConfigComponent& config,
+        const JoltCharacterHandleComponent& joltHandle,
         const PlayerComponent& player,
         const TimeStateComponent& time)
         {
-            // 死亡判定（タグがあれば処理スキップ）
-            if (_world->HasComponent<Tag::DeadTag>(id)) return;          
+            if (_world->HasComponent<Tag::DeadTag>(id)) return;
+            if (!joltHandle.character) return; // Jolt実体が無い場合はスキップ
 
             // =========================================================
-            // 1. 移動の適用 (今回はTransformへ直接加算する簡易実装とする。
-            //    Jolt Physics 等が後段にあるなら、ここは不要になる可能性がある)
+            // モデルの振り向き (TPS仕様) のみ担当する
             // =========================================================
-            if (inputData.desiredVelocity.LengthSquared() > 0.001f) {
-                // ★ ガイドライン準拠: rawDt ではなく必ず time.localDt を使用する
-                trans.position = trans.position + inputData.desiredVelocity * time.localDt;
-                trans.isStatic = false;
-            }
+            Vector3 horizontalMove(inputData.desiredVelocity.x, 0.0f, inputData.desiredVelocity.z);
 
-            // =========================================================
-            // 2. 振り向き（マウスカーソル位置へのエイム）
-            // =========================================================
-            Vector3 toTarget = inputData.lookTargetPos - trans.position;
-            toTarget.y = 0.0f; // トップビューのためY軸(高さ)の差分は無視する
+            if (horizontalMove.LengthSquared() > 0.001f) {
+                horizontalMove.Normalize();
 
-            if (toTarget.LengthSquared() > 0.001f) {
-                toTarget.Normalize();
-
-                // XとZからヨー角(Yaw)を計算
-                float targetYaw = atan2f(toTarget.x, toTarget.z);
+                float targetYaw = atan2f(horizontalMove.x, horizontalMove.z);
                 Quaternion targetRot = Quaternion::CreateFromAxisAngle(Vector3::UnitY, targetYaw);
 
-                // ★ ガイドライン準拠: 回転の補間にも必ず time.localDt を使用する
+                // 描画用のTransformを回転させる（TimeScale適用済みDtを使用）
                 trans.rotation = Quaternion::Slerp(trans.rotation, targetRot, player.turnSpeed * time.localDt);
-
-                // 物理エンジンやSIMD命令に不正な数値を送らないための正規化保護
                 DirectX::XMVector4Normalize(DirectX::XMLoadFloat4(&trans.rotation));
                 trans.isStatic = false;
+
+                // 物理カプセルの向きも同期させる (直立カプセルの向き)
+                joltHandle.character->SetRotation(JPH::Quat(trans.rotation.x, trans.rotation.y, trans.rotation.z, trans.rotation.w));
             }
         });
 }
 
-// ステージ L02: 入力が確定した後、物理エンジンの前に実行する
 REGISTER_LOGIC_SYSTEM(PlayerMoveSystem, Priority::LogicStage::L02_Update);

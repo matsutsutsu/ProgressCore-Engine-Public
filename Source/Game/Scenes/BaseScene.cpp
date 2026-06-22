@@ -138,10 +138,6 @@ void BaseScene::Update(float elapsedTime)
 {
     ZoneScopedN("BaseScene::Update");
 
-
-    // ECSシステムが走り出す「前」の、誰もメモリを触っていない安全な瞬間に世界を切り替える！
-    ExecutePendingSceneOperations();
-
     RenderQueue::Instance().BeginFrame();
     Graphics::Instance().GetParticleRenderer()->BeginFrame();
 
@@ -217,26 +213,6 @@ void BaseScene::DrawGUI()
 }
 
 
-
-// ---------------------------------------------------------
-// 予約されたセーブ/ロード処理の消化 (フレームの先頭で呼ばれる)
-// ---------------------------------------------------------
-void BaseScene::ExecutePendingSceneOperations()
-{
-    // ロード予約がある場合
-    if (!_pendingLoadScenePath.empty()) {
-        // ★必要であればここでパーティクル等の事前リセット処理 (OnPreLoadScene) を呼ぶ
-
-        SceneManager::Instance().LoadScene(_worldPtr, _pendingLoadScenePath);
-        _pendingLoadScenePath.clear();
-    }
-
-    // セーブ予約がある場合
-    if (!_pendingSaveScenePath.empty()) {
-        SceneManager::Instance().SaveScene(_worldPtr, _pendingSaveScenePath);
-        _pendingSaveScenePath.clear();
-    }
-}
 
 // ============================================================
 //  OnDeviceRecreated（デバイスロスト復帰後）
