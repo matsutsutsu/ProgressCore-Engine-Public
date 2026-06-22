@@ -29,7 +29,7 @@ void EditorScene::Initialize()
     SceneInitializer::SpawnLightStartSet(*_worldPtr, device);
     //Prefab::SpawnPrefab(*_worldPtr, "Assets/Prefabs/Camera/FreeCamera.json");
 
-
+    SceneInitializer::SpawnAnimationTest(*_worldPtr, device);
 
 
     // (a) ノード種別を登録
