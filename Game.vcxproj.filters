@@ -505,6 +505,12 @@
     <Filter Include="Source\Game\Logics\Character\Enemy\Combat">
       <UniqueIdentifier>{51ebfc95-f636-416f-9a70-55bc25dbcd11}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\Character\Player\Components">
+      <UniqueIdentifier>{b32b3cba-14b1-49d4-a485-70088a470068}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\Character\Player\Systems">
+      <UniqueIdentifier>{edfdb3db-8c16-43a6-90ca-2bed32f4f008}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -735,15 +741,6 @@
     <ClInclude Include="Source\Game\Logics\Combat\HealthComponent.h">
       <Filter>Source\Game\Logics\Combat</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Player\PlayerComponent.h">
-      <Filter>Source\Game\Logics\Character\Player</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Player\PlayerInputSystem.h">
-      <Filter>Source\Game\Logics\Character\Player</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Player\PlayerMoveSystem.h">
-      <Filter>Source\Game\Logics\Character\Player</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Scenes\EditorScene.h">
       <Filter>Source\Game\Scenes</Filter>
     </ClInclude>
@@ -824,9 +821,6 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Combat\CombatComponents.h">
       <Filter>Source\Game\Logics\Combat</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Player\PlayerFeedbackSystem.h">
-      <Filter>Source\Game\Logics\Character\Player</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Renderer\ParticleRenderer.h">
       <Filter>Source\Engine\Graphics\Renderer</Filter>
@@ -1569,9 +1563,6 @@
     <ClInclude Include="Source\Engine\Graphics\Pipeline\Core\IRenderPass.h">
       <Filter>Source\Engine\Graphics\Pipeline\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Player\PlayerAttackSystem.h">
-      <Filter>Source\Game\Logics\Character\Player</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\ECS\CCL_ECSContext.h">
       <Filter>Source\Engine\ECS</Filter>
     </ClInclude>
@@ -1664,6 +1655,36 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Enemy\PerceptionComponent.h">
       <Filter>Source\Game\Logics\Character\Enemy\Combat</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Player\Components\PlayerComponent.h">
+      <Filter>Source\Game\Logics\Character\Player\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerAttackSystem.h">
+      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerFeedbackSystem.h">
+      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerInputSystem.h">
+      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerMoveSystem.h">
+      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Player\Components\DashComponent.h">
+      <Filter>Source\Game\Logics\Character\Player\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Player\Components\JustEvadeComponent.h">
+      <Filter>Source\Game\Logics\Character\Player\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerDashSystem.h">
+      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.h">
+      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Platform\Input\InputKeyTable.h">
+      <Filter>Source\Engine\Platform\Input</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1877,12 +1898,6 @@
     <ClCompile Include="Source\Engine\Serialization\Factory\SceneInitializer.cpp">
       <Filter>Source\Engine\Serialization\Factory</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Player\PlayerInputSystem.cpp">
-      <Filter>Source\Game\Logics\Character\Player</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Player\PlayerMoveSystem.cpp">
-      <Filter>Source\Game\Logics\Character\Player</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Game\Scenes\EditorScene.cpp">
       <Filter>Source\Game\Scenes</Filter>
     </ClCompile>
@@ -1909,9 +1924,6 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Combat\HealthSystem.cpp">
       <Filter>Source\Game\Logics\Combat</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Player\PlayerFeedbackSystem.cpp">
-      <Filter>Source\Game\Logics\Character\Player</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Renderer\ParticleRenderer.cpp">
       <Filter>Source\Engine\Graphics\Renderer</Filter>
@@ -2420,9 +2432,6 @@
     <ClCompile Include="Source\Engine\Platform\Input\InputFacade.cpp">
       <Filter>Source\Engine\Platform\Input\API</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Player\PlayerComponentMeta.cpp">
-      <Filter>Source\Game\Logics\Character\Player</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Physics\Components\Character\JoltCharacterConfigComponentMeta.cpp">
       <Filter>Source\Engine\Physics\Components\Character</Filter>
     </ClCompile>
@@ -2431,9 +2440,6 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\ToneMapEffect.cpp">
       <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Player\PlayerAttackSystem.cpp">
-      <Filter>Source\Game\Logics\Character\Player</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\DistortionEffect.cpp">
       <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
@@ -2482,6 +2488,30 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\StateTree\System\StateTreeSystem.cpp">
       <Filter>Source\Game\Logics\AI\StateTree\System</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Player\Components\PlayerComponentMeta.cpp">
+      <Filter>Source\Game\Logics\Character\Player\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerAttackSystem.cpp">
+      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerFeedbackSystem.cpp">
+      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerInputSystem.cpp">
+      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerMoveSystem.cpp">
+      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerDashSystem.cpp">
+      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.cpp">
+      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Player\Components\DashComponentsMeta.cpp">
+      <Filter>Source\Game\Logics\Character\Player\Components</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

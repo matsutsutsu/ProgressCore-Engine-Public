@@ -4,35 +4,50 @@
             "components": {
                 "Bounding Box": {
                     "worldAABB.Center": [
-                        -0.42352133989334106,
-                        2.313857316970825,
-                        -20.792640686035156
+                        1.252985954284668,
+                        2.3142833709716797,
+                        -25.357389450073242
                     ],
                     "worldAABB.Extents": [
-                        1.9829037189483643,
-                        2.3838889598846436,
-                        2.3262901306152344
+                        1.8918421268463135,
+                        2.3838887214660645,
+                        2.2547264099121094
                     ]
                 },
                 "Character Movement Input": {
+                    "dashRequested": false,
                     "desiredVelocity": [
                         0.0,
                         0.0,
                         0.0
                     ],
-                    "isAttackRequested": false,
+                    "isAttackRequested": true,
                     "jumpRequested": false,
                     "lookTargetPos": [
                         0.0,
                         0.0,
                         0.0
-                    ]
+                    ],
+                    "overrideSpeed": -1.0
+                },
+                "Dash Component": {
+                    "currentTimer": -0.006666665896773338,
+                    "dashCooldown": 0.1599999964237213,
+                    "dashDirection": [
+                        -0.0032646399922668934,
+                        0.0,
+                        -0.999994695186615
+                    ],
+                    "dashDuration": 0.1599999964237213,
+                    "dashSpeed": 114.0,
+                    "isDashing": false,
+                    "isInvincible": false
                 },
                 "Jolt Capsule Collider": {
-                    "halfHeight": 0.5,
+                    "halfHeight": 2.5,
                     "localOffset": [
                         0.0,
-                        0.0,
+                        1.899999976158142,
                         0.0
                     ],
                     "localRotationEuler": [
@@ -40,14 +55,17 @@
                         0.0,
                         0.0
                     ],
-                    "radius": 0.5
+                    "radius": 1.0
                 },
                 "Jolt Character Config": {
-                    "characterMass": 70.0,
+                    "characterMass": 148.0,
                     "jumpSpeed": 10.0,
                     "maxSlopeAngle": 45.0,
                     "maxStepHeight": 0.5,
-                    "walkSpeed": 19.600000381469727
+                    "walkSpeed": 43.599998474121094
+                },
+                "Just Evade Component": {
+                    "isJustSuccess": false
                 },
                 "Material": null,
                 "Model": {
@@ -72,15 +90,15 @@
                     "isStatic": false,
                     "parent": 2,
                     "position": [
-                        -0.6915249824523926,
-                        -0.0545911006629467,
-                        -20.823028564453125
+                        1.5221047401428223,
+                        -0.05416519567370415,
+                        -25.339378356933594
                     ],
                     "rotation": [
                         0.0,
-                        0.056421827524900436,
+                        0.9994418621063232,
                         0.0,
-                        -0.9984070062637329
+                        0.03340775519609451
                     ],
                     "scale": [
                         0.05000000074505806,

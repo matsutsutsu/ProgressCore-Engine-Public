@@ -4,7 +4,7 @@
 /// @note ハードウェア依存（InputFacade）はすべてこのシステムに集約させる。
 
 #include "Engine/ECS/System/CCL_IfSystem.h"
-#include "Game/Logics/Character/Player/PlayerComponent.h"
+#include "Game/Logics/Character/Player/Components/PlayerComponent.h"
 #include "Engine/Physics/Components/Character/CharacterMovementInputComponent.h"
 
 // ※ 名前空間で囲まない (ガイドライン準拠)

@@ -29,9 +29,9 @@ void EditorScene::Initialize()
     SceneInitializer::SpawnLightStartSet(*_worldPtr, device);
     //Prefab::SpawnPrefab(*_worldPtr, "Assets/Prefabs/Camera/FreeCamera.json");
 
-    //SceneInitializer::SpawnAnimationTest(*_worldPtr, device);
+    SceneInitializer::SpawnAnimationTest(*_worldPtr, device);
 
-    SceneManager::Instance().LoadScene(_worldPtr,"Assets/Scene/PlayerMovementScene.json");
+    //SceneManager::Instance().LoadScene(_worldPtr,"Assets/Scene/PlayerMovementScene.json");
 
     // (a) ノード種別を登録
     static auto enemyIds = EnemyAI::RegisterNodes();   // アプリ起動中1回でOK

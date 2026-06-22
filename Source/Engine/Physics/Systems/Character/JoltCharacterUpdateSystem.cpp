@@ -7,6 +7,9 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
+#include <SimpleMath.h>
+using namespace DirectX::SimpleMath;
+
 // ===================================================================================
 // 【 物理肉体更新システム : JoltCharacterUpdateSystem 】
 //
@@ -105,12 +108,23 @@ void JoltCharacterUpdateSystem::Update(float rawDt) {
                 vy = config.jumpSpeed;
             }
 
-            // 重力積分（論理的な速度の増分なので localDt で積分する）
-            vy += gravity.GetY() * time.localDt;
+            // ===============================================================
+            // ★ 対策1: 物理エンジンの崩壊を防ぐ「時間の安全装置」
+            // フレームレートが低下しても、物理がワープしないよう最大30fps(0.033f)相当に制限する
+            // ===============================================================
+            float safeDt = (std::min)(rawDt, 0.0333f);
+
+            // 重力積分 (安全なdtを使用)
+            vy += gravity.GetY() * safeDt;
+
+            // ===============================================================
+            // ★追加: アクション層から速度上書き要求があればそれを優先する
+            // ===============================================================
+            float currentSpeed = (input.overrideSpeed > 0.0f) ? input.overrideSpeed : config.walkSpeed;
 
             // 方向(-1.0~1.0) に Configの歩行速度 を掛けて本来の速度を出す
-            float moveVx = input.desiredVelocity.x * config.walkSpeed;
-            float moveVz = input.desiredVelocity.z * config.walkSpeed;
+            float moveVx = input.desiredVelocity.x * currentSpeed;
+            float moveVz = input.desiredVelocity.z * currentSpeed;
 
             // 水平は「ペダル(input)」で完全上書き ＝ フル空中制御。
             // 慣性や加速カーブを入れたい場合は、ここで現在の水平速度とブレンドする。
@@ -128,9 +142,11 @@ void JoltCharacterUpdateSystem::Update(float rawDt) {
             // ===============================================================
             JPH::CharacterVirtual::ExtendedUpdateSettings updateSettings;
             updateSettings.mWalkStairsStepUp = JPH::Vec3(0.0f, config.maxStepHeight, 0.0f);
+            // 床吸着の設定
+            updateSettings.mStickToFloorStepDown = JPH::Vec3(0.0f, -config.maxStepHeight, 0.0f); // ★ 必須追加
 
             ch->ExtendedUpdate(
-                rawDt, gravity, updateSettings,
+                safeDt, gravity, updateSettings,
                 physicsSystem->GetDefaultBroadPhaseLayerFilter(PhysicsLayers::MOVING),
                 physicsSystem->GetDefaultLayerFilter(PhysicsLayers::MOVING),
                 bodyFilter,
@@ -143,6 +159,13 @@ void JoltCharacterUpdateSystem::Update(float rawDt) {
             JPH::RVec3 pos = ch->GetPosition();
             trans.position = { pos.GetX(), pos.GetY(), pos.GetZ() };
             trans.isStatic = false; // 行列の再計算を要求
+
+            //// ★ デバッグ用コード：毎フレームの実際の移動距離をコンソールに出力
+            //static Vector3 prevPos = trans.position;
+            //Vector3        diff    = trans.position - prevPos;
+            //CCL_LOG_INFO(LogCategory::Game, "Velocity: %.2f | MoveDiff Z: %.4f | Dt: %.4f",
+            //    ch->GetLinearVelocity().Length(), diff.z, rawDt);
+            //prevPos = trans.position;
 
             // ===============================================================
             // 内部Kinematic剛体（幽霊）を CharacterVirtual に追従させる

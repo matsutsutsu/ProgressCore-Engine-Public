@@ -1,0 +1,29 @@
+# Visual Studio の標準スタイルに最も近い Microsoft スタイルをベースにする
+# → LLVM よりも VS の初期フォーマットに近く、余計な変更が少ない
+BasedOnStyle: Microsoft
+
+# 連続する代入文を縦に揃える（読みやすさ向上）
+AlignConsecutiveAssignments: true
+
+# 連続する変数宣言を縦に揃える（読みやすさ向上）
+AlignConsecutiveDeclarations: true
+
+# 関数呼び出しの括弧の後での整列を禁止
+# → VS の初期スタイルに近く、勝手に整列されて崩れるのを防ぐ
+AlignAfterOpenBracket: DontAlign
+
+# include の並び替えを無効化
+# → VS の初期コードや手動で整理した順番を壊さない
+SortIncludes: false
+
+# コメントの折り返し（Reflow）を無効化
+# → コメントの文章が勝手に改行されて崩れるのを防ぐ
+ReflowComments: false
+
+# 行の折り返し（ColumnLimit）を無効化
+# → 長い行でも勝手に改行されない（最小侵襲に必須）
+ColumnLimit: 0
+
+# IndentCaseLabels: false        # switch-case のインデントを VS と同じに
+SpaceBeforeParens: ControlStatements  # if/for だけスペース、関数呼び出しは詰める
+PointerAlignment: Right        # int* p の形を維持

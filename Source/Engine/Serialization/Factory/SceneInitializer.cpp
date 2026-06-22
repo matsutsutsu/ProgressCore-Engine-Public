@@ -121,6 +121,14 @@ void SceneInitializer::SpawnAnimationTest(CCL::ECS::Core::World& world, ID3D11De
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Camera/FreeCamera.json");
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/World/JoltExampleStage.json");
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/AnimationModel.json");
+
+
+    auto player = EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Player/Player.json");
+    auto camera = EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Player/PlayerFollowCamera.json");
+
+    // player.ID() を渡してメソッドチェーンでPatchする
+    camera.Patch<CameraBodyFollow>([pid = player.ID()](auto &body) { body.target = pid; })
+        .Patch<CameraAimLookAt>([pid = player.ID()](auto &aim) { aim.target = pid; });
    
 }
 
@@ -132,7 +140,6 @@ void SceneInitializer::SpawnShaderTest(CCL::ECS::Core::World& world, ID3D11Devic
 }
 
 
-#include "Game/Logics/Character/Player/PlayerComponent.h"
 #include "Game/Logics/Character/Enemy/EnemyComponent.h"
 
 // ============================================================================
