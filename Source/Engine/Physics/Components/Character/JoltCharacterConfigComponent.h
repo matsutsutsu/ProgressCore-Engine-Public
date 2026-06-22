@@ -26,4 +26,7 @@ struct JoltCharacterConfigComponent {
     // --- ★キビキビ着地のための追加パラメータ ---
     float gravityScale     = 1.0f; // 通常重力（上昇用）
     float fallGravityScale = 2.5f; // 落下時は2.5倍強く引っ張る！
+
+    // --- ★ダッシュ後の慣性・減速パラメータ ---
+    float deceleration = 8.0f; ///< 減衰力（低いほどダッシュ後によく滑る）
 };

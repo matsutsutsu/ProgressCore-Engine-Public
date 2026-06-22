@@ -11,4 +11,7 @@ struct CharacterMovementInputComponent {
 
     bool dashRequested = false;  // 入力層からのDash要求
     float overrideSpeed = -1.0f; // アクション層からの速度上書き(-1.0fなら通常速度)
+
+    // --- アクションの爽快感（慣性の引き継ぎ）用 ---
+    DirectX::SimpleMath::Vector3 currentVelocity = {0, 0, 0};
 };

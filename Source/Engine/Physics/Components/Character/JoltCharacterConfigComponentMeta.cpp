@@ -21,4 +21,6 @@ CFIELD_FLOAT_RANGED(characterMass, "Character Mass (kg)", 1.0f, 0.1f, 1000.0f, "
 CFIELD_FLOAT_RANGED(gravityScale, "Gravity Scale", 0.1f, 0.0f, 50.0f, "Physics")
 CFIELD_FLOAT_RANGED(fallGravityScale, "Fall Gravity Scale", 0.1f, 0.0f, 50.0f, "Physics")
 
+CFIELD_FLOAT_RANGED(deceleration, "減速摩擦力 (deceleration)", 0.1f, 1.0f, 50.0f, "Movement Feel")
+
 COMPONENT_META_END(JoltCharacterConfigComponent)
