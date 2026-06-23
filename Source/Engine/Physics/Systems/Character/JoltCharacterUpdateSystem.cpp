@@ -72,8 +72,7 @@ void JoltCharacterUpdateSystem::ApplyTeleportIfNeeded(TransformComponent &trans,
 float JoltCharacterUpdateSystem::CalculateVerticalVelocity(float safeDt, float currentVy, const JoltCharacterConfigComponent &config, const CharacterMovementInputComponent &input, bool isGrounded, float gravityY)
 {
     float vy = currentVy;
-    if (isGrounded && vy < 0.0f)
-        vy = 0.0f;
+    if (isGrounded && vy < 0.0f) vy = 0.0f;
 
     if (input.jumpRequested)
     {
@@ -81,7 +80,21 @@ float JoltCharacterUpdateSystem::CalculateVerticalVelocity(float safeDt, float c
     }
 
     // 非対称重力の適用 (キビキビ着地)
-    float currentGravityScale = (vy < 0.0f) ? config.fallGravityScale : config.gravityScale;
+    float currentGravityScale = config.gravityScale;
+    if (vy < 0.0f)
+    {
+        currentGravityScale = config.fallGravityScale;
+    }
+
+    // ===============================================================
+    //  滞空時間ハック (Apex Hang Time)
+    // ===============================================================
+    // 空中かつ、Y軸の速度が閾値(-1.5 〜 1.5)の間なら、重力を極端に弱める
+    if (!isGrounded && std::abs(vy) < config.apexVelocityThreshold)
+    {
+        currentGravityScale = config.apexGravityScale;
+    }
+
     vy += gravityY * currentGravityScale * safeDt;
 
     return vy;

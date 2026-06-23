@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <DirectXMath.h> // XM_PIの使用に必要
 
+#include "Game/Logics/GameEvent/GameEvents.h"
+
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
@@ -44,6 +46,30 @@ void PlayerMoveSystem::Update(float rawDt)
 // -----------------------------------------------------------------------------------
 void PlayerMoveSystem::UpdateJumpLogic(float dt, bool isGrounded, CharacterMovementInputComponent &inputData, PlayerComponent &player)
 {
+    // 直前の落下速度から「着地」の衝撃を計算しイベント発火
+    if (isGrounded)
+    {
+        if (!player.wasGroundedLastFrame)
+        {
+            // 落下速度が一定以上(例：-10.0f)ならカメラシェイクを要求
+            if (player.lastFallVelocity < -10.0f)
+            {
+                // 落下が速いほど揺れを強くする
+                float shakePower = std::abs(player.lastFallVelocity) * 0.03f;
+                _world->GetEventBus().Publish(CameraShakeRequestEvent{shakePower, 0.2f});
+            }
+        }
+        player.timeSinceGrounded = 0.0f;
+        player.currentJumpCount  = 0;
+    }
+    else
+    {
+        player.timeSinceGrounded += dt;
+    }
+
+    // 状態の保存
+    player.wasGroundedLastFrame = isGrounded;
+
     // コヨーテタイマーの更新
     if (isGrounded)
     {

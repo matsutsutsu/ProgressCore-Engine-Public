@@ -4,17 +4,22 @@
             "components": {
                 "Bounding Box": {
                     "worldAABB.Center": [
-                        0.8400129675865173,
-                        2.316091299057007,
-                        -15.598356246948242
+                        0.2761325240135193,
+                        2.3150012493133545,
+                        -18.239368438720703
                     ],
                     "worldAABB.Extents": [
-                        1.9837431907653809,
+                        1.9780194759368896,
                         2.3838889598846436,
-                        2.326941967010498
+                        2.3224945068359375
                     ]
                 },
                 "Character Movement Input": {
+                    "currentVelocity": [
+                        -2.5848926554772333e-08,
+                        0.0,
+                        3.4966124076163396e-06
+                    ],
                     "dashRequested": false,
                     "desiredVelocity": [
                         0.0,
@@ -34,9 +39,9 @@
                     "currentTimer": -0.006666665896773338,
                     "dashCooldown": 0.1599999964237213,
                     "dashDirection": [
-                        -1.0,
+                        2.9387738464947688e-08,
                         0.0,
-                        -4.408160947377837e-08
+                        -1.0
                     ],
                     "dashDuration": 0.1599999964237213,
                     "dashSpeed": 114.0,
@@ -58,7 +63,10 @@
                     "radius": 1.0
                 },
                 "Jolt Character Config": {
+                    "apexGravityScale": 0.699999988079071,
+                    "apexVelocityThreshold": 0.30000001192092896,
                     "characterMass": 148.0,
+                    "deceleration": 5.900000095367432,
                     "fallGravityScale": 10.399999618530273,
                     "gravityScale": 6.300000190734863,
                     "jumpSpeed": 30.0,
@@ -77,9 +85,19 @@
                     "name": "Player"
                 },
                 "Player Component": {
+                    "bankingMultiplier": 0.5,
+                    "coyoteTimeWindow": 0.15000000596046448,
                     "currentJumpCount": 0,
+                    "currentRoll": -4.555765351554539e-14,
+                    "currentYaw": -0.11037808656692505,
+                    "jumpBufferTimer": 0.0,
+                    "jumpBufferWindow": 0.15000000596046448,
+                    "lastFallVelocity": 0.0,
+                    "maxBankingAngle": 30.0,
                     "maxJumps": 2,
+                    "timeSinceGrounded": 0.0,
                     "turnSpeed": 10.0,
+                    "wasGroundedLastFrame": true,
                     "wasJumpButtonPressed": false
                 },
                 "TimeState": {
@@ -94,15 +112,15 @@
                     "isStatic": false,
                     "parent": 2,
                     "position": [
-                        0.5720226168632507,
-                        -0.05235720053315163,
-                        -15.567852020263672
+                        0.008053046651184559,
+                        -0.05344732478260994,
+                        -18.269079208374023
                     ],
                     "rotation": [
-                        0.0,
-                        0.0566389337182045,
-                        0.0,
-                        0.9983947277069092
+                        1.2565036029127245e-15,
+                        -0.05516103282570839,
+                        -2.2744145840780314e-14,
+                        0.9984774589538574
                     ],
                     "scale": [
                         0.05000000074505806,

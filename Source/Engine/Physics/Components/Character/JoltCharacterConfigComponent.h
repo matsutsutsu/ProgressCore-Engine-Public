@@ -29,4 +29,9 @@ struct JoltCharacterConfigComponent {
 
     // --- ★ダッシュ後の慣性・減速パラメータ ---
     float deceleration = 8.0f; ///< 減衰力（低いほどダッシュ後によく滑る）
+
+    // --- ★空中のタメ（Apex Hang Time）パラメータ ---
+    float apexGravityScale      = 0.3f; // 頂点付近での重力倍率（軽いほどフワッとする）
+    float apexVelocityThreshold = 1.5f; // 頂点と判定するY軸速度の閾値
+
 };

@@ -7,6 +7,7 @@
 #include "Game/Logics/Character/Player/Components/DashComponent.h"
 
 #include "Game/Logics/GameEvent/GameEvents.h"
+#include "Engine/Physics/Components/Character/CharacterMovementInputComponent.h"
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
@@ -32,7 +33,24 @@ void CameraActionTPSSystem::Initialize()
             }
         });
     });
+
+  // 着地などの汎用カメラシェイクを受信
+    ListenEvent<CameraShakeRequestEvent>([this](const CameraShakeRequestEvent &ev) {
+
+        ForEachWithID([&](EntityID id, VirtualCamera &vcam, CameraBodyTPSComponent &tps, TransformComponent &trans) {
+            if (!_world->HasComponent<CameraShake>(id))
+            {
+                _world->AddComponent<CameraShake>(id);
+            }
+            if (auto *shake = _world->GetComponent<CameraShake>(id))
+            {
+                shake->SetShake(ev.amplitude, ev.duration);
+            }
+        });
+    });
+
 }
+
 
 void CameraActionTPSSystem::Update(float dt)
 {
@@ -55,8 +73,26 @@ void CameraActionTPSSystem::Update(float dt)
         tps.currentPitch += lookY * tps.lookSpeedY * dt;
         tps.currentPitch = std::clamp(tps.currentPitch, tps.minPitch, tps.maxPitch);
 
-        // 3. 理想の注視点(ワールド空間)の算出
+       // 3. 理想の注視点(ワールド空間)の算出
         Vector3 idealLookAt = targetTrans->position + tps.targetOffset;
+
+        // ルックアヘッド (進行方向へ注視点をずらす)
+        // FIXME:　ECSシステム内でGetComponentするぐらいならArchetypeに含む、一応値は書き換えていない
+        auto *targetInput = _world->GetComponent<CharacterMovementInputComponent>(tps.target.id);
+        if (targetInput)
+        {
+            // ターゲットの現在の速度ベクトルを取得（縦揺れによる酔いを防ぐためY軸は潰す）
+            Vector3 vel = targetInput->currentVelocity;
+            vel.y       = 0.0f;
+
+            Vector3 targetLookahead = vel * tps.lookaheadMultiplier;
+
+            // ルックアヘッド量自体も滑らかに補間する（急ブレーキ時の視点ガタつき防止）
+            float laBlend        = 1.0f - std::exp(-tps.lookaheadDamping * dt);
+            tps.currentLookahead = Vector3::Lerp(tps.currentLookahead, targetLookahead, laBlend);
+
+            idealLookAt += tps.currentLookahead;
+        }
 
         // 初回フレームは補間をスキップして強制ターゲット同期
         if (tps.isFirstFrame)

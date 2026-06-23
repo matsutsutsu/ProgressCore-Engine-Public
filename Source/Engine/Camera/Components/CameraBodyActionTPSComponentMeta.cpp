@@ -77,6 +77,11 @@ struct ComponentMeta<CameraBodyTPSComponent>
         ImGui::SeparatorText(u8"滑らかさ (Smoothing)");
         changed |= ImGui::DragFloat(u8"位置追従遅延 (positionDamping)", &comp.positionDamping, 0.1f, 0.0f, 50.0f);
         changed |= ImGui::DragFloat(u8"視野角補間速度 (fovDamping)", &comp.fovDamping, 0.1f, 0.0f, 50.0f);
+        
+        // ★追加：ルックアヘッドのGUI
+        ImGui::SeparatorText(u8"ルックアヘッド (Lookahead)");
+        changed |= ImGui::DragFloat(u8"前方注視係数 (lookaheadMultiplier)", &comp.lookaheadMultiplier, 0.05f, 0.0f, 5.0f);
+        changed |= ImGui::DragFloat(u8"注視遅延 (lookaheadDamping)", &comp.lookaheadDamping, 0.1f, 0.0f, 50.0f);
 
         return changed;
     }
@@ -87,10 +92,13 @@ struct ComponentMeta<CameraBodyTPSComponent>
     }
 #endif
 
-    // 自動シリアライズ用のフィールド一覧 (JSONへのセーブ/ロード用)
+   // 自動シリアライズ用のフィールド一覧 (JSONへのセーブ/ロード用)
     static const std::vector<FieldDescriptor> &Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
+            // ★追加: 追従ターゲット(EntityLink)のシリアライズ漏れを防ぐ
+            CFIELD(target, "Target", "Settings")
+
             CFIELD_FLOAT3_FAST(targetOffset, "Target Offset", 0.1f, "Positioning")
             CFIELD_FLOAT_RANGED(distance, "Distance", 0.1f, 1.0f, 100.0f, "Positioning")
             CFIELD_FLOAT_RANGED(baseFov, "Base FOV", 1.0f, 10.0f, 120.0f, "Dynamic Lens")
@@ -102,7 +110,13 @@ struct ComponentMeta<CameraBodyTPSComponent>
             CFIELD_FLOAT_RANGED(lookSpeedX, "Look Speed X", 1.0f, 0.0f, 500.0f, "Control Settings")
             CFIELD_FLOAT_RANGED(lookSpeedY, "Look Speed Y", 1.0f, 0.0f, 500.0f, "Control Settings")
             CFIELD_FLOAT_RANGED(positionDamping, "Pos Damping", 0.1f, 0.0f, 50.0f, "Smoothing")
-            CFIELD_FLOAT_RANGED(fovDamping, "FOV Damping", 0.1f, 0.0f, 50.0f, "Smoothing")};
+            CFIELD_FLOAT_RANGED(fovDamping, "FOV Damping", 0.1f, 0.0f, 50.0f, "Smoothing")
+            CFIELD_FLOAT_RANGED(lookaheadMultiplier, u8"前方注視係数 (lookaheadMultiplier)", 0.05f, 0.0f, 5.0f, "Lookahead")
+            CFIELD_FLOAT_RANGED(lookaheadDamping, u8"注視遅延 (lookaheadDamping)", 0.1f, 0.0f, 50.0f, "Lookahead")
+            
+            // ★修正: Vector3 型なので CFIELD_FLOAT3_FAST に変更！
+            CFIELD_FLOAT3_FAST(currentLookahead, u8"現在の注視オフセット (currentLookahead)", 0.1f, "State")
+        };
         return fields;
     }
 };

@@ -29,4 +29,9 @@ CFIELD_FLOAT_RANGED(maxBankingAngle, u8"最大バンキング角 (maxBankingAngl
 CFIELD(currentYaw, u8"現在のYaw角 (currentYaw)", "State")
 CFIELD(currentRoll, u8"現在のRoll角 (currentRoll)", "State")
 
+// 着地衝撃用のステート
+CFIELD(wasGroundedLastFrame, u8"前フレーム接地状態 (wasGroundedLastFrame)", "State")
+CFIELD(lastFallVelocity, u8"直前落下速度 (lastFallVelocity)", "State")
+
+
 COMPONENT_META_END(PlayerComponent)

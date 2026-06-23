@@ -133,6 +133,16 @@ REGISTER_COMPONENT(CameraAimLookAt, "CameraAimLookAt")
 REGISTER_COMPONENT_EDITOR_GUI(CameraAimLookAt)
 
 // ============================================================================
+// Camera Shake (パターンA: 全自動)
+// ============================================================================
+COMPONENT_META_BEGIN(CameraShake, "Camera Shake")
+// 実行時の状態監視（デバッグ）用として表示
+CFIELD_FLOAT_RANGED(amplitude, u8"揺れの強さ (amplitude)", 0.1f, 0.0f, 100.0f, "Shake State")
+CFIELD_FLOAT_RANGED(duration, u8"残り時間 (duration)", 0.01f, 0.0f, 10.0f, "Shake State")
+CFIELD_FLOAT_RANGED(maxDuration, u8"最大時間 (maxDuration)", 0.01f, 0.0f, 10.0f, "Shake State")
+COMPONENT_META_END(CameraShake)
+
+// ============================================================================
 // Camera Body Free (パターンA: 全自動)
 // ============================================================================
 COMPONENT_META_BEGIN(CameraBodyFree, "CameraBodyFree")
@@ -141,3 +151,4 @@ CFIELD_FLOAT_RANGED(lookSpeed, "Look Speed", 0.01f, 0.0f, 10.0f, "Settings")
 CFIELD_FLOAT_RANGED(currentPitch, "Current Pitch", 0.1f, -89.0f, 89.0f, "State")
 CFIELD_FLOAT_RANGED(currentYaw, "Current Yaw", 0.1f, -360.0f, 360.0f, "State")
 COMPONENT_META_END(CameraBodyFree)
+

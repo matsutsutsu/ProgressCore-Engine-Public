@@ -29,6 +29,12 @@ struct CameraBodyTPSComponent
     float positionDamping = 12.0f; ///< 位置追従の硬さ（低いほどゴム紐のように遅れる）
     float fovDamping      = 8.0f;  ///< FOV変化の補間速度
 
+    // --- ルックアヘッド（進行方向への注視） ---
+    float lookaheadMultiplier = 0.3f; ///< 速度に対する注視点の前方移動量
+    float lookaheadDamping    = 3.0f; ///< ルックアヘッドの遅延（酔い防止用）
+
+    DirectX::SimpleMath::Vector3 currentLookahead = {0.0f, 0.0f, 0.0f}; ///< 内部状態
+
     // --- 実行時内部状態（シリアライズ不要） ---
     DirectX::SimpleMath::Vector3 currentLookAt = {0.0f, 0.0f, 0.0f}; ///< 補間計算用の仮想注視点座標
     bool                         isFirstFrame  = true;               ///< 初回フレームでのワープ初期化フラグ

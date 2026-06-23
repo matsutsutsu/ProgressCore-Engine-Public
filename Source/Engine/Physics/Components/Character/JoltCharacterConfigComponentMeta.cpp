@@ -22,5 +22,8 @@ CFIELD_FLOAT_RANGED(gravityScale, "Gravity Scale", 0.1f, 0.0f, 50.0f, "Physics")
 CFIELD_FLOAT_RANGED(fallGravityScale, "Fall Gravity Scale", 0.1f, 0.0f, 50.0f, "Physics")
 
 CFIELD_FLOAT_RANGED(deceleration, "減速摩擦力 (deceleration)", 0.1f, 1.0f, 50.0f, "Movement Feel")
+// 滞空時間ハック
+CFIELD_FLOAT_RANGED(apexGravityScale, u8"頂点重力倍率 (apexGravityScale)", 0.1f, 0.0f, 10.0f, "Game Feel")
+CFIELD_FLOAT_RANGED(apexVelocityThreshold, u8"頂点判定閾値 (apexVelocityThreshold)", 0.1f, 0.0f, 10.0f, "Game Feel")
 
 COMPONENT_META_END(JoltCharacterConfigComponent)
