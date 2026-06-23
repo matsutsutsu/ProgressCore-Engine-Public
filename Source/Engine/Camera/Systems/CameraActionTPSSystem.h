@@ -20,5 +20,6 @@ class CameraActionTPSSystem : public CCL::ECS::IfSystem<
     }
     virtual ~CameraActionTPSSystem() = default;
 
+    void Initialize() override;
     void Update(float dt) override;
 };

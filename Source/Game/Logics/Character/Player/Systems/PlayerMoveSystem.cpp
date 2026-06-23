@@ -5,62 +5,141 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 #include <cmath>
 #include <algorithm>
+#include <DirectXMath.h> // XM_PIの使用に必要
 
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
 void PlayerMoveSystem::Update(float rawDt)
 {
-    ForEachWithID([&](EntityID id,
-        TransformComponent& trans,
-        CharacterMovementInputComponent& inputData,
-        const JoltCharacterConfigComponent& config,
-        const JoltCharacterHandleComponent& joltHandle,
-        PlayerComponent& player,
-        const TimeStateComponent& time)
-        {
-            if (_world->HasComponent<Tag::DeadTag>(id)) return;
-            if (!joltHandle.character) return; // Jolt実体が無い場合はスキップ
+    ForEachWithID([&](EntityID                            id,
+                      TransformComponent                 &trans,
+                      CharacterMovementInputComponent    &inputData,
+                      const JoltCharacterConfigComponent &config,
+                      const JoltCharacterHandleComponent &joltHandle,
+                      PlayerComponent                    &player,
+                      const TimeStateComponent           &time) {
+        if (_world->HasComponent<Tag::DeadTag>(id))
+            return;
+        if (!joltHandle.character)
+            return; // Jolt実体が無い場合はスキップ
 
-            // =========================================================
-            // 1. 2段ジャンプの入力トリガーおよび回数管理の統合
-            // =========================================================
-            bool isGrounded = (joltHandle.character->GetGroundState() == JPH::CharacterVirtual::EGroundState::OnGround);
-            if (isGrounded) {
-                player.currentJumpCount = 0; // 接地時は回数リセット
-            }
+        float dt         = time.localDt;
+        bool  isGrounded = (joltHandle.character->GetGroundState() == JPH::CharacterVirtual::EGroundState::OnGround);
 
-            // ボタンが「押しっぱなし」ではなく「今押された瞬間」だけを検知（エッジトリガー）
-            bool isPressedThisFrame = inputData.jumpRequested && !player.wasJumpButtonPressed;
-            player.wasJumpButtonPressed = inputData.jumpRequested; // 状態の保存
+        // =========================================================
+        // 1. 操作ハック（時間の魔法）
+        // =========================================================
+        UpdateJumpLogic(dt, isGrounded, inputData, player);
 
-            if (isPressedThisFrame && player.currentJumpCount < player.maxJumps) {
-                player.currentJumpCount++;
-                inputData.jumpRequested = true; // 物理システムへジャンプの実行を命じるチケットを発行
-            } else {
-                inputData.jumpRequested = false; // 条件を満たさない、または押しっぱなしなら要求を取り下げる
-            }
+        // =========================================================
+        // 2. 視覚ハック（空間の魔法）
+        // =========================================================
+        UpdateBankingAndRotation(dt, inputData, config.walkSpeed, player, trans, joltHandle.character.GetPtr());
+    });
+}
 
-            // =========================================================
-            // モデルの振り向き (TPS仕様) のみ担当する
-            // =========================================================
-            Vector3 horizontalMove(inputData.desiredVelocity.x, 0.0f, inputData.desiredVelocity.z);
+// -----------------------------------------------------------------------------------
+// [責務] 操作の遊び（バッファ）を作り、人間の反射神経のズレを吸収する
+// -----------------------------------------------------------------------------------
+void PlayerMoveSystem::UpdateJumpLogic(float dt, bool isGrounded, CharacterMovementInputComponent &inputData, PlayerComponent &player)
+{
+    // コヨーテタイマーの更新
+    if (isGrounded)
+    {
+        player.timeSinceGrounded = 0.0f;
+        player.currentJumpCount  = 0;
+    }
+    else
+    {
+        player.timeSinceGrounded += dt; // 空中なら時間を計測
+    }
 
-            if (horizontalMove.LengthSquared() > 0.001f) {
-                horizontalMove.Normalize();
+    // エッジ検出とバッファタイマーの更新
+    bool isPressedThisFrame     = inputData.jumpRequested && !player.wasJumpButtonPressed;
+    player.wasJumpButtonPressed = inputData.jumpRequested;
 
-                float targetYaw = atan2f(horizontalMove.x, horizontalMove.z);
-                Quaternion targetRot = Quaternion::CreateFromAxisAngle(Vector3::UnitY, targetYaw);
+    if (isPressedThisFrame)
+    {
+        player.jumpBufferTimer = player.jumpBufferWindow; // ボタンを押したら「予約」
+    }
+    else if (player.jumpBufferTimer > 0.0f)
+    {
+        player.jumpBufferTimer -= dt; // 予約の消費
+    }
 
-                // 描画用のTransformを回転させる（TimeScale適用済みDtを使用）
-                trans.rotation = Quaternion::Slerp(trans.rotation, targetRot, player.turnSpeed * time.localDt);
-                DirectX::XMVector4Normalize(DirectX::XMLoadFloat4(&trans.rotation));
-                trans.isStatic = false;
+    // ジャンプ成立の判定
+    bool canFirstJump  = (player.timeSinceGrounded <= player.coyoteTimeWindow) && (player.currentJumpCount == 0);
+    bool canDoubleJump = (player.currentJumpCount > 0 && player.currentJumpCount < player.maxJumps);
 
-                // 物理カプセルの向きも同期させる (直立カプセルの向き)
-                joltHandle.character->SetRotation(JPH::Quat(trans.rotation.x, trans.rotation.y, trans.rotation.z, trans.rotation.w));
-            }
-        });
+    if (player.jumpBufferTimer > 0.0f && (canFirstJump || canDoubleJump))
+    {
+        player.currentJumpCount++;
+        inputData.jumpRequested = true;
+
+        player.jumpBufferTimer   = 0.0f;   // 成立したら予約を破棄
+        player.timeSinceGrounded = 999.0f; // 連続コヨーテを防ぐために莫大な時間を代入
+    }
+    else
+    {
+        inputData.jumpRequested = false;
+    }
+}
+
+// -----------------------------------------------------------------------------------
+// [責務] アニメーションを使わずに旋回の勢いを「体の傾き」として視覚化し、物理エンジンには純粋な方向のみを渡す
+// -----------------------------------------------------------------------------------
+void PlayerMoveSystem::UpdateBankingAndRotation(float dt, const CharacterMovementInputComponent &inputData, float walkSpeed, PlayerComponent &player, TransformComponent &trans, JPH::CharacterVirtual *character)
+{
+    Vector3 horizontalMove(inputData.desiredVelocity.x, 0.0f, inputData.desiredVelocity.z);
+
+    if (horizontalMove.LengthSquared() > 0.001f)
+    {
+        horizontalMove.Normalize();
+        float targetYaw = atan2f(horizontalMove.x, horizontalMove.z);
+
+        // 最短回転角度の差分計算 (-π 〜 π)
+        float angleDiff = targetYaw - player.currentYaw;
+        while (angleDiff > DirectX::XM_PI)
+            angleDiff -= DirectX::XM_2PI;
+        while (angleDiff < -DirectX::XM_PI)
+            angleDiff += DirectX::XM_2PI;
+
+        // ロジック用のYaw(左右の向き)を安全に補間
+        player.currentYaw += angleDiff * player.turnSpeed * dt;
+
+        // --- バンキング(傾き)の計算 ---
+        // 旋回量(angleDiff)と現在の移動速度から傾きの目標値を算出
+        float speedRatio = (walkSpeed > 0.001f) ? (inputData.currentVelocity.Length() / walkSpeed) : 0.0f;
+
+        // 急旋回・高速であるほど深く傾く (-angleDiff で内側に倒し込む)
+        float targetRoll = -(angleDiff * 10.0f) * player.bankingMultiplier * speedRatio;
+
+        // 限界角(度)をラジアンに変換してクランプ
+        float maxRollRad = DirectX::XMConvertToRadians(player.maxBankingAngle);
+        targetRoll       = std::clamp(targetRoll, -maxRollRad, maxRollRad);
+
+        // Roll(傾き)をバネのように滑らかに補間 (C++20のstd::lerpを使用)
+        player.currentRoll = std::lerp(player.currentRoll, targetRoll, 8.0f * dt);
+    }
+    else
+    {
+        // 停止時は直立姿勢へ戻る
+        player.currentRoll = std::lerp(player.currentRoll, 0.0f, 10.0f * dt);
+    }
+
+    // --- 物理と描画の完全分離 (DODの極意) ---
+    Quaternion yawRot  = Quaternion::CreateFromAxisAngle(Vector3::UnitY, player.currentYaw);
+    Quaternion rollRot = Quaternion::CreateFromAxisAngle(Vector3::UnitZ, player.currentRoll);
+
+    // 最終的な「描画用Transform」にはRollの傾きを含める
+    trans.rotation = rollRot * yawRot;
+    DirectX::XMVector4Normalize(DirectX::XMLoadFloat4(&trans.rotation));
+    trans.isStatic = false;
+
+    // 「物理エンジン(Jolt)」には、傾きを一切含まない純粋なYawだけを渡す
+    // ※これを行わないと物理カプセルが傾いて地面に突き刺さります
+    character->SetRotation(JPH::Quat(yawRot.x, yawRot.y, yawRot.z, yawRot.w));
 }
 
 REGISTER_LOGIC_SYSTEM(PlayerMoveSystem, Priority::LogicStage::L02_Update);

@@ -6,6 +6,8 @@
 #include "Engine/Platform/Input/IInputAPI.h"
 #include "Game/Logics/Character/Player/Components/DashComponent.h"
 
+#include "Game/Logics/GameEvent/GameEvents.h"
+
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include <algorithm>
@@ -14,6 +16,23 @@
 using namespace CCL::ECS;
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
+
+void CameraActionTPSSystem::Initialize()
+{
+    // JUST回避の衝撃をカメラに伝達する
+    ListenEvent<JustEvadeSuccessEvent>([this](const JustEvadeSuccessEvent &ev) {
+        // 自分の担当している仮想カメラを走査
+        ForEach([&](VirtualCamera &vcam, const CameraBodyTPSComponent &tps, TransformComponent &trans) {
+            // JUST回避したプレイヤーを映しているカメラなら、衝撃(FOVパンチ)を与える
+            if (tps.target.id == ev.playerID)
+            {
+                // 画角を瞬間的に限界まで広げる。
+                // 次のフレームから自動的に「fovDamping」の摩擦力によって滑らかに元に戻る。
+                vcam.fov = 130.0f;
+            }
+        });
+    });
+}
 
 void CameraActionTPSSystem::Update(float dt)
 {

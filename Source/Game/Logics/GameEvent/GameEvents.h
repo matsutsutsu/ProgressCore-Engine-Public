@@ -3,6 +3,16 @@
 #include "Engine/ECS/Common/CCL_Common.h" // CCL::ECS::EntityID を使うため
 #include <DirectXMath.h>           // DirectX::XMFLOAT3 を使うため
 
+
+// JUST回避が成功した瞬間にEventBusへ放たれるイベント
+struct JustEvadeSuccessEvent
+{
+    CCL::ECS::EntityID playerID;   // 回避を成功させたプレイヤー
+    CCL::ECS::EntityID attackerID; // 攻撃してきた敵（今回は不使用でも用意しておく）
+};
+
+
+
 // GameEvents.h
 struct EntityKilledEvent {
     CCL::ECS::EntityID killedEntityID;

@@ -10,12 +10,11 @@
 #include "Engine/Physics/Components/Character/JoltCharacterConfigComponent.h"
 #include "Engine/Physics/Components/Character/JoltCharacterHandleComponent.h"
 
-class PlayerMoveSystem : public CCL::ECS::IfSystem<
-    PlayerMoveSystem,
-    CCL::ECS::Write<TransformComponent>, // ★モデルの回転(Yaw)反映のためWriteを維持
+class PlayerMoveSystem : public CCL::ECS::IfSystem<PlayerMoveSystem,
+    CCL::ECS::Write<TransformComponent>, 
     CCL::ECS::Write<CharacterMovementInputComponent>,
     CCL::ECS::Read<JoltCharacterConfigComponent>,
-    CCL::ECS::Read<JoltCharacterHandleComponent>, // ★Jolt実体へのアクセス
+    CCL::ECS::Read<JoltCharacterHandleComponent>,
     CCL::ECS::Write<PlayerComponent>,
     CCL::ECS::Read<TimeStateComponent>>
 {
@@ -24,4 +23,12 @@ public:
     virtual ~PlayerMoveSystem() = default;
 
     void Update(float dt) override;
+
+    private:
+    /// @brief コヨーテタイムと先行入力バッファを用いたジャンプ判定処理
+    void UpdateJumpLogic(float dt, bool isGrounded, CharacterMovementInputComponent &inputData, PlayerComponent &player);
+
+    /// @brief プロシージャル・バンキング（傾き）の計算と、物理/描画の回転分離処理
+    void UpdateBankingAndRotation(float dt, const CharacterMovementInputComponent &inputData, float walkSpeed, PlayerComponent &player, TransformComponent &trans, JPH::CharacterVirtual *character);
+
 };
