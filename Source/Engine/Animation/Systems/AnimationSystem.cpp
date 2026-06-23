@@ -90,30 +90,30 @@ void AnimationSystem::Update(float dt)
                 {
 
                     // 文字列を数値に変換し、switch文で最速のジャンプを行う
-                    uint32_t eventHash = CCL::Utils::HashString(evt.eventName.c_str());
+                    //uint32_t eventHash = CCL::Utils::HashString(evt.eventName.c_str());
 
-                    switch (eventHash)
-                    {
-                    case CCL::Utils::HashString("HitBox_Start"):
-                        _world->GetEventBus().Publish(AnimEventHitBoxMessage{id, true});
-                        break;
-                    case CCL::Utils::HashString("HitBox_End"):
-                        _world->GetEventBus().Publish(AnimEventHitBoxMessage{id, false});
-                        break;
-                    case CCL::Utils::HashString("Play_Sound"):
-                        _world->GetEventBus().Publish(AnimEventSoundMessage{id});
-                        break;
-                    case CCL::Utils::HashString("Play_Effect"):
-                        _world->GetEventBus().Publish(AnimEventEffectMessage{id, evt.stringParam});
-                        break;
-                    case CCL::Utils::HashString("HitBox"):
-                        // [重要] Hitbox は CombatAnimationSyncSystem が直接「状態」として
-                        // 読み取って処理するため、イベントバスに投げる必要はない。無視してよい。
-                        break;
-                    default:
-                        // 未知のイベントは無視
-                        break;
-                    }
+                    //switch (eventHash)
+                    //{
+                    //case CCL::Utils::HashString("HitBox_Start"):
+                    //    _world->GetEventBus().Publish(AnimEventHitBoxMessage{id, true});
+                    //    break;
+                    //case CCL::Utils::HashString("HitBox_End"):
+                    //    _world->GetEventBus().Publish(AnimEventHitBoxMessage{id, false});
+                    //    break;
+                    //case CCL::Utils::HashString("Play_Sound"):
+                    //    _world->GetEventBus().Publish(AnimEventSoundMessage{id});
+                    //    break;
+                    //case CCL::Utils::HashString("Play_Effect"):
+                    //    _world->GetEventBus().Publish(AnimEventEffectMessage{id, evt.stringParam});
+                    //    break;
+                    //case CCL::Utils::HashString("HitBox"):
+                    //    // [重要] Hitbox は CombatAnimationSyncSystem が直接「状態」として
+                    //    // 読み取って処理するため、イベントバスに投げる必要はない。無視してよい。
+                    //    break;
+                    //default:
+                    //    // 未知のイベントは無視
+                    //    break;
+                    //}
 
                     animator.nextEventIndex++;
                 }
@@ -239,4 +239,4 @@ void AnimationSystem::UpdateManual(CCL::ECS::EntityID entity, float time)
     }
 }
 
-REGISTER_LOGIC_SYSTEM(AnimationSystem, Priority::LogicStage::L02_Update);
+REGISTER_LOGIC_SYSTEM(AnimationSystem, Priority::LogicStage::L02_PostUpdate);

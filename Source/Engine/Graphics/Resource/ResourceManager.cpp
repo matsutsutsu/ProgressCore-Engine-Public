@@ -8,7 +8,6 @@
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 
 #include "Engine/Platform/Core/FileSystem.h" // ユーザー指定のパス
-#include <cereal/archives/json.hpp>
 #include <sstream>
 
 #ifdef ENABLE_EDITOR
@@ -273,26 +272,34 @@ void ResourceManager::UnloadMaterial(MaterialHandle handle) {
 // [5] Animation Sequence
 // ============================================================================
 const AnimSequence* ResourceManager::LoadAnimSequence(const char* filename) {
-    if (!filename || filename[0] == '\0') return nullptr;
+    if (!filename || filename[0] == '\0')
+        return nullptr;
 
     uint32_t hash = HashString(filename);
-    auto it = m_animSequenceRegistry.find(hash);
-    if (it != m_animSequenceRegistry.end()) {
-        AnimSequence* seq = m_animSequencePool.Get(it->second);
-        if (seq) return seq;
+    auto     it   = m_animSequenceRegistry.find(hash);
+    if (it != m_animSequenceRegistry.end())
+    {
+        AnimSequence *seq = m_animSequencePool.Get(it->second);
+        if (seq)
+            return seq;
     }
 
-    std::ifstream is(filename);
-    if (!is.is_open()) return nullptr;
+    // ★ 修正: Cerealの Archive を廃止し、nlohmann::json でロードする
+    std::string jsonStr = FileSystem::ReadAllText(filename);
+    if (jsonStr.empty())
+        return nullptr;
 
     AnimSequenceHandle handle = m_animSequencePool.Create();
-    AnimSequence* seq = m_animSequencePool.Get(handle);
+    AnimSequence      *seq    = m_animSequencePool.Get(handle);
 
-    try {
-        cereal::JSONInputArchive archive(is);
-        archive(*seq);
+    try
+    {
+        nlohmann::json j = nlohmann::json::parse(jsonStr);
+        *seq             = j.get<AnimSequence>();
     }
-    catch (...) {
+    catch (const std::exception &e)
+    {
+        CCL_LOG_ERROR(LogCategory::Core, "Failed to parse AnimSequence json: %s (%s)", filename, e.what());
         m_animSequencePool.Destroy(handle);
         return nullptr;
     }
@@ -500,26 +507,38 @@ void ResourceManager::DrawDebugGUI() {
 MaterialHandle ResourceManager::LoadMaterialAsset(const std::string& virtualPath)
 {
     std::string jsonStr = FileSystem::ReadAllText(virtualPath);
-    if (jsonStr.empty()) return MaterialHandle{}; // ロード失敗
+    if (jsonStr.empty())
+        return MaterialHandle{}; // ロード失敗
 
     MaterialHandle handle = m_materialPool.Create();
-    MaterialData* mat = m_materialPool.Get(handle);
+    MaterialData  *mat    = m_materialPool.Get(handle);
 
-    std::istringstream is(jsonStr);
-    try {
-        cereal::JSONInputArchive archive(is);
-        archive(cereal::make_nvp("Material", *mat));
+    try
+    {
+        nlohmann::json j = nlohmann::json::parse(jsonStr);
 
-        // ★重要: JSONから読み込んだファイルパスを使って、実際のテクスチャをロードしてHandleを復旧させる
-        for (auto& texRef : mat->textures) {
-            if (!texRef.assetPath.empty()) {
+        // 古いCereal形式の "Material" ネスト構造をサポート
+        if (j.contains("Material"))
+        {
+            *mat = j["Material"].get<MaterialData>();
+        }
+        else
+        {
+            *mat = j.get<MaterialData>();
+        }
+
+        for (auto &texRef : mat->textures)
+        {
+            if (!texRef.assetPath.empty())
+            {
                 texRef.handle = LoadTexture(texRef.assetPath.c_str());
             }
         }
         return handle;
     }
-    catch (...) {
-        CCL_LOG_ERROR(LogCategory::Core, "Failed to parse material json: %s", virtualPath.c_str());
+    catch (const std::exception &e)
+    {
+        CCL_LOG_ERROR(LogCategory::Core, "Failed to parse material json: %s (%s)", virtualPath.c_str(), e.what());
         m_materialPool.Destroy(handle);
         return MaterialHandle{};
     }
@@ -530,17 +549,16 @@ bool ResourceManager::SaveMaterialAsset(MaterialHandle handle, const std::string
     MaterialData* mat = m_materialPool.Get(handle);
     if (!mat) return false;
 
-    std::ostringstream os;
-    try {
-        cereal::JSONOutputArchive archive(os);
-        archive(cereal::make_nvp("Material", *mat));
+   try
+    {
+        nlohmann::json j;
+        j["Material"] = *mat;
+        return FileSystem::WriteAllText(virtualPath, j.dump(4));
     }
-    catch (...) {
+    catch (...)
+    {
         return false;
     }
-
-    // FileSystemを経由して書き込み
-    return FileSystem::WriteAllText(virtualPath, os.str());
 }
 
 //  目的:

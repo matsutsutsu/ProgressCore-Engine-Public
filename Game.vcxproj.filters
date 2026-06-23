@@ -1698,6 +1698,15 @@
     <ClInclude Include="Source\Engine\Camera\Systems\CameraActionTPSSystem.h">
       <Filter>Source\Engine\Camera\Systems\_Game</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Camera\Components\CameraDollyCartComponent.h">
+      <Filter>Source\Engine\Camera\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Camera\Systems\CameraDollySystem.h">
+      <Filter>Source\Engine\Camera\Systems\_Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\CameraPathEditorWindow.h">
+      <Filter>Source\Editor\Windows\Game</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2530,6 +2539,15 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Camera\Systems\CameraActionTPSSystem.cpp">
       <Filter>Source\Engine\Camera\Systems\_Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Camera\Components\CameraDollyCartComponentMeta.cpp">
+      <Filter>Source\Engine\Camera\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Camera\Systems\CameraDollySystem.cpp">
+      <Filter>Source\Engine\Camera\Systems\_Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\CameraPathEditorWindow.cpp">
+      <Filter>Source\Editor\Windows\Game</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

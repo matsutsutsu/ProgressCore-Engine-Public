@@ -40,8 +40,20 @@ struct HitboxComponent {
     CCL::ECS::EntityID hitTargets[MAX_HIT_TARGETS]; ///< ヒット済み対象のIDリスト
     uint8_t hitCount = 0;                ///< 現在ヒットした数
 
-    // ※攻撃開始(isActive=true)の瞬間に hitCount=0 にリセットすることで、
-    //   次の攻撃で再度当たるようになる。
+    // =========================================================
+    // ★追加: CombatAnimationSyncSystem による Hitbox 駆動用
+    //
+    // ownerID（ダメージ帰属）とは別物。
+    // ownerEntity = Animator + CombatRoster を持つルートエンティティ。
+    //   "剣のエンティティ" から "キャラクターのエンティティ" を逆引きするために使う。
+    // tagHash     = roster.entries[i].tag を HashString したもの("RightHand"など)。
+    //   AnimNotifyEvent.stringParam のハッシュと毎フレーム比較することで
+    //   文字列比較コストをゼロにする。
+    //
+    // 初期化タイミング: 武器エンティティのスポーン時（Rosterへの登録と同箇所）。
+    // =========================================================
+    CCL::ECS::EntityID ownerEntity = CCL::ECS::InvalidEntityID; ///< Animatorを持つルートのID
+    uint32_t           tagHash     = 0;
 };
 
 // --- 2. 被弾側の判定データ ---

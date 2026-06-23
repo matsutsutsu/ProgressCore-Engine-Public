@@ -6,67 +6,86 @@
 #include "Engine/Animation/Core/AnimGraphSerializer.h"
 #include "Engine/Platform/Core/Logger.h"
 
+/// @brief ステートマシン評価。ロード/束縛（シリアル）と評価（並列）を2フェーズに分離する。
+/// @details フェーズ1で全ポインタ(sequence/speedCurve)を束縛し、フェーズ2の並列評価から
+///          ResourceManager（共有シングルトン）・ファイルI/Oを完全に排除してレースを防ぐ。
 void AnimControllerSystem::Update(float dt)
 {
     auto &resourceManager = ResourceManager::Instance();
 
-    ForEachWithIDParallel([&resourceManager](CCL::ECS::EntityID id,
-                              AnimStateMachineComponent        &fsm,
-                              AnimatorComponent                &animator,
-                              AnimParametersComponent          &params) {
-        // エディタで操作中の場合は、ステートマシンからの再生命令（干渉）を完全に遮断する
+    // =====================================================================
+    // フェーズ1【シリアル】グラフのロード・ポインタ束縛・初期再生
+    //   ファイルI/O と ResourceManager 変更はスレッド非安全のため、並列ループから
+    //   分離し必ずメインスレッドで実行する。定常状態では states が非空なので、
+    //   この走査は先頭の早期 return でほぼ分岐1回だけで抜ける（実質ノーコスト）。
+    // =====================================================================
+    ForEachWithID([&resourceManager](CCL::ECS::EntityID /*id*/,
+                      AnimStateMachineComponent &fsm,
+                      AnimatorComponent         &animator,
+                      AnimParametersComponent & /*params*/) {
         if (animator.isEditorOverride)
             return;
 
-        // ========================================================================
-        // 1. グラフのロードと初期化
-        //    ※ TODO(Batch3): この遅延ロードは並列ループ内でのファイルI/O＆
-        //                     ResourceManager変更となりスレッド非安全。要分離。
-        // ========================================================================
-        if (fsm.internalGraph.states.empty() && !fsm.graphPath.empty())
+        // 未ロードのグラフのみ処理（ロード済み or パス未設定なら即 return）
+        if (!fsm.internalGraph.states.empty() || fsm.graphPath.empty())
+            return;
+
+        if (!AnimGraphSerializer::LoadFromJSON(fsm.internalGraph, fsm.graphPath, {}))
         {
-            if (AnimGraphSerializer::LoadFromJSON(fsm.internalGraph, fsm.graphPath, {}))
-            {
-
-                for (auto &state : fsm.internalGraph.states)
-                {
-                    if (!state.sequenceFilePath.empty())
-                    {
-                        state.sequence = resourceManager.LoadAnimSequence(state.sequenceFilePath.c_str());
-                    }
-                }
-
-                fsm.currentStateHash = fsm.internalGraph.entryStateHash; // 初期状態へ
-
-                // ★ 初期再生のブートストラップ（最初の再生なのでブレンドは0）
-                for (const auto &state : fsm.internalGraph.states)
-                {
-                    if (state.stateHash == fsm.currentStateHash)
-                    {
-                        if (state.sequence)
-                        {
-                            animator.Play(state.sequence,
-                                {.blendTime = 0.0f,
-                                    .loop   = state.isLoop,
-                                    .speed  = state.playbackSpeed});
-                        }
-                        break;
-                    }
-                }
-            }
-            else
-            {
-                fsm.graphPath = ""; // ロード失敗時はクリア
-            }
+            fsm.graphPath = ""; // ロード失敗時はクリア（毎フレーム再試行しない）
+            return;
         }
 
-        // グラフが空なら処理しない
+        // 全ステートの sequence / speedCurve ポインタをここで束縛する。
+        // これにより並列評価フェーズ(2)から ResourceManager を呼ぶ必要がなくなる。
+        for (auto &state : fsm.internalGraph.states)
+        {
+            if (!state.sequenceFilePath.empty())
+                state.sequence = resourceManager.LoadAnimSequence(state.sequenceFilePath.c_str());
+
+            if (!state.speedCurveName.empty())
+                state.speedCurve = resourceManager.LoadAnimCurve(state.speedCurveName.c_str());
+        }
+
+        fsm.currentStateHash = fsm.internalGraph.entryStateHash; // 初期状態へ
+
+        // 初期再生のブートストラップ（最初の再生なのでブレンドは0）
+        for (const auto &state : fsm.internalGraph.states)
+        {
+            if (state.stateHash == fsm.currentStateHash)
+            {
+                if (state.sequence)
+                {
+                    animator.Play(state.sequence,
+                        {.blendTime = 0.0f,
+                            .loop   = state.isLoop,
+                            .speed  = state.playbackSpeed});
+                }
+                break;
+            }
+        }
+    });
+
+    // =====================================================================
+    // フェーズ2【並列】純粋なステートマシン評価
+    //   ResourceManager / ファイルI/O は一切呼ばない（フェーズ1で束縛済み）。
+    //   ※ 遷移ログ(CCL_LOG_*)は Logger がスレッドセーフであることが前提。
+    //     未確認なら、この並列パスのログは要ガード（後述）。
+    // =====================================================================
+    ForEachWithIDParallel([](CCL::ECS::EntityID          id,
+                              AnimStateMachineComponent &fsm,
+                              AnimatorComponent         &animator,
+                              AnimParametersComponent   &params) {
+        if (animator.isEditorOverride)
+            return;
+
+        // 未ロード/ロード失敗はスキップ（フェーズ1で処理済みのはず）
         if (fsm.internalGraph.states.empty())
             return;
 
-        // ========================================================================
-        // 2. 現在のステートを検索 (internalGraph を直接参照)
-        // ========================================================================
+        // ====================================================================
+        // 1. 現在のステートを検索
+        // ====================================================================
         const AnimState *currentState = nullptr;
         for (const auto &state : fsm.internalGraph.states)
         {
@@ -83,9 +102,9 @@ void AnimControllerSystem::Update(float dt)
             return;
         }
 
-        // ========================================================================
-        // 3. 遷移条件の評価
-        // ========================================================================
+        // ====================================================================
+        // 2. 遷移条件の評価
+        // ====================================================================
         for (const auto &transition : currentState->transitions)
         {
             bool allConditionsMet = true;
@@ -96,21 +115,17 @@ void AnimControllerSystem::Update(float dt)
                 if (cond.op == AnimConditionOp::Trigger)
                 {
                     if (!params.HasTrigger(cond.paramHash))
-                    {
                         allConditionsMet = false;
-                    }
                     if (!allConditionsMet)
                         break;
-                    continue; // トリガーの場合はFloat/Boolの検索をスキップ
+                    continue; // トリガーは Float/Bool 検索をスキップ
                 }
 
                 // アニメーション再生終了(Finished)の評価
                 if (cond.op == AnimConditionOp::Finished)
                 {
                     if (!animator.isFinished)
-                    {
                         allConditionsMet = false;
-                    }
                     if (!allConditionsMet)
                         break;
                     continue;
@@ -119,7 +134,7 @@ void AnimControllerSystem::Update(float dt)
                 float paramValue = 0.0f;
                 bool  isFound    = false;
 
-                // Floatの検索
+                // Float の検索
                 for (const auto &p : params.floats)
                 {
                     if (p.hash == cond.paramHash)
@@ -130,7 +145,7 @@ void AnimControllerSystem::Update(float dt)
                     }
                 }
 
-                // Floatに無ければBoolを検索して変換
+                // Float に無ければ Bool を検索して変換
                 if (!isFound)
                 {
                     for (const auto &p : params.bools)
@@ -165,9 +180,9 @@ void AnimControllerSystem::Update(float dt)
                     break;
             }
 
-            // ========================================================================
-            // 4. 遷移の実行と再生命令
-            // ========================================================================
+            // ================================================================
+            // 3. 遷移の実行と再生命令
+            // ================================================================
             if (allConditionsMet)
             {
                 // この遷移で使用したトリガーを消費(削除)する
@@ -190,22 +205,17 @@ void AnimControllerSystem::Update(float dt)
                 {
                     if (nextState.stateHash == transition.targetStateHash)
                     {
-
                         CCL_LOG_SUCCESS(LogCategory::Game, "[AnimController] Entity %d Transitioned: [%s] -> [%s]",
                             (int)id, oldStateName.c_str(), nextState.sequenceName.c_str());
 
                         if (nextState.sequence)
                         {
-                            const AnimationCurve *curvePtr = nullptr;
-                            if (!nextState.speedCurveName.empty())
-                            {
-                                curvePtr = resourceManager.LoadAnimCurve(nextState.speedCurveName.c_str());
-                            }
+                            // ★ フェーズ1で束縛済みの speedCurve を使用（ResourceManager呼び出しを排除）
                             animator.Play(nextState.sequence,
                                 {.blendTime = transition.blendDuration,
                                     .loop   = nextState.isLoop,
                                     .speed  = nextState.playbackSpeed,
-                                    .curve  = curvePtr});
+                                    .curve  = nextState.speedCurve});
                         }
                         break;
                     }
@@ -216,4 +226,4 @@ void AnimControllerSystem::Update(float dt)
     });
 }
 
-REGISTER_LOGIC_SYSTEM(AnimControllerSystem, Priority::LogicStage::L02_PostUpdate);
+REGISTER_LOGIC_SYSTEM(AnimControllerSystem, Priority::LogicStage::L02_Update);

@@ -25,6 +25,7 @@
 #include "Editor/Windows/MemoryAnalyzerWindow.h"
 #include "Editor/Windows/TestLauncherWindow.h"
 
+#include "Editor/Windows/CameraPathEditorWindow.h"
 #include "Editor/Windows/StateTreeWindow.h"
 
 #include "Engine/Serialization/Factory/Prefab.h"
@@ -42,26 +43,20 @@ namespace fs = std::filesystem;
 
 void EditorWindowManager::Initialize()
 {
-    // =========================================================
-    // ★ 常に表示しておきたいメインウィンドウ (デフォルトで true)
-    // =========================================================
+
     RegisterWindow<InspectorWindow>();
     RegisterWindow<HierarchyWindow>();
     RegisterWindow<AssetBrowserWindow>();
 
-    // =========================================================
-    // ★ デフォルトでは「非表示」にするサブウィンドウ
-    // (->SetVisible(false) をつけるだけで、起動時は隠れます)
-    // =========================================================
     RegisterWindow<ECSDebugWindow>();
     RegisterWindow<ConsoleWindow>();
     //RegisterWindow<AnimationSequencerWindow>();
     //RegisterWindow<AnimGraphWindow>();
 	//RegisterWindow<BehaviorTreeWindow>();
     RegisterWindow<StateTreeWindow>();
+    RegisterWindow<CameraPathEditorWindow>();
 
-    // ※まだ実装中で完全に読み込みたくない（クラッシュする等の）場合は、
-    // 引き続きコメントアウトで対応してください。
+
     RegisterWindow<TextEditorWindow>();
     RegisterWindow<InputEditorWindow>();
     RegisterWindow<NavMeshWindow>();

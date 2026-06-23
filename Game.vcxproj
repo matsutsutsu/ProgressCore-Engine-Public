@@ -368,6 +368,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\CameraPathEditorWindow.h" />
     <ClInclude Include="Source\Editor\Windows\ConsoleWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
@@ -416,9 +417,11 @@
     <ClInclude Include="Source\Engine\Audio\FmodIntegration\IAudioAPI.h" />
     <ClInclude Include="Source\Engine\Audio\Systems\AudioSystem.h" />
     <ClInclude Include="Source\Engine\Camera\Components\CameraBodyActionTPSComponent.h" />
+    <ClInclude Include="Source\Engine\Camera\Components\CameraDollyCartComponent.h" />
     <ClInclude Include="Source\Engine\Camera\Components\VirtualCameraComponents.h" />
     <ClInclude Include="Source\Engine\Camera\Systems\CameraActionTPSSystem.h" />
     <ClInclude Include="Source\Engine\Camera\Systems\CameraBrainSystem.h" />
+    <ClInclude Include="Source\Engine\Camera\Systems\CameraDollySystem.h" />
     <ClInclude Include="Source\Engine\Camera\Systems\CameraListenerSystem.h" />
     <ClInclude Include="Source\Engine\Camera\Systems\VisualCameraSystem.h" />
     <ClInclude Include="Source\Engine\Core\App\EngineServices.h" />
@@ -1207,6 +1210,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\CameraPathEditorWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\ConsoleWindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
@@ -1247,9 +1251,11 @@
     <ClCompile Include="Source\Engine\Audio\FmodIntegration\FmodAudioManager.cpp" />
     <ClCompile Include="Source\Engine\Audio\Systems\AudioSystem.cpp" />
     <ClCompile Include="Source\Engine\Camera\Components\CameraBodyActionTPSComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Camera\Components\CameraDollyCartComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Camera\Components\VirtualCameraComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Camera\Systems\CameraActionTPSSystem.cpp" />
     <ClCompile Include="Source\Engine\Camera\Systems\CameraBrainSystem.cpp" />
+    <ClCompile Include="Source\Engine\Camera\Systems\CameraDollySystem.cpp" />
     <ClCompile Include="Source\Engine\Camera\Systems\CameraListenerSystem.cpp" />
     <ClCompile Include="Source\Engine\Camera\Systems\VisualCameraSystem.cpp" />
     <ClCompile Include="Source\Engine\Core\App\Framework.cpp" />
