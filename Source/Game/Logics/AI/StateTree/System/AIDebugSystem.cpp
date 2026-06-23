@@ -4,7 +4,6 @@
 
 #include "Game/Logics/AI/StateTree/Core/StateTreeRegistry.h"
 #include "Game/Logics/AI/StateTree/Core/NodeRegistry.h"
-#include "Game/Logics/LevelGen/DungeonGrid.h"          // パスは環境に合わせる
 #include "Game/Logics/AI/FlowField/NavGridFlowField.h"           // パスは環境に合わせる
 
 #include "Engine/ECS/Core/CCL_World.h"
@@ -39,12 +38,11 @@ void AIDebugSystem::Update(float dt)
     // ================================================================
     CCL_LOG_INFO(LogCategory::Game, "[AI-DIAG] --- STAGE-1: Resource 確認 ---");
 
-    const bool hasDungeon = _world->HasResource<RuneForge::Dungeon::DungeonGrid>();
+
     const bool hasFlowField = _world->HasResource<RuneForge::Dungeon::NavGridFlowField>();
     const bool hasSTReg = _world->HasResource<StateTreeRegistry>();
 
-    CCL_LOG_INFO(LogCategory::Game, "[AI-DIAG]   DungeonGrid      : %s",
-        hasDungeon ? "OK" : "NG ← AddResource<DungeonGrid>() が呼ばれていない");
+  
     CCL_LOG_INFO(LogCategory::Game, "[AI-DIAG]   NavGridFlowField : %s",
         hasFlowField ? "OK" : "NG ← NavFlowFieldSystem が L01 で動いていないかも");
     CCL_LOG_INFO(LogCategory::Game, "[AI-DIAG]   StateTreeRegistry: %s",

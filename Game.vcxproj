@@ -353,7 +353,7 @@
     <ClInclude Include="Source\Editor\Windows\AnimationSequencerWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\AnimGraphWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
@@ -543,7 +543,6 @@
     <ClInclude Include="Source\Engine\Graphics\Systems\Lighting\ShadowMapRenderSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Particle\GPUParticleRenderSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Particle\GPUParticleUpdateSystem.h" />
-    <ClInclude Include="Source\Engine\Graphics\Systems\Particle\ParticleEventSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\PostProcess\PostProcessSystem.h" />
     <ClInclude Include="Source\Engine\Physics\Components\Character\CharacterMovementInputComponent.h" />
     <ClInclude Include="Source\Engine\Physics\Components\Character\JoltCharacterConfigComponent.h" />
@@ -1198,7 +1197,7 @@
     <ClCompile Include="Source\Editor\Windows\AnimationSequencerWindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\AnimGraphWindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
@@ -1333,7 +1332,6 @@
     <ClCompile Include="Source\Engine\Graphics\Systems\Lighting\ShadowMapRenderSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Particle\GPUParticleRenderSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Particle\GPUParticleUpdateSystem.cpp" />
-    <ClCompile Include="Source\Engine\Graphics\Systems\Particle\ParticleEventSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\PostProcess\PostProcessSystem.cpp" />
     <ClCompile Include="Source\Engine\Physics\Components\Character\CharacterMovementInputComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Physics\Components\Character\JoltCharacterConfigComponentMeta.cpp" />

@@ -1,286 +1,205 @@
+// ===================================================================================
+// ファイル: AnimationSequencerWindow.cpp
+// 役割       : AnimSequence 編集ウィンドウの実装。
+// 責務       : ImSequencer/ImCurveEdit の仲介(pImpl)、UI構築、JSON保存/ロード、
+//              選択エンティティへのリアルタイムプレビュー。
+// 設計方針   : イベント種別は AnimEventType(enum)で型安全に分岐。IOは FileSystem 経由。
+//              状態はインスタンスメンバのみ(static禁止)。
+// ===================================================================================
 #include "AnimationSequencerWindow.h"
 #include "Engine/Animation/Components/AnimatorComponent.h"
 #include "Engine/Graphics/Components/Core/ModelComponent.h"
-#include "ImSequencer.h"
+#include "Engine/Animation/Systems/AnimationSystem.h"
 #include "Engine/Graphics/Resource/Model.h"
 #include "Engine/Graphics/Resource/ModelResource.h"
-#include "Engine/Animation/Core/AnimSequence.h"
-#include "Engine/Animation/Systems/AnimationSystem.h"
-
-#include "Game/Logics/Combat/CombatRosterComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
-#include "Engine/Transform/Components/PendingParentComponent.h"
+#include "Game/Logics/Combat/CombatRosterComponent.h"
 
-#include "Engine/Platform/Core/Dialog.h"
+#include "Engine/Platform/Core/Dialog.h"     // Engine::FileDialog
+#include "Engine/Platform/Core/FileSystem.h" // FileSystem
 #include "Engine/Platform/Core/Logger.h"
 
-#include <filesystem>
+#include "ImSequencer.h"
 #include <ImCurveEdit.h>
-#include <algorithm>
-#include <cstdio>
-#include <string>
-#include <vector>
-#include <fstream>
+#include <imgui.h>
 #include <json.hpp>
 
-// =============================================================================
-// AnimationSequenceImpl（ImSequencer <-> AnimSequence の仲介）
-// cpp 内部クラス。ヘッダから ImSequencer.h の依存を遮断する。
-// =============================================================================
+#include <algorithm>
+#include <cmath>
+#include <cstdio>
+#include <cstring>
+#include <string>
+#include <vector>
+
+namespace
+{
+/// @brief 秒⇔フレーム変換の基準FPS。マジック60を1箇所に集約。
+constexpr float kEditorFps = 60.0f;
+
+inline int SecToFrame(float sec)
+{
+    return static_cast<int>(sec * kEditorFps);
+}
+inline float FrameToSec(int frame)
+{
+    return static_cast<float>(frame) / kEditorFps;
+}
+} // namespace
+
+// ===================================================================================
+// イベント種別の定義テーブル（マジックintを排除し、1箇所に集約）
+//   種別追加時はこのテーブルに1行足すだけ。色・名前・デフォルト長を一元管理する。
+// ===================================================================================
+namespace
+{
+struct EventTypeDesc
+{
+    AnimEventType type;
+    const char   *name;
+    unsigned int  color;      ///< ImSequencer ブロック色 (ABGR)
+    int           defaultLen; ///< 追加時のデフォルト区間長(フレーム)
+};
+
+// AnimEventType の順序と一致させること（index = (int)type）
+constexpr EventTypeDesc kEventTypes[] = {
+    {AnimEventType::HitBox, "HitBox (Attack)", 0xFF5050D0, 30},
+    {AnimEventType::Sound, "Sound (SE)", 0xFFD08050, 10},
+    {AnimEventType::Effect, "Effect (Effekseer)", 0xFF50D050, 10},
+    {AnimEventType::Blackboard, "Blackboard (Flag)", 0xFF50A0D0, 20},
+    {AnimEventType::SpawnHitbox, "Spawn HitBox (Spatial)", 0xFFD050A0, 30},
+    {AnimEventType::Trail, "Trail (Weapon)", 0xFFD0D030, 30},
+};
+
+constexpr int kEventTypeCount = (int)AnimEventType::Count;
+
+const EventTypeDesc &DescOf(AnimEventType t)
+{
+    int i = (int)t;
+    if (i < 0 || i >= kEventTypeCount)
+        i = 0;
+    return kEventTypes[i];
+}
+} // namespace
+
+// ===================================================================================
+// AnimationSequenceImpl : ImSequencer <-> AnimSequence の仲介(pImpl)
+//   cache(UIブロック) と targetSequence(ECSデータ) を相互変換する。
+//   イベントの全パラメータは AnimNotifyEvent に直接対応する(多目的float流用なし)。
+// ===================================================================================
 class AnimationSequenceImpl : public ImSequencer::SequenceInterface
 {
   public:
-    struct EditorEvent
-    {
-        int  frameStart;
-        int  frameEnd;
-        int  type;
-        char stringParam[256];
-
-        float floatParam1 = 0.0f;
-        float floatParam2 = 0.0f;
-        float floatParam3 = 0.0f;
-
-        float offset[3] = {0.0f, 0.0f, 0.0f};
-        float radius    = 1.0f;
-    };
-
-    std::vector<EditorEvent> cache;
-    AnimSequence            *targetSequence = nullptr;
+    AnimSequence *targetSequence = nullptr;
 
     int mFrameMin = 0;
-    int mFrameMax = 60 * 5;
+    int mFrameMax = (int)kEditorFps * 5;
 
-    // =========================================================================
-    // 台本(ECSデータ) -> UI(ブロック) への変換
-    // =========================================================================
-    void SyncFromData()
+    /// @brief 台本(events) を UI が直接編集できるよう、ブロックは events の参照ではなく
+    ///        events 自体を直接編集する設計にする(中間cache廃止で同期バグを根絶)。
+    /// @note  ImSequencer は frameStart/End への int* を要求するため、events の startTime/
+    ///        endTime(秒) とは別に、フレーム値の作業配列を持つ。
+    struct FrameSlot
     {
-        cache.clear();
+        int start;
+        int end;
+    };
+    std::vector<FrameSlot> frames; ///< events と同インデックスのフレーム値
+
+    /// @brief events からフレーム作業配列を再構築する。
+    void RebuildFrames()
+    {
+        frames.clear();
         if (!targetSequence)
             return;
-
-        // ローカル変数で BB ペアを追跡（メンバ変数のシャドウを排除）
-        int         pendingBBStart = -1;
-        std::string pendingBBEventName;
-
-        for (const auto &evt : targetSequence->events)
-        {
-            EditorEvent item{};
-            item.frameStart = (int)(evt.startTime * 60.0f);
-            item.frameEnd   = (int)(evt.endTime * 60.0f);
-            strcpy_s(item.stringParam, sizeof(item.stringParam), evt.stringParam.c_str());
-            item.floatParam1 = evt.floatParam1;
-            item.floatParam2 = evt.floatParam2;
-            item.floatParam3 = evt.floatParam3;
-            item.offset[0]   = evt.offset.x;
-            item.offset[1]   = evt.offset.y;
-            item.offset[2]   = evt.offset.z;
-            item.radius      = evt.radius;
-
-            if (evt.eventName == "HitBox")
-            {
-                item.type = 0;
-                cache.push_back(item);
-            }
-            else if (evt.eventName == "SpawnHitbox")
-            {
-                item.type      = 4;
-                item.offset[0] = evt.offset.x;
-                item.offset[1] = evt.offset.y;
-                item.offset[2] = evt.offset.z;
-                item.radius    = evt.radius;
-                cache.push_back(item);
-            }
-            else if (evt.eventName == "Play_Sound")
-            {
-                item.type = 1;
-                cache.push_back(item);
-            }
-            else if (evt.eventName == "Play_Effect")
-            {
-                item.type = 2;
-                cache.push_back(item);
-            }
-            else if (evt.eventName == "Trail")
-            {
-                item.type = 5;
-                cache.push_back(item);
-            }
-            else if (evt.eventName.find("BB_") == 0 &&
-                     evt.eventName.find("_True") != std::string::npos)
-            {
-                pendingBBStart     = (int)(evt.startTime * 60.0f);
-                pendingBBEventName = evt.eventName.substr(3, evt.eventName.find("_True") - 3);
-            }
-            else if (evt.eventName.find("BB_") == 0 &&
-                     evt.eventName.find("_False") != std::string::npos)
-            {
-                if (pendingBBStart != -1)
-                {
-                    EditorEvent bbItem{};
-                    bbItem.type       = 3;
-                    bbItem.frameStart = pendingBBStart;
-                    bbItem.frameEnd   = (int)(evt.startTime * 60.0f);
-                    strcpy_s(bbItem.stringParam, sizeof(bbItem.stringParam),
-                        pendingBBEventName.c_str());
-                    cache.push_back(bbItem);
-                    pendingBBStart = -1;
-                }
-            }
-        }
+        frames.reserve(targetSequence->events.size());
+        for (const auto &e : targetSequence->events)
+            frames.push_back({SecToFrame(e.startTime), SecToFrame(e.endTime)});
     }
 
-    // =========================================================================
-    // UI(ブロック) -> 台本(ECSデータ) への変換と自動ソート
-    // =========================================================================
-    void SyncToData()
+    /// @brief フレーム作業配列を events(秒) に書き戻し、startTime 昇順でソートする。
+    void CommitFrames()
     {
         if (!targetSequence)
             return;
-        targetSequence->events.clear();
-
-        for (const auto &item : cache)
+        const size_t n = (std::min)(frames.size(), targetSequence->events.size());
+        for (size_t i = 0; i < n; ++i)
         {
-            float startSec = (float)item.frameStart / 60.0f;
-            float endSec   = (float)item.frameEnd / 60.0f;
-
-            AnimNotifyEvent ev;
-            ev.startTime   = startSec;
-            ev.endTime     = endSec;
-            ev.floatParam1 = item.floatParam1;
-            ev.floatParam2 = item.floatParam2;
-            ev.floatParam3 = item.floatParam3;
-            ev.offset      = DirectX::SimpleMath::Vector3(
-                item.offset[0], item.offset[1], item.offset[2]);
-            ev.radius = item.radius;
-
-            if (item.type == 0)
-            {
-                ev.eventName   = "HitBox";
-                ev.stringParam = item.stringParam;
-                targetSequence->events.push_back(ev);
-            }
-            else if (item.type == 1)
-            {
-                ev.eventName   = "Play_Sound";
-                ev.stringParam = item.stringParam;
-                targetSequence->events.push_back(ev);
-            }
-            else if (item.type == 2)
-            {
-                ev.eventName   = "Play_Effect";
-                ev.stringParam = item.stringParam;
-                targetSequence->events.push_back(ev);
-            }
-            else if (item.type == 3)
-            {
-                std::string baseName = item.stringParam;
-                ev.eventName         = "BB_" + baseName + "_True";
-                ev.stringParam       = "";
-                targetSequence->events.push_back(ev);
-
-                AnimNotifyEvent evFalse = ev;
-                evFalse.startTime       = endSec;
-                evFalse.eventName       = "BB_" + baseName + "_False";
-                targetSequence->events.push_back(evFalse);
-            }
-            else if (item.type == 4)
-            {
-                ev.eventName = "SpawnHitbox";
-                ev.offset    = DirectX::SimpleMath::Vector3(
-                    item.offset[0], item.offset[1], item.offset[2]);
-                ev.radius = item.radius;
-                targetSequence->events.push_back(ev);
-            }
-            else if (item.type == 5)
-            {
-                ev.eventName   = "Trail";
-                ev.stringParam = item.stringParam;
-                targetSequence->events.push_back(ev);
-            }
+            targetSequence->events[i].startTime = FrameToSec(frames[i].start);
+            targetSequence->events[i].endTime   = FrameToSec(frames[i].end);
         }
+        SortAndResync();
+    }
 
-        // startTime 昇順ソート（栞ロジックの不変条件を保証）
+    /// @brief events を startTime 昇順にソートし、フレーム配列を再構築する。
+    void SortAndResync()
+    {
+        if (!targetSequence)
+            return;
         std::sort(targetSequence->events.begin(), targetSequence->events.end(),
             [](const AnimNotifyEvent &a, const AnimNotifyEvent &b) {
                 return a.startTime < b.startTime;
             });
+        RebuildFrames();
     }
 
     void UpdateDuration(float durationSeconds)
     {
-        mFrameMax = (int)(durationSeconds * 60.0f * 1.1f);
-        if (mFrameMax < 60)
-            mFrameMax = 60;
+        mFrameMax = (int)(durationSeconds * kEditorFps * 1.1f);
+        if (mFrameMax < (int)kEditorFps)
+            mFrameMax = (int)kEditorFps;
     }
 
-    // ---- ImSequencer::SequenceInterface 実装 ----
-    virtual int GetFrameMin() const override
+    // ---- ImSequencer::SequenceInterface ----
+    int GetFrameMin() const override
     {
         return mFrameMin;
     }
-    virtual int GetFrameMax() const override
+    int GetFrameMax() const override
     {
         return mFrameMax;
     }
-    virtual int GetItemCount() const override
+    int GetItemCount() const override
     {
-        return (int)cache.size();
+        return targetSequence ? (int)targetSequence->events.size() : 0;
     }
-    virtual int GetItemTypeCount() const override
+    int GetItemTypeCount() const override
     {
-        return 6;
+        return kEventTypeCount;
     }
 
-    virtual const char *GetItemTypeName(int typeIndex) const override
+    const char *GetItemTypeName(int typeIndex) const override
     {
-        switch (typeIndex)
-        {
-        case 0:
-            return "HitBox (Attack)";
-        case 1:
-            return "Sound (SE)";
-        case 2:
-            return "Effect (Effekseer)";
-        case 3:
-            return "Blackboard (Flag)";
-        case 4:
-            return "Spawn HitBox (Spatial)";
-        case 5:
-            return "Trail (Weapon)";
-        default:
+        if (typeIndex < 0 || typeIndex >= kEventTypeCount)
             return "Unknown";
-        }
+        return kEventTypes[typeIndex].name;
     }
 
-    virtual const char *GetItemLabel(int index) const override
+    const char *GetItemLabel(int index) const override
     {
-        // スレッドセーフではないが ImSequencer の呼び出し規約上は単一スレッドから呼ばれる
-        static char temp[128];
-        if (index < 0 || index >= (int)cache.size())
+        static char temp[160];
+        if (!targetSequence || index < 0 || index >= (int)targetSequence->events.size())
             return "";
-        const auto &item = cache[index];
-        const char *name = (item.stringParam[0] != '\0') ? item.stringParam : "Empty";
-        switch (item.type)
+        const auto &e = targetSequence->events[index];
+        const char *p = e.stringParam.empty() ? "Empty" : e.stringParam.c_str();
+        switch (e.type)
         {
-        case 0:
-            sprintf_s(temp, "[%d] Attack: %s", index, name);
+        case AnimEventType::HitBox:
+            sprintf_s(temp, "[%d] Attack: %s", index, p);
             break;
-        case 1:
-            sprintf_s(temp, "[%d] Sound: %s", index, name);
+        case AnimEventType::Sound:
+            sprintf_s(temp, "[%d] Sound: %s", index, p);
             break;
-        case 2:
-            sprintf_s(temp, "[%d] Effekseer: %s", index, name);
+        case AnimEventType::Effect:
+            sprintf_s(temp, "[%d] Effect: %s", index, p);
             break;
-        case 3:
-            sprintf_s(temp, "[%d] Blackboard: %s", index, name);
+        case AnimEventType::Blackboard:
+            sprintf_s(temp, "[%d] BB: %s", index, p);
             break;
-        case 4:
-            sprintf_s(temp, "[%d] Spawn Sphere: R=%.1f", index, item.radius);
+        case AnimEventType::SpawnHitbox:
+            sprintf_s(temp, "[%d] Spawn R=%.1f", index, e.radius);
             break;
-        case 5:
-            sprintf_s(temp, "[%d] Trail: %s", index, name);
+        case AnimEventType::Trail:
+            sprintf_s(temp, "[%d] Trail: %s", index, p);
             break;
         default:
             sprintf_s(temp, "[%d] Event", index);
@@ -289,92 +208,69 @@ class AnimationSequenceImpl : public ImSequencer::SequenceInterface
         return temp;
     }
 
-    virtual void Get(int index, int **start, int **end, int *type, unsigned int *color) override
+    void Get(int index, int **start, int **end, int *type, unsigned int *color) override
     {
-        if (index < 0 || index >= (int)cache.size())
+        if (!targetSequence || index < 0 || index >= (int)targetSequence->events.size())
             return;
-        EditorEvent &item = cache[index];
+        // frames が events と同サイズであることを保証
+        if ((int)frames.size() != (int)targetSequence->events.size())
+            RebuildFrames();
+
         if (start)
-            *start = &item.frameStart;
+            *start = &frames[index].start;
         if (end)
-            *end = &item.frameEnd;
+            *end = &frames[index].end;
         if (type)
-            *type = item.type;
+            *type = (int)targetSequence->events[index].type;
         if (color)
-        {
-            switch (item.type)
-            {
-            case 0:
-                *color = 0xFF5050D0;
-                break; // 紫: HitBox
-            case 1:
-                *color = 0xFFD08050;
-                break; // 橙: Sound
-            case 2:
-                *color = 0xFF50D050;
-                break; // 緑: Effect
-            case 3:
-                *color = 0xFF50A0D0;
-                break; // 水色: Blackboard（旧実装で欠落→修正）
-            case 4:
-                *color = 0xFFD050A0;
-                break; // ピンク: SpawnHitbox
-            case 5:
-                *color = 0xFFD0D030;
-                break; // 黄: Trail
-            default:
-                *color = 0xFFFFFFFF;
-                break;
-            }
-        }
+            *color = DescOf(targetSequence->events[index].type).color;
     }
 
-    virtual void Add(int type) override
+    void Add(int type) override
     {
-        EditorEvent item{};
-        item.type       = type;
-        item.frameStart = 0;
-        item.frameEnd   = (type == 0 || type == 4 || type == 5) ? 30 : 10;
-        memset(item.stringParam, 0, sizeof(item.stringParam));
-        if (type == 2)
-            item.floatParam1 = 1.0f; // デフォルトスケール
-        if (type == 4)
-        {
-            item.offset[0] = item.offset[1] = item.offset[2] = 0.0f;
-            item.radius                                      = 1.0f;
-        }
-        cache.push_back(item);
+        if (!targetSequence)
+            return;
+        if (type < 0 || type >= kEventTypeCount)
+            type = 0;
+
+        AnimNotifyEvent e;
+        e.type      = (AnimEventType)type;
+        e.startTime = 0.0f;
+        e.endTime   = FrameToSec(kEventTypes[type].defaultLen);
+        if (e.type == AnimEventType::Effect)
+            e.effectScale = 1.0f;
+        targetSequence->events.push_back(e);
+        RebuildFrames();
     }
 
-    virtual void Del(int index) override
+    void Del(int index) override
     {
-        if (index >= 0 && index < (int)cache.size())
-            cache.erase(cache.begin() + index);
+        if (!targetSequence || index < 0 || index >= (int)targetSequence->events.size())
+            return;
+        targetSequence->events.erase(targetSequence->events.begin() + index);
+        RebuildFrames();
     }
-    virtual void Duplicate(int index) override
+
+    void Duplicate(int index) override
     {
-        if (index >= 0 && index < (int)cache.size())
-            cache.push_back(cache[index]);
+        if (!targetSequence || index < 0 || index >= (int)targetSequence->events.size())
+            return;
+        targetSequence->events.push_back(targetSequence->events[index]);
+        RebuildFrames();
     }
-    virtual size_t GetCustomHeight(int /*index*/) override
+
+    size_t GetCustomHeight(int) override
     {
-        return 24;
+        return 0;
     }
-    virtual void DoubleClick(int /*index*/) override
-    {
-    }
-    virtual void CustomDraw(int, ImDrawList *, const ImRect &, const ImRect &,
-        const ImRect &, const ImRect &) override
-    {
-    }
-    virtual void CustomDrawCompact(int, ImDrawList *, const ImRect &, const ImRect &) override
+    void DoubleClick(int) override
     {
     }
 };
 
-// =============================================================================
-// SequencerCurveDelegate（AnimSequence のカーブを ImCurveEdit に橋渡し）
-// =============================================================================
+// ===================================================================================
+// SequencerCurveDelegate : AnimSequence のカーブを ImCurveEdit に橋渡し
+// ===================================================================================
 struct SequencerCurveDelegate : public ImCurveEdit::Delegate
 {
     AnimSequence *targetSeq = nullptr;
@@ -388,11 +284,7 @@ struct SequencerCurveDelegate : public ImCurveEdit::Delegate
     {
         targetSeq = seq;
         if (targetSeq)
-        {
             animDuration = targetSeq->duration;
-            if (m_max.x <= 0.0f || m_max.x == 1.0f)
-                m_max.x = targetSeq->duration;
-        }
         UpdatePoints();
     }
 
@@ -401,7 +293,7 @@ struct SequencerCurveDelegate : public ImCurveEdit::Delegate
         if (!targetSeq)
             return;
         m_min.x = 0.0f;
-        m_max.x = targetSeq->duration;
+        m_max.x = (targetSeq->duration > 0.0f) ? targetSeq->duration : 1.0f;
     }
 
     void UpdatePoints()
@@ -420,12 +312,12 @@ struct SequencerCurveDelegate : public ImCurveEdit::Delegate
     {
         return 2;
     }
-    size_t GetPointCount(size_t curveIndex) override
+    size_t GetPointCount(size_t ci) override
     {
         if (!targetSeq)
             return 0;
-        return (curveIndex == 0) ? targetSeq->speedCurve.keys.size()
-                                 : targetSeq->rootMotionCurve.keys.size();
+        return (ci == 0) ? targetSeq->speedCurve.keys.size()
+                         : targetSeq->rootMotionCurve.keys.size();
     }
     ImCurveEdit::CurveType GetCurveType(size_t) const override
     {
@@ -460,10 +352,13 @@ struct SequencerCurveDelegate : public ImCurveEdit::Delegate
     {
         if (!targetSeq)
             return pi;
-        value.x               = (std::max)(0.0f, value.x);
-        AnimationCurve &curve = (ci == 0) ? targetSeq->speedCurve : targetSeq->rootMotionCurve;
-        curve.keys[pi].time   = value.x;
-        curve.keys[pi].value  = value.y;
+        value.x           = (std::max)(0.0f, value.x);
+        AnimationCurve &c = (ci == 0) ? targetSeq->speedCurve : targetSeq->rootMotionCurve;
+        if (pi >= 0 && pi < (int)c.keys.size())
+        {
+            c.keys[pi].time  = value.x;
+            c.keys[pi].value = value.y;
+        }
         UpdatePoints();
         return pi;
     }
@@ -472,132 +367,104 @@ struct SequencerCurveDelegate : public ImCurveEdit::Delegate
     {
         if (!targetSeq)
             return;
-        AnimationCurve &curve = (ci == 0) ? targetSeq->speedCurve : targetSeq->rootMotionCurve;
-        curve.keys.push_back({value.x, value.y});
-        std::sort(curve.keys.begin(), curve.keys.end(),
+        AnimationCurve &c = (ci == 0) ? targetSeq->speedCurve : targetSeq->rootMotionCurve;
+        c.keys.push_back({value.x, value.y});
+        std::sort(c.keys.begin(), c.keys.end(),
             [](const CurveKey &a, const CurveKey &b) { return a.time < b.time; });
         UpdatePoints();
     }
 };
 
-// =============================================================================
-// カーブエディタ グリッド＋ルーラー オーバーレイ（変更なし・省略なし）
-// =============================================================================
-static void DrawCurveEditorOverlay(
-    ImDrawList *dl,
-    ImVec2      canvasPos,
-    ImVec2      canvasSize,
-    ImVec2      viewMin,
-    ImVec2      viewMax,
-    float       animDuration)
+// ===================================================================================
+// グリッド + ルーラー オーバーレイ
+// ===================================================================================
+static void DrawCurveEditorOverlay(ImDrawList *dl, ImVec2 pos, ImVec2 size,
+    ImVec2 vMin, ImVec2 vMax, float duration)
 {
-    if (canvasSize.x <= 0 || canvasSize.y <= 0)
+    if (size.x <= 0 || size.y <= 0)
         return;
-    if (viewMax.x <= viewMin.x || viewMax.y <= viewMin.y)
+    if (vMax.x <= vMin.x || vMax.y <= vMin.y)
         return;
 
-    const float left   = canvasPos.x;
-    const float top    = canvasPos.y;
-    const float right  = left + canvasSize.x;
-    const float bottom = top + canvasSize.y;
-    const float PAD    = 6.0f;
+    const float left = pos.x, top = pos.y;
+    const float right = left + size.x, bottom = top + size.y;
+    const float PAD = 6.0f;
+    dl->PushClipRect(pos, ImVec2(right, bottom), true);
 
-    dl->PushClipRect(canvasPos, ImVec2(right, bottom), true);
+    const ImU32 cMinor = IM_COL32(70, 70, 70, 110);
+    const ImU32 cMajor = IM_COL32(100, 100, 100, 160);
+    const ImU32 cZero  = IM_COL32(180, 180, 180, 200);
+    const ImU32 cDur   = IM_COL32(255, 180, 60, 200);
+    const ImU32 cLabel = IM_COL32(210, 210, 210, 230);
+    const ImU32 cShd   = IM_COL32(0, 0, 0, 200);
 
-    const ImU32 COL_GRID_MINOR = IM_COL32(70, 70, 70, 110);
-    const ImU32 COL_GRID_MAJOR = IM_COL32(100, 100, 100, 160);
-    const ImU32 COL_AXIS_ZERO  = IM_COL32(180, 180, 180, 200);
-    const ImU32 COL_DURATION   = IM_COL32(255, 180, 60, 200);
-    const ImU32 COL_LABEL      = IM_COL32(210, 210, 210, 230);
-    const ImU32 COL_LABEL_SHD  = IM_COL32(0, 0, 0, 200);
+    auto sx = [&](float t) { return left + PAD + (t - vMin.x) / (vMax.x - vMin.x) * (size.x - 2 * PAD); };
+    auto sy = [&](float v) { return bottom - PAD - (v - vMin.y) / (vMax.y - vMin.y) * (size.y - 2 * PAD); };
 
-    auto toScreenX = [&](float t) {
-        return left + PAD + (t - viewMin.x) / (viewMax.x - viewMin.x) * (canvasSize.x - 2 * PAD);
-    };
-    auto toScreenY = [&](float v) {
-        return bottom - PAD - (v - viewMin.y) / (viewMax.y - viewMin.y) * (canvasSize.y - 2 * PAD);
-    };
-
-    // X グリッド（時間軸）
-    float xRange = viewMax.x - viewMin.x;
-    float xStep  = 0.1f;
-    if (xRange > 5.0f)
-        xStep = 0.5f;
-    if (xRange > 20.0f)
-        xStep = 1.0f;
-
-    for (float t = std::ceil(viewMin.x / xStep) * xStep; t <= viewMax.x; t += xStep)
+    float xr = vMax.x - vMin.x, xstep = 0.1f;
+    if (xr > 5.0f)
+        xstep = 0.5f;
+    if (xr > 20.0f)
+        xstep = 1.0f;
+    for (float t = std::ceil(vMin.x / xstep) * xstep; t <= vMax.x; t += xstep)
     {
-        float sx = toScreenX(t);
-        if (sx < left || sx > right)
+        float x = sx(t);
+        if (x < left || x > right)
             continue;
-        bool major = (std::fmod(std::abs(t), xStep * 5.0f) < xStep * 0.5f);
-        dl->AddLine(ImVec2(sx, top), ImVec2(sx, bottom),
-            major ? COL_GRID_MAJOR : COL_GRID_MINOR, major ? 1.0f : 0.5f);
+        bool major = (std::fmod(std::abs(t), xstep * 5.0f) < xstep * 0.5f);
+        dl->AddLine(ImVec2(x, top), ImVec2(x, bottom), major ? cMajor : cMinor, major ? 1.0f : 0.5f);
         if (major)
         {
-            char label[16];
-            snprintf(label, sizeof(label), "%.2fs", t);
-            dl->AddText(ImVec2(sx + 2.0f + 1.0f, top + 2.0f + 1.0f), COL_LABEL_SHD, label);
-            dl->AddText(ImVec2(sx + 2.0f, top + 2.0f), COL_LABEL, label);
+            char l[16];
+            snprintf(l, sizeof(l), "%.2fs", t);
+            dl->AddText(ImVec2(x + 3, top + 3), cShd, l);
+            dl->AddText(ImVec2(x + 2, top + 2), cLabel, l);
         }
     }
 
-    // Y グリッド（値軸）
-    float yRange = viewMax.y - viewMin.y;
-    float yStep  = 0.5f;
-    if (yRange > 5.0f)
-        yStep = 1.0f;
-
-    for (float v = std::ceil(viewMin.y / yStep) * yStep; v <= viewMax.y; v += yStep)
+    float yr = vMax.y - vMin.y, ystep = 0.5f;
+    if (yr > 5.0f)
+        ystep = 1.0f;
+    for (float v = std::ceil(vMin.y / ystep) * ystep; v <= vMax.y; v += ystep)
     {
-        float sy = toScreenY(v);
-        if (sy < top || sy > bottom)
+        float y = sy(v);
+        if (y < top || y > bottom)
             continue;
-        bool major = (std::fmod(std::abs(v), yStep * 2.0f) < yStep * 0.5f);
-        dl->AddLine(ImVec2(left, sy), ImVec2(right, sy),
-            major ? COL_GRID_MAJOR : COL_GRID_MINOR, major ? 1.0f : 0.5f);
+        bool major = (std::fmod(std::abs(v), ystep * 2.0f) < ystep * 0.5f);
+        dl->AddLine(ImVec2(left, y), ImVec2(right, y), major ? cMajor : cMinor, major ? 1.0f : 0.5f);
         if (major)
         {
-            char label[16];
-            snprintf(label, sizeof(label), "%.1f", v);
-            dl->AddText(ImVec2(left + PAD + 1.0f + 1.0f, sy - 10.0f + 1.0f), COL_LABEL_SHD, label);
-            dl->AddText(ImVec2(left + PAD + 1.0f, sy - 10.0f), COL_LABEL, label);
+            char l[16];
+            snprintf(l, sizeof(l), "%.1f", v);
+            dl->AddText(ImVec2(left + PAD + 2, y - 9), cShd, l);
+            dl->AddText(ImVec2(left + PAD + 1, y - 10), cLabel, l);
         }
     }
 
-    // Y=0 ライン（軸）
-    if (viewMin.y <= 0.0f && 0.0f <= viewMax.y)
-    {
-        float sy = toScreenY(0.0f);
-        dl->AddLine(ImVec2(left, sy), ImVec2(right, sy), COL_AXIS_ZERO, 1.5f);
-    }
+    if (vMin.y <= 0.0f && 0.0f <= vMax.y)
+        dl->AddLine(ImVec2(left, sy(0.0f)), ImVec2(right, sy(0.0f)), cZero, 1.5f);
 
-    // Duration 縦線
-    if (animDuration > viewMin.x && animDuration < viewMax.x)
+    if (duration > vMin.x && duration < vMax.x)
     {
-        float sx = toScreenX(animDuration);
-        dl->AddLine(ImVec2(sx, top), ImVec2(sx, bottom), COL_DURATION, 2.0f);
-        dl->AddText(ImVec2(sx + 3.0f, bottom - 18.0f), COL_DURATION, "END");
+        float x = sx(duration);
+        dl->AddLine(ImVec2(x, top), ImVec2(x, bottom), cDur, 2.0f);
+        dl->AddText(ImVec2(x + 3, bottom - 18), cDur, "END");
     }
-
     dl->PopClipRect();
 }
 
-// =============================================================================
+// ===================================================================================
 // AnimationSequencerWindow 実装
-// =============================================================================
+// ===================================================================================
 AnimationSequencerWindow::AnimationSequencerWindow()
     : EditorWindow("Sequencer")
 {
     _sequencerImpl = std::make_unique<AnimationSequenceImpl>();
     _curveDelegate = std::make_unique<SequencerCurveDelegate>();
 
-    // 初回から空のタイムラインを表示するために紐付け
     _sequencerImpl->targetSequence = &_editingSequence;
     _sequencerImpl->UpdateDuration(_editingSequence.duration);
-    _sequencerImpl->SyncFromData();
-
+    _sequencerImpl->RebuildFrames();
     SetVisible(true);
 }
 
@@ -605,21 +472,19 @@ AnimationSequencerWindow::~AnimationSequencerWindow() = default;
 
 void AnimationSequencerWindow::DrawContents(EditorContext &context)
 {
-    if (context.selectedEntity == CCL::ECS::InvalidEntityID ||
-        context.selectedEntity == 0)
+    if (context.selectedEntity == CCL::ECS::InvalidEntityID || context.selectedEntity == 0)
     {
         ImGui::TextDisabled("Select an entity to edit animation.");
         return;
     }
 
-    CCL::ECS::EntityID entity = context.selectedEntity;
+    const CCL::ECS::EntityID entity = context.selectedEntity;
 
     auto *animator  = context.world->GetComponent<AnimatorComponent>(entity);
     auto *modelComp = context.world->GetComponent<ModelComponent>(entity);
     if (!animator || !modelComp || !modelComp->GetModel())
     {
-        ImGui::TextColored(ImVec4(1, 0, 0, 1),
-            "Entity needs Animator and Model components.");
+        ImGui::TextColored(ImVec4(1, 0, 0, 1), "Entity needs Animator and Model.");
         return;
     }
 
@@ -627,32 +492,25 @@ void AnimationSequencerWindow::DrawContents(EditorContext &context)
     ModelResource *resource = model->GetResourceMutable();
     if (!resource)
         return;
-
     auto &animations = resource->GetAnimationsMutable();
     if (animations.empty())
+    {
+        ImGui::TextDisabled("Model has no animations.");
         return;
+    }
 
-    // =========================================================
-    // エンティティ切り替え検出：選択が変わったら状態をリセット
-    // =========================================================
+    // ---- エンティティ切替検出：状態を完全リセット ----
     if (entity != _lastSelectedEntity)
     {
-        // 前のエンティティで編集モードが残っていたら安全に解除
         if (context.isAnimEditMode)
         {
-            if (animator)
-            {
-                animator->isEditorOverride = false;
-                // 退避していたシーケンスを復元（前エンティティとは別物だが安全側に倒す）
-                if (_savedSequence)
-                    animator->currentSequence = _savedSequence;
-            }
+            animator->isEditorOverride = false;
+            if (_savedSequence)
+                animator->currentSequence = _savedSequence;
             context.isAnimEditMode = false;
         }
-
-        // 編集バッファを空のシーケンスにリセット
-        _editingSequence       = AnimSequence{};
-        _savePath              = "";
+        _editingSequence = AnimSequence{};
+        _savePath.clear();
         _selectedAnimIndex     = -1;
         _prevSelectedAnimIndex = -2;
         _isPlaying             = false;
@@ -664,766 +522,470 @@ void AnimationSequencerWindow::DrawContents(EditorContext &context)
 
         _sequencerImpl->targetSequence = &_editingSequence;
         _sequencerImpl->UpdateDuration(_editingSequence.duration);
-        _sequencerImpl->SyncFromData();
-
+        _sequencerImpl->RebuildFrames();
         _lastSelectedEntity = entity;
     }
 
-    // =========================================================
-    // 1. トップツールバー（セーブ・ロード）
-    // =========================================================
+    // ====================================================
+    // ツールバー: Save / Load
+    // ====================================================
     if (ImGui::Button("Save JSON..."))
     {
-        char filename[MAX_PATH] = {};
-        if (Dialog::SaveFileName(filename, MAX_PATH,
-                "JSON Files\0*.json\0", "Save Anim Sequence", "json",
-                "Data/Animations/Sequence", GetActiveWindow()) == DialogResult::OK)
+        if (auto path = Engine::FileDialog::SavePreset("AnimSequence", "Save Anim Sequence"))
         {
-            namespace fs = std::filesystem;
-            std::error_code ec;
-            fs::path        relPath   = fs::relative(filename, fs::current_path(), ec);
-            std::string     finalPath = (!ec && !relPath.empty())
-                                            ? relPath.generic_string()
-                                            : filename;
-            _savePath                 = finalPath;
+            _savePath                     = Engine::FileDialog::ConvertToRelativePath(*path);
+            _editingSequence.sequenceName = std::filesystem::path(_savePath).stem().string();
+            _sequencerImpl->SortAndResync();
 
-            // ファイル名からシーケンス名を自動抽出
-            _editingSequence.sequenceName = fs::path(finalPath).stem().string();
-            _sequencerImpl->SyncToData();
-
-            std::ofstream os(finalPath);
-            if (os.is_open())
-            {
-                nlohmann::json j;
-                j["AnimSequence"] = _editingSequence;
-                os << j.dump(4);
-                CCL_LOG_INFO(LogCategory::Editor, "Sequence Saved: %s", finalPath.c_str());
-            }
+            nlohmann::json j = _editingSequence;
+            if (FileSystem::WriteAllText(_savePath, j.dump(4)))
+                CCL_LOG_SUCCESS(LogCategory::Editor, "Sequence Saved: %s", _savePath.c_str());
+            else
+                CCL_LOG_ERROR(LogCategory::Editor, "Sequence Save Failed: %s", _savePath.c_str());
         }
     }
-
     ImGui::SameLine();
-
     if (ImGui::Button("Load JSON..."))
     {
-        char filename[MAX_PATH] = {};
-        if (Dialog::OpenFileName(filename, MAX_PATH,
-                "JSON Files\0*.json\0", "Load Anim Sequence",
-                "Data/Animations/Sequence", GetActiveWindow()) == DialogResult::OK)
+        if (auto path = Engine::FileDialog::OpenPreset("AnimSequence", "Load Anim Sequence"))
         {
-            namespace fs = std::filesystem;
-            std::error_code ec;
-            fs::path        relPath   = fs::relative(filename, fs::current_path(), ec);
-            std::string     finalPath = (!ec && !relPath.empty())
-                                            ? relPath.generic_string()
-                                            : filename;
-            _savePath                 = finalPath;
-
-            std::ifstream is(finalPath);
-            if (is.is_open())
+            std::string loadPath = Engine::FileDialog::ConvertToRelativePath(*path);
+            std::string text     = FileSystem::ReadAllText(loadPath);
+            if (!text.empty())
             {
                 try
                 {
-                    nlohmann::json j;
-                    is >> j;
-                    if (j.contains("AnimSequence"))
-                        j.at("AnimSequence").get_to(_editingSequence);
-                    else
-                        j.get_to(_editingSequence);
+                    nlohmann::json j = nlohmann::json::parse(text);
+                    _editingSequence = j.get<AnimSequence>();
+                    _savePath        = loadPath;
 
-                    // ロード後にターゲットアニメを同期
+                    // ターゲットアニメをコンボに同期
                     _selectedAnimIndex = 0;
                     for (int i = 0; i < (int)animations.size(); ++i)
-                    {
-                        if (animations[i].m_Name == _editingSequence.targetAnimName)
+                        if (animations[i].name == _editingSequence.targetAnimName)
                         {
                             _selectedAnimIndex = i;
                             break;
                         }
-                    }
-                    _prevSelectedAnimIndex = -2; // 強制再バインドを促す
+                    _prevSelectedAnimIndex = -2;
 
                     _sequencerImpl->targetSequence = &_editingSequence;
                     _sequencerImpl->UpdateDuration(_editingSequence.duration);
-                    _sequencerImpl->SyncFromData();
+                    _sequencerImpl->SortAndResync();
                     _selectedEntry = -1;
                     _fitCurveView  = true;
-
-                    CCL_LOG_SUCCESS(LogCategory::Editor,
-                        "Sequence Loaded: %s", finalPath.c_str());
+                    CCL_LOG_SUCCESS(LogCategory::Editor, "Sequence Loaded: %s", loadPath.c_str());
                 }
                 catch (const std::exception &e)
                 {
-                    CCL_LOG_ERROR(LogCategory::Editor,
-                        "Failed to load sequence JSON: %s", e.what());
+                    CCL_LOG_ERROR(LogCategory::Editor, "Load failed: %s", e.what());
                 }
             }
         }
     }
-
     ImGui::SameLine();
     ImGui::TextDisabled("File: %s", _savePath.empty() ? "None" : _savePath.c_str());
 
-    // シーケンス名の編集
-    char seqNameBuf[128] = {};
-    strcpy_s(seqNameBuf, sizeof(seqNameBuf), _editingSequence.sequenceName.c_str());
-    ImGui::SetNextItemWidth(200.0f);
-    if (ImGui::InputText("Sequence Name", seqNameBuf, sizeof(seqNameBuf)))
-        _editingSequence.sequenceName = seqNameBuf;
+    // シーケンス名
+    char nameBuf[128];
+    strcpy_s(nameBuf, sizeof(nameBuf), _editingSequence.sequenceName.c_str());
+    ImGui::SetNextItemWidth(200);
+    if (ImGui::InputText("Sequence Name", nameBuf, sizeof(nameBuf)))
+        _editingSequence.sequenceName = nameBuf;
 
-    // ターゲットアニメーションのコンボ
+    // ターゲットアニメ
     ImGui::SameLine();
     if (_selectedAnimIndex < 0 || _selectedAnimIndex >= (int)animations.size())
         _selectedAnimIndex = 0;
-
-    ImGui::SetNextItemWidth(250.0f);
-    if (ImGui::BeginCombo("Target Animation",
-            animations[_selectedAnimIndex].m_Name.c_str()))
+    ImGui::SetNextItemWidth(250);
+    if (ImGui::BeginCombo("Target Animation", animations[_selectedAnimIndex].name.c_str()))
     {
         for (int i = 0; i < (int)animations.size(); ++i)
         {
-            bool isSelected = (_selectedAnimIndex == i);
-            if (ImGui::Selectable(animations[i].m_Name.c_str(), isSelected))
+            bool sel = (_selectedAnimIndex == i);
+            if (ImGui::Selectable(animations[i].name.c_str(), sel))
                 _selectedAnimIndex = i;
-            if (isSelected)
+            if (sel)
                 ImGui::SetItemDefaultFocus();
         }
         ImGui::EndCombo();
     }
 
-    // アニメ選択が変わったらバッファに反映
     if (_prevSelectedAnimIndex != _selectedAnimIndex)
     {
         _prevSelectedAnimIndex          = _selectedAnimIndex;
-        _editingSequence.targetAnimName = animations[_selectedAnimIndex].m_Name;
-        _editingSequence.duration       = animations[_selectedAnimIndex].m_SecondsLength;
-        _sequencerImpl->targetSequence  = &_editingSequence;
+        _editingSequence.targetAnimName = animations[_selectedAnimIndex].name;
+        _editingSequence.duration       = animations[_selectedAnimIndex].secondsLength;
         _sequencerImpl->UpdateDuration(_editingSequence.duration);
-        _sequencerImpl->SyncFromData();
         _fitCurveView = true;
     }
 
-    // =========================================================
-    // Edit Mode の制御
-    // =========================================================
+    // ====================================================
+    // 編集モード制御（currentSequence 退避/復元）
+    // ====================================================
     if (context.isAnimEditMode)
     {
-        // ── 編集モード突入時の1回だけ実行 ──────────────────────────
         if (!_wasEditMode)
         {
-            // ★修正: 元のシーケンスを退避してから編集バッファで上書き
-            _savedSequence       = animator->currentSequence;
+            _savedSequence       = animator->currentSequence; // ★退避
             _wasEditMode         = true;
             context.animEditTime = animator->currentTimer;
         }
-
-        // 編集バッファを Animator に指す（毎フレーム設定して上書きを防ぐ）
         animator->isEditorOverride = true;
         animator->currentSequence  = &_editingSequence;
     }
-    else
+    else if (_wasEditMode)
     {
-        if (_wasEditMode)
-        {
-            // ★修正: 編集モード解除時に currentSequence を退避先から復元
-            animator->currentSequence  = _savedSequence;
-            animator->isEditorOverride = false;
-            _savedSequence             = nullptr;
-            _wasEditMode               = false;
-            _isPlaying                 = false;
-        }
+        animator->currentSequence  = _savedSequence; // ★復元
+        animator->isEditorOverride = false;
+        _savedSequence             = nullptr;
+        _wasEditMode               = false;
+        _isPlaying                 = false;
     }
 
     ImGui::Separator();
 
-    // =========================================================
-    // 2. メインレイアウト（左右 2ペイン）
-    // =========================================================
-    if (!ImGui::BeginTable("SequencerLayout", 2,
-            ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV))
+    // ====================================================
+    // 2ペインレイアウト
+    // ====================================================
+    if (!ImGui::BeginTable("SeqLayout", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV))
         return;
-
-    ImGui::TableSetupColumn("Timeline", ImGuiTableColumnFlags_WidthStretch, 0.75f);
-    ImGui::TableSetupColumn("Inspector", ImGuiTableColumnFlags_WidthStretch, 0.25f);
+    ImGui::TableSetupColumn("Timeline", ImGuiTableColumnFlags_WidthStretch, 0.7f);
+    ImGui::TableSetupColumn("Inspector", ImGuiTableColumnFlags_WidthStretch, 0.3f);
     ImGui::TableNextRow();
 
-    // -----------------------------------------------------
-    // 左カラム: タイムライン
-    // -----------------------------------------------------
+    // ---- 左: タイムライン ----
     ImGui::TableSetColumnIndex(0);
 
-    // Space で再生/停止
-    if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) &&
-        ImGui::IsKeyPressed(ImGuiKey_Space))
-    {
+    if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && ImGui::IsKeyPressed(ImGuiKey_Space))
         _isPlaying = !_isPlaying;
-    }
 
     if (context.isAnimEditMode)
     {
         if (_isPlaying)
         {
-            float dt = ImGui::GetIO().DeltaTime;
-            context.animEditTime += dt * animator->playbackSpeed;
-            if (context.animEditTime > _editingSequence.duration)
-            {
+            context.animEditTime += ImGui::GetIO().DeltaTime * animator->playbackSpeed;
+            if (_editingSequence.duration > 0.0f && context.animEditTime > _editingSequence.duration)
                 context.animEditTime = animator->isLoop
-                                           ? fmod(context.animEditTime, _editingSequence.duration)
+                                           ? std::fmod(context.animEditTime, _editingSequence.duration)
                                            : _editingSequence.duration;
-            }
             animator->currentTimer = context.animEditTime;
         }
-
         if (ImGui::Button(_isPlaying ? "|| Pause" : "> Play"))
             _isPlaying = !_isPlaying;
         ImGui::SameLine();
     }
     else
-    {
         _isPlaying = false;
-    }
 
-    // イベント追加ヘルパー
-    auto AddAndSelectEvent = [&](int type) {
-        _sequencerImpl->Add(type);
-        auto &newItem      = _sequencerImpl->cache.back();
-        newItem.frameStart = context.isAnimEditMode
-                                 ? (int)(context.animEditTime * 60.0f)
-                                 : 0;
-        newItem.frameEnd   = newItem.frameStart + ((type == 0) ? 30 : 10);
-        _sequencerImpl->SyncToData();
-        _selectedEntry = (int)_sequencerImpl->cache.size() - 1;
+    // イベント追加（現在時刻に配置して選択）
+    auto AddEvt = [&](AnimEventType t) {
+        _sequencerImpl->Add((int)t);
+        auto &e     = _editingSequence.events.back();
+        int   s     = context.isAnimEditMode ? SecToFrame(context.animEditTime) : 0;
+        e.startTime = FrameToSec(s);
+        e.endTime   = FrameToSec(s + DescOf(t).defaultLen);
+        _sequencerImpl->SortAndResync();
+        _selectedEntry = (int)_editingSequence.events.size() - 1;
     };
 
-    if (ImGui::Button("+ Attack (HitBox)"))
-        AddAndSelectEvent(0);
+    if (ImGui::Button("+ Attack"))
+        AddEvt(AnimEventType::HitBox);
     ImGui::SameLine();
-    if (ImGui::Button("+ Spawn HitBox"))
-        AddAndSelectEvent(4);
+    if (ImGui::Button("+ Spawn"))
+        AddEvt(AnimEventType::SpawnHitbox);
     ImGui::SameLine();
-    if (ImGui::Button("+ Trail"))
-        AddAndSelectEvent(5);
+    if (ImGui::Button("+ Sound"))
+        AddEvt(AnimEventType::Sound);
     ImGui::SameLine();
-    if (ImGui::Button("+ Sound (SE)"))
-        AddAndSelectEvent(1);
+    if (ImGui::Button("+ Effect"))
+        AddEvt(AnimEventType::Effect);
     ImGui::SameLine();
-    if (ImGui::Button("+ Effect (VFX)"))
-        AddAndSelectEvent(2);
     if (ImGui::Button("+ BB Flag"))
-        AddAndSelectEvent(3);
+        AddEvt(AnimEventType::Blackboard);
 
-    int currentFrame = context.isAnimEditMode
-                           ? (int)(context.animEditTime * 60.0f)
-                           : (int)(animator->currentTimer * 60.0f);
-    int prevFrame    = currentFrame;
+    int curFrame  = context.isAnimEditMode ? SecToFrame(context.animEditTime)
+                                           : SecToFrame(animator->currentTimer);
+    int prevFrame = curFrame;
 
-    if (_sequencerImpl->targetSequence)
+    _expanded    = true;
+    bool changed = ImSequencer::Sequencer(
+        _sequencerImpl.get(), &curFrame, &_expanded, &_selectedEntry, &_firstFrame,
+        ImSequencer::SEQUENCER_EDIT_STARTEND | ImSequencer::SEQUENCER_ADD |
+            ImSequencer::SEQUENCER_DEL | ImSequencer::SEQUENCER_CHANGE_FRAME);
+
+    if (changed)
+        _sequencerImpl->CommitFrames();
+
+    // Delete キーで削除
+    if (_selectedEntry >= 0 &&
+        ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) &&
+        ImGui::IsKeyPressed(ImGuiKey_Delete))
     {
-        _expanded    = true;
-        bool changed = ImSequencer::Sequencer(
-            _sequencerImpl.get(), &currentFrame, &_expanded,
-            &_selectedEntry, &_firstFrame,
-            ImSequencer::SEQUENCER_EDIT_STARTEND |
-                ImSequencer::SEQUENCER_ADD |
-                ImSequencer::SEQUENCER_DEL |
-                ImSequencer::SEQUENCER_CHANGE_FRAME);
+        _sequencerImpl->Del(_selectedEntry);
+        _selectedEntry = -1;
+    }
 
-        if (changed)
-            _sequencerImpl->SyncToData();
-
-        // Delete キーで選択ブロック削除
-        if (_selectedEntry >= 0 &&
-            ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) &&
-            ImGui::IsKeyPressed(ImGuiKey_Delete))
-        {
-            _sequencerImpl->Del(_selectedEntry);
-            _sequencerImpl->SyncToData();
+    // 矢印キーでナッジ
+    if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
+    {
+        if (ImGui::IsKeyPressed(ImGuiKey_Escape))
             _selectedEntry = -1;
-        }
-
-        // タイムライン操作
-        ImVec2   seqMin = ImGui::GetItemRectMin();
-        ImVec2   seqMax = ImGui::GetItemRectMax();
-        ImGuiIO &io     = ImGui::GetIO();
-
-        // Shift + ホイールで横スクロール
-        if (ImGui::IsMouseHoveringRect(seqMin, seqMax))
+        int nudge = ImGui::GetIO().KeyShift ? 5 : 1;
+        if (_selectedEntry >= 0 && _selectedEntry < (int)_sequencerImpl->frames.size())
         {
-            if (io.KeyShift && io.MouseWheel != 0.0f)
+            auto &f     = _sequencerImpl->frames[_selectedEntry];
+            bool  moved = false;
+            if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
             {
-                _firstFrame -= (int)(io.MouseWheel * 15.0f);
-                if (_firstFrame < 0)
-                    _firstFrame = 0;
+                f.start -= nudge;
+                f.end -= nudge;
+                moved = true;
+            }
+            if (ImGui::IsKeyPressed(ImGuiKey_RightArrow))
+            {
+                f.start += nudge;
+                f.end += nudge;
+                moved = true;
+            }
+            if (moved)
+            {
+                if (f.start < 0)
+                {
+                    f.end += -f.start;
+                    f.start = 0;
+                }
+                _sequencerImpl->CommitFrames();
             }
         }
+    }
 
-        // キーボードナッジ
-        if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
+    if (curFrame != prevFrame)
+    {
+        _isPlaying             = false;
+        context.animEditTime   = FrameToSec(curFrame);
+        animator->currentTimer = context.animEditTime;
+    }
+
+    // プレビュー反映
+    if (context.isAnimEditMode && context.systemManager)
+    {
+        if (auto *animSys = context.systemManager->GetSystem<AnimationSystem>())
         {
-            if (ImGui::IsKeyPressed(ImGuiKey_Escape))
-                _selectedEntry = -1;
+            animSys->UpdateManual(entity, context.animEditTime);
+            if (auto *tr = context.world->GetComponent<TransformComponent>(entity))
+                model->UpdateTransform(tr->worldMatrix);
+        }
+    }
 
-            int nudge = io.KeyShift ? 5 : 1;
+    // ---- 右: インスペクタ + カーブ ----
+    ImGui::TableSetColumnIndex(1);
+    ImGui::Text("Duration: %.2fs", _editingSequence.duration);
+    ImGui::Checkbox("Edit Mode (Preview)", &context.isAnimEditMode);
+    ImGui::Separator();
+    ImGui::TextColored(ImVec4(0.5f, 1, 0.5f, 1), "Selected Event");
+    ImGui::Spacing();
 
-            if (_selectedEntry >= 0 &&
-                _selectedEntry < (int)_sequencerImpl->cache.size())
+    if (_selectedEntry >= 0 && _selectedEntry < (int)_editingSequence.events.size())
+    {
+        auto &e  = _editingSequence.events[_selectedEntry];
+        bool  ch = false;
+
+        ImGui::TextDisabled("Type: %s", DescOf(e.type).name);
+        ImGui::Text("Time: %.2fs - %.2fs", e.startTime, e.endTime);
+        ImGui::Spacing();
+
+        // stringParam 編集用バッファ
+        char buf[256];
+        strcpy_s(buf, sizeof(buf), e.stringParam.c_str());
+
+        switch (e.type)
+        {
+        case AnimEventType::HitBox: {
+            // 武器タグ（Roster があればコンボ、無ければ手入力）
+            auto *roster = context.world->GetComponent<CombatRosterComponent>(entity);
+            if (roster && roster->count > 0)
             {
-                auto &item  = _sequencerImpl->cache[_selectedEntry];
-                bool  moved = false;
-                if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
+                ImGui::Text("Weapon Tag:");
+                ImGui::SetNextItemWidth(-1);
+                const char *preview = e.stringParam.empty() ? "Select Tag..." : e.stringParam.c_str();
+                if (ImGui::BeginCombo("##Tag", preview))
                 {
-                    item.frameStart -= nudge;
-                    item.frameEnd -= nudge;
-                    moved = true;
-                }
-                if (ImGui::IsKeyPressed(ImGuiKey_RightArrow))
-                {
-                    item.frameStart += nudge;
-                    item.frameEnd += nudge;
-                    moved = true;
-                }
-                if (moved)
-                {
-                    if (item.frameStart < 0)
+                    for (int i = 0; i < roster->count; ++i)
                     {
-                        item.frameEnd += (0 - item.frameStart);
-                        item.frameStart = 0;
+                        bool sel = (e.stringParam == roster->entries[i].tag);
+                        if (ImGui::Selectable(roster->entries[i].tag, sel))
+                        {
+                            e.stringParam = roster->entries[i].tag;
+                            ch            = true;
+                        }
+                        if (sel)
+                            ImGui::SetItemDefaultFocus();
                     }
-                    _sequencerImpl->SyncToData();
+                    ImGui::EndCombo();
                 }
             }
             else
             {
-                if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
+                ImGui::Text("Weapon Tag (no roster):");
+                ImGui::SetNextItemWidth(-1);
+                if (ImGui::InputText("##Tag", buf, sizeof(buf)))
                 {
-                    currentFrame -= nudge;
-                    if (currentFrame < 0)
-                        currentFrame = 0;
-                }
-                if (ImGui::IsKeyPressed(ImGuiKey_RightArrow))
-                {
-                    currentFrame += nudge;
-                    if (currentFrame > _sequencerImpl->mFrameMax)
-                        currentFrame = _sequencerImpl->mFrameMax;
+                    e.stringParam = buf;
+                    ch            = true;
                 }
             }
-        }
-
-        if (currentFrame != prevFrame)
-        {
-            _isPlaying             = false;
-            context.animEditTime   = (float)currentFrame / 60.0f;
-            animator->currentTimer = context.animEditTime;
-        }
-
-        if (context.isAnimEditMode && context.systemManager)
-        {
-            if (auto *animSystem =
-                    context.systemManager->GetSystem<AnimationSystem>())
-            {
-                animSystem->UpdateManual(entity, context.animEditTime);
-                if (auto *transform =
-                        context.world->GetComponent<TransformComponent>(entity))
-                {
-                    model->UpdateTransform(transform->worldMatrix);
-                }
-            }
-        }
-    }
-
-    // -----------------------------------------------------
-    // 右カラム: カーブエディタ + インスペクタ
-    // -----------------------------------------------------
-    ImGui::TableSetColumnIndex(1);
-
-    ImGui::Text("Duration: %.2fs", _editingSequence.duration);
-    ImGui::Checkbox("Edit Mode (Preview)", &context.isAnimEditMode);
-    ImGui::Separator();
-
-    ImGui::TextColored(ImVec4(0.5f, 1.0f, 0.5f, 1.0f), "Selected Event");
-    ImGui::Spacing();
-
-    if (_selectedEntry >= 0 && _selectedEntry < (int)_sequencerImpl->cache.size())
-    {
-        auto &selectedItem = _sequencerImpl->cache[_selectedEntry];
-        bool  propChanged  = false;
-
-        ImGui::TextDisabled("Type: %s",
-            _sequencerImpl->GetItemTypeName(selectedItem.type));
-        ImGui::Text("Time: %.2fs - %.2fs",
-            selectedItem.frameStart / 60.0f, selectedItem.frameEnd / 60.0f);
-        ImGui::Spacing();
-
-        if (selectedItem.type == 0 || selectedItem.type == 4 ||
-            selectedItem.type == 5)
-        {
-            if (selectedItem.type == 0 || selectedItem.type == 5)
-            {
-                auto *roster = context.world->GetComponent<CombatRosterComponent>(entity);
-                if (roster && roster->count > 0)
-                {
-                    ImGui::Text(selectedItem.type == 0
-                                    ? "Target Weapon Tag:"
-                                    : "Trail Weapon Tag:");
-                    const char *preview = selectedItem.stringParam[0] != '\0'
-                                              ? selectedItem.stringParam
-                                              : "Select Tag...";
-                    ImGui::SetNextItemWidth(-1);
-                    ImGui::PushID(&selectedItem);
-                    if (ImGui::BeginCombo("##WeaponTag", preview))
-                    {
-                        for (int i = 0; i < roster->count; ++i)
-                        {
-                            bool isSel = (strcmp(selectedItem.stringParam,
-                                              roster->entries[i].tag) == 0);
-                            if (ImGui::Selectable(roster->entries[i].tag, isSel))
-                            {
-                                strcpy_s(selectedItem.stringParam,
-                                    sizeof(selectedItem.stringParam),
-                                    roster->entries[i].tag);
-                                propChanged = true;
-                            }
-                            if (isSel)
-                                ImGui::SetItemDefaultFocus();
-                        }
-                        ImGui::EndCombo();
-                    }
-                    ImGui::PopID();
-
-                    // Trail の Live Edit
-                    if (selectedItem.type == 5 &&
-                        selectedItem.stringParam[0] != '\0')
-                    {
-                        CCL::ECS::EntityID targetWeaponID =
-                            CCL::ECS::InvalidEntityID;
-                        for (int i = 0; i < roster->count; ++i)
-                        {
-                            if (strcmp(selectedItem.stringParam,
-                                    roster->entries[i].tag) == 0)
-                            {
-                                targetWeaponID = roster->entries[i].id;
-                                break;
-                            }
-                        }
-                        if (targetWeaponID != CCL::ECS::InvalidEntityID)
-                        {
-                            auto *trail =
-                                context.world->GetComponent<TrailComponent>(
-                                    targetWeaponID);
-                            if (trail)
-                            {
-                                ImGui::Spacing();
-                                ImGui::Separator();
-                                ImGui::TextColored(
-                                    ImVec4(0.3f, 1.0f, 1.0f, 1.0f),
-                                    "Live Edit: Trail Component");
-                                ImGui::ColorEdit4("Color", &trail->color.x);
-                                ImGui::DragFloat3("Rotation Offset",
-                                    &trail->localRotationOffset.x, 0.01f);
-                                ImGui::DragFloat3("Root Offset",
-                                    &trail->localRootOffset.x, 0.01f);
-                                ImGui::DragFloat3("Tip Offset",
-                                    &trail->localTipOffset.x, 0.01f);
-
-                                char texBuf[256];
-                                strcpy_s(texBuf, trail->texturePath.c_str());
-                                ImGui::SetNextItemWidth(-1);
-                                if (ImGui::InputText("##TrailTex", texBuf,
-                                        sizeof(texBuf)))
-                                {
-                                    trail->texturePath = texBuf;
-                                }
-                                if (ImGui::Button("Browse Texture...",
-                                        ImVec2(-1, 0)))
-                                {
-                                    char fname[256] = {};
-                                    if (Dialog::OpenFileName(fname, 256,
-                                            "Textures\0*.png;*.dds;*.jpg\0"
-                                            "All Files\0*.*\0",
-                                            "Select Texture", "Data/Textures",
-                                            GetActiveWindow()) == DialogResult::OK)
-                                    {
-                                        namespace fs = std::filesystem;
-                                        std::error_code ec;
-                                        trail->texturePath =
-                                            fs::relative(fname,
-                                                fs::current_path(), ec)
-                                                .generic_string();
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                ImGui::TextColored(ImVec4(1, 0.3f, 0.3f, 1),
-                                    "[Warning] No TrailComponent.");
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    ImGui::TextColored(ImVec4(1, 1, 0, 1), "[Warning] No Roster");
-                    ImGui::SetNextItemWidth(-1);
-                    if (ImGui::InputText("##DamageTag",
-                            selectedItem.stringParam,
-                            sizeof(selectedItem.stringParam)))
-                        propChanged = true;
-                }
-            }
-
-            if (selectedItem.type == 4)
-            {
-                ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.3f, 1.0f),
-                    "Hitbox Transform");
-                if (ImGui::DragFloat3("Offset", selectedItem.offset, 0.05f))
-                    propChanged = true;
-                if (ImGui::DragFloat("Radius", &selectedItem.radius,
-                        0.05f, 0.0f, 100.0f))
-                    propChanged = true;
-            }
-
             ImGui::Spacing();
             ImGui::Separator();
-            ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.3f, 1.0f),
-                "Hit Stop Settings");
-
-            if (selectedItem.type == 0)
-            {
-                ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.5f, 1.0f),
-                    "Attack Settings");
-                if (ImGui::DragFloat("Damage", &selectedItem.floatParam3,
-                        0.5f, 0.0f, 1000.0f, "%.1f"))
-                    propChanged = true;
-                ImGui::Spacing();
-                ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.3f, 1.0f),
-                    "Hit Stop Settings");
-                if (ImGui::SliderFloat("HitStop Duration",
-                        &selectedItem.floatParam1, 0.0f, 1.0f, "%.2f s"))
-                    propChanged = true;
-                if (ImGui::SliderFloat("HitStop TimeScale",
-                        &selectedItem.floatParam2, 0.0f, 1.0f, "%.2f x"))
-                    propChanged = true;
-            }
-            else if (selectedItem.type == 4)
-            {
-                if (ImGui::DragFloat("Damage", &selectedItem.floatParam1,
-                        0.5f, 0.0f, 1000.0f, "%.1f"))
-                    propChanged = true;
-                if (ImGui::SliderFloat("HitStop Duration",
-                        &selectedItem.floatParam2, 0.0f, 1.0f, "%.2f s"))
-                    propChanged = true;
-            }
+            ImGui::TextColored(ImVec4(1, 0.5f, 0.5f, 1), "Attack");
+            if (ImGui::DragFloat("Damage", &e.damage, 0.5f, 0.0f, 1000.0f, "%.1f"))
+                ch = true;
+            ImGui::TextColored(ImVec4(1, 0.7f, 0.3f, 1), "Hit Stop");
+            if (ImGui::SliderFloat("Duration", &e.hitStopDuration, 0.0f, 1.0f, "%.2f s"))
+                ch = true;
+            if (ImGui::SliderFloat("TimeScale", &e.hitStopScale, 0.0f, 1.0f, "%.2f x"))
+                ch = true;
+            break;
         }
-        else if (selectedItem.type == 1)
-        {
-            ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f),
-                "FMOD Event Path:");
+        case AnimEventType::SpawnHitbox:
+            ImGui::TextColored(ImVec4(1, 0.7f, 0.3f, 1), "Spatial Hitbox");
+            if (ImGui::DragFloat3("Offset", &e.offset.x, 0.05f))
+                ch = true;
+            if (ImGui::DragFloat("Radius", &e.radius, 0.05f, 0.0f, 100.0f))
+                ch = true;
+            if (ImGui::DragFloat("Damage", &e.damage, 0.5f, 0.0f, 1000.0f, "%.1f"))
+                ch = true;
+            if (ImGui::SliderFloat("HitStop", &e.hitStopDuration, 0.0f, 1.0f, "%.2f s"))
+                ch = true;
+            break;
+
+        case AnimEventType::Sound:
+            ImGui::TextColored(ImVec4(1, 0.8f, 0.2f, 1), "FMOD Event Path");
             ImGui::SetNextItemWidth(-1);
-            if (ImGui::InputText("##FMODPath", selectedItem.stringParam,
-                    sizeof(selectedItem.stringParam)))
-                propChanged = true;
+            if (ImGui::InputText("##Snd", buf, sizeof(buf)))
+            {
+                e.stringParam = buf;
+                ch            = true;
+            }
             if (ImGui::IsItemHovered())
-                ImGui::SetTooltip("Example: event:/SFX/SwordSwing");
-        }
-        else if (selectedItem.type == 2)
-        {
-            ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f),
-                "Effekseer Asset (.efk / .efkefc)");
+                ImGui::SetTooltip("event:/SFX/SwordSwing");
+            break;
+
+        case AnimEventType::Effect:
+            ImGui::TextColored(ImVec4(1, 0.8f, 0.2f, 1), "Effekseer Path");
             ImGui::SetNextItemWidth(-1);
-            if (ImGui::InputText("##EffectPath", selectedItem.stringParam,
-                    sizeof(selectedItem.stringParam)))
-                propChanged = true;
-            if (ImGui::Button("Browse Effekseer...", ImVec2(-1, 0)))
+            if (ImGui::InputText("##Efk", buf, sizeof(buf)))
             {
-                char fname[256] = {};
-                if (Dialog::OpenFileName(fname, 256,
-                        "Effekseer Files\0*.efk;*.efkefc\0All Files\0*.*\0",
-                        "Select File", "Data", GetActiveWindow()) == DialogResult::OK)
-                {
-                    namespace fs = std::filesystem;
-                    std::error_code ec;
-                    strcpy_s(selectedItem.stringParam,
-                        sizeof(selectedItem.stringParam),
-                        fs::relative(fname, fs::current_path(), ec)
-                            .generic_string()
-                            .c_str());
-                    propChanged = true;
-                }
+                e.stringParam = buf;
+                ch            = true;
             }
-            ImGui::Spacing();
-            ImGui::Separator();
-            ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f),
-                "Transform Settings");
-            if (ImGui::DragFloat3("Offset", selectedItem.offset, 0.05f))
-                propChanged = true;
-            if (ImGui::DragFloat("Scale", &selectedItem.floatParam1,
-                    0.05f, 0.0f, 100.0f, "%.2f x"))
-                propChanged = true;
-            bool isFollowing = (selectedItem.floatParam2 > 0.5f);
-            if (ImGui::Checkbox("Follow Parent", &isFollowing))
+            if (ImGui::DragFloat3("Offset", &e.offset.x, 0.05f))
+                ch = true;
+            if (ImGui::DragFloat("Scale", &e.effectScale, 0.05f, 0.0f, 100.0f, "%.2f x"))
+                ch = true;
+            if (ImGui::Checkbox("Follow Parent", &e.effectFollow))
+                ch = true;
+            break;
+
+        case AnimEventType::Blackboard:
+            ImGui::TextColored(ImVec4(1, 1, 0, 1), "Blackboard Flag");
+            ImGui::SetNextItemWidth(-1);
+            if (ImGui::InputText("##BB", buf, sizeof(buf)))
             {
-                selectedItem.floatParam2 = isFollowing ? 1.0f : 0.0f;
-                propChanged              = true;
+                e.stringParam = buf;
+                ch            = true;
             }
-        }
-        else if (selectedItem.type == 3)
-        {
-            ImGui::TextColored(ImVec4(1, 1, 0, 1), "Blackboard Flag Settings");
-            ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 20.0f);
-            ImGui::Text("Quick Presets:");
+            ImGui::TextDisabled("Active during [%.2fs - %.2fs]", e.startTime, e.endTime);
+            break;
 
-            auto PresetButton = [&](const char *label, const char *flag,
-                                    ImVec4 color) {
-                ImGui::PushStyleColor(ImGuiCol_Button, color);
-                if (ImGui::Button(label))
-                {
-                    strcpy_s(selectedItem.stringParam,
-                        sizeof(selectedItem.stringParam), flag);
-                    propChanged = true;
-                }
-                ImGui::PopStyleColor();
-            };
+        case AnimEventType::Trail:
+            // Trail 専用UIは現状なし（TrailComponent未実装）。区間のみ編集可。
+            ImGui::TextDisabled("Trail (no component yet). Interval only.");
+            ImGui::SetNextItemWidth(-1);
+            if (ImGui::InputText("##Trail", buf, sizeof(buf)))
+            {
+                e.stringParam = buf;
+                ch            = true;
+            }
+            break;
 
-            PresetButton("Accept Input", "AcceptInput",
-                ImVec4(0.2f, 0.4f, 0.8f, 1.0f));
-            ImGui::SameLine();
-            PresetButton("Attack Next", "AttackNext",
-                ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
-            ImGui::SameLine();
-            PresetButton("Invincible", "IsInvincible",
-                ImVec4(0.6f, 0.6f, 0.1f, 1.0f));
-            ImGui::SameLine();
-            PresetButton("Dodge Cancel", "CanDodgeCancel",
-                ImVec4(0.1f, 0.7f, 0.3f, 1.0f));
-
-            ImGui::Spacing();
-            ImGui::Separator();
-            ImGui::SetNextItemWidth(
-                ImGui::GetContentRegionAvail().x - 100.0f);
-            if (ImGui::InputText("Flag Name", selectedItem.stringParam,
-                    sizeof(selectedItem.stringParam)))
-                propChanged = true;
-
-            ImGui::BeginChild("BB_Preview", ImVec2(0, 60), true);
-            ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f),
-                "Generated Events:");
-            ImGui::BulletText("Frame %d: BB_%s_True",
-                selectedItem.frameStart, selectedItem.stringParam);
-            ImGui::BulletText("Frame %d: BB_%s_False",
-                selectedItem.frameEnd, selectedItem.stringParam);
-            ImGui::EndChild();
+        default:
+            break;
         }
 
-        if (propChanged)
-            _sequencerImpl->SyncToData();
+        if (ch)
+            _sequencerImpl->SortAndResync();
     }
     else
     {
-        ImGui::TextDisabled(
-            "No event block selected.\nClick a block on the timeline.");
+        ImGui::TextDisabled("No event selected.\nClick a block on the timeline.");
     }
 
-    // =====================================================
-    // カーブエディタ
-    // =====================================================
-    if (_sequencerImpl->targetSequence)
+    // ---- カーブエディタ ----
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::TextColored(ImVec4(1, 0.6f, 0.2f, 1), "Animation Curves");
+
+    ImGui::SetNextItemWidth(130);
+    float yR[2] = {_curveDelegate->m_min.y, _curveDelegate->m_max.y};
+    if (ImGui::DragFloat2("Y-Range", yR, 0.05f))
     {
-        ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.2f, 1.0f),
-            "◆ Animation Curves");
-
-        ImGui::SetNextItemWidth(130);
-        float yRange[2] = {_curveDelegate->m_min.y, _curveDelegate->m_max.y};
-        if (ImGui::DragFloat2("Y-Range", yRange, 0.05f))
+        _curveDelegate->m_min.y = yR[0];
+        _curveDelegate->m_max.y = yR[1];
+    }
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(130);
+    float xR[2] = {_curveDelegate->m_min.x, _curveDelegate->m_max.x};
+    if (ImGui::DragFloat2("X-Range", xR, 0.01f, 0.0f, 100.0f))
+        if (xR[1] > xR[0] + 0.01f)
         {
-            _curveDelegate->m_min.y = yRange[0];
-            _curveDelegate->m_max.y = yRange[1];
+            _curveDelegate->m_min.x = xR[0];
+            _curveDelegate->m_max.x = xR[1];
         }
-        if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("カーブの値(Y軸)の表示範囲");
-        ImGui::SameLine();
+    ImGui::SameLine();
+    if (ImGui::Button("Fit"))
+        _fitCurveView = true;
 
-        ImGui::SetNextItemWidth(130);
-        float xRange[2] = {_curveDelegate->m_min.x, _curveDelegate->m_max.x};
-        if (ImGui::DragFloat2("X-Range", xRange, 0.01f, 0.0f, 100.0f))
+    ImGui::Checkbox("Speed", &_curveDelegate->visible[0]);
+    ImGui::SameLine();
+    ImGui::Checkbox("RootMotion", &_curveDelegate->visible[1]);
+    ImGui::SameLine();
+    ImGui::TextDisabled("[Scroll:Pan | Ctrl+Scroll:Zoom]");
+
+    if (_fitCurveView && _curveDelegate->targetSeq)
+    {
+        _curveDelegate->FitViewToDuration();
+        _fitCurveView = false;
+    }
+    _curveDelegate->SetSequence(&_editingSequence);
+
+    ImVec2 cPos  = ImGui::GetCursorScreenPos();
+    ImVec2 cSize = ImVec2(ImGui::GetContentRegionAvail().x, 260.0f);
+    DrawCurveEditorOverlay(ImGui::GetWindowDrawList(), cPos, cSize,
+        _curveDelegate->m_min, _curveDelegate->m_max, _curveDelegate->animDuration);
+    ImCurveEdit::Edit(*_curveDelegate, cSize, 999);
+
+    if (ImGui::IsMouseHoveringRect(cPos, ImVec2(cPos.x + cSize.x, cPos.y + cSize.y)))
+    {
+        const float wheel = ImGui::GetIO().MouseWheel;
+        if (wheel != 0.0f)
         {
-            if (xRange[1] > xRange[0] + 0.01f)
+            if (ImGui::GetIO().KeyCtrl)
             {
-                _curveDelegate->m_min.x = xRange[0];
-                _curveDelegate->m_max.x = xRange[1];
+                const float nx          = (ImGui::GetIO().MousePos.x - cPos.x) / cSize.x;
+                const float focus       = _curveDelegate->m_min.x + nx * (_curveDelegate->m_max.x - _curveDelegate->m_min.x);
+                const float zoom        = (wheel > 0.0f) ? 0.82f : 1.22f;
+                const float nr          = (_curveDelegate->m_max.x - _curveDelegate->m_min.x) * zoom;
+                _curveDelegate->m_min.x = focus - nx * nr;
+                _curveDelegate->m_max.x = _curveDelegate->m_min.x + nr;
+            }
+            else
+            {
+                const float pan = (_curveDelegate->m_max.x - _curveDelegate->m_min.x) * 0.12f * -wheel;
+                _curveDelegate->m_min.x += pan;
+                _curveDelegate->m_max.x += pan;
             }
         }
-        if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("時間(X軸)の表示範囲");
-        ImGui::SameLine();
-
-        if (ImGui::Button("Fit"))
-            _fitCurveView = true;
-        if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("アニメーションの長さに合わせてX軸をリセット");
-
-        ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
-        ImGui::Checkbox("Speed", &_curveDelegate->visible[0]);
-        ImGui::PopStyleColor();
-        ImGui::SameLine();
-        ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(0.0f, 0.65f, 1.0f, 1.0f));
-        ImGui::Checkbox("RootMotion", &_curveDelegate->visible[1]);
-        ImGui::PopStyleColor();
-        ImGui::SameLine();
-        ImGui::TextDisabled("[Scroll:Pan | Ctrl+Scroll:Zoom]");
-
-        if (_fitCurveView && _curveDelegate->targetSeq)
-        {
-            _curveDelegate->FitViewToDuration();
-            _fitCurveView = false;
-        }
-
-        _curveDelegate->SetSequence(&_editingSequence);
-
-        ImVec2      curveCanvasPos  = ImGui::GetCursorScreenPos();
-        ImVec2      availRegion     = ImGui::GetContentRegionAvail();
-        const float CURVE_H         = 260.0f;
-        ImVec2      curveCanvasSize = ImVec2(availRegion.x, CURVE_H);
-
-        DrawCurveEditorOverlay(
-            ImGui::GetWindowDrawList(),
-            curveCanvasPos, curveCanvasSize,
-            _curveDelegate->m_min, _curveDelegate->m_max,
-            _curveDelegate->animDuration);
-
-        ImCurveEdit::Edit(*_curveDelegate, curveCanvasSize, 999);
-
-        if (ImGui::IsMouseHoveringRect(curveCanvasPos,
-                ImVec2(curveCanvasPos.x + curveCanvasSize.x,
-                    curveCanvasPos.y + curveCanvasSize.y)))
-        {
-            const float wheel = ImGui::GetIO().MouseWheel;
-            if (wheel != 0.0f)
-            {
-                if (ImGui::GetIO().KeyCtrl)
-                {
-                    const float mouseNX =
-                        (ImGui::GetIO().MousePos.x - curveCanvasPos.x) / curveCanvasSize.x;
-                    const float focusT =
-                        _curveDelegate->m_min.x + mouseNX * (_curveDelegate->m_max.x - _curveDelegate->m_min.x);
-                    const float zoomFactor = (wheel > 0.0f) ? 0.82f : 1.22f;
-                    const float newRange =
-                        (_curveDelegate->m_max.x - _curveDelegate->m_min.x) * zoomFactor;
-                    _curveDelegate->m_min.x = focusT - mouseNX * newRange;
-                    _curveDelegate->m_max.x =
-                        _curveDelegate->m_min.x + newRange;
-                }
-                else
-                {
-                    const float panStep =
-                        (_curveDelegate->m_max.x - _curveDelegate->m_min.x) * 0.12f * -wheel;
-                    _curveDelegate->m_min.x += panStep;
-                    _curveDelegate->m_max.x += panStep;
-                }
-            }
-        }
-
-        ImGui::Spacing();
-        ImGui::Separator();
     }
 
     ImGui::EndTable();

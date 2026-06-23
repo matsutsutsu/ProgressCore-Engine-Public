@@ -3,7 +3,6 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include <cmath>
-#include "Engine/Core/Math/StringHash.h"
 
 #include "Engine/Animation/Core/AnimEventMessages.h"
 #include "Engine/Animation/Core/AnimationCurve.h"
@@ -15,6 +14,11 @@
 // ===================================================================================
 // ファイル: AnimationSystem.cpp
 // 概要: アニメーションの「時間進行」と「イベント発火」を担う実働システム
+//
+// [ イベント発火の方針 ]
+//   点イベント(Sound/Effect/SpawnHitbox) は EventBus で1回だけ発火。
+//   区間状態イベント(HitBox/Trail/Blackboard) は発火せず、各専用システムが
+//   区間ポーリングで読み取る（AnimEventType で型安全に分岐）。
 // ===================================================================================
 
 AnimationSystem::AnimationSystem()
@@ -41,7 +45,6 @@ void AnimationSystem::Update(float dt)
         float curveMultiplier = 1.0f;
         if (animator.activeCurve)
         {
-            // duration が 0 のときの 0除算/NaN を回避
             float progress  = (seq->duration > 0.0f) ? (animator.currentTimer / seq->duration) : 0.0f;
             curveMultiplier = animator.activeCurve->Evaluate(progress);
         }
@@ -76,8 +79,8 @@ void AnimationSystem::Update(float dt)
         }
 
         // ========================================================
-        // 2. 高速イベント発火ロジック (O(1)アクセス)
-        //    ※ 順方向再生時のみ発火。逆再生時は栞を現在時刻へ再同期する。
+        // 2. イベント発火ロジック (O(1)栞アクセス)
+        //    点イベントのみ発火。区間状態イベントは各専用システムが読む。
         // ========================================================
         if (movedForward)
         {
@@ -85,41 +88,51 @@ void AnimationSystem::Update(float dt)
             {
                 const auto &evt = seq->events[animator.nextEventIndex];
 
-                // まだイベントの時間に達していなければ、これ以上の走査は不要
+                // まだイベントの時間に達していなければ走査終了
                 if (animator.currentTimer >= evt.startTime)
                 {
+                    switch (evt.type)
+                    {
+                    case AnimEventType::Sound:
+                        // 点イベント: FMOD 再生を依頼
+                        _world->GetEventBus().Publish(
+                            AnimEventSoundMessage{id, evt.stringParam});
+                        break;
 
-                    // 文字列を数値に変換し、switch文で最速のジャンプを行う
-                    //uint32_t eventHash = CCL::Utils::HashString(evt.eventName.c_str());
+                    case AnimEventType::Effect:
+                        // 点イベント: Effekseer 生成を依頼（オフセット/スケール/追従を渡す）
+                        _world->GetEventBus().Publish(
+                            AnimEventEffectMessage{
+                                id, evt.stringParam, evt.offset,
+                                evt.effectScale, evt.effectFollow});
+                        break;
 
-                    //switch (eventHash)
-                    //{
-                    //case CCL::Utils::HashString("HitBox_Start"):
-                    //    _world->GetEventBus().Publish(AnimEventHitBoxMessage{id, true});
-                    //    break;
-                    //case CCL::Utils::HashString("HitBox_End"):
-                    //    _world->GetEventBus().Publish(AnimEventHitBoxMessage{id, false});
-                    //    break;
-                    //case CCL::Utils::HashString("Play_Sound"):
-                    //    _world->GetEventBus().Publish(AnimEventSoundMessage{id});
-                    //    break;
-                    //case CCL::Utils::HashString("Play_Effect"):
-                    //    _world->GetEventBus().Publish(AnimEventEffectMessage{id, evt.stringParam});
-                    //    break;
-                    //case CCL::Utils::HashString("HitBox"):
-                    //    // [重要] Hitbox は CombatAnimationSyncSystem が直接「状態」として
-                    //    // 読み取って処理するため、イベントバスに投げる必要はない。無視してよい。
-                    //    break;
-                    //default:
-                    //    // 未知のイベントは無視
-                    //    break;
-                    //}
+                    case AnimEventType::SpawnHitbox:
+                        // 点イベント: 空間に独立した球状ヒットボックスを生成依頼
+                        _world->GetEventBus().Publish(
+                            AnimEventSpawnHitboxMessage{
+                                id, evt.offset, evt.radius,
+                                evt.damage, evt.hitStopDuration});
+                        break;
+
+                    case AnimEventType::HitBox:
+                    case AnimEventType::Trail:
+                    case AnimEventType::Blackboard:
+                        // 区間状態イベント: 専用システムが区間ポーリングで読むため発火しない。
+                        //   HitBox      → CombatAnimationSyncSystem
+                        //   Trail       → (Trail制御システム)
+                        //   Blackboard  → (AIのBB更新システム / 現状未実装)
+                        break;
+
+                    default:
+                        break;
+                    }
 
                     animator.nextEventIndex++;
                 }
                 else
                 {
-                    break; // まだ時間が来ていないイベントに当たったらループを抜ける
+                    break; // まだ時間が来ていないイベントに当たったら抜ける
                 }
             }
         }
@@ -138,7 +151,6 @@ void AnimationSystem::Update(float dt)
             {
                 if (animator.isLoop)
                 {
-                    // ループ時: 時間を丸め込み、イベントの栞を最初に戻す
                     animator.currentTimer   = fmod(animator.currentTimer, seq->duration);
                     animator.nextEventIndex = 0;
                 }
@@ -150,7 +162,6 @@ void AnimationSystem::Update(float dt)
             }
             else if (animator.currentTimer < 0.0f)
             {
-                // 逆再生で先頭を下回った場合
                 if (animator.isLoop)
                 {
                     animator.currentTimer = fmod(animator.currentTimer, seq->duration) + seq->duration;
@@ -173,40 +184,31 @@ void AnimationSystem::Update(float dt)
 
             if (animIndex != -1)
             {
-                // ブレンド中の場合は2つのアニメーションを計算して混ぜる
                 if (animator.isBlending && animator.previousSequence)
                 {
                     int prevAnimIndex = model->GetAnimationIndex(animator.previousSequence->targetAnimName.c_str());
 
                     if (prevAnimIndex != -1)
                     {
-                        // ① 過去の姿勢を B に保存
                         model->ComputeAnimation(prevAnimIndex, animator.previousTimer, animator.poseBufferB);
-                        // ② 現在の姿勢を A に保存
                         model->ComputeAnimation(animIndex, animator.currentTimer, animator.poseBufferA);
 
-                        // ③ 補間率 (0.0 ~ 1.0) を算出してクランプ
                         float blendRate = (animator.blendDuration > 0.0f)
                                               ? (animator.currentBlendTime / animator.blendDuration)
                                               : 1.0f;
                         blendRate       = std::fmax(0.0f, std::fmin(blendRate, 1.0f));
 
-                        // ④ BとAを混ぜ合わせ、結果を A に上書きする
                         Model::BlendAnimations(animator.poseBufferB, animator.poseBufferA, blendRate, animator.poseBufferA);
-
-                        // ⑤ 混ぜた結果を骨に適用
                         model->SetNodePoses(animator.poseBufferA);
                     }
                     else
                     {
-                        // 過去のデータが見つからなければ通常再生
                         model->ComputeAnimation(animIndex, animator.currentTimer, animator.poseBufferA);
                         model->SetNodePoses(animator.poseBufferA);
                     }
                 }
                 else
                 {
-                    // ★ 通常の単独再生
                     model->ComputeAnimation(animIndex, animator.currentTimer, animator.poseBufferA);
                     model->SetNodePoses(animator.poseBufferA);
                 }

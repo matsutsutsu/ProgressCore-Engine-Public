@@ -21,6 +21,10 @@
             "visible": true
         },
         {
+            "name": "Sequencer",
+            "visible": true
+        },
+        {
             "name": "State Tree Editor",
             "visible": false
         },
