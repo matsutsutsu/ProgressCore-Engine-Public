@@ -28,16 +28,13 @@ struct CameraDollyCartComponent
 {
     std::string pathAsset = "";
 
-    // 変更：tではなく「メートル(距離)」で管理する
     float currentDistance = 0.0f;
-
-    // 変更：moveSpeedの意味が「m/s」になる
-    float moveSpeed = 5.0f;
-
-    bool lookForward = true;
-
-    // 変更：前方注視オフセットも「m」になる（例: 常に2m先を見る）
+    float moveSpeed       = 5.0f;
+    bool  lookForward     = true;
     float lookAheadOffset = 2.0f;
 
     std::shared_ptr<CameraPathAsset> loadedPath = nullptr;
+
+    // ★追加: 毎フレームのエラーログスパムを防止するための実行時フラグ
+    bool hasLoadError = false;
 };

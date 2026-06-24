@@ -1,3 +1,5 @@
 {
-    "DialogHistory": {}
+    "DialogHistory": {
+        "CameraPath": "Assets\\Prefabs\\Camera"
+    }
 }

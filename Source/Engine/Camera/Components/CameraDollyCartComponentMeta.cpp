@@ -9,6 +9,7 @@
 #ifdef ENABLE_EDITOR
 #include "Engine/Platform/Core/Dialog.h"     // 独自ダイアログAPIの想定パス
 #include "Engine/Platform/Core/FileSystem.h" // 仮想パス処理の想定パス
+#include <json.hpp>
 #endif
 
 template <>
@@ -32,19 +33,47 @@ struct ComponentMeta<CameraDollyCartComponent>
         if (ImGui::InputText("Path File", pathBuf, sizeof(pathBuf)))
         {
             comp.pathAsset = pathBuf;
-            comp.loadedPath.reset(); // パスが手動で書き換えられたら再ロードを促す
-            changed = true;
+            comp.loadedPath.reset();
+            comp.hasLoadError = false; // ★追加: 手入力でパスが変わったらエラーフラグを解除して再試行を許可する
+            changed           = true;
         }
 
-        ImGui::SameLine();
+        // --- 既存の Browse ボタン ---
         if (ImGui::Button("Browse..."))
         {
-            // 指示書厳守: OSダイアログを開き、絶対パスを相対パスに変換して保存する
             if (auto pathOpt = Engine::FileDialog::OpenPreset("CameraPath"))
             {
                 comp.pathAsset = Engine::FileDialog::ConvertToRelativePath(*pathOpt);
-                comp.loadedPath.reset(); // 違うファイルが選ばれたらキャッシュを破棄
-                changed = true;
+                comp.loadedPath.reset();
+                comp.hasLoadError = false; // ★追加: エラー解除
+                changed           = true;
+            }
+        }
+
+        ImGui::SameLine();
+
+        // --- ★追加: New ボタン (新規作成ワークフロー) ---
+        if (ImGui::Button("Create New..."))
+        {
+            // OSの保存ダイアログを開く
+            if (auto pathOpt = Engine::FileDialog::SavePreset("CameraPath", "Create New Camera Path"))
+            {
+                std::string relPath = Engine::FileDialog::ConvertToRelativePath(*pathOpt);
+
+                // 初期の軌道データ（2つのウェイポイントを持つ最低限のデータ）を作成
+                nlohmann::json j;
+                j["points"] = nlohmann::json::array();
+                j["points"].push_back({{"x", 0.0f}, {"y", 0.0f}, {"z", 0.0f}});
+                j["points"].push_back({{"x", 0.0f}, {"y", 0.0f}, {"z", 5.0f}}); // 5m先の点
+
+                // 物理ファイルとしてディスクに書き出す
+                FileSystem::WriteAllText(relPath, j.dump(4));
+
+                // コンポーネントに自動セットアップ
+                comp.pathAsset = relPath;
+                comp.loadedPath.reset();
+                comp.hasLoadError = false; // エラー解除
+                changed           = true;
             }
         }
 

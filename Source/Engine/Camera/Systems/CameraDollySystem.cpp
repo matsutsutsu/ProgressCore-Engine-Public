@@ -119,8 +119,8 @@ void CameraDollySystem::Update(float /*rawDt*/)
     // 警告: 物理時間は必ず time.localDt を使う
 
     ForEach([](VirtualCamera &vcam, CameraDollyCartComponent &cart, const TimeStateComponent &time) {
-        // 1. リソースの遅延ロードと LUT の構築
-        if (!cart.loadedPath && !cart.pathAsset.empty())
+        // 1. リソースの遅延ロード (未ロード かつ エラー未発生 の場合のみ試行)
+        if (!cart.loadedPath && !cart.pathAsset.empty() && !cart.hasLoadError)
         {
             std::string jsonStr = FileSystem::ReadAllText(cart.pathAsset);
             if (!jsonStr.empty())
@@ -139,7 +139,6 @@ void CameraDollySystem::Update(float /*rawDt*/)
                         }
                     }
 
-                    // ★追加：ロード直後にLUTを構築する
                     BuildLookupTable(*cart.loadedPath);
 
                     CCL_LOG_SUCCESS(LogCategory::Game, "Loaded Camera Path: %s (Length: %.2fm)",
@@ -147,8 +146,14 @@ void CameraDollySystem::Update(float /*rawDt*/)
                 }
                 catch (const std::exception &e)
                 {
+                    cart.hasLoadError = true; // ★追加: パース失敗なら再試行しない
                     CCL_LOG_ERROR(LogCategory::Game, "Failed to parse Camera Path: %s\n%s", cart.pathAsset.c_str(), e.what());
                 }
+            }
+            else
+            {
+                cart.hasLoadError = true; // ★追加: ファイル不在または空なら再試行しない
+                CCL_LOG_ERROR(LogCategory::Game, "Camera Path file not found or empty: %s", cart.pathAsset.c_str());
             }
         }
 

@@ -49,6 +49,9 @@ struct EditorContext {
      ImGuizmo::MODE      currentGizmoMode = ImGuizmo::LOCAL;
 #endif
 
+     // ★ パスエディタと3Dビューポートの連携用
+     int editingPathNodeIndex = -1; // -1 なら何も選択していない
+
      // ★ ImGuiに渡すためのゲーム画面テクスチャ
      void* gameSRV = nullptr;
 };

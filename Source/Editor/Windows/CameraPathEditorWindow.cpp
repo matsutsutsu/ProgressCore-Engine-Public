@@ -21,6 +21,15 @@ void CameraPathEditorWindow::DrawContents(EditorContext &context)
     if (!context.world)
         return;
 
+    // 別のエンティティが選択されたらインデックスをリセットする保護処理
+    static CCL::ECS::EntityID lastSelectedEntity = CCL::ECS::InvalidEntityID;
+    if (context.selectedEntity != lastSelectedEntity)
+    {
+        _selectedPointIndex          = -1;
+        context.editingPathNodeIndex = -1;
+        lastSelectedEntity           = context.selectedEntity;
+    }
+
     // 1. 対象エンティティのバリデーション
     if (context.selectedEntity == InvalidEntityID)
     {
@@ -132,6 +141,9 @@ void CameraPathEditorWindow::DrawContents(EditorContext &context)
         }
         ImGui::EndListBox();
     }
+
+    // ★ 追加: Contextへの同期（GameViewWindowのImGuizmoに伝えるため）
+    context.editingPathNodeIndex = _selectedPointIndex;
 
     // -------------------------------------------------------------
     // 選択頂点の編集部 (Inspector風)
