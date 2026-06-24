@@ -1,7 +1,5 @@
 #include "BaseScene.h"
 
-
-#include "Engine/Serialization/Serializer/SceneSerializer.h"
 #include "Engine/Serialization/Factory/Prefab.h"
 #include "Engine/Serialization/Factory/SceneInitializer.h"
 
@@ -96,9 +94,6 @@ void BaseScene::Initialize()
 
     // システム登録 (派生クラスの処理が走る)
     RegisterSystems();
-
-    // GPUパーティクル事前準備　オブジェクトプール用に最初に確保しておく
-    //Prefab::PrewarmParticles(*_worldPtr);
 
 }
 

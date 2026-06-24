@@ -3,22 +3,14 @@
 #include "Engine/Graphics/RHI/Graphics.h"
 
 #include "Engine/Serialization/Factory/Prefab.h"
-
 #include "Engine/Platform/Core/Logger.h"
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
-
-#include "Editor/Core/EditorCommandHistory.h"
-#include "Engine/Transform/Components/TransformComponent.h"
-
-#include "Engine/Transform/Systems/TransformUpdateSystem.h"
 
 
 #include "Game/Logics/AI/StateTree/EnemyAI/EnemyAI.h"
 #include "Game/Logics/AI/StateTree/Core/StateTreeRegistry.h"
 
-
-// RuneForgeの処理を削除します
 
 void EditorScene::Initialize()
 {
@@ -47,9 +39,7 @@ void EditorScene::Initialize()
 
 void EditorScene::Finalize() 
 {
-
     BaseScene::Finalize(); // 共通終了化
-
 }
 
 void EditorScene::RegisterSystems()
