@@ -8,6 +8,7 @@
 
 #include "Game/Logics/GameEvent/GameEvents.h"
 #include "Engine/Physics/Components/Character/CharacterMovementInputComponent.h"
+#include "Game/Logics/Combat/DeadTag.h"
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
@@ -51,50 +52,96 @@ void CameraActionTPSSystem::Initialize()
 
 }
 
-
 void CameraActionTPSSystem::Update(float dt)
 {
     if (!_world->HasResource<std::shared_ptr<IInputAPI>>())
         return;
     auto inputAPI = _world->GetResource<std::shared_ptr<IInputAPI>>();
 
-    // デバイス入力の回収（右スティック/マウス移動量）
     float lookX = inputAPI->GetAxis("LookX");
     float lookY = inputAPI->GetAxis("LookY");
 
+    // ForEachは IfSystem のテンプレート引数(3つのコンポーネント)と完全に一致させる
     ForEach([&](VirtualCamera &vcam, CameraBodyTPSComponent &tps, TransformComponent &trans) {
-        // 1. 追従対象（プレイヤー）のTransformを取得
+        // 1. 追従対象（プレイヤー）の取得
         auto *targetTrans = _world->GetComponent<TransformComponent>(tps.target.id);
         if (!targetTrans)
             return;
 
-        // 2. 入力による回転（オービット）の更新
-        tps.currentYaw += lookX * tps.lookSpeedX * dt;
-        tps.currentPitch += lookY * tps.lookSpeedY * dt;
-        tps.currentPitch = std::clamp(tps.currentPitch, tps.minPitch, tps.maxPitch);
+        // 2. ロックオン対象（エネミー）の生存確認とTransform取得
+        auto *enemyTrans = tps.isLockOnActive ? _world->GetComponent<TransformComponent>(tps.lockOnTarget.id) : nullptr;
 
-       // 3. 理想の注視点(ワールド空間)の算出
-        Vector3 idealLookAt = targetTrans->position + tps.targetOffset;
-
-        // ルックアヘッド (進行方向へ注視点をずらす)
-        // FIXME:　ECSシステム内でGetComponentするぐらいならArchetypeに含む、一応値は書き換えていない
-        auto *targetInput = _world->GetComponent<CharacterMovementInputComponent>(tps.target.id);
-        if (targetInput)
+        // 敵が死亡タグを持っていたらロックオンを自動終了させる安全ハック
+        if (tps.isLockOnActive && (!enemyTrans || _world->HasComponent<Tag::DeadTag>(tps.lockOnTarget.id)))
         {
-            // ターゲットの現在の速度ベクトルを取得（縦揺れによる酔いを防ぐためY軸は潰す）
-            Vector3 vel = targetInput->currentVelocity;
-            vel.y       = 0.0f;
-
-            Vector3 targetLookahead = vel * tps.lookaheadMultiplier;
-
-            // ルックアヘッド量自体も滑らかに補間する（急ブレーキ時の視点ガタつき防止）
-            float laBlend        = 1.0f - std::exp(-tps.lookaheadDamping * dt);
-            tps.currentLookahead = Vector3::Lerp(tps.currentLookahead, targetLookahead, laBlend);
-
-            idealLookAt += tps.currentLookahead;
+            tps.isLockOnActive = false;
+            enemyTrans         = nullptr;
         }
 
-        // 初回フレームは補間をスキップして強制ターゲット同期
+        // 3. オービット（回転角）の決定
+        // 3. オービット（回転角）の決定
+        if (enemyTrans)
+        {
+            // ===============================================================
+            // 【ロックオンモード】: 球面座標系に完全準拠した角度の自動逆算
+            // ===============================================================
+            // backwardDir は実質的に「カメラのForwardベクトル」として機能しているため、
+            // 「プレイヤーから敵へ向かうベクトル」を算出して向きを合わせる
+            Vector3 playerToEnemy = enemyTrans->position - targetTrans->position;
+
+            // X軸=cos, Z軸=sin の球面座標系に完全に噛み合わせる
+            float idealYawRad = atan2f(playerToEnemy.z, playerToEnemy.x);
+            float idealYawDeg = XMConvertToDegrees(idealYawRad);
+
+            // 最短回転（角度の180度跨ぎでカメラが逆回転するのを防ぐハック）
+            float yawDiff = idealYawDeg - tps.currentYaw;
+            while (yawDiff > 180.0f)
+                yawDiff -= 360.0f;
+            while (yawDiff < -180.0f)
+                yawDiff += 360.0f;
+
+            // 滑らかな自動回り込み補間
+            float rotBlend = 1.0f - std::exp(-tps.lockOnRotationDamping * dt);
+            tps.currentYaw += yawDiff * rotBlend;
+
+            // ピッチ角はエディタの設定値へ自動追従
+            tps.currentPitch = std::lerp(tps.currentPitch, tps.lockOnPitch, rotBlend);
+        }
+        else
+        {
+            // ===============================================================
+            // 【通常モード】: スティック入力による自由カメラ操作
+            // ===============================================================
+            tps.currentYaw += lookX * tps.lookSpeedX * dt;
+            tps.currentPitch += lookY * tps.lookSpeedY * dt;
+            tps.currentPitch = std::clamp(tps.currentPitch, tps.minPitch, tps.maxPitch);
+        }
+
+        // 4. 注視点（LookAt）の算出
+        Vector3 idealLookAt = targetTrans->position + tps.targetOffset;
+
+        if (enemyTrans)
+        {
+            // ★ AAAハック: 自分と敵の中間地点をブレンド計算し、両方を画面に収める
+            Vector3 enemyCorePos = enemyTrans->position + tps.targetOffset; // 敵もプレイヤーと同じ高さのコアを狙う
+            idealLookAt          = Vector3::Lerp(idealLookAt, enemyCorePos, tps.lockOnSubjugationRatio);
+        }
+        else
+        {
+            // 通常時のみルックアヘッド（進行方向への視点ズレ）を適用
+            auto *targetInput = _world->GetComponent<CharacterMovementInputComponent>(tps.target.id);
+            if (targetInput)
+            {
+                Vector3 vel             = targetInput->currentVelocity;
+                vel.y                   = 0.0f;
+                Vector3 targetLookahead = vel * tps.lookaheadMultiplier;
+                float   laBlend         = 1.0f - std::exp(-tps.lookaheadDamping * dt);
+                tps.currentLookahead    = Vector3::Lerp(tps.currentLookahead, targetLookahead, laBlend);
+                idealLookAt += tps.currentLookahead;
+            }
+        }
+
+        // 初回フレーム初期化
         if (tps.isFirstFrame)
         {
             tps.currentLookAt = idealLookAt;
@@ -102,11 +149,11 @@ void CameraActionTPSSystem::Update(float dt)
             tps.isFirstFrame  = false;
         }
 
-        // 4. フレームレート非依存の指数減衰（Exponential Decay）による遅延追従
+        // 5. 指数減衰による追従
         float posBlend    = 1.0f - std::exp(-tps.positionDamping * dt);
         tps.currentLookAt = Vector3::Lerp(tps.currentLookAt, idealLookAt, posBlend);
 
-        // 5. 球面座標からカメラの配置方向ベクトルを逆算
+        // 6. 球面座標から配置位置の算出
         float pitchRad = XMConvertToRadians(tps.currentPitch);
         float yawRad   = XMConvertToRadians(tps.currentYaw);
 
@@ -116,37 +163,33 @@ void CameraActionTPSSystem::Update(float dt)
         backwardDir.z = sinf(yawRad) * cosf(pitchRad);
         backwardDir.Normalize();
 
-        // 仮想注視点から距離分だけ後ろに引いた位置を最終座標とする
         Vector3 finalPos = tps.currentLookAt - (backwardDir * tps.distance);
 
-        // 6. 動的FOVの適用（ダッシュ状態の検知）
+        // 7. 動的FOV
         float targetFov = tps.baseFov;
         auto *dash      = _world->GetComponent<DashComponent>(tps.target.id);
         if (dash && dash->isDashing)
         {
             targetFov = tps.dashFov;
         }
-
-        // FOVも指数減衰で滑らかに遷移
         float fovBlend = 1.0f - std::exp(-tps.fovDamping * dt);
         vcam.fov       = std::lerp(vcam.fov, targetFov, fovBlend);
 
-        // 7. データメンバの更新と同期
+        // 8. TransformとVirtualCameraバッファの更新
         trans.position = finalPos;
 
-        // 回転行列の作成（LookAtから逆算）
         XMMATRIX lookMat = XMMatrixLookToLH(XMVectorZero(), backwardDir, Vector3::Up);
         XMVECTOR det;
         XMMATRIX worldRot = XMMatrixInverse(&det, lookMat);
         trans.rotation    = Quaternion::CreateFromRotationMatrix(worldRot);
 
-        // 仮想カメラバッファへの書き込み（CameraBrainへの最終伝達データ）
         vcam.resultPos    = finalPos;
         vcam.resultLookAt = tps.currentLookAt;
         vcam.resultUp     = Vector3::Up;
         vcam.isValid      = true;
     });
 }
+
 
 // 描画ステージ（Render）ではなく、ロジック確定直後のL02フェーズでカメラの姿勢を確定させる
 REGISTER_LOGIC_SYSTEM(CameraActionTPSSystem, Priority::LogicStage::L02_Update);

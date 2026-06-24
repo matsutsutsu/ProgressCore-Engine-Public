@@ -30,30 +30,38 @@ struct ComponentMeta<CameraBodyTPSComponent>
         bool changed = false;
 
         // =========================================================
-        // 1. ターゲットリンク (他のカメラコンポーネントとUXを完全統一)
+        // 1. ターゲットリンク (ドラッグ＆ドロップ対応)
         // =========================================================
-        ImGui::SeparatorText("Target Link");
+        ImGui::SeparatorText(u8"追従・注視ターゲット設定");
 
-        int targetInt = static_cast<int>(comp.target.id);
-        if (ImGui::InputInt("Target ID", &targetInt)) {
-            comp.target.id = static_cast<unsigned long long>((std::max)(0, targetInt));
-            changed = true;
-        }
-
-        if (ImGui::BeginDragDropTarget()) {
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_ENTITY_ID")) {
-                unsigned long long droppedID = *(const unsigned long long*)payload->Data;
-                comp.target.id = droppedID;
-                changed = true;
+        auto RenderEntityLinkBox = [](const char *label, CCL::Serialization::EntityLink &link) -> bool {
+            bool        dndChanged = false;
+            std::string btnLabel   = (link.id == 0) ? std::string(label) + ": None (Drag Entity)" : std::string(label) + " ID: " + std::to_string(link.id);
+            ImGui::Button(btnLabel.c_str(), ImVec2(-1, 0));
+            if (ImGui::BeginDragDropTarget())
+            {
+                if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("DND_ENTITY_ID"))
+                {
+                    link.id    = *(const unsigned long long *)payload->Data;
+                    dndChanged = true;
+                }
+                ImGui::EndDragDropTarget();
             }
-            ImGui::EndDragDropTarget();
-        }
-        ImGui::TextColored(ImVec4(0.5f, 0.8f, 1.0f, 1.0f), "[ Drop Entity Here from Hierarchy ]");
+            return dndChanged;
+        };
 
+        changed |= RenderEntityLinkBox("Player Target", comp.target);
+        changed |= RenderEntityLinkBox("LockOn Enemy", comp.lockOnTarget);
 
         // =========================================================
         // 2. パラメータの描画 (「日本語（変数名）」形式で統一)
         // =========================================================
+        ImGui::SeparatorText(u8"ロックオン設定 (Lock-on Settings)");
+        changed |= ImGui::Checkbox(u8"ロックオン有効化 (isLockOnActive)", &comp.isLockOnActive);
+        changed |= ImGui::DragFloat(u8"ロックオン固定ピッチ (lockOnPitch)", &comp.lockOnPitch, 0.5f, -60.0f, 60.0f);
+        changed |= ImGui::DragFloat(u8"敵への注視偏重率 (lockOnSubjugationRatio)", &comp.lockOnSubjugationRatio, 0.01f, 0.0f, 0.5f);
+        changed |= ImGui::DragFloat(u8"自動回り込み速度 (lockOnRotationDamping)", &comp.lockOnRotationDamping, 0.1f, 1.0f, 20.0f);
+
         ImGui::SeparatorText(u8"位置・追従 (Positioning)");
         changed |= ImGui::DragFloat3(u8"注視点オフセット (targetOffset)", &comp.targetOffset.x, 0.1f);
         changed |= ImGui::DragFloat(u8"カメラ距離 (distance)", &comp.distance, 0.1f, 1.0f, 100.0f);
@@ -77,8 +85,7 @@ struct ComponentMeta<CameraBodyTPSComponent>
         ImGui::SeparatorText(u8"滑らかさ (Smoothing)");
         changed |= ImGui::DragFloat(u8"位置追従遅延 (positionDamping)", &comp.positionDamping, 0.1f, 0.0f, 50.0f);
         changed |= ImGui::DragFloat(u8"視野角補間速度 (fovDamping)", &comp.fovDamping, 0.1f, 0.0f, 50.0f);
-        
-        // ★追加：ルックアヘッドのGUI
+
         ImGui::SeparatorText(u8"ルックアヘッド (Lookahead)");
         changed |= ImGui::DragFloat(u8"前方注視係数 (lookaheadMultiplier)", &comp.lookaheadMultiplier, 0.05f, 0.0f, 5.0f);
         changed |= ImGui::DragFloat(u8"注視遅延 (lookaheadDamping)", &comp.lookaheadDamping, 0.1f, 0.0f, 50.0f);
@@ -96,8 +103,12 @@ struct ComponentMeta<CameraBodyTPSComponent>
     static const std::vector<FieldDescriptor> &Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
-            // ★追加: 追従ターゲット(EntityLink)のシリアライズ漏れを防ぐ
             CFIELD(target, "Target", "Settings")
+            CFIELD(lockOnTarget, "LockOn Target", "Settings")
+            CFIELD(isLockOnActive, u8"ロックオン有効化 (isLockOnActive)", "LockOn")
+            CFIELD_FLOAT_RANGED(lockOnPitch, u8"ロックオン固定ピッチ (lockOnPitch)", 0.5f, -60.0f, 60.0f, "LockOn")
+            CFIELD_FLOAT_RANGED(lockOnSubjugationRatio, u8"敵への注視偏重率 (lockOnSubjugationRatio)", 0.01f, 0.0f, 0.5f, "LockOn")
+            CFIELD_FLOAT_RANGED(lockOnRotationDamping, u8"自動回り込み速度 (lockOnRotationDamping)", 0.1f, 1.0f, 20.0f, "LockOn")
 
             CFIELD_FLOAT3_FAST(targetOffset, "Target Offset", 0.1f, "Positioning")
             CFIELD_FLOAT_RANGED(distance, "Distance", 0.1f, 1.0f, 100.0f, "Positioning")
@@ -114,7 +125,6 @@ struct ComponentMeta<CameraBodyTPSComponent>
             CFIELD_FLOAT_RANGED(lookaheadMultiplier, u8"前方注視係数 (lookaheadMultiplier)", 0.05f, 0.0f, 5.0f, "Lookahead")
             CFIELD_FLOAT_RANGED(lookaheadDamping, u8"注視遅延 (lookaheadDamping)", 0.1f, 0.0f, 50.0f, "Lookahead")
             
-            // ★修正: Vector3 型なので CFIELD_FLOAT3_FAST に変更！
             CFIELD_FLOAT3_FAST(currentLookahead, u8"現在の注視オフセット (currentLookahead)", 0.1f, "State")
         };
         return fields;

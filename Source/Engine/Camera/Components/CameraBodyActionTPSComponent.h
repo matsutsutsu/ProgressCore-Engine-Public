@@ -35,6 +35,15 @@ struct CameraBodyTPSComponent
 
     DirectX::SimpleMath::Vector3 currentLookahead = {0.0f, 0.0f, 0.0f}; ///< 内部状態
 
+    // =======================================================================
+    // ターゲット・ロックオンシステム用パラメータ
+    // =======================================================================
+    CCL::Serialization::EntityLink lockOnTarget;                   ///< ロックオン対象のエネミーEntity
+    bool                           isLockOnActive         = false; ///< ロックオンが現在有効かどうか
+    float                          lockOnPitch            = 12.0f; ///< ロックオン中の固定理想ピッチ角(度)
+    float                          lockOnSubjugationRatio = 0.35f; ///< 敵への注視偏重率 (0.0=プレイヤー中心, 0.5=完全な中間地点)
+    float                          lockOnRotationDamping  = 6.0f;  ///< ロックオン時のカメラ角度の自動回り込み補間速度
+
     // --- 実行時内部状態（シリアライズ不要） ---
     DirectX::SimpleMath::Vector3 currentLookAt = {0.0f, 0.0f, 0.0f}; ///< 補間計算用の仮想注視点座標
     bool                         isFirstFrame  = true;               ///< 初回フレームでのワープ初期化フラグ
