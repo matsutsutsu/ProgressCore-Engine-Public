@@ -51,7 +51,7 @@ void EditorWindowManager::Initialize()
     RegisterWindow<ECSDebugWindow>();
     RegisterWindow<ConsoleWindow>();
     RegisterWindow<AnimationSequencerWindow>();
-    //RegisterWindow<AnimGraphWindow>();
+    RegisterWindow<AnimGraphWindow>();
 	//RegisterWindow<BehaviorTreeWindow>();
     RegisterWindow<StateTreeWindow>();
     RegisterWindow<CameraPathEditorWindow>();

@@ -67,4 +67,31 @@ struct AnimParametersComponent {
             triggers.erase(it);
         }
     }
+
+    /// @brief Float→Bool の順で検索し、条件評価用の数値を返す。
+    /// @param hash  パラメータのハッシュ
+    /// @param outValue 見つかった値（Boolは1.0/0.0に変換）
+    /// @return いずれかに存在すれば true
+    /// @note AnimControllerSystem の遷移条件評価で使用。Float優先・Boolフォールバック。
+    bool TryGetNumeric(uint32_t hash, float &outValue) const
+    {
+        for (const auto &p : floats)
+        {
+            if (p.hash == hash)
+            {
+                outValue = p.value;
+                return true;
+            }
+        }
+        for (const auto &p : bools)
+        {
+            if (p.hash == hash)
+            {
+                outValue = p.value ? 1.0f : 0.0f;
+                return true;
+            }
+        }
+        return false;
+    }
+
 };

@@ -28,6 +28,9 @@ AnimationSystem::AnimationSystem()
 
 void AnimationSystem::Update(float dt)
 {
+    // 直列実行。Model は共有インスタンスを書き換える(SetNodePoses)ため、
+    // 安易な並列化はポーズの競合を招く。並列化する場合は Model のポーズ書き込みを
+    // エンティティ単位に分離してから行うこと。
     ForEachWithID([this](CCL::ECS::EntityID id, AnimatorComponent &animator, ModelComponent &modelComp, const TimeStateComponent &time) {
         // 台本（Sequence）がセットされていなければ何もしない
         if (!animator.currentSequence)

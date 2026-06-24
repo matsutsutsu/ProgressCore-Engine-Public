@@ -131,32 +131,10 @@ void AnimControllerSystem::Update(float dt)
                     continue;
                 }
 
+                // Float→Bool の順で検索（コンポーネント側ヘルパーに集約）。
+                // 見つからない場合は paramValue=0.0f のまま評価する（従来挙動を維持）。
                 float paramValue = 0.0f;
-                bool  isFound    = false;
-
-                // Float の検索
-                for (const auto &p : params.floats)
-                {
-                    if (p.hash == cond.paramHash)
-                    {
-                        paramValue = p.value;
-                        isFound    = true;
-                        break;
-                    }
-                }
-
-                // Float に無ければ Bool を検索して変換
-                if (!isFound)
-                {
-                    for (const auto &p : params.bools)
-                    {
-                        if (p.hash == cond.paramHash)
-                        {
-                            paramValue = p.value ? 1.0f : 0.0f;
-                            break;
-                        }
-                    }
-                }
+                params.TryGetNumeric(cond.paramHash, paramValue);
 
                 switch (cond.op)
                 {

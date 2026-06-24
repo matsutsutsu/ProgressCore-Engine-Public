@@ -25,6 +25,10 @@
             "visible": true
         },
         {
+            "name": "Anim Graph Editor",
+            "visible": true
+        },
+        {
             "name": "State Tree Editor",
             "visible": false
         },

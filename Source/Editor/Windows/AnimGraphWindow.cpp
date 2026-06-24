@@ -17,6 +17,7 @@
 #include <iomanip>
 
 namespace ed = ax::NodeEditor;
+using Engine::FileDialog;
 
 // =====================================================================
 // 安定ID採番ヘルパー
@@ -762,14 +763,9 @@ void AnimGraphWindow::DrawStateSettings(int nodeId)
         ImGui::TextDisabled("%s", state.sequenceFilePath.empty() ? "None" : state.sequenceFilePath.c_str());
         if (ImGui::Button("ファイルを選択 (Browse...)##Motion", ImVec2(-1, 0)))
         {
-            char filename[MAX_PATH] = {};
-            if (Dialog::OpenFileName(filename, MAX_PATH, "JSON Files\0*.json\0", "Select Anim Sequence",
-                    "Data/Animations/Node", GetActiveWindow()) == DialogResult::OK)
+            if (auto path = FileDialog::OpenPreset("AnimSequence", "Select Anim Sequence"))
             {
-                namespace fs = std::filesystem;
-                std::error_code ec;
-                fs::path        relPath = fs::relative(filename, fs::current_path(), ec);
-                state.sequenceFilePath  = (!ec && !relPath.empty()) ? relPath.generic_string() : filename;
+                state.sequenceFilePath = FileDialog::ConvertToRelativePath(*path);
             }
         }
 
@@ -864,41 +860,24 @@ void AnimGraphWindow::DrawTransitionSettings(int linkId)
 }
 
 
-void AnimGraphWindow::DrawToolbar() {
-    if (ImGui::Button("保存 (Save As...)")) {
-        char filename[MAX_PATH] = {};
-        auto result = Dialog::SaveFileName(
-            filename, MAX_PATH, "JSON Files\0*.json\0", "Save Anim Graph", "json",
-            "Data/Animations/Node", GetActiveWindow()
-        );
-
-        if (result == DialogResult::OK) {
-            namespace fs = std::filesystem;
-            fs::path absPath = filename;
-            fs::path currentPath = fs::current_path();
-            std::error_code ec;
-            fs::path relPath = fs::relative(absPath, currentPath, ec);
-            _currentFilePath = (!ec && !relPath.empty()) ? relPath.generic_string() : filename;
+void AnimGraphWindow::DrawToolbar()
+{
+    if (ImGui::Button("保存 (Save As...)"))
+    {
+        if (auto path = FileDialog::SavePreset("AnimNodes", "Save Anim Graph"))
+        {
+            _currentFilePath = FileDialog::ConvertToRelativePath(*path);
             SaveGraph(_currentFilePath);
         }
     }
 
     ImGui::SameLine();
 
-    if (ImGui::Button("読込 (Load...)")) {
-        char filename[MAX_PATH] = {};
-        auto result = Dialog::OpenFileName(
-            filename, MAX_PATH, "JSON Files\0*.json\0", "Select Anim Graph File",
-            "Data/Animations/Node", GetActiveWindow()
-        );
-
-        if (result == DialogResult::OK) {
-            namespace fs = std::filesystem;
-            fs::path absPath = filename;
-            fs::path currentPath = fs::current_path();
-            std::error_code ec;
-            fs::path relPath = fs::relative(absPath, currentPath, ec);
-            _currentFilePath = (!ec && !relPath.empty()) ? relPath.generic_string() : filename;
+    if (ImGui::Button("読込 (Load...)"))
+    {
+        if (auto path = FileDialog::OpenPreset("AnimNodes", "Select Anim Graph File"))
+        {
+            _currentFilePath = FileDialog::ConvertToRelativePath(*path);
             LoadGraph(_currentFilePath);
         }
     }
@@ -910,8 +889,8 @@ void AnimGraphWindow::DrawToolbar() {
     ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
     ImGui::SameLine();
 
-    if (ImGui::Button("全表示 (Focus All)")) ed::NavigateToContent();
-
+    if (ImGui::Button("全表示 (Focus All)"))
+        ed::NavigateToContent();
 }
 
 void AnimGraphWindow::SaveGraph(const std::string &path)
