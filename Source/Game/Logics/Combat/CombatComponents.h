@@ -54,8 +54,11 @@ struct DamageEventComponent
     CCL::ECS::EntityID attackerID  = CCL::ECS::InvalidEntityID; ///< 誰が攻撃したか
     float              finalDamage = 0.0f;                      ///< 計算済み最終ダメージ
 
-    bool isCritical = false; ///< 常に false（受け皿。将来のVFX分岐用に温存）
-
     DirectX::SimpleMath::Vector3 knockbackDir   = DirectX::SimpleMath::Vector3::Zero;
     float                        knockbackForce = 0.0f;
+
+    // --- ヒットストップ(判定時に確定、解決System が双方の時計へ適用) ---
+    float hitStopDuration = 0.0f; ///< ヒットストップ時間(秒)
+    float hitStopScale    = 0.0f; ///< 停止中のタイムスケール(0で完全停止)
+
 };

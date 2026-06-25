@@ -108,9 +108,10 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
     dmg.targetID       = victimCandidate;
     dmg.attackerID     = hitbox->ownerID;
     dmg.finalDamage    = finalDamage;
-    dmg.isCritical     = false; // クリティカル概念なし（受け皿のみ）
     dmg.knockbackDir   = knockDir;
     dmg.knockbackForce = knockForce;
+    dmg.hitStopDuration = hitbox->hitStopDuration; 
+    dmg.hitStopScale    = hitbox->hitStopScale;    
     entityRef.Set(dmg);
 
     CCL_LOG_INFO(LogCategory::Game,

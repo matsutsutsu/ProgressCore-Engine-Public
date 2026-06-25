@@ -34,7 +34,7 @@
         },
         {
             "name": "Camera Path Editor",
-            "visible": true
+            "visible": false
         },
         {
             "name": "Text Editor",
