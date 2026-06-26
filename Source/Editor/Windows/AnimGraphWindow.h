@@ -86,4 +86,16 @@ class AnimGraphWindow : public EditorWindow
 
     int  _paramRenameIndex = -1; ///< リネーム編集中のパラメータindex（-1=なし）
     char _paramNameBuf[64] = ""; ///< リネーム入力バッファ
+
+    // =====================================================================
+    // エディタの独自ステート管理 (Unity風 Make Transition用)
+    // =====================================================================
+    enum class EditorMode
+    {
+        Normal,
+        CreatingTransition
+    };
+    EditorMode _editorMode                 = EditorMode::Normal;
+    uint32_t   _transitionSourceHash       = 0;
+    bool       _isTransitionSourceAnyState = false;
 };
