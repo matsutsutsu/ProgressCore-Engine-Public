@@ -46,6 +46,14 @@ namespace {
 }
 
 // =====================================================================
+// エディタ内での遷移エフェクト（パルス）を管理するためのローカル状態
+// =====================================================================
+static uint32_t s_prevActiveState = 0;
+static uint32_t s_highlightSrc    = 0;
+static uint32_t s_highlightDst    = 0;
+static float    s_highlightTimer  = 0.0f;
+
+// =====================================================================
 // 矢印(三角形)のみを描画するヘルパー関数
 // =====================================================================
 static void DrawTriangleArrow(ImDrawList *drawList, const ImVec2 &p0, const ImVec2 &p1, ImU32 color)
@@ -57,14 +65,16 @@ static void DrawTriangleArrow(ImDrawList *drawList, const ImVec2 &p0, const ImVe
     dir.x /= length;
     dir.y /= length;
 
-    // 線分の真ん中より少し先に矢印を配置
-    ImVec2 midPoint  = ImVec2(p0.x + dir.x * (length * 0.55f), p0.y + dir.y * (length * 0.55f));
+    // ★ 矢印を線の真ん中ではなく、ターゲットノードの「直前（80px手前）」に配置する (Unity風)
+    float  offset   = std::min(length * 0.8f, 80.0f);
+    ImVec2 arrowPos = ImVec2(p1.x - dir.x * offset, p1.y - dir.y * offset);
+
     float  arrowSize = 7.0f;
     ImVec2 perp      = ImVec2(-dir.y, dir.x);
 
-    ImVec2 pt1 = ImVec2(midPoint.x + dir.x * arrowSize, midPoint.y + dir.y * arrowSize);
-    ImVec2 pt2 = ImVec2(midPoint.x - dir.x * arrowSize + perp.x * arrowSize * 0.8f, midPoint.y - dir.y * arrowSize + perp.y * arrowSize * 0.8f);
-    ImVec2 pt3 = ImVec2(midPoint.x - dir.x * arrowSize - perp.x * arrowSize * 0.8f, midPoint.y - dir.y * arrowSize - perp.y * arrowSize * 0.8f);
+    ImVec2 pt1 = ImVec2(arrowPos.x + dir.x * arrowSize, arrowPos.y + dir.y * arrowSize);
+    ImVec2 pt2 = ImVec2(arrowPos.x - dir.x * arrowSize + perp.x * arrowSize * 0.8f, arrowPos.y - dir.y * arrowSize + perp.y * arrowSize * 0.8f);
+    ImVec2 pt3 = ImVec2(arrowPos.x - dir.x * arrowSize - perp.x * arrowSize * 0.8f, arrowPos.y - dir.y * arrowSize - perp.y * arrowSize * 0.8f);
 
     drawList->AddTriangleFilled(pt1, pt2, pt3, color);
 }
@@ -390,6 +400,28 @@ void AnimGraphWindow::DrawNodeWorkspace()
         _nodeToPlaceHash = 0;
     }
 
+    // -----------------------------------------------------------------
+    // ★ 実行中のステート変化を検知して、遷移エフェクトのタイマーを発火させる
+    // -----------------------------------------------------------------
+    if (_runtimeActiveStateHash != s_prevActiveState)
+    {
+        if (s_prevActiveState != 0 && _runtimeActiveStateHash != 0)
+        {
+            s_highlightSrc = s_prevActiveState;
+            s_highlightDst = _runtimeActiveStateHash;
+
+            // ★ 高速遷移で残像が被らないよう、ハイライト時間を 0.3秒 に短縮
+            s_highlightTimer = 0.3f;
+        }
+        s_prevActiveState = _runtimeActiveStateHash;
+    }
+    if (s_highlightTimer > 0.0f)
+    {
+        s_highlightTimer -= ImGui::GetIO().DeltaTime;
+        if (s_highlightTimer < 0.0f)
+            s_highlightTimer = 0.0f;
+    }
+
     // --- ④ 標準リンクの描画（NodeEditorに当たり判定と描画順を任せる） ---
     _linkLut.clear();
     for (const auto &t : allTrans)
@@ -397,17 +429,58 @@ void AnimGraphWindow::DrawNodeWorkspace()
         int srcPin = GetOutPinId(t.src, t.dst);
         int dstPin = GetInPinId(t.src, t.dst);
 
-        bool   isSelected = (_selectedLinkId == t.linkId);
-        ImVec4 linkColor  = t.isAny ? ImVec4(0.4f, 0.8f, 0.8f, 1.0f) : ((_runtimeActiveStateHash == t.src) ? ImVec4(0.4f, 0.8f, 1.0f, 1.0f) : ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
-        if (isSelected)
-            linkColor = ImVec4(1.0f, 0.65f, 0.0f, 1.0f); // 選択時はオレンジ
-        float thickness = isSelected ? 4.0f : 2.5f;
+        bool isSelected = (_selectedLinkId == t.linkId);
 
-        // ed::Linkを使うことで「ノードの裏側」に描画され、当たり判定も平行線として完全に分離する
+        // --- 遷移エフェクトの対象リンクかどうかを判定 ---
+        bool isJustTransitioned = false;
+        if (s_highlightTimer > 0.0f)
+        {
+            if (t.src == s_highlightSrc && t.dst == s_highlightDst)
+            {
+                isJustTransitioned = true;
+            }
+            else if (t.isAny && t.dst == s_highlightDst)
+            {
+                // 通常ステートからの遷移が存在しない場合のみ、AnyStateからの遷移として扱う
+                bool hasNormal = false;
+                for (const auto &tr : allTrans)
+                {
+                    if (!tr.isAny && tr.src == s_highlightSrc && tr.dst == s_highlightDst)
+                    {
+                        hasNormal = true;
+                        break;
+                    }
+                }
+                if (!hasNormal)
+                    isJustTransitioned = true;
+            }
+        }
+
+        // --- 状況に応じたリンクの「色」と「太さ」の決定 ---
+        ImVec4 linkColor = t.isAny ? ImVec4(0.4f, 0.8f, 0.8f, 1.0f) : ImVec4(0.6f, 0.6f, 0.6f, 1.0f);
+
+        if (_runtimeActiveStateHash == t.src)
+        {
+            linkColor = ImVec4(0.3f, 0.7f, 1.0f, 1.0f); // 実行中のステートから伸びる線は「青」
+        }
+
+        // ★ 選択時、または遷移直後は「オレンジ色」にハイライト
+        if (isSelected || isJustTransitioned)
+        {
+            linkColor = ImVec4(1.0f, 0.65f, 0.0f, 1.0f);
+        }
+
+        // 遷移直後や選択時は線を太くして視認性を上げる
+        float thickness = (isSelected || isJustTransitioned) ? 4.0f : 2.5f;
+
+        // リンクの描画
         ed::Link(t.linkId, srcPin, dstPin, linkColor, thickness);
+
+        // ★ 視界のノイズになる ed::Flow は完全に削除しました
+
         _linkLut.push_back({t.linkId, LinkRef{t.src, t.dst, t.isAny}});
 
-        // 矢印(三角形)だけを座標に上乗せ描画
+        // 矢印(三角形)の描画
         if (pinPositions.count(srcPin) && pinPositions.count(dstPin))
         {
             DrawTriangleArrow(drawList, pinPositions[srcPin], pinPositions[dstPin], ImGui::ColorConvertFloat4ToU32(linkColor));
