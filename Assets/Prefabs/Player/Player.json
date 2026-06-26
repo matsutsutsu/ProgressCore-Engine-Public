@@ -2,23 +2,31 @@
     "entities": [
         {
             "components": {
+                "AnimParameters": null,
+                "AnimStateMachine": {
+                    "graphPath": "Assets/Animations/Nodes/TestAnimationNode.json"
+                },
+                "Animator": {
+                    "isLoop": true,
+                    "playbackSpeed": 1.0
+                },
                 "Bounding Box": {
                     "worldAABB.Center": [
-                        0.2761325240135193,
-                        2.3150012493133545,
-                        -18.239368438720703
+                        -4.651778697967529,
+                        3.1680166721343994,
+                        -20.232868194580078
                     ],
                     "worldAABB.Extents": [
-                        1.9780194759368896,
-                        2.3838889598846436,
-                        2.3224945068359375
+                        1.3109731674194336,
+                        3.221970319747925,
+                        2.496615409851074
                     ]
                 },
                 "Character Movement Input": {
                     "currentVelocity": [
-                        -2.5848926554772333e-08,
+                        -8.686644696194455e-38,
                         0.0,
-                        3.4966124076163396e-06
+                        -7.006492321624085e-45
                     ],
                     "dashRequested": false,
                     "desiredVelocity": [
@@ -26,7 +34,7 @@
                         0.0,
                         0.0
                     ],
-                    "isAttackRequested": true,
+                    "isAttackRequested": false,
                     "jumpRequested": false,
                     "lookTargetPos": [
                         0.0,
@@ -39,7 +47,7 @@
                     "currentTimer": -0.006666665896773338,
                     "dashCooldown": 0.1599999964237213,
                     "dashDirection": [
-                        2.9387738464947688e-08,
+                        4.408160947377837e-08,
                         0.0,
                         -1.0
                     ],
@@ -79,7 +87,7 @@
                 },
                 "Material": null,
                 "Model": {
-                    "assetPath": "Assets/Models/Player/Player.glb"
+                    "assetPath": "Assets/Models/Player/SK_SciFITrooper_Man_03.gltf"
                 },
                 "Name": {
                     "name": "Player"
@@ -88,8 +96,8 @@
                     "bankingMultiplier": 0.5,
                     "coyoteTimeWindow": 0.15000000596046448,
                     "currentJumpCount": 0,
-                    "currentRoll": -4.555765351554539e-14,
-                    "currentYaw": -0.11037808656692505,
+                    "currentRoll": -2.802596928649634e-45,
+                    "currentYaw": -1.811211109161377,
                     "jumpBufferTimer": 0.0,
                     "jumpBufferWindow": 0.15000000596046448,
                     "lastFallVelocity": 0.0,
@@ -112,20 +120,20 @@
                     "isStatic": false,
                     "parent": 2,
                     "position": [
-                        0.008053046651184559,
-                        -0.05344732478260994,
-                        -18.269079208374023
+                        -4.912563323974609,
+                        -0.057456765323877335,
+                        -20.29923439025879
                     ],
                     "rotation": [
-                        1.2565036029127245e-15,
-                        -0.05516103282570839,
-                        -2.2744145840780314e-14,
-                        0.9984774589538574
+                        1.401298464324817e-45,
+                        -0.7867990732192993,
+                        -1.401298464324817e-45,
+                        0.617209255695343
                     ],
                     "scale": [
-                        0.05000000074505806,
-                        0.05000000074505806,
-                        0.05000000074505806
+                        3.5,
+                        3.5,
+                        3.5
                     ]
                 },
                 "Visibility": {

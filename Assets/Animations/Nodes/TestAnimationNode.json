@@ -1,14 +1,34 @@
 {
-    "entryPosX": 0.0,
-    "entryPosY": 0.0,
+    "anyStatePosX": 461.0,
+    "anyStatePosY": -181.0,
+    "anyStateTransitions": [],
+    "entryPosX": 93.0,
+    "entryPosY": 75.0,
     "entryStateHash": 1168775091,
+    "parameters": [
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 174817312,
+            "name": "Speed",
+            "type": 0
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 1116791579,
+            "name": "IsDashing",
+            "type": 1
+        }
+    ],
     "states": [
         {
             "isLoop": true,
-            "nodePosX": -3.0,
-            "nodePosY": 183.0,
+            "nodePosX": 93.0,
+            "nodePosY": 235.0,
             "playbackSpeed": 1.0,
-            "sequenceFilePath": "Assets/Animations/Sequencer/Move.json",
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/Idle.json",
             "sequenceName": "Idle",
             "speedCurveName": "",
             "stateHash": 1168775091,
@@ -17,39 +37,54 @@
                     "blendDuration": 0.20000000298023224,
                     "conditions": [
                         {
-                            "op": 3,
-                            "paramHash": 2343121693,
-                            "paramName": "Attack",
-                            "threshold": 0.0
+                            "op": 1,
+                            "paramHash": 174817312,
+                            "paramName": "Speed",
+                            "threshold": 1.0
                         }
                     ],
-                    "targetStateHash": 2343121693
+                    "logicType": 0,
+                    "targetStateHash": 2371348074
                 }
             ]
         },
         {
-            "isLoop": false,
-            "nodePosX": 317.0,
-            "nodePosY": 183.0,
+            "isLoop": true,
+            "nodePosX": 445.0,
+            "nodePosY": 235.0,
             "playbackSpeed": 1.0,
-            "sequenceFilePath": "Assets/Animations/Sequencer/Attack.json",
-            "sequenceName": "Attack",
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/Walk.json",
+            "sequenceName": "Run",
             "speedCurveName": "",
-            "stateHash": 2343121693,
+            "stateHash": 2371348074,
             "transitions": [
                 {
                     "blendDuration": 0.20000000298023224,
                     "conditions": [
                         {
-                            "op": 4,
+                            "op": 2,
                             "paramHash": 174817312,
                             "paramName": "Speed",
-                            "threshold": 0.0
+                            "threshold": 1.0
                         }
                     ],
+                    "logicType": 0,
                     "targetStateHash": 1168775091
                 }
             ]
+        },
+        {
+            "isLoop": true,
+            "nodePosX": 461.0,
+            "nodePosY": 7.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "",
+            "sequenceName": "Dash",
+            "speedCurveName": "",
+            "stateHash": 1750693397,
+            "transitions": []
         }
     ]
 }

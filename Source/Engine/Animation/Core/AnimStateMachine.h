@@ -23,6 +23,30 @@ enum class AnimTransitionLogic
     OR
 };
 
+/// @brief パラメータの型。Unity Animator の Float/Bool/Trigger に相当。
+/// @details Int は当面 Float で代用できるため持たない（必要になれば末尾に追加）。
+///          シリアライズは int 値。途中挿入禁止・末尾追加のみ。
+enum class AnimParamType : uint8_t
+{
+    Float,
+    Bool,
+    Trigger
+};
+
+/// @brief パラメータの定義（グラフが所有する「宣言」）。
+/// @details ランタイムの実値は AnimParametersComponent が持つ。本構造体は名前・型・
+///          デフォルト値のみを保持し、エディタのパラメータパネルで編集される。
+/// @note    hash は name の派生（HashString(name)）。name 変更時は hash を再計算し、
+///          参照している AnimCondition.paramHash も張り替えること（エディタ側責務）。
+struct AnimParamDef
+{
+    std::string   name         = "NewParam";
+    uint32_t      hash         = 0;
+    AnimParamType type         = AnimParamType::Float;
+    float         defaultFloat = 0.0f;  ///< type==Float のときの初期値
+    bool          defaultBool  = false; ///< type==Bool のときの初期値
+};
+
 // 遷移条件
 struct AnimCondition
 {
@@ -35,12 +59,9 @@ struct AnimCondition
 // 遷移の矢印
 struct AnimTransition
 {
-    uint32_t targetStateHash = 0;
-    float    blendDuration   = 0.2f;
-
-    /// @brief 条件の結合方法（AND/OR）。
-    AnimTransitionLogic logicType = AnimTransitionLogic::AND;
-
+    uint32_t                   targetStateHash = 0;
+    float                      blendDuration   = 0.2f;
+    AnimTransitionLogic        logicType       = AnimTransitionLogic::AND;
     std::vector<AnimCondition> conditions;
 };
 
@@ -53,8 +74,8 @@ struct AnimState
 
     bool        isLoop        = true;
     float       playbackSpeed = 1.0f;
-    std::string speedCurveName;      // 空文字なら等速
-    std::string rootMotionCurveName; // 空文字ならルートモーションカーブなし
+    std::string speedCurveName;
+    std::string rootMotionCurveName;
 
     float nodePosX = 0.0f;
     float nodePosY = 0.0f;
@@ -74,10 +95,12 @@ struct AnimStateGraph
     float entryPosX = 0.0f;
     float entryPosY = 0.0f;
 
-    /// @brief どのステートからでも遷移可能な特別遷移（Any State）。
     std::vector<AnimTransition> anyStateTransitions;
     float                       anyStatePosX = 0.0f;
     float                       anyStatePosY = 0.0f;
+
+    /// @brief このグラフで使うパラメータ定義の一覧（Unity の Parameters タブ相当）。
+    std::vector<AnimParamDef> parameters;
 };
 
 // =================================================================
@@ -85,6 +108,26 @@ struct AnimStateGraph
 // =================================================================
 using json = nlohmann::json;
 
+// --- AnimParamDef ---
+inline void to_json(json &j, const AnimParamDef &p)
+{
+    j = json{
+        {"name", p.name},
+        {"hash", p.hash},
+        {"type", (int)p.type},
+        {"defaultFloat", p.defaultFloat},
+        {"defaultBool", p.defaultBool}};
+}
+inline void from_json(const json &j, AnimParamDef &p)
+{
+    p.name         = j.value("name", std::string{"NewParam"});
+    p.hash         = j.value("hash", 0u);
+    p.type         = (AnimParamType)j.value("type", 0);
+    p.defaultFloat = j.value("defaultFloat", 0.0f);
+    p.defaultBool  = j.value("defaultBool", false);
+}
+
+// --- AnimCondition ---
 inline void to_json(json &j, const AnimCondition &c)
 {
     j = json{
@@ -106,6 +149,7 @@ inline void from_json(const json &j, AnimCondition &c)
     j.at("threshold").get_to(c.threshold);
 }
 
+// --- AnimTransition ---
 inline void to_json(json &j, const AnimTransition &t)
 {
     j = json{
@@ -132,6 +176,7 @@ inline void from_json(const json &j, AnimTransition &t)
     j.at("conditions").get_to(t.conditions);
 }
 
+// --- AnimState ---
 inline void to_json(json &j, const AnimState &s)
 {
     j = json{
@@ -167,6 +212,7 @@ inline void from_json(const json &j, AnimState &s)
     j.at("transitions").get_to(s.transitions);
 }
 
+// --- AnimStateGraph ---
 inline void to_json(json &j, const AnimStateGraph &g)
 {
     j = json{
@@ -176,6 +222,7 @@ inline void to_json(json &j, const AnimStateGraph &g)
         {"anyStateTransitions", g.anyStateTransitions},
         {"anyStatePosX", g.anyStatePosX},
         {"anyStatePosY", g.anyStatePosY},
+        {"parameters", g.parameters},
         {"states", g.states}};
 }
 inline void from_json(const json &j, AnimStateGraph &g)
@@ -191,6 +238,8 @@ inline void from_json(const json &j, AnimStateGraph &g)
         j.at("anyStatePosX").get_to(g.anyStatePosX);
     if (j.contains("anyStatePosY"))
         j.at("anyStatePosY").get_to(g.anyStatePosY);
+    if (j.contains("parameters"))
+        j.at("parameters").get_to(g.parameters);
     j.at("states").get_to(g.states);
 }
 

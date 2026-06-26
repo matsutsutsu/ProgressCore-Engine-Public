@@ -38,6 +38,11 @@ class AnimGraphWindow : public EditorWindow
     // Transition の共通UI描画
     void DrawTransitionConditionUI(AnimTransition &trans);
 
+    // パラメータパネル（Unity の Parameters タブ相当）
+    void DrawParameterPanel(EditorContext &context);
+    /// @brief パラメータ名変更時、参照している全条件の paramHash/paramName を張り替える。
+    void RenameParameterReferences(uint32_t oldHash, const std::string &newName, uint32_t newHash);
+
     void HandleInteraction();
     void HandleContextMenu();
 
@@ -78,4 +83,7 @@ class AnimGraphWindow : public EditorWindow
 
     // デバッグ用：現在実行中のステート
     uint32_t _runtimeActiveStateHash = 0;
+
+    int  _paramRenameIndex = -1; ///< リネーム編集中のパラメータindex（-1=なし）
+    char _paramNameBuf[64] = ""; ///< リネーム入力バッファ
 };

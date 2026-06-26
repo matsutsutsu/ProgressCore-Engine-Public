@@ -6,6 +6,8 @@
 #include <imgui_internal.h>
 #include <string>
 
+#include "Engine/Animation/Components/AnimParametersComponent.h"
+
 #include "Engine/Platform/Core/Dialog.h"
 #include "Engine/Platform/Core/Logger.h"
 //#include "Engine/Graphics/RHI/Graphics.h"
@@ -216,7 +218,14 @@ void AnimGraphWindow::DrawContents(EditorContext& context) {
 
     ImGui::NextColumn();
 
-    // インスペクタもChildWindowにし、独立したスクロール領域と安全な座標系を持たせる
+    // 右カラムを上下分割：上=パラメータパネル / 下=インスペクタ（Unity Animator 風）
+    // 上部はパラメータ数に応じて高さを取りつつ、下部インスペクタを必ず残す。
+    const float paramPanelHeight = ImGui::GetContentRegionAvail().y * 0.4f;
+
+    ImGui::BeginChild("ParameterPanelChild", ImVec2(0, paramPanelHeight), true);
+    DrawParameterPanel(context);
+    ImGui::EndChild();
+
     ImGui::BeginChild("InspectorChild", ImVec2(0, 0), false);
     DrawInspector();
     ImGui::EndChild();
@@ -1018,17 +1027,28 @@ void AnimGraphWindow::DrawTransitionConditionUI(AnimTransition &trans)
         ImGui::PushID((int)c);
         ImGui::Separator();
         ImGui::Text("条件 (Condition) %d", (int)c);
-        ImGui::Text("対象パラメータ (Parameter Name):");
+        ImGui::Text("対象パラメータ (Parameter):");
+        ImGui::SetNextItemWidth(-1);
 
-        char paramBuf[64];
-        strncpy_s(paramBuf, sizeof(paramBuf), cond.paramName.c_str(), _TRUNCATE);
-        if (ImGui::InputText("##ParamName", paramBuf, sizeof(paramBuf)))
+        // 登録済みパラメータからドロップダウンで選択（手入力＋ハッシュ手計算を廃止）
+        const char *preview = cond.paramName.empty() ? "(未選択)" : cond.paramName.c_str();
+        if (ImGui::BeginCombo("##ParamSelect", preview))
         {
-            cond.paramName = paramBuf;
-            cond.paramHash = CCL::Utils::HashString(paramBuf);
+            if (_currentGraph.parameters.empty())
+                ImGui::TextDisabled("パラメータ未登録。\n左のパネルで追加してください。");
+            for (const auto &pd : _currentGraph.parameters)
+            {
+                bool sel = (cond.paramHash == pd.hash);
+                if (ImGui::Selectable(pd.name.c_str(), sel))
+                {
+                    cond.paramName = pd.name;
+                    cond.paramHash = pd.hash;
+                }
+                if (sel)
+                    ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
         }
-        if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("パラメータ名を入力してください。ハッシュ値は自動計算されます。");
         ImGui::TextDisabled("ID: 0x%08X", cond.paramHash);
 
         int op = (int)cond.op;
@@ -1057,3 +1077,176 @@ void AnimGraphWindow::DrawTransitionConditionUI(AnimTransition &trans)
         ImGui::PopID();
     }
 }
+
+// ===========================================================================
+// パラメータパネル（Unity Animator の Parameters タブ相当）
+//   グラフが所有する AnimParamDef を一覧編集する。実行中は選択エンティティの
+//   AnimParametersComponent から現在値を読み、ライブ表示する。
+// ===========================================================================
+void AnimGraphWindow::DrawParameterPanel(EditorContext &context)
+{
+    ImGui::Text("パラメータ (Parameters)");
+    ImGui::SameLine();
+
+    // --- 追加ボタン（型ごと） ---
+    if (ImGui::SmallButton("+ Float"))
+    {
+        AnimParamDef p;
+        p.name = "NewFloat";
+        p.type = AnimParamType::Float;
+        p.hash = CCL::Utils::HashString(p.name.c_str());
+        _currentGraph.parameters.push_back(p);
+    }
+    ImGui::SameLine();
+    if (ImGui::SmallButton("+ Bool"))
+    {
+        AnimParamDef p;
+        p.name = "NewBool";
+        p.type = AnimParamType::Bool;
+        p.hash = CCL::Utils::HashString(p.name.c_str());
+        _currentGraph.parameters.push_back(p);
+    }
+    ImGui::SameLine();
+    if (ImGui::SmallButton("+ Trigger"))
+    {
+        AnimParamDef p;
+        p.name = "NewTrigger";
+        p.type = AnimParamType::Trigger;
+        p.hash = CCL::Utils::HashString(p.name.c_str());
+        _currentGraph.parameters.push_back(p);
+    }
+
+    ImGui::Separator();
+
+    // --- ライブ値参照用（実行中エンティティの実値） ---
+    AnimParametersComponent *liveParams = nullptr;
+    if (context.selectedEntity != CCL::ECS::InvalidEntityID && context.world)
+        liveParams = context.world->GetComponent<AnimParametersComponent>(context.selectedEntity);
+
+    if (!ImGui::BeginTable("ParamTable", 3,
+            ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY))
+        return;
+
+    ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch);
+    ImGui::TableSetupColumn("Type/Default", ImGuiTableColumnFlags_WidthFixed, 120.0f);
+    ImGui::TableSetupColumn("Live", ImGuiTableColumnFlags_WidthFixed, 70.0f);
+    ImGui::TableHeadersRow();
+
+    int deleteIndex = -1;
+
+    for (int i = 0; i < (int)_currentGraph.parameters.size(); ++i)
+    {
+        AnimParamDef &p = _currentGraph.parameters[i];
+        ImGui::PushID(i);
+        ImGui::TableNextRow();
+
+        // --- 列1: 名前（ダブルクリックでリネーム編集） ---
+        ImGui::TableSetColumnIndex(0);
+        if (_paramRenameIndex == i)
+        {
+            ImGui::SetNextItemWidth(-1);
+            bool commit = ImGui::InputText("##rename", _paramNameBuf, sizeof(_paramNameBuf),
+                ImGuiInputTextFlags_EnterReturnsTrue);
+            if (commit || ImGui::IsItemDeactivatedAfterEdit())
+            {
+                std::string newName = _paramNameBuf;
+                if (!newName.empty() && newName != p.name)
+                {
+                    uint32_t oldHash = p.hash;
+                    uint32_t newHash = CCL::Utils::HashString(newName.c_str());
+                    // 参照している全条件を張り替える（これを怠ると条件が壊れる）
+                    RenameParameterReferences(oldHash, newName, newHash);
+                    p.name = newName;
+                    p.hash = newHash;
+                }
+                _paramRenameIndex = -1;
+            }
+        }
+        else
+        {
+            // アイコン的に型を色分け表示
+            ImVec4 col = (p.type == AnimParamType::Float)  ? ImVec4(0.5f, 0.8f, 1.0f, 1.0f)
+                         : (p.type == AnimParamType::Bool) ? ImVec4(0.6f, 1.0f, 0.6f, 1.0f)
+                                                           : ImVec4(1.0f, 0.8f, 0.4f, 1.0f);
+            ImGui::TextColored(col, "%s", p.name.c_str());
+            if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0))
+            {
+                _paramRenameIndex = i;
+                strncpy_s(_paramNameBuf, sizeof(_paramNameBuf), p.name.c_str(), _TRUNCATE);
+            }
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("ID: 0x%08X\n(ダブルクリックでリネーム)", p.hash);
+        }
+
+        // --- 列2: 型とデフォルト値 ---
+        ImGui::TableSetColumnIndex(1);
+        switch (p.type)
+        {
+        case AnimParamType::Float:
+            ImGui::SetNextItemWidth(-1);
+            ImGui::DragFloat("##def", &p.defaultFloat, 0.05f);
+            break;
+        case AnimParamType::Bool:
+            ImGui::Checkbox("##def", &p.defaultBool);
+            ImGui::SameLine();
+            ImGui::TextDisabled("Bool");
+            break;
+        case AnimParamType::Trigger:
+            ImGui::TextDisabled("Trigger");
+            break;
+        }
+
+        // --- 列3: ライブ値（実行中の実値） ---
+        ImGui::TableSetColumnIndex(2);
+        if (liveParams)
+        {
+            float fv = 0.0f;
+            if (liveParams->TryGetNumeric(p.hash, fv))
+            {
+                if (p.type == AnimParamType::Bool || p.type == AnimParamType::Trigger)
+                    ImGui::TextColored(fv != 0.0f ? ImVec4(0.4f, 1.0f, 0.4f, 1.0f) : ImVec4(0.6f, 0.6f, 0.6f, 1.0f),
+                        fv != 0.0f ? "TRUE" : "false");
+                else
+                    ImGui::Text("%.2f", fv);
+            }
+            else
+                ImGui::TextDisabled("-");
+        }
+        else
+            ImGui::TextDisabled("-");
+
+        // 右クリックで削除メニュー
+        if (ImGui::BeginPopupContextItem("paramCtx"))
+        {
+            if (ImGui::MenuItem("削除 (Delete)"))
+                deleteIndex = i;
+            ImGui::EndPopup();
+        }
+
+        ImGui::PopID();
+    }
+
+    ImGui::EndTable();
+
+    // ループ外で削除（イテレータ破壊回避）
+    if (deleteIndex >= 0)
+        _currentGraph.parameters.erase(_currentGraph.parameters.begin() + deleteIndex);
+}
+
+// パラメータ名変更時、全遷移・AnyState遷移の条件参照を張り替える。
+void AnimGraphWindow::RenameParameterReferences(uint32_t oldHash, const std::string &newName, uint32_t newHash)
+{
+    auto patch = [&](std::vector<AnimTransition> &transitions) {
+        for (auto &t : transitions)
+            for (auto &c : t.conditions)
+                if (c.paramHash == oldHash)
+                {
+                    c.paramHash = newHash;
+                    c.paramName = newName;
+                }
+    };
+    for (auto &s : _currentGraph.states)
+        patch(s.transitions);
+    patch(_currentGraph.anyStateTransitions);
+}
+
