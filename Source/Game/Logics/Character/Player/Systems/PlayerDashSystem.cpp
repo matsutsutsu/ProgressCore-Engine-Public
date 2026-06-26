@@ -22,6 +22,7 @@ void PlayerDashSystem::Update(float rawDt)
         {
             dash.isDashing    = true;
             dash.isInvincible = true;
+            dash.isJustEvadeWindowActive = true; // ダッシュ開始と同時にジャスト受付開始
             dash.currentTimer = dash.dashDuration;
 
             // 移動入力があればその方向、無入力ならキャラの正面方向へダッシュ
@@ -38,18 +39,26 @@ void PlayerDashSystem::Update(float rawDt)
             dash.dashDirection.Normalize();
         }
 
-        // 3. Dash中の状態更新と速度の注入
+          // 3. Dash中の状態更新と速度の注入
         if (dash.isDashing)
         {
             dash.currentTimer -= time.localDt;
 
+            // ダッシュ開始から指定時間(justEvadeWindow)が経過したら、ジャスト受付のみ終了する
+            float elapsedTime = dash.dashDuration - dash.currentTimer;
+            if (elapsedTime > dash.justEvadeWindow)
+            {
+                dash.isJustEvadeWindowActive = false;
+            }
+
             if (dash.currentTimer <= 0.0f)
             {
                 // Dash終了 (クールダウンへ移行)
-                dash.isDashing      = false;
-                dash.isInvincible   = false;
-                dash.currentTimer   = dash.dashCooldown;
-                input.overrideSpeed = -1.0f; // 速度上書きを解除
+                dash.isDashing               = false;
+                dash.isInvincible            = false;
+                dash.isJustEvadeWindowActive = false; // 念のため
+                dash.currentTimer            = dash.dashCooldown;
+                input.overrideSpeed          = -1.0f;
             }
             else
             {

@@ -23,15 +23,16 @@ CFIELD_FLOAT_RANGED(jumpBufferWindow, u8"先行入力バッファ (jumpBufferWin
 CFIELD(timeSinceGrounded, u8"滞空時間 (timeSinceGrounded)", "State")
 CFIELD(jumpBufferTimer, u8"ジャンプ予約タイマー (jumpBufferTimer)", "State")
 
+// 着地衝撃用のステート
+CFIELD(wasGroundedLastFrame, u8"前フレーム接地状態 (wasGroundedLastFrame)", "State")
+CFIELD(lastFallVelocity, u8"直前落下速度 (lastFallVelocity)", "State")
+
 // 視覚的慣性 (バンキング)
 CFIELD_FLOAT_RANGED(bankingMultiplier, u8"バンキング係数 (bankingMultiplier)", 0.1f, 0.0f, 5.0f, "Visuals")
 CFIELD_FLOAT_RANGED(maxBankingAngle, u8"最大バンキング角 (maxBankingAngle)", 1.0f, 0.0f, 90.0f, "Visuals")
 CFIELD(currentYaw, u8"現在のYaw角 (currentYaw)", "State")
 CFIELD(currentRoll, u8"現在のRoll角 (currentRoll)", "State")
 
-// 着地衝撃用のステート
-CFIELD(wasGroundedLastFrame, u8"前フレーム接地状態 (wasGroundedLastFrame)", "State")
-CFIELD(lastFallVelocity, u8"直前落下速度 (lastFallVelocity)", "State")
 
 
 COMPONENT_META_END(PlayerComponent)

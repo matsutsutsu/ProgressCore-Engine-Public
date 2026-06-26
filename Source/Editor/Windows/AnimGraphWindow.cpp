@@ -66,7 +66,7 @@ static void DrawTriangleArrow(ImDrawList *drawList, const ImVec2 &p0, const ImVe
     dir.y /= length;
 
     // ★ 矢印を線の真ん中ではなく、ターゲットノードの「直前（80px手前）」に配置する (Unity風)
-    float  offset   = std::min(length * 0.8f, 80.0f);
+    float  offset   = (std::min)(length * 0.8f, 80.0f);
     ImVec2 arrowPos = ImVec2(p1.x - dir.x * offset, p1.y - dir.y * offset);
 
     float  arrowSize = 7.0f;

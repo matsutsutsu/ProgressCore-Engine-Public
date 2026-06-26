@@ -11,6 +11,7 @@ COMPONENT_META_BEGIN(DashComponent, "Dash Component")
 CFIELD_FLOAT_RANGED(dashSpeed, "Dash Speed", 1.0f, 0.0f, 200.0f, "Config")
 CFIELD_FLOAT_RANGED(dashDuration, "Dash Duration", 0.01f, 0.0f, 5.0f, "Config")
 CFIELD_FLOAT_RANGED(dashCooldown, "Dash Cooldown", 0.01f, 0.0f, 10.0f, "Config")
+CFIELD_FLOAT_RANGED(justEvadeWindow, "Just Evade Window", 0.01f, 0.0f, 10.0f, "Config")
 
 // --- State (実行時の状態監視・デバッグ用) ---
 CFIELD(isDashing, "Is Dashing", "State")

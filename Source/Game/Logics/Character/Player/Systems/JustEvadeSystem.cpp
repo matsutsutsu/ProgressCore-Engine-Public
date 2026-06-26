@@ -4,10 +4,17 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
+#include "Engine/Animation/Components/AnimParametersComponent.h"
+#include "Engine/Core/Math/StringHash.h"
+
 #include "Game/Logics/GameEvent/GameEvents.h"
 #include "Engine/Timer/TimeState.h"
 
 using namespace CCL::ECS;
+
+// アニメーション掲示板へ書き込むトリガーのハッシュ
+static const uint32_t HASH_TRIG_JUST_EVADE = CCL::Utils::HashString("OnJustEvade");
+
 
 void JustEvadeSystem::Initialize()
 {
@@ -31,8 +38,28 @@ void JustEvadeSystem::Initialize()
         timeContext.globalFreezeScale = 0.1f;
         timeContext.globalHitStopTimer = 0.5f;
 
-        // ※ 将来的に敵だけをスローモーションにしたい場合は、ここで ev.attackerID の
-        // TimeState を取得して cinematicScale を 0.1f などに落とす処理を追記します。
+        // =======================================================
+        //  2. アニメーションを「ジャスト回避専用モーション」へ強制遷移
+        // =======================================================
+        if (auto *animParams = _world->GetComponent<AnimParametersComponent>(ev.playerID))
+        {
+            animParams->SetTrigger(HASH_TRIG_JUST_EVADE);
+        }
+
+        // =======================================================
+        // 3. エフェクト・残像・SEの呼び出し (Game Feel)
+        // =======================================================
+        // EventBus を使って、再生すべきSEやエフェクトをシステムに命令します。
+        // （※これらの構造体は例です。あなたのプロジェクトの構造に合わせてください）
+
+        // 音響：甲高いガラスが割れるような音
+        // _world->GetEventBus().Publish(SoundRequestEvent{"event:/SFX/JustEvade", ev.playerID});
+
+        // 画面効果：色収差（Chromatic Aberration）を強めるイベント
+        // _world->GetEventBus().Publish(PostProcessPunchEvent{PostProcessType::ChromaticAberration, 1.0f});
+
+        // 残像：ダッシュ残像を3倍の濃度・赤色で出す命令
+        // _world->GetEventBus().Publish(GhostTrailRequestEvent{ev.playerID, Color::Red, 0.5f});
     });
 
 
