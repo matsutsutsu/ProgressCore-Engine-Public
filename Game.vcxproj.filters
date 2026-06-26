@@ -1704,6 +1704,9 @@
     <ClInclude Include="Source\Editor\Windows\CameraPathEditorWindow.h">
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\Systems\CharacterAnimSyncSystem.h">
+      <Filter>Source\Engine\Animation\Systems</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2542,6 +2545,9 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\CameraPathEditorWindow.cpp">
       <Filter>Source\Editor\Windows\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\Systems\CharacterAnimSyncSystem.cpp">
+      <Filter>Source\Engine\Animation\Systems</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

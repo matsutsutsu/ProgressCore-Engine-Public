@@ -410,6 +410,7 @@
     <ClInclude Include="Source\Engine\Animation\Core\AnimStateMachine.h" />
     <ClInclude Include="Source\Engine\Animation\Systems\AnimationSystem.h" />
     <ClInclude Include="Source\Engine\Animation\Systems\AnimControllerSystem.h" />
+    <ClInclude Include="Source\Engine\Animation\Systems\CharacterAnimSyncSystem.h" />
     <ClInclude Include="Source\Engine\Animation\Systems\CombatAnimationSyncSystem.h" />
     <ClInclude Include="Source\Engine\Audio\Components\AudioEmitterComponent.h" />
     <ClInclude Include="Source\Engine\Audio\Components\AudioEvents.h" />
@@ -1245,6 +1246,7 @@
     <ClCompile Include="Source\Engine\Animation\Core\AnimGraphSerializer.cpp" />
     <ClCompile Include="Source\Engine\Animation\Systems\AnimationSystem.cpp" />
     <ClCompile Include="Source\Engine\Animation\Systems\AnimControllerSystem.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Systems\CharacterAnimSyncSystem.cpp" />
     <ClCompile Include="Source\Engine\Animation\Systems\CombatAnimationSyncSystem.cpp" />
     <ClCompile Include="Source\Engine\Audio\Components\AudioComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Audio\FmodIntegration\FmodAudioManager.cpp" />
