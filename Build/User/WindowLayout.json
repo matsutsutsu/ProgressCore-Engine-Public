@@ -30,7 +30,7 @@
         },
         {
             "name": "State Tree Editor",
-            "visible": false
+            "visible": true
         },
         {
             "name": "Camera Path Editor",
