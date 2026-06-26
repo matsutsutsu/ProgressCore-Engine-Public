@@ -6,6 +6,34 @@
 #include "Engine/Animation/Core/AnimGraphSerializer.h"
 #include "Engine/Platform/Core/Logger.h"
 
+// 現在再生中シーケンスに、指定ハッシュの受付ウィンドウ区間があり、
+// かつ現在時刻がその区間内なら true。ComboWindow/CancelWindow 両方を対象にする。
+static bool IsInWindow(const AnimatorComponent &animator, uint32_t windowHash)
+{
+    if (windowHash == 0)
+        return true; // ウィンドウ指定なし → 常時許可
+    const AnimSequence *seq = animator.currentSequence;
+    if (!seq)
+        return false;
+
+    for (const auto &ev : seq->events)
+    {
+        if (ev.type != AnimEventType::ComboWindow &&
+            ev.type != AnimEventType::CancelWindow)
+            continue;
+
+        // stringParam のハッシュは LoadAnimSequence でキャッシュ済み（tagHash 同様にしたい）
+        // 現状 tagHash は HitBox 専用なので、ここは windowHash と stringParam を比較する。
+        if (CCL::Utils::HashString(ev.stringParam.c_str()) != windowHash)
+            continue;
+
+        if (animator.currentTimer >= ev.startTime &&
+            animator.currentTimer <= ev.endTime)
+            return true;
+    }
+    return false;
+}
+
 /// @brief ステートマシン評価。ロード/束縛（シリアル）と評価（並列）を2フェーズに分離する。
 /// @details フェーズ1で全ポインタ(sequence/speedCurve)を束縛し、フェーズ2の並列評価から
 ///          ResourceManager（共有シングルトン）・ファイルI/Oを完全に排除してレースを防ぐ。
@@ -110,6 +138,12 @@ void AnimControllerSystem::Update(float dt)
             {
                 // ★ DOD/FSMの定石: Any Stateからの遷移の場合、自分自身への遷移は無視する（無限ループ防止）
                 if (isAnyState && transition.targetStateHash == fsm.currentStateHash)
+                    continue;
+
+                // ★ 受付ウィンドウゲート: requiredWindow 指定がある遷移は、
+                //    現在再生中シーケンスの該当ウィンドウ区間内でなければスキップする。
+                //    （コンボ先行入力・キャンセル区間をフレーム精度で制御）
+                if (!IsInWindow(animator, transition.requiredWindowHash))
                     continue;
 
                 bool allConditionsMet = true;

@@ -1002,6 +1002,23 @@ void AnimGraphWindow::DrawTransitionConditionUI(AnimTransition &trans)
     ImGui::DragFloat("ブレンド時間 (Blend Duration)", &trans.blendDuration, 0.01f, 0.0f, 2.0f, "%.2f s");
     ImGui::Separator();
 
+    // --- 受付ウィンドウ指定（コンボ/キャンセル区間に紐付け） ---
+    {
+        char winBuf[64];
+        strncpy_s(winBuf, sizeof(winBuf), trans.requiredWindow.c_str(), _TRUNCATE);
+        ImGui::Text("受付ウィンドウ (Required Window):");
+        ImGui::SetNextItemWidth(-1);
+        if (ImGui::InputText("##ReqWin", winBuf, sizeof(winBuf)))
+        {
+            trans.requiredWindow     = winBuf;
+            trans.requiredWindowHash = (winBuf[0] == '\0') ? 0u
+                                                           : CCL::Utils::HashString(winBuf);
+        }
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("Sequencer の Combo/Cancel Window 名を指定。\n空なら常時遷移可。区間内のみ遷移を許可。");
+    }
+    ImGui::Separator();
+
     int         logicOp    = (int)trans.logicType;
     const char *logicOps[] = {"すべて満たす (AND)", "いずれかを満たす (OR)"};
     if (ImGui::Combo("判定方法 (Logic)", &logicOp, logicOps, IM_ARRAYSIZE(logicOps)))

@@ -22,7 +22,7 @@
         },
         {
             "name": "Sequencer",
-            "visible": false
+            "visible": true
         },
         {
             "name": "Anim Graph Editor",

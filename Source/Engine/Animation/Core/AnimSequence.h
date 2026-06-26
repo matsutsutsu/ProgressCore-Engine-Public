@@ -54,6 +54,8 @@ enum class AnimEventType : uint8_t
     Blackboard,  ///< BB フラグの ON/OFF (区間 → True/False 2点に展開)
     SpawnHitbox, ///< 空間に独立した球状ヒットボックスを生成(区間)
     Trail,       ///< 武器の軌跡エフェクト ON/OFF(区間)
+    ComboWindow, ///< コンボ先行入力の受付区間。stringParam=受付名
+    CancelWindow, ///< 行動キャンセルの受付区間。stringParam=受付名
 
     Count
 };

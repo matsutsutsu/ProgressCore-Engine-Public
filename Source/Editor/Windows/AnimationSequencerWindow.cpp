@@ -62,12 +62,14 @@ struct EventTypeDesc
 
 // AnimEventType の順序と一致させること（index = (int)type）
 constexpr EventTypeDesc kEventTypes[] = {
-    {AnimEventType::HitBox, "HitBox (Attack)", 0xFF5050D0, 30},
-    {AnimEventType::Sound, "Sound (SE)", 0xFFD08050, 10},
-    {AnimEventType::Effect, "Effect (Effekseer)", 0xFF50D050, 10},
-    {AnimEventType::Blackboard, "Blackboard (Flag)", 0xFF50A0D0, 20},
-    {AnimEventType::SpawnHitbox, "Spawn HitBox (Spatial)", 0xFFD050A0, 30},
-    {AnimEventType::Trail, "Trail (Weapon)", 0xFFD0D030, 30},
+    { AnimEventType::HitBox,       "HitBox (Attack)",        0xFF5050D0, 30 },
+    { AnimEventType::Sound,        "Sound (SE)",             0xFFD08050, 10 },
+    { AnimEventType::Effect,       "Effect (Effekseer)",     0xFF50D050, 10 },
+    { AnimEventType::Blackboard,   "Blackboard (Flag)",      0xFF50A0D0, 20 },
+    { AnimEventType::SpawnHitbox,  "Spawn HitBox (Spatial)", 0xFFD050A0, 30 },
+    { AnimEventType::Trail,        "Trail (Weapon)",         0xFFD0D030, 30 },
+    { AnimEventType::ComboWindow,  "Combo Window",           0xFF40C0FF, 20 },
+    { AnimEventType::CancelWindow, "Cancel Window",          0xFFC040FF, 20 },
 };
 
 constexpr int kEventTypeCount = (int)AnimEventType::Count;
@@ -701,8 +703,11 @@ void AnimationSequencerWindow::DrawContents(EditorContext &context)
     if (ImGui::Button("+ Effect"))
         AddEvt(AnimEventType::Effect);
     ImGui::SameLine();
-    if (ImGui::Button("+ BB Flag"))
-        AddEvt(AnimEventType::Blackboard);
+    if (ImGui::Button("+ Combo"))
+        AddEvt(AnimEventType::ComboWindow);
+    ImGui::SameLine();
+    if (ImGui::Button("+ Cancel"))
+        AddEvt(AnimEventType::CancelWindow);
 
     int curFrame  = context.isAnimEditMode ? SecToFrame(context.animEditTime)
                                            : SecToFrame(animator->currentTimer);
@@ -887,27 +892,20 @@ void AnimationSequencerWindow::DrawContents(EditorContext &context)
                 ch = true;
             break;
 
-        case AnimEventType::Blackboard:
-            ImGui::TextColored(ImVec4(1, 1, 0, 1), "Blackboard Flag");
+        case AnimEventType::ComboWindow:
+        case AnimEventType::CancelWindow:
+        {
+            const bool isCombo = (e.type == AnimEventType::ComboWindow);
+            ImGui::TextColored(isCombo ? ImVec4(0.25f, 0.75f, 1.0f, 1.0f) : ImVec4(0.75f, 0.25f, 1.0f, 1.0f),
+                isCombo ? "Combo Accept Window" : "Cancel Window");
+            ImGui::Text("受付名 (Window Name):");
             ImGui::SetNextItemWidth(-1);
-            if (ImGui::InputText("##BB", buf, sizeof(buf)))
-            {
-                e.stringParam = buf;
-                ch            = true;
-            }
-            ImGui::TextDisabled("Active during [%.2fs - %.2fs]", e.startTime, e.endTime);
+            if (ImGui::InputText("##Win", buf, sizeof(buf))) { e.stringParam = buf; ch = true; }
+            ImGui::TextDisabled("Active [%.2fs - %.2fs]", e.startTime, e.endTime);
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("ノードエディタの遷移に同名を設定すると、\nこの区間内だけその遷移が有効になる。");
             break;
-
-        case AnimEventType::Trail:
-            // Trail 専用UIは現状なし（TrailComponent未実装）。区間のみ編集可。
-            ImGui::TextDisabled("Trail (no component yet). Interval only.");
-            ImGui::SetNextItemWidth(-1);
-            if (ImGui::InputText("##Trail", buf, sizeof(buf)))
-            {
-                e.stringParam = buf;
-                ch            = true;
-            }
-            break;
+        }
 
         default:
             break;
