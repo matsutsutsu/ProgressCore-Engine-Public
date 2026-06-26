@@ -1,0 +1,15 @@
+{
+    "duration": 0.4166666269302368,
+    "events": [],
+    "rootMotionCurve": {
+        "keys": [],
+        "name": ""
+    },
+    "sequenceName": "Jump_Start",
+    "speedCurve": {
+        "keys": [],
+        "name": ""
+    },
+    "targetAnimName": "Jump_Combat_Start_0_Seq_0",
+    "targetModelPath": ""
+}

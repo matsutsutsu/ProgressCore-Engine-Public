@@ -69,8 +69,6 @@ void AnimControllerSystem::Update(float dt)
     // =====================================================================
     // フェーズ2【並列】純粋なステートマシン評価
     //   ResourceManager / ファイルI/O は一切呼ばない（フェーズ1で束縛済み）。
-    //   ※ 遷移ログ(CCL_LOG_*)は Logger がスレッドセーフであることが前提。
-    //     未確認なら、この並列パスのログは要ガード（後述）。
     // =====================================================================
     ForEachWithIDParallel([](CCL::ECS::EntityID          id,
                               AnimStateMachineComponent &fsm,
@@ -79,7 +77,6 @@ void AnimControllerSystem::Update(float dt)
         if (animator.isEditorOverride)
             return;
 
-        // 未ロード/ロード失敗はスキップ（フェーズ1で処理済みのはず）
         if (fsm.internalGraph.states.empty())
             return;
 
@@ -103,102 +100,122 @@ void AnimControllerSystem::Update(float dt)
         }
 
         // ====================================================================
-        // 2. 遷移条件の評価
+        // 2. 遷移条件の評価 (評価ロジックの共通化)
         // ====================================================================
-        for (const auto &transition : currentState->transitions)
-        {
-            bool allConditionsMet = true;
+        const AnimTransition *triggeredTransition = nullptr;
 
-            for (const auto &cond : transition.conditions)
+        // 与えられた遷移リストを順に評価するラムダ式
+        auto EvaluateTransitions = [&](const std::vector<AnimTransition> &transitions, bool isAnyState) -> bool {
+            for (const auto &transition : transitions)
             {
-                // トリガーの評価
-                if (cond.op == AnimConditionOp::Trigger)
-                {
-                    if (!params.HasTrigger(cond.paramHash))
-                        allConditionsMet = false;
-                    if (!allConditionsMet)
-                        break;
-                    continue; // トリガーは Float/Bool 検索をスキップ
-                }
-
-                // アニメーション再生終了(Finished)の評価
-                if (cond.op == AnimConditionOp::Finished)
-                {
-                    if (!animator.isFinished)
-                        allConditionsMet = false;
-                    if (!allConditionsMet)
-                        break;
+                // ★ DOD/FSMの定石: Any Stateからの遷移の場合、自分自身への遷移は無視する（無限ループ防止）
+                if (isAnyState && transition.targetStateHash == fsm.currentStateHash)
                     continue;
-                }
 
-                // Float→Bool の順で検索（コンポーネント側ヘルパーに集約）。
-                // 見つからない場合は paramValue=0.0f のまま評価する（従来挙動を維持）。
-                float paramValue = 0.0f;
-                params.TryGetNumeric(cond.paramHash, paramValue);
+                bool allConditionsMet = true;
 
-                switch (cond.op)
-                {
-                case AnimConditionOp::Greater:
-                    if (!(paramValue > cond.threshold))
-                        allConditionsMet = false;
-                    break;
-                case AnimConditionOp::Less:
-                    if (!(paramValue < cond.threshold))
-                        allConditionsMet = false;
-                    break;
-                case AnimConditionOp::Equal:
-                    if (std::abs(paramValue - cond.threshold) > 0.0001f)
-                        allConditionsMet = false;
-                    break;
-                default:
-                    break;
-                }
-
-                if (!allConditionsMet)
-                    break;
-            }
-
-            // ================================================================
-            // 3. 遷移の実行と再生命令
-            // ================================================================
-            if (allConditionsMet)
-            {
-                // この遷移で使用したトリガーを消費(削除)する
                 for (const auto &cond : transition.conditions)
                 {
+                    // トリガーの評価
                     if (cond.op == AnimConditionOp::Trigger)
                     {
-                        params.ConsumeTrigger(cond.paramHash);
-                        CCL_LOG_INFO(LogCategory::Game, "[AnimController] Consumed Trigger: '%s' (0x%08X)",
-                            cond.paramName.c_str(), cond.paramHash);
+                        if (!params.HasTrigger(cond.paramHash))
+                            allConditionsMet = false;
+                        if (!allConditionsMet)
+                            break;
+                        continue; // トリガーは Float/Bool 検索をスキップ
                     }
-                }
 
-                std::string oldStateName = currentState->sequenceName;
-
-                fsm.currentStateHash = transition.targetStateHash;
-
-                // 遷移先を internalGraph から探す
-                for (const auto &nextState : fsm.internalGraph.states)
-                {
-                    if (nextState.stateHash == transition.targetStateHash)
+                    // アニメーション再生終了(Finished)の評価
+                    if (cond.op == AnimConditionOp::Finished)
                     {
-                        CCL_LOG_SUCCESS(LogCategory::Game, "[AnimController] Entity %d Transitioned: [%s] -> [%s]",
-                            (int)id, oldStateName.c_str(), nextState.sequenceName.c_str());
+                        if (!animator.isFinished)
+                            allConditionsMet = false;
+                        if (!allConditionsMet)
+                            break;
+                        continue;
+                    }
 
-                        if (nextState.sequence)
-                        {
-                            // ★ フェーズ1で束縛済みの speedCurve を使用（ResourceManager呼び出しを排除）
-                            animator.Play(nextState.sequence,
-                                {.blendTime = transition.blendDuration,
-                                    .loop   = nextState.isLoop,
-                                    .speed  = nextState.playbackSpeed,
-                                    .curve  = nextState.speedCurve});
-                        }
+                    // Float→Bool の順で検索
+                    float paramValue = 0.0f;
+                    params.TryGetNumeric(cond.paramHash, paramValue);
+
+                    switch (cond.op)
+                    {
+                    case AnimConditionOp::Greater:
+                        if (!(paramValue > cond.threshold))
+                            allConditionsMet = false;
+                        break;
+                    case AnimConditionOp::Less:
+                        if (!(paramValue < cond.threshold))
+                            allConditionsMet = false;
+                        break;
+                    case AnimConditionOp::Equal:
+                        if (std::abs(paramValue - cond.threshold) > 0.0001f)
+                            allConditionsMet = false;
+                        break;
+                    default:
                         break;
                     }
+
+                    if (!allConditionsMet)
+                        break;
                 }
-                break;
+
+                // 全条件を満たしたら、この遷移を採用してループを抜ける
+                if (allConditionsMet)
+                {
+                    triggeredTransition = &transition;
+                    return true;
+                }
+            }
+            return false; // 条件を満たす遷移が無かった
+        };
+
+        // ★ 優先度1: まず Any State の遷移リストをチェックする (割り込み判定)
+        if (!EvaluateTransitions(fsm.internalGraph.anyStateTransitions, true))
+        {
+            // ★ 優先度2: 割り込みが無ければ、現在のステートの遷移リストをチェックする
+            EvaluateTransitions(currentState->transitions, false);
+        }
+
+        // ================================================================
+        // 3. 遷移の実行と再生命令
+        // ================================================================
+        if (triggeredTransition)
+        {
+            // この遷移で使用したトリガーを消費(削除)する
+            for (const auto &cond : triggeredTransition->conditions)
+            {
+                if (cond.op == AnimConditionOp::Trigger)
+                {
+                    params.ConsumeTrigger(cond.paramHash);
+                    CCL_LOG_INFO(LogCategory::Game, "[AnimController] Consumed Trigger: '%s' (0x%08X)",
+                        cond.paramName.c_str(), cond.paramHash);
+                }
+            }
+
+            std::string oldStateName = currentState->sequenceName;
+            fsm.currentStateHash     = triggeredTransition->targetStateHash;
+
+            // 遷移先を internalGraph から探す
+            for (const auto &nextState : fsm.internalGraph.states)
+            {
+                if (nextState.stateHash == triggeredTransition->targetStateHash)
+                {
+                    CCL_LOG_SUCCESS(LogCategory::Game, "[AnimController] Entity %d Transitioned: [%s] -> [%s]",
+                        (int)id, oldStateName.c_str(), nextState.sequenceName.c_str());
+
+                    if (nextState.sequence)
+                    {
+                        animator.Play(nextState.sequence,
+                            {.blendTime = triggeredTransition->blendDuration,
+                                .loop   = nextState.isLoop,
+                                .speed  = nextState.playbackSpeed,
+                                .curve  = nextState.speedCurve});
+                    }
+                    break;
+                }
             }
         }
     });

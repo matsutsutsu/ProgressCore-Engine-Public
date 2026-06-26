@@ -67,7 +67,7 @@ void CharacterAnimSyncSystem::Update(float /*dt*/)
         }
         else if (!isGrounded && wasGrounded)
         {
-            if (currentYVel > 0.0f)
+            if (currentYVel > -2.0f)
             {
                 animParams.SetTrigger(HASH_TRIG_JUMP); // ジャンプした瞬間
             }

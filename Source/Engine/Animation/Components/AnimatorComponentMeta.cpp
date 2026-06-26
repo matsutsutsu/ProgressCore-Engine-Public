@@ -85,48 +85,84 @@ REGISTER_COMPONENT_EDITOR_GUI(AnimatorComponent)
 // ===================================================================
 // 2. AnimStateMachineComponent (パターンB)
 // ===================================================================
-template <> struct ComponentMeta<AnimStateMachineComponent> {
+template <>
+struct ComponentMeta<AnimStateMachineComponent>
+{
     CCL_META_USING_THIS(AnimStateMachineComponent)
-        static constexpr const char* displayName = "Anim State Machine";
-    static constexpr bool        hasCustomGui = true;
+    static constexpr const char *displayName    = "Anim State Machine";
+    static constexpr bool        hasCustomGui   = true;
     static constexpr bool        isSerializable = true;
 
 #ifdef ENABLE_EDITOR
-    static bool CustomGui(AnimStateMachineComponent& fsm, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr) {
+    static bool CustomGui(AnimStateMachineComponent &fsm, unsigned long long /*entityID*/ = 0, void * /*worldPtr*/ = nullptr)
+    {
         bool changed = false;
 
         ImGui::TextDisabled("Graph File: %s", fsm.graphPath.empty() ? "None" : fsm.graphPath.c_str());
 
-        if (ImGui::Button("Load Anim Graph... (JSON)", ImVec2(-1, 0))) {
-            if (auto path = Engine::FileDialog::OpenPreset("AnimNodes", "Select Anim Nodes", Graphics::Instance().GetWindowHandle())) {
-                namespace fs = std::filesystem;
-                fs::path absPath = path->string();
-                fs::path currentPath = fs::current_path();
+        // -------------------------------------------------------------
+        // 【修正点】グラフのロード処理をラムダ式として共通化 (DRY原則)
+        // -------------------------------------------------------------
+        auto reloadGraph = [&]() {
+            if (AnimGraphSerializer::LoadFromJSON(fsm.internalGraph, fsm.graphPath, {}))
+            {
+                // ロード成功後、シーケンスのポインタを再紐付けする
+                for (auto &state : fsm.internalGraph.states)
+                {
+                    if (!state.sequenceFilePath.empty())
+                    {
+                        state.sequence = ResourceManager::Instance().LoadAnimSequence(state.sequenceFilePath.c_str());
+                    }
+                }
+                // エントリーステートに戻す
+                fsm.currentStateHash = fsm.internalGraph.entryStateHash;
+                changed              = true;
+            }
+        };
+
+        // -------------------------------------------------------------
+        // UIレイアウト: 新規ロードボタンと更新ボタンを配置
+        // -------------------------------------------------------------
+        if (ImGui::Button("Load Anim Graph... (JSON)"))
+        {
+            if (auto path = Engine::FileDialog::OpenPreset("AnimNodes", "Select Anim Nodes", Graphics::Instance().GetWindowHandle()))
+            {
+                namespace fs                = std::filesystem;
+                fs::path        absPath     = path->string();
+                fs::path        currentPath = fs::current_path();
                 std::error_code ec;
-                fs::path relPath = fs::relative(absPath, currentPath, ec);
+                fs::path        relPath = fs::relative(absPath, currentPath, ec);
+
+                // 相対パスに変換して保存
                 fsm.graphPath = (!ec && !relPath.empty()) ? relPath.generic_string() : path->string();
 
-                if (AnimGraphSerializer::LoadFromJSON(fsm.internalGraph, fsm.graphPath, {})) {
-                    for (auto& state : fsm.internalGraph.states) {
-                        if (!state.sequenceFilePath.empty()) {
-                            state.sequence = ResourceManager::Instance().LoadAnimSequence(state.sequenceFilePath.c_str());
-                        }
-                    }
-                    fsm.currentStateHash = fsm.internalGraph.entryStateHash;
-                    changed = true;
-                }
+                // 共通のロード処理を実行
+                reloadGraph();
+            }
+        }
+
+        // パスが既に設定されている場合のみ、横にReloadボタンを表示
+        if (!fsm.graphPath.empty())
+        {
+            ImGui::SameLine();
+            if (ImGui::Button("Reload Graph"))
+            {
+                reloadGraph();
             }
         }
         ImGui::Separator();
 
-        if (fsm.internalGraph.states.empty()) {
+        if (fsm.internalGraph.states.empty())
+        {
             ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "[Error] No AnimGraph Assigned!");
             return false;
         }
 
         std::string currentStateName = "Unknown";
-        for (const auto& state : fsm.internalGraph.states) {
-            if (state.stateHash == fsm.currentStateHash) {
+        for (const auto &state : fsm.internalGraph.states)
+        {
+            if (state.stateHash == fsm.currentStateHash)
+            {
                 currentStateName = state.sequenceName;
                 break;
             }
@@ -141,30 +177,37 @@ template <> struct ComponentMeta<AnimStateMachineComponent> {
         ImGui::Text("Available States (Click to force transition):");
 
         ImGui::Indent();
-        for (const auto& state : fsm.internalGraph.states) {
+        for (const auto &state : fsm.internalGraph.states)
+        {
             bool isCurrent = (state.stateHash == fsm.currentStateHash);
 
-            if (isCurrent) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 1.0f, 0.2f, 1.0f));
+            if (isCurrent)
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 1.0f, 0.2f, 1.0f));
 
-            if (ImGui::Selectable(state.sequenceName.c_str(), isCurrent)) {
+            if (ImGui::Selectable(state.sequenceName.c_str(), isCurrent))
+            {
                 fsm.currentStateHash = state.stateHash;
-                changed = true;
+                changed              = true;
             }
 
-            if (isCurrent) ImGui::PopStyleColor();
+            if (isCurrent)
+                ImGui::PopStyleColor();
         }
         ImGui::Unindent();
 
         return changed;
     }
 #else
-    static bool CustomGui(AnimStateMachineComponent&, unsigned long long, void*) { return false; }
+    static bool CustomGui(AnimStateMachineComponent &, unsigned long long, void *)
+    {
+        return false;
+    }
 #endif
 
-    static const std::vector<FieldDescriptor>& Fields() {
+    static const std::vector<FieldDescriptor> &Fields()
+    {
         static const std::vector<FieldDescriptor> fields = {
-            CFIELD(graphPath, "Graph File Path", "General")
-        };
+            CFIELD(graphPath, "Graph File Path", "General")};
         return fields;
     }
 };

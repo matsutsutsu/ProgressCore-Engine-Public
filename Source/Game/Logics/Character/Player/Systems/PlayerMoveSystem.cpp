@@ -5,12 +5,15 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 #include <cmath>
 #include <algorithm>
-#include <DirectXMath.h> // XM_PIの使用に必要
+#include <DirectXMath.h>
 
 #include "Game/Logics/GameEvent/GameEvents.h"
+#include "Engine/Core/Math/StringHash.h" // ★追加: ハッシュ計算用
 
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
+
+static const uint32_t HASH_TRIG_DOUBLE_JUMP = CCL::Utils::HashString("OnDoubleJump");
 
 void PlayerMoveSystem::Update(float rawDt)
 {
@@ -20,11 +23,12 @@ void PlayerMoveSystem::Update(float rawDt)
                       const JoltCharacterConfigComponent &config,
                       const JoltCharacterHandleComponent &joltHandle,
                       PlayerComponent                    &player,
+                      AnimParametersComponent            &animParams, // ★追加
                       const TimeStateComponent           &time) {
         if (_world->HasComponent<Tag::DeadTag>(id))
             return;
         if (!joltHandle.character)
-            return; // Jolt実体が無い場合はスキップ
+            return;
 
         float dt         = time.localDt;
         bool  isGrounded = (joltHandle.character->GetGroundState() == JPH::CharacterVirtual::EGroundState::OnGround);
@@ -32,7 +36,7 @@ void PlayerMoveSystem::Update(float rawDt)
         // =========================================================
         // 1. 操作ハック（時間の魔法）
         // =========================================================
-        UpdateJumpLogic(dt, isGrounded, inputData, player);
+        UpdateJumpLogic(dt, isGrounded, inputData, player, animParams); // ★引数追加
 
         // =========================================================
         // 2. 視覚ハック（空間の魔法）
@@ -44,17 +48,15 @@ void PlayerMoveSystem::Update(float rawDt)
 // -----------------------------------------------------------------------------------
 // [責務] 操作の遊び（バッファ）を作り、人間の反射神経のズレを吸収する
 // -----------------------------------------------------------------------------------
-void PlayerMoveSystem::UpdateJumpLogic(float dt, bool isGrounded, CharacterMovementInputComponent &inputData, PlayerComponent &player)
+void PlayerMoveSystem::UpdateJumpLogic(float dt, bool isGrounded, CharacterMovementInputComponent &inputData, PlayerComponent &player, AnimParametersComponent &animParams)
 {
     // 直前の落下速度から「着地」の衝撃を計算しイベント発火
     if (isGrounded)
     {
         if (!player.wasGroundedLastFrame)
         {
-            // 落下速度が一定以上(例：-10.0f)ならカメラシェイクを要求
             if (player.lastFallVelocity < -10.0f)
             {
-                // 落下が速いほど揺れを強くする
                 float shakePower = std::abs(player.lastFallVelocity) * 0.03f;
                 _world->GetEventBus().Publish(CameraShakeRequestEvent{shakePower, 0.2f});
             }
@@ -67,19 +69,7 @@ void PlayerMoveSystem::UpdateJumpLogic(float dt, bool isGrounded, CharacterMovem
         player.timeSinceGrounded += dt;
     }
 
-    // 状態の保存
     player.wasGroundedLastFrame = isGrounded;
-
-    // コヨーテタイマーの更新
-    if (isGrounded)
-    {
-        player.timeSinceGrounded = 0.0f;
-        player.currentJumpCount  = 0;
-    }
-    else
-    {
-        player.timeSinceGrounded += dt; // 空中なら時間を計測
-    }
 
     // エッジ検出とバッファタイマーの更新
     bool isPressedThisFrame     = inputData.jumpRequested && !player.wasJumpButtonPressed;
@@ -87,11 +77,11 @@ void PlayerMoveSystem::UpdateJumpLogic(float dt, bool isGrounded, CharacterMovem
 
     if (isPressedThisFrame)
     {
-        player.jumpBufferTimer = player.jumpBufferWindow; // ボタンを押したら「予約」
+        player.jumpBufferTimer = player.jumpBufferWindow;
     }
     else if (player.jumpBufferTimer > 0.0f)
     {
-        player.jumpBufferTimer -= dt; // 予約の消費
+        player.jumpBufferTimer -= dt;
     }
 
     // ジャンプ成立の判定
@@ -103,8 +93,19 @@ void PlayerMoveSystem::UpdateJumpLogic(float dt, bool isGrounded, CharacterMovem
         player.currentJumpCount++;
         inputData.jumpRequested = true;
 
-        player.jumpBufferTimer   = 0.0f;   // 成立したら予約を破棄
-        player.timeSinceGrounded = 999.0f; // 連続コヨーテを防ぐために莫大な時間を代入
+        // =========================================================
+        // ★ AAAアニメーションハック: 固有アクションの伝達
+        // 1段目は CharacterAnimSyncSystem が JoltのY速度変化を見て自動で OnJump を出す。
+        // 空中での2段目は物理からは判別不可能なため、ここで専用の「宙返り」等を
+        // 再生させるためのトリガーを発行する。
+        // =========================================================
+        if (canDoubleJump)
+        {
+            animParams.SetTrigger(HASH_TRIG_DOUBLE_JUMP);
+        }
+
+        player.jumpBufferTimer   = 0.0f;
+        player.timeSinceGrounded = 999.0f;
     }
     else
     {
@@ -124,47 +125,34 @@ void PlayerMoveSystem::UpdateBankingAndRotation(float dt, const CharacterMovemen
         horizontalMove.Normalize();
         float targetYaw = atan2f(horizontalMove.x, horizontalMove.z);
 
-        // 最短回転角度の差分計算 (-π 〜 π)
         float angleDiff = targetYaw - player.currentYaw;
         while (angleDiff > DirectX::XM_PI)
             angleDiff -= DirectX::XM_2PI;
         while (angleDiff < -DirectX::XM_PI)
             angleDiff += DirectX::XM_2PI;
 
-        // ロジック用のYaw(左右の向き)を安全に補間
         player.currentYaw += angleDiff * player.turnSpeed * dt;
 
-        // --- バンキング(傾き)の計算 ---
-        // 旋回量(angleDiff)と現在の移動速度から傾きの目標値を算出
         float speedRatio = (walkSpeed > 0.001f) ? (inputData.currentVelocity.Length() / walkSpeed) : 0.0f;
-
-        // 急旋回・高速であるほど深く傾く (-angleDiff で内側に倒し込む)
         float targetRoll = -(angleDiff * 10.0f) * player.bankingMultiplier * speedRatio;
 
-        // 限界角(度)をラジアンに変換してクランプ
         float maxRollRad = DirectX::XMConvertToRadians(player.maxBankingAngle);
         targetRoll       = std::clamp(targetRoll, -maxRollRad, maxRollRad);
 
-        // Roll(傾き)をバネのように滑らかに補間 (C++20のstd::lerpを使用)
         player.currentRoll = std::lerp(player.currentRoll, targetRoll, 8.0f * dt);
     }
     else
     {
-        // 停止時は直立姿勢へ戻る
         player.currentRoll = std::lerp(player.currentRoll, 0.0f, 10.0f * dt);
     }
 
-    // --- 物理と描画の完全分離 (DODの極意) ---
     Quaternion yawRot  = Quaternion::CreateFromAxisAngle(Vector3::UnitY, player.currentYaw);
     Quaternion rollRot = Quaternion::CreateFromAxisAngle(Vector3::UnitZ, player.currentRoll);
 
-    // 最終的な「描画用Transform」にはRollの傾きを含める
     trans.rotation = rollRot * yawRot;
     DirectX::XMVector4Normalize(DirectX::XMLoadFloat4(&trans.rotation));
     trans.isStatic = false;
 
-    // 「物理エンジン(Jolt)」には、傾きを一切含まない純粋なYawだけを渡す
-    // ※これを行わないと物理カプセルが傾いて地面に突き刺さります
     character->SetRotation(JPH::Quat(yawRot.x, yawRot.y, yawRot.z, yawRot.w));
 }
 
