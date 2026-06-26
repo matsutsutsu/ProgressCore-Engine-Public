@@ -271,9 +271,13 @@ void ResourceManager::UnloadMaterial(MaterialHandle handle) {
 // ============================================================================
 // [5] Animation Sequence
 // ============================================================================
-const AnimSequence* ResourceManager::LoadAnimSequence(const char* filename) {
+const AnimSequence *ResourceManager::LoadAnimSequence(const char *filename)
+{
     if (!filename || filename[0] == '\0')
         return nullptr;
+
+    // LoadAnimCurve と同様にスレッドセーフにする(レジストリ/プールの競合防止)。
+    std::lock_guard<std::mutex> lock(_mutex);
 
     uint32_t hash = HashString(filename);
     auto     it   = m_animSequenceRegistry.find(hash);
@@ -284,7 +288,7 @@ const AnimSequence* ResourceManager::LoadAnimSequence(const char* filename) {
             return seq;
     }
 
-    // ★ 修正: Cerealの Archive を廃止し、nlohmann::json でロードする
+    // Cereal を廃止し、nlohmann::json でロードする
     std::string jsonStr = FileSystem::ReadAllText(filename);
     if (jsonStr.empty())
         return nullptr;
@@ -302,6 +306,31 @@ const AnimSequence* ResourceManager::LoadAnimSequence(const char* filename) {
         CCL_LOG_ERROR(LogCategory::Core, "Failed to parse AnimSequence json: %s (%s)", filename, e.what());
         m_animSequencePool.Destroy(handle);
         return nullptr;
+    }
+
+    // =====================================================================
+    // ロード後処理: 不変条件の保証と派生データの計算
+    // =====================================================================
+
+    // (1) startTime 昇順ソートを保証する。
+    //     AnimationSystem の O(1) 栞ロジックは events が昇順である前提。
+    //     Sequencer 保存は SortAndResync 済みだが、手書き/外部生成 JSON は
+    //     未ソートの可能性があるため、ロード経路で必ず保証する。
+    std::sort(seq->events.begin(), seq->events.end(),
+        [](const AnimNotifyEvent &a, const AnimNotifyEvent &b) {
+            return a.startTime < b.startTime;
+        });
+
+    // (2) HitBox イベントの tagHash をここで1回だけ計算してキャッシュする。
+    //     CombatAnimationSyncSystem が毎フレーム HashString する必要をなくす。
+    //     tagHash は派生データのため JSON には保存せず、必ずこのロード時に再計算する
+    //     (stringParam を手編集しても不整合が起きない)。
+    for (auto &ev : seq->events)
+    {
+        if (ev.type == AnimEventType::HitBox && !ev.stringParam.empty())
+            ev.tagHash = HashString(ev.stringParam.c_str());
+        else
+            ev.tagHash = 0;
     }
 
     m_animSequenceRegistry[hash] = handle;
@@ -323,22 +352,20 @@ const AnimationCurve* ResourceManager::LoadAnimCurve(const char* filepath) {
         return m_animCurvePool.Get(it->second);
     }
 
-    // JSONファイルの読み込み
-    std::ifstream is(filepath);
-    if (!is.is_open()) {
+    // FileSystem 経由で読み込む(.pak 暗号化・パス解決に対応)
+    std::string jsonStr = FileSystem::ReadAllText(filepath);
+    if (jsonStr.empty())
+    {
         CCL_LOG_ERROR(LogCategory::Core, "Failed to open curve file: %s", filepath);
         return nullptr;
     }
-
     // プールから空き部屋を確保
-    CCL::Handle<AnimationCurve> handle = m_animCurvePool.Create();
-    AnimationCurve* newCurve = m_animCurvePool.Get(handle);
-
-    try {
-        // ※ CurveEditorWindow で nlohmann/json を使って保存した場合は、ここも nlohmann でパースします
-        nlohmann::json j;
-        is >> j;
-        *newCurve = j.get<AnimationCurve>();
+    CCL::Handle<AnimationCurve> handle   = m_animCurvePool.Create();
+    AnimationCurve             *newCurve = m_animCurvePool.Get(handle);
+    try
+    {
+        nlohmann::json j = nlohmann::json::parse(jsonStr);
+        *newCurve        = j.get<AnimationCurve>();
 
         m_animCurveRegistry[hash] = handle;
         m_assetPathRegistry[hash] = filepath;

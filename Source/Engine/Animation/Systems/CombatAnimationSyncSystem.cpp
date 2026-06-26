@@ -56,9 +56,8 @@ void CombatAnimationSyncSystem::Update(float /*dt*/)
             if (ev.type != AnimEventType::HitBox)
                 continue;
 
-            // 武器タグ一致判定。tagHash はスポーン時に1回計算済み。
-            // stringParam のハッシュは小規模(武器数×イベント数)なので毎フレームでも実質ゼロコスト。
-            if (CCL::Utils::HashString(ev.stringParam.c_str()) != hb.tagHash)
+            // tagHash は LoadAnimSequence でキャッシュ済み（毎フレーム HashString 不要）。
+            if (ev.tagHash != hb.tagHash)
                 continue;
 
             if (animator->currentTimer >= ev.startTime &&

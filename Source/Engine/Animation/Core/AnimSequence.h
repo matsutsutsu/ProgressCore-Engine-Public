@@ -84,7 +84,10 @@ struct AnimNotifyEvent
     float effectScale  = 1.0f;  ///< エフェクトのスケール倍率
     bool  effectFollow = false; ///< 親(キャラ)に追従するか
 
-   
+    // --- 派生データ(ロード時にキャッシュ。JSONには保存しない) ---
+    /// @brief stringParam のハッシュ値。HitBox タグ照合の毎フレーム HashString を回避する。
+    /// @note  ResourceManager::LoadAnimSequence が計算する。手動 from_json では 0 のまま。
+    uint32_t tagHash = 0;
 };
 
 /// @brief 全エンティティで共有されるアニメーションの台本。
