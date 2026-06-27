@@ -9,6 +9,7 @@
 
 #include "Engine/Graphics/Components/Core/ModelComponent.h"
 #include "Engine/Animation/Components/AnimatorComponent.h"
+#include "Engine/Animation/Components/RootMotionComponent.h"
 #include "Engine/Timer/TimeState.h"
 
 // ===================================================================================
@@ -202,19 +203,39 @@ void AnimationSystem::Update(float dt)
                         blendRate       = std::fmax(0.0f, std::fmin(blendRate, 1.0f));
 
                         Model::BlendAnimations(animator.poseBufferB, animator.poseBufferA, blendRate, animator.poseBufferA);
-                        model->SetNodePoses(animator.poseBufferA);
+                       
                     }
                     else
                     {
                         model->ComputeAnimation(animIndex, animator.currentTimer, animator.poseBufferA);
-                        model->SetNodePoses(animator.poseBufferA);
+                    
                     }
                 }
                 else
                 {
                     model->ComputeAnimation(animIndex, animator.currentTimer, animator.poseBufferA);
-                    model->SetNodePoses(animator.poseBufferA);
+                
                 }
+
+                // ========================================================
+                // ★ Root Motion キャンセリング (Baking into Pose)
+                // ========================================================
+                auto *rootMotion = _world->GetComponent<RootMotionComponent>(id);
+                if (rootMotion && rootMotion->enabled && !animator.poseBufferA.empty())
+                {
+                    // ルートボーン(インデックス0)のXZ移動を強制的に原点に固定する。
+                    // これを行わないと、抽出した移動(Capsule)とメッシュのローカル移動が
+                    // 二重にかかり、キャラクターが当たり判定から飛び出してしまう。
+                    animator.poseBufferA[0].position.x = 0.0f;
+                    animator.poseBufferA[0].position.z = 0.0f;
+
+                    // ※ ジャンプなどでY軸もモデルデータ依存にする場合は Y も 0 にするが、
+                    // 通常は重力(Physics)に任せるためXZのみを固定するのがAAAの定石。
+                }
+
+                // ★ 全てのデータ加工が終わった後、最後に1回だけメモリに書き込む（O(1)の原則）
+                model->SetNodePoses(animator.poseBufferA);
+
             }
         }
     });

@@ -121,13 +121,13 @@
             ]
         },
         {
-            "applyRootMotion": false,
+            "applyRootMotion": true,
             "isLoop": true,
-            "nodePosX": 429.0,
-            "nodePosY": 311.0,
+            "nodePosX": 420.0,
+            "nodePosY": 304.0,
             "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
-            "sequenceFilePath": "Assets/Animations/Sequencer/Player/Walk.json",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/Run_RM.json",
             "sequenceName": "Run",
             "speedCurveName": "",
             "stateHash": 2371348074,
@@ -149,13 +149,13 @@
             ]
         },
         {
-            "applyRootMotion": true,
+            "applyRootMotion": false,
             "isLoop": true,
             "nodePosX": 333.0,
             "nodePosY": -9.0,
             "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
-            "sequenceFilePath": "Assets/Animations/Sequencer/Player/DashAttack.json",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/Run.json",
             "sequenceName": "Dash",
             "speedCurveName": "",
             "stateHash": 1750693397,
@@ -194,12 +194,6 @@
                             "paramHash": 174817312,
                             "paramName": "Speed",
                             "threshold": 1.0
-                        },
-                        {
-                            "op": 4,
-                            "paramHash": 174817312,
-                            "paramName": "Speed",
-                            "threshold": 0.0
                         }
                     ],
                     "logicType": 0,

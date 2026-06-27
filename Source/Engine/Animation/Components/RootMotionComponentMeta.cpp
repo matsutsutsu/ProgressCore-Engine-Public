@@ -62,8 +62,7 @@ struct ComponentMeta<RootMotionComponent>
         ImGui::BeginDisabled();
 
         ImGui::Checkbox("Enabled", &comp.enabled);
-        ImGui::Checkbox("Just Started", &comp.justStarted);
-        ImGui::DragFloat("Prev Progress", &comp.prevProgress, 0.01f, 0.0f, 1.0f);
+        ImGui::DragFloat("Prev Timer", &comp.prevTimer, 0.01f, 0.0f, 10.0f);
 
         ImGui::EndDisabled();
 

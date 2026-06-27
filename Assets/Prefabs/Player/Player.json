@@ -6,27 +6,28 @@
                 "AnimStateMachine": {
                     "graphPath": "Assets/Animations/Nodes/TestAnimationNode.json"
                 },
+                "Animation": null,
                 "Animator": {
                     "isLoop": true,
-                    "playbackSpeed": 1.0
+                    "playbackSpeed": 0.5
                 },
                 "Bounding Box": {
                     "worldAABB.Center": [
-                        -4.651778697967529,
-                        3.1680166721343994,
-                        -20.232868194580078
+                        8.989217758178711,
+                        3.184028148651123,
+                        4.541933059692383
                     ],
                     "worldAABB.Extents": [
-                        1.3109731674194336,
-                        3.221970319747925,
-                        2.496615409851074
+                        0.7657580375671387,
+                        3.221978187561035,
+                        2.382901668548584
                     ]
                 },
                 "Character Movement Input": {
                     "currentVelocity": [
-                        -8.686644696194455e-38,
+                        -2.0985934734344482,
                         0.0,
-                        -7.006492321624085e-45
+                        0.0007523017702624202
                     ],
                     "dashRequested": false,
                     "desiredVelocity": [
@@ -47,14 +48,15 @@
                     "currentTimer": -0.006666665896773338,
                     "dashCooldown": 0.1599999964237213,
                     "dashDirection": [
-                        4.408160947377837e-08,
+                        0.9808154702186584,
                         0.0,
-                        -1.0
+                        -0.19493861496448517
                     ],
                     "dashDuration": 0.1599999964237213,
                     "dashSpeed": 114.0,
                     "isDashing": false,
-                    "isInvincible": false
+                    "isInvincible": false,
+                    "justEvadeWindow": 0.07999999821186066
                 },
                 "Jolt Capsule Collider": {
                     "halfHeight": 2.5,
@@ -96,8 +98,8 @@
                     "bankingMultiplier": 0.5,
                     "coyoteTimeWindow": 0.15000000596046448,
                     "currentJumpCount": 0,
-                    "currentRoll": -2.802596928649634e-45,
-                    "currentYaw": -1.811211109161377,
+                    "currentRoll": 3.1681586278864415e-06,
+                    "currentYaw": -7.8539252281188965,
                     "jumpBufferTimer": 0.0,
                     "jumpBufferWindow": 0.15000000596046448,
                     "lastFallVelocity": 0.0,
@@ -120,15 +122,15 @@
                     "isStatic": false,
                     "parent": 2,
                     "position": [
-                        -4.912563323974609,
-                        -0.057456765323877335,
-                        -20.29923439025879
+                        8.685142517089844,
+                        -0.041470639407634735,
+                        4.539604187011719
                     ],
                     "rotation": [
-                        1.401298464324817e-45,
-                        -0.7867990732192993,
-                        -1.401298464324817e-45,
-                        0.617209255695343
+                        1.120081606131862e-06,
+                        0.7070868015289307,
+                        -1.1201449297004729e-06,
+                        -0.707126796245575
                     ],
                     "scale": [
                         3.5,

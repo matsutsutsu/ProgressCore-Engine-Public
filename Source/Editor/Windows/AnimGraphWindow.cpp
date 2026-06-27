@@ -838,7 +838,7 @@ void AnimGraphWindow::DrawToolbar()
 {
     if (ImGui::Button("保存 (Save As...)"))
     {
-        if (auto path = FileDialog::SavePreset("AnimNodes", "Save Anim Graph"))
+        if (auto path = FileDialog::SavePreset("AnimNode", "Save Anim Graph"))
         {
             _currentFilePath = FileDialog::ConvertToRelativePath(*path);
             SaveGraph(_currentFilePath);
@@ -849,7 +849,7 @@ void AnimGraphWindow::DrawToolbar()
 
     if (ImGui::Button("読込 (Load...)"))
     {
-        if (auto path = FileDialog::OpenPreset("AnimNodes", "Select Anim Graph File"))
+        if (auto path = FileDialog::OpenPreset("AnimNode", "Select Anim Graph File"))
         {
             _currentFilePath = FileDialog::ConvertToRelativePath(*path);
             LoadGraph(_currentFilePath);
@@ -890,6 +890,8 @@ void AnimGraphWindow::SaveGraph(const std::string &path)
     }
     AnimGraphSerializer::SaveToJSON(_currentGraph, path);
 
+    // ノードグラフをテキスト化にしてわかりやすくする
+    #if 0
     try
     {
         std::filesystem::create_directories("Build/Logs");
@@ -907,6 +909,7 @@ void AnimGraphWindow::SaveGraph(const std::string &path)
     {
         CCL_LOG_WARN(LogCategory::Editor, "[Anim Editor] Failed to export text dump: %s", e.what());
     }
+    #endif
 }
 
 void AnimGraphWindow::LoadGraph(const std::string& path) {

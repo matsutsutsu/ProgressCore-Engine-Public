@@ -1,5 +1,8 @@
 {
     "DialogHistory": {
-        "AnimNodes": "Assets\\Animations\\Nodes"
+        "AnimNode": "Assets\\Animations\\Nodes",
+        "AnimNodes": "Assets\\Animations\\Nodes",
+        "AnimSequence": "Assets\\Animations\\Sequencer\\Player",
+        "Prefab": "Assets\\Prefabs\\Player"
     }
 }

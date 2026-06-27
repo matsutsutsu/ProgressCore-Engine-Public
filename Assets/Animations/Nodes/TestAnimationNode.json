@@ -13,6 +13,7 @@
                 }
             ],
             "logicType": 0,
+            "requiredWindow": "",
             "targetStateHash": 1750693397
         },
         {
@@ -26,6 +27,7 @@
                 }
             ],
             "logicType": 0,
+            "requiredWindow": "",
             "targetStateHash": 236909357
         },
         {
@@ -45,6 +47,7 @@
                 }
             ],
             "logicType": 0,
+            "requiredWindow": "",
             "targetStateHash": 2063645824
         }
     ],
@@ -90,6 +93,7 @@
     ],
     "states": [
         {
+            "applyRootMotion": false,
             "isLoop": true,
             "nodePosX": 77.0,
             "nodePosY": 311.0,
@@ -111,14 +115,16 @@
                         }
                     ],
                     "logicType": 0,
+                    "requiredWindow": "",
                     "targetStateHash": 2371348074
                 }
             ]
         },
         {
+            "applyRootMotion": false,
             "isLoop": true,
-            "nodePosX": 429.0,
-            "nodePosY": 311.0,
+            "nodePosX": 428.0,
+            "nodePosY": 304.0,
             "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Walk.json",
@@ -137,14 +143,16 @@
                         }
                     ],
                     "logicType": 0,
+                    "requiredWindow": "",
                     "targetStateHash": 1168775091
                 }
             ]
         },
         {
+            "applyRootMotion": false,
             "isLoop": true,
-            "nodePosX": 333.0,
-            "nodePosY": -9.0,
+            "nodePosX": 330.0,
+            "nodePosY": -14.0,
             "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Run.json",
@@ -169,6 +177,7 @@
                         }
                     ],
                     "logicType": 0,
+                    "requiredWindow": "",
                     "targetStateHash": 1168775091
                 },
                 {
@@ -188,11 +197,13 @@
                         }
                     ],
                     "logicType": 0,
+                    "requiredWindow": "",
                     "targetStateHash": 2371348074
                 }
             ]
         },
         {
+            "applyRootMotion": false,
             "isLoop": false,
             "nodePosX": 765.0,
             "nodePosY": -89.0,
@@ -214,11 +225,13 @@
                         }
                     ],
                     "logicType": 0,
+                    "requiredWindow": "",
                     "targetStateHash": 2063645824
                 }
             ]
         },
         {
+            "applyRootMotion": false,
             "isLoop": true,
             "nodePosX": 765.0,
             "nodePosY": 103.0,
@@ -240,6 +253,7 @@
                         }
                     ],
                     "logicType": 0,
+                    "requiredWindow": "",
                     "targetStateHash": 1168775091
                 }
             ]
