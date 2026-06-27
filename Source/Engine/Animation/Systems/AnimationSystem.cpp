@@ -68,11 +68,27 @@ void AnimationSystem::Update(float dt)
         if (animator.isBlending)
         {
             animator.currentBlendTime += time.localDt;
-            animator.previousTimer += time.localDt * animator.playbackSpeed;
+
+            // 過去のモーションは「過去のスピード」で進める
+            animator.previousTimer += time.localDt * animator.previousPlaybackSpeed;
 
             if (animator.previousSequence && animator.previousSequence->duration > 0.0f)
             {
-                animator.previousTimer = fmod(animator.previousTimer, animator.previousSequence->duration);
+                // ループ設定に応じて「フリーズ」か「ループ」かを分ける
+                if (!animator.previousLoop)
+                {
+                    // 非ループ (JumpEndなど): durationを超えたら末尾でフリーズさせる
+                    animator.previousTimer = (std::min)(animator.previousTimer, animator.previousSequence->duration);
+                }
+                else
+                {
+                    // ループ (Runなど): 安全に剰余計算してループさせる
+                    animator.previousTimer = std::fmod(animator.previousTimer, animator.previousSequence->duration);
+                    if (animator.previousTimer < 0.0f)
+                    {
+                        animator.previousTimer += animator.previousSequence->duration;
+                    }
+                }
             }
 
             if (animator.currentBlendTime >= animator.blendDuration)
@@ -191,51 +207,62 @@ void AnimationSystem::Update(float dt)
                 if (animator.isBlending && animator.previousSequence)
                 {
                     int prevAnimIndex = model->GetAnimationIndex(animator.previousSequence->targetAnimName.c_str());
-
                     if (prevAnimIndex != -1)
                     {
+                        // 容疑者C対策: 骨格空間のバッファサイズを強制的に現在のモデルのノード数に同期
+                        size_t nodeCount = animator.poseBufferA.size();
+                        if (animator.poseBufferB.size() != nodeCount)
+                        {
+                            animator.poseBufferB.resize(nodeCount);
+                        }
+
+                        // 過去と現在のポーズをそれぞれ独立して計算
                         model->ComputeAnimation(prevAnimIndex, animator.previousTimer, animator.poseBufferB);
                         model->ComputeAnimation(animIndex, animator.currentTimer, animator.poseBufferA);
 
-                        float blendRate = (animator.blendDuration > 0.0f)
-                                              ? (animator.currentBlendTime / animator.blendDuration)
-                                              : 1.0f;
+                        // 容疑者B対策: ブレンドを行う「前」に、過去と現在の両方のルートボーンを強制キャンセルする！
+                        // ルートモーションの有無に関わらず、描画空間においてRoot（Index:0）のXZは常に原点であるべき。
+                        auto *rootMotion = _world->GetComponent<RootMotionComponent>(id);
+                        if (rootMotion && rootMotion->enabled)
+                        {
+                            if (!animator.poseBufferB.empty())
+                            {
+                                animator.poseBufferB[0].position.x = 0.0f;
+                                animator.poseBufferB[0].position.z = 0.0f;
+                            }
+                            if (!animator.poseBufferA.empty())
+                            {
+                                animator.poseBufferA[0].position.x = 0.0f;
+                                animator.poseBufferA[0].position.z = 0.0f;
+                            }
+                        }
+
+                        float blendRate = (animator.blendDuration > 0.0f) ? (animator.currentBlendTime / animator.blendDuration) : 1.0f;
                         blendRate       = std::fmax(0.0f, std::fmin(blendRate, 1.0f));
 
+                        // 完全にクリーンアップされたRoot同士のポーズをブレンド
                         Model::BlendAnimations(animator.poseBufferB, animator.poseBufferA, blendRate, animator.poseBufferA);
-                       
                     }
                     else
                     {
                         model->ComputeAnimation(animIndex, animator.currentTimer, animator.poseBufferA);
-                    
                     }
                 }
                 else
                 {
                     model->ComputeAnimation(animIndex, animator.currentTimer, animator.poseBufferA);
-                
+
+                    // 通常再生時のキャンセリング（ブレンドしていない時）
+                    auto *rootMotion = _world->GetComponent<RootMotionComponent>(id);
+                    if (rootMotion && rootMotion->enabled && !animator.poseBufferA.empty())
+                    {
+                        animator.poseBufferA[0].position.x = 0.0f;
+                        animator.poseBufferA[0].position.z = 0.0f;
+                    }
                 }
 
-                // ========================================================
-                // ★ Root Motion キャンセリング (Baking into Pose)
-                // ========================================================
-                auto *rootMotion = _world->GetComponent<RootMotionComponent>(id);
-                if (rootMotion && rootMotion->enabled && !animator.poseBufferA.empty())
-                {
-                    // ルートボーン(インデックス0)のXZ移動を強制的に原点に固定する。
-                    // これを行わないと、抽出した移動(Capsule)とメッシュのローカル移動が
-                    // 二重にかかり、キャラクターが当たり判定から飛び出してしまう。
-                    animator.poseBufferA[0].position.x = 0.0f;
-                    animator.poseBufferA[0].position.z = 0.0f;
-
-                    // ※ ジャンプなどでY軸もモデルデータ依存にする場合は Y も 0 にするが、
-                    // 通常は重力(Physics)に任せるためXZのみを固定するのがAAAの定石。
-                }
-
-                // ★ 全てのデータ加工が終わった後、最後に1回だけメモリに書き込む（O(1)の原則）
+                // 最終確定したポーズを行列へ反映（SetNodePosesはここに1回だけ！）
                 model->SetNodePoses(animator.poseBufferA);
-
             }
         }
     });

@@ -1,6 +1,6 @@
 {
-    "anyStatePosX": 333.0,
-    "anyStatePosY": -197.0,
+    "anyStatePosX": 358.0,
+    "anyStatePosY": -198.0,
     "anyStateTransitions": [
         {
             "blendDuration": 0.20000000298023224,
@@ -17,7 +17,7 @@
             "targetStateHash": 1750693397
         },
         {
-            "blendDuration": 0.20000000298023224,
+            "blendDuration": 0.10000000149011612,
             "conditions": [
                 {
                     "op": 3,
@@ -49,6 +49,20 @@
             "logicType": 0,
             "requiredWindow": "",
             "targetStateHash": 2063645824
+        },
+        {
+            "blendDuration": 0.10000000149011612,
+            "conditions": [
+                {
+                    "op": 3,
+                    "paramHash": 2057105605,
+                    "paramName": "OnDoubleJump",
+                    "threshold": 0.0
+                }
+            ],
+            "logicType": 0,
+            "requiredWindow": "",
+            "targetStateHash": 2262072404
         }
     ],
     "entryPosX": 29.0,
@@ -89,13 +103,27 @@
             "hash": 101128815,
             "name": "YVelocity",
             "type": 0
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 2057105605,
+            "name": "OnDoubleJump",
+            "type": 2
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 4288447221,
+            "name": "OnLand",
+            "type": 2
         }
     ],
     "states": [
         {
             "applyRootMotion": false,
             "isLoop": true,
-            "nodePosX": 77.0,
+            "nodePosX": 76.0,
             "nodePosY": 311.0,
             "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
@@ -205,12 +233,12 @@
         {
             "applyRootMotion": false,
             "isLoop": false,
-            "nodePosX": 765.0,
-            "nodePosY": -89.0,
-            "playbackSpeed": 1.0,
+            "nodePosX": 757.0,
+            "nodePosY": -134.0,
+            "playbackSpeed": 2.5,
             "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Jump_Start.json",
-            "sequenceName": "Jump",
+            "sequenceName": "JumpStart",
             "speedCurveName": "",
             "stateHash": 236909357,
             "transitions": [
@@ -233,12 +261,12 @@
         {
             "applyRootMotion": false,
             "isLoop": true,
-            "nodePosX": 765.0,
-            "nodePosY": 103.0,
+            "nodePosX": 793.0,
+            "nodePosY": 97.0,
             "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Jump_Loop.json",
-            "sequenceName": "Fall",
+            "sequenceName": "JumpLoop",
             "speedCurveName": "",
             "stateHash": 2063645824,
             "transitions": [
@@ -246,15 +274,85 @@
                     "blendDuration": 0.20000000298023224,
                     "conditions": [
                         {
-                            "op": 0,
-                            "paramHash": 45180367,
-                            "paramName": "IsGrounded",
-                            "threshold": 1.0
+                            "op": 3,
+                            "paramHash": 4288447221,
+                            "paramName": "OnLand",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredWindow": "",
+                    "targetStateHash": 3204239090
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "isLoop": false,
+            "nodePosX": 980.0,
+            "nodePosY": -6.0,
+            "playbackSpeed": 2.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/DoubleJump.json",
+            "sequenceName": "DoubleJump",
+            "speedCurveName": "",
+            "stateHash": 2262072404,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 174817312,
+                            "paramName": "Speed",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredWindow": "",
+                    "targetStateHash": 2063645824
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "isLoop": false,
+            "nodePosX": 518.0,
+            "nodePosY": 97.0,
+            "playbackSpeed": 2.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/Jump_End.json",
+            "sequenceName": "JumpEnd",
+            "speedCurveName": "",
+            "stateHash": 3204239090,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 174817312,
+                            "paramName": "Speed",
+                            "threshold": 0.0
                         }
                     ],
                     "logicType": 0,
                     "requiredWindow": "",
                     "targetStateHash": 1168775091
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 174817312,
+                            "paramName": "Speed",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredWindow": "",
+                    "targetStateHash": 2371348074
                 }
             ]
         }

@@ -42,6 +42,10 @@ struct AnimatorComponent {
     float currentBlendTime = 0.0f;
     bool isBlending = false;
 
+    // 過去のモーションをブレンド中に正しく制御するための記憶
+    bool  previousLoop          = false;
+    float previousPlaybackSpeed = 1.0f;
+
     // --- 計算用キャッシュ (毎フレームのnew/deleteを防ぐマイボウル) ---
     std::vector<Model::NodePose> poseBufferA;
     std::vector<Model::NodePose> poseBufferB; // 過去のアニメーション用
@@ -62,8 +66,6 @@ struct AnimatorComponent {
     };
 
     /// @brief 新しいシーケンスの再生を開始する（必要ならクロスフェード）。
-    /// @param sequence 再生する台本。現在と同一なら再生位置はリセットしない。
-    /// @param params   再生パラメータ。例: Play(seq, { .loop = false, .speed = 1.5f });
     void Play(const AnimSequence *sequence, const PlayParams &params = {})
     {
         if (currentSequence != sequence)
@@ -72,7 +74,34 @@ struct AnimatorComponent {
             if (currentSequence && params.blendTime > 0.001f)
             {
                 previousSequence = currentSequence;
-                previousTimer    = currentTimer;
+
+                // ==========================================================
+                // ★ クリティカルな修正: 時間のはみ出し(オーバーフロー)を補正する
+                // ==========================================================
+                if (currentSequence->duration > 0.0f)
+                {
+                    if (!isLoop)
+                    {
+                        // 非ループ (JumpEnd等): 終了後は末尾のポーズを維持するようクランプ
+                        previousTimer = (std::min)(currentTimer, currentSequence->duration);
+                    }
+                    else
+                    {
+                        // ループ: はみ出た時間を剰余計算して安全なループ内時間に丸める
+                        previousTimer = std::fmod(currentTimer, currentSequence->duration);
+                        if (previousTimer < 0.0f)
+                            previousTimer += currentSequence->duration;
+                    }
+                }
+                else
+                {
+                    previousTimer = currentTimer;
+                }
+
+                // 過去の状態として今の設定を記憶しておく
+                previousLoop          = isLoop;
+                previousPlaybackSpeed = playbackSpeed;
+
                 isBlending       = true;
                 blendDuration    = params.blendTime;
                 currentBlendTime = 0.0f;
@@ -88,6 +117,7 @@ struct AnimatorComponent {
             nextEventIndex  = 0;
             isFinished      = false;
         }
+
         isLoop        = params.loop;
         playbackSpeed = params.speed;
         activeCurve   = params.curve;

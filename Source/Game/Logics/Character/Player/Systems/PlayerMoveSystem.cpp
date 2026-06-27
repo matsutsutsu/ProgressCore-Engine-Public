@@ -156,4 +156,4 @@ void PlayerMoveSystem::UpdateBankingAndRotation(float dt, const CharacterMovemen
     character->SetRotation(JPH::Quat(yawRot.x, yawRot.y, yawRot.z, yawRot.w));
 }
 
-REGISTER_LOGIC_SYSTEM(PlayerMoveSystem, Priority::LogicStage::L02_Update);
+REGISTER_LOGIC_SYSTEM(PlayerMoveSystem, Priority::LogicStage::L02_PreUpdate);
