@@ -606,25 +606,94 @@ void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, Animator
     if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && ImGui::IsKeyPressed(ImGuiKey_Space))
         _isPlaying = !_isPlaying;
 
+    const float dur      = _editingSequence.duration;
+    const int   durFrame = SecToFrame(dur);
+
     if (context.isAnimEditMode)
     {
         if (_isPlaying)
         {
             context.animEditTime += ImGui::GetIO().DeltaTime * animator->playbackSpeed;
-            if (_editingSequence.duration > 0.0f && context.animEditTime > _editingSequence.duration)
-                context.animEditTime = animator->isLoop
-                                           ? std::fmod(context.animEditTime, _editingSequence.duration)
-                                           : _editingSequence.duration;
+            if (dur > 0.0f && context.animEditTime > dur)
+            {
+                // ループ設定はプレビュー専用トグルを優先（アニメ設定と独立に試せる）
+                context.animEditTime = _loopPreview ? std::fmod(context.animEditTime, dur) : dur;
+                if (!_loopPreview)
+                    _isPlaying = false; // 非ループは最後で停止
+            }
             animator->currentTimer = context.animEditTime;
         }
+
+        // ── 再生コントロール群 ──
+        if (ImGui::Button("|<")) // 先頭へ
+        {
+            context.animEditTime   = 0.0f;
+            animator->currentTimer = 0.0f;
+            _isPlaying             = false;
+        }
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("先頭へ (Home)");
+        ImGui::SameLine();
+
         if (ImGui::Button(_isPlaying ? "|| Pause" : "> Play"))
             _isPlaying = !_isPlaying;
         ImGui::SameLine();
+
+        if (ImGui::Button(">|")) // 最後へ
+        {
+            context.animEditTime   = dur;
+            animator->currentTimer = dur;
+            _isPlaying             = false;
+        }
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("最後へ (End)");
+        ImGui::SameLine();
+
+        // ループトグル
+        ImGui::Checkbox("Loop", &_loopPreview);
+        ImGui::SameLine();
+
+        // ── 現在時刻の 秒 / frame / 全体長 表示 ──
+        const float curSec = context.animEditTime;
+        const int   curFrm = SecToFrame(curSec);
+        ImGui::TextColored(ImVec4(1.0f, 0.9f, 0.4f, 1.0f),
+            "%.2fs / %df", curSec, curFrm);
+        ImGui::SameLine();
+        ImGui::TextDisabled("(total %.2fs / %df)", dur, durFrame);
     }
     else
     {
         _isPlaying = false;
+        ImGui::TextDisabled("Enable 'Edit Mode' to preview & scrub.");
     }
+
+    // ── Homeキー/Endキーでも先頭・末尾へ ──
+    if (context.isAnimEditMode && ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
+    {
+        if (ImGui::IsKeyPressed(ImGuiKey_Home))
+        {
+            context.animEditTime   = 0.0f;
+            animator->currentTimer = 0.0f;
+            _isPlaying             = false;
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_End))
+        {
+            context.animEditTime   = dur;
+            animator->currentTimer = dur;
+            _isPlaying             = false;
+        }
+    }
+
+    // ── スナップ設定 ──
+    ImGui::Checkbox("Snap", &_snapEnabled);
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(80);
+    ImGui::DragInt("##snapStep", &_snapStep, 1, 1, 30, "%df");
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("スナップ単位（フレーム）");
+    ImGui::SameLine();
+    ImGui::TextDisabled("|");
+    ImGui::SameLine();
 
     // イベント追加
     auto AddEvt = [&](AnimEventType t) {
@@ -632,10 +701,9 @@ void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, Animator
         auto &e     = _editingSequence.events.back();
         int   s     = context.isAnimEditMode ? SecToFrame(context.animEditTime) : 0;
         e.startTime = FrameToSec(s);
-        e.endTime   = FrameToSec(s + 30); // 0.5秒の初期幅
-
+        e.endTime   = FrameToSec(s + 30);
         _sequencerImpl->SyncFrameCache();
-        _selectedEntry = (int)_editingSequence.events.size(); // マスターが0番なので最後尾はsize()
+        _selectedEntry = (int)_editingSequence.events.size();
     };
 
     if (ImGui::Button("+ Attack"))
@@ -665,8 +733,21 @@ void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, Animator
         ImSequencer::SEQUENCER_EDIT_STARTEND | ImSequencer::SEQUENCER_ADD |
             ImSequencer::SEQUENCER_DEL | ImSequencer::SEQUENCER_CHANGE_FRAME);
 
+    // ── ドラッグ後のスナップ適用（選択イベントのフレーム境界を丸める）──
     if (changed)
+    {
+        if (_snapEnabled && _snapStep > 0 &&
+            _selectedEntry > 0 && _selectedEntry < (int)_sequencerImpl->_frameCacheMap.size())
+        {
+            auto &f    = _sequencerImpl->_frameCacheMap[_selectedEntry];
+            auto  snap = [&](int v) { return ((v + _snapStep / 2) / _snapStep) * _snapStep; };
+            f.first    = snap(f.first);
+            f.second   = snap(f.second);
+            if (f.second <= f.first)
+                f.second = f.first + _snapStep; // 区間が潰れない最小幅
+        }
         _sequencerImpl->FlushFrameCache();
+    }
 
     // 削除処理
     if (_selectedEntry > 0 && ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && ImGui::IsKeyPressed(ImGuiKey_Delete))
@@ -755,7 +836,38 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
         ImGui::TextColored(ImVec4(0.5f, 1, 0.5f, 1), "Selected Event");
         ImGui::Spacing();
         ImGui::TextDisabled("Type: %s", _sequencerImpl->GetItemTypeName((int)e.type));
-        ImGui::Text("Time: %.2fs - %.2fs", e.startTime, e.endTime);
+        // ── 開始/終了を秒で直接入力（ドラッグより精密）──
+        {
+            float startSec = e.startTime;
+            float endSec   = e.endTime;
+            bool  timeCh   = false;
+
+            ImGui::SetNextItemWidth(90);
+            if (ImGui::DragFloat("開始 (s)##start", &startSec, 0.01f, 0.0f, _editingSequence.duration, "%.2f"))
+                timeCh = true;
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(90);
+            if (ImGui::DragFloat("終了 (s)##end", &endSec, 0.01f, 0.0f, _editingSequence.duration, "%.2f"))
+                timeCh = true;
+
+            // フレーム表示も併記
+            ImGui::TextDisabled("Frame: %d - %d", SecToFrame(e.startTime), SecToFrame(e.endTime));
+
+            if (timeCh)
+            {
+                // クランプと前後関係の保証
+                startSec = std::clamp(startSec, 0.0f, _editingSequence.duration);
+                endSec   = std::clamp(endSec, 0.0f, _editingSequence.duration);
+                if (endSec < startSec)
+                    endSec = startSec;
+
+                e.startTime = startSec;
+                e.endTime   = endSec;
+                ch          = true;
+                _sequencerImpl->SyncFrameCache(); // タイムライン側へ即反映
+            }
+        }
+        ImGui::Spacing();
         ImGui::Spacing();
 
         char buf[256];

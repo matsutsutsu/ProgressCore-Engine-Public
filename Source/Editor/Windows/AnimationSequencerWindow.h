@@ -51,6 +51,11 @@ class AnimationSequencerWindow : public EditorWindow
     int  _firstFrame    = 0;
     bool _fitCurveView  = true;
 
+    // --- タイムライン操作の使い勝手 ---
+    bool _snapEnabled = true; ///< イベント区間ドラッグ/ナッジのスナップ有効
+    int  _snapStep    = 5;    ///< スナップ単位（フレーム）
+    bool _loopPreview = true; ///< プレビュー再生のループ
+
     // --- 編集対象バッファ・UI状態（旧: ファイル/関数スコープ static） ---
     AnimSequence _editingSequence;               ///< 編集中の台本（旧: g_EditingSequence）
     std::string  _savePath;                      ///< 保存先パス（旧: g_SavePath）
