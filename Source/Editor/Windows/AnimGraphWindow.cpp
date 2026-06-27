@@ -275,19 +275,32 @@ void AnimGraphWindow::DrawNodeWorkspace()
         }
     }
 
-    // キャンバス座標系でのノード中心を取得
+    // ノード中心をライブ座標で取得する。
+    //   旧実装は保存済みの nodePosX/Y を使っていたため、ノードをドラッグした直後は
+    //   「保存前の古い位置」から線が伸びてしまっていた（見た目バグ）。
+    //   ed::GetNodePosition / GetNodeSize で現在の実座標・実サイズを使い解消する。
+    //   返り値は「キャンバス座標」。スクリーン変換は呼び出し側で行う。
     auto GetNodeCenter = [&](uint32_t hash) -> ImVec2 {
+        int nodeId;
         if (hash == ENTRY_HASH)
-            return ImVec2(_currentGraph.entryPosX + NODE_WIDTH / 2, _currentGraph.entryPosY + NODE_HEIGHT_ESTIMATE / 2);
-        if (hash == ANY_HASH)
-            return ImVec2(_currentGraph.anyStatePosX + NODE_WIDTH / 2, _currentGraph.anyStatePosY + NODE_HEIGHT_ESTIMATE / 2);
-        for (const auto &s : _currentGraph.states)
-        {
-            if (s.stateHash == hash)
-                return ImVec2(s.nodePosX + NODE_WIDTH / 2, s.nodePosY + NODE_HEIGHT_ESTIMATE / 2);
-        }
-        return ImVec2(0, 0);
+            nodeId = ENTRY_NODE_ID;
+        else if (hash == ANY_HASH)
+            nodeId = ANY_STATE_NODE_ID;
+        else
+            nodeId = StateNodeId(hash);
+
+        ImVec2 pos  = ed::GetNodePosition(nodeId); // キャンバス座標（ライブ）
+        ImVec2 size = ed::GetNodeSize(nodeId);     // 実サイズ（ライブ）
+
+        // サイズが未確定（描画前）なら推定値でフォールバック
+        if (size.x <= 0.0f)
+            size.x = NODE_WIDTH;
+        if (size.y <= 0.0f)
+            size.y = NODE_HEIGHT_ESTIMATE;
+
+        return ImVec2(pos.x + size.x * 0.5f, pos.y + size.y * 0.5f);
     };
+
 
     // 法線（直角）オフセットを計算 (進行方向に対して左へ8pxずらす)
     auto CalcNormalOffset = [](ImVec2 p0, ImVec2 p1) -> ImVec2 {
@@ -490,14 +503,99 @@ void AnimGraphWindow::DrawNodeWorkspace()
     // --- ⑤ Make Transition 中のテンポラリ線描画 ---
     if (_editorMode == EditorMode::CreatingTransition)
     {
-        ImVec2   mousePos = ImGui::GetMousePos();
-        uint32_t srcHash  = _isTransitionSourceAnyState ? ANY_HASH : _transitionSourceHash;
+        uint32_t srcHash = _isTransitionSourceAnyState ? ANY_HASH : _transitionSourceHash;
 
-        // 始点をキャンバス座標からスクリーン座標へ変換
-        ImVec2 startPos = ed::CanvasToScreen(GetNodeCenter(srcHash));
+        int srcNodeId = _isTransitionSourceAnyState ? ANY_STATE_NODE_ID
+                                                    : (srcHash == ENTRY_HASH ? ENTRY_NODE_ID : StateNodeId(srcHash));
 
-        drawList->AddLine(startPos, mousePos, IM_COL32(255, 255, 255, 255), 2.5f);
-        DrawTriangleArrow(drawList, startPos, mousePos, IM_COL32(255, 255, 255, 255));
+        ed::Suspend();
+        ImDrawList *overlay = ImGui::GetForegroundDrawList();
+
+        // ソースノードの矩形を「スクリーン座標」で求める。
+        //   GetNodeSize はキャンバス座標サイズなので、左上(min)と右下(max)を
+        //   それぞれ CanvasToScreen して引き算し、ズーム適用後の実サイズを得る。
+        ImVec2 srcMinCanvas  = ed::GetNodePosition(srcNodeId);
+        ImVec2 srcSizeCanvas = ed::GetNodeSize(srcNodeId);
+        if (srcSizeCanvas.x <= 0.0f)
+            srcSizeCanvas.x = NODE_WIDTH;
+        if (srcSizeCanvas.y <= 0.0f)
+            srcSizeCanvas.y = NODE_HEIGHT_ESTIMATE;
+
+        ImVec2 srcMin = ed::CanvasToScreen(srcMinCanvas);
+        ImVec2 srcMax = ed::CanvasToScreen(ImVec2(srcMinCanvas.x + srcSizeCanvas.x,
+            srcMinCanvas.y + srcSizeCanvas.y));
+        ImVec2 srcCenter((srcMin.x + srcMax.x) * 0.5f, (srcMin.y + srcMax.y) * 0.5f);
+        ImVec2 mousePos = ImGui::GetMousePos();
+
+        // 中心からマウス方向へ伸ばし、ノード矩形の外周との交点を始点にする。
+        //   矩形と線分の交差を、方向ベクトルを矩形の半サイズでスケールして求める。
+        auto EdgePoint = [](ImVec2 c, ImVec2 halfSize, ImVec2 dir) -> ImVec2 {
+            // dir 方向に矩形外周まで伸ばすスケール t を求める（軸ごとに最小を取る）
+            float tx = (std::abs(dir.x) > 1e-4f) ? (halfSize.x / std::abs(dir.x)) : FLT_MAX;
+            float ty = (std::abs(dir.y) > 1e-4f) ? (halfSize.y / std::abs(dir.y)) : FLT_MAX;
+            float t  = (std::min)(tx, ty);
+            return ImVec2(c.x + dir.x * t, c.y + dir.y * t);
+        };
+
+        ImVec2 dir(mousePos.x - srcCenter.x, mousePos.y - srcCenter.y);
+        float  len = std::sqrt(dir.x * dir.x + dir.y * dir.y);
+        if (len > 1e-4f)
+        {
+            dir.x /= len;
+            dir.y /= len;
+        }
+        else
+        {
+            dir = ImVec2(1, 0);
+        }
+
+        ImVec2 srcHalf((srcMax.x - srcMin.x) * 0.5f, (srcMax.y - srcMin.y) * 0.5f);
+        ImVec2 startPos = EdgePoint(srcCenter, srcHalf, dir); // ★外周から出す
+
+        // 接続先候補のハイライト：ノードにぴったり合わせた枠（スクリーン実サイズ）
+        ImU32      lineColor = IM_COL32(255, 255, 255, 255);
+        ImVec2     endPos    = mousePos;
+        ed::NodeId hovered   = ed::GetHoveredNode();
+        if (hovered.Get() != 0)
+        {
+            int  hid         = (int)(intptr_t)hovered.Get();
+            bool validTarget = (hid != ENTRY_NODE_ID && hid != ANY_STATE_NODE_ID && hid != srcNodeId);
+
+            // ホバーノードの矩形もスクリーン座標で正確に求める
+            ImVec2 hMinCanvas  = ed::GetNodePosition(hid);
+            ImVec2 hSizeCanvas = ed::GetNodeSize(hid);
+            ImVec2 hMin        = ed::CanvasToScreen(hMinCanvas);
+            ImVec2 hMax        = ed::CanvasToScreen(ImVec2(hMinCanvas.x + hSizeCanvas.x,
+                       hMinCanvas.y + hSizeCanvas.y));
+
+            ImU32 hl = validTarget ? IM_COL32(80, 220, 120, 255) : IM_COL32(220, 80, 80, 255);
+            // ノード枠ぴったり（はみ出さないよう内側1px）
+            overlay->AddRect(ImVec2(hMin.x + 1, hMin.y + 1), ImVec2(hMax.x - 1, hMax.y - 1),
+                hl, 6.0f, 0, 2.5f);
+
+            if (validTarget)
+                lineColor = IM_COL32(120, 240, 160, 255);
+
+            // 線の終点もホバーノードの外周に吸着させる（マウスではなくノード縁へ）
+            ImVec2 hCenter((hMin.x + hMax.x) * 0.5f, (hMin.y + hMax.y) * 0.5f);
+            ImVec2 hHalf((hMax.x - hMin.x) * 0.5f, (hMax.y - hMin.y) * 0.5f);
+            ImVec2 dirToSrc(srcCenter.x - hCenter.x, srcCenter.y - hCenter.y);
+            float  l2 = std::sqrt(dirToSrc.x * dirToSrc.x + dirToSrc.y * dirToSrc.y);
+            if (l2 > 1e-4f)
+            {
+                dirToSrc.x /= l2;
+                dirToSrc.y /= l2;
+            }
+            endPos = EdgePoint(hCenter, hHalf, dirToSrc);
+        }
+
+        overlay->AddLine(startPos, endPos, lineColor, 2.5f);
+        DrawTriangleArrow(overlay, startPos, endPos, lineColor);
+
+        ed::Resume();
+
+        // 左クリックでターゲット確定
+        // ... 以降は既存のまま
 
         // 左クリックでターゲット確定
         if (ImGui::IsMouseClicked(0))
