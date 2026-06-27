@@ -38,7 +38,7 @@ template <> struct ComponentMeta<AnimatorComponent> {
 
         ImGui::TextDisabled("Dynamic Preview");
         if (ImGui::Button("Load & Play Sequence... (JSON)", ImVec2(-1, 0))) {
-            if (auto path = Engine::FileDialog::OpenPreset("AnimSequence", "Select Anim Sequence", Graphics::Instance().GetWindowHandle())) {
+            if (auto path = FileDialog::OpenPreset("AnimSequence", "Select Anim Sequence", Graphics::Instance().GetWindowHandle())) {
                 namespace fs = std::filesystem;
                 fs::path absPath = path->string();
                 fs::path currentPath = fs::current_path();
@@ -125,7 +125,7 @@ struct ComponentMeta<AnimStateMachineComponent>
         // -------------------------------------------------------------
         if (ImGui::Button("Load Anim Graph... (JSON)"))
         {
-            if (auto path = Engine::FileDialog::OpenPreset("AnimNodes", "Select Anim Nodes", Graphics::Instance().GetWindowHandle()))
+            if (auto path = FileDialog::OpenPreset("AnimNodes", "Select Anim Nodes", Graphics::Instance().GetWindowHandle()))
             {
                 namespace fs                = std::filesystem;
                 fs::path        absPath     = path->string();

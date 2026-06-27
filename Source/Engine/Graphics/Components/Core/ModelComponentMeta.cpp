@@ -62,7 +62,7 @@ template <> struct ComponentMeta<ModelComponent> {
         ImGui::Separator();
 
         if (ImGui::Button("Load New Model...", ImVec2(-1, 0))) {
-            if (auto path = Engine::FileDialog::OpenPreset("Model", "Select Model",
+            if (auto path = FileDialog::OpenPreset("Model", "Select Model",
                 Graphics::Instance().GetWindowHandle()))
             {
                 std::filesystem::path workDir = std::filesystem::current_path();

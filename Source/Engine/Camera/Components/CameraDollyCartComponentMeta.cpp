@@ -41,9 +41,9 @@ struct ComponentMeta<CameraDollyCartComponent>
         // --- 既存の Browse ボタン ---
         if (ImGui::Button("Browse..."))
         {
-            if (auto pathOpt = Engine::FileDialog::OpenPreset("CameraPath"))
+            if (auto pathOpt = FileDialog::OpenPreset("CameraPath"))
             {
-                comp.pathAsset = Engine::FileDialog::ConvertToRelativePath(*pathOpt);
+                comp.pathAsset = FileDialog::ConvertToRelativePath(*pathOpt);
                 comp.loadedPath.reset();
                 comp.hasLoadError = false; // ★追加: エラー解除
                 changed           = true;
@@ -52,13 +52,13 @@ struct ComponentMeta<CameraDollyCartComponent>
 
         ImGui::SameLine();
 
-        // --- ★追加: New ボタン (新規作成ワークフロー) ---
+        // --- New ボタン (新規作成ワークフロー) ---
         if (ImGui::Button("Create New..."))
         {
             // OSの保存ダイアログを開く
-            if (auto pathOpt = Engine::FileDialog::SavePreset("CameraPath", "Create New Camera Path"))
+            if (auto pathOpt = FileDialog::SavePreset("CameraPath", "Create New Camera Path"))
             {
-                std::string relPath = Engine::FileDialog::ConvertToRelativePath(*pathOpt);
+                std::string relPath = FileDialog::ConvertToRelativePath(*pathOpt);
 
                 // 初期の軌道データ（2つのウェイポイントを持つ最低限のデータ）を作成
                 nlohmann::json j;

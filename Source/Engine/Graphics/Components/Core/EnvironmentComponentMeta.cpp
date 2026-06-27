@@ -93,10 +93,10 @@ template <> struct ComponentMeta<FogComponent> {
             ImGui::Text("Noise Texture:");
             ImGui::SameLine();
             if (ImGui::Button("Load...##FogNoise")) {
-                if (auto path = Engine::FileDialog::OpenPreset("Texture", "Select Texture", Graphics::Instance().GetWindowHandle())) {
+                if (auto path = FileDialog::OpenPreset("Texture", "Select Texture", Graphics::Instance().GetWindowHandle())) {
 
                    // 絶対パスを相対パスに変換する
-                    std::string relativePath = Engine::FileDialog::ConvertToRelativePath(*path);
+                    std::string relativePath = FileDialog::ConvertToRelativePath(*path);
 
                     strcpy_s(comp.noiseTexturePath, relativePath.c_str());
                     comp.noiseTextureHandle = TextureHandle{}; // ハンドルをリセットして再ロードを促す

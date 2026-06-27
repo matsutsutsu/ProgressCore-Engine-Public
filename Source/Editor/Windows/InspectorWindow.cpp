@@ -87,7 +87,7 @@ void InspectorWindow::DrawContents(EditorContext &context)
         HWND               hWnd   = Graphics::Instance().GetWindowHandle();
         static const char *filter = "JSON Files (*.json)\0*.json\0All Files (*.*)\0*.*\0";
 
-        if (auto path = Engine::FileDialog::SavePreset("Prefab", "Save Prefab",
+        if (auto path = FileDialog::SavePreset("Prefab", "Save Prefab",
             {}, Graphics::Instance().GetWindowHandle()))
         {
             PrefabSerializer::Save(path->string().c_str(), world, selected, std::string(filenameBuf));

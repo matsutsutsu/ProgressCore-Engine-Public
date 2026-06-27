@@ -27,7 +27,7 @@ StateTreeWindow::StateTreeWindow()
 
 #ifdef ENABLE_EDITOR
     // ファイルダイアログのプリセットを登録（StateTree 専用の履歴を持つ）
-    Engine::FileDialog::RegisterPreset("StateTree", {
+    FileDialog::RegisterPreset("StateTree", {
         /*filters*/   { { "StateTree", "*.json" } },
         /*defaultDir*/ "Assets/AI",
         /*defaultExt*/ "json"
@@ -318,10 +318,10 @@ void StateTreeWindow::NewTree()
 
 void StateTreeWindow::OpenTree()
 {
-    auto picked = Engine::FileDialog::OpenPreset("StateTree", "Open State Tree");
+    auto picked = FileDialog::OpenPreset("StateTree", "Open State Tree");
     if (!picked) return;
 
-    const std::string rel = Engine::FileDialog::ConvertToRelativePath(*picked);
+    const std::string rel = FileDialog::ConvertToRelativePath(*picked);
     StateTreeDef loaded;
     if (StateTreeSerializer::LoadDef(rel, loaded)) {
         _def = std::move(loaded);
@@ -335,10 +335,10 @@ void StateTreeWindow::SaveTree(bool saveAs)
 {
     std::string target = _currentPath;
     if (saveAs || target.empty()) {
-        auto picked = Engine::FileDialog::SavePreset(
+        auto picked = FileDialog::SavePreset(
             "StateTree", "Save State Tree", _def.name + ".json");
         if (!picked) return;
-        target = Engine::FileDialog::ConvertToRelativePath(*picked);
+        target = FileDialog::ConvertToRelativePath(*picked);
     }
     if (StateTreeSerializer::SaveDef(target, _def))
         _currentPath = target;

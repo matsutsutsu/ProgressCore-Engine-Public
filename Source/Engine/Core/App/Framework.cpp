@@ -75,7 +75,7 @@ Framework::Framework(HWND hWnd)
 #endif
 	// ★ FileDialog を一括初期化
 	//    プリセット登録 + 前回の履歴ロードがここで完結する
-	Engine::FileDialog::Initialize();
+	FileDialog::Initialize();
 
 	// Input 初期化
 	Input::Instance().Initialize(hWnd);
@@ -135,7 +135,7 @@ Framework::~Framework()
 	ImGuiRenderer::Finalize();
 #endif
 	// ★ ダイアログ履歴を保存
-	Engine::FileDialog::SaveHistory();
+	FileDialog::SaveHistory();
 
 	Logger::Instance().Flush();
 	Logger::Instance().ClearSinks(); // shared_ptr 循環参照防止

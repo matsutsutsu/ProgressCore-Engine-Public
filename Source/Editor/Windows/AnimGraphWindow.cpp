@@ -19,7 +19,7 @@
 #include <iomanip>
 
 namespace ed = ax::NodeEditor;
-using Engine::FileDialog;
+
 
 // =====================================================================
 // 安定ID採番ヘルパー
@@ -743,6 +743,9 @@ void AnimGraphWindow::DrawStateSettings(int nodeId)
         ImGui::Separator();
 
         ImGui::Checkbox("ループ再生 (Loop Animation)", &state.isLoop);
+        ImGui::Checkbox("ルートモーション適用 (Apply Root Motion)", &state.applyRootMotion);
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("このステートで rootMotionCurve による前進を適用する。\nカーブは進捗→累積前進距離(m)。");
         ImGui::DragFloat("再生速度 (Playback Speed)", &state.playbackSpeed, 0.05f, 0.0f, 5.0f);
 
         char curveBuf[128];

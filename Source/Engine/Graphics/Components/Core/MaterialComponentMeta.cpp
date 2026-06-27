@@ -105,13 +105,13 @@ template <> struct ComponentMeta<MaterialComponent> {
 
             if (ImGui::TreeNode(nodeName)) {
                 if (ImGui::Button("Save as .mat.json")) {
-                    if (auto path = Engine::FileDialog::SavePreset("Material", "Assets/Materials", "mat.json", Graphics::Instance().GetWindowHandle())) {
+                    if (auto path = FileDialog::SavePreset("Material", "Assets/Materials", "mat.json", Graphics::Instance().GetWindowHandle())) {
                         ResourceManager::Instance().SaveMaterialAsset(matHandle, path->string());
                     }
                 }
                 ImGui::SameLine();
                 if (ImGui::Button("Load .mat.json")) {
-                    if (auto path = Engine::FileDialog::OpenPreset("Material", "Select Material", Graphics::Instance().GetWindowHandle())) {
+                    if (auto path = FileDialog::OpenPreset("Material", "Select Material", Graphics::Instance().GetWindowHandle())) {
                         MaterialHandle newHandle = ResourceManager::Instance().LoadMaterialAsset(path->string());
                         if (newHandle.IsValid()) {
                             comp->SetData(i, newHandle);
@@ -159,7 +159,7 @@ template <> struct ComponentMeta<MaterialComponent> {
                         ImGui::SameLine();
 
                         if (ImGui::Button("Load...")) {
-                            if (auto path = Engine::FileDialog::OpenPreset("Texture", "Select Texture", Graphics::Instance().GetWindowHandle())) {
+                            if (auto path = FileDialog::OpenPreset("Texture", "Select Texture", Graphics::Instance().GetWindowHandle())) {
                                 const auto s = path->string();
                                 matPtr->SetTexture(slotHash, ResourceManager::Instance().LoadTexture(s.c_str()), s);
                                 changed = true;

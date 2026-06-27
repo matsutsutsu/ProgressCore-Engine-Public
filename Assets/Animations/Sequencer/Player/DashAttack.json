@@ -1,0 +1,15 @@
+{
+    "duration": 2.066666603088379,
+    "events": [],
+    "rootMotionCurve": {
+        "keys": [],
+        "name": ""
+    },
+    "sequenceName": "DashAttack",
+    "speedCurve": {
+        "keys": [],
+        "name": ""
+    },
+    "targetAnimName": "Run_Attack_01_Seq_0",
+    "targetModelPath": ""
+}

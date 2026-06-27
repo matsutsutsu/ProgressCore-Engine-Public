@@ -403,6 +403,7 @@
     <ClInclude Include="Source\Engine\AI\Navigation\Systems\NavSteeringSystem.h" />
     <ClInclude Include="Source\Engine\Animation\Components\AnimatorComponent.h" />
     <ClInclude Include="Source\Engine\Animation\Components\AnimParametersComponent.h" />
+    <ClInclude Include="Source\Engine\Animation\Components\RootMotionComponent.h" />
     <ClInclude Include="Source\Engine\Animation\Core\AnimationCurve.h" />
     <ClInclude Include="Source\Engine\Animation\Core\AnimEventMessages.h" />
     <ClInclude Include="Source\Engine\Animation\Core\AnimGraphSerializer.h" />
@@ -412,6 +413,7 @@
     <ClInclude Include="Source\Engine\Animation\Systems\AnimControllerSystem.h" />
     <ClInclude Include="Source\Engine\Animation\Systems\CharacterAnimSyncSystem.h" />
     <ClInclude Include="Source\Engine\Animation\Systems\CombatAnimationSyncSystem.h" />
+    <ClInclude Include="Source\Engine\Animation\Systems\RootMotionSystem.h" />
     <ClInclude Include="Source\Engine\Audio\Components\AudioEmitterComponent.h" />
     <ClInclude Include="Source\Engine\Audio\Components\AudioEvents.h" />
     <ClInclude Include="Source\Engine\Audio\FmodIntegration\FmodAudioManager.h" />
@@ -1243,11 +1245,13 @@
     <ClCompile Include="Source\Engine\AI\Navigation\Systems\NavPathfindingSystem.cpp" />
     <ClCompile Include="Source\Engine\AI\Navigation\Systems\NavSteeringSystem.cpp" />
     <ClCompile Include="Source\Engine\Animation\Components\AnimatorComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Components\RootMotionComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Animation\Core\AnimGraphSerializer.cpp" />
     <ClCompile Include="Source\Engine\Animation\Systems\AnimationSystem.cpp" />
     <ClCompile Include="Source\Engine\Animation\Systems\AnimControllerSystem.cpp" />
     <ClCompile Include="Source\Engine\Animation\Systems\CharacterAnimSyncSystem.cpp" />
     <ClCompile Include="Source\Engine\Animation\Systems\CombatAnimationSyncSystem.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Systems\RootMotionSystem.cpp" />
     <ClCompile Include="Source\Engine\Audio\Components\AudioComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Audio\FmodIntegration\FmodAudioManager.cpp" />
     <ClCompile Include="Source\Engine\Audio\Systems\AudioSystem.cpp" />

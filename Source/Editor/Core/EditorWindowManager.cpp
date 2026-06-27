@@ -228,7 +228,7 @@ void EditorWindowManager::DrawFileMenu(EditorContext& context)
 
             HWND hWnd = Graphics::Instance().GetWindowHandle();
           
-            if (auto path = Engine::FileDialog::OpenPreset("Scene", "Open Scene", hWnd)) {
+            if (auto path = FileDialog::OpenPreset("Scene", "Open Scene", hWnd)) {
                 context.pendingLoadScenePath = path->string();
                 context.selectedEntity = CCL::ECS::InvalidEntityID;
             }
@@ -236,7 +236,7 @@ void EditorWindowManager::DrawFileMenu(EditorContext& context)
         if (ImGui::MenuItem("Save Scene", "Ctrl+S")) {
 
             HWND hWnd = Graphics::Instance().GetWindowHandle();
-            if (auto path = Engine::FileDialog::SavePreset("Scene", "Save Scene", {}
+            if (auto path = FileDialog::SavePreset("Scene", "Save Scene", {}
                 ,hWnd)) {
                 context.pendingSaveScenePath = path->string();
                 context.selectedEntity = CCL::ECS::InvalidEntityID;

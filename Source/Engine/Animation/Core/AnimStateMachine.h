@@ -87,6 +87,10 @@ struct AnimState
     std::string speedCurveName;
     std::string rootMotionCurveName;
 
+    /// @brief このステートでルートモーション(rootMotionCurve駆動の前進)を適用するか。
+    /// @details Unity の "Apply Root Motion" 相当。遷移時に RootMotionComponent.enabled へ反映。
+    bool applyRootMotion = false;
+
     float nodePosX = 0.0f;
     float nodePosY = 0.0f;
 
@@ -204,6 +208,7 @@ inline void to_json(json &j, const AnimState &s)
         {"playbackSpeed", s.playbackSpeed},
         {"speedCurveName", s.speedCurveName},
         {"rootMotionCurveName", s.rootMotionCurveName},
+        {"applyRootMotion", s.applyRootMotion},
         {"nodePosX", s.nodePosX},
         {"nodePosY", s.nodePosY},
         {"transitions", s.transitions}};
@@ -222,6 +227,8 @@ inline void from_json(const json &j, AnimState &s)
         j.at("speedCurveName").get_to(s.speedCurveName);
     if (j.contains("rootMotionCurveName"))
         j.at("rootMotionCurveName").get_to(s.rootMotionCurveName);
+    if (j.contains("applyRootMotion"))
+        j.at("applyRootMotion").get_to(s.applyRootMotion);
     if (j.contains("nodePosX"))
         j.at("nodePosX").get_to(s.nodePosX);
     if (j.contains("nodePosY"))

@@ -17,6 +17,8 @@
 
 class AnimationSequenceImpl;
 struct SequencerCurveDelegate;
+class AnimatorComponent;
+class Model;
 
 /// @brief アニメーション台本(AnimSequence)編集ウィンドウ。
 /// @details 1ウィンドウ=1編集バッファ。選択エンティティが変わると再バインドする。
@@ -28,6 +30,15 @@ class AnimationSequencerWindow : public EditorWindow
 
   protected:
     void DrawContents(EditorContext &context) override;
+
+  private:
+    // --- 描画・更新を分割したサブ関数群 ---
+    void ResetStateOnEntitySwitch(EditorContext &context, AnimatorComponent *animator);
+    void DrawFileIO();
+    void DrawEditModeToggle(EditorContext &context, AnimatorComponent *animator);
+    void DrawTimelinePane(EditorContext &context, AnimatorComponent *animator, Model *model);
+    void DrawInspectorPane(EditorContext &context);
+    void DrawCurvePane();
 
   private:
     // --- pImpl（ImSequencer / ImCurveEdit 依存をcppに隠蔽） ---

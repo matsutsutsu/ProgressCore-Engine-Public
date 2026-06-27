@@ -203,7 +203,7 @@ template <> struct ComponentMeta<GPUParticleComponent> {
         HWND  hWnd = Graphics::Instance().GetWindowHandle();
 
         auto pickTexture = [&](char* dst, size_t cap, TextureHandle& handle, const char* title) {
-            if (auto path = Engine::FileDialog::OpenPreset("Texture", title, hWnd)) {
+            if (auto path = FileDialog::OpenPreset("Texture", title, hWnd)) {
                 strcpy_s(dst, cap, ToRelativePath(*path).c_str());
                 handle = rm.LoadTexture(dst);
                 changed = true;
@@ -211,12 +211,12 @@ template <> struct ComponentMeta<GPUParticleComponent> {
             };
 
         if (ImGui::Button(u8"プリセット保存 (Save Preset)")) {
-            if (auto path = Engine::FileDialog::SavePreset("GPUParticlePreset", u8"Save Particle Preset", {}, hWnd))
+            if (auto path = FileDialog::SavePreset("GPUParticlePreset", u8"Save Particle Preset", {}, hWnd))
                 SavePreset(path->string(), *p);
         }
         ImGui::SameLine();
         if (ImGui::Button(u8"プリセット読込 (Load Preset)")) {
-            if (auto path = Engine::FileDialog::OpenPreset("GPUParticlePreset", u8"Load Particle Preset", hWnd))
+            if (auto path = FileDialog::OpenPreset("GPUParticlePreset", u8"Load Particle Preset", hWnd))
                 if (LoadPreset(path->string(), *p)) changed = true;
         }
         ImGui::Separator();
