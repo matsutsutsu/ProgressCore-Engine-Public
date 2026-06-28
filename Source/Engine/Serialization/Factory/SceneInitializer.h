@@ -22,6 +22,9 @@ class SceneInitializer {
 
 	static void SpawnAnimationTest(CCL::ECS::Core::World& world, ID3D11Device* device);
 
+
+	static void SpawnGameTest(CCL::ECS::Core::World& world, ID3D11Device* device);
+
 	static void SpawnShaderTest(CCL::ECS::Core::World& world, ID3D11Device* device);
 
 

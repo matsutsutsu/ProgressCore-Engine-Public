@@ -121,9 +121,16 @@ void SceneInitializer::SpawnJoltTest(CCL::ECS::Core::World &world, ID3D11Device 
 void SceneInitializer::SpawnAnimationTest(CCL::ECS::Core::World& world, ID3D11Device* device)
 {
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Camera/FreeCamera.json");
-    EntityFactory::SpawnPrefab(world, "Assets/Prefabs/World/JoltExampleStage.json");
+    EntityFactory::SpawnPrefab(world, "Assets/Prefabs/World/ExampleStage.json");
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/AnimationModel.json");
+   
+}
 
+void SceneInitializer::SpawnGameTest(CCL::ECS::Core::World &world, ID3D11Device *device)
+{
+    EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Camera/FreeCamera.json");
+    EntityFactory::SpawnPrefab(world, "Assets/Prefabs/World/JoltExampleStage.json");
+    EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Enemy/TestEnemy.json");
 
     auto player = EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Player/Player.json");
     auto camera = EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Player/PlayerFollowCamera.json");
@@ -131,10 +138,9 @@ void SceneInitializer::SpawnAnimationTest(CCL::ECS::Core::World& world, ID3D11De
     // player.ID() を渡してメソッドチェーンでPatchする
     camera.Patch<CameraBodyTPSComponent>([pid = player.ID()](auto &body) { body.target = pid; })
         .Patch<CameraAimLookAt>([pid = player.ID()](auto &aim) { aim.target = pid; });
-   
 }
 
-void SceneInitializer::SpawnShaderTest(CCL::ECS::Core::World& world, ID3D11Device* device)
+void SceneInitializer::SpawnShaderTest(CCL::ECS::Core::World &world, ID3D11Device *device)
 {
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Camera/FreeCamera.json");
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Sponza.json");

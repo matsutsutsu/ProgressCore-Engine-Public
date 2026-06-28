@@ -29,6 +29,10 @@
             "visible": true
         },
         {
+            "name": "Behavior Tree Editor",
+            "visible": true
+        },
+        {
             "name": "State Tree Editor",
             "visible": false
         },

@@ -5,6 +5,8 @@
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"
 #include "Game/Logics/AI/BehaviorTree/Drone/DroneComponent.h"
 
+#include "Engine/Serialization/Core/EntityLink.h"
+
 /**
  * @file BehaviorTreeComponents.h
  * @brief ECSエンティティが保持するAIの状態管理コンポーネント
@@ -64,7 +66,7 @@ struct BehaviorTreeComponent {
 // AIシステムからの「出力」を受け取るコンポーネント（毎フレームリセットされる使い捨てデータ）
 // 例えば、AIが「近接攻撃してほしい」「ここに移動してほしい」といった命令をこのコンポーネントに書き込む
 struct BossCommandComponent {
-    CCL::ECS::EntityID targetPlayerId = CCL::ECS::InvalidEntityID; // 誰を狙うか
+    CCL::Serialization::EntityLink targetPlayerId; // 誰を狙うか
 
     DroneFormationType requestFormation = DroneFormationType::Hidden;
 

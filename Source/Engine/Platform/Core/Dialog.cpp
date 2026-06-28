@@ -312,6 +312,12 @@ void FileDialog::Initialize(const std::filesystem::path& settingsPath)
         .defaultExt = "json",
     });
 
+    RegisterPreset("BehaviorTreeNode", {
+    .filters    =  { { "Behavior Tree", "*.json" } },
+    .defaultDir = "Assets/AI",
+    .defaultExt = "json",
+    });
+
     // ----------------------------------------------------------------
     // 前回の履歴を読み込む
     // ----------------------------------------------------------------

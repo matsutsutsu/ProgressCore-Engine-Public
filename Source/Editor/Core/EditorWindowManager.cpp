@@ -52,7 +52,7 @@ void EditorWindowManager::Initialize()
     RegisterWindow<ConsoleWindow>();
     RegisterWindow<AnimationSequencerWindow>();
     RegisterWindow<AnimGraphWindow>();
-	//RegisterWindow<BehaviorTreeWindow>();
+	RegisterWindow<BehaviorTreeWindow>();
     RegisterWindow<StateTreeWindow>();
     RegisterWindow<CameraPathEditorWindow>();
 

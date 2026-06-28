@@ -6,71 +6,66 @@
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeLoader.h"
 #include "Game/Logics/AI/BehaviorTree/Drone/DroneComponent.h"
 #include "Engine/Serialization/Registry/ComponentRegistry.h"
-#include "Engine/Serialization/Meta/ComponentMeta.h"
-#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
-#include "Engine/Serialization/Meta/ComponentMetaJson.h"
-#include "Engine/Platform/Core/Dialog.h"
-#include <imgui.h>
-#include <filesystem>
-#include <iterator>
 
-#include "Engine/Serialization/Registry/ComponentRegistry_Editor.h"
+// ★ マニュアル絶対ルール: 必須ヘッダーに変更
+#include "Engine/Serialization/Meta/ComponentDefine.h"
+
 #ifdef ENABLE_EDITOR
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
+#include "Engine/Platform/Core/Dialog.h"     // FileDialog用
+#include "Engine/Platform/Core/FileSystem.h" // FileSystem用
+#include <imgui.h>
 #endif
 
- // =======================================================================
- // エディタ表示用のEnum文字列定義（プルダウンメニュー用）
- // =======================================================================
-static const char* DroneFormationNames[] = {
+// =======================================================================
+// エディタ表示用のEnum文字列定義（プルダウンメニュー用）
+// =======================================================================
+static const char *DroneFormationNames[] = {
     "Hidden", "OrbitCircle", "SequentialAttack", "DeathRing", "AegisShield",
-    "HighOrbit", "LowOrbit", "SpreadLockOn", "AllCharge","CloseGuard", "ChargeTunnel" // ★前回追加した4つを追記
-};
-static const char* DroneStateNames[] = {
-    "Idle", "MoveToTarget", "LockOn", "FireCharge"
-};
+    "HighOrbit", "LowOrbit", "SpreadLockOn", "AllCharge", "CloseGuard", "ChargeTunnel"};
+static const char *DroneStateNames[] = {
+    "Idle", "MoveToTarget", "LockOn", "FireCharge"};
 
-template <> struct ComponentMeta<BehaviorTreeComponent> {
-    static constexpr bool registered = true;
-    static constexpr const char* displayName = "Behavior Tree";
-    static constexpr bool hasCustomGui = true; // カスタムGUIを有効化
-    static constexpr bool isSerializable = true;
+// =======================================================================
+// 1. BehaviorTreeComponent
+// =======================================================================
+template <>
+struct ComponentMeta<BehaviorTreeComponent>
+{
+    CCL_META_USING_THIS(BehaviorTreeComponent) // ★ CFIELDを使うための必須マクロ
 
-    // --- カスタムGUIでロード機能を統合 ---
-    static bool CustomGui(BehaviorTreeComponent& comp, unsigned long long entityID, void* worldPtr) {
+    static constexpr const char *displayName    = "Behavior Tree";
+    static constexpr bool        hasCustomGui   = true;
+    static constexpr bool        isSerializable = true;
+
+#ifdef ENABLE_EDITOR
+    static bool CustomGui(BehaviorTreeComponent &comp, unsigned long long /*entityID*/ = 0, void * /*worldPtr*/ = nullptr)
+    {
         bool changed = false;
 
-        // ★ AnimStateMachineComponent を踏襲した現在のパス表示
         ImGui::TextDisabled("BT File: %s", comp.assetPath.empty() ? "None" : comp.assetPath.c_str());
 
-        // ★ 幅いっぱいの押しやすいロードボタン
-        if (ImGui::Button("Load Behavior Tree... (JSON)", ImVec2(-1, 0))) {
-            char filename[MAX_PATH] = {};
-            // ウィンドウハンドルを渡してダイアログを親ウィンドウの中央に出す
-            if (Dialog::OpenFileName(filename, MAX_PATH, "JSON Files\0*.json\0", "Select Behavior Tree",
-                "Data/BehaviorTree", GetActiveWindow()) == DialogResult::OK) {
+        // ★ マニュアル準拠: Engine::FileDialog を使用
+        if (ImGui::Button("Load Behavior Tree... (JSON)", ImVec2(-1, 0)))
+        {
+            // 第1引数にコンテキスト、第2引数にタイトル、第3引数にウィンドウハンドル
+            if (auto pathOpt = FileDialog::OpenPreset("BehaviorTree", "Select Behavior Tree", GetActiveWindow()))
+            {
 
-                // 絶対パスからプロジェクト相対パスへの変換処理（チーム開発対応）
-                namespace fs = std::filesystem;
-                fs::path absPath = filename;
-                fs::path currentPath = fs::current_path();
-                std::error_code ec;
-                fs::path relPath = fs::relative(absPath, currentPath, ec);
+                // 1. 絶対パスからプロジェクト相対パスに自動変換 (チーム開発でのパス割れ防止)
+                comp.assetPath = FileDialog::ConvertToRelativePath(*pathOpt);
 
-                // 変換に成功したら相対パスを、失敗したら絶対パスをそのまま保存
-                comp.assetPath = (!ec && !relPath.empty()) ? relPath.generic_string() : filename;
-
-                // メモリバッファが無ければ確保
-                if (!comp.sharedAsset) {
+                // 2. メモリバッファ確保
+                if (!comp.sharedAsset)
+                {
                     comp.sharedAsset = std::make_shared<BTAsset>();
                 }
 
-                // ★ 即座にロードしてバインドする
+                // 3. 即座にロードしてバインド
                 BehaviorTreeLoader::LoadFromJson(comp.assetPath, *comp.sharedAsset);
 
-                // BossAISystem が「ファイルが書き換わった」と勘違いして再ロードするのを防ぐため、
-                // 読み込み完了済みのパスとしても登録しておく
+                // 4. 重複ロード防止フラグの更新
                 comp.loadedAssetPath = comp.assetPath;
 
                 changed = true;
@@ -79,81 +74,91 @@ template <> struct ComponentMeta<BehaviorTreeComponent> {
 
         ImGui::Separator();
 
-        // 外部のエディタで上書き保存したとき用の手動リロードボタン
-        if (ImGui::Button("Reload AI")) {
-            if (!comp.sharedAsset) comp.sharedAsset = std::make_shared<BTAsset>();
+        if (ImGui::Button("Reload AI"))
+        {
+            if (!comp.sharedAsset)
+                comp.sharedAsset = std::make_shared<BTAsset>();
             BehaviorTreeLoader::LoadFromJson(comp.assetPath, *comp.sharedAsset);
             changed = true;
         }
 
         ImGui::Separator();
 
-
-        // nullチェックを入れてからサイズを表示する
         size_t nodeCount = comp.sharedAsset ? comp.sharedAsset->nodes.size() : 0;
         ImGui::LabelText("Nodes", "%zu", nodeCount);
         ImGui::LabelText("Current Node", "%u", comp.runningNodeId);
 
         return changed;
     }
+#else
+    static bool CustomGui(BehaviorTreeComponent &, unsigned long long, void *)
+    {
+        return false;
+    }
+#endif
 
-    static const std::vector<FieldDescriptor>& Fields() {
+    // ★ マニュアル準拠: 生の FieldDescriptor 配列ではなく CFIELD マクロを使用
+    static const std::vector<FieldDescriptor> &Fields()
+    {
         static const std::vector<FieldDescriptor> fields = {
-            { "AIパス", "assetPath", FieldKind::String, offsetof(BehaviorTreeComponent, assetPath), 0, 0, 0, "File", nullptr, 0, true },
-            {"第2形態AIパス", "phase2AssetPath", FieldKind::String, offsetof(BehaviorTreeComponent, phase2AssetPath), 0, 0, 0, "File", nullptr, 0, true },
-		    { "第2形態移行HP閾値", "phase2HealthThreshold", FieldKind::Float, offsetof(BehaviorTreeComponent, phase2HealthThreshold), 0.1f, 0.0f, 100.0f, "File", nullptr, 0, true }   
-        };
+            CFIELD(assetPath, "AIパス", "File")
+            CFIELD(phase2AssetPath, "第2形態AIパス", "File")
+            CFIELD_FLOAT_RANGED(phase2HealthThreshold, "第2形態移行HP閾値", 0.1f, 0.0f, 100.0f, "File")};
         return fields;
     }
 };
 REGISTER_COMPONENT(BehaviorTreeComponent, "BehaviorTreeComponent")
+REGISTER_COMPONENT_EDITOR_GUI(BehaviorTreeComponent)
 
-// ... (以下 BossCommandComponent と DroneComponent の定義はそのまま) ...
-
-// --- BossCommandComponent（保存しない） ---
+// =======================================================================
+// 2. BossCommandComponent（空枠保存 ＋ インスペクタ表示）
+// =======================================================================
 template <> struct ComponentMeta<BossCommandComponent> {
-    static constexpr bool registered = true;
-    static constexpr const char* displayName = "Boss Command (AI Output)";
-    static constexpr bool hasCustomGui = false;
-    static constexpr bool isSerializable = false;
+    CCL_META_USING_THIS(BossCommandComponent)
 
+    static constexpr const char* displayName = "Boss Command (AI Output)";
+    static constexpr bool hasCustomGui = false; // 自動描画システムに委譲
+    static constexpr bool isSerializable = true;  // ★ true に変更（これでアタッチ状態がシーンに保存されます）
+
+    // シリアライズ処理は上記の ComponentSerializer が身代わりになって空化するため、
+    // ここに Fields() を残しておいても中身が JSON に書き出されることはありません。
+    // 純粋に「インスペクタ画面で現在の値をモニタリングする」ためだけに機能します。
     static const std::vector<FieldDescriptor>& Fields() {
         static const std::vector<FieldDescriptor> fields = {
-			{ "現在のActionID", "currentActionId", FieldKind::UInt16, offsetof(BossCommandComponent, currentActionId), 1.0f, 0.0f, 0.0f, "Current Command", nullptr, 0, false },
-
-            // ★追加: ドローンに対するフォーメーション要求とターゲットID
-            { "フォーメーション要求", "requestFormation", FieldKind::EnumU8, offsetof(BossCommandComponent, requestFormation), 1.0f, 0.0f, 0.0f, "Drone Control", DroneFormationNames, std::size(DroneFormationNames), false },
-            { "ターゲット(Player)ID", "targetPlayerId", FieldKind::EntityID, offsetof(BossCommandComponent, targetPlayerId), 1.0f, 0.0f, 0.0f, "Drone Control", nullptr, 0, false }
+            CFIELD(currentActionId, "現在のActionID", "Current Command")
+            CFIELD_ENUM_U8(requestFormation, "フォーメーション要求", DroneFormationNames, std::size(DroneFormationNames), "Drone Control")
+            CFIELD(targetPlayerId, "ターゲット(Player)ID", "Drone Control")
         };
         return fields;
     }
 };
 REGISTER_COMPONENT(BossCommandComponent, "BossCommandComponent")
+REGISTER_COMPONENT_EDITOR_GUI(BossCommandComponent)
 
+// =======================================================================
+// 3. DroneComponent（保存する）
+// =======================================================================
+template <>
+struct ComponentMeta<DroneComponent>
+{
+    CCL_META_USING_THIS(DroneComponent)
 
-// --- DroneComponent（保存する） ---
-template <> struct ComponentMeta<DroneComponent> {
-    static constexpr bool registered = true;
-    static constexpr const char* displayName = "Drone (ドローン)";
-    static constexpr bool hasCustomGui = false;
-    static constexpr bool isSerializable = true;
+    static constexpr const char *displayName    = "Drone (ドローン)";
+    static constexpr bool        hasCustomGui   = false;
+    static constexpr bool        isSerializable = true;
 
-    static const std::vector<FieldDescriptor>& Fields() {
+    static const std::vector<FieldDescriptor> &Fields()
+    {
         static const std::vector<FieldDescriptor> fields = {
-            // ★修正: EntityID に対応したためコメントアウトを解除
-            { "親ボスID", "ownerBossId", FieldKind::EntityID, offsetof(DroneComponent, ownerBossId), 1.0f, 0.0f, 0.0f, "Hierarchy", nullptr, 0, true },
-            { "ローカルインデックス", "localIndex", FieldKind::UInt16, offsetof(DroneComponent, localIndex), 1.0f, 0.0f, 0.0f, "Formation", nullptr, 0, true },
-            { "総ドローン数", "totalDrones", FieldKind::UInt16, offsetof(DroneComponent, totalDrones), 1.0f, 0.0f, 0.0f, "Formation", nullptr, 0, true },
-
-            // ★追加: 現在のフォーメーションとステートをプルダウン表示
-            { "現在の指示", "currentFormation", FieldKind::EnumU8, offsetof(DroneComponent, currentFormation), 1.0f, 0.0f, 0.0f, "State", DroneFormationNames, std::size(DroneFormationNames), false },
-            { "現在ステート", "currentState", FieldKind::EnumU8, offsetof(DroneComponent, currentState), 1.0f, 0.0f, 0.0f, "State", DroneStateNames, std::size(DroneStateNames), false },
-            { "状態タイマー", "stateTimer", FieldKind::Float, offsetof(DroneComponent, stateTimer), 0.1f, 0.0f, 0.0f, "State", nullptr, 0, false },
-
-            { "目標座標", "targetPosition", FieldKind::Float3, offsetof(DroneComponent, targetPosition), 0.1f, 0.0f, 0.0f, "State", nullptr, 0, false },
-            { "移動速度", "moveSpeed", FieldKind::Float, offsetof(DroneComponent, moveSpeed), 0.1f, 0.0f, 100.0f, "Stats", nullptr, 0, true },
-            { "旋回半径", "orbitRadius", FieldKind::Float, offsetof(DroneComponent, orbitRadius), 0.1f, 0.0f, 100.0f, "Stats", nullptr, 0, true }
-        };
+            CFIELD(ownerBossId, "親ボスID", "Hierarchy") // ★コンポーネント側は EntityLink であること！
+            CFIELD(localIndex, "ローカルインデックス", "Formation")
+            CFIELD(totalDrones, "総ドローン数", "Formation")
+            CFIELD_ENUM_U8(currentFormation, "現在の指示", DroneFormationNames, std::size(DroneFormationNames), "State")
+            CFIELD_ENUM_U8(currentState, "現在ステート", DroneStateNames, std::size(DroneStateNames), "State")
+            CFIELD(stateTimer, "状態タイマー", "State")
+            CFIELD_FLOAT3_FAST(targetPosition, "目標座標", 0.1f, "State")
+            CFIELD_FLOAT_RANGED(moveSpeed, "移動速度", 0.1f, 0.0f, 100.0f, "Stats")
+            CFIELD_FLOAT_RANGED(orbitRadius, "旋回半径", 0.1f, 0.0f, 100.0f, "Stats")};
         return fields;
     }
 };

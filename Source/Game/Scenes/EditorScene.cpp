@@ -21,7 +21,7 @@ void EditorScene::Initialize()
     SceneInitializer::SpawnLightStartSet(*_worldPtr, device);
     //Prefab::SpawnPrefab(*_worldPtr, "Assets/Prefabs/Camera/FreeCamera.json");
 
-    SceneInitializer::SpawnAnimationTest(*_worldPtr, device);
+    SceneInitializer::SpawnGameTest(*_worldPtr, device);
 
     //SceneManager::Instance().LoadScene(_worldPtr,"Assets/Scene/PlayerMovementScene.json");
 
