@@ -31,7 +31,8 @@
 #include "Engine/Core/Components/PersistentTag.h"
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/Platform/Core/FileSystem.h"
-#include "Engine/Transform/Components/PendingParentComponent.h"
+#include "Engine/Transform/Components/TransformComponent.h"
+#include "Engine/Transform/Systems/TransformUpdateSystem.h"
 
 #include <json.hpp>
 #include <fstream>
@@ -126,6 +127,7 @@ void SceneSerializer::SerializeEntity(
         void* data = chunk->GetComponentPtrByType(typeData.id, index);
         const auto* meta = registry.GetInfoByName(name);
         if (!meta || !data) continue;
+        if (!meta->isSerializable) continue;   // ★ 保存対象外はスキップ
 
         nlohmann::json compJson;
         // ★ SaveContext を渡して、EntityLink フィールドが自動で localIndex に変換される
@@ -146,28 +148,41 @@ std::vector<EntityID> SceneSerializer::Deserialize(World* world, const std::stri
     }
 
     nlohmann::json root;
-    try {
+    try
+    {
         root = nlohmann::json::parse(jsonStr);
     }
-    catch (const std::exception& /*e*/) {
+    catch (const std::exception &e)
+    {
+        CCL_LOG_ERROR(LogCategory::Core,
+            "[SceneSerializer] JSON parse failed (%s): %s", filepath.c_str(), e.what());
         return {};
     }
 
     // ---- バージョンチェック ----
-    if (root.contains(CCL::Serialization::Keys::Magic)) {
+    // ---- フォーマット検証 (新フォーマットのみ: magic 必須) ----
+    if (!root.contains(CCL::Serialization::Keys::Magic))
+    {
+        CCL_LOG_ERROR(LogCategory::Core,
+            "[SceneSerializer] missing magic — not a valid scene/prefab file: %s", filepath.c_str());
+        return {};
+    }
+    {
         uint32_t magic = root[CCL::Serialization::Keys::Magic].get<uint32_t>();
-        if (magic != CCL::Serialization::SceneFileMagic) {
-            // Logger::Error("SceneSerializer: magic mismatch");
+        if (magic != CCL::Serialization::SceneFileMagic)
+        {
+            CCL_LOG_ERROR(LogCategory::Core,
+                "[SceneSerializer] magic mismatch: %s", filepath.c_str());
             return {};
         }
         uint32_t ver = root.value(CCL::Serialization::Keys::Version, 0u);
-        if (ver < CCL::Serialization::MinSupportedSceneVersion) {
-            // Logger::Error("SceneSerializer: unsupported version " + std::to_string(ver));
+        if (ver < CCL::Serialization::MinSupportedSceneVersion)
+        {
+            CCL_LOG_ERROR(LogCategory::Core,
+                "[SceneSerializer] unsupported version %u: %s", ver, filepath.c_str());
             return {};
         }
-        // 将来: ver < CurrentSceneVersion ならアップグレード処理を挟む
     }
-    // (旧フォーマットは magic フィールドがないので、無しの場合は素通り = 互換ロード)
 
     if (!root.contains(CCL::Serialization::Keys::Entities)) return {};
     return DeserializeRaw(world, root[CCL::Serialization::Keys::Entities]);
@@ -188,25 +203,23 @@ std::vector<EntityID> SceneSerializer::DeserializeRaw(World* world, const nlohma
     // ---------------------------------------------------------
     // Pass 1: エンティティ一括 Spawn + LoadContext へ登録
     // ---------------------------------------------------------
-    // ※ Archetype は空のまま生成し、後続でコンポーネントを追加する。
-    //   旧版にあったヒープ確保 (new/delete) は廃止。スタック変数で十分。
     Archetype emptyArch;
-    for (const auto& entityJson : entitiesJson) {
+    for (const auto &entityJson : entitiesJson)
+    {
         EntityID newID = world->RequestSpawnEntity(emptyArch);
         createdEntities.push_back(newID);
 
-        // ★ ローカルインデックス → 新 EntityID を登録
-        // 旧フォーマット (raw EntityID を "id" に保存) と新フォーマット ("lid") の両対応
-        uint32_t localIdx = 0;
-        if (entityJson.contains(CCL::Serialization::Keys::EntityLocal)) {
-            localIdx = entityJson[CCL::Serialization::Keys::EntityLocal].get<uint32_t>();
+        // 新フォーマットのみ: ローカルインデックス (lid) → 新 EntityID を登録
+        if (entityJson.contains(CCL::Serialization::Keys::EntityLocal))
+        {
+            uint32_t localIdx = entityJson[CCL::Serialization::Keys::EntityLocal].get<uint32_t>();
+            loadCtx.Register(localIdx, newID);
         }
-        else if (entityJson.contains("id")) {
-            // 旧フォーマット互換: 順序で localIndex を割り当て直す
-            // (本来は raw ID だが、上書きで一意性を持たせる)
-            localIdx = static_cast<uint32_t>(createdEntities.size());
+        else
+        {
+            CCL_LOG_ERROR(LogCategory::Core,
+                "[SceneSerializer] entity missing local index (lid) — link/parent resolution may fail");
         }
-        loadCtx.Register(localIdx, newID);
     }
 
     // ---------------------------------------------------------
@@ -227,26 +240,6 @@ std::vector<EntityID> SceneSerializer::DeserializeRaw(World* world, const nlohma
                 // 通常のデシリアライズ（ここでゴミの parentID が入る可能性がある）
                 meta->deserializeToWorld(world, newID, compJson, &loadCtx);
             }
-
-            // =====================================================================
-            // ★ 追加: 確実な親子関係の復元 (PendingParentComponent の活用)
-            // 自動リマップの盲点をバイパスし、確実に実EntityIDを解決して予約する
-            // =====================================================================
-            if (components.contains("Transform")) {
-                const auto& transJson = components["Transform"];
-                if (transJson.contains("Parent")) {
-                    auto localIdx = transJson["Parent"].get<CCL::Serialization::SaveContext::LocalIndex>();
-                    EntityID resolvedParent = loadCtx.Resolve(localIdx);
-
-                    // プレハブ内に存在する正しい親が見つかった場合のみ
-                    if (resolvedParent != CCL::ECS::InvalidEntityID) {
-                        // 次のフレームで安全に SetParent させるための予約コンポーネントを付与
-                        PendingParentComponent ppc;
-                        ppc.parentID = resolvedParent;
-                        world->AddComponent<PendingParentComponent>(newID, ppc);
-                    }
-                }
-            }
         }
     }
 
@@ -257,6 +250,24 @@ std::vector<EntityID> SceneSerializer::DeserializeRaw(World* world, const nlohma
     //   - PendingParentComponent 等は ScrutinyAndApply で処理されるはず
     // ---------------------------------------------------------
     world->ScrutinyAndApply();
+
+    // ---------------------------------------------------------
+    // Pass 4: 親子リンクの最終確定 (文字列に依存しない)
+    //   EntityLink により各 Transform の parent.id は既に実 EntityID へ解決済み。
+    //   ただし保存しない firstChild/兄弟リンク(下方向)は未構築なので、
+    //   解決済み parent.id を使って SetParent で双方向リンクを張り直す。
+    //   createdEntities は root→子の順(BFS)なので親が先に処理される。
+    // ---------------------------------------------------------
+    for (EntityID id : createdEntities)
+    {
+        auto *t = world->GetComponent<TransformComponent>(id);
+        if (!t)
+            continue;
+        if (!t->parent.IsValid())
+            continue; // ルート/親なしは対象外
+        TransformUpdateSystem::SetParent(*world, id, t->parent.id);
+    }
+
 
     return createdEntities;
 }
