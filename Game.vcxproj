@@ -623,6 +623,10 @@
     <ClInclude Include="Source\Engine\UI\Widgets\UIProgressBar.h" />
     <ClInclude Include="Source\Engine\UI\Widgets\UIText.h" />
     <ClInclude Include="Source\Game\Core\AllComponents.h" />
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTAction.h" />
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTActionRegistry.h" />
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTActions_Boss.h" />
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTConditions.h" />
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BossActionComponent.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
@@ -687,6 +691,7 @@
     <ClInclude Include="Source\Game\Logics\AI\NavAI\AIPatrolSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\NavAI\AIPerceptionSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\NavAI\Events\AISoundEvent.h" />
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\Commander\CommanderAI.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\NodeParamField.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\NodeRegistry.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\StateTreeAsset.h" />

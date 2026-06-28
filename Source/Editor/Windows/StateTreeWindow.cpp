@@ -257,6 +257,14 @@ void StateTreeWindow::DrawParams(NodeDef& node, bool isCondition)
             if (ImGui::Checkbox(f.name.c_str(), &v))
                 node.params[f.name] = v;
         } break;
+        case ParamType::String: {
+            std::string cur = node.params.value(f.name, f.defStr);
+            char        buf[256];
+            std::snprintf(buf, sizeof(buf), "%s", cur.c_str());
+            if (ImGui::InputText(f.name.c_str(), buf, sizeof(buf)))
+                node.params[f.name] = std::string(buf);
+        }
+        break;
         }
         ImGui::PopID();
     }

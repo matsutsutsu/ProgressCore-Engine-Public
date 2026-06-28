@@ -517,6 +517,12 @@
     <Filter Include="Source\Engine\Camera\Systems\_Game">
       <UniqueIdentifier>{206d07c2-08fd-4a68-a742-55052fcc5297}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\AI\BehaviorTree\Actions">
+      <UniqueIdentifier>{3135afad-6920-43ec-93d8-8f46096aaa44}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\AI\StateTree\Commander">
+      <UniqueIdentifier>{eb9849a2-7b3c-4a70-bca8-37b07ab5252d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1712,6 +1718,21 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\Systems\RootMotionSystem.h">
       <Filter>Source\Engine\Animation\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTAction.h">
+      <Filter>Source\Game\Logics\AI\BehaviorTree\Actions</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTActionRegistry.h">
+      <Filter>Source\Game\Logics\AI\BehaviorTree\Actions</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTActions_Boss.h">
+      <Filter>Source\Game\Logics\AI\BehaviorTree\Actions</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTConditions.h">
+      <Filter>Source\Game\Logics\AI\BehaviorTree\Actions</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\Commander\CommanderAI.h">
+      <Filter>Source\Game\Logics\AI\StateTree\Commander</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
