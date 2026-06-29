@@ -220,7 +220,7 @@ REGISTER_COMPONENT_EDITOR_GUI(AnimStateMachineComponent)
 template <> struct ComponentMeta<AnimParametersComponent> {
     static constexpr const char* displayName = "Anim Parameters";
     static constexpr bool        hasCustomGui = true;
-    static constexpr bool        isSerializable = false;
+    static constexpr bool        isSerializable = true;
 
 #ifdef ENABLE_EDITOR
     static bool CustomGui(AnimParametersComponent& params, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr) {

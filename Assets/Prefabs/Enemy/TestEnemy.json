@@ -2,6 +2,7 @@
     "entities": [
         {
             "components": {
+                "AnimParameters": null,
                 "AnimStateMachine": {
                     "graphPath": "Assets/Animations/Nodes/TestAnimationNode.json"
                 },
