@@ -13,7 +13,7 @@
                 }
             ],
             "logicType": 0,
-            "requiredWindow": "",
+            "requiredCancelMask": 0,
             "targetStateHash": 1750693397
         },
         {
@@ -27,7 +27,7 @@
                 }
             ],
             "logicType": 0,
-            "requiredWindow": "",
+            "requiredCancelMask": 0,
             "targetStateHash": 236909357
         },
         {
@@ -47,7 +47,7 @@
                 }
             ],
             "logicType": 0,
-            "requiredWindow": "",
+            "requiredCancelMask": 0,
             "targetStateHash": 2063645824
         },
         {
@@ -61,7 +61,7 @@
                 }
             ],
             "logicType": 0,
-            "requiredWindow": "",
+            "requiredCancelMask": 0,
             "targetStateHash": 2262072404
         }
     ],
@@ -117,6 +117,13 @@
             "hash": 4288447221,
             "name": "OnLand",
             "type": 2
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 2343121693,
+            "name": "Attack",
+            "type": 2
         }
     ],
     "states": [
@@ -124,7 +131,7 @@
             "applyRootMotion": false,
             "isLoop": true,
             "nodePosX": 76.0,
-            "nodePosY": 311.0,
+            "nodePosY": 321.0,
             "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Idle.json",
@@ -143,8 +150,22 @@
                         }
                     ],
                     "logicType": 0,
-                    "requiredWindow": "",
+                    "requiredCancelMask": 0,
                     "targetStateHash": 2371348074
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 3,
+                            "paramHash": 2343121693,
+                            "paramName": "Attack",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 240607861
                 }
             ]
         },
@@ -171,7 +192,7 @@
                         }
                     ],
                     "logicType": 0,
-                    "requiredWindow": "",
+                    "requiredCancelMask": 0,
                     "targetStateHash": 1168775091
                 }
             ]
@@ -205,7 +226,7 @@
                         }
                     ],
                     "logicType": 0,
-                    "requiredWindow": "",
+                    "requiredCancelMask": 0,
                     "targetStateHash": 1168775091
                 },
                 {
@@ -225,7 +246,7 @@
                         }
                     ],
                     "logicType": 0,
-                    "requiredWindow": "",
+                    "requiredCancelMask": 0,
                     "targetStateHash": 2371348074
                 }
             ]
@@ -253,7 +274,7 @@
                         }
                     ],
                     "logicType": 0,
-                    "requiredWindow": "",
+                    "requiredCancelMask": 0,
                     "targetStateHash": 2063645824
                 }
             ]
@@ -281,7 +302,7 @@
                         }
                     ],
                     "logicType": 0,
-                    "requiredWindow": "",
+                    "requiredCancelMask": 0,
                     "targetStateHash": 3204239090
                 }
             ]
@@ -309,7 +330,7 @@
                         }
                     ],
                     "logicType": 0,
-                    "requiredWindow": "",
+                    "requiredCancelMask": 0,
                     "targetStateHash": 2063645824
                 }
             ]
@@ -337,7 +358,7 @@
                         }
                     ],
                     "logicType": 0,
-                    "requiredWindow": "",
+                    "requiredCancelMask": 0,
                     "targetStateHash": 1168775091
                 },
                 {
@@ -351,8 +372,78 @@
                         }
                     ],
                     "logicType": 0,
-                    "requiredWindow": "",
+                    "requiredCancelMask": 0,
                     "targetStateHash": 2371348074
+                }
+            ]
+        },
+        {
+            "applyRootMotion": true,
+            "isLoop": false,
+            "nodePosX": -70.0,
+            "nodePosY": 472.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/Attack_1.json",
+            "sequenceName": "Attack_1",
+            "speedCurveName": "",
+            "stateHash": 240607861,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 3,
+                            "paramHash": 2343121693,
+                            "paramName": "Attack",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 1,
+                    "targetStateHash": 190275004
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 1168775091
+                }
+            ]
+        },
+        {
+            "applyRootMotion": true,
+            "isLoop": false,
+            "nodePosX": 74.0,
+            "nodePosY": 637.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/Attack_2.json",
+            "sequenceName": "Attack_2",
+            "speedCurveName": "",
+            "stateHash": 190275004,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 1168775091
                 }
             ]
         }

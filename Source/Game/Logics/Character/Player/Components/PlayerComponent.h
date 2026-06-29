@@ -32,4 +32,7 @@ struct PlayerComponent {
     // =========================================================
     bool  wasGroundedLastFrame = true; // 前フレームの接地状態
     float lastFallVelocity     = 0.0f; // 直前のY速度（落下速度）
+
+    // --- 攻撃入力状態 ---
+    bool wasAttackButtonPressed = false; ///< 前フレームの攻撃ボタン押下状態 (連打・押しっぱなし防止用)
 };

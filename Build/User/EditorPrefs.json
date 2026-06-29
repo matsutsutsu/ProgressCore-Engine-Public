@@ -1,3 +1,5 @@
 {
-    "DialogHistory": {}
+    "DialogHistory": {
+        "AnimNode": "Assets\\Animations\\Nodes"
+    }
 }

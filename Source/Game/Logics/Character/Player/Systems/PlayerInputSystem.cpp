@@ -50,6 +50,7 @@ void PlayerInputSystem::Update(float dt)
 
     // 4. Chunk一括更新 (SoA)
     ForEach([&](CharacterMovementInputComponent& inputData, const PlayerComponent& player) {
+
         // 要求速度、攻撃意思、ジャンプ意思の書き込み
         inputData.desiredVelocity   = moveDir;
         inputData.isAttackRequested = isAttacking;

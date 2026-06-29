@@ -1,0 +1,15 @@
+{
+    "duration": 1.5833333730697632,
+    "events": [],
+    "rootMotionCurve": {
+        "keys": [],
+        "name": ""
+    },
+    "sequenceName": "Attack_2",
+    "speedCurve": {
+        "keys": [],
+        "name": ""
+    },
+    "targetAnimName": "Combo_Attack_01_01_Seq_0",
+    "targetModelPath": ""
+}
