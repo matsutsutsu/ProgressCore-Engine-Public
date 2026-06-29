@@ -1216,69 +1216,149 @@ void AnimGraphWindow::DrawTransitionConditionUI(AnimTransition &trans)
     ImGui::Text("遷移条件 (Conditions)");
     if (ImGui::Button("+ 条件を追加 (Add Condition)"))
     {
-        trans.conditions.push_back({CCL::Utils::HashString("Speed"), "Speed", AnimConditionOp::Greater, 0.0f});
+        // 初期状態はエラーを防ぐため「再生終了」にしておく
+        trans.conditions.push_back({0, "", AnimConditionOp::Finished, 0.0f});
     }
 
-    // ★ 削除するインデックスを記憶する変数（遅延削除用）
+    // 削除するインデックスを記憶する変数（遅延削除用）
     int conditionToDelete = -1;
 
     for (size_t c = 0; c < trans.conditions.size(); ++c)
     {
         auto &cond = trans.conditions[c];
 
-        ImGui::PushID((int)c); // ★ PushID
-        ImGui::Separator();
-        ImGui::Text("条件 (Condition) %d", (int)c);
-        ImGui::Text("対象パラメータ (Parameter):");
-        ImGui::SetNextItemWidth(-1);
+        ImGui::PushID((int)c);
+        ImGui::Spacing();
 
-        const char *preview = cond.paramName.empty() ? "(未選択)" : cond.paramName.c_str();
-        if (ImGui::BeginCombo("##ParamSelect", preview))
+        // =========================================================================
+        // 1. Target (対象) の選択
+        // =========================================================================
+        std::string preview = "未選択";
+        if (cond.op == AnimConditionOp::Finished)
         {
+            preview = "[ 再生終了 (Finished) ]";
+        }
+        else if (!cond.paramName.empty())
+        {
+            preview = cond.paramName;
+        }
+
+        ImGui::SetNextItemWidth(160);
+        if (ImGui::BeginCombo("##Target", preview.c_str()))
+        {
+            // 特別な項目：再生終了
+            bool isSelFinished = (cond.op == AnimConditionOp::Finished);
+            if (ImGui::Selectable("[ 再生終了 (Finished) ]", isSelFinished))
+            {
+                cond.op        = AnimConditionOp::Finished;
+                cond.paramHash = 0;
+                cond.paramName = "";
+            }
+
+            ImGui::Separator();
+
             if (_currentGraph.parameters.empty())
-                ImGui::TextDisabled("パラメータ未登録。\n左のパネルで追加してください。");
+                ImGui::TextDisabled("パラメータ未登録");
+
             for (const auto &pd : _currentGraph.parameters)
             {
-                bool sel = (cond.paramHash == pd.hash);
+                bool sel = (cond.paramHash == pd.hash && cond.op != AnimConditionOp::Finished);
                 if (ImGui::Selectable(pd.name.c_str(), sel))
                 {
                     cond.paramName = pd.name;
                     cond.paramHash = pd.hash;
+                    // パラメータが変わったので、型に応じてデフォルトの演算子を自動設定する
+                    if (pd.type == AnimParamType::Trigger)
+                        cond.op = AnimConditionOp::Trigger;
+                    else if (pd.type == AnimParamType::Bool)
+                        cond.op = AnimConditionOp::Equal;
+                    else
+                        cond.op = AnimConditionOp::Greater; // Floatのデフォルト
                 }
                 if (sel)
                     ImGui::SetItemDefaultFocus();
             }
             ImGui::EndCombo();
         }
-        ImGui::TextDisabled("ID: 0x%08X", cond.paramHash);
 
-        int op = (int)cond.op;
-        ImGui::SetNextItemWidth(150);
-        const char *ops[] = {"一致 (Equal)", "より大きい (Greater)", "より小さい (Less)", "トリガー (Trigger)", "再生終了 (Finished)"};
-        if (ImGui::Combo("条件 (Op)", &op, ops, IM_ARRAYSIZE(ops)))
-            cond.op = (AnimConditionOp)op;
+        ImGui::SameLine();
 
-        if (cond.op != AnimConditionOp::Trigger && cond.op != AnimConditionOp::Finished)
+        // =========================================================================
+        // 2. パラメータの型に応じたスマートUIの出し分け
+        // =========================================================================
+        if (cond.op == AnimConditionOp::Finished)
         {
-            ImGui::SameLine();
-            ImGui::SetNextItemWidth(100);
-            ImGui::DragFloat("閾値 (Value)", &cond.threshold, 0.05f);
+            // Finished の場合は演算子も閾値も不要
+            ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "最後まで再生で遷移");
+        }
+        else if (cond.paramHash != 0)
+        {
+            // 対象パラメータの型を検索
+            AnimParamType pType = AnimParamType::Float;
+            for (const auto &pd : _currentGraph.parameters)
+            {
+                if (pd.hash == cond.paramHash)
+                {
+                    pType = pd.type;
+                    break;
+                }
+            }
+
+            if (pType == AnimParamType::Trigger)
+            {
+                // Trigger は演算子も閾値も不要
+                cond.op = AnimConditionOp::Trigger;
+                ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.4f, 1.0f), "発動で遷移");
+            }
+            else if (pType == AnimParamType::Bool)
+            {
+                // Bool は == に固定し、true/false のドロップダウンに変更
+                cond.op = AnimConditionOp::Equal;
+                ImGui::Text(" は ");
+                ImGui::SameLine();
+                ImGui::SetNextItemWidth(80);
+
+                int         boolVal       = (cond.threshold > 0.5f) ? 1 : 0;
+                const char *boolOptions[] = {"false", "true"};
+                if (ImGui::Combo("##BoolVal", &boolVal, boolOptions, 2))
+                {
+                    cond.threshold = boolVal ? 1.0f : 0.0f;
+                }
+            }
+            else if (pType == AnimParamType::Float)
+            {
+                // Float の場合は無意味な演算子を排除
+                if (cond.op == AnimConditionOp::Trigger || cond.op == AnimConditionOp::Finished)
+                    cond.op = AnimConditionOp::Greater;
+
+                int         opInt      = (int)cond.op; // 0:Equal, 1:Greater, 2:Less
+                const char *opsFloat[] = {"==", ">", "<"};
+
+                ImGui::SetNextItemWidth(50);
+                if (ImGui::Combo("##FloatOp", &opInt, opsFloat, 3))
+                    cond.op = (AnimConditionOp)opInt;
+
+                ImGui::SameLine();
+                ImGui::SetNextItemWidth(60);
+                ImGui::DragFloat("##FloatVal", &cond.threshold, 0.05f);
+            }
         }
         else
         {
-            cond.threshold = 0.0f;
+            ImGui::TextDisabled("対象を選択...");
         }
 
-        // ★ 即座に erase せず、インデックスを記憶するだけにする
-        if (ImGui::Button("削除 (Delete)"))
+        // 行の右端に削除ボタン
+        ImGui::SameLine();
+        if (ImGui::Button("X", ImVec2(24, 0)))
         {
             conditionToDelete = (int)c;
         }
 
-        ImGui::PopID(); // ★ 確実にペアになる PopID
+        ImGui::PopID();
     }
 
-    // ★ ループを安全に抜けた後で配列から削除する
+    // 遅延削除の実行
     if (conditionToDelete >= 0)
     {
         trans.conditions.erase(trans.conditions.begin() + conditionToDelete);
