@@ -1734,6 +1734,9 @@
     <ClInclude Include="Source\Game\Logics\AI\StateTree\Commander\CommanderAI.h">
       <Filter>Source\Game\Logics\AI\StateTree\Commander</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\Systems\AnimSetupSystem.h">
+      <Filter>Source\Engine\Animation\Systems</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2581,6 +2584,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Animation\Components\RootMotionComponentMeta.cpp">
       <Filter>Source\Engine\Animation\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\Systems\AnimSetupSystem.cpp">
+      <Filter>Source\Engine\Animation\Systems</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
