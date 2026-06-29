@@ -24,6 +24,7 @@
 #include "Editor/Windows/BehaviorTreeWindow.h"
 #include "Editor/Windows/MemoryAnalyzerWindow.h"
 #include "Editor/Windows/TestLauncherWindow.h"
+#include "Editor/Windows/CurveEditorWindow.h"
 
 #include "Editor/Windows/CameraPathEditorWindow.h"
 #include "Editor/Windows/StateTreeWindow.h"
@@ -55,6 +56,7 @@ void EditorWindowManager::Initialize()
 	RegisterWindow<BehaviorTreeWindow>();
     RegisterWindow<StateTreeWindow>();
     RegisterWindow<CameraPathEditorWindow>();
+    RegisterWindow<CurveEditorWindow>();
 
 
     RegisterWindow<TextEditorWindow>();

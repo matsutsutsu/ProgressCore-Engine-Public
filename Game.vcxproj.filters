@@ -1737,6 +1737,12 @@
     <ClInclude Include="Source\Engine\Animation\Systems\AnimSetupSystem.h">
       <Filter>Source\Engine\Animation\Systems</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Math\CurveData.h">
+      <Filter>Source\Engine\Core\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\CurveEditorWindow.h">
+      <Filter>Source\Editor\Windows\Game</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2590,6 +2596,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Components\Core\PrimitiveComponentMeta.cpp">
       <Filter>Source\Engine\Graphics\Components\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\CurveEditorWindow.cpp">
+      <Filter>Source\Editor\Windows\Game</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -372,6 +372,7 @@
     <ClInclude Include="Source\Editor\Windows\ConsoleWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\CurveEditorWindow.h" />
     <ClInclude Include="Source\Editor\Windows\ECSDebugWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
@@ -433,6 +434,7 @@
     <ClInclude Include="Source\Engine\Core\Components\DestroyTag.h" />
     <ClInclude Include="Source\Engine\Core\Components\NameComponent.h" />
     <ClInclude Include="Source\Engine\Core\Components\PersistentTag.h" />
+    <ClInclude Include="Source\Engine\Core\Math\CurveData.h" />
     <ClInclude Include="Source\Engine\Core\Math\Misc.h" />
     <ClInclude Include="Source\Engine\Core\Math\ScreenToWorld.h" />
     <ClInclude Include="Source\Engine\Core\Math\StringHash.h" />
@@ -1222,6 +1224,7 @@
     <ClCompile Include="Source\Editor\Windows\ConsoleWindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\CurveEditorWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\ECSDebugWindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
