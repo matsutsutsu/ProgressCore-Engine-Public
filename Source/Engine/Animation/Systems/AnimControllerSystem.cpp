@@ -2,6 +2,7 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include <cmath>
+#include <imgui.h>
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Animation/Core/AnimGraphSerializer.h"
 #include "Engine/Platform/Core/Logger.h"
@@ -94,11 +95,17 @@ void AnimControllerSystem::Update(float dt)
         }
     });
 
+    // ログフラグをローカルにコピーし、ラムダ式にキャプチャさせてスレッドセーフにする
+    bool enableLog = false;
+#ifdef ENABLE_EDITOR
+    enableLog = _enableTransitionLog;
+#endif
+
     // =====================================================================
     // フェーズ2【並列】純粋なステートマシン評価
     //   ResourceManager / ファイルI/O は一切呼ばない（フェーズ1で束縛済み）。
     // =====================================================================
-    ForEachWithIDParallel([](CCL::ECS::EntityID          id,
+    ForEachWithIDParallel([enableLog](CCL::ECS::EntityID          id,
                               AnimStateMachineComponent &fsm,
                               AnimatorComponent         &animator,
                               AnimParametersComponent   &params) {
@@ -224,8 +231,14 @@ void AnimControllerSystem::Update(float dt)
                 if (cond.op == AnimConditionOp::Trigger)
                 {
                     params.ConsumeTrigger(cond.paramHash);
-                    CCL_LOG_INFO(LogCategory::Game, "[AnimController] Consumed Trigger: '%s' (0x%08X)",
-                        cond.paramName.c_str(), cond.paramHash);
+
+#ifdef ENABLE_EDITOR
+                    if (enableLog)
+                    {
+                        CCL_LOG_INFO(LogCategory::Game, "[AnimController] Consumed Trigger: '%s' (0x%08X)",
+                            cond.paramName.c_str(), cond.paramHash);
+                    }
+#endif
                 }
             }
 
@@ -237,8 +250,13 @@ void AnimControllerSystem::Update(float dt)
             {
                 if (nextState.stateHash == triggeredTransition->targetStateHash)
                 {
-                    CCL_LOG_SUCCESS(LogCategory::Game, "[AnimController] Entity %d Transitioned: [%s] -> [%s]",
-                        (int)id, oldStateName.c_str(), nextState.sequenceName.c_str());
+#ifdef ENABLE_EDITOR
+                    if (enableLog)
+                    {
+                        CCL_LOG_SUCCESS(LogCategory::Game, "[AnimController] Entity %d Transitioned: [%s] -> [%s]",
+                            (int)id, oldStateName.c_str(), nextState.sequenceName.c_str());
+                    }
+#endif
 
                     if (nextState.sequence)
                     {
@@ -254,5 +272,20 @@ void AnimControllerSystem::Update(float dt)
         }
     });
 }
+
+
+// システムのインスペクタ表示
+void AnimControllerSystem::OnGui()
+{
+    ImGui::Text("Animation Controller Settings");
+    ImGui::Separator();
+
+    ImGui::Checkbox("Enable Transition Logs", &_enableTransitionLog);
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::SetTooltip("チェックを入れると、ステートが切り替わった瞬間にコンソールへログを出力します。\n高速遷移によるログ汚染を防ぐため、デバッグ時のみONにしてください。");
+    }
+}
+
 
 REGISTER_LOGIC_SYSTEM(AnimControllerSystem, Priority::LogicStage::L02_Update);

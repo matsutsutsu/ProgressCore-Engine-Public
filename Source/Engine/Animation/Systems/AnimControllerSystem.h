@@ -23,8 +23,20 @@ class AnimControllerSystem : public CCL::ECS::IfSystem<AnimControllerSystem,
 {
 public:
     // 基底クラスのコンストラクタ呼び出しもフルパスで指定
-    AnimControllerSystem() : IfSystem("AnimControllerSystem") {}
+    AnimControllerSystem() : IfSystem("AnimControllerSystem") 
+    {
+        hasGui = true;    
+    }
     virtual ~AnimControllerSystem() = default;
 
     void Update(float dt) override;
+
+    // エディタ用のシステムインスペクタ描画
+    void OnGui() override;
+
+  private:
+#ifdef ENABLE_EDITOR
+    // 状態遷移ログを出力するかどうかのフラグ（デフォルトOFFでコンソール汚染を防ぐ）
+    bool _enableTransitionLog = false;
+#endif
 };

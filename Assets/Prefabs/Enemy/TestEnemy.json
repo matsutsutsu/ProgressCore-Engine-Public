@@ -93,7 +93,10 @@
                     "assetPath": "Assets/Models/Player/SK_SciFITrooper_Man_03.gltf"
                 },
                 "Name": {
-                    "name": "DummyPlayer"
+                    "name": "DummyEnemy"
+                },
+                "StateTree": {
+                    "assetName": "Commander"
                 },
                 "TimeState": {
                     "buffScale": 1.0,
@@ -128,6 +131,6 @@
         }
     ],
     "magic": 1397506883,
-    "name": "DummyPlayer",
+    "name": "DummyEnemy",
     "version": 1
 }

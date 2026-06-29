@@ -52,8 +52,7 @@ struct SetActiveBTTask : public CCL::AI::ITask
     {
         const auto *p      = static_cast<const Params *>(ctx.params);
         auto       *btComp = ctx.world->GetComponent<BehaviorTreeComponent>(ctx.entity);
-        if (!btComp)
-            return CCL::AI::RunStatus::Failed;
+        if (!btComp) return CCL::AI::RunStatus::Failed;
 
         // 戦術が変わった = 使う BT を切り替える
         // （assetPath != loadedAssetPath になると BossAISystem が自動ロード）
@@ -186,10 +185,11 @@ inline CCL::AI::StateTreeAsset BuildCommanderAsset(const CommanderIDs &ids)
     };
 
     // 優先度の高い順に追加（上から評価される）
-    addTactic("Final", "Data/BehaviorTree/Final.json", ids.droneCountBelow, 100.0f);
-    addTactic("Aggressive", "Data/BehaviorTree/Aggressive.json", ids.droneCountBelow, 400.0f);
-    addTactic("Pressure", "Data/BehaviorTree/Pressure.json", ids.droneCountBelow, 700.0f);
-    addTactic("Control", "Data/BehaviorTree/Control.json", ST_INVALID_NODE_TYPE, 0.0f); // フォールバック
+    addTactic("Final",      "Assets/BehaviorTree/Final.json", ids.droneCountBelow, 100.0f);
+    addTactic("Aggressive", "Assets/BehaviorTree/Aggressive.json", ids.droneCountBelow, 400.0f);
+    addTactic("Pressure",   "Assets/BehaviorTree/Pressure.json", ids.droneCountBelow, 700.0f);
+    addTactic("Control",    "Assets/BehaviorTree/TestAINode.json", ST_INVALID_NODE_TYPE, 0.0f); // フォールバック
+
 
     (void)root;
     return asset;

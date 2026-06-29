@@ -11,6 +11,10 @@
 #include "Game/Logics/AI/StateTree/EnemyAI/EnemyAI.h"
 #include "Game/Logics/AI/StateTree/Core/StateTreeRegistry.h"
 
+#include "Game/Logics/AI/StateTree/Commander/CommanderAI.h"
+#include "Game/Logics/AI/BehaviorTree/Actions/BTActions_Boss.h"
+#include "Game/Logics/AI/BehaviorTree/Actions/BTConditions.h"
+
 
 void EditorScene::Initialize()
 {
@@ -25,13 +29,21 @@ void EditorScene::Initialize()
 
     //SceneManager::Instance().LoadScene(_worldPtr,"Assets/Scene/PlayerMovementScene.json");
 
-    // (a) ノード種別を登録
-    static auto enemyIds = EnemyAI::RegisterNodes();   // アプリ起動中1回でOK
-  
-    _worldPtr->AddResource<CCL::AI::StateTreeRegistry>();          // 空で生成
-    auto& stReg = _worldPtr->GetResource<CCL::AI::StateTreeRegistry>();
-    auto enemyHandle = stReg.Register(EnemyAI::BuildEnemyAsset(enemyIds, 12.0f));
-   
+    static auto enemyIds = EnemyAI::RegisterNodes();
+
+    // ★追加：BTのアクション・条件を登録
+    CCL::AI::BT::BossActions::RegisterAll();
+    CCL::AI::BT::BossConditions::RegisterAll();
+
+    // ★追加：司令官のノードを登録
+    static auto commanderIds = CommanderAI::RegisterNodes();
+
+    _worldPtr->AddResource<CCL::AI::StateTreeRegistry>();
+    auto &stReg       = _worldPtr->GetResource<CCL::AI::StateTreeRegistry>();
+    auto  enemyHandle = stReg.Register(EnemyAI::BuildEnemyAsset(enemyIds, 12.0f));
+
+    // ★追加：司令官StateTreeアセットを登録
+    stReg.Register(CommanderAI::BuildCommanderAsset(commanderIds));
 
 
     CCL_LOG_INFO(LogCategory::Core, "EditorScene Initialize");
