@@ -204,43 +204,46 @@ void AnimationSystem::Update(float dt)
 
             if (animIndex != -1)
             {
+                // ★ 数学的アプローチによる真のルートボーン特定
+                const int rootNodeIndex = model->FindRealRootMotionNodeIndex(animIndex);
+
                 if (animator.isBlending && animator.previousSequence)
                 {
                     int prevAnimIndex = model->GetAnimationIndex(animator.previousSequence->targetAnimName.c_str());
                     if (prevAnimIndex != -1)
                     {
-                        // 容疑者C対策: 骨格空間のバッファサイズを強制的に現在のモデルのノード数に同期
+                        // バッファサイズの同期
                         size_t nodeCount = animator.poseBufferA.size();
                         if (animator.poseBufferB.size() != nodeCount)
                         {
                             animator.poseBufferB.resize(nodeCount);
                         }
 
-                        // 過去と現在のポーズをそれぞれ独立して計算
+                        // 過去と現在のポーズを計算
                         model->ComputeAnimation(prevAnimIndex, animator.previousTimer, animator.poseBufferB);
                         model->ComputeAnimation(animIndex, animator.currentTimer, animator.poseBufferA);
 
-                        // 容疑者B対策: ブレンドを行う「前」に、過去と現在の両方のルートボーンを強制キャンセルする！
-                        // ルートモーションの有無に関わらず、描画空間においてRoot（Index:0）のXZは常に原点であるべき。
-                        auto *rootMotion = _world->GetComponent<RootMotionComponent>(id);
-                        if (rootMotion && rootMotion->enabled)
+                        // ========================================================
+                        // ★ Force Root Lock (ブレンド中の過去・現在両方のピン留め)
+                        // ========================================================
+                        if (!animator.poseBufferB.empty())
                         {
-                            if (!animator.poseBufferB.empty())
-                            {
-                                animator.poseBufferB[0].position.x = 0.0f;
-                                animator.poseBufferB[0].position.z = 0.0f;
-                            }
-                            if (!animator.poseBufferA.empty())
-                            {
-                                animator.poseBufferA[0].position.x = 0.0f;
-                                animator.poseBufferA[0].position.z = 0.0f;
-                            }
+                            Model::NodePose initPoseB;
+                            model->ComputeAnimation(prevAnimIndex, rootNodeIndex, 0.0f, initPoseB);
+                            // X, Y, Z すべてを「0秒時点の初期位置」に固定し、アニメ自身の移動を完全に殺す
+                            animator.poseBufferB[0].position = initPoseB.position;
+                        }
+                        if (!animator.poseBufferA.empty())
+                        {
+                            Model::NodePose initPoseA;
+                            model->ComputeAnimation(animIndex, rootNodeIndex, 0.0f, initPoseA);
+                            animator.poseBufferA[0].position = initPoseA.position;
                         }
 
                         float blendRate = (animator.blendDuration > 0.0f) ? (animator.currentBlendTime / animator.blendDuration) : 1.0f;
                         blendRate       = std::fmax(0.0f, std::fmin(blendRate, 1.0f));
 
-                        // 完全にクリーンアップされたRoot同士のポーズをブレンド
+                        // クリーンアップされたポーズ同士をブレンド
                         Model::BlendAnimations(animator.poseBufferB, animator.poseBufferA, blendRate, animator.poseBufferA);
                     }
                     else
@@ -250,14 +253,25 @@ void AnimationSystem::Update(float dt)
                 }
                 else
                 {
+                    // ブレンドしていない通常再生
                     model->ComputeAnimation(animIndex, animator.currentTimer, animator.poseBufferA);
+                }
 
-                    // 通常再生時のキャンセリング（ブレンドしていない時）
-                    auto *rootMotion = _world->GetComponent<RootMotionComponent>(id);
-                    if (rootMotion && rootMotion->enabled && !animator.poseBufferA.empty())
+                // ========================================================
+                // ★ Force Root Lock (真のルートボーンのXZを初期位置にピン留め)
+                // ========================================================
+                auto *rootMotion = _world->GetComponent<RootMotionComponent>(id);
+                if (rootMotion && rootMotion->enabled && !animator.poseBufferA.empty())
+                {
+                    // 配列全体を0秒で計算して初期ポーズ群を取得
+                    std::vector<Model::NodePose> initPoses;
+                    model->ComputeAnimation(animIndex, 0.0f, initPoses);
+
+                    if (rootNodeIndex < initPoses.size() && rootNodeIndex < animator.poseBufferA.size())
                     {
-                        animator.poseBufferA[0].position.x = 0.0f;
-                        animator.poseBufferA[0].position.z = 0.0f;
+                        // Y(高さ)のアニメーションはそのまま活かし、XZ(前後左右)の移動のみを殺す！
+                        animator.poseBufferA[rootNodeIndex].position.x = initPoses[rootNodeIndex].position.x;
+                        animator.poseBufferA[rootNodeIndex].position.z = initPoses[rootNodeIndex].position.z;
                     }
                 }
 

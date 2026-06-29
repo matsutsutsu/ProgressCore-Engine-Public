@@ -100,23 +100,34 @@ float JoltCharacterUpdateSystem::CalculateVerticalVelocity(float safeDt, float c
     return vy;
 }
 
-Vector3 JoltCharacterUpdateSystem::CalculateHorizontalVelocity(float safeDt, const JoltCharacterConfigComponent &config, CharacterMovementInputComponent &input)
-{
-    Vector3 targetVelocity(0, 0, 0);
 
-    if (input.overrideSpeed > 0.0f)
+DirectX::SimpleMath::Vector3 JoltCharacterUpdateSystem::CalculateHorizontalVelocity(float safeDt, const JoltCharacterConfigComponent &config, CharacterMovementInputComponent &input)
+{
+    // ========================================================
+    // 1. ルートモーション中: 慣性(Lerp)を完全に殺し、アニメーションの速度を100%適用する
+    // ========================================================
+    if (input.isRootMotionActive)
     {
-        // 【加速時 (ダッシュ中)】: 瞬間的にトップスピードへ
-        targetVelocity        = input.desiredVelocity * input.overrideSpeed;
-        input.currentVelocity = targetVelocity;
+        input.currentVelocity = input.rootMotionVelocity;
+        return input.currentVelocity;
     }
-    else
+
+    // ========================================================
+    // 2. 通常移動 / ダッシュ中: 慣性(Lerp)をかけて心地よい操作感を作る
+    // ========================================================
+    float targetSpeed = config.walkSpeed;
+
+    // ダッシュ等で速度が上書きされているか (-1.0f より大きいか)
+    if (input.overrideSpeed >= 0.0f)
     {
-        // 【減速時 (通常時)】: 目標速度へ指数減衰で滑らかに落とす (慣性の引き継ぎ)
-        targetVelocity        = input.desiredVelocity * config.walkSpeed;
-        float blend           = 1.0f - std::exp(-config.deceleration * safeDt);
-        input.currentVelocity = Vector3::Lerp(input.currentVelocity, targetVelocity, blend);
+        targetSpeed = input.overrideSpeed;
     }
+
+    Vector3 targetVelocity = input.desiredVelocity * targetSpeed;
+
+    // プレイヤーの入力に対して心地よい慣性(Lerp)をかける
+    float friction        = 10.0f;
+    input.currentVelocity = Vector3::Lerp(input.currentVelocity, targetVelocity, friction * safeDt);
 
     return input.currentVelocity;
 }

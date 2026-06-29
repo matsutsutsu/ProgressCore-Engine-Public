@@ -33,6 +33,10 @@ void PlayerMoveSystem::Update(float rawDt)
         float dt         = time.localDt;
         bool  isGrounded = (joltHandle.character->GetGroundState() == JPH::CharacterVirtual::EGroundState::OnGround);
 
+        // 毎フレーム、ルートモーションのフラグとダッシュの上書きをリセットする
+        inputData.isRootMotionActive = false;
+        inputData.rootMotionVelocity = Vector3::Zero;
+
         // =========================================================
         // 1. 操作ハック（時間の魔法）
         // =========================================================

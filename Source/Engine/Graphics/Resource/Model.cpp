@@ -669,3 +669,59 @@ std::shared_ptr<Model> Model::CreateFromData(ID3D11Device *device,
 
     return model;
 }
+
+
+int Model::GetRootMotionNodeIndex() const
+{
+    // ノードの中から「ルート」や「腰」にあたるボーンの名前を検索する
+    for (size_t i = 0; i < nodes.size(); ++i)
+    {
+        std::string name = nodes[i].name;
+
+        // 比較しやすいように小文字に変換
+        std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) { return std::tolower(c); });
+
+        // Mixamo, Unreal, Unity などの一般的なルートボーン名を網羅
+        if (name.find("root") != std::string::npos ||
+            name.find("hips") != std::string::npos ||
+            name.find("pelvis") != std::string::npos ||
+            name.find("bip01") != std::string::npos) // 3ds Max Biped用
+        {
+            return static_cast<int>(i);
+        }
+    }
+
+    // 万が一見つからなければ安全のために 0 を返す
+    return 0;
+}
+
+int Model::FindRealRootMotionNodeIndex(int animIndex) const
+{
+    if (animIndex < 0) return 0;
+
+    std::vector<NodePose> startPoses, endPoses;
+
+    // 0秒時点のポーズを取得
+    ComputeAnimation(animIndex, 0.0f, startPoses);
+
+    // 少し時間が進んだ時点（0.5秒）のポーズを取得
+    ComputeAnimation(animIndex, 0.5f, endPoses);
+
+    if (startPoses.empty() || endPoses.empty()) return 0;
+
+    // ノードは通常、親から子へ順に並んでいる (0:Root, 1:Hips, 2:Spine ...)
+    for (size_t i = 0; i < std::min(startPoses.size(), endPoses.size()); ++i)
+    {
+        float dx     = endPoses[i].position.x - startPoses[i].position.x;
+        float dz     = endPoses[i].position.z - startPoses[i].position.z;
+        float distSq = dx * dx + dz * dz;
+
+        // XZ平面で 1cm (0.01m) 以上動いている最初の親ボーンを「真のルート」と見なす！
+        if (distSq > 0.0001f)
+        {
+            return static_cast<int>(i); // Hipsなどの本当に動いているインデックスが確定で返る
+        }
+    }
+
+    return 0; // 誰も動いていなければ安全に0を返す
+}

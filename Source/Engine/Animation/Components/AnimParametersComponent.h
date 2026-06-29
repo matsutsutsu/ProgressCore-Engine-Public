@@ -82,7 +82,7 @@ struct AnimParametersComponent
     /// @brief トリガーを発火させる（先行入力バッファへの登録）
     /// @param hash トリガーのハッシュ
     /// @param bufferTime 先行入力の猶予時間（秒）。デフォルト0.25秒(約15フレーム)
-    void SetTrigger(uint32_t hash, float bufferTime = 0.25f)
+    void SetTrigger(uint32_t hash, float bufferTime = 0.15f)
     {
         for (auto &t : triggers)
         {
@@ -153,4 +153,15 @@ struct AnimParametersComponent
         }
         return false;
     }
+
+    // -----------------------------------------------------------------------
+    // ★ 暴発防止用：トリガーの全消去（フラッシュ）
+    // ダメージを受けた瞬間や、回避・死亡時など、
+    // 過去の入力を無効化したい「割り込み処理」が発生した際に呼び出す。
+    // -----------------------------------------------------------------------
+    void ClearTriggers()
+    {
+        triggers.clear();
+    }
+
 };

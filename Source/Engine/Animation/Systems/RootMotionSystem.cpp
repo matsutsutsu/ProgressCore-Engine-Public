@@ -44,8 +44,10 @@ void RootMotionSystem::Update(float /*rawDt*/)
         const AnimSequence *seq       = animator.currentSequence;
         int                 animIndex = model->GetAnimationIndex(seq->targetAnimName.c_str());
 
-        if (animIndex == -1 || seq->duration <= 0.0f)
-            return;
+        if (animIndex == -1 || seq->duration <= 0.0f) return;
+
+        // ★ 究極の特定: 抽出対象を「実際に動いているボーン」にする
+        const int rootNodeIndex = model->FindRealRootMotionNodeIndex(animIndex);
 
         // ★ 遷移（シーケンスの切り替わり）検知
         if (rm.lastEvaluatedSeq != seq)
@@ -65,7 +67,6 @@ void RootMotionSystem::Update(float /*rawDt*/)
             return;
         }
 
-        const int rootNodeIndex = 0;
 
         // ========================================================
         // 抽出ロジックの共通化 (Lambda)
@@ -153,6 +154,10 @@ void RootMotionSystem::Update(float /*rawDt*/)
 
         input.desiredVelocity = forward;
         input.overrideSpeed   = speed;
+
+        // ダッシュ用の変数を汚染せず、専用領域に書き込む
+        input.isRootMotionActive = true;
+        input.rootMotionVelocity = forward * speed;
     });
 }
 
