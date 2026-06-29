@@ -139,7 +139,7 @@
                             "op": 1,
                             "paramHash": 174817312,
                             "paramName": "Speed",
-                            "threshold": 1.0
+                            "threshold": 2.0
                         }
                     ],
                     "logicType": 0,
@@ -155,7 +155,7 @@
             "nodePosY": 304.0,
             "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
-            "sequenceFilePath": "Assets/Animations/Sequencer/Player/Walk.json",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/Run.json",
             "sequenceName": "Run",
             "speedCurveName": "",
             "stateHash": 2371348074,
@@ -167,7 +167,7 @@
                             "op": 2,
                             "paramHash": 174817312,
                             "paramName": "Speed",
-                            "threshold": 1.0
+                            "threshold": 2.0
                         }
                     ],
                     "logicType": 0,

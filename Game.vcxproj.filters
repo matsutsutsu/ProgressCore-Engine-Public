@@ -2588,6 +2588,9 @@
     <ClCompile Include="Source\Engine\Animation\Systems\AnimSetupSystem.cpp">
       <Filter>Source\Engine\Animation\Systems</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Components\Core\PrimitiveComponentMeta.cpp">
+      <Filter>Source\Engine\Graphics\Components\Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shader\Common\Common.hlsli">

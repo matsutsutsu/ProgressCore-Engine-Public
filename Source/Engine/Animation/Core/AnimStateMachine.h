@@ -64,13 +64,9 @@ struct AnimTransition
     float                      blendDuration   = 0.2f;
     AnimTransitionLogic        logicType       = AnimTransitionLogic::AND;
 
-    /// @brief この遷移を許可する受付ウィンドウ名（空なら常時許可）。
-    /// @details Sequencer の ComboWindow/CancelWindow イベントの stringParam と照合する。
-    ///          現在再生中シーケンスに同名ウィンドウがあり、かつ現在時刻がその区間内の
-    ///          ときのみ遷移を許可する（条件成立に AND される）。
-    std::string requiredWindow;
-    uint32_t    requiredWindowHash = 0; ///< requiredWindow の派生（ロード/設定時に計算）
 
+    // 文字列を完全に廃止し、ビットマスクに変更
+    uint32_t requiredCancelMask = 0;
 
     std::vector<AnimCondition> conditions;
 };
@@ -170,7 +166,7 @@ inline void to_json(json &j, const AnimTransition &t)
         {"targetStateHash", t.targetStateHash},
         {"blendDuration", t.blendDuration},
         {"logicType", (int)t.logicType},
-        {"requiredWindow", t.requiredWindow},
+        {"requiredCancelMask", t.requiredCancelMask},
         {"conditions", t.conditions}};
 }
 inline void from_json(const json &j, AnimTransition &t)
@@ -189,10 +185,8 @@ inline void from_json(const json &j, AnimTransition &t)
     else
         t.logicType = AnimTransitionLogic::AND;
 
-    t.requiredWindow = j.value("requiredWindow", std::string{});
-    // requiredWindowHash は派生データ。保存せずロード時に再計算する。
-    t.requiredWindowHash = t.requiredWindow.empty() ? 0u
-                                                    : CCL::Utils::HashString(t.requiredWindow.c_str());
+    // ★ 文字列からの移行対応：もし古いrequiredWindowがあれば無視し、Maskを読む
+    t.requiredCancelMask = j.value("requiredCancelMask", 0u);
 
     j.at("conditions").get_to(t.conditions);
 }

@@ -12,6 +12,9 @@ AlignConsecutiveDeclarations: true
 # → VS の初期スタイルに近く、勝手に整列されて崩れるのを防ぐ
 AlignAfterOpenBracket: DontAlign
 
+# if (!flag) return; を 1 行のまま維持
+AllowShortIfStatementsOnASingleLine: true   
+
 # include の並び替えを無効化
 # → VS の初期コードや手動で整理した順番を壊さない
 SortIncludes: false

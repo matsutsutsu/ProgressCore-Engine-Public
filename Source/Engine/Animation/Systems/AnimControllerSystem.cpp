@@ -7,12 +7,14 @@
 #include "Engine/Animation/Core/AnimGraphSerializer.h"
 #include "Engine/Platform/Core/Logger.h"
 
-// 現在再生中シーケンスに、指定ハッシュの受付ウィンドウ区間があり、
-// かつ現在時刻がその区間内なら true。ComboWindow/CancelWindow 両方を対象にする。
-static bool IsInWindow(const AnimatorComponent &animator, uint32_t windowHash)
+// ===========================================================================
+// 超速化: ビットマスクによるキャンセルウィンドウの評価
+// ===========================================================================
+static bool IsInCancelWindow(const AnimatorComponent &animator, uint32_t requiredMask)
 {
-    if (windowHash == 0)
-        return true; // ウィンドウ指定なし → 常時許可
+    if (requiredMask == 0)
+        return true; // マスク指定なし(0)なら常時許可
+
     const AnimSequence *seq = animator.currentSequence;
     if (!seq)
         return false;
@@ -23,9 +25,8 @@ static bool IsInWindow(const AnimatorComponent &animator, uint32_t windowHash)
             ev.type != AnimEventType::CancelWindow)
             continue;
 
-        // stringParam のハッシュは LoadAnimSequence でキャッシュ済み（tagHash 同様にしたい）
-        // 現状 tagHash は HitBox 専用なので、ここは windowHash と stringParam を比較する。
-        if (CCL::Utils::HashString(ev.stringParam.c_str()) != windowHash)
+        // ★ DODの極み: 窓のマスクと、遷移が要求するマスクのビットが「1つでも」被っていればOK
+        if ((ev.cancelMask & requiredMask) == 0)
             continue;
 
         if (animator.currentTimer >= ev.startTime &&
@@ -51,7 +52,8 @@ void AnimControllerSystem::Update(float dt)
     ForEachWithID([&resourceManager](CCL::ECS::EntityID /*id*/,
                       AnimStateMachineComponent &fsm,
                       AnimatorComponent         &animator,
-                      AnimParametersComponent & /*params*/) {
+                      AnimParametersComponent & /*params*/,
+                      const TimeStateComponent & /*time*/) {
         if (animator.isEditorOverride)
             return;
 
@@ -105,15 +107,18 @@ void AnimControllerSystem::Update(float dt)
     // フェーズ2【並列】純粋なステートマシン評価
     //   ResourceManager / ファイルI/O は一切呼ばない（フェーズ1で束縛済み）。
     // =====================================================================
-    ForEachWithIDParallel([enableLog](CCL::ECS::EntityID          id,
+    ForEachWithIDParallel([enableLog](CCL::ECS::EntityID id,
                               AnimStateMachineComponent &fsm,
                               AnimatorComponent         &animator,
-                              AnimParametersComponent   &params) {
-        if (animator.isEditorOverride)
-            return;
+                              AnimParametersComponent   &params,
+                              const TimeStateComponent  &time) { // ★ TimeStateComponent を追加
+        if (animator.isEditorOverride) return;
 
-        if (fsm.internalGraph.states.empty())
-            return;
+        // ★★★ コアロジック: ステート評価の前に、先行入力バッファの寿命を削ぎ落とす ★★★
+        // time.localDt を使うことで、ヒットストップやスローモーション中も完璧に同期する
+        params.TickTriggers(time.localDt);
+
+        if (fsm.internalGraph.states.empty()) return;
 
         // ====================================================================
         // 1. 現在のステートを検索
@@ -147,11 +152,8 @@ void AnimControllerSystem::Update(float dt)
                 if (isAnyState && transition.targetStateHash == fsm.currentStateHash)
                     continue;
 
-                // ★ 受付ウィンドウゲート: requiredWindow 指定がある遷移は、
-                //    現在再生中シーケンスの該当ウィンドウ区間内でなければスキップする。
-                //    （コンボ先行入力・キャンセル区間をフレーム精度で制御）
-                if (!IsInWindow(animator, transition.requiredWindowHash))
-                    continue;
+               // ★ ビットマスク版の判定関数を呼び出す
+                if (!IsInCancelWindow(animator, transition.requiredCancelMask)) continue;
 
                 bool allConditionsMet = true;
 

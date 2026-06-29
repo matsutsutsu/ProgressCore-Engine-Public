@@ -1,5 +1,5 @@
 {
-    "duration": 0.6666666865348816,
+    "duration": 0.46666666865348816,
     "events": [],
     "rootMotionCurve": {
         "keys": [],
@@ -10,6 +10,6 @@
         "keys": [],
         "name": ""
     },
-    "targetAnimName": "Run_Combat_Loop_F_0_RM_Seq_0",
+    "targetAnimName": "Run_Fast_Combat_Loop_Seq_0",
     "targetModelPath": ""
 }

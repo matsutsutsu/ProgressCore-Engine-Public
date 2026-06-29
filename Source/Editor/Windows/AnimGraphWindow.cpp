@@ -1190,26 +1190,53 @@ void AnimGraphWindow::DrawTransitionConditionUI(AnimTransition &trans)
     ImGui::DragFloat("ブレンド時間 (Blend Duration)", &trans.blendDuration, 0.01f, 0.0f, 2.0f, "%.2f s");
     ImGui::Separator();
 
-    // --- 受付ウィンドウ指定（コンボ/キャンセル区間に紐付け） ---
+    // =========================================================================
+    // ★ ビットマスクによるキャンセル窓の要求指定 (チェックボックス化)
+    // =========================================================================
+    ImGui::Text("遷移を許可する窓 (Required Cancel Mask):");
+    ImGui::TextDisabled("※複数チェック時は「いずれかの窓」で許可されます。");
+
+    // ① プレビュー文字列の作成
+    std::string previewMask = "";
+    if (trans.requiredCancelMask == 0)
     {
-        char winBuf[64];
-        strncpy_s(winBuf, sizeof(winBuf), trans.requiredWindow.c_str(), _TRUNCATE);
-        ImGui::Text("受付ウィンドウ (Required Window):");
-        ImGui::SetNextItemWidth(-1);
-        if (ImGui::InputText("##ReqWin", winBuf, sizeof(winBuf)))
+        // 全てOFF（0）の場合は「常時許可」とみなす
+        previewMask = "[ 常時遷移可能 (None) ]";
+    }
+    else
+    {
+        for (const auto &def : GetCancelFlagDefs())
         {
-            trans.requiredWindow     = winBuf;
-            trans.requiredWindowHash = (winBuf[0] == '\0') ? 0u
-                                                           : CCL::Utils::HashString(winBuf);
+            if (trans.requiredCancelMask & def.flag)
+            {
+                if (!previewMask.empty()) previewMask += ", ";
+                previewMask += def.name;
+            }
         }
-        if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("Sequencer の Combo/Cancel Window 名を指定。\n空なら常時遷移可。区間内のみ遷移を許可。");
+    }
+
+    // ② ドロップダウン（コンボボックス）の描画
+    ImGui::SetNextItemWidth(-1);
+    if (ImGui::BeginCombo("##ReqCancelMask", previewMask.c_str()))
+    {
+        for (const auto &def : GetCancelFlagDefs())
+        {
+            bool active = (trans.requiredCancelMask & def.flag) != 0;
+            if (ImGui::Checkbox(def.name, &active))
+            {
+                if (active)
+                    trans.requiredCancelMask |= def.flag;
+                else
+                    trans.requiredCancelMask &= ~def.flag;
+            }
+        }
+        ImGui::EndCombo();
     }
     ImGui::Separator();
 
     int         logicOp    = (int)trans.logicType;
     const char *logicOps[] = {"すべて満たす (AND)", "いずれかを満たす (OR)"};
-    if (ImGui::Combo("判定方法 (Logic)", &logicOp, logicOps, IM_ARRAYSIZE(logicOps)))
+    if (ImGui::Combo("条件判定方法 (Logic)", &logicOp, logicOps, IM_ARRAYSIZE(logicOps)))
         trans.logicType = (AnimTransitionLogic)logicOp;
     ImGui::Separator();
 

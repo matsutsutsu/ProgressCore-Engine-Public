@@ -961,17 +961,53 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
         case AnimEventType::CancelWindow: {
             const bool isCombo = (e.type == AnimEventType::ComboWindow);
             ImGui::TextColored(isCombo ? ImVec4(0.25f, 0.75f, 1.0f, 1.0f) : ImVec4(0.75f, 0.25f, 1.0f, 1.0f),
-                isCombo ? "Combo Accept Window" : "Cancel Window");
-            ImGui::Text("受付名 (Window Name):");
-            ImGui::SetNextItemWidth(-1);
-            if (ImGui::InputText("##Win", buf, sizeof(buf)))
+                isCombo ? "コンボ受付窓 (Combo Window)" : "キャンセル窓 (Cancel Window)");
+            ImGui::Separator();
+
+            ImGui::Text("許可するキャンセルアクション:");
+
+            // ① 現在選択されているフラグの名前を繋げてプレビュー文字列を作る
+            std::string preview = "";
+            if (e.cancelMask == 0)
             {
-                e.stringParam = buf;
-                ch            = true;
+                preview = "未設定 (None)";
             }
+            else
+            {
+                for (const auto &def : GetCancelFlagDefs())
+                {
+                    if (e.cancelMask & def.flag)
+                    {
+                        if (!preview.empty()) preview += ", ";
+                        preview += def.name;
+                    }
+                }
+            }
+
+            // ② ドロップダウン（コンボボックス）の描画
+            ImGui::SetNextItemWidth(-1); // 横幅いっぱいに広げる
+            if (ImGui::BeginCombo("##CancelMaskCombo", preview.c_str()))
+            {
+                for (const auto &def : GetCancelFlagDefs())
+                {
+                    bool active = (e.cancelMask & def.flag) != 0;
+
+                    // コンボボックス内にチェックボックスを配置
+                    // ※ ImGuiのCheckboxはクリックしてもコンボボックスが勝手に閉じないという利点がある
+                    if (ImGui::Checkbox(def.name, &active))
+                    {
+                        if (active)
+                            e.cancelMask |= def.flag;
+                        else
+                            e.cancelMask &= ~def.flag;
+                        ch = true; // 変更を検知
+                    }
+                }
+                ImGui::EndCombo();
+            }
+
+            ImGui::Spacing();
             ImGui::TextDisabled("Active [%.2fs - %.2fs]", e.startTime, e.endTime);
-            if (ImGui::IsItemHovered())
-                ImGui::SetTooltip("遷移に同名を設定すると、この区間のみ有効になります。");
             break;
         }
         default:

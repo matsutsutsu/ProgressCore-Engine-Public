@@ -3,6 +3,7 @@
 #include "Engine/Animation/Core/AnimStateMachine.h"
 #include "Engine/Animation/Components/AnimParametersComponent.h"
 #include "Engine/Animation/Components/AnimatorComponent.h"
+#include "Engine/Timer/TimeState.h"
 
 // ===================================================================================
 // ファイル: AnimControllerSystem.h
@@ -19,7 +20,8 @@
 class AnimControllerSystem : public CCL::ECS::IfSystem<AnimControllerSystem,
     CCL::ECS::Write<AnimStateMachineComponent>,
     CCL::ECS::Write<AnimatorComponent>,
-    CCL::ECS::Write<AnimParametersComponent>>
+    CCL::ECS::Write<AnimParametersComponent>,
+    CCL::ECS::Read<TimeStateComponent>>
 {
 public:
     // 基底クラスのコンストラクタ呼び出しもフルパスで指定
