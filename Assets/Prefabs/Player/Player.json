@@ -9,25 +9,13 @@
                 "Animation": null,
                 "Animator": {
                     "isLoop": true,
-                    "playbackSpeed": 0.5
-                },
-                "Bounding Box": {
-                    "worldAABB.Center": [
-                        8.989217758178711,
-                        3.184028148651123,
-                        4.541933059692383
-                    ],
-                    "worldAABB.Extents": [
-                        0.7657580375671387,
-                        3.221978187561035,
-                        2.382901668548584
-                    ]
+                    "playbackSpeed": 1.0
                 },
                 "Character Movement Input": {
                     "currentVelocity": [
-                        -2.0985934734344482,
+                        0.0014348197728395462,
                         0.0,
-                        0.0007523017702624202
+                        0.01541142538189888
                     ],
                     "dashRequested": false,
                     "desiredVelocity": [
@@ -48,9 +36,9 @@
                     "currentTimer": -0.006666665896773338,
                     "dashCooldown": 0.1599999964237213,
                     "dashDirection": [
-                        0.9808154702186584,
+                        5.8775476929895376e-08,
                         0.0,
-                        -0.19493861496448517
+                        -1.0
                     ],
                     "dashDuration": 0.1599999964237213,
                     "dashSpeed": 114.0,
@@ -98,8 +86,8 @@
                     "bankingMultiplier": 0.5,
                     "coyoteTimeWindow": 0.15000000596046448,
                     "currentJumpCount": 0,
-                    "currentRoll": 3.1681586278864415e-06,
-                    "currentYaw": -7.8539252281188965,
+                    "currentRoll": -8.202393360079441e-07,
+                    "currentYaw": -37.2386474609375,
                     "jumpBufferTimer": 0.0,
                     "jumpBufferWindow": 0.15000000596046448,
                     "lastFallVelocity": 0.0,
@@ -120,29 +108,69 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 2,
+                    "parent": 3,
                     "position": [
-                        8.685142517089844,
-                        -0.041470639407634735,
-                        4.539604187011719
+                        -3.683290719985962,
+                        -0.04812708497047424,
+                        12.927962303161621
                     ],
                     "rotation": [
-                        1.120081606131862e-06,
-                        0.7070868015289307,
-                        -1.1201449297004729e-06,
-                        -0.707126796245575
+                        -9.359099095718193e-08,
+                        0.22820410132408142,
+                        -3.9929796002979856e-07,
+                        0.9736133217811584
                     ],
                     "scale": [
                         3.5,
                         3.5,
                         3.5
                     ]
-                },
-                "Visibility": {
-                    "isVisible": true
                 }
             },
             "lid": 1
+        },
+        {
+            "components": {
+                "BoneAttachmentComponent": {
+                    "boneName": "hand_r"
+                },
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Weapon/Sword.gltf"
+                },
+                "Name": {
+                    "name": "Sword"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 1,
+                    "position": [
+                        0.10000000149011612,
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.9993907809257507,
+                        0.0,
+                        0.03489947319030762
+                    ],
+                    "scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ]
+                }
+            },
+            "lid": 2
         }
     ],
     "magic": 1397506883,
