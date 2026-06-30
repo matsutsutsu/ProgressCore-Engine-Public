@@ -22,7 +22,9 @@
 
 // ユーザーがエディタやJSONで付与し、物理の性質を設定するためのコンポーネント
 struct JoltRigidbodyComponent {
+    // JPH::EMotionType:: 0,Static   1,Kinematic 2,Dynamic
     JPH::EMotionType motionType  = JPH::EMotionType::Dynamic;
+    // PhysicsLayers::  0,NON_MOVING  1,MOVING
     JPH::ObjectLayer objectLayer = PhysicsLayers::MOVING;
     float            restitution = 0.0f; // 反発係数
     float            friction    = 0.2f; // 摩擦係数

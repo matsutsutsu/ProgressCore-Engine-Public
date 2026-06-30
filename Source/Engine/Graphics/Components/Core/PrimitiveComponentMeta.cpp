@@ -86,5 +86,5 @@ template <> struct ComponentMeta<PrimitiveComponent> {
     }
 };
 
-REGISTER_COMPONENT(PrimitiveComponent, "Graphics")
+REGISTER_COMPONENT(PrimitiveComponent, "Primitive")
 REGISTER_COMPONENT_EDITOR_GUI(PrimitiveComponent)

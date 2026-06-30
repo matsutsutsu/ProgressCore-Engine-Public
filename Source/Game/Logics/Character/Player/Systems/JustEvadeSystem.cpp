@@ -71,8 +71,11 @@ void JustEvadeSystem::Update(float rawDt)
     // イベントは同期的に飛んできてフラグを true にするため、
     // 次のフレームに成功判定が持ち越されないよう、フレームの最後に全フラグをリセットする。
     ForEach([&](JustEvadeComponent &evade, DashComponent &dash, const TimeStateComponent &time) {
-        // 毎フレーム成功フラグは下ろす
-        evade.isJustSuccess = false;
+        // 毎フレームリセットではなく、ダッシュが終わった瞬間にリセットする
+        if (!dash.isDashing)
+        {
+            evade.isJustSuccess = false;
+        }
 
         // ==========================================================
         //  ブラックリストタイマーの更新
@@ -92,39 +95,34 @@ void JustEvadeSystem::Update(float rawDt)
 
 void JustEvadeSystem::CheckJustEvade(EntityID playerCandidate, EntityID otherCandidate)
 {
-    // 1. 対象エンティティが JustEvade と Dash を持っているか
-    auto* evade = _world->GetComponent<JustEvadeComponent>(playerCandidate);
-    auto* dash = _world->GetComponent<DashComponent>(playerCandidate);
+    auto *evade = _world->GetComponent<JustEvadeComponent>(playerCandidate);
+    auto *dash  = _world->GetComponent<DashComponent>(playerCandidate);
 
     if (!evade || !dash) return;
 
+    // 1. 【ガード条件】ジャスト回避が可能な「有効ウィンドウ」内か？
+    if (!dash->isJustEvadeWindowActive) return;
 
-    // 記録されている「直前に回避した相手」と同じなら、問答無用で弾く
-    if (evade->lastEvadedTarget == otherCandidate) return;
-
-    // 2. 無敵中でなければ JUST 判定しない
-    if (!dash->isInvincible) return;
-    // 既にこのフレームで成功済みなら重複処理を防ぐ
+    // 2. 【ガード条件】このダッシュですでに成功しているなら処理しない
+    // ★ここが最も重要：evade->isJustSuccess を「このダッシュ内での成功フラグ」として扱います
     if (evade->isJustSuccess) return;
 
-    // 3. 判定成立 
-    // ※ 将来的には otherCandidate が「敵の攻撃判定(Hitbox)」かどうかのチェックをここに追加します
-    //  無限ループ防止のため、1度成功したら「受付窓」を即座に閉じる
-    //// （ダッシュ自体の無敵(isInvincible)は継続するため、敵を安全にすり抜けられる）
-    dash->isJustEvadeWindowActive = false;
-    evade->isJustSuccess = true;
+    // 3. 【ガード条件】同じ敵に対する多段発動を防ぐ (既存のブラックリスト機能)
+    if (evade->lastEvadedTarget == otherCandidate) return;
 
-    // ★ 相手の顔（ID）を記憶し、1.0秒間は同じ相手に絶対発動させない
+    // =====================================================================
+    // 5. 判定成立
+    // =====================================================================
+    // 受付窓を閉じ、成功フラグを立てることで、このダッシュ中の他敵との接触は無視される
+    dash->isJustEvadeWindowActive = false;
+    evade->isJustSuccess          = true;
+
     evade->lastEvadedTarget = otherCandidate;
-    evade->resetTimer       = 1.0f; // 1秒間ブラックリスト入り
-    
-    // ===============================================================
-    //  成功の事実をシステム全体にブロードキャスト（放送）する
-    // ===============================================================
+    evade->resetTimer       = 1.0f;
+
     _world->GetEventBus().Publish(JustEvadeSuccessEvent{playerCandidate, otherCandidate});
 
     CCL_LOG_SUCCESS(LogCategory::Game, "JUST EVADE SUCCESS!! PlayerID: %llu", playerCandidate);
-
 }
 
 // イベントを受け取り終わった後の状態を初期化するため、最も遅い Cleanup フェーズに登録する

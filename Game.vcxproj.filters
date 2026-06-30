@@ -523,6 +523,9 @@
     <Filter Include="Source\Game\Logics\AI\StateTree\Commander">
       <UniqueIdentifier>{eb9849a2-7b3c-4a70-bca8-37b07ab5252d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Prototype">
+      <UniqueIdentifier>{f6e27a6b-390a-468b-b147-49ca5346c7eb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1746,6 +1749,24 @@
     <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltCharacterContactListener.h">
       <Filter>Source\Engine\Physics\JoltIntegration</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Prototype\PrototypeConfig.h">
+      <Filter>Source\Game\Prototype</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Prototype\ProtoDroneComponent.h">
+      <Filter>Source\Game\Prototype</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Prototype\ProtoDroneSwarmSystem.h">
+      <Filter>Source\Game\Prototype</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Prototype\ProtoDebugUISystem.h">
+      <Filter>Source\Game\Prototype</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Prototype\ProtoCombatSystem.h">
+      <Filter>Source\Game\Prototype</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Prototype\ProtoDroneSpawnerSystem.h">
+      <Filter>Source\Game\Prototype</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2605,6 +2626,18 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltCharacterContactListener.cpp">
       <Filter>Source\Engine\Physics\JoltIntegration</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Prototype\ProtoDroneSwarmSystem.cpp">
+      <Filter>Source\Game\Prototype</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Prototype\ProtoDebugUISystem.cpp">
+      <Filter>Source\Game\Prototype</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Prototype\ProtoCombatSystem.cpp">
+      <Filter>Source\Game\Prototype</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Prototype\ProtoDroneSpawnerSystem.cpp">
+      <Filter>Source\Game\Prototype</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
