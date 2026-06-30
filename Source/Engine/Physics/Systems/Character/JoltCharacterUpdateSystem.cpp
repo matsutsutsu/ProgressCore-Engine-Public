@@ -1,6 +1,7 @@
 #include "JoltCharacterUpdateSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"
+#include "Engine/Physics/JoltIntegration/JoltCharacterContactListener.h"
 #include "Engine/Physics/Components/Jolt/JoltHandleComponent.h"
 #include <Jolt/Physics/Body/BodyFilter.h>
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -142,11 +143,21 @@ void JoltCharacterUpdateSystem::UpdatePhysicsAndSync(float safeDt, JoltPhysicsMa
     updateSettings.mWalkStairsStepUp     = JPH::Vec3(0.0f, config.maxStepHeight, 0.0f);
     updateSettings.mStickToFloorStepDown = JPH::Vec3(0.0f, -config.maxStepHeight, 0.0f);
 
+    // キャラクターリスナーをインスタンス化してセットする
+    // 一つずつ作成する理由は共有にするとマルチスレッドで死ぬから
+    JoltCharacterContactListener contactListener(_world, id, &physicsSystem->GetBodyInterface());
+    ch->SetListener(&contactListener);
+
     ch->ExtendedUpdate(
         safeDt, physicsSystem->GetGravity(), updateSettings,
         physicsSystem->GetDefaultBroadPhaseLayerFilter(PhysicsLayers::MOVING),
         physicsSystem->GetDefaultLayerFilter(PhysicsLayers::MOVING),
         bodyFilter, {}, *joltManager->GetTempAllocator());
+
+    // 衝突判定が終わったら安全のためにリスナーを解除しておく
+    // 変数定義をその場で行っているため}で消すときに中身をそのままにしておくと
+    // CharacterVisualがずっと不要なメモリを保持してしまうからクリアする
+    ch->SetListener(nullptr);
 
     JPH::RVec3 pos = ch->GetPosition();
     trans.position = {pos.GetX(), pos.GetY(), pos.GetZ()};

@@ -1743,6 +1743,9 @@
     <ClInclude Include="Source\Editor\Windows\CurveEditorWindow.h">
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltCharacterContactListener.h">
+      <Filter>Source\Engine\Physics\JoltIntegration</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2599,6 +2602,9 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\CurveEditorWindow.cpp">
       <Filter>Source\Editor\Windows\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltCharacterContactListener.cpp">
+      <Filter>Source\Engine\Physics\JoltIntegration</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

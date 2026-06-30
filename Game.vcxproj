@@ -561,6 +561,7 @@
     <ClInclude Include="Source\Engine\Physics\Components\Jolt\JoltHandleComponent.h" />
     <ClInclude Include="Source\Engine\Physics\Components\RigidBody\JoltRigidBodyComponent.h" />
     <ClInclude Include="Source\Engine\Physics\JoltIntegration\IPhysicsAPI.h" />
+    <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltCharacterContactListener.h" />
     <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltContactListener.h" />
     <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsFacade.h" />
     <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsManager.h" />
@@ -1353,6 +1354,7 @@
     <ClCompile Include="Source\Engine\Physics\Components\Character\CharacterMovementInputComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Physics\Components\Character\JoltCharacterConfigComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Physics\Components\Jolt\JoltPhysicsComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltCharacterContactListener.cpp" />
     <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltContactListener.cpp" />
     <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsFacade.cpp" />
     <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsManager.cpp" />
