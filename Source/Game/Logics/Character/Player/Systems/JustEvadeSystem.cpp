@@ -70,9 +70,23 @@ void JustEvadeSystem::Update(float rawDt)
     // ★ Update の責務変更: フラグのクリーンアップ
     // イベントは同期的に飛んできてフラグを true にするため、
     // 次のフレームに成功判定が持ち越されないよう、フレームの最後に全フラグをリセットする。
-    ForEach([&](JustEvadeComponent& evade, const DashComponent& dash) {
-
+    ForEach([&](JustEvadeComponent &evade, DashComponent &dash, const TimeStateComponent &time) {
+        // 毎フレーム成功フラグは下ろす
         evade.isJustSuccess = false;
+
+        // ==========================================================
+        //  ブラックリストタイマーの更新
+        // ==========================================================
+        if (evade.resetTimer > 0.0f)
+        {
+            evade.resetTimer -= time.localDt;
+
+            // 時間が経過したら、相手の顔を忘れる（再びジャスト回避可能になる）
+            if (evade.resetTimer <= 0.0f)
+            {
+                evade.lastEvadedTarget = CCL::ECS::InvalidEntityID;
+            }
+        }
     });
 }
 
@@ -84,15 +98,25 @@ void JustEvadeSystem::CheckJustEvade(EntityID playerCandidate, EntityID otherCan
 
     if (!evade || !dash) return;
 
+
+    // 記録されている「直前に回避した相手」と同じなら、問答無用で弾く
+    if (evade->lastEvadedTarget == otherCandidate) return;
+
     // 2. 無敵中でなければ JUST 判定しない
     if (!dash->isInvincible) return;
-
     // 既にこのフレームで成功済みなら重複処理を防ぐ
     if (evade->isJustSuccess) return;
 
     // 3. 判定成立 
     // ※ 将来的には otherCandidate が「敵の攻撃判定(Hitbox)」かどうかのチェックをここに追加します
+    //  無限ループ防止のため、1度成功したら「受付窓」を即座に閉じる
+    //// （ダッシュ自体の無敵(isInvincible)は継続するため、敵を安全にすり抜けられる）
+    dash->isJustEvadeWindowActive = false;
     evade->isJustSuccess = true;
+
+    // ★ 相手の顔（ID）を記憶し、1.0秒間は同じ相手に絶対発動させない
+    evade->lastEvadedTarget = otherCandidate;
+    evade->resetTimer       = 1.0f; // 1秒間ブラックリスト入り
     
     // ===============================================================
     //  成功の事実をシステム全体にブロードキャスト（放送）する

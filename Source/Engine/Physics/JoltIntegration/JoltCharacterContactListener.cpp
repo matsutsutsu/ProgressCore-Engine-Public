@@ -23,9 +23,8 @@ void JoltCharacterContactListener::OnContactAdded(const JPH::CharacterVirtual *i
     // 相手が「動かない背景（壁や床）」なら、イベントを発行せずここで即座に処理を捨てる
     // =================================================================================
     JPH::ObjectLayer hitLayer = m_bodyInterface->GetObjectLayer(inBodyID2);
-    if (hitLayer == PhysicsLayers::NON_MOVING)
-    {
-        return;
+    if (hitLayer == PhysicsLayers::NON_MOVING) {
+        return; 
     }
 
     // 相手の BodyID から ECSの EntityID を復元
