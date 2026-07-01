@@ -5,7 +5,7 @@
 #include <cmath>
 
 #include "Engine/Animation/Core/AnimEventMessages.h"
-#include "Engine/Animation/Core/AnimationCurve.h"
+#include "Engine/Core/Math/CurveData.h"
 
 #include "Engine/Graphics/Components/Core/ModelComponent.h"
 #include "Engine/Animation/Components/AnimatorComponent.h"
@@ -298,12 +298,40 @@ void AnimationSystem::UpdateManual(CCL::ECS::EntityID entity, float time)
         return;
 
     int animIndex = model->GetAnimationIndex(seq->targetAnimName.c_str());
+    if (animIndex == -1)
+        return;
 
-    if (animIndex != -1)
+    model->ComputeAnimation(animIndex, time, animator->poseBufferA);
+
+    // ========================================================
+    // ★ Force Root Lock（エディタプレビュー版）
+    //   実行時の Update() と同様に、ルートボーンのXZ移動をクリップの初期姿勢へ
+    //   ピン留めする。これが無いと、クリップに焼き込まれたルートボーン自身の
+    //   前進(スケルトンのアニメーション)と、RootMotionカーブ由来の Transform 移動
+    //   （AnimationSequencerWindow::DrawRootMotionPreview）が二重に加算されてしまい、
+    //   「アニメーションだけが Position より前に出てしまう」不具合の原因になる。
+    //   Yは高さの変化（しゃがみ・ジャンプ等）を活かすためピン留めしない。
+    //   ※ 実行時と異なり RootMotionComponent.enabled の判定が無いため、
+    //     シーケンサーでの手動プレビューは常にピン留めする
+    //     （このウィンドウは root motion を Transform 側で制御する用途が前提のため）。
+    // ========================================================
+    if (!animator->poseBufferA.empty())
     {
-        model->ComputeAnimation(animIndex, time, animator->poseBufferA);
-        model->SetNodePoses(animator->poseBufferA);
+        const int rootNodeIndex = model->FindRealRootMotionNodeIndex(animIndex);
+
+        std::vector<Model::NodePose> initPoses;
+        model->ComputeAnimation(animIndex, 0.0f, initPoses);
+
+        if (rootNodeIndex >= 0 &&
+            rootNodeIndex < (int)initPoses.size() &&
+            rootNodeIndex < (int)animator->poseBufferA.size())
+        {
+            animator->poseBufferA[rootNodeIndex].position.x = initPoses[rootNodeIndex].position.x;
+            animator->poseBufferA[rootNodeIndex].position.z = initPoses[rootNodeIndex].position.z;
+        }
     }
+
+    model->SetNodePoses(animator->poseBufferA);
 }
 
 REGISTER_LOGIC_SYSTEM(AnimationSystem, Priority::LogicStage::L02_PostUpdate);

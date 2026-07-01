@@ -62,7 +62,7 @@
         },
         {
             "name": "Test Launcher",
-            "visible": true
+            "visible": false
         },
         {
             "name": "Game View",

@@ -2,13 +2,21 @@
     "duration": 1.5833333730697632,
     "events": [],
     "rootMotionCurve": {
+        "color": 4286643968,
         "keys": [],
-        "name": ""
+        "name": "",
+        "postInfinity": 0,
+        "preInfinity": 0,
+        "visible": true
     },
     "sequenceName": "Attack_2",
     "speedCurve": {
+        "color": 4286643968,
         "keys": [],
-        "name": ""
+        "name": "",
+        "postInfinity": 0,
+        "preInfinity": 0,
+        "visible": true
     },
     "targetAnimName": "Combo_Attack_01_01_Seq_0",
     "targetModelPath": ""

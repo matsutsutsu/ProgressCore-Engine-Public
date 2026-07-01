@@ -8,7 +8,7 @@
 
 #include "Engine/Core/Math/StringHash.h"
 #include "ResourcePool.h"
-// ★ 追加: 新しく作った型定義専用ヘッダーを読み込む
+// 新しく作った型定義専用ヘッダーを読み込む
 #include "ResourceTypes.h"
 
 // --- 依存するリソースの先行宣言 & インクルード ---
@@ -18,7 +18,7 @@
 #include "Engine/Graphics/Components/Particle/GPUParticleBuffer.h"
 #include "Engine/Graphics/RHI/RenderTarget.h"
 #include "Engine/Animation/Core/AnimSequence.h"
-#include "Engine/Animation/Core/AnimationCurve.h"
+#include "Engine/Core/Math/CurveData.h" 
 
 
 // ============================================================================
@@ -83,7 +83,7 @@ public:
     // [5] Animation Sequence
     // ---------------------------------------------------------
     const AnimSequence* LoadAnimSequence(const char* filename);
-    const AnimationCurve* LoadAnimCurve(const char* filepath);
+    const CurveData    *LoadAnimCurve(const char *filepath);
 
     // ---------------------------------------------------------
     // [6] Render Target (GPU Resource)
@@ -115,14 +115,14 @@ private:
     CCL::ResourcePool<AnimSequence>         m_animSequencePool;
     CCL::ResourcePool<RenderTarget>         m_renderTargetPool;
     CCL::ResourcePool<GPUParticleBufferSet> m_particleBufferPool;
-    CCL::ResourcePool<AnimationCurve>       m_animCurvePool; 
+    CCL::ResourcePool<CurveData>            m_animCurvePool;
 
     // --- Registries (重複ロード防止のキャッシュ) ---
     std::unordered_map<uint32_t, TextureHandle>      m_textureRegistry;
     std::unordered_map<uint32_t, ModelHandle>        m_modelRegistry;
     std::unordered_map<uint32_t, AnimSequenceHandle> m_animSequenceRegistry;
     std::unordered_map<uint32_t, std::string>        m_assetPathRegistry;
-    std::unordered_map<uint32_t, CCL::Handle<AnimationCurve>> m_animCurveRegistry; 
+    std::unordered_map<uint32_t, CCL::Handle<CurveData>> m_animCurveRegistry;
 
     // スレッドセーフ用ミューテックス
     std::mutex _mutex;

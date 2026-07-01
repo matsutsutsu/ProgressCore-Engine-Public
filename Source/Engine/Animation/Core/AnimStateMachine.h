@@ -4,8 +4,9 @@
 #include <cstdint>
 #include <json.hpp>
 #include "Engine/Animation/Core/AnimSequence.h"
-#include "Engine/Animation/Core/AnimationCurve.h"
 #include "Engine/Core/Math/StringHash.h" 
+
+struct CurveData;
 
 // 条件演算子
 enum class AnimConditionOp
@@ -90,7 +91,8 @@ struct AnimState
     float nodePosX = 0.0f;
     float nodePosY = 0.0f;
 
-    const AnimationCurve *speedCurve = nullptr;
+    const CurveData  *speedCurve      = nullptr;
+    const CurveData  *rootMotionCurve = nullptr; // rootMotionCurveName から束縛
     const AnimSequence   *sequence   = nullptr;
 
     std::vector<AnimTransition> transitions;

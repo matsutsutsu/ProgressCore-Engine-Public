@@ -1128,9 +1128,6 @@
     <ClInclude Include="Source\Engine\AI\Navigation\Systems\NavSteeringSystem.h">
       <Filter>Source\Engine\AI\Navigation\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Animation\Core\AnimationCurve.h">
-      <Filter>Source\Engine\Animation\Core</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Animation\Core\AnimEventMessages.h">
       <Filter>Source\Engine\Animation\Core</Filter>
     </ClInclude>
@@ -1769,6 +1766,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Physics\Systems\Character\JoltCharacterDebugDrawSystem.h">
       <Filter>Source\Engine\Physics\Systems\Character</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Utils\CurveEditorWidget.h">
+      <Filter>Source\Editor\Utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2615,9 +2615,6 @@
     <ClCompile Include="Source\Engine\Animation\Systems\RootMotionSystem.cpp">
       <Filter>Source\Engine\Animation\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Animation\Components\RootMotionComponentMeta.cpp">
-      <Filter>Source\Engine\Animation\Components</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Animation\Systems\AnimSetupSystem.cpp">
       <Filter>Source\Engine\Animation\Systems</Filter>
     </ClCompile>
@@ -2644,6 +2641,12 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Physics\Systems\Character\JoltCharacterDebugDrawSystem.cpp">
       <Filter>Source\Engine\Physics\Systems\Character</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\Components\RootMotionComponentMeta.cpp">
+      <Filter>Source\Engine\Animation\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Utils\CurveEditorWidget.cpp">
+      <Filter>Source\Editor\Utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

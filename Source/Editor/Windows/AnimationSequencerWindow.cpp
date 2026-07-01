@@ -1,7 +1,7 @@
 // ===================================================================================
 // ファイル: AnimationSequencerWindow.cpp
 // 役割       : AnimSequence 編集ウィンドウの実装。
-// 責務       : ImSequencer/ImCurveEdit の仲介(pImpl)、UI構築、JSON保存/ロード、
+// 責務       : ImSequencer によるイベント編集、CurveEditorWidget による速度/RootMotion
 //              選択エンティティへのリアルタイムプレビュー。
 // ===================================================================================
 #include "AnimationSequencerWindow.h"
@@ -20,7 +20,6 @@
 #include "Engine/Platform/Core/Logger.h"
 
 #include "ImSequencer.h"
-#include <ImCurveEdit.h>
 #include <imgui.h>
 #include <json.hpp>
 
@@ -273,72 +272,6 @@ class AnimationSequenceImpl : public ImSequencer::SequenceInterface
 };
 
 // ===================================================================================
-// SequencerCurveDelegate（カーブエディタ用デリゲート定義）
-// ===================================================================================
-struct SequencerCurveDelegate : public ImCurveEdit::Delegate
-{
-    AnimSequence *_seq         = nullptr;
-    ImVec2        m_min        = {0.0f, 0.0f};
-    ImVec2        m_max        = {1.0f, 2.0f};
-    bool          visible[2]   = {true, true};
-    float         animDuration = 1.0f;
-
-    void SetSequence(AnimSequence *seq)
-    {
-        _seq = seq;
-        if (_seq)
-        {
-            animDuration = _seq->duration > 0.01f ? _seq->duration : 1.0f;
-            m_max.x      = animDuration;
-        }
-    }
-
-    virtual size_t GetCurveCount() override
-    {
-        return _seq ? 2 : 0;
-    }
-    virtual bool IsVisible(size_t curveIndex) override
-    {
-        return curveIndex < 2 ? visible[curveIndex] : true;
-    }
-    virtual ImVec2 &GetMin() override
-    {
-        return m_min;
-    }
-    virtual ImVec2 &GetMax() override
-    {
-        return m_max;
-    }
-    virtual unsigned int GetBackgroundColor() override
-    {
-        return 0xFF202020;
-    }
-
-    virtual size_t GetPointCount(size_t curveIndex) override
-    {
-        return 0; // AnimationCurve の実装が完了したら修正
-    }
-
-    virtual uint32_t GetCurveColor(size_t curveIndex) override
-    {
-        return (curveIndex == 0) ? 0xFF00FFFF : 0x00FF00FF;
-    }
-
-    virtual ImVec2 *GetPoints(size_t curveIndex) override
-    {
-        return nullptr;
-    }
-
-    virtual int EditPoint(size_t curveIndex, int pointIndex, ImVec2 value) override
-    {
-        return pointIndex;
-    }
-
-    virtual void AddPoint(size_t curveIndex, ImVec2 value) override
-    {
-    }
-};
-
 // ===================================================================================
 // AnimationSequencerWindow メンバ関数群の実装
 // ===================================================================================
@@ -346,7 +279,6 @@ AnimationSequencerWindow::AnimationSequencerWindow()
     : EditorWindow("Sequencer")
 {
     _sequencerImpl = std::make_unique<AnimationSequenceImpl>();
-    _curveDelegate = std::make_unique<SequencerCurveDelegate>();
 
     // 初期状態バインド
     _sequencerImpl->SetSequence(&_editingSequence);
@@ -356,16 +288,6 @@ AnimationSequencerWindow::AnimationSequencerWindow()
 }
 
 AnimationSequencerWindow::~AnimationSequencerWindow() = default;
-
-static void DrawCurveEditorOverlay(ImDrawList *drawList, ImVec2 pos, ImVec2 size, ImVec2 min, ImVec2 max, float duration)
-{
-    float timeToX = size.x / (max.x - min.x);
-    float zeroX   = pos.x - min.x * timeToX;
-
-    drawList->AddLine(ImVec2(zeroX, pos.y), ImVec2(zeroX, pos.y + size.y), 0x44FFFFFF, 1.0f);
-    float durationX = zeroX + duration * timeToX;
-    drawList->AddLine(ImVec2(durationX, pos.y), ImVec2(durationX, pos.y + size.y), 0x890000FF, 1.5f);
-}
 
 // -----------------------------------------------------------------------------------
 // メインの描画エントリー
@@ -481,7 +403,7 @@ void AnimationSequencerWindow::DrawContents(EditorContext &context)
     // ---- 右側: インスペクタ & カーブ ----
     ImGui::TableSetColumnIndex(1);
     DrawInspectorPane(context);
-    DrawCurvePane();
+    DrawCurvePane(context.animEditTime);
 
     ImGui::EndTable();
 }
@@ -500,6 +422,18 @@ void AnimationSequencerWindow::ResetStateOnEntitySwitch(EditorContext &context, 
             if (_savedSequence)
                 animator->currentSequence = _savedSequence;
             context.isAnimEditMode = false;
+
+            // ルートモーションプレビューで動かした位置を、切替前のエンティティに対して復元する
+            // （_lastSelectedEntity はまだ更新前＝古いエンティティを指している）
+            if (_rootMotionActive)
+            {
+                if (context.world)
+                {
+                    if (auto *oldTrans = context.world->GetComponent<TransformComponent>(_lastSelectedEntity))
+                        oldTrans->SetPosition(_rootMotionBasePos);
+                }
+                _rootMotionActive = false;
+            }
         }
         _editingSequence = AnimSequence{};
         _savePath.clear();
@@ -598,7 +532,64 @@ void AnimationSequencerWindow::DrawEditModeToggle(EditorContext &context, Animat
         _savedSequence             = nullptr;
         _wasEditMode               = false;
         _isPlaying                 = false;
+
+        // ルートモーションプレビューで動かした位置を元に戻す
+        if (_rootMotionActive)
+        {
+            if (context.world)
+            {
+                if (auto *trans = context.world->GetComponent<TransformComponent>(context.selectedEntity))
+                    trans->SetPosition(_rootMotionBasePos);
+            }
+            _rootMotionActive = false;
+        }
     }
+}
+
+void AnimationSequencerWindow::DrawRootMotionPreview(EditorContext &context, AnimatorComponent * /*animator*/)
+{
+    if (!context.isAnimEditMode || !context.world) return;
+
+    TransformComponent *trans = context.world->GetComponent<TransformComponent>(context.selectedEntity);
+    if (!trans) return;
+
+    const CurveData &rmc = _editingSequence.rootMotionCurve;
+    if (rmc.empty())
+    {
+        // カーブが無い（または全キー削除された）→ プレビュー駆動を終了し、
+        // 次にキーが追加された瞬間の位置を新しい基準点として扱う。
+        _rootMotionActive = false;
+        return;
+    }
+
+    const float dur      = _editingSequence.duration;
+    const float progress = (dur > 0.0f) ? std::clamp(context.animEditTime / dur, 0.0f, 1.0f) : 0.0f;
+
+    if (!_rootMotionActive)
+    {
+        // このフレームで初めてカーブ駆動プレビューが有効になった → 現在位置を基準点として記録する。
+        // 以後は毎フレーム「基準点 + 前方 * (curve(progress) - curve(0))」で絶対位置を
+        // 再計算するため、スクラブや巻き戻しをしても誤差が蓄積しない。
+        _rootMotionBasePos = trans->position;
+        _rootMotionActive  = true;
+    }
+
+    // ワールド前方ベクトル（worldMatrixのZ軸列。回転はキャッシュ済みのものを使う）
+    DirectX::XMFLOAT3 fwd = trans->GetForward();
+
+    const float dist = rmc.Evaluate(progress) - rmc.Evaluate(0.0f);
+
+    DirectX::XMFLOAT3 newPos = {
+        _rootMotionBasePos.x + fwd.x * dist,
+        _rootMotionBasePos.y + fwd.y * dist,
+        _rootMotionBasePos.z + fwd.z * dist,
+    };
+    trans->SetPosition(newPos);
+
+    // worldMatrix は本来 TransformUpdateSystem が計算するキャッシュだが、
+    // このフレーム内で直後に model->UpdateTransform() がそれを読みに行くため、ここで即時再計算する。
+    // ※ 親を持つエンティティでは親行列を考慮していないため位置がずれる（プレビュー専用の簡易実装）。
+    trans->UpdateMatrix();
 }
 
 void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, AnimatorComponent *animator, Model *model)
@@ -613,7 +604,11 @@ void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, Animator
     {
         if (_isPlaying)
         {
-            context.animEditTime += ImGui::GetIO().DeltaTime * animator->playbackSpeed;
+            const float progress0 = (dur > 0.0f) ? std::clamp(context.animEditTime / dur, 0.0f, 1.0f) : 0.0f;
+            const float speedMult = _editingSequence.speedCurve.empty()
+                                        ? 1.0f
+                                        : _editingSequence.speedCurve.Evaluate(progress0);
+            context.animEditTime += ImGui::GetIO().DeltaTime * animator->playbackSpeed * speedMult;
             if (dur > 0.0f && context.animEditTime > dur)
             {
                 // ループ設定はプレビュー専用トグルを優先（アニメ設定と独立に試せる）
@@ -797,6 +792,11 @@ void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, Animator
         context.animEditTime   = FrameToSec(curFrame);
         animator->currentTimer = context.animEditTime;
     }
+
+    // ルートモーションカーブのプレビュー適用（進捗→累積前進距離を Transform に反映）
+    // ※ 下の UpdateTransform はキャッシュ済み worldMatrix を読むだけなので、
+    //    表示への反映を最短にするためここで先に位置を確定させる。
+    DrawRootMotionPreview(context, animator);
 
     // ECSランタイムへの反映
     if (context.isAnimEditMode && context.systemManager)
@@ -1019,74 +1019,55 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
     }
 }
 
-void AnimationSequencerWindow::DrawCurvePane()
+void AnimationSequencerWindow::DrawCurvePane(float animTime)
 {
     ImGui::Spacing();
     ImGui::Separator();
-    ImGui::TextColored(ImVec4(1, 0.6f, 0.2f, 1), "Animation Curves");
+    ImGui::TextColored(ImVec4(1, 0.6f, 0.2f, 1), "アニメーションカーブ (横軸 = 進捗 0〜1)");
 
-    ImGui::SetNextItemWidth(130);
-    float yR[2] = {_curveDelegate->m_min.y, _curveDelegate->m_max.y};
-    if (ImGui::DragFloat2("Y-Range", yR, 0.05f))
-    {
-        _curveDelegate->m_min.y = yR[0];
-        _curveDelegate->m_max.y = yR[1];
-    }
+    static bool showSpeed = true, showRoot = true;
+    ImGui::Checkbox("速度##cv", &showSpeed);
     ImGui::SameLine();
-    ImGui::SetNextItemWidth(130);
-    float xR[2] = {_curveDelegate->m_min.x, _curveDelegate->m_max.x};
-    if (ImGui::DragFloat2("X-Range", xR, 0.01f, 0.0f, 100.0f))
-    {
-        if (xR[1] > xR[0] + 0.01f)
-        {
-            _curveDelegate->m_min.x = xR[0];
-            _curveDelegate->m_max.x = xR[1];
-        }
-    }
+    ImGui::Checkbox("ルートモーション##cv", &showRoot);
     ImGui::SameLine();
-    if (ImGui::Button("Fit"))
-        _fitCurveView = true;
-
-    ImGui::Checkbox("Speed", &_curveDelegate->visible[0]);
+    if (ImGui::Button("全体表示##cv")) _fitCurveView = true;
     ImGui::SameLine();
-    ImGui::Checkbox("RootMotion", &_curveDelegate->visible[1]);
+    ImGui::TextDisabled("[ダブルクリック=キー追加 / 右orホイール=パン&ズーム / Alt+ハンドル=接線分離]");
+
+    _editingSequence.speedCurve.visible      = showSpeed;
+    _editingSequence.rootMotionCurve.visible = showRoot;
+
+    const float dur      = _editingSequence.duration;
+    const float progress = (dur > 0.0f) ? std::clamp(animTime / dur, 0.0f, 1.0f) : 0.0f;
+
+    // 編集対象の切り替え（選択が毎フレーム消えないよう、変化時だけ SetActiveCurve）
+    int active = _curveWidget.ActiveCurveIndex();
+    int prev   = active;
+    ImGui::RadioButton("速度を編集", &active, 0);
     ImGui::SameLine();
-    ImGui::TextDisabled("[Scroll:Pan | Ctrl+Scroll:Zoom]");
+    ImGui::RadioButton("ルートモーションを編集", &active, 1);
+    if (active != prev) _curveWidget.SetActiveCurve(active);
 
-    if (_fitCurveView && _curveDelegate->_seq)
+    std::vector<CurveData *> targets = {&_editingSequence.speedCurve, &_editingSequence.rootMotionCurve};
+
+    CurveEditorWidget::Options opt;
+    opt.height        = 240.0f;
+    opt.showInspector = true;
+    opt.showPlayhead  = true;
+    opt.playheadX     = progress;
+    opt.fitRequested  = _fitCurveView;
+    _fitCurveView     = false;
+
+    _curveWidget.Draw("##seqCurves", targets, opt);
+
+    // 現在の再生位置での評価値を即読み出し（数値でも確認できる）
+    const float sp = _editingSequence.speedCurve.empty() ? 1.0f : _editingSequence.speedCurve.Evaluate(progress);
+    const float rm = _editingSequence.rootMotionCurve.empty() ? 0.0f : _editingSequence.rootMotionCurve.Evaluate(progress);
+    ImGui::TextColored(ImVec4(0.6f, 0.9f, 1.0f, 1.0f),
+        "進捗 %.2f  |  速度倍率 %.3f  |  累積前進 %.3f m", progress, sp, rm);
+
+    if (active == 1 && !_editingSequence.rootMotionCurve.empty())
     {
-        _curveDelegate->m_min.x = 0.0f;
-        _curveDelegate->m_max.x = _editingSequence.duration * 1.05f;
-        _fitCurveView           = false;
-    }
-    _curveDelegate->SetSequence(&_editingSequence);
-
-    ImVec2 cPos  = ImGui::GetCursorScreenPos();
-    ImVec2 cSize = ImVec2(ImGui::GetContentRegionAvail().x, 260.0f);
-    DrawCurveEditorOverlay(ImGui::GetWindowDrawList(), cPos, cSize,
-        _curveDelegate->m_min, _curveDelegate->m_max, _curveDelegate->animDuration);
-    ImCurveEdit::Edit(*_curveDelegate, cSize, 999);
-
-    if (ImGui::IsMouseHoveringRect(cPos, ImVec2(cPos.x + cSize.x, cPos.y + cSize.y)))
-    {
-        const float wheel = ImGui::GetIO().MouseWheel;
-        if (wheel != 0.0f)
-        {
-            if (ImGui::GetIO().KeyCtrl)
-            {
-                const float nx          = (ImGui::GetIO().MousePos.x - cPos.x) / cSize.x;
-                const float focus       = _curveDelegate->m_min.x + nx * (_curveDelegate->m_max.x - _curveDelegate->m_min.x);
-                const float zoom        = (wheel > 0.0f) ? 0.82f : 1.22f;
-                const float nr          = (_curveDelegate->m_max.x - _curveDelegate->m_min.x) * zoom;
-                _curveDelegate->m_min.x = focus - nx * nr;
-                _curveDelegate->m_max.x = _curveDelegate->m_min.x + nr;
-            }
-            else
-            {
-                const float pan = (_curveDelegate->m_max.x - _curveDelegate->m_min.x) * 0.12f * -wheel;
-                _curveDelegate->m_min.x += pan;
-                _curveDelegate->m_max.x += pan;
-            }
-        }
+        ImGui::TextDisabled("※ 上のシーンビューでキャラが実際に前進する量として確認できます。");
     }
 }

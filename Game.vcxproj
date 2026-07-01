@@ -344,6 +344,7 @@
     <ClInclude Include="Source\Editor\Utils\AssetBrowser.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="Source\Editor\Utils\CurveEditorWidget.h" />
     <ClInclude Include="Source\Editor\Utils\NavMeshBuilder.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
@@ -405,7 +406,6 @@
     <ClInclude Include="Source\Engine\Animation\Components\AnimatorComponent.h" />
     <ClInclude Include="Source\Engine\Animation\Components\AnimParametersComponent.h" />
     <ClInclude Include="Source\Engine\Animation\Components\RootMotionComponent.h" />
-    <ClInclude Include="Source\Engine\Animation\Core\AnimationCurve.h" />
     <ClInclude Include="Source\Engine\Animation\Core\AnimEventMessages.h" />
     <ClInclude Include="Source\Engine\Animation\Core\AnimGraphSerializer.h" />
     <ClInclude Include="Source\Engine\Animation\Core\AnimSequence.h" />
@@ -1207,6 +1207,7 @@
     <ClCompile Include="Source\Editor\Utils\AssetBrowser.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Utils\CurveEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\Utils\NavMeshBuilder.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>

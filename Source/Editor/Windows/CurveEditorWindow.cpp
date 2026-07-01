@@ -114,7 +114,7 @@ void CurveEditorWindow::EnsureInitialized()
     if (!_curves.empty()) return;
 
     CurveData c;
-    c.name  = "カーブ";
+    c.name  = "Curve";
     c.color = PaletteColor(_paletteIndex++);
     c.AddKey(0.0f, 0.0f);
     c.AddKey(1.0f, 1.0f);
@@ -184,7 +184,7 @@ void CurveEditorWindow::DrawToolbar()
     ImGui::SameLine();
     if (ImGui::Button("読込"))
     {
-        if (auto pathOpt = FileDialog::OpenPreset("Assets", "カーブデータを読み込む"))
+        if (auto pathOpt = FileDialog::OpenPreset("CurveData", "カーブデータを読み込む"))
         {
             std::string rel = std::filesystem::relative(*pathOpt, std::filesystem::current_path()).string();
             if (LoadFromFile(rel)) _currentFilePath = rel;
@@ -196,7 +196,7 @@ void CurveEditorWindow::DrawToolbar()
     {
         if (_currentFilePath.empty())
         {
-            if (auto pathOpt = FileDialog::SavePreset("Assets", "カーブデータを保存", "NewCurve.json"))
+            if (auto pathOpt = FileDialog::SavePreset("CurveData", "カーブデータを保存", "NewCurve.json"))
                 _currentFilePath = std::filesystem::relative(*pathOpt, std::filesystem::current_path()).string();
         }
         if (!_currentFilePath.empty()) SaveToFile(_currentFilePath);
@@ -205,7 +205,7 @@ void CurveEditorWindow::DrawToolbar()
     ImGui::SameLine();
     if (ImGui::Button("名前を付けて保存"))
     {
-        if (auto pathOpt = FileDialog::SavePreset("Assets", "カーブデータを保存", "NewCurve.json"))
+        if (auto pathOpt = FileDialog::SavePreset("CurveData", "カーブデータを保存", "NewCurve.json"))
         {
             _currentFilePath = std::filesystem::relative(*pathOpt, std::filesystem::current_path()).string();
             SaveToFile(_currentFilePath);
@@ -963,7 +963,7 @@ void CurveEditorWindow::FrameAll()
 }
 
 // ===========================================================================
-// シリアライズ（新: curves配列 / 旧: 単体keys の両対応）
+// シリアライズ（curves配列フォーマット）
 // ===========================================================================
 void CurveEditorWindow::SaveToFile(const std::string &path)
 {
@@ -1036,11 +1036,10 @@ bool CurveEditorWindow::LoadFromFile(const std::string &path)
 
         if (j.contains("curves") && j["curves"].is_array())
         {
-            // 新フォーマット
             for (const auto &jc : j["curves"])
             {
                 CurveData c;
-                c.name         = jc.value("name", "カーブ");
+                c.name         = jc.value("name", "Curve");
                 c.color        = jc.value("color", (uint32_t)PaletteColor(_paletteIndex));
                 c.visible      = jc.value("visible", true);
                 c.preInfinity  = (ExtrapMode)jc.value("preInfinity", (int)ExtrapMode::Constant);
@@ -1049,15 +1048,6 @@ bool CurveEditorWindow::LoadFromFile(const std::string &path)
                 _curves.push_back(std::move(c));
                 _paletteIndex++;
             }
-        }
-        else if (j.contains("keys") && j["keys"].is_array())
-        {
-            // 旧フォーマット（単一カーブ）: 後方互換
-            CurveData c;
-            c.name  = j.value("name", "カーブ");
-            c.color = PaletteColor(_paletteIndex++);
-            ReadKeys(j["keys"], c);
-            _curves.push_back(std::move(c));
         }
 
         if (_curves.empty())

@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <json.hpp>
 
 // ===========================================================================
 // カーブのコアデータモデル（エディタ非依存 / ランタイムからも直接使える）
@@ -51,7 +52,7 @@ struct CurveKeyframe
 
 struct CurveData
 {
-    std::string                name         = "カーブ";
+    std::string                name         = "Curve";
     uint32_t                   color        = 0xFF80FF00u; // IM_COL32(0,255,128,255) 相当（0xAABBGGRR）
     bool                       visible      = true;
     ExtrapMode                 preInfinity  = ExtrapMode::Constant;
@@ -300,3 +301,62 @@ struct CurveData
         return base;
     }
 };
+
+// ===========================================================================
+// JSON シリアライズ（エディタの保存形式と一致。ランタイムからも読める）
+//   - CurveKeyframe.id はランタイム専用なので保存しない
+//   - interp 未指定のキーは旧 AnimationCurve 形式（線形）とみなす → 後方互換
+// ===========================================================================
+inline void to_json(nlohmann::json &j, const CurveKeyframe &k)
+{
+    j = nlohmann::json{
+        {"time", k.time}, {"value", k.value},
+        {"inTangent", k.inTangent}, {"outTangent", k.outTangent},
+        {"interp", (int)k.interp},
+        {"tangentIn", (int)k.tangentIn}, {"tangentOut", (int)k.tangentOut}};
+}
+inline void from_json(const nlohmann::json &j, CurveKeyframe &k)
+{
+    k.time       = j.value("time", 0.0f);
+    k.value      = j.value("value", 0.0f);
+    k.inTangent  = j.value("inTangent", 0.0f);
+    k.outTangent = j.value("outTangent", 0.0f);
+    k.interp     = (CurveInterp)j.value("interp", (int)CurveInterp::Cubic);
+    k.tangentIn  = (TangentMode)j.value("tangentIn", (int)TangentMode::Auto);
+    k.tangentOut = (TangentMode)j.value("tangentOut", (int)TangentMode::Auto);
+    k.id         = 0; // ロード後 AssignMissingIds で採番
+}
+
+inline void to_json(nlohmann::json &j, const CurveData &c)
+{
+    j = nlohmann::json{
+        {"name", c.name}, {"color", c.color}, {"visible", c.visible},
+        {"preInfinity", (int)c.preInfinity}, {"postInfinity", (int)c.postInfinity},
+        {"keys", c.keys}};
+}
+inline void from_json(const nlohmann::json &j, CurveData &c)
+{
+    c.name         = j.value("name", std::string("Curve"));
+    c.color        = j.value("color", 0xFF80FF00u);
+    c.visible      = j.value("visible", true);
+    c.preInfinity  = (ExtrapMode)j.value("preInfinity", (int)ExtrapMode::Constant);
+    c.postInfinity = (ExtrapMode)j.value("postInfinity", (int)ExtrapMode::Constant);
+    c.keys.clear();
+    if (j.contains("keys") && j["keys"].is_array())
+        c.keys = j["keys"].get<std::vector<CurveKeyframe>>();
+    c.AssignMissingIds();
+    c.RecalculateTangents(); // Auto/Flat の接線を確定（Aligned/Broken の手動値は尊重）
+}
+
+// ---------------------------------------------------------------------------
+// 実行時アセット用ローダ。
+//   エディタは複数カーブ文書 {name, curves:[...]} で保存するため、
+//   ランタイムでは「先頭の1本」を採用する（1ファイル=1カーブ運用）。
+// ---------------------------------------------------------------------------
+inline bool LoadCurveDataFromJson(const nlohmann::json &root, CurveData &out)
+{
+    if (!root.contains("curves") || !root["curves"].is_array() || root["curves"].empty())
+        return false;
+    out = root["curves"][0].get<CurveData>();
+    return !out.keys.empty();
+}

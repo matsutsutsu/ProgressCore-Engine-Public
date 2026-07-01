@@ -341,39 +341,41 @@ const AnimSequence *ResourceManager::LoadAnimSequence(const char *filename)
     return seq;
 }
 
-const AnimationCurve* ResourceManager::LoadAnimCurve(const char* filepath) {
-    std::lock_guard<std::mutex> lock(_mutex); // スレッドセーフ
+const CurveData *ResourceManager::LoadAnimCurve(const char *filepath)
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+    uint32_t                    hash = CCL::Utils::HashString(filepath);
 
-    uint32_t hash = CCL::Utils::HashString(filepath);
-
-    // すでにロードされていれば、そのポインタを返す（重複ロード防止）
     auto it = m_animCurveRegistry.find(hash);
-    if (it != m_animCurveRegistry.end()) {
+    if (it != m_animCurveRegistry.end())
         return m_animCurvePool.Get(it->second);
-    }
 
-    // FileSystem 経由で読み込む(.pak 暗号化・パス解決に対応)
     std::string jsonStr = FileSystem::ReadAllText(filepath);
     if (jsonStr.empty())
     {
         CCL_LOG_ERROR(LogCategory::Core, "Failed to open curve file: %s", filepath);
         return nullptr;
     }
-    // プールから空き部屋を確保
-    CCL::Handle<AnimationCurve> handle   = m_animCurvePool.Create();
-    AnimationCurve             *newCurve = m_animCurvePool.Get(handle);
+
+    CCL::Handle<CurveData> handle   = m_animCurvePool.Create();
+    CurveData             *newCurve = m_animCurvePool.Get(handle);
     try
     {
         nlohmann::json j = nlohmann::json::parse(jsonStr);
-        *newCurve        = j.get<AnimationCurve>();
-
+        // 複数カーブ文書なら先頭、単一/旧AnimationCurve形式もそのまま読める
+        if (!LoadCurveDataFromJson(j, *newCurve))
+        {
+            CCL_LOG_ERROR(LogCategory::Core, "Curve has no keys: %s", filepath);
+            m_animCurvePool.Destroy(handle);
+            return nullptr;
+        }
         m_animCurveRegistry[hash] = handle;
         m_assetPathRegistry[hash] = filepath;
-
         CCL_LOG_SUCCESS(LogCategory::Core, "Loaded Anim Curve: %s", filepath);
         return newCurve;
     }
-    catch (const std::exception& e) {
+    catch (const std::exception &e)
+    {
         CCL_LOG_ERROR(LogCategory::Core, "Failed to parse curve JSON: %s (%s)", filepath, e.what());
         m_animCurvePool.Destroy(handle);
         return nullptr;

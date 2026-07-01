@@ -1,6 +1,7 @@
 #include "RootMotionSystem.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
+#include "Engine/Core/Math/CurveData.h"
 
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
@@ -65,6 +66,39 @@ void RootMotionSystem::Update(float /*rawDt*/)
             input.desiredVelocity = Vector3::Zero;
             input.overrideSpeed   = 0.0f;
             return;
+        }
+
+        // ========================================================
+        // ★ カーブ駆動ルートモーション（進捗→累積前進距離 m）
+        //   rootMotionCurve が設定されていれば、ボーン抽出ではなく
+        //   カーブの区間差分ぶんだけキャラの正面へ前進させる。
+        // ========================================================
+        if (animator.activeRootMotionCurve && !animator.activeRootMotionCurve->empty() && seq->duration > 0.0f)
+        {
+            const CurveData *rmc = animator.activeRootMotionCurve;
+
+            const float p0 = std::clamp(rm.prevTimer / seq->duration, 0.0f, 1.0f);
+            const float p1 = std::clamp(animator.currentTimer / seq->duration, 0.0f, 1.0f);
+            rm.prevTimer   = animator.currentTimer;
+
+            // ループで進捗が巻き戻った場合は「末尾まで＋先頭から」で連続させる
+            float dist;
+            if (p1 >= p0)
+                dist = rmc->Evaluate(p1) - rmc->Evaluate(p0);
+            else
+                dist = (rmc->Evaluate(1.0f) - rmc->Evaluate(p0)) + (rmc->Evaluate(p1) - rmc->Evaluate(0.0f));
+
+            Vector3 forward = Vector3::Transform(Vector3::UnitZ, trans.rotation);
+            forward.y       = 0.0f;
+            if (forward.LengthSquared() > 1e-6f) forward.Normalize();
+
+            const float speed = dist / ldt; // 前進速度(m/s)。負値=後退
+
+            input.desiredVelocity    = forward;
+            input.overrideSpeed      = speed;
+            input.isRootMotionActive = true;
+            input.rootMotionVelocity = forward * speed;
+            return; // ボーン抽出はスキップ
         }
 
 

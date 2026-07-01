@@ -76,6 +76,10 @@ void AnimControllerSystem::Update(float dt)
 
             if (!state.speedCurveName.empty())
                 state.speedCurve = resourceManager.LoadAnimCurve(state.speedCurveName.c_str());
+
+             if (!state.rootMotionCurveName.empty())
+                state.rootMotionCurve = resourceManager.LoadAnimCurve(state.rootMotionCurveName.c_str());
+
         }
 
         fsm.currentStateHash = fsm.internalGraph.entryStateHash; // 初期状態へ
@@ -90,7 +94,10 @@ void AnimControllerSystem::Update(float dt)
                     animator.Play(state.sequence,
                         {.blendTime = 0.0f,
                             .loop   = state.isLoop,
-                            .speed  = state.playbackSpeed});
+                            .speed  = state.playbackSpeed,
+                            .curve            = state.speedCurve,
+                            .rootMotionCurve = state.rootMotionCurve
+                        });
                 }
                 break;
             }
@@ -266,7 +273,8 @@ void AnimControllerSystem::Update(float dt)
                             {.blendTime = triggeredTransition->blendDuration,
                                 .loop   = nextState.isLoop,
                                 .speed  = nextState.playbackSpeed,
-                                .curve  = nextState.speedCurve});
+                                .curve            = nextState.speedCurve,
+                                .rootMotionCurve = nextState.rootMotionCurve});
                     }
                     break;
                 }

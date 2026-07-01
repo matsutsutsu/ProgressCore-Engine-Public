@@ -3,7 +3,7 @@
 #include "Engine/Animation/Core/AnimSequence.h"
 #include <vector>
 // カーブデータ構造の先行宣言（後で定義します）
-struct AnimationCurve;
+struct CurveData;
 
 // ===================================================================================
 // ファイル: AnimatorComponent.h
@@ -21,7 +21,9 @@ struct AnimatorComponent {
     const AnimSequence* currentSequence = nullptr; // 共有データへのポインタ（8バイト）
 
     // 再生速度を動的に変化させるカーブのポインタ
-    const AnimationCurve* activeCurve = nullptr;
+    const CurveData *activeCurve = nullptr;
+    // ルートモーション量カーブ（進捗→累積前進距離 m）。nullptr で従来のボーン抽出
+    const CurveData *activeRootMotionCurve = nullptr;
 
     // --- アニメーション状態（時計） ---
     float currentTimer = 0.0f;
@@ -62,7 +64,8 @@ struct AnimatorComponent {
         float                 blendTime = 0.2f;    // クロスフェード時間（秒）。0なら即時切替
         bool                  loop      = true;    // ループ再生するか
         float                 speed     = 1.0f;    // 再生速度倍率
-        const AnimationCurve *curve     = nullptr; // 速度カーブ（nullで等速）
+        const CurveData    *curve           = nullptr; // 速度カーブ（nullで等速）
+        const CurveData    *rootMotionCurve = nullptr; // ルートモーション量カーブ（nullでボーン駆動）
     };
 
     /// @brief 新しいシーケンスの再生を開始する（必要ならクロスフェード）。
@@ -120,7 +123,19 @@ struct AnimatorComponent {
 
         isLoop        = params.loop;
         playbackSpeed = params.speed;
-        activeCurve   = params.curve;
+        // ============================================================
+        // ★ 修正の核心: 明示的な curve 指定が無ければ、シーケンス自身が
+        //   埋め込みで持っているカーブ（Sequencerで編集・保存したもの）を
+        //   自動的に採用する。これが無かったため「保存してもシーケンサー上
+        //   でしか効果が確認できない」不具合が起きていた。
+        // ============================================================
+        activeCurve = params.curve;
+        if (!activeCurve && sequence && !sequence->speedCurve.empty())
+            activeCurve = &sequence->speedCurve;
+
+        activeRootMotionCurve = params.rootMotionCurve;
+        if (!activeRootMotionCurve && sequence && !sequence->rootMotionCurve.empty())
+            activeRootMotionCurve = &sequence->rootMotionCurve;
     }
 
     /// @brief イベント発火用の栞(nextEventIndex)を、現在の再生時刻に合わせて再同期する。

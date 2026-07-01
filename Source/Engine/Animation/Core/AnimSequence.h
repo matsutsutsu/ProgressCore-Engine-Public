@@ -17,7 +17,7 @@
 #include "SimpleMath.h"
 
 #include "Engine/ECS/Common/CCL_Common.h"
-#include "Engine/Animation/Core/AnimationCurve.h"
+#include "Engine/Core/Math/CurveData.h"
 
 // ===================================================================================
 // Vector3 ⇔ json 変換
@@ -141,8 +141,8 @@ struct AnimSequence
     /// @note 必ず startTime 昇順でソートされていること。
     std::vector<AnimNotifyEvent> events;
 
-    AnimationCurve speedCurve;      ///< 再生速度カーブ(進捗率→速度倍率)
-    AnimationCurve rootMotionCurve; ///< ルートモーションカーブ(進捗率→移動量係数)
+     CurveData   speedCurve;      ///< 再生速度カーブ(進捗→速度倍率)
+     CurveData rootMotionCurve; ///< ルートモーションカーブ(進捗→累積前進距離 m)
 
 
 };
