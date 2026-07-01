@@ -8,7 +8,8 @@
 #include <DirectXMath.h>
 
 #include "Game/Logics/GameEvent/GameEvents.h"
-#include "Engine/Core/Math/StringHash.h" // ★追加: ハッシュ計算用
+#include "Engine/Core/Math/StringHash.h" // ハッシュ計算用
+
 
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
@@ -115,6 +116,8 @@ void PlayerMoveSystem::UpdateJumpLogic(float dt, bool isGrounded, CharacterMovem
     {
         inputData.jumpRequested = false;
     }
+
+
 }
 
 // -----------------------------------------------------------------------------------
@@ -154,7 +157,7 @@ void PlayerMoveSystem::UpdateBankingAndRotation(float dt, const CharacterMovemen
     Quaternion rollRot = Quaternion::CreateFromAxisAngle(Vector3::UnitZ, player.currentRoll);
 
     trans.rotation = rollRot * yawRot;
-    DirectX::XMVector4Normalize(DirectX::XMLoadFloat4(&trans.rotation));
+    DirectX::XMStoreFloat4(&trans.rotation, DirectX::XMVector4Normalize(DirectX::XMLoadFloat4(&trans.rotation)));
     trans.isStatic = false;
 
     character->SetRotation(JPH::Quat(yawRot.x, yawRot.y, yawRot.z, yawRot.w));

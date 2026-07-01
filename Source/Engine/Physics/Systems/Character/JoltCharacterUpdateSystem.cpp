@@ -8,6 +8,9 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 #include <SimpleMath.h>
 
+#include "Engine/Platform/Core/Logger.h"
+
+
 using namespace DirectX::SimpleMath;
 using namespace CCL::ECS;
 
@@ -53,6 +56,23 @@ void JoltCharacterUpdateSystem::Update(float rawDt)
 
         // 5. 物理空間の更新と同期
         UpdatePhysicsAndSync(safeDt, joltManager, ch, config, trans, id);
+
+        // ===============================================================
+        // 震えの原因を特定するための XZ軸ベクトルのログ出力
+        // ===============================================================
+        //JPH::Vec3 actualVel = ch->GetLinearVelocity();
+
+        //// 入力がある、または動いている時だけログを出す
+        //if (input.desiredVelocity.LengthSquared() > 0.001f || actualVel.LengthSq() > 0.001f)
+        //{
+        //    CCL_LOG_INFO(LogCategory::Game,
+        //        "[Jolt Char Jitter] ID:%d | 1.Input(%.2f, %.2f) -> 2.Lerp(%.2f, %.2f) -> 3.Jolt(%.2f, %.2f)",
+        //        id,
+        //        input.desiredVelocity.x, input.desiredVelocity.z, // 1. カメラとキー入力から決まった理想の向き
+        //        input.currentVelocity.x, input.currentVelocity.z, // 2. 慣性(Lerp)をかけた後の要求速度
+        //        actualVel.GetX(), actualVel.GetZ());              // 3. 地形と干渉した後の現実の速度
+        //}
+
     });
 }
 
@@ -73,30 +93,38 @@ void JoltCharacterUpdateSystem::ApplyTeleportIfNeeded(TransformComponent &trans,
 float JoltCharacterUpdateSystem::CalculateVerticalVelocity(float safeDt, float currentVy, const JoltCharacterConfigComponent &config, const CharacterMovementInputComponent &input, bool isGrounded, float gravityY)
 {
     float vy = currentVy;
-    if (isGrounded && vy < 0.0f) vy = 0.0f;
+    if (isGrounded && vy <= 0.0f) vy = 0.0f;
 
     if (input.jumpRequested)
     {
         vy = config.jumpSpeed;
-    }
-
-    // 非対称重力の適用 (キビキビ着地)
-    float currentGravityScale = config.gravityScale;
-    if (vy < 0.0f)
-    {
-        currentGravityScale = config.fallGravityScale;
+        isGrounded = false; // ジャンプした瞬間は空中扱いにする
     }
 
     // ===============================================================
-    //  滞空時間ハック (Apex Hang Time)
+    //  空中の時のみ重力を適用する
     // ===============================================================
-    // 空中かつ、Y軸の速度が閾値(-1.5 〜 1.5)の間なら、重力を極端に弱める
-    if (!isGrounded && std::abs(vy) < config.apexVelocityThreshold)
+    if (!isGrounded)
     {
-        currentGravityScale = config.apexGravityScale;
+        // 非対称重力の適用 (キビキビ着地)
+        float currentGravityScale = config.gravityScale;
+        if (vy < 0.0f)
+        {
+            currentGravityScale = config.fallGravityScale;
+        }
+
+        // ===============================================================
+        //  滞空時間ハック (Apex Hang Time)
+        // ===============================================================
+        // 空中かつ、Y軸の速度が閾値(-1.5 〜 1.5)の間なら、重力を極端に弱める
+        if (std::abs(vy) < config.apexVelocityThreshold)
+        {
+            currentGravityScale = config.apexGravityScale;
+        }
+
+        vy += gravityY * currentGravityScale * safeDt;
     }
 
-    vy += gravityY * currentGravityScale * safeDt;
 
     return vy;
 }
@@ -165,8 +193,9 @@ void JoltCharacterUpdateSystem::UpdatePhysicsAndSync(float safeDt, JoltPhysicsMa
 
     if (kinBody)
     {
-        JPH::Quat joltRot(trans.rotation.x, trans.rotation.y, trans.rotation.z, trans.rotation.w);
-        joltRot = joltRot.Normalized();
+        // CharacterVirtual が計算した「傾きのない純粋な回転(Yawのみ)」を取得し、物理剛体にセットする
+        JPH::Quat joltRot = ch->GetRotation();
+
         joltManager->GetBodyInterface().SetPositionAndRotation(kinBody->bodyID, pos, joltRot, JPH::EActivation::DontActivate);
     }
 }

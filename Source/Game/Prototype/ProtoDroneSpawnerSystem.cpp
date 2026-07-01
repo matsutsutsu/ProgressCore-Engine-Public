@@ -81,4 +81,4 @@ void ProtoDroneSpawnerSystem::Update(float /*dt*/)
 }
 
 // 毎フレームの最初の方で生成を行う
-REGISTER_LOGIC_SYSTEM(ProtoDroneSpawnerSystem, Priority::LogicStage::L02_Update);
+//REGISTER_LOGIC_SYSTEM(ProtoDroneSpawnerSystem, Priority::LogicStage::L02_Update);

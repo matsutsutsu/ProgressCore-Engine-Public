@@ -19,6 +19,24 @@ void TimeScaleSystem::Update(float rawDt)
     auto& ctx = _world->GetResource<TimeContext>();
 
     // =========================================================
+    // ★ デバッグ：世界時間の凍結とコマ送り
+    // =========================================================
+    if (ctx.isPaused)
+    {
+        if (ctx.stepNextFrame)
+        {
+            // 1フレーム(60fps想定)だけ強制的に時間を進める
+            rawDt             = 0.016666f;
+            ctx.stepNextFrame = false;
+        }
+        else
+        {
+            // 完全に時間を止める
+            rawDt = 0.0f;
+        }
+    }
+
+    // =========================================================
     // 1. SlowMotionデータの更新（ロジックの分離）
     // =========================================================
     auto updateSlowMotion = [rawDt](SlowMotionData& slow) {
@@ -112,6 +130,17 @@ void TimeScaleSystem::OnGui()
     if (ImGui::Button("Trigger Witch Time (2.0s, 10% Speed)")) {
         ctx.globalHitStopTimer = 2.0f;
         ctx.globalFreezeScale = 0.1f;
+    }
+
+    // デバッグ用のコマ送り機能
+    ImGui::SeparatorText("Debug Pause & Step");
+    ImGui::Checkbox("Pause Game (F10)", &ctx.isPaused);
+    if (ctx.isPaused)
+    {
+        if (ImGui::Button("Step 1 Frame (F11)"))
+        {
+            ctx.stepNextFrame = true;
+        }
     }
 }
 
