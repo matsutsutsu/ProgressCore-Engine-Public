@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <memory>
-#include "../Common/CCL_Common.h"
+#include "Engine/ECS/Common/CCL_Types.h"
 #include "CCL_Chunk.h"
 #include "CCL_PendingOps.h"
 #include <functional>

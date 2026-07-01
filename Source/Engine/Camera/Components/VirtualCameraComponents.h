@@ -1,5 +1,4 @@
 #pragma once
-#include "Engine/ECS/Common/CCL_Common.h"
 #include "Engine/Serialization/Core/EntityLink.h" // ★追加: EntityLinkを使用するため
 #include <DirectXMath.h>
 #include <algorithm> // for max

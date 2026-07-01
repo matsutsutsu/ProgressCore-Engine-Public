@@ -6,13 +6,12 @@
 #include "Engine/Scene/Scene.h"
 
 // ECS関連
-#include "Engine/ECS/Common/CCL_Common.h"
-#include "Engine/ECS/Core/CCL_PendingOps.h"
-#include "Engine/ECS/Core/CCL_World.h"
-#include "Engine/ECS/System/CCL_SystemManager.h"
 #include "Engine/ECS/CCL_ECSContext.h"
 
 #include "Engine/Scene/SceneManager.h"
+
+class World;
+class SystemManager;
 
 class BaseScene : public Scene {
   protected:

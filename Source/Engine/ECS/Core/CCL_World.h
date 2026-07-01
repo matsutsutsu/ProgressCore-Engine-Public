@@ -27,7 +27,7 @@
 #include <utility>
 #include <vector>
 
-#include "../Common/CCL_Common.h"
+#include "Engine/ECS/Common/CCL_Types.h"
 #include "CCL_ChunkManager.h"
 #include "CCL_PendingOps.h"
 #include "Engine/ECS/Jobs/CCL_FrameAllocator.h"

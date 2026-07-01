@@ -7,7 +7,7 @@
 // 位置付け   : アニメーションと各システムを疎結合に保つための一方向通知。
 //              EventBus::Publish は同期即時配送のため、購読側は軽量処理に留めること。
 // ===================================================================================
-#include "Engine/ECS/Common/CCL_Common.h"
+#include "Engine/ECS/Common/CCL_Types.h"
 #include "SimpleMath.h"
 #include <string>
 

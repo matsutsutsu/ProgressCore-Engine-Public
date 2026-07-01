@@ -42,7 +42,7 @@
 #include "CCL_SystemAccess.h"
 
 // IfSystem の実装内では Chunk / World / JobSystem の完全定義が必要
-#include "Engine/ECS/Common/CCL_Common.h"
+#include "Engine/ECS/Common/CCL_Types.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/Jobs/CCL_JobSystem.h"
 

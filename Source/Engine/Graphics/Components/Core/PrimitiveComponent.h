@@ -1,5 +1,4 @@
 #pragma once
-#include "Engine/ECS/Common/CCL_Common.h"
 #include <DirectXMath.h>
 
 enum class PrimitiveType { Box, Sphere, Cylinder, Capsule, Cone };

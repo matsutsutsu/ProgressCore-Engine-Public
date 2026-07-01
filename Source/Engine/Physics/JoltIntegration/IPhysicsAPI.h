@@ -1,5 +1,5 @@
 #pragma once
-#include "Engine/ECS/Common/CCL_Common.h"
+#include "Engine/ECS/Common/CCL_Types.h"
 #include <DirectXMath.h>
 
 // レイキャストの結果を返すための構造体

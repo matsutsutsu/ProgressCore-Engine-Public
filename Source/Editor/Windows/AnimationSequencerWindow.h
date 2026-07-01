@@ -11,7 +11,7 @@
 // ===================================================================================
 #include "Editor/Core/EditorWindow.h"
 #include "Engine/Animation/Core/AnimSequence.h"
-#include "Engine/ECS/Common/CCL_Common.h"
+#include "Engine/ECS/Common/CCL_Types.h"
 #include "Editor/Utils/CurveEditorWidget.h" // パスは配置に合わせて調整
 #include <DirectXMath.h>
 #include <memory>

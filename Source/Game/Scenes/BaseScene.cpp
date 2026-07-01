@@ -1,5 +1,8 @@
 #include "BaseScene.h"
 
+#include "Engine/ECS/Core/CCL_World.h"
+#include "Engine/ECS/System/CCL_SystemManager.h"
+
 #include "Engine/Serialization/Factory/Prefab.h"
 #include "Engine/Serialization/Factory/SceneInitializer.h"
 

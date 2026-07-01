@@ -1,5 +1,5 @@
 #pragma once
-#include "Engine/ECS/Common/CCL_Common.h"
+#include "Engine/ECS/Common/CCL_Types.h"
 #include <DirectXMath.h>
 
 // Jolt空間からECS空間へ配達される「衝突の手紙」

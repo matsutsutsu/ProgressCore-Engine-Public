@@ -1083,9 +1083,6 @@
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BossActionSystem.h">
       <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\ECS\Common\CCL_Common.h">
-      <Filter>Source\Engine\ECS\Common</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\ECS\Core\CCL_Chunk.h">
       <Filter>Source\Engine\ECS\Core</Filter>
     </ClInclude>
@@ -2709,6 +2706,9 @@
     </None>
     <None Include=".editorconfig">
       <Filter>Build</Filter>
+    </None>
+    <None Include="Source\Engine\ECS\Common\ECSCommonArchitecture.md">
+      <Filter>Source\Engine\ECS\Common</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

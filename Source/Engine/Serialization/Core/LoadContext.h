@@ -20,7 +20,7 @@
 #pragma once
 #include <cstdint>
 #include <vector>
-#include "Engine/ECS/Common/CCL_Common.h"
+#include "Engine/ECS/Common/CCL_Types.h"
 #include "SaveContext.h"  // LocalIndex の定義を共有
 
 namespace CCL::Serialization {

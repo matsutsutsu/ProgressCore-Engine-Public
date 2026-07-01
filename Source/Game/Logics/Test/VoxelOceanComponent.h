@@ -1,5 +1,4 @@
 #pragma once
-#include "Engine/ECS/Common/CCL_Common.h"
 
 // ボクセルオーシャン用のコンポーネント
 struct VoxelOceanComponent {

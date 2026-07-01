@@ -23,7 +23,7 @@
 #include <string>
 #include <vector>
 
-#include "Engine/ECS/Common/CCL_Common.h"
+#include "Engine/ECS/Common/CCL_Archetype.h"
 
 // Chunk / World / JobSystem はポインタとしてしか使わないため前方宣言で十分。
 // これにより SystemBase.h は重い実装ヘッダに依存しません。
