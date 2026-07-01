@@ -459,7 +459,6 @@
     <ClInclude Include="Source\Engine\ECS\Jobs\CCL_FrameAllocator.h" />
     <ClInclude Include="Source\Engine\ECS\Jobs\CCL_JobSystem.h" />
     <ClInclude Include="Source\Engine\ECS\System\CCL_IfSystem.h" />
-    <ClInclude Include="Source\Engine\ECS\System\CCL_System.h" />
     <ClInclude Include="Source\Engine\ECS\System\CCL_SystemAccess.h" />
     <ClInclude Include="Source\Engine\ECS\System\CCL_SystemBase.h" />
     <ClInclude Include="Source\Engine\ECS\System\CCL_SystemManager.h" />
@@ -1511,6 +1510,10 @@
     <None Include="Shader\Renderer\Primitive\PrimitiveRenderer.hlsli" />
     <None Include="Shader\Renderer\Shape\ShapeRenderer.hlsli" />
     <None Include="Source\Engine\ECS\Common\ECSCommonArchitecture.md">
+      <SubType>
+      </SubType>
+    </None>
+    <None Include="Source\Engine\ECS\System\ECSSystemArchitecture.md">
       <SubType>
       </SubType>
     </None>

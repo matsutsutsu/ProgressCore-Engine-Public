@@ -24,7 +24,7 @@
 //   - 「誰がダメージを与えたか」を知らない。HPの最終状態だけを見て判定する。
 //     毒/落下/罠など将来のダメージソースが増えても本Systemは無変更で動く。
 // ===========================================================================
-#include "Engine/ECS/System/CCL_System.h"
+#include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/Combat/HealthComponent.h"
 #include "Engine/Timer/TimeState.h"
 

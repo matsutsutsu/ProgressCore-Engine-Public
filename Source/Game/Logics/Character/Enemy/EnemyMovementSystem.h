@@ -1,5 +1,5 @@
 #pragma once
-#include "Engine/ECS/System/CCL_System.h"
+#include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Game/Logics/Character/Enemy/MoveIntentComponent.h"
 #include "Engine/Timer/TimeState.h" // ★ 追加

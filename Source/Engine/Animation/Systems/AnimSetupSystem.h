@@ -9,7 +9,7 @@
 // これにより、ユーザーは AnimatorComponent をアタッチするだけでアニメーション機能一式を
 // 安全に使い始めることができ、コンポーネントの付け忘れバグを防止する。
 // ===================================================================================
-#include "Engine/ECS/System/CCL_System.h"
+#include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Animation/Components/AnimatorComponent.h"
 #include "Engine/Animation/Components/AnimParametersComponent.h"
 #include "Engine/Animation/Core/AnimStateMachine.h"

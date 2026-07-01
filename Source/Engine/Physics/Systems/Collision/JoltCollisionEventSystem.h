@@ -1,5 +1,5 @@
 #pragma once
-#include "Engine/ECS/System/CCL_System.h"
+#include "Engine/ECS/System/CCL_IfSystem.h"
 
 // JoltのContactListenerに溜まった「衝突の手紙」を回収し、
 // ECSのEventBusに一斉送信する配達員（システム）

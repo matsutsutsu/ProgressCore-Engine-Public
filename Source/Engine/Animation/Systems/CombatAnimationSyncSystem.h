@@ -14,7 +14,7 @@
  *       なので、ステージの壁により完全に直列化されており安全が保証される。
  */
 #pragma once
-#include "Engine/ECS/System/CCL_System.h"
+#include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/Combat/CombatComponents.h"
 
 class CombatAnimationSyncSystem

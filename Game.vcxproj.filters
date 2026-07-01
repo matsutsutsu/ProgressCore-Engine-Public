@@ -1095,9 +1095,6 @@
     <ClInclude Include="Source\Engine\ECS\Core\CCL_World.h">
       <Filter>Source\Engine\ECS\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\ECS\System\CCL_System.h">
-      <Filter>Source\Engine\ECS\System</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\ECS\System\CCL_SystemAccess.h">
       <Filter>Source\Engine\ECS\System</Filter>
     </ClInclude>
@@ -2709,6 +2706,9 @@
     </None>
     <None Include="Source\Engine\ECS\Common\ECSCommonArchitecture.md">
       <Filter>Source\Engine\ECS\Common</Filter>
+    </None>
+    <None Include="Source\Engine\ECS\System\ECSSystemArchitecture.md">
+      <Filter>Source\Engine\ECS\System</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

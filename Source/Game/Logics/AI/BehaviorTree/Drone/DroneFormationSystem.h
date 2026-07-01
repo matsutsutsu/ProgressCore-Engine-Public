@@ -3,7 +3,7 @@
  * @brief ボスの指示に基づいて全ドローンの目標座標（TargetPosition）を計算するシステム
  */
 #pragma once
-#include "Engine/ECS/System/CCL_System.h"
+#include "Engine/ECS/System/CCL_IfSystem.h"
 #include "DroneComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"

@@ -1,5 +1,5 @@
 #pragma once
-#include "Engine/ECS/System/CCL_System.h"
+#include "Engine/ECS/System/CCL_IfSystem.h"
 #include "TimeState.h"
 
 // Write<TimeState> を宣言。これによりTaskSchedulerが依存関係を正確に把握する

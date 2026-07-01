@@ -1,5 +1,5 @@
 #pragma once
-#include "Engine/ECS/System/CCL_System.h"
+#include "Engine/ECS/System/CCL_IfSystem.h"
 
 class NavMeshDebugDrawSystem : public CCL::ECS::IfSystem<NavMeshDebugDrawSystem> {
 public:

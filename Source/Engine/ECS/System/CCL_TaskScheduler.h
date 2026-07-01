@@ -1,10 +1,11 @@
 #pragma once
-#include "CCL_System.h"
 #include <algorithm>
 #include <memory>
 #include <vector>
 #include <string>
 #include "Engine/ECS/Core/CCL_Chunk.h"
+#include "Engine/ECS/System/CCL_SystemBase.h"
+#include "Engine/ECS/Jobs/CCL_JobSystem.h"
 #include "Engine/Platform/Core/Logger.h"
 
 namespace CCL::ECS {

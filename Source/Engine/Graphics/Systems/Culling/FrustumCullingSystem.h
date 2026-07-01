@@ -1,5 +1,5 @@
 #pragma once
-#include "Engine/ECS/System/CCL_System.h"
+#include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Graphics/Components/Culling/CullingComponents.h"
 
 // AABBとカメラの視錐台を判定し、可視フラグを切り替えるシステム

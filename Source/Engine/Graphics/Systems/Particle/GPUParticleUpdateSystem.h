@@ -1,5 +1,5 @@
 #pragma once
-#include "Engine/ECS/System/CCL_System.h"
+#include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Graphics/Components/Particle/GPUParticleComponent.h"
 #include "Engine/Graphics/Components/Particle/GPUParticleBuffer.h"
 #include "Engine/Transform/Components/TransformComponent.h"

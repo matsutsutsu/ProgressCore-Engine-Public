@@ -1,5 +1,5 @@
 #pragma once
-#include "Engine/ECS/System/CCL_System.h"
+#include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"
 #include "Game/Logics/AI/BehaviorTree/BossActionComponent.h"      

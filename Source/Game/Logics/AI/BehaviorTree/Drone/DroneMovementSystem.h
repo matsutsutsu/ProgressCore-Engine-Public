@@ -3,7 +3,7 @@
  * @brief 振付師が決定した目標座標へ向かってドローンを物理的に移動・回転させるシステム
  */
 #pragma once
-#include "Engine/ECS/System/CCL_System.h"
+#include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/AI/BehaviorTree/Drone/DroneComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Timer/TimeState.h"

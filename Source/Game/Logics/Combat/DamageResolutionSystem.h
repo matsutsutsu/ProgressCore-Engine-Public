@@ -26,7 +26,7 @@
 //   - ノックバックは「速度を書き込む」だけ。減衰の継続処理は KnockbackSystem に委譲し
 //     本Systemの責務を「イベント解決」に限定する(単一責任)。
 // ===========================================================================
-#include "Engine/ECS/System/CCL_System.h"
+#include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/Combat/CombatComponents.h"
 
 class DamageResolutionSystem : public CCL::ECS::IfSystem<DamageResolutionSystem,
