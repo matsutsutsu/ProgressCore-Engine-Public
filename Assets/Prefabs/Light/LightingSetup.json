@@ -64,7 +64,7 @@
                         50.0,
                         200.0
                     ],
-                    "shadowBias": 0.001500000013038516,
+                    "shadowBias": 0.0002,
                     "shadowColor": [
                         0.0,
                         0.0,
@@ -78,7 +78,7 @@
                     "freezeScale": 0.0,
                     "group": 0,
                     "hitStopTimer": 0.0,
-                    "localDt": 0.01600000075995922
+                    "localDt": 0.01666666753590107
                 },
                 "ToneMapConfig": {
                     "data.chromaticAberration": 0.0,

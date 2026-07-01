@@ -3,7 +3,35 @@
     "events": [],
     "rootMotionCurve": {
         "color": 4286643968,
-        "keys": [],
+        "keys": [
+            {
+                "inTangent": 78.65190887451172,
+                "interp": 2,
+                "outTangent": 78.65190887451172,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": -0.005024142563343048,
+                "value": 1.0167169570922852
+            },
+            {
+                "inTangent": 6.0864152908325195,
+                "interp": 2,
+                "outTangent": 6.0864152908325195,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": 0.0550481379032135,
+                "value": 5.741516590118408
+            },
+            {
+                "inTangent": 0.5565458536148071,
+                "interp": 2,
+                "outTangent": 0.5565458536148071,
+                "tangentIn": 2,
+                "tangentOut": 2,
+                "time": 0.9874287247657776,
+                "value": 7.057197093963623
+            }
+        ],
         "name": "",
         "postInfinity": 0,
         "preInfinity": 0,
@@ -12,7 +40,44 @@
     "sequenceName": "Attack_2",
     "speedCurve": {
         "color": 4286643968,
-        "keys": [],
+        "keys": [
+            {
+                "inTangent": 16.950559616088867,
+                "interp": 2,
+                "outTangent": 16.950559616088867,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": 0.00763365626335144,
+                "value": 1.00166654586792
+            },
+            {
+                "inTangent": 0.7456186413764954,
+                "interp": 2,
+                "outTangent": 0.7456186413764954,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": 0.04934027045965195,
+                "value": 1.7086169719696045
+            },
+            {
+                "inTangent": -1.1152679920196533,
+                "interp": 2,
+                "outTangent": -1.1152679920196533,
+                "tangentIn": 2,
+                "tangentOut": 2,
+                "time": 0.5318068265914917,
+                "value": 1.3924998044967651
+            },
+            {
+                "inTangent": -0.8178662657737732,
+                "interp": 2,
+                "outTangent": -0.8178662657737732,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": 1.002544641494751,
+                "value": 1.0074992179870605
+            }
+        ],
         "name": "",
         "postInfinity": 0,
         "preInfinity": 0,

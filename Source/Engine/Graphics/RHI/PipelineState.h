@@ -32,6 +32,18 @@ struct PipelineStateDesc {
         desc.topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
         return desc;
     }
+
+    // 影生成専用のベース金型
+    static PipelineStateDesc DefaultShadow()
+    {
+        PipelineStateDesc desc;
+        desc.blend = BlendState::Opaque;
+        desc.depth = DepthState::TestAndWrite;
+        // 影専用のラスタライザステートを指定（スロープスケールドバイアス適用）
+        desc.rasterizer = RasterizerState::ShadowCullBack;
+        desc.topology   = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+        return desc;
+    }
 };
 
 // 2. 完成した「金型（PSO）」本体

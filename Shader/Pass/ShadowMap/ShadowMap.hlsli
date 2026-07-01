@@ -24,6 +24,11 @@ float SampleCascade(float4 worldPos, int cascadeIndex)
     // 範囲外判定
     if (any(shadow_texcoord.xy < 0.0f) || any(shadow_texcoord.xy > 1.0f) || shadow_texcoord.z < 0.0f || shadow_texcoord.z > 1.0f)
         return 1.0f;
+    
+    // ダイナミック・カスケード・バイアス
+    // カスケード層が奥になるほど、解像度の粗さに比例してバイアスを強める
+    float cascadeScale = pow(3.0f, cascadeIndex);
+    float dynamicBias = shadow_bias * cascadeScale;
 
     float depth = shadow_texcoord.z - shadow_bias;
     float shadowWeight = 0.0f;

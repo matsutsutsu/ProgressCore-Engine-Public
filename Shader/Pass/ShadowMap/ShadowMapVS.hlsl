@@ -14,6 +14,7 @@ float4 main(
     float4 worldPos;
     CalculateWorldTransform(position, boneWeights, boneIndices, instanceID, worldPos);
 
+
     // currentCascadeIndex を使って適切な行列を選択する
     return mul(worldPos, light_view_projection[currentCascadeIndex]);
 }
