@@ -264,6 +264,12 @@ void FileDialog::Initialize(const std::filesystem::path& settingsPath)
     // エンジン共通プリセットを一括登録
     // ※ defaultDir はプロジェクト構成に合わせて変更する
     // ----------------------------------------------------------------
+    RegisterPreset("Assets", {
+    .filters = { {"Assets Files", "*.json"}, {"All Files", "*.*"} },
+    .defaultDir = "Assets",
+    .defaultExt = "json",
+    });
+    
     RegisterPreset("Scene", {
         .filters = { {"Scene Files", "*.json"}, {"All Files", "*.*"} },
         .defaultDir = "Assets/Scene",

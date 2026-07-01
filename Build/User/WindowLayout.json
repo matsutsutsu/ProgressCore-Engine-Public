@@ -42,7 +42,7 @@
         },
         {
             "name": "Curve Editor",
-            "visible": false
+            "visible": true
         },
         {
             "name": "Text Editor",
