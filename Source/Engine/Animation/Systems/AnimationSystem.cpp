@@ -225,19 +225,31 @@ void AnimationSystem::Update(float dt)
 
                         // ========================================================
                         // ★ Force Root Lock (ブレンド中の過去・現在両方のピン留め)
-                        // ========================================================
+                        //   非ブレンド経路と同じく「真のルートボーン」のXZだけを0秒姿勢へ固定する。
+                        //   ここを [0] 固定にしていると、rootNodeIndex が0番以外(通常Hips=1)の
+                        //   リグでは遷移ブレンド中だけ焼き込み前進が漏れ、ブレンド終了で
+                        //   その場へ戻る「前に出てすぐ戻る」不具合になる。
+                        //   過去バッファは別クリップ(=別のルートボーン番号)なので個別に特定する。
                         if (!animator.poseBufferB.empty())
                         {
-                            Model::NodePose initPoseB;
-                            model->ComputeAnimation(prevAnimIndex, rootNodeIndex, 0.0f, initPoseB);
-                            // X, Y, Z すべてを「0秒時点の初期位置」に固定し、アニメ自身の移動を完全に殺す
-                            animator.poseBufferB[0].position = initPoseB.position;
+                            const int prevRootNodeIndex = model->FindRealRootMotionNodeIndex(prevAnimIndex);
+                            if (prevRootNodeIndex >= 0 && prevRootNodeIndex < (int)animator.poseBufferB.size())
+                            {
+                                Model::NodePose initPoseB;
+                                model->ComputeAnimation(prevAnimIndex, prevRootNodeIndex, 0.0f, initPoseB);
+                                animator.poseBufferB[prevRootNodeIndex].position.x = initPoseB.position.x;
+                                animator.poseBufferB[prevRootNodeIndex].position.z = initPoseB.position.z;
+                            }
                         }
                         if (!animator.poseBufferA.empty())
                         {
-                            Model::NodePose initPoseA;
-                            model->ComputeAnimation(animIndex, rootNodeIndex, 0.0f, initPoseA);
-                            animator.poseBufferA[0].position = initPoseA.position;
+                            if (rootNodeIndex >= 0 && rootNodeIndex < (int)animator.poseBufferA.size())
+                            {
+                                Model::NodePose initPoseA;
+                                model->ComputeAnimation(animIndex, rootNodeIndex, 0.0f, initPoseA);
+                                animator.poseBufferA[rootNodeIndex].position.x = initPoseA.position.x;
+                                animator.poseBufferA[rootNodeIndex].position.z = initPoseA.position.z;
+                            }
                         }
 
                         float blendRate = (animator.blendDuration > 0.0f) ? (animator.currentBlendTime / animator.blendDuration) : 1.0f;
