@@ -76,8 +76,9 @@ class AnimationSequencerWindow : public EditorWindow
     const AnimSequence *_savedSequence = nullptr;
 
     // --- ルートモーションカーブのプレビュー用状態 ---
-    DirectX::XMFLOAT3 _rootMotionBasePos = {0.0f, 0.0f, 0.0f}; ///< プレビュー開始時点の位置（復元/基準に使用）
-    bool              _rootMotionActive  = false;              ///< 今このフレーム、カーブ駆動で位置を書き換えているか
+    DirectX::XMFLOAT3 _rootMotionOriginPos = {0.0f, 0.0f, 0.0f}; ///< プレビュー開始時点の位置（終了時の復元用。累積しない）
+    DirectX::XMFLOAT3 _rootMotionBasePos   = {0.0f, 0.0f, 0.0f}; ///< 現在ループの基準位置（ループごとに1周ぶん前進を畳み込む）
+    bool              _rootMotionActive    = false;              ///< 今このフレーム、カーブ駆動で位置を書き換えているか
 
     // --- エンティティ切替検出 ---
     CCL::ECS::EntityID _lastSelectedEntity = CCL::ECS::InvalidEntityID;

@@ -16,6 +16,28 @@
 
 using namespace CCL::Utils;
 
+namespace
+{
+// アセットのキャッシュキー用に、パス文字列の表記ゆれ(区切り文字・大文字小文字)を吸収する。
+// Windowsのファイルアクセス自体は大小無視・スラッシュ混在OKだが、HashStringは
+// バイト単位の完全一致でしか同じ値を返さない。Sequencer(保存)とAnimGraph(参照)が
+// それぞれ別のダイアログ操作で得た文字列は、見た目が同じファイルでも
+// "Assets/Anims/Attack.json" と "Assets\Anims\Attack.json" のようにズレることがあり、
+// これがキャッシュ更新を素通りさせて「保存しても反映されない」不具合の主因になる。
+// ※ 実際のファイル読み込み(FileSystem::ReadAllText等)には元の filename をそのまま使い、
+//   ハッシュ計算のときだけこの正規化版を使う。
+std::string NormalizeAssetKey(const char *path)
+{
+    std::string s = path ? path : "";
+    for (char &c : s)
+    {
+        if (c == '\\') c = '/';
+        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    }
+    return s;
+}
+} // namespace
+
 void ResourceManager::ClearAll()
 {
     // マルチスレッド対応の場合はロックをかける
@@ -304,7 +326,7 @@ const AnimSequence *ResourceManager::LoadAnimSequence(const char *filename)
     // LoadAnimCurve と同様にスレッドセーフにする(レジストリ/プールの競合防止)。
     std::lock_guard<std::mutex> lock(_mutex);
 
-    uint32_t hash = HashString(filename);
+    uint32_t hash = HashString(NormalizeAssetKey(filename).c_str());
     auto     it   = m_animSequenceRegistry.find(hash);
     if (it != m_animSequenceRegistry.end())
     {
@@ -374,7 +396,7 @@ const AnimSequence *ResourceManager::ReloadAnimSequence(const char *filename)
     if (!filename || filename[0] == '\0')
         return nullptr;
 
-    uint32_t hash = HashString(filename);
+    uint32_t hash = HashString(NormalizeAssetKey(filename).c_str());
 
     AnimSequence *seq = nullptr;
     {
@@ -388,7 +410,17 @@ const AnimSequence *ResourceManager::ReloadAnimSequence(const char *filename)
 
     // まだ一度もロードされていなければ、通常ロードに任せる（新規キャッシュ生成）。
     if (!seq)
+    {
+        // ★ ここに来る＝「キャッシュキーが見つからなかった」ということ。
+        //   保存前に既に同じファイルがどこかで読み込まれているはずなのに毎回ここに来る場合、
+        //   Sequencerの保存パスとゲーム側が参照しているパス文字列がズレている（別ファイル
+        //   として扱われている）可能性が高い。m_debugNameRegistry と見比べて確認できる。
+        CCL_LOG_WARN(LogCategory::Core,
+            "ReloadAnimSequence: cache miss for '%s' (key='%s') -> 新規ロードとして扱います。"
+            "既存キャッシュに反映されない場合はパス表記のズレを疑ってください。",
+            filename, NormalizeAssetKey(filename).c_str());
         return LoadAnimSequence(filename);
+    }
 
     std::string jsonStr = FileSystem::ReadAllText(filename);
     if (jsonStr.empty())
@@ -424,7 +456,7 @@ const AnimSequence *ResourceManager::ReloadAnimSequence(const char *filename)
 const CurveData *ResourceManager::LoadAnimCurve(const char *filepath)
 {
     std::lock_guard<std::mutex> lock(_mutex);
-    uint32_t                    hash = CCL::Utils::HashString(filepath);
+    uint32_t                    hash = CCL::Utils::HashString(NormalizeAssetKey(filepath).c_str());
 
     auto it = m_animCurveRegistry.find(hash);
     if (it != m_animCurveRegistry.end())

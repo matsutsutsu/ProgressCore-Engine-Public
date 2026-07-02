@@ -10,6 +10,7 @@
 #include "Engine/Animation/Systems/AnimationSystem.h"
 #include "Engine/Graphics/Resource/Model.h"
 #include "Engine/Graphics/Resource/ModelResource.h"
+#include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Game/Logics/Combat/CombatRosterComponent.h"
@@ -430,7 +431,7 @@ void AnimationSequencerWindow::ResetStateOnEntitySwitch(EditorContext &context, 
                 if (context.world)
                 {
                     if (auto *oldTrans = context.world->GetComponent<TransformComponent>(_lastSelectedEntity))
-                        oldTrans->SetPosition(_rootMotionBasePos);
+                        oldTrans->SetPosition(_rootMotionOriginPos);
                 }
                 _rootMotionActive = false;
             }
@@ -473,7 +474,14 @@ void AnimationSequencerWindow::DrawFileIO()
 
             nlohmann::json j = _editingSequence;
             if (FileSystem::WriteAllText(_savePath, j.dump(4)))
+            {
                 CCL_LOG_SUCCESS(LogCategory::Editor, "Sequence Saved: %s", _savePath.c_str());
+
+                // ★ 保存直後にランタイム側キャッシュを同一インスタンスへ上書き再読込。
+                //   これをしないと ResourceManager が起動時の古い内容を返し続け、
+                //   ゲーム再生に編集が反映されない（＝「保存したのに変わらない」の原因）。
+                ResourceManager::Instance().ReloadAnimSequence(_savePath.c_str());
+            }
             else
                 CCL_LOG_ERROR(LogCategory::Editor, "Sequence Save Failed: %s", _savePath.c_str());
         }
@@ -539,7 +547,7 @@ void AnimationSequencerWindow::DrawEditModeToggle(EditorContext &context, Animat
             if (context.world)
             {
                 if (auto *trans = context.world->GetComponent<TransformComponent>(context.selectedEntity))
-                    trans->SetPosition(_rootMotionBasePos);
+                    trans->SetPosition(_rootMotionOriginPos);
             }
             _rootMotionActive = false;
         }
@@ -568,10 +576,13 @@ void AnimationSequencerWindow::DrawRootMotionPreview(EditorContext &context, Ani
     if (!_rootMotionActive)
     {
         // このフレームで初めてカーブ駆動プレビューが有効になった → 現在位置を基準点として記録する。
-        // 以後は毎フレーム「基準点 + 前方 * (curve(progress) - curve(0))」で絶対位置を
-        // 再計算するため、スクラブや巻き戻しをしても誤差が蓄積しない。
-        _rootMotionBasePos = trans->position;
-        _rootMotionActive  = true;
+        // 以後は毎フレーム「基準点 + 前方 * (curve(progress) - curve(0))」で絶対位置を再計算する。
+        // ループするたびに _rootMotionBasePos へ1周ぶんの前進を畳み込むので、
+        // ループ境界で原点にスナップバックせず連続して前進する。
+        // _rootMotionOriginPos は累積しない「真の開始位置」で、編集モード終了時の復元に使う。
+        _rootMotionOriginPos = trans->position;
+        _rootMotionBasePos   = trans->position;
+        _rootMotionActive    = true;
     }
 
     // ワールド前方ベクトル（worldMatrixのZ軸列。回転はキャッシュ済みのものを使う）
@@ -612,9 +623,32 @@ void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, Animator
             if (dur > 0.0f && context.animEditTime > dur)
             {
                 // ループ設定はプレビュー専用トグルを優先（アニメ設定と独立に試せる）
-                context.animEditTime = _loopPreview ? std::fmod(context.animEditTime, dur) : dur;
-                if (!_loopPreview)
-                    _isPlaying = false; // 非ループは最後で停止
+                if (_loopPreview)
+                {
+                    context.animEditTime = std::fmod(context.animEditTime, dur);
+
+                    // ★ ルートモーションプレビューのループ連続化:
+                    //   ここは「再生による折り返し」でのみ通る（スクラブでは通らない）ため、
+                    //   1周ぶんの前進量を基準位置へ畳み込む。これにより次ループの進捗0が
+                    //   前ループ終端と一致し、原点へのスナップバックが消える。
+                    if (_rootMotionActive && !_editingSequence.rootMotionCurve.empty() && context.world)
+                    {
+                        if (auto *trans = context.world->GetComponent<TransformComponent>(context.selectedEntity))
+                        {
+                            const CurveData  &rmc       = _editingSequence.rootMotionCurve;
+                            const float       cycleDist = rmc.Evaluate(1.0f) - rmc.Evaluate(0.0f);
+                            DirectX::XMFLOAT3 fwd       = trans->GetForward();
+                            _rootMotionBasePos.x += fwd.x * cycleDist;
+                            _rootMotionBasePos.y += fwd.y * cycleDist;
+                            _rootMotionBasePos.z += fwd.z * cycleDist;
+                        }
+                    }
+                }
+                else
+                {
+                    context.animEditTime = dur;
+                    _isPlaying           = false; // 非ループは最後で停止
+                }
             }
             animator->currentTimer = context.animEditTime;
         }
@@ -1050,6 +1084,89 @@ void AnimationSequencerWindow::DrawCurvePane(float animTime)
 
     std::vector<CurveData *> targets = {&_editingSequence.speedCurve, &_editingSequence.rootMotionCurve};
 
+    // ================================================================
+    // ルートモーション編集時専用ツール
+    //   カーブは「進捗→累積前進距離(m)」。0から形を作るのは接線をいじる必要があって
+    //   面倒なので、プリセットボタンで単調増加の綺麗な形をワンクリックで用意する。
+    //   移動距離そのものは、他のキーと同じくキャンバス/インスペクタで末尾キーの
+    //   「値」を直接ドラッグして決める（専用の距離入力は用意しない＝操作がひとつで済む）。
+    // ================================================================
+    if (active == 1)
+    {
+        CurveData &rc = _editingSequence.rootMotionCurve;
+
+        auto rebuildPreset = [](CurveData &c, int type, float dist) {
+            c.keys.clear();
+            CurveKeyframe k0;
+            k0.time  = 0.0f;
+            k0.value = 0.0f;
+            CurveKeyframe k1;
+            k1.time  = 1.0f;
+            k1.value = dist;
+            switch (type)
+            {
+            case 0: // 一定速度（線形）
+                k0.interp = CurveInterp::Linear;
+                k1.interp = CurveInterp::Linear;
+                break;
+            case 1: // イーズイン（ゆっくり踏み出して加速）
+                k0.interp     = CurveInterp::Cubic;
+                k0.tangentOut = TangentMode::Flat;
+                k1.interp     = CurveInterp::Cubic;
+                k1.tangentIn  = TangentMode::Auto;
+                break;
+            case 2: // イーズアウト（勢いよく出て減速）
+                k0.interp     = CurveInterp::Cubic;
+                k0.tangentOut = TangentMode::Auto;
+                k1.interp     = CurveInterp::Cubic;
+                k1.tangentIn  = TangentMode::Flat;
+                break;
+            case 3: // スムーズ（S字：加速→減速）
+                k0.interp     = CurveInterp::Cubic;
+                k0.tangentOut = TangentMode::Flat;
+                k1.interp     = CurveInterp::Cubic;
+                k1.tangentIn  = TangentMode::Flat;
+                break;
+            }
+            c.keys.push_back(k0);
+            c.keys.push_back(k1);
+            c.AssignMissingIds();
+            c.RecalculateTangents();
+        };
+
+        // プリセット生成時の距離は「今のカーブの総移動量」を引き継ぐ（無ければ1.0）。
+        // 生成後、末尾キーの値を通常通りドラッグすれば距離を変えられる。
+        const float keepDist = rc.keys.empty() ? 1.0f : (rc.keys.back().value - rc.keys.front().value);
+
+        ImGui::TextDisabled("形状プリセット:");
+        ImGui::SameLine();
+        if (ImGui::Button("一定"))
+        {
+            rebuildPreset(rc, 0, keepDist);
+            _curveWidget.SetActiveCurve(1);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("イーズイン"))
+        {
+            rebuildPreset(rc, 1, keepDist);
+            _curveWidget.SetActiveCurve(1);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("イーズアウト"))
+        {
+            rebuildPreset(rc, 2, keepDist);
+            _curveWidget.SetActiveCurve(1);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("スムーズ"))
+        {
+            rebuildPreset(rc, 3, keepDist);
+            _curveWidget.SetActiveCurve(1);
+        }
+
+        ImGui::TextDisabled("移動距離は末尾キーの「値」を右のインスペクタかキャンバスでドラッグして決めます。");
+    }
+
     CurveEditorWidget::Options opt;
     opt.height        = 240.0f;
     opt.showInspector = true;
@@ -1063,8 +1180,21 @@ void AnimationSequencerWindow::DrawCurvePane(float animTime)
     // 現在の再生位置での評価値を即読み出し（数値でも確認できる）
     const float sp = _editingSequence.speedCurve.empty() ? 1.0f : _editingSequence.speedCurve.Evaluate(progress);
     const float rm = _editingSequence.rootMotionCurve.empty() ? 0.0f : _editingSequence.rootMotionCurve.Evaluate(progress);
+
+    // ルートモーションの瞬間速度（傾き）も出す：実際の動きの速さが直感的に分かる
+    float rmSpeed = 0.0f;
+    if (!_editingSequence.rootMotionCurve.empty() && dur > 0.0f)
+    {
+        const float      h   = 0.01f;
+        const float      p0  = std::clamp(progress - h, 0.0f, 1.0f);
+        const float      p1  = std::clamp(progress + h, 0.0f, 1.0f);
+        const CurveData &rc2 = _editingSequence.rootMotionCurve;
+        const float      dp  = (p1 - p0) * dur; // 秒
+        if (dp > 1e-5f) rmSpeed = (rc2.Evaluate(p1) - rc2.Evaluate(p0)) / dp;
+    }
+
     ImGui::TextColored(ImVec4(0.6f, 0.9f, 1.0f, 1.0f),
-        "進捗 %.2f  |  速度倍率 %.3f  |  累積前進 %.3f m", progress, sp, rm);
+        "進捗 %.2f  |  速度倍率 %.3f  |  累積前進 %.3f m  |  前進速度 %.2f m/s", progress, sp, rm, rmSpeed);
 
     if (active == 1 && !_editingSequence.rootMotionCurve.empty())
     {
