@@ -529,6 +529,9 @@
     <Filter Include="Shader\Material\Glow">
       <UniqueIdentifier>{a0a81a85-1408-40de-9bd8-6353baff6c1f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shader\Material\Hologram">
+      <UniqueIdentifier>{89c2f0cc-d6e1-41e2-9bf4-e95577026c72}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -2834,6 +2837,12 @@
     </FxCompile>
     <FxCompile Include="Shader\Material\Glow\GlowPS.hlsl">
       <Filter>Shader\Material\Glow</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Hologram\HologramPS.hlsl">
+      <Filter>Shader\Material\Hologram</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Hologram\HologramVS.hlsl">
+      <Filter>Shader\Material\Hologram</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

@@ -5,7 +5,8 @@
         { "name": "Lambert" },
         { "name": "Basic" },
         { "name": "Toon" },
-        { "name": "Glow", "blend": "additive" }
+        { "name": "Glow", "blend": "additive" },
+        { "name": "Hologram", "blend": "additive" }
     ],
     "customShaders": [
         { "name": "Outline",   "class": "OutlineShader" },
