@@ -25,6 +25,8 @@ struct AnimatorComponent {
     // ルートモーション量カーブ（進捗→累積前進距離 m）。nullptr で従来のボーン抽出
     const CurveData *activeRootMotionCurve = nullptr;
 
+    bool lockVerticalRootMotion = false; // Force Root LockでYも固定するか（ステートから伝播）
+
     // --- アニメーション状態（時計） ---
     float currentTimer = 0.0f;
     float playbackSpeed = 1.0f;
@@ -66,6 +68,7 @@ struct AnimatorComponent {
         float                 speed     = 1.0f;    // 再生速度倍率
         const CurveData    *curve           = nullptr; // 速度カーブ（nullで等速）
         const CurveData    *rootMotionCurve = nullptr; // ルートモーション量カーブ（nullでボーン駆動）
+        bool                  lockVerticalRootMotion = false;   // Force Root LockでYも固定するか（ステートから伝播）
     };
 
     /// @brief 新しいシーケンスの再生を開始する（必要ならクロスフェード）。
@@ -136,6 +139,8 @@ struct AnimatorComponent {
         activeRootMotionCurve = params.rootMotionCurve;
         if (!activeRootMotionCurve && sequence && !sequence->rootMotionCurve.empty())
             activeRootMotionCurve = &sequence->rootMotionCurve;
+
+        lockVerticalRootMotion = params.lockVerticalRootMotion;
     }
 
     /// @brief イベント発火用の栞(nextEventIndex)を、現在の再生時刻に合わせて再同期する。

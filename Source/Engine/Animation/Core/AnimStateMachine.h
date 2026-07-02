@@ -88,6 +88,11 @@ struct AnimState
     /// @details Unity の "Apply Root Motion" 相当。遷移時に RootMotionComponent.enabled へ反映。
     bool applyRootMotion = false;
 
+    /// @brief true なら Force Root Lock でルートボーンのYも初期姿勢へピン留めする。
+    ///        地上攻撃など「浮いてほしくない」ステート用。
+    ///        false（既定）は従来通りYをクリップの動きのまま活かす（ジャンプ攻撃等向け）。
+    bool lockVerticalRootMotion = false;
+
     float nodePosX = 0.0f;
     float nodePosY = 0.0f;
 
@@ -205,6 +210,7 @@ inline void to_json(json &j, const AnimState &s)
         {"speedCurveName", s.speedCurveName},
         {"rootMotionCurveName", s.rootMotionCurveName},
         {"applyRootMotion", s.applyRootMotion},
+        {"lockVerticalRootMotion", s.lockVerticalRootMotion},
         {"nodePosX", s.nodePosX},
         {"nodePosY", s.nodePosY},
         {"transitions", s.transitions}};
@@ -225,6 +231,8 @@ inline void from_json(const json &j, AnimState &s)
         j.at("rootMotionCurveName").get_to(s.rootMotionCurveName);
     if (j.contains("applyRootMotion"))
         j.at("applyRootMotion").get_to(s.applyRootMotion);
+    if (j.contains("lockVerticalRootMotion"))
+        j.at("lockVerticalRootMotion").get_to(s.lockVerticalRootMotion);
     if (j.contains("nodePosX"))
         j.at("nodePosX").get_to(s.nodePosX);
     if (j.contains("nodePosY"))

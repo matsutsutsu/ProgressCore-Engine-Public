@@ -92,11 +92,12 @@ void AnimControllerSystem::Update(float dt)
                 if (state.sequence)
                 {
                     animator.Play(state.sequence,
-                        {.blendTime = 0.0f,
-                            .loop   = state.isLoop,
-                            .speed  = state.playbackSpeed,
-                            .curve            = state.speedCurve,
-                            .rootMotionCurve = state.rootMotionCurve
+                        {.blendTime                 = 0.0f,
+                            .loop                   = state.isLoop,
+                            .speed                  = state.playbackSpeed,
+                            .curve                  = state.speedCurve,
+                            .rootMotionCurve        = state.rootMotionCurve,
+                            .lockVerticalRootMotion = state.lockVerticalRootMotion
                         });
                 }
                 break;
@@ -270,11 +271,13 @@ void AnimControllerSystem::Update(float dt)
                     if (nextState.sequence)
                     {
                         animator.Play(nextState.sequence,
-                            {.blendTime = triggeredTransition->blendDuration,
-                                .loop   = nextState.isLoop,
-                                .speed  = nextState.playbackSpeed,
-                                .curve            = nextState.speedCurve,
-                                .rootMotionCurve = nextState.rootMotionCurve});
+                            {.blendTime                 = triggeredTransition->blendDuration,
+                                .loop                   = nextState.isLoop,
+                                .speed                  = nextState.playbackSpeed,
+                                .curve                  = nextState.speedCurve,
+                                .rootMotionCurve        = nextState.rootMotionCurve,
+                                .lockVerticalRootMotion = nextState.lockVerticalRootMotion
+                            });
                     }
                     break;
                 }

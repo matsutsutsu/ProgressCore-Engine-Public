@@ -17,38 +17,73 @@ namespace CCL::ECS {
              return _executionBatches;
          }
 
-        // システムのリストを解析して実行計画（グラフ）を作る
+        // ------------------------------------------------------------
+        // BuildGraph
+        // ------------------------------------------------------------
+        // 目的:
+        //   全 System の依存関係を解析し、
+        //   「どの System を同じフレーム内で並列実行できるか」を判定して
+        //   実行バッチ（フェーズ）を構築する。
+        //
+        // 背景:
+        //   ECS の System は、読み書きするコンポーネントや対象 Chunk が重なると
+        //   並列実行できない（データ競合が発生する）。
+        //   また、Priority（ステージ）が異なる場合は必ず順序を守る必要がある。
+        //   本関数はそれらの制約を満たしつつ、最大限の並列化を行うための
+        //   トポロジカルソートの簡易版である。
+        //
+        // 出力:
+        //   _executionBatches :
+        //      外側 vector = 実行順序（Batch 0 → Batch 1 → ...）
+        //      内側 vector = 同時に並列実行してよい System の集合
+        //
+        // 並列化ルール:
+        //   1. Priority が異なる System は必ず直列化（同じバッチに入れない）
+        //   2. Priority が同じ場合のみ、データ競合チェックを行う
+        //   3. 読み書きする TypeID が競合する場合は直列化
+        //   4. 同じ Chunk を触る場合も直列化
+        //   5. 競合する System より「後のバッチ」に配置する
+        //
+        // ------------------------------------------------------------    
         void BuildGraph(const std::vector<std::unique_ptr<SystemBase>> &systems)
         {
+            // 概要：バッチクリアなどの初期化
             _executionBatches.clear();
             if (systems.empty()) return;
 
             // 各システムが「どのバッチに入るか」を記録する
             std::vector<int> systemBatchIndex(systems.size(), 0);
 
-            // 依存関係（トポロジカルソートの簡易版）
-            // 全システムを走査し、自分より前のシステムとデータ競合があるか調べる
+            // ------------------------------------------------------------
+            // Phase 1: 依存関係解析
+            // ------------------------------------------------------------
+            // 概要：全システムを走査し、自分より前のシステムとデータ競合があるか調べる
             for (size_t i = 0; i < systems.size(); ++i) {
+
+                // 基本的に競合するシステムがなければ
+                // 一番最初に入れたいので -1 で初期化
                 int maxDependencyBatch = -1; // 自分がどこのバッチに入るべきか
 
                 // システム i（今調べているシステム）が、何を読み書きするかを取得
                 auto readsI  = systems[i]->GetReadTypes();
                 auto writesI = systems[i]->GetWriteTypes();
 
-                // 自分より前にあるシステム j と「競合」しないか全部チェックする！
+                // 概要：自分より前にあるシステム j と「競合」しないか全部チェックする！
+                // 説明：今から入れようとしているブロック（i）と
+                // 　　　すでに置かれているブロック（j）の間で
+                // 　　　同じコンポーネントを触るかチェックする
                 for (size_t j = 0; j < i; ++j) {
-                    bool conflict = false;
+                    bool conflict = false; // 競合があるかどうかのフラグ
 
-                    // ==========================================================
-                    // ★ 究極の修正: ステージ（優先度）の境界線を「絶対の壁」にする
-                    // 優先度（Enumの値）が違うシステム同士は、データに関係なく必ず順番を待つ！
-                    // ==========================================================
+
+                    // ステージ（優先度）の境界線を「絶対の壁」にする
+                    // 優先度（Enumの値）が違うシステム同士は、データに関係なく必ず順番を待つ
                     if (systems[i]->GetPriority() != systems[j]->GetPriority()) {
                         conflict = true;
                     }
+                    // --- 優先度（ステージ）が同じ場合のみ、データ競合をチェックして並列化を試みる ---
                     else {
-                        // --- 優先度（ステージ）が同じ場合のみ、データ競合をチェックして並列化を試みる ---
-                        auto readsJ = systems[j]->GetReadTypes();
+                        auto readsJ  = systems[j]->GetReadTypes();
                         auto writesJ = systems[j]->GetWriteTypes();
 
                         bool typeConflict = false;
@@ -77,6 +112,8 @@ namespace CCL::ECS {
 
                     // 競合（またはステージの違い）があった場合、その先輩のバッチ以降に配置する
                     if (conflict) {
+                        // systemBatchIndex[j] は、すでに決まっている j のバッチ番号
+                        // maxDependencyBatch は、今の i が入るべきバッチ番号の候補
                         maxDependencyBatch = (std::max)(maxDependencyBatch, systemBatchIndex[j]);
                     }
                 }

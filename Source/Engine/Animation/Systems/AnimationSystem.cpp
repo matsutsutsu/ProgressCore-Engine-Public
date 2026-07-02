@@ -239,6 +239,8 @@ void AnimationSystem::Update(float dt)
                                 model->ComputeAnimation(prevAnimIndex, prevRootNodeIndex, 0.0f, initPoseB);
                                 animator.poseBufferB[prevRootNodeIndex].position.x = initPoseB.position.x;
                                 animator.poseBufferB[prevRootNodeIndex].position.z = initPoseB.position.z;
+                                if (animator.lockVerticalRootMotion)
+                                    animator.poseBufferB[prevRootNodeIndex].position.y = initPoseB.position.y;
                             }
                         }
                         if (!animator.poseBufferA.empty())
@@ -249,6 +251,8 @@ void AnimationSystem::Update(float dt)
                                 model->ComputeAnimation(animIndex, rootNodeIndex, 0.0f, initPoseA);
                                 animator.poseBufferA[rootNodeIndex].position.x = initPoseA.position.x;
                                 animator.poseBufferA[rootNodeIndex].position.z = initPoseA.position.z;
+                                if (animator.lockVerticalRootMotion) 
+                                    animator.poseBufferA[rootNodeIndex].position.y = initPoseA.position.y;
                             }
                         }
 
@@ -284,6 +288,10 @@ void AnimationSystem::Update(float dt)
                         // Y(高さ)のアニメーションはそのまま活かし、XZ(前後左右)の移動のみを殺す！
                         animator.poseBufferA[rootNodeIndex].position.x = initPoses[rootNodeIndex].position.x;
                         animator.poseBufferA[rootNodeIndex].position.z = initPoses[rootNodeIndex].position.z;
+
+                        // フラグが立っていればYも固定（地上攻撃向け）
+                        if (animator.lockVerticalRootMotion)
+                            animator.poseBufferA[rootNodeIndex].position.y = initPoses[rootNodeIndex].position.y;
                     }
                 }
 
@@ -340,6 +348,10 @@ void AnimationSystem::UpdateManual(CCL::ECS::EntityID entity, float time)
         {
             animator->poseBufferA[rootNodeIndex].position.x = initPoses[rootNodeIndex].position.x;
             animator->poseBufferA[rootNodeIndex].position.z = initPoses[rootNodeIndex].position.z;
+
+             if (animator->lockVerticalRootMotion) 
+                animator->poseBufferA[rootNodeIndex].position.y = initPoses[rootNodeIndex].position.y;
+
         }
     }
 

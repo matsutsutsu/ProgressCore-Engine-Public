@@ -859,6 +859,9 @@ void AnimGraphWindow::DrawStateSettings(int nodeId)
         ImGui::Checkbox("ルートモーション適用 (Apply Root Motion)", &state.applyRootMotion);
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip("このステートで rootMotionCurve による前進を適用する。\nカーブは進捗→累積前進距離(m)。");
+        ImGui::Checkbox("垂直方向もロック (Lock Vertical)", &state.lockVerticalRootMotion);
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("ONにするとルートボーンのYも初期姿勢へ固定します。\n地上攻撃など浮いてほしくないステート向け。\nジャンプ攻撃など意図的な上下動があるステートはOFFのままにしてください。");
         ImGui::DragFloat("再生速度 (Playback Speed)", &state.playbackSpeed, 0.05f, 0.0f, 5.0f);
 
         char curveBuf[128];

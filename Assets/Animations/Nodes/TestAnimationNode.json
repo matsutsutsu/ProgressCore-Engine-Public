@@ -130,6 +130,7 @@
         {
             "applyRootMotion": false,
             "isLoop": true,
+            "lockVerticalRootMotion": false,
             "nodePosX": 76.0,
             "nodePosY": 321.0,
             "playbackSpeed": 1.0,
@@ -172,6 +173,7 @@
         {
             "applyRootMotion": false,
             "isLoop": true,
+            "lockVerticalRootMotion": false,
             "nodePosX": 428.0,
             "nodePosY": 304.0,
             "playbackSpeed": 1.0,
@@ -200,6 +202,7 @@
         {
             "applyRootMotion": false,
             "isLoop": true,
+            "lockVerticalRootMotion": false,
             "nodePosX": 330.0,
             "nodePosY": -14.0,
             "playbackSpeed": 1.0,
@@ -254,6 +257,7 @@
         {
             "applyRootMotion": false,
             "isLoop": false,
+            "lockVerticalRootMotion": false,
             "nodePosX": 757.0,
             "nodePosY": -134.0,
             "playbackSpeed": 2.5,
@@ -282,6 +286,7 @@
         {
             "applyRootMotion": false,
             "isLoop": true,
+            "lockVerticalRootMotion": false,
             "nodePosX": 793.0,
             "nodePosY": 97.0,
             "playbackSpeed": 1.0,
@@ -310,6 +315,7 @@
         {
             "applyRootMotion": false,
             "isLoop": false,
+            "lockVerticalRootMotion": false,
             "nodePosX": 980.0,
             "nodePosY": -6.0,
             "playbackSpeed": 2.0,
@@ -338,6 +344,7 @@
         {
             "applyRootMotion": false,
             "isLoop": false,
+            "lockVerticalRootMotion": false,
             "nodePosX": 518.0,
             "nodePosY": 97.0,
             "playbackSpeed": 2.0,
@@ -380,6 +387,7 @@
         {
             "applyRootMotion": true,
             "isLoop": false,
+            "lockVerticalRootMotion": false,
             "nodePosX": -70.0,
             "nodePosY": 472.0,
             "playbackSpeed": 1.0,
@@ -422,7 +430,8 @@
         {
             "applyRootMotion": true,
             "isLoop": false,
-            "nodePosX": 74.0,
+            "lockVerticalRootMotion": true,
+            "nodePosX": 60.0,
             "nodePosY": 637.0,
             "playbackSpeed": 1.0,
             "rootMotionCurveName": "",

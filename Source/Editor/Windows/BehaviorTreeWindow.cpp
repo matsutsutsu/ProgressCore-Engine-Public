@@ -238,27 +238,26 @@ void BehaviorTreeWindow::CreateNode(EditorBTNodeType type, const std::string& na
 void BehaviorTreeWindow::DrawContents(EditorContext& context) {
     ed::SetCurrentEditor(_nodeContext);
 
-    // カラムを分けて、左側をノードエディタ、右側をインスペクタにする（AnimGraphと同様）
-    ImGui::Columns(2, "BTEditorColumns", true);
-    // =======================================================
-    // ★ 修正: 初回起動時のみ、ノードエディタの幅を75%にする
-    // =======================================================
-    static bool isFirstLayout = true;
-    if (isFirstLayout) {
-        float winWidth = ImGui::GetWindowWidth();
-        // ★ 修正：ウィンドウ幅が正しく計算されている時（10px以上）だけ初期化を行う
-        if (winWidth > 10.0f) {
-            ImGui::SetColumnWidth(0, winWidth * 0.75f);
-            isFirstLayout = false;
-        }
+    // テーブルを2列で作成。BordersInnerV で中央にリサイズ可能な縦線を引く
+    if (ImGui::BeginTable("BTEditorTable", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV))
+    {
+
+        // 初期幅の比率を設定 (左のワークスペースが75%、右のインスペクタが25%)
+        ImGui::TableSetupColumn("Workspace", ImGuiTableColumnFlags_WidthStretch, 0.75f);
+        ImGui::TableSetupColumn("Inspector", ImGuiTableColumnFlags_WidthStretch, 0.25f);
+        ImGui::TableNextRow();
+
+        // --- 左ペイン (ツールバー ＋ ノードエディタ) ---
+        ImGui::TableSetColumnIndex(0);
+        DrawToolbar();
+        DrawNodeWorkspace(context); // ※この中でGetContentRegionAvail()が安全に呼ばれるようになる
+
+        // --- 右ペイン (インスペクタ) ---
+        ImGui::TableSetColumnIndex(1);
+        DrawInspector();
+
+        ImGui::EndTable();
     }
-
-    DrawToolbar();
-    DrawNodeWorkspace(context);
-
-    ImGui::NextColumn();
-    DrawInspector();
-    ImGui::Columns(1);
 }
 
 // ====================================================================
@@ -351,13 +350,27 @@ void BehaviorTreeWindow::UpdateExecutionOrder() {
  * @brief ノードエディタ空間（キャンバス）の描画と、リンク操作の監視を行う
  */
 void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext& context) {
+
     // リンクやノードに変更があった時だけソート処理を走らせる
     if (_executionOrderDirty) {
         UpdateExecutionOrder();
         _executionOrderDirty = false;
     }
 
-    ed::Begin("BT_Node_Workspace");
+    // =========================================================================
+    //  ゼロ除算・無限ループを防ぐための究極の防波堤
+    // =========================================================================
+    ImVec2 avail = ImGui::GetContentRegionAvail();
+    if (avail.x <= 1.0f || avail.y <= 1.0f)
+    {
+        return; // 描画領域が潰れているフレームはノードエディタを起動しない
+    }
+
+    ed::SetCurrentEditor(_nodeContext);
+
+    // ImVec2(0.0f, 0.0f) をやめ、安全が保証されたサイズを明示的に渡す
+    ed::Begin("My Node Editor", avail);
+
 
     // =======================================================
     //  選択中のエンティティから、実行中のAI状態（デバッグ配列）を取得
