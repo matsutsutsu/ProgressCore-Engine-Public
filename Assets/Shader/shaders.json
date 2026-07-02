@@ -1,0 +1,14 @@
+{
+    "materialShaders": [
+        { "name": "PBR" },
+        { "name": "Phong" },
+        { "name": "Lambert" },
+        { "name": "Basic" },
+        { "name": "Toon" }
+    ],
+    "customShaders": [
+        { "name": "Outline",   "class": "OutlineShader" },
+        { "name": "ShadowMap", "class": "ShadowMapShader" },
+        { "name": "Particle",  "class": "ParticleShader" }
+    ]
+}

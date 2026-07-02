@@ -1764,6 +1764,9 @@
     <ClInclude Include="Source\Editor\Utils\CurveEditorWidget.h">
       <Filter>Source\Editor\Utils</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Shader\ShaderManifest.h">
+      <Filter>Source\Engine\Graphics\Shader</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2642,6 +2645,9 @@
     <ClCompile Include="Source\Editor\Utils\CurveEditorWidget.cpp">
       <Filter>Source\Editor\Utils</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Shader\ShaderManifest.cpp">
+      <Filter>Source\Engine\Graphics\Shader</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shader\Common\Common.hlsli">
@@ -2778,7 +2784,7 @@
     <FxCompile Include="Shader\Material\Dissolve\DissolvePS.hlsl">
       <Filter>Shader\Material\DissolvePS</Filter>
     </FxCompile>
-    <FxCompile Include="Shader\Material\PBR\PBR_PS.hlsl">
+    <FxCompile Include="Shader\Material\PBR\PBRPS.hlsl">
       <Filter>Shader\Material\PBR</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Pass\Outline\OutlineVS.hlsl">
@@ -2793,7 +2799,7 @@
     <FxCompile Include="Shader\Material\Phong\PhongVS.hlsl">
       <Filter>Shader\Material\Phong</Filter>
     </FxCompile>
-    <FxCompile Include="Shader\Material\PBR\PBR_VS.hlsl">
+    <FxCompile Include="Shader\Material\PBR\PBRVS.hlsl">
       <Filter>Shader\Material\PBR</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\Lambert\LambertVS.hlsl">

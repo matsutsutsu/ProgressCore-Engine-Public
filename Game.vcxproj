@@ -528,6 +528,7 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\IPostEffect.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\PostProcessManager.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\ToneMapEffect.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\ShaderManifest.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderReflection.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderRegistry.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderResources.h" />
@@ -1342,6 +1343,7 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\DistortionEffect.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\PostProcessManager.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\ToneMapEffect.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Shader\ShaderManifest.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\ShaderReflection.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Core\EnvironmentSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Core\MaterialSetupSystem.cpp" />
@@ -1572,12 +1574,12 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
     </FxCompile>
-    <FxCompile Include="Shader\Material\PBR\PBR_PS.hlsl">
+    <FxCompile Include="Shader\Material\PBR\PBRPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
     </FxCompile>
-    <FxCompile Include="Shader\Material\PBR\PBR_VS.hlsl">
+    <FxCompile Include="Shader\Material\PBR\PBRVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>

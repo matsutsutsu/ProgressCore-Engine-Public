@@ -1,4 +1,5 @@
 #include "Graphics.h"
+#include "Engine/Graphics/Shader/ShaderManifest.h"
 #include "Engine/Core/Math/Misc.h"
 #include "Engine/Graphics/RHI/Camera.h"
 
@@ -50,28 +51,32 @@ void Graphics::Initialize(HWND hWnd)
     // ---- Phase 3: シェーダー登録 ----
     auto& reg = ShaderRegistry::Instance();
 
-    reg.RegisterShader<ErrorShader>("Error"_hash);  
+    //reg.RegisterShader<ErrorShader>("Error"_hash);  
 
-    reg.RegisterMaterialShader("PBR"_hash,
-        "Assets/Shader/PBR_VS.cso", L"Shader/Material/PBR/PBR_VS.hlsl",
-        "Assets/Shader/PBR_PS.cso", L"Shader/Material/PBR/PBR_PS.hlsl");
-    reg.RegisterMaterialShader("Phong"_hash,
-        "Assets/Shader/PhongVS.cso", L"Shader/Material/Phong/PhongVS.hlsl",
-        "Assets/Shader/PhongPS.cso", L"Shader/Material/Phong/PhongPS.hlsl");
-    reg.RegisterMaterialShader("Lambert"_hash,
-        "Assets/Shader/LambertVS.cso", L"Shader/Material/Lambert/LambertVS.hlsl",
-        "Assets/Shader/LambertPS.cso", L"Shader/Material/Lambert/LambertPS.hlsl");
-    reg.RegisterMaterialShader("Basic"_hash,
-        "Assets/Shader/BasicVS.cso", L"Shader/Material/Basic/BasicVS.hlsl",
-        "Assets/Shader/BasicPS.cso", L"Shader/Material/Basic/BasicPS.hlsl");
-    reg.RegisterMaterialShader("Toon"_hash,
-        "Assets/Shader/ToonVS.cso", L"Shader/Material/Toon/ToonVS.hlsl",
-        "Assets/Shader/ToonPS.cso", L"Shader/Material/Toon/ToonPS.hlsl");
-    reg.RegisterShader<OutlineShader>("Outline"_hash);
-    reg.RegisterShader<ShadowMapShader>("ShadowMap"_hash);
+    //reg.RegisterMaterialShader("PBR"_hash,
+    //    "Assets/Shader/PBR_VS.cso", L"Shader/Material/PBR/PBR_VS.hlsl",
+    //    "Assets/Shader/PBR_PS.cso", L"Shader/Material/PBR/PBR_PS.hlsl");
+    //reg.RegisterMaterialShader("Phong"_hash,
+    //    "Assets/Shader/PhongVS.cso", L"Shader/Material/Phong/PhongVS.hlsl",
+    //    "Assets/Shader/PhongPS.cso", L"Shader/Material/Phong/PhongPS.hlsl");
+    //reg.RegisterMaterialShader("Lambert"_hash,
+    //    "Assets/Shader/LambertVS.cso", L"Shader/Material/Lambert/LambertVS.hlsl",
+    //    "Assets/Shader/LambertPS.cso", L"Shader/Material/Lambert/LambertPS.hlsl");
+    //reg.RegisterMaterialShader("Basic"_hash,
+    //    "Assets/Shader/BasicVS.cso", L"Shader/Material/Basic/BasicVS.hlsl",
+    //    "Assets/Shader/BasicPS.cso", L"Shader/Material/Basic/BasicPS.hlsl");
+    //reg.RegisterMaterialShader("Toon"_hash,
+    //    "Assets/Shader/ToonVS.cso", L"Shader/Material/Toon/ToonVS.hlsl",
+    //    "Assets/Shader/ToonPS.cso", L"Shader/Material/Toon/ToonPS.hlsl");
+    //reg.RegisterShader<OutlineShader>("Outline"_hash);
+    //reg.RegisterShader<ShadowMapShader>("ShadowMap"_hash);
 
-    // Graphics.cpp の Phase 3 に追加
-    reg.RegisterShader<ParticleShader>("Particle"_hash);
+    //// Graphics.cpp の Phase 3 に追加
+    //reg.RegisterShader<ParticleShader>("Particle"_hash);
+
+    // マテリアルは Assets/Shader/shaders.json に1行足すだけ（C++・再ビルド不要）
+    ShaderManifest::LoadAndRegister("Assets/Shader/shaders.json",
+        ShaderRegistry::Instance());
 
     // ---- Phase 4: レンダリングパイプライン構築 ----
     SetupRenderPipeline();
