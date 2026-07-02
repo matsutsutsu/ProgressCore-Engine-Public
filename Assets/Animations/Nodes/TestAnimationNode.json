@@ -430,8 +430,8 @@
         {
             "applyRootMotion": true,
             "isLoop": false,
-            "lockVerticalRootMotion": true,
-            "nodePosX": 60.0,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 58.0,
             "nodePosY": 637.0,
             "playbackSpeed": 1.0,
             "rootMotionCurveName": "",

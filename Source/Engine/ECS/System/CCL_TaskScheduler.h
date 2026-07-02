@@ -83,23 +83,38 @@ namespace CCL::ECS {
                     }
                     // --- 優先度（ステージ）が同じ場合のみ、データ競合をチェックして並列化を試みる ---
                     else {
+                        // 相手システムの読み書きする TypeID を取得
                         auto readsJ  = systems[j]->GetReadTypes();
                         auto writesJ = systems[j]->GetWriteTypes();
 
                         bool typeConflict = false;
                         for (auto w : writesI) {
-                            if (Contains(readsJ, w) || Contains(writesJ, w)) typeConflict = true;
+                            if (Contains(readsJ, w) || Contains(writesJ, w))
+                            {
+                                typeConflict = true;
+                                break;
+                            }
                         }
                         for (auto r : readsI) {
-                            if (Contains(writesJ, r)) typeConflict = true;
+                            if (Contains(writesJ, r))
+                            {
+                                typeConflict = true;
+                                break;
+                            }
                         }
 
+                        // 型が競合しても、Chunk が完全に独立していれば並列化可能
+                        // なので、Chunk の競合もチェックする
                         if (typeConflict) {
+                            // 互いのシステムの処理する Chunk を取得して、同じ Chunk があるかを調べる
                             const auto& chunksI = systems[i]->GetTargetChunks();
                             const auto& chunksJ = systems[j]->GetTargetChunks();
 
+                            // 自分が処理するChunkを取り出す
                             for (CCL::ECS::Core::Chunk* cI : chunksI) {
+                                // 相手が処理するChunkを取り出す
                                 for (CCL::ECS::Core::Chunk* cJ : chunksJ) {
+                                    // 同じChunkを触る場合は競合とみなす
                                     if (cI == cJ) {
                                         conflict = true;
                                         break;

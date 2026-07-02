@@ -820,7 +820,14 @@ void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, Animator
         }
     }
 
-    if (curFrame != prevFrame)
+    // ★ 修正: curFrame != prevFrame は「ImSequencerウィジェット内部の量子化/丸め」だけでも
+    //   毎フレーム発生しうる（ユーザーが何も触っていなくても）。これを無条件に
+    //   「ユーザーがスクラブした」とみなして animEditTime を整数フレームへ強制スナップし
+    //   さらに _isPlaying を止めてしまうと、再生中に不規則な停止と時間巻き戻り/早送りが
+    //   起き、体感で「速度が速くなったり遅くなったりする」不具合になっていた。
+    //   本物のドラッグ操作（左マウスボタン押下中）のときだけ反応するようにし、
+    //   通常再生中はスムーズな時間進行（上の _isPlaying ブロック）を唯一の権威にする。
+    if (curFrame != prevFrame && ImGui::IsMouseDown(ImGuiMouseButton_Left))
     {
         _isPlaying             = false;
         context.animEditTime   = FrameToSec(curFrame);

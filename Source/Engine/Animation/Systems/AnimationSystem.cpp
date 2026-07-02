@@ -8,6 +8,7 @@
 #include "Engine/Core/Math/CurveData.h"
 
 #include "Engine/Graphics/Components/Core/ModelComponent.h"
+#include "Engine/Graphics/Resource/ModelResource.h"
 #include "Engine/Animation/Components/AnimatorComponent.h"
 #include "Engine/Animation/Components/RootMotionComponent.h"
 #include "Engine/Timer/TimeState.h"
@@ -230,6 +231,14 @@ void AnimationSystem::Update(float dt)
                         //   リグでは遷移ブレンド中だけ焼き込み前進が漏れ、ブレンド終了で
                         //   その場へ戻る「前に出てすぐ戻る」不具合になる。
                         //   過去バッファは別クリップ(=別のルートボーン番号)なので個別に特定する。
+                        //
+                        //   ★ Y方向のピン基準について:
+                        //   lockVerticalRootMotion 時は「そのクリップ自身の0秒目」ではなく
+                        //   ModelResource のバインドポーズ（実行中に一切変化しない静的な基準姿勢）
+                        //   を使う。攻撃クリップの0秒目が既に膝を曲げた姿勢から始まっていると、
+                        //   そこを基準にした瞬間アニメ全体がその分浮く/沈むため
+                        //   （"攻撃モーションで足が浮く"不具合の直接原因）。
+                        const ModelResource *modelRes = model->GetResource();
                         if (!animator.poseBufferB.empty())
                         {
                             const int prevRootNodeIndex = model->FindRealRootMotionNodeIndex(prevAnimIndex);
@@ -239,8 +248,10 @@ void AnimationSystem::Update(float dt)
                                 model->ComputeAnimation(prevAnimIndex, prevRootNodeIndex, 0.0f, initPoseB);
                                 animator.poseBufferB[prevRootNodeIndex].position.x = initPoseB.position.x;
                                 animator.poseBufferB[prevRootNodeIndex].position.z = initPoseB.position.z;
-                                if (animator.lockVerticalRootMotion)
-                                    animator.poseBufferB[prevRootNodeIndex].position.y = initPoseB.position.y;
+                                if (animator.lockVerticalRootMotion && modelRes &&
+                                    prevRootNodeIndex < (int)modelRes->GetNodes().size())
+                                    animator.poseBufferB[prevRootNodeIndex].position.y =
+                                        modelRes->GetNodes()[prevRootNodeIndex].translate.y;
                             }
                         }
                         if (!animator.poseBufferA.empty())
@@ -251,8 +262,10 @@ void AnimationSystem::Update(float dt)
                                 model->ComputeAnimation(animIndex, rootNodeIndex, 0.0f, initPoseA);
                                 animator.poseBufferA[rootNodeIndex].position.x = initPoseA.position.x;
                                 animator.poseBufferA[rootNodeIndex].position.z = initPoseA.position.z;
-                                if (animator.lockVerticalRootMotion) 
-                                    animator.poseBufferA[rootNodeIndex].position.y = initPoseA.position.y;
+                                if (animator.lockVerticalRootMotion && modelRes &&
+                                    rootNodeIndex < (int)modelRes->GetNodes().size())
+                                    animator.poseBufferA[rootNodeIndex].position.y =
+                                        modelRes->GetNodes()[rootNodeIndex].translate.y;
                             }
                         }
 
@@ -289,9 +302,18 @@ void AnimationSystem::Update(float dt)
                         animator.poseBufferA[rootNodeIndex].position.x = initPoses[rootNodeIndex].position.x;
                         animator.poseBufferA[rootNodeIndex].position.z = initPoses[rootNodeIndex].position.z;
 
-                        // フラグが立っていればYも固定（地上攻撃向け）
+                        // Y(高さ)のアニメーションは既定では活かすが、lockVerticalRootMotion時は
+                        // モデルのバインドポーズ（実行中不変の基準姿勢）へピン留めする。
+                        // クリップ自身の0秒目を基準にすると、そこが既に膝を曲げた姿勢の場合
+                        // アニメ全体がその分浮く/沈む（"攻撃で足が浮く"不具合の原因）ため、
+                        // どのクリップでも同じ高さになるバインドポーズを基準にする。
                         if (animator.lockVerticalRootMotion)
-                            animator.poseBufferA[rootNodeIndex].position.y = initPoses[rootNodeIndex].position.y;
+                        {
+                            const ModelResource *modelRes = model->GetResource();
+                            if (modelRes && rootNodeIndex < (int)modelRes->GetNodes().size())
+                                animator.poseBufferA[rootNodeIndex].position.y =
+                                    modelRes->GetNodes()[rootNodeIndex].translate.y;
+                        }
                     }
                 }
 
@@ -349,9 +371,15 @@ void AnimationSystem::UpdateManual(CCL::ECS::EntityID entity, float time)
             animator->poseBufferA[rootNodeIndex].position.x = initPoses[rootNodeIndex].position.x;
             animator->poseBufferA[rootNodeIndex].position.z = initPoses[rootNodeIndex].position.z;
 
-             if (animator->lockVerticalRootMotion) 
-                animator->poseBufferA[rootNodeIndex].position.y = initPoses[rootNodeIndex].position.y;
-
+            // クリップ自身の0秒目ではなく、モデルのバインドポーズを高さの基準にする
+            // （実機の Update() と同じ基準に揃え、プレビューと実機の見た目を一致させる）。
+            if (animator->lockVerticalRootMotion)
+            {
+                const ModelResource *modelRes = model->GetResource();
+                if (modelRes && rootNodeIndex < (int)modelRes->GetNodes().size())
+                    animator->poseBufferA[rootNodeIndex].position.y =
+                        modelRes->GetNodes()[rootNodeIndex].translate.y;
+            }
         }
     }
 

@@ -12,6 +12,7 @@
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include <array>
 #include <algorithm> // std::lower_bound用
+#include <cctype>
 
 // ヘルパー関数：キーフレームの二分探索と補間率の計算
 template <typename T>
@@ -47,18 +48,18 @@ void EvaluateKeyframes(const std::vector<T> &keyframes, float time, float &outRa
 }
 
 // コンストラクタ
-Model::Model(ID3D11Device* device, const char* filename, float sampleRate)
+Model::Model(ID3D11Device *device, const char *filename, float sampleRate)
     : filePath(filename)
 {
     // ファイル名が空の場合（動的生成モード）
     // ファイル読み込みを行わず、空のリソースだけ作って終了する
-    if (filePath.empty()) {
+    if (filePath.empty())
+    {
         // LoadModelResourceではなく、AllocateEmptyModelResourceを呼ぶ。
         // これで、Load()でクラッシュすることも、他の動的モデルとメモリが混ざることも絶対に無くなります。
         resource = ResourceManager::Instance().AllocateEmptyModelResource();
         return;
     }
-
 
     resource = ResourceManager::Instance().LoadModelResource(filename);
     if (!resource.IsValid())
@@ -69,22 +70,22 @@ Model::Model(ID3D11Device* device, const char* filename, float sampleRate)
 
     // ModelResourceに格納された階層情報（Nodes）を
     // Modelのインスタンスにコピーして親子関係を再構築する
-    const std::vector<ModelResource::Node>& resNodes = ResourceManager::Instance().GetModel(resource)->GetNodes();
+    const std::vector<ModelResource::Node> &resNodes = ResourceManager::Instance().GetModel(resource)->GetNodes();
     nodes.resize(resNodes.size());
     for (size_t i = 0; i < nodes.size(); ++i)
     {
-        const ModelResource::Node& src = resNodes.at(i);
-        Node& dst = nodes.at(i);
+        const ModelResource::Node &src = resNodes.at(i);
+        Node                      &dst = nodes.at(i);
 
         if (src.parentIndex >= 0)
         {
             dst.parent = &nodes.at(src.parentIndex);
         }
 
-        dst.name = src.name;
+        dst.name     = src.name;
         dst.position = src.translate;
         dst.rotation = src.rotate;
-        dst.scale = src.scale;
+        dst.scale    = src.scale;
 
         dst.children.clear();
 
@@ -96,7 +97,7 @@ Model::Model(ID3D11Device* device, const char* filename, float sampleRate)
     // ② 親子関係の再構築
     for (size_t i = 0; i < nodes.size(); ++i)
     {
-        const auto& src = resNodes[i];
+        const auto &src = resNodes[i];
         if (src.parentIndex >= 0 && src.parentIndex < (int)nodes.size())
         {
             nodes[i].parent = &nodes[src.parentIndex];
@@ -105,14 +106,14 @@ Model::Model(ID3D11Device* device, const char* filename, float sampleRate)
     }
 
     // リソース側のマテリアルを参照
-    const std::vector<ModelResource::Material>& resMaterials = ResourceManager::Instance().GetModel(resource)->GetMaterials();
+    const std::vector<ModelResource::Material> &resMaterials = ResourceManager::Instance().GetModel(resource)->GetMaterials();
     // モデル側マテリアルを用意
     materials.resize(resMaterials.size());
 
     for (size_t i = 0; i < resMaterials.size(); ++i)
     {
-        const auto& src = resMaterials[i];
-        auto& dst = materials[i];
+        const auto &src = resMaterials[i];
+        auto       &dst = materials[i];
 
         // ---- 参照を保存 ----
         dst.name = src.name;
@@ -132,14 +133,14 @@ Model::Model(ID3D11Device* device, const char* filename, float sampleRate)
         dst.data->shaderHash = "PBR"_hash; // デフォルト
 
         // アルファモードのコピー（型変換）
-        dst.data->alphaMode = static_cast<AlphaMode>(src.alphaMode);
+        dst.data->alphaMode   = static_cast<AlphaMode>(src.alphaMode);
         dst.data->alphaCutoff = src.alphaCutoff;
 
         // 1. カラー情報
         dst.data->SetColor("materialColor"_hash, src.baseColor); // 従来のPhong/Basicシェーダー用
         dst.data->SetColor("baseColor"_hash, src.baseColor);     // 新しいPBRシェーダー用
         // emissiveColor (float3) を float4 に変換して格納
-        dst.data->SetColor("emissiveColor"_hash, { src.emissiveColor.x, src.emissiveColor.y, src.emissiveColor.z, 1.0f });
+        dst.data->SetColor("emissiveColor"_hash, {src.emissiveColor.x, src.emissiveColor.y, src.emissiveColor.z, 1.0f});
 
         // 2. スカラー情報
         dst.data->SetScalar("metalness"_hash, src.metalness);
@@ -148,7 +149,7 @@ Model::Model(ID3D11Device* device, const char* filename, float sampleRate)
         dst.data->SetScalar("alphaCutoff"_hash, src.alphaCutoff);
 
         // 3. ToonShader用のデフォルト値（これがないと黒くなる）
-        dst.data->SetColor("rimColor"_hash, { 1.0f, 1.0f, 1.0f, 1.0f });
+        dst.data->SetColor("rimColor"_hash, {1.0f, 1.0f, 1.0f, 1.0f});
         dst.data->SetScalar("rimPower"_hash, 5.0f);
         dst.data->SetScalar("rimIntensity"_hash, 1.0f);
 
@@ -156,61 +157,66 @@ Model::Model(ID3D11Device* device, const char* filename, float sampleRate)
         dst.data->SetTexture("RampTexture"_hash, ResourceManager::Instance().LoadTexture("Assets/Textures/Shader/ramp.png"));
 
         // OutlineShader用のデフォルト値
-        dst.data->SetColor("color"_hash, { 0.0f, 0.0f, 0.0f, 1.0f }); // 黒い線
-        dst.data->SetScalar("size"_hash, 0.02f);                      // 太さ
+        dst.data->SetColor("color"_hash, {0.0f, 0.0f, 0.0f, 1.0f}); // 黒い線
+        dst.data->SetScalar("size"_hash, 0.02f);                    // 太さ
 
         // 4. テクスチャ情報
-        if (src.baseMap) {
+        if (src.baseMap)
+        {
             auto handle = ResourceManager::Instance().RegisterTexture(src.baseMap);
             dst.data->SetTexture("DiffuseMap"_hash, handle);
             dst.data->SetTexture("AlbedoMap"_hash, handle);
             dst.data->SetScalar("useAlbedoMap"_hash, 1.0f); // ★フラグON
         }
-        else {
+        else
+        {
             dst.data->SetScalar("useAlbedoMap"_hash, 0.0f); // ★フラグOFF
         }
 
-        if (src.normalMap) {
+        if (src.normalMap)
+        {
             dst.data->SetTexture("NormalMap"_hash, ResourceManager::Instance().RegisterTexture(src.normalMap));
             dst.data->SetScalar("useNormalMap"_hash, 1.0f);
         }
-        else {
+        else
+        {
             dst.data->SetScalar("useNormalMap"_hash, 0.0f);
         }
 
-        if (src.emissiveMap) {
+        if (src.emissiveMap)
+        {
             dst.data->SetTexture("EmissiveMap"_hash, ResourceManager::Instance().RegisterTexture(src.emissiveMap));
         }
 
-        if (src.occlusionMap) {
+        if (src.occlusionMap)
+        {
             dst.data->SetTexture("OcclusionMap"_hash, ResourceManager::Instance().RegisterTexture(src.occlusionMap));
         }
 
-        if (src.metalnessRoughnessMap) {
+        if (src.metalnessRoughnessMap)
+        {
             auto handle = ResourceManager::Instance().RegisterTexture(src.metalnessRoughnessMap);
             dst.data->SetTexture("MetalnessRoughnessMap"_hash, handle);
             dst.data->SetTexture("MetalRoughMap"_hash, handle);
             dst.data->SetScalar("useMetalRoughMap"_hash, 1.0f); // ★フラグON
         }
-        else {
+        else
+        {
             dst.data->SetScalar("useMetalRoughMap"_hash, 0.0f); // ★フラグOFF
         }
-
-
     }
 
-const std::vector<ModelResource::Mesh>& resMeshes = ResourceManager::Instance().GetModel(resource)->GetMeshes();
+    const std::vector<ModelResource::Mesh> &resMeshes = ResourceManager::Instance().GetModel(resource)->GetMeshes();
     meshes.resize(resMeshes.size());
     for (size_t i = 0; i < resMeshes.size(); ++i)
     {
-        const auto& src = resMeshes[i];
-        auto& dst = meshes[i];
+        const auto &src = resMeshes[i];
+        auto       &dst = meshes[i];
 
         // ---- 参照を保存 ----
-        dst.data = &src;
-        dst.material = &materials.at(src.materialIndex);  // ここでComponentを持つMaterialへの参照が入る
+        dst.data     = &src;
+        dst.material = &materials.at(src.materialIndex); // ここでComponentを持つMaterialへの参照が入る
 
-    
         // ModelResource::Mesh はそのメッシュが属する nodeIndex を持っている [cite: 15]
         if (src.nodeIndex >= 0 && src.nodeIndex < (int)nodes.size())
         {
@@ -222,16 +228,13 @@ const std::vector<ModelResource::Mesh>& resMeshes = ResourceManager::Instance().
         }
 
         dst.bones.reserve(src.bones.size());
-        for (const ModelResource::Bone& srcBone : src.bones)
+        for (const ModelResource::Bone &srcBone : src.bones)
         {
-            Model::Bone& dstBone = dst.bones.emplace_back();
-            dstBone.data = &srcBone;
-            dstBone.node = &nodes.at(srcBone.nodeIndex);
+            Model::Bone &dstBone = dst.bones.emplace_back();
+            dstBone.data         = &srcBone;
+            dstBone.node         = &nodes.at(srcBone.nodeIndex);
         }
     }
-
-
-
 
     // 行列初期化
     DirectX::XMFLOAT4X4 worldTransform;
@@ -240,11 +243,14 @@ const std::vector<ModelResource::Mesh>& resMeshes = ResourceManager::Instance().
 }
 
 // アニメーションインデックス取得
-int Model::GetAnimationIndex(const char* name) const
+int Model::GetAnimationIndex(const char *name) const
 {
-    if (!resource.IsValid()) { return -1; } // IsValidに変更
+    if (!resource.IsValid())
+    {
+        return -1;
+    } // IsValidに変更
 
-    const auto& animations = ResourceManager::Instance().GetModel(resource)->GetAnimations();
+    const auto &animations = ResourceManager::Instance().GetModel(resource)->GetAnimations();
 
     for (size_t animationIndex = 0; animationIndex < animations.size(); ++animationIndex)
     {
@@ -257,7 +263,7 @@ int Model::GetAnimationIndex(const char* name) const
 }
 
 // ノードインデックス取得
-int Model::GetNodeIndex(const char* name) const
+int Model::GetNodeIndex(const char *name) const
 {
     for (size_t nodeIndex = 0; nodeIndex < nodes.size(); ++nodeIndex)
     {
@@ -270,15 +276,14 @@ int Model::GetNodeIndex(const char* name) const
 }
 
 // トランスフォーム更新処理
-void Model::UpdateTransform(const DirectX::XMFLOAT4X4& worldTransform)
+void Model::UpdateTransform(const DirectX::XMFLOAT4X4 &worldTransform)
 {
     DirectX::XMMATRIX ParentWorldTransform = DirectX::XMLoadFloat4x4(&worldTransform);
 
-    const std::vector<ModelResource::Node>& resNodes = ResourceManager::Instance().GetModel(resource)->GetNodes();
-   
+    const std::vector<ModelResource::Node> &resNodes = ResourceManager::Instance().GetModel(resource)->GetNodes();
 
     int index = 0;
-    for (Node& node : nodes)
+    for (Node &node : nodes)
     {
         const ModelResource::Node &n = resNodes[index];
         if (node.rotation.x != n.rotate.x ||
@@ -291,9 +296,9 @@ void Model::UpdateTransform(const DirectX::XMFLOAT4X4& worldTransform)
         index++;
 
         // ローカル行列算出
-        DirectX::XMMATRIX S = DirectX::XMMatrixScaling(node.scale.x, node.scale.y, node.scale.z);
-        DirectX::XMMATRIX R = DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&node.rotation));
-        DirectX::XMMATRIX T = DirectX::XMMatrixTranslation(node.position.x, node.position.y, node.position.z);
+        DirectX::XMMATRIX S              = DirectX::XMMatrixScaling(node.scale.x, node.scale.y, node.scale.z);
+        DirectX::XMMATRIX R              = DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&node.rotation));
+        DirectX::XMMATRIX T              = DirectX::XMMatrixTranslation(node.position.x, node.position.y, node.position.z);
         DirectX::XMMATRIX LocalTransform = S * R * T;
 
         // グローバル行列算出
@@ -350,10 +355,23 @@ void Model::ComputeAnimation(int animationIndex, int nodeIndex, float time, Node
     }
 
     // ★ Translation Retargeting の実装（プロポーション崩壊対策）
-    // Root(0) と Pelvis(通常1または特定の名前) 以外は、アニメーションの位置移動を無視して
+    // Root(0) と Pelvis/Hips 系ボーン以外は、アニメーションの位置移動を無視して
     // モデル本来の骨の長さ(bindNode.position)を強制的に上書き適用する。
-    // ※ノード構造に合わせて isRootOrPelvis の判定条件は調整すること
-    bool isRootOrPelvis = (nodeIndex == 0 || bindNode.name == "Pelvis" || bindNode.name == "root");
+    // ※ 以前は "Pelvis"/"root" と完全一致するボーン名しか対象にしておらず、
+    //   リグの命名規則（例: "Hips", "mixamorig:Hips", "Bip01_Pelvis" 等）が
+    //   これと違うだけで腰の上下動チャンネルがまるごと握りつぶされ、
+    //   「膝は曲がるのに腰だけ動かず脚が地面に届かない(浮いて見える)」不具合の
+    //   直接原因になっていた。大文字小文字を無視した部分一致に緩和する。
+    auto containsCI = [](const std::string &name, const char *needle) {
+        std::string lower = name;
+        std::transform(lower.begin(), lower.end(), lower.begin(),
+            [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        return lower.find(needle) != std::string::npos;
+    };
+    bool isRootOrPelvis = (nodeIndex == 0) ||
+                          containsCI(bindNode.name, "pelvis") ||
+                          containsCI(bindNode.name, "hips") ||
+                          containsCI(bindNode.name, "root");
     if (!isRootOrPelvis)
     {
         nodePose.position = bindNode.position;
@@ -383,7 +401,7 @@ void Model::ComputeAnimation(int animationIndex, int nodeIndex, float time, Node
 }
 
 // アニメーション計算
-void Model::ComputeAnimation(int animationIndex, float time, std::vector<NodePose>& nodePoses) const
+void Model::ComputeAnimation(int animationIndex, float time, std::vector<NodePose> &nodePoses) const
 {
     if (nodePoses.size() != nodes.size())
     {
@@ -396,21 +414,21 @@ void Model::ComputeAnimation(int animationIndex, float time, std::vector<NodePos
 }
 
 // ノードポーズ設定
-void Model::SetNodePoses(const std::vector<NodePose>& nodePoses)
+void Model::SetNodePoses(const std::vector<NodePose> &nodePoses)
 {
     for (size_t nodeIndex = 0; nodeIndex < nodes.size(); ++nodeIndex)
     {
-        const NodePose& pose = nodePoses.at(nodeIndex);
-        Node& node = nodes.at(nodeIndex);
+        const NodePose &pose = nodePoses.at(nodeIndex);
+        Node           &node = nodes.at(nodeIndex);
 
         node.position = pose.position;
         node.rotation = pose.rotation;
-        node.scale = pose.scale;
+        node.scale    = pose.scale;
     }
 }
 
 // ノードポーズ取得
-void Model::GetNodePoses(std::vector<NodePose>& nodePoses) const
+void Model::GetNodePoses(std::vector<NodePose> &nodePoses) const
 {
     if (nodePoses.size() != nodes.size())
     {
@@ -418,58 +436,57 @@ void Model::GetNodePoses(std::vector<NodePose>& nodePoses) const
     }
     for (size_t nodeIndex = 0; nodeIndex < nodes.size(); ++nodeIndex)
     {
-        const Node& node = nodes.at(nodeIndex);
-        NodePose& pose = nodePoses.at(nodeIndex);
+        const Node &node = nodes.at(nodeIndex);
+        NodePose   &pose = nodePoses.at(nodeIndex);
 
         pose.position = node.position;
         pose.rotation = node.rotation;
-        pose.scale = node.scale;
+        pose.scale    = node.scale;
     }
 }
 
 // アニメーション補間処理
 void Model::BlendAnimations(
-    const std::vector<NodePose>& animation0,
-    const std::vector<NodePose>& animation1,
-    float blendRate,
-    std::vector<NodePose>& result)
+    const std::vector<NodePose> &animation0,
+    const std::vector<NodePose> &animation1,
+    float                        blendRate,
+    std::vector<NodePose>       &result)
 {
     size_t nodeCount = animation0.size();
     result.resize(nodeCount);
 
     for (size_t i = 0; i < nodeCount; ++i)
     {
-        const Model::NodePose& pose0 = animation0[i];
-        const Model::NodePose& pose1 = animation1[i];
-        Model::NodePose& blendedPose = result[i];
+        const Model::NodePose &pose0       = animation0[i];
+        const Model::NodePose &pose1       = animation1[i];
+        Model::NodePose       &blendedPose = result[i];
 
         // 位置の線形補間
-        DirectX::XMVECTOR pos0 = DirectX::XMLoadFloat3(&pose0.position);
-        DirectX::XMVECTOR pos1 = DirectX::XMLoadFloat3(&pose1.position);
+        DirectX::XMVECTOR pos0       = DirectX::XMLoadFloat3(&pose0.position);
+        DirectX::XMVECTOR pos1       = DirectX::XMLoadFloat3(&pose1.position);
         DirectX::XMVECTOR blendedPos = DirectX::XMVectorLerp(pos0, pos1, blendRate);
         DirectX::XMStoreFloat3(&blendedPose.position, blendedPos);
 
         // 回転のスフィア線形補間
-        DirectX::XMVECTOR rot0 = DirectX::XMLoadFloat4(&pose0.rotation);
-        DirectX::XMVECTOR rot1 = DirectX::XMLoadFloat4(&pose1.rotation);
+        DirectX::XMVECTOR rot0       = DirectX::XMLoadFloat4(&pose0.rotation);
+        DirectX::XMVECTOR rot1       = DirectX::XMLoadFloat4(&pose1.rotation);
         DirectX::XMVECTOR blendedRot = DirectX::XMQuaternionSlerp(rot0, rot1, blendRate);
         DirectX::XMStoreFloat4(&blendedPose.rotation, blendedRot);
 
         // スケールの線形補間
-        DirectX::XMVECTOR scale0 = DirectX::XMLoadFloat3(&pose0.scale);
-        DirectX::XMVECTOR scale1 = DirectX::XMLoadFloat3(&pose1.scale);
+        DirectX::XMVECTOR scale0       = DirectX::XMLoadFloat3(&pose0.scale);
+        DirectX::XMVECTOR scale1       = DirectX::XMLoadFloat3(&pose1.scale);
         DirectX::XMVECTOR blendedScale = DirectX::XMVectorLerp(scale0, scale1, blendRate);
         DirectX::XMStoreFloat3(&blendedPose.scale, blendedScale);
     }
 }
 
-
-const ModelResource* Model::GetResource() const
+const ModelResource *Model::GetResource() const
 {
     return ResourceManager::Instance().GetModel(resource);
 }
 
-ModelResource* Model::GetResourceMutable()
+ModelResource *Model::GetResourceMutable()
 {
     return ResourceManager::Instance().GetModel(resource);
 }
@@ -497,13 +514,15 @@ std::shared_ptr<Model> Model::CreateFromData(ID3D11Device *device,
 
     // GPUバッファ作成
     // (GpuResourceUtils に追加した関数を使用)
-    if (!mesh.vertices.empty()) {
+    if (!mesh.vertices.empty())
+    {
         GpuResourceUtils::CreateVertexBuffer(device,
             mesh.vertices.data(),
             static_cast<UINT>(mesh.vertices.size() * sizeof(ModelResource::Vertex)),
             mesh.vertexBuffer.GetAddressOf());
     }
-    if (!mesh.indices.empty()) {
+    if (!mesh.indices.empty())
+    {
         GpuResourceUtils::CreateIndexBuffer(device,
             mesh.indices.data(),
             static_cast<UINT>(mesh.indices.size() * sizeof(uint32_t)),
@@ -526,12 +545,15 @@ std::shared_ptr<Model> Model::CreateFromData(ID3D11Device *device,
     mesh.boundsMin = {FLT_MAX, FLT_MAX, FLT_MAX};
     mesh.boundsMax = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
 
-    if (mesh.vertices.empty()) {
+    if (mesh.vertices.empty())
+    {
         mesh.boundsMin = {0, 0, 0};
         mesh.boundsMax = {0, 0, 0};
     }
-    else {
-        for (const auto &v : mesh.vertices) {
+    else
+    {
+        for (const auto &v : mesh.vertices)
+        {
             mesh.boundsMin.x = (std::min)(mesh.boundsMin.x, v.position.x);
             mesh.boundsMin.y = (std::min)(mesh.boundsMin.y, v.position.y);
             mesh.boundsMin.z = (std::min)(mesh.boundsMin.z, v.position.z);
@@ -587,17 +609,19 @@ std::shared_ptr<Model> Model::CreateFromData(ID3D11Device *device,
     model->materials[0].name = "BatchMaterial";
 
     // ★修正: 引数で渡されたマテリアルデータを共有する！
-    if (baseMaterial) {
+    if (baseMaterial)
+    {
         model->materials[0].data = baseMaterial;
     }
-    else {
+    else
+    {
         // マテリアルが無い場合（フォールバック）のみ、光りすぎないPBR初期値を設定する
         auto matData = std::make_shared<MaterialData>();
 
         matData->shaderHash = "PBR"_hash;
-        matData->SetColor("materialColor"_hash, { 1.0f, 1.0f, 1.0f, 1.0f });
-        matData->SetColor("baseColor"_hash, { 1.0f, 1.0f, 1.0f, 1.0f });
-        matData->SetColor("emissiveColor"_hash, { 0.0f, 0.0f, 0.0f, 1.0f });
+        matData->SetColor("materialColor"_hash, {1.0f, 1.0f, 1.0f, 1.0f});
+        matData->SetColor("baseColor"_hash, {1.0f, 1.0f, 1.0f, 1.0f});
+        matData->SetColor("emissiveColor"_hash, {0.0f, 0.0f, 0.0f, 1.0f});
 
         // PBRの「ちょうどいい」デフォルト値
         matData->SetScalar("metalness"_hash, 0.0f); // 非金属
@@ -624,16 +648,16 @@ std::shared_ptr<Model> Model::CreateFromData(ID3D11Device *device,
     {
         // この時点で res(ModelResource) には Mesh/Material が登録済み、
         // model->nodes / model->materials も上で構築済み。
-        const std::vector<ModelResource::Mesh>& resMeshes = res->GetMeshes();
+        const std::vector<ModelResource::Mesh> &resMeshes = res->GetMeshes();
         model->meshes.resize(resMeshes.size());
         for (size_t i = 0; i < resMeshes.size(); ++i)
         {
-            const ModelResource::Mesh& src = resMeshes[i];
-            Model::Mesh& dst = model->meshes[i];
- 
+            const ModelResource::Mesh &src = resMeshes[i];
+            Model::Mesh               &dst = model->meshes[i];
+
             // ---- 参照を保存（描画ループが mesh.data->vertexBuffer を使う）----
             dst.data = &src;
- 
+
             // マテリアル参照（materialIndex 範囲チェック）
             if (src.materialIndex >= 0 &&
                 src.materialIndex < (int)model->materials.size())
@@ -648,7 +672,7 @@ std::shared_ptr<Model> Model::CreateFromData(ID3D11Device *device,
             {
                 dst.material = nullptr;
             }
- 
+
             // ノード参照（CreateFromData はルート1ノードのみ）
             if (src.nodeIndex >= 0 && src.nodeIndex < (int)model->nodes.size())
             {
@@ -662,14 +686,13 @@ std::shared_ptr<Model> Model::CreateFromData(ID3D11Device *device,
             {
                 dst.node = nullptr;
             }
- 
+
             // ボーンは無し（静的バッチメッシュ）。dst.bones は空のまま。
         }
     }
 
     return model;
 }
-
 
 int Model::GetRootMotionNodeIndex() const
 {
