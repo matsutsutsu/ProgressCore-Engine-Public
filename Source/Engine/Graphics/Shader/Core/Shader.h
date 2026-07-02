@@ -12,6 +12,7 @@
 #include <filesystem>
 
 class IMaterialShader; // 前方宣言（AsMaterial の戻り値型に使う）
+class PipelineState;   // GetPSO の戻り値（ポインタなので前方宣言で足りる
 
 // ============================================================================
 // Shader : 全描画シェーダーの基底（パイプライン制御層）
@@ -55,6 +56,13 @@ public:
         const RenderServices& s) = 0;
 
     virtual void CheckAndReload(ID3D11Device* device) {}
+
+     /**
+     * @brief このシェーダー固有の PSO（ブレンド/深度/カリング）。
+     * @return nullptr の場合、各パスのデフォルト PSO が使われる（後方互換）。
+     *         MaterialShader が JSON 由来の PSO を返す。
+     */
+    virtual const PipelineState* GetPSO() const { return nullptr; }
 
     /**
      * @brief 安全なダウンキャスト（RTTI 不要）。

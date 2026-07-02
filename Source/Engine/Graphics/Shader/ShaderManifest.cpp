@@ -8,6 +8,7 @@
 #include "ShaderManifest.h"
 
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
+#include "Engine/Graphics/RHI/PipelineState.h" // PipelineStateDesc / Blend/Depth/Rasterizer enum
 #include "Engine/Platform/Core/FileSystem.h"
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/Core/Math/StringHash.h"   // CCL::Utils::HashString（"_hash" リテラルと同一のハッシュ）
@@ -52,6 +53,83 @@ const std::unordered_map<std::string, CustomRegistrar>& CustomRegistrars()
     return table;
 }
 
+// ---------------------------------------------------------------------------
+// JSON 文字列 → 各種ステート enum への変換。未知値は false を返す（呼び出し側で警告）。
+// RenderState.h の enum に既にある値だけを対象にしている。
+// ---------------------------------------------------------------------------
+bool ParseBlend(const std::string& s, BlendState& out)
+{
+    if (s == "opaque")                        { out = BlendState::Opaque;       return true; }
+    if (s == "transparency" || s == "alpha")  { out = BlendState::Transparency; return true; }
+    if (s == "additive"     || s == "add")    { out = BlendState::Additive;     return true; }
+    if (s == "subtract"     || s == "subtraction") { out = BlendState::Subtraction; return true; }
+    if (s == "multiply")                      { out = BlendState::Multiply;     return true; }
+    return false;
+}
+
+bool ParseCull(const std::string& s, RasterizerState& out)
+{
+    if (s == "back") { out = RasterizerState::SolidCullBack; return true; }
+    if (s == "none") { out = RasterizerState::SolidCullNone; return true; } // 両面描画
+    return false;
+}
+
+bool ParseDepth(const std::string& s, DepthState& out)
+{
+    if (s == "testWrite" || s == "default")       { out = DepthState::TestAndWrite;  return true; }
+    if (s == "testOnly"  || s == "readOnly")      { out = DepthState::TestOnly;      return true; } // 書き込みなし
+    if (s == "writeOnly")                         { out = DepthState::WriteOnly;     return true; }
+    if (s == "none"      || s == "noTestNoWrite") { out = DepthState::NoTestNoWrite; return true; } // 常に最前面
+    if (s == "testLessEqual")                     { out = DepthState::TestLessEqual; return true; }
+    return false;
+}
+
+// ---------------------------------------------------------------------------
+// マテリアルエントリから PSO の「設計図」を組み立てる。
+// blend / cull / depth のいずれかが指定されていれば true を返し out を埋める。
+// 何も無ければ false（＝パス側のデフォルト PSO をそのまま使う。既存挙動を維持）。
+//
+// 【ベースの決め方】まず blend を解決し、透明系(Transparency/Additive/Subtraction/
+// Multiply)なら DefaultTransparent()(深度書き込みなし・両面)を、そうでなければ
+// DefaultOpaque()(深度書き込みあり・背面カリング)を土台にする。
+// これにより {"blend":"additive"} だけで加算エフェクトの妥当な既定が得られる。
+// cull / depth を明示すればその軸だけ上書きできる。
+// ---------------------------------------------------------------------------
+bool BuildPsoDesc(const nlohmann::json& e, const std::string& name, PipelineStateDesc& out)
+{
+    const bool hasBlend = e.contains("blend") && e["blend"].is_string();
+    const bool hasCull  = e.contains("cull")  && e["cull"].is_string();
+    const bool hasDepth = e.contains("depth") && e["depth"].is_string();
+    if (!hasBlend && !hasCull && !hasDepth) return false;
+
+    BlendState blend = BlendState::Opaque;
+    if (hasBlend && !ParseBlend(e["blend"].get<std::string>(), blend))
+        CCL_LOG_WARN(LogCategory::Render, "[ShaderManifest] %s: 未知の blend 値 '%s'。opaque 扱い。",
+            name.c_str(), e["blend"].get<std::string>().c_str());
+
+    const bool transparentish =
+        (blend == BlendState::Transparency || blend == BlendState::Additive ||
+         blend == BlendState::Subtraction  || blend == BlendState::Multiply);
+
+    out = transparentish ? PipelineStateDesc::DefaultTransparent()
+                         : PipelineStateDesc::DefaultOpaque();
+    out.blend = blend;
+
+    if (hasCull) {
+        RasterizerState r;
+        if (ParseCull(e["cull"].get<std::string>(), r)) out.rasterizer = r;
+        else CCL_LOG_WARN(LogCategory::Render, "[ShaderManifest] %s: 未知の cull 値 '%s'。",
+            name.c_str(), e["cull"].get<std::string>().c_str());
+    }
+    if (hasDepth) {
+        DepthState d;
+        if (ParseDepth(e["depth"].get<std::string>(), d)) out.depth = d;
+        else CCL_LOG_WARN(LogCategory::Render, "[ShaderManifest] %s: 未知の depth 値 '%s'。",
+            name.c_str(), e["depth"].get<std::string>().c_str());
+    }
+    return true;
+}
+
 // 1つのマテリアルエントリを登録する。成功で true。
 bool RegisterMaterialEntry(const nlohmann::json& e, ShaderRegistry& reg)
 {
@@ -77,9 +155,16 @@ bool RegisterMaterialEntry(const nlohmann::json& e, ShaderRegistry& reg)
         CCL_LOG_WARN(LogCategory::Render, "[ShaderManifest] PS cso が見つかりません: %s", psCso.c_str());
 
     const uint32_t hash = CCL::Utils::HashString(name.c_str());
-    reg.RegisterMaterialShader(hash, vsCso, ToWide(vsHlsl), psCso, ToWide(psHlsl));
 
-    CCL_LOG_INFO(LogCategory::Render, "[ShaderManifest] material 登録: %s (hash=%u)", name.c_str(), hash);
+    // blend/cull/depth 指定があれば PSO の設計図を作って渡す。
+    // 無ければ nullptr = パス側のデフォルト PSO を使う（既存シェーダーは完全に無変更）。
+    PipelineStateDesc psoDesc;
+    const bool hasPso = BuildPsoDesc(e, name, psoDesc);
+    reg.RegisterMaterialShader(hash, vsCso, ToWide(vsHlsl), psCso, ToWide(psHlsl),
+        hasPso ? &psoDesc : nullptr);
+
+    CCL_LOG_INFO(LogCategory::Render, "[ShaderManifest] material 登録: %s (hash=%u%s)",
+        name.c_str(), hash, hasPso ? ", 独自PSO" : "");
     return true;
 }
 

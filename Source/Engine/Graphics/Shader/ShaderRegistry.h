@@ -7,6 +7,8 @@
 #include "Engine/Core/Math/StringHash.h"
 #include <unordered_set>
 #include "Engine/Platform/Core/Logger.h"
+#include "Engine/Graphics/RHI/PipelineState.h"   
+#include <optional>                              
 
 
 class ShaderRegistry {
@@ -36,9 +38,14 @@ public:
     // =======================================================
     void RegisterMaterialShader(uint32_t shaderHash,
         const std::string& vsCso, const std::wstring& vsHlsl,
-        const std::string& psCso, const std::wstring& psHlsl) {
-        _factories[shaderHash] = [vsCso, vsHlsl, psCso, psHlsl](ID3D11Device* device) {
-            return std::make_unique<MaterialShader>(device, vsCso, vsHlsl, psCso, psHlsl);
+        const std::string& psCso, const std::wstring& psHlsl,
+        const PipelineStateDesc* psoDesc = nullptr) {      
+        // PSO 設計図は factory ラムダの寿命まで生存させる必要があるため optional にコピー保持
+        std::optional<PipelineStateDesc> psoCopy;
+        if (psoDesc) psoCopy = *psoDesc;
+        _factories[shaderHash] = [vsCso, vsHlsl, psCso, psHlsl, psoCopy](ID3D11Device* device) {
+            return std::make_unique<MaterialShader>(device, vsCso, vsHlsl, psCso, psHlsl,
+                psoCopy ? &*psoCopy : nullptr);             
             };
         _shaderSortIDs[shaderHash] = _nextSortID++;
     }

@@ -33,6 +33,8 @@ void OpaquePass::Execute(const RenderFrameContext& ctx)
     dc->PSSetSamplers(SLOT_SMP_LINEAR, 1, samplers);
     _psoOpaque.Apply(dc, _services->renderState);
 
+    const PipelineState *lastPso = &_psoOpaque; 
+
     const DirectX::XMVECTOR cameraPos = DirectX::XMLoadFloat3(&ctx.camera->GetEye());
 
     queue->SortAndBuildBatches();
@@ -49,6 +51,16 @@ void OpaquePass::Execute(const RenderFrameContext& ctx)
 
         if (!matShader) { ++i; continue; }   // 不透明パスはマテリアルシェーダー必須
         matShader->Begin(dc, *_services, ctx);
+
+        // シェーダー固有 PSO があれば上書き。無ければパス既定へ戻す。
+        {
+            const PipelineState *want = shader->GetPSO() ? shader->GetPSO() : &_psoOpaque;
+            if (want != lastPso)
+            {
+                want->Apply(dc, _services->renderState);
+                lastPso = want;
+            }
+        }
 
         const size_t   batchStart = i;
         size_t         batchCount = 0;

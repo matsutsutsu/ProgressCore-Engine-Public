@@ -24,14 +24,23 @@ class ShaderRegistry;
  *  @code
  *   {
  *     "materialShaders": [
- *       { "name": "PBR" },
- *       { "name": "Phong" }
+ *       { "name": "PBR" },                                    // 通常の不透明
+ *       { "name": "GlowSigil", "blend": "additive" },         // 加算発光（深度書込なし/両面が既定に）
+ *       { "name": "Grass",     "cull":  "none" },             // 両面描画
+ *       { "name": "Marker",    "depth": "none" }              // 常に最前面
  *     ],
  *     "customShaders": [
  *       { "name": "Outline", "class": "OutlineShader" }
  *     ]
  *   }
  *  @endcode
+ *
+ *  【任意の PSO フィールド】(いずれも省略可。省略時はパス既定を使い、既存挙動を維持)
+ *    "blend": opaque | transparency(alpha) | additive(add) | subtract | multiply
+ *    "cull" : back | none
+ *    "depth": testWrite(default) | testOnly(readOnly) | writeOnly | none | testLessEqual
+ *    ※ blend が透明系のときはベースが自動で「深度書込なし・両面」になる。
+ *       cull/depth を明示すればその軸だけ上書きできる。
  *
  *  【パス導出規約】(全シェーダー統一。name=N)
  *    cso : Assets/Shader/<N>VS.cso, Assets/Shader/<N>PS.cso
