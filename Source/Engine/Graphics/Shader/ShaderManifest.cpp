@@ -162,6 +162,7 @@ bool RegisterMaterialEntry(const nlohmann::json& e, ShaderRegistry& reg)
     const bool hasPso = BuildPsoDesc(e, name, psoDesc);
     reg.RegisterMaterialShader(hash, vsCso, ToWide(vsHlsl), psCso, ToWide(psHlsl),
         hasPso ? &psoDesc : nullptr);
+    reg.RegisterName(hash, name); 
 
     CCL_LOG_INFO(LogCategory::Render, "[ShaderManifest] material 登録: %s (hash=%u%s)",
         name.c_str(), hash, hasPso ? ", 独自PSO" : "");
@@ -192,6 +193,7 @@ bool RegisterCustomEntry(const nlohmann::json& e, ShaderRegistry& reg)
 
     const uint32_t hash = CCL::Utils::HashString(name.c_str());
     it->second(reg, hash);
+    reg.RegisterName(hash, name); 
 
     CCL_LOG_INFO(LogCategory::Render, "[ShaderManifest] custom 登録: %s <%s> (hash=%u)",
         name.c_str(), cls.c_str(), hash);

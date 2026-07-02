@@ -526,6 +526,9 @@
     <Filter Include="Source\Game\Prototype">
       <UniqueIdentifier>{f6e27a6b-390a-468b-b147-49ca5346c7eb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shader\Material\Glow">
+      <UniqueIdentifier>{a0a81a85-1408-40de-9bd8-6353baff6c1f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -2825,6 +2828,12 @@
     </FxCompile>
     <FxCompile Include="Shader\Pass\Error\ErrorVS.hlsl">
       <Filter>Shader\Pass\Error</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Glow\GlowVS.hlsl">
+      <Filter>Shader\Material\Glow</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Glow\GlowPS.hlsl">
+      <Filter>Shader\Material\Glow</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

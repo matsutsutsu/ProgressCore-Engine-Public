@@ -8,7 +8,8 @@
 #include <unordered_set>
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/Graphics/RHI/PipelineState.h"   
-#include <optional>                              
+#include <optional>      
+#include <string>
 
 
 class ShaderRegistry {
@@ -93,6 +94,34 @@ public:
         return it != _shaderSortIDs.end() ? it->second : 0;
     }
 
+    // ============================================================
+    //  表示名レジストリ（エディタのシェーダー選択コンボ用）
+    // ------------------------------------------------------------
+    //  ShaderManifest が shaders.json から読んだ "name" をここに登録する。
+    //  material/custom を問わず、JSON に書かれた登録順を保持する。
+    //  これにより、新しいシェーダーを shaders.json に足すだけで
+    //  エディタのドロップダウンにも自動で反映される
+    //  （MaterialComponentMeta.cpp の手書き配列を廃止するための土台）。
+    // ============================================================
+    void RegisterName(uint32_t shaderHash, const std::string &name)
+    {
+        if (_hashToName.find(shaderHash) == _hashToName.end())
+        {
+            _orderedNames.push_back({name, shaderHash});
+        }
+        _hashToName[shaderHash] = name; // 再登録（ホットリロード等）時は上書きのみ
+    }
+
+    /**
+     * @brief 登録順の (表示名, ハッシュ) 一覧。
+     * @details エディタの ImGui::Combo 等はこれを毎回変換して使う想定
+     *          （名前→ハッシュの再計算をしなくて済むよう、ハッシュも一緒に返す）。
+     */
+    const std::vector<std::pair<std::string, uint32_t>> &GetRegisteredNames() const
+    {
+        return _orderedNames;
+    }
+
 private:
     std::unordered_map<uint32_t, std::function<std::unique_ptr<Shader>(ID3D11Device*)>> _factories;
     std::unordered_map<uint32_t, std::unique_ptr<Shader>> _shaders;
@@ -102,5 +131,8 @@ private:
     std::unordered_map<uint32_t, uint8_t> _shaderSortIDs;
 
     std::unordered_set<uint32_t> _warnedMissing; // 警告済みハッシュ（once-warn）
+
+        std::unordered_map<uint32_t, std::string>     _hashToName;   // 重複登録の検出用
+    std::vector<std::pair<std::string, uint32_t>> _orderedNames; // 表示順を保持
 
 };

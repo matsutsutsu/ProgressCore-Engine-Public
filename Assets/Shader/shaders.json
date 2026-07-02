@@ -4,7 +4,8 @@
         { "name": "Phong" },
         { "name": "Lambert" },
         { "name": "Basic" },
-        { "name": "Toon" }
+        { "name": "Toon" },
+        { "name": "Glow", "blend": "additive" }
     ],
     "customShaders": [
         { "name": "Outline",   "class": "OutlineShader" },
