@@ -1,6 +1,6 @@
 // --- JoltCleanupSystem.h ---
 #pragma once
-#include "Engine/ECS/System/CCL_System.h"
+#include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Core/Components/DestroyTag.h"
 #include "Engine/Physics/Components/Jolt/JoltHandleComponent.h"
 

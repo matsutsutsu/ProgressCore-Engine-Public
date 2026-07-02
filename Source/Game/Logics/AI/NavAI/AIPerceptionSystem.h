@@ -1,5 +1,5 @@
 #pragma once
-#include "Engine/ECS/System/CCL_System.h"
+#include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Game/Logics/AI/NavAI/AIComponents.h"
 #include "Engine/AI/Navigation/Components/NavAgentComponent.h"

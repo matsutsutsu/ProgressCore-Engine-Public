@@ -21,11 +21,27 @@
             "visible": true
         },
         {
-            "name": "Dungeon Architect Tool",
+            "name": "Sequencer",
+            "visible": true
+        },
+        {
+            "name": "Anim Graph Editor",
+            "visible": true
+        },
+        {
+            "name": "Behavior Tree Editor",
             "visible": true
         },
         {
             "name": "State Tree Editor",
+            "visible": false
+        },
+        {
+            "name": "Camera Path Editor",
+            "visible": false
+        },
+        {
+            "name": "Curve Editor",
             "visible": false
         },
         {

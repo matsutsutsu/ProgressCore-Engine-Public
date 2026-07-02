@@ -1,6 +1,6 @@
 #pragma once
 #include <DirectXMath.h>
-#include "Engine/ECS/Common/CCL_Common.h"
+#include "Engine/ECS/Common/CCL_Types.h"
 #include "Engine/Serialization/Core/EntityLink.h" 
 
 // ===================================================================================

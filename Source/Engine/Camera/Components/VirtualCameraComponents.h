@@ -1,5 +1,4 @@
 #pragma once
-#include "Engine/ECS/Common/CCL_Common.h"
 #include "Engine/Serialization/Core/EntityLink.h" // ★追加: EntityLinkを使用するため
 #include <DirectXMath.h>
 #include <algorithm> // for max
@@ -58,17 +57,3 @@ struct CameraBodyFree {
     float currentPitch = 0.0f;
 };
 
-// ===================================================================================
-// TPS（三人称視点）カメラ用コンポーネント
-// ===================================================================================
-struct CameraBodyTPS {
-    float distance = 5.0f;
-    float currentPitch = 10.0f;
-    float currentYaw = 0.0f;
-    float lookSpeedX = 100.0f;
-    float lookSpeedY = 100.0f;
-    DirectX::XMFLOAT3 targetOffset = { 0, 1.0f, 0 };
-
-    // ★ 修正: EntityLinkを使用する
-    CCL::Serialization::EntityLink targetEntity;
-};

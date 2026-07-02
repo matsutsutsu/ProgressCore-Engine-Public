@@ -9,6 +9,8 @@
 #include "Engine/Serialization/Serializer/SceneSerializer.h"
 #include "Engine/Serialization/Registry/ComponentRegistry.h"
 
+#include "Engine/ECS/Core/CCL_World.h"
+
 
 // タグとシステム
 #include "Engine/Core/Components/PersistentTag.h"
@@ -128,7 +130,7 @@ void SceneManager::SaveScene(CCL::ECS::Core::World* world, const std::string& fi
 	SceneSerializer::Serialize(world, filepath);
 }
 
-void SceneManager::LoadScene(World* world, const std::string& filepath)
+void SceneManager::LoadScene(CCL::ECS::Core::World* world, const std::string& filepath)
 {
     // ==========================================================
     // 1. 破壊の宣告 (Marking)

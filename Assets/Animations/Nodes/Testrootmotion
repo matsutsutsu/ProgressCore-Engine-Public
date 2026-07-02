@@ -1,0 +1,262 @@
+{
+    "anyStatePosX": 333.0,
+    "anyStatePosY": -197.0,
+    "anyStateTransitions": [
+        {
+            "blendDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "op": 0,
+                    "paramHash": 1116791579,
+                    "paramName": "IsDashing",
+                    "threshold": 1.0
+                }
+            ],
+            "logicType": 0,
+            "requiredWindow": "",
+            "targetStateHash": 1750693397
+        },
+        {
+            "blendDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "op": 3,
+                    "paramHash": 3424824828,
+                    "paramName": "OnJump",
+                    "threshold": 0.0
+                }
+            ],
+            "logicType": 0,
+            "requiredWindow": "",
+            "targetStateHash": 236909357
+        },
+        {
+            "blendDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "op": 2,
+                    "paramHash": 101128815,
+                    "paramName": "YVelocity",
+                    "threshold": 0.0
+                },
+                {
+                    "op": 0,
+                    "paramHash": 45180367,
+                    "paramName": "IsGrounded",
+                    "threshold": 0.0
+                }
+            ],
+            "logicType": 0,
+            "requiredWindow": "",
+            "targetStateHash": 2063645824
+        }
+    ],
+    "entryPosX": 29.0,
+    "entryPosY": -85.0,
+    "entryStateHash": 1168775091,
+    "parameters": [
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 174817312,
+            "name": "Speed",
+            "type": 0
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 1116791579,
+            "name": "IsDashing",
+            "type": 1
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 45180367,
+            "name": "IsGrounded",
+            "type": 1
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 3424824828,
+            "name": "OnJump",
+            "type": 2
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 101128815,
+            "name": "YVelocity",
+            "type": 0
+        }
+    ],
+    "states": [
+        {
+            "applyRootMotion": false,
+            "isLoop": true,
+            "nodePosX": 77.0,
+            "nodePosY": 311.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/Idle.json",
+            "sequenceName": "Idle",
+            "speedCurveName": "",
+            "stateHash": 1168775091,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 174817312,
+                            "paramName": "Speed",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredWindow": "",
+                    "targetStateHash": 2371348074
+                }
+            ]
+        },
+        {
+            "applyRootMotion": true,
+            "isLoop": true,
+            "nodePosX": 420.0,
+            "nodePosY": 304.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/Run_RM.json",
+            "sequenceName": "Run",
+            "speedCurveName": "",
+            "stateHash": 2371348074,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 2,
+                            "paramHash": 174817312,
+                            "paramName": "Speed",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredWindow": "",
+                    "targetStateHash": 1168775091
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "isLoop": true,
+            "nodePosX": 333.0,
+            "nodePosY": -9.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/Run.json",
+            "sequenceName": "Dash",
+            "speedCurveName": "",
+            "stateHash": 1750693397,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 0,
+                            "paramHash": 1116791579,
+                            "paramName": "IsDashing",
+                            "threshold": 0.0
+                        },
+                        {
+                            "op": 2,
+                            "paramHash": 174817312,
+                            "paramName": "Speed",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredWindow": "",
+                    "targetStateHash": 1168775091
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 0,
+                            "paramHash": 1116791579,
+                            "paramName": "IsDashing",
+                            "threshold": 0.0
+                        },
+                        {
+                            "op": 1,
+                            "paramHash": 174817312,
+                            "paramName": "Speed",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredWindow": "",
+                    "targetStateHash": 2371348074
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "isLoop": false,
+            "nodePosX": 765.0,
+            "nodePosY": -89.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/Jump_Start.json",
+            "sequenceName": "Jump",
+            "speedCurveName": "",
+            "stateHash": 236909357,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 2,
+                            "paramHash": 101128815,
+                            "paramName": "YVelocity",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredWindow": "",
+                    "targetStateHash": 2063645824
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "isLoop": true,
+            "nodePosX": 765.0,
+            "nodePosY": 103.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/Jump_Loop.json",
+            "sequenceName": "Fall",
+            "speedCurveName": "",
+            "stateHash": 2063645824,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 0,
+                            "paramHash": 45180367,
+                            "paramName": "IsGrounded",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredWindow": "",
+                    "targetStateHash": 1168775091
+                }
+            ]
+        }
+    ]
+}

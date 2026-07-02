@@ -38,6 +38,7 @@
 #include <SimpleMath.h>
 
 #include <vector>
+#include <unordered_set>
 
 using namespace DirectX::SimpleMath;
 
@@ -59,21 +60,34 @@ namespace Prefab {
         }
 
         /// @brief root を起点に階層(root含む)の全EntityIDを集める(読み取りのみ)。
-        /// @note  走査(読み)と変更(書き)を分離するためここでIDを確定させる。
-        void CollectSubtree(Core::World& world, EntityID root, std::vector<EntityID>& out)
+        /// @note  親子/兄弟リンクが破損して循環していても、訪問済み集合と
+        ///        深さ上限で無限ループ/スタックオーバーフローを防ぐ。
+        void CollectSubtreeImpl(Core::World& world, EntityID root,
+            std::vector<EntityID>& out,
+            std::unordered_set<EntityID>& visited, int depth)
         {
+            if (depth > 4096) return;                 // 異常な深さ(スタック保険)
+            if (!visited.insert(root).second) return; // 既訪問 = 循環 → 打ち切り
+
             out.push_back(root);
             auto* t = world.GetComponent<TransformComponent>(root);
             if (!t) return;
 
             EntityID child = t->firstChildID;
             while (child != 0) {
+                if (visited.count(child)) break;      // 兄弟リンクの循環を打ち切り
                 auto* ct = world.GetComponent<TransformComponent>(child);
                 if (!ct) break;
                 EntityID next = ct->nextSiblingID; // 再帰前に次兄弟を退避
-                CollectSubtree(world, child, out);
+                CollectSubtreeImpl(world, child, out, visited, depth + 1);
                 child = next;
             }
+        }
+
+        void CollectSubtree(Core::World& world, EntityID root, std::vector<EntityID>& out)
+        {
+            std::unordered_set<EntityID> visited;
+            CollectSubtreeImpl(world, root, out, visited, 0);
         }
 
     } // namespace
@@ -123,12 +137,15 @@ namespace Prefab {
                 if (auto* pooled = world.GetComponent<PooledParticleComponent>(id)) {
                     pooled->SetKey(path);
                 }
-                else {
+                else
+                {
                     PooledParticleComponent newComp;
                     newComp.SetKey(path);
                     world.AddComponent<PooledParticleComponent>(id, newComp); // 遅延適用
                 }
             }
+            // ★ 新規追加分を確定させてから手順2・3で読む (拡張時のみの稀パスなので安価)
+            world.ScrutinyAndApply();
         }
 
         // 2) parent(弾など)の子へ接ぐ + ローカル位置を設定。
@@ -186,13 +203,15 @@ namespace Prefab {
         std::string fullPath = prefabPath;
         if (fullPath.find(".json") == std::string::npos) fullPath += ".json";
 
-        if (!FileSystem::Exists(fullPath)) {
+        if (!FileSystem::Exists(fullPath))
+        {
             CCL_LOG_ERROR(LogCategory::Core, "[Prefab] Not Found: %s", fullPath.c_str());
-            return 0;
+            return InvalidEntityID;
         }
 
         std::vector<EntityID> created = SceneSerializer::Deserialize(&world, fullPath);
-        if (created.empty()) return 0;
+        if (created.empty())
+            return InvalidEntityID;
 
         EntityID rootID = created[0];
         for (EntityID id : created) {

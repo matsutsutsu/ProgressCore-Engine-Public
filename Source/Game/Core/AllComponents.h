@@ -46,7 +46,7 @@
 // ゲームロジック
 
 
-#include "Game/Logics/Character/Player/PlayerComponent.h"
+#include "Game/Logics/Character/Player/Components/PlayerComponent.h"
 
 
 #include "Game/Logics/Combat/HealthComponent.h"

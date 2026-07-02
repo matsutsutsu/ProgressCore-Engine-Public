@@ -114,7 +114,7 @@ void DroneFormationSystem::Update(float rawDt) {
     }
 
     // 超並列処理による各ドローンの更新
-    ForEachParallel([this, currentTime](DroneComponent& drone, const TimeState& time) {
+    ForEachParallel([this, currentTime](DroneComponent& drone, const TimeStateComponent& time) {
 
         // ★ ドローン各自の時計を使用（突撃待機のタイマー減算などに使う）
         float dt = time.localDt;
@@ -873,7 +873,7 @@ void DroneFormationSystem::OnGui()
                         droneComp->ownerBossId = activeBossId;
                     }
 
-                    auto* timeComp = _world->GetComponent<TimeState>(droneId);
+                    auto* timeComp = _world->GetComponent<TimeStateComponent>(droneId);
                     if (timeComp) {
                         timeComp->group = TimeGroup::Enemy;
                     }

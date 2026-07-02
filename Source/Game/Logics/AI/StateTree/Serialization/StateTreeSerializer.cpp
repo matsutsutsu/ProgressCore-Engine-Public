@@ -76,21 +76,35 @@ namespace
     }
 
     // --- params(json) → blob 書き込み（フィールド記述子で駆動）---
-    void WriteParam(uint8_t* blob, const NodeParamField& f, const json& params)
+    void WriteParam(uint8_t *blob, const NodeParamField &f, const json &params)
     {
-        switch (f.type) {
+        switch (f.type)
+        {
         case ParamType::Float: {
             float v = params.value(f.name, static_cast<float>(f.defVal));
             std::memcpy(blob + f.offset, &v, sizeof(float));
-        } break;
+        }
+        break;
         case ParamType::Int: {
             int v = params.value(f.name, static_cast<int>(f.defVal));
             std::memcpy(blob + f.offset, &v, sizeof(int));
-        } break;
+        }
+        break;
         case ParamType::Bool: {
             bool v = params.value(f.name, static_cast<bool>(f.defVal != 0.0));
             std::memcpy(blob + f.offset, &v, sizeof(bool));
-        } break;
+        }
+        break;
+        // 文字列を固定長 char バッファへコピー
+        case ParamType::String: {
+            std::string v   = params.value(f.name, f.defStr);
+            char       *dst = reinterpret_cast<char *>(blob + f.offset);
+            if (f.capacity > 0)
+            {
+                strncpy_s(dst, f.capacity, v.c_str(), _TRUNCATE);
+            }
+        }
+        break;
         }
     }
 

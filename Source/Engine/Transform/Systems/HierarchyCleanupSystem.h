@@ -1,5 +1,5 @@
 #pragma once
-#include "Engine/ECS/System/CCL_System.h"
+#include "Engine/ECS/System/CCL_IfSystem.h"
 #include <vector>
 #include "Engine/Core/Components/DestroyTag.h"
 #include "Engine/Transform/Components/TransformComponent.h"

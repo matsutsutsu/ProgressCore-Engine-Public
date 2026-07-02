@@ -1,5 +1,0 @@
-# BasedOnStyle: LLVM
-
-AlignConsecutiveAssignments: true
-AlignConsecutiveDeclarations: true
-AlignAfterOpenBracket: DontAlign

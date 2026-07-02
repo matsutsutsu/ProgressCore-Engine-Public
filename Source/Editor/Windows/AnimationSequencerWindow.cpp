@@ -1,1223 +1,1210 @@
+// ===================================================================================
+// ファイル: AnimationSequencerWindow.cpp
+// 役割       : AnimSequence 編集ウィンドウの実装。
+// 責務       : ImSequencer によるイベント編集、CurveEditorWidget による速度/RootMotion
+//              選択エンティティへのリアルタイムプレビュー。
+// ===================================================================================
 #include "AnimationSequencerWindow.h"
 #include "Engine/Animation/Components/AnimatorComponent.h"
 #include "Engine/Graphics/Components/Core/ModelComponent.h"
-#include "ImSequencer.h"
-#include "Engine/Assets/Model.h"
-#include "Engine/Assets/ModelResource.h"
-#include "Engine/Animation/Core/AnimSequence.h" 
-#include "Engine/Animation/Systems/AnimationSystem.h" 
-
-// ボスが持っている武器の名簿を読むためにインクルード
-#include "Game/Logics/Combat/CombatRosterComponent.h"
+#include "Engine/Animation/Systems/AnimationSystem.h"
+#include "Engine/Graphics/Resource/Model.h"
+#include "Engine/Graphics/Resource/ModelResource.h"
+#include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Transform/Components/TransformComponent.h"
-#include "Engine/Transform/Components/PendingParentComponent.h"
-#include "Game/Logics/Combat/Shader/TrailComponent.h"
+#include "Engine/ECS/Core/CCL_World.h"
+#include "Game/Logics/Combat/CombatRosterComponent.h"
 
+// IO / Platform
 #include "Engine/Platform/Core/Dialog.h"
+#include "Engine/Platform/Core/FileSystem.h"
 #include "Engine/Platform/Core/Logger.h"
 
-#include <filesystem>
+#include "ImSequencer.h"
+#include <imgui.h>
+#include <json.hpp>
 
-#include <ImCurveEdit.h>
 #include <algorithm>
+#include <cmath>
 #include <cstdio>
-#include <string>
 #include <vector>
-#include <fstream>
-#include <cereal/archives/json.hpp>
 
-// =============================================================================
-// データ管理クラス (ImSequencer <-> AnimSequence の仲介)
-// =============================================================================
-class AnimationSequenceImpl : public ImSequencer::SequenceInterface {
-public:
-    struct EditorEvent {
-        int frameStart;
-        int frameEnd;
-        int type;
-        char stringParam[256];
-
-        // ヒットストップ用のパラメータをキャッシュできるようにする
-        float floatParam1 = 0.0f;
-        float floatParam2 = 0.0f;
-        float floatParam3 = 0.0f;
-
-        // =========================================================
-        // Hitbox用の空間パラメータ (ImGui用に配列で定義)
-        // =========================================================
-        float offset[3] = { 0.0f, 0.0f, 0.0f };
-        float radius = 1.0f;
-    };
-
-    std::vector<EditorEvent> cache;
-    AnimSequence* targetSequence = nullptr;
-
-    int pendingBBStart = -1;
-    std::string pendingBBEventName = "";
-
-    int mFrameMin = 0;
-    int mFrameMax = 60 * 5;
-
-    // =========================================================================
-    // 台本(ECSデータ) -> UI(ブロック) への変換
-    // =========================================================================
-    void SyncFromData() {
-        cache.clear();
-        if (!targetSequence) return;
-
-        int pendingBBStart = -1;
-        std::string pendingBBEventName = "";
-
-        for (const auto& evt : targetSequence->events) {
-            EditorEvent item{};
-            item.frameStart = (int)(evt.startTime * 60.0f);
-            item.frameEnd = (int)(evt.endTime * 60.0f);
-
-            strcpy_s(item.stringParam, sizeof(item.stringParam), evt.stringParam.c_str());
-            
-            // ヒットストップ用のパラメータをキャッシュ
-            item.floatParam1 = evt.floatParam1;
-            item.floatParam2 = evt.floatParam2;
-            item.floatParam3 = evt.floatParam3;
-
-            // 空間パラメータのロード
-            item.offset[0] = evt.offset.x; item.offset[1] = evt.offset.y; item.offset[2] = evt.offset.z;
-            item.radius = evt.radius;
-
-            if (evt.eventName == "HitBox") {
-                item.type = 0;
-                cache.push_back(item);
-            }
-            // 空間スポーン用のイベント
-            else if (evt.eventName == "SpawnHitbox") {
-                item.type = 4;
-                item.offset[0] = evt.offset.x; item.offset[1] = evt.offset.y; item.offset[2] = evt.offset.z;
-                item.radius = evt.radius;
-                cache.push_back(item);
-            }
-            else if (evt.eventName == "Play_Sound") {
-                item.type = 1;
-                cache.push_back(item);
-            }
-            else if (evt.eventName == "Play_Effect") {
-                item.type = 2;
-                cache.push_back(item);
-            }
-            else if (evt.eventName == "Trail") {
-                item.type = 5;
-                cache.push_back(item);
-            }
-            else if (evt.eventName.find("BB_") == 0 && evt.eventName.find("_True") != std::string::npos) {
-                item.type = 3;
-                pendingBBStart = (int)(evt.startTime * 60.0f);
-                pendingBBEventName = evt.eventName.substr(3, evt.eventName.find("_True") - 3);
-            }
-            else if (evt.eventName.find("BB_") == 0 && evt.eventName.find("_False") != std::string::npos) {
-                if (pendingBBStart != -1) {
-                    item.type = 3;
-                    EditorEvent item{ pendingBBStart, (int)(evt.startTime * 60.0f), 3 };
-                    strcpy_s(item.stringParam, sizeof(item.stringParam), pendingBBEventName.c_str());
-                    cache.push_back(item);
-                    pendingBBStart = -1;
-                }
-            }
-        }
-    }
-
-    // =========================================================================
-    // UI(ブロック) -> 台本(ECSデータ) への変換と自動ソート
-    // =========================================================================
-    void SyncToData() {
-        if (!targetSequence) return;
-        targetSequence->events.clear();
-
-        for (const auto& item : cache) {
-            float startSec = (float)item.frameStart / 60.0f;
-            float endSec = (float)item.frameEnd / 60.0f;
-
-            // 1. まず共通のイベントデータ(ev)を作成し、パラメータを詰め込む
-            AnimNotifyEvent ev;
-            ev.startTime = startSec;
-            ev.endTime = endSec;
-            ev.floatParam1 = item.floatParam1; // ヒットストップ時間など
-            ev.floatParam2 = item.floatParam2; // スロー倍率など
-            ev.floatParam3 = item.floatParam3;
-
-            // 空間パラメータのセーブ (配列からVector3へ変換)
-            ev.offset = DirectX::SimpleMath::Vector3(item.offset[0], item.offset[1], item.offset[2]);
-            ev.radius = item.radius;
-
-            // 2. 種類(type)に応じて名前と文字列パラメータを設定し、台本に保存
-            if (item.type == 0) {
-                ev.eventName = "HitBox";
-                ev.stringParam = item.stringParam;
-                targetSequence->events.push_back(ev);
-            }
-            else if (item.type == 1) {
-                ev.eventName = "Play_Sound";
-                ev.stringParam = item.stringParam;
-                targetSequence->events.push_back(ev);
-            }
-            else if (item.type == 2) {
-                ev.eventName = "Play_Effect";
-                ev.stringParam = item.stringParam;
-                targetSequence->events.push_back(ev);
-            }
-            else if (item.type == 3) {
-                // Blackboardの場合は、開始時にTrue、終了時にFalseの2つのイベントを生成する
-                std::string baseName = item.stringParam;
-
-                ev.eventName = "BB_" + baseName + "_True";
-                ev.stringParam = "";
-                targetSequence->events.push_back(ev);
-
-                AnimNotifyEvent evFalse = ev; // パラメータをコピー
-                evFalse.startTime = endSec;   // Falseイベントはブロックの終了時間に発火する
-                evFalse.eventName = "BB_" + baseName + "_False";
-                targetSequence->events.push_back(evFalse);
-            }
-            // 空間スポーン用のイベント
-            else if (item.type == 4) {
-                ev.eventName = "SpawnHitbox";
-                ev.offset = DirectX::SimpleMath::Vector3(item.offset[0], item.offset[1], item.offset[2]);
-                ev.radius = item.radius;
-                targetSequence->events.push_back(ev);
-            }
-            else if (item.type == 5) {
-                ev.eventName = "Trail";
-                ev.stringParam = item.stringParam; // どの武器から発生させるかのタグ
-                targetSequence->events.push_back(ev);
-            }
-        }
-
-        // 時間順にソートしてバグを防ぐ
-        std::sort(targetSequence->events.begin(), targetSequence->events.end(),
-            [](const AnimNotifyEvent& a, const AnimNotifyEvent& b) {
-                return a.startTime < b.startTime;
-            });
-    }
-
-    void UpdateDuration(float durationSeconds) {
-        mFrameMax = (int)(durationSeconds * 60.0f * 1.1f);
-        if (mFrameMax < 60) mFrameMax = 60;
-    }
-
-    virtual int GetFrameMin() const override { return mFrameMin; }
-    virtual int GetFrameMax() const override { return mFrameMax; }
-    virtual int GetItemCount() const override { return (int)cache.size(); }
-    virtual int GetItemTypeCount() const override { return 6; }
-
-    virtual const char* GetItemTypeName(int typeIndex) const override {
-        switch (typeIndex) {
-        case 0: return "HitBox (Attack)";
-        case 1: return "Sound (SE)";
-        case 2: return "Effect (Effekseer)";
-        case 3: return "Blackboard (Flag)";
-        case 4: return "Spawn HitBox (Spatial)";
-        case 5: return "Trail (Weapon)"; 
-        default: return "Unknown";
-        }
-    }
-
-    virtual const char* GetItemLabel(int index) const override {
-        static char temp[128];
-        if (index < 0 || index >= (int)cache.size()) return "";
-        const auto& item = cache[index];
-        const char* name = (item.stringParam[0] != '\0') ? item.stringParam : "Empty";
-        switch (item.type) {
-        case 0: sprintf_s(temp, "[%d] Attack: %s", index, name); break;
-        case 1: sprintf_s(temp, "[%d] Sound: %s", index, name); break;
-        case 2: sprintf_s(temp, "[%d] Effekseer: %s", index, name); break; 
-        case 3: sprintf_s(temp, "[%d] Blackboard: %s", index, name); break;
-        case 4: sprintf_s(temp, "[%d] Spawn Sphere: R=%.1f", index, item.radius); break;
-        case 5: sprintf_s(temp, "[%d] Trail: %s", index, name); break;
-        default: sprintf_s(temp, "[%d] Event", index); break;
-        }
-        return temp;
-    }
-
-    virtual void Get(int index, int** start, int** end, int* type, unsigned int* color) override {
-        if (index < 0 || index >= (int)cache.size()) return;
-        EditorEvent& item = cache[index];
-        if (start) *start = &item.frameStart;
-        if (end) *end = &item.frameEnd;
-        if (type) *type = item.type;
-        if (color) {
-            switch (item.type) {
-            case 0: *color = 0xFF5050D0; break;
-            case 1: *color = 0xFFD08050; break;
-            case 2: *color = 0xFF50D050; break;
-            case 4: *color = 0xFFD050A0; break;
-            case 5: *color = 0xFFD0D030; break;
-            default: *color = 0xFFFFFFFF; break;
-            }
-        }
-    }
-
-    virtual void Add(int type) override {
-        EditorEvent item;
-        item.type = type;
-        item.frameStart = 0;
-        item.frameEnd = (type == 0 || type == 4 || type == 5) ? 30 : 10;
-        memset(item.stringParam, 0, sizeof(item.stringParam));
-
-        if (type == 2) {
-            item.floatParam1 = 1.0f; // floatParam1 をエフェクトのスケールとして流用
-        }
-
-        if (type == 4) {
-            item.offset[0] = 0.0f; item.offset[1] = 0.0f; item.offset[2] = 0.0f;
-            item.radius = 1.0f; 
-        }
-
-        cache.push_back(item);
-    }
-
-    virtual void Del(int index) override {
-        if (index >= 0 && index < (int)cache.size()) cache.erase(cache.begin() + index);
-    }
-    virtual void Duplicate(int index) override {
-        if (index >= 0 && index < (int)cache.size()) cache.push_back(cache[index]);
-    }
-    virtual size_t GetCustomHeight(int index) override { return 24; }
-    virtual void DoubleClick(int index) override {}
-    virtual void CustomDraw(int, ImDrawList*, const ImRect&, const ImRect&, const ImRect&, const ImRect&) override {}
-    virtual void CustomDrawCompact(int, ImDrawList*, const ImRect&, const ImRect&) override {}
-};
-
-// =============================================================================
-// SequencerCurveDelegate
-// =============================================================================
-struct SequencerCurveDelegate : public ImCurveEdit::Delegate {
-    AnimSequence* targetSeq = nullptr;
-    ImVec2 points[2][256];
-    bool visible[2] = { true, true };
-
-    ImVec2 m_min = ImVec2(0.0f, -1.0f);
-    ImVec2 m_max = ImVec2(1.0f, 3.0f);
-
-    // アニメーションの実際の長さ（Duration ラインの表示用）
-    float animDuration = 1.0f;
-
-    void SetSequence(AnimSequence* seq) {
-        targetSeq = seq;
-        if (targetSeq) {
-            animDuration = targetSeq->duration;
-            // X最大値はdurationだけ固定せず、ユーザーが広げられるようにする
-            // 初回だけ自動フィット
-            if (m_max.x <= 0.0f || m_max.x == 1.0f) {
-                m_max.x = targetSeq->duration;
-            }
-        }
-        UpdatePoints();
-    }
-
-    void FitViewToDuration() {
-        if (!targetSeq) return;
-        m_min.x = 0.0f;
-        m_max.x = targetSeq->duration;
-    }
-
-    void UpdatePoints() {
-        if (!targetSeq) return;
-        for (size_t i = 0; i < targetSeq->speedCurve.keys.size() && i < 256; ++i) {
-            points[0][i] = ImVec2(targetSeq->speedCurve.keys[i].time, targetSeq->speedCurve.keys[i].value);
-        }
-        for (size_t i = 0; i < targetSeq->rootMotionCurve.keys.size() && i < 256; ++i) {
-            points[1][i] = ImVec2(targetSeq->rootMotionCurve.keys[i].time, targetSeq->rootMotionCurve.keys[i].value);
-        }
-    }
-
-    size_t GetCurveCount() override { return 2; }
-    size_t GetPointCount(size_t curveIndex) override {
-        if (!targetSeq) return 0;
-        return (curveIndex == 0) ? targetSeq->speedCurve.keys.size() : targetSeq->rootMotionCurve.keys.size();
-    }
-
-    ImCurveEdit::CurveType GetCurveType(size_t curveIndex) const override { return ImCurveEdit::CurveSmooth; }
-    bool IsVisible(size_t curveIndex) override { return visible[curveIndex]; }
-    uint32_t GetCurveColor(size_t curveIndex) override { return curveIndex == 0 ? 0xFF00FF00 : 0xFF00A5FF; }
-    ImVec2* GetPoints(size_t curveIndex) override { return points[curveIndex]; }
-    virtual ImVec2& GetMin() override { return m_min; }
-    virtual ImVec2& GetMax() override { return m_max; }
-    virtual unsigned int GetBackgroundColor() override {
-        return 0x00000000; // 変更点: 背景を「完全な透明」にし、下敷きのグリッドを見せる
-    }
-
-    int EditPoint(size_t curveIndex, int pointIndex, ImVec2 value) override {
-        if (!targetSeq) return pointIndex;
-
-        // 変更点: 上限のクランプを外し、右側に自由にキーを打てるようにする
-        value.x = (std::max)(0.0f, value.x);
-
-        AnimationCurve& curve = (curveIndex == 0) ? targetSeq->speedCurve : targetSeq->rootMotionCurve;
-        curve.keys[pointIndex].time = value.x;
-        curve.keys[pointIndex].value = value.y;
-        UpdatePoints();
-        return pointIndex;
-    }
-
-    void AddPoint(size_t curveIndex, ImVec2 value) override {
-        if (!targetSeq) return;
-        AnimationCurve& curve = (curveIndex == 0) ? targetSeq->speedCurve : targetSeq->rootMotionCurve;
-        curve.keys.push_back({ value.x, value.y });
-        std::sort(curve.keys.begin(), curve.keys.end(), [](const CurveKey& a, const CurveKey& b) { return a.time < b.time; });
-        UpdatePoints();
-    }
-};
-
-// =============================================================================
-// ★新機能: カーブエディタ グリッド＋ルーラー オーバーレイ描画
-// ImCurveEdit::Edit の「後」に呼び出し、グリッド線と目盛りラベルを重ね描きする
-// =============================================================================
-static void DrawCurveEditorOverlay(
-    ImDrawList* dl,
-    ImVec2       canvasPos,      // Edit()描画領域の左上スクリーン座標
-    ImVec2       canvasSize,     // Edit()描画領域のサイズ
-    ImVec2       viewMin,        // データ空間の表示最小値 (x=時間, y=値)
-    ImVec2       viewMax,        // データ空間の表示最大値
-    float        animDuration    // アニメーション終端位置 (縦線を引く)
-) {
-    if (canvasSize.x <= 0 || canvasSize.y <= 0) return;
-    if (viewMax.x <= viewMin.x || viewMax.y <= viewMin.y) return;
-
-    const float left = canvasPos.x;
-    const float top = canvasPos.y;
-    const float right = left + canvasSize.x;
-    const float bottom = top + canvasSize.y;
-
-    // ImCurveEdit 内部のパディング（実装に合わせて微調整してください）
-    const float PAD = 6.0f;
-
-    dl->PushClipRect(canvasPos, ImVec2(right, bottom), true);
-
-    // --- 色の定義 ---
-    const ImU32 COL_GRID_MINOR = IM_COL32(70, 70, 70, 110);  // 細グリッド
-    const ImU32 COL_GRID_MAJOR = IM_COL32(100, 100, 100, 160);  // 太グリッド
-    const ImU32 COL_AXIS_ZERO = IM_COL32(180, 180, 180, 200);  // ゼロライン
-    const ImU32 COL_DURATION = IM_COL32(255, 180, 60, 200);  // Duration ライン
-    const ImU32 COL_LABEL = IM_COL32(210, 210, 210, 230);  // ラベル文字
-    const ImU32 COL_LABEL_SHD = IM_COL32(0, 0, 0, 200);  // 文字シャドウ
-    const ImU32 COL_RULER_BG = IM_COL32(25, 25, 25, 220);  // ルーラー背景
-
-    // --- データ座標 → スクリーン座標 変換 ---
-    auto toScreenX = [&](float t) -> float {
-        return left + (t - viewMin.x) / (viewMax.x - viewMin.x) * canvasSize.x;
-        };
-    auto toScreenY = [&](float v) -> float {
-        return bottom - (v - viewMin.y) / (viewMax.y - viewMin.y) * canvasSize.y;
-        };
-
-    // =========================================================
-    // 1. X軸 (時間) グリッド ─ 間隔を表示範囲に合わせて自動選択
-    // =========================================================
-    const float timeRange = viewMax.x - viewMin.x;
-    float timeStep = 1.0f;
-    if (timeRange <= 0.3f)  timeStep = 0.02f;
-    else if (timeRange <= 1.0f)  timeStep = 0.05f;
-    else if (timeRange <= 2.0f)  timeStep = 0.1f;
-    else if (timeRange <= 5.0f)  timeStep = 0.25f;
-    else if (timeRange <= 15.0f) timeStep = 0.5f;
-    else                          timeStep = 1.0f;
-
-    const float timeStart = std::floor(viewMin.x / timeStep) * timeStep;
-    for (float t = timeStart; t <= viewMax.x + timeStep * 0.01f; t += timeStep) {
-        const float sx = toScreenX(t);
-        if (sx < left - 1.0f || sx > right + 1.0f) continue;
-
-        // 整数秒は少し太く明るく
-        const bool isMajor = (fabsf(fmodf(t + timeStep * 0.001f, 1.0f)) < timeStep * 0.5f);
-        dl->AddLine(ImVec2(sx, top), ImVec2(sx, bottom),
-            isMajor ? COL_GRID_MAJOR : COL_GRID_MINOR,
-            isMajor ? 1.2f : 0.8f);
-    }
-
-    // =========================================================
-    // 2. Y軸 (値) グリッド
-    // =========================================================
-    const float valueRange = viewMax.y - viewMin.y;
-    float valueStep = 0.5f;
-    if (valueRange <= 0.5f)  valueStep = 0.05f;
-    else if (valueRange <= 2.0f)  valueStep = 0.25f;
-    else if (valueRange <= 5.0f)  valueStep = 0.5f;
-    else if (valueRange <= 10.0f) valueStep = 1.0f;
-    else                           valueStep = 2.0f;
-
-    const float valueStart = std::floor(viewMin.y / valueStep) * valueStep;
-    for (float v = valueStart; v <= viewMax.y + valueStep * 0.01f; v += valueStep) {
-        const float sy = toScreenY(v);
-        if (sy < top - 1.0f || sy > bottom + 1.0f) continue;
-
-        // Y=0 のゼロラインは特別扱い
-        if (fabsf(v) < valueStep * 0.1f) {
-            dl->AddLine(ImVec2(left, sy), ImVec2(right, sy), COL_AXIS_ZERO, 1.5f);
-        }
-        else {
-            dl->AddLine(ImVec2(left, sy), ImVec2(right, sy), COL_GRID_MINOR, 0.8f);
-        }
-    }
-
-    // =========================================================
-    // 3. Duration 終端ライン (オレンジ縦線)
-    // =========================================================
-    {
-        const float sx = toScreenX(animDuration);
-        if (sx >= left && sx <= right) {
-            dl->AddLine(ImVec2(sx, top), ImVec2(sx, bottom), COL_DURATION, 1.5f);
-            // "END" ラベル
-            const ImVec2 tp(sx + 3.0f, top + 2.0f);
-            dl->AddText(ImVec2(tp.x + 1, tp.y + 1), COL_LABEL_SHD, "END");
-            dl->AddText(tp, COL_DURATION, "END");
-        }
-    }
-
-    // =========================================================
-    // 4. 下部ルーラー: 時間ラベル
-    // =========================================================
-    const float RULER_H = 16.0f;
-    dl->AddRectFilled(ImVec2(left, bottom - RULER_H), ImVec2(right, bottom), COL_RULER_BG);
-
-    for (float t = timeStart; t <= viewMax.x + timeStep * 0.01f; t += timeStep) {
-        const float sx = toScreenX(t);
-        if (sx < left + 2.0f || sx > right - 2.0f) continue;
-
-        // ティック
-        dl->AddLine(ImVec2(sx, bottom - RULER_H), ImVec2(sx, bottom - RULER_H + 4.0f), COL_GRID_MAJOR, 1.0f);
-
-        // 時間テキスト
-        char buf[24];
-        if (timeStep < 0.1f)      snprintf(buf, sizeof(buf), "%.3fs", t);
-        else if (timeStep < 1.0f) snprintf(buf, sizeof(buf), "%.2fs", t);
-        else                       snprintf(buf, sizeof(buf), "%.1fs", t);
-
-        const ImVec2 tp(sx + 2.0f, bottom - RULER_H + 3.0f);
-        dl->AddText(ImVec2(tp.x + 1, tp.y + 1), COL_LABEL_SHD, buf);
-        dl->AddText(tp, COL_LABEL, buf);
-    }
-
-    // =========================================================
-    // 5. 左部ルーラー: 値ラベル
-    // =========================================================
-    const float VALUE_RULER_W = 38.0f;
-    dl->AddRectFilled(ImVec2(left, top), ImVec2(left + VALUE_RULER_W, bottom - RULER_H), COL_RULER_BG);
-
-    for (float v = valueStart; v <= viewMax.y + valueStep * 0.01f; v += valueStep) {
-        const float sy = toScreenY(v);
-        if (sy < top + 4.0f || sy > bottom - RULER_H - 4.0f) continue;
-
-        char buf[24];
-        snprintf(buf, sizeof(buf), "%.2f", v);
-
-        const ImVec2 tp(left + 2.0f, sy - 7.0f);
-        dl->AddText(ImVec2(tp.x + 1, tp.y + 1), COL_LABEL_SHD, buf);
-        dl->AddText(tp, COL_LABEL, buf);
-
-        // ルーラーから本体への短いティック線
-        dl->AddLine(ImVec2(left + VALUE_RULER_W - 3.0f, sy),
-            ImVec2(left + VALUE_RULER_W + 3.0f, sy),
-            COL_GRID_MAJOR, 1.0f);
-    }
-
-    // =========================================================
-    // 6. 外枠
-    // =========================================================
-    dl->AddRect(canvasPos, ImVec2(right, bottom), IM_COL32(90, 90, 90, 200));
-
-    dl->PopClipRect();
+// -----------------------------------------------------------------------------------
+// 時間変換ヘルパー
+// -----------------------------------------------------------------------------------
+inline int SecToFrame(float sec)
+{
+    return (int)(sec * 60.0f);
+}
+inline float FrameToSec(int frame)
+{
+    return (float)frame / 60.0f;
 }
 
-// =============================================================================
-// Window Class Implementation
-// =============================================================================
-static AnimSequence g_EditingSequence;
-static char g_SavePath[256] = "Assets/Animations/NewSequence.json";
-static int s_SelectedAnimIndex = -1;
+// ===================================================================================
+// ImSequencer用のインターフェース(pImpl)実装クラス
+// ===================================================================================
+class AnimationSequenceImpl : public ImSequencer::SequenceInterface
+{
+  public:
+    AnimSequence *_seq = nullptr;
 
+    // キャッシュバッファ: [0] はマスタートラック(Duration)、[1]以降がイベント
+    mutable std::vector<std::pair<int, int>> _frameCacheMap;
+
+    AnimationSequenceImpl() = default;
+
+    void SetSequence(AnimSequence *seq)
+    {
+        _seq = seq;
+    }
+
+    void SyncFrameCache() const
+    {
+        if (!_seq)
+            return;
+
+        // 常に「イベント数 + 1 (マスタートラック)」を確保する
+        _frameCacheMap.resize(_seq->events.size() + 1);
+
+        // [0] マスタートラック: 開始は常に0、終了は現在のアセット長(duration)
+        _frameCacheMap[0].first  = 0;
+        _frameCacheMap[0].second = SecToFrame(_seq->duration);
+
+        // [1] 以降: 各イベントの開始・終了
+        for (size_t i = 0; i < _seq->events.size(); ++i)
+        {
+            _frameCacheMap[i + 1].first  = SecToFrame(_seq->events[i].startTime);
+            _frameCacheMap[i + 1].second = SecToFrame(_seq->events[i].endTime);
+        }
+    }
+
+    // UI上でドラッグされたフレームを実データ(秒)に同期する
+    void FlushFrameCache() const
+    {
+        if (!_seq || _frameCacheMap.empty())
+            return;
+
+        // ★ マスタートラックのドラッグを無効化し、アセット本来の長さ(duration)に強制ロックする
+        _frameCacheMap[0].first  = 0;
+        _frameCacheMap[0].second = SecToFrame(_seq->duration);
+
+        // イベントの時間を同期
+        for (size_t i = 0; i < _seq->events.size(); ++i)
+        {
+            if (i + 1 < _frameCacheMap.size())
+            {
+                _seq->events[i].startTime = FrameToSec(_frameCacheMap[i + 1].first);
+                _seq->events[i].endTime   = FrameToSec(_frameCacheMap[i + 1].second);
+            }
+        }
+    }
+
+    virtual int GetItemCount() const override
+    {
+        if (!_seq)
+            return 0;
+        // マスタートラックが必ず存在するため、常に 1 以上になる
+        return (int)_seq->events.size() + 1;
+    }
+
+    virtual int GetFrameMin() const override
+    {
+        return 0;
+    }
+    virtual int GetFrameMax() const override
+    {
+        if (!_seq)
+            return 100;
+        int maxFrames = SecToFrame(_seq->duration);
+        return maxFrames > 0 ? maxFrames : 100;
+    }
+
+    virtual void BeginEdit(int /*index*/) override
+    {
+    }
+    virtual void EndEdit() override
+    {
+    }
+
+    virtual int GetItemTypeCount() const override
+    {
+        return (int)AnimEventType::Count;
+    }
+
+    virtual const char *GetItemTypeName(int typeIndex) const override
+    {
+        static const char *names[] = {
+            "HitBox", "Sound", "Effect", "Blackboard",
+            "SpawnHitbox", "Trail", "ComboWindow", "CancelWindow"};
+        if (typeIndex < 0 || typeIndex >= (int)AnimEventType::Count)
+            return "Unknown";
+        return names[typeIndex];
+    }
+
+    virtual const char *GetItemLabel(int index) const override
+    {
+        if (!_seq)
+            return "";
+        if (index == 0)
+            return "Master (Duration)"; // 0番目は常にマスタートラック
+
+        int evIdx = index - 1;
+        if (evIdx < 0 || evIdx >= (int)_seq->events.size())
+            return "";
+
+        static char buf[128];
+        const auto &ev = _seq->events[evIdx];
+        switch (ev.type)
+        {
+        case AnimEventType::HitBox:
+            snprintf(buf, sizeof(buf), "HitBox: %s", ev.stringParam.c_str());
+            break;
+        case AnimEventType::Sound:
+            snprintf(buf, sizeof(buf), "Sound: %s", ev.stringParam.c_str());
+            break;
+        case AnimEventType::Effect:
+            snprintf(buf, sizeof(buf), "Effect: %s", ev.stringParam.c_str());
+            break;
+        case AnimEventType::Blackboard:
+            snprintf(buf, sizeof(buf), "BB: %s", ev.stringParam.c_str());
+            break;
+        case AnimEventType::SpawnHitbox:
+            snprintf(buf, sizeof(buf), "SpawnHitbox");
+            break;
+        case AnimEventType::Trail:
+            snprintf(buf, sizeof(buf), "Trail: %s", ev.stringParam.c_str());
+            break;
+        case AnimEventType::ComboWindow:
+            snprintf(buf, sizeof(buf), "Combo: %s", ev.stringParam.c_str());
+            break;
+        case AnimEventType::CancelWindow:
+            snprintf(buf, sizeof(buf), "Cancel: %s", ev.stringParam.c_str());
+            break;
+        default:
+            snprintf(buf, sizeof(buf), "Event %d", evIdx);
+            break;
+        }
+        return buf;
+    }
+
+    virtual void Get(int index, int **start, int **end, int *type, unsigned int *color) override
+    {
+        if (!_seq)
+            return;
+
+        // ★ 注意: ここにあった SyncFrameCache() を削除しました！
+        // 毎フレーム呼ばれる Get() 内でキャッシュを再生成するとドラッグ操作が破綻するためです。
+
+        if (index < 0 || index >= (int)_frameCacheMap.size())
+            return;
+
+        if (start)
+            *start = &_frameCacheMap[index].first;
+        if (end)
+            *end = &_frameCacheMap[index].second;
+
+        // index 0 はマスタートラック、1以降が実イベント
+        if (index == 0)
+        {
+            if (type)
+                *type = -1; // 区別用
+            if (color)
+                *color = 0xFF555555; // マスタートラックはグレー
+        }
+        else
+        {
+            int evIdx = index - 1;
+            if (type)
+                *type = (int)_seq->events[evIdx].type;
+            if (color)
+            {
+                static const unsigned int colors[] = {
+                    0xFF323296, 0xFF329632, 0xFF969632, 0xFF963296,
+                    0xFF1010A0, 0xFF96A032, 0xFF32A096, 0xFF505050};
+                *color = colors[(int)_seq->events[evIdx].type % 8];
+            }
+        }
+    }
+
+    virtual void Add(int type) override
+    {
+        if (!_seq)
+            return;
+        AnimNotifyEvent ev;
+        ev.type      = (AnimEventType)type;
+        ev.startTime = 0.0f;
+        ev.endTime   = (std::min)(0.5f, _seq->duration);
+
+        if (type == (int)AnimEventType::Sound)
+            ev.stringParam = "Cue_Default";
+        if (type == (int)AnimEventType::Effect)
+            ev.stringParam = "VFX_Default";
+        if (type == (int)AnimEventType::HitBox)
+            ev.stringParam = "Weapon_R";
+
+        _seq->events.push_back(ev);
+        SyncFrameCache();
+    }
+
+    virtual void Del(int index) override
+    {
+        if (!_seq || index == 0)
+            return; // マスターは削除不可
+        int evIdx = index - 1;
+        if (evIdx >= 0 && evIdx < (int)_seq->events.size())
+        {
+            _seq->events.erase(_seq->events.begin() + evIdx);
+            SyncFrameCache();
+        }
+    }
+
+    virtual void Duplicate(int index) override
+    {
+        if (!_seq || index == 0)
+            return; // マスターは複製不可
+        int evIdx = index - 1;
+        if (evIdx >= 0 && evIdx < (int)_seq->events.size())
+        {
+            _seq->events.push_back(_seq->events[evIdx]);
+            SyncFrameCache();
+        }
+    }
+};
+
+// ===================================================================================
+// ===================================================================================
+// AnimationSequencerWindow メンバ関数群の実装
+// ===================================================================================
 AnimationSequencerWindow::AnimationSequencerWindow()
-    : EditorWindow("Sequencer"), _expanded(true), _selectedEntry(-1), _firstFrame(0)
+    : EditorWindow("Sequencer")
 {
     _sequencerImpl = std::make_unique<AnimationSequenceImpl>();
-    _curveDelegate = std::make_unique<SequencerCurveDelegate>();
 
-    //  初回から空のタイムラインを表示するために紐付けを行う
-    _sequencerImpl->targetSequence = &g_EditingSequence;
-    _sequencerImpl->UpdateDuration(g_EditingSequence.duration);
-    _sequencerImpl->SyncFromData();
+    // 初期状態バインド
+    _sequencerImpl->SetSequence(&_editingSequence);
+    _sequencerImpl->SyncFrameCache();
 
     SetVisible(true);
 }
 
 AnimationSequencerWindow::~AnimationSequencerWindow() = default;
 
-void AnimationSequencerWindow::DrawContents(EditorContext& context)
+// -----------------------------------------------------------------------------------
+// メインの描画エントリー
+// -----------------------------------------------------------------------------------
+void AnimationSequencerWindow::DrawContents(EditorContext &context)
 {
-    if (context.selectedEntity == CCL::ECS::InvalidEntityID || context.selectedEntity == 0) {
+    if (context.selectedEntity == CCL::ECS::InvalidEntityID || context.selectedEntity == 0)
+    {
         ImGui::TextDisabled("Select an entity to edit animation.");
         return;
     }
 
-    CCL::ECS::EntityID entity = context.selectedEntity;
-    auto* animator = context.world->GetComponent<AnimatorComponent>(entity);
-    auto* modelComp = context.world->GetComponent<ModelComponent>(entity);
+    const CCL::ECS::EntityID entity = context.selectedEntity;
 
-    if (!animator || !modelComp || !modelComp->GetModel()) {
-        ImGui::TextColored(ImVec4(1, 0, 0, 1), "Entity needs Animator and Model components.");
+    auto *animator  = context.world->GetComponent<AnimatorComponent>(entity);
+    auto *modelComp = context.world->GetComponent<ModelComponent>(entity);
+    if (!animator || !modelComp || !modelComp->GetModel())
+    {
+        ImGui::TextColored(ImVec4(1, 0, 0, 1), "Entity needs Animator and Model.");
         return;
     }
 
-    Model* model = modelComp->GetModel();
-    ModelResource* resource = model->GetResourceMutable();
-    if (!resource) return;
-
-    auto& animations = resource->GetAnimationsMutable();
-    if (animations.empty()) return;
-
-    // =========================================================
-    // 1. トップツールバー (セーブ・ロード・基本設定)
-    // =========================================================
-    if (ImGui::Button("Save JSON...")) {
-        char filename[MAX_PATH] = {};
-        if (Dialog::SaveFileName(filename, MAX_PATH, "JSON Files\0*.json\0", "Save Anim Sequence", "json",
-            "Data/Animations/Sequence", GetActiveWindow()) == DialogResult::OK) {
-            namespace fs = std::filesystem;
-            std::error_code ec;
-            fs::path relPath = fs::relative(filename, fs::current_path(), ec);
-            std::string finalPath = (!ec && !relPath.empty()) ? relPath.generic_string() : filename;
-
-            strcpy_s(g_SavePath, sizeof(g_SavePath), finalPath.c_str());
-
-            // =============================================================
-            // ★追加: 保存する直前に、ファイル名から名前を自動抽出して強制セット！
-            // (例: "Assets/Animations/Tackle_Loop.json" -> "Tackle_Loop")
-            // =============================================================
-            fs::path fsPath(finalPath);
-            g_EditingSequence.sequenceName = fsPath.stem().string();
-
-            _sequencerImpl->SyncToData();
-
-            std::ofstream os(finalPath);
-            if (os.is_open()) {
-                // ★修正: 厳格な Cereal を廃止し、柔軟な nlohmann::json でセーブする
-                nlohmann::json j;
-                // Cereal が作っていた古いフォーマットと互換性を保つため、キーで包む
-                j["AnimSequence"] = g_EditingSequence;
-                os << j.dump(4);
-
-                CCL_LOG_INFO(LogCategory::Editor, "Sequence Saved: %s", finalPath.c_str());
-            }
-        }
+    Model         *model    = modelComp->GetModel();
+    ModelResource *resource = model->GetResourceMutable();
+    if (!resource)
+        return;
+    auto &animations = resource->GetAnimationsMutable();
+    if (animations.empty())
+    {
+        ImGui::TextDisabled("Model has no animations.");
+        return;
     }
-    ImGui::SameLine();
-    if (ImGui::Button("Load JSON...")) {
-        char filename[MAX_PATH] = {};
-        if (Dialog::OpenFileName(filename, MAX_PATH, "JSON Files\0*.json\0", "Load Anim Sequence",
-            "Data/Animations/Sequence", GetActiveWindow()) == DialogResult::OK) {
-            namespace fs = std::filesystem;
-            std::error_code ec;
-            fs::path relPath = fs::relative(filename, fs::current_path(), ec);
-            std::string finalPath = (!ec && !relPath.empty()) ? relPath.generic_string() : filename;
 
-            strcpy_s(g_SavePath, sizeof(g_SavePath), finalPath.c_str());
+    // 1. エンティティ切替の検出と初期化
+    ResetStateOnEntitySwitch(context, animator);
 
-            std::ifstream is(finalPath);
-            if (is.is_open()) {
-                // ★修正: nlohmann::json に切り替え、クラッシュを防ぐ try-catch を導入
-                try {
-                    nlohmann::json j;
-                    is >> j;
+    // 2. セーブ・ロード処理
+    DrawFileIO();
 
-                    // 古い Cereal フォーマット("AnimSequence"がある)でも、新フォーマットでも安全に読めるようにする
-                    if (j.contains("AnimSequence")) {
-                        j.at("AnimSequence").get_to(g_EditingSequence);
-                    }
-                    else {
-                        j.get_to(g_EditingSequence);
-                    }
-
-                    for (int i = 0; i < (int)animations.size(); ++i) {
-                        if (animations[i].m_Name == g_EditingSequence.targetAnimName) {
-                            s_SelectedAnimIndex = i; break;
-                        }
-                    }
-                    _sequencerImpl->targetSequence = &g_EditingSequence;
-                    _sequencerImpl->UpdateDuration(g_EditingSequence.duration);
-                    _sequencerImpl->SyncFromData();
-                    _selectedEntry = -1;
-                    _fitCurveView = true; // ロード時にビューをフィット
-
-                    CCL_LOG_SUCCESS(LogCategory::Editor, "Sequence Loaded: %s", finalPath.c_str());
-                }
-                catch (const std::exception& e) {
-                    // ★万が一フォーマットが壊れていても、エディタが落ちるのではなくエラーログを出す
-                    CCL_LOG_ERROR(LogCategory::Editor, "Failed to load sequence JSON: %s", e.what());
-                }
-            }
-        }
-    }
-    ImGui::SameLine(); ImGui::TextDisabled("File: %s", g_SavePath[0] == '\0' ? "None" : g_SavePath);
-
-    char seqNameBuf[128] = {};
-    strcpy_s(seqNameBuf, sizeof(seqNameBuf), g_EditingSequence.sequenceName.c_str());
-    ImGui::SetNextItemWidth(200.0f);
-    if (ImGui::InputText("Sequence Name", seqNameBuf, sizeof(seqNameBuf))) g_EditingSequence.sequenceName = seqNameBuf;
+    // 3. アニメーション選択UI
+    char nameBuf[128];
+    strcpy_s(nameBuf, sizeof(nameBuf), _editingSequence.sequenceName.c_str());
+    ImGui::SetNextItemWidth(200);
+    if (ImGui::InputText("Sequence Name", nameBuf, sizeof(nameBuf)))
+        _editingSequence.sequenceName = nameBuf;
 
     ImGui::SameLine();
-    if (s_SelectedAnimIndex < 0 || s_SelectedAnimIndex >= (int)animations.size()) s_SelectedAnimIndex = 0;
-    static int prevSelectedIndex = -2;
-    ImGui::SetNextItemWidth(250.0f);
-    if (ImGui::BeginCombo("Target Animation", animations[s_SelectedAnimIndex].m_Name.c_str())) {
-        for (int i = 0; i < (int)animations.size(); ++i) {
-            bool isSelected = (s_SelectedAnimIndex == i);
-            if (ImGui::Selectable(animations[i].m_Name.c_str(), isSelected)) s_SelectedAnimIndex = i;
-            if (isSelected) ImGui::SetItemDefaultFocus();
+
+    // ★ ロード直後の同期 (JSONのtargetAnimNameからコンボボックスの選択位置を復元する)
+    if (_prevSelectedAnimIndex == -2)
+    {
+        _selectedAnimIndex = 0; // 見つからなかった場合のデフォルト
+        for (int i = 0; i < (int)animations.size(); ++i)
+        {
+            if (animations[i].name == _editingSequence.targetAnimName)
+            {
+                _selectedAnimIndex = i;
+                break;
+            }
+        }
+        _prevSelectedAnimIndex = _selectedAnimIndex;
+
+        // アセットの長さに強制同期
+        _editingSequence.duration = (std::max)(0.01f, animations[_selectedAnimIndex].secondsLength);
+        _sequencerImpl->SyncFrameCache();
+        _fitCurveView = true;
+    }
+
+    ImGui::SetNextItemWidth(250);
+    if (ImGui::BeginCombo("Target Animation", animations[_selectedAnimIndex].name.c_str()))
+    {
+        for (int i = 0; i < (int)animations.size(); ++i)
+        {
+            bool sel = (_selectedAnimIndex == i);
+            if (ImGui::Selectable(animations[i].name.c_str(), sel))
+                _selectedAnimIndex = i;
+            if (sel)
+                ImGui::SetItemDefaultFocus();
         }
         ImGui::EndCombo();
     }
 
-    if (prevSelectedIndex != s_SelectedAnimIndex) {
-        prevSelectedIndex = s_SelectedAnimIndex;
-        g_EditingSequence.targetAnimName = animations[s_SelectedAnimIndex].m_Name;
-        g_EditingSequence.duration = animations[s_SelectedAnimIndex].m_SecondsLength;
-        _sequencerImpl->targetSequence = &g_EditingSequence;
-        _sequencerImpl->UpdateDuration(g_EditingSequence.duration);
-        _sequencerImpl->SyncFromData();
-        _fitCurveView = true; // アニメ切り替え時にビューをフィット
+    // ★ コンボボックスで選択が変更された時の同期
+    if (_prevSelectedAnimIndex != _selectedAnimIndex)
+    {
+        _prevSelectedAnimIndex          = _selectedAnimIndex;
+        _editingSequence.targetAnimName = animations[_selectedAnimIndex].name;
+
+        // アセット本来の長さにシーケンスの最大長を強制ロック
+        _editingSequence.duration = (std::max)(0.01f, animations[_selectedAnimIndex].secondsLength);
+
+        _sequencerImpl->SyncFrameCache();
+        _fitCurveView = true;
     }
 
-    // =========================================================
-    // Edit Mode の制御
-    // =========================================================
-    if (context.isAnimEditMode) {
-        animator->isEditorOverride = true;
-        animator->currentSequence = &g_EditingSequence;
-    }
-    else {
-        animator->isEditorOverride = false;
-    }
+    // 4. エディットモード切替の適用
+    DrawEditModeToggle(context, animator);
 
     ImGui::Separator();
 
-    // =========================================================
-    // 2. メインレイアウト (左右2ペイン構造)
-    // =========================================================
-    if (ImGui::BeginTable("SequencerLayout", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV)) {
-        ImGui::TableSetupColumn("Timeline", ImGuiTableColumnFlags_WidthStretch, 0.75f);
-        ImGui::TableSetupColumn("Inspector", ImGuiTableColumnFlags_WidthStretch, 0.25f);
-        ImGui::TableNextRow();
+    // 5. メインUI（2ペインレイアウト）の描画
+    if (!ImGui::BeginTable("SeqLayout", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV))
+        return;
 
-        // -----------------------------------------------------
-        // 左カラム: タイムラインと追加ボタン
-        // -----------------------------------------------------
-        ImGui::TableSetColumnIndex(0);
+    ImGui::TableSetupColumn("Timeline", ImGuiTableColumnFlags_WidthStretch, 0.7f);
+    ImGui::TableSetupColumn("Inspector", ImGuiTableColumnFlags_WidthStretch, 0.3f);
+    ImGui::TableNextRow();
 
-        static bool s_isPlaying = false;
-        static bool s_wasEditMode = false;
+    // ---- 左側: タイムライン ----
+    ImGui::TableSetColumnIndex(0);
+    DrawTimelinePane(context, animator, model);
 
-        // ショートカットキー（Spaceで再生/停止）
-        if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && ImGui::IsKeyPressed(ImGuiKey_Space)) {
-            s_isPlaying = !s_isPlaying;
-        }
+    // ---- 右側: インスペクタ & カーブ ----
+    ImGui::TableSetColumnIndex(1);
+    DrawInspectorPane(context);
+    DrawCurvePane(context.animEditTime);
 
-        if (context.isAnimEditMode) {
-            if (!s_wasEditMode) {
-                context.animEditTime = animator->currentTimer;
-                s_wasEditMode = true;
-            }
+    ImGui::EndTable();
+}
 
-            if (s_isPlaying) {
-                float dt = ImGui::GetIO().DeltaTime;
-                context.animEditTime += dt * animator->playbackSpeed;
-                if (context.animEditTime > g_EditingSequence.duration) {
-                    context.animEditTime = animator->isLoop
-                        ? fmod(context.animEditTime, g_EditingSequence.duration)
-                        : g_EditingSequence.duration;
+// -----------------------------------------------------------------------------------
+// サブ描画関数群
+// -----------------------------------------------------------------------------------
+
+void AnimationSequencerWindow::ResetStateOnEntitySwitch(EditorContext &context, AnimatorComponent *animator)
+{
+    if (context.selectedEntity != _lastSelectedEntity)
+    {
+        if (context.isAnimEditMode)
+        {
+            animator->isEditorOverride = false;
+            if (_savedSequence)
+                animator->currentSequence = _savedSequence;
+            context.isAnimEditMode = false;
+
+            // ルートモーションプレビューで動かした位置を、切替前のエンティティに対して復元する
+            // （_lastSelectedEntity はまだ更新前＝古いエンティティを指している）
+            if (_rootMotionActive)
+            {
+                if (context.world)
+                {
+                    if (auto *oldTrans = context.world->GetComponent<TransformComponent>(_lastSelectedEntity))
+                        oldTrans->SetPosition(_rootMotionOriginPos);
                 }
-                animator->currentTimer = context.animEditTime;
+                _rootMotionActive = false;
             }
-
-            if (ImGui::Button(s_isPlaying ? "|| Pause" : "> Play")) {
-                s_isPlaying = !s_isPlaying;
-            }
-            ImGui::SameLine();
         }
-        else {
-            s_isPlaying = false;
-            s_wasEditMode = false;
+        _editingSequence = AnimSequence{};
+        _savePath.clear();
+        _selectedAnimIndex     = -1;
+        _prevSelectedAnimIndex = -2;
+        _isPlaying             = false;
+        _wasEditMode           = false;
+        _savedSequence         = nullptr;
+        _selectedEntry         = -1;
+        _firstFrame            = 0;
+        _fitCurveView          = true;
+
+        _sequencerImpl->SetSequence(&_editingSequence);
+        _sequencerImpl->SyncFrameCache();
+        _lastSelectedEntity = context.selectedEntity;
+    }
+}
+
+void AnimationSequencerWindow::DrawFileIO()
+{
+    // ★ Duration はアセットから自動取得されるため、テキスト表示(閲覧専用)に変更
+    ImGui::Text("Editing: %s", _savePath.empty() ? "(New Sequence)" : _savePath.c_str());
+    ImGui::SameLine();
+
+    ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Duration: %.2f s (%d frames)",
+        _editingSequence.duration, SecToFrame(_editingSequence.duration));
+    ImGui::SameLine();
+
+    if (ImGui::Button("Save JSON..."))
+    {
+        if (auto path = FileDialog::SavePreset("AnimSequence", "Save Anim Sequence"))
+        {
+            _savePath                     = FileDialog::ConvertToRelativePath(*path);
+            _editingSequence.sequenceName = std::filesystem::path(_savePath).stem().string();
+
+            _sequencerImpl->SyncFrameCache();
+
+            nlohmann::json j = _editingSequence;
+            if (FileSystem::WriteAllText(_savePath, j.dump(4)))
+            {
+                CCL_LOG_SUCCESS(LogCategory::Editor, "Sequence Saved: %s", _savePath.c_str());
+
+                // ★ 保存直後にランタイム側キャッシュを同一インスタンスへ上書き再読込。
+                //   これをしないと ResourceManager が起動時の古い内容を返し続け、
+                //   ゲーム再生に編集が反映されない（＝「保存したのに変わらない」の原因）。
+                ResourceManager::Instance().ReloadAnimSequence(_savePath.c_str());
+            }
+            else
+                CCL_LOG_ERROR(LogCategory::Editor, "Sequence Save Failed: %s", _savePath.c_str());
         }
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Load JSON..."))
+    {
+        if (auto path = FileDialog::OpenPreset("AnimSequence", "Load Anim Sequence"))
+        {
+            std::string loadPath = FileDialog::ConvertToRelativePath(*path);
+            std::string text     = FileSystem::ReadAllText(loadPath);
+            if (!text.empty())
+            {
+                try
+                {
+                    nlohmann::json j = nlohmann::json::parse(text);
+                    _editingSequence = j.get<AnimSequence>();
+                    _savePath        = loadPath;
 
-        auto AddAndSelectEvent = [&](int type) {
-            _sequencerImpl->Add(type);
-            auto& newItem = _sequencerImpl->cache.back();
-            newItem.frameStart = context.isAnimEditMode ? (int)(context.animEditTime * 60.0f) : 0;
-            newItem.frameEnd = newItem.frameStart + ((type == 0) ? 30 : 10);
-            _sequencerImpl->SyncToData();
-            _selectedEntry = (int)_sequencerImpl->cache.size() - 1;
-            };
+                    // ロード完了時にアニメーションリストとの同期を促すフラグ
+                    _prevSelectedAnimIndex = -2;
 
-        if (ImGui::Button("+ Attack (HitBox)")) AddAndSelectEvent(0);
-        ImGui::SameLine();
-        if (ImGui::Button("+ Spawn HitBox")) AddAndSelectEvent(4);  
-        ImGui::SameLine();
-        if (ImGui::Button("+ Trail")) AddAndSelectEvent(5); // ★新規追加 (武器系なのでHitBoxの隣に)
-        ImGui::SameLine();
-        if (ImGui::Button("+ Sound (SE)")) AddAndSelectEvent(1);
-        ImGui::SameLine();
-        if (ImGui::Button("+ Effect (VFX)")) AddAndSelectEvent(2);
-        if (ImGui::Button("+ BB Flag")) { AddAndSelectEvent(3); }
+                    _sequencerImpl->SetSequence(&_editingSequence);
+                    _sequencerImpl->SyncFrameCache();
 
-        int currentFrame = context.isAnimEditMode ? (int)(context.animEditTime * 60.0f) : (int)(animator->currentTimer * 60.0f);
-        int prevFrame = currentFrame;
-
-        if (_sequencerImpl->targetSequence) {
-            _expanded = true;
-            bool changed = ImSequencer::Sequencer(_sequencerImpl.get(), &currentFrame, &_expanded, &_selectedEntry, &_firstFrame,
-                ImSequencer::SEQUENCER_EDIT_STARTEND | ImSequencer::SEQUENCER_ADD | ImSequencer::SEQUENCER_DEL | ImSequencer::SEQUENCER_CHANGE_FRAME);
-
-            if (changed) _sequencerImpl->SyncToData();
-
-            //  Deleteキーで選択中のイベントブロックを削除
-            if (_selectedEntry >= 0 && ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && ImGui::IsKeyPressed(ImGuiKey_Delete)) {
-                _sequencerImpl->Del(_selectedEntry);
-                _sequencerImpl->SyncToData();
-                _selectedEntry = -1;
-            }
-
-            // =====================================================================
-            // ★ 究極のUX改善: 直感的なタイムライン操作とキーボードショートカット
-            // =====================================================================
-            ImVec2 seqMin = ImGui::GetItemRectMin();
-            ImVec2 seqMax = ImGui::GetItemRectMax();
-            ImGuiIO& io = ImGui::GetIO();
-
-            // 1. Shift + マウスホイールでタイムラインを横スクロール（パン）
-            if (ImGui::IsMouseHoveringRect(seqMin, seqMax)) {
-                if (io.KeyShift && io.MouseWheel != 0.0f) {
-                    _firstFrame -= (int)(io.MouseWheel * 15.0f); // 15フレーム単位で高速スクロール
-                    if (_firstFrame < 0) _firstFrame = 0;
-                }
-            }
-
-            // 2. マウスの精密操作への依存からの脱却（キーボード操作）
-            if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) {
-
-                // Escキーでイベントブロックの選択を解除
-                if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
                     _selectedEntry = -1;
+                    _fitCurveView  = true;
+                    CCL_LOG_SUCCESS(LogCategory::Editor, "Sequence Loaded: %s", loadPath.c_str());
                 }
-
-                // Shiftキーを押しながらだと移動量が5倍（5フレーム）になる
-                int nudgeAmount = io.KeyShift ? 5 : 1;
-
-                // A. イベントブロックが選択されている場合 → ブロックの位置を微調整（ナッジ）
-                if (_selectedEntry >= 0 && _selectedEntry < _sequencerImpl->cache.size()) {
-                    auto& item = _sequencerImpl->cache[_selectedEntry];
-                    bool itemMoved = false;
-
-                    if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) {
-                        item.frameStart -= nudgeAmount;
-                        item.frameEnd -= nudgeAmount;
-                        itemMoved = true;
-                    }
-                    if (ImGui::IsKeyPressed(ImGuiKey_RightArrow)) {
-                        item.frameStart += nudgeAmount;
-                        item.frameEnd += nudgeAmount;
-                        itemMoved = true;
-                    }
-
-                    // ブロックがマイナスフレームに行かないようにガード
-                    if (itemMoved) {
-                        if (item.frameStart < 0) {
-                            item.frameEnd += (0 - item.frameStart);
-                            item.frameStart = 0;
-                        }
-                        _sequencerImpl->SyncToData();
-                    }
-                }
-                // B. イベントが選択されていない場合 → 再生バー（プレイヘッド）をスクラブ移動
-                else {
-                    if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) {
-                        currentFrame -= nudgeAmount;
-                        if (currentFrame < 0) currentFrame = 0;
-                    }
-                    if (ImGui::IsKeyPressed(ImGuiKey_RightArrow)) {
-                        currentFrame += nudgeAmount;
-                        if (currentFrame > _sequencerImpl->mFrameMax) currentFrame = _sequencerImpl->mFrameMax;
-                    }
-                }
-            }
-
-            if (currentFrame != prevFrame) {
-                s_isPlaying = false;
-                float newTime = (float)currentFrame / 60.0f;
-                context.animEditTime = newTime;
-                animator->currentTimer = newTime;
-            }
-
-            if (context.isAnimEditMode && context.systemManager) {
-                if (auto* animSystem = context.systemManager->GetSystem<AnimationSystem>()) {
-                    animSystem->UpdateManual(entity, context.animEditTime);
-                    if (auto* transform = context.world->GetComponent<TransformComponent>(entity)) {
-                        model->UpdateTransform(transform->worldMatrix);
-                    }
+                catch (const std::exception &e)
+                {
+                    CCL_LOG_ERROR(LogCategory::Editor, "Load failed: %s", e.what());
                 }
             }
         }
+    }
+}
 
-        // -----------------------------------------------------
-        // 右カラム: カーブエディタ + インスペクタ
-        // -----------------------------------------------------
-        ImGui::TableSetColumnIndex(1);
+void AnimationSequencerWindow::DrawEditModeToggle(EditorContext &context, AnimatorComponent *animator)
+{
+    if (context.isAnimEditMode)
+    {
+        if (!_wasEditMode)
+        {
+            _savedSequence       = animator->currentSequence;
+            _wasEditMode         = true;
+            context.animEditTime = animator->currentTimer;
+        }
+        animator->isEditorOverride = true;
+        animator->currentSequence  = &_editingSequence;
+    }
+    else if (_wasEditMode)
+    {
+        animator->currentSequence  = _savedSequence;
+        animator->isEditorOverride = false;
+        _savedSequence             = nullptr;
+        _wasEditMode               = false;
+        _isPlaying                 = false;
 
-        ImGui::Text("Duration: %.2fs", g_EditingSequence.duration);
+        // ルートモーションプレビューで動かした位置を元に戻す
+        if (_rootMotionActive)
+        {
+            if (context.world)
+            {
+                if (auto *trans = context.world->GetComponent<TransformComponent>(context.selectedEntity))
+                    trans->SetPosition(_rootMotionOriginPos);
+            }
+            _rootMotionActive = false;
+        }
+    }
+}
+
+void AnimationSequencerWindow::DrawRootMotionPreview(EditorContext &context, AnimatorComponent * /*animator*/)
+{
+    if (!context.isAnimEditMode || !context.world) return;
+
+    TransformComponent *trans = context.world->GetComponent<TransformComponent>(context.selectedEntity);
+    if (!trans) return;
+
+    const CurveData &rmc = _editingSequence.rootMotionCurve;
+    if (rmc.empty())
+    {
+        // カーブが無い（または全キー削除された）→ プレビュー駆動を終了し、
+        // 次にキーが追加された瞬間の位置を新しい基準点として扱う。
+        _rootMotionActive = false;
+        return;
+    }
+
+    const float dur      = _editingSequence.duration;
+    const float progress = (dur > 0.0f) ? std::clamp(context.animEditTime / dur, 0.0f, 1.0f) : 0.0f;
+
+    if (!_rootMotionActive)
+    {
+        // このフレームで初めてカーブ駆動プレビューが有効になった → 現在位置を基準点として記録する。
+        // 以後は毎フレーム「基準点 + 前方 * (curve(progress) - curve(0))」で絶対位置を再計算する。
+        // ループするたびに _rootMotionBasePos へ1周ぶんの前進を畳み込むので、
+        // ループ境界で原点にスナップバックせず連続して前進する。
+        // _rootMotionOriginPos は累積しない「真の開始位置」で、編集モード終了時の復元に使う。
+        _rootMotionOriginPos = trans->position;
+        _rootMotionBasePos   = trans->position;
+        _rootMotionActive    = true;
+    }
+
+    // ワールド前方ベクトル（worldMatrixのZ軸列。回転はキャッシュ済みのものを使う）
+    DirectX::XMFLOAT3 fwd = trans->GetForward();
+
+    const float dist = rmc.Evaluate(progress) - rmc.Evaluate(0.0f);
+
+    DirectX::XMFLOAT3 newPos = {
+        _rootMotionBasePos.x + fwd.x * dist,
+        _rootMotionBasePos.y + fwd.y * dist,
+        _rootMotionBasePos.z + fwd.z * dist,
+    };
+    trans->SetPosition(newPos);
+
+    // worldMatrix は本来 TransformUpdateSystem が計算するキャッシュだが、
+    // このフレーム内で直後に model->UpdateTransform() がそれを読みに行くため、ここで即時再計算する。
+    // ※ 親を持つエンティティでは親行列を考慮していないため位置がずれる（プレビュー専用の簡易実装）。
+    trans->UpdateMatrix();
+}
+
+void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, AnimatorComponent *animator, Model *model)
+{
+    if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && ImGui::IsKeyPressed(ImGuiKey_Space))
+        _isPlaying = !_isPlaying;
+
+    const float dur      = _editingSequence.duration;
+    const int   durFrame = SecToFrame(dur);
+
+    if (context.isAnimEditMode)
+    {
+        if (_isPlaying)
+        {
+            const float progress0 = (dur > 0.0f) ? std::clamp(context.animEditTime / dur, 0.0f, 1.0f) : 0.0f;
+            const float speedMult = _editingSequence.speedCurve.empty()
+                                        ? 1.0f
+                                        : _editingSequence.speedCurve.Evaluate(progress0);
+            context.animEditTime += ImGui::GetIO().DeltaTime * animator->playbackSpeed * speedMult;
+            if (dur > 0.0f && context.animEditTime > dur)
+            {
+                // ループ設定はプレビュー専用トグルを優先（アニメ設定と独立に試せる）
+                if (_loopPreview)
+                {
+                    context.animEditTime = std::fmod(context.animEditTime, dur);
+
+                    // ★ ルートモーションプレビューのループ連続化:
+                    //   ここは「再生による折り返し」でのみ通る（スクラブでは通らない）ため、
+                    //   1周ぶんの前進量を基準位置へ畳み込む。これにより次ループの進捗0が
+                    //   前ループ終端と一致し、原点へのスナップバックが消える。
+                    if (_rootMotionActive && !_editingSequence.rootMotionCurve.empty() && context.world)
+                    {
+                        if (auto *trans = context.world->GetComponent<TransformComponent>(context.selectedEntity))
+                        {
+                            const CurveData  &rmc       = _editingSequence.rootMotionCurve;
+                            const float       cycleDist = rmc.Evaluate(1.0f) - rmc.Evaluate(0.0f);
+                            DirectX::XMFLOAT3 fwd       = trans->GetForward();
+                            _rootMotionBasePos.x += fwd.x * cycleDist;
+                            _rootMotionBasePos.y += fwd.y * cycleDist;
+                            _rootMotionBasePos.z += fwd.z * cycleDist;
+                        }
+                    }
+                }
+                else
+                {
+                    context.animEditTime = dur;
+                    _isPlaying           = false; // 非ループは最後で停止
+                }
+            }
+            animator->currentTimer = context.animEditTime;
+        }
+
+        // ── 再生コントロール群 ──
+        if (ImGui::Button("|<")) // 先頭へ
+        {
+            context.animEditTime   = 0.0f;
+            animator->currentTimer = 0.0f;
+            _isPlaying             = false;
+        }
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("先頭へ (Home)");
+        ImGui::SameLine();
+
+        if (ImGui::Button(_isPlaying ? "|| Pause" : "> Play"))
+            _isPlaying = !_isPlaying;
+        ImGui::SameLine();
+
+        if (ImGui::Button(">|")) // 最後へ
+        {
+            context.animEditTime   = dur;
+            animator->currentTimer = dur;
+            _isPlaying             = false;
+        }
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("最後へ (End)");
+        ImGui::SameLine();
+
+        // ループトグル
+        ImGui::Checkbox("Loop", &_loopPreview);
+        ImGui::SameLine();
+
+        // ── 現在時刻の 秒 / frame / 全体長 表示 ──
+        const float curSec = context.animEditTime;
+        const int   curFrm = SecToFrame(curSec);
+        ImGui::TextColored(ImVec4(1.0f, 0.9f, 0.4f, 1.0f),
+            "%.2fs / %df", curSec, curFrm);
+        ImGui::SameLine();
+        ImGui::TextDisabled("(total %.2fs / %df)", dur, durFrame);
+    }
+    else
+    {
+        _isPlaying = false;
+        ImGui::TextDisabled("Enable 'Edit Mode' to preview & scrub.");
+    }
+
+    // ── Homeキー/Endキーでも先頭・末尾へ ──
+    if (context.isAnimEditMode && ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
+    {
+        if (ImGui::IsKeyPressed(ImGuiKey_Home))
+        {
+            context.animEditTime   = 0.0f;
+            animator->currentTimer = 0.0f;
+            _isPlaying             = false;
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_End))
+        {
+            context.animEditTime   = dur;
+            animator->currentTimer = dur;
+            _isPlaying             = false;
+        }
+    }
+
+    // ── スナップ設定 ──
+    ImGui::Checkbox("Snap", &_snapEnabled);
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(80);
+    ImGui::DragInt("##snapStep", &_snapStep, 1, 1, 30, "%df");
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("スナップ単位（フレーム）");
+    ImGui::SameLine();
+    ImGui::TextDisabled("|");
+    ImGui::SameLine();
+
+    // イベント追加
+    auto AddEvt = [&](AnimEventType t) {
+        _sequencerImpl->Add((int)t);
+        auto &e     = _editingSequence.events.back();
+        int   s     = context.isAnimEditMode ? SecToFrame(context.animEditTime) : 0;
+        e.startTime = FrameToSec(s);
+        e.endTime   = FrameToSec(s + 30);
+        _sequencerImpl->SyncFrameCache();
+        _selectedEntry = (int)_editingSequence.events.size();
+    };
+
+    if (ImGui::Button("+ Attack"))
+        AddEvt(AnimEventType::HitBox);
+    ImGui::SameLine();
+    if (ImGui::Button("+ Spawn"))
+        AddEvt(AnimEventType::SpawnHitbox);
+    ImGui::SameLine();
+    if (ImGui::Button("+ Sound"))
+        AddEvt(AnimEventType::Sound);
+    ImGui::SameLine();
+    if (ImGui::Button("+ Effect"))
+        AddEvt(AnimEventType::Effect);
+    ImGui::SameLine();
+    if (ImGui::Button("+ Combo"))
+        AddEvt(AnimEventType::ComboWindow);
+    ImGui::SameLine();
+    if (ImGui::Button("+ Cancel"))
+        AddEvt(AnimEventType::CancelWindow);
+
+    int curFrame  = context.isAnimEditMode ? SecToFrame(context.animEditTime) : SecToFrame(animator->currentTimer);
+    int prevFrame = curFrame;
+
+    _expanded    = true;
+    bool changed = ImSequencer::Sequencer(
+        _sequencerImpl.get(), &curFrame, &_expanded, &_selectedEntry, &_firstFrame,
+        ImSequencer::SEQUENCER_EDIT_STARTEND | ImSequencer::SEQUENCER_ADD |
+            ImSequencer::SEQUENCER_DEL | ImSequencer::SEQUENCER_CHANGE_FRAME);
+
+    // ── ドラッグ後のスナップ適用（選択イベントのフレーム境界を丸める）──
+    if (changed)
+    {
+        if (_snapEnabled && _snapStep > 0 &&
+            _selectedEntry > 0 && _selectedEntry < (int)_sequencerImpl->_frameCacheMap.size())
+        {
+            auto &f    = _sequencerImpl->_frameCacheMap[_selectedEntry];
+            auto  snap = [&](int v) { return ((v + _snapStep / 2) / _snapStep) * _snapStep; };
+            f.first    = snap(f.first);
+            f.second   = snap(f.second);
+            if (f.second <= f.first)
+                f.second = f.first + _snapStep; // 区間が潰れない最小幅
+        }
+        _sequencerImpl->FlushFrameCache();
+    }
+
+    // 削除処理
+    if (_selectedEntry > 0 && ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && ImGui::IsKeyPressed(ImGuiKey_Delete))
+    {
+        _sequencerImpl->Del(_selectedEntry);
+        _selectedEntry = -1;
+    }
+
+    // ナッジ(微調整)処理
+    if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
+    {
+        if (ImGui::IsKeyPressed(ImGuiKey_Escape))
+            _selectedEntry = -1;
+
+        int nudge = ImGui::GetIO().KeyShift ? 5 : 1;
+        if (_selectedEntry > 0 && _selectedEntry < (int)_sequencerImpl->_frameCacheMap.size()) // マスターはナッジ不可
+        {
+            auto &f     = _sequencerImpl->_frameCacheMap[_selectedEntry];
+            bool  moved = false;
+
+            if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
+            {
+                f.first -= nudge;
+                f.second -= nudge;
+                moved = true;
+            }
+            if (ImGui::IsKeyPressed(ImGuiKey_RightArrow))
+            {
+                f.first += nudge;
+                f.second += nudge;
+                moved = true;
+            }
+            if (moved && f.first < 0)
+            {
+                f.second += -f.first;
+                f.first = 0;
+            }
+
+            if (moved)
+                _sequencerImpl->FlushFrameCache();
+        }
+    }
+
+    // ★ 修正: curFrame != prevFrame は「ImSequencerウィジェット内部の量子化/丸め」だけでも
+    //   毎フレーム発生しうる（ユーザーが何も触っていなくても）。これを無条件に
+    //   「ユーザーがスクラブした」とみなして animEditTime を整数フレームへ強制スナップし
+    //   さらに _isPlaying を止めてしまうと、再生中に不規則な停止と時間巻き戻り/早送りが
+    //   起き、体感で「速度が速くなったり遅くなったりする」不具合になっていた。
+    //   本物のドラッグ操作（左マウスボタン押下中）のときだけ反応するようにし、
+    //   通常再生中はスムーズな時間進行（上の _isPlaying ブロック）を唯一の権威にする。
+    if (curFrame != prevFrame && ImGui::IsMouseDown(ImGuiMouseButton_Left))
+    {
+        _isPlaying             = false;
+        context.animEditTime   = FrameToSec(curFrame);
+        animator->currentTimer = context.animEditTime;
+    }
+
+    // ルートモーションカーブのプレビュー適用（進捗→累積前進距離を Transform に反映）
+    // ※ 下の UpdateTransform はキャッシュ済み worldMatrix を読むだけなので、
+    //    表示への反映を最短にするためここで先に位置を確定させる。
+    DrawRootMotionPreview(context, animator);
+
+    // ECSランタイムへの反映
+    if (context.isAnimEditMode && context.systemManager)
+    {
+        if (auto *animSys = context.systemManager->GetSystem<AnimationSystem>())
+        {
+            animSys->UpdateManual(context.selectedEntity, context.animEditTime);
+            if (auto *tr = context.world->GetComponent<TransformComponent>(context.selectedEntity))
+                model->UpdateTransform(tr->worldMatrix);
+        }
+    }
+}
+
+void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
+{
+    ImGui::Text("Sequence Settings");
+    ImGui::Separator();
+
+    // マスター（全体の長さ）が選択されている場合、もしくは未選択の場合の表示
+    if (_selectedEntry == 0 || _selectedEntry == -1)
+    {
+        if (_selectedEntry == 0)
+        {
+            ImGui::TextColored(ImVec4(0.5f, 1, 0.5f, 1), "Master Track (Duration)");
+            ImGui::TextDisabled("Modify the total length of the sequence.");
+        }
+
+        // アセットロック済みなので閲覧のみ
+        ImGui::Text("Duration: %.2f s", _editingSequence.duration);
         ImGui::Checkbox("Edit Mode (Preview)", &context.isAnimEditMode);
-        ImGui::Separator();
+    }
+    else if (_selectedEntry > 0 && _selectedEntry <= (int)_editingSequence.events.size())
+    {
+        auto &e  = _editingSequence.events[_selectedEntry - 1]; // イベントのインデックスは-1
+        bool  ch = false;
 
-        ImGui::TextColored(ImVec4(0.5f, 1.0f, 0.5f, 1.0f), "Selected Event");
+        ImGui::TextColored(ImVec4(0.5f, 1, 0.5f, 1), "Selected Event");
+        ImGui::Spacing();
+        ImGui::TextDisabled("Type: %s", _sequencerImpl->GetItemTypeName((int)e.type));
+        // ── 開始/終了を秒で直接入力（ドラッグより精密）──
+        {
+            float startSec = e.startTime;
+            float endSec   = e.endTime;
+            bool  timeCh   = false;
+
+            ImGui::SetNextItemWidth(90);
+            if (ImGui::DragFloat("開始 (s)##start", &startSec, 0.01f, 0.0f, _editingSequence.duration, "%.2f"))
+                timeCh = true;
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(90);
+            if (ImGui::DragFloat("終了 (s)##end", &endSec, 0.01f, 0.0f, _editingSequence.duration, "%.2f"))
+                timeCh = true;
+
+            // フレーム表示も併記
+            ImGui::TextDisabled("Frame: %d - %d", SecToFrame(e.startTime), SecToFrame(e.endTime));
+
+            if (timeCh)
+            {
+                // クランプと前後関係の保証
+                startSec = std::clamp(startSec, 0.0f, _editingSequence.duration);
+                endSec   = std::clamp(endSec, 0.0f, _editingSequence.duration);
+                if (endSec < startSec)
+                    endSec = startSec;
+
+                e.startTime = startSec;
+                e.endTime   = endSec;
+                ch          = true;
+                _sequencerImpl->SyncFrameCache(); // タイムライン側へ即反映
+            }
+        }
+        ImGui::Spacing();
         ImGui::Spacing();
 
-        if (_selectedEntry >= 0 && _selectedEntry < (int)_sequencerImpl->cache.size()) {
-            auto& selectedItem = _sequencerImpl->cache[_selectedEntry];
-            bool propChanged = false;
+        char buf[256];
+        strcpy_s(buf, sizeof(buf), e.stringParam.c_str());
 
-            ImGui::TextDisabled("Type: %s", _sequencerImpl->GetItemTypeName(selectedItem.type));
-            ImGui::Text("Time: %.2fs - %.2fs", selectedItem.frameStart / 60.0f, selectedItem.frameEnd / 60.0f);
-            ImGui::Spacing();
-
-            if (selectedItem.type == 0 || selectedItem.type == 4 || selectedItem.type == 5) {
-
-                // --- Type 0 (Weapon) と Type 5 (Trail) の場合: Rosterから武器タグを選択 ---
-                if(selectedItem.type == 0 || selectedItem.type == 5) {
-                    auto* roster = context.world->GetComponent<CombatRosterComponent>(entity);
-                    if (roster && roster->count > 0) {
-                        ImGui::Text(selectedItem.type == 0 ? "Target Weapon Tag:" : "Trail Weapon Tag:");
-                        const char* currentPreview = selectedItem.stringParam[0] != '\0' ? selectedItem.stringParam : "Select Tag...";
-                        ImGui::SetNextItemWidth(-1);
-
-                        // =========================================================
-                        // ★修正: ImGuiのID衝突（プルダウンが開かないバグ）を完全に防ぐ
-                        // PushIDで囲むことで、内部的に一意のウィジェットとして認識させる！
-                        // =========================================================
-                        ImGui::PushID(&selectedItem); // メモリアドレスをIDの種にする最強の安全策
-
-                        if (ImGui::BeginCombo("##WeaponTag", currentPreview)) {
-                            for (int i = 0; i < roster->count; ++i) {
-                                bool isSelected = (strcmp(selectedItem.stringParam, roster->entries[i].tag) == 0);
-                                if (ImGui::Selectable(roster->entries[i].tag, isSelected)) {
-                                    strcpy_s(selectedItem.stringParam, sizeof(selectedItem.stringParam), roster->entries[i].tag);
-                                    propChanged = true;
-                                }
-                                if (isSelected) ImGui::SetItemDefaultFocus();
-                            }
-                            ImGui::EndCombo();
-                        }
-
-                        ImGui::PopID(); // ★Pushしたら絶対にPopすること！
-                        // =========================================================
-
-                        // =========================================================
-                        // Trail(Type 5)の場合、指定した武器のコンポーネントを直接編集するUI
-                        // =========================================================
-                        if (selectedItem.type == 5 && selectedItem.stringParam[0] != '\0') {
-
-                            // 1. 選択中の武器タグから、実際のEntityIDを探し出す
-                            CCL::ECS::EntityID targetWeaponID = CCL::ECS::InvalidEntityID;
-                            for (int i = 0; i < roster->count; ++i) {
-                                if (strcmp(selectedItem.stringParam, roster->entries[i].tag) == 0) {
-                                    targetWeaponID = roster->entries[i].id;
-                                    break;
-                                }
-                            }
-
-                            // 2. 武器が見つかったら、そのTrailComponentをポインタで取得して直接いじる
-                            if (targetWeaponID != CCL::ECS::InvalidEntityID) {
-                                auto* trail = context.world->GetComponent<TrailComponent>(targetWeaponID);
-
-                                if (trail) {
-                                    ImGui::Spacing();
-                                    ImGui::Separator();
-                                    ImGui::TextColored(ImVec4(0.3f, 1.0f, 1.0f, 1.0f), "Live Edit: Trail Component");
-
-                                    // 貴方様が記述した完璧なLive Edit UIコード
-                                    ImGui::ColorEdit4("Color (色)", &trail->color.x);
-                                    ImGui::DragFloat3("Rotation Offset (回転)", &trail->localRotationOffset.x, 0.01f);
-                                    ImGui::DragFloat3("Root Offset (根元)", &trail->localRootOffset.x, 0.01f);
-                                    ImGui::DragFloat3("Tip Offset (剣先)", &trail->localTipOffset.x, 0.01f);
-
-                                    char texBuf[256];
-                                    strcpy_s(texBuf, trail->texturePath.c_str());
-                                    ImGui::SetNextItemWidth(-1);
-                                    if (ImGui::InputText("##TrailTex", texBuf, sizeof(texBuf))) {
-                                        trail->texturePath = texBuf;
-                                    }
-
-                                    if (ImGui::Button("Browse Texture...", ImVec2(-1, 0))) {
-                                        char filename[256] = {};
-                                        if (Dialog::OpenFileName(filename, 256, "Textures\0*.png;*.dds;*.jpg\0All Files\0*.*\0", "Select Texture",
-                                            "Data/Textures", GetActiveWindow()) == DialogResult::OK) {
-                                            namespace fs = std::filesystem;
-                                            std::error_code ec;
-                                            trail->texturePath = fs::relative(filename, fs::current_path(), ec).generic_string();
-                                        }
-                                    }
-                                }
-                                else {
-                                    ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "[Warning] The selected weapon does not have a TrailComponent.");
-                                }
-                            }
-                        }
-                    }
-                    else {
-                        ImGui::TextColored(ImVec4(1, 1, 0, 1), "[Warning] No Roster");
-                        ImGui::SetNextItemWidth(-1);
-                        if (ImGui::InputText("##DamageTag", selectedItem.stringParam, sizeof(selectedItem.stringParam))) propChanged = true;
-                    }
-                }
-
-                // --- Type 4: 新規の空間スポーン(Spawn)の場合 ---
-                if (selectedItem.type == 4) {
-                    ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.3f, 1.0f), "Hitbox Transform (判定の空間設定)");
-                    if (ImGui::DragFloat3("Offset (位置)", selectedItem.offset, 0.05f)) propChanged = true;
-                    if (ImGui::DragFloat("Radius (半径)", &selectedItem.radius, 0.05f, 0.0f, 100.0f)) propChanged = true;
-                }
-
-                ImGui::Spacing();
-                ImGui::Separator();
-                ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.3f, 1.0f), "Hit Stop Settings");
-
-                if (selectedItem.type == 0) {
-                    // -----------------------------------------------------
-                    // Type 0: 既存の Weapon HitBox
-                    // [floatParam1] = ヒットストップ時間
-                    // [floatParam2] = ヒットストップ中のタイムスケール（スロー倍率）
-                    // [floatParam3] = ★追加: 攻撃力 (Damage)
-                    // -----------------------------------------------------
-                    ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.5f, 1.0f), "Attack Settings (攻撃設定)");
-                    if (ImGui::DragFloat("Damage (攻撃力)", &selectedItem.floatParam3, 0.5f, 0.0f, 1000.0f, "%.1f")) {
-                        propChanged = true;
-                    }
-                    ImGui::Spacing();
-
-                    ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.3f, 1.0f), "Hit Stop Settings");
-                    if (ImGui::SliderFloat("HitStop Duration (秒)", &selectedItem.floatParam1, 0.0f, 1.0f, "%.2f s")) {
-                        propChanged = true;
-                    }
-                    if (ImGui::SliderFloat("HitStop TimeScale (倍率)", &selectedItem.floatParam2, 0.0f, 1.0f, "%.2f x")) {
-                        propChanged = true;
-                    }
-                }
-                else if (selectedItem.type == 4) {
-                    // -----------------------------------------------------
-                    // Type 4: 新規の Spawn HitBox
-                    // [floatParam1] = ダメージ（攻撃力）
-                    // [floatParam2] = ヒットストップ時間
-                    // -----------------------------------------------------
-                    if (ImGui::DragFloat("Damage (攻撃力)", &selectedItem.floatParam1, 0.5f, 0.0f, 1000.0f, "%.1f")) {
-                        propChanged = true;
-                    }
-                    if (ImGui::SliderFloat("HitStop Duration (秒)", &selectedItem.floatParam2, 0.0f, 1.0f, "%.2f s")) {
-                        propChanged = true;
-                    }
-                }
-
-            }
-            else if (selectedItem.type == 1) {
-                // =================================================================
-                // ★修正: FMOD対応。ファイルパスではなくイベントパスの入力にする
-                // =================================================================
-                ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "FMOD Event Path:");
-                ImGui::SetNextItemWidth(-1);
-                if (ImGui::InputText("##FMODPath", selectedItem.stringParam, sizeof(selectedItem.stringParam))) {
-                    propChanged = true;
-                }
-                if (ImGui::IsItemHovered()) {
-                    ImGui::SetTooltip("Example: event:/SFX/SwordSwing\nType the FMOD event path.");
-                }
-            }
-            else if (selectedItem.type == 2) {
-                // =================================================================
-                // ★既存: Effekseer専用の処理 (分離して維持)
-                // =================================================================
-                ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "Effekseer Asset (.efk / .efkefc)");
-                ImGui::SetNextItemWidth(-1);
-                if (ImGui::InputText("##EffectPath", selectedItem.stringParam, sizeof(selectedItem.stringParam))) propChanged = true;
-
-                if (ImGui::Button("Browse Effekseer...", ImVec2(-1, 0))) {
-                    const char* filter = "Effekseer Files\0*.efk;*.efkefc\0All Files\0*.*\0";
-                    char filename[256] = {};
-                    if (Dialog::OpenFileName(filename, 256, filter, "Select File", "Data", GetActiveWindow()) == DialogResult::OK) {
-                        namespace fs = std::filesystem;
-                        std::error_code ec;
-                        std::string finalPath = fs::relative(filename, fs::current_path(), ec).generic_string();
-                        strcpy_s(selectedItem.stringParam, sizeof(selectedItem.stringParam), finalPath.c_str());
-                        propChanged = true;
-                    }
-                }
-
-                ImGui::Spacing();
-                ImGui::Separator();
-                ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "Transform Settings (空間設定)");
-                if (ImGui::DragFloat3("Offset (位置のズレ)", selectedItem.offset, 0.05f)) propChanged = true;
-                if (ImGui::DragFloat("Scale (大きさ)", &selectedItem.floatParam1, 0.05f, 0.0f, 100.0f, "%.2f x")) propChanged = true;
-
-                // =========================================================
-                // 追従フラグの設定UI
-                // =========================================================
-                bool isFollowing = (selectedItem.floatParam2 > 0.5f);
-                if (ImGui::Checkbox("Follow Parent (キャラクターに追従する)", &isFollowing)) {
-                    selectedItem.floatParam2 = isFollowing ? 1.0f : 0.0f;
-                    propChanged = true;
-                }
-            }
-            else if (selectedItem.type == 3) {
-                ImGui::TextColored(ImVec4(1, 1, 0, 1), "Blackboard Flag Settings");
-                ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 20.0f);
-
-                ImGui::Text("Quick Presets:");
-                auto PresetButton = [&](const char* label, const char* flagName, ImVec4 color) {
-                    ImGui::PushStyleColor(ImGuiCol_Button, color);
-                    if (ImGui::Button(label)) {
-                        strcpy_s(selectedItem.stringParam, sizeof(selectedItem.stringParam), flagName);
-                        propChanged = true;
-                    }
-                    ImGui::PopStyleColor();
-                    };
-
-                PresetButton("Accept Input", "AcceptInput", ImVec4(0.2f, 0.4f, 0.8f, 1.0f));
-                ImGui::SameLine();
-                PresetButton("Attack Next", "AttackNext", ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
-                ImGui::SameLine();
-                PresetButton("Invincible", "IsInvincible", ImVec4(0.6f, 0.6f, 0.1f, 1.0f));
-
-                // 回避によるキャンセル
-                ImGui::SameLine();
-                PresetButton("Dodge Cancel", "CanDodgeCancel", ImVec4(0.1f, 0.7f, 0.3f, 1.0f));
-
-                ImGui::Spacing();
-                ImGui::Separator();
-
-                ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 100.0f);
-                if (ImGui::InputText("Flag Name", selectedItem.stringParam, sizeof(selectedItem.stringParam))) {
-                    propChanged = true;
-                }
-
-                ImGui::BeginChild("BB_Preview", ImVec2(0, 60), true);
-                ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Generated Events:");
-                ImGui::BulletText("Frame %d: BB_%s_True", selectedItem.frameStart, selectedItem.stringParam);
-                ImGui::BulletText("Frame %d: BB_%s_False", selectedItem.frameEnd, selectedItem.stringParam);
-                ImGui::EndChild();
-            }
-
-            if (propChanged) _sequencerImpl->SyncToData();
-        }
-        else {
-            ImGui::TextDisabled("No event block selected.\nClick a block on the timeline.");
-        }
-
-        // =====================================================
-        // ★改良版 カーブエディタ
-        // =====================================================
-        if (_sequencerImpl->targetSequence) {
-
-            ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.2f, 1.0f), "◆ Animation Curves");
-
-            // --- ツールバー行1: Y軸レンジ ---
-            ImGui::SetNextItemWidth(130);
-            float yRange[2] = { _curveDelegate->m_min.y, _curveDelegate->m_max.y };
-            if (ImGui::DragFloat2("Y-Range", yRange, 0.05f)) {
-                _curveDelegate->m_min.y = yRange[0];
-                _curveDelegate->m_max.y = yRange[1];
-            }
-            if (ImGui::IsItemHovered()) ImGui::SetTooltip("カーブの値(Y軸)の表示範囲");
-
-            ImGui::SameLine();
-
-            // --- ツールバー行1: X軸レンジ (Durationを超えて拡張可能) ---
-            ImGui::SetNextItemWidth(130);
-            float xRange[2] = { _curveDelegate->m_min.x, _curveDelegate->m_max.x };
-            if (ImGui::DragFloat2("X-Range", xRange, 0.01f, 0.0f, 100.0f)) {
-                if (xRange[1] > xRange[0] + 0.01f) {
-                    _curveDelegate->m_min.x = xRange[0];
-                    _curveDelegate->m_max.x = xRange[1];
-                }
-            }
-            if (ImGui::IsItemHovered()) ImGui::SetTooltip("時間(X軸)の表示範囲\nDurationを超えて広げることができます");
-
-            ImGui::SameLine();
-
-            // --- Fit ボタン: Durationに合わせてリセット ---
-            if (ImGui::Button("Fit")) {
-                _fitCurveView = true;
-            }
-            if (ImGui::IsItemHovered()) ImGui::SetTooltip("アニメーションの長さに合わせてX軸をリセット");
-
-            // --- ツールバー行2: カーブの表示/非表示 ---
-            ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
-            ImGui::Checkbox("Speed", &_curveDelegate->visible[0]);
-            ImGui::PopStyleColor();
-            ImGui::SameLine();
-            ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(0.0f, 0.65f, 1.0f, 1.0f));
-            ImGui::Checkbox("RootMotion", &_curveDelegate->visible[1]);
-            ImGui::PopStyleColor();
-            ImGui::SameLine();
-            ImGui::TextDisabled("[Scroll:Pan | Ctrl+Scroll:Zoom]");
-
-            // --- _fitCurveView フラグが立っていたらビューをリセット ---
-            if (_fitCurveView && _curveDelegate->targetSeq) {
-                _curveDelegate->FitViewToDuration();
-                _fitCurveView = false;
-            }
-
-            _curveDelegate->SetSequence(&g_EditingSequence);
-
-            // --- カーブエディタ本体を描画 ---
-            ImVec2 curveCanvasPos = ImGui::GetCursorScreenPos();
-            ImVec2 availRegion = ImGui::GetContentRegionAvail();
-            const float CURVE_H = 260.0f;
-            ImVec2 curveCanvasSize = ImVec2(availRegion.x, CURVE_H);
-
-            // ★変更点: 先に背景グリッドとルーラーを描画する（下敷き）
-            DrawCurveEditorOverlay(
-                ImGui::GetWindowDrawList(),
-                curveCanvasPos,
-                curveCanvasSize,
-                _curveDelegate->m_min,
-                _curveDelegate->m_max,
-                _curveDelegate->animDuration
-            );
-
-            // ★変更点: その上に、背景を透明にした ImCurveEdit を重ねて描画する
-            ImCurveEdit::Edit(*_curveDelegate, curveCanvasSize, 999);
-
-            // ★ マウスホイールでパン / Ctrl+ホイールでズーム
-            if (ImGui::IsMouseHoveringRect(curveCanvasPos,
-                ImVec2(curveCanvasPos.x + curveCanvasSize.x,
-                    curveCanvasPos.y + curveCanvasSize.y)))
+        switch (e.type)
+        {
+        case AnimEventType::HitBox: {
+            auto *roster = context.world->GetComponent<CombatRosterComponent>(context.selectedEntity);
+            if (roster && roster->count > 0)
             {
-                const float wheel = ImGui::GetIO().MouseWheel;
-                if (wheel != 0.0f) {
-                    if (ImGui::GetIO().KeyCtrl) {
-                        // --- Ctrl + ホイール: マウス位置を中心にズーム ---
-                        const float mouseNX = (ImGui::GetIO().MousePos.x - curveCanvasPos.x) / curveCanvasSize.x;
-                        const float focusT = _curveDelegate->m_min.x + mouseNX * (_curveDelegate->m_max.x - _curveDelegate->m_min.x);
-                        const float zoomFactor = (wheel > 0.0f) ? 0.82f : 1.22f;
-                        const float newRange = (_curveDelegate->m_max.x - _curveDelegate->m_min.x) * zoomFactor;
-                        _curveDelegate->m_min.x = focusT - mouseNX * newRange;
-                        _curveDelegate->m_max.x = _curveDelegate->m_min.x + newRange;
+                ImGui::Text("Weapon Tag:");
+                ImGui::SetNextItemWidth(-1);
+                const char *preview = e.stringParam.empty() ? "Select Tag..." : e.stringParam.c_str();
+                if (ImGui::BeginCombo("##Tag", preview))
+                {
+                    for (int i = 0; i < roster->count; ++i)
+                    {
+                        bool sel = (e.stringParam == roster->entries[i].tag);
+                        if (ImGui::Selectable(roster->entries[i].tag, sel))
+                        {
+                            e.stringParam = roster->entries[i].tag;
+                            ch            = true;
+                        }
+                        if (sel)
+                            ImGui::SetItemDefaultFocus();
                     }
-                    else {
-                        // --- ホイール: X軸パン ---
-                        const float panStep = (_curveDelegate->m_max.x - _curveDelegate->m_min.x) * 0.12f * -wheel;
-                        _curveDelegate->m_min.x += panStep;
-                        _curveDelegate->m_max.x += panStep;
-                    }
+                    ImGui::EndCombo();
                 }
             }
-
+            else
+            {
+                ImGui::Text("Weapon Tag (no roster):");
+                ImGui::SetNextItemWidth(-1);
+                if (ImGui::InputText("##Tag", buf, sizeof(buf)))
+                {
+                    e.stringParam = buf;
+                    ch            = true;
+                }
+            }
             ImGui::Spacing();
             ImGui::Separator();
+            ImGui::TextColored(ImVec4(1, 0.5f, 0.5f, 1), "Attack");
+            if (ImGui::DragFloat("Damage", &e.damage, 0.5f, 0.0f, 1000.0f, "%.1f"))
+                ch = true;
+            ImGui::TextColored(ImVec4(1, 0.7f, 0.3f, 1), "Hit Stop");
+            if (ImGui::SliderFloat("Duration", &e.hitStopDuration, 0.0f, 1.0f, "%.2f s"))
+                ch = true;
+            if (ImGui::SliderFloat("TimeScale", &e.hitStopScale, 0.0f, 1.0f, "%.2f x"))
+                ch = true;
+            break;
+        }
+        case AnimEventType::SpawnHitbox:
+            ImGui::TextColored(ImVec4(1, 0.7f, 0.3f, 1), "Spatial Hitbox");
+            if (ImGui::DragFloat3("Offset", &e.offset.x, 0.05f))
+                ch = true;
+            if (ImGui::DragFloat("Radius", &e.radius, 0.05f, 0.0f, 100.0f))
+                ch = true;
+            if (ImGui::DragFloat("Damage", &e.damage, 0.5f, 0.0f, 1000.0f, "%.1f"))
+                ch = true;
+            if (ImGui::SliderFloat("HitStop", &e.hitStopDuration, 0.0f, 1.0f, "%.2f s"))
+                ch = true;
+            break;
+        case AnimEventType::Sound:
+            ImGui::TextColored(ImVec4(1, 0.8f, 0.2f, 1), "FMOD Event Path");
+            ImGui::SetNextItemWidth(-1);
+            if (ImGui::InputText("##Snd", buf, sizeof(buf)))
+            {
+                e.stringParam = buf;
+                ch            = true;
+            }
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("event:/SFX/SwordSwing");
+            break;
+        case AnimEventType::Effect:
+            ImGui::TextColored(ImVec4(1, 0.8f, 0.2f, 1), "Effekseer Path");
+            ImGui::SetNextItemWidth(-1);
+            if (ImGui::InputText("##Efk", buf, sizeof(buf)))
+            {
+                e.stringParam = buf;
+                ch            = true;
+            }
+            if (ImGui::DragFloat3("Offset", &e.offset.x, 0.05f))
+                ch = true;
+            if (ImGui::DragFloat("Scale", &e.effectScale, 0.05f, 0.0f, 100.0f, "%.2f x"))
+                ch = true;
+            if (ImGui::Checkbox("Follow Parent", &e.effectFollow))
+                ch = true;
+            break;
+        case AnimEventType::ComboWindow:
+        case AnimEventType::CancelWindow: {
+            const bool isCombo = (e.type == AnimEventType::ComboWindow);
+            ImGui::TextColored(isCombo ? ImVec4(0.25f, 0.75f, 1.0f, 1.0f) : ImVec4(0.75f, 0.25f, 1.0f, 1.0f),
+                isCombo ? "コンボ受付窓 (Combo Window)" : "キャンセル窓 (Cancel Window)");
+            ImGui::Separator();
+
+            ImGui::Text("許可するキャンセルアクション:");
+
+            // ① 現在選択されているフラグの名前を繋げてプレビュー文字列を作る
+            std::string preview = "";
+            if (e.cancelMask == 0)
+            {
+                preview = "未設定 (None)";
+            }
+            else
+            {
+                for (const auto &def : GetCancelFlagDefs())
+                {
+                    if (e.cancelMask & def.flag)
+                    {
+                        if (!preview.empty()) preview += ", ";
+                        preview += def.name;
+                    }
+                }
+            }
+
+            // ② ドロップダウン（コンボボックス）の描画
+            ImGui::SetNextItemWidth(-1); // 横幅いっぱいに広げる
+            if (ImGui::BeginCombo("##CancelMaskCombo", preview.c_str()))
+            {
+                for (const auto &def : GetCancelFlagDefs())
+                {
+                    bool active = (e.cancelMask & def.flag) != 0;
+
+                    // コンボボックス内にチェックボックスを配置
+                    // ※ ImGuiのCheckboxはクリックしてもコンボボックスが勝手に閉じないという利点がある
+                    if (ImGui::Checkbox(def.name, &active))
+                    {
+                        if (active)
+                            e.cancelMask |= def.flag;
+                        else
+                            e.cancelMask &= ~def.flag;
+                        ch = true; // 変更を検知
+                    }
+                }
+                ImGui::EndCombo();
+            }
+
+            ImGui::Spacing();
+            ImGui::TextDisabled("Active [%.2fs - %.2fs]", e.startTime, e.endTime);
+            break;
+        }
+        default:
+            break;
         }
 
+        if (ch)
+            _sequencerImpl->SyncFrameCache();
+    }
+}
 
-        ImGui::EndTable();
+void AnimationSequencerWindow::DrawCurvePane(float animTime)
+{
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::TextColored(ImVec4(1, 0.6f, 0.2f, 1), "アニメーションカーブ (横軸 = 進捗 0〜1)");
+
+    static bool showSpeed = true, showRoot = true;
+    ImGui::Checkbox("速度##cv", &showSpeed);
+    ImGui::SameLine();
+    ImGui::Checkbox("ルートモーション##cv", &showRoot);
+    ImGui::SameLine();
+    if (ImGui::Button("全体表示##cv")) _fitCurveView = true;
+    ImGui::SameLine();
+    ImGui::TextDisabled("[ダブルクリック=キー追加 / 右orホイール=パン&ズーム / Alt+ハンドル=接線分離]");
+
+    _editingSequence.speedCurve.visible      = showSpeed;
+    _editingSequence.rootMotionCurve.visible = showRoot;
+
+    const float dur      = _editingSequence.duration;
+    const float progress = (dur > 0.0f) ? std::clamp(animTime / dur, 0.0f, 1.0f) : 0.0f;
+
+    // 編集対象の切り替え（選択が毎フレーム消えないよう、変化時だけ SetActiveCurve）
+    int active = _curveWidget.ActiveCurveIndex();
+    int prev   = active;
+    ImGui::RadioButton("速度を編集", &active, 0);
+    ImGui::SameLine();
+    ImGui::RadioButton("ルートモーションを編集", &active, 1);
+    if (active != prev) _curveWidget.SetActiveCurve(active);
+
+    std::vector<CurveData *> targets = {&_editingSequence.speedCurve, &_editingSequence.rootMotionCurve};
+
+    // ================================================================
+    // ルートモーション編集時専用ツール
+    //   カーブは「進捗→累積前進距離(m)」。0から形を作るのは接線をいじる必要があって
+    //   面倒なので、プリセットボタンで単調増加の綺麗な形をワンクリックで用意する。
+    //   移動距離そのものは、他のキーと同じくキャンバス/インスペクタで末尾キーの
+    //   「値」を直接ドラッグして決める（専用の距離入力は用意しない＝操作がひとつで済む）。
+    // ================================================================
+    if (active == 1)
+    {
+        CurveData &rc = _editingSequence.rootMotionCurve;
+
+        auto rebuildPreset = [](CurveData &c, int type, float dist) {
+            c.keys.clear();
+            CurveKeyframe k0;
+            k0.time  = 0.0f;
+            k0.value = 0.0f;
+            CurveKeyframe k1;
+            k1.time  = 1.0f;
+            k1.value = dist;
+            switch (type)
+            {
+            case 0: // 一定速度（線形）
+                k0.interp = CurveInterp::Linear;
+                k1.interp = CurveInterp::Linear;
+                break;
+            case 1: // イーズイン（ゆっくり踏み出して加速）
+                k0.interp     = CurveInterp::Cubic;
+                k0.tangentOut = TangentMode::Flat;
+                k1.interp     = CurveInterp::Cubic;
+                k1.tangentIn  = TangentMode::Auto;
+                break;
+            case 2: // イーズアウト（勢いよく出て減速）
+                k0.interp     = CurveInterp::Cubic;
+                k0.tangentOut = TangentMode::Auto;
+                k1.interp     = CurveInterp::Cubic;
+                k1.tangentIn  = TangentMode::Flat;
+                break;
+            case 3: // スムーズ（S字：加速→減速）
+                k0.interp     = CurveInterp::Cubic;
+                k0.tangentOut = TangentMode::Flat;
+                k1.interp     = CurveInterp::Cubic;
+                k1.tangentIn  = TangentMode::Flat;
+                break;
+            }
+            c.keys.push_back(k0);
+            c.keys.push_back(k1);
+            c.AssignMissingIds();
+            c.RecalculateTangents();
+        };
+
+        // プリセット生成時の距離は「今のカーブの総移動量」を引き継ぐ（無ければ1.0）。
+        // 生成後、末尾キーの値を通常通りドラッグすれば距離を変えられる。
+        const float keepDist = rc.keys.empty() ? 1.0f : (rc.keys.back().value - rc.keys.front().value);
+
+        ImGui::TextDisabled("形状プリセット:");
+        ImGui::SameLine();
+        if (ImGui::Button("一定"))
+        {
+            rebuildPreset(rc, 0, keepDist);
+            _curveWidget.SetActiveCurve(1);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("イーズイン"))
+        {
+            rebuildPreset(rc, 1, keepDist);
+            _curveWidget.SetActiveCurve(1);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("イーズアウト"))
+        {
+            rebuildPreset(rc, 2, keepDist);
+            _curveWidget.SetActiveCurve(1);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("スムーズ"))
+        {
+            rebuildPreset(rc, 3, keepDist);
+            _curveWidget.SetActiveCurve(1);
+        }
+
+        ImGui::TextDisabled("移動距離は末尾キーの「値」を右のインスペクタかキャンバスでドラッグして決めます。");
+    }
+
+    CurveEditorWidget::Options opt;
+    opt.height        = 240.0f;
+    opt.showInspector = true;
+    opt.showPlayhead  = true;
+    opt.playheadX     = progress;
+    opt.fitRequested  = _fitCurveView;
+    _fitCurveView     = false;
+
+    _curveWidget.Draw("##seqCurves", targets, opt);
+
+    // 現在の再生位置での評価値を即読み出し（数値でも確認できる）
+    const float sp = _editingSequence.speedCurve.empty() ? 1.0f : _editingSequence.speedCurve.Evaluate(progress);
+    const float rm = _editingSequence.rootMotionCurve.empty() ? 0.0f : _editingSequence.rootMotionCurve.Evaluate(progress);
+
+    // ルートモーションの瞬間速度（傾き）も出す：実際の動きの速さが直感的に分かる
+    float rmSpeed = 0.0f;
+    if (!_editingSequence.rootMotionCurve.empty() && dur > 0.0f)
+    {
+        const float      h   = 0.01f;
+        const float      p0  = std::clamp(progress - h, 0.0f, 1.0f);
+        const float      p1  = std::clamp(progress + h, 0.0f, 1.0f);
+        const CurveData &rc2 = _editingSequence.rootMotionCurve;
+        const float      dp  = (p1 - p0) * dur; // 秒
+        if (dp > 1e-5f) rmSpeed = (rc2.Evaluate(p1) - rc2.Evaluate(p0)) / dp;
+    }
+
+    ImGui::TextColored(ImVec4(0.6f, 0.9f, 1.0f, 1.0f),
+        "進捗 %.2f  |  速度倍率 %.3f  |  累積前進 %.3f m  |  前進速度 %.2f m/s", progress, sp, rm, rmSpeed);
+
+    if (active == 1 && !_editingSequence.rootMotionCurve.empty())
+    {
+        ImGui::TextDisabled("※ 上のシーンビューでキャラが実際に前進する量として確認できます。");
     }
 }

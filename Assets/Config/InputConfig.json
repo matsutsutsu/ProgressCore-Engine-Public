@@ -12,6 +12,24 @@
                 }
             ],
             "Name": "Attack"
+        },
+        {
+            "Bindings": [
+                {
+                    "Device": "Keyboard",
+                    "Key": "SPACE"
+                }
+            ],
+            "Name": "Jump"
+        },
+        {
+            "Bindings": [
+                {
+                    "Device": "Keyboard",
+                    "Key": "SHIFT"
+                }
+            ],
+            "Name": "Dash"
         }
     ],
     "Axes": [

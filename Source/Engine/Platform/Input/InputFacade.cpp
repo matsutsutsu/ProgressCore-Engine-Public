@@ -1,4 +1,5 @@
 #include "InputFacade.h"
+#include "InputKeyTable.h"
 #include <algorithm>
 #include <fstream>
 #include <iostream>
@@ -26,46 +27,12 @@
 
      // ---------------------------------------------------------
      // ヘルパー: 文字列 -> キーコード変換
+     //   共通テーブル(InputKeyTable)へ委譲。
+     //   キー定義の追加は InputKeyTable.h 側で行うこと。
      // ---------------------------------------------------------
-     unsigned int StringToKeyCode(const std::string& str) {
-         if (str == "NONE") return 0; // 軸入力などでキー判定が不要な場合
-
-         // --- キーボード (アルファベットはASCIIコードそのまま) ---
-         if (str.length() == 1 && str[0] >= 'A' && str[0] <= 'Z') return str[0];
-         if (str == "SPACE") return VK_SPACE;
-         if (str == "ESC")   return VK_ESCAPE;
-         if (str == "BACK")  return VK_BACK;
-         if (str == "UP")    return VK_UP;
-         if (str == "SHIFT") return VK_SHIFT;
-         if (str == "DOWN")  return VK_DOWN;
-         if (str == "LEFT")  return VK_LEFT;
-         if (str == "RIGHT") return VK_RIGHT;
-
-         // --- マウス ---
-         if (str == "BTN_LEFT")   return Mouse::BTN_LEFT;
-         if (str == "BTN_RIGHT")  return Mouse::BTN_RIGHT;
-         if (str == "BTN_MIDDLE") return Mouse::BTN_MIDDLE;
-
-         // --- ゲームパッド ---
-         if (str == "BTN_A") return GamePad::BTN_A;
-         if (str == "BTN_B") return GamePad::BTN_B;
-         if (str == "BTN_X") return GamePad::BTN_X;
-         if (str == "BTN_Y") return GamePad::BTN_Y;
-         if (str == "BTN_LEFT_SHOULDER")  return GamePad::BTN_LEFT_SHOULDER; // L1
-         if (str == "BTN_RIGHT_SHOULDER") return GamePad::BTN_RIGHT_SHOULDER;// R1
-         if (str == "BTN_LEFT_TRIGGER")   return GamePad::BTN_LEFT_TRIGGER;  // L2ボタン割り当て時
-         if (str == "BTN_RIGHT_TRIGGER")  return GamePad::BTN_RIGHT_TRIGGER; // R2ボタン割り当て時
-         if (str == "BTN_BACK")           return GamePad::BTN_BACK;          // セレクト / ビュー
-         if (str == "BTN_START")          return GamePad::BTN_START;         // スタート / メニュー
-         if (str == "BTN_LEFT_THUMB")     return GamePad::BTN_LEFT_THUMB;    // 左スティック押し込み
-         if (str == "BTN_RIGHT_THUMB")    return GamePad::BTN_RIGHT_THUMB;   // 右スティック押し込み
-         if (str == "BTN_DPAD_UP")        return GamePad::BTN_UP;       // 十字キー上
-         if (str == "BTN_DPAD_DOWN")      return GamePad::BTN_DOWN;     // 十字キー下
-         if (str == "BTN_DPAD_LEFT")      return GamePad::BTN_LEFT;     // 十字キー左
-         if (str == "BTN_DPAD_RIGHT")     return GamePad::BTN_RIGHT;    // 十字キー右
-
-         // 未知のキーは一旦0を返す。必要に応じて追加してください
-         return 0;
+     unsigned int StringToKeyCode(const std::string &str)
+     {
+         return InputKeyTable::StringToKeyCode(str);
      }
  }
 

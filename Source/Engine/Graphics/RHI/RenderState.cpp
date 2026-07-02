@@ -292,4 +292,33 @@ RenderState::RenderState(ID3D11Device* device)
 			rasterizerStates[static_cast<int>(RasterizerState::WireCullBack)].GetAddressOf());
 		_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 	}
+
+	// ⑤ 影生成用：ソリッド、裏面カリング、デプスバイアス有効
+    {
+        D3D11_RASTERIZER_DESC desc{};
+        desc.FillMode = D3D11_FILL_SOLID;
+
+        // ★ バックカリング（裏面カリング）
+        desc.CullMode              = D3D11_CULL_BACK;
+        desc.FrontCounterClockwise = false;
+
+        // --- 最終チューニング値 ---
+        // 押し込みのベース値（少し下げる）
+        desc.DepthBias = 2000;
+
+        // スロープバイアス（少し下げる）
+        desc.SlopeScaledDepthBias = 1.5f;
+
+        // 垂直な壁でのバイアス暴走を止める上限値 (環境のスケールに合わせて微調整)
+        desc.DepthBiasClamp = 0.005f;
+
+        desc.DepthClipEnable       = true;
+        desc.ScissorEnable         = false;
+        desc.MultisampleEnable     = true;
+        desc.AntialiasedLineEnable = false;
+
+        HRESULT hr = device->CreateRasterizerState(&desc,
+            rasterizerStates[static_cast<int>(RasterizerState::ShadowCullBack)].GetAddressOf());
+        _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+    }
 }

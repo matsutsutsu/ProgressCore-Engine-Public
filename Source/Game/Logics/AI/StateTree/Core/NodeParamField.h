@@ -16,7 +16,7 @@
 namespace CCL::AI
 {
     /// @brief paramsフィールドの型（M2 はスカラのみ。必要なら Vec3 等を追加）。
-    enum class ParamType : uint8_t { Float, Int, Bool };
+    enum class ParamType : uint8_t { Float, Int, Bool,String };
 
     /// @brief Params 構造体内の1フィールドの記述。
     struct NodeParamField
@@ -29,6 +29,11 @@ namespace CCL::AI
         double minVal = 0.0;         ///< エディタ用レンジ下限（min==max のときクランプ無効）
         double maxVal = 0.0;         ///< エディタ用レンジ上限
         float  step   = 0.1f;        ///< DragFloat のステップ
+
+         // String 型のときの char バッファ容量（sizeof(member)）
+        uint32_t capacity = 0;
+        // String 型の既定値（数値の defVal とは別に持つ）
+        std::string defStr;
     };
 }
 
@@ -49,3 +54,8 @@ namespace CCL::AI
 #define NODE_PARAM_BOOL(StructT, member, label, def)                          \
     CCL::AI::NodeParamField{ (label), CCL::AI::ParamType::Bool,               \
         (uint32_t)offsetof(StructT, member), (double)(def), 0.0, 0.0, 1.0f }
+
+#define NODE_PARAM_STRING(StructT, member, label, defaultStr)                 \
+    CCL::AI::NodeParamField{ (label), CCL::AI::ParamType::String,             \
+        (uint32_t)offsetof(StructT, member), 0.0, 0.0, 0.0, 0.1f,             \
+        (uint32_t)sizeof(((StructT*)0)->member), (defaultStr) }

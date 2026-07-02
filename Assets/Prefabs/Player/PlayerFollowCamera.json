@@ -1,0 +1,76 @@
+{
+    "entities": [
+        {
+            "components": {
+                "Camera": {
+                    "baseFov": 70.0,
+                    "currentLookahead": [
+                        0.198355033993721,
+                        0.0,
+                        -0.1833362728357315
+                    ],
+                    "currentPitch": -22.0,
+                    "currentYaw": 90.0,
+                    "dashFov": 90.0,
+                    "distance": 17.5,
+                    "fovDamping": 8.5,
+                    "lookSpeedX": 120.0,
+                    "lookSpeedY": 120.0,
+                    "lookaheadDamping": 1.600000023841858,
+                    "lookaheadMultiplier": 0.20000000298023224,
+                    "maxPitch": 80.0,
+                    "minPitch": -70.0,
+                    "positionDamping": 4.5,
+                    "target": 3,
+                    "targetOffset": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "Name": {
+                    "name": "PlayerFollowCamera"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 2,
+                    "position": [
+                        1.9172172546386719,
+                        6.50405740737915,
+                        -31.874248504638672
+                    ],
+                    "rotation": [
+                        0.1908089965581894,
+                        -2.145414512710886e-08,
+                        4.170262357661159e-09,
+                        0.9816272258758545
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "VirtualCamera": {
+                    "blendTime": 1.0,
+                    "farClip": 1000.0,
+                    "fov": 70.0000228881836,
+                    "nearClip": 0.10000000149011612,
+                    "priority": 200
+                }
+            },
+            "lid": 1
+        }
+    ],
+    "magic": 1397506883,
+    "name": "PlayerFollowCamera",
+    "version": 1
+}

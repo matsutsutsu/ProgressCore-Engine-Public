@@ -2,7 +2,7 @@
 // CCL_PendingOps.h
 // Component Add/Remove の遅延処理リスト
 
-#include "../Common/CCL_Common.h"
+#include "Engine/ECS/Common/CCL_Types.h"
 #include <vector>
 #include <memory>
 #include <functional>

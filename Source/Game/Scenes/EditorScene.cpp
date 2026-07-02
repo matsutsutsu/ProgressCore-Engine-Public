@@ -3,21 +3,18 @@
 #include "Engine/Graphics/RHI/Graphics.h"
 
 #include "Engine/Serialization/Factory/Prefab.h"
-
 #include "Engine/Platform/Core/Logger.h"
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 
-#include "Editor/Core/EditorCommandHistory.h"
-#include "Engine/Transform/Components/TransformComponent.h"
-
-#include "Engine/Transform/Systems/TransformUpdateSystem.h"
-
-#include "Game/Logics/LevelGen/DungeonLevelBuilder.h"
-#include "Game/Logics/LevelGen/DungeonLayout.h"
 
 #include "Game/Logics/AI/StateTree/EnemyAI/EnemyAI.h"
 #include "Game/Logics/AI/StateTree/Core/StateTreeRegistry.h"
+
+#include "Game/Logics/AI/StateTree/Commander/CommanderAI.h"
+#include "Game/Logics/AI/BehaviorTree/Actions/BTActions_Boss.h"
+#include "Game/Logics/AI/BehaviorTree/Actions/BTConditions.h"
+
 
 void EditorScene::Initialize()
 {
@@ -28,33 +25,25 @@ void EditorScene::Initialize()
     SceneInitializer::SpawnLightStartSet(*_worldPtr, device);
     //Prefab::SpawnPrefab(*_worldPtr, "Assets/Prefabs/Camera/FreeCamera.json");
 
+    SceneInitializer::SpawnGameTest(*_worldPtr, device);
 
-    DungeonLevelBuilder::BuildParams p;
-    p.seed = 2024;
-    p.spawnPrefabs = true;
-    //p.playerPrefab = "Assets/Prefabs/Player/PlayerTest.json";
-    p.enemyPrefab = "Assets/Prefabs/Enemy/EnemyTest.json";
-    //p.portalPrefab = "Assets/Prefabs/Portal/ExitPortal.json";
-    // パスを空文字にすればその種類は配置しない
-    //DungeonLevelBuilder::Build(*_worldPtr, device, p);
+    //SceneManager::Instance().LoadScene(_worldPtr,"Assets/Scene/PlayerMovementScene.json");
 
+    static auto enemyIds = EnemyAI::RegisterNodes();
 
-    // 手作りマップ（テスト用固定マップ）
-    RuneForge::Dungeon::DungeonLayout layout;
-    layout.LoadFromJson("Assets/DebugMaps/test1.json");
-    DungeonLevelBuilder::BuildFromResult(*_worldPtr, device, layout.ToResult(), p);
+    // ★追加：BTのアクション・条件を登録
+    CCL::AI::BT::BossActions::RegisterAll();
+    CCL::AI::BT::BossConditions::RegisterAll();
 
-    // プレイヤーをスタート地点に生成（カメラもセット）
-    DungeonLevelBuilder::SpawnPlayerAtStart(*_worldPtr);
+    // ★追加：司令官のノードを登録
+    static auto commanderIds = CommanderAI::RegisterNodes();
 
+    _worldPtr->AddResource<CCL::AI::StateTreeRegistry>();
+    auto &stReg       = _worldPtr->GetResource<CCL::AI::StateTreeRegistry>();
+    auto  enemyHandle = stReg.Register(EnemyAI::BuildEnemyAsset(enemyIds, 12.0f));
 
-    // (a) ノード種別を登録
-    static auto enemyIds = EnemyAI::RegisterNodes();   // アプリ起動中1回でOK
-  
-    _worldPtr->AddResource<CCL::AI::StateTreeRegistry>();          // 空で生成
-    auto& stReg = _worldPtr->GetResource<CCL::AI::StateTreeRegistry>();
-    auto enemyHandle = stReg.Register(EnemyAI::BuildEnemyAsset(enemyIds, 12.0f));
-   
+    // ★追加：司令官StateTreeアセットを登録
+    stReg.Register(CommanderAI::BuildCommanderAsset(commanderIds));
 
 
     CCL_LOG_INFO(LogCategory::Core, "EditorScene Initialize");
@@ -62,9 +51,7 @@ void EditorScene::Initialize()
 
 void EditorScene::Finalize() 
 {
-
     BaseScene::Finalize(); // 共通終了化
-
 }
 
 void EditorScene::RegisterSystems()

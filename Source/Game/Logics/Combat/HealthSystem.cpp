@@ -14,7 +14,6 @@
 #include "HealthSystem.h"
 #include "Game/Logics/Combat/DeadTag.h"
 #include "Engine/Core/Components/NameComponent.h"
-#include "Game/Logics/GameEvent/GameEvents.h"
 #include <algorithm>
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"

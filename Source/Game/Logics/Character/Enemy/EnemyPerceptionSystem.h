@@ -9,7 +9,7 @@
 /// プレイヤー検索は Update 内で1回だけ行い、結果を全敵の Perception に配る。
 /// （旧 EnemyTrackingSystem は敵ごとに同じ計算をしていたが、検索はフレーム1回で十分）
 #pragma once
-#include "Engine/ECS/System/CCL_System.h"
+#include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "EnemyComponent.h"
 #include "Game/Logics/Character/Enemy/PerceptionComponent.h"

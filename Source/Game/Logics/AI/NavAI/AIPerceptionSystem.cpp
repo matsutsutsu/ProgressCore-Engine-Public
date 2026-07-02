@@ -1,7 +1,7 @@
 #include "AIPerceptionSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Physics/JoltIntegration/IPhysicsAPI.h"
-#include "Game/Logics/Character/Player/PlayerComponent.h"
+#include "Game/Logics/Character/Player/Components/PlayerComponent.h"
 #include "Engine/Platform/Core/Logger.h"
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"

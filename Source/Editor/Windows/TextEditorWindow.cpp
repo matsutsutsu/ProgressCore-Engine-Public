@@ -30,7 +30,7 @@ void TextEditorWindow::DrawContents(EditorContext &context)
     ImGui::InputText("File Path", _filePath, sizeof(_filePath));
     ImGui::SameLine();
     if (ImGui::Button("Browse...")) {
-        if (auto path = Engine::FileDialog::OpenPreset("TextEditor", "Select File to Edit",
+        if (auto path = FileDialog::OpenPreset("TextEditor", "Select File to Edit",
             Graphics::Instance().GetWindowHandle()))
         {
             const auto s = path->string();

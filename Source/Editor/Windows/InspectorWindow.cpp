@@ -87,7 +87,7 @@ void InspectorWindow::DrawContents(EditorContext &context)
         HWND               hWnd   = Graphics::Instance().GetWindowHandle();
         static const char *filter = "JSON Files (*.json)\0*.json\0All Files (*.*)\0*.*\0";
 
-        if (auto path = Engine::FileDialog::SavePreset("Prefab", "Save Prefab",
+        if (auto path = FileDialog::SavePreset("Prefab", "Save Prefab",
             {}, Graphics::Instance().GetWindowHandle()))
         {
             PrefabSerializer::Save(path->string().c_str(), world, selected, std::string(filenameBuf));
@@ -101,6 +101,45 @@ void InspectorWindow::DrawContents(EditorContext &context)
     // =========================================================
     const auto &archetype = world->GetEntityArchetype(selected);
     auto       &registry  = ComponentGuiRegistry::Instance();
+
+    // === ① フィルタ ＋ ② 一括開閉 ＋ ⑤ Jump to ツールバー ===========
+    {
+        ImGui::SetNextItemWidth(-160.0f);
+        ImGui::InputTextWithHint("##InspectorFilter", "Filter Components...",
+            _inspectorFilterBuffer, sizeof(_inspectorFilterBuffer));
+
+        ImGui::SameLine();
+        if (ImGui::SmallButton("Expand"))
+            _forceOpenState = 1;
+        ImGui::SameLine();
+        if (ImGui::SmallButton("Collapse"))
+            _forceOpenState = 0;
+
+        ImGui::SetNextItemWidth(-1.0f);
+        if (ImGui::BeginCombo("##JumpTo", "Jump to component...", ImGuiComboFlags_HeightLarge))
+        {
+            for (const auto &td : archetype)
+            {
+                std::string label = registry.GetName(td.id);
+                if (label.find("Unknown") != std::string::npos && td.name != nullptr)
+                {
+                    label = td.name;
+                }
+                if (ImGui::Selectable(label.c_str()))
+                {
+                    _hasJumpTarget = true;
+                    _jumpToTypeID  = td.id;
+                }
+            }
+            ImGui::EndCombo();
+        }
+        ImGui::Separator();
+    }
+
+    // フィルタ文字列を小文字化（大文字小文字を区別しない）
+    std::string inspectorFilter = _inspectorFilterBuffer;
+    std::transform(inspectorFilter.begin(), inspectorFilter.end(),
+        inspectorFilter.begin(), ::tolower);
 
     for (const auto &typeData : archetype) {
         CCL::ECS::TypeID typeID   = typeData.id;
@@ -125,6 +164,19 @@ void InspectorWindow::DrawContents(EditorContext &context)
 
           // GUIが未登録（パラメータ編集はできない状態）であることが分かるようにマークを付ける
           compName += " (No GUI)";
+
+        }
+
+        // ① フィルタに一致しないコンポーネントは描画ごとスキップ
+        if (!inspectorFilter.empty())
+        {
+            std::string compNameLower = compName;
+            std::transform(compNameLower.begin(), compNameLower.end(),
+                compNameLower.begin(), ::tolower);
+            if (compNameLower.find(inspectorFilter) == std::string::npos)
+            {
+                continue;
+            }
         }
 
         ImGui::PushID((int)typeID);
@@ -147,10 +199,29 @@ void InspectorWindow::DrawContents(EditorContext &context)
         ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.28f, 0.28f, 0.28f, 1.0f));
         ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.32f, 0.32f, 0.32f, 1.0f));
 
+        // ② 一括開閉の指令があればこのフレームだけ強制（storage に永続化される）
+        if (_forceOpenState != -1)
+        {
+            ImGui::SetNextItemOpen(_forceOpenState == 1, ImGuiCond_Always);
+        }
+        // ⑤ Jump 先は強制的に開いて中身を見せる
+        bool isJumpTarget = (_hasJumpTarget && typeID == _jumpToTypeID);
+        if (isJumpTarget)
+        {
+            ImGui::SetNextItemOpen(true, ImGuiCond_Always);
+        }
+
         bool headerOpen = ImGui::CollapsingHeader(
             compName.c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap);
 
         ImGui::PopStyleColor(3);
+
+        // ⑤ Jump 先ヘッダーを画面上部付近までスクロール（このフレーム限り）
+        if (isJumpTarget)
+        {
+            ImGui::SetScrollHereY(0.1f);
+            _hasJumpTarget = false;
+        }
 
         // -------------------------------------------------------
         // ③ 削除ボタンのステルス化 (ヘッダーに溶け込ませる)
@@ -183,6 +254,9 @@ void InspectorWindow::DrawContents(EditorContext &context)
 
         ImGui::PopID();
     }
+
+    // ② このフレームで消費した一括開閉指令をクリア
+    _forceOpenState = -1;
 
     ImGui::Separator();
     ImGui::Spacing();

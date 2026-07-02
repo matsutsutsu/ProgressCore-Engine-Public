@@ -1,5 +1,5 @@
 #include "SceneInitializer.h"
-#include "Engine/ECS/Common/CCL_Common.h"
+#include "Engine/ECS/Common/CCL_Types.h"
 #include "Game/Core/AllComponents.h"
 #include "Engine/Serialization/Factory/Prefab.h"
 #include "Engine/Serialization/Factory/EntityFactory.h"
@@ -11,216 +11,6 @@
 #include "Engine/Timer/TimeState.h"
 
 using namespace CCL::ECS;
-
-// ダンジョン生成ロジック（配置先に合わせてパス調整）
-#include "Game/Logics/LevelGen/DungeonGenerator.h"
-#include "Game/Logics/LevelGen/DungeonMeshBatcher.h"
-
-#include <DirectXMath.h>
-
-using namespace CCL::ECS;
-using namespace RuneForge::Dungeon;
-
-
-namespace
-{
-    // 床・壁マップチップモデルのパス（プロジェクトに合わせて調整）
-    constexpr const char* kFloorModelPath = "Assets/Models/MapChip/Floor.glb";
-    constexpr const char* kWallModelPath = "Assets/Models/MapChip/Wall.glb";
-
-    // 1チャンクの一辺（セル数）。前回チームは 20。16〜20 が目安。
-    constexpr int kChunkSize = 16;
-}
-
-
-
-
-void SceneInitializer::SpawnDungeonTest(
-    CCL::ECS::Core::World& world, ID3D11Device* device,
-    uint32_t seed, int floorIndex)
-{
-    // device 未指定なら Graphics から取得してもよいが、呼び出し側で渡す前提。
-    if (!device)
-    {
-        CCL_LOG_WARN(LogCategory::Core, "[Dungeon] device is null; abort spawn.");
-        return;
-    }
-
-    // ----------------------------------------------------------------
-    // 1. 生成（決定的）＋ ASCII デバッグ出力
-    // ----------------------------------------------------------------
-    DungeonGenerateResult result = DungeonGenerator::Generate(seed, floorIndex);
-    DungeonGenerator::DebugPrintGrid(result);
-
-    CCL_LOG_INFO(LogCategory::Core,
-        "[Dungeon] Building floor %d seed=%u grid=%dx%d (chunk=%d)",
-        floorIndex, result.usedSeed, result.width, result.depth, kChunkSize);
-
-    // ----------------------------------------------------------------
-    // 2. マップチップモデルをロード（チャンク間で共有）
-    //    CreateFromData に渡す baseMaterial もこのモデルから取る。
-    // ----------------------------------------------------------------
-    auto floorModel = std::make_shared<Model>(device, kFloorModelPath);
-    auto wallModel = std::make_shared<Model>(device, kWallModelPath);
-
-    // ---- 診断: モデルがちゃんとメッシュを持っているか確認 ----
-    auto countVerts = [](const std::shared_ptr<Model>& m) -> size_t {
-        if (!m) return 0;
-        const ModelResource* res = m->GetResource();
-        if (!res) return 0;
-        size_t v = 0;
-        for (const auto& mesh : res->GetMeshes()) v += mesh.vertices.size();
-        return v;
-        };
-    size_t floorVerts = countVerts(floorModel);
-    size_t wallVerts = countVerts(wallModel);
-    CCL_LOG_INFO(LogCategory::Core,
-        "[Dungeon] chip models loaded: floor='%s' verts=%zu | wall='%s' verts=%zu",
-        kFloorModelPath, floorVerts, kWallModelPath, wallVerts);
-
-    if (floorVerts == 0 && wallVerts == 0) {
-        CCL_LOG_ERROR(LogCategory::Core,
-            "[Dungeon] ABORT: both chip models have 0 vertices. "
-            "Check that the .glb paths exist relative to the working directory.");
-        return;
-    }
-
-    // baseMaterial（無ければ CreateFromData 側でデフォルトPBRが入る）
-    std::shared_ptr<MaterialData> floorMat, wallMat;
-    if (!floorModel->GetMaterials().empty()) floorMat = floorModel->GetMaterials()[0].data;
-    if (!wallModel->GetMaterials().empty())  wallMat = wallModel->GetMaterials()[0].data;
-    // 床・壁が混在する1メッシュなので、代表マテリアルは壁を優先（無ければ床）
-    std::shared_ptr<MaterialData> chunkMat = wallMat ? wallMat : floorMat;
-
-    // ----------------------------------------------------------------
-    // 3. チャンクループ：床＋壁を1バッチ→1Model→1エンティティ
-    // ----------------------------------------------------------------
-    const auto chunkArch = ArchetypeHelper::Generate<
-        TransformComponent,
-        ModelComponent
-    >();
-
-    int chunkCount = 0;
-    long totalVerts = 0, totalTris = 0;
-    EntityID firstChunkId{};            // 診断用
-    ModelInstanceHandle firstHandle{};  // 診断用
-
-    for (int cj = 0; cj < result.depth; cj += kChunkSize)
-    {
-        for (int ci = 0; ci < result.width; ci += kChunkSize)
-        {
-            // 床＋壁を1メッシュに結合
-            auto batch = DungeonMeshBatcher::BuildChunk(
-                result, ci, cj, kChunkSize, kChunkSize, floorModel, wallModel);
-
-            if (batch.vertices.empty()) continue;
-
-            // ランタイムModel生成
-            auto chunkModel = Model::CreateFromData(
-                device, batch.vertices, batch.indices, chunkMat);
-            if (!chunkModel) continue;
-
-            // ★★ 診断: 全チャンクの「リソース同一性」と「頂点座標」を出す。
-            //    全部同じ形に見える原因が、リソース共有なのか頂点座標なのかを切り分ける。
-            {
-                const ModelResource* res = chunkModel->GetResource();
-                const auto& mm = chunkModel->GetMeshes();
-                const void* dataPtr = (!mm.empty()) ? (const void*)mm[0].data : nullptr;
-                // バッチ先頭頂点の座標（チャンクごとに違うはず）
-                float vx = batch.vertices.empty() ? -999 : batch.vertices.front().position.x;
-                float vz = batch.vertices.empty() ? -999 : batch.vertices.front().position.z;
-                CCL_LOG_INFO(LogCategory::Core,
-                    "[Dungeon][DIAG] chunk(%d,%d): ModelPtr=%p Resource=%p mesh.data=%p "
-                    "modelMeshes=%zu firstVert=(%.1f,%.1f)",
-                    ci, cj, (void*)chunkModel.get(), (const void*)res, dataPtr,
-                    mm.size(), vx, vz);
-            }
-
-            // プール登録してハンドル化
-            ModelInstanceHandle handle =
-                ResourceManager::Instance().RegisterModelInstance(chunkModel);
-            if (!handle.IsValid()) continue;
-
-            // ★ 診断: 登録直後のハンドルと、プールから引けるか
-            if (chunkCount == 0) {
-                Model* check = ResourceManager::Instance().GetModelInstance(handle);
-                CCL_LOG_INFO(LogCategory::Core,
-                    "[Dungeon][DIAG] after Register: handle.index=%u gen=%u valid=%d "
-                    "GetModelInstance=%p  meshesViaPool=%zu",
-                    handle.index, handle.generation, handle.IsValid(),
-                    (void*)check, check ? check->GetMeshes().size() : 0);
-            }
-
-            // エンティティ生成（Transform はワールド原点。頂点が既にワールド座標）
-            auto e = EntityFactory::SpawnNamed(world, "DungeonChunk", chunkArch);
-
-            TransformComponent trans{};
-            trans.position = { batch.originX, 0.0f, batch.originZ }; // ★ チャンクのワールド原点
-            trans.rotation = { 0.0f, 0.0f, 0.0f, 1.0f };
-            trans.scale = { 1.0f, 1.0f, 1.0f };
-            trans.isStatic = true;  // 動かないので毎フレーム更新不要
-            trans.isDirty = true;  // 生成直後に1回 worldMatrix を計算させる
-
-            ModelComponent mc{};
-            mc.SetRuntimeModel(handle); // ★ ランタイム生成ハンドルを安全に差し込む
-
-            // ★ 診断: Set する直前の mc のハンドル
-            if (chunkCount == 0) {
-                CCL_LOG_INFO(LogCategory::Core,
-                    "[Dungeon][DIAG] before Set: mc.modelHandle.index=%u valid=%d "
-                    "isRuntime=%d ownsHandle=%d",
-                    mc.modelHandle.index, mc.modelHandle.IsValid(),
-                    mc.isRuntime, mc.ownsHandle);
-            }
-
-            EntityID chunkId = e; // 暗黙変換で EntityID を保存
-            e.Set(std::move(trans))
-                .Set(std::move(mc));
-
-            if (chunkCount == 0) { firstChunkId = chunkId; firstHandle = handle; }
-
-            ++chunkCount;
-            totalVerts += (long)batch.vertices.size();
-            totalTris += (long)batch.indices.size() / 3;
-        }
-    }
-
-    CCL_LOG_INFO(LogCategory::Core,
-        "[Dungeon] Done. chunks=%d verts=%ld tris=%ld  Start=(%d,%d) Portal=(%d,%d)",
-        chunkCount, totalVerts, totalTris,
-        result.startCell.i, result.startCell.j,
-        result.portalCell.i, result.portalCell.j);
-
-    // ★ 診断: 構造変更を今すぐ適用し、実チャンクに入った ModelComponent を読み戻す。
-    //    ここで handle が生きていれば SpawnDungeonTest 側は正しく、描画/その後の
-    //    コピーで失われているなら ModelComponent のライフサイクル側が原因と分かる。
-    world.ScrutinyAndApply();
-
-    if (chunkCount > 0) {
-        ModelComponent* applied = world.GetComponent<ModelComponent>(firstChunkId);
-        if (!applied) {
-            CCL_LOG_ERROR(LogCategory::Core,
-                "[Dungeon][DIAG] POST-APPLY: GetComponent<ModelComponent> returned null "
-                "(entity %u has no ModelComponent in its archetype?)", firstChunkId);
-        }
-        else {
-            Model* m = applied->GetModel();
-            CCL_LOG_INFO(LogCategory::Core,
-                "[Dungeon][DIAG] POST-APPLY: entity=%u  storedHandle.index=%u valid=%d "
-                "isRuntime=%d ownsHandle=%d  GetModel=%p  (registered was index=%u)",
-                firstChunkId, applied->modelHandle.index, applied->modelHandle.IsValid(),
-                applied->isRuntime, applied->ownsHandle, (void*)m, firstHandle.index);
-            if (!applied->modelHandle.IsValid()) {
-                CCL_LOG_ERROR(LogCategory::Core,
-                    "[Dungeon][DIAG] >>> handle LOST during PendingOps apply. "
-                    "The component was COPIED (not moved) and the copy path cleared it, "
-                    "OR a temporary's destructor unloaded the instance.");
-            }
-        }
-    }
-}
-
-
 
 
 void SceneInitializer::SpawnCameraTest(
@@ -310,7 +100,7 @@ void SceneInitializer::SpawnJoltTest(CCL::ECS::Core::World &world, ID3D11Device 
     modelComp.SetModel("Assets/Models/Player/Player.glb");
 
     player.Set(TransformComponent{ .position = {0.0f, 5.0f, 0.0f}, .rotation = {0.0f, 0.0f, 0.0f, 1.0f}, .scale = {1.0f, 1.0f, 1.0f} })
-          .Set(PlayerComponent{ .moveSpeed = 6.0f, .turnSpeed = 10.0f })
+          .Set(PlayerComponent{ .turnSpeed = 10.0f })
           .Set(JoltCharacterConfigComponent{ .maxSlopeAngle = 45.0f, .maxStepHeight = 0.5f, .walkSpeed = 6.0f, .jumpSpeed = 10.0f, .characterMass = 70.0f })
           .Set(JoltCapsuleColliderComponent{ .halfHeight = 0.5f, .radius = 0.5f })
           .Set(PrimitiveComponent{ .type = PrimitiveType::Capsule, .size = {0.0f, 1.0f, 0.0f}, .radius = 0.5f, .color = {0.2f, 0.8f, 0.2f, 1.0f} })
@@ -326,6 +116,8 @@ void SceneInitializer::SpawnJoltTest(CCL::ECS::Core::World &world, ID3D11Device 
 
 }
 
+#include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"
+
 void SceneInitializer::SpawnAnimationTest(CCL::ECS::Core::World& world, ID3D11Device* device)
 {
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Camera/FreeCamera.json");
@@ -334,7 +126,22 @@ void SceneInitializer::SpawnAnimationTest(CCL::ECS::Core::World& world, ID3D11De
    
 }
 
-void SceneInitializer::SpawnShaderTest(CCL::ECS::Core::World& world, ID3D11Device* device)
+void SceneInitializer::SpawnGameTest(CCL::ECS::Core::World &world, ID3D11Device *device)
+{
+    EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Camera/FreeCamera.json");
+    EntityFactory::SpawnPrefab(world, "Assets/Prefabs/World/JoltExampleStage.json");
+    EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Enemy/TestEnemy.json");
+    EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Enemy/TestDroneEnemy.json");
+
+    auto player = EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Player/Player.json");
+    auto camera = EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Player/PlayerFollowCamera.json");
+
+    // player.ID() を渡してメソッドチェーンでPatchする
+    camera.Patch<CameraBodyTPSComponent>([pid = player.ID()](auto &body) { body.target = pid; })
+        .Patch<CameraAimLookAt>([pid = player.ID()](auto &aim) { aim.target = pid; });
+}
+
+void SceneInitializer::SpawnShaderTest(CCL::ECS::Core::World &world, ID3D11Device *device)
 {
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Camera/FreeCamera.json");
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Sponza.json");
@@ -342,72 +149,7 @@ void SceneInitializer::SpawnShaderTest(CCL::ECS::Core::World& world, ID3D11Devic
 }
 
 
-#include "Game/Logics/Character/Player/PlayerComponent.h"
 #include "Game/Logics/Character/Enemy/EnemyComponent.h"
-
-//============================================================================
-// SceneInitializer.cpp または 任意のテスト用クラス
-//============================================================================
-#include "Game/Logics/LevelGen/DungeonGrid.h"
-#include "Engine/Serialization/Factory/EntityFactory.h"
-#include "Engine/Transform/Components/TransformComponent.h"
-#include <random>
-
-void SceneInitializer::SpawnEnemySwarmTest(CCL::ECS::Core::World& world, ID3D11Device* device, int count)
-{
-    using namespace RuneForge::Dungeon;
-
-    // 1. ダンジョン空間の真実である DungeonGrid リソースを取得
-    if (!world.HasResource<DungeonGrid>())
-    {
-        CCL_LOG_ERROR(LogCategory::Core, "DungeonGrid is missing! Please call DungeonLevelBuilder::Build first.");
-        return;
-    }
-
-    auto& grid = world.GetResource<DungeonGrid>();
-    std::mt19937 gen(42); // 固定シードで再現性を担保
-
-    // 2. ダンジョンのグリッド幅・奥行きの範囲で乱数を生成
-    // ※ width/depth が private の場合は grid.GetWidth() 等に適宜変更してください
-    std::uniform_int_distribution<int> distI(0, grid.Width() - 1);
-    std::uniform_int_distribution<int> distJ(0, grid.Depth() - 1);
-
-    // 密集を防ぐための微小な座標ブレ（ジッター）
-    float halfCell = grid.CellSize() * 0.4f;
-    std::uniform_real_distribution<float> jitter(-halfCell, halfCell);
-
-    int spawned = 0;
-    int maxAttempts = count * 10; // 空きマスが見つからず無限ループに陥るのを防ぐ安全装置
-
-    for (int attempts = 0; attempts < maxAttempts && spawned < count; ++attempts)
-    {
-        int i = distI(gen);
-        int j = distJ(gen);
-
-        // 3. 【最重要】そこが「壁」ならスキップしてやり直す
-        if (grid.IsWall(i, j)) continue;
-
-        // 4. セルの中心ワールド座標を取得し、ジッター（ブレ）を加えて散らす
-        float posX = grid.CellCenterWorldX(i) + jitter(gen);
-        float posZ = grid.CellCenterWorldZ(j) + jitter(gen);
-        float posY = 1.0f;
-
-        // 5. ECS へのエンティティ登録
-        auto enemy = EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Enemy/EnemyTest.json");
-
-        // 生成直後に安全に Transform を書き換える (Patchを使用)
-        enemy.Patch<TransformComponent>([posX, posY, posZ](auto& t) {
-            t.position = { posX, posY, posZ };
-            t.rotation = { 0.0f, 0.0f, 0.0f, 1.0f };
-            t.scale = { 0.2f, 0.2f, 0.2f };
-            t.isDirty = true; // 行列の再計算を要求
-            });
-
-        spawned++;
-    }
-
-    CCL_LOG_INFO(LogCategory::Core, "SpawnEnemySwarmTest: Successfully spawned %d enemies.", spawned);
-}
 
 // ============================================================================
 // 指定した数のモデルを並べるテスト環境

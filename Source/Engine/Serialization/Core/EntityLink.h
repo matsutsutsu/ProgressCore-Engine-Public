@@ -23,7 +23,7 @@
 //     EntityID x = link1  → 暗黙変換で取れる (既存コードと互換)
 // =====================================================================
 #pragma once
-#include "Engine/ECS/Common/CCL_Common.h"   // CCL::ECS::EntityID, InvalidEntityID の正式な定義元
+#include "Engine/ECS/Common/CCL_Types.h"   // CCL::ECS::EntityID, InvalidEntityID の正式な定義元
 
 namespace CCL::Serialization {
 

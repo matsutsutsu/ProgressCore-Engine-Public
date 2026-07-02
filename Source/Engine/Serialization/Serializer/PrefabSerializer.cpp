@@ -139,6 +139,7 @@ bool PrefabSerializer::Save(
             void* data = chunk->GetComponentPtrByType(typeData.id, index);
             const auto* meta = registry.GetInfoByName(cName);
             if (!meta || !data) continue;
+            if (!meta->isSerializable) continue;   // ★ 保存対象外はスキップ
 
             nlohmann::json compJson;
             // ★ SaveContext を渡すことで EntityLink が自動で localIndex 化される。

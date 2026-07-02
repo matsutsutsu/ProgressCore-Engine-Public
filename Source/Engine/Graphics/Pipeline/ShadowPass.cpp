@@ -13,7 +13,7 @@
 void ShadowPass::Initialize(const RenderServices& services)
 {
     IRenderPass::Initialize(services);
-    _psoShadow = PipelineState(PipelineStateDesc::DefaultOpaque());
+    _psoShadow = PipelineState(PipelineStateDesc::DefaultShadow());
     _instanceBuffer.Create(services.device, 8192);
 }
 

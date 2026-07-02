@@ -1,18 +1,159 @@
 {
-    "entryPosX": 0.0,
-    "entryPosY": 0.0,
+    "anyStatePosX": 358.0,
+    "anyStatePosY": -198.0,
+    "anyStateTransitions": [
+        {
+            "blendDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "op": 0,
+                    "paramHash": 1116791579,
+                    "paramName": "IsDashing",
+                    "threshold": 1.0
+                }
+            ],
+            "logicType": 0,
+            "requiredCancelMask": 0,
+            "targetStateHash": 1750693397
+        },
+        {
+            "blendDuration": 0.10000000149011612,
+            "conditions": [
+                {
+                    "op": 3,
+                    "paramHash": 3424824828,
+                    "paramName": "OnJump",
+                    "threshold": 0.0
+                }
+            ],
+            "logicType": 0,
+            "requiredCancelMask": 0,
+            "targetStateHash": 236909357
+        },
+        {
+            "blendDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "op": 2,
+                    "paramHash": 101128815,
+                    "paramName": "YVelocity",
+                    "threshold": 0.0
+                },
+                {
+                    "op": 0,
+                    "paramHash": 45180367,
+                    "paramName": "IsGrounded",
+                    "threshold": 0.0
+                }
+            ],
+            "logicType": 0,
+            "requiredCancelMask": 0,
+            "targetStateHash": 2063645824
+        },
+        {
+            "blendDuration": 0.10000000149011612,
+            "conditions": [
+                {
+                    "op": 3,
+                    "paramHash": 2057105605,
+                    "paramName": "OnDoubleJump",
+                    "threshold": 0.0
+                }
+            ],
+            "logicType": 0,
+            "requiredCancelMask": 0,
+            "targetStateHash": 2262072404
+        }
+    ],
+    "entryPosX": 29.0,
+    "entryPosY": -85.0,
     "entryStateHash": 1168775091,
+    "parameters": [
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 174817312,
+            "name": "Speed",
+            "type": 0
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 1116791579,
+            "name": "IsDashing",
+            "type": 1
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 45180367,
+            "name": "IsGrounded",
+            "type": 1
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 3424824828,
+            "name": "OnJump",
+            "type": 2
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 101128815,
+            "name": "YVelocity",
+            "type": 0
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 2057105605,
+            "name": "OnDoubleJump",
+            "type": 2
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 4288447221,
+            "name": "OnLand",
+            "type": 2
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 2343121693,
+            "name": "Attack",
+            "type": 2
+        }
+    ],
     "states": [
         {
+            "applyRootMotion": false,
             "isLoop": true,
-            "nodePosX": -3.0,
-            "nodePosY": 183.0,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 76.0,
+            "nodePosY": 321.0,
             "playbackSpeed": 1.0,
-            "sequenceFilePath": "Assets/Animations/Sequencer/Move.json",
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/Idle.json",
             "sequenceName": "Idle",
             "speedCurveName": "",
             "stateHash": 1168775091,
             "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 174817312,
+                            "paramName": "Speed",
+                            "threshold": 2.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 2371348074
+                },
                 {
                     "blendDuration": 0.20000000298023224,
                     "conditions": [
@@ -23,19 +164,166 @@
                             "threshold": 0.0
                         }
                     ],
-                    "targetStateHash": 2343121693
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 240607861
                 }
             ]
         },
         {
-            "isLoop": false,
-            "nodePosX": 317.0,
-            "nodePosY": 183.0,
+            "applyRootMotion": false,
+            "isLoop": true,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 428.0,
+            "nodePosY": 304.0,
             "playbackSpeed": 1.0,
-            "sequenceFilePath": "Assets/Animations/Sequencer/Attack.json",
-            "sequenceName": "Attack",
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/Run.json",
+            "sequenceName": "Run",
             "speedCurveName": "",
-            "stateHash": 2343121693,
+            "stateHash": 2371348074,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 2,
+                            "paramHash": 174817312,
+                            "paramName": "Speed",
+                            "threshold": 2.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 1168775091
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "isLoop": true,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 330.0,
+            "nodePosY": -14.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/Run.json",
+            "sequenceName": "Dash",
+            "speedCurveName": "",
+            "stateHash": 1750693397,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 0,
+                            "paramHash": 1116791579,
+                            "paramName": "IsDashing",
+                            "threshold": 0.0
+                        },
+                        {
+                            "op": 2,
+                            "paramHash": 174817312,
+                            "paramName": "Speed",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 1168775091
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 0,
+                            "paramHash": 1116791579,
+                            "paramName": "IsDashing",
+                            "threshold": 0.0
+                        },
+                        {
+                            "op": 1,
+                            "paramHash": 174817312,
+                            "paramName": "Speed",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 2371348074
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "isLoop": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 757.0,
+            "nodePosY": -134.0,
+            "playbackSpeed": 2.5,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/Jump_Start.json",
+            "sequenceName": "JumpStart",
+            "speedCurveName": "",
+            "stateHash": 236909357,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 2,
+                            "paramHash": 101128815,
+                            "paramName": "YVelocity",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 2063645824
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "isLoop": true,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 793.0,
+            "nodePosY": 97.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/Jump_Loop.json",
+            "sequenceName": "JumpLoop",
+            "speedCurveName": "",
+            "stateHash": 2063645824,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 3,
+                            "paramHash": 4288447221,
+                            "paramName": "OnLand",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 3204239090
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "isLoop": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 980.0,
+            "nodePosY": -6.0,
+            "playbackSpeed": 2.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/DoubleJump.json",
+            "sequenceName": "DoubleJump",
+            "speedCurveName": "",
+            "stateHash": 2262072404,
             "transitions": [
                 {
                     "blendDuration": 0.20000000298023224,
@@ -47,6 +335,123 @@
                             "threshold": 0.0
                         }
                     ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 2063645824
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "isLoop": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 518.0,
+            "nodePosY": 97.0,
+            "playbackSpeed": 2.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/Jump_End.json",
+            "sequenceName": "JumpEnd",
+            "speedCurveName": "",
+            "stateHash": 3204239090,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 174817312,
+                            "paramName": "Speed",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 1168775091
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 174817312,
+                            "paramName": "Speed",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 2371348074
+                }
+            ]
+        },
+        {
+            "applyRootMotion": true,
+            "isLoop": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": -70.0,
+            "nodePosY": 472.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/Attack_1.json",
+            "sequenceName": "Attack_1",
+            "speedCurveName": "",
+            "stateHash": 240607861,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 3,
+                            "paramHash": 2343121693,
+                            "paramName": "Attack",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 1,
+                    "targetStateHash": 190275004
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 1168775091
+                }
+            ]
+        },
+        {
+            "applyRootMotion": true,
+            "isLoop": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 58.0,
+            "nodePosY": 637.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/Attack_2.json",
+            "sequenceName": "Attack_2",
+            "speedCurveName": "",
+            "stateHash": 190275004,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
                     "targetStateHash": 1168775091
                 }
             ]

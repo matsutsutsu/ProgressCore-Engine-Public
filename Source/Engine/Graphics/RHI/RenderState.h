@@ -45,6 +45,7 @@ enum class RasterizerState
 	SolidCullBack,
 	WireCullNone,
 	WireCullBack,
+    ShadowCullBack,	// 影生成専用（深度バイアス・スロープスケールドバイアス有効）
 
 	EnumCount
 };

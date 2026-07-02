@@ -11,7 +11,7 @@
 ///   3) BFS で距離場を埋め、NavGridFlowField Resource に書く
 /// という「ワールド単位の1パス」を行う。
 #pragma once
-#include "Engine/ECS/System/CCL_System.h"
+#include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/Character/Player/PlayerComponent.h"   // パスは適宜合わせてください
 #include <vector>
 

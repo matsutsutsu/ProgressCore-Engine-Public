@@ -1,70 +1,167 @@
 #pragma once
 #include <vector>
 #include <cstdint>
+#include <algorithm>
 
 // ===================================================================================
 // ファイル: AnimParametersComponent.h
 // 概要: アニメーション状態遷移のための「パラメータ掲示板」コンポーネント
-// 
-// [ 役割 ]
-// ロジックシステム（移動やAI）が計算した「現在の状態（速度、接地判定など）」を書き込み、
-// AnimControllerSystem（評価器）がそれを読み取るためのデータコンテナ。
-// std::unordered_map を避け、フラットな vector の線形探索を用いることで、
-// データ指向設計（DOD）に基づいた高速なキャッシュヒットを実現している。
 // ===================================================================================
 
 // CPUキャッシュラインに収まりやすいフラットなパラメータボード
-struct AnimParametersComponent {
-    struct FloatParam { uint32_t hash; float value; };
-    struct BoolParam { uint32_t hash; bool value; };
+struct AnimParametersComponent
+{
+    struct FloatParam
+    {
+        uint32_t hash;
+        float    value;
+    };
+    struct BoolParam
+    {
+        uint32_t hash;
+        bool     value;
+    };
 
-    std::vector<FloatParam> floats;
-    std::vector<BoolParam>  bools;
-    std::vector<uint32_t>   triggers; // 発生したトリガーのIDリスト
+    // ★ トリガーに寿命(先行入力猶予時間)を持たせる
+    struct TriggerParam
+    {
+        uint32_t hash;
+        float    lifetime;
+    };
 
-    void SetFloat(uint32_t hash, float val) {
-        for (auto& p : floats) {
-            if (p.hash == hash) { p.value = val; return; }
+    std::vector<FloatParam>   floats;
+    std::vector<BoolParam>    bools;
+    std::vector<TriggerParam> triggers; // IDリストから構造体にアップグレード
+
+    void SetFloat(uint32_t hash, float val)
+    {
+        for (auto &p : floats)
+        {
+            if (p.hash == hash)
+            {
+                p.value = val;
+                return;
+            }
         }
-        floats.push_back({ hash, val });
+        floats.push_back({hash, val});
     }
 
-    float GetFloat(uint32_t hash) const {
-        for (const auto& p : floats) {
-            if (p.hash == hash) return p.value;
+    float GetFloat(uint32_t hash) const
+    {
+        for (const auto &p : floats)
+        {
+            if (p.hash == hash)
+                return p.value;
         }
         return 0.0f; // デフォルト値
     }
 
-    void SetBool(uint32_t hash, bool val) {
-        for (auto& p : bools) {
-            if (p.hash == hash) { p.value = val; return; }
+    void SetBool(uint32_t hash, bool val)
+    {
+        for (auto &p : bools)
+        {
+            if (p.hash == hash)
+            {
+                p.value = val;
+                return;
+            }
         }
-        bools.push_back({ hash, val });
+        bools.push_back({hash, val});
     }
 
-    bool GetBool(uint32_t hash) const {
-        for (const auto& p : bools) {
-            if (p.hash == hash) return p.value;
+    bool GetBool(uint32_t hash) const
+    {
+        for (const auto &p : bools)
+        {
+            if (p.hash == hash)
+                return p.value;
         }
         return false;
     }
 
-    void SetTrigger(uint32_t hash) {
-        // 既に存在していなければ追加
-        if (std::find(triggers.begin(), triggers.end(), hash) == triggers.end()) {
-            triggers.push_back(hash);
+    /// @brief トリガーを発火させる（先行入力バッファへの登録）
+    /// @param hash トリガーのハッシュ
+    /// @param bufferTime 先行入力の猶予時間（秒）。デフォルト0.25秒(約15フレーム)
+    void SetTrigger(uint32_t hash, float bufferTime = 0.15f)
+    {
+        for (auto &t : triggers)
+        {
+            if (t.hash == hash)
+            {
+                // 既に存在する場合は、寿命を上書き(延長)する
+                t.lifetime = bufferTime;
+                return;
+            }
         }
+        triggers.push_back({hash, bufferTime});
     }
 
-    bool HasTrigger(uint32_t hash) const {
-        return std::find(triggers.begin(), triggers.end(), hash) != triggers.end();
+    bool HasTrigger(uint32_t hash) const
+    {
+        for (const auto &t : triggers)
+        {
+            if (t.hash == hash)
+                return true;
+        }
+        return false;
     }
 
-    void ConsumeTrigger(uint32_t hash) {
-        auto it = std::find(triggers.begin(), triggers.end(), hash);
-        if (it != triggers.end()) {
-            triggers.erase(it);
-        }
+    void ConsumeTrigger(uint32_t hash)
+    {
+        triggers.erase(
+            std::remove_if(triggers.begin(), triggers.end(),
+                [hash](const TriggerParam &t) { return t.hash == hash; }),
+            triggers.end());
     }
+
+    /// @brief 毎フレーム呼ばれ、バッファの寿命を減らし、切れたものを掃除する
+    void TickTriggers(float dt)
+    {
+        if (triggers.empty())
+            return;
+
+        // 寿命を減らす
+        for (auto &t : triggers)
+        {
+            t.lifetime -= dt;
+        }
+
+        // 寿命が0以下のトリガーを一括削除 (Erase-Remove Idiom)
+        triggers.erase(
+            std::remove_if(triggers.begin(), triggers.end(),
+                [](const TriggerParam &t) { return t.lifetime <= 0.0f; }),
+            triggers.end());
+    }
+
+    bool TryGetNumeric(uint32_t hash, float &outValue) const
+    {
+        for (const auto &p : floats)
+        {
+            if (p.hash == hash)
+            {
+                outValue = p.value;
+                return true;
+            }
+        }
+        for (const auto &p : bools)
+        {
+            if (p.hash == hash)
+            {
+                outValue = p.value ? 1.0f : 0.0f;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // -----------------------------------------------------------------------
+    // ★ 暴発防止用：トリガーの全消去（フラッシュ）
+    // ダメージを受けた瞬間や、回避・死亡時など、
+    // 過去の入力を無効化したい「割り込み処理」が発生した際に呼び出す。
+    // -----------------------------------------------------------------------
+    void ClearTriggers()
+    {
+        triggers.clear();
+    }
+
 };

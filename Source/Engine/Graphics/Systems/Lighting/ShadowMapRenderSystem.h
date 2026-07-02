@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Engine/ECS/System/CCL_System.h" // IfSystemの継承元
+#include "Engine/ECS/System/CCL_IfSystem.h" // IfSystemの継承元
 
 // テンプレート引数で使用するコンポーネント
 #include "Engine/Graphics/Components/Core/ModelComponent.h"

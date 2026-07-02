@@ -1,5 +1,4 @@
 #pragma once
-#include "Engine/ECS/Common/CCL_Common.h"
 
 // ECS限界テスト用のコンポーネント
 struct OrbitBenchmarkComponent {

@@ -1,0 +1,15 @@
+{
+    "duration": 0.46666666865348816,
+    "events": [],
+    "rootMotionCurve": {
+        "keys": [],
+        "name": ""
+    },
+    "sequenceName": "Run",
+    "speedCurve": {
+        "keys": [],
+        "name": ""
+    },
+    "targetAnimName": "Run_Fast_Combat_Loop_Seq_0",
+    "targetModelPath": ""
+}

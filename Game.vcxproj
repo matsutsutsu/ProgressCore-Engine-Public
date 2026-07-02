@@ -344,6 +344,7 @@
     <ClInclude Include="Source\Editor\Utils\AssetBrowser.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="Source\Editor\Utils\CurveEditorWidget.h" />
     <ClInclude Include="Source\Editor\Utils\NavMeshBuilder.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
@@ -351,27 +352,28 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\AnimationSequencerWindow.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\AnimGraphWindow.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\AssetBrowserWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\BehaviorTreeWindow.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\CameraPathEditorWindow.h" />
     <ClInclude Include="Source\Editor\Windows\ConsoleWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\DungeonGeneratorWindow.h" />
+    <ClInclude Include="Source\Editor\Windows\CurveEditorWindow.h" />
     <ClInclude Include="Source\Editor\Windows\ECSDebugWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
@@ -403,21 +405,28 @@
     <ClInclude Include="Source\Engine\AI\Navigation\Systems\NavSteeringSystem.h" />
     <ClInclude Include="Source\Engine\Animation\Components\AnimatorComponent.h" />
     <ClInclude Include="Source\Engine\Animation\Components\AnimParametersComponent.h" />
-    <ClInclude Include="Source\Engine\Animation\Core\AnimationCurve.h" />
+    <ClInclude Include="Source\Engine\Animation\Components\RootMotionComponent.h" />
     <ClInclude Include="Source\Engine\Animation\Core\AnimEventMessages.h" />
     <ClInclude Include="Source\Engine\Animation\Core\AnimGraphSerializer.h" />
     <ClInclude Include="Source\Engine\Animation\Core\AnimSequence.h" />
     <ClInclude Include="Source\Engine\Animation\Core\AnimStateMachine.h" />
     <ClInclude Include="Source\Engine\Animation\Systems\AnimationSystem.h" />
     <ClInclude Include="Source\Engine\Animation\Systems\AnimControllerSystem.h" />
+    <ClInclude Include="Source\Engine\Animation\Systems\AnimSetupSystem.h" />
+    <ClInclude Include="Source\Engine\Animation\Systems\CharacterAnimSyncSystem.h" />
     <ClInclude Include="Source\Engine\Animation\Systems\CombatAnimationSyncSystem.h" />
+    <ClInclude Include="Source\Engine\Animation\Systems\RootMotionSystem.h" />
     <ClInclude Include="Source\Engine\Audio\Components\AudioEmitterComponent.h" />
     <ClInclude Include="Source\Engine\Audio\Components\AudioEvents.h" />
     <ClInclude Include="Source\Engine\Audio\FmodIntegration\FmodAudioManager.h" />
     <ClInclude Include="Source\Engine\Audio\FmodIntegration\IAudioAPI.h" />
     <ClInclude Include="Source\Engine\Audio\Systems\AudioSystem.h" />
+    <ClInclude Include="Source\Engine\Camera\Components\CameraBodyActionTPSComponent.h" />
+    <ClInclude Include="Source\Engine\Camera\Components\CameraDollyCartComponent.h" />
     <ClInclude Include="Source\Engine\Camera\Components\VirtualCameraComponents.h" />
+    <ClInclude Include="Source\Engine\Camera\Systems\CameraActionTPSSystem.h" />
     <ClInclude Include="Source\Engine\Camera\Systems\CameraBrainSystem.h" />
+    <ClInclude Include="Source\Engine\Camera\Systems\CameraDollySystem.h" />
     <ClInclude Include="Source\Engine\Camera\Systems\CameraListenerSystem.h" />
     <ClInclude Include="Source\Engine\Camera\Systems\VisualCameraSystem.h" />
     <ClInclude Include="Source\Engine\Core\App\EngineServices.h" />
@@ -425,6 +434,7 @@
     <ClInclude Include="Source\Engine\Core\Components\DestroyTag.h" />
     <ClInclude Include="Source\Engine\Core\Components\NameComponent.h" />
     <ClInclude Include="Source\Engine\Core\Components\PersistentTag.h" />
+    <ClInclude Include="Source\Engine\Core\Math\CurveData.h" />
     <ClInclude Include="Source\Engine\Core\Math\Misc.h" />
     <ClInclude Include="Source\Engine\Core\Math\ScreenToWorld.h" />
     <ClInclude Include="Source\Engine\Core\Math\StringHash.h" />
@@ -434,7 +444,6 @@
     <ClInclude Include="Source\Engine\Core\Time\HighResolutionTimer.h" />
     <ClInclude Include="Source\Engine\ECS\CCL_ECSContext.h" />
     <ClInclude Include="Source\Engine\ECS\Common\CCL_Archetype.h" />
-    <ClInclude Include="Source\Engine\ECS\Common\CCL_Common.h" />
     <ClInclude Include="Source\Engine\ECS\Common\CCL_IDEmitter.h" />
     <ClInclude Include="Source\Engine\ECS\Common\CCL_TypeErasure.h" />
     <ClInclude Include="Source\Engine\ECS\Common\CCL_TypeInfo.h" />
@@ -450,7 +459,6 @@
     <ClInclude Include="Source\Engine\ECS\Jobs\CCL_FrameAllocator.h" />
     <ClInclude Include="Source\Engine\ECS\Jobs\CCL_JobSystem.h" />
     <ClInclude Include="Source\Engine\ECS\System\CCL_IfSystem.h" />
-    <ClInclude Include="Source\Engine\ECS\System\CCL_System.h" />
     <ClInclude Include="Source\Engine\ECS\System\CCL_SystemAccess.h" />
     <ClInclude Include="Source\Engine\ECS\System\CCL_SystemBase.h" />
     <ClInclude Include="Source\Engine\ECS\System\CCL_SystemManager.h" />
@@ -539,7 +547,6 @@
     <ClInclude Include="Source\Engine\Graphics\Systems\Lighting\ShadowMapRenderSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Particle\GPUParticleRenderSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Particle\GPUParticleUpdateSystem.h" />
-    <ClInclude Include="Source\Engine\Graphics\Systems\Particle\ParticleEventSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\PostProcess\PostProcessSystem.h" />
     <ClInclude Include="Source\Engine\Physics\Components\Character\CharacterMovementInputComponent.h" />
     <ClInclude Include="Source\Engine\Physics\Components\Character\JoltCharacterConfigComponent.h" />
@@ -552,9 +559,11 @@
     <ClInclude Include="Source\Engine\Physics\Components\Jolt\JoltHandleComponent.h" />
     <ClInclude Include="Source\Engine\Physics\Components\RigidBody\JoltRigidBodyComponent.h" />
     <ClInclude Include="Source\Engine\Physics\JoltIntegration\IPhysicsAPI.h" />
+    <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltCharacterContactListener.h" />
     <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltContactListener.h" />
     <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsFacade.h" />
     <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsManager.h" />
+    <ClInclude Include="Source\Engine\Physics\Systems\Character\JoltCharacterDebugDrawSystem.h" />
     <ClInclude Include="Source\Engine\Physics\Systems\Character\JoltCharacterSetupSystem.h" />
     <ClInclude Include="Source\Engine\Physics\Systems\Character\JoltCharacterUpdateSystem.h" />
     <ClInclude Include="Source\Engine\Physics\Systems\Collision\JoltCollisionEventSystem.h" />
@@ -574,6 +583,7 @@
     <ClInclude Include="Source\Engine\Platform\Input\IInputAPI.h" />
     <ClInclude Include="Source\Engine\Platform\Input\Input.h" />
     <ClInclude Include="Source\Engine\Platform\Input\InputFacade.h" />
+    <ClInclude Include="Source\Engine\Platform\Input\InputKeyTable.h" />
     <ClInclude Include="Source\Engine\Platform\Input\Keyboard.h" />
     <ClInclude Include="Source\Engine\Platform\Input\Mouse.h" />
     <ClInclude Include="Source\Engine\Scene\Scene.h" />
@@ -616,60 +626,64 @@
     <ClInclude Include="Source\Engine\UI\Widgets\UIProgressBar.h" />
     <ClInclude Include="Source\Engine\UI\Widgets\UIText.h" />
     <ClInclude Include="Source\Game\Core\AllComponents.h" />
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTAction.h" />
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTActionRegistry.h" />
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTActions_Boss.h" />
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTConditions.h" />
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BossActionComponent.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BossActionSystem.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BossAISystem.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\ActionRegistry.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeBuilder.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeComponents.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeData.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeLoader.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Drone\DroneComponent.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Drone\DroneFormationSystem.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Drone\DroneMovementSystem.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\FlowField\NavFlowFieldSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\FlowField\NavGridFlowField.h" />
@@ -680,6 +694,7 @@
     <ClInclude Include="Source\Game\Logics\AI\NavAI\AIPatrolSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\NavAI\AIPerceptionSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\NavAI\Events\AISoundEvent.h" />
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\Commander\CommanderAI.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\NodeParamField.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\NodeRegistry.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\StateTreeAsset.h" />
@@ -692,20 +707,21 @@
     <ClInclude Include="Source\Game\Logics\AI\StateTree\System\AIDebugSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\System\StateTreeResolveSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\System\StateTreeSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Collision\CharacterWallComponents.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Collision\CharacterWallSlideSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Enemy\AttackIntentComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyMovementSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyPerceptionSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Enemy\MoveIntentComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Enemy\PerceptionComponent.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Player\PlayerAttackSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Player\PlayerComponent.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Player\PlayerFeedbackSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Player\PlayerInputSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Player\PlayerMoveSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Combat\GameRng.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Components\DashComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Components\JustEvadeComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Components\PlayerComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerAttackSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerDashSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerFeedbackSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerInputSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerMoveSystem.h" />
     <ClInclude Include="Source\Game\Logics\Combat\CombatRosterComponent.h" />
     <ClInclude Include="Source\Game\Logics\Combat\DamageResolutionSystem.h" />
     <ClInclude Include="Source\Game\Logics\Combat\DeadTag.h" />
@@ -713,21 +729,9 @@
     <ClInclude Include="Source\Game\Logics\Combat\HealthComponent.h" />
     <ClInclude Include="Source\Game\Logics\Combat\HealthSystem.h" />
     <ClInclude Include="Source\Game\Logics\Combat\HitboxCollisionSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Combat\KnockbackComponent.h" />
-    <ClInclude Include="Source\Game\Logics\Combat\KnockbackSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Combat\TargetRegistry.h" />
-    <ClInclude Include="Source\Game\Logics\Combat\TargetRegistrySystem.h" />
     <ClInclude Include="Source\Game\Logics\GameEvent\GameEvents.h" />
     <ClInclude Include="Source\Game\Logics\GameEvent\GameOverResource.h" />
     <ClInclude Include="Source\Game\Logics\GameEvent\GameStateMode.h" />
-    <ClInclude Include="Source\Game\Logics\LevelGen\DungeonChunkTag.h" />
-    <ClInclude Include="Source\Game\Logics\LevelGen\DungeonGenerator.h" />
-    <ClInclude Include="Source\Game\Logics\LevelGen\DungeonGrid.h" />
-    <ClInclude Include="Source\Game\Logics\LevelGen\DungeonLayout.h" />
-    <ClInclude Include="Source\Game\Logics\LevelGen\DungeonLevelBuilder.h" />
-    <ClInclude Include="Source\Game\Logics\LevelGen\DungeonMeshBatcher.h" />
-    <ClInclude Include="Source\Game\Logics\LevelGen\DungeonTypes.h" />
-    <ClInclude Include="Source\Game\Logics\LevelGen\RoomTemplateTable.h" />
     <ClInclude Include="Source\Game\Logics\Test\ECSBenchmarkSystem.h" />
     <ClInclude Include="Source\Game\Logics\Test\LissajousOrbitComponent.h" />
     <ClInclude Include="Source\Game\Logics\Test\LissajousOrbitSystem.h" />
@@ -738,35 +742,12 @@
     <ClInclude Include="Source\Game\Logics\Test\VectorFlowSystem.h" />
     <ClInclude Include="Source\Game\Logics\Test\VoxelOceanComponent.h" />
     <ClInclude Include="Source\Game\Logics\Test\VoxelOceanSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Bullet\BulletComponents.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Bullet\BulletInheritanceSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Bullet\BulletSpawn.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Bullet\BulletTravelSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Bullet\BulletVisualSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Bullet\MagicBulletPool.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Bullet\WandFireSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Bullet\WandRuntimeComponents.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Collision\BulletEnemyCollisionSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Collision\BulletHitResponseSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Collision\BulletWallCollisionSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Compiler\CompiledWandProgram.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Compiler\WandBuildComponent.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Compiler\WandCompiler.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Compiler\WandCompileSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Compiler\WandProgramRegistry.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Core\RuneDatabase.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Core\RuneStackCurve.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Core\WandTypes.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Accelerate.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Focus.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Homing.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Reflection.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Slow.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Effects\Effect_Split.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Effects\OnHitResolution.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Effects\ResolveOnHit.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Effects\SpawnResolution.h" />
-    <ClInclude Include="Source\Game\Logics\Wand\Effects\TravelResolution.h" />
+    <ClInclude Include="Source\Game\Prototype\ProtoCombatSystem.h" />
+    <ClInclude Include="Source\Game\Prototype\ProtoDebugUISystem.h" />
+    <ClInclude Include="Source\Game\Prototype\ProtoDroneComponent.h" />
+    <ClInclude Include="Source\Game\Prototype\ProtoDroneSpawnerSystem.h" />
+    <ClInclude Include="Source\Game\Prototype\ProtoDroneSwarmSystem.h" />
+    <ClInclude Include="Source\Game\Prototype\PrototypeConfig.h" />
     <ClInclude Include="Source\Game\Scenes\BaseScene.h" />
     <ClInclude Include="Source\Game\Scenes\EditorScene.h" />
     <ClInclude Include="Source\Game\Scenes\ParticleScene.h" />
@@ -1224,6 +1205,7 @@
     <ClCompile Include="Source\Editor\Utils\AssetBrowser.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Utils\CurveEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\Utils\NavMeshBuilder.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
@@ -1231,24 +1213,25 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\AnimationSequencerWindow.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\AnimGraphWindow.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\BehaviorTreeWindow.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\CameraPathEditorWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\ConsoleWindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\DungeonGeneratorWindow.cpp" />
+    <ClCompile Include="Source\Editor\Windows\CurveEditorWindow.cpp" />
     <ClCompile Include="Source\Editor\Windows\ECSDebugWindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
@@ -1278,15 +1261,23 @@
     <ClCompile Include="Source\Engine\AI\Navigation\Systems\NavPathfindingSystem.cpp" />
     <ClCompile Include="Source\Engine\AI\Navigation\Systems\NavSteeringSystem.cpp" />
     <ClCompile Include="Source\Engine\Animation\Components\AnimatorComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Components\RootMotionComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Animation\Core\AnimGraphSerializer.cpp" />
     <ClCompile Include="Source\Engine\Animation\Systems\AnimationSystem.cpp" />
     <ClCompile Include="Source\Engine\Animation\Systems\AnimControllerSystem.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Systems\AnimSetupSystem.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Systems\CharacterAnimSyncSystem.cpp" />
     <ClCompile Include="Source\Engine\Animation\Systems\CombatAnimationSyncSystem.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Systems\RootMotionSystem.cpp" />
     <ClCompile Include="Source\Engine\Audio\Components\AudioComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Audio\FmodIntegration\FmodAudioManager.cpp" />
     <ClCompile Include="Source\Engine\Audio\Systems\AudioSystem.cpp" />
+    <ClCompile Include="Source\Engine\Camera\Components\CameraBodyActionTPSComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Camera\Components\CameraDollyCartComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Camera\Components\VirtualCameraComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Camera\Systems\CameraActionTPSSystem.cpp" />
     <ClCompile Include="Source\Engine\Camera\Systems\CameraBrainSystem.cpp" />
+    <ClCompile Include="Source\Engine\Camera\Systems\CameraDollySystem.cpp" />
     <ClCompile Include="Source\Engine\Camera\Systems\CameraListenerSystem.cpp" />
     <ClCompile Include="Source\Engine\Camera\Systems\VisualCameraSystem.cpp" />
     <ClCompile Include="Source\Engine\Core\App\Framework.cpp" />
@@ -1307,6 +1298,7 @@
     <ClCompile Include="Source\Engine\Graphics\Components\Core\EnvironmentComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Core\MaterialComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Core\ModelComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Components\Core\PrimitiveComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Culling\CullingComponentsMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Lighting\LightComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Particle\GPUParticleComponentMeta.cpp" />
@@ -1364,14 +1356,15 @@
     <ClCompile Include="Source\Engine\Graphics\Systems\Lighting\ShadowMapRenderSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Particle\GPUParticleRenderSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Particle\GPUParticleUpdateSystem.cpp" />
-    <ClCompile Include="Source\Engine\Graphics\Systems\Particle\ParticleEventSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\PostProcess\PostProcessSystem.cpp" />
     <ClCompile Include="Source\Engine\Physics\Components\Character\CharacterMovementInputComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Physics\Components\Character\JoltCharacterConfigComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Physics\Components\Jolt\JoltPhysicsComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltCharacterContactListener.cpp" />
     <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltContactListener.cpp" />
     <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsFacade.cpp" />
     <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsManager.cpp" />
+    <ClCompile Include="Source\Engine\Physics\Systems\Character\JoltCharacterDebugDrawSystem.cpp" />
     <ClCompile Include="Source\Engine\Physics\Systems\Character\JoltCharacterSetupSystem.cpp" />
     <ClCompile Include="Source\Engine\Physics\Systems\Character\JoltCharacterUpdateSystem.cpp" />
     <ClCompile Include="Source\Engine\Physics\Systems\Collision\JoltCollisionEventSystem.cpp" />
@@ -1408,44 +1401,44 @@
     <ClCompile Include="Source\Engine\UI\UIElement.cpp" />
     <ClCompile Include="Source\Engine\UI\UIManager.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeComponentMeta.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BossActionComponentMeta.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BossActionSystem.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BossAISystem.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeBuilder.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeLoader.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Drone\DroneFormationSystem.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Drone\DroneMovementSystem.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\FlowField\NavFlowFieldSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\NavAI\AIComponentsMeta.cpp" />
@@ -1460,47 +1453,30 @@
     <ClCompile Include="Source\Game\Logics\AI\StateTree\System\AIDebugSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\StateTree\System\StateTreeResolveSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\StateTree\System\StateTreeSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Collision\CharacterWallComponentsMeta.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Collision\CharacterWallSlideSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyMovementSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyPerceptionSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Player\PlayerAttackSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Player\PlayerComponentMeta.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Player\PlayerFeedbackSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Player\PlayerInputSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Player\PlayerMoveSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Components\DashComponentsMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Components\PlayerComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerAttackSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerDashSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerFeedbackSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerInputSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerMoveSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\CombatComponentsMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\DamageResolutionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\HealthSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\HitboxCollisionSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Combat\KnockbackComponentMeta.cpp" />
-    <ClCompile Include="Source\Game\Logics\Combat\KnockbackSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Combat\TargetRegistrySystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\LevelGen\DungeonGenerator.cpp" />
-    <ClCompile Include="Source\Game\Logics\LevelGen\DungeonLayout.cpp" />
-    <ClCompile Include="Source\Game\Logics\LevelGen\DungeonLevelBuilder.cpp" />
-    <ClCompile Include="Source\Game\Logics\LevelGen\DungeonMeshBatcher.cpp" />
-    <ClCompile Include="Source\Game\Logics\LevelGen\RoomTemplateTable.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\ECSBenchmarkSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\LissajousOrbitSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\TornadoVortexSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\VectorFlowSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\VoxelOceanSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Wand\Bullet\BulletComponentsMeta.cpp" />
-    <ClCompile Include="Source\Game\Logics\Wand\Bullet\BulletInheritanceSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Wand\Bullet\BulletSpawn.cpp" />
-    <ClCompile Include="Source\Game\Logics\Wand\Bullet\BulletTravelSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Wand\Bullet\BulletVisualSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Wand\Bullet\WandFireSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Wand\Bullet\WandRuntimeComponentsMeta.cpp" />
-    <ClCompile Include="Source\Game\Logics\Wand\Collision\BulletEnemyCollisionSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Wand\Collision\BulletHitResponseSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Wand\Collision\BulletWallCollisionSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Wand\Compiler\WandBuildComponentMeta.cpp" />
-    <ClCompile Include="Source\Game\Logics\Wand\Compiler\WandCompiler.cpp" />
-    <ClCompile Include="Source\Game\Logics\Wand\Compiler\WandCompileSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Wand\Core\RuneDatabase.cpp" />
+    <ClCompile Include="Source\Game\Prototype\ProtoCombatSystem.cpp" />
+    <ClCompile Include="Source\Game\Prototype\ProtoDebugUISystem.cpp" />
+    <ClCompile Include="Source\Game\Prototype\ProtoDroneSpawnerSystem.cpp" />
+    <ClCompile Include="Source\Game\Prototype\ProtoDroneSwarmSystem.cpp" />
     <ClCompile Include="Source\Game\Scenes\BaseScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\EditorScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\ParticleScene.cpp" />
@@ -1533,6 +1509,14 @@
     <None Include="Shader\PostProcess\Bloom.hlsli" />
     <None Include="Shader\Renderer\Primitive\PrimitiveRenderer.hlsli" />
     <None Include="Shader\Renderer\Shape\ShapeRenderer.hlsli" />
+    <None Include="Source\Engine\ECS\Common\ECSCommonArchitecture.md">
+      <SubType>
+      </SubType>
+    </None>
+    <None Include="Source\Engine\ECS\System\ECSSystemArchitecture.md">
+      <SubType>
+      </SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shader\Compute\GPUParticle\initialize_particle_cs.hlsl">

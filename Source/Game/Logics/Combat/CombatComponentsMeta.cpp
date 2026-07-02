@@ -31,12 +31,13 @@ COMPONENT_META_BEGIN(HitboxComponent, "Hitbox")
 CFIELD_FLOAT_RANGED(damageAmount, "Damage Amount", 1.0f, 0.0f, 9999.0f, "Base")
 // 判定の稼働フラグ（bool型は自動推論）
 CFIELD(isActive, "Is Active", "State")
-// クリティカル率 [0.0 ~ 1.0] の範囲で制限
-CFIELD_FLOAT_RANGED(critRate, "Critical Rate", 0.01f, 0.0f, 1.0f, "Combat Stats")
-// クリティカルダメージ倍率（下限 1.0 倍）
-CFIELD_FLOAT_RANGED(critMult, "Critical Multiplier", 0.05f, 1.0f, 10.0f, "Combat Stats")
+
 // ノックバックの強さ（ご要望のコアパラメータ）
 CFIELD_FLOAT_RANGED(knockback, "Knockback Force", 0.1f, 0.0f, 500.0f, "Combat Stats")
+
+// ヒットストップ関連もエディタで調整できるように追加
+CFIELD_FLOAT_RANGED(hitStopDuration, "HitStop Duration (s)", 0.01f, 0.0f, 5.0f, "Combat Stats")
+CFIELD_FLOAT_RANGED(hitStopScale, "HitStop Time Scale", 0.01f, 0.0f, 1.0f, "Combat Stats")
 
 // 【アーキテクチャ解説】
 // ownerID(EntityID) や hitTargets(固定長配列), hitCount は、

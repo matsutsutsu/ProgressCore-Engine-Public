@@ -45,7 +45,7 @@ struct BTPin {
  * @brief ピンとピンを繋ぐ「線（リンク）」のデータ
  */
 struct BTLink {
-    int id;               ///< リンクのユニークID
+    uint32_t id;               ///< リンクのユニークID
     uint32_t startPinId;  ///< 接続元の出力ピンID
     uint32_t endPinId;    ///< 接続先の入力ピンID
 };

@@ -75,7 +75,7 @@ Framework::Framework(HWND hWnd)
 #endif
 	// ★ FileDialog を一括初期化
 	//    プリセット登録 + 前回の履歴ロードがここで完結する
-	Engine::FileDialog::Initialize();
+	FileDialog::Initialize();
 
 	// Input 初期化
 	Input::Instance().Initialize(hWnd);
@@ -135,7 +135,7 @@ Framework::~Framework()
 	ImGuiRenderer::Finalize();
 #endif
 	// ★ ダイアログ履歴を保存
-	Engine::FileDialog::SaveHistory();
+	FileDialog::SaveHistory();
 
 	Logger::Instance().Flush();
 	Logger::Instance().ClearSinks(); // shared_ptr 循環参照防止
@@ -221,6 +221,7 @@ void Framework::Update(float elapsedTime)
 		if (currentScene) {
 			m_editorContext.world = currentScene->GetWorld();
 			m_editorContext.systemManager = currentScene->GetSystemManager();
+		
 		}
 		else {
 			m_editorContext.world = nullptr;
@@ -255,7 +256,7 @@ void Framework::Render(float elapsedTime)
 	ID3D11DeviceContext* dc = Graphics::Instance().GetDeviceContext();
 
 	// =========================================================
-	// ★ 構成による描画先の切り替え
+	// 　ビルド構成による描画先の切り替え
 	// =========================================================
 #ifdef ENABLE_EDITOR
 	// 【エディタあり (Development)】: ゲームは裏画面(gameRTV)に描画する
@@ -466,6 +467,44 @@ int Framework::Run()
 				ZoneScopedN("Framework::Input::Update");
 				Input::Instance().Update(frameTime);
 			}
+
+			// ===========================================================================
+			// ★ あなたの提案による中央集権型シーン操作回路
+			//   誰も世界の処理を始めていないこのクリーンな瞬間に対処することで、
+			//   以降の FixedUpdate, Update, Render は一貫して「新しい世界」を走る。
+			// ===========================================================================
+#ifdef ENABLE_EDITOR
+
+			if (auto* currentScene = SceneManager::Instance().GetCurrentScene())
+			{
+				auto* world = currentScene->GetWorld();
+				if (world)
+				{
+					// ① ロード要求の一括検知
+					if (!m_editorContext.pendingLoadScenePath.empty())
+					{
+						ZoneScopedN("Editor::ExecutePendingLoad");
+
+						// シーンマネージャーを直接叩いて、この世界のエンティティを入れ替える
+						SceneManager::Instance().LoadScene(world, m_editorContext.pendingLoadScenePath);
+
+						// リクエストを完全に消化したのでクリア
+						m_editorContext.pendingLoadScenePath.clear();
+						m_editorContext.selectedEntity = CCL::ECS::InvalidEntityID;
+					}
+
+					// ② セーブ要求の一括検知
+					if (!m_editorContext.pendingSaveScenePath.empty())
+					{
+						ZoneScopedN("Editor::ExecutePendingSave");
+
+						SceneManager::Instance().SaveScene(world, m_editorContext.pendingSaveScenePath);
+						m_editorContext.pendingSaveScenePath.clear();
+					}
+				}
+			}
+#endif
+			// ===========================================================================
 
 
 			// ループ回数制限用のカウンタ

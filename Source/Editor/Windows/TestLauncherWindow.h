@@ -31,18 +31,10 @@ private:
         std::function<void(CCL::ECS::Core::World&, ID3D11Device*, int)> callback;
     };
 
-    // 3. シード値や階層を指定する特殊テスト (Dungeonなど)
-    struct DungeonTest {
-        std::string name;
-        int seed;
-        int floor;
-        std::function<void(CCL::ECS::Core::World&, ID3D11Device*, uint32_t, int)> callback;
-    };
 
     std::vector<BasicTest>   _basicTests;
     std::vector<CountTest>   _perfTests;
-    std::vector<DungeonTest> _dungeonTests;
-
+ 
     // 共通の環境リセット処理
     void CleanupAndInitializeEnv(EditorContext& context);
 };

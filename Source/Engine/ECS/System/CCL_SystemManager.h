@@ -6,14 +6,14 @@
 #include <memory>
 #include <algorithm>
 #include <chrono>
-#include "../Common/CCL_Common.h"
-#include "CCL_System.h"
+#include "Engine/ECS/System/CCL_TaskScheduler.h"
+#include "Engine/ECS/System/CCL_SystemBase.h"
 #include "Engine/ECS/Core/CCL_ChunkManager.h"
+#include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/Jobs/CCL_JobSystem.h"
 
 // Priority定義を知る必要がある
 #include "Engine/Core/Systems/SystemPriority.h"
-#include "CCL_TaskScheduler.h"
 
 
 namespace CCL::ECS

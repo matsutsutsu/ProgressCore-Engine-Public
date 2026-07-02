@@ -1,5 +1,5 @@
 #pragma once
-#include "Engine/ECS/Common/CCL_Common.h"
+#include "Engine/ECS/Common/CCL_Types.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include <DirectXMath.h>
 #include <d3d11.h>

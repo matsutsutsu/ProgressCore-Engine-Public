@@ -21,7 +21,7 @@
 #pragma once
 #include <cstdint>
 #include <unordered_map>
-#include "Engine/ECS/Common/CCL_Common.h"
+#include "Engine/ECS/Common/CCL_Types.h"
 
 namespace CCL::Serialization {
 

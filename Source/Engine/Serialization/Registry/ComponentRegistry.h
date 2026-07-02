@@ -40,15 +40,14 @@ public:
     using DeserializeToWorldFunc = std::function<void(CCL::ECS::Core::World*, CCL::ECS::EntityID,
         const nlohmann::json&, CCL::Serialization::LoadContext*)>;
 
-    struct MetaInfo {
-        std::string name;
-        SerializeFunc serialize;                       // (json, comp*, SaveContext) -> void
-        DeserializeToWorldFunc deserializeToWorld;     // (world, entity, json, LoadContext) -> void
+    struct MetaInfo
+    {
+        std::string            name;
+        SerializeFunc          serialize;          // (json, comp*, SaveContext) -> void
+        DeserializeToWorldFunc deserializeToWorld; // (world, entity, json, LoadContext) -> void
 
-        // シーン保存ヘルパー (isSerializable = false の型では未設定 = nullptr)
-        std::function<bool(CCL::ECS::Core::World*, CCL::ECS::EntityID)> hasComponent = nullptr;
-        std::function<void(CCL::ECS::Core::World*, CCL::ECS::EntityID,
-            nlohmann::json&, CCL::Serialization::SaveContext*)> saveToJSON = nullptr;
+        // false の型はシーン/プレハブ保存からスキップされる (実行時専用コンポーネント等)
+        bool isSerializable = true;
     };
 
     static ComponentRegistry& Instance();
@@ -56,45 +55,31 @@ public:
     const std::unordered_map<std::string, MetaInfo>& GetAllMeta() const { return _nameToMeta; }
 
     template <typename T>
-    void Register(const std::string& name)
+    void Register(const std::string &name)
     {
         MetaInfo info;
         info.name = name;
 
         // ---- 保存: SaveContext を渡す (EntityLink が自動 remap される) ----
-        info.serialize = [](nlohmann::json& j, const void* ptr, CCL::Serialization::SaveContext* ctx) {
-            ComponentMetaJson::ComponentSerializer<T>::Save(j, *static_cast<const T*>(ptr), ctx);
-            };
+        info.serialize = [](nlohmann::json &j, const void *ptr, CCL::Serialization::SaveContext *ctx) {
+            ComponentMetaJson::ComponentSerializer<T>::Save(j, *static_cast<const T *>(ptr), ctx);
+        };
 
         // ---- 復元: LoadContext を渡す (EntityLink が自動 Resolve される) ----
-        //   経路は常にこれ 1 本。カスタムが必要なら ComponentSerializer<T> を特殊化する。
-        info.deserializeToWorld = [](CCL::ECS::Core::World* world,
-            CCL::ECS::EntityID entity,
-            const nlohmann::json& j,
-            CCL::Serialization::LoadContext* ctx)
-            {
-                T temp{};
-                ComponentMetaJson::ComponentSerializer<T>::Load(j, temp, ctx);
-                world->AddComponent<T>(entity, std::move(temp));
-            };
+        info.deserializeToWorld = [](CCL::ECS::Core::World            *world,
+                                      CCL::ECS::EntityID               entity,
+                                      const nlohmann::json            &j,
+                                      CCL::Serialization::LoadContext *ctx) {
+            T temp{};
+            ComponentMetaJson::ComponentSerializer<T>::Load(j, temp, ctx);
+            world->AddComponent<T>(entity, std::move(temp));
+        };
 
-        // ---- シーン保存用 (isSerializable で除外する型はフックを張らない) ----
-        if constexpr (HasIsSerializable<T>::value) {
-            info.hasComponent = [](CCL::ECS::Core::World* w, CCL::ECS::EntityID e) {
-                return w->HasComponent<T>(e);
-                };
-            info.saveToJSON = [](CCL::ECS::Core::World* w, CCL::ECS::EntityID e,
-                nlohmann::json& j, CCL::Serialization::SaveContext* ctx)
-                {
-                    if (auto* comp = w->GetComponent<T>(e)) {
-                        nlohmann::json compJson;
-                        ComponentMetaJson::ComponentSerializer<T>::Save(compJson, *comp, ctx);
-                        j[ComponentMeta<T>::displayName] = compJson;
-                    }
-                };
-        }
+        // ---- 保存可否フラグ (実際の保存経路がこの値を見てスキップする) ----
+        //   ComponentMeta<T>::isSerializable が無ければ true、false 指定なら false。
+        info.isSerializable = HasIsSerializable<T>::value;
 
-        _nameToMeta[name] = std::move(info);
+        _nameToMeta[name]                          = std::move(info);
         _typeIdToName[CCL::ECS::TypeInfo<T>::ID()] = name;
     }
 
@@ -108,11 +93,6 @@ public:
         return (it != _typeIdToName.end()) ? it->second : std::string{};
     }
 
-    void RegisterInternal(CCL::ECS::TypeID typeId, const std::string& name, MetaInfo&& info)
-    {
-        _nameToMeta[name] = std::move(info);
-        _typeIdToName[typeId] = name;
-    }
 
 private:
     std::unordered_map<std::string, MetaInfo> _nameToMeta;

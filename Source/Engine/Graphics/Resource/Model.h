@@ -129,6 +129,12 @@ public:
             const std::vector<uint32_t>                           &indices,
             std::shared_ptr<MaterialData>                          baseMaterial);
 	
+	// ルートモーションの抽出と固定の対象となる、真のルートボーンを探して返す
+    int GetRootMotionNodeIndex() const;
+
+    // アニメーションデータの中で、実際に大きく移動している真のルートボーンを自動特定する
+    int FindRealRootMotionNodeIndex(int animIndex) const;
+
 private:
 	// shared_ptrで持つことで、外部に配ってもデータは消えない
 	std::vector<Material> materials;

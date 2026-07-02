@@ -2,10 +2,22 @@
     "entities": [
         {
             "components": {
-                "JoltMeshCollider": {
+                "Bounding Box": {
+                    "worldAABB.Center": [
+                        90.00000762939453,
+                        3.8497228622436523,
+                        0.0
+                    ],
+                    "worldAABB.Extents": [
+                        191.97186279296875,
+                        14.098334312438965,
+                        120.0
+                    ]
+                },
+                "Jolt Mesh Collider": {
                     "isEnabled": true
                 },
-                "JoltRigidbody": {
+                "Jolt Rigidbody": {
                     "friction": 0.20000000298023224,
                     "gravityFactor": 1.0,
                     "initialVelocity": [
@@ -26,8 +38,17 @@
                 "Name": {
                     "name": "JoltExampleStage"
                 },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
                 "Transform": {
                     "isStatic": false,
+                    "parent": 2,
                     "position": [
                         0.0,
                         0.0,
@@ -40,14 +61,19 @@
                         1.0
                     ],
                     "scale": [
+                        4.0,
                         3.0,
-                        3.0,
-                        3.0
+                        4.0
                     ]
+                },
+                "Visibility": {
+                    "isVisible": true
                 }
             },
-            "id": 4294967317
+            "lid": 1
         }
     ],
-    "name": "JoltExampleStage"
+    "magic": 1397506883,
+    "name": "JoltExampleStage",
+    "version": 1
 }

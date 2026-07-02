@@ -1,5 +1,5 @@
 #pragma once
-#include "Engine/ECS/System/CCL_System.h"
+#include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Graphics/Components/Culling/CullingComponents.h"
 
 // カリング用のAABBを可視化するデバッグシステム

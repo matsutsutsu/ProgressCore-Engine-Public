@@ -26,7 +26,7 @@
 //   - ノックバック方向は攻撃者→被弾者の Transform から算出(XZ平面)。位置が取れない
 //     場合は強さ0として無効化する(安全側)。
 // ===========================================================================
-#include "Engine/ECS/System/CCL_System.h"
+#include "Engine/ECS/System/CCL_IfSystem.h"
 
 class HitboxCollisionSystem : public CCL::ECS::IfSystem<HitboxCollisionSystem> {
 public:

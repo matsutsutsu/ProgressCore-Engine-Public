@@ -119,4 +119,4 @@ void NavMeshDebugDrawSystem::Update(float dt)
     }
 }
 
-//REGISTER_RENDER_SYSTEM(NavMeshDebugDrawSystem, Priority::RenderStage::R08_Main);
+REGISTER_RENDER_SYSTEM(NavMeshDebugDrawSystem, Priority::RenderStage::R08_Main);
