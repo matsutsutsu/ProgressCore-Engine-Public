@@ -1511,6 +1511,8 @@
     <None Include="Shader\PostProcess\Bloom.hlsli" />
     <None Include="Shader\Renderer\Primitive\PrimitiveRenderer.hlsli" />
     <None Include="Shader\Renderer\Shape\ShapeRenderer.hlsli" />
+    <None Include="Shader\SHADER_ARCHITECTURE.md" />
+    <None Include="Source\Engine\ECS\CCL_ECS_ARCHITECTURE.md" />
     <None Include="Source\Engine\ECS\Common\ECSCommonArchitecture.md">
       <SubType>
       </SubType>

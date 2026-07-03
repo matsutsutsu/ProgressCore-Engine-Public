@@ -2728,6 +2728,12 @@
     <None Include="Source\Engine\ECS\System\ECSSystemArchitecture.md">
       <Filter>Source\Engine\ECS\System</Filter>
     </None>
+    <None Include="Source\Engine\ECS\CCL_ECS_ARCHITECTURE.md">
+      <Filter>Source\Engine\ECS</Filter>
+    </None>
+    <None Include="Shader\SHADER_ARCHITECTURE.md">
+      <Filter>Shader</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shader\Material\Basic\BasicPS.hlsl">
