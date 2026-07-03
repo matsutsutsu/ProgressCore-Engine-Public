@@ -11,7 +11,7 @@
 class PlayerInputSystem : public CCL::ECS::IfSystem<
     PlayerInputSystem,
     CCL::ECS::Write<CharacterMovementInputComponent>,
-    CCL::ECS::Read<PlayerComponent>>
+    CCL::ECS::Write<PlayerComponent>>
 {
 public:
     PlayerInputSystem();

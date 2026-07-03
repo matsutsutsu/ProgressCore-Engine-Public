@@ -8,6 +8,7 @@
 
 #include "Game/Logics/GameEvent/GameEvents.h"
 #include "Engine/Physics/Components/Character/CharacterMovementInputComponent.h"
+#include "Game/Logics/Character/Player/Components/PlayerComponent.h"
 #include "Game/Logics/Combat/DeadTag.h"
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -65,8 +66,17 @@ void CameraActionTPSSystem::Update(float dt)
     ForEach([&](VirtualCamera &vcam, CameraBodyTPSComponent &tps, TransformComponent &trans) {
         // 1. 追従対象（プレイヤー）の取得
         auto *targetTrans = _world->GetComponent<TransformComponent>(tps.target.id);
-        if (!targetTrans)
-            return;
+        if (!targetTrans) return;
+
+        // ===================================================================
+        // ★データブリッジ：プレイヤーコンポーネントからロックオン情報を自動同期する
+        // これにより、カメラがプレイヤー固有のロックオン状態を完全に追従する
+        // ===================================================================
+        if (auto *playerComp = _world->GetComponent<PlayerComponent>(tps.target.id))
+        {
+            tps.lockOnTarget.id = playerComp->lockOnTargetID;
+            tps.isLockOnActive  = (playerComp->lockOnTargetID != CCL::ECS::InvalidEntityID);
+        }
 
         // 2. ロックオン対象（エネミー）の生存確認とTransform取得
         auto *enemyTrans = tps.isLockOnActive ? _world->GetComponent<TransformComponent>(tps.lockOnTarget.id) : nullptr;

@@ -50,7 +50,7 @@
         },
         {
             "name": "Input Mapping Editor",
-            "visible": false
+            "visible": true
         },
         {
             "name": "NavMesh Builder",

@@ -1779,6 +1779,9 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderManifest.h">
       <Filter>Source\Engine\Graphics\Shader</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerLockOnSystem.h">
+      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2659,6 +2662,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Shader\ShaderManifest.cpp">
       <Filter>Source\Engine\Graphics\Shader</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerLockOnSystem.cpp">
+      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

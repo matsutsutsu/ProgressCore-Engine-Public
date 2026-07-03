@@ -27,8 +27,9 @@ void PlayerInputSystem::Update(float dt)
     auto inputAPI = _world->GetResource<std::shared_ptr<IInputAPI>>();
     Camera* mainCamera = _world->GetResource<Camera*>();
 
+
     // =========================================================
-    // ★ ハードウェア直叩きによるデバッグポーズ＆コマ送り制御
+    // DEBUG ハードウェア直叩きによるデバッグポーズ＆コマ送り制御
     // =========================================================
     if (_world->HasResource<TimeContext>())
     {
@@ -53,12 +54,15 @@ void PlayerInputSystem::Update(float dt)
         wasF11Pressed = isF11Pressed;
     }
 
+
+
     // 1. デバイスからの入力取得
     float moveX       = inputAPI->GetAxis("MoveX");
     float moveY       = inputAPI->GetAxis("MoveY");
     bool  isAttacking = inputAPI->GetAction("Attack");
     bool  isJumping   = inputAPI->GetAction("Jump");
     bool  isDashing   = inputAPI->GetAction("Dash"); // ダッシュ入力の取得
+    bool  isLockOn    = inputAPI->GetAction("LockOn"); // Rボタンなどのアクションを追加
 
     // 2. カメラ空間ベースのベクトル生成 (TPS特有の処理)
     // ※Cameraクラスの仕様に合わせて GetForward() 等の関数名は適宜読み替えること
@@ -78,16 +82,15 @@ void PlayerInputSystem::Update(float dt)
     }
 
     // 4. Chunk一括更新 (SoA)
-    ForEach([&](CharacterMovementInputComponent& inputData, const PlayerComponent& player) {
+    ForEach([&](CharacterMovementInputComponent& inputData, PlayerComponent& player) {
 
         // 要求速度、攻撃意思、ジャンプ意思の書き込み
         inputData.desiredVelocity   = moveDir;
         inputData.isAttackRequested = isAttacking;
         inputData.jumpRequested     = isJumping;
         inputData.dashRequested     = isDashing; // ダッシュ要求をコンポーネントへ渡す
+        player.lockOnToggleRequested = isLockOn;  // ロックオン要求をコンポーネントへ渡す
 
-        // TPSにおけるエイム先は「カメラの中心」となるため、マウス交差計算は撤廃。
-        // 必要に応じてカメラの RayCast などの結果をここに流し込む設計とする。
         });
 }
 

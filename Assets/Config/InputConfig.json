@@ -30,6 +30,15 @@
                 }
             ],
             "Name": "Dash"
+        },
+        {
+            "Bindings": [
+                {
+                    "Device": "Keyboard",
+                    "Key": "R"
+                }
+            ],
+            "Name": "LockOn"
         }
     ],
     "Axes": [

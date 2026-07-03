@@ -722,6 +722,7 @@
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerDashSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerFeedbackSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerInputSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerLockOnSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerMoveSystem.h" />
     <ClInclude Include="Source\Game\Logics\Combat\CombatRosterComponent.h" />
     <ClInclude Include="Source\Game\Logics\Combat\DamageResolutionSystem.h" />
@@ -1465,6 +1466,7 @@
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerDashSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerFeedbackSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerInputSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerLockOnSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerMoveSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\CombatComponentsMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\DamageResolutionSystem.cpp" />
