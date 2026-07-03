@@ -1,6 +1,25 @@
 {
     "duration": 2.066666603088379,
-    "events": [],
+    "events": [
+        {
+            "cancelMask": 1,
+            "damage": 0.0,
+            "effectFollow": false,
+            "effectScale": 1.0,
+            "endTime": 1.6666666269302368,
+            "hitStopDuration": 0.0,
+            "hitStopScale": 1.0,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "startTime": 0.5,
+            "stringParam": "",
+            "type": 6
+        }
+    ],
     "rootMotionCurve": {
         "color": 4286643968,
         "keys": [
