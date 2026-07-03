@@ -2,13 +2,77 @@
     "duration": 2.066666603088379,
     "events": [],
     "rootMotionCurve": {
-        "keys": [],
-        "name": ""
+        "color": 4286643968,
+        "keys": [
+            {
+                "inTangent": 90.43489837646484,
+                "interp": 2,
+                "outTangent": 90.43489837646484,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": -0.0009294748306274414,
+                "value": 0.9708085060119629
+            },
+            {
+                "inTangent": 17.133358001708984,
+                "interp": 2,
+                "outTangent": 17.133358001708984,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": 0.2095698118209839,
+                "value": 20.00728988647461
+            },
+            {
+                "inTangent": 0.46789196133613586,
+                "interp": 2,
+                "outTangent": 0.46789196133613586,
+                "tangentIn": 2,
+                "tangentOut": 2,
+                "time": 1.4320186376571655,
+                "value": 25.52202033996582
+            }
+        ],
+        "name": "",
+        "postInfinity": 0,
+        "preInfinity": 0,
+        "visible": true
     },
     "sequenceName": "DashAttack",
     "speedCurve": {
-        "keys": [],
-        "name": ""
+        "color": 4286643968,
+        "keys": [
+            {
+                "inTangent": 1.498558521270752,
+                "interp": 2,
+                "outTangent": 1.498558521270752,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": -0.006428509950637817,
+                "value": 0.9770514965057373
+            },
+            {
+                "inTangent": 1.4069923162460327,
+                "interp": 2,
+                "outTangent": 1.4069923162460327,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": 0.6464728713035583,
+                "value": 1.9554624557495117
+            },
+            {
+                "inTangent": 1.2455289363861084,
+                "interp": 2,
+                "outTangent": 1.2455289363861084,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": 1.016735315322876,
+                "value": 2.416635036468506
+            }
+        ],
+        "name": "",
+        "postInfinity": 0,
+        "preInfinity": 0,
+        "visible": true
     },
     "targetAnimName": "Run_Attack_01_Seq_0",
     "targetModelPath": ""

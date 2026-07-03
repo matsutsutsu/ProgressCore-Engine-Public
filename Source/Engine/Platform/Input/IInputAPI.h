@@ -85,9 +85,7 @@ public:
     virtual bool GetAction(uint32_t actionHash) const = 0;
     virtual float GetAxis(uint32_t axisHash) const = 0;
 
-    // =======================================================
-    // ★ 文字列で呼べる安全なヘルパー（中身をここに直接記述）
-    // =======================================================
+    // 文字列で呼べる安全なヘルパー関数
     bool GetAction(const char* actionName) const { 
         return GetAction(CCL::Utils::HashString(actionName)); 
     }

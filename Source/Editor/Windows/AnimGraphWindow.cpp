@@ -864,16 +864,6 @@ void AnimGraphWindow::DrawStateSettings(int nodeId)
             ImGui::SetTooltip("ONにするとルートボーンのYも初期姿勢へ固定します。\n地上攻撃など浮いてほしくないステート向け。\nジャンプ攻撃など意図的な上下動があるステートはOFFのままにしてください。");
         ImGui::DragFloat("再生速度 (Playback Speed)", &state.playbackSpeed, 0.05f, 0.0f, 5.0f);
 
-        char curveBuf[128];
-        strncpy_s(curveBuf, sizeof(curveBuf), state.speedCurveName.c_str(), _TRUNCATE);
-        if (ImGui::InputText("速度カーブ (Speed Curve)", curveBuf, sizeof(curveBuf)))
-            state.speedCurveName = curveBuf;
-
-        char rmCurveBuf[256];
-        strncpy_s(rmCurveBuf, sizeof(rmCurveBuf), state.rootMotionCurveName.c_str(), _TRUNCATE);
-        if (ImGui::InputText("ルートモーションカーブ (RootMotion Curve)", rmCurveBuf, sizeof(rmCurveBuf)))
-            state.rootMotionCurveName = rmCurveBuf;
-
         ImGui::Separator();
         if (_currentGraph.entryStateHash == state.stateHash)
         {
@@ -981,6 +971,44 @@ void AnimGraphWindow::DrawToolbar()
 
     if (ImGui::Button("全表示 (Focus All)"))
         ed::NavigateToContent();
+
+    ImGui::SameLine();
+
+    // =======================================================
+    // 構造のテキスト化ボタン
+    // =======================================================
+    if (ImGui::Button("テキスト出力 (Export Text)"))
+    {
+        try
+        {
+            // 出力先のフォルダを確保
+            std::filesystem::create_directories("Build/Logs");
+
+            // ファイル名が未設定(保存前)なら "Untitled_AnimGraph" を使う
+            std::string filename = _currentFilePath.empty()
+                                       ? "Untitled_AnimGraph"
+                                       : std::filesystem::path(_currentFilePath).stem().string();
+
+            std::string txtPath  = "Build/Logs/" + filename + ".txt";
+            std::string dumpText = DumpAnimGraphToString(_currentGraph);
+
+            std::ofstream txtOut(txtPath);
+            if (txtOut.is_open())
+            {
+                txtOut << dumpText;
+                CCL_LOG_INFO(LogCategory::Editor, "[Anim Editor] Exported text dump to %s", txtPath.c_str());
+            }
+            else
+            {
+                CCL_LOG_ERROR(LogCategory::Editor, "[Anim Editor] Failed to open file for text dump: %s", txtPath.c_str());
+            }
+        }
+        catch (const std::exception &e)
+        {
+            CCL_LOG_WARN(LogCategory::Editor, "[Anim Editor] Failed to export text dump: %s", e.what());
+        }
+    }
+    // =======================================================
 }
 
 void AnimGraphWindow::SaveGraph(const std::string &path)
@@ -1006,26 +1034,7 @@ void AnimGraphWindow::SaveGraph(const std::string &path)
     }
     AnimGraphSerializer::SaveToJSON(_currentGraph, path);
 
-    // ノードグラフをテキスト化にしてわかりやすくする
-    #if 0
-    try
-    {
-        std::filesystem::create_directories("Build/Logs");
-        std::string   filename = std::filesystem::path(path).stem().string();
-        std::string   txtPath  = "Build/Logs/" + filename + ".txt";
-        std::string   dumpText = DumpAnimGraphToString(_currentGraph);
-        std::ofstream txtOut(txtPath);
-        if (txtOut.is_open())
-        {
-            txtOut << dumpText;
-            CCL_LOG_INFO(LogCategory::Editor, "[Anim Editor] Exported text dump to %s", txtPath.c_str());
-        }
-    }
-    catch (const std::exception &e)
-    {
-        CCL_LOG_WARN(LogCategory::Editor, "[Anim Editor] Failed to export text dump: %s", e.what());
-    }
-    #endif
+    
 }
 
 void AnimGraphWindow::LoadGraph(const std::string& path) {
