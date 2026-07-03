@@ -145,22 +145,27 @@ void EditorWindowManager::Draw(EditorContext &context)
 {
     ZoneScopedN("EditorWindowManager::Draw");
 
-    // EditorScene::OnDrawImGui もしくは Update の中で
-    if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Z)) {
-        EditorCommandHistory::Instance().Undo();
-    }
-    if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Y)) {
-        EditorCommandHistory::Instance().Redo();
-    }
+    {
+        ZoneScopedN("Input Check (Undo/Redo & F1)");
+        // EditorScene::OnDrawImGui もしくは Update の中で
+        if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Z)) {
+            EditorCommandHistory::Instance().Undo();
+        }
+        if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Y)) {
+            EditorCommandHistory::Instance().Redo();
+        }
 
-    // 1. ショートカットキー (F1) で表示切替
-    // ImGuiがアクティブでなくても効くようにします
-    if (ImGui::IsKeyPressed(ImGuiKey_F1, false)) {
-        _isVisible = !_isVisible;
+        // 1. ショートカットキー (F1) で表示切替
+        if (ImGui::IsKeyPressed(ImGuiKey_F1, false)) {
+            _isVisible = !_isVisible;
+        }
     }
 
     // 初回のみリストを自動生成
-    if (context.prefabFiles.empty()) {
+    if (context.prefabFiles.empty())
+    {
+        // 重いディスクI/Oが発生していないか追跡
+        ZoneScopedN("Init: RefreshPrefabList");
         RefreshPrefabList(context);
     }
 
@@ -168,33 +173,35 @@ void EditorWindowManager::Draw(EditorContext &context)
     //  F1非表示時は、背景キャンバスにゲーム画面をフルスクリーン描画する
     // =========================================================
     if (!_isVisible) {
-        if (context.gameSRV) {
-            // ImGuiの描画可能領域全体（画面サイズ）を取得
-            ImVec2 displaySize = ImGui::GetIO().DisplaySize;
+        ZoneScopedN("Draw Background Canvas"); 
 
-            // UIの後ろの壁紙としてゲーム画面を直接焼き付ける
+        if (context.gameSRV)
+        {
+            ImVec2 displaySize = ImGui::GetIO().DisplaySize;
             ImGui::GetBackgroundDrawList()->AddImage(
                 context.gameSRV,
-                ImVec2(0, 0),         // 左上
-                displaySize           // 右下
+                ImVec2(0, 0), // 左上
+                displaySize   // 右下
             );
         }
-
-        // ヒントUI
-        //ImGui::SetNextWindowPos(ImVec2(10, 10));
-        //ImGui::SetNextWindowBgAlpha(0.3f);
-        //ImGui::Begin("HiddenOverlay", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoNav);
-        //ImGui::TextColored(ImVec4(1, 1, 0, 1), "[F1] Show Editor UI");
-        //ImGui::End();
-
-        return; // ウィンドウ群やメニューバーは描画せずに終了
+        return;
     }
 
     // 3. 表示状態なら描画実行
-    DrawMainMenuBar(context);
+    {
+        // ★ 容疑者2: メニューバー構築の負荷を追跡
+        ZoneScopedN("DrawMainMenuBar");
+        DrawMainMenuBar(context);
+    }
 
-    for (auto &window : _windows) {
-        window->Render(context);
+    {
+        // ★ 容疑者3: 全ウィンドウ群の描画負荷を追跡
+        ZoneScopedN("Render Windows Loop");
+        for (auto &window : _windows)
+        {
+
+            window->Render(context);
+        }
     }
 }
 
