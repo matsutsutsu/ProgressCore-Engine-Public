@@ -11,7 +11,8 @@
                     "Key": "BTN_RIGHT_TRIGGER"
                 }
             ],
-            "Name": "Attack"
+            "Name": "Attack",
+            "Trigger": "Triggered"
         },
         {
             "Bindings": [
@@ -20,7 +21,8 @@
                     "Key": "SPACE"
                 }
             ],
-            "Name": "Jump"
+            "Name": "Jump",
+            "Trigger": "Down"
         },
         {
             "Bindings": [
@@ -29,7 +31,8 @@
                     "Key": "SHIFT"
                 }
             ],
-            "Name": "Dash"
+            "Name": "Dash",
+            "Trigger": "Triggered"
         },
         {
             "Bindings": [
@@ -38,7 +41,8 @@
                     "Key": "R"
                 }
             ],
-            "Name": "LockOn"
+            "Name": "LockOn",
+            "Trigger": "Triggered"
         }
     ],
     "Axes": [

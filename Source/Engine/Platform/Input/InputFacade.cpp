@@ -1,223 +1,221 @@
 #include "InputFacade.h"
-#include "InputKeyTable.h"
+#include "InputKeyTable.h"   // 共通キーテーブル（StringToKeyCode 委譲用）
 #include <algorithm>
 #include <fstream>
 #include <iostream>
 
 // ※お使いのJSONライブラリに合わせてください
- #include <json.hpp>
- using json = nlohmann::json;
- 
- namespace {
-     // ---------------------------------------------------------
-     // ヘルパー: 文字列 -> デバイスタイプ変換
-     // ---------------------------------------------------------
-     InputDeviceType StringToDeviceType(const std::string& str) {
-         if (str == "Keyboard") return InputDeviceType::Keyboard;
-         if (str == "Mouse_Button") return InputDeviceType::Mouse_Button;
-         if (str == "GamePad_Button") return InputDeviceType::GamePad_Button;
-         if (str == "GamePad_AxisLX") return InputDeviceType::GamePad_AxisLX;
-         if (str == "GamePad_AxisLY") return InputDeviceType::GamePad_AxisLY;
-         if (str == "GamePad_AxisRX") return InputDeviceType::GamePad_AxisRX;
-         if (str == "GamePad_AxisRY") return InputDeviceType::GamePad_AxisRY;
-         if (str == "GamePad_TriggerL") return InputDeviceType::GamePad_TriggerL;
-         if (str == "GamePad_TriggerR") return InputDeviceType::GamePad_TriggerR;
-         return InputDeviceType::Keyboard; // Default
-     }
+#include <json.hpp>
+using json = nlohmann::json;
 
-     // ---------------------------------------------------------
-     // ヘルパー: 文字列 -> キーコード変換
-     //   共通テーブル(InputKeyTable)へ委譲。
-     //   キー定義の追加は InputKeyTable.h 側で行うこと。
-     // ---------------------------------------------------------
-     unsigned int StringToKeyCode(const std::string &str)
-     {
-         return InputKeyTable::StringToKeyCode(str);
-     }
- }
+namespace {
+    // ---------------------------------------------------------
+    // ヘルパー: 文字列 -> デバイスタイプ変換
+    // ---------------------------------------------------------
+    InputDeviceType StringToDeviceType(const std::string& str) {
+        if (str == "Keyboard") return InputDeviceType::Keyboard;
+        if (str == "Mouse_Button") return InputDeviceType::Mouse_Button;
+        if (str == "GamePad_Button") return InputDeviceType::GamePad_Button;
+        if (str == "GamePad_AxisLX") return InputDeviceType::GamePad_AxisLX;
+        if (str == "GamePad_AxisLY") return InputDeviceType::GamePad_AxisLY;
+        if (str == "GamePad_AxisRX") return InputDeviceType::GamePad_AxisRX;
+        if (str == "GamePad_AxisRY") return InputDeviceType::GamePad_AxisRY;
+        if (str == "GamePad_TriggerL") return InputDeviceType::GamePad_TriggerL;
+        if (str == "GamePad_TriggerR") return InputDeviceType::GamePad_TriggerR;
+        return InputDeviceType::Keyboard; // Default
+    }
 
- // =======================================================
- // JSONファイルからのロード処理
- // =======================================================
- bool InputFacade::LoadConfig(const std::string& filePath) {
-     std::ifstream file(filePath);
-     if (!file.is_open()) {
-         // ※エンジンのログシステムでエラーを出力してください
-         // OutputDebugStringA("Failed to open InputConfig.json\n");
-         return false;
-     }
+    // ---------------------------------------------------------
+    // ヘルパー: 文字列 -> キーコード変換
+    //   共通テーブル(InputKeyTable)へ委譲。
+    //   キー定義の追加は InputKeyTable.h 側で行うこと。
+    // ---------------------------------------------------------
+    unsigned int StringToKeyCode(const std::string& str) {
+        return InputKeyTable::StringToKeyCode(str);
+    }
+}
 
-     // JSONライブラリによるパース (以下は nlohmann/json を想定した記述です)
-     
-     json doc;
-     try {
-         file >> doc;
-     } catch (...) {
-         return false;
-     }
+// =======================================================
+// JSONファイルからのロード処理
+// =======================================================
+bool InputFacade::LoadConfig(const std::string& filePath) {
+    std::ifstream file(filePath);
+    if (!file.is_open()) {
+        return false;
+    }
 
-     // 既存のバインディングをクリア（再読み込みに対応するため）
-     m_actionBindings.clear();
-     m_axisBindings.clear();
-     m_actionNames.clear(); // 名前リストもクリア
-     m_axisNames.clear();
+    json doc;
+    try {
+        file >> doc;
+    } catch (...) {
+        return false;
+    }
 
-     // 1. Actions の読み込み
-     if (doc.contains("Actions")) {
-         for (const auto& actionJson : doc["Actions"]) {
-             std::string name = actionJson["Name"].get<std::string>();
+    // 既存のバインディングをクリア（再読み込みに対応するため）
+    m_actionBindings.clear();
+    m_axisBindings.clear();
+    m_actionTriggerTypes.clear();
+    m_actionNames.clear();
+    m_axisNames.clear();
 
-             for (const auto& bindJson : actionJson["Bindings"]) {
-                 InputDeviceType device = StringToDeviceType(bindJson["Device"].get<std::string>());
-                 unsigned int keyCode = StringToKeyCode(bindJson["Key"].get<std::string>());
+    // 1. Actions の読み込み
+    if (doc.contains("Actions")) {
+        for (const auto& actionJson : doc["Actions"]) {
+            std::string name = actionJson["Name"].get<std::string>();
 
-                 AddActionBinding(name, device, keyCode);
-             }
-         }
-     }
+            // トリガー種別（無ければ "Down"）
+            std::string trig = actionJson.value("Trigger", std::string("Down"));
+            SetActionTriggerType(name, StringToTriggerType(trig));
 
-     // 2. Axes の読み込み
-     if (doc.contains("Axes")) {
-         for (const auto& axisJson : doc["Axes"]) {
-             std::string name = axisJson["Name"].get<std::string>();
+            for (const auto& bindJson : actionJson["Bindings"]) {
+                InputDeviceType device = StringToDeviceType(bindJson["Device"].get<std::string>());
+                unsigned int keyCode = StringToKeyCode(bindJson["Key"].get<std::string>());
+                AddActionBinding(name, device, keyCode);
+            }
+        }
+    }
 
-             for (const auto& bindJson : axisJson["Bindings"]) {
-                 InputDeviceType device = StringToDeviceType(bindJson["Device"].get<std::string>());
-                 unsigned int keyCode = StringToKeyCode(bindJson["Key"].get<std::string>());
-                 float scale = bindJson.value("Scale", 1.0f); // デフォルトは1.0f
+    // 2. Axes の読み込み
+    if (doc.contains("Axes")) {
+        for (const auto& axisJson : doc["Axes"]) {
+            std::string name = axisJson["Name"].get<std::string>();
 
-                 AddAxisBinding(name, device, keyCode, scale);
-             }
-         }
-     }
-     
+            for (const auto& bindJson : axisJson["Bindings"]) {
+                InputDeviceType device = StringToDeviceType(bindJson["Device"].get<std::string>());
+                unsigned int keyCode = StringToKeyCode(bindJson["Key"].get<std::string>());
+                float scale = bindJson.value("Scale", 1.0f);
+                AddAxisBinding(name, device, keyCode, scale);
+            }
+        }
+    }
 
-     return true;
- }
+    return true;
+}
 
- // =======================================================
- // 辞書への登録 (文字列をハッシュ化して登録する)
- // =======================================================
- void InputFacade::AddActionBinding(const std::string& actionName, InputDeviceType device, unsigned int keyCode) {
-     uint32_t hash = CCL::Utils::HashString(actionName);
+// =======================================================
+// 辞書への登録 (文字列をハッシュ化して登録する)
+// =======================================================
+void InputFacade::AddActionBinding(const std::string& actionName, InputDeviceType device, unsigned int keyCode) {
+    uint32_t hash = CCL::Utils::HashString(actionName);
+    m_actionNames.push_back(actionName);
+    m_actionBindings[hash].push_back({ device, keyCode, 1.0f });
+}
 
-     // エディタ等から動的に呼ばれた場合のために名前をチェック
-     m_actionNames.push_back(actionName);
+void InputFacade::AddAxisBinding(const std::string& axisName, InputDeviceType device, unsigned int keyCode, float scale) {
+    uint32_t hash = CCL::Utils::HashString(axisName);
+    if (std::find(m_axisNames.begin(), m_axisNames.end(), axisName) == m_axisNames.end()) {
+        m_axisNames.push_back(axisName);
+    }
+    m_axisBindings[hash].push_back({ device, keyCode, scale });
+}
 
-     m_actionBindings[hash].push_back({ device, keyCode, 1.0f });
- }
+void InputFacade::SetActionTriggerType(const std::string& actionName, TriggerType type) {
+    uint32_t hash = CCL::Utils::HashString(actionName);
+    m_actionTriggerTypes[hash] = type;
+}
 
- void InputFacade::AddAxisBinding(const std::string& axisName, InputDeviceType device, unsigned int keyCode, float scale) {
-     uint32_t hash = CCL::Utils::HashString(axisName);
+// =======================================================
+// 内部評価ヘルパー（種別ごとの実処理）
+// =======================================================
+bool InputFacade::EvalActionDown(const std::vector<InputBinding>& binds) const {
+    for (const auto& bind : binds) {
+        switch (bind.deviceType) {
+        case InputDeviceType::Keyboard:       if (m_rawInput->GetKeyboard().IsDown(bind.keyCode)) return true; break;
+        case InputDeviceType::Mouse_Button:   if (m_rawInput->GetMouse().IsDown(bind.keyCode)) return true; break;
+        case InputDeviceType::GamePad_Button: if (m_rawInput->GetGamePad().IsDown(bind.keyCode)) return true; break;
+        default: break;
+        }
+    }
+    return false;
+}
 
-     // エディタ等から動的に呼ばれた場合のために名前をチェック
-     if (std::find(m_axisNames.begin(), m_axisNames.end(), axisName) == m_axisNames.end()) {
-         m_axisNames.push_back(axisName);
-     }
+bool InputFacade::EvalActionTriggered(const std::vector<InputBinding>& binds) const {
+    for (const auto& bind : binds) {
+        switch (bind.deviceType) {
+        case InputDeviceType::Keyboard:
+            // 毎フレームの蓄積トリガーを参照（取りこぼし防止）
+            if (m_rawInput->GetLogicKeyTriggered(bind.keyCode)) return true;
+            break;
+        case InputDeviceType::Mouse_Button:
+            if ((m_rawInput->GetLogicMouseButtonDown() & bind.keyCode) != 0) return true;
+            break;
+        case InputDeviceType::GamePad_Button:
+            if ((m_rawInput->GetLogicPadButtonDown() & bind.keyCode) != 0) return true;
+            break;
+        default: break;
+        }
+    }
+    return false;
+}
 
-     m_axisBindings[hash].push_back({ device, keyCode, scale });
- }
+bool InputFacade::EvalActionReleased(const std::vector<InputBinding>& binds) const {
+    for (const auto& bind : binds) {
+        switch (bind.deviceType) {
+        case InputDeviceType::Keyboard:       if (m_rawInput->GetKeyboard().IsReleased(bind.keyCode)) return true; break;
+        case InputDeviceType::Mouse_Button:   if (m_rawInput->GetMouse().IsReleased(bind.keyCode)) return true; break;
+        case InputDeviceType::GamePad_Button: if (m_rawInput->GetGamePad().IsReleased(bind.keyCode)) return true; break;
+        default: break;
+        }
+    }
+    return false;
+}
 
- // =======================================================
- // デジタル入力（Action）の取得 (ハッシュで最速検索)
- // =======================================================
- bool InputFacade::GetAction(uint32_t actionHash) const {
-     if (!m_rawInput) return false;
-     auto it = m_actionBindings.find(actionHash);
-     if (it == m_actionBindings.end()) return false;
+// =======================================================
+// アクション取得（統一窓口）
+//   エディタで設定された種別に従って評価する。
+// =======================================================
+bool InputFacade::GetAction(uint32_t actionHash) const {
+    if (!m_rawInput) return false;
+    auto it = m_actionBindings.find(actionHash);
+    if (it == m_actionBindings.end()) return false;
 
-     for (const auto& bind : it->second) {
-         switch (bind.deviceType) {
-         case InputDeviceType::Keyboard:       if (m_rawInput->GetKeyboard().IsDown(bind.keyCode)) return true; break;
-         case InputDeviceType::Mouse_Button:   if (m_rawInput->GetMouse().IsDown(bind.keyCode)) return true; break;
-         case InputDeviceType::GamePad_Button: if (m_rawInput->GetGamePad().IsDown(bind.keyCode)) return true; break;
-         default: break;
-         }
-     }
-     return false;
- }
+    // 種別を引く（未登録なら Down）
+    TriggerType type = TriggerType::Down;
+    auto tit = m_actionTriggerTypes.find(actionHash);
+    if (tit != m_actionTriggerTypes.end()) type = tit->second;
 
- bool InputFacade::GetActionTriggered(uint32_t actionHash) const {
-     if (!m_rawInput) return false;
-     auto it = m_actionBindings.find(actionHash);
-     if (it == m_actionBindings.end()) return false;
+    switch (type) {
+    case TriggerType::Triggered: return EvalActionTriggered(it->second);
+    case TriggerType::Released:  return EvalActionReleased(it->second);
+    case TriggerType::Down:
+    default:                     return EvalActionDown(it->second);
+    }
+}
 
-     for (const auto& bind : it->second) {
-         switch (bind.deviceType) {
-         case InputDeviceType::Keyboard:
-             // 蓄積バッファを参照
-             // Fixed用の蓄積バッファではなく、毎フレームの「生のトリガー」を取得する
-             if (m_rawInput->GetLogicKeyTriggered(bind.keyCode)) return true;
-             break;
+// =======================================================
+// アナログ入力（Axis）の取得 (ハッシュで最速検索)
+// =======================================================
+float InputFacade::GetAxis(uint32_t axisHash) const {
+    if (!m_rawInput) return 0.0f;
+    auto it = m_axisBindings.find(axisHash);
+    if (it == m_axisBindings.end()) return 0.0f;
 
-         case InputDeviceType::Mouse_Button:
-             // bind.keyCode が Mouse::BTN_LEFT などのビットフラグ(定数)である前提
-             // ★ 修正: 毎フレームのマウスボタン「押下瞬間」を取得する
-             if ((m_rawInput->GetLogicMouseButtonDown() & bind.keyCode) != 0) return true;
-             break;
+    float finalValue = 0.0f;
 
-         case InputDeviceType::GamePad_Button:
-             // bind.keyCode が GamePad::BTN_A などのビットフラグである前提
-             // ★ 修正: 毎フレームのパッドボタン「押下瞬間」を取得する
-             if ((m_rawInput->GetLogicPadButtonDown() & bind.keyCode) != 0) return true;
-             break;
+    for (const auto& bind : it->second) {
+        float rawValue = 0.0f;
 
-         default: break;
-         }
-     }
-     return false;
- }
+        switch (bind.deviceType) {
+        case InputDeviceType::Keyboard:       if (m_rawInput->GetKeyboard().IsDown(bind.keyCode)) rawValue = 1.0f; break;
+        case InputDeviceType::Mouse_Button:   if (m_rawInput->GetMouse().IsDown(bind.keyCode)) rawValue = 1.0f; break;
+        case InputDeviceType::GamePad_Button: if (m_rawInput->GetGamePad().IsDown(bind.keyCode)) rawValue = 1.0f; break;
+        case InputDeviceType::GamePad_AxisLX: rawValue = m_rawInput->GetGamePad().GetAxisLX(); break;
+        case InputDeviceType::GamePad_AxisLY: rawValue = m_rawInput->GetGamePad().GetAxisLY(); break;
+        case InputDeviceType::GamePad_AxisRX: rawValue = m_rawInput->GetGamePad().GetAxisRX(); break;
+        case InputDeviceType::GamePad_AxisRY: rawValue = m_rawInput->GetGamePad().GetAxisRY(); break;
+        case InputDeviceType::GamePad_TriggerL: rawValue = m_rawInput->GetGamePad().GetTriggerL(); break;
+        case InputDeviceType::GamePad_TriggerR: rawValue = m_rawInput->GetGamePad().GetTriggerR(); break;
+        }
 
- bool InputFacade::GetActionReleased(uint32_t actionHash) const {
-     if (!m_rawInput) return false;
-     auto it = m_actionBindings.find(actionHash);
-     if (it == m_actionBindings.end()) return false;
+        finalValue += rawValue * bind.scale;
+    }
 
-     for (const auto& bind : it->second) {
-         switch (bind.deviceType) {
-         case InputDeviceType::Keyboard:       if (m_rawInput->GetKeyboard().IsReleased(bind.keyCode)) return true; break;
-         case InputDeviceType::Mouse_Button:   if (m_rawInput->GetMouse().IsReleased(bind.keyCode)) return true; break;
-         case InputDeviceType::GamePad_Button: if (m_rawInput->GetGamePad().IsReleased(bind.keyCode)) return true; break;
-         default: break;
-         }
-     }
-     return false;
- }
+    return std::clamp(finalValue, -1.0f, 1.0f);
+}
 
- // =======================================================
- // アナログ入力（Axis）の取得 (ハッシュで最速検索)
- // =======================================================
- float InputFacade::GetAxis(uint32_t axisHash) const {
-     if (!m_rawInput) return 0.0f;
-     auto it = m_axisBindings.find(axisHash);
-     if (it == m_axisBindings.end()) return 0.0f;
-
-     float finalValue = 0.0f;
-
-     for (const auto& bind : it->second) {
-         float rawValue = 0.0f;
-
-         switch (bind.deviceType) {
-         case InputDeviceType::Keyboard:       if (m_rawInput->GetKeyboard().IsDown(bind.keyCode)) rawValue = 1.0f; break;
-         case InputDeviceType::Mouse_Button:   if (m_rawInput->GetMouse().IsDown(bind.keyCode)) rawValue = 1.0f; break;
-         case InputDeviceType::GamePad_Button: if (m_rawInput->GetGamePad().IsDown(bind.keyCode)) rawValue = 1.0f; break;
-         case InputDeviceType::GamePad_AxisLX: rawValue = m_rawInput->GetGamePad().GetAxisLX(); break;
-         case InputDeviceType::GamePad_AxisLY: rawValue = m_rawInput->GetGamePad().GetAxisLY(); break;
-         case InputDeviceType::GamePad_AxisRX: rawValue = m_rawInput->GetGamePad().GetAxisRX(); break;
-         case InputDeviceType::GamePad_AxisRY: rawValue = m_rawInput->GetGamePad().GetAxisRY(); break;
-         case InputDeviceType::GamePad_TriggerL: rawValue = m_rawInput->GetGamePad().GetTriggerL(); break;
-         case InputDeviceType::GamePad_TriggerR: rawValue = m_rawInput->GetGamePad().GetTriggerR(); break;
-         }
-
-         finalValue += rawValue * bind.scale;
-     }
-
-     return std::clamp(finalValue, -1.0f, 1.0f);
- }
-
- void InputFacade::SetVibration(float leftMotor, float rightMotor, float duration) {
-     // アクティブなデバイスがGamePadの時のみ振動させる（マウスキーボード時は無視）
-     if (m_rawInput && GetActiveDeviceType() == ActiveDeviceType::GamePad) {
-         m_rawInput->GetGamePad().SetVibration(leftMotor, rightMotor, duration);
-     }
- }
+void InputFacade::SetVibration(float leftMotor, float rightMotor, float duration) {
+    // アクティブなデバイスがGamePadの時のみ振動させる
+    if (m_rawInput && GetActiveDeviceType() == ActiveDeviceType::GamePad) {
+        m_rawInput->GetGamePad().SetVibration(leftMotor, rightMotor, duration);
+    }
+}

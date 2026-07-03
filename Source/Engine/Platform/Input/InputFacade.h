@@ -12,6 +12,9 @@ private:
     std::unordered_map<uint32_t, std::vector<InputBinding>> m_actionBindings;
     std::unordered_map<uint32_t, std::vector<InputBinding>> m_axisBindings;
 
+    // アクションごとの発火種別（未登録は Down 扱い）
+    std::unordered_map<uint32_t, TriggerType> m_actionTriggerTypes;
+
 public:
     // UI用：現在のアクティブなデバイスを取得する
     ActiveDeviceType GetActiveDeviceType() const override {
@@ -24,6 +27,12 @@ public:
 private:
     std::vector<std::string> m_actionNames;
     std::vector<std::string> m_axisNames;
+
+    // --- 内部評価ヘルパー（種別ごとの実処理） ---
+    bool EvalActionDown(const std::vector<InputBinding>& binds) const;
+    bool EvalActionTriggered(const std::vector<InputBinding>& binds) const;
+    bool EvalActionReleased(const std::vector<InputBinding>& binds) const;
+
 public:
     InputFacade(Input* rawInput) : m_rawInput(rawInput) {}
     virtual ~InputFacade() = default;
@@ -31,7 +40,6 @@ public:
     // 外部JSONファイルからバインディングを読み込む
     bool LoadConfig(const std::string& filePath) override;
 
-    // InputFacade.h の public セクションでオーバーライド
     float GetMouseX() const override {
         return static_cast<float>(m_rawInput->GetMouse().GetPositionX());
     }
@@ -47,11 +55,10 @@ public:
 
     void AddActionBinding(const std::string& actionName, InputDeviceType device, unsigned int keyCode) override;
     void AddAxisBinding(const std::string& axisName, InputDeviceType device, unsigned int keyCode, float scale = 1.0f) override;
+    void SetActionTriggerType(const std::string& actionName, TriggerType type) override;
 
-    // オーバーライドする関数を uint32_t に合わせる
+    // エディタ種別で評価する統一窓口
     bool GetAction(uint32_t actionHash) const override;
-    bool GetActionTriggered(uint32_t actionHash) const override;
-    bool GetActionReleased(uint32_t actionHash) const override;
     float GetAxis(uint32_t axisHash) const override;
 
     void SetVibration(float leftMotor, float rightMotor, float duration) override;

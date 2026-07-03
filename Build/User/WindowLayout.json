@@ -49,8 +49,8 @@
             "visible": false
         },
         {
-            "name": "Input Mapping Editor",
-            "visible": true
+            "name": "入力設定エディタ##InputMappingEditor",
+            "visible": false
         },
         {
             "name": "NavMesh Builder",
