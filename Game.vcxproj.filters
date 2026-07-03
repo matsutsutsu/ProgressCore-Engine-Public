@@ -532,6 +532,12 @@
     <Filter Include="Shader\Material\Hologram">
       <UniqueIdentifier>{89c2f0cc-d6e1-41e2-9bf4-e95577026c72}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shader\Material\Grass">
+      <UniqueIdentifier>{bbb7eb73-54f8-4baa-b812-64de1367e851}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shader\Material\GhostPBR">
+      <UniqueIdentifier>{2ed6532d-2763-44c1-ad75-6dcc87492a5e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -2843,6 +2849,18 @@
     </FxCompile>
     <FxCompile Include="Shader\Material\Hologram\HologramVS.hlsl">
       <Filter>Shader\Material\Hologram</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Grass\GrassPS.hlsl">
+      <Filter>Shader\Material\Grass</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Grass\GrassVS.hlsl">
+      <Filter>Shader\Material\Grass</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\GhostPBR\GhostPBRPS.hlsl">
+      <Filter>Shader\Material\GhostPBR</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\GhostPBR\GhostPBRVS.hlsl">
+      <Filter>Shader\Material\GhostPBR</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
