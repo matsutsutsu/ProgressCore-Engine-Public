@@ -1782,6 +1782,15 @@
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerLockOnSystem.h">
       <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Transform\Systems\TransformSnapshotSystem.h">
+      <Filter>Source\Engine\Transform\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Components\RenderInterpState.h">
+      <Filter>Source\Engine\Core\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Transform\Systems\TransformInterpolationSystem.h">
+      <Filter>Source\Engine\Transform\Systems</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2665,6 +2674,12 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerLockOnSystem.cpp">
       <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Transform\Systems\TransformSnapshotSystem.cpp">
+      <Filter>Source\Engine\Transform\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Transform\Systems\TransformInterpolationSystem.cpp">
+      <Filter>Source\Engine\Transform\Systems</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

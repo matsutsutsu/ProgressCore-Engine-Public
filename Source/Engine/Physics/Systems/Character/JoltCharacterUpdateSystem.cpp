@@ -7,7 +7,7 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include <SimpleMath.h>
-
+#include <chrono> 
 #include "Engine/Platform/Core/Logger.h"
 
 
@@ -35,10 +35,23 @@ void JoltCharacterUpdateSystem::Update(float rawDt)
             return;
         JPH::CharacterVirtual *ch = handle.character.GetPtr();
 
+          // ===============================================================
+        // ★ マイクロ秒精度の呼び出し間隔検証（static: エンティティ間で共有される点に注意。
+        //   将来的にキャラが複数体になったら id 別の map に変更すること）
+        // ===============================================================
+        static auto lastCallTime = std::chrono::steady_clock::now();
+        auto        nowTime      = std::chrono::steady_clock::now();
+        double      intervalUs   = std::chrono::duration<double, std::micro>(nowTime - lastCallTime).count();
+        lastCallTime             = nowTime;
+
+
         // 時間の安全装置とタイムスケール
         float safeDt     = (std::max)(0.0001f, (std::min)(rawDt, 0.0333f));
         float timeScale  = (rawDt > 0.0001f) ? (time.localDt / rawDt) : 0.0f;
         bool  isGrounded = (ch->GetGroundState() == JPH::CharacterVirtual::EGroundState::OnGround);
+
+         JPH::Vec3 velBeforeSet = ch->GetLinearVelocity(); // Set前の速度も記録
+
 
         // 1. ワープ処理の解決
         ApplyTeleportIfNeeded(trans, ch);
@@ -50,29 +63,29 @@ void JoltCharacterUpdateSystem::Update(float rawDt)
         // 3. 水平方向（慣性ドリフト減速）の計算
         Vector3 newHorizontalVel = CalculateHorizontalVelocity(safeDt, config, input);
 
-        // 4. Joltへの速度注入 (TimeScaleの適用)
-        JPH::Vec3 finalVel(newHorizontalVel.x * timeScale, newVy * timeScale, newHorizontalVel.z * timeScale);
+        // 検証用: timeScale を速度に掛けない
+        JPH::Vec3 finalVel(newHorizontalVel.x, newVy, newHorizontalVel.z);
         ch->SetLinearVelocity(finalVel);
 
-        // 5. 物理空間の更新と同期
+           JPH::RVec3 posBefore = ch->GetPosition();
+
         UpdatePhysicsAndSync(safeDt, joltManager, ch, config, trans, id);
 
-        // ===============================================================
-        // 震えの原因を特定するための XZ軸ベクトルのログ出力
-        // ===============================================================
-        //JPH::Vec3 actualVel = ch->GetLinearVelocity();
+        JPH::RVec3 posAfter = ch->GetPosition();
 
-        //// 入力がある、または動いている時だけログを出す
-        //if (input.desiredVelocity.LengthSquared() > 0.001f || actualVel.LengthSq() > 0.001f)
-        //{
-        //    CCL_LOG_INFO(LogCategory::Game,
-        //        "[Jolt Char Jitter] ID:%d | 1.Input(%.2f, %.2f) -> 2.Lerp(%.2f, %.2f) -> 3.Jolt(%.2f, %.2f)",
-        //        id,
-        //        input.desiredVelocity.x, input.desiredVelocity.z, // 1. カメラとキー入力から決まった理想の向き
-        //        input.currentVelocity.x, input.currentVelocity.z, // 2. 慣性(Lerp)をかけた後の要求速度
-        //        actualVel.GetX(), actualVel.GetZ());              // 3. 地形と干渉した後の現実の速度
-        //}
-
+        // ===============================================================
+        // ★ 統合デバッグログ: 呼び出し間隔 + 入力 + 速度 + 移動量を1行で
+        // ===============================================================
+     /*   CCL_LOG_INFO(LogCategory::Game,
+            "[UnifiedDbg] id=%u intervalUs=%.1f rawDt=%.5f localDt=%.5f "
+            "desiredVel(%.3f,%.3f) currentVel(%.3f,%.3f) finalVel(%.3f,%.3f) "
+            "dPos(x=%.4f z=%.4f)",
+            (uint32_t)id, intervalUs, rawDt, time.localDt,
+            input.desiredVelocity.x, input.desiredVelocity.z,
+            input.currentVelocity.x, input.currentVelocity.z,
+            finalVel.GetX(), finalVel.GetZ(),
+            posAfter.GetX() - posBefore.GetX(),
+            posAfter.GetZ() - posBefore.GetZ());*/
     });
 }
 
@@ -176,11 +189,27 @@ void JoltCharacterUpdateSystem::UpdatePhysicsAndSync(float safeDt, JoltPhysicsMa
     JoltCharacterContactListener contactListener(_world, id, &physicsSystem->GetBodyInterface());
     ch->SetListener(&contactListener);
 
+   JPH::RVec3 posBefore = ch->GetPosition();
+
     ch->ExtendedUpdate(
         safeDt, physicsSystem->GetGravity(), updateSettings,
         physicsSystem->GetDefaultBroadPhaseLayerFilter(PhysicsLayers::MOVING),
         physicsSystem->GetDefaultLayerFilter(PhysicsLayers::MOVING),
         bodyFilter, {}, *joltManager->GetTempAllocator());
+
+    JPH::RVec3 posAfter = ch->GetPosition();
+    JPH::Vec3  gN       = ch->GetGroundNormal();
+    auto       gState   = ch->GetGroundState();
+
+    //CCL_LOG_INFO(LogCategory::Game,
+    //    "[CharDbg] dPos(x=%.4f z=%.4f y=%.4f) gState=%d gN(%.2f,%.2f,%.2f)",
+    //    posAfter.GetX() - posBefore.GetX(),
+    //    posAfter.GetZ() - posBefore.GetZ(),
+    //    posAfter.GetY() - posBefore.GetY(),
+    //    (int)gState,
+    //    gN.GetX(), gN.GetY(), gN.GetZ());
+
+
 
     // 衝突判定が終わったら安全のためにリスナーを解除しておく
     // 変数定義をその場で行っているため}で消すときに中身をそのままにしておくと
@@ -196,7 +225,7 @@ void JoltCharacterUpdateSystem::UpdatePhysicsAndSync(float safeDt, JoltPhysicsMa
         // CharacterVirtual が計算した「傾きのない純粋な回転(Yawのみ)」を取得し、物理剛体にセットする
         JPH::Quat joltRot = ch->GetRotation();
 
-        joltManager->GetBodyInterface().SetPositionAndRotation(kinBody->bodyID, pos, joltRot, JPH::EActivation::DontActivate);
+        //joltManager->GetBodyInterface().SetPositionAndRotation(kinBody->bodyID, pos, joltRot, JPH::EActivation::DontActivate);
     }
 }
 

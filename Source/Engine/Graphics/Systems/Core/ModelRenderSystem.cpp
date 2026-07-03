@@ -40,7 +40,6 @@ void ModelRenderSystem::Update(float dt)
         if (!model) return;
 
 
-        // ShadowMapでUpdateTransform行うのでここではやらない
         bool hasBones = false;
         for (const auto &mesh : model->GetMeshes()) {
             if (!mesh.bones.empty()) {
@@ -90,7 +89,7 @@ void ModelRenderSystem::Update(float dt)
         }
 
         cmd.model = model;
-        cmd.worldMatrix = transform.worldMatrix;
+        cmd.worldMatrix = transform.renderWorldMatrix;
 
         // マテリアルオーバーライド配列のコピー
         cmd.overrideCount = static_cast<uint8_t>((std::min)(mat.overrideMaterials.size(), static_cast<size_t>(4)));

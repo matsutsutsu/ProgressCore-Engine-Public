@@ -22,7 +22,7 @@
 #include "Editor/Windows/ConsoleWindow.h"
 
 #include "EngineServices.h"
-
+#include "Engine/Core/Components/RenderInterpState.h"
 
 #ifdef ENABLE_EDITOR
 #include <imgui.h>
@@ -537,6 +537,23 @@ int Framework::Run()
 				accumulator = fmod(accumulator, FIXED_DT);
 			}
 
+			
+			// ===============================================================
+            // ★ 描画補間係数の算出とWorldへの供給
+            //   accumulator / FIXED_DT = 次の物理ステップに対してどれだけ「先読み」しているか
+            // ===============================================================
+            if (auto *currentScene = SceneManager::Instance().GetCurrentScene())
+            {
+                if (auto *world = currentScene->GetWorld())
+                {
+                    // ★ 規約準拠：必ず HasResource でガードしてから参照更新（O(1)・ヒープ確保なし）
+                    if (world->HasResource<RenderInterpState>())
+                    {
+                        world->GetResource<RenderInterpState>().alpha =
+                            static_cast<float>(accumulator / FIXED_DT);
+                    }
+                }
+            }
 
 
 			// 5. 残った時間 (accumulator) を使って「補間」を行うのが理想だが、

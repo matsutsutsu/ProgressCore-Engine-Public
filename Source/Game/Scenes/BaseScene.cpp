@@ -17,6 +17,7 @@
 #include "Engine/Graphics/Systems/Core/EnvironmentSystem.h"
 #include "Engine/Graphics/Renderer/RenderQueue.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
+#include "Engine/Core/Components/RenderInterpState.h"
 
 #include "Engine/Core/App/Framework.h"
 #include "Engine/Core/App/EngineServices.h"
@@ -62,6 +63,9 @@ void BaseScene::Initialize()
 
     // リソース登録
     _worldPtr->AddResource<Input *>(&Input::Instance());
+
+    //  RenderInterpState は、RenderInterpSystem が参照するためにリソースとして登録する。
+    _worldPtr->AddResource<RenderInterpState>();
 
 
     auto& services = EngineServices::Instance();

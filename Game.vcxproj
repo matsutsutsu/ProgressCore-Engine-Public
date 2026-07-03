@@ -434,6 +434,7 @@
     <ClInclude Include="Source\Engine\Core\Components\DestroyTag.h" />
     <ClInclude Include="Source\Engine\Core\Components\NameComponent.h" />
     <ClInclude Include="Source\Engine\Core\Components\PersistentTag.h" />
+    <ClInclude Include="Source\Engine\Core\Components\RenderInterpState.h" />
     <ClInclude Include="Source\Engine\Core\Math\CurveData.h" />
     <ClInclude Include="Source\Engine\Core\Math\Misc.h" />
     <ClInclude Include="Source\Engine\Core\Math\ScreenToWorld.h" />
@@ -616,6 +617,8 @@
     <ClInclude Include="Source\Engine\Transform\Core\TransformHierarchyCache.h" />
     <ClInclude Include="Source\Engine\Transform\Systems\BoneAttachmentSystem.h" />
     <ClInclude Include="Source\Engine\Transform\Systems\HierarchyCleanupSystem.h" />
+    <ClInclude Include="Source\Engine\Transform\Systems\TransformInterpolationSystem.h" />
+    <ClInclude Include="Source\Engine\Transform\Systems\TransformSnapshotSystem.h" />
     <ClInclude Include="Source\Engine\Transform\Systems\TransformUpdateSystem.h" />
     <ClInclude Include="Source\Engine\UI\ImGui\ImGuiThemes.h" />
     <ClInclude Include="Source\Engine\UI\Text\BitmapFont.h" />
@@ -1399,6 +1402,8 @@
     <ClCompile Include="Source\Engine\Transform\Core\TransformHierarchyCache.cpp" />
     <ClCompile Include="Source\Engine\Transform\Systems\BoneAttachmentSystem.cpp" />
     <ClCompile Include="Source\Engine\Transform\Systems\HierarchyCleanupSystem.cpp" />
+    <ClCompile Include="Source\Engine\Transform\Systems\TransformInterpolationSystem.cpp" />
+    <ClCompile Include="Source\Engine\Transform\Systems\TransformSnapshotSystem.cpp" />
     <ClCompile Include="Source\Engine\Transform\Systems\TransformUpdateSystem.cpp" />
     <ClCompile Include="Source\Engine\UI\ImGui\ImGuiThemes.cpp" />
     <ClCompile Include="Source\Engine\UI\UIElement.cpp" />

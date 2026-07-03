@@ -23,6 +23,22 @@ struct TransformComponent {
     DirectX::XMFLOAT4   rotation    = {0, 0, 0, 1}; // 親からの相対回転 (Local Rotation)
     DirectX::XMFLOAT3   scale       = {1, 1, 1};    // 親からの相対サイズ (Local Scale)
 
+
+    // ★ 描画補間用（Fix Your Timestepパターン）
+    /**
+     * @brief 直前のFixedUpdate確定時点でのローカル位置。
+     * @note TransformSnapshotSystem が毎FixedUpdateの先頭で position をここへ退避する。
+     *       Render側の補間専用データであり、ゲームロジックが参照してはならない。
+     */
+    DirectX::XMFLOAT3 prevPosition = {0, 0, 0};
+
+    /**
+     * @brief 直前のFixedUpdate確定時点でのローカル回転。
+     * @note prevPosition と同じ役割。用途はRender補間専用。
+     */
+    DirectX::XMFLOAT4 prevRotation = {0, 0, 0, 1};
+
+
     // 静的オブジェクトフラグ (trueなら更新しない)
     bool isStatic = false;
 
@@ -44,6 +60,13 @@ struct TransformComponent {
     // ※手動では書き換えず、TransformUpdateSystemに計算させる
     DirectX::XMFLOAT4X4 worldMatrix = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
 
+    /**
+     * @brief 描画専用の補間済みワールド行列。
+     * @note TransformInterpolationSystem (Render Stage, R00) が毎描画フレーム
+     *       prevPosition/position を alpha で線形補間して書き込む。
+     *       ゲームロジックは絶対にこれを参照しないこと（worldMatrix を使うこと）。
+     */
+    DirectX::XMFLOAT4X4 renderWorldMatrix;
 
     // =========================================================
     // 親子関係データ

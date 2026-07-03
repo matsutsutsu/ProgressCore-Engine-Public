@@ -44,6 +44,8 @@ namespace Priority {
     // カリングシステム(R04, R05)も明確な位置に配置しています。
     // ========================================================
     enum class RenderStage : int {
+        R00_Interpolation = 50, // 補間済みワールド行列の確定（カメラより前）
+
         R01_Camera = 100, // CameraBrain, FreeCamera (カメラ位置確定)
         R02_Environment = 200, // Light, Fogの設定
         R03_Animation = 300, // スケルタルメッシュ更新 (頂点が動く)
