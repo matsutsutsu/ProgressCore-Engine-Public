@@ -2,39 +2,79 @@
 #include "TransformInterpolationSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Core/Components/RenderInterpState.h"
+#include "Engine/Transform/Core/TransformHierarchyCache.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
 using namespace CCL::ECS;
 using namespace DirectX;
 
-// ---------------------------------------------------------------
-// prevPosition/position を alpha 補間して renderWorldMatrix を作る。
-// alpha は Framework が毎フレーム RenderInterpStateComponent に書き込む。
-// ---------------------------------------------------------------
+/// @brief ローカルのprevPosition/positionをalphaで補間し、ローカル行列を合成する。
+/// @note 静的物体は補間不要のため、現在のローカル値をそのまま使う。
+static inline XMMATRIX ComposeLocalRender(const TransformComponent &t, float alpha)
+{
+    if (t.isStatic) {
+        return XMMatrixAffineTransformation(
+            XMLoadFloat3(&t.scale), XMVectorZero(),
+            XMLoadFloat4(&t.rotation), XMLoadFloat3(&t.position));
+    }
+    XMVECTOR lerpPos  = XMVectorLerp(XMLoadFloat3(&t.prevPosition), XMLoadFloat3(&t.position), alpha);
+    XMVECTOR slerpRot = XMQuaternionSlerp(XMLoadFloat4(&t.prevRotation), XMLoadFloat4(&t.rotation), alpha);
+    return XMMatrixAffineTransformation(XMLoadFloat3(&t.scale), XMVectorZero(), slerpRot, lerpPos);
+}
+
 void TransformInterpolationSystem::Update(float dt)
 {
-     // 規約準拠：HasResource でガード。alpha は並列ループ前に1回だけ読み、値渡しキャプチャする
-    // （ForEachParallel 中に Resource を触らせない＝データレース回避）
     if (!_world->HasResource<RenderInterpState>()) return;
     const float alpha = _world->GetResource<RenderInterpState>().alpha;
 
-    using namespace DirectX;
-
+    // ---------------------------------------------------------------
+    // Phase 1: ルート(parent==0)を並列で補間確定。
+    //          TransformUpdateSystem::ComputeRootsParallel と対になる処理。
+    // ---------------------------------------------------------------
     ForEachParallel([alpha](TransformComponent &trans) {
-        if (trans.isStatic) {
-            trans.renderWorldMatrix = trans.worldMatrix;
-            return;
-        }
-        XMVECTOR lerpPos  = XMVectorLerp(XMLoadFloat3(&trans.prevPosition),
-                                         XMLoadFloat3(&trans.position), alpha);
-        XMVECTOR slerpRot = XMQuaternionSlerp(XMLoadFloat4(&trans.prevRotation),
-                                              XMLoadFloat4(&trans.rotation), alpha);
-        XMVECTOR scale    = XMLoadFloat3(&trans.scale);
-        XMMATRIX m = XMMatrixAffineTransformation(scale, XMVectorZero(), slerpRot, lerpPos);
-        XMStoreFloat4x4(&trans.renderWorldMatrix, m);
+        if (trans.parent != 0) return; // 子は Phase 2 で処理
+        XMMATRIX local = ComposeLocalRender(trans, alpha);
+        XMStoreFloat4x4(&trans.renderWorldMatrix, local); // ルートはローカル＝ワールド
     });
+
+    // ---------------------------------------------------------------
+    // Phase 2: 非ルートをdepth順に「補間ローカル × 親renderWorldMatrix」で解決。
+    //          TransformUpdateSystem::SolveHierarchy と対になる処理。
+    //          ★ cache自体はLogic権威データなので読み取り専用で使い、
+    //            書き込みは自前の _renderWorldDense に対してのみ行う。
+    // ---------------------------------------------------------------
+    if (!_world->HasResource<TransformHierarchyCache*>()) return;
+    TransformHierarchyCache *cache = _world->GetResource<TransformHierarchyCache*>();
+    if (!cache) return;
+
+    const size_t n = cache->Count();
+    if (_renderWorldDense.size() < n) _renderWorldDense.resize(n);
+
+    for (size_t i = 0; i < n; ++i) {
+        const int idx = static_cast<int>(i);
+        const EntityID id = cache->EntityAt(idx);
+
+        auto *t = _world->GetComponent<TransformComponent>(id);
+        if (!t) continue;
+
+        const XMMATRIX local = ComposeLocalRender(*t, alpha);
+
+        // 親のrenderWorldMatrix取得：非ルート親なら自前denseから、ルート親ならPhase1で確定済みのコンポーネントから
+        const int p = cache->ParentInOrderOf(idx);
+        XMMATRIX parentW;
+        if (p >= 0) {
+            parentW = XMLoadFloat4x4(&_renderWorldDense[p]);
+        }
+        else {
+            auto *pt = _world->GetComponent<TransformComponent>(cache->ParentIdOf(idx));
+            parentW = pt ? XMLoadFloat4x4(&pt->renderWorldMatrix) : XMMatrixIdentity();
+        }
+
+        const XMMATRIX world = XMMatrixMultiply(local, parentW);
+        XMStoreFloat4x4(&_renderWorldDense[idx], world); // 後続の子が読むため保持
+        XMStoreFloat4x4(&t->renderWorldMatrix, world);   // 描画用に書き戻し
+    }
 }
 
-// R00: カメラ(R01)より前。RenderStage の最先頭で補間を確定させる
 REGISTER_RENDER_SYSTEM(TransformInterpolationSystem, Priority::RenderStage::R00_Interpolation);

@@ -615,6 +615,7 @@
     <ClInclude Include="Source\Engine\Transform\Components\PendingParentComponent.h" />
     <ClInclude Include="Source\Engine\Transform\Components\TransformComponent.h" />
     <ClInclude Include="Source\Engine\Transform\Core\TransformHierarchyCache.h" />
+    <ClInclude Include="Source\Engine\Transform\Systems\BoneAttachmentRenderSystem.h" />
     <ClInclude Include="Source\Engine\Transform\Systems\BoneAttachmentSystem.h" />
     <ClInclude Include="Source\Engine\Transform\Systems\HierarchyCleanupSystem.h" />
     <ClInclude Include="Source\Engine\Transform\Systems\TransformInterpolationSystem.h" />
@@ -1400,6 +1401,7 @@
     <ClCompile Include="Source\Engine\Timer\TimeScaleSystem.cpp" />
     <ClCompile Include="Source\Engine\Transform\Components\TransformComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Transform\Core\TransformHierarchyCache.cpp" />
+    <ClCompile Include="Source\Engine\Transform\Systems\BoneAttachmentRenderSystem.cpp" />
     <ClCompile Include="Source\Engine\Transform\Systems\BoneAttachmentSystem.cpp" />
     <ClCompile Include="Source\Engine\Transform\Systems\HierarchyCleanupSystem.cpp" />
     <ClCompile Include="Source\Engine\Transform\Systems\TransformInterpolationSystem.cpp" />

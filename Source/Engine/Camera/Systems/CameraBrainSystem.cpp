@@ -168,4 +168,4 @@ void CameraBrainSystem::Update(float dt)
 // ==========================================
 // マクロは必ず .cpp の末尾に1回だけ書く
 // ==========================================
-REGISTER_RENDER_SYSTEM(CameraBrainSystem, Priority::RenderStage::R01_Camera);
+REGISTER_RENDER_SYSTEM(CameraBrainSystem, Priority::RenderStage::R01b_CameraBrain);

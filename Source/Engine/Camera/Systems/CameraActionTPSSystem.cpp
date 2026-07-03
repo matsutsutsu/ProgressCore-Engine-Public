@@ -68,6 +68,13 @@ void CameraActionTPSSystem::Update(float dt)
         auto *targetTrans = _world->GetComponent<TransformComponent>(tps.target.id);
         if (!targetTrans) return;
 
+        // 4. 注視点（LookAt）の算出
+        // ★ position（非補間）ではなく renderWorldMatrix の平行移動成分（補間済み）を使う
+        Vector3 targetWorldPos = targetTrans->GetRenderWorldPosition();
+
+        Vector3 idealLookAt = targetWorldPos + tps.targetOffset;
+ 
+
         // ===================================================================
         // ★データブリッジ：プレイヤーコンポーネントからロックオン情報を自動同期する
         // これにより、カメラがプレイヤー固有のロックオン状態を完全に追従する
@@ -89,15 +96,10 @@ void CameraActionTPSSystem::Update(float dt)
         }
 
         // 3. オービット（回転角）の決定
-        // 3. オービット（回転角）の決定
         if (enemyTrans)
         {
-            // ===============================================================
-            // 【ロックオンモード】: 球面座標系に完全準拠した角度の自動逆算
-            // ===============================================================
-            // backwardDir は実質的に「カメラのForwardベクトル」として機能しているため、
-            // 「プレイヤーから敵へ向かうベクトル」を算出して向きを合わせる
-            Vector3 playerToEnemy = enemyTrans->position - targetTrans->position;
+            // ロックオン角度計算（現状は非補間のposition同士なので、動きが速いと敵の方向がわずかにガクつく可能性）
+            Vector3 playerToEnemy = enemyTrans->GetRenderWorldPosition() - targetTrans->GetRenderWorldPosition();
 
             // X軸=cos, Z軸=sin の球面座標系に完全に噛み合わせる
             float idealYawRad = atan2f(playerToEnemy.z, playerToEnemy.x);
@@ -127,13 +129,12 @@ void CameraActionTPSSystem::Update(float dt)
             tps.currentPitch = std::clamp(tps.currentPitch, tps.minPitch, tps.maxPitch);
         }
 
-        // 4. 注視点（LookAt）の算出
-        Vector3 idealLookAt = targetTrans->position + tps.targetOffset;
 
         if (enemyTrans)
         {
             // ★ AAAハック: 自分と敵の中間地点をブレンド計算し、両方を画面に収める
-            Vector3 enemyCorePos = enemyTrans->position + tps.targetOffset; // 敵もプレイヤーと同じ高さのコアを狙う
+            // 敵コア位置も同様に統一
+            Vector3 enemyCorePos = enemyTrans->GetRenderWorldPosition() + tps.targetOffset;
             idealLookAt          = Vector3::Lerp(idealLookAt, enemyCorePos, tps.lockOnSubjugationRatio);
         }
         else
@@ -202,4 +203,4 @@ void CameraActionTPSSystem::Update(float dt)
 
 
 // 描画ステージ（Render）ではなく、ロジック確定直後のL02フェーズでカメラの姿勢を確定させる
-REGISTER_LOGIC_SYSTEM(CameraActionTPSSystem, Priority::LogicStage::L02_Update);
+REGISTER_RENDER_SYSTEM(CameraActionTPSSystem, Priority::RenderStage::R01_Camera);

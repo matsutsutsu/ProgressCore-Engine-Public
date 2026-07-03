@@ -1791,6 +1791,9 @@
     <ClInclude Include="Source\Engine\Transform\Systems\TransformInterpolationSystem.h">
       <Filter>Source\Engine\Transform\Systems</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Transform\Systems\BoneAttachmentRenderSystem.h">
+      <Filter>Source\Engine\Transform\Systems</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2679,6 +2682,9 @@
       <Filter>Source\Engine\Transform\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Transform\Systems\TransformInterpolationSystem.cpp">
+      <Filter>Source\Engine\Transform\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Transform\Systems\BoneAttachmentRenderSystem.cpp">
       <Filter>Source\Engine\Transform\Systems</Filter>
     </ClCompile>
   </ItemGroup>

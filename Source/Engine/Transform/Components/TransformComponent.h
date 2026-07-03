@@ -128,6 +128,14 @@ struct TransformComponent {
         return DirectX::XMFLOAT3(worldMatrix._41, worldMatrix._42, worldMatrix._43);
     }
 
+    // TransformComponent.h に追加すると各カメラ系で使い回せる
+    /// @brief 描画補間済みのワールド座標を返す。カメラ追従など「見た目に追従させたい」用途専用。
+    /// @note ロジック判定には GetWorldPosition()（worldMatrix基準）を使うこと。
+    DirectX::XMFLOAT3 GetRenderWorldPosition() const
+    {
+        return {renderWorldMatrix._41, renderWorldMatrix._42, renderWorldMatrix._43};
+    }
+
     // ワールド回転 (絶対回転) を取得する
     DirectX::XMFLOAT4 GetWorldRotation() const
     {

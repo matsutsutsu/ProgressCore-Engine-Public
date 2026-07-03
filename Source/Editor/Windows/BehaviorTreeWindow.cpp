@@ -57,7 +57,13 @@ void BehaviorTreeWindow::RecordStateForUndo(const std::string& commandName) {
 
 
 BehaviorTreeWindow::BehaviorTreeWindow() : EditorWindow("Behavior Tree Editor") {
-    _nodeContext = ed::CreateEditor();
+
+    // =========================================================================
+    // ★ 究極の修正1: 過去のクラッシュデータが記録されたiniファイルの読み込みを完全に拒絶する
+    // =========================================================================
+    ed::Config config;
+    config.SettingsFile = nullptr; // これにより、常に初期状態でクリーンに起動する
+    _nodeContext        = ed::CreateEditor(&config);
 
     // 初期状態としてRootノードを1つだけ作成しておく
     CreateNode(EditorBTNodeType::Root, "ROOT", 0.0f, 0.0f);
@@ -238,8 +244,19 @@ void BehaviorTreeWindow::CreateNode(EditorBTNodeType type, const std::string& na
 void BehaviorTreeWindow::DrawContents(EditorContext& context) {
     ed::SetCurrentEditor(_nodeContext);
 
-    // テーブルを2列で作成。BordersInnerV で中央にリサイズ可能な縦線を引く
-    if (ImGui::BeginTable("BTEditorTable", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV))
+    // =========================================================================
+    // ★ 究極の修正2: 描画領域が小さすぎるフレームは、絶対に中身を描画させない
+    // =========================================================================
+    ImVec2 availableSize = ImGui::GetContentRegionAvail();
+    if (availableSize.x < 50.0f || availableSize.y < 50.0f)
+    {
+        // 次のフレームで安全な領域を確保してもらうために、ダミー（透明の箱）だけ置いて逃げる
+        ImGui::Dummy(ImVec2(50.0f, 50.0f));
+        return;
+    }
+
+
+    if (ImGui::BeginTable("BTEditorTable", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV, availableSize))
     {
 
         // 初期幅の比率を設定 (左のワークスペースが75%、右のインスペクタが25%)
@@ -358,18 +375,19 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext& context) {
     }
 
     // =========================================================================
-    //  ゼロ除算・無限ループを防ぐための究極の防波堤
+    // ★ 究極の修正3: ここでも安全確保（念には念を）
     // =========================================================================
     ImVec2 avail = ImGui::GetContentRegionAvail();
-    if (avail.x <= 1.0f || avail.y <= 1.0f)
+    if (avail.x < 50.0f || avail.y < 50.0f)
     {
-        return; // 描画領域が潰れているフレームはノードエディタを起動しない
+        ImGui::Dummy(ImVec2(50.0f, 50.0f));
+        return;
     }
 
     ed::SetCurrentEditor(_nodeContext);
 
     // ImVec2(0.0f, 0.0f) をやめ、安全が保証されたサイズを明示的に渡す
-    ed::Begin("My Node Editor", avail);
+    ed::Begin("My Node Editor");
 
 
     // =======================================================
@@ -832,19 +850,24 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext& context) {
     HandleContextMenu();
 
     // ★ 究極の修正: ed::End() の「前」で、数フレーム待機してからカメラを動かす
-    // =========================================================
     if (_needInitialZoom) {
         _framesSinceOpen++;
 
         // ImGuiがノードの幅と高さを完全に計算し終わるまで待つ（3フレーム目以降）
         if (_framesSinceOpen > 2) {
-            ed::NavigateToContent();
+            
+            // ★ 修正3: フリーズの真犯人対策
+            // 1. ノードが無い状態で NavigateToContent を呼ぶとゼロ除算で死ぬため回避
+            // 2. 引数に 0.0f を渡して「アニメーション無し(即時反映)」にし、カメラ補間計算中の NaN 増殖を封じる
+            if (!_nodes.empty()) {
+                ed::NavigateToContent(0.0f);
+            }
+            
             _needInitialZoom = false;
         }
     }
 
     ed::End();
-
 }
 
 // ====================================================================
