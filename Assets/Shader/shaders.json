@@ -1,4 +1,4 @@
-{
+﻿{
     "materialShaders": [
         { "name": "PBR" },
         { "name": "Phong" },
@@ -7,6 +7,8 @@
         { "name": "Toon" },
         { "name": "Glow", "blend": "additive" },
         { "name": "Hologram", "blend": "additive" },
+        { "name": "Fire", "blend": "additive" },
+        { "name": "Water", "blend": "transparency", "depth": "testOnly" },
         { "name": "Grass", "cull": "none" },
         { "name": "GhostPBR", "blend": "transparency", "depth": "testOnly" },
         { "name": "EnergyStream", "blend": "additive" }

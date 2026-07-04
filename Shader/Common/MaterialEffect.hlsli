@@ -70,7 +70,7 @@ float3 ApplyHitFlash(float3 baseColor, float flashIntensity)
 float GetTime()      { return gTimeParams.x; }
 float GetDeltaTime() { return gTimeParams.y; }
 
-// UVスクロール（流れる炎・水・エネルギー帯など
+// UVスクロール（流れる炎・水・エネルギー帯など）
 float2 ScrollUV(float2 uv, float2 speed)
 {
     return uv + speed * GetTime();
@@ -99,6 +99,18 @@ float3 ApplyRimLightParams(float3 baseColor, float3 normal, float3 viewDir,
     float NdotV = saturate(dot(normal, viewDir));
     float rim   = pow(1.0f - NdotV, power);
     return baseColor + rim * color * strength;
+}
+
+// ==========================================================
+// 7. グローバルノイズを使った乱流サンプリング
+//   gGlobalNoiseMap (t13, Scene.hlsli で宣言) は EnvironmentSystem が
+//   毎フレーム無条件にバインドするため、マテリアル側でのテクスチャ設定が
+//   一切不要。Fire/Water 等の「揺らめき」表現の乱流源として使う。
+// ==========================================================
+float SampleGlobalNoise(SamplerState smp, float2 uv, float2 scrollSpeed)
+{
+    float2 scrolledUV = uv + scrollSpeed * GetTime();
+    return gGlobalNoiseMap.Sample(smp, scrolledUV).r;
 }
 
 #endif // MATERIAL_EFFECT_HLSLI

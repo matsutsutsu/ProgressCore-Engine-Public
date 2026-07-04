@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="External">
@@ -532,7 +532,12 @@
     <Filter Include="Shader\Material\Hologram">
       <UniqueIdentifier>{89c2f0cc-d6e1-41e2-9bf4-e95577026c72}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shader\Material\Grass">
+    <Filter Include="Shader\Material\Fire">
+      <UniqueIdentifier>{a1b2c3d4-e5f6-7890-abcd-ef1234567890}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shader\Material\Water">
+      <UniqueIdentifier>{b2c3d4e5-f6a7-8901-bcde-f12345678901}</UniqueIdentifier>
+    </Filter>    <Filter Include="Shader\Material\Grass">
       <UniqueIdentifier>{bbb7eb73-54f8-4baa-b812-64de1367e851}</UniqueIdentifier>
     </Filter>
     <Filter Include="Shader\Material\GhostPBR">
@@ -2722,6 +2727,9 @@
     <None Include="Shader\Common\Transform.hlsli">
       <Filter>Shader\Common</Filter>
     </None>
+    <None Include="Shader\Material\Water\WaterShared.hlsli">
+      <Filter>Shader\Material\Water</Filter>
+    </None>
     <None Include="Shader\Common\PBRLighting.hlsli">
       <Filter>Shader\Common</Filter>
     </None>
@@ -2877,7 +2885,18 @@
     <FxCompile Include="Shader\Material\Hologram\HologramVS.hlsl">
       <Filter>Shader\Material\Hologram</Filter>
     </FxCompile>
-    <FxCompile Include="Shader\Material\Grass\GrassPS.hlsl">
+    <FxCompile Include="Shader\Material\Fire\FirePS.hlsl">
+      <Filter>Shader\Material\Fire</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Fire\FireVS.hlsl">
+      <Filter>Shader\Material\Fire</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Water\WaterPS.hlsl">
+      <Filter>Shader\Material\Water</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Water\WaterVS.hlsl">
+      <Filter>Shader\Material\Water</Filter>
+    </FxCompile>    <FxCompile Include="Shader\Material\Grass\GrassPS.hlsl">
       <Filter>Shader\Material\Grass</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\Grass\GrassVS.hlsl">

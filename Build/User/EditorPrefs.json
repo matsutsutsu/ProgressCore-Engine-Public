@@ -1,6 +1,5 @@
 {
     "DialogHistory": {
-        "Model": "Assets\\Models\\Shape",
         "Scene": "Assets\\Scene"
     }
 }
