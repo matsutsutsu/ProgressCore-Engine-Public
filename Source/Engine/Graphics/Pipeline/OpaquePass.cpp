@@ -88,12 +88,9 @@ void OpaquePass::Execute(const RenderFrameContext& ctx)
 
             if (!activeMat) continue; // マテリアルなし：スキップ
 
-            // 透明判定（activeMat を直接参照。mesh への書き込みゼロ）
-            float alpha = 1.0f;
-            DirectX::XMFLOAT4 matColor;
-            if (activeMat->GetColor("materialColor"_hash, matColor)) alpha = matColor.w;
-            const bool isTransparent = (activeMat->alphaMode == AlphaMode::Blend ||
-                (alpha > 0.01f && alpha < 0.99f));
+            // 透明判定: シェーダー PSO の blend 設定で判定（cbuffer 変数名に依存しない）
+            const PipelineState* matPso = shader->GetPSO();
+            const bool isTransparent = matPso && matPso->IsBlendEnabled();
             const bool isSkinned = !mesh.bones.empty();
 
             _instanceScratch.clear();
