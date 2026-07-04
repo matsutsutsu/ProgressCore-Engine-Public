@@ -99,8 +99,7 @@ void GraphicsDevice::Initialize(HWND hWnd)
     }
 
     // ---- CbScene 定数バッファ (b8) ----
-    // サイズは Graphics 側の CbSceneData と一致させること。
-    // alignas(16) CbSceneData = XMMATRIX×3 + XMFLOAT4×3 = 192+48 = 240 bytes
+    // サイズは ShaderShared.h の GpuData::CbScene と一致（sizeof で自動追従）
     {
         D3D11_BUFFER_DESC bd{};
         bd.ByteWidth = sizeof(GpuData::CbScene); // ShaderShared.h で定義

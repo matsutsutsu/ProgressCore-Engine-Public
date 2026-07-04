@@ -142,6 +142,12 @@ CB_STRUCT(CbScene, SLOT_CB_SCENE)
     float4 cameraPosition;
     ROW_MAJOR float4x4 gView;        // HLSL名: gView
     ROW_MAJOR float4x4 gProjection;  // HLSL名: gProjection
+
+    // ★追加: 時間パラメータ（Graphics::Update が毎フレーム書き込む）
+    //   x: 経過秒(time)  y: デルタ秒(deltaTime)  z: sin(経過秒)  w: 予約
+    //   末尾に追加しているため既存フィールドのオフセットは不変。
+    //   Common.hlsli を include する全マテリアルから gTimeParams で参照可能。
+    float4 gTimeParams;
 };
 
 // ==================================================================
@@ -197,7 +203,7 @@ static_assert(sizeof(SpotLight) == 80, "SpotLight size mismatch vs HLSL");
 static_assert(sizeof(InstanceData) == 80, "InstanceData size mismatch vs HLSL");
 static_assert(sizeof(CbLight) == 1104, "CbLight size mismatch vs HLSL");
 static_assert(sizeof(CbSkeleton) == 16384, "CbSkeleton size mismatch vs HLSL");
-static_assert(sizeof(CbScene) == 240, "CbScene size mismatch vs HLSL");
+static_assert(sizeof(CbScene) == 256, "CbScene size mismatch vs HLSL");
 static_assert(sizeof(CbShadow) == 240, "CbShadow size mismatch vs HLSL");
 static_assert(sizeof(CbFog) == 96, "CbFog size mismatch vs HLSL");
 

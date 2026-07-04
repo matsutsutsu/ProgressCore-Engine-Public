@@ -758,8 +758,6 @@
     <ClInclude Include="Source\Game\Scenes\EditorScene.h" />
     <ClInclude Include="Source\Game\Scenes\ParticleScene.h" />
     <ClInclude Include="Source\Game\Scenes\SceneLoading.h" />
-    <ClInclude Include="Source\Game\UI\FloatingTextComponent.h" />
-    <ClInclude Include="Source\Game\UI\FloatingTextSystem.h" />
     <ClInclude Include="Source\Game\Utils\ParticlePool.h" />
     <ClInclude Include="Source\Game\Utils\PooledParticleComponent.h" />
   </ItemGroup>
@@ -1492,7 +1490,6 @@
     <ClCompile Include="Source\Game\Scenes\EditorScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\ParticleScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\SceneLoading.cpp" />
-    <ClCompile Include="Source\Game\UI\FloatingTextSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="External\DirectXTex\DirectXTex_Desktop_2022.vcxproj">
@@ -1574,6 +1571,16 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\EnergyStream\EnergyStreamPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\EnergyStream\EnergyStreamVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
     </FxCompile>
     <FxCompile Include="Shader\Material\GhostPBR\GhostPBRPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>

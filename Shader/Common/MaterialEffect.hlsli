@@ -62,4 +62,43 @@ float3 ApplyHitFlash(float3 baseColor, float flashIntensity)
     return lerp(baseColor, float3(1.0, 1.0, 1.0), flashIntensity);
 }
 
+// ==========================================================
+// 5. 時間ユーティリティ（CbScene.gTimeParams 由来）
+//   Scene.hlsli 経由で gTimeParams が見えている前提。
+//   x:経過秒 y:デルタ秒 z:sin(経過秒)
+// ==========================================================
+float GetTime()      { return gTimeParams.x; }
+float GetDeltaTime() { return gTimeParams.y; }
+
+// UVスクロール（流れる炎・水・エネルギー帯など
+float2 ScrollUV(float2 uv, float2 speed)
+{
+    return uv + speed * GetTime();
+}
+
+// 脈動（0..1 を min..max の範囲で行き来させる。明滅・鼓動表現に）
+//   speed: 1秒あたりの往復回数の目安
+float Pulse(float minV, float maxV, float speed)
+{
+    float t = 0.5f + 0.5f * sin(GetTime() * speed * 6.2831853f);
+    return lerp(minV, maxV, t);
+}
+
+// ==========================================================
+// 6. パラメータ化リムライト（マテリアルごとに制御可能）
+//   既存の ApplyRimLight は フォグ用グローバル gFogRimParams に依存していて
+//   マテリアル個別に設定できなかった。こちらは power/color/strength を
+//   引数で受け取るので、Hologram 等が自前のリムを持てる。
+// ==========================================================
+float3 ApplyRimLightParams(float3 baseColor, float3 normal, float3 viewDir,
+                           float power, float3 color, float strength)
+{
+    if (strength <= 0.0f)
+        return baseColor;
+
+    float NdotV = saturate(dot(normal, viewDir));
+    float rim   = pow(1.0f - NdotV, power);
+    return baseColor + rim * color * strength;
+}
+
 #endif // MATERIAL_EFFECT_HLSLI

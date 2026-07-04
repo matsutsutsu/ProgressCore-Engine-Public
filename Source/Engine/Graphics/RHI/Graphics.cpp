@@ -1,4 +1,6 @@
 #include "Graphics.h"
+#include <chrono>
+#include <cmath>
 #include "Engine/Graphics/Shader/ShaderManifest.h"
 #include "Engine/Core/Math/Misc.h"
 #include "Engine/Graphics/RHI/Camera.h"
@@ -143,6 +145,16 @@ void Graphics::Update()
         const DirectionalLight& dir = _lightManager->GetDirectionalLight();
         data.lightDirection = { dir.direction.x, dir.direction.y, dir.direction.z, 0.0f };
         data.lightColor = { dir.color.x,     dir.color.y,     dir.color.z, dir.intensity };
+    }
+
+    {
+        static const auto s_start = std::chrono::high_resolution_clock::now();
+        static auto s_prev = s_start;
+        const auto now = std::chrono::high_resolution_clock::now();
+        const float timeSec  = std::chrono::duration<float>(now - s_start).count();
+        const float deltaSec = std::chrono::duration<float>(now - s_prev).count();
+        s_prev = now;
+        data.gTimeParams = { timeSec, deltaSec, sinf(timeSec), 0.0f };
     }
 
     _gfxDevice.UpdateSceneConstantBuffer(&data, sizeof(data));

@@ -1,25 +1,27 @@
 // Shader/Material/Hologram/HologramPS.hlsl
+// Category : unlit
+// PSO      : blend=additive  (shaders.json: { "name":"Hologram", "blend":"additive" })
+// Params   : rimColor(f4) 縁色 / rimPower(f) 縁の鋭さ / intensity(f) 強さ
+//            pulseSpeed(f) 脈動速度(0=無し) / scanlineDensity(f) 走査線の密度(0=無し)
+//            scanlineStrength(f) 走査線の濃さ(0.2〜0.4推奨)
+// Textures : なし
+// Use      : シールド/ホログラム/幽霊の縁。殻メッシュや単純形状に適用推奨。
 //
-// フレネル発光(Hologram)マテリアル用のピクセルシェーダー。
-// 視線ベクトルと法線の角度(dot積)から輪郭部分だけを光らせる Unlit シェーダー。
-// Glow(全面が均一に光る)との違いは、この視線依存の項(fresnel)があること。
-// カメラが動く/オブジェクトが回転すると光る位置がリアルタイムに変わる。
-//
-// cameraPosition は CbScene(Per-frame, b8)由来。Common.hlsli経由で
-// Scene.hlsli が既にincludeされているため、マテリアル側で追加のバインドは不要
-// （Graphics::Update が毎フレーム自動で埋める）。
+// 改良点: CbScene.gTimeParams(gTime) を使い、脈動(Pulse)と流れる走査線を追加。
+//         リム計算は MaterialEffect.hlsli の ApplyRimLightParams に集約
+//         （マテリアルごとに power/color/strength を制御できる版）。
 #include "Shader/Common/Common.hlsli"
+#include "Shader/Common/MaterialEffect.hlsli"
 
-// ==============================================================================
-// 定数バッファ
-//   ★ 変数名がそのまま MaterialData の nameHash キーになる
-// ==============================================================================
 cbuffer CbMesh : register(REG_CB(SLOT_CB_MATERIAL))
 {
-    float4 rimColor;   // rgb: 縁の発光色
-    float  rimPower;   // 縁の鋭さ（大きいほど薄く鋭い輪郭になる。目安 1〜8）
-    float  intensity;  // 発光の強さ（1.0が基準）
-    float2 _pad;       // 16byte境界合わせ
+    float4 rimColor;         // rgb: 縁の発光色
+    float  rimPower;         // 縁の鋭さ（大きいほど薄く鋭い。目安 1〜8）
+    float  intensity;        // 発光の強さ
+    float  pulseSpeed;       // 脈動の速さ（0で脈動なし。1.0で穏やかな明滅）
+    float  scanlineDensity;  // 走査線の密度（0で走査線なし）
+    float  scanlineStrength; // 走査線の濃さ（0.2〜0.4が自然。1.0だと強い縞）
+    float3 _pad;             // 16byte境界合わせ
 };
 
 float4 main(VS_OUT pin) : SV_TARGET
@@ -27,15 +29,21 @@ float4 main(VS_OUT pin) : SV_TARGET
     float3 normal  = normalize(pin.normal);
     float3 viewDir = normalize(cameraPosition.xyz - pin.position.xyz);
 
-    // 正面(dot≈1)ではfresnel≈0、輪郭(dot≈0)ではfresnel≈1 になる。
-    // rimPower を上げるほど、輪郭付近だけに絞り込まれた鋭いカーブになる。
-    float NdotV    = saturate(dot(normal, viewDir));
-    float fresnel  = pow(1.0f - NdotV, rimPower);
+    // 1. フレネル縁発光（黒ベースに加算する形で強度を得る）
+    float3 rim = ApplyRimLightParams(float3(0, 0, 0), normal, viewDir,
+                                     rimPower, rimColor.rgb, 1.0f);
 
-    float3 finalColor = rimColor.rgb * fresnel * intensity;
+    // 2. 脈動（pulseSpeed=0 なら等倍のまま）
+    float pulse = (pulseSpeed > 0.0f) ? Pulse(0.55f, 1.0f, pulseSpeed) : 1.0f;
 
-    // ★ 加算合成(BlendState::Additive)は SrcBlend=SRC_ALPHA。
-    //   色側で既に fresnel を掛けて減衰させているので、アルファは1.0のままで良い
-    //   （Glowのようにテクスチャのアルファをマスクとして使う必要が無いケース）。
+    // 3. 流れる走査線（scanlineDensity=0 なら無効。時間で下から上へ流れる）
+    float scan = 1.0f;
+    if (scanlineDensity > 0.0f)
+    {
+        float band = 0.5f + 0.5f * sin((pin.texcoord.y * scanlineDensity - GetTime() * 2.0f) * 6.2831853f);
+        scan = 1.0f - scanlineStrength * (1.0f - band); // band=1→減衰なし, band=0→strength分暗く
+    }
+
+    float3 finalColor = rim * intensity * pulse * scan;
     return float4(finalColor, 1.0f);
 }

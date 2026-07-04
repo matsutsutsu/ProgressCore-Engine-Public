@@ -538,6 +538,9 @@
     <Filter Include="Shader\Material\GhostPBR">
       <UniqueIdentifier>{2ed6532d-2763-44c1-ad75-6dcc87492a5e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shader\Material\EnergyStream">
+      <UniqueIdentifier>{e6277476-9d98-4bf6-8531-1e88079f10f7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -803,12 +806,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\UI\Text\TextManager.h">
       <Filter>Source\Engine\UI\Text</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\UI\FloatingTextComponent.h">
-      <Filter>Source\Game\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\UI\FloatingTextSystem.h">
-      <Filter>Source\Game\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\UI\ImGui\ImGuiThemes.h">
       <Filter>Source\Engine\UI\ImGui</Filter>
@@ -2024,9 +2021,6 @@
     <ClCompile Include="Source\Engine\UI\UIManager.cpp">
       <Filter>Source\Engine\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\UI\FloatingTextSystem.cpp">
-      <Filter>Source\Game\UI</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\UI\ImGui\ImGuiThemes.cpp">
       <Filter>Source\Engine\UI\ImGui</Filter>
     </ClCompile>
@@ -2894,6 +2888,12 @@
     </FxCompile>
     <FxCompile Include="Shader\Material\GhostPBR\GhostPBRVS.hlsl">
       <Filter>Shader\Material\GhostPBR</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\EnergyStream\EnergyStreamVS.hlsl">
+      <Filter>Shader\Material\EnergyStream</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\EnergyStream\EnergyStreamPS.hlsl">
+      <Filter>Shader\Material\EnergyStream</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
