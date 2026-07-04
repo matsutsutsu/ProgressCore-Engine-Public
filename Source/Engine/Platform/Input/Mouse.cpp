@@ -1,4 +1,6 @@
 #include "Mouse.h"
+#include <tracy/Tracy.hpp>
+
 static const int KeyMap[] =
 {
     VK_LBUTTON,        // 左ボタン
@@ -17,6 +19,8 @@ Mouse::Mouse(HWND hWnd)
 // 更新
 void Mouse::Update()
 {
+    ZoneScopedN("Mouse::Update");
+
     // スイッチ情報
     MouseButton newButtonState = 0;
     for (int i = 0; i < ARRAYSIZE(KeyMap); ++i)

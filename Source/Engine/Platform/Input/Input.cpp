@@ -1,5 +1,6 @@
 #include "Input.h"
 #include <cmath> // std::abs 用
+#include <tracy/Tracy.hpp>
 
 // 初期化
 void Input::Initialize(HWND hWnd)
@@ -12,6 +13,8 @@ void Input::Initialize(HWND hWnd)
 // 更新処理
 void Input::Update(float dt)
 {
+    ZoneScopedN("Input::Update"); 
+
 	gamePad->Update(dt);
 	mouse->Update();
     keyboard->Update(); 
