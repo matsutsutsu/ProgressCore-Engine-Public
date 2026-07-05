@@ -48,6 +48,10 @@ namespace ComponentMetaImGui {
     {
         using namespace DirectX;
         bool changed = false;
+
+        // 読み取り専用なら以降のウィジェットを無効化（表示はされるが編集不可）
+        if (fd.readonly) ImGui::BeginDisabled();
+
         switch (fd.kind) {
         case FieldKind::Float: {
             float& v = RawField<float>(obj, fd.offset);
@@ -66,51 +70,36 @@ namespace ComponentMetaImGui {
         case FieldKind::UInt8: {
             uint8_t& v = RawField<uint8_t>(obj, fd.offset);
             int      tmp = (int)v;
-            if (ImGui::DragInt(fd.name, &tmp, 1.0f, 0, 255)) {
-                v = (uint8_t)tmp;
-                changed = true;
-            }
+            if (ImGui::DragInt(fd.name, &tmp, 1.0f, 0, 255)) { v = (uint8_t)tmp; changed = true; }
             break;
         }
         case FieldKind::UInt16: {
             uint16_t& v = RawField<uint16_t>(obj, fd.offset);
             int       tmp = (int)v;
-            if (ImGui::DragInt(fd.name, &tmp, 1.0f, 0, 65535)) {
-                v = (uint16_t)tmp;
-                changed = true;
-            }
+            if (ImGui::DragInt(fd.name, &tmp, 1.0f, 0, 65535)) { v = (uint16_t)tmp; changed = true; }
             break;
         }
         case FieldKind::UInt32: {
             uint32_t& v = RawField<uint32_t>(obj, fd.offset);
             int       tmp = (int)v;
-            if (ImGui::DragInt(fd.name, &tmp, 1.0f, 0, 4294967295)) {
-                v = (uint32_t)tmp;
-                changed = true;
-            }
+            if (ImGui::DragInt(fd.name, &tmp, 1.0f, 0, 4294967295)) { v = (uint32_t)tmp; changed = true; }
             break;
         }
         case FieldKind::EntityLink: {
-            // エンティティ参照。64bit ID を表示しつつ、ヒエラルキーからの
-            // ドラッグ&ドロップで付け替えできるようにする。
             auto& link = RawField<CCL::Serialization::EntityLink>(obj, fd.offset);
             ImGui::InputScalar(fd.name, ImGuiDataType_U64, &link.id);
-
             if (ImGui::BeginDragDropTarget()) {
-                // 送信側 (ヒエラルキービュー) のペイロード型に合わせて受け取る。
                 if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_ENTITY_ID")) {
                     if (payload->DataSize == sizeof(uint32_t)) {
-                        link.id = *static_cast<const uint32_t*>(payload->Data);
-                        changed = true;
+                        link.id = *static_cast<const uint32_t*>(payload->Data); changed = true;
                     }
                     else if (payload->DataSize == sizeof(uint64_t)) {
-                        link.id = *static_cast<const uint64_t*>(payload->Data);
-                        changed = true;
+                        link.id = *static_cast<const uint64_t*>(payload->Data); changed = true;
                     }
                 }
                 ImGui::EndDragDropTarget();
             }
-            if (ImGui::IsItemHovered()) {
+            if (ImGui::IsItemHovered() && fd.tooltip == nullptr) {
                 ImGui::SetTooltip("ドラッグ＆ドロップでエンティティをアタッチ可能");
             }
             break;
@@ -119,17 +108,11 @@ namespace ComponentMetaImGui {
             uint8_t& v = RawField<uint8_t>(obj, fd.offset);
             int      cur = (int)v;
             if (fd.enumNames && fd.enumCount > 0) {
-                if (ImGui::Combo(fd.name, &cur, fd.enumNames, fd.enumCount)) {
-                    v = (uint8_t)cur;
-                    changed = true;
-                }
+                if (ImGui::Combo(fd.name, &cur, fd.enumNames, fd.enumCount)) { v = (uint8_t)cur; changed = true; }
             }
             else {
                 int tmp = cur;
-                if (ImGui::DragInt(fd.name, &tmp, 1, 0, 255)) {
-                    v = (uint8_t)tmp;
-                    changed = true;
-                }
+                if (ImGui::DragInt(fd.name, &tmp, 1, 0, 255)) { v = (uint8_t)tmp; changed = true; }
             }
             break;
         }
@@ -153,18 +136,31 @@ namespace ComponentMetaImGui {
             changed = ImGui::DragFloat4(fd.name, &RawField<XMFLOAT4>(obj, fd.offset).x, fd.dragSpeed);
             break;
         }
+        case FieldKind::Color: {
+            // XMFLOAT4 を RGBA カラーピッカーで編集
+            changed = ImGui::ColorEdit4(fd.name, &RawField<XMFLOAT4>(obj, fd.offset).x);
+            break;
+        }
         case FieldKind::String: {
             std::string& v = RawField<std::string>(obj, fd.offset);
             char         buf[256];
             strncpy_s(buf, sizeof(buf), v.c_str(), _TRUNCATE);
-            if (ImGui::InputText(fd.name, buf, sizeof(buf))) {
-                v = buf;
-                changed = true;
-            }
+            if (ImGui::InputText(fd.name, buf, sizeof(buf))) { v = buf; changed = true; }
             break;
         }
         default: break;
         }
+
+        if (fd.readonly) ImGui::EndDisabled();
+
+        // ツールチップ（指定があればホバーで表示。Disabled 中でもホバー判定は効く）
+        if (fd.tooltip && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+            ImGui::SetTooltip("%s", fd.tooltip);
+        }
+
+        // 読み取り専用は編集扱いにしない（Undo コマンドを誤発行しないため）
+        if (fd.readonly) changed = false;
+
         return changed;
     }
 
@@ -285,16 +281,40 @@ namespace ComponentMetaImGui {
         return anyChanged;
     }
 
-    // 登録時にポインタと ID をキャストしてリレーする
-    template <typename T, typename RegistryType> void RegisterGuiMeta(RegistryType& registry)
+    // 登録時にポインタと ID をキャストしてリレーする。
+    // category / sortPriority / hiddenInInspector は、手書き ComponentMeta<T> 特殊化で
+    // 書き忘れていても (無ければ) 既定値 "Misc" / 1000 / false にフォールバックする。
+    template <typename T, typename RegistryType>
+    void RegisterGuiMeta(RegistryType &registry)
     {
+        std::string category = "Misc";
+        if constexpr (HasCategory<T>::value)
+        {
+            category = std::string(ComponentMeta<T>::category);
+        }
+
+        int sortPriority = 1000;
+        if constexpr (HasSortPriority<T>::value)
+        {
+            sortPriority = ComponentMeta<T>::sortPriority;
+        }
+
+        bool hidden = false;
+        if constexpr (HasHiddenInInspector<T>::value)
+        {
+            hidden = ComponentMeta<T>::hiddenInInspector;
+        }
+
         registry.template Register<T>(
             std::string(ComponentMeta<T>::displayName),
-            typename RegistryType::GuiFunc([](void* ptr, auto entity, auto* world) {
-                DrawInspector<T>(*static_cast<T*>(ptr),
+            category,
+            sortPriority,
+            hidden,
+            typename RegistryType::GuiFunc([](void *ptr, auto entity, auto *world) {
+                DrawInspector<T>(*static_cast<T *>(ptr),
                     static_cast<unsigned long long>(entity),
-                    static_cast<void*>(world));
-                }));
+                    static_cast<void *>(world));
+            }));
     }
 
 } // namespace ComponentMetaImGui

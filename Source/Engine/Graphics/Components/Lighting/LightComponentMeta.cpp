@@ -3,6 +3,7 @@
 
 #include "Engine/Graphics/Components/Lighting/LightComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
+#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
 
 #ifdef ENABLE_EDITOR
 #include "Editor/Inspector/ComponentGuiRegistry.h"
@@ -14,8 +15,12 @@
 // ============================================================================
 template <> struct ComponentMeta<DirectionalLightComponent> {
     CCL_META_USING_THIS(DirectionalLightComponent)
-        static constexpr const char* displayName = "DirectionalLight";
-    static constexpr bool        hasCustomGui = true;
+
+    static constexpr const char* displayName    = "DirectionalLight";
+    static constexpr const char* category       = CCL::Categories::Light; // ★追加
+    static constexpr int         sortPriority   = 300; // ★追加
+    static constexpr bool        hiddenInInspector = false;
+    static constexpr bool        hasCustomGui   = true;
     static constexpr bool        isSerializable = true;
 
 #ifdef ENABLE_EDITOR
@@ -48,8 +53,12 @@ template <> struct ComponentMeta<DirectionalLightComponent> {
 // ============================================================================
 template <> struct ComponentMeta<PointLightComponent> {
     CCL_META_USING_THIS(PointLightComponent)
-        static constexpr const char* displayName = "PointLight";
-    static constexpr bool        hasCustomGui = true;
+
+    static constexpr const char* displayName    = "PointLight";
+    static constexpr const char* category       = CCL::Categories::Light; // ★追加
+    static constexpr int         sortPriority   = 310; // ★追加
+    static constexpr bool        hiddenInInspector = false;
+    static constexpr bool        hasCustomGui   = true;
     static constexpr bool        isSerializable = true;
 
 #ifdef ENABLE_EDITOR
@@ -87,8 +96,12 @@ template <> struct ComponentMeta<PointLightComponent> {
 // ============================================================================
 template <> struct ComponentMeta<SpotLightComponent> {
     CCL_META_USING_THIS(SpotLightComponent)
-        static constexpr const char* displayName = "SpotLight";
-    static constexpr bool        hasCustomGui = true;
+
+    static constexpr const char* displayName    = "SpotLight";
+    static constexpr const char* category       = CCL::Categories::Light; // ★追加
+    static constexpr int         sortPriority   = 320; // ★追加
+    static constexpr bool        hiddenInInspector = false;
+    static constexpr bool        hasCustomGui   = true;
     static constexpr bool        isSerializable = true;
 
 #ifdef ENABLE_EDITOR

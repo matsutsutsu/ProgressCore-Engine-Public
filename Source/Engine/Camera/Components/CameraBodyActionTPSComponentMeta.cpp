@@ -3,8 +3,10 @@
 
 #include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
+#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
+
 #include <string>
-#include <algorithm> // std::max用に追加
+#include <algorithm> 
 
 #ifdef ENABLE_EDITOR
 #include <imgui.h>
@@ -13,7 +15,7 @@
 #endif
 
 // ============================================================================
-// CameraBodyActionTPS メタデータ定義（パターンB: カスタムGUI ＋ 自動シリアライズ）
+// CameraBodyActionTPS メタデータ定義
 // ============================================================================
 template <>
 struct ComponentMeta<CameraBodyTPSComponent>
@@ -21,6 +23,9 @@ struct ComponentMeta<CameraBodyTPSComponent>
     CCL_META_USING_THIS(CameraBodyTPSComponent)
 
     static constexpr const char *displayName    = "Camera Body Action TPS";
+    static constexpr const char *category       = CCL::Categories::Camera; // ★追加
+    static constexpr int         sortPriority   = 350; // ★追加
+    static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui   = true;
     static constexpr bool        isSerializable = true;
 
@@ -29,9 +34,6 @@ struct ComponentMeta<CameraBodyTPSComponent>
     {
         bool changed = false;
 
-        // =========================================================
-        // 1. ターゲットリンク (ドラッグ＆ドロップ対応)
-        // =========================================================
         ImGui::SeparatorText(u8"追従・注視ターゲット設定");
 
         auto RenderEntityLinkBox = [](const char *label, CCL::Serialization::EntityLink &link) -> bool {
@@ -53,9 +55,6 @@ struct ComponentMeta<CameraBodyTPSComponent>
         changed |= RenderEntityLinkBox("Player Target", comp.target);
         changed |= RenderEntityLinkBox("LockOn Enemy", comp.lockOnTarget);
 
-        // =========================================================
-        // 2. パラメータの描画 (「日本語（変数名）」形式で統一)
-        // =========================================================
         ImGui::SeparatorText(u8"ロックオン設定 (Lock-on Settings)");
         changed |= ImGui::Checkbox(u8"ロックオン有効化 (isLockOnActive)", &comp.isLockOnActive);
         changed |= ImGui::DragFloat(u8"ロックオン固定ピッチ (lockOnPitch)", &comp.lockOnPitch, 0.5f, -60.0f, 60.0f);
@@ -93,13 +92,10 @@ struct ComponentMeta<CameraBodyTPSComponent>
         return changed;
     }
 #else
-    static bool CustomGui(CameraBodyActionTPS &, unsigned long long, void *)
-    {
-        return false;
-    }
+    // ★ 修正: 構造体名(CameraBodyTPSComponent)と完全に一致させること！
+    static bool CustomGui(CameraBodyTPSComponent &, unsigned long long, void *) { return false; }
 #endif
 
-   // 自動シリアライズ用のフィールド一覧 (JSONへのセーブ/ロード用)
     static const std::vector<FieldDescriptor> &Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
@@ -131,5 +127,6 @@ struct ComponentMeta<CameraBodyTPSComponent>
     }
 };
 
-REGISTER_COMPONENT(CameraBodyTPSComponent, "Camera")
+// ★修正: カテゴリを "Camera"（生文字）から "CameraBodyTPS" などの正式な識別子名に変更
+REGISTER_COMPONENT(CameraBodyTPSComponent, "CameraBodyTPS")
 REGISTER_COMPONENT_EDITOR_GUI(CameraBodyTPSComponent)

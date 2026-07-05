@@ -2,45 +2,71 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
+// 必要なインクルードを追加
+#include <imgui.h>
+#include "Engine/Timer/TimeState.h"
+
 void VoxelOceanSystem::Update(float dt)
 {
-    // ECSの真骨頂: メモリが連続しているため、猛烈な速度で10万回の計算が終わります
-    ForEachParallel([&](TransformComponent& trans, VoxelOceanComponent& ocean) {
+    if (!_world || !_world->HasResource<TimeContext>()) return;
+    auto &ctx = _world->GetResource<TimeContext>();
 
-        // 経過時間を進める
-        ocean.timeElapsed += dt * ocean.waveSpeed;
+    // ------------------------------------------------------------
+    // 1. タイムスケールの適用 (Environmentグループの時間を取得)
+    // -------------------------------------------------------------
+    float timeScale = ctx.globalScale;
 
-        float x = trans.position.x;
-        float z = trans.position.z;
-        float t = ocean.timeElapsed;
+    // タイムスケールを適用した経過時間を進める
+    m_globalTime += dt * timeScale * m_settings.waveSpeed;
 
-        // -------------------------------------------------------------
-        // 🌊 複合波の合成（Gerstner Wave 簡易版）
-        // -------------------------------------------------------------
-        // 波1: 全体的にゆっくり大きくうねるベースの波
+    // -------------------------------------------------------------
+    // 2. 数万個のVoxelの更新 (DOD最適化)
+    // -------------------------------------------------------------
+    // ローカル変数にコピーしておくことで、ラムダ式内のポインタ間接参照(this->)を排除し高速化する
+    const float t      = m_globalTime;
+    const float amp    = m_settings.waveAmplitude;
+    const float freq   = m_settings.waveFrequency;
+    const float offset = m_settings.heightOffset;
+
+    ForEachParallel([t, amp, freq, offset](TransformComponent &trans, const VoxelOceanComponent &ocean) {
+        float x = trans.position.x * freq;
+        float z = trans.position.z * freq;
+
+        // 複合波の合成（Gerstner Wave 簡易版）
         float wave1 = std::sin(x * 0.1f + t) * 2.0f;
-
-        // 波2: 少し斜め方向から来る、少し速い中くらいの波
         float wave2 = std::cos(z * 0.15f + t * 1.2f) * 1.5f;
-
-        // 波3: 細かく波立つ、対角線方向の速い波
         float wave3 = std::sin((x + z) * 0.2f - t * 1.5f) * 1.0f;
 
-        // 3つの波を足し合わせて、最終的な高さを決定する
-        trans.position.y = wave1 + wave2 + wave3;
+        // 振幅と基本オフセットを適用
+        trans.position.y = offset + ((wave1 + wave2 + wave3) * amp);
 
-        // （おまけ）少し揺れるような回転を加えるとより滑らかに見えます
-        // 簡易的にX軸とZ軸にわずかな傾きを与えます
-        float tiltX = std::cos(x * 0.1f + t) * 0.1f;
-        float tiltZ = -std::sin(z * 0.15f + t * 1.2f) * 0.1f;
-
-        // クォータニオンをEuler角から簡易生成して代入 (※エンジンの仕様に合わせてください)
-        // ここでは簡単な見栄えのための擬似的な回転です
-        // もし重ければ回転計算は削除しても波としては成立します
-            
-		trans.isDirty = true; // 行列の再計算を要求  
-        });
+        // 描画エンジンに行列の再計算を要求する
+        trans.isDirty  = true;
+        trans.isStatic = false;
+    });
 }
 
+// -------------------------------------------------------------
+// GUIでのリアルタイム編集
+// -------------------------------------------------------------
+void VoxelOceanSystem::OnGui()
+{
+    if (ImGui::CollapsingHeader("Voxel Ocean Settings", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        ImGui::Indent();
+
+        ImGui::SliderFloat("Wave Speed", &m_settings.waveSpeed, 0.0f, 10.0f, "%.2f");
+        ImGui::SliderFloat("Wave Amplitude", &m_settings.waveAmplitude, 0.0f, 10.0f, "%.2f");
+        ImGui::SliderFloat("Wave Frequency", &m_settings.waveFrequency, 0.1f, 5.0f, "%.2f");
+        ImGui::DragFloat("Height Offset", &m_settings.heightOffset, 0.1f, -50.0f, 50.0f, "%.2f");
+
+        ImGui::Separator();
+        ImGui::Text("Global Ocean Time: %.2f", m_globalTime);
+
+        ImGui::Unindent();
+    }
+}
+
+
 // LogicグループのUpdateフェーズで回す
-REGISTER_LOGIC_SYSTEM(VoxelOceanSystem, Priority::LogicStage::L02_Update);
+REGISTER_LOGIC_SYSTEM(VoxelOceanSystem, Priority::LogicStage::L02_Update)

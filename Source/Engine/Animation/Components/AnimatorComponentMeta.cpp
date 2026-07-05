@@ -1,18 +1,19 @@
 /// @file  AnimatorComponentMeta.cpp
-/// @brief アニメーション関連コンポーネント (Animator, AnimStateMachine, AnimParameters) のシリアライズ/インスペクタ定義。
+/// @brief アニメーション関連コンポーネントのシリアライズ/インスペクタ定義。
 
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Animation/Components/AnimatorComponent.h"
-#include "Engine/Animation/Core/AnimStateMachine.h"     
-#include "Engine/Animation/Components/AnimParametersComponent.h" 
+#include "Engine/Animation/Core/AnimStateMachine.h"
+#include "Engine/Animation/Components/AnimParametersComponent.h"
 #include "Engine/Graphics/Components/Core/ModelComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
+#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
 
 #include "Engine/Animation/Core/AnimGraphSerializer.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Platform/Core/Dialog.h"
-#include <filesystem>
+#include "Engine/Platform/Core/FileSystem.h"
 
 #ifdef ENABLE_EDITOR
 #include "Editor/Inspector/ComponentGuiRegistry.h"
@@ -20,16 +21,23 @@
 #endif
 
 // ===================================================================
-// 1. AnimatorComponent (パターンB)
+// 1. AnimatorComponent
 // ===================================================================
-template <> struct ComponentMeta<AnimatorComponent> {
+template <>
+struct ComponentMeta<AnimatorComponent>
+{
     CCL_META_USING_THIS(AnimatorComponent)
-        static constexpr const char* displayName = "Animator";
-    static constexpr bool        hasCustomGui = true;
-    static constexpr bool        isSerializable = true;
+
+    static constexpr const char *displayName       = "Animator";
+    static constexpr const char *category          = CCL::Categories::Animation; // ★修正
+    static constexpr int         sortPriority      = 100;
+    static constexpr bool        hiddenInInspector = false;
+    static constexpr bool        hasCustomGui      = true;
+    static constexpr bool        isSerializable    = true;
 
 #ifdef ENABLE_EDITOR
-    static bool CustomGui(AnimatorComponent& anim, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr) {
+    static bool CustomGui(AnimatorComponent &anim, unsigned long long /*entityID*/ = 0, void * /*worldPtr*/ = nullptr)
+    {
         bool changed = false;
 
         if (ImGui::DragFloat("Speed", &anim.playbackSpeed, 0.05f, -5.0f, 5.0f)) changed = true;
@@ -37,30 +45,30 @@ template <> struct ComponentMeta<AnimatorComponent> {
         ImGui::Separator();
 
         ImGui::TextDisabled("Dynamic Preview");
-        if (ImGui::Button("Load & Play Sequence... (JSON)", ImVec2(-1, 0))) {
-            if (auto path = FileDialog::OpenPreset("AnimSequence", "Select Anim Sequence", Graphics::Instance().GetWindowHandle())) {
-                namespace fs = std::filesystem;
-                fs::path absPath = path->string();
-                fs::path currentPath = fs::current_path();
-                std::error_code ec;
-                fs::path relPath = fs::relative(absPath, currentPath, ec);
-                std::string finalPath = (!ec && !relPath.empty()) ? relPath.generic_string() : path->string();
-                const AnimSequence* loadedSeq = ResourceManager::Instance().LoadAnimSequence(finalPath.c_str());
+        if (ImGui::Button("Load & Play Sequence... (JSON)", ImVec2(-1, 0)))
+        {
+            if (auto pathOpt = FileDialog::OpenPreset("AnimSequence"))
+            {
+                std::string         finalPath = FileDialog::ConvertToRelativePath(*pathOpt);
+                const AnimSequence *loadedSeq = ResourceManager::Instance().LoadAnimSequence(finalPath.c_str());
 
-                if (loadedSeq) {
-                    anim.Play(loadedSeq, { .blendTime = 0.2f, .loop = true, .speed = 1.0f });
+                if (loadedSeq)
+                {
+                    anim.Play(loadedSeq, {.blendTime = 0.2f, .loop = true, .speed = 1.0f});
                     changed = true;
                 }
             }
         }
         ImGui::Separator();
 
-        if (anim.currentSequence) {
+        if (anim.currentSequence)
+        {
             ImGui::Text("Sequence: %s", anim.currentSequence->sequenceName.c_str());
             ImGui::Text("Target Anim: %s", anim.currentSequence->targetAnimName.c_str());
             ImGui::Text("Time: %.2f / %.2f", anim.currentTimer, anim.currentSequence->duration);
         }
-        else {
+        else
+        {
             ImGui::TextColored(ImVec4(1, 1, 0, 1), "No Sequence Playing");
         }
         ImGui::Text("Finished: %s", anim.isFinished ? "True" : "False");
@@ -68,14 +76,17 @@ template <> struct ComponentMeta<AnimatorComponent> {
         return changed;
     }
 #else
-    static bool CustomGui(AnimatorComponent&, unsigned long long, void*) { return false; }
+    static bool CustomGui(AnimatorComponent &, unsigned long long, void *)
+    {
+        return false;
+    }
 #endif
 
-    static const std::vector<FieldDescriptor>& Fields() {
+    static const std::vector<FieldDescriptor> &Fields()
+    {
         static const std::vector<FieldDescriptor> fields = {
             CFIELD_FLOAT_RANGED(playbackSpeed, "Playback Speed", 0.05f, -5.0f, 5.0f, "Playback")
-            CFIELD(isLoop, "Loop", "Playback")
-        };
+                CFIELD(isLoop, "Loop", "Playback")};
         return fields;
     }
 };
@@ -83,15 +94,19 @@ REGISTER_COMPONENT(AnimatorComponent, "Animator")
 REGISTER_COMPONENT_EDITOR_GUI(AnimatorComponent)
 
 // ===================================================================
-// 2. AnimStateMachineComponent (パターンB)
+// 2. AnimStateMachineComponent
 // ===================================================================
 template <>
 struct ComponentMeta<AnimStateMachineComponent>
 {
     CCL_META_USING_THIS(AnimStateMachineComponent)
-    static constexpr const char *displayName    = "Anim State Machine";
-    static constexpr bool        hasCustomGui   = true;
-    static constexpr bool        isSerializable = true;
+
+    static constexpr const char *displayName       = "Anim State Machine";
+    static constexpr const char *category          = CCL::Categories::Animation; // ★修正
+    static constexpr int         sortPriority      = 105;
+    static constexpr bool        hiddenInInspector = false;
+    static constexpr bool        hasCustomGui      = true;
+    static constexpr bool        isSerializable    = true;
 
 #ifdef ENABLE_EDITOR
     static bool CustomGui(AnimStateMachineComponent &fsm, unsigned long long /*entityID*/ = 0, void * /*worldPtr*/ = nullptr)
@@ -100,13 +115,9 @@ struct ComponentMeta<AnimStateMachineComponent>
 
         ImGui::TextDisabled("Graph File: %s", fsm.graphPath.empty() ? "None" : fsm.graphPath.c_str());
 
-        // -------------------------------------------------------------
-        // 【修正点】グラフのロード処理をラムダ式として共通化 (DRY原則)
-        // -------------------------------------------------------------
         auto reloadGraph = [&]() {
             if (AnimGraphSerializer::LoadFromJSON(fsm.internalGraph, fsm.graphPath, {}))
             {
-                // ロード成功後、シーケンスのポインタを再紐付けする
                 for (auto &state : fsm.internalGraph.states)
                 {
                     if (!state.sequenceFilePath.empty())
@@ -114,34 +125,21 @@ struct ComponentMeta<AnimStateMachineComponent>
                         state.sequence = ResourceManager::Instance().LoadAnimSequence(state.sequenceFilePath.c_str());
                     }
                 }
-                // エントリーステートに戻す
                 fsm.currentStateHash = fsm.internalGraph.entryStateHash;
                 changed              = true;
             }
         };
 
-        // -------------------------------------------------------------
-        // UIレイアウト: 新規ロードボタンと更新ボタンを配置
-        // -------------------------------------------------------------
         if (ImGui::Button("Load Anim Graph... (JSON)"))
         {
-            if (auto path = FileDialog::OpenPreset("AnimNodes", "Select Anim Nodes", Graphics::Instance().GetWindowHandle()))
+            if (auto pathOpt = FileDialog::OpenPreset("AnimNodes"))
             {
-                namespace fs                = std::filesystem;
-                fs::path        absPath     = path->string();
-                fs::path        currentPath = fs::current_path();
-                std::error_code ec;
-                fs::path        relPath = fs::relative(absPath, currentPath, ec);
-
-                // 相対パスに変換して保存
-                fsm.graphPath = (!ec && !relPath.empty()) ? relPath.generic_string() : path->string();
-
-                // 共通のロード処理を実行
+                fsm.graphPath = FileDialog::ConvertToRelativePath(*pathOpt);
                 reloadGraph();
+                changed = true;
             }
         }
 
-        // パスが既に設定されている場合のみ、横にReloadボタンを表示
         if (!fsm.graphPath.empty())
         {
             ImGui::SameLine();
@@ -155,7 +153,7 @@ struct ComponentMeta<AnimStateMachineComponent>
         if (fsm.internalGraph.states.empty())
         {
             ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "[Error] No AnimGraph Assigned!");
-            return false;
+            return changed;
         }
 
         std::string currentStateName = "Unknown";
@@ -174,7 +172,7 @@ struct ComponentMeta<AnimStateMachineComponent>
         ImGui::TextDisabled("Hash ID: 0x%X", fsm.currentStateHash);
 
         ImGui::Separator();
-        ImGui::Text("Available States (Click to force transition):");
+        ImGui::Text("Available States:");
 
         ImGui::Indent();
         for (const auto &state : fsm.internalGraph.states)
@@ -215,25 +213,33 @@ REGISTER_COMPONENT(AnimStateMachineComponent, "AnimStateMachine")
 REGISTER_COMPONENT_EDITOR_GUI(AnimStateMachineComponent)
 
 // ===================================================================
-// 3. AnimParametersComponent (パターンB / 非保存)
+// 3. AnimParametersComponent
 // ===================================================================
-template <> struct ComponentMeta<AnimParametersComponent> {
-    static constexpr const char* displayName = "Anim Parameters";
-    static constexpr bool        hasCustomGui = true;
-    static constexpr bool        isSerializable = true;
+template <>
+struct ComponentMeta<AnimParametersComponent>
+{
+    static constexpr const char *displayName       = "Anim Parameters";
+    static constexpr const char *category          = CCL::Categories::Animation; // ★修正
+    static constexpr int         sortPriority      = 120;
+    static constexpr bool        hiddenInInspector = false;
+    static constexpr bool        hasCustomGui      = true;
+    static constexpr bool        isSerializable    = false;
 
 #ifdef ENABLE_EDITOR
-    static bool CustomGui(AnimParametersComponent& params, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr) {
+    static bool CustomGui(AnimParametersComponent &params, unsigned long long /*entityID*/ = 0, void * /*worldPtr*/ = nullptr)
+    {
         bool changed = false;
 
         ImGui::Text("Float Parameters");
         ImGui::Separator();
 
-        for (auto& p : params.floats) {
+        for (auto &p : params.floats)
+        {
             ImGui::PushID(p.hash);
             ImGui::Text("ID: 0x%08X", p.hash);
             ImGui::SameLine(120);
-            if (ImGui::DragFloat("##val", &p.value, 0.05f)) {
+            if (ImGui::DragFloat("##val", &p.value, 0.05f))
+            {
                 changed = true;
             }
             ImGui::PopID();
@@ -243,27 +249,34 @@ template <> struct ComponentMeta<AnimParametersComponent> {
         ImGui::Text("Bool Parameters");
         ImGui::Separator();
 
-        for (auto& p : params.bools) {
+        for (auto &p : params.bools)
+        {
             ImGui::PushID(p.hash);
             ImGui::Text("ID: 0x%08X", p.hash);
             ImGui::SameLine(120);
-            if (ImGui::Checkbox("##val", &p.value)) {
+            if (ImGui::Checkbox("##val", &p.value))
+            {
                 changed = true;
             }
             ImGui::PopID();
         }
 
-        if (params.floats.empty() && params.bools.empty()) {
+        if (params.floats.empty() && params.bools.empty())
+        {
             ImGui::TextDisabled("No parameters set.");
         }
 
         return changed;
     }
 #else
-    static bool CustomGui(AnimParametersComponent&, unsigned long long, void*) { return false; }
+    static bool CustomGui(AnimParametersComponent &, unsigned long long, void *)
+    {
+        return false;
+    }
 #endif
 
-    static const std::vector<FieldDescriptor>& Fields() {
+    static const std::vector<FieldDescriptor> &Fields()
+    {
         static const std::vector<FieldDescriptor> empty;
         return empty;
     }

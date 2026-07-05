@@ -13,6 +13,7 @@
 
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
+#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
 
 #ifdef ENABLE_EDITOR
 #include "Editor/Inspector/ComponentGuiRegistry.h"
@@ -23,46 +24,31 @@
 using json = nlohmann::json;
 
 // ===========================================================================
-// 1. HitboxComponent メタデータ定義 (パターンA: 全自動)
+// 1. Hitbox / Hurtbox
+// ★修正: Combat カテゴリへの明示的配置
 // ===========================================================================
-COMPONENT_META_BEGIN(HitboxComponent, "Hitbox")
-
-// 基礎ダメージ量（スライダー/ドラッグで調整可能）
-CFIELD_FLOAT_RANGED(damageAmount, "Damage Amount", 1.0f, 0.0f, 9999.0f, "Base")
-// 判定の稼働フラグ（bool型は自動推論）
-CFIELD(isActive, "Is Active", "State")
-
-// ノックバックの強さ（ご要望のコアパラメータ）
-CFIELD_FLOAT_RANGED(knockback, "Knockback Force", 0.1f, 0.0f, 500.0f, "Combat Stats")
-
-// ヒットストップ関連もエディタで調整できるように追加
-CFIELD_FLOAT_RANGED(hitStopDuration, "HitStop Duration (s)", 0.01f, 0.0f, 5.0f, "Combat Stats")
-CFIELD_FLOAT_RANGED(hitStopScale, "HitStop Time Scale", 0.01f, 0.0f, 1.0f, "Combat Stats")
-
-// 【アーキテクチャ解説】
-// ownerID(EntityID) や hitTargets(固定長配列), hitCount は、
-// 完全に実行時のシステム間（Jolt ⇔ HitboxCollisionSystem）の同期・多段ヒット防止制御用データであり、
-// シーンファイルへの永続化やエディタによる手動書き換えの対象外（DODの非シリアライズ原則）とするため、
-// 意図的に Fields の定義から除外しています。これによりデータ破損を防ぎます。
-
+COMPONENT_META_BEGIN_FULL(HitboxComponent, "Hitbox", CCL::Categories::Combat, 170, false)
+    CFIELD_FLOAT_RANGED(damageAmount, "Damage Amount", 1.0f, 0.0f, 9999.0f, "Base")
+    CFIELD(isActive, "Is Active", "State")
+    CFIELD_FLOAT_RANGED(knockback, "Knockback Force", 0.1f, 0.0f, 500.0f, "Combat Stats")
+    CFIELD_FLOAT_RANGED(hitStopDuration, "HitStop Duration (s)", 0.01f, 0.0f, 5.0f, "Combat Stats")
+    CFIELD_FLOAT_RANGED(hitStopScale, "HitStop Time Scale", 0.01f, 0.0f, 1.0f, "Combat Stats")
 COMPONENT_META_END(HitboxComponent)
 
-
-// ===========================================================================
-// 2. HurtboxComponent メタデータ定義 (パターンA: 全自動)
-// ===========================================================================
-COMPONENT_META_BEGIN(HurtboxComponent, "Hurtbox")
-// 被ダメージ倍率（弱点部位なら 2.0f、耐性なら 0.5f などにエディタから調整可能）
-CFIELD_FLOAT_RANGED(damageMultiplier, "Damage Multiplier", 0.05f, 0.0f, 10.0f, "Defense")
+COMPONENT_META_BEGIN_FULL(HurtboxComponent, "Hurtbox", CCL::Categories::Combat, 171, false)
+    CFIELD_FLOAT_RANGED(damageMultiplier, "Damage Multiplier", 0.05f, 0.0f, 10.0f, "Defense")
 COMPONENT_META_END(HurtboxComponent)
 
 // ===================================================================
-// 2. BoneAttachmentComponent (パターンB)
+// 2. BoneAttachmentComponent
 // ===================================================================
 template <> struct ComponentMeta<BoneAttachmentComponent> {
     CCL_META_USING_THIS(BoneAttachmentComponent)
-        static constexpr const char* displayName = "Bone Attachment (ボーン追従)";
-    static constexpr bool        hasCustomGui = true;
+
+    static constexpr const char* displayName    = "Bone Attachment (ボーン追従)";
+    static constexpr const char* category       = CCL::Categories::Hierarchy; // ★追加
+    static constexpr int         sortPriority   = 5; // ★追加: Transformの直後にする
+    static constexpr bool        hasCustomGui   = true;
     static constexpr bool        isSerializable = true;
 
 #ifdef ENABLE_EDITOR
@@ -139,12 +125,10 @@ REGISTER_COMPONENT(BoneAttachmentComponent, "BoneAttachmentComponent")
 REGISTER_COMPONENT_EDITOR_GUI(BoneAttachmentComponent)
 
 // ===================================================================
-// パターンC: CombatRosterComponent / HealthComponent のカスタムシリアライズ
+// パターンC: CombatRoster / Health
 // ===================================================================
 namespace ComponentMetaJson {
-    // --- CombatRosterComponent ---
-    template <>
-    struct ComponentSerializer<CombatRosterComponent> {
+    template <> struct ComponentSerializer<CombatRosterComponent> {
         static void Save(json& j, const CombatRosterComponent& comp, SaveContext* ctx) {
             j["count"] = comp.count;
             j["entries"] = json::array();
@@ -180,9 +164,7 @@ namespace ComponentMetaJson {
         }
     };
 
-    // --- HealthComponent ---
-    template <>
-    struct ComponentSerializer<HealthComponent> {
+    template <> struct ComponentSerializer<HealthComponent> {
         static void Save(json& j, const HealthComponent& comp, SaveContext* /*ctx*/) {
             j["maxHealth"] = comp.maxHealth;
             j["currentHealth"] = comp.currentHealth;
@@ -196,14 +178,16 @@ namespace ComponentMetaJson {
             if (j.contains("team"))                  comp.team = static_cast<TeamID>(j["team"].get<int>());
         }
     };
-} // namespace ComponentMetaJson
+} 
 
 // ===================================================================
-// 3. CombatRosterComponent (パターンC GUI)
+// 3. CombatRosterComponent
 // ===================================================================
 template <> struct ComponentMeta<CombatRosterComponent> {
-    static constexpr const char* displayName = "Combat Roster (部位名簿)";
-    static constexpr bool        hasCustomGui = true;
+    static constexpr const char* displayName    = "Combat Roster (部位名簿)";
+    static constexpr const char* category       = CCL::Categories::Combat; // ★追加
+    static constexpr int         sortPriority   = 175; // ★追加
+    static constexpr bool        hasCustomGui   = true;
     static constexpr bool        isSerializable = true;
 
 #ifdef ENABLE_EDITOR
@@ -219,8 +203,7 @@ template <> struct ComponentMeta<CombatRosterComponent> {
                 childEntities.push_back(child);
                 if (auto* childTrans = world->GetComponent<TransformComponent>(child)) {
                     child = childTrans->nextSiblingID;
-                }
-                else break;
+                } else break;
             }
         }
 
@@ -293,8 +276,7 @@ template <> struct ComponentMeta<CombatRosterComponent> {
                 comp.count++;
                 changed = true;
             }
-        }
-        else {
+        } else {
             ImGui::TextDisabled("最大登録数(4)に達しています");
         }
         return changed;
@@ -315,9 +297,11 @@ REGISTER_COMPONENT_EDITOR_GUI(CombatRosterComponent)
 // 4. DamageEventComponent (非保存タグ)
 // ===================================================================
 template <> struct ComponentMeta<DamageEventComponent> {
-    static constexpr const char* displayName = "Damage Event (一時データ)";
-    static constexpr bool        hasCustomGui = false;
-    static constexpr bool        isSerializable = false; // ★保存対象から除外
+    static constexpr const char* displayName    = "Damage Event (一時データ)";
+    static constexpr const char* category       = CCL::Categories::Internal; // ★追加
+    static constexpr int         sortPriority   = 900; // ★追加
+    static constexpr bool        hasCustomGui   = false;
+    static constexpr bool        isSerializable = false;
 
     static const std::vector<FieldDescriptor>& Fields() {
         static const std::vector<FieldDescriptor> empty;
@@ -328,11 +312,13 @@ REGISTER_COMPONENT(DamageEventComponent, "DamageEventComponent")
 REGISTER_COMPONENT_EDITOR_GUI(DamageEventComponent)
 
 // ===================================================================
-// 5. HealthComponent (パターンC GUI)
+// 5. HealthComponent
 // ===================================================================
 template <> struct ComponentMeta<HealthComponent> {
-    static constexpr const char* displayName = "Health (体力・陣営)";
-    static constexpr bool        hasCustomGui = true;
+    static constexpr const char* displayName    = "Health (体力・陣営)";
+    static constexpr const char* category       = CCL::Categories::Gameplay; // ★追加
+    static constexpr int         sortPriority   = 100; // ★追加
+    static constexpr bool        hasCustomGui   = true;
     static constexpr bool        isSerializable = true;
 
 #ifdef ENABLE_EDITOR
@@ -375,8 +361,7 @@ template <> struct ComponentMeta<HealthComponent> {
 
         if (comp.invincibilityTimer > 0.0f) {
             ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), ">> Invincible! (%.2f sec left) <<", comp.invincibilityTimer);
-        }
-        else {
+        } else {
             ImGui::TextDisabled("Not Invincible");
         }
 

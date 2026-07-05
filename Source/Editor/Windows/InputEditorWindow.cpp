@@ -13,8 +13,7 @@
 
 using json = nlohmann::json;
 
-InputEditorWindow::InputEditorWindow()
-    : EditorWindow(u8"入力設定エディタ##InputMappingEditor")
+InputEditorWindow::InputEditorWindow() : EditorWindow("InputMappingEditor")
 {
     // ウィンドウ起動時にとりあえず読み込んでおく
     LoadFromJson();

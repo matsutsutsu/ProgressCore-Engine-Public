@@ -598,6 +598,7 @@
     <ClInclude Include="Source\Engine\Serialization\Factory\EntityFactory.h" />
     <ClInclude Include="Source\Engine\Serialization\Factory\Prefab.h" />
     <ClInclude Include="Source\Engine\Serialization\Factory\SceneInitializer.h" />
+    <ClInclude Include="Source\Engine\Serialization\Meta\ComponentCategories.h" />
     <ClInclude Include="Source\Engine\Serialization\Meta\ComponentDefine.h" />
     <ClInclude Include="Source\Engine\Serialization\Meta\ComponentMeta.h" />
     <ClInclude Include="Source\Engine\Serialization\Meta\ComponentMetaImGui.h">
@@ -1642,7 +1643,8 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-    </FxCompile>    <FxCompile Include="Shader\Material\Lambert\LambertPS.hlsl">
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Lambert\LambertPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>

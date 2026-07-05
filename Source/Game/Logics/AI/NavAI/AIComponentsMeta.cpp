@@ -3,6 +3,7 @@
 
 #include "Game/Logics/AI/NavAI/AIComponents.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
+#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
 
 #ifdef ENABLE_EDITOR
 #include "Editor/Inspector/ComponentGuiRegistry.h"
@@ -10,12 +11,16 @@
 #endif
 
 // ============================================================================
-// 1. 脳の状態 (AI State) - パターンB
+// 1. 脳の状態 (AI State)
 // ============================================================================
 template <> struct ComponentMeta<AIStateComponent> {
     CCL_META_USING_THIS(AIStateComponent)
-        static constexpr const char* displayName = "AI State / Brain";
-    static constexpr bool        hasCustomGui = true;
+
+    static constexpr const char* displayName    = "AI State / Brain";
+    static constexpr const char* category       = CCL::Categories::AI; // ★追加
+    static constexpr int         sortPriority   = 150; // ★追加
+    static constexpr bool        hiddenInInspector = false;
+    static constexpr bool        hasCustomGui   = true;
     static constexpr bool        isSerializable = true;
 
 #ifdef ENABLE_EDITOR
@@ -60,20 +65,25 @@ REGISTER_COMPONENT(AIStateComponent, "AIState")
 REGISTER_COMPONENT_EDITOR_GUI(AIStateComponent)
 
 // ============================================================================
-// 2. 知覚能力 (AI Perception) - パターンA (全自動化)
+// 2. 知覚能力 (AI Perception) 
+// ★修正: BEGIN_FULL を使用しカテゴリと並び順を明記
 // ============================================================================
-COMPONENT_META_BEGIN(AIPerceptionComponent, "AIPerception")
-CFIELD_FLOAT_RANGED(visionRange, "Vision Range (m)", 0.5f, 0.0f, 100.0f, "Vision")
-CFIELD_FLOAT_RANGED(visionAngle, "Vision Angle (deg)", 1.0f, 0.0f, 360.0f, "Vision")
+COMPONENT_META_BEGIN_FULL(AIPerceptionComponent, "AIPerception", CCL::Categories::AI, 155, false)
+    CFIELD_FLOAT_RANGED(visionRange, "Vision Range (m)", 0.5f, 0.0f, 100.0f, "Vision")
+    CFIELD_FLOAT_RANGED(visionAngle, "Vision Angle (deg)", 1.0f, 0.0f, 360.0f, "Vision")
 COMPONENT_META_END(AIPerceptionComponent)
 
 // ============================================================================
-// 3. 記憶と適応 (AI Memory / Meta AI) - パターンB
+// 3. 記憶と適応 (AI Memory / Meta AI)
 // ============================================================================
 template <> struct ComponentMeta<AIMemoryComponent> {
     CCL_META_USING_THIS(AIMemoryComponent)
-        static constexpr const char* displayName = "AI Memory (Meta)";
-    static constexpr bool        hasCustomGui = true;
+
+    static constexpr const char* displayName    = "AI Memory (Meta)";
+    static constexpr const char* category       = CCL::Categories::AI; // ★追加
+    static constexpr int         sortPriority   = 160; // ★追加
+    static constexpr bool        hiddenInInspector = false;
+    static constexpr bool        hasCustomGui   = true;
     static constexpr bool        isSerializable = true;
 
 #ifdef ENABLE_EDITOR

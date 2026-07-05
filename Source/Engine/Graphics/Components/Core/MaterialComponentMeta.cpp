@@ -5,12 +5,13 @@
 #include "Engine/Graphics/Components/Core/MaterialComponent.h"
 #include "Engine/Graphics/Components/Core/ModelComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
+#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Platform/Core/Dialog.h"
 #include "Engine/Core/Math/StringHash.h"
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
-#include <vector> // ★追加: shaderNames を ShaderRegistry から動的に組み立てるため
+#include <vector> 
 
 #ifdef ENABLE_EDITOR
 #include "Editor/Inspector/ComponentGuiRegistry.h"
@@ -21,6 +22,9 @@ template <>
 struct ComponentMeta<MaterialComponent>
 {
     static constexpr const char *displayName    = "Material";
+    static constexpr const char *category       = CCL::Categories::Rendering; // ★修正
+    static constexpr int         sortPriority   = 20; // ★追加: Modelの直後に配置
+    static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui   = true;
     static constexpr bool        isSerializable = true;
 
@@ -82,8 +86,6 @@ struct ComponentMeta<MaterialComponent>
         ImGui::Separator();
         if (ImGui::CollapsingHeader("Batch Operations (Apply to All)", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            // ★変更: 手書き配列を廃止し、ShaderRegistry から動的に取得する。
-            //         shaders.json に1行足すだけで、ここにも自動で出てくる。
             const auto               &registeredShaders = ShaderRegistry::Instance().GetRegisteredNames();
             std::vector<const char *> shaderNames;
             shaderNames.reserve(registeredShaders.size());
@@ -102,7 +104,6 @@ struct ComponentMeta<MaterialComponent>
 
                 if (ImGui::Button("Apply Shader to All Slots"))
                 {
-                    // ★変更: 文字列から再ハッシュせず、登録済みのハッシュをそのまま使う
                     uint32_t targetHash = registeredShaders[batchShaderIdx].second;
                     for (size_t i = 0; i < comp->overrideMaterials.size(); ++i)
                     {
@@ -150,6 +151,7 @@ struct ComponentMeta<MaterialComponent>
                 ImGui::SameLine();
                 if (ImGui::Button("Load .mat.json"))
                 {
+                    // ★修正: Engine:: プレフィックスを削除
                     if (auto path = FileDialog::OpenPreset("Material", "Select Material", Graphics::Instance().GetWindowHandle()))
                     {
                         MaterialHandle newHandle = ResourceManager::Instance().LoadMaterialAsset(path->string());
@@ -177,10 +179,6 @@ struct ComponentMeta<MaterialComponent>
                     changed = true;
                 }
 
-                // ★変更: 手書き配列(しかも上のBatch用と個数/内容が食い違っていた)を廃止し、
-                //         ShaderRegistry から動的に取得する。
-                //         現在のシェーダーがどれかも、文字列の再ハッシュではなく
-                //         登録済みハッシュとの直接比較で探す（typoに強い）。
                 const auto               &registeredShaders = ShaderRegistry::Instance().GetRegisteredNames();
                 std::vector<const char *> shaderNames;
                 shaderNames.reserve(registeredShaders.size());
@@ -193,7 +191,7 @@ struct ComponentMeta<MaterialComponent>
                         currentShaderIdx = (int)s;
                     }
                 }
-                if (currentShaderIdx < 0) currentShaderIdx = 0; // 未登録ハッシュ(typo等)は先頭を暫定表示
+                if (currentShaderIdx < 0) currentShaderIdx = 0; 
 
                 if (!shaderNames.empty() &&
                     ImGui::Combo("Shader", &currentShaderIdx, shaderNames.data(), (int)shaderNames.size()))
@@ -218,6 +216,7 @@ struct ComponentMeta<MaterialComponent>
 
                         if (ImGui::Button("Load..."))
                         {
+                            // ★修正: Engine:: プレフィックスを削除
                             if (auto path = FileDialog::OpenPreset("Texture", "Select Texture", Graphics::Instance().GetWindowHandle()))
                             {
                                 const auto s = path->string();
@@ -248,11 +247,6 @@ struct ComponentMeta<MaterialComponent>
                     {
                         const auto &cbs = shader->GetReflection().GetConstantBuffers();
 
-                        // ★追加: 未設定の変数を一括で既定値追加するボタン。
-                        //   シェーダーを切り替えた直後、cbufferがゼロ初期化のまま
-                        //   (AutoConstantBuffer::Create の cpuBuffer.resize(size, 0))
-                        //   だと Glow のように「真っ黒=何も見えない」事故が起きるため、
-                        //   スライダーが出る前に明示的に値を持たせられるようにする。
                         if (ImGui::Button("Fill All Missing With Defaults"))
                         {
                             for (const auto &cbInfo : cbs)
@@ -297,12 +291,9 @@ struct ComponentMeta<MaterialComponent>
                             {
                                 if (varInfo.type != D3D_SVT_FLOAT) continue;
 
-                                // ★修正: 以前は else if で columns==4 判定が
-                                //   到達不能だった(float4もscalar扱いされていた)ため、
-                                //   先に「色か/スカラーか」を確定させてから分岐する。
                                 const bool isColor  = (varInfo.rows == 1 && varInfo.columns == 4);
                                 const bool isScalar = (varInfo.rows == 1 && varInfo.columns == 1);
-                                if (!isColor && !isScalar) continue; // 行列等はこのUIでは非対応
+                                if (!isColor && !isScalar) continue; 
 
                                 ImGui::PushID(varInfo.name.c_str());
 
@@ -319,9 +310,6 @@ struct ComponentMeta<MaterialComponent>
                                     }
                                     else
                                     {
-                                        // ★追加: 未設定変数はスライダーの代わりに Add ボタンを出す。
-                                        //   これが無いと GetScalar==false のままスライダーが
-                                        //   一切表示されず、GUIから初期化する手段が無かった。
                                         ImGui::TextDisabled("%s (unset)", varInfo.name.c_str());
                                         ImGui::SameLine();
                                         if (ImGui::Button("Add"))

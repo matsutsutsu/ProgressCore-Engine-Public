@@ -4,43 +4,54 @@
 
 #include "Engine/AI/Navigation/Components/NavAgentComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
+#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加: カテゴリ定数
 
 #ifdef ENABLE_EDITOR
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #endif
 
-template <> struct ComponentMeta<NavAgentComponent> {
+template <>
+struct ComponentMeta<NavAgentComponent>
+{
     CCL_META_USING_THIS(NavAgentComponent)
 
-        static constexpr const char* displayName = "Nav Agent";
-    static constexpr bool        hasCustomGui = true;
-    static constexpr bool        isSerializable = true;
+    static constexpr const char *displayName       = "Nav Agent";
+    static constexpr const char *category          = CCL::Categories::AI; // ★修正: 定数を使用
+    static constexpr int         sortPriority      = 150;
+    static constexpr bool        hiddenInInspector = false;
+    static constexpr bool        hasCustomGui      = true;
+    static constexpr bool        isSerializable    = true;
 
 #ifdef ENABLE_EDITOR
-    static bool CustomGui(NavAgentComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr) {
+    static bool CustomGui(NavAgentComponent &comp, unsigned long long /*entityID*/ = 0, void * /*worldPtr*/ = nullptr)
+    {
         bool changed = false;
 
         ImGui::SeparatorText("Navigation Target");
 
-        if (ImGui::DragFloat3("Target Position", &comp.targetPosition.x, 0.1f)) {
+        if (ImGui::DragFloat3("Target Position", &comp.targetPosition.x, 0.1f))
+        {
             changed = true;
         }
 
         ImGui::Spacing();
 
-        if (ImGui::Button("Force Path Request", ImVec2(-1, 0))) {
+        if (ImGui::Button("Force Path Request", ImVec2(-1, 0)))
+        {
             comp.isPathRequested = true;
-            changed = true;
+            changed              = true;
         }
 
         ImGui::Spacing();
         ImGui::SeparatorText("Debug Info");
 
-        if (comp.isPathRequested) {
+        if (comp.isPathRequested)
+        {
             ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), "Status: Path Requested...");
         }
-        else {
+        else
+        {
             ImGui::TextDisabled("Status: Idle / Moving");
         }
 
@@ -52,12 +63,16 @@ template <> struct ComponentMeta<NavAgentComponent> {
         return changed;
     }
 #else
-    static bool CustomGui(NavAgentComponent&, unsigned long long, void*) { return false; }
+    static bool CustomGui(NavAgentComponent &, unsigned long long, void *)
+    {
+        return false;
+    }
 #endif
 
-    static const std::vector<FieldDescriptor>& Fields() {
+    static const std::vector<FieldDescriptor> &Fields()
+    {
         static const std::vector<FieldDescriptor> fields = {
-            CFIELD(targetPosition, "Target Position", "AI")
+            CFIELD(targetPosition, "Target Position", "AI") // フィールドの小カテゴリは生文字列のままで運用
         };
         return fields;
     }

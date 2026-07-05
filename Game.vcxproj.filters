@@ -537,7 +537,8 @@
     </Filter>
     <Filter Include="Shader\Material\Water">
       <UniqueIdentifier>{b2c3d4e5-f6a7-8901-bcde-f12345678901}</UniqueIdentifier>
-    </Filter>    <Filter Include="Shader\Material\Grass">
+    </Filter>
+    <Filter Include="Shader\Material\Grass">
       <UniqueIdentifier>{bbb7eb73-54f8-4baa-b812-64de1367e851}</UniqueIdentifier>
     </Filter>
     <Filter Include="Shader\Material\GhostPBR">
@@ -1796,6 +1797,9 @@
     <ClInclude Include="Source\Engine\Transform\Systems\BoneAttachmentRenderSystem.h">
       <Filter>Source\Engine\Transform\Systems</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Serialization\Meta\ComponentCategories.h">
+      <Filter>Source\Engine\Serialization\Meta</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2896,7 +2900,8 @@
     </FxCompile>
     <FxCompile Include="Shader\Material\Water\WaterVS.hlsl">
       <Filter>Shader\Material\Water</Filter>
-    </FxCompile>    <FxCompile Include="Shader\Material\Grass\GrassPS.hlsl">
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Grass\GrassPS.hlsl">
       <Filter>Shader\Material\Grass</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\Grass\GrassVS.hlsl">

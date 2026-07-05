@@ -5,9 +5,9 @@
 #include "Engine/Graphics/Components/Core/ModelComponent.h"
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Platform/Core/Dialog.h"
-#include <filesystem>
 
 #include "Engine/Serialization/Meta/ComponentDefine.h"
+#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
 #ifdef ENABLE_EDITOR
@@ -19,9 +19,6 @@
 
 // ============================================================================
 // カスタムシリアライズ:
-//   ComponentMetaJson::ComponentSerializer<ModelComponent> を特殊化する。
-//   これが唯一のカスタマイズ口。フラグもトレイトも不要。
-//   ModelComponent は assetHash (実行時ハンドル) を持つが、保存にはパスを使う。
 // ============================================================================
 namespace ComponentMetaJson {
     template <>
@@ -35,15 +32,17 @@ namespace ComponentMetaJson {
             }
         }
     };
-} // namespace ComponentMetaJson
+} 
 
 // ============================================================================
 // ComponentMeta<ModelComponent>
-//   hasCustomGui = true。Fields() は空 (保存は上の ComponentSerializer が担う)。
 // ============================================================================
 template <> struct ComponentMeta<ModelComponent> {
-    static constexpr const char* displayName = "Model";
-    static constexpr bool        hasCustomGui = true;
+    static constexpr const char* displayName    = "Model";
+    static constexpr const char* category       = CCL::Categories::Rendering; // ★追加
+    static constexpr int         sortPriority   = 10; // ★追加: Transformの直後に配置されるべき重要コンポーネント
+    static constexpr bool        hiddenInInspector = false;
+    static constexpr bool        hasCustomGui   = true;
     static constexpr bool        isSerializable = true;
 
 #ifdef ENABLE_EDITOR
@@ -62,12 +61,12 @@ template <> struct ComponentMeta<ModelComponent> {
         ImGui::Separator();
 
         if (ImGui::Button("Load New Model...", ImVec2(-1, 0))) {
+            // ★修正: std::filesystem の依存を排除し、厳格に FileDialog::ConvertToRelativePath を使用
             if (auto path = FileDialog::OpenPreset("Model", "Select Model",
                 Graphics::Instance().GetWindowHandle()))
             {
-                std::filesystem::path workDir = std::filesystem::current_path();
-                std::filesystem::path relativePath = std::filesystem::relative(*path, workDir);
-                comp.SetModel(relativePath.generic_string().c_str());
+                std::string relPath = FileDialog::ConvertToRelativePath(*path);
+                comp.SetModel(relPath.c_str());
                 changed = true;
             }
         }
@@ -82,7 +81,7 @@ template <> struct ComponentMeta<ModelComponent> {
 #endif
 
     static const std::vector<FieldDescriptor>& Fields() {
-        static const std::vector<FieldDescriptor> empty; // カスタムシリアライズなので空
+        static const std::vector<FieldDescriptor> empty; 
         return empty;
     }
 };

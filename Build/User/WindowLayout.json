@@ -49,7 +49,7 @@
             "visible": false
         },
         {
-            "name": "入力設定エディタ##InputMappingEditor",
+            "name": "InputMappingEditor",
             "visible": false
         },
         {
@@ -62,7 +62,7 @@
         },
         {
             "name": "Test Launcher",
-            "visible": false
+            "visible": true
         },
         {
             "name": "Game View",

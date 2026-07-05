@@ -70,6 +70,7 @@ namespace ComponentMetaJson {
         case FieldKind::Float2:  _MetaJsonDX::F2_to(j[fd.jsonName], RawField<const DirectX::XMFLOAT2>(obj, fd.offset)); break;
         case FieldKind::Float3:  _MetaJsonDX::F3_to(j[fd.jsonName], RawField<const DirectX::XMFLOAT3>(obj, fd.offset)); break;
         case FieldKind::Float4:  _MetaJsonDX::F4_to(j[fd.jsonName], RawField<const DirectX::XMFLOAT4>(obj, fd.offset)); break;
+        case FieldKind::Color:   _MetaJsonDX::F4_to(j[fd.jsonName], RawField<const DirectX::XMFLOAT4>(obj, fd.offset)); break;
         case FieldKind::String:  j[fd.jsonName] = RawField<const std::string>(obj, fd.offset); break;
         default:
             assert(false && "SerializeField: unhandled FieldKind");
@@ -107,6 +108,7 @@ namespace ComponentMetaJson {
         case FieldKind::Float2:  _MetaJsonDX::F2_from(j[fd.jsonName], RawField<DirectX::XMFLOAT2>(obj, fd.offset)); break;
         case FieldKind::Float3:  _MetaJsonDX::F3_from(j[fd.jsonName], RawField<DirectX::XMFLOAT3>(obj, fd.offset)); break;
         case FieldKind::Float4:  _MetaJsonDX::F4_from(j[fd.jsonName], RawField<DirectX::XMFLOAT4>(obj, fd.offset)); break;
+        case FieldKind::Color:   _MetaJsonDX::F4_from(j[fd.jsonName], RawField<DirectX::XMFLOAT4>(obj, fd.offset)); break;
         case FieldKind::String:
             j[fd.jsonName].get_to(RawField<std::string>(obj, fd.offset));
             break;

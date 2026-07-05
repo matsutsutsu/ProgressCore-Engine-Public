@@ -2,7 +2,7 @@
     "entities": [
         {
             "components": {
-                "Camera": {
+                "CameraBodyTPS": {
                     "baseFov": 70.0,
                     "currentLookahead": [
                         -0.33348944783210754,
