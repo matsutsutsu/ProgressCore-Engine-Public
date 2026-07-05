@@ -1800,6 +1800,15 @@
     <ClInclude Include="Source\Engine\Serialization\Meta\ComponentCategories.h">
       <Filter>Source\Engine\Serialization\Meta</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Test\JoltSandboxGuiSystem.h">
+      <Filter>Source\Game\Logics\Test</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Test\BoidComponent.h">
+      <Filter>Source\Game\Logics\Test</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Test\BoidSystem.h">
+      <Filter>Source\Game\Logics\Test</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2689,6 +2698,12 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Transform\Systems\BoneAttachmentRenderSystem.cpp">
       <Filter>Source\Engine\Transform\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Test\JoltSandboxGuiSystem.cpp">
+      <Filter>Source\Game\Logics\Test</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Test\BoidSystem.cpp">
+      <Filter>Source\Game\Logics\Test</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

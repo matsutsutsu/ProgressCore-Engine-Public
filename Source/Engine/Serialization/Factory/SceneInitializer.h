@@ -18,7 +18,6 @@ class SceneInitializer {
     
 
     // ジョルトのテスト環境
-    static void SpawnJoltTest(CCL::ECS::Core::World &world, ID3D11Device *device);
 
 	static void SpawnAnimationTest(CCL::ECS::Core::World& world, ID3D11Device* device);
 
@@ -44,6 +43,13 @@ class SceneInitializer {
     // 物理エンジンの極限テスト（数万個の雪崩）
     static void SpawnPhysicsAvalancheTest(CCL::ECS::Core::World& world, ID3D11Device* device, int count);
 
+    // =======================================================
+    // 物理エンジンの極限テスト（数万個の雪崩）
+    // =======================================================
+    static void SpawnJoltAvalancheTest(CCL::ECS::Core::World &world, ID3D11Device *device, int count);
+
+    // 究極の群れシミュレーション
+    static void SpawnBoidsTest(CCL::ECS::Core::World &world, ID3D11Device *device, int count);
 
     // 既存の宣言の下に追加
     static void SpawnLissajousTest(CCL::ECS::Core::World& world, ID3D11Device* device, int count);

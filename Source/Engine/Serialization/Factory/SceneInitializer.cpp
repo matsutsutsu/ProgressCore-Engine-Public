@@ -37,84 +37,6 @@ void SceneInitializer::SpawnLightStartSet(CCL::ECS::Core::World &world, ID3D11De
 }
 
 
-void SceneInitializer::SpawnJoltTest(CCL::ECS::Core::World &world, ID3D11Device *device)
-{
-    // ──────────────────────────────────────────
-    // 1. 床の生成 (Box)
-    // ──────────────────────────────────────────
-    const auto floorArch = ArchetypeHelper::Generate<
-        TransformComponent,
-        PrimitiveComponent,
-        JoltRigidbodyComponent,
-        JoltBoxColliderComponent
-    >();
-
-    auto floor = EntityFactory::SpawnNamed(world, "Floor_Box", floorArch);
-
-    floor.Set(TransformComponent{ .position = {0.0f, 0.0f, 0.0f}, .rotation = {0.0f, 0.0f, 0.0f, 1.0f}, .scale = {1.0f, 1.0f, 1.0f} })
-         .Set(JoltRigidbodyComponent{ .motionType = JPH::EMotionType::Static, .objectLayer = PhysicsLayers::NON_MOVING })
-         .Set(JoltBoxColliderComponent{ .halfExtent = {50.0f, 1.0f, 50.0f} })
-         .Set(PrimitiveComponent{ .type = PrimitiveType::Box, .size = {50.0f, 1.0f, 50.0f}, .color = {0.5f, 0.5f, 0.5f, 1.0f} });
-
-
-    // ──────────────────────────────────────────
-    // 2. 落下する球の生成 (Sphere)
-    // ──────────────────────────────────────────
-    const auto sphereArch = ArchetypeHelper::Generate<
-        TransformComponent,
-        PrimitiveComponent,
-        JoltRigidbodyComponent,
-        JoltSphereColliderComponent
-    >();
-
-    auto sphere = EntityFactory::SpawnNamed(world, "Bouncing_Sphere", sphereArch);
-
-    sphere.Set(TransformComponent{ .position = {0.0f, 15.0f, 0.0f}, .rotation = {0.0f, 0.0f, 0.0f, 1.0f}, .scale = {1.0f, 1.0f, 1.0f} })
-          .Set(JoltRigidbodyComponent{
-            .motionType = JPH::EMotionType::Dynamic, 
-            .objectLayer = PhysicsLayers::MOVING, 
-            .restitution = 0.8f,
-            .initialVelocity = {0.0f, -5.0f, 0.0f},
-            .gravityFactor = 1.0f })
-          .Set(JoltSphereColliderComponent{ .radius = 1.0f })
-          .Set(PrimitiveComponent{ .type = PrimitiveType::Sphere, .radius = 1.0f, .color = {1.0f, 0.2f, 0.2f, 1.0f} });
-
-
-    // ──────────────────────────────────────────
-    // 3. テスト用プレイヤー (CharacterVirtual) の生成
-    // ──────────────────────────────────────────
-    const auto playerArch = ArchetypeHelper::Generate<
-        TransformComponent, 
-        PrimitiveComponent,
-        PlayerComponent,
-        JoltCharacterConfigComponent, // ★修正: パフォーマンス低下を防ぐため設計図に含める
-        JoltCapsuleColliderComponent,
-        ModelComponent,   
-        AnimatorComponent 
-    >();
-
-    auto player = EntityFactory::SpawnNamed(world, "Test_Player", playerArch);
-
-    // ※ ModelComponent は SetModel() という関数呼び出しが必要なため、一度変数を作ってから流し込む
-    ModelComponent modelComp;
-    modelComp.SetModel("Assets/Models/Player/Player.glb");
-
-    player.Set(TransformComponent{ .position = {0.0f, 5.0f, 0.0f}, .rotation = {0.0f, 0.0f, 0.0f, 1.0f}, .scale = {1.0f, 1.0f, 1.0f} })
-          .Set(PlayerComponent{ .turnSpeed = 10.0f })
-          .Set(JoltCharacterConfigComponent{ .maxSlopeAngle = 45.0f, .maxStepHeight = 0.5f, .walkSpeed = 6.0f, .jumpSpeed = 10.0f, .characterMass = 70.0f })
-          .Set(JoltCapsuleColliderComponent{ .halfHeight = 0.5f, .radius = 0.5f })
-          .Set(PrimitiveComponent{ .type = PrimitiveType::Capsule, .size = {0.0f, 1.0f, 0.0f}, .radius = 0.5f, .color = {0.2f, 0.8f, 0.2f, 1.0f} })
-          .Set(std::move(modelComp)) // 作っておいた ModelComponent をムーブ（無駄なコピー回避）
-          .Set(AnimatorComponent{}); // 空の初期化
-
-    // 2. カメラの生成とターゲット設定が、一気に書ける！
-    auto camera = EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Camera/PlayerFollowCamera.json");
-    
-    // player.ID() を渡してメソッドチェーンでPatchする
-    camera.Patch<CameraBodyFollow>([pid = player.ID()](auto& body) { body.target = pid; })
-          .Patch<CameraAimLookAt> ([pid = player.ID()](auto& aim)  { aim.target = pid; });
-
-}
 
 #include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"
 
@@ -315,6 +237,7 @@ void SceneInitializer::SpawnPhysicsAvalancheTest(
     const auto staticArch = CCL::ECS::ArchetypeHelper::Generate<
         TransformComponent,
         PrimitiveComponent,
+        TimeStateComponent,
         JoltRigidbodyComponent,
         JoltBoxColliderComponent
     >();
@@ -322,6 +245,7 @@ void SceneInitializer::SpawnPhysicsAvalancheTest(
     const auto dynamicArch = CCL::ECS::ArchetypeHelper::Generate<
         TransformComponent,
         PrimitiveComponent,
+        TimeStateComponent,
         JoltRigidbodyComponent,
         JoltBoxColliderComponent
     >();
@@ -334,7 +258,7 @@ void SceneInitializer::SpawnPhysicsAvalancheTest(
     // X軸周りに20度回転させたクォータニオンを作成
     DirectX::XMVECTOR q = DirectX::XMQuaternionRotationAxis(
         DirectX::XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f),
-        DirectX::XMConvertToRadians(20.0f)
+        DirectX::XMConvertToRadians(0.0f)
     );
     DirectX::XMFLOAT4 rot;
     DirectX::XMStoreFloat4(&rot, q);
@@ -353,7 +277,7 @@ void SceneInitializer::SpawnPhysicsAvalancheTest(
     // -------------------------------------------------------------
     // count(例: 50,000)の立方根をとって、3Dのグリッド状に配置する
     int sideSize = static_cast<int>(std::cbrt(count));
-    float spacing = 5.0f; // 1.0fのキューブに対して少し隙間を空ける
+    float spacing = 2.0f; // 1.0fのキューブに対して少し隙間を空ける
     float offset = (sideSize * spacing) / 2.0f;
 
     std::mt19937 gen(12345);
@@ -395,7 +319,122 @@ void SceneInitializer::SpawnPhysicsAvalancheTest(
 #include "Game/Logics/Test/VectorFlowComponent.h"
 // ※PrimitiveComponent などのインクルードは適宜行ってください
 
-void SceneInitializer::SpawnLissajousTest(CCL::ECS::Core::World& world, ID3D11Device* device, int count) {
+void SceneInitializer::SpawnJoltAvalancheTest(CCL::ECS::Core::World &world, ID3D11Device *device, int count)
+{
+    // ====================================================================
+    // 1. 巨大な床（受け皿）の生成 (Static)
+    // ====================================================================
+    auto staticBoxArch = CCL::ECS::ArchetypeHelper::Generate<TransformComponent, PrimitiveComponent, JoltRigidbodyComponent, JoltBoxColliderComponent>();
+
+    auto floor = EntityFactory::SpawnNamed(world, "Floor", staticBoxArch);
+    floor.Set(TransformComponent{
+        .position = {0, -10.0f, 0}, .rotation = {0, 0, 0, 1}, .scale = {200.0f, 10.0f, 200.0f}, .isStatic = true, .isDirty = true});
+    floor.Set(PrimitiveComponent{.type = PrimitiveType::Box, .color = {0.2f, 0.2f, 0.25f, 1.0f}});
+    floor.Set(JoltBoxColliderComponent{.halfExtent = {100.0f, 5.0f, 100.0f}});
+
+    // ※ エンジンの仕様に合わせて Static を指定してください
+    // 例: JoltMotionType::Static など
+    floor.Set(JoltRigidbodyComponent{
+        .motionType  = JPH::EMotionType::Static,
+        .objectLayer = PhysicsLayers::NON_MOVING,
+    });
+
+    // ====================================================================
+    // 2. 中央の巨大な障害物（四方八方に弾けさせるためのコア）
+    // ====================================================================
+    auto staticSphereArch = CCL::ECS::ArchetypeHelper::Generate<TransformComponent, PrimitiveComponent, JoltRigidbodyComponent, JoltSphereColliderComponent>();
+
+    auto obstacle = EntityFactory::SpawnNamed(world, "CenterObstacle", staticSphereArch);
+    obstacle.Set(TransformComponent{
+        .position = {0, 15.0f, 0}, .rotation = {0, 0, 0, 1}, .scale = {30.0f, 30.0f, 30.0f}, .isStatic = true, .isDirty = true});
+    obstacle.Set(PrimitiveComponent{.type = PrimitiveType::Sphere, .color = {0.8f, 0.2f, 0.2f, 1.0f}}); // 赤色
+    obstacle.Set(JoltSphereColliderComponent{.radius = 15.0f});
+    obstacle.Set(JoltRigidbodyComponent{
+        .motionType = JPH::EMotionType::Static,
+        .objectLayer = PhysicsLayers::NON_MOVING,
+    });
+
+    // ====================================================================
+    // 3. 空中から降り注ぐ大量の剛体の生成 (Dynamic)
+    // ====================================================================
+    std::mt19937                          gen(42);
+    std::uniform_real_distribution<float> posDist(-40.0f, 40.0f);    // スポーン範囲(XZ)
+    std::uniform_real_distribution<float> heightDist(50.0f, 250.0f); // スポーン高度(Y) かなり上空まで
+    std::uniform_real_distribution<float> rotDist(0.0f, DirectX::XM_2PI);
+    std::uniform_real_distribution<float> colorDist(0.3f, 1.0f);
+    std::uniform_int_distribution<int>    typeDist(0, 1); // 0: Box, 1: Sphere
+
+    auto dynamicBoxArch    = CCL::ECS::ArchetypeHelper::Generate<TransformComponent, PrimitiveComponent,TimeStateComponent, JoltRigidbodyComponent, JoltBoxColliderComponent>();
+    auto dynamicSphereArch = CCL::ECS::ArchetypeHelper::Generate<TransformComponent, PrimitiveComponent,TimeStateComponent, JoltRigidbodyComponent, JoltSphereColliderComponent>();
+
+    for (int i = 0; i < count; ++i)
+    {
+        float x = posDist(gen);
+        float y = heightDist(gen);
+        float z = posDist(gen);
+
+        // 個体ごとにランダムな色
+        DirectX::XMFLOAT4 color = {colorDist(gen), colorDist(gen), colorDist(gen), 1.0f};
+        // ランダムな初期回転
+        DirectX::SimpleMath::Quaternion rot = DirectX::SimpleMath::Quaternion::CreateFromYawPitchRoll(rotDist(gen), rotDist(gen), rotDist(gen));
+
+        if (typeDist(gen) == 0)
+        {
+            // --- 動的な Box ---
+            auto e = EntityFactory::SpawnNamed(world, "DebrisBox", dynamicBoxArch);
+            e.Set(TransformComponent{
+                .position = {x, y, z}, .rotation = {rot.x, rot.y, rot.z, rot.w}, .scale = {1.0f, 1.0f, 1.0f}, .isStatic = false, .isDirty = true});
+            e.Set(PrimitiveComponent{.type = PrimitiveType::Box, .color = color});
+            e.Set(JoltBoxColliderComponent{.halfExtent = {0.5f, 0.5f, 0.5f}});
+            e.Set(JoltRigidbodyComponent{/* MotionType = Dynamic */});
+        }
+        else
+        {
+            // --- 動的な Sphere ---
+            auto e = EntityFactory::SpawnNamed(world, "DebrisSphere", dynamicSphereArch);
+            e.Set(TransformComponent{
+                .position = {x, y, z}, .rotation = {rot.x, rot.y, rot.z, rot.w}, .scale = {1.0f, 1.0f, 1.0f}, .isStatic = false, .isDirty = true});
+            e.Set(PrimitiveComponent{.type = PrimitiveType::Sphere, .color = color});
+            e.Set(JoltSphereColliderComponent{.radius = 0.5f});
+            e.Set(JoltRigidbodyComponent{/* MotionType = Dynamic */});
+        }
+    }
+}
+
+#include "Game/Logics/Test/BoidComponent.h"
+
+void SceneInitializer::SpawnBoidsTest(CCL::ECS::Core::World &world, ID3D11Device *device, int count)
+{
+    std::mt19937                          gen(1337);
+    std::uniform_real_distribution<float> distPos(-20.0f, 20.0f);
+    std::uniform_real_distribution<float> distVel(-5.0f, 5.0f);
+    std::uniform_real_distribution<float> distColor(0.5f, 1.0f);
+
+    auto arch = CCL::ECS::ArchetypeHelper::Generate<TransformComponent, PrimitiveComponent, BoidComponent>();
+
+    for (int i = 0; i < count; ++i)
+    {
+        auto e = EntityFactory::SpawnNamed(world, "Boid", arch);
+
+        float x = distPos(gen);
+        float y = 20.0f + distPos(gen);
+        float z = distPos(gen);
+
+        // 進行方向がわかりやすいように、Z軸(前)に細長いConeやCapsuleを使用する
+        e.Set(TransformComponent{
+            .position = {x, y, z}, .rotation = {0, 0, 0, 1}, .scale = {0.3f, 0.3f, 0.8f}, .isStatic = false, .isDirty = true});
+
+        // 色を少しずつバラけさせる
+        DirectX::XMFLOAT4 color = {0.2f, distColor(gen), 1.0f, 1.0f}; // 青緑系
+        e.Set(PrimitiveComponent{.type = PrimitiveType::Cone, .color = color});
+
+        e.Set(BoidComponent{
+            .velocity       = {distVel(gen), distVel(gen), distVel(gen)}});
+    }
+}
+
+void SceneInitializer::SpawnLissajousTest(CCL::ECS::Core::World &world, ID3D11Device *device, int count)
+{
     std::mt19937 gen(1001);
     std::uniform_real_distribution<float> distPhase(0.0f, DirectX::XM_2PI);
     std::uniform_real_distribution<float> distAmp(5.0f, 20.0f);

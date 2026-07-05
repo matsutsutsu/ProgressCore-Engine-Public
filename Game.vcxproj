@@ -739,7 +739,10 @@
     <ClInclude Include="Source\Game\Logics\GameEvent\GameEvents.h" />
     <ClInclude Include="Source\Game\Logics\GameEvent\GameOverResource.h" />
     <ClInclude Include="Source\Game\Logics\GameEvent\GameStateMode.h" />
+    <ClInclude Include="Source\Game\Logics\Test\BoidComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Test\BoidSystem.h" />
     <ClInclude Include="Source\Game\Logics\Test\ECSBenchmarkSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Test\JoltSandboxGuiSystem.h" />
     <ClInclude Include="Source\Game\Logics\Test\LissajousOrbitComponent.h" />
     <ClInclude Include="Source\Game\Logics\Test\LissajousOrbitSystem.h" />
     <ClInclude Include="Source\Game\Logics\Test\OrbitBenchmarkComponent.h" />
@@ -1478,7 +1481,9 @@
     <ClCompile Include="Source\Game\Logics\Combat\DamageResolutionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\HealthSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\HitboxCollisionSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Test\BoidSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\ECSBenchmarkSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Test\JoltSandboxGuiSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\LissajousOrbitSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\TornadoVortexSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\VectorFlowSystem.cpp" />
