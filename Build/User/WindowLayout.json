@@ -54,7 +54,7 @@
         },
         {
             "name": "NavMesh Builder",
-            "visible": true
+            "visible": false
         },
         {
             "name": "Memory Analyzer",

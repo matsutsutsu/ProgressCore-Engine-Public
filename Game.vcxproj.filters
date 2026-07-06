@@ -2782,6 +2782,9 @@
     <None Include="Shader\SHADER_ARCHITECTURE.md">
       <Filter>Shader</Filter>
     </None>
+    <None Include="Source\Engine\Graphics\Pipeline\_RenderPass_Guide.md">
+      <Filter>Source\Engine\Graphics\Pipeline</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shader\Material\Basic\BasicPS.hlsl">

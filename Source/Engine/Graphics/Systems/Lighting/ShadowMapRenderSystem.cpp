@@ -13,6 +13,8 @@
 #include "Engine/Graphics/Shader/Pass/ShadowMap.h"
 #include "Engine/Graphics/Shader/Pass/ShadowUtils.h"
 
+#include <DirectXCollision.h> // BoundingBox / BoundingOrientedBox 交差判定用
+
 using namespace CCL::ECS;
 using namespace DirectX;
 
@@ -25,87 +27,155 @@ ShadowMapRenderSystem::ShadowMapRenderSystem()
 
 void ShadowMapRenderSystem::Update(float dt)
 {
-    // シャドウマップへの描画
+    // シャドウマップへの描画コマンドを積む処理。
+    // 実際の描画（ラスタライズ）は ShadowPass が行う。ここはあくまで
+    // 「どのメッシュを・どのカスケードに描くか」を選別してキューへ積むだけ。
     RenderShadowMap();
 }
 
+// ============================================================================
+// シャドウ描画コマンドの生成（提出）
+//   役割：
+//     1. カメラのビュー錐台を距離で 3 分割し、各カスケードのライト空間 VP 行列を作る
+//     2. その VP の逆行列で「NDCの立方体 → ワールド空間の傾いた箱(OBB)」を復元し、
+//        各カスケードが実際にワールド上でカバーする領域を表す OBB を 3 つ得る
+//     3. 各エンティティ／各メッシュの AABB を 3 つのカスケード OBB と交差判定し、
+//        「入っているカスケードだけ」を示すビットマスク(cascadeMask)を作る
+//     4. どのカスケードにも入らないメッシュはキューに積まない（＝影描画から除外）
+//
+//   カリングの二段構え：
+//     - モデル単位の早期棄却：モデル全体の AABB が全カスケード外なら、
+//       メッシュを一つも調べずにエンティティごと捨てる（最速の枝刈り）
+//     - メッシュ単位の絞り込み：Sponza のような「1体で数百メッシュ」のモデルは
+//       モデル全体 AABB が全カスケードに掛かってしまうため、メッシュごとに
+//       個別の cascadeMask を作って、遠い/視界外のメッシュを落とす
+// ============================================================================
 void ShadowMapRenderSystem::RenderShadowMap()
 {
-    // 1. 必要なリソースの取得
+    // ------------------------------------------------------------------
+    // 1. 必要なリソースの取得（どれか欠けていたら何もしない）
+    // ------------------------------------------------------------------
     if (!_world->HasResource<ShadowMap*>() || !_world->HasResource<Camera*>() || !_world->HasResource<LightManager*>()) return;
-    
+
     ShadowMap* shadowMap = _world->GetResource<ShadowMap*>();
     Camera* camera = _world->GetResource<Camera*>();
     LightManager* lightManager = _world->GetResource<LightManager*>();
 
-    // 2. View を使ったデータの同期 (Single Source of Truth)
-    // テンプレートシグネチャに縛られず、設定コンポーネントだけを検索してパラメータを上書きする
+    // ------------------------------------------------------------------
+    // 2. 設定コンポーネント(SSOT)からシャドウパラメータを同期する。
+    //    テンプレートのクエリ対象に縛られず、シングルトン設定だけ拾って上書き。
+    // ------------------------------------------------------------------
     if (auto* config = _world->GetSingletonComponent<ShadowMapConfigComponent>()) {
         shadowMap->params.shadowBias = config->shadowBias;
         shadowMap->params.shadowColor = config->shadowColor;
         shadowMap->params.cascadeSplits[0] = config->cascadeSplits.x;
         shadowMap->params.cascadeSplits[1] = config->cascadeSplits.y;
         shadowMap->params.cascadeSplits[2] = config->cascadeSplits.z;
-        
-        
     }
 
-  
-    // ================================================================
-    //  カスケードの行列を計算し、交差判定用のOBBを3つ作成する
-    // ================================================================
+    // ------------------------------------------------------------------
+    // 3. カスケードの行列を計算し、交差判定用のOBBを3つ作成する。
+    //    lightVPs[i] : カスケード i のライト空間ビュー射影行列
+    // ------------------------------------------------------------------
     DirectX::XMMATRIX lightVPs[3];
     CalculateCascadeMatrices(
         DirectX::XMLoadFloat4x4(&camera->GetView()),
-        camera->GetFovY(), 
-        camera->GetAspect(), 
-        lightManager->GetDirectionalLight().direction, 
-        shadowMap->params.cascadeSplits, 
+        camera->GetFovY(),
+        camera->GetAspect(),
+        lightManager->GetDirectionalLight().direction,
+        shadowMap->params.cascadeSplits,
         lightVPs
     );
 
     DirectX::BoundingOrientedBox cascadeOBBs[3];
     // DirectXのNDC空間の箱 (X,Yは -1~1, Zは 0~1) => Center(0,0,0.5), Extents(1,1,0.5)
     DirectX::BoundingBox ndcBox(DirectX::XMFLOAT3(0.0f, 0.0f, 0.5f), DirectX::XMFLOAT3(1.0f, 1.0f, 0.5f));
-    
-    for(int i = 0; i < 3; ++i) {
+
+    for (int i = 0; i < 3; ++i) {
         DirectX::BoundingOrientedBox::CreateFromBoundingBox(cascadeOBBs[i], ndcBox);
         // ライト行列の「逆行列」を掛けることで、NDCの立方体をワールド空間の傾いた箱(OBB)に逆変換する
         cascadeOBBs[i].Transform(cascadeOBBs[i], DirectX::XMMatrixInverse(nullptr, lightVPs[i]));
     }
 
-
     auto& renderQueue = RenderQueue::Instance();
 
-    // ★修正: 引数に bounds を追加
-    ForEach([&](const TransformComponent &trans, const ModelComponent &model, const BoundingBoxComponent &bounds) {
-        if (!model.GetModel()) return;
+    // メッシュのローカル空間 AABB を boundsMin/Max から構築するヘルパー。
+    // 縮退メッシュ（頂点0）の場合は extents が巨大化し「常に可視」＝安全側に倒れる。
+    auto buildLocalAABB = [](const Model::Mesh& m) -> DirectX::BoundingBox {
+        const DirectX::XMVECTOR bmin = DirectX::XMLoadFloat3(&m.data->boundsMin);
+        const DirectX::XMVECTOR bmax = DirectX::XMLoadFloat3(&m.data->boundsMax);
+        DirectX::BoundingBox box;
+        DirectX::XMStoreFloat3(&box.Center, DirectX::XMVectorScale(DirectX::XMVectorAdd(bmin, bmax), 0.5f));
+        DirectX::XMStoreFloat3(&box.Extents, DirectX::XMVectorAbs(DirectX::XMVectorScale(DirectX::XMVectorSubtract(bmax, bmin), 0.5f)));
+        return box;
+    };
 
-        // ================================================================
-        // 3つのカスケード箱とモデルのAABBの交差判定を行い、マスクを作る
-        // ================================================================
-        uint8_t cascadeMask = 0;
-        if (cascadeOBBs[0].Intersects(bounds.worldAABB)) cascadeMask |= (1 << 0);
-        if (cascadeOBBs[1].Intersects(bounds.worldAABB)) cascadeMask |= (1 << 1);
-        if (cascadeOBBs[2].Intersects(bounds.worldAABB)) cascadeMask |= (1 << 2);
+    // ------------------------------------------------------------------
+    // 4. エンティティを走査してシャドウコマンドを積む
+    //    （TransformComponent / ModelComponent / BoundingBoxComponent を持つもの）
+    // ------------------------------------------------------------------
+    ForEach([&](const TransformComponent& trans, const ModelComponent& model, const BoundingBoxComponent& bounds) {
+        Model* pModel = model.GetModel();
+        if (!pModel) return;
 
-        // ★最強のカリング: どのカスケードからも見えないなら、キューにすら積まない（完全消去）
-        if (cascadeMask == 0) return;
+        // --- (A) モデル単位の早期棄却 ------------------------------------
+        // モデル全体の worldAABB がどのカスケードにも掛からなければ、
+        // メッシュを一つも調べずにこのエンティティ全体を捨てる（最速の枝刈り）。
+        uint8_t modelMask = 0;
+        if (cascadeOBBs[0].Intersects(bounds.worldAABB)) modelMask |= (1 << 0);
+        if (cascadeOBBs[1].Intersects(bounds.worldAABB)) modelMask |= (1 << 1);
+        if (cascadeOBBs[2].Intersects(bounds.worldAABB)) modelMask |= (1 << 2);
+        if (modelMask == 0) return; // 全カスケード外：影に一切寄与しない
 
-        // 全てのメッシュを影描画キューに登録
-        for (const auto& mesh : model.GetModel()->GetMeshes()) {
+        const DirectX::XMMATRIX entityWorld = DirectX::XMLoadFloat4x4(&trans.worldMatrix);
+
+        // --- (B) メッシュ単位の絞り込み ----------------------------------
+        // Sponza のような巨大単一モデルは、モデル全体 AABB では全カスケードに
+        // 掛かってしまう。メッシュ個別に AABB を作って cascadeMask を精密化する。
+        for (const auto& mesh : pModel->GetMeshes()) {
+            if (!mesh.data) continue;
+
+            const bool isSkinned = !mesh.bones.empty();
+
+            uint8_t meshMask;
+            if (isSkinned) {
+                // スキンドはアニメーションで実形状がレストポーズ AABB を超えうるため、
+                // メッシュ単位では絞らずモデル単位のマスクを踏襲する（影欠けを防ぐ安全側）。
+                meshMask = modelMask;
+            }
+            else {
+                // このメッシュのワールド行列を作る。
+                // ★描画時の世界変換（node->globalTransform * entityWorld）と一致させること。
+                DirectX::XMMATRIX meshWorld = entityWorld;
+                if (mesh.node) {
+                    meshWorld = DirectX::XMLoadFloat4x4(&mesh.node->globalTransform) * entityWorld;
+                }
+
+                // ローカル AABB → ワールド AABB（回転を含んでも包含する軸平行ボックスになる）
+                DirectX::BoundingBox worldAABB;
+                buildLocalAABB(mesh).Transform(worldAABB, meshWorld);
+
+                // このメッシュ専用の cascadeMask を、各カスケード OBB との交差から作る。
+                meshMask = 0;
+                if (cascadeOBBs[0].Intersects(worldAABB)) meshMask |= (1 << 0);
+                if (cascadeOBBs[1].Intersects(worldAABB)) meshMask |= (1 << 1);
+                if (cascadeOBBs[2].Intersects(worldAABB)) meshMask |= (1 << 2);
+            }
+
+            // どのカスケードにも入らないメッシュはキューに積まない（＝影描画から除外）。
+            if (meshMask == 0) continue;
 
             // 影用の伝票を作成
             ShadowCommand cmd;
-            cmd.model = model.GetModel();
+            cmd.model = pModel;
             cmd.mesh = &mesh;
+            // ★ worldMatrix は「エンティティのワールド行列」をそのまま積む。
+            //   node の合成は ShadowPass 側で行う仕様なので、ここでは合成しない。
             cmd.worldMatrix = trans.worldMatrix;
-			cmd.cascadeMask = cascadeMask; // どのカスケードで描画するかを示すビットマスクをセット
+            cmd.cascadeMask = meshMask; // メッシュ個別のカスケードマスク
 
-            // カウンターに提出
             renderQueue.SubmitShadow(cmd);
         }
-        
     });
 }
 
