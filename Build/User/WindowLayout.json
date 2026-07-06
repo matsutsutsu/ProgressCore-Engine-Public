@@ -22,11 +22,11 @@
         },
         {
             "name": "Sequencer",
-            "visible": false
+            "visible": true
         },
         {
             "name": "Anim Graph Editor",
-            "visible": false
+            "visible": true
         },
         {
             "name": "Behavior Tree Editor",
@@ -54,7 +54,7 @@
         },
         {
             "name": "NavMesh Builder",
-            "visible": false
+            "visible": true
         },
         {
             "name": "Memory Analyzer",

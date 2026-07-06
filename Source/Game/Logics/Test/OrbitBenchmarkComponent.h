@@ -1,9 +1,11 @@
 #pragma once
 
-// ECS限界テスト用のコンポーネント
-struct OrbitBenchmarkComponent {
-    float angle;      // 現在の角度
-    float orbitSpeed; // 回る速さ
-    float radius;     // 中心からの距離
-    float waveSpeed;  // 上下に波打つ速さ
+/**
+ * @brief ECS限界テスト（ギャラクシー・スウォーム）用コンポーネント
+ * @note DOD最適化のため、共通パラメータ(速度など)はSystemで管理し、個体固有の不変データのみを保持します。
+ */
+struct OrbitBenchmarkComponent
+{
+    float phaseOffset; // 個体ごとの初期角度（ズレ）
+    float radius;      // 中心からの軌道半径
 };

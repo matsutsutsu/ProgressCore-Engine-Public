@@ -7,6 +7,10 @@
 #include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
 #include "Game/Logics/AI/BehaviorTree/Drone/DroneComponent.h"
 
+#include "Game/Logics/AI/NavAI/AIComponents.h"
+#include "Engine/AI/Navigation/Components/NavAgentComponent.h"
+#include "Engine/Transform/Components/TransformComponent.h"
+
 // BossActionComponent は今後追加するので一旦前方宣言
 struct BossActionComponent;
 
@@ -63,22 +67,35 @@ struct MoveAction : public IBTAction
 {
     BTNodeState Execute(BTContext &ctx) override
     {
-        auto &timers = ctx.bt->nodeTimers;
-        if (ctx.nodeId >= timers.size())
+        // 1. 世界の海から強引に他コンポーネントを釣り上げる（キャッシュミス発生源）
+        auto *navAgent = ctx.world->GetComponent<NavAgentComponent>(ctx.entity);
+        auto *memory   = ctx.world->GetComponent<AIMemoryComponent>(ctx.entity);
+
+        if (!navAgent || !memory || !ctx.myTransform)
+        {
             return BTNodeState::Failure;
+        }
 
-        ctx.bt->lastLogActionId = ::AI::A_Move;
+        // 2. プレイヤーの最後に確認した座標(Vector3)をナビゲーションの目的地(XMFLOAT3)に流し込む
+        navAgent->targetPosition  = memory->lastKnownPos;
+        navAgent->isPathRequested = true;
 
-        if (timers[ctx.nodeId] == 0.0f)
+        // 本来は AIMovementControlSystem がやるべき速度指定をここで強奪する
+        navAgent->currentDesiredSpeed = 5.0f;
+
+        // 3. 自身と目的地の距離を計算し、到達判定を行う
+        DirectX::SimpleMath::Vector3 myPos(ctx.myTransform->position);
+        DirectX::SimpleMath::Vector3 targetPos(memory->lastKnownPos);
+        float                        dist = DirectX::SimpleMath::Vector3::Distance(myPos, targetPos);
+
+        if (dist <= 2.0f)
+        {
+            // 到達完了（速度をリセットして完了報告）
+            navAgent->currentDesiredSpeed = 0.0f;
             return BTNodeState::Success;
+        }
 
-        if (timers[ctx.nodeId] == -1.0f)
-            timers[ctx.nodeId] = 0.5f;
-
-        // 毎フレーム「移動してほしい」を書き続ける
-        ctx.command->currentActionId = ::AI::A_Move;
-
-        return BTNodeState::Running;
+        return BTNodeState::Running; // 移動中
     }
 };
 

@@ -117,7 +117,6 @@ Framework::Framework(HWND hWnd)
 // デストラクタ
 Framework::~Framework()
 {
- 
 	ZoneScopedN("Framework::Destrucor");
 
 
@@ -129,21 +128,38 @@ Framework::~Framework()
 #endif
 
 	// シーン終了化
-	SceneManager::Instance().Clear();
+    {
+        ZoneScopedN("Finalize: SceneManager");
+        SceneManager::Instance().Clear();
+    }
 #ifdef ENABLE_EDITOR
-	// IMGUI終了化
-	ImGuiRenderer::Finalize();
+
+	{
+        ZoneScopedN("Finalize: ImGuiRenderer");
+        // IMGUI終了化
+        ImGuiRenderer::Finalize();
+    }
+
 #endif
-	// ★ ダイアログ履歴を保存
-	FileDialog::SaveHistory();
+    {
+        ZoneScopedN("Finalize:  SaveFileDialogHistory");
+        // ★ ダイアログ履歴を保存
+        FileDialog::SaveHistory();
+    }
 
-	Logger::Instance().Flush();
-	Logger::Instance().ClearSinks(); // shared_ptr 循環参照防止
+	{
+        ZoneScopedN("Finalize: Logger");
+        Logger::Instance().Flush();
+        Logger::Instance().ClearSinks(); // shared_ptr 循環参照防止
+    }
 
-	// ④ 描画パイプラインの破棄 (ここで ResourceManager のクリアも行われる)
-	// 最後に残ったGPUの親玉を破壊します。
-	// ここでついに、あの「ReportLiveDeviceObjects」のレポートが出力されます！
-	Graphics::Instance().Shutdown();
+	{
+        ZoneScopedN("Finalize: Graphics::Shutdown");
+        // ④ 描画パイプラインの破棄 (ここで ResourceManager のクリアも行われる)
+        // 最後に残ったGPUの親玉を破壊します。
+        // ここでついに、あの「ReportLiveDeviceObjects」のレポートが出力されます！
+        Graphics::Instance().Shutdown();
+    }
 
 }
 
@@ -574,6 +590,9 @@ int Framework::Run()
 // メッセージハンドラ
 LRESULT CALLBACK Framework::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+    // ★ OSからのメッセージ処理がスパイクの原因になることもあるため追跡
+    ZoneScopedN("Framework::HandleMessage");
+
 #ifdef ENABLE_EDITOR
 	if (ImGuiRenderer::HandleMessage(hWnd, msg, wParam, lParam))
 		return true;
