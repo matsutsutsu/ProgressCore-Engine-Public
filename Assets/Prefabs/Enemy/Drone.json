@@ -3,19 +3,41 @@
         {
             "components": {
                 "DroneComponent": {
-                    "currentFormation": 0,
+                    "currentFormation": 1,
                     "currentState": 0,
-                    "localIndex": 0,
+                    "localIndex": 5,
                     "moveSpeed": 30.0,
                     "orbitRadius": 8.0,
-                    "ownerBossId": 0,
+                    "ownerBossId": 3,
                     "stateTimer": 0.0,
                     "targetPosition": [
+                        -15.14175033569336,
+                        -0.03696369007229805,
+                        61.12327575683594
+                    ],
+                    "totalDrones": 12
+                },
+                "Jolt Rigidbody": {
+                    "friction": 0.20000000298023224,
+                    "gravityFactor": 1.0,
+                    "initialVelocity": [
                         0.0,
                         0.0,
                         0.0
                     ],
-                    "totalDrones": 1
+                    "isSensor": false,
+                    "motionType": 2,
+                    "objectLayer": 2,
+                    "restitution": 0.0,
+                    "useCCD": false
+                },
+                "Jolt Sphere Collider": {
+                    "localOffset": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "radius": 0.5
                 },
                 "Name": {
                     "name": "TestDrone"
@@ -49,15 +71,15 @@
                     "isStatic": false,
                     "parent": 2,
                     "position": [
-                        -9.339223861694336,
-                        4.958939552307129,
-                        60.12434768676758
+                        -15.25050163269043,
+                        -0.08571034669876099,
+                        61.44034194946289
                     ],
                     "rotation": [
                         0.0,
-                        1.0,
+                        0.6029027700424194,
                         0.0,
-                        6.229855387118732e-08
+                        0.7978147864341736
                     ],
                     "scale": [
                         1.0,

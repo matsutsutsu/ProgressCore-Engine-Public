@@ -53,6 +53,25 @@ int DroneManagerSystem::GetAliveCount() const
     return count;
 }
 
+void DroneManagerSystem::ReindexAllDrones()
+{
+    // まず総数を数える
+    int total = GetAliveCount();
+    if (total <= 0) return;
+
+    // 連番を振る（0,1,2,... と totalDrones=total）
+    uint16_t idx  = 0;
+    auto     view = _world->View<DroneComponent>();
+    for (auto e : view)
+    {
+        if (auto *d = _world->GetComponent<DroneComponent>(e))
+        {
+            d->localIndex  = idx++;
+            d->totalDrones = static_cast<uint16_t>(total);
+        }
+    }
+}
+ 
 
 // ============================================================================
 // FindBoss：最初のボスを探す
@@ -71,32 +90,44 @@ EntityID DroneManagerSystem::FindBoss() const
 int DroneManagerSystem::SpawnDrones(int count)
 {
     EntityID bossId = FindBoss();
-    if (bossId == InvalidEntityID) {
+    if (bossId == InvalidEntityID)
+    {
         CCL_LOG_WARN(LogCategory::Game, "[DroneManager] ボスが居ないので生成中止");
         return 0;
     }
 
-    auto* bossTrans = _world->GetComponent<TransformComponent>(bossId);
-    Vector3 basePos = bossTrans ? Vector3(bossTrans->position) : Vector3::Zero;
+    auto   *bossTrans = _world->GetComponent<TransformComponent>(bossId);
+    Vector3 basePos   = bossTrans ? Vector3(bossTrans->position) : Vector3::Zero;
     basePos.y += 5.0f;
 
     int spawned = 0;
-    for (int i = 0; i < count; ++i) {
+    for (int i = 0; i < count; ++i)
+    {
         EntityID droneId = Prefab::SpawnPrefab(*_world, kDronePrefab);
         if (droneId == InvalidEntityID) continue;
 
-        if (auto* t = _world->GetComponent<TransformComponent>(droneId)) {
+        if (auto *t = _world->GetComponent<TransformComponent>(droneId))
+        {
             t->position = basePos;
             t->isDirty  = true;
         }
-        if (auto* d = _world->GetComponent<DroneComponent>(droneId)) {
+        if (auto *d = _world->GetComponent<DroneComponent>(droneId))
+        {
             d->ownerBossId = bossId;
+            // ★動作確認用：円陣を組ませる
+            d->currentFormation = DroneFormationType::OrbitCircle;
+            d->orbitRadius      = 8.0f;
         }
-        if (auto* tm = _world->GetComponent<TimeStateComponent>(droneId)) {
+        if (auto *tm = _world->GetComponent<TimeStateComponent>(droneId))
+        {
             tm->group = TimeGroup::Enemy;
         }
         ++spawned;
     }
+
+    // ★スポーン後：全ドローンに localIndex / totalDrones を振り直す
+    //   （既存＋新規をまとめて連番にしないと円が歪む）
+    ReindexAllDrones();
 
     CCL_LOG_INFO(LogCategory::Game, "[DroneManager] %d 機スポーン（合計 %d）",
         spawned, GetAliveCount());

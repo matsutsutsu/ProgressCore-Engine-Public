@@ -55,6 +55,9 @@ class DroneManagerSystem : public CCL::ECS::IfSystem<DroneManagerSystem,
 
     /// @brief 現在の生存数を返す（View で数える）。
     int GetAliveCount() const;
+    
+    /// @brief 全ドローンに対して localIndex / totalDrones を振り直す。
+    void ReindexAllDrones();
 
   private:
     /// @brief シーン内の最初のボス（BossCommandComponent 保持）を探す。

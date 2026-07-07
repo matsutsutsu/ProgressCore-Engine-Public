@@ -523,6 +523,9 @@
     <Filter Include="Source\Game\Logics\AI\Drone">
       <UniqueIdentifier>{1dcf7f43-80a3-4026-958c-8d279ef4bbb6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\AI\Drone\Formation">
+      <UniqueIdentifier>{7fb876f4-9c60-4a35-9ec9-43da0f2894c5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\implot-master\implot.h">
@@ -1742,6 +1745,15 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Drone\DroneManagerSystem.h">
       <Filter>Source\Game\Logics\AI\Drone</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\IFormation.h">
+      <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\FormationRegistry.h">
+      <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_Basic.h">
+      <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

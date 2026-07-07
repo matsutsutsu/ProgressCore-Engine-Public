@@ -12,6 +12,7 @@
 #include "Game/Logics/AI/StateTree/Commander/CommanderAI.h"
 #include "Game/Logics/AI/BehaviorTree/Actions/BTActions_Boss.h"
 #include "Game/Logics/AI/BehaviorTree/Actions/BTConditions.h"
+#include "Game/Logics/AI/Drone/Formation/Formations_Basic.h"
 
 
 void EditorScene::Initialize()
@@ -32,6 +33,7 @@ void EditorScene::Initialize()
     // ★追加：BTのアクション・条件を登録
     CCL::AI::BT::BossActions::RegisterAll();
     CCL::AI::BT::BossConditions::RegisterAll();
+    CCL::AI::Formation::Basic::RegisterAll();
 
     // ★追加：司令官のノードを登録
     static auto commanderIds = CommanderAI::RegisterNodes();

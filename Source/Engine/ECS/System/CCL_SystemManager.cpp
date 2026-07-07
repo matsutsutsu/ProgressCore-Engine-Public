@@ -115,6 +115,9 @@ namespace CCL::ECS
    void SystemManager::OnGui()
     {
 #ifdef ENABLE_EDITOR
+        // ★ エディタUI全体の処理負荷を計測
+        ZoneScopedN("SystemManager::OnGui");
+
         if (ImGui::Begin("System Manager")) {
 
             // ----------------------------------------------------
@@ -236,7 +239,16 @@ namespace CCL::ECS
                         // 折りたたみヘッダーの中にシステムのGUIを表示
                         if (ImGui::CollapsingHeader(sys->GetName().c_str())) {
                             ImGui::Indent(); // 少しインデントして階層構造を見やすく
-                            sys->OnGui();    // ★ここで各システムのGUIを呼ぶ
+
+                            // OnGuiの処理負荷追跡
+                            {
+                                ZoneScoped;
+                                std::string zoneName = sys->GetName() + "::OnGui";
+                                ZoneName(zoneName.c_str(), zoneName.size());
+
+                                sys->OnGui(); // 各システムのGUI描画を実行
+                            }
+
                             ImGui::Unindent();
                             ImGui::Spacing();
                         }
@@ -256,7 +268,16 @@ namespace CCL::ECS
                         ImGui::PushID(sys->GetSystemID());
                         if (ImGui::CollapsingHeader(sys->GetName().c_str())) {
                             ImGui::Indent();
-                            sys->OnGui();
+
+                            // OnGuiの処理負荷追跡
+                            {
+                                ZoneScoped;
+                                std::string zoneName = sys->GetName() + "::OnGui";
+                                ZoneName(zoneName.c_str(), zoneName.size());
+
+                                sys->OnGui(); // 各システムのGUI描画を実行
+                            }
+
                             ImGui::Unindent();
                             ImGui::Spacing();
                         }

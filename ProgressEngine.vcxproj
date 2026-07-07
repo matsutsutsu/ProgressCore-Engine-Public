@@ -679,6 +679,9 @@
     <ClInclude Include="Source\Game\Logics\AI\Drone\DroneFormationSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\DroneManagerSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\DroneMovementSystem.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\FormationRegistry.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_Basic.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\IFormation.h" />
     <ClInclude Include="Source\Game\Logics\AI\FlowField\NavFlowFieldSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\FlowField\NavGridFlowField.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\Commander\CommanderAI.h" />
