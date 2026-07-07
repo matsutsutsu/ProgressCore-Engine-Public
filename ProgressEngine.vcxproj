@@ -701,6 +701,7 @@
     <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\StateTreeRegistry.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\Serialization\StateTreeDef.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\Serialization\StateTreeSerializer.h" />
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\System\AIDebugSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\System\StateTreeResolveSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\System\StateTreeSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Components\DashComponent.h" />
@@ -1439,6 +1440,7 @@
     <ClCompile Include="Source\Game\Logics\AI\FlowField\NavFlowFieldSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\StateTree\Core\StateTreeComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\StateTree\Serialization\StateTreeSerializer.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\StateTree\System\AIDebugSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\StateTree\System\StateTreeResolveSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\StateTree\System\StateTreeSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Components\DashComponentsMeta.cpp" />

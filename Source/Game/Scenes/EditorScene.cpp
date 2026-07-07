@@ -46,6 +46,9 @@ void EditorScene::Initialize()
     // 敵AIが受け取るシーン全体の情報が入った共有のリソースを登録
     _worldPtr->AddResource<BattleContext>();
 
+    auto &battle           = _worldPtr->GetResource<BattleContext>();
+    battle.droneAliveCount = 650; // ← Pressure条件(<=700)を満たす値に変更
+
 
     CCL_LOG_INFO(LogCategory::Core, "EditorScene Initialize");
 }
