@@ -5,10 +5,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Shader">
-      <UniqueIdentifier>{9f64f4ff-d9e0-43d7-88e1-13e6d3656a89}</UniqueIdentifier>
-      <Extensions>hlsl;hlsli</Extensions>
-    </Filter>
     <Filter Include="External\ImGuizmo">
       <UniqueIdentifier>{5f7002dc-627e-48c5-9e59-33cef80467f8}</UniqueIdentifier>
     </Filter>
@@ -17,51 +13,6 @@
     </Filter>
     <Filter Include="External\imgui-docking">
       <UniqueIdentifier>{c85446c9-90d2-4441-add5-5aac511d95ce}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Common">
-      <UniqueIdentifier>{2d28a88d-02f8-4b5b-8c7d-7b51eb07c3b2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Material">
-      <UniqueIdentifier>{7a19440d-ebf9-43a6-b5fb-f8f081320a3c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Material\Basic">
-      <UniqueIdentifier>{2312518a-49e8-40bc-a0df-e91061f7abfb}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Material\Phong">
-      <UniqueIdentifier>{53e07590-7c14-48a5-9a50-0838466f082c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Material\Toon">
-      <UniqueIdentifier>{a6edb9bf-13a1-4e65-98eb-c439e0aee7a6}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Material\Sprite">
-      <UniqueIdentifier>{3507bcf8-30c6-4874-acdd-63af07150527}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Renderer">
-      <UniqueIdentifier>{627c6b60-21df-45c0-b745-ffef10d97ed8}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Renderer\Primitive">
-      <UniqueIdentifier>{7366f537-e180-40c2-b757-f27216aa0ce3}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Renderer\Shape">
-      <UniqueIdentifier>{942d04f7-5d81-46e2-96ae-cc88d7c44e4b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Pass">
-      <UniqueIdentifier>{e7067b87-8e10-4f6e-a321-f72d64988db8}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Compute">
-      <UniqueIdentifier>{73e8c3c4-4bb0-4d05-9939-abfaa0c83594}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Compute\GPUParticle">
-      <UniqueIdentifier>{7a8c859c-165f-42f0-87f0-2729f0b955d0}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Pass\ShadowMap">
-      <UniqueIdentifier>{06034f22-f2c0-48eb-802c-41fd61f27fb6}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Pass\Outline">
-      <UniqueIdentifier>{8c257204-934c-4af4-8fff-539fb5e193f3}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\PostProcess">
-      <UniqueIdentifier>{2a5582fd-a623-4bc4-abdc-fdc7f0f0650b}</UniqueIdentifier>
     </Filter>
     <Filter Include="Build">
       <UniqueIdentifier>{0feccf57-f683-442f-803b-3e8e5c9fa59f}</UniqueIdentifier>
@@ -184,15 +135,6 @@
     <Filter Include="Source\Game\Utils">
       <UniqueIdentifier>{7b613cb4-265d-4fc0-9e9c-3309a07093d6}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shader\Material\DissolvePS">
-      <UniqueIdentifier>{3504f0f0-4cc8-46d3-8950-bee910685031}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Material\Lambert">
-      <UniqueIdentifier>{c4ad84b2-9b2e-425f-8870-b9190a1ab854}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Material\PBR">
-      <UniqueIdentifier>{7fe08d8d-9ddd-4639-b0e7-a230086cd0d3}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Game\GameEvent">
       <UniqueIdentifier>{6d456466-192c-420e-8be4-6fe0a14e4d5b}</UniqueIdentifier>
     </Filter>
@@ -201,9 +143,6 @@
     </Filter>
     <Filter Include="Source\Game\Logics\Test">
       <UniqueIdentifier>{7de38b51-de5a-4cbe-a640-02ac89b89766}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Pass\SkyBox">
-      <UniqueIdentifier>{7aa7b402-62ad-4c1d-bdb8-5ade6932aa53}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Audio">
       <UniqueIdentifier>{f67d589a-603e-4892-ba9f-e03879675b0e}</UniqueIdentifier>
@@ -454,14 +393,8 @@
     <Filter Include="Source\Engine\Transform\Core">
       <UniqueIdentifier>{6bbbd955-4bdc-4d09-a45f-dda2d10e4270}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shader\Compute\Boids">
-      <UniqueIdentifier>{7f01f78f-5e12-4472-9745-513f6f592a59}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\Graphics\Shader\_Shared">
       <UniqueIdentifier>{18957b19-91a2-477b-b87c-fa95d9ba54d2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Pass\Error">
-      <UniqueIdentifier>{dea43f46-2574-4dff-ab31-f548204c8040}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Game\Logics\Combat">
       <UniqueIdentifier>{f9e98694-67ee-43f9-8feb-4ed9c3cab61a}</UniqueIdentifier>
@@ -505,29 +438,96 @@
     <Filter Include="Source\Game\Prototype">
       <UniqueIdentifier>{f6e27a6b-390a-468b-b147-49ca5346c7eb}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shader\Material\Glow">
-      <UniqueIdentifier>{a0a81a85-1408-40de-9bd8-6353baff6c1f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Material\Hologram">
-      <UniqueIdentifier>{89c2f0cc-d6e1-41e2-9bf4-e95577026c72}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Material\Fire">
-      <UniqueIdentifier>{a1b2c3d4-e5f6-7890-abcd-ef1234567890}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Material\Water">
-      <UniqueIdentifier>{b2c3d4e5-f6a7-8901-bcde-f12345678901}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Material\Grass">
-      <UniqueIdentifier>{bbb7eb73-54f8-4baa-b812-64de1367e851}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Material\GhostPBR">
-      <UniqueIdentifier>{2ed6532d-2763-44c1-ad75-6dcc87492a5e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Material\EnergyStream">
-      <UniqueIdentifier>{e6277476-9d98-4bf6-8531-1e88079f10f7}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Game\Logics\AI\Battle">
       <UniqueIdentifier>{517346a0-976c-42e5-8a21-5198a71675a7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Shader">
+      <UniqueIdentifier>{9f64f4ff-d9e0-43d7-88e1-13e6d3656a89}</UniqueIdentifier>
+      <Extensions>hlsl;hlsli</Extensions>
+    </Filter>
+    <Filter Include="Source\Shader\Common">
+      <UniqueIdentifier>{2d28a88d-02f8-4b5b-8c7d-7b51eb07c3b2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Shader\Material">
+      <UniqueIdentifier>{7a19440d-ebf9-43a6-b5fb-f8f081320a3c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Shader\Material\Basic">
+      <UniqueIdentifier>{2312518a-49e8-40bc-a0df-e91061f7abfb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Shader\Material\Phong">
+      <UniqueIdentifier>{53e07590-7c14-48a5-9a50-0838466f082c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Shader\Material\Toon">
+      <UniqueIdentifier>{a6edb9bf-13a1-4e65-98eb-c439e0aee7a6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Shader\Material\Sprite">
+      <UniqueIdentifier>{3507bcf8-30c6-4874-acdd-63af07150527}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Shader\Material\DissolvePS">
+      <UniqueIdentifier>{3504f0f0-4cc8-46d3-8950-bee910685031}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Shader\Material\Lambert">
+      <UniqueIdentifier>{c4ad84b2-9b2e-425f-8870-b9190a1ab854}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Shader\Material\PBR">
+      <UniqueIdentifier>{7fe08d8d-9ddd-4639-b0e7-a230086cd0d3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Shader\Material\Glow">
+      <UniqueIdentifier>{a0a81a85-1408-40de-9bd8-6353baff6c1f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Shader\Material\Hologram">
+      <UniqueIdentifier>{89c2f0cc-d6e1-41e2-9bf4-e95577026c72}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Shader\Material\Fire">
+      <UniqueIdentifier>{a1b2c3d4-e5f6-7890-abcd-ef1234567890}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Shader\Material\Water">
+      <UniqueIdentifier>{b2c3d4e5-f6a7-8901-bcde-f12345678901}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Shader\Material\Grass">
+      <UniqueIdentifier>{bbb7eb73-54f8-4baa-b812-64de1367e851}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Shader\Material\GhostPBR">
+      <UniqueIdentifier>{2ed6532d-2763-44c1-ad75-6dcc87492a5e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Shader\Material\EnergyStream">
+      <UniqueIdentifier>{e6277476-9d98-4bf6-8531-1e88079f10f7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Shader\Renderer">
+      <UniqueIdentifier>{627c6b60-21df-45c0-b745-ffef10d97ed8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Shader\Renderer\Primitive">
+      <UniqueIdentifier>{7366f537-e180-40c2-b757-f27216aa0ce3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Shader\Renderer\Shape">
+      <UniqueIdentifier>{942d04f7-5d81-46e2-96ae-cc88d7c44e4b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Shader\Pass">
+      <UniqueIdentifier>{e7067b87-8e10-4f6e-a321-f72d64988db8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Shader\Pass\ShadowMap">
+      <UniqueIdentifier>{06034f22-f2c0-48eb-802c-41fd61f27fb6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Shader\Pass\Outline">
+      <UniqueIdentifier>{8c257204-934c-4af4-8fff-539fb5e193f3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Shader\Pass\SkyBox">
+      <UniqueIdentifier>{7aa7b402-62ad-4c1d-bdb8-5ade6932aa53}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Shader\Pass\Error">
+      <UniqueIdentifier>{dea43f46-2574-4dff-ab31-f548204c8040}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Shader\Compute">
+      <UniqueIdentifier>{73e8c3c4-4bb0-4d05-9939-abfaa0c83594}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Shader\Compute\GPUParticle">
+      <UniqueIdentifier>{7a8c859c-165f-42f0-87f0-2729f0b955d0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Shader\Compute\Boids">
+      <UniqueIdentifier>{7f01f78f-5e12-4472-9745-513f6f592a59}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Shader\PostProcess">
+      <UniqueIdentifier>{2a5582fd-a623-4bc4-abdc-fdc7f0f0650b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -2615,55 +2615,55 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Shader\Common\Common.hlsli">
-      <Filter>Shader\Common</Filter>
+      <Filter>Source\Shader\Common</Filter>
     </None>
     <None Include="Shader\Common\Lighting.hlsli">
-      <Filter>Shader\Common</Filter>
+      <Filter>Source\Shader\Common</Filter>
     </None>
     <None Include="Shader\Common\Scene.hlsli">
-      <Filter>Shader\Common</Filter>
+      <Filter>Source\Shader\Common</Filter>
     </None>
     <None Include="Shader\Common\Skinning.hlsli">
-      <Filter>Shader\Common</Filter>
+      <Filter>Source\Shader\Common</Filter>
     </None>
     <None Include="Shader\Material\Sprite\Sprite.hlsli">
-      <Filter>Shader\Material\Sprite</Filter>
+      <Filter>Source\Shader\Material\Sprite</Filter>
     </None>
     <None Include="Shader\Renderer\Shape\ShapeRenderer.hlsli">
-      <Filter>Shader\Renderer\Shape</Filter>
+      <Filter>Source\Shader\Renderer\Shape</Filter>
     </None>
     <None Include="Shader\Renderer\Primitive\PrimitiveRenderer.hlsli">
-      <Filter>Shader\Renderer\Primitive</Filter>
+      <Filter>Source\Shader\Renderer\Primitive</Filter>
     </None>
     <None Include="Shader\Pass\ShadowMap\ShadowMap.hlsli">
-      <Filter>Shader\Pass\ShadowMap</Filter>
+      <Filter>Source\Shader\Pass\ShadowMap</Filter>
     </None>
     <None Include="Shader\Compute\GPUParticle\particle.hlsli">
-      <Filter>Shader\Compute\GPUParticle</Filter>
+      <Filter>Source\Shader\Compute\GPUParticle</Filter>
     </None>
     <None Include="Shader\Common\Instancing.hlsli">
-      <Filter>Shader\Common</Filter>
+      <Filter>Source\Shader\Common</Filter>
     </None>
     <None Include="Shader\PostProcess\Bloom.hlsli">
-      <Filter>Shader\PostProcess</Filter>
+      <Filter>Source\Shader\PostProcess</Filter>
     </None>
     <None Include=".clang-format">
       <Filter>Build</Filter>
     </None>
     <None Include="Shader\Common\Transform.hlsli">
-      <Filter>Shader\Common</Filter>
+      <Filter>Source\Shader\Common</Filter>
     </None>
     <None Include="Shader\Material\Water\WaterShared.hlsli">
-      <Filter>Shader\Material\Water</Filter>
+      <Filter>Source\Shader\Material\Water</Filter>
     </None>
     <None Include="Shader\Common\PBRLighting.hlsli">
-      <Filter>Shader\Common</Filter>
+      <Filter>Source\Shader\Common</Filter>
     </None>
     <None Include="Shader\Common\MaterialEffect.hlsli">
-      <Filter>Shader\Common</Filter>
+      <Filter>Source\Shader\Common</Filter>
     </None>
     <None Include="Shader\Common\ToonLighting.hlsli">
-      <Filter>Shader\Common</Filter>
+      <Filter>Source\Shader\Common</Filter>
     </None>
     <None Include="Build\EditorTooling.props">
       <Filter>Build\props</Filter>
@@ -2687,7 +2687,7 @@
       <Filter>Source\Engine\ECS</Filter>
     </None>
     <None Include="Shader\SHADER_ARCHITECTURE.md">
-      <Filter>Shader</Filter>
+      <Filter>Source\Shader</Filter>
     </None>
     <None Include="Source\Engine\Graphics\Pipeline\_RenderPass_Guide.md">
       <Filter>Source\Engine\Graphics\Pipeline</Filter>
@@ -2695,154 +2695,154 @@
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shader\Material\Basic\BasicPS.hlsl">
-      <Filter>Shader\Material\Basic</Filter>
+      <Filter>Source\Shader\Material\Basic</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\Lambert\LambertPS.hlsl">
-      <Filter>Shader\Material\Lambert</Filter>
+      <Filter>Source\Shader\Material\Lambert</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\Phong\PhongPS.hlsl">
-      <Filter>Shader\Material\Phong</Filter>
+      <Filter>Source\Shader\Material\Phong</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\Toon\ToonPS.hlsl">
-      <Filter>Shader\Material\Toon</Filter>
+      <Filter>Source\Shader\Material\Toon</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\Sprite\SpritePS.hlsl">
-      <Filter>Shader\Material\Sprite</Filter>
+      <Filter>Source\Shader\Material\Sprite</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Renderer\Shape\ShapeRendererPS.hlsl">
-      <Filter>Shader\Renderer\Shape</Filter>
+      <Filter>Source\Shader\Renderer\Shape</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Renderer\Shape\ShapeRendererVS.hlsl">
-      <Filter>Shader\Renderer\Shape</Filter>
+      <Filter>Source\Shader\Renderer\Shape</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Renderer\Primitive\PrimitiveRendererPS.hlsl">
-      <Filter>Shader\Renderer\Primitive</Filter>
+      <Filter>Source\Shader\Renderer\Primitive</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Renderer\Primitive\PrimitiveRendererVS.hlsl">
-      <Filter>Shader\Renderer\Primitive</Filter>
+      <Filter>Source\Shader\Renderer\Primitive</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Pass\Outline\OutlinePS.hlsl">
-      <Filter>Shader\Pass\Outline</Filter>
+      <Filter>Source\Shader\Pass\Outline</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Pass\ShadowMap\ShadowMapVS.hlsl">
-      <Filter>Shader\Pass\ShadowMap</Filter>
+      <Filter>Source\Shader\Pass\ShadowMap</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Compute\GPUParticle\integrate_particle_cs.hlsl">
-      <Filter>Shader\Compute\GPUParticle</Filter>
+      <Filter>Source\Shader\Compute\GPUParticle</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Compute\GPUParticle\particle_gs.hlsl">
-      <Filter>Shader\Compute\GPUParticle</Filter>
+      <Filter>Source\Shader\Compute\GPUParticle</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Compute\GPUParticle\particle_ps.hlsl">
-      <Filter>Shader\Compute\GPUParticle</Filter>
+      <Filter>Source\Shader\Compute\GPUParticle</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Compute\GPUParticle\particle_vs.hlsl">
-      <Filter>Shader\Compute\GPUParticle</Filter>
+      <Filter>Source\Shader\Compute\GPUParticle</Filter>
     </FxCompile>
     <FxCompile Include="Shader\PostProcess\FullScreenVS.hlsl">
-      <Filter>Shader\PostProcess</Filter>
+      <Filter>Source\Shader\PostProcess</Filter>
     </FxCompile>
     <FxCompile Include="Shader\PostProcess\BloomExtractionPS.hlsl">
-      <Filter>Shader\PostProcess</Filter>
+      <Filter>Source\Shader\PostProcess</Filter>
     </FxCompile>
     <FxCompile Include="Shader\PostProcess\BloomDownSamplePS.hlsl">
-      <Filter>Shader\PostProcess</Filter>
+      <Filter>Source\Shader\PostProcess</Filter>
     </FxCompile>
     <FxCompile Include="Shader\PostProcess\BloomUpSamplePS.hlsl">
-      <Filter>Shader\PostProcess</Filter>
+      <Filter>Source\Shader\PostProcess</Filter>
     </FxCompile>
     <FxCompile Include="Shader\PostProcess\ToneMapPS.hlsl">
-      <Filter>Shader\PostProcess</Filter>
+      <Filter>Source\Shader\PostProcess</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Compute\GPUParticle\initialize_particle_cs.hlsl">
-      <Filter>Shader\Compute\GPUParticle</Filter>
+      <Filter>Source\Shader\Compute\GPUParticle</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\Dissolve\DissolvePS.hlsl">
-      <Filter>Shader\Material\DissolvePS</Filter>
+      <Filter>Source\Shader\Material\DissolvePS</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\PBR\PBRPS.hlsl">
-      <Filter>Shader\Material\PBR</Filter>
+      <Filter>Source\Shader\Material\PBR</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Pass\Outline\OutlineVS.hlsl">
-      <Filter>Shader\Pass\Outline</Filter>
+      <Filter>Source\Shader\Pass\Outline</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\Toon\ToonVS.hlsl">
-      <Filter>Shader\Material\Toon</Filter>
+      <Filter>Source\Shader\Material\Toon</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\Sprite\SpriteVS.hlsl">
-      <Filter>Shader\Material\Sprite</Filter>
+      <Filter>Source\Shader\Material\Sprite</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\Phong\PhongVS.hlsl">
-      <Filter>Shader\Material\Phong</Filter>
+      <Filter>Source\Shader\Material\Phong</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\PBR\PBRVS.hlsl">
-      <Filter>Shader\Material\PBR</Filter>
+      <Filter>Source\Shader\Material\PBR</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\Lambert\LambertVS.hlsl">
-      <Filter>Shader\Material\Lambert</Filter>
+      <Filter>Source\Shader\Material\Lambert</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\Basic\BasicVS.hlsl">
-      <Filter>Shader\Material\Basic</Filter>
+      <Filter>Source\Shader\Material\Basic</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Pass\SkyBox\SkyboxVS.hlsl">
-      <Filter>Shader\Pass\SkyBox</Filter>
+      <Filter>Source\Shader\Pass\SkyBox</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Pass\SkyBox\SkyboxPS.hlsl">
-      <Filter>Shader\Pass\SkyBox</Filter>
+      <Filter>Source\Shader\Pass\SkyBox</Filter>
     </FxCompile>
     <FxCompile Include="Shader\PostProcess\BloomCompositePS.hlsl">
-      <Filter>Shader\PostProcess</Filter>
+      <Filter>Source\Shader\PostProcess</Filter>
     </FxCompile>
     <FxCompile Include="Shader\PostProcess\DistortionPS.hlsl">
-      <Filter>Shader\PostProcess</Filter>
+      <Filter>Source\Shader\PostProcess</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Pass\Error\ErrorPS.hlsl">
-      <Filter>Shader\Pass\Error</Filter>
+      <Filter>Source\Shader\Pass\Error</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Pass\Error\ErrorVS.hlsl">
-      <Filter>Shader\Pass\Error</Filter>
+      <Filter>Source\Shader\Pass\Error</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\Glow\GlowVS.hlsl">
-      <Filter>Shader\Material\Glow</Filter>
+      <Filter>Source\Shader\Material\Glow</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\Glow\GlowPS.hlsl">
-      <Filter>Shader\Material\Glow</Filter>
+      <Filter>Source\Shader\Material\Glow</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\Hologram\HologramPS.hlsl">
-      <Filter>Shader\Material\Hologram</Filter>
+      <Filter>Source\Shader\Material\Hologram</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\Hologram\HologramVS.hlsl">
-      <Filter>Shader\Material\Hologram</Filter>
+      <Filter>Source\Shader\Material\Hologram</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\Fire\FirePS.hlsl">
-      <Filter>Shader\Material\Fire</Filter>
+      <Filter>Source\Shader\Material\Fire</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\Fire\FireVS.hlsl">
-      <Filter>Shader\Material\Fire</Filter>
+      <Filter>Source\Shader\Material\Fire</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\Water\WaterPS.hlsl">
-      <Filter>Shader\Material\Water</Filter>
+      <Filter>Source\Shader\Material\Water</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\Water\WaterVS.hlsl">
-      <Filter>Shader\Material\Water</Filter>
+      <Filter>Source\Shader\Material\Water</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\Grass\GrassPS.hlsl">
-      <Filter>Shader\Material\Grass</Filter>
+      <Filter>Source\Shader\Material\Grass</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\Grass\GrassVS.hlsl">
-      <Filter>Shader\Material\Grass</Filter>
+      <Filter>Source\Shader\Material\Grass</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\GhostPBR\GhostPBRPS.hlsl">
-      <Filter>Shader\Material\GhostPBR</Filter>
+      <Filter>Source\Shader\Material\GhostPBR</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\GhostPBR\GhostPBRVS.hlsl">
-      <Filter>Shader\Material\GhostPBR</Filter>
+      <Filter>Source\Shader\Material\GhostPBR</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\EnergyStream\EnergyStreamVS.hlsl">
-      <Filter>Shader\Material\EnergyStream</Filter>
+      <Filter>Source\Shader\Material\EnergyStream</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\EnergyStream\EnergyStreamPS.hlsl">
-      <Filter>Shader\Material\EnergyStream</Filter>
+      <Filter>Source\Shader\Material\EnergyStream</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
