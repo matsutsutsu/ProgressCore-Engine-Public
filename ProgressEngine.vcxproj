@@ -623,8 +623,6 @@
     <ClInclude Include="Source\Engine\Transform\Systems\TransformSnapshotSystem.h" />
     <ClInclude Include="Source\Engine\Transform\Systems\TransformUpdateSystem.h" />
     <ClInclude Include="Source\Engine\UI\ImGui\ImGuiThemes.h" />
-    <ClInclude Include="Source\Engine\UI\Text\BitmapFont.h" />
-    <ClInclude Include="Source\Engine\UI\Text\TextManager.h" />
     <ClInclude Include="Source\Engine\UI\UIContext.h" />
     <ClInclude Include="Source\Engine\UI\UIElement.h" />
     <ClInclude Include="Source\Engine\UI\UIManager.h" />

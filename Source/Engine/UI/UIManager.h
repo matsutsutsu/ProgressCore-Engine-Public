@@ -1,6 +1,5 @@
 #pragma once
 #include "Engine/Graphics/Renderer/Sprite.h"
-#include "Engine/UI/Text/TextManager.h" // テキスト統合のため追加
 #include <memory>
 #include <unordered_map>
 #include <vector>
@@ -35,8 +34,6 @@ class UIManager {
     // スプライトリソース
     std::unordered_map<std::string, std::unique_ptr<Sprite>> m_sprites;
 
-    // テキストマネージャーへの参照
-    TextManager *m_textManager = nullptr;
 
     ID3D11Device        *m_device  = nullptr;
     ID3D11DeviceContext *m_context = nullptr;
@@ -54,9 +51,6 @@ class UIManager {
     UIManager(ID3D11Device *device, ID3D11DeviceContext *context);
     ~UIManager();
 
-    // --- テキスト管理 ---
-    void         SetTextManager(TextManager *textManager) { m_textManager = textManager; }
-    TextManager *GetTextManager() const { return m_textManager; }
 
     // --- 要素管理 ---
     // 親を持たないルート要素として追加する

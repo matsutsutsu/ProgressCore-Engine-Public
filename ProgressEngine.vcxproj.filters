@@ -126,9 +126,6 @@
     <Filter Include="Source\Engine\UI\Widgets">
       <UniqueIdentifier>{13ca0c60-1e37-4955-a35a-3f3eb232a4f9}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\UI\Text">
-      <UniqueIdentifier>{156c372a-0957-4989-aa99-5ad742803706}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\UI\ImGui">
       <UniqueIdentifier>{4c3ff29b-8223-48fe-9ed2-adbda18fe524}</UniqueIdentifier>
     </Filter>
@@ -788,12 +785,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\UI\Widgets\UIProgressBar.h">
       <Filter>Source\Engine\UI\Widgets</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\UI\Text\BitmapFont.h">
-      <Filter>Source\Engine\UI\Text</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\UI\Text\TextManager.h">
-      <Filter>Source\Engine\UI\Text</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\UI\ImGui\ImGuiThemes.h">
       <Filter>Source\Engine\UI\ImGui</Filter>
