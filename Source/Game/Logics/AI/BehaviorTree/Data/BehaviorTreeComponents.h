@@ -3,7 +3,7 @@
 #include <memory>
 #include "SimpleMath.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"
-#include "Game/Logics/AI/BehaviorTree/Drone/DroneComponent.h"
+#include "Game/Logics/AI/Drone/DroneComponent.h"
 
 #include "Engine/Serialization/Core/EntityLink.h"
 

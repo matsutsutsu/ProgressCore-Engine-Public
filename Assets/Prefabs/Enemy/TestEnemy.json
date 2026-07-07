@@ -2,7 +2,6 @@
     "entities": [
         {
             "components": {
-                "AnimParameters": null,
                 "AnimStateMachine": {
                     "graphPath": "Assets/Animations/Nodes/TestAnimationNode.json"
                 },
@@ -12,7 +11,7 @@
                     "playbackSpeed": 1.0
                 },
                 "BehaviorTreeComponent": {
-                    "assetPath": "Assets/BehaviorTree/TestAINode.json",
+                    "assetPath": "Assets/BehaviorTree/Final.json",
                     "phase2AssetPath": "Data/BehaviorTree/BossAI_Phase2.json",
                     "phase2HealthThreshold": 50.0
                 },
@@ -33,11 +32,16 @@
                     "turnSpeed": 10.0,
                     "walkSpeed": 3.0
                 },
+                "BossCommandComponent": {
+                    "currentActionId": 0,
+                    "requestFormation": 0,
+                    "targetPlayerId": 0
+                },
                 "Character Movement Input": {
                     "currentVelocity": [
-                        7.006492321624085e-45,
+                        2.802596928649634e-45,
                         0.0,
-                        7.006492321624085e-45
+                        2.802596928649634e-45
                     ],
                     "dashRequested": false,
                     "desiredVelocity": [
@@ -112,7 +116,7 @@
                     "parent": 2,
                     "position": [
                         -10.243258476257324,
-                        -0.041242245584726334,
+                        -0.04314780235290527,
                         58.317935943603516
                     ],
                     "rotation": [

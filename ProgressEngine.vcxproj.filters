@@ -174,9 +174,6 @@
     <Filter Include="Source\Game\Logics\AI\BehaviorTree">
       <UniqueIdentifier>{8dd7befc-98d6-4365-99c8-9534556837c6}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Game\Logics\AI\BehaviorTree\Drone">
-      <UniqueIdentifier>{1dcf7f43-80a3-4026-958c-8d279ef4bbb6}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Editor\Windows\Animation">
       <UniqueIdentifier>{42b8635d-e5f6-487b-bf24-ddd18ec772ae}</UniqueIdentifier>
     </Filter>
@@ -522,6 +519,9 @@
     </Filter>
     <Filter Include="Shader\PostProcess">
       <UniqueIdentifier>{2a5582fd-a623-4bc4-abdc-fdc7f0f0650b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\AI\Drone">
+      <UniqueIdentifier>{1dcf7f43-80a3-4026-958c-8d279ef4bbb6}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -968,15 +968,6 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Test\VectorFlowSystem.h">
       <Filter>Source\Game\Logics\Test</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Drone\DroneComponent.h">
-      <Filter>Source\Game\Logics\AI\BehaviorTree\Drone</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Drone\DroneFormationSystem.h">
-      <Filter>Source\Game\Logics\AI\BehaviorTree\Drone</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Drone\DroneMovementSystem.h">
-      <Filter>Source\Game\Logics\AI\BehaviorTree\Drone</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\AnimationSequencerWindow.h">
       <Filter>Source\Editor\Windows\Animation</Filter>
@@ -1740,6 +1731,18 @@
     <ClInclude Include="Source\Game\Logics\AI\StateTree\System\AIDebugSystem.h">
       <Filter>Source\Game\Logics\AI\StateTree\System</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\DroneComponent.h">
+      <Filter>Source\Game\Logics\AI\Drone</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\DroneFormationSystem.h">
+      <Filter>Source\Game\Logics\AI\Drone</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\DroneMovementSystem.h">
+      <Filter>Source\Game\Logics\AI\Drone</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\DroneManagerSystem.h">
+      <Filter>Source\Game\Logics\AI\Drone</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2104,12 +2107,6 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Test\VectorFlowSystem.cpp">
       <Filter>Source\Game\Logics\Test</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Drone\DroneFormationSystem.cpp">
-      <Filter>Source\Game\Logics\AI\BehaviorTree\Drone</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Drone\DroneMovementSystem.cpp">
-      <Filter>Source\Game\Logics\AI\BehaviorTree\Drone</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\AnimationSequencerWindow.cpp">
       <Filter>Source\Editor\Windows\Animation</Filter>
@@ -2605,6 +2602,15 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\StateTree\System\AIDebugSystem.cpp">
       <Filter>Source\Game\Logics\AI\StateTree\System</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\Drone\DroneFormationSystem.cpp">
+      <Filter>Source\Game\Logics\AI\Drone</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\Drone\DroneMovementSystem.cpp">
+      <Filter>Source\Game\Logics\AI\Drone</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\Drone\DroneManagerSystem.cpp">
+      <Filter>Source\Game\Logics\AI\Drone</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

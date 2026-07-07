@@ -1,0 +1,75 @@
+{
+    "entities": [
+        {
+            "components": {
+                "DroneComponent": {
+                    "currentFormation": 0,
+                    "currentState": 0,
+                    "localIndex": 0,
+                    "moveSpeed": 30.0,
+                    "orbitRadius": 8.0,
+                    "ownerBossId": 0,
+                    "stateTimer": 0.0,
+                    "targetPosition": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "totalDrones": 1
+                },
+                "Name": {
+                    "name": "TestDrone"
+                },
+                "Primitive": {
+                    "color": [
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "height": 1.0,
+                    "isWireframe": false,
+                    "radius": 1.0,
+                    "size": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "type": 1
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 2,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 2,
+                    "position": [
+                        -9.339223861694336,
+                        4.958939552307129,
+                        60.12434768676758
+                    ],
+                    "rotation": [
+                        0.0,
+                        1.0,
+                        0.0,
+                        6.229855387118732e-08
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                }
+            },
+            "lid": 1
+        }
+    ],
+    "magic": 1397506883,
+    "name": "TestDrone",
+    "version": 1
+}

@@ -4,7 +4,7 @@
  */
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeLoader.h"
-#include "Game/Logics/AI/BehaviorTree/Drone/DroneComponent.h"
+#include "Game/Logics/AI/Drone/DroneComponent.h"
 #include "Engine/Serialization/Registry/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加

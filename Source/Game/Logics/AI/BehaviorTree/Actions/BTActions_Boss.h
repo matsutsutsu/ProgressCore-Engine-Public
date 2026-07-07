@@ -5,7 +5,7 @@
 #include "Game/Logics/AI/BehaviorTree/Actions/BTAction.h"
 #include "Game/Logics/AI/BehaviorTree/Actions/BTActionRegistry.h"
 #include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
-#include "Game/Logics/AI/BehaviorTree/Drone/DroneComponent.h"
+#include "Game/Logics/AI/Drone/DroneComponent.h"
 
 
 // BossActionComponent は今後追加するので一旦前方宣言
