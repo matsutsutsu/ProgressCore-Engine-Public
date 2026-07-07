@@ -71,7 +71,6 @@ void SceneInitializer::SpawnShaderTest(CCL::ECS::Core::World &world, ID3D11Devic
 }
 
 
-#include "Game/Logics/Character/Enemy/EnemyComponent.h"
 
 // ============================================================================
 // 指定した数のモデルを並べるテスト環境

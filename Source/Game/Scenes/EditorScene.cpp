@@ -7,8 +7,6 @@
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 
-
-#include "Game/Logics/AI/StateTree/EnemyAI/EnemyAI.h"
 #include "Game/Logics/AI/StateTree/Core/StateTreeRegistry.h"
 
 #include "Game/Logics/AI/StateTree/Commander/CommanderAI.h"
@@ -29,7 +27,7 @@ void EditorScene::Initialize()
 
     //SceneManager::Instance().LoadScene(_worldPtr,"Assets/Scene/PlayerMovementScene.json");
 
-    static auto enemyIds = EnemyAI::RegisterNodes();
+    //static auto enemyIds = EnemyAI::RegisterNodes();
 
     // ★追加：BTのアクション・条件を登録
     CCL::AI::BT::BossActions::RegisterAll();
@@ -40,10 +38,13 @@ void EditorScene::Initialize()
 
     _worldPtr->AddResource<CCL::AI::StateTreeRegistry>();
     auto &stReg       = _worldPtr->GetResource<CCL::AI::StateTreeRegistry>();
-    auto  enemyHandle = stReg.Register(EnemyAI::BuildEnemyAsset(enemyIds, 12.0f));
+    //auto  enemyHandle = stReg.Register(EnemyAI::BuildEnemyAsset(enemyIds, 12.0f));
 
     // ★追加：司令官StateTreeアセットを登録
     stReg.Register(CommanderAI::BuildCommanderAsset(commanderIds));
+
+    // 敵AIが受け取るシーン全体の情報が入った共有のリソースを登録
+    _worldPtr->AddResource<BattleContext>();
 
 
     CCL_LOG_INFO(LogCategory::Core, "EditorScene Initialize");

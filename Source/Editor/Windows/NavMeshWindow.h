@@ -1,6 +1,6 @@
 #pragma once
 #include "Editor/Core/EditorWindow.h"
-#include "Editor/Utils/NavMeshBuilder.h" // ※NavMeshBuilderのパスに合わせてください
+#include "Editor/Utils/NavMeshBuilder.h" 
 
 class NavMeshWindow : public EditorWindow {
 public:

@@ -632,6 +632,7 @@
     <ClInclude Include="Source\Engine\UI\Widgets\UIProgressBar.h" />
     <ClInclude Include="Source\Engine\UI\Widgets\UIText.h" />
     <ClInclude Include="Source\Game\Core\AllComponents.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Battle\BattleContext.h" />
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTAction.h" />
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTActionRegistry.h" />
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTActions_Boss.h" />
@@ -693,13 +694,6 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\FlowField\NavFlowFieldSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\FlowField\NavGridFlowField.h" />
-    <ClInclude Include="Source\Game\Logics\AI\NavAI\AIComponents.h" />
-    <ClInclude Include="Source\Game\Logics\AI\NavAI\AIDebugDrawSystem.h" />
-    <ClInclude Include="Source\Game\Logics\AI\NavAI\AIHearingSystem.h" />
-    <ClInclude Include="Source\Game\Logics\AI\NavAI\AIMovementControlSystem.h" />
-    <ClInclude Include="Source\Game\Logics\AI\NavAI\AIPatrolSystem.h" />
-    <ClInclude Include="Source\Game\Logics\AI\NavAI\AIPerceptionSystem.h" />
-    <ClInclude Include="Source\Game\Logics\AI\NavAI\Events\AISoundEvent.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\Commander\CommanderAI.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\NodeParamField.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\NodeRegistry.h" />
@@ -707,18 +701,10 @@
     <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\StateTreeComponent.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\StateTreeNode.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\StateTreeRegistry.h" />
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\EnemyAI\EnemyAI.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\Serialization\StateTreeDef.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\Serialization\StateTreeSerializer.h" />
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\System\AIDebugSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\System\StateTreeResolveSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\System\StateTreeSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Enemy\AttackIntentComponent.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyComponent.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyMovementSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyPerceptionSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Enemy\MoveIntentComponent.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Enemy\PerceptionComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Components\DashComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Components\JustEvadeComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Components\PlayerComponent.h" />
@@ -1453,21 +1439,10 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\FlowField\NavFlowFieldSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\AI\NavAI\AIComponentsMeta.cpp" />
-    <ClCompile Include="Source\Game\Logics\AI\NavAI\AIDebugDrawSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\AI\NavAI\AIHearingSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\AI\NavAI\AIMovementControlSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\AI\NavAI\AIPatrolSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\AI\NavAI\AIPerceptionSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\AI\StateTree\Core\AILogicComponentsMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\StateTree\Core\StateTreeComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\StateTree\Serialization\StateTreeSerializer.cpp" />
-    <ClCompile Include="Source\Game\Logics\AI\StateTree\System\AIDebugSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\StateTree\System\StateTreeResolveSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\StateTree\System\StateTreeSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyComponentMeta.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyMovementSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyPerceptionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Components\DashComponentsMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Components\PlayerComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.cpp" />

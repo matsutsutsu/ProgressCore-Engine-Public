@@ -17,6 +17,7 @@
 #include "Game/Logics/AI/StateTree/Core/StateTreeNode.h"
 #include "Game/Logics/AI/StateTree/Core/NodeRegistry.h"
 #include "Game/Logics/AI/StateTree/Core/NodeParamField.h"
+#include "Game/Logics/AI/Battle/BattleContext.h"
 
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h" // BehaviorTreeComponent
 #include "Game/Logics/Combat/HealthComponent.h"
@@ -91,11 +92,13 @@ struct DroneCountBelowCondition : public CCL::AI::ICondition
     bool Evaluate(CCL::AI::ExecContext &ctx) override
     {
         const auto *p = static_cast<const Params *>(ctx.params);
-        // TODO: 実際のドローン残数取得に差し替える
-        //   例: auto& dm = ctx.world->GetResource<DroneManager>();
-        //       return dm.AliveCount() <= p->count;
-        (void)ctx;
-        return false; // 仮実装。ドローン管理が出来たら接続する
+
+        // 世界の事実（ドローン残数）を BattleContext から読む
+        if (!ctx.world->HasResource<BattleContext>()) return false;
+        auto &battle = ctx.world->GetResource<BattleContext>();
+
+        // 残数が閾値以下なら true（= この戦術状態に入る）
+        return static_cast<float>(battle.droneAliveCount) <= p->count;
     }
 };
 

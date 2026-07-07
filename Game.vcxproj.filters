@@ -235,24 +235,6 @@
     <Filter Include="External\imgui-node-editor">
       <UniqueIdentifier>{f1fed5a5-b31c-4a17-a80d-f659d2c8ca2d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Game\Logics\AI\NavAI">
-      <UniqueIdentifier>{2736be5b-ab12-43f4-b1fa-02081e070a29}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\AI\NavAI\_Meta">
-      <UniqueIdentifier>{f92e7382-d177-443e-845f-dd7f35fc0091}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\AI\NavAI\01_Priority">
-      <UniqueIdentifier>{907a29c2-cbfc-42ec-bdbc-a43e4ebbe965}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\AI\NavAI\02_Priority">
-      <UniqueIdentifier>{5eeb6637-93a0-47a6-94ed-e6191de0b100}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\AI\NavAI\03_Priority">
-      <UniqueIdentifier>{f4cafca4-a522-4a5d-b00e-d007c57d13ac}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\AI\NavAI\Events">
-      <UniqueIdentifier>{f95c9ba8-4fb9-49d1-b3ac-36951014e133}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Game\Logics\AI\BehaviorTree">
       <UniqueIdentifier>{8dd7befc-98d6-4365-99c8-9534556837c6}</UniqueIdentifier>
     </Filter>
@@ -502,9 +484,6 @@
     <Filter Include="Source\Game\Logics\AI\StateTree\System">
       <UniqueIdentifier>{f31dd04f-c457-4af4-a232-8466a46c1cb3}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Game\Logics\Character\Enemy\Combat">
-      <UniqueIdentifier>{51ebfc95-f636-416f-9a70-55bc25dbcd11}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Game\Logics\Character\Player\Components">
       <UniqueIdentifier>{b32b3cba-14b1-49d4-a485-70088a470068}</UniqueIdentifier>
     </Filter>
@@ -546,6 +525,9 @@
     </Filter>
     <Filter Include="Shader\Material\EnergyStream">
       <UniqueIdentifier>{e6277476-9d98-4bf6-8531-1e88079f10f7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\AI\Battle">
+      <UniqueIdentifier>{517346a0-976c-42e5-8a21-5198a71675a7}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -861,9 +843,6 @@
     <ClInclude Include="Source\Engine\Serialization\Factory\EntityFactory.h">
       <Filter>Source\Engine\Serialization\Factory</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyComponent.h">
-      <Filter>Source\Game\Logics\Character\Enemy</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Test\OrbitBenchmarkComponent.h">
       <Filter>Source\Game\Logics\Test</Filter>
     </ClInclude>
@@ -980,27 +959,6 @@
     </ClInclude>
     <ClInclude Include="External\imgui-node-editor\imgui_node_editor_internal.h">
       <Filter>External\imgui-node-editor</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\NavAI\AIHearingSystem.h">
-      <Filter>Source\Game\Logics\AI\NavAI\01_Priority</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\NavAI\AIPerceptionSystem.h">
-      <Filter>Source\Game\Logics\AI\NavAI\01_Priority</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\NavAI\AIPatrolSystem.h">
-      <Filter>Source\Game\Logics\AI\NavAI\02_Priority</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\NavAI\AIMovementControlSystem.h">
-      <Filter>Source\Game\Logics\AI\NavAI\03_Priority</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\NavAI\Events\AISoundEvent.h">
-      <Filter>Source\Game\Logics\AI\NavAI\Events</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\NavAI\AIComponents.h">
-      <Filter>Source\Game\Logics\AI\NavAI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\NavAI\AIDebugDrawSystem.h">
-      <Filter>Source\Game\Logics\AI\NavAI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BossAISystem.h">
       <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
@@ -1608,12 +1566,6 @@
     <ClInclude Include="Source\Editor\Windows\TestLauncherWindow.h">
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyPerceptionSystem.h">
-      <Filter>Source\Game\Logics\Character\Enemy</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Enemy\EnemyMovementSystem.h">
-      <Filter>Source\Game\Logics\Character\Enemy</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\FlowField\NavGridFlowField.h">
       <Filter>Source\Game\Logics\AI\FlowField</Filter>
     </ClInclude>
@@ -1638,32 +1590,17 @@
     <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\StateTreeRegistry.h">
       <Filter>Source\Game\Logics\AI\StateTree\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\EnemyAI\EnemyAI.h">
-      <Filter>Source\Game\Logics\AI\StateTree\EnemyAI</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\StateTree\Serialization\StateTreeDef.h">
       <Filter>Source\Game\Logics\AI\StateTree\Serialization</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\StateTree\Serialization\StateTreeSerializer.h">
       <Filter>Source\Game\Logics\AI\StateTree\Serialization</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\System\AIDebugSystem.h">
-      <Filter>Source\Game\Logics\AI\StateTree\System</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\StateTree\System\StateTreeResolveSystem.h">
       <Filter>Source\Game\Logics\AI\StateTree\System</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\StateTree\System\StateTreeSystem.h">
       <Filter>Source\Game\Logics\AI\StateTree\System</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Enemy\MoveIntentComponent.h">
-      <Filter>Source\Game\Logics\Character\Enemy\Combat</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Enemy\AttackIntentComponent.h">
-      <Filter>Source\Game\Logics\Character\Enemy\Combat</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Enemy\PerceptionComponent.h">
-      <Filter>Source\Game\Logics\Character\Enemy\Combat</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Player\Components\PlayerComponent.h">
       <Filter>Source\Game\Logics\Character\Player\Components</Filter>
@@ -1808,6 +1745,9 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Test\BoidSystem.h">
       <Filter>Source\Game\Logics\Test</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Battle\BattleContext.h">
+      <Filter>Source\Game\Logics\AI\Battle</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2158,24 +2098,6 @@
     </ClCompile>
     <ClCompile Include="External\imgui-node-editor\imgui_node_editor_api.cpp">
       <Filter>External\imgui-node-editor</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\NavAI\AIComponentsMeta.cpp">
-      <Filter>Source\Game\Logics\AI\NavAI\_Meta</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\NavAI\AIHearingSystem.cpp">
-      <Filter>Source\Game\Logics\AI\NavAI\01_Priority</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\NavAI\AIPerceptionSystem.cpp">
-      <Filter>Source\Game\Logics\AI\NavAI\01_Priority</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\NavAI\AIPatrolSystem.cpp">
-      <Filter>Source\Game\Logics\AI\NavAI\02_Priority</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\NavAI\AIMovementControlSystem.cpp">
-      <Filter>Source\Game\Logics\AI\NavAI\03_Priority</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\NavAI\AIDebugDrawSystem.cpp">
-      <Filter>Source\Game\Logics\AI\NavAI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BossAISystem.cpp">
       <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
@@ -2564,32 +2486,17 @@
     <ClCompile Include="Source\Engine\Core\Math\ScreenToWorld.cpp">
       <Filter>Source\Engine\Core\Math</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyComponentMeta.cpp">
-      <Filter>Source\Game\Logics\Character\Enemy</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Editor\Windows\TestLauncherWindow.cpp">
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyPerceptionSystem.cpp">
-      <Filter>Source\Game\Logics\Character\Enemy</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Enemy\EnemyMovementSystem.cpp">
-      <Filter>Source\Game\Logics\Character\Enemy</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\FlowField\NavFlowFieldSystem.cpp">
       <Filter>Source\Game\Logics\AI\FlowField</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\StateTree\Core\AILogicComponentsMeta.cpp">
-      <Filter>Source\Game\Logics\AI\StateTree\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\StateTree\Core\StateTreeComponentMeta.cpp">
       <Filter>Source\Game\Logics\AI\StateTree\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\StateTree\Serialization\StateTreeSerializer.cpp">
       <Filter>Source\Game\Logics\AI\StateTree\Serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\StateTree\System\AIDebugSystem.cpp">
-      <Filter>Source\Game\Logics\AI\StateTree\System</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\StateTree\System\StateTreeResolveSystem.cpp">
       <Filter>Source\Game\Logics\AI\StateTree\System</Filter>
