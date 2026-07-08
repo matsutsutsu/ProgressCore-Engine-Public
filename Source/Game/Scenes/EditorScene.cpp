@@ -14,6 +14,8 @@
 #include "Game/Logics/AI/BehaviorTree/Actions/BTConditions.h"
 #include "Game/Logics/AI/Drone/Formation/Formations_Basic.h"
 
+// ★ デモ用AIのヘッダをインクルード（パスは実際の環境に合わせてください）
+#include "Game/Prototype/DemoAI.h"
 
 void EditorScene::Initialize()
 {
@@ -35,6 +37,8 @@ void EditorScene::Initialize()
     CCL::AI::BT::BossConditions::RegisterAll();
     CCL::AI::Formation::Basic::RegisterAll();
 
+
+
     // ★追加：司令官のノードを登録
     static auto commanderIds = CommanderAI::RegisterNodes();
 
@@ -44,6 +48,16 @@ void EditorScene::Initialize()
 
     // ★追加：司令官StateTreeアセットを登録
     stReg.Register(CommanderAI::BuildCommanderAsset(commanderIds));
+
+
+        // =========================================================
+    // 1. デモ用 StateTree アセットの登録
+    // =========================================================
+    static auto demoIds = DemoAI::RegisterNodes();
+
+    // "DemoEnemy" という名前でアセットを登録
+    stReg.Register(DemoAI::BuildDemoAsset(demoIds));
+
 
     // 敵AIが受け取るシーン全体の情報が入った共有のリソースを登録
     _worldPtr->AddResource<BattleContext>();

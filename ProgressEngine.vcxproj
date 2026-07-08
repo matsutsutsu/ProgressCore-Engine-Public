@@ -729,6 +729,7 @@
     <ClInclude Include="Source\Game\Logics\Test\VectorFlowSystem.h" />
     <ClInclude Include="Source\Game\Logics\Test\VoxelOceanComponent.h" />
     <ClInclude Include="Source\Game\Logics\Test\VoxelOceanSystem.h" />
+    <ClInclude Include="Source\Game\Prototype\DemoAI.h" />
     <ClInclude Include="Source\Game\Prototype\ProtoCombatSystem.h" />
     <ClInclude Include="Source\Game\Prototype\ProtoDebugUISystem.h" />
     <ClInclude Include="Source\Game\Prototype\ProtoDroneComponent.h" />

@@ -1755,6 +1755,9 @@
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_Basic.h">
       <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Prototype\DemoAI.h">
+      <Filter>Source\Game\Prototype</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">

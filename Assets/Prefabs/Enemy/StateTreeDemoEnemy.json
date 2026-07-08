@@ -1,0 +1,94 @@
+{
+    "entities": [
+        {
+            "components": {
+                "AnimStateMachine": {
+                    "graphPath": "Assets/Animations/Nodes/TestAnimationNode.json"
+                },
+                "Animation": null,
+                "Animator": {
+                    "isLoop": true,
+                    "playbackSpeed": 1.0
+                },
+                "BehaviorTreeComponent": {
+                    "assetPath": "Assets/BehaviorTree/Final.json",
+                    "phase2AssetPath": "Data/BehaviorTree/BossAI_Phase2.json",
+                    "phase2HealthThreshold": 50.0
+                },
+                "BossActionComponent": {
+                    "acceleration": 10.0,
+                    "actionTimer": 0.0,
+                    "chargeHoverVelocity": 6.0,
+                    "chargeSpeed": 25.0,
+                    "currentChargeAnimStart": 2.5,
+                    "currentChargeTotal": 3.5,
+                    "currentMoveSpeed": 0.0,
+                    "currentState": 0,
+                    "deceleration": 15.0,
+                    "evadeSpeed": 25.0,
+                    "hoverAltitude": 20.0,
+                    "isHovering": false,
+                    "jumpAttackApexHeight": 8.0,
+                    "turnSpeed": 10.0,
+                    "walkSpeed": 3.0
+                },
+                "BossCommandComponent": {
+                    "currentActionId": 0,
+                    "requestFormation": 0,
+                    "targetPlayerId": 0
+                },
+                "HealthComponent": {
+                    "currentHealth": 100.0,
+                    "invincibilityDuration": 0.5,
+                    "maxHealth": 100.0,
+                    "team": 1
+                },
+                "Just Evade Component": {
+                    "isJustSuccess": false
+                },
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Player/SK_SciFITrooper_Man_03.gltf"
+                },
+                "Name": {
+                    "name": "DummyEnemy"
+                },
+                "StateTree": {
+                    "assetName": "DemoEnemy"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 2,
+                    "position": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        -0.0,
+                        -0.9950960874557495,
+                        -0.0,
+                        0.09891314804553986
+                    ],
+                    "scale": [
+                        3.5,
+                        3.5,
+                        3.5
+                    ]
+                }
+            },
+            "lid": 1
+        }
+    ],
+    "magic": 1397506883,
+    "name": "DummyEnemy",
+    "version": 1
+}
