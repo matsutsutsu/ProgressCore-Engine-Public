@@ -34,7 +34,7 @@
         },
         {
             "name": "State Tree Editor",
-            "visible": true
+            "visible": false
         },
         {
             "name": "Camera Path Editor",
@@ -46,7 +46,7 @@
         },
         {
             "name": "Text Editor",
-            "visible": false
+            "visible": true
         },
         {
             "name": "InputMappingEditor",

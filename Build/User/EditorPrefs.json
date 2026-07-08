@@ -1,3 +1,5 @@
 {
-    "DialogHistory": {}
+    "DialogHistory": {
+        "TextEditor": "Assets\\Prefabs\\Enemy"
+    }
 }

@@ -6,11 +6,21 @@
 
 #include "Engine/Animation/Components/AnimParametersComponent.h"
 #include "Engine/Core/Math/StringHash.h"
+#include "Game/Logics/AI/Drone/DroneComponent.h"
 
 #include "Game/Logics/GameEvent/GameEvents.h"
 #include "Engine/Timer/TimeState.h"
 
 using namespace CCL::ECS;
+
+// JustEvadeSystem.cpp に追加（無名関数 or メンバ）
+static bool IsDroneHostile(const DroneComponent *drone)
+{
+    if (!drone) return false;
+    // 突撃系の状態だけを「危険」とみなす
+    return drone->currentState == DroneState::FireCharge || drone->currentState == DroneState::HorizontalCharge;
+}
+
 
 // アニメーション掲示板へ書き込むトリガーのハッシュ
 static const uint32_t HASH_TRIG_JUST_EVADE = CCL::Utils::HashString("OnJustEvade");
@@ -109,6 +119,13 @@ void JustEvadeSystem::CheckJustEvade(EntityID playerCandidate, EntityID otherCan
 
     // 3. 【ガード条件】同じ敵に対する多段発動を防ぐ (既存のブラックリスト機能)
     if (evade->lastEvadedTarget == otherCandidate) return;
+
+     // 相手がドローンで、かつ「攻撃中」でなければ成立させない
+    auto *otherDrone = _world->GetComponent<DroneComponent>(otherCandidate);
+    if (otherDrone && !IsDroneHostile(otherDrone)) return;
+    //   → 攻撃中でない陣形ドローンに突っ込んでも回避は起きない
+    //   → otherDrone が nullptr（ボス本体の攻撃など）の場合は従来通り成立
+
 
     // =====================================================================
     // 5. 判定成立
