@@ -4,16 +4,17 @@
 
 #include "Engine/Physics/Components/Collision/JoltBoxColliderComponent.h"
 #include "Engine/Physics/Components/Collision/JoltSphereColliderComponent.h"
-#include "Engine/Physics/Components/Collision/JoltCapsuleColliderComponent.h" 
+#include "Engine/Physics/Components/Collision/JoltCapsuleColliderComponent.h"
 #include "Engine/Physics/Components/Collision/JoltMeshColliderComponent.h"
-#include "Engine/Physics/Components/RigidBody/JoltRigidbodyComponent.h" 
+#include "Engine/Physics/Components/RigidBody/JoltRigidbodyComponent.h"
+
+#include "Engine/Physics/JoltIntegration/PhysicsLayers.h" // LayerNames / LayerCount
 
 #include "Engine/Serialization/Meta/ComponentDefine.h"
-#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
+#include "Engine/Serialization/Meta/ComponentCategories.h"
 
 // ============================================================================
 // Jolt Box Collider
-// ★修正: 全ての物理系コンポーネントにカテゴリと並び順を明記
 // ============================================================================
 COMPONENT_META_BEGIN_FULL(JoltBoxColliderComponent, "Jolt Box Collider", CCL::Categories::Physics, 210, false)
     CFIELD_FLOAT3_FAST(halfExtent, "Half Extent", 0.1f, "Box Collider")
@@ -51,12 +52,13 @@ COMPONENT_META_END(JoltMeshColliderComponent)
 // ============================================================================
 namespace {
     const char* const MotionTypeNames[] = { "Static", "Kinematic", "Dynamic" };
+    // ★ObjectLayer の名前は PhysicsLayers::LayerNames を使う（手書き配列を廃止）。
+    //   レイヤーを増やしても PhysicsLayers.h の X-Macro に1行足すだけで自動反映される。
 } // namespace
 
 COMPONENT_META_BEGIN_FULL(JoltRigidbodyComponent, "Jolt Rigidbody", CCL::Categories::Physics, 200, false)
     CFIELD_ENUM_U8(motionType, "Motion Type", MotionTypeNames, 3, "Physics")
-    CFIELD_ENUM_U8(objectLayer, "Object Layer",PhysicsLayers::LayerNames, PhysicsLayers::LayerCount, "Physics")
-
+    CFIELD_ENUM_U8(objectLayer, "Object Layer", PhysicsLayers::LayerNames, PhysicsLayers::LayerCount, "Physics")
 
     CFIELD_FLOAT_RANGED(restitution, "Restitution (反発)", 0.05f, 0.0f, 1.0f, "Material")
     CFIELD_FLOAT_RANGED(friction, "Friction (摩擦)", 0.05f, 0.0f, 1.0f, "Material")

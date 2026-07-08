@@ -3,13 +3,16 @@
 
 #include "JoltCharacterConfigComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
-#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
+#include "Engine/Serialization/Meta/ComponentCategories.h"
+#include "Engine/Physics/JoltIntegration/PhysicsLayers.h" // LayerNames / LayerCount
 
 // ===========================================================================
 // JoltCharacterConfigComponent メタデータ定義
-// ★修正: BEGIN_FULL を使用
 // ===========================================================================
 COMPONENT_META_BEGIN_FULL(JoltCharacterConfigComponent, "Jolt Character Config", CCL::Categories::Physics, 205, false)
+
+// ★presence プロキシの物理レイヤー（剛体と同じ LayerNames を共有）
+CFIELD_ENUM_U8(objectLayer, "Object Layer", PhysicsLayers::LayerNames, PhysicsLayers::LayerCount, "Physics")
 
 CFIELD_FLOAT_RANGED(maxSlopeAngle, "Max Slope Angle (Deg)", 1.0f, 0.0f, 90.0f, "Movement Limits")
 CFIELD_FLOAT_RANGED(maxStepHeight, "Max Step Height", 0.05f, 0.0f, 2.0f, "Movement Limits")

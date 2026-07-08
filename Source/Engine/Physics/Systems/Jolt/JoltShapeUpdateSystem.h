@@ -4,6 +4,7 @@
 #include "Engine/Physics/Components/Collision/JoltBoxColliderComponent.h"
 #include "Engine/Physics/Components/Collision/JoltSphereColliderComponent.h"
 #include "Engine/Physics/Components/Collision/JoltCapsuleColliderComponent.h"
+#include "Engine/Physics/Components/Character/JoltCharacterHandleComponent.h" // キャラ除外用
 
 // ===================================================================================
 // 実行時にコライダーの形状変更(isDirty)を検知し、Joltの剛体に「外科手術」を行うシステム群。
@@ -33,6 +34,11 @@ class JoltCapsuleShapeUpdateSystem : public CCL::ECS::IfSystem<JoltCapsuleShapeU
                                          CCL::ECS::Read<JoltHandleComponent>,
                                          CCL::ECS::Write<JoltCapsuleColliderComponent>> {
 public:
-    JoltCapsuleShapeUpdateSystem() : IfSystem("JoltCapsuleShapeUpdateSystem") {}
+    JoltCapsuleShapeUpdateSystem() : IfSystem("JoltCapsuleShapeUpdateSystem") {
+        // ★キャラの presence プロキシは CharacterSetup が「足元オフセット付き」で作る。
+        //   このシステムは capsule.localOffset を使うため、キャラに適用すると
+        //   CharacterVirtual と形状がズレる。よってキャラは除外する。
+        SetExclude<JoltCharacterHandleComponent>();
+    }
     void Update(float dt) override;
 };

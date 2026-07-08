@@ -2,7 +2,7 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"
 #include "Engine/Physics/JoltIntegration/JoltCharacterContactListener.h"
-#include "Engine/Physics/JoltIntegration/PhysicsLayers.h" // PhysicsLayers::MOVING を明示的に参照
+#include "Engine/Physics/JoltIntegration/PhysicsLayers.h"
 #include "Engine/Physics/Components/Jolt/JoltHandleComponent.h"
 #include <Jolt/Physics/Body/BodyFilter.h>
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -50,7 +50,7 @@ void JoltCharacterUpdateSystem::Update(float rawDt)
         JPH::Vec3 finalVel(newHorizontalVel.x, newVy, newHorizontalVel.z);
         ch->SetLinearVelocity(finalVel);
 
-        // 4. 物理更新と Transform への同期
+        // 4. 物理更新と Transform / presenceプロキシへの同期
         UpdatePhysicsAndSync(safeDt, joltManager, ch, config, trans, id);
     });
 }
@@ -91,7 +91,6 @@ float JoltCharacterUpdateSystem::CalculateVerticalVelocity(float safeDt, float c
         }
 
         // 滞空時間ハック (Apex Hang Time)
-        // 空中かつ、Y軸の速度が閾値の間なら重力を極端に弱める
         if (std::abs(vy) < config.apexVelocityThreshold)
         {
             currentGravityScale = config.apexGravityScale;
@@ -115,7 +114,6 @@ DirectX::SimpleMath::Vector3 JoltCharacterUpdateSystem::CalculateHorizontalVeloc
     // 2. 通常移動 / ダッシュ中: 慣性(Lerp)をかけて心地よい操作感を作る
     float targetSpeed = config.walkSpeed;
 
-    // ダッシュ等で速度が上書きされているか
     if (input.overrideSpeed >= 0.0f)
     {
         targetSpeed = input.overrideSpeed;
@@ -123,7 +121,6 @@ DirectX::SimpleMath::Vector3 JoltCharacterUpdateSystem::CalculateHorizontalVeloc
 
     Vector3 targetVelocity = input.desiredVelocity * targetSpeed;
 
-    // プレイヤーの入力に対して心地よい慣性(Lerp)をかける
     float friction        = 10.0f;
     input.currentVelocity = Vector3::Lerp(input.currentVelocity, targetVelocity, friction * safeDt);
 
@@ -133,39 +130,39 @@ DirectX::SimpleMath::Vector3 JoltCharacterUpdateSystem::CalculateHorizontalVeloc
 void JoltCharacterUpdateSystem::UpdatePhysicsAndSync(float safeDt, JoltPhysicsManager *joltManager, JPH::CharacterVirtual *ch, const JoltCharacterConfigComponent &config, TransformComponent &trans, EntityID id)
 {
     JPH::PhysicsSystem         *physicsSystem = joltManager->GetPhysicsSystem();
-    JoltHandleComponent        *kinBody       = _world->GetComponent<JoltHandleComponent>(id);
-    JPH::IgnoreSingleBodyFilter bodyFilter(kinBody ? kinBody->bodyID : JPH::BodyID());
+    JoltHandleComponent        *kinBody       = _world->GetComponent<JoltHandleComponent>(id); // presenceプロキシ
+    JPH::IgnoreSingleBodyFilter bodyFilter(kinBody ? kinBody->bodyID : JPH::BodyID());         // 自分のプロキシは無視
 
     JPH::CharacterVirtual::ExtendedUpdateSettings updateSettings;
     updateSettings.mWalkStairsStepUp     = JPH::Vec3(0.0f, config.maxStepHeight, 0.0f);
     updateSettings.mStickToFloorStepDown = JPH::Vec3(0.0f, -config.maxStepHeight, 0.0f);
 
-    // キャラクター用の接触リスナー。
-    // ★fix: EventBus 即時発行ではなく、剛体側と同じバッファ(sink)へ蓄積する方式に統一。
-    //   マルチスレッド共有を避けるため 1体ずつスタック上に生成する。
+    // キャラクター用の接触リスナー（剛体側と同じバッファへ蓄積）。
     JoltCharacterContactListener contactListener(joltManager->GetContactListener(), id, &physicsSystem->GetBodyInterface());
     ch->SetListener(&contactListener);
 
+    // ★キャラ自身のレイヤーは config.objectLayer に統一（presenceプロキシと同じ層で世界を見る）
     ch->ExtendedUpdate(
         safeDt, physicsSystem->GetGravity(), updateSettings,
-        physicsSystem->GetDefaultBroadPhaseLayerFilter(PhysicsLayers::MOVING),
-        physicsSystem->GetDefaultLayerFilter(PhysicsLayers::MOVING),
+        physicsSystem->GetDefaultBroadPhaseLayerFilter(config.objectLayer),
+        physicsSystem->GetDefaultLayerFilter(config.objectLayer),
         bodyFilter, {}, *joltManager->GetTempAllocator());
 
     // リスナーはスタック変数なので、スコープを抜ける前に必ず外す
-    // （CharacterVirtual がダングリングポインタを保持しないように）
     ch->SetListener(nullptr);
 
     JPH::RVec3 pos = ch->GetPosition();
     trans.position = {pos.GetX(), pos.GetY(), pos.GetZ()};
     trans.isStatic = false;
 
+    // ★presence プロキシ（Kinematic 剛体）を CharacterVirtual に追従させる。
+    //   SetPosition のテレポートではなく MoveKinematic を使うことで、
+    //   「dt後に目標へ到達する速度」が乗り、他の動的ボディとの接触に相対速度が反映される。
+    //   これで弾/レイ/敵からプレイヤーを正しく検知できるようになる。
     if (kinBody)
     {
-        // CharacterVirtual が計算した回転(Yawのみ)を剛体へ同期する場合はここで行う。
-        // 現状は無効化中（剛体追従が必要になったら有効化すること）。
-        // JPH::Quat joltRot = ch->GetRotation();
-        // joltManager->GetBodyInterface().SetPositionAndRotation(kinBody->bodyID, pos, joltRot, JPH::EActivation::DontActivate);
+        JPH::Quat joltRot = ch->GetRotation();
+        joltManager->GetBodyInterface().MoveKinematic(kinBody->bodyID, pos, joltRot, safeDt);
     }
 }
 
