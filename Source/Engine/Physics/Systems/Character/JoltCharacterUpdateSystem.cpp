@@ -2,20 +2,18 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"
 #include "Engine/Physics/JoltIntegration/JoltCharacterContactListener.h"
+#include "Engine/Physics/JoltIntegration/PhysicsLayers.h" // PhysicsLayers::MOVING を明示的に参照
 #include "Engine/Physics/Components/Jolt/JoltHandleComponent.h"
 #include <Jolt/Physics/Body/BodyFilter.h>
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include <SimpleMath.h>
-#include <chrono> 
-#include "Engine/Platform/Core/Logger.h"
-
 
 using namespace DirectX::SimpleMath;
 using namespace CCL::ECS;
 
 // ===================================================================================
-// メインの Update ループ (可読性を極限まで高めた設計)
+// メインの Update ループ
 // ===================================================================================
 void JoltCharacterUpdateSystem::Update(float rawDt)
 {
@@ -35,23 +33,9 @@ void JoltCharacterUpdateSystem::Update(float rawDt)
             return;
         JPH::CharacterVirtual *ch = handle.character.GetPtr();
 
-          // ===============================================================
-        // ★ マイクロ秒精度の呼び出し間隔検証（static: エンティティ間で共有される点に注意。
-        //   将来的にキャラが複数体になったら id 別の map に変更すること）
-        // ===============================================================
-        static auto lastCallTime = std::chrono::steady_clock::now();
-        auto        nowTime      = std::chrono::steady_clock::now();
-        double      intervalUs   = std::chrono::duration<double, std::micro>(nowTime - lastCallTime).count();
-        lastCallTime             = nowTime;
-
-
-        // 時間の安全装置とタイムスケール
+        // 時間の安全装置（dtクランプ）
         float safeDt     = (std::max)(0.0001f, (std::min)(rawDt, 0.0333f));
-        float timeScale  = (rawDt > 0.0001f) ? (time.localDt / rawDt) : 0.0f;
         bool  isGrounded = (ch->GetGroundState() == JPH::CharacterVirtual::EGroundState::OnGround);
-
-         JPH::Vec3 velBeforeSet = ch->GetLinearVelocity(); // Set前の速度も記録
-
 
         // 1. ワープ処理の解決
         ApplyTeleportIfNeeded(trans, ch);
@@ -63,29 +47,11 @@ void JoltCharacterUpdateSystem::Update(float rawDt)
         // 3. 水平方向（慣性ドリフト減速）の計算
         Vector3 newHorizontalVel = CalculateHorizontalVelocity(safeDt, config, input);
 
-        // 検証用: timeScale を速度に掛けない
         JPH::Vec3 finalVel(newHorizontalVel.x, newVy, newHorizontalVel.z);
         ch->SetLinearVelocity(finalVel);
 
-           JPH::RVec3 posBefore = ch->GetPosition();
-
+        // 4. 物理更新と Transform への同期
         UpdatePhysicsAndSync(safeDt, joltManager, ch, config, trans, id);
-
-        JPH::RVec3 posAfter = ch->GetPosition();
-
-        // ===============================================================
-        // ★ 統合デバッグログ: 呼び出し間隔 + 入力 + 速度 + 移動量を1行で
-        // ===============================================================
-     /*   CCL_LOG_INFO(LogCategory::Game,
-            "[UnifiedDbg] id=%u intervalUs=%.1f rawDt=%.5f localDt=%.5f "
-            "desiredVel(%.3f,%.3f) currentVel(%.3f,%.3f) finalVel(%.3f,%.3f) "
-            "dPos(x=%.4f z=%.4f)",
-            (uint32_t)id, intervalUs, rawDt, time.localDt,
-            input.desiredVelocity.x, input.desiredVelocity.z,
-            input.currentVelocity.x, input.currentVelocity.z,
-            finalVel.GetX(), finalVel.GetZ(),
-            posAfter.GetX() - posBefore.GetX(),
-            posAfter.GetZ() - posBefore.GetZ());*/
     });
 }
 
@@ -110,13 +76,11 @@ float JoltCharacterUpdateSystem::CalculateVerticalVelocity(float safeDt, float c
 
     if (input.jumpRequested)
     {
-        vy = config.jumpSpeed;
+        vy         = config.jumpSpeed;
         isGrounded = false; // ジャンプした瞬間は空中扱いにする
     }
 
-    // ===============================================================
-    //  空中の時のみ重力を適用する
-    // ===============================================================
+    // 空中の時のみ重力を適用する
     if (!isGrounded)
     {
         // 非対称重力の適用 (キビキビ着地)
@@ -126,10 +90,8 @@ float JoltCharacterUpdateSystem::CalculateVerticalVelocity(float safeDt, float c
             currentGravityScale = config.fallGravityScale;
         }
 
-        // ===============================================================
-        //  滞空時間ハック (Apex Hang Time)
-        // ===============================================================
-        // 空中かつ、Y軸の速度が閾値(-1.5 〜 1.5)の間なら、重力を極端に弱める
+        // 滞空時間ハック (Apex Hang Time)
+        // 空中かつ、Y軸の速度が閾値の間なら重力を極端に弱める
         if (std::abs(vy) < config.apexVelocityThreshold)
         {
             currentGravityScale = config.apexGravityScale;
@@ -138,28 +100,22 @@ float JoltCharacterUpdateSystem::CalculateVerticalVelocity(float safeDt, float c
         vy += gravityY * currentGravityScale * safeDt;
     }
 
-
     return vy;
 }
 
-
 DirectX::SimpleMath::Vector3 JoltCharacterUpdateSystem::CalculateHorizontalVelocity(float safeDt, const JoltCharacterConfigComponent &config, CharacterMovementInputComponent &input)
 {
-    // ========================================================
-    // 1. ルートモーション中: 慣性(Lerp)を完全に殺し、アニメーションの速度を100%適用する
-    // ========================================================
+    // 1. ルートモーション中: 慣性(Lerp)を殺し、アニメーションの速度を100%適用する
     if (input.isRootMotionActive)
     {
         input.currentVelocity = input.rootMotionVelocity;
         return input.currentVelocity;
     }
 
-    // ========================================================
     // 2. 通常移動 / ダッシュ中: 慣性(Lerp)をかけて心地よい操作感を作る
-    // ========================================================
     float targetSpeed = config.walkSpeed;
 
-    // ダッシュ等で速度が上書きされているか (-1.0f より大きいか)
+    // ダッシュ等で速度が上書きされているか
     if (input.overrideSpeed >= 0.0f)
     {
         targetSpeed = input.overrideSpeed;
@@ -184,12 +140,11 @@ void JoltCharacterUpdateSystem::UpdatePhysicsAndSync(float safeDt, JoltPhysicsMa
     updateSettings.mWalkStairsStepUp     = JPH::Vec3(0.0f, config.maxStepHeight, 0.0f);
     updateSettings.mStickToFloorStepDown = JPH::Vec3(0.0f, -config.maxStepHeight, 0.0f);
 
-    // キャラクターリスナーをインスタンス化してセットする
-    // 一つずつ作成する理由は共有にするとマルチスレッドで死ぬから
-    JoltCharacterContactListener contactListener(_world, id, &physicsSystem->GetBodyInterface());
+    // キャラクター用の接触リスナー。
+    // ★fix: EventBus 即時発行ではなく、剛体側と同じバッファ(sink)へ蓄積する方式に統一。
+    //   マルチスレッド共有を避けるため 1体ずつスタック上に生成する。
+    JoltCharacterContactListener contactListener(joltManager->GetContactListener(), id, &physicsSystem->GetBodyInterface());
     ch->SetListener(&contactListener);
-
-   JPH::RVec3 posBefore = ch->GetPosition();
 
     ch->ExtendedUpdate(
         safeDt, physicsSystem->GetGravity(), updateSettings,
@@ -197,23 +152,8 @@ void JoltCharacterUpdateSystem::UpdatePhysicsAndSync(float safeDt, JoltPhysicsMa
         physicsSystem->GetDefaultLayerFilter(PhysicsLayers::MOVING),
         bodyFilter, {}, *joltManager->GetTempAllocator());
 
-    JPH::RVec3 posAfter = ch->GetPosition();
-    JPH::Vec3  gN       = ch->GetGroundNormal();
-    auto       gState   = ch->GetGroundState();
-
-    //CCL_LOG_INFO(LogCategory::Game,
-    //    "[CharDbg] dPos(x=%.4f z=%.4f y=%.4f) gState=%d gN(%.2f,%.2f,%.2f)",
-    //    posAfter.GetX() - posBefore.GetX(),
-    //    posAfter.GetZ() - posBefore.GetZ(),
-    //    posAfter.GetY() - posBefore.GetY(),
-    //    (int)gState,
-    //    gN.GetX(), gN.GetY(), gN.GetZ());
-
-
-
-    // 衝突判定が終わったら安全のためにリスナーを解除しておく
-    // 変数定義をその場で行っているため}で消すときに中身をそのままにしておくと
-    // CharacterVisualがずっと不要なメモリを保持してしまうからクリアする
+    // リスナーはスタック変数なので、スコープを抜ける前に必ず外す
+    // （CharacterVirtual がダングリングポインタを保持しないように）
     ch->SetListener(nullptr);
 
     JPH::RVec3 pos = ch->GetPosition();
@@ -222,10 +162,10 @@ void JoltCharacterUpdateSystem::UpdatePhysicsAndSync(float safeDt, JoltPhysicsMa
 
     if (kinBody)
     {
-        // CharacterVirtual が計算した「傾きのない純粋な回転(Yawのみ)」を取得し、物理剛体にセットする
-        JPH::Quat joltRot = ch->GetRotation();
-
-        //joltManager->GetBodyInterface().SetPositionAndRotation(kinBody->bodyID, pos, joltRot, JPH::EActivation::DontActivate);
+        // CharacterVirtual が計算した回転(Yawのみ)を剛体へ同期する場合はここで行う。
+        // 現状は無効化中（剛体追従が必要になったら有効化すること）。
+        // JPH::Quat joltRot = ch->GetRotation();
+        // joltManager->GetBodyInterface().SetPositionAndRotation(kinBody->bodyID, pos, joltRot, JPH::EActivation::DontActivate);
     }
 }
 

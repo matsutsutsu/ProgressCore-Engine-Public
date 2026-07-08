@@ -565,6 +565,7 @@
     <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltContactListener.h" />
     <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsFacade.h" />
     <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsManager.h" />
+    <ClInclude Include="Source\Engine\Physics\JoltIntegration\PhysicsLayers.h" />
     <ClInclude Include="Source\Engine\Physics\Systems\Character\JoltCharacterDebugDrawSystem.h" />
     <ClInclude Include="Source\Engine\Physics\Systems\Character\JoltCharacterSetupSystem.h" />
     <ClInclude Include="Source\Engine\Physics\Systems\Character\JoltCharacterUpdateSystem.h" />
@@ -1351,6 +1352,7 @@
     <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltContactListener.cpp" />
     <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsFacade.cpp" />
     <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsManager.cpp" />
+    <ClCompile Include="Source\Engine\Physics\JoltIntegration\PhysicsLayers.cpp" />
     <ClCompile Include="Source\Engine\Physics\Systems\Character\JoltCharacterDebugDrawSystem.cpp" />
     <ClCompile Include="Source\Engine\Physics\Systems\Character\JoltCharacterSetupSystem.cpp" />
     <ClCompile Include="Source\Engine\Physics\Systems\Character\JoltCharacterUpdateSystem.cpp" />
@@ -1496,6 +1498,10 @@
       </SubType>
     </None>
     <None Include="Source\Engine\Graphics\Pipeline\_RenderPass_Guide.md">
+      <SubType>
+      </SubType>
+    </None>
+    <None Include="Source\Engine\Physics\Physics-Archtecture.md">
       <SubType>
       </SubType>
     </None>

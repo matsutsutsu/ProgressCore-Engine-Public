@@ -450,7 +450,7 @@ int Framework::Run()
 			//_CrtSetBreakAlloc(121457);
 			//_CrtSetBreakAlloc(121196);
 			 
-			//_CrtSetBreakAlloc(2275584);
+			//_CrtSetBreakAlloc(57272);
 
 			// 2. 「死の螺旋」防止（Safety Cap）
 			// どんなに重くても、現実時間が 0.25秒 進んだことにして計算を打ち切る

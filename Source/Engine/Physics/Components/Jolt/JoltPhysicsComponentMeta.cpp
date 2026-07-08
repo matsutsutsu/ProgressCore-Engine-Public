@@ -51,12 +51,12 @@ COMPONENT_META_END(JoltMeshColliderComponent)
 // ============================================================================
 namespace {
     const char* const MotionTypeNames[] = { "Static", "Kinematic", "Dynamic" };
-    const char* const ObjectLayerNames[] = { "NON_MOVING", "MOVING","ENEMY","BULLET"};
 } // namespace
 
 COMPONENT_META_BEGIN_FULL(JoltRigidbodyComponent, "Jolt Rigidbody", CCL::Categories::Physics, 200, false)
     CFIELD_ENUM_U8(motionType, "Motion Type", MotionTypeNames, 3, "Physics")
-    CFIELD_ENUM_U8(objectLayer, "Object Layer", ObjectLayerNames, 4, "Physics")
+    CFIELD_ENUM_U8(objectLayer, "Object Layer",PhysicsLayers::LayerNames, PhysicsLayers::LayerCount, "Physics")
+
 
     CFIELD_FLOAT_RANGED(restitution, "Restitution (反発)", 0.05f, 0.0f, 1.0f, "Material")
     CFIELD_FLOAT_RANGED(friction, "Friction (摩擦)", 0.05f, 0.0f, 1.0f, "Material")

@@ -1758,6 +1758,9 @@
     <ClInclude Include="Source\Game\Prototype\DemoAI.h">
       <Filter>Source\Game\Prototype</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\JoltIntegration\PhysicsLayers.h">
+      <Filter>Source\Engine\Physics\JoltIntegration</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2627,6 +2630,9 @@
     <ClCompile Include="Source\Game\Logics\AI\Drone\DroneManagerSystem.cpp">
       <Filter>Source\Game\Logics\AI\Drone</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Physics\JoltIntegration\PhysicsLayers.cpp">
+      <Filter>Source\Engine\Physics\JoltIntegration</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shader\Common\Common.hlsli">
@@ -2706,6 +2712,9 @@
     </None>
     <None Include="Source\Engine\Graphics\Pipeline\_RenderPass_Guide.md">
       <Filter>Source\Engine\Graphics\Pipeline</Filter>
+    </None>
+    <None Include="Source\Engine\Physics\Physics-Archtecture.md">
+      <Filter>Source\Engine\Physics</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

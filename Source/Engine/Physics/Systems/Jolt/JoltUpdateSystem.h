@@ -3,6 +3,7 @@
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"
 #include "Engine/Physics/Components/Jolt/JoltHandleComponent.h"
+#include "Engine/Physics/Components/Character/JoltCharacterHandleComponent.h" // 除外フィルタ用
 
 // ===================================================================================
 // ファイル名: JoltUpdateSystem.h
@@ -12,17 +13,12 @@
 // 【アーキテクチャ仕様】
 // 1. JoltStepSystem
 //    - 実行フェーズ: Physics
-//    - JoltPhysicsManager::Step()
-//    を呼び出し、全CPUコアで並列に衝突・落下計算を実行する。
+//    - JoltPhysicsManager::Step() を呼び、全CPUコアで並列に衝突・落下計算を実行する。
 // 2. JoltPullSystem
 //    - 実行フェーズ: Collision (または PostPhysics)
 //    - 計算が終わったJolt剛体の最新座標を読み取り、ECSの Transform に書き戻す。
-//
-// 【使い方・ルール】
-// - PullSystem では IsActive()
-// をチェックし、スリープ中の剛体の座標は同期しない（超最適化）。
-// - このフェーズが終わった後、描画システムが最新の Transform
-// を使って画面を描画する。
+//    - ★CharacterVirtual を持つEntityは JoltCharacterUpdateSystem が同期済みのため、
+//      SetExclude で Chunk 単位から丸ごと除外する（ループ内の毎エンティティ判定を撤廃）。
 // ===================================================================================
 
 
@@ -38,6 +34,10 @@ class JoltPullSystem : public CCL::ECS::IfSystem<JoltPullSystem,
                            CCL::ECS::Write<TransformComponent>,
                            CCL::ECS::Read<JoltHandleComponent>> {
   public:
-    JoltPullSystem() : IfSystem("JoltPullSystem") {}
+    JoltPullSystem() : IfSystem("JoltPullSystem") {
+        // キャラクターは CharacterUpdateSystem が既に正しい位置に同期している。
+        // ここで Pull すると競合してカクつくため、Chunk ごと対象から外す。
+        SetExclude<JoltCharacterHandleComponent>();
+    }
     void Update(float dt) override;
 };
