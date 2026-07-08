@@ -1,10 +1,5 @@
 /// @file  DroneMovementSystem.cpp
 /// @brief ドローン移動システムの実装（Facade廃止・Transform直接積分版）。
-///
-/// 旧との違いはただ1点：
-///   旧: 各 Process* が drone.currentVelocity を計算 → physicsAPI->SetLinearVelocity()
-///   新: 各 Process* が drone.currentVelocity を計算 → Update側が trans.position += v*dt で積分
-/// 各 Process* 内の演出ロジック（Lerp/Slerpのゲイン・震え等）は完全に流用。
 #include "DroneMovementSystem.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -18,7 +13,7 @@ void DroneMovementSystem::Update(float rawDt)
 {
     m_currentTime += rawDt;
 
-    ForEachWithIDParallel([this](EntityID id, TransformComponent &trans, DroneComponent &drone,
+    ForEachParallel([this](TransformComponent &trans, DroneComponent &drone,
                               const TimeStateComponent &time) {
         // ドローン各自の時計を使用（被弾でヒットストップ等がかかった時にピタッと止まる）
         float dt = time.localDt;
@@ -45,7 +40,7 @@ void DroneMovementSystem::Update(float rawDt)
                 drone.currentState    = DroneState::MoveToTarget;
                 trans.isDirty         = true;
                 trans.isTeleported    = true; // 瞬間移動なので Push 側に teleport と伝える
-                // ★Facade呼び出しは無し。trans を書けば Push が Jolt へ反映する。
+                
             }
         }
 
@@ -80,13 +75,7 @@ void DroneMovementSystem::Update(float rawDt)
             break;
         }
 
-        // ====================================================================
-        // ★ここが唯一の本質的な変更点★
-        // 旧: physicsAPI->SetLinearVelocity(id, finalVel) で Jolt に積分を委譲していた
-        // 新: ここで自分（ECS/ゲームプレイ層）が position を積分する。
-        //     Shaking は Process 内で既に position を直接動かしている（ProcessMoveToTarget
-        //     を内部で呼んでから震えを加算する構造）ので、二重積分しないよう除外する。
-        // ====================================================================
+        // Shakingは関数内で直接positionを書き換えるので、ここでは積分しない
         if (drone.currentState != DroneState::Shaking)
         {
             // タイムスケール（ヒットストップ中は遅くなる）を考慮して積分
@@ -101,7 +90,6 @@ void DroneMovementSystem::Update(float rawDt)
         // position/rotation を書いたので Jolt への反映を要求する
         trans.isDirty = true;
 
-        (void)id; // Facade を使わなくなったので id はもう物理呼び出しに使わない
     });
 }
 

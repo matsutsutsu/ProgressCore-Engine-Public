@@ -1,14 +1,6 @@
 /// @file  DroneMovementSystem.h
 /// @brief 振付師が決定した目標座標へ向かってドローンを物理的に移動・回転させるシステム。
 ///
-/// ★設計変更（Facade廃止版）★
-///   旧: IPhysicsAPI::SetLinearVelocity() で Jolt に速度を渡し、Jolt側で積分させていた
-///       → Kinematic は Pull されない設計のため、次フレームの Push で座標が巻き戻るバグの温床
-///   新: DroneComponent.currentVelocity は「意思」としてのデータのみに留め、
-///       ゲームプレイ層（このシステム）が trans.position / rotation を直接積分・書き込みする。
-///       → Jolt には触れない。TransformComponent が isDirty になれば
-///         既存の PushSystem がそのまま Jolt へ同期してくれる。
-///
 /// 実行順序: L03_PrePhysics（PushSystem より前）で trans を確定させる。
 #pragma once
 #include "Engine/ECS/System/CCL_IfSystem.h"
