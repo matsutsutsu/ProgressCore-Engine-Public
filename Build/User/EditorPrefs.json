@@ -1,5 +1,6 @@
 {
     "DialogHistory": {
-        "TextEditor": "Assets\\Prefabs\\Enemy"
+        "Model": "Assets\\Models\\Enemy\\Muriel\\TestMuriel",
+        "Scene": "Assets\\Scene"
     }
 }

@@ -18,7 +18,7 @@ static bool IsDroneHostile(const DroneComponent *drone)
 {
     if (!drone) return false;
     // 突撃系の状態だけを「危険」とみなす
-    return drone->currentState == DroneState::FireCharge || drone->currentState == DroneState::HorizontalCharge;
+    return drone->currentState == DroneState::FireCharge;
 }
 
 

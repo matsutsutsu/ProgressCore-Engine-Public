@@ -46,7 +46,7 @@
         },
         {
             "name": "Text Editor",
-            "visible": true
+            "visible": false
         },
         {
             "name": "InputMappingEditor",

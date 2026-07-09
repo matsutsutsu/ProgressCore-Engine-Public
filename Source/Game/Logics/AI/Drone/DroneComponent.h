@@ -60,17 +60,11 @@ enum class DroneFormationType : uint8_t {
 };
 
 // ドローン個体の具体的な物理ステート
-enum class DroneState : uint8_t {
-    Idle,         ///< 【有機的追従】バネ制御でフワフワと目標に追従する待機・陣形維持状態。
-    MoveToTarget, ///< 【機械的移動】Lerpで直線的に指定位置へ素早く整列する状態。
-    LockOn,       ///< 【タメ・静止】一切移動せずその場に留まるエネルギー充填・待機状態。
-    FireCharge,   ///< 【高速突撃】目標座標へ向かって等速直線運動で突撃する攻撃状態。
-    Hold,         ///< 【完全停止】その場で急ブレーキをかけて完全に固定される状態。 
-
-    // シールドからの発射などに使う、浮き上がらない直線突撃
-    HorizontalCharge,
-
-    Shaking, // 震える状態
+enum class DroneState : uint8_t
+{
+    Idle,         ///< 【有機的追従】バネ制御でフワフワと目標に追従する待機・陣形維持状態
+    MoveToTarget, ///< 【機械的移動】直線的に指定位置へ素早く整列する状態
+    FireCharge,   ///< 【高速突撃】目標へ向かって突撃する攻撃状態（ジャスト回避の対象）
 };
 
 /**

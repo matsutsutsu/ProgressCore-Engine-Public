@@ -31,6 +31,7 @@ struct OrbitCircleFormation : public IFormation
         // 円周上の座標（ボス中心）
         const float r = drone.orbitRadius;
         Vector3     offset(std::cos(angle) * r, 0.0f, std::sin(angle) * r);
+        offset.y = 2.0f; // ボスより少し上に浮かせる
 
         drone.targetPosition = ctx.bossPos + offset;
 
@@ -40,7 +41,7 @@ struct OrbitCircleFormation : public IFormation
         drone.targetLookDirection = look;
 
         // 陣形維持中は「有機的追従」ステートが自然
-        drone.currentState = DroneState::Idle;
+        //drone.currentState = DroneState::Idle;
     }
 };
 

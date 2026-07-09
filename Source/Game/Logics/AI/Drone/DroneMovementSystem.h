@@ -1,6 +1,12 @@
 /// @file  DroneMovementSystem.h
 /// @brief 振付師が決定した目標座標へ向かってドローンを物理的に移動・回転させるシステム。
 ///
+/// ★リファクタリング（基礎3ステート版）★
+///   DroneState を Idle / MoveToTarget / FireCharge の3つに絞った。
+///   LockOn・Hold・HorizontalCharge・Shaking は演出の上乗せであり、
+///   企画の基礎ループ（陣形を組む→隊列を直す→突撃する）には不要なため一旦削除。
+///   必要になった時点で「1ステート=1関数」の形のまま追加すればよい。
+///
 /// 実行順序: L03_PrePhysics（PushSystem より前）で trans を確定させる。
 #pragma once
 #include "Engine/ECS/System/CCL_IfSystem.h"
@@ -24,33 +30,17 @@ class DroneMovementSystem : public CCL::ECS::IfSystem<
     virtual void Update(float dt) override;
 
   private:
-    float m_currentTime = 0.0f; // システム稼働時間（震えの波の計算に必須）
-
-  private:
     // =========================================================
-    // 物理ステートごとの処理を切り出したヘルパー関数群
-    // 各関数は drone.currentVelocity（意思）を計算し、
+    // 各関数は drone.currentVelocity（意思）と rotation を計算する。
     // 最後に trans.position へ積分するのは Update 側の共通処理が担う。
     // =========================================================
 
-    /// @brief 滑らかに目標へ移動・回転する (Lerp/Slerp)
+    /// @brief 滑らかに目標へ移動・回転する (Lerp/Slerp)。陣形の再構築に使う。
     inline void ProcessMoveToTarget(TransformComponent &trans, DroneComponent &drone, float dt);
 
-    /// @brief 目標へ向かって直線的に高速突撃する
-    inline void ProcessFireCharge(TransformComponent &trans, DroneComponent &drone, float dt);
-
-    /// @brief スプリング制御、ホバーノイズ、バンキングを用いた有機的な追従
+    /// @brief 陣形を維持しつつフワフワ追従する。待機・巡回に使う。
     inline void ProcessIdle(TransformComponent &trans, DroneComponent &drone, float dt);
 
-    // 待機・エネルギー充填（発射前のブルブル震える演出）
-    inline void ProcessLockOn(TransformComponent &trans, DroneComponent &drone, float dt);
-
-    //  完全にその場に固定・停止する
-    inline void ProcessHold(TransformComponent &trans, DroneComponent &drone, float dt);
-
-    // 上に浮かず、そのまま少し後ろに引いてから直線突撃する
-    inline void ProcessHorizontalCharge(TransformComponent &trans, DroneComponent &drone, float dt);
-
-    /// @brief 目標座標へ追従しつつ、激しい振動ノイズを加算する（自前で position を書く特殊系）
-    inline void ProcessShaking(TransformComponent &trans, DroneComponent &drone, float dt, float currentTime);
+    /// @brief 目標方向へ直線的に高速突撃する。ジャスト回避の対象となる攻撃状態。
+    inline void ProcessFireCharge(TransformComponent &trans, DroneComponent &drone, float dt);
 };

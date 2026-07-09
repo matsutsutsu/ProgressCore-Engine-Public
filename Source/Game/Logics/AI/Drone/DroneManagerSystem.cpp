@@ -162,6 +162,33 @@ void DroneManagerSystem::DestroyAll()
     CCL_LOG_INFO(LogCategory::Game, "[DroneManager] 全機破壊");
 }
 
+void DroneManagerSystem::SetAllDroneState(DroneState state)
+{
+    int  count = 0;
+    auto view  = _world->View<DroneComponent>();
+    for (auto e : view)
+    {
+        if (auto *d = _world->GetComponent<DroneComponent>(e))
+        {
+            d->currentState = state;
+
+            // FireCharge に切り替える場合、突撃に必要な最低限のデータを補う
+            if (state == DroneState::FireCharge)
+            {
+                // fireDirection が未設定(0ベクトル)だと動かないので、
+                // ボスからプレイヤー方向 or 単純にボス→ドローンの外向きベクトルを与える
+                if (d->fireDirection.LengthSquared() < 0.001f)
+                {
+                    d->fireDirection = DirectX::SimpleMath::Vector3::UnitZ; // 最低限のフェイルセーフ
+                }
+                d->stateTimer = 0.5f; // タメ0.5秒 → リリース、という動作確認向けの値
+            }
+            ++count;
+        }
+    }
+    CCL_LOG_INFO(LogCategory::Game, "[DroneManager] 全 %d 機の State を %d に変更", count, (int)state);
+}
+
 
 // ============================================================================
 // OnGui：生成・破壊・カウント確認のデバッグUI
@@ -206,6 +233,22 @@ void DroneManagerSystem::OnGui()
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
         if (ImGui::Button("Destroy All", ImVec2(100, 30)))
             DestroyAll();
+        ImGui::PopStyleColor();
+
+         ImGui::Spacing();
+        ImGui::TextColored(ImVec4(0.6f, 0.8f, 1.0f, 1.0f), "State Debug (動作確認用)");
+
+        if (ImGui::Button("All -> Idle", ImVec2(110, 26)))
+            SetAllDroneState(DroneState::Idle);
+
+        ImGui::SameLine();
+        if (ImGui::Button("All -> MoveToTarget", ImVec2(140, 26)))
+            SetAllDroneState(DroneState::MoveToTarget);
+
+        ImGui::SameLine();
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.9f, 0.3f, 0.2f, 1.0f));
+        if (ImGui::Button("All -> FireCharge (突撃!)", ImVec2(180, 26)))
+            SetAllDroneState(DroneState::FireCharge);
         ImGui::PopStyleColor();
 
         ImGui::Unindent();

@@ -59,6 +59,9 @@ class DroneManagerSystem : public CCL::ECS::IfSystem<DroneManagerSystem,
     /// @brief 全ドローンに対して localIndex / totalDrones を振り直す。
     void ReindexAllDrones();
 
+    /// @brief 全ドローンの currentState を一括変更する（デバッグ用）。
+    void SetAllDroneState(DroneState state);
+
   private:
     /// @brief シーン内の最初のボス（BossCommandComponent 保持）を探す。
     CCL::ECS::EntityID FindBoss() const;
