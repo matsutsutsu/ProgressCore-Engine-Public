@@ -43,9 +43,24 @@ void EvaluateKeyframes(const std::vector<T> &keyframes, float time, float &outRa
     auto it = std::lower_bound(keyframes.begin(), keyframes.end(), time,
         [](const T &kf, float t) { return kf.seconds < t; });
 
-    outK1   = &(*it);
-    outK0   = &(*(it - 1));
-    outRate = (time - outK0->seconds) / (outK1->seconds - outK0->seconds);
+    outK1 = &(*it);
+    outK0 = &(*(it - 1));
+
+    // ★ ゼロ除算ガード: UE5等の書き出しでは、IK切り替えや瞬間ポーズ変更を表現するために
+    //   同一時刻(またはごく僅かな差)に2つのキーフレームが置かれることがある。
+    //   分母がほぼ0のまま除算すると outRate が NaN/Inf になり、その姿勢がそのまま
+    //   Slerp/Lerpに渡って該当ボーンの向きが破綻する（"特定の部位だけおかしい"の一因になりうる）。
+    //   実質的にステップ変化とみなし、後側のキーフレームの値をそのまま採用する。
+    const float delta = outK1->seconds - outK0->seconds;
+    if (delta <= 1e-6f)
+    {
+        outRate = 0.0f;
+        outK0   = outK1; // 補間せず後側の値をそのまま使う
+    }
+    else
+    {
+        outRate = (time - outK0->seconds) / delta;
+    }
 }
 
 // コンストラクタ
