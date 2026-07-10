@@ -7,6 +7,10 @@
 #include "Engine/Core/Systems/SystemPriority.h" // LogicStage等の定義
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
+
+#include "Game/Logics/AI/BehaviorTree/Actions/BTActions_Boss.h"
+#include "Game/Logics/AI/BehaviorTree/Actions/BTConditions.h"
+
 #include <SimpleMath.h>
 #include <imgui.h>
 #include <fstream>
@@ -53,6 +57,21 @@ BossAISystem::BossAISystem() : IfSystem("BossAISystem")
 	hasGui = true; // デバッグGUIを持つことを宣言
 }
 
+
+void BossAISystem::Initialize()
+{
+    // このシステムが評価する BT のアクション・条件を登録する。
+    // 「BossAISystem が動く」ということは「BTのノードが必要」ということなので、
+    // ここに書くのが最も自然（EditorScene 等の外部が知る必要はない）。
+    //
+    // ※ RegisterAll() は ActionID をキーに ID→クラス を詰め直すだけの実装なので、
+    //   複数回呼ばれても副作用なく上書きされるだけ（冪等）。
+    //   ただし通常は Entity 1体分ではなくシステム1個につき1回しか呼ばれない。
+    CCL::AI::BT::BossActions::RegisterAll();
+    CCL::AI::BT::BossConditions::RegisterAll();
+
+    CCL_LOG_INFO(LogCategory::AI, "[BossAISystem] BTノード登録完了");
+}
 
 void BossAISystem::Update(float rawDt)
 {

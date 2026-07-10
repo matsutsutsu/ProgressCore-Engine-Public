@@ -5,6 +5,7 @@
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
 #include "Game/Logics/AI/Battle/BattleContext.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h" // BossCommandComponent
+#include "Game/Logics/AI/Drone/Formation/Formations_Basic.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -12,6 +13,20 @@
 
 using namespace CCL::ECS;
 using namespace CCL::AI::Formation;
+
+void DroneFormationSystem::Initialize()
+{
+    // このシステムが評価する陣形クラス（IFormation）を登録する。
+    // 「DroneFormationSystem が動く」ということは「陣形クラスが必要」
+    // ということなので、ここに書くのが最も自然。
+    //
+    // 陣形を追加した時（例：DeathRingFormation等）も、
+    // Formations_Basic.h の RegisterAll() に1行足すだけで、
+    // このシステムを持つ全シーンに自動反映される。
+    CCL::AI::Formation::Basic::RegisterAll();
+
+    CCL_LOG_INFO(LogCategory::AI, "[DroneFormationSystem] 陣形クラス登録完了");
+}
 
 void DroneFormationSystem::Update(float dt)
 {

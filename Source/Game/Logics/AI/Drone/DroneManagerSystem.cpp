@@ -25,6 +25,13 @@ using namespace DirectX::SimpleMath;
 static constexpr const char* kDronePrefab = "Assets/Prefabs/Enemy/Drone.json";
 
 
+void DroneManagerSystem::Initialize()
+{
+    ListenEvent<JustEvadeSuccessEvent>([this](const JustEvadeSuccessEvent &ev) {
+        OnJustEvadeSuccess(ev);
+    });
+}
+
 // ============================================================================
 // Update：生存数を数えて BattleContext に反映（毎フレーム）
 // ============================================================================
@@ -175,13 +182,22 @@ void DroneManagerSystem::SetAllDroneState(DroneState state)
             // FireCharge に切り替える場合、突撃に必要な最低限のデータを補う
             if (state == DroneState::FireCharge)
             {
-                // fireDirection が未設定(0ベクトル)だと動かないので、
-                // ボスからプレイヤー方向 or 単純にボス→ドローンの外向きベクトルを与える
-                if (d->fireDirection.LengthSquared() < 0.001f)
+                // BattleContext からプレイヤー位置を取得して方向を計算
+                DirectX::SimpleMath::Vector3 dir = -DirectX::SimpleMath::Vector3::UnitZ; // フェイルセーフ
+                if (_world->HasResource<BattleContext>())
                 {
-                    d->fireDirection = DirectX::SimpleMath::Vector3::UnitZ; // 最低限のフェイルセーフ
+                    auto                        &battle   = _world->GetResource<BattleContext>();
+                    DirectX::SimpleMath::Vector3 toPlayer = battle.playerPos - d->targetPosition;
+                    toPlayer.y                            = 0.0f; // 水平方向のみ
+                    if (toPlayer.LengthSquared() > 0.001f)
+                    {
+                        toPlayer.Normalize();
+                        dir = toPlayer;
+                    }
                 }
-                d->stateTimer = 0.5f; // タメ0.5秒 → リリース、という動作確認向けの値
+                d->fireDirection       = dir;
+                d->targetLookDirection = dir; // 見た目の向きも合わせる
+                d->stateTimer          = 0.5f;
             }
             ++count;
         }
@@ -256,6 +272,33 @@ void DroneManagerSystem::OnGui()
 #endif
 }
 
+// イベントハンドラ：対象が本当にドローンなら破壊する
+void DroneManagerSystem::OnJustEvadeSuccess(const JustEvadeSuccessEvent &ev)
+{
+    // otherEntityID がドローンでない（ボス本体など）場合は何もしない。
+    // DestroyDrone 内で DroneComponent の有無を見て安全に弾かれる。
+    DestroyDrone(ev.attackerID);
+}
+
+// 指定した1機を破壊する
+bool DroneManagerSystem::DestroyDrone(EntityID droneId)
+{
+    // ドローンでないもの（ボス等）を誤って壊さないためのガード
+    if (!_world->GetComponent<DroneComponent>(droneId))
+    {
+        return false;
+    }
+
+    _world->Destroy(droneId);
+
+    CCL_LOG_INFO(LogCategory::Game, "[DroneManager] ドローン破壊 id=%llu（残り %d 機）",
+        (unsigned long long)droneId, GetAliveCount() - 1);
+    //   ↑ GetAliveCount() はまだ破棄が反映される前なので -1 して見た目のログを合わせている
+    //     （Destroy が即座に消えるか遅延キューかはエンジン仕様に依存。
+    //       次フレームの Update で正確な数に上書きされるので実害はない）
+
+    return true;
+}
 
 // L02_Update で計数（StateTreeSystem と同じステージ。順序は問わない）
 REGISTER_LOGIC_SYSTEM(DroneManagerSystem, Priority::LogicStage::L02_Update)

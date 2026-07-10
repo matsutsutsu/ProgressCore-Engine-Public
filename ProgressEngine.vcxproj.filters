@@ -1674,24 +1674,6 @@
     <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltCharacterContactListener.h">
       <Filter>Source\Engine\Physics\JoltIntegration</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Prototype\PrototypeConfig.h">
-      <Filter>Source\Game\Prototype</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Prototype\ProtoDroneComponent.h">
-      <Filter>Source\Game\Prototype</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Prototype\ProtoDroneSwarmSystem.h">
-      <Filter>Source\Game\Prototype</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Prototype\ProtoDebugUISystem.h">
-      <Filter>Source\Game\Prototype</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Prototype\ProtoCombatSystem.h">
-      <Filter>Source\Game\Prototype</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Prototype\ProtoDroneSpawnerSystem.h">
-      <Filter>Source\Game\Prototype</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Physics\Systems\Character\JoltCharacterDebugDrawSystem.h">
       <Filter>Source\Engine\Physics\Systems\Character</Filter>
     </ClInclude>
@@ -2575,18 +2557,6 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltCharacterContactListener.cpp">
       <Filter>Source\Engine\Physics\JoltIntegration</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Prototype\ProtoDroneSwarmSystem.cpp">
-      <Filter>Source\Game\Prototype</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Prototype\ProtoDebugUISystem.cpp">
-      <Filter>Source\Game\Prototype</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Prototype\ProtoCombatSystem.cpp">
-      <Filter>Source\Game\Prototype</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Prototype\ProtoDroneSpawnerSystem.cpp">
-      <Filter>Source\Game\Prototype</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Physics\Systems\Character\JoltCharacterDebugDrawSystem.cpp">
       <Filter>Source\Engine\Physics\Systems\Character</Filter>

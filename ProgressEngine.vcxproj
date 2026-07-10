@@ -731,12 +731,6 @@
     <ClInclude Include="Source\Game\Logics\Test\VoxelOceanComponent.h" />
     <ClInclude Include="Source\Game\Logics\Test\VoxelOceanSystem.h" />
     <ClInclude Include="Source\Game\Prototype\DemoAI.h" />
-    <ClInclude Include="Source\Game\Prototype\ProtoCombatSystem.h" />
-    <ClInclude Include="Source\Game\Prototype\ProtoDebugUISystem.h" />
-    <ClInclude Include="Source\Game\Prototype\ProtoDroneComponent.h" />
-    <ClInclude Include="Source\Game\Prototype\ProtoDroneSpawnerSystem.h" />
-    <ClInclude Include="Source\Game\Prototype\ProtoDroneSwarmSystem.h" />
-    <ClInclude Include="Source\Game\Prototype\PrototypeConfig.h" />
     <ClInclude Include="Source\Game\Scenes\BaseScene.h" />
     <ClInclude Include="Source\Game\Scenes\EditorScene.h" />
     <ClInclude Include="Source\Game\Scenes\ParticleScene.h" />
@@ -1451,10 +1445,6 @@
     <ClCompile Include="Source\Game\Logics\Test\TornadoVortexSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\VectorFlowSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\VoxelOceanSystem.cpp" />
-    <ClCompile Include="Source\Game\Prototype\ProtoCombatSystem.cpp" />
-    <ClCompile Include="Source\Game\Prototype\ProtoDebugUISystem.cpp" />
-    <ClCompile Include="Source\Game\Prototype\ProtoDroneSpawnerSystem.cpp" />
-    <ClCompile Include="Source\Game\Prototype\ProtoDroneSwarmSystem.cpp" />
     <ClCompile Include="Source\Game\Scenes\BaseScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\EditorScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\ParticleScene.cpp" />

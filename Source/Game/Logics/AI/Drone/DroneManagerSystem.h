@@ -15,6 +15,7 @@
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/AI/Drone/DroneComponent.h"
 #include "Engine/Timer/TimeState.h"
+#include "Game/Logics/GameEvent/GameEvents.h"
 
 namespace CCL::ECS::Core
 {
@@ -32,6 +33,8 @@ class DroneManagerSystem : public CCL::ECS::IfSystem<DroneManagerSystem,
     {
         hasGui = true;
     }
+
+    void Initialize() override;
 
     /// @brief 毎フレーム：生存ドローンを数えて BattleContext.droneAliveCount に書く。
     void Update(float dt) override;
@@ -62,7 +65,15 @@ class DroneManagerSystem : public CCL::ECS::IfSystem<DroneManagerSystem,
     /// @brief 全ドローンの currentState を一括変更する（デバッグ用）。
     void SetAllDroneState(DroneState state);
 
+    /// @brief 指定した1機のドローンを破壊する。
+    ///        DroneComponent を持たない/既に破壊済みの EntityID を渡しても安全（何もしない）。
+    /// @return 破壊できたら true
+    bool DestroyDrone(CCL::ECS::EntityID droneId);
+
   private:
+    /// @brief JustEvadeSuccessEvent を受けたときの処理
+    void OnJustEvadeSuccess(const struct JustEvadeSuccessEvent &ev);
+
     /// @brief シーン内の最初のボス（BossCommandComponent 保持）を探す。
     CCL::ECS::EntityID FindBoss() const;
 

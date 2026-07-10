@@ -21,6 +21,9 @@ class DroneFormationSystem : public CCL::ECS::IfSystem<
         : IfSystem("DroneFormationSystem")
     {
     }
+
+    void Initialize() override;
+
     void Update(float dt) override;
 
   private:

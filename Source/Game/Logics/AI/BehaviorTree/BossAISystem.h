@@ -32,9 +32,11 @@ public:
     BossAISystem();
     virtual ~BossAISystem() override = default;
 
-    virtual void Update(float dt) override;
+    void Initialize() override;
 
-    virtual void OnGui() override; // GUI描画用関数
+    void Update(float dt) override;
+    
+    void OnGui() override; 
 
 private:
     bool m_showFloatingText = true; // 3Dテキスト表示のON/OFFフラグ
