@@ -1,27 +1,30 @@
 /// @file  BTAction.h
 /// @brief BehaviorTree のアクション・条件の基底。StateTree の ITask/ICondition と対。
 ///
-/// 既存 BossAISystem::ExecuteAction の挙動を完全再現するため、BTContext は
-/// nodeTimers を含む BehaviorTreeComponent 全体への参照を持つ。
+/// ★汎用化（ボス固有を排除）★
+///   BTContext からボス固有の command(BossCommand) / myAction(BossAction) を外した。
+///   これらが必要なアクション（ボス用）は Execute の中で
+///   ctx.world->GetComponent<BossCommandComponent>(ctx.entity) と自分で取りに行く。
+///   → BTエンジンとContextが「ボス」を一切知らなくなり、ドローンにも流用できる。
 #pragma once
 #include <cstdint>
 
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"        // BTNodeState, ActionID, BTNodeID
-#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"  // BehaviorTreeComponent, BossCommandComponent
+#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"  // BehaviorTreeComponent
 
 // 前方宣言
 namespace CCL::ECS::Core { class World; }
 namespace CCL::ECS        { using EntityID = unsigned long long; }
 struct TransformComponent;
-struct BossActionComponent;
 
 
 namespace CCL::AI::BT
 {
     // ====================================================================
-    // BTContext — アクション/条件が受け取る情報のカバン
+    // BTContext — アクション/条件が受け取る情報のカバン（汎用のみ）
     // ====================================================================
-    /// @brief 既存 ExecuteAction の引数群をそのまま1つにまとめたもの。
+    /// @brief どのエンティティのBTでも使える汎用データだけを持つ。
+    ///        ボス固有のコンポーネントは world/entity から自分で取得する。
     struct BTContext
     {
         CCL::ECS::Core::World* world  = nullptr;
@@ -30,12 +33,8 @@ namespace CCL::AI::BT
         // --- AI状態（nodeTimers / blackboard / lastLogActionId を読み書き）---
         BehaviorTreeComponent* bt = nullptr;
 
-        // --- 出力先（currentActionId / requestFormation を書く）---
-        BossCommandComponent*  command = nullptr;
-
-        // --- 読み取り専用データ ---
-        const TransformComponent*  myTransform = nullptr;
-        const BossActionComponent* myAction    = nullptr;
+        // --- 読み取り専用データ（どのAIも持ちうる汎用コンポーネント）---
+        const TransformComponent* myTransform = nullptr;
 
         // --- ノード情報 ---
         BTNodeID nodeId = 0;   // nodeTimers[nodeId] を引くのに使う

@@ -873,4 +873,4 @@ void BossAISystem::OnGui() {
 // 規約に基づき末尾でシステム自動登録。
 // 実行タイミングは「L02_Update (AI、移動、弾の更新など並列化の主戦場)」を指定。
 // ※プロジェクト側に REGISTER_LOGIC_SYSTEM マクロが定義されている前提
-REGISTER_LOGIC_SYSTEM(BossAISystem, Priority::LogicStage::L02_Update);
+//REGISTER_LOGIC_SYSTEM(BossAISystem, Priority::LogicStage::L02_Update);

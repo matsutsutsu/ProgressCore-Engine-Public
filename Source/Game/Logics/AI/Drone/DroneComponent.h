@@ -99,4 +99,9 @@ struct DroneComponent {
     // --- 1バイト型 (enum/bool) ---
     DroneFormationType currentFormation = DroneFormationType::Hidden;
     DroneState currentState = DroneState::Idle;
+
+    /// @brief 陣形スロットへの初回到着が完了したか（StateTree 用ラッチ）。
+    ///        true になると Forming(Idle) に固定され、回転する targetPosition との
+    ///        距離では MoveToSlot に戻らない（点滅防止）。
+    bool hasReachedSlot = false;
 };

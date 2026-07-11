@@ -5,6 +5,7 @@
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h" // BossCommandComponent
+#include "Game/Logics/AI/StateTree/Core/StateTreeComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Serialization/Factory/Prefab.h"
 #include "Engine/ECS/Core/CCL_World.h"
@@ -24,9 +25,29 @@ using namespace DirectX::SimpleMath;
 // ドローンのプレハブパス（既存コードから）
 static constexpr const char* kDronePrefab = "Assets/Prefabs/Enemy/Drone.json";
 
+// ノード種別はプロセス内で1回だけ登録（NodeRegistry はシングルトン）
+static const DroneAI::DroneAIIDs kDroneAIIds = DroneAI::RegisterNodes();
+
+
+void DroneManagerSystem::EnsureDroneAIRegistered()
+{
+    // EditorScene::Initialize が StateTreeRegistry を後から作り直すため、
+    // 毎フレーム「DroneAI が未登録なら登録」する遅延方式にする。
+    if (!_world->HasResource<CCL::AI::StateTreeRegistry>()) return;
+
+    auto& stReg = _world->GetResource<CCL::AI::StateTreeRegistry>();
+    if (stReg.FindByName("DroneAI").IsValid()) return;
+
+    stReg.Register(DroneAI::BuildDroneAsset(kDroneAIIds));
+    CCL_LOG_INFO(LogCategory::AI, "[DroneManager] DroneAI(StateTree) 登録完了");
+}
+
 
 void DroneManagerSystem::Initialize()
 {
+    // ノード種別は static 初期化で登録済み。アセットは EnsureDroneAIRegistered で遅延登録。
+    EnsureDroneAIRegistered();
+
     ListenEvent<JustEvadeSuccessEvent>([this](const JustEvadeSuccessEvent &ev) {
         OnJustEvadeSuccess(ev);
     });
@@ -37,6 +58,8 @@ void DroneManagerSystem::Initialize()
 // ============================================================================
 void DroneManagerSystem::Update(float /*dt*/)
 {
+    EnsureDroneAIRegistered();
+
     if (!_world->HasResource<BattleContext>()) return;
     auto& battle = _world->GetResource<BattleContext>();
 
@@ -96,6 +119,8 @@ EntityID DroneManagerSystem::FindBoss() const
 // ============================================================================
 int DroneManagerSystem::SpawnDrones(int count)
 {
+    EnsureDroneAIRegistered();
+
     EntityID bossId = FindBoss();
     if (bossId == InvalidEntityID)
     {
@@ -124,12 +149,46 @@ int DroneManagerSystem::SpawnDrones(int count)
             // ★動作確認用：円陣を組ませる
             d->currentFormation = DroneFormationType::OrbitCircle;
             d->orbitRadius      = 8.0f;
+            d->hasReachedSlot   = false;   // スポーン直後は必ず MoveToSlot から開始
         }
         if (auto *tm = _world->GetComponent<TimeStateComponent>(droneId))
         {
             tm->group = TimeGroup::Enemy;
         }
+
+        // 個体 StateTree を使わせる（プレハブに無ければ追加）
+        if (auto *st = _world->GetComponent<StateTreeComponent>(droneId))
+        {
+            st->assetName   = "DroneAI";
+            st->assetHandle = {};   // 再解決させる
+        }
+        else
+        {
+            StateTreeComponent stComp;
+            stComp.assetName = "DroneAI";
+            _world->AddComponent<StateTreeComponent>(droneId, stComp);
+        }
+
         ++spawned;
+    }
+
+    // AddComponent の遅延反映 + assetHandle 解決
+    _world->ScrutinyAndApply();
+
+    if (_world->HasResource<CCL::AI::StateTreeRegistry>())
+    {
+        auto& stReg = _world->GetResource<CCL::AI::StateTreeRegistry>();
+        auto  view  = _world->View<DroneComponent, StateTreeComponent>();
+        for (auto e : view)
+        {
+            if (auto *st = _world->GetComponent<StateTreeComponent>(e))
+            {
+                if (st->assetName == "DroneAI" && !st->assetHandle.IsValid())
+                {
+                    st->assetHandle = stReg.FindByName("DroneAI");
+                }
+            }
+        }
     }
 
     // ★スポーン後：全ドローンに localIndex / totalDrones を振り直す
@@ -178,6 +237,15 @@ void DroneManagerSystem::SetAllDroneState(DroneState state)
         if (auto *d = _world->GetComponent<DroneComponent>(e))
         {
             d->currentState = state;
+
+            if (state == DroneState::MoveToTarget)
+            {
+                d->hasReachedSlot = false;   // 再接近を許可
+            }
+            else if (state == DroneState::Idle)
+            {
+                d->hasReachedSlot = true;    // 手動 Idle = 到着済み扱い
+            }
 
             // FireCharge に切り替える場合、突撃に必要な最低限のデータを補う
             if (state == DroneState::FireCharge)

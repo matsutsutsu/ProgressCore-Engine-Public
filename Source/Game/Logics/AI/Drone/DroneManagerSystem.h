@@ -14,6 +14,8 @@
 #pragma once
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/AI/Drone/DroneComponent.h"
+#include "Game/Logics/AI/Drone/DroneAI.h"
+#include "Game/Logics/AI/StateTree/Core/StateTreeRegistry.h"
 #include "Engine/Timer/TimeState.h"
 #include "Game/Logics/GameEvent/GameEvents.h"
 
@@ -71,6 +73,10 @@ class DroneManagerSystem : public CCL::ECS::IfSystem<DroneManagerSystem,
     bool DestroyDrone(CCL::ECS::EntityID droneId);
 
   private:
+    /// @brief DroneAI アセットを StateTreeRegistry に登録する（未登録時のみ）。
+    ///        EditorScene が Registry を再生成する順序問題を吸収するため遅延登録。
+    void EnsureDroneAIRegistered();
+
     /// @brief JustEvadeSuccessEvent を受けたときの処理
     void OnJustEvadeSuccess(const struct JustEvadeSuccessEvent &ev);
 

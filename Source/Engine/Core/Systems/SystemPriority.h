@@ -19,10 +19,6 @@ namespace Priority {
 
         L02_Update = 200, // AI、移動、弾の更新など (並列化の主戦場)
 
-        L02_AI_Sense = 210, // ① Perception, Hearing
-        L02_AI_Think = 220, // ② State Judgment, Patrol Logic
-        L02_AI_Act = 230, // ③ Movement Control (Speed Setting)
-
         L02_PostUpdate = 250,  // すべてのUpdate系システムの後に実行される、主にアニメーションの更新と物理への反映をここで行う
 
         L03_PrePhysics = 300, // 空間分割(Grid)など、物理・衝突判定の準備

@@ -1725,6 +1725,9 @@
     <ClInclude Include="Source\Game\Logics\AI\Drone\DroneMovementSystem.h">
       <Filter>Source\Game\Logics\AI\Drone</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\DroneAI.h">
+      <Filter>Source\Game\Logics\AI\Drone</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Drone\DroneManagerSystem.h">
       <Filter>Source\Game\Logics\AI\Drone</Filter>
     </ClInclude>
@@ -1742,6 +1745,12 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Physics\JoltIntegration\PhysicsLayers.h">
       <Filter>Source\Engine\Physics\JoltIntegration</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeSystem.h">
+      <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BossPerceptionSystem.h">
+      <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2602,6 +2611,12 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Physics\JoltIntegration\PhysicsLayers.cpp">
       <Filter>Source\Engine\Physics\JoltIntegration</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeSystem.cpp">
+      <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BossPerceptionSystem.cpp">
+      <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

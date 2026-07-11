@@ -35,7 +35,7 @@ void EditorScene::Initialize()
     auto &stReg       = _worldPtr->GetResource<CCL::AI::StateTreeRegistry>();
     //auto  enemyHandle = stReg.Register(EnemyAI::BuildEnemyAsset(enemyIds, 12.0f));
 
-    // ★追加：司令官StateTreeアセットを登録
+    // 司令官StateTreeアセットを登録
     stReg.Register(CommanderAI::BuildCommanderAsset(commanderIds));
 
 

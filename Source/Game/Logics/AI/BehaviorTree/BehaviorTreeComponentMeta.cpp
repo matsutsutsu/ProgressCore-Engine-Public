@@ -126,6 +126,7 @@ template <> struct ComponentMeta<DroneComponent> {
             CFIELD(totalDrones, "総ドローン数", "Formation")
             CFIELD_ENUM_U8(currentFormation, "現在の指示", DroneFormationNames, std::size(DroneFormationNames), "State")
             CFIELD_ENUM_U8(currentState, "現在ステート", DroneStateNames, std::size(DroneStateNames), "State")
+            CFIELD(hasReachedSlot, "スロット到着済み", "State")
             CFIELD(stateTimer, "状態タイマー", "State")
             CFIELD_FLOAT3_FAST(targetPosition, "目標座標", 0.1f, "State")
             CFIELD_FLOAT_RANGED(moveSpeed, "移動速度", 0.1f, 0.0f, 100.0f, "Stats")
