@@ -4,6 +4,8 @@
 #include "Engine/Graphics/Shader/PostProcess/DistortionEffect.h"
 #include "Engine/Graphics/Shader/PostProcess/RadialBlurEffect.h"
 #include "Engine/Graphics/Components/PostProcess/RadialBlurConfigComponent.h"
+#include "Engine/Graphics/Shader/PostProcess/VignetteEffect.h"
+#include "Engine/Graphics/Components/PostProcess/VignetteConfigComponent.h"
 
 
 
@@ -71,6 +73,15 @@ void PostProcessSystem::Update(float dt) {
         bloom->SetEnabled(finalBloom.enable);
         bloom->UpdateParams(finalBloom.data);
     }
+
+    if (auto* comp = _world->GetSingletonComponent<VignetteConfigComponent>()) {
+      if (auto* vignette = postProcess->GetEffect<VignetteEffect>()) {
+        vignette->SetEnabled(comp->enable);
+        comp->data.vigTime += dt;
+        vignette->UpdateParams(comp->data);
+      }
+    }
+
     postProcess->toneMapConfig = finalToneMap;
 }
 

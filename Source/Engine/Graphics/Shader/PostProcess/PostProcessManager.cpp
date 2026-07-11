@@ -8,6 +8,7 @@
 #include "BloomEffect.h"
 #include "DistortionEffect.h"
 #include "RadialBlurEffect.h"
+#include "VignetteEffect.h"
 
 
 void PostProcessManager::Initialize(ID3D11Device* device, UINT width, UINT height)
@@ -24,6 +25,7 @@ void PostProcessManager::Initialize(ID3D11Device* device, UINT width, UINT heigh
     AddEffect<DistortionEffect>();
     AddEffect<RadialBlurEffect>();
     AddEffect<BloomEffect>();
+    AddEffect<VignetteEffect>();
 
 
     Resize(device, width, height);

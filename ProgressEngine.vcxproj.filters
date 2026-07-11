@@ -1530,10 +1530,16 @@
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\RadialBlurConfigComponent.h">
       <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\VignetteConfigComponent.h">
+      <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\DistortionEffect.h">
       <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\RadialBlurEffect.h">
+      <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\VignetteEffect.h">
       <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\ErrorShader.h">
@@ -2480,7 +2486,13 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\RadialBlurEffect.cpp">
       <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\VignetteEffect.cpp">
+      <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Components\PostProcess\RadialBlurConfigComponentMeta.cpp">
+      <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Components\PostProcess\VignetteConfigComponentMeta.cpp">
       <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\ErrorShader.cpp">
@@ -2818,6 +2830,9 @@
       <Filter>Shader\PostProcess</Filter>
     </FxCompile>
     <FxCompile Include="Shader\PostProcess\RadialBlurPS.hlsl">
+      <Filter>Shader\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\PostProcess\VignettePS.hlsl">
       <Filter>Shader\PostProcess</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Pass\Error\ErrorPS.hlsl">

@@ -5,6 +5,7 @@
 #include "Engine/Graphics/Components/PostProcess/ToneMapConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/DistortionConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/RadialBlurConfigComponent.h"
+#include "Engine/Graphics/Components/PostProcess/VignetteConfigComponent.h"
 
 // 前方宣言
 class PostProcessManager;
@@ -23,7 +24,8 @@ public:
         return {CCL::ECS::TypeInfo<BloomConfigComponent>::ID(),
             CCL::ECS::TypeInfo<ToneMapConfigComponent>::ID(),
             CCL::ECS::TypeInfo<DistortionConfigComponent>::ID(),
-            CCL::ECS::TypeInfo<RadialBlurConfigComponent>::ID()};
+            CCL::ECS::TypeInfo<RadialBlurConfigComponent>::ID(),
+            CCL::ECS::TypeInfo<VignetteConfigComponent>::ID()};
     }
 
     void Update(float dt) override;

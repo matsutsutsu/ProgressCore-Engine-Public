@@ -3,6 +3,7 @@
 #include "Engine/Graphics/Components/PostProcess/RadialBlurConfigComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
+#include "Engine/Serialization/Meta/ComponentCategories.h"
 
 #ifdef ENABLE_EDITOR
 #include "Editor/Inspector/ComponentGuiRegistry.h"
@@ -30,9 +31,12 @@ namespace ComponentMetaJson {
 } // namespace ComponentMetaJson
 
 template <> struct ComponentMeta<RadialBlurConfigComponent> {
-    static constexpr const char* displayName   = "RadialBlur";
-    static constexpr bool        hasCustomGui   = true;
-    static constexpr bool        isSerializable = true;
+    static constexpr const char* displayName       = "RadialBlur";
+    static constexpr const char* category          = CCL::Categories::Effect;
+    static constexpr int         sortPriority       = 530;
+    static constexpr bool        hiddenInInspector  = false;
+    static constexpr bool        hasCustomGui       = true;
+    static constexpr bool        isSerializable     = true;
 
 #ifdef ENABLE_EDITOR
     static bool CustomGui(RadialBlurConfigComponent& c,

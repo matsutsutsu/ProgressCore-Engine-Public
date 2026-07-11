@@ -56,6 +56,19 @@ PP_STRUCT(CbRadialBlurData, SLOT_CB_RADIALBLUR) {
   float  blurFalloff;
 };
 
+// ============================================================================
+// Vignette パラメータレイアウト（合計48バイト）
+// ============================================================================
+PP_STRUCT(CbVignetteData, SLOT_CB_VIGNETTE) {
+  float4 vigColor;
+  float  vigIntensity;
+  float  vigRadius;
+  float  vigSoftness;
+  float  vigPulseSpeed;
+  float  vigTime;
+  float  vigPad[3];
+};
+
 #ifdef __cplusplus
 } // namespace GpuData
 // C++側のサイズ検証。ずれていたらコンパイルが止まる
@@ -66,6 +79,8 @@ static_assert(
     sizeof(GpuData::CbDistortionData) == 16, "CbDistortionData size mismatch");
 static_assert(
     sizeof(GpuData::CbRadialBlurData) == 16, "CbRadialBlurData size mismatch");
+static_assert(
+    sizeof(GpuData::CbVignetteData) == 48, "CbVignetteData size mismatch");
 #endif
 
 #endif // POST_PROCESS_SHARED_H

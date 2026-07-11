@@ -478,6 +478,7 @@
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\BloomConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\DistortionConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\RadialBlurConfigComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\VignetteConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\ToneMapConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\Core\IRenderPass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\Core\RenderPipeline.h" />
@@ -528,6 +529,7 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\BloomEffect.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\DistortionEffect.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\RadialBlurEffect.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\VignetteEffect.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\IPostEffect.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\PostProcessManager.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\ToneMapEffect.h" />
@@ -1283,6 +1285,7 @@
     <ClCompile Include="Source\Engine\ECS\System\CCL_SystemManager.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Core\EnvironmentComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\PostProcess\RadialBlurConfigComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Components\PostProcess\VignetteConfigComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Core\MaterialComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Core\ModelComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Core\PrimitiveComponentMeta.cpp" />
@@ -1328,6 +1331,7 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\BloomEffect.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\DistortionEffect.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\RadialBlurEffect.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\VignetteEffect.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\PostProcessManager.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\ToneMapEffect.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\ShaderManifest.cpp" />
@@ -1725,6 +1729,11 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
     </FxCompile>
     <FxCompile Include="Shader\PostProcess\DistortionPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\PostProcess\VignettePS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
