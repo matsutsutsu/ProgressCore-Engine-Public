@@ -2754,6 +2754,18 @@
     <FxCompile Include="Shader\Material\Basic\BasicPS.hlsl">
       <Filter>Shader\Material\Basic</Filter>
     </FxCompile>
+    <FxCompile Include="Shader\Material\LockOnMarker\LockOnMarkerVS.hlsl">
+      <Filter>Shader\Material\LockOnMarker</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\LockOnMarker\LockOnMarkerPS.hlsl">
+      <Filter>Shader\Material\LockOnMarker</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\LockOnPBR\LockOnPBRVS.hlsl">
+      <Filter>Shader\Material\LockOnPBR</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\LockOnPBR\LockOnPBRPS.hlsl">
+      <Filter>Shader\Material\LockOnPBR</Filter>
+    </FxCompile>
     <FxCompile Include="Shader\Material\Lambert\LambertPS.hlsl">
       <Filter>Shader\Material\Lambert</Filter>
     </FxCompile>

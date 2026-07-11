@@ -11,7 +11,9 @@
         { "name": "Water", "blend": "transparency", "depth": "testOnly" },
         { "name": "Grass", "cull": "none" },
         { "name": "GhostPBR", "blend": "transparency", "depth": "testOnly" },
-        { "name": "EnergyStream", "blend": "additive" }
+        { "name": "EnergyStream", "blend": "additive" },
+        { "name": "LockOnPBR" },
+        { "name": "LockOnMarker", "blend": "transparency", "depth": "none" }
     ],
     "customShaders": [
         { "name": "Outline",   "class": "OutlineShader" },
