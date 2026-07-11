@@ -8,6 +8,7 @@
 #include "BloomEffect.h"
 #include "DistortionEffect.h"
 #include "RadialBlurEffect.h"
+#include "DepthOfFieldEffect.h"
 #include "VignetteEffect.h"
 #include "ChromaticAberrationEffect.h"
 #include "ColorGradingEffect.h"
@@ -26,6 +27,7 @@ void PostProcessManager::Initialize(ID3D11Device* device, UINT width, UINT heigh
 
     AddEffect<DistortionEffect>();
     AddEffect<RadialBlurEffect>();
+    AddEffect<DepthOfFieldEffect>();
     AddEffect<BloomEffect>();
     AddEffect<ChromaticAberrationEffect>();
     AddEffect<VignetteEffect>();
@@ -89,7 +91,9 @@ void PostProcessManager::BeginScene(ID3D11DeviceContext* dc,
     dc->RSSetViewports(1, &vp);
 }
 
-ID3D11ShaderResourceView* PostProcessManager::EndScene(ID3D11DeviceContext* dc, ID3D11RenderTargetView* targetRTV)
+ID3D11ShaderResourceView* PostProcessManager::EndScene(ID3D11DeviceContext* dc,
+    ID3D11RenderTargetView* targetRTV,
+    ID3D11ShaderResourceView* sceneDepthSRV)
 {
     RenderTarget* outputSDR = ResourceManager::Instance().GetRenderTarget(_outputSDR);
     if (!outputSDR) return nullptr;
@@ -97,6 +101,10 @@ ID3D11ShaderResourceView* PostProcessManager::EndScene(ID3D11DeviceContext* dc, 
     // RTV 登録を解除
     ID3D11RenderTargetView* nullRTV = nullptr;
     dc->OMSetRenderTargets(1, &nullRTV, nullptr);
+
+    if (sceneDepthSRV) {
+        dc->PSSetShaderResources(SLOT_SRV_SCENE_DEPTH, 1, &sceneDepthSRV);
+    }
 
     // ================================================================
     // ★ 究極のエコシステム: Ping-Pong 実行
@@ -150,6 +158,9 @@ ID3D11ShaderResourceView* PostProcessManager::EndScene(ID3D11DeviceContext* dc, 
     }
 
     // 最終的な HDR 結果は readIdx のキャンバスに入っている
+    ID3D11ShaderResourceView* nullDepth = nullptr;
+    dc->PSSetShaderResources(SLOT_SRV_SCENE_DEPTH, 1, &nullDepth);
+
     RenderTarget* finalHDR = ResourceManager::Instance().GetRenderTarget(_hdrBuffers[readIdx]);
 
     // ================================================================

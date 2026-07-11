@@ -55,7 +55,8 @@ public:
      * @param targetRTV nullptr の場合は内部 SDR バッファに出力（ImGui 用）。
      */
     ID3D11ShaderResourceView* EndScene(ID3D11DeviceContext* dc,
-        ID3D11RenderTargetView* targetRTV = nullptr);
+        ID3D11RenderTargetView* targetRTV = nullptr,
+        ID3D11ShaderResourceView* sceneDepthSRV = nullptr);
 
     // ================================================================
     //  エフェクト管理 API

@@ -70,6 +70,7 @@ struct RenderFrameContext
     // ---- 出力先（パイプライン最終出力。途中パスで切り替わる場合あり） ----
     ID3D11RenderTargetView* targetRTV = nullptr;
     ID3D11DepthStencilView* targetDSV = nullptr;
+    ID3D11ShaderResourceView* sceneDepthSRV = nullptr;
 
     // ---- メタ情報 ----
     float    deltaTime = 0.0f;

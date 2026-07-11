@@ -5,6 +5,7 @@
 #include "Engine/Graphics/Components/PostProcess/ToneMapConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/DistortionConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/RadialBlurConfigComponent.h"
+#include "Engine/Graphics/Components/PostProcess/DepthOfFieldConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/VignetteConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/ChromaticAberrationConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/ColorGradingConfigComponent.h"
@@ -27,6 +28,7 @@ public:
             CCL::ECS::TypeInfo<ToneMapConfigComponent>::ID(),
             CCL::ECS::TypeInfo<DistortionConfigComponent>::ID(),
             CCL::ECS::TypeInfo<RadialBlurConfigComponent>::ID(),
+            CCL::ECS::TypeInfo<DepthOfFieldConfigComponent>::ID(),
             CCL::ECS::TypeInfo<VignetteConfigComponent>::ID(),
             CCL::ECS::TypeInfo<ChromaticAberrationConfigComponent>::ID(),
             CCL::ECS::TypeInfo<ColorGradingConfigComponent>::ID()};

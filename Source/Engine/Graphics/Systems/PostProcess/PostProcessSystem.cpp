@@ -4,6 +4,8 @@
 #include "Engine/Graphics/Shader/PostProcess/DistortionEffect.h"
 #include "Engine/Graphics/Shader/PostProcess/RadialBlurEffect.h"
 #include "Engine/Graphics/Components/PostProcess/RadialBlurConfigComponent.h"
+#include "Engine/Graphics/Shader/PostProcess/DepthOfFieldEffect.h"
+#include "Engine/Graphics/Components/PostProcess/DepthOfFieldConfigComponent.h"
 #include "Engine/Graphics/Shader/PostProcess/VignetteEffect.h"
 #include "Engine/Graphics/Components/PostProcess/VignetteConfigComponent.h"
 #include "Engine/Graphics/Shader/PostProcess/ChromaticAberrationEffect.h"
@@ -70,6 +72,13 @@ void PostProcessSystem::Update(float dt) {
       if (auto* radial = postProcess->GetEffect<RadialBlurEffect>()) {
         radial->SetEnabled(comp->enable);
         radial->UpdateParams(comp->data);
+      }
+    }
+
+    if (auto* comp = _world->GetSingletonComponent<DepthOfFieldConfigComponent>()) {
+      if (auto* dof = postProcess->GetEffect<DepthOfFieldEffect>()) {
+        dof->SetEnabled(comp->enable);
+        dof->UpdateParams(comp->data);
       }
     }
 

@@ -89,6 +89,16 @@ PP_STRUCT(CbColorGradingData, SLOT_CB_COLORGRADING) {
   float  gradeMixAmount;
 };
 
+// ============================================================================
+// DepthOfField パラメータレイアウト（合計16バイト）
+// ============================================================================
+PP_STRUCT(CbDepthOfFieldData, SLOT_CB_DOF) {
+  float dofFocusDistance;
+  float dofFocusRange;
+  float dofFalloff;
+  float dofMaxBlur;
+};
+
 #ifdef __cplusplus
 } // namespace GpuData
 // C++側のサイズ検証。ずれていたらコンパイルが止まる
@@ -105,6 +115,8 @@ static_assert(
     sizeof(GpuData::CbChromaticData) == 16, "CbChromaticData size mismatch");
 static_assert(
     sizeof(GpuData::CbColorGradingData) == 32, "CbColorGradingData size mismatch");
+static_assert(
+    sizeof(GpuData::CbDepthOfFieldData) == 16, "CbDepthOfFieldData size mismatch");
 #endif
 
 #endif // POST_PROCESS_SHARED_H

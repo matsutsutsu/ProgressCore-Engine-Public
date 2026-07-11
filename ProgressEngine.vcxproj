@@ -481,6 +481,7 @@
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\VignetteConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\ChromaticAberrationConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\ColorGradingConfigComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\DepthOfFieldConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\ToneMapConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\Core\IRenderPass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\Core\RenderPipeline.h" />
@@ -534,6 +535,7 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\VignetteEffect.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\ChromaticAberrationEffect.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\ColorGradingEffect.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\DepthOfFieldEffect.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\IPostEffect.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\PostProcessManager.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\ToneMapEffect.h" />
@@ -1292,6 +1294,7 @@
     <ClCompile Include="Source\Engine\Graphics\Components\PostProcess\VignetteConfigComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\PostProcess\ChromaticAberrationConfigComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\PostProcess\ColorGradingConfigComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Components\PostProcess\DepthOfFieldConfigComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Core\MaterialComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Core\ModelComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Core\PrimitiveComponentMeta.cpp" />
@@ -1340,6 +1343,7 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\VignetteEffect.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\ChromaticAberrationEffect.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\ColorGradingEffect.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\DepthOfFieldEffect.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\PostProcessManager.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\ToneMapEffect.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\ShaderManifest.cpp" />
@@ -1772,6 +1776,11 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
     </FxCompile>
     <FxCompile Include="Shader\PostProcess\ColorGradingPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\PostProcess\DepthOfFieldPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>

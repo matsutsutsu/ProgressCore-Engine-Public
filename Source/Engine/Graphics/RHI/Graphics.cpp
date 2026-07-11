@@ -182,6 +182,7 @@ RenderFrameContext Graphics::MakeFrameContext(ID3D11RenderTargetView* overrideRT
     ctx.camera = &_mainCamera; // ← 直接参照
     ctx.targetRTV = (overrideRTV != nullptr) ? overrideRTV : _gfxDevice.GetGameRTV();
     ctx.targetDSV = _gfxDevice.GetDepthStencilView();
+    ctx.sceneDepthSRV = _gfxDevice.GetDepthSRV();
     ctx.viewportW = _gfxDevice.GetWidthU();
     ctx.viewportH = _gfxDevice.GetHeightU();
     return ctx;

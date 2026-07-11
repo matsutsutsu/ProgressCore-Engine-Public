@@ -1539,6 +1539,9 @@
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\ColorGradingConfigComponent.h">
       <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\DepthOfFieldConfigComponent.h">
+      <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\DistortionEffect.h">
       <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
     </ClInclude>
@@ -1552,6 +1555,9 @@
       <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\ColorGradingEffect.h">
+      <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\DepthOfFieldEffect.h">
       <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\ErrorShader.h">
@@ -2507,6 +2513,9 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\ColorGradingEffect.cpp">
       <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\DepthOfFieldEffect.cpp">
+      <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Components\PostProcess\RadialBlurConfigComponentMeta.cpp">
       <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
     </ClCompile>
@@ -2517,6 +2526,9 @@
       <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Components\PostProcess\ColorGradingConfigComponentMeta.cpp">
+      <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Components\PostProcess\DepthOfFieldConfigComponentMeta.cpp">
       <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\ErrorShader.cpp">
@@ -2875,6 +2887,9 @@
       <Filter>Shader\PostProcess</Filter>
     </FxCompile>
     <FxCompile Include="Shader\PostProcess\ColorGradingPS.hlsl">
+      <Filter>Shader\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\PostProcess\DepthOfFieldPS.hlsl">
       <Filter>Shader\PostProcess</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Pass\Error\ErrorPS.hlsl">
