@@ -9,6 +9,7 @@
 #include "DistortionEffect.h"
 #include "RadialBlurEffect.h"
 #include "VignetteEffect.h"
+#include "ChromaticAberrationEffect.h"
 
 
 void PostProcessManager::Initialize(ID3D11Device* device, UINT width, UINT height)
@@ -25,6 +26,7 @@ void PostProcessManager::Initialize(ID3D11Device* device, UINT width, UINT heigh
     AddEffect<DistortionEffect>();
     AddEffect<RadialBlurEffect>();
     AddEffect<BloomEffect>();
+    AddEffect<ChromaticAberrationEffect>();
     AddEffect<VignetteEffect>();
 
 

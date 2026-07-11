@@ -69,6 +69,15 @@ PP_STRUCT(CbVignetteData, SLOT_CB_VIGNETTE) {
   float  vigPad[3];
 };
 
+// ============================================================================
+// ChromaticAberration パラメータレイアウト（合計16バイト）
+// ============================================================================
+PP_STRUCT(CbChromaticData, SLOT_CB_CHROMATIC) {
+  float2 chromaCenter;
+  float  chromaStrength;
+  float  chromaFalloff;
+};
+
 #ifdef __cplusplus
 } // namespace GpuData
 // C++側のサイズ検証。ずれていたらコンパイルが止まる
@@ -81,6 +90,8 @@ static_assert(
     sizeof(GpuData::CbRadialBlurData) == 16, "CbRadialBlurData size mismatch");
 static_assert(
     sizeof(GpuData::CbVignetteData) == 48, "CbVignetteData size mismatch");
+static_assert(
+    sizeof(GpuData::CbChromaticData) == 16, "CbChromaticData size mismatch");
 #endif
 
 #endif // POST_PROCESS_SHARED_H

@@ -1,5 +1,5 @@
 // Shader/PostProcess/VignettePS.hlsl
-#include "Shader/Common/Common.hlsli"
+#include "Shader/PostProcess/PostProcessVS.hlsli"
 #include "Engine/Graphics/Shader/Shared/PostProcessShared.h"
 
 Texture2D    gSceneTexture : register(REG_SRV(SLOT_SRV_BLOOM_IN));

@@ -5,7 +5,7 @@
 // 外周ほど強く流れる「スピード感」を出す。
 //
 // center付近は鮮明に保つ(falloffで制御)ため、中心の被写体は読めるまま周囲だけが流れる。
-#include "Shader/Common/Common.hlsli"
+#include "Shader/PostProcess/PostProcessVS.hlsli"
 #include "Engine/Graphics/Shader/Shared/PostProcessShared.h"
 
 Texture2D    gSceneTexture : register(REG_SRV(SLOT_SRV_BLOOM_IN));

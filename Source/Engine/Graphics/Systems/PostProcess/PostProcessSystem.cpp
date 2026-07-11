@@ -6,6 +6,8 @@
 #include "Engine/Graphics/Components/PostProcess/RadialBlurConfigComponent.h"
 #include "Engine/Graphics/Shader/PostProcess/VignetteEffect.h"
 #include "Engine/Graphics/Components/PostProcess/VignetteConfigComponent.h"
+#include "Engine/Graphics/Shader/PostProcess/ChromaticAberrationEffect.h"
+#include "Engine/Graphics/Components/PostProcess/ChromaticAberrationConfigComponent.h"
 
 
 
@@ -72,6 +74,13 @@ void PostProcessSystem::Update(float dt) {
     if (auto* bloom = postProcess->GetEffect<BloomEffect>()) {
         bloom->SetEnabled(finalBloom.enable);
         bloom->UpdateParams(finalBloom.data);
+    }
+
+    if (auto* comp = _world->GetSingletonComponent<ChromaticAberrationConfigComponent>()) {
+      if (auto* chroma = postProcess->GetEffect<ChromaticAberrationEffect>()) {
+        chroma->SetEnabled(comp->enable);
+        chroma->UpdateParams(comp->data);
+      }
     }
 
     if (auto* comp = _world->GetSingletonComponent<VignetteConfigComponent>()) {
