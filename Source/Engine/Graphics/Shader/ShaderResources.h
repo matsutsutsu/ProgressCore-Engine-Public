@@ -33,6 +33,7 @@
 #define SLOT_CB_BLOOM           0
 #define SLOT_CB_TONEMAP         1
 #define SLOT_CB_DISTORTION      2   // ディストーション用のスロットを確保
+#define SLOT_CB_RADIALBLUR      2   // 放射状ブラー(Distortionとb2を共有=時間的に排他)
 
 // --- Per-frame (Graphics / EnvironmentSystem がバインド) ---
 #define SLOT_CB_SCENE           8   // viewProjection, camera, dirLight ... ★Graphics::Update のみ書込

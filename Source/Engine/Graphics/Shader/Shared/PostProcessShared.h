@@ -47,6 +47,15 @@ PP_STRUCT(CbDistortionData, SLOT_CB_DISTORTION) {
   float pad3[2];
 };
 
+// ============================================================================
+// RadialBlur パラメータレイアウト（合計16バイト）
+// ============================================================================
+PP_STRUCT(CbRadialBlurData, SLOT_CB_RADIALBLUR) {
+  float2 blurCenter;
+  float  blurStrength;
+  float  blurFalloff;
+};
+
 #ifdef __cplusplus
 } // namespace GpuData
 // C++側のサイズ検証。ずれていたらコンパイルが止まる
@@ -55,6 +64,8 @@ static_assert(
     sizeof(GpuData::CbToneMapData) == 32, "CbToneMapData size mismatch");
 static_assert(
     sizeof(GpuData::CbDistortionData) == 16, "CbDistortionData size mismatch");
+static_assert(
+    sizeof(GpuData::CbRadialBlurData) == 16, "CbRadialBlurData size mismatch");
 #endif
 
 #endif // POST_PROCESS_SHARED_H
