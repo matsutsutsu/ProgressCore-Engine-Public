@@ -8,6 +8,8 @@
 #include "Engine/Graphics/Components/PostProcess/VignetteConfigComponent.h"
 #include "Engine/Graphics/Shader/PostProcess/ChromaticAberrationEffect.h"
 #include "Engine/Graphics/Components/PostProcess/ChromaticAberrationConfigComponent.h"
+#include "Engine/Graphics/Shader/PostProcess/ColorGradingEffect.h"
+#include "Engine/Graphics/Components/PostProcess/ColorGradingConfigComponent.h"
 
 
 
@@ -88,6 +90,13 @@ void PostProcessSystem::Update(float dt) {
         vignette->SetEnabled(comp->enable);
         comp->data.vigTime += dt;
         vignette->UpdateParams(comp->data);
+      }
+    }
+
+    if (auto* comp = _world->GetSingletonComponent<ColorGradingConfigComponent>()) {
+      if (auto* grading = postProcess->GetEffect<ColorGradingEffect>()) {
+        grading->SetEnabled(comp->enable);
+        grading->UpdateParams(comp->data);
       }
     }
 

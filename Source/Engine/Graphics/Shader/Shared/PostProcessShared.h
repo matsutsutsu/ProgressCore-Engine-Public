@@ -78,6 +78,17 @@ PP_STRUCT(CbChromaticData, SLOT_CB_CHROMATIC) {
   float  chromaFalloff;
 };
 
+// ============================================================================
+// ColorGrading パラメータレイアウト（合計32バイト）
+// ============================================================================
+PP_STRUCT(CbColorGradingData, SLOT_CB_COLORGRADING) {
+  float4 gradeTint;
+  float  gradeSaturation;
+  float  gradeContrast;
+  float  gradeBrightness;
+  float  gradeMixAmount;
+};
+
 #ifdef __cplusplus
 } // namespace GpuData
 // C++側のサイズ検証。ずれていたらコンパイルが止まる
@@ -92,6 +103,8 @@ static_assert(
     sizeof(GpuData::CbVignetteData) == 48, "CbVignetteData size mismatch");
 static_assert(
     sizeof(GpuData::CbChromaticData) == 16, "CbChromaticData size mismatch");
+static_assert(
+    sizeof(GpuData::CbColorGradingData) == 32, "CbColorGradingData size mismatch");
 #endif
 
 #endif // POST_PROCESS_SHARED_H

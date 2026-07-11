@@ -16,6 +16,16 @@
                     "falloff": 2.0,
                     "strength": 0.0
                 },
+                "ColorGrading": {
+                    "brightness": 1.0,
+                    "contrast": 1.0,
+                    "enable": true,
+                    "mixAmount": 1.0,
+                    "saturation": 1.0,
+                    "tintB": 1.0,
+                    "tintG": 1.0,
+                    "tintR": 1.0
+                },
                 "DirectionalLight": {
                     "color": [
                         1.0,

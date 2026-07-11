@@ -7,6 +7,7 @@
 #include "Engine/Graphics/Components/PostProcess/RadialBlurConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/VignetteConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/ChromaticAberrationConfigComponent.h"
+#include "Engine/Graphics/Components/PostProcess/ColorGradingConfigComponent.h"
 
 // 前方宣言
 class PostProcessManager;
@@ -27,7 +28,8 @@ public:
             CCL::ECS::TypeInfo<DistortionConfigComponent>::ID(),
             CCL::ECS::TypeInfo<RadialBlurConfigComponent>::ID(),
             CCL::ECS::TypeInfo<VignetteConfigComponent>::ID(),
-            CCL::ECS::TypeInfo<ChromaticAberrationConfigComponent>::ID()};
+            CCL::ECS::TypeInfo<ChromaticAberrationConfigComponent>::ID(),
+            CCL::ECS::TypeInfo<ColorGradingConfigComponent>::ID()};
     }
 
     void Update(float dt) override;
