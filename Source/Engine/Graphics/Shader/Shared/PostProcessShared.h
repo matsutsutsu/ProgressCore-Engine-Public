@@ -99,6 +99,16 @@ PP_STRUCT(CbDepthOfFieldData, SLOT_CB_DOF) {
   float dofMaxBlur;
 };
 
+// ============================================================================
+// SSAO パラメータレイアウト（合計16バイト）
+// ============================================================================
+PP_STRUCT(CbSSAOData, SLOT_CB_SSAO) {
+  float ssaoRadius;
+  float ssaoIntensity;
+  float ssaoBias;
+  float ssaoMaxDistance;
+};
+
 #ifdef __cplusplus
 } // namespace GpuData
 // C++側のサイズ検証。ずれていたらコンパイルが止まる
@@ -117,6 +127,8 @@ static_assert(
     sizeof(GpuData::CbColorGradingData) == 32, "CbColorGradingData size mismatch");
 static_assert(
     sizeof(GpuData::CbDepthOfFieldData) == 16, "CbDepthOfFieldData size mismatch");
+static_assert(
+    sizeof(GpuData::CbSSAOData) == 16, "CbSSAOData size mismatch");
 #endif
 
 #endif // POST_PROCESS_SHARED_H

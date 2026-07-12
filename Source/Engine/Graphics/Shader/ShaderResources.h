@@ -38,6 +38,7 @@
 #define SLOT_CB_CHROMATIC       2   // 色収差(b2共有=時間的に排他)
 #define SLOT_CB_COLORGRADING    2   // カラーグレーディング(b2共有=時間的に排他)
 #define SLOT_CB_DOF             2   // 被写界深度(b2共有=時間的に排他)
+#define SLOT_CB_SSAO            2   // SSAO(b2共有=時間的に排他)
 
 // --- Per-frame (Graphics / EnvironmentSystem がバインド) ---
 #define SLOT_CB_SCENE           8   // viewProjection, camera, dirLight ... ★Graphics::Update のみ書込

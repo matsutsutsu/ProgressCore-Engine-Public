@@ -12,6 +12,8 @@
 #include "Engine/Graphics/Components/PostProcess/ChromaticAberrationConfigComponent.h"
 #include "Engine/Graphics/Shader/PostProcess/ColorGradingEffect.h"
 #include "Engine/Graphics/Components/PostProcess/ColorGradingConfigComponent.h"
+#include "Engine/Graphics/Shader/PostProcess/SSAOEffect.h"
+#include "Engine/Graphics/Components/PostProcess/SSAOConfigComponent.h"
 
 
 
@@ -57,6 +59,13 @@ void PostProcessSystem::Update(float dt) {
     // -------------------------------------------------------
     // 4. マネージャーへ一括転送
     // -------------------------------------------------------
+
+    if (auto* comp = _world->GetSingletonComponent<SSAOConfigComponent>()) {
+      if (auto* ssao = postProcess->GetEffect<SSAOEffect>()) {
+        ssao->SetEnabled(comp->enable);
+        ssao->UpdateParams(comp->data);
+      }
+    }
 
     // ★ Distortion の転送処理を追加
     if (auto *comp =

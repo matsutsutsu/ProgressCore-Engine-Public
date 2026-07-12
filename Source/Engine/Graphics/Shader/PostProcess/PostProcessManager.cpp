@@ -12,6 +12,7 @@
 #include "VignetteEffect.h"
 #include "ChromaticAberrationEffect.h"
 #include "ColorGradingEffect.h"
+#include "SSAOEffect.h"
 
 
 void PostProcessManager::Initialize(ID3D11Device* device, UINT width, UINT height)
@@ -25,6 +26,7 @@ void PostProcessManager::Initialize(ID3D11Device* device, UINT width, UINT heigh
     // 2. エフェクトの生産ラインを構築
     // ==========================================================
 
+    AddEffect<SSAOEffect>();
     AddEffect<DistortionEffect>();
     AddEffect<RadialBlurEffect>();
     AddEffect<DepthOfFieldEffect>();

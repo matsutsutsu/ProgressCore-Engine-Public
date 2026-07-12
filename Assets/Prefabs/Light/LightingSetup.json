@@ -89,6 +89,13 @@
                     "falloff": 2.0,
                     "strength": 0.0
                 },
+                "SSAO": {
+                    "bias": 0.019999999552965164,
+                    "enable": true,
+                    "intensity": 0.800000011920929,
+                    "maxDistance": 50.0,
+                    "radius": 0.5
+                },
                 "ShadowMapConfig": {
                     "cascadeSplits": [
                         15.0,
