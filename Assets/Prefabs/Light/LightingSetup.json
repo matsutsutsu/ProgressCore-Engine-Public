@@ -26,6 +26,13 @@
                     "tintG": 1.0,
                     "tintR": 1.0
                 },
+                "DepthOfField": {
+                    "enable": false,
+                    "falloff": 8.0,
+                    "focusDistance": 10.0,
+                    "focusRange": 3.0,
+                    "maxBlur": 0.009999999776482582
+                },
                 "DirectionalLight": {
                     "color": [
                         1.0,

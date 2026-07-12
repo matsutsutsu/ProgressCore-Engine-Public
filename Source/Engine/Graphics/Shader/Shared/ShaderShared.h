@@ -148,6 +148,8 @@ CB_STRUCT(CbScene, SLOT_CB_SCENE)
     //   末尾に追加しているため既存フィールドのオフセットは不変。
     //   Common.hlsli を include する全マテリアルから gTimeParams で参照可能。
     float4 gTimeParams;
+
+    float4 gScreenParams;
 };
 
 // ==================================================================
@@ -203,7 +205,7 @@ static_assert(sizeof(SpotLight) == 80, "SpotLight size mismatch vs HLSL");
 static_assert(sizeof(InstanceData) == 80, "InstanceData size mismatch vs HLSL");
 static_assert(sizeof(CbLight) == 1104, "CbLight size mismatch vs HLSL");
 static_assert(sizeof(CbSkeleton) == 16384, "CbSkeleton size mismatch vs HLSL");
-static_assert(sizeof(CbScene) == 256, "CbScene size mismatch vs HLSL");
+static_assert(sizeof(CbScene) == 272, "CbScene size mismatch vs HLSL");
 static_assert(sizeof(CbShadow) == 240, "CbShadow size mismatch vs HLSL");
 static_assert(sizeof(CbFog) == 96, "CbFog size mismatch vs HLSL");
 

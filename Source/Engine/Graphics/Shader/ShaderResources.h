@@ -69,6 +69,7 @@
 //        構造化バッファ。両者は同時に発生しないため衝突しない。
 #define SLOT_SRV_PARTICLE_BUF   3   // (別名) パーティクル描画時の構造化バッファ
 #define SLOT_SRV_SCENE_DEPTH    4
+#define SLOT_SRV_SCENE_COLOR    5
 
 // --- Per-pass / ポストプロセス ---
 //     ※ t0/t1 は per-material と物理スロットを共有（時間的に排他）

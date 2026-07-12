@@ -1309,6 +1309,8 @@
     <ClCompile Include="Source\Engine\Graphics\Pipeline\SetupPass.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\ShadowPass.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\SkyboxPass.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Pipeline\SceneColorGrabPass.cpp" />
+    <ClInclude Include="Source\Engine\Graphics\Pipeline\SceneColorGrabPass.h" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\TransparentPass.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Renderer\ImGuiRenderer.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -1641,6 +1643,16 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
     </FxCompile>
     <FxCompile Include="Shader\Material\LockOnMarker\LockOnMarkerPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Refraction\RefractionVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Refraction\RefractionPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>

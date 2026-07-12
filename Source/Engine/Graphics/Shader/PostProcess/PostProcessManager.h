@@ -58,6 +58,8 @@ public:
         ID3D11RenderTargetView* targetRTV = nullptr,
         ID3D11ShaderResourceView* sceneDepthSRV = nullptr);
 
+    void GrabSceneColor(ID3D11DeviceContext* dc);
+
     // ================================================================
     //  エフェクト管理 API
     // ================================================================
@@ -108,6 +110,7 @@ private:
     //  HDR キャンバスを 2枚 用意する（Ping-Pong用）
     RenderTargetHandle _hdrBuffers[2];
     RenderTargetHandle _outputSDR{};
+    RenderTargetHandle _sceneColorCopy{};
 
     std::vector<std::unique_ptr<IPostEffect>> _effects;
 

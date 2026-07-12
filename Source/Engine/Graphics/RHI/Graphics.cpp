@@ -157,6 +157,12 @@ void Graphics::Update()
         data.gTimeParams = { timeSec, deltaSec, sinf(timeSec), 0.0f };
     }
 
+    {
+        const float sw = _gfxDevice.GetWidth();
+        const float sh = _gfxDevice.GetHeight();
+        data.gScreenParams = { sw, sh, (sw > 0 ? 1.0f / sw : 0.0f), (sh > 0 ? 1.0f / sh : 0.0f) };
+    }
+
     _gfxDevice.UpdateSceneConstantBuffer(&data, sizeof(data));
 }
 

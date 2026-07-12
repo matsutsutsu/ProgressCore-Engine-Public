@@ -13,7 +13,8 @@
         { "name": "GhostPBR", "blend": "transparency", "depth": "testOnly" },
         { "name": "EnergyStream", "blend": "additive" },
         { "name": "LockOnPBR" },
-        { "name": "LockOnMarker", "blend": "transparency", "depth": "none" }
+        { "name": "LockOnMarker", "blend": "transparency", "depth": "none" },
+        { "name": "Refraction", "blend": "transparency", "depth": "testOnly" }
     ],
     "customShaders": [
         { "name": "Outline",   "class": "OutlineShader" },
