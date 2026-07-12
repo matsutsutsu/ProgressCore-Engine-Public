@@ -9,8 +9,10 @@ void PostProcessPass::Execute(const RenderFrameContext& ctx)
 
     if (_services->sceneConstantBuffer) {
         ID3D11Buffer* sceneCB = _services->sceneConstantBuffer;
+        ctx.dc->VSSetConstantBuffers(SLOT_CB_SCENE, 1, &sceneCB);
         ctx.dc->PSSetConstantBuffers(SLOT_CB_SCENE, 1, &sceneCB);
     }
 
-    _services->postProcess->EndScene(ctx.dc, ctx.targetRTV, ctx.sceneDepthSRV);
+    _services->postProcess->EndScene(
+        ctx.dc, ctx.targetRTV, ctx.sceneDepthSRV, ctx.sceneNormalSRV);
 }

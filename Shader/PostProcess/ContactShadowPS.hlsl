@@ -6,7 +6,7 @@
 // 「直接光が特定方向から遮られるか」を扱う。両者は補完関係。
 #include "Shader/PostProcess/PostProcessVS.hlsli"
 #include "Shader/Common/DepthUtils.hlsli"
-#include "Engine/Graphics/Shader/Shared/PostProcessShared.h"
+#include "Shader/PostProcess/ContactShadow.hlsli"
 
 Texture2D    gSceneColor : register(REG_SRV(SLOT_SRV_BLOOM_IN));
 SamplerState LinearSampler : register(REG_SMP(SLOT_SMP_LINEAR));

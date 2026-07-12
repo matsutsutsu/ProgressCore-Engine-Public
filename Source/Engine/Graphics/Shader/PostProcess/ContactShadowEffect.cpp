@@ -21,6 +21,12 @@ void ContactShadowEffect::Initialize(ID3D11Device* device, UINT /*width*/, UINT 
     sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
     sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
     device->CreateSamplerState(&sampDesc, _res->sampler.GetAddressOf());
+
+    D3D11_BLEND_DESC blendDesc = {};
+    blendDesc.RenderTarget[0].BlendEnable = FALSE;
+    blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+    HRESULT hr = device->CreateBlendState(&blendDesc, _opaqueBlendState.GetAddressOf());
+    _ASSERT_EXPR(SUCCEEDED(hr), L"ContactShadowEffect: OpaqueBlendState 生成失敗");
 }
 
 void ContactShadowEffect::Resize(ID3D11Device* /*device*/, UINT /*width*/, UINT /*height*/)
@@ -49,6 +55,7 @@ void ContactShadowEffect::Process(ID3D11DeviceContext* dc,
     }
 
     dc->OMSetRenderTargets(1, &outputRTV, nullptr);
+    dc->OMSetBlendState(_opaqueBlendState.Get(), nullptr, 0xFFFFFFFF);
     dc->IASetInputLayout(nullptr);
     dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     dc->VSSetShader(_res->vs.Get(), nullptr, 0);

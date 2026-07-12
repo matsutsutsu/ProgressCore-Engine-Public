@@ -50,6 +50,9 @@ struct RenderServices
     LightManager* lightManager = nullptr;
     ShadowMap* shadowMap = nullptr;
     RenderQueue* renderQueue = nullptr;
+
+    UINT screenWidth  = 0;
+    UINT screenHeight = 0;
 };
 
 // ============================================================================
@@ -71,6 +74,7 @@ struct RenderFrameContext
     ID3D11RenderTargetView* targetRTV = nullptr;
     ID3D11DepthStencilView* targetDSV = nullptr;
     ID3D11ShaderResourceView* sceneDepthSRV = nullptr;
+    ID3D11ShaderResourceView* sceneNormalSRV = nullptr;
 
     // ---- メタ情報 ----
     float    deltaTime = 0.0f;

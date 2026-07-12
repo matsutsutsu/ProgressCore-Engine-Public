@@ -1,4 +1,4 @@
-﻿{
+{
     "materialShaders": [
         { "name": "PBR" },
         { "name": "Phong" },
@@ -19,6 +19,7 @@
     "customShaders": [
         { "name": "Outline",   "class": "OutlineShader" },
         { "name": "ShadowMap", "class": "ShadowMapShader" },
-        { "name": "Particle",  "class": "ParticleShader" }
+        { "name": "Particle",  "class": "ParticleShader" },
+        { "name": "NormalPrepass", "class": "NormalPrepassShader" }
     ]
 }

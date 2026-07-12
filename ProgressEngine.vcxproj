@@ -488,6 +488,8 @@
     <ClInclude Include="Source\Engine\Graphics\Pipeline\Core\IRenderPass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\Core\RenderPipeline.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\OpaquePass.h" />
+    <ClInclude Include="Source\Engine\Graphics\Pipeline\NormalBuffer.h" />
+    <ClInclude Include="Source\Engine\Graphics\Pipeline\NormalPrepass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\ParticlePass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\PostProcessPass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\PrimitivePass.h" />
@@ -529,6 +531,7 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\ParticleComputeShader.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\ParticleShader.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\ShadowMapShader.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\Material\NormalPrepassShader.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Pass\ShadowMap.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Pass\ShadowUtils.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\BloomEffect.h" />
@@ -1309,6 +1312,8 @@
     <ClCompile Include="Source\Engine\Graphics\Components\Particle\GPUParticleComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\Core\RenderPipeline.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\OpaquePass.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Pipeline\NormalBuffer.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Pipeline\NormalPrepass.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\ParticlePass.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\PostProcessPass.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\PrimitivePass.cpp" />
@@ -1344,6 +1349,7 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\ParticleComputeShader.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\ParticleShader.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\ShadowMapShader.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Shader\Material\NormalPrepassShader.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\Pass\ShadowMap.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\BloomEffect.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\DistortionEffect.cpp" />
@@ -1725,6 +1731,11 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
     </FxCompile>
+        <FxCompile Include="Shader\Pass\NormalPrepass\NormalPrepassPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
     <FxCompile Include="Shader\Pass\Error\ErrorPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
@@ -1741,6 +1752,11 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
     </FxCompile>
     <FxCompile Include="Shader\Pass\Outline\OutlineVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+    </FxCompile>
+        <FxCompile Include="Shader\Pass\NormalPrepass\NormalPrepassVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
@@ -1801,6 +1817,16 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
     </FxCompile>
             <FxCompile Include="Shader\PostProcess\ContactShadowPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+        <FxCompile Include="Shader\PostProcess\SSAOBlurPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\PostProcess\SSAOCompositePS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>

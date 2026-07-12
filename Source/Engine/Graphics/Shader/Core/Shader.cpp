@@ -115,7 +115,8 @@ void Shader::UpdateMaterialProperties(ID3D11DeviceContext* dc, const MaterialDat
         // t4/t5 は SceneColorGrabPass 等がパイプライン側でバインドする per-pass リソース。
         // マテリアルに無いから null を刺すと屈折等が常に黒になる。
         if (texInfo.bindPoint == SLOT_SRV_SCENE_DEPTH ||
-            texInfo.bindPoint == SLOT_SRV_SCENE_COLOR) {
+            texInfo.bindPoint == SLOT_SRV_SCENE_COLOR ||
+            texInfo.bindPoint == SLOT_SRV_SCENE_NORMAL) {
             continue;
         }
 

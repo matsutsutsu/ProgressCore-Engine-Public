@@ -100,6 +100,8 @@ void Graphics::SetupRenderPipeline()
     _renderServices.renderQueue = &RenderQueue::Instance();
     _renderServices.lightManager = _lightManager.get();
     _renderServices.postProcess = _postProcess.get();
+    _renderServices.screenWidth = _gfxDevice.GetWidthU();
+    _renderServices.screenHeight = _gfxDevice.GetHeightU();
 
     // (I) RenderQueue に ShaderRegistry を注入（ホットパス singleton ゼロ）
     RenderQueue::Instance().Initialize(_renderServices.shaders);
@@ -189,6 +191,7 @@ RenderFrameContext Graphics::MakeFrameContext(ID3D11RenderTargetView* overrideRT
     ctx.targetRTV = (overrideRTV != nullptr) ? overrideRTV : _gfxDevice.GetGameRTV();
     ctx.targetDSV = _gfxDevice.GetDepthStencilView();
     ctx.sceneDepthSRV = _gfxDevice.GetDepthSRV();
+    ctx.sceneNormalSRV = _sceneNormalSRV;
     ctx.viewportW = _gfxDevice.GetWidthU();
     ctx.viewportH = _gfxDevice.GetHeightU();
     return ctx;

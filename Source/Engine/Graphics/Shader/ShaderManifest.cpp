@@ -17,6 +17,7 @@
 #include "Engine/Graphics/Shader/Material/OutlineShader.h"
 #include "Engine/Graphics/Shader/Material/ShadowMapShader.h"
 #include "Engine/Graphics/Shader/Material/ParticleShader.h"
+#include "Engine/Graphics/Shader/Material/NormalPrepassShader.h"
 
 #include <json.hpp>
 #include <functional>
@@ -49,6 +50,7 @@ const std::unordered_map<std::string, CustomRegistrar>& CustomRegistrars()
         { "OutlineShader",   [](ShaderRegistry& r, uint32_t h) { r.RegisterShader<OutlineShader>(h);   } },
         { "ShadowMapShader", [](ShaderRegistry& r, uint32_t h) { r.RegisterShader<ShadowMapShader>(h); } },
         { "ParticleShader",  [](ShaderRegistry& r, uint32_t h) { r.RegisterShader<ParticleShader>(h);  } },
+        { "NormalPrepassShader", [](ShaderRegistry& r, uint32_t h) { r.RegisterShader<NormalPrepassShader>(h); } },
     };
     return table;
 }

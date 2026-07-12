@@ -99,7 +99,8 @@ void PostProcessManager::BeginScene(ID3D11DeviceContext* dc,
 
 ID3D11ShaderResourceView* PostProcessManager::EndScene(ID3D11DeviceContext* dc,
     ID3D11RenderTargetView* targetRTV,
-    ID3D11ShaderResourceView* sceneDepthSRV)
+    ID3D11ShaderResourceView* sceneDepthSRV,
+    ID3D11ShaderResourceView* sceneNormalSRV)
 {
     RenderTarget* outputSDR = ResourceManager::Instance().GetRenderTarget(_outputSDR);
     if (!outputSDR) return nullptr;
@@ -110,6 +111,9 @@ ID3D11ShaderResourceView* PostProcessManager::EndScene(ID3D11DeviceContext* dc,
 
     if (sceneDepthSRV) {
         dc->PSSetShaderResources(SLOT_SRV_SCENE_DEPTH, 1, &sceneDepthSRV);
+    }
+    if (sceneNormalSRV) {
+        dc->PSSetShaderResources(SLOT_SRV_SCENE_NORMAL, 1, &sceneNormalSRV);
     }
 
     // ================================================================
@@ -166,6 +170,8 @@ ID3D11ShaderResourceView* PostProcessManager::EndScene(ID3D11DeviceContext* dc,
     // 最終的な HDR 結果は readIdx のキャンバスに入っている
     ID3D11ShaderResourceView* nullDepth = nullptr;
     dc->PSSetShaderResources(SLOT_SRV_SCENE_DEPTH, 1, &nullDepth);
+    ID3D11ShaderResourceView* nullNormal = nullptr;
+    dc->PSSetShaderResources(SLOT_SRV_SCENE_NORMAL, 1, &nullNormal);
 
     RenderTarget* finalHDR = ResourceManager::Instance().GetRenderTarget(_hdrBuffers[readIdx]);
 

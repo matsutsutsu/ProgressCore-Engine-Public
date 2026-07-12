@@ -506,6 +506,9 @@
       <UniqueIdentifier>{e7067b87-8e10-4f6e-a321-f72d64988db8}</UniqueIdentifier>
     </Filter>
     <Filter Include="Shader\Pass\ShadowMap">
+    <Filter Include="Shader\Pass\NormalPrepass">
+      <UniqueIdentifier>{a1b2c3d4-e5f6-7890-abcd-ef1234567890}</UniqueIdentifier>
+    </Filter>
       <UniqueIdentifier>{06034f22-f2c0-48eb-802c-41fd61f27fb6}</UniqueIdentifier>
     </Filter>
     <Filter Include="Shader\Pass\Outline">
@@ -739,6 +742,9 @@
       <Filter>Source\Engine\Graphics\Shader\Material</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\ShadowMapShader.h">
+      <Filter>Source\Engine\Graphics\Shader\Material</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Shader\Material\NormalPrepassShader.h">
       <Filter>Source\Engine\Graphics\Shader\Material</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\Pass\ShadowMap.h">
@@ -1174,6 +1180,12 @@
       <Filter>Source\Engine\Graphics\RHI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Pipeline\OpaquePass.h">
+      <Filter>Source\Engine\Graphics\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Pipeline\NormalBuffer.h">
+      <Filter>Source\Engine\Graphics\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Pipeline\NormalPrepass.h">
       <Filter>Source\Engine\Graphics\Pipeline</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Pipeline\ParticlePass.h">
@@ -2000,6 +2012,9 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\ShadowMapShader.cpp">
       <Filter>Source\Engine\Graphics\Shader\Material</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Shader\Material\NormalPrepassShader.cpp">
+      <Filter>Source\Engine\Graphics\Shader\Material</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Shader\Pass\ShadowMap.cpp">
       <Filter>Source\Engine\Graphics\Shader\Pass</Filter>
     </ClCompile>
@@ -2301,6 +2316,12 @@
       <Filter>Source\Engine\Graphics\RHI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Pipeline\OpaquePass.cpp">
+      <Filter>Source\Engine\Graphics\Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Pipeline\NormalBuffer.cpp">
+      <Filter>Source\Engine\Graphics\Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Pipeline\NormalPrepass.cpp">
       <Filter>Source\Engine\Graphics\Pipeline</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Pipeline\ParticlePass.cpp">
@@ -2853,6 +2874,12 @@
     <FxCompile Include="Shader\Pass\ShadowMap\ShadowMapVS.hlsl">
       <Filter>Shader\Pass\ShadowMap</Filter>
     </FxCompile>
+    <FxCompile Include="Shader\Pass\NormalPrepass\NormalPrepassVS.hlsl">
+      <Filter>Shader\Pass\NormalPrepass</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Pass\NormalPrepass\NormalPrepassPS.hlsl">
+      <Filter>Shader\Pass\NormalPrepass</Filter>
+    </FxCompile>
     <FxCompile Include="Shader\Compute\GPUParticle\integrate_particle_cs.hlsl">
       <Filter>Shader\Compute\GPUParticle</Filter>
     </FxCompile>
@@ -2938,6 +2965,12 @@
       <Filter>Shader\PostProcess</Filter>
     </FxCompile>
     <FxCompile Include="Shader\PostProcess\SSAOPS.hlsl">
+      <Filter>Shader\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\PostProcess\SSAOBlurPS.hlsl">
+      <Filter>Shader\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\PostProcess\SSAOCompositePS.hlsl">
       <Filter>Shader\PostProcess</Filter>
     </FxCompile>
     <FxCompile Include="Shader\PostProcess\ContactShadowPS.hlsl">

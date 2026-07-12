@@ -42,5 +42,6 @@ private:
         Microsoft::WRL::ComPtr<ID3D11Buffer>       cb;
         Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler;
     };
+    Microsoft::WRL::ComPtr<ID3D11BlendState> _opaqueBlendState;
     std::unique_ptr<Resources> _res;
 };

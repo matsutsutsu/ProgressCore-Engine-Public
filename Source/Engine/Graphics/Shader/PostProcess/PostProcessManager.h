@@ -56,7 +56,8 @@ public:
      */
     ID3D11ShaderResourceView* EndScene(ID3D11DeviceContext* dc,
         ID3D11RenderTargetView* targetRTV = nullptr,
-        ID3D11ShaderResourceView* sceneDepthSRV = nullptr);
+        ID3D11ShaderResourceView* sceneDepthSRV = nullptr,
+        ID3D11ShaderResourceView* sceneNormalSRV = nullptr);
 
     void GrabSceneColor(ID3D11DeviceContext* dc);
 

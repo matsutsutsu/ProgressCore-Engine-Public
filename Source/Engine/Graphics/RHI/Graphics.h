@@ -138,6 +138,8 @@ public:
      */
     RenderFrameContext MakeFrameContext(ID3D11RenderTargetView* overrideRTV = nullptr) noexcept;
 
+    void SetSceneNormalSRV(ID3D11ShaderResourceView* srv) noexcept { _sceneNormalSRV = srv; }
+
 private:
 
     // ---- カメラ（Graphics が唯一の所有者） ----
@@ -167,4 +169,5 @@ private:
 
     bool _deviceLost = false; ///< Present() がデバイスロストを検出するとセットされる
 
+    ID3D11ShaderResourceView* _sceneNormalSRV = nullptr;
 };

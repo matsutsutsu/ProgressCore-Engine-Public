@@ -110,6 +110,15 @@ PP_STRUCT(CbSSAOData, SLOT_CB_SSAO) {
 };
 
 // ============================================================================
+// SSAOBlur パラメータレイアウト（合計16バイト）
+// ============================================================================
+PP_STRUCT(CbSSAOBlurData, SLOT_CB_SSAO_BLUR) {
+  float2 blurTexelStep;
+  float  blurDepthSigma;
+  float  blurMaxDistance;
+};
+
+// ============================================================================
 // ContactShadow パラメータレイアウト（合計32バイト）
 // ============================================================================
 PP_STRUCT(CbContactShadowData, SLOT_CB_CONTACTSHADOW) {
@@ -141,6 +150,8 @@ static_assert(
     sizeof(GpuData::CbDepthOfFieldData) == 16, "CbDepthOfFieldData size mismatch");
 static_assert(
     sizeof(GpuData::CbSSAOData) == 16, "CbSSAOData size mismatch");
+static_assert(
+    sizeof(GpuData::CbSSAOBlurData) == 16, "CbSSAOBlurData size mismatch");
 static_assert(
     sizeof(GpuData::CbContactShadowData) == 32, "CbContactShadowData size mismatch");
 #endif
