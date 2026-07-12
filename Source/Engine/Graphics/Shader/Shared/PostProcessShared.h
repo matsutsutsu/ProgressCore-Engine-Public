@@ -109,6 +109,18 @@ PP_STRUCT(CbSSAOData, SLOT_CB_SSAO) {
   float ssaoMaxDistance;
 };
 
+// ============================================================================
+// ContactShadow パラメータレイアウト（合計32バイト）
+// ============================================================================
+PP_STRUCT(CbContactShadowData, SLOT_CB_CONTACTSHADOW) {
+  float csRayLength;
+  float csThickness;
+  float csBias;
+  float csIntensity;
+  float csMaxDistance;
+  float3 csPad;
+};
+
 #ifdef __cplusplus
 } // namespace GpuData
 // C++側のサイズ検証。ずれていたらコンパイルが止まる
@@ -129,6 +141,8 @@ static_assert(
     sizeof(GpuData::CbDepthOfFieldData) == 16, "CbDepthOfFieldData size mismatch");
 static_assert(
     sizeof(GpuData::CbSSAOData) == 16, "CbSSAOData size mismatch");
+static_assert(
+    sizeof(GpuData::CbContactShadowData) == 32, "CbContactShadowData size mismatch");
 #endif
 
 #endif // POST_PROCESS_SHARED_H

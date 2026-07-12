@@ -2,11 +2,180 @@
     "entities": [
         {
             "components": {
+                "BloomConfig": {
+                    "data.intensity": 1.0,
+                    "data.radius": 1.0,
+                    "data.softKnee": 0.20000000298023224,
+                    "data.threshold": 1.0,
+                    "enable": true
+                },
+                "ChromaticAberration": {
+                    "centerX": 0.5,
+                    "centerY": 0.5,
+                    "enable": true,
+                    "falloff": 2.0,
+                    "strength": 0.0
+                },
+                "ColorGrading": {
+                    "brightness": 1.0,
+                    "contrast": 1.0,
+                    "enable": true,
+                    "mixAmount": 1.0,
+                    "saturation": 1.0,
+                    "tintB": 1.0,
+                    "tintG": 1.0,
+                    "tintR": 1.0
+                },
+                "ContactShadow": {
+                    "bias": 0.019999999552965164,
+                    "enable": true,
+                    "intensity": 0.699999988079071,
+                    "maxDistance": 30.0,
+                    "rayLength": 0.30000001192092896,
+                    "thickness": 0.10000000149011612
+                },
+                "DepthOfField": {
+                    "enable": false,
+                    "falloff": 8.0,
+                    "focusDistance": 10.0,
+                    "focusRange": 3.0,
+                    "maxBlur": 0.009999999776482582
+                },
+                "DirectionalLight": {
+                    "color": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "groundColor": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.5333333611488342
+                    ],
+                    "intensity": 1.0,
+                    "skyColor": [
+                        0.0,
+                        0.10309933125972748,
+                        0.35135138034820557,
+                        1.0
+                    ]
+                },
+                "Fog": {
+                    "color": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "enabled": true,
+                    "end": 500.0,
+                    "heightDensity": 0.5,
+                    "heightStart": 0.0,
+                    "noiseScale": 0.10000000149011612,
+                    "noiseSpeed": [
+                        0.10000000149011612,
+                        0.05000000074505806
+                    ],
+                    "noiseStrength": 0.0,
+                    "rimColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "rimPower": 3.0,
+                    "rimStrength": 0.0,
+                    "start": 40.0
+                },
+                "Name": {
+                    "name": "LightingSetup"
+                },
+                "RadialBlur": {
+                    "centerX": 0.5,
+                    "centerY": 0.5,
+                    "enable": false,
+                    "falloff": 2.0,
+                    "strength": 0.0
+                },
+                "SSAO": {
+                    "bias": 0.019999999552965164,
+                    "enable": true,
+                    "intensity": 0.800000011920929,
+                    "maxDistance": 50.0,
+                    "radius": 0.5
+                },
+                "ShadowMapConfig": {
+                    "cascadeSplits": [
+                        15.0,
+                        50.0,
+                        200.0
+                    ],
+                    "shadowBias": 0.00019999999494757503,
+                    "shadowColor": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.5
+                    ]
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "ToneMapConfig": {
+                    "data.chromaticAberration": 0.0,
+                    "data.colorTint": [
+                        1.0,
+                        1.0,
+                        1.0,
+                        0.0
+                    ],
+                    "data.exposure": 0.4000000059604645
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 9,
+                    "position": [
+                        0.0,
+                        5.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.699999988079071,
+                        0.0,
+                        -0.5,
+                        0.9200000166893005
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "Vignette": {
+                    "colorB": 0.0,
+                    "colorG": 0.0,
+                    "colorR": 0.0,
+                    "enable": true,
+                    "intensity": 0.4000000059604645,
+                    "pulseSpeed": 0.0,
+                    "radius": 0.550000011920929,
+                    "softness": 0.3499999940395355
+                }
+            },
+            "lid": 1
+        },
+        {
+            "components": {
                 "CameraBodyFree": {
-                    "currentPitch": -22.399993896484375,
-                    "currentYaw": -0.19999729096889496,
+                    "currentPitch": -14.000009536743164,
+                    "currentYaw": 361.3998718261719,
                     "lookSpeed": 0.20000000298023224,
-                    "moveSpeed": 19.90656280517578
+                    "moveSpeed": 21.13446617126465
                 },
                 "Name": {
                     "name": "FreeCamera"
@@ -21,17 +190,17 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 7,
+                    "parent": 9,
                     "position": [
-                        -7.292622089385986,
-                        10.64321231842041,
-                        -17.70302391052246
+                        -1.9295345544815063,
+                        10.316675186157227,
+                        -24.551612854003906
                     ],
                     "rotation": [
-                        0.1942339837551117,
-                        -0.0017120656557381153,
-                        0.00033899801201187074,
-                        0.9809536933898926
+                        0.1218603327870369,
+                        0.012124818749725819,
+                        -0.0014887417200952768,
+                        0.9924720525741577
                     ],
                     "scale": [
                         1.0,
@@ -47,7 +216,7 @@
                     "priority": 100
                 }
             },
-            "lid": 1
+            "lid": 2
         },
         {
             "components": {
@@ -85,7 +254,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 7,
+                    "parent": 9,
                     "position": [
                         0.0,
                         0.0,
@@ -101,119 +270,6 @@
                         4.0,
                         3.0,
                         4.0
-                    ]
-                }
-            },
-            "lid": 2
-        },
-        {
-            "components": {
-                "BloomConfig": {
-                    "data.intensity": 1.0,
-                    "data.radius": 1.0,
-                    "data.softKnee": 0.20000000298023224,
-                    "data.threshold": 1.0,
-                    "enable": true
-                },
-                "DirectionalLight": {
-                    "color": [
-                        1.0,
-                        1.0,
-                        1.0
-                    ],
-                    "groundColor": [
-                        0.0,
-                        0.0,
-                        0.0,
-                        0.5333333611488342
-                    ],
-                    "intensity": 0.0,
-                    "skyColor": [
-                        0.0,
-                        0.10309933125972748,
-                        0.35135138034820557,
-                        1.0
-                    ]
-                },
-                "Fog": {
-                    "color": [
-                        0.0,
-                        0.0,
-                        0.0,
-                        1.0
-                    ],
-                    "enabled": true,
-                    "end": 500.0,
-                    "heightDensity": 0.5,
-                    "heightStart": 0.0,
-                    "noiseScale": 0.10000000149011612,
-                    "noiseSpeed": [
-                        0.10000000149011612,
-                        0.05000000074505806
-                    ],
-                    "noiseStrength": 0.0,
-                    "rimColor": [
-                        1.0,
-                        1.0,
-                        1.0
-                    ],
-                    "rimPower": 3.0,
-                    "rimStrength": 0.0,
-                    "start": 40.0
-                },
-                "Name": {
-                    "name": "LightingSetup"
-                },
-                "ShadowMapConfig": {
-                    "cascadeSplits": [
-                        15.0,
-                        50.0,
-                        200.0
-                    ],
-                    "shadowBias": 0.00019999999494757503,
-                    "shadowColor": [
-                        0.0,
-                        0.0,
-                        0.0,
-                        0.5
-                    ]
-                },
-                "TimeState": {
-                    "buffScale": 1.0,
-                    "cinematicScale": 1.0,
-                    "freezeScale": 0.0,
-                    "group": 0,
-                    "hitStopTimer": 0.0,
-                    "localDt": 0.01666666753590107
-                },
-                "ToneMapConfig": {
-                    "data.chromaticAberration": 0.0,
-                    "data.colorTint": [
-                        1.0,
-                        1.0,
-                        1.0,
-                        0.0
-                    ],
-                    "data.exposure": 0.4000000059604645
-                },
-                "Transform": {
-                    "isStatic": false,
-                    "parent": 7,
-                    "position": [
-                        0.0,
-                        5.0,
-                        0.0
-                    ],
-                    "rotation": [
-                        0.699999988079071,
-                        0.0,
-                        -0.5,
-                        0.9200000166893005
-                    ],
-                    "scale": [
-                        1.0,
-                        1.0,
-                        1.0
                     ]
                 }
             },
@@ -246,7 +302,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 7,
+                    "parent": 9,
                     "position": [
                         1.0,
                         -0.04807744920253754,
@@ -286,7 +342,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 7,
+                    "parent": 9,
                     "position": [
                         -6.5,
                         3.5,
@@ -326,7 +382,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 7,
+                    "parent": 9,
                     "position": [
                         -14.699999809265137,
                         3.5,
@@ -346,9 +402,89 @@
                 }
             },
             "lid": 6
+        },
+        {
+            "components": {
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Test/Sponza/Sponza.gltf"
+                },
+                "Name": {
+                    "name": "Sponza"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 9,
+                    "position": [
+                        0.0,
+                        15.0,
+                        -154.39999389648438
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        5.0,
+                        5.0,
+                        5.0
+                    ]
+                }
+            },
+            "lid": 7
+        },
+        {
+            "components": {
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Test/DamagedHelmet.glb"
+                },
+                "Name": {
+                    "name": "DamageHelmet"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 9,
+                    "position": [
+                        10.100000381469727,
+                        5.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        1.0,
+                        -0.0,
+                        -6.229854676575997e-08
+                    ],
+                    "scale": [
+                        4.0,
+                        4.0,
+                        4.0
+                    ]
+                }
+            },
+            "lid": 8
         }
     ],
     "magic": 1397506883,
-    "timestamp": 1783824399,
+    "timestamp": 1783828538,
     "version": 1
 }

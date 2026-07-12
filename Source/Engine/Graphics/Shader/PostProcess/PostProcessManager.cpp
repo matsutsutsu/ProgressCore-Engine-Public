@@ -13,6 +13,7 @@
 #include "ChromaticAberrationEffect.h"
 #include "ColorGradingEffect.h"
 #include "SSAOEffect.h"
+#include "ContactShadowEffect.h"
 
 
 void PostProcessManager::Initialize(ID3D11Device* device, UINT width, UINT height)
@@ -27,6 +28,7 @@ void PostProcessManager::Initialize(ID3D11Device* device, UINT width, UINT heigh
     // ==========================================================
 
     AddEffect<SSAOEffect>();
+    AddEffect<ContactShadowEffect>();
     AddEffect<DistortionEffect>();
     AddEffect<RadialBlurEffect>();
     AddEffect<DepthOfFieldEffect>();

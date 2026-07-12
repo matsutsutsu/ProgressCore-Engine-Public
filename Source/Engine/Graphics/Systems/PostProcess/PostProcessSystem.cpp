@@ -14,6 +14,8 @@
 #include "Engine/Graphics/Components/PostProcess/ColorGradingConfigComponent.h"
 #include "Engine/Graphics/Shader/PostProcess/SSAOEffect.h"
 #include "Engine/Graphics/Components/PostProcess/SSAOConfigComponent.h"
+#include "Engine/Graphics/Shader/PostProcess/ContactShadowEffect.h"
+#include "Engine/Graphics/Components/PostProcess/ContactShadowConfigComponent.h"
 
 
 
@@ -64,6 +66,13 @@ void PostProcessSystem::Update(float dt) {
       if (auto* ssao = postProcess->GetEffect<SSAOEffect>()) {
         ssao->SetEnabled(comp->enable);
         ssao->UpdateParams(comp->data);
+      }
+    }
+
+    if (auto* comp = _world->GetSingletonComponent<ContactShadowConfigComponent>()) {
+      if (auto* contact = postProcess->GetEffect<ContactShadowEffect>()) {
+        contact->SetEnabled(comp->enable);
+        contact->UpdateParams(comp->data);
       }
     }
 
