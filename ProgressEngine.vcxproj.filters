@@ -420,9 +420,6 @@
     <Filter Include="Source\Game\Logics\AI\BehaviorTree\Actions">
       <UniqueIdentifier>{3135afad-6920-43ec-93d8-8f46096aaa44}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Game\Logics\AI\StateTree\Commander">
-      <UniqueIdentifier>{eb9849a2-7b3c-4a70-bca8-37b07ab5252d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Game\Prototype">
       <UniqueIdentifier>{f6e27a6b-390a-468b-b147-49ca5346c7eb}</UniqueIdentifier>
     </Filter>
@@ -543,6 +540,9 @@
     </Filter>
     <Filter Include="Source\Game\Logics\Character\Boss\Systems">
       <UniqueIdentifier>{26282c6a-b038-4c3e-9623-0dd3a09282da}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\Character\Boss\Commander">
+      <UniqueIdentifier>{eb9849a2-7b3c-4a70-bca8-37b07ab5252d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -1720,7 +1720,7 @@
       <Filter>Source\Game\Logics\AI\BehaviorTree\Actions</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\StateTree\Commander\CommanderAI.h">
-      <Filter>Source\Game\Logics\AI\StateTree\Commander</Filter>
+      <Filter>Source\Game\Logics\Character\Boss\Commander</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\Systems\AnimSetupSystem.h">
       <Filter>Source\Engine\Animation\Systems</Filter>

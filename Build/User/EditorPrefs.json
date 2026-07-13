@@ -1,3 +1,5 @@
 {
-    "DialogHistory": {}
+    "DialogHistory": {
+        "Scene": "Assets\\Scene"
+    }
 }
