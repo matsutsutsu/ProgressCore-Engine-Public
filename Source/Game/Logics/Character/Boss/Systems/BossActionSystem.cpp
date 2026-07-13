@@ -11,6 +11,8 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
+#include <Jolt/Physics/Character/CharacterVirtual.h>
+
 #include <cmath>
 #include <algorithm>
 
@@ -23,7 +25,6 @@ using namespace DirectX::SimpleMath;
 
 namespace
 {
-// 角度差を -180度〜180度に丸める（最短回転のため）
 float WrapAngle(float angle)
 {
     while (angle > DirectX::XM_PI)
@@ -48,6 +49,13 @@ void TurnToward(TransformComponent &trans, const Vector3 &lookDir, float turnSpe
     trans.rotation = Quaternion::CreateFromAxisAngle(Vector3::UnitY, newYaw);
     trans.isDirty  = true;
 }
+
+void SyncCharacterRotation(const TransformComponent &trans, JPH::CharacterVirtual *character)
+{
+    if (!character) return;
+
+    character->SetRotation(JPH::Quat(trans.rotation.x, trans.rotation.y, trans.rotation.z, trans.rotation.w));
+}
 } // namespace
 
 void BossActionSystem::Update(float rawDt)
@@ -58,35 +66,34 @@ void BossActionSystem::Update(float rawDt)
 
     Vector3 playerPos(battle.playerPos);
 
-    ForEach([&](TransformComponent &trans, BossActionComponent &bossDef,
-                const BossCommandComponent &cmd, const TimeStateComponent &time) {
+    ForEach([&](CharacterMovementInputComponent &input,
+                BossActionComponent &bossDef,
+                TransformComponent &trans,
+                const BossCommandComponent &cmd,
+                const JoltCharacterConfigComponent &config,
+                const JoltCharacterHandleComponent &joltHandle,
+                const TimeStateComponent &time) {
+        if (!joltHandle.character)
+            return;
+
         float dt = time.localDt;
 
-        // --- コマンド受付：意図に応じてステートを決める ---
         bossDef.currentState = (cmd.currentActionId == ::AI::A_Move)
                                    ? BossActionState::Move
                                    : BossActionState::None;
 
-        // --- ステートごとの処理 ---
         if (bossDef.currentState == BossActionState::Move)
         {
-            ProcessMove(bossDef, trans, playerPos, dt);
+            ProcessMove(bossDef, trans, input, config, joltHandle, playerPos, dt);
         }
         else
         {
-            ProcessIdle(bossDef, trans, playerPos, dt);
+            ProcessIdle(bossDef, trans, input, joltHandle, playerPos, dt);
         }
-
-        // --- 速度の積分（共通）---
-        trans.position = trans.position + bossDef.moveDirection * bossDef.currentMoveSpeed * dt;
-        trans.isDirty = true;
     });
 }
 
 
-// ============================================================================
-// デバッグUI：ボスの物理パラメータ調整・現在状態確認・位置ワープ
-// ============================================================================
 void BossActionSystem::OnGui()
 {
     if (!ImGui::CollapsingHeader("Boss Action (Position Debugger)"))
@@ -107,7 +114,6 @@ void BossActionSystem::OnGui()
         ImGui::PushID(static_cast<int>(e));
         ImGui::Text("Boss Entity ID: %llu", (unsigned long long)e);
 
-        // 位置を見ながら動かす（デバッグ用ワープ）
         float pos[3] = {trans->position.x, trans->position.y, trans->position.z};
         if (ImGui::DragFloat3("Boss Pos (Warp)", pos, 0.2f))
         {
@@ -121,19 +127,24 @@ void BossActionSystem::OnGui()
 }
 
 void BossActionSystem::ProcessIdle(BossActionComponent &bossDef, TransformComponent &trans,
+    CharacterMovementInputComponent &input, const JoltCharacterHandleComponent &joltHandle,
     const Vector3 &playerPos, float dt)
 {
-    // 速度をゼロへ滑らかに減速
     bossDef.currentMoveSpeed = (std::max)(0.0f,
         bossDef.currentMoveSpeed - bossDef.deceleration * dt);
 
-    // プレイヤーの方をゆっくり向く（睨みつける演出）
+    input.desiredVelocity = Vector3::Zero;
+    input.overrideSpeed   = -1.0f;
+
     Vector3 dirToPlayer = playerPos - trans.position;
     dirToPlayer.y       = 0.0f;
     TurnToward(trans, dirToPlayer, bossDef.idleTurnSpeed, dt);
+    SyncCharacterRotation(trans, joltHandle.character.GetPtr());
 }
 
 void BossActionSystem::ProcessMove(BossActionComponent &bossDef, TransformComponent &trans,
+    CharacterMovementInputComponent &input, const JoltCharacterConfigComponent &config,
+    const JoltCharacterHandleComponent &joltHandle,
     const Vector3 &playerPos, float dt)
 {
     Vector3 dirToPlayer = playerPos - trans.position;
@@ -142,18 +153,23 @@ void BossActionSystem::ProcessMove(BossActionComponent &bossDef, TransformCompon
     if (dirToPlayer.LengthSquared() <= 0.001f)
     {
         bossDef.currentMoveSpeed = 0.0f;
+        input.desiredVelocity    = Vector3::Zero;
+        input.overrideSpeed      = -1.0f;
         return;
     }
+
     dirToPlayer.Normalize();
     bossDef.moveDirection = dirToPlayer;
 
-    // 目標速度（最大速度）へ滑らかに加速
     bossDef.currentMoveSpeed = (std::min)(bossDef.walkSpeed,
         bossDef.currentMoveSpeed + bossDef.acceleration * dt);
 
-    // 進行方向を向く
+    input.desiredVelocity = dirToPlayer;
+    input.overrideSpeed   = (std::min)(bossDef.currentMoveSpeed, config.walkSpeed);
+
     TurnToward(trans, dirToPlayer, bossDef.turnSpeed, dt);
+    SyncCharacterRotation(trans, joltHandle.character.GetPtr());
 }
 
-// BehaviorTreeSystem(L02) の後、物理同期(Push)の前
-REGISTER_LOGIC_SYSTEM(BossActionSystem, Priority::LogicStage::L03_PrePhysics);
+// BehaviorTreeSystem(L02) の後、JoltCharacterUpdateSystem(L03) の前
+REGISTER_LOGIC_SYSTEM(BossActionSystem, Priority::LogicStage::L02_PostUpdate);

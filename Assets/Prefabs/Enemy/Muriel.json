@@ -29,6 +29,7 @@
                     "hoverAltitude": 20.0,
                     "isHovering": false,
                     "jumpAttackApexHeight": 8.0,
+                    "runSpeed": 8.0,
                     "turnSpeed": 10.0,
                     "walkSpeed": 3.0
                 },
@@ -89,7 +90,7 @@
                     "maxSlopeAngle": 45.0,
                     "maxStepHeight": 0.5,
                     "objectLayer": 1,
-                    "walkSpeed": 43.599998474121094
+                    "walkSpeed": 30.0
                 },
                 "Just Evade Component": {
                     "isJustSuccess": false

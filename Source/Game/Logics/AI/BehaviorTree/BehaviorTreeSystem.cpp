@@ -8,6 +8,7 @@
 #include "Game/Logics/AI/BehaviorTree/Actions/BTActionRegistry.h"
 
 #include "Game/Logics/AI/BehaviorTree/Actions/BTConditions.h"
+#include "Game/Logics/Character/Boss/Data/BTActions_Boss.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -48,6 +49,7 @@ BehaviorTreeSystem::BehaviorTreeSystem() : IfSystem("BehaviorTreeSystem")
 void BehaviorTreeSystem::Initialize()
 {
     BT::BossConditions::RegisterAll();
+    BT::BossActions::RegisterAll();
     CCL_LOG_INFO(LogCategory::AI, "[BehaviorTreeSystem] BTノード登録完了");
 }
 
@@ -67,9 +69,18 @@ void BehaviorTreeSystem::Update(float rawDt)
                 if (!btComp.sharedAsset) {
                     btComp.sharedAsset = std::make_shared<BTAsset>();
                 }
-                BehaviorTreeLoader::LoadFromJson(btComp.assetPath, *btComp.sharedAsset);
+                if (BehaviorTreeLoader::LoadFromJson(btComp.assetPath, *btComp.sharedAsset)) {
+                    btComp.loadedAssetPath = btComp.assetPath;
+                }
+                else {
+                    CCL_LOG_WARN(LogCategory::AI,
+                        "[BehaviorTreeSystem] BTロード失敗のため再試行可能: %s",
+                        btComp.assetPath.c_str());
+                }
             }
-            btComp.loadedAssetPath = btComp.assetPath;
+            else {
+                btComp.loadedAssetPath.clear();
+            }
         }
         if (!btComp.sharedAsset || btComp.sharedAsset->nodes.empty()) return;
 

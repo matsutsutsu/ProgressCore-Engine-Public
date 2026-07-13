@@ -17,7 +17,7 @@ CFIELD_ENUM_U8(objectLayer, "Object Layer", PhysicsLayers::LayerNames, PhysicsLa
 CFIELD_FLOAT_RANGED(maxSlopeAngle, "Max Slope Angle (Deg)", 1.0f, 0.0f, 90.0f, "Movement Limits")
 CFIELD_FLOAT_RANGED(maxStepHeight, "Max Step Height", 0.05f, 0.0f, 2.0f, "Movement Limits")
 
-CFIELD_FLOAT_RANGED(walkSpeed, "Walk Speed", 0.1f, 0.0f, 50.0f, "Speed")
+CFIELD_FLOAT_RANGED(walkSpeed, "最大歩行速度（物理上限）", 0.1f, 0.0f, 50.0f, "Speed")
 CFIELD_FLOAT_RANGED(jumpSpeed, "Jump Speed", 0.1f, 0.0f, 50.0f, "Speed")
 
 CFIELD_FLOAT_RANGED(characterMass, "Character Mass (kg)", 1.0f, 0.1f, 1000.0f, "Physics")

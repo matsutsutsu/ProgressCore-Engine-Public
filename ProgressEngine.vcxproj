@@ -649,6 +649,7 @@
     <ClInclude Include="Source\Engine\UI\Widgets\UIText.h" />
     <ClInclude Include="Source\Game\Core\AllComponents.h" />
     <ClInclude Include="Source\Game\Logics\AI\Battle\BattleContext.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Battle\BattleContextSyncSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTAction.h" />
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTActionRegistry.h" />
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTConditions.h" />
@@ -697,6 +698,7 @@
     <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\StateTreeRegistry.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\Serialization\StateTreeDef.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\Serialization\StateTreeSerializer.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Debug\AIDebugOverlaySystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\System\AIDebugSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\System\StateTreeResolveSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\System\StateTreeSystem.h" />
@@ -1412,6 +1414,7 @@
     <ClCompile Include="Source\Engine\UI\ImGui\ImGuiThemes.cpp" />
     <ClCompile Include="Source\Engine\UI\UIElement.cpp" />
     <ClCompile Include="Source\Engine\UI\UIManager.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\Battle\BattleContextSyncSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeComponentMeta.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
@@ -1434,6 +1437,7 @@
     <ClCompile Include="Source\Game\Logics\AI\FlowField\NavFlowFieldSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\StateTree\Core\StateTreeComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\StateTree\Serialization\StateTreeSerializer.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\Debug\AIDebugOverlaySystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\StateTree\System\AIDebugSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\StateTree\System\StateTreeResolveSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\StateTree\System\StateTreeSystem.cpp" />

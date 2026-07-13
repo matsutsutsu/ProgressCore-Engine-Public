@@ -11,6 +11,8 @@
 #include <algorithm>
 #include <queue>
 #include <fstream>
+#include <cstring>
+#include <cstdio>
 #include <json.hpp>
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/Platform/Core/Dialog.h"
@@ -53,6 +55,79 @@ void BehaviorTreeWindow::RecordStateForUndo(const std::string& commandName) {
         );
         _lastSavedState = newState;
     }
+}
+
+// ====================================================================
+// ActionRegistry ヘルパー（最小構成 BossAction と同期）
+// ====================================================================
+const char* BehaviorTreeWindow::GetActionDisplayName(ActionID id)
+{
+    if (const ActionEntry* e = FindActionEntry(id))
+        return e->name;
+    static thread_local char buf[64];
+    snprintf(buf, sizeof(buf), "不明なAction (ID:%d)", static_cast<int>(id));
+    return buf;
+}
+
+const char* BehaviorTreeWindow::GetConditionDisplayName(ActionID id)
+{
+    if (const ActionEntry* e = FindConditionEntry(id))
+        return e->name;
+    static thread_local char buf[64];
+    snprintf(buf, sizeof(buf), "不明なCondition (ID:%d)", static_cast<int>(id));
+    return buf;
+}
+
+bool BehaviorTreeWindow::DrawActionCombo(const char* label, ActionID& currentId)
+{
+    bool changed = false;
+    const char* preview = GetActionDisplayName(currentId);
+
+    if (ImGui::BeginCombo(label, preview)) {
+        const char* lastCategory = nullptr;
+        for (int i = 0; i < g_ActionRegistryCount; ++i) {
+            const ActionEntry& e = g_ActionRegistry[i];
+            if (e.category && (!lastCategory || std::strcmp(e.category, lastCategory) != 0)) {
+                ImGui::SeparatorText(e.category);
+                lastCategory = e.category;
+            }
+            const bool selected = (e.id == currentId);
+            if (ImGui::Selectable(e.name, selected)) {
+                currentId = e.id;
+                changed = true;
+            }
+            if (selected)
+                ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+    return changed;
+}
+
+bool BehaviorTreeWindow::DrawConditionCombo(const char* label, ActionID& currentId)
+{
+    bool changed = false;
+    const char* preview = GetConditionDisplayName(currentId);
+
+    if (ImGui::BeginCombo(label, preview)) {
+        const char* lastCategory = nullptr;
+        for (int i = 0; i < g_ConditionRegistryCount; ++i) {
+            const ActionEntry& e = g_ConditionRegistry[i];
+            if (e.category && (!lastCategory || std::strcmp(e.category, lastCategory) != 0)) {
+                ImGui::SeparatorText(e.category);
+                lastCategory = e.category;
+            }
+            const bool selected = (e.id == currentId);
+            if (ImGui::Selectable(e.name, selected)) {
+                currentId = e.id;
+                changed = true;
+            }
+            if (selected)
+                ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+    return changed;
 }
 
 
@@ -592,37 +667,22 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext& context) {
         }
 
         if (node.type == EditorBTNodeType::Action) {
-            const char* actionName = "Unknown";
-            for (int i = 0; i < g_ActionRegistryCount; ++i) {
-                if (g_ActionRegistry[i].id == node.actionOrConditionId) {
-                    actionName = g_ActionRegistry[i].name; break;
-                }
-            }
-            ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "> %s", actionName);
+            ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "> %s",
+                GetActionDisplayName(node.actionOrConditionId));
 
-            // =======================================================
-              // ★ 修正：Waitアクション時の残り時間リアルタイム表示
-              // =======================================================
-            if (activeAI && node.runtimeFlatIndex >= 0 && node.runtimeFlatIndex < activeAI->nodeTimers.size()) {
+            // Waitアクション時の残り時間リアルタイム表示
+            if (activeAI && node.runtimeFlatIndex >= 0
+                && node.runtimeFlatIndex < activeAI->nodeTimers.size()) {
                 float currentTimer = activeAI->nodeTimers[node.runtimeFlatIndex];
 
-                // ★ 究極の修正：
-                // タイマーが0.0fより大きい【かつ】、そのノードのIDが本物のWaitノード(100〜111)である時だけ表示する！
-                bool isRealWaitNode = (node.actionOrConditionId >= 100 && node.actionOrConditionId <= 111);
-
-                if (currentTimer > 0.0f && isRealWaitNode) {
+                if (currentTimer > 0.0f && IsWaitAction(node.actionOrConditionId)) {
                     ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.0f, 1.0f), "Wait: %.1fs", currentTimer);
                 }
             }
         }
         else if (node.type == EditorBTNodeType::Condition) {
-            const char* condName = "Unknown";
-            for (int i = 0; i < g_ConditionRegistryCount; ++i) {
-                if (g_ConditionRegistry[i].id == node.actionOrConditionId) {
-                    condName = g_ConditionRegistry[i].name; break;
-                }
-            }
-            ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "? %s", condName);
+            ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "? %s",
+                GetConditionDisplayName(node.actionOrConditionId));
         }
         // =======================================================
         //  デコレーターの表示とリアルタイム・プログレスバー
@@ -936,7 +996,8 @@ void BehaviorTreeWindow::DrawInspector() {
             case EditorBTNodeType::Action:
                 ImGui::Text("【Action (アクション / 行動)】\n"
                     "実際にAIを動かす末端の命令です。ゲームのロジックに命令を送ります。\n"
-                    "💡 使い方：移動や攻撃など。実行に時間がかかる行動は「Running(実行中)」を返し続け、次フレームも呼ばれます。");
+                    "💡 使い方：移動や攻撃など。実行に時間がかかる行動は「Running(実行中)」を返し続け、次フレームも呼ばれます。\n"
+                    "📌 現状のBoss実行層が対応するのは「移動(Move)」のみ。ドローン系は陣形指示、Waitはタイマー待機です。");
                 break;
             case EditorBTNodeType::Decorator:
                 ImGui::Text("【Decorator (デコレーター / 修飾)】\n"
@@ -963,14 +1024,7 @@ void BehaviorTreeWindow::DrawInspector() {
             if (it->type == EditorBTNodeType::Condition) {
                 ImGui::Separator();
                 ImGui::Text("条件設定 (Condition):");
-                int currentIndex = 0;
-                const char* names[64];
-                for (int i = 0; i < g_ConditionRegistryCount; ++i) {
-                    names[i] = g_ConditionRegistry[i].name;
-                    if (g_ConditionRegistry[i].id == it->actionOrConditionId) currentIndex = i;
-                }
-                if (ImGui::Combo("条件を選ぶ", &currentIndex, names, g_ConditionRegistryCount)) {
-                    it->actionOrConditionId = g_ConditionRegistry[currentIndex].id;
+                if (DrawConditionCombo("条件を選ぶ", it->actionOrConditionId)) {
                     _executionOrderDirty = true;
                     needsUndo = true;
                     undoMessage = "Change Condition";
@@ -979,17 +1033,32 @@ void BehaviorTreeWindow::DrawInspector() {
             else if (it->type == EditorBTNodeType::Action) {
                 ImGui::Separator();
                 ImGui::Text("行動設定 (Action):");
-                int currentIndex = 0;
-                const char* names[64];
-                for (int i = 0; i < g_ActionRegistryCount; ++i) {
-                    names[i] = g_ActionRegistry[i].name;
-                    if (g_ActionRegistry[i].id == it->actionOrConditionId) currentIndex = i;
-                }
-                if (ImGui::Combo("行動を選ぶ", &currentIndex, names, g_ActionRegistryCount)) {
-                    it->actionOrConditionId = g_ActionRegistry[currentIndex].id;
+                if (DrawActionCombo("行動を選ぶ", it->actionOrConditionId)) {
                     _executionOrderDirty = true;
                     needsUndo = true;
                     undoMessage = "Change Action";
+                }
+
+                // 選択中アクションの補足（最小構成 BossAction との対応）
+                if (IsBossPhysicalAction(it->actionOrConditionId)) {
+                    ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.6f, 1.0f),
+                        "→ BossActionSystem が物理移動を実行");
+                }
+                else if (IsDroneAction(it->actionOrConditionId)) {
+                    ImGui::TextColored(ImVec4(0.6f, 0.8f, 1.0f, 1.0f),
+                        "→ BossCommand.requestFormation に陣形を指示");
+                }
+                else if (IsWaitAction(it->actionOrConditionId)) {
+                    ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.4f, 1.0f),
+                        "→ nodeTimers で待機（BossAction 非依存）");
+                }
+                else if (it->actionOrConditionId == AI::A_ResetDamage) {
+                    ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f),
+                        "→ ブラックボードの蓄積ダメージをリセット");
+                }
+                else if (!FindActionEntry(it->actionOrConditionId)) {
+                    ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f),
+                        "⚠ 未登録ID（旧BTからの互換データの可能性）");
                 }
             }
 

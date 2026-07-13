@@ -188,9 +188,9 @@ inline CCL::AI::StateTreeAsset BuildCommanderAsset(const CommanderIDs &ids)
     };
 
     // 優先度の高い順に追加（上から評価される）
-    addTactic("Final",      "Assets/BehaviorTree/Final.json", ids.droneCountBelow, 100.0f);
-    addTactic("Aggressive", "Assets/BehaviorTree/Aggressive.json", ids.droneCountBelow, 400.0f);
-    addTactic("Pressure",   "Assets/BehaviorTree/Pressure.json", ids.droneCountBelow, 700.0f);
+    addTactic("Final",      "Assets/BehaviorTree/TestAINode.json", ids.droneCountBelow, 100.0f);
+    addTactic("Aggressive", "Assets/BehaviorTree/TestAINode.json", ids.droneCountBelow, 400.0f);
+    addTactic("Pressure",   "Assets/BehaviorTree/TestAINode.json", ids.droneCountBelow, 700.0f);
     addTactic("Control",    "Assets/BehaviorTree/TestAINode.json", ST_INVALID_NODE_TYPE, 0.0f); // フォールバック
 
 

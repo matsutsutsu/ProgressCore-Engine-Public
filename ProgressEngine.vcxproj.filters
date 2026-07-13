@@ -1821,6 +1821,10 @@
     <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossPerceptionSystem.h">
       <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Debug\AIDebugOverlaySystem.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Battle\BattleContextSyncSystem.h">
+      <Filter>Source\Game\Logics\AI\Battle</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2737,6 +2741,12 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossPerceptionSystem.cpp">
       <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\Debug\AIDebugOverlaySystem.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\Battle\BattleContextSyncSystem.cpp">
+      <Filter>Source\Game\Logics\AI\Battle</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
