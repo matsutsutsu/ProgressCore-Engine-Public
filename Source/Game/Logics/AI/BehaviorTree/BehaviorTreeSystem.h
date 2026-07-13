@@ -36,6 +36,8 @@ class BehaviorTreeSystem : public CCL::ECS::IfSystem<
     void Initialize() override; // BTActions/BTConditions の登録
     void Update(float dt) override;
 
+    void OnGui() override;
+
   private:
     /// @brief 木を再帰的に評価する汎用エンジン。
     ///        Action/Condition は registry から引いて実行する。

@@ -6,7 +6,7 @@
 
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeLoader.h"
 #include "Game/Logics/AI/BehaviorTree/Actions/BTActionRegistry.h"
-#include "Game/Logics/AI/BehaviorTree/Actions/BTActions_Boss.h"
+
 #include "Game/Logics/AI/BehaviorTree/Actions/BTConditions.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
@@ -15,6 +15,11 @@
 #include "Engine/Platform/Core/Logger.h"
 
 #include <algorithm>
+
+#ifdef ENABLE_EDITOR
+#include <imgui.h>
+#endif
+ 
 
 using namespace CCL::ECS;
 using namespace CCL::AI;
@@ -37,12 +42,11 @@ namespace {
 
 BehaviorTreeSystem::BehaviorTreeSystem() : IfSystem("BehaviorTreeSystem")
 {
+    hasGui = true;
 }
 
 void BehaviorTreeSystem::Initialize()
 {
-    // このエンジンが評価するアクション・条件を登録（自己登録）
-    BT::BossActions::RegisterAll();
     BT::BossConditions::RegisterAll();
     CCL_LOG_INFO(LogCategory::AI, "[BehaviorTreeSystem] BTノード登録完了");
 }
@@ -265,6 +269,40 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
         btComp.runningNodeId = nodeId;
     }
     return result;
+}
+
+
+void BehaviorTreeSystem::OnGui()
+{
+    if (!ImGui::CollapsingHeader("Behavior Tree (Brain Debugger)")) return;
+
+    auto view = _world->View<BehaviorTreeComponent>();
+    for (auto e : view)
+    {
+        auto *btComp = _world->GetComponent<BehaviorTreeComponent>(e);
+        if (!btComp) continue;
+
+        ImGui::PushID(static_cast<int>(e));
+        ImGui::Text("Entity ID: %llu", (unsigned long long)e);
+        ImGui::Text("Asset Path: %s", btComp->assetPath.c_str());
+
+        // lastLogActionId から行動名を逆引き（ActionRegistry.hの辞書を利用）
+        std::string actionName = "Idle";
+        for (int i = 0; i < g_ActionRegistryCount; ++i)
+        {
+            if (g_ActionRegistry[i].id == btComp->lastLogActionId)
+            {
+                actionName = g_ActionRegistry[i].name;
+                break;
+            }
+        }
+        ImGui::TextColored(ImVec4(0.4f, 1.0f, 1.0f, 1.0f), "Current Action: %s", actionName.c_str());
+
+        ImGui::Text("Distance To Target: %.2fm", btComp->blackboard.distanceToTarget);
+        ImGui::Text("HP: %.1f%%", btComp->blackboard.healthPercentage);
+
+        ImGui::PopID();
+    }
 }
 
 

@@ -1,6 +1,6 @@
 #include "PlayerLockOnSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
-#include "Game/Logics/AI/BehaviorTree/BossActionComponent.h" // 敵を標的にする
+#include "Game/Logics/Character/Boss/Data/BossActionComponent.h" // 敵を標的にする
 #include "Game/Logics/Combat/DeadTag.h"         // 死亡確認用
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"

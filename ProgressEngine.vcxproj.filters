@@ -111,9 +111,6 @@
     <Filter Include="Source\Game\Logics\Character">
       <UniqueIdentifier>{f65da97b-1737-4ea7-aae7-9a3744c10e2c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Game\Logics\Character\Enemy">
-      <UniqueIdentifier>{87923076-e918-4f96-84dc-7e74c7cbd684}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Game\Logics\Character\Player">
       <UniqueIdentifier>{ed9c166e-35f2-4b23-87b8-78bb1571fccb}</UniqueIdentifier>
     </Filter>
@@ -537,6 +534,15 @@
     </Filter>
     <Filter Include="Source\Game\Logics\AI\Drone\Formation">
       <UniqueIdentifier>{7fb876f4-9c60-4a35-9ec9-43da0f2894c5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\Character\Boss">
+      <UniqueIdentifier>{b874cd55-47ee-462e-bbe1-8d273659c62b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\Character\Boss\Data">
+      <UniqueIdentifier>{564ce338-6c03-425b-b433-b62c4bf26631}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\Character\Boss\Systems">
+      <UniqueIdentifier>{26282c6a-b038-4c3e-9623-0dd3a09282da}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -966,9 +972,6 @@
     <ClInclude Include="External\imgui-node-editor\imgui_node_editor_internal.h">
       <Filter>External\imgui-node-editor</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BossAISystem.h">
-      <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Test\LissajousOrbitComponent.h">
       <Filter>Source\Game\Logics\Test</Filter>
     </ClInclude>
@@ -1046,12 +1049,6 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Combat\CombatRosterComponent.h">
       <Filter>Source\Game\Logics\Combat</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BossActionComponent.h">
-      <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BossActionSystem.h">
-      <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\ECS\Core\CCL_Chunk.h">
       <Filter>Source\Engine\ECS\Core</Filter>
@@ -1719,9 +1716,6 @@
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTActionRegistry.h">
       <Filter>Source\Game\Logics\AI\BehaviorTree\Actions</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTActions_Boss.h">
-      <Filter>Source\Game\Logics\AI\BehaviorTree\Actions</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTConditions.h">
       <Filter>Source\Game\Logics\AI\BehaviorTree\Actions</Filter>
     </ClInclude>
@@ -1815,8 +1809,17 @@
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeSystem.h">
       <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BossPerceptionSystem.h">
-      <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Data\BossActionComponent.h">
+      <Filter>Source\Game\Logics\Character\Boss\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Data\BTActions_Boss.h">
+      <Filter>Source\Game\Logics\Character\Boss\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossActionSystem.h">
+      <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossPerceptionSystem.h">
+      <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2171,9 +2174,6 @@
     <ClCompile Include="External\imgui-node-editor\imgui_node_editor_api.cpp">
       <Filter>External\imgui-node-editor</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BossAISystem.cpp">
-      <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeComponentMeta.cpp">
       <Filter>Source\Game\Logics\AI\BehaviorTree\_Meta</Filter>
     </ClCompile>
@@ -2233,12 +2233,6 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\GameViewWindow.cpp">
       <Filter>Source\Editor\Windows\Editor</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BossActionSystem.cpp">
-      <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BossActionComponentMeta.cpp">
-      <Filter>Source\Game\Logics\AI\BehaviorTree\_Meta</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\ECS\Core\CCL_Chunk.cpp">
       <Filter>Source\Engine\ECS\Core</Filter>
@@ -2735,8 +2729,14 @@
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeSystem.cpp">
       <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BossPerceptionSystem.cpp">
-      <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Data\BossActionComponentMeta.cpp">
+      <Filter>Source\Game\Logics\Character\Boss\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossActionSystem.cpp">
+      <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossPerceptionSystem.cpp">
+      <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -2823,6 +2823,9 @@
     </None>
     <None Include="Source\Game\Logics\AI\Drone\Drone_Guide.md">
       <Filter>Source\Game\Logics\AI\Drone</Filter>
+    </None>
+    <None Include="Source\Game\Logics\AI\StateTree\StateTree_Guide.md">
+      <Filter>Source\Game\Logics\AI\StateTree</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
