@@ -506,10 +506,10 @@
       <UniqueIdentifier>{e7067b87-8e10-4f6e-a321-f72d64988db8}</UniqueIdentifier>
     </Filter>
     <Filter Include="Shader\Pass\ShadowMap">
+      <UniqueIdentifier>{06034f22-f2c0-48eb-802c-41fd61f27fb6}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Shader\Pass\NormalPrepass">
       <UniqueIdentifier>{a1b2c3d4-e5f6-7890-abcd-ef1234567890}</UniqueIdentifier>
-    </Filter>
-      <UniqueIdentifier>{06034f22-f2c0-48eb-802c-41fd61f27fb6}</UniqueIdentifier>
     </Filter>
     <Filter Include="Shader\Pass\Outline">
       <UniqueIdentifier>{8c257204-934c-4af4-8fff-539fb5e193f3}</UniqueIdentifier>
