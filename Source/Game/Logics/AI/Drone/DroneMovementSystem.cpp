@@ -23,20 +23,20 @@ void DroneMovementSystem::Update(float rawDt)
         // ====================================================================
         // 【リード（Leash）によるスタック救済】ボスから遠すぎたら強制ワープ
         // ====================================================================
-        if (const auto *bossTrans = _world->GetComponent<TransformComponent>(drone.ownerBossId))
-        {
-            const float     distToBossSqr = (trans.position - bossTrans->position).LengthSquared();
-            constexpr float leashRadius   = 140.0f;
+        //if (const auto *bossTrans = _world->GetComponent<TransformComponent>(drone.ownerBossId))
+        //{
+        //    const float     distToBossSqr = (trans.position - bossTrans->position).LengthSquared();
+        //    constexpr float leashRadius   = 140.0f;
 
-            if (distToBossSqr > (leashRadius * leashRadius))
-            {
-                trans.position        = bossTrans->position + Vector3(0.0f, 15.0f, 0.0f);
-                drone.currentVelocity = Vector3::Zero;
-                drone.currentState    = DroneState::MoveToTarget;
-                trans.isDirty         = true;
-                trans.isTeleported    = true; // 瞬間移動なので Push 側に teleport と伝える
-            }
-        }
+        //    if (distToBossSqr > (leashRadius * leashRadius))
+        //    {
+        //        trans.position        = bossTrans->position + Vector3(0.0f, 15.0f, 0.0f);
+        //        drone.currentVelocity = Vector3::Zero;
+        //        drone.currentState    = DroneState::MoveToTarget;
+        //        trans.isDirty         = true;
+        //        trans.isTeleported    = true; // 瞬間移動なので Push 側に teleport と伝える
+        //    }
+        //}
 
         drone.hoverTimeOffset += dt;
 

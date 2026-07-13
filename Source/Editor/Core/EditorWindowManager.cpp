@@ -498,7 +498,7 @@ void EditorWindowManager::DrawToolsMenu(EditorContext &context)
     ZoneScopedN("EditorWindowManager::DrawToolsMenu");
     if (ImGui::BeginMenu("Tools"))
     {
-
+        // Tracy Profiler を起動するメニュー項目
         if (ImGui::MenuItem("Launch Tracy Profiler"))
         {
             HINSTANCE result = ShellExecuteA(
@@ -518,8 +518,33 @@ void EditorWindowManager::DrawToolsMenu(EditorContext &context)
                 CCL_LOG_INFO(LogCategory::Editor, "Tracy Profiler launched successfully.");
             }
         }
+
+        // ModelEditor を起動するメニュー項目
+        if (ImGui::MenuItem("Launch ModelEditor"))
+        {
+            HINSTANCE result = ShellExecuteA(
+                nullptr,
+                "open",
+                "Tools\\ModelEditor\\ModelEditor.exe",
+                nullptr,
+                nullptr,
+                SW_SHOW);
+
+            if ((INT_PTR)result <= 32)
+            {
+                CCL_LOG_ERROR(LogCategory::Editor, "Failed to launch ModelEditor. Verify path: Tools\\ModelEditor\\ModelEditor.exe");
+            }
+            else
+            {
+                CCL_LOG_INFO(LogCategory::Editor, "ModelEditor launched successfully.");
+            }
+        }
+
+
+
         ImGui::EndMenu();
     }
+
 }
 
 void EditorWindowManager::SaveLayout(const std::string &path)

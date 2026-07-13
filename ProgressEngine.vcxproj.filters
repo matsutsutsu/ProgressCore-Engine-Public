@@ -2821,6 +2821,9 @@
     <None Include="Source\Engine\Physics\Physics-Archtecture.md">
       <Filter>Source\Engine\Physics</Filter>
     </None>
+    <None Include="Source\Game\Logics\AI\Drone\Drone_Guide.md">
+      <Filter>Source\Game\Logics\AI\Drone</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shader\Material\Basic\BasicPS.hlsl">

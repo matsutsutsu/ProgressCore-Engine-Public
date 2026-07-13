@@ -30,6 +30,8 @@ void DroneFormationSystem::Initialize()
 
 void DroneFormationSystem::Update(float dt)
 {
+    ZoneScopedN("DroneFormationSystem::Updateeeeeeeeeeeeeeee");
+
     _elapsed += dt;
 
     auto &registry = FormationRegistry::Instance();
