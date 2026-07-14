@@ -1,9 +1,10 @@
 /// @file  CommanderAI.h
-/// @brief ボス司令官の StateTree。戦術状態を選び、各状態が使う BehaviorTree を
-///        切り替える（StateTree → BT ブリッジ）。
+/// @brief ボス司令官の StateTree が使う Task/Condition の「語彙」定義。
+///        木構造そのものは Assets/AI/Commander.json（StateTreeWindow で編集）に
+///        あり、このファイルはノード実装(C++)だけを提供する。
 ///
 /// 3層構造のうち「StateTree（戦術決定）」の層:
-///   - Control / Pressure / Aggressive / Recover / Final / Broken の戦術状態
+///   - Control / Pressure / Aggressive / Final などの戦術状態（木構造はJSON側）
 ///   - 各状態のタスク = SetActiveBTTask（使う BT のパスを書き換えるだけ）
 ///   - 実際の攻撃実行は BossAISystem（既存の BT 評価）が担う
 ///
@@ -12,6 +13,13 @@
 ///     → BossAISystem の既存ロード機構が新しい BT を自動ロード
 ///     → その BT が currentActionId を出力
 ///     → BossActionSystem が実行
+///
+/// ★木構造をここでハードコードしない理由★
+///   RegisterNodes() でこのファイルの Task/Condition を NodeRegistry に
+///   登録さえすれば、StateTreeWindow のパレットに自動で出てくる。
+///   木構造（どの状態がどの順で並ぶか）は Assets/AI/Commander.json を
+///   StateTreeWindow で編集し、シーン起動時に StateTreeSerializer::LoadDef +
+///   Compile で読み込む（EditorScene::Initialize 参照）。
 #pragma once
 #include "Game/Logics/AI/StateTree/Core/StateTreeAsset.h"
 #include "Game/Logics/AI/StateTree/Core/StateTreeNode.h"
@@ -24,8 +32,6 @@
 
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Platform/Core/Logger.h"
-
-#include <cstring>
 
 namespace CommanderAI
 {
@@ -146,56 +152,6 @@ inline CommanderIDs RegisterNodes()
     ids.droneCountBelow = reg.RegisterCondition<DroneCountBelowCondition>("DroneCountBelow", "Tactics");
     ids.healthBelow     = reg.RegisterCondition<HealthBelowCondition>("HealthBelow", "Tactics");
     return ids;
-}
-
-// ====================================================================
-// 司令官 StateTree アセット（ハードコード版・後で JSON 化可）
-// ====================================================================
-/// 戦術ツリー（子の順 = 優先度）:
-///   Root
-///    ├ Broken   : BREAK中             → BT "Broken"
-///    ├ Final    : ドローン<=100        → BT "Final"
-///    ├ Aggressive: ドローン<=400        → BT "Aggressive"
-///    ├ Pressure : ドローン<=700        → BT "Pressure"
-///    └ Control  : (フォールバック)      → BT "Control"
-inline CCL::AI::StateTreeAsset BuildCommanderAsset(const CommanderIDs &ids)
-{
-    using namespace CCL::AI;
-    StateTreeAsset asset;
-    asset.name = "Commander";
-
-    const uint16_t root = asset.AddState("Root");
-
-    // 各戦術状態を作るヘルパー的な流れ
-    auto addTactic = [&](const char *stateName, const char *btPath,
-                         NodeTypeID condType, float condValue) -> uint16_t {
-        const uint16_t s = asset.AddState(stateName, root);
-
-        // 入場条件（フォールバックの Control は condType を ST_INVALID で渡す）
-        if (condType != ST_INVALID_NODE_TYPE)
-        {
-            DroneCountBelowCondition::Params cp{condValue};
-            asset.AddEnterCondition(s, condType,
-                asset.AddParams(cp), sizeof(cp));
-        }
-
-        // SetActiveBT タスク（btPath を埋める）
-        SetActiveBTTask::Params tp{};
-        strncpy_s(tp.btPath, sizeof(tp.btPath), btPath, _TRUNCATE);
-        asset.AddTask(s, ids.setBtTask,
-            asset.AddParams(tp), sizeof(tp), 0);
-        return s;
-    };
-
-    // 優先度の高い順に追加（上から評価される）
-    addTactic("Final",      "Assets/BehaviorTree/TestAINode.json", ids.droneCountBelow, 100.0f);
-    addTactic("Aggressive", "Assets/BehaviorTree/TestAINode.json", ids.droneCountBelow, 400.0f);
-    addTactic("Pressure",   "Assets/BehaviorTree/TestAINode.json", ids.droneCountBelow, 700.0f);
-    addTactic("Control",    "Assets/BehaviorTree/TestAINode.json", ST_INVALID_NODE_TYPE, 0.0f); // フォールバック
-
-
-    (void)root;
-    return asset;
 }
 
 } // namespace CommanderAI

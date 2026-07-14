@@ -14,6 +14,8 @@
 #include <imgui.h>
 #endif
 
+#include <utility>   // std::swap（兄弟の並び替えで使用）
+
 using namespace CCL::AI;
 
 // ============================================================
@@ -75,6 +77,26 @@ void StateTreeWindow::DrawContents(EditorContext& context)
                     parent->children.erase(parent->children.begin() + childIdx);
             }
             _hasSelection = false;
+        }
+        _deferredOp = DeferredOp::None;
+    } else if (_deferredOp == DeferredOp::MoveUp || _deferredOp == DeferredOp::MoveDown) {
+        // 兄弟内の並び順 = 評価優先度（SelectStates は先頭から早い者勝ちで評価するため）。
+        if (!_deferredPath.empty()) {
+            std::vector<int> parentPath = _deferredPath;
+            const int childIdx = parentPath.back();
+            parentPath.pop_back();
+            if (auto* parent = Resolve(parentPath)) {
+                const int otherIdx = (_deferredOp == DeferredOp::MoveUp) ? childIdx - 1 : childIdx + 1;
+                if (otherIdx >= 0 && otherIdx < (int)parent->children.size()) {
+                    std::swap(parent->children[childIdx], parent->children[otherIdx]);
+
+                    // 選択中の状態が動いた側なら選択パスも追従させる
+                    std::vector<int> selfPath  = parentPath; selfPath.push_back(childIdx);
+                    std::vector<int> otherPath = parentPath; otherPath.push_back(otherIdx);
+                    if (_hasSelection && _selectedPath == selfPath)       _selectedPath = otherPath;
+                    else if (_hasSelection && _selectedPath == otherPath) _selectedPath = selfPath;
+                }
+            }
         }
         _deferredOp = DeferredOp::None;
     }
@@ -147,10 +169,22 @@ void StateTreeWindow::DrawStateNode(StateDef& state, std::vector<int> path)
             _deferredOp   = DeferredOp::AddChild;
             _deferredPath = path;
         }
-        // ルート（path 空）は削除不可
-        if (!path.empty() && ImGui::MenuItem("Delete State")) {
-            _deferredOp   = DeferredOp::DeleteState;
-            _deferredPath = path;
+        // ルート（path 空）は削除・並び替え不可（兄弟が存在しないため）
+        if (!path.empty()) {
+            if (ImGui::MenuItem("Delete State")) {
+                _deferredOp   = DeferredOp::DeleteState;
+                _deferredPath = path;
+            }
+            ImGui::Separator();
+            // 優先度 = 兄弟内の並び順（上にあるほど先に評価される＝優先度が高い）
+            if (ImGui::MenuItem("Move Up")) {
+                _deferredOp   = DeferredOp::MoveUp;
+                _deferredPath = path;
+            }
+            if (ImGui::MenuItem("Move Down")) {
+                _deferredOp   = DeferredOp::MoveDown;
+                _deferredPath = path;
+            }
         }
         ImGui::EndPopup();
     }

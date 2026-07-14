@@ -45,7 +45,7 @@ private:
     CCL::AI::StateDef* Resolve(const std::vector<int>& path);
 
     // --- 遅延構造操作（描画中の vector 破壊を避ける）---
-    enum class DeferredOp { None, AddChild, DeleteState };
+    enum class DeferredOp { None, AddChild, DeleteState, MoveUp, MoveDown };
     DeferredOp        _deferredOp = DeferredOp::None;
     std::vector<int>  _deferredPath;
 
