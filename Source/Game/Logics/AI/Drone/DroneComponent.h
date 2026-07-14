@@ -110,4 +110,15 @@ struct DroneComponent {
     ///        ここへ配布し、個体 StateTree の WantsAttackCondition が読む。
     ///        true → Active(FireCharge) へ遷移する。
     bool wantsAttack = false;
+
+    /// @brief 陣形攻撃の進行度（0.0→1.0、実行時専用・非シリアライズ）。
+    ///        ヒンジ回転（縦割りが橋のように倒れる）など「時間で形が動く」攻撃の時間軸。
+    ///        攻撃陣形（Formation）が wantsAttack 中に進め、非攻撃時は 0 に戻す。
+    float attackProgress = 0.0f;
+
+    /// @brief FireCharge 中の移動モード（実行時専用・非シリアライズ）。
+    ///        false : fireDirection へ直進（弾幕・突撃系のデフォルト）。
+    ///        true  : targetPosition を剛体追従（縦割りのように陣形自体が動く攻撃）。
+    ///                攻撃陣形が毎フレーム true にし、BeginChargeTask が攻撃開始時に false へ戻す。
+    bool chargeFollowsTarget = false;
 };

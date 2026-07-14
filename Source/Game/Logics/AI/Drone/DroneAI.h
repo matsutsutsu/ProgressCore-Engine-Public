@@ -142,7 +142,13 @@ namespace DroneAI
             auto* drone = ctx.world->GetComponent<DroneComponent>(ctx.entity);
             if (!drone) return;
 
+            // 攻撃開始時のガード：直進モードから始める。
+            //   陣形自体が動く攻撃（縦割り等）は Formation 側が毎フレーム true に上書きする。
+            //   これにより前回の攻撃の追従モードが直進系の攻撃へ漏れない。
+            drone->chargeFollowsTarget = false;
+
             // タメ時間（ProcessFireCharge が stateTimer>0 を「予備動作」として扱う）
+            //   ※追従モード（chargeFollowsTarget=true）では ProcessFireCharge がタメを無視する。
             drone->stateTimer = 0.4f;
 
             // 突撃方向：陣形が既にセット済みなら尊重、未設定ならプレイヤー方向

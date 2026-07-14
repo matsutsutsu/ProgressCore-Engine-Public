@@ -41,6 +41,7 @@ void DroneFormationSystem::Update(float dt)
     // --- 場の情報を組み立てる（ボス位置・プレイヤー位置）---
     FormationContext ctx;
     ctx.time = _elapsed;
+    ctx.dt   = dt; // 攻撃の進行度（ヒンジ回転など）を進めるのに使う
 
     // ボス位置（BossCommandComponent を持つ最初のEntity）
     {

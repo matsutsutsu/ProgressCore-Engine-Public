@@ -19,8 +19,20 @@ namespace CCL::AI::Formation::Attack
 {
 // ====================================================================
 // 縦割り（GuillotineSlam）
-//   ボスの頭上・ややプレイヤー寄りに「縦の刃（壁）」を形成し、
-//   プレイヤーへ向けて振り下ろす。要求回避＝横回避（企画書①）。
+//   ボス頭上に「縦の刃（壁）」を立て、下端を回転軸に、橋が倒れるように
+//   プレイヤー側へ振り下ろす。要求回避＝横回避（企画書①）。
+//
+// 動きの核心＝ヒンジ回転（剛体）:
+//   各機の "刃ローカル座標" は固定（下端からの高さ height と、幅方向 side）。
+//   刃全体を下端の軸まわりに角度 θ 回転させる。
+//     θ=0   : 直立（up 方向）        ← 予備動作（読ませる形）
+//     θ=90° : 前方へ水平（dir 方向）  ← 倒れきった状態
+//   回転後の高さベクトル = up*height*cos(θ) + dir*height*sin(θ)
+//   → 下端(height=0)は θ に依らず不動＝軸。上段ほど大きく前へ倒れる。
+//
+//   θ は attackProgress(0→1) から求める。倒れは重力的に加速させたいので easeIn。
+//   移動は chargeFollowsTarget=true で「targetPosition を剛体追従」させる
+//   （fireDirection 直進ではなく、壁が形を保ったまま回る）。
 // ====================================================================
 struct GuillotineSlamFormation : public IFormation
 {
@@ -28,9 +40,9 @@ struct GuillotineSlamFormation : public IFormation
     {
         using namespace DirectX::SimpleMath;
 
-        // 突撃中は座標・方向を凍結（リリース後にホーミングさせない）。
-        if (drone.currentState == DroneState::FireCharge)
-            return;
+        // この攻撃は「陣形自体が動く」ので、突撃中も targetPosition を更新し続ける。
+        // 移動側にはそれを剛体追従させる（直進ではなく回転）。
+        drone.chargeFollowsTarget = true;
 
         // --- ボス→プレイヤーの水平方向と、それに直交する「刃の幅」方向 ---
         Vector3 dir = ctx.playerPos - ctx.bossPos;
@@ -48,27 +60,44 @@ struct GuillotineSlamFormation : public IFormation
         const int col   = drone.localIndex % cols;
         const int row   = drone.localIndex / cols;
 
-        const float spacing       = 2.0f; // 刃の目の細かさ
-        const float baseHeight    = 9.0f; // ボス頭上の高さ
-        const float forwardOffset = 4.0f; // プレイヤー側への寄せ
+        const float spacing     = 2.0f; // 刃の目の細かさ
+        const float hingeHeight = 2.0f; // 回転軸（下端）の高さ
 
-        // 刃の中心（ボス頭上・ややプレイヤー寄り）
-        const Vector3 bladeCenter = ctx.bossPos + dir * forwardOffset + Vector3::UnitY * baseHeight;
+        // --- 攻撃の進行度 θ を更新する ---
+        //   wantsAttack 中だけ進め、非攻撃時は 0 に戻して直立を保つ。
+        if (drone.wantsAttack)
+            drone.attackProgress = (std::min)(1.0f, drone.attackProgress + ctx.dt * kSwingSpeed);
+        else
+            drone.attackProgress = 0.0f;
 
-        // 幅方向は中央揃え、高さ方向は上へ積む
-        const Vector3 offset = right * ((col - (cols - 1) * 0.5f) * spacing)
-                             + Vector3::UnitY * (row * spacing);
+        const float eased = drone.attackProgress * drone.attackProgress; // easeIn（倒れが加速）
+        const float theta = eased * kThetaMax;                            // 0 → kThetaMax
+        const float c = std::cos(theta);
+        const float s = std::sin(theta);
 
-        drone.targetPosition = bladeCenter + offset;
+        // --- 刃ローカル：下端からの高さ height と、幅方向オフセット side ---
+        const float height = row * spacing;                       // 下端(row0)=0＝軸
+        const float side   = (col - (cols - 1) * 0.5f) * spacing; // 幅方向は中央揃え
 
-        // 刃が「振り下ろされる」方向＝各機からプレイヤーへ（下＋前の成分を持つ）
-        Vector3 toPlayer = ctx.playerPos - drone.targetPosition;
-        if (toPlayer.LengthSquared() > 0.001f) toPlayer.Normalize();
-        else                                   toPlayer = -Vector3::UnitY;
+        // 回転軸（下端の中心）：ボス頭上のやや低い位置
+        const Vector3 hingeBase = ctx.bossPos + Vector3::UnitY * hingeHeight;
 
-        drone.fireDirection       = toPlayer;
-        drone.targetLookDirection = toPlayer;
+        // 高さベクトルを下端軸まわりに θ 回転（up → dir へ倒す）
+        const Vector3 rotatedUp = Vector3::UnitY * (height * c) + dir * (height * s);
+
+        drone.targetPosition = hingeBase + right * side + rotatedUp;
+
+        // 向き：倒れていく接線方向（-up*sin + dir*cos）を向かせる
+        Vector3 look = Vector3::UnitY * (-s) + dir * c;
+        if (look.LengthSquared() < 0.001f) look = dir;
+        look.Normalize();
+        drone.fireDirection       = look;
+        drone.targetLookDirection = look;
     }
+
+    // --- 調整値（グレーボックスで実測して詰める）---
+    static constexpr float kSwingSpeed = 2.5f;               // attackProgress の増加速度（1/秒）→ 倒れ切りまで ≈0.4s
+    static constexpr float kThetaMax   = 1.9f;               // 最大回転角（rad）≈109°（水平を少し越えて叩きつける）
 };
 
 // ====================================================================

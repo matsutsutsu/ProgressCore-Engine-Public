@@ -133,6 +133,29 @@ inline void DroneMovementSystem::ProcessIdle(TransformComponent &trans, DroneCom
 ///        0になった瞬間から「リリース」（高速直進）に切り替わる2フェーズ構造。
 inline void DroneMovementSystem::ProcessFireCharge(TransformComponent &trans, DroneComponent &drone, float dt)
 {
+    // ------------------------------------------------------------
+    // [追従モード] 陣形自体が動く攻撃（縦割りのヒンジ回転など）。
+    //   fireDirection 直進ではなく、Formation が毎フレーム動かす targetPosition を
+    //   剛体追従する（壁が形を保ったまま回る）。タメ（stateTimer）は使わない。
+    // ------------------------------------------------------------
+    if (drone.chargeFollowsTarget)
+    {
+        // 今フレームで targetPosition に一致させる＝剛体（壁がたわまない）。
+        drone.currentVelocity = Vector3::Zero;
+        trans.position        = drone.targetPosition;
+
+        if (drone.targetLookDirection.LengthSquared() > 0.001f)
+        {
+            Vector3 lookDir = drone.targetLookDirection;
+            lookDir.Normalize();
+            float      targetYaw   = atan2f(lookDir.x, -lookDir.z);
+            float      targetPitch = asinf(std::clamp(lookDir.y, -1.0f, 1.0f));
+            Quaternion targetRot   = Quaternion::CreateFromYawPitchRoll(targetYaw, targetPitch, 0.0f);
+            trans.rotation         = Quaternion::Slerp(trans.rotation, targetRot, (std::min)(25.0f * dt, 1.0f));
+        }
+        return;
+    }
+
     if (drone.fireDirection.LengthSquared() <= 0.001f)
     {
         drone.currentVelocity = Vector3::Zero;

@@ -20,6 +20,7 @@ struct FormationContext
     DirectX::SimpleMath::Vector3 bossPos   = {};   // ボスの位置（陣形の中心）
     DirectX::SimpleMath::Vector3 playerPos = {};   // プレイヤーの位置（狙う系で使う）
     float                        time      = 0.0f; // 経過時間（回転アニメ等に使う）
+    float                        dt        = 0.0f; // このフレームの経過時間（攻撃の進行度を進めるのに使う）
 };
 
 /// @brief 陣形の基底。派生が「1機分の目標座標」を計算する。
