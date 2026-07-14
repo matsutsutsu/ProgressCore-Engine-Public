@@ -6,6 +6,7 @@
 #include "Engine/Graphics/Renderer/ModelRenderer.h"
 #include "Engine/Graphics/Resource/Model.h"
 #include "Engine/Graphics/Renderer/RenderQueue.h"
+#include "Engine/Graphics/Renderer/MeshCulling.h" // メッシュ AABB 構築（Opaque/Normal と共有）
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
@@ -99,16 +100,8 @@ void ShadowMapRenderSystem::RenderShadowMap()
 
     auto& renderQueue = RenderQueue::Instance();
 
-    // メッシュのローカル空間 AABB を boundsMin/Max から構築するヘルパー。
-    // 縮退メッシュ（頂点0）の場合は extents が巨大化し「常に可視」＝安全側に倒れる。
-    auto buildLocalAABB = [](const Model::Mesh& m) -> DirectX::BoundingBox {
-        const DirectX::XMVECTOR bmin = DirectX::XMLoadFloat3(&m.data->boundsMin);
-        const DirectX::XMVECTOR bmax = DirectX::XMLoadFloat3(&m.data->boundsMax);
-        DirectX::BoundingBox box;
-        DirectX::XMStoreFloat3(&box.Center, DirectX::XMVectorScale(DirectX::XMVectorAdd(bmin, bmax), 0.5f));
-        DirectX::XMStoreFloat3(&box.Extents, DirectX::XMVectorAbs(DirectX::XMVectorScale(DirectX::XMVectorSubtract(bmax, bmin), 0.5f)));
-        return box;
-    };
+    // メッシュのローカル AABB 構築は MeshCull::BuildLocalAABB に集約済み
+    // （Opaque/Normal/Shadow で同一実装を共有し、縮退メッシュは安全側に倒れる）。
 
     // ------------------------------------------------------------------
     // 4. エンティティを走査してシャドウコマンドを積む
@@ -153,7 +146,7 @@ void ShadowMapRenderSystem::RenderShadowMap()
 
                 // ローカル AABB → ワールド AABB（回転を含んでも包含する軸平行ボックスになる）
                 DirectX::BoundingBox worldAABB;
-                buildLocalAABB(mesh).Transform(worldAABB, meshWorld);
+                MeshCull::BuildLocalAABB(mesh).Transform(worldAABB, meshWorld);
 
                 // このメッシュ専用の cascadeMask を、各カスケード OBB との交差から作る。
                 meshMask = 0;

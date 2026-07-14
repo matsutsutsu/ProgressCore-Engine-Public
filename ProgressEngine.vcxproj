@@ -502,6 +502,7 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Renderer\InstanceBuffer.h" />
     <ClInclude Include="Source\Engine\Graphics\Renderer\ModelRenderer.h" />
+    <ClInclude Include="Source\Engine\Graphics\Renderer\MeshCulling.h" />
     <ClInclude Include="Source\Engine\Graphics\Renderer\ParticleRenderer.h" />
     <ClInclude Include="Source\Engine\Graphics\Renderer\PrimitiveRenderer.h" />
     <ClInclude Include="Source\Engine\Graphics\Renderer\RenderQueue.h" />

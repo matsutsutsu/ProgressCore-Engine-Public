@@ -51,5 +51,9 @@ public:
     void SetEnabled(bool v)    noexcept { _enabled = v; }
 
 protected:
-    bool _enabled = true;
+    // ★既定は OFF（opt-in）。PostProcessSystem は「対応する設定コンポーネントが
+    //   存在するエフェクトだけ」SetEnabled() を呼ぶため、既定 true にすると設定の
+    //   無いエフェクト（SSAO/ContactShadow/DoF/…）が毎フレーム全走行して GPU を
+    //   飽和させる。Bloom と同じく「設定があるときだけ有効」に統一する。
+    bool _enabled = false;
 };

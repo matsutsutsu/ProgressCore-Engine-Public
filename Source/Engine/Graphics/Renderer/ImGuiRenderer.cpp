@@ -12,6 +12,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 
 // 静的メンバ変数の実体定義
 ImFont *ImGuiRenderer::s_editorFont = nullptr;
+bool ImGuiRenderer::s_platformWindowsEnabled = true;
 
 // 初期化
 void ImGuiRenderer::Initialize(HWND hWnd, ID3D11Device* device, ID3D11DeviceContext* dc)
@@ -251,10 +252,21 @@ void ImGuiRenderer::Render(ID3D11DeviceContext* context)
     ImGuiIO &io = ImGui::GetIO();
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
-        ZoneScopedN("ImGui::UpdatePlatformWindows"); // ★ここでOSの割り込み遅延が起きやすい
-        ImGui::UpdatePlatformWindows();
-        ImGui::RenderPlatformWindowsDefault();
+        {
+            ZoneScopedN("ImGui::UpdatePlatformWindows");
+            ImGui::UpdatePlatformWindows();
+        }
+        if (s_platformWindowsEnabled)
+        {
+            ZoneScopedN("ImGui::RenderPlatformWindowsDefault");
+            ImGui::RenderPlatformWindowsDefault();
+        }
     }
+}
+
+void ImGuiRenderer::SetPlatformWindowsEnabled(bool enabled)
+{
+    s_platformWindowsEnabled = enabled;
 }
 
 // WIN32メッセージハンドラー

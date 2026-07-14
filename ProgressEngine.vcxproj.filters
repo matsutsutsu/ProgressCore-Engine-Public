@@ -873,6 +873,9 @@
     <ClInclude Include="Source\Engine\Graphics\Renderer\RenderQueue.h">
       <Filter>Source\Engine\Graphics\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Renderer\MeshCulling.h">
+      <Filter>Source\Engine\Graphics\Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\Pass\ShadowUtils.h">
       <Filter>Source\Engine\Graphics\Shader\Pass</Filter>
     </ClInclude>

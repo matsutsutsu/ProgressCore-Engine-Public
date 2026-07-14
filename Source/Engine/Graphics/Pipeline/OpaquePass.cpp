@@ -3,6 +3,7 @@
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
 #include "Engine/Graphics/RHI/Camera.h"
 #include "Engine/Graphics/Renderer/RenderQueue.h"
+#include "Engine/Graphics/Renderer/MeshCulling.h" // メッシュ単位カリング（NormalPrepass と共有）
 #include "Engine/Graphics/Shader/ShaderResources.h"
 #include "Engine/Graphics/Shader/Pass/ShadowMap.h"
 #include <DirectXCollision.h> // フラスタム / AABB カリング用
@@ -69,29 +70,10 @@ void OpaquePass::Execute(const RenderFrameContext &ctx)
 
     const DirectX::XMVECTOR cameraPos = DirectX::XMLoadFloat3(&ctx.camera->GetEye());
 
-    // ワールド空間フラスタム（Camera::UpdateFrustum で invView 変換済み）
+    // ワールド空間フラスタム（Camera::UpdateFrustum で invView 変換済み）。
+    // カリング判定と AABB / ワールド行列の構築は MeshCull ヘルパに集約し、
+    // NormalPrepass と完全に同一基準であることを保証する（実装ズレ防止）。
     const DirectX::BoundingFrustum &frustum = ctx.camera->GetFrustum();
-
-    // メッシュのローカル空間 AABB を boundsMin/Max から構築するヘルパー。
-    // 縮退メッシュ（頂点0）の場合は extents が巨大化し「常に可視」＝安全側に倒れる。
-    auto buildLocalAABB = [](const Model::Mesh &m) -> DirectX::BoundingBox {
-        using namespace DirectX;
-        const XMVECTOR bmin = XMLoadFloat3(&m.data->boundsMin);
-        const XMVECTOR bmax = XMLoadFloat3(&m.data->boundsMax);
-        BoundingBox    box;
-        XMStoreFloat3(&box.Center, XMVectorScale(XMVectorAdd(bmin, bmax), 0.5f));
-        XMStoreFloat3(&box.Extents, XMVectorAbs(XMVectorScale(XMVectorSubtract(bmax, bmin), 0.5f)));
-        return box;
-    };
-
-    // ローカル AABB を world で変換し、フラスタムと交差判定する。
-    // Transform は回転を含んでも「包含する軸平行ボックス」を返す（保守的で正しい）。
-    auto isVisible = [&](const DirectX::BoundingBox &localBox,
-                         const DirectX::XMFLOAT4X4  &world) -> bool {
-        DirectX::BoundingBox worldBox;
-        localBox.Transform(worldBox, DirectX::XMLoadFloat4x4(&world));
-        return frustum.Contains(worldBox) != DirectX::DISJOINT;
-    };
 
     // ------------------------------------------------------------------
     // ② コマンドをソートしてバッチキーを構築（shader→model→material 順）
@@ -169,24 +151,7 @@ void OpaquePass::Execute(const RenderFrameContext &ctx)
             const bool           isSkinned     = !mesh.bones.empty();
 
             // このメッシュのローカル AABB（全インスタンスで使い回す）
-            const DirectX::BoundingBox localAABB = buildLocalAABB(mesh);
-
-            // メッシュのワールド行列を計算するヘルパー。
-            // node がある場合は node->globalTransform * entityWorld（描画時と一致させる）。
-            auto computeWorld = [&](const DirectX::XMFLOAT4X4 &entityWorld) -> DirectX::XMFLOAT4X4 {
-                DirectX::XMFLOAT4X4 out;
-                if (mesh.node)
-                {
-                    const DirectX::XMMATRIX ml = DirectX::XMLoadFloat4x4(&mesh.node->globalTransform);
-                    const DirectX::XMMATRIX ew = DirectX::XMLoadFloat4x4(&entityWorld);
-                    DirectX::XMStoreFloat4x4(&out, ml * ew);
-                }
-                else
-                {
-                    out = entityWorld;
-                }
-                return out;
-            };
+            const DirectX::BoundingBox localAABB = MeshCull::BuildLocalAABB(mesh);
 
             // =========================================================
             // 半透明：距離ソート用に後段へ転送（インスタンス単位でカリング）
@@ -199,10 +164,10 @@ void OpaquePass::Execute(const RenderFrameContext &ctx)
 
                     // スキンドはワールド行列がそのまま（骨で変形）、非スキンドは node 合成
                     const DirectX::XMFLOAT4X4 worldM =
-                        isSkinned ? info.worldMatrix : computeWorld(info.worldMatrix);
+                        isSkinned ? info.worldMatrix : MeshCull::ComputeMeshWorld(mesh, info.worldMatrix);
 
                     // 非スキンドのみカリング（スキンドは姿勢で AABB が変わるため除外）
-                    if (!isSkinned && !isVisible(localAABB, worldM)) continue;
+                    if (!isSkinned && !MeshCull::IsMeshVisible(localAABB, worldM, frustum)) continue;
 
                     TransparencyCommand tInfo;
                     tInfo.shaderHash           = current.shaderHash;
@@ -239,8 +204,8 @@ void OpaquePass::Execute(const RenderFrameContext &ctx)
                 }
                 else
                 {
-                    data.world = computeWorld(cmd.worldMatrix);
-                    if (!isVisible(localAABB, data.world)) continue; // 視界外は積まない
+                    data.world = MeshCull::ComputeMeshWorld(mesh, cmd.worldMatrix);
+                    if (!MeshCull::IsMeshVisible(localAABB, data.world, frustum)) continue; // 視界外は積まない
                     _instanceScratch.push_back(data);
                 }
             }

@@ -2,10 +2,13 @@
 /// @brief NormalPrepass の実装。ShadowPass と同型の「専用シェーダー二度描き」パターン。
 #include "NormalPrepass.h"
 #include "Engine/Graphics/RHI/Graphics.h"
+#include "Engine/Graphics/RHI/Camera.h"
 #include "Engine/Graphics/Renderer/ModelRenderer.h"
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
 #include "Engine/Graphics/Renderer/RenderQueue.h"
+#include "Engine/Graphics/Renderer/MeshCulling.h" // メッシュ単位カリング（OpaquePass と共有）
 #include "Engine/Graphics/Shader/ShaderResources.h"
+#include <DirectXCollision.h> // メッシュ単位フラスタムカリング用
 #include <wrl/client.h>
 #include <algorithm>
 
@@ -39,6 +42,11 @@ void NormalPrepass::Execute(const RenderFrameContext& ctx)
 
     Shader* shader = _services->shaders->GetShader("NormalPrepass"_hash, _services->device);
     if (!shader) return;
+
+    // メッシュ単位フラスタムカリング用のワールド空間 frustum（OpaquePass と同一方式）。
+    // camera は上流パイプラインが保証するが、念のため null なら法線書き出しをスキップする。
+    if (!ctx.camera) return;
+    const DirectX::BoundingFrustum& frustum = ctx.camera->GetFrustum();
 
     Microsoft::WRL::ComPtr<ID3D11RenderTargetView> oldRTV;
     Microsoft::WRL::ComPtr<ID3D11DepthStencilView> oldDSV;
@@ -83,6 +91,10 @@ void NormalPrepass::Execute(const RenderFrameContext& ctx)
 
             const bool isSkinned = !mesh.bones.empty();
 
+            // このメッシュのローカル AABB（非スキンドのカリングで使い回す）。
+            // OpaquePass と同一の MeshCull ヘルパを使い、両パスのカリング基準を一致させる。
+            const DirectX::BoundingBox localAABB = MeshCull::BuildLocalAABB(mesh);
+
             _instanceScratch.clear();
             _instanceScratch.reserve(batchCount);
             for (size_t k = 0; k < batchCount; ++k) {
@@ -90,23 +102,28 @@ void NormalPrepass::Execute(const RenderFrameContext& ctx)
                 InstanceData data;
                 data.customParams = cmd.customParams;
                 if (isSkinned) {
+                    // スキンドはカリングせず全数積む（変形は骨行列側。姿勢で AABB が変わるため安全側で除外）
                     DirectX::XMStoreFloat4x4(&data.world, DirectX::XMMatrixIdentity());
+                    _instanceScratch.push_back(data);
                 }
-                else if (mesh.node) {
-                    const DirectX::XMMATRIX ml = DirectX::XMLoadFloat4x4(&mesh.node->globalTransform);
-                    const DirectX::XMMATRIX ew = DirectX::XMLoadFloat4x4(&cmd.worldMatrix);
-                    DirectX::XMStoreFloat4x4(&data.world, ml * ew);
+                else {
+                    data.world = MeshCull::ComputeMeshWorld(mesh, cmd.worldMatrix);
+                    // ★ OpaquePass と同じメッシュ単位フラスタムカリング。視界外は積まない。
+                    if (!MeshCull::IsMeshVisible(localAABB, data.world, frustum)) continue;
+                    _instanceScratch.push_back(data);
                 }
-                else { data.world = cmd.worldMatrix; }
-                _instanceScratch.push_back(data);
             }
+
+            // 可視インスタンスが 0 個なら、このメッシュの IA 設定・Map/Unmap・ドローを丸ごと回避する。
+            if (_instanceScratch.empty()) continue;
 
             UINT stride = sizeof(ModelResource::Vertex), offset = 0;
             dc->IASetVertexBuffers(0, 1, mesh.data->vertexBuffer.GetAddressOf(), &stride, &offset);
             dc->IASetIndexBuffer(mesh.data->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
             if (isSkinned) {
-                for (size_t k = 0; k < batchCount; ++k) {
+                // スキンドはカリングしていないため _instanceScratch.size() == batchCount
+                for (size_t k = 0; k < _instanceScratch.size(); ++k) {
                     const auto& cmd = opaqueCommands[sortKeys[batchStart + k].originalIndex];
                     _instanceBuffer.Write(dc, &_instanceScratch[k], 1);
                     _instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
@@ -115,10 +132,12 @@ void NormalPrepass::Execute(const RenderFrameContext& ctx)
                 }
             }
             else {
+                // ★ batchCount ではなく「カリング後の可視インスタンス数」で描画する
+                const size_t visibleCount = _instanceScratch.size();
                 size_t curOffset = 0;
-                while (curOffset < batchCount) {
+                while (curOffset < visibleCount) {
                     const size_t drawCount = (std::min)(
-                        batchCount - curOffset, _instanceBuffer.GetMaxInstances());
+                        visibleCount - curOffset, _instanceBuffer.GetMaxInstances());
                     _instanceBuffer.Write(dc, _instanceScratch.data() + curOffset, drawCount);
                     _instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
                     dc->DrawIndexedInstanced(static_cast<UINT>(mesh.data->indices.size()),

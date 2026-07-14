@@ -26,11 +26,11 @@ void TransparentPass::Execute(const RenderFrameContext& ctx)
     }
     _psoTransparent.Apply(dc, _services->renderState);
 
-    const PipelineState *lastPso = &_psoTransparent;   
+    const PipelineState *lastPso = &_psoTransparent;
 
-    auto allTrans = queue->GetDeferredTransparentCommands();
-    for (const auto& t : queue->GetTransparentCommands()) allTrans.push_back(t);
-
+    // OpaquePass が積んだ遅延半透明コマンドを距離降順（奥→手前）でその場ソートする。
+    // このリストは毎フレーム作り直されるため破壊的並べ替えで問題なく、コピーも発生しない。
+    auto& allTrans = queue->GetDeferredTransparentCommandsMutable();
     std::sort(allTrans.begin(), allTrans.end(),
         [](const TransparencyCommand& l, const TransparencyCommand& r) {
             return l.distance > r.distance;
@@ -70,8 +70,8 @@ void TransparentPass::Execute(const RenderFrameContext& ctx)
             singleData.world = info.worldMatrix;
         }
 
-        std::vector<InstanceData> temp = { singleData };
-        _instanceBuffer.Write(dc, temp);
+        // 1 体分をポインタ渡しの高速版で書き込む（毎ドローの vector 確保を回避）
+        _instanceBuffer.Write(dc, &singleData, 1);
         _instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
 
         if (isSkinned) renderer->UpdateSkeletonConstants(dc, mesh);

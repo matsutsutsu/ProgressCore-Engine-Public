@@ -352,6 +352,13 @@ void Framework::Render(float elapsedTime)
 				TracyD3D11Zone(tracyCtx, "ImGui Pass (GPU)");
 			}
 
+			// 編集モードかつ UI 表示中のみ、切り離し OS 窓（セカンダリ Present）を許可
+			const bool allowPlatformWindows =
+			    m_editorWindowManager &&
+			    m_editorWindowManager->IsVisible() &&
+			    m_editorContext.playState == EditorPlayState::Stopped;
+			ImGuiRenderer::SetPlatformWindowsEnabled(allowPlatformWindows);
+
 			// IMGUI描画
 			ImGuiRenderer::Render(dc);
 		}
