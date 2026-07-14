@@ -242,6 +242,8 @@ class AnimationSequenceImpl : public ImSequencer::SequenceInterface
             ev.stringParam = "VFX_Default";
         if (type == (int)AnimEventType::HitBox)
             ev.stringParam = "Weapon_R";
+        if (type == (int)AnimEventType::Trail)
+            ev.stringParam = "Weapon_R";
 
         _seq->events.push_back(ev);
         SyncFrameCache();
@@ -741,6 +743,9 @@ void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, Animator
     if (ImGui::Button("+ Spawn"))
         AddEvt(AnimEventType::SpawnHitbox);
     ImGui::SameLine();
+    if (ImGui::Button("+ Trail"))
+        AddEvt(AnimEventType::Trail);
+    ImGui::SameLine();
     if (ImGui::Button("+ Sound"))
         AddEvt(AnimEventType::Sound);
     ImGui::SameLine();
@@ -914,24 +919,23 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
         char buf[256];
         strcpy_s(buf, sizeof(buf), e.stringParam.c_str());
 
-        switch (e.type)
-        {
-        case AnimEventType::HitBox: {
+        // 武器タグ選択（CombatRoster があればプリセット、無ければ自由入力）。HitBox / Trail 共用。
+        auto drawWeaponTagPicker = [&](AnimNotifyEvent &ev, bool &changed) {
             auto *roster = context.world->GetComponent<CombatRosterComponent>(context.selectedEntity);
             if (roster && roster->count > 0)
             {
                 ImGui::Text("Weapon Tag:");
                 ImGui::SetNextItemWidth(-1);
-                const char *preview = e.stringParam.empty() ? "Select Tag..." : e.stringParam.c_str();
+                const char *preview = ev.stringParam.empty() ? "Select Tag..." : ev.stringParam.c_str();
                 if (ImGui::BeginCombo("##Tag", preview))
                 {
                     for (int i = 0; i < roster->count; ++i)
                     {
-                        bool sel = (e.stringParam == roster->entries[i].tag);
+                        bool sel = (ev.stringParam == roster->entries[i].tag);
                         if (ImGui::Selectable(roster->entries[i].tag, sel))
                         {
-                            e.stringParam = roster->entries[i].tag;
-                            ch            = true;
+                            ev.stringParam = roster->entries[i].tag;
+                            changed        = true;
                         }
                         if (sel)
                             ImGui::SetItemDefaultFocus();
@@ -941,14 +945,22 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
             }
             else
             {
+                char tagBuf[256];
+                strcpy_s(tagBuf, sizeof(tagBuf), ev.stringParam.c_str());
                 ImGui::Text("Weapon Tag (no roster):");
                 ImGui::SetNextItemWidth(-1);
-                if (ImGui::InputText("##Tag", buf, sizeof(buf)))
+                if (ImGui::InputText("##Tag", tagBuf, sizeof(tagBuf)))
                 {
-                    e.stringParam = buf;
-                    ch            = true;
+                    ev.stringParam = tagBuf;
+                    changed        = true;
                 }
             }
+        };
+
+        switch (e.type)
+        {
+        case AnimEventType::HitBox: {
+            drawWeaponTagPicker(e, ch);
             ImGui::Spacing();
             ImGui::Separator();
             ImGui::TextColored(ImVec4(1, 0.5f, 0.5f, 1), "Attack");
@@ -971,6 +983,16 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
                 ch = true;
             if (ImGui::SliderFloat("HitStop", &e.hitStopDuration, 0.0f, 1.0f, "%.2f s"))
                 ch = true;
+            break;
+        case AnimEventType::Trail:
+            ImGui::TextColored(ImVec4(0.6f, 0.85f, 1.0f, 1), "Weapon Trail (軌跡)");
+            drawWeaponTagPicker(e, ch);
+            ImGui::Spacing();
+            ImGui::TextDisabled("この区間中、対象武器の Weapon Trail が emitting=ON になります");
+            ImGui::TextDisabled("(武器側で Anim Controlled を ON にしておくこと)。");
+            ImGui::TextDisabled("軌跡の色・尾の長さは武器の Weapon Trail コンポーネントで調整します。");
+            ImGui::Spacing();
+            ImGui::TextDisabled("Active [%.2fs - %.2fs]", e.startTime, e.endTime);
             break;
         case AnimEventType::Sound:
             ImGui::TextColored(ImVec4(1, 0.8f, 0.2f, 1), "FMOD Event Path");

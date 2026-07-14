@@ -225,17 +225,22 @@ void AnimationSystem::DispatchPointEvents(CCL::ECS::EntityID id, AnimatorCompone
             break;
 
         case AnimEventType::SpawnHitbox:
-            // 点イベント: 空間に独立した球状ヒットボックスを生成依頼
-            _world->GetEventBus().Publish(
-                AnimEventSpawnHitboxMessage{id, evt.offset, evt.radius, evt.damage, evt.hitStopDuration});
+        {
+            // 点イベント: 空間に独立した球状ヒットボックスを生成依頼。
+            //   球の生存時間は Sequencer のブロック長(区間)をそのまま渡す。
+            //   点(startTime==endTime)なら 0 になり、購読側が最小寿命へフォールバックする。
+            const float window = evt.endTime - evt.startTime;
+            _world->GetEventBus().Publish(AnimEventSpawnHitboxMessage{
+                id, evt.offset, evt.radius, evt.damage, evt.hitStopDuration, evt.hitStopScale, window});
             break;
+        }
 
         case AnimEventType::HitBox:
         case AnimEventType::Trail:
         case AnimEventType::Blackboard:
             // 区間状態イベント: 専用システムが区間ポーリングで読むため発火しない。
             //   HitBox      → CombatAnimationSyncSystem
-            //   Trail       → (Trail制御システム)
+            //   Trail       → TrailAnimationSyncSystem
             //   Blackboard  → (AIのBB更新システム / 現状未実装)
             break;
 

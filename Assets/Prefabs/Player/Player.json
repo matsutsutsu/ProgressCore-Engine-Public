@@ -8,20 +8,20 @@
                 },
                 "Animation": null,
                 "Animator": {
-                    "isLoop": true,
-                    "playbackSpeed": 1.0
+                    "isLoop": false,
+                    "playbackSpeed": 0.59331214427948
                 },
                 "Character Movement Input": {
                     "currentVelocity": [
-                        0.0014348197728395462,
+                        -7.886837005615234,
                         0.0,
-                        0.01541142538189888
+                        -18.320178985595703
                     ],
                     "dashRequested": false,
                     "desiredVelocity": [
+                        -0.3954153060913086,
                         0.0,
-                        0.0,
-                        0.0
+                        -0.9185023903846741
                     ],
                     "isAttackRequested": false,
                     "jumpRequested": false,
@@ -36,9 +36,9 @@
                     "currentTimer": -0.006666665896773338,
                     "dashCooldown": 0.1599999964237213,
                     "dashDirection": [
-                        5.8775476929895376e-08,
+                        0.7598035931587219,
                         0.0,
-                        -1.0
+                        0.6501527428627014
                     ],
                     "dashDuration": 0.1599999964237213,
                     "dashSpeed": 114.0,
@@ -70,6 +70,7 @@
                     "jumpSpeed": 30.0,
                     "maxSlopeAngle": 45.0,
                     "maxStepHeight": 0.5,
+                    "objectLayer": 1,
                     "walkSpeed": 43.599998474121094
                 },
                 "Just Evade Component": {
@@ -86,8 +87,8 @@
                     "bankingMultiplier": 0.5,
                     "coyoteTimeWindow": 0.15000000596046448,
                     "currentJumpCount": 0,
-                    "currentRoll": -8.202393360079441e-07,
-                    "currentYaw": -37.2386474609375,
+                    "currentRoll": 4.130344954944576e-09,
+                    "currentYaw": -71.85011291503906,
                     "jumpBufferTimer": 0.0,
                     "jumpBufferWindow": 0.15000000596046448,
                     "lastFallVelocity": 0.0,
@@ -110,15 +111,15 @@
                     "isStatic": false,
                     "parent": 3,
                     "position": [
-                        -3.683290719985962,
-                        -0.04812708497047424,
-                        12.927962303161621
+                        -5.2434515953063965,
+                        -0.04660465195775032,
+                        26.12630844116211
                     ],
                     "rotation": [
-                        -9.359099095718193e-08,
-                        0.22820410132408142,
-                        -3.9929796002979856e-07,
-                        0.9736133217811584
+                        2.022658485145712e-09,
+                        0.9794137477874756,
+                        -4.1688250074223276e-10,
+                        -0.20186328887939453
                     ],
                     "scale": [
                         3.5,
@@ -167,6 +168,28 @@
                         0.5,
                         0.5,
                         0.5
+                    ]
+                },
+                "Weapon Trail (武器トレイル)": {
+                    "animControlled": false,
+                    "baseOffset": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "color": [
+                        0.6000000238418579,
+                        0.800000011920929,
+                        1.0,
+                        1.0
+                    ],
+                    "emitting": false,
+                    "lifeTime": 0.18000000715255737,
+                    "minDistance": 0.019999999552965164,
+                    "tipOffset": [
+                        0.0,
+                        2.7200000286102295,
+                        0.0
                     ]
                 }
             },

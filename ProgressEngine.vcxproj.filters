@@ -285,6 +285,9 @@
     <Filter Include="Source\Engine\Graphics\Components\PostProcess">
       <UniqueIdentifier>{8e5c03eb-3e09-4eba-8c94-777aa47af4c7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Graphics\Components\Trail">
+      <UniqueIdentifier>{2b1c4d6e-9a70-4c11-8f23-5d7e0a1b2c34}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Graphics\Systems\Core">
       <UniqueIdentifier>{bf771668-5e61-4ceb-b31f-a98b88ea309d}</UniqueIdentifier>
     </Filter>
@@ -299,6 +302,9 @@
     </Filter>
     <Filter Include="Source\Engine\Graphics\Systems\PostProcess">
       <UniqueIdentifier>{a0623513-f839-4818-8d09-916f82453b50}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Graphics\Systems\Trail">
+      <UniqueIdentifier>{3c2d5e7f-0b81-4d22-9a34-6e8f1b2c3d45}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Physics\JoltIntegration">
       <UniqueIdentifier>{ec8eebb9-31b8-4275-9553-1d6ebf289568}</UniqueIdentifier>
@@ -495,6 +501,9 @@
     </Filter>
     <Filter Include="Shader\Renderer\Shape">
       <UniqueIdentifier>{942d04f7-5d81-46e2-96ae-cc88d7c44e4b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shader\Renderer\Trail">
+      <UniqueIdentifier>{4d3e6f80-1c92-4e33-ab45-7f9020304a56}</UniqueIdentifier>
     </Filter>
     <Filter Include="Shader\Pass">
       <UniqueIdentifier>{e7067b87-8e10-4f6e-a321-f72d64988db8}</UniqueIdentifier>
@@ -1047,6 +1056,9 @@
     <ClInclude Include="Source\Game\Logics\Combat\HitboxCollisionSystem.h">
       <Filter>Source\Game\Logics\Combat</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Combat\SpawnHitboxSystem.h">
+      <Filter>Source\Game\Logics\Combat</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Combat\DamageResolutionSystem.h">
       <Filter>Source\Game\Logics\Combat</Filter>
     </ClInclude>
@@ -1190,6 +1202,21 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Pipeline\ParticlePass.h">
       <Filter>Source\Engine\Graphics\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Pipeline\TrailPass.h">
+      <Filter>Source\Engine\Graphics\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Components\Trail\TrailComponent.h">
+      <Filter>Source\Engine\Graphics\Components\Trail</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Renderer\TrailRenderer.h">
+      <Filter>Source\Engine\Graphics\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Systems\Trail\TrailSystem.h">
+      <Filter>Source\Engine\Graphics\Systems\Trail</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Systems\Trail\TrailAnimationSyncSystem.h">
+      <Filter>Source\Engine\Graphics\Systems\Trail</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Pipeline\PostProcessPass.h">
       <Filter>Source\Engine\Graphics\Pipeline</Filter>
@@ -2237,6 +2264,9 @@
     <ClCompile Include="Source\Game\Logics\Combat\HitboxCollisionSystem.cpp">
       <Filter>Source\Game\Logics\Combat</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Combat\SpawnHitboxSystem.cpp">
+      <Filter>Source\Game\Logics\Combat</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Game\Logics\Combat\DamageResolutionSystem.cpp">
       <Filter>Source\Game\Logics\Combat</Filter>
     </ClCompile>
@@ -2332,6 +2362,21 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Pipeline\ParticlePass.cpp">
       <Filter>Source\Engine\Graphics\Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Pipeline\TrailPass.cpp">
+      <Filter>Source\Engine\Graphics\Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Components\Trail\TrailComponentMeta.cpp">
+      <Filter>Source\Engine\Graphics\Components\Trail</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Renderer\TrailRenderer.cpp">
+      <Filter>Source\Engine\Graphics\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Systems\Trail\TrailSystem.cpp">
+      <Filter>Source\Engine\Graphics\Systems\Trail</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Systems\Trail\TrailAnimationSyncSystem.cpp">
+      <Filter>Source\Engine\Graphics\Systems\Trail</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Pipeline\PostProcessPass.cpp">
       <Filter>Source\Engine\Graphics\Pipeline</Filter>
@@ -2960,6 +3005,12 @@
     </FxCompile>
     <FxCompile Include="Shader\Material\Basic\BasicVS.hlsl">
       <Filter>Shader\Material\Basic</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Renderer\Trail\TrailVS.hlsl">
+      <Filter>Shader\Renderer\Trail</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Renderer\Trail\TrailPS.hlsl">
+      <Filter>Shader\Renderer\Trail</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Pass\SkyBox\SkyboxVS.hlsl">
       <Filter>Shader\Pass\SkyBox</Filter>

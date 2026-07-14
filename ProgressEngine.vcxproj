@@ -491,6 +491,11 @@
     <ClInclude Include="Source\Engine\Graphics\Pipeline\NormalBuffer.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\NormalPrepass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\ParticlePass.h" />
+    <ClInclude Include="Source\Engine\Graphics\Pipeline\TrailPass.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\Trail\TrailComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Renderer\TrailRenderer.h" />
+    <ClInclude Include="Source\Engine\Graphics\Systems\Trail\TrailSystem.h" />
+    <ClInclude Include="Source\Engine\Graphics\Systems\Trail\TrailAnimationSyncSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\PostProcessPass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\PrimitivePass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\SetupPass.h" />
@@ -725,6 +730,7 @@
     <ClInclude Include="Source\Game\Logics\Combat\HealthComponent.h" />
     <ClInclude Include="Source\Game\Logics\Combat\HealthSystem.h" />
     <ClInclude Include="Source\Game\Logics\Combat\HitboxCollisionSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Combat\SpawnHitboxSystem.h" />
     <ClInclude Include="Source\Game\Logics\GameEvent\GameEvents.h" />
     <ClInclude Include="Source\Game\Logics\GameEvent\GameOverResource.h" />
     <ClInclude Include="Source\Game\Logics\GameEvent\GameStateMode.h" />
@@ -1306,6 +1312,11 @@
     <ClCompile Include="Source\Engine\Graphics\Pipeline\NormalBuffer.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\NormalPrepass.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\ParticlePass.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Pipeline\TrailPass.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Components\Trail\TrailComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Renderer\TrailRenderer.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Systems\Trail\TrailSystem.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Systems\Trail\TrailAnimationSyncSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\PostProcessPass.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\PrimitivePass.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\SetupPass.cpp" />
@@ -1459,6 +1470,7 @@
     <ClCompile Include="Source\Game\Logics\Combat\DamageResolutionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\HealthSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\HitboxCollisionSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Combat\SpawnHitboxSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\BoidSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\ECSBenchmarkSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\JoltSandboxGuiSystem.cpp" />
@@ -1553,6 +1565,16 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Renderer\Trail\TrailVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Renderer\Trail\TrailPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
     </FxCompile>
     <FxCompile Include="Shader\Material\Basic\BasicPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>

@@ -312,6 +312,25 @@ REGISTER_COMPONENT(DamageEventComponent, "DamageEventComponent")
 REGISTER_COMPONENT_EDITOR_GUI(DamageEventComponent)
 
 // ===================================================================
+// 4-2. HitboxLifetimeComponent (生成型Hitboxの寿命・非保存タグ)
+// ===================================================================
+template <> struct ComponentMeta<HitboxLifetimeComponent> {
+    static constexpr const char* displayName       = "Hitbox Lifetime (一時データ)";
+    static constexpr const char* category          = CCL::Categories::Internal;
+    static constexpr int         sortPriority       = 901;
+    static constexpr bool        hasCustomGui       = false;
+    static constexpr bool        isSerializable     = false;
+    static constexpr bool        hiddenInInspector  = true;
+
+    static const std::vector<FieldDescriptor>& Fields() {
+        static const std::vector<FieldDescriptor> empty;
+        return empty;
+    }
+};
+REGISTER_COMPONENT(HitboxLifetimeComponent, "HitboxLifetimeComponent")
+REGISTER_COMPONENT_EDITOR_GUI(HitboxLifetimeComponent)
+
+// ===================================================================
 // 5. HealthComponent
 // ===================================================================
 template <> struct ComponentMeta<HealthComponent> {

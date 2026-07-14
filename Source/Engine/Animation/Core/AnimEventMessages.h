@@ -36,11 +36,16 @@ struct AnimEventEffectMessage
 };
 
 /// @brief 戦闘システム宛て。空間に独立した球状ヒットボックスの生成を依頼する。
+/// @note  offset は owner のローカル基準（前方＝キャラの向き）。購読側で owner の
+///        ワールド回転を掛けてワールド位置へ変換する。lifeTime は Sequencer の
+///        ブロック長(endTime-startTime)を渡し、球はその区間だけ生存する。
 struct AnimEventSpawnHitboxMessage
 {
     CCL::ECS::EntityID           owner;           ///< 攻撃の帰属（このアニメを再生中のエンティティ）
-    DirectX::SimpleMath::Vector3 offset;          ///< 生成位置オフセット
+    DirectX::SimpleMath::Vector3 offset;          ///< 生成位置オフセット（owner ローカル）
     float                        radius;          ///< 球半径
     float                        damage;          ///< 攻撃力
     float                        hitStopDuration; ///< ヒットストップ時間
+    float                        hitStopScale;    ///< ヒットストップ中のタイムスケール(0で完全停止)
+    float                        lifeTime;        ///< 判定球の生存時間(秒)。区間長 endTime-startTime。
 };
