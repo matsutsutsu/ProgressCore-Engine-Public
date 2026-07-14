@@ -96,6 +96,26 @@ struct DroneAction : public IBTAction
         if (auto *cmd = ctx.world->GetComponent<BossCommandComponent>(ctx.entity)) {
             cmd->requestFormation =
                 static_cast<DroneFormationType>(id - 2000 + 1);
+
+            // 陣形の指示 = 「形を作る（予備動作/帰投）」フェーズなので攻撃信号は下ろす。
+            // 突撃（リリース）は後続の DroneStrikeAction が明示的に立てる。
+            cmd->droneAttackActive = false;
+        }
+        return BTNodeState::Success;
+    }
+};
+
+// ====================================================================
+// ⑤ ドローン攻撃リリース（Strike）★ボス固有：BossCommand を自分で取りに行く
+//    「今撃て」信号を立てる。DroneCommandSystem 経由で各ドローンが FireCharge へ。
+// ====================================================================
+struct DroneStrikeAction : public IBTAction
+{
+    BTNodeState Execute(BTContext &ctx) override
+    {
+        ctx.bt->lastLogActionId = ::AI::A_DroneStrike;
+        if (auto *cmd = ctx.world->GetComponent<BossCommandComponent>(ctx.entity)) {
+            cmd->droneAttackActive = true;
         }
         return BTNodeState::Success;
     }
@@ -123,6 +143,7 @@ inline void RegisterAll()
 
     reg.RegisterAction<ResetDamageAction>(::AI::A_ResetDamage);
     reg.RegisterAction<MoveAction>(::AI::A_Move);
+    reg.RegisterAction<DroneStrikeAction>(::AI::A_DroneStrike);
 
     for (ActionID id = 2000; id <= 2029; ++id)
         reg.RegisterActionInstance(id, std::make_unique<DroneAction>(id));

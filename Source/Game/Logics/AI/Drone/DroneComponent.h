@@ -104,4 +104,10 @@ struct DroneComponent {
     ///        true になると Forming(Idle) に固定され、回転する targetPosition との
     ///        距離では MoveToSlot に戻らない（点滅防止）。
     bool hasReachedSlot = false;
+
+    /// @brief ボスから「今攻撃せよ」の命令が来ているか（実行時専用・非シリアライズ）。
+    ///        DroneCommandSystem が毎フレーム BossCommandComponent.droneAttackActive を
+    ///        ここへ配布し、個体 StateTree の WantsAttackCondition が読む。
+    ///        true → Active(FireCharge) へ遷移する。
+    bool wantsAttack = false;
 };

@@ -49,6 +49,7 @@ namespace AI {
     // --- 1000番台: ボス本体（最小構成）---
     inline constexpr ActionID A_Move        = 1000; ///< BossActionSystem が実行
     inline constexpr ActionID A_ResetDamage = 1005; ///< ブラックボードの蓄積ダメージをリセット
+    inline constexpr ActionID A_DroneStrike = 1006; ///< ドローンへ「今撃て」信号（陣形攻撃のリリース）
 
     // --- 2000番台: ドローン制御（id - 2000 + 1 → DroneFormationType）---
     inline constexpr ActionID A_DroneOrbit        = 2000;
@@ -115,6 +116,7 @@ inline constexpr ActionEntry g_ActionRegistry[] = {
     // --- ボス本体 (Boss) ※実行層は Move のみ対応 ---
     { AI::A_Move,        "ボス：移動 (Move To Player)", "Boss" },
     { AI::A_ResetDamage, "ボス：蓄積ダメージリセット",   "Boss" },
+    { AI::A_DroneStrike, "ドローン：攻撃実行 (Strike/リリース)", "Drone" },
 
     // --- ドローン群 (Drone) ---
     { AI::A_DroneOrbit,        "ドローン：円陣展開 (Orbit Circle)",   "Drone" },

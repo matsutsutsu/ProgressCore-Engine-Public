@@ -335,6 +335,38 @@ void DroneManagerSystem::OnGui()
             SetAllDroneState(DroneState::FireCharge);
         ImGui::PopStyleColor();
 
+        // ================================================================
+        // 陣形攻撃テスト（縦割り）：BTを組まずに手動でパイプラインを検証する
+        //   ボスの BossCommandComponent へ直接命令を書き、
+        //   DroneCommandSystem → DroneAI(StateTree) → Formation の流れを確認する。
+        //   ※ボスBTが毎フレーム陣形を指示している場合はそちらに上書きされるので、
+        //     テスト時はボスBTを Move のみ等にしておくこと。
+        // ================================================================
+        ImGui::Spacing();
+        ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.3f, 1.0f), "Formation Attack Test (縦割り)");
+
+        auto setBossCmd = [this](DroneFormationType f, bool attack) {
+            EntityID boss = FindBoss();
+            if (auto *cmd = _world->GetComponent<BossCommandComponent>(boss))
+            {
+                cmd->requestFormation  = f;
+                cmd->droneAttackActive = attack;
+            }
+        };
+
+        if (ImGui::Button("1) Form Blade (刃を形成)", ImVec2(180, 26)))
+            setBossCmd(DroneFormationType::GuillotineSlam, false);
+
+        ImGui::SameLine();
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.9f, 0.3f, 0.2f, 1.0f));
+        if (ImGui::Button("2) Strike! (振り下ろし)", ImVec2(180, 26)))
+            setBossCmd(DroneFormationType::GuillotineSlam, true);
+        ImGui::PopStyleColor();
+
+        ImGui::SameLine();
+        if (ImGui::Button("3) Return (周回へ)", ImVec2(140, 26)))
+            setBossCmd(DroneFormationType::OrbitCircle, false);
+
         ImGui::Unindent();
     }
 #endif

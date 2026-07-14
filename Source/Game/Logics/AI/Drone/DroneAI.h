@@ -24,6 +24,7 @@
 #include "Game/Logics/AI/StateTree/Core/NodeParamField.h"
 
 #include "Game/Logics/AI/Drone/DroneComponent.h"
+#include "Game/Logics/AI/Battle/BattleContext.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Transform/Components/TransformComponent.h"
@@ -113,16 +114,57 @@ namespace DroneAI
     // ====================================================================
     // 条件：攻撃を要求されているか（Activeへ入る条件）
     // ====================================================================
-    /// @note 現状は「攻撃命令の伝達手段」が未実装のプレースホルダー。
-    ///       将来、ボスBTの DroneAction が攻撃系の陣形を指示した際に
-    ///       DroneComponent 側へフラグを立てる仕組みと接続する
-    ///       （CommanderAI::DroneCountBelowCondition と同じ「後で接続」パターン）。
+    /// @note ボスBT（DroneStrikeAction）が BossCommandComponent.droneAttackActive を立て、
+    ///       DroneCommandSystem がそれを各ドローンの wantsAttack へ配布する。
+    ///       このフラグが立っている間だけ Active（=FireCharge）に入る。
     struct WantsAttackCondition : public CCL::AI::ICondition
     {
-        bool Evaluate(CCL::AI::ExecContext& /*ctx*/) override
+        bool Evaluate(CCL::AI::ExecContext& ctx) override
         {
-            // TODO: ボスからの攻撃命令と接続する。今は常にfalse（Activeへは入らない）。
-            return false;
+            const auto* drone = ctx.world->GetComponent<DroneComponent>(ctx.entity);
+            return drone && drone->wantsAttack;
+        }
+    };
+
+
+    // ====================================================================
+    // タスク：突撃開始（Activeへ入った瞬間の初期化）
+    // ====================================================================
+    /// @note EnterState で「タメ時間(stateTimer)」と「突撃方向(fireDirection)」を仕込む。
+    ///       fireDirection は陣形（GuillotineSlam 等）が予備動作フェーズ中に既にセット
+    ///       しているのでそれを尊重し、未設定のときだけプレイヤー方向をフォールバックにする。
+    ///       これにより FireCharge 突入時に方向がロックされ、DroneMovementSystem の
+    ///       「タメ→リリース」がコミットした直進として成立する（ホーミングしない）。
+    struct BeginChargeTask : public CCL::AI::ITask
+    {
+        void EnterState(CCL::AI::ExecContext& ctx) override
+        {
+            auto* drone = ctx.world->GetComponent<DroneComponent>(ctx.entity);
+            if (!drone) return;
+
+            // タメ時間（ProcessFireCharge が stateTimer>0 を「予備動作」として扱う）
+            drone->stateTimer = 0.4f;
+
+            // 突撃方向：陣形が既にセット済みなら尊重、未設定ならプレイヤー方向
+            if (drone->fireDirection.LengthSquared() < 0.001f)
+            {
+                DirectX::SimpleMath::Vector3 dir = -DirectX::SimpleMath::Vector3::UnitZ;
+                if (ctx.world->HasResource<BattleContext>())
+                {
+                    auto& battle = ctx.world->GetResource<BattleContext>();
+                    DirectX::SimpleMath::Vector3 toPlayer =
+                        DirectX::SimpleMath::Vector3(battle.playerPos) - drone->targetPosition;
+                    if (toPlayer.LengthSquared() > 0.001f) { toPlayer.Normalize(); dir = toPlayer; }
+                }
+                drone->fireDirection       = dir;
+                drone->targetLookDirection = dir;
+            }
+        }
+
+        CCL::AI::RunStatus Tick(CCL::AI::ExecContext& /*ctx*/) override
+        {
+            // 維持のみ。初期化は EnterState 側で済ませている。
+            return CCL::AI::RunStatus::Running;
         }
     };
 
@@ -135,6 +177,7 @@ namespace DroneAI
         CCL::AI::NodeTypeID setState;
         CCL::AI::NodeTypeID notAtTarget;
         CCL::AI::NodeTypeID wantsAttack;
+        CCL::AI::NodeTypeID beginCharge;
     };
 
     inline DroneAIIDs RegisterNodes()
@@ -144,6 +187,7 @@ namespace DroneAI
         ids.setState    = reg.RegisterTask<SetDroneStateTask>("SetDroneState", "Drone");
         ids.notAtTarget = reg.RegisterCondition<NotAtTargetCondition>("NotAtTarget", "Drone");
         ids.wantsAttack = reg.RegisterCondition<WantsAttackCondition>("WantsAttack", "Drone");
+        ids.beginCharge = reg.RegisterTask<BeginChargeTask>("BeginCharge", "Drone");
         return ids;
     }
 
@@ -167,6 +211,9 @@ namespace DroneAI
         {
             const uint16_t active = asset.AddState("Active", root);
             asset.AddEnterCondition(active, ids.wantsAttack, 0, 0);   // パラメータ無し
+
+            // 入場時に突撃を初期化（タメ・方向ロック）。EnterState を持つので先に置く。
+            asset.AddTask(active, ids.beginCharge, 0, 0, 0);
 
             SetDroneStateTask::Params tp{ static_cast<int>(DroneState::FireCharge) };
             asset.AddTask(active, ids.setState, asset.AddParams(tp), sizeof(tp), 0);

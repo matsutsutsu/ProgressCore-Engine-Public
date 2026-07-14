@@ -6,6 +6,7 @@
 #include "Game/Logics/AI/Battle/BattleContext.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h" // BossCommandComponent
 #include "Game/Logics/AI/Drone/Formation/Formations_Basic.h"
+#include "Game/Logics/AI/Drone/Formation/Formations_Attack.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -24,6 +25,7 @@ void DroneFormationSystem::Initialize()
     // Formations_Basic.h の RegisterAll() に1行足すだけで、
     // このシステムを持つ全シーンに自動反映される。
     CCL::AI::Formation::Basic::RegisterAll();
+    CCL::AI::Formation::Attack::RegisterAll(); // 攻撃陣形（縦割り等）
 
     CCL_LOG_INFO(LogCategory::AI, "[DroneFormationSystem] 陣形クラス登録完了");
 }
