@@ -885,6 +885,9 @@
     <ClInclude Include="Source\Engine\Graphics\Renderer\MeshCulling.h">
       <Filter>Source\Engine\Graphics\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Renderer\RenderDebugRegistry.h">
+      <Filter>Source\Engine\Graphics\Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\Pass\ShadowUtils.h">
       <Filter>Source\Engine\Graphics\Shader\Pass</Filter>
     </ClInclude>
@@ -1018,6 +1021,12 @@
       <Filter>Source\Editor\Windows\Editor</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\GameViewWindow.h">
+      <Filter>Source\Editor\Windows\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\RenderDebugWindow.h">
+      <Filter>Source\Editor\Windows\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\RenderTargetVisualizer.h">
       <Filter>Source\Editor\Windows\Editor</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\HierarchyWindow.h">
@@ -2276,6 +2285,12 @@
     <ClCompile Include="Source\Editor\Windows\GameViewWindow.cpp">
       <Filter>Source\Editor\Windows\Editor</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\RenderDebugWindow.cpp">
+      <Filter>Source\Editor\Windows\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\RenderTargetVisualizer.cpp">
+      <Filter>Source\Editor\Windows\Editor</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\ECS\Core\CCL_Chunk.cpp">
       <Filter>Source\Engine\ECS\Core</Filter>
     </ClCompile>
@@ -3040,6 +3055,9 @@
       <Filter>Shader\PostProcess</Filter>
     </FxCompile>
     <FxCompile Include="Shader\PostProcess\SSAOPS.hlsl">
+      <Filter>Shader\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\PostProcess\RenderTargetDebugPS.hlsl">
       <Filter>Shader\PostProcess</Filter>
     </FxCompile>
     <FxCompile Include="Shader\PostProcess\SSAOBlurPS.hlsl">

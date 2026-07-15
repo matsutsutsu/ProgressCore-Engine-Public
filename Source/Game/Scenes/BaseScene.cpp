@@ -16,6 +16,7 @@
 
 #include "Engine/Graphics/Systems/Core/EnvironmentSystem.h"
 #include "Engine/Graphics/Renderer/RenderQueue.h"
+#include "Engine/Graphics/Renderer/RenderDebugRegistry.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 #include "Engine/Core/Components/RenderInterpState.h"
 
@@ -141,6 +142,7 @@ void BaseScene::Update(float elapsedTime)
     ZoneScopedN("BaseScene::Update");
 
     RenderQueue::Instance().BeginFrame();
+    RenderDebugRegistry::Instance().BeginFrame(); // デバッグテクスチャ一覧もフレーム先頭でクリア
     Graphics::Instance().GetParticleRenderer()->BeginFrame();
 
     // カメラ行列・CbScene の更新と CbLight のバインドを行う。

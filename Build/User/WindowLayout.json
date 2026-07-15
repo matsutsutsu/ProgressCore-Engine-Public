@@ -67,6 +67,10 @@
         {
             "name": "Game View",
             "visible": true
+        },
+        {
+            "name": "Render Debug",
+            "visible": true
         }
     ]
 }

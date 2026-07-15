@@ -6,6 +6,7 @@
 #include "Engine/Graphics/Renderer/ModelRenderer.h"
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
 #include "Engine/Graphics/Renderer/RenderQueue.h"
+#include "Engine/Graphics/Renderer/RenderDebugRegistry.h" // デバッグテクスチャ登録
 #include "Engine/Graphics/Renderer/MeshCulling.h" // メッシュ単位カリング（OpaquePass と共有）
 #include "Engine/Graphics/Shader/ShaderResources.h"
 #include <DirectXCollision.h> // メッシュ単位フラスタムカリング用
@@ -157,4 +158,9 @@ void NormalPrepass::Execute(const RenderFrameContext& ctx)
     ID3D11ShaderResourceView* normalSRV = _normalBuffer.GetSRV();
     dc->PSSetShaderResources(SLOT_SRV_SCENE_NORMAL, 1, &normalSRV);
     Graphics::Instance().SetSceneNormalSRV(normalSRV);
+
+    // デバッグ表示へ登録（RTV は上で解除済み。SRV として安全に読める）
+    RenderDebugRegistry::Instance().Register({
+        "NormalPrepass", normalSRV,
+        _normalBuffer.GetWidth(), _normalBuffer.GetHeight(), DebugTexKind::Normal });
 }

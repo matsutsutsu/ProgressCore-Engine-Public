@@ -6,6 +6,7 @@
 #include "Engine/Graphics/Shader/ShaderResources.h"
 #include "Engine/Graphics/Shader/Shared/ShaderShared.h"
 #include "Engine/Graphics/Renderer/RenderQueue.h"
+#include "Engine/Graphics/Renderer/RenderDebugRegistry.h"
 #include "Engine/Graphics/Shader/Pass/ShadowUtils.h"
 #include "Engine/Graphics/Shader/Pass/ShadowMap.h"
 #include <algorithm>
@@ -159,4 +160,9 @@ void ShadowPass::Execute(const RenderFrameContext& ctx)
 
     dc->OMSetRenderTargets(1, oldRTV.GetAddressOf(), oldDSV.Get());
     dc->RSSetViewports(1, &oldVP);
+
+    // デバッグ表示へ登録（Texture2DArray のため v1 では一覧に注記のみ。実表示は v2 で対応）
+    RenderDebugRegistry::Instance().Register({
+        "ShadowMap (Cascades)", shadowMap->GetShaderResourceView(),
+        shadowMap->GetWidth(), shadowMap->GetHeight(), DebugTexKind::Array });
 }

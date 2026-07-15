@@ -29,6 +29,7 @@
 #include "Editor/Core/EditorWindowManager.h"
 #include "Editor/Core/EditorContext.h"
 #include "Engine/Graphics/Renderer/ImGuiRenderer.h"
+#include "Engine/Graphics/Renderer/RenderDebugRegistry.h"
 #endif
 
 #include "tracy/Tracy.hpp"
@@ -336,6 +337,18 @@ void Framework::Render(float elapsedTime)
 			if (m_editorWindowManager) {
 				// ★ ここで完成したゲーム画面のテクスチャをUIに渡す！
 				m_editorContext.gameSRV = (void*)Graphics::Instance().GetGameSRV();
+
+				// デバッグ表示（Render Debug ウィンドウ）へ device レベルの SRV を登録する。
+				// パス出力ではないため、SRV が確定するこの位置（描画完了後）で申告する。
+				{
+					const uint32_t sw = static_cast<uint32_t>(Graphics::Instance().GetScreenWidth());
+					const uint32_t sh = static_cast<uint32_t>(Graphics::Instance().GetScreenHeight());
+					RenderDebugRegistry::Instance().Register({
+						"GameView (Final)", Graphics::Instance().GetGameSRV(), sw, sh, DebugTexKind::Color });
+					RenderDebugRegistry::Instance().Register({
+						"SceneDepth", Graphics::Instance().GetDepthSRV(), sw, sh, DebugTexKind::Depth });
+				}
+
 				m_editorWindowManager->Draw(m_editorContext);
 
 				if (m_editorWindowManager->IsVisible()) {

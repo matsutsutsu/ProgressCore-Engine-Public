@@ -26,6 +26,8 @@ public:
 
     ID3D11RenderTargetView*   GetRTV() const noexcept { return _rtv.Get(); }
     ID3D11ShaderResourceView* GetSRV() const noexcept { return _srv.Get(); }
+    UINT                      GetWidth()  const noexcept { return _width; }
+    UINT                      GetHeight() const noexcept { return _height; }
 
 private:
     Microsoft::WRL::ComPtr<ID3D11Texture2D>          _texture;
