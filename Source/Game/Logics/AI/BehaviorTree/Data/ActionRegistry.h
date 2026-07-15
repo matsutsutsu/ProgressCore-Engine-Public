@@ -88,9 +88,10 @@ namespace AI {
     inline constexpr ActionID A_DroneMegaClapLowerFirst = 2027;
     inline constexpr ActionID A_DroneMegaShieldChargeUpperFirst = 2028;
     inline constexpr ActionID A_DroneMegaShieldChargeLowerFirst = 2029;
+    inline constexpr ActionID A_DroneTsunamiWaveRL = 2030; ///< 波状縦割り（右→左）。enum TsunamiWave_RL に対応
 
     inline constexpr ActionID A_DroneFirst = 2000;
-    inline constexpr ActionID A_DroneLast  = 2029;
+    inline constexpr ActionID A_DroneLast  = 2030;
 }
 
 // ============================================================================
@@ -130,6 +131,11 @@ inline constexpr ActionEntry g_ActionRegistry[] = {
     { AI::A_DroneGuillotineSlam, "ドローン：縦割り (Guillotine Slam)", "Drone" },
     { AI::A_DroneClapSlam,       "ドローン：挟み込み1段 (Clap Slam)", "Drone" },
     { AI::A_DroneKamikazeSwarm,  "ドローン：弾幕 (Kamikaze Swarm)", "Drone" },
+    { AI::A_DroneMegaClapLowerFirst, "ドローン：挟み込み2段・下段先攻 (Mega Clap)", "Drone" },
+    { AI::A_DroneMegaClapUpperFirst, "ドローン：挟み込み2段・上段先攻 (Mega Clap)", "Drone" },
+    { AI::A_DroneSideSlapWhip,   "ドローン：横なぎ回転 (Side Slap Whip)", "Drone" },
+    { AI::A_DroneTsunamiWave,    "ドローン：波状縦割り・左→右 (Wave)", "Drone" },
+    { AI::A_DroneTsunamiWaveRL,  "ドローン：波状縦割り・右→左 (Wave)", "Drone" },
     { AI::A_DroneStrike,         "ドローン：攻撃実行 (Strike/リリース)", "Drone" },
 };
 inline constexpr int g_ActionRegistryCount = sizeof(g_ActionRegistry) / sizeof(ActionEntry);

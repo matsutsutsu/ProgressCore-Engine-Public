@@ -57,6 +57,9 @@ enum class DroneFormationType : uint8_t {
     MegaShieldCharge_UpperFirst,
     MegaShieldCharge_LowerFirst,
 
+    // 波状縦割りの方向読み用（TsunamiWave=左→右, これ=右→左）
+    TsunamiWave_RL, ///< 【波状縦割り・右→右左】右端から順に倒れてくる波
+
 };
 
 // ドローン個体の具体的な物理ステート

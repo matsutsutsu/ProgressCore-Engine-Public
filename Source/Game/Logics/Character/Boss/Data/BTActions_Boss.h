@@ -145,7 +145,7 @@ inline void RegisterAll()
     reg.RegisterAction<MoveAction>(::AI::A_Move);
     reg.RegisterAction<DroneStrikeAction>(::AI::A_DroneStrike);
 
-    for (ActionID id = 2000; id <= 2029; ++id)
+    for (ActionID id = ::AI::A_DroneFirst; id <= ::AI::A_DroneLast; ++id)
         reg.RegisterActionInstance(id, std::make_unique<DroneAction>(id));
 }
 
