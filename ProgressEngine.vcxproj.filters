@@ -288,6 +288,9 @@
     <Filter Include="Source\Engine\Graphics\Components\Trail">
       <UniqueIdentifier>{2b1c4d6e-9a70-4c11-8f23-5d7e0a1b2c34}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Graphics\Components\Impact">
+      <UniqueIdentifier>{5e4f7091-2da3-4f44-bc56-8091a2b3c4d6}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Graphics\Systems\Core">
       <UniqueIdentifier>{bf771668-5e61-4ceb-b31f-a98b88ea309d}</UniqueIdentifier>
     </Filter>
@@ -305,6 +308,9 @@
     </Filter>
     <Filter Include="Source\Engine\Graphics\Systems\Trail">
       <UniqueIdentifier>{3c2d5e7f-0b81-4d22-9a34-6e8f1b2c3d45}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Graphics\Systems\Impact">
+      <UniqueIdentifier>{6f5a819b-3eb4-4055-cd67-9102b3c4d5e7}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Physics\JoltIntegration">
       <UniqueIdentifier>{ec8eebb9-31b8-4275-9553-1d6ebf289568}</UniqueIdentifier>
@@ -1227,6 +1233,12 @@
     <ClInclude Include="Source\Engine\Graphics\Systems\Trail\TrailAnimationSyncSystem.h">
       <Filter>Source\Engine\Graphics\Systems\Trail</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Components\Impact\ScreenImpactComponent.h">
+      <Filter>Source\Engine\Graphics\Components\Impact</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Systems\Impact\ScreenImpactSystem.h">
+      <Filter>Source\Engine\Graphics\Systems\Impact</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Pipeline\PostProcessPass.h">
       <Filter>Source\Engine\Graphics\Pipeline</Filter>
     </ClInclude>
@@ -1546,6 +1558,9 @@
       <Filter>Source\Engine\Transform\Systems</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Physics\Components\Character\CharacterMovementInputComponent.h">
+      <Filter>Source\Engine\Physics\Components\Character</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\Components\Character\KnockbackComponent.h">
       <Filter>Source\Engine\Physics\Components\Character</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Platform\Input\GamePad.h">
@@ -2393,6 +2408,12 @@
     <ClCompile Include="Source\Engine\Graphics\Systems\Trail\TrailAnimationSyncSystem.cpp">
       <Filter>Source\Engine\Graphics\Systems\Trail</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Components\Impact\ScreenImpactComponentMeta.cpp">
+      <Filter>Source\Engine\Graphics\Components\Impact</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Systems\Impact\ScreenImpactSystem.cpp">
+      <Filter>Source\Engine\Graphics\Systems\Impact</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Pipeline\PostProcessPass.cpp">
       <Filter>Source\Engine\Graphics\Pipeline</Filter>
     </ClCompile>
@@ -2607,6 +2628,9 @@
       <Filter>Source\Engine\Physics\Components\Character</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Physics\Components\Character\CharacterMovementInputComponentMeta.cpp">
+      <Filter>Source\Engine\Physics\Components\Character</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Physics\Components\Character\KnockbackComponentMeta.cpp">
       <Filter>Source\Engine\Physics\Components\Character</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\ToneMapEffect.cpp">

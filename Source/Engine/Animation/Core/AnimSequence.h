@@ -111,12 +111,19 @@ struct AnimNotifyEvent
 
     // --- 戦闘パラメータ(HitBox / SpawnHitbox 用) ---
     float damage          = 0.0f; ///< 攻撃力
+    float knockback       = 0.0f; ///< ノックバックの強さ(0で無効)。対ボスは弱め推奨。
     float hitStopDuration = 0.0f; ///< ヒットストップ時間(秒)
     float hitStopScale    = 1.0f; ///< ヒットストップ中のタイムスケール(0で完全停止)
 
     // --- 空間パラメータ(SpawnHitbox / Effect 用) ---
     DirectX::SimpleMath::Vector3 offset = DirectX::SimpleMath::Vector3::Zero; ///< 発生位置オフセット
     float                        radius = 1.0f;                               ///< 球半径(SpawnHitbox)
+
+    /// @brief SpawnHitbox が生成する判定球の物理レイヤー（＝誰に当てるか）。
+    /// @details PhysicsLayers の index。既定 3 = PLAYER_ATTACK(ボスに命中)。
+    ///          ボスの攻撃なら 4 = BOSS_ATTACK(プレイヤーに命中) を選ぶ。
+    ///          Jolt を core に引き込まないため uint8_t で保持し、購読側で ObjectLayer へキャスト。
+    uint8_t attackLayer = 3;
 
     // --- エフェクトパラメータ(Effect 用) ---
     float effectScale  = 1.0f;  ///< エフェクトのスケール倍率
@@ -158,9 +165,10 @@ inline void to_json(json &j, const AnimNotifyEvent &e)
         {"startTime", e.startTime}, {"endTime", e.endTime},
         {"type", (int)e.type}, {"stringParam", e.stringParam},
         {"cancelMask", e.cancelMask},
-        {"damage", e.damage}, {"hitStopDuration", e.hitStopDuration},
+        {"damage", e.damage}, {"knockback", e.knockback},
+        {"hitStopDuration", e.hitStopDuration},
         {"hitStopScale", e.hitStopScale},
-        {"radius", e.radius},
+        {"radius", e.radius}, {"attackLayer", e.attackLayer},
         {"effectScale", e.effectScale}, {"effectFollow", e.effectFollow}};
 
     // Vector3 は初期化子リスト内で直接変換できない（ADL未解決でエラーになる）ため、
@@ -175,10 +183,12 @@ inline void from_json(const json &j, AnimNotifyEvent &e)
     e.stringParam     = j.value("stringParam", std::string{});
     e.cancelMask      = j.value("cancelMask", 0u);
     e.damage          = j.value("damage", 0.0f);
+    e.knockback       = j.value("knockback", 0.0f);
     e.hitStopDuration = j.value("hitStopDuration", 0.0f);
     e.hitStopScale    = j.value("hitStopScale", 1.0f);
     if (j.contains("offset")) j.at("offset").get_to(e.offset);
     e.radius       = j.value("radius", 1.0f);
+    e.attackLayer  = static_cast<uint8_t>(j.value("attackLayer", 3));
     e.effectScale  = j.value("effectScale", 1.0f);
     e.effectFollow = j.value("effectFollow", false);
 }

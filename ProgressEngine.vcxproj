@@ -502,6 +502,8 @@
     <ClInclude Include="Source\Engine\Graphics\Renderer\TrailRenderer.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Trail\TrailSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Trail\TrailAnimationSyncSystem.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\Impact\ScreenImpactComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Systems\Impact\ScreenImpactSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\PostProcessPass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\PrimitivePass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\SetupPass.h" />
@@ -581,6 +583,7 @@
     <ClInclude Include="Source\Engine\Graphics\Systems\Particle\GPUParticleUpdateSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\PostProcess\PostProcessSystem.h" />
     <ClInclude Include="Source\Engine\Physics\Components\Character\CharacterMovementInputComponent.h" />
+    <ClInclude Include="Source\Engine\Physics\Components\Character\KnockbackComponent.h" />
     <ClInclude Include="Source\Engine\Physics\Components\Character\JoltCharacterConfigComponent.h" />
     <ClInclude Include="Source\Engine\Physics\Components\Character\JoltCharacterHandleComponent.h" />
     <ClInclude Include="Source\Engine\Physics\Components\Collision\JoltBoxColliderComponent.h" />
@@ -1330,6 +1333,8 @@
     <ClCompile Include="Source\Engine\Graphics\Renderer\TrailRenderer.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Trail\TrailSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Trail\TrailAnimationSyncSystem.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Components\Impact\ScreenImpactComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Systems\Impact\ScreenImpactSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\PostProcessPass.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\PrimitivePass.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\SetupPass.cpp" />
@@ -1394,6 +1399,7 @@
     <ClCompile Include="Source\Engine\Graphics\Systems\Particle\GPUParticleUpdateSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\PostProcess\PostProcessSystem.cpp" />
     <ClCompile Include="Source\Engine\Physics\Components\Character\CharacterMovementInputComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Physics\Components\Character\KnockbackComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Physics\Components\Character\JoltCharacterConfigComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Physics\Components\Jolt\JoltPhysicsComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltCharacterContactListener.cpp" />

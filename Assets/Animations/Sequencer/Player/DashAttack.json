@@ -2,6 +2,7 @@
     "duration": 2.066666603088379,
     "events": [
         {
+            "attackLayer": 3,
             "cancelMask": 1,
             "damage": 0.0,
             "effectFollow": false,
@@ -9,6 +10,7 @@
             "endTime": 1.6666666269302368,
             "hitStopDuration": 0.0,
             "hitStopScale": 1.0,
+            "knockback": 0.0,
             "offset": {
                 "x": 0.0,
                 "y": 0.0,
@@ -20,6 +22,7 @@
             "type": 6
         },
         {
+            "attackLayer": 3,
             "cancelMask": 0,
             "damage": 0.0,
             "effectFollow": false,
@@ -27,6 +30,7 @@
             "endTime": 0.5833333134651184,
             "hitStopDuration": 0.0,
             "hitStopScale": 1.0,
+            "knockback": 0.0,
             "offset": {
                 "x": 0.0,
                 "y": 0.0,
@@ -36,6 +40,26 @@
             "startTime": 0.25,
             "stringParam": "Weapon_R",
             "type": 5
+        },
+        {
+            "attackLayer": 3,
+            "cancelMask": 0,
+            "damage": 5.0,
+            "effectFollow": false,
+            "effectScale": 1.0,
+            "endTime": 0.5833333134651184,
+            "hitStopDuration": 0.10000000149011612,
+            "hitStopScale": 0.0,
+            "knockback": 5.0,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "startTime": 0.25,
+            "stringParam": "Weapon_R",
+            "type": 0
         }
     ],
     "rootMotionCurve": {

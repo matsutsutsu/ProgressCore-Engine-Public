@@ -276,7 +276,7 @@ void SceneInitializer::SpawnPhysicsAvalancheTest(
                     .Set(JoltBoxColliderComponent{ .halfExtent = {1.0f, 1.0f, 1.0f} })
                     .Set(JoltRigidbodyComponent{
                         .motionType = JPH::EMotionType::Dynamic,
-                        .objectLayer = PhysicsLayers::MOVING,
+                        .objectLayer = PhysicsLayers::PLAYER,
                         .restitution = 0.2f, // 少し弾む
                         .friction = 0.3f
                         });

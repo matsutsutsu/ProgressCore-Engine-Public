@@ -24,7 +24,7 @@ struct JoltRigidbodyComponent
     // JPH::EMotionType:: 0,Static   1,Kinematic 2,Dynamic
     JPH::EMotionType motionType = JPH::EMotionType::Dynamic;
     // PhysicsLayers::  0,NON_MOVING 1,MOVING 2,ENEMY 3,BULLET
-    JPH::ObjectLayer objectLayer = PhysicsLayers::MOVING;
+    JPH::ObjectLayer objectLayer = PhysicsLayers::PLAYER;
     float            restitution = 0.0f; // 反発係数
     float            friction    = 0.2f; // 摩擦係数
 

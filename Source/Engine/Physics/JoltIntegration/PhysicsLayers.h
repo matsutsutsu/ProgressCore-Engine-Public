@@ -26,12 +26,17 @@
 // ★ レイヤーの唯一の定義元（X-Macro）
 //    (定数名, 値, 表示名)  ← ここに1行足すだけで全部が増える
 // ──────────────────────────────────────────────
-#define PHYSICS_OBJECT_LAYER_LIST(X) \
-    X(NON_MOVING, 0, "NON_MOVING")   \
-    X(MOVING,     1, "MOVING")       \
-    X(ENEMY,      2, "ENEMY")        \
-    X(BULLET,     3, "BULLET")       \
-    X(BOSS,       4, "BOSS")
+// 企画: プレイヤー vs ボスの1対1アクション。
+//   本体レイヤー: PLAYER / BOSS（+ 壁 NON_MOVING）。
+//   攻撃レイヤー: PLAYER_ATTACK(=ボスに命中) / BOSS_ATTACK(=プレイヤーに命中)。
+//     ★攻撃レイヤーで「誰に当てるか」を表現する。剣も空間判定(SpawnHitbox)も
+//       この攻撃レイヤーを載せることで、味方誤爆せず相手にだけ当たる。
+#define PHYSICS_OBJECT_LAYER_LIST(X)         \
+    X(NON_MOVING,    0, "NON_MOVING")        \
+    X(PLAYER,        1, "PLAYER")            \
+    X(BOSS,          2, "BOSS")              \
+    X(PLAYER_ATTACK, 3, "PLAYER_ATTACK")     \
+    X(BOSS_ATTACK,   4, "BOSS_ATTACK")
 
 // ──────────────────────────────────────────────
 // 1. 住人の種類 (ObjectLayer)  ※定数・個数・名前配列を X-Macro から自動生成

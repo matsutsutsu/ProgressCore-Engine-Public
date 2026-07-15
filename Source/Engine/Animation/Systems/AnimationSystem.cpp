@@ -231,7 +231,8 @@ void AnimationSystem::DispatchPointEvents(CCL::ECS::EntityID id, AnimatorCompone
             //   点(startTime==endTime)なら 0 になり、購読側が最小寿命へフォールバックする。
             const float window = evt.endTime - evt.startTime;
             _world->GetEventBus().Publish(AnimEventSpawnHitboxMessage{
-                id, evt.offset, evt.radius, evt.damage, evt.hitStopDuration, evt.hitStopScale, window});
+                id, evt.offset, evt.radius, evt.damage, evt.hitStopDuration, evt.hitStopScale, window,
+                evt.attackLayer, evt.knockback});
             break;
         }
 

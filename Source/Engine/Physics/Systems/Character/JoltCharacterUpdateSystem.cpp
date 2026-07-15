@@ -4,6 +4,7 @@
 #include "Engine/Physics/JoltIntegration/JoltCharacterContactListener.h"
 #include "Engine/Physics/JoltIntegration/PhysicsLayers.h"
 #include "Engine/Physics/Components/Jolt/JoltHandleComponent.h"
+#include "Engine/Physics/Components/Character/KnockbackComponent.h"
 #include <Jolt/Physics/Body/BodyFilter.h>
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
@@ -46,6 +47,26 @@ void JoltCharacterUpdateSystem::Update(float rawDt)
 
         // 3. 水平方向（慣性ドリフト減速）の計算
         Vector3 newHorizontalVel = CalculateHorizontalVelocity(safeDt, config, input);
+
+        // 3.5 ノックバック（被弾で書き込まれた速度を減衰させつつ水平速度へ加算）。
+        //     CharacterVirtual 経由で動かすので壁抜けしない。残り時間比で線形に減衰させ、
+        //     命中直後が最大 → 0 へ。KnockbackComponent は被弾側に常設で付ける。
+        if (auto *kb = _world->GetComponent<KnockbackComponent>(id))
+        {
+            if (kb->timer > 0.0f)
+            {
+                const float k = (kb->duration > 0.0f) ? (kb->timer / kb->duration) : 1.0f; // 1→0
+                newHorizontalVel.x += kb->velocity.x * k;
+                newHorizontalVel.z += kb->velocity.z * k;
+
+                kb->timer -= safeDt;
+                if (kb->timer <= 0.0f)
+                {
+                    kb->timer    = 0.0f;
+                    kb->velocity = Vector3::Zero;
+                }
+            }
+        }
 
         JPH::Vec3 finalVel(newHorizontalVel.x, newVy, newHorizontalVel.z);
         ch->SetLinearVelocity(finalVel);

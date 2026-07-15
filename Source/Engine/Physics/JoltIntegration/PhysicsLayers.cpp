@@ -8,11 +8,11 @@ using namespace JPH;
 BPLayerInterfaceImpl::BPLayerInterfaceImpl()
 {
     // 「ObjectLayer の X」を持った奴を、どの「BroadPhase バケツ」に入れるかの対応表
-    mObjectToBroadPhase[PhysicsLayers::NON_MOVING] = BroadPhaseLayers::NON_MOVING;
-    mObjectToBroadPhase[PhysicsLayers::MOVING]     = BroadPhaseLayers::MOVING;
-    mObjectToBroadPhase[PhysicsLayers::ENEMY]      = BroadPhaseLayers::MOVING;
-    mObjectToBroadPhase[PhysicsLayers::BULLET]     = BroadPhaseLayers::MOVING;
-    mObjectToBroadPhase[PhysicsLayers::BOSS]       = BroadPhaseLayers::MOVING; // ボスも動くキャラ扱い
+    mObjectToBroadPhase[PhysicsLayers::NON_MOVING]    = BroadPhaseLayers::NON_MOVING;
+    mObjectToBroadPhase[PhysicsLayers::PLAYER]        = BroadPhaseLayers::MOVING;
+    mObjectToBroadPhase[PhysicsLayers::BOSS]          = BroadPhaseLayers::MOVING; // ボスも動くキャラ扱い
+    mObjectToBroadPhase[PhysicsLayers::PLAYER_ATTACK] = BroadPhaseLayers::MOVING; // 攻撃判定も動くもの側
+    mObjectToBroadPhase[PhysicsLayers::BOSS_ATTACK]   = BroadPhaseLayers::MOVING;
 }
 
 uint BPLayerInterfaceImpl::GetNumBroadPhaseLayers() const
@@ -44,7 +44,7 @@ const char *BPLayerInterfaceImpl::GetBroadPhaseLayerName(BroadPhaseLayer inLayer
 
 // ──────────────────────────────────────────────
 // ObjectVsBroadPhaseLayerFilterImpl
-//   BULLET は NON_MOVING(壁) のバケツとは照合しない（壁判定はDDAでやるため）。
+//   攻撃レイヤーは NON_MOVING(壁) バケツとは照合しない（壁は攻撃を止めない）。
 // ──────────────────────────────────────────────
 bool ObjectVsBroadPhaseLayerFilterImpl::ShouldCollide(
     ObjectLayer inLayer1, BroadPhaseLayer inLayer2) const
@@ -53,14 +53,14 @@ bool ObjectVsBroadPhaseLayerFilterImpl::ShouldCollide(
     {
     case PhysicsLayers::NON_MOVING:
         return inLayer2 == BroadPhaseLayers::MOVING;
-    case PhysicsLayers::MOVING:
-        return true; // キャラは全バケツと照合
-    case PhysicsLayers::ENEMY:
-        return true; // 敵は弾(MOVINGバケツ)等と照合する
+    case PhysicsLayers::PLAYER:
+        return true; // プレイヤーは全バケツと照合（壁・ボス）
     case PhysicsLayers::BOSS:
-        return true; // ボスは壁・動くもの全バケツと照合（地面に立ち、プレイヤーと当たる）
-    case PhysicsLayers::BULLET:
-        return inLayer2 == BroadPhaseLayers::MOVING; // 弾は動くものバケツのみ（壁バケツは見ない）
+        return true; // ボスは全バケツと照合（地面に立ち、プレイヤーと当たる）
+    case PhysicsLayers::PLAYER_ATTACK:
+        return inLayer2 == BroadPhaseLayers::MOVING; // 攻撃はキャラ(MOVINGバケツ)のみ
+    case PhysicsLayers::BOSS_ATTACK:
+        return inLayer2 == BroadPhaseLayers::MOVING;
     default:
         JPH_ASSERT(false);
         return false;
@@ -68,41 +68,41 @@ bool ObjectVsBroadPhaseLayerFilterImpl::ShouldCollide(
 }
 
 // ──────────────────────────────────────────────
-// ObjectLayerPairFilterImpl  ★命中ルールの確定版
-//   BULLET × ENEMY  = true（命中）。
-//   BULLET × BULLET = false（弾同士は当たらない＝O(n²)回避）。
-//   BULLET × MOVING = false（弾はプレイヤーに当たらない）。
-//   BULLET × NON_MOVING(壁) = false（壁はDDA）。
+// ObjectLayerPairFilterImpl  ★命中ルールの確定版（プレイヤー vs ボス）
+//   本体同士: PLAYER × BOSS = true（押し合う）。壁は本体だけ止める。
+//   攻撃レイヤーは「相手の本体」にだけ当たる:
+//     PLAYER_ATTACK × BOSS   = true（プレイヤーの攻撃はボスに命中）
+//     BOSS_ATTACK   × PLAYER = true（ボスの攻撃はプレイヤーに命中）
+//   攻撃 × 攻撃、攻撃 × 自分、攻撃 × 壁 は false（誤爆・壁ヒットしない）。
+//   ※対称に呼ばれても成立するよう両方向で一致させている。
 // ──────────────────────────────────────────────
 bool ObjectLayerPairFilterImpl::ShouldCollide(ObjectLayer inObject1, ObjectLayer inObject2) const
 {
     switch (inObject1)
     {
     case PhysicsLayers::NON_MOVING:
-        // 壁は「キャラ(MOVING)」「ボス(BOSS)」と当たる（弾・ドローンとは当たらない）
-        return inObject2 == PhysicsLayers::MOVING || inObject2 == PhysicsLayers::BOSS;
+        // 壁/地面は本体(PLAYER/BOSS)だけ止める。攻撃判定はすり抜ける。
+        return inObject2 == PhysicsLayers::PLAYER || inObject2 == PhysicsLayers::BOSS;
 
-    case PhysicsLayers::MOVING:
-        // キャラ(プレイヤー)は 壁・他キャラ・敵ドローン・ボス と当たる。弾とは当たらない。
-        return inObject2 == PhysicsLayers::NON_MOVING || inObject2 == PhysicsLayers::MOVING
-               || inObject2 == PhysicsLayers::ENEMY || inObject2 == PhysicsLayers::BOSS;
-
-    case PhysicsLayers::ENEMY:
-        // 敵ドローンは プレイヤー(MOVING)・弾 と当たる。
-        //   ★ボス(BOSS)とは当たらない＝自分の群れがボスを押し出さない（企画：ドローンはボスの武器）。
-        //   ★敵同士(ENEMY)も当たらない＝O(n^2)回避。
-        return inObject2 == PhysicsLayers::MOVING
-               //|| inObject2 == PhysicsLayers::ENEMY
-               || inObject2 == PhysicsLayers::BULLET;
+    case PhysicsLayers::PLAYER:
+        // プレイヤー本体は 壁・ボス本体・ボスの攻撃 と当たる。
+        return inObject2 == PhysicsLayers::NON_MOVING
+               || inObject2 == PhysicsLayers::BOSS
+               || inObject2 == PhysicsLayers::BOSS_ATTACK;
 
     case PhysicsLayers::BOSS:
-        // ボスは 壁・地面(NON_MOVING) と プレイヤー(MOVING) と当たる。
-        //   ドローン(ENEMY)・弾(BULLET)とは当たらない（旧 MOVING の挙動を踏襲しつつ群れの押し出しを排除）。
-        return inObject2 == PhysicsLayers::NON_MOVING || inObject2 == PhysicsLayers::MOVING;
+        // ボス本体は 壁・プレイヤー本体・プレイヤーの攻撃 と当たる。
+        return inObject2 == PhysicsLayers::NON_MOVING
+               || inObject2 == PhysicsLayers::PLAYER
+               || inObject2 == PhysicsLayers::PLAYER_ATTACK;
 
-    case PhysicsLayers::BULLET:
-        // 弾は「敵」とだけ当たる。弾同士・プレイヤー・壁・ボスとは当たらない。
-        return inObject2 == PhysicsLayers::ENEMY;
+    case PhysicsLayers::PLAYER_ATTACK:
+        // プレイヤーの攻撃は「ボス本体」にだけ命中。
+        return inObject2 == PhysicsLayers::BOSS;
+
+    case PhysicsLayers::BOSS_ATTACK:
+        // ボスの攻撃は「プレイヤー本体」にだけ命中。
+        return inObject2 == PhysicsLayers::PLAYER;
 
     default:
         JPH_ASSERT(false);

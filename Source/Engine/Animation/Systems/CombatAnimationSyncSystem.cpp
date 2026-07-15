@@ -6,6 +6,7 @@
 #include "CombatAnimationSyncSystem.h"
 #include "Engine/Animation/Components/AnimatorComponent.h"
 #include "Engine/Animation/Core/AnimSequence.h"
+#include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
@@ -13,6 +14,28 @@
 #include "Engine/Core/Math/StringHash.h"
 
 using namespace CCL::ECS;
+
+namespace
+{
+// Hitbox エンティティから親を辿り、最初に見つかった Animator 保持エンティティを返す。
+// 剣はキャラ(=Animatorを持つ)の子孫にぶら下がる前提。空間生成の判定球は親を持たない
+// ため見つからず InvalidEntityID を返す（＝常時判定の弾のまま）。
+EntityID ResolveAnimatorOwner(CCL::ECS::Core::World* world, EntityID hitboxID)
+{
+    EntityID cur = InvalidEntityID;
+    if (const auto* t = world->GetComponent<TransformComponent>(hitboxID))
+        cur = t->parent; // EntityLink → EntityID 暗黙変換
+    int guard = 0;
+    while (cur != InvalidEntityID && cur != 0 && guard++ < 32)
+    {
+        if (world->GetComponent<AnimatorComponent>(cur))
+            return cur; // 台本の持ち主を発見
+        const auto* pt = world->GetComponent<TransformComponent>(cur);
+        cur = pt ? static_cast<EntityID>(pt->parent) : InvalidEntityID;
+    }
+    return InvalidEntityID;
+}
+} // namespace
 
 void CombatAnimationSyncSystem::Update(float /*dt*/)
 {
@@ -27,7 +50,13 @@ void CombatAnimationSyncSystem::Update(float /*dt*/)
     //   旧実装の文字列ハッシュ比較は enum 比較に置換済み（型安全・高速化）。
     // =====================================================================
     ForEachWithID([this](EntityID hitboxID, HitboxComponent &hb) {
-        // ── 1. 駆動元未設定の Hitbox（弾など常時判定）はスキップ ──
+        // ── 1. 駆動元(owner)の解決 ──
+        //   未設定なら親を辿って Animator 保持の祖先(=キャラ)を自動解決しキャッシュする。
+        //   剣はキャラの子孫なので解決できる。空間生成の判定球は親が無く解決不能＝
+        //   ownerEntity=Invalid のまま「常時判定の弾」として下でスキップされる。
+        if (hb.ownerEntity == InvalidEntityID)
+            hb.ownerEntity = ResolveAnimatorOwner(_world, hitboxID);
+
         if (hb.ownerEntity == InvalidEntityID)
             return;
 
@@ -48,7 +77,9 @@ void CombatAnimationSyncSystem::Update(float /*dt*/)
         const AnimSequence *seq = animator->currentSequence;
 
         // ── 3. このHitboxに対応する HitBox 区間が現在アクティブか判定 ──
-        bool shouldBeActive = false;
+        //   アクティブなイベントを捕まえておき、そのイベントに入力された戦闘パラメータ
+        //   （攻撃力・ヒットストップ）を Hitbox へ反映する。
+        const AnimNotifyEvent *activeEv = nullptr;
 
         for (const auto &ev : seq->events)
         {
@@ -56,30 +87,47 @@ void CombatAnimationSyncSystem::Update(float /*dt*/)
             if (ev.type != AnimEventType::HitBox)
                 continue;
 
-            // tagHash は LoadAnimSequence でキャッシュ済み（毎フレーム HashString 不要）。
-            if (ev.tagHash != hb.tagHash)
+            // タグ照合: hb.tagHash==0(未設定)なら「いずれの HitBox 区間でも」有効にする
+            // （単一武器の簡易運用）。タグが設定されている場合のみ厳密照合する。
+            if (hb.tagHash != 0 && ev.tagHash != hb.tagHash)
                 continue;
 
             if (animator->currentTimer >= ev.startTime &&
                 animator->currentTimer <= ev.endTime)
             {
-                shouldBeActive = true;
+                activeEv = &ev;
                 break;
             }
         }
+        const bool shouldBeActive = (activeEv != nullptr);
 
         // ── 4. エッジ検出 & 書き込み（Write宣言済み・自エンティティ） ──
-        if (shouldBeActive && !hb.isActive)
+        if (shouldBeActive)
         {
-            // 【立ち上がりエッジ】多段ヒット防止の履歴をクリア
-            hb.hitCount = 0;
-            std::memset(hb.hitTargets, 0, sizeof(hb.hitTargets));
-            hb.isActive = true;
+            // 【立ち上がりエッジ】多段ヒット防止の履歴をクリア（区間に入った最初の1回だけ）
+            if (!hb.isActive)
+            {
+                hb.hitCount = 0;
+                std::memset(hb.hitTargets, 0, sizeof(hb.hitTargets));
+                hb.isActive = true;
 
-            CCL_LOG_INFO(LogCategory::Game,
-                "[HitboxSync] Activated. Entity %llu (tagHash 0x%08X)", hitboxID, hb.tagHash);
+                CCL_LOG_INFO(LogCategory::Game,
+                    "[HitboxSync] Activated. Entity %llu dmg=%.1f hitStop=%.2f (tagHash 0x%08X)",
+                    hitboxID, activeEv->damage, activeEv->hitStopDuration, hb.tagHash);
+            }
+
+            // ★ Sequencer の HitBox イベントに入力した値を毎フレーム Hitbox へ反映する。
+            //   これが無いと攻撃力/ヒットストップが 0 のままで当たっても効かない。
+            //   毎フレーム反映にすることで、隣接する別区間(コンボ)へ切り替わっても
+            //   その区間の値が正しく入る。攻撃帰属(ownerID)はアニメの持ち主＝キャラ本体
+            //   （自傷防止・攻撃側ヒットストップの適用先）。
+            hb.damageAmount    = activeEv->damage;
+            hb.knockback       = activeEv->knockback;
+            hb.hitStopDuration = activeEv->hitStopDuration;
+            hb.hitStopScale    = activeEv->hitStopScale;
+            hb.ownerID         = hb.ownerEntity;
         }
-        else if (!shouldBeActive && hb.isActive)
+        else if (hb.isActive)
         {
             // 【立ち下がりエッジ】区間を抜けた / アニメがキャンセルされた
             hb.isActive = false;

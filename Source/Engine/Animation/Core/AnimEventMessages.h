@@ -48,4 +48,6 @@ struct AnimEventSpawnHitboxMessage
     float                        hitStopDuration; ///< ヒットストップ時間
     float                        hitStopScale;    ///< ヒットストップ中のタイムスケール(0で完全停止)
     float                        lifeTime;        ///< 判定球の生存時間(秒)。区間長 endTime-startTime。
+    uint8_t                      attackLayer;     ///< 判定球の物理レイヤー(index)。誰に当てるか。
+    float                        knockback;       ///< ノックバックの強さ(0で無効)。
 };

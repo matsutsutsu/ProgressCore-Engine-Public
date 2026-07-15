@@ -17,7 +17,6 @@
 
 #include "Engine/Animation/Core/AnimEventMessages.h"
 #include "CombatComponents.h"  // HitboxComponent
-#include "HealthComponent.h"   // TeamID
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Physics/Components/RigidBody/JoltRigidBodyComponent.h"
 #include "Engine/Physics/Components/Collision/JoltSphereColliderComponent.h"
@@ -86,15 +85,10 @@ void SpawnHitboxSystem::OnSpawnHitbox(const AnimEventSpawnHitboxMessage& msg)
     XMFLOAT3 spawnPosF;
     XMStoreFloat3(&spawnPosF, spawnPos);
 
-    // ── 3. 陣営で衝突レイヤーを決定 ──
-    //   プレイヤーの攻撃 → BULLET (敵ENEMYにのみ命中／壁・自陣とは当たらない)
-    //   敵の攻撃         → ENEMY  (プレイヤーMOVINGに命中)
-    JPH::ObjectLayer layer = PhysicsLayers::BULLET;
-    if (const auto* hp = _world->GetComponent<HealthComponent>(msg.owner))
-    {
-        if (hp->team == TeamID::Enemy)
-            layer = PhysicsLayers::ENEMY;
-    }
+    // ── 3. 衝突レイヤーはイベントで明示指定（＝誰に当てるか） ──
+    //   PLAYER_ATTACK(3) ならボスに命中、BOSS_ATTACK(4) ならプレイヤーに命中。
+    //   Sequencer の SpawnHitbox 設定で選ぶ。陣営(team)には依存しない。
+    const JPH::ObjectLayer layer = static_cast<JPH::ObjectLayer>(msg.attackLayer);
 
     // ── 4. 判定球エンティティを生成 ──
     static const Archetype hitboxArch = ArchetypeHelper::Generate<
@@ -115,6 +109,7 @@ void SpawnHitboxSystem::OnSpawnHitbox(const AnimEventSpawnHitboxMessage& msg)
     HitboxComponent hb{};
     hb.ownerID         = msg.owner;
     hb.damageAmount    = msg.damage;
+    hb.knockback       = msg.knockback;
     hb.isActive        = true;
     hb.hitStopDuration = msg.hitStopDuration;
     hb.hitStopScale    = msg.hitStopScale;

@@ -169,13 +169,11 @@ namespace ComponentMetaJson {
             j["maxHealth"] = comp.maxHealth;
             j["currentHealth"] = comp.currentHealth;
             j["invincibilityDuration"] = comp.invincibilityDuration;
-            j["team"] = static_cast<int>(comp.team);
         }
         static void Load(const json& j, HealthComponent& comp, LoadContext* /*ctx*/) {
             if (j.contains("maxHealth"))             comp.maxHealth = j["maxHealth"].get<float>();
             if (j.contains("currentHealth"))         comp.currentHealth = j["currentHealth"].get<float>();
             if (j.contains("invincibilityDuration")) comp.invincibilityDuration = j["invincibilityDuration"].get<float>();
-            if (j.contains("team"))                  comp.team = static_cast<TeamID>(j["team"].get<int>());
         }
     };
 } 
@@ -344,17 +342,6 @@ template <> struct ComponentMeta<HealthComponent> {
     static bool CustomGui(HealthComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr) {
         bool changed = false;
 
-        const char* teamNames[] = { "Player (プレイヤー)", "Enemy (敵)", "Neutral (中立)" };
-        int currentTeam = static_cast<int>(comp.team);
-
-        ImGui::Text("Team / Faction:");
-        ImGui::SetNextItemWidth(-1);
-        if (ImGui::Combo("##TeamCombo", &currentTeam, teamNames, IM_ARRAYSIZE(teamNames))) {
-            comp.team = static_cast<TeamID>(currentTeam);
-            changed = true;
-        }
-
-        ImGui::Separator();
         ImGui::Text("Health Status:");
 
         float healthRatio = comp.maxHealth > 0.0f ? (comp.currentHealth / comp.maxHealth) : 0.0f;

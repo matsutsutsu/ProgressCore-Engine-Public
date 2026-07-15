@@ -24,7 +24,7 @@ struct JoltCharacterConfigComponent
     // --- ★物理レイヤー ---
     // presence用KinematicプロキシのObjectLayer。ExtendedUpdateのフィルタにも使う。
     // これにより「キャラが世界を見る層」と「他者がキャラを見る層」が一致する。
-    JPH::ObjectLayer objectLayer = PhysicsLayers::MOVING;
+    JPH::ObjectLayer objectLayer = PhysicsLayers::PLAYER;
 
     float maxSlopeAngle = 45.0f; // 登れる最大角度（度）
     float maxStepHeight = 0.5f;  // 乗り越えられる段差の最大高

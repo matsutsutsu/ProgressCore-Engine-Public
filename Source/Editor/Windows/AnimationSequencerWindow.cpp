@@ -14,6 +14,7 @@
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Game/Logics/Combat/CombatRosterComponent.h"
+#include "Engine/Physics/JoltIntegration/PhysicsLayers.h" // 攻撃レイヤー選択(LayerNames)
 
 // IO / Platform
 #include "Engine/Platform/Core/Dialog.h"
@@ -966,6 +967,10 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
             ImGui::TextColored(ImVec4(1, 0.5f, 0.5f, 1), "Attack");
             if (ImGui::DragFloat("Damage", &e.damage, 0.5f, 0.0f, 1000.0f, "%.1f"))
                 ch = true;
+            if (ImGui::DragFloat("Knockback", &e.knockback, 0.1f, 0.0f, 100.0f, "%.1f"))
+                ch = true;
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("吹き飛ばしの強さ。対ボスは弱め(0〜数値小)推奨");
             ImGui::TextColored(ImVec4(1, 0.7f, 0.3f, 1), "Hit Stop");
             if (ImGui::SliderFloat("Duration", &e.hitStopDuration, 0.0f, 1.0f, "%.2f s"))
                 ch = true;
@@ -973,7 +978,7 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
                 ch = true;
             break;
         }
-        case AnimEventType::SpawnHitbox:
+        case AnimEventType::SpawnHitbox: {
             ImGui::TextColored(ImVec4(1, 0.7f, 0.3f, 1), "Spatial Hitbox");
             if (ImGui::DragFloat3("Offset", &e.offset.x, 0.05f))
                 ch = true;
@@ -981,9 +986,23 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
                 ch = true;
             if (ImGui::DragFloat("Damage", &e.damage, 0.5f, 0.0f, 1000.0f, "%.1f"))
                 ch = true;
+            if (ImGui::DragFloat("Knockback", &e.knockback, 0.1f, 0.0f, 100.0f, "%.1f"))
+                ch = true;
             if (ImGui::SliderFloat("HitStop", &e.hitStopDuration, 0.0f, 1.0f, "%.2f s"))
                 ch = true;
+
+            // 攻撃レイヤー（＝誰に当てるか）。剛体レイヤーと同じ LayerNames から選ぶ。
+            int atkLayer = e.attackLayer;
+            if (atkLayer < 0 || atkLayer >= PhysicsLayers::LayerCount) atkLayer = 3;
+            if (ImGui::Combo("Attack Layer", &atkLayer,
+                             PhysicsLayers::LayerNames, PhysicsLayers::LayerCount))
+            {
+                e.attackLayer = static_cast<uint8_t>(atkLayer);
+                ch            = true;
+            }
+            ImGui::TextDisabled("PLAYER_ATTACK=ボスに命中 / BOSS_ATTACK=プレイヤーに命中");
             break;
+        }
         case AnimEventType::Trail:
             ImGui::TextColored(ImVec4(0.6f, 0.85f, 1.0f, 1), "Weapon Trail (軌跡)");
             drawWeaponTagPicker(e, ch);

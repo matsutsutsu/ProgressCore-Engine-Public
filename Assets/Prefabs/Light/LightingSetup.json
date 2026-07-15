@@ -104,6 +104,13 @@
                     "maxDistance": 50.0,
                     "radius": 0.5
                 },
+                "Screen Impact (命中演出)": {
+                    "chromaticStrength": 0.012000000104308128,
+                    "duration": 0.2199999988079071,
+                    "radialStrength": 0.3499999940395355,
+                    "shakeAmplitude": 0.18000000715255737,
+                    "shakeFrequency": 38.0
+                },
                 "ShadowMapConfig": {
                     "cascadeSplits": [
                         15.0,

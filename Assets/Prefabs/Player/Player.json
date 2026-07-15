@@ -9,19 +9,19 @@
                 "Animation": null,
                 "Animator": {
                     "isLoop": false,
-                    "playbackSpeed": 0.59331214427948
+                    "playbackSpeed": 0.5
                 },
                 "Character Movement Input": {
                     "currentVelocity": [
-                        -7.886837005615234,
+                        -0.00011810919386334717,
                         0.0,
-                        -18.320178985595703
+                        0.1385306864976883
                     ],
                     "dashRequested": false,
                     "desiredVelocity": [
-                        -0.3954153060913086,
+                        -0.0008525847806595266,
                         0.0,
-                        -0.9185023903846741
+                        0.9999997019767761
                     ],
                     "isAttackRequested": false,
                     "jumpRequested": false,
@@ -36,9 +36,9 @@
                     "currentTimer": -0.006666665896773338,
                     "dashCooldown": 0.1599999964237213,
                     "dashDirection": [
-                        0.7598035931587219,
+                        -0.5239579677581787,
                         0.0,
-                        0.6501527428627014
+                        0.8517440557479858
                     ],
                     "dashDuration": 0.1599999964237213,
                     "dashSpeed": 114.0,
@@ -46,11 +46,20 @@
                     "isInvincible": false,
                     "justEvadeWindow": 0.07999999821186066
                 },
+                "HealthComponent": {
+                    "currentHealth": 100.0,
+                    "invincibilityDuration": 0.5,
+                    "maxHealth": 100.0,
+                    "team": 1
+                },
+                "Hurtbox": {
+                    "damageMultiplier": 1.0
+                },
                 "Jolt Capsule Collider": {
-                    "halfHeight": 2.5,
+                    "halfHeight": 3.5,
                     "localOffset": [
                         0.0,
-                        1.899999976158142,
+                        3.200000047683716,
                         0.0
                     ],
                     "localRotationEuler": [
@@ -87,8 +96,8 @@
                     "bankingMultiplier": 0.5,
                     "coyoteTimeWindow": 0.15000000596046448,
                     "currentJumpCount": 0,
-                    "currentRoll": 4.130344954944576e-09,
-                    "currentYaw": -71.85011291503906,
+                    "currentRoll": -1.4133213880995754e-05,
+                    "currentYaw": -75.39907836914063,
                     "jumpBufferTimer": 0.0,
                     "jumpBufferWindow": 0.15000000596046448,
                     "lastFallVelocity": 0.0,
@@ -111,15 +120,15 @@
                     "isStatic": false,
                     "parent": 3,
                     "position": [
-                        -5.2434515953063965,
-                        -0.04660465195775032,
-                        26.12630844116211
+                        5.074308395385742,
+                        -0.05183815956115723,
+                        -31.50080108642578
                     ],
                     "rotation": [
-                        2.022658485145712e-09,
-                        0.9794137477874756,
-                        -4.1688250074223276e-10,
-                        -0.20186328887939453
+                        3.0124409633458527e-09,
+                        -0.00042629241943359375,
+                        -7.066606485750526e-06,
+                        0.9999999403953552
                     ],
                     "scale": [
                         3.5,
@@ -134,6 +143,41 @@
             "components": {
                 "BoneAttachmentComponent": {
                     "boneName": "hand_r"
+                },
+                "Hitbox": {
+                    "damageAmount": 0.0,
+                    "hitStopDuration": 0.0,
+                    "hitStopScale": 1.0,
+                    "isActive": false,
+                    "knockback": 0.0
+                },
+                "Jolt Capsule Collider": {
+                    "halfHeight": 2.5999999046325684,
+                    "localOffset": [
+                        0.0,
+                        2.200000047683716,
+                        0.0
+                    ],
+                    "localRotationEuler": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "radius": 0.5
+                },
+                "Jolt Rigidbody": {
+                    "friction": 0.20000000298023224,
+                    "gravityFactor": 1.0,
+                    "initialVelocity": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "isSensor": true,
+                    "motionType": 1,
+                    "objectLayer": 3,
+                    "restitution": 0.0,
+                    "useCCD": false
                 },
                 "Material": null,
                 "Model": {

@@ -8,7 +8,7 @@
 //
 // 責務:
 //   - owner の Transform を基準に、offset をワールド回転で回して生成位置を確定。
-//   - 陣営(TeamID)から衝突レイヤーを決定（Player→BULLET / Enemy→ENEMY）。
+//   - 衝突レイヤーはイベントの attackLayer で明示指定（PLAYER_ATTACK/BOSS_ATTACK）。
 //   - Transform + Hitbox + Jolt(sensor) + SphereCollider + Timer を載せて Spawn。
 //     以降は既存パイプラインに完全委譲する:
 //       JoltBodySetupSystem(L03) が sensor 剛体を生成
