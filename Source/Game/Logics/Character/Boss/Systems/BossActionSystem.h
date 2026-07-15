@@ -56,4 +56,11 @@ private:
                      const JoltCharacterConfigComponent& config,
                      const JoltCharacterHandleComponent& joltHandle,
                      const DirectX::SimpleMath::Vector3& playerPos, float dt);
+
+    /// @brief 近接攻撃中の物理挙動。薙ぎ払いは足を止めてプレイヤーを向く。
+    ///        踏み込み/突進を足すときは、ここで currentActionId により前進を分岐する。
+    void ProcessMeleeHold(BossActionComponent& bossDef, TransformComponent& trans,
+                          CharacterMovementInputComponent& input,
+                          const JoltCharacterHandleComponent& joltHandle,
+                          const DirectX::SimpleMath::Vector3& playerPos, float dt);
 };

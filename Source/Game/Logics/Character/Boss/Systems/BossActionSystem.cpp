@@ -78,17 +78,26 @@ void BossActionSystem::Update(float rawDt)
 
         float dt = time.localDt;
 
-        bossDef.currentState = (cmd.currentActionId == ::AI::A_Move)
-                                   ? BossActionState::Move
-                                   : BossActionState::None;
-
-        if (bossDef.currentState == BossActionState::Move)
-        {
-            ProcessMove(bossDef, trans, input, config, joltHandle, playerPos, dt);
-        }
+        // AIの意図(currentActionId) → ボスの物理ステートへ翻訳
+        if (cmd.currentActionId == ::AI::A_Move)
+            bossDef.currentState = BossActionState::Move;
+        else if (::IsBossMeleeAction(cmd.currentActionId))
+            bossDef.currentState = BossActionState::Melee;
         else
+            bossDef.currentState = BossActionState::None;
+
+        switch (bossDef.currentState)
         {
+        case BossActionState::Move:
+            ProcessMove(bossDef, trans, input, config, joltHandle, playerPos, dt);
+            break;
+        case BossActionState::Melee:
+            // 近接攻撃中：足を止めて斬る（アニメ本体は BT の SetTrigger で再生済み）
+            ProcessMeleeHold(bossDef, trans, input, joltHandle, playerPos, dt);
+            break;
+        default:
             ProcessIdle(bossDef, trans, input, joltHandle, playerPos, dt);
+            break;
         }
     });
 }
@@ -167,6 +176,24 @@ void BossActionSystem::ProcessMove(BossActionComponent &bossDef, TransformCompon
     input.desiredVelocity = dirToPlayer;
     input.overrideSpeed   = (std::min)(bossDef.currentMoveSpeed, config.walkSpeed);
 
+    TurnToward(trans, dirToPlayer, bossDef.turnSpeed, dt);
+    SyncCharacterRotation(trans, joltHandle.character.GetPtr());
+}
+
+void BossActionSystem::ProcessMeleeHold(BossActionComponent &bossDef, TransformComponent &trans,
+    CharacterMovementInputComponent &input, const JoltCharacterHandleComponent &joltHandle,
+    const Vector3 &playerPos, float dt)
+{
+    // 近接攻撃中は足を止めて踏ん張る（薙ぎ払い）。
+    //   アニメ本体は BT の SetTrigger で再生済み。当たり判定はアニメ内 HitBox イベントが握る。
+    //   ★将来 踏み込み/突進 を足すときは、ここで cmd.currentActionId により前進を分岐する。
+    bossDef.currentMoveSpeed = 0.0f;
+    input.desiredVelocity    = Vector3::Zero;
+    input.overrideSpeed      = -1.0f;
+
+    // 斬る相手（プレイヤー）の方を向く（移動中と同じ速さでしっかり正対）
+    Vector3 dirToPlayer = playerPos - trans.position;
+    dirToPlayer.y       = 0.0f;
     TurnToward(trans, dirToPlayer, bossDef.turnSpeed, dt);
     SyncCharacterRotation(trans, joltHandle.character.GetPtr());
 }

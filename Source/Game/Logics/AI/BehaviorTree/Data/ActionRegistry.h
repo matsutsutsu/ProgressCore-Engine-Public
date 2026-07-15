@@ -57,6 +57,9 @@ namespace AI {
     inline constexpr ActionID A_ResetDamage = 1005; ///< ブラックボードの蓄積ダメージをリセット
     inline constexpr ActionID A_DroneStrike = 1006; ///< ドローンへ「今撃て」信号（陣形攻撃のリリース）
 
+    // --- 1100番台: ボス近接（アニメトリガー＋硬直）---
+    inline constexpr ActionID A_BossSlash   = 1101; ///< 薙ぎ払い（張り付かれた時の自衛技）
+
     // --- 2000番台: ドローン制御（id - 2000 + 1 → DroneFormationType）---
     inline constexpr ActionID A_DroneOrbit        = 2000;
     inline constexpr ActionID A_DroneHighOrbitSnipe = 2001;
@@ -120,8 +123,9 @@ inline constexpr ActionEntry g_ActionRegistry[] = {
     { AI::A_Wait9_0s,  "待機: 9.0秒",  "Common" },
     { AI::A_Wait10_0s, "待機: 10.0秒", "Common" },
 
-    // --- ボス本体 (Boss) ※実行層は Move のみ対応 ---
+    // --- ボス本体 (Boss) ---
     { AI::A_Move,        "ボス：移動 (Move To Player)", "Boss" },
+    { AI::A_BossSlash,   "ボス：薙ぎ払い (Slash)",       "Boss" },
     { AI::A_ResetDamage, "ボス：蓄積ダメージリセット",   "Boss" },
 
     // --- ドローン群 (Drone) ※候補は「実装済みのみ」に絞ってある。
@@ -185,4 +189,11 @@ inline bool IsDroneAction(ActionID id)
 inline bool IsBossPhysicalAction(ActionID id)
 {
     return id == AI::A_Move;
+}
+
+/// @brief ボスの近接アクション（アニメトリガーで攻撃する系）か。
+///        今後 踏み込み/突進 を足したらここに条件を追加する。
+inline bool IsBossMeleeAction(ActionID id)
+{
+    return id == AI::A_BossSlash;
 }

@@ -1,0 +1,126 @@
+{
+  "assetId": 102,
+  "editor_links": [
+    {
+      "id": 6,
+      "startPin": 2,
+      "endPin": 4
+    },
+    {
+      "id": 10,
+      "startPin": 5,
+      "endPin": 8
+    },
+    {
+      "id": 13,
+      "startPin": 9,
+      "endPin": 12
+    },
+    {
+      "id": 16,
+      "startPin": 9,
+      "endPin": 15
+    },
+    {
+      "id": 19,
+      "startPin": 9,
+      "endPin": 18
+    }
+  ],
+  "editor_nodes": [
+    {
+      "id": 1,
+      "type": 0,
+      "name": "ROOT",
+      "actionId": 0,
+      "inputPinId": 0,
+      "outputPinId": 2,
+      "posX": 0.0,
+      "posY": 0.0
+    },
+    {
+      "id": 3,
+      "type": 1,
+      "name": "セレクター (Selector)",
+      "actionId": 0,
+      "inputPinId": 4,
+      "outputPinId": 5,
+      "posX": 0.0,
+      "posY": 150.0
+    },
+    {
+      "id": 7,
+      "type": 2,
+      "name": "シーケンス (Sequence)",
+      "actionId": 0,
+      "inputPinId": 8,
+      "outputPinId": 9,
+      "posX": 0.0,
+      "posY": 300.0
+    },
+    {
+      "id": 11,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 1000,
+      "inputPinId": 12,
+      "outputPinId": 0,
+      "posX": -200.0,
+      "posY": 480.0
+    },
+    {
+      "id": 14,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 1101,
+      "inputPinId": 15,
+      "outputPinId": 0,
+      "posX": 0.0,
+      "posY": 480.0
+    },
+    {
+      "id": 17,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 102,
+      "inputPinId": 18,
+      "outputPinId": 0,
+      "posX": 200.0,
+      "posY": 480.0
+    }
+  ],
+  "last_id_counter": 20,
+  "nodes": [
+    {
+      "type": "Selector",
+      "actionOrConditionId": 0,
+      "children": [
+        1
+      ]
+    },
+    {
+      "type": "Sequence",
+      "actionOrConditionId": 0,
+      "children": [
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 1000,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 1101,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 102,
+      "children": []
+    }
+  ]
+}

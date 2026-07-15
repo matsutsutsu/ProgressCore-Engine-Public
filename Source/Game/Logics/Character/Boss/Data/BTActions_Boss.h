@@ -9,6 +9,8 @@
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h" // BossCommandComponent
 #include "Game/Logics/AI/Drone/DroneComponent.h"
 #include "Engine/ECS/Core/CCL_World.h"                               // world->GetComponent
+#include "Engine/Animation/Components/AnimParametersComponent.h"     // SetTrigger（近接アニメ）
+#include "Engine/Core/Math/StringHash.h"                             // HashString
 
 
 namespace CCL::AI::BT::BossActions
@@ -122,11 +124,63 @@ struct DroneStrikeAction : public IBTAction
 };
 
 // ====================================================================
+// ⑥ 近接攻撃（Melee）★ボス固有：アニメのトリガーを引く
+//    設計：AIは「攻撃を決めてアニメのトリガーを引く」だけ。実際の当たり判定の
+//    タイミングは、アニメクリップ内の HitBox イベント(startTime/endTime)が握る
+//    （CombatAnimationSyncSystem が剣 Hitbox を区間ON/OFFする）。
+//    このアクションは:
+//      - 開始フレームに1回だけ SetTrigger（＝攻撃発生の合図）
+//      - duration の間 Running（振り＋硬直ぶんBTを留める＝連打防止）
+//      - currentActionId を立て続け、BossActionSystem が足を止める/踏み込む等の
+//        物理挙動を担当する（薙ぎ払いは停止、将来の踏み込み/突進は前進）。
+//    ★前提：ボスに AnimParameters コンポーネントと、triggerHash に対応する
+//      遷移（例 "Slash"）が AnimStateMachine に用意されていること。
+// ====================================================================
+struct MeleeAttackAction : public IBTAction
+{
+    uint32_t triggerHash;
+    float    duration;
+    ActionID id;
+
+    MeleeAttackAction(uint32_t hash, float dur, ActionID actionId)
+        : triggerHash(hash), duration(dur), id(actionId) {}
+
+    BTNodeState Execute(BTContext &ctx) override
+    {
+        auto &timers = ctx.bt->nodeTimers;
+        if (ctx.nodeId >= timers.size()) return BTNodeState::Failure;
+
+        ctx.bt->lastLogActionId = id;
+
+        // 硬直終了 → 完了
+        if (timers[ctx.nodeId] == 0.0f) return BTNodeState::Success;
+
+        // 開始フレーム：アニメのトリガーを1回だけ引く（＝攻撃発生の合図）
+        if (timers[ctx.nodeId] == -1.0f)
+        {
+            timers[ctx.nodeId] = duration;
+            if (auto *anim = ctx.world->GetComponent<AnimParametersComponent>(ctx.entity))
+                anim->SetTrigger(triggerHash);
+        }
+
+        // 硬直中：近接中であることを BossActionSystem へ伝える（停止/前進の制御に使う）
+        if (auto *cmd = ctx.world->GetComponent<BossCommandComponent>(ctx.entity))
+            cmd->currentActionId = id;
+
+        return BTNodeState::Running;
+    }
+};
+
+// ====================================================================
 // 登録
 // ====================================================================
 inline void RegisterAll()
 {
     auto &reg = BTActionRegistry::Instance();
+
+    // 近接：薙ぎ払い（アニメのトリガー名 "Slash" / 硬直 0.8s）
+    reg.RegisterActionInstance(::AI::A_BossSlash,
+        std::make_unique<MeleeAttackAction>(CCL::Utils::HashString("Slash"), 0.8f, ::AI::A_BossSlash));
 
     reg.RegisterActionInstance(::AI::A_Wait0_5s,  std::make_unique<WaitAction>(0.5f));
     reg.RegisterActionInstance(::AI::A_Wait1_0s,  std::make_unique<WaitAction>(1.0f));
