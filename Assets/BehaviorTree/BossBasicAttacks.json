@@ -1,0 +1,441 @@
+{
+  "assetId": 101,
+  "editor_links": [
+    {
+      "id": 6,
+      "startPin": 2,
+      "endPin": 4
+    },
+    {
+      "id": 10,
+      "startPin": 5,
+      "endPin": 8
+    },
+    {
+      "id": 13,
+      "startPin": 9,
+      "endPin": 12
+    },
+    {
+      "id": 16,
+      "startPin": 9,
+      "endPin": 15
+    },
+    {
+      "id": 19,
+      "startPin": 9,
+      "endPin": 18
+    },
+    {
+      "id": 22,
+      "startPin": 9,
+      "endPin": 21
+    },
+    {
+      "id": 25,
+      "startPin": 9,
+      "endPin": 24
+    },
+    {
+      "id": 28,
+      "startPin": 9,
+      "endPin": 27
+    },
+    {
+      "id": 31,
+      "startPin": 9,
+      "endPin": 30
+    },
+    {
+      "id": 34,
+      "startPin": 9,
+      "endPin": 33
+    },
+    {
+      "id": 37,
+      "startPin": 9,
+      "endPin": 36
+    },
+    {
+      "id": 40,
+      "startPin": 9,
+      "endPin": 39
+    },
+    {
+      "id": 43,
+      "startPin": 9,
+      "endPin": 42
+    },
+    {
+      "id": 46,
+      "startPin": 9,
+      "endPin": 45
+    },
+    {
+      "id": 49,
+      "startPin": 9,
+      "endPin": 48
+    },
+    {
+      "id": 52,
+      "startPin": 9,
+      "endPin": 51
+    },
+    {
+      "id": 55,
+      "startPin": 9,
+      "endPin": 54
+    },
+    {
+      "id": 58,
+      "startPin": 9,
+      "endPin": 57
+    },
+    {
+      "id": 61,
+      "startPin": 9,
+      "endPin": 60
+    },
+    {
+      "id": 64,
+      "startPin": 9,
+      "endPin": 63
+    }
+  ],
+  "editor_nodes": [
+    {
+      "id": 1,
+      "type": 0,
+      "name": "ROOT",
+      "actionId": 0,
+      "inputPinId": 0,
+      "outputPinId": 2,
+      "posX": 0.0,
+      "posY": 0.0
+    },
+    {
+      "id": 3,
+      "type": 1,
+      "name": "セレクター (Selector)",
+      "actionId": 0,
+      "inputPinId": 4,
+      "outputPinId": 5,
+      "posX": 0.0,
+      "posY": 150.0
+    },
+    {
+      "id": 7,
+      "type": 2,
+      "name": "シーケンス (Sequence)",
+      "actionId": 0,
+      "inputPinId": 8,
+      "outputPinId": 9,
+      "posX": 0.0,
+      "posY": 300.0
+    },
+    {
+      "id": 11,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 2023,
+      "inputPinId": 12,
+      "outputPinId": 0,
+      "posX": -1700.0,
+      "posY": 480.0
+    },
+    {
+      "id": 14,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 102,
+      "inputPinId": 15,
+      "outputPinId": 0,
+      "posX": -1500.0,
+      "posY": 480.0
+    },
+    {
+      "id": 17,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 1006,
+      "inputPinId": 18,
+      "outputPinId": 0,
+      "posX": -1300.0,
+      "posY": 480.0
+    },
+    {
+      "id": 20,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 101,
+      "inputPinId": 21,
+      "outputPinId": 0,
+      "posX": -1100.0,
+      "posY": 480.0
+    },
+    {
+      "id": 23,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 2000,
+      "inputPinId": 24,
+      "outputPinId": 0,
+      "posX": -900.0,
+      "posY": 480.0
+    },
+    {
+      "id": 26,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 103,
+      "inputPinId": 27,
+      "outputPinId": 0,
+      "posX": -700.0,
+      "posY": 480.0
+    },
+    {
+      "id": 29,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 2024,
+      "inputPinId": 30,
+      "outputPinId": 0,
+      "posX": -500.0,
+      "posY": 480.0
+    },
+    {
+      "id": 32,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 102,
+      "inputPinId": 33,
+      "outputPinId": 0,
+      "posX": -300.0,
+      "posY": 480.0
+    },
+    {
+      "id": 35,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 1006,
+      "inputPinId": 36,
+      "outputPinId": 0,
+      "posX": -100.0,
+      "posY": 480.0
+    },
+    {
+      "id": 38,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 101,
+      "inputPinId": 39,
+      "outputPinId": 0,
+      "posX": 100.0,
+      "posY": 480.0
+    },
+    {
+      "id": 41,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 2000,
+      "inputPinId": 42,
+      "outputPinId": 0,
+      "posX": 300.0,
+      "posY": 480.0
+    },
+    {
+      "id": 44,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 103,
+      "inputPinId": 45,
+      "outputPinId": 0,
+      "posX": 500.0,
+      "posY": 480.0
+    },
+    {
+      "id": 47,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 2016,
+      "inputPinId": 48,
+      "outputPinId": 0,
+      "posX": 700.0,
+      "posY": 480.0
+    },
+    {
+      "id": 50,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 101,
+      "inputPinId": 51,
+      "outputPinId": 0,
+      "posX": 900.0,
+      "posY": 480.0
+    },
+    {
+      "id": 53,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 1006,
+      "inputPinId": 54,
+      "outputPinId": 0,
+      "posX": 1100.0,
+      "posY": 480.0
+    },
+    {
+      "id": 56,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 104,
+      "inputPinId": 57,
+      "outputPinId": 0,
+      "posX": 1300.0,
+      "posY": 480.0
+    },
+    {
+      "id": 59,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 2000,
+      "inputPinId": 60,
+      "outputPinId": 0,
+      "posX": 1500.0,
+      "posY": 480.0
+    },
+    {
+      "id": 62,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 104,
+      "inputPinId": 63,
+      "outputPinId": 0,
+      "posX": 1700.0,
+      "posY": 480.0
+    }
+  ],
+  "last_id_counter": 65,
+  "nodes": [
+    {
+      "type": "Selector",
+      "actionOrConditionId": 0,
+      "children": [
+        1
+      ]
+    },
+    {
+      "type": "Sequence",
+      "actionOrConditionId": 0,
+      "children": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 2023,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 102,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 1006,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 101,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 2000,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 103,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 2024,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 102,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 1006,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 101,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 2000,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 103,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 2016,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 101,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 1006,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 104,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 2000,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 104,
+      "children": []
+    }
+  ]
+}

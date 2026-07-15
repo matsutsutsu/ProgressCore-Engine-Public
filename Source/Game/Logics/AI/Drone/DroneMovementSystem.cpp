@@ -156,6 +156,26 @@ inline void DroneMovementSystem::ProcessFireCharge(TransformComponent &trans, Dr
         return;
     }
 
+    // ------------------------------------------------------------
+    // [dashモード：発射待ち] fireDelay>0 の間はその場で静止して自分の順番を待つ。
+    //   弾幕(KamikazeSwarm)が localIndex から各機に発射順(fireDelay)を割り振り、
+    //   「順番に飛ばす」を表現する。0 になったら下のタメ→リリースへ進む。
+    // ------------------------------------------------------------
+    if (drone.fireDelay > 0.0f)
+    {
+        drone.fireDelay -= dt;
+        drone.currentVelocity = Vector3::Zero;
+
+        // 待機中も狙い（発射方向）を向いておく＝溜めている見た目
+        if (drone.targetLookDirection.LengthSquared() > 0.001f)
+        {
+            float      targetYaw = atan2f(-drone.targetLookDirection.x, -drone.targetLookDirection.z);
+            Quaternion targetRot = Quaternion::CreateFromAxisAngle(Vector3::UnitY, targetYaw);
+            trans.rotation       = Quaternion::Slerp(trans.rotation, targetRot, (std::min)(15.0f * dt, 1.0f));
+        }
+        return;
+    }
+
     if (drone.fireDirection.LengthSquared() <= 0.001f)
     {
         drone.currentVelocity = Vector3::Zero;

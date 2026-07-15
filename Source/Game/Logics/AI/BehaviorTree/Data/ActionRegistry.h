@@ -6,6 +6,12 @@
  *   - Boss 実行層が対応するのは A_Move のみ（それ以外は Idle）
  *   - BT 側は Wait / ResetDamage / Move / Drone(2000〜2029) を登録
  *   - 条件は BTConditions.h の8種を維持
+ *
+ * ★ g_ActionRegistry（BTWindowのAction候補リスト）はDrone系を「実装済みのみ」に
+ *   絞ってある（OrbitCircle / GuillotineSlam / DroneStrike の3つ）。
+ *   AI:: 側の定数と DroneAction の登録ループ(2000〜2029)自体は残しているので、
+ *   Formation実装（Formations_Basic.h / Formations_Attack.h）が増えたら
+ *   g_ActionRegistry に1行追加するだけで候補に復活する。
  */
 #pragma once
 #include <cstdint>
@@ -116,39 +122,15 @@ inline constexpr ActionEntry g_ActionRegistry[] = {
     // --- ボス本体 (Boss) ※実行層は Move のみ対応 ---
     { AI::A_Move,        "ボス：移動 (Move To Player)", "Boss" },
     { AI::A_ResetDamage, "ボス：蓄積ダメージリセット",   "Boss" },
-    { AI::A_DroneStrike, "ドローン：攻撃実行 (Strike/リリース)", "Drone" },
 
-    // --- ドローン群 (Drone) ---
-    { AI::A_DroneOrbit,        "ドローン：円陣展開 (Orbit Circle)",   "Drone" },
-    { AI::A_DroneHighOrbitSnipe, "ドローン：上空狙撃 (High Orbit Snipe)", "Drone" },
-    { AI::A_DroneDeathRing,    "ドローン：処刑の輪 (Death Ring)",     "Drone" },
-    { AI::A_DroneAegisShield,  "ドローン：絶対防衛 (Aegis Shield)",   "Drone" },
-    { AI::A_DroneHighOrbit,    "ドローン：上空待機 (High Orbit)",     "Drone" },
-    { AI::A_DroneLowOrbit,     "ドローン：降下展開 (Low Orbit)",      "Drone" },
-    { AI::A_DroneSpreadLockOn, "ドローン：拡散静止 (Spread LockOn)",  "Drone" },
-    { AI::A_DroneAllCharge,    "ドローン：一斉突撃 (All Charge)",     "Drone" },
-    { AI::A_DroneCloseGuard,   "ドローン：全方位バリア (Close Guard)","Drone" },
-    { AI::A_DroneBarrierBurst, "ドローン：バリア爆発 (Barrier Burst)", "Drone" },
-    { AI::A_DroneChargeTunnel, "ドローン：突進通路 (Charge Tunnel)",  "Drone" },
-    { AI::A_DroneHoldPosition, "ドローン：位置固定 (Hold Position)",  "Drone" },
-    { AI::A_DroneDirectionalCharge, "ドローン：陣形維持の一斉突撃",    "Drone" },
-    { AI::A_DroneCycloneBurst, "ドローン：サイクロンバースト",        "Drone" },
-    { AI::A_DroneHighLowOrbit, "ドローン：双層の輪廻 (HighLow Orbit)", "Drone" },
-    { AI::A_DroneCrossHelix,   "ドローン：交差螺旋 (Cross Helix)",     "Drone" },
-    { AI::A_DroneKamikazeSwarm,"ドローン：暴雨の号令 (Kamikaze Swarm)","Drone" },
-    { AI::A_DroneHighLowCycloneBurst, "ドローン：双層の竜巻",          "Drone" },
-    { AI::A_DroneSweepingBeam, "128機：絶望の秒針 (Sweeping Beam)",   "Drone" },
-    { AI::A_DroneInfinityEight,"128機：輪廻の軌道 (Infinity Eight)",   "Drone" },
-    { AI::A_DroneSwarmRiver,   "128機：暴虐の濁流 (Swarm River)",     "Drone" },
-    { AI::A_DroneSideSlapWhip, "ドローン：側面ビンタ (Side Slap Whip)","Drone" },
-    { AI::A_DroneInfinitySnipe,"128機：輪廻の狙撃 (Infinity Snipe)",   "Drone" },
-    { AI::A_DroneGuillotineSlam, "ドローン：断頭台振り下ろし",        "Drone" },
-    { AI::A_DroneClapSlam,     "ドローン：刃挟み込み (Clap Slam)",    "Drone" },
-    { AI::A_DroneTsunamiWave,  "128機：津波 (Tsunami Wave)",          "Drone" },
-    { AI::A_DroneMegaClapUpperFirst, "128機：多段挟み込み（上段先攻）", "Drone" },
-    { AI::A_DroneMegaClapLowerFirst, "128機：多段挟み込み（下段先攻）", "Drone" },
-    { AI::A_DroneMegaShieldChargeUpperFirst, "128機：メガ・シールドチャージ（上段先攻）", "Drone" },
-    { AI::A_DroneMegaShieldChargeLowerFirst, "128機：メガ・シールドチャージ（下段先攻）", "Drone" },
+    // --- ドローン群 (Drone) ※候補は「実装済みのみ」に絞ってある。
+    //     AI:: 側の定数・DroneAction registration(2000〜2029) は温存しているので、
+    //     Formation実装が増えたらここへ1行足すだけで候補に復活する。
+    { AI::A_DroneOrbit,          "ドローン：円陣展開 (Orbit Circle) ※帰投にも使用", "Drone" },
+    { AI::A_DroneGuillotineSlam, "ドローン：縦割り (Guillotine Slam)", "Drone" },
+    { AI::A_DroneClapSlam,       "ドローン：挟み込み1段 (Clap Slam)", "Drone" },
+    { AI::A_DroneKamikazeSwarm,  "ドローン：弾幕 (Kamikaze Swarm)", "Drone" },
+    { AI::A_DroneStrike,         "ドローン：攻撃実行 (Strike/リリース)", "Drone" },
 };
 inline constexpr int g_ActionRegistryCount = sizeof(g_ActionRegistry) / sizeof(ActionEntry);
 

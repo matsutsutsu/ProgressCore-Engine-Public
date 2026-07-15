@@ -121,4 +121,11 @@ struct DroneComponent {
     ///        true  : targetPosition を剛体追従（縦割りのように陣形自体が動く攻撃）。
     ///                攻撃陣形が毎フレーム true にし、BeginChargeTask が攻撃開始時に false へ戻す。
     bool chargeFollowsTarget = false;
+
+    /// @brief dashモードの「発射待ち時間」（実行時専用・非シリアライズ）。
+    ///        弾幕(KamikazeSwarm)のように順番に撃つ攻撃で、各機の発射順を作る。
+    ///        FireCharge に入っても fireDelay>0 の間はその場で待機し、0になってから
+    ///        タメ→リリースへ進む。攻撃陣形が forming 中に localIndex から設定し、
+    ///        OrbitCircle(中立)で 0 にリセットする。
+    float fireDelay = 0.0f;
 };

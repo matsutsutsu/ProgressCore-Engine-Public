@@ -42,6 +42,12 @@ struct OrbitCircleFormation : public IFormation
 
         // 陣形維持中は「有機的追従」ステートが自然
         //drone.currentState = DroneState::Idle;
+
+        // 周回＝中立状態。攻撃で使ったスクラッチをここでリセットする
+        // （BT が攻撃と攻撃の間に必ず OrbitCircle を挟むので、次の攻撃へ前回の値が漏れない）。
+        drone.attackProgress      = 0.0f;
+        drone.fireDelay           = 0.0f;
+        drone.chargeFollowsTarget = false;
     }
 };
 

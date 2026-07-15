@@ -1,6 +1,27 @@
 {
   "assetId": 100,
-  "_comment": "縦割り自動発動テストBT。ランタイム nodes[] のみ（editor_nodes無し＝Windowでは空表示）。Sequenceが完了するとルートSelectorが毎フレーム再評価してループする。",
+  "editor_links": [
+    { "id": 100, "startPin": 2,  "endPin": 11 },
+    { "id": 101, "startPin": 12, "endPin": 21 },
+    { "id": 102, "startPin": 22, "endPin": 31 },
+    { "id": 103, "startPin": 22, "endPin": 33 },
+    { "id": 104, "startPin": 22, "endPin": 35 },
+    { "id": 105, "startPin": 22, "endPin": 37 },
+    { "id": 106, "startPin": 22, "endPin": 39 },
+    { "id": 107, "startPin": 22, "endPin": 41 }
+  ],
+  "editor_nodes": [
+    { "id": 1,  "type": 0, "name": "ROOT",                    "actionId": 0,    "inputPinId": 0,  "outputPinId": 2,  "posX": 0.0,    "posY": 0.0 },
+    { "id": 10, "type": 1, "name": "セレクター (Selector)",    "actionId": 0,    "inputPinId": 11, "outputPinId": 12, "posX": -18.0,  "posY": 158.0 },
+    { "id": 20, "type": 2, "name": "シーケンス (Sequence)",    "actionId": 0,    "inputPinId": 21, "outputPinId": 22, "posX": -34.0,  "posY": 350.0 },
+    { "id": 30, "type": 4, "name": "アクション (Action)",      "actionId": 2023, "inputPinId": 31, "outputPinId": 0,  "posX": -500.0, "posY": 550.0 },
+    { "id": 32, "type": 4, "name": "アクション (Action)",      "actionId": 102,  "inputPinId": 33, "outputPinId": 0,  "posX": -300.0, "posY": 550.0 },
+    { "id": 34, "type": 4, "name": "アクション (Action)",      "actionId": 1006, "inputPinId": 35, "outputPinId": 0,  "posX": -100.0, "posY": 550.0 },
+    { "id": 36, "type": 4, "name": "アクション (Action)",      "actionId": 101,  "inputPinId": 37, "outputPinId": 0,  "posX": 100.0,  "posY": 550.0 },
+    { "id": 38, "type": 4, "name": "アクション (Action)",      "actionId": 2000, "inputPinId": 39, "outputPinId": 0,  "posX": 300.0,  "posY": 550.0 },
+    { "id": 40, "type": 4, "name": "アクション (Action)",      "actionId": 104,  "inputPinId": 41, "outputPinId": 0,  "posX": 500.0,  "posY": 550.0 }
+  ],
+  "last_id_counter": 200,
   "nodes": [
     {
       "type": "Selector",
@@ -15,38 +36,32 @@
     {
       "type": "Action",
       "actionOrConditionId": 2023,
-      "children": [],
-      "_note": "A_DroneGuillotineSlam: requestFormation=GuillotineSlam（刃を形成／予備動作の開始）"
+      "children": []
     },
     {
       "type": "Action",
       "actionOrConditionId": 102,
-      "children": [],
-      "_note": "A_Wait1_5s: 予備動作の猶予（プレイヤーが形を読む時間）。ここのWait値が読ませ時間"
+      "children": []
     },
     {
       "type": "Action",
       "actionOrConditionId": 1006,
-      "children": [],
-      "_note": "A_DroneStrike: droneAttackActive=true（振り下ろし開始）"
+      "children": []
     },
     {
       "type": "Action",
       "actionOrConditionId": 101,
-      "children": [],
-      "_note": "A_Wait1_0s: 振り下ろし＋倒れきった刃の滞在時間"
+      "children": []
     },
     {
       "type": "Action",
       "actionOrConditionId": 2000,
-      "children": [],
-      "_note": "A_DroneOrbit: requestFormation=OrbitCircle & droneAttackActive=false（帰投・周回へ）"
+      "children": []
     },
     {
       "type": "Action",
       "actionOrConditionId": 104,
-      "children": [],
-      "_note": "A_Wait3_0s: クールダウン（周回して次の縦割りまでの間）"
+      "children": []
     }
   ]
 }

@@ -102,13 +102,150 @@ struct GuillotineSlamFormation : public IFormation
 };
 
 // ====================================================================
+// 挟み込み1段（ClapSlam）
+//   ボス前方の左右に「低い壁」を2枚作り、左右同時に中央へスライドして
+//   プレイヤーを挟み込む。壁は低いのでジャンプで越えて避ける。要求回避＝ジャンプ（企画書②）。
+//
+// 動きの核心＝左右の壁が中央へ寄る（剛体スライド）:
+//   localIndex の前半＝左の壁、後半＝右の壁。各壁は「奥行き(dir)×高さ(up)」の格子。
+//   高さは低く抑える（＝ジャンプで越えられる）。
+//   進行度 attackProgress(0→1) で左右の間隔 gap を 広→狭 に縮める＝バチンと挟む。
+//   縦割りと同じく chargeFollowsTarget=true で targetPosition を剛体追従させる。
+// ====================================================================
+struct ClapSlamFormation : public IFormation
+{
+    void Calculate(DroneComponent &drone, const FormationContext &ctx) override
+    {
+        using namespace DirectX::SimpleMath;
+
+        drone.chargeFollowsTarget = true; // 壁が形を保ったままスライドする
+
+        Vector3 dir = ctx.playerPos - ctx.bossPos;
+        dir.y = 0.0f;
+        if (dir.LengthSquared() < 0.001f) dir = Vector3::UnitZ;
+        dir.Normalize();
+
+        Vector3 right = Vector3::UnitY.Cross(dir);
+        if (right.LengthSquared() < 0.001f) right = Vector3::UnitX;
+        right.Normalize();
+
+        // --- 左右どちらの壁か・その壁の中での通し番号 k ---
+        const int total  = (drone.totalDrones > 0) ? drone.totalDrones : 1;
+        const int half   = (std::max)(1, total / 2);
+        const bool isLeft = (drone.localIndex < static_cast<uint16_t>(half));
+        const int k      = isLeft ? drone.localIndex : (drone.localIndex - half);
+
+        // --- 壁の格子：低い高さ(row) × 奥行き(col) ---
+        const int   heightRows    = 2;    // 低い壁（ジャンプで越えられる）
+        const int   perSide       = half;
+        const int   colsPerSide   = (std::max)(1, (perSide + heightRows - 1) / heightRows);
+        const int   col           = k / heightRows; // 奥行き方向
+        const int   row           = k % heightRows; // 高さ方向
+
+        const float depthSpacing  = 2.5f; // 壁の奥行きの間隔
+        const float heightSpacing = 1.5f; // 高さの間隔（低め）
+        const float baseHeight    = 0.8f; // 壁の下端の高さ（地面付近）
+        const float clapForward   = 6.0f; // ボスからプレイヤー側への壁の中心距離
+
+        // --- 進行度で左右間隔 gap を縮める（挟み込み）---
+        if (drone.wantsAttack)
+            drone.attackProgress = (std::min)(1.0f, drone.attackProgress + ctx.dt * kClapSpeed);
+        else
+            drone.attackProgress = 0.0f;
+
+        const float eased = drone.attackProgress * drone.attackProgress;  // easeIn（バチンと閉じる）
+        const float gap   = kStartGap + (kEndGap - kStartGap) * eased;    // 広 → 狭
+
+        const float sideSign = isLeft ? -1.0f : 1.0f;
+        const float depth    = (col - (colsPerSide - 1) * 0.5f) * depthSpacing; // 奥行きは中央揃え
+
+        const Vector3 center = ctx.bossPos + dir * clapForward + Vector3::UnitY * baseHeight;
+        drone.targetPosition = center
+                             + right * (sideSign * gap)          // 左右から寄る
+                             + dir   * depth                     // 奥行きに広がる壁
+                             + Vector3::UnitY * (row * heightSpacing);
+
+        // 向き：相手側（内向き）を向かせる
+        Vector3 look = right * (-sideSign);
+        if (look.LengthSquared() < 0.001f) look = dir;
+        look.Normalize();
+        drone.fireDirection       = look;
+        drone.targetLookDirection = look;
+    }
+
+    // --- 調整値（グレーボックスで実測して詰める）---
+    static constexpr float kClapSpeed = 3.0f;   // attackProgress の増加速度 → 閉じ切りまで ≈0.33s
+    static constexpr float kStartGap  = 12.0f;  // 開始時の左右間隔（広く開いて読ませる）
+    static constexpr float kEndGap    = 1.2f;   // 閉じ切り時の左右間隔（ほぼ接触）
+};
+
+// ====================================================================
+// 弾幕（KamikazeSwarm）※初めての dashモード攻撃
+//   ボス頭上にドローンを集め、プレイヤーへ向かって「順番に」高速で撃ち出す。
+//   プレイヤーはジャスト回避で凌ぐ（企画書⑥）。
+//
+// 縦割り／挟み込みとの違い＝移動モードが逆:
+//   これらは chargeFollowsTarget=false のまま＝各機が fireDirection へ独立に直進する
+//   「弾（fire-and-forget）」。DroneMovementSystem の「タメ→リリース」がそのまま弾になる。
+//
+// 「順番に」の作り方:
+//   forming 中に localIndex から fireDelay を割り振る（先頭ほど早く撃つ）。
+//   全機が同時に FireCharge へ入っても、ProcessFireCharge が fireDelay の間その場で
+//   待機させるため、結果として順次発射になる。
+//   fireDelay = (localIndex / total) * kFireWindow で、機数に依らず常に kFireWindow 秒で
+//   撃ち切る（1000機でも一定時間で発射）。
+// ====================================================================
+struct KamikazeSwarmFormation : public IFormation
+{
+    void Calculate(DroneComponent &drone, const FormationContext &ctx) override
+    {
+        using namespace DirectX::SimpleMath;
+
+        // 発射後は各機が独立して飛ぶので、撃ち出したら陣形は関与しない（凍結）。
+        if (drone.currentState == DroneState::FireCharge)
+            return;
+
+        drone.chargeFollowsTarget = false; // ★dashモード（fireDirection直進）
+
+        Vector3 dir = ctx.playerPos - ctx.bossPos;
+        dir.y = 0.0f;
+        if (dir.LengthSquared() < 0.001f) dir = Vector3::UnitZ;
+        dir.Normalize();
+
+        // --- forming：ボス頭上に「弾の供給リング」を作って待機させる ---
+        const int   total = (drone.totalDrones > 0) ? drone.totalDrones : 1;
+        const float angle = (2.0f * 3.14159265f) * (static_cast<float>(drone.localIndex) / static_cast<float>(total));
+        const float ringR = 3.5f;
+        const float ringH = 7.0f; // ボス頭上
+
+        Vector3 pos = ctx.bossPos + Vector3::UnitY * ringH
+                    + Vector3(std::cos(angle) * ringR, 0.0f, std::sin(angle) * ringR);
+        drone.targetPosition = pos;
+
+        // 発射方向：待機位置からプレイヤーへ（発射時にこの方向でロックされる）
+        Vector3 toPlayer = ctx.playerPos - pos;
+        if (toPlayer.LengthSquared() > 0.001f) toPlayer.Normalize();
+        else                                   toPlayer = dir;
+        drone.fireDirection       = toPlayer;
+        drone.targetLookDirection = toPlayer;
+
+        // 発射順（先頭ほど早い）。機数に依らず kFireWindow 秒で撃ち切る。
+        drone.fireDelay = (static_cast<float>(drone.localIndex) / static_cast<float>(total)) * kFireWindow;
+    }
+
+    // --- 調整値（グレーボックスで実測して詰める）---
+    static constexpr float kFireWindow = 1.8f; // 全機を撃ち切るのにかける秒数（順次発射の総時間）
+};
+
+// ====================================================================
 // 登録（DroneFormationSystem::Initialize から呼ぶ）
 // ====================================================================
 inline void RegisterAll()
 {
     auto &reg = FormationRegistry::Instance();
     reg.Register<GuillotineSlamFormation>(DroneFormationType::GuillotineSlam);
-    // … 今後 ClapSlam（挟み込み）/ 弾幕 などをここへ1クラスずつ追加 …
+    reg.Register<ClapSlamFormation>(DroneFormationType::ClapSlam);
+    reg.Register<KamikazeSwarmFormation>(DroneFormationType::KamikazeSwarm);
 }
 
 } // namespace CCL::AI::Formation::Attack

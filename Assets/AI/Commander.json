@@ -9,13 +9,13 @@
           { "type": "HealthBelow", "params": { "HP Ratio <=": 0.5 } }
         ],
         "tasks": [
-          { "type": "SetActiveBT", "params": { "BT Path": "Assets/BehaviorTree/BossGuillotineTest.json" } }
+          { "type": "SetActiveBT", "params": { "BT Path": "Assets/BehaviorTree/BossBasicAttacks.json" } }
         ]
       },
       {
         "name": "Phase1",
         "tasks": [
-          { "type": "SetActiveBT", "params": { "BT Path": "Assets/BehaviorTree/BossGuillotineTest.json" } }
+          { "type": "SetActiveBT", "params": { "BT Path": "Assets/BehaviorTree/BossBasicAttacks.json" } }
         ]
       }
     ]
