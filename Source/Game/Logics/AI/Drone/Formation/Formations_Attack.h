@@ -60,8 +60,9 @@ struct GuillotineSlamFormation : public IFormation
         const int col   = drone.localIndex % cols;
         const int row   = drone.localIndex / cols;
 
-        const float spacing     = 2.0f; // 刃の目の細かさ
-        const float hingeHeight = 2.0f; // 回転軸（下端）の高さ
+        const float spacing      = 2.0f; // 刃の目の細かさ
+        const float hingeHeight  = 2.0f; // 回転軸（下端）の高さ
+        const float hingeForward = 5.0f; // ボスからプレイヤー側へ離す距離（押し出し回避＋間合い）
 
         // --- 攻撃の進行度 θ を更新する ---
         //   wantsAttack 中だけ進め、非攻撃時は 0 に戻して直立を保つ。

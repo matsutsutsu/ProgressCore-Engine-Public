@@ -170,7 +170,7 @@
                         0.5
                     ]
                 },
-                "Weapon Trail (武器トレイル)": {
+                "Weapon Trail": {
                     "animControlled": true,
                     "baseOffset": [
                         0.0,

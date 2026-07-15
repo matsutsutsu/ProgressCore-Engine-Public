@@ -21,7 +21,7 @@ using json = nlohmann::json;
 // ===========================================================================
 // TrailComponent（Effect カテゴリ。Model/Material の少し後ろに並べる）
 // ===========================================================================
-COMPONENT_META_BEGIN_FULL(TrailComponent, "Weapon Trail (武器トレイル)", CCL::Categories::Effect, 180, false)
+COMPONENT_META_BEGIN_FULL(TrailComponent, "Weapon Trail", CCL::Categories::Effect, 180, false)
     CFIELD_FLOAT3_FAST(baseOffset, "Base Offset (根本)", 0.01f, "Shape")
     CFIELD_FLOAT3_FAST(tipOffset,  "Tip Offset (先端)",  0.01f, "Shape")
     CFIELD_COLOR(color, "Color (加算)", "Look")

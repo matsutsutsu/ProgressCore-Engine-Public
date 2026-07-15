@@ -30,7 +30,8 @@
     X(NON_MOVING, 0, "NON_MOVING")   \
     X(MOVING,     1, "MOVING")       \
     X(ENEMY,      2, "ENEMY")        \
-    X(BULLET,     3, "BULLET")
+    X(BULLET,     3, "BULLET")       \
+    X(BOSS,       4, "BOSS")
 
 // ──────────────────────────────────────────────
 // 1. 住人の種類 (ObjectLayer)  ※定数・個数・名前配列を X-Macro から自動生成

@@ -89,7 +89,7 @@
                     "jumpSpeed": 30.0,
                     "maxSlopeAngle": 45.0,
                     "maxStepHeight": 0.5,
-                    "objectLayer": 1,
+                    "objectLayer": 4,
                     "walkSpeed": 30.0
                 },
                 "Just Evade Component": {
