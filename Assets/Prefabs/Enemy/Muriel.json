@@ -2,8 +2,9 @@
     "entities": [
         {
             "components": {
+                "AnimParameters": null,
                 "AnimStateMachine": {
-                    "graphPath": "Assets/Animations/Nodes/TestAnimationNode.json"
+                    "graphPath": "Assets/Animations/Nodes/MurielAnimNode.json"
                 },
                 "Animation": null,
                 "Animator": {
@@ -33,9 +34,9 @@
                 },
                 "Character Movement Input": {
                     "currentVelocity": [
-                        2.4768376079009613e-06,
+                        6.785077832915931e-09,
                         0.0,
-                        -3.577868847060017e-05
+                        -9.614466556229218e-09
                     ],
                     "dashRequested": false,
                     "desiredVelocity": [
@@ -53,7 +54,7 @@
                     "overrideSpeed": -1.0
                 },
                 "HealthComponent": {
-                    "currentHealth": 1000.0,
+                    "currentHealth": 980.0,
                     "invincibilityDuration": 0.20000000298023224,
                     "maxHealth": 1000.0
                 },
@@ -115,15 +116,15 @@
                     "isStatic": false,
                     "parent": 3,
                     "position": [
-                        2.7369163036346436,
-                        -0.04382684826850891,
-                        17.91733169555664
+                        -0.758340060710907,
+                        -0.043857891112565994,
+                        28.086877822875977
                     ],
                     "rotation": [
                         0.0,
-                        0.9995048642158508,
+                        0.9994778633117676,
                         0.0,
-                        0.03146437555551529
+                        0.032308731228113174
                     ],
                     "scale": [
                         3.5,

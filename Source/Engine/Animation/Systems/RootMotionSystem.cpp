@@ -8,15 +8,22 @@ using namespace DirectX::SimpleMath;
 
 void RootMotionSystem::Update(float /*rawDt*/)
 {
-    ForEach([&](RootMotionComponent             &rm,
+    ForEachWithID([&](EntityID                          id,
+                RootMotionComponent             &rm,
                 CharacterMovementInputComponent &input,
                 const AnimatorComponent         &animator,
                 const AnimStateMachineComponent &fsm,
-                const DashComponent             &dash,
                 const TransformComponent        &trans,
                 const TimeStateComponent        &time,
                 const ModelComponent            &modelComp) {
-        if (dash.isDashing)
+        // ダッシュはプレイヤー限定の任意コンポーネント。持っていれば参照する。
+        bool isDashing = false;
+        if (const auto *dash = _world->GetComponent<DashComponent>(id))
+        {
+            isDashing = dash->isDashing;
+        }
+
+        if (isDashing)
         {
             rm.enabled          = false;
             rm.lastEvaluatedSeq = nullptr;

@@ -1878,6 +1878,9 @@
     <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossActionSystem.h">
       <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossAnimSyncSystem.h">
+      <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossPerceptionSystem.h">
       <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
     </ClInclude>
@@ -2832,6 +2835,9 @@
       <Filter>Source\Game\Logics\Character\Boss\Data</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossActionSystem.cpp">
+      <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossAnimSyncSystem.cpp">
       <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossPerceptionSystem.cpp">

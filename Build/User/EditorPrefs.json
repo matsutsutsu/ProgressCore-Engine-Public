@@ -1,5 +1,6 @@
 {
     "DialogHistory": {
-        "Prefab": "Assets\\Prefabs\\Enemy"
+        "AnimNode": "Assets\\Animations\\Nodes",
+        "BehaviorTreeNode": "Assets\\BehaviorTree"
     }
 }

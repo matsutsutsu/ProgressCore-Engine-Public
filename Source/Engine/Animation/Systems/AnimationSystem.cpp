@@ -32,6 +32,7 @@ namespace
 //        単体テストしやすく、ヘッダにも公開しない（実装詳細のため匿名namespaceに隔離）。
 // -----------------------------------------------------------------------------------
 
+// TODO: 実行中にこの部分の処理負荷がとてつもないフレームがあったから後で調べる まれに出てくる
 /// @brief 速度カーブによる時間の歪み(Time Warping)を考慮した実効再生速度を返す。
 float ComputeEffectiveSpeed(const AnimatorComponent &animator, const AnimSequence *seq)
 {

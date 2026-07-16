@@ -1,0 +1,161 @@
+{
+    "anyStatePosX": 304.0,
+    "anyStatePosY": -16.0,
+    "anyStateTransitions": [
+        {
+            "blendDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "op": 3,
+                    "paramHash": 1898928778,
+                    "paramName": "Slash",
+                    "threshold": 0.0
+                }
+            ],
+            "logicType": 0,
+            "requiredCancelMask": 0,
+            "targetStateHash": 1898928778
+        }
+    ],
+    "entryPosX": -48.0,
+    "entryPosY": 304.0,
+    "entryStateHash": 1168775091,
+    "parameters": [
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 174817312,
+            "name": "Speed",
+            "type": 0
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 3816806871,
+            "name": "IsMoving",
+            "type": 1
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 1898928778,
+            "name": "Slash",
+            "type": 2
+        }
+    ],
+    "states": [
+        {
+            "applyRootMotion": false,
+            "isLoop": true,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 170.0,
+            "nodePosY": 298.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/Idle.json",
+            "sequenceName": "Idle",
+            "speedCurveName": "",
+            "stateHash": 1168775091,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 174817312,
+                            "paramName": "Speed",
+                            "threshold": 0.10000000149011612
+                        },
+                        {
+                            "op": 0,
+                            "paramHash": 3816806871,
+                            "paramName": "IsMoving",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 1,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 2133600820
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "isLoop": true,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 436.0,
+            "nodePosY": 298.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/Move.json",
+            "sequenceName": "Move",
+            "speedCurveName": "",
+            "stateHash": 2133600820,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 2,
+                            "paramHash": 174817312,
+                            "paramName": "Speed",
+                            "threshold": 0.10000000149011612
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 1168775091
+                }
+            ]
+        },
+        {
+            "applyRootMotion": true,
+            "isLoop": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 298.0,
+            "nodePosY": 114.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/Slash.json",
+            "sequenceName": "Slash",
+            "speedCurveName": "",
+            "stateHash": 1898928778,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 1168775091
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        },
+                        {
+                            "op": 1,
+                            "paramHash": 174817312,
+                            "paramName": "Speed",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 2133600820
+                }
+            ]
+        }
+    ]
+}
