@@ -60,6 +60,11 @@ struct ComponentMeta<CameraBodyTPSComponent>
         changed |= ImGui::DragFloat(u8"ロックオン固定ピッチ (lockOnPitch)", &comp.lockOnPitch, 0.5f, -60.0f, 60.0f);
         changed |= ImGui::DragFloat(u8"敵への注視偏重率 (lockOnSubjugationRatio)", &comp.lockOnSubjugationRatio, 0.01f, 0.0f, 0.5f);
         changed |= ImGui::DragFloat(u8"自動回り込み速度 (lockOnRotationDamping)", &comp.lockOnRotationDamping, 0.1f, 1.0f, 20.0f);
+        changed |= ImGui::DragFloat(u8"注視ずれ上限 (lockOnMaxLookShift)", &comp.lockOnMaxLookShift, 0.1f, 0.0f, 15.0f);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip(u8"注視点が敵側へずれる上限(m)。小さいほどプレイヤーが常に画面内。");
+        changed |= ImGui::DragFloat(u8"離間による引き量 (lockOnDistanceGain)", &comp.lockOnDistanceGain, 0.01f, 0.0f, 2.0f);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip(u8"敵と離れるほどカメラを引く量(m/m)。両者を画面に収める。0で引き無し。");
+        changed |= ImGui::DragFloat(u8"引き量の上限 (lockOnMaxExtraDistance)", &comp.lockOnMaxExtraDistance, 0.1f, 0.0f, 30.0f);
 
         ImGui::SeparatorText(u8"位置・追従 (Positioning)");
         changed |= ImGui::DragFloat3(u8"注視点オフセット (targetOffset)", &comp.targetOffset.x, 0.1f);
@@ -105,6 +110,9 @@ struct ComponentMeta<CameraBodyTPSComponent>
             CFIELD_FLOAT_RANGED(lockOnPitch, u8"ロックオン固定ピッチ (lockOnPitch)", 0.5f, -60.0f, 60.0f, "LockOn")
             CFIELD_FLOAT_RANGED(lockOnSubjugationRatio, u8"敵への注視偏重率 (lockOnSubjugationRatio)", 0.01f, 0.0f, 0.5f, "LockOn")
             CFIELD_FLOAT_RANGED(lockOnRotationDamping, u8"自動回り込み速度 (lockOnRotationDamping)", 0.1f, 1.0f, 20.0f, "LockOn")
+            CFIELD_FLOAT_RANGED(lockOnMaxLookShift, u8"注視ずれ上限 (lockOnMaxLookShift)", 0.1f, 0.0f, 15.0f, "LockOn")
+            CFIELD_FLOAT_RANGED(lockOnDistanceGain, u8"離間による引き量 (lockOnDistanceGain)", 0.01f, 0.0f, 2.0f, "LockOn")
+            CFIELD_FLOAT_RANGED(lockOnMaxExtraDistance, u8"引き量の上限 (lockOnMaxExtraDistance)", 0.1f, 0.0f, 30.0f, "LockOn")
 
             CFIELD_FLOAT3_FAST(targetOffset, "Target Offset", 0.1f, "Positioning")
             CFIELD_FLOAT_RANGED(distance, "Distance", 0.1f, 1.0f, 100.0f, "Positioning")

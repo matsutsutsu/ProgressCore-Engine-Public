@@ -44,7 +44,13 @@ struct CameraBodyTPSComponent
     float                          lockOnSubjugationRatio = 0.35f; ///< 敵への注視偏重率 (0.0=プレイヤー中心, 0.5=完全な中間地点)
     float                          lockOnRotationDamping  = 6.0f;  ///< ロックオン時のカメラ角度の自動回り込み補間速度
 
+    // --- ロックオン・フレーミング（遠距離でもプレイヤーを画面内に保つ） ---
+    float lockOnMaxLookShift      = 3.0f;  ///< 注視点がプレイヤーから敵側へずれる上限(m)。大きいほど敵寄り。
+    float lockOnDistanceGain      = 0.35f; ///< 敵との離間1mあたり追加で引くカメラ距離(m)。0で引き無し。
+    float lockOnMaxExtraDistance  = 8.0f;  ///< 離間による追加引きの上限(m)。引きすぎでプレイヤーが小さくなるのを防ぐ。
+
     // --- 実行時内部状態（シリアライズ不要） ---
     DirectX::SimpleMath::Vector3 currentLookAt = {0.0f, 0.0f, 0.0f}; ///< 補間計算用の仮想注視点座標
+    DirectX::SimpleMath::Vector3 currentPivot  = {0.0f, 0.0f, 0.0f}; ///< 回り込み中心の補間座標（ロックオン時はプレイヤー基準）
     bool                         isFirstFrame  = true;               ///< 初回フレームでのワープ初期化フラグ
 };

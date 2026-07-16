@@ -130,12 +130,31 @@ void CameraActionTPSSystem::Update(float dt)
         }
 
 
+        // 回り込み中心(pivot)と距離。通常は注視点中心、ロックオン中はプレイヤー中心。
+        Vector3 posPivotTarget = idealLookAt;
+        float   camDistance    = tps.distance;
+
         if (enemyTrans)
         {
-            // ★ AAAハック: 自分と敵の中間地点をブレンド計算し、両方を画面に収める
-            // 敵コア位置も同様に統一
-            Vector3 enemyCorePos = enemyTrans->GetRenderWorldPosition() + tps.targetOffset;
-            idealLookAt          = Vector3::Lerp(idealLookAt, enemyCorePos, tps.lockOnSubjugationRatio);
+            // ★ TPSロックオンのフレーミング（遠距離でプレイヤーが画面外に出る問題の対策）:
+            //   (1) 注視点はプレイヤー→敵へ寄せるが、ずれ量に上限(lockOnMaxLookShift)を設け、
+            //       遠距離でもプレイヤーを必ずフレーム内に残す。
+            //   (2) 回り込み中心はプレイヤー基準にする。従来は注視点(中間地点)を中心に
+            //       引いていたため、敵が遠いとカメラがプレイヤーより前に出て画面外になっていた。
+            //   (3) 敵が離れるほどカメラを引き、プレイヤーと敵の両方をフレームに収める。
+            Vector3 pivot     = targetTrans->GetRenderWorldPosition() + tps.targetOffset;
+            Vector3 enemyCore = enemyTrans->GetRenderWorldPosition() + tps.targetOffset;
+
+            Vector3 lookShift = (enemyCore - pivot) * tps.lockOnSubjugationRatio;
+            float   shiftLen  = lookShift.Length();
+            if (shiftLen > tps.lockOnMaxLookShift && shiftLen > 1e-4f)
+                lookShift *= (tps.lockOnMaxLookShift / shiftLen); // プレイヤーを画面内に保つクランプ
+            idealLookAt = pivot + lookShift;
+
+            const float sep = (enemyCore - pivot).Length();
+            posPivotTarget  = pivot; // カメラはプレイヤーを中心に回り込む
+            camDistance     = tps.distance +
+                              std::clamp(sep * tps.lockOnDistanceGain, 0.0f, tps.lockOnMaxExtraDistance);
         }
         else
         {
@@ -150,19 +169,22 @@ void CameraActionTPSSystem::Update(float dt)
                 tps.currentLookahead    = Vector3::Lerp(tps.currentLookahead, targetLookahead, laBlend);
                 idealLookAt += tps.currentLookahead;
             }
+            posPivotTarget = idealLookAt; // 通常時は従来どおり注視点中心に回り込む
         }
 
         // 初回フレーム初期化
         if (tps.isFirstFrame)
         {
             tps.currentLookAt = idealLookAt;
+            tps.currentPivot  = posPivotTarget;
             vcam.fov          = tps.baseFov;
             tps.isFirstFrame  = false;
         }
 
-        // 5. 指数減衰による追従
+        // 5. 指数減衰による追従（注視点と回り込み中心をそれぞれ滑らかに追う）
         float posBlend    = 1.0f - std::exp(-tps.positionDamping * dt);
         tps.currentLookAt = Vector3::Lerp(tps.currentLookAt, idealLookAt, posBlend);
+        tps.currentPivot  = Vector3::Lerp(tps.currentPivot, posPivotTarget, posBlend);
 
         // 6. 球面座標から配置位置の算出
         float pitchRad = XMConvertToRadians(tps.currentPitch);
@@ -174,7 +196,8 @@ void CameraActionTPSSystem::Update(float dt)
         backwardDir.z = sinf(yawRad) * cosf(pitchRad);
         backwardDir.Normalize();
 
-        Vector3 finalPos = tps.currentLookAt - (backwardDir * tps.distance);
+        // 回り込み中心から後方へ camDistance 引いた位置がカメラ本体。
+        Vector3 finalPos = tps.currentPivot - (backwardDir * camDistance);
 
         // 7. 動的FOV
         float targetFov = tps.baseFov;

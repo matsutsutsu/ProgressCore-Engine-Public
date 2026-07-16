@@ -46,7 +46,7 @@ void PlayerLockOnSystem::Update(float /*dt*/)
         // _world->ForEachWithID ではなく、View() を使って対象IDを走査する
         // ===================================================================
         EntityID closestEnemyID = InvalidEntityID;
-        float    closestDistSq  = 30.0f * 30.0f; // ロックオン可能な限界距離（例: 30メートル）の2乗
+        float    closestDistSq  = 90.0f * 90.0f; // ロックオン可能な限界距離（例: 30メートル）の2乗
 
         // 世界中のドローンのEntityIDを一覧取得する
         auto droneView = _world->View<BossActionComponent, TransformComponent>();
