@@ -61,6 +61,11 @@ void TimeScaleSystem::Update(float rawDt)
     ctx.groupScales[static_cast<size_t>(TimeGroup::Enemy)] = ctx.enemySlow.currentComputedScale;
     // UIやEnvironmentなど、必要に応じて追加可能
 
+    // ★ OVERDRIVE の勢力別追加倍率を折り込む（非発動時は 1.0 なので影響なし）。
+    //   これで「敵はスロー・プレイヤーは高速」の無双状態が実効dtに乗る。
+    ctx.groupScales[static_cast<size_t>(TimeGroup::Player)] *= ctx.overdrivePlayerScale;
+    ctx.groupScales[static_cast<size_t>(TimeGroup::Enemy)]  *= ctx.overdriveEnemyScale;
+
     // =========================================================
     // 2. 親時計（世界全体）のヒットスロー計算
     // =========================================================

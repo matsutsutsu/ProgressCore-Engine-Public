@@ -53,6 +53,16 @@
             ],
             "Name": "FreeLook",
             "Trigger": "Down"
+        },
+        {
+            "Bindings": [
+                {
+                    "Device": "Keyboard",
+                    "Key": "Q"
+                }
+            ],
+            "Name": "Overdrive",
+            "Trigger": "Triggered"
         }
     ],
     "Axes": [

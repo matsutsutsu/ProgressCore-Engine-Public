@@ -419,3 +419,6 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# 開発者個人のAIコンテキスト/設計メモ（別の非公開リポジトリで管理）
+/_devnotes/

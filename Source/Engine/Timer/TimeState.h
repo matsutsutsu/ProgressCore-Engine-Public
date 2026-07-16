@@ -46,6 +46,12 @@ struct TimeContext {
     // 初期値はすべて1.0f
     float groupScales[static_cast<size_t>(TimeGroup::Count)] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f };
 
+    // --- OVERDRIVE（勢力別の追加倍率。OverdriveSystem が設定、非発動時は1.0） ---
+    //   発動中: 敵(Enemy)を遅く、プレイヤー(Player)を速くして「自分だけ高速」を作る。
+    //   TimeScaleSystem が groupScales に掛け合わせて実効dtへ反映する。
+    float overdrivePlayerScale = 1.0f;
+    float overdriveEnemyScale  = 1.0f;
+
     // --- デバッグ用（コマ送り） ---
     bool isPaused      = false;
     bool stepNextFrame = false;
