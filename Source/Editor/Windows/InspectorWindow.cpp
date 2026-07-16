@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <cstring>
 #include <string>
+#include <vector>         
+#include <unordered_map>  
 #include <windows.h>
 
 #include "Engine/Core/Components/NameComponent.h"
@@ -98,6 +100,10 @@ void InspectorWindow::DrawContents(EditorContext &context)
 
     // =========================================================
     // コンポーネント一覧表示と編集
+    //   カテゴリ見出し(折りたたみ) → その中に各コンポーネント、の二段構造。
+    //   ・カテゴリは ComponentMeta<T>::category (既定 "Misc") を GUI レジストリ
+    //     経由で引く。std::map なので見出しはアルファベット順に並ぶ。
+    //   ・フィルタ / Jump / 一括開閉(Expand,Collapse) は drawOne 内でそのまま機能する。
     // =========================================================
     const auto &archetype = world->GetEntityArchetype(selected);
     auto       &registry  = ComponentGuiRegistry::Instance();
@@ -141,8 +147,13 @@ void InspectorWindow::DrawContents(EditorContext &context)
     std::transform(inspectorFilter.begin(), inspectorFilter.end(),
         inspectorFilter.begin(), ::tolower);
 
-    for (const auto &typeData : archetype) {
-        CCL::ECS::TypeID typeID   = typeData.id;
+    // -------------------------------------------------------------
+    // 1 コンポーネント分の描画（旧: for ループ本体をそのまま関数化）
+    //   フィルタで弾いた場合は false を返す（何も描画しない）。
+    //   描画したら true を返す（カテゴリ見出しの「実質空か」判定に使う）。
+    // -------------------------------------------------------------
+    auto drawOne = [&](const auto &typeData) -> void {
+        CCL::ECS::TypeID typeID = typeData.id;
 
         // 1. まずは Registry にカスタム名（表示名）が登録されているか確認
         std::string compName = registry.GetName(typeID);
@@ -157,14 +168,12 @@ void InspectorWindow::DrawContents(EditorContext &context)
             const std::string prefixes[] = {"struct ", "class "};
             for (const auto &prefix : prefixes) {
                 if (compName.find(prefix) == 0) {
-                  compName.erase(0, prefix.length());
-                  break;
+                    compName.erase(0, prefix.length());
+                    break;
                 }
             }
-
-          // GUIが未登録（パラメータ編集はできない状態）であることが分かるようにマークを付ける
-          compName += " (No GUI)";
-
+            // GUIが未登録（パラメータ編集はできない状態）であることが分かるようにマークを付ける
+            compName += " (No GUI)";
         }
 
         // ① フィルタに一致しないコンポーネントは描画ごとスキップ
@@ -175,7 +184,7 @@ void InspectorWindow::DrawContents(EditorContext &context)
                 compNameLower.begin(), ::tolower);
             if (compNameLower.find(inspectorFilter) == std::string::npos)
             {
-                continue;
+                return;
             }
         }
 
@@ -184,20 +193,18 @@ void InspectorWindow::DrawContents(EditorContext &context)
         // -------------------------------------------------------
         // ① コンポーネント間の明確な「黒いスリット(隙間)」
         // -------------------------------------------------------
-        ImGui::Dummy(ImVec2(0.0f, 6.0f));
+        // コンポーネント間はうっすらした余白のみで区切る（黒い線は使わず、境界は余白で見せる）
+        ImGui::Dummy(ImVec2(0.0f, 3.0f));
 
-        ImGui::PushStyleColor(ImGuiCol_Separator, ImVec4(0.05f, 0.05f, 0.05f, 1.0f));
-        ImGui::Separator();
-        ImGui::PopStyleColor();
-
-        ImGui::Dummy(ImVec2(0.0f, 2.0f));
-
-        // -------------------------------------------------------
-        // ② ヘッダーバーのコントラスト強化
-        // -------------------------------------------------------
-        ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.22f, 0.22f, 0.22f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.28f, 0.28f, 0.28f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.32f, 0.32f, 0.32f, 1.0f));
+        // コンポーネントヘッダー: カテゴリ帯より明るいニュートラルグレーで一段下の階層を表す
+        ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.28f, 0.29f, 0.31f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.34f, 0.35f, 0.38f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.38f, 0.39f, 0.42f, 1.0f));
+        // No GUI コンポーネントは名前をくすませ、編集可能なものと区別する
+        bool isNoGui = (compName.find("(No GUI)") != std::string::npos);
+        ImGui::PushStyleColor(ImGuiCol_Text,
+            isNoGui ? ImVec4(0.55f, 0.55f, 0.58f, 1.0f)   // ディム
+                    : ImVec4(0.92f, 0.92f, 0.94f, 1.0f)); // 通常（ほぼ白）
 
         // ② 一括開閉の指令があればこのフレームだけ強制（storage に永続化される）
         if (_forceOpenState != -1)
@@ -214,7 +221,7 @@ void InspectorWindow::DrawContents(EditorContext &context)
         bool headerOpen = ImGui::CollapsingHeader(
             compName.c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap);
 
-        ImGui::PopStyleColor(3);
+        ImGui::PopStyleColor(4);
 
         // ⑤ Jump 先ヘッダーを画面上部付近までスクロール（このフレーム限り）
         if (isJumpTarget)
@@ -242,14 +249,134 @@ void InspectorWindow::DrawContents(EditorContext &context)
         // -------------------------------------------------------
         // ④ 中身のプロパティのインデント処理
         // -------------------------------------------------------
-        if (headerOpen) {
+        if (headerOpen)
+        {
             ImGui::Spacing();
-            ImGui::Indent(12.0f);
+            ImGui::Indent(16.0f); // 中身をヘッダーより深くインデント（従属を明確化）
 
             registry.DrawInspector(typeID, world, selected);
 
-            ImGui::Unindent(12.0f);
-            ImGui::Spacing();
+            ImGui::Unindent(16.0f);
+            ImGui::Dummy(ImVec2(0.0f, 4.0f)); // 次コンポーネントとの間に息継ぎの余白
+        }
+
+        ImGui::PopID();
+    };
+
+    // -------------------------------------------------------------
+    // カテゴリごとに typeData を振り分ける。
+    //   ・hiddenInInspector のコンポーネントは一覧に出さない。
+    //   ・各カテゴリ内は sortPriority 昇順。
+    //   ・カテゴリ見出しの順は「属するコンポーネントの最小 priority」で決める。
+    //     → priority 0 の Transform を持つ "Transform" カテゴリが必ず先頭に来る。
+    // -------------------------------------------------------------
+    using TypeDataT = std::decay_t<decltype(*archetype.begin())>;
+    struct CatEntry {
+        std::vector<const TypeDataT*> comps;
+        int minPriority = 100000;
+    };
+    std::unordered_map<std::string, CatEntry> catMap;
+
+    for (const auto &typeData : archetype) {
+        if (registry.IsHidden(typeData.id)) continue;   // ④/③ 非表示はスキップ
+
+        std::string cat = registry.GetCategory(typeData.id);
+        if (cat.empty()) cat = "Misc";
+        int prio = registry.GetSortPriority(typeData.id);
+
+        auto &ce = catMap[cat];
+        ce.comps.push_back(&typeData);
+        ce.minPriority = (std::min)(ce.minPriority, prio);
+    }
+
+    // カテゴリ内を priority 昇順（同点は表示名）でソート
+    for (auto &[cat, ce] : catMap) {
+        std::sort(ce.comps.begin(), ce.comps.end(),
+            [&](const TypeDataT* a, const TypeDataT* b) {
+                int pa = registry.GetSortPriority(a->id);
+                int pb = registry.GetSortPriority(b->id);
+                if (pa != pb) return pa < pb;
+                return registry.GetName(a->id) < registry.GetName(b->id);
+            });
+    }
+
+    // カテゴリ見出しを「最小priority → 名前」で並べた順序リストにする
+    std::vector<const std::string*> orderedCats;
+    orderedCats.reserve(catMap.size());
+    for (auto &[cat, ce] : catMap) orderedCats.push_back(&cat);
+    std::sort(orderedCats.begin(), orderedCats.end(),
+        [&](const std::string* a, const std::string* b) {
+            int pa = catMap[*a].minPriority;
+            int pb = catMap[*b].minPriority;
+            if (pa != pb) return pa < pb;
+            return *a < *b;
+        });
+
+    // ⑤ Jump 対象が属するカテゴリを求めておく（畳まれていても開くため）
+    std::string jumpCategory;
+    if (_hasJumpTarget) {
+        jumpCategory = registry.GetCategory(_jumpToTypeID);
+        if (jumpCategory.empty()) jumpCategory = "Misc";
+    }
+
+    // -------------------------------------------------------------
+    // カテゴリ見出し（折りたたみ可能）→ 中に各コンポーネント
+    // -------------------------------------------------------------
+    for (const std::string* catPtr : orderedCats) {
+        const std::string& category = *catPtr;
+        auto& comps = catMap[category].comps;
+
+        ImGui::PushID(category.c_str());
+
+        if (_forceOpenState != -1)
+            ImGui::SetNextItemOpen(_forceOpenState == 1, ImGuiCond_Always);
+        if (_hasJumpTarget && category == jumpCategory)
+            ImGui::SetNextItemOpen(true, ImGuiCond_Always);
+
+        // === カテゴリ見出し（Unreal Details のカテゴリバー風）=====================
+        //   ・コンポーネントヘッダーより明るい/彩度の高い色にして「親」だと分からせる
+        //   ・大文字化 + 左のアクセントバーで、スタイル依存せず確実に存在感を出す
+        std::string categoryUpper = category;
+        std::transform(categoryUpper.begin(), categoryUpper.end(),
+            categoryUpper.begin(), ::toupper);
+
+        // 帯の上下に薄い余白を作り、前後のセクションと視覚的に切り離す
+        ImGui::Dummy(ImVec2(0.0f, 4.0f));
+
+        ImVec2 barMin   = ImGui::GetCursorScreenPos();
+        float  barWidth = ImGui::GetContentRegionAvail().x;
+
+        ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.18f, 0.26f, 0.38f, 1.0f)); // 彩度を落とした落ち着いた青
+        ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.22f, 0.31f, 0.45f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.25f, 0.34f, 0.50f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8.0f, 3.0f)); // y を 7.0 → 3.0 に縮小
+
+        bool catOpen = ImGui::CollapsingHeader(categoryUpper.c_str(),
+            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowItemOverlap);
+
+        ImGui::PopStyleVar();
+        ImGui::PopStyleColor(4);
+
+        // 左端に太めのアクセントバーを重ね描き（スタイル設定に依存せず必ず見える）
+        {
+            ImDrawList *dl        = ImGui::GetWindowDrawList();
+            float       barHeight = ImGui::GetItemRectSize().y;
+            ImVec2      accentMin = barMin;
+            ImVec2      accentMax = ImVec2(barMin.x + 4.0f, barMin.y + barHeight);
+            dl->AddRectFilled(accentMin, accentMax, IM_COL32(90, 160, 240, 255));
+        }
+
+        ImGui::Dummy(ImVec2(0.0f, 2.0f));
+
+        if (catOpen)
+        {
+            ImGui::Indent(8.0f);
+            for (const TypeDataT *td : comps)
+            {
+                drawOne(*td);
+            }
+            ImGui::Unindent(8.0f);
         }
 
         ImGui::PopID();

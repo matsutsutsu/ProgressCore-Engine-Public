@@ -3,6 +3,7 @@
 
 #include "Engine/Core/Components/NameComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
+#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
 #ifdef ENABLE_EDITOR
@@ -34,8 +35,11 @@ namespace ComponentMetaJson {
 // ComponentMeta<NameComponent>
 // ============================================================================
 template <> struct ComponentMeta<NameComponent> {
-    static constexpr const char* displayName = "Name";
-    static constexpr bool        hasCustomGui = true;
+    static constexpr const char* displayName    = "Name";
+    static constexpr const char* category       = CCL::Categories::Meta; // ★修正: 最も重要なメタ情報
+    static constexpr int         sortPriority   = 0; // ★修正: Transformと同様に最上段に固定
+    static constexpr bool        hiddenInInspector = false;
+    static constexpr bool        hasCustomGui   = true;
     static constexpr bool        isSerializable = true;
 
 #ifdef ENABLE_EDITOR
@@ -51,7 +55,6 @@ template <> struct ComponentMeta<NameComponent> {
     static bool CustomGui(NameComponent&, unsigned long long, void*) { return false; }
 #endif
 
-    // カスタムシリアライズを使用するため、Fields() は空
     static const std::vector<FieldDescriptor>& Fields() {
         static const std::vector<FieldDescriptor> empty;
         return empty;

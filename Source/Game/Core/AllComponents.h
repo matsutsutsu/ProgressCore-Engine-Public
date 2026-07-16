@@ -18,9 +18,6 @@
 #include "Engine/Physics/Components/Character/JoltCharacterHandleComponent.h"
 #include "Engine/Physics/Components/Character/JoltCharacterConfigComponent.h"
 
-
-#include "Game/Logics/Character/Enemy/EnemyComponent.h"
-
 // カメラ
 
 #include "Engine/Camera/Components/VirtualCameraComponents.h"
@@ -29,8 +26,6 @@
 #include "Engine/Graphics/Components/Core/ModelComponent.h"
 #include "Engine/Graphics/Components/Core/PrimitiveComponent.h"
 #include "Engine/Graphics/Components/Core/MaterialComponent.h"
-
-//#include "Game/GameLogics/Text/FloatingTextComponent.h"
 
 #include "Engine/Animation/Components/AnimatorComponent.h"
 // シェーダー

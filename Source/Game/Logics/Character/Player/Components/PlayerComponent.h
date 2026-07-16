@@ -1,6 +1,7 @@
 /// @file PlayerComponent.h
 /// @brief プレイヤー固有のステータス（速度や設定）のみを保持するコンポーネント
 #pragma once
+#include "Engine/Serialization/Core/EntityLink.h"
 
 struct PlayerComponent {
 
@@ -35,4 +36,9 @@ struct PlayerComponent {
 
     // --- 攻撃入力状態 ---
     bool wasAttackButtonPressed = false; ///< 前フレームの攻撃ボタン押下状態 (連打・押しっぱなし防止用)
+
+    // ロックオンデータ
+    bool               lockOnToggleRequested = false;                     ///< Rボタンが押された瞬間だけ true になるトリガー意思
+    CCL::Serialization::EntityLink lockOnTargetID  = CCL::ECS::InvalidEntityID; ///< 現在ロックオンしている敵のEntityID
+
 };

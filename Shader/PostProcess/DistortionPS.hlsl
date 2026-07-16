@@ -1,4 +1,4 @@
-#include "Shader/Common/Common.hlsli"
+#include "Shader/PostProcess/PostProcessVS.hlsli"
 #include "Engine/Graphics/Shader/Shared/PostProcessShared.h"
 
 Texture2D gInputTexture : register(REG_SRV(SLOT_SRV_PP_DISTORTION_MAP));

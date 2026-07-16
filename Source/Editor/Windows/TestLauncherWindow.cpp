@@ -12,7 +12,7 @@ TestLauncherWindow::TestLauncherWindow() : EditorWindow("Test Launcher")
     // =======================================================
 
     // 1. 基本テスト
-    _basicTests.push_back({ "Jolt Physics Basic", SceneInitializer::SpawnJoltTest });
+
     _basicTests.push_back({ "Animation Basic", SceneInitializer::SpawnAnimationTest });
     _basicTests.push_back({ "Shader Test", SceneInitializer::SpawnShaderTest });
 
@@ -22,7 +22,11 @@ TestLauncherWindow::TestLauncherWindow() : EditorWindow("Test Launcher")
 
     _perfTests.push_back({ "Model Grid", 500, SceneInitializer::SpawnModelGridTest });
 
+    _perfTests.push_back({"Jolt Tofu Avalanche", 5000, SceneInitializer::SpawnPhysicsAvalancheTest});
+    _perfTests.push_back({"Jolt Avalanche", 5000, SceneInitializer::SpawnJoltAvalancheTest});
    
+    _perfTests.push_back({"Boids Swarm", 5000, SceneInitializer::SpawnBoidsTest});
+
 }
 
 void TestLauncherWindow::CleanupAndInitializeEnv(EditorContext& context)

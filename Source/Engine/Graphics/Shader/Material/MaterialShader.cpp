@@ -3,11 +3,20 @@
 #include "Engine/Graphics/Resource/ModelResource.h"
 #include "Engine/Platform/Core/Logger.h"
 
-MaterialShader::MaterialShader(ID3D11Device* device,
-    const std::string& vsCsoPath, const std::wstring& vsHlslPath,
-    const std::string& psCsoPath, const std::wstring& psHlslPath)
+MaterialShader::MaterialShader(ID3D11Device *device,
+    const std::string &vsCsoPath, const std::wstring &vsHlslPath,
+    const std::string &psCsoPath, const std::wstring &psHlslPath,
+    const PipelineStateDesc *psoDesc) 
     : _vsHlslPath(vsHlslPath), _psHlslPath(psHlslPath)
 {
+    // JSON で PSO 指定があれば固める（無ければパス既定に委ねる）
+    if (psoDesc)
+    {
+        _pso    = PipelineState(*psoDesc);
+        _hasPso = true;
+    }
+
+    
     // 汎用頂点レイアウトを使用して頂点シェーダーをロード
     GpuResourceUtils::LoadVertexShader(device,
         vsCsoPath.c_str(),

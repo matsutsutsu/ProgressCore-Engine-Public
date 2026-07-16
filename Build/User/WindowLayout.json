@@ -26,7 +26,7 @@
         },
         {
             "name": "Anim Graph Editor",
-            "visible": true
+            "visible": false
         },
         {
             "name": "Behavior Tree Editor",
@@ -49,7 +49,7 @@
             "visible": false
         },
         {
-            "name": "Input Mapping Editor",
+            "name": "InputMappingEditor",
             "visible": false
         },
         {
@@ -67,6 +67,10 @@
         {
             "name": "Game View",
             "visible": true
+        },
+        {
+            "name": "Render Debug",
+            "visible": false
         }
     ]
 }

@@ -193,6 +193,18 @@ private:
      */
     nlohmann::json BuildBakedNodes();
 
+    /// @brief ActionRegistry から表示名を引く（未登録IDはフォールバック文字列）
+    static const char* GetActionDisplayName(ActionID id);
+
+    /// @brief ConditionRegistry から表示名を引く
+    static const char* GetConditionDisplayName(ActionID id);
+
+    /// @brief カテゴリ別プルダウンで ActionID を選択させる
+    bool DrawActionCombo(const char* label, ActionID& currentId);
+
+    /// @brief カテゴリ別プルダウンで ConditionID を選択させる
+    bool DrawConditionCombo(const char* label, ActionID& currentId);
+
 private:
     ax::NodeEditor::EditorContext* _nodeContext = nullptr; ///< Node Editorの内部状態（キャンバスのズーム等）
 

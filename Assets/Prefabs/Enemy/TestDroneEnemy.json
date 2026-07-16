@@ -2,23 +2,6 @@
     "entities": [
         {
             "components": {
-                "Graphics": {
-                    "color": [
-                        1.0,
-                        0.0,
-                        0.0,
-                        1.0
-                    ],
-                    "height": 1.0,
-                    "isWireframe": false,
-                    "radius": 0.5,
-                    "size": [
-                        1.0,
-                        1.0,
-                        1.0
-                    ],
-                    "type": 0
-                },
                 "Jolt Rigidbody": {
                     "friction": 0.20000000298023224,
                     "gravityFactor": 1.0,
@@ -39,16 +22,33 @@
                         0.0,
                         0.0
                     ],
-                    "radius": 2.799999952316284
+                    "radius": 1.0
                 },
                 "Name": {
                     "name": "TestDroneDummy"
+                },
+                "Primitive": {
+                    "color": [
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "height": 1.0,
+                    "isWireframe": false,
+                    "radius": 1.0,
+                    "size": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "type": 1
                 },
                 "TimeState": {
                     "buffScale": 1.0,
                     "cinematicScale": 1.0,
                     "freezeScale": 0.0,
-                    "group": 0,
+                    "group": 2,
                     "hitStopTimer": 0.0,
                     "localDt": 0.01666666753590107
                 },
@@ -56,9 +56,9 @@
                     "isStatic": false,
                     "parent": 2,
                     "position": [
-                        -2.3556463718414307,
-                        2.635999917984009,
-                        29.65123176574707
+                        -10.243260383605957,
+                        4.9568891525268555,
+                        58.317935943603516
                     ],
                     "rotation": [
                         0.0,

@@ -51,6 +51,7 @@ public:
     // ---- Render target access ----
     ID3D11RenderTargetView* GetBackBufferRTV()    const noexcept { return _backBufferRTV.Get(); }
     ID3D11DepthStencilView* GetDepthStencilView() const noexcept { return _depthStencilView.Get(); }
+    ID3D11ShaderResourceView* GetDepthSRV()       const noexcept { return _depthSRV.Get(); }
     ID3D11RenderTargetView* GetGameRTV()          const noexcept { return _gameRTV.Get(); }
     ID3D11ShaderResourceView* GetGameSRV()          const noexcept { return _gameSRV.Get(); }
 
@@ -91,6 +92,7 @@ private:
     Microsoft::WRL::ComPtr<IDXGISwapChain>           _swapChain;
     Microsoft::WRL::ComPtr<ID3D11RenderTargetView>   _backBufferRTV;
     Microsoft::WRL::ComPtr<ID3D11DepthStencilView>   _depthStencilView;
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> _depthSRV;
     Microsoft::WRL::ComPtr<ID3D11Texture2D>          _gameTex;
     Microsoft::WRL::ComPtr<ID3D11RenderTargetView>   _gameRTV;
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> _gameSRV;

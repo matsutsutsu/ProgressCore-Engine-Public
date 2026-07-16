@@ -158,7 +158,7 @@ namespace CCL::ECS::Core
     private:
 		// このChunkが「なんのコンポーネント」を持っているかの定義情報
         Archetype _archetype;
-        size_t _capacity = 0;      // 追加：最大容量を保持
+        size_t _capacity = 0;      // 最大容量を保持
 
 		// このChunkに所属するエンティティIDのリスト
         std::vector<EntityID> _ownerEntities;

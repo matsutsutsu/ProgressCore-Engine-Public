@@ -5,12 +5,13 @@
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"
 #include "Engine/Physics/Components/Character/CharacterMovementInputComponent.h"
 #include "Engine/Animation/Components/AnimParametersComponent.h"
+#include "Game/Logics/Character/Player/Components/DashComponent.h" 
 
-class PlayerAttackSystem : public CCL::ECS::IfSystem<
-                               PlayerAttackSystem,
-                               CCL::ECS::Read<CharacterMovementInputComponent>,
-                               CCL::ECS::Write<AnimParametersComponent>,
-                               CCL::ECS::Write<PlayerComponent>>
+class PlayerAttackSystem : public CCL::ECS::IfSystem< PlayerAttackSystem,
+      CCL::ECS::Read<CharacterMovementInputComponent>,
+      CCL::ECS::Write<DashComponent>, 
+      CCL::ECS::Write<AnimParametersComponent>,
+      CCL::ECS::Write<PlayerComponent>>
 {
   public:
     PlayerAttackSystem()

@@ -3,7 +3,7 @@
 #include <memory>
 #include "SimpleMath.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"
-#include "Game/Logics/AI/BehaviorTree/Drone/DroneComponent.h"
+#include "Game/Logics/AI/Drone/DroneComponent.h"
 
 #include "Engine/Serialization/Core/EntityLink.h"
 
@@ -72,4 +72,9 @@ struct BossCommandComponent {
 
     // AIが現在「筋肉にやってほしい」と要求しているActionIDをそのまま渡す
     ActionID currentActionId = 0;
+
+    /// @brief ドローン陣形攻撃の「今撃て」信号（実行時専用・非シリアライズ）。
+    ///        BTの DroneStrikeAction が true、DroneAction(陣形指示) が false にする。
+    ///        DroneCommandSystem が各ドローンの wantsAttack へ配布する。
+    bool droneAttackActive = false;
 };

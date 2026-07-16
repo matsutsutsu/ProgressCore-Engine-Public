@@ -1,0 +1,1071 @@
+{
+  "assetId": 101,
+  "editor_links": [
+    {
+      "id": 6,
+      "startPin": 2,
+      "endPin": 4
+    },
+    {
+      "id": 10,
+      "startPin": 5,
+      "endPin": 8
+    },
+    {
+      "id": 13,
+      "startPin": 9,
+      "endPin": 12
+    },
+    {
+      "id": 16,
+      "startPin": 9,
+      "endPin": 15
+    },
+    {
+      "id": 19,
+      "startPin": 9,
+      "endPin": 18
+    },
+    {
+      "id": 22,
+      "startPin": 9,
+      "endPin": 21
+    },
+    {
+      "id": 25,
+      "startPin": 9,
+      "endPin": 24
+    },
+    {
+      "id": 28,
+      "startPin": 9,
+      "endPin": 27
+    },
+    {
+      "id": 31,
+      "startPin": 9,
+      "endPin": 30
+    },
+    {
+      "id": 34,
+      "startPin": 9,
+      "endPin": 33
+    },
+    {
+      "id": 37,
+      "startPin": 9,
+      "endPin": 36
+    },
+    {
+      "id": 40,
+      "startPin": 9,
+      "endPin": 39
+    },
+    {
+      "id": 43,
+      "startPin": 9,
+      "endPin": 42
+    },
+    {
+      "id": 46,
+      "startPin": 9,
+      "endPin": 45
+    },
+    {
+      "id": 49,
+      "startPin": 9,
+      "endPin": 48
+    },
+    {
+      "id": 52,
+      "startPin": 9,
+      "endPin": 51
+    },
+    {
+      "id": 55,
+      "startPin": 9,
+      "endPin": 54
+    },
+    {
+      "id": 58,
+      "startPin": 9,
+      "endPin": 57
+    },
+    {
+      "id": 61,
+      "startPin": 9,
+      "endPin": 60
+    },
+    {
+      "id": 64,
+      "startPin": 9,
+      "endPin": 63
+    },
+    {
+      "id": 67,
+      "startPin": 9,
+      "endPin": 66
+    },
+    {
+      "id": 70,
+      "startPin": 9,
+      "endPin": 69
+    },
+    {
+      "id": 73,
+      "startPin": 9,
+      "endPin": 72
+    },
+    {
+      "id": 76,
+      "startPin": 9,
+      "endPin": 75
+    },
+    {
+      "id": 79,
+      "startPin": 9,
+      "endPin": 78
+    },
+    {
+      "id": 82,
+      "startPin": 9,
+      "endPin": 81
+    },
+    {
+      "id": 85,
+      "startPin": 9,
+      "endPin": 84
+    },
+    {
+      "id": 88,
+      "startPin": 9,
+      "endPin": 87
+    },
+    {
+      "id": 91,
+      "startPin": 9,
+      "endPin": 90
+    },
+    {
+      "id": 94,
+      "startPin": 9,
+      "endPin": 93
+    },
+    {
+      "id": 97,
+      "startPin": 9,
+      "endPin": 96
+    },
+    {
+      "id": 100,
+      "startPin": 9,
+      "endPin": 99
+    },
+    {
+      "id": 103,
+      "startPin": 9,
+      "endPin": 102
+    },
+    {
+      "id": 106,
+      "startPin": 9,
+      "endPin": 105
+    },
+    {
+      "id": 109,
+      "startPin": 9,
+      "endPin": 108
+    },
+    {
+      "id": 112,
+      "startPin": 9,
+      "endPin": 111
+    },
+    {
+      "id": 115,
+      "startPin": 9,
+      "endPin": 114
+    },
+    {
+      "id": 118,
+      "startPin": 9,
+      "endPin": 117
+    },
+    {
+      "id": 121,
+      "startPin": 9,
+      "endPin": 120
+    },
+    {
+      "id": 124,
+      "startPin": 9,
+      "endPin": 123
+    },
+    {
+      "id": 127,
+      "startPin": 9,
+      "endPin": 126
+    },
+    {
+      "id": 130,
+      "startPin": 9,
+      "endPin": 129
+    },
+    {
+      "id": 133,
+      "startPin": 9,
+      "endPin": 132
+    },
+    {
+      "id": 136,
+      "startPin": 9,
+      "endPin": 135
+    },
+    {
+      "id": 139,
+      "startPin": 9,
+      "endPin": 138
+    },
+    {
+      "id": 142,
+      "startPin": 9,
+      "endPin": 141
+    },
+    {
+      "id": 145,
+      "startPin": 9,
+      "endPin": 144
+    },
+    {
+      "id": 148,
+      "startPin": 9,
+      "endPin": 147
+    },
+    {
+      "id": 151,
+      "startPin": 9,
+      "endPin": 150
+    },
+    {
+      "id": 154,
+      "startPin": 9,
+      "endPin": 153
+    }
+  ],
+  "editor_nodes": [
+    {
+      "id": 1,
+      "type": 0,
+      "name": "ROOT",
+      "actionId": 0,
+      "inputPinId": 0,
+      "outputPinId": 2,
+      "posX": 0.0,
+      "posY": 0.0
+    },
+    {
+      "id": 3,
+      "type": 1,
+      "name": "セレクター (Selector)",
+      "actionId": 0,
+      "inputPinId": 4,
+      "outputPinId": 5,
+      "posX": 0.0,
+      "posY": 150.0
+    },
+    {
+      "id": 7,
+      "type": 2,
+      "name": "シーケンス (Sequence)",
+      "actionId": 0,
+      "inputPinId": 8,
+      "outputPinId": 9,
+      "posX": 0.0,
+      "posY": 300.0
+    },
+    {
+      "id": 11,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 2023,
+      "inputPinId": 12,
+      "outputPinId": 0,
+      "posX": -4700.0,
+      "posY": 480.0
+    },
+    {
+      "id": 14,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 102,
+      "inputPinId": 15,
+      "outputPinId": 0,
+      "posX": -4500.0,
+      "posY": 480.0
+    },
+    {
+      "id": 17,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 1006,
+      "inputPinId": 18,
+      "outputPinId": 0,
+      "posX": -4300.0,
+      "posY": 480.0
+    },
+    {
+      "id": 20,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 101,
+      "inputPinId": 21,
+      "outputPinId": 0,
+      "posX": -4100.0,
+      "posY": 480.0
+    },
+    {
+      "id": 23,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 2000,
+      "inputPinId": 24,
+      "outputPinId": 0,
+      "posX": -3900.0,
+      "posY": 480.0
+    },
+    {
+      "id": 26,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 103,
+      "inputPinId": 27,
+      "outputPinId": 0,
+      "posX": -3700.0,
+      "posY": 480.0
+    },
+    {
+      "id": 29,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 2024,
+      "inputPinId": 30,
+      "outputPinId": 0,
+      "posX": -3500.0,
+      "posY": 480.0
+    },
+    {
+      "id": 32,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 102,
+      "inputPinId": 33,
+      "outputPinId": 0,
+      "posX": -3300.0,
+      "posY": 480.0
+    },
+    {
+      "id": 35,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 1006,
+      "inputPinId": 36,
+      "outputPinId": 0,
+      "posX": -3100.0,
+      "posY": 480.0
+    },
+    {
+      "id": 38,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 101,
+      "inputPinId": 39,
+      "outputPinId": 0,
+      "posX": -2900.0,
+      "posY": 480.0
+    },
+    {
+      "id": 41,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 2000,
+      "inputPinId": 42,
+      "outputPinId": 0,
+      "posX": -2700.0,
+      "posY": 480.0
+    },
+    {
+      "id": 44,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 103,
+      "inputPinId": 45,
+      "outputPinId": 0,
+      "posX": -2500.0,
+      "posY": 480.0
+    },
+    {
+      "id": 47,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 2016,
+      "inputPinId": 48,
+      "outputPinId": 0,
+      "posX": -2300.0,
+      "posY": 480.0
+    },
+    {
+      "id": 50,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 101,
+      "inputPinId": 51,
+      "outputPinId": 0,
+      "posX": -2100.0,
+      "posY": 480.0
+    },
+    {
+      "id": 53,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 1006,
+      "inputPinId": 54,
+      "outputPinId": 0,
+      "posX": -1900.0,
+      "posY": 480.0
+    },
+    {
+      "id": 56,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 104,
+      "inputPinId": 57,
+      "outputPinId": 0,
+      "posX": -1700.0,
+      "posY": 480.0
+    },
+    {
+      "id": 59,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 2000,
+      "inputPinId": 60,
+      "outputPinId": 0,
+      "posX": -1500.0,
+      "posY": 480.0
+    },
+    {
+      "id": 62,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 103,
+      "inputPinId": 63,
+      "outputPinId": 0,
+      "posX": -1300.0,
+      "posY": 480.0
+    },
+    {
+      "id": 65,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 2027,
+      "inputPinId": 66,
+      "outputPinId": 0,
+      "posX": -1100.0,
+      "posY": 480.0
+    },
+    {
+      "id": 68,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 102,
+      "inputPinId": 69,
+      "outputPinId": 0,
+      "posX": -900.0,
+      "posY": 480.0
+    },
+    {
+      "id": 71,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 1006,
+      "inputPinId": 72,
+      "outputPinId": 0,
+      "posX": -700.0,
+      "posY": 480.0
+    },
+    {
+      "id": 74,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 103,
+      "inputPinId": 75,
+      "outputPinId": 0,
+      "posX": -500.0,
+      "posY": 480.0
+    },
+    {
+      "id": 77,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 2000,
+      "inputPinId": 78,
+      "outputPinId": 0,
+      "posX": -300.0,
+      "posY": 480.0
+    },
+    {
+      "id": 80,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 103,
+      "inputPinId": 81,
+      "outputPinId": 0,
+      "posX": -100.0,
+      "posY": 480.0
+    },
+    {
+      "id": 83,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 2026,
+      "inputPinId": 84,
+      "outputPinId": 0,
+      "posX": 100.0,
+      "posY": 480.0
+    },
+    {
+      "id": 86,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 102,
+      "inputPinId": 87,
+      "outputPinId": 0,
+      "posX": 300.0,
+      "posY": 480.0
+    },
+    {
+      "id": 89,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 1006,
+      "inputPinId": 90,
+      "outputPinId": 0,
+      "posX": 500.0,
+      "posY": 480.0
+    },
+    {
+      "id": 92,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 103,
+      "inputPinId": 93,
+      "outputPinId": 0,
+      "posX": 700.0,
+      "posY": 480.0
+    },
+    {
+      "id": 95,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 2000,
+      "inputPinId": 96,
+      "outputPinId": 0,
+      "posX": 900.0,
+      "posY": 480.0
+    },
+    {
+      "id": 98,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 103,
+      "inputPinId": 99,
+      "outputPinId": 0,
+      "posX": 1100.0,
+      "posY": 480.0
+    },
+    {
+      "id": 101,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 2021,
+      "inputPinId": 102,
+      "outputPinId": 0,
+      "posX": 1300.0,
+      "posY": 480.0
+    },
+    {
+      "id": 104,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 102,
+      "inputPinId": 105,
+      "outputPinId": 0,
+      "posX": 1500.0,
+      "posY": 480.0
+    },
+    {
+      "id": 107,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 1006,
+      "inputPinId": 108,
+      "outputPinId": 0,
+      "posX": 1700.0,
+      "posY": 480.0
+    },
+    {
+      "id": 110,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 103,
+      "inputPinId": 111,
+      "outputPinId": 0,
+      "posX": 1900.0,
+      "posY": 480.0
+    },
+    {
+      "id": 113,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 2000,
+      "inputPinId": 114,
+      "outputPinId": 0,
+      "posX": 2100.0,
+      "posY": 480.0
+    },
+    {
+      "id": 116,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 103,
+      "inputPinId": 117,
+      "outputPinId": 0,
+      "posX": 2300.0,
+      "posY": 480.0
+    },
+    {
+      "id": 119,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 2025,
+      "inputPinId": 120,
+      "outputPinId": 0,
+      "posX": 2500.0,
+      "posY": 480.0
+    },
+    {
+      "id": 122,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 102,
+      "inputPinId": 123,
+      "outputPinId": 0,
+      "posX": 2700.0,
+      "posY": 480.0
+    },
+    {
+      "id": 125,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 1006,
+      "inputPinId": 126,
+      "outputPinId": 0,
+      "posX": 2900.0,
+      "posY": 480.0
+    },
+    {
+      "id": 128,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 104,
+      "inputPinId": 129,
+      "outputPinId": 0,
+      "posX": 3100.0,
+      "posY": 480.0
+    },
+    {
+      "id": 131,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 2000,
+      "inputPinId": 132,
+      "outputPinId": 0,
+      "posX": 3300.0,
+      "posY": 480.0
+    },
+    {
+      "id": 134,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 103,
+      "inputPinId": 135,
+      "outputPinId": 0,
+      "posX": 3500.0,
+      "posY": 480.0
+    },
+    {
+      "id": 137,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 2030,
+      "inputPinId": 138,
+      "outputPinId": 0,
+      "posX": 3700.0,
+      "posY": 480.0
+    },
+    {
+      "id": 140,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 102,
+      "inputPinId": 141,
+      "outputPinId": 0,
+      "posX": 3900.0,
+      "posY": 480.0
+    },
+    {
+      "id": 143,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 1006,
+      "inputPinId": 144,
+      "outputPinId": 0,
+      "posX": 4100.0,
+      "posY": 480.0
+    },
+    {
+      "id": 146,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 104,
+      "inputPinId": 147,
+      "outputPinId": 0,
+      "posX": 4300.0,
+      "posY": 480.0
+    },
+    {
+      "id": 149,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 2000,
+      "inputPinId": 150,
+      "outputPinId": 0,
+      "posX": 4500.0,
+      "posY": 480.0
+    },
+    {
+      "id": 152,
+      "type": 4,
+      "name": "アクション (Action)",
+      "actionId": 104,
+      "inputPinId": 153,
+      "outputPinId": 0,
+      "posX": 4700.0,
+      "posY": 480.0
+    }
+  ],
+  "last_id_counter": 155,
+  "nodes": [
+    {
+      "type": "Selector",
+      "actionOrConditionId": 0,
+      "children": [
+        1
+      ]
+    },
+    {
+      "type": "Sequence",
+      "actionOrConditionId": 0,
+      "children": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49
+      ]
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 2023,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 102,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 1006,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 101,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 2000,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 103,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 2024,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 102,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 1006,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 101,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 2000,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 103,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 2016,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 101,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 1006,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 104,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 2000,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 103,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 2027,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 102,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 1006,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 103,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 2000,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 103,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 2026,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 102,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 1006,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 103,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 2000,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 103,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 2021,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 102,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 1006,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 103,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 2000,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 103,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 2025,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 102,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 1006,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 104,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 2000,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 103,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 2030,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 102,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 1006,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 104,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 2000,
+      "children": []
+    },
+    {
+      "type": "Action",
+      "actionOrConditionId": 104,
+      "children": []
+    }
+  ]
+}

@@ -2,18 +2,23 @@
     "entities": [
         {
             "components": {
-                "Camera": {
+                "CameraBodyTPS": {
                     "baseFov": 70.0,
                     "currentLookahead": [
-                        0.198355033993721,
+                        -0.33348944783210754,
                         0.0,
-                        -0.1833362728357315
+                        -0.34687715768814087
                     ],
-                    "currentPitch": -22.0,
+                    "currentPitch": -30.500009536743164,
                     "currentYaw": 90.0,
                     "dashFov": 90.0,
                     "distance": 17.5,
                     "fovDamping": 8.5,
+                    "isLockOnActive": false,
+                    "lockOnPitch": -30.0,
+                    "lockOnRotationDamping": 6.0,
+                    "lockOnSubjugationRatio": 0.3499999940395355,
+                    "lockOnTarget": 0,
                     "lookSpeedX": 120.0,
                     "lookSpeedY": 120.0,
                     "lookaheadDamping": 1.600000023841858,
@@ -43,15 +48,15 @@
                     "isStatic": false,
                     "parent": 2,
                     "position": [
-                        1.9172172546386719,
-                        6.50405740737915,
-                        -31.874248504638672
+                        -3.8807387351989746,
+                        8.833580017089844,
+                        -1.8262691497802734
                     ],
                     "rotation": [
-                        0.1908089965581894,
-                        -2.145414512710886e-08,
-                        4.170262357661159e-09,
-                        0.9816272258758545
+                        0.2630313038825989,
+                        -2.1086096424483003e-08,
+                        5.748731268795382e-09,
+                        0.9647873044013977
                     ],
                     "scale": [
                         1.0,

@@ -86,6 +86,7 @@ public:
     float                     GetScreenWidth()   const noexcept { return _gfxDevice.GetWidth(); }
     float                     GetScreenHeight()  const noexcept { return _gfxDevice.GetHeight(); }
     ID3D11DepthStencilView*   GetDepthStencilView()   noexcept { return _gfxDevice.GetDepthStencilView(); }
+    ID3D11ShaderResourceView* GetDepthSRV()           noexcept { return _gfxDevice.GetDepthSRV(); }
     ID3D11RenderTargetView*   GetBackBufferRTV()       noexcept { return _gfxDevice.GetBackBufferRTV(); }
     ID3D11Buffer*             GetSceneConstantBuffer() noexcept { return _gfxDevice.GetSceneConstantBuffer(); }
     ID3D11RenderTargetView*   GetGameRTV()             noexcept { return _gfxDevice.GetGameRTV(); }
@@ -137,6 +138,8 @@ public:
      */
     RenderFrameContext MakeFrameContext(ID3D11RenderTargetView* overrideRTV = nullptr) noexcept;
 
+    void SetSceneNormalSRV(ID3D11ShaderResourceView* srv) noexcept { _sceneNormalSRV = srv; }
+
 private:
 
     // ---- カメラ（Graphics が唯一の所有者） ----
@@ -166,4 +169,5 @@ private:
 
     bool _deviceLost = false; ///< Present() がデバイスロストを検出するとセットされる
 
+    ID3D11ShaderResourceView* _sceneNormalSRV = nullptr;
 };

@@ -1,0 +1,242 @@
+{
+    "entities": [
+        {
+            "components": {
+                "AnimParameters": null,
+                "AnimStateMachine": {
+                    "graphPath": "Assets/Animations/Nodes/MurielAnimNode.json"
+                },
+                "Animation": null,
+                "Animator": {
+                    "isLoop": false,
+                    "playbackSpeed": 0.5
+                },
+                "BehaviorTreeComponent": {
+                    "assetPath": "Assets/BehaviorTree/BossSlashTest.json",
+                    "phase2AssetPath": "Data/BehaviorTree/BossAI_Phase2.json",
+                    "phase2HealthThreshold": 50.0
+                },
+                "BossActionComponent": {
+                    "acceleration": 10.0,
+                    "chargeSpeed": 25.0,
+                    "currentMoveSpeed": 0.0,
+                    "currentState": 2,
+                    "deceleration": 15.0,
+                    "idleTurnSpeed": 4.0,
+                    "runSpeed": 8.0,
+                    "turnSpeed": 10.0,
+                    "walkSpeed": 3.0
+                },
+                "BossCommandComponent": {
+                    "currentActionId": 1101,
+                    "requestFormation": 0,
+                    "targetPlayerId": 0
+                },
+                "Character Movement Input": {
+                    "currentVelocity": [
+                        0.954632043838501,
+                        0.0,
+                        -1.7907869815826416
+                    ],
+                    "dashRequested": false,
+                    "desiredVelocity": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "isAttackRequested": false,
+                    "jumpRequested": false,
+                    "lookTargetPos": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "overrideSpeed": -1.0
+                },
+                "HealthComponent": {
+                    "currentHealth": 900.0,
+                    "invincibilityDuration": 0.20000000298023224,
+                    "maxHealth": 1000.0
+                },
+                "Hurtbox": {
+                    "damageMultiplier": 1.0
+                },
+                "Jolt Capsule Collider": {
+                    "halfHeight": 3.9000000953674316,
+                    "localOffset": [
+                        0.0,
+                        3.4000000953674316,
+                        0.0
+                    ],
+                    "localRotationEuler": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "radius": 1.399999976158142
+                },
+                "Jolt Character Config": {
+                    "apexGravityScale": 0.699999988079071,
+                    "apexVelocityThreshold": 0.30000001192092896,
+                    "characterMass": 148.0,
+                    "deceleration": 5.900000095367432,
+                    "fallGravityScale": 10.399999618530273,
+                    "gravityScale": 6.300000190734863,
+                    "jumpSpeed": 30.0,
+                    "maxSlopeAngle": 45.0,
+                    "maxStepHeight": 0.5,
+                    "objectLayer": 2,
+                    "walkSpeed": 30.0
+                },
+                "Just Evade Component": {
+                    "isJustSuccess": false
+                },
+                "Knockback (ノックバック)": {
+                    "duration": 0.18000000715255737
+                },
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Enemy/Muriel/Muriel.gltf"
+                },
+                "Name": {
+                    "name": "Muriel"
+                },
+                "StateTree": {
+                    "assetName": "Commander"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 3,
+                    "position": [
+                        4.368585109710693,
+                        -0.041816458106040955,
+                        24.459253311157227
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.9696617126464844,
+                        0.0,
+                        0.24445073306560516
+                    ],
+                    "scale": [
+                        3.5,
+                        3.5,
+                        3.5
+                    ]
+                }
+            },
+            "lid": 1
+        },
+        {
+            "components": {
+                "BoneAttachmentComponent": {
+                    "boneName": "hand_r"
+                },
+                "Hitbox": {
+                    "damageAmount": 5.0,
+                    "hitStopDuration": 0.15000000596046448,
+                    "hitStopScale": 0.0,
+                    "isActive": false,
+                    "knockback": 5.0
+                },
+                "Jolt Capsule Collider": {
+                    "halfHeight": 3.700000047683716,
+                    "localOffset": [
+                        0.0,
+                        1.7000000476837158,
+                        0.0
+                    ],
+                    "localRotationEuler": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "radius": 1.2999999523162842
+                },
+                "Jolt Rigidbody": {
+                    "friction": 0.20000000298023224,
+                    "gravityFactor": 1.0,
+                    "initialVelocity": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "isSensor": true,
+                    "motionType": 1,
+                    "objectLayer": 4,
+                    "restitution": 0.0,
+                    "useCCD": false
+                },
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Weapon/MurielSword/MurielSword.gltf"
+                },
+                "Name": {
+                    "name": "MurielSword"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 1,
+                    "position": [
+                        0.05000000074505806,
+                        0.0,
+                        0.019999999552965164
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        -0.06975647062063217,
+                        0.9975640773773193
+                    ],
+                    "scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ]
+                },
+                "Weapon Trail": {
+                    "animControlled": true,
+                    "baseOffset": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "color": [
+                        1.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "emitting": false,
+                    "lifeTime": 0.18000000715255737,
+                    "minDistance": 0.019999999552965164,
+                    "tipOffset": [
+                        0.0,
+                        2.4700000286102295,
+                        0.0
+                    ]
+                }
+            },
+            "lid": 2
+        }
+    ],
+    "magic": 1397506883,
+    "name": "Muriel",
+    "version": 1
+}

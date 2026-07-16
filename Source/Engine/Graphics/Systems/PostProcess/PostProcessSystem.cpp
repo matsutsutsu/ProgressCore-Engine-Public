@@ -2,6 +2,20 @@
 #include "Engine/Graphics/Shader/PostProcess/PostProcessManager.h"
 #include "Engine/Graphics/Shader/PostProcess/BloomEffect.h"
 #include "Engine/Graphics/Shader/PostProcess/DistortionEffect.h"
+#include "Engine/Graphics/Shader/PostProcess/RadialBlurEffect.h"
+#include "Engine/Graphics/Components/PostProcess/RadialBlurConfigComponent.h"
+#include "Engine/Graphics/Shader/PostProcess/DepthOfFieldEffect.h"
+#include "Engine/Graphics/Components/PostProcess/DepthOfFieldConfigComponent.h"
+#include "Engine/Graphics/Shader/PostProcess/VignetteEffect.h"
+#include "Engine/Graphics/Components/PostProcess/VignetteConfigComponent.h"
+#include "Engine/Graphics/Shader/PostProcess/ChromaticAberrationEffect.h"
+#include "Engine/Graphics/Components/PostProcess/ChromaticAberrationConfigComponent.h"
+#include "Engine/Graphics/Shader/PostProcess/ColorGradingEffect.h"
+#include "Engine/Graphics/Components/PostProcess/ColorGradingConfigComponent.h"
+#include "Engine/Graphics/Shader/PostProcess/SSAOEffect.h"
+#include "Engine/Graphics/Components/PostProcess/SSAOConfigComponent.h"
+#include "Engine/Graphics/Shader/PostProcess/ContactShadowEffect.h"
+#include "Engine/Graphics/Components/PostProcess/ContactShadowConfigComponent.h"
 
 
 
@@ -48,6 +62,20 @@ void PostProcessSystem::Update(float dt) {
     // 4. マネージャーへ一括転送
     // -------------------------------------------------------
 
+    if (auto* comp = _world->GetSingletonComponent<SSAOConfigComponent>()) {
+      if (auto* ssao = postProcess->GetEffect<SSAOEffect>()) {
+        ssao->SetEnabled(comp->enable);
+        ssao->UpdateParams(comp->data);
+      }
+    }
+
+    if (auto* comp = _world->GetSingletonComponent<ContactShadowConfigComponent>()) {
+      if (auto* contact = postProcess->GetEffect<ContactShadowEffect>()) {
+        contact->SetEnabled(comp->enable);
+        contact->UpdateParams(comp->data);
+      }
+    }
+
     // ★ Distortion の転送処理を追加
     if (auto *comp =
             _world->GetSingletonComponent<DistortionConfigComponent>()) {
@@ -58,10 +86,47 @@ void PostProcessSystem::Update(float dt) {
       }
     }
 
+    if (auto* comp = _world->GetSingletonComponent<RadialBlurConfigComponent>()) {
+      if (auto* radial = postProcess->GetEffect<RadialBlurEffect>()) {
+        radial->SetEnabled(comp->enable);
+        radial->UpdateParams(comp->data);
+      }
+    }
+
+    if (auto* comp = _world->GetSingletonComponent<DepthOfFieldConfigComponent>()) {
+      if (auto* dof = postProcess->GetEffect<DepthOfFieldEffect>()) {
+        dof->SetEnabled(comp->enable);
+        dof->UpdateParams(comp->data);
+      }
+    }
+
     if (auto* bloom = postProcess->GetEffect<BloomEffect>()) {
         bloom->SetEnabled(finalBloom.enable);
         bloom->UpdateParams(finalBloom.data);
     }
+
+    if (auto* comp = _world->GetSingletonComponent<ChromaticAberrationConfigComponent>()) {
+      if (auto* chroma = postProcess->GetEffect<ChromaticAberrationEffect>()) {
+        chroma->SetEnabled(comp->enable);
+        chroma->UpdateParams(comp->data);
+      }
+    }
+
+    if (auto* comp = _world->GetSingletonComponent<VignetteConfigComponent>()) {
+      if (auto* vignette = postProcess->GetEffect<VignetteEffect>()) {
+        vignette->SetEnabled(comp->enable);
+        comp->data.vigTime += dt;
+        vignette->UpdateParams(comp->data);
+      }
+    }
+
+    if (auto* comp = _world->GetSingletonComponent<ColorGradingConfigComponent>()) {
+      if (auto* grading = postProcess->GetEffect<ColorGradingEffect>()) {
+        grading->SetEnabled(comp->enable);
+        grading->UpdateParams(comp->data);
+      }
+    }
+
     postProcess->toneMapConfig = finalToneMap;
 }
 

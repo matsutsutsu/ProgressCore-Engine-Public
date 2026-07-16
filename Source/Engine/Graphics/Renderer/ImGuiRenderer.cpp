@@ -4,7 +4,7 @@
 #include <ImGuizmo.h>
 #include "ImGuiRenderer.h"
 #include "implot.h"
-
+#include <tracy/Tracy.hpp>
 #include"Engine/UI/ImGui/ImGuiThemes.h"
 #endif
 
@@ -12,10 +12,13 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 
 // 静的メンバ変数の実体定義
 ImFont *ImGuiRenderer::s_editorFont = nullptr;
+bool ImGuiRenderer::s_platformWindowsEnabled = true;
 
 // 初期化
 void ImGuiRenderer::Initialize(HWND hWnd, ID3D11Device* device, ID3D11DeviceContext* dc)
 {
+    ZoneScopedN("ImGuiRenderer::Initialize"); 
+
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -165,6 +168,8 @@ void ImGuiRenderer::Initialize(HWND hWnd, ID3D11Device* device, ID3D11DeviceCont
 // 終了化
 void ImGuiRenderer::Finalize()
 {
+    ZoneScopedN("ImGuiRenderer::Finalize");
+
 	ImPlot::DestroyContext();
 
 	ImGui_ImplDX11_Shutdown();
@@ -174,7 +179,9 @@ void ImGuiRenderer::Finalize()
 
 // フレーム開始処理
 void ImGuiRenderer::NewFrame()
-{
+{    
+    ZoneScopedN("ImGuiRenderer::NewFrame");
+
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 
@@ -227,18 +234,39 @@ void ImGuiRenderer::NewFrame()
 // 描画実行
 void ImGuiRenderer::Render(ID3D11DeviceContext* context)
 {
-	// Rendering
-	ImGui::Render();
+    ZoneScopedN("ImGuiRenderer::Render (Total)"); 
 
-	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-
-	// Update and Render additional Platform Windows
-	ImGuiIO& io = ImGui::GetIO();
-	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 	{
-		ImGui::UpdatePlatformWindows();
-		ImGui::RenderPlatformWindowsDefault();
-	}
+        // 1. CPU側でUIの頂点データなどを計算・確定させる処理
+        ZoneScopedN("ImGui::Render (Build Draw Data)");
+        ImGui::Render();
+    }
+
+    {
+        // 2. 確定した頂点データをDX11経由でGPUに流し込む処理
+        ZoneScopedN("ImGui_ImplDX11_RenderDrawData (GPU Submit)");
+        ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+    }
+
+    // 3. Viewports機能（ウィンドウをエンジンの外に引っ張り出した場合）の処理
+    ImGuiIO &io = ImGui::GetIO();
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+        {
+            ZoneScopedN("ImGui::UpdatePlatformWindows");
+            ImGui::UpdatePlatformWindows();
+        }
+        if (s_platformWindowsEnabled)
+        {
+            ZoneScopedN("ImGui::RenderPlatformWindowsDefault");
+            ImGui::RenderPlatformWindowsDefault();
+        }
+    }
+}
+
+void ImGuiRenderer::SetPlatformWindowsEnabled(bool enabled)
+{
+    s_platformWindowsEnabled = enabled;
 }
 
 // WIN32メッセージハンドラー

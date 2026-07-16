@@ -55,7 +55,11 @@ public:
      * @param targetRTV nullptr の場合は内部 SDR バッファに出力（ImGui 用）。
      */
     ID3D11ShaderResourceView* EndScene(ID3D11DeviceContext* dc,
-        ID3D11RenderTargetView* targetRTV = nullptr);
+        ID3D11RenderTargetView* targetRTV = nullptr,
+        ID3D11ShaderResourceView* sceneDepthSRV = nullptr,
+        ID3D11ShaderResourceView* sceneNormalSRV = nullptr);
+
+    void GrabSceneColor(ID3D11DeviceContext* dc);
 
     // ================================================================
     //  エフェクト管理 API
@@ -107,6 +111,7 @@ private:
     //  HDR キャンバスを 2枚 用意する（Ping-Pong用）
     RenderTargetHandle _hdrBuffers[2];
     RenderTargetHandle _outputSDR{};
+    RenderTargetHandle _sceneColorCopy{};
 
     std::vector<std::unique_ptr<IPostEffect>> _effects;
 

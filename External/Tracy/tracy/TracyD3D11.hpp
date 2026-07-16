@@ -219,29 +219,22 @@ public:
 
         auto begin = m_previousCheckpoint;
         auto end = m_nextCheckpoint;
-        for (auto i = begin; i != end; ++i)
+        auto i = begin;
+        for (; i != end; ++i)
         {
             uint32_t k = RingIndex(i);
             UINT64 timestamp = 0;
 
-            HRESULT hr;
-            // S_FALSE は「エラーではなく、まだ書き込み中」という意味。S_OKになるまでほんの少し待つ。
-            while ((hr = m_immediateDevCtx->GetData(m_queries[k], &timestamp, sizeof(timestamp), 0)) == S_FALSE)
+            // POLL（非ブロッキング・単発）で回収する。
+            // まだ書き込み中(S_FALSE)なら CPU をスピンさせず、ここで打ち切る。
+            // 重要：破棄せず「回収できた i まで」だけチェックポイントを進め、
+            //       残り [i, end) は次フレームの Collect が続きから回収する。
+            //   → 空 while による CPU スピン（旧実装）も、
+            //     無条件前進による GPU ゾーン全消失（前回の誤修正）も両方回避する。
+            if (m_immediateDevCtx->GetData(m_queries[k], &timestamp, sizeof(timestamp), 0) != S_OK)
             {
-                // ドライバのラグを吸収するための空ループ（数マイクロ秒で抜けます）
-            }
-
-            if (hr != S_OK)
-            {
-                // デバイスロストなど、S_FALSE以外の致命的なエラーが起きた場合のみ安全に抜ける
                 break;
             }
-
-            //if (m_immediateDevCtx->GetData(m_queries[k], &timestamp, sizeof(timestamp), 0) != S_OK)
-            //{
-            //    TracyD3D11Panic("timestamp expected to be ready, but it was not!");
-            //    break;
-            //}
             timestamp *= (1000000000ull / disjoint.Frequency);
             auto* item = Profiler::QueueSerial();
             MemWrite(&item->hdr.type, QueueType::GpuTime);
@@ -251,10 +244,17 @@ public:
             Profiler::QueueSerialFinish();
         }
 
+        // 実際に回収できたところまでだけ前進させる（未回収ぶんのドロップ防止の肝）。
+        m_previousCheckpoint = i;
+
+        // このレンジを最後まで回収し切ったときだけ disjoint を張り直す。
+        // 途中までなら disjoint はそのまま残し、次フレームに続きから回収する。
         // disjoint timestamp queries should only be invoked once per frame or less
         // https://learn.microsoft.com/en-us/windows/win32/api/d3d11/ne-d3d11-d3d11_query
-        m_immediateDevCtx->Begin(m_disjointQuery);
-        m_previousCheckpoint = m_nextCheckpoint;
+        if (i == end)
+        {
+            m_immediateDevCtx->Begin(m_disjointQuery);
+        }
     }
 
 private:

@@ -62,19 +62,30 @@ void GraphicsDevice::Initialize(HWND hWnd)
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
 
-    // ---- 深度ステンシル ----
+    // ---- 深度ステンシル (SRV対応: typeless テクスチャ + DSV + SRV) ----
     {
         Microsoft::WRL::ComPtr<ID3D11Texture2D> tex;
         D3D11_TEXTURE2D_DESC d{};
         d.Width = _width; d.Height = _height;
         d.MipLevels = 1; d.ArraySize = 1;
-        d.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+        d.Format = DXGI_FORMAT_R24G8_TYPELESS;
         d.SampleDesc = { 1, 0 };
         d.Usage = D3D11_USAGE_DEFAULT;
-        d.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+        d.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
         hr = _device->CreateTexture2D(&d, nullptr, tex.GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
-        hr = _device->CreateDepthStencilView(tex.Get(), nullptr, _depthStencilView.GetAddressOf());
+
+        D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
+        dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+        dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+        hr = _device->CreateDepthStencilView(tex.Get(), &dsvDesc, _depthStencilView.GetAddressOf());
+        _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+
+        D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+        srvDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+        srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+        srvDesc.Texture2D.MipLevels = 1;
+        hr = _device->CreateShaderResourceView(tex.Get(), &srvDesc, _depthSRV.GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
 
@@ -99,8 +110,7 @@ void GraphicsDevice::Initialize(HWND hWnd)
     }
 
     // ---- CbScene 定数バッファ (b8) ----
-    // サイズは Graphics 側の CbSceneData と一致させること。
-    // alignas(16) CbSceneData = XMMATRIX×3 + XMFLOAT4×3 = 192+48 = 240 bytes
+    // サイズは ShaderShared.h の GpuData::CbScene と一致（sizeof で自動追従）
     {
         D3D11_BUFFER_DESC bd{};
         bd.ByteWidth = sizeof(GpuData::CbScene); // ShaderShared.h で定義
@@ -139,6 +149,7 @@ void GraphicsDevice::Shutdown()
     _gameRTV.Reset();
     _gameTex.Reset();
     _depthStencilView.Reset();
+    _depthSRV.Reset();
     _backBufferRTV.Reset();
     _swapChain.Reset();
     _context.Reset();

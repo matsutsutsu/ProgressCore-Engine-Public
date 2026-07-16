@@ -6,11 +6,22 @@
 
 #include "Engine/Animation/Components/AnimParametersComponent.h"
 #include "Engine/Core/Math/StringHash.h"
+#include "Game/Logics/AI/Drone/DroneComponent.h"
 
 #include "Game/Logics/GameEvent/GameEvents.h"
 #include "Engine/Timer/TimeState.h"
+#include "Engine/Graphics/Components/Impact/JustEvadeEffectComponent.h"
 
 using namespace CCL::ECS;
+
+// JustEvadeSystem.cpp に追加（無名関数 or メンバ）
+static bool IsDroneHostile(const DroneComponent *drone)
+{
+    if (!drone) return false;
+    // 突撃系の状態だけを「危険」とみなす
+    return drone->currentState == DroneState::FireCharge;
+}
+
 
 // アニメーション掲示板へ書き込むトリガーのハッシュ
 static const uint32_t HASH_TRIG_JUST_EVADE = CCL::Utils::HashString("OnJustEvade");
@@ -47,19 +58,18 @@ void JustEvadeSystem::Initialize()
         }
 
         // =======================================================
-        // 3. エフェクト・残像・SEの呼び出し (Game Feel)
+        // 3. 画面演出（ウィッチタイム）のトリガー
         // =======================================================
-        // EventBus を使って、再生すべきSEやエフェクトをシステムに命令します。
-        // （※これらの構造体は例です。あなたのプロジェクトの構造に合わせてください）
+        // シーンに置いた JustEvadeEffectComponent(singleton) の timer を立てるだけ。
+        // 実際の色調/放射ブラー/色収差/ビネットの駆動は JustEvadeEffectSystem(R02) が
+        // 毎フレーム行い、演出後は元の PP 値へ自動復元する。
+        if (auto *fx = _world->GetSingletonComponent<JustEvadeEffectComponent>())
+        {
+            fx->Trigger();
+        }
 
-        // 音響：甲高いガラスが割れるような音
+        // TODO(任意): 音響（甲高いガラス音）や残像の追加はここに足す。
         // _world->GetEventBus().Publish(SoundRequestEvent{"event:/SFX/JustEvade", ev.playerID});
-
-        // 画面効果：色収差（Chromatic Aberration）を強めるイベント
-        // _world->GetEventBus().Publish(PostProcessPunchEvent{PostProcessType::ChromaticAberration, 1.0f});
-
-        // 残像：ダッシュ残像を3倍の濃度・赤色で出す命令
-        // _world->GetEventBus().Publish(GhostTrailRequestEvent{ev.playerID, Color::Red, 0.5f});
     });
 
 
@@ -109,6 +119,13 @@ void JustEvadeSystem::CheckJustEvade(EntityID playerCandidate, EntityID otherCan
 
     // 3. 【ガード条件】同じ敵に対する多段発動を防ぐ (既存のブラックリスト機能)
     if (evade->lastEvadedTarget == otherCandidate) return;
+
+     // 相手がドローンで、かつ「攻撃中」でなければ成立させない
+    auto *otherDrone = _world->GetComponent<DroneComponent>(otherCandidate);
+    if (otherDrone && !IsDroneHostile(otherDrone)) return;
+    //   → 攻撃中でない陣形ドローンに突っ込んでも回避は起きない
+    //   → otherDrone が nullptr（ボス本体の攻撃など）の場合は従来通り成立
+
 
     // =====================================================================
     // 5. 判定成立

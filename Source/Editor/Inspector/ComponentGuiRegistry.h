@@ -25,6 +25,9 @@ public:
     // 名前と関数をセットで保持する構造体
     struct Entry {
         std::string name;
+        std::string category     = "Misc"; // インスペクタのカテゴリ見出し
+        int         sortPriority = 1000;   // 小さいほど先頭
+        bool        hidden       = false;  // true でインスペクタ非表示
         GuiFunc guiFunc = nullptr;
         CtorFunc ctor = nullptr;
         size_t size = 0;  
@@ -46,13 +49,18 @@ public:
 
 
     // T: 型, name: 表示名, func: 描画関数
-    template <typename T> void Register(const std::string &name, GuiFunc func)
+    template <typename T>
+    void Register(const std::string &name, const std::string &category,
+        int sortPriority, bool hidden, GuiFunc func)
     {
         Entry entry;
-        entry.name    = name;
-        entry.guiFunc = func;
-        entry.ctor    = [](void *ptr) { new (ptr) T(); };
-        entry.size    = sizeof(T);
+        entry.name         = name;
+        entry.category     = category;
+        entry.sortPriority = sortPriority;
+        entry.hidden       = hidden;
+        entry.guiFunc      = func;
+        entry.ctor         = [](void *ptr) { new (ptr) T(); };
+        entry.size         = sizeof(T);
 
         // TypeDataを作って全情報を取得
         TypeData td;
@@ -76,7 +84,7 @@ public:
 
         std::type_index key = typeid(T);
 
-        // ★修正: operator[] は使わず insert で安全に登録（コンパイルエラー解決）
+        //  operator[] は使わず insert で安全に登録（コンパイルエラー解決）
         _registry.insert({key, entry});
 
         // ★最強のハック: TypeID の取得を「実行時」まで遅延させる
@@ -109,6 +117,37 @@ public:
         auto it = _registry.find(idIt->second);
         if (it != _registry.end()) return it->second.name;
         return "Unknown Component (ID: " + std::to_string(id) + ")";
+    }
+
+    // カテゴリ見出し名。未登録は "Misc"。
+    std::string GetCategory(TypeID id)
+    {
+        ResolveBindings();
+        auto idIt = _typeIdToIndex.find(id);
+        if (idIt == _typeIdToIndex.end()) return "Misc";
+        auto it = _registry.find(idIt->second);
+        if (it != _registry.end() && !it->second.category.empty())
+            return it->second.category;
+        return "Misc";
+    }
+
+
+    // 並び順 (小さいほど先頭)。未登録は最後方。
+    int GetSortPriority(TypeID id) {
+        ResolveBindings();
+        auto idIt = _typeIdToIndex.find(id);
+        if (idIt == _typeIdToIndex.end()) return 100000;
+        auto it = _registry.find(idIt->second);
+        return (it != _registry.end()) ? it->second.sortPriority : 100000;
+    }
+
+    // インスペクタ非表示か
+    bool IsHidden(TypeID id) {
+        ResolveBindings();
+        auto idIt = _typeIdToIndex.find(id);
+        if (idIt == _typeIdToIndex.end()) return false;
+        auto it = _registry.find(idIt->second);
+        return (it != _registry.end()) ? it->second.hidden : false;
     }
 
     void DrawInspector(TypeID id, CCL::ECS::Core::World* world, EntityID entity) {

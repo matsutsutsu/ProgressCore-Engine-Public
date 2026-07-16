@@ -320,7 +320,7 @@ void FileDialog::Initialize(const std::filesystem::path& settingsPath)
 
     RegisterPreset("BehaviorTreeNode", {
     .filters    =  { { "Behavior Tree", "*.json" } },
-    .defaultDir = "Assets/AI",
+    .defaultDir = "Assets/BehaviorTree",
     .defaultExt = "json",
     });
 

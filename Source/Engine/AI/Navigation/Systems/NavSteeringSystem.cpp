@@ -85,4 +85,4 @@ void NavSteeringSystem::Update(float dt) {
         });
 }
 
-REGISTER_LOGIC_SYSTEM(NavSteeringSystem, Priority::LogicStage::L02_AI_Act)
+//REGISTER_LOGIC_SYSTEM(NavSteeringSystem, Priority::LogicStage::L02_AI_Act)

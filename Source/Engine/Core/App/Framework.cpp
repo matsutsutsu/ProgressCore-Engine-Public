@@ -22,13 +22,14 @@
 #include "Editor/Windows/ConsoleWindow.h"
 
 #include "EngineServices.h"
-
+#include "Engine/Core/Components/RenderInterpState.h"
 
 #ifdef ENABLE_EDITOR
 #include <imgui.h>
 #include "Editor/Core/EditorWindowManager.h"
 #include "Editor/Core/EditorContext.h"
 #include "Engine/Graphics/Renderer/ImGuiRenderer.h"
+#include "Engine/Graphics/Renderer/RenderDebugRegistry.h"
 #endif
 
 #include "tracy/Tracy.hpp"
@@ -117,7 +118,6 @@ Framework::Framework(HWND hWnd)
 // デストラクタ
 Framework::~Framework()
 {
- 
 	ZoneScopedN("Framework::Destrucor");
 
 
@@ -129,21 +129,38 @@ Framework::~Framework()
 #endif
 
 	// シーン終了化
-	SceneManager::Instance().Clear();
+    {
+        ZoneScopedN("Finalize: SceneManager");
+        SceneManager::Instance().Clear();
+    }
 #ifdef ENABLE_EDITOR
-	// IMGUI終了化
-	ImGuiRenderer::Finalize();
+
+	{
+        ZoneScopedN("Finalize: ImGuiRenderer");
+        // IMGUI終了化
+        ImGuiRenderer::Finalize();
+    }
+
 #endif
-	// ★ ダイアログ履歴を保存
-	FileDialog::SaveHistory();
+    {
+        ZoneScopedN("Finalize:  SaveFileDialogHistory");
+        // ★ ダイアログ履歴を保存
+        FileDialog::SaveHistory();
+    }
 
-	Logger::Instance().Flush();
-	Logger::Instance().ClearSinks(); // shared_ptr 循環参照防止
+	{
+        ZoneScopedN("Finalize: Logger");
+        Logger::Instance().Flush();
+        Logger::Instance().ClearSinks(); // shared_ptr 循環参照防止
+    }
 
-	// ④ 描画パイプラインの破棄 (ここで ResourceManager のクリアも行われる)
-	// 最後に残ったGPUの親玉を破壊します。
-	// ここでついに、あの「ReportLiveDeviceObjects」のレポートが出力されます！
-	Graphics::Instance().Shutdown();
+	{
+        ZoneScopedN("Finalize: Graphics::Shutdown");
+        // ④ 描画パイプラインの破棄 (ここで ResourceManager のクリアも行われる)
+        // 最後に残ったGPUの親玉を破壊します。
+        // ここでついに、あの「ReportLiveDeviceObjects」のレポートが出力されます！
+        Graphics::Instance().Shutdown();
+    }
 
 }
 
@@ -158,21 +175,10 @@ void Framework::FixedUpdate(float fixedTime)
     ZoneScopedN("Framework::FixedUpdate");
 
 
-	bool shouldUpdateLogic = true;
-
-#ifdef ENABLE_EDITOR
-	// エディタが有効な場合、Play状態の時だけロジックを回す
-	if (m_editorContext.playState != EditorPlayState::Playing) {
-		shouldUpdateLogic = false;
-	}
-#endif
-
-	// ★ 関所：shouldUpdateLogic が true の時だけゲーム内時間が進む
-	if (shouldUpdateLogic) {
-		// SceneManager に FixedUpdate を追加して呼ぶのが理想
-		// まだ実装していない場合は、一旦コメントアウトかエラー回避しておく
-		SceneManager::Instance().FixedUpdate(fixedTime);
-	}
+	// 一時停止/コマ送りの判断は Run() 側で一元管理する。
+	//   ここが呼ばれた時点で「1物理ステップ進めてよい」ことは確定しているため、
+	//   本関数は無条件にロジックを進める（停止中は Run() が本関数を呼ばない）。
+	SceneManager::Instance().FixedUpdate(fixedTime);
 
 
 	 // 使い終わった入力フラグをここでリセット
@@ -320,6 +326,18 @@ void Framework::Render(float elapsedTime)
 			if (m_editorWindowManager) {
 				// ★ ここで完成したゲーム画面のテクスチャをUIに渡す！
 				m_editorContext.gameSRV = (void*)Graphics::Instance().GetGameSRV();
+
+				// デバッグ表示（Render Debug ウィンドウ）へ device レベルの SRV を登録する。
+				// パス出力ではないため、SRV が確定するこの位置（描画完了後）で申告する。
+				{
+					const uint32_t sw = static_cast<uint32_t>(Graphics::Instance().GetScreenWidth());
+					const uint32_t sh = static_cast<uint32_t>(Graphics::Instance().GetScreenHeight());
+					RenderDebugRegistry::Instance().Register({
+						"GameView (Final)", Graphics::Instance().GetGameSRV(), sw, sh, DebugTexKind::Color });
+					RenderDebugRegistry::Instance().Register({
+						"SceneDepth", Graphics::Instance().GetDepthSRV(), sw, sh, DebugTexKind::Depth });
+				}
+
 				m_editorWindowManager->Draw(m_editorContext);
 
 				if (m_editorWindowManager->IsVisible()) {
@@ -335,6 +353,13 @@ void Framework::Render(float elapsedTime)
 			if (auto tracyCtx = Graphics::Instance().GetTracyContext()) {
 				TracyD3D11Zone(tracyCtx, "ImGui Pass (GPU)");
 			}
+
+			// 一時停止中かつ UI 表示中のみ、切り離し OS 窓（セカンダリ Present）を許可
+			const bool allowPlatformWindows =
+			    m_editorWindowManager &&
+			    m_editorWindowManager->IsVisible() &&
+			    m_editorContext.isPaused;
+			ImGuiRenderer::SetPlatformWindowsEnabled(allowPlatformWindows);
 
 			// IMGUI描画
 			ImGuiRenderer::Render(dc);
@@ -434,15 +459,32 @@ int Framework::Run()
 			//_CrtSetBreakAlloc(121457);
 			//_CrtSetBreakAlloc(121196);
 			 
-			//_CrtSetBreakAlloc(2275584);
+			//_CrtSetBreakAlloc(57272);
 
 			// 2. 「死の螺旋」防止（Safety Cap）
 			// どんなに重くても、現実時間が 0.25秒 進んだことにして計算を打ち切る
 			// これがないと、処理落ち→計算量増える→さらに処理落ち... で停止する
 			if (frameTime > 0.1f) frameTime = 0.1f;
 
-			// 3. 時間を貯める
-			accumulator += frameTime;
+			// 一時停止中はゲーム内時間(accumulator)を進めない。
+			//   進めてしまうと FixedUpdate(ロジック)が止まって prevPosition/position が
+			//   固定されているのに alpha だけ実時間で 0↔1 に揺れ続け、
+			//   TransformInterpolationSystem が両者を往復補間してキャラが「震える」。
+			bool logicFrozen = false;
+			bool doSingleStep = false;
+#ifdef ENABLE_EDITOR
+			logicFrozen = m_editorContext.isPaused;
+			// コマ送り：一時停止中に要求されたら、このフレームだけ1物理ステップ進める
+			if (logicFrozen && m_editorContext.stepOneFrame) {
+				doSingleStep = true;
+			}
+			m_editorContext.stepOneFrame = false; // 要求は毎フレーム消費（連続送りはキー側のedge検出で防ぐ）
+#endif
+
+			// 3. 時間を貯める（停止中は貯めない）
+			if (!logicFrozen) {
+				accumulator += frameTime;
+			}
 
 			// 1秒ごとの計測処理
 			m_debugTimer += frameTime;
@@ -511,6 +553,13 @@ int Framework::Run()
 			int updateCount = 0;
 			const int MAX_STEPS = 4; // 1フレームに許容する最大更新回数
 
+			// コマ送り：accumulator に関係なく、確実に1物理ステップだけ進める。
+			//   一時停止中なので下の通常ループ(while)は accumulator が溜まらず回らない。
+			if (doSingleStep)
+			{
+				FixedUpdate(FIXED_DT);
+				m_fixedUpdateCounter++;
+			}
 
 			while (accumulator >= FIXED_DT && updateCount < MAX_STEPS)
 			{
@@ -537,6 +586,24 @@ int Framework::Run()
 				accumulator = fmod(accumulator, FIXED_DT);
 			}
 
+			
+			// ===============================================================
+            // ★ 描画補間係数の算出とWorldへの供給
+            //   accumulator / FIXED_DT = 次の物理ステップに対してどれだけ「先読み」しているか
+            // ===============================================================
+            if (auto *currentScene = SceneManager::Instance().GetCurrentScene())
+            {
+                if (auto *world = currentScene->GetWorld())
+                {
+                    // ★ 規約準拠：必ず HasResource でガードしてから参照更新（O(1)・ヒープ確保なし）
+                    if (world->HasResource<RenderInterpState>())
+                    {
+                        // 一時停止中は補間せず最新の確定姿勢(alpha=1)を表示して震えを止める
+                        world->GetResource<RenderInterpState>().alpha =
+                            logicFrozen ? 1.0f : static_cast<float>(accumulator / FIXED_DT);
+                    }
+                }
+            }
 
 
 			// 5. 残った時間 (accumulator) を使って「補間」を行うのが理想だが、
@@ -557,6 +624,9 @@ int Framework::Run()
 // メッセージハンドラ
 LRESULT CALLBACK Framework::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+    // ★ OSからのメッセージ処理がスパイクの原因になることもあるため追跡
+    ZoneScopedN("Framework::HandleMessage");
+
 #ifdef ENABLE_EDITOR
 	if (ImGuiRenderer::HandleMessage(hWnd, msg, wParam, lParam))
 		return true;

@@ -1,0 +1,47 @@
+{
+    "entities": [
+        {
+            "components": {
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Shape/Plane.glb"
+                },
+                "Name": {
+                    "name": "ShaderPlane"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 2,
+                    "position": [
+                        -14.699999809265137,
+                        3.5,
+                        0.0
+                    ],
+                    "rotation": [
+                        -0.7071067690849304,
+                        0.0,
+                        0.0,
+                        0.7071067690849304
+                    ],
+                    "scale": [
+                        3.0,
+                        3.0,
+                        3.0
+                    ]
+                }
+            },
+            "lid": 1
+        }
+    ],
+    "magic": 1397506883,
+    "name": "ShaderPlane",
+    "version": 1
+}

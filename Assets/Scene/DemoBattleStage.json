@@ -1,0 +1,377 @@
+{
+    "entities": [
+        {
+            "components": {
+                "BloomConfig": {
+                    "data.intensity": 1.0,
+                    "data.radius": 1.0,
+                    "data.softKnee": 0.20000000298023224,
+                    "data.threshold": 1.0,
+                    "enable": true
+                },
+                "DirectionalLight": {
+                    "color": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "groundColor": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.5333333611488342
+                    ],
+                    "intensity": 0.0,
+                    "skyColor": [
+                        0.0,
+                        0.10309933125972748,
+                        0.35135138034820557,
+                        1.0
+                    ]
+                },
+                "Fog": {
+                    "color": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "enabled": true,
+                    "end": 500.0,
+                    "heightDensity": 0.5,
+                    "heightStart": 0.0,
+                    "noiseScale": 0.10000000149011612,
+                    "noiseSpeed": [
+                        0.10000000149011612,
+                        0.05000000074505806
+                    ],
+                    "noiseStrength": 0.0,
+                    "rimColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "rimPower": 3.0,
+                    "rimStrength": 0.0,
+                    "start": 40.0
+                },
+                "Name": {
+                    "name": "LightingSetup"
+                },
+                "ShadowMapConfig": {
+                    "cascadeSplits": [
+                        15.0,
+                        50.0,
+                        200.0
+                    ],
+                    "shadowBias": 0.00019999999494757503,
+                    "shadowColor": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.5
+                    ]
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "ToneMapConfig": {
+                    "data.chromaticAberration": 0.0,
+                    "data.colorTint": [
+                        1.0,
+                        1.0,
+                        1.0,
+                        0.0
+                    ],
+                    "data.exposure": 0.4000000059604645
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 8,
+                    "position": [
+                        0.0,
+                        5.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.699999988079071,
+                        0.0,
+                        -0.5,
+                        0.9200000166893005
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                }
+            },
+            "lid": 1
+        },
+        {
+            "components": {
+                "CameraBodyFree": {
+                    "currentPitch": -6.399973392486572,
+                    "currentYaw": 355.60040283203125,
+                    "lookSpeed": 0.20000000298023224,
+                    "moveSpeed": 46.27208709716797
+                },
+                "Name": {
+                    "name": "FreeCamera"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 8,
+                    "position": [
+                        7.015992164611816,
+                        13.73703670501709,
+                        -51.039649963378906
+                    ],
+                    "rotation": [
+                        0.05578013136982918,
+                        -0.03832436352968216,
+                        0.002142655197530985,
+                        0.9977049827575684
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "VirtualCamera": {
+                    "blendTime": 2.0,
+                    "farClip": 1000.0,
+                    "fov": 60.29999923706055,
+                    "nearClip": 0.10000000149011612,
+                    "priority": 100
+                }
+            },
+            "lid": 2
+        },
+        {
+            "components": {
+                "AnimStateMachine": {
+                    "graphPath": "Assets/Animations/Nodes/TestAnimationNode.json"
+                },
+                "Animation": null,
+                "Animator": {
+                    "isLoop": true,
+                    "playbackSpeed": 1.0
+                },
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Player/SK_SciFITrooper_Man_03.gltf"
+                },
+                "Name": {
+                    "name": "DummyEnemy"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 8,
+                    "position": [
+                        1.0,
+                        -0.04807744920253754,
+                        1.0
+                    ],
+                    "rotation": [
+                        -0.0,
+                        -0.9950960874557495,
+                        -0.0,
+                        0.09891314804553986
+                    ],
+                    "scale": [
+                        3.5,
+                        3.5,
+                        3.5
+                    ]
+                }
+            },
+            "lid": 3
+        },
+        {
+            "components": {
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Shape/Sphere.glb"
+                },
+                "Name": {
+                    "name": "ShaderSphere"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 8,
+                    "position": [
+                        -6.5,
+                        3.5,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        3.0,
+                        3.0,
+                        3.0
+                    ]
+                }
+            },
+            "lid": 4
+        },
+        {
+            "components": {
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Stage/SM_Circular_Floor.glb"
+                },
+                "Name": {
+                    "name": "Clear Model"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 8,
+                    "position": [
+                        0.0,
+                        -6.800000190734863,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        10.0,
+                        10.0,
+                        10.0
+                    ]
+                }
+            },
+            "lid": 5
+        },
+        {
+            "components": {
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Stage/SM_Circular_Floor_Top.glb"
+                },
+                "Name": {
+                    "name": "Clear Model"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 8,
+                    "position": [
+                        0.0,
+                        1.2000000476837158,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        10.0,
+                        10.0,
+                        10.0
+                    ]
+                }
+            },
+            "lid": 6
+        },
+        {
+            "components": {
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Stage/Building/Sci-Fi_building_Modular_set_Low_Poly-9b38bb97/glb/scifi_modular.glb"
+                },
+                "Name": {
+                    "name": "Clear Model"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 8,
+                    "position": [
+                        225.5,
+                        -97.30000305175781,
+                        521.2999877929688
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        5.0,
+                        5.0,
+                        5.0
+                    ]
+                }
+            },
+            "lid": 7
+        }
+    ],
+    "magic": 1397506883,
+    "timestamp": 1783406276,
+    "version": 1
+}

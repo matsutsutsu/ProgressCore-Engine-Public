@@ -14,7 +14,7 @@ class Model;
 struct MaterialData;
 struct GPUParticleBufferSet;
 class RenderTarget;
-class AnimSequence;
+struct AnimSequence;
 
 // ============================================================================
 // [Data Structures]

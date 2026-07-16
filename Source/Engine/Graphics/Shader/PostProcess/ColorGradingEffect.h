@@ -1,0 +1,35 @@
+/// @file  ColorGradingEffect.h
+/// @brief カラーグレーディング(色調整/カラーフィルター)ポストエフェクト。
+#pragma once
+#include "IPostEffect.h"
+#include "Engine/Graphics/Shader/Shared/PostProcessShared.h"
+#include <d3d11.h>
+#include <wrl/client.h>
+#include <memory>
+
+class ColorGradingEffect : public IPostEffect
+{
+public:
+    ColorGradingEffect() = default;
+    ~ColorGradingEffect() override = default;
+
+    void Initialize(ID3D11Device* device, UINT width, UINT height) override;
+    void Resize(ID3D11Device* device, UINT width, UINT height) override;
+    void Process(ID3D11DeviceContext* dc,
+                 ID3D11ShaderResourceView* inputSRV,
+                 ID3D11RenderTargetView* outputRTV) override;
+
+    const char* GetName() const override { return "ColorGrading"; }
+    void UpdateParams(const GpuData::CbColorGradingData& data) { _cbData = data; }
+
+private:
+    GpuData::CbColorGradingData _cbData{};
+
+    struct Resources {
+        Microsoft::WRL::ComPtr<ID3D11VertexShader> vs;
+        Microsoft::WRL::ComPtr<ID3D11PixelShader>  ps;
+        Microsoft::WRL::ComPtr<ID3D11Buffer>       cb;
+        Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler;
+    };
+    std::unique_ptr<Resources> _res;
+};

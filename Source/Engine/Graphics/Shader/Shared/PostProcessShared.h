@@ -47,6 +47,89 @@ PP_STRUCT(CbDistortionData, SLOT_CB_DISTORTION) {
   float pad3[2];
 };
 
+// ============================================================================
+// RadialBlur パラメータレイアウト（合計16バイト）
+// ============================================================================
+PP_STRUCT(CbRadialBlurData, SLOT_CB_RADIALBLUR) {
+  float2 blurCenter;
+  float  blurStrength;
+  float  blurFalloff;
+};
+
+// ============================================================================
+// Vignette パラメータレイアウト（合計48バイト）
+// ============================================================================
+PP_STRUCT(CbVignetteData, SLOT_CB_VIGNETTE) {
+  float4 vigColor;
+  float  vigIntensity;
+  float  vigRadius;
+  float  vigSoftness;
+  float  vigPulseSpeed;
+  float  vigTime;
+  float  vigPad[3];
+};
+
+// ============================================================================
+// ChromaticAberration パラメータレイアウト（合計16バイト）
+// ============================================================================
+PP_STRUCT(CbChromaticData, SLOT_CB_CHROMATIC) {
+  float2 chromaCenter;
+  float  chromaStrength;
+  float  chromaFalloff;
+};
+
+// ============================================================================
+// ColorGrading パラメータレイアウト（合計32バイト）
+// ============================================================================
+PP_STRUCT(CbColorGradingData, SLOT_CB_COLORGRADING) {
+  float4 gradeTint;
+  float  gradeSaturation;
+  float  gradeContrast;
+  float  gradeBrightness;
+  float  gradeMixAmount;
+};
+
+// ============================================================================
+// DepthOfField パラメータレイアウト（合計16バイト）
+// ============================================================================
+PP_STRUCT(CbDepthOfFieldData, SLOT_CB_DOF) {
+  float dofFocusDistance;
+  float dofFocusRange;
+  float dofFalloff;
+  float dofMaxBlur;
+};
+
+// ============================================================================
+// SSAO パラメータレイアウト（合計16バイト）
+// ============================================================================
+PP_STRUCT(CbSSAOData, SLOT_CB_SSAO) {
+  float ssaoRadius;
+  float ssaoIntensity;
+  float ssaoBias;
+  float ssaoMaxDistance;
+};
+
+// ============================================================================
+// SSAOBlur パラメータレイアウト（合計16バイト）
+// ============================================================================
+PP_STRUCT(CbSSAOBlurData, SLOT_CB_SSAO_BLUR) {
+  float2 blurTexelStep;
+  float  blurDepthSigma;
+  float  blurMaxDistance;
+};
+
+// ============================================================================
+// ContactShadow パラメータレイアウト（合計32バイト）
+// ============================================================================
+PP_STRUCT(CbContactShadowData, SLOT_CB_CONTACTSHADOW) {
+  float csRayLength;
+  float csThickness;
+  float csBias;
+  float csIntensity;
+  float csMaxDistance;
+  float3 csPad;
+};
+
 #ifdef __cplusplus
 } // namespace GpuData
 // C++側のサイズ検証。ずれていたらコンパイルが止まる
@@ -55,6 +138,22 @@ static_assert(
     sizeof(GpuData::CbToneMapData) == 32, "CbToneMapData size mismatch");
 static_assert(
     sizeof(GpuData::CbDistortionData) == 16, "CbDistortionData size mismatch");
+static_assert(
+    sizeof(GpuData::CbRadialBlurData) == 16, "CbRadialBlurData size mismatch");
+static_assert(
+    sizeof(GpuData::CbVignetteData) == 48, "CbVignetteData size mismatch");
+static_assert(
+    sizeof(GpuData::CbChromaticData) == 16, "CbChromaticData size mismatch");
+static_assert(
+    sizeof(GpuData::CbColorGradingData) == 32, "CbColorGradingData size mismatch");
+static_assert(
+    sizeof(GpuData::CbDepthOfFieldData) == 16, "CbDepthOfFieldData size mismatch");
+static_assert(
+    sizeof(GpuData::CbSSAOData) == 16, "CbSSAOData size mismatch");
+static_assert(
+    sizeof(GpuData::CbSSAOBlurData) == 16, "CbSSAOBlurData size mismatch");
+static_assert(
+    sizeof(GpuData::CbContactShadowData) == 32, "CbContactShadowData size mismatch");
 #endif
 
 #endif // POST_PROCESS_SHARED_H

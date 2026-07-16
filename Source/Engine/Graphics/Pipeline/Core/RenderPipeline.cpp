@@ -11,9 +11,12 @@
 #include "Engine/Graphics/Pipeline/SetupPass.h"
 #include "Engine/Graphics/Pipeline/ShadowPass.h"
 #include "Engine/Graphics/Pipeline/OpaquePass.h"
+#include "Engine/Graphics/Pipeline/NormalPrepass.h"
 #include "Engine/Graphics/Pipeline/SkyboxPass.h"
+#include "Engine/Graphics/Pipeline/SceneColorGrabPass.h"
 #include "Engine/Graphics/Pipeline/TransparentPass.h"
 #include "Engine/Graphics/Pipeline/ParticlePass.h"
+#include "Engine/Graphics/Pipeline/TrailPass.h"
 #include "Engine/Graphics/Pipeline/PrimitivePass.h"
 #include "Engine/Graphics/Pipeline/PostProcessPass.h"
 
@@ -28,9 +31,12 @@ void RenderPipeline::BuildDefaultPipeline()
     AddPass<SetupPass>();       // 1. HDR バッファのクリアとバインド
     AddPass<ShadowPass>();      // 2. シャドウマップ生成
     AddPass<OpaquePass>();      // 3. 不透明ジオメトリ
+    AddPass<NormalPrepass>();   // 3.5 法線プリパス(深度確定後)
     AddPass<SkyboxPass>();      // 4. スカイボックス
+    AddPass<SceneColorGrabPass>(); // 4.5 屈折用シーンカラーグラブ
     AddPass<TransparentPass>(); // 5. 半透明
     AddPass<ParticlePass>();    // 6. パーティクル
+    AddPass<TrailPass>();       // 6.5 武器トレイル(加算)。Bloom に拾わせるため PP の前
     AddPass<PrimitivePass>();   // 7. デバッグプリミティブ
     AddPass<PostProcessPass>(); // 8. ポストプロセス・最終出力
 }

@@ -69,19 +69,14 @@ public:
     // フレーム開始時にリストを空にする（メモリ再確保を防ぐため clear のみ）
     void BeginFrame() {
         _opaqueCommands.clear();
-        _transparentCommands.clear();
-        _deferredTransparentCommands.clear(); 
-        _shadowCommands.clear();              
+        _deferredTransparentCommands.clear();
+        _shadowCommands.clear();
         _sortKeys.clear();
     }
 
     // ECS(ウェイター)から注文を受け取る
     void SubmitOpaque(const RenderCommand& cmd) {
         _opaqueCommands.push_back(cmd);
-    }
-
-    void SubmitTransparent(const TransparencyCommand& cmd) {
-        _transparentCommands.push_back(cmd);
     }
 
     void SubmitDeferredTransparent(const TransparencyCommand& cmd) {
@@ -123,8 +118,10 @@ public:
     // シェフ(ModelRenderer)が読み取るためのゲッター
     const std::vector<RenderCommand>& GetOpaqueCommands() const { return _opaqueCommands; }
     const std::vector<RenderKey>& GetSortedKeys() const { return _sortKeys; }
-    const std::vector<TransparencyCommand>& GetTransparentCommands() const { return _transparentCommands; }
     const std::vector<TransparencyCommand>& GetDeferredTransparentCommands() const { return _deferredTransparentCommands; }
+    // 距離ソートを TransparentPass 側でその場実行するための可変参照。
+    // このリストは毎フレーム BeginFrame でクリア＆OpaquePass が再構築するため破壊的並べ替えで問題ない。
+    std::vector<TransparencyCommand>& GetDeferredTransparentCommandsMutable() { return _deferredTransparentCommands; }
     const std::vector<ShadowCommand>& GetShadowCommands() const { return _shadowCommands; }
 
 
@@ -133,7 +130,6 @@ private:
 
     std::vector<RenderCommand>       _opaqueCommands;
     std::vector<RenderKey>           _sortKeys;
-    std::vector<TransparencyCommand> _transparentCommands;
     std::vector<TransparencyCommand> _deferredTransparentCommands; // 不透明パスで弾かれた半透明
     std::vector<ShadowCommand>       _shadowCommands;
 };

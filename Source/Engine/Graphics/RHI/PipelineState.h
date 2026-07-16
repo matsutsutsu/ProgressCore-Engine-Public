@@ -62,6 +62,9 @@ public:
         dc->RSSetState(rs->GetRasterizerState(_desc.rasterizer));
     }
 
+    /// Opaque 以外のブレンド（Transparency / Additive 等）が有効か。
+    bool IsBlendEnabled() const { return _desc.blend != BlendState::Opaque; }
+
 private:
     PipelineStateDesc _desc;
 };

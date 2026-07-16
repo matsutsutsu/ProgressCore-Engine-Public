@@ -9,12 +9,14 @@
 #include "Game/Logics/Character/Player/Components/DashComponent.h"
 #include "Engine/Graphics/Components/Core/ModelComponent.h" // ★追加
 
+// ★ DashComponent はプレイヤー専用のためフィルタに含めない（含めるとダッシュを
+//   持たないエンティティ＝ボス等が丸ごと対象外になってしまう）。存在すれば
+//   Update() 内で GetComponent により任意で参照する（CharacterAnimSyncSystem と同じ方式）。
 class RootMotionSystem : public CCL::ECS::IfSystem<RootMotionSystem,
                              CCL::ECS::Write<RootMotionComponent>,
                              CCL::ECS::Write<CharacterMovementInputComponent>,
                              CCL::ECS::Read<AnimatorComponent>,
                              CCL::ECS::Read<AnimStateMachineComponent>,
-                             CCL::ECS::Read<DashComponent>,
                              CCL::ECS::Read<TransformComponent>,
                              CCL::ECS::Read<TimeStateComponent>,
                              CCL::ECS::Read<ModelComponent>> // ★追加

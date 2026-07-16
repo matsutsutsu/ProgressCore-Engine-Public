@@ -2,7 +2,9 @@
 #include <Jolt/Jolt.h>
 #include <Jolt/Physics/Character/CharacterVirtual.h>
 #include <Jolt/Physics/Body/BodyInterface.h>
-#include "Engine/ECS/Core/CCL_World.h"
+
+#include "Engine/ECS/Common/CCL_Types.h"
+#include "Engine/Physics/JoltIntegration/JoltContactListener.h" // 収集先バッファ(sink)
 
 // ===================================================================================
 // ファイル: JoltCharacterContactListener.h
@@ -10,20 +12,24 @@
 //
 // 【アーキテクチャ仕様】
 // - CharacterVirtual の ExtendedUpdate 実行中に一時的にアタッチされる。
-// - 通常の剛体用リスナー(JoltContactListener)はマルチスレッドから呼ばれるが、
-//   本クラスは ECS の ForEachWithID 内（シングルスレッド）で同期的に呼ばれるため、
-//   ミューテックス(mutex)等のロックを必要とせず、直接 EventBus へ送信できる設計となっている。
+// - ★以前は EventBus へ即時 Publish していたが、物理更新の途中でゲームロジックが
+//   割り込むと（構造変更等が混ざり）危険なため、剛体側と同じ JoltContactListener の
+//   バッファへ PushEvent() で蓄積する方式に統一した。
+//   実際の配送は物理更新後の L05 (JoltCollisionEventSystem) が一括で行う。
+// - World には依存しない（データ競合の温床を断つ）。
 // ===================================================================================
 
 class JoltCharacterContactListener : public JPH::CharacterContactListener
 {
   private:
-    CCL::ECS::Core::World *m_world;
-    CCL::ECS::EntityID     m_playerID;
-    JPH::BodyInterface    *m_bodyInterface;
+    JoltContactListener *m_sink; ///< 収集先バッファ（剛体側と共有）
+    CCL::ECS::EntityID   m_playerID;
+    JPH::BodyInterface  *m_bodyInterface;
 
   public:
-    JoltCharacterContactListener(CCL::ECS::Core::World *world, CCL::ECS::EntityID playerID, JPH::BodyInterface *bodyInterface);
+    JoltCharacterContactListener(JoltContactListener *sink,
+        CCL::ECS::EntityID                            playerID,
+        JPH::BodyInterface                           *bodyInterface);
 
     virtual void OnContactAdded(const JPH::CharacterVirtual *inCharacter,
         const JPH::BodyID                                   &inBodyID2,

@@ -14,6 +14,7 @@ void AnimSetupSystem::Update(float dt)
     // イテレータが破壊されるため、対象となるエンティティIDを一度キャッシュする
     std::vector<EntityID> needsParams;
     std::vector<EntityID> needsStateMachine;
+    std::vector<EntityID> needsRootMotion;
 
     // 1. 足りないコンポーネントを【個別に】調査する
     ForEachWithID([&](EntityID id, const AnimatorComponent &animator) {
@@ -25,6 +26,10 @@ void AnimSetupSystem::Update(float dt)
         {
             needsStateMachine.push_back(id);
         }
+        if (!_world->HasComponent<RootMotionComponent>(id))
+        {
+            needsRootMotion.push_back(id);
+        }
     });
 
     // 2. 足りないものだけを【個別に】付与する（ループ外での安全な構造変更）
@@ -35,6 +40,10 @@ void AnimSetupSystem::Update(float dt)
     for (auto id : needsStateMachine)
     {
         _world->AddComponent<AnimStateMachineComponent>(id);
+    }
+    for (auto id : needsRootMotion)
+    {
+        _world->AddComponent<RootMotionComponent>(id);
     }
 }
 

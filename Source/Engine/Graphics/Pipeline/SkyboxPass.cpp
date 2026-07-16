@@ -2,6 +2,7 @@
 #include "Engine/Graphics/RHI/Graphics.h"    // _ASSERT_EXPR のため保持
 #include "Engine/Graphics/RHI/Camera.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
+#include "Engine/Graphics/RHI/RenderState.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 
 void SkyboxPass::Initialize(const RenderServices& services)
@@ -67,12 +68,14 @@ void SkyboxPass::Execute(const RenderFrameContext& ctx)
 
     const RenderState* rs = _services->renderState;
 
+    dc->OMSetBlendState(rs->GetBlendState(BlendState::Opaque), nullptr, 0xFFFFFFFF);
     dc->OMSetDepthStencilState(rs->GetDepthStencilState(DepthState::TestLessEqual), 0);
     dc->RSSetState(rs->GetRasterizerState(RasterizerState::SolidCullNone));
 
     dc->Draw(3, 0);
 
     // ステート復元
+    dc->OMSetBlendState(rs->GetBlendState(BlendState::Opaque), nullptr, 0xFFFFFFFF);
     dc->OMSetDepthStencilState(rs->GetDepthStencilState(DepthState::TestAndWrite), 0);
     dc->RSSetState(rs->GetRasterizerState(RasterizerState::SolidCullBack));
 }

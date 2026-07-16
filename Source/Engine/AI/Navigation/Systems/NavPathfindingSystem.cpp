@@ -108,4 +108,4 @@ void NavPathfindingSystem::Update(float dt) {
 }
 
 
-REGISTER_LOGIC_SYSTEM(NavPathfindingSystem, Priority::LogicStage::L02_AI_Think);
+//REGISTER_LOGIC_SYSTEM(NavPathfindingSystem, Priority::LogicStage::L02_AI_Think);

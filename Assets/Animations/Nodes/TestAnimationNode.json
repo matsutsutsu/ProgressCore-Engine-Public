@@ -1,6 +1,6 @@
 {
-    "anyStatePosX": 358.0,
-    "anyStatePosY": -198.0,
+    "anyStatePosX": 357.0,
+    "anyStatePosY": -197.0,
     "anyStateTransitions": [
         {
             "blendDuration": 0.20000000298023224,
@@ -63,10 +63,30 @@
             "logicType": 0,
             "requiredCancelMask": 0,
             "targetStateHash": 2262072404
+        },
+        {
+            "blendDuration": 0.10000000149011612,
+            "conditions": [
+                {
+                    "op": 3,
+                    "paramHash": 3987189933,
+                    "paramName": "DashAttack",
+                    "threshold": 0.0
+                },
+                {
+                    "op": 1,
+                    "paramHash": 174817312,
+                    "paramName": "Speed",
+                    "threshold": 45.0
+                }
+            ],
+            "logicType": 0,
+            "requiredCancelMask": 0,
+            "targetStateHash": 3987189933
         }
     ],
-    "entryPosX": 29.0,
-    "entryPosY": -85.0,
+    "entryPosX": -348.0,
+    "entryPosY": 314.0,
     "entryStateHash": 1168775091,
     "parameters": [
         {
@@ -124,6 +144,13 @@
             "hash": 2343121693,
             "name": "Attack",
             "type": 2
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 3987189933,
+            "name": "DashAttack",
+            "type": 2
         }
     ],
     "states": [
@@ -131,8 +158,8 @@
             "applyRootMotion": false,
             "isLoop": true,
             "lockVerticalRootMotion": false,
-            "nodePosX": 76.0,
-            "nodePosY": 321.0,
+            "nodePosX": 74.0,
+            "nodePosY": 322.0,
             "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Idle.json",
@@ -196,6 +223,20 @@
                     "logicType": 0,
                     "requiredCancelMask": 0,
                     "targetStateHash": 1168775091
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 3,
+                            "paramHash": 2343121693,
+                            "paramName": "Attack",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 240607861
                 }
             ]
         },
@@ -424,6 +465,26 @@
                     "logicType": 0,
                     "requiredCancelMask": 0,
                     "targetStateHash": 1168775091
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        },
+                        {
+                            "op": 1,
+                            "paramHash": 174817312,
+                            "paramName": "Speed",
+                            "threshold": 2.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 2371348074
                 }
             ]
         },
@@ -453,6 +514,89 @@
                     "logicType": 0,
                     "requiredCancelMask": 0,
                     "targetStateHash": 1168775091
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        },
+                        {
+                            "op": 1,
+                            "paramHash": 174817312,
+                            "paramName": "Speed",
+                            "threshold": 2.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 2371348074
+                }
+            ]
+        },
+        {
+            "applyRootMotion": true,
+            "isLoop": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": -69.0,
+            "nodePosY": 62.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/DashAttack.json",
+            "sequenceName": "DashAttack",
+            "speedCurveName": "",
+            "stateHash": 3987189933,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 1168775091
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 174817312,
+                            "paramName": "Speed",
+                            "threshold": 1.0
+                        },
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 2371348074
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 3,
+                            "paramHash": 2343121693,
+                            "paramName": "Attack",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 1,
+                    "targetStateHash": 240607861
                 }
             ]
         }

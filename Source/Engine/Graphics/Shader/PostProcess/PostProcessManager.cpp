@@ -7,6 +7,13 @@
 // 各種エフェクトクラスのインクルード
 #include "BloomEffect.h"
 #include "DistortionEffect.h"
+#include "RadialBlurEffect.h"
+#include "DepthOfFieldEffect.h"
+#include "VignetteEffect.h"
+#include "ChromaticAberrationEffect.h"
+#include "ColorGradingEffect.h"
+#include "SSAOEffect.h"
+#include "ContactShadowEffect.h"
 
 
 void PostProcessManager::Initialize(ID3D11Device* device, UINT width, UINT height)
@@ -20,8 +27,15 @@ void PostProcessManager::Initialize(ID3D11Device* device, UINT width, UINT heigh
     // 2. エフェクトの生産ラインを構築
     // ==========================================================
 
+    AddEffect<SSAOEffect>();
+    AddEffect<ContactShadowEffect>();
     AddEffect<DistortionEffect>();
+    AddEffect<RadialBlurEffect>();
+    AddEffect<DepthOfFieldEffect>();
     AddEffect<BloomEffect>();
+    AddEffect<ChromaticAberrationEffect>();
+    AddEffect<VignetteEffect>();
+    AddEffect<ColorGradingEffect>();
 
 
     Resize(device, width, height);
@@ -34,6 +48,7 @@ PostProcessManager::~PostProcessManager()
     if (_hdrBuffers[0].IsValid()) ResourceManager::Instance().UnloadRenderTarget(_hdrBuffers[0]);
     if (_hdrBuffers[1].IsValid()) ResourceManager::Instance().UnloadRenderTarget(_hdrBuffers[1]);
     if (_outputSDR.IsValid()) ResourceManager::Instance().UnloadRenderTarget(_outputSDR);
+    if (_sceneColorCopy.IsValid()) ResourceManager::Instance().UnloadRenderTarget(_sceneColorCopy);
 }
 
 void PostProcessManager::Resize(ID3D11Device* device, UINT width, UINT height)
@@ -45,11 +60,12 @@ void PostProcessManager::Resize(ID3D11Device* device, UINT width, UINT height)
     if(_hdrBuffers[0].IsValid()) ResourceManager::Instance().UnloadRenderTarget(_hdrBuffers[0]);
     if (_hdrBuffers[1].IsValid()) ResourceManager::Instance().UnloadRenderTarget(_hdrBuffers[1]);
     if (_outputSDR.IsValid()) ResourceManager::Instance().UnloadRenderTarget(_outputSDR);
+    if (_sceneColorCopy.IsValid()) ResourceManager::Instance().UnloadRenderTarget(_sceneColorCopy);
 
-    // ★ フル解像度の HDR キャンバスを2枚確保
     _hdrBuffers[0] = ResourceManager::Instance().CreateRenderTarget(width, height, DXGI_FORMAT_R16G16B16A16_FLOAT);
     _hdrBuffers[1] = ResourceManager::Instance().CreateRenderTarget(width, height, DXGI_FORMAT_R16G16B16A16_FLOAT);
     _outputSDR = ResourceManager::Instance().CreateRenderTarget(width, height, DXGI_FORMAT_R8G8B8A8_UNORM);
+    _sceneColorCopy = ResourceManager::Instance().CreateRenderTarget(width, height, DXGI_FORMAT_R16G16B16A16_FLOAT);
 
     // 全エフェクトの中間 RT もリサイズ
     for (auto& effect : _effects) {
@@ -81,7 +97,10 @@ void PostProcessManager::BeginScene(ID3D11DeviceContext* dc,
     dc->RSSetViewports(1, &vp);
 }
 
-ID3D11ShaderResourceView* PostProcessManager::EndScene(ID3D11DeviceContext* dc, ID3D11RenderTargetView* targetRTV)
+ID3D11ShaderResourceView* PostProcessManager::EndScene(ID3D11DeviceContext* dc,
+    ID3D11RenderTargetView* targetRTV,
+    ID3D11ShaderResourceView* sceneDepthSRV,
+    ID3D11ShaderResourceView* sceneNormalSRV)
 {
     RenderTarget* outputSDR = ResourceManager::Instance().GetRenderTarget(_outputSDR);
     if (!outputSDR) return nullptr;
@@ -89,6 +108,13 @@ ID3D11ShaderResourceView* PostProcessManager::EndScene(ID3D11DeviceContext* dc, 
     // RTV 登録を解除
     ID3D11RenderTargetView* nullRTV = nullptr;
     dc->OMSetRenderTargets(1, &nullRTV, nullptr);
+
+    if (sceneDepthSRV) {
+        dc->PSSetShaderResources(SLOT_SRV_SCENE_DEPTH, 1, &sceneDepthSRV);
+    }
+    if (sceneNormalSRV) {
+        dc->PSSetShaderResources(SLOT_SRV_SCENE_NORMAL, 1, &sceneNormalSRV);
+    }
 
     // ================================================================
     // ★ 究極のエコシステム: Ping-Pong 実行
@@ -142,6 +168,11 @@ ID3D11ShaderResourceView* PostProcessManager::EndScene(ID3D11DeviceContext* dc, 
     }
 
     // 最終的な HDR 結果は readIdx のキャンバスに入っている
+    ID3D11ShaderResourceView* nullDepth = nullptr;
+    dc->PSSetShaderResources(SLOT_SRV_SCENE_DEPTH, 1, &nullDepth);
+    ID3D11ShaderResourceView* nullNormal = nullptr;
+    dc->PSSetShaderResources(SLOT_SRV_SCENE_NORMAL, 1, &nullNormal);
+
     RenderTarget* finalHDR = ResourceManager::Instance().GetRenderTarget(_hdrBuffers[readIdx]);
 
     // ================================================================
@@ -156,4 +187,22 @@ ID3D11ShaderResourceView* PostProcessManager::EndScene(ID3D11DeviceContext* dc, 
     _toneMapEffect->Process(dc, finalHDR->GetSRV(), finalRTV, toneMapConfig);
 
     return outputSDR->GetSRV();
+}
+
+void PostProcessManager::GrabSceneColor(ID3D11DeviceContext* dc)
+{
+    RenderTarget* scene = ResourceManager::Instance().GetRenderTarget(_hdrBuffers[0]);
+    RenderTarget* copy  = ResourceManager::Instance().GetRenderTarget(_sceneColorCopy);
+    if (!scene || !copy) return;
+
+    ID3D11Resource* src = nullptr;
+    ID3D11Resource* dst = nullptr;
+    scene->GetSRV()->GetResource(&src);
+    copy->GetSRV()->GetResource(&dst);
+    if (src && dst) dc->CopyResource(dst, src);
+    if (src) src->Release();
+    if (dst) dst->Release();
+
+    ID3D11ShaderResourceView* srv = copy->GetSRV();
+    dc->PSSetShaderResources(SLOT_SRV_SCENE_COLOR, 1, &srv);
 }

@@ -7,11 +7,11 @@
 #include "Engine/Platform/Core/FileSystem.h"
 
 #include "Engine/Serialization/Meta/ComponentDefine.h"
+#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
 #include <json.hpp>
 #include <cmath>
-#include <filesystem>
 #include <string>
 
 #ifdef ENABLE_EDITOR
@@ -26,11 +26,7 @@ using json = nlohmann::json;
 // =====================================================================
 namespace
 {
-
-inline float SafeF(float v)
-{
-    return std::isfinite(v) ? v : 0.0f;
-}
+inline float SafeF(float v) { return std::isfinite(v) ? v : 0.0f; }
 
 void WriteDescToJson(json &j, const ParticleEmitterDesc &d)
 {
@@ -79,28 +75,13 @@ void ReadDescFromJson(const json &j, ParticleEmitterDesc &d)
     auto F  = [&](const char *k, float &dst) { if (j.contains(k) && j[k].is_number()) dst = j[k].get<float>(); };
     auto I  = [&](const char *k, int &dst) { if (j.contains(k) && j[k].is_number()) dst = j[k].get<int>(); };
     auto F2 = [&](const char *k, GpuData::float2 &v) {
-        if (j.contains(k) && j[k].is_array() && j[k].size() >= 2)
-        {
-            v.x = j[k][0].get<float>();
-            v.y = j[k][1].get<float>();
-        }
+        if (j.contains(k) && j[k].is_array() && j[k].size() >= 2) { v.x = j[k][0].get<float>(); v.y = j[k][1].get<float>(); }
     };
     auto F3 = [&](const char *k, GpuData::float3 &v) {
-        if (j.contains(k) && j[k].is_array() && j[k].size() >= 3)
-        {
-            v.x = j[k][0].get<float>();
-            v.y = j[k][1].get<float>();
-            v.z = j[k][2].get<float>();
-        }
+        if (j.contains(k) && j[k].is_array() && j[k].size() >= 3) { v.x = j[k][0].get<float>(); v.y = j[k][1].get<float>(); v.z = j[k][2].get<float>(); }
     };
     auto F4 = [&](const char *k, GpuData::float4 &v) {
-        if (j.contains(k) && j[k].is_array() && j[k].size() >= 4)
-        {
-            v.x = j[k][0].get<float>();
-            v.y = j[k][1].get<float>();
-            v.z = j[k][2].get<float>();
-            v.w = j[k][3].get<float>();
-        }
+        if (j.contains(k) && j[k].is_array() && j[k].size() >= 4) { v.x = j[k][0].get<float>(); v.y = j[k][1].get<float>(); v.z = j[k][2].get<float>(); v.w = j[k][3].get<float>(); }
     };
     auto STR = [&](const char *k, char *dst, size_t cap) {
         if (j.contains(k) && j[k].is_string()) strcpy_s(dst, cap, j[k].get<std::string>().c_str());
@@ -150,13 +131,7 @@ void ReadDescFromJson(const json &j, ParticleEmitterDesc &d)
     STR("texturePath", d.texturePath, sizeof(d.texturePath));
     STR("colorRampPath", d.colorRampPath, sizeof(d.colorRampPath));
 }
-
-std::string ToRelativePath(const std::filesystem::path &absPath)
-{
-    std::error_code ec;
-    auto            rel = std::filesystem::relative(absPath, std::filesystem::current_path(), ec);
-    return (!ec && !rel.empty()) ? rel.generic_string() : absPath.generic_string();
-}
+// ★ 修正: 自前で std::filesystem を使った ToRelativePath を完全削除
 } // namespace
 
 // =====================================================================
@@ -227,6 +202,9 @@ struct ComponentMeta<GPUParticleComponent>
     CCL_META_USING_THIS(GPUParticleComponent)
 
     static constexpr const char *displayName    = "GPU Particle Emitter";
+    static constexpr const char *category       = CCL::Categories::Effect; // ★追加
+    static constexpr int         sortPriority   = 450; // ★追加
+    static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui   = true;
     static constexpr bool        isSerializable = true;
 
@@ -239,14 +217,14 @@ struct ComponentMeta<GPUParticleComponent>
         auto &rm      = ResourceManager::Instance();
         HWND  hWnd    = Graphics::Instance().GetWindowHandle();
 
-        // 静的ローカル変数で「現在どっちのタブが開かれているか」を記憶する
         static int lastActiveTabId    = -1;
         int        currentActiveTabId = -1;
 
         auto pickTexture = [&](char *dst, size_t cap, TextureHandle &handle, const char *title) {
+            // ★ 修正: エンジン管轄の FileDialog::ConvertToRelativePath を正しく使用
             if (auto path = FileDialog::OpenPreset("Texture", title, hWnd))
             {
-                strcpy_s(dst, cap, ToRelativePath(*path).c_str());
+                strcpy_s(dst, cap, FileDialog::ConvertToRelativePath(*path).c_str());
                 handle  = rm.LoadTexture(dst);
                 changed = true;
             }
@@ -265,26 +243,13 @@ struct ComponentMeta<GPUParticleComponent>
         }
         ImGui::Separator();
 
-        // --------------------------------────────────────-----------------
-        // 🌟 改善の核心: BeginChild による「独立したスクロール宇宙」の確立
-        // --------------------------------────────────────────────────────-
-        // 高さを 380px に完全固定します。これにより、どんなにタブを切り替えても
-        // インスペクタ（親）の全体の高さがガタガタ動くのを物理的に阻止します。
-        // 第4引数に ImGuiWindowFlags_NavFlattened を指定して操作性を確保します。
         ImGui::BeginChild("ParticleEditorChild", ImVec2(0, 380.0f), ImGuiChildFlags_Border, ImGuiWindowFlags_NavFlattened);
 
-        // -----------------------------------------------------------------
-        // 🌟 タブバーによる認知的負荷の分散とスクロールの撲滅
-        // -----------------------------------------------------------------
         if (ImGui::BeginTabBar("ParticleTabs"))
         {
-
-            // =============================================================
-            // TAB 1: 基礎設定 ＆ 発生形状
-            // =============================================================
             if (ImGui::BeginTabItem(u8"基本・発生 (Base & Spawn)"))
             {
-                currentActiveTabId = 0; // IDを割り当て
+                currentActiveTabId = 0;
                 ImGui::Spacing();
                 ImGui::SeparatorText(u8"エミッタ設定 (Emitter)");
                 int tempMax = d.maxCount;
@@ -304,13 +269,12 @@ struct ComponentMeta<GPUParticleComponent>
                 if (ImGui::Combo(u8"発生モード (Mode)", &d.emitMode, modes, IM_ARRAYSIZE(modes))) changed = true;
 
                 if (d.emitMode == 1)
-                { // Burst
+                { 
                     if (ImGui::DragInt(u8"発生数 (Count)", &d.burstCount, 1, 0, 10000)) changed = true;
                     if (ImGui::Button(u8"発火テスト (Trigger)", ImVec2(-1, 0))) p->TriggerBurst();
                 }
                 else
-                { // Continuous
-                    // 🌟 工夫: Min/Max の2変数を DragFloat2 で横一列に圧縮し、スクロールを削減
+                { 
                     if (ImGui::DragFloat2(u8"発生間隔 (Delay Min/Max)", &d.spawnDelay.x, 0.001f, 0.0f, 5.0f, "%.4f"))
                     {
                         if (d.spawnDelay.x > d.spawnDelay.y) d.spawnDelay.y = d.spawnDelay.x;
@@ -336,12 +300,9 @@ struct ComponentMeta<GPUParticleComponent>
                 ImGui::EndTabItem();
             }
 
-            // =============================================================
-            // TAB 2: 運動 ＆ 物理
-            // =============================================================
             if (ImGui::BeginTabItem(u8"運動・物理 (Movement)"))
             {
-                currentActiveTabId = 1; // IDを割り当て
+                currentActiveTabId = 1; 
                 ImGui::Spacing();
                 ImGui::SeparatorText(u8"速度 (Velocity)");
                 changed |= ImGui::DragFloat2(u8"初速度 (Speed Min/Max)", &d.emitSpeed.x, 0.1f, -100.0f, 100.0f, "%.2f");
@@ -363,12 +324,9 @@ struct ComponentMeta<GPUParticleComponent>
                 ImGui::EndTabItem();
             }
 
-            // =============================================================
-            // TAB 3: サイズ ＆ 寿命変化
-            // =============================================================
             if (ImGui::BeginTabItem(u8"サイズ・寿命 (Size & Life)"))
             {
-                currentActiveTabId = 2; // IDを割り当て
+                currentActiveTabId = 2; 
                 ImGui::Spacing();
                 ImGui::SeparatorText(u8"寿命 (Lifespan)");
                 if (ImGui::DragFloat2(u8"生存時間 (Life Min/Max)", &d.lifespan.x, 0.05f, 0.01f, 60.0f, "%.2f sec"))
@@ -385,12 +343,9 @@ struct ComponentMeta<GPUParticleComponent>
                 ImGui::EndTabItem();
             }
 
-            // =============================================================
-            // TAB 4: グラフィック ＆ テクスチャ参照
-            // =============================================================
             if (ImGui::BeginTabItem(u8"描画・テクスチャ (Graphics)"))
             {
-                currentActiveTabId = 3; // IDを割り当て
+                currentActiveTabId = 3; 
                 ImGui::Spacing();
                 ImGui::SeparatorText(u8"カラー・ブレンド (Color & Blend)");
                 const char *renderModes[] = {"Additive (Fire/Light)", "Alpha Blend (Smoke/Dark)"};
@@ -417,8 +372,8 @@ struct ComponentMeta<GPUParticleComponent>
                 int grid[2] = {(int)d.spriteGrid.x, (int)d.spriteGrid.y};
                 if (ImGui::DragInt2(u8"分割数 (Grid X/Y)", grid, 0.1f, 1, 16))
                 {
-                    d.spriteGrid.x = (uint32_t)(grid[0] < 1 ? 1 : grid[0]);
-                    d.spriteGrid.y = (uint32_t)(grid[1] < 1 ? 1 : grid[1]);
+                    d.spriteGrid.x = uint32_t(grid[0] < 1 ? 1 : grid[0]);
+                    d.spriteGrid.y = uint32_t(grid[1] < 1 ? 1 : grid[1]);
                     changed        = true;
                 }
                 const char *animModes[] = {"Random (Fixed)", "Life Cycle (Animate)"};
@@ -468,29 +423,22 @@ struct ComponentMeta<GPUParticleComponent>
             ImGui::EndTabBar();
         }
 
-        // 🌟 自動スクロールリセットの魔法: タブの切り替えが発生した瞬間、
-        // この ChildWindow のスクロール位置を一番上（0.0f）に強制リセットする。
         if (currentActiveTabId != lastActiveTabId && currentActiveTabId != -1)
         {
             ImGui::SetScrollY(0.0f);
             lastActiveTabId = currentActiveTabId;
         }
 
-        ImGui::EndChild(); // スクロール宇宙の終了
+        ImGui::EndChild(); 
 
-        // 値が変更されていればGPU側のバッファ更新フラグを立てる
         if (changed) p->MarkDescChanged();
 
         return changed;
     }
 #else
-    static bool CustomGui(GPUParticleComponent &, unsigned long long, void *)
-    {
-        return false;
-    }
+    static bool CustomGui(GPUParticleComponent &, unsigned long long, void *) { return false; }
 #endif
 
-    // シリアライズ用の定義（自動シリアライズ側は JSON でカスタム処理しているため空でOK）
     static const std::vector<FieldDescriptor> &Fields()
     {
         static const std::vector<FieldDescriptor> empty;

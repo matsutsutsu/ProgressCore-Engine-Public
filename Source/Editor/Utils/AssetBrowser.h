@@ -12,63 +12,60 @@ namespace fs = std::filesystem;
 
 class AssetBrowser
 {
-public:
-    AssetBrowser(const std::string& rootPath, ID3D11Device* device);
-	~AssetBrowser();
+  public:
+    AssetBrowser(const std::string &rootPath, ID3D11Device *device);
+    ~AssetBrowser();
 
     void Draw();
-
-    /**
-     * @brief フォルダ構成を再読み込みし、ツリーを構築し直します。
-     * @details ファイルを追加・削除した際や、更新ボタンを押した際に手動で呼び出します。
-     */
     void Refresh();
 
-private:
-    struct AssetNode 
+  private:
+    struct AssetNode
     {
-        std::string name;         // ファイル/フォルダ名
-        fs::path path;            // 実際のファイルパス
-        bool isDirectory = false; // フォルダかどうか
-        std::vector<AssetNode> children; // 子要素（フォルダ内のファイル/フォルダ）
+        std::string            name;                // ファイル/フォルダ名
+        fs::path               path;                // 実際のファイルパス
+        bool                   isDirectory = false; // フォルダかどうか
+        std::vector<AssetNode> children;            // 子要素
+        AssetNode             *parent = nullptr;    // ★追加: 親ノードへのポインタ（パンくずリスト用）
     };
 
-    struct IconTexture 
-    {
-        Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv;
-        int width = 0;
-        int height = 0;
-    };
 
-    // ディレクトリを走査してノードを作成
-    void LoadDirectory(const fs::path& dirPath, AssetNode& node);
+    // ディレクトリ走査
+    void LoadDirectory(const fs::path &dirPath, AssetNode &node);
+    void SetParents(AssetNode &node, AssetNode *parent); // ★追加: ポインタの安全な再構築
 
-    // 左ペイン（フォルダツリー）
-    void DrawAssetNode(AssetNode& node);
+    // ナビゲーション機能
+    void NavigateTo(AssetNode *folder);
+    void NavigateBack();
+    void NavigateForward();
+    void NavigateUp();
 
-    // 右ペイン（グリッドビュー）
-    void DrawGridView(AssetNode& node);
-
-    // アイコンロード系
-    IconTexture LoadIcon(ID3D11Device* device, const std::wstring& path);
-    void LoadIcons(ID3D11Device* device);
+    // 描画系
+    void DrawToolbar();
+    void DrawBreadcrumbs();
+    void DrawFolderTree(AssetNode &node);
+    void DrawGridView();
+    void DrawSearchBar();
 
     // ユーティリティ
-    AssetNode* FindNodeByPath(AssetNode& node, const fs::path& path);
-    void DrawSearchBar();
-    bool FilterAsset(const AssetNode& node);
+    AssetNode  *FindNodeByPath(AssetNode &node, const fs::path &path);
+    bool        FilterAsset(const AssetNode &node);
 
-private:
-    AssetNode rootNode;                  // ルートノード
-	AssetNode* selectedFolder = nullptr; // 選択中のフォルダ
-    std::string rootPath;                // ルートパス
-    std::string selectedFilePath;        // 選択中のファイル
+  private:
+    AssetNode   rootNode; // ルートノード
+    std::string rootPath; // ルートパス
 
-    std::unordered_map<std::string, IconTexture> iconMap;       // カテゴリ→アイコン
-    std::unordered_map<std::string, std::string> extensionMap;  // 拡張子→カテゴリ
+    // ★ 状態管理アーキテクチャの刷新
+    AssetNode  *currentFolder = nullptr; // 右ペインで表示中のフォルダ
+    std::string selectedAssetPath;       // 選択中のアセットのパス
 
-    std::string searchQuery;                          // 検索クエリ
+    std::vector<AssetNode *> historyBack;    // 戻る履歴
+    std::vector<AssetNode *> historyForward; // 進む履歴
+
+    std::unordered_map<std::string, std::string> extensionMap; // 拡張子→カテゴリ
+
+    std::string                           searchQuery; // 検索クエリ
     std::unordered_map<std::string, bool> typeFilters; // 種別フィルタ
 
-	ID3D11Device* device;            // D3D11デバイス（アイコン作成用）
+    ID3D11Device *device; // D3D11デバイス（アイコン作成用）
 };

@@ -5,6 +5,7 @@
 
 #include "CullingComponents.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
+#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
 
 #ifdef ENABLE_EDITOR
 #include "Editor/Inspector/ComponentGuiRegistry.h"
@@ -12,13 +13,17 @@
 #endif
 
 // ===========================================================================
-// BoundingBoxComponent (インスペクタ描画のみ・シリアライズ対象外)
+// BoundingBoxComponent 
 // ===========================================================================
 template <> struct ComponentMeta<BoundingBoxComponent> {
     CCL_META_USING_THIS(BoundingBoxComponent)
-        static constexpr const char* displayName = "Bounding Box";
-    static constexpr bool        hasCustomGui = false; // 自動インスペクタを利用
-    static constexpr bool        isSerializable = false; // ★ JSONへの保存をスキップ
+
+    static constexpr const char* displayName    = "Bounding Box";
+    static constexpr const char* category       = CCL::Categories::Internal; // ★修正: 内部ステートとして隔離
+    static constexpr int         sortPriority   = 900; // ★追加: インスペクタの最下層へ
+    static constexpr bool        hiddenInInspector = false;
+    static constexpr bool        hasCustomGui   = false; 
+    static constexpr bool        isSerializable = false; 
 
 #ifdef ENABLE_EDITOR
     static bool CustomGui(BoundingBoxComponent&, unsigned long long, void*) { return false; }
@@ -38,13 +43,17 @@ REGISTER_COMPONENT(BoundingBoxComponent, "Bounding Box")
 REGISTER_COMPONENT_EDITOR_GUI(BoundingBoxComponent)
 
 // ===========================================================================
-// VisibilityComponent (インスペクタ描画のみ・シリアライズ対象外)
+// VisibilityComponent 
 // ===========================================================================
 template <> struct ComponentMeta<VisibilityComponent> {
     CCL_META_USING_THIS(VisibilityComponent)
-        static constexpr const char* displayName = "Visibility";
-    static constexpr bool        hasCustomGui = false; // 自動インスペクタを利用
-    static constexpr bool        isSerializable = false; // ★ JSONへの保存をスキップ
+
+    static constexpr const char* displayName    = "Visibility";
+    static constexpr const char* category       = CCL::Categories::Internal; // ★修正
+    static constexpr int         sortPriority   = 910; // ★追加
+    static constexpr bool        hiddenInInspector = false;
+    static constexpr bool        hasCustomGui   = false; 
+    static constexpr bool        isSerializable = false; 
 
 #ifdef ENABLE_EDITOR
     static bool CustomGui(VisibilityComponent&, unsigned long long, void*) { return false; }

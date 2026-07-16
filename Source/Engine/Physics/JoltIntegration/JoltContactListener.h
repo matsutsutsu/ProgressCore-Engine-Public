@@ -4,6 +4,9 @@
  *
  * @note Joltのワーカースレッドから非同期に呼ばれるため、内部状態の変更には必ずミューテックスによる保護が必要。
  * @warning このクラス内で直接ECSのWorldやコンポーネントにアクセスしてはならない（データ競合によるクラッシュを招く）。
+ *
+ * @note キャラクター側(JoltCharacterContactListener)もこのバッファに PushEvent() で相乗りし、
+ *       物理更新後の L05 で JoltCollisionEventSystem が一括配送する。
  */
 #pragma once
 #include <Jolt/Jolt.h>
@@ -25,6 +28,12 @@ public:
     virtual void OnContactAdded(const JPH::Body& inBody1, const JPH::Body& inBody2,
         const JPH::ContactManifold& inManifold,
         JPH::ContactSettings& ioSettings) override;
+
+    /**
+     * @brief 外部（キャラクターリスナー等）から衝突イベントをスレッドセーフに追加する。
+     * @note どのスレッドから呼んでも安全。剛体・キャラ双方のイベントをこの1つのバッファに集約する。
+     */
+    void PushEvent(const JoltCollisionEvent &ev);
 
     /**
      * @brief 蓄積された全ての衝突イベントを一括で取得し、内部バッファをクリアする

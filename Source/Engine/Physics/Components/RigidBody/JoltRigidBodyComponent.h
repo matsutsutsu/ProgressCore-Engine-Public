@@ -1,7 +1,8 @@
 #pragma once
-#include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h" // PhysicsLayers用
+#include "Engine/Physics/JoltIntegration/PhysicsLayers.h" // PhysicsLayers / JPH::ObjectLayer 用（Manager全体は引かない）
 #include <Jolt/Jolt.h>
 #include <Jolt/Physics/Body/MotionType.h>
+#include <DirectXMath.h>
 
 // ===================================================================================
 // ファイル名: JoltRigidbodyComponent.h
@@ -12,20 +13,18 @@
 // - エディタ(ImGui)やJSONからシリアライズされる値。
 //
 // 【使い方・ルール】
-// - これと
-// TransformComponent、および形状(Box/Sphere等)の3つをEntityにアタッチすると、
+// - これと TransformComponent、および形状(Box/Sphere等)の3つをEntityにアタッチすると、
 //   JoltBodySetupSystem が自動的にJolt空間に剛体（実体）を生成する。
-// -
-// 初期化後は、このコンポーネントの値を変更してもJoltには反映されない（初期パラメータとして扱う）。
+// - 初期化後は、このコンポーネントの値を変更してもJoltには反映されない（初期パラメータとして扱う）。
 // ===================================================================================
 
-
 // ユーザーがエディタやJSONで付与し、物理の性質を設定するためのコンポーネント
-struct JoltRigidbodyComponent {
+struct JoltRigidbodyComponent
+{
     // JPH::EMotionType:: 0,Static   1,Kinematic 2,Dynamic
-    JPH::EMotionType motionType  = JPH::EMotionType::Dynamic;
-    // PhysicsLayers::  0,NON_MOVING  1,MOVING
-    JPH::ObjectLayer objectLayer = PhysicsLayers::MOVING;
+    JPH::EMotionType motionType = JPH::EMotionType::Dynamic;
+    // PhysicsLayers::  0,NON_MOVING 1,MOVING 2,ENEMY 3,BULLET
+    JPH::ObjectLayer objectLayer = PhysicsLayers::PLAYER;
     float            restitution = 0.0f; // 反発係数
     float            friction    = 0.2f; // 摩擦係数
 

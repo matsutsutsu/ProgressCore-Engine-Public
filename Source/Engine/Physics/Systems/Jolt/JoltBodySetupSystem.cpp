@@ -192,6 +192,13 @@ void JoltBodySetupSystem::Update(float dt)
 
         JPH::Body *body = bodyInterface.CreateBody(bodySettings);
 
+        // ★追加: 剛体の生成に失敗した場合（上限到達など）のフェイルセーフ
+        if (body == nullptr)
+        {
+            // CCL_LOG_ERROR("Physics", "Failed to create Jolt Body! EntityID: %d. Max bodies reached?", id);
+            return; // このエンティティの生成をスキップして、次のループへ
+        }
+
         // Static(静的)なものは最初からスリープ状態で空間に追加し、無駄な計算を省く
         JPH::EActivation activation = (rigid.motionType == JPH::EMotionType::Static)
                                           ? JPH::EActivation::DontActivate

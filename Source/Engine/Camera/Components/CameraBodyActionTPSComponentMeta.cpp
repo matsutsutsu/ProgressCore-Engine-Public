@@ -3,8 +3,10 @@
 
 #include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
+#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
+
 #include <string>
-#include <algorithm> // std::max用に追加
+#include <algorithm> 
 
 #ifdef ENABLE_EDITOR
 #include <imgui.h>
@@ -13,7 +15,7 @@
 #endif
 
 // ============================================================================
-// CameraBodyActionTPS メタデータ定義（パターンB: カスタムGUI ＋ 自動シリアライズ）
+// CameraBodyActionTPS メタデータ定義
 // ============================================================================
 template <>
 struct ComponentMeta<CameraBodyTPSComponent>
@@ -21,6 +23,9 @@ struct ComponentMeta<CameraBodyTPSComponent>
     CCL_META_USING_THIS(CameraBodyTPSComponent)
 
     static constexpr const char *displayName    = "Camera Body Action TPS";
+    static constexpr const char *category       = CCL::Categories::Camera; // ★追加
+    static constexpr int         sortPriority   = 350; // ★追加
+    static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui   = true;
     static constexpr bool        isSerializable = true;
 
@@ -29,9 +34,6 @@ struct ComponentMeta<CameraBodyTPSComponent>
     {
         bool changed = false;
 
-        // =========================================================
-        // 1. ターゲットリンク (ドラッグ＆ドロップ対応)
-        // =========================================================
         ImGui::SeparatorText(u8"追従・注視ターゲット設定");
 
         auto RenderEntityLinkBox = [](const char *label, CCL::Serialization::EntityLink &link) -> bool {
@@ -53,14 +55,16 @@ struct ComponentMeta<CameraBodyTPSComponent>
         changed |= RenderEntityLinkBox("Player Target", comp.target);
         changed |= RenderEntityLinkBox("LockOn Enemy", comp.lockOnTarget);
 
-        // =========================================================
-        // 2. パラメータの描画 (「日本語（変数名）」形式で統一)
-        // =========================================================
         ImGui::SeparatorText(u8"ロックオン設定 (Lock-on Settings)");
         changed |= ImGui::Checkbox(u8"ロックオン有効化 (isLockOnActive)", &comp.isLockOnActive);
         changed |= ImGui::DragFloat(u8"ロックオン固定ピッチ (lockOnPitch)", &comp.lockOnPitch, 0.5f, -60.0f, 60.0f);
         changed |= ImGui::DragFloat(u8"敵への注視偏重率 (lockOnSubjugationRatio)", &comp.lockOnSubjugationRatio, 0.01f, 0.0f, 0.5f);
         changed |= ImGui::DragFloat(u8"自動回り込み速度 (lockOnRotationDamping)", &comp.lockOnRotationDamping, 0.1f, 1.0f, 20.0f);
+        changed |= ImGui::DragFloat(u8"注視ずれ上限 (lockOnMaxLookShift)", &comp.lockOnMaxLookShift, 0.1f, 0.0f, 15.0f);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip(u8"注視点が敵側へずれる上限(m)。小さいほどプレイヤーが常に画面内。");
+        changed |= ImGui::DragFloat(u8"離間による引き量 (lockOnDistanceGain)", &comp.lockOnDistanceGain, 0.01f, 0.0f, 2.0f);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip(u8"敵と離れるほどカメラを引く量(m/m)。両者を画面に収める。0で引き無し。");
+        changed |= ImGui::DragFloat(u8"引き量の上限 (lockOnMaxExtraDistance)", &comp.lockOnMaxExtraDistance, 0.1f, 0.0f, 30.0f);
 
         ImGui::SeparatorText(u8"位置・追従 (Positioning)");
         changed |= ImGui::DragFloat3(u8"注視点オフセット (targetOffset)", &comp.targetOffset.x, 0.1f);
@@ -79,8 +83,15 @@ struct ComponentMeta<CameraBodyTPSComponent>
         changed |= ImGui::DragFloat(u8"最大ピッチ制限 (maxPitch)", &comp.maxPitch, 0.5f, -89.0f, 89.0f);
 
         ImGui::SeparatorText(u8"操作感度 (Control Settings)");
-        changed |= ImGui::DragFloat(u8"X軸回転速度 (lookSpeedX)", &comp.lookSpeedX, 1.0f, 0.0f, 500.0f);
-        changed |= ImGui::DragFloat(u8"Y軸回転速度 (lookSpeedY)", &comp.lookSpeedY, 1.0f, 0.0f, 500.0f);
+        changed |= ImGui::DragFloat(u8"パッドX軸回転速度 (lookSpeedX)", &comp.lookSpeedX, 1.0f, 0.0f, 500.0f);
+        changed |= ImGui::DragFloat(u8"パッドY軸回転速度 (lookSpeedY)", &comp.lookSpeedY, 1.0f, 0.0f, 500.0f);
+
+        ImGui::SeparatorText(u8"マウス視点 (Mouse Look)");
+        changed |= ImGui::Checkbox(u8"右クリック押下中のみ (mouseLookRequiresButton)", &comp.mouseLookRequiresButton);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip(u8"ON=右ドラッグ中だけ視点回転(エディタ向き)。OFF=常時マウス視点(フルスクリーン向き)。");
+        changed |= ImGui::DragFloat(u8"マウス水平感度 (mouseSensitivityX)", &comp.mouseSensitivityX, 0.01f, 0.0f, 2.0f);
+        changed |= ImGui::DragFloat(u8"マウス垂直感度 (mouseSensitivityY)", &comp.mouseSensitivityY, 0.01f, 0.0f, 2.0f);
+        changed |= ImGui::Checkbox(u8"上下反転 (mouseInvertY)", &comp.mouseInvertY);
 
         ImGui::SeparatorText(u8"滑らかさ (Smoothing)");
         changed |= ImGui::DragFloat(u8"位置追従遅延 (positionDamping)", &comp.positionDamping, 0.1f, 0.0f, 50.0f);
@@ -93,13 +104,10 @@ struct ComponentMeta<CameraBodyTPSComponent>
         return changed;
     }
 #else
-    static bool CustomGui(CameraBodyActionTPS &, unsigned long long, void *)
-    {
-        return false;
-    }
+    // ★ 修正: 構造体名(CameraBodyTPSComponent)と完全に一致させること！
+    static bool CustomGui(CameraBodyTPSComponent &, unsigned long long, void *) { return false; }
 #endif
 
-   // 自動シリアライズ用のフィールド一覧 (JSONへのセーブ/ロード用)
     static const std::vector<FieldDescriptor> &Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
@@ -109,6 +117,9 @@ struct ComponentMeta<CameraBodyTPSComponent>
             CFIELD_FLOAT_RANGED(lockOnPitch, u8"ロックオン固定ピッチ (lockOnPitch)", 0.5f, -60.0f, 60.0f, "LockOn")
             CFIELD_FLOAT_RANGED(lockOnSubjugationRatio, u8"敵への注視偏重率 (lockOnSubjugationRatio)", 0.01f, 0.0f, 0.5f, "LockOn")
             CFIELD_FLOAT_RANGED(lockOnRotationDamping, u8"自動回り込み速度 (lockOnRotationDamping)", 0.1f, 1.0f, 20.0f, "LockOn")
+            CFIELD_FLOAT_RANGED(lockOnMaxLookShift, u8"注視ずれ上限 (lockOnMaxLookShift)", 0.1f, 0.0f, 15.0f, "LockOn")
+            CFIELD_FLOAT_RANGED(lockOnDistanceGain, u8"離間による引き量 (lockOnDistanceGain)", 0.01f, 0.0f, 2.0f, "LockOn")
+            CFIELD_FLOAT_RANGED(lockOnMaxExtraDistance, u8"引き量の上限 (lockOnMaxExtraDistance)", 0.1f, 0.0f, 30.0f, "LockOn")
 
             CFIELD_FLOAT3_FAST(targetOffset, "Target Offset", 0.1f, "Positioning")
             CFIELD_FLOAT_RANGED(distance, "Distance", 0.1f, 1.0f, 100.0f, "Positioning")
@@ -120,6 +131,10 @@ struct ComponentMeta<CameraBodyTPSComponent>
             CFIELD_FLOAT_RANGED(maxPitch, "Max Pitch", 1.0f, -89.0f, 89.0f, "Orbit Constraints")
             CFIELD_FLOAT_RANGED(lookSpeedX, "Look Speed X", 1.0f, 0.0f, 500.0f, "Control Settings")
             CFIELD_FLOAT_RANGED(lookSpeedY, "Look Speed Y", 1.0f, 0.0f, 500.0f, "Control Settings")
+            CFIELD(mouseLookRequiresButton, u8"右クリック押下中のみ (mouseLookRequiresButton)", "Mouse Look")
+            CFIELD_FLOAT_RANGED(mouseSensitivityX, u8"マウス水平感度 (mouseSensitivityX)", 0.01f, 0.0f, 2.0f, "Mouse Look")
+            CFIELD_FLOAT_RANGED(mouseSensitivityY, u8"マウス垂直感度 (mouseSensitivityY)", 0.01f, 0.0f, 2.0f, "Mouse Look")
+            CFIELD(mouseInvertY, u8"上下反転 (mouseInvertY)", "Mouse Look")
             CFIELD_FLOAT_RANGED(positionDamping, "Pos Damping", 0.1f, 0.0f, 50.0f, "Smoothing")
             CFIELD_FLOAT_RANGED(fovDamping, "FOV Damping", 0.1f, 0.0f, 50.0f, "Smoothing")
             CFIELD_FLOAT_RANGED(lookaheadMultiplier, u8"前方注視係数 (lookaheadMultiplier)", 0.05f, 0.0f, 5.0f, "Lookahead")
@@ -131,5 +146,6 @@ struct ComponentMeta<CameraBodyTPSComponent>
     }
 };
 
-REGISTER_COMPONENT(CameraBodyTPSComponent, "Camera")
+// ★修正: カテゴリを "Camera"（生文字）から "CameraBodyTPS" などの正式な識別子名に変更
+REGISTER_COMPONENT(CameraBodyTPSComponent, "CameraBodyTPS")
 REGISTER_COMPONENT_EDITOR_GUI(CameraBodyTPSComponent)

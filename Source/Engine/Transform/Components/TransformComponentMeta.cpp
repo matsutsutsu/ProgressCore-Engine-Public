@@ -1,9 +1,9 @@
 /// @file  TransformComponentMeta.cpp
 /// @brief TransformComponent のシリアライズ/インスペクタ定義。
-///        位置・回転・スケール・静的フラグ・親 (EntityLink) を扱う。
 
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
+#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
 #include <cmath>
 #include <algorithm>
 
@@ -29,15 +29,17 @@ namespace {
 }
 
 template <> struct ComponentMeta<TransformComponent> {
-    CCL_META_USING_THIS(TransformComponent)   // ★ Fields() 内で CFIELD を使うために必須
-        static constexpr const char* displayName = "Transform";
-    static constexpr bool        hasCustomGui = true;
+    CCL_META_USING_THIS(TransformComponent)   
+
+    static constexpr const char* displayName    = "Transform";
+    static constexpr const char* category       = CCL::Categories::Transform; // ★追加
+    static constexpr int         sortPriority   = 0; // ★マニュアル通り「常に最上段」を強制
+    static constexpr bool        hiddenInInspector = false;
+    static constexpr bool        hasCustomGui   = true;
     static constexpr bool        isSerializable = true;
 
 #ifdef ENABLE_EDITOR
-    static bool CustomGui(TransformComponent& comp,
-        unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr)
-    {
+    static bool CustomGui(TransformComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr) {
         bool changed = false;
 
         if (ImGui::DragFloat3("Position", &comp.position.x, 0.1f)) {
@@ -62,18 +64,6 @@ template <> struct ComponentMeta<TransformComponent> {
     static bool CustomGui(TransformComponent&, unsigned long long, void*) { return false; }
 #endif
 
-    /**
-     * @brief シリアライズ対象フィールド。
-     *   保存する:   position, rotation, scale, isStatic, parent (EntityLink)
-     *   保存しない: isDirty / isTeleported / worldMatrix (実行時キャッシュ),
-     *               firstChildID / prevSiblingID / nextSiblingID (HierarchySystem 管理)
-     *
-     *   parent は EntityLink なので、保存時に SaveContext でローカルインデックスへ、
-     *   復元時に LoadContext で新 EntityID へ自動変換される (専用コード不要)。
-     *
-     *   ※ hasCustomGui = true のため、ここの drag speed はインスペクタには影響しない
-     *     (インスペクタは上の CustomGui が描画する)。Fields() は純粋に保存定義。
-     */
     static const std::vector<FieldDescriptor>& Fields() {
         static const std::vector<FieldDescriptor> fields = {
             CFIELD(position, "Position", "Transform")

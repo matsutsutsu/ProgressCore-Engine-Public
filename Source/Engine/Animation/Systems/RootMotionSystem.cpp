@@ -8,18 +8,27 @@ using namespace DirectX::SimpleMath;
 
 void RootMotionSystem::Update(float /*rawDt*/)
 {
-    ForEach([&](RootMotionComponent             &rm,
+    ForEachWithID([&](EntityID                          id,
+                RootMotionComponent             &rm,
                 CharacterMovementInputComponent &input,
                 const AnimatorComponent         &animator,
                 const AnimStateMachineComponent &fsm,
-                const DashComponent             &dash,
                 const TransformComponent        &trans,
                 const TimeStateComponent        &time,
                 const ModelComponent            &modelComp) {
-        if (dash.isDashing)
+        // ダッシュはプレイヤー限定の任意コンポーネント。持っていれば参照する。
+        bool isDashing = false;
+        if (const auto *dash = _world->GetComponent<DashComponent>(id))
         {
-            rm.enabled          = false;
-            rm.lastEvaluatedSeq = nullptr;
+            isDashing = dash->isDashing;
+        }
+
+        if (isDashing)
+        {
+            rm.enabled                = false;
+            rm.lastEvaluatedSeq       = nullptr;
+            input.isRootMotionActive  = false;
+            input.rootMotionVelocity  = Vector3::Zero;
             return;
         }
 
@@ -38,7 +47,14 @@ void RootMotionSystem::Update(float /*rawDt*/)
         Model *model = modelComp.GetModel();
         if (!rm.enabled || !animator.currentSequence || !model)
         {
-            rm.lastEvaluatedSeq = nullptr;
+            // ★このフレームはルートモーション非適用のステート。
+            //   このComponent(rm)は唯一の書き手なので、ここで確実にフラグを下ろさないと
+            //   前回ルートモーションを使ったステート（例:Slash）の値が
+            //   JoltCharacterUpdateSystem 側に残留し、以後ずっと通常移動を上書きし続ける
+            //  （＝Move等の意図した移動が「一度も動かなく見える」バグの原因）。
+            rm.lastEvaluatedSeq       = nullptr;
+            input.isRootMotionActive  = false;
+            input.rootMotionVelocity  = Vector3::Zero;
             return;
         }
 

@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "Game/Logics/AI/StateTree/Core/StateTreeAsset.h"
+#include "Engine/Platform/Core/Logger.h"
 
 
 namespace CCL::AI
@@ -45,6 +46,20 @@ namespace CCL::AI
         /// @param asset 構築済みの StateTreeAsset（ムーブで所有権を渡す）
         StateTreeHandle Register(StateTreeAsset&& asset)
         {
+            // ★ ホットリロード対応: 既に同じ名前のアセットが登録されているかチェック
+            auto it = _nameToHandle.find(asset.name);
+            if (it != _nameToHandle.end())
+            {
+                // 既存のメモリインデックスを取得し、中身を直接上書き(ムーブ)する
+                uint32_t idx = it->second.value;
+                _assets[idx] = std::move(asset);
+
+                // エディタからの更新成功をログに出力
+                CCL_LOG_SUCCESS(LogCategory::Editor, "[StateTreeRegistry] アセット '%s' をホットリロードしました。", _assets[idx].name.c_str());
+                return it->second;
+            }
+
+            // 新規登録の場合
             const uint32_t idx = static_cast<uint32_t>(_assets.size());
             _nameToHandle[asset.name] = StateTreeHandle{ idx };
             _assets.push_back(std::move(asset));

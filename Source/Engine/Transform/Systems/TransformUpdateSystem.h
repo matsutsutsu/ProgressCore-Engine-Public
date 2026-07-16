@@ -13,6 +13,12 @@ class TransformUpdateSystem : public CCL::ECS::IfSystem<TransformUpdateSystem,CC
     TransformUpdateSystem();
     virtual ~TransformUpdateSystem() = default;
 
+    /// @brief 登録時に1回だけ呼ばれる。階層解決キャッシュをResourceとして公開する。
+    /// @note TransformInterpolationSystem(Render Stage)が同じdepth順を読むために使う。
+    ///       所有権は本システムのまま（_cacheへの生ポインタを渡すだけ）。
+    void Initialize() override;
+
+
     // フレーム毎の更新処理
     void Update(float dt) override;
 

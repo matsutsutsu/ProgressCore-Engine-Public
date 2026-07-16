@@ -33,6 +33,14 @@
 #define SLOT_CB_BLOOM           0
 #define SLOT_CB_TONEMAP         1
 #define SLOT_CB_DISTORTION      2   // ディストーション用のスロットを確保
+#define SLOT_CB_RADIALBLUR      2   // 放射状ブラー(Distortionとb2を共有=時間的に排他)
+#define SLOT_CB_VIGNETTE        2   // ビネット(b2共有=時間的に排他)
+#define SLOT_CB_CHROMATIC       2   // 色収差(b2共有=時間的に排他)
+#define SLOT_CB_COLORGRADING    2   // カラーグレーディング(b2共有=時間的に排他)
+#define SLOT_CB_DOF             2   // 被写界深度(b2共有=時間的に排他)
+#define SLOT_CB_SSAO            2   // SSAO(b2共有=時間的に排他)
+#define SLOT_CB_SSAO_BLUR       2   // SSAOブラー(b2共有=時間的に排他)
+#define SLOT_CB_CONTACTSHADOW   2   // コンタクトシャドウ(b2共有=時間的に排他)
 
 // --- Per-frame (Graphics / EnvironmentSystem がバインド) ---
 #define SLOT_CB_SCENE           8   // viewProjection, camera, dirLight ... ★Graphics::Update のみ書込
@@ -64,6 +72,8 @@
 //        構造化バッファ。両者は同時に発生しないため衝突しない。
 #define SLOT_SRV_PARTICLE_BUF   3   // (別名) パーティクル描画時の構造化バッファ
 #define SLOT_SRV_SCENE_DEPTH    4
+#define SLOT_SRV_SCENE_COLOR    5
+#define SLOT_SRV_SCENE_NORMAL   6
 
 // --- Per-pass / ポストプロセス ---
 //     ※ t0/t1 は per-material と物理スロットを共有（時間的に排他）

@@ -6,8 +6,8 @@
 /**
  * @brief 半透明メッシュを奥から手前の順で描画するパス。
  * @details
- *  OpaquePass から転送された遅延コマンドと、ECS から直接 Submit されたコマンドを
- *  合算し、距離降順でソートしてから描画する。
+ *  OpaquePass が blend 有効と判定して転送した遅延コマンドを、距離降順で
+ *  ソートしてから 1 体ずつ描画する。
  */
 class TransparentPass : public IRenderPass
 {

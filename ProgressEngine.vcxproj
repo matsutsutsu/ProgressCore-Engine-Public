@@ -1,0 +1,1925 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Development|x64">
+      <Configuration>Development</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{D22095F2-0FC3-424B-97D6-074B973AB293}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>ProgressEngine</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Development|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="Build\EditorTooling.props" />
+    <Import Project="Build\EngineCore.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="Build\ShippingOptimize.props" />
+    <Import Project="Build\EngineCore.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Development|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="Build\EditorTooling.props" />
+    <Import Project="Build\EngineCore.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>Build/bin\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>Build/obj\$(Platform)\$(Configuration)\</IntDir>
+    <MultiProcFXC>true</MultiProcFXC>
+    <IncludePath>$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>Build/bin\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>Build/obj\$(Platform)\$(Configuration)\</IntDir>
+    <MultiProcFXC>true</MultiProcFXC>
+    <IncludePath>$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>Build/bin\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>Build/obj\$(Platform)\$(Configuration)\</IntDir>
+    <MultiProcFXC>true</MultiProcFXC>
+    <IncludePath>$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <MinimalRebuild>false</MinimalRebuild>
+      <AdditionalOptions>/utf-8  /Zc:char8_t- %(AdditionalOptions)</AdditionalOptions>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <ForcedIncludeFiles>pch.h</ForcedIncludeFiles>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ShowProgress>NotSet</ShowProgress>
+    </Link>
+    <FxCompile>
+      <ShaderModel>5.0</ShaderModel>
+      <ObjectFileOutput>Assets\Shader\%(Filename).cso</ObjectFileOutput>
+      <AssemblerOutput>
+      </AssemblerOutput>
+      <AssemblerOutputFile>Assets\Shader\%(Filename).cod</AssemblerOutputFile>
+      <AdditionalIncludeDirectories>$(SolutionDir)Source\;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </FxCompile>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <MinimalRebuild>false</MinimalRebuild>
+      <AdditionalOptions>/utf-8  /Zc:char8_t- %(AdditionalOptions)</AdditionalOptions>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <ForcedIncludeFiles>pch.h</ForcedIncludeFiles>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ShowProgress>NotSet</ShowProgress>
+    </Link>
+    <FxCompile>
+      <ShaderModel>5.0</ShaderModel>
+      <ObjectFileOutput>Assets\Shader\%(Filename).cso</ObjectFileOutput>
+      <AssemblerOutput>
+      </AssemblerOutput>
+      <AssemblerOutputFile>Assets\Shader\%(Filename).cod</AssemblerOutputFile>
+      <AdditionalIncludeDirectories>$(SolutionDir)Source\;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </FxCompile>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <MinimalRebuild>false</MinimalRebuild>
+      <AdditionalOptions>/utf-8  /Zc:char8_t- %(AdditionalOptions)</AdditionalOptions>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <ForcedIncludeFiles>pch.h</ForcedIncludeFiles>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ShowProgress>NotSet</ShowProgress>
+    </Link>
+    <FxCompile>
+      <ShaderModel>5.0</ShaderModel>
+      <ObjectFileOutput>Assets\Shader\%(Filename).cso</ObjectFileOutput>
+      <AssemblerOutput>
+      </AssemblerOutput>
+      <AssemblerOutputFile>Assets\Shader\%(Filename).cod</AssemblerOutputFile>
+      <AdditionalIncludeDirectories>$(SolutionDir)Source\;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </FxCompile>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="External\imgui-docking\imconfig.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\imgui-docking\imgui.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\imgui-docking\imgui_impl_dx11.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\imgui-docking\imgui_impl_win32.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\imgui-docking\imgui_internal.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\imgui-docking\imstb_rectpack.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\imgui-docking\imstb_textedit.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\imgui-docking\imstb_truetype.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\imgui-node-editor\crude_json.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\imgui-node-editor\imgui_bezier_math.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\imgui-node-editor\imgui_canvas.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\imgui-node-editor\imgui_extra_math.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\imgui-node-editor\imgui_node_editor.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\imgui-node-editor\imgui_node_editor_internal.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\ImGuizmo\GraphEditor.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\ImGuizmo\ImCurveEdit.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\ImGuizmo\ImGradient.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\ImGuizmo\ImGuizmo.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\ImGuizmo\ImLightRig.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\ImGuizmo\ImSequencer.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\ImGuizmo\ImZoomSlider.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\implot-master\implot.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\implot-master\implot_internal.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="External\Lua\src\lapi.h" />
+    <ClInclude Include="External\Lua\src\lauxlib.h" />
+    <ClInclude Include="External\Lua\src\lcode.h" />
+    <ClInclude Include="External\Lua\src\lctype.h" />
+    <ClInclude Include="External\Lua\src\ldebug.h" />
+    <ClInclude Include="External\Lua\src\ldo.h" />
+    <ClInclude Include="External\Lua\src\lfunc.h" />
+    <ClInclude Include="External\Lua\src\lgc.h" />
+    <ClInclude Include="External\Lua\src\ljumptab.h" />
+    <ClInclude Include="External\Lua\src\llex.h" />
+    <ClInclude Include="External\Lua\src\llimits.h" />
+    <ClInclude Include="External\Lua\src\lmem.h" />
+    <ClInclude Include="External\Lua\src\lobject.h" />
+    <ClInclude Include="External\Lua\src\lopcodes.h" />
+    <ClInclude Include="External\Lua\src\lopnames.h" />
+    <ClInclude Include="External\Lua\src\lparser.h" />
+    <ClInclude Include="External\Lua\src\lprefix.h" />
+    <ClInclude Include="External\Lua\src\lstate.h" />
+    <ClInclude Include="External\Lua\src\lstring.h" />
+    <ClInclude Include="External\Lua\src\ltable.h" />
+    <ClInclude Include="External\Lua\src\ltm.h" />
+    <ClInclude Include="External\Lua\src\lua.h" />
+    <ClInclude Include="External\Lua\src\lua.hpp" />
+    <ClInclude Include="External\Lua\src\luaconf.h" />
+    <ClInclude Include="External\Lua\src\lualib.h" />
+    <ClInclude Include="External\Lua\src\lundump.h" />
+    <ClInclude Include="External\Lua\src\lvm.h" />
+    <ClInclude Include="External\Lua\src\lzio.h" />
+    <ClInclude Include="External\RecastNavigation\DebugUtils\Include\DebugDraw.h" />
+    <ClInclude Include="External\RecastNavigation\DebugUtils\Include\DetourDebugDraw.h" />
+    <ClInclude Include="External\RecastNavigation\DebugUtils\Include\RecastDebugDraw.h" />
+    <ClInclude Include="External\RecastNavigation\DebugUtils\Include\RecastDump.h" />
+    <ClInclude Include="External\RecastNavigation\DetourCrowd\Include\DetourCrowd.h" />
+    <ClInclude Include="External\RecastNavigation\DetourCrowd\Include\DetourLocalBoundary.h" />
+    <ClInclude Include="External\RecastNavigation\DetourCrowd\Include\DetourObstacleAvoidance.h" />
+    <ClInclude Include="External\RecastNavigation\DetourCrowd\Include\DetourPathCorridor.h" />
+    <ClInclude Include="External\RecastNavigation\DetourCrowd\Include\DetourPathQueue.h" />
+    <ClInclude Include="External\RecastNavigation\DetourCrowd\Include\DetourProximityGrid.h" />
+    <ClInclude Include="External\RecastNavigation\DetourTileCache\Include\DetourTileCache.h" />
+    <ClInclude Include="External\RecastNavigation\DetourTileCache\Include\DetourTileCacheBuilder.h" />
+    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourAlloc.h" />
+    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourAssert.h" />
+    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourCommon.h" />
+    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourMath.h" />
+    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourNavMesh.h" />
+    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourNavMeshBuilder.h" />
+    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourNavMeshQuery.h" />
+    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourNode.h" />
+    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourStatus.h" />
+    <ClInclude Include="External\RecastNavigation\Recast\Include\Recast.h" />
+    <ClInclude Include="External\RecastNavigation\Recast\Include\RecastAlloc.h" />
+    <ClInclude Include="External\RecastNavigation\Recast\Include\RecastAssert.h" />
+    <ClInclude Include="External\sol2\sol\sol.hpp" />
+    <ClInclude Include="Source\Editor\Core\EditorCommandHistory.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Core\EditorContext.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Core\EditorWindow.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Core\EditorWindowManager.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Inspector\ComponentGuiRegistry.h" />
+    <ClInclude Include="Source\Editor\Utils\AssetBrowser.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Utils\CurveEditorWidget.h" />
+    <ClInclude Include="Source\Editor\Utils\NavMeshBuilder.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Utils\ShellIconLoader.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\AnimationSequencerWindow.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\AnimGraphWindow.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\AssetBrowserWindow.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\BehaviorTreeWindow.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\CameraPathEditorWindow.h" />
+    <ClInclude Include="Source\Editor\Windows\ConsoleWindow.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\CurveEditorWindow.h" />
+    <ClInclude Include="Source\Editor\Windows\ECSDebugWindow.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\GameViewWindow.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\RenderDebugWindow.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\RenderTargetVisualizer.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\HierarchyWindow.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\InputEditorWindow.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\InspectorWindow.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\MemoryAnalyzerWindow.h" />
+    <ClInclude Include="Source\Editor\Windows\NavMeshWindow.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\StateTreeWindow.h" />
+    <ClInclude Include="Source\Editor\Windows\TestLauncherWindow.h" />
+    <ClInclude Include="Source\Editor\Windows\TextEditorWindow.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\AI\Navigation\Components\NavAgentComponent.h" />
+    <ClInclude Include="Source\Engine\AI\Navigation\Core\NavigationData.h" />
+    <ClInclude Include="Source\Engine\AI\Navigation\Systems\NavMeshDebugDrawSystem.h" />
+    <ClInclude Include="Source\Engine\AI\Navigation\Systems\NavPathfindingSystem.h" />
+    <ClInclude Include="Source\Engine\AI\Navigation\Systems\NavSteeringSystem.h" />
+    <ClInclude Include="Source\Engine\Animation\Components\AnimatorComponent.h" />
+    <ClInclude Include="Source\Engine\Animation\Components\AnimParametersComponent.h" />
+    <ClInclude Include="Source\Engine\Animation\Components\RootMotionComponent.h" />
+    <ClInclude Include="Source\Engine\Animation\Core\AnimEventMessages.h" />
+    <ClInclude Include="Source\Engine\Animation\Core\AnimGraphSerializer.h" />
+    <ClInclude Include="Source\Engine\Animation\Core\AnimSequence.h" />
+    <ClInclude Include="Source\Engine\Animation\Core\AnimStateMachine.h" />
+    <ClInclude Include="Source\Engine\Animation\Systems\AnimationSystem.h" />
+    <ClInclude Include="Source\Engine\Animation\Systems\AnimControllerSystem.h" />
+    <ClInclude Include="Source\Engine\Animation\Systems\AnimSetupSystem.h" />
+    <ClInclude Include="Source\Engine\Animation\Systems\CharacterAnimSyncSystem.h" />
+    <ClInclude Include="Source\Engine\Animation\Systems\CombatAnimationSyncSystem.h" />
+    <ClInclude Include="Source\Engine\Animation\Systems\RootMotionSystem.h" />
+    <ClInclude Include="Source\Engine\Audio\Components\AudioEmitterComponent.h" />
+    <ClInclude Include="Source\Engine\Audio\Components\AudioEvents.h" />
+    <ClInclude Include="Source\Engine\Audio\FmodIntegration\FmodAudioManager.h" />
+    <ClInclude Include="Source\Engine\Audio\FmodIntegration\IAudioAPI.h" />
+    <ClInclude Include="Source\Engine\Audio\Systems\AudioSystem.h" />
+    <ClInclude Include="Source\Engine\Camera\Components\CameraBodyActionTPSComponent.h" />
+    <ClInclude Include="Source\Engine\Camera\Components\CameraDollyCartComponent.h" />
+    <ClInclude Include="Source\Engine\Camera\Components\VirtualCameraComponents.h" />
+    <ClInclude Include="Source\Engine\Camera\Systems\CameraActionTPSSystem.h" />
+    <ClInclude Include="Source\Engine\Camera\Systems\CameraBrainSystem.h" />
+    <ClInclude Include="Source\Engine\Camera\Systems\CameraDollySystem.h" />
+    <ClInclude Include="Source\Engine\Camera\Systems\CameraListenerSystem.h" />
+    <ClInclude Include="Source\Engine\Camera\Systems\VisualCameraSystem.h" />
+    <ClInclude Include="Source\Engine\Core\App\EngineServices.h" />
+    <ClInclude Include="Source\Engine\Core\App\Framework.h" />
+    <ClInclude Include="Source\Engine\Core\Components\DestroyTag.h" />
+    <ClInclude Include="Source\Engine\Core\Components\NameComponent.h" />
+    <ClInclude Include="Source\Engine\Core\Components\PersistentTag.h" />
+    <ClInclude Include="Source\Engine\Core\Components\RenderInterpState.h" />
+    <ClInclude Include="Source\Engine\Core\Math\CurveData.h" />
+    <ClInclude Include="Source\Engine\Core\Math\Misc.h" />
+    <ClInclude Include="Source\Engine\Core\Math\ScreenToWorld.h" />
+    <ClInclude Include="Source\Engine\Core\Math\StringHash.h" />
+    <ClInclude Include="Source\Engine\Core\Math\TransformUtils.h" />
+    <ClInclude Include="Source\Engine\Core\pch.h" />
+    <ClInclude Include="Source\Engine\Core\Systems\SystemPriority.h" />
+    <ClInclude Include="Source\Engine\Core\Time\HighResolutionTimer.h" />
+    <ClInclude Include="Source\Engine\ECS\CCL_ECSContext.h" />
+    <ClInclude Include="Source\Engine\ECS\Common\CCL_Archetype.h" />
+    <ClInclude Include="Source\Engine\ECS\Common\CCL_IDEmitter.h" />
+    <ClInclude Include="Source\Engine\ECS\Common\CCL_TypeErasure.h" />
+    <ClInclude Include="Source\Engine\ECS\Common\CCL_TypeInfo.h" />
+    <ClInclude Include="Source\Engine\ECS\Common\CCL_Types.h" />
+    <ClInclude Include="Source\Engine\ECS\Core\CCL_Chunk.h" />
+    <ClInclude Include="Source\Engine\ECS\Core\CCL_ChunkManager.h" />
+    <ClInclude Include="Source\Engine\ECS\Core\CCL_ComponentHandle.h" />
+    <ClInclude Include="Source\Engine\ECS\Core\CCL_EntityRef.h" />
+    <ClInclude Include="Source\Engine\ECS\Core\CCL_PendingOps.h" />
+    <ClInclude Include="Source\Engine\ECS\Core\CCL_Resource.h" />
+    <ClInclude Include="Source\Engine\ECS\Core\CCL_World.h" />
+    <ClInclude Include="Source\Engine\ECS\Events\CCL_EventBus.h" />
+    <ClInclude Include="Source\Engine\ECS\Jobs\CCL_FrameAllocator.h" />
+    <ClInclude Include="Source\Engine\ECS\Jobs\CCL_JobSystem.h" />
+    <ClInclude Include="Source\Engine\ECS\System\CCL_IfSystem.h" />
+    <ClInclude Include="Source\Engine\ECS\System\CCL_SystemAccess.h" />
+    <ClInclude Include="Source\Engine\ECS\System\CCL_SystemBase.h" />
+    <ClInclude Include="Source\Engine\ECS\System\CCL_SystemManager.h" />
+    <ClInclude Include="Source\Engine\ECS\System\CCL_SystemRegistry.h" />
+    <ClInclude Include="Source\Engine\ECS\System\CCL_TaskScheduler.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\Core\DissolveComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\Core\MaterialComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\Core\ModelComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\Core\PrimitiveComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\Culling\CullingComponents.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\Lighting\FogComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\Lighting\LightComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\Lighting\ShadowMapConfigComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\Particle\GPUParticleBuffer.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\Particle\GPUParticleComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\BloomConfigComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\DistortionConfigComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\RadialBlurConfigComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\VignetteConfigComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\ChromaticAberrationConfigComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\ColorGradingConfigComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\DepthOfFieldConfigComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\SSAOConfigComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\ContactShadowConfigComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\ToneMapConfigComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Pipeline\Core\IRenderPass.h" />
+    <ClInclude Include="Source\Engine\Graphics\Pipeline\Core\RenderPipeline.h" />
+    <ClInclude Include="Source\Engine\Graphics\Pipeline\OpaquePass.h" />
+    <ClInclude Include="Source\Engine\Graphics\Pipeline\NormalBuffer.h" />
+    <ClInclude Include="Source\Engine\Graphics\Pipeline\NormalPrepass.h" />
+    <ClInclude Include="Source\Engine\Graphics\Pipeline\ParticlePass.h" />
+    <ClInclude Include="Source\Engine\Graphics\Pipeline\TrailPass.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\Trail\TrailComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Renderer\TrailRenderer.h" />
+    <ClInclude Include="Source\Engine\Graphics\Systems\Trail\TrailSystem.h" />
+    <ClInclude Include="Source\Engine\Graphics\Systems\Trail\TrailAnimationSyncSystem.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\Impact\ScreenImpactComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Systems\Impact\ScreenImpactSystem.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\Impact\JustEvadeEffectComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Systems\Impact\JustEvadeEffectSystem.h" />
+    <ClInclude Include="Source\Engine\Graphics\Pipeline\PostProcessPass.h" />
+    <ClInclude Include="Source\Engine\Graphics\Pipeline\PrimitivePass.h" />
+    <ClInclude Include="Source\Engine\Graphics\Pipeline\SetupPass.h" />
+    <ClInclude Include="Source\Engine\Graphics\Pipeline\ShadowPass.h" />
+    <ClInclude Include="Source\Engine\Graphics\Pipeline\SkyboxPass.h" />
+    <ClInclude Include="Source\Engine\Graphics\Pipeline\TransparentPass.h" />
+    <ClInclude Include="Source\Engine\Graphics\Renderer\ImGuiRenderer.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Renderer\InstanceBuffer.h" />
+    <ClInclude Include="Source\Engine\Graphics\Renderer\ModelRenderer.h" />
+    <ClInclude Include="Source\Engine\Graphics\Renderer\MeshCulling.h" />
+    <ClInclude Include="Source\Engine\Graphics\Renderer\RenderDebugRegistry.h" />
+    <ClInclude Include="Source\Engine\Graphics\Renderer\ParticleRenderer.h" />
+    <ClInclude Include="Source\Engine\Graphics\Renderer\PrimitiveRenderer.h" />
+    <ClInclude Include="Source\Engine\Graphics\Renderer\RenderQueue.h" />
+    <ClInclude Include="Source\Engine\Graphics\Renderer\ShapeRenderer.h" />
+    <ClInclude Include="Source\Engine\Graphics\Renderer\Sprite.h" />
+    <ClInclude Include="Source\Engine\Graphics\Resource\GLTFImporter.h" />
+    <ClInclude Include="Source\Engine\Graphics\Resource\GraphicsTypes.h" />
+    <ClInclude Include="Source\Engine\Graphics\Resource\MaterialData.h" />
+    <ClInclude Include="Source\Engine\Graphics\Resource\Model.h" />
+    <ClInclude Include="Source\Engine\Graphics\Resource\ModelResource.h" />
+    <ClInclude Include="Source\Engine\Graphics\Resource\ResourcePool.h" />
+    <ClInclude Include="Source\Engine\Graphics\Resource\ResourceManager.h" />
+    <ClInclude Include="Source\Engine\Graphics\Resource\ResourceTypes.h" />
+    <ClInclude Include="Source\Engine\Graphics\RHI\Camera.h" />
+    <ClInclude Include="Source\Engine\Graphics\RHI\GpuResourceUtils.h" />
+    <ClInclude Include="Source\Engine\Graphics\RHI\Graphics.h" />
+    <ClInclude Include="Source\Engine\Graphics\RHI\GraphicsDevice.h" />
+    <ClInclude Include="Source\Engine\Graphics\RHI\Light.h" />
+    <ClInclude Include="Source\Engine\Graphics\RHI\PipelineState.h" />
+    <ClInclude Include="Source\Engine\Graphics\RHI\RenderContext.h" />
+    <ClInclude Include="Source\Engine\Graphics\RHI\RenderState.h" />
+    <ClInclude Include="Source\Engine\Graphics\RHI\RenderTarget.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\Core\Shader.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\Material\ErrorShader.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\Material\MaterialShader.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\Material\OutlineShader.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\Material\ParticleComputeShader.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\Material\ParticleShader.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\Material\ShadowMapShader.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\Material\NormalPrepassShader.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\Pass\ShadowMap.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\Pass\ShadowUtils.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\BloomEffect.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\DistortionEffect.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\RadialBlurEffect.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\VignetteEffect.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\ChromaticAberrationEffect.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\ColorGradingEffect.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\DepthOfFieldEffect.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\SSAOEffect.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\ContactShadowEffect.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\IPostEffect.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\PostProcessManager.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\ToneMapEffect.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\ShaderManifest.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\ShaderReflection.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\ShaderRegistry.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\ShaderResources.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\Shared\ParticleShared.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\Shared\PostProcessShared.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\Shared\ShaderShared.h" />
+    <ClInclude Include="Source\Engine\Graphics\Systems\Core\EnvironmentSystem.h" />
+    <ClInclude Include="Source\Engine\Graphics\Systems\Core\MaterialSetupSystem.h" />
+    <ClInclude Include="Source\Engine\Graphics\Systems\Core\ModelPoseUpdateSystem.h" />
+    <ClInclude Include="Source\Engine\Graphics\Systems\Core\ModelRenderSystem.h" />
+    <ClInclude Include="Source\Engine\Graphics\Systems\Core\PrimitiveRenderSystem.h" />
+    <ClInclude Include="Source\Engine\Graphics\Systems\Culling\AABBDebugDrawSystem.h" />
+    <ClInclude Include="Source\Engine\Graphics\Systems\Culling\BoundsUpdateSystem.h" />
+    <ClInclude Include="Source\Engine\Graphics\Systems\Culling\CullingSetupSystem.h" />
+    <ClInclude Include="Source\Engine\Graphics\Systems\Culling\FrustumCullingSystem.h" />
+    <ClInclude Include="Source\Engine\Graphics\Systems\Lighting\LightSystem.h" />
+    <ClInclude Include="Source\Engine\Graphics\Systems\Lighting\ShadowMapRenderSystem.h" />
+    <ClInclude Include="Source\Engine\Graphics\Systems\Particle\GPUParticleRenderSystem.h" />
+    <ClInclude Include="Source\Engine\Graphics\Systems\Particle\GPUParticleUpdateSystem.h" />
+    <ClInclude Include="Source\Engine\Graphics\Systems\PostProcess\PostProcessSystem.h" />
+    <ClInclude Include="Source\Engine\Physics\Components\Character\CharacterMovementInputComponent.h" />
+    <ClInclude Include="Source\Engine\Physics\Components\Character\KnockbackComponent.h" />
+    <ClInclude Include="Source\Engine\Physics\Components\Character\JoltCharacterConfigComponent.h" />
+    <ClInclude Include="Source\Engine\Physics\Components\Character\JoltCharacterHandleComponent.h" />
+    <ClInclude Include="Source\Engine\Physics\Components\Collision\JoltBoxColliderComponent.h" />
+    <ClInclude Include="Source\Engine\Physics\Components\Collision\JoltCapsuleColliderComponent.h" />
+    <ClInclude Include="Source\Engine\Physics\Components\Collision\JoltCollisionEvent.h" />
+    <ClInclude Include="Source\Engine\Physics\Components\Collision\JoltMeshColliderComponent.h" />
+    <ClInclude Include="Source\Engine\Physics\Components\Collision\JoltSphereColliderComponent.h" />
+    <ClInclude Include="Source\Engine\Physics\Components\Jolt\JoltHandleComponent.h" />
+    <ClInclude Include="Source\Engine\Physics\Components\RigidBody\JoltRigidBodyComponent.h" />
+    <ClInclude Include="Source\Engine\Physics\JoltIntegration\IPhysicsAPI.h" />
+    <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltCharacterContactListener.h" />
+    <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltContactListener.h" />
+    <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsFacade.h" />
+    <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsManager.h" />
+    <ClInclude Include="Source\Engine\Physics\JoltIntegration\PhysicsLayers.h" />
+    <ClInclude Include="Source\Engine\Physics\Systems\Character\JoltCharacterDebugDrawSystem.h" />
+    <ClInclude Include="Source\Engine\Physics\Systems\Character\JoltCharacterSetupSystem.h" />
+    <ClInclude Include="Source\Engine\Physics\Systems\Character\JoltCharacterUpdateSystem.h" />
+    <ClInclude Include="Source\Engine\Physics\Systems\Collision\JoltCollisionEventSystem.h" />
+    <ClInclude Include="Source\Engine\Physics\Systems\Collision\JoltMeshColliderComponent.h" />
+    <ClInclude Include="Source\Engine\Physics\Systems\Collision\JoltSphereColliderComponent.h" />
+    <ClInclude Include="Source\Engine\Physics\Systems\Jolt\JoltBodySetupSystem.h" />
+    <ClInclude Include="Source\Engine\Physics\Systems\Jolt\JoltCleanupSystem.h" />
+    <ClInclude Include="Source\Engine\Physics\Systems\Jolt\JoltDebugDrawSystem.h" />
+    <ClInclude Include="Source\Engine\Physics\Systems\Jolt\JoltPushSystem.h" />
+    <ClInclude Include="Source\Engine\Physics\Systems\Jolt\JoltShapeUpdateSystem.h" />
+    <ClInclude Include="Source\Engine\Physics\Systems\Jolt\JoltUpdateSystem.h" />
+    <ClInclude Include="Source\Engine\Platform\Core\Dialog.h" />
+    <ClInclude Include="Source\Engine\Platform\Core\FileSystem.h" />
+    <ClInclude Include="Source\Engine\Platform\Core\Logger.h" />
+    <ClInclude Include="Source\Engine\Platform\Core\LogSinks.h" />
+    <ClInclude Include="Source\Engine\Platform\Input\GamePad.h" />
+    <ClInclude Include="Source\Engine\Platform\Input\IInputAPI.h" />
+    <ClInclude Include="Source\Engine\Platform\Input\Input.h" />
+    <ClInclude Include="Source\Engine\Platform\Input\InputFacade.h" />
+    <ClInclude Include="Source\Engine\Platform\Input\InputKeyTable.h" />
+    <ClInclude Include="Source\Engine\Platform\Input\Keyboard.h" />
+    <ClInclude Include="Source\Engine\Platform\Input\Mouse.h" />
+    <ClInclude Include="Source\Engine\Scene\Scene.h" />
+    <ClInclude Include="Source\Engine\Scene\SceneFactory.h" />
+    <ClInclude Include="Source\Engine\Scene\SceneManager.h" />
+    <ClInclude Include="Source\Engine\Serialization\Core\EntityLink.h" />
+    <ClInclude Include="Source\Engine\Serialization\Core\LoadContext.h" />
+    <ClInclude Include="Source\Engine\Serialization\Core\SaveContext.h" />
+    <ClInclude Include="Source\Engine\Serialization\Core\SceneFormat.h" />
+    <ClInclude Include="Source\Engine\Serialization\Factory\EntityFactory.h" />
+    <ClInclude Include="Source\Engine\Serialization\Factory\Prefab.h" />
+    <ClInclude Include="Source\Engine\Serialization\Factory\SceneInitializer.h" />
+    <ClInclude Include="Source\Engine\Serialization\Meta\ComponentCategories.h" />
+    <ClInclude Include="Source\Engine\Serialization\Meta\ComponentDefine.h" />
+    <ClInclude Include="Source\Engine\Serialization\Meta\ComponentMeta.h" />
+    <ClInclude Include="Source\Engine\Serialization\Meta\ComponentMetaImGui.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Serialization\Meta\ComponentMetaJson.h" />
+    <ClInclude Include="Source\Engine\Serialization\Registry\ComponentRegistry.h" />
+    <ClInclude Include="Source\Engine\Serialization\Registry\ComponentRegistry_Editor.h" />
+    <ClInclude Include="Source\Engine\Serialization\Serializer\PrefabSerializer.h" />
+    <ClInclude Include="Source\Engine\Serialization\Serializer\SceneSerializer.h" />
+    <ClInclude Include="Source\Engine\Timer\TimeScaleSetupSystem.h" />
+    <ClInclude Include="Source\Engine\Timer\TimeScaleSystem.h" />
+    <ClInclude Include="Source\Engine\Timer\TimeState.h" />
+    <ClInclude Include="Source\Engine\Transform\Components\BoneAttachmentComponent.h" />
+    <ClInclude Include="Source\Engine\Transform\Components\PendingParentComponent.h" />
+    <ClInclude Include="Source\Engine\Transform\Components\TransformComponent.h" />
+    <ClInclude Include="Source\Engine\Transform\Core\TransformHierarchyCache.h" />
+    <ClInclude Include="Source\Engine\Transform\Systems\BoneAttachmentRenderSystem.h" />
+    <ClInclude Include="Source\Engine\Transform\Systems\BoneAttachmentSystem.h" />
+    <ClInclude Include="Source\Engine\Transform\Systems\HierarchyCleanupSystem.h" />
+    <ClInclude Include="Source\Engine\Transform\Systems\TransformInterpolationSystem.h" />
+    <ClInclude Include="Source\Engine\Transform\Systems\TransformSnapshotSystem.h" />
+    <ClInclude Include="Source\Engine\Transform\Systems\TransformUpdateSystem.h" />
+    <ClInclude Include="Source\Engine\UI\ImGui\ImGuiThemes.h" />
+    <ClInclude Include="Source\Engine\UI\UIContext.h" />
+    <ClInclude Include="Source\Engine\UI\UIElement.h" />
+    <ClInclude Include="Source\Engine\UI\UIManager.h" />
+    <ClInclude Include="Source\Engine\UI\Widgets\SimpleButton.h" />
+    <ClInclude Include="Source\Engine\UI\Widgets\UIProgressBar.h" />
+    <ClInclude Include="Source\Engine\UI\Widgets\UIText.h" />
+    <ClInclude Include="Source\Game\Core\AllComponents.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Battle\BattleContext.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Battle\BattleContextSyncSystem.h" />
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTAction.h" />
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTActionRegistry.h" />
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTConditions.h" />
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeSystem.h" />
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\ActionRegistry.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeBuilder.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeComponents.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeData.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeLoader.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\DroneComponent.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Drone\DroneFormationSystem.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Drone\DroneAI.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Drone\DroneManagerSystem.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Drone\DroneMovementSystem.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Drone\DroneCommandSystem.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\FormationRegistry.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_Basic.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_Attack.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\IFormation.h" />
+    <ClInclude Include="Source\Game\Logics\AI\FlowField\NavFlowFieldSystem.h" />
+    <ClInclude Include="Source\Game\Logics\AI\FlowField\NavGridFlowField.h" />
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\Commander\CommanderAI.h" />
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\NodeParamField.h" />
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\NodeRegistry.h" />
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\StateTreeAsset.h" />
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\StateTreeComponent.h" />
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\StateTreeNode.h" />
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\StateTreeRegistry.h" />
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\Serialization\StateTreeDef.h" />
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\Serialization\StateTreeSerializer.h" />
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\System\AIDebugSystem.h" />
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\System\StateTreeResolveSystem.h" />
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\System\StateTreeSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Data\BossActionComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Data\BTActions_Boss.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossActionSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossAnimSyncSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossPerceptionSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Components\DashComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Components\JustEvadeComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Components\PlayerComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerAttackSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerDashSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerFeedbackSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerInputSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerLockOnSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerMoveSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Combat\CombatRosterComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Combat\DamageResolutionSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Combat\DeadTag.h" />
+    <ClInclude Include="Source\Game\Logics\Combat\CombatComponents.h" />
+    <ClInclude Include="Source\Game\Logics\Combat\HealthComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Combat\HealthSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Combat\HitboxCollisionSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Combat\SpawnHitboxSystem.h" />
+    <ClInclude Include="Source\Game\Logics\GameEvent\GameEvents.h" />
+    <ClInclude Include="Source\Game\Logics\GameEvent\GameOverResource.h" />
+    <ClInclude Include="Source\Game\Logics\GameEvent\GameStateMode.h" />
+    <ClInclude Include="Source\Game\Logics\Test\BoidComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Test\BoidSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Test\ECSBenchmarkSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Test\JoltSandboxGuiSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Test\LissajousOrbitComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Test\LissajousOrbitSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Test\OrbitBenchmarkComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Test\TornadoVortexComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Test\TornadoVortexSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Test\VectorFlowComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Test\VectorFlowSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Test\VoxelOceanComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Test\VoxelOceanSystem.h" />
+    <ClInclude Include="Source\Game\Prototype\DemoAI.h" />
+    <ClInclude Include="Source\Game\Scenes\BaseScene.h" />
+    <ClInclude Include="Source\Game\Scenes\EditorScene.h" />
+    <ClInclude Include="Source\Game\Scenes\ParticleScene.h" />
+    <ClInclude Include="Source\Game\Scenes\SceneLoading.h" />
+    <ClInclude Include="Source\Game\Utils\ParticlePool.h" />
+    <ClInclude Include="Source\Game\Utils\PooledParticleComponent.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="External\imgui-docking\imgui.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\imgui-docking\imgui_demo.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\imgui-docking\imgui_draw.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\imgui-docking\imgui_impl_dx11.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\imgui-docking\imgui_impl_win32.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\imgui-docking\imgui_tables.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\imgui-docking\imgui_widgets.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\imgui-node-editor\crude_json.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\imgui-node-editor\imgui_canvas.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\imgui-node-editor\imgui_node_editor.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\imgui-node-editor\imgui_node_editor_api.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\ImGuizmo\GraphEditor.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\ImGuizmo\ImCurveEdit.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\ImGuizmo\ImGradient.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\ImGuizmo\ImGuizmo.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\ImGuizmo\ImSequencer.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\implot-master\implot.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\implot-master\implot_demo.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\implot-master\implot_items.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="External\Lua\src\lapi.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="External\Lua\src\lauxlib.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="External\Lua\src\lbaselib.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="External\Lua\src\lcode.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="External\Lua\src\lcorolib.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="External\Lua\src\lctype.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="External\Lua\src\ldblib.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="External\Lua\src\ldebug.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="External\Lua\src\ldo.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="External\Lua\src\ldump.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="External\Lua\src\lfunc.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="External\Lua\src\lgc.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="External\Lua\src\linit.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="External\Lua\src\liolib.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="External\Lua\src\llex.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="External\Lua\src\lmathlib.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="External\Lua\src\lmem.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="External\Lua\src\loadlib.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="External\Lua\src\lobject.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="External\Lua\src\lopcodes.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="External\Lua\src\loslib.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="External\Lua\src\lparser.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="External\Lua\src\lstate.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="External\Lua\src\lstring.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="External\Lua\src\lstrlib.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="External\Lua\src\ltable.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="External\Lua\src\ltablib.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="External\Lua\src\ltm.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="External\Lua\src\lundump.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="External\Lua\src\lutf8lib.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="External\Lua\src\lvm.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="External\Lua\src\lzio.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="External\RecastNavigation\DebugUtils\Source\DebugDraw.cpp" />
+    <ClCompile Include="External\RecastNavigation\DebugUtils\Source\DetourDebugDraw.cpp" />
+    <ClCompile Include="External\RecastNavigation\DebugUtils\Source\RecastDebugDraw.cpp" />
+    <ClCompile Include="External\RecastNavigation\DebugUtils\Source\RecastDump.cpp" />
+    <ClCompile Include="External\RecastNavigation\DetourCrowd\Source\DetourCrowd.cpp" />
+    <ClCompile Include="External\RecastNavigation\DetourCrowd\Source\DetourLocalBoundary.cpp" />
+    <ClCompile Include="External\RecastNavigation\DetourCrowd\Source\DetourObstacleAvoidance.cpp" />
+    <ClCompile Include="External\RecastNavigation\DetourCrowd\Source\DetourPathCorridor.cpp" />
+    <ClCompile Include="External\RecastNavigation\DetourCrowd\Source\DetourPathQueue.cpp" />
+    <ClCompile Include="External\RecastNavigation\DetourCrowd\Source\DetourProximityGrid.cpp" />
+    <ClCompile Include="External\RecastNavigation\DetourTileCache\Source\DetourTileCache.cpp" />
+    <ClCompile Include="External\RecastNavigation\DetourTileCache\Source\DetourTileCacheBuilder.cpp" />
+    <ClCompile Include="External\RecastNavigation\Detour\Source\DetourAlloc.cpp" />
+    <ClCompile Include="External\RecastNavigation\Detour\Source\DetourAssert.cpp" />
+    <ClCompile Include="External\RecastNavigation\Detour\Source\DetourCommon.cpp" />
+    <ClCompile Include="External\RecastNavigation\Detour\Source\DetourNavMesh.cpp" />
+    <ClCompile Include="External\RecastNavigation\Detour\Source\DetourNavMeshBuilder.cpp" />
+    <ClCompile Include="External\RecastNavigation\Detour\Source\DetourNavMeshQuery.cpp" />
+    <ClCompile Include="External\RecastNavigation\Detour\Source\DetourNode.cpp" />
+    <ClCompile Include="External\RecastNavigation\Recast\Source\Recast.cpp" />
+    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastAlloc.cpp" />
+    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastArea.cpp" />
+    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastAssert.cpp" />
+    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastContour.cpp" />
+    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastFilter.cpp" />
+    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastLayers.cpp" />
+    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastMesh.cpp" />
+    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastMeshDetail.cpp" />
+    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastRasterization.cpp" />
+    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastRegion.cpp" />
+    <ClCompile Include="External\Tracy\TracyClient.cpp" />
+    <ClCompile Include="Source\Editor\Core\EditorWindowManager.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Inspector\ComponentGuiRegistry.cpp" />
+    <ClCompile Include="Source\Editor\Utils\AssetBrowser.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Utils\CurveEditorWidget.cpp" />
+    <ClCompile Include="Source\Editor\Utils\NavMeshBuilder.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Utils\ShellIconLoader.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\AnimationSequencerWindow.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\AnimGraphWindow.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\BehaviorTreeWindow.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\CameraPathEditorWindow.cpp" />
+    <ClCompile Include="Source\Editor\Windows\ConsoleWindow.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\CurveEditorWindow.cpp" />
+    <ClCompile Include="Source\Editor\Windows\ECSDebugWindow.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\GameViewWindow.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\RenderDebugWindow.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\RenderTargetVisualizer.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\HierarchyWindow.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\InputEditorWindow.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\InspectorWindow.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\MemoryAnalyzerWindow.cpp" />
+    <ClCompile Include="Source\Editor\Windows\NavMeshWindow.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\StateTreeWindow.cpp" />
+    <ClCompile Include="Source\Editor\Windows\TestLauncherWindow.cpp" />
+    <ClCompile Include="Source\Editor\Windows\TextEditorWindow.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\AI\Navigation\Components\NavAgentComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\AI\Navigation\Systems\NavMeshDebugDrawSystem.cpp" />
+    <ClCompile Include="Source\Engine\AI\Navigation\Systems\NavPathfindingSystem.cpp" />
+    <ClCompile Include="Source\Engine\AI\Navigation\Systems\NavSteeringSystem.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Components\AnimatorComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Components\RootMotionComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Core\AnimGraphSerializer.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Systems\AnimationSystem.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Systems\AnimControllerSystem.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Systems\AnimSetupSystem.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Systems\CharacterAnimSyncSystem.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Systems\CombatAnimationSyncSystem.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Systems\RootMotionSystem.cpp" />
+    <ClCompile Include="Source\Engine\Audio\Components\AudioComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Audio\FmodIntegration\FmodAudioManager.cpp" />
+    <ClCompile Include="Source\Engine\Audio\Systems\AudioSystem.cpp" />
+    <ClCompile Include="Source\Engine\Camera\Components\CameraBodyActionTPSComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Camera\Components\CameraDollyCartComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Camera\Components\VirtualCameraComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Camera\Systems\CameraActionTPSSystem.cpp" />
+    <ClCompile Include="Source\Engine\Camera\Systems\CameraBrainSystem.cpp" />
+    <ClCompile Include="Source\Engine\Camera\Systems\CameraDollySystem.cpp" />
+    <ClCompile Include="Source\Engine\Camera\Systems\CameraListenerSystem.cpp" />
+    <ClCompile Include="Source\Engine\Camera\Systems\VisualCameraSystem.cpp" />
+    <ClCompile Include="Source\Engine\Core\App\Framework.cpp" />
+    <ClCompile Include="Source\Engine\Core\App\Main.cpp" />
+    <ClCompile Include="Source\Engine\Core\Components\CoreComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Core\Math\ScreenToWorld.cpp" />
+    <ClCompile Include="Source\Engine\Core\Math\TransformUtils.cpp" />
+    <ClCompile Include="Source\Engine\Core\pch.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\ECS\Core\CCL_Chunk.cpp" />
+    <ClCompile Include="Source\Engine\ECS\Core\CCL_ChunkManager.cpp" />
+    <ClCompile Include="Source\Engine\ECS\Core\CCL_World.cpp" />
+    <ClCompile Include="Source\Engine\ECS\Jobs\CCL_JobSystem.cpp" />
+    <ClCompile Include="Source\Engine\ECS\System\CCL_SystemManager.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Components\Core\EnvironmentComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Components\PostProcess\RadialBlurConfigComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Components\PostProcess\VignetteConfigComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Components\PostProcess\ChromaticAberrationConfigComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Components\PostProcess\ColorGradingConfigComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Components\PostProcess\DepthOfFieldConfigComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Components\PostProcess\SSAOConfigComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Components\PostProcess\ContactShadowConfigComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Components\Core\MaterialComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Components\Core\ModelComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Components\Core\PrimitiveComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Components\Culling\CullingComponentsMeta.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Components\Lighting\LightComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Components\Particle\GPUParticleComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Pipeline\Core\RenderPipeline.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Pipeline\OpaquePass.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Pipeline\NormalBuffer.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Pipeline\NormalPrepass.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Pipeline\ParticlePass.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Pipeline\TrailPass.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Components\Trail\TrailComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Renderer\TrailRenderer.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Systems\Trail\TrailSystem.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Systems\Trail\TrailAnimationSyncSystem.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Components\Impact\ScreenImpactComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Systems\Impact\ScreenImpactSystem.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Components\Impact\JustEvadeEffectComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Systems\Impact\JustEvadeEffectSystem.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Pipeline\PostProcessPass.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Pipeline\PrimitivePass.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Pipeline\SetupPass.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Pipeline\ShadowPass.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Pipeline\SkyboxPass.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Pipeline\SceneColorGrabPass.cpp" />
+    <ClInclude Include="Source\Engine\Graphics\Pipeline\SceneColorGrabPass.h" />
+    <ClCompile Include="Source\Engine\Graphics\Pipeline\TransparentPass.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Renderer\ImGuiRenderer.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Renderer\ModelRenderer.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Renderer\ParticleRenderer.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Renderer\PrimitiveRenderer.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Renderer\ShapeRenderer.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Renderer\Sprite.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Resource\GLTFImporter.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Resource\Model.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Resource\ModelResource.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Resource\ResourceManager.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\RHI\Camera.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\RHI\GpuResourceUtils.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\RHI\Graphics.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\RHI\GraphicsDevice.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\RHI\Light.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\RHI\RenderState.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\RHI\RenderTarget.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Shader\Core\Shader.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Shader\Material\ErrorShader.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Shader\Material\MaterialShader.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Shader\Material\OutlineShader.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Shader\Material\ParticleComputeShader.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Shader\Material\ParticleShader.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Shader\Material\ShadowMapShader.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Shader\Material\NormalPrepassShader.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Shader\Pass\ShadowMap.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\BloomEffect.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\DistortionEffect.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\RadialBlurEffect.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\VignetteEffect.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\ChromaticAberrationEffect.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\ColorGradingEffect.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\DepthOfFieldEffect.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\SSAOEffect.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\ContactShadowEffect.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\PostProcessManager.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\ToneMapEffect.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Shader\ShaderManifest.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Shader\ShaderReflection.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Systems\Core\EnvironmentSystem.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Systems\Core\MaterialSetupSystem.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Systems\Core\ModelPoseUpdateSystem.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Systems\Core\ModelRenderSystem.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Systems\Core\PrimitiveRenderSystem.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Systems\Culling\AABBDebugDrawSystem.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Systems\Culling\BoundsUpdateSystem.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Systems\Culling\CullingSetupSystem.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Systems\Culling\FrustumCullingSystem.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Systems\Lighting\LightSystem.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Systems\Lighting\ShadowMapRenderSystem.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Systems\Particle\GPUParticleRenderSystem.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Systems\Particle\GPUParticleUpdateSystem.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Systems\PostProcess\PostProcessSystem.cpp" />
+    <ClCompile Include="Source\Engine\Physics\Components\Character\CharacterMovementInputComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Physics\Components\Character\KnockbackComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Physics\Components\Character\JoltCharacterConfigComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Physics\Components\Jolt\JoltPhysicsComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltCharacterContactListener.cpp" />
+    <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltContactListener.cpp" />
+    <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsFacade.cpp" />
+    <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsManager.cpp" />
+    <ClCompile Include="Source\Engine\Physics\JoltIntegration\PhysicsLayers.cpp" />
+    <ClCompile Include="Source\Engine\Physics\Systems\Character\JoltCharacterDebugDrawSystem.cpp" />
+    <ClCompile Include="Source\Engine\Physics\Systems\Character\JoltCharacterSetupSystem.cpp" />
+    <ClCompile Include="Source\Engine\Physics\Systems\Character\JoltCharacterUpdateSystem.cpp" />
+    <ClCompile Include="Source\Engine\Physics\Systems\Collision\JoltCollisionEventSystem.cpp" />
+    <ClCompile Include="Source\Engine\Physics\Systems\Jolt\JoltBodySetupSystem.cpp" />
+    <ClCompile Include="Source\Engine\Physics\Systems\Jolt\JoltCleanupSystem.cpp" />
+    <ClCompile Include="Source\Engine\Physics\Systems\Jolt\JoltDebugDrawSystem.cpp" />
+    <ClCompile Include="Source\Engine\Physics\Systems\Jolt\JoltPushSystem.cpp" />
+    <ClCompile Include="Source\Engine\Physics\Systems\Jolt\JoltShapeUpdateSystem.cpp" />
+    <ClCompile Include="Source\Engine\Physics\Systems\Jolt\JoltUpdateSystem.cpp" />
+    <ClCompile Include="Source\Engine\Platform\Core\Dialog.cpp" />
+    <ClCompile Include="Source\Engine\Platform\Core\FileSystem.cpp" />
+    <ClCompile Include="Source\Engine\Platform\Core\Logger.cpp" />
+    <ClCompile Include="Source\Engine\Platform\Input\GamePad.cpp" />
+    <ClCompile Include="Source\Engine\Platform\Input\Input.cpp" />
+    <ClCompile Include="Source\Engine\Platform\Input\InputFacade.cpp" />
+    <ClCompile Include="Source\Engine\Platform\Input\Keyboard.cpp" />
+    <ClCompile Include="Source\Engine\Platform\Input\Mouse.cpp" />
+    <ClCompile Include="Source\Engine\Scene\SceneFactory.cpp" />
+    <ClCompile Include="Source\Engine\Scene\SceneManager.cpp" />
+    <ClCompile Include="Source\Engine\Serialization\Factory\Prefab.cpp" />
+    <ClCompile Include="Source\Engine\Serialization\Factory\SceneInitializer.cpp" />
+    <ClCompile Include="Source\Engine\Serialization\Registry\ComponentRegistry.cpp" />
+    <ClCompile Include="Source\Engine\Serialization\Serializer\PrefabSerializer.cpp" />
+    <ClCompile Include="Source\Engine\Serialization\Serializer\SceneSerializer.cpp" />
+    <ClCompile Include="Source\Engine\Timer\TimeComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Timer\TimeScaleSetupSystem.cpp" />
+    <ClCompile Include="Source\Engine\Timer\TimeScaleSystem.cpp" />
+    <ClCompile Include="Source\Engine\Transform\Components\TransformComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Transform\Core\TransformHierarchyCache.cpp" />
+    <ClCompile Include="Source\Engine\Transform\Systems\BoneAttachmentRenderSystem.cpp" />
+    <ClCompile Include="Source\Engine\Transform\Systems\BoneAttachmentSystem.cpp" />
+    <ClCompile Include="Source\Engine\Transform\Systems\HierarchyCleanupSystem.cpp" />
+    <ClCompile Include="Source\Engine\Transform\Systems\TransformInterpolationSystem.cpp" />
+    <ClCompile Include="Source\Engine\Transform\Systems\TransformSnapshotSystem.cpp" />
+    <ClCompile Include="Source\Engine\Transform\Systems\TransformUpdateSystem.cpp" />
+    <ClCompile Include="Source\Engine\UI\ImGui\ImGuiThemes.cpp" />
+    <ClCompile Include="Source\Engine\UI\UIElement.cpp" />
+    <ClCompile Include="Source\Engine\UI\UIManager.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\Battle\BattleContextSyncSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeComponentMeta.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeBuilder.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeLoader.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\Drone\DroneFormationSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\Drone\DroneManagerSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\Drone\DroneCommandSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\Drone\DroneMovementSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\FlowField\NavFlowFieldSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\StateTree\Core\StateTreeComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\StateTree\Serialization\StateTreeSerializer.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\StateTree\System\AIDebugSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\StateTree\System\StateTreeResolveSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\StateTree\System\StateTreeSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Data\BossActionComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossActionSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossAnimSyncSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossPerceptionSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Components\DashComponentsMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Components\PlayerComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerAttackSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerDashSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerFeedbackSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerInputSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerLockOnSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerMoveSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Combat\CombatComponentsMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Combat\DamageResolutionSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Combat\HealthSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Combat\HitboxCollisionSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Combat\SpawnHitboxSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Test\BoidSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Test\ECSBenchmarkSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Test\JoltSandboxGuiSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Test\LissajousOrbitSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Test\TornadoVortexSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Test\VectorFlowSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Test\VoxelOceanSystem.cpp" />
+    <ClCompile Include="Source\Game\Scenes\BaseScene.cpp" />
+    <ClCompile Include="Source\Game\Scenes\EditorScene.cpp" />
+    <ClCompile Include="Source\Game\Scenes\ParticleScene.cpp" />
+    <ClCompile Include="Source\Game\Scenes\SceneLoading.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="External\DirectXTex\DirectXTex_Desktop_2022.vcxproj">
+      <Project>{371b9fa9-4c90-4ac6-a123-aced756d6c77}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".clang-format" />
+    <None Include=".editorconfig" />
+    <None Include="Build\EditorTooling.props" />
+    <None Include="Build\EngineCore.props" />
+    <None Include="Build\ShippingOptimize.props" />
+    <None Include="Shader\Common\Common.hlsli" />
+    <None Include="Shader\Common\Instancing.hlsli" />
+    <None Include="Shader\Common\Lighting.hlsli" />
+    <None Include="Shader\Common\MaterialEffect.hlsli" />
+    <None Include="Shader\Common\PBRLighting.hlsli" />
+    <None Include="Shader\Common\Scene.hlsli" />
+    <None Include="Shader\Common\Skinning.hlsli" />
+    <None Include="Shader\Common\ToonLighting.hlsli" />
+    <None Include="Shader\Common\Transform.hlsli" />
+    <None Include="Shader\Material\Water\WaterShared.hlsli" />
+    <None Include="Shader\Compute\GPUParticle\particle.hlsli" />
+    <None Include="Shader\Material\Sprite\Sprite.hlsli" />
+    <None Include="Shader\Pass\ShadowMap\ShadowMap.hlsli" />
+    <None Include="Shader\PostProcess\Bloom.hlsli" />
+    <None Include="Shader\Renderer\Primitive\PrimitiveRenderer.hlsli" />
+    <None Include="Shader\Renderer\Shape\ShapeRenderer.hlsli" />
+    <None Include="Shader\SHADER_ARCHITECTURE.md" />
+    <None Include="Source\Engine\ECS\CCL_ECS_ARCHITECTURE.md" />
+    <None Include="Source\Engine\ECS\Common\ECSCommonArchitecture.md">
+      <SubType>
+      </SubType>
+    </None>
+    <None Include="Source\Engine\ECS\System\ECSSystemArchitecture.md">
+      <SubType>
+      </SubType>
+    </None>
+    <None Include="Source\Engine\Graphics\Pipeline\_RenderPass_Guide.md">
+      <SubType>
+      </SubType>
+    </None>
+    <None Include="Source\Engine\Physics\Physics-Archtecture.md">
+      <SubType>
+      </SubType>
+    </None>
+    <None Include="Source\Game\Logics\AI\Drone\Drone_Guide.md">
+      <SubType>
+      </SubType>
+    </None>
+    <None Include="Source\Game\Logics\AI\StateTree\StateTree_Guide.md">
+      <SubType>
+      </SubType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Shader\Compute\GPUParticle\initialize_particle_cs.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Development|x64'">4.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Shader\Compute\GPUParticle\integrate_particle_cs.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Compute</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Compute\GPUParticle\particle_gs.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Geometry</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Geometry</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Geometry</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Compute\GPUParticle\particle_ps.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Compute\GPUParticle\particle_vs.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Renderer\Trail\TrailVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Renderer\Trail\TrailPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Basic\BasicPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Basic\BasicVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Dissolve\DissolvePS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\EnergyStream\EnergyStreamPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\EnergyStream\EnergyStreamVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\GhostPBR\GhostPBRPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\GhostPBR\GhostPBRVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Glow\GlowPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Glow\GlowVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Grass\GrassPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Grass\GrassVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Hologram\HologramPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Hologram\HologramVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Fire\FirePS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Fire\FireVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Water\WaterPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Water\WaterVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\LockOnMarker\LockOnMarkerVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\LockOnMarker\LockOnMarkerPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Refraction\RefractionVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Refraction\RefractionPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\LockOnPBR\LockOnPBRVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\LockOnPBR\LockOnPBRPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Lambert\LambertPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Lambert\LambertVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\PBR\PBRPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\PBR\PBRVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Phong\PhongPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Phong\PhongVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Sprite\SpritePS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Sprite\SpriteVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Toon\ToonPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Toon\ToonVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Pass\NormalPrepass\NormalPrepassPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Pass\Error\ErrorPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Pass\Error\ErrorVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Pass\Outline\OutlinePS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Pass\Outline\OutlineVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Pass\NormalPrepass\NormalPrepassVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Pass\ShadowMap\ShadowMapVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Pass\SkyBox\SkyboxPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Pass\SkyBox\SkyboxVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\PostProcess\BloomCompositePS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\PostProcess\BloomDownSamplePS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\PostProcess\BloomExtractionPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\PostProcess\BloomUpSamplePS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\PostProcess\DistortionPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\PostProcess\VignettePS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\PostProcess\ChromaticAberrationPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\PostProcess\ColorGradingPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\PostProcess\ContactShadowPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\PostProcess\SSAOBlurPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\PostProcess\SSAOCompositePS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\PostProcess\SSAOPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\PostProcess\RenderTargetDebugPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\PostProcess\DepthOfFieldPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\PostProcess\RadialBlurPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\PostProcess\FullScreenVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\PostProcess\ToneMapPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Renderer\Primitive\PrimitiveRendererPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Renderer\Primitive\PrimitiveRendererVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Renderer\Shape\ShapeRendererPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Renderer\Shape\ShapeRendererVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="Build\ECSDebugView.natvis" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>

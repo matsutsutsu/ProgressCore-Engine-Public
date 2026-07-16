@@ -16,6 +16,15 @@ static inline XMMATRIX ComposeLocal(const TransformComponent& t) {
         XMLoadFloat4(&t.rotation), XMLoadFloat3(&t.position));
 }
 
+void TransformUpdateSystem::Initialize()
+{
+    // Render Stageの補間システムが同じ階層順序を参照できるよう公開する
+    if (!_world->HasResource<TransformHierarchyCache *>())
+    {
+        _world->AddResource<TransformHierarchyCache *>(&_cache);
+    }
+}
+
 void TransformUpdateSystem::Update(float dt)
 {
     ProcessPendingParents();

@@ -8,20 +8,20 @@
                 },
                 "Animation": null,
                 "Animator": {
-                    "isLoop": true,
-                    "playbackSpeed": 1.0
+                    "isLoop": false,
+                    "playbackSpeed": 0.5
                 },
                 "Character Movement Input": {
                     "currentVelocity": [
-                        0.0014348197728395462,
+                        -0.00011810919386334717,
                         0.0,
-                        0.01541142538189888
+                        0.1385306864976883
                     ],
                     "dashRequested": false,
                     "desiredVelocity": [
+                        -0.0008525847806595266,
                         0.0,
-                        0.0,
-                        0.0
+                        0.9999997019767761
                     ],
                     "isAttackRequested": false,
                     "jumpRequested": false,
@@ -36,9 +36,9 @@
                     "currentTimer": -0.006666665896773338,
                     "dashCooldown": 0.1599999964237213,
                     "dashDirection": [
-                        5.8775476929895376e-08,
+                        -0.5239579677581787,
                         0.0,
-                        -1.0
+                        0.8517440557479858
                     ],
                     "dashDuration": 0.1599999964237213,
                     "dashSpeed": 114.0,
@@ -46,11 +46,20 @@
                     "isInvincible": false,
                     "justEvadeWindow": 0.07999999821186066
                 },
+                "HealthComponent": {
+                    "currentHealth": 100.0,
+                    "invincibilityDuration": 0.5,
+                    "maxHealth": 100.0,
+                    "team": 1
+                },
+                "Hurtbox": {
+                    "damageMultiplier": 1.0
+                },
                 "Jolt Capsule Collider": {
-                    "halfHeight": 2.5,
+                    "halfHeight": 3.5,
                     "localOffset": [
                         0.0,
-                        1.899999976158142,
+                        3.200000047683716,
                         0.0
                     ],
                     "localRotationEuler": [
@@ -70,6 +79,7 @@
                     "jumpSpeed": 30.0,
                     "maxSlopeAngle": 45.0,
                     "maxStepHeight": 0.5,
+                    "objectLayer": 1,
                     "walkSpeed": 43.599998474121094
                 },
                 "Just Evade Component": {
@@ -86,8 +96,8 @@
                     "bankingMultiplier": 0.5,
                     "coyoteTimeWindow": 0.15000000596046448,
                     "currentJumpCount": 0,
-                    "currentRoll": -8.202393360079441e-07,
-                    "currentYaw": -37.2386474609375,
+                    "currentRoll": -1.4133213880995754e-05,
+                    "currentYaw": -75.39907836914063,
                     "jumpBufferTimer": 0.0,
                     "jumpBufferWindow": 0.15000000596046448,
                     "lastFallVelocity": 0.0,
@@ -110,15 +120,15 @@
                     "isStatic": false,
                     "parent": 3,
                     "position": [
-                        -3.683290719985962,
-                        -0.04812708497047424,
-                        12.927962303161621
+                        5.074308395385742,
+                        -0.05183815956115723,
+                        -31.50080108642578
                     ],
                     "rotation": [
-                        -9.359099095718193e-08,
-                        0.22820410132408142,
-                        -3.9929796002979856e-07,
-                        0.9736133217811584
+                        3.0124409633458527e-09,
+                        -0.00042629241943359375,
+                        -7.066606485750526e-06,
+                        0.9999999403953552
                     ],
                     "scale": [
                         3.5,
@@ -133,6 +143,41 @@
             "components": {
                 "BoneAttachmentComponent": {
                     "boneName": "hand_r"
+                },
+                "Hitbox": {
+                    "damageAmount": 0.0,
+                    "hitStopDuration": 0.0,
+                    "hitStopScale": 1.0,
+                    "isActive": false,
+                    "knockback": 0.0
+                },
+                "Jolt Capsule Collider": {
+                    "halfHeight": 2.5999999046325684,
+                    "localOffset": [
+                        0.0,
+                        2.200000047683716,
+                        0.0
+                    ],
+                    "localRotationEuler": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "radius": 0.5
+                },
+                "Jolt Rigidbody": {
+                    "friction": 0.20000000298023224,
+                    "gravityFactor": 1.0,
+                    "initialVelocity": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "isSensor": true,
+                    "motionType": 1,
+                    "objectLayer": 3,
+                    "restitution": 0.0,
+                    "useCCD": false
                 },
                 "Material": null,
                 "Model": {
@@ -167,6 +212,28 @@
                         0.5,
                         0.5,
                         0.5
+                    ]
+                },
+                "Weapon Trail": {
+                    "animControlled": true,
+                    "baseOffset": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "color": [
+                        0.6000000238418579,
+                        0.800000011920929,
+                        1.0,
+                        1.0
+                    ],
+                    "emitting": false,
+                    "lifeTime": 0.18000000715255737,
+                    "minDistance": 0.019999999552965164,
+                    "tipOffset": [
+                        0.0,
+                        2.7200000286102295,
+                        0.0
                     ]
                 }
             },

@@ -62,3 +62,14 @@ struct DamageEventComponent
     float hitStopScale    = 0.0f; ///< 停止中のタイムスケール(0で完全停止)
 
 };
+
+// --- 4. 生成型ヒットボックスの寿命(ランタイム専用) ---
+/// @brief アニメ由来で生成された球状 Hitbox の自動消滅タイマー。
+/// @details SpawnHitboxSystem が生成時に付与し、毎フレーム remainingLife を減らして
+///          0 以下で自身を Destroy する。剣など「既存の子コライダを ON/OFF する
+///          Hitbox」には付与しない(そちらは寿命を持たず、アニメ区間で駆動される)。
+/// @note    転がり続ける弾ではなく一瞬の空間判定用。保存対象外・非表示の内部タグ。
+struct HitboxLifetimeComponent
+{
+    float remainingLife = 0.0f; ///< 残り生存時間(秒)。0以下で Destroy 対象。
+};

@@ -1,0 +1,23 @@
+{
+  "name": "Commander",
+  "root": {
+    "name": "Root",
+    "children": [
+      {
+        "name": "Phase2",
+        "enterConditions": [
+          { "type": "HealthBelow", "params": { "HP Ratio <=": 0.5 } }
+        ],
+        "tasks": [
+          { "type": "SetActiveBT", "params": { "BT Path": "Assets/BehaviorTree/BossSlashTest.json" } }
+        ]
+      },
+      {
+        "name": "Phase1",
+        "tasks": [
+          { "type": "SetActiveBT", "params": { "BT Path": "Assets/BehaviorTree/BossSlashTest.json" } }
+        ]
+      }
+    ]
+  }
+}

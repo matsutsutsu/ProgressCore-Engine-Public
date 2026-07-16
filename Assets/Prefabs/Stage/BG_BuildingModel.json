@@ -1,0 +1,47 @@
+{
+    "entities": [
+        {
+            "components": {
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Stage/Building/Sci-Fi_building_Modular_set_Low_Poly-9b38bb97/glb/scifi_modular.glb"
+                },
+                "Name": {
+                    "name": "BackGround_BuildingModel"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 2,
+                    "position": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                }
+            },
+            "lid": 1
+        }
+    ],
+    "magic": 1397506883,
+    "name": "BackGround_BuildingModel",
+    "version": 1
+}

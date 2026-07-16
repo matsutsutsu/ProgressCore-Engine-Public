@@ -13,6 +13,7 @@
 #include <array>
 #include <algorithm> // std::lower_bound用
 #include <cctype>
+#include <tracy/Tracy.hpp>
 
 // ヘルパー関数：キーフレームの二分探索と補間率の計算
 template <typename T>
@@ -42,9 +43,24 @@ void EvaluateKeyframes(const std::vector<T> &keyframes, float time, float &outRa
     auto it = std::lower_bound(keyframes.begin(), keyframes.end(), time,
         [](const T &kf, float t) { return kf.seconds < t; });
 
-    outK1   = &(*it);
-    outK0   = &(*(it - 1));
-    outRate = (time - outK0->seconds) / (outK1->seconds - outK0->seconds);
+    outK1 = &(*it);
+    outK0 = &(*(it - 1));
+
+    // ★ ゼロ除算ガード: UE5等の書き出しでは、IK切り替えや瞬間ポーズ変更を表現するために
+    //   同一時刻(またはごく僅かな差)に2つのキーフレームが置かれることがある。
+    //   分母がほぼ0のまま除算すると outRate が NaN/Inf になり、その姿勢がそのまま
+    //   Slerp/Lerpに渡って該当ボーンの向きが破綻する（"特定の部位だけおかしい"の一因になりうる）。
+    //   実質的にステップ変化とみなし、後側のキーフレームの値をそのまま採用する。
+    const float delta = outK1->seconds - outK0->seconds;
+    if (delta <= 1e-6f)
+    {
+        outRate = 0.0f;
+        outK0   = outK1; // 補間せず後側の値をそのまま使う
+    }
+    else
+    {
+        outRate = (time - outK0->seconds) / delta;
+    }
 }
 
 // コンストラクタ
@@ -325,10 +341,9 @@ void Model::UpdateTransform(const DirectX::XMFLOAT4X4 &worldTransform)
 
 void Model::ComputeAnimation(int animationIndex, int nodeIndex, float time, NodePose &nodePose) const
 {
-    if (!resource.IsValid())
-    {
-        return;
-    }
+    ZoneScopedN("Model::ComputeAnimation");
+
+    if (!resource.IsValid()) return;
 
     const auto                     &animations = ResourceManager::Instance().GetModel(resource)->GetAnimations();
     const ModelResource::Animation &animation  = animations.at(animationIndex);
@@ -720,7 +735,17 @@ int Model::GetRootMotionNodeIndex() const
 
 int Model::FindRealRootMotionNodeIndex(int animIndex) const
 {
+    ZoneScopedN("Model::FindRealRootMotionNodeIndex");
+
     if (animIndex < 0) return 0;
+
+    // ★ キャッシュヒット: 過去に一度でも計算済みならO(1)で返す。
+    //   結果はこのクリップのアニメーションデータだけで決まる静的な値なので、
+    //   毎フレーム ComputeAnimation を全ノード×2回走らせる必要はない。
+    if ((size_t)animIndex < _rootMotionNodeCache.size() && _rootMotionNodeCache[(size_t)animIndex] >= 0)
+        return _rootMotionNodeCache[(size_t)animIndex];
+
+    int result = 0; // 誰も動いていなければ安全に0を返す（従来仕様を維持）
 
     std::vector<NodePose> startPoses, endPoses;
 
@@ -730,21 +755,28 @@ int Model::FindRealRootMotionNodeIndex(int animIndex) const
     // 少し時間が進んだ時点（0.5秒）のポーズを取得
     ComputeAnimation(animIndex, 0.5f, endPoses);
 
-    if (startPoses.empty() || endPoses.empty()) return 0;
-
-    // ノードは通常、親から子へ順に並んでいる (0:Root, 1:Hips, 2:Spine ...)
-    for (size_t i = 0; i < std::min(startPoses.size(), endPoses.size()); ++i)
+    if (!startPoses.empty() && !endPoses.empty())
     {
-        float dx     = endPoses[i].position.x - startPoses[i].position.x;
-        float dz     = endPoses[i].position.z - startPoses[i].position.z;
-        float distSq = dx * dx + dz * dz;
-
-        // XZ平面で 1cm (0.01m) 以上動いている最初の親ボーンを「真のルート」と見なす！
-        if (distSq > 0.0001f)
+        // ノードは通常、親から子へ順に並んでいる (0:Root, 1:Hips, 2:Spine ...)
+        for (size_t i = 0; i < std::min(startPoses.size(), endPoses.size()); ++i)
         {
-            return static_cast<int>(i); // Hipsなどの本当に動いているインデックスが確定で返る
+            float dx     = endPoses[i].position.x - startPoses[i].position.x;
+            float dz     = endPoses[i].position.z - startPoses[i].position.z;
+            float distSq = dx * dx + dz * dz;
+
+            // XZ平面で 1cm (0.01m) 以上動いている最初の親ボーンを「真のルート」と見なす！
+            if (distSq > 0.0001f)
+            {
+                result = static_cast<int>(i); // Hipsなどの本当に動いているインデックスが確定
+                break;
+            }
         }
     }
 
-    return 0; // 誰も動いていなければ安全に0を返す
+    // ★ キャッシュへ格納。以降この animIndex での呼び出しは全て初回計算を再利用する。
+    if ((size_t)animIndex >= _rootMotionNodeCache.size())
+        _rootMotionNodeCache.resize((size_t)animIndex + 1, -1);
+    _rootMotionNodeCache[(size_t)animIndex] = result;
+
+    return result;
 }

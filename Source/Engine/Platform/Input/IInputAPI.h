@@ -23,6 +23,28 @@ struct InputBinding {
     float           scale = 1.0f; // 軸の方向や感度（Wなら1.0、Sなら-1.0等）
 };
 
+// 2.3 アクションの発火タイミング種別（エディタで設定する）
+enum class TriggerType {
+    Down,       // 押しっぱなし（押されている間ずっと true）
+    Triggered,  // 押した瞬間だけ true
+    Released    // 離した瞬間だけ true
+};
+
+// 文字列 <-> TriggerType （JSON保存/読込用）
+inline const char* TriggerTypeToString(TriggerType t) {
+    switch (t) {
+    case TriggerType::Triggered: return "Triggered";
+    case TriggerType::Released:  return "Released";
+    case TriggerType::Down:
+    default:                     return "Down";
+    }
+}
+inline TriggerType StringToTriggerType(const std::string& s) {
+    if (s == "Triggered") return TriggerType::Triggered;
+    if (s == "Released")  return TriggerType::Released;
+    return TriggerType::Down;
+}
+
 // 2.5 アクティブな操作デバイス（UIのアイコン表示切り替え用）
 enum class ActiveDeviceType {
     KeyboardMouse,
@@ -44,6 +66,10 @@ public:
     // マウスとスクリーン情報の取得
     virtual float GetMouseX() const = 0;
     virtual float GetMouseY() const = 0;
+    // マウスの毎フレーム移動量（デルタ、ピクセル単位）。TPSの視点回転などに使う。
+    // スティックと違い「倒し量」ではなく既に「移動量」なので、利用側で dt を掛けないこと。
+    virtual float GetMouseDeltaX() const = 0;
+    virtual float GetMouseDeltaY() const = 0;
     virtual float GetScreenWidth() const = 0;
     virtual float GetScreenHeight() const = 0;
 
@@ -51,26 +77,21 @@ public:
     virtual void AddActionBinding(const std::string& actionName, InputDeviceType device, unsigned int keyCode) = 0;
     virtual void AddAxisBinding(const std::string& axisName, InputDeviceType device, unsigned int keyCode, float scale = 1.0f) = 0;
 
-    // =======================================================
-    // ★ デジタル・アナログ入力の取得（コア機能：超高速版）
-    // =======================================================
-    virtual bool GetAction(uint32_t actionHash) const = 0;
-    virtual bool GetActionTriggered(uint32_t actionHash) const = 0;
-    virtual bool GetActionReleased(uint32_t actionHash) const = 0;
-    virtual float GetAxis(uint32_t axisHash) const = 0;
+    // アクションの発火種別を設定（LoadConfig / エディタから使用）
+    virtual void SetActionTriggerType(const std::string& actionName, TriggerType type) = 0;
 
     // =======================================================
-    // ★ 既存コードを壊さないための安全なヘルパー関数
-    // （純粋仮想関数 '= 0' ではなく、中身を直接ここに書きます）
+    // ★ 入力の取得（コア機能：超高速版）
+    //   GetAction は、エディタで設定された種別
+    //   (Down / Triggered / Released) に従って評価される。
+    //   ゲーム側はこの1関数を呼ぶだけでよい。
     // =======================================================
+    virtual bool GetAction(uint32_t actionHash) const = 0;
+    virtual float GetAxis(uint32_t axisHash) const = 0;
+
+    // 文字列で呼べる安全なヘルパー関数
     bool GetAction(const char* actionName) const { 
         return GetAction(CCL::Utils::HashString(actionName)); 
-    }
-    bool GetActionTriggered(const char* actionName) const { 
-        return GetActionTriggered(CCL::Utils::HashString(actionName)); 
-    }
-    bool GetActionReleased(const char* actionName) const { 
-        return GetActionReleased(CCL::Utils::HashString(actionName)); 
     }
     float GetAxis(const char* axisName) const { 
         return GetAxis(CCL::Utils::HashString(axisName)); 

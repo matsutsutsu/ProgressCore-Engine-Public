@@ -19,10 +19,6 @@ namespace Priority {
 
         L02_Update = 200, // AI、移動、弾の更新など (並列化の主戦場)
 
-        L02_AI_Sense = 210, // ① Perception, Hearing
-        L02_AI_Think = 220, // ② State Judgment, Patrol Logic
-        L02_AI_Act = 230, // ③ Movement Control (Speed Setting)
-
         L02_PostUpdate = 250,  // すべてのUpdate系システムの後に実行される、主にアニメーションの更新と物理への反映をここで行う
 
         L03_PrePhysics = 300, // 空間分割(Grid)など、物理・衝突判定の準備
@@ -44,7 +40,12 @@ namespace Priority {
     // カリングシステム(R04, R05)も明確な位置に配置しています。
     // ========================================================
     enum class RenderStage : int {
+        R00_Interpolation = 50, // 補間済みワールド行列の確定（カメラより前）
+
         R01_Camera = 100, // CameraBrain, FreeCamera (カメラ位置確定)
+
+        R01b_CameraBrain = 150, // ★ vCamを集約しMainCameraへ反映（必ずBodyの後）
+
         R02_Environment = 200, // Light, Fogの設定
         R03_Animation = 300, // スケルタルメッシュ更新 (頂点が動く)
         R04_BoundsUpdate = 400, // TransformやAnimから正確なAABBを再計算

@@ -1,4 +1,5 @@
 #pragma once
+#include "Engine/Physics/JoltIntegration/PhysicsLayers.h" // objectLayer (JPH::ObjectLayer) 用
 
 // ===================================================================================
 // ファイル名: JoltCharacterConfigComponent.h
@@ -7,16 +8,24 @@
 // 【アーキテクチャ仕様】
 // -
 // 段差の乗り越え高さや、登れる坂の角度など、アクションゲーム特有のパラメータを保持。
+// - ★物理レイヤー(objectLayer)もここで持つ。剛体(JoltRigidbodyComponent.objectLayer)と
+//   同じ ObjectLayer の仕組みに乗せることで、キャラのレイヤー分けを一元管理する。
 //
 // 【使い方・ルール】
 // - プレイヤーや敵AIにアタッチする。JoltCharacterSetupSystem
-// がこれを見てキャラクターを生成する。
-// - 生成後も walkSpeed
-// などをゲームロジック（PlayerMoveSystem等）から参照して使用する。
+// がこれを見てキャラクター本体(CharacterVirtual)と
+//   presence用のKinematicプロキシ剛体を生成する。
+// - 生成後も walkSpeed などをゲームロジック（PlayerMoveSystem等）から参照して使用する。
 // ===================================================================================
 
 // キャラクターの運動性能（プランナーが調整する値）
-struct JoltCharacterConfigComponent {
+struct JoltCharacterConfigComponent
+{
+    // --- ★物理レイヤー ---
+    // presence用KinematicプロキシのObjectLayer。ExtendedUpdateのフィルタにも使う。
+    // これにより「キャラが世界を見る層」と「他者がキャラを見る層」が一致する。
+    JPH::ObjectLayer objectLayer = PhysicsLayers::PLAYER;
+
     float maxSlopeAngle = 45.0f; // 登れる最大角度（度）
     float maxStepHeight = 0.5f;  // 乗り越えられる段差の最大高
     float walkSpeed     = 6.0f;  // 歩行速度

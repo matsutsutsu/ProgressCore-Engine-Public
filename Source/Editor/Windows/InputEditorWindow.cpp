@@ -13,8 +13,7 @@
 
 using json = nlohmann::json;
 
-InputEditorWindow::InputEditorWindow()
-    : EditorWindow("Input Mapping Editor")
+InputEditorWindow::InputEditorWindow() : EditorWindow("InputMappingEditor")
 {
     // ウィンドウ起動時にとりあえず読み込んでおく
     LoadFromJson();
@@ -28,8 +27,7 @@ void InputEditorWindow::LoadFromJson()
 
     // VFSから読み込み
     std::string jsonStr = FileSystem::ReadAllText(_configPath);
-    if (jsonStr.empty())
-        return;
+    if (jsonStr.empty()) return;
 
     json doc;
     try
@@ -41,7 +39,8 @@ void InputEditorWindow::LoadFromJson()
             for (const auto &act : doc["Actions"])
             {
                 ActionData action;
-                action.name = act["Name"].get<std::string>();
+                action.name    = act["Name"].get<std::string>();
+                action.trigger = act.value("Trigger", std::string("Down"));
                 for (const auto &b : act["Bindings"])
                 {
                     action.bindings.push_back({b["Device"], b["Key"], 1.0f});
@@ -80,6 +79,7 @@ void InputEditorWindow::SaveToJson()
     {
         json jAct;
         jAct["Name"]     = act.name;
+        jAct["Trigger"]  = act.trigger;
         jAct["Bindings"] = json::array();
         for (const auto &b : act.bindings)
         {
@@ -126,12 +126,12 @@ void InputEditorWindow::DrawDeviceSelector(BindingData &b, bool isAxis)
         }
     };
 
-    radio("Keyboard", DC::Keyboard, "Keyboard", "NONE");
+    radio("キーボード", DC::Keyboard, "Keyboard", "NONE");
     ImGui::SameLine();
-    radio("Mouse", DC::Mouse, "Mouse_Button", "BTN_LEFT");
+    radio("マウス", DC::Mouse, "Mouse_Button", "BTN_LEFT");
     ImGui::SameLine();
     // GamePadはタブによって初期値を変える（Axisタブなら軸を初期選択）
-    radio("GamePad", DC::GamePad,
+    radio("ゲームパッド", DC::GamePad,
         isAxis ? "GamePad_AxisLX" : "GamePad_Button",
         "NONE");
 }
@@ -148,12 +148,12 @@ void InputEditorWindow::DrawKeyCombo(BindingData &b, bool isAxis)
 
     std::string preview = InputKeyTable::DisplayNameOf(b.device, b.key);
 
-    if (ImGui::BeginCombo("Key", preview.c_str()))
+    if (ImGui::BeginCombo("キー##KeySelect", preview.c_str()))
     {
         // --- フィルタ ---
         static char filter[32] = "";
         ImGui::SetNextItemWidth(-FLT_MIN);
-        ImGui::InputTextWithHint("##filter", "Filter...", filter, sizeof(filter));
+        ImGui::InputTextWithHint("##filter", "絞り込み...", filter, sizeof(filter));
         ImGui::Separator();
 
         std::string f = filter;
@@ -174,8 +174,7 @@ void InputEditorWindow::DrawKeyCombo(BindingData &b, bool isAxis)
                     for (auto &c : key)
                         c = (char)std::tolower((unsigned char)c);
                     if (disp.find(f) == std::string::npos &&
-                        key.find(f) == std::string::npos)
-                        continue;
+                        key.find(f) == std::string::npos) continue;
                 }
                 if (showHeader && !headerShown)
                 {
@@ -189,8 +188,7 @@ void InputEditorWindow::DrawKeyCombo(BindingData &b, bool isAxis)
                     b.key     = std::string(e.key);
                     filter[0] = '\0';
                 }
-                if (isSelected)
-                    ImGui::SetItemDefaultFocus();
+                if (isSelected) ImGui::SetItemDefaultFocus();
             }
         };
 
@@ -205,8 +203,8 @@ void InputEditorWindow::DrawKeyCombo(BindingData &b, bool isAxis)
         case DC::GamePad:
             if (isAxis)
             {
-                drawList("Sticks / Triggers", InputKeyTable::GamePadAxisEntries(), true);
-                drawList("Buttons", InputKeyTable::GamePadEntries(), true);
+                drawList("スティック / トリガー", InputKeyTable::GamePadAxisEntries(), true);
+                drawList("ボタン", InputKeyTable::GamePadEntries(), true);
             }
             else
             {
@@ -236,7 +234,7 @@ void InputEditorWindow::DrawBindingParams(BindingData &b, bool isAxis)
         ImGui::BeginDisabled();
         char buf[64];
         strcpy_s(buf, disp.c_str());
-        ImGui::InputText("Key", buf, sizeof(buf), ImGuiInputTextFlags_ReadOnly);
+        ImGui::InputText("キー##ReadOnly", buf, sizeof(buf), ImGuiInputTextFlags_ReadOnly);
         ImGui::EndDisabled();
     }
     else
@@ -248,7 +246,7 @@ void InputEditorWindow::DrawBindingParams(BindingData &b, bool isAxis)
         if (_captureTarget == &b)
         {
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.5f, 0.1f, 1.0f));
-            if (ImGui::Button("Press... (ESC cancel)"))
+            if (ImGui::Button("キーを押してください... (ESCで中止)"))
             {
                 _captureTarget = nullptr;
             }
@@ -256,8 +254,7 @@ void InputEditorWindow::DrawBindingParams(BindingData &b, bool isAxis)
 
             if (!_captureArmed)
             {
-                if (!ImGui::IsAnyMouseDown())
-                    _captureArmed = true;
+                if (!ImGui::IsAnyMouseDown()) _captureArmed = true;
             }
             else if (::GetAsyncKeyState(VK_ESCAPE) & 0x8000)
             {
@@ -293,13 +290,12 @@ void InputEditorWindow::DrawBindingParams(BindingData &b, bool isAxis)
                         captured = true;
                     }
                 }
-                if (captured)
-                    _captureTarget = nullptr;
+                if (captured) _captureTarget = nullptr;
             }
         }
         else
         {
-            if (ImGui::Button("Capture"))
+            if (ImGui::Button("キャプチャ"))
             {
                 _captureTarget = &b;
                 _captureArmed  = false;
@@ -310,7 +306,7 @@ void InputEditorWindow::DrawBindingParams(BindingData &b, bool isAxis)
     // 4) AxisのみScale
     if (isAxis)
     {
-        ImGui::DragFloat("Scale", &b.scale, 0.1f, -1.0f, 1.0f);
+        ImGui::DragFloat("感度 / 方向##Scale", &b.scale, 0.1f, -1.0f, 1.0f);
     }
 }
 
@@ -319,14 +315,14 @@ void InputEditorWindow::DrawContents(EditorContext &context)
     // -------------------------------------------------------------
     // 上部ツールバー：保存とホットリロード
     // -------------------------------------------------------------
-    if (ImGui::Button("Load from JSON"))
+    if (ImGui::Button("JSONから再読み込み"))
     {
         LoadFromJson();
     }
     ImGui::SameLine();
 
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.6f, 0.2f, 1.0f));
-    if (ImGui::Button("Save & Apply to Engine"))
+    if (ImGui::Button("保存してエンジンに反映"))
     {
         SaveToJson();
 
@@ -344,8 +340,8 @@ void InputEditorWindow::DrawContents(EditorContext &context)
     if (ImGui::IsItemHovered())
     {
         ImGui::SetTooltip(
-            "まず Keyboard / Mouse / GamePad を選び、次に Key を選びます。\n"
-            "[Capture] を押して実際にキー/ボタンを押すと自動登録できます。\n"
+            "まず「キーボード / マウス / ゲームパッド」を選び、次にキーを選びます。\n"
+            "「キャプチャ」を押して実際にキー/ボタンを押すと自動登録できます。\n"
             "SHIFT/CTRL/ALT/Fキー/テンキー/パッド各ボタンに対応。");
     }
 
@@ -361,9 +357,9 @@ void InputEditorWindow::DrawContents(EditorContext &context)
         // ==========================================
         // Actions (単発ボタン)
         // ==========================================
-        if (ImGui::BeginTabItem("Actions (Digital)"))
+        if (ImGui::BeginTabItem("アクション（デジタル）"))
         {
-            if (ImGui::Button("+ Add New Action"))
+            if (ImGui::Button("＋ アクションを追加"))
             {
                 _actions.push_back({"NewAction", {}});
             }
@@ -376,13 +372,13 @@ void InputEditorWindow::DrawContents(EditorContext &context)
 
                 char nameBuf[64];
                 strcpy_s(nameBuf, act.name.c_str());
-                if (ImGui::InputText("Action Name", nameBuf, sizeof(nameBuf)))
+                if (ImGui::InputText("アクション名", nameBuf, sizeof(nameBuf)))
                 {
                     act.name = nameBuf;
                 }
 
                 ImGui::SameLine(ImGui::GetWindowWidth() - 100);
-                if (ImGui::Button("Delete Action"))
+                if (ImGui::Button("削除##Action"))
                 {
                     _captureTarget = nullptr; // dangling防止
                     _actions.erase(_actions.begin() + i);
@@ -390,13 +386,41 @@ void InputEditorWindow::DrawContents(EditorContext &context)
                     break;
                 }
 
+                // --- 発火タイミング種別 ---
+                {
+                    // 表示は日本語、保存値は英字（JSON互換のため）
+                    const char *trigLabels[] = {"押しっぱなし", "押した瞬間", "離した瞬間"};
+                    const char *trigValues[] = {"Down", "Triggered", "Released"};
+                    const char *trigDesc[]   = {
+                        "押されている間ずっと反応します",
+                        "押した瞬間の1フレームだけ反応します",
+                        "離した瞬間の1フレームだけ反応します"};
+                    int cur = 0;
+                    if (act.trigger == "Triggered")
+                        cur = 1;
+                    else if (act.trigger == "Released")
+                        cur = 2;
+
+                    ImGui::SetNextItemWidth(160);
+                    if (ImGui::Combo("発火タイミング", &cur, trigLabels, IM_ARRAYSIZE(trigLabels)))
+                    {
+                        act.trigger = trigValues[cur];
+                    }
+                    ImGui::SameLine();
+                    ImGui::TextDisabled("(?)");
+                    if (ImGui::IsItemHovered())
+                    {
+                        ImGui::SetTooltip("%s", trigDesc[cur]);
+                    }
+                }
+
                 ImGui::Indent();
                 for (size_t j = 0; j < act.bindings.size(); ++j)
                 {
                     ImGui::PushID((int)j);
-                    ImGui::Text("Bind %zu:", j);
+                    ImGui::Text("割り当て %zu:", j);
                     ImGui::SameLine();
-                    if (ImGui::Button("x Delete"))
+                    if (ImGui::Button("削除##Bind"))
                     {
                         _captureTarget = nullptr; // dangling防止
                         act.bindings.erase(act.bindings.begin() + j);
@@ -408,7 +432,7 @@ void InputEditorWindow::DrawContents(EditorContext &context)
                     ImGui::PopID();
                 }
 
-                if (ImGui::Button("+ Add Binding"))
+                if (ImGui::Button("＋ 割り当てを追加"))
                 {
                     act.bindings.push_back(BindingData());
                 }
@@ -425,9 +449,9 @@ void InputEditorWindow::DrawContents(EditorContext &context)
         // ==========================================
         // Axes (アナログ軸)
         // ==========================================
-        if (ImGui::BeginTabItem("Axes (Analog)"))
+        if (ImGui::BeginTabItem("軸（アナログ）"))
         {
-            if (ImGui::Button("+ Add New Axis"))
+            if (ImGui::Button("＋ 軸を追加"))
             {
                 _axes.push_back({"NewAxis", {}});
             }
@@ -440,13 +464,13 @@ void InputEditorWindow::DrawContents(EditorContext &context)
 
                 char nameBuf[64];
                 strcpy_s(nameBuf, ax.name.c_str());
-                if (ImGui::InputText("Axis Name", nameBuf, sizeof(nameBuf)))
+                if (ImGui::InputText("軸名", nameBuf, sizeof(nameBuf)))
                 {
                     ax.name = nameBuf;
                 }
 
                 ImGui::SameLine(ImGui::GetWindowWidth() - 100);
-                if (ImGui::Button("Delete Axis"))
+                if (ImGui::Button("削除##Axis"))
                 {
                     _captureTarget = nullptr; // dangling防止
                     _axes.erase(_axes.begin() + i);
@@ -458,9 +482,9 @@ void InputEditorWindow::DrawContents(EditorContext &context)
                 for (size_t j = 0; j < ax.bindings.size(); ++j)
                 {
                     ImGui::PushID((int)j);
-                    ImGui::Text("Bind %zu:", j);
+                    ImGui::Text("割り当て %zu:", j);
                     ImGui::SameLine();
-                    if (ImGui::Button("x Delete"))
+                    if (ImGui::Button("削除##AxisBind"))
                     {
                         _captureTarget = nullptr; // dangling防止
                         ax.bindings.erase(ax.bindings.begin() + j);
@@ -472,7 +496,7 @@ void InputEditorWindow::DrawContents(EditorContext &context)
                     ImGui::PopID();
                 }
 
-                if (ImGui::Button("+ Add Binding"))
+                if (ImGui::Button("＋ 割り当てを追加"))
                 {
                     ax.bindings.push_back(BindingData());
                 }
