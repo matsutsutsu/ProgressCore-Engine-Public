@@ -59,8 +59,14 @@ void CameraActionTPSSystem::Update(float dt)
         return;
     auto inputAPI = _world->GetResource<std::shared_ptr<IInputAPI>>();
 
+    // ゲームパッド右スティック（倒し量：-1..1）。あとで dt を掛けて積分する。
     float lookX = inputAPI->GetAxis("LookX");
     float lookY = inputAPI->GetAxis("LookY");
+
+    // マウスの毎フレーム移動量（ピクセル）。既に「移動量」なので dt は掛けない。
+    float mouseDX = inputAPI->GetMouseDeltaX();
+    float mouseDY = inputAPI->GetMouseDeltaY();
+    bool  rmbHeld = inputAPI->GetAction("FreeLook"); // 右クリック押下中か
 
     // ForEachは IfSystem のテンプレート引数(3つのコンポーネント)と完全に一致させる
     ForEach([&](VirtualCamera &vcam, CameraBodyTPSComponent &tps, TransformComponent &trans) {
@@ -122,10 +128,25 @@ void CameraActionTPSSystem::Update(float dt)
         else
         {
             // ===============================================================
-            // 【通常モード】: スティック入力による自由カメラ操作
+            // 【通常モード】: マウス／スティックによる自由カメラ操作
+            //   ・スティック: 倒し量なので dt を掛けて積分（速度入力）。
+            //   ・マウス    : 既に移動量なので dt を掛けない（デルタ入力）。
+            //                 mouseLookRequiresButton=true のときは右クリック中のみ。
             // ===============================================================
-            tps.currentYaw += lookX * tps.lookSpeedX * dt;
+            // スティック（速度入力）。右入力でカメラが右を向くよう水平は減算。
+            tps.currentYaw   -= lookX * tps.lookSpeedX * dt;
             tps.currentPitch += lookY * tps.lookSpeedY * dt;
+
+            // マウス（デルタ入力）
+            if (!tps.mouseLookRequiresButton || rmbHeld)
+            {
+                float invert = tps.mouseInvertY ? -1.0f : 1.0f;
+                // マウスを右へ動かす(mouseDX>0)とカメラも右を向くよう、yaw規約に合わせて減算。
+                tps.currentYaw   -= mouseDX * tps.mouseSensitivityX;
+                // 画面Yは下方向が正。マウスを上へ動かす(mouseDY<0)とカメラも上を向くよう符号反転。
+                tps.currentPitch += (-mouseDY) * tps.mouseSensitivityY * invert;
+            }
+
             tps.currentPitch = std::clamp(tps.currentPitch, tps.minPitch, tps.maxPitch);
         }
 

@@ -43,6 +43,16 @@
             ],
             "Name": "LockOn",
             "Trigger": "Triggered"
+        },
+        {
+            "Bindings": [
+                {
+                    "Device": "Mouse_Button",
+                    "Key": "BTN_RIGHT"
+                }
+            ],
+            "Name": "FreeLook",
+            "Trigger": "Down"
         }
     ],
     "Axes": [
@@ -85,6 +95,26 @@
                 }
             ],
             "Name": "MoveY"
+        },
+        {
+            "Bindings": [
+                {
+                    "Device": "GamePad_AxisRX",
+                    "Key": "NONE",
+                    "Scale": 1.0
+                }
+            ],
+            "Name": "LookX"
+        },
+        {
+            "Bindings": [
+                {
+                    "Device": "GamePad_AxisRY",
+                    "Key": "NONE",
+                    "Scale": 1.0
+                }
+            ],
+            "Name": "LookY"
         }
     ]
 }

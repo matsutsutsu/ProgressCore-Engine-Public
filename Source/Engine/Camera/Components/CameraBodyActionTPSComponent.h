@@ -22,8 +22,14 @@ struct CameraBodyTPSComponent
     float minPitch     = -70.0f; ///< 垂直角度の最低制限（地面めり込み防止）
     float maxPitch     = 80.0f;  ///< 垂直角度の最高制限
 
-    float lookSpeedX = 120.0f; ///< マウス/スティックX軸感度
-    float lookSpeedY = 120.0f; ///< マウス/スティックY軸感度
+    float lookSpeedX = 120.0f; ///< ゲームパッド右スティックX軸の回転速度(度/秒)。dtで積分される。
+    float lookSpeedY = 120.0f; ///< ゲームパッド右スティックY軸の回転速度(度/秒)。dtで積分される。
+
+    // --- マウス視点操作（デルタ入力：dtを掛けない） ---
+    float mouseSensitivityX      = 0.15f; ///< マウス水平感度(度/ピクセル)。移動量に直接掛ける。
+    float mouseSensitivityY      = 0.15f; ///< マウス垂直感度(度/ピクセル)。
+    bool  mouseInvertY           = false; ///< 上下反転（true=マウス下でカメラ上向き）。
+    bool  mouseLookRequiresButton = false; ///< true=右クリック押下中のみ視点回転。false=常時マウス視点(TPS標準)。
 
     // --- 指数減衰（遅延追従）パラメータ ---
     float positionDamping = 12.0f; ///< 位置追従の硬さ（低いほどゴム紐のように遅れる）

@@ -8,8 +8,8 @@
                 },
                 "Animation": null,
                 "Animator": {
-                    "isLoop": true,
-                    "playbackSpeed": 1.0
+                    "isLoop": false,
+                    "playbackSpeed": 0.5
                 },
                 "BehaviorTreeComponent": {
                     "assetPath": "Assets/BehaviorTree/BossSlashTest.json",
@@ -34,9 +34,9 @@
                 },
                 "Character Movement Input": {
                     "currentVelocity": [
-                        6.785077832915931e-09,
+                        0.954632043838501,
                         0.0,
-                        -9.614466556229218e-09
+                        -1.7907869815826416
                     ],
                     "dashRequested": false,
                     "desiredVelocity": [
@@ -54,7 +54,7 @@
                     "overrideSpeed": -1.0
                 },
                 "HealthComponent": {
-                    "currentHealth": 980.0,
+                    "currentHealth": 900.0,
                     "invincibilityDuration": 0.20000000298023224,
                     "maxHealth": 1000.0
                 },
@@ -116,15 +116,15 @@
                     "isStatic": false,
                     "parent": 3,
                     "position": [
-                        -0.758340060710907,
-                        -0.043857891112565994,
-                        28.086877822875977
+                        4.368585109710693,
+                        -0.041816458106040955,
+                        24.459253311157227
                     ],
                     "rotation": [
                         0.0,
-                        0.9994778633117676,
+                        0.9696617126464844,
                         0.0,
-                        0.032308731228113174
+                        0.24445073306560516
                     ],
                     "scale": [
                         3.5,
@@ -141,11 +141,11 @@
                     "boneName": "hand_r"
                 },
                 "Hitbox": {
-                    "damageAmount": 0.0,
-                    "hitStopDuration": 0.0,
-                    "hitStopScale": 1.0,
+                    "damageAmount": 5.0,
+                    "hitStopDuration": 0.15000000596046448,
+                    "hitStopScale": 0.0,
                     "isActive": false,
-                    "knockback": 0.0
+                    "knockback": 5.0
                 },
                 "Jolt Capsule Collider": {
                     "halfHeight": 3.700000047683716,
@@ -208,6 +208,28 @@
                         0.5,
                         0.5,
                         0.5
+                    ]
+                },
+                "Weapon Trail": {
+                    "animControlled": true,
+                    "baseOffset": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "color": [
+                        1.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "emitting": false,
+                    "lifeTime": 0.18000000715255737,
+                    "minDistance": 0.019999999552965164,
+                    "tipOffset": [
+                        0.0,
+                        2.4700000286102295,
+                        0.0
                     ]
                 }
             },

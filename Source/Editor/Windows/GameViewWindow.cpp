@@ -101,6 +101,11 @@ void SavePathAssetToJson(const std::string &path, const std::vector<Vector3> &po
 // =========================================================================
 void GameViewWindow::DrawContents(EditorContext &context)
 {
+    // ★ この関数は ImGui::Begin("Game View") と End の間で呼ばれるので、
+    //   ここでの IsWindowFocused は「ゲームビュー窓」のフォーカス状態を指す。
+    //   これを EditorWindowManager が拾い、フォーカス中のみマウス視点を通す。
+    context.gameViewFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
+
     ImVec2 avail = ImGui::GetContentRegionAvail();
 
     // 16:9 のアスペクト比を維持してピッタリ収まるサイズを計算

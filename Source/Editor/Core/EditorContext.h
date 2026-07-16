@@ -53,4 +53,9 @@ struct EditorContext {
 
      // ★ ImGuiに渡すためのゲーム画面テクスチャ
      void* gameSRV = nullptr;
+
+     // ★ ゲームビュー(ImGuiウィンドウ)にフォーカスがあるか。
+     //   GameViewWindow が毎フレーム更新し、EditorWindowManager が
+     //   「全画面 or フォーカス中」を InputFacade へ伝えてマウス視点の可否を切り替える。
+     bool gameViewFocused = false;
 };

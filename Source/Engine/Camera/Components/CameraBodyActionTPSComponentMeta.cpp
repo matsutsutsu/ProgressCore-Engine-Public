@@ -83,8 +83,15 @@ struct ComponentMeta<CameraBodyTPSComponent>
         changed |= ImGui::DragFloat(u8"最大ピッチ制限 (maxPitch)", &comp.maxPitch, 0.5f, -89.0f, 89.0f);
 
         ImGui::SeparatorText(u8"操作感度 (Control Settings)");
-        changed |= ImGui::DragFloat(u8"X軸回転速度 (lookSpeedX)", &comp.lookSpeedX, 1.0f, 0.0f, 500.0f);
-        changed |= ImGui::DragFloat(u8"Y軸回転速度 (lookSpeedY)", &comp.lookSpeedY, 1.0f, 0.0f, 500.0f);
+        changed |= ImGui::DragFloat(u8"パッドX軸回転速度 (lookSpeedX)", &comp.lookSpeedX, 1.0f, 0.0f, 500.0f);
+        changed |= ImGui::DragFloat(u8"パッドY軸回転速度 (lookSpeedY)", &comp.lookSpeedY, 1.0f, 0.0f, 500.0f);
+
+        ImGui::SeparatorText(u8"マウス視点 (Mouse Look)");
+        changed |= ImGui::Checkbox(u8"右クリック押下中のみ (mouseLookRequiresButton)", &comp.mouseLookRequiresButton);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip(u8"ON=右ドラッグ中だけ視点回転(エディタ向き)。OFF=常時マウス視点(フルスクリーン向き)。");
+        changed |= ImGui::DragFloat(u8"マウス水平感度 (mouseSensitivityX)", &comp.mouseSensitivityX, 0.01f, 0.0f, 2.0f);
+        changed |= ImGui::DragFloat(u8"マウス垂直感度 (mouseSensitivityY)", &comp.mouseSensitivityY, 0.01f, 0.0f, 2.0f);
+        changed |= ImGui::Checkbox(u8"上下反転 (mouseInvertY)", &comp.mouseInvertY);
 
         ImGui::SeparatorText(u8"滑らかさ (Smoothing)");
         changed |= ImGui::DragFloat(u8"位置追従遅延 (positionDamping)", &comp.positionDamping, 0.1f, 0.0f, 50.0f);
@@ -124,6 +131,10 @@ struct ComponentMeta<CameraBodyTPSComponent>
             CFIELD_FLOAT_RANGED(maxPitch, "Max Pitch", 1.0f, -89.0f, 89.0f, "Orbit Constraints")
             CFIELD_FLOAT_RANGED(lookSpeedX, "Look Speed X", 1.0f, 0.0f, 500.0f, "Control Settings")
             CFIELD_FLOAT_RANGED(lookSpeedY, "Look Speed Y", 1.0f, 0.0f, 500.0f, "Control Settings")
+            CFIELD(mouseLookRequiresButton, u8"右クリック押下中のみ (mouseLookRequiresButton)", "Mouse Look")
+            CFIELD_FLOAT_RANGED(mouseSensitivityX, u8"マウス水平感度 (mouseSensitivityX)", 0.01f, 0.0f, 2.0f, "Mouse Look")
+            CFIELD_FLOAT_RANGED(mouseSensitivityY, u8"マウス垂直感度 (mouseSensitivityY)", 0.01f, 0.0f, 2.0f, "Mouse Look")
+            CFIELD(mouseInvertY, u8"上下反転 (mouseInvertY)", "Mouse Look")
             CFIELD_FLOAT_RANGED(positionDamping, "Pos Damping", 0.1f, 0.0f, 50.0f, "Smoothing")
             CFIELD_FLOAT_RANGED(fovDamping, "FOV Damping", 0.1f, 0.0f, 50.0f, "Smoothing")
             CFIELD_FLOAT_RANGED(lookaheadMultiplier, u8"前方注視係数 (lookaheadMultiplier)", 0.05f, 0.0f, 5.0f, "Lookahead")

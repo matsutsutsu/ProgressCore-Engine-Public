@@ -8,6 +8,10 @@
 #include "Editor/Core/EditorCommandHistory.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 
+// マウス視点の可否（全画面 or ゲームビュー フォーカス）を InputFacade へ伝えるため
+#include "Engine/Core/App/EngineServices.h"
+#include "Engine/Platform/Input/InputFacade.h"
+
 // 各ウィンドウのヘッダをインクルード
 #include "Editor/Windows/AssetBrowserWindow.h"
 #include "Editor/Windows/ECSDebugWindow.h"
@@ -185,9 +189,17 @@ void EditorWindowManager::Draw(EditorContext &context)
         RefreshPrefabList(context);
     }
 
+    // 今フレームのフォーカス状態はこの後 GameViewWindow が設定する。
+    // 窓が閉じている等で更新されない場合に前フレームの値が残らないよう先にクリア。
+    context.gameViewFocused = false;
+
     if (!_isVisible)
     {
         ZoneScopedN("Draw Background Canvas");
+
+        // 全画面(F1)プレイ中は常にマウス視点を有効化する。
+        if (auto &input = EngineServices::Instance().inputFacade)
+            input->SetGameInputActive(true);
 
         if (context.gameSRV)
         {
@@ -214,6 +226,12 @@ void EditorWindowManager::Draw(EditorContext &context)
             window->Render(context);
         }
     }
+
+    // ★ 窓描画後の確定したフォーカス状態を InputFacade へ反映。
+    //   ゲームビューにフォーカスがある時だけマウス視点を通す（編集中に視点が
+    //   マウスへ引っ張られるのを防ぐ）。
+    if (auto &input = EngineServices::Instance().inputFacade)
+        input->SetGameInputActive(context.gameViewFocused);
 }
 
 void EditorWindowManager::DrawMainMenuBar(EditorContext &context)
