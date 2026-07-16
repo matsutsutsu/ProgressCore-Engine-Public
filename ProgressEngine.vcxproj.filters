@@ -1233,6 +1233,12 @@
     <ClInclude Include="Source\Engine\Graphics\Systems\Trail\TrailAnimationSyncSystem.h">
       <Filter>Source\Engine\Graphics\Systems\Trail</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Components\Impact\JustEvadeEffectComponent.h">
+      <Filter>Source\Engine\Graphics\Components\Impact</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Systems\Impact\JustEvadeEffectSystem.h">
+      <Filter>Source\Engine\Graphics\Systems\Impact</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Components\Impact\ScreenImpactComponent.h">
       <Filter>Source\Engine\Graphics\Components\Impact</Filter>
     </ClInclude>
@@ -2410,6 +2416,12 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Systems\Trail\TrailAnimationSyncSystem.cpp">
       <Filter>Source\Engine\Graphics\Systems\Trail</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Components\Impact\JustEvadeEffectComponentMeta.cpp">
+      <Filter>Source\Engine\Graphics\Components\Impact</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Systems\Impact\JustEvadeEffectSystem.cpp">
+      <Filter>Source\Engine\Graphics\Systems\Impact</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Components\Impact\ScreenImpactComponentMeta.cpp">
       <Filter>Source\Engine\Graphics\Components\Impact</Filter>

@@ -10,6 +10,7 @@
 
 #include "Game/Logics/GameEvent/GameEvents.h"
 #include "Engine/Timer/TimeState.h"
+#include "Engine/Graphics/Components/Impact/JustEvadeEffectComponent.h"
 
 using namespace CCL::ECS;
 
@@ -57,19 +58,18 @@ void JustEvadeSystem::Initialize()
         }
 
         // =======================================================
-        // 3. エフェクト・残像・SEの呼び出し (Game Feel)
+        // 3. 画面演出（ウィッチタイム）のトリガー
         // =======================================================
-        // EventBus を使って、再生すべきSEやエフェクトをシステムに命令します。
-        // （※これらの構造体は例です。あなたのプロジェクトの構造に合わせてください）
+        // シーンに置いた JustEvadeEffectComponent(singleton) の timer を立てるだけ。
+        // 実際の色調/放射ブラー/色収差/ビネットの駆動は JustEvadeEffectSystem(R02) が
+        // 毎フレーム行い、演出後は元の PP 値へ自動復元する。
+        if (auto *fx = _world->GetSingletonComponent<JustEvadeEffectComponent>())
+        {
+            fx->Trigger();
+        }
 
-        // 音響：甲高いガラスが割れるような音
+        // TODO(任意): 音響（甲高いガラス音）や残像の追加はここに足す。
         // _world->GetEventBus().Publish(SoundRequestEvent{"event:/SFX/JustEvade", ev.playerID});
-
-        // 画面効果：色収差（Chromatic Aberration）を強めるイベント
-        // _world->GetEventBus().Publish(PostProcessPunchEvent{PostProcessType::ChromaticAberration, 1.0f});
-
-        // 残像：ダッシュ残像を3倍の濃度・赤色で出す命令
-        // _world->GetEventBus().Publish(GhostTrailRequestEvent{ev.playerID, Color::Red, 0.5f});
     });
 
 

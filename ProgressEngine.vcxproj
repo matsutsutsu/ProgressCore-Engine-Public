@@ -504,6 +504,8 @@
     <ClInclude Include="Source\Engine\Graphics\Systems\Trail\TrailAnimationSyncSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\Impact\ScreenImpactComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Impact\ScreenImpactSystem.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\Impact\JustEvadeEffectComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Systems\Impact\JustEvadeEffectSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\PostProcessPass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\PrimitivePass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\SetupPass.h" />
@@ -1336,6 +1338,8 @@
     <ClCompile Include="Source\Engine\Graphics\Systems\Trail\TrailAnimationSyncSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Impact\ScreenImpactComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Impact\ScreenImpactSystem.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Components\Impact\JustEvadeEffectComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Systems\Impact\JustEvadeEffectSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\PostProcessPass.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\PrimitivePass.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\SetupPass.cpp" />
