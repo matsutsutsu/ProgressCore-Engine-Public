@@ -25,8 +25,10 @@ void RootMotionSystem::Update(float /*rawDt*/)
 
         if (isDashing)
         {
-            rm.enabled          = false;
-            rm.lastEvaluatedSeq = nullptr;
+            rm.enabled                = false;
+            rm.lastEvaluatedSeq       = nullptr;
+            input.isRootMotionActive  = false;
+            input.rootMotionVelocity  = Vector3::Zero;
             return;
         }
 
@@ -45,7 +47,14 @@ void RootMotionSystem::Update(float /*rawDt*/)
         Model *model = modelComp.GetModel();
         if (!rm.enabled || !animator.currentSequence || !model)
         {
-            rm.lastEvaluatedSeq = nullptr;
+            // ★このフレームはルートモーション非適用のステート。
+            //   このComponent(rm)は唯一の書き手なので、ここで確実にフラグを下ろさないと
+            //   前回ルートモーションを使ったステート（例:Slash）の値が
+            //   JoltCharacterUpdateSystem 側に残留し、以後ずっと通常移動を上書きし続ける
+            //  （＝Move等の意図した移動が「一度も動かなく見える」バグの原因）。
+            rm.lastEvaluatedSeq       = nullptr;
+            input.isRootMotionActive  = false;
+            input.rootMotionVelocity  = Vector3::Zero;
             return;
         }
 

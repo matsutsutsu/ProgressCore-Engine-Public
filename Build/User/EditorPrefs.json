@@ -1,6 +1,3 @@
 {
-    "DialogHistory": {
-        "AnimNode": "Assets\\Animations\\Nodes",
-        "BehaviorTreeNode": "Assets\\BehaviorTree"
-    }
+    "DialogHistory": {}
 }
