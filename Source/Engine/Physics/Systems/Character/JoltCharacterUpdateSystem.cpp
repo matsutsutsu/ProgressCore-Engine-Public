@@ -34,8 +34,19 @@ void JoltCharacterUpdateSystem::Update(float rawDt)
             return;
         JPH::CharacterVirtual *ch = handle.character.GetPtr();
 
-        // 時間の安全装置（dtクランプ）
-        float safeDt     = (std::max)(0.0001f, (std::min)(rawDt, 0.0333f));
+        // 時間の安全装置（dtクランプ）。
+        // ★ rawDt(実時間)ではなく time.localDt(このキャラの実効dt)で積分する。
+        //   ヒットストップ/スロー/ポーズといった時間スケールを移動にも一貫して反映させ、
+        //   「タイマーは localDt・移動は実時間」の不整合（ジャスト回避スロー中にダッシュが
+        //   何倍にも伸びる不具合）を解消する。通常時は localDt==rawDt なので挙動は不変。
+        float safeDt     = (std::max)(0.0001f, (std::min)(time.localDt, 0.0333f));
+        // presenceプロキシ(Kinematic剛体)の MoveKinematic 用 dt。
+        // ★ 物理本体の Step(dt) は常に実時間で回る（JoltStepSystem は time スケールを掛けない）。
+        //   MoveKinematic は「dt 秒で目標へ到達する速度」を内部で速度化するため、ここに
+        //   safeDt(スロー中は極小) を渡すと、その速度を Step 側が実dtで積分して 10 倍以上
+        //   オーバーシュートし、プロキシが無限遠へ飛んで QuadTree の AABB が NaN/Inf 化して
+        //   ブロードフェーズがクラッシュする。→ プロキシの追従には実dtを使う。
+        float moveDt     = (std::max)(0.0001f, (std::min)(rawDt, 0.0333f));
         bool  isGrounded = (ch->GetGroundState() == JPH::CharacterVirtual::EGroundState::OnGround);
 
         // 1. ワープ処理の解決
@@ -72,7 +83,8 @@ void JoltCharacterUpdateSystem::Update(float rawDt)
         ch->SetLinearVelocity(finalVel);
 
         // 4. 物理更新と Transform / presenceプロキシへの同期
-        UpdatePhysicsAndSync(safeDt, joltManager, ch, config, trans, id);
+        //    CharacterVirtual の積分は safeDt(スロー反映)、プロキシ追従は moveDt(実時間)。
+        UpdatePhysicsAndSync(safeDt, moveDt, joltManager, ch, config, trans, id);
     });
 }
 
@@ -148,7 +160,7 @@ DirectX::SimpleMath::Vector3 JoltCharacterUpdateSystem::CalculateHorizontalVeloc
     return input.currentVelocity;
 }
 
-void JoltCharacterUpdateSystem::UpdatePhysicsAndSync(float safeDt, JoltPhysicsManager *joltManager, JPH::CharacterVirtual *ch, const JoltCharacterConfigComponent &config, TransformComponent &trans, EntityID id)
+void JoltCharacterUpdateSystem::UpdatePhysicsAndSync(float safeDt, float moveDt, JoltPhysicsManager *joltManager, JPH::CharacterVirtual *ch, const JoltCharacterConfigComponent &config, TransformComponent &trans, EntityID id)
 {
     JPH::PhysicsSystem         *physicsSystem = joltManager->GetPhysicsSystem();
     JoltHandleComponent        *kinBody       = _world->GetComponent<JoltHandleComponent>(id); // presenceプロキシ
@@ -183,7 +195,9 @@ void JoltCharacterUpdateSystem::UpdatePhysicsAndSync(float safeDt, JoltPhysicsMa
     if (kinBody)
     {
         JPH::Quat joltRot = ch->GetRotation();
-        joltManager->GetBodyInterface().MoveKinematic(kinBody->bodyID, pos, joltRot, safeDt);
+        // ★実時間(moveDt)で追従させる。Step が実dtで速度を積分するため、ここも実dtで
+        //   速度化しないとスロー中にオーバーシュートしてプロキシが飛ぶ（QuadTreeクラッシュ）。
+        joltManager->GetBodyInterface().MoveKinematic(kinBody->bodyID, pos, joltRot, moveDt);
     }
 }
 
