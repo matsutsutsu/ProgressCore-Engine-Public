@@ -8,6 +8,10 @@
 #include <json.hpp>
 using json = nlohmann::json;
 
+#ifdef ENABLE_EDITOR
+#include <imgui.h>
+#endif
+
 namespace {
     // ---------------------------------------------------------
     // ヘルパー: 文字列 -> デバイスタイプ変換
@@ -160,12 +164,34 @@ bool InputFacade::EvalActionReleased(const std::vector<InputBinding>& binds) con
     return false;
 }
 
+#ifdef ENABLE_EDITOR
+namespace {
+    // ---------------------------------------------------------
+    // B案: エディタでウィジェットを能動操作している間はゲーム入力を殺す。
+    //   ・WantCaptureKeyboard : テキスト/数値欄にフォーカスがあり、キー入力を
+    //                           ImGui が奪っている（名前入力中の WASD 漏れ防止）
+    //   ・IsAnyItemActive     : スライダー/DragFloat 等をドラッグ中＝値調整中
+    //   ※ GameView 自体が ImGui ウィンドウのため WantCaptureMouse は
+    //     「画面にマウスを乗せただけ」で true になり通常プレイを阻害する。
+    //     ゆえにマウスフラグは意図的に見ない。
+    // ---------------------------------------------------------
+    inline bool EditorIsConsumingInput() {
+        if (!ImGui::GetCurrentContext()) return false;
+        return ImGui::GetIO().WantCaptureKeyboard || ImGui::IsAnyItemActive();
+    }
+}
+#endif
+
 // =======================================================
 // アクション取得（統一窓口）
 //   エディタで設定された種別に従って評価する。
 // =======================================================
 bool InputFacade::GetAction(uint32_t actionHash) const {
     if (!m_rawInput) return false;
+#ifdef ENABLE_EDITOR
+    // エディタで値調整中はゲーム側へ入力を通さない（プレイヤー暴発防止）
+    if (EditorIsConsumingInput()) return false;
+#endif
     auto it = m_actionBindings.find(actionHash);
     if (it == m_actionBindings.end()) return false;
 
@@ -187,6 +213,10 @@ bool InputFacade::GetAction(uint32_t actionHash) const {
 // =======================================================
 float InputFacade::GetAxis(uint32_t axisHash) const {
     if (!m_rawInput) return 0.0f;
+#ifdef ENABLE_EDITOR
+    // エディタで値調整中は軸入力を中立(0)にして移動の暴発を防ぐ
+    if (EditorIsConsumingInput()) return 0.0f;
+#endif
     auto it = m_axisBindings.find(axisHash);
     if (it == m_axisBindings.end()) return 0.0f;
 

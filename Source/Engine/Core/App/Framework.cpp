@@ -175,21 +175,10 @@ void Framework::FixedUpdate(float fixedTime)
     ZoneScopedN("Framework::FixedUpdate");
 
 
-	bool shouldUpdateLogic = true;
-
-#ifdef ENABLE_EDITOR
-	// エディタが有効な場合、Play状態の時だけロジックを回す
-	if (m_editorContext.playState != EditorPlayState::Playing) {
-		shouldUpdateLogic = false;
-	}
-#endif
-
-	// ★ 関所：shouldUpdateLogic が true の時だけゲーム内時間が進む
-	if (shouldUpdateLogic) {
-		// SceneManager に FixedUpdate を追加して呼ぶのが理想
-		// まだ実装していない場合は、一旦コメントアウトかエラー回避しておく
-		SceneManager::Instance().FixedUpdate(fixedTime);
-	}
+	// 一時停止/コマ送りの判断は Run() 側で一元管理する。
+	//   ここが呼ばれた時点で「1物理ステップ進めてよい」ことは確定しているため、
+	//   本関数は無条件にロジックを進める（停止中は Run() が本関数を呼ばない）。
+	SceneManager::Instance().FixedUpdate(fixedTime);
 
 
 	 // 使い終わった入力フラグをここでリセット
@@ -365,11 +354,11 @@ void Framework::Render(float elapsedTime)
 				TracyD3D11Zone(tracyCtx, "ImGui Pass (GPU)");
 			}
 
-			// 編集モードかつ UI 表示中のみ、切り離し OS 窓（セカンダリ Present）を許可
+			// 一時停止中かつ UI 表示中のみ、切り離し OS 窓（セカンダリ Present）を許可
 			const bool allowPlatformWindows =
 			    m_editorWindowManager &&
 			    m_editorWindowManager->IsVisible() &&
-			    m_editorContext.playState == EditorPlayState::Stopped;
+			    m_editorContext.isPaused;
 			ImGuiRenderer::SetPlatformWindowsEnabled(allowPlatformWindows);
 
 			// IMGUI描画
@@ -477,8 +466,25 @@ int Framework::Run()
 			// これがないと、処理落ち→計算量増える→さらに処理落ち... で停止する
 			if (frameTime > 0.1f) frameTime = 0.1f;
 
-			// 3. 時間を貯める
-			accumulator += frameTime;
+			// 一時停止中はゲーム内時間(accumulator)を進めない。
+			//   進めてしまうと FixedUpdate(ロジック)が止まって prevPosition/position が
+			//   固定されているのに alpha だけ実時間で 0↔1 に揺れ続け、
+			//   TransformInterpolationSystem が両者を往復補間してキャラが「震える」。
+			bool logicFrozen = false;
+			bool doSingleStep = false;
+#ifdef ENABLE_EDITOR
+			logicFrozen = m_editorContext.isPaused;
+			// コマ送り：一時停止中に要求されたら、このフレームだけ1物理ステップ進める
+			if (logicFrozen && m_editorContext.stepOneFrame) {
+				doSingleStep = true;
+			}
+			m_editorContext.stepOneFrame = false; // 要求は毎フレーム消費（連続送りはキー側のedge検出で防ぐ）
+#endif
+
+			// 3. 時間を貯める（停止中は貯めない）
+			if (!logicFrozen) {
+				accumulator += frameTime;
+			}
 
 			// 1秒ごとの計測処理
 			m_debugTimer += frameTime;
@@ -547,6 +553,13 @@ int Framework::Run()
 			int updateCount = 0;
 			const int MAX_STEPS = 4; // 1フレームに許容する最大更新回数
 
+			// コマ送り：accumulator に関係なく、確実に1物理ステップだけ進める。
+			//   一時停止中なので下の通常ループ(while)は accumulator が溜まらず回らない。
+			if (doSingleStep)
+			{
+				FixedUpdate(FIXED_DT);
+				m_fixedUpdateCounter++;
+			}
 
 			while (accumulator >= FIXED_DT && updateCount < MAX_STEPS)
 			{
@@ -585,8 +598,9 @@ int Framework::Run()
                     // ★ 規約準拠：必ず HasResource でガードしてから参照更新（O(1)・ヒープ確保なし）
                     if (world->HasResource<RenderInterpState>())
                     {
+                        // 一時停止中は補間せず最新の確定姿勢(alpha=1)を表示して震えを止める
                         world->GetResource<RenderInterpState>().alpha =
-                            static_cast<float>(accumulator / FIXED_DT);
+                            logicFrozen ? 1.0f : static_cast<float>(accumulator / FIXED_DT);
                     }
                 }
             }

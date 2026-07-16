@@ -164,6 +164,19 @@ void EditorWindowManager::Draw(EditorContext &context)
         {
             _isVisible = !_isVisible;
         }
+
+        // TAB で一時停止/再開をトグル（ツールバーの Pause/Resume ボタンと同じ動作）。
+        //   テキスト入力欄にフォーカスがあるときは ImGui のフィールド移動を優先し、誤爆させない。
+        if (ImGui::IsKeyPressed(ImGuiKey_Tab, false) && !ImGui::GetIO().WantCaptureKeyboard)
+        {
+            context.isPaused = !context.isPaused;
+        }
+
+        // F11 で1フレームだけコマ送り（一時停止中のみ有効）。false=リピートなしで1回だけ。
+        if (context.isPaused && ImGui::IsKeyPressed(ImGuiKey_F11, false) && !ImGui::GetIO().WantCaptureKeyboard)
+        {
+            context.stepOneFrame = true;
+        }
     }
 
     if (context.prefabFiles.empty())
@@ -380,53 +393,34 @@ void EditorWindowManager::DrawWindowMenu(EditorContext &context)
 void EditorWindowManager::DrawPlayControlBar(EditorContext &context)
 {
     ZoneScopedN("EditorWindowManager::DrawPlayControlBar");
-    float menuBarWidth      = ImGui::GetWindowWidth();
-    float buttonWidth       = 50.0f;
-    float totalButtonsWidth = buttonWidth * 2.0f + ImGui::GetStyle().ItemSpacing.x;
 
-    ImGui::SameLine(menuBarWidth * 0.5f - totalButtonsWidth * 0.5f);
+    // 「一時停止 / 再開」トグルのみ。
+    //   セーブやシーンのバックアップ/復元は一切行わない。押した瞬間に
+    //   context.isPaused を反転するだけで、Framework 側がその間 FixedUpdate を止める。
+    float  menuBarWidth = ImGui::GetWindowWidth();
+    float  buttonWidth  = 90.0f;
+    ImVec2 btnSize      = ImVec2(buttonWidth, 0);
 
-    ImVec2 btnSize = ImVec2(buttonWidth, 0);
+    ImGui::SameLine(menuBarWidth * 0.5f - buttonWidth * 0.5f);
 
-    if (context.playState != EditorPlayState::Stopped)
+    if (context.isPaused)
     {
-        if (ImGui::Button("Stop", btnSize))
+        if (ImGui::Button("> Resume", btnSize))
         {
-            context.playState            = EditorPlayState::Stopped;
-            context.pendingLoadScenePath = context.tempBackupScenePath;
-            CCL_LOG_INFO(LogCategory::Editor, "Play In Editor: Stopped and Restored.");
+            context.isPaused = false;
+        }
+        // 停止中のみコマ送りボタンを出す（F11 と同じ動作）
+        ImGui::SameLine();
+        if (ImGui::Button(">| Step", btnSize))
+        {
+            context.stepOneFrame = true;
         }
     }
     else
     {
-        ImGui::BeginDisabled();
-        ImGui::Button("Stop", btnSize);
-        ImGui::EndDisabled();
-    }
-
-    ImGui::SameLine();
-
-    if (context.playState == EditorPlayState::Stopped)
-    {
-        if (ImGui::Button("Play", btnSize))
+        if (ImGui::Button("|| Pause", btnSize))
         {
-            context.pendingSaveScenePath = context.tempBackupScenePath;
-            context.playState            = EditorPlayState::Playing;
-            CCL_LOG_INFO(LogCategory::Editor, "Play In Editor: Started.");
-        }
-    }
-    else if (context.playState == EditorPlayState::Playing)
-    {
-        if (ImGui::Button("Pause", btnSize))
-        {
-            context.playState = EditorPlayState::Paused;
-        }
-    }
-    else if (context.playState == EditorPlayState::Paused)
-    {
-        if (ImGui::Button("Resume", btnSize))
-        {
-            context.playState = EditorPlayState::Playing;
+            context.isPaused = true;
         }
     }
 }

@@ -11,6 +11,10 @@
 
 #include "Engine/ECS/Core/CCL_World.h"
 
+// ★ ロード前検証（破壊前のファイル存在確認）に使用
+#include "Engine/Platform/Core/FileSystem.h"
+#include "Engine/Platform/Core/Logger.h"
+
 
 // タグとシステム
 #include "Engine/Core/Components/PersistentTag.h"
@@ -132,6 +136,22 @@ void SceneManager::SaveScene(CCL::ECS::Core::World* world, const std::string& fi
 
 void SceneManager::LoadScene(CCL::ECS::Core::World* world, const std::string& filepath)
 {
+    // ==========================================================
+    // 0. 事前検証 (★破壊する前にロード可能か確かめる)
+    //   本関数は「全破壊 → デシリアライズ」の順で動く。
+    //   ファイルが欠損/空だと破壊だけ実行され、ワールドが丸ごと消滅する。
+    //   （Play-In-Editor で Play 前に Stop を押し、バックアップ未作成のまま
+    //     復元しようとして全エンティティが消える事故の直接原因。）
+    //   ここで読めないと判明したら、現在の世界には一切手を付けずに中止する。
+    // ==========================================================
+    const std::string jsonStr = FileSystem::ReadAllText(filepath);
+    if (jsonStr.empty()) {
+        CCL_LOG_ERROR(LogCategory::Core,
+            "[SceneManager] LoadScene 中止: ファイルが存在しないか空です (%s)。"
+            "現在のワールドは破壊しません。", filepath.c_str());
+        return;
+    }
+
     // ==========================================================
     // 1. 破壊の宣告 (Marking)
     // ==========================================================

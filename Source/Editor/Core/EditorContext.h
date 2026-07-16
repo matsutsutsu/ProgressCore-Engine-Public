@@ -10,13 +10,6 @@
 #include <ImGuizmo.h>
 #endif
 
-// ゲームの再生状態
-enum class EditorPlayState {
-    Stopped, // 編集モード（時間は止まっている）
-    Playing, // 再生モード（ゲーム進行中）
-    Paused   // 一時停止モード（コマ送りやデバッグ用）
-};
-
 // エディタ内で共有されるコンテキストデータ
 struct EditorContext {
     CCL::ECS::Core::World *world          = nullptr;
@@ -35,9 +28,15 @@ struct EditorContext {
     // シーンセーブ予約パス
     std::string pendingSaveScenePath;
 
-    // 再生状態とバックアップ用パス
-    EditorPlayState playState = EditorPlayState::Playing;
-    std::string tempBackupScenePath = "Assets/Scene/_TempPlayBackup.json";
+    // ★ 一時停止トグル。
+    //   true の間だけゲームロジック(FixedUpdate)の進行を止める「ただの一時停止」。
+    //   セーブ/ロードやシーンのバックアップは一切行わない。
+    //   起動時は false（＝従来通り実行状態）で始まる。
+    bool isPaused = false;
+
+    // ★ コマ送り要求。一時停止中に true にすると、次の1フレームだけ物理を進めて
+    //   すぐ false に戻る（Framework が消費）。停止中の1フレーム送り用。
+    bool stepOneFrame = false;
 
     // アニメーションエディタとの連携用
      bool  isAnimEditMode = false; // これらもポインタではなく実体値にするのが安全です
