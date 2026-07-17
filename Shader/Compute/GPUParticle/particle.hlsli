@@ -80,19 +80,55 @@ void spawn(in uint id, inout particle p)
     float ang_rand   = randUint(p.seed +  7u);
     float y_rand     = randUint(p.seed +  8u);
 
-    // ---- 発生位置（均一楕円） ----
+    // ---- サブフレーム補間 ----
+    //   前フレーム→現フレームのエミッタ姿勢を s∈[0,1] で補間してスポーンする。
+    //   これにより1フレーム内のスポーン群が「その瞬間の線」に固まらず、
+    //   剣が動いた軌道上に連続して塗られる（速い振りでも櫛にならない）。
+    float  s = randUint(p.seed + 15u);
+    float3 emitPos = lerp(prev_world_position, world_position, s);
+    float4 q0 = prev_emit_rotation;
+    float4 q1 = emit_rotation;
+    if (dot(q0, q1) < 0.0f) q1 = -q1;                 // 最短経路（隣接フレームなので nlerp で十分）
+    float4 emitRot = normalize(lerp(q0, q1, s) + float4(0, 0, 0, 1e-6f));
+
+    // ---- 発生位置 ----
     float angle = a_rand * 2.0f * PI;
-    float r     = sqrt(lerp(emit_radius.x * emit_radius.x,
+
+    if (emit_shape > 0.5f)
+    {
+        // 【線分モード：剣の刃に沿って撒く】
+        //   base(emit_local_offset) → tip(emit_local_offset + emit_line_end) を t で均一補間。
+        //   emit_radius を刃まわりの筒の太さ(軸に直交する円)として使う。
+        //   最後に emitRot(補間したボーンの向き) で回すので、剣を振っても刃に張り付き続ける。
+        float  tparam = randUint(p.seed + 14u);
+        float3 baseL  = emit_local_offset.xyz;
+        float3 tipL   = emit_local_offset.xyz + emit_line_end;
+        float3 lineP  = lerp(baseL, tipL, tparam);
+
+        // 刃の軸に直交する2ベクトルを作り、その円周上に太さ分だけ散らす
+        float3 axis = normalize(emit_line_end + float3(1e-5f, 1e-5f, 1e-5f));
+        float3 ref  = (abs(axis.y) < 0.99f) ? float3(0.0f, 1.0f, 0.0f) : float3(1.0f, 0.0f, 0.0f);
+        float3 t1   = normalize(cross(axis, ref));
+        float3 t2   = cross(axis, t1);
+        float  rr   = lerp(emit_radius.x, emit_radius.y, r_rand);
+        float3 radial = (t1 * cos(angle) + t2 * sin(angle)) * rr;
+
+        float3 localPos = lineP + radial;
+        p.position = emitPos + RotateByQuat(localPos, emitRot);
+    }
+    else
+    {
+        // 【ディスクモード：従来の均一楕円（互換）】
+        float r = sqrt(lerp(emit_radius.x * emit_radius.x,
                             emit_radius.y * emit_radius.y, r_rand));
+        float3 offset;
+        offset.x = r * cos(angle) * emit_stretch.x;   // X 軸倍率
+        offset.z = r * sin(angle) * emit_stretch.y;   // Z 軸倍率
+        // emit_local_offset.w: Y 方向発生揺らぎ幅
+        offset.y = emit_local_offset.w * (y_rand * 2.0f - 1.0f);
 
-    float3 offset;
-    offset.x = r * cos(angle) * emit_stretch.x;   // X 軸倍率
-    offset.z = r * sin(angle) * emit_stretch.y;   // Z 軸倍率
-    // emit_local_offset.w: Y 方向発生揺らぎ幅
-    offset.y = emit_local_offset.w * (y_rand * 2.0f - 1.0f);
-
-    // emit_rotation / world_position は CbParticleDynamic から
-    p.position = world_position + emit_local_offset.xyz + offset;
+        p.position = emitPos + emit_local_offset.xyz + offset;
+    }
 
     // ---- 速度（円錐放出） ----
     float phi       = 2.0f * PI * randUint(p.seed + 9u);
@@ -106,7 +142,7 @@ void spawn(in uint id, inout particle p)
     localVel.z = sin_theta * sin(phi);
     localVel  *= lerp(emit_speed.x, emit_speed.y, speed_rand);
 
-    p.velocity     = RotateByQuat(localVel, emit_rotation);
+    p.velocity     = RotateByQuat(localVel, emitRot);
     p.angular_speed = lerp(emit_angular_speed.x, emit_angular_speed.y, randUint(p.seed + 11u));
     p.mass          = 1.0f;
     p.angle         = PI * ang_rand;

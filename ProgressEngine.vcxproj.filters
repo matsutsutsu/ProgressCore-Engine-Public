@@ -1335,6 +1335,9 @@
     <ClInclude Include="Source\Engine\Graphics\Systems\Particle\GPUParticleUpdateSystem.h">
       <Filter>Source\Engine\Graphics\Systems\Particle</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Systems\Particle\ParticleAnimationSyncSystem.h">
+      <Filter>Source\Engine\Graphics\Systems\Particle</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Systems\PostProcess\PostProcessSystem.h">
       <Filter>Source\Engine\Graphics\Systems\PostProcess</Filter>
     </ClInclude>
@@ -2505,6 +2508,9 @@
       <Filter>Source\Engine\Graphics\Systems\Particle</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Systems\Particle\GPUParticleUpdateSystem.cpp">
+      <Filter>Source\Engine\Graphics\Systems\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Systems\Particle\ParticleAnimationSyncSystem.cpp">
       <Filter>Source\Engine\Graphics\Systems\Particle</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Systems\PostProcess\PostProcessSystem.cpp">

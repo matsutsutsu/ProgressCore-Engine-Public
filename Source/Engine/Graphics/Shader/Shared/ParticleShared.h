@@ -131,8 +131,12 @@ CB_PARTICLE_STRUCT(CbParticleStatic, SLOT_CB_PARTICLE_STATIC)
     float  vortex_strength;         // offset 196: 中心軸(Y)まわりの渦
     float  drag;                    // offset 200: 速度減衰 (1/s)
     uint   force_flags;             // offset 204: bit0=引力/渦 有効, bit1=local空間
+
+    // ---- 発生形状: 線分(剣の刃に沿って撒く) ---- (offset 208-223)
+    float3 emit_line_end;           // offset 208: 線分の終点。emit_local_offset を始点とするローカルオフセット(刃先)
+    float  emit_shape;              // offset 220: 0:既存の楕円ディスク 1:線分(base→tip をemit_rotationで刃に沿わせる)
 };
-// 合計: 176 bytes
+// 合計: 224 bytes
 
 // ==================================================================
 // CbParticleDynamic — ランタイム値 (毎フレーム upload, 48 bytes)
@@ -149,17 +153,23 @@ CB_PARTICLE_STRUCT(CbParticleDynamic, SLOT_CB_PARTICLE_DYNAMIC)
 
     float  delta_time;              // offset 32: 1フレームの秒数
     float  burst_trigger;           // offset 36: >0 でバースト発動、システムが消費して 0 に戻す
-    float2 _pad_dynamic;            // offset 40
+    float  emit_enabled;            // offset 40: 継続放出モードの発生ゲート (0:停止 それ以外:発生)。アニメ連動用。
+    float  _pad_dynamic;            // offset 44
+
+    // ---- 前フレームのエミッタ姿勢（サブフレーム補間でスポーンを軌道上に連続配置する） ----
+    float4 prev_emit_rotation;      // offset 48: 前フレームのワールド回転
+    float3 prev_world_position;     // offset 64: 前フレームのワールド座標
+    float  _pad_dynamic2;           // offset 76
 };
-// 合計: 48 bytes
+// 合計: 80 bytes
 
 // ==================================================================
 // C++ 側のみ: レイアウト検証
 // ==================================================================
 #ifdef __cplusplus
 static_assert(sizeof(GpuParticle) == 80, "GpuParticle size mismatch");
-static_assert(sizeof(CbParticleStatic) == 208, "CbParticleStatic size mismatch");
-static_assert(sizeof(CbParticleDynamic) == 48, "CbParticleDynamic size mismatch");
+static_assert(sizeof(CbParticleStatic) == 224, "CbParticleStatic size mismatch");
+static_assert(sizeof(CbParticleDynamic) == 80, "CbParticleDynamic size mismatch");
 
 } // namespace GpuData
 

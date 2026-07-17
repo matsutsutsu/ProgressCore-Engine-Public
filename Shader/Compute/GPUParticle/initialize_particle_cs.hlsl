@@ -18,7 +18,7 @@ void main(uint3 dtid : SV_DispatchThreadID)
         p.color.a = 0.0f;
         p.age     = p.lifespan + 1.0f;
     }
-    else
+    else if (emit_enabled > 0.5f)
     {
         // 継続放出モード: Pre-warm (最初から粒子が散らばった状態)
         p.state = STATE_ALIVE;
@@ -32,6 +32,17 @@ void main(uint3 dtid : SV_DispatchThreadID)
         float3 gVec = float3(0.0f, gravity, 0.0f);
         p.position += 0.5f * gVec * p.age * p.age;
         p.velocity += gVec * p.age;
+    }
+    else
+    {
+        // 継続モードだが発生ゲートOFF（アニメ連動で最初は空にしておく）: 死亡待機で開始。
+        // ★ age を staggered にしておく。全粒子を同じ age にすると、ゲートが開いた瞬間に
+        //    一斉スポーンして「最初の1フレームだけ大量に出て以降出ない」不具合になる。
+        //    id で位相をばらけさせ、ゲート開放後に順次スポーン（定常流）させる。
+        p.state   = STATE_DEAD;
+        p.color.a = 0.0f;
+        float start_ratio = (float)id / (float)max_count;
+        p.age = start_ratio * p.lifespan;
     }
 
     particle_buffer[id] = p;

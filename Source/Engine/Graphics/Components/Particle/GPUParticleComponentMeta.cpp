@@ -40,6 +40,8 @@ void WriteDescToJson(json &j, const ParticleEmitterDesc &d)
     j["fadeDuration"]  = {SafeF(d.fadeDuration.x), SafeF(d.fadeDuration.y)};
     j["localOffset"]   = {SafeF(d.localOffset.x), SafeF(d.localOffset.y), SafeF(d.localOffset.z)};
     j["emitStretch"]   = {SafeF(d.emitStretch.x), SafeF(d.emitStretch.y)};
+    j["lineEnd"]       = {SafeF(d.lineEnd.x), SafeF(d.lineEnd.y), SafeF(d.lineEnd.z)};
+    j["emitShape"]     = d.emitShape;
     j["uvScrollSpeed"] = {SafeF(d.uvScrollSpeed.x), SafeF(d.uvScrollSpeed.y)};
     j["scale"]         = {SafeF(d.scale.x), SafeF(d.scale.y)};
     j["color"]         = {SafeF(d.color.x), SafeF(d.color.y), SafeF(d.color.z), SafeF(d.color.w)};
@@ -114,6 +116,8 @@ void ReadDescFromJson(const json &j, ParticleEmitterDesc &d)
     I("particleType", d.particleType);
     I("emitMode", d.emitMode);
     I("burstCount", d.burstCount);
+    I("emitShape", d.emitShape);
+    F3("lineEnd", d.lineEnd);
     d.attractorLocal = j.value("attractorLocal", true);
 
     if (j.contains("spriteGrid") && j["spriteGrid"].is_array() && j["spriteGrid"].size() >= 2)
@@ -145,11 +149,13 @@ struct ComponentSerializer<GPUParticleComponent>
     static void Save(json &j, const GPUParticleComponent &comp, SaveContext * /*ctx*/)
     {
         WriteDescToJson(j, comp.desc);
+        j["animControlled"] = comp.animControlled; // 発生をアニメ区間で駆動するか
     }
 
     static void Load(const json &j, GPUParticleComponent &comp, LoadContext * /*ctx*/)
     {
         ReadDescFromJson(j, comp.desc);
+        comp.animControlled = j.value("animControlled", false);
 
         auto &rm       = ResourceManager::Instance();
         comp.texture   = (comp.desc.texturePath[0] != '\0') ? rm.LoadTexture(comp.desc.texturePath) : TextureHandle{};
@@ -268,6 +274,10 @@ struct ComponentMeta<GPUParticleComponent>
                 const char *modes[] = {"Continuous (継続)", "Burst (爆発)"};
                 if (ImGui::Combo(u8"発生モード (Mode)", &d.emitMode, modes, IM_ARRAYSIZE(modes))) changed = true;
 
+                if (ImGui::Checkbox(u8"アニメ制御 (Anim Controlled)", &p->animControlled)) changed = true;
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip(u8"ONにすると祖先(Animator)の Particle 区間イベント中だけ発生します。\n剣ボーンに子付けして「まとい」演出に使います。");
+
                 if (d.emitMode == 1)
                 { 
                     if (ImGui::DragInt(u8"発生数 (Count)", &d.burstCount, 1, 0, 10000)) changed = true;
@@ -283,14 +293,36 @@ struct ComponentMeta<GPUParticleComponent>
                 }
 
                 ImGui::SeparatorText(u8"形状と位置 (Shape & Position)");
+
+                const char *shapeNames[] = {u8"ディスク (Disk)", u8"線分・剣 (Line/Blade)"};
+                if (ImGui::Combo(u8"発生形状 (Emit Shape)", &d.emitShape, shapeNames, IM_ARRAYSIZE(shapeNames))) changed = true;
+
                 changed |= ImGui::DragFloat3(u8"位置オフセット (Pos Offset)", &d.localOffset.x, 0.1f);
-                changed |= ImGui::DragFloat(u8"高さ範囲 Y (Height Volume)", &d.localOffsetY, 0.1f, 0.0f, 50.0f);
-                if (ImGui::DragFloat2(u8"半径 (Radius Min/Max)", &d.emitRadius.x, 0.01f, 0.0f, 100.0f, "%.2f"))
+                if (ImGui::IsItemHovered() && d.emitShape == 1)
+                    ImGui::SetTooltip(u8"線分の始点(根本)。剣ボーンのローカル座標で刃の根本に合わせる。");
+
+                if (d.emitShape == 1)
                 {
-                    if (d.emitRadius.x > d.emitRadius.y) d.emitRadius.y = d.emitRadius.x;
-                    changed = true;
+                    // 線分モード: 刃先までのローカルオフセット + 太さ
+                    changed |= ImGui::DragFloat3(u8"刃先オフセット (Blade Tip)", &d.lineEnd.x, 0.05f);
+                    if (ImGui::IsItemHovered())
+                        ImGui::SetTooltip(u8"始点(Pos Offset)から刃先までのローカルオフセット。\n剣の刃が伸びる軸に長さぶん設定する (例: Y+ に刃長)。");
+                    if (ImGui::DragFloat2(u8"筒の太さ (Tube Radius Min/Max)", &d.emitRadius.x, 0.005f, 0.0f, 10.0f, "%.3f"))
+                    {
+                        if (d.emitRadius.x > d.emitRadius.y) d.emitRadius.y = d.emitRadius.x;
+                        changed = true;
+                    }
                 }
-                changed |= ImGui::DragFloat2(u8"形状比率 XZ (Stretch)", &d.emitStretch.x, 0.01f, 0.0f, 10.0f, "%.2f");
+                else
+                {
+                    changed |= ImGui::DragFloat(u8"高さ範囲 Y (Height Volume)", &d.localOffsetY, 0.1f, 0.0f, 50.0f);
+                    if (ImGui::DragFloat2(u8"半径 (Radius Min/Max)", &d.emitRadius.x, 0.01f, 0.0f, 100.0f, "%.2f"))
+                    {
+                        if (d.emitRadius.x > d.emitRadius.y) d.emitRadius.y = d.emitRadius.x;
+                        changed = true;
+                    }
+                    changed |= ImGui::DragFloat2(u8"形状比率 XZ (Stretch)", &d.emitStretch.x, 0.01f, 0.0f, 10.0f, "%.2f");
+                }
                 if (ImGui::DragFloat2(u8"放出角度 (Cone Angle Min/Max)", &d.coneAngle.x, 0.01f, 0.0f, 3.1415f, "%.2f rad"))
                 {
                     if (d.coneAngle.x > d.coneAngle.y) d.coneAngle.y = d.coneAngle.x;

@@ -58,6 +58,10 @@ static GpuData::CbParticleStatic BuildStaticCb(const ParticleEmitterDesc& d)
     if (d.attractorLocal)                                        flags |= 2u; // local 空間
     cb.force_flags = flags;
 
+    // ---- 発生形状 (線分/剣) ----
+    cb.emit_line_end = { d.lineEnd.x, d.lineEnd.y, d.lineEnd.z };
+    cb.emit_shape    = static_cast<float>(d.emitShape);
+
     return cb;
 }
 
@@ -67,14 +71,22 @@ static GpuData::CbParticleStatic BuildStaticCb(const ParticleEmitterDesc& d)
 // =========================================================================
 static GpuData::CbParticleDynamic BuildDynamicCb(
     const TransformComponent& transform,
-    float time, float dt, float burstTrigger)
+    const GpuData::float3& prevPos, const GpuData::float4& prevRot,
+    float time, float dt, float burstTrigger, float emitEnabled)
 {
     GpuData::CbParticleDynamic cb = {};
-    cb.emit_rotation = transform.rotation;
+    // ★ world 回転を使う（local ではない）。ボーン追従(BoneAttachmentSystem)は
+    //   worldMatrix にボーンの向きを焼き込むが local rotation は更新しないため、
+    //   transform.rotation だと剣の向きに追従せず線分/速度の向きがずれる。
+    cb.emit_rotation = transform.GetWorldRotation();
     cb.world_position = transform.GetWorldPosition();
     cb.time = time;
     cb.delta_time = dt;
     cb.burst_trigger = burstTrigger;
+    cb.emit_enabled = emitEnabled; // 継続放出の発生ゲート(アニメ連動)。false時は再生成を止める。
+    // 前フレーム姿勢: spawn 側で現フレームとの間を補間してスポーンを軌道上に連続配置する。
+    cb.prev_emit_rotation  = prevRot;
+    cb.prev_world_position = prevPos;
     return cb;
 }
 
@@ -178,7 +190,15 @@ void GPUParticleUpdateSystem::DispatchInitCS(
     particle._staticDirty = false;
 
     // Dynamic CB (InitCS では dt は 0.016f で代替) (★ .Get() を追加)
-    auto dynCb = BuildDynamicCb(transform, particle.time, 0.016f, particle.burstTrigger);
+    //   emit ゲートを init にも渡す: OFF なら継続モードの pre-warm を抑止し、空から開始する。
+    //   init 時は前フレーム姿勢が無いので現在姿勢で初期化(スメアなし)。
+    const GpuData::float3 curPos = transform.GetWorldPosition();
+    const GpuData::float4 curRot = transform.GetWorldRotation();
+    auto dynCb = BuildDynamicCb(transform, curPos, curRot, particle.time, 0.016f, particle.burstTrigger,
+        particle.emitting ? 1.0f : 0.0f);
+    particle.prevWorldPos     = curPos;
+    particle.prevWorldRot     = curRot;
+    particle.hasPrevTransform = true;
     dc->UpdateSubresource(buf->dynamicCB.Get(), 0, nullptr, &dynCb, 0, 0);
 
     // b13, b14 を一括バインド (★ .Get() を追加)
@@ -223,7 +243,19 @@ void GPUParticleUpdateSystem::DispatchUpdateCS(
     }
 
     // Dynamic CB: 毎フレーム upload (★ .Get() を追加)
-    auto dynCb = BuildDynamicCb(transform, particle.time, dt, particle.burstTrigger);
+    //   前フレーム姿勢を渡してサブフレーム補間（スポーンを軌道上に連続配置）。
+    const GpuData::float3 curPos = transform.GetWorldPosition();
+    const GpuData::float4 curRot = transform.GetWorldRotation();
+    const GpuData::float3 prevPos = particle.hasPrevTransform ? particle.prevWorldPos : curPos;
+    const GpuData::float4 prevRot = particle.hasPrevTransform ? particle.prevWorldRot : curRot;
+
+    auto dynCb = BuildDynamicCb(transform, prevPos, prevRot, particle.time, dt, particle.burstTrigger,
+        particle.emitting ? 1.0f : 0.0f);
+
+    // 次フレームのために現在姿勢を保存
+    particle.prevWorldPos     = curPos;
+    particle.prevWorldRot     = curRot;
+    particle.hasPrevTransform = true;
     dc->UpdateSubresource(buf->dynamicCB.Get(), 0, nullptr, &dynCb, 0, 0);
 
     // b13, b14 を一括バインド (★ .Get() を追加)

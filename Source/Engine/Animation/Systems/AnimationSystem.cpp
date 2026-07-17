@@ -239,10 +239,12 @@ void AnimationSystem::DispatchPointEvents(CCL::ECS::EntityID id, AnimatorCompone
 
         case AnimEventType::HitBox:
         case AnimEventType::Trail:
+        case AnimEventType::Particle:
         case AnimEventType::Blackboard:
             // 区間状態イベント: 専用システムが区間ポーリングで読むため発火しない。
             //   HitBox      → CombatAnimationSyncSystem
             //   Trail       → TrailAnimationSyncSystem
+            //   Particle    → ParticleAnimationSyncSystem
             //   Blackboard  → (AIのBB更新システム / 現状未実装)
             break;
 

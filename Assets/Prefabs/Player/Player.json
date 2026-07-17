@@ -8,20 +8,20 @@
                 },
                 "Animation": null,
                 "Animator": {
-                    "isLoop": false,
-                    "playbackSpeed": 0.5
+                    "isLoop": true,
+                    "playbackSpeed": 1.0
                 },
                 "Character Movement Input": {
                     "currentVelocity": [
-                        -5.07078742980957,
                         0.0,
-                        18.87687110900879
+                        0.0,
+                        0.0
                     ],
                     "dashRequested": false,
                     "desiredVelocity": [
-                        -0.25942736864089966,
                         0.0,
-                        0.9657626152038574
+                        0.0,
+                        0.0
                     ],
                     "isAttackRequested": false,
                     "jumpRequested": false,
@@ -33,15 +33,20 @@
                     "overrideSpeed": -1.0
                 },
                 "Dash Component": {
-                    "currentTimer": -0.01666664145886898,
+                    "approachDuration": 0.3499999940395355,
+                    "approachPlayerScale": 1.0,
+                    "approachSpeed": 60.0,
+                    "approachStopRange": 4.0,
+                    "currentTimer": -0.006666665896773338,
                     "dashCooldown": 0.1599999964237213,
                     "dashDirection": [
-                        0.9617168307304382,
+                        -0.8525776267051697,
                         0.0,
-                        -0.2740451395511627
+                        -0.5226005911827087
                     ],
                     "dashDuration": 0.1599999964237213,
                     "dashSpeed": 114.0,
+                    "isApproaching": false,
                     "isDashing": false,
                     "isInvincible": false,
                     "justEvadeWindow": 0.07999999821186066
@@ -82,7 +87,16 @@
                     "walkSpeed": 43.599998474121094
                 },
                 "Just Evade Component": {
-                    "isJustSuccess": false
+                    "chainCount": 0,
+                    "chainSpeedMax": 0.4000000059604645,
+                    "chainSpeedPerLevel": 0.07999999821186066,
+                    "idleBreakTime": 4.0,
+                    "isJustSuccess": false,
+                    "killRadiusBase": 3.0,
+                    "killRadiusPerLevel": 2.0,
+                    "maxChain": 5,
+                    "windowScaleMin": 0.5,
+                    "windowScalePerLevel": 0.10000000149011612
                 },
                 "Material": null,
                 "Model": {
@@ -92,7 +106,7 @@
                     "name": "Player"
                 },
                 "Overdrive": {
-                    "currentGauge": 0.0,
+                    "currentGauge": 100.0,
                     "duration": 6.0,
                     "enemyTimeScale": 0.3499999940395355,
                     "environmentTimeScale": 0.3499999940395355,
@@ -106,8 +120,8 @@
                     "bankingMultiplier": 0.5,
                     "coyoteTimeWindow": 0.15000000596046448,
                     "currentJumpCount": 0,
-                    "currentRoll": -0.0011442964896559715,
-                    "currentYaw": -63.09428405761719,
+                    "currentRoll": -3.948801619230297e-39,
+                    "currentYaw": -44.474430084228516,
                     "jumpBufferTimer": 0.0,
                     "jumpBufferWindow": 0.15000000596046448,
                     "lastFallVelocity": 0.0,
@@ -130,15 +144,15 @@
                     "isStatic": false,
                     "parent": 3,
                     "position": [
-                        2.3955442905426025,
-                        -0.06037711724638939,
-                        -67.02685546875
+                        -5.030646324157715,
+                        -0.05141567438840866,
+                        0.0
                     ],
                     "rotation": [
-                        7.485896639991552e-05,
-                        -0.13083839416503906,
-                        -0.0005672298721037805,
-                        0.9914035797119141
+                        -4.809452511347778e-40,
+                        0.24359020590782166,
+                        1.9149290021399712e-39,
+                        -0.9698782563209534
                     ],
                     "scale": [
                         3.5,
@@ -154,12 +168,104 @@
                 "BoneAttachmentComponent": {
                     "boneName": "hand_r"
                 },
+                "GPUParticle": {
+                    "angularSpeed": [
+                        0.0,
+                        0.0
+                    ],
+                    "animControlled": true,
+                    "attractorLocal": true,
+                    "attractorPos": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "attractorRadius": 0.0,
+                    "attractorStrength": 0.0,
+                    "burstCount": 0,
+                    "color": [
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "colorMode": 1,
+                    "colorRampPath": "Assets/Textures/VFX/VFX_Ramp_Fire.png",
+                    "coneAngle": [
+                        0.0,
+                        3.140000104904175
+                    ],
+                    "drag": 0.0,
+                    "emitMode": 0,
+                    "emitRadius": [
+                        0.0,
+                        0.11999999731779099
+                    ],
+                    "emitShape": 1,
+                    "emitSize": [
+                        0.10000000149011612,
+                        0.05000000074505806
+                    ],
+                    "emitSpeed": [
+                        1.0,
+                        1.0
+                    ],
+                    "emitStretch": [
+                        1.0,
+                        1.0
+                    ],
+                    "fadeDuration": [
+                        0.20000000298023224,
+                        0.30000001192092896
+                    ],
+                    "gravity": 0.0,
+                    "lifespan": [
+                        0.30000001192092896,
+                        0.8899999856948853
+                    ],
+                    "lineEnd": [
+                        0.0,
+                        4.349999904632568,
+                        0.0
+                    ],
+                    "localOffset": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "localOffsetY": 0.0,
+                    "maxCount": 8000,
+                    "noiseScale": 1.0,
+                    "noiseStrength": 0.0,
+                    "particleType": 1,
+                    "renderMode": 0,
+                    "scale": [
+                        0.5,
+                        0.5
+                    ],
+                    "spawnDelay": [
+                        0.00800000037997961,
+                        0.0560000017285347
+                    ],
+                    "spriteGrid": [
+                        1,
+                        1
+                    ],
+                    "spriteMode": 0,
+                    "texturePath": "",
+                    "uvScrollSpeed": [
+                        0.0,
+                        0.0
+                    ],
+                    "velocityStretch": 0.0,
+                    "vortexStrength": 0.0
+                },
                 "Hitbox": {
                     "damageAmount": 5.0,
-                    "hitStopDuration": 0.07000000029802322,
+                    "hitStopDuration": 0.15000000596046448,
                     "hitStopScale": 0.0,
                     "isActive": false,
-                    "knockback": 5.0
+                    "knockback": 10.0
                 },
                 "Jolt Capsule Collider": {
                     "halfHeight": 2.5999999046325684,

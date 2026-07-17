@@ -1,6 +1,7 @@
 #pragma once
 #include "Engine/Graphics/Shader/Shared/ParticleShared.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
+#include "Engine/ECS/Common/CCL_Types.h" // EntityID (アニメ連動オーナーのキャッシュ用)
 #include <cstring>
 #include <d3d11.h>
 #include <wrl/client.h>   // ComPtr (proceduralRampSRV 用)
@@ -30,9 +31,13 @@ struct ParticleEmitterDesc
     GpuData::float2 fadeDuration      = { 0.2f, 0.3f };    // fade_duration  フェード in/out (秒)
 
     // ---- 発生位置 ----
-    GpuData::float3 localOffset       = { 0, 0, 0 };       // emit_local_offset.xyz
-    float           localOffsetY      = 0.0f;              // emit_local_offset.w (Y揺らぎ幅)
+    GpuData::float3 localOffset       = { 0, 0, 0 };       // emit_local_offset.xyz (線分モードでは始点=根本)
+    float           localOffsetY      = 0.0f;              // emit_local_offset.w (Y揺らぎ幅・ディスクモード用)
     GpuData::float2 emitStretch       = { 1.0f, 1.0f };    // emit_stretch   x:X軸 y:Z軸倍率
+
+    // ---- 発生形状 (剣の刃に沿って撒く線分モード) ----
+    int             emitShape         = 0;                 // emit_shape 0:ディスク(既存) 1:線分(剣)
+    GpuData::float3 lineEnd           = { 0.0f, 1.0f, 0.0f }; // emit_line_end: localOffset を始点とする刃先までのローカルオフセット
 
     // ---- 色 ----
     GpuData::float4 color             = { 1, 1, 1, 1 };    // manual_color
@@ -103,6 +108,26 @@ struct GPUParticleComponent
     bool  _staticDirty  = true;            // true  → staticCB を再 upload する
     float time          = 0.0f;            // 累積経過時間（フレームをまたいで保持）
     float burstTrigger  = 0.0f;            // TriggerBurst() で立て、UpdateSystem が消費
+
+    // ---- アニメ連動の発生ゲート（TrailComponent と同じ区間ゲート方式） ----
+    // emitting=false の間、UpdateSystem は emit_enabled=0 を GPU へ渡し、
+    // 継続モードの粒子の「再生成」だけを止める（既存粒子は寿命まで生きて尾を引いて消える）。
+    bool emitting = true;                   ///< 発生マスタースイッチ(runtime)。GPUへ emit_enabled として渡る。
+
+    /// @brief true: 祖先(Animator)の Particle 区間イベントで emitting を自動駆動する。
+    ///        false: emitting は手動（常時ON）。既定は手動。※これのみシリアライズ対象。
+    bool animControlled = false;
+
+    /// @brief animControlled 時に解決した「Animator を持つ祖先」。Invalid は未解決(非シリアライズ)。
+    ///        ParticleAnimationSyncSystem が親を辿って一度だけ解決しキャッシュする。
+    CCL::ECS::EntityID ownerEntity = CCL::ECS::InvalidEntityID;
+
+    // ---- サブフレーム補間用: 前フレームのエミッタ姿勢(runtime・非シリアライズ) ----
+    // 速い剣の振りでもスポーンが1フレームの「櫛」にならず軌道上に連続配置されるよう、
+    // UpdateSystem が毎フレーム「前フレームのワールド姿勢」を保持し、spawn 時に補間する。
+    GpuData::float3 prevWorldPos    = { 0.0f, 0.0f, 0.0f };
+    GpuData::float4 prevWorldRot    = { 0.0f, 0.0f, 0.0f, 1.0f };
+    bool            hasPrevTransform = false; // false の初回は現在姿勢で初期化(スメアなし)
 
     // ---- コンストラクタ ----
     GPUParticleComponent()  = default;

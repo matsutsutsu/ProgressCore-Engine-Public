@@ -44,15 +44,32 @@ void main(uint3 dtid : SV_DispatchThreadID)
     }
     else  // 継続放出モード
     {
-        p.age += delta_time;
+        bool wasAlive = (p.state == STATE_ALIVE);
+
+        // 生存粒子は常に加齢（ゲートOFFでも寿命まで生きて尾を引いて自然に消える）。
+        // 死亡待機粒子はゲートON中のみ加齢（OFF中は staggered な位相を凍結し、
+        // ゲート開放時に一斉ではなく順次スポーンさせる＝定常流を保証）。
+        if (wasAlive || emit_enabled > 0.5f)
+            p.age += delta_time;
 
         if (p.age > p.lifespan)
         {
-            spawn(id, p);
-            p.state = STATE_ALIVE;
+            if (emit_enabled > 0.5f)
+            {
+                spawn(id, p);           // ゲートON: 軌道上(サブフレーム補間)にスポーン
+                p.state = STATE_ALIVE;
+            }
+            else
+            {
+                // ゲートOFF: 一斉スポーン防止のため age を staggered に戻して死亡待機。
+                // これで次にゲートが開いたときも順次スポーンになる（連続攻撃でも定常）。
+                p.state   = STATE_DEAD;
+                p.color.a = 0.0f;
+                p.age     = ((float)id / (float)max_count) * p.lifespan;
+            }
         }
 
-        if (p.age > 0.0f)
+        if (p.state == STATE_ALIVE && p.age > 0.0f)
         {
             UpdateParticle(p);
         }
