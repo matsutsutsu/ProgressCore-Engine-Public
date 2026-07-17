@@ -44,14 +44,14 @@ template <> struct ComponentMeta<ContactShadowConfigComponent> {
     static bool CustomGui(ContactShadowConfigComponent& c,
                           unsigned long long /*entityID*/ = 0, void* /*world*/ = nullptr) {
         bool changed = false;
-        if (ImGui::Checkbox("Enable", &c.enable)) changed = true;
+        if (ImGui::Checkbox("有効", &c.enable)) changed = true;
 
         ImGui::BeginDisabled(!c.enable);
-        if (ImGui::DragFloat("Ray Length (m)", &c.data.csRayLength, 0.01f, 0.05f, 2.0f)) changed = true;
-        if (ImGui::DragFloat("Thickness (m)", &c.data.csThickness, 0.01f, 0.01f, 1.0f)) changed = true;
-        if (ImGui::DragFloat("Bias", &c.data.csBias, 0.001f, 0.0f, 0.2f)) changed = true;
-        if (ImGui::DragFloat("Intensity", &c.data.csIntensity, 0.01f, 0.0f, 1.0f)) changed = true;
-        if (ImGui::DragFloat("Max Distance (m)", &c.data.csMaxDistance, 1.0f, 1.0f, 200.0f)) changed = true;
+        if (ImGui::DragFloat("レイ長(m)", &c.data.csRayLength, 0.01f, 0.05f, 2.0f)) changed = true;
+        if (ImGui::DragFloat("厚み(m)", &c.data.csThickness, 0.01f, 0.01f, 1.0f)) changed = true;
+        if (ImGui::DragFloat("バイアス", &c.data.csBias, 0.001f, 0.0f, 0.2f)) changed = true;
+        if (ImGui::DragFloat("強度", &c.data.csIntensity, 0.01f, 0.0f, 1.0f)) changed = true;
+        if (ImGui::DragFloat("最大距離(m)", &c.data.csMaxDistance, 1.0f, 1.0f, 200.0f)) changed = true;
 
         ImGui::Separator();
         ImGui::TextDisabled("光源方向へ深度を辿る影。\nライトを動かすと影の向きも変わる。");

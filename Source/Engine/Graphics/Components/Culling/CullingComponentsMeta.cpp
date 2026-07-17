@@ -33,8 +33,8 @@ template <> struct ComponentMeta<BoundingBoxComponent> {
 
     static const std::vector<FieldDescriptor>& Fields() {
         static const std::vector<FieldDescriptor> fields = {
-            CFIELD_FLOAT3_FAST(worldAABB.Center, "Center", 0.1f, "Culling")
-            CFIELD_FLOAT3_FAST(worldAABB.Extents, "Extents", 0.1f, "Culling")
+            CFIELD_FLOAT3_FAST(worldAABB.Center, "中心", 0.1f, "カリング")
+            CFIELD_FLOAT3_FAST(worldAABB.Extents, "範囲(半径)", 0.1f, "カリング")
         };
         return fields;
     }
@@ -63,7 +63,7 @@ template <> struct ComponentMeta<VisibilityComponent> {
 
     static const std::vector<FieldDescriptor>& Fields() {
         static const std::vector<FieldDescriptor> fields = {
-            CFIELD(isVisible, "Is Visible", "Culling")
+            CFIELD(isVisible, "表示中", "カリング")
         };
         return fields;
     }

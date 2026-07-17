@@ -5,6 +5,8 @@
 #include "Engine/Serialization/Core/EntityLink.h"
 #include <DirectXMath.h>
 #include <cstring>
+#include <cfloat>
+#include <string>
 #include <type_traits>
 #include "Editor/Core/EditorCommandHistory.h"
 #include "Engine/Platform/Core/Logger.h"
@@ -42,12 +44,38 @@ namespace ComponentMetaImGui {
 
 
     // ------------------------------------------------------------------------
-    // DrawField: FieldDescriptor 1 つ分のインスペクタ描画
+    // フィールドのツールチップ文字列を組み立てる。
+    //   ・tooltip（CFIELD_T の説明）があれば先頭に
+    //   ・続けて「変数名: <jsonName>」を必ず付ける
+    //     → 表示名を日本語にしても、ホバーすれば元の C++ 変数名が分かる。
+    // ------------------------------------------------------------------------
+    inline std::string BuildFieldTooltip(const FieldDescriptor& fd)
+    {
+        std::string t;
+        if (fd.tooltip && fd.tooltip[0]) t = fd.tooltip;
+        if (fd.jsonName && fd.jsonName[0]) {
+            if (!t.empty()) t += "\n";
+            t += "変数名: ";
+            t += fd.jsonName;
+        }
+        if (fd.kind == FieldKind::EntityLink) {
+            if (!t.empty()) t += "\n";
+            t += "D&D でエンティティをアタッチ可能";
+        }
+        return t;
+    }
+
+    // ------------------------------------------------------------------------
+    // DrawField: FieldDescriptor 1 つ分の「ウィジェット部分だけ」を描画する。
+    //   ラベル(表示名)は呼び出し側が左カラムに描くので、ここでは隠しラベル "##v"
+    //   をウィジェットに渡す（PushID(offset) 済みなので "##v" でも ID は一意）。
+    //   幅は呼び出し側が SetNextItemWidth(-FLT_MIN) で右カラムいっぱいに広げる。
     // ------------------------------------------------------------------------
     inline bool DrawField(const FieldDescriptor& fd, void* obj)
     {
         using namespace DirectX;
         bool changed = false;
+        const char* W = "##v"; // 隠しラベル
 
         // 読み取り専用なら以降のウィジェットを無効化（表示はされるが編集不可）
         if (fd.readonly) ImGui::BeginDisabled();
@@ -55,39 +83,39 @@ namespace ComponentMetaImGui {
         switch (fd.kind) {
         case FieldKind::Float: {
             float& v = RawField<float>(obj, fd.offset);
-            changed = ImGui::DragFloat(fd.name, &v, fd.dragSpeed, fd.rangeMin, fd.rangeMax);
+            changed = ImGui::DragFloat(W, &v, fd.dragSpeed, fd.rangeMin, fd.rangeMax);
             break;
         }
         case FieldKind::Int: {
             int& v = RawField<int>(obj, fd.offset);
-            changed = ImGui::DragInt(fd.name, &v, fd.dragSpeed, (int)fd.rangeMin, (int)fd.rangeMax);
+            changed = ImGui::DragInt(W, &v, fd.dragSpeed, (int)fd.rangeMin, (int)fd.rangeMax);
             break;
         }
         case FieldKind::Bool: {
-            changed = ImGui::Checkbox(fd.name, &RawField<bool>(obj, fd.offset));
+            changed = ImGui::Checkbox(W, &RawField<bool>(obj, fd.offset));
             break;
         }
         case FieldKind::UInt8: {
             uint8_t& v = RawField<uint8_t>(obj, fd.offset);
             int      tmp = (int)v;
-            if (ImGui::DragInt(fd.name, &tmp, 1.0f, 0, 255)) { v = (uint8_t)tmp; changed = true; }
+            if (ImGui::DragInt(W, &tmp, 1.0f, 0, 255)) { v = (uint8_t)tmp; changed = true; }
             break;
         }
         case FieldKind::UInt16: {
             uint16_t& v = RawField<uint16_t>(obj, fd.offset);
             int       tmp = (int)v;
-            if (ImGui::DragInt(fd.name, &tmp, 1.0f, 0, 65535)) { v = (uint16_t)tmp; changed = true; }
+            if (ImGui::DragInt(W, &tmp, 1.0f, 0, 65535)) { v = (uint16_t)tmp; changed = true; }
             break;
         }
         case FieldKind::UInt32: {
             uint32_t& v = RawField<uint32_t>(obj, fd.offset);
             int       tmp = (int)v;
-            if (ImGui::DragInt(fd.name, &tmp, 1.0f, 0, 4294967295)) { v = (uint32_t)tmp; changed = true; }
+            if (ImGui::DragInt(W, &tmp, 1.0f, 0, 4294967295)) { v = (uint32_t)tmp; changed = true; }
             break;
         }
         case FieldKind::EntityLink: {
             auto& link = RawField<CCL::Serialization::EntityLink>(obj, fd.offset);
-            ImGui::InputScalar(fd.name, ImGuiDataType_U64, &link.id);
+            ImGui::InputScalar(W, ImGuiDataType_U64, &link.id);
             if (ImGui::BeginDragDropTarget()) {
                 if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_ENTITY_ID")) {
                     if (payload->DataSize == sizeof(uint32_t)) {
@@ -99,53 +127,50 @@ namespace ComponentMetaImGui {
                 }
                 ImGui::EndDragDropTarget();
             }
-            if (ImGui::IsItemHovered() && fd.tooltip == nullptr) {
-                ImGui::SetTooltip("ドラッグ＆ドロップでエンティティをアタッチ可能");
-            }
             break;
         }
         case FieldKind::EnumU8: {
             uint8_t& v = RawField<uint8_t>(obj, fd.offset);
             int      cur = (int)v;
             if (fd.enumNames && fd.enumCount > 0) {
-                if (ImGui::Combo(fd.name, &cur, fd.enumNames, fd.enumCount)) { v = (uint8_t)cur; changed = true; }
+                if (ImGui::Combo(W, &cur, fd.enumNames, fd.enumCount)) { v = (uint8_t)cur; changed = true; }
             }
             else {
                 int tmp = cur;
-                if (ImGui::DragInt(fd.name, &tmp, 1, 0, 255)) { v = (uint8_t)tmp; changed = true; }
+                if (ImGui::DragInt(W, &tmp, 1, 0, 255)) { v = (uint8_t)tmp; changed = true; }
             }
             break;
         }
         case FieldKind::EnumInt: {
             int& v = RawField<int>(obj, fd.offset);
             if (fd.enumNames && fd.enumCount > 0)
-                changed = ImGui::Combo(fd.name, &v, fd.enumNames, fd.enumCount);
+                changed = ImGui::Combo(W, &v, fd.enumNames, fd.enumCount);
             else
-                changed = ImGui::DragInt(fd.name, &v);
+                changed = ImGui::DragInt(W, &v);
             break;
         }
         case FieldKind::Float2: {
-            changed = ImGui::DragFloat2(fd.name, &RawField<XMFLOAT2>(obj, fd.offset).x, fd.dragSpeed);
+            changed = ImGui::DragFloat2(W, &RawField<XMFLOAT2>(obj, fd.offset).x, fd.dragSpeed);
             break;
         }
         case FieldKind::Float3: {
-            changed = ImGui::DragFloat3(fd.name, &RawField<XMFLOAT3>(obj, fd.offset).x, fd.dragSpeed);
+            changed = ImGui::DragFloat3(W, &RawField<XMFLOAT3>(obj, fd.offset).x, fd.dragSpeed);
             break;
         }
         case FieldKind::Float4: {
-            changed = ImGui::DragFloat4(fd.name, &RawField<XMFLOAT4>(obj, fd.offset).x, fd.dragSpeed);
+            changed = ImGui::DragFloat4(W, &RawField<XMFLOAT4>(obj, fd.offset).x, fd.dragSpeed);
             break;
         }
         case FieldKind::Color: {
             // XMFLOAT4 を RGBA カラーピッカーで編集
-            changed = ImGui::ColorEdit4(fd.name, &RawField<XMFLOAT4>(obj, fd.offset).x);
+            changed = ImGui::ColorEdit4(W, &RawField<XMFLOAT4>(obj, fd.offset).x);
             break;
         }
         case FieldKind::String: {
             std::string& v = RawField<std::string>(obj, fd.offset);
             char         buf[256];
             strncpy_s(buf, sizeof(buf), v.c_str(), _TRUNCATE);
-            if (ImGui::InputText(fd.name, buf, sizeof(buf))) { v = buf; changed = true; }
+            if (ImGui::InputText(W, buf, sizeof(buf))) { v = buf; changed = true; }
             break;
         }
         default: break;
@@ -153,9 +178,10 @@ namespace ComponentMetaImGui {
 
         if (fd.readonly) ImGui::EndDisabled();
 
-        // ツールチップ（指定があればホバーで表示。Disabled 中でもホバー判定は効く）
-        if (fd.tooltip && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
-            ImGui::SetTooltip("%s", fd.tooltip);
+        // ウィジェットをホバーしても「説明＋変数名」を表示（Disabled でもホバー判定は効く）
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+            std::string tt = BuildFieldTooltip(fd);
+            if (!tt.empty()) ImGui::SetTooltip("%s", tt.c_str());
         }
 
         // 読み取り専用は編集扱いにしない（Undo コマンドを誤発行しないため）
@@ -213,39 +239,73 @@ namespace ComponentMetaImGui {
             }
         }
         else {
-            // 自動生成描画
+            // 自動生成描画（2カラムのプロパティグリッド）
+            //   ・左カラム = 表示名（固定幅・自動クリップ。ホバーで変数名ツールチップ）
+            //   ・右カラム = ウィジェット（常に幅いっぱいに広げるので見切れない）
+            //   ★ 同名カテゴリが離れて出現しても 1 つに統合してから描く。
+            //     （連続前提で描くと同名の TreeNode/Table が 2 つでき、ImGui の
+            //       ID 重複警告がホバー時に出るため）
             const auto& fields = ComponentMeta<T>::Fields();
             if (!fields.empty()) {
                 void* obj = &component;
-                const char* curCategory = nullptr;
-                bool        catOpen = true;
 
+                // --- 1. カテゴリ単位でフィールドをまとめる（カテゴリの初出順を保持） ---
+                struct FieldGroup {
+                    const char* category = nullptr;
+                    std::vector<const FieldDescriptor*> items;
+                };
+                std::vector<FieldGroup> groups;
+                groups.reserve(8);
                 for (const auto& fd : fields) {
-                    if (fd.category != nullptr) {
-                        if (curCategory == nullptr || strcmp(fd.category, curCategory) != 0) {
-                            if (curCategory != nullptr && catOpen) {
-                                ImGui::Unindent(12.0f);
-                                ImGui::TreePop();
-                            }
-                            curCategory = fd.category;
-                            catOpen = ImGui::TreeNodeEx(curCategory,
-                                ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth);
-                            if (catOpen) ImGui::Indent(12.0f);
+                    const char* cat = fd.category;
+                    FieldGroup* g = nullptr;
+                    for (auto& cand : groups) {
+                        if ((cand.category == nullptr && cat == nullptr) ||
+                            (cand.category && cat && strcmp(cand.category, cat) == 0)) {
+                            g = &cand; break;
                         }
                     }
-                    if (!catOpen) continue;
+                    if (!g) { groups.push_back({ cat, {} }); g = &groups.back(); }
+                    g->items.push_back(&fd);
+                }
 
-                    ImGui::PushID((int)fd.offset);
-
-                    bool fieldChanged = DrawField(fd, obj);
-                    if (fieldChanged) anyChanged = true;
-
-                    // ドラッグ開始時の値をバックアップ
-                    if (ImGui::IsItemActivated()) {
-                        s_backupState = component;
+                // 表示名列の幅：パネル幅の約4割（極端値は制限）。
+                auto beginPropTable = [&](const char* idstr) -> bool {
+                    float avail  = ImGui::GetContentRegionAvail().x;
+                    float labelW = avail * 0.42f;
+                    if (labelW < 90.0f)  labelW = 90.0f;
+                    if (labelW > 240.0f) labelW = 240.0f;
+                    if (ImGui::BeginTable(idstr, 2, ImGuiTableFlags_NoBordersInBody)) {
+                        ImGui::TableSetupColumn("l", ImGuiTableColumnFlags_WidthFixed, labelW);
+                        ImGui::TableSetupColumn("w", ImGuiTableColumnFlags_WidthStretch);
+                        return true;
                     }
-                    // 編集完了時に Undo コマンドを発行
-                    if (ImGui::IsItemDeactivatedAfterEdit()) {
+                    return false;
+                };
+
+                // 1 フィールド分の行を描く。
+                auto drawRow = [&](const FieldDescriptor& fd) {
+                    ImGui::PushID((int)fd.offset);
+                    ImGui::TableNextRow();
+
+                    // 左カラム：表示名（ホバーで「説明＋変数名」ツールチップ）
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::TextUnformatted(fd.name ? fd.name : "");
+                    if (ImGui::IsItemHovered()) {
+                        std::string tt = BuildFieldTooltip(fd);
+                        if (!tt.empty()) ImGui::SetTooltip("%s", tt.c_str());
+                    }
+
+                    // 右カラム：ウィジェット（幅いっぱい）
+                    ImGui::TableSetColumnIndex(1);
+                    ImGui::SetNextItemWidth(-FLT_MIN);
+                    if (DrawField(fd, obj)) anyChanged = true;
+
+                    if (ImGui::IsItemActivated()) {
+                        s_backupState = component; // ドラッグ開始時の値をバックアップ
+                    }
+                    if (ImGui::IsItemDeactivatedAfterEdit()) { // 編集完了時に Undo 発行
                         if (world && entity != 0) {
                             auto* ecsWorld = static_cast<CCL::ECS::Core::World*>(world);
                             auto ecsEntity = static_cast<CCL::ECS::EntityID>(entity);
@@ -258,13 +318,31 @@ namespace ComponentMetaImGui {
                                 "[UndoSystem] Failed to issue command! World or Entity is null.");
                         }
                     }
-
                     ImGui::PopID();
-                }
+                };
 
-                if (curCategory != nullptr && catOpen) {
-                    ImGui::Unindent(12.0f);
-                    ImGui::TreePop();
+                // --- 2. グループごとに描画（各カテゴリは 1 回だけ＝ID重複しない） ---
+                for (const auto& g : groups) {
+                    if (g.category != nullptr) {
+                        bool catOpen = ImGui::TreeNodeEx(g.category,
+                            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth);
+                        if (catOpen) {
+                            ImGui::Indent(12.0f);
+                            if (beginPropTable(g.category)) {
+                                for (const auto* fd : g.items) drawRow(*fd);
+                                ImGui::EndTable();
+                            }
+                            ImGui::Unindent(12.0f);
+                            ImGui::TreePop();
+                        }
+                    }
+                    else {
+                        // カテゴリ無し：見出しなしで並べる
+                        if (beginPropTable("##rootprops")) {
+                            for (const auto* fd : g.items) drawRow(*fd);
+                            ImGui::EndTable();
+                        }
+                    }
                 }
             }
         }

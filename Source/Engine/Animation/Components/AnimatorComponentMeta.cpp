@@ -40,12 +40,12 @@ struct ComponentMeta<AnimatorComponent>
     {
         bool changed = false;
 
-        if (ImGui::DragFloat("Speed", &anim.playbackSpeed, 0.05f, -5.0f, 5.0f)) changed = true;
-        if (ImGui::Checkbox("Loop", &anim.isLoop)) changed = true;
+        if (ImGui::DragFloat("再生速度", &anim.playbackSpeed, 0.05f, -5.0f, 5.0f)) changed = true;
+        if (ImGui::Checkbox("ループ", &anim.isLoop)) changed = true;
         ImGui::Separator();
 
-        ImGui::TextDisabled("Dynamic Preview");
-        if (ImGui::Button("Load & Play Sequence... (JSON)", ImVec2(-1, 0)))
+        ImGui::TextDisabled("動的プレビュー");
+        if (ImGui::Button("シーケンスを読込&再生... (JSON)", ImVec2(-1, 0)))
         {
             if (auto pathOpt = FileDialog::OpenPreset("AnimSequence"))
             {
@@ -63,15 +63,15 @@ struct ComponentMeta<AnimatorComponent>
 
         if (anim.currentSequence)
         {
-            ImGui::Text("Sequence: %s", anim.currentSequence->sequenceName.c_str());
-            ImGui::Text("Target Anim: %s", anim.currentSequence->targetAnimName.c_str());
-            ImGui::Text("Time: %.2f / %.2f", anim.currentTimer, anim.currentSequence->duration);
+            ImGui::Text("シーケンス: %s", anim.currentSequence->sequenceName.c_str());
+            ImGui::Text("対象アニメ: %s", anim.currentSequence->targetAnimName.c_str());
+            ImGui::Text("時間: %.2f / %.2f", anim.currentTimer, anim.currentSequence->duration);
         }
         else
         {
-            ImGui::TextColored(ImVec4(1, 1, 0, 1), "No Sequence Playing");
+            ImGui::TextColored(ImVec4(1, 1, 0, 1), "再生中のシーケンスなし");
         }
-        ImGui::Text("Finished: %s", anim.isFinished ? "True" : "False");
+        ImGui::Text("終了: %s", anim.isFinished ? "True" : "False");
 
         return changed;
     }
@@ -85,8 +85,8 @@ struct ComponentMeta<AnimatorComponent>
     static const std::vector<FieldDescriptor> &Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
-            CFIELD_FLOAT_RANGED(playbackSpeed, "Playback Speed", 0.05f, -5.0f, 5.0f, "Playback")
-                CFIELD(isLoop, "Loop", "Playback")};
+            CFIELD_FLOAT_RANGED(playbackSpeed, "再生速度", 0.05f, -5.0f, 5.0f, "再生")
+                CFIELD(isLoop, "ループ", "再生")};
         return fields;
     }
 };
@@ -113,7 +113,7 @@ struct ComponentMeta<AnimStateMachineComponent>
     {
         bool changed = false;
 
-        ImGui::TextDisabled("Graph File: %s", fsm.graphPath.empty() ? "None" : fsm.graphPath.c_str());
+        ImGui::TextDisabled("グラフファイル: %s", fsm.graphPath.empty() ? "なし" : fsm.graphPath.c_str());
 
         auto reloadGraph = [&]() {
             if (AnimGraphSerializer::LoadFromJSON(fsm.internalGraph, fsm.graphPath, {}))
@@ -130,7 +130,7 @@ struct ComponentMeta<AnimStateMachineComponent>
             }
         };
 
-        if (ImGui::Button("Load Anim Graph... (JSON)"))
+        if (ImGui::Button("アニメグラフを読込... (JSON)"))
         {
             if (auto pathOpt = FileDialog::OpenPreset("AnimNodes"))
             {
@@ -143,7 +143,7 @@ struct ComponentMeta<AnimStateMachineComponent>
         if (!fsm.graphPath.empty())
         {
             ImGui::SameLine();
-            if (ImGui::Button("Reload Graph"))
+            if (ImGui::Button("グラフ再読込"))
             {
                 reloadGraph();
             }
@@ -152,7 +152,7 @@ struct ComponentMeta<AnimStateMachineComponent>
 
         if (fsm.internalGraph.states.empty())
         {
-            ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "[Error] No AnimGraph Assigned!");
+            ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "[エラー] アニメグラフが未設定です!");
             return changed;
         }
 
@@ -166,13 +166,13 @@ struct ComponentMeta<AnimStateMachineComponent>
             }
         }
 
-        ImGui::Text("Current State:");
+        ImGui::Text("現在の状態:");
         ImGui::SameLine();
         ImGui::TextColored(ImVec4(0.2f, 1.0f, 0.2f, 1.0f), "[ %s ]", currentStateName.c_str());
         ImGui::TextDisabled("Hash ID: 0x%X", fsm.currentStateHash);
 
         ImGui::Separator();
-        ImGui::Text("Available States:");
+        ImGui::Text("利用可能な状態:");
 
         ImGui::Indent();
         for (const auto &state : fsm.internalGraph.states)
@@ -205,7 +205,7 @@ struct ComponentMeta<AnimStateMachineComponent>
     static const std::vector<FieldDescriptor> &Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
-            CFIELD(graphPath, "Graph File Path", "General")};
+            CFIELD(graphPath, "グラフファイルパス", "全般")};
         return fields;
     }
 };
@@ -230,7 +230,7 @@ struct ComponentMeta<AnimParametersComponent>
     {
         bool changed = false;
 
-        ImGui::Text("Float Parameters");
+        ImGui::Text("Floatパラメータ");
         ImGui::Separator();
 
         for (auto &p : params.floats)
@@ -246,7 +246,7 @@ struct ComponentMeta<AnimParametersComponent>
         }
 
         ImGui::Spacing();
-        ImGui::Text("Bool Parameters");
+        ImGui::Text("Boolパラメータ");
         ImGui::Separator();
 
         for (auto &p : params.bools)
@@ -263,7 +263,7 @@ struct ComponentMeta<AnimParametersComponent>
 
         if (params.floats.empty() && params.bools.empty())
         {
-            ImGui::TextDisabled("No parameters set.");
+            ImGui::TextDisabled("パラメータ未設定");
         }
 
         return changed;

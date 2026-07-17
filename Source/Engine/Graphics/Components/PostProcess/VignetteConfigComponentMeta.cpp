@@ -49,17 +49,17 @@ template <> struct ComponentMeta<VignetteConfigComponent> {
     static bool CustomGui(VignetteConfigComponent& c,
                           unsigned long long /*entityID*/ = 0, void* /*world*/ = nullptr) {
         bool changed = false;
-        if (ImGui::Checkbox("Enable", &c.enable)) changed = true;
+        if (ImGui::Checkbox("有効", &c.enable)) changed = true;
 
         ImGui::BeginDisabled(!c.enable);
-        if (ImGui::ColorEdit3("Color", &c.data.vigColor.x)) changed = true;
-        if (ImGui::DragFloat("Intensity", &c.data.vigIntensity, 0.01f, 0.0f, 1.0f)) changed = true;
-        if (ImGui::DragFloat("Radius", &c.data.vigRadius, 0.01f, 0.0f, 1.0f)) changed = true;
-        if (ImGui::DragFloat("Softness", &c.data.vigSoftness, 0.01f, 0.01f, 1.0f)) changed = true;
-        if (ImGui::DragFloat("Pulse Speed", &c.data.vigPulseSpeed, 0.05f, 0.0f, 8.0f)) changed = true;
+        if (ImGui::ColorEdit3("色", &c.data.vigColor.x)) changed = true;
+        if (ImGui::DragFloat("強度", &c.data.vigIntensity, 0.01f, 0.0f, 1.0f)) changed = true;
+        if (ImGui::DragFloat("半径", &c.data.vigRadius, 0.01f, 0.0f, 1.0f)) changed = true;
+        if (ImGui::DragFloat("柔らかさ", &c.data.vigSoftness, 0.01f, 0.01f, 1.0f)) changed = true;
+        if (ImGui::DragFloat("脈動速度", &c.data.vigPulseSpeed, 0.05f, 0.0f, 8.0f)) changed = true;
 
         ImGui::Separator();
-        if (ImGui::Button("Preset: Subtle (常時)")) {
+        if (ImGui::Button("プリセット:弱め(常時)")) {
             c.data.vigColor = { 0.0f, 0.0f, 0.0f, 1.0f };
             c.data.vigIntensity = 0.4f;
             c.data.vigRadius = 0.55f;
@@ -68,7 +68,7 @@ template <> struct ComponentMeta<VignetteConfigComponent> {
             changed = true;
         }
         ImGui::SameLine();
-        if (ImGui::Button("Preset: Danger (HP低下)")) {
+        if (ImGui::Button("プリセット:危険(HP低下)")) {
             c.data.vigColor = { 0.5f, 0.0f, 0.0f, 1.0f };
             c.data.vigIntensity = 0.7f;
             c.data.vigRadius = 0.35f;

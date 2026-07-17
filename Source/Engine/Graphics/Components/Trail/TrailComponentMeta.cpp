@@ -22,12 +22,12 @@ using json = nlohmann::json;
 // TrailComponent（Effect カテゴリ。Model/Material の少し後ろに並べる）
 // ===========================================================================
 COMPONENT_META_BEGIN_FULL(TrailComponent, "Weapon Trail", CCL::Categories::Effect, 180, false)
-    CFIELD_FLOAT3_FAST(baseOffset, "Base Offset (根本)", 0.01f, "Shape")
-    CFIELD_FLOAT3_FAST(tipOffset,  "Tip Offset (先端)",  0.01f, "Shape")
-    CFIELD_COLOR(color, "Color (加算)", "Look")
-    CFIELD_FLOAT_RANGED(lifeTime,    "Life Time (s)", 0.005f, 0.0f, 2.0f, "Look")
-    CFIELD_FLOAT_RANGED(minDistance, "Min Distance",  0.005f, 0.0f, 1.0f, "Shape")
-    CFIELD(emitting, "Emitting", "State")
-    CFIELD_T(animControlled, "Anim Controlled", "State",
+    CFIELD_FLOAT3_FAST(baseOffset, "根本オフセット", 0.01f, "形状")
+    CFIELD_FLOAT3_FAST(tipOffset,  "先端オフセット",  0.01f, "形状")
+    CFIELD_COLOR(color, "色(加算)", "見た目")
+    CFIELD_FLOAT_RANGED(lifeTime,    "寿命(秒)", 0.005f, 0.0f, 2.0f, "見た目")
+    CFIELD_FLOAT_RANGED(minDistance, "最小距離",  0.005f, 0.0f, 1.0f, "形状")
+    CFIELD(emitting, "発生中", "状態")
+    CFIELD_T(animControlled, "アニメ制御", "状態",
              "ONで Trail アニメイベントの区間中だけ発生。OFFは手動(Emitting)運用。")
 COMPONENT_META_END(TrailComponent)

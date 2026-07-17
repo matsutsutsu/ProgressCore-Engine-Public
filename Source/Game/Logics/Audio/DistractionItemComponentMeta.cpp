@@ -20,18 +20,18 @@ template <> struct ComponentMeta<DistractionItemComponent> {
     static bool CustomGui(DistractionItemComponent& comp, unsigned long long entityID = 0, void* worldPtr = nullptr) {
         bool changed = false;
 
-        ImGui::SeparatorText("Item Settings");
+        ImGui::SeparatorText("アイテム設定");
 
-        changed |= ImGui::DragFloat("Volume Radius (m)", &comp.volumeRadius, 0.5f, 1.0f, 100.0f, "%.1f m");
+        changed |= ImGui::DragFloat("音の届く半径(m)", &comp.volumeRadius, 0.5f, 1.0f, 100.0f, "%.1f m");
 
-        changed |= ImGui::DragFloat("BounceVelocityThreshold (m)", &comp.bounceVelocityThreshold, 0.5f, 1.0f, 100.0f, "%.1f m");
+        changed |= ImGui::DragFloat("跳ね反応しきい値(m)", &comp.bounceVelocityThreshold, 0.5f, 1.0f, 100.0f, "%.1f m");
 
         ImGui::Spacing();
-        ImGui::SeparatorText("FMOD Sound Event");
+        ImGui::SeparatorText("FMOD サウンドイベント");
 
         // --- FMOD パス入力 UI ---
         static char pathBuffer[256] = "";
-        ImGui::Text("FMOD Event Path");
+        ImGui::Text("FMODイベントパス");
         if (ImGui::InputText("##FMODPath", pathBuffer, sizeof(pathBuffer), ImGuiInputTextFlags_EnterReturnsTrue)) {
             if (strlen(pathBuffer) > 0) {
                 // Enterキーが押されたらハッシュ化して保存
@@ -41,23 +41,23 @@ template <> struct ComponentMeta<DistractionItemComponent> {
             }
         }
         if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("Example: event:/SFX/ItemDrop\nType the FMOD path and press [Enter].");
+            ImGui::SetTooltip("例: event:/SFX/ItemDrop\nFMODパスを入力して[Enter]で適用します。");
         }
 
         ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "Hash ID: 0x%08X", comp.fmodEventHash);
 
 
         ImGui::Spacing();
-        ImGui::SeparatorText("Runtime Status");
+        ImGui::SeparatorText("実行時ステータス");
 
         if (comp.hasTriggered) {
-            ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), "[ SOUND TRIGGERED ]");
+            ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), "[ 発音済み ]");
         }
         else {
-            ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "[ READY TO RING ]");
+            ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "[ 発音待機 ]");
         }
 
-        changed |= ImGui::Checkbox("Has Triggered", &comp.hasTriggered);
+        changed |= ImGui::Checkbox("発音済みフラグ", &comp.hasTriggered);
 
         return changed;
     }
@@ -65,13 +65,13 @@ template <> struct ComponentMeta<DistractionItemComponent> {
 
     static const std::vector<FieldDescriptor>& Fields() {
         static const std::vector<FieldDescriptor> fields = {
-            META_FIELD_FLOAT(DistractionItemComponent, volumeRadius, "volumeRadius", "Volume Radius", 0.5f, 1.0f, 100.0f, "Settings"),
+            META_FIELD_FLOAT(DistractionItemComponent, volumeRadius, "volumeRadius", "音の届く半径", 0.5f, 1.0f, 100.0f, "Settings"),
 
             // ★追加: ハッシュ値をセーブデータ(JSON)に保存する
             // UInt32 の保存マクロがない場合は INT を代用するか、エンジンの仕様に合わせます
-            { "FMOD Hash", "fmodEventHash", FieldKind::Int, offsetof(DistractionItemComponent, fmodEventHash), 1.0f, 0.0f, 0.0f, "Audio", nullptr, 0, true },
+            { "FMODハッシュ", "fmodEventHash", FieldKind::Int, offsetof(DistractionItemComponent, fmodEventHash), 1.0f, 0.0f, 0.0f, "Audio", nullptr, 0, true },
 
-            META_FIELD_FLOAT(DistractionItemComponent, bounceVelocityThreshold, "bounceVelocityThreshold", "BounceVelocityThreshold", 0.5f, 1.0f, 100.0f, "Settings"),
+            META_FIELD_FLOAT(DistractionItemComponent, bounceVelocityThreshold, "bounceVelocityThreshold", "跳ね反応しきい値", 0.5f, 1.0f, 100.0f, "Settings"),
         };
         return fields;
     }

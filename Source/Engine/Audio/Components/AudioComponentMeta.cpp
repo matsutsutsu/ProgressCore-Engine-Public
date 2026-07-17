@@ -34,7 +34,7 @@ struct ComponentMeta<AudioEmitterComponent>
 
         static char pathBuffer[256] = "";
 
-        ImGui::Text("FMOD Event Path");
+        ImGui::Text("FMODイベントパス");
         if (ImGui::InputText("##FMODPath", pathBuffer, sizeof(pathBuffer), ImGuiInputTextFlags_EnterReturnsTrue))
         {
             if (strlen(pathBuffer) > 0)
@@ -45,18 +45,18 @@ struct ComponentMeta<AudioEmitterComponent>
         }
         if (ImGui::IsItemHovered())
         {
-            ImGui::SetTooltip("Example: event:/SFX/Shoot\nType the FMOD path and press [Enter] to apply.");
+            ImGui::SetTooltip("例: event:/SFX/Shoot\nFMODパスを入力して[Enter]で適用します。");
         }
 
         ImGui::Spacing();
 
-        if (ImGui::Checkbox("Auto Play on Spawn", &comp.autoPlay))
+        if (ImGui::Checkbox("生成時に自動再生", &comp.autoPlay))
         {
             changed = true;
         }
 
         ImGui::BeginDisabled();
-        ImGui::Checkbox("Is Playing (Runtime)", &comp.isPlaying);
+        ImGui::Checkbox("再生中(実行時)", &comp.isPlaying);
         ImGui::EndDisabled();
 
         ImGui::PopID();
@@ -73,8 +73,8 @@ struct ComponentMeta<AudioEmitterComponent>
     static const std::vector<FieldDescriptor> &Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
-            CFIELD(eventHash, "Event Hash", "Audio")
-                CFIELD(autoPlay, "Auto Play", "Audio")};
+            CFIELD(eventHash, "イベントハッシュ", "オーディオ")
+                CFIELD(autoPlay, "自動再生", "オーディオ")};
         return fields;
     }
 };

@@ -11,23 +11,23 @@
 // ===========================================================================
 COMPONENT_META_BEGIN_FULL(PlayerComponent, "Player Component", CCL::Categories::Gameplay, 130, false)
 
-CFIELD(turnSpeed, u8"旋回速度 (turnSpeed)", "Movement")
+CFIELD(turnSpeed, "旋回速度", "移動")
 
-CFIELD(maxJumps, u8"最大ジャンプ回数 (maxJumps)", "Jump Settings")
-CFIELD(currentJumpCount, u8"現在のジャンプ回数 (currentJumpCount)", "Jump State")
-CFIELD(wasJumpButtonPressed, u8"前フレームボタン状態 (wasJumpButtonPressed)", "Jump State")
+CFIELD(maxJumps, "最大ジャンプ回数", "ジャンプ設定")
+CFIELD(currentJumpCount, "現在のジャンプ回数", "ジャンプ状態")
+CFIELD(wasJumpButtonPressed, "前フレームボタン状態", "ジャンプ状態")
 
-CFIELD_FLOAT_RANGED(coyoteTimeWindow, u8"コヨーテタイム (coyoteTimeWindow)", 0.01f, 0.0f, 1.0f, "Game Feel")
-CFIELD_FLOAT_RANGED(jumpBufferWindow, u8"先行入力バッファ (jumpBufferWindow)", 0.01f, 0.0f, 1.0f, "Game Feel")
-CFIELD(timeSinceGrounded, u8"滞空時間 (timeSinceGrounded)", "State")
-CFIELD(jumpBufferTimer, u8"ジャンプ予約タイマー (jumpBufferTimer)", "State")
-CFIELD(currentYaw, u8"現在のYaw角 (currentYaw)", "State")
-CFIELD(currentRoll, u8"現在のRoll角 (currentRoll)", "State")
+CFIELD_FLOAT_RANGED(coyoteTimeWindow, "コヨーテタイム", 0.01f, 0.0f, 1.0f, "操作感")
+CFIELD_FLOAT_RANGED(jumpBufferWindow, "先行入力バッファ", 0.01f, 0.0f, 1.0f, "操作感")
+CFIELD(timeSinceGrounded, "滞空時間", "状態")
+CFIELD(jumpBufferTimer, "ジャンプ予約タイマー", "状態")
+CFIELD(currentYaw, "現在のYaw角", "状態")
+CFIELD(currentRoll, "現在のRoll角", "状態")
 
-CFIELD(wasGroundedLastFrame, u8"前フレーム接地状態 (wasGroundedLastFrame)", "State")
-CFIELD(lastFallVelocity, u8"直前落下速度 (lastFallVelocity)", "State")
+CFIELD(wasGroundedLastFrame, "前フレーム接地状態", "状態")
+CFIELD(lastFallVelocity, "直前落下速度", "状態")
 
-CFIELD_FLOAT_RANGED(bankingMultiplier, u8"バンキング係数 (bankingMultiplier)", 0.1f, 0.0f, 5.0f, "Visuals")
-CFIELD_FLOAT_RANGED(maxBankingAngle, u8"最大バンキング角 (maxBankingAngle)", 1.0f, 0.0f, 90.0f, "Visuals")
+CFIELD_FLOAT_RANGED(bankingMultiplier, "バンキング係数", 0.1f, 0.0f, 5.0f, "見た目")
+CFIELD_FLOAT_RANGED(maxBankingAngle, "最大バンキング角", 1.0f, 0.0f, 90.0f, "見た目")
 
 COMPONENT_META_END(PlayerComponent)

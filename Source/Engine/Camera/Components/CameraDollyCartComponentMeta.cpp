@@ -32,11 +32,11 @@ struct ComponentMeta<CameraDollyCartComponent>
     {
         bool changed = false;
 
-        ImGui::SeparatorText("Path Asset Settings");
+        ImGui::SeparatorText("軌道アセット設定");
 
         char pathBuf[256];
         strncpy_s(pathBuf, comp.pathAsset.c_str(), sizeof(pathBuf));
-        if (ImGui::InputText("Path File", pathBuf, sizeof(pathBuf)))
+        if (ImGui::InputText("軌道ファイル", pathBuf, sizeof(pathBuf)))
         {
             comp.pathAsset = pathBuf;
             comp.loadedPath.reset();
@@ -44,7 +44,7 @@ struct ComponentMeta<CameraDollyCartComponent>
             changed           = true;
         }
 
-        if (ImGui::Button("Browse..."))
+        if (ImGui::Button("参照..."))
         {
             if (auto pathOpt = FileDialog::OpenPreset("CameraPath"))
             {
@@ -57,9 +57,9 @@ struct ComponentMeta<CameraDollyCartComponent>
 
         ImGui::SameLine();
 
-        if (ImGui::Button("Create New..."))
+        if (ImGui::Button("新規作成..."))
         {
-            if (auto pathOpt = FileDialog::SavePreset("CameraPath", "Create New Camera Path"))
+            if (auto pathOpt = FileDialog::SavePreset("CameraPath", "カメラ軌道を新規作成"))
             {
                 std::string relPath = FileDialog::ConvertToRelativePath(*pathOpt);
 
@@ -77,15 +77,15 @@ struct ComponentMeta<CameraDollyCartComponent>
             }
         }
 
-        ImGui::SeparatorText("Playback Settings");
+        ImGui::SeparatorText("再生設定");
 
-        changed |= ImGui::DragFloat("Current Dist (m)", &comp.currentDistance, 0.1f, 0.0f, 1000.0f);
-        changed |= ImGui::DragFloat("Move Speed (m/s)", &comp.moveSpeed, 0.1f, 0.0f, 100.0f);
-        changed |= ImGui::Checkbox("Look Forward", &comp.lookForward);
+        changed |= ImGui::DragFloat("現在の進行距離(m)", &comp.currentDistance, 0.1f, 0.0f, 1000.0f);
+        changed |= ImGui::DragFloat("移動速度(m/s)", &comp.moveSpeed, 0.1f, 0.0f, 100.0f);
+        changed |= ImGui::Checkbox("進行方向を向く", &comp.lookForward);
 
         if (comp.lookForward)
         {
-            changed |= ImGui::DragFloat("Look Ahead Offset (m)", &comp.lookAheadOffset, 0.1f, 0.01f, 10.0f);
+            changed |= ImGui::DragFloat("先読みオフセット(m)", &comp.lookAheadOffset, 0.1f, 0.01f, 10.0f);
         }
 
         return changed; 
@@ -97,11 +97,11 @@ struct ComponentMeta<CameraDollyCartComponent>
     static const std::vector<FieldDescriptor> &Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
-            CFIELD(pathAsset, "Path Asset", "Settings")
-            CFIELD(currentDistance, "Current Distance", "Playback")
-            CFIELD(moveSpeed, "Move Speed", "Playback")
-            CFIELD(lookForward, "Look Forward", "Playback")
-            CFIELD(lookAheadOffset, "Look Ahead Offset", "Playback")
+            CFIELD(pathAsset, "軌道アセット", "Settings")
+            CFIELD(currentDistance, "現在の進行距離", "Playback")
+            CFIELD(moveSpeed, "移動速度", "Playback")
+            CFIELD(lookForward, "進行方向を向く", "Playback")
+            CFIELD(lookAheadOffset, "先読みオフセット", "Playback")
         };
         return fields;
     }

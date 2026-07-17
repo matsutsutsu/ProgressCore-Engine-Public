@@ -11,26 +11,26 @@
 // ★修正: Movement カテゴリへ
 // ===========================================================================
 COMPONENT_META_BEGIN_FULL(DashComponent, "Dash Component", CCL::Categories::Movement, 155, false)
-CFIELD_FLOAT_RANGED(dashSpeed, "Dash Speed", 1.0f, 0.0f, 200.0f, "Config")
-CFIELD_FLOAT_RANGED(dashDuration, "Dash Duration", 0.01f, 0.0f, 5.0f, "Config")
-CFIELD_FLOAT_RANGED(dashCooldown, "Dash Cooldown", 0.01f, 0.0f, 10.0f, "Config")
-CFIELD_FLOAT_RANGED(justEvadeWindow, "Just Evade Window", 0.01f, 0.0f, 10.0f, "Config")
+CFIELD_FLOAT_RANGED(dashSpeed, "ダッシュ速度", 1.0f, 0.0f, 200.0f, "設定")
+CFIELD_FLOAT_RANGED(dashDuration, "ダッシュ継続時間", 0.01f, 0.0f, 5.0f, "設定")
+CFIELD_FLOAT_RANGED(dashCooldown, "ダッシュ再使用時間", 0.01f, 0.0f, 10.0f, "設定")
+CFIELD_FLOAT_RANGED(justEvadeWindow, "ジャスト回避受付時間", 0.01f, 0.0f, 10.0f, "設定")
 
-CFIELD_FLOAT_RANGED(approachSpeed, "Approach Speed", 1.0f, 0.0f, 300.0f, "Config")
-CFIELD_FLOAT_RANGED(approachDuration, "Approach Duration", 0.01f, 0.0f, 3.0f, "Config")
-CFIELD_FLOAT_RANGED(approachPlayerScale, "Approach Player Scale", 0.05f, 0.1f, 5.0f, "Config")
-CFIELD_FLOAT_RANGED(approachStopRange, "Approach Stop Range", 0.1f, 0.0f, 30.0f, "Config")
+CFIELD_FLOAT_RANGED(approachSpeed, "接近速度", 1.0f, 0.0f, 300.0f, "設定")
+CFIELD_FLOAT_RANGED(approachDuration, "接近継続時間", 0.01f, 0.0f, 3.0f, "設定")
+CFIELD_FLOAT_RANGED(approachPlayerScale, "接近時プレイヤー倍率", 0.05f, 0.1f, 5.0f, "設定")
+CFIELD_FLOAT_RANGED(approachStopRange, "接近停止距離", 0.1f, 0.0f, 30.0f, "設定")
 
-CFIELD(isDashing, "Is Dashing", "State")
-CFIELD(isApproaching, "Is Approaching", "State")
-CFIELD(isInvincible, "Is Invincible", "State")
-CFIELD(currentTimer, "Current Timer", "State")
-CFIELD_FLOAT3_FAST(dashDirection, "Dash Direction", 0.1f, "State")
+CFIELD(isDashing, "ダッシュ中", "状態")
+CFIELD(isApproaching, "接近中", "状態")
+CFIELD(isInvincible, "無敵中", "状態")
+CFIELD(currentTimer, "現在タイマー", "状態")
+CFIELD_FLOAT3_FAST(dashDirection, "ダッシュ方向", 0.1f, "状態")
 COMPONENT_META_END(DashComponent)
 
 // ===========================================================================
 // JustEvadeComponent メタデータ定義
 // ===========================================================================
 COMPONENT_META_BEGIN_FULL(JustEvadeComponent, "Just Evade Component", CCL::Categories::Movement, 156, false)
-CFIELD(isJustSuccess, "Is Just Success", "State")
+CFIELD(isJustSuccess, "ジャスト成功", "状態")
 COMPONENT_META_END(JustEvadeComponent)

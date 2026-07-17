@@ -46,31 +46,31 @@ template <> struct ComponentMeta<ColorGradingConfigComponent> {
     static bool CustomGui(ColorGradingConfigComponent& c,
                           unsigned long long /*entityID*/ = 0, void* /*world*/ = nullptr) {
         bool changed = false;
-        if (ImGui::Checkbox("Enable", &c.enable)) changed = true;
+        if (ImGui::Checkbox("有効", &c.enable)) changed = true;
 
         ImGui::BeginDisabled(!c.enable);
-        if (ImGui::ColorEdit3("Tint", &c.data.gradeTint.x)) changed = true;
-        if (ImGui::DragFloat("Saturation", &c.data.gradeSaturation, 0.01f, 0.0f, 2.0f)) changed = true;
-        if (ImGui::DragFloat("Contrast",   &c.data.gradeContrast,   0.01f, 0.0f, 2.0f)) changed = true;
-        if (ImGui::DragFloat("Brightness", &c.data.gradeBrightness, 0.01f, 0.0f, 2.0f)) changed = true;
-        if (ImGui::DragFloat("Mix",        &c.data.gradeMixAmount,  0.01f, 0.0f, 1.0f)) changed = true;
+        if (ImGui::ColorEdit3("色補正", &c.data.gradeTint.x)) changed = true;
+        if (ImGui::DragFloat("彩度", &c.data.gradeSaturation, 0.01f, 0.0f, 2.0f)) changed = true;
+        if (ImGui::DragFloat("コントラスト",   &c.data.gradeContrast,   0.01f, 0.0f, 2.0f)) changed = true;
+        if (ImGui::DragFloat("明るさ", &c.data.gradeBrightness, 0.01f, 0.0f, 2.0f)) changed = true;
+        if (ImGui::DragFloat("ミックス",        &c.data.gradeMixAmount,  0.01f, 0.0f, 1.0f)) changed = true;
 
         ImGui::Separator();
-        ImGui::TextDisabled("Filter Presets");
+        ImGui::TextDisabled("フィルタプリセット");
 
-        if (ImGui::Button("Normal")) {
+        if (ImGui::Button("標準")) {
             c.data.gradeTint = { 1.0f, 1.0f, 1.0f, 1.0f };
             c.data.gradeSaturation = 1.0f; c.data.gradeContrast = 1.0f; c.data.gradeBrightness = 1.0f;
             c.data.gradeMixAmount = 1.0f; changed = true;
         }
         ImGui::SameLine();
-        if (ImGui::Button("Monochrome")) {
+        if (ImGui::Button("モノクロ")) {
             c.data.gradeTint = { 1.0f, 1.0f, 1.0f, 1.0f };
             c.data.gradeSaturation = 0.0f; c.data.gradeContrast = 1.1f; c.data.gradeBrightness = 1.0f;
             c.data.gradeMixAmount = 1.0f; changed = true;
         }
         ImGui::SameLine();
-        if (ImGui::Button("Sepia")) {
+        if (ImGui::Button("セピア")) {
             c.data.gradeTint = { 1.2f, 1.0f, 0.8f, 1.0f };
             c.data.gradeSaturation = 0.25f; c.data.gradeContrast = 1.05f; c.data.gradeBrightness = 1.0f;
             c.data.gradeMixAmount = 1.0f; changed = true;

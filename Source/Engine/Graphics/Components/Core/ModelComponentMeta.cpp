@@ -52,17 +52,17 @@ template <> struct ComponentMeta<ModelComponent> {
         bool changed = false;
         std::string currentPath = ResourceManager::Instance().GetAssetPath(comp.assetHash);
 
-        ImGui::TextDisabled("Current Model:");
+        ImGui::TextDisabled("現在のモデル:");
         if (currentPath.empty())
-            ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.5f, 1.0f), "(None / Empty)");
+            ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.5f, 1.0f), "(なし / 空)");
         else
             ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.6f, 1.0f), "%s", currentPath.c_str());
 
         ImGui::Separator();
 
-        if (ImGui::Button("Load New Model...", ImVec2(-1, 0))) {
+        if (ImGui::Button("モデルを読み込む...", ImVec2(-1, 0))) {
             // ★修正: std::filesystem の依存を排除し、厳格に FileDialog::ConvertToRelativePath を使用
-            if (auto path = FileDialog::OpenPreset("Model", "Select Model",
+            if (auto path = FileDialog::OpenPreset("Model", "モデルを選択",
                 Graphics::Instance().GetWindowHandle()))
             {
                 std::string relPath = FileDialog::ConvertToRelativePath(*path);
@@ -70,7 +70,7 @@ template <> struct ComponentMeta<ModelComponent> {
                 changed = true;
             }
         }
-        if (!currentPath.empty() && ImGui::Button("Clear Model", ImVec2(-1, 0))) {
+        if (!currentPath.empty() && ImGui::Button("モデルをクリア", ImVec2(-1, 0))) {
             comp.SetModel("");
             changed = true;
         }

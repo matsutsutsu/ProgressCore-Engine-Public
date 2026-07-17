@@ -42,13 +42,13 @@ template <> struct ComponentMeta<SSAOConfigComponent> {
     static bool CustomGui(SSAOConfigComponent& c,
                           unsigned long long /*entityID*/ = 0, void* /*world*/ = nullptr) {
         bool changed = false;
-        if (ImGui::Checkbox("Enable", &c.enable)) changed = true;
+        if (ImGui::Checkbox("有効", &c.enable)) changed = true;
 
         ImGui::BeginDisabled(!c.enable);
-        if (ImGui::DragFloat("Radius (m)", &c.data.ssaoRadius, 0.01f, 0.05f, 3.0f)) changed = true;
-        if (ImGui::DragFloat("Intensity", &c.data.ssaoIntensity, 0.01f, 0.0f, 1.0f)) changed = true;
-        if (ImGui::DragFloat("Bias", &c.data.ssaoBias, 0.001f, 0.0f, 0.2f)) changed = true;
-        if (ImGui::DragFloat("Max Distance (m)", &c.data.ssaoMaxDistance, 1.0f, 1.0f, 500.0f)) changed = true;
+        if (ImGui::DragFloat("半径(m)", &c.data.ssaoRadius, 0.01f, 0.05f, 3.0f)) changed = true;
+        if (ImGui::DragFloat("強度", &c.data.ssaoIntensity, 0.01f, 0.0f, 1.0f)) changed = true;
+        if (ImGui::DragFloat("バイアス", &c.data.ssaoBias, 0.001f, 0.0f, 0.2f)) changed = true;
+        if (ImGui::DragFloat("最大距離(m)", &c.data.ssaoMaxDistance, 1.0f, 1.0f, 500.0f)) changed = true;
 
         ImGui::Separator();
         ImGui::TextDisabled("AOは演出ではなく絵の基礎品質。\n薄く常時掛けるのが正しい使い方。");

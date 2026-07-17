@@ -12,21 +12,21 @@
 COMPONENT_META_BEGIN_FULL(JoltCharacterConfigComponent, "Jolt Character Config", CCL::Categories::Physics, 205, false)
 
 // ★presence プロキシの物理レイヤー（剛体と同じ LayerNames を共有）
-CFIELD_ENUM_U8(objectLayer, "Object Layer", PhysicsLayers::LayerNames, PhysicsLayers::LayerCount, "Physics")
+CFIELD_ENUM_U8(objectLayer, "オブジェクトレイヤー", PhysicsLayers::LayerNames, PhysicsLayers::LayerCount, "物理")
 
-CFIELD_FLOAT_RANGED(maxSlopeAngle, "Max Slope Angle (Deg)", 1.0f, 0.0f, 90.0f, "Movement Limits")
-CFIELD_FLOAT_RANGED(maxStepHeight, "Max Step Height", 0.05f, 0.0f, 2.0f, "Movement Limits")
+CFIELD_FLOAT_RANGED(maxSlopeAngle, "最大登坂角度(度)", 1.0f, 0.0f, 90.0f, "移動制限")
+CFIELD_FLOAT_RANGED(maxStepHeight, "最大段差", 0.05f, 0.0f, 2.0f, "移動制限")
 
-CFIELD_FLOAT_RANGED(walkSpeed, "最大歩行速度（物理上限）", 0.1f, 0.0f, 50.0f, "Speed")
-CFIELD_FLOAT_RANGED(jumpSpeed, "Jump Speed", 0.1f, 0.0f, 50.0f, "Speed")
+CFIELD_FLOAT_RANGED(walkSpeed, "最大歩行速度（物理上限）", 0.1f, 0.0f, 50.0f, "速度")
+CFIELD_FLOAT_RANGED(jumpSpeed, "ジャンプ速度", 0.1f, 0.0f, 50.0f, "速度")
 
-CFIELD_FLOAT_RANGED(characterMass, "Character Mass (kg)", 1.0f, 0.1f, 1000.0f, "Physics")
+CFIELD_FLOAT_RANGED(characterMass, "質量(kg)", 1.0f, 0.1f, 1000.0f, "物理")
 
-CFIELD_FLOAT_RANGED(gravityScale, "Gravity Scale", 0.1f, 0.0f, 50.0f, "Physics")
-CFIELD_FLOAT_RANGED(fallGravityScale, "Fall Gravity Scale", 0.1f, 0.0f, 50.0f, "Physics")
+CFIELD_FLOAT_RANGED(gravityScale, "重力倍率", 0.1f, 0.0f, 50.0f, "物理")
+CFIELD_FLOAT_RANGED(fallGravityScale, "落下重力倍率", 0.1f, 0.0f, 50.0f, "物理")
 
-CFIELD_FLOAT_RANGED(deceleration, "減速摩擦力 (deceleration)", 0.1f, 1.0f, 50.0f, "Movement Feel")
-CFIELD_FLOAT_RANGED(apexGravityScale, u8"頂点重力倍率 (apexGravityScale)", 0.1f, 0.0f, 10.0f, "Game Feel")
-CFIELD_FLOAT_RANGED(apexVelocityThreshold, u8"頂点判定閾値 (apexVelocityThreshold)", 0.1f, 0.0f, 10.0f, "Game Feel")
+CFIELD_FLOAT_RANGED(deceleration, "減速摩擦力", 0.1f, 1.0f, 50.0f, "操作感")
+CFIELD_FLOAT_RANGED(apexGravityScale, "頂点重力倍率", 0.1f, 0.0f, 10.0f, "操作感")
+CFIELD_FLOAT_RANGED(apexVelocityThreshold, "頂点判定閾値", 0.1f, 0.0f, 10.0f, "操作感")
 
 COMPONENT_META_END(JoltCharacterConfigComponent)

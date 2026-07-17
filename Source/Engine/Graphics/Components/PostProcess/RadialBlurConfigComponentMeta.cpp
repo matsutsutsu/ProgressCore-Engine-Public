@@ -42,12 +42,12 @@ template <> struct ComponentMeta<RadialBlurConfigComponent> {
     static bool CustomGui(RadialBlurConfigComponent& c,
                           unsigned long long /*entityID*/ = 0, void* /*world*/ = nullptr) {
         bool changed = false;
-        if (ImGui::Checkbox("Enable", &c.enable)) changed = true;
+        if (ImGui::Checkbox("有効", &c.enable)) changed = true;
 
         ImGui::BeginDisabled(!c.enable);
-        if (ImGui::DragFloat2("Center (UV)", &c.data.blurCenter.x, 0.01f, 0.0f, 1.0f)) changed = true;
-        if (ImGui::DragFloat("Strength", &c.data.blurStrength, 0.005f, 0.0f, 1.0f)) changed = true;
-        if (ImGui::DragFloat("Falloff", &c.data.blurFalloff, 0.05f, 0.0f, 8.0f)) changed = true;
+        if (ImGui::DragFloat2("中心(UV)", &c.data.blurCenter.x, 0.01f, 0.0f, 1.0f)) changed = true;
+        if (ImGui::DragFloat("強度", &c.data.blurStrength, 0.005f, 0.0f, 1.0f)) changed = true;
+        if (ImGui::DragFloat("減衰", &c.data.blurFalloff, 0.05f, 0.0f, 8.0f)) changed = true;
         ImGui::EndDisabled();
 
         return changed;

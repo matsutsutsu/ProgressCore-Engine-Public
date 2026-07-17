@@ -21,9 +21,9 @@ using json = nlohmann::json;
 // ScreenImpactComponent（Effect カテゴリ。シーンに singleton で1つ置く）
 // ===========================================================================
 COMPONENT_META_BEGIN_FULL(ScreenImpactComponent, "Screen Impact", CCL::Categories::Effect, 185, false)
-    CFIELD_FLOAT_RANGED(duration,          "Duration (s)",     0.005f, 0.0f, 1.0f,  "Impact")
-    CFIELD_FLOAT_RANGED(shakeAmplitude,    "Shake Amplitude",  0.005f, 0.0f, 2.0f,  "Camera Shake")
-    CFIELD_FLOAT_RANGED(shakeFrequency,    "Shake Frequency",  0.5f,   0.0f, 120.0f,"Camera Shake")
-    CFIELD_FLOAT_RANGED(radialStrength,    "Radial Blur Peak", 0.01f,  0.0f, 2.0f,  "Post Process")
-    CFIELD_FLOAT_RANGED(chromaticStrength, "Chromatic Peak",   0.001f, 0.0f, 0.2f,  "Post Process")
+    CFIELD_FLOAT_RANGED(duration,          "継続時間(秒)",     0.005f, 0.0f, 1.0f,  "衝撃")
+    CFIELD_FLOAT_RANGED(shakeAmplitude,    "揺れの強さ",  0.005f, 0.0f, 2.0f,  "カメラ揺れ")
+    CFIELD_FLOAT_RANGED(shakeFrequency,    "揺れの周波数",  0.5f,   0.0f, 120.0f,"カメラ揺れ")
+    CFIELD_FLOAT_RANGED(radialStrength,    "放射ブラー強度", 0.01f,  0.0f, 2.0f,  "ポストプロセス")
+    CFIELD_FLOAT_RANGED(chromaticStrength, "色収差強度",   0.001f, 0.0f, 0.2f,  "ポストプロセス")
 COMPONENT_META_END(ScreenImpactComponent)

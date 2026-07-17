@@ -25,16 +25,16 @@ template <> struct ComponentMeta<TestAnimationPlayerComponent> {
     {
         bool changed = false;
 
-        ImGui::TextDisabled("Player Movement Settings");
+        ImGui::TextDisabled("移動設定");
         ImGui::Separator();
 
         // 移動速度の調整スライダー
-        if (ImGui::DragFloat("Move Speed", &player.moveSpeed, 0.1f, 0.0f, 100.0f)) {
+        if (ImGui::DragFloat("移動速度", &player.moveSpeed, 0.1f, 0.0f, 100.0f)) {
             changed = true;
         }
 
         // 振り向き速度の調整スライダー
-        if (ImGui::DragFloat("Turn Speed", &player.turnSpeed, 0.1f, 0.0f, 50.0f)) {
+        if (ImGui::DragFloat("旋回速度", &player.turnSpeed, 0.1f, 0.0f, 50.0f)) {
             changed = true;
         }
 
@@ -49,8 +49,8 @@ template <> struct ComponentMeta<TestAnimationPlayerComponent> {
     static const std::vector<FieldDescriptor>& Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
-            META_FIELD_FLOAT(TestAnimationPlayerComponent, moveSpeed, "moveSpeed", "Move Speed", 0.1f, 0.0f, 100.0f, "Movement"),
-            META_FIELD_FLOAT(TestAnimationPlayerComponent, turnSpeed, "turnSpeed", "Turn Speed", 0.1f, 0.0f, 50.0f, "Movement")
+            META_FIELD_FLOAT(TestAnimationPlayerComponent, moveSpeed, "moveSpeed", "移動速度", 0.1f, 0.0f, 100.0f, "Movement"),
+            META_FIELD_FLOAT(TestAnimationPlayerComponent, turnSpeed, "turnSpeed", "旋回速度", 0.1f, 0.0f, 50.0f, "Movement")
         };
         return fields;
     }

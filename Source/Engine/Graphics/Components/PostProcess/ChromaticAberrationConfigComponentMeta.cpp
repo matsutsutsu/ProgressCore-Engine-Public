@@ -42,12 +42,12 @@ template <> struct ComponentMeta<ChromaticAberrationConfigComponent> {
     static bool CustomGui(ChromaticAberrationConfigComponent& c,
                           unsigned long long /*entityID*/ = 0, void* /*world*/ = nullptr) {
         bool changed = false;
-        if (ImGui::Checkbox("Enable", &c.enable)) changed = true;
+        if (ImGui::Checkbox("有効", &c.enable)) changed = true;
 
         ImGui::BeginDisabled(!c.enable);
-        if (ImGui::DragFloat2("Center (UV)", &c.data.chromaCenter.x, 0.01f, 0.0f, 1.0f)) changed = true;
-        if (ImGui::DragFloat("Strength", &c.data.chromaStrength, 0.001f, 0.0f, 0.2f)) changed = true;
-        if (ImGui::DragFloat("Falloff", &c.data.chromaFalloff, 0.05f, 0.0f, 8.0f)) changed = true;
+        if (ImGui::DragFloat2("中心(UV)", &c.data.chromaCenter.x, 0.01f, 0.0f, 1.0f)) changed = true;
+        if (ImGui::DragFloat("強度", &c.data.chromaStrength, 0.001f, 0.0f, 0.2f)) changed = true;
+        if (ImGui::DragFloat("減衰", &c.data.chromaFalloff, 0.05f, 0.0f, 8.0f)) changed = true;
         ImGui::EndDisabled();
 
         return changed;

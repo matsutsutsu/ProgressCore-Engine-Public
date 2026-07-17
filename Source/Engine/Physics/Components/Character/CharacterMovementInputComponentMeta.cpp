@@ -11,15 +11,15 @@
 // ===========================================================================
 COMPONENT_META_BEGIN_FULL(CharacterMovementInputComponent, "Character Movement Input", CCL::Categories::Movement, 150, false)
 
-CFIELD_FLOAT3_FAST(desiredVelocity, "Desired Velocity", 0.1f, "Input State")
-CFIELD_FLOAT3_FAST(lookTargetPos, "Look Target Pos", 0.1f, "Input State")
+CFIELD_FLOAT3_FAST(desiredVelocity, "要求速度", 0.1f, "入力状態")
+CFIELD_FLOAT3_FAST(lookTargetPos, "注視目標座標", 0.1f, "入力状態")
 
-CFIELD(isAttackRequested, "Attack Requested", "Input State")
-CFIELD(jumpRequested, "Jump Requested", "Input State")
+CFIELD(isAttackRequested, "攻撃要求", "入力状態")
+CFIELD(jumpRequested, "ジャンプ要求", "入力状態")
 
-CFIELD(dashRequested, "Dash Requested", "Input State")
-CFIELD_FLOAT_RANGED(overrideSpeed, "Override Speed", 0.5f, -1.0f, 200.0f, "Input State")
+CFIELD(dashRequested, "ダッシュ要求", "入力状態")
+CFIELD_FLOAT_RANGED(overrideSpeed, "速度上書き", 0.5f, -1.0f, 200.0f, "入力状態")
 
-CFIELD_FLOAT3_FAST(currentVelocity, "currentVelocity", 0.1f, "State")
+CFIELD_FLOAT3_FAST(currentVelocity, "現在速度", 0.1f, "状態")
 
 COMPONENT_META_END(CharacterMovementInputComponent)

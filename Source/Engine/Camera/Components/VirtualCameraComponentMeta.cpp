@@ -16,11 +16,11 @@
 // ★修正: BEGIN_FULL を使用し、カテゴリと優先度を明記
 // ============================================================================
 COMPONENT_META_BEGIN_FULL(VirtualCamera, "VirtualCamera", CCL::Categories::Camera, 300, false)
-    CFIELD_INT_RANGED(priority, "Priority", -100, 100, "Camera Settings")
-    CFIELD_FLOAT_RANGED(blendTime, "Blend Time (s)", 0.1f, 0.0f, 10.0f, "Camera Settings")
-    CFIELD_FLOAT_RANGED(fov, "Field of View (FOV)", 0.5f, 1.0f, 179.0f, "Lens")
-    CFIELD_FLOAT_RANGED(nearClip, "Near Clip", 0.01f, 0.001f, 1000.0f, "Lens")
-    CFIELD_FLOAT_RANGED(farClip, "Far Clip", 10.0f, 1.0f, 100000.0f, "Lens")
+    CFIELD_INT_RANGED(priority, "優先度", -100, 100, "Camera Settings")
+    CFIELD_FLOAT_RANGED(blendTime, "ブレンド時間(秒)", 0.1f, 0.0f, 10.0f, "Camera Settings")
+    CFIELD_FLOAT_RANGED(fov, "視野角(FOV)", 0.5f, 1.0f, 179.0f, "Lens")
+    CFIELD_FLOAT_RANGED(nearClip, "ニアクリップ", 0.01f, 0.001f, 1000.0f, "Lens")
+    CFIELD_FLOAT_RANGED(farClip, "ファークリップ", 10.0f, 1.0f, 100000.0f, "Lens")
 COMPONENT_META_END(VirtualCamera)
 
 // ============================================================================
@@ -39,10 +39,10 @@ template <> struct ComponentMeta<CameraBodyFollow> {
     static bool CustomGui(CameraBodyFollow& comp, unsigned long long /*entityID*/ = 0, void* /*world*/ = nullptr) {
         bool changed = false;
 
-        ImGui::SeparatorText("Target Link");
+        ImGui::SeparatorText("ターゲット連携");
 
         int targetInt = static_cast<int>(comp.target.id);
-        if (ImGui::InputInt("Target ID", &targetInt)) {
+        if (ImGui::InputInt("ターゲットID", &targetInt)) {
             comp.target.id = static_cast<unsigned long long>((std::max)(0, targetInt));
             changed = true;
         }
@@ -56,12 +56,12 @@ template <> struct ComponentMeta<CameraBodyFollow> {
             ImGui::EndDragDropTarget();
         }
 
-        ImGui::TextColored(ImVec4(0.5f, 0.8f, 1.0f, 1.0f), "[ Drop Entity Here from Hierarchy ]");
+        ImGui::TextColored(ImVec4(0.5f, 0.8f, 1.0f, 1.0f), "[ ここにHierarchyからエンティティをドロップ ]");
 
-        ImGui::SeparatorText("Follow Settings");
-        changed |= ImGui::DragFloat3("Follow Offset", &comp.offset.x, 0.1f);
-        changed |= ImGui::DragFloat("Damping", &comp.damping, 0.1f, 0.0f, 100.0f);
-        changed |= ImGui::Checkbox("Lock Y Height", &comp.lockY);
+        ImGui::SeparatorText("追従設定");
+        changed |= ImGui::DragFloat3("追従オフセット", &comp.offset.x, 0.1f);
+        changed |= ImGui::DragFloat("減衰", &comp.damping, 0.1f, 0.0f, 100.0f);
+        changed |= ImGui::Checkbox("Y高さを固定", &comp.lockY);
 
         return changed;
     }
@@ -71,10 +71,10 @@ template <> struct ComponentMeta<CameraBodyFollow> {
 
     static const std::vector<FieldDescriptor>& Fields() {
         static const std::vector<FieldDescriptor> fields = {
-            CFIELD(target, "Target Entity ID", "Follow Settings")
-            CFIELD(offset, "Follow Offset", "Follow Settings")
-            CFIELD_FLOAT_RANGED(damping, "Damping", 0.1f, 0.0f, 100.0f, "Follow Settings")
-            CFIELD(lockY, "Lock Y Height", "Follow Settings")
+            CFIELD(target, "ターゲット", "Follow Settings")
+            CFIELD(offset, "追従オフセット", "Follow Settings")
+            CFIELD_FLOAT_RANGED(damping, "減衰", 0.1f, 0.0f, 100.0f, "Follow Settings")
+            CFIELD(lockY, "Y高さを固定", "Follow Settings")
         };
         return fields;
     }
@@ -98,10 +98,10 @@ template <> struct ComponentMeta<CameraAimLookAt> {
     static bool CustomGui(CameraAimLookAt& comp, unsigned long long /*entityID*/ = 0, void* /*world*/ = nullptr) {
         bool changed = false;
 
-        ImGui::SeparatorText("Target Link");
+        ImGui::SeparatorText("ターゲット連携");
 
         int targetInt = static_cast<int>(comp.target.id);
-        if (ImGui::InputInt("Target ID", &targetInt)) {
+        if (ImGui::InputInt("ターゲットID", &targetInt)) {
             comp.target.id = static_cast<unsigned long long>((std::max)(0, targetInt));
             changed = true;
         }
@@ -114,11 +114,11 @@ template <> struct ComponentMeta<CameraAimLookAt> {
             }
             ImGui::EndDragDropTarget();
         }
-        ImGui::TextColored(ImVec4(0.5f, 0.8f, 1.0f, 1.0f), "[ Drop Entity Here from Hierarchy ]");
+        ImGui::TextColored(ImVec4(0.5f, 0.8f, 1.0f, 1.0f), "[ ここにHierarchyからエンティティをドロップ ]");
 
-        ImGui::SeparatorText("Aim Settings");
-        changed |= ImGui::DragFloat3("LookAt Offset", &comp.offset.x, 0.1f);
-        changed |= ImGui::DragFloat("Damping", &comp.damping, 0.1f, 0.0f, 100.0f);
+        ImGui::SeparatorText("注視設定");
+        changed |= ImGui::DragFloat3("注視オフセット", &comp.offset.x, 0.1f);
+        changed |= ImGui::DragFloat("減衰", &comp.damping, 0.1f, 0.0f, 100.0f);
 
         return changed;
     }
@@ -128,9 +128,9 @@ template <> struct ComponentMeta<CameraAimLookAt> {
 
     static const std::vector<FieldDescriptor>& Fields() {
         static const std::vector<FieldDescriptor> fields = {
-            CFIELD(target, "Target Entity ID", "Aim Settings")
-            CFIELD(offset, "LookAt Offset", "Aim Settings")
-            CFIELD_FLOAT_RANGED(damping, "Damping", 0.1f, 0.0f, 100.0f, "Aim Settings")
+            CFIELD(target, "ターゲット", "Aim Settings")
+            CFIELD(offset, "注視オフセット", "Aim Settings")
+            CFIELD_FLOAT_RANGED(damping, "減衰", 0.1f, 0.0f, 100.0f, "Aim Settings")
         };
         return fields;
     }
@@ -143,9 +143,9 @@ REGISTER_COMPONENT_EDITOR_GUI(CameraAimLookAt)
 // ★修正: BEGIN_CAT を使用
 // ============================================================================
 COMPONENT_META_BEGIN_FULL(CameraShake, "Camera Shake", CCL::Categories::Camera, 330, false)
-    CFIELD_FLOAT_RANGED(amplitude, u8"揺れの強さ (amplitude)", 0.1f, 0.0f, 100.0f, "Shake State")
-    CFIELD_FLOAT_RANGED(duration, u8"残り時間 (duration)", 0.01f, 0.0f, 10.0f, "Shake State")
-    CFIELD_FLOAT_RANGED(maxDuration, u8"最大時間 (maxDuration)", 0.01f, 0.0f, 10.0f, "Shake State")
+    CFIELD_FLOAT_RANGED(amplitude, "揺れの強さ", 0.1f, 0.0f, 100.0f, "Shake State")
+    CFIELD_FLOAT_RANGED(duration, "残り時間", 0.01f, 0.0f, 10.0f, "Shake State")
+    CFIELD_FLOAT_RANGED(maxDuration, "最大時間", 0.01f, 0.0f, 10.0f, "Shake State")
 COMPONENT_META_END(CameraShake)
 
 // ============================================================================
@@ -153,8 +153,8 @@ COMPONENT_META_END(CameraShake)
 // ★修正: BEGIN_CAT を使用
 // ============================================================================
 COMPONENT_META_BEGIN_FULL(CameraBodyFree, "CameraBodyFree", CCL::Categories::Camera, 340, false)
-    CFIELD_FLOAT_RANGED(moveSpeed, "Move Speed", 0.1f, 0.0f, 100.0f, "Settings")
-    CFIELD_FLOAT_RANGED(lookSpeed, "Look Speed", 0.01f, 0.0f, 10.0f, "Settings")
-    CFIELD_FLOAT_RANGED(currentPitch, "Current Pitch", 0.1f, -89.0f, 89.0f, "State")
-    CFIELD_FLOAT_RANGED(currentYaw, "Current Yaw", 0.1f, -360.0f, 360.0f, "State")
+    CFIELD_FLOAT_RANGED(moveSpeed, "移動速度", 0.1f, 0.0f, 100.0f, "Settings")
+    CFIELD_FLOAT_RANGED(lookSpeed, "視点速度", 0.01f, 0.0f, 10.0f, "Settings")
+    CFIELD_FLOAT_RANGED(currentPitch, "現在ピッチ", 0.1f, -89.0f, 89.0f, "State")
+    CFIELD_FLOAT_RANGED(currentYaw, "現在ヨー", 0.1f, -360.0f, 360.0f, "State")
 COMPONENT_META_END(CameraBodyFree)

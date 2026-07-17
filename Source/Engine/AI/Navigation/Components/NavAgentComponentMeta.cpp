@@ -28,35 +28,35 @@ struct ComponentMeta<NavAgentComponent>
     {
         bool changed = false;
 
-        ImGui::SeparatorText("Navigation Target");
+        ImGui::SeparatorText("目標地点");
 
-        if (ImGui::DragFloat3("Target Position", &comp.targetPosition.x, 0.1f))
+        if (ImGui::DragFloat3("目標座標", &comp.targetPosition.x, 0.1f))
         {
             changed = true;
         }
 
         ImGui::Spacing();
 
-        if (ImGui::Button("Force Path Request", ImVec2(-1, 0)))
+        if (ImGui::Button("経路計算を強制実行", ImVec2(-1, 0)))
         {
             comp.isPathRequested = true;
             changed              = true;
         }
 
         ImGui::Spacing();
-        ImGui::SeparatorText("Debug Info");
+        ImGui::SeparatorText("デバッグ情報");
 
         if (comp.isPathRequested)
         {
-            ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), "Status: Path Requested...");
+            ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), "状態: 経路計算中...");
         }
         else
         {
-            ImGui::TextDisabled("Status: Idle / Moving");
+            ImGui::TextDisabled("状態: 待機/移動中");
         }
 
-        ImGui::Text("Waypoints Count: %zu", comp.waypoints.size());
-        ImGui::Text("Current Index: %d", comp.currentWaypointIndex);
+        ImGui::Text("経由点数: %zu", comp.waypoints.size());
+        ImGui::Text("現在インデックス: %d", comp.currentWaypointIndex);
         ImGui::Text("currentDesiredSpeed: %.2f", comp.currentDesiredSpeed);
         ImGui::Text("stopDistance: %.2f", comp.stopDistance);
 
@@ -72,7 +72,7 @@ struct ComponentMeta<NavAgentComponent>
     static const std::vector<FieldDescriptor> &Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
-            CFIELD(targetPosition, "Target Position", "AI") // フィールドの小カテゴリは生文字列のままで運用
+            CFIELD(targetPosition, "目標座標", "AI") // フィールドの小カテゴリは生文字列のままで運用
         };
         return fields;
     }

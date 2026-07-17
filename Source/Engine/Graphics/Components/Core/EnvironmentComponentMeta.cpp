@@ -32,9 +32,9 @@ template <> struct ComponentMeta<ToneMapConfigComponent> {
 #ifdef ENABLE_EDITOR
     static bool CustomGui(ToneMapConfigComponent& comp, unsigned long long /* entityID */ = 0, void* /* worldPtr */ = nullptr) {
         bool changed = false;
-        changed |= ImGui::DragFloat("Exposure", &comp.data.exposure, 0.01f, 0.0f, 10.0f);
-        changed |= ImGui::DragFloat("Chromatic Aberration", &comp.data.chromaticAberration, 0.001f, -0.1f, 0.1f);
-        changed |= ImGui::ColorEdit3("Color Tint", &comp.data.colorTint.x);
+        changed |= ImGui::DragFloat("露出", &comp.data.exposure, 0.01f, 0.0f, 10.0f);
+        changed |= ImGui::DragFloat("色収差", &comp.data.chromaticAberration, 0.001f, -0.1f, 0.1f);
+        changed |= ImGui::ColorEdit3("色補正(Tint)", &comp.data.colorTint.x);
         return changed;
     }
 #else
@@ -43,9 +43,9 @@ template <> struct ComponentMeta<ToneMapConfigComponent> {
 
     static const std::vector<FieldDescriptor>& Fields() {
         static const std::vector<FieldDescriptor> fields = {
-            CFIELD_FLOAT_RANGED(data.exposure, "Exposure", 0.05f, 0.0f, 20.0f, "Settings")
-            CFIELD_FLOAT_RANGED(data.chromaticAberration, "Chromatic Aberration", 0.001f, -0.1f, 0.1f, "Settings")
-            CFIELD(data.colorTint, "Color Tint", "Settings")
+            CFIELD_FLOAT_RANGED(data.exposure, "露出", 0.05f, 0.0f, 20.0f, "Settings")
+            CFIELD_FLOAT_RANGED(data.chromaticAberration, "色収差", 0.001f, -0.1f, 0.1f, "Settings")
+            CFIELD(data.colorTint, "色補正(Tint)", "Settings")
         };
         return fields;
     }
@@ -58,17 +58,17 @@ REGISTER_COMPONENT_EDITOR_GUI(ToneMapConfigComponent)
 // ★修正: BEGIN_FULL を使用してエフェクトとして明示的にカテゴリ化
 // ============================================================================
 COMPONENT_META_BEGIN_FULL(BloomConfigComponent, "BloomConfig", CCL::Categories::Effect, 510, false)
-    CFIELD(enable, "Enable", "Setup")
-    CFIELD(data.threshold, "Threshold", "Filter")
-    CFIELD(data.softKnee, "Soft Knee", "Filter")
-    CFIELD(data.intensity, "Intensity", "Glow")
-    CFIELD(data.radius, "Radius", "Glow")
+    CFIELD(enable, "有効", "Setup")
+    CFIELD(data.threshold, "閾値", "Filter")
+    CFIELD(data.softKnee, "ソフトニー", "Filter")
+    CFIELD(data.intensity, "強度", "Glow")
+    CFIELD(data.radius, "半径", "Glow")
 COMPONENT_META_END(BloomConfigComponent)
 
 COMPONENT_META_BEGIN_FULL(DistortionConfigComponent, "DistortionConfig", CCL::Categories::Effect, 520, false)
-    CFIELD(enable, "Enable", "Setup")
-    CFIELD(data.time, "Time Multiplier", "Animation")
-    CFIELD(data.strength, "Distort Strength", "Parameters")
+    CFIELD(enable, "有効", "Setup")
+    CFIELD(data.time, "時間倍率", "Animation")
+    CFIELD(data.strength, "歪み強度", "Parameters")
 COMPONENT_META_END(DistortionConfigComponent)
 
 // ============================================================================
@@ -87,21 +87,21 @@ template <> struct ComponentMeta<FogComponent> {
     static bool CustomGui(FogComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr) {
         bool changed = false;
 
-        changed |= ImGui::Checkbox("Enable Fog", &comp.enabled);
-        changed |= ImGui::ColorEdit4("Base Color", &comp.color.x);
+        changed |= ImGui::Checkbox("フォグ有効", &comp.enabled);
+        changed |= ImGui::ColorEdit4("基本色", &comp.color.x);
 
-        if (ImGui::CollapsingHeader("Distance & Height", ImGuiTreeNodeFlags_DefaultOpen)) {
-            changed |= ImGui::DragFloat("Start Dist", &comp.start, 0.5f);
-            changed |= ImGui::DragFloat("End Dist", &comp.end, 0.5f);
-            changed |= ImGui::DragFloat("Height Level", &comp.heightStart, 0.1f);
-            changed |= ImGui::DragFloat("Height Density", &comp.heightDensity, 0.01f);
+        if (ImGui::CollapsingHeader("距離と高さ", ImGuiTreeNodeFlags_DefaultOpen)) {
+            changed |= ImGui::DragFloat("開始距離", &comp.start, 0.5f);
+            changed |= ImGui::DragFloat("終了距離", &comp.end, 0.5f);
+            changed |= ImGui::DragFloat("高さ基準", &comp.heightStart, 0.1f);
+            changed |= ImGui::DragFloat("高さ密度", &comp.heightDensity, 0.01f);
         }
 
-        if (ImGui::CollapsingHeader("Noise & Animation", ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::Text("Noise Texture:");
+        if (ImGui::CollapsingHeader("ノイズとアニメーション", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::Text("ノイズテクスチャ:");
             ImGui::SameLine();
-            if (ImGui::Button("Load...##FogNoise")) {
-                if (auto path = FileDialog::OpenPreset("Texture", "Select Texture", Graphics::Instance().GetWindowHandle())) {
+            if (ImGui::Button("読込...##FogNoise")) {
+                if (auto path = FileDialog::OpenPreset("Texture", "テクスチャを選択", Graphics::Instance().GetWindowHandle())) {
 
                     // ★修正: Engine:: プレフィックスを削除
                     std::string relativePath = FileDialog::ConvertToRelativePath(*path);
@@ -120,22 +120,22 @@ template <> struct ComponentMeta<FogComponent> {
             if (previewSRV) {
                 ImGui::Image((void*)previewSRV, ImVec2(64, 64));
                 ImGui::SameLine();
-                if (ImGui::Button("Clear##FogNoise")) {
+                if (ImGui::Button("クリア##FogNoise")) {
                     comp.noiseTextureHandle = TextureHandle{};
                     comp.noiseTexturePath[0] = '\0';
                     changed = true;
                 }
             }
 
-            changed |= ImGui::DragFloat("NoiseStrength", &comp.noiseStrength, 0.01f, 0.0f, 1.0f);
-            changed |= ImGui::DragFloat("Scale", &comp.noiseScale, 0.001f);
-            changed |= ImGui::DragFloat2("Scroll Speed", &comp.noiseSpeed.x, 0.01f);
+            changed |= ImGui::DragFloat("ノイズ強度", &comp.noiseStrength, 0.01f, 0.0f, 1.0f);
+            changed |= ImGui::DragFloat("スケール", &comp.noiseScale, 0.001f);
+            changed |= ImGui::DragFloat2("スクロール速度", &comp.noiseSpeed.x, 0.01f);
         }
 
-        if (ImGui::CollapsingHeader("Rim Light", ImGuiTreeNodeFlags_DefaultOpen)) {
-            changed |= ImGui::ColorEdit3("Rim Color", &comp.rimColor.x);
-            changed |= ImGui::DragFloat("Strength", &comp.rimStrength, 0.1f, 0.0f, 10.0f);
-            changed |= ImGui::DragFloat("Power", &comp.rimPower, 0.1f, 0.1f, 20.0f);
+        if (ImGui::CollapsingHeader("リムライト", ImGuiTreeNodeFlags_DefaultOpen)) {
+            changed |= ImGui::ColorEdit3("リム色", &comp.rimColor.x);
+            changed |= ImGui::DragFloat("強さ", &comp.rimStrength, 0.1f, 0.0f, 10.0f);
+            changed |= ImGui::DragFloat("強度(Power)", &comp.rimPower, 0.1f, 0.1f, 20.0f);
         }
 
         return changed;
@@ -146,18 +146,18 @@ template <> struct ComponentMeta<FogComponent> {
 
     static const std::vector<FieldDescriptor>& Fields() {
         static const std::vector<FieldDescriptor> fields = {
-            CFIELD(enabled, "Enabled", "Base")
-            CFIELD(color, "Color", "Base")
-            CFIELD(start, "Start Dist", "Dist")
-            CFIELD(end, "End Dist", "Dist")
-            CFIELD(heightStart, "Height Start", "Height")
-            CFIELD_FLOAT_RANGED(heightDensity, "Height Density", 0.01f, 0.0f, 1.0f, "Height")
-            CFIELD_FLOAT_RANGED(noiseStrength, "Noise Strength", 0.01f, 0.0f, 1.0f, "Noise")
-            CFIELD(noiseScale, "Noise Scale", "Noise")
-            CFIELD(noiseSpeed, "Noise Speed", "Noise")
-            CFIELD(rimColor, "Rim Color", "Rim")
-            CFIELD_FLOAT_RANGED(rimStrength, "Rim Strength", 0.1f, 0.0f, 10.0f, "Rim")
-            CFIELD_FLOAT_RANGED(rimPower, "Rim Power", 0.1f, 0.0f, 20.0f, "Rim")
+            CFIELD(enabled, "有効", "Base")
+            CFIELD(color, "色", "Base")
+            CFIELD(start, "開始距離", "Dist")
+            CFIELD(end, "終了距離", "Dist")
+            CFIELD(heightStart, "高さ開始", "Height")
+            CFIELD_FLOAT_RANGED(heightDensity, "高さ密度", 0.01f, 0.0f, 1.0f, "Height")
+            CFIELD_FLOAT_RANGED(noiseStrength, "ノイズ強度", 0.01f, 0.0f, 1.0f, "Noise")
+            CFIELD(noiseScale, "ノイズスケール", "Noise")
+            CFIELD(noiseSpeed, "ノイズ速度", "Noise")
+            CFIELD(rimColor, "リム色", "Rim")
+            CFIELD_FLOAT_RANGED(rimStrength, "リム強度", 0.1f, 0.0f, 10.0f, "Rim")
+            CFIELD_FLOAT_RANGED(rimPower, "リム強度(Power)", 0.1f, 0.0f, 20.0f, "Rim")
         };
         return fields;
     }
@@ -180,11 +180,11 @@ template <> struct ComponentMeta<ShadowMapConfigComponent> {
 #ifdef ENABLE_EDITOR
     static bool CustomGui(ShadowMapConfigComponent& c, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr) {
         bool changed = false;
-        ImGui::SeparatorText("Shadow Settings");
+        ImGui::SeparatorText("シャドウ設定");
 
-        changed |= ImGui::DragFloat3("Cascade Splits (Near/Mid/Far)", &c.cascadeSplits.x, 1.0f, 1.0f, 1000.0f);
-        changed |= ImGui::DragFloat("Bias", &c.shadowBias, 0.0001f, 0.0f, 0.01f, "%.5f");
-        changed |= ImGui::ColorEdit4("Shadow Color", &c.shadowColor.x);
+        changed |= ImGui::DragFloat3("カスケード分割(近/中/遠)", &c.cascadeSplits.x, 1.0f, 1.0f, 1000.0f);
+        changed |= ImGui::DragFloat("バイアス", &c.shadowBias, 0.0001f, 0.0f, 0.01f, "%.5f");
+        changed |= ImGui::ColorEdit4("シャドウ色", &c.shadowColor.x);
 
         return changed;
     }
@@ -194,9 +194,9 @@ template <> struct ComponentMeta<ShadowMapConfigComponent> {
 
     static const std::vector<FieldDescriptor>& Fields() {
         static const std::vector<FieldDescriptor> fields = {
-            CFIELD_FLOAT_RANGED(shadowBias, "Shadow Bias", 0.0001f, 0.0f, 0.01f, "Settings")
-            CFIELD(shadowColor, "Shadow Color", "Settings")
-            CFIELD(cascadeSplits, "Cascade Splits", "Settings")
+            CFIELD_FLOAT_RANGED(shadowBias, "シャドウバイアス", 0.0001f, 0.0f, 0.01f, "Settings")
+            CFIELD(shadowColor, "シャドウ色", "Settings")
+            CFIELD(cascadeSplits, "カスケード分割", "Settings")
         };
         return fields;
     }

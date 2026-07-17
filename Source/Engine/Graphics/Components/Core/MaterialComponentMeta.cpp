@@ -37,7 +37,7 @@ struct ComponentMeta<MaterialComponent>
 
         if (comp->overrideMaterials.empty())
         {
-            ImGui::TextDisabled("Using Shared Materials (Default)");
+            ImGui::TextDisabled("共有マテリアルを使用中(既定)");
             bool hasModel = false;
             if (world)
             {
@@ -45,7 +45,7 @@ struct ComponentMeta<MaterialComponent>
                 if (modelComp && modelComp->GetModel())
                 {
                     hasModel = true;
-                    if (ImGui::Button("Override All Materials (Edit)"))
+                    if (ImGui::Button("全マテリアルを上書き(編集)"))
                     {
                         const auto &meshes = modelComp->GetModel()->GetMeshes();
                         comp->overrideMaterials.resize(meshes.size());
@@ -64,7 +64,7 @@ struct ComponentMeta<MaterialComponent>
                     }
                 }
             }
-            if (!hasModel && ImGui::Button("Create Empty Material List"))
+            if (!hasModel && ImGui::Button("空のマテリアルリストを作成"))
             {
                 MaterialHandle emptyHandle = ResourceManager::Instance().CreateMaterial();
                 comp->overrideMaterials.resize(1, emptyHandle);
@@ -73,7 +73,7 @@ struct ComponentMeta<MaterialComponent>
             return changed;
         }
 
-        if (ImGui::Button("Reset to Default (Discard Changes)"))
+        if (ImGui::Button("既定に戻す(変更を破棄)"))
         {
             for (auto handle : comp->overrideMaterials)
             {
@@ -84,7 +84,7 @@ struct ComponentMeta<MaterialComponent>
         }
 
         ImGui::Separator();
-        if (ImGui::CollapsingHeader("Batch Operations (Apply to All)", ImGuiTreeNodeFlags_DefaultOpen))
+        if (ImGui::CollapsingHeader("一括操作(全スロットに適用)", ImGuiTreeNodeFlags_DefaultOpen))
         {
             const auto               &registeredShaders = ShaderRegistry::Instance().GetRegisteredNames();
             std::vector<const char *> shaderNames;
@@ -102,7 +102,7 @@ struct ComponentMeta<MaterialComponent>
                 ImGui::Combo("##BatchShader", &batchShaderIdx, shaderNames.data(), (int)shaderNames.size());
                 ImGui::SameLine();
 
-                if (ImGui::Button("Apply Shader to All Slots"))
+                if (ImGui::Button("全スロットにシェーダー適用"))
                 {
                     uint32_t targetHash = registeredShaders[batchShaderIdx].second;
                     for (size_t i = 0; i < comp->overrideMaterials.size(); ++i)
@@ -120,12 +120,12 @@ struct ComponentMeta<MaterialComponent>
             }
             else
             {
-                ImGui::TextDisabled("No shaders registered yet (ShaderManifest not loaded?)");
+                ImGui::TextDisabled("シェーダー未登録(ShaderManifest未読込?)");
             }
         }
 
         ImGui::Separator();
-        ImGui::Text("Material Slots:");
+        ImGui::Text("マテリアルスロット:");
 
         for (size_t i = 0; i < comp->overrideMaterials.size(); ++i)
         {
@@ -141,7 +141,7 @@ struct ComponentMeta<MaterialComponent>
 
             if (ImGui::TreeNode(nodeName))
             {
-                if (ImGui::Button("Save as .mat.json"))
+                if (ImGui::Button(".mat.jsonで保存"))
                 {
                     if (auto path = FileDialog::SavePreset("Material", "Assets/Materials", "mat.json", Graphics::Instance().GetWindowHandle()))
                     {
@@ -149,10 +149,10 @@ struct ComponentMeta<MaterialComponent>
                     }
                 }
                 ImGui::SameLine();
-                if (ImGui::Button("Load .mat.json"))
+                if (ImGui::Button(".mat.jsonを読込"))
                 {
                     // ★修正: Engine:: プレフィックスを削除
-                    if (auto path = FileDialog::OpenPreset("Material", "Select Material", Graphics::Instance().GetWindowHandle()))
+                    if (auto path = FileDialog::OpenPreset("Material", "マテリアルを選択", Graphics::Instance().GetWindowHandle()))
                     {
                         MaterialHandle newHandle = ResourceManager::Instance().LoadMaterialAsset(path->string());
                         if (newHandle.IsValid())
@@ -167,13 +167,13 @@ struct ComponentMeta<MaterialComponent>
                 DirectX::XMFLOAT4 mainColor;
                 if (matPtr->GetColor("materialColor"_hash, mainColor))
                 {
-                    if (ImGui::ColorEdit4("Main Color", &mainColor.x))
+                    if (ImGui::ColorEdit4("メインカラー", &mainColor.x))
                     {
                         matPtr->SetColor("materialColor"_hash, mainColor);
                         changed = true;
                     }
                 }
-                else if (ImGui::Button("Add Color Property"))
+                else if (ImGui::Button("カラープロパティ追加"))
                 {
                     matPtr->SetColor("materialColor"_hash, {1, 1, 1, 1});
                     changed = true;
@@ -194,13 +194,13 @@ struct ComponentMeta<MaterialComponent>
                 if (currentShaderIdx < 0) currentShaderIdx = 0; 
 
                 if (!shaderNames.empty() &&
-                    ImGui::Combo("Shader", &currentShaderIdx, shaderNames.data(), (int)shaderNames.size()))
+                    ImGui::Combo("シェーダー", &currentShaderIdx, shaderNames.data(), (int)shaderNames.size()))
                 {
                     matPtr->shaderHash = registeredShaders[currentShaderIdx].second;
                     changed            = true;
                 }
 
-                if (ImGui::TreeNode("Textures"))
+                if (ImGui::TreeNode("テクスチャ"))
                 {
                     const char *slotNames[] = {"DiffuseMap", "NormalMap", "EmissiveMap", "RampTexture"};
 
@@ -214,7 +214,7 @@ struct ComponentMeta<MaterialComponent>
                         ImGui::Text("%s: %s", slotName, hasTexture ? "[Set]" : "[Empty]");
                         ImGui::SameLine();
 
-                        if (ImGui::Button("Load..."))
+                        if (ImGui::Button("読込..."))
                         {
                             // ★修正: Engine:: プレフィックスを削除
                             if (auto path = FileDialog::OpenPreset("Texture", "Select Texture", Graphics::Instance().GetWindowHandle()))
@@ -227,7 +227,7 @@ struct ComponentMeta<MaterialComponent>
                         if (!hasTexture && std::string(slotName) == "DiffuseMap")
                         {
                             ImGui::SameLine();
-                            if (ImGui::Button("Set White"))
+                            if (ImGui::Button("白を設定"))
                             {
                                 Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> whiteTex;
                                 GpuResourceUtils::CreateDummyTexture(Graphics::Instance().GetDevice(), 0xFFFFFFFF, whiteTex.GetAddressOf());
@@ -240,14 +240,14 @@ struct ComponentMeta<MaterialComponent>
                     ImGui::TreePop();
                 }
 
-                if (ImGui::TreeNode("Advanced Parameters"))
+                if (ImGui::TreeNode("詳細パラメータ"))
                 {
                     Shader *shader = ShaderRegistry::Instance().GetShader(matPtr->shaderHash, Graphics::Instance().GetDevice());
                     if (shader)
                     {
                         const auto &cbs = shader->GetReflection().GetConstantBuffers();
 
-                        if (ImGui::Button("Fill All Missing With Defaults"))
+                        if (ImGui::Button("未設定を既定値で埋める"))
                         {
                             for (const auto &cbInfo : cbs)
                             {
@@ -312,7 +312,7 @@ struct ComponentMeta<MaterialComponent>
                                     {
                                         ImGui::TextDisabled("%s (unset)", varInfo.name.c_str());
                                         ImGui::SameLine();
-                                        if (ImGui::Button("Add"))
+                                        if (ImGui::Button("追加"))
                                         {
                                             matPtr->SetScalar(varInfo.nameHash, 1.0f);
                                             changed = true;
@@ -334,7 +334,7 @@ struct ComponentMeta<MaterialComponent>
                                     {
                                         ImGui::TextDisabled("%s (unset)", varInfo.name.c_str());
                                         ImGui::SameLine();
-                                        if (ImGui::Button("Add"))
+                                        if (ImGui::Button("追加"))
                                         {
                                             matPtr->SetColor(varInfo.nameHash, {1.0f, 1.0f, 1.0f, 1.0f});
                                             changed = true;
@@ -348,7 +348,7 @@ struct ComponentMeta<MaterialComponent>
                     }
                     else
                     {
-                        ImGui::TextDisabled("Shader not loaded.");
+                        ImGui::TextDisabled("シェーダー未読込。");
                     }
                     ImGui::TreePop();
                 }

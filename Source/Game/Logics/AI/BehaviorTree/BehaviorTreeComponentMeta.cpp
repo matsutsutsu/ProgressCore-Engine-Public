@@ -40,9 +40,9 @@ template <> struct ComponentMeta<BehaviorTreeComponent> {
     static bool CustomGui(BehaviorTreeComponent &comp, unsigned long long /*entityID*/ = 0, void * /*worldPtr*/ = nullptr) {
         bool changed = false;
 
-        ImGui::TextDisabled("BT File: %s", comp.assetPath.empty() ? "None" : comp.assetPath.c_str());
+        ImGui::TextDisabled("BTファイル: %s", comp.assetPath.empty() ? "None" : comp.assetPath.c_str());
 
-        if (ImGui::Button("Load Behavior Tree... (JSON)", ImVec2(-1, 0))) {
+        if (ImGui::Button("ビヘイビアツリーを読込... (JSON)", ImVec2(-1, 0))) {
             if (auto pathOpt = FileDialog::OpenPreset("BehaviorTree", "Select Behavior Tree", GetActiveWindow())) {
                 comp.assetPath = FileDialog::ConvertToRelativePath(*pathOpt);
                 if (!comp.sharedAsset) comp.sharedAsset = std::make_shared<BTAsset>();
@@ -53,7 +53,7 @@ template <> struct ComponentMeta<BehaviorTreeComponent> {
         }
 
         ImGui::Separator();
-        if (ImGui::Button("Reload AI")) {
+        if (ImGui::Button("AI再読込")) {
             if (!comp.sharedAsset) comp.sharedAsset = std::make_shared<BTAsset>();
             BehaviorTreeLoader::LoadFromJson(comp.assetPath, *comp.sharedAsset);
             changed = true;

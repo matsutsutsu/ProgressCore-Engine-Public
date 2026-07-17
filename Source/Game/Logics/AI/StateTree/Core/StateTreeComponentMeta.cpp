@@ -41,7 +41,7 @@ template <> struct ComponentMeta<StateTreeComponent> {
         char buf[128];
         std::snprintf(buf, sizeof(buf), "%s", comp.assetName.c_str());
         ImGui::SetNextItemWidth(200.0f);
-        if (ImGui::InputText("Asset Name", buf, sizeof(buf))) {
+        if (ImGui::InputText("アセット名", buf, sizeof(buf))) {
             comp.assetName = buf;
             comp.assetHandle = CCL::AI::StateTreeHandle{};
             changed = true;
@@ -56,11 +56,11 @@ template <> struct ComponentMeta<StateTreeComponent> {
 
         ImGui::Separator();
         if (comp.activeDepth > 0) {
-            ImGui::TextDisabled("Active States:");
+            ImGui::TextDisabled("アクティブ状態:");
             for (int d = 0; d < (int)comp.activeDepth; ++d)
                 ImGui::Text("  [%d] states[%u]", d, (unsigned)comp.activeStates[d]);
         } else {
-            ImGui::TextDisabled("Active: (none)");
+            ImGui::TextDisabled("アクティブ: (なし)");
         }
         return changed;
     }

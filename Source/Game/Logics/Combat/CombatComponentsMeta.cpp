@@ -28,15 +28,15 @@ using json = nlohmann::json;
 // ★修正: Combat カテゴリへの明示的配置
 // ===========================================================================
 COMPONENT_META_BEGIN_FULL(HitboxComponent, "Hitbox", CCL::Categories::Combat, 170, false)
-    CFIELD_FLOAT_RANGED(damageAmount, "Damage Amount", 1.0f, 0.0f, 9999.0f, "Base")
-    CFIELD(isActive, "Is Active", "State")
-    CFIELD_FLOAT_RANGED(knockback, "Knockback Force", 0.1f, 0.0f, 500.0f, "Combat Stats")
-    CFIELD_FLOAT_RANGED(hitStopDuration, "HitStop Duration (s)", 0.01f, 0.0f, 5.0f, "Combat Stats")
-    CFIELD_FLOAT_RANGED(hitStopScale, "HitStop Time Scale", 0.01f, 0.0f, 1.0f, "Combat Stats")
+    CFIELD_FLOAT_RANGED(damageAmount, "ダメージ量", 1.0f, 0.0f, 9999.0f, "基本")
+    CFIELD(isActive, "有効", "状態")
+    CFIELD_FLOAT_RANGED(knockback, "ノックバック力", 0.1f, 0.0f, 500.0f, "戦闘ステータス")
+    CFIELD_FLOAT_RANGED(hitStopDuration, "ヒットストップ時間(秒)", 0.01f, 0.0f, 5.0f, "戦闘ステータス")
+    CFIELD_FLOAT_RANGED(hitStopScale, "ヒットストップ時間倍率", 0.01f, 0.0f, 1.0f, "戦闘ステータス")
 COMPONENT_META_END(HitboxComponent)
 
 COMPONENT_META_BEGIN_FULL(HurtboxComponent, "Hurtbox", CCL::Categories::Combat, 171, false)
-    CFIELD_FLOAT_RANGED(damageMultiplier, "Damage Multiplier", 0.05f, 0.0f, 10.0f, "Defense")
+    CFIELD_FLOAT_RANGED(damageMultiplier, "被ダメージ倍率", 0.05f, 0.0f, 10.0f, "防御")
 COMPONENT_META_END(HurtboxComponent)
 
 // ===================================================================
@@ -67,7 +67,7 @@ template <> struct ComponentMeta<BoneAttachmentComponent> {
             }
         }
 
-        ImGui::Text("Target Bone Name:");
+        ImGui::Text("対象ボーン名:");
         ImGui::SetNextItemWidth(-1);
 
         if (parentID != 0) {
@@ -75,9 +75,9 @@ template <> struct ComponentMeta<BoneAttachmentComponent> {
                 if (Model* model = modelComp->GetModel()) {
                     const auto& nodes = model->GetNodes();
                     if (!nodes.empty()) {
-                        const char* currentPreview = !comp.boneName.empty() ? comp.boneName.c_str() : "Select Bone...";
+                        const char* currentPreview = !comp.boneName.empty() ? comp.boneName.c_str() : "ボーンを選択...";
                         if (ImGui::BeginCombo("##BoneCombo", currentPreview)) {
-                            if (ImGui::Selectable("None", comp.boneName.empty())) {
+                            if (ImGui::Selectable("なし", comp.boneName.empty())) {
                                 comp.boneName = "";
                                 comp.cachedBoneIndex = -1;
                                 changed = true;
@@ -99,7 +99,7 @@ template <> struct ComponentMeta<BoneAttachmentComponent> {
             }
         }
 
-        ImGui::TextColored(ImVec4(1, 1, 0, 1), "[Warning] Parent Model not found.");
+        ImGui::TextColored(ImVec4(1, 1, 0, 1), "[警告] 親モデルが見つかりません。");
 
         char buffer[256];
         strncpy_s(buffer, sizeof(buffer), comp.boneName.c_str(), _TRUNCATE);
@@ -116,7 +116,7 @@ template <> struct ComponentMeta<BoneAttachmentComponent> {
 
     static const std::vector<FieldDescriptor>& Fields() {
         static const std::vector<FieldDescriptor> fields = {
-            CFIELD(boneName, "Bone Name", "BoneAttachment")
+            CFIELD(boneName, "ボーン名", "BoneAttachment")
         };
         return fields;
     }
@@ -210,7 +210,7 @@ template <> struct ComponentMeta<CombatRosterComponent> {
 
         for (int i = 0; i < comp.count; ++i) {
             ImGui::PushID(i);
-            ImGui::TextColored(ImVec4(0.7f, 0.7f, 1.0f, 1.0f), "Slot %d", i);
+            ImGui::TextColored(ImVec4(0.7f, 0.7f, 1.0f, 1.0f), "部位 %d", i);
             ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 30.0f);
             if (ImGui::Button("X")) {
                 for (int j = i; j < comp.count - 1; ++j) {
@@ -222,10 +222,10 @@ template <> struct ComponentMeta<CombatRosterComponent> {
                 break;
             }
 
-            ImGui::Text(" Tag  "); ImGui::SameLine();
+            ImGui::Text(" タグ "); ImGui::SameLine();
             ImGui::SetNextItemWidth(120.0f);
 
-            const char* currentPreview = comp.entries[i].tag[0] != '\0' ? comp.entries[i].tag : "Select...";
+            const char* currentPreview = comp.entries[i].tag[0] != '\0' ? comp.entries[i].tag : "選択...";
             if (ImGui::BeginCombo("##TagCombo", currentPreview)) {
                 const char* presets[] = { "RightHand", "LeftHand", "RightFoot", "LeftFoot", "Head", "Tail", "Weapon_A", "Weapon_B" };
                 for (const char* p : presets) {
@@ -240,21 +240,21 @@ template <> struct ComponentMeta<CombatRosterComponent> {
             ImGui::SetNextItemWidth(-1);
             if (ImGui::InputText("##TagInput", comp.entries[i].tag, sizeof(comp.entries[i].tag))) changed = true;
 
-            ImGui::Text(" Bind "); ImGui::SameLine();
+            ImGui::Text(" 割当 "); ImGui::SameLine();
             ImGui::SetNextItemWidth(-1);
 
             char entityPreview[64];
-            if (comp.entries[i].id == 0) sprintf_s(entityPreview, "None (Not Bound)");
-            else sprintf_s(entityPreview, "Entity [%llu]", comp.entries[i].id);
+            if (comp.entries[i].id == 0) sprintf_s(entityPreview, "なし(未割当)");
+            else sprintf_s(entityPreview, "エンティティ [%llu]", comp.entries[i].id);
 
             if (ImGui::BeginCombo("##EntityCombo", entityPreview)) {
-                if (ImGui::Selectable("None", comp.entries[i].id == 0)) {
+                if (ImGui::Selectable("なし", comp.entries[i].id == 0)) {
                     comp.entries[i].id = 0;
                     changed = true;
                 }
                 for (auto childID : childEntities) {
                     char label[64];
-                    sprintf_s(label, "Child Entity [%llu]", childID);
+                    sprintf_s(label, "子エンティティ [%llu]", childID);
                     if (ImGui::Selectable(label, comp.entries[i].id == childID)) {
                         comp.entries[i].id = childID;
                         changed = true;
@@ -342,33 +342,33 @@ template <> struct ComponentMeta<HealthComponent> {
     static bool CustomGui(HealthComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr) {
         bool changed = false;
 
-        ImGui::Text("Health Status:");
+        ImGui::Text("体力ステータス:");
 
         float healthRatio = comp.maxHealth > 0.0f ? (comp.currentHealth / comp.maxHealth) : 0.0f;
         char overlay[32];
         sprintf_s(overlay, "%.1f / %.1f", comp.currentHealth, comp.maxHealth);
         ImGui::ProgressBar(healthRatio, ImVec2(-1.f, 0.f), overlay);
 
-        if (ImGui::DragFloat("Max Health", &comp.maxHealth, 1.0f, 1.0f, 99999.0f)) {
+        if (ImGui::DragFloat("最大体力", &comp.maxHealth, 1.0f, 1.0f, 99999.0f)) {
             if (comp.currentHealth > comp.maxHealth) {
                 comp.currentHealth = comp.maxHealth;
             }
             changed = true;
         }
-        if (ImGui::DragFloat("Current Health", &comp.currentHealth, 1.0f, 0.0f, comp.maxHealth)) {
+        if (ImGui::DragFloat("現在体力", &comp.currentHealth, 1.0f, 0.0f, comp.maxHealth)) {
             changed = true;
         }
 
         ImGui::Separator();
-        ImGui::Text("Invincibility (無敵設定):");
-        if (ImGui::DragFloat("Duration (sec)", &comp.invincibilityDuration, 0.05f, 0.0f, 10.0f)) {
+        ImGui::Text("無敵設定:");
+        if (ImGui::DragFloat("無敵時間(秒)", &comp.invincibilityDuration, 0.05f, 0.0f, 10.0f)) {
             changed = true;
         }
 
         if (comp.invincibilityTimer > 0.0f) {
-            ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), ">> Invincible! (%.2f sec left) <<", comp.invincibilityTimer);
+            ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), ">> 無敵中! (残り%.2f秒) <<", comp.invincibilityTimer);
         } else {
-            ImGui::TextDisabled("Not Invincible");
+            ImGui::TextDisabled("無敵ではない");
         }
 
         return changed;

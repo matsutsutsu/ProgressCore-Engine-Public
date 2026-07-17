@@ -49,8 +49,8 @@ struct ComponentMeta<RootMotionComponent>
         ImGui::Separator();
 
         ImGui::BeginDisabled();
-        ImGui::Checkbox("Enabled", &comp.enabled);
-        ImGui::DragFloat("Prev Timer", &comp.prevTimer, 0.01f, 0.0f, 10.0f);
+        ImGui::Checkbox("有効", &comp.enabled);
+        ImGui::DragFloat("前回タイマー", &comp.prevTimer, 0.01f, 0.0f, 10.0f);
         ImGui::EndDisabled();
 
         return false;

@@ -42,22 +42,22 @@ template <> struct ComponentMeta<TransformComponent> {
     static bool CustomGui(TransformComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr) {
         bool changed = false;
 
-        if (ImGui::DragFloat3("Position", &comp.position.x, 0.1f)) {
+        if (ImGui::DragFloat3("位置", &comp.position.x, 0.1f)) {
             comp.isTeleported = true; comp.isStatic = false; changed = true;
         }
 
         DirectX::XMFLOAT3 euler = QuatToEulerDegrees(comp.rotation);
-        if (ImGui::DragFloat3("Rotation", &euler.x, 1.0f)) {
+        if (ImGui::DragFloat3("回転", &euler.x, 1.0f)) {
             comp.rotation = EulerDegreesToQuat(euler);
             comp.isTeleported = true; comp.isStatic = false; changed = true;
         }
 
-        if (ImGui::DragFloat3("Scale", &comp.scale.x, 0.1f)) {
+        if (ImGui::DragFloat3("スケール", &comp.scale.x, 0.1f)) {
             comp.isStatic = false; changed = true;
         }
 
         ImGui::Spacing();
-        changed |= ImGui::Checkbox("Is Static", &comp.isStatic);
+        changed |= ImGui::Checkbox("静的(Static)", &comp.isStatic);
         return changed;
     }
 #else
@@ -66,11 +66,11 @@ template <> struct ComponentMeta<TransformComponent> {
 
     static const std::vector<FieldDescriptor>& Fields() {
         static const std::vector<FieldDescriptor> fields = {
-            CFIELD(position, "Position", "Transform")
-            CFIELD(rotation, "Rotation", "Transform")
-            CFIELD(scale,    "Scale",    "Transform")
-            CFIELD(isStatic, "Is Static","Transform")
-            CFIELD(parent,   "Parent",   "Hierarchy")
+            CFIELD(position, "位置", "Transform")
+            CFIELD(rotation, "回転", "Transform")
+            CFIELD(scale,    "スケール",    "Transform")
+            CFIELD(isStatic, "静的(Static)","Transform")
+            CFIELD(parent,   "親",   "Hierarchy")
         };
         return fields;
     }
