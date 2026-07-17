@@ -152,6 +152,9 @@ DirectX::SimpleMath::Vector3 JoltCharacterUpdateSystem::CalculateHorizontalVeloc
         targetSpeed = input.overrideSpeed;
     }
 
+    // アクション層の速度倍率(チェイン段数などによる移動速度上昇)。負値の暴走を防ぐためクランプ。
+    targetSpeed *= (input.speedMultiplier > 0.0f) ? input.speedMultiplier : 1.0f;
+
     Vector3 targetVelocity = input.desiredVelocity * targetSpeed;
 
     float friction        = 10.0f;

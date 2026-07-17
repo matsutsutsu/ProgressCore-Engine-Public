@@ -119,9 +119,11 @@ void PlayerDashSystem::Update(float rawDt)
         {
             dash.currentTimer -= time.localDt;
 
-            // ダッシュ開始から指定時間(justEvadeWindow)が経過したら、ジャスト受付のみ終了する
-            float elapsedTime = dash.dashDuration - dash.currentTimer;
-            if (elapsedTime > dash.justEvadeWindow)
+            // ダッシュ開始から指定時間(justEvadeWindow×チェイン倍率)が経過したら、ジャスト受付のみ終了する。
+            // チェインが伸びるほど windowScale が小さくなり、受付が厳しくなる（リスク上昇）。
+            float elapsedTime    = dash.dashDuration - dash.currentTimer;
+            float effectiveWindow = dash.justEvadeWindow * dash.justEvadeWindowScale;
+            if (elapsedTime > effectiveWindow)
             {
                 dash.isJustEvadeWindowActive = false;
             }

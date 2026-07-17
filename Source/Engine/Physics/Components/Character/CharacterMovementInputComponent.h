@@ -12,6 +12,10 @@ struct CharacterMovementInputComponent {
     bool dashRequested = false;  // 入力層からのDash要求
     float overrideSpeed = -1.0f; // アクション層からの速度上書き(-1.0fなら通常速度)
 
+    // アクション層からの速度倍率(1.0で等倍)。walkSpeed/overrideSpeed の両方に掛かる。
+    // 例: ジャスト回避チェインの段数に応じた移動速度上昇に使う。
+    float speedMultiplier = 1.0f;
+
 
     // ルートモーション専用の通信領域
     bool                         isRootMotionActive = false;              // ルートモーション中か
