@@ -8,7 +8,7 @@
                 },
                 "Animation": null,
                 "Animator": {
-                    "isLoop": false,
+                    "isLoop": true,
                     "playbackSpeed": 0.5
                 },
                 "BehaviorTreeComponent": {
@@ -19,8 +19,8 @@
                 "BossActionComponent": {
                     "acceleration": 10.0,
                     "chargeSpeed": 25.0,
-                    "currentMoveSpeed": 0.0,
-                    "currentState": 2,
+                    "currentMoveSpeed": 3.0,
+                    "currentState": 1,
                     "deceleration": 15.0,
                     "idleTurnSpeed": 4.0,
                     "runSpeed": 8.0,
@@ -28,21 +28,21 @@
                     "walkSpeed": 3.0
                 },
                 "BossCommandComponent": {
-                    "currentActionId": 1101,
+                    "currentActionId": 1000,
                     "requestFormation": 0,
                     "targetPlayerId": 0
                 },
                 "Character Movement Input": {
                     "currentVelocity": [
-                        0.954632043838501,
+                        0.8640531301498413,
                         0.0,
-                        -1.7907869815826416
+                        -2.861654758453369
                     ],
                     "dashRequested": false,
                     "desiredVelocity": [
+                        0.2769808769226074,
                         0.0,
-                        0.0,
-                        0.0
+                        -0.9608754515647888
                     ],
                     "isAttackRequested": false,
                     "jumpRequested": false,
@@ -51,10 +51,10 @@
                         0.0,
                         0.0
                     ],
-                    "overrideSpeed": -1.0
+                    "overrideSpeed": 3.0
                 },
                 "HealthComponent": {
-                    "currentHealth": 900.0,
+                    "currentHealth": 895.0,
                     "invincibilityDuration": 0.20000000298023224,
                     "maxHealth": 1000.0
                 },
@@ -108,7 +108,7 @@
                     "buffScale": 1.0,
                     "cinematicScale": 1.0,
                     "freezeScale": 0.0,
-                    "group": 0,
+                    "group": 2,
                     "hitStopTimer": 0.0,
                     "localDt": 0.01666666753590107
                 },
@@ -116,15 +116,15 @@
                     "isStatic": false,
                     "parent": 3,
                     "position": [
-                        4.368585109710693,
-                        -0.041816458106040955,
-                        24.459253311157227
+                        1.024121880531311,
+                        -0.04281148314476013,
+                        28.65264129638672
                     ],
                     "rotation": [
                         0.0,
-                        0.9696617126464844,
+                        0.9892306923866272,
                         0.0,
-                        0.24445073306560516
+                        0.1463644802570343
                     ],
                     "scale": [
                         3.5,

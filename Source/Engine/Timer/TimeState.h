@@ -49,8 +49,9 @@ struct TimeContext {
     // --- OVERDRIVE（勢力別の追加倍率。OverdriveSystem が設定、非発動時は1.0） ---
     //   発動中: 敵(Enemy)を遅く、プレイヤー(Player)を速くして「自分だけ高速」を作る。
     //   TimeScaleSystem が groupScales に掛け合わせて実効dtへ反映する。
-    float overdrivePlayerScale = 1.0f;
-    float overdriveEnemyScale  = 1.0f;
+    float overdrivePlayerScale      = 1.0f;
+    float overdriveEnemyScale       = 1.0f;
+    float overdriveEnvironmentScale = 1.0f; ///< 環境（ステージ/パーティクル/VFX）のスロー倍率
 
     // --- デバッグ用（コマ送り） ---
     bool isPaused      = false;

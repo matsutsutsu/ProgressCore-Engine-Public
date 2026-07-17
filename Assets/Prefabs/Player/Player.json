@@ -13,15 +13,15 @@
                 },
                 "Character Movement Input": {
                     "currentVelocity": [
-                        -0.00011810919386334717,
+                        -5.07078742980957,
                         0.0,
-                        0.1385306864976883
+                        18.87687110900879
                     ],
                     "dashRequested": false,
                     "desiredVelocity": [
-                        -0.0008525847806595266,
+                        -0.25942736864089966,
                         0.0,
-                        0.9999997019767761
+                        0.9657626152038574
                     ],
                     "isAttackRequested": false,
                     "jumpRequested": false,
@@ -33,12 +33,12 @@
                     "overrideSpeed": -1.0
                 },
                 "Dash Component": {
-                    "currentTimer": -0.006666665896773338,
+                    "currentTimer": -0.01666664145886898,
                     "dashCooldown": 0.1599999964237213,
                     "dashDirection": [
-                        -0.5239579677581787,
+                        0.9617168307304382,
                         0.0,
-                        0.8517440557479858
+                        -0.2740451395511627
                     ],
                     "dashDuration": 0.1599999964237213,
                     "dashSpeed": 114.0,
@@ -47,10 +47,9 @@
                     "justEvadeWindow": 0.07999999821186066
                 },
                 "HealthComponent": {
-                    "currentHealth": 100.0,
+                    "currentHealth": 95.0,
                     "invincibilityDuration": 0.5,
-                    "maxHealth": 100.0,
-                    "team": 1
+                    "maxHealth": 100.0
                 },
                 "Hurtbox": {
                     "damageMultiplier": 1.0
@@ -92,12 +91,23 @@
                 "Name": {
                     "name": "Player"
                 },
+                "Overdrive (オーバードライブ)": {
+                    "currentGauge": 0.0,
+                    "duration": 6.0,
+                    "enemyTimeScale": 0.3499999940395355,
+                    "environmentTimeScale": 0.3499999940395355,
+                    "gainOnDash": 4.0,
+                    "gainOnJustEvade": 25.0,
+                    "isActive": false,
+                    "maxGauge": 100.0,
+                    "playerTimeScale": 1.149999976158142
+                },
                 "Player Component": {
                     "bankingMultiplier": 0.5,
                     "coyoteTimeWindow": 0.15000000596046448,
                     "currentJumpCount": 0,
-                    "currentRoll": -1.4133213880995754e-05,
-                    "currentYaw": -75.39907836914063,
+                    "currentRoll": -0.0011442964896559715,
+                    "currentYaw": -63.09428405761719,
                     "jumpBufferTimer": 0.0,
                     "jumpBufferWindow": 0.15000000596046448,
                     "lastFallVelocity": 0.0,
@@ -120,15 +130,15 @@
                     "isStatic": false,
                     "parent": 3,
                     "position": [
-                        5.074308395385742,
-                        -0.05183815956115723,
-                        -31.50080108642578
+                        2.3955442905426025,
+                        -0.06037711724638939,
+                        -67.02685546875
                     ],
                     "rotation": [
-                        3.0124409633458527e-09,
-                        -0.00042629241943359375,
-                        -7.066606485750526e-06,
-                        0.9999999403953552
+                        7.485896639991552e-05,
+                        -0.13083839416503906,
+                        -0.0005672298721037805,
+                        0.9914035797119141
                     ],
                     "scale": [
                         3.5,
@@ -145,11 +155,11 @@
                     "boneName": "hand_r"
                 },
                 "Hitbox": {
-                    "damageAmount": 0.0,
-                    "hitStopDuration": 0.0,
-                    "hitStopScale": 1.0,
+                    "damageAmount": 5.0,
+                    "hitStopDuration": 0.07000000029802322,
+                    "hitStopScale": 0.0,
                     "isActive": false,
-                    "knockback": 0.0
+                    "knockback": 5.0
                 },
                 "Jolt Capsule Collider": {
                     "halfHeight": 2.5999999046325684,

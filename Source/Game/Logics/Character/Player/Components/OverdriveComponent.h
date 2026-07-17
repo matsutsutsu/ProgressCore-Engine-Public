@@ -19,9 +19,10 @@ struct OverdriveComponent
     float gainOnDash      = 4.0f;   ///< 通常回避(ダッシュ)で僅かに加算＝詰み対策の救済ルート
 
     // --- 発動（チューニング） ---
-    float duration        = 6.0f;   ///< 発動持続(実秒)。MAXから0まで時間経過で減少。
-    float enemyTimeScale  = 0.35f;  ///< 発動中の敵/ドローン(TimeGroup::Enemy)の時間倍率
-    float playerTimeScale = 1.15f;  ///< 発動中のプレイヤー(TimeGroup::Player)の時間倍率(>1で高速)
+    float duration           = 6.0f;   ///< 発動持続(実秒)。MAXから0まで時間経過で減少。
+    float enemyTimeScale      = 0.35f;  ///< 発動中の敵/ドローン(TimeGroup::Enemy)の時間倍率
+    float environmentTimeScale = 0.35f; ///< 発動中の環境/ステージ/パーティクル(TimeGroup::Environment)の時間倍率
+    float playerTimeScale     = 1.15f;  ///< 発動中のプレイヤー(TimeGroup::Player)の時間倍率(>1で高速)
 
     // --- ランタイム状態（非シリアライズ） ---
     float currentGauge = 0.0f; ///< 現在のゲージ量
