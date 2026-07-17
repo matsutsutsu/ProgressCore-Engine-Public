@@ -10,7 +10,7 @@ class PlayerDashSystem : public CCL::ECS::IfSystem<
     CCL::ECS::Write<CharacterMovementInputComponent>,
     CCL::ECS::Write<DashComponent>,
     CCL::ECS::Read<TransformComponent>,
-    CCL::ECS::Read<TimeStateComponent>>
+    CCL::ECS::Write<TimeStateComponent>>
 {
 public:
     PlayerDashSystem() : IfSystem("PlayerDashSystem") {}

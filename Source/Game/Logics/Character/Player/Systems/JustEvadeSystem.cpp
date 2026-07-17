@@ -50,6 +50,20 @@ void JustEvadeSystem::Initialize()
         timeContext.globalHitStopTimer = 0.5f;
 
         // =======================================================
+        //  1.5 接近（ジャスト回避の近道）の起動
+        //      現在のダッシュを終了し、「殴れる位置に着くための接近時間」へ移行する。
+        //      実際の移動と時計の打ち消しは PlayerDashSystem が毎フレーム駆動する。
+        // =======================================================
+        if (auto *dash = _world->GetComponent<DashComponent>(ev.playerID))
+        {
+            dash->isDashing               = false; // 回避ダッシュを終了して接近へ
+            dash->isJustEvadeWindowActive = false;
+            dash->isInvincible            = true;  // 接近中もスロー中の群れをすり抜けられるよう無敵
+            dash->isApproaching           = true;
+            dash->approachTimer           = dash->approachDuration;
+        }
+
+        // =======================================================
         //  2. アニメーションを「ジャスト回避専用モーション」へ強制遷移
         // =======================================================
         if (auto *animParams = _world->GetComponent<AnimParametersComponent>(ev.playerID))
