@@ -9,7 +9,7 @@
 // ===========================================================================
 // OverdriveComponent メタデータ定義（Combat カテゴリ）
 // ===========================================================================
-COMPONENT_META_BEGIN_FULL(OverdriveComponent, "Overdrive (オーバードライブ)", CCL::Categories::Combat, 160, false)
+COMPONENT_META_BEGIN_FULL(OverdriveComponent, "Overdrive", CCL::Categories::Combat, 160, false)
     CFIELD_FLOAT_RANGED(maxGauge,        "Max Gauge",          1.0f,   1.0f, 1000.0f, "Gauge")
     CFIELD_FLOAT_RANGED(gainOnJustEvade, "Gain: Just Evade",   0.5f,   0.0f, 200.0f,  "Gauge")
     CFIELD_FLOAT_RANGED(gainOnDash,      "Gain: Dash (救済)",  0.1f,   0.0f, 100.0f,  "Gauge")

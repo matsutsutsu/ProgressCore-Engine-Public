@@ -112,7 +112,7 @@ REGISTER_COMPONENT_EDITOR_GUI(BossCommandComponent)
 template <> struct ComponentMeta<DroneComponent> {
     CCL_META_USING_THIS(DroneComponent)
 
-    static constexpr const char *displayName    = "Drone (ドローン)";
+    static constexpr const char *displayName    = "Drone";
     static constexpr const char *category       = CCL::Categories::AI; // ★追加
     static constexpr int         sortPriority   = 170; // ★追加
     static constexpr bool        hiddenInInspector = false;

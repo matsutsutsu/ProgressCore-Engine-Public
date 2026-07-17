@@ -87,7 +87,7 @@
                     "rimStrength": 0.0,
                     "start": 40.0
                 },
-                "Just Evade Effect (ジャスト回避演出)": {
+                "Just Evade Effect": {
                     "attackTime": 0.029999999329447746,
                     "chromaPeak": 0.019999999552965164,
                     "duration": 0.5,
@@ -116,7 +116,7 @@
                     "maxDistance": 50.0,
                     "radius": 0.5
                 },
-                "Screen Impact (命中演出)": {
+                "Screen Impact": {
                     "chromaticStrength": 0.012000000104308128,
                     "duration": 0.2199999988079071,
                     "radialStrength": 0.3499999940395355,

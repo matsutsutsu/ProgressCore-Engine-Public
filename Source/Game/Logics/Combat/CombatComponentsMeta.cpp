@@ -45,7 +45,7 @@ COMPONENT_META_END(HurtboxComponent)
 template <> struct ComponentMeta<BoneAttachmentComponent> {
     CCL_META_USING_THIS(BoneAttachmentComponent)
 
-    static constexpr const char* displayName    = "Bone Attachment (ボーン追従)";
+    static constexpr const char* displayName    = "Bone Attachment";
     static constexpr const char* category       = CCL::Categories::Hierarchy; // ★追加
     static constexpr int         sortPriority   = 5; // ★追加: Transformの直後にする
     static constexpr bool        hasCustomGui   = true;
@@ -182,7 +182,7 @@ namespace ComponentMetaJson {
 // 3. CombatRosterComponent
 // ===================================================================
 template <> struct ComponentMeta<CombatRosterComponent> {
-    static constexpr const char* displayName    = "Combat Roster (部位名簿)";
+    static constexpr const char* displayName    = "Combat Roster";
     static constexpr const char* category       = CCL::Categories::Combat; // ★追加
     static constexpr int         sortPriority   = 175; // ★追加
     static constexpr bool        hasCustomGui   = true;
@@ -295,7 +295,7 @@ REGISTER_COMPONENT_EDITOR_GUI(CombatRosterComponent)
 // 4. DamageEventComponent (非保存タグ)
 // ===================================================================
 template <> struct ComponentMeta<DamageEventComponent> {
-    static constexpr const char* displayName    = "Damage Event (一時データ)";
+    static constexpr const char* displayName    = "Damage Event";
     static constexpr const char* category       = CCL::Categories::Internal; // ★追加
     static constexpr int         sortPriority   = 900; // ★追加
     static constexpr bool        hasCustomGui   = false;
@@ -313,7 +313,7 @@ REGISTER_COMPONENT_EDITOR_GUI(DamageEventComponent)
 // 4-2. HitboxLifetimeComponent (生成型Hitboxの寿命・非保存タグ)
 // ===================================================================
 template <> struct ComponentMeta<HitboxLifetimeComponent> {
-    static constexpr const char* displayName       = "Hitbox Lifetime (一時データ)";
+    static constexpr const char* displayName       = "Hitbox Lifetime";
     static constexpr const char* category          = CCL::Categories::Internal;
     static constexpr int         sortPriority       = 901;
     static constexpr bool        hasCustomGui       = false;
@@ -332,7 +332,7 @@ REGISTER_COMPONENT_EDITOR_GUI(HitboxLifetimeComponent)
 // 5. HealthComponent
 // ===================================================================
 template <> struct ComponentMeta<HealthComponent> {
-    static constexpr const char* displayName    = "Health (体力・陣営)";
+    static constexpr const char* displayName    = "Health";
     static constexpr const char* category       = CCL::Categories::Gameplay; // ★追加
     static constexpr int         sortPriority   = 100; // ★追加
     static constexpr bool        hasCustomGui   = true;

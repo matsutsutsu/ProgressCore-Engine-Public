@@ -91,7 +91,7 @@
                 "Name": {
                     "name": "Player"
                 },
-                "Overdrive (オーバードライブ)": {
+                "Overdrive": {
                     "currentGauge": 0.0,
                     "duration": 6.0,
                     "enemyTimeScale": 0.3499999940395355,

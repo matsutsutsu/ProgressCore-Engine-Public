@@ -10,6 +10,6 @@
 // ===========================================================================
 // KnockbackComponent メタデータ定義（Movement カテゴリ）
 // ===========================================================================
-COMPONENT_META_BEGIN_FULL(KnockbackComponent, "Knockback (ノックバック)", CCL::Categories::Movement, 155, false)
+COMPONENT_META_BEGIN_FULL(KnockbackComponent, "Knockback", CCL::Categories::Movement, 155, false)
     CFIELD_FLOAT_RANGED(duration, "Duration (s)", 0.005f, 0.0f, 2.0f, "Knockback")
 COMPONENT_META_END(KnockbackComponent)

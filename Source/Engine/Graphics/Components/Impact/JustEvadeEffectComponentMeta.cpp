@@ -21,7 +21,7 @@ using json = nlohmann::json;
 // JustEvadeEffectComponent（Effect カテゴリ。シーンに singleton で1つ置く）
 //   style は3種の色味を切り替えるドロップダウン（見比べ確認用）。
 // ===========================================================================
-COMPONENT_META_BEGIN_FULL(JustEvadeEffectComponent, "Just Evade Effect (ジャスト回避演出)", CCL::Categories::Effect, 186, false)
+COMPONENT_META_BEGIN_FULL(JustEvadeEffectComponent, "Just Evade Effect", CCL::Categories::Effect, 186, false)
     CFIELD_ENUM_U8(style,        "Color Style",      JustEvadeStyleNames, JustEvadeStyleCount, "Style")
     CFIELD_FLOAT_RANGED(duration,     "Duration (s)",       0.005f, 0.0f, 2.0f,  "Envelope")
     CFIELD_FLOAT_RANGED(attackTime,   "Attack (s)",         0.005f, 0.0f, 0.5f,  "Envelope")

@@ -91,7 +91,7 @@
                 "Just Evade Component": {
                     "isJustSuccess": false
                 },
-                "Knockback (ノックバック)": {
+                "Knockback": {
                     "duration": 0.18000000715255737
                 },
                 "Material": null,
