@@ -15,6 +15,18 @@
 #include <cctype>
 #include <tracy/Tracy.hpp>
 
+// ヘルパー関数：大文字小文字を無視した部分一致。
+//   ロード時に「Root/Pelvis/Hips 系ボーンか」を一度だけ判定するために使う。
+//   ※ 旧実装はこの判定を ComputeAnimation 内で骨ごと・毎フレーム実行しており、
+//     std::string のヒープ確保が積み重なって処理落ちの主要因になっていた。
+static bool ContainsCI(const std::string &name, const char *needle)
+{
+    std::string lower = name;
+    std::transform(lower.begin(), lower.end(), lower.begin(),
+        [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    return lower.find(needle) != std::string::npos;
+}
+
 // ヘルパー関数：キーフレームの二分探索と補間率の計算
 template <typename T>
 void EvaluateKeyframes(const std::vector<T> &keyframes, float time, float &outRate, const T *&outK0, const T *&outK1)
@@ -102,6 +114,13 @@ Model::Model(ID3D11Device *device, const char *filename, float sampleRate)
         dst.position = src.translate;
         dst.rotation = src.rotate;
         dst.scale    = src.scale;
+
+        // ★ 位置リターゲット対象フラグをここで一度だけ確定（毎フレームの文字列判定を廃止）。
+        //   index 0（ルート）と Pelvis/Hips/Root 系ボーンだけがアニメの位置移動をそのまま使う。
+        dst.isRootOrPelvis = (i == 0) ||
+                             ContainsCI(src.name, "pelvis") ||
+                             ContainsCI(src.name, "hips") ||
+                             ContainsCI(src.name, "root");
 
         dst.children.clear();
 
@@ -258,7 +277,7 @@ Model::Model(ID3D11Device *device, const char *filename, float sampleRate)
     UpdateTransform(worldTransform);
 }
 
-// アニメーションインデックス取得
+// アニメーションインデックス取得（名前→indexをハッシュ表でO(1)取得）
 int Model::GetAnimationIndex(const char *name) const
 {
     if (!resource.IsValid())
@@ -266,16 +285,22 @@ int Model::GetAnimationIndex(const char *name) const
         return -1;
     } // IsValidに変更
 
-    const auto &animations = ResourceManager::Instance().GetModel(resource)->GetAnimations();
-
-    for (size_t animationIndex = 0; animationIndex < animations.size(); ++animationIndex)
+    // 初回だけ名前→indexの表を構築する（ロード後は不変なので以降は再利用）。
+    if (!_animIndexBuilt)
     {
-        if (animations.at(animationIndex).name == name)
+        const auto &animations = ResourceManager::Instance().GetModel(resource)->GetAnimations();
+        _animIndexCache.clear();
+        _animIndexCache.reserve(animations.size());
+        for (size_t i = 0; i < animations.size(); ++i)
         {
-            return static_cast<int>(animationIndex);
+            // 名前衝突時は先勝ち（従来の線形探索と同じ「最初に一致したもの」を維持）。
+            _animIndexCache.emplace(CCL::Utils::HashString(animations[i].name), static_cast<int>(i));
         }
+        _animIndexBuilt = true;
     }
-    return -1;
+
+    auto it = _animIndexCache.find(CCL::Utils::HashString(name));
+    return (it != _animIndexCache.end()) ? it->second : -1;
 }
 
 // ノードインデックス取得
@@ -296,21 +321,8 @@ void Model::UpdateTransform(const DirectX::XMFLOAT4X4 &worldTransform)
 {
     DirectX::XMMATRIX ParentWorldTransform = DirectX::XMLoadFloat4x4(&worldTransform);
 
-    const std::vector<ModelResource::Node> &resNodes = ResourceManager::Instance().GetModel(resource)->GetNodes();
-
-    int index = 0;
     for (Node &node : nodes)
     {
-        const ModelResource::Node &n = resNodes[index];
-        if (node.rotation.x != n.rotate.x ||
-            node.rotation.y != n.rotate.y ||
-            node.rotation.z != n.rotate.z ||
-            node.rotation.w != n.rotate.w)
-        {
-            int a = 0;
-        }
-        index++;
-
         // ローカル行列算出
         DirectX::XMMATRIX S              = DirectX::XMMatrixScaling(node.scale.x, node.scale.y, node.scale.z);
         DirectX::XMMATRIX R              = DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&node.rotation));
@@ -339,15 +351,13 @@ void Model::UpdateTransform(const DirectX::XMFLOAT4X4 &worldTransform)
     }
 }
 
-void Model::ComputeAnimation(int animationIndex, int nodeIndex, float time, NodePose &nodePose) const
+// 単一ノードのポーズ評価の実体（取得済みの Animation を受け取る内部ヘルパー）。
+//   ResourceManager 取得を含めないことで、vector 版がノード数ぶん引き直す無駄を無くす。
+void Model::ComputeNodePose(const ModelResource::Animation &animation, int nodeIndex, float time, NodePose &nodePose) const
 {
-    ZoneScopedN("Model::ComputeAnimation");
+    ZoneScopedN("Model::ComputeNodePose");
 
-    if (!resource.IsValid()) return;
-
-    const auto                     &animations = ResourceManager::Instance().GetModel(resource)->GetAnimations();
-    const ModelResource::Animation &animation  = animations.at(animationIndex);
-    const ModelResource::NodeAnim  &nodeAnim   = animation.nodeAnims.at(nodeIndex);
+    const ModelResource::NodeAnim &nodeAnim = animation.nodeAnims.at(nodeIndex);
 
     // デフォルト値として、モデルの本来のバインドポーズ（初期姿勢）を設定しておく
     // これによりアニメーションデータが存在しないチャンネルが0リセットされるのを防ぐ
@@ -369,25 +379,11 @@ void Model::ComputeAnimation(int animationIndex, int nodeIndex, float time, Node
         DirectX::XMStoreFloat3(&nodePose.position, V);
     }
 
-    // ★ Translation Retargeting の実装（プロポーション崩壊対策）
-    // Root(0) と Pelvis/Hips 系ボーン以外は、アニメーションの位置移動を無視して
-    // モデル本来の骨の長さ(bindNode.position)を強制的に上書き適用する。
-    // ※ 以前は "Pelvis"/"root" と完全一致するボーン名しか対象にしておらず、
-    //   リグの命名規則（例: "Hips", "mixamorig:Hips", "Bip01_Pelvis" 等）が
-    //   これと違うだけで腰の上下動チャンネルがまるごと握りつぶされ、
-    //   「膝は曲がるのに腰だけ動かず脚が地面に届かない(浮いて見える)」不具合の
-    //   直接原因になっていた。大文字小文字を無視した部分一致に緩和する。
-    auto containsCI = [](const std::string &name, const char *needle) {
-        std::string lower = name;
-        std::transform(lower.begin(), lower.end(), lower.begin(),
-            [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-        return lower.find(needle) != std::string::npos;
-    };
-    bool isRootOrPelvis = (nodeIndex == 0) ||
-                          containsCI(bindNode.name, "pelvis") ||
-                          containsCI(bindNode.name, "hips") ||
-                          containsCI(bindNode.name, "root");
-    if (!isRootOrPelvis)
+    // ★ Translation Retargeting（プロポーション崩壊対策）。
+    //   Root/Pelvis/Hips 系以外は、アニメの位置移動を無視してモデル本来の骨の長さ
+    //   (bindNode.position)で上書きする。対象かどうかはロード時に確定した isRootOrPelvis を
+    //   見るだけ（旧実装はここで骨名を毎フレーム小文字化＋部分一致しており処理落ちの主因だった）。
+    if (!bindNode.isRootOrPelvis)
     {
         nodePose.position = bindNode.position;
     }
@@ -415,16 +411,35 @@ void Model::ComputeAnimation(int animationIndex, int nodeIndex, float time, Node
     }
 }
 
-// アニメーション計算
+void Model::ComputeAnimation(int animationIndex, int nodeIndex, float time, NodePose &nodePose) const
+{
+    ZoneScopedN("Model::ComputeAnimation");
+
+    if (!resource.IsValid()) return;
+
+    const auto &animations = ResourceManager::Instance().GetModel(resource)->GetAnimations();
+    ComputeNodePose(animations.at(animationIndex), nodeIndex, time, nodePose);
+}
+
+// アニメーション計算（全ノード）
 void Model::ComputeAnimation(int animationIndex, float time, std::vector<NodePose> &nodePoses) const
 {
+    ZoneScopedN("Model::ComputeAnimation");
+
+    if (!resource.IsValid()) return;
+
     if (nodePoses.size() != nodes.size())
     {
         nodePoses.resize(nodes.size());
     }
+
+    // ★ ResourceManager 取得と Animation 参照はループ外で1回だけ（旧実装はノード数ぶん引き直していた）。
+    const auto                     &animations = ResourceManager::Instance().GetModel(resource)->GetAnimations();
+    const ModelResource::Animation &animation  = animations.at(animationIndex);
+
     for (size_t nodeIndex = 0; nodeIndex < nodePoses.size(); ++nodeIndex)
     {
-        ComputeAnimation(animationIndex, static_cast<int>(nodeIndex), time, nodePoses.at(nodeIndex));
+        ComputeNodePose(animation, static_cast<int>(nodeIndex), time, nodePoses.at(nodeIndex));
     }
 }
 
@@ -618,6 +633,7 @@ std::shared_ptr<Model> Model::CreateFromData(ID3D11Device *device,
     model->nodes[0].position = {0, 0, 0};
     model->nodes[0].scale    = {1, 1, 1};
     model->nodes[0].rotation = {0, 0, 0, 1};
+    model->nodes[0].isRootOrPelvis = true; // index0=ルート。通常ロードのフラグ計算と整合させる
 
     // --- Materialの同期 ---
     model->materials.resize(1);
@@ -779,4 +795,22 @@ int Model::FindRealRootMotionNodeIndex(int animIndex) const
     _rootMotionNodeCache[(size_t)animIndex] = result;
 
     return result;
+}
+
+const Model::NodePose &Model::GetPinnedPoseAtZero(int animIndex, int nodeIndex) const
+{
+    ZoneScopedN("Model::GetPinnedPoseAtZero");
+
+    // (animIndex, nodeIndex) を 1キーに畳み込む（どちらも非負の前提）。
+    const uint64_t key = (static_cast<uint64_t>(static_cast<uint32_t>(animIndex)) << 32) |
+                         static_cast<uint32_t>(nodeIndex);
+
+    auto it = _pinnedPoseAtZeroCache.find(key);
+    if (it != _pinnedPoseAtZeroCache.end())
+        return it->second; // キャッシュヒット：0秒ポーズを再計算せず返す
+
+    // 初回のみ 0秒時点のポーズを計算して格納（以降は不変なので再利用）。
+    NodePose pose;
+    ComputeAnimation(animIndex, nodeIndex, 0.0f, pose);
+    return _pinnedPoseAtZeroCache.emplace(key, pose).first->second;
 }

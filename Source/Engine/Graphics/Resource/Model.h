@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <cstdint>
+#include <unordered_map>
 
 #include "MaterialData.h"
 #include "ResourcePool.h"
@@ -35,6 +37,13 @@ class Model
         Node *parent = nullptr;
         // 子ノード
         std::vector<Node *> children;
+
+        // ★ 位置リターゲット対象フラグ（ロード時に一度だけ確定する静的な性質）。
+        //   true  = Root / Pelvis / Hips 系。アニメーションの位置移動をそのまま使う。
+        //   false = それ以外。位置はバインドポーズ(骨の長さ)で上書きしプロポーション崩壊を防ぐ。
+        //   骨名で決まり実行中に変化しないため、毎フレーム文字列判定するのは無駄。
+        //   ここへ焼き込み、ComputeAnimation ではこのフラグを見るだけにする。
+        bool isRootOrPelvis = false;
     };
 
     struct Material
@@ -112,6 +121,13 @@ class Model
     void ComputeAnimation(int animationIndex, int nodeIndex, float time, NodePose &nodePose) const;
     void ComputeAnimation(int animationIndex, float time, std::vector<NodePose> &nodePoses) const;
 
+  private:
+    // 単一ノードのポーズ評価の実体。既に取得済みの Animation を受け取ることで、
+    // vector 版がノード数ぶん ResourceManager を引き直す無駄を無くす（呼び出し側で1回だけ取得する）。
+    void ComputeNodePose(const ModelResource::Animation &animation, int nodeIndex, float time, NodePose &nodePose) const;
+
+  public:
+
     // ノードポーズ設定
     void SetNodePoses(const std::vector<NodePose> &nodePoses);
 
@@ -152,6 +168,11 @@ class Model
     // アニメーションデータの中で、実際に大きく移動している真のルートボーンを自動特定する
     int FindRealRootMotionNodeIndex(int animIndex) const;
 
+    // 指定クリップの「0秒時点」における指定ノードのポーズを返す（キャッシュ付き）。
+    //   ルートモーションのピン留め基準（前進量を殺すための0秒姿勢）は毎フレーム不変なので、
+    //   初回だけ ComputeAnimation で計算し、以降は再利用してホットパスの再計算を消す。
+    const NodePose &GetPinnedPoseAtZero(int animIndex, int nodeIndex) const;
+
   private:
     // shared_ptrで持つことで、外部に配ってもデータは消えない
     std::vector<Material> materials;
@@ -181,4 +202,21 @@ class Model
     //   const 関数から書き込むため mutable。
     // ---------------------------------------------------------------
     mutable std::vector<int> _rootMotionNodeCache;
+
+    // ---------------------------------------------------------------
+    // ★ アニメ名 → インデックスのキャッシュ。
+    //   GetAnimationIndex は毎フレーム（ブレンド時は2回）呼ばれるが、旧実装は
+    //   全アニメを std::string 比較で線形走査していた。名前とインデックスの対応は
+    //   ロード後は不変なので、FNV-1a ハッシュ(HashString)をキーに一度だけ表を作り O(1) 化する。
+    //   初回 GetAnimationIndex 呼び出しで遅延構築する（_animIndexBuilt が番兵）。
+    // ---------------------------------------------------------------
+    mutable std::unordered_map<uint32_t, int> _animIndexCache;
+    mutable bool                              _animIndexBuilt = false;
+
+    // ---------------------------------------------------------------
+    // ★ ルートモーションのピン留め用「0秒ポーズ」キャッシュ。
+    //   キーは (animIndex, nodeIndex) を 1つの 64bit に詰めたもの。
+    //   0秒時点の姿勢はクリップ不変なので、初回計算後は再利用する。
+    // ---------------------------------------------------------------
+    mutable std::unordered_map<uint64_t, NodePose> _pinnedPoseAtZeroCache;
 };

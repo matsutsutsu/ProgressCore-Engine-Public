@@ -143,8 +143,8 @@ void PinRootMotionNode(Model *model, int animIndex, int rootNodeIndex,
     if (!model || rootNodeIndex < 0 || rootNodeIndex >= (int)poseBuffer.size())
         return;
 
-    Model::NodePose initPose;
-    model->ComputeAnimation(animIndex, rootNodeIndex, 0.0f, initPose);
+    // 0秒ポーズ（前進量を殺すためのXZ基準）はクリップ不変。キャッシュから取得して毎フレーム再計算を避ける。
+    const Model::NodePose &initPose = model->GetPinnedPoseAtZero(animIndex, rootNodeIndex);
     poseBuffer[rootNodeIndex].position.x = initPose.position.x;
     poseBuffer[rootNodeIndex].position.z = initPose.position.z;
 
