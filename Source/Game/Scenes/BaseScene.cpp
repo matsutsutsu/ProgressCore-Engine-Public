@@ -59,7 +59,10 @@ void BaseScene::Initialize()
     cam->SetLookAt({ 0.0f, 10.0f, -10.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f });
 
     // ECSコンテキストの生成
-    _ecsContext = std::make_unique<CCL::ECS::ECSContext>();
+    {
+        ZoneScopedN("BaseScene: ECSContext create");
+        _ecsContext = std::make_unique<CCL::ECS::ECSContext>();
+    }
     _worldPtr   = _ecsContext->GetWorld(); // 互換性用
 
     // リソース登録
@@ -100,8 +103,11 @@ void BaseScene::Initialize()
     _worldPtr->AddResource<TimeContext>();
 
 
-    // システム登録 (派生クラスの処理が走る)
-    RegisterSystems();
+    // システム登録 (派生クラスの処理が走る)。全システムのインスタンス生成・登録がここで走る。
+    {
+        ZoneScopedN("BaseScene: RegisterSystems");
+        RegisterSystems();
+    }
 
 }
 

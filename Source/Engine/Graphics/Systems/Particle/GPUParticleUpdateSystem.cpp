@@ -13,6 +13,8 @@
 
 #include "Game/Utils/PooledParticleComponent.h"
 
+#include <tracy/Tracy.hpp>
+
 GPUParticleUpdateSystem::~GPUParticleUpdateSystem() = default;
 
 // =========================================================================
@@ -93,19 +95,29 @@ static GpuData::CbParticleDynamic BuildDynamicCb(
 // =========================================================================
 void GPUParticleUpdateSystem::InitializeParticle(ID3D11Device* device)
 {
+    ZoneScopedN("GPUParticle: InitializeParticle (first frame)");
+
     _device = device;
-    _computeShader = std::make_unique<ParticleComputeShader>(device);
+    {
+        ZoneScopedN("GPUParticle: ComputeShader compile");
+        _computeShader = std::make_unique<ParticleComputeShader>(device);
+    }
 
     D3D11_SAMPLER_DESC sd = {};
     sd.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
     sd.AddressU = sd.AddressV = sd.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
     device->CreateSamplerState(&sd, _sampler.GetAddressOf());
 
-    CreateNoiseTexture(device);
+    {
+        ZoneScopedN("GPUParticle: CreateNoiseTexture (32^3)");
+        CreateNoiseTexture(device);
+    }
 }
 
 void GPUParticleUpdateSystem::Update(float dt)
 {
+    ZoneScopedN("GPUParticleUpdateSystem::Update");
+
     if (!_isLoaded) {
         InitializeParticle(Graphics::Instance().GetDevice());
         _isLoaded = true;
@@ -114,7 +126,10 @@ void GPUParticleUpdateSystem::Update(float dt)
     ID3D11DeviceContext* dc = Graphics::Instance().GetDeviceContext();
     if (!dc || !_computeShader) return;
 
-    _computeShader->CheckAndReload(_device);
+    {
+        ZoneScopedN("GPUParticle: CheckAndReload (shader)");
+        _computeShader->CheckAndReload(_device);
+    }
     if (!_computeShader->GetInitCS() || !_computeShader->GetUpdateCS()) return;
 
     // CS の UAV バインド前に前フレームの SRV スロットを全解放
@@ -124,6 +139,7 @@ void GPUParticleUpdateSystem::Update(float dt)
     dc->PSSetShaderResources(0, 16, nullSRVs);
     dc->CSSetShaderResources(0, 16, nullSRVs);
 
+    ZoneNamedN(dispatchZone, "GPUParticle: Emitter dispatch loop", true);
     ForEachWithID([&](CCL::ECS::EntityID id,
         GPUParticleComponent& particle,
         const TransformComponent& transform,
@@ -155,6 +171,8 @@ void GPUParticleUpdateSystem::Update(float dt)
 // =========================================================================
 void GPUParticleUpdateSystem::RebuildParticleBuffer(GPUParticleComponent& particle)
 {
+    ZoneScopedN("GPUParticle: RebuildParticleBuffer (CreateBuffer)");
+
     if (particle.computeBuffer.IsValid()) {
         ResourceManager::Instance().UnloadParticleBuffer(particle.computeBuffer);
         particle.computeBuffer = ParticleBufferHandle{};
@@ -182,6 +200,8 @@ void GPUParticleUpdateSystem::DispatchInitCS(
     const TransformComponent& transform,
     GPUParticleBufferSet* buf)
 {
+    ZoneScopedN("GPUParticle: DispatchInitCS (first frame)");
+
     if (!cs || !buf) return;
 
     // Static CB: 初回は必ず upload (★ .Get() を追加)
@@ -231,6 +251,8 @@ void GPUParticleUpdateSystem::DispatchUpdateCS(
     GPUParticleBufferSet* buf,
     float dt)
 {
+    ZoneScopedN("GPUParticle: DispatchUpdateCS");
+
     if (!cs || !buf) return;
 
     particle.time += dt;

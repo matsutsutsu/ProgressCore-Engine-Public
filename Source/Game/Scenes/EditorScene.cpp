@@ -1,6 +1,7 @@
 #include "EditorScene.h"
 #include "Engine/Serialization/Factory/SceneInitializer.h"
 #include "Engine/Graphics/RHI/Graphics.h"
+#include "tracy/Tracy.hpp"
 
 #include "Engine/Serialization/Factory/Prefab.h"
 #include "Engine/Platform/Core/Logger.h"
@@ -14,14 +15,23 @@
 
 void EditorScene::Initialize()
 {
+    ZoneScopedN("EditorScene::Initialize");
+
     BaseScene::Initialize(); // 共通初期化
 
 
     ID3D11Device *device = Graphics::Instance().GetDevice();
-    SceneInitializer::SpawnLightStartSet(*_worldPtr, device);
+    {
+        ZoneScopedN("EditorScene: SpawnLightStartSet");
+        SceneInitializer::SpawnLightStartSet(*_worldPtr, device);
+    }
     //Prefab::SpawnPrefab(*_worldPtr, "Assets/Prefabs/Camera/FreeCamera.json");
 
-    SceneInitializer::SpawnGameTest(*_worldPtr, device);
+    // ★ 起動コストの主因候補：テスト用エンティティ（ドローン多数など）の一括生成。
+    {
+        ZoneScopedN("EditorScene: SpawnGameTest");
+        SceneInitializer::SpawnGameTest(*_worldPtr, device);
+    }
 
     //SceneManager::Instance().LoadScene(_worldPtr,"Assets/Scene/PlayerMovementScene.json");
 
@@ -39,9 +49,12 @@ void EditorScene::Initialize()
     //auto  enemyHandle = stReg.Register(EnemyAI::BuildEnemyAsset(enemyIds, 12.0f));
 
     // 司令官StateTreeアセットをJSONからロード（StateTreeWindowで組み立てたものがそのまま使われる）
-    CCL::AI::StateTreeDef commanderDef;
-    if (CCL::AI::StateTreeSerializer::LoadDef("Assets/AI/Commander.json", commanderDef))
-        stReg.Register(CCL::AI::StateTreeSerializer::Compile(commanderDef));
+    {
+        ZoneScopedN("EditorScene: StateTree load+compile");
+        CCL::AI::StateTreeDef commanderDef;
+        if (CCL::AI::StateTreeSerializer::LoadDef("Assets/AI/Commander.json", commanderDef))
+            stReg.Register(CCL::AI::StateTreeSerializer::Compile(commanderDef));
+    }
 
 
     // 敵AIが受け取るシーン全体の情報が入った共有のリソースを登録

@@ -61,25 +61,39 @@ Framework::Framework(HWND hWnd)
 
 
 	// ★ 最初にLoggerをセットアップ (他システムが起動時に CCL_LOG を呼ぶため)
-	Logger::Instance().AddSink(std::make_shared<DebugStreamSink>());
-	Logger::Instance().AddSink(std::make_shared<FileSink>(
-		"Build/Logs/Engine.log", 10ull * 1024 * 1024, 3));
-	m_consoleLogSink = std::make_shared<ImGuiBufferSink>(2000);
-	Logger::Instance().AddSink(m_consoleLogSink);
-
+	{
+		ZoneScopedN("Init: Logger");
+		Logger::Instance().AddSink(std::make_shared<DebugStreamSink>());
+		Logger::Instance().AddSink(std::make_shared<FileSink>(
+			"Build/Logs/Engine.log", 10ull * 1024 * 1024, 3));
+		m_consoleLogSink = std::make_shared<ImGuiBufferSink>(2000);
+		Logger::Instance().AddSink(m_consoleLogSink);
+	}
 
 	// グラフィックス初期化
-	Graphics::Instance().Initialize(hWnd);
+	{
+		ZoneScopedN("Init: Graphics");
+		Graphics::Instance().Initialize(hWnd);
+	}
 #ifdef ENABLE_EDITOR
 	// IMGUI初期化
-	ImGuiRenderer::Initialize(hWnd, Graphics::Instance().GetDevice(), Graphics::Instance().GetDeviceContext());
+	{
+		ZoneScopedN("Init: ImGuiRenderer");
+		ImGuiRenderer::Initialize(hWnd, Graphics::Instance().GetDevice(), Graphics::Instance().GetDeviceContext());
+	}
 #endif
 	// ★ FileDialog を一括初期化
 	//    プリセット登録 + 前回の履歴ロードがここで完結する
-	FileDialog::Initialize();
+	{
+		ZoneScopedN("Init: FileDialog");
+		FileDialog::Initialize();
+	}
 
 	// Input 初期化
-	Input::Instance().Initialize(hWnd);
+	{
+		ZoneScopedN("Init: Input");
+		Input::Instance().Initialize(hWnd);
+	}
 
 
 	// =========================================================
@@ -87,30 +101,45 @@ Framework::Framework(HWND hWnd)
 	// =========================================================
 	auto& services = EngineServices::Instance();
 
-	services.inputFacade = std::make_shared<InputFacade>(&Input::Instance());
-	services.inputFacade->LoadConfig("Assets/Config/InputConfig.json");
+	{
+		ZoneScopedN("Init: InputFacade + LoadConfig");
+		services.inputFacade = std::make_shared<InputFacade>(&Input::Instance());
+		services.inputFacade->LoadConfig("Assets/Config/InputConfig.json");
+	}
 
-	services.audioManager = std::make_shared<FmodAudioManager>();
-	services.audioManager->Initialize();
-	services.audioManager->LoadConfig("Assets/Config/AudioConfig.json");
+	{
+		ZoneScopedN("Init: Audio (Fmod) + LoadConfig");
+		services.audioManager = std::make_shared<FmodAudioManager>();
+		services.audioManager->Initialize();
+		services.audioManager->LoadConfig("Assets/Config/AudioConfig.json");
+	}
 
-	services.physicsManager = std::make_shared<JoltPhysicsManager>();
-	services.physicsManager->Initialize();
+	{
+		ZoneScopedN("Init: Physics (Jolt)");
+		services.physicsManager = std::make_shared<JoltPhysicsManager>();
+		services.physicsManager->Initialize();
+	}
 
 
-	// シーンマネージャー初期化
-	SceneManager::Instance().Initialize();	
+	// シーンマネージャー初期化（この中で最初のシーン生成予約まで行う）
+	{
+		ZoneScopedN("Init: SceneManager");
+		SceneManager::Instance().Initialize();
+	}
 
 #ifdef ENABLE_EDITOR
 	// エディタの初期化をフレームワーク層で行う
-	m_editorWindowManager = std::make_unique<EditorWindowManager>();
-	m_editorWindowManager->Initialize();
-	// 2. 状態の復元 
-	m_editorWindowManager->LoadLayout("Build/User/WindowLayout.json");
+	{
+		ZoneScopedN("Init: EditorWindowManager + LoadLayout");
+		m_editorWindowManager = std::make_unique<EditorWindowManager>();
+		m_editorWindowManager->Initialize();
+		// 2. 状態の復元
+		m_editorWindowManager->LoadLayout("Build/User/WindowLayout.json");
 
-	// ConsoleWindow に Sink を渡す
-	if (auto* console = m_editorWindowManager->GetWindow<ConsoleWindow>())
-		console->SetBufferSink(m_consoleLogSink);
+		// ConsoleWindow に Sink を渡す
+		if (auto* console = m_editorWindowManager->GetWindow<ConsoleWindow>())
+			console->SetBufferSink(m_consoleLogSink);
+	}
 #endif
 
 }

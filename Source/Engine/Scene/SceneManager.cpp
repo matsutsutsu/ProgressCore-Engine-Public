@@ -31,6 +31,8 @@ using namespace CCL::ECS::Core;
 //初期化
 void SceneManager::Initialize()
 {
+	ZoneScopedN("SceneManager::Initialize");
+
 	//シーン登録
 	//SceneFactory::Instance().Register("ModelViewer", []() { return new ModelViewerScene(); });
 	SceneFactory::Instance().Register("Editor", []() { return new EditorScene(); });
@@ -38,7 +40,7 @@ void SceneManager::Initialize()
 	SceneFactory::Instance().Register("Particle", []() { return new ParticleScene(); });
 
 
-	// 最初に表示するシーン
+	// 最初に表示するシーン（生成予約のみ。実体の重い初期化は初回 Update で走る）
 	ChangeScene("Editor");
 	//ChangeScene("Particle");
 }
@@ -56,9 +58,13 @@ void SceneManager::FixedUpdate(float fixedTime)
 //更新処理
 void SceneManager::Update(float elapsedTime)
 {
+	ZoneScopedN("SceneManager::Update");
 
 	if (nextScene != nullptr)
 	{
+		// ★ シーン切替フレーム（起動直後もここ）。重い初期化が集中するので個別に計測する。
+		ZoneScopedN("SceneManager: Scene Switch");
+
 		//古いシーンを終了処理
 		Clear();
 
@@ -71,16 +77,22 @@ void SceneManager::Update(float elapsedTime)
         // もし SceneLoading を経由して既に行われていれば、IsReady() が true
         // なのでスキップされる
         if (!currentScene->IsReady()) {
-            currentScene->Initialize();
+            {
+                ZoneScopedN("Scene::Initialize (heavy load)");
+                currentScene->Initialize();
+            }
 
 			// 終わった瞬間にマネージャーが責任を持ってフラグを立てる
             currentScene->SetReady();
         }
 
-		// 【2段階目】: GPUへのセットアップ (Start) 
+		// 【2段階目】: GPUへのセットアップ (Start)
         // これは絶対にメインスレッドのこのタイミングで1回だけ呼ばれる。
         // dc->Map や UIManager の dc へのバインド等はここで行う。
-        currentScene->Start();
+        {
+            ZoneScopedN("Scene::Start (GPU setup)");
+            currentScene->Start();
+        }
 	}
 
 	if (currentScene != nullptr)

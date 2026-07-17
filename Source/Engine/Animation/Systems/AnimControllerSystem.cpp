@@ -6,6 +6,7 @@
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Animation/Core/AnimGraphSerializer.h"
 #include "Engine/Platform/Core/Logger.h"
+#include <tracy/Tracy.hpp>
 
 // ===========================================================================
 // 超速化: ビットマスクによるキャンセルウィンドウの評価
@@ -41,6 +42,8 @@ static bool IsInCancelWindow(const AnimatorComponent &animator, uint32_t require
 ///          ResourceManager（共有シングルトン）・ファイルI/Oを完全に排除してレースを防ぐ。
 void AnimControllerSystem::Update(float dt)
 {
+    ZoneScopedN("AnimControllerSystem::Update");
+
     auto &resourceManager = ResourceManager::Instance();
 
     // =====================================================================
@@ -60,6 +63,10 @@ void AnimControllerSystem::Update(float dt)
         // 未ロードのグラフのみ処理（ロード済み or パス未設定なら即 return）
         if (!fsm.internalGraph.states.empty() || fsm.graphPath.empty())
             return;
+
+        // ここに来るのは初回のみ（グラフJSONロード＋シーケンス/カーブのディスクロード）。
+        // 起動直後は全キャラ分がこのフレームに集中するため、初回スパイクの正体はここ。
+        ZoneScopedN("AnimCtrl: LoadGraph+Bind (first frame)");
 
         if (!AnimGraphSerializer::LoadFromJSON(fsm.internalGraph, fsm.graphPath, {}))
         {
