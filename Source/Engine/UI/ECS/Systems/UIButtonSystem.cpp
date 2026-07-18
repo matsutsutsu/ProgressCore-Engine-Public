@@ -9,6 +9,7 @@
 #include "Engine/Platform/Core/Logger.h"
 
 #include "Engine/UI/ECS/UIEvents.h"
+#include "Engine/UI/ECS/Components/UIAnimationComponent.h"
 
 using namespace CCL::ECS;
 
@@ -26,6 +27,13 @@ void UIButtonSystem::Update(float /*dt*/)
             img.color = btn.hoverColor;
         else
             img.color = btn.normalColor;
+
+        // hover/focus で拡大演出（UIAnimationComponent があれば目標スケールを設定）。
+        if (auto *anim = _world->GetComponent<UIAnimationComponent>(id))
+        {
+            const bool hot     = inter.interactable && (inter.isHovered || inter.isFocused);
+            anim->targetScale  = hot ? btn.hoverScale : 1.0f;
+        }
 
         // クリック成立でイベント発火（ゲーム側がハッシュで分岐）
         if (inter.clicked)

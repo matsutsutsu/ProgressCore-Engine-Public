@@ -120,9 +120,6 @@
     <Filter Include="Source\Engine\Core\Time">
       <UniqueIdentifier>{ab497727-165d-4680-b87c-970d32a4b362}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\UI\Widgets">
-      <UniqueIdentifier>{13ca0c60-1e37-4955-a35a-3f3eb232a4f9}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\UI\ECS">
       <UniqueIdentifier>{7a1b2c3d-4e5f-4a6b-8c9d-0e1f2a3b4c5d}</UniqueIdentifier>
     </Filter>
@@ -819,12 +816,6 @@
     <ClInclude Include="Source\Game\Core\AllComponents.h">
       <Filter>Source\Game\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\UI\UIContext.h">
-      <Filter>Source\Engine\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\UI\UIElement.h">
-      <Filter>Source\Engine\UI</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\UI\ECS\Components\UITransformComponent.h">
       <Filter>Source\Engine\UI\ECS\Components</Filter>
     </ClInclude>
@@ -876,20 +867,14 @@
     <ClInclude Include="Source\Game\UI\OverdriveHudSystem.h">
       <Filter>Source\Game\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\UI\UIManager.h">
-      <Filter>Source\Engine\UI</Filter>
+    <ClInclude Include="Source\Engine\UI\ECS\Components\UIAnimationComponent.h">
+      <Filter>Source\Engine\UI\ECS\Components</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\UI\Widgets\SimpleButton.h">
-      <Filter>Source\Engine\UI\Widgets</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\UI\Widgets\UIProgressBar.h">
-      <Filter>Source\Engine\UI\Widgets</Filter>
+    <ClInclude Include="Source\Engine\UI\ECS\Systems\UIAnimationSystem.h">
+      <Filter>Source\Engine\UI\ECS\Systems</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\UI\ImGui\ImGuiThemes.h">
       <Filter>Source\Engine\UI\ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\UI\Widgets\UIText.h">
-      <Filter>Source\Engine\UI\Widgets</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Math\StringHash.h">
       <Filter>Source\Engine\Core\Math</Filter>
@@ -2192,9 +2177,6 @@
     <ClCompile Include="Source\Game\Scenes\ParticleScene.cpp">
       <Filter>Source\Game\Scenes\HokaScene</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\UI\UIElement.cpp">
-      <Filter>Source\Engine\UI</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\UI\ECS\Components\UIComponentsMeta.cpp">
       <Filter>Source\Engine\UI\ECS\Components</Filter>
     </ClCompile>
@@ -2222,8 +2204,8 @@
     <ClCompile Include="Source\Game\UI\OverdriveHudSystem.cpp">
       <Filter>Source\Game\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\UI\UIManager.cpp">
-      <Filter>Source\Engine\UI</Filter>
+    <ClCompile Include="Source\Engine\UI\ECS\Systems\UIAnimationSystem.cpp">
+      <Filter>Source\Engine\UI\ECS\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\UI\ImGui\ImGuiThemes.cpp">
       <Filter>Source\Engine\UI\ImGui</Filter>

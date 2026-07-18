@@ -16,5 +16,7 @@ struct UIButtonComponent
     DirectX::XMFLOAT4 pressedColor  = {0.15f, 0.18f, 0.26f, 1.0f};
     DirectX::XMFLOAT4 disabledColor = {0.20f, 0.20f, 0.22f, 0.5f};
 
+    float hoverScale = 1.08f; ///< hover/focus 時の拡大率（UIAnimationComponent があれば追従演出）
+
     std::string onClickAction; ///< クリック時に発火する識別名（空可）。ハッシュ化してイベントで通知。
 };

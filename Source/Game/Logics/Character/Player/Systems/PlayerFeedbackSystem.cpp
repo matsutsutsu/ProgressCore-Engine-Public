@@ -67,9 +67,8 @@ void PlayerFeedbackSystem::Initialize()
             // AudioManager::Instance().PlaySE("Player_Damage");
 
             // -----------------------------------------------------------------
-            // 演出4：画面の縁を赤くする（UIエフェクト）
+            // 演出4：被弾時の画面縁エフェクト（ECS UI で別途実装予定）
             // -----------------------------------------------------------------
-            // UIManager::Instance().ShowDamageVignette();
         }
     });
 }

@@ -660,12 +660,6 @@
     <ClInclude Include="Source\Engine\Transform\Systems\TransformSnapshotSystem.h" />
     <ClInclude Include="Source\Engine\Transform\Systems\TransformUpdateSystem.h" />
     <ClInclude Include="Source\Engine\UI\ImGui\ImGuiThemes.h" />
-    <ClInclude Include="Source\Engine\UI\UIContext.h" />
-    <ClInclude Include="Source\Engine\UI\UIElement.h" />
-    <ClInclude Include="Source\Engine\UI\UIManager.h" />
-    <ClInclude Include="Source\Engine\UI\Widgets\SimpleButton.h" />
-    <ClInclude Include="Source\Engine\UI\Widgets\UIProgressBar.h" />
-    <ClInclude Include="Source\Engine\UI\Widgets\UIText.h" />
     <ClInclude Include="Source\Game\Core\AllComponents.h" />
     <ClInclude Include="Source\Game\Logics\AI\Battle\BattleContext.h" />
     <ClInclude Include="Source\Game\Logics\AI\Battle\BattleContextSyncSystem.h" />
@@ -750,6 +744,8 @@
     <ClInclude Include="Source\Engine\UI\ECS\Components\UIProgressBarComponent.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Systems\UIProgressBarCollectSystem.h" />
     <ClInclude Include="Source\Game\UI\OverdriveHudSystem.h" />
+    <ClInclude Include="Source\Engine\UI\ECS\Components\UIAnimationComponent.h" />
+    <ClInclude Include="Source\Engine\UI\ECS\Systems\UIAnimationSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerAttackSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerDashSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerFeedbackSystem.h" />
@@ -1470,8 +1466,6 @@
     <ClCompile Include="Source\Engine\Transform\Systems\TransformSnapshotSystem.cpp" />
     <ClCompile Include="Source\Engine\Transform\Systems\TransformUpdateSystem.cpp" />
     <ClCompile Include="Source\Engine\UI\ImGui\ImGuiThemes.cpp" />
-    <ClCompile Include="Source\Engine\UI\UIElement.cpp" />
-    <ClCompile Include="Source\Engine\UI\UIManager.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Battle\BattleContextSyncSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeComponentMeta.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
@@ -1517,6 +1511,7 @@
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIButtonSystem.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIProgressBarCollectSystem.cpp" />
     <ClCompile Include="Source\Game\UI\OverdriveHudSystem.cpp" />
+    <ClCompile Include="Source\Engine\UI\ECS\Systems\UIAnimationSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerAttackSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerDashSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerFeedbackSystem.cpp" />

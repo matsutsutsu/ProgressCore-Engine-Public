@@ -88,7 +88,7 @@ void SceneManager::Update(float elapsedTime)
 
 		// 【2段階目】: GPUへのセットアップ (Start)
         // これは絶対にメインスレッドのこのタイミングで1回だけ呼ばれる。
-        // dc->Map や UIManager の dc へのバインド等はここで行う。
+        // dc->Map などGPUリソースのバインドはここで行う。
         {
             ZoneScopedN("Scene::Start (GPU setup)");
             currentScene->Start();

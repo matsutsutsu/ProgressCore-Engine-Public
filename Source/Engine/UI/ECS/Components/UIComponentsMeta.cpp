@@ -8,6 +8,7 @@
 #include "UIInteractableComponent.h"
 #include "UIButtonComponent.h"
 #include "UIProgressBarComponent.h"
+#include "UIAnimationComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
 
@@ -61,8 +62,17 @@ COMPONENT_META_BEGIN_FULL(UIButtonComponent, "UI Button (ボタン)", CCL::Categ
     CFIELD_COLOR(hoverColor,    "Hover Color",    "Button")
     CFIELD_COLOR(pressedColor,  "Pressed Color",  "Button")
     CFIELD_COLOR(disabledColor, "Disabled Color", "Button")
+    CFIELD_FLOAT_RANGED(hoverScale, "Hover Scale", 0.01f, 0.5f, 2.0f, "Button")
     CFIELD(onClickAction, "On Click Action", "Button")
 COMPONENT_META_END(UIButtonComponent)
+
+// ===========================================================================
+// UIAnimationComponent（UI カテゴリ）
+// ===========================================================================
+COMPONENT_META_BEGIN_FULL(UIAnimationComponent, "UI Animation (追従演出)", CCL::Categories::UI, 35, false)
+    CFIELD_FLOAT_RANGED(smoothSpeed, "Smooth Speed", 0.1f, 0.1f, 60.0f, "Anim")
+    CFIELD_FLOAT_RANGED(targetScale, "Target Scale", 0.01f, 0.1f, 4.0f, "Anim")
+COMPONENT_META_END(UIAnimationComponent)
 
 // ===========================================================================
 // UIProgressBarComponent（UI カテゴリ）
