@@ -11,6 +11,6 @@ public:
     void Update(float dt) override;
 
     // 外部から強制的にクリーンアップを走らせる静的関数
-    static void ExecuteCleanup(CCL::ECS::Core::World& world);
+    static void ExecuteCleanup(CCL::ECS::World& world);
 };
 

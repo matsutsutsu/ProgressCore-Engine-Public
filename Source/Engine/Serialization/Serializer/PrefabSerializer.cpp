@@ -33,7 +33,7 @@
 #include <vector>
 
 using namespace CCL::ECS;
-using namespace CCL::ECS::Core;
+using namespace CCL::ECS;
 using CCL::Serialization::SaveContext;
 
 namespace {

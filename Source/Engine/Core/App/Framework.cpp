@@ -106,7 +106,7 @@ Framework::Framework(HWND hWnd)
 		ZoneScopedN("Init: JobSystem (shared frame pool)");
 		// ECSのフレーム並列で全Worldが共有する唯一のジョブプールを、ここ（上層）で1つだけ生成。
 		// 以降 SystemManager はこれを注入して使う（各Worldでプールを持たない）。
-		services.jobSystem = std::make_shared<CCL::ECS::Core::JobSystem>();
+		services.jobSystem = std::make_shared<CCL::ECS::JobSystem>();
 	}
 
 	{

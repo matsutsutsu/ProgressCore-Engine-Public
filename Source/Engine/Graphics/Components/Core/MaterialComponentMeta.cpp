@@ -33,7 +33,7 @@ struct ComponentMeta<MaterialComponent>
     {
         bool               changed = false;
         MaterialComponent *comp    = &compRef;
-        auto              *world   = static_cast<CCL::ECS::Core::World *>(worldPtr);
+        auto              *world   = static_cast<CCL::ECS::World *>(worldPtr);
 
         if (comp->overrideMaterials.empty())
         {

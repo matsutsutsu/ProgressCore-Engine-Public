@@ -5,7 +5,7 @@
 
 
 
-namespace CCL::ECS::Core {
+namespace CCL::ECS {
 
     // =======================================================================
     // 開店準備（コンストラクタ）
@@ -180,4 +180,4 @@ namespace CCL::ECS::Core {
         }
     }
 
-} // namespace CCL::ECS::Core
+} // namespace CCL::ECS

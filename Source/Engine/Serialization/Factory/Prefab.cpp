@@ -52,7 +52,7 @@ namespace Prefab {
     namespace {
 
         /// @brief ParticlePool(World Resource)を取得。未登録なら遅延生成する。
-        ParticlePool& GetOrCreatePool(Core::World& world)
+        ParticlePool& GetOrCreatePool(World& world)
         {
             if (!world.HasResource<ParticlePool>())
                 world.AddResource<ParticlePool>();
@@ -62,7 +62,7 @@ namespace Prefab {
         /// @brief root を起点に階層(root含む)の全EntityIDを集める(読み取りのみ)。
         /// @note  親子/兄弟リンクが破損して循環していても、訪問済み集合と
         ///        深さ上限で無限ループ/スタックオーバーフローを防ぐ。
-        void CollectSubtreeImpl(Core::World& world, EntityID root,
+        void CollectSubtreeImpl(World& world, EntityID root,
             std::vector<EntityID>& out,
             std::unordered_set<EntityID>& visited, int depth)
         {
@@ -84,7 +84,7 @@ namespace Prefab {
             }
         }
 
-        void CollectSubtree(Core::World& world, EntityID root, std::vector<EntityID>& out)
+        void CollectSubtree(World& world, EntityID root, std::vector<EntityID>& out)
         {
             std::unordered_set<EntityID> visited;
             CollectSubtreeImpl(world, root, out, visited, 0);
@@ -107,7 +107,7 @@ namespace Prefab {
         // ここで個別に解放するグローバル状態は持たない(設計上の意図)。
     }
 
-    void PrewarmParticles(Core::World& /*world*/)
+    void PrewarmParticles(World& /*world*/)
     {
         // TODO: ゲーム設定から「事前生成するVFXパスと個数」を受け取り、
         //       SpawnParticle→ReturnParticleToPool を繰り返してプールを温める。
@@ -117,7 +117,7 @@ namespace Prefab {
     // =====================================================================
     // パーティクル: プールから階層ごと借りて parent の子に接ぐ
     // =====================================================================
-    EntityID SpawnParticle(Core::World& world, const std::string& path,
+    EntityID SpawnParticle(World& world, const std::string& path,
         EntityID parentID, const DirectX::XMFLOAT3& localPos)
     {
         ParticlePool& pool = GetOrCreatePool(world);
@@ -173,7 +173,7 @@ namespace Prefab {
     // パーティクル: 階層ごとプールへ返す(破棄しない)
     //   HierarchyCleanupSystem(L07) が死亡Entityの子(emitterRoot)に対して呼ぶ。
     // =====================================================================
-    void ReturnParticleToPool(Core::World& world, EntityID rootId)
+    void ReturnParticleToPool(World& world, EntityID rootId)
     {
         if (rootId == InvalidEntityID) return;
 
@@ -198,7 +198,7 @@ namespace Prefab {
     // =====================================================================
     // 汎用 SpawnPrefab (SceneSerializer を使う)
     // =====================================================================
-    EntityID SpawnPrefab(Core::World& world, const std::string& prefabPath)
+    EntityID SpawnPrefab(World& world, const std::string& prefabPath)
     {
         std::string fullPath = prefabPath;
         if (fullPath.find(".json") == std::string::npos) fullPath += ".json";
@@ -221,7 +221,7 @@ namespace Prefab {
         return rootID;
     }
 
-    EntityID SpawnPrefab(Core::World& world, const std::string& path,
+    EntityID SpawnPrefab(World& world, const std::string& path,
         const DirectX::XMFLOAT3& position)
     {
         EntityID id = SpawnPrefab(world, path);
@@ -232,7 +232,7 @@ namespace Prefab {
         return id;
     }
 
-    EntityID SpawnPrefab(Core::World& world, const std::string& path,
+    EntityID SpawnPrefab(World& world, const std::string& path,
         const DirectX::XMFLOAT3& position,
         const DirectX::XMFLOAT4& rotation)
     {
@@ -247,7 +247,7 @@ namespace Prefab {
         return id;
     }
 
-    EntityID SpawnPrefab(Core::World& world, const std::string& path,
+    EntityID SpawnPrefab(World& world, const std::string& path,
         const DirectX::XMFLOAT3& position, float rotationY)
     {
         EntityID id = SpawnPrefab(world, path);

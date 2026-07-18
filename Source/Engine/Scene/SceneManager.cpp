@@ -28,7 +28,7 @@
 #include "tracy/Tracy.hpp"
 
 
-using namespace CCL::ECS::Core;
+using namespace CCL::ECS;
 
 //初期化
 void SceneManager::Initialize()
@@ -147,7 +147,7 @@ void SceneManager::Clear()
 // =========================================================================
 // ECSシーンの保存 (Save)
 // =========================================================================
-void SceneManager::SaveScene(CCL::ECS::Core::World* world, const std::string& filepath)
+void SceneManager::SaveScene(CCL::ECS::World* world, const std::string& filepath)
 {
 	// 1. 写真撮影前の「世界の整理」
 	// 今溜まっている RequestDestroy などのペンディング操作を完全に終わらせ、
@@ -158,7 +158,7 @@ void SceneManager::SaveScene(CCL::ECS::Core::World* world, const std::string& fi
 	SceneSerializer::Serialize(world, filepath);
 }
 
-void SceneManager::LoadScene(CCL::ECS::Core::World* world, const std::string& filepath)
+void SceneManager::LoadScene(CCL::ECS::World* world, const std::string& filepath)
 {
     // ==========================================================
     // 0. 事前検証 (★破壊する前にロード可能か確かめる)

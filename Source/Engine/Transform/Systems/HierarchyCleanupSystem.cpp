@@ -27,7 +27,7 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 
 using namespace CCL::ECS;
-using namespace CCL::ECS::Core;
+using namespace CCL::ECS;
 
 HierarchyCleanupSystem::HierarchyCleanupSystem() : IfSystem("HierarchyCleanupSystem") {}
 
@@ -39,7 +39,7 @@ void HierarchyCleanupSystem::Update(float dt)
 // =========================================================================
 // 実際のクリーンアップ処理 (static)
 // =========================================================================
-void HierarchyCleanupSystem::ExecuteCleanup(CCL::ECS::Core::World& world)
+void HierarchyCleanupSystem::ExecuteCleanup(CCL::ECS::World& world)
 {
     std::vector<EntityID> executionList;
     executionList.reserve(64);
@@ -115,7 +115,7 @@ void HierarchyCleanupSystem::ExecuteCleanup(CCL::ECS::Core::World& world)
 //     一緒にプールへ返るため、ここで個別に列挙してはならない。
 // =========================================================================
 void HierarchyCleanupSystem::CollectChildrenRecursive(
-    CCL::ECS::Core::World& world, EntityID currentID, std::vector<EntityID>& outList)
+    CCL::ECS::World& world, EntityID currentID, std::vector<EntityID>& outList)
 {
     auto* trans = world.GetComponent<TransformComponent>(currentID);
     if (!trans) return;

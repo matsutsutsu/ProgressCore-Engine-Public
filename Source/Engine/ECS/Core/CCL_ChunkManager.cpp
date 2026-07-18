@@ -5,7 +5,7 @@
 #include <unordered_set>
 #include <cassert>
 
-namespace CCL::ECS::Core
+namespace CCL::ECS
 {
     using namespace CCL::ECS;
 
@@ -729,4 +729,4 @@ namespace CCL::ECS::Core
         }
     }
 
-} // namespace CCL::ECS::Core
+} // namespace CCL::ECS

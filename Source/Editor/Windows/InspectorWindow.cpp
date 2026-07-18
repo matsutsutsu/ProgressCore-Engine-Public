@@ -47,7 +47,7 @@ void InspectorWindow::DrawContents(EditorContext &context)
 {
     // ★ 修正：ポインタではなく実体を直接取得
     CCL::ECS::EntityID     selected = context.selectedEntity;
-    CCL::ECS::Core::World *world    = context.world;
+    CCL::ECS::World *world    = context.world;
 
     // 1. エンティティ未選択時のガード
     // InvalidEntityID または 0 なら描画しない

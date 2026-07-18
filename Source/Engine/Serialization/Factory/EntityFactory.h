@@ -10,7 +10,7 @@ namespace EntityFactory {
     //  ECSコアを汚さずに「名前付きSpawn」を実現する魔法のヘルパー関数
     // ========================================================================
     // アーキタイプ変数と名前を渡すだけで、自動でNameComponentを付与して生成します。
-    inline CCL::ECS::Core::EntityRef SpawnNamed(CCL::ECS::Core::World &world,
+    inline CCL::ECS::EntityRef SpawnNamed(CCL::ECS::World &world,
                                             const char *name,
                                             const CCL::ECS::Archetype &baseArch)
     {
@@ -25,7 +25,7 @@ namespace EntityFactory {
 
 
     // プレハブをSpawnして、便利な EntityRef を返す
-    inline CCL::ECS::Core::EntityRef SpawnPrefab(CCL::ECS::Core::World &world,
+    inline CCL::ECS::EntityRef SpawnPrefab(CCL::ECS::World &world,
                                                  const char *prefabPath) {
       CCL::ECS::EntityID id = Prefab::SpawnPrefab(world, prefabPath);
       return {&world, id};

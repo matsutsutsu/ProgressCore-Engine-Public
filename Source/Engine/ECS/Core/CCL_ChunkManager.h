@@ -9,7 +9,7 @@
 #include <unordered_set>
 #include <shared_mutex>
 
-namespace CCL::ECS::Core
+namespace CCL::ECS
 {
     using namespace CCL::ECS;
 
@@ -301,4 +301,4 @@ namespace CCL::ECS::Core
         mutable std::shared_mutex _structureMutex;
     };
 
-} // namespace CCL::ECS::Core
+} // namespace CCL::ECS

@@ -8,7 +8,7 @@
 #include "tracy/Tracy.hpp"
 
 
-namespace CCL::ECS::Core {
+namespace CCL::ECS {
 
     // フレーム毎にリセットする超高速アロケータ
     class FrameAllocator {
@@ -164,4 +164,4 @@ namespace CCL::ECS::Core {
 
         std::vector<std::function<void()>> _destructors; // 後片付けリスト
     };
-} // namespace CCL::ECS::Core
+} // namespace CCL::ECS

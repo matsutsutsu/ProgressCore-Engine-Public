@@ -41,7 +41,7 @@
 #include "Engine/Core/Components/DestroyTag.h"
 
 
-namespace CCL::ECS::Core
+namespace CCL::ECS
 {
     using namespace CCL::ECS;
 
@@ -645,4 +645,4 @@ namespace CCL::ECS::Core
         return EntityRef{ this, id };
     }
 
-} // namespace CCL::ECS::Core
+} // namespace CCL::ECS

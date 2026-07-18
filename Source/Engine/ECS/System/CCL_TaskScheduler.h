@@ -119,9 +119,9 @@ namespace CCL::ECS {
                         //    const auto& chunksJ = systems[j]->GetTargetChunks();
 
                         //    // 自分が処理するChunkを取り出す
-                        //    for (CCL::ECS::Core::Chunk* cI : chunksI) {
+                        //    for (CCL::ECS::Chunk* cI : chunksI) {
                         //        // 相手が処理するChunkを取り出す
-                        //        for (CCL::ECS::Core::Chunk* cJ : chunksJ) {
+                        //        for (CCL::ECS::Chunk* cJ : chunksJ) {
                         //            // 同じChunkを触る場合は競合とみなす
                         //            if (cI == cJ) {
                         //                conflict = true;
@@ -171,7 +171,7 @@ namespace CCL::ECS {
         }
 
         // 構築されたバッチ順に実行する
-        void Execute(float dt, Core::JobSystem *jobSystem)
+        void Execute(float dt, JobSystem *jobSystem)
         {
             // バッチ（シフト表のまとまり）ごとに順番に見ていく
             for (auto &batch : _executionBatches) {
@@ -187,7 +187,7 @@ namespace CCL::ECS {
                 // ② バッチの中にシステムが複数（並列可能）ある場合
                 else {
                     // バッチ内に複数システムがある = 完全にデータが独立している = 超並列実行可能！
-                    Core::JobCounter counter;
+                    JobCounter counter;
 
                     // システムの数だけ、JobSystem（厨房）に仕事を投げる
                     for (SystemBase *sys : batch) {

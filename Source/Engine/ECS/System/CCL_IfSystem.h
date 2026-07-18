@@ -186,7 +186,7 @@ namespace CCL::ECS
         template <typename Func>
         void ForEach(Func&& func)
         {
-            using namespace CCL::ECS::Core;
+            using namespace CCL::ECS;
 
             for (Chunk* chunk : _targetChunks)
             {
@@ -238,7 +238,7 @@ namespace CCL::ECS
         template <typename Func>
         void ForEachParallel(Func&& func)
         {
-            using namespace CCL::ECS::Core;
+            using namespace CCL::ECS;
 
             // 並列化が不可能/不要な状況なら直列版にフォールバック
             if (!_jobSystem || !this->enableMultiThread) {
@@ -258,7 +258,7 @@ namespace CCL::ECS
                 return;
             }
 
-            Core::JobCounter counter;
+            JobCounter counter;
 
             // 1ジョブが担当する Chunk 数（均等割り、切り上げ）
             const size_t chunksPerJob = (totalChunks + threadCount - 1) / threadCount;
@@ -336,7 +336,7 @@ namespace CCL::ECS
         template <typename Func>
         void ForEachWithID(Func&& func)
         {
-            using namespace CCL::ECS::Core;
+            using namespace CCL::ECS;
 
             for (Chunk* chunk : _targetChunks)
             {
@@ -379,7 +379,7 @@ namespace CCL::ECS
         template <typename Func>
         void ForEachWithIDParallel(Func&& func)
         {
-            using namespace CCL::ECS::Core;
+            using namespace CCL::ECS;
 
             if (!_jobSystem || !this->enableMultiThread) {
                 ForEachWithID(func);
@@ -397,7 +397,7 @@ namespace CCL::ECS
                 return;
             }
 
-            Core::JobCounter counter;
+            JobCounter counter;
 
             const size_t chunksPerJob = (totalChunks + threadCount - 1) / threadCount;
 

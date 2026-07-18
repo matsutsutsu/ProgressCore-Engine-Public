@@ -12,13 +12,10 @@
 
 #include "Engine/UI/ECS/UIRenderer.h" // ECSネイティブUIの2Dパス描画
 
-class World;
-class SystemManager;
-
 class BaseScene : public Scene {
   protected:
     std::unique_ptr<CCL::ECS::ECSContext> _ecsContext;
-    CCL::ECS::Core::World *_worldPtr = nullptr;
+    CCL::ECS::World *_worldPtr = nullptr;
 
     UIRenderer _uiRenderer; // UIDrawList を2Dパスで描画する
 
@@ -39,7 +36,7 @@ class BaseScene : public Scene {
     // 外部（ImGui等）から呼ばれる「安全なリクエスト関数」
     // =========================================================
     
-    CCL::ECS::Core::World* GetWorld() override { return _worldPtr; }
+    CCL::ECS::World* GetWorld() override { return _worldPtr; }
     CCL::ECS::SystemManager* GetSystemManager() override { return _ecsContext->GetSystemManager(); }
 
     /**

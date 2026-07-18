@@ -67,7 +67,7 @@ void PauseSystem::Update(float /*dt*/)
 void PauseSystem::OpenPause()
 {
     using namespace CCL::GameUI;
-    Core::World &w = *_world;
+    World &w = *_world;
 
     _paused = true;
     if (w.HasResource<GameFlowState>())
@@ -91,7 +91,7 @@ void PauseSystem::OpenPause()
 
 void PauseSystem::ClosePause()
 {
-    Core::World &w = *_world;
+    World &w = *_world;
 
     _paused = false;
     if (w.HasResource<GameFlowState>())

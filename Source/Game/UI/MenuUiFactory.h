@@ -30,7 +30,7 @@ namespace CCL::GameUI
     };
 
     /// @brief 画面中央アンカーのテキストラベルを生成する。
-    inline CCL::ECS::EntityID SpawnLabel(CCL::ECS::Core::World &world, const char *name,
+    inline CCL::ECS::EntityID SpawnLabel(CCL::ECS::World &world, const char *name,
         const std::string &text, DirectX::XMFLOAT2 offset, float pixelSize, int sortOrder = 11)
     {
         auto arch = CCL::ECS::ArchetypeHelper::Generate<UITransformComponent, UITextComponent>();
@@ -52,7 +52,7 @@ namespace CCL::GameUI
     }
 
     /// @brief 単色パネル（暗転オーバーレイ等）を生成する。size を大きくすれば全画面を覆える。
-    inline CCL::ECS::EntityID SpawnPanel(CCL::ECS::Core::World &world, const char *name,
+    inline CCL::ECS::EntityID SpawnPanel(CCL::ECS::World &world, const char *name,
         DirectX::XMFLOAT2 offset, DirectX::XMFLOAT2 size, DirectX::XMFLOAT4 color, int sortOrder)
     {
         auto arch = CCL::ECS::ArchetypeHelper::Generate<UITransformComponent, UIImageComponent>();
@@ -75,7 +75,7 @@ namespace CCL::GameUI
     /// @brief ボタン（背景パネル＋当たり判定＋ボタン見た目＋拡大演出）と、その上に重ねる
     ///        ラベル（テキスト）を生成する。戻り値＝生成したボタン/ラベルの EntityID ペア。
     /// @param sortOrder ボタン背景の描画順。ラベルは +1 で少し手前に置く。
-    inline MenuButtonIds SpawnButton(CCL::ECS::Core::World &world, const char *btnName,
+    inline MenuButtonIds SpawnButton(CCL::ECS::World &world, const char *btnName,
         const char *labelName, const std::string &label, DirectX::XMFLOAT2 offset,
         const std::string &action, bool focused, int sortOrder = 10)
     {

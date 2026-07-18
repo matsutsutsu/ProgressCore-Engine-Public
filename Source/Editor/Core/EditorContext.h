@@ -12,7 +12,7 @@
 
 // エディタ内で共有されるコンテキストデータ
 struct EditorContext {
-    CCL::ECS::Core::World *world          = nullptr;
+    CCL::ECS::World *world          = nullptr;
     CCL::ECS::SystemManager *systemManager  = nullptr;
     CCL::ECS::EntityID       selectedEntity = CCL::ECS::InvalidEntityID;
 

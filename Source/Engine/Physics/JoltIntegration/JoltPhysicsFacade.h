@@ -4,10 +4,10 @@
 
 class JoltPhysicsFacade : public IPhysicsAPI {
 private:
-    CCL::ECS::Core::World* m_world;
+    CCL::ECS::World* m_world;
 
 public:
-    JoltPhysicsFacade(CCL::ECS::Core::World* world) : m_world(world) {}
+    JoltPhysicsFacade(CCL::ECS::World* world) : m_world(world) {}
     virtual ~JoltPhysicsFacade() = default;
 
     // Linear

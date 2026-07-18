@@ -83,7 +83,7 @@ void GameResultSystem::Update(float /*dt*/)
 void GameResultSystem::ShowResultUI(bool win)
 {
     using namespace CCL::GameUI;
-    Core::World &w = *_world;
+    World &w = *_world;
 
     // 暗転パネル（全画面を覆う大きめの半透明黒）。HUD より手前に出すため sortOrder は高め。
     SpawnPanel(w, "ResultDim", {0.0f, 0.0f}, {4000.0f, 4000.0f}, {0.0f, 0.0f, 0.0f, 0.6f}, 200);

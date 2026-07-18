@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 
-namespace CCL::ECS::Core {
+namespace CCL::ECS {
     class World;
 }
 
@@ -32,8 +32,8 @@ struct NavMeshBuildData {
 class NavMeshBuilder {
 public:
     // 前回作ったジオメトリ収集関数（privateにしてもOKです）
-    static NavMeshBuildData GatherGeometry(CCL::ECS::Core::World& world);
+    static NavMeshBuildData GatherGeometry(CCL::ECS::World& world);
 
     // ★今回追加するBake本体関数
-    static bool BuildNavMesh(CCL::ECS::Core::World& world, const NavMeshBuildSettings& settings);
+    static bool BuildNavMesh(CCL::ECS::World& world, const NavMeshBuildSettings& settings);
 };

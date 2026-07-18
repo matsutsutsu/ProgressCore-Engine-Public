@@ -12,7 +12,7 @@
 #include <cstdint>
 
 // World / EntityID はポインタ参照のみなので前方宣言で十分
-namespace CCL::ECS::Core { class World; }
+namespace CCL::ECS { class World; }
 namespace CCL::ECS        { using EntityID = unsigned long long; }
 
 
@@ -33,7 +33,7 @@ namespace CCL::AI
     ///   instance  → StateTreeComponent::scratch 内の該当オフセット (読み書き可)
     struct ExecContext
     {
-        CCL::ECS::Core::World* world    = nullptr;
+        CCL::ECS::World* world    = nullptr;
         CCL::ECS::EntityID     entity   = 0;
 
         // このノードのパラメータ（JSONから焼き込まれた定数。読み取り専用）

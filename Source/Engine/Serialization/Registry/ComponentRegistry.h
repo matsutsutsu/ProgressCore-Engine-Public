@@ -37,7 +37,7 @@ struct HasIsSerializable<T, std::void_t<decltype(ComponentMeta<T>::isSerializabl
 class ComponentRegistry {
 public:
     using SerializeFunc = std::function<void(nlohmann::json&, const void*, CCL::Serialization::SaveContext*)>;
-    using DeserializeToWorldFunc = std::function<void(CCL::ECS::Core::World*, CCL::ECS::EntityID,
+    using DeserializeToWorldFunc = std::function<void(CCL::ECS::World*, CCL::ECS::EntityID,
         const nlohmann::json&, CCL::Serialization::LoadContext*)>;
 
     struct MetaInfo
@@ -66,7 +66,7 @@ public:
         };
 
         // ---- 復元: LoadContext を渡す (EntityLink が自動 Resolve される) ----
-        info.deserializeToWorld = [](CCL::ECS::Core::World            *world,
+        info.deserializeToWorld = [](CCL::ECS::World            *world,
                                       CCL::ECS::EntityID               entity,
                                       const nlohmann::json            &j,
                                       CCL::Serialization::LoadContext *ctx) {

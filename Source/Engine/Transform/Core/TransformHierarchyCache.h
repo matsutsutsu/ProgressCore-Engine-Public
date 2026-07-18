@@ -3,7 +3,7 @@
 #include <DirectXMath.h>
 #include "Engine/ECS/Common/CCL_Types.h"
 
-namespace CCL::ECS::Core { class World; }
+namespace CCL::ECS { class World; }
 
 /**
  * @brief 非ルート（parent!=0）の Transform だけを depth 順に並べたトポロジキャッシュ。
@@ -14,7 +14,7 @@ namespace CCL::ECS::Core { class World; }
  */
 class TransformHierarchyCache {
 public:
-    void Rebuild(CCL::ECS::Core::World& world);
+    void Rebuild(CCL::ECS::World& world);
 
     int OrderOf(CCL::ECS::EntityID id) const {
         const uint32_t pure = CCL::ECS::EntityHandle::GetIndex(id);

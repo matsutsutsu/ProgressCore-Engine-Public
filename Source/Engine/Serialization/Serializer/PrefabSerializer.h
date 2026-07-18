@@ -14,7 +14,7 @@
 class PrefabSerializer {
 public:
     static bool Save(const std::string& filepath,
-        CCL::ECS::Core::World* world,
+        CCL::ECS::World* world,
         CCL::ECS::EntityID rootEntity,
         const std::string& name);
 };

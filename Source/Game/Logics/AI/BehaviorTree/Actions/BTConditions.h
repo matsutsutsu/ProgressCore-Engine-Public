@@ -1,5 +1,5 @@
 /// @file  BTConditions.h
-/// @brief BTの条件クラス群。::AI::C_〜 でグローバルの ActionRegistry を参照。
+/// @brief BTの条件クラス群。::CCL::AI::C_〜 でグローバルの ActionRegistry を参照。
 #pragma once
 #include "Game/Logics/AI/BehaviorTree/Actions/BTAction.h"
 #include "Game/Logics/AI/BehaviorTree/Actions/BTActionRegistry.h"
@@ -91,15 +91,15 @@ inline void RegisterAll()
 {
     auto &reg = BTActionRegistry::Instance();
 
-    // ::AI:: でグローバルの ActionRegistry の ID を参照
-    reg.RegisterCondition<RangeClose>(::AI::C_RangeClose);
-    reg.RegisterCondition<RangeMedium>(::AI::C_RangeMedium);
-    reg.RegisterCondition<RangeMostClose>(::AI::C_RangeMostClose);
-    reg.RegisterCondition<RangeFar>(::AI::C_RangeFar);
-    reg.RegisterCondition<IsPhase2>(::AI::C_IsPhase2);
-    reg.RegisterCondition<DamageThresholdExceeded>(::AI::C_DamageThresholdExceeded);
-    reg.RegisterCondition<ShouldTransitionPhase2>(::AI::C_ShouldTransitionPhase2);
-    reg.RegisterCondition<IsAtStageEdge>(::AI::C_IsAtStageEdge);
+    // ::CCL::AI:: でグローバルの ActionRegistry の ID を参照
+    reg.RegisterCondition<RangeClose>(::CCL::AI::C_RangeClose);
+    reg.RegisterCondition<RangeMedium>(::CCL::AI::C_RangeMedium);
+    reg.RegisterCondition<RangeMostClose>(::CCL::AI::C_RangeMostClose);
+    reg.RegisterCondition<RangeFar>(::CCL::AI::C_RangeFar);
+    reg.RegisterCondition<IsPhase2>(::CCL::AI::C_IsPhase2);
+    reg.RegisterCondition<DamageThresholdExceeded>(::CCL::AI::C_DamageThresholdExceeded);
+    reg.RegisterCondition<ShouldTransitionPhase2>(::CCL::AI::C_ShouldTransitionPhase2);
+    reg.RegisterCondition<IsAtStageEdge>(::CCL::AI::C_IsAtStageEdge);
 }
 
 } // namespace CCL::AI::BT::BossConditions

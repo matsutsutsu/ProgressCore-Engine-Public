@@ -14,7 +14,7 @@ using namespace CCL::ECS;
 
 
 void SceneInitializer::SpawnCameraTest(
-    CCL::ECS::Core::World &world, ID3D11Device *device, int count)
+    CCL::ECS::World &world, ID3D11Device *device, int count)
 {
     // プレイヤー
     EntityID playerID = Prefab::SpawnPrefab(world, "Assets/Prefabs/Player.json", {0, 0, 0});
@@ -30,7 +30,7 @@ void SceneInitializer::SpawnCameraTest(
     Prefab::SpawnPrefab(world, "Assets/Prefabs/Stage/Map_Floor.json");
 }
 
-void SceneInitializer::SpawnLightStartSet(CCL::ECS::Core::World &world, ID3D11Device *device)
+void SceneInitializer::SpawnLightStartSet(CCL::ECS::World &world, ID3D11Device *device)
 {
     // ライティングセットアップ
     Prefab::SpawnPrefab(world, "Assets/Prefabs/Light/LightingSetup.json");
@@ -40,7 +40,7 @@ void SceneInitializer::SpawnLightStartSet(CCL::ECS::Core::World &world, ID3D11De
 
 #include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"
 
-void SceneInitializer::SpawnAnimationTest(CCL::ECS::Core::World& world, ID3D11Device* device)
+void SceneInitializer::SpawnAnimationTest(CCL::ECS::World& world, ID3D11Device* device)
 {
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Camera/FreeCamera.json");
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/World/ExampleStage.json");
@@ -48,7 +48,7 @@ void SceneInitializer::SpawnAnimationTest(CCL::ECS::Core::World& world, ID3D11De
    
 }
 
-void SceneInitializer::SpawnGameTest(CCL::ECS::Core::World &world, ID3D11Device *device)
+void SceneInitializer::SpawnGameTest(CCL::ECS::World &world, ID3D11Device *device)
 {
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Camera/FreeCamera.json");
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/World/JoltExampleStage.json");
@@ -62,7 +62,7 @@ void SceneInitializer::SpawnGameTest(CCL::ECS::Core::World &world, ID3D11Device 
         .Patch<CameraAimLookAt>([pid = player.ID()](auto &aim) { aim.target = pid; });
 }
 
-void SceneInitializer::SpawnShaderTest(CCL::ECS::Core::World &world, ID3D11Device *device)
+void SceneInitializer::SpawnShaderTest(CCL::ECS::World &world, ID3D11Device *device)
 {
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Camera/FreeCamera.json");
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Sponza.json");
@@ -75,7 +75,7 @@ void SceneInitializer::SpawnShaderTest(CCL::ECS::Core::World &world, ID3D11Devic
 // 指定した数のモデルを並べるテスト環境
 // ============================================================================
 void SceneInitializer::SpawnModelGridTest(
-    CCL::ECS::Core::World& world, ID3D11Device* device, int count)
+    CCL::ECS::World& world, ID3D11Device* device, int count)
 {
     // 1. 空間を見るためのフリーカメラを配置
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Camera/FreeCamera.json");
@@ -127,7 +127,7 @@ void SceneInitializer::SpawnModelGridTest(
 }
 
 
-void SceneInitializer::SpawnECSBenchmarkTest(CCL::ECS::Core::World &world, ID3D11Device *device, int count)
+void SceneInitializer::SpawnECSBenchmarkTest(CCL::ECS::World &world, ID3D11Device *device, int count)
 {
     std::mt19937                          gen(42);
     std::uniform_real_distribution<float> distAngle(0.0f, DirectX::XM_2PI);
@@ -156,7 +156,7 @@ void SceneInitializer::SpawnECSBenchmarkTest(CCL::ECS::Core::World &world, ID3D1
 
 
 void SceneInitializer::SpawnVoxelOceanTest(
-    CCL::ECS::Core::World& world, ID3D11Device* device, int gridSize){
+    CCL::ECS::World& world, ID3D11Device* device, int gridSize){
     
 
     Prefab::SpawnPrefab(world, "Assets/Prefabs/Camera/FreeCamera.json");
@@ -205,7 +205,7 @@ void SceneInitializer::SpawnVoxelOceanTest(
 #include <cmath>
 
 void SceneInitializer::SpawnPhysicsAvalancheTest(
-    CCL::ECS::Core::World& world, ID3D11Device* device, int count)
+    CCL::ECS::World& world, ID3D11Device* device, int count)
 {
     // 1. アーキタイプの生成
     const auto staticArch = CCL::ECS::ArchetypeHelper::Generate<
@@ -293,7 +293,7 @@ void SceneInitializer::SpawnPhysicsAvalancheTest(
 #include "Game/Logics/Test/VectorFlowComponent.h"
 // ※PrimitiveComponent などのインクルードは適宜行ってください
 
-void SceneInitializer::SpawnJoltAvalancheTest(CCL::ECS::Core::World &world, ID3D11Device *device, int count)
+void SceneInitializer::SpawnJoltAvalancheTest(CCL::ECS::World &world, ID3D11Device *device, int count)
 {
     // ====================================================================
     // 1. 巨大な床（受け皿）の生成 (Static)
@@ -377,7 +377,7 @@ void SceneInitializer::SpawnJoltAvalancheTest(CCL::ECS::Core::World &world, ID3D
 
 #include "Game/Logics/Test/BoidComponent.h"
 
-void SceneInitializer::SpawnBoidsTest(CCL::ECS::Core::World &world, ID3D11Device *device, int count)
+void SceneInitializer::SpawnBoidsTest(CCL::ECS::World &world, ID3D11Device *device, int count)
 {
     std::mt19937                          gen(1337);
     std::uniform_real_distribution<float> distPos(-20.0f, 20.0f);
@@ -407,7 +407,7 @@ void SceneInitializer::SpawnBoidsTest(CCL::ECS::Core::World &world, ID3D11Device
     }
 }
 
-void SceneInitializer::SpawnLissajousTest(CCL::ECS::Core::World &world, ID3D11Device *device, int count)
+void SceneInitializer::SpawnLissajousTest(CCL::ECS::World &world, ID3D11Device *device, int count)
 {
     std::mt19937 gen(1001);
     std::uniform_real_distribution<float> distPhase(0.0f, DirectX::XM_2PI);
@@ -432,7 +432,7 @@ void SceneInitializer::SpawnLissajousTest(CCL::ECS::Core::World &world, ID3D11De
     }
 }
 
-void SceneInitializer::SpawnTornadoTest(CCL::ECS::Core::World& world, ID3D11Device* device, int count) {
+void SceneInitializer::SpawnTornadoTest(CCL::ECS::World& world, ID3D11Device* device, int count) {
     std::mt19937 gen(2002);
     std::uniform_real_distribution<float> distRadius(5.0f, 20.0f);
     std::uniform_real_distribution<float> distAngle(0.0f, DirectX::XM_2PI);
@@ -458,7 +458,7 @@ void SceneInitializer::SpawnTornadoTest(CCL::ECS::Core::World& world, ID3D11Devi
     }
 }
 
-void SceneInitializer::SpawnVectorFlowTest(CCL::ECS::Core::World& world, ID3D11Device* device, int count) {
+void SceneInitializer::SpawnVectorFlowTest(CCL::ECS::World& world, ID3D11Device* device, int count) {
     std::mt19937 gen(3003);
     std::uniform_real_distribution<float> distPos(-30.0f, 30.0f);
 

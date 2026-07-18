@@ -75,13 +75,13 @@ private:
 template <typename T>
 class ChangeComponentCommand : public IEditorCommand {
 private:
-    CCL::ECS::Core::World* _world;
+    CCL::ECS::World* _world;
     CCL::ECS::EntityID _entity;
     T _oldData;
     T _newData;
 
 public:
-    ChangeComponentCommand(CCL::ECS::Core::World* world, CCL::ECS::EntityID entity, const T& oldData, const T& newData)
+    ChangeComponentCommand(CCL::ECS::World* world, CCL::ECS::EntityID entity, const T& oldData, const T& newData)
         : _world(world), _entity(entity), _oldData(oldData), _newData(newData) {
     }
 

@@ -21,14 +21,14 @@ private:
     // 1. 引数なしの基本テスト (Graphics, Animationなど)
     struct BasicTest {
         std::string name;
-        std::function<void(CCL::ECS::Core::World&, ID3D11Device*)> callback;
+        std::function<void(CCL::ECS::World&, ID3D11Device*)> callback;
     };
 
     // 2. 個数を指定できるパフォーマンステスト
     struct CountTest {
         std::string name;
         int count; // ★ UIで操作するための変数
-        std::function<void(CCL::ECS::Core::World&, ID3D11Device*, int)> callback;
+        std::function<void(CCL::ECS::World&, ID3D11Device*, int)> callback;
     };
 
 

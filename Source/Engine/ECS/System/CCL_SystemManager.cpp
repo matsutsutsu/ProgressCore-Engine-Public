@@ -7,9 +7,9 @@
 
 namespace CCL::ECS
 {
-    using namespace CCL::ECS::Core;
+    using namespace CCL::ECS;
 
-    void SystemManager::ResolveTargetChunks(Core::ChunkManager* cm)
+    void SystemManager::ResolveTargetChunks(ChunkManager* cm)
     {
         // チャンク振り分け負荷を計測
         ZoneScopedN("SystemManager::ResolveTargetChunks");

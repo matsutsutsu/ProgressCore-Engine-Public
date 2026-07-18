@@ -15,7 +15,7 @@
  * 例：UI更新・サウンド再生・実績の解除など、ECSの外部に影響を与えるイベントを発行するために使う
  */
 
-namespace CCL::ECS::Core {
+namespace CCL::ECS {
 
     // =======================================================
     // 1. 型IDジェネレータ (重い typeid を排除する魔法)
@@ -133,4 +133,4 @@ namespace CCL::ECS::Core {
         void Clear() { _subscribers.clear(); }
     };
 
-} // namespace CCL::ECS::Core
+} // namespace CCL::ECS

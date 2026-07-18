@@ -43,9 +43,9 @@ protected:
 
 private:
     // 各タブの描画処理を分割
-    void DrawMemoryTab(CCL::ECS::Core::World* world);
+    void DrawMemoryTab(CCL::ECS::World* world);
     void DrawSystemsTab(CCL::ECS::SystemManager* systemManager);
-    void DrawPendingOpsTab(CCL::ECS::Core::World* world);
+    void DrawPendingOpsTab(CCL::ECS::World* world);
     // 実行グラフ描画用メソッド
     void DrawExecutionGraphTab(CCL::ECS::SystemManager* systemManager);
 

@@ -23,23 +23,23 @@ class SceneSerializer {
 public:
     // ---- 保存 ----
     // ファイルに書き出す。失敗時 false を返す。
-    static bool Serialize(CCL::ECS::Core::World* world, const std::string& filepath);
+    static bool Serialize(CCL::ECS::World* world, const std::string& filepath);
 
     // ---- 読み込み ----
     // 結果として生成された EntityID リストを返す (Prefab 化したい時など便利)。
     // 失敗時は空 vector。
     static std::vector<CCL::ECS::EntityID> Deserialize(
-        CCL::ECS::Core::World* world, const std::string& filepath);
+        CCL::ECS::World* world, const std::string& filepath);
 
     // JSON オブジェクトから直接ロード (Prefab 内で使う / 通信ペイロードから等)。
     // entitiesJson は配列を想定 (root["entities"] と同等)。
     static std::vector<CCL::ECS::EntityID> DeserializeRaw(
-        CCL::ECS::Core::World* world, const nlohmann::json& entitiesJson);
+        CCL::ECS::World* world, const nlohmann::json& entitiesJson);
 
 private:
     // 1 エンティティ分の書き出し
     static void SerializeEntity(
-        CCL::ECS::Core::World* world,
+        CCL::ECS::World* world,
         CCL::ECS::EntityID entity,
         nlohmann::json& outJson,
         CCL::Serialization::SaveContext& saveCtx);

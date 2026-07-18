@@ -31,11 +31,11 @@ namespace CCL::ECS
         ~SystemManager() = default;
 
         // Worldをセットする（EditorScene::Initializeなどで呼ぶ）
-        void SetWorld(Core::World* world) { _world = world; }
+        void SetWorld(World* world) { _world = world; }
 
         // 共有ジョブプールを注入する（上層=EngineServicesが持つ唯一のプールを渡す）。
         // ※ RegisterSystems の前に呼ぶこと（各システムへ配るのは登録時のため）。
-        void SetJobSystem(Core::JobSystem* js) { _jobSystem = js; }
+        void SetJobSystem(JobSystem* js) { _jobSystem = js; }
 
 
         // ------------------------------------------------------------------
@@ -131,7 +131,7 @@ namespace CCL::ECS
         // クエリ解決とデータ割り当て
         // 全てのSystemの_targetChunksリストを、そのSystemのArchetypeフィルタに
         // 合致するデータ（Chunk）で更新することです
-        void ResolveTargetChunks(Core::ChunkManager* cm);
+        void ResolveTargetChunks(ChunkManager* cm);
 
         // 物理・ロジック系の更新（FixedUpdateから呼ばれる）
         void UpdateLogic(float dt) {
@@ -213,14 +213,14 @@ namespace CCL::ECS
 
         // 共有ジョブプールへのポインタ（所有しない）。
         // 実体は EngineServices が1つだけ持ち、SetJobSystem で注入される。
-        Core::JobSystem* _jobSystem = nullptr;
+        JobSystem* _jobSystem = nullptr;
 
         // 2つのリストに分離
         std::vector<std::unique_ptr<SystemBase>> _logicSystems;
         std::vector<std::unique_ptr<SystemBase>> _renderSystems;
 
 
-        Core::World* _world = nullptr;
+        World* _world = nullptr;
 
 
         TaskScheduler _logicScheduler;

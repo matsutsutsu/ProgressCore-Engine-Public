@@ -17,7 +17,7 @@
 #include "../Common/CCL_Types.h"
 
 
-namespace CCL::ECS::Core
+namespace CCL::ECS
 {
     // 前方宣言（World の定義は不要）
     class World;
@@ -84,4 +84,4 @@ namespace CCL::ECS::Core
         EntityID ID() const { return id; }
     };
 
-} // namespace CCL::ECS::Core
+} // namespace CCL::ECS

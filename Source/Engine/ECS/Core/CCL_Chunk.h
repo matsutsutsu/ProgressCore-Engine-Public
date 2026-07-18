@@ -78,7 +78,7 @@
 
 #pragma endregion
 
-namespace CCL::ECS::Core
+namespace CCL::ECS
 {
     using namespace CCL::ECS;
 

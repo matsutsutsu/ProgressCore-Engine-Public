@@ -4,7 +4,7 @@
 #include <algorithm>
 
 using namespace CCL::ECS;
-using namespace CCL::ECS::Core;
+using namespace CCL::ECS;
 
 namespace { struct StackEntry { EntityID id; int parentOrder; EntityID parentId; }; }
 

@@ -19,7 +19,7 @@
 #include "Engine/Timer/TimeState.h"
 #include "Game/Logics/GameEvent/GameEvents.h"
 
-namespace CCL::ECS::Core
+namespace CCL::ECS
 {
 class World;
 }

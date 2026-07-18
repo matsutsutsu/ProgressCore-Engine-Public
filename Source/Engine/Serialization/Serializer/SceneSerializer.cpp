@@ -40,7 +40,7 @@
 #include <chrono>
 
 using namespace CCL::ECS;
-using namespace CCL::ECS::Core;
+using namespace CCL::ECS;
 using CCL::Serialization::SaveContext;
 using CCL::Serialization::LoadContext;
 using CCL::Serialization::EntityLink;

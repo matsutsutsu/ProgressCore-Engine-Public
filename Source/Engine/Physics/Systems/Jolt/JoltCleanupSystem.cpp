@@ -11,7 +11,7 @@ void JoltCleanupSystem::Update(float dt) {
 }
 
 // 直接チャンクを回して確実に剛体を消去する関数
-void JoltCleanupSystem::ExecuteCleanup(CCL::ECS::Core::World& world)
+void JoltCleanupSystem::ExecuteCleanup(CCL::ECS::World& world)
 {
     bool hasJolt = world.HasResource<JoltPhysicsManager*>();
     JoltPhysicsManager* joltManager = hasJolt ? world.GetResource<JoltPhysicsManager*>() : nullptr;

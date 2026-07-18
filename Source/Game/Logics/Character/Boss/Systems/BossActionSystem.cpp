@@ -79,7 +79,7 @@ void BossActionSystem::Update(float rawDt)
         float dt = time.localDt;
 
         // AIの意図(currentActionId) → ボスの物理ステートへ翻訳
-        if (cmd.currentActionId == ::AI::A_Move)
+        if (cmd.currentActionId == ::CCL::AI::A_Move)
             bossDef.currentState = BossActionState::Move;
         else if (::IsBossMeleeAction(cmd.currentActionId))
             bossDef.currentState = BossActionState::Melee;

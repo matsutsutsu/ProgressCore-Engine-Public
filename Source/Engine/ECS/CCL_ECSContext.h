@@ -12,9 +12,9 @@ namespace CCL::ECS {
         //   フレーム並列に使うためSystemManagerへ注入する（World毎に持たない）。
         // explicit... コンストラクタを「ECSContext ctx = ...」のように暗黙的に呼ばせないための指定
         // 別に書かなくてもいいけど、書いておくと「ECSContext ctx = ...」のような書き方を禁止できる
-        explicit ECSContext(Core::JobSystem* jobSystem = nullptr)
+        explicit ECSContext(JobSystem* jobSystem = nullptr)
         {
-            _world         = std::make_unique<Core::World>();
+            _world         = std::make_unique<World>();
             _systemManager = std::make_unique<SystemManager>();
 
             // SystemManagerに「お前が処理すべきデータはこれだ」と教える
@@ -75,11 +75,11 @@ namespace CCL::ECS {
         // ---------------------------------------------------------
         // アクセッサ
         // ---------------------------------------------------------
-        Core::World   *GetWorld() const { return _world.get(); }
+        World   *GetWorld() const { return _world.get(); }
         SystemManager *GetSystemManager() const { return _systemManager.get(); }
 
       private:
-        std::unique_ptr<Core::World>   _world;
+        std::unique_ptr<World>   _world;
         std::unique_ptr<SystemManager> _systemManager;
     };
 

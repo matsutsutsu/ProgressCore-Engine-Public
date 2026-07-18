@@ -19,7 +19,7 @@ public:
 
 
     // EntityID と World* を受け取るように変更
-    using GuiFunc = std::function<void(void*, EntityID, CCL::ECS::Core::World*)>;
+    using GuiFunc = std::function<void(void*, EntityID, CCL::ECS::World*)>;
     using CtorFunc = std::function<void(void*)>; // 追加：初期化用
 
     // 名前と関数をセットで保持する構造体
@@ -40,7 +40,7 @@ public:
 
         // WorldとEntityIDだけで描画を完結させるためのラッパー関数
         // InspectorWindowはこれを使うことで、void* へのキャストやGetComponentを自分でしなくて済む
-        std::function<void(CCL::ECS::Core::World *, EntityID)> drawInspector = nullptr;
+        std::function<void(CCL::ECS::World *, EntityID)> drawInspector = nullptr;
     };
 
 
@@ -73,7 +73,7 @@ public:
 
         // ★ここで「安全な描画関数」を生成して保存する
         // 実行時に T型 の GetComponent を行い、ポインタが有効な場合のみ guiFunc を呼ぶ
-        entry.drawInspector = [func](CCL::ECS::Core::World *world, EntityID entity) {
+        entry.drawInspector = [func](CCL::ECS::World *world, EntityID entity) {
             // World経由で型安全に取得
             T *component = world->GetComponent<T>(entity);
             if (component) {
@@ -150,7 +150,7 @@ public:
         return (it != _registry.end()) ? it->second.hidden : false;
     }
 
-    void DrawInspector(TypeID id, CCL::ECS::Core::World* world, EntityID entity) {
+    void DrawInspector(TypeID id, CCL::ECS::World* world, EntityID entity) {
         ResolveBindings(); // 描画前に解決
         auto idIt = _typeIdToIndex.find(id);
         if (idIt == _typeIdToIndex.end()) return;
@@ -196,7 +196,7 @@ public:
     }
 
     // 描画実行
-    void Draw(TypeID id, void* data, EntityID entity, CCL::ECS::Core::World* world);
+    void Draw(TypeID id, void* data, EntityID entity, CCL::ECS::World* world);
 
 private:
     // ★ メインストレージ: type_index → Entry（型に紐づく不変キー）

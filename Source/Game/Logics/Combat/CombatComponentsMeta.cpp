@@ -54,7 +54,7 @@ template <> struct ComponentMeta<BoneAttachmentComponent> {
 #ifdef ENABLE_EDITOR
     static bool CustomGui(BoneAttachmentComponent& comp, unsigned long long entityID, void* worldPtr) {
         bool changed = false;
-        auto* world = static_cast<CCL::ECS::Core::World*>(worldPtr);
+        auto* world = static_cast<CCL::ECS::World*>(worldPtr);
         if (!world) return false;
 
         CCL::ECS::EntityID parentID = 0;
@@ -191,7 +191,7 @@ template <> struct ComponentMeta<CombatRosterComponent> {
 #ifdef ENABLE_EDITOR
     static bool CustomGui(CombatRosterComponent& comp, unsigned long long entityID, void* worldPtr) {
         bool changed = false;
-        auto* world = static_cast<CCL::ECS::Core::World*>(worldPtr);
+        auto* world = static_cast<CCL::ECS::World*>(worldPtr);
         if (!world) return false;
 
         std::vector<CCL::ECS::EntityID> childEntities;

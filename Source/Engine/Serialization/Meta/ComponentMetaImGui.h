@@ -229,7 +229,7 @@ namespace ComponentMetaImGui {
             // クリックを離した/入力完了した瞬間に Undo コマンドを発行
             if (s_isEditing && !ImGui::IsAnyItemActive()) {
                 if (world && entity != 0) {
-                    auto* ecsWorld = static_cast<CCL::ECS::Core::World*>(world);
+                    auto* ecsWorld = static_cast<CCL::ECS::World*>(world);
                     auto ecsEntity = static_cast<CCL::ECS::EntityID>(entity);
                     EditorCommandHistory::Instance().ExecuteCommand(
                         std::make_unique<ChangeComponentCommand<T>>(
@@ -307,7 +307,7 @@ namespace ComponentMetaImGui {
                     }
                     if (ImGui::IsItemDeactivatedAfterEdit()) { // 編集完了時に Undo 発行
                         if (world && entity != 0) {
-                            auto* ecsWorld = static_cast<CCL::ECS::Core::World*>(world);
+                            auto* ecsWorld = static_cast<CCL::ECS::World*>(world);
                             auto ecsEntity = static_cast<CCL::ECS::EntityID>(entity);
                             EditorCommandHistory::Instance().ExecuteCommand(
                                 std::make_unique<ChangeComponentCommand<T>>(

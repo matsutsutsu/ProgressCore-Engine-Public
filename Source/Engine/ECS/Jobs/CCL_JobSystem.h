@@ -26,7 +26,7 @@
 // ===================================================================================
 
 
-namespace CCL::ECS::Core {
+namespace CCL::ECS {
 
     // Job = 「引数なし・戻り値なし」の関数（ラムダ式など）
     // 例：「野菜を切る」「皿を洗う」「Chunk0番を更新する」といった具体的な作業内容
@@ -90,4 +90,4 @@ namespace CCL::ECS::Core {
         bool _shutdown = false; // 「閉店」フラグ
     };
 
-} // namespace CCL::ECS::Core
+} // namespace CCL::ECS

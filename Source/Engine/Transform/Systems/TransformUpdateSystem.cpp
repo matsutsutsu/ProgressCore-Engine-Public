@@ -173,7 +173,7 @@ void TransformUpdateSystem::RepairBrokenLinks()
 // =========================================================================
 // ↓↓↓ 以下 static ヘルパーは既存のまま（変更なし） ↓↓↓
 // =========================================================================
-void TransformUpdateSystem::SetParent(Core::World& world, EntityID childID, EntityID newParentID)
+void TransformUpdateSystem::SetParent(World& world, EntityID childID, EntityID newParentID)
 {
     if (childID == newParentID) return;
     if (!world.IsEntityValid(childID)) return;
@@ -201,7 +201,7 @@ void TransformUpdateSystem::SetParent(Core::World& world, EntityID childID, Enti
     parentTrans->firstChildID = childID;
 }
 
-void TransformUpdateSystem::DetachChild(Core::World& world, EntityID childID)
+void TransformUpdateSystem::DetachChild(World& world, EntityID childID)
 {
     auto* childTrans = world.GetComponent<TransformComponent>(childID);
     if (!childTrans || childTrans->parent == 0) return;
@@ -227,7 +227,7 @@ void TransformUpdateSystem::DetachChild(Core::World& world, EntityID childID)
     childTrans->nextSiblingID = 0;
 }
 
-void TransformUpdateSystem::DestroyEntityWithHierarchy(Core::World& world, EntityID entity, bool destroyChildren)
+void TransformUpdateSystem::DestroyEntityWithHierarchy(World& world, EntityID entity, bool destroyChildren)
 {
     if (!world.IsEntityValid(entity)) return;
     auto* trans = world.GetComponent<TransformComponent>(entity);
@@ -257,7 +257,7 @@ void TransformUpdateSystem::DestroyEntityWithHierarchy(Core::World& world, Entit
     world.RequestDestroyEntity(entity);
 }
 
-void TransformUpdateSystem::MarkForDestruction(Core::World& world, EntityID entity, bool destroyChildren)
+void TransformUpdateSystem::MarkForDestruction(World& world, EntityID entity, bool destroyChildren)
 {
     if (!world.IsEntityValid(entity)) return;
     if (world.HasComponent<Tag::DestroyTag>(entity)) return;

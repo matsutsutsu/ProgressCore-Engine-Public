@@ -9,7 +9,7 @@
  *
  * ★ g_ActionRegistry（BTWindowのAction候補リスト）はDrone系を「実装済みのみ」に
  *   絞ってある（OrbitCircle / GuillotineSlam / DroneStrike の3つ）。
- *   AI:: 側の定数と DroneAction の登録ループ(2000〜2029)自体は残しているので、
+ *   CCL::AI:: 側の定数と DroneAction の登録ループ(2000〜2029)自体は残しているので、
  *   Formation実装（Formations_Basic.h / Formations_Attack.h）が増えたら
  *   g_ActionRegistry に1行追加するだけで候補に復活する。
  */
@@ -21,7 +21,7 @@
 // ============================================================================
 // 【単一情報源】AIの「行動」と「条件」のID定義
 // ============================================================================
-namespace AI {
+namespace CCL::AI {
     // ==========================================
     // 【条件 (Conditions: 1〜99)】
     // ==========================================
@@ -110,50 +110,50 @@ inline constexpr ActionEntry g_ActionRegistry[] = {
     { 0, "なし (None)", "None" },
 
     // --- 汎用・待機 (Common) ---
-    { AI::A_Wait0_5s,  "待機: 0.5秒",  "Common" },
-    { AI::A_Wait1_0s,  "待機: 1.0秒",  "Common" },
-    { AI::A_Wait1_5s,  "待機: 1.5秒",  "Common" },
-    { AI::A_Wait2_0s,  "待機: 2.0秒",  "Common" },
-    { AI::A_Wait3_0s,  "待機: 3.0秒",  "Common" },
-    { AI::A_Wait4_0s,  "待機: 4.0秒",  "Common" },
-    { AI::A_Wait5_0s,  "待機: 5.0秒",  "Common" },
-    { AI::A_Wait6_0s,  "待機: 6.0秒",  "Common" },
-    { AI::A_Wait7_0s,  "待機: 7.0秒",  "Common" },
-    { AI::A_Wait8_0s,  "待機: 8.0秒",  "Common" },
-    { AI::A_Wait9_0s,  "待機: 9.0秒",  "Common" },
-    { AI::A_Wait10_0s, "待機: 10.0秒", "Common" },
+    { CCL::AI::A_Wait0_5s,  "待機: 0.5秒",  "Common" },
+    { CCL::AI::A_Wait1_0s,  "待機: 1.0秒",  "Common" },
+    { CCL::AI::A_Wait1_5s,  "待機: 1.5秒",  "Common" },
+    { CCL::AI::A_Wait2_0s,  "待機: 2.0秒",  "Common" },
+    { CCL::AI::A_Wait3_0s,  "待機: 3.0秒",  "Common" },
+    { CCL::AI::A_Wait4_0s,  "待機: 4.0秒",  "Common" },
+    { CCL::AI::A_Wait5_0s,  "待機: 5.0秒",  "Common" },
+    { CCL::AI::A_Wait6_0s,  "待機: 6.0秒",  "Common" },
+    { CCL::AI::A_Wait7_0s,  "待機: 7.0秒",  "Common" },
+    { CCL::AI::A_Wait8_0s,  "待機: 8.0秒",  "Common" },
+    { CCL::AI::A_Wait9_0s,  "待機: 9.0秒",  "Common" },
+    { CCL::AI::A_Wait10_0s, "待機: 10.0秒", "Common" },
 
     // --- ボス本体 (Boss) ---
-    { AI::A_Move,        "ボス：移動 (Move To Player)", "Boss" },
-    { AI::A_BossSlash,   "ボス：薙ぎ払い (Slash)",       "Boss" },
-    { AI::A_ResetDamage, "ボス：蓄積ダメージリセット",   "Boss" },
+    { CCL::AI::A_Move,        "ボス：移動 (Move To Player)", "Boss" },
+    { CCL::AI::A_BossSlash,   "ボス：薙ぎ払い (Slash)",       "Boss" },
+    { CCL::AI::A_ResetDamage, "ボス：蓄積ダメージリセット",   "Boss" },
 
     // --- ドローン群 (Drone) ※候補は「実装済みのみ」に絞ってある。
-    //     AI:: 側の定数・DroneAction registration(2000〜2029) は温存しているので、
+    //     CCL::AI:: 側の定数・DroneAction registration(2000〜2029) は温存しているので、
     //     Formation実装が増えたらここへ1行足すだけで候補に復活する。
-    { AI::A_DroneOrbit,          "ドローン：円陣展開 (Orbit Circle) ※帰投にも使用", "Drone" },
-    { AI::A_DroneGuillotineSlam, "ドローン：縦割り (Guillotine Slam)", "Drone" },
-    { AI::A_DroneClapSlam,       "ドローン：挟み込み1段 (Clap Slam)", "Drone" },
-    { AI::A_DroneKamikazeSwarm,  "ドローン：弾幕 (Kamikaze Swarm)", "Drone" },
-    { AI::A_DroneMegaClapLowerFirst, "ドローン：挟み込み2段・下段先攻 (Mega Clap)", "Drone" },
-    { AI::A_DroneMegaClapUpperFirst, "ドローン：挟み込み2段・上段先攻 (Mega Clap)", "Drone" },
-    { AI::A_DroneSideSlapWhip,   "ドローン：横なぎ回転 (Side Slap Whip)", "Drone" },
-    { AI::A_DroneTsunamiWave,    "ドローン：波状縦割り・左→右 (Wave)", "Drone" },
-    { AI::A_DroneTsunamiWaveRL,  "ドローン：波状縦割り・右→左 (Wave)", "Drone" },
-    { AI::A_DroneStrike,         "ドローン：攻撃実行 (Strike/リリース)", "Drone" },
+    { CCL::AI::A_DroneOrbit,          "ドローン：円陣展開 (Orbit Circle) ※帰投にも使用", "Drone" },
+    { CCL::AI::A_DroneGuillotineSlam, "ドローン：縦割り (Guillotine Slam)", "Drone" },
+    { CCL::AI::A_DroneClapSlam,       "ドローン：挟み込み1段 (Clap Slam)", "Drone" },
+    { CCL::AI::A_DroneKamikazeSwarm,  "ドローン：弾幕 (Kamikaze Swarm)", "Drone" },
+    { CCL::AI::A_DroneMegaClapLowerFirst, "ドローン：挟み込み2段・下段先攻 (Mega Clap)", "Drone" },
+    { CCL::AI::A_DroneMegaClapUpperFirst, "ドローン：挟み込み2段・上段先攻 (Mega Clap)", "Drone" },
+    { CCL::AI::A_DroneSideSlapWhip,   "ドローン：横なぎ回転 (Side Slap Whip)", "Drone" },
+    { CCL::AI::A_DroneTsunamiWave,    "ドローン：波状縦割り・左→右 (Wave)", "Drone" },
+    { CCL::AI::A_DroneTsunamiWaveRL,  "ドローン：波状縦割り・右→左 (Wave)", "Drone" },
+    { CCL::AI::A_DroneStrike,         "ドローン：攻撃実行 (Strike/リリース)", "Drone" },
 };
 inline constexpr int g_ActionRegistryCount = sizeof(g_ActionRegistry) / sizeof(ActionEntry);
 
 inline constexpr ActionEntry g_ConditionRegistry[] = {
     { 0, "なし (None)", "None" },
-    { AI::C_RangeClose,              "距離 < 15m",    "Range" },
-    { AI::C_RangeMedium,             "距離 15-40m",   "Range" },
-    { AI::C_RangeMostClose,          "距離 < 8m",     "Range" },
-    { AI::C_RangeFar,                "距離 > 40m",    "Range" },
-    { AI::C_IsPhase2,                "フェーズ >= 2", "State" },
-    { AI::C_ShouldTransitionPhase2,  "第2形態移行条件 (HP半分以下 & 第1形態)", "State" },
-    { AI::C_DamageThresholdExceeded, "ダメージ蓄積 > 閾値", "State" },
-    { AI::C_IsAtStageEdge,           "ステージの端にいる", "State" },
+    { CCL::AI::C_RangeClose,              "距離 < 15m",    "Range" },
+    { CCL::AI::C_RangeMedium,             "距離 15-40m",   "Range" },
+    { CCL::AI::C_RangeMostClose,          "距離 < 8m",     "Range" },
+    { CCL::AI::C_RangeFar,                "距離 > 40m",    "Range" },
+    { CCL::AI::C_IsPhase2,                "フェーズ >= 2", "State" },
+    { CCL::AI::C_ShouldTransitionPhase2,  "第2形態移行条件 (HP半分以下 & 第1形態)", "State" },
+    { CCL::AI::C_DamageThresholdExceeded, "ダメージ蓄積 > 閾値", "State" },
+    { CCL::AI::C_IsAtStageEdge,           "ステージの端にいる", "State" },
 };
 inline constexpr int g_ConditionRegistryCount = sizeof(g_ConditionRegistry) / sizeof(ActionEntry);
 
@@ -178,22 +178,22 @@ inline const ActionEntry* FindConditionEntry(ActionID id)
 
 inline bool IsWaitAction(ActionID id)
 {
-    return id >= AI::A_Wait0_5s && id <= AI::A_Wait10_0s;
+    return id >= CCL::AI::A_Wait0_5s && id <= CCL::AI::A_Wait10_0s;
 }
 
 inline bool IsDroneAction(ActionID id)
 {
-    return id >= AI::A_DroneFirst && id <= AI::A_DroneLast;
+    return id >= CCL::AI::A_DroneFirst && id <= CCL::AI::A_DroneLast;
 }
 
 inline bool IsBossPhysicalAction(ActionID id)
 {
-    return id == AI::A_Move;
+    return id == CCL::AI::A_Move;
 }
 
 /// @brief ボスの近接アクション（アニメトリガーで攻撃する系）か。
 ///        今後 踏み込み/突進 を足したらここに条件を追加する。
 inline bool IsBossMeleeAction(ActionID id)
 {
-    return id == AI::A_BossSlash;
+    return id == CCL::AI::A_BossSlash;
 }

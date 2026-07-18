@@ -7,7 +7,7 @@
 #include <memory>
 #include <functional>
 
-namespace CCL::ECS::Core
+namespace CCL::ECS
 {
     enum class PendingOpKind
     {

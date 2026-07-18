@@ -1052,7 +1052,7 @@ void BehaviorTreeWindow::DrawInspector() {
                     ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.4f, 1.0f),
                         "→ nodeTimers で待機（BossAction 非依存）");
                 }
-                else if (it->actionOrConditionId == AI::A_ResetDamage) {
+                else if (it->actionOrConditionId == CCL::AI::A_ResetDamage) {
                     ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f),
                         "→ ブラックボードの蓄積ダメージをリセット");
                 }

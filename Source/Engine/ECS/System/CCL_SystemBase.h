@@ -27,7 +27,7 @@
 
 // Chunk / World / JobSystem はポインタとしてしか使わないため前方宣言で十分。
 // これにより SystemBase.h は重い実装ヘッダに依存しません。
-namespace CCL::ECS::Core {
+namespace CCL::ECS {
     class Chunk;
     class World;
     class JobSystem;
@@ -78,7 +78,7 @@ namespace CCL::ECS
         const Archetype& GetExcludeFilter() const { return _excludeFilter; }
 
         /// @brief このフレームで処理対象とする Chunk を追加（SystemManager から呼ばれる）
-        void AddTargetChunk(CCL::ECS::Core::Chunk* chunk)
+        void AddTargetChunk(CCL::ECS::Chunk* chunk)
         {
             _targetChunks.push_back(chunk);
         }
@@ -139,13 +139,13 @@ namespace CCL::ECS
         virtual void OnGui() {}
 
         /// @brief 今フレームの処理対象 Chunk リストを取得
-        const std::vector<CCL::ECS::Core::Chunk*>& GetTargetChunks() const
+        const std::vector<CCL::ECS::Chunk*>& GetTargetChunks() const
         {
             return _targetChunks;
         }
 
         /// @brief World 参照をセット（SystemManager が登録時に呼ぶ）
-        void SetWorld(Core::World* world) { _world = world; }
+        void SetWorld(World* world) { _world = world; }
 
         // --------------------------------------------------------
         // 優先度
@@ -177,7 +177,7 @@ namespace CCL::ECS
         // --------------------------------------------------------
 
         /// @brief 並列化に使う JobSystem を渡す（SystemManager から呼ばれる）
-        void SetJobSystem(Core::JobSystem* js) { _jobSystem = js; }
+        void SetJobSystem(JobSystem* js) { _jobSystem = js; }
 
         /// @brief ChunkManager の構造変更用 mutex を渡す（読み取りロックに使用）
         void SetStructureMutex(std::shared_mutex* mutex) { _structureMutex = mutex; }
@@ -204,7 +204,7 @@ namespace CCL::ECS
         // ----------------------------------------------------------
 
         /// @brief このSystemが今フレーム処理するべき Chunk 群
-        std::vector<CCL::ECS::Core::Chunk*> _targetChunks;
+        std::vector<CCL::ECS::Chunk*> _targetChunks;
 
         /// @brief 必要 Component 構成（派生側で IfSystem コンストラクタが自動設定）
         Archetype _filter;
@@ -216,13 +216,13 @@ namespace CCL::ECS
         SystemID _systemID = InvalidSystemID;
 
         /// @brief 所属する World への参照（SystemManager が登録時に注入）
-        Core::World* _world = nullptr;
+        World* _world = nullptr;
 
         /// @brief デフォルト優先度（中間値）。SystemManager 経由で上書き
         int _priority = 1000;
 
         /// @brief JobSystem への参照（並列 ForEach 等で使用）
-        Core::JobSystem* _jobSystem = nullptr;
+        JobSystem* _jobSystem = nullptr;
 
         /// @brief ChunkManager の構造変更用 mutex（読み取りロック用）
         std::shared_mutex* _structureMutex = nullptr;

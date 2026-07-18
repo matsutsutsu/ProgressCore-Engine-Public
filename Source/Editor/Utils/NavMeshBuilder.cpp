@@ -12,7 +12,7 @@
 #include <DetourNavMesh.h>
 #include <DetourNavMeshBuilder.h>
 
-NavMeshBuildData NavMeshBuilder::GatherGeometry(CCL::ECS::Core::World& world) {
+NavMeshBuildData NavMeshBuilder::GatherGeometry(CCL::ECS::World& world) {
     NavMeshBuildData data;
     int vertexOffset = 0; // 複数のモデル・メッシュを繋ぎ合わせるための頂点オフセット
 
@@ -77,7 +77,7 @@ NavMeshBuildData NavMeshBuilder::GatherGeometry(CCL::ECS::Core::World& world) {
 }
 
 
-bool NavMeshBuilder::BuildNavMesh(CCL::ECS::Core::World& world, const NavMeshBuildSettings& settings) {
+bool NavMeshBuilder::BuildNavMesh(CCL::ECS::World& world, const NavMeshBuildSettings& settings) {
     // 1. ジオメトリの収集
     NavMeshBuildData geom = GatherGeometry(world);
     int nverts = geom.vertices.size() / 3;

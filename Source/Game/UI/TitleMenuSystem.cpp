@@ -22,7 +22,7 @@ using namespace CCL::ECS;
 
 void TitleMenuSystem::Initialize()
 {
-    Core::World &world = *_world;
+    World &world = *_world;
 
     // --- タイトルロゴ ---
     CCL::GameUI::SpawnLabel(world, "TitleLogo", "RuneForge", {-150.0f, -180.0f}, 56.0f);

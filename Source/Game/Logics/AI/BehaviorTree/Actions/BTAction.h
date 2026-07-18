@@ -13,7 +13,7 @@
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"  // BehaviorTreeComponent
 
 // 前方宣言
-namespace CCL::ECS::Core { class World; }
+namespace CCL::ECS { class World; }
 namespace CCL::ECS        { using EntityID = unsigned long long; }
 struct TransformComponent;
 
@@ -27,7 +27,7 @@ namespace CCL::AI::BT
     ///        ボス固有のコンポーネントは world/entity から自分で取得する。
     struct BTContext
     {
-        CCL::ECS::Core::World* world  = nullptr;
+        CCL::ECS::World* world  = nullptr;
         CCL::ECS::EntityID     entity = 0;
 
         // --- AI状態（nodeTimers / blackboard / lastLogActionId を読み書き）---

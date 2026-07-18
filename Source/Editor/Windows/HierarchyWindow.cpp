@@ -68,7 +68,7 @@ void HierarchyWindow::DrawContents(EditorContext& context)
         // =========================================================
         for (auto& chunkPtr : chunks) {
             if (!chunkPtr) continue;
-            CCL::ECS::Core::Chunk* chunk = chunkPtr.get();
+            CCL::ECS::Chunk* chunk = chunkPtr.get();
 
             TransformComponent* transforms = chunk->HasComponent<TransformComponent>()
                 ? chunk->GetComponentArray<TransformComponent>() : nullptr;
@@ -336,7 +336,7 @@ void HierarchyWindow::DrawFlatNode(
 void HierarchyWindow::FlattenChildren(
     CCL::ECS::EntityID firstChildID,
     int depth,
-    CCL::ECS::Core::World* world,
+    CCL::ECS::World* world,
     std::vector<FlatNode>& outFlatList)
 {
     CCL::ECS::EntityID childID = firstChildID;
@@ -361,7 +361,7 @@ void HierarchyWindow::FlattenChildren(
 bool HierarchyWindow::IsDescendantOf(
     CCL::ECS::EntityID targetEntity,
     CCL::ECS::EntityID ancestorEntity,
-    CCL::ECS::Core::World* world)
+    CCL::ECS::World* world)
 {
     if (targetEntity == ancestorEntity) return true;
 

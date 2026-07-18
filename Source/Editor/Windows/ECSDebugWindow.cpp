@@ -300,7 +300,7 @@ static void DrawHexDump(const void* data, size_t size) {
 // =========================================================
 // タブ1: Memory & Chunks (メモリのヒートマップとインスペクタ)
 // =========================================================
-void ECSDebugWindow::DrawMemoryTab(CCL::ECS::Core::World* world) {
+void ECSDebugWindow::DrawMemoryTab(CCL::ECS::World* world) {
     auto& chunks = world->GetChunkManager().GetChunks();
 
     // =======================================================
@@ -481,7 +481,7 @@ void ECSDebugWindow::DrawMemoryTab(CCL::ECS::Core::World* world) {
 // =========================================================
 // タブ3: Pending Operations (遅延処理の可視化)
 // =========================================================
-void ECSDebugWindow::DrawPendingOpsTab(CCL::ECS::Core::World* world) {
+void ECSDebugWindow::DrawPendingOpsTab(CCL::ECS::World* world) {
     auto& pending = world->GetPendingOps();
     auto& ops = pending.Ops();
 
@@ -503,10 +503,10 @@ void ECSDebugWindow::DrawPendingOpsTab(CCL::ECS::Core::World* world) {
 
             // 操作に応じた色分け
             switch (op.kind) {
-            case CCL::ECS::Core::PendingOpKind::Spawn:           typeName = "SPAWN";   color = ImVec4(0.2f, 1.0f, 0.2f, 1.0f); break;
-            case CCL::ECS::Core::PendingOpKind::Destroy:         typeName = "DESTROY"; color = ImVec4(1.0f, 0.3f, 0.3f, 1.0f); break;
-            case CCL::ECS::Core::PendingOpKind::AddComponent:    typeName = "ADD";     color = ImVec4(0.2f, 0.7f, 1.0f, 1.0f); break;
-            case CCL::ECS::Core::PendingOpKind::RemoveComponent: typeName = "REMOVE";  color = ImVec4(1.0f, 0.6f, 0.2f, 1.0f); break;
+            case CCL::ECS::PendingOpKind::Spawn:           typeName = "SPAWN";   color = ImVec4(0.2f, 1.0f, 0.2f, 1.0f); break;
+            case CCL::ECS::PendingOpKind::Destroy:         typeName = "DESTROY"; color = ImVec4(1.0f, 0.3f, 0.3f, 1.0f); break;
+            case CCL::ECS::PendingOpKind::AddComponent:    typeName = "ADD";     color = ImVec4(0.2f, 0.7f, 1.0f, 1.0f); break;
+            case CCL::ECS::PendingOpKind::RemoveComponent: typeName = "REMOVE";  color = ImVec4(1.0f, 0.6f, 0.2f, 1.0f); break;
             }
 
             ImGui::TextColored(color, "[%s]", typeName);

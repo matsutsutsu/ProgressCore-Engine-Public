@@ -16,7 +16,7 @@
 #include "../Common/CCL_Types.h"
 
 
-namespace CCL::ECS::Core
+namespace CCL::ECS
 {
     // 前方宣言（World の完全定義は実装側で必要）
     class World;
@@ -100,4 +100,4 @@ namespace CCL::ECS::Core
         EntityID _id;
     };
 
-} // namespace CCL::ECS::Core
+} // namespace CCL::ECS

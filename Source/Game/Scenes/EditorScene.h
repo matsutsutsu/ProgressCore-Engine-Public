@@ -18,7 +18,7 @@ class EditorScene : public BaseScene {
 
     void RegisterSystems() override;
    
-    CCL::ECS::Core::World* GetWorld() override { return _worldPtr; }
+    CCL::ECS::World* GetWorld() override { return _worldPtr; }
     CCL::ECS::SystemManager* GetSystemManager() override { return _ecsContext->GetSystemManager(); }
 
 };

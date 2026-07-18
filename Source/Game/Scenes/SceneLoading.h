@@ -30,7 +30,7 @@ class SceneLoading : public BaseScene {
 
     // ロードジョブの寿命管理カウンタ。Finalize/dtor で WaitForCounter して
     // 「ジョブ完了前に this が壊れる」use-after-free を防ぐ（join 相当）。
-    CCL::ECS::Core::JobCounter _loadCounter;
+    CCL::ECS::JobCounter _loadCounter;
 
     // ローディング中の "NOW LOADING" 表示（メインスレッド専用・遅延生成）
     std::unique_ptr<TextRenderer> _text;
@@ -57,7 +57,7 @@ class SceneLoading : public BaseScene {
     void OnRenderUI() override;
     void OnDrawImGui() override;
 
-    CCL::ECS::Core::World* GetWorld() override { return _worldPtr; }
+    CCL::ECS::World* GetWorld() override { return _worldPtr; }
     CCL::ECS::SystemManager* GetSystemManager() override { return _ecsContext->GetSystemManager(); }
 
     float time = 0.0f;

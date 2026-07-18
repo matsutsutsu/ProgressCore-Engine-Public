@@ -9,7 +9,7 @@
 #include "tracy/Tracy.hpp"
 
 
-namespace CCL::ECS::Core {
+namespace CCL::ECS {
     using namespace CCL::ECS;
 
     World::World()
@@ -268,4 +268,4 @@ namespace CCL::ECS::Core {
         return _chunkManager.GetChunks()[chunkIdx]->GetComponentPtrByType(tid, entityIdx);
     }
 
-} // namespace CCL::ECS::Core
+} // namespace CCL::ECS

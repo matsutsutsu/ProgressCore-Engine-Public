@@ -2,7 +2,7 @@
 #include <memory>
 #include <atomic>
 
-namespace CCL::ECS::Core { class World; }
+namespace CCL::ECS { class World; }
 namespace CCL::ECS { class SystemManager; }
 
 // シーン基底
@@ -49,6 +49,6 @@ public:
     virtual void DrawGUI() = 0;
 
     // 外部（エディタやフレームワーク）が世界にアクセスするための窓口
-    virtual CCL::ECS::Core::World* GetWorld() = 0;
+    virtual CCL::ECS::World* GetWorld() = 0;
     virtual CCL::ECS::SystemManager* GetSystemManager() = 0;
 };

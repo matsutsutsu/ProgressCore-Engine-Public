@@ -64,7 +64,7 @@ struct MoveAction : public IBTAction
         if (ctx.nodeId >= timers.size())
             return BTNodeState::Failure;
 
-        ctx.bt->lastLogActionId = ::AI::A_Move;
+        ctx.bt->lastLogActionId = ::CCL::AI::A_Move;
 
         // 完了
         if (timers[ctx.nodeId] == 0.0f)
@@ -76,7 +76,7 @@ struct MoveAction : public IBTAction
 
         // 実行中：ボス固有の出力先を自分で取得して書く
         if (auto *cmd = ctx.world->GetComponent<BossCommandComponent>(ctx.entity)) {
-            cmd->currentActionId = ::AI::A_Move;
+            cmd->currentActionId = ::CCL::AI::A_Move;
         }
         return BTNodeState::Running;
     }
@@ -115,7 +115,7 @@ struct DroneStrikeAction : public IBTAction
 {
     BTNodeState Execute(BTContext &ctx) override
     {
-        ctx.bt->lastLogActionId = ::AI::A_DroneStrike;
+        ctx.bt->lastLogActionId = ::CCL::AI::A_DroneStrike;
         if (auto *cmd = ctx.world->GetComponent<BossCommandComponent>(ctx.entity)) {
             cmd->droneAttackActive = true;
         }
@@ -179,27 +179,27 @@ inline void RegisterAll()
     auto &reg = BTActionRegistry::Instance();
 
     // 近接：薙ぎ払い（アニメのトリガー名 "Slash" / 硬直 0.8s）
-    reg.RegisterActionInstance(::AI::A_BossSlash,
-        std::make_unique<MeleeAttackAction>(CCL::Utils::HashString("Slash"), 0.8f, ::AI::A_BossSlash));
+    reg.RegisterActionInstance(::CCL::AI::A_BossSlash,
+        std::make_unique<MeleeAttackAction>(CCL::Utils::HashString("Slash"), 0.8f, ::CCL::AI::A_BossSlash));
 
-    reg.RegisterActionInstance(::AI::A_Wait0_5s,  std::make_unique<WaitAction>(0.5f));
-    reg.RegisterActionInstance(::AI::A_Wait1_0s,  std::make_unique<WaitAction>(1.0f));
-    reg.RegisterActionInstance(::AI::A_Wait1_5s,  std::make_unique<WaitAction>(1.5f));
-    reg.RegisterActionInstance(::AI::A_Wait2_0s,  std::make_unique<WaitAction>(2.0f));
-    reg.RegisterActionInstance(::AI::A_Wait3_0s,  std::make_unique<WaitAction>(3.0f));
-    reg.RegisterActionInstance(::AI::A_Wait4_0s,  std::make_unique<WaitAction>(4.0f));
-    reg.RegisterActionInstance(::AI::A_Wait5_0s,  std::make_unique<WaitAction>(5.0f));
-    reg.RegisterActionInstance(::AI::A_Wait6_0s,  std::make_unique<WaitAction>(6.0f));
-    reg.RegisterActionInstance(::AI::A_Wait7_0s,  std::make_unique<WaitAction>(7.0f));
-    reg.RegisterActionInstance(::AI::A_Wait8_0s,  std::make_unique<WaitAction>(8.0f));
-    reg.RegisterActionInstance(::AI::A_Wait9_0s,  std::make_unique<WaitAction>(9.0f));
-    reg.RegisterActionInstance(::AI::A_Wait10_0s, std::make_unique<WaitAction>(10.0f));
+    reg.RegisterActionInstance(::CCL::AI::A_Wait0_5s,  std::make_unique<WaitAction>(0.5f));
+    reg.RegisterActionInstance(::CCL::AI::A_Wait1_0s,  std::make_unique<WaitAction>(1.0f));
+    reg.RegisterActionInstance(::CCL::AI::A_Wait1_5s,  std::make_unique<WaitAction>(1.5f));
+    reg.RegisterActionInstance(::CCL::AI::A_Wait2_0s,  std::make_unique<WaitAction>(2.0f));
+    reg.RegisterActionInstance(::CCL::AI::A_Wait3_0s,  std::make_unique<WaitAction>(3.0f));
+    reg.RegisterActionInstance(::CCL::AI::A_Wait4_0s,  std::make_unique<WaitAction>(4.0f));
+    reg.RegisterActionInstance(::CCL::AI::A_Wait5_0s,  std::make_unique<WaitAction>(5.0f));
+    reg.RegisterActionInstance(::CCL::AI::A_Wait6_0s,  std::make_unique<WaitAction>(6.0f));
+    reg.RegisterActionInstance(::CCL::AI::A_Wait7_0s,  std::make_unique<WaitAction>(7.0f));
+    reg.RegisterActionInstance(::CCL::AI::A_Wait8_0s,  std::make_unique<WaitAction>(8.0f));
+    reg.RegisterActionInstance(::CCL::AI::A_Wait9_0s,  std::make_unique<WaitAction>(9.0f));
+    reg.RegisterActionInstance(::CCL::AI::A_Wait10_0s, std::make_unique<WaitAction>(10.0f));
 
-    reg.RegisterAction<ResetDamageAction>(::AI::A_ResetDamage);
-    reg.RegisterAction<MoveAction>(::AI::A_Move);
-    reg.RegisterAction<DroneStrikeAction>(::AI::A_DroneStrike);
+    reg.RegisterAction<ResetDamageAction>(::CCL::AI::A_ResetDamage);
+    reg.RegisterAction<MoveAction>(::CCL::AI::A_Move);
+    reg.RegisterAction<DroneStrikeAction>(::CCL::AI::A_DroneStrike);
 
-    for (ActionID id = ::AI::A_DroneFirst; id <= ::AI::A_DroneLast; ++id)
+    for (ActionID id = ::CCL::AI::A_DroneFirst; id <= ::CCL::AI::A_DroneLast; ++id)
         reg.RegisterActionInstance(id, std::make_unique<DroneAction>(id));
 }
 

@@ -29,7 +29,7 @@ private:
     void FlattenChildren(
         CCL::ECS::EntityID firstChildID,
         int depth,
-        CCL::ECS::Core::World* world,
+        CCL::ECS::World* world,
         std::vector<FlatNode>& outFlatList);
 
     void DrawFlatNode(
@@ -39,7 +39,7 @@ private:
     bool IsDescendantOf(
         CCL::ECS::EntityID targetEntity,
         CCL::ECS::EntityID ancestorEntity,
-        CCL::ECS::Core::World* world); // ← ここも World に変更
+        CCL::ECS::World* world); // ← ここも World に変更
 
     char _searchBuffer[256] = { 0 };
 };

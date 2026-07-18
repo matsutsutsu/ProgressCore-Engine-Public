@@ -20,7 +20,7 @@
 #include <utility>  // std::forward
 
 
-namespace CCL::ECS::Core
+namespace CCL::ECS
 {
     // ------------------------------------------------------------------
     // ResourceIDGenerator
@@ -100,4 +100,4 @@ namespace CCL::ECS::Core
         }
     };
 
-} // namespace CCL::ECS::Core
+} // namespace CCL::ECS

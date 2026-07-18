@@ -31,7 +31,7 @@ ComponentGuiRegistry &ComponentGuiRegistry::Instance()
 
 // Draw関数にも EntityID と World* を追加して渡す
 void ComponentGuiRegistry::Draw(
-    TypeID id, void* data, EntityID entity, CCL::ECS::Core::World* world)
+    TypeID id, void* data, EntityID entity, CCL::ECS::World* world)
 {
     ResolveBindings(); // ★追加: 描画する直前に、IDマップが未完成なら完成させる
 
