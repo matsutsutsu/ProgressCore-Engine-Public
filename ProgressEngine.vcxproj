@@ -733,6 +733,8 @@
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\OverdriveSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Components\OverdriveComponent.h" />
+    <ClInclude Include="Source\Engine\UI\ECS\Components\UITransformComponent.h" />
+    <ClInclude Include="Source\Engine\UI\ECS\Components\UIImageComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerAttackSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerDashSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerFeedbackSystem.h" />
@@ -1491,6 +1493,7 @@
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\OverdriveSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Components\OverdriveComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\UI\ECS\Components\UIComponentsMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerAttackSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerDashSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerFeedbackSystem.cpp" />
