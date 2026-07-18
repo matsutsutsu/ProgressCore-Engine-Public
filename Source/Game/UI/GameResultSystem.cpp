@@ -19,7 +19,7 @@ void GameResultSystem::Initialize()
 {
     // ボタンクリックを購読（この世界ではリザルトのボタンだけが発火源）。
     const uint32_t kRetry   = CCL::Utils::HashString("retry");
-    const uint32_t kToTitle = CCL::Utils::HashString("to_title");
+    const uint32_t kToTitle = CCL::Utils::HashString("result_to_title");
 
     _world->GetEventBus().Subscribe<UIButtonClickedEvent>(
         [this, kRetry, kToTitle](const UIButtonClickedEvent &e) {
@@ -71,5 +71,5 @@ void GameResultSystem::ShowResultUI()
 
     // ボタン（RETRY が初期フォーカス）
     SpawnButton(w, "BtnRetry", "LblRetry", "RETRY", {0.0f, 0.0f}, "retry", true, 210);
-    SpawnButton(w, "BtnToTitle", "LblToTitle", "TITLE", {0.0f, 90.0f}, "to_title", false, 210);
+    SpawnButton(w, "BtnToTitle", "LblToTitle", "TITLE", {0.0f, 90.0f}, "result_to_title", false, 210);
 }

@@ -1,0 +1,104 @@
+/// @file PauseSystem.cpp
+/// 役割・設計方針は PauseSystem.h を参照。
+#include "PauseSystem.h"
+
+#include "Engine/ECS/Core/CCL_World.h"
+#include "Engine/Scene/SceneManager.h"
+#include "Engine/Core/Math/StringHash.h"
+
+#include "Engine/Platform/Input/Input.h"
+#include "Engine/Platform/Input/GamePad.h"
+
+#include "Engine/UI/ECS/UIEvents.h"
+#include "Game/UI/MenuUiFactory.h"
+#include "Game/GameFlowState.h"
+
+#include <cstdint>
+
+using namespace CCL::ECS;
+
+namespace
+{
+constexpr int VKEY_ESCAPE = 0x1B; // windows.h を持ち込まないための ESC 仮想キーコード
+}
+
+void PauseSystem::Initialize()
+{
+    // ポーズ状態の共有リソースを用意（BaseScene が参照する）。
+    if (!_world->HasResource<GameFlowState>())
+        _world->AddResource<GameFlowState>();
+
+    // ポーズメニューのボタン購読。
+    const uint32_t kResume  = CCL::Utils::HashString("resume");
+    const uint32_t kToTitle = CCL::Utils::HashString("pause_to_title");
+
+    _world->GetEventBus().Subscribe<UIButtonClickedEvent>(
+        [this, kResume, kToTitle](const UIButtonClickedEvent &e) {
+            if (e.actionHash == kResume)
+            {
+                ClosePause();
+            }
+            else if (e.actionHash == kToTitle)
+            {
+                if (_transitioning) return;
+                _transitioning = true;
+                // ポーズ状態を次シーンへ持ち越さない（保険）。
+                if (_world->HasResource<GameFlowState>())
+                    _world->GetResource<GameFlowState>().paused = false;
+                SceneManager::Instance().ChangeScene("Title");
+            }
+        });
+}
+
+void PauseSystem::Update(float /*dt*/)
+{
+    if (!_world->HasResource<Input *>()) return;
+    Input *input = _world->GetResource<Input *>();
+    if (!input) return;
+
+    const bool toggle = input->GetKeyboard().IsTriggered(VKEY_ESCAPE)
+                     || input->GetGamePad().IsTriggered(GamePad::BTN_START);
+    if (!toggle) return;
+
+    if (!_paused) OpenPause();
+    else          ClosePause();
+}
+
+void PauseSystem::OpenPause()
+{
+    using namespace CCL::GameUI;
+    Core::World &w = *_world;
+
+    _paused = true;
+    if (w.HasResource<GameFlowState>())
+        w.GetResource<GameFlowState>().paused = true;
+
+    // オーバーレイ生成（HUDより手前へ sortOrder 高め）。
+    _overlay.clear();
+    _overlay.push_back(SpawnPanel(w, "PauseDim", {0.0f, 0.0f}, {4000.0f, 4000.0f},
+        {0.0f, 0.0f, 0.0f, 0.55f}, 200));
+    _overlay.push_back(SpawnLabel(w, "PauseTitle", "PAUSE", {-90.0f, -140.0f}, 56.0f, 220));
+
+    auto resume = SpawnButton(w, "BtnResume", "LblResume", "RESUME", {0.0f, 0.0f}, "resume", true, 210);
+    _overlay.push_back(resume.button);
+    _overlay.push_back(resume.label);
+
+    auto toTitle = SpawnButton(w, "BtnPauseTitle", "LblPauseTitle", "TITLE", {0.0f, 90.0f},
+        "pause_to_title", false, 210);
+    _overlay.push_back(toTitle.button);
+    _overlay.push_back(toTitle.label);
+}
+
+void PauseSystem::ClosePause()
+{
+    Core::World &w = *_world;
+
+    _paused = false;
+    if (w.HasResource<GameFlowState>())
+        w.GetResource<GameFlowState>().paused = false;
+
+    // 生成したオーバーレイ実体を破棄（ソフト削除：次の構造適用で消える）。
+    for (EntityID id : _overlay)
+        w.Destroy(id);
+    _overlay.clear();
+}

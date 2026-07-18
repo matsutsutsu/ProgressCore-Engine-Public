@@ -21,6 +21,14 @@
 
 namespace CCL::GameUI
 {
+    /// @brief SpawnButton が返す、生成したボタンとラベルの EntityID ペア。
+    ///        （解除時に両方を破棄できるよう、ラベルの ID も返す）
+    struct MenuButtonIds
+    {
+        CCL::ECS::EntityID button = CCL::ECS::InvalidEntityID;
+        CCL::ECS::EntityID label  = CCL::ECS::InvalidEntityID;
+    };
+
     /// @brief 画面中央アンカーのテキストラベルを生成する。
     inline CCL::ECS::EntityID SpawnLabel(CCL::ECS::Core::World &world, const char *name,
         const std::string &text, DirectX::XMFLOAT2 offset, float pixelSize, int sortOrder = 11)
@@ -65,9 +73,9 @@ namespace CCL::GameUI
     }
 
     /// @brief ボタン（背景パネル＋当たり判定＋ボタン見た目＋拡大演出）と、その上に重ねる
-    ///        ラベル（テキスト）を生成する。戻り値＝操作対象のボタン EntityID（初期フォーカス用）。
+    ///        ラベル（テキスト）を生成する。戻り値＝生成したボタン/ラベルの EntityID ペア。
     /// @param sortOrder ボタン背景の描画順。ラベルは +1 で少し手前に置く。
-    inline CCL::ECS::EntityID SpawnButton(CCL::ECS::Core::World &world, const char *btnName,
+    inline MenuButtonIds SpawnButton(CCL::ECS::Core::World &world, const char *btnName,
         const char *labelName, const std::string &label, DirectX::XMFLOAT2 offset,
         const std::string &action, bool focused, int sortOrder = 10)
     {
@@ -115,7 +123,8 @@ namespace CCL::GameUI
         lx.sortOrder = sortOrder + 1;
 
         lbl.Set(lt).Set(lx);
+        const EntityID lblID = lbl.ID();
 
-        return btnID;
+        return {btnID, lblID};
     }
 } // namespace CCL::GameUI

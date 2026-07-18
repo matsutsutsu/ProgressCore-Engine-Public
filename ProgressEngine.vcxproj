@@ -747,6 +747,8 @@
     <ClInclude Include="Source\Game\UI\TitleMenuSystem.h" />
     <ClInclude Include="Source\Game\UI\MenuUiFactory.h" />
     <ClInclude Include="Source\Game\UI\GameResultSystem.h" />
+    <ClInclude Include="Source\Game\UI\PauseSystem.h" />
+    <ClInclude Include="Source\Game\GameFlowState.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Components\UIAnimationComponent.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Systems\UIAnimationSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerAttackSystem.h" />
@@ -1517,6 +1519,7 @@
     <ClCompile Include="Source\Game\UI\OverdriveHudSystem.cpp" />
     <ClCompile Include="Source\Game\UI\TitleMenuSystem.cpp" />
     <ClCompile Include="Source\Game\UI\GameResultSystem.cpp" />
+    <ClCompile Include="Source\Game\UI\PauseSystem.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIAnimationSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerAttackSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerDashSystem.cpp" />

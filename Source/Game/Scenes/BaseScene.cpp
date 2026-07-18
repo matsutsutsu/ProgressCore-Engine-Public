@@ -28,6 +28,7 @@
 #include "Engine/Physics/Systems/Jolt/JoltCleanupSystem.h"
 
 #include "Engine/UI/ECS/UIDrawList.h" // ECSネイティブUIの描画リスト
+#include "Game/GameFlowState.h"        // ポーズ状態（ロジック停止の判定）
  
 #include "tracy/Tracy.hpp"
 
@@ -162,15 +163,26 @@ void BaseScene::Update(float elapsedTime)
 
 
     if (_ecsContext) {
-       _ecsContext->UpdateRender(elapsedTime);
+        // ポーズ中は UpdatePaused（構造変更の適用＋描画のみ）に切替える。
+        // これによりポーズ中でもオーバーレイの生成/破棄が反映され、UIも描ける。
+        const bool paused = _worldPtr && _worldPtr->HasResource<GameFlowState>()
+                            && _worldPtr->GetResource<GameFlowState>().paused;
+        if (paused)
+            _ecsContext->UpdatePaused(elapsedTime);
+        else
+            _ecsContext->UpdateRender(elapsedTime);
     }
 
 }
 
-void BaseScene::FixedUpdate(float fixedTime) 
-{  
+void BaseScene::FixedUpdate(float fixedTime)
+{
     ZoneScopedN("BaseScene::FixedUpdate");
 
+    // ポーズ中はゲームロジック・物理を止める（描画は Update 側で継続）。
+    const bool paused = _worldPtr && _worldPtr->HasResource<GameFlowState>()
+                        && _worldPtr->GetResource<GameFlowState>().paused;
+    if (paused) return;
 
     // ECSコンテキストに更新を委譲（これだけで全てが正しい順序で回る）
     if (_ecsContext) {
