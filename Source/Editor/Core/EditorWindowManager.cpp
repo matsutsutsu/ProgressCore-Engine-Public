@@ -383,6 +383,9 @@ void EditorWindowManager::DrawSceneMenu(EditorContext &context)
     {
         if (ImGui::MenuItem("Particle Scene")) SceneManager::Instance().ChangeScene("Particle");
         if (ImGui::MenuItem("Editor Scene")) SceneManager::Instance().ChangeScene("Editor");
+        ImGui::Separator();
+        // 非同期ロード版：ローディング画面を挟んで裏読み遷移する（動作確認用）
+        if (ImGui::MenuItem("Editor Scene (Async)")) SceneManager::Instance().ChangeSceneAsync("Editor");
         ImGui::EndMenu();
     }
 }

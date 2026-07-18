@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include <atomic>
 
 namespace CCL::ECS::Core { class World; }
 namespace CCL::ECS { class SystemManager; }
@@ -8,8 +9,11 @@ namespace CCL::ECS { class SystemManager; }
 class Scene
 {
   protected:
-    // 状態管理は一番親のクラスが責任を持つ
-    bool _isReady = false;
+    // 状態管理は一番親のクラスが責任を持つ。
+    // ★ 非同期ロード時はワーカースレッドが書き、メインスレッドが読むため atomic。
+    //    acquire/release で「Initialize が構築した World の中身」の可視性まで保証する
+    //    （release で立てた ready を acquire で観測した後は、World へ安全にアクセスできる）。
+    std::atomic<bool> _isReady{false};
 
 public:
     Scene() {}
@@ -17,10 +21,10 @@ public:
 
     // 初期化が完了しているかどうかのフラグ
     // LoadingSceneで裏読みした場合は true を返すようにする
-    bool IsReady() const { return _isReady; }
+    bool IsReady() const { return _isReady.load(std::memory_order_acquire); }
 
-    // マネージャーから「初期化完了」を通知するための関数
-    void SetReady() { _isReady = true; }
+    // マネージャー（または裏読みスレッド）から「初期化完了」を通知するための関数
+    void SetReady() { _isReady.store(true, std::memory_order_release); }
 
     // 初期化
     virtual void Initialize() = 0;

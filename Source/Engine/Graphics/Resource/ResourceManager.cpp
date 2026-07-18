@@ -193,20 +193,49 @@ ModelHandle ResourceManager::LoadModelResource(const char *filename)
     if (!filename) return ModelHandle{};
 
     uint32_t hash = HashString(filename);
-    auto     it   = m_modelRegistry.find(hash);
-    if (it != m_modelRegistry.end())
+
+    // ============================================================
+    // 非同期シーンロード対応：ワーカースレッドから呼ばれ得るため、
+    // 共有レジストリ m_modelRegistry への参照/更新を _mutex で保護する。
+    // ただし model->Load() は内部で LoadTexture()（同じ _mutex をロック）を
+    // 呼ぶ可能性があり、ロックを跨いだまま呼ぶと自己デッドロックする。
+    // → 「登録操作だけロック・重いロード本体はロック外」のダブルチェックロック。
+    // ============================================================
+
+    // 1) キャッシュ命中確認（ロック下）
     {
-        if (m_modelPool.Get(it->second) != nullptr) return it->second;
+        std::lock_guard<std::mutex> lock(_mutex);
+        auto it = m_modelRegistry.find(hash);
+        if (it != m_modelRegistry.end() && m_modelPool.Get(it->second) != nullptr)
+            return it->second;
     }
 
-    ModelHandle    handle = m_modelPool.Create();
-    ModelResource *model  = m_modelPool.Get(handle);
-    model->Load(Graphics::Instance().GetDevice(), filename);
+    // 2) 空きスロット確保（プール操作のためロック下）
+    ModelHandle handle;
+    {
+        std::lock_guard<std::mutex> lock(_mutex);
+        handle = m_modelPool.Create();
+    }
 
-    m_modelRegistry[hash] = handle;
+    // 3) 実データのロード（重い・LoadTexture 経由で再入し得るためロック外で実行）
+    if (ModelResource *model = m_modelPool.Get(handle))
+        model->Load(Graphics::Instance().GetDevice(), filename);
+
+    // 4) レジストリ登録（ロック下・二重ロードは「先着を採用し自分は破棄」で解決）
+    {
+        std::lock_guard<std::mutex> lock(_mutex);
+        auto it = m_modelRegistry.find(hash);
+        if (it != m_modelRegistry.end() && m_modelPool.Get(it->second) != nullptr)
+        {
+            // 別スレッドが先に同じモデルを載せていた → 自分の分は捨てて既存を使う
+            m_modelPool.Destroy(handle);
+            return it->second;
+        }
+        m_modelRegistry[hash] = handle;
 #ifdef _DEBUG
-    m_debugNameRegistry[hash] = filename;
+        m_debugNameRegistry[hash] = filename;
 #endif
+    }
     return handle;
 }
 

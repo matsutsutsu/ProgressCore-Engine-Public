@@ -4,6 +4,7 @@
 // シーン登録ヘッダー
 #include"Game/Scenes/EditorScene.h"
 #include "Game/Scenes/ParticleScene.h"
+#include "Game/Scenes/SceneLoading.h" // 非同期ロード用のローディングシーン
 
 
 #include "Engine/Serialization/Serializer/SceneSerializer.h"
@@ -227,6 +228,22 @@ void SceneManager::ChangeScene(const std::string& name)
 	if (newScene) {
 		nextScene = newScene;
 	}
+}
+
+
+// 非同期シーン切り替え
+void SceneManager::ChangeSceneAsync(const std::string& name)
+{
+    // 対象シーンを生成（この時点では Initialize は走らせない＝軽い）
+    Scene* target = SceneFactory::Instance().Create(name);
+    if (!target) return;
+
+    // 表示上のシーン名は「最終的に遷移する先」を指しておく
+    _currentSceneName = name;
+
+    // ローディング画面で包む。target の重い Initialize() は
+    // SceneLoading がワーカースレッドで裏読みし、完了後に本線へ切り替える。
+    ChangeScene(new SceneLoading(target));
 }
 
 
