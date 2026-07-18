@@ -873,6 +873,12 @@
     <ClInclude Include="Source\Game\UI\TitleMenuSystem.h">
       <Filter>Source\Game\UI</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\UI\MenuUiFactory.h">
+      <Filter>Source\Game\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\UI\GameResultSystem.h">
+      <Filter>Source\Game\UI</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\UI\ECS\Components\UIAnimationComponent.h">
       <Filter>Source\Engine\UI\ECS\Components</Filter>
     </ClInclude>
@@ -2214,6 +2220,9 @@
       <Filter>Source\Game\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\TitleMenuSystem.cpp">
+      <Filter>Source\Game\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\UI\GameResultSystem.cpp">
       <Filter>Source\Game\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIAnimationSystem.cpp">

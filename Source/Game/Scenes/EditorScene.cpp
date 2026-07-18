@@ -13,6 +13,8 @@
 
 #include "Game/Logics/AI/StateTree/Commander/CommanderAI.h"
 
+#include "Game/UI/GameResultSystem.h" // ゲームオーバー検知＋リザルトUI
+
 void EditorScene::Initialize()
 {
     ZoneScopedN("EditorScene::Initialize");
@@ -79,6 +81,9 @@ void EditorScene::RegisterSystems()
     auto &sysManager = *(_ecsContext->GetSystemManager());
     CCL::ECS::SystemRegistry::Instance().RegisterAll(sysManager);
 
+    // ゲーム本編専用：ゲームオーバー検知＋リザルトUIオーバーレイ。
+    // グローバル登録していないので、タイトル等には入らずゲーム世界でだけ動く。
+    sysManager.RegisterSystem<GameResultSystem>(Priority::LogicStage::L02_PostUpdate);
 }
 
 void EditorScene::FixedUpdate(float dt) 
