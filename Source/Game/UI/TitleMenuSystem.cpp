@@ -1,5 +1,12 @@
 /// @file TitleMenuSystem.cpp
 /// 役割・設計方針は TitleMenuSystem.h を参照。
+
+// QUIT でアプリ終了要求（PostQuitMessage）に使う。
+// DirectXMath 等と min/max マクロが衝突しないよう、windows.h は最初に絞って取り込む。
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
+
 #include "TitleMenuSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
@@ -40,7 +47,11 @@ void TitleMenuSystem::Initialize()
             }
             else if (e.actionHash == kQuit)
             {
-                // TODO(後続): アプリ終了要求。現状は何もしない。
+                _transitioning = true;
+                // アプリ終了を要求。メインループ（while WM_QUIT != msg）が
+                // 次の PeekMessage で WM_QUIT を拾って抜ける。
+                // このコールバックはメインスレッドで走るので安全。
+                PostQuitMessage(0);
             }
         });
 }
