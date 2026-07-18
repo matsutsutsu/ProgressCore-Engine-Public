@@ -867,6 +867,15 @@
     <ClInclude Include="Source\Engine\UI\ECS\Systems\UIButtonSystem.h">
       <Filter>Source\Engine\UI\ECS\Systems</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\UI\ECS\Components\UIProgressBarComponent.h">
+      <Filter>Source\Engine\UI\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\UI\ECS\Systems\UIProgressBarCollectSystem.h">
+      <Filter>Source\Engine\UI\ECS\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\UI\OverdriveHudSystem.h">
+      <Filter>Source\Game\UI</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\UI\UIManager.h">
       <Filter>Source\Engine\UI</Filter>
     </ClInclude>
@@ -2206,6 +2215,12 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIButtonSystem.cpp">
       <Filter>Source\Engine\UI\ECS\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\UI\ECS\Systems\UIProgressBarCollectSystem.cpp">
+      <Filter>Source\Engine\UI\ECS\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\UI\OverdriveHudSystem.cpp">
+      <Filter>Source\Game\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\UI\UIManager.cpp">
       <Filter>Source\Engine\UI</Filter>

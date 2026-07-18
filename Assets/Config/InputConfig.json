@@ -19,6 +19,10 @@
                 {
                     "Device": "Keyboard",
                     "Key": "SPACE"
+                },
+                {
+                    "Device": "GamePad_Button",
+                    "Key": "BTN_A"
                 }
             ],
             "Name": "Jump",
@@ -29,6 +33,10 @@
                 {
                     "Device": "Keyboard",
                     "Key": "SHIFT"
+                },
+                {
+                    "Device": "GamePad_Button",
+                    "Key": "BTN_LEFT_SHOULDER"
                 }
             ],
             "Name": "Dash",
@@ -39,6 +47,10 @@
                 {
                     "Device": "Keyboard",
                     "Key": "R"
+                },
+                {
+                    "Device": "GamePad_Button",
+                    "Key": "BTN_RIGHT_SHOULDER"
                 }
             ],
             "Name": "LockOn",
@@ -59,6 +71,10 @@
                 {
                     "Device": "Keyboard",
                     "Key": "Q"
+                },
+                {
+                    "Device": "GamePad_Button",
+                    "Key": "BTN_LEFT_TRIGGER"
                 }
             ],
             "Name": "Overdrive",

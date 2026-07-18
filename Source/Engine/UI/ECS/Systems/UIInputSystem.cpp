@@ -1,5 +1,8 @@
 /// @file UIInputSystem.cpp
 /// 役割・設計方針は UIInputSystem.h を参照。
+///
+/// このSystemは「マウス（hover/press/click）」と「パッド/キーのフォーカス移動＋決定」の
+/// 両方を1箇所で扱う。clicked のリセット/確定を単一Systemに集約し、二重書きの競合を防ぐ。
 #include "UIInputSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
@@ -9,21 +12,46 @@
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/UI/ECS/UILayoutUtil.h"
 #include "Engine/Platform/Input/Input.h"
+#include "Engine/Platform/Input/GamePad.h"
+
+#include <vector>
+#include <cfloat>
+#include <cmath>
 
 using namespace CCL::ECS;
 
+namespace
+{
+// windows.h を持ち込まないための仮想キーコード（VK_*）。
+constexpr int VKEY_LEFT   = 0x25;
+constexpr int VKEY_UP     = 0x26;
+constexpr int VKEY_RIGHT  = 0x27;
+constexpr int VKEY_DOWN   = 0x28;
+constexpr int VKEY_RETURN = 0x0D;
+constexpr int VKEY_SPACE  = 0x20;
+} // namespace
+
 void UIInputSystem::Update(float /*dt*/)
 {
-    // マウス（具象 Input はリソース登録済み。無ければ何もしない）。
     if (!_world->HasResource<Input *>()) return;
     Input *input = _world->GetResource<Input *>();
     if (!input) return;
 
-    Mouse      &mouse   = input->GetMouse();
-    const float mx      = static_cast<float>(mouse.GetPositionX());
-    const float my      = static_cast<float>(mouse.GetPositionY());
-    const bool  pressed = mouse.IsTriggered(Mouse::BTN_LEFT); // 押した瞬間
-    const bool  released = mouse.IsReleased(Mouse::BTN_LEFT); // 離した瞬間
+    // --- 入力（マウス／キー／パッド） ---
+    Mouse      &mouse    = input->GetMouse();
+    const float mx       = static_cast<float>(mouse.GetPositionX());
+    const float my       = static_cast<float>(mouse.GetPositionY());
+    const bool  pressed  = mouse.IsTriggered(Mouse::BTN_LEFT);
+    const bool  released = mouse.IsReleased(Mouse::BTN_LEFT);
+
+    Keyboard &kb = input->GetKeyboard();
+    GamePad  &gp = input->GetGamePad();
+    const bool navUp    = kb.IsTriggered(VKEY_UP)    || gp.IsTriggered(GamePad::BTN_UP);
+    const bool navDown  = kb.IsTriggered(VKEY_DOWN)  || gp.IsTriggered(GamePad::BTN_DOWN);
+    const bool navLeft  = kb.IsTriggered(VKEY_LEFT)  || gp.IsTriggered(GamePad::BTN_LEFT);
+    const bool navRight = kb.IsTriggered(VKEY_RIGHT) || gp.IsTriggered(GamePad::BTN_RIGHT);
+    const bool confirm  = kb.IsTriggered(VKEY_RETURN) || kb.IsTriggered(VKEY_SPACE) || gp.IsTriggered(GamePad::BTN_A);
+    const bool anyDir   = navUp || navDown || navLeft || navRight;
 
     auto       &gfx     = Graphics::Instance();
     const float screenW = gfx.GetScreenWidth();
@@ -34,36 +62,85 @@ void UIInputSystem::Update(float /*dt*/)
                my >= t.computedPos.y && my <= t.computedPos.y + t.computedSize.y;
     };
 
-    // --- Pass 1: 最前面(priority最大)のヒット要素を特定 ---
-    EntityID topID       = InvalidEntityID;
+    // --- Pass 1: 矩形計算 ＋ マウス最前面ヒット ＋ フォーカス候補(中心)の収集 ---
+    EntityID topID       = InvalidEntityID; // マウスが乗っている最前面
     int      topPriority = 0;
+    EntityID focusedID   = InvalidEntityID; // 現在のフォーカス
+    struct Cand { EntityID id; float cx, cy; };
+    std::vector<Cand> cands;
+
     ForEachWithID([&](EntityID id, UITransformComponent &t, UIInteractableComponent &inter) {
         CCL::UI::ComputeUIRect(t, screenW, screenH);
         if (!inter.interactable) return;
-        if (!inRect(t)) return;
-        if (topID == InvalidEntityID || inter.priority >= topPriority)
+
+        // マウスヒット（最前面優先）
+        if (inRect(t) && (topID == InvalidEntityID || inter.priority >= topPriority))
         {
             topID       = id;
             topPriority = inter.priority;
         }
+
+        // フォーカス候補
+        if (inter.focusable)
+        {
+            cands.push_back({id, t.computedPos.x + t.computedSize.x * 0.5f,
+                                 t.computedPos.y + t.computedSize.y * 0.5f});
+            if (inter.isFocused) focusedID = id;
+        }
     });
 
-    // --- Pass 2: 状態更新（hover/press/click） ---
+    // --- フォーカスの移動先を決定 ---
+    EntityID newFocus = focusedID;
+    if (!cands.empty())
+    {
+        if (focusedID == InvalidEntityID)
+        {
+            if (anyDir) newFocus = cands.front().id; // 初回入力でどれかへ
+        }
+        else if (anyDir)
+        {
+            float fx = 0.0f, fy = 0.0f;
+            for (const auto &c : cands)
+                if (c.id == focusedID) { fx = c.cx; fy = c.cy; break; }
+
+            float    best   = FLT_MAX;
+            EntityID bestId = focusedID;
+            for (const auto &c : cands)
+            {
+                if (c.id == focusedID) continue;
+                const float dx = c.cx - fx, dy = c.cy - fy;
+                float       score = FLT_MAX;
+                const float eps   = 1.0f;
+                // 押した方向にある候補のみ対象。直交ズレを重み付けして最も素直な隣を選ぶ。
+                if (navDown && dy > eps)       score = dy + std::abs(dx) * 2.0f;
+                else if (navUp && dy < -eps)   score = -dy + std::abs(dx) * 2.0f;
+                else if (navRight && dx > eps) score = dx + std::abs(dy) * 2.0f;
+                else if (navLeft && dx < -eps) score = -dx + std::abs(dy) * 2.0f;
+                if (score < best) { best = score; bestId = c.id; }
+            }
+            newFocus = bestId;
+        }
+    }
+
+    // --- Pass 2: 状態確定（hover/press/click/focus） ---
     ForEachWithID([&](EntityID id, UITransformComponent & /*t*/, UIInteractableComponent &inter) {
         inter.clicked = false;
 
-        const bool hot   = (id == topID) && inter.interactable;
-        inter.isHovered  = hot;
-
-        if (pressed && hot)
-            inter.isPressed = true; // この要素で押下開始
-
+        // マウス hover/press/click
+        const bool hotMouse = (id == topID) && inter.interactable;
+        inter.isHovered     = hotMouse;
+        if (pressed && hotMouse)
+            inter.isPressed = true;
         if (released)
         {
-            if (inter.isPressed && hot)
-                inter.clicked = true; // 押下した要素の上で離した＝クリック成立
-            inter.isPressed = false;  // 離したら押下解除（要素外で離した場合も含む）
+            if (inter.isPressed && hotMouse) inter.clicked = true;
+            inter.isPressed = false;
         }
+
+        // パッド/キー focus と決定
+        inter.isFocused = inter.interactable && inter.focusable && (id == newFocus);
+        if (confirm && inter.isFocused)
+            inter.clicked = true;
     });
 }
 

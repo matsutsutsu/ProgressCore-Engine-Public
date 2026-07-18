@@ -7,6 +7,7 @@
 #include "UITextComponent.h"
 #include "UIInteractableComponent.h"
 #include "UIButtonComponent.h"
+#include "UIProgressBarComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
 
@@ -48,6 +49,7 @@ COMPONENT_META_END(UITextComponent)
 // ===========================================================================
 COMPONENT_META_BEGIN_FULL(UIInteractableComponent, "UI Interactable (操作可)", CCL::Categories::UI, 40, false)
     CFIELD(interactable, "Interactable", "Input")
+    CFIELD(focusable,    "Focusable",    "Input")
     CFIELD_INT_RANGED(priority, "Hit Priority", -1000, 1000, "Input")
 COMPONENT_META_END(UIInteractableComponent)
 
@@ -61,3 +63,14 @@ COMPONENT_META_BEGIN_FULL(UIButtonComponent, "UI Button (ボタン)", CCL::Categ
     CFIELD_COLOR(disabledColor, "Disabled Color", "Button")
     CFIELD(onClickAction, "On Click Action", "Button")
 COMPONENT_META_END(UIButtonComponent)
+
+// ===========================================================================
+// UIProgressBarComponent（UI カテゴリ）
+// ===========================================================================
+COMPONENT_META_BEGIN_FULL(UIProgressBarComponent, "UI Progress Bar (ゲージ)", CCL::Categories::UI, 25, false)
+    CFIELD_FLOAT_RANGED(value, "Value (0..1)", 0.01f, 0.0f, 1.0f, "Bar")
+    CFIELD_COLOR(bgColor,   "BG Color",   "Bar")
+    CFIELD_COLOR(fillColor, "Fill Color", "Bar")
+    CFIELD(visible,   "Visible",    "Bar")
+    CFIELD_INT_RANGED(sortOrder, "Sort Order", -1000, 1000, "Bar")
+COMPONENT_META_END(UIProgressBarComponent)

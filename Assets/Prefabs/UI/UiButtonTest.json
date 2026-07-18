@@ -1,0 +1,106 @@
+{
+    "entities": [
+        {
+            "components": {
+                "Name": {
+                    "name": "UIButtonTest"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 2,
+                    "position": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "UI Button (ボタン)": {
+                    "disabledColor": [
+                        0.20000000298023224,
+                        0.20000000298023224,
+                        0.2199999988079071,
+                        0.5
+                    ],
+                    "hoverColor": [
+                        0.3499999940395355,
+                        0.41999998688697815,
+                        0.6000000238418579,
+                        1.0
+                    ],
+                    "normalColor": [
+                        0.25,
+                        0.2800000011920929,
+                        0.3499999940395355,
+                        1.0
+                    ],
+                    "onClickAction": "",
+                    "pressedColor": [
+                        0.15000000596046448,
+                        0.18000000715255737,
+                        0.25999999046325684,
+                        1.0
+                    ]
+                },
+                "UI Image (画像/単色)": {
+                    "color": [
+                        0.25,
+                        0.2800000011920929,
+                        0.3499999940395355,
+                        1.0
+                    ],
+                    "sortOrder": 0,
+                    "texturePath": "",
+                    "visible": true
+                },
+                "UI Interactable (操作可)": {
+                    "focusable": true,
+                    "interactable": true,
+                    "priority": 0
+                },
+                "UI Transform (矩形)": {
+                    "anchor": [
+                        0.5,
+                        0.5
+                    ],
+                    "offset": [
+                        0.0,
+                        0.0
+                    ],
+                    "pivot": [
+                        0.5,
+                        0.5
+                    ],
+                    "rotation": 0.0,
+                    "scale": 1.0,
+                    "size": [
+                        200.0,
+                        60.0
+                    ]
+                }
+            },
+            "lid": 1
+        }
+    ],
+    "magic": 1397506883,
+    "name": "UIButtonTest",
+    "version": 1
+}

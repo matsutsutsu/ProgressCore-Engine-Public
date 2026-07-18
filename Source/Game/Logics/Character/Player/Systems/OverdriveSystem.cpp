@@ -17,7 +17,8 @@ using namespace CCL::ECS;
 
 void OverdriveSystem::Initialize()
 {
-    hasGui = true; // ゲージHUDを OnGui で前面描画する
+    // ※ ゲージHUDは ECS UI（OverdriveHudSystem + UIProgressBar/UIText）へ移行済み。
+    //    旧 ImGui foreground 直描き(OnGui)は撤去（製品ビルドで消えないHUDにするため）。
 
     // ジャスト回避成功でゲージを多めに加算（近道）。発動中は加算しない（無限延長防止）。
     ListenEvent<JustEvadeSuccessEvent>([this](const JustEvadeSuccessEvent &ev) {
@@ -85,35 +86,10 @@ void OverdriveSystem::Update(float dt)
     }
 }
 
+// ゲージHUDは ECS UI（OverdriveHudSystem + UIProgressBar/UIText）へ移行済み。
+// 旧 ImGui foreground 直描きは撤去（製品ビルドで消えないHUDにするため）。OnGui は未使用。
 void OverdriveSystem::OnGui()
 {
-    // プレイヤーの OverdriveComponent を1つ拾ってHUDを描く。
-    const OverdriveComponent *found = nullptr;
-    ForEach([&](OverdriveComponent &od, const DashComponent & /*dash*/) {
-        if (!found) found = &od;
-    });
-    if (!found) return;
-
-    ImDrawList *dl = ImGui::GetForegroundDrawList();
-    ImGuiIO    &io = ImGui::GetIO();
-
-    const float w = 340.0f, h = 24.0f;
-    const float x = 48.0f, y = io.DisplaySize.y - 72.0f;
-
-    float ratio = (found->maxGauge > 0.0f) ? (found->currentGauge / found->maxGauge) : 0.0f;
-    ratio       = (ratio < 0.0f) ? 0.0f : (ratio > 1.0f ? 1.0f : ratio);
-
-    const ImU32 fill = found->isActive ? IM_COL32(255, 70, 220, 255)   // 発動中：マゼンタ
-                     : (found->IsFull() ? IM_COL32(255, 215, 60, 255)   // MAX：ゴールド
-                                        : IM_COL32(70, 170, 255, 255));  // 蓄積中：ブルー
-
-    dl->AddRectFilled(ImVec2(x, y), ImVec2(x + w, y + h), IM_COL32(0, 0, 0, 160), 4.0f);
-    dl->AddRectFilled(ImVec2(x, y), ImVec2(x + w * ratio, y + h), fill, 4.0f);
-    dl->AddRect(ImVec2(x, y), ImVec2(x + w, y + h), IM_COL32(255, 255, 255, 210), 4.0f, 0, 2.0f);
-
-    const char *label = found->isActive ? "OVERDRIVE!!"
-                      : (found->IsFull() ? "OVERDRIVE READY  [Q]" : "OVERDRIVE");
-    dl->AddText(ImVec2(x, y - 20.0f), IM_COL32(255, 255, 255, 255), label);
 }
 
 // 時間スケールは1フレーム遅延で TimeScaleSystem に折り込まれる（体感無問題）。

@@ -16,12 +16,13 @@ void UIButtonSystem::Update(float /*dt*/)
 {
     ForEachWithID([&](EntityID id, const UIInteractableComponent &inter,
                       const UIButtonComponent &btn, UIImageComponent &img) {
-        // 状態に応じた色へ差し替え（Disabled > Pressed > Hover > Normal の優先）
+        // 状態に応じた色へ差し替え（Disabled > Pressed > Hover/Focus > Normal の優先）。
+        // マウスhover と パッド/キーfocus は同じハイライト扱い。
         if (!inter.interactable)
             img.color = btn.disabledColor;
         else if (inter.isPressed)
             img.color = btn.pressedColor;
-        else if (inter.isHovered)
+        else if (inter.isHovered || inter.isFocused)
             img.color = btn.hoverColor;
         else
             img.color = btn.normalColor;
