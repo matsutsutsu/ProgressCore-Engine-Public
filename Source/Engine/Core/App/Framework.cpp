@@ -22,6 +22,7 @@
 #include "Editor/Windows/ConsoleWindow.h"
 
 #include "EngineServices.h"
+#include "Engine/ECS/Jobs/CCL_JobSystem.h" // 共有ジョブプールの実体生成に必要
 #include "Engine/Core/Components/RenderInterpState.h"
 
 #ifdef ENABLE_EDITOR
@@ -100,6 +101,13 @@ Framework::Framework(HWND hWnd)
 	//  システムを生成・初期化し、仲介役に預ける
 	// =========================================================
 	auto& services = EngineServices::Instance();
+
+	{
+		ZoneScopedN("Init: JobSystem (shared frame pool)");
+		// ECSのフレーム並列で全Worldが共有する唯一のジョブプールを、ここ（上層）で1つだけ生成。
+		// 以降 SystemManager はこれを注入して使う（各Worldでプールを持たない）。
+		services.jobSystem = std::make_shared<CCL::ECS::Core::JobSystem>();
+	}
 
 	{
 		ZoneScopedN("Init: InputFacade + LoadConfig");

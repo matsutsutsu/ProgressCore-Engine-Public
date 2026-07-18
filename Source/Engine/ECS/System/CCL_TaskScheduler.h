@@ -177,13 +177,15 @@ namespace CCL::ECS {
             for (auto &batch : _executionBatches) {
                 if (batch.empty()) continue;
 
-                 // ① バッチの中にシステムが1個しかない場合
-                if (batch.size() == 1) {   
-                    // バッチ内に1つしかないなら直列実行
-                    batch[0]->UpdateImpl(dt);
+                 // ① バッチが1個 or プール未注入なら直列実行
+                //    （jobSystem==nullptr の安全弁：プール無しでも必ず動く）
+                if (batch.size() == 1 || jobSystem == nullptr) {
+                    for (SystemBase* sys : batch) {
+                        sys->UpdateImpl(dt);
+                    }
                 }
                 // ② バッチの中にシステムが複数（並列可能）ある場合
-                else {      
+                else {
                     // バッチ内に複数システムがある = 完全にデータが独立している = 超並列実行可能！
                     Core::JobCounter counter;
 

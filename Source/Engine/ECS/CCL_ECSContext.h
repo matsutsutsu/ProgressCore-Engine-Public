@@ -8,13 +8,20 @@ namespace CCL::ECS {
     // 1つの独立したECS環境（データとロジックのセット）を管理するクラス
     class ECSContext {
       public:
-        ECSContext()
+        // jobSystem: 上層(EngineServices)が持つ共有ジョブプール。
+        //   フレーム並列に使うためSystemManagerへ注入する（World毎に持たない）。
+        // explicit... コンストラクタを「ECSContext ctx = ...」のように暗黙的に呼ばせないための指定
+        // 別に書かなくてもいいけど、書いておくと「ECSContext ctx = ...」のような書き方を禁止できる
+        explicit ECSContext(Core::JobSystem* jobSystem = nullptr)
         {
             _world         = std::make_unique<Core::World>();
             _systemManager = std::make_unique<SystemManager>();
 
             // SystemManagerに「お前が処理すべきデータはこれだ」と教える
             _systemManager->SetWorld(_world.get());
+
+            // 共有ジョブプールを注入（RegisterSystems より前に済ませる）
+            _systemManager->SetJobSystem(jobSystem);
         }
 
         ~ECSContext() = default;

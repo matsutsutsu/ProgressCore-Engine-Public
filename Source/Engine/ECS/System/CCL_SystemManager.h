@@ -33,6 +33,10 @@ namespace CCL::ECS
         // Worldをセットする（EditorScene::Initializeなどで呼ぶ）
         void SetWorld(Core::World* world) { _world = world; }
 
+        // 共有ジョブプールを注入する（上層=EngineServicesが持つ唯一のプールを渡す）。
+        // ※ RegisterSystems の前に呼ぶこと（各システムへ配るのは登録時のため）。
+        void SetJobSystem(Core::JobSystem* js) { _jobSystem = js; }
+
 
         // ------------------------------------------------------------------
         // ★改良: ステージEnumを使った登録関数 (推奨)
@@ -85,9 +89,10 @@ namespace CCL::ECS
                 ptr->SetStructureMutex(&_world->GetChunkManager().GetStructureMutex());
             }
 
-            // 生成したシステムにジョブシステムを渡しておく
+            // 生成したシステムに共有ジョブプールを渡しておく
             // これで各システムは自動的に並列処理機能を使えるようになる
-            sys->SetJobSystem(&_jobSystem);
+            // （_jobSystem は EngineServices が持つ共有プールへのポインタ）
+            sys->SetJobSystem(_jobSystem);
 
             // =======================================================
             // 全ての準備が整ったので、システムの初期化を自動実行する
@@ -140,7 +145,7 @@ namespace CCL::ECS
             }
 
             // スケジューラによる超並列実行！
-            _logicScheduler.Execute(dt, &_jobSystem);
+            _logicScheduler.Execute(dt, _jobSystem);
         }
 
 
@@ -148,7 +153,7 @@ namespace CCL::ECS
         void UpdateRender(float dt) {     
 
             // Render側のシステムもスケジューラで実行
-            _renderScheduler.Execute(dt, &_jobSystem);
+            _renderScheduler.Execute(dt, _jobSystem);
         }
 
 		// ImGuiによるデバッグGUI描画
@@ -206,8 +211,9 @@ namespace CCL::ECS
             );
         }
 
-        // ジョブシステム
-        Core::JobSystem _jobSystem;
+        // 共有ジョブプールへのポインタ（所有しない）。
+        // 実体は EngineServices が1つだけ持ち、SetJobSystem で注入される。
+        Core::JobSystem* _jobSystem = nullptr;
 
         // 2つのリストに分離
         std::vector<std::unique_ptr<SystemBase>> _logicSystems;

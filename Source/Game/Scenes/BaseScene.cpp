@@ -61,9 +61,12 @@ void BaseScene::Initialize()
     cam->SetLookAt({ 0.0f, 10.0f, -10.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f });
 
     // ECSコンテキストの生成
+    // フレーム並列用の共有ジョブプール（EngineServices所有）を注入する。
+    // これで各Worldが自前のプールを持たず、アプリ全体で1プールを共有する。
     {
         ZoneScopedN("BaseScene: ECSContext create");
-        _ecsContext = std::make_unique<CCL::ECS::ECSContext>();
+        _ecsContext = std::make_unique<CCL::ECS::ECSContext>(
+            EngineServices::Instance().jobSystem.get());
     }
     _worldPtr   = _ecsContext->GetWorld(); // 互換性用
 
