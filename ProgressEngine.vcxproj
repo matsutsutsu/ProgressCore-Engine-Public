@@ -742,6 +742,11 @@
     <ClInclude Include="Source\Engine\UI\ECS\Components\UITextComponent.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Systems\UITextCollectSystem.h" />
     <ClInclude Include="Source\Engine\UI\Text\TextRenderer.h" />
+    <ClInclude Include="Source\Engine\UI\ECS\Components\UIInteractableComponent.h" />
+    <ClInclude Include="Source\Engine\UI\ECS\Components\UIButtonComponent.h" />
+    <ClInclude Include="Source\Engine\UI\ECS\UIEvents.h" />
+    <ClInclude Include="Source\Engine\UI\ECS\Systems\UIInputSystem.h" />
+    <ClInclude Include="Source\Engine\UI\ECS\Systems\UIButtonSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerAttackSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerDashSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerFeedbackSystem.h" />
@@ -1505,6 +1510,8 @@
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UILayoutSystem.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UITextCollectSystem.cpp" />
     <ClCompile Include="Source\Engine\UI\Text\TextRenderer.cpp" />
+    <ClCompile Include="Source\Engine\UI\ECS\Systems\UIInputSystem.cpp" />
+    <ClCompile Include="Source\Engine\UI\ECS\Systems\UIButtonSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerAttackSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerDashSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerFeedbackSystem.cpp" />

@@ -1,3 +1,5 @@
 {
-    "DialogHistory": {}
+    "DialogHistory": {
+        "Prefab": "Assets\\Prefabs\\UI"
+    }
 }

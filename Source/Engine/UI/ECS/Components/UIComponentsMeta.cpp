@@ -5,6 +5,8 @@
 #include "UITransformComponent.h"
 #include "UIImageComponent.h"
 #include "UITextComponent.h"
+#include "UIInteractableComponent.h"
+#include "UIButtonComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
 
@@ -40,3 +42,22 @@ COMPONENT_META_BEGIN_FULL(UITextComponent, "UI Text (文字列)", CCL::Categorie
     CFIELD(visible,     "Visible",    "Appearance")
     CFIELD_INT_RANGED(sortOrder, "Sort Order", -1000, 1000, "Appearance")
 COMPONENT_META_END(UITextComponent)
+
+// ===========================================================================
+// UIInteractableComponent（UI カテゴリ）
+// ===========================================================================
+COMPONENT_META_BEGIN_FULL(UIInteractableComponent, "UI Interactable (操作可)", CCL::Categories::UI, 40, false)
+    CFIELD(interactable, "Interactable", "Input")
+    CFIELD_INT_RANGED(priority, "Hit Priority", -1000, 1000, "Input")
+COMPONENT_META_END(UIInteractableComponent)
+
+// ===========================================================================
+// UIButtonComponent（UI カテゴリ）
+// ===========================================================================
+COMPONENT_META_BEGIN_FULL(UIButtonComponent, "UI Button (ボタン)", CCL::Categories::UI, 50, false)
+    CFIELD_COLOR(normalColor,   "Normal Color",   "Button")
+    CFIELD_COLOR(hoverColor,    "Hover Color",    "Button")
+    CFIELD_COLOR(pressedColor,  "Pressed Color",  "Button")
+    CFIELD_COLOR(disabledColor, "Disabled Color", "Button")
+    CFIELD(onClickAction, "On Click Action", "Button")
+COMPONENT_META_END(UIButtonComponent)

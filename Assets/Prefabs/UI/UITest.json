@@ -1,0 +1,74 @@
+{
+    "entities": [
+        {
+            "components": {
+                "Name": {
+                    "name": "UITest"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 2,
+                    "position": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "UI Image (画像/単色)": {
+                    "color": [
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "sortOrder": 0,
+                    "texturePath": "",
+                    "visible": true
+                },
+                "UI Transform (矩形)": {
+                    "anchor": [
+                        0.5,
+                        0.5
+                    ],
+                    "offset": [
+                        0.0,
+                        0.0
+                    ],
+                    "pivot": [
+                        0.5,
+                        0.5
+                    ],
+                    "rotation": 0.0,
+                    "scale": 1.0,
+                    "size": [
+                        200.0,
+                        60.0
+                    ]
+                }
+            },
+            "lid": 1
+        }
+    ],
+    "magic": 1397506883,
+    "name": "UITest",
+    "version": 1
+}

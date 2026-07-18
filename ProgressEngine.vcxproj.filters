@@ -852,6 +852,21 @@
     <ClInclude Include="Source\Engine\UI\Text\TextRenderer.h">
       <Filter>Source\Engine\UI\Text</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\UI\ECS\Components\UIInteractableComponent.h">
+      <Filter>Source\Engine\UI\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\UI\ECS\Components\UIButtonComponent.h">
+      <Filter>Source\Engine\UI\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\UI\ECS\UIEvents.h">
+      <Filter>Source\Engine\UI\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\UI\ECS\Systems\UIInputSystem.h">
+      <Filter>Source\Engine\UI\ECS\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\UI\ECS\Systems\UIButtonSystem.h">
+      <Filter>Source\Engine\UI\ECS\Systems</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\UI\UIManager.h">
       <Filter>Source\Engine\UI</Filter>
     </ClInclude>
@@ -2185,6 +2200,12 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\UI\Text\TextRenderer.cpp">
       <Filter>Source\Engine\UI\Text</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\UI\ECS\Systems\UIInputSystem.cpp">
+      <Filter>Source\Engine\UI\ECS\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\UI\ECS\Systems\UIButtonSystem.cpp">
+      <Filter>Source\Engine\UI\ECS\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\UI\UIManager.cpp">
       <Filter>Source\Engine\UI</Filter>
