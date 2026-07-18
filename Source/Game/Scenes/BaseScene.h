@@ -10,6 +10,8 @@
 
 #include "Engine/Scene/SceneManager.h"
 
+#include "Engine/UI/ECS/UIRenderer.h" // ECSネイティブUIの2Dパス描画
+
 class World;
 class SystemManager;
 
@@ -17,6 +19,8 @@ class BaseScene : public Scene {
   protected:
     std::unique_ptr<CCL::ECS::ECSContext> _ecsContext;
     CCL::ECS::Core::World *_worldPtr = nullptr;
+
+    UIRenderer _uiRenderer; // UIDrawList を2Dパスで描画する
 
   public:
     BaseScene()                   = default;

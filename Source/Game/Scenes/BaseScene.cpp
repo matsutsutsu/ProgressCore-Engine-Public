@@ -26,6 +26,8 @@
 #include "Engine/Transform/Systems/TransformUpdateSystem.h"
 #include "Engine/Transform/Systems/HierarchyCleanupSystem.h"
 #include "Engine/Physics/Systems/Jolt/JoltCleanupSystem.h"
+
+#include "Engine/UI/ECS/UIDrawList.h" // ECSネイティブUIの描画リスト
  
 #include "tracy/Tracy.hpp"
 
@@ -210,6 +212,10 @@ void BaseScene::Render()
             gfx.GetRenderState()->GetBlendState(BlendState::Transparency), nullptr, 0xffffffff);
         dc->OMSetDepthStencilState(
             gfx.GetRenderState()->GetDepthStencilState(DepthState::NoTestNoWrite), 0);
+
+        // ECSネイティブUI: UILayoutSystem(UpdateRender)が構築した UIDrawList を描く。
+        if (_worldPtr && _worldPtr->HasResource<UIDrawList>())
+            _uiRenderer.Flush(dc, gfx.GetDevice(), _worldPtr->GetResource<UIDrawList>());
 
         OnRenderUI();
     }

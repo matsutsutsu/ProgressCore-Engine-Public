@@ -86,6 +86,16 @@ Sprite::Sprite(ID3D11Device* device, const char* filename)
 	}
 }
 
+// コンストラクタ（外部SRVを包む）: 既存コンストラクタに委譲してVS/PS/頂点バッファを
+// 用意し、ダミーテクスチャを渡されたSRV（フォントアトラス等）へ差し替える。
+Sprite::Sprite(ID3D11Device* device, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv, float width, float height)
+	: Sprite(device)
+{
+	shaderResourceView = srv;
+	textureWidth       = width;
+	textureHeight      = height;
+}
+
 // 描画実行
 void Sprite::Render(ID3D11DeviceContext* dc,
 	float dx, float dy,					// 左上位置

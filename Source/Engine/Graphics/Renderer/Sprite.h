@@ -12,6 +12,9 @@ class Sprite
 public:
 	Sprite(ID3D11Device* device);
 	Sprite(ID3D11Device* device, const char* filename);
+	// 実行時生成テクスチャ（フォントアトラス等）を外部SRVから包む。
+	// 描画パイプライン（VS/PS/頂点バッファ）は他コンストラクタと共通。
+	Sprite(ID3D11Device* device, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv, float width, float height);
 	virtual ~Sprite() = default; // デストラクタを仮想関数にしておくのが安全
 
 	// 頂点データ

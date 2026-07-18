@@ -4,6 +4,7 @@
 
 #include "UITransformComponent.h"
 #include "UIImageComponent.h"
+#include "UITextComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
 
@@ -28,3 +29,14 @@ COMPONENT_META_BEGIN_FULL(UIImageComponent, "UI Image (画像/単色)", CCL::Cat
     CFIELD(visible,      "Visible",     "Appearance")
     CFIELD_INT_RANGED(sortOrder, "Sort Order", -1000, 1000, "Appearance")
 COMPONENT_META_END(UIImageComponent)
+
+// ===========================================================================
+// UITextComponent（UI カテゴリ）
+// ===========================================================================
+COMPONENT_META_BEGIN_FULL(UITextComponent, "UI Text (文字列)", CCL::Categories::UI, 30, false)
+    CFIELD(text, "Text", "Appearance")
+    CFIELD_FLOAT_RANGED(pixelSize, "Pixel Size", 0.5f, 4.0f, 256.0f, "Appearance")
+    CFIELD_COLOR(color, "Color", "Appearance")
+    CFIELD(visible,     "Visible",    "Appearance")
+    CFIELD_INT_RANGED(sortOrder, "Sort Order", -1000, 1000, "Appearance")
+COMPONENT_META_END(UITextComponent)

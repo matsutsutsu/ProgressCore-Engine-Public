@@ -129,6 +129,12 @@
     <Filter Include="Source\Engine\UI\ECS\Components">
       <UniqueIdentifier>{8b2c3d4e-5f6a-4b7c-9d0e-1f2a3b4c5d6e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\UI\ECS\Systems">
+      <UniqueIdentifier>{9c3d4e5f-6a7b-4c8d-9e0f-2a3b4c5d6e7f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\UI\Text">
+      <UniqueIdentifier>{a1d5e6f7-8b9c-4d0e-1f2a-3b4c5d6e7f80}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\UI\ImGui">
       <UniqueIdentifier>{4c3ff29b-8223-48fe-9ed2-adbda18fe524}</UniqueIdentifier>
     </Filter>
@@ -824,6 +830,27 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\UI\ECS\Components\UIImageComponent.h">
       <Filter>Source\Engine\UI\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\UI\ECS\UIDrawList.h">
+      <Filter>Source\Engine\UI\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\UI\ECS\UIRenderer.h">
+      <Filter>Source\Engine\UI\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\UI\ECS\Systems\UILayoutSystem.h">
+      <Filter>Source\Engine\UI\ECS\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\UI\ECS\UILayoutUtil.h">
+      <Filter>Source\Engine\UI\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\UI\ECS\Components\UITextComponent.h">
+      <Filter>Source\Engine\UI\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\UI\ECS\Systems\UITextCollectSystem.h">
+      <Filter>Source\Engine\UI\ECS\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\UI\Text\TextRenderer.h">
+      <Filter>Source\Engine\UI\Text</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\UI\UIManager.h">
       <Filter>Source\Engine\UI</Filter>
@@ -2146,6 +2173,18 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\UI\ECS\Components\UIComponentsMeta.cpp">
       <Filter>Source\Engine\UI\ECS\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\UI\ECS\UIRenderer.cpp">
+      <Filter>Source\Engine\UI\ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\UI\ECS\Systems\UILayoutSystem.cpp">
+      <Filter>Source\Engine\UI\ECS\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\UI\ECS\Systems\UITextCollectSystem.cpp">
+      <Filter>Source\Engine\UI\ECS\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\UI\Text\TextRenderer.cpp">
+      <Filter>Source\Engine\UI\Text</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\UI\UIManager.cpp">
       <Filter>Source\Engine\UI</Filter>
