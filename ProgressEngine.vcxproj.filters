@@ -804,6 +804,9 @@
     <ClInclude Include="Source\Game\Scenes\EditorScene.h">
       <Filter>Source\Game\Scenes</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Scenes\TitleScene.h">
+      <Filter>Source\Game\Scenes</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Scenes\SceneLoading.h">
       <Filter>Source\Game\Scenes</Filter>
     </ClInclude>
@@ -865,6 +868,9 @@
       <Filter>Source\Engine\UI\ECS\Systems</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\OverdriveHudSystem.h">
+      <Filter>Source\Game\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\UI\TitleMenuSystem.h">
       <Filter>Source\Game\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\UI\ECS\Components\UIAnimationComponent.h">
@@ -2168,6 +2174,9 @@
     <ClCompile Include="Source\Game\Scenes\EditorScene.cpp">
       <Filter>Source\Game\Scenes</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\Scenes\TitleScene.cpp">
+      <Filter>Source\Game\Scenes</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Game\Scenes\SceneLoading.cpp">
       <Filter>Source\Game\Scenes</Filter>
     </ClCompile>
@@ -2202,6 +2211,9 @@
       <Filter>Source\Engine\UI\ECS\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\OverdriveHudSystem.cpp">
+      <Filter>Source\Game\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\UI\TitleMenuSystem.cpp">
       <Filter>Source\Game\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIAnimationSystem.cpp">

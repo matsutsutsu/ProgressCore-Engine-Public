@@ -386,6 +386,9 @@ void EditorWindowManager::DrawSceneMenu(EditorContext &context)
         ImGui::Separator();
         // 非同期ロード版：ローディング画面を挟んで裏読み遷移する（動作確認用）
         if (ImGui::MenuItem("Editor Scene (Async)")) SceneManager::Instance().ChangeSceneAsync("Editor");
+        ImGui::Separator();
+        // ゲームループ：タイトル画面から START でゲームへ（動作確認用）
+        if (ImGui::MenuItem("Title Scene")) SceneManager::Instance().ChangeScene("Title");
         ImGui::EndMenu();
     }
 }

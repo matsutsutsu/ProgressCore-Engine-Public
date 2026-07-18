@@ -4,6 +4,7 @@
 // シーン登録ヘッダー
 #include"Game/Scenes/EditorScene.h"
 #include "Game/Scenes/ParticleScene.h"
+#include "Game/Scenes/TitleScene.h"   // ゲームループのタイトル画面
 #include "Game/Scenes/SceneLoading.h" // 非同期ロード用のローディングシーン
 
 
@@ -40,9 +41,19 @@ void SceneManager::Initialize()
 
 	SceneFactory::Instance().Register("Particle", []() { return new ParticleScene(); });
 
+	// ゲームループ用シーン
+	SceneFactory::Instance().Register("Title", []() { return new TitleScene(); });
+	// "Game" = 実プレイ。SpawnGameTest の重複を避けるため既存のゲーム世界を再利用する。
+	SceneFactory::Instance().Register("Game", []() { return new EditorScene(); });
+
 
 	// 最初に表示するシーン（生成予約のみ。実体の重い初期化は初回 Update で走る）
+	// エディタ開発時は従来通りゲーム世界を直接開く。製品ビルドはタイトルから開始する。
+#ifdef ENABLE_EDITOR
 	ChangeScene("Editor");
+#else
+	ChangeScene("Title");
+#endif
 	//ChangeScene("Particle");
 }
 
