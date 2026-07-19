@@ -62,6 +62,7 @@ protected:
 
 	Microsoft::WRL::ComPtr<ID3D11Buffer>				vertexBuffer;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>	shaderResourceView;
+	Microsoft::WRL::ComPtr<ID3D11SamplerState>			samplerState;
 
 	float textureWidth = 0;
 	float textureHeight = 0;

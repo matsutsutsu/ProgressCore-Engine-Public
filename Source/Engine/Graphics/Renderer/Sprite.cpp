@@ -58,7 +58,22 @@ Sprite::Sprite(ID3D11Device* device, const char* filename)
 		_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 	}
 
-	// テクスチャの生成	
+	// サンプラーステートの生成（s0）。SpritePS が register(s0) でサンプルするため、
+	// これを Render でバインドしないと DEVICE_DRAW_SAMPLER_NOT_SET 警告が出る。
+	{
+		D3D11_SAMPLER_DESC desc = {};
+		desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		desc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+		desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+		desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+		desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+		desc.MinLOD = 0;
+		desc.MaxLOD = D3D11_FLOAT32_MAX;
+		hr = device->CreateSamplerState(&desc, samplerState.GetAddressOf());
+		_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+	}
+
+	// テクスチャの生成
 	if (filename != nullptr)
 	{
 		// テクスチャファイル読み込み
@@ -199,6 +214,7 @@ void Sprite::Render(ID3D11DeviceContext* dc,
 	dc->VSSetShader(vertexShader.Get(), nullptr, 0);
 	dc->PSSetShader(pixelShader.Get(), nullptr, 0);
 	dc->PSSetShaderResources(0, 1, shaderResourceView.GetAddressOf());
+	dc->PSSetSamplers(0, 1, samplerState.GetAddressOf());
 
 	// 描画
 	dc->Draw(4, 0);
