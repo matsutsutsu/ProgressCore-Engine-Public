@@ -2,7 +2,9 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
+#ifdef ENABLE_EDITOR
 #include <imgui.h>
+#endif
 #include "Engine/Timer/TimeState.h"
 #include <cmath>
 
@@ -160,6 +162,7 @@ void BoidSystem::Update(float dt)
 // -------------------------------------------------------------
 // GUIでのリアルタイム編集
 // -------------------------------------------------------------
+#ifdef ENABLE_EDITOR
 void BoidSystem::OnGui()
 {
     if (ImGui::CollapsingHeader("Boids Swarm Settings", ImGuiTreeNodeFlags_DefaultOpen))
@@ -185,5 +188,8 @@ void BoidSystem::OnGui()
         ImGui::Unindent();
     }
 }
+#else
+void BoidSystem::OnGui() {}
+#endif
 
 REGISTER_LOGIC_SYSTEM(BoidSystem, Priority::LogicStage::L02_Update);

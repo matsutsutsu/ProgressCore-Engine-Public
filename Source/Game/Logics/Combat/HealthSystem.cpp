@@ -19,7 +19,9 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
+#ifdef ENABLE_EDITOR
 #include <imgui.h>
+#endif
 
 
 void HealthSystem::Update(float dt)
@@ -44,6 +46,7 @@ void HealthSystem::Update(float dt)
 }
 
 
+#ifdef ENABLE_EDITOR
 void HealthSystem::OnGui()
 {
     ImGui::Text("Health Monitor");
@@ -139,6 +142,9 @@ void HealthSystem::OnGui()
         ImGui::EndTable();
     }
 }
+#else
+void HealthSystem::OnGui() {}
+#endif
 
 
 REGISTER_LOGIC_SYSTEM(HealthSystem, Priority::LogicStage::L06_HealthManagement);

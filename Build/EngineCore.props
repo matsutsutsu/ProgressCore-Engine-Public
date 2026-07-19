@@ -78,6 +78,11 @@
 				$(SolutionDir)External\RecastNavigation\DebugUtils\Include;
 				$(SolutionDir)External\stb;
 
+				<!-- Tracy のヘッダは全構成で #include される（コード側は無条件 include）。
+				     TRACY_ENABLE 未定義（Shipping）なら全マクロが no-op になるだけなので、
+				     ヘッダ探索パスは共通のここに置いて全構成で見つかるようにする。 -->
+				$(SolutionDir)External\Tracy;
+
 				$(ProjectDir)Engine\Core;
 				
 				%(AdditionalIncludeDirectories)

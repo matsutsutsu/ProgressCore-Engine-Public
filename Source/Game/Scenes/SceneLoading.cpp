@@ -16,6 +16,7 @@ SceneLoading::~SceneLoading()
 {
     // 念のため：ロードジョブが走っていれば完了を待ってから破棄する。
     // （通常は Finalize 済みで即返るが、二重の安全弁。）
+    // loadCounterでワーカースレッドの仕事のカウントが０になるまで待つ
     SceneManager::Instance().GetLoaderJobs().WaitForCounter(&_loadCounter);
 }
 
@@ -35,6 +36,8 @@ void SceneLoading::Initialize()
         // 自作の汎用 JobSystem を「フレーム並列」だけでなく
         // 「シーン非同期ロード」にも使い回す。ここでは WaitForCounter で
         // 待たずに投げっぱなしにし、_isFinished を毎フレーム覗く（fire-and-poll）。
+        // Executeの中身はメインではなくワーカースレッドで実行される、これが非同期ロード
+        // Execute(job, counter) ... Execute(ワーカースレッドで実行する処理, カウンター)
         SceneManager::Instance().GetLoaderJobs().Execute(
             [target, finished]() {
                 // WIC 経由のテクスチャ読み込みには、このスレッドでの COM 初期化が要る。
@@ -44,6 +47,7 @@ void SceneLoading::Initialize()
                 //    DeviceContext（描画コマンド）は触らないこと。
                 //    リソース生成（CreateBuffer/CreateTexture）はフリースレッドなので可。
                 target->Initialize();
+                // SetReadyで中身のisReadyをtrueにする、これで他のスレッドが正しい値を確認できる
                 target->SetReady(); // release：以降 world の中身がメインから安全に見える
 
                 if (SUCCEEDED(hr)) CoUninitialize();
@@ -70,6 +74,7 @@ void SceneLoading::Update(float elapsedTime)
 
     BaseScene::Update(elapsedTime);
 
+    // ワーカースレッドで書き込まれたデータを読み込む、acquireでしっかりと正しい値を確認できる
     const bool done = _isFinished.load(std::memory_order_acquire);
 
     // --- 表示用進捗のスムージング ---
@@ -85,14 +90,17 @@ void SceneLoading::Update(float elapsedTime)
     //   ① 裏読み完了（done） かつ
     //   ② 最低表示時間を経過（一瞬で終わってもロード画面を必ず見せる） かつ
     //   ③ バーが満タン付近（100% を見せてから切り替える）
-    if (done && time >= kMinLoadTime && _progress >= 0.995f)
+    // 裏読みが終わり次第、本命シーンへ引き渡す。
+    //   画面は SceneManager が「黒のまま保持」しているため、ローディング画面は
+    //   見えていない。よって「最低表示時間」や「バー100%待ち」の演出条件は不要で、
+    //   完了したら即引き渡してよい（黒→ゲームの1回フェードインにつながる）。
+    //   RequestTransition は黒保持を解いて本命へ差し替え、フェードインを開始する。
+    if (done && time >= kMinLoadTime && _nextScene)
     {
-        // 次のシーンへ遷移。_nextScene は SetReady() 済みなので
-        // SceneManager::Update の IsReady() チェックで再 Initialize されない。
-        SceneManager::Instance().ChangeScene(_nextScene);
-
-        // 所有権を Manager に渡したのでポインタをクリア
-        _nextScene = nullptr;
+        if (SceneManager::Instance().RequestTransition(_nextScene))
+        {
+            _nextScene = nullptr;
+        }
     }
 }
 

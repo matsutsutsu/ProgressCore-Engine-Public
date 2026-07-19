@@ -11,7 +11,9 @@
 #include "Engine/Platform/Input/IInputAPI.h"
 
 #include <memory>
+#ifdef ENABLE_EDITOR
 #include <imgui.h>
+#endif
 
 using namespace CCL::ECS;
 

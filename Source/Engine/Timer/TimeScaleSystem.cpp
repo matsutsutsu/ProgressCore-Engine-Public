@@ -2,7 +2,9 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h" // 優先度Enumへのパスは適宜調整してください
 #include <algorithm>
+#ifdef ENABLE_EDITOR
 #include <imgui.h>
+#endif
 
 TimeScaleSystem::TimeScaleSystem() : IfSystem("TimeScaleSystem")
 {
@@ -119,6 +121,7 @@ void TimeScaleSystem::Update(float rawDt)
 // ============================================================================
 // デバッガ・GUI
 // ============================================================================
+#ifdef ENABLE_EDITOR
 void TimeScaleSystem::OnGui()
 {
     if (!_world || !_world->HasResource<TimeContext>()) return;
@@ -153,5 +156,8 @@ void TimeScaleSystem::OnGui()
         }
     }
 }
+#else
+void TimeScaleSystem::OnGui() {}
+#endif
 
 REGISTER_LOGIC_SYSTEM(TimeScaleSystem, Priority::LogicStage::L01_TimeScale);

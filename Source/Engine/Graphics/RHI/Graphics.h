@@ -92,8 +92,8 @@ public:
     ID3D11RenderTargetView*   GetGameRTV()             noexcept { return _gfxDevice.GetGameRTV(); }
     ID3D11ShaderResourceView* GetGameSRV()             noexcept { return _gfxDevice.GetGameSRV(); }
 
-    // Tracyコンテキストへのデリゲート
-    tracy::D3D11Ctx* GetTracyContext()       noexcept { return _gfxDevice.GetTracyContext(); }
+    // Tracyコンテキストへのデリゲート（TracyD3D11Ctx は無効構成で void*）
+    TracyD3D11Ctx GetTracyContext()       noexcept { return _gfxDevice.GetTracyContext(); }
 
     // ----------------------------------------------------------------
     //  アクセサ（描画サブシステム）

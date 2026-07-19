@@ -6,12 +6,15 @@
 #include "Game/Core/AllComponents.h"
 #include "Engine/Serialization/Factory/EntityFactory.h"
 
+#ifdef ENABLE_EDITOR
 #include <imgui.h>
+#endif
 #include <random>
 
 // ★ 修正1: ArchetypeHelper 等へのアクセスを簡略化するため名前空間を展開
 using namespace CCL::ECS;
 
+#ifdef ENABLE_EDITOR
 void JoltSandboxGuiSystem::OnGui()
 {
     // イムグイのウィンドウを作成
@@ -113,6 +116,9 @@ void JoltSandboxGuiSystem::OnGui()
 
     ImGui::End();
 }
+#else
+void JoltSandboxGuiSystem::OnGui() {}
+#endif
 
 // ------------------------------------------------------------------
 // 各種スポーン実装

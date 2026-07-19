@@ -41,11 +41,9 @@ void PauseSystem::Initialize()
             else if (e.actionHash == kToTitle)
             {
                 if (_transitioning) return;
-                _transitioning = true;
-                // ポーズ状態を次シーンへ持ち越さない（保険）。
-                if (_world->HasResource<GameFlowState>())
-                    _world->GetResource<GameFlowState>().paused = false;
-                SceneManager::Instance().ChangeScene("Title");
+                // タイトルへ。ポーズ中の world は破棄されるので paused の後始末は不要
+                //（遷移先 Title は自前の GameFlowState を持つ）。フェード中はポーズのまま凍結。
+                _transitioning = SceneManager::Instance().RequestTransition("Title", false);
             }
         });
 }

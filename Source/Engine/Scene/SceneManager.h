@@ -2,17 +2,23 @@
 
 #include "Scene.h"
 #include <string>
+#include <memory>
 
 #include "Engine/ECS/Jobs/CCL_JobSystem.h" // シーン非同期ロード用の汎用スレッドプール
 
 // World クラスが存在することをコンパイラに教える
 namespace CCL::ECS { class World; }
 
+// フェード用の全画面矩形（黒オーバーレイ）。実体は .cpp で生成する。
+class Sprite;
+
 // シーンマネージャー
 class SceneManager {
 private:
-    SceneManager() {}
-    ~SceneManager() {}
+    // unique_ptr<Sprite> を持つため、Sprite が完全型になる .cpp 側で定義する
+    //（ヘッダでは Sprite は前方宣言のみ＝不完全型で ~unique_ptr が組めない）。
+    SceneManager();
+    ~SceneManager();
 
 public:
     // 唯一のインスタンス取得
@@ -52,6 +58,32 @@ public:
     // Initialize() を裏（ワーカースレッド）で走らせてから遷移する。
     void ChangeSceneAsync(const std::string& name);
 
+    // =====================================================================
+    //  画面遷移（フェード）の統括
+    //   シーン切替の所有者である SceneManager が「フェードアウト → 切替 →
+    //   フェードイン」を1本の状態機械として回す。World は遷移で破棄されるため
+    //   フェードを World の中（ECSシステム）に置くと遷移をまたげない。だから
+    //   遷移をまたいで生き残るこの層が持つのが正しい。
+    //
+    //   呼び出し側（メニューのボタン等）は「行き先を頼む」だけでよく、
+    //   フェードもロードも SceneLoading の存在も知らなくてよい（疎結合）。
+    // =====================================================================
+
+    // 遷移を要求する。フェードアウト→黒の瞬間に切替→フェードインを自動で行う。
+    // async=true なら SceneLoading を挟んで裏読みする。
+    // 既に遷移中なら false を返して無視する（二重遷移防止）。
+    bool RequestTransition(const std::string& name, bool async = false);
+
+    // 既に生成・ロード済みのシーン実体へフェード遷移する。
+    // SceneLoading が「裏読み完了した本命シーン」へ切り替えるときに使う。
+    bool RequestTransition(Scene* readyScene);
+
+    // 黒→表示のフェードインのみ（起動直後の初回シーンのポップイン隠し）。
+    void FadeInFromBlack(float dur = 0.65f);
+
+    // 遷移フェード中かどうか。
+    bool IsTransitioning() const { return _fade != FadeState::None; }
+
     // シーンロード専用の汎用スレッドプール（各Worldの並列プールとは独立）。
     // SceneLoading がここへ「対象シーンの Initialize」ジョブを投げる。
     CCL::ECS::JobSystem& GetLoaderJobs() { return _loaderJobs; }
@@ -68,7 +100,38 @@ public:
 
 
 private:
+    // フェードの進行を1ステップ進める（黒の瞬間に予約された切替を発火する）。
+    void AdvanceFade(float dt);
+    // 予約された切替（名前 or 実体）を今この場で実行する。黒の瞬間に呼ばれる。
+    void BeginPendingChange();
+    // フェードの黒矩形を描画する（Render の末尾＝最前面で呼ぶ）。
+    void DrawFade();
 
+    // --- フェード状態機械 ---
+    //   Out（暗転）→ Hold（黒で少しタメる）→ In（明転）の3段。
+    //   Hold を挟むことで「黒に着いた瞬間に即バウンド」する軽さを消し、
+    //   その裏で新シーンの初回フレームを描き切ってからフェードインできる。
+    enum class FadeState { None, Out, Hold, In };
+    FadeState _fade      = FadeState::None;
+    float     _fadeAlpha = 0.0f;  // 0=透明 / 1=黒
+    float     _fadeOutDur = 0.55f; // 暗転にかける秒数
+    float     _fadeInDur  = 0.65f; // 明転にかける秒数
+    float     _fadeHoldDur = 0.15f; // 完全な黒を保持する秒数
+    float     _fadeHoldTimer = 0.0f;
+
+    // 黒の瞬間に実行する「予約された切替」。名前指定と実体指定のどちらか。
+    bool        _pendingValid    = false;
+    std::string _pendingName;
+    bool        _pendingAsync    = false;
+    Scene*      _pendingScene    = nullptr; // 実体指定（SceneLoading からの本命切替）
+
+    // 非同期ロードの「黒保持」中フラグ。
+    //   true の間はローディング画面を見せず、黒（alpha=1）のまま裏読み完了を待つ。
+    //   完了時に本命シーンへ差し替えて“1回だけ”フェードインする（暗→明→暗→明 の
+    //   チラつきを避ける）。SceneLoading からの RequestTransition(Scene*) で解除。
+    bool _asyncHold = false;
+
+    std::unique_ptr<Sprite> _fadeQuad; // 黒矩形（遅延生成）
 
     Scene* currentScene = nullptr; // 現在のシーン
     Scene* nextScene = nullptr;    // 次に遷移するシーン

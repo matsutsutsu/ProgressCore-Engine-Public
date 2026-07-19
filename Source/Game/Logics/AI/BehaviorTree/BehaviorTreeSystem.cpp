@@ -283,6 +283,7 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
 }
 
 
+#ifdef ENABLE_EDITOR
 void BehaviorTreeSystem::OnGui()
 {
     if (!ImGui::CollapsingHeader("Behavior Tree (Brain Debugger)")) return;
@@ -315,6 +316,9 @@ void BehaviorTreeSystem::OnGui()
         ImGui::PopID();
     }
 }
+#else
+void BehaviorTreeSystem::OnGui() {}
+#endif
 
 
 REGISTER_LOGIC_SYSTEM(BehaviorTreeSystem, Priority::LogicStage::L02_Update);

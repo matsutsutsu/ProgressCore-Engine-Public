@@ -28,14 +28,12 @@ void GameResultSystem::Initialize()
 
             if (e.actionHash == kRetry)
             {
-                _transitioning = true;
-                // ゲームを再読込（新しい EditorScene を裏読み）。
-                SceneManager::Instance().ChangeSceneAsync("Game");
+                // ゲーム再読込（新しい世界を裏読み）。フェードは SceneManager が統括。
+                _transitioning = SceneManager::Instance().RequestTransition("Game", true);
             }
             else if (e.actionHash == kToTitle)
             {
-                _transitioning = true;
-                SceneManager::Instance().ChangeScene("Title");
+                _transitioning = SceneManager::Instance().RequestTransition("Title", false);
             }
         });
 }

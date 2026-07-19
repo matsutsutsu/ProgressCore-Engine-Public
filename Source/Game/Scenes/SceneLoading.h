@@ -41,8 +41,9 @@ class SceneLoading : public BaseScene {
     // 表示用の進捗 0..1（実ロードは進捗を取れないのでスムージングで見せる）
     float _progress = 0.0f;
 
-    // 最低表示時間（秒）。ロードが一瞬で終わっても、この時間は必ずローディング画面を出す。
-    static constexpr float kMinLoadTime = 1.5f;
+    // 最低待機時間（秒）。画面は黒で保持されるため“見せる”ためではなく、
+    // ロードが一瞬で終わった場合に黒を一拍だけ置くための最小間。
+    static constexpr float kMinLoadTime = 0.15f;
 
   public:
     // コンストラクタで次のシーンを受け取る

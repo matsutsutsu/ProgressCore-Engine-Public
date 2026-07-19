@@ -29,7 +29,7 @@
 
 #include "Engine/UI/ECS/UIDrawList.h" // ECSネイティブUIの描画リスト
 #include "Game/GameFlowState.h"        // ポーズ状態（ロジック停止の判定）
- 
+
 #include "tracy/Tracy.hpp"
 
 #include "Engine/Platform/Core/Logger.h"
@@ -233,6 +233,9 @@ void BaseScene::Render()
             _uiRenderer.Flush(dc, gfx.GetDevice(), _worldPtr->GetResource<UIDrawList>());
 
         OnRenderUI();
+
+        // 画面遷移フェード（黒オーバーレイ）は SceneManager::Render が
+        // 全シーン描画の後に一元的に被せる（ここでは描かない）。
     }
 
 }

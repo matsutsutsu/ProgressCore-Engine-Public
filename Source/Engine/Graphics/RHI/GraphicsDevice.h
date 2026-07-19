@@ -56,7 +56,9 @@ public:
     ID3D11ShaderResourceView* GetGameSRV()          const noexcept { return _gameSRV.Get(); }
 
     // Tracyコンテキストへのアクセサ
-    tracy::D3D11Ctx* GetTracyContext() const noexcept { return _tracyD3D11Ctx; }
+    // ※ tracy::D3D11Ctx は TRACY_ENABLE 未定義（Shipping）だと存在しないため、
+    //    両構成で定義される移植用エイリアス TracyD3D11Ctx（無効時は void*）を使う。
+    TracyD3D11Ctx GetTracyContext() const noexcept { return _tracyD3D11Ctx; }
 
     // ---- CbScene 定数バッファ ----
     ID3D11Buffer* GetSceneConstantBuffer() const noexcept { return _sceneConstantBuffer.Get(); }
@@ -99,6 +101,6 @@ private:
     Microsoft::WRL::ComPtr<ID3D11Buffer>             _sceneConstantBuffer;
     D3D11_VIEWPORT                                   _viewport{};
 
-    // Tracy D3D11 コンテキストのポインタ
-    tracy::D3D11Ctx* _tracyD3D11Ctx = nullptr;
+    // Tracy D3D11 コンテキストのポインタ（無効構成では TracyD3D11Ctx=void*）
+    TracyD3D11Ctx _tracyD3D11Ctx = nullptr;
 };

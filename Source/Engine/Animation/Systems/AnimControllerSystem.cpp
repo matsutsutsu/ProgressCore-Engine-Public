@@ -2,7 +2,9 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include <cmath>
+#ifdef ENABLE_EDITOR
 #include <imgui.h>
+#endif
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Animation/Core/AnimGraphSerializer.h"
 #include "Engine/Platform/Core/Logger.h"
@@ -295,6 +297,7 @@ void AnimControllerSystem::Update(float dt)
 
 
 // システムのインスペクタ表示
+#ifdef ENABLE_EDITOR
 void AnimControllerSystem::OnGui()
 {
     ImGui::Text("Animation Controller Settings");
@@ -306,6 +309,9 @@ void AnimControllerSystem::OnGui()
         ImGui::SetTooltip("チェックを入れると、ステートが切り替わった瞬間にコンソールへログを出力します。\n高速遷移によるログ汚染を防ぐため、デバッグ時のみONにしてください。");
     }
 }
+#else
+void AnimControllerSystem::OnGui() {}
+#endif
 
 
 REGISTER_LOGIC_SYSTEM(AnimControllerSystem, Priority::LogicStage::L02_Update);

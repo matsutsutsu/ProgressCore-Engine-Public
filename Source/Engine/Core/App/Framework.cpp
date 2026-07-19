@@ -244,7 +244,7 @@ void Framework::Update(float elapsedTime)
 #endif
 
 	{
- 
+
 		ZoneScopedN("Framework::SceneManager::Update");
 
 

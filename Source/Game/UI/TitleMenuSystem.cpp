@@ -41,9 +41,9 @@ void TitleMenuSystem::Initialize()
 
             if (e.actionHash == kStart)
             {
-                _transitioning = true;
-                // ゲーム本編へ。重い Initialize は SceneLoading が裏読みする。
-                SceneManager::Instance().ChangeSceneAsync("Game");
+                // 「Game へ行きたい」と頼むだけ。フェード・ローディングの裏読み・
+                // World 破棄のタイミングは SceneManager が統括する（疎結合）。
+                _transitioning = SceneManager::Instance().RequestTransition("Game", true);
             }
             else if (e.actionHash == kQuit)
             {
