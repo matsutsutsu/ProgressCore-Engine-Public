@@ -870,6 +870,9 @@
     <ClInclude Include="Source\Game\UI\OverdriveHudSystem.h">
       <Filter>Source\Game\UI</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\UI\PlayerHealthHudSystem.h">
+      <Filter>Source\Game\UI</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\UI\TitleMenuSystem.h">
       <Filter>Source\Game\UI</Filter>
     </ClInclude>
@@ -2232,6 +2235,9 @@
       <Filter>Source\Engine\UI\ECS\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\OverdriveHudSystem.cpp">
+      <Filter>Source\Game\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\UI\PlayerHealthHudSystem.cpp">
       <Filter>Source\Game\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\TitleMenuSystem.cpp">

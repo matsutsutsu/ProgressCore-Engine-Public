@@ -38,13 +38,27 @@ void UIProgressBarCollectSystem::Update(float /*dt*/)
         bg.sortOrder = bar.sortOrder;
         drawList.items.push_back(bg);
 
-        // フィル（幅 × value）
+        // 遅延ダメージ（チップ）バー：背景とフィルの間に幅 × trailValue で描く。
+        // フィルが value まで手前を覆うので、value..trailValue の差分だけが色付きで残る。
+        if (bar.showTrail)
+        {
+            const float tv = std::clamp(bar.trailValue, 0.0f, 1.0f);
+            UIDrawItem trail;
+            trail.kind      = UIDrawKind::Image;
+            trail.pos       = t.computedPos;
+            trail.size      = {t.computedSize.x * tv, t.computedSize.y};
+            trail.color     = bar.trailColor;
+            trail.sortOrder = bar.sortOrder + 1; // 背景より手前・フィルより奥
+            drawList.items.push_back(trail);
+        }
+
+        // フィル（幅 × value）。遅延バーがある時はその手前へ。
         UIDrawItem fill;
         fill.kind      = UIDrawKind::Image;
         fill.pos       = t.computedPos;
         fill.size      = {t.computedSize.x * v, t.computedSize.y};
         fill.color     = bar.fillColor;
-        fill.sortOrder = bar.sortOrder + 1; // 背景より手前
+        fill.sortOrder = bar.sortOrder + (bar.showTrail ? 2 : 1); // 遅延バー/背景より手前
         drawList.items.push_back(fill);
     });
 }
