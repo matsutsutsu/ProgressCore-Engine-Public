@@ -7,12 +7,22 @@
 // ★カメラのコンポーネントを使うためにインクルードを追加
 #include "Engine/Camera/Components/VirtualCameraComponents.h"
 
+// ★被弾ビネット用：既存のビネット設定(singleton)を一時的に駆動する。
+//   回避演出中の二重駆動を避けるため JustEvadeEffectComponent も参照する。
+#include "Engine/Graphics/Components/PostProcess/VignetteConfigComponent.h"
+#include "Engine/Graphics/Components/Impact/JustEvadeEffectComponent.h"
+
 // #include "Engine/Platform/Input/Input.h"
 // #include "Engine/Audio/AudioManager.h"
 
 // システムの実行順序の定義ヘッダー
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
+
+namespace
+{
+inline float Lerp(float a, float b, float t) { return a + (b - a) * t; }
+} // namespace
 
 PlayerFeedbackSystem::PlayerFeedbackSystem() : IfSystem("PlayerFeedbackSystem") {}
 
@@ -67,18 +77,90 @@ void PlayerFeedbackSystem::Initialize()
             // AudioManager::Instance().PlaySE("Player_Damage");
 
             // -----------------------------------------------------------------
-            // 演出4：被弾時の画面縁エフェクト（ECS UI で別途実装予定）
+            // 演出4：被弾ビネット（画面端の赤フラッシュ）
+            // タイマを立てるだけ。実際の見た目は Update() が VignetteConfig を駆動して作る。
+            // 連続被弾でも最新の一撃で満タンにリフレッシュする。
             // -----------------------------------------------------------------
+            _flashTimer = kFlashDuration;
         }
     });
 }
 
 void PlayerFeedbackSystem::Update(float dt)
 {
-    // イベント駆動システムのため、毎フレームエンティティを走査する必要はありません。
+    // 被弾ビネットの時間経過（パッと出てスッと引く）を毎フレーム駆動する。
+    UpdateDamageVignette(dt);
+}
 
-    // ※もし「画面の赤いエフェクトを、時間経過(dt)で徐々に透明にしていく」などの
-    // 毎フレームの更新処理が必要になった場合は、ここに記述します。
+// ---------------------------------------------------------------------------
+// 被弾ビネット本体：既存の VignetteConfigComponent(singleton) を一時的に赤く光らせ、
+// 演出後は立ち下がりで元の値へ完全復元する（JustEvadeEffectSystem と同じ「壊さない」型）。
+// 触るのは intensity / color / pulse のみ。
+// ---------------------------------------------------------------------------
+void PlayerFeedbackSystem::UpdateDamageVignette(float dt)
+{
+    auto *vig = _world->GetSingletonComponent<VignetteConfigComponent>();
+    if (!vig) return; // ビネット設定が無いシーンでは何もしない
+
+    // ジャスト回避演出がビネットを駆動中なら譲る（二重駆動を避ける安全弁）。
+    // ※通常は「食らう」と「回避成功（無敵）」は同時に起きない。
+    if (auto *je = _world->GetSingletonComponent<JustEvadeEffectComponent>())
+    {
+        if (je->timer > 0.0f)
+        {
+            _flashActive = false; // 復元は JustEvade 側に任せて手を引く
+            return;
+        }
+    }
+
+    const bool active = (_flashTimer > 0.0f);
+
+    // ── 立ち下がり：退避しておいた元の値へ完全復元する ──
+    if (!active)
+    {
+        if (_flashActive)
+        {
+            vig->enable             = _vigBase.enable;
+            vig->data.vigIntensity  = _vigBase.intensity;
+            vig->data.vigColor      = _vigBase.color;
+            vig->data.vigPulseSpeed = _vigBase.pulse;
+            vig->data.vigRadius     = _vigBase.radius;
+            vig->data.vigSoftness   = _vigBase.softness;
+            _flashActive = false;
+        }
+        return;
+    }
+
+    // ── 立ち上がり：元のビネット値を退避（演出後にここへ戻す） ──
+    if (!_flashActive)
+    {
+        _vigBase.enable    = vig->enable;
+        _vigBase.intensity = vig->data.vigIntensity;
+        _vigBase.color     = vig->data.vigColor;
+        _vigBase.pulse     = vig->data.vigPulseSpeed;
+        _vigBase.radius    = vig->data.vigRadius;
+        _vigBase.softness  = vig->data.vigSoftness;
+    }
+
+    // ── 減衰（実時間。スロー窓でも体感の長さが一致する） ──
+    _flashTimer -= dt;
+    if (_flashTimer < 0.0f) _flashTimer = 0.0f;
+
+    // ── エンベロープ：被弾で即最大 → env=e² で素早く減衰（パッと出てスッと引く） ──
+    const float e   = _flashTimer / kFlashDuration; // 1→0
+    const float env = e * e;                        // 後半ほど速く引いてキレを出す
+
+    vig->enable            = true;
+    vig->data.vigIntensity = Lerp(_vigBase.intensity, kFlashPeak, env);
+    vig->data.vigColor     = DirectX::XMFLOAT4{Lerp(_vigBase.color.x, kFlashR, env),
+                                               Lerp(_vigBase.color.y, kFlashG, env),
+                                               Lerp(_vigBase.color.z, kFlashB, env), 1.0f};
+    // 半径を縮め・ふちを広げて、赤を四隅だけでなく画面の内側まで届かせる。
+    vig->data.vigRadius     = Lerp(_vigBase.radius, kFlashRadius, env);
+    vig->data.vigSoftness   = Lerp(_vigBase.softness, kFlashSoftness, env);
+    vig->data.vigPulseSpeed = 0.0f; // フラッシュ中は脈動させない
+
+    _flashActive = true;
 }
 
 // 演出系のシステムなので、物理やロジックが終わった後（PostUpdate等）に実行するのが安全です

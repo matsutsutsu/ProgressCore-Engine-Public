@@ -14,6 +14,8 @@
 // ===========================================================================
 #include "DamageResolutionSystem.h"
 #include "Game/Logics/Combat/HealthComponent.h"
+#include "Game/Logics/GameEvent/GameEvents.h"
+#include "Game/Logics/Character/Player/Components/PlayerComponent.h"
 #include "Engine/Timer/TimeState.h"
 #include "Engine/Physics/Components/Character/KnockbackComponent.h"
 #include "Engine/Graphics/Components/Impact/ScreenImpactComponent.h"
@@ -83,6 +85,14 @@ void DamageResolutionSystem::Update(float dt) {
                     const float power = std::clamp(event.finalDamage / kRefDamage, 0.3f, 1.5f);
                     impact->Trigger(power, static_cast<float>(eventEntity & 0xFF) * 0.137f);
                 }
+
+                // --- 被弾フィードバックの通知 ---
+                // 実際に食らった時だけ DamageTakenEvent を発火する（無敵ですり抜けた場合は出さない）。
+                // 購読側が各自の演出を行う：PlayerFeedbackSystem（プレイヤーのカメラシェイク＋被弾ビネット）、
+                // JustEvadeSystem（被弾でジャスト回避チェイン切断）など。isPlayer は受け取り側の判定用フラグ。
+                const bool isPlayer = _world->HasComponent<PlayerComponent>(event.targetID);
+                _world->GetEventBus().Publish(
+                    DamageTakenEvent{event.targetID, event.finalDamage, isPlayer});
             }
         }
 
