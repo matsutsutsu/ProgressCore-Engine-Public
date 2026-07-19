@@ -9,6 +9,10 @@
                 {
                     "Device": "GamePad_Button",
                     "Key": "BTN_RIGHT_TRIGGER"
+                },
+                {
+                    "Device": "GamePad_Button",
+                    "Key": "BTN_X"
                 }
             ],
             "Name": "Attack",
@@ -51,6 +55,10 @@
                 {
                     "Device": "GamePad_Button",
                     "Key": "BTN_RIGHT_SHOULDER"
+                },
+                {
+                    "Device": "GamePad_Button",
+                    "Key": "BTN_RIGHT_THUMB"
                 }
             ],
             "Name": "LockOn",

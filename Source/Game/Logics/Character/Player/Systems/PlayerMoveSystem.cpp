@@ -16,6 +16,9 @@ using namespace DirectX::SimpleMath;
 
 static const uint32_t HASH_TRIG_DOUBLE_JUMP = CCL::Utils::HashString("OnDoubleJump");
 
+// 攻撃時オートフェイシングの回頭速度（通常の turnSpeed より速く、キビッと敵へ向く）。
+static constexpr float kAttackTurnSpeed = 18.0f;
+
 void PlayerMoveSystem::Update(float rawDt)
 {
     ForEachWithID([&](EntityID                            id,
@@ -125,6 +128,26 @@ void PlayerMoveSystem::UpdateJumpLogic(float dt, bool isGrounded, CharacterMovem
 // -----------------------------------------------------------------------------------
 void PlayerMoveSystem::UpdateBankingAndRotation(float dt, const CharacterMovementInputComponent &inputData, float walkSpeed, PlayerComponent &player, TransformComponent &trans, JPH::CharacterVirtual *character)
 {
+    // =========================================================
+    // 攻撃時オートフェイシング（移動より優先）
+    //   attackFaceTimer>0 の間は、移動方向ではなく攻撃対象方向(attackFaceYaw)へ
+    //   速い回頭で向く。バンク（傾き）は演出上オフにして真っ直ぐ斬らせる。
+    // =========================================================
+    if (player.attackFaceTimer > 0.0f)
+    {
+        player.attackFaceTimer -= dt;
+
+        float angleDiff = player.attackFaceYaw - player.currentYaw;
+        while (angleDiff > DirectX::XM_PI)
+            angleDiff -= DirectX::XM_2PI;
+        while (angleDiff < -DirectX::XM_PI)
+            angleDiff += DirectX::XM_2PI;
+
+        player.currentYaw += angleDiff * kAttackTurnSpeed * dt;
+        player.currentRoll = std::lerp(player.currentRoll, 0.0f, 10.0f * dt); // 攻撃中はバンク解除
+    }
+    else
+    {
     Vector3 horizontalMove(inputData.desiredVelocity.x, 0.0f, inputData.desiredVelocity.z);
 
     if (horizontalMove.LengthSquared() > 0.001f)
@@ -151,6 +174,7 @@ void PlayerMoveSystem::UpdateBankingAndRotation(float dt, const CharacterMovemen
     else
     {
         player.currentRoll = std::lerp(player.currentRoll, 0.0f, 10.0f * dt);
+    }
     }
 
     Quaternion yawRot  = Quaternion::CreateFromAxisAngle(Vector3::UnitY, player.currentYaw);
