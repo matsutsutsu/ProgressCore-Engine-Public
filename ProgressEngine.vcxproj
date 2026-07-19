@@ -745,6 +745,7 @@
     <ClInclude Include="Source\Engine\UI\ECS\Systems\UIProgressBarCollectSystem.h" />
     <ClInclude Include="Source\Game\UI\OverdriveHudSystem.h" />
     <ClInclude Include="Source\Game\UI\PlayerHealthHudSystem.h" />
+    <ClInclude Include="Source\Game\UI\BossHealthHudSystem.h" />
     <ClInclude Include="Source\Game\UI\TitleMenuSystem.h" />
     <ClInclude Include="Source\Game\UI\MenuUiFactory.h" />
     <ClInclude Include="Source\Game\UI\GameResultSystem.h" />
@@ -1532,6 +1533,7 @@
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIProgressBarCollectSystem.cpp" />
     <ClCompile Include="Source\Game\UI\OverdriveHudSystem.cpp" />
     <ClCompile Include="Source\Game\UI\PlayerHealthHudSystem.cpp" />
+    <ClCompile Include="Source\Game\UI\BossHealthHudSystem.cpp" />
     <ClCompile Include="Source\Game\UI\TitleMenuSystem.cpp" />
     <ClCompile Include="Source\Game\UI\GameResultSystem.cpp" />
     <ClCompile Include="Source\Game\UI\PauseSystem.cpp" />
