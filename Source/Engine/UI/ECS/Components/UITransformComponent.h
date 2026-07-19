@@ -21,6 +21,11 @@ struct UITransformComponent
     float             rotation = 0.0f;       ///< 回転(度)。pivot 基準で回す。
     float             scale    = 1.0f;       ///< 拡大率
 
+    // --- 演出用（非シリアライズ：出現アニメ等が動かす） ---
+    ///< 不透明度(0..1)。収集時に画像/文字の色αへ乗算される。フェードイン等の演出チャンネル。
+    ///  色そのものの α とは独立なので、ボタン色の毎フレーム上書きに影響されずフェードできる。
+    float             alpha    = 1.0f;
+
     // --- レイアウト結果（非シリアライズ：UILayoutSystem が書き込む） ---
     DirectX::XMFLOAT2 computedPos  = {0.0f, 0.0f}; ///< 画面上の左上位置(px)
     DirectX::XMFLOAT2 computedSize = {0.0f, 0.0f}; ///< 画面上のサイズ(px)

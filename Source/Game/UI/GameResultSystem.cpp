@@ -98,17 +98,19 @@ void GameResultSystem::ShowResultUI(bool win)
     using namespace CCL::GameUI;
     World &w = *_world;
 
-    // 暗転パネル（全画面を覆う大きめの半透明黒）。HUD より手前に出すため sortOrder は高め。
-    SpawnPanel(w, "ResultDim", {0.0f, 0.0f}, {4000.0f, 4000.0f}, {0.0f, 0.0f, 0.0f, 0.6f}, 200);
+    // 出現アニメ：要素ごとに遅延を少しずつ増やして上から順にスッと出す（暗転→見出し→ボタン）。
+    // 暗転パネルはスライド無し(0)のフェードのみ、それ以外は上スライド付きで現れる。
+    SpawnPanel(w, "ResultDim", {0.0f, 0.0f}, {4000.0f, 4000.0f}, {0.0f, 0.0f, 0.0f, 0.6f}, 200,
+        0.00f, 0.0f);
 
     // 見出し（勝敗で文言と色を変える。中央寄せは近似オフセット）
     const char             *title = win ? "GAME CLEAR" : "GAME OVER";
     const DirectX::XMFLOAT4 color = win ? DirectX::XMFLOAT4{1.0f, 0.9f, 0.4f, 1.0f}  // 金
                                         : DirectX::XMFLOAT4{1.0f, 0.4f, 0.4f, 1.0f}; // 赤
-    EntityID titleId = SpawnLabel(w, "ResultTitle", title, {-190.0f, -140.0f}, 64.0f, 220);
+    EntityID titleId = SpawnLabel(w, "ResultTitle", title, {-190.0f, -140.0f}, 64.0f, 220, 0.08f);
     if (auto *tx = w.GetComponent<UITextComponent>(titleId)) tx->color = color;
 
     // ボタン（RETRY が初期フォーカス）
-    SpawnButton(w, "BtnRetry", "LblRetry", "RETRY", {0.0f, 0.0f}, "retry", true, 210);
-    SpawnButton(w, "BtnToTitle", "LblToTitle", "TITLE", {0.0f, 90.0f}, "result_to_title", false, 210);
+    SpawnButton(w, "BtnRetry", "LblRetry", "RETRY", {0.0f, 0.0f}, "retry", true, 210, 0.16f);
+    SpawnButton(w, "BtnToTitle", "LblToTitle", "TITLE", {0.0f, 90.0f}, "result_to_title", false, 210, 0.24f);
 }

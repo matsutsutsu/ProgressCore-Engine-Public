@@ -15,6 +15,7 @@
 #include "Engine/UI/ECS/Components/UIInteractableComponent.h"
 #include "Engine/UI/ECS/Components/UIButtonComponent.h"
 #include "Engine/UI/ECS/Components/UIAnimationComponent.h"
+#include "Engine/UI/ECS/Components/UIAppearComponent.h"
 #include "Engine/UI/ECS/Components/UITextComponent.h"
 
 #include <string>
@@ -29,11 +30,25 @@ namespace CCL::GameUI
         CCL::ECS::EntityID label  = CCL::ECS::InvalidEntityID;
     };
 
-    /// @brief 画面中央アンカーのテキストラベルを生成する。
-    inline CCL::ECS::EntityID SpawnLabel(CCL::ECS::World &world, const char *name,
-        const std::string &text, DirectX::XMFLOAT2 offset, float pixelSize, int sortOrder = 11)
+    /// @brief 出現アニメを設定するヘルパ。appearDelay>=0 なら再生ON＋開始を不可視(alpha=0)にする。
+    inline void ConfigureAppear(UITransformComponent &t, UIAppearComponent &ap, float appearDelay)
     {
-        auto arch = CCL::ECS::ArchetypeHelper::Generate<UITransformComponent, UITextComponent>();
+        if (appearDelay >= 0.0f)
+        {
+            ap.play  = true;
+            ap.delay = appearDelay;
+            t.alpha  = 0.0f; // 出現前は見えないように（システムが 0→1 へ上げる）
+        }
+    }
+
+    /// @brief 画面中央アンカーのテキストラベルを生成する。
+    /// @param appearDelay >=0 で出現アニメを再生（秒・遅延）。負(既定)ならアニメ無し。
+    inline CCL::ECS::EntityID SpawnLabel(CCL::ECS::World &world, const char *name,
+        const std::string &text, DirectX::XMFLOAT2 offset, float pixelSize, int sortOrder = 11,
+        float appearDelay = -1.0f)
+    {
+        auto arch = CCL::ECS::ArchetypeHelper::Generate<UITransformComponent, UITextComponent,
+            UIAppearComponent>();
         auto e    = EntityFactory::SpawnNamed(world, name, arch);
 
         UITransformComponent t;
@@ -47,15 +62,22 @@ namespace CCL::GameUI
         tx.pixelSize = pixelSize;
         tx.sortOrder = sortOrder;
 
-        e.Set(t).Set(tx);
+        UIAppearComponent ap;
+        ConfigureAppear(t, ap, appearDelay);
+
+        e.Set(t).Set(tx).Set(ap);
         return e.ID();
     }
 
     /// @brief 単色パネル（暗転オーバーレイ等）を生成する。size を大きくすれば全画面を覆える。
+    /// @param appearDelay >=0 で出現アニメを再生（秒・遅延）。負(既定)ならアニメ無し。
+    /// @param appearSlideY 出現時の上スライド量(px)。暗転パネルは 0（フェードのみ）が自然。
     inline CCL::ECS::EntityID SpawnPanel(CCL::ECS::World &world, const char *name,
-        DirectX::XMFLOAT2 offset, DirectX::XMFLOAT2 size, DirectX::XMFLOAT4 color, int sortOrder)
+        DirectX::XMFLOAT2 offset, DirectX::XMFLOAT2 size, DirectX::XMFLOAT4 color, int sortOrder,
+        float appearDelay = -1.0f, float appearSlideY = 28.0f)
     {
-        auto arch = CCL::ECS::ArchetypeHelper::Generate<UITransformComponent, UIImageComponent>();
+        auto arch = CCL::ECS::ArchetypeHelper::Generate<UITransformComponent, UIImageComponent,
+            UIAppearComponent>();
         auto e    = EntityFactory::SpawnNamed(world, name, arch);
 
         UITransformComponent t;
@@ -68,22 +90,28 @@ namespace CCL::GameUI
         img.color     = color;
         img.sortOrder = sortOrder;
 
-        e.Set(t).Set(img);
+        UIAppearComponent ap;
+        ap.slideY = appearSlideY;
+        ConfigureAppear(t, ap, appearDelay);
+
+        e.Set(t).Set(img).Set(ap);
         return e.ID();
     }
 
     /// @brief ボタン（背景パネル＋当たり判定＋ボタン見た目＋拡大演出）と、その上に重ねる
     ///        ラベル（テキスト）を生成する。戻り値＝生成したボタン/ラベルの EntityID ペア。
     /// @param sortOrder ボタン背景の描画順。ラベルは +1 で少し手前に置く。
+    /// @param appearDelay >=0 で出現アニメを再生（秒・遅延）。負(既定)ならアニメ無し。
+    ///        ボタン本体とラベルの両方に同じ遅延で適用する。
     inline MenuButtonIds SpawnButton(CCL::ECS::World &world, const char *btnName,
         const char *labelName, const std::string &label, DirectX::XMFLOAT2 offset,
-        const std::string &action, bool focused, int sortOrder = 10)
+        const std::string &action, bool focused, int sortOrder = 10, float appearDelay = -1.0f)
     {
         using namespace CCL::ECS;
 
         // --- ボタン本体 ---
         auto btnArch = ArchetypeHelper::Generate<UITransformComponent, UIImageComponent,
-            UIInteractableComponent, UIButtonComponent, UIAnimationComponent>();
+            UIInteractableComponent, UIButtonComponent, UIAnimationComponent, UIAppearComponent>();
         auto btn = EntityFactory::SpawnNamed(world, btnName, btnArch);
 
         UITransformComponent bt;
@@ -104,11 +132,15 @@ namespace CCL::GameUI
 
         UIAnimationComponent banim;
 
-        btn.Set(bt).Set(bimg).Set(inter).Set(bcomp).Set(banim);
+        UIAppearComponent bap;
+        ConfigureAppear(bt, bap, appearDelay);
+
+        btn.Set(bt).Set(bimg).Set(inter).Set(bcomp).Set(banim).Set(bap);
         const EntityID btnID = btn.ID();
 
         // --- ラベル（別エンティティ・左パディングで配置） ---
-        auto labelArch = ArchetypeHelper::Generate<UITransformComponent, UITextComponent>();
+        auto labelArch = ArchetypeHelper::Generate<UITransformComponent, UITextComponent,
+            UIAppearComponent>();
         auto lbl       = EntityFactory::SpawnNamed(world, labelName, labelArch);
 
         UITransformComponent lt;
@@ -122,7 +154,10 @@ namespace CCL::GameUI
         lx.pixelSize = 28.0f;
         lx.sortOrder = sortOrder + 1;
 
-        lbl.Set(lt).Set(lx);
+        UIAppearComponent lap;
+        ConfigureAppear(lt, lap, appearDelay);
+
+        lbl.Set(lt).Set(lx).Set(lap);
         const EntityID lblID = lbl.ID();
 
         return {btnID, lblID};

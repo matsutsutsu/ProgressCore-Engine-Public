@@ -33,6 +33,7 @@ void UITextCollectSystem::Update(float /*dt*/)
         item.kind      = UIDrawKind::Text;
         item.pos       = t.computedPos; // 左上基準
         item.color     = txt.color;
+        item.color.w  *= t.alpha; // 演出用の不透明度を反映（フェードイン等）
         item.sortOrder = txt.sortOrder;
         item.text      = txt.text;
         item.pixelSize = txt.pixelSize;

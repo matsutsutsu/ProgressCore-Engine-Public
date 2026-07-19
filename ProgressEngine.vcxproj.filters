@@ -888,7 +888,13 @@
     <ClInclude Include="Source\Engine\UI\ECS\Components\UIAnimationComponent.h">
       <Filter>Source\Engine\UI\ECS\Components</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\UI\ECS\Components\UIAppearComponent.h">
+      <Filter>Source\Engine\UI\ECS\Components</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\UI\ECS\Systems\UIAnimationSystem.h">
+      <Filter>Source\Engine\UI\ECS\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\UI\ECS\Systems\UIAppearSystem.h">
       <Filter>Source\Engine\UI\ECS\Systems</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\UI\ImGui\ImGuiThemes.h">
@@ -2238,6 +2244,9 @@
       <Filter>Source\Game\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIAnimationSystem.cpp">
+      <Filter>Source\Engine\UI\ECS\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\UI\ECS\Systems\UIAppearSystem.cpp">
       <Filter>Source\Engine\UI\ECS\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\UI\ImGui\ImGuiThemes.cpp">

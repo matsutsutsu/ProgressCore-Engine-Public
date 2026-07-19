@@ -41,6 +41,7 @@ void UILayoutSystem::Update(float /*dt*/)
         item.pos         = t.computedPos;
         item.size        = t.computedSize;
         item.color       = img.color;
+        item.color.w    *= t.alpha; // 演出用の不透明度を反映（フェードイン等）
         item.rotation    = t.rotation;
         item.sortOrder   = img.sortOrder;
         item.texturePath = img.texturePath;
