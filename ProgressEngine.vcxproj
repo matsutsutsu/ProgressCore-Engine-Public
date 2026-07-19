@@ -764,6 +764,7 @@
     <ClInclude Include="Source\Game\Logics\Combat\CombatRosterComponent.h" />
     <ClInclude Include="Source\Game\Logics\Combat\DamageResolutionSystem.h" />
     <ClInclude Include="Source\Game\Logics\Combat\DefeatSlowMotionSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Combat\HitEffectSystem.h" />
     <ClInclude Include="Source\Game\Logics\Combat\DeadTag.h" />
     <ClInclude Include="Source\Game\Logics\Combat\CombatComponents.h" />
     <ClInclude Include="Source\Game\Logics\Combat\HealthComponent.h" />
@@ -1548,6 +1549,7 @@
     <ClCompile Include="Source\Game\Logics\Combat\CombatComponentsMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\DamageResolutionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\DefeatSlowMotionSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Combat\HitEffectSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\HealthSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\HitboxCollisionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\SpawnHitboxSystem.cpp" />

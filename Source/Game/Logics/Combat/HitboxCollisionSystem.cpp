@@ -46,8 +46,8 @@ void HitboxCollisionSystem::Initialize()
     // EventBus は同期配送のため、コールバックはこの Initialize 完了後の
     // 物理ステージ内で呼ばれる。
     ListenEvent<JoltCollisionEvent>([this](const JoltCollisionEvent &ev) {
-        CheckAndSpawnDamageEvent(ev.entityA, ev.entityB);
-        CheckAndSpawnDamageEvent(ev.entityB, ev.entityA);
+        CheckAndSpawnDamageEvent(ev.entityA, ev.entityB, ev.contactPosition);
+        CheckAndSpawnDamageEvent(ev.entityB, ev.entityA, ev.contactPosition);
     });
 
     CCL_LOG_INFO(LogCategory::Game, "HitboxCollisionSystem Initialized.");
@@ -58,7 +58,8 @@ void HitboxCollisionSystem::Update(float /*dt*/)
     // イベント駆動のため Update は空。判定は ListenEvent コールバックで行う。
 }
 
-void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate, EntityID victimCandidate)
+void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate, EntityID victimCandidate,
+    const DirectX::XMFLOAT3 &contactPos)
 {
     // 1. Hitbox(攻撃) と Hurtbox(被弾) の成立確認
     auto *hitbox  = _world->GetComponent<HitboxComponent>(attackerCandidate);
@@ -79,7 +80,10 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
     //    ※1対1ボス戦のためクリティカルは無し。
     const float finalDamage = hitbox->damageAmount * hurtbox->damageMultiplier;
 
-    // 4. ノックバック方向(攻撃者→被弾者のXZ方向)
+    // 4. 命中位置：物理衝突の接触点(ワールド座標)をそのまま使う。加工しない。
+    const Vector3 hitPos(contactPos);
+
+    // 5. ノックバック方向(攻撃者→被弾者のXZ方向)
     Vector3 knockDir   = Vector3::Zero;
     float   knockForce = 0.0f;
     if (hitbox->knockback > 0.0f)
@@ -110,8 +114,9 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
     dmg.finalDamage    = finalDamage;
     dmg.knockbackDir   = knockDir;
     dmg.knockbackForce = knockForce;
-    dmg.hitStopDuration = hitbox->hitStopDuration; 
-    dmg.hitStopScale    = hitbox->hitStopScale;    
+    dmg.hitStopDuration = hitbox->hitStopDuration;
+    dmg.hitStopScale    = hitbox->hitStopScale;
+    dmg.hitPosition     = hitPos;
     entityRef.Set(dmg);
 
     CCL_LOG_INFO(LogCategory::Game,

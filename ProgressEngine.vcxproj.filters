@@ -1158,6 +1158,9 @@
     <ClInclude Include="Source\Game\Logics\Combat\DefeatSlowMotionSystem.h">
       <Filter>Source\Game\Logics\Combat</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Combat\HitEffectSystem.h">
+      <Filter>Source\Game\Logics\Combat</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Combat\CombatRosterComponent.h">
       <Filter>Source\Game\Logics\Combat</Filter>
     </ClInclude>
@@ -2439,6 +2442,9 @@
       <Filter>Source\Game\Logics\Combat</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Combat\DefeatSlowMotionSystem.cpp">
+      <Filter>Source\Game\Logics\Combat</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Combat\HitEffectSystem.cpp">
       <Filter>Source\Game\Logics\Combat</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Combat\CombatComponentsMeta.cpp">

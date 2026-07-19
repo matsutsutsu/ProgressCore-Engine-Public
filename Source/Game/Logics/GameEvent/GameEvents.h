@@ -34,3 +34,10 @@ struct DamageTakenEvent {
     float              damageAmount; // 受けたダメージ量
     bool               isPlayer;     // プレイヤーかどうか（受け取り側が判定しやすくする便利フラグ）
 };
+
+// 攻撃が「確定ヒット」した瞬間に発行されるイベント（無敵ですり抜けた時は出ない）。
+// 命中位置に衝突エフェクト(GPUパーティクル)を出すために HitEffectSystem が購読する。
+struct HitImpactEvent {
+    DirectX::XMFLOAT3 position = {0.0f, 0.0f, 0.0f}; // 接触点(ワールド座標)
+    float             power    = 1.0f;               // 命中の強さ(ダメージ量など。演出スケール用)
+};

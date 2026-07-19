@@ -27,6 +27,7 @@
 //     場合は強さ0として無効化する(安全側)。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
+#include <DirectXMath.h>
 
 class HitboxCollisionSystem : public CCL::ECS::IfSystem<HitboxCollisionSystem> {
 public:
@@ -39,7 +40,9 @@ private:
     /// @brief attacker候補→victim候補の一方向で命中を検証し、成立すればDamageEventを生成する。
     /// @param attackerCandidate 攻撃側になり得るエンティティ(Hitbox所持を確認する)
     /// @param victimCandidate   被弾側になり得るエンティティ(Hurtbox所持を確認する)
+    /// @param contactPos        物理衝突の接触点(ワールド座標)。命中エフェクト位置にそのまま使う。
     /// @note  双方向(A→B, B→A)は呼び出し側で2回呼ぶことで担保する。
     void CheckAndSpawnDamageEvent(CCL::ECS::EntityID attackerCandidate,
-        CCL::ECS::EntityID victimCandidate);
+        CCL::ECS::EntityID victimCandidate,
+        const DirectX::XMFLOAT3 &contactPos);
 };

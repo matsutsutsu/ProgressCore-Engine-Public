@@ -61,6 +61,9 @@ struct DamageEventComponent
     float hitStopDuration = 0.0f; ///< ヒットストップ時間(秒)
     float hitStopScale    = 0.0f; ///< 停止中のタイムスケール(0で完全停止)
 
+    // --- 命中エフェクト用の接触点(判定時に確定) ---
+    ///< 攻撃判定と被弾者の中点あたり。解決System が確定ヒット時に HitImpactEvent へ載せる。
+    DirectX::SimpleMath::Vector3 hitPosition = DirectX::SimpleMath::Vector3::Zero;
 };
 
 // --- 4. 生成型ヒットボックスの寿命(ランタイム専用) ---

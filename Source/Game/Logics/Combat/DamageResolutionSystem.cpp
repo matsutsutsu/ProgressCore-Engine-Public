@@ -93,6 +93,12 @@ void DamageResolutionSystem::Update(float dt) {
                 const bool isPlayer = _world->HasComponent<PlayerComponent>(event.targetID);
                 _world->GetEventBus().Publish(
                     DamageTakenEvent{event.targetID, event.finalDamage, isPlayer});
+
+                // --- 命中エフェクトの通知（確定ヒットの接触点に衝突VFXを出す） ---
+                // HitEffectSystem が購読して GPUパーティクルのバーストを生成する。
+                _world->GetEventBus().Publish(HitImpactEvent{
+                    DirectX::XMFLOAT3{event.hitPosition.x, event.hitPosition.y, event.hitPosition.z},
+                    event.finalDamage});
             }
         }
 
