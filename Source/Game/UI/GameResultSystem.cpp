@@ -38,9 +38,23 @@ void GameResultSystem::Initialize()
         });
 }
 
-void GameResultSystem::Update(float /*dt*/)
+void GameResultSystem::Update(float dt)
 {
     if (_resultShown) return; // 既に表示済みなら何もしない
+
+    // 勝利演出の待機中：撃破スローの余韻を見せてからリザルトを出す。
+    // dt はスロー非依存の実時間なので、実時間でカウントダウンすればスロー終了後に表示される。
+    if (_pendingWin)
+    {
+        _winDelay -= dt;
+        if (_winDelay <= 0.0f)
+        {
+            _resultShown = true;
+            ShowResultUI(true); // GAME CLEAR
+            CCL_LOG_INFO(LogCategory::Game, "[GameResult] Game Clear. Result UI shown (after defeat slow-mo).");
+        }
+        return; // 待機中は勝敗の再判定をしない
+    }
 
     bool playerDead   = false;
     bool anyEnemy     = false;
@@ -72,9 +86,10 @@ void GameResultSystem::Update(float /*dt*/)
     }
     else if (_sawEnemy && aliveEnemies == 0)
     {
-        _resultShown = true;
-        ShowResultUI(true); // GAME CLEAR
-        CCL_LOG_INFO(LogCategory::Game, "[GameResult] Game Clear. Result UI shown.");
+        // 即表示せず、撃破スローの余韻を見せてから出す（実際の表示は上の待機処理で行う）。
+        _pendingWin = true;
+        _winDelay   = kResultDelay;
+        CCL_LOG_INFO(LogCategory::Game, "[GameResult] Game Clear detected. Waiting for defeat slow-mo before showing result.");
     }
 }
 

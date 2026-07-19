@@ -74,21 +74,24 @@ void TimeScaleSystem::Update(float rawDt)
     ctx.groupScales[static_cast<size_t>(TimeGroup::Environment)] *= ctx.overdriveEnvironmentScale;
 
     // =========================================================
-    // 2. 親時計（世界全体）のヒットスロー計算
+    // 2. 親時計（世界全体）の計算
+    //    ① 全体ヒットストップ：命中の一瞬停止（イーズ無し＝キビキビ）
+    //    ② シネマティックスロー：撃破スロー等（イーズ有り＝滑らかに戻す）
+    //    どちらも globalScale に乗るので、group に関係なく全エンティティへ効く。
     // =========================================================
+    float hitStopFactor = 1.0f;
     if (ctx.globalHitStopTimer > 0.0f) {
         ctx.globalHitStopTimer -= rawDt;
-        if (ctx.globalHitStopTimer <= 0.0f) {
+        if (ctx.globalHitStopTimer <= 0.0f)
             ctx.globalHitStopTimer = 0.0f;
-            ctx.globalScale = ctx.baseGlobalScale;
-        }
-        else {
-            ctx.globalScale = ctx.baseGlobalScale * ctx.globalFreezeScale;
-        }
+        else
+            hitStopFactor = ctx.globalFreezeScale;
     }
-    else {
-        ctx.globalScale = ctx.baseGlobalScale;
-    }
+
+    // 撃破スロー等のシネマティックスローをイーズしながら 1.0 へ戻す。
+    updateSlowMotion(ctx.cinematicSlow);
+
+    ctx.globalScale = ctx.baseGlobalScale * hitStopFactor * ctx.cinematicSlow.currentComputedScale;
 
     // =========================================================
     // 3. 【マルチスレッド超並列実行】各自の時計の更新

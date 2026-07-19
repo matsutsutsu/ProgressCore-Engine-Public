@@ -7,4 +7,8 @@ struct HealthComponent {
     float currentHealth         = 100.0f;
     float invincibilityTimer    = 0.0f;
     float invincibilityDuration = 0.5f;
+
+    // 撃破スロー演出を「1体につき1回だけ」発火させるための実行時フラグ（非シリアライズ）。
+    // DefeatSlowMotionSystem が死亡検知時に true にする。
+    bool deathFxFired = false;
 };

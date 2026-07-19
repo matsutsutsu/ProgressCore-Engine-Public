@@ -53,6 +53,7 @@ void SceneInitializer::SpawnGameTest(CCL::ECS::World &world, ID3D11Device *devic
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Camera/FreeCamera.json");
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/World/JoltExampleStage.json");
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Enemy/Muriel.json");
+    EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Particles/StageParticle.json");
 
     auto player = EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Player/Player.json");
     auto camera = EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Player/PlayerFollowCamera.json");
