@@ -61,43 +61,46 @@ void PostProcessSystem::Update(float dt) {
     // -------------------------------------------------------
     // 4. マネージャーへ一括転送
     // -------------------------------------------------------
+    // ★重要: SetEnabled() は「コンポーネントが見つかった時だけ」ではなく、
+    // 見つからない場合も含めて毎フレーム無条件で呼ぶこと。
+    // PostProcessManager のエフェクトはアプリ全体で使い回されるシングルトンなので、
+    // 「コンポーネントが無いシーンでは何もしない」実装だと、以前別のシーンで
+    // ONにしたエフェクトが次のシーンに持ち越されたまま(sticky)残ってしまう
+    // (実際に発生：ポストエフェクト用コンポーネントの無い旧シーンで、以前有効化
+    //  されたエフェクトが動き続けて負荷が高くなっていた)。
+    // 「コンポーネント無し = 無効」を毎フレーム明示するのが唯一の正しい実装。
 
-    if (auto* comp = _world->GetSingletonComponent<SSAOConfigComponent>()) {
-      if (auto* ssao = postProcess->GetEffect<SSAOEffect>()) {
-        ssao->SetEnabled(comp->enable);
-        ssao->UpdateParams(comp->data);
-      }
+    if (auto* ssao = postProcess->GetEffect<SSAOEffect>()) {
+      auto* comp = _world->GetSingletonComponent<SSAOConfigComponent>();
+      ssao->SetEnabled(comp && comp->enable);
+      if (comp) ssao->UpdateParams(comp->data);
     }
 
-    if (auto* comp = _world->GetSingletonComponent<ContactShadowConfigComponent>()) {
-      if (auto* contact = postProcess->GetEffect<ContactShadowEffect>()) {
-        contact->SetEnabled(comp->enable);
-        contact->UpdateParams(comp->data);
-      }
+    if (auto* contact = postProcess->GetEffect<ContactShadowEffect>()) {
+      auto* comp = _world->GetSingletonComponent<ContactShadowConfigComponent>();
+      contact->SetEnabled(comp && comp->enable);
+      if (comp) contact->UpdateParams(comp->data);
     }
 
-    // ★ Distortion の転送処理を追加
-    if (auto *comp =
-            _world->GetSingletonComponent<DistortionConfigComponent>()) {
-      if (auto *distortion = postProcess->GetEffect<DistortionEffect>()) {
-        distortion->SetEnabled(comp->enable);
+    if (auto *distortion = postProcess->GetEffect<DistortionEffect>()) {
+      auto* comp = _world->GetSingletonComponent<DistortionConfigComponent>();
+      distortion->SetEnabled(comp && comp->enable);
+      if (comp) {
         comp->data.time += dt; // システム側でアニメーション時間を進める
         distortion->UpdateParams(comp->data);
       }
     }
 
-    if (auto* comp = _world->GetSingletonComponent<RadialBlurConfigComponent>()) {
-      if (auto* radial = postProcess->GetEffect<RadialBlurEffect>()) {
-        radial->SetEnabled(comp->enable);
-        radial->UpdateParams(comp->data);
-      }
+    if (auto* radial = postProcess->GetEffect<RadialBlurEffect>()) {
+      auto* comp = _world->GetSingletonComponent<RadialBlurConfigComponent>();
+      radial->SetEnabled(comp && comp->enable);
+      if (comp) radial->UpdateParams(comp->data);
     }
 
-    if (auto* comp = _world->GetSingletonComponent<DepthOfFieldConfigComponent>()) {
-      if (auto* dof = postProcess->GetEffect<DepthOfFieldEffect>()) {
-        dof->SetEnabled(comp->enable);
-        dof->UpdateParams(comp->data);
-      }
+    if (auto* dof = postProcess->GetEffect<DepthOfFieldEffect>()) {
+      auto* comp = _world->GetSingletonComponent<DepthOfFieldConfigComponent>();
+      dof->SetEnabled(comp && comp->enable);
+      if (comp) dof->UpdateParams(comp->data);
     }
 
     if (auto* bloom = postProcess->GetEffect<BloomEffect>()) {
@@ -105,26 +108,25 @@ void PostProcessSystem::Update(float dt) {
         bloom->UpdateParams(finalBloom.data);
     }
 
-    if (auto* comp = _world->GetSingletonComponent<ChromaticAberrationConfigComponent>()) {
-      if (auto* chroma = postProcess->GetEffect<ChromaticAberrationEffect>()) {
-        chroma->SetEnabled(comp->enable);
-        chroma->UpdateParams(comp->data);
-      }
+    if (auto* chroma = postProcess->GetEffect<ChromaticAberrationEffect>()) {
+      auto* comp = _world->GetSingletonComponent<ChromaticAberrationConfigComponent>();
+      chroma->SetEnabled(comp && comp->enable);
+      if (comp) chroma->UpdateParams(comp->data);
     }
 
-    if (auto* comp = _world->GetSingletonComponent<VignetteConfigComponent>()) {
-      if (auto* vignette = postProcess->GetEffect<VignetteEffect>()) {
-        vignette->SetEnabled(comp->enable);
+    if (auto* vignette = postProcess->GetEffect<VignetteEffect>()) {
+      auto* comp = _world->GetSingletonComponent<VignetteConfigComponent>();
+      vignette->SetEnabled(comp && comp->enable);
+      if (comp) {
         comp->data.vigTime += dt;
         vignette->UpdateParams(comp->data);
       }
     }
 
-    if (auto* comp = _world->GetSingletonComponent<ColorGradingConfigComponent>()) {
-      if (auto* grading = postProcess->GetEffect<ColorGradingEffect>()) {
-        grading->SetEnabled(comp->enable);
-        grading->UpdateParams(comp->data);
-      }
+    if (auto* grading = postProcess->GetEffect<ColorGradingEffect>()) {
+      auto* comp = _world->GetSingletonComponent<ColorGradingConfigComponent>();
+      grading->SetEnabled(comp && comp->enable);
+      if (comp) grading->UpdateParams(comp->data);
     }
 
     postProcess->toneMapConfig = finalToneMap;

@@ -13,11 +13,14 @@
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"
 
 #include <cstdint>
+#include <imgui.h>
 
 using namespace CCL::ECS;
 
 void GameResultSystem::Initialize()
 {
+    hasGui = true; // デバッグ用の検知状態パネルを OnGui で出す
+
     // ボタンクリックを購読（この世界ではリザルトのボタンだけが発火源）。
     const uint32_t kRetry   = CCL::Utils::HashString("retry");
     const uint32_t kToTitle = CCL::Utils::HashString("result_to_title");
@@ -40,6 +43,7 @@ void GameResultSystem::Initialize()
 
 void GameResultSystem::Update(float dt)
 {
+    if (!_debugEnabled) return; // デバッグ用の全体OFF（ステージ確認中などに勝敗判定を止める）
     if (_resultShown) return; // 既に表示済みなら何もしない
 
     // 勝利演出の待機中：撃破スローの余韻を見せてからリザルトを出す。
@@ -56,9 +60,10 @@ void GameResultSystem::Update(float dt)
         return; // 待機中は勝敗の再判定をしない
     }
 
-    bool playerDead   = false;
-    bool anyEnemy     = false;
-    int  aliveEnemies = 0;
+    bool playerPresent = false;
+    bool playerDead    = false;
+    bool anyEnemy      = false;
+    int  aliveEnemies  = 0;
 
     // 全 HealthComponent を走査し、プレイヤー／敵を仕分ける。
     ForEachWithID([&](EntityID id, const HealthComponent &hp) {
@@ -66,6 +71,7 @@ void GameResultSystem::Update(float dt)
 
         if (_world->HasComponent<PlayerComponent>(id))
         {
+            playerPresent = true;        // プレイヤーが世界に存在する
             if (dead) playerDead = true; // プレイヤー死亡
         }
         else
@@ -76,6 +82,16 @@ void GameResultSystem::Update(float dt)
     });
 
     if (anyEnemy) _sawEnemy = true; // 一度でも敵を見たら記憶
+
+    // デバッグGUI用のスナップショット
+    _dbgPlayerPresent = playerPresent;
+    _dbgAliveEnemies  = aliveEnemies;
+
+    // ★ セーフガード：プレイヤーが1体も存在しないシーンでは勝敗判定を行わない。
+    //   ステージ実装確認用のテストScene（プレイヤー未生成）では、敵扱いの HealthComponent が
+    //   生存0になった瞬間に GAME CLEAR が誤発火していた。プレイヤー不在＝プレイセッションでは
+    //   ないため、ここで判定自体を打ち切る（リザルトを一切出さない）。
+    if (!playerPresent) return;
 
     // --- 勝敗判定（敗北を優先） ---
     if (playerDead)
@@ -113,4 +129,34 @@ void GameResultSystem::ShowResultUI(bool win)
     // ボタン（RETRY が初期フォーカス）
     SpawnButton(w, "BtnRetry", "LblRetry", "RETRY", {0.0f, 0.0f}, "retry", true, 210, 0.16f);
     SpawnButton(w, "BtnToTitle", "LblToTitle", "TITLE", {0.0f, 90.0f}, "result_to_title", false, 210, 0.24f);
+}
+
+// ============================================================================
+//  デバッグ：勝敗検知の内部状態を可視化し、必要なら判定を止められるようにする。
+// ============================================================================
+void GameResultSystem::OnGui()
+{
+    ImGui::SeparatorText("リザルト検知 (デバッグ)");
+
+    ImGui::Checkbox("システム有効", &_debugEnabled);
+    if (!_debugEnabled)
+        ImGui::TextDisabled("→ 勝敗判定・リザルト表示を停止中");
+
+    ImGui::Separator();
+    ImGui::Text("プレイヤー存在 : %s", _dbgPlayerPresent ? "yes" : "NO (テストScene扱い→抑止)");
+    ImGui::Text("敵を観測(sawEnemy) : %s", _sawEnemy ? "yes" : "no");
+    ImGui::Text("生存敵数 : %d", _dbgAliveEnemies);
+    ImGui::Text("リザルト表示済み : %s", _resultShown ? "yes" : "no");
+    ImGui::Text("勝利待機中 : %s (残り %.2fs)", _pendingWin ? "yes" : "no", _winDelay);
+
+    ImGui::Separator();
+    if (ImGui::Button("検知状態をリセット"))
+    {
+        _resultShown   = false;
+        _sawEnemy      = false;
+        _pendingWin    = false;
+        _winDelay      = 0.0f;
+        _transitioning = false;
+    }
+    ImGui::TextDisabled("※プレイヤー不在のSceneでは自動でリザルトを抑止します");
 }

@@ -1947,6 +1947,9 @@
     <ClInclude Include="Source\Game\Logics\AI\Drone\DroneCommandSystem.h">
       <Filter>Source\Game\Logics\AI\Drone</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\DroneHitSystem.h">
+      <Filter>Source\Game\Logics\AI\Drone</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_Attack.h">
       <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
     </ClInclude>
@@ -2988,6 +2991,9 @@
       <Filter>Source\Game\Logics\AI\Drone</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\Drone\DroneCommandSystem.cpp">
+      <Filter>Source\Game\Logics\AI\Drone</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\Drone\DroneHitSystem.cpp">
       <Filter>Source\Game\Logics\AI\Drone</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Physics\JoltIntegration\PhysicsLayers.cpp">

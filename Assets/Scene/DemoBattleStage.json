@@ -9,6 +9,38 @@
                     "data.threshold": 1.0,
                     "enable": true
                 },
+                "ChromaticAberration": {
+                    "centerX": 0.5,
+                    "centerY": 0.5,
+                    "enable": false,
+                    "falloff": 2.0,
+                    "strength": 0.0
+                },
+                "ColorGrading": {
+                    "brightness": 1.0,
+                    "contrast": 1.0,
+                    "enable": true,
+                    "mixAmount": 1.0,
+                    "saturation": 1.0,
+                    "tintB": 1.0,
+                    "tintG": 1.0,
+                    "tintR": 1.0
+                },
+                "ContactShadow": {
+                    "bias": 0.019999999552965164,
+                    "enable": true,
+                    "intensity": 0.699999988079071,
+                    "maxDistance": 30.0,
+                    "rayLength": 0.30000001192092896,
+                    "thickness": 0.10000000149011612
+                },
+                "DepthOfField": {
+                    "enable": false,
+                    "falloff": 8.0,
+                    "focusDistance": 10.0,
+                    "focusRange": 3.0,
+                    "maxBlur": 0.009999999776482582
+                },
                 "DirectionalLight": {
                     "color": [
                         1.0,
@@ -21,7 +53,7 @@
                         0.0,
                         0.5333333611488342
                     ],
-                    "intensity": 0.0,
+                    "intensity": 1.0,
                     "skyColor": [
                         0.0,
                         0.10309933125972748,
@@ -55,8 +87,41 @@
                     "rimStrength": 0.0,
                     "start": 40.0
                 },
+                "Just Evade Effect": {
+                    "attackTime": 0.029999999329447746,
+                    "chromaPeak": 0.019999999552965164,
+                    "duration": 0.5,
+                    "gradeMixPeak": 0.8999999761581421,
+                    "radialPeak": 0.3499999940395355,
+                    "releaseTime": 0.18000000715255737,
+                    "spikeDecay": 0.18000000715255737,
+                    "style": 2,
+                    "vignettePeak": 0.6000000238418579,
+                    "vignettePulse": 5.0
+                },
                 "Name": {
                     "name": "LightingSetup"
+                },
+                "RadialBlur": {
+                    "centerX": 0.5,
+                    "centerY": 0.5,
+                    "enable": false,
+                    "falloff": 2.0,
+                    "strength": 0.0
+                },
+                "SSAO": {
+                    "bias": 0.019999999552965164,
+                    "enable": true,
+                    "intensity": 0.800000011920929,
+                    "maxDistance": 50.0,
+                    "radius": 0.5
+                },
+                "Screen Impact": {
+                    "chromaticStrength": 0.012000000104308128,
+                    "duration": 0.2199999988079071,
+                    "radialStrength": 0.3499999940395355,
+                    "shakeAmplitude": 0.18000000715255737,
+                    "shakeFrequency": 38.0
                 },
                 "ShadowMapConfig": {
                     "cascadeSplits": [
@@ -109,6 +174,16 @@
                         1.0,
                         1.0
                     ]
+                },
+                "Vignette": {
+                    "colorB": 0.0,
+                    "colorG": 0.0,
+                    "colorR": 0.0,
+                    "enable": true,
+                    "intensity": 0.4000000059604645,
+                    "pulseSpeed": 0.0,
+                    "radius": 0.550000011920929,
+                    "softness": 0.3499999940395355
                 }
             },
             "lid": 1
@@ -116,8 +191,8 @@
         {
             "components": {
                 "CameraBodyFree": {
-                    "currentPitch": -6.399973392486572,
-                    "currentYaw": 355.60040283203125,
+                    "currentPitch": -22.799976348876953,
+                    "currentYaw": 362.60015869140625,
                     "lookSpeed": 0.20000000298023224,
                     "moveSpeed": 46.27208709716797
                 },
@@ -136,15 +211,15 @@
                     "isStatic": false,
                     "parent": 8,
                     "position": [
-                        7.015992164611816,
-                        13.73703670501709,
-                        -51.039649963378906
+                        -1.0961359739303589,
+                        9.272128105163574,
+                        -18.9947452545166
                     ],
                     "rotation": [
-                        0.05578013136982918,
-                        -0.03832436352968216,
-                        0.002142655197530985,
-                        0.9977049827575684
+                        0.19760625064373016,
+                        0.022241055965423584,
+                        -0.004484578035771847,
+                        0.9800189137458801
                     ],
                     "scale": [
                         1.0,
@@ -164,6 +239,7 @@
         },
         {
             "components": {
+                "AnimParameters": null,
                 "AnimStateMachine": {
                     "graphPath": "Assets/Animations/Nodes/TestAnimationNode.json"
                 },
@@ -372,6 +448,6 @@
         }
     ],
     "magic": 1397506883,
-    "timestamp": 1783406276,
+    "timestamp": 1784544361,
     "version": 1
 }

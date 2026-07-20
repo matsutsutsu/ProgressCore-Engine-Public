@@ -698,6 +698,7 @@
     <ClInclude Include="Source\Game\Logics\AI\Drone\DroneManagerSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\DroneMovementSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\DroneCommandSystem.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Drone\DroneHitSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\FormationRegistry.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_Basic.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_Attack.h" />
@@ -1509,6 +1510,7 @@
     <ClCompile Include="Source\Game\Logics\AI\Drone\DroneManagerSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\DroneCommandSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\DroneMovementSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\Drone\DroneHitSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\FlowField\NavFlowFieldSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\StateTree\Core\StateTreeComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\StateTree\Serialization\StateTreeSerializer.cpp" />

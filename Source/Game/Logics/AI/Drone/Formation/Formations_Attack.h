@@ -103,14 +103,21 @@ struct GuillotineSlamFormation : public IFormation
 
 // ====================================================================
 // 挟み込み1段（ClapSlam）
-//   ボス前方の左右に「低い壁」を2枚作り、左右同時に中央へスライドして
-//   プレイヤーを挟み込む。壁は低いのでジャンプで越えて避ける。要求回避＝ジャンプ（企画書②）。
+//   ボスの「前方」に左右2本の腕（低い壁）を張り出し、真横に開いた状態から
+//   前方中央（プレイヤー方向の軸）へ振り込んでバチンと挟む。壁は低いので
+//   ジャンプで越えて避ける。要求回避＝ジャンプ（企画書②）。
 //
-// 動きの核心＝左右の壁が中央へ寄る（剛体スライド）:
-//   localIndex の前半＝左の壁、後半＝右の壁。各壁は「奥行き(dir)×高さ(up)」の格子。
-//   高さは低く抑える（＝ジャンプで越えられる）。
-//   進行度 attackProgress(0→1) で左右の間隔 gap を 広→狭 に縮める＝バチンと挟む。
-//   縦割りと同じく chargeFollowsTarget=true で targetPosition を剛体追従させる。
+// ★設計変更（前作ソースを参照して調整）:
+//   旧実装は壁の奥行きをボス→プレイヤー軸(dir)に沿って伸ばしていたため、
+//   機数が増えると壁がボスの「前後」に長い回廊になり、ボスを取り巻いて見えた。
+//   本実装は前作方式に合わせ、各機を「プレイヤー方向を軸に回転させた腕方向 armDir」
+//   × 距離 で配置する。腕は常にボスの前方に張り出し、角度を 横→中央 へ閉じる。
+//   前後には伸ばさない。
+//
+// 動きの核心＝左右の腕が前方中央へ振れて閉じる（剛体スライド）:
+//   localIndex 偶数＝右腕／奇数＝左腕。腕内の番号 k を (距離セグメント × 高さ) に割付。
+//   進行度 attackProgress(0→1) で腕の角度を kStartAngle(真横)→kEndAngle(前方中央) へ。
+//   chargeFollowsTarget=true で targetPosition を剛体追従させる。
 // ====================================================================
 struct ClapSlamFormation : public IFormation
 {
@@ -118,65 +125,57 @@ struct ClapSlamFormation : public IFormation
     {
         using namespace DirectX::SimpleMath;
 
-        drone.chargeFollowsTarget = true; // 壁が形を保ったままスライドする
+        drone.chargeFollowsTarget = true; // 腕が形を保ったまま閉じる（剛体スライド）
 
-        Vector3 dir = ctx.playerPos - ctx.bossPos;
-        dir.y = 0.0f;
-        if (dir.LengthSquared() < 0.001f) dir = Vector3::UnitZ;
-        dir.Normalize();
+        // ボス→プレイヤーの水平方向＝挟み込みの中心軸。腕はこの線上へ閉じる。
+        Vector3 centerDir = ctx.playerPos - ctx.bossPos;
+        centerDir.y = 0.0f;
+        if (centerDir.LengthSquared() < 0.001f) centerDir = Vector3::UnitZ;
+        centerDir.Normalize();
 
-        Vector3 right = Vector3::UnitY.Cross(dir);
-        if (right.LengthSquared() < 0.001f) right = Vector3::UnitX;
-        right.Normalize();
+        // --- 左右どちらの腕か → 腕内番号 k を (距離セグメント × 高さ) へ割り付ける ---
+        const bool isRight = (drone.localIndex % 2 == 0);
+        const int  k       = drone.localIndex / 2;
+        const int  hRow    = k % kHeightRows;         // 高さ（低い壁＝ジャンプで越える）
+        const int  seg     = k / kHeightRows;         // 腕の先端方向（前方へ伸びる）
 
-        // --- 左右どちらの壁か・その壁の中での通し番号 k ---
-        const int total  = (drone.totalDrones > 0) ? drone.totalDrones : 1;
-        const int half   = (std::max)(1, total / 2);
-        const bool isLeft = (drone.localIndex < static_cast<uint16_t>(half));
-        const int k      = isLeft ? drone.localIndex : (drone.localIndex - half);
+        const float distance = kBaseDistance + seg  * kDistanceStep;
+        const float height   = kBaseHeight   + hRow * kHeightSpacing;
 
-        // --- 壁の格子：低い高さ(row) × 奥行き(col) ---
-        const int   heightRows    = 2;    // 低い壁（ジャンプで越えられる）
-        const int   perSide       = half;
-        const int   colsPerSide   = (std::max)(1, (perSide + heightRows - 1) / heightRows);
-        const int   col           = k / heightRows; // 奥行き方向
-        const int   row           = k % heightRows; // 高さ方向
-
-        const float depthSpacing  = 2.5f; // 壁の奥行きの間隔
-        const float heightSpacing = 1.5f; // 高さの間隔（低め）
-        const float baseHeight    = 0.8f; // 壁の下端の高さ（地面付近）
-        const float clapForward   = 6.0f; // ボスからプレイヤー側への壁の中心距離
-
-        // --- 進行度で左右間隔 gap を縮める（挟み込み）---
+        // --- 進行度で腕の角度を「真横(±kStartAngle)→前方中央(±kEndAngle)」へ閉じる ---
         if (drone.wantsAttack)
             drone.attackProgress = (std::min)(1.0f, drone.attackProgress + ctx.dt * kClapSpeed);
         else
             drone.attackProgress = 0.0f;
 
-        const float eased = drone.attackProgress * drone.attackProgress;  // easeIn（バチンと閉じる）
-        const float gap   = kStartGap + (kEndGap - kStartGap) * eased;    // 広 → 狭
+        const float eased = drone.attackProgress * drone.attackProgress; // easeIn（バチンと閉じる）
+        const float sign  = isRight ? 1.0f : -1.0f;
+        const float angle = sign * (kStartAngle + (kEndAngle - kStartAngle) * eased);
 
-        const float sideSign = isLeft ? -1.0f : 1.0f;
-        const float depth    = (col - (colsPerSide - 1) * 0.5f) * depthSpacing; // 奥行きは中央揃え
+        // centerDir を Y 軸まわりに angle 回転＝この機の「腕方向」。常にボス前方に張り出す。
+        const Quaternion swing  = Quaternion::CreateFromAxisAngle(Vector3::UnitY, angle);
+        const Vector3    armDir  = Vector3::Transform(centerDir, swing);
 
-        const Vector3 center = ctx.bossPos + dir * clapForward + Vector3::UnitY * baseHeight;
-        drone.targetPosition = center
-                             + right * (sideSign * gap)          // 左右から寄る
-                             + dir   * depth                     // 奥行きに広がる壁
-                             + Vector3::UnitY * (row * heightSpacing);
+        drone.targetPosition = ctx.bossPos + armDir * distance + Vector3::UnitY * height;
 
-        // 向き：相手側（内向き）を向かせる
-        Vector3 look = right * (-sideSign);
-        if (look.LengthSquared() < 0.001f) look = dir;
+        // 向き：中心軸（相手方向）を向かせる＝内向き
+        Vector3 look = ctx.playerPos - drone.targetPosition;
+        look.y = 0.0f;
+        if (look.LengthSquared() < 0.001f) look = centerDir;
         look.Normalize();
         drone.fireDirection       = look;
         drone.targetLookDirection = look;
     }
 
     // --- 調整値（グレーボックスで実測して詰める）---
-    static constexpr float kClapSpeed = 3.0f;   // attackProgress の増加速度 → 閉じ切りまで ≈0.33s
-    static constexpr float kStartGap  = 12.0f;  // 開始時の左右間隔（広く開いて読ませる）
-    static constexpr float kEndGap    = 1.2f;   // 閉じ切り時の左右間隔（ほぼ接触）
+    static constexpr float kClapSpeed     = 3.0f;   // 閉じ速度（1/秒）→ 閉じ切り ≈0.33s
+    static constexpr int   kHeightRows    = 2;      // 低い壁（ジャンプで越えられる）
+    static constexpr float kBaseDistance  = 3.0f;   // 最内の腕のボスからの距離
+    static constexpr float kDistanceStep  = 1.2f;   // 腕が前方へ伸びる間隔
+    static constexpr float kBaseHeight    = 0.8f;   // 壁の下端（地面付近）
+    static constexpr float kHeightSpacing = 1.5f;   // 高さ段の間隔（低め）
+    static constexpr float kStartAngle    = 1.5f;   // 開始角(rad)≈86°（ほぼ真横に開く）
+    static constexpr float kEndAngle      = 0.08f;  // 閉じ切り角(rad)≈5°（前方中央でほぼ接触）
 };
 
 // ====================================================================
