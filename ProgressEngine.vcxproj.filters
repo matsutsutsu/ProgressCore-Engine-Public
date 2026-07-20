@@ -897,6 +897,9 @@
     <ClInclude Include="Source\Engine\UI\ECS\Components\UIAppearComponent.h">
       <Filter>Source\Engine\UI\ECS\Components</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\UI\ECS\Components\UICanvasComponent.h">
+      <Filter>Source\Engine\UI\ECS\Components</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\UI\ECS\Systems\UIAnimationSystem.h">
       <Filter>Source\Engine\UI\ECS\Systems</Filter>
     </ClInclude>

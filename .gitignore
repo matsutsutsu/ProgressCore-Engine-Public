@@ -420,9 +420,6 @@ FodyWeavers.xsd
 *.msm
 *.msp
 
-# 開発者個人のAIコンテキスト/設計メモ（別の非公開リポジトリで管理）
-/_devnotes/
-
 # 構造ダンプの個人ツール出力（コミット不要）
 _dump_structure.bat
 structure.txt

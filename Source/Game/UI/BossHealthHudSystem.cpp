@@ -8,9 +8,11 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Serialization/Factory/EntityFactory.h"
 
+#include "Engine/Transform/Components/TransformComponent.h" // UI階層（親子）
 #include "Engine/UI/ECS/Components/UITransformComponent.h"
 #include "Engine/UI/ECS/Components/UIProgressBarComponent.h"
 #include "Engine/UI/ECS/Components/UITextComponent.h"
+#include "Game/UI/MenuUiFactory.h" // SpawnCanvas / MakeUINode
 
 #include <algorithm>
 #include <cmath>
@@ -26,8 +28,12 @@ const DirectX::XMFLOAT4 kBossTrail = {1.00f, 0.82f, 0.35f, 0.95f}; // アンバ�
 
 void BossHealthHudSystem::Initialize()
 {
+    // UI階層のルート。配下(ゲージ/ラベル)をこの Canvas の子にしてヒエラルキーで束ねる。
+    const EntityID canvas = CCL::GameUI::SpawnCanvas(*_world, "BossHpCanvas");
+
     // --- ゲージ本体（画面上部中央・アンカー方式） ---
-    auto barArch = ArchetypeHelper::Generate<UITransformComponent, UIProgressBarComponent>();
+    auto barArch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
+        UIProgressBarComponent>();
     auto bar     = EntityFactory::SpawnNamed(*_world, "BossHpGauge", barArch);
 
     UITransformComponent t;
@@ -45,11 +51,12 @@ void BossHealthHudSystem::Initialize()
     b.trailValue = 1.0f;
     b.visible    = false;      // 出現するまで隠しておく
 
-    bar.Set(t).Set(b);
+    bar.Set(CCL::GameUI::MakeUINode(canvas)).Set(t).Set(b);
     m_barID = bar.ID();
 
     // --- ラベル（ゲージの上・中央寄せは近似オフセット） ---
-    auto labelArch = ArchetypeHelper::Generate<UITransformComponent, UITextComponent>();
+    auto labelArch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
+        UITextComponent>();
     auto label     = EntityFactory::SpawnNamed(*_world, "BossHpLabel", labelArch);
 
     UITransformComponent lt;
@@ -64,7 +71,7 @@ void BossHealthHudSystem::Initialize()
     lx.sortOrder = 103; // フィル(102)より手前
     lx.visible   = false;
 
-    label.Set(lt).Set(lx);
+    label.Set(CCL::GameUI::MakeUINode(canvas)).Set(lt).Set(lx);
     m_labelID = label.ID();
 }
 

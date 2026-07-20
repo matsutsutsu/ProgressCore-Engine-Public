@@ -31,8 +31,8 @@ void UILayoutSystem::Update(float /*dt*/)
     auto &drawList = _world->GetResource<UIDrawList>();
     // ※ クリアは消費側(UIRenderer::Flush 末尾)が行う。ここでは積むだけ。
 
-    ForEach([&](UITransformComponent &t, const UIImageComponent &img) {
-        CCL::UI::ComputeUIRect(t, screenW, screenH);
+    ForEachWithID([&](CCL::ECS::EntityID id, UITransformComponent &t, const UIImageComponent &img) {
+        CCL::UI::ComputeUIRect(*_world, id, t, screenW, screenH);
 
         if (!img.visible) return;
 

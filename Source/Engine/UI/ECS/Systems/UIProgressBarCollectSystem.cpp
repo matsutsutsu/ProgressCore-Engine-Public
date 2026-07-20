@@ -23,8 +23,8 @@ void UIProgressBarCollectSystem::Update(float /*dt*/)
     const float screenH = gfx.GetScreenHeight();
     auto       &drawList = _world->GetResource<UIDrawList>();
 
-    ForEach([&](UITransformComponent &t, const UIProgressBarComponent &bar) {
-        CCL::UI::ComputeUIRect(t, screenW, screenH);
+    ForEachWithID([&](CCL::ECS::EntityID id, UITransformComponent &t, const UIProgressBarComponent &bar) {
+        CCL::UI::ComputeUIRect(*_world, id, t, screenW, screenH);
         if (!bar.visible) return;
 
         const float v = std::clamp(bar.value, 0.0f, 1.0f);

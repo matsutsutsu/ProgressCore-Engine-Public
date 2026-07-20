@@ -8,9 +8,11 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Serialization/Factory/EntityFactory.h"
 
+#include "Engine/Transform/Components/TransformComponent.h" // UI階層（親子）
 #include "Engine/UI/ECS/Components/UITransformComponent.h"
 #include "Engine/UI/ECS/Components/UIProgressBarComponent.h"
 #include "Engine/UI/ECS/Components/UITextComponent.h"
+#include "Game/UI/MenuUiFactory.h" // SpawnCanvas / MakeUINode
 
 using namespace CCL::ECS;
 
@@ -24,8 +26,12 @@ const DirectX::XMFLOAT4 kColCharge = {0.275f, 0.667f, 1.0f, 1.0f}; // 蓄積中�
 
 void OverdriveHudSystem::Initialize()
 {
+    // UI階層のルート。配下(ゲージ/ラベル)をこの Canvas の子にしてヒエラルキーで束ねる。
+    const EntityID canvas = CCL::GameUI::SpawnCanvas(*_world, "OverdriveCanvas");
+
     // --- ゲージ本体（左下・アンカー方式） ---
-    auto gaugeArch = ArchetypeHelper::Generate<UITransformComponent, UIProgressBarComponent>();
+    auto gaugeArch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
+        UIProgressBarComponent>();
     auto gauge     = EntityFactory::SpawnNamed(*_world, "OverdriveGauge", gaugeArch);
 
     UITransformComponent gt;
@@ -38,11 +44,12 @@ void OverdriveHudSystem::Initialize()
     gb.fillColor = kColCharge;
     gb.sortOrder = 100;
 
-    gauge.Set(gt).Set(gb);
+    gauge.Set(CCL::GameUI::MakeUINode(canvas)).Set(gt).Set(gb);
     m_gaugeID = gauge.ID();
 
     // --- ラベル（ゲージの上） ---
-    auto labelArch = ArchetypeHelper::Generate<UITransformComponent, UITextComponent>();
+    auto labelArch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
+        UITextComponent>();
     auto label     = EntityFactory::SpawnNamed(*_world, "OverdriveLabel", labelArch);
 
     UITransformComponent lt;
@@ -56,7 +63,7 @@ void OverdriveHudSystem::Initialize()
     lx.pixelSize = 18.0f;
     lx.sortOrder = 102;
 
-    label.Set(lt).Set(lx);
+    label.Set(CCL::GameUI::MakeUINode(canvas)).Set(lt).Set(lx);
     m_labelID = label.ID();
 }
 

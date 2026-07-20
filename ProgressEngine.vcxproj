@@ -754,6 +754,7 @@
     <ClInclude Include="Source\Game\GameFlowState.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Components\UIAnimationComponent.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Components\UIAppearComponent.h" />
+    <ClInclude Include="Source\Engine\UI\ECS\Components\UICanvasComponent.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Systems\UIAnimationSystem.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Systems\UIAppearSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerAttackSystem.h" />

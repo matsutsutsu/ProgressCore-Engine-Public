@@ -24,8 +24,8 @@ void UITextCollectSystem::Update(float /*dt*/)
     auto &drawList = _world->GetResource<UIDrawList>();
     // ※ クリアは消費側(UIRenderer::Flush 末尾)が行う。
 
-    ForEach([&](UITransformComponent &t, const UITextComponent &txt) {
-        CCL::UI::ComputeUIRect(t, screenW, screenH);
+    ForEachWithID([&](CCL::ECS::EntityID id, UITransformComponent &t, const UITextComponent &txt) {
+        CCL::UI::ComputeUIRect(*_world, id, t, screenW, screenH);
 
         if (!txt.visible || txt.text.empty()) return;
 

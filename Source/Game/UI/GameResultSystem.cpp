@@ -13,7 +13,10 @@
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"
 
 #include <cstdint>
+
+#ifdef ENABLE_EDITOR
 #include <imgui.h>
+#endif
 
 using namespace CCL::ECS;
 
@@ -114,26 +117,31 @@ void GameResultSystem::ShowResultUI(bool win)
     using namespace CCL::GameUI;
     World &w = *_world;
 
+    // UI階層：Canvas を親にして配下を束ねる（ヒエラルキーで入れ子表示）。
+    const EntityID canvas = SpawnCanvas(w, "ResultCanvas");
+
     // 出現アニメ：要素ごとに遅延を少しずつ増やして上から順にスッと出す（暗転→見出し→ボタン）。
     // 暗転パネルはスライド無し(0)のフェードのみ、それ以外は上スライド付きで現れる。
     SpawnPanel(w, "ResultDim", {0.0f, 0.0f}, {4000.0f, 4000.0f}, {0.0f, 0.0f, 0.0f, 0.6f}, 200,
-        0.00f, 0.0f);
+        0.00f, 0.0f, canvas);
 
     // 見出し（勝敗で文言と色を変える。中央寄せは近似オフセット）
     const char             *title = win ? "GAME CLEAR" : "GAME OVER";
     const DirectX::XMFLOAT4 color = win ? DirectX::XMFLOAT4{1.0f, 0.9f, 0.4f, 1.0f}  // 金
                                         : DirectX::XMFLOAT4{1.0f, 0.4f, 0.4f, 1.0f}; // 赤
-    EntityID titleId = SpawnLabel(w, "ResultTitle", title, {-190.0f, -140.0f}, 64.0f, 220, 0.08f);
+    EntityID titleId = SpawnLabel(w, "ResultTitle", title, {-190.0f, -140.0f}, 64.0f, 220, 0.08f, canvas);
     if (auto *tx = w.GetComponent<UITextComponent>(titleId)) tx->color = color;
 
     // ボタン（RETRY が初期フォーカス）
-    SpawnButton(w, "BtnRetry", "LblRetry", "RETRY", {0.0f, 0.0f}, "retry", true, 210, 0.16f);
-    SpawnButton(w, "BtnToTitle", "LblToTitle", "TITLE", {0.0f, 90.0f}, "result_to_title", false, 210, 0.24f);
+    SpawnButton(w, "BtnRetry", "LblRetry", "RETRY", {0.0f, 0.0f}, "retry", true, 210, 0.16f, canvas);
+    SpawnButton(w, "BtnToTitle", "LblToTitle", "TITLE", {0.0f, 90.0f}, "result_to_title", false, 210, 0.24f, canvas);
 }
 
 // ============================================================================
 //  デバッグ：勝敗検知の内部状態を可視化し、必要なら判定を止められるようにする。
+//  ※ImGuiはエディタ専用。Shipping(Release)ビルドではスタブに差し替える。
 // ============================================================================
+#ifdef ENABLE_EDITOR
 void GameResultSystem::OnGui()
 {
     ImGui::SeparatorText("リザルト検知 (デバッグ)");
@@ -160,3 +168,6 @@ void GameResultSystem::OnGui()
     }
     ImGui::TextDisabled("※プレイヤー不在のSceneでは自動でリザルトを抑止します");
 }
+#else
+void GameResultSystem::OnGui() {}
+#endif

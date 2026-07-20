@@ -73,17 +73,21 @@ void PauseSystem::OpenPause()
 
     // オーバーレイ生成（HUDより手前へ sortOrder 高め）。
     // 出現アニメ：暗転→見出し→ボタンの順に少し遅延させてスッと出す（暗転はフェードのみ）。
+    // UI階層：Canvas を親にして配下を束ねる（ヒエラルキーで入れ子表示・一括破棄）。
     _overlay.clear();
-    _overlay.push_back(SpawnPanel(w, "PauseDim", {0.0f, 0.0f}, {4000.0f, 4000.0f},
-        {0.0f, 0.0f, 0.0f, 0.55f}, 200, 0.00f, 0.0f));
-    _overlay.push_back(SpawnLabel(w, "PauseTitle", "PAUSE", {-90.0f, -140.0f}, 56.0f, 220, 0.08f));
+    const EntityID canvas = SpawnCanvas(w, "PauseCanvas");
+    _overlay.push_back(canvas);
 
-    auto resume = SpawnButton(w, "BtnResume", "LblResume", "RESUME", {0.0f, 0.0f}, "resume", true, 210, 0.16f);
+    _overlay.push_back(SpawnPanel(w, "PauseDim", {0.0f, 0.0f}, {4000.0f, 4000.0f},
+        {0.0f, 0.0f, 0.0f, 0.55f}, 200, 0.00f, 0.0f, canvas));
+    _overlay.push_back(SpawnLabel(w, "PauseTitle", "PAUSE", {-90.0f, -140.0f}, 56.0f, 220, 0.08f, canvas));
+
+    auto resume = SpawnButton(w, "BtnResume", "LblResume", "RESUME", {0.0f, 0.0f}, "resume", true, 210, 0.16f, canvas);
     _overlay.push_back(resume.button);
     _overlay.push_back(resume.label);
 
     auto toTitle = SpawnButton(w, "BtnPauseTitle", "LblPauseTitle", "TITLE", {0.0f, 90.0f},
-        "pause_to_title", false, 210, 0.24f);
+        "pause_to_title", false, 210, 0.24f, canvas);
     _overlay.push_back(toTitle.button);
     _overlay.push_back(toTitle.label);
 }
