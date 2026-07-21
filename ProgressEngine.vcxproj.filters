@@ -1113,6 +1113,9 @@
     <ClInclude Include="Source\Editor\Windows\RenderDebugWindow.h">
       <Filter>Source\Editor\Windows\Editor</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\BuildingScatterWindow.h">
+      <Filter>Source\Editor\Windows\Editor</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\Windows\RenderTargetVisualizer.h">
       <Filter>Source\Editor\Windows\Editor</Filter>
     </ClInclude>
@@ -2460,6 +2463,9 @@
       <Filter>Source\Editor\Windows\Editor</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\RenderDebugWindow.cpp">
+      <Filter>Source\Editor\Windows\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\BuildingScatterWindow.cpp">
       <Filter>Source\Editor\Windows\Editor</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\RenderTargetVisualizer.cpp">

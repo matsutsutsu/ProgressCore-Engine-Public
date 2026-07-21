@@ -71,6 +71,10 @@
         {
             "name": "Render Debug",
             "visible": false
+        },
+        {
+            "name": "Building Scatter",
+            "visible": true
         }
     ]
 }
