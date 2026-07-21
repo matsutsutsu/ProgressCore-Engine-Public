@@ -50,3 +50,35 @@ Vector3 ScreenToWorld::GetRayIntersectionY0(
 
     return intersection;
 }
+
+void ScreenToWorld::GetRay(
+    float mouseX, float mouseY,
+    float screenWidth, float screenHeight,
+    const Camera& camera,
+    Vector3& outOrigin, Vector3& outDir)
+{
+    // GetRayIntersectionY0 と同じ逆変換だが、Y=0 で切らずレイそのものを返す。
+    Viewport vp;
+    vp.x = 0.0f;
+    vp.y = 0.0f;
+    vp.width = screenWidth;
+    vp.height = screenHeight;
+    vp.minDepth = 0.0f;
+    vp.maxDepth = 1.0f;
+
+    Matrix view = XMLoadFloat4x4(&camera.GetView());
+    Matrix proj = XMLoadFloat4x4(&camera.GetProjection());
+    Matrix world = Matrix::Identity;
+
+    Vector3 nearSource(mouseX, mouseY, 0.0f);
+    Vector3 farSource(mouseX, mouseY, 1.0f);
+
+    Vector3 nearPoint = vp.Unproject(nearSource, proj, view, world);
+    Vector3 farPoint = vp.Unproject(farSource, proj, view, world);
+
+    Vector3 dir = farPoint - nearPoint;
+    dir.Normalize();
+
+    outOrigin = nearPoint;
+    outDir = dir;
+}

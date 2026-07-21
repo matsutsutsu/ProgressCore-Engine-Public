@@ -31,6 +31,7 @@ public:
     // Queries (剛体)
     bool CheckGrounded(CCL::ECS::EntityID entity, float distance) override;
     PhysicsHitInfo RayCast(const DirectX::XMFLOAT3& origin, const DirectX::XMFLOAT3& direction, float maxDistance, CCL::ECS::EntityID ignoreEntity) override;
+    PhysicsHitInfo RayCastStatic(const DirectX::XMFLOAT3& origin, const DirectX::XMFLOAT3& direction, float maxDistance) override;
 
     // Queries (CharacterVirtual)
     bool IsCharacterGrounded(CCL::ECS::EntityID entity) override;

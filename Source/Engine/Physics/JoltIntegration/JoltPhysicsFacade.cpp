@@ -245,6 +245,39 @@ PhysicsHitInfo JoltPhysicsFacade::RayCast(const XMFLOAT3 &origin, const XMFLOAT3
     return info;
 }
 
+PhysicsHitInfo JoltPhysicsFacade::RayCastStatic(const XMFLOAT3 &origin, const XMFLOAT3 &direction, float maxDistance)
+{
+    PhysicsHitInfo               info;
+    auto                        &physicsManager = m_world->GetResource<JoltPhysicsManager *>();
+    const JPH::NarrowPhaseQuery &narrowPhase    = physicsManager->GetPhysicsSystem()->GetNarrowPhaseQuery();
+
+    JPH::RVec3 rayStart(origin.x, origin.y, origin.z);
+
+    XMVECTOR dirVec = XMVector3Normalize(XMLoadFloat3(&direction));
+    dirVec          = XMVectorScale(dirVec, maxDistance);
+    XMFLOAT3 finalDir;
+    XMStoreFloat3(&finalDir, dirVec);
+    JPH::RVec3 rayDir(finalDir.x, finalDir.y, finalDir.z);
+
+    // 地形(NON_MOVING)だけにヒットさせる。プレイヤー/ボス/ドローン等の動的ボディは無視される。
+    JPH::SpecifiedBroadPhaseLayerFilter bpFilter(BroadPhaseLayers::NON_MOVING);
+    JPH::SpecifiedObjectLayerFilter     objFilter(PhysicsLayers::NON_MOVING);
+
+    JPH::RayCastResult hit;
+    bool               isHit = narrowPhase.CastRay(
+        JPH::RRayCast(rayStart, rayDir), hit, bpFilter, objFilter);
+
+    if (isHit)
+    {
+        info.hit      = true;
+        info.distance = maxDistance * hit.mFraction;
+
+        JPH::RVec3 hitPos = rayStart + rayDir * hit.mFraction;
+        info.position     = {hitPos.GetX(), hitPos.GetY(), hitPos.GetZ()};
+    }
+    return info;
+}
+
 // =======================================================
 // 🟣 Character Queries (CharacterVirtual)
 // =======================================================

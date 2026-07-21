@@ -10,9 +10,14 @@
 // ★ ShapeRenderer のインクルード
 #include "Engine/Graphics/Renderer/ShapeRenderer.h"
 
+// ★ ピッキング用: スクリーン→レイ変換 と カリング用ワールドAABB
+#include "Engine/Core/Math/ScreenToWorld.h"
+#include "Engine/Graphics/Components/Culling/CullingComponents.h"
+
 #include <json.hpp>
 #include <algorithm>
 #include <cmath>
+#include <cfloat>
 
 #ifdef ENABLE_EDITOR
 #include <ImGuizmo.h>
@@ -78,6 +83,52 @@ void BuildLookupTable(CameraPathAsset &asset)
         prevPos = currPos;
     }
     asset.totalLength = accumulatedDistance;
+}
+
+// =========================================================================
+// レイ-AABB による最近傍エンティティ選択(ピッキング)
+//   カリング用に各描画エンティティが持つ worldAABB(DirectX::BoundingBox)へ
+//   レイを飛ばし、最も手前でヒットしたエンティティを返す。
+//   ※ 追加データ不要。BoundingBoxComponent は ModelCullingSetupSystem が自動付与する。
+// =========================================================================
+CCL::ECS::EntityID PickEntity(CCL::ECS::World &world,
+    const Vector3 &origin, const Vector3 &dir)
+{
+    using namespace CCL::ECS;
+
+    const XMVECTOR o = XMLoadFloat3(&origin);
+    const XMVECTOR d = XMLoadFloat3(&dir);
+
+    EntityID best     = InvalidEntityID;
+    float    bestDist = FLT_MAX;
+
+    auto &chunks = world.GetChunkManager().GetChunks();
+    for (auto &chunkPtr : chunks)
+    {
+        if (!chunkPtr) continue;
+        Chunk *chunk = chunkPtr.get();
+        if (!chunk->HasComponent<BoundingBoxComponent>()) continue;
+
+        BoundingBoxComponent *boxes = chunk->GetComponentArray<BoundingBoxComponent>();
+        VisibilityComponent  *vis   = chunk->HasComponent<VisibilityComponent>()
+                                          ? chunk->GetComponentArray<VisibilityComponent>()
+                                          : nullptr;
+
+        const size_t count = chunk->GetEntityCount();
+        for (size_t i = 0; i < count; ++i)
+        {
+            if (chunk->IsEntityDestroyed(i)) continue;
+            if (vis && !vis[i].isVisible) continue; // 非表示は拾わない
+
+            float dist = 0.0f;
+            if (boxes[i].worldAABB.Intersects(o, d, dist) && dist < bestDist)
+            {
+                bestDist = dist;
+                best     = chunk->GetEntityByIndex(i);
+            }
+        }
+    }
+    return best;
 }
 
 // エディタからの自動保存用
@@ -229,6 +280,54 @@ void GameViewWindow::DrawContents(EditorContext &context)
                     }
 
                     wasUsingGizmo = isUsingGizmo;
+                }
+            }
+        }
+    }
+
+    // =========================================================================
+    // クリックによるオブジェクト選択 (ピッキング)
+    //   ・一時停止中(=編集中)のみ有効。プレイ中はクリックをゲーム入力に回すため選択しない。
+    //   ・GameView画像の相対座標(local)で判定するので、ウィンドウ位置や内部解像度に依存しない
+    //     (= GameView越しでもクリック座標がズレない)。
+    //   ・ギズモ操作中/ホバー中は誤選択しない。ドラッグ(カメラ回転等)後のリリースも除外。
+    // =========================================================================
+    if (context.isPaused && context.world &&
+        context.world->HasResource<Camera *>() &&
+        ImGui::IsWindowHovered() &&
+        !ImGuizmo::IsOver() && !ImGuizmo::IsUsing())
+    {
+        const ImVec2 mouse = ImGui::GetMousePos();
+        const ImVec2 local = ImVec2(mouse.x - screenPos.x, mouse.y - screenPos.y);
+        const bool   insideImage =
+            local.x >= 0.0f && local.y >= 0.0f &&
+            local.x <= imageSize.x && local.y <= imageSize.y;
+
+        if (insideImage && ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+        {
+            // ドラッグ(カメラ操作)後のリリースは選択に使わない (約5px以上動いたら無視)
+            const ImVec2 dd      = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left);
+            const bool   wasDrag = (dd.x * dd.x + dd.y * dd.y) > 25.0f;
+
+            if (!wasDrag)
+            {
+                Camera *camera = context.world->GetResource<Camera *>();
+                Vector3 rayOrigin, rayDir;
+                ScreenToWorld::GetRay(local.x, local.y, imageSize.x, imageSize.y,
+                    *camera, rayOrigin, rayDir);
+
+                const CCL::ECS::EntityID hit = PickEntity(*context.world, rayOrigin, rayDir);
+
+                ImGuiIO &io = ImGui::GetIO();
+                if (hit != CCL::ECS::InvalidEntityID)
+                {
+                    if (io.KeyCtrl) context.ToggleSelection(hit); // 追加/解除
+                    else            context.SetSingleSelection(hit);
+                }
+                else if (!io.KeyCtrl)
+                {
+                    // 何もない場所を通常クリック → 選択解除
+                    context.ClearSelection();
                 }
             }
         }

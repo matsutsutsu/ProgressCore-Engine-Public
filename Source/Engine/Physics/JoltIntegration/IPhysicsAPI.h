@@ -58,6 +58,11 @@ public:
     // 任意の場所から任意の方向へレーザーを撃つ（銃の弾や、敵の視界判定に使う）
     virtual PhysicsHitInfo RayCast(const DirectX::XMFLOAT3& origin, const DirectX::XMFLOAT3& direction, float maxDistance, CCL::ECS::EntityID ignoreEntity = CCL::ECS::InvalidEntityID) = 0;
 
+    // 静止物(NON_MOVING: 壁/建物/地面)だけに当てるレイキャスト。
+    //   プレイヤー/ボス/ドローン等の動的ボディには反応しない。
+    //   用途: TPSカメラの衝突回避（地形とだけ交差させ、間に何も無ければ素通しにしたい）など。
+    virtual PhysicsHitInfo RayCastStatic(const DirectX::XMFLOAT3& origin, const DirectX::XMFLOAT3& direction, float maxDistance) = 0;
+
     // =======================================================
     // 🟣 キャラクター専用クエリ (CharacterVirtual)
     // =======================================================

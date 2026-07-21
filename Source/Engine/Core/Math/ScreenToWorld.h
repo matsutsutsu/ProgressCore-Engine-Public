@@ -23,4 +23,25 @@ public:
         float mouseX, float mouseY,
         float screenWidth, float screenHeight,
         const Camera& camera);
+
+    /**
+     * @brief スクリーン座標から、ワールド空間のピッキング用レイ(始点+方向)を生成する。
+     *
+     * Y=0 平面に限定しない汎用レイ。オブジェクト選択(レイ-AABB判定)に使う。
+     * mouseX/mouseY と screenWidth/screenHeight は「同じ座標系」であれば単位は不問。
+     * GameView のように画像内相対座標(local)と表示サイズ(imageSize)を渡せば、
+     * レンダーターゲットの実解像度やウィンドウ位置に依存せず正しいレイになる。
+     *
+     * @param mouseX,mouseY      対象領域の左上を原点としたマウス座標
+     * @param screenWidth/Height 対象領域のサイズ(mouseと同じ座標系)
+     * @param camera             現在の描画カメラ
+     * @param outOrigin          [out] レイ始点(ニアクリップ上の点)
+     * @param outDir             [out] 正規化されたレイ方向
+     */
+    static void GetRay(
+        float mouseX, float mouseY,
+        float screenWidth, float screenHeight,
+        const Camera& camera,
+        DirectX::SimpleMath::Vector3& outOrigin,
+        DirectX::SimpleMath::Vector3& outDir);
 };

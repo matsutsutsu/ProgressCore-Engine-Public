@@ -28,15 +28,15 @@ private:
 
     // ---- 配置パラメータ ----
     float _center[3]    = { 0.0f, 0.0f, 0.0f }; // 中心(円柱ステージ)のワールド座標
-    float _minRadius    = 20.0f;                // 中心からの最短出現距離(これより内側には出さない)
-    float _maxRadius    = 60.0f;                // 最長出現距離
-    int   _count        = 30;                   // 生成する建物数
-    float _baseY        = 0.0f;                 // 建物の接地Y座標
+    float _minRadius    = 500.0f;                // 中心からの最短出現距離(これより内側には出さない)
+    float _maxRadius    = 1000.0f;                // 最長出現距離
+    int   _count        = 60;                   // 生成する建物数
+    float _baseY        = -300.0f;                 // 建物の接地Y座標
     int   _seed         = 1234;                 // 乱数シード(変えると配置が変わる)
     bool  _randomYaw    = true;                 // Y軸ランダム回転
-    float _scaleRange[2]= { 0.8f, 1.4f };       // ランダム均等スケールの下限/上限
-    float _minSpacing   = 6.0f;                 // 建物同士の最小間隔(重なり防止)
-    int   _clusterCount = 1;                    // 親グループ(塊)の数。1なら全部ひとつにまとめる
+    float _scaleRange[2]= { 5.0f, 13.0f };       // ランダム均等スケールの下限/上限
+    float _minSpacing   = 300.0f;                 // 建物同士の最小間隔(重なり防止)
+    int   _clusterCount = 6;                    // 親グループ(塊)の数。1なら全部ひとつにまとめる
 
     // 使用する建物モデル(Scifi-Building_01〜08)。全ON既定。
     bool  _useModel[8]  = { true, true, true, true, true, true, true, true };

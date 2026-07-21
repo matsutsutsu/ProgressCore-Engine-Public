@@ -97,6 +97,16 @@ struct ComponentMeta<CameraBodyTPSComponent>
         changed |= ImGui::DragFloat(u8"位置追従遅延 (positionDamping)", &comp.positionDamping, 0.1f, 0.0f, 50.0f);
         changed |= ImGui::DragFloat(u8"視野角補間速度 (fovDamping)", &comp.fovDamping, 0.1f, 0.0f, 50.0f);
 
+        ImGui::SeparatorText(u8"カメラ衝突 (Collision)");
+        changed |= ImGui::Checkbox(u8"衝突回避 有効 (collisionEnabled)", &comp.collisionEnabled);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip(u8"地形/建物にカメラがめり込まないよう、手前へ寄せる。");
+        changed |= ImGui::DragFloat(u8"衝突余白/半径 (collisionRadius)", &comp.collisionRadius, 0.01f, 0.0f, 2.0f);
+        changed |= ImGui::DragFloat(u8"最小距離 (collisionMinDistance)", &comp.collisionMinDistance, 0.05f, 0.1f, 10.0f);
+        changed |= ImGui::DragFloat(u8"寄せる速さ (collisionInDamping)", &comp.collisionInDamping, 0.5f, 1.0f, 100.0f);
+        changed |= ImGui::DragFloat(u8"戻す速さ (collisionOutDamping)", &comp.collisionOutDamping, 0.5f, 1.0f, 100.0f);
+        changed |= ImGui::DragFloat(u8"寄った時の頭寄せ (collisionHeadBias)", &comp.collisionHeadBias, 0.01f, 0.0f, 1.0f);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip(u8"カメラが寄った時に足元ではなく頭付近の高さへ持ち上げる強さ(0=そのまま,1=頭の高さ)。");
+
         ImGui::SeparatorText(u8"ルックアヘッド (Lookahead)");
         changed |= ImGui::DragFloat(u8"前方注視係数 (lookaheadMultiplier)", &comp.lookaheadMultiplier, 0.05f, 0.0f, 5.0f);
         changed |= ImGui::DragFloat(u8"注視遅延 (lookaheadDamping)", &comp.lookaheadDamping, 0.1f, 0.0f, 50.0f);
@@ -137,6 +147,13 @@ struct ComponentMeta<CameraBodyTPSComponent>
             CFIELD(mouseInvertY, "上下反転", "Mouse Look")
             CFIELD_FLOAT_RANGED(positionDamping, "位置追従遅延", 0.1f, 0.0f, 50.0f, "Smoothing")
             CFIELD_FLOAT_RANGED(fovDamping, "視野角補間速度", 0.1f, 0.0f, 50.0f, "Smoothing")
+
+            CFIELD(collisionEnabled, "衝突回避 有効", "Collision")
+            CFIELD_FLOAT_RANGED(collisionRadius, "衝突余白/半径", 0.01f, 0.0f, 2.0f, "Collision")
+            CFIELD_FLOAT_RANGED(collisionMinDistance, "最小距離", 0.05f, 0.1f, 10.0f, "Collision")
+            CFIELD_FLOAT_RANGED(collisionInDamping, "寄せる速さ", 0.5f, 1.0f, 100.0f, "Collision")
+            CFIELD_FLOAT_RANGED(collisionOutDamping, "戻す速さ", 0.5f, 1.0f, 100.0f, "Collision")
+            CFIELD_FLOAT_RANGED(collisionHeadBias, "寄った時の頭寄せ", 0.01f, 0.0f, 1.0f, "Collision")
             CFIELD_FLOAT_RANGED(lookaheadMultiplier, "前方注視係数", 0.05f, 0.0f, 5.0f, "Lookahead")
             CFIELD_FLOAT_RANGED(lookaheadDamping, "注視遅延", 0.1f, 0.0f, 50.0f, "Lookahead")
 

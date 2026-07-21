@@ -74,7 +74,7 @@
         },
         {
             "name": "Building Scatter",
-            "visible": true
+            "visible": false
         }
     ]
 }

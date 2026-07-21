@@ -8,8 +8,11 @@
 
 #include "Game/Logics/GameEvent/GameEvents.h"
 #include "Engine/Physics/Components/Character/CharacterMovementInputComponent.h"
+#include "Engine/Physics/JoltIntegration/IPhysicsAPI.h" // カメラ衝突（地形レイキャスト）
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"
 #include "Game/Logics/Combat/DeadTag.h"
+
+#include <memory>
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
@@ -67,6 +70,12 @@ void CameraActionTPSSystem::Update(float dt)
     float mouseDX = inputAPI->GetMouseDeltaX();
     float mouseDY = inputAPI->GetMouseDeltaY();
     bool  rmbHeld = inputAPI->GetAction("FreeLook"); // 右クリック押下中か
+
+    // カメラ衝突用の物理API（地形とだけ交差判定する）。無ければ衝突回避はスキップ。
+    std::shared_ptr<IPhysicsAPI> physicsAPI =
+        _world->HasResource<std::shared_ptr<IPhysicsAPI>>()
+            ? _world->GetResource<std::shared_ptr<IPhysicsAPI>>()
+            : nullptr;
 
     // ForEachは IfSystem のテンプレート引数(3つのコンポーネント)と完全に一致させる
     ForEach([&](VirtualCamera &vcam, CameraBodyTPSComponent &tps, TransformComponent &trans) {
@@ -196,10 +205,11 @@ void CameraActionTPSSystem::Update(float dt)
         // 初回フレーム初期化
         if (tps.isFirstFrame)
         {
-            tps.currentLookAt = idealLookAt;
-            tps.currentPivot  = posPivotTarget;
-            vcam.fov          = tps.baseFov;
-            tps.isFirstFrame  = false;
+            tps.currentLookAt      = idealLookAt;
+            tps.currentPivot       = posPivotTarget;
+            tps.currentCamDistance = camDistance;
+            vcam.fov               = tps.baseFov;
+            tps.isFirstFrame       = false;
         }
 
         // 5. 指数減衰による追従（注視点と回り込み中心をそれぞれ滑らかに追う）
@@ -217,8 +227,46 @@ void CameraActionTPSSystem::Update(float dt)
         backwardDir.z = sinf(yawRad) * cosf(pitchRad);
         backwardDir.Normalize();
 
-        // 回り込み中心から後方へ camDistance 引いた位置がカメラ本体。
-        Vector3 finalPos = tps.currentPivot - (backwardDir * camDistance);
+        // =====================================================================
+        // 6.5 カメラ衝突（スプリングアームのコリジョン）
+        //   回り込み中心(pivot)からカメラ本体へ向けて地形(NON_MOVING)をレイキャストし、
+        //   壁/建物に当たったらカメラをその手前へ寄せる（＝モデルへめり込ませない）。
+        //   ・寄せる(内側)のは速く、戻す(外側)のはゆっくり＝標準的なスプリングアーム挙動。
+        //   ・当たったのが地形だけなので、間をドローンやボスが横切ってもカメラは飛び込まない。
+        // =====================================================================
+        float desiredDist  = camDistance;
+        float resolvedDist = desiredDist;
+        if (tps.collisionEnabled && physicsAPI)
+        {
+            Vector3        castDir = -backwardDir; // pivot からカメラ本体へ向かう向き
+            const float    maxDist = desiredDist + tps.collisionRadius;
+            XMFLOAT3       o       = {tps.currentPivot.x, tps.currentPivot.y, tps.currentPivot.z};
+            XMFLOAT3       d       = {castDir.x, castDir.y, castDir.z};
+            PhysicsHitInfo hit     = physicsAPI->RayCastStatic(o, d, maxDist);
+            if (hit.hit)
+            {
+                // 地形（壁も床も）に当たったら、その少し手前（collisionRadius ぶん）に置いてめり込みを防ぐ。
+                resolvedDist = hit.distance - tps.collisionRadius;
+                resolvedDist = std::clamp(resolvedDist, tps.collisionMinDistance, desiredDist);
+            }
+        }
+
+        // fast-in / slow-out：内側へ寄せるのは素早く、外側へ戻すのはゆっくり補間する。
+        float colDamping = (resolvedDist < tps.currentCamDistance) ? tps.collisionInDamping : tps.collisionOutDamping;
+        float colBlend   = 1.0f - std::exp(-colDamping * dt);
+        tps.currentCamDistance = std::lerp(tps.currentCamDistance, resolvedDist, colBlend);
+
+        // 回り込み中心から後方へ（衝突を反映した）距離ぶん引いた位置がカメラ本体。
+        Vector3 finalPos = tps.currentPivot - (backwardDir * tps.currentCamDistance);
+
+        // ★ カメラが寄った時は「足元」ではなく「頭付近」へ寄せる。
+        //   引き込み量(pullRatio)に応じて、カメラのY(高さ)を pivot(頭)の高さへ持ち上げる。
+        //   これで壁/床でカメラが近づいても視点が足元に落ちず、頭〜肩の高さを保つ。
+        {
+            float range     = (std::max)(0.001f, desiredDist - tps.collisionMinDistance);
+            float pullRatio = std::clamp((desiredDist - tps.currentCamDistance) / range, 0.0f, 1.0f);
+            finalPos.y      = std::lerp(finalPos.y, tps.currentPivot.y, pullRatio * tps.collisionHeadBias);
+        }
 
         // 7. 動的FOV
         float targetFov = tps.baseFov;

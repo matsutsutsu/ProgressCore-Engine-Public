@@ -32,8 +32,21 @@ struct CameraBodyTPSComponent
     bool  mouseLookRequiresButton = false; ///< true=右クリック押下中のみ視点回転。false=常時マウス視点(TPS標準)。
 
     // --- 指数減衰（遅延追従）パラメータ ---
-    float positionDamping = 12.0f; ///< 位置追従の硬さ（低いほどゴム紐のように遅れる）
+    float positionDamping = 12.0f; ///< 位置追従の硬さ（低いほどゴム紐のように遅れる＝スプリング挙動）
     float fovDamping      = 8.0f;  ///< FOV変化の補間速度
+
+    // --- カメラ衝突（スプリングアームのコリジョン：地形/建物にめり込まない） ---
+    bool  collisionEnabled     = true;  ///< 地形との衝突回避を行うか
+    float collisionRadius      = 0.3f;  ///< カメラ球の半径相当の余白(m)。衝突面から浮かせてニアクリップ/めり込みを防ぐ。
+    float collisionMinDistance = 0.8f;  ///< 衝突で寄っても、これ以上プレイヤーへは近づかない下限距離(m)
+    float collisionInDamping   = 30.0f; ///< 障害物へ侵入時：内側へ寄せる速さ（大きい＝素早くめり込み回避）
+    float collisionOutDamping  = 6.0f;  ///< 障害物が消えた時：外側へ戻す速さ（小さい＝ヌルッと戻る）
+
+    // ★ カメラが寄った時に、足元ではなく頭付近の高さへ持ち上げる強さ。
+    //   引き込み量に応じてカメラYを pivot(頭)の高さへ寄せる。0=そのまま(足元に落ちる), 1=完全に頭の高さ。
+    float collisionHeadBias    = 1.0f;
+
+    float currentCamDistance = 0.0f;    ///< 衝突を反映した現在のカメラ距離（実行時内部状態）
 
     // --- ルックアヘッド（進行方向への注視） ---
     float lookaheadMultiplier = 0.3f; ///< 速度に対する注視点の前方移動量
