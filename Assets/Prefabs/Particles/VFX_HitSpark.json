@@ -5,23 +5,6 @@
                 "Name": {
                     "name": "VFX_HitSSparkEmitter"
                 },
-                "Primitive": {
-                    "color": [
-                        1.0,
-                        1.0,
-                        1.0,
-                        1.0
-                    ],
-                    "height": 1.0,
-                    "isWireframe": false,
-                    "radius": 0.5,
-                    "size": [
-                        1.0,
-                        1.0,
-                        1.0
-                    ],
-                    "type": 1
-                },
                 "TimeState": {
                     "buffScale": 1.0,
                     "cinematicScale": 1.0,

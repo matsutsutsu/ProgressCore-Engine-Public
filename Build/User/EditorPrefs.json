@@ -1,5 +1,5 @@
 {
     "DialogHistory": {
-        "Scene": "Assets\\Scene"
+        "Prefab": "Assets\\Prefabs\\Player"
     }
 }

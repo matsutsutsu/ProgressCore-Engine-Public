@@ -8,20 +8,20 @@
                 },
                 "Animation": null,
                 "Animator": {
-                    "isLoop": true,
-                    "playbackSpeed": 1.0
+                    "isLoop": false,
+                    "playbackSpeed": 0.5747548937797546
                 },
                 "Character Movement Input": {
                     "currentVelocity": [
+                        -18.40237045288086,
                         0.0,
-                        0.0,
-                        0.0
+                        12.927664756774902
                     ],
                     "dashRequested": false,
                     "desiredVelocity": [
+                        -0.8182697296142578,
                         0.0,
-                        0.0,
-                        0.0
+                        0.5748344659805298
                     ],
                     "isAttackRequested": false,
                     "jumpRequested": false,
@@ -40,9 +40,9 @@
                     "currentTimer": -0.006666665896773338,
                     "dashCooldown": 0.1599999964237213,
                     "dashDirection": [
-                        -0.8525776267051697,
+                        0.5852976441383362,
                         0.0,
-                        -0.5226005911827087
+                        -0.8108185529708862
                     ],
                     "dashDuration": 0.1599999964237213,
                     "dashSpeed": 114.0,
@@ -87,7 +87,7 @@
                     "walkSpeed": 43.599998474121094
                 },
                 "Just Evade Component": {
-                    "chainCount": 0,
+                    "chainCount": 1,
                     "chainSpeedMax": 0.4000000059604645,
                     "chainSpeedPerLevel": 0.07999999821186066,
                     "idleBreakTime": 4.0,
@@ -120,8 +120,8 @@
                     "bankingMultiplier": 0.5,
                     "coyoteTimeWindow": 0.15000000596046448,
                     "currentJumpCount": 0,
-                    "currentRoll": -3.948801619230297e-39,
-                    "currentYaw": -44.474430084228516,
+                    "currentRoll": -3.179230390060184e-08,
+                    "currentYaw": -19.807950973510742,
                     "jumpBufferTimer": 0.0,
                     "jumpBufferWindow": 0.15000000596046448,
                     "lastFallVelocity": 0.0,
@@ -144,15 +144,15 @@
                     "isStatic": false,
                     "parent": 3,
                     "position": [
-                        -5.030646324157715,
-                        -0.05141567438840866,
-                        0.0
+                        -5.61627197265625,
+                        -0.053244274109601974,
+                        -7.578848361968994
                     ],
                     "rotation": [
-                        -4.809452511347778e-40,
-                        0.24359020590782166,
-                        1.9149290021399712e-39,
-                        -0.9698782563209534
+                        -7.329191031857363e-09,
+                        0.46106699109077454,
+                        1.4105694390309509e-08,
+                        -0.8873653411865234
                     ],
                     "scale": [
                         3.5,
@@ -262,10 +262,10 @@
                 },
                 "Hitbox": {
                     "damageAmount": 5.0,
-                    "hitStopDuration": 0.15000000596046448,
+                    "hitStopDuration": 0.07000000029802322,
                     "hitStopScale": 0.0,
                     "isActive": false,
-                    "knockback": 10.0
+                    "knockback": 5.0
                 },
                 "Jolt Capsule Collider": {
                     "halfHeight": 2.5999999046325684,
@@ -338,9 +338,9 @@
                         0.0
                     ],
                     "color": [
-                        0.6000000238418579,
-                        0.800000011920929,
                         1.0,
+                        0.3706563711166382,
+                        0.0,
                         1.0
                     ],
                     "emitting": false,
