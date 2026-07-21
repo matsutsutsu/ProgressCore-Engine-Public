@@ -29,6 +29,7 @@
 
 #include "Engine/Core/Components/DestroyTag.h"
 #include "Engine/Core/Components/PersistentTag.h"
+#include "Engine/Core/Components/NameComponent.h"
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/Platform/Core/FileSystem.h"
 #include "Engine/Transform/Components/TransformComponent.h"
@@ -38,12 +39,40 @@
 #include <fstream>
 #include <iomanip>
 #include <chrono>
+#include <unordered_set>
 
 using namespace CCL::ECS;
 using namespace CCL::ECS;
 using CCL::Serialization::SaveContext;
 using CCL::Serialization::LoadContext;
 using CCL::Serialization::EntityLink;
+
+namespace {
+    // root を起点に階層(root 含む)の全 EntityID を DFS で収集する(読み取りのみ)。
+    // root が先頭に入る。親子/兄弟リンクが破損して循環していても、訪問済み集合と
+    // 深さ上限で無限ループ/スタックオーバーフローを防ぐ。
+    void CollectCloneSubtree(World* world, EntityID id,
+        std::vector<EntityID>& out,
+        std::unordered_set<EntityID>& visited, int depth)
+    {
+        if (depth > 4096) return;                 // 異常な深さ(スタック保険)
+        if (!visited.insert(id).second) return;   // 既訪問 = 循環 → 打ち切り
+
+        out.push_back(id);
+        auto* t = world->GetComponent<TransformComponent>(id);
+        if (!t) return;
+
+        EntityID child = t->firstChildID;
+        while (child != 0) {
+            if (visited.count(child)) break;      // 兄弟リンクの循環を打ち切り
+            auto* ct = world->GetComponent<TransformComponent>(child);
+            if (!ct) break;
+            EntityID next = ct->nextSiblingID;    // 再帰前に次兄弟を退避
+            CollectCloneSubtree(world, child, out, visited, depth + 1);
+            child = next;
+        }
+    }
+} // namespace
 
 // =====================================================================
 // 保存 (Serialize)
@@ -270,4 +299,59 @@ std::vector<EntityID> SceneSerializer::DeserializeRaw(World* world, const nlohma
 
 
     return createdEntities;
+}
+
+// =====================================================================
+// 複製 (DuplicateHierarchy) — エディタ用
+//   「シリアライズ → デシリアライズ」を内部でメモリ上に閉じて行うことで、
+//   保存対象コンポーネント・親子階層・EntityLink 参照を丸ごと複製する。
+//   ファイル I/O は一切発生しない。
+// =====================================================================
+std::vector<EntityID> SceneSerializer::DuplicateHierarchy(World* world, EntityID root)
+{
+    if (!world || root == InvalidEntityID) return {};
+
+    // ---- 1) サブツリー(root + 全子孫)を収集 (root が先頭) ----
+    std::vector<EntityID> subtree;
+    {
+        std::unordered_set<EntityID> visited;
+        CollectCloneSubtree(world, root, subtree, visited, 0);
+    }
+    if (subtree.empty()) return {};
+
+    // ---- 2) 全エンティティに localIndex を先行発行 (リンク解決のため) ----
+    //   本体書き出し前に全て登録しておくと、サブツリー内の相互参照
+    //   (親子/EntityLink)が正しく localIndex 化される。
+    SaveContext saveCtx;
+    for (EntityID id : subtree) saveCtx.GetOrRegister(id);
+
+    // ---- 3) 各エンティティを JSON 配列へ書き出し ----
+    nlohmann::json entitiesArray = nlohmann::json::array();
+    for (EntityID id : subtree) {
+        nlohmann::json entityJson;
+        SerializeEntity(world, id, entityJson, saveCtx);
+        entitiesArray.push_back(std::move(entityJson));
+    }
+
+    // ---- 4) 復元して新しいエンティティ群を生成 ----
+    std::vector<EntityID> created = DeserializeRaw(world, entitiesArray);
+    if (created.empty()) return {};
+
+    EntityID newRoot = created[0];
+
+    // ---- 5) 複製ルートを「元と同じ親」の子として接ぐ ----
+    //   サブツリー外の親はリンク解決されず新ルートはルート化するため、明示的に張り直す。
+    if (auto* srcT = world->GetComponent<TransformComponent>(root)) {
+        if (srcT->parent.IsValid()) {
+            TransformUpdateSystem::SetParent(*world, newRoot, srcT->parent.id);
+        }
+    }
+
+    // ---- 6) 分かりやすいよう複製ルートの名前へ " (Copy)" を付与 (あれば) ----
+    if (auto* nc = world->GetComponent<NameComponent>(newRoot)) {
+        std::string newName = std::string(nc->name) + " (Copy)";
+        strncpy_s(nc->name, newName.c_str(), sizeof(nc->name) - 1);
+    }
+
+    return created;
 }

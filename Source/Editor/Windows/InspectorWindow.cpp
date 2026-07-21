@@ -11,6 +11,7 @@
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Platform/Core/Dialog.h"
 #include "Engine/Serialization/Serializer/PrefabSerializer.h"
+#include "Engine/Serialization/Serializer/SceneSerializer.h"
 
 
 namespace {
@@ -92,12 +93,40 @@ void InspectorWindow::DrawContents(EditorContext &context)
     ImGui::TextDisabled("(ID: %llu)", selected);
     ImGui::Separator();
 
-    // 削除ボタン
+    // 複数選択中はその旨を表示し、複製/削除は選択全体に適用されることを明示する。
+    //   ※ コンポーネント編集はアクティブ(主選択)の1体に対してのみ行う。
+    const size_t selCount = context.selectedEntities.size();
+    if (selCount > 1) {
+        ImGui::TextColored(ImVec4(0.5f, 0.8f, 1.0f, 1.0f),
+            "%zu 個を選択中 (編集はアクティブの1体のみ / 複製・削除は全体)", selCount);
+    }
+
+    // 複製ボタン (選択エンティティを階層ごと複製し、複製先を選択状態にする)
+    ImGui::SameLine(ImGui::GetWindowWidth() - 200);
+    if (ImGui::Button("複製", ImVec2(75, 0))) {
+        std::vector<CCL::ECS::EntityID> roots = context.GetTopLevelSelection();
+        if (roots.empty()) roots.push_back(selected); // 保険
+        std::vector<CCL::ECS::EntityID> newRoots;
+        for (CCL::ECS::EntityID src : roots) {
+            auto created = SceneSerializer::DuplicateHierarchy(world, src);
+            if (!created.empty()) newRoots.push_back(created[0]);
+        }
+        if (!newRoots.empty()) {
+            context.ClearSelection();
+            for (CCL::ECS::EntityID r : newRoots) context.AddSelection(r);
+        }
+        return; // 選択が切り替わったのでこのフレームの描画は中止
+    }
+
+    // 削除ボタン (選択中すべてを削除)
     ImGui::SameLine(ImGui::GetWindowWidth() - 120);
     if (ImGui::Button("エンティティを削除", ImVec2(110, 0))) {
-        world->Destroy(selected);
-        // ★ 修正：選択を無効化する
-        context.selectedEntity = CCL::ECS::InvalidEntityID;
+        std::vector<CCL::ECS::EntityID> toDelete = context.selectedEntities;
+        if (toDelete.empty()) toDelete.push_back(selected); // 保険
+        for (CCL::ECS::EntityID id : toDelete) {
+            world->Destroy(id);
+        }
+        context.ClearSelection();
         return; // 破棄されたのでこれ以上の描画は中止
     }
 

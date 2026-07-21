@@ -8,6 +8,7 @@
 
 #include "Engine/Serialization/Factory/Prefab.h"
 #include "Engine/Serialization/Factory/EntityFactory.h"
+#include "Engine/Serialization/Serializer/SceneSerializer.h"
 
 
 HierarchyWindow::HierarchyWindow() : EditorWindow("Hierarchy") {}
@@ -163,7 +164,7 @@ void HierarchyWindow::DrawContents(EditorContext& context)
             const char* prefabPath = (const char*)payload->Data;
             CCL::ECS::EntityID newEntity = Prefab::SpawnPrefab(*context.world, prefabPath);
             if (newEntity != CCL::ECS::InvalidEntityID) {
-                context.selectedEntity = newEntity;
+                context.SetSingleSelection(newEntity);
             }
         }
         ImGui::EndDragDropTarget();
@@ -191,7 +192,29 @@ void HierarchyWindow::DrawContents(EditorContext& context)
     }
     // 背景クリック時の選択解除
     if (ImGui::IsMouseClicked(0) && ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) {
-        context.selectedEntity = CCL::ECS::InvalidEntityID;
+        context.ClearSelection();
+    }
+
+    // ---------------------------------------------------------
+    // 5. キーボードショートカット: Ctrl+D で選択エンティティ(複数可)を階層ごと複製
+    // ---------------------------------------------------------
+    if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) &&
+        ImGui::GetIO().KeyCtrl &&
+        ImGui::IsKeyPressed(ImGuiKey_D, false) &&
+        !context.selectedEntities.empty())
+    {
+        std::vector<CCL::ECS::EntityID> roots = context.GetTopLevelSelection();
+        std::vector<CCL::ECS::EntityID> newRoots;
+        for (CCL::ECS::EntityID src : roots) {
+            auto created = SceneSerializer::DuplicateHierarchy(context.world, src);
+            if (!created.empty()) newRoots.push_back(created[0]);
+        }
+        if (!newRoots.empty()) {
+            // 複製で生まれたルート群を新しい選択セットにする
+            context.ClearSelection();
+            for (CCL::ECS::EntityID r : newRoots) context.AddSelection(r);
+            CCL_LOG_INFO(LogCategory::Editor, "Duplicated %zu entities (Ctrl+D)", newRoots.size());
+        }
     }
 }
 
@@ -222,7 +245,7 @@ void HierarchyWindow::DrawFlatNode(
 
 
     if (!node.hasChildren) flags |= ImGuiTreeNodeFlags_Leaf;
-    if (context.selectedEntity == node.entityID) flags |= ImGuiTreeNodeFlags_Selected;
+    if (context.IsSelected(node.entityID)) flags |= ImGuiTreeNodeFlags_Selected;
 
     // エンジン側で管理している開閉状態を ImGui に強制的に教える
     bool isOpen = _openNodes.count(node.entityID) > 0;
@@ -298,7 +321,19 @@ void HierarchyWindow::DrawFlatNode(
         if (!ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
             // かつ、矢印（開閉ボタン）を押していない場合のみ選択を切り替える
             if (!ImGui::IsItemToggledOpen()) {
-                context.selectedEntity = node.entityID;
+                ImGuiIO& io = ImGui::GetIO();
+                if (io.KeyCtrl) {
+                    // Ctrl+クリック: 個別トグル (追加/解除)
+                    context.ToggleSelection(node.entityID);
+                }
+                else if (io.KeyShift && context.selectedEntity != CCL::ECS::InvalidEntityID) {
+                    // Shift+クリック: 主選択(アンカー)からこのノードまでを範囲選択
+                    SelectRangeTo(node.entityID, context);
+                }
+                else {
+                    // 通常クリック: 単一選択
+                    context.SetSingleSelection(node.entityID);
+                }
             }
         }
     }
@@ -306,23 +341,59 @@ void HierarchyWindow::DrawFlatNode(
     // ---------------------------------------------------------
     //  右クリックメニュー (独立/Unparent 機能の追加)
     // ---------------------------------------------------------
-    if (ImGui::BeginPopupContextItem()) {
-        
-        // 追加: 親から外れてルートに戻るボタン
-        if (ImGui::MenuItem("Unparent (Make Root)")) {
-            if (context.world->HasComponent<PendingParentComponent>(node.entityID)) {
-                context.world->GetComponent<PendingParentComponent>(node.entityID)->parentID = 0;
-            } else {
-                context.world->AddComponent<PendingParentComponent>(node.entityID); // 0は親なしを意味する
-            }
-            CCL_LOG_INFO(LogCategory::Editor, "Entity %u unparented.", node.entityID);
+    // 未選択のノードを右クリックした場合は、まずそれを単一選択にする
+    // (一般的なエディタの挙動。選択済みノードを右クリックした時は選択を維持する)。
+    if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+        if (!context.IsSelected(node.entityID)) {
+            context.SetSingleSelection(node.entityID);
         }
-        
+    }
+
+    if (ImGui::BeginPopupContextItem()) {
+
+        // 選択数に応じた見出し (複数選択中はまとめて操作されることを明示)
+        const size_t selCount = context.selectedEntities.size();
+        if (selCount > 1) {
+            ImGui::TextDisabled("%zu 個を選択中", selCount);
+            ImGui::Separator();
+        }
+
+        // 追加: 親から外れてルートに戻るボタン (選択中すべてに適用)
+        if (ImGui::MenuItem("Unparent (Make Root)")) {
+            for (CCL::ECS::EntityID id : context.selectedEntities) {
+                if (context.world->HasComponent<PendingParentComponent>(id)) {
+                    context.world->GetComponent<PendingParentComponent>(id)->parentID = 0;
+                } else {
+                    context.world->AddComponent<PendingParentComponent>(id); // 0は親なしを意味する
+                }
+            }
+            CCL_LOG_INFO(LogCategory::Editor, "Unparented %zu entities.", selCount);
+        }
+
+        // 追加: 選択エンティティ(複数可)を階層ごと複製する
+        if (ImGui::MenuItem("複製", "Ctrl+D")) {
+            std::vector<CCL::ECS::EntityID> roots = context.GetTopLevelSelection();
+            std::vector<CCL::ECS::EntityID> newRoots;
+            for (CCL::ECS::EntityID src : roots) {
+                auto created = SceneSerializer::DuplicateHierarchy(context.world, src);
+                if (!created.empty()) newRoots.push_back(created[0]);
+            }
+            if (!newRoots.empty()) {
+                context.ClearSelection();
+                for (CCL::ECS::EntityID r : newRoots) context.AddSelection(r);
+                CCL_LOG_INFO(LogCategory::Editor, "Duplicated %zu entities", newRoots.size());
+            }
+        }
+
         ImGui::Separator(); // 区切り線
 
         if (ImGui::MenuItem("Delete Entity")) {
-            context.world->Destroy(node.entityID);
-            if (context.selectedEntity == node.entityID) context.selectedEntity = CCL::ECS::InvalidEntityID;
+            // 選択中すべてを削除 (セットをコピーしてから回す)
+            std::vector<CCL::ECS::EntityID> toDelete = context.selectedEntities;
+            for (CCL::ECS::EntityID id : toDelete) {
+                context.world->Destroy(id);
+            }
+            context.ClearSelection();
         }
         ImGui::EndPopup();
     }
@@ -356,6 +427,39 @@ void HierarchyWindow::FlattenChildren(
 
         childID = childTrans->nextSiblingID;
     }
+}
+
+// =========================================================================
+// Shift+クリック範囲選択
+//   現在の主選択(アンカー)から clicked までを、画面に見えている並び順
+//   (_flatList) の上で連続選択する。
+// =========================================================================
+void HierarchyWindow::SelectRangeTo(CCL::ECS::EntityID clicked, EditorContext& context)
+{
+    CCL::ECS::EntityID anchor = context.selectedEntity;
+
+    // _flatList 内でのアンカーとクリック先の位置を探す
+    int anchorIdx = -1, clickedIdx = -1;
+    for (int i = 0; i < (int)_flatList.size(); ++i) {
+        if (_flatList[i].entityID == anchor)  anchorIdx = i;
+        if (_flatList[i].entityID == clicked) clickedIdx = i;
+    }
+
+    // どちらかが見つからない(検索中で表示外など)場合は単純に追加選択にフォールバック
+    if (anchorIdx < 0 || clickedIdx < 0) {
+        context.AddSelection(clicked);
+        return;
+    }
+
+    int lo = (std::min)(anchorIdx, clickedIdx);
+    int hi = (std::max)(anchorIdx, clickedIdx);
+
+    // 範囲を選択セットに置き換える (アンカーは維持、主選択は clicked にする)
+    context.selectedEntities.clear();
+    for (int i = lo; i <= hi; ++i) {
+        context.selectedEntities.push_back(_flatList[i].entityID);
+    }
+    context.selectedEntity = clicked;
 }
 
 bool HierarchyWindow::IsDescendantOf(

@@ -569,7 +569,7 @@ int Framework::Run()
 
 						// リクエストを完全に消化したのでクリア
 						m_editorContext.pendingLoadScenePath.clear();
-						m_editorContext.selectedEntity = CCL::ECS::InvalidEntityID;
+						m_editorContext.ClearSelection();
 					}
 
 					// ② セーブ要求の一括検知

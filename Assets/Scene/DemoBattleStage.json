@@ -125,9 +125,9 @@
                 },
                 "ShadowMapConfig": {
                     "cascadeSplits": [
-                        15.0,
+                        20.0,
                         50.0,
-                        200.0
+                        100.0
                     ],
                     "shadowBias": 0.00019999999494757503,
                     "shadowColor": [
@@ -157,7 +157,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 8,
+                    "parent": 16,
                     "position": [
                         0.0,
                         5.0,
@@ -191,10 +191,10 @@
         {
             "components": {
                 "CameraBodyFree": {
-                    "currentPitch": -22.799976348876953,
-                    "currentYaw": 362.60015869140625,
+                    "currentPitch": -14.09992790222168,
+                    "currentYaw": 1444.0001220703125,
                     "lookSpeed": 0.20000000298023224,
-                    "moveSpeed": 46.27208709716797
+                    "moveSpeed": 250.27586364746094
                 },
                 "Name": {
                     "name": "FreeCamera"
@@ -209,17 +209,17 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 8,
+                    "parent": 16,
                     "position": [
-                        -1.0961359739303589,
-                        9.272128105163574,
-                        -18.9947452545166
+                        -54.47820281982422,
+                        133.79197692871094,
+                        -106.00811004638672
                     ],
                     "rotation": [
-                        0.19760625064373016,
-                        0.022241055965423584,
-                        -0.004484578035771847,
-                        0.9800189137458801
+                        0.12266005575656891,
+                        0.034636739641427994,
+                        -0.004283519461750984,
+                        0.991834819316864
                     ],
                     "scale": [
                         1.0,
@@ -236,6 +236,42 @@
                 }
             },
             "lid": 2
+        },
+        {
+            "components": {
+                "Name": {
+                    "name": "BG_Building_Preset1"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 16,
+                    "position": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                }
+            },
+            "lid": 3
         },
         {
             "components": {
@@ -265,7 +301,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 8,
+                    "parent": 16,
                     "position": [
                         1.0,
                         -0.04807744920253754,
@@ -284,7 +320,7 @@
                     ]
                 }
             },
-            "lid": 3
+            "lid": 4
         },
         {
             "components": {
@@ -305,7 +341,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 8,
+                    "parent": 16,
                     "position": [
                         -6.5,
                         3.5,
@@ -324,7 +360,7 @@
                     ]
                 }
             },
-            "lid": 4
+            "lid": 5
         },
         {
             "components": {
@@ -333,7 +369,7 @@
                     "assetPath": "Assets/Models/Stage/SM_Circular_Floor.glb"
                 },
                 "Name": {
-                    "name": "Clear Model"
+                    "name": "Circular_Floor"
                 },
                 "TimeState": {
                     "buffScale": 1.0,
@@ -345,50 +381,10 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 8,
+                    "parent": 16,
                     "position": [
                         0.0,
                         -6.800000190734863,
-                        0.0
-                    ],
-                    "rotation": [
-                        0.0,
-                        0.0,
-                        0.0,
-                        1.0
-                    ],
-                    "scale": [
-                        10.0,
-                        10.0,
-                        10.0
-                    ]
-                }
-            },
-            "lid": 5
-        },
-        {
-            "components": {
-                "Material": null,
-                "Model": {
-                    "assetPath": "Assets/Models/Stage/SM_Circular_Floor_Top.glb"
-                },
-                "Name": {
-                    "name": "Clear Model"
-                },
-                "TimeState": {
-                    "buffScale": 1.0,
-                    "cinematicScale": 1.0,
-                    "freezeScale": 0.0,
-                    "group": 0,
-                    "hitStopTimer": 0.0,
-                    "localDt": 0.01666666753590107
-                },
-                "Transform": {
-                    "isStatic": false,
-                    "parent": 8,
-                    "position": [
-                        0.0,
-                        1.2000000476837158,
                         0.0
                     ],
                     "rotation": [
@@ -410,10 +406,10 @@
             "components": {
                 "Material": null,
                 "Model": {
-                    "assetPath": "Assets/Models/Stage/Building/Sci-Fi_building_Modular_set_Low_Poly-9b38bb97/glb/scifi_modular.glb"
+                    "assetPath": "Assets/Models/Stage/SM_Circular_Floor_Top.glb"
                 },
                 "Name": {
-                    "name": "Clear Model"
+                    "name": "Circular_Floor_Top"
                 },
                 "TimeState": {
                     "buffScale": 1.0,
@@ -425,11 +421,291 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 8,
+                    "parent": 16,
                     "position": [
-                        225.5,
-                        -97.30000305175781,
-                        521.2999877929688
+                        0.0,
+                        1.2000000476837158,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        -0.3583679497241974,
+                        0.0,
+                        0.9335803985595703
+                    ],
+                    "scale": [
+                        10.0,
+                        10.0,
+                        10.0
+                    ]
+                }
+            },
+            "lid": 7
+        },
+        {
+            "components": {
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Building/Scifi-Building_01.glb"
+                },
+                "Name": {
+                    "name": "BG_Building_01"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 3,
+                    "position": [
+                        -400.0,
+                        -67.30000305175781,
+                        400.0
+                    ],
+                    "rotation": [
+                        -0.0,
+                        -1.0,
+                        0.0,
+                        -6.229854676575997e-08
+                    ],
+                    "scale": [
+                        5.0,
+                        5.0,
+                        5.0
+                    ]
+                }
+            },
+            "lid": 8
+        },
+        {
+            "components": {
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Building/Scifi-Building_02.glb"
+                },
+                "Name": {
+                    "name": "BG_Building_02"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 3,
+                    "position": [
+                        -300.0,
+                        -67.30000305175781,
+                        400.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        -0.6883545517921448,
+                        0.0,
+                        0.7253743410110474
+                    ],
+                    "scale": [
+                        5.0,
+                        5.0,
+                        5.0
+                    ]
+                }
+            },
+            "lid": 9
+        },
+        {
+            "components": {
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Building/Scifi-Building_03.glb"
+                },
+                "Name": {
+                    "name": "BG_Building_03"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 3,
+                    "position": [
+                        -200.0,
+                        -67.30000305175781,
+                        400.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.9999619126319885,
+                        0.0,
+                        0.008726587519049644
+                    ],
+                    "scale": [
+                        5.0,
+                        5.0,
+                        5.0
+                    ]
+                }
+            },
+            "lid": 10
+        },
+        {
+            "components": {
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Building/Scifi-Building_04.glb"
+                },
+                "Name": {
+                    "name": "BG_Building_04"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 3,
+                    "position": [
+                        -118.5999984741211,
+                        -67.30000305175781,
+                        400.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        -0.30901700258255005,
+                        0.0,
+                        0.9510565400123596
+                    ],
+                    "scale": [
+                        5.0,
+                        5.0,
+                        5.0
+                    ]
+                }
+            },
+            "lid": 11
+        },
+        {
+            "components": {
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Building/Scifi-Building_05.glb"
+                },
+                "Name": {
+                    "name": "BG_Building_05"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 3,
+                    "position": [
+                        50.0,
+                        -67.30000305175781,
+                        400.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.9510564804077148,
+                        0.0,
+                        0.3090169429779053
+                    ],
+                    "scale": [
+                        5.0,
+                        5.0,
+                        5.0
+                    ]
+                }
+            },
+            "lid": 12
+        },
+        {
+            "components": {
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Building/Scifi-Building_06.glb"
+                },
+                "Name": {
+                    "name": "BG_Building_06"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 3,
+                    "position": [
+                        200.0,
+                        -67.30000305175781,
+                        400.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        1.0,
+                        -0.0,
+                        -6.229854676575997e-08
+                    ],
+                    "scale": [
+                        5.0,
+                        5.0,
+                        5.0
+                    ]
+                }
+            },
+            "lid": 13
+        },
+        {
+            "components": {
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Building/Scifi-Building_07.glb"
+                },
+                "Name": {
+                    "name": "BG_Building_07"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 3,
+                    "position": [
+                        350.0,
+                        -67.30000305175781,
+                        400.0
                     ],
                     "rotation": [
                         0.0,
@@ -444,10 +720,50 @@
                     ]
                 }
             },
-            "lid": 7
+            "lid": 14
+        },
+        {
+            "components": {
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Building/Scifi-Building_08.glb"
+                },
+                "Name": {
+                    "name": "BG_Building_08"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 3,
+                    "position": [
+                        500.0,
+                        -67.30000305175781,
+                        400.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.7071067690849304,
+                        0.0,
+                        0.7071067690849304
+                    ],
+                    "scale": [
+                        5.0,
+                        5.0,
+                        5.0
+                    ]
+                }
+            },
+            "lid": 15
         }
     ],
     "magic": 1397506883,
-    "timestamp": 1784544361,
+    "timestamp": 1784598347,
     "version": 1
 }

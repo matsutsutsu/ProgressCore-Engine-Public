@@ -36,6 +36,9 @@ private:
         const FlatNode& node,
         EditorContext& context);
 
+    // Shift+クリックによる範囲選択を処理する (_flatList 上で anchor→clicked を選択)
+    void SelectRangeTo(CCL::ECS::EntityID clicked, EditorContext& context);
+
     bool IsDescendantOf(
         CCL::ECS::EntityID targetEntity,
         CCL::ECS::EntityID ancestorEntity,

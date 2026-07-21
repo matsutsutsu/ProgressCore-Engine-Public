@@ -36,6 +36,15 @@ public:
     static std::vector<CCL::ECS::EntityID> DeserializeRaw(
         CCL::ECS::World* world, const nlohmann::json& entitiesJson);
 
+    // ---- 複製 (エディタ用) ----
+    // 指定エンティティとその子孫を丸ごと複製し、生成された EntityID 群を返す
+    // (先頭[0] が複製されたルート)。内部の親子/EntityLink 参照はサブツリー内で
+    // 正しく張り直され、複製ルートは元エンティティと同じ親の子として接がれる。
+    // シリアライズ経路を再利用するため、保存対象コンポーネントは全てコピーされる。
+    // 失敗時は空 vector。
+    static std::vector<CCL::ECS::EntityID> DuplicateHierarchy(
+        CCL::ECS::World* world, CCL::ECS::EntityID root);
+
 private:
     // 1 エンティティ分の書き出し
     static void SerializeEntity(
