@@ -179,6 +179,7 @@ CB_STRUCT(CbFog, SLOT_CB_FOG)
     float4 gFogNoiseParams; // x:scale y:strength z:speedX w:speedY
     float4 gFogRimColor;
     float4 gFogRimParams;   // x:power y:strength
+    float4 gSkyFogParams;   // x:horizon(フォグ開始の視線高 dir.y) y:softness(フェード幅)
 };
 
 // ==================================================================
@@ -207,7 +208,7 @@ static_assert(sizeof(CbLight) == 1104, "CbLight size mismatch vs HLSL");
 static_assert(sizeof(CbSkeleton) == 16384, "CbSkeleton size mismatch vs HLSL");
 static_assert(sizeof(CbScene) == 272, "CbScene size mismatch vs HLSL");
 static_assert(sizeof(CbShadow) == 240, "CbShadow size mismatch vs HLSL");
-static_assert(sizeof(CbFog) == 96, "CbFog size mismatch vs HLSL");
+static_assert(sizeof(CbFog) == 112, "CbFog size mismatch vs HLSL");
 
 } // namespace GpuData
 

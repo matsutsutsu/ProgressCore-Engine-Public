@@ -63,15 +63,15 @@
                 },
                 "Fog": {
                     "color": [
-                        0.0,
-                        0.0,
-                        0.0,
+                        0.5289574861526489,
+                        0.5289574861526489,
+                        0.5289574861526489,
                         1.0
                     ],
                     "enabled": true,
                     "end": 500.0,
                     "heightDensity": 0.5,
-                    "heightStart": 0.0,
+                    "heightStart": -50.5,
                     "noiseScale": 0.10000000149011612,
                     "noiseSpeed": [
                         0.10000000149011612,
@@ -157,7 +157,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 139,
+                    "parent": 140,
                     "position": [
                         0.0,
                         5.0,
@@ -191,10 +191,10 @@
         {
             "components": {
                 "CameraBodyFree": {
-                    "currentPitch": -11.499984741210938,
-                    "currentYaw": 475.0008544921875,
+                    "currentPitch": -20.299999237060547,
+                    "currentYaw": -350.5997009277344,
                     "lookSpeed": 0.20000000298023224,
-                    "moveSpeed": 56.638797760009766
+                    "moveSpeed": 30.290679931640625
                 },
                 "Name": {
                     "name": "FreeCamera"
@@ -209,17 +209,17 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 139,
+                    "parent": 140,
                     "position": [
-                        -23.909732818603516,
-                        26.265491485595703,
-                        7.001375198364258
+                        -6.105327129364014,
+                        13.470032691955566,
+                        -18.56425666809082
                     ],
                     "rotation": [
-                        0.053830306977033615,
-                        0.8391519784927368,
-                        -0.08449805527925491,
-                        0.534589946269989
+                        0.17563317716121674,
+                        0.08065870404243469,
+                        -0.014440134167671204,
+                        0.9810395836830139
                     ],
                     "scale": [
                         1.0,
@@ -229,7 +229,7 @@
                 },
                 "VirtualCamera": {
                     "blendTime": 2.0,
-                    "farClip": 1000.0,
+                    "farClip": 3000.0,
                     "fov": 60.29999923706055,
                     "nearClip": 0.10000000149011612,
                     "priority": 100
@@ -252,7 +252,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 139,
+                    "parent": 140,
                     "position": [
                         0.0,
                         0.0,
@@ -288,7 +288,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 139,
+                    "parent": 140,
                     "position": [
                         0.0,
                         0.0,
@@ -324,7 +324,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 139,
+                    "parent": 140,
                     "position": [
                         0.0,
                         0.0,
@@ -360,7 +360,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 139,
+                    "parent": 140,
                     "position": [
                         0.0,
                         0.0,
@@ -396,7 +396,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 139,
+                    "parent": 140,
                     "position": [
                         0.0,
                         0.0,
@@ -432,7 +432,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 139,
+                    "parent": 140,
                     "position": [
                         0.0,
                         0.0,
@@ -468,7 +468,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 139,
+                    "parent": 140,
                     "position": [
                         0.0,
                         0.0,
@@ -504,7 +504,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 139,
+                    "parent": 140,
                     "position": [
                         0.0,
                         0.0,
@@ -540,7 +540,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 139,
+                    "parent": 140,
                     "position": [
                         0.0,
                         0.0,
@@ -576,7 +576,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 139,
+                    "parent": 140,
                     "position": [
                         0.0,
                         0.0,
@@ -612,7 +612,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 139,
+                    "parent": 140,
                     "position": [
                         0.0,
                         0.0,
@@ -648,7 +648,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 139,
+                    "parent": 140,
                     "position": [
                         0.0,
                         0.0,
@@ -697,7 +697,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 139,
+                    "parent": 140,
                     "position": [
                         1.0,
                         -0.04807744920253754,
@@ -737,7 +737,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 139,
+                    "parent": 140,
                     "position": [
                         -6.5,
                         3.5,
@@ -777,7 +777,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 139,
+                    "parent": 140,
                     "position": [
                         0.0,
                         -6.800000190734863,
@@ -817,7 +817,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 139,
+                    "parent": 140,
                     "position": [
                         0.0,
                         1.2000000476837158,
@@ -5637,9 +5637,49 @@
                 }
             },
             "lid": 138
+        },
+        {
+            "components": {
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Shape/Plane.glb"
+                },
+                "Name": {
+                    "name": "CloudPlane"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 140,
+                    "position": [
+                        0.0,
+                        -60.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        3000.0,
+                        5.0,
+                        3000.0
+                    ]
+                }
+            },
+            "lid": 139
         }
     ],
     "magic": 1397506883,
-    "timestamp": 1784615014,
+    "timestamp": 1784640216,
     "version": 1
 }

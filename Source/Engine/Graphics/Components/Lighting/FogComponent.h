@@ -22,6 +22,11 @@ struct FogComponent {
     float             noiseStrength         = 0.0f; // ノイズの影響度 (0.0=無効)
     DirectX::XMFLOAT2 noiseSpeed{0.1f, 0.05f};      // 流れる速度
 
+    // --- スカイボックス地平線フォグ ---
+    // 空(虚空)を距離フォグと同じ色に溶かして境目を消す。強度は color.a と連動。
+    float skyFogHeight   = 0.05f; // フォグ開始の視線高(dir.y)。下げるほど空が広く残る
+    float skyFogSoftness = 0.35f; // フェード幅。大きいほど緩やかに空へ抜ける
+
     // --- リムライト (Atmosphere Rim) ---
     // キャラクターやオブジェクトの輪郭を光らせ、背景との分離を良くします
     DirectX::XMFLOAT3 rimColor{1.0f, 1.0f, 1.0f}; // 発光色

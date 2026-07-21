@@ -1,4 +1,5 @@
 #include "Engine/Graphics/Shader/ShaderResources.h"
+#include "Shader/Common/Scene.hlsli" // CbFog(gFogColor) を取り込む
 
 // IBLですでにセットされている s1 を流用する超絶スマートな設計
 TextureCube SkyboxMap : register(REG_SRV(SLOT_SRV_SKYBOX_BG));
@@ -12,11 +13,28 @@ struct VS_OUT
 
 float4 main(VS_OUT pin) : SV_TARGET
 {
+    float3 dir = normalize(pin.rayDir);
+
     // Mipレベル強制(SampleLevel)をやめ、通常のSampleを使用する
     // これによりカメラの解像度に合わせた最適なミップマップが自動選択され、
     // ジャギー（ピクセルのチラつき）のない最高品質の空が描画されます。
-    float3 envColor = SkyboxMap.Sample(LinearSampler, normalize(pin.rayDir)).rgb;
-    
-    
+    float3 envColor = SkyboxMap.Sample(LinearSampler, dir).rgb;
+
+    // ------------------------------------------------------------------
+    // 距離フォグと背景を繋ぐ「地平線フォグ」。
+    //   視線が地平線より下（島の下の虚空）を向くほど gFogColor へ寄せる。
+    //   これで空っぽの空間も霧色になり、ApplyHeightFog で霧に溶けた地形と
+    //   背景が同じ色で連続する（境目が消える）。
+    //   dir.y : +1=真上, 0=地平線, -1=真下
+    //   強度は gFogColor.a（FogComponent.color の α）と連動。
+    //   位置/幅は FogComponent の skyFogHeight / skyFogSoftness で調整可能。
+    //   フォグ無効/未設定時は gFogColor.a=0 なので下2行は無効化される。
+    // ------------------------------------------------------------------
+    float kHorizon = gSkyFogParams.x;              // フォグ開始の視線高
+    float kBand    = max(gSkyFogParams.y, 1e-3f);  // フェード幅（0除算回避）
+    float fogT = 1.0f - smoothstep(kHorizon, kHorizon + kBand, dir.y);
+    fogT       = saturate(fogT * gFogColor.a);
+    envColor   = lerp(envColor, gFogColor.rgb, fogT);
+
     return float4(envColor, 1.0f);
 }

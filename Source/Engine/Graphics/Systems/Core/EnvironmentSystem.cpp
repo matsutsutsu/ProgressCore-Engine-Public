@@ -79,10 +79,13 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext* dc, const Rende
     }
 
     // 3. フォグ定数バッファ (b11)
-    GpuData::CbFog fogData = { {0.5f,0.5f,0.5f,1.0f},{0.0f,1000.0f,10.0f,0.0f},{},{},{},{} };
+    //   既定は「フォグ無し」。gFogColor.a=0 が geo(ApplyHeightFog) と
+    //   skybox(地平線フォグ) の両方のマスター強度を無効化する。
+    //   FogComponent が無い / enabled=false のときはこの既定のまま送る＝完全にOFF。
+    GpuData::CbFog fogData = { {0.5f,0.5f,0.5f,0.0f},{0.0f,1000.0f,10.0f,0.0f},{},{},{},{},{} };
     ID3D11ShaderResourceView* fogNoiseSrv = nullptr;
 
-    if (auto* fog = _world->GetSingletonComponent<FogComponent>()) {
+    if (auto* fog = _world->GetSingletonComponent<FogComponent>(); fog && fog->enabled) {
        fogData.gFogColor = fog->color;
        fogData.gFogParams = { fog->start, fog->end, fog->heightStart, fog->heightDensity };
        fogData.gFogCenter = fog->center;
@@ -90,6 +93,7 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext* dc, const Rende
                                fog->noiseSpeed.x, fog->noiseSpeed.y };
        fogData.gFogRimColor = { fog->rimColor.x, fog->rimColor.y, fog->rimColor.z, 1.0f };
        fogData.gFogRimParams = { fog->rimPower, fog->rimStrength, 0.0f, 0.0f };
+       fogData.gSkyFogParams = { fog->skyFogHeight, fog->skyFogSoftness, 0.0f, 0.0f };
        // --------------------------------------------------------
        // 【遅延ロードとバインド準備】
        // --------------------------------------------------------
@@ -98,8 +102,8 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext* dc, const Rende
            fog->noiseTextureHandle = ResourceManager::Instance().LoadTexture(fog->noiseTexturePath);
        }
 
-       // ハンドルから実体（SRV）を安全に取得
-       ID3D11ShaderResourceView* fogNoiseSrv = nullptr;
+       // ★修正: ここで内側に再宣言していたため外側の fogNoiseSrv に反映されず、
+       //         フォグノイズSRV(t9)が常に null だった。外側の変数へ代入する。
        if (fog->noiseTextureHandle.IsValid()) {
            fogNoiseSrv = ResourceManager::Instance().GetTexture(fog->noiseTextureHandle);
        }
@@ -108,7 +112,7 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext* dc, const Rende
        if (!fogNoiseSrv && _globalNoiseSRV) {
            fogNoiseSrv = _globalNoiseSRV.Get();
        }
-        
+
     }
 
     if (_fogConstantBuffer) {

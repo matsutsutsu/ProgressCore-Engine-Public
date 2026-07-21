@@ -132,6 +132,12 @@ template <> struct ComponentMeta<FogComponent> {
             changed |= ImGui::DragFloat2("スクロール速度", &comp.noiseSpeed.x, 0.01f);
         }
 
+        if (ImGui::CollapsingHeader("スカイボックス地平線フォグ", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::TextDisabled("空(虚空)を基本色で霧化。強度は基本色のαと連動。");
+            changed |= ImGui::DragFloat("地平線高さ", &comp.skyFogHeight, 0.01f, -1.0f, 1.0f);
+            changed |= ImGui::DragFloat("フェード幅", &comp.skyFogSoftness, 0.01f, 0.0f, 2.0f);
+        }
+
         if (ImGui::CollapsingHeader("リムライト", ImGuiTreeNodeFlags_DefaultOpen)) {
             changed |= ImGui::ColorEdit3("リム色", &comp.rimColor.x);
             changed |= ImGui::DragFloat("強さ", &comp.rimStrength, 0.1f, 0.0f, 10.0f);
@@ -155,6 +161,8 @@ template <> struct ComponentMeta<FogComponent> {
             CFIELD_FLOAT_RANGED(noiseStrength, "ノイズ強度", 0.01f, 0.0f, 1.0f, "Noise")
             CFIELD(noiseScale, "ノイズスケール", "Noise")
             CFIELD(noiseSpeed, "ノイズ速度", "Noise")
+            CFIELD_FLOAT_RANGED(skyFogHeight, "地平線高さ", 0.01f, -1.0f, 1.0f, "SkyFog")
+            CFIELD_FLOAT_RANGED(skyFogSoftness, "フェード幅", 0.01f, 0.0f, 2.0f, "SkyFog")
             CFIELD(rimColor, "リム色", "Rim")
             CFIELD_FLOAT_RANGED(rimStrength, "リム強度", 0.1f, 0.0f, 10.0f, "Rim")
             CFIELD_FLOAT_RANGED(rimPower, "リム強度(Power)", 0.1f, 0.0f, 20.0f, "Rim")
