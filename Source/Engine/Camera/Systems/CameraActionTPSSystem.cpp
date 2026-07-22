@@ -84,6 +84,17 @@ void CameraActionTPSSystem::Update(float dt)
     //    以前のようにハードコードで target を焼き込む必要がない。
     const EntityID playerId = CameraBinding::FindPlayer(_world);
 
+    // カーソルを固定しない（＝マウスルックも止める）条件をフレーム先頭で確定。
+    //   ・ポーズ中（メニュー操作にカーソルが要る）
+    //   ・カーソル自由(UI操作)モード中（実行中に ImGui エディタを操作したい）
+    //   ・エディタで他ウィンドウ操作中（IsGameInputActive=false）
+    const bool flowPaused =
+        _world->HasResource<GameFlowState>() && _world->GetResource<GameFlowState>().paused;
+    const bool flowUiInteract =
+        _world->HasResource<GameFlowState>() && _world->GetResource<GameFlowState>().uiInteract;
+    const bool cursorFreeOverride =
+        flowPaused || flowUiInteract || !inputAPI->IsGameInputActive();
+
     // このフレーム、いずれかのTPSカメラがマウスルック中ならカーソルをロックしたい。
     bool wantCursorLock = false;
 
@@ -164,8 +175,8 @@ void CameraActionTPSSystem::Update(float dt)
             tps.currentYaw   -= lookX * tps.lookSpeedX * dt;
             tps.currentPitch += lookY * tps.lookSpeedY * dt;
 
-            // マウス（デルタ入力）
-            if (!tps.mouseLookRequiresButton || rmbHeld)
+            // マウス（デルタ入力）。カーソル自由/ポーズ/他UI操作中は回さない。
+            if ((!tps.mouseLookRequiresButton || rmbHeld) && !cursorFreeOverride)
             {
                 float invert = tps.mouseInvertY ? -1.0f : 1.0f;
                 // マウスを右へ動かす(mouseDX>0)とカメラも右を向くよう、yaw規約に合わせて減算。
@@ -318,8 +329,7 @@ void CameraActionTPSSystem::Update(float dt)
     //   さらに Mouse 側で「非フォーカス時は自動解除」しているため、
     //   alt-tab でカーソルが囚われることもない。
     // =====================================================================
-    bool paused = _world->HasResource<GameFlowState>() && _world->GetResource<GameFlowState>().paused;
-    if (paused || !inputAPI->IsGameInputActive())
+    if (cursorFreeOverride)
         wantCursorLock = false;
 
     inputAPI->SetMouseLock(wantCursorLock);

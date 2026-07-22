@@ -18,6 +18,7 @@ using namespace DirectX::SimpleMath;
 // トリガーのハッシュ値を事前計算
 static const uint32_t HASH_TRIG_ATTACK      = CCL::Utils::HashString("Attack");
 static const uint32_t HASH_TRIG_DASH_ATTACK = CCL::Utils::HashString("DashAttack"); // ★ダッシュ攻撃用のハッシュを追加
+static const uint32_t HASH_TRIG_AIR_ATTACK  = CCL::Utils::HashString("AirAttack");  // ★空中攻撃用のハッシュ
 
 namespace
 {
@@ -105,38 +106,51 @@ void PlayerAttackSystem::Update(float dt)
         // 前フレームで押されておらず、今フレームで押された瞬間（エッジ検出）
         if (inputData.isAttackRequested && !player.wasAttackButtonPressed)
         {
-            // 攻撃の瞬間に対象へ回頭を予約（通常/ダッシュ攻撃どちらも）。
+            // 攻撃の瞬間に対象へ回頭を予約（地上/空中どちらも）。
             SetAttackFacing(_world, playerID, player);
 
             // ==============================================================
-            // ★ ダッシュ攻撃の判定 (速度・慣性ベース)
+            // ★ 空中攻撃の判定（最優先）
+            //   空中にいる間に攻撃したら、地上の通常/ダッシュ攻撃ではなく空中攻撃を出す。
+            //   実際のアニメーション遷移・攻撃判定は「AirAttack」トリガーを受けて別途実装する。
             // ==============================================================
-            // 閾値: ダッシュ最高速度の 50% 以上のスピードが出ている時とする
-            float thresholdSpeed = dash.dashSpeed * 0.5f;
-            float currentSpeedSq = inputData.currentVelocity.LengthSquared();
-
-            // isDashing が true、または慣性によって十分な速度が出ている場合
-            if (dash.isDashing || currentSpeedSq >= (thresholdSpeed * thresholdSpeed))
+            if (player.isAirborne)
             {
-                // ダッシュ攻撃のトリガーを発行
-                animParams.SetTrigger(HASH_TRIG_DASH_ATTACK, 0.25f);
-
-                // 【重要】ダッシュ中に攻撃を出した場合は、ダッシュの無敵や受付窓を強制キャンセルする
-                if (dash.isDashing)
-                {
-                    dash.isDashing               = false;
-                    dash.isInvincible            = false;
-                    dash.isJustEvadeWindowActive = false;
-                    // すぐに次のダッシュが出せないよう、クールダウンを発生させる
-                    dash.currentTimer = dash.dashCooldown;
-                }
-
-                CCL_LOG_INFO(LogCategory::Game, "Dash Attack Triggered! SpeedSq: %.1f", currentSpeedSq);
+                animParams.SetTrigger(HASH_TRIG_AIR_ATTACK, 0.25f);
+                CCL_LOG_INFO(LogCategory::Game, "Air Attack Triggered!");
             }
             else
             {
-                // 停止時、または通常の歩き状態なら通常攻撃
-                animParams.SetTrigger(HASH_TRIG_ATTACK, 0.25f);
+                // ==============================================================
+                // ★ ダッシュ攻撃の判定 (速度・慣性ベース)
+                // ==============================================================
+                // 閾値: ダッシュ最高速度の 50% 以上のスピードが出ている時とする
+                float thresholdSpeed = dash.dashSpeed * 0.5f;
+                float currentSpeedSq = inputData.currentVelocity.LengthSquared();
+
+                // isDashing が true、または慣性によって十分な速度が出ている場合
+                if (dash.isDashing || currentSpeedSq >= (thresholdSpeed * thresholdSpeed))
+                {
+                    // ダッシュ攻撃のトリガーを発行
+                    animParams.SetTrigger(HASH_TRIG_DASH_ATTACK, 0.25f);
+
+                    // 【重要】ダッシュ中に攻撃を出した場合は、ダッシュの無敵や受付窓を強制キャンセルする
+                    if (dash.isDashing)
+                    {
+                        dash.isDashing               = false;
+                        dash.isInvincible            = false;
+                        dash.isJustEvadeWindowActive = false;
+                        // すぐに次のダッシュが出せないよう、クールダウンを発生させる
+                        dash.currentTimer = dash.dashCooldown;
+                    }
+
+                    CCL_LOG_INFO(LogCategory::Game, "Dash Attack Triggered! SpeedSq: %.1f", currentSpeedSq);
+                }
+                else
+                {
+                    // 停止時、または通常の歩き状態なら通常攻撃
+                    animParams.SetTrigger(HASH_TRIG_ATTACK, 0.25f);
+                }
             }
         }
 

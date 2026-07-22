@@ -26,6 +26,7 @@ CFIELD(currentRoll, "現在のRoll角", "状態")
 
 CFIELD(wasGroundedLastFrame, "前フレーム接地状態", "状態")
 CFIELD(lastFallVelocity, "直前落下速度", "状態")
+CFIELD(isAirborne, "空中状態", "状態")
 
 CFIELD_FLOAT_RANGED(bankingMultiplier, "バンキング係数", 0.1f, 0.0f, 5.0f, "見た目")
 CFIELD_FLOAT_RANGED(maxBankingAngle, "最大バンキング角", 1.0f, 0.0f, 90.0f, "見た目")

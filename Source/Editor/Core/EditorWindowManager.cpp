@@ -7,6 +7,7 @@
 
 #include "Editor/Core/EditorCommandHistory.h"
 #include "Engine/Transform/Components/TransformComponent.h"
+#include "Game/GameFlowState.h" // カーソル自由(UI操作)モードの共有フラグ
 
 // マウス視点の可否（全画面 or ゲームビュー フォーカス）を InputFacade へ伝えるため
 #include "Engine/Core/App/EngineServices.h"
@@ -187,6 +188,22 @@ void EditorWindowManager::Draw(EditorContext &context)
         if (context.isPaused && ImGui::IsKeyPressed(ImGuiKey_F11, false) && !ImGui::GetIO().WantCaptureKeyboard)
         {
             context.stepOneFrame = true;
+        }
+
+        // F2 で「カーソル自由(UI操作)モード」をトグル。ゲームは動いたままカーソルだけ解放し、
+        //   実行中に ImGui エディタ(シーケンサー等)を操作できるようにする。誤爆防止に入力中は無視。
+        if (ImGui::IsKeyPressed(ImGuiKey_F2, false) && !ImGui::GetIO().WantCaptureKeyboard)
+        {
+            context.cursorFreeToggle = !context.cursorFreeToggle;
+        }
+
+        // 「カーソル自由」の最終状態を World リソースへ反映する。
+        //   F2トグル or シーケンサーEditMode 中は true。カメラ(カーソルロック)と
+        //   PauseSystem(ESC抑制)がこれを読む。
+        if (context.world && context.world->HasResource<GameFlowState>())
+        {
+            context.world->GetResource<GameFlowState>().uiInteract =
+                context.cursorFreeToggle || context.isAnimEditMode;
         }
     }
 
@@ -432,6 +449,11 @@ void EditorWindowManager::DrawWindowMenu(EditorContext &context)
         if (ImGui::MenuItem("Show UI", "F1", &_isVisible))
         {
         }
+
+        // 切り離した OS ウィンドウ(別画面に出した ImGui)を実際に描画するか。
+        //   OFF にすると Exe 外のウィンドウは黒くなる代わりに負荷が下がる。
+        ImGui::MenuItem("外部ウィンドウを描画", nullptr, &context.renderExternalWindows);
+
         ImGui::Separator();
         for (auto &window : _windows)
         {

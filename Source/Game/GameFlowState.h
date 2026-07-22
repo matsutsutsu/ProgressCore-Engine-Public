@@ -7,4 +7,11 @@ struct GameFlowState
     /// true の間、ゲームロジック/物理（FixedUpdate=UpdateLogic）を止める。
     /// 描画・UI（Update=UpdatePaused）は継続するので、ポーズ画面が操作できる。
     bool paused = false;
+
+    /// ★ 「カーソル自由(UI操作)モード」。true の間はゲームを止めずに
+    ///    マウスカーソルだけ解放する（＝実行中に ImGui エディタを操作できる）。
+    ///    ・カメラ: この間はカーソルをロックせず、マウスルックも止める。
+    ///    ・PauseSystem: この間は ESC のポーズ切替を抑制する。
+    ///    エディタ側(F2トグル / シーケンサーEditMode)が毎フレーム設定する。
+    bool uiInteract = false;
 };

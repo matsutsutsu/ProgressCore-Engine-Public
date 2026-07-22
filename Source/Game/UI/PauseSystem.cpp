@@ -58,6 +58,14 @@ void PauseSystem::Update(float /*dt*/)
                      || input->GetGamePad().IsTriggered(GamePad::BTN_START);
     if (!toggle) return;
 
+    // ★ カーソル自由(UI操作)モード中は、編集中に誤ってポーズメニューが出ないよう
+    //    ESC/START のポーズ切替を無視する（既にポーズ中の解除は許可）。
+    if (!_paused && _world->HasResource<GameFlowState>()
+        && _world->GetResource<GameFlowState>().uiInteract)
+    {
+        return;
+    }
+
     if (!_paused) OpenPause();
     else          ClosePause();
 }

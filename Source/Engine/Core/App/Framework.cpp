@@ -392,11 +392,13 @@ void Framework::Render(float elapsedTime)
 				TracyD3D11Zone(tracyCtx, "ImGui Pass (GPU)");
 			}
 
-			// 一時停止中かつ UI 表示中のみ、切り離し OS 窓（セカンダリ Present）を許可
+			// 切り離した OS 窓（セカンダリ Present）の描画可否。UI表示中かつユーザーが
+				// 有効にしている間は常に描画する（プレイ中でも別画面で操作可）。重い場面は
+				// context.renderExternalWindows を false にして止められる。
 			const bool allowPlatformWindows =
 			    m_editorWindowManager &&
 			    m_editorWindowManager->IsVisible() &&
-			    m_editorContext.isPaused;
+			    m_editorContext.renderExternalWindows; // ★ pause縛りを外し、UI表示中は常に外部ウィンドウを描画
 			ImGuiRenderer::SetPlatformWindowsEnabled(allowPlatformWindows);
 
 			// IMGUI描画

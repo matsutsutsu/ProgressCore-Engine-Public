@@ -78,6 +78,8 @@ void PlayerMoveSystem::UpdateJumpLogic(float dt, bool isGrounded, CharacterMovem
     }
 
     player.wasGroundedLastFrame = isGrounded;
+    // 空中状態を一元更新（空中攻撃などが参照する唯一の判定元）
+    player.isAirborne = !isGrounded;
 
     // エッジ検出とバッファタイマーの更新
     bool isPressedThisFrame     = inputData.jumpRequested && !player.wasJumpButtonPressed;

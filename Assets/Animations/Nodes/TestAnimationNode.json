@@ -1,6 +1,6 @@
 {
-    "anyStatePosX": 357.0,
-    "anyStatePosY": -197.0,
+    "anyStatePosX": 360.0,
+    "anyStatePosY": -377.0,
     "anyStateTransitions": [
         {
             "blendDuration": 0.20000000298023224,
@@ -83,6 +83,62 @@
             "logicType": 0,
             "requiredCancelMask": 0,
             "targetStateHash": 3987189933
+        },
+        {
+            "blendDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "op": 3,
+                    "paramHash": 448068029,
+                    "paramName": "HitFront",
+                    "threshold": 0.0
+                }
+            ],
+            "logicType": 0,
+            "requiredCancelMask": 0,
+            "targetStateHash": 448068029
+        },
+        {
+            "blendDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "op": 3,
+                    "paramHash": 4038633241,
+                    "paramName": "HitBack",
+                    "threshold": 0.0
+                }
+            ],
+            "logicType": 0,
+            "requiredCancelMask": 0,
+            "targetStateHash": 4038633241
+        },
+        {
+            "blendDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "op": 3,
+                    "paramHash": 2671032551,
+                    "paramName": "HitLeft",
+                    "threshold": 0.0
+                }
+            ],
+            "logicType": 0,
+            "requiredCancelMask": 0,
+            "targetStateHash": 2671032551
+        },
+        {
+            "blendDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "op": 3,
+                    "paramHash": 1939215512,
+                    "paramName": "HitRight",
+                    "threshold": 0.0
+                }
+            ],
+            "logicType": 0,
+            "requiredCancelMask": 0,
+            "targetStateHash": 1939215512
         }
     ],
     "entryPosX": -348.0,
@@ -151,6 +207,41 @@
             "hash": 3987189933,
             "name": "DashAttack",
             "type": 2
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 899714431,
+            "name": "AirAttack",
+            "type": 2
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 448068029,
+            "name": "HitFront",
+            "type": 2
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 4038633241,
+            "name": "HitBack",
+            "type": 2
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 2671032551,
+            "name": "HitLeft",
+            "type": 2
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 1939215512,
+            "name": "HitRight",
+            "type": 2
         }
     ],
     "states": [
@@ -158,8 +249,8 @@
             "applyRootMotion": false,
             "isLoop": true,
             "lockVerticalRootMotion": false,
-            "nodePosX": 74.0,
-            "nodePosY": 322.0,
+            "nodePosX": 62.0,
+            "nodePosY": 317.0,
             "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Idle.json",
@@ -328,8 +419,8 @@
             "applyRootMotion": false,
             "isLoop": true,
             "lockVerticalRootMotion": false,
-            "nodePosX": 793.0,
-            "nodePosY": 97.0,
+            "nodePosX": 788.0,
+            "nodePosY": 91.0,
             "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Jump_Loop.json",
@@ -350,6 +441,20 @@
                     "logicType": 0,
                     "requiredCancelMask": 0,
                     "targetStateHash": 3204239090
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 3,
+                            "paramHash": 899714431,
+                            "paramName": "AirAttack",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 899714431
                 }
             ]
         },
@@ -597,6 +702,165 @@
                     "logicType": 0,
                     "requiredCancelMask": 1,
                     "targetStateHash": 240607861
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "isLoop": true,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 683.0,
+            "nodePosY": 262.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "",
+            "sequenceName": "AirAttack",
+            "speedCurveName": "",
+            "stateHash": 899714431,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 2063645824
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 3,
+                            "paramHash": 4288447221,
+                            "paramName": "OnLand",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 3204239090
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "isLoop": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": -460.0,
+            "nodePosY": -263.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/Hit_Front.json",
+            "sequenceName": "HitFront",
+            "speedCurveName": "",
+            "stateHash": 448068029,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 1168775091
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "isLoop": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": -251.0,
+            "nodePosY": -263.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/Hit_Back.json",
+            "sequenceName": "HitBack",
+            "speedCurveName": "",
+            "stateHash": 4038633241,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 1168775091
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "isLoop": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": -90.0,
+            "nodePosY": -247.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/Hit_Left.json",
+            "sequenceName": "HitLeft",
+            "speedCurveName": "",
+            "stateHash": 2671032551,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 1168775091
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "isLoop": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 104.0,
+            "nodePosY": -247.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/Hit_Right.json",
+            "sequenceName": "HitRight",
+            "speedCurveName": "",
+            "stateHash": 1939215512,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 1168775091
                 }
             ]
         }

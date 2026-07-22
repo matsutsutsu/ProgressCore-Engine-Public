@@ -19,14 +19,74 @@
 #include "Engine/Timer/TimeState.h"
 #include "Engine/Physics/Components/Character/KnockbackComponent.h"
 #include "Engine/Graphics/Components/Impact/ScreenImpactComponent.h"
+#include "Engine/Transform/Components/TransformComponent.h"       // 被弾者の向き（前後左右判定）
+#include "Engine/Animation/Components/AnimParametersComponent.h"  // ヒットリアクションのトリガー発行
+#include "Engine/Core/Math/StringHash.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Platform/Core/Logger.h"
 
 #include <algorithm>
+#include <cmath>
 
 using namespace CCL::ECS;
+using namespace DirectX::SimpleMath;
+
+namespace
+{
+    // ヒットリアクションのトリガー名（規約：攻撃が「来た方向」で命名する）。
+    //   前=正面から食らった / 後=背後から / 右=右側から / 左=左側から。
+    //   ※クリップを「のけぞる向き」で名付けている場合は前後・左右を入れ替えて使うこと。
+    const uint32_t HASH_HIT_FRONT = CCL::Utils::HashString("HitFront");
+    const uint32_t HASH_HIT_BACK  = CCL::Utils::HashString("HitBack");
+    const uint32_t HASH_HIT_LEFT  = CCL::Utils::HashString("HitLeft");
+    const uint32_t HASH_HIT_RIGHT = CCL::Utils::HashString("HitRight");
+    
+    /// @brief 被弾方向から前後左右のヒットリアクションを選んで再生する。
+    ///        アニメーターを持たない相手（ドローン等）は自動でスキップされる。
+    ///        方向元は「攻撃者の位置」を最優先、無ければノックバック方向の反転を使う。
+    void FireHitReaction(World *world, const DamageEventComponent &ev)
+    {
+        // アニメーターが無ければ何もしない（1000機のドローン等はここで弾かれる）。
+        auto *anim = world->GetComponent<AnimParametersComponent>(ev.targetID);
+        if (!anim) return;
+    
+        auto *vtrans = world->GetComponent<TransformComponent>(ev.targetID);
+        if (!vtrans) return;
+    
+        // 被弾者の水平 forward / right を rotation から求める（LH: right = up × forward）。
+        Vector3 fwd = Vector3::Transform(Vector3::UnitZ, vtrans->rotation);
+        fwd.y = 0.0f;
+        if (fwd.LengthSquared() < 1e-6f) fwd = Vector3::UnitZ;
+        else                             fwd.Normalize();
+        const Vector3 right(fwd.z, 0.0f, -fwd.x);
+    
+        // 攻撃が「来た方向」（被弾者→攻撃者側）を求める。
+        //   優先: 攻撃者の位置 → 無ければ -knockbackDir（ノックバックは攻撃者から離れる向き）。
+        Vector3 fromAttacker = Vector3::Zero;
+        if (auto *atk = world->GetComponent<TransformComponent>(ev.attackerID))
+            fromAttacker = Vector3(atk->position) - Vector3(vtrans->position);
+        else if (ev.knockbackDir.LengthSquared() > 1e-6f)
+            fromAttacker = -ev.knockbackDir;
+        fromAttacker.y = 0.0f;
+    
+        // 方向不明（環境ダメージ等）は正面リアクションで代替する。
+        uint32_t trig = HASH_HIT_FRONT;
+        if (fromAttacker.LengthSquared() > 1e-6f)
+        {
+            fromAttacker.Normalize();
+            const float f = fromAttacker.Dot(fwd);   // +で前
+            const float r = fromAttacker.Dot(right); // +で右
+            if (std::abs(f) >= std::abs(r))
+                trig = (f >= 0.0f) ? HASH_HIT_FRONT : HASH_HIT_BACK;
+            else
+                trig = (r >= 0.0f) ? HASH_HIT_RIGHT : HASH_HIT_LEFT;
+        }
+    
+        anim->SetTrigger(trig, 0.15f);
+    }
+} // namespace
 
 void DamageResolutionSystem::Update(float dt) {
 
@@ -93,6 +153,12 @@ void DamageResolutionSystem::Update(float dt) {
                 const bool isPlayer = _world->HasComponent<PlayerComponent>(event.targetID);
                 _world->GetEventBus().Publish(
                     DamageTakenEvent{event.targetID, event.finalDamage, isPlayer});
+
+                // --- ヒットリアクション（前後左右）の再生 ---
+                // 生き残った時だけ怯ませる。致命打は死亡アニメ側に任せる（怯みと二重再生しない）。
+                // プレイヤーも敵も共通：AnimParametersComponent を持つ相手だけが反応する。
+                if (health->currentHealth > 0.0f)
+                    FireHitReaction(_world, event);
 
                 // --- 命中エフェクトの通知（確定ヒットの接触点に衝突VFXを出す） ---
                 // HitEffectSystem が購読して GPUパーティクルのバーストを生成する。

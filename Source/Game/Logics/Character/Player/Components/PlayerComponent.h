@@ -34,6 +34,13 @@ struct PlayerComponent {
     bool  wasGroundedLastFrame = true; // 前フレームの接地状態
     float lastFallVelocity     = 0.0f; // 直前のY速度（落下速度）
 
+    // =========================================================
+    // 空中状態（空中攻撃などの分岐に使う唯一の判定元）
+    // =========================================================
+    /// @brief 接地していない＝空中にいるか。PlayerMoveSystem が接地判定から毎フレーム更新する。
+    ///        空中攻撃の作動条件など「空中かどうか」を見たいシステムはこのフラグを参照する。
+    bool isAirborne = false;
+
     // --- 攻撃入力状態 ---
     bool wasAttackButtonPressed = false; ///< 前フレームの攻撃ボタン押下状態 (連打・押しっぱなし防止用)
 

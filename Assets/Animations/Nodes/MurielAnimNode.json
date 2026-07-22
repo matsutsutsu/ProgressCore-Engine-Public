@@ -15,6 +15,62 @@
             "logicType": 0,
             "requiredCancelMask": 0,
             "targetStateHash": 1898928778
+        },
+        {
+            "blendDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "op": 3,
+                    "paramHash": 1939215512,
+                    "paramName": "HitRight",
+                    "threshold": 0.0
+                }
+            ],
+            "logicType": 0,
+            "requiredCancelMask": 0,
+            "targetStateHash": 1939215512
+        },
+        {
+            "blendDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "op": 3,
+                    "paramHash": 2671032551,
+                    "paramName": "HitLeft",
+                    "threshold": 0.0
+                }
+            ],
+            "logicType": 0,
+            "requiredCancelMask": 0,
+            "targetStateHash": 2671032551
+        },
+        {
+            "blendDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "op": 3,
+                    "paramHash": 4038633241,
+                    "paramName": "HitBack",
+                    "threshold": 0.0
+                }
+            ],
+            "logicType": 0,
+            "requiredCancelMask": 0,
+            "targetStateHash": 4038633241
+        },
+        {
+            "blendDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "op": 3,
+                    "paramHash": 448068029,
+                    "paramName": "HitFront",
+                    "threshold": 0.0
+                }
+            ],
+            "logicType": 0,
+            "requiredCancelMask": 0,
+            "targetStateHash": 448068029
         }
     ],
     "entryPosX": -48.0,
@@ -40,6 +96,34 @@
             "defaultFloat": 0.0,
             "hash": 1898928778,
             "name": "Slash",
+            "type": 2
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 448068029,
+            "name": "HitFront",
+            "type": 2
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 4038633241,
+            "name": "HitBack",
+            "type": 2
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 2671032551,
+            "name": "HitLeft",
+            "type": 2
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 1939215512,
+            "name": "HitRight",
             "type": 2
         }
     ],
@@ -154,6 +238,122 @@
                     "logicType": 0,
                     "requiredCancelMask": 0,
                     "targetStateHash": 2133600820
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "isLoop": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": -398.0,
+            "nodePosY": -231.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/Hit_Front.json",
+            "sequenceName": "HitFront",
+            "speedCurveName": "",
+            "stateHash": 448068029,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 1168775091
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "isLoop": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": -228.0,
+            "nodePosY": -233.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/Hit_Front.json",
+            "sequenceName": "HitBack",
+            "speedCurveName": "",
+            "stateHash": 4038633241,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 1168775091
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "isLoop": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": -52.0,
+            "nodePosY": -233.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/Hit_Right.json",
+            "sequenceName": "HitLeft",
+            "speedCurveName": "",
+            "stateHash": 2671032551,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 1168775091
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "isLoop": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 124.0,
+            "nodePosY": -233.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/Hit_Right.json",
+            "sequenceName": "HitRight",
+            "speedCurveName": "",
+            "stateHash": 1939215512,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 1168775091
                 }
             ]
         }

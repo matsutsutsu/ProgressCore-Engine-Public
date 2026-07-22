@@ -126,6 +126,11 @@ struct EditorContext {
     //   すぐ false に戻る（Framework が消費）。停止中の1フレーム送り用。
     bool stepOneFrame = false;
 
+    // ★ 「カーソル自由(UI操作)モード」の手動トグル状態（F2）。
+    //   これ または isAnimEditMode が true のとき、GameFlowState.uiInteract が立ち、
+    //   ゲームを止めずにカーソルが解放される（実行中に ImGui を操作できる）。
+    bool cursorFreeToggle = false;
+
     // アニメーションエディタとの連携用
      bool  isAnimEditMode = false; // これらもポインタではなく実体値にするのが安全です
      float animEditTime   = 0.0f;
@@ -146,4 +151,10 @@ struct EditorContext {
      //   GameViewWindow が毎フレーム更新し、EditorWindowManager が
      //   「全画面 or フォーカス中」を InputFacade へ伝えてマウス視点の可否を切り替える。
      bool gameViewFocused = false;
+
+     // ★ 切り離した OS ウィンドウ(ImGuiマルチビューポート)を実際に描画するか。
+     //   true の間だけ Exe 外へドラッグしたウィンドウが表示・操作できる。
+     //   各外部ウィンドウは個別スワップチェーンを毎フレーム Present するため、
+     //   負荷が気になる場面では false にして描画を止められる。既定は有効。
+     bool renderExternalWindows = true;
 };
