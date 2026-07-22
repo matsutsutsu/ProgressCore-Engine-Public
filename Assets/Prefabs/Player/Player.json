@@ -4,7 +4,7 @@
             "components": {
                 "AnimParameters": null,
                 "AnimStateMachine": {
-                    "graphPath": "Assets/Animations/Nodes/TestAnimationNode.json"
+                    "graphPath": "Assets/Animations/Nodes/PlayerAnimNode.json"
                 },
                 "Animation": null,
                 "Animator": {
@@ -100,7 +100,7 @@
                 },
                 "Material": null,
                 "Model": {
-                    "assetPath": "Assets/Models/Player/SK_SciFITrooper_Man_03.gltf"
+                    "assetPath": "Assets/Models/Player/SK_SciFITrooper_Man_03.glb"
                 },
                 "Name": {
                     "name": "Player"

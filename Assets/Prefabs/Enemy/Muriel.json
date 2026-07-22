@@ -12,7 +12,7 @@
                     "playbackSpeed": 0.5
                 },
                 "BehaviorTreeComponent": {
-                    "assetPath": "Assets/BehaviorTree/DroneHitTest.json",
+                    "assetPath": "Assets/BehaviorTree/BossSlashTest.json",
                     "phase2AssetPath": "Data/BehaviorTree/BossAI_Phase2.json",
                     "phase2HealthThreshold": 50.0
                 },
@@ -96,7 +96,7 @@
                 },
                 "Material": null,
                 "Model": {
-                    "assetPath": "Assets/Models/Enemy/Muriel/Muriel.gltf"
+                    "assetPath": "Assets/Models/Enemy/Muriel/Muriel.glb"
                 },
                 "Name": {
                     "name": "Muriel"
