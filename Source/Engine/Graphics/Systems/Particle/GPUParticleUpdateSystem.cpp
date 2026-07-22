@@ -139,6 +139,14 @@ void GPUParticleUpdateSystem::Update(float dt)
     dc->PSSetShaderResources(0, 16, nullSRVs);
     dc->CSSetShaderResources(0, 16, nullSRVs);
 
+    // 世界の時計が止まっている間はシミュレーションを凍らせる。
+    //   本システムは RenderStage なのでポーズ中(UpdatePaused)も走り続けるが、localDt を作る
+    //   TimeScaleSystem は LOGIC なので止まっており localDt が古い値のまま残る。ここで
+    //   TimeContext.isPaused を見て dt=0 にすれば particle.time も emission も進まず完全に静止する。
+    bool worldPaused = false;
+    if (_world->HasResource<TimeContext>())
+        worldPaused = _world->GetResource<TimeContext>().isPaused;
+
     ZoneNamedN(dispatchZone, "GPUParticle: Emitter dispatch loop", true);
     ForEachWithID([&](CCL::ECS::EntityID id,
         GPUParticleComponent& particle,
@@ -159,7 +167,11 @@ void GPUParticleUpdateSystem::Update(float dt)
             if (particle.needsGpuInit)
                 DispatchInitCS(dc, _computeShader.get(), particle, transform, buffers);
             else
-                DispatchUpdateCS(dc, _computeShader.get(), particle, transform, buffers, rawDt.localDt);
+            {
+                // ポーズ中は dt=0 で凍結。通常時は各エンティティのローカルdtで進める。
+                const float simDt = worldPaused ? 0.0f : rawDt.localDt;
+                DispatchUpdateCS(dc, _computeShader.get(), particle, transform, buffers, simDt);
+            }
         });
 
     dc->CSSetShader(nullptr, nullptr, 0);

@@ -12,6 +12,7 @@
 #include "Engine/UI/ECS/UIEvents.h"
 #include "Game/UI/MenuUiFactory.h"
 #include "Game/GameFlowState.h"
+#include "Engine/Timer/TimeState.h" // TimeContext.isPaused（世界時計の凍結。RenderStageのVFXが尊重する）
 
 #include <cstdint>
 
@@ -79,6 +80,11 @@ void PauseSystem::OpenPause()
     if (w.HasResource<GameFlowState>())
         w.GetResource<GameFlowState>().paused = true;
 
+    // 「世界の時計」も止める。FixedUpdate が凍って TimeScaleSystem(localDt生成) が走らないため、
+    // RenderStage で回り続ける VFX（GPUパーティクル等）はこのフラグを見て自前で dt=0 に凍る。
+    if (w.HasResource<TimeContext>())
+        w.GetResource<TimeContext>().isPaused = true;
+
     // オーバーレイ生成（HUDより手前へ sortOrder 高め）。
     // 出現アニメ：暗転→見出し→ボタンの順に少し遅延させてスッと出す（暗転はフェードのみ）。
     // UI階層：Canvas を親にして配下を束ねる（ヒエラルキーで入れ子表示・一括破棄）。
@@ -107,6 +113,10 @@ void PauseSystem::ClosePause()
     _paused = false;
     if (w.HasResource<GameFlowState>())
         w.GetResource<GameFlowState>().paused = false;
+
+    // 世界の時計を再開（VFXも次フレームから通常速度に戻る）。
+    if (w.HasResource<TimeContext>())
+        w.GetResource<TimeContext>().isPaused = false;
 
     // 生成したオーバーレイ実体を破棄（ソフト削除：次の構造適用で消える）。
     for (EntityID id : _overlay)

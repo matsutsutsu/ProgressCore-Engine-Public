@@ -8,6 +8,7 @@
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Platform/Input/Input.h"
 #include "Engine/Scene/SceneManager.h"
+#include "Engine/Timer/TimeState.h" // TimeContext.isPaused（世界時計の凍結。accumulator/補間を止める）
 #include "Engine/Serialization/Serializer/LevelSerializer.h"
 #include "Game/Scenes/BaseScene.h"
 
@@ -520,6 +521,16 @@ int Framework::Run()
 			}
 			m_editorContext.stepOneFrame = false; // 要求は毎フレーム消費（連続送りはキー側のedge検出で防ぐ）
 #endif
+
+			// ★ ゲームのポーズ（PauseSystem）でも世界の時計は止まる。エディタ非依存・Shipping対応の
+			//   ため、engine層の TimeContext.isPaused を見て logicFrozen に合流させる。これを入れないと
+			//   accumulator だけ実時間で溜まり、alpha が 0↔1 に揺れて prev/current の固定姿勢を往復補間し、
+			//   ポーズ中なのにキャラ/パーティクルが「震える」。（上の解説コメント参照）
+			if (auto *pausedScene = SceneManager::Instance().GetCurrentScene())
+				if (auto *pausedWorld = pausedScene->GetWorld())
+					if (pausedWorld->HasResource<TimeContext>() &&
+						pausedWorld->GetResource<TimeContext>().isPaused)
+						logicFrozen = true;
 
 			// 3. 時間を貯める（停止中は貯めない）
 			if (!logicFrozen) {
