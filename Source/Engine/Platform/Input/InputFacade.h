@@ -63,7 +63,11 @@ public:
     //   false = 他のエディタ窓を操作中 → マウスデルタを 0 にして視点固定
     //   ※ シェーディング/製品ビルド(非エディタ)では常に true のまま。
     void SetGameInputActive(bool v) { m_gameInputActive = v; }
-    bool IsGameInputActive() const { return m_gameInputActive; }
+    bool IsGameInputActive() const override { return m_gameInputActive; }
+
+    // マウスカーソルのロック（生Mouseへ委譲）。マウスルック時に画面中央へ固定する。
+    void SetMouseLock(bool lock) override { if (m_rawInput) m_rawInput->GetMouse().SetCursorLock(lock); }
+    bool IsMouseLocked() const override { return m_rawInput && m_rawInput->GetMouse().IsCursorLocked(); }
     float GetScreenWidth() const override {
         return static_cast<float>(m_rawInput->GetMouse().GetScreenWidth());
     }

@@ -30,6 +30,7 @@ struct CameraBodyTPSComponent
     float mouseSensitivityY      = 0.15f; ///< マウス垂直感度(度/ピクセル)。
     bool  mouseInvertY           = false; ///< 上下反転（true=マウス下でカメラ上向き）。
     bool  mouseLookRequiresButton = false; ///< true=右クリック押下中のみ視点回転。false=常時マウス視点(TPS標準)。
+    bool  enableCursorLock        = true;  ///< マウスルック中、カーソルを画面中央へ固定＋非表示にする（端の頭打ち防止）。
 
     // --- 指数減衰（遅延追従）パラメータ ---
     float positionDamping = 12.0f; ///< 位置追従の硬さ（低いほどゴム紐のように遅れる＝スプリング挙動）

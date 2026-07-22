@@ -92,6 +92,8 @@ struct ComponentMeta<CameraBodyTPSComponent>
         changed |= ImGui::DragFloat(u8"マウス水平感度 (mouseSensitivityX)", &comp.mouseSensitivityX, 0.01f, 0.0f, 2.0f);
         changed |= ImGui::DragFloat(u8"マウス垂直感度 (mouseSensitivityY)", &comp.mouseSensitivityY, 0.01f, 0.0f, 2.0f);
         changed |= ImGui::Checkbox(u8"上下反転 (mouseInvertY)", &comp.mouseInvertY);
+        changed |= ImGui::Checkbox(u8"カーソル中央固定 (enableCursorLock)", &comp.enableCursorLock);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip(u8"マウスルック中、カーソルを画面中央へ固定＋非表示にし、画面端で視点が止まらないようにする。ポーズ/非フォーカスで自動解除。");
 
         ImGui::SeparatorText(u8"滑らかさ (Smoothing)");
         changed |= ImGui::DragFloat(u8"位置追従遅延 (positionDamping)", &comp.positionDamping, 0.1f, 0.0f, 50.0f);
@@ -145,6 +147,7 @@ struct ComponentMeta<CameraBodyTPSComponent>
             CFIELD_FLOAT_RANGED(mouseSensitivityX, "マウス水平感度", 0.01f, 0.0f, 2.0f, "Mouse Look")
             CFIELD_FLOAT_RANGED(mouseSensitivityY, "マウス垂直感度", 0.01f, 0.0f, 2.0f, "Mouse Look")
             CFIELD(mouseInvertY, "上下反転", "Mouse Look")
+            CFIELD(enableCursorLock, "カーソル中央固定", "Mouse Look")
             CFIELD_FLOAT_RANGED(positionDamping, "位置追従遅延", 0.1f, 0.0f, 50.0f, "Smoothing")
             CFIELD_FLOAT_RANGED(fovDamping, "視野角補間速度", 0.1f, 0.0f, 50.0f, "Smoothing")
 

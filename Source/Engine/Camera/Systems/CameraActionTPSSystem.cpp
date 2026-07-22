@@ -12,6 +12,7 @@
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"
 #include "Game/Logics/Combat/DeadTag.h"
 #include "Engine/Camera/Systems/CameraTargetBinding.h"
+#include "Game/GameFlowState.h" // ポーズ中はカーソルロックを解除するため
 
 #include <memory>
 
@@ -83,6 +84,9 @@ void CameraActionTPSSystem::Update(float dt)
     //    以前のようにハードコードで target を焼き込む必要がない。
     const EntityID playerId = CameraBinding::FindPlayer(_world);
 
+    // このフレーム、いずれかのTPSカメラがマウスルック中ならカーソルをロックしたい。
+    bool wantCursorLock = false;
+
     // ForEachは IfSystem のテンプレート引数(3つのコンポーネント)と完全に一致させる
     ForEach([&](VirtualCamera &vcam, CameraBodyTPSComponent &tps, TransformComponent &trans) {
         // ★ target が無効(未接続 / リロードでID変化 / リスポーン)なら役割で繋ぎ直す。
@@ -91,6 +95,11 @@ void CameraActionTPSSystem::Update(float dt)
         // 1. 追従対象（プレイヤー）の取得
         auto *targetTrans = _world->GetComponent<TransformComponent>(tps.target.id);
         if (!targetTrans) return;
+
+        // このカメラが「今マウスルック中」ならカーソルロックを要求する。
+        //   常時マウス視点なら常に、右クリック視点なら押下中のみ。
+        if (tps.enableCursorLock && (!tps.mouseLookRequiresButton || rmbHeld))
+            wantCursorLock = true;
 
         // 4. 注視点（LookAt）の算出
         // ★ position（非補間）ではなく renderWorldMatrix の平行移動成分（補間済み）を使う
@@ -300,6 +309,20 @@ void CameraActionTPSSystem::Update(float dt)
         vcam.resultUp     = Vector3::Up;
         vcam.isValid      = true;
     });
+
+    // =====================================================================
+    // カーソルロックの最終決定（フレームに1回）
+    //   マウスルック中でも、以下では固定しない（＝解除する）:
+    //     ・ポーズ中（メニュー操作にカーソルが要る）
+    //     ・エディタで他ウィンドウ操作中（IsGameInputActive=false）
+    //   さらに Mouse 側で「非フォーカス時は自動解除」しているため、
+    //   alt-tab でカーソルが囚われることもない。
+    // =====================================================================
+    bool paused = _world->HasResource<GameFlowState>() && _world->GetResource<GameFlowState>().paused;
+    if (paused || !inputAPI->IsGameInputActive())
+        wantCursorLock = false;
+
+    inputAPI->SetMouseLock(wantCursorLock);
 }
 
 

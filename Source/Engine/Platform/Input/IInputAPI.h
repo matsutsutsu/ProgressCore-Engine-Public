@@ -73,6 +73,16 @@ public:
     virtual float GetScreenWidth() const = 0;
     virtual float GetScreenHeight() const = 0;
 
+    // --- マウスカーソルのロック（マウスルック） ---
+    //   lock=true でカーソルを画面中央へ固定＋非表示にし、画面端での頭打ちを無くす。
+    //   非エディタ実装の既定は何もしない（no-op）。
+    virtual void SetMouseLock(bool lock) { (void)lock; }
+    virtual bool IsMouseLocked() const { return false; }
+
+    // ゲーム側がマウス視点入力を受け付けてよいか（エディタが毎フレーム更新。非エディタ/製品は常に true）。
+    //   ロック判定にも使う：エディタの別ウィンドウ操作中はカーソルを固定しない。
+    virtual bool IsGameInputActive() const { return true; }
+
     // --- 設定（バインディング） ---
     virtual void AddActionBinding(const std::string& actionName, InputDeviceType device, unsigned int keyCode) = 0;
     virtual void AddAxisBinding(const std::string& axisName, InputDeviceType device, unsigned int keyCode, float scale = 1.0f) = 0;

@@ -97,6 +97,15 @@ public:
 	// スクリーン高さ取得
 	int GetScreenHeight() const { return screenHeight; }
 
+	// =========================================================
+	// カーソルロック（マウスルック用）
+	//   true にすると Update() で毎フレーム、カーソルを画面中央へ戻し（＝端で頭打ちしない）、
+	//   OSカーソルを隠す。移動量(GetVelocity)は「中央からのズレ」として供給される。
+	//   ・ウィンドウが非フォーカスなら安全のため自動解除する（alt-tabでカーソルが囚われない）。
+	// =========================================================
+	void SetCursorLock(bool lock) { m_lockRequested = lock; }
+	bool IsCursorLocked() const { return m_cursorHidden; }
+
 private:
 	MouseButton		buttonState[2] = { 0 };
 	MouseButton		buttonDown = 0;
@@ -107,4 +116,7 @@ private:
 	int				screenWidth = 0;
 	int				screenHeight = 0;
 	HWND			hWnd = nullptr;
+
+	bool			m_lockRequested = false; // ゲーム側からのロック要求
+	bool			m_cursorHidden  = false; // 実際にロック中か（ShowCursorカウンタ整合＆開始フレーム検出用）
 };
