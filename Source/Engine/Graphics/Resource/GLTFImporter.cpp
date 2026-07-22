@@ -1,4 +1,5 @@
 #include <fstream>
+#include <cstring>    // memcmp 用
 #include <windows.h>  // OutputDebugStringA 用
 #include <filesystem> // パス検証用
 #define TINYGLTF_IMPLEMENTATION
@@ -18,6 +19,20 @@ bool LoadImageData(tinygltf::Image *, const int, std::string *,
     void *user_pointer)
 {
     return true;
+}
+
+// 画像バイト列の先頭マジックナンバーから拡張子を判定する。
+// glb 埋め込みテクスチャは mimeType が "image/unknown" 等で当てにならない
+// ことがあるため、実データの先頭バイトで形式を決める。
+static const char *DetectImageExtensionFromBytes(const unsigned char *data, size_t size)
+{
+    if (data == nullptr) return "bin";
+    if (size >= 4 && std::memcmp(data, "DDS ", 4) == 0) return "dds";
+    if (size >= 8 && std::memcmp(data, "\x89PNG\r\n\x1a\n", 8) == 0) return "png";
+    if (size >= 3 && data[0] == 0xFF && data[1] == 0xD8 && data[2] == 0xFF) return "jpg";
+    if (size >= 4 && std::memcmp(data, "#?RA", 4) == 0) return "hdr"; // #?RADIANCE
+    if (size >= 12 && std::memcmp(data, "RIFF", 4) == 0 && std::memcmp(data + 8, "WEBP", 4) == 0) return "webp";
+    return "bin";
 }
 
 // コンストラクタ
@@ -494,12 +509,26 @@ void GLTFImporter::LoadMaterials(MaterialList &materials, ID3D11Device *device)
                 }
                 else
                 {
+                    // 埋め込みバイト列を取得（マジック判定・書き出しに使用）
+                    const byte *imageData = nullptr;
+                    size_t      imageSize = 0;
+                    if (gltfImage.bufferView >= 0)
+                    {
+                        const tinygltf::BufferView &bv  = gltfModel.bufferViews.at(gltfImage.bufferView);
+                        const tinygltf::Buffer     &buf = gltfModel.buffers.at(bv.buffer);
+                        imageData                       = buf.data.data() + bv.byteOffset;
+                        imageSize                       = bv.byteLength;
+                    }
+
                     // テクスチャファイルパス作成
                     std::filesystem::path textureFilePath(gltfImage.uri);
-                    if (textureFilePath == "")
+                    if (textureFilePath.empty())
                     {
-                        // テクスチャファイル名がなかった場合はマテリアル名とテクスチャタイプから作成
-                        std::string extension(std::filesystem::path(gltfImage.mimeType).filename().string());
+                        // テクスチャファイル名がなかった場合はマテリアル名とテクスチャタイプから作成。
+                        // 拡張子は mimeType が "image/unknown" 等で信用できないため、
+                        // 実データの先頭マジックナンバーから判定する。
+                        const char *extension = DetectImageExtensionFromBytes(
+                            reinterpret_cast<const unsigned char *>(imageData), imageSize);
                         textureFilePath = material.name + "_" + textureType + "." + extension;
                     }
                     textureFilePath = "Textures" / textureFilePath.filename();
