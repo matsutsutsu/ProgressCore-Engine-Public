@@ -12,6 +12,7 @@
 // マウス視点の可否（全画面 or ゲームビュー フォーカス）を InputFacade へ伝えるため
 #include "Engine/Core/App/EngineServices.h"
 #include "Engine/Platform/Input/InputFacade.h"
+#include "Engine/UI/ECS/GameViewportInfo.h" // GameView表示矩形の毎フレーム無効化
 
 // 各ウィンドウのヘッダをインクルード
 #include "Editor/Windows/AssetBrowserWindow.h"
@@ -216,6 +217,11 @@ void EditorWindowManager::Draw(EditorContext &context)
     // 今フレームのフォーカス状態はこの後 GameViewWindow が設定する。
     // 窓が閉じている等で更新されない場合に前フレームの値が残らないよう先にクリア。
     context.gameViewFocused = false;
+
+    // ゲーム画像の表示矩形も同様に毎フレーム無効化。GameView が描いたフレームだけ再び valid=true
+    // になる。全画面(F1)や窓を閉じた時は valid=false のまま → UIクリック判定は恒等写像に戻る。
+    if (context.world && context.world->HasResource<GameViewportInfo>())
+        context.world->GetResource<GameViewportInfo>().valid = false;
 
     if (!_isVisible)
     {

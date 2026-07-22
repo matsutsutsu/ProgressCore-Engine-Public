@@ -13,6 +13,7 @@
 // ★ ピッキング用: スクリーン→レイ変換 と カリング用ワールドAABB
 #include "Engine/Core/Math/ScreenToWorld.h"
 #include "Engine/Graphics/Components/Culling/CullingComponents.h"
+#include "Engine/UI/ECS/GameViewportInfo.h" // UIクリック判定へゲーム画像の表示矩形を橋渡し
 
 #include <json.hpp>
 #include <algorithm>
@@ -180,6 +181,21 @@ void GameViewWindow::DrawContents(EditorContext &context)
     if (context.gameSRV)
     {
         ImGui::Image(context.gameSRV, imageSize);
+
+        // ★ ゲーム画像の表示矩形を UIInputSystem へ橋渡し（UIクリック判定の座標写像用）。
+        //   screenPos は ImGui スクリーン座標(マルチビューポートでは OS デスクトップ基準)なので、
+        //   メインビューポート原点を引いて「メインウィンドウのクライアント座標」へ直す。
+        //   これはプラットフォーム Mouse::GetPositionX/Y と同じ空間。
+        if (context.world && context.world->HasResource<GameViewportInfo>())
+        {
+            const ImVec2 mainPos = ImGui::GetMainViewport()->Pos;
+            GameViewportInfo &vp = context.world->GetResource<GameViewportInfo>();
+            vp.x     = screenPos.x - mainPos.x;
+            vp.y     = screenPos.y - mainPos.y;
+            vp.w     = imageSize.x;
+            vp.h     = imageSize.y;
+            vp.valid = true;
+        }
     }
     else
     {

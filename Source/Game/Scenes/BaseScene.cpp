@@ -28,6 +28,7 @@
 #include "Engine/Physics/Systems/Jolt/JoltCleanupSystem.h"
 
 #include "Engine/UI/ECS/UIDrawList.h" // ECSネイティブUIの描画リスト
+#include "Engine/UI/ECS/GameViewportInfo.h" // GameView表示矩形（UIクリック判定の座標写像用）
 #include "Game/GameFlowState.h"        // ポーズ状態（ロジック停止の判定）
 
 #include "tracy/Tracy.hpp"
@@ -107,6 +108,10 @@ void BaseScene::Initialize()
     //_worldPtr->AddResource<CCL::ECS::SystemManager *>(_ecsContext->GetSystemManager());
 
     _worldPtr->AddResource<TimeContext>();
+
+    // ゲーム画面(RT)の表示矩形。エディタ(GameViewWindow)が毎フレーム書き込み、UIInputSystem が
+    // マウス座標をUI空間へ写像するのに使う。Shipping/全画面では valid=false のまま（恒等写像）。
+    _worldPtr->AddResource<GameViewportInfo>();
 
 
     // システム登録 (派生クラスの処理が走る)。全システムのインスタンス生成・登録がここで走る。

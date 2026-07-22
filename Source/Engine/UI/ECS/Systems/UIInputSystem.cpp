@@ -11,6 +11,7 @@
 
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/UI/ECS/UILayoutUtil.h"
+#include "Engine/UI/ECS/GameViewportInfo.h"
 #include "Engine/Platform/Input/Input.h"
 #include "Engine/Platform/Input/GamePad.h"
 
@@ -39,10 +40,27 @@ void UIInputSystem::Update(float /*dt*/)
 
     // --- 入力（マウス／キー／パッド） ---
     Mouse      &mouse    = input->GetMouse();
-    const float mx       = static_cast<float>(mouse.GetPositionX());
-    const float my       = static_cast<float>(mouse.GetPositionY());
     const bool  pressed  = mouse.IsTriggered(Mouse::BTN_LEFT);
     const bool  released = mouse.IsReleased(Mouse::BTN_LEFT);
+
+    auto       &gfx     = Graphics::Instance();
+    const float screenW = gfx.GetScreenWidth();
+    const float screenH = gfx.GetScreenHeight();
+
+    // マウスの「ウィンドウ・クライアント座標」を UI オーサリング空間(=RT解像度)へ写像する。
+    //   全画面/Shipping: GameViewInfo が無い or invalid → 恒等写像（クライアント==RT で一致）。
+    //   エディタ: GameView がRTをレターボックス縮小して貼るため、その表示矩形で正規化して戻す。
+    float mx = static_cast<float>(mouse.GetPositionX());
+    float my = static_cast<float>(mouse.GetPositionY());
+    if (_world->HasResource<GameViewportInfo>())
+    {
+        const GameViewportInfo &vp = _world->GetResource<GameViewportInfo>();
+        if (vp.valid && vp.w > 0.0f && vp.h > 0.0f)
+        {
+            mx = (mx - vp.x) / vp.w * screenW; // 画像内ローカル → [0..1] → UI空間
+            my = (my - vp.y) / vp.h * screenH;
+        }
+    }
 
     Keyboard &kb = input->GetKeyboard();
     GamePad  &gp = input->GetGamePad();
@@ -52,10 +70,6 @@ void UIInputSystem::Update(float /*dt*/)
     const bool navRight = kb.IsTriggered(VKEY_RIGHT) || gp.IsTriggered(GamePad::BTN_RIGHT);
     const bool confirm  = kb.IsTriggered(VKEY_RETURN) || kb.IsTriggered(VKEY_SPACE) || gp.IsTriggered(GamePad::BTN_A);
     const bool anyDir   = navUp || navDown || navLeft || navRight;
-
-    auto       &gfx     = Graphics::Instance();
-    const float screenW = gfx.GetScreenWidth();
-    const float screenH = gfx.GetScreenHeight();
 
     auto inRect = [&](const UITransformComponent &t) {
         return mx >= t.computedPos.x && mx <= t.computedPos.x + t.computedSize.x &&
@@ -70,7 +84,7 @@ void UIInputSystem::Update(float /*dt*/)
     std::vector<Cand> cands;
 
     ForEachWithID([&](EntityID id, UITransformComponent &t, UIInteractableComponent &inter) {
-        CCL::UI::ComputeUIRect(t, screenW, screenH);
+        CCL::UI::ComputeUIRect(*_world, id, t, screenW, screenH); // 階層(Canvas offset/scale)込みで解決
         if (!inter.interactable) return;
 
         // マウスヒット（最前面優先）

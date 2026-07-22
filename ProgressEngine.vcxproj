@@ -736,6 +736,7 @@
     <ClInclude Include="Source\Game\Logics\Character\Player\Components\OverdriveComponent.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Components\UITransformComponent.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Components\UIImageComponent.h" />
+    <ClInclude Include="Source\Engine\UI\ECS\GameViewportInfo.h" />
     <ClInclude Include="Source\Engine\UI\ECS\UIDrawList.h" />
     <ClInclude Include="Source\Engine\UI\ECS\UIRenderer.h" />
     <ClInclude Include="Source\Engine\UI\ECS\UILayoutUtil.h" />

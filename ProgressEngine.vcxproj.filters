@@ -825,6 +825,9 @@
     <ClInclude Include="Source\Engine\UI\ECS\Components\UIImageComponent.h">
       <Filter>Source\Engine\UI\ECS\Components</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\UI\ECS\GameViewportInfo.h">
+      <Filter>Source\Engine\UI\ECS</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\UI\ECS\UIDrawList.h">
       <Filter>Source\Engine\UI\ECS</Filter>
     </ClInclude>
