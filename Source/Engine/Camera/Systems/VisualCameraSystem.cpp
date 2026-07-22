@@ -3,6 +3,7 @@
 // 実装で必要なものをここで初めてインクルードする
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Platform/Input/Input.h"
+#include "Engine/Camera/Systems/CameraTargetBinding.h" // 役割ベースの target 自動接続
 #include <SimpleMath.h>
 #include <cstdlib>
 
@@ -18,7 +19,13 @@ using namespace DirectX::SimpleMath;
 // =========================================================
 void CameraFollowSystem::Update(float dt)
 {
-    ForEach([&](VirtualCamera &vcam, const CameraBodyFollow &body) {
+    // ★ 追従対象を「役割」で解決(プレハブ/レベル配置でも自動接続される)
+    const CCL::ECS::EntityID playerId = CameraBinding::FindPlayer(_world);
+
+    ForEach([&](VirtualCamera &vcam, CameraBodyFollow &body) {
+        // ★ target が無効なら役割でプレイヤーへ繋ぎ直す
+        CameraBinding::BindIfInvalid(_world, body.target, playerId);
+
         // ターゲットのTransformを取得
         auto *targetTrans = _world->GetComponent<TransformComponent>(body.target);
         if (!targetTrans) return;
@@ -59,7 +66,13 @@ void CameraFollowSystem::Update(float dt)
 // =========================================================
 void CameraLookAtSystem::Update(float dt)
 {
-    ForEach([&](VirtualCamera &vcam, const CameraAimLookAt &aim) {
+    // ★ 注視対象を「役割」で解決(プレハブ/レベル配置でも自動接続される)
+    const CCL::ECS::EntityID playerId = CameraBinding::FindPlayer(_world);
+
+    ForEach([&](VirtualCamera &vcam, CameraAimLookAt &aim) {
+        // ★ target が無効なら役割でプレイヤーへ繋ぎ直す
+        CameraBinding::BindIfInvalid(_world, aim.target, playerId);
+
         auto *targetTrans = _world->GetComponent<TransformComponent>(aim.target);
         if (!targetTrans) return;
 

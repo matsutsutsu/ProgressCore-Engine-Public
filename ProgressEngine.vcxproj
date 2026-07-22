@@ -434,6 +434,7 @@
     <ClInclude Include="Source\Engine\Camera\Components\CameraDollyCartComponent.h" />
     <ClInclude Include="Source\Engine\Camera\Components\VirtualCameraComponents.h" />
     <ClInclude Include="Source\Engine\Camera\Systems\CameraActionTPSSystem.h" />
+    <ClInclude Include="Source\Engine\Camera\Systems\CameraTargetBinding.h" />
     <ClInclude Include="Source\Engine\Camera\Systems\CameraBrainSystem.h" />
     <ClInclude Include="Source\Engine\Camera\Systems\CameraDollySystem.h" />
     <ClInclude Include="Source\Engine\Camera\Systems\CameraListenerSystem.h" />

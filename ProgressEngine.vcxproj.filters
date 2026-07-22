@@ -1857,6 +1857,9 @@
     <ClInclude Include="Source\Engine\Camera\Systems\CameraActionTPSSystem.h">
       <Filter>Source\Engine\Camera\Systems\_Game</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Camera\Systems\CameraTargetBinding.h">
+      <Filter>Source\Engine\Camera\Systems\_Game</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Camera\Components\CameraDollyCartComponent.h">
       <Filter>Source\Engine\Camera\Components</Filter>
     </ClInclude>

@@ -10,7 +10,7 @@
 // ---------------------------------------------------------
 class CameraFollowSystem : public CCL::ECS::IfSystem<CameraFollowSystem,
                                CCL::ECS::Write<VirtualCamera>,
-                               CCL::ECS::Read<CameraBodyFollow>> {
+                               CCL::ECS::Write<CameraBodyFollow>> { // target 自動接続のため Write
   public:
     CameraFollowSystem() : IfSystem("CameraFollowSystem") {}
     void Update(float dt) override; // 中身は書かない
@@ -21,7 +21,7 @@ class CameraFollowSystem : public CCL::ECS::IfSystem<CameraFollowSystem,
 // ---------------------------------------------------------
 class CameraLookAtSystem : public CCL::ECS::IfSystem<CameraLookAtSystem,
                                CCL::ECS::Write<VirtualCamera>,
-                               CCL::ECS::Read<CameraAimLookAt>> {
+                               CCL::ECS::Write<CameraAimLookAt>> { // target 自動接続のため Write
   public:
     CameraLookAtSystem() : IfSystem("CameraLookAtSystem") {}
     void Update(float dt) override;

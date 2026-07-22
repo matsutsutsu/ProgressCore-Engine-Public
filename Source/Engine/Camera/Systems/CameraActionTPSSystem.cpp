@@ -11,6 +11,7 @@
 #include "Engine/Physics/JoltIntegration/IPhysicsAPI.h" // カメラ衝突（地形レイキャスト）
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"
 #include "Game/Logics/Combat/DeadTag.h"
+#include "Engine/Camera/Systems/CameraTargetBinding.h"
 
 #include <memory>
 
@@ -22,26 +23,6 @@
 using namespace CCL::ECS;
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
-
-namespace {
-    // 「役割」でプレイヤーを探す: PlayerComponent を持つ最初のエンティティを返す。
-    //   ハードコードした ID ではなく役割で解決するので、プレハブ/レベルで別々に
-    //   配置しても、save/load やリスポーンで ID が変わっても繋ぎ直せる。
-    EntityID FindPlayerEntity(World* world)
-    {
-        if (!world) return InvalidEntityID;
-        for (auto& chunkPtr : world->GetChunkManager().GetChunks()) {
-            if (!chunkPtr) continue;
-            Chunk* chunk = chunkPtr.get();
-            if (!chunk->HasComponent<PlayerComponent>()) continue;
-            for (size_t i = 0; i < chunk->GetEntityCount(); ++i) {
-                if (chunk->IsEntityDestroyed(i)) continue;
-                return chunk->GetEntityByIndex(i);
-            }
-        }
-        return InvalidEntityID;
-    }
-}
 
 void CameraActionTPSSystem::Initialize()
 {
@@ -100,15 +81,12 @@ void CameraActionTPSSystem::Update(float dt)
     // ★ 追従対象(プレイヤー)を「役割」で毎フレーム解決しておく。
     //    プレハブ/レベルで別々に配置されても、ここで自動接続されるため
     //    以前のようにハードコードで target を焼き込む必要がない。
-    const EntityID playerId = FindPlayerEntity(_world);
+    const EntityID playerId = CameraBinding::FindPlayer(_world);
 
     // ForEachは IfSystem のテンプレート引数(3つのコンポーネント)と完全に一致させる
     ForEach([&](VirtualCamera &vcam, CameraBodyTPSComponent &tps, TransformComponent &trans) {
         // ★ target が無効(未接続 / リロードでID変化 / リスポーン)なら役割で繋ぎ直す。
-        //    有効な相手を指している場合は尊重して上書きしない。
-        if (playerId != InvalidEntityID && !_world->IsEntityValid(tps.target.id)) {
-            tps.target.id = playerId;
-        }
+        CameraBinding::BindIfInvalid(_world, tps.target, playerId);
 
         // 1. 追従対象（プレイヤー）の取得
         auto *targetTrans = _world->GetComponent<TransformComponent>(tps.target.id);
