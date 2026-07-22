@@ -8,6 +8,7 @@
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Platform/Input/Input.h"
 #include "Engine/Scene/SceneManager.h"
+#include "Engine/Serialization/Serializer/LevelSerializer.h"
 #include "Game/Scenes/BaseScene.h"
 
 // APIファイルをインクルード
@@ -579,6 +580,25 @@ int Framework::Run()
 
 						SceneManager::Instance().SaveScene(world, m_editorContext.pendingSaveScenePath);
 						m_editorContext.pendingSaveScenePath.clear();
+					}
+
+					// ③ レベル(ステージ+プレハブ参照)のロード要求
+					if (!m_editorContext.pendingLoadLevelPath.empty())
+					{
+						ZoneScopedN("Editor::ExecutePendingLoadLevel");
+
+						LevelSerializer::LoadLevel(world, m_editorContext.pendingLoadLevelPath);
+						m_editorContext.pendingLoadLevelPath.clear();
+						m_editorContext.ClearSelection();
+					}
+
+					// ④ レベルのセーブ要求
+					if (!m_editorContext.pendingSaveLevelPath.empty())
+					{
+						ZoneScopedN("Editor::ExecutePendingSaveLevel");
+
+						LevelSerializer::SaveLevel(world, m_editorContext.pendingSaveLevelPath);
+						m_editorContext.pendingSaveLevelPath.clear();
 					}
 				}
 			}

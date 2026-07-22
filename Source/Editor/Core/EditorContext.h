@@ -111,6 +111,11 @@ struct EditorContext {
     // シーンセーブ予約パス
     std::string pendingSaveScenePath;
 
+    // レベル(ステージ+プレハブ参照)のロード/セーブ予約パス。
+    //   シーンと同じく「安全な瞬間」に Framework が消化する(遅延実行)。
+    std::string pendingLoadLevelPath;
+    std::string pendingSaveLevelPath;
+
     // ★ 一時停止トグル。
     //   true の間だけゲームロジック(FixedUpdate)の進行を止める「ただの一時停止」。
     //   セーブ/ロードやシーンのバックアップは一切行わない。

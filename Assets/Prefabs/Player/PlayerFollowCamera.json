@@ -4,17 +4,26 @@
             "components": {
                 "CameraBodyTPS": {
                     "baseFov": 70.0,
+                    "collisionEnabled": true,
+                    "collisionHeadBias": 1.0,
+                    "collisionInDamping": 30.0,
+                    "collisionMinDistance": 0.800000011920929,
+                    "collisionOutDamping": 6.0,
+                    "collisionRadius": 0.30000001192092896,
                     "currentLookahead": [
-                        -0.33348944783210754,
+                        -1.0119346380233765,
                         0.0,
-                        -0.34687715768814087
+                        -1.3286523818969727
                     ],
-                    "currentPitch": -30.500009536743164,
-                    "currentYaw": 90.0,
+                    "currentPitch": -30.549978256225586,
+                    "currentYaw": -1414.330078125,
                     "dashFov": 90.0,
                     "distance": 17.5,
                     "fovDamping": 8.5,
                     "isLockOnActive": false,
+                    "lockOnDistanceGain": 0.3499999940395355,
+                    "lockOnMaxExtraDistance": 8.0,
+                    "lockOnMaxLookShift": 3.0,
                     "lockOnPitch": -30.0,
                     "lockOnRotationDamping": 6.0,
                     "lockOnSubjugationRatio": 0.3499999940395355,
@@ -25,11 +34,15 @@
                     "lookaheadMultiplier": 0.20000000298023224,
                     "maxPitch": 80.0,
                     "minPitch": -70.0,
+                    "mouseInvertY": false,
+                    "mouseLookRequiresButton": false,
+                    "mouseSensitivityX": 0.15000000596046448,
+                    "mouseSensitivityY": 0.15000000596046448,
                     "positionDamping": 4.5,
                     "target": 3,
                     "targetOffset": [
                         0.0,
-                        0.0,
+                        5.0,
                         0.0
                     ]
                 },
@@ -48,15 +61,15 @@
                     "isStatic": false,
                     "parent": 2,
                     "position": [
-                        -3.8807387351989746,
-                        8.833580017089844,
-                        -1.8262691497802734
+                        -30.51964569091797,
+                        13.825661659240723,
+                        -74.84752655029297
                     ],
                     "rotation": [
-                        0.2630313038825989,
-                        -2.1086096424483003e-08,
-                        5.748731268795382e-09,
-                        0.9647873044013977
+                        0.22301681339740753,
+                        0.5135531425476074,
+                        -0.1402513086795807,
+                        0.8166126608848572
                     ],
                     "scale": [
                         1.0,
@@ -67,7 +80,7 @@
                 "VirtualCamera": {
                     "blendTime": 1.0,
                     "farClip": 1000.0,
-                    "fov": 70.0000228881836,
+                    "fov": 70.00001525878906,
                     "nearClip": 0.10000000149011612,
                     "priority": 200
                 }

@@ -34,6 +34,7 @@
 #include "Editor/Windows/BuildingScatterWindow.h"
 
 #include "Engine/Serialization/Factory/Prefab.h"
+#include "Engine/Core/Components/PrefabInstanceComponent.h"
 #include "Engine/Platform/Core/FileSystem.h"
 #include <fstream>
 #include <json.hpp>
@@ -100,7 +101,11 @@ void DrawPrefabNodeTree(const std::string &nodeName, const PrefabNode &node, Edi
             if (context.world)
             {
                 DirectX::XMFLOAT3 spawnPos = {0, 5, 0};
-                Prefab::SpawnPrefab(*context.world, node.fullPath, spawnPos);
+                CCL::ECS::EntityID e = Prefab::SpawnPrefab(*context.world, node.fullPath, spawnPos);
+                // ★ プレハブ実体としてマーク。レベル保存で {path, transform} 参照に、
+                //    シーン(ベイク)保存では除外対象になる。
+                if (e != CCL::ECS::InvalidEntityID)
+                    context.world->AddComponent<PrefabInstanceComponent>(e, PrefabInstanceComponent{ node.fullPath });
                 CCL_LOG_INFO(LogCategory::Editor, "Spawned Prefab: %s", displayName.c_str());
             }
         }
@@ -279,6 +284,30 @@ void EditorWindowManager::DrawFileMenu(EditorContext &context)
                 context.ClearSelection();
             }
         }
+
+        ImGui::Separator();
+
+        // ---- レベル = ステージ(ベイク) + プレハブ実体(参照配置) ----
+        //   Open Scene/Save Scene が「ステージ層」だけを扱うのに対し、こちらは
+        //   プレハブ配置(プレイヤー/敵など)を参照ごと一括で保存/復元する。
+        if (ImGui::MenuItem("Open Level..."))
+        {
+            HWND hWnd = Graphics::Instance().GetWindowHandle();
+            if (auto path = FileDialog::OpenPreset("Scene", "Open Level", hWnd))
+            {
+                context.pendingLoadLevelPath = path->string();
+                context.ClearSelection();
+            }
+        }
+        if (ImGui::MenuItem("Save Level..."))
+        {
+            HWND hWnd = Graphics::Instance().GetWindowHandle();
+            if (auto path = FileDialog::SavePreset("Scene", "Save Level", {}, hWnd))
+            {
+                context.pendingSaveLevelPath = path->string();
+            }
+        }
+
         ImGui::Separator();
         if (ImGui::MenuItem("Exit"))
         {

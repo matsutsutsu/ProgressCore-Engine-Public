@@ -443,6 +443,7 @@
     <ClInclude Include="Source\Engine\Core\Components\DestroyTag.h" />
     <ClInclude Include="Source\Engine\Core\Components\NameComponent.h" />
     <ClInclude Include="Source\Engine\Core\Components\PersistentTag.h" />
+    <ClInclude Include="Source\Engine\Core\Components\PrefabInstanceComponent.h" />
     <ClInclude Include="Source\Engine\Core\Components\RenderInterpState.h" />
     <ClInclude Include="Source\Engine\Core\Math\CurveData.h" />
     <ClInclude Include="Source\Engine\Core\Math\Misc.h" />
@@ -649,6 +650,7 @@
     <ClInclude Include="Source\Engine\Serialization\Registry\ComponentRegistry_Editor.h" />
     <ClInclude Include="Source\Engine\Serialization\Serializer\PrefabSerializer.h" />
     <ClInclude Include="Source\Engine\Serialization\Serializer\SceneSerializer.h" />
+    <ClInclude Include="Source\Engine\Serialization\Serializer\LevelSerializer.h" />
     <ClInclude Include="Source\Engine\Timer\TimeScaleSetupSystem.h" />
     <ClInclude Include="Source\Engine\Timer\TimeScaleSystem.h" />
     <ClInclude Include="Source\Engine\Timer\TimeState.h" />
@@ -1484,6 +1486,7 @@
     <ClCompile Include="Source\Engine\Serialization\Registry\ComponentRegistry.cpp" />
     <ClCompile Include="Source\Engine\Serialization\Serializer\PrefabSerializer.cpp" />
     <ClCompile Include="Source\Engine\Serialization\Serializer\SceneSerializer.cpp" />
+    <ClCompile Include="Source\Engine\Serialization\Serializer\LevelSerializer.cpp" />
     <ClCompile Include="Source\Engine\Timer\TimeComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Timer\TimeScaleSetupSystem.cpp" />
     <ClCompile Include="Source\Engine\Timer\TimeScaleSystem.cpp" />

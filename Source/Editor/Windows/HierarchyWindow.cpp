@@ -9,6 +9,7 @@
 #include "Engine/Serialization/Factory/Prefab.h"
 #include "Engine/Serialization/Factory/EntityFactory.h"
 #include "Engine/Serialization/Serializer/SceneSerializer.h"
+#include "Engine/Core/Components/PrefabInstanceComponent.h"
 
 
 HierarchyWindow::HierarchyWindow() : EditorWindow("Hierarchy") {}
@@ -164,6 +165,9 @@ void HierarchyWindow::DrawContents(EditorContext& context)
             const char* prefabPath = (const char*)payload->Data;
             CCL::ECS::EntityID newEntity = Prefab::SpawnPrefab(*context.world, prefabPath);
             if (newEntity != CCL::ECS::InvalidEntityID) {
+                // ★ プレハブ実体としてマーク(レベル保存で参照配置、シーン保存では除外)
+                context.world->AddComponent<PrefabInstanceComponent>(
+                    newEntity, PrefabInstanceComponent{ prefabPath });
                 context.SetSingleSelection(newEntity);
             }
         }

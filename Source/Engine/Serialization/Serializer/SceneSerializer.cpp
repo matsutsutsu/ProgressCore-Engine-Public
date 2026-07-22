@@ -30,6 +30,7 @@
 #include "Engine/Core/Components/DestroyTag.h"
 #include "Engine/Core/Components/PersistentTag.h"
 #include "Engine/Core/Components/NameComponent.h"
+#include "Engine/Core/Components/PrefabInstanceComponent.h"
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/Platform/Core/FileSystem.h"
 #include "Engine/Transform/Components/TransformComponent.h"
@@ -97,6 +98,29 @@ bool SceneSerializer::Serialize(World* world, const std::string& filepath)
     SaveContext saveCtx;
     std::vector<EntityID> targets;
 
+    // ---- 事前収集: プレハブ実体(参照配置)の subtree はベイク保存から除外する ----
+    //   PrefabInstanceComponent を持つルート配下は「レベルファイル側で参照保存」される。
+    //   ここで焼くと二重配置＆プレハブ編集が効かなくなるため、subtree ごと弾く。
+    std::unordered_set<EntityID> prefabExcluded;
+    {
+        auto& chunkManager = world->GetChunkManager();
+        for (const auto& upChunk : chunkManager.GetChunks()) {
+            if (!upChunk) continue;
+            Chunk* chunk = upChunk.get();
+            if (!chunk->HasComponent<PrefabInstanceComponent>()) continue;
+
+            size_t          count = chunk->GetEntityCount();
+            const EntityID* ids = chunk->GetEntityIDs();
+            for (size_t i = 0; i < count; ++i) {
+                if (chunk->IsEntityDestroyed(i)) continue;
+                std::vector<EntityID> sub;
+                std::unordered_set<EntityID> visited;
+                CollectCloneSubtree(world, ids[i], sub, visited, 0);
+                for (EntityID e : sub) prefabExcluded.insert(e);
+            }
+        }
+    }
+
     {
         auto& chunkManager = world->GetChunkManager();
         for (const auto& upChunk : chunkManager.GetChunks()) {
@@ -112,6 +136,7 @@ bool SceneSerializer::Serialize(World* world, const std::string& filepath)
             for (size_t i = 0; i < count; ++i) {
                 if (chunk->IsEntityDestroyed(i)) continue;
                 EntityID id = ids[i];
+                if (prefabExcluded.count(id)) continue; // ★ プレハブ実体は焼かない
                 saveCtx.GetOrRegister(id);  // ★ ここで localIndex 発行
                 targets.push_back(id);
             }
