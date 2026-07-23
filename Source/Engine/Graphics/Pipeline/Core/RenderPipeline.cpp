@@ -30,9 +30,9 @@ void RenderPipeline::BuildDefaultPipeline()
     // 描画パスを実行順に登録
     AddPass<SetupPass>();       // 1. HDR バッファのクリアとバインド
     AddPass<ShadowPass>();      // 2. シャドウマップ生成
-    AddPass<OpaquePass>();      // 3. 不透明ジオメトリ
-    AddPass<NormalPrepass>();   // 3.5 法線プリパス(深度確定後)
-    AddPass<SkyboxPass>();      // 4. スカイボックス
+    AddPass<NormalPrepass>();   // 3. Z(深度)+法線プリパス：不透明の深度を先に確定させる
+    AddPass<OpaquePass>();      // 4. 不透明ジオメトリ（深度確定済み → early-Z で隠れピクセルの PBR を省略）
+    AddPass<SkyboxPass>();      // 5. スカイボックス
     AddPass<SceneColorGrabPass>(); // 4.5 屈折用シーンカラーグラブ
     AddPass<TransparentPass>(); // 5. 半透明
     AddPass<ParticlePass>();    // 6. パーティクル

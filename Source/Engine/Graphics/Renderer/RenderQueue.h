@@ -72,6 +72,7 @@ public:
         _deferredTransparentCommands.clear();
         _shadowCommands.clear();
         _sortKeys.clear();
+        _batchesBuilt = false; // このフレームのソートはまだ未構築
     }
 
     // ECS(ウェイター)から注文を受け取る
@@ -94,6 +95,10 @@ public:
      */
     void SortAndBuildBatches()
     {
+        // フレーム内で最初に呼んだパス（Z プリパス or 不透明パス）だけが実際に構築する。
+        // 以降の呼び出しは同じ _sortKeys を再利用し、二重ソートを避ける。
+        if (_batchesBuilt) return;
+
         _sortKeys.clear();
         _sortKeys.reserve(_opaqueCommands.size());
 
@@ -113,6 +118,7 @@ public:
             _sortKeys.push_back({ (shaderPart << 56) | (modelPart << 24) | matPart, i });
         }
         std::sort(_sortKeys.begin(), _sortKeys.end());
+        _batchesBuilt = true;
     }
 
     // シェフ(ModelRenderer)が読み取るためのゲッター
@@ -127,6 +133,8 @@ public:
 
 private:
     ShaderRegistry* _shaderRegistry = nullptr;
+
+    bool                             _batchesBuilt = false; // 当該フレームで SortAndBuildBatches 済みか
 
     std::vector<RenderCommand>       _opaqueCommands;
     std::vector<RenderKey>           _sortKeys;

@@ -9,16 +9,31 @@
 #include "Engine/Graphics/Renderer/RenderDebugRegistry.h" // デバッグテクスチャ登録
 #include "Engine/Graphics/Renderer/MeshCulling.h" // メッシュ単位カリング（OpaquePass と共有）
 #include "Engine/Graphics/Shader/ShaderResources.h"
+#include "Engine/Core/Math/StringHash.h" // "Grass"_hash 用
 #include <DirectXCollision.h> // メッシュ単位フラスタムカリング用
 #include <wrl/client.h>
 #include <algorithm>
+
+namespace
+{
+    // アルファクリップ(cutout)を行う不透明マテリアルの判定。
+    // Z プリパスの共有 PS はクリップしないため、これらは深度を書かせず
+    // OpaquePass 側の自前描画に委ねる。将来 cutout シェーダーを追加したら
+    // ここに hash を足す（または manifest に cutout フラグを設ける）。
+    inline bool IsCutoutShader(uint32_t shaderHash)
+    {
+        return shaderHash == "Grass"_hash;
+    }
+}
 
 void NormalPrepass::Initialize(const RenderServices& services)
 {
     IRenderPass::Initialize(services);
 
+    // Z プリパスを兼ねるため深度書き込みを有効化（DefaultOpaque = TestAndWrite）。
+    // このパスが不透明ジオメトリの深度を先に確定させ、後続 OpaquePass は early-Z で
+    // 隠れピクセルの重い PBR ピクセルシェーダをスキップできる。
     PipelineStateDesc desc = PipelineStateDesc::DefaultOpaque();
-    desc.depth = DepthState::TestOnly;
     _pso = PipelineState(desc);
 
     _instanceBuffer.Create(services.device, 8192);
@@ -40,6 +55,10 @@ void NormalPrepass::Execute(const RenderFrameContext& ctx)
     RenderQueue* queue = _services->renderQueue;
     ModelRenderer* renderer = _services->modelRenderer;
     if (!queue || !renderer) return;
+
+    // OpaquePass より前に実行されるため、ソート済みキーをここで構築する。
+    // フレーム内で既に構築済みなら RenderQueue 側のガードで no-op になる（二重ソート防止）。
+    queue->SortAndBuildBatches();
 
     Shader* shader = _services->shaders->GetShader("NormalPrepass"_hash, _services->device);
     if (!shader) return;
@@ -78,6 +97,13 @@ void NormalPrepass::Execute(const RenderFrameContext& ctx)
         while (i < sortKeys.size() && sortKeys[i].value == currentBatchKey) { ++batchCount; ++i; }
 
         if (!current.model) continue;
+
+        // アルファクリップ(cutout)マテリアルは Z プリパスから除外する。
+        // このパスの共有 PS はクリップを行わないため、含めると草などの
+        // 透明テクセル部分まで深度を書き込み、背景が抜けて穴になる。
+        // 除外したメッシュは OpaquePass 側で自前の深度書き込み＋clip により
+        // 従来どおり正しく描画される（early-Z の恩恵は無いが cutout では元々ほぼ効かない）。
+        if (IsCutoutShader(current.shaderHash)) continue;
 
         Shader* matShader = _services->shaders->GetShader(current.shaderHash, _services->device);
         if (matShader) {

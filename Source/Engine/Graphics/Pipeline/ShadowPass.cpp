@@ -39,22 +39,52 @@ void ShadowPass::Execute(const RenderFrameContext& ctx)
     D3D11_VIEWPORT oldVP;
     dc->RSGetViewports(&numVP, &oldVP);
 
+    // ------------------------------------------------------------------
+    // ★ カスケード非依存の前計算はループ外で 1 回だけ行う。
+    //    従来はカスケード 3 周それぞれで「シェーダー取得・カスケード行列計算・
+    //    items のコピー＆行列合成＆ソート」を丸ごとやり直しており、CPU を
+    //    3 倍浪費していた（Sponza のように影キャスタが多いと顕著）。
+    // ------------------------------------------------------------------
+    Shader* shader = _services->shaders->GetShader("ShadowMap"_hash, _services->device);
+    if (!shader) return;
+
+    const DirectX::XMFLOAT3 lightDir =
+        _services->lightManager->GetDirectionalLight().direction;
+
+    DirectX::XMMATRIX lightVPs[3];
+    CalculateCascadeMatrices(
+        XMLoadFloat4x4(&ctx.camera->GetView()),
+        ctx.camera->GetFovY(),
+        ctx.camera->GetAspect(),
+        lightDir,
+        shadowMap->params.cascadeSplits,
+        lightVPs);
+
+    // 影キャスタの items 構築（node 合成）とソートは全カスケードで共通なので 1 回だけ。
+    // cascadeMask による絞り込みはカスケードごとのバッチ構築側で行う。
+    _itemsScratch.clear();
+    _itemsScratch.reserve(shadowCommands.size());
+    for (const auto& cmd : shadowCommands) {
+        if (!cmd.mesh) continue;
+        SortItem item;
+        item.mesh = cmd.mesh;
+        item.cascadeMask = cmd.cascadeMask;
+        if (!cmd.mesh->bones.empty() || !cmd.mesh->node) {
+            item.worldMatrix = cmd.worldMatrix;
+        }
+        else {
+            const DirectX::XMMATRIX ml = DirectX::XMLoadFloat4x4(&cmd.mesh->node->globalTransform);
+            const DirectX::XMMATRIX ew = DirectX::XMLoadFloat4x4(&cmd.worldMatrix);
+            DirectX::XMStoreFloat4x4(&item.worldMatrix, ml * ew);
+        }
+        _itemsScratch.push_back(item);
+    }
+    std::sort(_itemsScratch.begin(), _itemsScratch.end(),
+        [](const SortItem& a, const SortItem& b) { return a.mesh < b.mesh; });
+
     for (int cascadeIndex = 0; cascadeIndex < 3; ++cascadeIndex) {
         shadowMap->Activate(dc, cascadeIndex);
         _psoShadow.Apply(dc, _services->renderState);
-
-        // ctx.camera / _services->lightManager を直接参照
-        const DirectX::XMFLOAT3 lightDir =
-            _services->lightManager->GetDirectionalLight().direction;
-
-        DirectX::XMMATRIX lightVPs[3];
-        CalculateCascadeMatrices(
-            XMLoadFloat4x4(&ctx.camera->GetView()),
-            ctx.camera->GetFovY(),
-            ctx.camera->GetAspect(),
-            lightDir,
-            shadowMap->params.cascadeSplits,
-            lightVPs);
 
         GpuData::CbShadow cbData{};
         XMStoreFloat4x4(&cbData.light_view_projection[0], lightVPs[0]);
@@ -71,35 +101,12 @@ void ShadowPass::Execute(const RenderFrameContext& ctx)
         shadowMap->UpdateConstantBuffer(dc, cbData);
         shadowMap->Bind(dc, -1, -1, SLOT_CB_SHADOW);
 
-        Shader* shader = _services->shaders->GetShader("ShadowMap"_hash, _services->device);
-        if (!shader) { shadowMap->Deactivate(dc); return; }
-
         shader->Begin(dc, *_services, ctx);
         dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-        // ★ヒープ確保を避けるため、メンバのスクラッチ領域を使い回す（.clear()はcapacityを保持する）。
-        _itemsScratch.clear();
-        _itemsScratch.reserve(shadowCommands.size());
-
+        // items（_itemsScratch）はループ外で構築＆ソート済み。ここでは cascadeMask で
+        // 絞り込みながらバッチを組むだけ。
         const Model::Mesh* lastBound = nullptr;
-
-        for (const auto& cmd : shadowCommands) {
-            if (!cmd.mesh) continue;
-            SortItem item;
-            item.mesh = cmd.mesh;
-            item.cascadeMask = cmd.cascadeMask;
-            if (!cmd.mesh->bones.empty() || !cmd.mesh->node) {
-                item.worldMatrix = cmd.worldMatrix;
-            }
-            else {
-                const DirectX::XMMATRIX ml = DirectX::XMLoadFloat4x4(&cmd.mesh->node->globalTransform);
-                const DirectX::XMMATRIX ew = DirectX::XMLoadFloat4x4(&cmd.worldMatrix);
-                DirectX::XMStoreFloat4x4(&item.worldMatrix, ml * ew);
-            }
-            _itemsScratch.push_back(item);
-        }
-        std::sort(_itemsScratch.begin(), _itemsScratch.end(),
-            [](const SortItem& a, const SortItem& b) { return a.mesh < b.mesh; });
 
         // batchesも同様にメンバのプールを使い回す。Batch::data の容量も維持されるため
         // 数フレームで確保が収束する（RenderTargetVisualizer の RT プールと同じ考え方）。
@@ -141,6 +148,9 @@ void ShadowPass::Execute(const RenderFrameContext& ctx)
             }
         }
 
+        // インスタンス SRV は毎バッチ同じものを指すので、バインドはループ外で 1 回だけ。
+        _instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
+
         for (size_t bi = 0; bi < _batchCount; ++bi) {
             const Batch& batch = _batchesScratch[bi];
 
@@ -151,7 +161,6 @@ void ShadowPass::Execute(const RenderFrameContext& ctx)
             while (offset < total) {
                 const size_t n = (std::min)(total - offset, _instanceBuffer.GetMaxInstances());
                 _instanceBuffer.Write(dc, batch.data.data() + offset, n);
-                _instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
                 dc->DrawIndexedInstanced(
                     static_cast<UINT>(batch.mesh->data->indices.size()),
                     static_cast<UINT>(n), 0, 0, 0);
