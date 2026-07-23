@@ -37,7 +37,6 @@ void PostProcessManager::Initialize(ID3D11Device* device, UINT width, UINT heigh
     AddEffect<VignetteEffect>();
     AddEffect<ColorGradingEffect>();
 
-
     Resize(device, width, height);
 }
 
@@ -45,9 +44,9 @@ PostProcessManager::~PostProcessManager()
 {
     _effects.clear(); // 各 IPostEffect が自前の RT を解放する
 
-    if (_hdrBuffers[0].IsValid()) ResourceManager::Instance().UnloadRenderTarget(_hdrBuffers[0]);
-    if (_hdrBuffers[1].IsValid()) ResourceManager::Instance().UnloadRenderTarget(_hdrBuffers[1]);
-    if (_outputSDR.IsValid()) ResourceManager::Instance().UnloadRenderTarget(_outputSDR);
+    if (_hdrBuffers[0].IsValid())  ResourceManager::Instance().UnloadRenderTarget(_hdrBuffers[0]);
+    if (_hdrBuffers[1].IsValid())  ResourceManager::Instance().UnloadRenderTarget(_hdrBuffers[1]);
+    if (_outputSDR.IsValid())      ResourceManager::Instance().UnloadRenderTarget(_outputSDR);
     if (_sceneColorCopy.IsValid()) ResourceManager::Instance().UnloadRenderTarget(_sceneColorCopy);
 }
 

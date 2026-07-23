@@ -27,6 +27,7 @@ cbuffer CbMesh : register(REG_CB(SLOT_CB_MATERIAL))
     float useNormalMap;
     float useMetalRoughMap;
     float useOcclusionMap;
+    float useEmissiveMap;
 
     // ★追加: ゴーストとしての透明度。0=完全に透明、1=不透明相当。
     //   目安: 0.3〜0.5 で「幽霊らしい」薄さになる。
@@ -91,7 +92,7 @@ float4 main(VS_OUT pin) : SV_TARGET
     // ------------------------------------------------------------
     // 3. 最終合成とエフェクト
     // ------------------------------------------------------------
-    float3 emissive = EmissiveMap.Sample(LinearSampler, pin.texcoord).rgb * emissiveColor;
+    float3 emissive = useEmissiveMap > 0.5f ? EmissiveMap.Sample(LinearSampler, pin.texcoord).rgb * emissiveColor : float3(0.0f, 0.0f, 0.0f);
     float3 finalColor = ambientIBL + light.diffuse + light.specular + emissive;
 
     if (gFogRimParams.y > 0.0f)

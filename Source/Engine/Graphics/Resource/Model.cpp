@@ -221,6 +221,11 @@ Model::Model(ID3D11Device *device, const char *filename, float sampleRate)
         if (src.emissiveMap)
         {
             dst.data->SetTexture("EmissiveMap"_hash, ResourceManager::Instance().RegisterTexture(src.emissiveMap));
+            dst.data->SetScalar("useEmissiveMap"_hash, 1.0f); // ★フラグON
+        }
+        else
+        {
+            dst.data->SetScalar("useEmissiveMap"_hash, 0.0f); // ★フラグOFF
         }
 
         if (src.occlusionMap)
@@ -666,6 +671,7 @@ std::shared_ptr<Model> Model::CreateFromData(ID3D11Device *device,
         matData->SetScalar("useNormalMap"_hash, 0.0f);
         matData->SetScalar("useMetalRoughMap"_hash, 0.0f);
         matData->SetScalar("useOcclusionMap"_hash, 0.0f);
+        matData->SetScalar("useEmissiveMap"_hash, 0.0f);
 
         model->materials[0].data = matData;
     }

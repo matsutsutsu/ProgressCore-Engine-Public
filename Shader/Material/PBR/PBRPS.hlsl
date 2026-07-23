@@ -18,6 +18,7 @@ cbuffer CbMesh : register(REG_CB(SLOT_CB_MATERIAL))
     float useNormalMap;
     float useMetalRoughMap;
     float useOcclusionMap;
+    float useEmissiveMap;
 };
 
 Texture2D AlbedoMap : register(REG_SRV(SLOT_SRV_MAT_TEX0));
@@ -32,6 +33,8 @@ SamplerState LinearSampler : register(REG_SMP(SLOT_SMP_LINEAR));
 // ==============================================================================
 float4 main(VS_OUT pin) : SV_TARGET
 {
+
+
     PBRSurfaceInfo surf;
     surf.pos = pin.position.xyz;
     surf.viewDir = normalize(cameraPosition.xyz - surf.pos);
@@ -78,7 +81,7 @@ float4 main(VS_OUT pin) : SV_TARGET
 
     // IBLによる環境光（間接光）を計算
     float3 ambientIBL = CalculateIBL(surf);
-    
+
     // ==============================================================================
     // マクロオクルージョン（影の中のIBLを減衰させて、影をクッキリさせる）
     // shadowWeight が 0.0 (影) のときは IBLを 20% (0.2) に落とし、
@@ -86,11 +89,11 @@ float4 main(VS_OUT pin) : SV_TARGET
     // ==============================================================================
     float skyOcclusion = lerp(0.2f, 1.0f, shadowWeight);
     ambientIBL *= skyOcclusion;
-    
+
     // ------------------------------------------------------------
     // 3. 最終合成とエフェクト
     // ------------------------------------------------------------
-    float3 emissive = EmissiveMap.Sample(LinearSampler, pin.texcoord).rgb * emissiveColor;
+    float3 emissive = useEmissiveMap > 0.5f ? EmissiveMap.Sample(LinearSampler, pin.texcoord).rgb * emissiveColor : float3(0.0f, 0.0f, 0.0f);
     
     // 直接光 ＋ 環境光 ＋ 発光
     float3 finalColor = ambientIBL + light.diffuse + light.specular + emissive;
@@ -109,6 +112,7 @@ float4 main(VS_OUT pin) : SV_TARGET
     
     // フォグ
     finalColor = ApplyHeightFog(surf.pos, cameraPosition.xyz, finalColor, LinearSampler, surf.normal);
+
 
     return float4(finalColor, alpha);
 }

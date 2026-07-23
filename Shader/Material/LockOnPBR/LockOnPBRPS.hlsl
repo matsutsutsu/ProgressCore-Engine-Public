@@ -19,6 +19,7 @@ cbuffer CbMesh : register(REG_CB(SLOT_CB_MATERIAL))
     float  useNormalMap;
     float  useMetalRoughMap;
     float  useOcclusionMap;
+    float  useEmissiveMap;
 
     float  lockOnIntensity;
     float  pulseSpeed;
@@ -63,7 +64,7 @@ float4 main(VS_OUT pin) : SV_TARGET
     float3 ambientIBL = CalculateIBL(surf);
     ambientIBL *= lerp(0.2f, 1.0f, shadowWeight);
 
-    float3 emissive = EmissiveMap.Sample(LinearSampler, pin.texcoord).rgb * emissiveColor;
+    float3 emissive = useEmissiveMap > 0.5f ? EmissiveMap.Sample(LinearSampler, pin.texcoord).rgb * emissiveColor : float3(0.0f, 0.0f, 0.0f);
     float3 finalColor = ambientIBL + light.diffuse + light.specular + emissive;
 
     if (lockOnIntensity > 0.0f)

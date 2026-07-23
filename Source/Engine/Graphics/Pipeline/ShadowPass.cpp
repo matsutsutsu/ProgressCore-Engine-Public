@@ -77,13 +77,9 @@ void ShadowPass::Execute(const RenderFrameContext& ctx)
         shader->Begin(dc, *_services, ctx);
         dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-        struct SortItem {
-            const Model::Mesh* mesh;
-            DirectX::XMFLOAT4X4 worldMatrix;
-            uint8_t              cascadeMask;
-        };
-        std::vector<SortItem> items;
-        items.reserve(shadowCommands.size());
+        // ★ヒープ確保を避けるため、メンバのスクラッチ領域を使い回す（.clear()はcapacityを保持する）。
+        _itemsScratch.clear();
+        _itemsScratch.reserve(shadowCommands.size());
 
         const Model::Mesh* lastBound = nullptr;
 
@@ -100,16 +96,24 @@ void ShadowPass::Execute(const RenderFrameContext& ctx)
                 const DirectX::XMMATRIX ew = DirectX::XMLoadFloat4x4(&cmd.worldMatrix);
                 DirectX::XMStoreFloat4x4(&item.worldMatrix, ml * ew);
             }
-            items.push_back(item);
+            _itemsScratch.push_back(item);
         }
-        std::sort(items.begin(), items.end(),
+        std::sort(_itemsScratch.begin(), _itemsScratch.end(),
             [](const SortItem& a, const SortItem& b) { return a.mesh < b.mesh; });
 
-        struct Batch { const Model::Mesh* mesh = nullptr; std::vector<InstanceData> data; };
-        std::vector<Batch> batches;
-        batches.reserve(16);
+        // batchesも同様にメンバのプールを使い回す。Batch::data の容量も維持されるため
+        // 数フレームで確保が収束する（RenderTargetVisualizer の RT プールと同じ考え方）。
+        _batchCount = 0;
+        auto acquireBatch = [&]() -> Batch& {
+            if (_batchCount >= _batchesScratch.size())
+                _batchesScratch.emplace_back();
+            Batch& b = _batchesScratch[_batchCount++];
+            b.mesh = nullptr;
+            b.data.clear();
+            return b;
+        };
 
-        for (const auto& info : items) {
+        for (const auto& info : _itemsScratch) {
             if (!info.mesh || !info.mesh->data) continue;
             if ((info.cascadeMask & (1 << cascadeIndex)) == 0) continue;
 
@@ -126,18 +130,19 @@ void ShadowPass::Execute(const RenderFrameContext& ctx)
                 dc->DrawIndexed(static_cast<UINT>(info.mesh->data->indices.size()), 0, 0);
             }
             else {
-                if (!batches.empty() && batches.back().mesh == info.mesh) {
-                    batches.back().data.push_back({ info.worldMatrix });
+                if (_batchCount > 0 && _batchesScratch[_batchCount - 1].mesh == info.mesh) {
+                    _batchesScratch[_batchCount - 1].data.push_back({ info.worldMatrix });
                 }
                 else {
-                    Batch b; b.mesh = info.mesh;
+                    Batch& b = acquireBatch();
+                    b.mesh = info.mesh;
                     b.data.push_back({ info.worldMatrix });
-                    batches.push_back(std::move(b));
                 }
             }
         }
 
-        for (const auto& batch : batches) {
+        for (size_t bi = 0; bi < _batchCount; ++bi) {
+            const Batch& batch = _batchesScratch[bi];
 
             UINT stride = sizeof(ModelResource::Vertex), zero = 0;
             dc->IASetVertexBuffers(0, 1, batch.mesh->data->vertexBuffer.GetAddressOf(), &stride, &zero);
