@@ -11,6 +11,7 @@
 #include "Game/Logics/GameEvent/GameEvents.h"
 #include "Engine/Timer/TimeState.h"
 #include "Engine/Graphics/Components/Impact/JustEvadeEffectComponent.h"
+#include "Engine/Physics/Components/RigidBody/JoltRigidBodyComponent.h" // 壁/地形との接触を除外するため
 
 #include <cstdio>
 #ifdef ENABLE_EDITOR
@@ -234,6 +235,17 @@ void JustEvadeSystem::CheckJustEvade(EntityID playerCandidate, EntityID otherCan
 
     // 3. 【ガード条件】同じ敵に対する多段発動を防ぐ (既存のブラックリスト機能)
     if (evade->lastEvadedTarget == otherCandidate) return;
+
+    // 3.5【ガード条件】壁・地形など「静止した非攻撃物」との接触では絶対に成立させない。
+    //   これが無いと、落下防止の見えない壁(INVISIBLE_WALL)や地形(NON_MOVING)に
+    //   ダッシュで突っ込んだだけでジャスト回避が誤発動し、接近(isApproaching)で
+    //   内側へ強制移動させられてしまう。ドローンやボスの攻撃は別レイヤーなので通過する。
+    if (auto *otherBody = _world->GetComponent<JoltRigidbodyComponent>(otherCandidate))
+    {
+        if (otherBody->objectLayer == PhysicsLayers::NON_MOVING ||
+            otherBody->objectLayer == PhysicsLayers::INVISIBLE_WALL)
+            return;
+    }
 
      // 相手がドローンで、かつ「攻撃中」でなければ成立させない
     auto *otherDrone = _world->GetComponent<DroneComponent>(otherCandidate);
