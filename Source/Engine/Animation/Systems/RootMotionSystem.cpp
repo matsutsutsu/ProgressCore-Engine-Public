@@ -8,22 +8,17 @@ using namespace DirectX::SimpleMath;
 
 void RootMotionSystem::Update(float /*rawDt*/)
 {
-    ForEachWithID([&](EntityID                          id,
-                RootMotionComponent             &rm,
+    ForEach([&](RootMotionComponent             &rm,
                 CharacterMovementInputComponent &input,
                 const AnimatorComponent         &animator,
                 const AnimStateMachineComponent &fsm,
                 const TransformComponent        &trans,
                 const TimeStateComponent        &time,
                 const ModelComponent            &modelComp) {
-        // ダッシュはプレイヤー限定の任意コンポーネント。持っていれば参照する。
-        bool isDashing = false;
-        if (const auto *dash = _world->GetComponent<DashComponent>(id))
-        {
-            isDashing = dash->isDashing;
-        }
-
-        if (isDashing)
+        // 外部システム（ダッシュ等の移動アクション）がこのフレームの移動を制御中なら、
+        // root motion による移動は一切適用しない。「いつ制御中か」の判断はゲーム側が
+        // externallyDriven に設定する。ここでは特定機構（ダッシュ）を知らない。
+        if (rm.externallyDriven)
         {
             rm.enabled                = false;
             rm.lastEvaluatedSeq       = nullptr;

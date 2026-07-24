@@ -2,6 +2,7 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
+#include "Engine/Animation/Components/RootMotionComponent.h" // ダッシュ中の外部移動制御を伝える
 #include "Game/Logics/AI/Battle/BattleContext.h"
 
 #include <algorithm>
@@ -29,10 +30,15 @@ void PlayerDashSystem::Update(float rawDt)
     const BattleContext *battle  = _world->HasResource<BattleContext>() ? &_world->GetResource<BattleContext>() : nullptr;
     const TimeContext   *timeCtx = _world->HasResource<TimeContext>() ? &_world->GetResource<TimeContext>() : nullptr;
 
-    ForEach([&](CharacterMovementInputComponent &input,
+    ForEachWithID([&](EntityID                        id,
+                CharacterMovementInputComponent &input,
                 DashComponent                   &dash,
                 const TransformComponent        &trans,
                 TimeStateComponent              &time) {
+        // ルートモーション対応キャラなら、後段でダッシュ状態を「外部移動制御中」として伝える。
+        //   これにより RootMotionSystem はダッシュを知らない汎用システムに保てる。
+        RootMotionComponent *rm = _world->GetComponent<RootMotionComponent>(id);
+
         // ============================================================
         // 0. 接近（ジャスト回避スロー中にボスへ詰める「接近専用時間」）
         //    通常ダッシュより優先。企画: 殴れる位置に着くための時間であり、
@@ -40,6 +46,9 @@ void PlayerDashSystem::Update(float rawDt)
         // ============================================================
         if (dash.isApproaching)
         {
+            // 接近は非ダッシュ扱い（従来どおり root motion 抑制の対象外）。
+            if (rm) rm->externallyDriven = false;
+
             input.dashRequested = false; // 接近中はダッシュ入力を握り潰す
 
             // 接近先(ボス)が居なければ打ち切る
@@ -149,6 +158,9 @@ void PlayerDashSystem::Update(float rawDt)
             // Dashしていない時は通常速度で動かすよう指示
             input.overrideSpeed = -1.0f;
         }
+
+        // ダッシュ中は「外部が移動を制御中」を root motion 側へ伝える（＝抽出を止めさせる）。
+        if (rm) rm->externallyDriven = dash.isDashing;
 
         // 次のフレームのために要求フラグを落とす
         input.dashRequested = false;

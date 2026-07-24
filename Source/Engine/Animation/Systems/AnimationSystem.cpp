@@ -312,9 +312,16 @@ void AnimationSystem::ComputeAndApplyPose(CCL::ECS::EntityID id, AnimatorCompone
         model->ComputeAnimation(animIndex, animator.currentTimer, animator.poseBufferA);
     }
 
-    // ★ Force Root Lock (真のルートボーンのピン留め。RootMotionComponent.enabled 時のみ)
+    // ★ Force Root Lock (真のルートボーンのピン留め)
+    //   ルートモーション対応キャラ(RootMotionComponent 保持)は、
+    //   「位置の権威は常に Transform 側」なので enabled に関係なく必ずピン留めする。
+    //     ・enabled  : 抽出した差分が Transform を動かす → ピンしないと二重に前進する
+    //     ・disabled : プログラム(ダッシュ等)が Transform を動かす → ピンしないと
+    //                  クリップに焼き込まれた前進でモデルだけが滑っていく
+    //   ※以前は enabled 時のみピン留めしていたため、ブレンド中(下の分岐では無条件に
+    //     ピン留め)は正常なのに、ブレンド終了と同時にダッシュのモデルが滑り出していた。
     auto *rootMotion = _world->GetComponent<RootMotionComponent>(id);
-    if (rootMotion && rootMotion->enabled && !animator.poseBufferA.empty())
+    if (rootMotion && !animator.poseBufferA.empty())
         PinRootMotionNode(model, animIndex, rootNodeIndex, animator.poseBufferA, animator.lockVerticalRootMotion);
 
     // 最終確定したポーズを行列へ反映（SetNodePosesはここに1回だけ！）

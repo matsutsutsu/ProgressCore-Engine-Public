@@ -6,12 +6,11 @@
 #include "Engine/Animation/Core/AnimStateMachine.h"
 #include "Engine/Physics/Components/Character/CharacterMovementInputComponent.h"
 #include "Engine/Animation/Components/RootMotionComponent.h"
-#include "Game/Logics/Character/Player/Components/DashComponent.h"
 #include "Engine/Graphics/Components/Core/ModelComponent.h" // ★追加
 
-// ★ DashComponent はプレイヤー専用のためフィルタに含めない（含めるとダッシュを
-//   持たないエンティティ＝ボス等が丸ごと対象外になってしまう）。存在すれば
-//   Update() 内で GetComponent により任意で参照する（CharacterAnimSyncSystem と同じ方式）。
+// ★ このシステムは特定ゲーム機構（ダッシュ等）を一切知らない汎用システム。
+//   「外部が移動を制御中だから root motion を止めたい」という判断は
+//   RootMotionComponent.externallyDriven（ゲーム側の移動アクションが設定）で受け取る。
 class RootMotionSystem : public CCL::ECS::IfSystem<RootMotionSystem,
                              CCL::ECS::Write<RootMotionComponent>,
                              CCL::ECS::Write<CharacterMovementInputComponent>,

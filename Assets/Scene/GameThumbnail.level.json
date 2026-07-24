@@ -1,0 +1,102 @@
+{
+    "instances": [
+        {
+            "position": [
+                0.0,
+                5.0,
+                0.0
+            ],
+            "prefab": "./Assets\\Prefabs\\Light\\GameLighting.json",
+            "rotation": [
+                0.699999988079071,
+                0.0,
+                -0.5,
+                0.9200000166893005
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "position": [
+                3.913203716278076,
+                1.6162967681884766,
+                -4.635127067565918
+            ],
+            "prefab": "./Assets\\Prefabs\\Camera\\FreeCamera.json",
+            "rotation": [
+                -0.03749125078320503,
+                -0.356451153755188,
+                -0.014316540211439133,
+                0.9334516525268555
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "position": [
+                0.0,
+                8.399999618530273,
+                0.0
+            ],
+            "prefab": "./Assets\\Prefabs\\Stage\\ColliderTorus.json",
+            "rotation": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "scale": [
+                120.0,
+                200.0,
+                120.0
+            ]
+        },
+        {
+            "position": [
+                0.0,
+                -0.6790000200271606,
+                0.0
+            ],
+            "prefab": "./Assets\\Prefabs\\Player\\Player.json",
+            "rotation": [
+                -4.389789521762271e-35,
+                0.9933998584747314,
+                -5.0686639838137686e-36,
+                0.11470318585634232
+            ],
+            "scale": [
+                3.5,
+                3.5,
+                3.5
+            ]
+        },
+        {
+            "position": [
+                0.0,
+                5.0,
+                0.0
+            ],
+            "prefab": "./Assets\\Prefabs\\Particles\\StageParticle.json",
+            "rotation": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        }
+    ],
+    "scene": "GameThumbnail.scene.json",
+    "type": "level",
+    "version": 1
+}

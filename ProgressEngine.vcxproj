@@ -612,8 +612,6 @@
     <ClInclude Include="Source\Engine\Physics\Systems\Character\JoltCharacterSetupSystem.h" />
     <ClInclude Include="Source\Engine\Physics\Systems\Character\JoltCharacterUpdateSystem.h" />
     <ClInclude Include="Source\Engine\Physics\Systems\Collision\JoltCollisionEventSystem.h" />
-    <ClInclude Include="Source\Engine\Physics\Systems\Collision\JoltMeshColliderComponent.h" />
-    <ClInclude Include="Source\Engine\Physics\Systems\Collision\JoltSphereColliderComponent.h" />
     <ClInclude Include="Source\Engine\Physics\Systems\Jolt\JoltBodySetupSystem.h" />
     <ClInclude Include="Source\Engine\Physics\Systems\Jolt\JoltCleanupSystem.h" />
     <ClInclude Include="Source\Engine\Physics\Systems\Jolt\JoltDebugDrawSystem.h" />

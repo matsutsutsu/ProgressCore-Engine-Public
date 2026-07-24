@@ -14,7 +14,7 @@ class JoltCharacterDebugDrawSystem : public CCL::ECS::IfSystem<JoltCharacterDebu
     JoltCharacterDebugDrawSystem()
         : IfSystem("JoltCharacterDebugDrawSystem")
     {
-        this->isDebugVisible = true;
+        //this->isDebugVisible = true;
     }
     void Update(float dt) override;
 };

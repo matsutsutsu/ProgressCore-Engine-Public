@@ -13,7 +13,7 @@ class JoltBoxDebugDrawSystem : public CCL::ECS::IfSystem<JoltBoxDebugDrawSystem,
                                      CCL::ECS::Read<JoltBoxColliderComponent>> {
 public:
     JoltBoxDebugDrawSystem() : IfSystem("JoltBoxDebugDrawSystem") {
-        this->isDebugVisible = true;
+        //this->isDebugVisible = true;
     }
     void Update(float dt) override;
 };
@@ -24,7 +24,7 @@ class JoltSphereDebugDrawSystem : public CCL::ECS::IfSystem<JoltSphereDebugDrawS
                                          CCL::ECS::Read<JoltSphereColliderComponent>> {
 public:
     JoltSphereDebugDrawSystem() : IfSystem("JoltSphereDebugDrawSystem") {
-        this->isDebugVisible = true;
+        //this->isDebugVisible = true;
     }
     void Update(float dt) override;
 };
@@ -35,7 +35,7 @@ class JoltCapsuleDebugDrawSystem : public CCL::ECS::IfSystem<JoltCapsuleDebugDra
                                          CCL::ECS::Read<JoltCapsuleColliderComponent>> {
 public:
     JoltCapsuleDebugDrawSystem() : IfSystem("JoltCapsuleDebugDrawSystem") {
-        this->isDebugVisible = true;
+        //this->isDebugVisible = true;
     }
     void Update(float dt) override;
 };
