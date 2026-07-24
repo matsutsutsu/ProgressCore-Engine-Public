@@ -3,6 +3,8 @@
 #include "Engine/Graphics/Shader/Shared/ShaderShared.h"  // _ASSERT_EXPR, HRTrace
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Platform/Core/Logger.h"
+#include <dxgi1_6.h> // IDXGIFactory6::EnumAdapterByGpuPreference (高性能GPUの明示選択)
+#pragma comment(lib, "dxgi.lib")
 
 // CbScene 構造体（GraphicsDevice が物理バッファを持ち、Graphics が内容を埋める）
 // バッファサイズだけ知れればよいため private static constexpr で宣言
@@ -17,6 +19,41 @@ void GraphicsDevice::Initialize(HWND hWnd)
     _height = static_cast<UINT>(rc.bottom - rc.top);
 
     HRESULT hr = S_OK;
+
+    // ---- 高性能GPU(dGPU)の明示選択 ----
+    // ハイブリッドグラフィックス(Optimus/PowerXpress)搭載PCでは、アダプタに
+    // nullptr を渡すとOS/ドライバの省電力ヒューリスティックで内蔵GPU(Intel等)が
+    // 選ばれてしまうことがある。IDXGIFactory6::EnumAdapterByGpuPreference で
+    // DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE を明示指定し、確実に dGPU を掴む。
+    // 非対応OS(Windows 10 1803未満)やアダプタ列挙に失敗した場合は
+    // chosenAdapter が null のままとなり、従来通りの既定アダプタにフォールバックする。
+    Microsoft::WRL::ComPtr<IDXGIAdapter1> chosenAdapter;
+    {
+        Microsoft::WRL::ComPtr<IDXGIFactory1> factory1;
+        if (SUCCEEDED(CreateDXGIFactory1(IID_PPV_ARGS(factory1.GetAddressOf()))))
+        {
+            Microsoft::WRL::ComPtr<IDXGIFactory6> factory6;
+            if (SUCCEEDED(factory1.As(&factory6)))
+            {
+                factory6->EnumAdapterByGpuPreference(
+                    0, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE,
+                    IID_PPV_ARGS(chosenAdapter.GetAddressOf()));
+            }
+        }
+
+        if (chosenAdapter)
+        {
+            DXGI_ADAPTER_DESC1 adapterDesc{};
+            chosenAdapter->GetDesc1(&adapterDesc);
+            CCL_LOG_INFO(LogCategory::Render,
+                "[GraphicsDevice] High-performance GPU selected: %ls", adapterDesc.Description);
+        }
+        else
+        {
+            CCL_LOG_INFO(LogCategory::Render,
+                "[GraphicsDevice] IDXGIFactory6 unavailable; falling back to default adapter selection.");
+        }
+    }
 
     // ---- デバイス & スワップチェーン ----
     {
@@ -42,9 +79,13 @@ void GraphicsDevice::Initialize(HWND hWnd)
         desc.Windowed = TRUE;
         desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
+        // アダプタを明示指定する場合、DriverType は D3D_DRIVER_TYPE_UNKNOWN でなければならない
+        // (pAdapter != nullptr と D3D_DRIVER_TYPE_HARDWARE の同時指定は E_INVALIDARG になる)。
+        const D3D_DRIVER_TYPE driverType = chosenAdapter ? D3D_DRIVER_TYPE_UNKNOWN : D3D_DRIVER_TYPE_HARDWARE;
+
         D3D_FEATURE_LEVEL featureLevel;
         hr = D3D11CreateDeviceAndSwapChain(
-            nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr,
+            chosenAdapter.Get(), driverType, nullptr,
             createDeviceFlags, featureLevels, ARRAYSIZE(featureLevels),
             D3D11_SDK_VERSION, &desc,
             _swapChain.GetAddressOf(), _device.GetAddressOf(),

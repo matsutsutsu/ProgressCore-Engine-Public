@@ -19,6 +19,18 @@
 //#pragma comment(lib, "SimulationController_static_64.lib")
 
 
+// ===================================================================
+// ハイブリッドGPU(Optimus/PowerXpress)搭載PCで、Windows が内蔵GPU(Intel等)を
+// 自動選択してしまう問題への対策。ドライバはexe側がこのシンボルをexportして
+// いるかを見て「高性能GPUを使いたい」という意思表示だと解釈する。
+// GraphicsDevice::Initialize 側の IDXGIFactory6::EnumAdapterByGpuPreference
+// による明示的なアダプタ選択と合わせた二重対策（こちらはドライバ側のフォールバック）。
+// ===================================================================
+extern "C" {
+    __declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
+    __declspec(dllexport) DWORD AmdPowerXpressRequestHighPerformance = 0x00000001;
+}
+
 #define SCREEN_MODE false // true: フルスクリーン、false: ウィンドウモード
 
 

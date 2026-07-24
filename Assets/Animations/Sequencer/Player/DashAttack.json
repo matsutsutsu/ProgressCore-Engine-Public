@@ -37,7 +37,7 @@
                 "z": 0.0
             },
             "radius": 1.0,
-            "startTime": 0.25,
+            "startTime": 0.21666666865348816,
             "stringParam": "Weapon_R",
             "type": 5
         },
@@ -57,7 +57,7 @@
                 "z": 0.0
             },
             "radius": 1.0,
-            "startTime": 0.25,
+            "startTime": 0.21666666865348816,
             "stringParam": "Weapon_R",
             "type": 0
         },
@@ -77,7 +77,7 @@
                 "z": 0.0
             },
             "radius": 1.0,
-            "startTime": 0.25,
+            "startTime": 0.23000000417232513,
             "stringParam": "Weapon_R",
             "type": 8
         }

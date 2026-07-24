@@ -13,7 +13,7 @@ class JoltBoxDebugDrawSystem : public CCL::ECS::IfSystem<JoltBoxDebugDrawSystem,
                                      CCL::ECS::Read<JoltBoxColliderComponent>> {
 public:
     JoltBoxDebugDrawSystem() : IfSystem("JoltBoxDebugDrawSystem") {
-        //this->isDebugVisible = true;
+        //this->isDebugVisible = true;        
     }
     void Update(float dt) override;
 };
