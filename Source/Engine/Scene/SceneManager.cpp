@@ -162,6 +162,13 @@ void SceneManager::Clear()
 		delete currentScene;
 		currentScene = nullptr;
 	}
+
+	// SceneManager 自身は Meyer's Singleton（static ローカル変数）のため、
+	// このインスタンスの実体の破棄は wWinMain リターン後の静的破棄タイミングまで
+	// 起きない＝Graphics::Shutdown()（デバイス破棄・リークレポート）より後になる。
+	// _fadeQuad はここで明示的に解放しておかないと、GraphicsDevice::Shutdown()
+	// の ReportLiveDeviceObjects で「真のリーク」として誤検出されてしまう。
+	_fadeQuad.reset();
 }
 
 
