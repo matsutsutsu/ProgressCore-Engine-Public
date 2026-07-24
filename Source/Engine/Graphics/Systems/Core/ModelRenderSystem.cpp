@@ -5,6 +5,7 @@
 #include "Engine/Graphics/RHI/Graphics.h" // DeviceContext取得用
 #include "Engine/Graphics/Renderer/ModelRenderer.h"
 #include "Engine/Graphics/Resource/Model.h" // Modelポインタ用
+#include "Engine/Graphics/Components/Core/NoRenderTag.h" // 当たり判定専用ジオメトリの除外用
 #include "Engine/Graphics/Shader/ShaderResources.h"
 #include <DirectXCollision.h> // 視錐台カリング用
 
@@ -18,7 +19,12 @@
 using namespace CCL::ECS;
 using namespace DirectX;
 
-ModelRenderSystem::ModelRenderSystem() : IfSystem("ModelRenderSystem"){}
+ModelRenderSystem::ModelRenderSystem() : IfSystem("ModelRenderSystem")
+{
+    // ★ 当たり判定専用ジオメトリ(NoRenderTag)は走査対象から除外する。
+    //    描画ループ側に分岐を足さずに「透明な当たり判定」を実現する。
+    SetExclude<NoRenderTag>();
+}
 
 void ModelRenderSystem::Update(float dt)
 {

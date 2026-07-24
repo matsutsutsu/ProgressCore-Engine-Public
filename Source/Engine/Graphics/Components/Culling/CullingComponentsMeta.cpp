@@ -4,6 +4,7 @@
 ///        インスペクタ表示のみを自動有効化する。
 
 #include "CullingComponents.h"
+#include "Engine/Graphics/Components/Core/NoRenderTag.h" // 当たり判定専用ジオメトリ用タグ
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
 
@@ -70,3 +71,30 @@ template <> struct ComponentMeta<VisibilityComponent> {
 };
 REGISTER_COMPONENT(VisibilityComponent, "Visibility")
 REGISTER_COMPONENT_EDITOR_GUI(VisibilityComponent)
+
+// ===========================================================================
+// NoRenderTag
+//   「描画しない（当たり判定専用）」を表すタグ。付いていること自体が意味を持つ
+//   ためフィールドは持たない。見えない壁/床に使う。
+//   ★ 作者が付ける設定データなので isSerializable = true（シーン/プレハブに保存）。
+// ===========================================================================
+template <> struct ComponentMeta<NoRenderTag> {
+    CCL_META_USING_THIS(NoRenderTag)
+
+    static constexpr const char* displayName    = "No Render (Collider Only)";
+    static constexpr const char* category       = CCL::Categories::Rendering;
+    static constexpr int         sortPriority   = 920;
+    static constexpr bool        hiddenInInspector = false;
+    static constexpr bool        hasCustomGui   = false;
+    static constexpr bool        isSerializable = true; // ★保存する（次回ロードでも透明のまま）
+
+    static bool CustomGui(NoRenderTag&, unsigned long long, void*) { return false; }
+
+    static const std::vector<FieldDescriptor>& Fields() {
+        // フィールド無し（タグの有無だけが意味を持つ）
+        static const std::vector<FieldDescriptor> fields = {};
+        return fields;
+    }
+};
+REGISTER_COMPONENT(NoRenderTag, "NoRenderTag")
+REGISTER_COMPONENT_EDITOR_GUI(NoRenderTag)

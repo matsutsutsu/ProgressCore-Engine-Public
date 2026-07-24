@@ -27,7 +27,7 @@
                     ],
                     "isSensor": false,
                     "motionType": 1,
-                    "objectLayer": 2,
+                    "objectLayer": 4,
                     "restitution": 0.0,
                     "useCCD": false
                 },

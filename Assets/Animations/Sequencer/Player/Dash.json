@@ -1,0 +1,23 @@
+{
+    "duration": 0.6666666865348816,
+    "events": [],
+    "rootMotionCurve": {
+        "color": 4286643968,
+        "keys": [],
+        "name": "Curve",
+        "postInfinity": 0,
+        "preInfinity": 0,
+        "visible": true
+    },
+    "sequenceName": "Dash",
+    "speedCurve": {
+        "color": 4286643968,
+        "keys": [],
+        "name": "Curve",
+        "postInfinity": 0,
+        "preInfinity": 0,
+        "visible": true
+    },
+    "targetAnimName": "Dodge_Combat_to_Run_Fast_F_Seq_0",
+    "targetModelPath": ""
+}

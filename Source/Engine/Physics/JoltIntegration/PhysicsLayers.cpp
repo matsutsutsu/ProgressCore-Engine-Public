@@ -13,6 +13,7 @@ BPLayerInterfaceImpl::BPLayerInterfaceImpl()
     mObjectToBroadPhase[PhysicsLayers::BOSS]          = BroadPhaseLayers::MOVING; // ボスも動くキャラ扱い
     mObjectToBroadPhase[PhysicsLayers::PLAYER_ATTACK] = BroadPhaseLayers::MOVING; // 攻撃判定も動くもの側
     mObjectToBroadPhase[PhysicsLayers::BOSS_ATTACK]   = BroadPhaseLayers::MOVING;
+    mObjectToBroadPhase[PhysicsLayers::INVISIBLE_WALL] = BroadPhaseLayers::NON_MOVING; // 見えない壁も静止物バケツ
 }
 
 uint BPLayerInterfaceImpl::GetNumBroadPhaseLayers() const
@@ -61,6 +62,8 @@ bool ObjectVsBroadPhaseLayerFilterImpl::ShouldCollide(
         return inLayer2 == BroadPhaseLayers::MOVING; // 攻撃はキャラ(MOVINGバケツ)のみ
     case PhysicsLayers::BOSS_ATTACK:
         return inLayer2 == BroadPhaseLayers::MOVING;
+    case PhysicsLayers::INVISIBLE_WALL:
+        return inLayer2 == BroadPhaseLayers::MOVING; // 止める相手はキャラ(MOVINGバケツ)だけ
     default:
         JPH_ASSERT(false);
         return false;
@@ -85,14 +88,16 @@ bool ObjectLayerPairFilterImpl::ShouldCollide(ObjectLayer inObject1, ObjectLayer
         return inObject2 == PhysicsLayers::PLAYER || inObject2 == PhysicsLayers::BOSS;
 
     case PhysicsLayers::PLAYER:
-        // プレイヤー本体は 壁・ボス本体・ボスの攻撃 と当たる。
+        // プレイヤー本体は 壁・見えない壁・ボス本体・ボスの攻撃 と当たる。
         return inObject2 == PhysicsLayers::NON_MOVING
+               || inObject2 == PhysicsLayers::INVISIBLE_WALL
                || inObject2 == PhysicsLayers::BOSS
                || inObject2 == PhysicsLayers::BOSS_ATTACK;
 
     case PhysicsLayers::BOSS:
-        // ボス本体は 壁・プレイヤー本体・プレイヤーの攻撃 と当たる。
+        // ボス本体は 壁・見えない壁・プレイヤー本体・プレイヤーの攻撃 と当たる。
         return inObject2 == PhysicsLayers::NON_MOVING
+               || inObject2 == PhysicsLayers::INVISIBLE_WALL
                || inObject2 == PhysicsLayers::PLAYER
                || inObject2 == PhysicsLayers::PLAYER_ATTACK;
 
@@ -103,6 +108,14 @@ bool ObjectLayerPairFilterImpl::ShouldCollide(ObjectLayer inObject1, ObjectLayer
     case PhysicsLayers::BOSS_ATTACK:
         // ボスの攻撃は「プレイヤー本体」にだけ命中。
         return inObject2 == PhysicsLayers::PLAYER;
+
+    case PhysicsLayers::INVISIBLE_WALL:
+        // 落下防止の見えない壁。地上を歩く本体(PLAYER/BOSS)だけを止める。
+        //   ・攻撃判定       → 素通り（NON_MOVING と同じ扱い）
+        //   ・飛行ドローン   → BOSS_ATTACK 層なので素通り
+        //   ・カメラのレイ   → RayCastStatic が ObjectLayer==NON_MOVING を狙い撃ちする
+        //                      ため、別レイヤーの本壁は自動的に無視される
+        return inObject2 == PhysicsLayers::PLAYER || inObject2 == PhysicsLayers::BOSS;
 
     default:
         JPH_ASSERT(false);

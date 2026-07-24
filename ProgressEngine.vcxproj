@@ -479,6 +479,7 @@
     <ClInclude Include="Source\Engine\Graphics\Components\Core\DissolveComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\Core\MaterialComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\Core\ModelComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\Core\NoRenderTag.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\Core\PrimitiveComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\Culling\CullingComponents.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\Lighting\FogComponent.h" />

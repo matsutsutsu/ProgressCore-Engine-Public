@@ -31,12 +31,15 @@
 //   攻撃レイヤー: PLAYER_ATTACK(=ボスに命中) / BOSS_ATTACK(=プレイヤーに命中)。
 //     ★攻撃レイヤーで「誰に当てるか」を表現する。剣も空間判定(SpawnHitbox)も
 //       この攻撃レイヤーを載せることで、味方誤爆せず相手にだけ当たる。
+//   INVISIBLE_WALL: 落下防止用の「見えない壁」。地形(NON_MOVING)と違い、
+//     カメラのレイキャストにも飛行ドローンにも反応せず、地上キャラだけを止める。
 #define PHYSICS_OBJECT_LAYER_LIST(X)         \
     X(NON_MOVING,    0, "NON_MOVING")        \
     X(PLAYER,        1, "PLAYER")            \
     X(BOSS,          2, "BOSS")              \
     X(PLAYER_ATTACK, 3, "PLAYER_ATTACK")     \
-    X(BOSS_ATTACK,   4, "BOSS_ATTACK")
+    X(BOSS_ATTACK,   4, "BOSS_ATTACK")       \
+    X(INVISIBLE_WALL,5, "INVISIBLE_WALL")
 
 // ──────────────────────────────────────────────
 // 1. 住人の種類 (ObjectLayer)  ※定数・個数・名前配列を X-Macro から自動生成

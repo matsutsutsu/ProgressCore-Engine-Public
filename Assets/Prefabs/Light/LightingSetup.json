@@ -85,6 +85,8 @@
                     ],
                     "rimPower": 3.0,
                     "rimStrength": 0.0,
+                    "skyFogHeight": -0.7900000214576721,
+                    "skyFogSoftness": 0.3499999940395355,
                     "start": 40.0
                 },
                 "Just Evade Effect": {

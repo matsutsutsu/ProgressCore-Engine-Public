@@ -5,6 +5,7 @@
 #include "Engine/Graphics/RHI/Light.h"
 #include "Engine/Graphics/Renderer/ModelRenderer.h"
 #include "Engine/Graphics/Resource/Model.h"
+#include "Engine/Graphics/Components/Core/NoRenderTag.h" // 当たり判定専用ジオメトリの除外用
 #include "Engine/Graphics/Renderer/RenderQueue.h"
 #include "Engine/Graphics/Renderer/MeshCulling.h" // メッシュ AABB 構築（Opaque/Normal と共有）
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -24,6 +25,9 @@ using namespace DirectX;
 ShadowMapRenderSystem::ShadowMapRenderSystem()
     : IfSystem("ShadowMapRenderSystem")
 {
+    // ★ 当たり判定専用ジオメトリ(NoRenderTag)は影も落とさない。
+    //    これが無いと「見えないのに影だけ出る」状態になる。
+    SetExclude<NoRenderTag>();
 }
 
 void ShadowMapRenderSystem::Update(float dt)
