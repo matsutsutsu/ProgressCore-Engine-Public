@@ -1884,8 +1884,8 @@
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTConditions.h">
       <Filter>Source\Game\Logics\AI\BehaviorTree\Actions</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\Commander\CommanderAI.h">
-      <Filter>Source\Game\Logics\Character\Boss\Commander</Filter>
+    <ClInclude Include="Source\Game\Logics\AI\StateTree\Muriel\MurielAI.h">
+      <Filter>Source\Game\Logics\Character\Boss\Muriel</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\Systems\AnimSetupSystem.h">
       <Filter>Source\Engine\Animation\Systems</Filter>

@@ -297,6 +297,17 @@ void StateTreeWindow::DrawParams(NodeDef& node, bool isCondition)
             std::snprintf(buf, sizeof(buf), "%s", cur.c_str());
             if (ImGui::InputText(f.name.c_str(), buf, sizeof(buf)))
                 node.params[f.name] = std::string(buf);
+
+            // パス型パラメータ（presetContext あり）は、隣に「参照」ボタンを出して
+            // ファイルダイアログから相対パスで選べるようにする（直接入力も維持）。
+            if (!f.presetContext.empty()) {
+                ImGui::SameLine();
+                const std::string btnLabel = std::string("参照##") + f.name;
+                if (ImGui::Button(btnLabel.c_str())) {
+                    if (auto picked = FileDialog::OpenPreset(f.presetContext))
+                        node.params[f.name] = FileDialog::ConvertToRelativePath(*picked);
+                }
+            }
         }
         break;
         }

@@ -26,7 +26,7 @@
         },
         {
             "name": "Anim Graph Editor",
-            "visible": true
+            "visible": false
         },
         {
             "name": "Behavior Tree Editor",
@@ -34,7 +34,7 @@
         },
         {
             "name": "State Tree Editor",
-            "visible": false
+            "visible": true
         },
         {
             "name": "Camera Path Editor",

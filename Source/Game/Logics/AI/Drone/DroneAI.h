@@ -1,7 +1,7 @@
 /// @file  DroneAI.h
 /// @brief ドローン個体の StateTree（企画書 第1段：判断層）。
 ///
-/// 役割分担（CommanderAI と同じパターン）:
+/// 役割分担（MurielAI と同じパターン）:
 ///   判断層（このファイル）  … 「今このドローンは何をすべきか」を決める
 ///   実行層（DroneMovementSystem・既存）… DroneComponent.currentState を見て物理的に動く
 ///

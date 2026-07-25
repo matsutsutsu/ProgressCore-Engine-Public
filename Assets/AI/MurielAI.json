@@ -1,0 +1,23 @@
+{
+  "name": "Muriel",
+  "root": {
+    "name": "Root",
+    "children": [
+      {
+        "name": "Dead",
+        "enterConditions": [
+          { "type": "IsDead" }
+        ],
+        "tasks": [
+          { "type": "BossDeath", "params": { "Death Trigger": "Death" } }
+        ]
+      },
+      {
+        "name": "Combat",
+        "tasks": [
+          { "type": "SetActiveBT", "params": { "BT Path": "Assets/BehaviorTree/BossBasicAttacks.json" } }
+        ]
+      }
+    ]
+  }
+}

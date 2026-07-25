@@ -34,6 +34,11 @@ namespace CCL::AI
         uint32_t capacity = 0;
         // String 型の既定値（数値の defVal とは別に持つ）
         std::string defStr;
+
+        /// @brief String 型がファイルパスのときの FileDialog プリセット contextId。
+        ///        非空ならエディタが入力欄の隣に「参照」ボタンを出し、ダイアログで選べる。
+        ///        空なら通常のテキスト入力（従来通り）。例: "BehaviorTreeNode"
+        std::string presetContext;
     };
 }
 
@@ -59,3 +64,10 @@ namespace CCL::AI
     CCL::AI::NodeParamField{ (label), CCL::AI::ParamType::String,             \
         (uint32_t)offsetof(StructT, member), 0.0, 0.0, 0.0, 0.1f,             \
         (uint32_t)sizeof(((StructT*)0)->member), (defaultStr) }
+
+// ファイルパス用の String フィールド。preset は FileDialog の contextId（"BehaviorTreeNode" 等）。
+// エディタが入力欄の隣に「参照」ボタンを出し、ファイルダイアログから相対パスで選べるようになる。
+#define NODE_PARAM_PATH(StructT, member, label, defaultStr, preset)            \
+    CCL::AI::NodeParamField{ (label), CCL::AI::ParamType::String,             \
+        (uint32_t)offsetof(StructT, member), 0.0, 0.0, 0.0, 0.1f,             \
+        (uint32_t)sizeof(((StructT*)0)->member), (defaultStr), (preset) }

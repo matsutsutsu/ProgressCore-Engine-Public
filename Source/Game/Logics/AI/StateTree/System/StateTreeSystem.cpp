@@ -243,5 +243,5 @@ void StateTreeSystem::TickTasks(const StateTreeAsset& asset,
 // ============================================================
 // 自動登録
 // ============================================================
-// Commander(StateTree) が BT の assetPath を書き換えてから BehaviorTreeSystem が読む
+// 戦術StateTree(例: Muriel) が BT の assetPath を書き換えてから BehaviorTreeSystem が読む
 REGISTER_LOGIC_SYSTEM(StateTreeSystem, Priority::LogicStage::L02_PreUpdate)

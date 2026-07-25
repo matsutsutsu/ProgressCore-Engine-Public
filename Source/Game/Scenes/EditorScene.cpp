@@ -11,7 +11,7 @@
 #include "Game/Logics/AI/StateTree/Core/StateTreeRegistry.h"
 #include "Game/Logics/AI/StateTree/Serialization/StateTreeSerializer.h"
 
-#include "Game/Logics/AI/StateTree/Commander/CommanderAI.h"
+#include "Game/Logics/AI/StateTree/Muriel/MurielAI.h"
 
 #include "Game/UI/GameResultSystem.h" // ゲームオーバー検知＋リザルトUI
 #include "Game/UI/PauseSystem.h"      // ESC/STARTでポーズ＋ポーズメニュー
@@ -42,21 +42,21 @@ void EditorScene::Initialize()
 
 
 
-    // 司令官の Task/Condition（語彙）を NodeRegistry へ登録
-    // 木構造はここでは組まない。StateTreeWindow で編集した Assets/AI/Commander.json を読む。
-    static auto commanderIds = CommanderAI::RegisterNodes();
-    (void)commanderIds;
+    // Muriel の Task/Condition（語彙）を NodeRegistry へ登録
+    // 木構造はここでは組まない。StateTreeWindow で編集した Assets/AI/MurielAI.json を読む。
+    static auto murielIds = MurielAI::RegisterNodes();
+    (void)murielIds;
 
     _worldPtr->AddResource<CCL::AI::StateTreeRegistry>();
     auto &stReg       = _worldPtr->GetResource<CCL::AI::StateTreeRegistry>();
     //auto  enemyHandle = stReg.Register(EnemyAI::BuildEnemyAsset(enemyIds, 12.0f));
 
-    // 司令官StateTreeアセットをJSONからロード（StateTreeWindowで組み立てたものがそのまま使われる）
+    // Muriel の StateTree アセットをJSONからロード（StateTreeWindowで組み立てたものがそのまま使われる）
     {
         ZoneScopedN("EditorScene: StateTree load+compile");
-        CCL::AI::StateTreeDef commanderDef;
-        if (CCL::AI::StateTreeSerializer::LoadDef("Assets/AI/Commander.json", commanderDef))
-            stReg.Register(CCL::AI::StateTreeSerializer::Compile(commanderDef));
+        CCL::AI::StateTreeDef murielDef;
+        if (CCL::AI::StateTreeSerializer::LoadDef("Assets/AI/MurielAI.json", murielDef))
+            stReg.Register(CCL::AI::StateTreeSerializer::Compile(murielDef));
     }
 
 
@@ -64,7 +64,7 @@ void EditorScene::Initialize()
     _worldPtr->AddResource<BattleContext>();
 
     auto &battle           = _worldPtr->GetResource<BattleContext>();
-    battle.droneAliveCount = 650; // 動作確認用の初期値（Commanderの戦術はHP割合で判定するため、この値自体は戦術選択に影響しない）
+    battle.droneAliveCount = 650; // 動作確認用の初期値（Murielの戦術はHP割合で判定するため、この値自体は戦術選択に影響しない）
 
 
     CCL_LOG_INFO(LogCategory::Core, "EditorScene Initialize");
