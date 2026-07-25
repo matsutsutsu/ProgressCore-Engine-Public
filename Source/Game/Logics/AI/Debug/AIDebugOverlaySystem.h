@@ -37,6 +37,6 @@ public:
 
 private:
     bool  _enabled    = true;
-    float _fontSize   = 15.0f;
-    float _headOffsetY = 4.5f; ///< キャラ原点からの頭上ワールドYオフセット（本体に被らせないよう調整）
+    float _fontSize   = 25.0f;
+    float _headOffsetY = 15.0f; ///< キャラ原点からの頭上ワールドYオフセット（本体に被らせないよう調整）
 };

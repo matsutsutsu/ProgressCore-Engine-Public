@@ -3,6 +3,7 @@
 
 // シーン登録ヘッダー
 #include"Game/Scenes/EditorScene.h"
+#include "Game/Scenes/GameScene.h"    // 実プレイ用シーン（BossBattleStageを読み込む）
 #include "Game/Scenes/ParticleScene.h"
 #include "Game/Scenes/TitleScene.h"   // ゲームループのタイトル画面
 #include "Game/Scenes/SceneLoading.h" // 非同期ロード用のローディングシーン
@@ -52,14 +53,15 @@ void SceneManager::Initialize()
 
 	// ゲームループ用シーン
 	SceneFactory::Instance().Register("Title", []() { return new TitleScene(); });
-	// "Game" = 実プレイ。SpawnGameTest の重複を避けるため既存のゲーム世界を再利用する。
-	SceneFactory::Instance().Register("Game", []() { return new EditorScene(); });
+	// "Game" = 実プレイ。起動時に BossBattleStage レベルを読み込んで戦闘へ入る専用シーン。
+	SceneFactory::Instance().Register("Game", []() { return new GameScene(); });
 
 
 	// 最初に表示するシーン（生成予約のみ。実体の重い初期化は初回 Update で走る）
-	// エディタ開発時は従来通りゲーム世界を直接開く。製品ビルドはタイトルから開始する。
+	// エディタ開発時は起動直後に GameScene(=BossBattleStage) へ入る。従来の編集用 EditorScene は
+	// メニューの「Editor Scene」からいつでも開ける。製品ビルドはタイトル→(Start)→Game の順。
 #ifdef ENABLE_EDITOR
-	ChangeScene("Editor");
+	ChangeScene("Game");
 #else
 	ChangeScene("Title");
 #endif
