@@ -1,0 +1,42 @@
+{
+  "assetId": 201,
+  "nodes": [
+    { "type": "Selector",       "actionOrConditionId": 0,    "children": [1, 5, 9] },
+
+    { "type": "Sequence",       "actionOrConditionId": 0,    "children": [2, 3, 4] },
+    { "type": "Condition",      "actionOrConditionId": 5,    "children": [] },
+    { "type": "Action",         "actionOrConditionId": 1101, "children": [] },
+    { "type": "Action",         "actionOrConditionId": 101,  "children": [] },
+
+    { "type": "Sequence",       "actionOrConditionId": 0,    "children": [6, 7, 8] },
+    { "type": "Condition",      "actionOrConditionId": 7,    "children": [] },
+    { "type": "Action",         "actionOrConditionId": 1000, "children": [] },
+    { "type": "Action",         "actionOrConditionId": 1000, "children": [] },
+
+    { "type": "RandomSelector", "actionOrConditionId": 0,    "children": [10, 17, 24] },
+
+    { "type": "Sequence",       "actionOrConditionId": 0,    "children": [11, 12, 13, 14, 15, 16] },
+    { "type": "Action",         "actionOrConditionId": 2023, "children": [] },
+    { "type": "Action",         "actionOrConditionId": 102,  "children": [] },
+    { "type": "Action",         "actionOrConditionId": 1006, "children": [] },
+    { "type": "Action",         "actionOrConditionId": 101,  "children": [] },
+    { "type": "Action",         "actionOrConditionId": 2000, "children": [] },
+    { "type": "Action",         "actionOrConditionId": 103,  "children": [] },
+
+    { "type": "Sequence",       "actionOrConditionId": 0,    "children": [18, 19, 20, 21, 22, 23] },
+    { "type": "Action",         "actionOrConditionId": 2024, "children": [] },
+    { "type": "Action",         "actionOrConditionId": 102,  "children": [] },
+    { "type": "Action",         "actionOrConditionId": 1006, "children": [] },
+    { "type": "Action",         "actionOrConditionId": 101,  "children": [] },
+    { "type": "Action",         "actionOrConditionId": 2000, "children": [] },
+    { "type": "Action",         "actionOrConditionId": 103,  "children": [] },
+
+    { "type": "Sequence",       "actionOrConditionId": 0,    "children": [25, 26, 27, 28, 29, 30] },
+    { "type": "Action",         "actionOrConditionId": 2016, "children": [] },
+    { "type": "Action",         "actionOrConditionId": 103,  "children": [] },
+    { "type": "Action",         "actionOrConditionId": 1006, "children": [] },
+    { "type": "Action",         "actionOrConditionId": 103,  "children": [] },
+    { "type": "Action",         "actionOrConditionId": 2000, "children": [] },
+    { "type": "Action",         "actionOrConditionId": 104,  "children": [] }
+  ]
+}

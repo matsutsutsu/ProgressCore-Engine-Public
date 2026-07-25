@@ -15,7 +15,7 @@
       {
         "name": "Combat",
         "tasks": [
-          { "type": "SetActiveBT", "params": { "BT Path": "Assets/BehaviorTree/BossBasicAttacks.json" } }
+          { "type": "SetActiveBT", "params": { "BT Path": "Assets/BehaviorTree/BossCombat.json" } }
         ]
       }
     ]
