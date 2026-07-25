@@ -47,8 +47,10 @@ struct PlayerComponent {
     // --- 攻撃時のターゲット自動フェイシング（オートエイム） ---
     //   攻撃入力の瞬間、PlayerAttackSystem が対象（ロックオン先／前方最寄り敵）方向の yaw を求めて
     //   attackFaceTimer を立てる。PlayerMoveSystem が >0 の間、移動より優先で currentYaw を敵へ回頭させる。
-    float attackFaceYaw   = 0.0f; ///< 攻撃時に向くべき yaw(rad)
-    float attackFaceTimer = 0.0f; ///< 自動フェイシングの残り時間(秒)。>0 の間だけ有効。
+    float attackFaceYaw      = 0.0f; ///< 攻撃時に向くべき yaw(rad)
+    float attackFaceTimer    = 0.0f; ///< 自動フェイシングの残り時間(秒)。>0 の間だけ有効。
+    float attackFaceMaxDistance = 5.0f; ///< この距離以内の敵にだけ攻撃時オートフェイシングする(m)。
+                                        ///< 遠い敵（ロックオン中でも）には向かず、入力方向のまま攻撃する。
 
     // ロックオンデータ
     bool               lockOnToggleRequested = false;                     ///< Rボタンが押された瞬間だけ true になるトリガー意思

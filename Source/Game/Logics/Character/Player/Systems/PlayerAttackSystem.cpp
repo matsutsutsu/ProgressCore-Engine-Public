@@ -24,8 +24,8 @@ namespace
 {
 // --- オートフェイシングのチューニング ---
 constexpr float kFaceDuration = 0.22f;              ///< 攻撃時に敵へ回頭させる時間(秒)
-constexpr float kFaceRange    = 12.0f;              ///< 自動で拾う敵の最大距離(m)
 const     float kFaceConeCos  = std::cos(1.221730f); ///< 前方±70°の内積閾値（cos70°）
+//   ※自動フェイシングの最大距離は PlayerComponent.attackFaceMaxDistance（エディタ調整可）を使う。
 
 /// @brief 前方コーン内で最も近い「生存中の敵」を探す。ロックオンが無い時のフォールバック。
 ///        敵＝HealthComponent を持ち PlayerComponent を持たない生存エンティティ。
@@ -79,7 +79,7 @@ void SetAttackFacing(World *world, EntityID playerID, PlayerComponent &player)
     else
     {
         const Vector3 forward(std::sin(player.currentYaw), 0.0f, std::cos(player.currentYaw));
-        target = FindBestFrontEnemy(world, playerID, playerPos, forward, kFaceRange, kFaceConeCos);
+        target = FindBestFrontEnemy(world, playerID, playerPos, forward, player.attackFaceMaxDistance, kFaceConeCos);
     }
     if (target == InvalidEntityID) return; // 敵が居なければ向いてる方向のまま攻撃
 
@@ -89,6 +89,10 @@ void SetAttackFacing(World *world, EntityID playerID, PlayerComponent &player)
     Vector3 to = Vector3(etrans->position) - playerPos;
     to.y       = 0.0f;
     if (to.LengthSquared() < 1e-4f) return;
+
+    // ★ 近いときだけ向く：対象が attackFaceMaxDistance より遠ければ回頭しない。
+    //   ロックオン中でも遠い敵には勝手に向かず、入力方向のまま攻撃できる（遠距離での暴発防止）。
+    if (to.LengthSquared() > player.attackFaceMaxDistance * player.attackFaceMaxDistance) return;
 
     player.attackFaceYaw   = std::atan2(to.x, to.z); // PlayerMoveSystem と同じ atan2(x,z) 規約
     player.attackFaceTimer = kFaceDuration;

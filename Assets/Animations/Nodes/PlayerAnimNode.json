@@ -426,7 +426,7 @@
                     "targetStateHash": 2063645824
                 },
                 {
-                    "blendDuration": 0.20000000298023224,
+                    "blendDuration": 0.05000000074505806,
                     "conditions": [
                         {
                             "op": 3,
@@ -469,7 +469,7 @@
                     "targetStateHash": 3204239090
                 },
                 {
-                    "blendDuration": 0.20000000298023224,
+                    "blendDuration": 0.05000000074505806,
                     "conditions": [
                         {
                             "op": 3,
@@ -512,7 +512,7 @@
                     "targetStateHash": 2063645824
                 },
                 {
-                    "blendDuration": 0.20000000298023224,
+                    "blendDuration": 0.05000000074505806,
                     "conditions": [
                         {
                             "op": 3,
