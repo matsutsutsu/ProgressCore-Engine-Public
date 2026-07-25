@@ -424,6 +424,20 @@
                     "logicType": 0,
                     "requiredCancelMask": 0,
                     "targetStateHash": 2063645824
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 3,
+                            "paramHash": 899714431,
+                            "paramName": "AirAttack",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 899714431
                 }
             ]
         },
@@ -474,8 +488,8 @@
             "applyRootMotion": false,
             "isLoop": false,
             "lockVerticalRootMotion": false,
-            "nodePosX": 980.0,
-            "nodePosY": -6.0,
+            "nodePosX": 1126.0,
+            "nodePosY": -134.0,
             "playbackSpeed": 2.0,
             "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/DoubleJump.json",
@@ -496,6 +510,20 @@
                     "logicType": 0,
                     "requiredCancelMask": 0,
                     "targetStateHash": 2063645824
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 3,
+                            "paramHash": 899714431,
+                            "paramName": "AirAttack",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 899714431
                 }
             ]
         },
@@ -721,11 +749,11 @@
             "applyRootMotion": false,
             "isLoop": true,
             "lockVerticalRootMotion": false,
-            "nodePosX": 683.0,
-            "nodePosY": 262.0,
+            "nodePosX": 670.0,
+            "nodePosY": 253.0,
             "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
-            "sequenceFilePath": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/Air_Attack.json",
             "sequenceName": "AirAttack",
             "speedCurveName": "",
             "stateHash": 899714431,

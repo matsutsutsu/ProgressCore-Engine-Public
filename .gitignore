@@ -22,6 +22,11 @@ mono_crash.*
 
 # Build results
 [Dd]ebug/
+# ↑の [Dd]ebug/ はアンカー無しのため、ソースツリー内の "Debug" フォルダ
+#   （例: Source/Game/Logics/AI/Debug/）まで巻き添えで無視してしまう。
+#   ソース配下の Debug は追跡対象に戻す（ビルド出力の Debug/ は引き続き無視される）。
+!Source/**/[Dd]ebug/
+!Source/**/[Dd]ebug/**
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/

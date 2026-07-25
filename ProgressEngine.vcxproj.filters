@@ -565,8 +565,11 @@
     <Filter Include="Source\Game\Logics\Character\Boss\Systems">
       <UniqueIdentifier>{26282c6a-b038-4c3e-9623-0dd3a09282da}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Game\Logics\Character\Boss\Commander">
+    <Filter Include="Source\Game\Logics\AI\StateTree\Muriel">
       <UniqueIdentifier>{eb9849a2-7b3c-4a70-bca8-37b07ab5252d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\AI\Debug">
+      <UniqueIdentifier>{da596e9b-e651-47b7-a01a-cd4a8da293d7}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -1885,7 +1888,7 @@
       <Filter>Source\Game\Logics\AI\BehaviorTree\Actions</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\StateTree\Muriel\MurielAI.h">
-      <Filter>Source\Game\Logics\Character\Boss\Muriel</Filter>
+      <Filter>Source\Game\Logics\AI\StateTree\Muriel</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\Systems\AnimSetupSystem.h">
       <Filter>Source\Engine\Animation\Systems</Filter>
@@ -2001,7 +2004,15 @@
     <ClInclude Include="Source\Game\Logics\AI\Battle\BattleContextSyncSystem.h">
       <Filter>Source\Game\Logics\AI\Battle</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Components\Core\NoRenderTag.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\Core\NoRenderTag.h">
+      <Filter>Source\Engine\Graphics\Components\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Debug\AIDebugOverlaySystem.h">
+      <Filter>Source\Game\Logics\AI\Debug</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Debug\AIDebugSpatialSystem.h">
+      <Filter>Source\Game\Logics\AI\Debug</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -3035,6 +3046,12 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\Battle\BattleContextSyncSystem.cpp">
       <Filter>Source\Game\Logics\AI\Battle</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\Debug\AIDebugOverlaySystem.cpp">
+      <Filter>Source\Game\Logics\AI\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\Debug\AIDebugSpatialSystem.cpp">
+      <Filter>Source\Game\Logics\AI\Debug</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
