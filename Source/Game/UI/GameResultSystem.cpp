@@ -1,5 +1,12 @@
 /// @file GameResultSystem.cpp
 /// 役割・設計方針は GameResultSystem.h を参照。
+
+// QUIT でアプリ終了要求（PostQuitMessage）に使う。
+// DirectXMath 等と min/max マクロが衝突しないよう、windows.h は最初に絞って取り込む。
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
+
 #include "GameResultSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
@@ -25,11 +32,11 @@ void GameResultSystem::Initialize()
     hasGui = true; // デバッグ用の検知状態パネルを OnGui で出す
 
     // ボタンクリックを購読（この世界ではリザルトのボタンだけが発火源）。
-    const uint32_t kRetry   = CCL::Utils::HashString("retry");
-    const uint32_t kToTitle = CCL::Utils::HashString("result_to_title");
+    const uint32_t kRetry = CCL::Utils::HashString("retry");
+    const uint32_t kQuit  = CCL::Utils::HashString("result_quit");
 
     _world->GetEventBus().Subscribe<UIButtonClickedEvent>(
-        [this, kRetry, kToTitle](const UIButtonClickedEvent &e) {
+        [this, kRetry, kQuit](const UIButtonClickedEvent &e) {
             if (_transitioning) return;
 
             if (e.actionHash == kRetry)
@@ -37,9 +44,11 @@ void GameResultSystem::Initialize()
                 // ゲーム再読込（新しい世界を裏読み）。フェードは SceneManager が統括。
                 _transitioning = SceneManager::Instance().RequestTransition("Game", true);
             }
-            else if (e.actionHash == kToTitle)
+            else if (e.actionHash == kQuit)
             {
-                _transitioning = SceneManager::Instance().RequestTransition("Title", false);
+                _transitioning = true;
+                // 展示会用：タイトルへは戻さず、そのままアプリを終了する。
+                PostQuitMessage(0);
             }
         });
 }
@@ -134,7 +143,7 @@ void GameResultSystem::ShowResultUI(bool win)
 
     // ボタン（RETRY が初期フォーカス）
     SpawnButton(w, "BtnRetry", "LblRetry", "RETRY", {0.0f, 0.0f}, "retry", true, 210, 0.16f, canvas);
-    SpawnButton(w, "BtnToTitle", "LblToTitle", "TITLE", {0.0f, 90.0f}, "result_to_title", false, 210, 0.24f, canvas);
+    SpawnButton(w, "BtnQuit", "LblQuit", "QUIT", {0.0f, 90.0f}, "result_quit", false, 210, 0.24f, canvas);
 }
 
 // ============================================================================

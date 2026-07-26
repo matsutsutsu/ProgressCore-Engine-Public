@@ -57,14 +57,11 @@ void SceneManager::Initialize()
 	SceneFactory::Instance().Register("Game", []() { return new GameScene(); });
 
 
-	// 最初に表示するシーン（生成予約のみ。実体の重い初期化は初回 Update で走る）
-	// エディタ開発時は起動直後に GameScene(=BossBattleStage) へ入る。従来の編集用 EditorScene は
-	// メニューの「Editor Scene」からいつでも開ける。製品ビルドはタイトル→(Start)→Game の順。
-#ifdef ENABLE_EDITOR
+	// 最初に表示するシーン（生成予約のみ。実体の重い初期化は初回 Update で走る）。
+	// 展示会用：タイトルは見せず、起動直後に GameScene(=BossBattleStage) の戦闘へ直行する。
+	// （Shipping で発生していたタイトルの緑点滅もタイトルを経由しないことで回避される。）
+	// 従来の編集用 EditorScene / TitleScene はメニューやコードから任意に開ける。
 	ChangeScene("Game");
-#else
-	ChangeScene("Title");
-#endif
 	//ChangeScene("Particle");
 
 	// 起動直後は黒から表示へフェードイン（初回シーンのポップインを隠す）。

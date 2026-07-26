@@ -1,5 +1,12 @@
 /// @file PauseSystem.cpp
 /// 役割・設計方針は PauseSystem.h を参照。
+
+// QUIT でアプリ終了要求（PostQuitMessage）に使う。
+// DirectXMath 等と min/max マクロが衝突しないよう、windows.h は最初に絞って取り込む。
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
+
 #include "PauseSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
@@ -30,21 +37,22 @@ void PauseSystem::Initialize()
         _world->AddResource<GameFlowState>();
 
     // ポーズメニューのボタン購読。
-    const uint32_t kResume  = CCL::Utils::HashString("resume");
-    const uint32_t kToTitle = CCL::Utils::HashString("pause_to_title");
+    const uint32_t kResume = CCL::Utils::HashString("resume");
+    const uint32_t kQuit   = CCL::Utils::HashString("pause_quit");
 
     _world->GetEventBus().Subscribe<UIButtonClickedEvent>(
-        [this, kResume, kToTitle](const UIButtonClickedEvent &e) {
+        [this, kResume, kQuit](const UIButtonClickedEvent &e) {
             if (e.actionHash == kResume)
             {
                 ClosePause();
             }
-            else if (e.actionHash == kToTitle)
+            else if (e.actionHash == kQuit)
             {
                 if (_transitioning) return;
-                // タイトルへ。ポーズ中の world は破棄されるので paused の後始末は不要
-                //（遷移先 Title は自前の GameFlowState を持つ）。フェード中はポーズのまま凍結。
-                _transitioning = SceneManager::Instance().RequestTransition("Title", false);
+                _transitioning = true;
+                // 展示会用：タイトルへは戻さず、そのままアプリを終了する。
+                // メインループ（while WM_QUIT != msg）が次の PeekMessage で WM_QUIT を拾って抜ける。
+                PostQuitMessage(0);
             }
         });
 }
@@ -100,10 +108,10 @@ void PauseSystem::OpenPause()
     _overlay.push_back(resume.button);
     _overlay.push_back(resume.label);
 
-    auto toTitle = SpawnButton(w, "BtnPauseTitle", "LblPauseTitle", "TITLE", {0.0f, 90.0f},
-        "pause_to_title", false, 210, 0.24f, canvas);
-    _overlay.push_back(toTitle.button);
-    _overlay.push_back(toTitle.label);
+    auto quit = SpawnButton(w, "BtnPauseQuit", "LblPauseQuit", "QUIT", {0.0f, 90.0f},
+        "pause_quit", false, 210, 0.24f, canvas);
+    _overlay.push_back(quit.button);
+    _overlay.push_back(quit.label);
 }
 
 void PauseSystem::ClosePause()
