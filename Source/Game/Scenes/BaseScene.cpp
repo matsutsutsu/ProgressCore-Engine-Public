@@ -228,8 +228,11 @@ void BaseScene::Render()
     {
         ZoneScopedN("UI Render");
 
+        // UI専用のα合成：色はストレートα合成のまま、RTのアルファは書き換えない。
+        // これで不透明シーンのα=1が保たれ、テキスト透明部分にαの穴が開かず、
+        // エディタ GameView(ImGui::Image) で「黒い枠」が出なくなる。
         dc->OMSetBlendState(
-            gfx.GetRenderState()->GetBlendState(BlendState::Transparency), nullptr, 0xffffffff);
+            gfx.GetRenderState()->GetBlendState(BlendState::UITransparency), nullptr, 0xffffffff);
         dc->OMSetDepthStencilState(
             gfx.GetRenderState()->GetDepthStencilState(DepthState::NoTestNoWrite), 0);
 

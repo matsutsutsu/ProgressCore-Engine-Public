@@ -223,6 +223,28 @@ RenderState::RenderState(ID3D11Device* device)
 			blendStates[static_cast<int>(BlendState::Multiply)].GetAddressOf());
 		_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 	}
+	// UI用の通常合成（色はストレートα合成。ただしRTのアルファは書き換えない）
+	//   Transparency との違いは RenderTargetWriteMask から ALPHA を外した点だけ。
+	//   これで不透明シーンが埋めた α=1 が保たれ、テキストの透明部分にαの穴が開かない
+	//   → エディタ GameView(ImGui::Image) で「黒い枠」が出なくなる。
+	{
+		D3D11_BLEND_DESC desc{};
+		desc.AlphaToCoverageEnable = false;
+		desc.IndependentBlendEnable = false;
+		desc.RenderTarget[0].BlendEnable = true;
+		desc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+		desc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+		desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+		desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+		desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+		desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		// ★ ALPHA を除外（RGBのみ書き込む）。これが今回の肝。
+		desc.RenderTarget[0].RenderTargetWriteMask =
+			D3D11_COLOR_WRITE_ENABLE_RED | D3D11_COLOR_WRITE_ENABLE_GREEN | D3D11_COLOR_WRITE_ENABLE_BLUE;
+		HRESULT hr = device->CreateBlendState(&desc,
+			blendStates[static_cast<int>(BlendState::UITransparency)].GetAddressOf());
+		_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+	}
 
 	// ベタ塗り＆カリングなし
 	{

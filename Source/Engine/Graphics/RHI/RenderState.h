@@ -34,6 +34,10 @@ enum class BlendState
 	Additive,
 	Subtraction,
 	Multiply,
+	// UI用のα合成。色は通常のストレートα合成だが、RTのアルファチャンネルは書き換えない
+	// （＝不透明シーンのα=1を保持）。これを使わないとテキスト等の透明部分でRTのαに0の穴が開き、
+	// エディタの GameView(ImGui::Image がαで貼る) で暗い背景が透けて「黒い枠」になる。
+	UITransparency,
 
 	EnumCount
 };
