@@ -67,8 +67,16 @@ Framework::Framework(HWND hWnd)
 	{
 		ZoneScopedN("Init: Logger");
 		Logger::Instance().AddSink(std::make_shared<DebugStreamSink>());
+		// ログファイルの出力先。開発時は Build/ 配下に集約、製品(Shipping)は exe 隣の Logs/ に。
+		// FileSink は遅延生成なので、Shipping では ERROR が実際に出た時だけファイルが作られる
+		//（正常終了なら何も残らない）。
+#ifdef ENABLE_EDITOR
+		const char* kLogPath = "Build/Logs/Engine.log";
+#else
+		const char* kLogPath = "Logs/Engine.log";
+#endif
 		Logger::Instance().AddSink(std::make_shared<FileSink>(
-			"Build/Logs/Engine.log", 10ull * 1024 * 1024, 3));
+			kLogPath, 10ull * 1024 * 1024, 3));
 		m_consoleLogSink = std::make_shared<ImGuiBufferSink>(2000);
 		Logger::Instance().AddSink(m_consoleLogSink);
 	}
@@ -85,12 +93,16 @@ Framework::Framework(HWND hWnd)
 		ImGuiRenderer::Initialize(hWnd, Graphics::Instance().GetDevice(), Graphics::Instance().GetDeviceContext());
 	}
 #endif
-	// ★ FileDialog を一括初期化
-	//    プリセット登録 + 前回の履歴ロードがここで完結する
+	// ★ FileDialog を一括初期化（エディタ専用）
+	//    プリセット登録 + 前回の履歴ロード（Build/User/EditorPrefs.json）がここで完結する。
+	//    ネイティブのファイル選択ダイアログはエディタ機能なので、Shipping では初期化しない
+	//    （＝EditorPrefs.json を生成しない）。
+#ifdef ENABLE_EDITOR
 	{
 		ZoneScopedN("Init: FileDialog");
 		FileDialog::Initialize();
 	}
+#endif
 
 	// Input 初期化
 	{
@@ -181,11 +193,13 @@ Framework::~Framework()
     }
 
 #endif
+#ifdef ENABLE_EDITOR
     {
         ZoneScopedN("Finalize:  SaveFileDialogHistory");
-        // ★ ダイアログ履歴を保存
+        // ★ ダイアログ履歴を保存（エディタ専用。Shipping では初期化もしないので保存もしない）
         FileDialog::SaveHistory();
     }
+#endif
 
 	{
         ZoneScopedN("Finalize: Logger");

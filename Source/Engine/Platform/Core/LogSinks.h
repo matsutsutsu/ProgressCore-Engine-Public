@@ -107,9 +107,10 @@ public:
         int      maxRotated = 3)
         : _path(std::move(path)), _maxBytes(maxBytes), _maxRotated(maxRotated)
     {
-        std::error_code ec;
-        std::filesystem::create_directories(_path.parent_path(), ec);
-        Open(true /*truncate*/);
+        // ★ ここではファイルを開かない（遅延生成）。
+        //   最初のログが実際に書き込まれるまでフォルダ/ファイルを作らないため、
+        //   Shipping のようにログが ERROR のみの構成だと「1件も出なければ何も残らない」。
+        //   これで正常終了時にログフォルダで散らからず、問題が起きた時だけ痕跡が残る。
     }
 
     ~FileSink() override
@@ -124,6 +125,16 @@ public:
     void Write(const LogMessage& msg) override
     {
         std::lock_guard lock(_mutex);
+
+        // 遅延生成：最初の書き込みでフォルダ作成＋ファイルオープン。
+        if (!_opened)
+        {
+            std::error_code ec;
+            if (_path.has_parent_path())
+                std::filesystem::create_directories(_path.parent_path(), ec);
+            Open(true /*truncate*/);
+            _opened = true;
+        }
         if (!_stream.is_open()) return;
 
         const std::string line = LogFormat::Format(msg) + '\n';
@@ -188,6 +199,7 @@ private:
     uint64_t              _bytesWritten = 0;
     uint64_t              _maxBytes;
     int                   _maxRotated;
+    bool                  _opened = false; ///< 遅延生成済みか（最初の Write で true）
 };
 
 //==============================================================================

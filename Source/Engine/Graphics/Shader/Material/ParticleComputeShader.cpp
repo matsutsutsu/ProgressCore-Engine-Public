@@ -11,10 +11,17 @@ ParticleComputeShader::ParticleComputeShader(ID3D11Device* device)
 
 void ParticleComputeShader::LoadShaders(ID3D11Device* device)
 {
-    // GpuResourceUtils の CompileComputeShader を使用して動的コンパイル＆生成
-    // ※ 既存の .cso 固定読み込みから、拡張した動的コンパイル経由に変更することで開発効率を極大化
+#if defined(_DEBUG) || defined(ENABLE_EDITOR)
+    // 開発時：HLSLソースから動的コンパイル。編集→CheckAndReload で即ホットリロードできる。
     GpuResourceUtils::CompileComputeShader(device, _initCsPath, "main", "cs_5_0", _initCS.ReleaseAndGetAddressOf());
     GpuResourceUtils::CompileComputeShader(device, _updateCsPath, "main", "cs_5_0", _updateCS.ReleaseAndGetAddressOf());
+#else
+    // 製品(Shipping)：同梱済みのコンパイル済み .cso を読む。
+    // HLSLソース(Shader/ 配下)は同梱しないため、動的コンパイルでは失敗する。
+    // 描画側 ParticleShader が Assets/Shader/*.cso を読むのと同じ方式に揃える。
+    GpuResourceUtils::LoadComputeShader(device, "Assets/Shader/initialize_particle_cs.cso", _initCS.ReleaseAndGetAddressOf());
+    GpuResourceUtils::LoadComputeShader(device, "Assets/Shader/integrate_particle_cs.cso", _updateCS.ReleaseAndGetAddressOf());
+#endif
 
     _initCsTime = GetLastWriteTime(_initCsPath);
     _updateCsTime = GetLastWriteTime(_updateCsPath);

@@ -20,9 +20,15 @@ void PostProcessManager::Initialize(ID3D11Device* device, UINT width, UINT heigh
 {
     _device = device;
 
+    // ★ 先に実サイズを確定させる。AddEffect() は各エフェクトの Initialize に
+    //   _width/_height を渡すため、ここで設定しておかないと 0×0 で中間RTの作成に
+    //   失敗し「RenderTarget::Create invalid args (w=0 h=0)」がログに出てしまう。
+    _width  = width;
+    _height = height;
+
     _toneMapEffect = std::make_unique<ToneMapEffect>();
     _toneMapEffect->Initialize(device);
-  
+
     // ==========================================================
     // 2. エフェクトの生産ラインを構築
     // ==========================================================

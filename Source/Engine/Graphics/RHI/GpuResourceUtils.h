@@ -108,4 +108,10 @@ public:
 		ID3D11ComputeShader** computeShader,
 		ID3DBlob** outShaderBlob = nullptr);
 
+	// コンピュートシェーダー読み込み (.cso) : 事前コンパイル済みバイナリからそのまま生成する。
+	// VS/PS/GS の Load* と同じ方式で、HLSLソース非同梱の製品(Shipping)でも動く。
+	static HRESULT LoadComputeShader(ID3D11Device* device,
+		const char* filename,
+		ID3D11ComputeShader** computeShader);
+
 };

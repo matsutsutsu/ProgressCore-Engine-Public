@@ -574,3 +574,37 @@ bool GpuResourceUtils::CompileComputeShader(ID3D11Device* device,
 
 	return true;
 }
+
+// コンピュートシェーダー読み込み (.cso)
+//   VS/PS/GS の Load* と同じく、事前コンパイル済み .cso を読んでそのまま生成する。
+//   HLSL ソースを同梱しない製品(Shipping)ビルド向け。
+HRESULT GpuResourceUtils::LoadComputeShader(
+	ID3D11Device* device,
+	const char* filename,
+	ID3D11ComputeShader** computeShader)
+{
+	// ファイルを開く
+	FILE* fp = nullptr;
+	fopen_s(&fp, filename, "rb");
+	if (!fp)
+	{
+		CCL_LOG_ERROR(LogCategory::Render, "Compute Shader (.cso) not found: %s", filename);
+		return E_FAIL;
+	}
+
+	// ファイルのサイズを求める
+	fseek(fp, 0, SEEK_END);
+	long size = ftell(fp);
+	fseek(fp, 0, SEEK_SET);
+
+	// メモリ上にバイナリを格納
+	std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(size);
+	fread(data.get(), size, 1, fp);
+	fclose(fp);
+
+	// コンピュートシェーダー生成
+	HRESULT hr = device->CreateComputeShader(data.get(), size, nullptr, computeShader);
+	_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+
+	return hr;
+}
