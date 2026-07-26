@@ -8,7 +8,7 @@
  * @brief ゲーム内のすべての音声再生を管理するオーディオAPIのインターフェース。
  * * 物理エンジンや描画エンジンから完全に独立し、ECSシステムに対して
  * イベント駆動ベースの音声再生機能を提供する。
- * 内部でFMODなどのミドルウェアを使用することを想定。
+ * 具体的なバックエンド（現状は DirectXTK Audio = DxtkAudioManager）はこの抽象を実装する。
  */
 class IAudioAPI {
 public:
@@ -40,7 +40,7 @@ public:
     virtual void LoadConfig(const std::string& configFilePath) = 0;
 
     /**
-     * @brief FMODのBankファイル（音声波形の塊）をメモリにロードする。
+     * @brief 音声波形の塊（Bank）をメモリにロードする。
      * @param bankFilePath 例: "Assets/Audio/Master.bank"
      */
     virtual void LoadBank(const char* bankFilePath) = 0;
@@ -100,14 +100,14 @@ public:
     /**
      * @brief 指定したIDの音声を停止する。
      * @param playingId PlayEvent() で受け取ったID
-     * @param allowFadeOut trueならFMOD Studioで設定したフェードアウト時間を尊重して止まる。
+     * @param allowFadeOut trueならバックエンドが設定したフェードアウト時間を尊重して止まる。
      */
     virtual void StopEvent(uint32_t playingId, bool allowFadeOut = true) = 0;
 
     /**
-     * @brief 指定したIDの音声に対して、FMOD内で設定した動的パラメータを送る。
+     * @brief 指定したIDの音声に対して、動的パラメータ（音量/ピッチ等）を送る。
      * @param playingId PlayEvent() で受け取ったID
-     * @param paramName パラメータ名 (例: "EnemyDistance", "RPM")
+     * @param paramName パラメータ名 (例: "volume", "pitch", "pan")
      * @param value 変更する数値
      */
     virtual void SetEventParameter(uint32_t playingId, const char* paramName, float value) = 0;

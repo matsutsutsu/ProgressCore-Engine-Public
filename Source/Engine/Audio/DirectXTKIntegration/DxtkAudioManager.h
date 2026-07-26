@@ -13,7 +13,7 @@
 ///   - 実装詳細(XAudio2依存)は Impl(pimpl) に隠し、このヘッダは xaudio2 を持ち込まない。
 ///   - AudioSystem が ForEachParallel から呼ぶため、内部マップは mutex で保護する。
 ///   - 注意: DXTK は WAV のみ再生可能（mp3/ogg 不可）。ファイルが無い場合は警告してスキップする。
-#include "Engine/Audio/FmodIntegration/IAudioAPI.h"
+#include "Engine/Audio/IAudioAPI.h"
 #include <memory>
 #include <string>
 #include <vector>

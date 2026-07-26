@@ -237,9 +237,6 @@
     <Filter Include="Source\Engine\Animation\Systems">
       <UniqueIdentifier>{8ca3cf27-4065-48ae-be45-e298fac63e7a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Audio\FmodIntegration">
-      <UniqueIdentifier>{7083e5f6-6cef-4b8b-af6a-10e584fd4c40}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\Audio\DirectXTKIntegration">
       <UniqueIdentifier>{2b7e6a1c-9d4f-4a3e-8c21-6f0b1d3e5a70}</UniqueIdentifier>
     </Filter>
@@ -1251,11 +1248,8 @@
     <ClInclude Include="Source\Engine\Audio\DirectXTKIntegration\DxtkAudioManager.h">
       <Filter>Source\Engine\Audio\DirectXTKIntegration</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Audio\FmodIntegration\FmodAudioManager.h">
-      <Filter>Source\Engine\Audio\FmodIntegration</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Audio\FmodIntegration\IAudioAPI.h">
-      <Filter>Source\Engine\Audio\FmodIntegration</Filter>
+    <ClInclude Include="Source\Engine\Audio\IAudioAPI.h">
+      <Filter>Source\Engine\Audio</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Audio\Components\AudioEmitterComponent.h">
       <Filter>Source\Engine\Audio\Components</Filter>
@@ -2542,9 +2536,6 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Audio\DirectXTKIntegration\DxtkAudioManager.cpp">
       <Filter>Source\Engine\Audio\DirectXTKIntegration</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Audio\FmodIntegration\FmodAudioManager.cpp">
-      <Filter>Source\Engine\Audio\FmodIntegration</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Audio\Components\AudioComponentMeta.cpp">
       <Filter>Source\Engine\Audio\Components</Filter>

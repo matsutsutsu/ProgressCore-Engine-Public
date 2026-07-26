@@ -10,7 +10,7 @@
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #include "Engine/ECS/Core/CCL_World.h"              // World からオーディオ資源を引く
-#include "Engine/Audio/FmodIntegration/IAudioAPI.h" // イベント名一覧（カタログ）
+#include "Engine/Audio/IAudioAPI.h" // イベント名一覧（カタログ）
 #include <memory>
 #include <vector>
 #include <cstdio>

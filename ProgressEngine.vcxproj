@@ -428,8 +428,7 @@
     <ClInclude Include="Source\Engine\Audio\Components\AudioEmitterComponent.h" />
     <ClInclude Include="Source\Engine\Audio\Components\AudioEvents.h" />
     <ClInclude Include="Source\Engine\Audio\DirectXTKIntegration\DxtkAudioManager.h" />
-    <ClInclude Include="Source\Engine\Audio\FmodIntegration\FmodAudioManager.h" />
-    <ClInclude Include="Source\Engine\Audio\FmodIntegration\IAudioAPI.h" />
+    <ClInclude Include="Source\Engine\Audio\IAudioAPI.h" />
     <ClInclude Include="Source\Engine\Audio\Systems\AudioSystem.h" />
     <ClInclude Include="Source\Engine\Camera\Components\CameraBodyActionTPSComponent.h" />
     <ClInclude Include="Source\Engine\Camera\Components\CameraDollyCartComponent.h" />
@@ -1341,7 +1340,6 @@
     <ClCompile Include="Source\Engine\Animation\Systems\RootMotionSystem.cpp" />
     <ClCompile Include="Source\Engine\Audio\Components\AudioComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Audio\DirectXTKIntegration\DxtkAudioManager.cpp" />
-    <ClCompile Include="Source\Engine\Audio\FmodIntegration\FmodAudioManager.cpp" />
     <ClCompile Include="Source\Engine\Audio\Systems\AudioSystem.cpp" />
     <ClCompile Include="Source\Engine\Camera\Components\CameraBodyActionTPSComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Camera\Components\CameraDollyCartComponentMeta.cpp" />

@@ -69,8 +69,6 @@
 				$(SolutionDir)External\Lua\src;
 				$(SolutionDir)External\sol2\include;
 				$(SolutionDir)External\JoltPhysics\include;
-				$(SolutionDir)External\FMOD\core\inc;
-				$(SolutionDir)External\FMOD\studio\inc;
 				$(SolutionDir)External\RecastNavigation\Recast\Include;
 				$(SolutionDir)External\RecastNavigation\Detour\Include;
 				$(SolutionDir)External\RecastNavigation\DetourTileCache\Include;
@@ -95,8 +93,6 @@
 				<!-- $(Configuration) ではなく $(ExtLibDirName) を使用する -->
 				$(SolutionDir)External\JoltPhysics\lib\$(ExtLibDirName);
 				$(SolutionDir)External\DirectXTK-main\Bin\Desktop_2022\x64\$(ExtLibDirName);
-				$(SolutionDir)External\FMOD\core\lib\x64;
-				$(SolutionDir)External\FMOD\studio\lib\x64;
 				%(AdditionalLibraryDirectories)
 			</AdditionalLibraryDirectories>
 			<AdditionalDependencies>
@@ -104,8 +100,7 @@
 				DirectXTK.lib;
 				dxgi.lib;xinput.lib;
 				xaudio2.lib;winmm.lib;
-				Jolt.lib;fmod_vc.lib;
-				fmodstudio_vc.lib;
+				Jolt.lib;
 				%(AdditionalDependencies)
 			</AdditionalDependencies>
 		</Link>
@@ -119,9 +114,6 @@
 
 			<PostBuildEvent>
 			<Command>
-				xcopy /y /d "$(SolutionDir)External\FMOD\core\lib\x64\*.dll" "$(TargetDir)"
-				xcopy /y /d "$(SolutionDir)External\FMOD\studio\lib\x64\*.dll" "$(TargetDir)"
-
 				%(Command)
 			</Command>
 		</PostBuildEvent>
