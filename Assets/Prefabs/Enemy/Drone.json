@@ -5,15 +5,16 @@
                 "DroneComponent": {
                     "currentFormation": 1,
                     "currentState": 0,
+                    "hasReachedSlot": false,
                     "localIndex": 5,
                     "moveSpeed": 30.0,
                     "orbitRadius": 8.0,
-                    "ownerBossId": 3,
+                    "ownerBossId": 0,
                     "stateTimer": 0.0,
                     "targetPosition": [
-                        -15.14175033569336,
-                        -0.03696369007229805,
-                        61.12327575683594
+                        4.56719446182251,
+                        2.0,
+                        -6.5681610107421875
                     ],
                     "totalDrones": 12
                 },
@@ -39,25 +40,12 @@
                     ],
                     "radius": 0.5
                 },
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Enemy/Drone/SM_Drone.glb"
+                },
                 "Name": {
                     "name": "Drone"
-                },
-                "Primitive": {
-                    "color": [
-                        1.0,
-                        1.0,
-                        1.0,
-                        1.0
-                    ],
-                    "height": 1.0,
-                    "isWireframe": false,
-                    "radius": 1.0,
-                    "size": [
-                        1.0,
-                        1.0,
-                        1.0
-                    ],
-                    "type": 1
                 },
                 "TimeState": {
                     "buffScale": 1.0,
@@ -71,15 +59,15 @@
                     "isStatic": false,
                     "parent": 2,
                     "position": [
-                        -15.25050163269043,
-                        -0.08571034669876099,
-                        61.44034194946289
+                        4.296149253845215,
+                        2.0214531421661377,
+                        -6.764354705810547
                     ],
                     "rotation": [
                         0.0,
-                        0.6029027700424194,
+                        0.2872009873390198,
                         0.0,
-                        0.7978147864341736
+                        -0.957870364189148
                     ],
                     "scale": [
                         1.0,
@@ -92,6 +80,6 @@
         }
     ],
     "magic": 1397506883,
-    "name": "TestDrone",
+    "name": "Drone",
     "version": 1
 }

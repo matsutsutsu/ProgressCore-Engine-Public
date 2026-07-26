@@ -340,6 +340,17 @@ void ModelResource::BuildModel(ID3D11Device* device, const char* dirname)
 				char fullpath[256];
 				::_makepath_s(fullpath, 256, nullptr, dirname, textureFileName.c_str(), nullptr);
 
+				// 同名の .dds があればそれを優先（PNG参照のまま、圧縮済みDDSへ透過的に差し替え）。
+				// texconv で生成した BCn/DDS を隣に置くだけでVRAM削減＆sRGB正常化が効く。
+				{
+					char drive[8], dir[256], fname[256], ext[64];
+					::_splitpath_s(fullpath, drive, dir, fname, ext);
+					char ddspath[256];
+					::_makepath_s(ddspath, 256, drive, dir, fname, ".dds");
+					if (::GetFileAttributesA(ddspath) != INVALID_FILE_ATTRIBUTES)
+						::strcpy_s(fullpath, ddspath);
+				}
+
 				// マルチバイト→ワイド文字変換
 				wchar_t wfilename[256];
 				::MultiByteToWideChar(CP_ACP, 0, fullpath, -1, wfilename, 256);

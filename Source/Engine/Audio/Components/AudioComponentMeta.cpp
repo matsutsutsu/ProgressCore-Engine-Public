@@ -112,8 +112,8 @@ struct ComponentMeta<AudioEmitterComponent>
         // 保存の正は eventName（人間可読）。eventHash は実行時に名前から導出するので保存しない。
         static const std::vector<FieldDescriptor> fields = {
             CFIELD(eventName, "サウンド名", "オーディオ")
-                CFIELD(volume, "音量", "オーディオ")
-                    CFIELD(autoPlay, "自動再生", "オーディオ")};
+            CFIELD(volume, "音量", "オーディオ")
+            CFIELD(autoPlay, "自動再生", "オーディオ")};
         return fields;
     }
 };
