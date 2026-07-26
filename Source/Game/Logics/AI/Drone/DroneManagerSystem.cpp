@@ -62,6 +62,9 @@ void DroneManagerSystem::Update(float /*dt*/)
 {
     EnsureDroneAIRegistered();
 
+    // シーン開始時：ボスとRegistryが揃い次第、初期ドローンを1回だけ配備する。
+    TryAutoSpawnInitial();
+
     if (!_world->HasResource<BattleContext>()) return;
     auto& battle = _world->GetResource<BattleContext>();
 
@@ -71,6 +74,27 @@ void DroneManagerSystem::Update(float /*dt*/)
     // 「ドローン数 = ボスHP」を BattleContext に反映
     // → これで司令官StateTree の DroneCountBelowCondition が本物の数を見る
     battle.droneAliveCount = alive;
+}
+
+
+// ============================================================================
+// TryAutoSpawnInitial：シーン開始時の初期配備（1回だけ）
+// ============================================================================
+void DroneManagerSystem::TryAutoSpawnInitial()
+{
+    if (!_autoSpawnEnabled || _autoSpawnDone) return;
+
+    // ボスが未生成 or Registry未準備のフレームは何もせず次フレームに再試行。
+    if (!_world->HasResource<CCL::AI::StateTreeRegistry>()) return;
+    if (FindBoss() == InvalidEntityID) return;
+
+    int spawned = SpawnDrones(_initialSpawnCount);
+    if (spawned > 0)
+    {
+        _autoSpawnDone = true;   // 成功したらラッチして二度と自動生成しない
+        CCL_LOG_INFO(LogCategory::Game,
+            "[DroneManager] シーン開始：初期ドローン %d 機を自動配備", spawned);
+    }
 }
 
 
@@ -286,6 +310,15 @@ void DroneManagerSystem::OnGui()
                                 ImGuiTreeNodeFlags_DefaultOpen))
     {
         ImGui::Indent();
+
+        // ---- シーン開始時の自動初期配備 ----
+        ImGui::TextColored(ImVec4(0.5f, 1.0f, 0.6f, 1.0f), "Auto Initial Spawn (シーン開始時)");
+        ImGui::Checkbox("Enable Auto Spawn", &_autoSpawnEnabled);
+        ImGui::SliderInt("Initial Count", &_initialSpawnCount, 1, 1000);
+        ImGui::Text("Auto Spawn Done: %s", _autoSpawnDone ? "yes" : "no");
+        if (ImGui::Button("Re-arm Auto Spawn", ImVec2(160, 24)))
+            _autoSpawnDone = false;   // もう一度シーン開始時のように配備し直す
+        ImGui::Separator();
 
         ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "Spawn Settings");
         ImGui::SliderInt("Spawn Count", &_spawnCount, 1, 100);

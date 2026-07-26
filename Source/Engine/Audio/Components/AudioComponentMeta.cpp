@@ -91,6 +91,16 @@ struct ComponentMeta<AudioEmitterComponent>
         // 音量（0=無音, 1=原音）。実行中に動かすとその場で反映される。
         if (ImGui::SliderFloat("音量", &comp.volume, 0.0f, 10.0f, "%.2f")) changed = true;
 
+        // 2D / 3D 切替。BGMは 2D（距離減衰なしで一様に鳴る）、効果音や環境音は 3D（距離で減衰・定位）。
+        int mode = comp.is3D ? 1 : 0;
+        if (ImGui::Combo("再生モード", &mode, "2D（BGM/減衰なし）\0003D（距離で減衰）\0"))
+        {
+            comp.is3D = (mode == 1);
+            changed   = true;
+        }
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("2D: 位置に関係なく一様に鳴る（BGM向き）。\n3D: リスナーからの距離で音量が減衰し左右に定位する（効果音/環境音向き）。");
+
         if (ImGui::Checkbox("生成時に自動再生", &comp.autoPlay)) changed = true;
 
         ImGui::BeginDisabled();
@@ -113,6 +123,7 @@ struct ComponentMeta<AudioEmitterComponent>
         static const std::vector<FieldDescriptor> fields = {
             CFIELD(eventName, "サウンド名", "オーディオ")
             CFIELD(volume, "音量", "オーディオ")
+            CFIELD(is3D, "3D空間音", "オーディオ")
             CFIELD(autoPlay, "自動再生", "オーディオ")};
         return fields;
     }

@@ -1,0 +1,49 @@
+{
+    "entities": [
+        {
+            "components": {
+                "AudioEmitterComponent": {
+                    "autoPlay": true,
+                    "eventName": "bgm:/game",
+                    "is3D": false,
+                    "volume": 0.07999999821186066
+                },
+                "Name": {
+                    "name": "BGM_Game"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 2,
+                    "position": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                }
+            },
+            "lid": 1
+        }
+    ],
+    "magic": 1397506883,
+    "name": "BGM_Game",
+    "version": 1
+}

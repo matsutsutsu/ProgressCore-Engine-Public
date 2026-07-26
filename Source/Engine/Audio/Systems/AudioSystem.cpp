@@ -50,19 +50,23 @@ void AudioSystem::Update(float dt) {
         if (emitter.eventHash == 0 && !emitter.eventName.empty())
             emitter.eventHash = CCL::Utils::HashString(emitter.eventName.c_str());
 
-        // --- 音の切り替え：鳴らしている音(activeHash)と指定(eventHash)が食い違ったら止めて鳴らし直す ---
-        if (emitter.isPlaying && emitter.playingId != 0 && emitter.eventHash != emitter.activeHash) {
+        // --- 音の切り替え：鳴らしている音(activeHash)や空間モード(2D/3D)が指定と食い違ったら止めて鳴らし直す ---
+        if (emitter.isPlaying && emitter.playingId != 0
+            && (emitter.eventHash != emitter.activeHash || emitter.is3D != emitter.activeIs3D)) {
             api->StopEvent(emitter.playingId);
             emitter.isPlaying = false;
             emitter.playingId = 0;
         }
 
-        // --- 未再生で自動再生フラグが立っていれば開始 ---
+        // --- 未再生で自動再生フラグが立っていれば開始（is3D で 3D空間音／2D一様再生を選ぶ） ---
         if (emitter.autoPlay && !emitter.isPlaying && emitter.eventHash != 0) {
-            emitter.playingId = api->PlayEvent3D(emitter.eventHash, transform.position);
+            emitter.playingId = emitter.is3D
+                ? api->PlayEvent3D(emitter.eventHash, transform.position)
+                : api->PlayEvent(emitter.eventHash); // 2D: 距離減衰・定位なし（BGM向き）
             emitter.isPlaying = (emitter.playingId != 0);
             if (emitter.isPlaying) {
                 emitter.activeHash   = emitter.eventHash;
+                emitter.activeIs3D   = emitter.is3D;
                 api->SetEventParameter(emitter.playingId, "volume", emitter.volume);
                 emitter.activeVolume = emitter.volume;
             }
@@ -74,8 +78,8 @@ void AudioSystem::Update(float dt) {
             emitter.activeVolume = emitter.volume;
         }
 
-        // --- 再生中：座標を毎フレーム追従 ---
-        if (emitter.isPlaying && emitter.playingId != 0) {
+        // --- 再生中：3Dのときだけ座標を毎フレーム追従（2Dは位置に依存しないので不要） ---
+        if (emitter.isPlaying && emitter.playingId != 0 && emitter.is3D) {
             api->SetEvent3DAttributes(emitter.playingId, transform.position);
         }
         });

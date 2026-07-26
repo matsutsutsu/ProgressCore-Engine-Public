@@ -77,6 +77,10 @@ class DroneManagerSystem : public CCL::ECS::IfSystem<DroneManagerSystem,
     ///        EditorScene が Registry を再生成する順序問題を吸収するため遅延登録。
     void EnsureDroneAIRegistered();
 
+    /// @brief ボスと StateTreeRegistry が準備でき次第、初期ドローンを1回だけ配備する。
+    ///        シーン開始直後はボス未生成のフレームがあるため、準備が整うまで毎フレーム再試行する。
+    void TryAutoSpawnInitial();
+
     /// @brief JustEvadeSuccessEvent を受けたときの処理
     void OnJustEvadeSuccess(const struct JustEvadeSuccessEvent &ev);
 
@@ -87,6 +91,11 @@ class DroneManagerSystem : public CCL::ECS::IfSystem<DroneManagerSystem,
     int   _spawnCount  = 12;
     float _spawnRadius = 8.0f;
     float _spawnSpeed  = 40.0f;
+
+    // ---- シーン開始時の自動初期配備 ----
+    bool _autoSpawnEnabled = true;  ///< シーン開始時に初期ドローンを自動配備するか
+    bool _autoSpawnDone    = false; ///< 初回配備が完了したか（1回だけ実行するためのラッチ）
+    int  _initialSpawnCount = 100;  ///< 初期配備数（展示会向け。スペックに応じて調整可）
 
   public:
     void OnGui() override; // 生成/破壊のデバッグUI
