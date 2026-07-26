@@ -2,7 +2,7 @@
 #include <memory>
 
 // 前方宣言
-class FmodAudioManager;
+class IAudioAPI; // オーディオバックエンド抽象（実体は DxtkAudioManager 等）
 class JoltPhysicsManager;
 class InputFacade;
 
@@ -22,7 +22,7 @@ public:
         return instance;
     }
 
-    std::shared_ptr<FmodAudioManager>   audioManager;
+    std::shared_ptr<IAudioAPI>          audioManager; // 実体は起動時に選ぶ（現在は DxtkAudioManager）
     std::shared_ptr<JoltPhysicsManager> physicsManager;
     std::shared_ptr<InputFacade>        inputFacade;
 

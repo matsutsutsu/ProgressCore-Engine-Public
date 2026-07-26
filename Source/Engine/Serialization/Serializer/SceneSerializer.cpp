@@ -35,6 +35,7 @@
 #include "Engine/Platform/Core/FileSystem.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Transform/Systems/TransformUpdateSystem.h"
+#include "Engine/UI/ECS/Components/UITransformComponent.h" // UI(HUD)はシステムが実行時生成するので保存対象外
 
 #include <json.hpp>
 #include <fstream>
@@ -130,6 +131,9 @@ bool SceneSerializer::Serialize(World* world, const std::string& filepath)
             // 保存対象外の判定
             if (chunk->HasComponent<Tag::DestroyTag>())    continue; // 削除予定
             if (chunk->HasComponent<Tag::PersistentTag>()) continue; // シーン跨ぎの常駐物
+            // UI(HUD/メニュー)は各シーンの UI システムが起動時に生成する“実行時エンティティ”。
+            // シーンに焼き込むと、次回起動時に「ロード分＋システム生成分」で二重になるため保存しない。
+            if (chunk->HasComponent<UITransformComponent>()) continue;
 
             size_t          count = chunk->GetEntityCount();
             const EntityID* ids = chunk->GetEntityIDs();

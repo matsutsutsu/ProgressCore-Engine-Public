@@ -13,7 +13,7 @@
 #include "Game/Scenes/BaseScene.h"
 
 // APIファイルをインクルード
-#include "Engine/Audio/FmodIntegration/FmodAudioManager.h"
+#include "Engine/Audio/DirectXTKIntegration/DxtkAudioManager.h" // オーディオは DXTK Audio を使用
 #include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"
 #include "Engine/Platform/Input/InputFacade.h"
 
@@ -118,10 +118,10 @@ Framework::Framework(HWND hWnd)
 	}
 
 	{
-		ZoneScopedN("Init: Audio (Fmod) + LoadConfig");
-		services.audioManager = std::make_shared<FmodAudioManager>();
+		ZoneScopedN("Init: Audio (DXTK) + LoadConfig");
+		services.audioManager = std::make_shared<DxtkAudioManager>();
 		services.audioManager->Initialize();
-		services.audioManager->LoadConfig("Assets/Config/AudioConfig.json");
+		services.audioManager->LoadConfig("Assets/Config/AudioConfigDXTK.json");
 	}
 
 	{

@@ -15,7 +15,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 135,
+                    "parent": 144,
                     "position": [
                         0.0,
                         0.0,
@@ -51,7 +51,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 135,
+                    "parent": 144,
                     "position": [
                         0.0,
                         0.0,
@@ -87,7 +87,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 135,
+                    "parent": 144,
                     "position": [
                         0.0,
                         0.0,
@@ -123,7 +123,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 135,
+                    "parent": 144,
                     "position": [
                         0.0,
                         0.0,
@@ -159,7 +159,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 135,
+                    "parent": 144,
                     "position": [
                         0.0,
                         0.0,
@@ -195,7 +195,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 135,
+                    "parent": 144,
                     "position": [
                         0.0,
                         0.0,
@@ -231,7 +231,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 135,
+                    "parent": 144,
                     "position": [
                         0.0,
                         0.0,
@@ -267,7 +267,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 135,
+                    "parent": 144,
                     "position": [
                         0.0,
                         0.0,
@@ -303,7 +303,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 135,
+                    "parent": 144,
                     "position": [
                         0.0,
                         0.0,
@@ -339,7 +339,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 135,
+                    "parent": 144,
                     "position": [
                         0.0,
                         0.0,
@@ -375,7 +375,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 135,
+                    "parent": 144,
                     "position": [
                         0.0,
                         0.0,
@@ -411,7 +411,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 135,
+                    "parent": 144,
                     "position": [
                         0.0,
                         0.0,
@@ -431,120 +431,6 @@
                 }
             },
             "lid": 12
-        },
-        {
-            "components": {
-                "Jolt Mesh Collider": {
-                    "isEnabled": true
-                },
-                "Jolt Rigidbody": {
-                    "friction": 0.20000000298023224,
-                    "gravityFactor": 1.0,
-                    "initialVelocity": [
-                        0.0,
-                        0.0,
-                        0.0
-                    ],
-                    "isSensor": false,
-                    "motionType": 0,
-                    "objectLayer": 0,
-                    "restitution": 0.0,
-                    "useCCD": false
-                },
-                "Material": null,
-                "Model": {
-                    "assetPath": "Assets/Models/Stage/GameStageCircle.glb"
-                },
-                "Name": {
-                    "name": "Circular_Floor"
-                },
-                "TimeState": {
-                    "buffScale": 1.0,
-                    "cinematicScale": 1.0,
-                    "freezeScale": 0.0,
-                    "group": 0,
-                    "hitStopTimer": 0.0,
-                    "localDt": 0.01666666753590107
-                },
-                "Transform": {
-                    "isStatic": false,
-                    "parent": 135,
-                    "position": [
-                        0.0,
-                        -10.399999618530273,
-                        0.0
-                    ],
-                    "rotation": [
-                        0.0,
-                        0.0,
-                        0.0,
-                        1.0
-                    ],
-                    "scale": [
-                        10.0,
-                        10.0,
-                        10.0
-                    ]
-                }
-            },
-            "lid": 13
-        },
-        {
-            "components": {
-                "Jolt Mesh Collider": {
-                    "isEnabled": true
-                },
-                "Jolt Rigidbody": {
-                    "friction": 0.20000000298023224,
-                    "gravityFactor": 1.0,
-                    "initialVelocity": [
-                        0.0,
-                        0.0,
-                        0.0
-                    ],
-                    "isSensor": false,
-                    "motionType": 0,
-                    "objectLayer": 0,
-                    "restitution": 0.0,
-                    "useCCD": false
-                },
-                "Material": null,
-                "Model": {
-                    "assetPath": "Assets/Models/Stage/SM_Circular_Floor_Top.glb"
-                },
-                "Name": {
-                    "name": "Circular_Floor_Top"
-                },
-                "TimeState": {
-                    "buffScale": 1.0,
-                    "cinematicScale": 1.0,
-                    "freezeScale": 0.0,
-                    "group": 0,
-                    "hitStopTimer": 0.0,
-                    "localDt": 0.01666666753590107
-                },
-                "Transform": {
-                    "isStatic": false,
-                    "parent": 135,
-                    "position": [
-                        0.0,
-                        0.0,
-                        0.0
-                    ],
-                    "rotation": [
-                        0.0,
-                        -0.3583679497241974,
-                        0.0,
-                        0.9335803985595703
-                    ],
-                    "scale": [
-                        10.0,
-                        10.0,
-                        10.0
-                    ]
-                }
-            },
-            "lid": 14
         },
         {
             "components": {
@@ -584,7 +470,7 @@
                     ]
                 }
             },
-            "lid": 15
+            "lid": 22
         },
         {
             "components": {
@@ -624,7 +510,7 @@
                     ]
                 }
             },
-            "lid": 16
+            "lid": 23
         },
         {
             "components": {
@@ -664,7 +550,7 @@
                     ]
                 }
             },
-            "lid": 17
+            "lid": 24
         },
         {
             "components": {
@@ -704,7 +590,7 @@
                     ]
                 }
             },
-            "lid": 18
+            "lid": 25
         },
         {
             "components": {
@@ -744,7 +630,7 @@
                     ]
                 }
             },
-            "lid": 19
+            "lid": 26
         },
         {
             "components": {
@@ -784,7 +670,7 @@
                     ]
                 }
             },
-            "lid": 20
+            "lid": 27
         },
         {
             "components": {
@@ -824,7 +710,7 @@
                     ]
                 }
             },
-            "lid": 21
+            "lid": 28
         },
         {
             "components": {
@@ -864,7 +750,7 @@
                     ]
                 }
             },
-            "lid": 22
+            "lid": 29
         },
         {
             "components": {
@@ -904,7 +790,7 @@
                     ]
                 }
             },
-            "lid": 23
+            "lid": 30
         },
         {
             "components": {
@@ -944,7 +830,7 @@
                     ]
                 }
             },
-            "lid": 24
+            "lid": 31
         },
         {
             "components": {
@@ -984,7 +870,7 @@
                     ]
                 }
             },
-            "lid": 25
+            "lid": 32
         },
         {
             "components": {
@@ -1024,7 +910,7 @@
                     ]
                 }
             },
-            "lid": 26
+            "lid": 33
         },
         {
             "components": {
@@ -1064,7 +950,7 @@
                     ]
                 }
             },
-            "lid": 27
+            "lid": 34
         },
         {
             "components": {
@@ -1104,7 +990,7 @@
                     ]
                 }
             },
-            "lid": 28
+            "lid": 35
         },
         {
             "components": {
@@ -1144,7 +1030,7 @@
                     ]
                 }
             },
-            "lid": 29
+            "lid": 36
         },
         {
             "components": {
@@ -1184,7 +1070,7 @@
                     ]
                 }
             },
-            "lid": 30
+            "lid": 37
         },
         {
             "components": {
@@ -1224,7 +1110,7 @@
                     ]
                 }
             },
-            "lid": 31
+            "lid": 38
         },
         {
             "components": {
@@ -1264,7 +1150,7 @@
                     ]
                 }
             },
-            "lid": 32
+            "lid": 39
         },
         {
             "components": {
@@ -1304,7 +1190,7 @@
                     ]
                 }
             },
-            "lid": 33
+            "lid": 40
         },
         {
             "components": {
@@ -1344,7 +1230,7 @@
                     ]
                 }
             },
-            "lid": 34
+            "lid": 41
         },
         {
             "components": {
@@ -1384,7 +1270,7 @@
                     ]
                 }
             },
-            "lid": 35
+            "lid": 42
         },
         {
             "components": {
@@ -1424,7 +1310,7 @@
                     ]
                 }
             },
-            "lid": 36
+            "lid": 43
         },
         {
             "components": {
@@ -1464,7 +1350,7 @@
                     ]
                 }
             },
-            "lid": 37
+            "lid": 44
         },
         {
             "components": {
@@ -1504,7 +1390,7 @@
                     ]
                 }
             },
-            "lid": 38
+            "lid": 45
         },
         {
             "components": {
@@ -1544,7 +1430,7 @@
                     ]
                 }
             },
-            "lid": 39
+            "lid": 46
         },
         {
             "components": {
@@ -1584,7 +1470,7 @@
                     ]
                 }
             },
-            "lid": 40
+            "lid": 47
         },
         {
             "components": {
@@ -1624,7 +1510,7 @@
                     ]
                 }
             },
-            "lid": 41
+            "lid": 48
         },
         {
             "components": {
@@ -1664,7 +1550,7 @@
                     ]
                 }
             },
-            "lid": 42
+            "lid": 49
         },
         {
             "components": {
@@ -1704,7 +1590,7 @@
                     ]
                 }
             },
-            "lid": 43
+            "lid": 50
         },
         {
             "components": {
@@ -1744,7 +1630,7 @@
                     ]
                 }
             },
-            "lid": 44
+            "lid": 51
         },
         {
             "components": {
@@ -1784,7 +1670,7 @@
                     ]
                 }
             },
-            "lid": 45
+            "lid": 52
         },
         {
             "components": {
@@ -1824,7 +1710,7 @@
                     ]
                 }
             },
-            "lid": 46
+            "lid": 53
         },
         {
             "components": {
@@ -1864,7 +1750,7 @@
                     ]
                 }
             },
-            "lid": 47
+            "lid": 54
         },
         {
             "components": {
@@ -1904,7 +1790,7 @@
                     ]
                 }
             },
-            "lid": 48
+            "lid": 55
         },
         {
             "components": {
@@ -1944,7 +1830,7 @@
                     ]
                 }
             },
-            "lid": 49
+            "lid": 56
         },
         {
             "components": {
@@ -1984,7 +1870,7 @@
                     ]
                 }
             },
-            "lid": 50
+            "lid": 57
         },
         {
             "components": {
@@ -2024,7 +1910,7 @@
                     ]
                 }
             },
-            "lid": 51
+            "lid": 58
         },
         {
             "components": {
@@ -2064,7 +1950,7 @@
                     ]
                 }
             },
-            "lid": 52
+            "lid": 59
         },
         {
             "components": {
@@ -2104,7 +1990,7 @@
                     ]
                 }
             },
-            "lid": 53
+            "lid": 60
         },
         {
             "components": {
@@ -2144,7 +2030,7 @@
                     ]
                 }
             },
-            "lid": 54
+            "lid": 61
         },
         {
             "components": {
@@ -2184,7 +2070,7 @@
                     ]
                 }
             },
-            "lid": 55
+            "lid": 62
         },
         {
             "components": {
@@ -2224,7 +2110,7 @@
                     ]
                 }
             },
-            "lid": 56
+            "lid": 63
         },
         {
             "components": {
@@ -2264,7 +2150,7 @@
                     ]
                 }
             },
-            "lid": 57
+            "lid": 64
         },
         {
             "components": {
@@ -2304,7 +2190,7 @@
                     ]
                 }
             },
-            "lid": 58
+            "lid": 65
         },
         {
             "components": {
@@ -2344,7 +2230,7 @@
                     ]
                 }
             },
-            "lid": 59
+            "lid": 66
         },
         {
             "components": {
@@ -2384,7 +2270,7 @@
                     ]
                 }
             },
-            "lid": 60
+            "lid": 67
         },
         {
             "components": {
@@ -2424,7 +2310,7 @@
                     ]
                 }
             },
-            "lid": 61
+            "lid": 68
         },
         {
             "components": {
@@ -2464,7 +2350,7 @@
                     ]
                 }
             },
-            "lid": 62
+            "lid": 69
         },
         {
             "components": {
@@ -2504,7 +2390,7 @@
                     ]
                 }
             },
-            "lid": 63
+            "lid": 70
         },
         {
             "components": {
@@ -2544,7 +2430,7 @@
                     ]
                 }
             },
-            "lid": 64
+            "lid": 71
         },
         {
             "components": {
@@ -2584,7 +2470,7 @@
                     ]
                 }
             },
-            "lid": 65
+            "lid": 72
         },
         {
             "components": {
@@ -2624,7 +2510,7 @@
                     ]
                 }
             },
-            "lid": 66
+            "lid": 73
         },
         {
             "components": {
@@ -2664,7 +2550,7 @@
                     ]
                 }
             },
-            "lid": 67
+            "lid": 74
         },
         {
             "components": {
@@ -2704,7 +2590,7 @@
                     ]
                 }
             },
-            "lid": 68
+            "lid": 75
         },
         {
             "components": {
@@ -2744,7 +2630,7 @@
                     ]
                 }
             },
-            "lid": 69
+            "lid": 76
         },
         {
             "components": {
@@ -2784,7 +2670,7 @@
                     ]
                 }
             },
-            "lid": 70
+            "lid": 77
         },
         {
             "components": {
@@ -2824,7 +2710,7 @@
                     ]
                 }
             },
-            "lid": 71
+            "lid": 78
         },
         {
             "components": {
@@ -2864,7 +2750,7 @@
                     ]
                 }
             },
-            "lid": 72
+            "lid": 79
         },
         {
             "components": {
@@ -2904,7 +2790,7 @@
                     ]
                 }
             },
-            "lid": 73
+            "lid": 80
         },
         {
             "components": {
@@ -2944,7 +2830,7 @@
                     ]
                 }
             },
-            "lid": 74
+            "lid": 81
         },
         {
             "components": {
@@ -2984,7 +2870,7 @@
                     ]
                 }
             },
-            "lid": 75
+            "lid": 82
         },
         {
             "components": {
@@ -3024,7 +2910,7 @@
                     ]
                 }
             },
-            "lid": 76
+            "lid": 83
         },
         {
             "components": {
@@ -3064,7 +2950,7 @@
                     ]
                 }
             },
-            "lid": 77
+            "lid": 84
         },
         {
             "components": {
@@ -3104,7 +2990,7 @@
                     ]
                 }
             },
-            "lid": 78
+            "lid": 85
         },
         {
             "components": {
@@ -3144,7 +3030,7 @@
                     ]
                 }
             },
-            "lid": 79
+            "lid": 86
         },
         {
             "components": {
@@ -3184,7 +3070,7 @@
                     ]
                 }
             },
-            "lid": 80
+            "lid": 87
         },
         {
             "components": {
@@ -3224,7 +3110,7 @@
                     ]
                 }
             },
-            "lid": 81
+            "lid": 88
         },
         {
             "components": {
@@ -3264,7 +3150,7 @@
                     ]
                 }
             },
-            "lid": 82
+            "lid": 89
         },
         {
             "components": {
@@ -3304,7 +3190,7 @@
                     ]
                 }
             },
-            "lid": 83
+            "lid": 90
         },
         {
             "components": {
@@ -3344,7 +3230,7 @@
                     ]
                 }
             },
-            "lid": 84
+            "lid": 91
         },
         {
             "components": {
@@ -3384,7 +3270,7 @@
                     ]
                 }
             },
-            "lid": 85
+            "lid": 92
         },
         {
             "components": {
@@ -3424,7 +3310,7 @@
                     ]
                 }
             },
-            "lid": 86
+            "lid": 93
         },
         {
             "components": {
@@ -3464,7 +3350,7 @@
                     ]
                 }
             },
-            "lid": 87
+            "lid": 94
         },
         {
             "components": {
@@ -3504,7 +3390,7 @@
                     ]
                 }
             },
-            "lid": 88
+            "lid": 95
         },
         {
             "components": {
@@ -3544,7 +3430,7 @@
                     ]
                 }
             },
-            "lid": 89
+            "lid": 96
         },
         {
             "components": {
@@ -3584,7 +3470,7 @@
                     ]
                 }
             },
-            "lid": 90
+            "lid": 97
         },
         {
             "components": {
@@ -3624,7 +3510,7 @@
                     ]
                 }
             },
-            "lid": 91
+            "lid": 98
         },
         {
             "components": {
@@ -3664,7 +3550,7 @@
                     ]
                 }
             },
-            "lid": 92
+            "lid": 99
         },
         {
             "components": {
@@ -3704,7 +3590,7 @@
                     ]
                 }
             },
-            "lid": 93
+            "lid": 100
         },
         {
             "components": {
@@ -3744,7 +3630,7 @@
                     ]
                 }
             },
-            "lid": 94
+            "lid": 101
         },
         {
             "components": {
@@ -3784,7 +3670,7 @@
                     ]
                 }
             },
-            "lid": 95
+            "lid": 102
         },
         {
             "components": {
@@ -3824,7 +3710,7 @@
                     ]
                 }
             },
-            "lid": 96
+            "lid": 103
         },
         {
             "components": {
@@ -3864,7 +3750,7 @@
                     ]
                 }
             },
-            "lid": 97
+            "lid": 104
         },
         {
             "components": {
@@ -3904,7 +3790,7 @@
                     ]
                 }
             },
-            "lid": 98
+            "lid": 105
         },
         {
             "components": {
@@ -3944,7 +3830,7 @@
                     ]
                 }
             },
-            "lid": 99
+            "lid": 106
         },
         {
             "components": {
@@ -3984,7 +3870,7 @@
                     ]
                 }
             },
-            "lid": 100
+            "lid": 107
         },
         {
             "components": {
@@ -4024,7 +3910,7 @@
                     ]
                 }
             },
-            "lid": 101
+            "lid": 108
         },
         {
             "components": {
@@ -4064,7 +3950,7 @@
                     ]
                 }
             },
-            "lid": 102
+            "lid": 109
         },
         {
             "components": {
@@ -4104,7 +3990,7 @@
                     ]
                 }
             },
-            "lid": 103
+            "lid": 110
         },
         {
             "components": {
@@ -4144,7 +4030,7 @@
                     ]
                 }
             },
-            "lid": 104
+            "lid": 111
         },
         {
             "components": {
@@ -4184,7 +4070,7 @@
                     ]
                 }
             },
-            "lid": 105
+            "lid": 112
         },
         {
             "components": {
@@ -4224,7 +4110,7 @@
                     ]
                 }
             },
-            "lid": 106
+            "lid": 113
         },
         {
             "components": {
@@ -4264,7 +4150,7 @@
                     ]
                 }
             },
-            "lid": 107
+            "lid": 114
         },
         {
             "components": {
@@ -4304,7 +4190,7 @@
                     ]
                 }
             },
-            "lid": 108
+            "lid": 115
         },
         {
             "components": {
@@ -4344,7 +4230,7 @@
                     ]
                 }
             },
-            "lid": 109
+            "lid": 116
         },
         {
             "components": {
@@ -4384,7 +4270,7 @@
                     ]
                 }
             },
-            "lid": 110
+            "lid": 117
         },
         {
             "components": {
@@ -4424,7 +4310,7 @@
                     ]
                 }
             },
-            "lid": 111
+            "lid": 118
         },
         {
             "components": {
@@ -4464,7 +4350,7 @@
                     ]
                 }
             },
-            "lid": 112
+            "lid": 119
         },
         {
             "components": {
@@ -4504,7 +4390,7 @@
                     ]
                 }
             },
-            "lid": 113
+            "lid": 120
         },
         {
             "components": {
@@ -4544,7 +4430,7 @@
                     ]
                 }
             },
-            "lid": 114
+            "lid": 121
         },
         {
             "components": {
@@ -4584,7 +4470,7 @@
                     ]
                 }
             },
-            "lid": 115
+            "lid": 122
         },
         {
             "components": {
@@ -4624,7 +4510,7 @@
                     ]
                 }
             },
-            "lid": 116
+            "lid": 123
         },
         {
             "components": {
@@ -4664,7 +4550,7 @@
                     ]
                 }
             },
-            "lid": 117
+            "lid": 124
         },
         {
             "components": {
@@ -4704,7 +4590,7 @@
                     ]
                 }
             },
-            "lid": 118
+            "lid": 125
         },
         {
             "components": {
@@ -4744,7 +4630,7 @@
                     ]
                 }
             },
-            "lid": 119
+            "lid": 126
         },
         {
             "components": {
@@ -4784,7 +4670,7 @@
                     ]
                 }
             },
-            "lid": 120
+            "lid": 127
         },
         {
             "components": {
@@ -4824,7 +4710,7 @@
                     ]
                 }
             },
-            "lid": 121
+            "lid": 128
         },
         {
             "components": {
@@ -4864,7 +4750,7 @@
                     ]
                 }
             },
-            "lid": 122
+            "lid": 129
         },
         {
             "components": {
@@ -4904,7 +4790,7 @@
                     ]
                 }
             },
-            "lid": 123
+            "lid": 130
         },
         {
             "components": {
@@ -4944,7 +4830,7 @@
                     ]
                 }
             },
-            "lid": 124
+            "lid": 131
         },
         {
             "components": {
@@ -4984,7 +4870,7 @@
                     ]
                 }
             },
-            "lid": 125
+            "lid": 132
         },
         {
             "components": {
@@ -5024,7 +4910,7 @@
                     ]
                 }
             },
-            "lid": 126
+            "lid": 133
         },
         {
             "components": {
@@ -5064,7 +4950,7 @@
                     ]
                 }
             },
-            "lid": 127
+            "lid": 134
         },
         {
             "components": {
@@ -5104,7 +4990,7 @@
                     ]
                 }
             },
-            "lid": 128
+            "lid": 135
         },
         {
             "components": {
@@ -5144,7 +5030,7 @@
                     ]
                 }
             },
-            "lid": 129
+            "lid": 136
         },
         {
             "components": {
@@ -5184,7 +5070,7 @@
                     ]
                 }
             },
-            "lid": 130
+            "lid": 137
         },
         {
             "components": {
@@ -5224,7 +5110,7 @@
                     ]
                 }
             },
-            "lid": 131
+            "lid": 138
         },
         {
             "components": {
@@ -5264,7 +5150,7 @@
                     ]
                 }
             },
-            "lid": 132
+            "lid": 139
         },
         {
             "components": {
@@ -5304,7 +5190,7 @@
                     ]
                 }
             },
-            "lid": 133
+            "lid": 140
         },
         {
             "components": {
@@ -5344,10 +5230,124 @@
                     ]
                 }
             },
-            "lid": 134
+            "lid": 141
+        },
+        {
+            "components": {
+                "Jolt Mesh Collider": {
+                    "isEnabled": true
+                },
+                "Jolt Rigidbody": {
+                    "friction": 0.20000000298023224,
+                    "gravityFactor": 1.0,
+                    "initialVelocity": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "isSensor": false,
+                    "motionType": 0,
+                    "objectLayer": 0,
+                    "restitution": 0.0,
+                    "useCCD": false
+                },
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Stage/GameStageCircle.glb"
+                },
+                "Name": {
+                    "name": "Circular_Floor"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 144,
+                    "position": [
+                        0.0,
+                        -10.399999618530273,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        10.0,
+                        10.0,
+                        10.0
+                    ]
+                }
+            },
+            "lid": 142
+        },
+        {
+            "components": {
+                "Jolt Mesh Collider": {
+                    "isEnabled": true
+                },
+                "Jolt Rigidbody": {
+                    "friction": 0.20000000298023224,
+                    "gravityFactor": 1.0,
+                    "initialVelocity": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "isSensor": false,
+                    "motionType": 0,
+                    "objectLayer": 0,
+                    "restitution": 0.0,
+                    "useCCD": false
+                },
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Stage/SM_Circular_Floor_Top.glb"
+                },
+                "Name": {
+                    "name": "Circular_Floor_Top"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 144,
+                    "position": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        -0.3583679497241974,
+                        0.0,
+                        0.9335803985595703
+                    ],
+                    "scale": [
+                        10.0,
+                        10.0,
+                        10.0
+                    ]
+                }
+            },
+            "lid": 143
         }
     ],
     "magic": 1397506883,
-    "timestamp": 1784858729,
+    "timestamp": 1785041779,
     "version": 1
 }

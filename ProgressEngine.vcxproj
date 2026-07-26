@@ -427,6 +427,7 @@
     <ClInclude Include="Source\Engine\Animation\Systems\RootMotionSystem.h" />
     <ClInclude Include="Source\Engine\Audio\Components\AudioEmitterComponent.h" />
     <ClInclude Include="Source\Engine\Audio\Components\AudioEvents.h" />
+    <ClInclude Include="Source\Engine\Audio\DirectXTKIntegration\DxtkAudioManager.h" />
     <ClInclude Include="Source\Engine\Audio\FmodIntegration\FmodAudioManager.h" />
     <ClInclude Include="Source\Engine\Audio\FmodIntegration\IAudioAPI.h" />
     <ClInclude Include="Source\Engine\Audio\Systems\AudioSystem.h" />
@@ -1339,6 +1340,7 @@
     <ClCompile Include="Source\Engine\Animation\Systems\CombatAnimationSyncSystem.cpp" />
     <ClCompile Include="Source\Engine\Animation\Systems\RootMotionSystem.cpp" />
     <ClCompile Include="Source\Engine\Audio\Components\AudioComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Audio\DirectXTKIntegration\DxtkAudioManager.cpp" />
     <ClCompile Include="Source\Engine\Audio\FmodIntegration\FmodAudioManager.cpp" />
     <ClCompile Include="Source\Engine\Audio\Systems\AudioSystem.cpp" />
     <ClCompile Include="Source\Engine\Camera\Components\CameraBodyActionTPSComponentMeta.cpp" />
