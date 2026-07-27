@@ -172,8 +172,8 @@ int DroneManagerSystem::SpawnDrones(int count)
         if (auto *d = _world->GetComponent<DroneComponent>(droneId))
         {
             d->ownerBossId = bossId;
-            // ★動作確認用：円陣を組ませる
-            d->currentFormation = DroneFormationType::OrbitCircle;
+            // 生成時の初期陣形：ボスの頭上高くで旋回する HighOrbit。
+            d->currentFormation = DroneFormationType::HighOrbit;
             d->orbitRadius      = 8.0f;
             d->hasReachedSlot   = false;   // スポーン直後は必ず MoveToSlot から開始
         }

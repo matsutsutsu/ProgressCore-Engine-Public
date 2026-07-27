@@ -13,7 +13,7 @@ cd /d "%~dp0"
 set CONFIG=Debug
 if not "%~1"=="" set CONFIG=%~1
 
-set EXE=Build\bin\x64\%CONFIG%\ProgressEngine.exe
+set EXE=Build\bin\x64\%CONFIG%\OVERCLEAVE.exe
 
 if not exist "%EXE%" (
     echo [Run.bat] Not found: %EXE%

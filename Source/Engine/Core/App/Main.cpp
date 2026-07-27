@@ -92,7 +92,7 @@ INT WINAPI wWinMain(HINSTANCE instance, HINSTANCE prev_instance, LPWSTR cmd_line
 		DWORD style = WS_POPUP | WS_VISIBLE;
 		DWORD exStyle = 0; // WS_EX_TOPMOSTは付けない！
 
-		hWnd = CreateWindowEx(exStyle, _T("Game"), _T("RuneForge"), style,
+		hWnd = CreateWindowEx(exStyle, _T("Game"), _T("OVERCLEAVE"), style,
 			0, 0, SCREEN_WIDTH, SCREEN_HEIGHT,
 			NULL, NULL, instance, NULL);
 	}
@@ -112,7 +112,7 @@ INT WINAPI wWinMain(HINSTANCE instance, HINSTANCE prev_instance, LPWSTR cmd_line
 		hWnd = CreateWindowEx(
 			0,
 			_T("Game"),
-			_T("RuneForge"),
+			_T("OVERCLEAVE"),
 			style,
 			0, 0,           // X, Y座標
 			screenW,        // 幅

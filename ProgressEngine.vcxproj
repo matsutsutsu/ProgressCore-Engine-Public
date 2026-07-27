@@ -62,6 +62,11 @@
     <Import Project="Build\EngineCore.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <!-- 出力Exe名。プロジェクト名(ProgressEngine=エンジン名)とは別に、ゲーム名で出力する。
+       手動リネームは事故のもと。ここで一度固定すれば全構成 OVERCLEAVE.exe が出る。 -->
+  <PropertyGroup>
+    <TargetName>OVERCLEAVE</TargetName>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>Build/bin\$(Platform)\$(Configuration)\</OutDir>

@@ -24,7 +24,7 @@ void TitleMenuSystem::Initialize()
         world.AddResource<GameFlowState>();
 
     // --- タイトルロゴ ---
-    CCL::GameUI::SpawnLabel(world, "TitleLogo", "RuneForge", {-150.0f, -180.0f}, 56.0f);
+    CCL::GameUI::SpawnLabel(world, "TitleLogo", "OVERCLEAVE", {-150.0f, -180.0f}, 56.0f);
 
     // --- ボタン（START が初期フォーカス） ---
     CCL::GameUI::SpawnButton(world, "BtnStart", "LblStart", "START", {0.0f, -20.0f}, "start_game", true);
