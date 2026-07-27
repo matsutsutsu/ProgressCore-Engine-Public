@@ -3,7 +3,7 @@
         {
             "components": {
                 "DroneComponent": {
-                    "currentFormation": 1,
+                    "currentFormation": 5,
                     "currentState": 0,
                     "hasReachedSlot": false,
                     "localIndex": 5,

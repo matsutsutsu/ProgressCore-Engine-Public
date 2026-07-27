@@ -1,7 +1,5 @@
 /// @file  Formations_Basic.h
 /// @brief 基本的な陣形クラスをまとめて定義（役割ごとに1ファイル）。
-///        旧 DroneFormationSystem の CalculateXxx 群を IFormation に移植していく。
-///        まずは動作確認用に OrbitCircle（円陣）だけ実装。
 #pragma once
 #include "Game/Logics/AI/Drone/Formation/IFormation.h"
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
@@ -51,6 +49,49 @@ struct OrbitCircleFormation : public IFormation
     }
 };
 
+// ====================================================================
+// 頭上円陣（HighOrbit）: ボスの「頭上高く」で円を描いて周回する中立陣形。
+//   OrbitCircle はボスの高さ(≈2m)で回るため、プレイヤーが接近するとドローンが
+//   壁になって近づけない（＝意図しない接近拒否）。攻撃していない間はドローンを
+//   頭上へ退避させ、地上の間合い（プレイヤー↔ボス）を空ける。
+//   → 攻撃と攻撃の「あいだ」の中立はこちらを使う（BT が Orbit の代わりに指定）。
+// ====================================================================
+struct HighOrbitFormation : public IFormation
+{
+    void Calculate(DroneComponent &drone, const FormationContext &ctx) override
+    {
+        using namespace DirectX::SimpleMath;
+
+        const int   total     = (drone.totalDrones > 0) ? drone.totalDrones : 1;
+        const float baseAngle = (2.0f * 3.14159265f) *
+                                (static_cast<float>(drone.localIndex) / static_cast<float>(total));
+        const float angle = baseAngle + ctx.time * 0.5f;
+
+        // --- 半径：固定値（機数に依らず一定）---
+        const float r = kOrbitRadius;
+
+        Vector3 offset(std::cos(angle) * r, 0.0f, std::sin(angle) * r);
+        offset.y = kHighOrbitHeight; // ★ ボスの頭上高く（地上の間合いを塞がない）
+
+        drone.targetPosition = ctx.bossPos + offset;
+
+        // 視線は外向き（水平）
+        Vector3 look = offset;
+        look.y = 0.0f;
+        if (look.LengthSquared() > 0.001f) { look.Normalize(); drone.targetLookDirection = look; }
+
+        // 中立状態＝攻撃で使ったスクラッチをリセット（次の攻撃へ前回値を漏らさない）。
+        // OrbitCircle と同じ役割。BT が攻撃の合間にこの陣形を挟む前提。
+        drone.attackProgress      = 0.0f;
+        drone.fireDelay           = 0.0f;
+        drone.chargeFollowsTarget = false;
+    }
+
+    // --- 調整値 ---
+    static constexpr float kHighOrbitHeight = 20.0f; // ボス頭上の周回高さ（ボスの背丈に合わせて調整）
+    static constexpr float kOrbitRadius     = 20.0f; // 円の半径（固定。詰まる/広すぎるならここを変える）
+};
+
 // … 今後 DeathRing / AegisShield / AllCharge などをここに1クラスずつ追加 …
 
 // ====================================================================
@@ -60,6 +101,7 @@ inline void RegisterAll()
 {
     auto &reg = FormationRegistry::Instance();
     reg.Register<OrbitCircleFormation>(DroneFormationType::OrbitCircle);
+    reg.Register<HighOrbitFormation>(DroneFormationType::HighOrbit);
     // reg.Register<DeathRingFormation>(DroneFormationType::DeathRing);
     // … 追加した分だけ登録 …
 }

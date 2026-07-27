@@ -9,7 +9,7 @@
     { "id": 32, "type": 4, "name": "タメ待機 1.5s",         "actionId": 102,  "inputPinId": 33, "outputPinId": 0,  "posX": -300.0, "posY": 550.0 },
     { "id": 34, "type": 4, "name": "ストライク(突撃)",      "actionId": 1006, "inputPinId": 35, "outputPinId": 0,  "posX": -100.0, "posY": 550.0 },
     { "id": 36, "type": 4, "name": "突撃持続 2.0s",         "actionId": 103,  "inputPinId": 37, "outputPinId": 0,  "posX": 100.0,  "posY": 550.0 },
-    { "id": 38, "type": 4, "name": "円陣へ戻す",            "actionId": 2000, "inputPinId": 39, "outputPinId": 0,  "posX": 300.0,  "posY": 550.0 },
+    { "id": 38, "type": 4, "name": "頭上円陣へ戻す",        "actionId": 2004, "inputPinId": 39, "outputPinId": 0,  "posX": 300.0,  "posY": 550.0 },
     { "id": 40, "type": 4, "name": "小休止 1.0s",           "actionId": 101,  "inputPinId": 41, "outputPinId": 0,  "posX": 500.0,  "posY": 550.0 }
   ],
   "editor_links": [
@@ -56,7 +56,7 @@
     },
     {
       "type": "Action",
-      "actionOrConditionId": 2000,
+      "actionOrConditionId": 2004,
       "children": []
     },
     {

@@ -88,6 +88,11 @@ struct GuillotineSlamFormation : public IFormation
 
         drone.targetPosition = hingeBase + right * side + rotatedUp;
 
+        // 地面へのめり込み防止：水平を越えて振り下ろすと刃先が地面下へ潜るため、
+        // ボス足元(地面)から kGroundClearance より下へは行かせない（刃が地面で止まる）。
+        const float floorY = ctx.bossPos.y + kGroundClearance;
+        if (drone.targetPosition.y < floorY) drone.targetPosition.y = floorY;
+
         // 向き：倒れていく接線方向（-up*sin + dir*cos）を向かせる
         Vector3 look = Vector3::UnitY * (-s) + dir * c;
         if (look.LengthSquared() < 0.001f) look = dir;
@@ -99,6 +104,7 @@ struct GuillotineSlamFormation : public IFormation
     // --- 調整値（グレーボックスで実測して詰める）---
     static constexpr float kSwingSpeed = 2.5f;               // attackProgress の増加速度（1/秒）→ 倒れ切りまで ≈0.4s
     static constexpr float kThetaMax   = 1.9f;               // 最大回転角（rad）≈109°（水平を少し越えて叩きつける）
+    static constexpr float kGroundClearance = 0.5f;          // 地面クランプ高さ（ドローン半径ぶん浮かせて埋没を防ぐ）
 };
 
 // ====================================================================
@@ -463,6 +469,11 @@ struct WaveGuillotineBase : public IFormation
             pos += Vector3::UnitY * sh;
         }
 
+        // 地面へのめり込み防止：水平を越えて倒れると刃先が地面下へ潜るため、
+        // ボス足元(地面)から kGroundClearance より下へは行かせない。
+        const float floorY = ctx.bossPos.y + kGroundClearance;
+        if (pos.y < floorY) pos.y = floorY;
+
         drone.targetPosition = pos;
         Vector3 look = Vector3::UnitY * (-std::sin(theta)) + dir * std::cos(theta);
         if (look.LengthSquared() < 0.001f) look = dir;
@@ -473,6 +484,7 @@ struct WaveGuillotineBase : public IFormation
 
     static constexpr float kWaveSpeed = 1.0f;  // 波全体の進行速度
     static constexpr float kThetaMax  = 1.9f;  // 各刃の最大倒れ角
+    static constexpr float kGroundClearance = 0.5f; // 地面クランプ高さ（埋没防止）
 };
 struct WaveGuillotineLtoR : public WaveGuillotineBase { float WaveT(int i, int n) const override { return (n <= 1) ? 0.0f : static_cast<float>(i) / (n - 1); } };
 struct WaveGuillotineRtoL : public WaveGuillotineBase { float WaveT(int i, int n) const override { return (n <= 1) ? 0.0f : 1.0f - static_cast<float>(i) / (n - 1); } };

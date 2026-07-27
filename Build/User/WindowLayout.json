@@ -30,7 +30,7 @@
         },
         {
             "name": "Behavior Tree Editor",
-            "visible": true
+            "visible": false
         },
         {
             "name": "State Tree Editor",

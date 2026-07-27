@@ -131,7 +131,8 @@ inline constexpr ActionEntry g_ActionRegistry[] = {
     // --- ドローン群 (Drone) ※候補は「実装済みのみ」に絞ってある。
     //     CCL::AI:: 側の定数・DroneAction registration(2000〜2029) は温存しているので、
     //     Formation実装が増えたらここへ1行足すだけで候補に復活する。
-    { CCL::AI::A_DroneOrbit,          "ドローン：円陣展開 (Orbit Circle) ※帰投にも使用", "Drone" },
+    { CCL::AI::A_DroneOrbit,          "ドローン：降下円陣 (Orbit Circle)", "Drone" },
+    { CCL::AI::A_DroneHighOrbit,      "ドローン：頭上円陣 (High Orbit)", "Drone" },
     { CCL::AI::A_DroneGuillotineSlam, "ドローン：縦割り (Guillotine Slam)", "Drone" },
     { CCL::AI::A_DroneClapSlam,       "ドローン：挟み込み1段 (Clap Slam)", "Drone" },
     { CCL::AI::A_DroneKamikazeSwarm,  "ドローン：弾幕 (Kamikaze Swarm)", "Drone" },
