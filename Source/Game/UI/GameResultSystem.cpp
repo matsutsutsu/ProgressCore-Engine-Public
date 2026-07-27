@@ -1,12 +1,6 @@
 /// @file GameResultSystem.cpp
 /// 役割・設計方針は GameResultSystem.h を参照。
 
-// QUIT でアプリ終了要求（PostQuitMessage）に使う。
-// DirectXMath 等と min/max マクロが衝突しないよう、windows.h は最初に絞って取り込む。
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <windows.h>
-
 #include "GameResultSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
@@ -16,6 +10,7 @@
 
 #include "Engine/UI/ECS/UIEvents.h"
 #include "Game/UI/MenuUiFactory.h"
+#include "Game/GameFlowState.h" // quitRequested（QUITはメインスレッドで消化する。下記参照）
 #include "Game/Logics/Combat/DeadTag.h"
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"
 
@@ -30,6 +25,10 @@ using namespace CCL::ECS;
 void GameResultSystem::Initialize()
 {
     hasGui = true; // デバッグ用の検知状態パネルを OnGui で出す
+
+    // 終了要求フラグの置き場を用意（メインスレッドの Run が毎フレーム参照する）。
+    if (!_world->HasResource<GameFlowState>())
+        _world->AddResource<GameFlowState>();
 
     // ボタンクリックを購読（この世界ではリザルトのボタンだけが発火源）。
     const uint32_t kRetry = CCL::Utils::HashString("retry");
@@ -48,7 +47,11 @@ void GameResultSystem::Initialize()
             {
                 _transitioning = true;
                 // 展示会用：タイトルへは戻さず、そのままアプリを終了する。
-                PostQuitMessage(0);
+                // ★ この購読はワーカースレッドで走りうるため、直接 PostQuitMessage を
+                //    呼ぶと WM_QUIT が別スレッドに積まれメインループが拾えない。
+                //    → フラグだけ立て、メインスレッドの Run() が拾って終了する。
+                if (_world->HasResource<GameFlowState>())
+                    _world->GetResource<GameFlowState>().quitRequested = true;
             }
         });
 }

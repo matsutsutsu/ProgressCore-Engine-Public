@@ -19,6 +19,7 @@ using namespace DirectX;
 
 void AIDebugSpatialSystem::Update(float /*dt*/)
 {
+#ifdef ENABLE_EDITOR
     if (!_enabled) return;
 
     // ShapeRenderer が無ければ描けない（NavMesh 等と同じ前提）。
@@ -56,6 +57,7 @@ void AIDebugSpatialSystem::Update(float /*dt*/)
             renderer->DrawArrow(center, pTarget, 0.5f, colLine);
         }
     });
+#endif 
 }
 
 #ifdef ENABLE_EDITOR

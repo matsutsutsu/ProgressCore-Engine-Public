@@ -14,4 +14,13 @@ struct GameFlowState
     ///    ・PauseSystem: この間は ESC のポーズ切替を抑制する。
     ///    エディタ側(F2トグル / シーケンサーEditMode)が毎フレーム設定する。
     bool uiInteract = false;
+
+    /// ★ アプリ終了要求。ポーズメニューの QUIT から立てる。
+    ///    重要: システムの Update はジョブスケジューラによりワーカースレッドで走るため、
+    ///    ワーカースレッドから PostQuitMessage を呼ぶと WM_QUIT が別スレッドのキューに積まれ、
+    ///    メインループ(PeekMessage=メインスレッド)が永久に拾えず終了しない。
+    ///    そこで「フラグを立てるだけ」にして、メインスレッドの Run() ループが毎フレーム
+    ///    これを見て PostQuitMessage(0) を呼ぶ。（ジョブの WaitForCounter が同期点になるので
+    ///    書き込みは main へ確実に可視化される）
+    bool quitRequested = false;
 };

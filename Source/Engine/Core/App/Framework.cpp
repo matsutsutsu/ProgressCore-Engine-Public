@@ -9,6 +9,7 @@
 #include "Engine/Platform/Input/Input.h"
 #include "Engine/Scene/SceneManager.h"
 #include "Engine/Timer/TimeState.h" // TimeContext.isPaused（世界時計の凍結。accumulator/補間を止める）
+#include "Game/GameFlowState.h"     // GameFlowState.quitRequested（QUITをメインスレッドで消化する）
 #include "Engine/Serialization/Serializer/LevelSerializer.h"
 #include "Game/Scenes/BaseScene.h"
 
@@ -548,6 +549,18 @@ int Framework::Run()
 					if (pausedWorld->HasResource<TimeContext>() &&
 						pausedWorld->GetResource<TimeContext>().isPaused)
 						logicFrozen = true;
+
+			// ★ ポーズメニューの QUIT 要求をメインスレッドで消化する。
+			//   システムの Update はジョブスケジューラ経由でワーカースレッドで走りうるため、
+			//   PostQuitMessage を各システムから直接呼ぶと WM_QUIT が別スレッドのキューに積まれ、
+			//   このメインループ(PeekMessage)が拾えず終了しない。フラグ経由で必ずここ(main)で呼ぶ。
+			if (auto *scene = SceneManager::Instance().GetCurrentScene())
+				if (auto *world = scene->GetWorld())
+					if (world->HasResource<GameFlowState>() &&
+						world->GetResource<GameFlowState>().quitRequested)
+					{
+						PostQuitMessage(0);
+					}
 
 			// 3. 時間を貯める（停止中は貯めない）
 			if (!logicFrozen) {

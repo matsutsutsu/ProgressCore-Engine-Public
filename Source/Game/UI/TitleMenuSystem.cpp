@@ -1,12 +1,6 @@
 /// @file TitleMenuSystem.cpp
 /// 役割・設計方針は TitleMenuSystem.h を参照。
 
-// QUIT でアプリ終了要求（PostQuitMessage）に使う。
-// DirectXMath 等と min/max マクロが衝突しないよう、windows.h は最初に絞って取り込む。
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <windows.h>
-
 #include "TitleMenuSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
@@ -15,6 +9,7 @@
 
 #include "Engine/UI/ECS/UIEvents.h"
 #include "Game/UI/MenuUiFactory.h" // メニューUIの共通生成ヘルパー
+#include "Game/GameFlowState.h"    // quitRequested（QUITはメインスレッドで消化する。下記参照）
 
 #include <cstdint>
 
@@ -23,6 +18,10 @@ using namespace CCL::ECS;
 void TitleMenuSystem::Initialize()
 {
     World &world = *_world;
+
+    // 終了要求フラグの置き場を用意（メインスレッドの Run が毎フレーム参照する）。
+    if (!world.HasResource<GameFlowState>())
+        world.AddResource<GameFlowState>();
 
     // --- タイトルロゴ ---
     CCL::GameUI::SpawnLabel(world, "TitleLogo", "RuneForge", {-150.0f, -180.0f}, 56.0f);
@@ -48,10 +47,12 @@ void TitleMenuSystem::Initialize()
             else if (e.actionHash == kQuit)
             {
                 _transitioning = true;
-                // アプリ終了を要求。メインループ（while WM_QUIT != msg）が
-                // 次の PeekMessage で WM_QUIT を拾って抜ける。
-                // このコールバックはメインスレッドで走るので安全。
-                PostQuitMessage(0);
+                // ★ この購読は UIButtonSystem 経由で発火し、ジョブスケジューラにより
+                //    ワーカースレッドで走りうる。ワーカーから PostQuitMessage を呼ぶと
+                //    WM_QUIT が別スレッドのキューに積まれ、メインループが拾えず終了しない。
+                //    → 終了要求フラグだけ立て、メインスレッドの Run() が拾って終了する。
+                if (_world->HasResource<GameFlowState>())
+                    _world->GetResource<GameFlowState>().quitRequested = true;
             }
         });
 }

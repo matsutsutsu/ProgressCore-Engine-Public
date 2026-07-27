@@ -1,12 +1,6 @@
 /// @file PauseSystem.cpp
 /// 役割・設計方針は PauseSystem.h を参照。
 
-// QUIT でアプリ終了要求（PostQuitMessage）に使う。
-// DirectXMath 等と min/max マクロが衝突しないよう、windows.h は最初に絞って取り込む。
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <windows.h>
-
 #include "PauseSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
@@ -51,8 +45,12 @@ void PauseSystem::Initialize()
                 if (_transitioning) return;
                 _transitioning = true;
                 // 展示会用：タイトルへは戻さず、そのままアプリを終了する。
-                // メインループ（while WM_QUIT != msg）が次の PeekMessage で WM_QUIT を拾って抜ける。
-                PostQuitMessage(0);
+                // ★ ここは（ジョブスケジューラ経由の）ワーカースレッドで走りうるため、
+                //    直接 PostQuitMessage を呼ぶと WM_QUIT が別スレッドのキューに積まれ、
+                //    メインスレッドの PeekMessage が拾えず終了しない。
+                //    → 終了要求フラグだけ立て、メインループ(Run)が拾って終了処理を行う。
+                if (_world->HasResource<GameFlowState>())
+                    _world->GetResource<GameFlowState>().quitRequested = true;
             }
         });
 }
