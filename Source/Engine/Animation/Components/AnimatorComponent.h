@@ -29,6 +29,10 @@ struct AnimatorComponent {
 
     // --- アニメーション状態（時計） ---
     float currentTimer = 0.0f;
+    /// @brief 前フレームの再生時刻（このフレームで進める前の currentTimer）。
+    ///        区間イベント(HitBox)のスイープ判定に使う：1フレームで [start,end] を飛び越しても
+    ///        [previousFrameTimer, currentTimer] と重なれば当たったと見なせる。AnimationSystem が毎フレーム設定。
+    float previousFrameTimer = 0.0f;
     float playbackSpeed = 1.0f;
     bool  isLoop = true;
     bool  isFinished = false;

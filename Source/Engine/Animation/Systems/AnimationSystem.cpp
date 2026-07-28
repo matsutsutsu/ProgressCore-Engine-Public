@@ -42,6 +42,9 @@ float ComputeEffectiveSpeed(const AnimatorComponent &animator, const AnimSequenc
     if (animator.activeCurve)
     {
         float progress  = (seq->duration > 0.0f) ? (animator.currentTimer / seq->duration) : 0.0f;
+        // ★ ループ境界を跨いだフレームでは currentTimer が duration を超え progress>1 になり、
+        //   速度カーブが外挿されて速度が一瞬跳ねる。進捗を [0,1] に丸めて外挿スパイクを防ぐ。
+        progress        = std::clamp(progress, 0.0f, 1.0f);
         curveMultiplier = animator.activeCurve->Evaluate(progress);
     }
     return animator.playbackSpeed * curveMultiplier;
@@ -55,6 +58,9 @@ bool AdvanceTimers(AnimatorComponent &animator, const AnimSequence *seq, float l
 
     const float effectiveSpeed = ComputeEffectiveSpeed(animator, seq);
     const float prevTime       = animator.currentTimer;
+
+    // このフレームで進める前の時刻を記録（区間HitBoxのスイープ判定に使う）。
+    animator.previousFrameTimer = prevTime;
 
     animator.currentTimer += localDt * effectiveSpeed;
     const bool movedForward = (animator.currentTimer >= prevTime);

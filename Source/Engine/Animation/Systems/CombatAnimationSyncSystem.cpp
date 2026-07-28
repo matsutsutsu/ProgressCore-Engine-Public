@@ -92,8 +92,26 @@ void CombatAnimationSyncSystem::Update(float /*dt*/)
             if (hb.tagHash != 0 && ev.tagHash != hb.tagHash)
                 continue;
 
-            if (animator->currentTimer >= ev.startTime &&
-                animator->currentTimer <= ev.endTime)
+            // ★ 区間スイープ判定：点包含ではなく [previousFrameTimer, currentTimer] と
+            //   [startTime, endTime] の重なりで判定する。これにより、高速再生や処理落ちで
+            //   1フレームの進み幅が区間を丸ごと飛び越しても、その窓を跨いだフレームで
+            //   確実にアクティブになる（＝短い/高速な攻撃判定が空振りしない）。
+            const float t0 = animator->previousFrameTimer;
+            const float t1 = animator->currentTimer;
+            bool        overlaps;
+            if (t1 >= t0)
+            {
+                // 通常（単調増加）: 進んだ区間 [t0,t1] と [start,end] が重なるか
+                overlaps = (ev.startTime <= t1 && ev.endTime >= t0);
+            }
+            else
+            {
+                // ループで巻き戻ったフレーム: 進んだ範囲は [t0,duration]∪[0,t1]。
+                // どちらかに重なれば有効（duration を参照せずに判定できる）。
+                overlaps = (ev.endTime >= t0) || (ev.startTime <= t1);
+            }
+
+            if (overlaps)
             {
                 activeEv = &ev;
                 break;
