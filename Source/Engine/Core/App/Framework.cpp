@@ -711,7 +711,7 @@ int Framework::Run()
 			Update(frameTime);
 			Render(frameTime);
 
- 
+
 			// ここで1フレーム終了をTracyに通知
             FrameMark;
 

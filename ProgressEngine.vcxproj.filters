@@ -1257,6 +1257,9 @@
     <ClInclude Include="Source\Engine\Audio\Components\AudioEvents.h">
       <Filter>Source\Engine\Audio\Components</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Audio\Systems\AudioCleanupSystem.h">
+      <Filter>Source\Engine\Audio\Systems</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Audio\Systems\AudioSystem.h">
       <Filter>Source\Engine\Audio\Systems</Filter>
     </ClInclude>
@@ -2539,6 +2542,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Audio\Components\AudioComponentMeta.cpp">
       <Filter>Source\Engine\Audio\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Audio\Systems\AudioCleanupSystem.cpp">
+      <Filter>Source\Engine\Audio\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Audio\Systems\AudioSystem.cpp">
       <Filter>Source\Engine\Audio\Systems</Filter>

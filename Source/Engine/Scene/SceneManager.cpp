@@ -28,6 +28,7 @@
 #include "Engine/Transform/Systems/TransformUpdateSystem.h"
 #include "Engine/Transform/Systems/HierarchyCleanupSystem.h"
 #include "Engine/Physics/Systems/Jolt/JoltCleanupSystem.h"
+#include "Engine/Audio/Systems/AudioCleanupSystem.h"
 
  
 #include "tracy/Tracy.hpp"
@@ -230,6 +231,9 @@ void SceneManager::LoadScene(CCL::ECS::World* world, const std::string& filepath
 
     // ① Joltの剛体を即座に消去する
     JoltCleanupSystem::ExecuteCleanup(*world);
+
+    // ①-b 破棄される AudioEmitter の再生中サウンドを止める（BGM等が遷移後も鳴り続けるのを防ぐ）
+    AudioCleanupSystem::ExecuteCleanup(*world);
 
     // ② ECSの階層を切り離し、RequestDestroy を発行する
     HierarchyCleanupSystem::ExecuteCleanup(*world);

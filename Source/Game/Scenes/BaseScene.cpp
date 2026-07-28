@@ -26,6 +26,7 @@
 #include "Engine/Transform/Systems/TransformUpdateSystem.h"
 #include "Engine/Transform/Systems/HierarchyCleanupSystem.h"
 #include "Engine/Physics/Systems/Jolt/JoltCleanupSystem.h"
+#include "Engine/Audio/Systems/AudioCleanupSystem.h"
 
 #include "Engine/UI/ECS/UIDrawList.h" // ECSネイティブUIの描画リスト
 #include "Engine/UI/ECS/GameViewportInfo.h" // GameView表示矩形（UIクリック判定の座標写像用）
@@ -144,6 +145,8 @@ void BaseScene::Finalize()
 
         // Jolt剛体の即時消去
         JoltCleanupSystem::ExecuteCleanup(*_worldPtr);
+        // 破棄される AudioEmitter の再生中サウンドを止める（BGM等の鳴りっぱなし防止）
+        AudioCleanupSystem::ExecuteCleanup(*_worldPtr);
         HierarchyCleanupSystem::ExecuteCleanup(*_worldPtr);
 
         // ゴミ箱を空にする
