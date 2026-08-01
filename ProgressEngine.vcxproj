@@ -436,6 +436,7 @@
     <ClInclude Include="Source\Engine\Audio\IAudioAPI.h" />
     <ClInclude Include="Source\Engine\Audio\Systems\AudioCleanupSystem.h" />
     <ClInclude Include="Source\Engine\Audio\Systems\AudioSystem.h" />
+    <ClInclude Include="Source\Engine\Camera\CameraEvents.h" />
     <ClInclude Include="Source\Engine\Camera\Components\CameraBodyActionTPSComponent.h" />
     <ClInclude Include="Source\Engine\Camera\Components\CameraDollyCartComponent.h" />
     <ClInclude Include="Source\Engine\Camera\Components\VirtualCameraComponents.h" />

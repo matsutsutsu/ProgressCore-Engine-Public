@@ -8,6 +8,7 @@
 #include <DirectXMath.h>
 
 #include "Game/Logics/GameEvent/GameEvents.h"
+#include "Engine/Camera/CameraEvents.h" // CameraShakeRequestEvent（着地の画面揺れ要求）
 #include "Engine/Core/Math/StringHash.h" // ハッシュ計算用
 
 

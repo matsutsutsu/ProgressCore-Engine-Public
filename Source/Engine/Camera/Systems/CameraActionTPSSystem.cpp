@@ -4,13 +4,10 @@
 #include "Engine/Camera/Systems/CameraActionTPSSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Platform/Input/IInputAPI.h"
-#include "Game/Logics/Character/Player/Components/DashComponent.h"
+#include "Engine/Camera/CameraEvents.h"
 
-#include "Game/Logics/GameEvent/GameEvents.h"
 #include "Engine/Physics/Components/Character/CharacterMovementInputComponent.h"
 #include "Engine/Physics/JoltIntegration/IPhysicsAPI.h" // カメラ衝突（地形レイキャスト）
-#include "Game/Logics/Character/Player/Components/PlayerComponent.h"
-#include "Game/Logics/Combat/DeadTag.h"
 #include "Engine/Camera/Systems/CameraTargetBinding.h"
 #include "Engine/Core/App/GameFlowState.h" // ポーズ中はカーソルロックを解除するため
 
@@ -27,16 +24,17 @@ using namespace DirectX::SimpleMath;
 
 void CameraActionTPSSystem::Initialize()
 {
-    // JUST回避の衝撃をカメラに伝達する
-    ListenEvent<JustEvadeSuccessEvent>([this](const JustEvadeSuccessEvent &ev) {
+    // 画角の瞬間的な変化(FOVパンチ)要求を受信する。
+    // 「なぜ広げたいか」(ジャスト回避など)はゲーム側の関心事なので、ここでは知らない。
+    ListenEvent<CameraFovPunchRequestEvent>([this](const CameraFovPunchRequestEvent &ev) {
         // 自分の担当している仮想カメラを走査
         ForEach([&](VirtualCamera &vcam, const CameraBodyTPSComponent &tps, TransformComponent &trans) {
-            // JUST回避したプレイヤーを映しているカメラなら、衝撃(FOVパンチ)を与える
-            if (tps.target.id == ev.playerID)
+            // 要求されたエンティティを映しているカメラなら、衝撃(FOVパンチ)を与える
+            if (tps.target.id == ev.targetID)
             {
-                // 画角を瞬間的に限界まで広げる。
+                // 画角を瞬間的に広げる。
                 // 次のフレームから自動的に「fovDamping」の摩擦力によって滑らかに元に戻る。
-                vcam.fov = 130.0f;
+                vcam.fov = ev.fov;
             }
         });
     });
@@ -120,23 +118,18 @@ void CameraActionTPSSystem::Update(float dt)
  
 
         // ===================================================================
-        // ★データブリッジ：プレイヤーコンポーネントからロックオン情報を自動同期する
-        // これにより、カメラがプレイヤー固有のロックオン状態を完全に追従する
+        // ロックオン状態(lockOnTarget / isLockOnActive)は、その持ち主である
+        // ゲーム側(PlayerLockOnSystem)がこの CameraBodyTPSComponent へ書き込む。
+        // 対象の死亡・消滅による解除もそちらが行うため、ここでは判断しない。
         // ===================================================================
-        if (auto *playerComp = _world->GetComponent<PlayerComponent>(tps.target.id))
-        {
-            tps.lockOnTarget.id = playerComp->lockOnTargetID;
-            tps.isLockOnActive  = (playerComp->lockOnTargetID != CCL::ECS::InvalidEntityID);
-        }
 
-        // 2. ロックオン対象（エネミー）の生存確認とTransform取得
+        // 2. ロックオン対象（エネミー）のTransform取得
         auto *enemyTrans = tps.isLockOnActive ? _world->GetComponent<TransformComponent>(tps.lockOnTarget.id) : nullptr;
 
-        // 敵が死亡タグを持っていたらロックオンを自動終了させる安全ハック
-        if (tps.isLockOnActive && (!enemyTrans || _world->HasComponent<Tag::DeadTag>(tps.lockOnTarget.id)))
+        // Transform が取れない（＝既に消滅している）場合だけ、描画側の保険として無効化する
+        if (tps.isLockOnActive && !enemyTrans)
         {
             tps.isLockOnActive = false;
-            enemyTrans         = nullptr;
         }
 
         // 3. オービット（回転角）の決定
@@ -298,12 +291,9 @@ void CameraActionTPSSystem::Update(float dt)
         }
 
         // 7. 動的FOV
-        float targetFov = tps.baseFov;
-        auto *dash      = _world->GetComponent<DashComponent>(tps.target.id);
-        if (dash && dash->isDashing)
-        {
-            targetFov = tps.dashFov;
-        }
+        // 「画角を広げたい」という要求はゲーム側(PlayerDashSystem 等)が
+        // wideFovRequest に書き込む。カメラは理由を知らずに要求だけを見る。
+        float targetFov = tps.wideFovRequest ? tps.dashFov : tps.baseFov;
         float fovBlend = 1.0f - std::exp(-tps.fovDamping * dt);
         vcam.fov       = std::lerp(vcam.fov, targetFov, fovBlend);
 

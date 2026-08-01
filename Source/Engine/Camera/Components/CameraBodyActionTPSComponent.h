@@ -15,6 +15,9 @@ struct CameraBodyTPSComponent
     float distance = 6.0f;  ///< ターゲットからの基本距離
     float baseFov  = 45.0f; ///< 通常時の視野角(度数法)
     float dashFov  = 70.0f; ///< ダッシュ（加速）時の最大視野角
+    /// @brief 画角を dashFov 側へ広げてほしいという要求。ゲーム側（PlayerDashSystem 等）が毎フレーム設定する。
+    ///        カメラがゲーム固有の DashComponent を読みに行かずに済むようにするためのフィールド。
+    bool  wideFovRequest = false;
 
     // --- オービット（回転）制御 ---
     float currentYaw   = 0.0f;   ///< 現在の水平角度(度)

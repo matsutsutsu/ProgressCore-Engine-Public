@@ -1839,6 +1839,9 @@
     <ClInclude Include="Source\Engine\Platform\Input\InputKeyTable.h">
       <Filter>Source\Engine\Platform\Input</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Camera\CameraEvents.h">
+      <Filter>Source\Engine\Camera</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Camera\Components\CameraBodyActionTPSComponent.h">
       <Filter>Source\Engine\Camera\Components</Filter>
     </ClInclude>

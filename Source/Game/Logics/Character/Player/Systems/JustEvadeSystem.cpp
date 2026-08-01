@@ -9,6 +9,7 @@
 #include "Game/Logics/AI/Drone/DroneComponent.h"
 
 #include "Game/Logics/GameEvent/GameEvents.h"
+#include "Engine/Camera/CameraEvents.h" // FOVパンチ要求（カメラへの演出指示）
 #include "Engine/Time/TimeState.h"
 #include "Engine/Graphics/Components/Impact/JustEvadeEffectComponent.h"
 #include "Engine/Physics/Components/RigidBody/JoltRigidBodyComponent.h" // 壁/地形との接触を除外するため
@@ -271,6 +272,10 @@ void JustEvadeSystem::CheckJustEvade(EntityID playerCandidate, EntityID otherCan
     evade->idleTimer = 0.0f; // 成立したので静止タイマーをリセット
 
     _world->GetEventBus().Publish(JustEvadeSuccessEvent{playerCandidate, otherCandidate});
+
+    // カメラへは「画角を瞬間的に広げてほしい」という汎用要求だけを伝える。
+    // （カメラが JustEvadeSuccessEvent を直接購読すると Engine→Game 依存になるため）
+    _world->GetEventBus().Publish(CameraFovPunchRequestEvent{playerCandidate, 130.0f});
 
     CCL_LOG_SUCCESS(LogCategory::Game, "JUST EVADE SUCCESS!! PlayerID: %llu  (CHAIN x%d)", playerCandidate, evade->chainCount);
 }

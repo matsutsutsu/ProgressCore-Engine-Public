@@ -11,12 +11,8 @@ struct JustEvadeSuccessEvent
     CCL::ECS::EntityID attackerID; // 攻撃してきた敵（今回は不使用でも用意しておく）
 };
 
-/// @brief 画面を揺らす要求をシステム全体に知らせるイベント
-struct CameraShakeRequestEvent
-{
-    float amplitude; // 揺れの強さ
-    float duration;  // 揺れる時間（秒）
-};
+// ※ カメラへの演出要求（CameraShakeRequestEvent / CameraFovPunchRequestEvent）は
+//    Engine/Camera/CameraEvents.h へ移動した。カメラがゲーム側の型を知らずに済むようにするため。
 
 
 

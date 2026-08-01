@@ -2,6 +2,7 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
+#include "Engine/Camera/Components/CameraBodyActionTPSComponent.h" // 画角要求(wideFovRequest)をカメラへ push する
 #include "Engine/Animation/Components/RootMotionComponent.h" // ダッシュ中の外部移動制御を伝える
 #include "Game/Logics/AI/Battle/BattleContext.h"
 
@@ -161,6 +162,15 @@ void PlayerDashSystem::Update(float rawDt)
 
         // ダッシュ中は「外部が移動を制御中」を root motion 側へ伝える（＝抽出を止めさせる）。
         if (rm) rm->externallyDriven = dash.isDashing;
+
+        // このプレイヤーを映しているカメラへ「画角を広げてほしい」要求を伝える。
+        // カメラ(Engine)が DashComponent(Game) を読みに来ないようにするため、こちらから push する。
+        for (EntityID camID : _world->View<CameraBodyTPSComponent>())
+        {
+            auto* tps = _world->GetComponent<CameraBodyTPSComponent>(camID);
+            if (!tps || tps->target.id != id) continue;
+            tps->wideFovRequest = dash.isDashing;
+        }
 
         // 次のフレームのために要求フラグを落とす
         input.dashRequested = false;
