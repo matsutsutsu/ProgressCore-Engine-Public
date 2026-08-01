@@ -10,7 +10,7 @@
 
 #include "Engine/UI/ECS/UIEvents.h"
 #include "Game/UI/MenuUiFactory.h"
-#include "Game/GameFlowState.h" // quitRequested（QUITはメインスレッドで消化する。下記参照）
+#include "Engine/Core/App/GameFlowState.h" // quitRequested（QUITはメインスレッドで消化する。下記参照）
 #include "Game/Logics/Combat/DeadTag.h"
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"
 

@@ -7,7 +7,7 @@
 
 #include "Editor/Core/EditorCommandHistory.h"
 #include "Engine/Transform/Components/TransformComponent.h"
-#include "Game/GameFlowState.h" // カーソル自由(UI操作)モードの共有フラグ
+#include "Engine/Core/App/GameFlowState.h" // カーソル自由(UI操作)モードの共有フラグ
 
 // マウス視点の可否（全画面 or ゲームビュー フォーカス）を InputFacade へ伝えるため
 #include "Engine/Core/App/EngineServices.h"

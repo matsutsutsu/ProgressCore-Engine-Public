@@ -12,7 +12,7 @@
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"
 #include "Game/Logics/Combat/DeadTag.h"
 #include "Engine/Camera/Systems/CameraTargetBinding.h"
-#include "Game/GameFlowState.h" // ポーズ中はカーソルロックを解除するため
+#include "Engine/Core/App/GameFlowState.h" // ポーズ中はカーソルロックを解除するため
 
 #include <memory>
 

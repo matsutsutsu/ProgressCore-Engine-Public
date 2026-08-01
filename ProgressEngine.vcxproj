@@ -447,6 +447,7 @@
     <ClInclude Include="Source\Engine\Camera\Systems\VisualCameraSystem.h" />
     <ClInclude Include="Source\Engine\Core\App\EngineServices.h" />
     <ClInclude Include="Source\Engine\Core\App\Framework.h" />
+    <ClInclude Include="Source\Engine\Core\App\GameFlowState.h" />
     <ClInclude Include="Source\Engine\Core\Components\DestroyTag.h" />
     <ClInclude Include="Source\Engine\Core\Components\NameComponent.h" />
     <ClInclude Include="Source\Engine\Core\Components\PersistentTag.h" />
@@ -765,7 +766,6 @@
     <ClInclude Include="Source\Game\UI\MenuUiFactory.h" />
     <ClInclude Include="Source\Game\UI\GameResultSystem.h" />
     <ClInclude Include="Source\Game\UI\PauseSystem.h" />
-    <ClInclude Include="Source\Game\GameFlowState.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Components\UIAnimationComponent.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Components\UIAppearComponent.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Components\UICanvasComponent.h" />

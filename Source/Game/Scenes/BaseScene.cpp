@@ -30,7 +30,7 @@
 
 #include "Engine/UI/ECS/UIDrawList.h" // ECSネイティブUIの描画リスト
 #include "Engine/UI/ECS/GameViewportInfo.h" // GameView表示矩形（UIクリック判定の座標写像用）
-#include "Game/GameFlowState.h"        // ポーズ状態（ロジック停止の判定）
+#include "Engine/Core/App/GameFlowState.h"        // ポーズ状態（ロジック停止の判定）
 
 #include "tracy/Tracy.hpp"
 

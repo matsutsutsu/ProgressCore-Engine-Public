@@ -891,8 +891,8 @@
     <ClInclude Include="Source\Game\UI\PauseSystem.h">
       <Filter>Source\Game\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\GameFlowState.h">
-      <Filter>Source\Game</Filter>
+    <ClInclude Include="Source\Engine\Core\App\GameFlowState.h">
+      <Filter>Source\Engine\Core\App</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\UI\ECS\Components\UIAnimationComponent.h">
       <Filter>Source\Engine\UI\ECS\Components</Filter>

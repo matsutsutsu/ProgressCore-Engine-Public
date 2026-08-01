@@ -9,7 +9,7 @@
 
 #include "Engine/UI/ECS/UIEvents.h"
 #include "Game/UI/MenuUiFactory.h" // メニューUIの共通生成ヘルパー
-#include "Game/GameFlowState.h"    // quitRequested（QUITはメインスレッドで消化する。下記参照）
+#include "Engine/Core/App/GameFlowState.h"    // quitRequested（QUITはメインスレッドで消化する。下記参照）
 
 #include <cstdint>
 
