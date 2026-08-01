@@ -2,7 +2,7 @@
 /// @file TitleScene.h
 /// @brief タイトル画面シーン。UIシステム一式＋TitleMenuSystem だけを登録する軽量シーン。
 ///        ゲーム本編（EditorScene）とは違い SpawnGameTest 等は行わない。
-#include "Game/Scenes/BaseScene.h"
+#include "Engine/Scene/BaseScene.h"
 
 class TitleScene : public BaseScene
 {

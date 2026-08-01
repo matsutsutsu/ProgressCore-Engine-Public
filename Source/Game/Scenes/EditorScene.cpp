@@ -1,4 +1,5 @@
 #include "EditorScene.h"
+#include "Engine/Scene/SceneFactory.h" // REGISTER_SCENE（ファイル末尾で自己登録）
 #include "Game/Logics/Test/SceneInitializer.h"
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "tracy/Tracy.hpp"
@@ -112,3 +113,5 @@ void EditorScene::Render()
 
 
 
+// SceneFactory への自動登録（SceneManager が本クラスを include せずに済むようにする）
+REGISTER_SCENE(EditorScene, "Editor")

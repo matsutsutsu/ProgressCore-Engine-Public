@@ -1,6 +1,6 @@
 #pragma once
 #include "Editor/Core/EditorWindowManager.h"
-#include "Game/Scenes/BaseScene.h"
+#include "Engine/Scene/BaseScene.h"
 
 
 #include "Engine/Animation/Systems/AnimationSystem.h"

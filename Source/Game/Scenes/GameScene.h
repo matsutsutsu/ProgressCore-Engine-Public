@@ -8,7 +8,7 @@
 ///     (BossBattleStage.level.json) に含まれるので、レベルを読むだけで戦場が完成する。
 ///   - エディタ(ImGui)には一切依存しないので Shipping でもそのまま動く。
 ///   - ゲーム本編専用システム（リザルト/ポーズ）は RegisterSystems で手動登録する。
-#include "Game/Scenes/BaseScene.h"
+#include "Engine/Scene/BaseScene.h"
 
 class GameScene : public BaseScene
 {

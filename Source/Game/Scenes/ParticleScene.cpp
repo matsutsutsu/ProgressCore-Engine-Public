@@ -1,4 +1,5 @@
 #include "ParticleScene.h"
+#include "Engine/Scene/SceneFactory.h" // REGISTER_SCENE（ファイル末尾で自己登録）
 #include "Engine/Serialization/Factory/Prefab.h"
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Game/Logics/Test/SceneInitializer.h"
@@ -39,3 +40,5 @@ void ParticleScene::RegisterSystems()
     CCL::ECS::SystemRegistry::Instance().RegisterAll(sysManager);
 }
 
+// SceneFactory への自動登録（SceneManager が本クラスを include せずに済むようにする）
+REGISTER_SCENE(ParticleScene, "Particle")

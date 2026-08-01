@@ -805,12 +805,12 @@
     <ClInclude Include="Source\Game\Logics\Test\VectorFlowSystem.h" />
     <ClInclude Include="Source\Game\Logics\Test\VoxelOceanComponent.h" />
     <ClInclude Include="Source\Game\Logics\Test\VoxelOceanSystem.h" />
-    <ClInclude Include="Source\Game\Scenes\BaseScene.h" />
+    <ClInclude Include="Source\Engine\Scene\BaseScene.h" />
     <ClInclude Include="Source\Game\Scenes\EditorScene.h" />
     <ClInclude Include="Source\Game\Scenes\GameScene.h" />
     <ClInclude Include="Source\Game\Scenes\TitleScene.h" />
     <ClInclude Include="Source\Game\Scenes\ParticleScene.h" />
-    <ClInclude Include="Source\Game\Scenes\SceneLoading.h" />
+    <ClInclude Include="Source\Engine\Scene\SceneLoading.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\imgui-docking\imgui.cpp">
@@ -1584,12 +1584,12 @@
     <ClCompile Include="Source\Game\Logics\Test\TornadoVortexSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\VectorFlowSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\VoxelOceanSystem.cpp" />
-    <ClCompile Include="Source\Game\Scenes\BaseScene.cpp" />
+    <ClCompile Include="Source\Engine\Scene\BaseScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\EditorScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\GameScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\TitleScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\ParticleScene.cpp" />
-    <ClCompile Include="Source\Game\Scenes\SceneLoading.cpp" />
+    <ClCompile Include="Source\Engine\Scene\SceneLoading.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="External\DirectXTex\DirectXTex_Desktop_2022.vcxproj">

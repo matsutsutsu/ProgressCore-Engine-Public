@@ -1,6 +1,7 @@
 /// @file TitleScene.cpp
 /// 役割・設計方針は TitleScene.h を参照。
 #include "TitleScene.h"
+#include "Engine/Scene/SceneFactory.h" // REGISTER_SCENE（ファイル末尾で自己登録）
 
 #include "Engine/ECS/System/CCL_SystemManager.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -20,3 +21,6 @@ void TitleScene::RegisterSystems()
     // タイトル専用：メニュー生成＋クリックで遷移（グローバル登録しないのでここで手動登録）
     m.RegisterSystem<TitleMenuSystem>(Priority::LogicStage::L02_Update);
 }
+
+// SceneFactory への自動登録（SceneManager が本クラスを include せずに済むようにする）
+REGISTER_SCENE(TitleScene, "Title")

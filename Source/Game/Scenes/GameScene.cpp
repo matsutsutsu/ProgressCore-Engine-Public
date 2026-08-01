@@ -1,6 +1,7 @@
 /// @file GameScene.cpp
 /// 役割・設計方針は GameScene.h を参照。
 #include "GameScene.h"
+#include "Engine/Scene/SceneFactory.h" // REGISTER_SCENE（ファイル末尾で自己登録）
 
 #include "Engine/Serialization/Serializer/LevelSerializer.h" // レベル読み込み
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -91,3 +92,6 @@ void GameScene::Render()
 {
     BaseScene::Render();
 }
+
+// SceneFactory への自動登録（SceneManager が本クラスを include せずに済むようにする）
+REGISTER_SCENE(GameScene, "Game")

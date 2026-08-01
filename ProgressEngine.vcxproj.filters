@@ -27,9 +27,6 @@
     <Filter Include="Source\Game\Scenes">
       <UniqueIdentifier>{bcd020d0-8067-4faa-af89-b60a66acc4eb}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Game\Scenes\HokaScene">
-      <UniqueIdentifier>{b84a6b16-8082-4c79-923e-e65214905498}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Game\Core">
       <UniqueIdentifier>{813bb5d7-2c41-44d7-83c6-1a23d654d564}</UniqueIdentifier>
     </Filter>
@@ -807,14 +804,11 @@
     <ClInclude Include="Source\Game\Scenes\TitleScene.h">
       <Filter>Source\Game\Scenes</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Scenes\SceneLoading.h">
-      <Filter>Source\Game\Scenes</Filter>
+    <ClInclude Include="Source\Engine\Scene\SceneLoading.h">
+      <Filter>Source\Engine\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Scenes\BaseScene.h">
-      <Filter>Source\Game\Scenes\HokaScene</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Scenes\ParticleScene.h">
-      <Filter>Source\Game\Scenes\HokaScene</Filter>
+    <ClInclude Include="Source\Engine\Scene\BaseScene.h">
+      <Filter>Source\Engine\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Core\AllComponents.h">
       <Filter>Source\Game\Core</Filter>
@@ -2010,6 +2004,9 @@
     <ClInclude Include="Source\Game\Logics\AI\Debug\AIDebugSpatialSystem.h">
       <Filter>Source\Game\Logics\AI\Debug</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Scenes\ParticleScene.h">
+      <Filter>Source\Game\Scenes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\implot-master\implot.cpp">
@@ -2234,14 +2231,11 @@
     <ClCompile Include="Source\Game\Scenes\TitleScene.cpp">
       <Filter>Source\Game\Scenes</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Scenes\SceneLoading.cpp">
-      <Filter>Source\Game\Scenes</Filter>
+    <ClCompile Include="Source\Engine\Scene\SceneLoading.cpp">
+      <Filter>Source\Engine\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Scenes\BaseScene.cpp">
-      <Filter>Source\Game\Scenes\HokaScene</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Scenes\ParticleScene.cpp">
-      <Filter>Source\Game\Scenes\HokaScene</Filter>
+    <ClCompile Include="Source\Engine\Scene\BaseScene.cpp">
+      <Filter>Source\Engine\Scene</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\UI\ECS\Components\UIComponentsMeta.cpp">
       <Filter>Source\Engine\UI\ECS\Components</Filter>
@@ -3055,6 +3049,9 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\Debug\AIDebugSpatialSystem.cpp">
       <Filter>Source\Game\Logics\AI\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Scenes\ParticleScene.cpp">
+      <Filter>Source\Game\Scenes</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

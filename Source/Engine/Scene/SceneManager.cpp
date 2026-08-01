@@ -1,12 +1,9 @@
 #include"SceneManager.h"
 #include"SceneFactory.h"
 
-// シーン登録ヘッダー
-#include"Game/Scenes/EditorScene.h"
-#include "Game/Scenes/GameScene.h"    // 実プレイ用シーン（BossBattleStageを読み込む）
-#include "Game/Scenes/ParticleScene.h"
-#include "Game/Scenes/TitleScene.h"   // ゲームループのタイトル画面
-#include "Game/Scenes/SceneLoading.h" // 非同期ロード用のローディングシーン
+// 具体シーンは各 .cpp の REGISTER_SCENE で SceneFactory へ自己登録される。
+// ここで include すると Engine→Game 依存になるため、名前(文字列)だけで扱う。
+#include "Engine/Scene/SceneLoading.h" // 非同期ロード用のローディングシーン
 
 
 #include "Engine/Serialization/Serializer/SceneSerializer.h"
@@ -46,17 +43,9 @@ void SceneManager::Initialize()
 {
 	ZoneScopedN("SceneManager::Initialize");
 
-	//シーン登録
-	//SceneFactory::Instance().Register("ModelViewer", []() { return new ModelViewerScene(); });
-	SceneFactory::Instance().Register("Editor", []() { return new EditorScene(); });
-
-	SceneFactory::Instance().Register("Particle", []() { return new ParticleScene(); });
-
-	// ゲームループ用シーン
-	SceneFactory::Instance().Register("Title", []() { return new TitleScene(); });
-	// "Game" = 実プレイ。起動時に BossBattleStage レベルを読み込んで戦闘へ入る専用シーン。
-	SceneFactory::Instance().Register("Game", []() { return new GameScene(); });
-
+	// シーン登録は各シーンの .cpp 末尾にある REGISTER_SCENE マクロが
+	// 静的初期化時に済ませている（"Editor" / "Particle" / "Title" / "Game"）。
+	// ここでは名前で参照するだけなので、具体シーンのヘッダは不要。
 
 	// 最初に表示するシーン（生成予約のみ。実体の重い初期化は初回 Update で走る）。
 	// 展示会用：タイトルは見せず、起動直後に GameScene(=BossBattleStage) の戦闘へ直行する。

@@ -1,7 +1,3 @@
 {
-    "DialogHistory": {
-        "Model": "Assets\\Models\\Enemy\\Drone",
-        "Prefab": "Assets\\Prefabs\\Test",
-        "Scene": "Assets\\Scene"
-    }
+    "DialogHistory": {}
 }

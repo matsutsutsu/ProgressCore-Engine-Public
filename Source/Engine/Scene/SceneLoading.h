@@ -1,5 +1,5 @@
 #pragma once
-#include "Game/Scenes/BaseScene.h"
+#include "Engine/Scene/BaseScene.h"
 
 #include "Engine/ECS/Jobs/CCL_JobSystem.h" // JobCounter（ロードジョブの寿命管理）
 
