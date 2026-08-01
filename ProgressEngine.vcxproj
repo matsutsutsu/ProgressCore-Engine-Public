@@ -482,7 +482,6 @@
     <ClInclude Include="Source\Engine\ECS\System\CCL_SystemManager.h" />
     <ClInclude Include="Source\Engine\ECS\System\CCL_SystemRegistry.h" />
     <ClInclude Include="Source\Engine\ECS\System\CCL_TaskScheduler.h" />
-    <ClInclude Include="Source\Engine\Graphics\Components\Core\DissolveComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\Core\MaterialComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\Core\ModelComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\Core\NoRenderTag.h" />

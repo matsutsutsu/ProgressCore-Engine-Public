@@ -1374,9 +1374,6 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\Core\Shader.h">
       <Filter>Source\Engine\Graphics\Shader\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Components\Core\DissolveComponent.h">
-      <Filter>Source\Engine\Graphics\Components\Core</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Components\Core\MaterialComponent.h">
       <Filter>Source\Engine\Graphics\Components\Core</Filter>
     </ClInclude>
