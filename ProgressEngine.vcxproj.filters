@@ -792,8 +792,8 @@
     <ClInclude Include="Source\Engine\Serialization\Factory\Prefab.h">
       <Filter>Source\Engine\Serialization\Factory</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Serialization\Factory\SceneInitializer.h">
-      <Filter>Source\Engine\Serialization\Factory</Filter>
+    <ClInclude Include="Source\Game\Logics\Test\SceneInitializer.h">
+      <Filter>Source\Game\Logics\Test</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Combat\HealthComponent.h">
       <Filter>Source\Game\Logics\Combat</Filter>
@@ -2219,8 +2219,8 @@
     <ClCompile Include="Source\Engine\Serialization\Factory\Prefab.cpp">
       <Filter>Source\Engine\Serialization\Factory</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Serialization\Factory\SceneInitializer.cpp">
-      <Filter>Source\Engine\Serialization\Factory</Filter>
+    <ClCompile Include="Source\Game\Logics\Test\SceneInitializer.cpp">
+      <Filter>Source\Game\Logics\Test</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Scenes\EditorScene.cpp">
       <Filter>Source\Game\Scenes</Filter>

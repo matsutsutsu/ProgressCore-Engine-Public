@@ -1,5 +1,5 @@
 #include "EditorScene.h"
-#include "Engine/Serialization/Factory/SceneInitializer.h"
+#include "Game/Logics/Test/SceneInitializer.h"
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "tracy/Tracy.hpp"
 

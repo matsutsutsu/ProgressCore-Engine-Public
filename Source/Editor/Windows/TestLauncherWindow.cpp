@@ -1,5 +1,5 @@
 #include "Editor/Windows/TestLauncherWindow.h"
-#include "Engine/Serialization/Factory/SceneInitializer.h"
+#include "Game/Logics/Test/SceneInitializer.h"
 #include "Engine/Serialization/Factory/Prefab.h"
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Transform/Systems/TransformUpdateSystem.h"

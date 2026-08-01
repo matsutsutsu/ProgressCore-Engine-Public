@@ -645,7 +645,6 @@
     <ClInclude Include="Source\Engine\Serialization\Core\SceneFormat.h" />
     <ClInclude Include="Source\Engine\Serialization\Factory\EntityFactory.h" />
     <ClInclude Include="Source\Engine\Serialization\Factory\Prefab.h" />
-    <ClInclude Include="Source\Engine\Serialization\Factory\SceneInitializer.h" />
     <ClInclude Include="Source\Engine\Serialization\Meta\ComponentCategories.h" />
     <ClInclude Include="Source\Engine\Serialization\Meta\ComponentDefine.h" />
     <ClInclude Include="Source\Engine\Serialization\Meta\ComponentMeta.h" />
@@ -793,6 +792,7 @@
     <ClInclude Include="Source\Game\Logics\GameEvent\GameStateMode.h" />
     <ClInclude Include="Source\Game\Logics\Test\BoidComponent.h" />
     <ClInclude Include="Source\Game\Logics\Test\BoidSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Test\SceneInitializer.h" />
     <ClInclude Include="Source\Game\Logics\Test\ECSBenchmarkSystem.h" />
     <ClInclude Include="Source\Game\Logics\Test\JoltSandboxGuiSystem.h" />
     <ClInclude Include="Source\Game\Logics\Test\LissajousOrbitComponent.h" />
@@ -1491,7 +1491,6 @@
     <ClCompile Include="Source\Engine\Scene\SceneFactory.cpp" />
     <ClCompile Include="Source\Engine\Scene\SceneManager.cpp" />
     <ClCompile Include="Source\Engine\Serialization\Factory\Prefab.cpp" />
-    <ClCompile Include="Source\Engine\Serialization\Factory\SceneInitializer.cpp" />
     <ClCompile Include="Source\Engine\Serialization\Registry\ComponentRegistry.cpp" />
     <ClCompile Include="Source\Engine\Serialization\Serializer\PrefabSerializer.cpp" />
     <ClCompile Include="Source\Engine\Serialization\Serializer\SceneSerializer.cpp" />
@@ -1577,6 +1576,7 @@
     <ClCompile Include="Source\Game\Logics\Combat\HitboxCollisionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\SpawnHitboxSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\BoidSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Test\SceneInitializer.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\ECSBenchmarkSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\JoltSandboxGuiSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Test\LissajousOrbitSystem.cpp" />

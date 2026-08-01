@@ -1,14 +1,23 @@
 #include "SceneInitializer.h"
+
 #include "Engine/ECS/Common/CCL_Types.h"
-#include "Game/Core/AllComponents.h"
 #include "Engine/Serialization/Factory/Prefab.h"
 #include "Engine/Serialization/Factory/EntityFactory.h"
 #include "Engine/Platform/Core/Logger.h"
+#include "Engine/Time/TimeState.h"
+#include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"
+
+#include "Game/Core/AllComponents.h"
+#include "Game/Logics/Test/OrbitBenchmarkComponent.h"
+#include "Game/Logics/Test/VoxelOceanComponent.h"
+#include "Game/Logics/Test/LissajousOrbitComponent.h"
+#include "Game/Logics/Test/TornadoVortexComponent.h"
+#include "Game/Logics/Test/VectorFlowComponent.h"
+#include "Game/Logics/Test/BoidComponent.h"
+
+#include <cmath>
 #include <random>
 #include <vector>
-
-#include "Game/Logics/Test/OrbitBenchmarkComponent.h"
-#include "Engine/Time/TimeState.h"
 
 using namespace CCL::ECS;
 
@@ -37,8 +46,6 @@ void SceneInitializer::SpawnLightStartSet(CCL::ECS::World &world, ID3D11Device *
 }
 
 
-
-#include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"
 
 void SceneInitializer::SpawnAnimationTest(CCL::ECS::World& world, ID3D11Device* device)
 {
@@ -153,9 +160,6 @@ void SceneInitializer::SpawnECSBenchmarkTest(CCL::ECS::World &world, ID3D11Devic
     }
 }
 
-#include "Game/Logics/Test/VoxelOceanComponent.h"
-
-
 void SceneInitializer::SpawnVoxelOceanTest(
     CCL::ECS::World& world, ID3D11Device* device, int gridSize){
     
@@ -202,8 +206,6 @@ void SceneInitializer::SpawnVoxelOceanTest(
 }
 
 
-
-#include <cmath>
 
 void SceneInitializer::SpawnPhysicsAvalancheTest(
     CCL::ECS::World& world, ID3D11Device* device, int count)
@@ -289,9 +291,6 @@ void SceneInitializer::SpawnPhysicsAvalancheTest(
 }
 
 
-#include "Game/Logics/Test/LissajousOrbitComponent.h"
-#include "Game/Logics/Test/TornadoVortexComponent.h"
-#include "Game/Logics/Test/VectorFlowComponent.h"
 // ※PrimitiveComponent などのインクルードは適宜行ってください
 
 void SceneInitializer::SpawnJoltAvalancheTest(CCL::ECS::World &world, ID3D11Device *device, int count)
@@ -375,8 +374,6 @@ void SceneInitializer::SpawnJoltAvalancheTest(CCL::ECS::World &world, ID3D11Devi
         }
     }
 }
-
-#include "Game/Logics/Test/BoidComponent.h"
 
 void SceneInitializer::SpawnBoidsTest(CCL::ECS::World &world, ID3D11Device *device, int count)
 {

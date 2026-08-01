@@ -4,7 +4,7 @@
 #include "Engine/ECS/System/CCL_SystemManager.h"
 
 #include "Engine/Serialization/Factory/Prefab.h"
-#include "Engine/Serialization/Factory/SceneInitializer.h"
+#include "Game/Logics/Test/SceneInitializer.h"
 
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"
