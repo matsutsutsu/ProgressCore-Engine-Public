@@ -18,7 +18,7 @@
 #include <string>
 
 class AnimationSequenceImpl;
-class AnimatorComponent;
+struct AnimatorComponent; // 実体は struct
 class Model;
 
 /// @brief アニメーション台本(AnimSequence)編集ウィンドウ。

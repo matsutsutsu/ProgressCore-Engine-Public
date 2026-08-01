@@ -2,10 +2,10 @@
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include <vector>
 
-// 前方宣言
-class AnimatorComponent;
-class ModelComponent;
-class TimeStateComponent;
+// 前方宣言（実体は struct なので struct で宣言する。class と混ぜると C4099 になる）
+struct AnimatorComponent;
+struct ModelComponent;
+struct TimeStateComponent;
 class Model;
 struct AnimSequence;
 

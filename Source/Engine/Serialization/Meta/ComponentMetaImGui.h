@@ -109,8 +109,13 @@ namespace ComponentMetaImGui {
         }
         case FieldKind::UInt32: {
             uint32_t& v = RawField<uint32_t>(obj, fd.offset);
-            int       tmp = (int)v;
-            if (ImGui::DragInt(W, &tmp, 1.0f, 0, 4294967295)) { v = (uint32_t)tmp; changed = true; }
+            // ★ DragInt は min/max が int のため uint32 の上限(4294967295)を渡せない。
+            //    渡すと -1 に切り捨てられて min>max となり、クランプが無効化されるうえ
+            //    int 経由の表示で INT_MAX 超の値(ハッシュ等)が負数として見えてしまう。
+            //    uint32 のまま扱える DragScalar を使う。
+            constexpr uint32_t kMin = 0u;
+            constexpr uint32_t kMax = 0xFFFFFFFFu;
+            changed = ImGui::DragScalar(W, ImGuiDataType_U32, &v, 1.0f, &kMin, &kMax);
             break;
         }
         case FieldKind::EntityLink: {
