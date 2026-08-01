@@ -135,9 +135,6 @@
     <Filter Include="Source\Engine\UI\ImGui">
       <UniqueIdentifier>{4c3ff29b-8223-48fe-9ed2-adbda18fe524}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Game\Utils">
-      <UniqueIdentifier>{7b613cb4-265d-4fc0-9e9c-3309a07093d6}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Game\GameEvent">
       <UniqueIdentifier>{6d456466-192c-420e-8be4-6fe0a14e4d5b}</UniqueIdentifier>
     </Filter>
@@ -399,7 +396,7 @@
     <Filter Include="Source\Game\Logics\AI\StateTree">
       <UniqueIdentifier>{b7c28ac1-c302-46fc-943a-869af40a6ac0}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Timer">
+    <Filter Include="Source\Engine\Time">
       <UniqueIdentifier>{7a88023c-be1b-4e90-9f95-822c9f974cc6}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Transform\Core">
@@ -440,9 +437,6 @@
     </Filter>
     <Filter Include="Source\Game\Logics\AI\BehaviorTree\Actions">
       <UniqueIdentifier>{3135afad-6920-43ec-93d8-8f46096aaa44}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Prototype">
-      <UniqueIdentifier>{f6e27a6b-390a-468b-b147-49ca5346c7eb}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Game\Logics\AI\Battle">
       <UniqueIdentifier>{517346a0-976c-42e5-8a21-5198a71675a7}</UniqueIdentifier>
@@ -954,8 +948,8 @@
     <ClInclude Include="Source\Engine\Graphics\Renderer\ParticleRenderer.h">
       <Filter>Source\Engine\Graphics\Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Utils\PooledParticleComponent.h">
-      <Filter>Source\Game\Utils</Filter>
+    <ClInclude Include="Source\Engine\Graphics\Components\Particle\PooledParticleComponent.h">
+      <Filter>Source\Engine\Graphics\Components\Particle</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\Factory\EntityFactory.h">
       <Filter>Source\Engine\Serialization\Factory</Filter>
@@ -1638,14 +1632,14 @@
     <ClInclude Include="Source\Editor\Windows\StateTreeWindow.h">
       <Filter>Source\Editor\Windows\AI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Timer\TimeScaleSetupSystem.h">
-      <Filter>Source\Engine\Timer</Filter>
+    <ClInclude Include="Source\Engine\Time\TimeScaleSetupSystem.h">
+      <Filter>Source\Engine\Time</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Timer\TimeScaleSystem.h">
-      <Filter>Source\Engine\Timer</Filter>
+    <ClInclude Include="Source\Engine\Time\TimeScaleSystem.h">
+      <Filter>Source\Engine\Time</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Timer\TimeState.h">
-      <Filter>Source\Engine\Timer</Filter>
+    <ClInclude Include="Source\Engine\Time\TimeState.h">
+      <Filter>Source\Engine\Time</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Systems\SystemPriority.h">
       <Filter>Source\Engine\Core\Systems</Filter>
@@ -1767,8 +1761,8 @@
     <ClInclude Include="Source\Engine\Core\Math\ScreenToWorld.h">
       <Filter>Source\Engine\Core\Math</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Utils\ParticlePool.h">
-      <Filter>Source\Game\Utils</Filter>
+    <ClInclude Include="Source\Engine\Graphics\Components\Particle\ParticlePool.h">
+      <Filter>Source\Engine\Graphics\Components\Particle</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\TestLauncherWindow.h">
       <Filter>Source\Editor\Windows\Game</Filter>
@@ -1979,9 +1973,6 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_Basic.h">
       <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Prototype\DemoAI.h">
-      <Filter>Source\Game\Prototype</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Physics\JoltIntegration\PhysicsLayers.h">
       <Filter>Source\Engine\Physics\JoltIntegration</Filter>
@@ -2792,14 +2783,14 @@
     <ClCompile Include="Source\Editor\Windows\StateTreeWindow.cpp">
       <Filter>Source\Editor\Windows\AI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Timer\TimeComponentMeta.cpp">
-      <Filter>Source\Engine\Timer</Filter>
+    <ClCompile Include="Source\Engine\Time\TimeComponentMeta.cpp">
+      <Filter>Source\Engine\Time</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Timer\TimeScaleSetupSystem.cpp">
-      <Filter>Source\Engine\Timer</Filter>
+    <ClCompile Include="Source\Engine\Time\TimeScaleSetupSystem.cpp">
+      <Filter>Source\Engine\Time</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Timer\TimeScaleSystem.cpp">
-      <Filter>Source\Engine\Timer</Filter>
+    <ClCompile Include="Source\Engine\Time\TimeScaleSystem.cpp">
+      <Filter>Source\Engine\Time</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Systems\Culling\AABBDebugDrawSystem.cpp">
       <Filter>Source\Engine\Graphics\Systems\Culling</Filter>

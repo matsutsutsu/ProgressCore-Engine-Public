@@ -3,7 +3,7 @@
 #include "Engine/Graphics/Components/Particle/GPUParticleComponent.h"
 #include "Engine/Graphics/Components/Particle/GPUParticleBuffer.h"
 #include "Engine/Transform/Components/TransformComponent.h"
-#include "Engine/Timer/TimeState.h"
+#include "Engine/Time/TimeState.h"
 
 class ParticleComputeShader; // 前方宣言
 struct GPUParticleBufferSet;

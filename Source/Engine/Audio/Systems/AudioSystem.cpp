@@ -3,7 +3,7 @@
 #include "Engine/Audio/Components/AudioEvents.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Platform/Core/Logger.h" // 厳格なロギング仕様に従う
-#include "Engine/Timer/TimeState.h"      // TimeContext（時間倍率→音のスロー演出）
+#include "Engine/Time/TimeState.h"      // TimeContext（時間倍率→音のスロー演出）
 
 #include <algorithm>
 #include <cmath>

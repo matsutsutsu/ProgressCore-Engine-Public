@@ -5,7 +5,7 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
-#include "Engine/Timer/TimeState.h"
+#include "Engine/Time/TimeState.h"
 
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"   // プレイヤー識別
 #include "Game/Logics/Character/Boss/Data/BossActionComponent.h"      // ボス識別

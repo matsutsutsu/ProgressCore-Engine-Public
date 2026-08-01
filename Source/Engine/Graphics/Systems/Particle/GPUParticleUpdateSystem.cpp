@@ -11,7 +11,7 @@
 
 #include "Engine/Graphics/Shader/ShaderReflection.h"
 
-#include "Game/Utils/PooledParticleComponent.h"
+#include "Engine/Graphics/Components/Particle/PooledParticleComponent.h"
 
 #include <tracy/Tracy.hpp>
 

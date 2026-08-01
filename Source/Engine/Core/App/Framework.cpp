@@ -8,7 +8,7 @@
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Platform/Input/Input.h"
 #include "Engine/Scene/SceneManager.h"
-#include "Engine/Timer/TimeState.h" // TimeContext.isPaused（世界時計の凍結。accumulator/補間を止める）
+#include "Engine/Time/TimeState.h" // TimeContext.isPaused（世界時計の凍結。accumulator/補間を止める）
 #include "Game/GameFlowState.h"     // GameFlowState.quitRequested（QUITをメインスレッドで消化する）
 #include "Engine/Serialization/Serializer/LevelSerializer.h"
 #include "Game/Scenes/BaseScene.h"

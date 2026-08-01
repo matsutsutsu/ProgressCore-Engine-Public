@@ -24,11 +24,11 @@
 // ===========================================================================
 #include "Prefab.h"
 #include "Engine/Serialization/Serializer/SceneSerializer.h"
-#include "Game/Utils/ParticlePool.h"
+#include "Engine/Graphics/Components/Particle/ParticlePool.h"
 #include "Engine/Transform/Systems/TransformUpdateSystem.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Graphics/Components/Particle/GPUParticleComponent.h"
-#include "Game/Utils/PooledParticleComponent.h"
+#include "Engine/Graphics/Components/Particle/PooledParticleComponent.h"
 #include "Engine/Platform/Core/FileSystem.h"
 #include "Engine/Platform/Core/Logger.h"
 

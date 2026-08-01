@@ -13,7 +13,7 @@
 #include "Engine/UI/ECS/UIEvents.h"
 #include "Game/UI/MenuUiFactory.h"
 #include "Game/GameFlowState.h"
-#include "Engine/Timer/TimeState.h" // TimeContext.isPaused（世界時計の凍結。RenderStageのVFXが尊重する）
+#include "Engine/Time/TimeState.h" // TimeContext.isPaused（世界時計の凍結。RenderStageのVFXが尊重する）
 
 #include <cstdint>
 

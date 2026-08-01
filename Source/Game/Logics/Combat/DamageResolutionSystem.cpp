@@ -16,7 +16,7 @@
 #include "Game/Logics/Combat/HealthComponent.h"
 #include "Game/Logics/GameEvent/GameEvents.h"
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"
-#include "Engine/Timer/TimeState.h"
+#include "Engine/Time/TimeState.h"
 #include "Engine/Physics/Components/Character/KnockbackComponent.h"
 #include "Engine/Graphics/Components/Impact/ScreenImpactComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"       // 被弾者の向き（前後左右判定）

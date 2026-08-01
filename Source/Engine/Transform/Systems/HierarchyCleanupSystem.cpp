@@ -20,7 +20,7 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include <algorithm>
 #include "Engine/Serialization/Factory/Prefab.h"
-#include "Game/Utils/PooledParticleComponent.h"
+#include "Engine/Graphics/Components/Particle/PooledParticleComponent.h"
 #include <vector>
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"

@@ -10,7 +10,7 @@
 #pragma once
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/AI/StateTree/Core/StateTreeComponent.h"
-#include "Engine/Timer/TimeState.h"
+#include "Engine/Time/TimeState.h"
 
 // StateTreeComponent と TimeStateComponent を持つ Entity を診断対象にする
 class AIDebugSystem : public CCL::ECS::IfSystem<

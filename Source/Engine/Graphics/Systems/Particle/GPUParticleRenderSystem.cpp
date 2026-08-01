@@ -13,7 +13,7 @@
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Graphics/Renderer/ParticleRenderer.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
-#include "Game/Utils/PooledParticleComponent.h"
+#include "Engine/Graphics/Components/Particle/PooledParticleComponent.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 

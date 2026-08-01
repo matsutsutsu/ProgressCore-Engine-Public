@@ -6,7 +6,7 @@
 #include "Engine/Camera/Components/VirtualCameraComponents.h"
 #include "Engine/Camera/Components/CameraDollyCartComponent.h"
 // ※TimeStateComponentの想定パス
-#include "Engine/Timer/TimeState.h"
+#include "Engine/Time/TimeState.h"
 
 // ECS指示書に基づき、名前空間でクラスを囲まない
 class CameraDollySystem : public CCL::ECS::IfSystem<

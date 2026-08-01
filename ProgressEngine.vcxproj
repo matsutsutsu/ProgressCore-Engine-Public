@@ -492,6 +492,8 @@
     <ClInclude Include="Source\Engine\Graphics\Components\Lighting\ShadowMapConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\Particle\GPUParticleBuffer.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\Particle\GPUParticleComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\Particle\ParticlePool.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\Particle\PooledParticleComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\BloomConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\DistortionConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\RadialBlurConfigComponent.h" />
@@ -656,9 +658,9 @@
     <ClInclude Include="Source\Engine\Serialization\Serializer\PrefabSerializer.h" />
     <ClInclude Include="Source\Engine\Serialization\Serializer\SceneSerializer.h" />
     <ClInclude Include="Source\Engine\Serialization\Serializer\LevelSerializer.h" />
-    <ClInclude Include="Source\Engine\Timer\TimeScaleSetupSystem.h" />
-    <ClInclude Include="Source\Engine\Timer\TimeScaleSystem.h" />
-    <ClInclude Include="Source\Engine\Timer\TimeState.h" />
+    <ClInclude Include="Source\Engine\Time\TimeScaleSetupSystem.h" />
+    <ClInclude Include="Source\Engine\Time\TimeScaleSystem.h" />
+    <ClInclude Include="Source\Engine\Time\TimeState.h" />
     <ClInclude Include="Source\Engine\Transform\Components\BoneAttachmentComponent.h" />
     <ClInclude Include="Source\Engine\Transform\Components\PendingParentComponent.h" />
     <ClInclude Include="Source\Engine\Transform\Components\TransformComponent.h" />
@@ -802,15 +804,12 @@
     <ClInclude Include="Source\Game\Logics\Test\VectorFlowSystem.h" />
     <ClInclude Include="Source\Game\Logics\Test\VoxelOceanComponent.h" />
     <ClInclude Include="Source\Game\Logics\Test\VoxelOceanSystem.h" />
-    <ClInclude Include="Source\Game\Prototype\DemoAI.h" />
     <ClInclude Include="Source\Game\Scenes\BaseScene.h" />
     <ClInclude Include="Source\Game\Scenes\EditorScene.h" />
     <ClInclude Include="Source\Game\Scenes\GameScene.h" />
     <ClInclude Include="Source\Game\Scenes\TitleScene.h" />
     <ClInclude Include="Source\Game\Scenes\ParticleScene.h" />
     <ClInclude Include="Source\Game\Scenes\SceneLoading.h" />
-    <ClInclude Include="Source\Game\Utils\ParticlePool.h" />
-    <ClInclude Include="Source\Game\Utils\PooledParticleComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="External\imgui-docking\imgui.cpp">
@@ -1497,9 +1496,9 @@
     <ClCompile Include="Source\Engine\Serialization\Serializer\PrefabSerializer.cpp" />
     <ClCompile Include="Source\Engine\Serialization\Serializer\SceneSerializer.cpp" />
     <ClCompile Include="Source\Engine\Serialization\Serializer\LevelSerializer.cpp" />
-    <ClCompile Include="Source\Engine\Timer\TimeComponentMeta.cpp" />
-    <ClCompile Include="Source\Engine\Timer\TimeScaleSetupSystem.cpp" />
-    <ClCompile Include="Source\Engine\Timer\TimeScaleSystem.cpp" />
+    <ClCompile Include="Source\Engine\Time\TimeComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Time\TimeScaleSetupSystem.cpp" />
+    <ClCompile Include="Source\Engine\Time\TimeScaleSystem.cpp" />
     <ClCompile Include="Source\Engine\Transform\Components\TransformComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Transform\Core\TransformHierarchyCache.cpp" />
     <ClCompile Include="Source\Engine\Transform\Systems\BoneAttachmentRenderSystem.cpp" />
