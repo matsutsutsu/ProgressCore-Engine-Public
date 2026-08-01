@@ -8,7 +8,6 @@
 
 #include "Engine/Physics/Components/Character/CharacterMovementInputComponent.h"
 #include "Engine/Physics/JoltIntegration/IPhysicsAPI.h" // カメラ衝突（地形レイキャスト）
-#include "Engine/Camera/Systems/CameraTargetBinding.h"
 #include "Engine/Core/App/GameFlowState.h" // ポーズ中はカーソルロックを解除するため
 
 #include <memory>
@@ -80,7 +79,6 @@ void CameraActionTPSSystem::Update(float dt)
     // ★ 追従対象(プレイヤー)を「役割」で毎フレーム解決しておく。
     //    プレハブ/レベルで別々に配置されても、ここで自動接続されるため
     //    以前のようにハードコードで target を焼き込む必要がない。
-    const EntityID playerId = CameraBinding::FindPlayer(_world);
 
     // カーソルを固定しない（＝マウスルックも止める）条件をフレーム先頭で確定。
     //   ・ポーズ中（メニュー操作にカーソルが要る）
@@ -98,8 +96,8 @@ void CameraActionTPSSystem::Update(float dt)
 
     // ForEachは IfSystem のテンプレート引数(3つのコンポーネント)と完全に一致させる
     ForEach([&](VirtualCamera &vcam, CameraBodyTPSComponent &tps, TransformComponent &trans) {
-        // ★ target が無効(未接続 / リロードでID変化 / リスポーン)なら役割で繋ぎ直す。
-        CameraBinding::BindIfInvalid(_world, tps.target, playerId);
+        // ※ target の解決(役割による自動接続)は、ゲーム側の CameraTargetBindSystem が
+        //    本システムより前のステージ(R00b)で済ませている。
 
         // 1. 追従対象（プレイヤー）の取得
         auto *targetTrans = _world->GetComponent<TransformComponent>(tps.target.id);

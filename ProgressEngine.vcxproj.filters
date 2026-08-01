@@ -1230,8 +1230,8 @@
     <ClInclude Include="Source\Engine\Animation\Systems\AnimControllerSystem.h">
       <Filter>Source\Engine\Animation\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Animation\Systems\CombatAnimationSyncSystem.h">
-      <Filter>Source\Engine\Animation\Systems</Filter>
+    <ClInclude Include="Source\Game\Logics\Combat\CombatAnimationSyncSystem.h">
+      <Filter>Source\Game\Logics\Combat</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Audio\DirectXTKIntegration\DxtkAudioManager.h">
       <Filter>Source\Engine\Audio\DirectXTKIntegration</Filter>
@@ -1818,6 +1818,9 @@
     <ClInclude Include="Source\Game\Logics\Character\Player\Components\JustEvadeComponent.h">
       <Filter>Source\Game\Logics\Character\Player\Components</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerAnimParamSyncSystem.h">
+      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerDashSystem.h">
       <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
     </ClInclude>
@@ -1851,8 +1854,8 @@
     <ClInclude Include="Source\Engine\Camera\Systems\CameraActionTPSSystem.h">
       <Filter>Source\Engine\Camera\Systems\_Game</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Camera\Systems\CameraTargetBinding.h">
-      <Filter>Source\Engine\Camera\Systems\_Game</Filter>
+    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\CameraTargetBindSystem.h">
+      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Camera\Components\CameraDollyCartComponent.h">
       <Filter>Source\Engine\Camera\Components</Filter>
@@ -2519,8 +2522,8 @@
     <ClCompile Include="Source\Engine\Animation\Systems\AnimControllerSystem.cpp">
       <Filter>Source\Engine\Animation\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Animation\Systems\CombatAnimationSyncSystem.cpp">
-      <Filter>Source\Engine\Animation\Systems</Filter>
+    <ClCompile Include="Source\Game\Logics\Combat\CombatAnimationSyncSystem.cpp">
+      <Filter>Source\Game\Logics\Combat</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Audio\DirectXTKIntegration\DxtkAudioManager.cpp">
       <Filter>Source\Engine\Audio\DirectXTKIntegration</Filter>
@@ -2916,6 +2919,12 @@
       <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerMoveSystem.cpp">
+      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\CameraTargetBindSystem.cpp">
+      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerAnimParamSyncSystem.cpp">
       <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerDashSystem.cpp">

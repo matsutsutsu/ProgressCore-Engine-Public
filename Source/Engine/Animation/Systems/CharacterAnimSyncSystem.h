@@ -9,8 +9,9 @@
 #include "Engine/Animation/Components/AnimParametersComponent.h"
 #include "Engine/Animation/Components/AnimatorComponent.h"
 
-// ※ダッシュ状態を見るための前方宣言/インクルード
-#include "Game/Logics/Character/Player/Components/DashComponent.h"
+// ※「ダッシュ中か」のようなゲーム固有の状態は、ゲーム側の
+//   PlayerAnimParamSyncSystem が AnimParameters へ直接 push する。
+//   本システムは物理(Jolt)由来の値だけを担当する。
 
 class CharacterAnimSyncSystem : public CCL::ECS::IfSystem<
                                     CharacterAnimSyncSystem,

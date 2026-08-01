@@ -1,6 +1,7 @@
 /// @file CharacterAnimSyncSystem.cpp
 
 #include "CharacterAnimSyncSystem.h"
+#include "Engine/Animation/Components/RootMotionComponent.h" // externallyDriven（外部が移動を駆動中か）
 #include "Engine/Core/Math/StringHash.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -15,7 +16,6 @@ using namespace DirectX::SimpleMath;
 static const uint32_t HASH_SPEED       =  CCL::Utils::HashString("Speed");
 static const uint32_t HASH_Y_VELOCITY  =  CCL::Utils::HashString("YVelocity");
 static const uint32_t HASH_IS_GROUNDED =  CCL::Utils::HashString("IsGrounded");
-static const uint32_t HASH_IS_DASHING  =  CCL::Utils::HashString("IsDashing");
 
 // トリガー用（エッジ検出）
 static const uint32_t HASH_TRIG_JUMP =  CCL::Utils::HashString("OnJump");
@@ -45,11 +45,14 @@ void CharacterAnimSyncSystem::Update(float /*dt*/)
         // 前フレームの接地状態を読み取る（エッジ検出用）
         bool wasGrounded = animParams.GetBool(HASH_IS_GROUNDED);
 
-        // ダッシュ状態の取得 (オプショナル: 敵など持っていないEntityはfalseになる)
-        bool isDashing = false;
-        if (auto *dash = _world->GetComponent<DashComponent>(id))
+        // 「外部（ゲーム側の移動アクション）が移動を駆動中か」を取得する。
+        // ダッシュ等でゲーム側が速度を握っている間は足滑り補正を掛けない。
+        // ※ ゲーム固有の DashComponent を直接読まず、Engine 側のこのフラグ経由で見る。
+        //    PlayerDashSystem が rm->externallyDriven = dash.isDashing を毎フレーム設定する。
+        bool externallyDriven = false;
+        if (auto *rootMotion = _world->GetComponent<RootMotionComponent>(id))
         {
-            isDashing = dash->isDashing;
+            externallyDriven = rootMotion->externallyDriven;
         }
 
         // ====================================================================
@@ -58,7 +61,7 @@ void CharacterAnimSyncSystem::Update(float /*dt*/)
         animParams.SetFloat(HASH_SPEED, currentSpeed);
         animParams.SetFloat(HASH_Y_VELOCITY, currentYVel);
         animParams.SetBool(HASH_IS_GROUNDED, isGrounded);
-        animParams.SetBool(HASH_IS_DASHING, isDashing);
+        // IsDashing はゲーム側(PlayerAnimParamSyncSystem)が同ステージで書き込む。
 
         // エッジ検出によるトリガー発行（ジャンプと着地）
         if (isGrounded && !wasGrounded)
@@ -82,7 +85,7 @@ void CharacterAnimSyncSystem::Update(float /*dt*/)
         // 移動速度がConfigの基準速度(walkSpeed)より速い/遅い場合、
         // アニメーションの再生速度(playbackSpeed)を動的に伸縮させて足の接地点を床に噛み合わせる。
 
-        if (isGrounded && currentSpeed > 0.1f && !isDashing)
+        if (isGrounded && currentSpeed > 0.1f && !externallyDriven)
         {
             // 歩き/走り中: 実際の移動速度 ÷ 基準歩行速度 = 再生倍率
             // (例: 速度が12なら、基準6の2倍速でアニメを再生し、足が滑るのを防ぐ)
