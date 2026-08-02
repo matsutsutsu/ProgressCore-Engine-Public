@@ -1,0 +1,117 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- =====================================================================
+       ECSPlayground.vcxproj
+
+       ECS コアだけを単体でビルドする学習用コンソールアプリ。
+       ProgressEngine.vcxproj とは完全に独立しており、あちらには一切影響しない。
+
+       ポイント:
+         - ENABLE_EDITOR / TRACY_ENABLE を「定義しない」ことで
+           ImGui と Tracy の依存が丸ごと消える
+         - Stub\ を Source\ より先にインクルードパスへ置き、
+           CCL_World.cpp の死んだ ShapeRenderer include を空ヘッダで受ける
+         - pch は使わない
+         - VCToolsVersion は 14.38.33130 に固定
+           （既定の 14.51 は CRT インポートライブラリが未インストールで
+             msvcprtd.lib が見つからずリンクに失敗する）
+       ===================================================================== -->
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <ProjectGuid>{7E1C0A42-9B33-4B7E-8C51-3D6F2A5E10B4}</ProjectGuid>
+    <RootNamespace>ECSPlayground</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <!-- 既定ツールセット(14.51)は CRT ライブラリが無いため v143 系に固定 -->
+    <VCToolsVersion>14.38.33130</VCToolsVersion>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
+    <UseDebugLibraries>true</UseDebugLibraries>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Configuration">
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+
+  <PropertyGroup>
+    <!-- リポジトリルート（このプロジェクトの2つ上） -->
+    <RepoRoot>$(MSBuildProjectDirectory)\..\..\</RepoRoot>
+    <OutDir>$(MSBuildProjectDirectory)\Bin\$(Configuration)\</OutDir>
+    <IntDir>$(MSBuildProjectDirectory)\Obj\$(Configuration)\</IntDir>
+    <TargetName>ECSPlayground</TargetName>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <!-- Stub を Source より先に置くこと（順序に意味がある） -->
+      <AdditionalIncludeDirectories>$(MSBuildProjectDirectory)\Stub;$(RepoRoot)Source;$(RepoRoot)External\Tracy;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>/utf-8 /Zc:char8_t- %(AdditionalOptions)</AdditionalOptions>
+      <!-- ENABLE_EDITOR も TRACY_ENABLE も定義しない -->
+      <PreprocessorDefinitions>_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
+  <!-- ================= ビルド対象（これで全部） ================= -->
+  <ItemGroup>
+    <ClCompile Include="ECSPlayground.cpp" />
+    <ClCompile Include="$(RepoRoot)Source\Engine\ECS\Core\CCL_Chunk.cpp" />
+    <ClCompile Include="$(RepoRoot)Source\Engine\ECS\Core\CCL_ChunkManager.cpp" />
+    <ClCompile Include="$(RepoRoot)Source\Engine\ECS\Core\CCL_World.cpp" />
+    <ClCompile Include="$(RepoRoot)Source\Engine\ECS\Jobs\CCL_JobSystem.cpp" />
+    <ClCompile Include="$(RepoRoot)Source\Engine\ECS\System\CCL_SystemManager.cpp" />
+    <!-- tracy::SetThreadName() は TRACY_ENABLE ガードの外にある実関数なので必要。
+         TRACY_ENABLE 未定義のため、それ以外の中身は全て消える。 -->
+    <ClCompile Include="$(RepoRoot)External\Tracy\TracyClient.cpp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" />
+    <None Include="Build.bat" />
+  </ItemGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>
