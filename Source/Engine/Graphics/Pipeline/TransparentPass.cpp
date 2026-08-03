@@ -9,24 +9,24 @@
 void TransparentPass::Initialize(const RenderServices& services)
 {
     IRenderPass::Initialize(services);
-    _psoTransparent = PipelineState(PipelineStateDesc::DefaultTransparent());
-    _instanceBuffer.Create(services.device, 8192);
+    m_psoTransparent = PipelineState(PipelineStateDesc::DefaultTransparent());
+    m_instanceBuffer.Create(services.device, 8192);
 }
 
 void TransparentPass::Execute(const RenderFrameContext& ctx)
 {
 
     ID3D11DeviceContext* dc = ctx.dc;
-    RenderQueue* queue = _services->renderQueue;
-    ModelRenderer* renderer = _services->modelRenderer;
+    RenderQueue* queue = m_services->renderQueue;
+    ModelRenderer* renderer = m_services->modelRenderer;
     if (!queue || !renderer) return;
 
-    if (_services->shadowMap) {
-        _services->shadowMap->Bind(dc, SLOT_SRV_SHADOW, SLOT_SMP_SHADOW, SLOT_CB_SHADOW);
+    if (m_services->shadowMap) {
+        m_services->shadowMap->Bind(dc, SLOT_SRV_SHADOW, SLOT_SMP_SHADOW, SLOT_CB_SHADOW);
     }
-    _psoTransparent.Apply(dc, _services->renderState);
+    m_psoTransparent.Apply(dc, m_services->renderState);
 
-    const PipelineState *lastPso = &_psoTransparent;
+    const PipelineState *lastPso = &m_psoTransparent;
 
     // OpaquePass が積んだ遅延半透明コマンドを距離降順（奥→手前）でその場ソートする。
     // このリストは毎フレーム作り直されるため破壊的並べ替えで問題なく、コピーも発生しない。
@@ -37,27 +37,27 @@ void TransparentPass::Execute(const RenderFrameContext& ctx)
         });
 
     for (const TransparencyCommand& info : allTrans) {
-        Shader* shader = _services->shaders->GetShader(info.shaderHash, _services->device);
+        Shader* shader = m_services->shaders->GetShader(info.shaderHash, m_services->device);
         IMaterialShader* matShader = shader ? shader->AsMaterial() : nullptr;
 
         if (!matShader) continue;
-        matShader->Begin(dc, *_services, ctx);
+        matShader->Begin(dc, *m_services, ctx);
 
         // シェーダー固有 PSO があれば上書き。無ければパス既定へ戻す。
         {
-            const PipelineState* want = shader->GetPSO() ? shader->GetPSO() : &_psoTransparent;
-            if (want != lastPso) { want->Apply(dc, _services->renderState); lastPso = want; }
+            const PipelineState* want = shader->GetPSO() ? shader->GetPSO() : &m_psoTransparent;
+            if (want != lastPso) { want->Apply(dc, m_services->renderState); lastPso = want; }
         }
 
         const Model::Mesh& mesh = *info.mesh;
 
         // =========================================================
-        // ★ F: const_cast 廃止
+        // F: const_cast 廃止
         //    override は引数として取得し、mesh.material を書き換えない。
         // =========================================================
         MaterialData* overrideMat = nullptr;
         if (info.overrideMaterial.IsValid()) {
-            overrideMat = _services->resources->GetMaterial(info.overrideMaterial);
+            overrideMat = m_services->resources->GetMaterial(info.overrideMaterial);
         }
 
         const bool isSkinned = !mesh.bones.empty();
@@ -71,8 +71,8 @@ void TransparentPass::Execute(const RenderFrameContext& ctx)
         }
 
         // 1 体分をポインタ渡しの高速版で書き込む（毎ドローの vector 確保を回避）
-        _instanceBuffer.Write(dc, &singleData, 1);
-        _instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
+        m_instanceBuffer.Write(dc, &singleData, 1);
+        m_instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
 
         if (isSkinned) renderer->UpdateSkeletonConstants(dc, mesh);
 
@@ -85,8 +85,8 @@ void TransparentPass::Execute(const RenderFrameContext& ctx)
         dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         dc->DrawIndexed(static_cast<UINT>(mesh.data->indices.size()), 0, 0);
 
-        // ★ const_cast による restore 行 完全削除
-        _instanceBuffer.Unbind(dc, SLOT_SRV_INSTANCE);
-        matShader->End(dc, *_services);
+        // const_cast による restore 行 完全削除
+        m_instanceBuffer.Unbind(dc, SLOT_SRV_INSTANCE);
+        matShader->End(dc, *m_services);
     }
 }

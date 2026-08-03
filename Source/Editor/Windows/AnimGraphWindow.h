@@ -15,8 +15,8 @@ struct EditorContext;
 } // namespace ax
 
 /// @brief アニメーションのステートマシン(AnimStateGraph)をノードグラフで編集するウィンドウ。
-/// @details 編集対象は _currentGraph。リンクの削除・選択は位置依存ではなく
-///          毎フレーム再構築する _linkLut(linkId→遷移の素性)で解決する。
+/// @details 編集対象は m_currentGraph。リンクの削除・選択は位置依存ではなく
+///          毎フレーム再構築する m_linkLut(linkId→遷移の素性)で解決する。
 class AnimGraphWindow : public EditorWindow
 {
   public:
@@ -62,30 +62,30 @@ class AnimGraphWindow : public EditorWindow
         uint32_t dstHash;
         bool     isAnyState;
     };
-    std::vector<std::pair<int, LinkRef>> _linkLut;
+    std::vector<std::pair<int, LinkRef>> m_linkLut;
     const LinkRef                       *FindLink(int linkId) const;
 
   private:
-    AnimStateGraph _currentGraph;
-    std::string    _currentFilePath = "Assets/Animations/PlayerAnimGraph.json";
+    AnimStateGraph m_currentGraph;
+    std::string    m_currentFilePath = "Assets/Animations/PlayerAnimGraph.json";
 
-    ax::NodeEditor::EditorContext *_nodeContext = nullptr;
+    ax::NodeEditor::EditorContext *m_nodeContext = nullptr;
 
     // 選択状態（0 = 未選択）
-    int _selectedNodeId = 0; ///< ed のノードID（予約負値 or hash*4）
-    int _selectedLinkId = 0; ///< ed のリンクID
+    int m_selectedNodeId = 0; ///< ed のノードID（予約負値 or hash*4）
+    int m_selectedLinkId = 0; ///< ed のリンクID
 
-    uint32_t _nodeToPlaceHash  = 0;
-    char     _newStateName[64] = "";
+    uint32_t m_nodeToPlaceHash  = 0;
+    char     m_newStateName[64] = "";
 
-    bool   _needRestorePositions = false;
-    ImVec2 _newNodeSpawnPos      = {0.0f, 0.0f};
+    bool   m_needRestorePositions = false;
+    ImVec2 m_newNodeSpawnPos      = {0.0f, 0.0f};
 
     // デバッグ用：現在実行中のステート
-    uint32_t _runtimeActiveStateHash = 0;
+    uint32_t m_runtimeActiveStateHash = 0;
 
-    int  _paramRenameIndex = -1; ///< リネーム編集中のパラメータindex（-1=なし）
-    char _paramNameBuf[64] = ""; ///< リネーム入力バッファ
+    int  m_paramRenameIndex = -1; ///< リネーム編集中のパラメータindex（-1=なし）
+    char m_paramNameBuf[64] = ""; ///< リネーム入力バッファ
 
     // =====================================================================
     // エディタの独自ステート管理 (Unity風 Make Transition用)
@@ -95,7 +95,7 @@ class AnimGraphWindow : public EditorWindow
         Normal,
         CreatingTransition
     };
-    EditorMode _editorMode                 = EditorMode::Normal;
-    uint32_t   _transitionSourceHash       = 0;
-    bool       _isTransitionSourceAnyState = false;
+    EditorMode m_editorMode                 = EditorMode::Normal;
+    uint32_t   m_transitionSourceHash       = 0;
+    bool       m_isTransitionSourceAnyState = false;
 };

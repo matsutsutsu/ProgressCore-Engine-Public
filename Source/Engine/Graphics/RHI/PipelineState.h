@@ -52,19 +52,19 @@ public:
     PipelineState() = default;
 
     // 設計図を受け取って金型を固める
-    PipelineState(const PipelineStateDesc& desc) : _desc(desc) {}
+    PipelineState(const PipelineStateDesc& desc) : m_desc(desc) {}
 
     // 描画の直前に、GPUに対して「この金型通りにしろ！」と強制上書きする
     void Apply(ID3D11DeviceContext* dc, const RenderState* rs) const {
-        dc->IASetPrimitiveTopology(_desc.topology);
-        dc->OMSetBlendState(rs->GetBlendState(_desc.blend), nullptr, 0xFFFFFFFF);
-        dc->OMSetDepthStencilState(rs->GetDepthStencilState(_desc.depth), 0);
-        dc->RSSetState(rs->GetRasterizerState(_desc.rasterizer));
+        dc->IASetPrimitiveTopology(m_desc.topology);
+        dc->OMSetBlendState(rs->GetBlendState(m_desc.blend), nullptr, 0xFFFFFFFF);
+        dc->OMSetDepthStencilState(rs->GetDepthStencilState(m_desc.depth), 0);
+        dc->RSSetState(rs->GetRasterizerState(m_desc.rasterizer));
     }
 
     /// Opaque 以外のブレンド（Transparency / Additive 等）が有効か。
-    bool IsBlendEnabled() const { return _desc.blend != BlendState::Opaque; }
+    bool IsBlendEnabled() const { return m_desc.blend != BlendState::Opaque; }
 
 private:
-    PipelineStateDesc _desc;
+    PipelineStateDesc m_desc;
 };

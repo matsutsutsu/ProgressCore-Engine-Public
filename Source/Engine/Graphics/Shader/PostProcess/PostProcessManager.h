@@ -25,12 +25,12 @@
  *  【使い方】
  *  @code
  *   // Graphics::Initialize 等で登録（順序 = 実行順）
- *   auto* bloom = _postProcess->AddEffect<BloomEffect>();
+ *   auto* bloom = m_postProcess->AddEffect<BloomEffect>();
  *   bloom->intensity = 1.5f;
- *   _postProcess->AddEffect<VignetteEffect>();
+ *   m_postProcess->AddEffect<VignetteEffect>();
  *
  *   // ECS システムからパラメータ更新
- *   auto* bloom = _postProcess->GetEffect<BloomEffect>();
+ *   auto* bloom = m_postProcess->GetEffect<BloomEffect>();
  *   if (bloom) {
  *       bloom->threshold = component->threshold;
  *       bloom->SetEnabled(component->enable);
@@ -76,8 +76,8 @@ public:
             "T must derive from IPostEffect");
         auto effect = std::make_unique<T>(std::forward<Args>(args)...);
         T* raw = effect.get();
-        effect->Initialize(_device, _width, _height);
-        _effects.push_back(std::move(effect));
+        effect->Initialize(m_device, m_width, m_height);
+        m_effects.push_back(std::move(effect));
         return raw;
     }
 
@@ -87,35 +87,35 @@ public:
     template<typename T>
     T* GetEffect() const
     {
-        for (const auto& e : _effects) {
+        for (const auto& e : m_effects) {
             if (auto* p = dynamic_cast<T*>(e.get()))
                 return p;
         }
         return nullptr;
     }
 
-    size_t GetEffectCount() const noexcept { return _effects.size(); }
+    size_t GetEffectCount() const noexcept { return m_effects.size(); }
 
     // ToneMap の露出値（ECS から更新）
     ToneMapConfigComponent toneMapConfig;
 
     // 注: bloomConfig は廃止。BloomEffect のメンバを直接書き込む。
-    //   旧: _postProcess->bloomConfig.intensity = 1.0f;
-    //   新: _postProcess->GetEffect<BloomEffect>()->intensity = 1.0f;
+    //   旧: m_postProcess->bloomConfig.intensity = 1.0f;
+    //   新: m_postProcess->GetEffect<BloomEffect>()->intensity = 1.0f;
 
 private:
-    ID3D11Device* _device = nullptr;
-    UINT          _width = 0;
-    UINT          _height = 0;
+    ID3D11Device* m_device = nullptr;
+    UINT          m_width = 0;
+    UINT          m_height = 0;
 
     //  HDR キャンバスを 2枚 用意する（Ping-Pong用）
-    RenderTargetHandle _hdrBuffers[2];
-    RenderTargetHandle _outputSDR{};
-    RenderTargetHandle _sceneColorCopy{};
+    RenderTargetHandle m_hdrBuffers[2];
+    RenderTargetHandle m_outputSDR{};
+    RenderTargetHandle m_sceneColorCopy{};
 
-    std::vector<std::unique_ptr<IPostEffect>> _effects;
+    std::vector<std::unique_ptr<IPostEffect>> m_effects;
 
     // ToneMap は常に最終ステップとして PostProcessManager が保持
     // BloomEffect が合成済み HDR を返すため 1 入力のみになった
-    std::unique_ptr<ToneMapEffect> _toneMapEffect;
+    std::unique_ptr<ToneMapEffect> m_toneMapEffect;
 };

@@ -24,7 +24,7 @@ public:
     void End(ID3D11DeviceContext* dc, const RenderServices& s) override;
 
      // JSON 由来の PSO を持っていれば返す。無ければ nullptr（パス既定を使わせる）。
-    const PipelineState* GetPSO() const override { return _hasPso ? &_pso : nullptr; }
+    const PipelineState* GetPSO() const override { return m_hasPso ? &m_pso : nullptr; }
 
     // ファイルの更新を監視し、再コンパイルを実行する
     void CheckAndReload(ID3D11Device* device) override;
@@ -34,14 +34,14 @@ private:
     Microsoft::WRL::ComPtr<ID3D11PixelShader>  pixelShader;
     Microsoft::WRL::ComPtr<ID3D11InputLayout>  inputLayout;
 
-    // シェーダー固有 PSO（_hasPso が false なら未設定）
-    PipelineState _pso;
-    bool          _hasPso = false;
+    // シェーダー固有 PSO（m_hasPso が false なら未設定）
+    PipelineState m_pso;
+    bool          m_hasPso = false;
 
-    std::wstring _vsHlslPath;
-    std::wstring _psHlslPath;
-    std::filesystem::file_time_type _vsLastWriteTime;
-    std::filesystem::file_time_type _psLastWriteTime;
+    std::wstring m_vsHlslPath;
+    std::wstring m_psHlslPath;
+    std::filesystem::file_time_type m_vsLastWriteTime;
+    std::filesystem::file_time_type m_psLastWriteTime;
 
 
 };

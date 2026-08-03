@@ -17,28 +17,28 @@ public:
      * @details Framework 初期化時に ImGuiBufferSink を共有することで、
      *          UI 側はロック安全な Snapshot() 経由で履歴を読める
      */
-    void SetBufferSink(std::shared_ptr<ImGuiBufferSink> sink) { _bufferSink = std::move(sink); }
+    void SetBufferSink(std::shared_ptr<ImGuiBufferSink> sink) { m_bufferSink = std::move(sink); }
 
 protected:
     void DrawContents(EditorContext& context) override;
 
 private:
-    std::shared_ptr<ImGuiBufferSink> _bufferSink;
+    std::shared_ptr<ImGuiBufferSink> m_bufferSink;
 
     // レベルフィルタ
-    bool _showInfo = true;
-    bool _showSuccess = true;
-    bool _showWarning = true;
-    bool _showError = true;
+    bool m_showInfo = true;
+    bool m_showSuccess = true;
+    bool m_showWarning = true;
+    bool m_showError = true;
 
-    bool _autoScroll = true;
+    bool m_autoScroll = true;
 
     // カテゴリフィルタ (LogCategory::Count 個、全 true で初期化)
-    bool _categoryFilters[static_cast<int>(LogCategory::Count)] = {};
+    bool m_categoryFilters[static_cast<int>(LogCategory::Count)] = {};
 
     // 検索
-    char _searchBuf[128] = {};
+    char m_searchBuf[128] = {};
 
     // 初期化済みフラグ
-    bool _initialized = false;
+    bool m_initialized = false;
 };

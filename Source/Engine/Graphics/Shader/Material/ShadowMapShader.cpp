@@ -24,7 +24,7 @@ void ShadowMapShader::Begin(ID3D11DeviceContext* dc,
     dc->VSSetShader(vertexShader.Get(), nullptr, 0);
     dc->PSSetShader(nullptr, nullptr, 0); // 影書き込みにピクセルシェーダー不要
 
-    for (auto& pair : _constantBuffers) {
+    for (auto& pair : m_constantBuffers) {
         pair.second.BindVS(dc);
     }
 }

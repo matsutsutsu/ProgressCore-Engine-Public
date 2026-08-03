@@ -17,8 +17,8 @@ StateTreeResolveSystem::StateTreeResolveSystem()
 void StateTreeResolveSystem::Update(float /*dt*/)
 {
     // Registry がなければ何もできない
-    if (!_world->HasResource<StateTreeRegistry>()) return;
-    auto& reg = _world->GetResource<StateTreeRegistry>();
+    if (!m_world->HasResource<StateTreeRegistry>()) return;
+    auto& reg = m_world->GetResource<StateTreeRegistry>();
 
     // assetHandle が未解決かつ assetName がある Entity だけ処理
     ForEach([&](StateTreeComponent& st)

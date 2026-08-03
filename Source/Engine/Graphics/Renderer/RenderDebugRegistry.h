@@ -50,24 +50,24 @@ public:
     }
 
     /// @brief フレーム先頭で一覧をクリアする（容量は再利用するので確保は起きない）。
-    void BeginFrame() noexcept { _entries.clear(); }
+    void BeginFrame() noexcept { m_entries.clear(); }
 
     /// @brief 中間テクスチャを 1 件登録する。Release ビルドでは何もしない（ゼロコスト）。
     void Register(const DebugTexEntry& e)
     {
 #ifdef ENABLE_EDITOR
         if (!e.srv) return;
-        _entries.push_back(e);
+        m_entries.push_back(e);
 #else
         (void)e;
 #endif
     }
 
     /// @brief 登録済み一覧を取得する（RenderDebugWindow が読む）。
-    const std::vector<DebugTexEntry>& GetEntries() const noexcept { return _entries; }
+    const std::vector<DebugTexEntry>& GetEntries() const noexcept { return m_entries; }
 
 private:
-    RenderDebugRegistry() { _entries.reserve(16); }
+    RenderDebugRegistry() { m_entries.reserve(16); }
 
-    std::vector<DebugTexEntry> _entries;
+    std::vector<DebugTexEntry> m_entries;
 };

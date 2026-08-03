@@ -28,12 +28,12 @@ public:
 
     const char* GetName() const override { return "SSAO"; }
 
-    void UpdateParams(const GpuData::CbSSAOData& data) { _cbData = data; }
-    void UpdateBlurParams(float depthSigma) { _blurDepthSigma = depthSigma; }
+    void UpdateParams(const GpuData::CbSSAOData& data) { m_cbData = data; }
+    void UpdateBlurParams(float depthSigma) { m_blurDepthSigma = depthSigma; }
 
 private:
-    GpuData::CbSSAOData _cbData{};
-    float _blurDepthSigma = 0.2f;
+    GpuData::CbSSAOData m_cbData{};
+    float m_blurDepthSigma = 0.2f;
 
     struct Resources {
         Microsoft::WRL::ComPtr<ID3D11VertexShader> vs;
@@ -44,13 +44,13 @@ private:
         Microsoft::WRL::ComPtr<ID3D11Buffer>       cbBlur;
         Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler;
     };
-    Microsoft::WRL::ComPtr<ID3D11BlendState> _opaqueBlendState;
-    std::unique_ptr<Resources> _res;
+    Microsoft::WRL::ComPtr<ID3D11BlendState> m_opaqueBlendState;
+    std::unique_ptr<Resources> m_res;
 
-    RenderTargetHandle _rawAO;
-    RenderTargetHandle _blurH;
-    RenderTargetHandle _blurV;
-    UINT _width = 0, _height = 0;
+    RenderTargetHandle m_rawAO;
+    RenderTargetHandle m_blurH;
+    RenderTargetHandle m_blurV;
+    UINT m_width = 0, m_height = 0;
 
     void CreateTargets(UINT width, UINT height);
     void ReleaseTargets();

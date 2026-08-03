@@ -15,7 +15,7 @@
  *  RenderPipeline から登録順に Execute される。
  *
  *  設計の核：Services（永続）と FrameContext（揮発）を明確に分離。
- *  - Initialize で受け取った Services は基底クラスが保持する → 派生クラスは _services 経由で参照
+ *  - Initialize で受け取った Services は基底クラスが保持する → 派生クラスは m_services 経由で参照
  *  - Execute は FrameContext のみ受け取る → フレーム毎データが明示的
  */
 class IRenderPass
@@ -26,33 +26,33 @@ public:
     // =========================================================
     //  TracyとUI表示用の自動キャッシュ名
     // =========================================================
-    std::string _passName = "Unknown Pass";
-    std::string _tracyZoneName = "Pass: Unknown";
+    std::string m_passName = "Unknown Pass";
+    std::string m_tracyZoneName = "Pass: Unknown";
 
     // =========================================================
     // テンプレートで自動生成される固有のGPUタグを保持する
     // =========================================================
 #if defined(TRACY_ENABLE)
-    const tracy::SourceLocationData* _gpuSourceLocation = nullptr;
+    const tracy::SourceLocationData* m_gpuSourceLocation = nullptr;
 #endif
 
     /**
      * @brief 初期化。Services を保持し、必要に応じて GPU リソースを生成する。
      * @param services 永続サービス群。ポインタはエンジン終了まで有効。
      * @details
-     *  デフォルト実装は _services の保持のみ。
+     *  デフォルト実装は m_services の保持のみ。
      *  GPU リソースが必要な派生クラスはオーバーライドして基底を呼ぶこと：
      *  @code
      *    void OpaquePass::Initialize(const RenderServices& services) override {
-     *        IRenderPass::Initialize(services);  // _services を保持
-     *        _psoOpaque = PipelineState(PipelineStateDesc::DefaultOpaque());
-     *        _instanceBuffer.Create(services.device, 8192);
+     *        IRenderPass::Initialize(services);  // m_services を保持
+     *        m_psoOpaque = PipelineState(PipelineStateDesc::DefaultOpaque());
+     *        m_instanceBuffer.Create(services.device, 8192);
      *    }
      *  @endcode
      */
     virtual void Initialize(const RenderServices& services)
     {
-        _services = &services;
+        m_services = &services;
     }
 
     /**
@@ -85,5 +85,5 @@ public:
 
 protected:
     /// Initialize 後にアクセス可能な永続サービスへのポインタ。
-    const RenderServices* _services = nullptr;
+    const RenderServices* m_services = nullptr;
 };

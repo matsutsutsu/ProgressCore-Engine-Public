@@ -75,8 +75,8 @@ public:
         if (name.find("class ") == 0)  name = name.substr(6);
         if (name.find("struct ") == 0) name = name.substr(7);
 
-        raw->_passName = name;
-        raw->_tracyZoneName = "Pass: " + name;
+        raw->m_passName = name;
+        raw->m_tracyZoneName = "Pass: " + name;
 
         // =========================================================
         // ★究極の解決策: 型(T)ごとに固有の静的(static)GPUタグを生成する！
@@ -87,11 +87,11 @@ public:
         static const tracy::SourceLocationData loc = {
             staticGpuName.c_str(), __FUNCTION__, __FILE__, (uint32_t)__LINE__, 0
         };
-        raw->_gpuSourceLocation = &loc;
+        raw->m_gpuSourceLocation = &loc;
 #endif
 
-        pass->Initialize(_services);        // _services は Initialize() 後にのみ有効
-        _passes.push_back(std::move(pass));
+        pass->Initialize(m_services);        // m_services は Initialize() 後にのみ有効
+        m_passes.push_back(std::move(pass));
         return raw;
     }
 
@@ -110,18 +110,18 @@ public:
     void OnResize(uint32_t width, uint32_t height);
 
     /// 登録されているパス数を返す（デバッグ・テスト用）。
-    size_t GetPassCount() const noexcept { return _passes.size(); }
+    size_t GetPassCount() const noexcept { return m_passes.size(); }
 
     /**
     * @brief 初期化時に渡されたサービス群への const 参照を返す。
     * @details EnvironmentSystem 等のパイプライン外システムが services を
     *          参照できるようにするアクセサ。ModelRenderer::GetServices() 経由で公開する。
     */
-    const RenderServices& GetServices() const noexcept { return _services; }
+    const RenderServices& GetServices() const noexcept { return m_services; }
 
 
 
 private:
-    RenderServices                            _services{};
-    std::vector<std::unique_ptr<IRenderPass>> _passes;
+    RenderServices                            m_services{};
+    std::vector<std::unique_ptr<IRenderPass>> m_passes;
 };

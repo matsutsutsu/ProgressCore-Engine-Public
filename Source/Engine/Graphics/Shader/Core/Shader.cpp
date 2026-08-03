@@ -7,10 +7,10 @@
 bool Shader::InitializeReflection(ID3D11Device* device, const std::string& csoPath)
 {
 	// csoファイルからリフレクション情報をロードし、定数バッファの自動生成を行う
-    if (!_reflection.LoadFromCompiledFile(csoPath.c_str())) return false;
+    if (!m_reflection.LoadFromCompiledFile(csoPath.c_str())) return false;
 
 	// 定数バッファの取得
-    const auto& cbs = _reflection.GetConstantBuffers();
+    const auto& cbs = m_reflection.GetConstantBuffers();
     for (const auto& cbInfo : cbs)
     {
 		// SLOT_CB_SCENE(slot8)以降はシステム予約領域なので、
@@ -19,26 +19,26 @@ bool Shader::InitializeReflection(ID3D11Device* device, const std::string& csoPa
             continue; // システム予約領域は無視
         }
 		// AutoConstantBuffer を生成してマップに保存
-        _constantBuffers[cbInfo.name].Create(device, cbInfo);
+        m_constantBuffers[cbInfo.name].Create(device, cbInfo);
     }
     return true;
 }
 
 int Shader::FetchTextureSlot(const std::string& name)
 {
-    int slot = _reflection.FindTextureSlot(name);
+    int slot = m_reflection.FindTextureSlot(name);
     if (slot != -1) {
-        _textureSlots[name] = slot;
-        _usedTextureSlots.push_back(slot);
+        m_textureSlots[name] = slot;
+        m_usedTextureSlots.push_back(slot);
     }
     return slot;
 }
 
 int Shader::FetchSamplerSlot(const std::string& name)
 {
-    int slot = _reflection.FindSamplerSlot(name);
+    int slot = m_reflection.FindSamplerSlot(name);
     if (slot != -1) {
-        _samplerSlots[name] = slot;
+        m_samplerSlots[name] = slot;
     }
     return slot;
 }
@@ -51,7 +51,7 @@ void Shader::ApplyShaderPipeline(ID3D11DeviceContext* dc, ID3D11VertexShader* vs
     dc->PSSetShader(ps, nullptr, 0);
 
 	// 定数バッファをバインド
-    for (auto& pair : _constantBuffers) {
+    for (auto& pair : m_constantBuffers) {
         pair.second.BindVS(dc);
         pair.second.BindPS(dc);
     }
@@ -62,13 +62,13 @@ void Shader::UnbindResources(ID3D11DeviceContext* dc)
     ID3D11ShaderResourceView* nullSRV = nullptr;
     ID3D11Buffer* nullCB = nullptr;
 
-    for (auto& pair : _constantBuffers) {
+    for (auto& pair : m_constantBuffers) {
         UINT slot = (UINT)pair.second.GetBindPoint();
         dc->VSSetConstantBuffers(slot, 1, &nullCB);
         dc->PSSetConstantBuffers(slot, 1, &nullCB);
     }
 
-    for (int slot : _usedTextureSlots) {
+    for (int slot : m_usedTextureSlots) {
         dc->PSSetShaderResources((UINT)slot, 1, &nullSRV);
     }
 
@@ -81,7 +81,7 @@ void Shader::UnbindResources(ID3D11DeviceContext* dc)
 void Shader::UpdateMaterialProperties(ID3D11DeviceContext* dc, const MaterialData& mat)
 {
 	// 定数バッファにマテリアルのスカラー値とカラー値を流し込む
-    for (auto& cbPair : _constantBuffers) {
+    for (auto& cbPair : m_constantBuffers) {
         auto& cb = cbPair.second;
         bool isUpdated = false;
 
@@ -106,7 +106,7 @@ void Shader::UpdateMaterialProperties(ID3D11DeviceContext* dc, const MaterialDat
     // ========================================================
     // ② テクスチャのバインド
     // ========================================================
-    const auto& shaderTextures = _reflection.GetTextures();
+    const auto& shaderTextures = m_reflection.GetTextures();
 
     for (const auto& texInfo : shaderTextures) {
 		// SLOT_SRV_FOG_NOISE(slot9)以降はシステム予約領域なので、
@@ -130,8 +130,8 @@ void Shader::UpdateMaterialProperties(ID3D11DeviceContext* dc, const MaterialDat
             ID3D11ShaderResourceView* srv = ResourceManager::Instance().GetTexture(texHandle);
             dc->PSSetShaderResources(slot, 1, &srv);
 
-            if (std::find(_usedTextureSlots.begin(), _usedTextureSlots.end(), slot) == _usedTextureSlots.end()) {
-                _usedTextureSlots.push_back(slot);
+            if (std::find(m_usedTextureSlots.begin(), m_usedTextureSlots.end(), slot) == m_usedTextureSlots.end()) {
+                m_usedTextureSlots.push_back(slot);
             }
         }
         else {
@@ -151,9 +151,9 @@ std::filesystem::file_time_type Shader::GetLastWriteTime(const std::wstring& fil
 
 void Shader::ResetReflection()
 {
-    _constantBuffers.clear();
-    _textureSlots.clear();
-    _samplerSlots.clear();
-    _usedTextureSlots.clear();
-    _reflection = ShaderReflect::ReflectionData();
+    m_constantBuffers.clear();
+    m_textureSlots.clear();
+    m_samplerSlots.clear();
+    m_usedTextureSlots.clear();
+    m_reflection = ShaderReflect::ReflectionData();
 }

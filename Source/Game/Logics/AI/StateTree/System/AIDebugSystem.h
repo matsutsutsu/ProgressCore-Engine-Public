@@ -26,6 +26,6 @@ class AIDebugSystem : public CCL::ECS::IfSystem<
     void Update(float dt) override;
 
   private:
-    float                  _timer    = 0.0f;
+    float                  m_timer    = 0.0f;
     static constexpr float kInterval = 2.0f; // 2秒ごとに出力
 };

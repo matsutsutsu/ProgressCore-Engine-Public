@@ -18,9 +18,9 @@ using namespace CCL::ECS;
 // ===================================================================================
 void JoltCharacterUpdateSystem::Update(float rawDt)
 {
-    if (!_world->HasResource<JoltPhysicsManager *>())
+    if (!m_world->HasResource<JoltPhysicsManager *>())
         return;
-    auto               &joltManager   = _world->GetResource<JoltPhysicsManager *>();
+    auto               &joltManager   = m_world->GetResource<JoltPhysicsManager *>();
     JPH::PhysicsSystem *physicsSystem = joltManager->GetPhysicsSystem();
     const float         gravityY      = physicsSystem->GetGravity().GetY();
 
@@ -62,7 +62,7 @@ void JoltCharacterUpdateSystem::Update(float rawDt)
         // 3.5 ノックバック（被弾で書き込まれた速度を減衰させつつ水平速度へ加算）。
         //     CharacterVirtual 経由で動かすので壁抜けしない。残り時間比で線形に減衰させ、
         //     命中直後が最大 → 0 へ。KnockbackComponent は被弾側に常設で付ける。
-        if (auto *kb = _world->GetComponent<KnockbackComponent>(id))
+        if (auto *kb = m_world->GetComponent<KnockbackComponent>(id))
         {
             if (kb->timer > 0.0f)
             {
@@ -166,7 +166,7 @@ DirectX::SimpleMath::Vector3 JoltCharacterUpdateSystem::CalculateHorizontalVeloc
 void JoltCharacterUpdateSystem::UpdatePhysicsAndSync(float safeDt, float moveDt, JoltPhysicsManager *joltManager, JPH::CharacterVirtual *ch, const JoltCharacterConfigComponent &config, TransformComponent &trans, EntityID id)
 {
     JPH::PhysicsSystem         *physicsSystem = joltManager->GetPhysicsSystem();
-    JoltHandleComponent        *kinBody       = _world->GetComponent<JoltHandleComponent>(id); // presenceプロキシ
+    JoltHandleComponent        *kinBody       = m_world->GetComponent<JoltHandleComponent>(id); // presenceプロキシ
     JPH::IgnoreSingleBodyFilter bodyFilter(kinBody ? kinBody->bodyID : JPH::BodyID());         // 自分のプロキシは無視
 
     JPH::CharacterVirtual::ExtendedUpdateSettings updateSettings;

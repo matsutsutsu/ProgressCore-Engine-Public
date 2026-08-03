@@ -21,6 +21,6 @@ class CameraPathEditorWindow : public EditorWindow
     void SavePathToJson(const std::string &relativePath, const std::vector<DirectX::SimpleMath::Vector3> &points);
 
     // 内部状態
-    int  _selectedPointIndex = -1;    // 現在選択している頂点のインデックス
-    bool _isAutoSave         = false; // (オプション) 値を変えたら自動保存するか
+    int  m_selectedPointIndex = -1;    // 現在選択している頂点のインデックス
+    bool m_isAutoSave         = false; // (オプション) 値を変えたら自動保存するか
 };

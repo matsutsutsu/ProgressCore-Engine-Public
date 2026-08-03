@@ -28,12 +28,12 @@ void HitEffectSystem::Initialize()
         // 位置なしで生成 → 直接 Transform をセットして即ワールド行列を焼く。
         // ※ SpawnPrefab(path,pos) の座標セットは遅延適用なので、最初のバーストが原点で
         //   出てしまう。ここでは live なコンポーネントを直接書き換えて確実に位置を決める。
-        EntityID rootID = Prefab::SpawnPrefab(*_world, kHitSparkPrefab);
+        EntityID rootID = Prefab::SpawnPrefab(*m_world, kHitSparkPrefab);
         if (rootID == InvalidEntityID) return;
 
         // ルートを命中位置へ。ワールド行列もこの場で確定させる。
         DirectX::XMMATRIX rootWorld = DirectX::XMMatrixIdentity();
-        if (auto *t = _world->GetComponent<TransformComponent>(rootID))
+        if (auto *t = m_world->GetComponent<TransformComponent>(rootID))
         {
             // ★重要：プレハブのルートには宙吊りの parent 参照(例: parent=3)が残っており、
             //   単体スポーン時に無関係なエンティティの子として解決されると、その位置・
@@ -47,20 +47,20 @@ void HitEffectSystem::Initialize()
             t->UpdateMatrix(); // 原点フラッシュ防止：この場でワールド行列を確定
             rootWorld = DirectX::XMLoadFloat4x4(&t->worldMatrix);
         }
-        _active.push_back({rootID, kVfxLifetime});
+        m_active.push_back({rootID, kVfxLifetime});
 
         // エミッタ(GPUParticle)を探して発火する。
         // プレハブがエディタ保存で「ルート＋子エミッタ」構成になっていても動くよう、
         // ルートに無ければルート直下の子から GPUParticle を探す。
-        if (auto *gp = _world->GetComponent<GPUParticleComponent>(rootID))
+        if (auto *gp = m_world->GetComponent<GPUParticleComponent>(rootID))
         {
             gp->hasPrevTransform = false; // スメア防止（前姿勢を現在位置で初期化させる）
             gp->TriggerBurst();
             return;
         }
-        for (EntityID cid : _world->View<GPUParticleComponent, TransformComponent>())
+        for (EntityID cid : m_world->View<GPUParticleComponent, TransformComponent>())
         {
-            auto *ct = _world->GetComponent<TransformComponent>(cid);
+            auto *ct = m_world->GetComponent<TransformComponent>(cid);
             if (!ct || ct->parent != rootID) continue; // このVFXの子エミッタだけ
 
             // 子エミッタは命中位置ぴったりに出したいので、姿勢をルート直下(オフセット0)に揃え、
@@ -71,7 +71,7 @@ void HitEffectSystem::Initialize()
             ct->isDirty  = true;
             ct->UpdateMatrix(rootWorld); // 親(ルート)行列を渡してワールド=命中位置に確定
 
-            if (auto *cgp = _world->GetComponent<GPUParticleComponent>(cid))
+            if (auto *cgp = m_world->GetComponent<GPUParticleComponent>(cid))
             {
                 // ★スメア防止：エミッタが原点→命中位置へ動いた分だけ粒子が線状に
                 //   引き伸ばされるのを防ぐ。前フレーム姿勢を「現在(命中位置)」で初期化させる。
@@ -79,7 +79,7 @@ void HitEffectSystem::Initialize()
                 cgp->TriggerBurst();
             }
 
-            _active.push_back({cid, kVfxLifetime}); // 子も寿命管理して破棄する
+            m_active.push_back({cid, kVfxLifetime}); // 子も寿命管理して破棄する
             break;
         }
     });
@@ -88,15 +88,15 @@ void HitEffectSystem::Initialize()
 void HitEffectSystem::Update(float dt)
 {
     // 寿命が尽きたエミッタを破棄する（粒子が消えてから安全に片付ける）。
-    for (size_t i = 0; i < _active.size();)
+    for (size_t i = 0; i < m_active.size();)
     {
-        _active[i].life -= dt;
-        if (_active[i].life <= 0.0f)
+        m_active[i].life -= dt;
+        if (m_active[i].life <= 0.0f)
         {
-            if (_world->IsEntityValid(_active[i].id))
-                _world->Destroy(_active[i].id);
-            _active[i] = _active.back(); // swap-erase（順序不問）
-            _active.pop_back();
+            if (m_world->IsEntityValid(m_active[i].id))
+                m_world->Destroy(m_active[i].id);
+            m_active[i] = m_active.back(); // swap-erase（順序不問）
+            m_active.pop_back();
         }
         else
         {

@@ -42,20 +42,20 @@ namespace
 
 void CameraTargetBindSystem::Update(float /*dt*/)
 {
-    const EntityID playerId = FindPlayer(_world);
+    const EntityID playerId = FindPlayer(m_world);
     if (playerId == InvalidEntityID) return;
 
     // カメラ本体(VirtualCamera)を持つエンティティを走査し、
     // 載っている「体(Body)」の種類ごとに target を繋ぎ直す。
     ForEachWithID([&](EntityID camID, const VirtualCamera & /*vcam*/) {
-        if (auto *follow = _world->GetComponent<CameraBodyFollow>(camID))
-            BindIfInvalid(_world, follow->target, playerId);
+        if (auto *follow = m_world->GetComponent<CameraBodyFollow>(camID))
+            BindIfInvalid(m_world, follow->target, playerId);
 
-        if (auto *aim = _world->GetComponent<CameraAimLookAt>(camID))
-            BindIfInvalid(_world, aim->target, playerId);
+        if (auto *aim = m_world->GetComponent<CameraAimLookAt>(camID))
+            BindIfInvalid(m_world, aim->target, playerId);
 
-        if (auto *tps = _world->GetComponent<CameraBodyTPSComponent>(camID))
-            BindIfInvalid(_world, tps->target, playerId);
+        if (auto *tps = m_world->GetComponent<CameraBodyTPSComponent>(camID))
+            BindIfInvalid(m_world, tps->target, playerId);
     });
 }
 

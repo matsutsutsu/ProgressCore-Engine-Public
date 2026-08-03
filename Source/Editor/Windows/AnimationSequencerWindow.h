@@ -4,7 +4,7 @@
 // 役割       : AnimSequence(アニメーション台本)を時間軸上で編集するエディタウィンドウ。
 // 責務       : ImSequencer によるイベント区間編集、CurveEditorWidget による速度/RootMotion
 //              カーブ編集、選択エンティティへのリアルタイムプレビュー（速度・移動量とも反映）。
-// 位置付け   : 編集対象は内部バッファ(_editingSequence)。保存で JSON 化し、ランタイムは
+// 位置付け   : 編集対象は内部バッファ(m_editingSequence)。保存で JSON 化し、ランタイムは
 //              ResourceManager 経由で再ロードする(エディタ↔ランタイムは疎結合)。
 // 設計方針   : 状態は全てインスタンスメンバ(static禁止)。編集モード突入/解除で
 //              Animator の currentSequence を退避/復元し、実行時への汚染を防ぐ。
@@ -50,36 +50,36 @@ class AnimationSequencerWindow : public EditorWindow
 
   private:
     // --- pImpl（ImSequencer 依存をcppに隠蔽） ---
-    std::unique_ptr<AnimationSequenceImpl> _sequencerImpl;
-    CurveEditorWidget                      _curveWidget; ///< 速度/RootMotionカーブの共通編集ウィジェット
+    std::unique_ptr<AnimationSequenceImpl> m_sequencerImpl;
+    CurveEditorWidget                      m_curveWidget; ///< 速度/RootMotionカーブの共通編集ウィジェット
 
     // --- ImSequencer 表示状態 ---
-    bool _expanded      = true;
-    int  _selectedEntry = -1;
-    int  _firstFrame    = 0;
-    bool _fitCurveView  = true; ///< 次フレームでカーブビューを全体表示にフィット
+    bool m_expanded      = true;
+    int  m_selectedEntry = -1;
+    int  m_firstFrame    = 0;
+    bool m_fitCurveView  = true; ///< 次フレームでカーブビューを全体表示にフィット
 
     // --- タイムライン操作の使い勝手 ---
-    bool _snapEnabled = true; ///< イベント区間ドラッグ/ナッジのスナップ有効
-    int  _snapStep    = 5;    ///< スナップ単位（フレーム）
-    bool _loopPreview = true; ///< プレビュー再生のループ
+    bool m_snapEnabled = true; ///< イベント区間ドラッグ/ナッジのスナップ有効
+    int  m_snapStep    = 5;    ///< スナップ単位（フレーム）
+    bool m_loopPreview = true; ///< プレビュー再生のループ
 
     // --- 編集対象バッファ・UI状態（旧: ファイル/関数スコープ static） ---
-    AnimSequence _editingSequence;               ///< 編集中の台本（旧: g_EditingSequence）
-    std::string  _savePath;                      ///< 保存先パス（旧: g_SavePath）
-    int          _selectedAnimIndex     = -1;    ///< 選択中アニメ（旧: s_SelectedAnimIndex）
-    int          _prevSelectedAnimIndex = -2;    ///< コンボ変化検出（旧: prevSelectedIndex）
-    bool         _isPlaying             = false; ///< プレビュー再生中（旧: s_isPlaying）
-    bool         _wasEditMode           = false; ///< 前フレームEditMode（旧: s_wasEditMode）
+    AnimSequence m_editingSequence;               ///< 編集中の台本（旧: g_EditingSequence）
+    std::string  m_savePath;                      ///< 保存先パス（旧: g_SavePath）
+    int          m_selectedAnimIndex     = -1;    ///< 選択中アニメ（旧: s_SelectedAnimIndex）
+    int          m_prevSelectedAnimIndex = -2;    ///< コンボ変化検出（旧: prevSelectedIndex）
+    bool         m_isPlaying             = false; ///< プレビュー再生中（旧: s_isPlaying）
+    bool         m_wasEditMode           = false; ///< 前フレームEditMode（旧: s_wasEditMode）
 
     // --- 編集モード解除時の currentSequence 復元用 ---
-    const AnimSequence *_savedSequence = nullptr;
+    const AnimSequence *m_savedSequence = nullptr;
 
     // --- ルートモーションカーブのプレビュー用状態 ---
-    DirectX::XMFLOAT3 _rootMotionOriginPos = {0.0f, 0.0f, 0.0f}; ///< プレビュー開始時点の位置（終了時の復元用。累積しない）
-    DirectX::XMFLOAT3 _rootMotionBasePos   = {0.0f, 0.0f, 0.0f}; ///< 現在ループの基準位置（ループごとに1周ぶん前進を畳み込む）
-    bool              _rootMotionActive    = false;              ///< 今このフレーム、カーブ駆動で位置を書き換えているか
+    DirectX::XMFLOAT3 m_rootMotionOriginPos = {0.0f, 0.0f, 0.0f}; ///< プレビュー開始時点の位置（終了時の復元用。累積しない）
+    DirectX::XMFLOAT3 m_rootMotionBasePos   = {0.0f, 0.0f, 0.0f}; ///< 現在ループの基準位置（ループごとに1周ぶん前進を畳み込む）
+    bool              m_rootMotionActive    = false;              ///< 今このフレーム、カーブ駆動で位置を書き換えているか
 
     // --- エンティティ切替検出 ---
-    CCL::ECS::EntityID _lastSelectedEntity = CCL::ECS::InvalidEntityID;
+    CCL::ECS::EntityID m_lastSelectedEntity = CCL::ECS::InvalidEntityID;
 };

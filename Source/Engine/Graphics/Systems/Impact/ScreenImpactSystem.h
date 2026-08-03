@@ -37,5 +37,5 @@ public:
     void Update(float dt) override;
 
 private:
-    bool _wasActive = false; ///< 前フレームで演出が出ていたか（立ち下がりでPP OFF）
+    bool m_wasActive = false; ///< 前フレームで演出が出ていたか（立ち下がりでPP OFF）
 };

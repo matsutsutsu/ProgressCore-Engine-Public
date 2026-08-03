@@ -10,8 +10,8 @@ using namespace CCL::ECS;
 void JoltCharacterDebugDrawSystem::Update(float dt)
 {
     if (!isDebugVisible) return;
-    if (!_world->HasResource<ShapeRenderer *>()) return;
-    auto *renderer = _world->GetResource<ShapeRenderer *>();
+    if (!m_world->HasResource<ShapeRenderer *>()) return;
+    auto *renderer = m_world->GetResource<ShapeRenderer *>();
     if (!renderer) return;
 
     ForEach([&](const TransformComponent              &trans,

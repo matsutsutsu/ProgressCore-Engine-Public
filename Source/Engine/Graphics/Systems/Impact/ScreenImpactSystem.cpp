@@ -24,13 +24,13 @@ using namespace DirectX;
 
 void ScreenImpactSystem::Update(float dt)
 {
-    auto* impact = _world->GetSingletonComponent<ScreenImpactComponent>();
+    auto* impact = m_world->GetSingletonComponent<ScreenImpactComponent>();
 
     const bool active = (impact && impact->timer > 0.0f);
 
     // ── PP設定への書き込みヘルパー（設定 singleton が無ければ何もしない） ──
     auto writeRadial = [&](bool en, float strength) {
-        if (auto* c = _world->GetSingletonComponent<RadialBlurConfigComponent>())
+        if (auto* c = m_world->GetSingletonComponent<RadialBlurConfigComponent>())
         {
             c->enable          = en;
             c->data.blurCenter = XMFLOAT2(0.5f, 0.5f);
@@ -39,7 +39,7 @@ void ScreenImpactSystem::Update(float dt)
         }
     };
     auto writeChroma = [&](bool en, float strength) {
-        if (auto* c = _world->GetSingletonComponent<ChromaticAberrationConfigComponent>())
+        if (auto* c = m_world->GetSingletonComponent<ChromaticAberrationConfigComponent>())
         {
             c->enable            = en;
             c->data.chromaCenter = XMFLOAT2(0.5f, 0.5f);
@@ -51,11 +51,11 @@ void ScreenImpactSystem::Update(float dt)
     if (!active)
     {
         // 立ち下がり: 一度だけ PP を OFF にして手放す（以後は触らない）。
-        if (_wasActive)
+        if (m_wasActive)
         {
             writeRadial(false, 0.0f);
             writeChroma(false, 0.0f);
-            _wasActive = false;
+            m_wasActive = false;
         }
         return;
     }
@@ -72,9 +72,9 @@ void ScreenImpactSystem::Update(float dt)
     writeChroma(true, impact->chromaticStrength * strength);
 
     // ── 3. カメラシェイク（CameraBrain 確定後の MainCamera に重ねる） ──
-    if (_world->HasResource<Camera*>())
+    if (m_world->HasResource<Camera*>())
     {
-        if (Camera* cam = _world->GetResource<Camera*>())
+        if (Camera* cam = m_world->GetResource<Camera*>())
         {
             const float amp   = impact->shakeAmplitude * strength;
             const float phase = (impact->duration - impact->timer) * impact->shakeFrequency;
@@ -100,7 +100,7 @@ void ScreenImpactSystem::Update(float dt)
         }
     }
 
-    _wasActive = true;
+    m_wasActive = true;
 }
 
 // CameraBrainSystem(R01b_CameraBrain) の後、PostProcessSystem(R09) の前に走る。

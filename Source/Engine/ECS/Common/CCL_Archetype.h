@@ -75,8 +75,8 @@ namespace CCL::ECS
         {
             // 挿入位置を二分探索で見つける
             auto it = std::lower_bound(
-                _data.begin(),
-                _data.end(),
+                m_data.begin(),
+                m_data.end(),
                 typeData.id,
                 [](const TypeData& td, TypeID targetId) {
                     return td.id < targetId;
@@ -85,12 +85,12 @@ namespace CCL::ECS
 
             // 既に同じ TypeID があれば追加せず、その位置を返す
             // これよくわからん
-            if (it != _data.end() && it->id == typeData.id) {
-                return std::distance(_data.begin(), it);
+            if (it != m_data.end() && it->id == typeData.id) {
+                return std::distance(m_data.begin(), it);
             }
 
-            const size_t index = std::distance(_data.begin(), it);
-            _data.insert(it, typeData);
+            const size_t index = std::distance(m_data.begin(), it);
+            m_data.insert(it, typeData);
             return index;
         }
 
@@ -110,16 +110,16 @@ namespace CCL::ECS
         void Sub(TypeID id)
         {
             auto it = std::lower_bound(
-                _data.begin(),
-                _data.end(),
+                m_data.begin(),
+                m_data.end(),
                 id,
                 [](const TypeData& td, TypeID targetId) {
                     return td.id < targetId;
                 }
             );
 
-            if (it != _data.end() && it->id == id) {
-                _data.erase(it);
+            if (it != m_data.end() && it->id == id) {
+                m_data.erase(it);
             }
         }
 
@@ -136,16 +136,16 @@ namespace CCL::ECS
         size_t GetComponentIndex(TypeID id) const
         {
             auto it = std::lower_bound(
-                _data.begin(),
-                _data.end(),
+                m_data.begin(),
+                m_data.end(),
                 id,
                 [](const TypeData& td, TypeID targetId) {
                     return td.id < targetId;
                 }
             );
 
-            if (it != _data.end() && it->id == id) {
-                return std::distance(_data.begin(), it);
+            if (it != m_data.end() && it->id == id) {
+                return std::distance(m_data.begin(), it);
             }
             return InvalidIndex;
         }
@@ -156,27 +156,27 @@ namespace CCL::ECS
          */
         bool operator==(const Archetype& r) const
         {
-            if (_data.size() != r._data.size()) return false;
-            return std::equal(_data.begin(), _data.end(), r._data.begin());
+            if (m_data.size() != r.m_data.size()) return false;
+            return std::equal(m_data.begin(), m_data.end(), r.m_data.begin());
         }
 
 
         // ------------------------------------------------------------
         // 読み取り専用アクセサ
         // ------------------------------------------------------------
-        const TypeData& at(size_t i)         const { return _data.at(i); }
-        const TypeData& operator[](size_t i) const { return _data[i]; }
+        const TypeData& at(size_t i)         const { return m_data.at(i); }
+        const TypeData& operator[](size_t i) const { return m_data[i]; }
 
-        size_t size()   const { return _data.size(); }
-        bool   empty()  const { return _data.empty(); }
+        size_t size()   const { return m_data.size(); }
+        bool   empty()  const { return m_data.empty(); }
 
         // 範囲for対応
-        std::vector<TypeData>::const_iterator begin() const { return _data.cbegin(); }
-        std::vector<TypeData>::const_iterator end()   const { return _data.cend(); }
+        std::vector<TypeData>::const_iterator begin() const { return m_data.cbegin(); }
+        std::vector<TypeData>::const_iterator end()   const { return m_data.cend(); }
 
     private:
         // 継承ではなく包含。常に TypeID 昇順ソート済みであることが不変条件。
-        std::vector<TypeData> _data;
+        std::vector<TypeData> m_data;
     };
 
 

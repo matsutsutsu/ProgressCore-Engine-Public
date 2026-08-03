@@ -7,7 +7,7 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 
 void JoltCleanupSystem::Update(float dt) {
-    ExecuteCleanup(*_world);
+    ExecuteCleanup(*m_world);
 }
 
 // 直接チャンクを回して確実に剛体を消去する関数

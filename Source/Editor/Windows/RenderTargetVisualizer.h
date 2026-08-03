@@ -34,7 +34,7 @@ public:
     bool EnsureInitialized(ID3D11Device* device);
 
     /// @brief フレーム先頭で RT プールのインデックスをリセットする。
-    void BeginFrame() noexcept { _poolIndex = 0; }
+    void BeginFrame() noexcept { m_poolIndex = 0; }
 
     /// @brief src を可視化して内部 RT へ焼き、その SRV を返す。失敗時 src をそのまま返す。
     /// @note  返る SRV は「次に同じプール RT が再利用されるまで」有効（ImGui 描画までは安全）。
@@ -52,17 +52,17 @@ private:
 
     RenderTarget* AcquirePoolTarget(ID3D11Device* device, uint32_t w, uint32_t h);
 
-    Microsoft::WRL::ComPtr<ID3D11VertexShader>   _vs;
-    Microsoft::WRL::ComPtr<ID3D11PixelShader>    _ps;
-    Microsoft::WRL::ComPtr<ID3D11Buffer>         _cb;
-    Microsoft::WRL::ComPtr<ID3D11SamplerState>   _sampler;
-    // ★直前のパス(SSAO/Bloom等)が加算/乗算ブレンドや深度テストを残したまま
+    Microsoft::WRL::ComPtr<ID3D11VertexShader>   m_vs;
+    Microsoft::WRL::ComPtr<ID3D11PixelShader>    m_ps;
+    Microsoft::WRL::ComPtr<ID3D11Buffer>         m_cb;
+    Microsoft::WRL::ComPtr<ID3D11SamplerState>   m_sampler;
+    // 直前のパス(SSAO/Bloom等)が加算/乗算ブレンドや深度テストを残したまま
     //   全画面三角形を描くと、意図した色で上書きされず黒く見える。
     //   他の PostProcess エフェクト(SSAOEffect 等)と同じく明示的に不透明固定する。
-    Microsoft::WRL::ComPtr<ID3D11BlendState>     _opaqueBlendState;
-    Microsoft::WRL::ComPtr<ID3D11DepthStencilState> _noDepthState;
+    Microsoft::WRL::ComPtr<ID3D11BlendState>     m_opaqueBlendState;
+    Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_noDepthState;
 
-    std::vector<std::unique_ptr<RenderTarget>> _pool; // 表示エントリ数ぶん使い回す
-    size_t _poolIndex   = 0;
-    bool   _initialized = false;
+    std::vector<std::unique_ptr<RenderTarget>> m_pool; // 表示エントリ数ぶん使い回す
+    size_t m_poolIndex   = 0;
+    bool   m_initialized = false;
 };

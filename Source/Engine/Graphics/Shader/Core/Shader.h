@@ -19,7 +19,7 @@ class PipelineState;   // GetPSO の戻り値（ポインタなので前方宣�
 // ----------------------------------------------------------------------------
 //  役割:
 //   1. HotReload   : HLSL が更新されたら再コンパイル（CheckAndReload）
-//   2. Reflection  : 定数バッファ/テクスチャの要求スロットを自動解析（_reflection）
+//   2. Reflection  : 定数バッファ/テクスチャの要求スロットを自動解析（m_reflection）
 //   3. PipelineCtrl: Begin / End で描画パイプラインの状態を管理
 //
 //  「メッシュ単位のマテリアル転送（Update）」が必要なものは、この基底ではなく
@@ -75,27 +75,27 @@ public:
     //  共通機能
     // ================================================================
 
-    const ShaderReflect::ReflectionData& GetReflection() const { return _reflection; }
-    const std::map<std::string, ShaderReflect::AutoConstantBuffer>& GetConstantBuffers() const { return _constantBuffers; }
+    const ShaderReflect::ReflectionData& GetReflection() const { return m_reflection; }
+    const std::map<std::string, ShaderReflect::AutoConstantBuffer>& GetConstantBuffers() const { return m_constantBuffers; }
 
     // テンプレート関数はコンパイル時に展開されるため、ヘッダーに実装を残します
     template<typename T>
     bool SetConstantValue(const std::string& bufferName, const std::string& varName, const T& value)
     {
-        auto it = _constantBuffers.find(bufferName);
-        if (it == _constantBuffers.end()) return false;
+        auto it = m_constantBuffers.find(bufferName);
+        if (it == m_constantBuffers.end()) return false;
         return it->second.SetValue(varName, value);
     }
 
 
 protected:
     // --- 共通機能：データメンバ ---
-    ShaderReflect::ReflectionData _reflection;
-    std::map<std::string, ShaderReflect::AutoConstantBuffer> _constantBuffers;
-    std::map<std::string, int> _textureSlots;
-    std::map<std::string, int> _samplerSlots;
-    std::vector<int> _usedTextureSlots;
-    std::filesystem::file_time_type _lastWriteTime;
+    ShaderReflect::ReflectionData m_reflection;
+    std::map<std::string, ShaderReflect::AutoConstantBuffer> m_constantBuffers;
+    std::map<std::string, int> m_textureSlots;
+    std::map<std::string, int> m_samplerSlots;
+    std::vector<int> m_usedTextureSlots;
+    std::filesystem::file_time_type m_lastWriteTime;
 
     // --- 共通機能：メソッド宣言（実装は .cpp へ） ---
     bool InitializeReflection(ID3D11Device* device, const std::string& csoPath);

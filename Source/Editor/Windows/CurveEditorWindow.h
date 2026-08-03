@@ -61,36 +61,36 @@ class CurveEditorWindow : public EditorWindow
     // -----------------------------------------------------------------------
     // データ
     // -----------------------------------------------------------------------
-    std::string            _docName = "新しいカーブセット";
-    std::vector<CurveData> _curves;
-    int                    _activeCurve = 0;
-    std::string            _currentFilePath;
+    std::string            m_docName = "新しいカーブセット";
+    std::vector<CurveData> m_curves;
+    int                    m_activeCurve = 0;
+    std::string            m_currentFilePath;
 
-    std::set<uint32_t> _selectedKeys; // アクティブカーブ内の選択キーID
+    std::set<uint32_t> m_selectedKeys; // アクティブカーブ内の選択キーID
 
     // 表示範囲（time, value）。ズーム/パンで更新される
-    ImVec2 _viewMin = ImVec2(-0.1f, -0.2f);
-    ImVec2 _viewMax = ImVec2(1.1f, 1.2f);
+    ImVec2 viewMin = ImVec2(-0.1f, -0.2f);
+    ImVec2 viewMax = ImVec2(1.1f, 1.2f);
 
     // プレビュー再生ヘッド
-    float _previewTime = 0.0f;
-    bool  _showPreview = true;
+    float m_previewTime = 0.0f;
+    bool  m_showPreview = true;
 
     // 補助トグル
-    bool _snap = false; // Ctrl中はグリッドスナップ（このフラグは常時ONにもできる）
+    bool m_snap = false; // Ctrl中はグリッドスナップ（このフラグは常時ONにもできる）
 
     // -----------------------------------------------------------------------
     // 操作の一時状態
     // -----------------------------------------------------------------------
-    DragMode                             _drag = DragMode::None;
-    ImVec2                               _dragStartCurve;   // ドラッグ開始のカーブ座標
-    std::unordered_map<uint32_t, ImVec2> _dragOrig;         // 移動前の (time,value)
-    uint32_t                             _tangentKeyId = 0; // 接線ドラッグ対象
-    ImVec2                               _boxStartScreen;   // 矩形選択の始点(スクリーン)
+    DragMode                             m_drag = DragMode::None;
+    ImVec2                               m_dragStartCurve;   // ドラッグ開始のカーブ座標
+    std::unordered_map<uint32_t, ImVec2> m_dragOrig;         // 移動前の (time,value)
+    uint32_t                             m_tangentKeyId = 0; // 接線ドラッグ対象
+    ImVec2                               m_boxStartScreen;   // 矩形選択の始点(スクリーン)
 
     // コンテキストメニュー用
-    uint32_t _ctxKeyId    = 0;
-    ImVec2   _ctxCurvePos = ImVec2(0, 0);
+    uint32_t m_ctxKeyId    = 0;
+    ImVec2   m_ctxCurvePos = ImVec2(0, 0);
 
-    uint32_t _paletteIndex = 0; // 新規カーブの色巡回
+    uint32_t m_paletteIndex = 0; // 新規カーブの色巡回
 };

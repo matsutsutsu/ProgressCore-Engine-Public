@@ -175,7 +175,7 @@ void EditorWindowManager::Draw(EditorContext &context)
 
         if (ImGui::IsKeyPressed(ImGuiKey_F1, false))
         {
-            _isVisible = !_isVisible;
+            m_isVisible = !m_isVisible;
         }
 
         // TAB で一時停止/再開をトグル（ツールバーの Pause/Resume ボタンと同じ動作）。
@@ -223,7 +223,7 @@ void EditorWindowManager::Draw(EditorContext &context)
     if (context.world && context.world->HasResource<GameViewportInfo>())
         context.world->GetResource<GameViewportInfo>().valid = false;
 
-    if (!_isVisible)
+    if (!m_isVisible)
     {
         ZoneScopedN("Draw Background Canvas");
 
@@ -249,7 +249,7 @@ void EditorWindowManager::Draw(EditorContext &context)
 
     {
         ZoneScopedN("Render Windows Loop");
-        for (auto &window : _windows)
+        for (auto &window : m_windows)
         {
             ZoneScoped;
             ZoneName(window->GetName().c_str(), window->GetName().size());
@@ -452,7 +452,7 @@ void EditorWindowManager::DrawWindowMenu(EditorContext &context)
     ZoneScopedN("EditorWindowManager::DrawWindowMenu");
     if (ImGui::BeginMenu("Window"))
     {
-        if (ImGui::MenuItem("Show UI", "F1", &_isVisible))
+        if (ImGui::MenuItem("Show UI", "F1", &m_isVisible))
         {
         }
 
@@ -461,7 +461,7 @@ void EditorWindowManager::DrawWindowMenu(EditorContext &context)
         ImGui::MenuItem("外部ウィンドウを描画", nullptr, &context.renderExternalWindows);
 
         ImGui::Separator();
-        for (auto &window : _windows)
+        for (auto &window : m_windows)
         {
             bool open = window->GetVisible();
             if (ImGui::MenuItem(window->GetName().c_str(), nullptr, &open))
@@ -632,7 +632,7 @@ void EditorWindowManager::SaveLayout(const std::string &path)
     nlohmann::json j;
     j["windows"] = nlohmann::json::array();
 
-    for (auto &window : _windows)
+    for (auto &window : m_windows)
     {
         j["windows"].push_back({{"name", window->GetName()},
             {"visible", window->GetVisible()}});
@@ -656,7 +656,7 @@ void EditorWindowManager::LoadLayout(const std::string &path)
             std::string name    = item["name"];
             bool        visible = item["visible"];
 
-            for (auto &window : _windows)
+            for (auto &window : m_windows)
             {
                 if (window->GetName() == name)
                 {

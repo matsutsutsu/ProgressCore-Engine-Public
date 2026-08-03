@@ -11,20 +11,20 @@ ModelRenderer::ModelRenderer(ID3D11Device* device)
     desc.Usage = D3D11_USAGE_DEFAULT;
     desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 
-    HRESULT hr = device->CreateBuffer(&desc, nullptr, _cbSkeletonBuffer.GetAddressOf());
+    HRESULT hr = device->CreateBuffer(&desc, nullptr, m_cbSkeletonBuffer.GetAddressOf());
     _ASSERT_EXPR(SUCCEEDED(hr), L"CbSkeleton バッファ生成失敗");
 }
 
 void ModelRenderer::BindAllGlobalConstantBuffers(ID3D11DeviceContext* dc)
 {
     // CbScene (b8)
-    if (_sceneCB) {
-        dc->VSSetConstantBuffers(SLOT_CB_SCENE, 1, &_sceneCB);
-        dc->PSSetConstantBuffers(SLOT_CB_SCENE, 1, &_sceneCB);
+    if (m_sceneCB) {
+        dc->VSSetConstantBuffers(SLOT_CB_SCENE, 1, &m_sceneCB);
+        dc->PSSetConstantBuffers(SLOT_CB_SCENE, 1, &m_sceneCB);
     }
     // CbSkeleton (b12)
-    if (_cbSkeletonBuffer) {
-        ID3D11Buffer* skel = _cbSkeletonBuffer.Get();
+    if (m_cbSkeletonBuffer) {
+        ID3D11Buffer* skel = m_cbSkeletonBuffer.Get();
         dc->VSSetConstantBuffers(SLOT_CB_SKELETON, 1, &skel);
     }
 }
@@ -32,7 +32,7 @@ void ModelRenderer::BindAllGlobalConstantBuffers(ID3D11DeviceContext* dc)
 void ModelRenderer::UpdateSkeletonConstants(ID3D11DeviceContext* dc,
     const Model::Mesh& mesh)
 {
-    if (!_cbSkeletonBuffer) return;
+    if (!m_cbSkeletonBuffer) return;
 
     if (!mesh.bones.empty()) {
         const size_t count = (std::min)(mesh.bones.size(),
@@ -43,16 +43,16 @@ void ModelRenderer::UpdateSkeletonConstants(ID3D11DeviceContext* dc,
                 DirectX::XMLoadFloat4x4(&bone.data->offsetTransform);
             const DirectX::XMMATRIX mw =
                 DirectX::XMLoadFloat4x4(&bone.node->worldTransform);
-            DirectX::XMStoreFloat4x4(&_cbSkeletonCache.boneTransforms[i], mo * mw);
+            DirectX::XMStoreFloat4x4(&m_cbSkeletonCache.boneTransforms[i], mo * mw);
         }
     }
     else {
         if (mesh.node)
-            _cbSkeletonCache.boneTransforms[0] = mesh.node->worldTransform;
+            m_cbSkeletonCache.boneTransforms[0] = mesh.node->worldTransform;
     }
 
-    dc->UpdateSubresource(_cbSkeletonBuffer.Get(), 0, nullptr, &_cbSkeletonCache, 0, 0);
+    dc->UpdateSubresource(m_cbSkeletonBuffer.Get(), 0, nullptr, &m_cbSkeletonCache, 0, 0);
 
-    ID3D11Buffer* buf = _cbSkeletonBuffer.Get();
+    ID3D11Buffer* buf = m_cbSkeletonBuffer.Get();
     dc->VSSetConstantBuffers(SLOT_CB_SKELETON, 1, &buf);
 }

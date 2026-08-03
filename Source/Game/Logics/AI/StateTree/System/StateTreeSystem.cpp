@@ -21,7 +21,7 @@ using namespace CCL::AI;
 // ============================================================
 void StateTreeSystem::Initialize()
 {
-    if (!_world->HasResource<StateTreeRegistry>()) {
+    if (!m_world->HasResource<StateTreeRegistry>()) {
         CCL_LOG_WARN(LogCategory::Game,
             "[StateTreeSystem] StateTreeRegistry が未登録です。");
     }
@@ -32,8 +32,8 @@ void StateTreeSystem::Initialize()
 // ============================================================
 void StateTreeSystem::Update(float /*dt*/)
 {
-    if (!_world->HasResource<StateTreeRegistry>()) return;
-    auto& registry = _world->GetResource<StateTreeRegistry>();
+    if (!m_world->HasResource<StateTreeRegistry>()) return;
+    auto& registry = m_world->GetResource<StateTreeRegistry>();
 
     // ★ 理想の設計：並列化（Parallel）への移行と極小フィルターの適用
     // 引数型・const・参照は、IfSystem のテンプレート定義と完全一致させる。
@@ -141,7 +141,7 @@ bool StateTreeSystem::EvaluateEnterConditions(const StateTreeAsset& asset,
         if (!cond) continue;
 
         ExecContext ctx;
-        ctx.world    = _world;
+        ctx.world    = m_world;
         ctx.entity   = entity;
         ctx.params   = ref.paramSize > 0 ? asset.paramBlob.data() + ref.paramOffset : nullptr;
         ctx.instance = nullptr;
@@ -171,7 +171,7 @@ void StateTreeSystem::EnterState(const StateTreeAsset& asset,
         if (!task) continue;
 
         ExecContext ctx;
-        ctx.world    = _world;
+        ctx.world    = m_world;
         ctx.entity   = entity;
         ctx.params   = ref.paramSize > 0 ? asset.paramBlob.data() + ref.paramOffset : nullptr;
         ctx.instance = st.GetInstancePtr(ref.instanceOffset);
@@ -200,7 +200,7 @@ void StateTreeSystem::ExitState(const StateTreeAsset& asset,
         if (!task) continue;
 
         ExecContext ctx;
-        ctx.world    = _world;
+        ctx.world    = m_world;
         ctx.entity   = entity;
         ctx.params   = ref.paramSize > 0 ? asset.paramBlob.data() + ref.paramOffset : nullptr;
         ctx.instance = st.GetInstancePtr(ref.instanceOffset);
@@ -230,7 +230,7 @@ void StateTreeSystem::TickTasks(const StateTreeAsset& asset,
         if (!task) continue;
 
         ExecContext ctx;
-        ctx.world    = _world;
+        ctx.world    = m_world;
         ctx.entity   = entity;
         ctx.params   = ref.paramSize > 0 ? asset.paramBlob.data() + ref.paramOffset : nullptr;
         ctx.instance = st.GetInstancePtr(ref.instanceOffset);

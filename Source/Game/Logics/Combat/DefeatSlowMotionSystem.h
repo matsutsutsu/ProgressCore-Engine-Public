@@ -25,7 +25,7 @@ class DefeatSlowMotionSystem
     void Update(float dt) override;
 
   private:
-    float _cooldown = 0.0f; ///< 通常撃破スローの連発防止（秒・実時間）
+    float m_cooldown = 0.0f; ///< 通常撃破スローの連発防止（秒・実時間）
 
     // --- チューニング用パラメータ（ここを触れば手触りを調整できる） ---
     static constexpr float kCooldown    = 0.6f;  ///< 通常撃破スローの再発火間隔(秒)

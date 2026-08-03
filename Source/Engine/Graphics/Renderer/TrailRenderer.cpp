@@ -32,7 +32,7 @@ struct CbTrail
 
 void TrailRenderer::EnsureInitialized(ID3D11Device* device)
 {
-    if (_initialized || !device)
+    if (m_initialized || !device)
         return;
 
     // 入力レイアウト: POSITION(float3) + COLOR(float4)
@@ -44,10 +44,10 @@ void TrailRenderer::EnsureInitialized(ID3D11Device* device)
     GpuResourceUtils::LoadVertexShader(
         device, "Assets/Shader/TrailVS.cso",
         layout, _countof(layout),
-        _inputLayout.GetAddressOf(), _vertexShader.GetAddressOf());
+        m_inputLayout.GetAddressOf(), m_vertexShader.GetAddressOf());
 
     GpuResourceUtils::LoadPixelShader(
-        device, "Assets/Shader/TrailPS.cso", _pixelShader.GetAddressOf());
+        device, "Assets/Shader/TrailPS.cso", m_pixelShader.GetAddressOf());
 
     // 動的頂点バッファ（毎フレーム WRITE_DISCARD で上書き）
     D3D11_BUFFER_DESC vbDesc = {};
@@ -55,11 +55,11 @@ void TrailRenderer::EnsureInitialized(ID3D11Device* device)
     vbDesc.Usage          = D3D11_USAGE_DYNAMIC;
     vbDesc.BindFlags      = D3D11_BIND_VERTEX_BUFFER;
     vbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-    device->CreateBuffer(&vbDesc, nullptr, _vertexBuffer.GetAddressOf());
+    device->CreateBuffer(&vbDesc, nullptr, m_vertexBuffer.GetAddressOf());
 
     // 動的定数バッファ（viewProjection）
     GpuResourceUtils::CreateDynamicConstantBuffer(
-        device, sizeof(CbTrail), _constantBuffer.GetAddressOf());
+        device, sizeof(CbTrail), m_constantBuffer.GetAddressOf());
 
     // PSO: 加算 / 深度テストのみ / 両面 / 三角形リスト
     PipelineStateDesc desc;
@@ -67,9 +67,9 @@ void TrailRenderer::EnsureInitialized(ID3D11Device* device)
     desc.depth      = DepthState::TestOnly;
     desc.rasterizer = RasterizerState::SolidCullNone;
     desc.topology   = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-    _pso = PipelineState(desc);
+    m_pso = PipelineState(desc);
 
-    _initialized = true;
+    m_initialized = true;
 }
 
 void TrailRenderer::SubmitTriangleList(const Vertex* verts, size_t vertexCount)
@@ -77,39 +77,39 @@ void TrailRenderer::SubmitTriangleList(const Vertex* verts, size_t vertexCount)
     if (!verts || vertexCount == 0)
         return;
 
-    std::lock_guard<std::mutex> lock(_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
 
     // 容量超過分は三角形境界(3頂点単位)で切り捨てる。
-    if (_vertices.size() + vertexCount > MAX_VERTICES)
+    if (m_vertices.size() + vertexCount > MAX_VERTICES)
     {
-        size_t remain = MAX_VERTICES - _vertices.size();
+        size_t remain = MAX_VERTICES - m_vertices.size();
         remain -= remain % 3;
         if (remain == 0)
             return;
         vertexCount = std::min(vertexCount, remain);
     }
 
-    _vertices.insert(_vertices.end(), verts, verts + vertexCount);
+    m_vertices.insert(m_vertices.end(), verts, verts + vertexCount);
 }
 
 void TrailRenderer::Render(const RenderServices& services, const RenderFrameContext& ctx)
 {
-    std::lock_guard<std::mutex> lock(_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
 
-    if (_vertices.empty())
+    if (m_vertices.empty())
         return;
 
     // 前提が欠けていたら安全側で破棄（次フレームに持ち越さない）。
     if (!ctx.dc || !ctx.camera || !services.device || !services.renderState)
     {
-        _vertices.clear();
+        m_vertices.clear();
         return;
     }
 
     EnsureInitialized(services.device);
-    if (!_initialized)
+    if (!m_initialized)
     {
-        _vertices.clear();
+        m_vertices.clear();
         return;
     }
 
@@ -120,36 +120,36 @@ void TrailRenderer::Render(const RenderServices& services, const RenderFrameCont
         CbTrail cb;
         cb.viewProjection = ctx.camera->GetViewProjectionMatrix();
         D3D11_MAPPED_SUBRESOURCE mapped;
-        if (SUCCEEDED(dc->Map(_constantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
+        if (SUCCEEDED(dc->Map(m_constantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
         {
             std::memcpy(mapped.pData, &cb, sizeof(cb));
-            dc->Unmap(_constantBuffer.Get(), 0);
+            dc->Unmap(m_constantBuffer.Get(), 0);
         }
     }
 
     // 2. 頂点アップロード
-    const size_t vertexCount = std::min(_vertices.size(), MAX_VERTICES);
+    const size_t vertexCount = std::min(m_vertices.size(), MAX_VERTICES);
     {
         D3D11_MAPPED_SUBRESOURCE mapped;
-        if (SUCCEEDED(dc->Map(_vertexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
+        if (SUCCEEDED(dc->Map(m_vertexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
         {
-            std::memcpy(mapped.pData, _vertices.data(), vertexCount * sizeof(Vertex));
-            dc->Unmap(_vertexBuffer.Get(), 0);
+            std::memcpy(mapped.pData, m_vertices.data(), vertexCount * sizeof(Vertex));
+            dc->Unmap(m_vertexBuffer.Get(), 0);
         }
     }
 
     // 3. ステート＆描画
-    _pso.Apply(dc, services.renderState);
-    dc->IASetInputLayout(_inputLayout.Get());
+    m_pso.Apply(dc, services.renderState);
+    dc->IASetInputLayout(m_inputLayout.Get());
 
     UINT stride = sizeof(Vertex), offset = 0;
-    ID3D11Buffer* vb = _vertexBuffer.Get();
+    ID3D11Buffer* vb = m_vertexBuffer.Get();
     dc->IASetVertexBuffers(0, 1, &vb, &stride, &offset);
 
-    dc->VSSetShader(_vertexShader.Get(), nullptr, 0);
-    dc->PSSetShader(_pixelShader.Get(), nullptr, 0);
+    dc->VSSetShader(m_vertexShader.Get(), nullptr, 0);
+    dc->PSSetShader(m_pixelShader.Get(), nullptr, 0);
 
-    ID3D11Buffer* cb = _constantBuffer.Get();
+    ID3D11Buffer* cb = m_constantBuffer.Get();
     dc->VSSetConstantBuffers(0, 1, &cb); // b0
 
     dc->Draw(static_cast<UINT>(vertexCount), 0);
@@ -161,17 +161,17 @@ void TrailRenderer::Render(const RenderServices& services, const RenderFrameCont
     dc->OMSetDepthStencilState(nullptr, 0);
     dc->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF);
 
-    _vertices.clear();
+    m_vertices.clear();
 }
 
 void TrailRenderer::Shutdown()
 {
-    std::lock_guard<std::mutex> lock(_mutex);
-    _vertices.clear();
-    _vertexBuffer.Reset();
-    _constantBuffer.Reset();
-    _inputLayout.Reset();
-    _vertexShader.Reset();
-    _pixelShader.Reset();
-    _initialized = false;
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_vertices.clear();
+    m_vertexBuffer.Reset();
+    m_constantBuffer.Reset();
+    m_inputLayout.Reset();
+    m_vertexShader.Reset();
+    m_pixelShader.Reset();
+    m_initialized = false;
 }

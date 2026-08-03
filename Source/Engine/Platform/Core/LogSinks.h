@@ -105,7 +105,7 @@ public:
     FileSink(std::filesystem::path path,
         uint64_t maxBytes = 10ull * 1024 * 1024,
         int      maxRotated = 3)
-        : _path(std::move(path)), _maxBytes(maxBytes), _maxRotated(maxRotated)
+        : m_path(std::move(path)), m_maxBytes(maxBytes), m_maxRotated(maxRotated)
     {
         // ★ ここではファイルを開かない（遅延生成）。
         //   最初のログが実際に書き込まれるまでフォルダ/ファイルを作らないため、
@@ -115,34 +115,34 @@ public:
 
     ~FileSink() override
     {
-        if (_stream.is_open())
+        if (m_stream.is_open())
         {
-            _stream << "=== Engine Log Closed ===" << std::endl;
-            _stream.close();
+            m_stream << "=== Engine Log Closed ===" << std::endl;
+            m_stream.close();
         }
     }
 
     void Write(const LogMessage& msg) override
     {
-        std::lock_guard lock(_mutex);
+        std::lock_guard lock(m_mutex);
 
         // 遅延生成：最初の書き込みでフォルダ作成＋ファイルオープン。
-        if (!_opened)
+        if (!m_opened)
         {
             std::error_code ec;
-            if (_path.has_parent_path())
-                std::filesystem::create_directories(_path.parent_path(), ec);
+            if (m_path.has_parent_path())
+                std::filesystem::create_directories(m_path.parent_path(), ec);
             Open(true /*truncate*/);
-            _opened = true;
+            m_opened = true;
         }
-        if (!_stream.is_open()) return;
+        if (!m_stream.is_open()) return;
 
         const std::string line = LogFormat::Format(msg) + '\n';
-        _stream.write(line.data(), static_cast<std::streamsize>(line.size()));
-        _bytesWritten += line.size();
+        m_stream.write(line.data(), static_cast<std::streamsize>(line.size()));
+        m_bytesWritten += line.size();
 
         // ローテーション判定
-        if (_maxBytes != 0 && _bytesWritten >= _maxBytes)
+        if (m_maxBytes != 0 && m_bytesWritten >= m_maxBytes)
         {
             Rotate();
         }
@@ -150,31 +150,31 @@ public:
 
     void Flush() override
     {
-        std::lock_guard lock(_mutex);
-        if (_stream.is_open()) _stream.flush();
+        std::lock_guard lock(m_mutex);
+        if (m_stream.is_open()) m_stream.flush();
     }
 
 private:
     void Open(bool truncate)
     {
         const auto mode = std::ios::out | (truncate ? std::ios::trunc : std::ios::app);
-        _stream.open(_path, mode);
-        if (_stream.is_open())
+        m_stream.open(m_path, mode);
+        if (m_stream.is_open())
         {
-            _stream << "=== Engine Log Started ===" << std::endl;
+            m_stream << "=== Engine Log Started ===" << std::endl;
         }
-        _bytesWritten = 0;
+        m_bytesWritten = 0;
     }
 
     /// .log -> .log.1 -> .log.2 -> ... に押し出す
     void Rotate()
     {
-        _stream.close();
+        m_stream.close();
 
         // 古いものから順に番号を上げる ( .log.(N-1) を .log.N にリネーム )
-        for (int i = _maxRotated; i >= 1; --i)
+        for (int i = m_maxRotated; i >= 1; --i)
         {
-            const auto src = (i == 1) ? _path : RotatedPath(i - 1);
+            const auto src = (i == 1) ? m_path : RotatedPath(i - 1);
             const auto dst = RotatedPath(i);
             std::error_code ec;
             if (std::filesystem::exists(src, ec))
@@ -188,18 +188,18 @@ private:
 
     std::filesystem::path RotatedPath(int index) const
     {
-        auto p = _path;
+        auto p = m_path;
         p += "." + std::to_string(index);
         return p;
     }
 
-    std::filesystem::path _path;
-    std::ofstream         _stream;
-    std::mutex            _mutex;
-    uint64_t              _bytesWritten = 0;
-    uint64_t              _maxBytes;
-    int                   _maxRotated;
-    bool                  _opened = false; ///< 遅延生成済みか（最初の Write で true）
+    std::filesystem::path m_path;
+    std::ofstream         m_stream;
+    std::mutex            m_mutex;
+    uint64_t              m_bytesWritten = 0;
+    uint64_t              m_maxBytes;
+    int                   m_maxRotated;
+    bool                  m_opened = false; ///< 遅延生成済みか（最初の Write で true）
 };
 
 //==============================================================================
@@ -211,39 +211,39 @@ private:
 class ImGuiBufferSink : public ILogSink
 {
 public:
-    explicit ImGuiBufferSink(size_t capacity = 1000) : _capacity(capacity) {}
+    explicit ImGuiBufferSink(size_t capacity = 1000) : m_capacity(capacity) {}
 
     void Write(const LogMessage& msg) override
     {
-        std::lock_guard lock(_mutex);
-        if (_buffer.size() >= _capacity)
+        std::lock_guard lock(m_mutex);
+        if (m_buffer.size() >= m_capacity)
         {
-            _buffer.pop_front();
+            m_buffer.pop_front();
         }
-        _buffer.push_back(msg);
+        m_buffer.push_back(msg);
     }
 
     void Clear() override
     {
-        std::lock_guard lock(_mutex);
-        _buffer.clear();
+        std::lock_guard lock(m_mutex);
+        m_buffer.clear();
     }
 
     /// ConsoleWindow 用: ロック内でコピーして返す (UI側はロックを長く持たない)
     std::vector<LogMessage> Snapshot() const
     {
-        std::lock_guard lock(_mutex);
-        return std::vector<LogMessage>(_buffer.begin(), _buffer.end());
+        std::lock_guard lock(m_mutex);
+        return std::vector<LogMessage>(m_buffer.begin(), m_buffer.end());
     }
 
     size_t Size() const
     {
-        std::lock_guard lock(_mutex);
-        return _buffer.size();
+        std::lock_guard lock(m_mutex);
+        return m_buffer.size();
     }
 
 private:
-    mutable std::mutex     _mutex;
-    std::deque<LogMessage> _buffer;
-    size_t                 _capacity;
+    mutable std::mutex     m_mutex;
+    std::deque<LogMessage> m_buffer;
+    size_t                 m_capacity;
 };

@@ -60,16 +60,16 @@ private:
 
     static constexpr size_t MAX_VERTICES = 8192; ///< 1フレーム上限（約2730三角形）
 
-    bool _initialized = false;
+    bool m_initialized = false;
 
-    Microsoft::WRL::ComPtr<ID3D11VertexShader> _vertexShader;
-    Microsoft::WRL::ComPtr<ID3D11PixelShader>  _pixelShader;
-    Microsoft::WRL::ComPtr<ID3D11InputLayout>  _inputLayout;
-    Microsoft::WRL::ComPtr<ID3D11Buffer>       _vertexBuffer;   ///< DYNAMIC 頂点バッファ
-    Microsoft::WRL::ComPtr<ID3D11Buffer>       _constantBuffer; ///< b0: viewProjection
+    Microsoft::WRL::ComPtr<ID3D11VertexShader> m_vertexShader;
+    Microsoft::WRL::ComPtr<ID3D11PixelShader>  m_pixelShader;
+    Microsoft::WRL::ComPtr<ID3D11InputLayout>  m_inputLayout;
+    Microsoft::WRL::ComPtr<ID3D11Buffer>       m_vertexBuffer;   ///< DYNAMIC 頂点バッファ
+    Microsoft::WRL::ComPtr<ID3D11Buffer>       m_constantBuffer; ///< b0: viewProjection
 
-    PipelineState _pso; ///< Additive / TestOnly / CullNone / TriangleList
+    PipelineState m_pso; ///< Additive / TestOnly / CullNone / TriangleList
 
-    std::vector<Vertex> _vertices; ///< フレーム内の全トレイル頂点
-    std::mutex          _mutex;
+    std::vector<Vertex> m_vertices; ///< フレーム内の全トレイル頂点
+    std::mutex          m_mutex;
 };

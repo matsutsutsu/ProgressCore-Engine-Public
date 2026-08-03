@@ -17,10 +17,10 @@ namespace CCL::ECS {
         if (coreCount == 0) coreCount = 4; // 分からなければとりあえず4人雇う
 
         // 2. コアの数だけシェフ（スレッド）を作成
-        // _workers.emplace_back した瞬間に、スレッドが生成され
+        // m_workers.emplace_back した瞬間に、スレッドが生成され
         // WorkerLoop() という関数が別世界（別スレッド）で動き出します。
         for (unsigned int i = 0; i < coreCount; ++i) {
-            _workers.emplace_back([this] { WorkerLoop(); });
+            m_workers.emplace_back([this] { WorkerLoop(); });
         }
     }
 
@@ -35,16 +35,16 @@ namespace CCL::ECS {
         // この書き換えが発生すると、シェフが「閉店に気づかずに永遠に寝てしまう」事故が起きるため。
         // ロックすることで「シェフが寝る準備を完了するまで」待ってから書き換える。
         {
-            std::unique_lock<std::mutex> lock(_queueMutex);
-            _shutdown = true;
+            std::unique_lock<std::mutex> lock(m_queueMutex);
+            m_shutdown = true;
         }
 
         // 2. 非常ベルを鳴らして全員叩き起こす
-        // 寝ているシェフ全員が `wait` から目覚め、`_shutdown` フラグを見て帰宅準備に入る。
-        _condition.notify_all();
+        // 寝ているシェフ全員が `wait` から目覚め、`m_shutdown` フラグを見て帰宅準備に入る。
+        m_condition.notify_all();
 
         // 3. 全員が更衣室から出てくる（スレッドが終了する）のを待つ
-        for (std::thread &worker : _workers) {
+        for (std::thread &worker : m_workers) {
             if (worker.joinable()) {
                 worker.join(); // シェフが完全に帰るまでここで待機
             }
@@ -66,16 +66,16 @@ namespace CCL::ECS {
 
         {
             // 2. 鍵をかけてボード（キュー）を独占する
-            std::unique_lock<std::mutex> lock(_queueMutex);
+            std::unique_lock<std::mutex> lock(m_queueMutex);
 
             // 仕事のボードにjob（システム処理function）を貼り付ける
-            _jobQueue.push({std::move(job), counter});
+            m_jobQueue.push({std::move(job), counter});
         }
         // ここでロック解除（スコープ抜け）
 
         // 3. 休憩室にベルを鳴らす。「1人起きてー！」
         // 寝ているシェフの中から1人だけを起こす。
-        _condition.notify_one();
+        m_condition.notify_one();
     }
 
     // =======================================================================
@@ -94,10 +94,10 @@ namespace CCL::ECS {
 
             {
                 // ロックして仕事があるか確認
-                std::unique_lock<std::mutex> lock(_queueMutex);
-                if (!_jobQueue.empty()) {
-                    job = std::move(_jobQueue.front());
-                    _jobQueue.pop();
+                std::unique_lock<std::mutex> lock(m_queueMutex);
+                if (!m_jobQueue.empty()) {
+                    job = std::move(m_jobQueue.front());
+                    m_jobQueue.pop();
                     foundJob = true;
                 }
             }
@@ -139,22 +139,22 @@ namespace CCL::ECS {
             {
                 // 1. 鍵（Mutex）をかける。
                 // これで、他のシェフや店長はこの { } の中に入れない。
-                // 注文ボード(_jobQueue)を触れるのは、世界で自分一人だけ！
-                std::unique_lock<std::mutex> lock(_queueMutex);
+                // 注文ボード(m_jobQueue)を触れるのは、世界で自分一人だけ！
+                std::unique_lock<std::mutex> lock(m_queueMutex);
 
-                // 2. 「仕事が来る」または「閉店(_shutdown)」まで寝て待つ
+                // 2. 「仕事が来る」または「閉店(m_shutdown)」まで寝て待つ
                 // wait関数は賢いので、寝ている間は「鍵を一時的に返却」してくれる。
-                // ベル(_condition)が鳴ったら飛び起きて、再び「鍵を奪い取って」から処理を再開する。
-                _condition.wait(lock, [this] { return _shutdown || !_jobQueue.empty(); });
+                // ベル(m_condition)が鳴ったら飛び起きて、再び「鍵を奪い取って」から処理を再開する。
+                m_condition.wait(lock, [this] { return m_shutdown || !m_jobQueue.empty(); });
 
                 // 起きた時に「閉店」かつ「仕事も空っぽ」なら、帰宅(return)する
-                if (_shutdown && _jobQueue.empty()) {
+                if (m_shutdown && m_jobQueue.empty()) {
                     return; // スレッド終了
                 }
 
                 // 3. ボードから一番前の注文票を1枚剥がして、自分の手元(currentJob)に移す
-                currentJob = std::move(_jobQueue.front()); // コピー・移動
-                _jobQueue.pop();                           // ボードから削除（破り捨てる）
+                currentJob = std::move(m_jobQueue.front()); // コピー・移動
+                m_jobQueue.pop();                           // ボードから削除（破り捨てる）
             }
             // ---【エリアA終了：ロック解除】---
             // ここで `lock` 変数が消滅するので、自動的に鍵が開く。

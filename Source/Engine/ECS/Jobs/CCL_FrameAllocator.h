@@ -14,39 +14,39 @@ namespace CCL::ECS {
     class FrameAllocator {
       public:
         // 1024 * 1024 = 1MB  
-        FrameAllocator(size_t pageSize = 1024 * 1024) : _pageSize(pageSize)
+        FrameAllocator(size_t pageSize = 1024 * 1024) : m_pageSize(pageSize)
         {
             // 最初から1ページ確保しておく
-            _pages.reserve(8);
+            m_pages.reserve(8);
             // 初期値を -1 にしておくことで、最初の AllocateNewPage で 0 になるように調整
-            _pageIndex = -1;
+            m_pageIndex = -1;
             AllocateNewPage(pageSize);
         }
 
         ~FrameAllocator()
         {
-            // ★重要: 終了時にデストラクタを呼ぶ
+            // 重要: 終了時にデストラクタを呼ぶ
             RunDestructors();
 
-            for (auto *p : _pages) {
+            for (auto *p : m_pages) {
  
-                // ★追加: OSにメモリを返す瞬間をTracyに通知
+                // OSにメモリを返す瞬間をTracyに通知
                 TracyFree(p);
 
                 ::operator delete(p);
             }
         }
 
-        // メモリ確保（アライメント対応の最強版）
+        // メモリ確保（アライメント指定に対応）
         void* Alloc(size_t size, size_t alignment = 16)
         {
-            // ★変更点1: サイズではなく「現在の書き込み位置(_offset)」を、
+            // サイズではなく「現在の書き込み位置(m_offset)」を、
             // 指定されたアライメント（16バイト）の倍数にぴったり揃うように切り上げます。
             // これにより、CPUが最も高速・安全に読み込める「16の倍数の番地」が確定します。
-            size_t alignedOffset = (_offset + alignment - 1) & ~(alignment - 1);
+            size_t alignedOffset = (m_offset + alignment - 1) & ~(alignment - 1);
 
-            // ★変更点2: 切り上げた安全な位置 + 今回使うサイズ が、ページに収まるかチェック
-            if (alignedOffset + size > _pageSize) {
+            // 切り上げた安全な位置 + 今回使うサイズ が、ページに収まるかチェック
+            if (alignedOffset + size > m_pageSize) {
                 AllocateNewPage(size);
 
                 // 新しいページをもらったので、書き込み位置はページの先頭（0）になります。
@@ -55,10 +55,10 @@ namespace CCL::ECS {
             }
 
             // 安全な開始位置からポインタを計算
-            void* ptr = _currentPage + alignedOffset;
+            void* ptr = m_currentPage + alignedOffset;
 
             // 「次に書き始める位置」は、今回データを置いた末尾に設定します。
-            _offset = alignedOffset + size;
+            m_offset = alignedOffset + size;
 
             return ptr;
         }
@@ -86,9 +86,9 @@ namespace CCL::ECS {
             //std::vector や
             //std::string を持っているクラスなら、中身を delete しないとメモリリークします。
             //そういう「難しいクラス」の場合だけ、「リセットするときにこのデストラクタを呼んでね」と
-            //_destructors リストにメモしておきます。
+            //m_destructors リストにメモしておきます。
             if constexpr (!std::is_trivially_destructible_v<T>) {
-                _destructors.push_back([ptr]() { ptr->~T(); });
+                m_destructors.push_back([ptr]() { ptr->~T(); });
             }
 
               return ptr;
@@ -97,7 +97,7 @@ namespace CCL::ECS {
         // フレームの終わりに呼ぶ（デストラクタは呼ばず、ポインタを戻すだけ）
         void Reset()
         {
-            // ★重要: リセット時にデストラクタを呼ぶ
+            // 重要: リセット時にデストラクタを呼ぶ
             //さっき登録した「後片付けリスト」を実行します。std::vector
             //などを持っているオブジェクトの中身を綺麗にします。
             RunDestructors();
@@ -105,19 +105,18 @@ namespace CCL::ECS {
             
  
             // このフレームで「実際に消費したバイト数」をグラフにプロット
-            size_t totalUsed = (_pageIndex * _pageSize) + _offset;
+            size_t totalUsed = (m_pageIndex * m_pageSize) + m_offset;
             // "FrameAllocator Usage" という名前の折れ線グラフがTracy上に作成されます
             TracyPlot("FrameAllocator Usage", static_cast<int64_t>(totalUsed));
 
 
 
-            //ここが最強のポイントです。
             //確保したメモリ（ページ）を delete（OSへ返却）しません。
             //ただ **「書き込み位置を0ページ目の、0行目に戻す」 **だけです。
             //これで、次のフレームではまた同じメモリ領域を最初から上書きして使えます。これが再利用です。
-            _pageIndex = 0;
-            _offset    = 0;
-            if (!_pages.empty()) _currentPage = _pages[0];
+            m_pageIndex = 0;
+            m_offset    = 0;
+            if (!m_pages.empty()) m_currentPage = m_pages[0];
         }
 
       private:
@@ -125,43 +124,43 @@ namespace CCL::ECS {
         void RunDestructors()
         {
             // 生成と逆順に破棄するのが安全
-            for (auto it = _destructors.rbegin(); it != _destructors.rend(); ++it) {
+            for (auto it = m_destructors.rbegin(); it != m_destructors.rend(); ++it) {
                 (*it)();
             }
-            _destructors.clear();
+            m_destructors.clear();
         }
 
         //ページが足りなくなったときに呼ばれます。
         void AllocateNewPage(size_t requiredSize)
         {
-            size_t sizeToAlloc = (std::max)(_pageSize, requiredSize);
+            size_t sizeToAlloc = (std::max)(m_pageSize, requiredSize);
 
-            _pageIndex++;
+            m_pageIndex++;
             // ページが足りなければ新規確保、あれば再利用
-            if (_pageIndex < _pages.size()) {
+            if (m_pageIndex < m_pages.size()) {
                  //すでに前のフレームで作った2ページ目、3ページ目があるなら、それを再利用！
-                _currentPage = _pages[_pageIndex];
+                m_currentPage = m_pages[m_pageIndex];
             }
             else {
                 // 本当に足りない時だけ、OSからメモリをもらう (::operator new)
                 uint8_t *ptr = static_cast<uint8_t *>(::operator new(sizeToAlloc));
-                _pages.push_back(ptr);
-                _currentPage = ptr;
+                m_pages.push_back(ptr);
+                m_currentPage = ptr;
 
  
                 // OSから新たに「ページ」という物理メモリを確保した瞬間を通知
                 TracyAlloc(ptr, sizeToAlloc);
 
             }
-            _offset = 0;  // 新しいページなので、書き込み位置は0から
+            m_offset = 0;  // 新しいページなので、書き込み位置は0から
         }
 
-        std::vector<uint8_t *> _pages;       // 落書き帳のページ（メモリの塊）のリスト
-        uint8_t               *_currentPage; // 今書いているページ
-        size_t                 _offset;      // 今書いているページの「何行目」にいるか
-        size_t                 _pageIndex;   // 今何ページ目を使っているか
-        size_t                 _pageSize;    // 1ページの大きさ（バイト数）
+        std::vector<uint8_t *> m_pages;       // 落書き帳のページ（メモリの塊）のリスト
+        uint8_t               *m_currentPage; // 今書いているページ
+        size_t                 m_offset;      // 今書いているページの「何行目」にいるか
+        size_t                 m_pageIndex;   // 今何ページ目を使っているか
+        size_t                 m_pageSize;    // 1ページの大きさ（バイト数）
 
-        std::vector<std::function<void()>> _destructors; // 後片付けリスト
+        std::vector<std::function<void()>> m_destructors; // 後片付けリスト
     };
 } // namespace CCL::ECS

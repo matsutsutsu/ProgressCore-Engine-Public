@@ -28,7 +28,7 @@
 namespace
 {
 // -----------------------------------------------------------------------------------
-// [責務] _world に依存しない純粋な計算群。
+// [責務] m_world に依存しない純粋な計算群。
 //        単体テストしやすく、ヘッダにも公開しない（実装詳細のため匿名namespaceに隔離）。
 // -----------------------------------------------------------------------------------
 
@@ -222,12 +222,12 @@ void AnimationSystem::DispatchPointEvents(CCL::ECS::EntityID id, AnimatorCompone
         {
         case AnimEventType::Sound:
             // 点イベント: FMOD 再生を依頼
-            _world->GetEventBus().Publish(AnimEventSoundMessage{id, evt.stringParam});
+            m_world->GetEventBus().Publish(AnimEventSoundMessage{id, evt.stringParam});
             break;
 
         case AnimEventType::Effect:
             // 点イベント: Effekseer 生成を依頼（オフセット/スケール/追従を渡す）
-            _world->GetEventBus().Publish(
+            m_world->GetEventBus().Publish(
                 AnimEventEffectMessage{id, evt.stringParam, evt.offset, evt.effectScale, evt.effectFollow});
             break;
 
@@ -237,7 +237,7 @@ void AnimationSystem::DispatchPointEvents(CCL::ECS::EntityID id, AnimatorCompone
             //   球の生存時間は Sequencer のブロック長(区間)をそのまま渡す。
             //   点(startTime==endTime)なら 0 になり、購読側が最小寿命へフォールバックする。
             const float window = evt.endTime - evt.startTime;
-            _world->GetEventBus().Publish(AnimEventSpawnHitboxMessage{
+            m_world->GetEventBus().Publish(AnimEventSpawnHitboxMessage{
                 id, evt.offset, evt.radius, evt.damage, evt.hitStopDuration, evt.hitStopScale, window,
                 evt.attackLayer, evt.knockback});
             break;
@@ -326,7 +326,7 @@ void AnimationSystem::ComputeAndApplyPose(CCL::ECS::EntityID id, AnimatorCompone
     //                  クリップに焼き込まれた前進でモデルだけが滑っていく
     //   ※以前は enabled 時のみピン留めしていたため、ブレンド中(下の分岐では無条件に
     //     ピン留め)は正常なのに、ブレンド終了と同時にダッシュのモデルが滑り出していた。
-    auto *rootMotion = _world->GetComponent<RootMotionComponent>(id);
+    auto *rootMotion = m_world->GetComponent<RootMotionComponent>(id);
     if (rootMotion && !animator.poseBufferA.empty())
         PinRootMotionNode(model, animIndex, rootNodeIndex, animator.poseBufferA, animator.lockVerticalRootMotion);
 
@@ -342,8 +342,8 @@ void AnimationSystem::UpdateManual(CCL::ECS::EntityID entity, float time)
 {
     ZoneScopedN("AnimationSystem::UpdateManual");
 
-    auto *animator  = _world->GetComponent<AnimatorComponent>(entity);
-    auto *modelComp = _world->GetComponent<ModelComponent>(entity);
+    auto *animator  = m_world->GetComponent<AnimatorComponent>(entity);
+    auto *modelComp = m_world->GetComponent<ModelComponent>(entity);
 
     if (!animator || !modelComp || !modelComp->GetModel())
         return;

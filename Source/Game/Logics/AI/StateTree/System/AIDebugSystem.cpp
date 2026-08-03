@@ -17,22 +17,22 @@ using namespace CCL::AI;
 void AIDebugSystem::Update(float dt)
 {
     // 2秒に1回だけ出す（毎フレームだとログが洪水になる）
-    _timer += dt;
-    if (_timer < kInterval) return;
-    _timer = 0.0f;
+    m_timer += dt;
+    if (m_timer < kInterval) return;
+    m_timer = 0.0f;
 
     CCL_LOG_INFO(LogCategory::Game, "============================================================");
     CCL_LOG_INFO(LogCategory::Game, "[AI-DIAG] === 司令官StateTree 診断 ===");
 
     // ---- STAGE-1: リソース確認 ----
-    const bool hasReg    = _world->HasResource<StateTreeRegistry>();
-    const bool hasBattle = _world->HasResource<BattleContext>();
+    const bool hasReg    = m_world->HasResource<StateTreeRegistry>();
+    const bool hasBattle = m_world->HasResource<BattleContext>();
     CCL_LOG_INFO(LogCategory::Game, "[AI-DIAG] STAGE-1 リソース: StateTreeRegistry=%s / BattleContext=%s",
         hasReg ? "OK" : "NG", hasBattle ? "OK" : "NG");
 
     if (hasBattle)
     {
-        auto &b = _world->GetResource<BattleContext>();
+        auto &b = m_world->GetResource<BattleContext>();
         CCL_LOG_INFO(LogCategory::Game, "[AI-DIAG]   droneAliveCount=%d  → 期待戦術=%s",
             b.droneAliveCount,
             b.droneAliveCount <= 100 ? "Final" : b.droneAliveCount <= 400 ? "Aggressive"
@@ -68,7 +68,7 @@ void AIDebugSystem::Update(float dt)
         }
 
         // STAGE-4: BT切替が効いているか
-        const auto *bt = _world->GetComponent<BehaviorTreeComponent>(entity);
+        const auto *bt = m_world->GetComponent<BehaviorTreeComponent>(entity);
         if (!bt)
         {
             CCL_LOG_WARN(LogCategory::Game, "[AI-DIAG]   STAGE-4 BehaviorTreeComponent が無い ← SetActiveBTが書き込めない");

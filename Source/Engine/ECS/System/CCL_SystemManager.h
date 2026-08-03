@@ -31,11 +31,11 @@ namespace CCL::ECS
         ~SystemManager() = default;
 
         // Worldをセットする（EditorScene::Initializeなどで呼ぶ）
-        void SetWorld(World* world) { _world = world; }
+        void SetWorld(World* world) { m_world = world; }
 
         // 共有ジョブプールを注入する（上層=EngineServicesが持つ唯一のプールを渡す）。
         // ※ RegisterSystems の前に呼ぶこと（各システムへ配るのは登録時のため）。
-        void SetJobSystem(JobSystem* js) { _jobSystem = js; }
+        void SetJobSystem(JobSystem* js) { m_jobSystem = js; }
 
 
         // ------------------------------------------------------------------
@@ -79,20 +79,20 @@ namespace CCL::ECS
 
             // --- 重要：初期化処理 ---
             // 生成時にWorldを渡す
-            if (_world) ptr->SetWorld(_world);
+            if (m_world) ptr->SetWorld(m_world);
 
             // 優先度もセット
             ptr->SetPriority(priority);
 
             // ChunkManagerのmutexを設定
-            if (_world) {
-                ptr->SetStructureMutex(&_world->GetChunkManager().GetStructureMutex());
+            if (m_world) {
+                ptr->SetStructureMutex(&m_world->GetChunkManager().GetStructureMutex());
             }
 
             // 生成したシステムに共有ジョブプールを渡しておく
             // これで各システムは自動的に並列処理機能を使えるようになる
-            // （_jobSystem は EngineServices が持つ共有プールへのポインタ）
-            sys->SetJobSystem(_jobSystem);
+            // （m_jobSystem は EngineServices が持つ共有プールへのポインタ）
+            sys->SetJobSystem(m_jobSystem);
 
             // =======================================================
             // 全ての準備が整ったので、システムの初期化を自動実行する
@@ -102,14 +102,14 @@ namespace CCL::ECS
 
             // グループに応じてリストに振り分け
             if (group == SystemGroup::Logic) {
-                _logicSystems.push_back(std::move(sys));
+                m_logicSystems.push_back(std::move(sys));
             }
             else {
-                _renderSystems.push_back(std::move(sys));
+                m_renderSystems.push_back(std::move(sys));
             }
 
             // システムが増えたので依存関係グラフを再構築する必要がある
-            _isGraphDirty = true;
+            m_isGraphDirty = true;
 
             // --- 重要：ソート処理 ---
             // 登録されたグループのリストだけソートすればOK
@@ -121,11 +121,11 @@ namespace CCL::ECS
 
         // 登録済みの全システムを破棄する
         void SystemClear() {
-            _logicSystems.clear();
-            _renderSystems.clear();
+            m_logicSystems.clear();
+            m_renderSystems.clear();
 
             // システムが空になったので、グラフもリセットさせる
-            _isGraphDirty = true;
+            m_isGraphDirty = true;
         }
 
         // クエリ解決とデータ割り当て
@@ -138,14 +138,14 @@ namespace CCL::ECS
 
 
             // グラフが古ければ再構築（ゲーム起動時やシステム動的追加時に1回だけ走る）
-            if (_isGraphDirty) {
-                _logicScheduler.BuildGraph(_logicSystems);
-                _renderScheduler.BuildGraph(_renderSystems);
-                _isGraphDirty = false;
+            if (m_isGraphDirty) {
+                m_logicScheduler.BuildGraph(m_logicSystems);
+                m_renderScheduler.BuildGraph(m_renderSystems);
+                m_isGraphDirty = false;
             }
 
             // スケジューラによる超並列実行！
-            _logicScheduler.Execute(dt, _jobSystem);
+            m_logicScheduler.Execute(dt, m_jobSystem);
         }
 
 
@@ -153,7 +153,7 @@ namespace CCL::ECS
         void UpdateRender(float dt) {     
 
             // Render側のシステムもスケジューラで実行
-            _renderScheduler.Execute(dt, _jobSystem);
+            m_renderScheduler.Execute(dt, m_jobSystem);
         }
 
 		// ImGuiによるデバッグGUI描画
@@ -161,19 +161,19 @@ namespace CCL::ECS
 
      
         // 外部（Worldクラスなど）からシステムリストを取得できる関数を追加
-        const std::vector<std::unique_ptr<SystemBase>>& GetLogicSystems() const { return _logicSystems; }
-        const std::vector<std::unique_ptr<SystemBase>>& GetRenderSystems() const { return _renderSystems; }
+        const std::vector<std::unique_ptr<SystemBase>>& GetLogicSystems() const { return m_logicSystems; }
+        const std::vector<std::unique_ptr<SystemBase>>& GetRenderSystems() const { return m_renderSystems; }
 
         // 外部（エディタ）からタスクスケジューラを読み取るための関数
-        const TaskScheduler& GetLogicScheduler() const { return _logicScheduler; }
-        const TaskScheduler& GetRenderScheduler() const { return _renderScheduler; }
+        const TaskScheduler& GetLogicScheduler() const { return m_logicScheduler; }
+        const TaskScheduler& GetRenderScheduler() const { return m_renderScheduler; }
 
         // ★追加: 指定した型のシステムを取得する関数
         // 使用例: auto* animSys = systemManager->GetSystem<AnimationSystem>();
         template <typename T> T *GetSystem() const
         {
             // 1. Logic Systems から検索
-            for (const auto &sys : _logicSystems) {
+            for (const auto &sys : m_logicSystems) {
                 // dynamic_cast で型チェックを行う
                 if (T *casted = dynamic_cast<T *>(sys.get())) {
                     return casted;
@@ -181,7 +181,7 @@ namespace CCL::ECS
             }
 
             // 2. Render Systems から検索
-            for (const auto &sys : _renderSystems) {
+            for (const auto &sys : m_renderSystems) {
                 if (T *casted = dynamic_cast<T *>(sys.get())) {
                     return casted;
                 }
@@ -202,7 +202,7 @@ namespace CCL::ECS
 
         // 優先度（昇順）でシステムを並び替える
         void SortSystems(SystemGroup group) {
-            auto& targetList = (group == SystemGroup::Logic) ? _logicSystems : _renderSystems;
+            auto& targetList = (group == SystemGroup::Logic) ? m_logicSystems : m_renderSystems;
 
             std::sort(targetList.begin(), targetList.end(),
                 [](const std::unique_ptr<SystemBase>& a, const std::unique_ptr<SystemBase>& b) {
@@ -213,24 +213,24 @@ namespace CCL::ECS
 
         // 共有ジョブプールへのポインタ（所有しない）。
         // 実体は EngineServices が1つだけ持ち、SetJobSystem で注入される。
-        JobSystem* _jobSystem = nullptr;
+        JobSystem* m_jobSystem = nullptr;
 
         // 2つのリストに分離
-        std::vector<std::unique_ptr<SystemBase>> _logicSystems;
-        std::vector<std::unique_ptr<SystemBase>> _renderSystems;
+        std::vector<std::unique_ptr<SystemBase>> m_logicSystems;
+        std::vector<std::unique_ptr<SystemBase>> m_renderSystems;
 
 
-        World* _world = nullptr;
+        World* m_world = nullptr;
 
 
-        TaskScheduler _logicScheduler;
-        TaskScheduler _renderScheduler;
-        bool          _isGraphDirty = true; // システムが追加されたらtrueにする
+        TaskScheduler m_logicScheduler;
+        TaskScheduler m_renderScheduler;
+        bool          m_isGraphDirty = true; // システムが追加されたらtrueにする
 
         // ==========================================
         //  キャッシュ用: 前回分配したチャンクのポインタ配列
         // ==========================================
-        std::vector<void*> _cachedChunkPointers;
+        std::vector<void*> m_cachedChunkPointers;
     };
 
 } // namespace CCL::ECS

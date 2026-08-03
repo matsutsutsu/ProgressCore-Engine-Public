@@ -42,11 +42,11 @@ void CameraActionTPSSystem::Initialize()
     ListenEvent<CameraShakeRequestEvent>([this](const CameraShakeRequestEvent &ev) {
 
         ForEachWithID([&](EntityID id, VirtualCamera &vcam, CameraBodyTPSComponent &tps, TransformComponent &trans) {
-            if (!_world->HasComponent<CameraShake>(id))
+            if (!m_world->HasComponent<CameraShake>(id))
             {
-                _world->AddComponent<CameraShake>(id);
+                m_world->AddComponent<CameraShake>(id);
             }
-            if (auto *shake = _world->GetComponent<CameraShake>(id))
+            if (auto *shake = m_world->GetComponent<CameraShake>(id))
             {
                 shake->SetShake(ev.amplitude, ev.duration);
             }
@@ -57,9 +57,9 @@ void CameraActionTPSSystem::Initialize()
 
 void CameraActionTPSSystem::Update(float dt)
 {
-    if (!_world->HasResource<std::shared_ptr<IInputAPI>>())
+    if (!m_world->HasResource<std::shared_ptr<IInputAPI>>())
         return;
-    auto inputAPI = _world->GetResource<std::shared_ptr<IInputAPI>>();
+    auto inputAPI = m_world->GetResource<std::shared_ptr<IInputAPI>>();
 
     // ゲームパッド右スティック（倒し量：-1..1）。あとで dt を掛けて積分する。
     float lookX = inputAPI->GetAxis("LookX");
@@ -72,8 +72,8 @@ void CameraActionTPSSystem::Update(float dt)
 
     // カメラ衝突用の物理API（地形とだけ交差判定する）。無ければ衝突回避はスキップ。
     std::shared_ptr<IPhysicsAPI> physicsAPI =
-        _world->HasResource<std::shared_ptr<IPhysicsAPI>>()
-            ? _world->GetResource<std::shared_ptr<IPhysicsAPI>>()
+        m_world->HasResource<std::shared_ptr<IPhysicsAPI>>()
+            ? m_world->GetResource<std::shared_ptr<IPhysicsAPI>>()
             : nullptr;
 
     // ★ 追従対象(プレイヤー)を「役割」で毎フレーム解決しておく。
@@ -85,9 +85,9 @@ void CameraActionTPSSystem::Update(float dt)
     //   ・カーソル自由(UI操作)モード中（実行中に ImGui エディタを操作したい）
     //   ・エディタで他ウィンドウ操作中（IsGameInputActive=false）
     const bool flowPaused =
-        _world->HasResource<GameFlowState>() && _world->GetResource<GameFlowState>().paused;
+        m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().paused;
     const bool flowUiInteract =
-        _world->HasResource<GameFlowState>() && _world->GetResource<GameFlowState>().uiInteract;
+        m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().uiInteract;
     const bool cursorFreeOverride =
         flowPaused || flowUiInteract || !inputAPI->IsGameInputActive();
 
@@ -100,7 +100,7 @@ void CameraActionTPSSystem::Update(float dt)
         //    本システムより前のステージ(R00b)で済ませている。
 
         // 1. 追従対象（プレイヤー）の取得
-        auto *targetTrans = _world->GetComponent<TransformComponent>(tps.target.id);
+        auto *targetTrans = m_world->GetComponent<TransformComponent>(tps.target.id);
         if (!targetTrans) return;
 
         // このカメラが「今マウスルック中」ならカーソルロックを要求する。
@@ -122,7 +122,7 @@ void CameraActionTPSSystem::Update(float dt)
         // ===================================================================
 
         // 2. ロックオン対象（エネミー）のTransform取得
-        auto *enemyTrans = tps.isLockOnActive ? _world->GetComponent<TransformComponent>(tps.lockOnTarget.id) : nullptr;
+        auto *enemyTrans = tps.isLockOnActive ? m_world->GetComponent<TransformComponent>(tps.lockOnTarget.id) : nullptr;
 
         // Transform が取れない（＝既に消滅している）場合だけ、描画側の保険として無効化する
         if (tps.isLockOnActive && !enemyTrans)
@@ -209,7 +209,7 @@ void CameraActionTPSSystem::Update(float dt)
         else
         {
             // 通常時のみルックアヘッド（進行方向への視点ズレ）を適用
-            auto *targetInput = _world->GetComponent<CharacterMovementInputComponent>(tps.target.id);
+            auto *targetInput = m_world->GetComponent<CharacterMovementInputComponent>(tps.target.id);
             if (targetInput)
             {
                 Vector3 vel             = targetInput->currentVelocity;

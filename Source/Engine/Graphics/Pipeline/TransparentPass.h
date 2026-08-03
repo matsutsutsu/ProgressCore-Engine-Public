@@ -17,6 +17,6 @@ public:
     const char* GetName() const override { return "TransparentPass"; }
 
 private:
-    PipelineState  _psoTransparent;
-    InstanceBuffer _instanceBuffer;
+    PipelineState  m_psoTransparent;
+    InstanceBuffer m_instanceBuffer;
 };

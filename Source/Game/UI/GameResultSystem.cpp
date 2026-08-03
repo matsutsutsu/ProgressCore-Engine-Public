@@ -27,48 +27,48 @@ void GameResultSystem::Initialize()
     hasGui = true; // デバッグ用の検知状態パネルを OnGui で出す
 
     // 終了要求フラグの置き場を用意（メインスレッドの Run が毎フレーム参照する）。
-    if (!_world->HasResource<GameFlowState>())
-        _world->AddResource<GameFlowState>();
+    if (!m_world->HasResource<GameFlowState>())
+        m_world->AddResource<GameFlowState>();
 
     // ボタンクリックを購読（この世界ではリザルトのボタンだけが発火源）。
     const uint32_t kRetry = CCL::Utils::HashString("retry");
     const uint32_t kQuit  = CCL::Utils::HashString("result_quit");
 
-    _world->GetEventBus().Subscribe<UIButtonClickedEvent>(
+    m_world->GetEventBus().Subscribe<UIButtonClickedEvent>(
         [this, kRetry, kQuit](const UIButtonClickedEvent &e) {
-            if (_transitioning) return;
+            if (m_transitioning) return;
 
             if (e.actionHash == kRetry)
             {
                 // ゲーム再読込（新しい世界を裏読み）。フェードは SceneManager が統括。
-                _transitioning = SceneManager::Instance().RequestTransition("Game", true);
+                m_transitioning = SceneManager::Instance().RequestTransition("Game", true);
             }
             else if (e.actionHash == kQuit)
             {
-                _transitioning = true;
+                m_transitioning = true;
                 // 展示会用：タイトルへは戻さず、そのままアプリを終了する。
                 // ★ この購読はワーカースレッドで走りうるため、直接 PostQuitMessage を
                 //    呼ぶと WM_QUIT が別スレッドに積まれメインループが拾えない。
                 //    → フラグだけ立て、メインスレッドの Run() が拾って終了する。
-                if (_world->HasResource<GameFlowState>())
-                    _world->GetResource<GameFlowState>().quitRequested = true;
+                if (m_world->HasResource<GameFlowState>())
+                    m_world->GetResource<GameFlowState>().quitRequested = true;
             }
         });
 }
 
 void GameResultSystem::Update(float dt)
 {
-    if (!_debugEnabled) return; // デバッグ用の全体OFF（ステージ確認中などに勝敗判定を止める）
-    if (_resultShown) return; // 既に表示済みなら何もしない
+    if (!m_debugEnabled) return; // デバッグ用の全体OFF（ステージ確認中などに勝敗判定を止める）
+    if (m_resultShown) return; // 既に表示済みなら何もしない
 
     // 勝利演出の待機中：撃破スローの余韻を見せてからリザルトを出す。
     // dt はスロー非依存の実時間なので、実時間でカウントダウンすればスロー終了後に表示される。
-    if (_pendingWin)
+    if (m_pendingWin)
     {
-        _winDelay -= dt;
-        if (_winDelay <= 0.0f)
+        m_winDelay -= dt;
+        if (m_winDelay <= 0.0f)
         {
-            _resultShown = true;
+            m_resultShown = true;
             ShowResultUI(true); // GAME CLEAR
             CCL_LOG_INFO(LogCategory::Game, "[GameResult] Game Clear. Result UI shown (after defeat slow-mo).");
         }
@@ -82,9 +82,9 @@ void GameResultSystem::Update(float dt)
 
     // 全 HealthComponent を走査し、プレイヤー／敵を仕分ける。
     ForEachWithID([&](EntityID id, const HealthComponent &hp) {
-        const bool dead = (hp.currentHealth <= 0.0f) || _world->HasComponent<Tag::DeadTag>(id);
+        const bool dead = (hp.currentHealth <= 0.0f) || m_world->HasComponent<Tag::DeadTag>(id);
 
-        if (_world->HasComponent<PlayerComponent>(id))
+        if (m_world->HasComponent<PlayerComponent>(id))
         {
             playerPresent = true;        // プレイヤーが世界に存在する
             if (dead) playerDead = true; // プレイヤー死亡
@@ -96,11 +96,11 @@ void GameResultSystem::Update(float dt)
         }
     });
 
-    if (anyEnemy) _sawEnemy = true; // 一度でも敵を見たら記憶
+    if (anyEnemy) m_sawEnemy = true; // 一度でも敵を見たら記憶
 
     // デバッグGUI用のスナップショット
-    _dbgPlayerPresent = playerPresent;
-    _dbgAliveEnemies  = aliveEnemies;
+    m_dbgPlayerPresent = playerPresent;
+    m_dbgAliveEnemies  = aliveEnemies;
 
     // ★ セーフガード：プレイヤーが1体も存在しないシーンでは勝敗判定を行わない。
     //   ステージ実装確認用のテストScene（プレイヤー未生成）では、敵扱いの HealthComponent が
@@ -111,15 +111,15 @@ void GameResultSystem::Update(float dt)
     // --- 勝敗判定（敗北を優先） ---
     if (playerDead)
     {
-        _resultShown = true;
+        m_resultShown = true;
         ShowResultUI(false); // GAME OVER
         CCL_LOG_INFO(LogCategory::Game, "[GameResult] Game Over. Result UI shown.");
     }
-    else if (_sawEnemy && aliveEnemies == 0)
+    else if (m_sawEnemy && aliveEnemies == 0)
     {
         // 即表示せず、撃破スローの余韻を見せてから出す（実際の表示は上の待機処理で行う）。
-        _pendingWin = true;
-        _winDelay   = kResultDelay;
+        m_pendingWin = true;
+        m_winDelay   = kResultDelay;
         CCL_LOG_INFO(LogCategory::Game, "[GameResult] Game Clear detected. Waiting for defeat slow-mo before showing result.");
     }
 }
@@ -127,7 +127,7 @@ void GameResultSystem::Update(float dt)
 void GameResultSystem::ShowResultUI(bool win)
 {
     using namespace CCL::GameUI;
-    World &w = *_world;
+    World &w = *m_world;
 
     // UI階層：Canvas を親にして配下を束ねる（ヒエラルキーで入れ子表示）。
     const EntityID canvas = SpawnCanvas(w, "ResultCanvas");
@@ -158,25 +158,25 @@ void GameResultSystem::OnGui()
 {
     ImGui::SeparatorText("リザルト検知 (デバッグ)");
 
-    ImGui::Checkbox("システム有効", &_debugEnabled);
-    if (!_debugEnabled)
+    ImGui::Checkbox("システム有効", &m_debugEnabled);
+    if (!m_debugEnabled)
         ImGui::TextDisabled("→ 勝敗判定・リザルト表示を停止中");
 
     ImGui::Separator();
-    ImGui::Text("プレイヤー存在 : %s", _dbgPlayerPresent ? "yes" : "NO (テストScene扱い→抑止)");
-    ImGui::Text("敵を観測(sawEnemy) : %s", _sawEnemy ? "yes" : "no");
-    ImGui::Text("生存敵数 : %d", _dbgAliveEnemies);
-    ImGui::Text("リザルト表示済み : %s", _resultShown ? "yes" : "no");
-    ImGui::Text("勝利待機中 : %s (残り %.2fs)", _pendingWin ? "yes" : "no", _winDelay);
+    ImGui::Text("プレイヤー存在 : %s", m_dbgPlayerPresent ? "yes" : "NO (テストScene扱い→抑止)");
+    ImGui::Text("敵を観測(sawEnemy) : %s", m_sawEnemy ? "yes" : "no");
+    ImGui::Text("生存敵数 : %d", m_dbgAliveEnemies);
+    ImGui::Text("リザルト表示済み : %s", m_resultShown ? "yes" : "no");
+    ImGui::Text("勝利待機中 : %s (残り %.2fs)", m_pendingWin ? "yes" : "no", m_winDelay);
 
     ImGui::Separator();
     if (ImGui::Button("検知状態をリセット"))
     {
-        _resultShown   = false;
-        _sawEnemy      = false;
-        _pendingWin    = false;
-        _winDelay      = 0.0f;
-        _transitioning = false;
+        m_resultShown   = false;
+        m_sawEnemy      = false;
+        m_pendingWin    = false;
+        m_winDelay      = 0.0f;
+        m_transitioning = false;
     }
     ImGui::TextDisabled("※プレイヤー不在のSceneでは自動でリザルトを抑止します");
 }

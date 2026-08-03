@@ -92,7 +92,7 @@ void DamageResolutionSystem::Update(float dt) {
 
     ForEachWithID([this](EntityID eventEntity, DamageEventComponent& event) {
 
-        if (auto* health = _world->GetComponent<HealthComponent>(event.targetID)) {
+        if (auto* health = m_world->GetComponent<HealthComponent>(event.targetID)) {
 
             // 無敵中はダメージ・ノックバックともに無効(イベントは破棄する)。
             if (health->invincibilityTimer <= 0.0f) {
@@ -110,12 +110,12 @@ void DamageResolutionSystem::Update(float dt) {
                 // TimeScaleSystem(L01) が次フレームから hitStopTimer を消費し localDt=0 にする。
                 if (event.hitStopDuration > 0.0f)
                 {
-                    if (auto *vt = _world->GetComponent<TimeStateComponent>(event.targetID))
+                    if (auto *vt = m_world->GetComponent<TimeStateComponent>(event.targetID))
                     {
                         vt->hitStopTimer = event.hitStopDuration;
                         vt->freezeScale  = event.hitStopScale;
                     }
-                    if (auto *at = _world->GetComponent<TimeStateComponent>(event.attackerID))
+                    if (auto *at = m_world->GetComponent<TimeStateComponent>(event.attackerID))
                     {
                         at->hitStopTimer = event.hitStopDuration;
                         at->freezeScale  = event.hitStopScale;
@@ -128,7 +128,7 @@ void DamageResolutionSystem::Update(float dt) {
                 // （CharacterVirtual 経由なので壁抜けしない）。無ければ何もしない。
                 if (event.knockbackForce > 0.0f)
                 {
-                    if (auto *kb = _world->GetComponent<KnockbackComponent>(event.targetID))
+                    if (auto *kb = m_world->GetComponent<KnockbackComponent>(event.targetID))
                     {
                         kb->velocity = event.knockbackDir * event.knockbackForce;
                         kb->timer    = kb->duration;
@@ -139,7 +139,7 @@ void DamageResolutionSystem::Update(float dt) {
                 // シーンに ScreenImpact singleton があれば、ダメージ量に応じた強さで
                 // カメラシェイク＋PPバーストを起動する（VFXは直接呼ばずデータで流す方針）。
                 // ScreenImpactSystem(R02) が減衰させ、camera / PostProcess へ反映する。
-                if (auto *impact = _world->GetSingletonComponent<ScreenImpactComponent>())
+                if (auto *impact = m_world->GetSingletonComponent<ScreenImpactComponent>())
                 {
                     constexpr float kRefDamage = 25.0f; // これで power=1.0 の基準ダメージ
                     const float power = std::clamp(event.finalDamage / kRefDamage, 0.3f, 1.5f);
@@ -150,26 +150,26 @@ void DamageResolutionSystem::Update(float dt) {
                 // 実際に食らった時だけ DamageTakenEvent を発火する（無敵ですり抜けた場合は出さない）。
                 // 購読側が各自の演出を行う：PlayerFeedbackSystem（プレイヤーのカメラシェイク＋被弾ビネット）、
                 // JustEvadeSystem（被弾でジャスト回避チェイン切断）など。isPlayer は受け取り側の判定用フラグ。
-                const bool isPlayer = _world->HasComponent<PlayerComponent>(event.targetID);
-                _world->GetEventBus().Publish(
+                const bool isPlayer = m_world->HasComponent<PlayerComponent>(event.targetID);
+                m_world->GetEventBus().Publish(
                     DamageTakenEvent{event.targetID, event.finalDamage, isPlayer});
 
                 // --- ヒットリアクション（前後左右）の再生 ---
                 // 生き残った時だけ怯ませる。致命打は死亡アニメ側に任せる（怯みと二重再生しない）。
                 // プレイヤーも敵も共通：AnimParametersComponent を持つ相手だけが反応する。
                 if (health->currentHealth > 0.0f)
-                    FireHitReaction(_world, event);
+                    FireHitReaction(m_world, event);
 
                 // --- 命中エフェクトの通知（確定ヒットの接触点に衝突VFXを出す） ---
                 // HitEffectSystem が購読して GPUパーティクルのバーストを生成する。
-                _world->GetEventBus().Publish(HitImpactEvent{
+                m_world->GetEventBus().Publish(HitImpactEvent{
                     DirectX::XMFLOAT3{event.hitPosition.x, event.hitPosition.y, event.hitPosition.z},
                     event.finalDamage});
             }
         }
 
         // 処理が終わったイベントエンティティは必ず破棄する。
-        _world->Destroy(eventEntity);
+        m_world->Destroy(eventEntity);
         });
 }
 

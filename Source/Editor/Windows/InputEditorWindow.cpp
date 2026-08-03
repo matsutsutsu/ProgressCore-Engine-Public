@@ -21,12 +21,12 @@ InputEditorWindow::InputEditorWindow() : EditorWindow("InputMappingEditor")
 
 void InputEditorWindow::LoadFromJson()
 {
-    _actions.clear();
-    _axes.clear();
-    _captureTarget = nullptr; // データ作り直し時はキャプチャを必ず解除
+    m_actions.clear();
+    m_axes.clear();
+    m_captureTarget = nullptr; // データ作り直し時はキャプチャを必ず解除
 
     // VFSから読み込み
-    std::string jsonStr = FileSystem::ReadAllText(_configPath);
+    std::string jsonStr = FileSystem::ReadAllText(m_configPath);
     if (jsonStr.empty()) return;
 
     json doc;
@@ -45,7 +45,7 @@ void InputEditorWindow::LoadFromJson()
                 {
                     action.bindings.push_back({b["Device"], b["Key"], 1.0f});
                 }
-                _actions.push_back(action);
+                m_actions.push_back(action);
             }
         }
 
@@ -59,7 +59,7 @@ void InputEditorWindow::LoadFromJson()
                 {
                     axis.bindings.push_back({b["Device"], b["Key"], b.value("Scale", 1.0f)});
                 }
-                _axes.push_back(axis);
+                m_axes.push_back(axis);
             }
         }
     }
@@ -75,7 +75,7 @@ void InputEditorWindow::SaveToJson()
     doc["Actions"] = json::array();
     doc["Axes"]    = json::array();
 
-    for (const auto &act : _actions)
+    for (const auto &act : m_actions)
     {
         json jAct;
         jAct["Name"]     = act.name;
@@ -88,7 +88,7 @@ void InputEditorWindow::SaveToJson()
         doc["Actions"].push_back(jAct);
     }
 
-    for (const auto &ax : _axes)
+    for (const auto &ax : m_axes)
     {
         json jAx;
         jAx["Name"]     = ax.name;
@@ -100,7 +100,7 @@ void InputEditorWindow::SaveToJson()
         doc["Axes"].push_back(jAx);
     }
 
-    FileSystem::WriteAllText(_configPath, doc.dump(4));
+    FileSystem::WriteAllText(m_configPath, doc.dump(4));
 }
 
 // =====================================================================
@@ -243,22 +243,22 @@ void InputEditorWindow::DrawBindingParams(BindingData &b, bool isAxis)
 
         // 3) Capture（押して登録）— ボタン系のみ
         ImGui::SameLine();
-        if (_captureTarget == &b)
+        if (m_captureTarget == &b)
         {
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.5f, 0.1f, 1.0f));
             if (ImGui::Button("キーを押してください... (ESCで中止)"))
             {
-                _captureTarget = nullptr;
+                m_captureTarget = nullptr;
             }
             ImGui::PopStyleColor();
 
-            if (!_captureArmed)
+            if (!m_captureArmed)
             {
-                if (!ImGui::IsAnyMouseDown()) _captureArmed = true;
+                if (!ImGui::IsAnyMouseDown()) m_captureArmed = true;
             }
             else if (::GetAsyncKeyState(VK_ESCAPE) & 0x8000)
             {
-                _captureTarget = nullptr;
+                m_captureTarget = nullptr;
             }
             else
             {
@@ -290,15 +290,15 @@ void InputEditorWindow::DrawBindingParams(BindingData &b, bool isAxis)
                         captured = true;
                     }
                 }
-                if (captured) _captureTarget = nullptr;
+                if (captured) m_captureTarget = nullptr;
             }
         }
         else
         {
             if (ImGui::Button("キャプチャ"))
             {
-                _captureTarget = &b;
-                _captureArmed  = false;
+                m_captureTarget = &b;
+                m_captureArmed  = false;
             }
         }
     }
@@ -330,7 +330,7 @@ void InputEditorWindow::DrawContents(EditorContext &context)
         if (context.world && context.world->HasResource<std::shared_ptr<IInputAPI>>())
         {
             auto inputAPI = context.world->GetResource<std::shared_ptr<IInputAPI>>();
-            inputAPI->LoadConfig(_configPath);
+            inputAPI->LoadConfig(m_configPath);
         }
     }
     ImGui::PopStyleColor();
@@ -361,14 +361,14 @@ void InputEditorWindow::DrawContents(EditorContext &context)
         {
             if (ImGui::Button("＋ アクションを追加"))
             {
-                _actions.push_back({"NewAction", {}});
+                m_actions.push_back({"NewAction", {}});
             }
             ImGui::Separator();
 
-            for (size_t i = 0; i < _actions.size(); ++i)
+            for (size_t i = 0; i < m_actions.size(); ++i)
             {
                 ImGui::PushID((int)i);
-                auto &act = _actions[i];
+                auto &act = m_actions[i];
 
                 char nameBuf[64];
                 strcpy_s(nameBuf, act.name.c_str());
@@ -380,8 +380,8 @@ void InputEditorWindow::DrawContents(EditorContext &context)
                 ImGui::SameLine(ImGui::GetWindowWidth() - 100);
                 if (ImGui::Button("削除##Action"))
                 {
-                    _captureTarget = nullptr; // dangling防止
-                    _actions.erase(_actions.begin() + i);
+                    m_captureTarget = nullptr; // dangling防止
+                    m_actions.erase(m_actions.begin() + i);
                     ImGui::PopID();
                     break;
                 }
@@ -422,7 +422,7 @@ void InputEditorWindow::DrawContents(EditorContext &context)
                     ImGui::SameLine();
                     if (ImGui::Button("削除##Bind"))
                     {
-                        _captureTarget = nullptr; // dangling防止
+                        m_captureTarget = nullptr; // dangling防止
                         act.bindings.erase(act.bindings.begin() + j);
                         ImGui::PopID();
                         break;
@@ -453,14 +453,14 @@ void InputEditorWindow::DrawContents(EditorContext &context)
         {
             if (ImGui::Button("＋ 軸を追加"))
             {
-                _axes.push_back({"NewAxis", {}});
+                m_axes.push_back({"NewAxis", {}});
             }
             ImGui::Separator();
 
-            for (size_t i = 0; i < _axes.size(); ++i)
+            for (size_t i = 0; i < m_axes.size(); ++i)
             {
                 ImGui::PushID((int)i);
-                auto &ax = _axes[i];
+                auto &ax = m_axes[i];
 
                 char nameBuf[64];
                 strcpy_s(nameBuf, ax.name.c_str());
@@ -472,8 +472,8 @@ void InputEditorWindow::DrawContents(EditorContext &context)
                 ImGui::SameLine(ImGui::GetWindowWidth() - 100);
                 if (ImGui::Button("削除##Axis"))
                 {
-                    _captureTarget = nullptr; // dangling防止
-                    _axes.erase(_axes.begin() + i);
+                    m_captureTarget = nullptr; // dangling防止
+                    m_axes.erase(m_axes.begin() + i);
                     ImGui::PopID();
                     break;
                 }
@@ -486,7 +486,7 @@ void InputEditorWindow::DrawContents(EditorContext &context)
                     ImGui::SameLine();
                     if (ImGui::Button("削除##AxisBind"))
                     {
-                        _captureTarget = nullptr; // dangling防止
+                        m_captureTarget = nullptr; // dangling防止
                         ax.bindings.erase(ax.bindings.begin() + j);
                         ImGui::PopID();
                         break;

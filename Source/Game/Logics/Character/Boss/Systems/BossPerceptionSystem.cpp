@@ -18,8 +18,8 @@ using namespace DirectX::SimpleMath;
 
 void BossPerceptionSystem::Update(float /*rawDt*/)
 {
-    if (!_world->HasResource<BattleContext>()) return;
-    const auto &battle = _world->GetResource<BattleContext>();
+    if (!m_world->HasResource<BattleContext>()) return;
+    const auto &battle = m_world->GetResource<BattleContext>();
     if (!battle.HasPlayer()) return; // プレイヤーがまだいなければ何もしない
 
     ForEach([&](BehaviorTreeComponent    &btComp,

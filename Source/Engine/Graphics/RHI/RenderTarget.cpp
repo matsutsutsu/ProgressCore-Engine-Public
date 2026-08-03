@@ -12,12 +12,12 @@ RenderTarget::~RenderTarget()
 
 void RenderTarget::Release()
 {
-    _texture.Reset();
-    _rtv.Reset();
-    _srv.Reset();
-    _width = 0;
-    _height = 0;
-    _format = DXGI_FORMAT_UNKNOWN;
+    m_texture.Reset();
+    m_rtv.Reset();
+    m_srv.Reset();
+    m_width = 0;
+    m_height = 0;
+    m_format = DXGI_FORMAT_UNKNOWN;
 }
 
 bool RenderTarget::Create(ID3D11Device* device, UINT width, UINT height, DXGI_FORMAT format)
@@ -30,9 +30,9 @@ bool RenderTarget::Create(ID3D11Device* device, UINT width, UINT height, DXGI_FO
 
     // 既存リソースを確実に解放してから再生成
     Release();
-    _width = width;
-    _height = height;
-    _format = format;
+    m_width = width;
+    m_height = height;
+    m_format = format;
 
     // 1. テクスチャ
     D3D11_TEXTURE2D_DESC texDesc = {};
@@ -46,7 +46,7 @@ bool RenderTarget::Create(ID3D11Device* device, UINT width, UINT height, DXGI_FO
     texDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 
     HRESULT hr = device->CreateTexture2D(&texDesc, nullptr,
-        _texture.ReleaseAndGetAddressOf());
+        m_texture.ReleaseAndGetAddressOf());
     if (FAILED(hr)) {
         CCL_LOG_ERROR(LogCategory::Render,
             "CreateTexture2D failed: hr=0x%08X w=%u h=%u", hr, width, height);
@@ -60,8 +60,8 @@ bool RenderTarget::Create(ID3D11Device* device, UINT width, UINT height, DXGI_FO
     rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
     rtvDesc.Texture2D.MipSlice = 0;
 
-    hr = device->CreateRenderTargetView(_texture.Get(), &rtvDesc,
-        _rtv.ReleaseAndGetAddressOf());
+    hr = device->CreateRenderTargetView(m_texture.Get(), &rtvDesc,
+        m_rtv.ReleaseAndGetAddressOf());
     if (FAILED(hr)) {
         CCL_LOG_ERROR(LogCategory::Render, "CreateRTV failed: hr=0x%08X", hr);
         Release();
@@ -75,9 +75,9 @@ bool RenderTarget::Create(ID3D11Device* device, UINT width, UINT height, DXGI_FO
     srvDesc.Texture2D.MostDetailedMip = 0;
     srvDesc.Texture2D.MipLevels = 1;
 
-    hr = device->CreateShaderResourceView(_texture.Get(), &srvDesc,
-        _srv.ReleaseAndGetAddressOf());
-	SetDebugName(_srv.Get(), "RenderTarget_SRV");
+    hr = device->CreateShaderResourceView(m_texture.Get(), &srvDesc,
+        m_srv.ReleaseAndGetAddressOf());
+	SetDebugName(m_srv.Get(), "RenderTarget_SRV");
     if (FAILED(hr)) {
         CCL_LOG_ERROR(LogCategory::Render, "CreateSRV failed: hr=0x%08X", hr);
         Release();
@@ -85,26 +85,26 @@ bool RenderTarget::Create(ID3D11Device* device, UINT width, UINT height, DXGI_FO
     }
 
     // 4. ビューポート設定
-    _viewport.Width = static_cast<float>(width);
-    _viewport.Height = static_cast<float>(height);
-    _viewport.MinDepth = 0.0f;
-    _viewport.MaxDepth = 1.0f;
-    _viewport.TopLeftX = 0.0f;
-    _viewport.TopLeftY = 0.0f;
+    m_viewport.Width = static_cast<float>(width);
+    m_viewport.Height = static_cast<float>(height);
+    m_viewport.MinDepth = 0.0f;
+    m_viewport.MaxDepth = 1.0f;
+    m_viewport.TopLeftX = 0.0f;
+    m_viewport.TopLeftY = 0.0f;
 
     return true;
 }
 
 void RenderTarget::Clear(ID3D11DeviceContext* dc, const float color[4])
 {
-    if (dc && _rtv) {
-        dc->ClearRenderTargetView(_rtv.Get(), color);
+    if (dc && m_rtv) {
+        dc->ClearRenderTargetView(m_rtv.Get(), color);
     }
 }
 
 void RenderTarget::Activate(ID3D11DeviceContext* dc, ID3D11DepthStencilView* dsv)
 {
-    if (!dc || !_rtv) return;
-    dc->RSSetViewports(1, &_viewport);
-    dc->OMSetRenderTargets(1, _rtv.GetAddressOf(), dsv);
+    if (!dc || !m_rtv) return;
+    dc->RSSetViewports(1, &m_viewport);
+    dc->OMSetRenderTargets(1, m_rtv.GetAddressOf(), dsv);
 }

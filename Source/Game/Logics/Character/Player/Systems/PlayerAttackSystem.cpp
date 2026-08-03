@@ -111,7 +111,7 @@ void PlayerAttackSystem::Update(float dt)
         if (inputData.isAttackRequested && !player.wasAttackButtonPressed)
         {
             // 攻撃の瞬間に対象へ回頭を予約（地上/空中どちらも）。
-            SetAttackFacing(_world, playerID, player);
+            SetAttackFacing(m_world, playerID, player);
 
             // ==============================================================
             // ★ 空中攻撃の判定（最優先）

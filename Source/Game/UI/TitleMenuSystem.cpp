@@ -17,7 +17,7 @@ using namespace CCL::ECS;
 
 void TitleMenuSystem::Initialize()
 {
-    World &world = *_world;
+    World &world = *m_world;
 
     // 終了要求フラグの置き場を用意（メインスレッドの Run が毎フレーム参照する）。
     if (!world.HasResource<GameFlowState>())
@@ -36,23 +36,23 @@ void TitleMenuSystem::Initialize()
 
     world.GetEventBus().Subscribe<UIButtonClickedEvent>(
         [this, kStart, kQuit](const UIButtonClickedEvent &e) {
-            if (_transitioning) return; // 遷移予約後は無視（二重遷移防止）
+            if (m_transitioning) return; // 遷移予約後は無視（二重遷移防止）
 
             if (e.actionHash == kStart)
             {
                 // 「Game へ行きたい」と頼むだけ。フェード・ローディングの裏読み・
                 // World 破棄のタイミングは SceneManager が統括する（疎結合）。
-                _transitioning = SceneManager::Instance().RequestTransition("Game", true);
+                m_transitioning = SceneManager::Instance().RequestTransition("Game", true);
             }
             else if (e.actionHash == kQuit)
             {
-                _transitioning = true;
-                // ★ この購読は UIButtonSystem 経由で発火し、ジョブスケジューラにより
+                m_transitioning = true;
+                // この購読は UIButtonSystem 経由で発火し、ジョブスケジューラにより
                 //    ワーカースレッドで走りうる。ワーカーから PostQuitMessage を呼ぶと
                 //    WM_QUIT が別スレッドのキューに積まれ、メインループが拾えず終了しない。
                 //    → 終了要求フラグだけ立て、メインスレッドの Run() が拾って終了する。
-                if (_world->HasResource<GameFlowState>())
-                    _world->GetResource<GameFlowState>().quitRequested = true;
+                if (m_world->HasResource<GameFlowState>())
+                    m_world->GetResource<GameFlowState>().quitRequested = true;
             }
         });
 }

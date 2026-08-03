@@ -17,8 +17,8 @@ void TimeScaleSystem::Initialize()
 
 void TimeScaleSystem::Update(float rawDt)
 {
-    if (!_world || !_world->HasResource<TimeContext>()) return;
-    auto& ctx = _world->GetResource<TimeContext>();
+    if (!m_world || !m_world->HasResource<TimeContext>()) return;
+    auto& ctx = m_world->GetResource<TimeContext>();
 
     // =========================================================
     // ★ デバッグ：世界時間の凍結とコマ送り
@@ -127,8 +127,8 @@ void TimeScaleSystem::Update(float rawDt)
 #ifdef ENABLE_EDITOR
 void TimeScaleSystem::OnGui()
 {
-    if (!_world || !_world->HasResource<TimeContext>()) return;
-    auto& ctx = _world->GetResource<TimeContext>();
+    if (!m_world || !m_world->HasResource<TimeContext>()) return;
+    auto& ctx = m_world->GetResource<TimeContext>();
 
     ImGui::SeparatorText("World Time Master");
     ImGui::DragFloat("Base Global Scale", &ctx.baseGlobalScale, 0.01f, 0.0f, 5.0f, "%.3f");

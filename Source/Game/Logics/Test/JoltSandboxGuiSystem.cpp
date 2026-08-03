@@ -11,7 +11,7 @@
 #endif
 #include <random>
 
-// ★ 修正1: ArchetypeHelper 等へのアクセスを簡略化するため名前空間を展開
+// ArchetypeHelper 等へのアクセスを簡略化するため名前空間を展開
 using namespace CCL::ECS;
 
 #ifdef ENABLE_EDITOR
@@ -76,7 +76,7 @@ void JoltSandboxGuiSystem::OnGui()
             {
                 // 重力係数をマイナスにした特殊な箱を1つスポーン
                 auto arch = ArchetypeHelper::Generate<TransformComponent, PrimitiveComponent, JoltRigidbodyComponent, JoltBoxColliderComponent>();
-                auto e    = EntityFactory::SpawnNamed(*_world, "AntiGravityBox", arch);
+                auto e    = EntityFactory::SpawnNamed(*m_world, "AntiGravityBox", arch);
 
                 e.Set(TransformComponent{.position = {0, 5.0f, 0}, .rotation = {0, 0, 0, 1}, .scale = {2.0f, 2.0f, 2.0f}, .isStatic = false, .isDirty = true});
                 e.Set(PrimitiveComponent{.type = PrimitiveType::Box, .color = {0.0f, 1.0f, 0.5f, 1.0f}});
@@ -135,8 +135,8 @@ void JoltSandboxGuiSystem::SpawnAvalanche()
 
     for (int i = 0; i < m_spawnCount; ++i)
     {
-        // ★ 修正1: CCL::ECS:: を削除し、直接 EntityFactory::SpawnNamed を呼ぶ
-        auto e = EntityFactory::SpawnNamed(*_world, "AvalancheDebris", arch);
+        // CCL::ECS:: を削除し、直接 EntityFactory::SpawnNamed を呼ぶ
+        auto e = EntityFactory::SpawnNamed(*m_world, "AvalancheDebris", arch);
 
         float x = distRadius(gen);
         float y = m_spawnHeight + distHeight(gen);
@@ -147,7 +147,7 @@ void JoltSandboxGuiSystem::SpawnAvalanche()
         e.Set(PrimitiveComponent{.type = PrimitiveType::Box, .color = {distColor(gen), distColor(gen), distColor(gen), 1.0f}});
         e.Set(JoltBoxColliderComponent{.halfExtent = {0.5f, 0.5f, 0.5f}});
 
-        // ★ 修正2: JPH::EMotionType::Dynamic を明示的に指定する
+        // JPH::EMotionType::Dynamic を明示的に指定する
         JoltRigidbodyComponent rigid;
         rigid.motionType  = JPH::EMotionType::Dynamic;
         rigid.friction    = 0.5f;
@@ -171,8 +171,7 @@ void JoltSandboxGuiSystem::SpawnBlockTower()
         for (int i = -1; i <= 1; ++i)
         {
 
-            // ★ 修正1
-            auto e = EntityFactory::SpawnNamed(*_world, "TowerBlock", arch);
+            auto e = EntityFactory::SpawnNamed(*m_world, "TowerBlock", arch);
 
             float posX = isEven ? (i * blockSize) : 0.0f;
             float posZ = isEven ? 0.0f : (i * blockSize);
@@ -186,7 +185,6 @@ void JoltSandboxGuiSystem::SpawnBlockTower()
             e.Set(PrimitiveComponent{.type = PrimitiveType::Box, .color = {0.8f, 0.6f, 0.4f, 1.0f}});
             e.Set(JoltBoxColliderComponent{.halfExtent = {scaleX * 0.5f, 0.5f, scaleZ * 0.5f}});
 
-            // ★ 修正2
             JoltRigidbodyComponent rigid;
             rigid.motionType = JPH::EMotionType::Dynamic;
             rigid.friction   = 0.8f;
@@ -201,15 +199,13 @@ void JoltSandboxGuiSystem::SpawnMeteorStrike()
 {
     auto arch = ArchetypeHelper::Generate<TransformComponent, PrimitiveComponent, JoltRigidbodyComponent, JoltSphereColliderComponent>();
 
-    // ★ 修正1
-    auto e = EntityFactory::SpawnNamed(*_world, "Meteor", arch);
+    auto e = EntityFactory::SpawnNamed(*m_world, "Meteor", arch);
 
     e.Set(TransformComponent{
         .position = {0.0f, m_spawnHeight + 50.0f, 0.0f}, .rotation = {0, 0, 0, 1}, .scale = {m_meteorSize, m_meteorSize, m_meteorSize}, .isStatic = false, .isDirty = true});
     e.Set(PrimitiveComponent{.type = PrimitiveType::Sphere, .color = {1.0f, 0.3f, 0.0f, 1.0f}});
     e.Set(JoltSphereColliderComponent{.radius = m_meteorSize * 0.5f});
 
-    // ★ 修正2
     JoltRigidbodyComponent rigid;
     rigid.motionType      = JPH::EMotionType::Dynamic;
     rigid.gravityFactor   = 3.0f;
@@ -223,9 +219,9 @@ void JoltSandboxGuiSystem::ClearAllSandboxEntities()
 {
     for (auto id : m_sandboxEntities)
     {
-        if (_world->IsEntityValid(id))
+        if (m_world->IsEntityValid(id))
         {
-            _world->AddComponent<Tag::DestroyTag>(id);
+            m_world->AddComponent<Tag::DestroyTag>(id);
         }
     }
     m_sandboxEntities.clear();

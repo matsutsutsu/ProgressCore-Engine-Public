@@ -28,7 +28,7 @@ PlayerFeedbackSystem::PlayerFeedbackSystem() : IfSystem("PlayerFeedbackSystem") 
 
 void PlayerFeedbackSystem::Initialize()
 {
-    if (!_world) return;
+    if (!m_world) return;
 
     // =======================================================================
     // 放送局（EventBus）から「ダメージを受けた」というニュースを受信する
@@ -44,7 +44,7 @@ void PlayerFeedbackSystem::Initialize()
             // （ダメージ量 e.damageAmount に応じて揺れの強さを変えるとリッチになります）
             // -----------------------------------------------------------------
             // ワールド内に存在するすべての VirtualCamera を探す
-            auto vcamView = _world->View<VirtualCamera>();
+            auto vcamView = m_world->View<VirtualCamera>();
             for (auto camID : vcamView) {
 
                 // ダメージ量(e.damageAmount)に基づいて揺れの強さを計算
@@ -53,7 +53,7 @@ void PlayerFeedbackSystem::Initialize()
                 float shakeDuration = 0.5f; // 揺れる時間は0.5秒
 
                 // すでに CameraShake コンポーネントを持っているか確認
-                if (auto *shake = _world->GetComponent<CameraShake>(camID)) {
+                if (auto *shake = m_world->GetComponent<CameraShake>(camID)) {
                     // 持っていれば上書きして揺らす
                     shake->SetShake(shakeStrength, shakeDuration);
                 }
@@ -61,7 +61,7 @@ void PlayerFeedbackSystem::Initialize()
                     // 持っていなければ新しく取り付けて揺らす
                     CameraShake newShake;
                     newShake.SetShake(shakeStrength, shakeDuration);
-                    _world->AddComponent<CameraShake>(camID, newShake);
+                    m_world->AddComponent<CameraShake>(camID, newShake);
                 }
             }
 
@@ -81,7 +81,7 @@ void PlayerFeedbackSystem::Initialize()
             // タイマを立てるだけ。実際の見た目は Update() が VignetteConfig を駆動して作る。
             // 連続被弾でも最新の一撃で満タンにリフレッシュする。
             // -----------------------------------------------------------------
-            _flashTimer = kFlashDuration;
+            m_flashTimer = kFlashDuration;
         }
     });
 }
@@ -99,68 +99,68 @@ void PlayerFeedbackSystem::Update(float dt)
 // ---------------------------------------------------------------------------
 void PlayerFeedbackSystem::UpdateDamageVignette(float dt)
 {
-    auto *vig = _world->GetSingletonComponent<VignetteConfigComponent>();
+    auto *vig = m_world->GetSingletonComponent<VignetteConfigComponent>();
     if (!vig) return; // ビネット設定が無いシーンでは何もしない
 
     // ジャスト回避演出がビネットを駆動中なら譲る（二重駆動を避ける安全弁）。
     // ※通常は「食らう」と「回避成功（無敵）」は同時に起きない。
-    if (auto *je = _world->GetSingletonComponent<JustEvadeEffectComponent>())
+    if (auto *je = m_world->GetSingletonComponent<JustEvadeEffectComponent>())
     {
         if (je->timer > 0.0f)
         {
-            _flashActive = false; // 復元は JustEvade 側に任せて手を引く
+            m_flashActive = false; // 復元は JustEvade 側に任せて手を引く
             return;
         }
     }
 
-    const bool active = (_flashTimer > 0.0f);
+    const bool active = (m_flashTimer > 0.0f);
 
     // ── 立ち下がり：退避しておいた元の値へ完全復元する ──
     if (!active)
     {
-        if (_flashActive)
+        if (m_flashActive)
         {
-            vig->enable             = _vigBase.enable;
-            vig->data.vigIntensity  = _vigBase.intensity;
-            vig->data.vigColor      = _vigBase.color;
-            vig->data.vigPulseSpeed = _vigBase.pulse;
-            vig->data.vigRadius     = _vigBase.radius;
-            vig->data.vigSoftness   = _vigBase.softness;
-            _flashActive = false;
+            vig->enable             = m_vigBase.enable;
+            vig->data.vigIntensity  = m_vigBase.intensity;
+            vig->data.vigColor      = m_vigBase.color;
+            vig->data.vigPulseSpeed = m_vigBase.pulse;
+            vig->data.vigRadius     = m_vigBase.radius;
+            vig->data.vigSoftness   = m_vigBase.softness;
+            m_flashActive = false;
         }
         return;
     }
 
     // ── 立ち上がり：元のビネット値を退避（演出後にここへ戻す） ──
-    if (!_flashActive)
+    if (!m_flashActive)
     {
-        _vigBase.enable    = vig->enable;
-        _vigBase.intensity = vig->data.vigIntensity;
-        _vigBase.color     = vig->data.vigColor;
-        _vigBase.pulse     = vig->data.vigPulseSpeed;
-        _vigBase.radius    = vig->data.vigRadius;
-        _vigBase.softness  = vig->data.vigSoftness;
+        m_vigBase.enable    = vig->enable;
+        m_vigBase.intensity = vig->data.vigIntensity;
+        m_vigBase.color     = vig->data.vigColor;
+        m_vigBase.pulse     = vig->data.vigPulseSpeed;
+        m_vigBase.radius    = vig->data.vigRadius;
+        m_vigBase.softness  = vig->data.vigSoftness;
     }
 
     // ── 減衰（実時間。スロー窓でも体感の長さが一致する） ──
-    _flashTimer -= dt;
-    if (_flashTimer < 0.0f) _flashTimer = 0.0f;
+    m_flashTimer -= dt;
+    if (m_flashTimer < 0.0f) m_flashTimer = 0.0f;
 
     // ── エンベロープ：被弾で即最大 → env=e² で素早く減衰（パッと出てスッと引く） ──
-    const float e   = _flashTimer / kFlashDuration; // 1→0
+    const float e   = m_flashTimer / kFlashDuration; // 1→0
     const float env = e * e;                        // 後半ほど速く引いてキレを出す
 
     vig->enable            = true;
-    vig->data.vigIntensity = Lerp(_vigBase.intensity, kFlashPeak, env);
-    vig->data.vigColor     = DirectX::XMFLOAT4{Lerp(_vigBase.color.x, kFlashR, env),
-                                               Lerp(_vigBase.color.y, kFlashG, env),
-                                               Lerp(_vigBase.color.z, kFlashB, env), 1.0f};
+    vig->data.vigIntensity = Lerp(m_vigBase.intensity, kFlashPeak, env);
+    vig->data.vigColor     = DirectX::XMFLOAT4{Lerp(m_vigBase.color.x, kFlashR, env),
+                                               Lerp(m_vigBase.color.y, kFlashG, env),
+                                               Lerp(m_vigBase.color.z, kFlashB, env), 1.0f};
     // 半径を縮め・ふちを広げて、赤を四隅だけでなく画面の内側まで届かせる。
-    vig->data.vigRadius     = Lerp(_vigBase.radius, kFlashRadius, env);
-    vig->data.vigSoftness   = Lerp(_vigBase.softness, kFlashSoftness, env);
+    vig->data.vigRadius     = Lerp(m_vigBase.radius, kFlashRadius, env);
+    vig->data.vigSoftness   = Lerp(m_vigBase.softness, kFlashSoftness, env);
     vig->data.vigPulseSpeed = 0.0f; // フラッシュ中は脈動させない
 
-    _flashActive = true;
+    m_flashActive = true;
 }
 
 // 演出系のシステムなので、物理やロジックが終わった後（PostUpdate等）に実行するのが安全です

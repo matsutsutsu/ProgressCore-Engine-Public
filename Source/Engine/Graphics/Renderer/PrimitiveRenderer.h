@@ -6,12 +6,12 @@
 #include <DirectXMath.h>
 // カリング計算用ヘッダ
 #include <DirectXCollision.h>
-#include <mutex> // ★マルチスレッド用
-#include <memory>  // ★追加
-#include <atomic>  // ★追加
-#include "Engine/Graphics/Renderer/InstanceBuffer.h" // ★インスタンスバッファ用
-#include "Engine/Graphics/RHI/PipelineState.h"  // ★PSO（金型）
-#include "Engine/Graphics/RHI/RenderContext.h"      // ★RenderContext
+#include <mutex> // マルチスレッド用
+#include <memory>
+#include <atomic>
+#include "Engine/Graphics/Renderer/InstanceBuffer.h" // インスタンスバッファ用
+#include "Engine/Graphics/RHI/PipelineState.h"  // PSO（金型）
+#include "Engine/Graphics/RHI/RenderContext.h"      // RenderContext
 
 // 頂点とインデックスのバッファをまとめる構造体
 struct GeometryBuffer
@@ -59,7 +59,7 @@ public:
     void SetCullingEnabled(bool enable) { m_cullingEnabled = enable; }
 
 	// ====================================================================
-    // ★ 描画登録関数の引数を変更（サイズ・半径は ECS 側で行列に焼き込む）
+    // 描画登録関数の引数を変更（サイズ・半径は ECS 側で行列に焼き込む）
     // ====================================================================
     void DrawSphere(const DirectX::XMFLOAT4X4& transform, const DirectX::XMFLOAT4& color);
     void DrawWireframeSphere(const DirectX::XMFLOAT4X4& transform, const DirectX::XMFLOAT4& color);
@@ -91,8 +91,8 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11InputLayout>		inputLayout;
 
 	// バラバラだったステートを廃止し、2つの「金型」に集約
-	PipelineState _psoOpaque;
-	PipelineState _psoWireframe;
+	PipelineState m_psoOpaque;
+	PipelineState m_psoWireframe;
 
 
 	GeometryBuffer	sphereBuffer;
@@ -102,20 +102,20 @@ private:
 	GeometryBuffer	coneBuffer;
 	GeometryBuffer  capsuleBuffer;
 
-	InstanceBuffer _instanceBuffer; // ★ GPUへの転送バッファ
+	InstanceBuffer m_instanceBuffer; // GPUへの転送バッファ
 
 	// =========================================================
 	// TLS (スレッドローカルストレージ) 管理機構
 	// =========================================================
-	uint64_t _instanceId; // このレンダラー固有のID
+	uint64_t m_instanceId; // このレンダラー固有のID
 	static std::atomic<uint64_t> s_instanceCounter;
 	
 
-	std::mutex _listMutex; // 初回のポインタ登録用
+	std::mutex m_listMutex; // 初回のポインタ登録用
 
 	// 全スレッドの「専用の袋」の場所(ポインタ)を記憶しておく名簿
 	// 生ポインタではなく、レンダラー自身がメモリの所有権を持つ（安全）
-	std::vector<std::unique_ptr<PrimitiveDrawList>> _drawLists;
+	std::vector<std::unique_ptr<PrimitiveDrawList>> m_drawLists;
 
 	// 自分のスレッドの袋を取得する関数
 	PrimitiveDrawList& GetDrawList();

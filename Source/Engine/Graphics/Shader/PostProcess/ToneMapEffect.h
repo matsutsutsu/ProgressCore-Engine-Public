@@ -26,8 +26,8 @@ public:
 
 private:
 
-    Microsoft::WRL::ComPtr<ID3D11VertexShader>  _vs;
-    Microsoft::WRL::ComPtr<ID3D11PixelShader>   _ps;
-    Microsoft::WRL::ComPtr<ID3D11Buffer>        _cbToneMap;
-    Microsoft::WRL::ComPtr<ID3D11SamplerState>  _sampler;
+    Microsoft::WRL::ComPtr<ID3D11VertexShader>  m_vs;
+    Microsoft::WRL::ComPtr<ID3D11PixelShader>   m_ps;
+    Microsoft::WRL::ComPtr<ID3D11Buffer>        m_cbToneMap;
+    Microsoft::WRL::ComPtr<ID3D11SamplerState>  m_sampler;
 };

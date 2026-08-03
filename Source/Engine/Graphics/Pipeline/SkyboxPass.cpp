@@ -17,22 +17,22 @@ void SkyboxPass::Initialize(const RenderServices& services)
         "Assets/Shader/SkyboxVS.cso",
         nullptr, 0,
         nullptr,
-        &_vertexShader);
+        &m_vertexShader);
     _ASSERT_EXPR(SUCCEEDED(hr), L"SkyboxVS のロードに失敗");
 
     hr = GpuResourceUtils::LoadPixelShader(
         device,
         "Assets/Shader/SkyboxPS.cso",
-        &_pixelShader);
+        &m_pixelShader);
     _ASSERT_EXPR(SUCCEEDED(hr), L"SkyboxPS のロードに失敗");
 
-    hr = GpuResourceUtils::CreateDynamicConstantBuffer(device, sizeof(CbSkybox), &_cbSkybox);
+    hr = GpuResourceUtils::CreateDynamicConstantBuffer(device, sizeof(CbSkybox), &m_cbSkybox);
     _ASSERT_EXPR(SUCCEEDED(hr), L"Skybox 用定数バッファの作成に失敗");
 
     hr = GpuResourceUtils::LoadTexture(
         device,
         "Assets/Textures/IBL/skybox_highres.dds",
-        &_skyboxTex);
+        &m_skyboxTex);
     _ASSERT_EXPR(SUCCEEDED(hr), L"Skybox 背景テクスチャのロードに失敗");
 }
 
@@ -50,23 +50,23 @@ void SkyboxPass::Execute(const RenderFrameContext& ctx)
     const DirectX::XMMATRIX invVP = DirectX::XMMatrixInverse(nullptr, V * P);
 
     D3D11_MAPPED_SUBRESOURCE mapped;
-    if (SUCCEEDED(dc->Map(_cbSkybox.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {
+    if (SUCCEEDED(dc->Map(m_cbSkybox.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {
         CbSkybox* cb = static_cast<CbSkybox*>(mapped.pData);
         DirectX::XMStoreFloat4x4(&cb->invViewProj, invVP);
-        dc->Unmap(_cbSkybox.Get(), 0);
+        dc->Unmap(m_cbSkybox.Get(), 0);
     }
 
-    dc->VSSetShader(_vertexShader.Get(), nullptr, 0);
-    dc->PSSetShader(_pixelShader.Get(), nullptr, 0);
-    dc->VSSetConstantBuffers(SLOT_CB_SKYBOX, 1, _cbSkybox.GetAddressOf());
-    dc->PSSetShaderResources(SLOT_SRV_SKYBOX_BG, 1, _skyboxTex.GetAddressOf());
+    dc->VSSetShader(m_vertexShader.Get(), nullptr, 0);
+    dc->PSSetShader(m_pixelShader.Get(), nullptr, 0);
+    dc->VSSetConstantBuffers(SLOT_CB_SKYBOX, 1, m_cbSkybox.GetAddressOf());
+    dc->PSSetShaderResources(SLOT_SRV_SKYBOX_BG, 1, m_skyboxTex.GetAddressOf());
 
     dc->IASetInputLayout(nullptr);
     dc->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
     dc->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
     dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    const RenderState* rs = _services->renderState;
+    const RenderState* rs = m_services->renderState;
 
     dc->OMSetBlendState(rs->GetBlendState(BlendState::Opaque), nullptr, 0xFFFFFFFF);
     dc->OMSetDepthStencilState(rs->GetDepthStencilState(DepthState::TestLessEqual), 0);

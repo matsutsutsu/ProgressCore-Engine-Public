@@ -3,7 +3,7 @@
 
 void SceneColorGrabPass::Execute(const RenderFrameContext& ctx)
 {
-    if (!_services || !_services->postProcess || !ctx.dc) return;
+    if (!m_services || !m_services->postProcess || !ctx.dc) return;
 
-    _services->postProcess->GrabSceneColor(ctx.dc);
+    m_services->postProcess->GrabSceneColor(ctx.dc);
 }

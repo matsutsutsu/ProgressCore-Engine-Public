@@ -3,7 +3,7 @@
 
 void TrailPass::Execute(const RenderFrameContext& ctx)
 {
-    if (!_services) return;
+    if (!m_services) return;
     // TrailSystem(R08)がこのフレームに積んだ頂点を描画してクリアする。
-    TrailRenderer::Instance().Render(*_services, ctx);
+    TrailRenderer::Instance().Render(*m_services, ctx);
 }

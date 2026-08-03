@@ -11,13 +11,13 @@ using namespace DirectX::SimpleMath;
 CameraListenerSystem::CameraListenerSystem() : SystemBase("CameraListenerSystem") {}
 
 void CameraListenerSystem::Update(float dt) {
-    if (!_world) return;
+    if (!m_world) return;
 
     // カメラとオーディオの両方が存在するかチェック
-    if (!_world->HasResource<Camera*>() || !_world->HasResource<std::shared_ptr<IAudioAPI>>()) return;
+    if (!m_world->HasResource<Camera*>() || !m_world->HasResource<std::shared_ptr<IAudioAPI>>()) return;
 
-    Camera* mainCamera = _world->GetResource<Camera*>();
-    auto& audioAPI = _world->GetResource<std::shared_ptr<IAudioAPI>>();
+    Camera* mainCamera = m_world->GetResource<Camera*>();
+    auto& audioAPI = m_world->GetResource<std::shared_ptr<IAudioAPI>>();
 
     if (!mainCamera || !audioAPI) return;
 

@@ -34,16 +34,16 @@ void NormalPrepass::Initialize(const RenderServices& services)
     // このパスが不透明ジオメトリの深度を先に確定させ、後続 OpaquePass は early-Z で
     // 隠れピクセルの重い PBR ピクセルシェーダをスキップできる。
     PipelineStateDesc desc = PipelineStateDesc::DefaultOpaque();
-    _pso = PipelineState(desc);
+    m_pso = PipelineState(desc);
 
-    _instanceBuffer.Create(services.device, 8192);
-    _normalBuffer.Create(services.device, services.screenWidth, services.screenHeight);
+    m_instanceBuffer.Create(services.device, 8192);
+    m_normalBuffer.Create(services.device, services.screenWidth, services.screenHeight);
 }
 
 void NormalPrepass::OnResize(uint32_t width, uint32_t height)
 {
-    if (_services && _services->device) {
-        _normalBuffer.Resize(_services->device, width, height);
+    if (m_services && m_services->device) {
+        m_normalBuffer.Resize(m_services->device, width, height);
     }
 }
 
@@ -52,15 +52,15 @@ void NormalPrepass::Execute(const RenderFrameContext& ctx)
     ID3D11DeviceContext* dc = ctx.dc;
     if (!dc) return;
 
-    RenderQueue* queue = _services->renderQueue;
-    ModelRenderer* renderer = _services->modelRenderer;
+    RenderQueue* queue = m_services->renderQueue;
+    ModelRenderer* renderer = m_services->modelRenderer;
     if (!queue || !renderer) return;
 
     // OpaquePass より前に実行されるため、ソート済みキーをここで構築する。
     // フレーム内で既に構築済みなら RenderQueue 側のガードで no-op になる（二重ソート防止）。
     queue->SortAndBuildBatches();
 
-    Shader* shader = _services->shaders->GetShader("NormalPrepass"_hash, _services->device);
+    Shader* shader = m_services->shaders->GetShader("NormalPrepass"_hash, m_services->device);
     if (!shader) return;
 
     // メッシュ単位フラスタムカリング用のワールド空間 frustum（OpaquePass と同一方式）。
@@ -75,12 +75,12 @@ void NormalPrepass::Execute(const RenderFrameContext& ctx)
     D3D11_VIEWPORT oldVP;
     dc->RSGetViewports(&numVP, &oldVP);
 
-    _normalBuffer.Activate(dc, ctx.targetDSV);
-    _pso.Apply(dc, _services->renderState);
+    m_normalBuffer.Activate(dc, ctx.targetDSV);
+    m_pso.Apply(dc, m_services->renderState);
 
     renderer->BindAllGlobalConstantBuffers(dc);
 
-    shader->Begin(dc, *_services, ctx);
+    shader->Begin(dc, *m_services, ctx);
     dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     const auto& sortKeys = queue->GetSortedKeys();
@@ -105,7 +105,7 @@ void NormalPrepass::Execute(const RenderFrameContext& ctx)
         // 従来どおり正しく描画される（early-Z の恩恵は無いが cutout では元々ほぼ効かない）。
         if (IsCutoutShader(current.shaderHash)) continue;
 
-        Shader* matShader = _services->shaders->GetShader(current.shaderHash, _services->device);
+        Shader* matShader = m_services->shaders->GetShader(current.shaderHash, m_services->device);
         if (matShader) {
             const PipelineState* matPso = matShader->GetPSO();
             if (matPso && matPso->IsBlendEnabled()) continue;
@@ -122,8 +122,8 @@ void NormalPrepass::Execute(const RenderFrameContext& ctx)
             // OpaquePass と同一の MeshCull ヘルパを使い、両パスのカリング基準を一致させる。
             const DirectX::BoundingBox localAABB = MeshCull::BuildLocalAABB(mesh);
 
-            _instanceScratch.clear();
-            _instanceScratch.reserve(batchCount);
+            m_instanceScratch.clear();
+            m_instanceScratch.reserve(batchCount);
             for (size_t k = 0; k < batchCount; ++k) {
                 const auto& cmd = opaqueCommands[sortKeys[batchStart + k].originalIndex];
                 InstanceData data;
@@ -131,62 +131,62 @@ void NormalPrepass::Execute(const RenderFrameContext& ctx)
                 if (isSkinned) {
                     // スキンドはカリングせず全数積む（変形は骨行列側。姿勢で AABB が変わるため安全側で除外）
                     DirectX::XMStoreFloat4x4(&data.world, DirectX::XMMatrixIdentity());
-                    _instanceScratch.push_back(data);
+                    m_instanceScratch.push_back(data);
                 }
                 else {
                     data.world = MeshCull::ComputeMeshWorld(mesh, cmd.worldMatrix);
-                    // ★ OpaquePass と同じメッシュ単位フラスタムカリング。視界外は積まない。
+                    // OpaquePass と同じメッシュ単位フラスタムカリング。視界外は積まない。
                     if (!MeshCull::IsMeshVisible(localAABB, data.world, frustum)) continue;
-                    _instanceScratch.push_back(data);
+                    m_instanceScratch.push_back(data);
                 }
             }
 
             // 可視インスタンスが 0 個なら、このメッシュの IA 設定・Map/Unmap・ドローを丸ごと回避する。
-            if (_instanceScratch.empty()) continue;
+            if (m_instanceScratch.empty()) continue;
 
             UINT stride = sizeof(ModelResource::Vertex), offset = 0;
             dc->IASetVertexBuffers(0, 1, mesh.data->vertexBuffer.GetAddressOf(), &stride, &offset);
             dc->IASetIndexBuffer(mesh.data->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
             if (isSkinned) {
-                // スキンドはカリングしていないため _instanceScratch.size() == batchCount
-                for (size_t k = 0; k < _instanceScratch.size(); ++k) {
+                // スキンドはカリングしていないため m_instanceScratch.size() == batchCount
+                for (size_t k = 0; k < m_instanceScratch.size(); ++k) {
                     const auto& cmd = opaqueCommands[sortKeys[batchStart + k].originalIndex];
-                    _instanceBuffer.Write(dc, &_instanceScratch[k], 1);
-                    _instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
+                    m_instanceBuffer.Write(dc, &m_instanceScratch[k], 1);
+                    m_instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
                     renderer->UpdateSkeletonConstants(dc, cmd.model->GetMeshes()[meshIdx]);
                     dc->DrawIndexedInstanced(static_cast<UINT>(mesh.data->indices.size()), 1, 0, 0, 0);
                 }
             }
             else {
-                // ★ batchCount ではなく「カリング後の可視インスタンス数」で描画する
-                const size_t visibleCount = _instanceScratch.size();
+                // batchCount ではなく「カリング後の可視インスタンス数」で描画する
+                const size_t visibleCount = m_instanceScratch.size();
                 size_t curOffset = 0;
                 while (curOffset < visibleCount) {
                     const size_t drawCount = (std::min)(
-                        visibleCount - curOffset, _instanceBuffer.GetMaxInstances());
-                    _instanceBuffer.Write(dc, _instanceScratch.data() + curOffset, drawCount);
-                    _instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
+                        visibleCount - curOffset, m_instanceBuffer.GetMaxInstances());
+                    m_instanceBuffer.Write(dc, m_instanceScratch.data() + curOffset, drawCount);
+                    m_instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
                     dc->DrawIndexedInstanced(static_cast<UINT>(mesh.data->indices.size()),
                         static_cast<UINT>(drawCount), 0, 0, 0);
                     curOffset += drawCount;
                 }
             }
-            _instanceBuffer.Unbind(dc, SLOT_SRV_INSTANCE);
+            m_instanceBuffer.Unbind(dc, SLOT_SRV_INSTANCE);
         }
     }
 
-    shader->End(dc, *_services);
+    shader->End(dc, *m_services);
 
     dc->OMSetRenderTargets(1, oldRTV.GetAddressOf(), oldDSV.Get());
     dc->RSSetViewports(1, &oldVP);
 
-    ID3D11ShaderResourceView* normalSRV = _normalBuffer.GetSRV();
+    ID3D11ShaderResourceView* normalSRV = m_normalBuffer.GetSRV();
     dc->PSSetShaderResources(SLOT_SRV_SCENE_NORMAL, 1, &normalSRV);
     Graphics::Instance().SetSceneNormalSRV(normalSRV);
 
     // デバッグ表示へ登録（RTV は上で解除済み。SRV として安全に読める）
     RenderDebugRegistry::Instance().Register({
         "NormalPrepass", normalSRV,
-        _normalBuffer.GetWidth(), _normalBuffer.GetHeight(), DebugTexKind::Normal });
+        m_normalBuffer.GetWidth(), m_normalBuffer.GetHeight(), DebugTexKind::Normal });
 }

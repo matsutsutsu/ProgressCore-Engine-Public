@@ -4,7 +4,7 @@
 void ParticlePass::Execute(const RenderFrameContext& ctx)
 {
 
-    if (_services->particleRenderer) {
-        _services->particleRenderer->Render(*_services,ctx);
+    if (m_services->particleRenderer) {
+        m_services->particleRenderer->Render(*m_services,ctx);
     }
 }

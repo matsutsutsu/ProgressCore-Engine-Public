@@ -163,7 +163,7 @@ struct ComponentSerializer<GPUParticleComponent>
 
         comp.isInitialized = false;
         comp.needsGpuInit  = true;
-        comp._staticDirty  = true;
+        comp.m_staticDirty  = true;
         comp.burstTrigger  = 0.0f;
     }
 };

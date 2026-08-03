@@ -22,9 +22,9 @@
 
 void NavPathfindingSystem::Update(float dt) {
 
-    if (!_world || !_world->HasResource<NavigationData>()) return;
+    if (!m_world || !m_world->HasResource<NavigationData>()) return;
 
-    auto& navData = _world->GetResource<NavigationData>();
+    auto& navData = m_world->GetResource<NavigationData>();
     dtNavMeshQuery* navQuery = navData.navQuery;
     if (!navQuery) return;
 

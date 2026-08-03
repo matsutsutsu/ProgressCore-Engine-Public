@@ -14,10 +14,10 @@ ErrorShader::ErrorShader(ID3D11Device* device)
         "Assets/Shader/ErrorVS.cso",
         ModelResource::InputElementDescs.data(),
         static_cast<UINT>(ModelResource::InputElementDescs.size()),
-        _inputLayout.GetAddressOf(),
-        _vs.GetAddressOf());
+        m_inputLayout.GetAddressOf(),
+        m_vs.GetAddressOf());
 
-    GpuResourceUtils::LoadPixelShader(device, "Assets/Shader/ErrorPS.cso", _ps.GetAddressOf());
+    GpuResourceUtils::LoadPixelShader(device, "Assets/Shader/ErrorPS.cso", m_ps.GetAddressOf());
 
     // CB/テクスチャは持たないが、基底の解放処理(UnbindResources)を共通化するため呼ぶ。
     InitializeReflection(device, "Assets/Shader/ErrorPS.cso");
@@ -25,7 +25,7 @@ ErrorShader::ErrorShader(ID3D11Device* device)
 
 void ErrorShader::Begin(ID3D11DeviceContext* dc, const RenderServices&, const RenderFrameContext&)
 {
-    ApplyShaderPipeline(dc, _vs.Get(), _ps.Get(), _inputLayout.Get());
+    ApplyShaderPipeline(dc, m_vs.Get(), m_ps.Get(), m_inputLayout.Get());
 }
 
 void ErrorShader::End(ID3D11DeviceContext* dc, const RenderServices&)

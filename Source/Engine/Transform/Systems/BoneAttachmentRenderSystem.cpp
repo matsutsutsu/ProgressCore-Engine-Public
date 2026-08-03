@@ -23,8 +23,8 @@ void BoneAttachmentRenderSystem::ResolveRenderAttachment(EntityID id, TransformC
     const EntityID parentId = trans.parent;
     if (parentId == 0) return;
 
-    auto* parentTrans = _world->GetComponent<TransformComponent>(parentId);
-    auto* parentModel = _world->GetComponent<ModelComponent>(parentId);
+    auto* parentTrans = m_world->GetComponent<TransformComponent>(parentId);
+    auto* parentModel = m_world->GetComponent<ModelComponent>(parentId);
     if (!parentTrans || !parentModel) return;
 
     Model* model = parentModel->GetModel();
@@ -57,7 +57,7 @@ void BoneAttachmentRenderSystem::PropagateRenderSubtree(EntityID firstChild, con
 
     EntityID c = firstChild;
     while (c != 0) {
-        auto* ct = _world->GetComponent<TransformComponent>(c);
+        auto* ct = m_world->GetComponent<TransformComponent>(c);
         if (!ct) break;
         const EntityID next = ct->nextSiblingID;
         stack.emplace_back(c, parentRenderWorld);
@@ -68,7 +68,7 @@ void BoneAttachmentRenderSystem::PropagateRenderSubtree(EntityID firstChild, con
         const auto [cid, pw] = stack.back();
         stack.pop_back();
 
-        auto* t = _world->GetComponent<TransformComponent>(cid);
+        auto* t = m_world->GetComponent<TransformComponent>(cid);
         if (!t) continue;
 
         const XMMATRIX world = XMMatrixMultiply(t->ComposeLocalMatrix(), XMLoadFloat4x4(&pw));
@@ -78,7 +78,7 @@ void BoneAttachmentRenderSystem::PropagateRenderSubtree(EntityID firstChild, con
 
         EntityID gc = t->firstChildID;
         while (gc != 0) {
-            auto* gct = _world->GetComponent<TransformComponent>(gc);
+            auto* gct = m_world->GetComponent<TransformComponent>(gc);
             if (!gct) break;
             const EntityID next = gct->nextSiblingID;
             stack.emplace_back(gc, world4);

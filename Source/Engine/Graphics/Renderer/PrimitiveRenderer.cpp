@@ -28,7 +28,7 @@ PrimitiveRenderer::PrimitiveRenderer(ID3D11Device* device)
 {
 
     // インスタンスごとの固有IDを発行する（シーン再読み込み時のバグ防止）
-    _instanceId = ++s_instanceCounter;
+    m_instanceId = ++s_instanceCounter;
 
 	// ==============================================================
     // 1. シェーダーと入力レイアウトの作成 (既存コードそのまま)
@@ -61,15 +61,15 @@ PrimitiveRenderer::PrimitiveRenderer(ID3D11Device* device)
 	// 2. PSO（金型）の作成 と インスタンスバッファの初期化
 	// ==============================================================
 	// ① 不透明（塗りつぶし）用
-	_psoOpaque = PipelineState(PipelineStateDesc::DefaultOpaque());
+	m_psoOpaque = PipelineState(PipelineStateDesc::DefaultOpaque());
 
 	// ② ワイヤーフレーム用（ベースをもらって、Rasterizerだけ書き換える）
 	PipelineStateDesc wireDesc = PipelineStateDesc::DefaultOpaque();
 	wireDesc.rasterizer = RasterizerState::WireCullNone; // 線画＆裏面も描画
-	_psoWireframe = PipelineState(wireDesc);
+	m_psoWireframe = PipelineState(wireDesc);
 
 	// インスタンスバッファ生成
-	_instanceBuffer.Create(device);
+	m_instanceBuffer.Create(device);
 
 
 	// ==============================================================
@@ -113,8 +113,8 @@ PrimitiveDrawList& PrimitiveRenderer::GetDrawList() {
     thread_local uint64_t myRendererId = 0;
 
     // もし「今のレンダラー」に未登録なら、新しい袋を作ってもらう
-    if (myRendererId != _instanceId) {
-        std::lock_guard<std::mutex> lock(_listMutex);
+    if (myRendererId != m_instanceId) {
+        std::lock_guard<std::mutex> lock(m_listMutex);
 
         // メモリの確保(袋の作成)はレンダラー側で行い、所有権を渡す
         auto newList = std::make_unique<PrimitiveDrawList>();
@@ -129,9 +129,9 @@ PrimitiveDrawList& PrimitiveRenderer::GetDrawList() {
         // ※よく使う図形はあらかじめ巨大な枠を確保しておく
 
         myLocalList = newList.get();
-        _drawLists.push_back(std::move(newList)); // レンダラーが寿命を管理する
+        m_drawLists.push_back(std::move(newList)); // レンダラーが寿命を管理する
 
-        myRendererId = _instanceId; // 登録完了
+        myRendererId = m_instanceId; // 登録完了
     }
     // ロックなしで爆速で返す
     return *myLocalList;
@@ -186,8 +186,8 @@ void PrimitiveRenderer::Render(ID3D11DeviceContext* dc,
             dc->IASetVertexBuffers(0, 1, geo.vertexBuffer.GetAddressOf(), &stride, &offset);
             dc->IASetIndexBuffer(geo.indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
-            std::lock_guard<std::mutex> lock(_listMutex);
-            for (auto& listPtr : _drawLists) {
+            std::lock_guard<std::mutex> lock(m_listMutex);
+            for (auto& listPtr : m_drawLists) {
                 std::vector<InstanceData>& instances = (*listPtr).*memberPtr;
                 if (instances.empty()) continue;
 
@@ -200,8 +200,8 @@ void PrimitiveRenderer::Render(ID3D11DeviceContext* dc,
                     std::vector<InstanceData> chunk(
                         instances.begin() + drawOffset,
                         instances.begin() + drawOffset + drawCount);
-                    _instanceBuffer.Write(dc, chunk);
-                    _instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
+                    m_instanceBuffer.Write(dc, chunk);
+                    m_instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
                     dc->DrawIndexedInstanced(geo.indexCount, static_cast<UINT>(drawCount), 0, 0, 0);
                     drawOffset += drawCount;
                 }
@@ -210,19 +210,19 @@ void PrimitiveRenderer::Render(ID3D11DeviceContext* dc,
         };
 
     // 6. 全図形を一気に描画
-    DrawInstanced(boxBuffer, _psoOpaque, &PrimitiveDrawList::opaqueBoxes);
-    DrawInstanced(boxBuffer, _psoWireframe, &PrimitiveDrawList::wireframeBoxes);
-    DrawInstanced(sphereBuffer, _psoOpaque, &PrimitiveDrawList::opaqueSpheres);
-    DrawInstanced(sphereBuffer, _psoWireframe, &PrimitiveDrawList::wireframeSpheres);
-    DrawInstanced(cylinderBuffer, _psoOpaque, &PrimitiveDrawList::opaqueCylinders);
-    DrawInstanced(cylinderBuffer, _psoWireframe, &PrimitiveDrawList::wireframeCylinders);
-    DrawInstanced(coneBuffer, _psoOpaque, &PrimitiveDrawList::opaqueCones);
-    DrawInstanced(coneBuffer, _psoWireframe, &PrimitiveDrawList::wireframeCones);
-    DrawInstanced(capsuleBuffer, _psoOpaque, &PrimitiveDrawList::opaqueCapsules);
-    DrawInstanced(capsuleBuffer, _psoWireframe, &PrimitiveDrawList::wireframeCapsules);
+    DrawInstanced(boxBuffer, m_psoOpaque, &PrimitiveDrawList::opaqueBoxes);
+    DrawInstanced(boxBuffer, m_psoWireframe, &PrimitiveDrawList::wireframeBoxes);
+    DrawInstanced(sphereBuffer, m_psoOpaque, &PrimitiveDrawList::opaqueSpheres);
+    DrawInstanced(sphereBuffer, m_psoWireframe, &PrimitiveDrawList::wireframeSpheres);
+    DrawInstanced(cylinderBuffer, m_psoOpaque, &PrimitiveDrawList::opaqueCylinders);
+    DrawInstanced(cylinderBuffer, m_psoWireframe, &PrimitiveDrawList::wireframeCylinders);
+    DrawInstanced(coneBuffer, m_psoOpaque, &PrimitiveDrawList::opaqueCones);
+    DrawInstanced(coneBuffer, m_psoWireframe, &PrimitiveDrawList::wireframeCones);
+    DrawInstanced(capsuleBuffer, m_psoOpaque, &PrimitiveDrawList::opaqueCapsules);
+    DrawInstanced(capsuleBuffer, m_psoWireframe, &PrimitiveDrawList::wireframeCapsules);
 
     // 7. クリーンアップ
-    _instanceBuffer.Unbind(dc, SLOT_SRV_INSTANCE);
+    m_instanceBuffer.Unbind(dc, SLOT_SRV_INSTANCE);
     dc->RSSetState(nullptr);
     dc->OMSetDepthStencilState(nullptr, 0);
     dc->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF);

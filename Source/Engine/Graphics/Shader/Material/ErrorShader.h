@@ -24,7 +24,7 @@ public:
     void End(ID3D11DeviceContext* dc, const RenderServices& s) override;
 
 private:
-    Microsoft::WRL::ComPtr<ID3D11VertexShader> _vs;
-    Microsoft::WRL::ComPtr<ID3D11PixelShader>  _ps;
-    Microsoft::WRL::ComPtr<ID3D11InputLayout>  _inputLayout;
+    Microsoft::WRL::ComPtr<ID3D11VertexShader> m_vs;
+    Microsoft::WRL::ComPtr<ID3D11PixelShader>  m_ps;
+    Microsoft::WRL::ComPtr<ID3D11InputLayout>  m_inputLayout;
 };

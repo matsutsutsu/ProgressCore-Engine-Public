@@ -13,10 +13,10 @@ void NavMeshWindow::DrawContents(EditorContext& context)
     // =======================================================
     // 1. 基本パラメータ (エージェントのサイズや移動能力)
     // =======================================================
-    ImGui::DragFloat("Agent Radius (太さ)", &_navSettings.agentRadius, 0.05f, 0.1f, 5.0f);
-    ImGui::DragFloat("Agent Height (身長)", &_navSettings.agentHeight, 0.1f, 0.1f, 5.0f);
-    ImGui::DragFloat("Max Climb (段差)", &_navSettings.agentMaxClimb, 0.05f, 0.0f, 2.0f);
-    ImGui::DragFloat("Max Slope (斜面角度)", &_navSettings.agentMaxSlope, 1.0f, 0.0f, 90.0f);
+    ImGui::DragFloat("Agent Radius (太さ)", &m_navSettings.agentRadius, 0.05f, 0.1f, 5.0f);
+    ImGui::DragFloat("Agent Height (身長)", &m_navSettings.agentHeight, 0.1f, 0.1f, 5.0f);
+    ImGui::DragFloat("Max Climb (段差)", &m_navSettings.agentMaxClimb, 0.05f, 0.0f, 2.0f);
+    ImGui::DragFloat("Max Slope (斜面角度)", &m_navSettings.agentMaxSlope, 1.0f, 0.0f, 90.0f);
 
     ImGui::Spacing();
 
@@ -25,10 +25,10 @@ void NavMeshWindow::DrawContents(EditorContext& context)
     // ※普段は隠しておき、精度を追い込みたい時だけ開く設計
     // =======================================================
     if (ImGui::CollapsingHeader("Advanced Settings")) {
-        ImGui::DragFloat("Cell Size (XY解像度)", &_navSettings.cellSize, 0.05f, 0.1f, 1.0f);
-        ImGui::DragFloat("Cell Height (Z解像度)", &_navSettings.cellHeight, 0.05f, 0.1f, 1.0f);
-        ImGui::DragFloat("Region Min Size", &_navSettings.regionMinSize, 1.0f, 0.0f, 50.0f);
-        ImGui::DragFloat("Region Merge Size", &_navSettings.regionMergeSize, 1.0f, 0.0f, 50.0f);
+        ImGui::DragFloat("Cell Size (XY解像度)", &m_navSettings.cellSize, 0.05f, 0.1f, 1.0f);
+        ImGui::DragFloat("Cell Height (Z解像度)", &m_navSettings.cellHeight, 0.05f, 0.1f, 1.0f);
+        ImGui::DragFloat("Region Min Size", &m_navSettings.regionMinSize, 1.0f, 0.0f, 50.0f);
+        ImGui::DragFloat("Region Merge Size", &m_navSettings.regionMergeSize, 1.0f, 0.0f, 50.0f);
     }
 
     ImGui::Spacing();
@@ -46,7 +46,7 @@ void NavMeshWindow::DrawContents(EditorContext& context)
     if (ImGui::Button("Bake NavMesh", ImVec2(-1, 40))) {
         // コンテキストから最新のWorldを渡し、Bakeを実行する
         // ※内部で以前のNavMeshメモリは解放(dtFree)されるため、何度押しても安全
-        NavMeshBuilder::BuildNavMesh(*context.world, _navSettings);
+        NavMeshBuilder::BuildNavMesh(*context.world, m_navSettings);
     }
 
     ImGui::PopStyleColor(3);

@@ -17,7 +17,7 @@ void MaterialSetupSystem::Update(float dt)
 
     // 2. 足りないものだけを【個別に】付与する
     for (auto id : needMaterial) {
-        _world->AddComponent<MaterialComponent>(id);
+        m_world->AddComponent<MaterialComponent>(id);
     }
   
 }

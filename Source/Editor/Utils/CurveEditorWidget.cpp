@@ -62,8 +62,8 @@ void AddDashedLine(ImDrawList *dl, const ImVec2 &a, const ImVec2 &b, ImU32 col, 
 // ===========================================================================
 void CurveEditorWidget::SetActiveCurve(int idx)
 {
-    _activeCurve = idx;
-    _sel.clear();
+    m_activeCurve = idx;
+    m_sel.clear();
 }
 
 void CurveEditorWidget::FrameAll(const std::vector<CurveData *> &curves)
@@ -83,28 +83,28 @@ void CurveEditorWidget::FrameAll(const std::vector<CurveData *> &curves)
     }
     if (!any)
     {
-        _viewMinX = 0.0f;
-        _viewMaxX = 1.0f;
-        _viewMinY = -0.2f;
-        _viewMaxY = 1.2f;
+        m_viewMinX = 0.0f;
+        m_viewMaxX = 1.0f;
+        m_viewMinY = -0.2f;
+        m_viewMaxY = 1.2f;
         return;
     }
     float padX = std::max(0.05f, (maxT - minT) * 0.08f);
     float padY = std::max(0.05f, (maxV - minV) * 0.15f);
-    _viewMinX  = minT - padX;
-    _viewMaxX  = maxT + padX;
-    _viewMinY  = minV - padY;
-    _viewMaxY  = maxV + padY;
+    m_viewMinX  = minT - padX;
+    m_viewMaxX  = maxT + padX;
+    m_viewMinY  = minV - padY;
+    m_viewMaxY  = maxV + padY;
 }
 
 void CurveEditorWidget::DeleteSelected(CurveData *curve, bool &modified)
 {
-    if (!curve || _sel.empty()) return;
+    if (!curve || m_sel.empty()) return;
     curve->keys.erase(
         std::remove_if(curve->keys.begin(), curve->keys.end(),
-            [this](const CurveKeyframe &k) { return _sel.count(k.id) > 0; }),
+            [this](const CurveKeyframe &k) { return m_sel.count(k.id) > 0; }),
         curve->keys.end());
-    _sel.clear();
+    m_sel.clear();
     curve->RecalculateTangents();
     modified = true;
 }
@@ -116,7 +116,7 @@ bool CurveEditorWidget::Draw(const char *strId, const std::vector<CurveData *> &
         ImGui::TextDisabled("表示するカーブがありません。");
         return false;
     }
-    if (_activeCurve < 0 || _activeCurve >= (int)curves.size()) _activeCurve = 0;
+    if (m_activeCurve < 0 || m_activeCurve >= (int)curves.size()) m_activeCurve = 0;
     if (opts.fitRequested) FrameAll(curves);
 
     bool modified = false;
@@ -136,9 +136,9 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
     ImGuiIO &io       = ImGui::GetIO();
 
     // float メンバ → ローカル ImVec2（末尾で書き戻す）
-    ImVec2 _viewMin(_viewMinX, _viewMinY);
-    ImVec2 _viewMax(_viewMaxX, _viewMaxY);
-    auto  &_selectedKeys = _sel;
+    ImVec2 viewMin(m_viewMinX, m_viewMinY);
+    ImVec2 viewMax(m_viewMaxX, m_viewMaxY);
+    auto  &m_selectedKeys = m_sel;
 
     const ImVec2 canvasPos  = ImGui::GetCursorScreenPos();
     ImVec2       canvasSize = ImGui::GetContentRegionAvail();
@@ -146,19 +146,19 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
     if (canvasSize.x < 50.0f) canvasSize.x = 50.0f;
     const ImVec2 canvasEnd = ImVec2(canvasPos.x + canvasSize.x, canvasPos.y + canvasSize.y);
 
-    float spanX = _viewMax.x - _viewMin.x;
-    float spanY = _viewMax.y - _viewMin.y;
+    float spanX = viewMax.x - viewMin.x;
+    float spanY = viewMax.y - viewMin.y;
     if (spanX < 1e-6f) spanX = 1e-6f;
     if (spanY < 1e-6f) spanY = 1e-6f;
 
     auto ToScreen = [&](float t, float v) -> ImVec2 {
-        float x = canvasPos.x + (t - _viewMin.x) / spanX * canvasSize.x;
-        float y = canvasPos.y + canvasSize.y - (v - _viewMin.y) / spanY * canvasSize.y;
+        float x = canvasPos.x + (t - viewMin.x) / spanX * canvasSize.x;
+        float y = canvasPos.y + canvasSize.y - (v - viewMin.y) / spanY * canvasSize.y;
         return ImVec2(x, y);
     };
     auto ToCurve = [&](ImVec2 s) -> ImVec2 {
-        float t = _viewMin.x + (s.x - canvasPos.x) / canvasSize.x * spanX;
-        float v = _viewMin.y + (canvasPos.y + canvasSize.y - s.y) / canvasSize.y * spanY;
+        float t = viewMin.x + (s.x - canvasPos.x) / canvasSize.x * spanX;
+        float v = viewMin.y + (canvasPos.y + canvasSize.y - s.y) / canvasSize.y * spanY;
         return ImVec2(t, v);
     };
 
@@ -172,7 +172,7 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
     dl->PushClipRect(canvasPos, canvasEnd, true);
     dl->AddRectFilled(canvasPos, canvasEnd, IM_COL32(24, 24, 27, 255));
 
-    CurveData *curve = (_activeCurve >= 0 && _activeCurve < (int)curves.size()) ? curves[_activeCurve] : nullptr;
+    CurveData *curve = (m_activeCurve >= 0 && m_activeCurve < (int)curves.size()) ? curves[m_activeCurve] : nullptr;
 
     // --- パン（右 or 中ドラッグ） ---
     const bool panning = hovered && (ImGui::IsMouseDragging(ImGuiMouseButton_Right, 2.0f) ||
@@ -182,12 +182,12 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
         ImVec2 d   = io.MouseDelta;
         float  dcx = d.x / canvasSize.x * spanX;
         float  dcy = d.y / canvasSize.y * spanY;
-        _viewMin.x -= dcx;
-        _viewMax.x -= dcx;
-        _viewMin.y += dcy;
-        _viewMax.y += dcy;
-        spanX = _viewMax.x - _viewMin.x;
-        spanY = _viewMax.y - _viewMin.y;
+        viewMin.x -= dcx;
+        viewMax.x -= dcx;
+        viewMin.y += dcy;
+        viewMax.y += dcy;
+        spanX = viewMax.x - viewMin.x;
+        spanY = viewMax.y - viewMin.y;
     }
 
     // --- ズーム（ホイール、カーソル中心。Ctrl:横のみ Shift:縦のみ） ---
@@ -199,26 +199,26 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
         const bool   onlyY = io.KeyShift && !io.KeyCtrl;
         if (!onlyY)
         {
-            _viewMin.x = pivot.x + (_viewMin.x - pivot.x) * zoom;
-            _viewMax.x = pivot.x + (_viewMax.x - pivot.x) * zoom;
+            viewMin.x = pivot.x + (viewMin.x - pivot.x) * zoom;
+            viewMax.x = pivot.x + (viewMax.x - pivot.x) * zoom;
         }
         if (!onlyX)
         {
-            _viewMin.y = pivot.y + (_viewMin.y - pivot.y) * zoom;
-            _viewMax.y = pivot.y + (_viewMax.y - pivot.y) * zoom;
+            viewMin.y = pivot.y + (viewMin.y - pivot.y) * zoom;
+            viewMax.y = pivot.y + (viewMax.y - pivot.y) * zoom;
         }
-        spanX = _viewMax.x - _viewMin.x;
-        spanY = _viewMax.y - _viewMin.y;
+        spanX = viewMax.x - viewMin.x;
+        spanY = viewMax.y - viewMin.y;
     }
 
     // --- グリッド & 目盛り ---
     {
         const float stepX  = NiceStep(spanX, canvasSize.x / 80.0f);
         const float stepY  = NiceStep(spanY, canvasSize.y / 45.0f);
-        float       startX = std::ceil(_viewMin.x / stepX) * stepX;
-        for (float gx = startX; gx <= _viewMax.x; gx += stepX)
+        float       startX = std::ceil(viewMin.x / stepX) * stepX;
+        for (float gx = startX; gx <= viewMax.x; gx += stepX)
         {
-            ImVec2 p    = ToScreen(gx, _viewMin.y);
+            ImVec2 p    = ToScreen(gx, viewMin.y);
             bool   axis = std::fabs(gx) < stepX * 0.001f;
             dl->AddLine(ImVec2(p.x, canvasPos.y), ImVec2(p.x, canvasEnd.y),
                 axis ? IM_COL32(120, 120, 120, 160) : IM_COL32(255, 255, 255, 18), axis ? 1.5f : 1.0f);
@@ -226,10 +226,10 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
             FormatTick(buf, sizeof(buf), gx, stepX);
             dl->AddText(ImVec2(p.x + 3, canvasEnd.y - 16), IM_COL32(170, 170, 175, 255), buf);
         }
-        float startY = std::ceil(_viewMin.y / stepY) * stepY;
-        for (float gy = startY; gy <= _viewMax.y; gy += stepY)
+        float startY = std::ceil(viewMin.y / stepY) * stepY;
+        for (float gy = startY; gy <= viewMax.y; gy += stepY)
         {
-            ImVec2 p    = ToScreen(_viewMin.x, gy);
+            ImVec2 p    = ToScreen(viewMin.x, gy);
             bool   axis = std::fabs(gy) < stepY * 0.001f;
             dl->AddLine(ImVec2(canvasPos.x, p.y), ImVec2(canvasEnd.x, p.y),
                 axis ? IM_COL32(120, 120, 120, 160) : IM_COL32(255, 255, 255, 18), axis ? 1.5f : 1.0f);
@@ -245,7 +245,7 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
     {
         const CurveData *c = curves[ci];
         if (!c || !c->visible || c->empty()) continue;
-        const bool isActive = (ci == _activeCurve);
+        const bool isActive = (ci == m_activeCurve);
 
         ImVec4      base    = ImGui::ColorConvertU32ToFloat4(c->color);
         ImU32       lineCol = IM_COL32((int)(base.x * 255), (int)(base.y * 255), (int)(base.z * 255), isActive ? 255 : 90);
@@ -253,7 +253,7 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
         const float firstT  = c->MinTime();
         const float lastT   = c->MaxTime();
 
-        ImVec2 prev = ToScreen(_viewMin.x, c->Evaluate(_viewMin.x));
+        ImVec2 prev = ToScreen(viewMin.x, c->Evaluate(viewMin.x));
         for (float sx = canvasPos.x + px; sx <= canvasEnd.x; sx += px)
         {
             float  t    = ToCurve(ImVec2(sx, 0)).x;
@@ -305,7 +305,7 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
     {
         if (hovered)
         {
-            for (uint32_t id : _selectedKeys)
+            for (uint32_t id : m_selectedKeys)
             {
                 int idx = curve->IndexOfId(id);
                 if (idx < 0) continue;
@@ -344,58 +344,58 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
         {
             ImVec2 cp  = ToCurve(io.MousePos);
             int    idx = curve->AddKey(cp.x, cp.y);
-            _selectedKeys.clear();
-            _selectedKeys.insert(curve->keys[idx].id);
+            m_selectedKeys.clear();
+            m_selectedKeys.insert(curve->keys[idx].id);
             modified = true;
         }
         else if (hoverHandle != 0)
         {
-            _drag       = (hoverHandle < 0) ? Drag::TangentIn : Drag::TangentOut;
-            _tangentKey = hoverHandleKeyId;
+            m_drag       = (hoverHandle < 0) ? Drag::TangentIn : Drag::TangentOut;
+            m_tangentKey = hoverHandleKeyId;
         }
         else if (hoverKeyIdx >= 0)
         {
             uint32_t id = curve->keys[hoverKeyIdx].id;
             if (io.KeyCtrl)
             {
-                if (_selectedKeys.count(id))
-                    _selectedKeys.erase(id);
+                if (m_selectedKeys.count(id))
+                    m_selectedKeys.erase(id);
                 else
-                    _selectedKeys.insert(id);
+                    m_selectedKeys.insert(id);
             }
-            else if (!_selectedKeys.count(id))
+            else if (!m_selectedKeys.count(id))
             {
-                _selectedKeys.clear();
-                _selectedKeys.insert(id);
+                m_selectedKeys.clear();
+                m_selectedKeys.insert(id);
             }
-            _drag       = Drag::MoveKeys;
-            _dragStartX = ToCurve(io.MousePos).x;
-            _dragStartY = ToCurve(io.MousePos).y;
-            _dragOrig.clear();
-            for (uint32_t sid : _selectedKeys)
+            m_drag       = Drag::MoveKeys;
+            m_dragStartX = ToCurve(io.MousePos).x;
+            m_dragStartY = ToCurve(io.MousePos).y;
+            m_dragOrig.clear();
+            for (uint32_t sid : m_selectedKeys)
             {
                 int si = curve->IndexOfId(sid);
-                if (si >= 0) _dragOrig.push_back({sid, {curve->keys[si].time, curve->keys[si].value}});
+                if (si >= 0) m_dragOrig.push_back({sid, {curve->keys[si].time, curve->keys[si].value}});
             }
         }
         else
         {
-            _drag      = Drag::BoxSelect;
-            _boxStartX = io.MousePos.x;
-            _boxStartY = io.MousePos.y;
-            if (!io.KeyCtrl) _selectedKeys.clear();
+            m_drag      = Drag::BoxSelect;
+            m_boxStartX = io.MousePos.x;
+            m_boxStartY = io.MousePos.y;
+            if (!io.KeyCtrl) m_selectedKeys.clear();
         }
     }
 
     // 左ドラッグ中
-    if (curve && active && _drag != Drag::None)
+    if (curve && active && m_drag != Drag::None)
     {
         ImVec2 cur = ToCurve(io.MousePos);
-        if (_drag == Drag::MoveKeys)
+        if (m_drag == Drag::MoveKeys)
         {
-            float ddx = cur.x - _dragStartX;
-            float ddy = cur.y - _dragStartY;
-            for (auto &pr : _dragOrig)
+            float ddx = cur.x - m_dragStartX;
+            float ddy = cur.y - m_dragStartY;
+            for (auto &pr : m_dragOrig)
             {
                 int si = curve->IndexOfId(pr.first);
                 if (si < 0) continue;
@@ -415,9 +415,9 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
             curve->RecalculateTangents();
             modified = true;
         }
-        else if (_drag == Drag::TangentIn || _drag == Drag::TangentOut)
+        else if (m_drag == Drag::TangentIn || m_drag == Drag::TangentOut)
         {
-            int idx = curve->IndexOfId(_tangentKey);
+            int idx = curve->IndexOfId(m_tangentKey);
             if (idx >= 0)
             {
                 CurveKeyframe &k     = curve->keys[idx];
@@ -427,7 +427,7 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
 
                 if (io.KeyAlt)
                 {
-                    if (_drag == Drag::TangentIn)
+                    if (m_drag == Drag::TangentIn)
                     {
                         k.inTangent = slope;
                         k.tangentIn = TangentMode::Broken;
@@ -448,9 +448,9 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
                 modified = true;
             }
         }
-        else if (_drag == Drag::BoxSelect)
+        else if (m_drag == Drag::BoxSelect)
         {
-            ImVec2 a(_boxStartX, _boxStartY), b = io.MousePos;
+            ImVec2 a(m_boxStartX, m_boxStartY), b = io.MousePos;
             dl->AddRectFilled(ImVec2(std::min(a.x, b.x), std::min(a.y, b.y)),
                 ImVec2(std::max(a.x, b.x), std::max(a.y, b.y)), IM_COL32(120, 170, 255, 40));
             dl->AddRect(ImVec2(std::min(a.x, b.x), std::min(a.y, b.y)),
@@ -459,25 +459,25 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
     }
 
     // 左ドラッグ終了
-    if (curve && deactivated && _drag != Drag::None)
+    if (curve && deactivated && m_drag != Drag::None)
     {
-        if (_drag == Drag::BoxSelect)
+        if (m_drag == Drag::BoxSelect)
         {
-            ImVec2 a(_boxStartX, _boxStartY), b = io.MousePos;
+            ImVec2 a(m_boxStartX, m_boxStartY), b = io.MousePos;
             float  x0 = std::min(a.x, b.x), x1 = std::max(a.x, b.x);
             float  y0 = std::min(a.y, b.y), y1 = std::max(a.y, b.y);
             for (const auto &k : curve->keys)
             {
                 ImVec2 sp = ToScreen(k.time, k.value);
-                if (sp.x >= x0 && sp.x <= x1 && sp.y >= y0 && sp.y <= y1) _selectedKeys.insert(k.id);
+                if (sp.x >= x0 && sp.x <= x1 && sp.y >= y0 && sp.y <= y1) m_selectedKeys.insert(k.id);
             }
         }
-        _drag = Drag::None;
-        _dragOrig.clear();
+        m_drag = Drag::None;
+        m_dragOrig.clear();
     }
 
     // Deleteキー
-    if (hovered && !_selectedKeys.empty())
+    if (hovered && !m_selectedKeys.empty())
     {
 #if defined(IMGUI_VERSION_NUM) && IMGUI_VERSION_NUM >= 18700
         if (ImGui::IsKeyPressed(ImGuiKey_Delete, false))
@@ -494,9 +494,9 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
         if (std::fabs(dd.x) < 3.0f && std::fabs(dd.y) < 3.0f)
         {
             ImVec2 cp = ToCurve(io.MousePos);
-            _ctxX     = cp.x;
-            _ctxY     = cp.y;
-            _ctxKey   = (hoverKeyIdx >= 0 && curve) ? curve->keys[hoverKeyIdx].id : 0;
+            m_ctxX     = cp.x;
+            m_ctxY     = cp.y;
+            m_ctxKey   = (hoverKeyIdx >= 0 && curve) ? curve->keys[hoverKeyIdx].id : 0;
             ImGui::OpenPopup("CurveCanvasCtx");
         }
     }
@@ -509,7 +509,7 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
         {
             const CurveKeyframe &k     = curve->keys[i];
             ImVec2               kp    = ToScreen(k.time, k.value);
-            bool                 isSel = _selectedKeys.count(k.id) > 0;
+            bool                 isSel = m_selectedKeys.count(k.id) > 0;
 
             if (isSel)
             {
@@ -536,7 +536,7 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
     // 再生ヘッド
     if (opts.showPlayhead && curve)
     {
-        ImVec2 top = ToScreen(opts.playheadX, _viewMax.y);
+        ImVec2 top = ToScreen(opts.playheadX, viewMax.y);
         dl->AddLine(ImVec2(top.x, canvasPos.y), ImVec2(top.x, canvasEnd.y), IM_COL32(255, 80, 80, 180), 1.5f);
         ImVec2 dot = ToScreen(opts.playheadX, curve->Evaluate(opts.playheadX));
         dl->AddCircle(dot, 5.0f, IM_COL32(255, 80, 80, 255), 12, 2.0f);
@@ -558,23 +558,23 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
     {
         if (ImGui::MenuItem("ここにキーを追加") && curve)
         {
-            int idx = curve->AddKey(_ctxX, _ctxY);
-            _selectedKeys.clear();
-            _selectedKeys.insert(curve->keys[idx].id);
+            int idx = curve->AddKey(m_ctxX, m_ctxY);
+            m_selectedKeys.clear();
+            m_selectedKeys.insert(curve->keys[idx].id);
             modified = true;
         }
-        if (_ctxKey != 0 && !_selectedKeys.count(_ctxKey))
+        if (m_ctxKey != 0 && !m_selectedKeys.count(m_ctxKey))
         {
-            _selectedKeys.clear();
-            _selectedKeys.insert(_ctxKey);
+            m_selectedKeys.clear();
+            m_selectedKeys.insert(m_ctxKey);
         }
-        const bool hasSel = !_selectedKeys.empty();
+        const bool hasSel = !m_selectedKeys.empty();
         if (ImGui::BeginMenu("補間", hasSel && curve))
         {
             for (int m = 0; m < 3; ++m)
                 if (ImGui::MenuItem(kInterpNames[m]))
                 {
-                    for (uint32_t id : _selectedKeys)
+                    for (uint32_t id : m_selectedKeys)
                     {
                         int si = curve->IndexOfId(id);
                         if (si >= 0) curve->keys[si].interp = (CurveInterp)m;
@@ -588,7 +588,7 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
             for (int m = 0; m < 4; ++m)
                 if (ImGui::MenuItem(kTangentNames[m]))
                 {
-                    for (uint32_t id : _selectedKeys)
+                    for (uint32_t id : m_selectedKeys)
                     {
                         int si = curve->IndexOfId(id);
                         if (si >= 0)
@@ -609,10 +609,10 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
     }
 
     // ビュー範囲を書き戻す
-    _viewMinX = _viewMin.x;
-    _viewMinY = _viewMin.y;
-    _viewMaxX = _viewMax.x;
-    _viewMaxY = _viewMax.y;
+    m_viewMinX = viewMin.x;
+    m_viewMinY = viewMin.y;
+    m_viewMaxX = viewMax.x;
+    m_viewMaxY = viewMax.y;
     return modified;
 }
 
@@ -621,7 +621,7 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
 // ===========================================================================
 void CurveEditorWidget::DrawInspector(const std::vector<CurveData *> &curves, bool &modified)
 {
-    CurveData *curve = (_activeCurve >= 0 && _activeCurve < (int)curves.size()) ? curves[_activeCurve] : nullptr;
+    CurveData *curve = (m_activeCurve >= 0 && m_activeCurve < (int)curves.size()) ? curves[m_activeCurve] : nullptr;
     if (!curve) return;
 
     ImGui::Spacing();
@@ -643,20 +643,20 @@ void CurveEditorWidget::DrawInspector(const std::vector<CurveData *> &curves, bo
         modified            = true;
     }
 
-    if (_sel.empty())
+    if (m_sel.empty())
     {
         ImGui::TextDisabled("キー未選択。ダブルクリックで追加、クリックで選択。");
         return;
     }
 
-    if (_sel.size() > 1)
+    if (m_sel.size() > 1)
     {
-        ImGui::Text("%d 個のキーを選択中", (int)_sel.size());
+        ImGui::Text("%d 個のキーを選択中", (int)m_sel.size());
         static int interpSel = 2;
         ImGui::SetNextItemWidth(150);
         if (ImGui::Combo("補間(全選択)", &interpSel, kInterpNames, 3))
         {
-            for (uint32_t id : _sel)
+            for (uint32_t id : m_sel)
             {
                 int si = curve->IndexOfId(id);
                 if (si >= 0) curve->keys[si].interp = (CurveInterp)interpSel;
@@ -666,11 +666,11 @@ void CurveEditorWidget::DrawInspector(const std::vector<CurveData *> &curves, bo
         return;
     }
 
-    uint32_t id  = *_sel.begin();
+    uint32_t id  = *m_sel.begin();
     int      idx = curve->IndexOfId(id);
     if (idx < 0)
     {
-        _sel.clear();
+        m_sel.clear();
         return;
     }
 

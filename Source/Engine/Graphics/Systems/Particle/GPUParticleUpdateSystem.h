@@ -43,14 +43,14 @@ class GPUParticleUpdateSystem : public CCL::ECS::IfSystem<GPUParticleUpdateSyste
 
 private:
 
-    ID3D11Device* _device = nullptr;
-    bool          _isLoaded = false;
+    ID3D11Device* m_device = nullptr;
+    bool          m_isLoaded = false;
 
-    std::unique_ptr<ParticleComputeShader> _computeShader; // Init/Update CS（HotReload対応）
+    std::unique_ptr<ParticleComputeShader> m_computeShader; // Init/Update CS（HotReload対応）
 
-    Microsoft::WRL::ComPtr<ID3D11SamplerState>       _sampler;
-    Microsoft::WRL::ComPtr<ID3D11Texture3D>          _noiseTexture;
-    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> _noiseSRV;
+    Microsoft::WRL::ComPtr<ID3D11SamplerState>       m_sampler;
+    Microsoft::WRL::ComPtr<ID3D11Texture3D>          m_noiseTexture;
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_noiseSRV;
 
 
 };

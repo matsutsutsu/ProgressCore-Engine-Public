@@ -48,14 +48,14 @@ namespace
 
 void DroneHitSystem::Update(float /*dt*/)
 {
-    if (!_world->HasResource<BattleContext>()) return;
-    const auto& battle = _world->GetResource<BattleContext>();
+    if (!m_world->HasResource<BattleContext>()) return;
+    const auto& battle = m_world->GetResource<BattleContext>();
 
     const EntityID playerId = battle.playerEntity;
     if (playerId == InvalidEntityID) return;
 
     // プレイヤーが無敵中なら判定不要(多段ヒットは無敵で吸収されるため走査ごとスキップ)。
-    auto* playerHealth = _world->GetComponent<HealthComponent>(playerId);
+    auto* playerHealth = m_world->GetComponent<HealthComponent>(playerId);
     if (!playerHealth || playerHealth->invincibilityTimer > 0.0f) return;
 
     const Vector3 playerPos(battle.playerPos);
@@ -93,7 +93,7 @@ void DroneHitSystem::Update(float /*dt*/)
 
     // --- DamageEvent を1個生成(HitboxCollisionSystem と同じ合流点) ---
     static const Archetype damageArchetype = ArchetypeHelper::Generate<DamageEventComponent>();
-    auto ref = _world->Spawn(damageArchetype);
+    auto ref = m_world->Spawn(damageArchetype);
 
     DamageEventComponent dmg{};
     dmg.targetID        = playerId;

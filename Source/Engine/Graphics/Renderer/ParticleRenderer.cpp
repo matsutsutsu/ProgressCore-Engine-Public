@@ -43,29 +43,29 @@ void ParticleRenderer::Initialize(ID3D11Device *device)
 
     // ① 加算用
     baseDesc.blend = BlendState::Additive;
-    _psoAdditive = PipelineState(baseDesc);
+    m_psoAdditive = PipelineState(baseDesc);
 
     // ② 半透明用
     baseDesc.blend = BlendState::Transparency;
-    _psoTransparent = PipelineState(baseDesc);
+    m_psoTransparent = PipelineState(baseDesc);
 
 
-    _isLoaded = true;
+    m_isLoaded = true;
 }
 
 void ParticleRenderer::BeginFrame()
 {
-    _drawCommands.clear(); // 毎フレームバケツを空にする
+    m_drawCommands.clear(); // 毎フレームバケツを空にする
 }
 
 void ParticleRenderer::Draw(const ParticleDrawCommand &cmd)
 {
-    _drawCommands.push_back(cmd); // バケツに積むだけ
+    m_drawCommands.push_back(cmd); // バケツに積むだけ
 }
 
 void ParticleRenderer::Render(const RenderServices& services, const RenderFrameContext& frameCtx)
 {
-    if (!_isLoaded || _drawCommands.empty()) return;
+    if (!m_isLoaded || m_drawCommands.empty()) return;
 
     ID3D11DeviceContext* dc = frameCtx.dc;
     const RenderState* rs = services.renderState;
@@ -95,7 +95,7 @@ void ParticleRenderer::Render(const RenderServices& services, const RenderFrameC
     }
 
     // ソート: renderMode → テクスチャポインタ (ステート切替最小化)
-    std::sort(_drawCommands.begin(), _drawCommands.end(),
+    std::sort(m_drawCommands.begin(), m_drawCommands.end(),
         [&services](const ParticleDrawCommand& a, const ParticleDrawCommand& b) {
             if (a.renderMode != b.renderMode) return a.renderMode < b.renderMode;
             auto* ta = services.resources->GetTexture(a.texture);
@@ -107,13 +107,13 @@ void ParticleRenderer::Render(const RenderServices& services, const RenderFrameC
     int                       curRenderMode = -1;
     ID3D11ShaderResourceView* curTexSRV = reinterpret_cast<ID3D11ShaderResourceView*>(-1);
 
-    for (const auto& cmd : _drawCommands) {
+    for (const auto& cmd : m_drawCommands) {
         GPUParticleBufferSet* buffers = services.resources->GetParticleBuffer(cmd.computeBuffer);
         if (!buffers || !buffers->particleSRV) continue;
 
         // PSO 切り替え (renderMode が変わった時のみ)
         if (curRenderMode != cmd.renderMode) {
-            (cmd.renderMode == 0 ? _psoAdditive : _psoTransparent).Apply(dc, rs);
+            (cmd.renderMode == 0 ? m_psoAdditive : m_psoTransparent).Apply(dc, rs);
             dc->OMSetDepthStencilState(rs->GetDepthStencilState(DepthState::TestOnly), 0);
             curRenderMode = cmd.renderMode;
         }

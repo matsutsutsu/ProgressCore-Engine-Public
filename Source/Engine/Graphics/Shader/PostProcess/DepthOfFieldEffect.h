@@ -20,10 +20,10 @@ public:
                  ID3D11RenderTargetView* outputRTV) override;
 
     const char* GetName() const override { return "DepthOfField"; }
-    void UpdateParams(const GpuData::CbDepthOfFieldData& data) { _cbData = data; }
+    void UpdateParams(const GpuData::CbDepthOfFieldData& data) { m_cbData = data; }
 
 private:
-    GpuData::CbDepthOfFieldData _cbData{};
+    GpuData::CbDepthOfFieldData m_cbData{};
 
     struct Resources {
         Microsoft::WRL::ComPtr<ID3D11VertexShader> vs;
@@ -31,5 +31,5 @@ private:
         Microsoft::WRL::ComPtr<ID3D11Buffer>       cb;
         Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler;
     };
-    std::unique_ptr<Resources> _res;
+    std::unique_ptr<Resources> m_res;
 };

@@ -29,16 +29,16 @@ class GameResultSystem
   private:
     void ShowResultUI(bool win); ///< リザルトUI（暗転＋文字＋ボタン）を生成
 
-    bool  _resultShown   = false; ///< 一度出したら維持（多重生成防止）
-    bool  _sawEnemy      = false; ///< 敵を一度でも観測したか（開幕0体での即勝利防止）
-    bool  _transitioning = false; ///< 遷移予約後の連打無視
-    bool  _pendingWin    = false; ///< 勝利検知後、撃破スローの余韻を見せている待機中か
-    float _winDelay      = 0.0f;  ///< 勝利リザルト表示までの残り時間（秒・実時間）
+    bool  m_resultShown   = false; ///< 一度出したら維持（多重生成防止）
+    bool  m_sawEnemy      = false; ///< 敵を一度でも観測したか（開幕0体での即勝利防止）
+    bool  m_transitioning = false; ///< 遷移予約後の連打無視
+    bool  m_pendingWin    = false; ///< 勝利検知後、撃破スローの余韻を見せている待機中か
+    float m_winDelay      = 0.0f;  ///< 勝利リザルト表示までの残り時間（秒・実時間）
 
     // --- デバッグ/セーフガード ---
-    bool  _debugEnabled     = true;  ///< false で勝敗判定・リザルト表示を停止（デバッグ用の全体OFF）
-    bool  _dbgPlayerPresent = false; ///< 直近フレームでプレイヤーを検知したか（GUI表示用）
-    int   _dbgAliveEnemies  = 0;     ///< 直近フレームの生存敵数（GUI表示用）
+    bool  m_debugEnabled     = true;  ///< false で勝敗判定・リザルト表示を停止（デバッグ用の全体OFF）
+    bool  m_dbgPlayerPresent = false; ///< 直近フレームでプレイヤーを検知したか（GUI表示用）
+    int   m_dbgAliveEnemies  = 0;     ///< 直近フレームの生存敵数（GUI表示用）
 
     /// 勝利検知からリザルト表示までの待ち時間(秒)。DefeatSlowMotionSystem の
     /// クライマックススロー(kClimaxDur≈0.85s)より少し長くして、スローが完全に戻ってから出す。

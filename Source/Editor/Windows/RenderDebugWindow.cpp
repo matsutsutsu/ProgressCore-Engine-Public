@@ -37,19 +37,19 @@ void RenderDebugWindow::DrawContents(EditorContext& context)
     {
         if (Camera* cam = context.world->GetResource<Camera*>())
         {
-            _nearZ = cam->GetNear();
-            _farZ  = cam->GetFar();
+            m_nearZ = cam->GetNear();
+            m_farZ  = cam->GetFar();
         }
     }
 
     // --- 共通コントロール ---
-    ImGui::SliderFloat("Thumbnail Width", &_thumbWidth, 128.0f, 640.0f, "%.0f px");
-    ImGui::SliderFloat("HDR Exposure", &_exposure, 0.05f, 8.0f, "%.2f");
+    ImGui::SliderFloat("Thumbnail Width", &m_thumbWidth, 128.0f, 640.0f, "%.0f px");
+    ImGui::SliderFloat("HDR Exposure", &m_exposure, 0.05f, 8.0f, "%.2f");
     const char* channelItems[] = { "RGB", "R", "G", "B", "A" };
-    ImGui::Combo("Channel", &_channelSelect, channelItems, IM_ARRAYSIZE(channelItems));
-    ImGui::InputInt("Array Slice", &_arraySlice);
-    if (_arraySlice < 0) _arraySlice = 0;
-    ImGui::TextDisabled("Depth linearize: near=%.2f far=%.1f (camera)", _nearZ, _farZ);
+    ImGui::Combo("Channel", &m_channelSelect, channelItems, IM_ARRAYSIZE(channelItems));
+    ImGui::InputInt("Array Slice", &m_arraySlice);
+    if (m_arraySlice < 0) m_arraySlice = 0;
+    ImGui::TextDisabled("Depth linearize: near=%.2f far=%.1f (camera)", m_nearZ, m_farZ);
     ImGui::Separator();
 
     if (entries.empty())
@@ -61,7 +61,7 @@ void RenderDebugWindow::DrawContents(EditorContext& context)
     }
 
     ID3D11DeviceContext* dc = Graphics::Instance().GetDeviceContext();
-    _viz.BeginFrame();
+    m_viz.BeginFrame();
 
     for (const auto& e : entries)
     {
@@ -74,25 +74,25 @@ void RenderDebugWindow::DrawContents(EditorContext& context)
         // 種別 → 可視化パラメータ
         RTVisualizeParams p;
         p.mode          = static_cast<int>(e.kind);
-        p.exposure      = _exposure;
-        p.nearZ         = _nearZ;
-        p.farZ          = _farZ;
+        p.exposure      = m_exposure;
+        p.nearZ         = m_nearZ;
+        p.farZ          = m_farZ;
         p.useArray      = (e.kind == DebugTexKind::Array) ? 1 : 0;
-        p.arraySlice    = _arraySlice;
-        p.channelSelect = _channelSelect;
+        p.arraySlice    = m_arraySlice;
+        p.channelSelect = m_channelSelect;
 
-        ID3D11ShaderResourceView* shown = _viz.Visualize(dc, e.srv, e.width, e.height, p);
+        ID3D11ShaderResourceView* shown = m_viz.Visualize(dc, e.srv, e.width, e.height, p);
 
         if (shown)
         {
             const float aspect = (e.width > 0) ? (float)e.height / (float)e.width : 9.0f / 16.0f;
-            const ImVec2 size(_thumbWidth, _thumbWidth * aspect);
+            const ImVec2 size(m_thumbWidth, m_thumbWidth * aspect);
             ImGui::Image((ImTextureID)shown, size);
 
             if (ImGui::IsItemHovered())
             {
                 ImGui::BeginTooltip();
-                const ImVec2 big(_thumbWidth * 1.8f, _thumbWidth * 1.8f * aspect);
+                const ImVec2 big(m_thumbWidth * 1.8f, m_thumbWidth * 1.8f * aspect);
                 ImGui::Image((ImTextureID)shown, big);
                 ImGui::EndTooltip();
             }

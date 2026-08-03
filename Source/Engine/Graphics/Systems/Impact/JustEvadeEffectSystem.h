@@ -29,7 +29,7 @@ public:
     void Update(float dt) override;
 
 private:
-    bool _wasActive = false; ///< 前フレームで演出が出ていたか（立ち上がり/下がり検出）
+    bool m_wasActive = false; ///< 前フレームで演出が出ていたか（立ち上がり/下がり検出）
 
     // 立ち上がりで退避する「元の」PP値（立ち下がりでここへ完全復元する）。
     struct Baseline
@@ -47,6 +47,6 @@ private:
         DirectX::XMFLOAT4    vigColor     = {0.0f, 0.0f, 0.0f, 1.0f};
         float                vigPulse     = 0.0f;
     };
-    Baseline _base;
-    float    _vigTime = 0.0f; ///< ビネット脈動用の位相（演出中に加算）
+    Baseline m_base;
+    float    m_vigTime = 0.0f; ///< ビネット脈動用の位相（演出中に加算）
 };

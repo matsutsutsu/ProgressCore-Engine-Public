@@ -13,8 +13,8 @@ void BoidSystem::Update(float dt)
     // ====================================================================
     // TimeContext の適用 (VoxelOceanSystem と同じく相対時間に対応)
     // ====================================================================
-    if (!_world || !_world->HasResource<TimeContext>()) return;
-    auto &ctx = _world->GetResource<TimeContext>();
+    if (!m_world || !m_world->HasResource<TimeContext>()) return;
+    auto &ctx = m_world->GetResource<TimeContext>();
 
     // 適切なスケールを採用（ゲームロジックなら globalScale が基本）
     float timeScale = ctx.globalScale;

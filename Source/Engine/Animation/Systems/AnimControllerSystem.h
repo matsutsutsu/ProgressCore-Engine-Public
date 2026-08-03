@@ -39,6 +39,6 @@ public:
   private:
 #ifdef ENABLE_EDITOR
     // 状態遷移ログを出力するかどうかのフラグ（デフォルトOFFでコンソール汚染を防ぐ）
-    bool _enableTransitionLog = false;
+    bool m_enableTransitionLog = false;
 #endif
 };

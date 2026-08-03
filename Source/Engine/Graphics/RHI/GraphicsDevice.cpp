@@ -11,12 +11,12 @@
 
 void GraphicsDevice::Initialize(HWND hWnd)
 {
-    _hWnd = hWnd;
+    m_hWnd = hWnd;
 
     RECT rc;
     GetClientRect(hWnd, &rc);
-    _width = static_cast<UINT>(rc.right - rc.left);
-    _height = static_cast<UINT>(rc.bottom - rc.top);
+    m_width = static_cast<UINT>(rc.right - rc.left);
+    m_height = static_cast<UINT>(rc.bottom - rc.top);
 
     HRESULT hr = S_OK;
 
@@ -68,8 +68,8 @@ void GraphicsDevice::Initialize(HWND hWnd)
         };
 
         DXGI_SWAP_CHAIN_DESC desc{};
-        desc.BufferDesc.Width = _width;
-        desc.BufferDesc.Height = _height;
+        desc.BufferDesc.Width = m_width;
+        desc.BufferDesc.Height = m_height;
         desc.BufferDesc.RefreshRate = { 60, 1 };
         desc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
         desc.SampleDesc = { 1, 0 };
@@ -88,18 +88,18 @@ void GraphicsDevice::Initialize(HWND hWnd)
             chosenAdapter.Get(), driverType, nullptr,
             createDeviceFlags, featureLevels, ARRAYSIZE(featureLevels),
             D3D11_SDK_VERSION, &desc,
-            _swapChain.GetAddressOf(), _device.GetAddressOf(),
-            &featureLevel, _context.GetAddressOf());
+            m_swapChain.GetAddressOf(), m_device.GetAddressOf(),
+            &featureLevel, m_context.GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
 
     // ---- バックバッファ RTV ----
     {
         Microsoft::WRL::ComPtr<ID3D11Texture2D> tex;
-        hr = _swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D),
+        hr = m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D),
             reinterpret_cast<void**>(tex.GetAddressOf()));
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
-        hr = _device->CreateRenderTargetView(tex.Get(), nullptr, _backBufferRTV.GetAddressOf());
+        hr = m_device->CreateRenderTargetView(tex.Get(), nullptr, m_backBufferRTV.GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
 
@@ -107,47 +107,47 @@ void GraphicsDevice::Initialize(HWND hWnd)
     {
         Microsoft::WRL::ComPtr<ID3D11Texture2D> tex;
         D3D11_TEXTURE2D_DESC d{};
-        d.Width = _width; d.Height = _height;
+        d.Width = m_width; d.Height = m_height;
         d.MipLevels = 1; d.ArraySize = 1;
         d.Format = DXGI_FORMAT_R24G8_TYPELESS;
         d.SampleDesc = { 1, 0 };
         d.Usage = D3D11_USAGE_DEFAULT;
         d.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
-        hr = _device->CreateTexture2D(&d, nullptr, tex.GetAddressOf());
+        hr = m_device->CreateTexture2D(&d, nullptr, tex.GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 
         D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
         dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
         dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-        hr = _device->CreateDepthStencilView(tex.Get(), &dsvDesc, _depthStencilView.GetAddressOf());
+        hr = m_device->CreateDepthStencilView(tex.Get(), &dsvDesc, m_depthStencilView.GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 
         D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc{};
         srvDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
         srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
         srvDesc.Texture2D.MipLevels = 1;
-        hr = _device->CreateShaderResourceView(tex.Get(), &srvDesc, _depthSRV.GetAddressOf());
+        hr = m_device->CreateShaderResourceView(tex.Get(), &srvDesc, m_depthSRV.GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
 
     // ---- ビューポート ----
-    _viewport = { 0.f, 0.f,
-                  static_cast<float>(_width), static_cast<float>(_height),
+    m_viewport = { 0.f, 0.f,
+                  static_cast<float>(m_width), static_cast<float>(m_height),
                   0.f, 1.f };
 
     // ---- ゲームビュー用 RTT（エディタ表示 / 最終出力先） ----
     {
         D3D11_TEXTURE2D_DESC t{};
-        t.Width = _width; t.Height = _height;
+        t.Width = m_width; t.Height = m_height;
         t.MipLevels = 1; t.ArraySize = 1;
         t.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
         t.SampleDesc = { 1, 0 };
         t.Usage = D3D11_USAGE_DEFAULT;
         t.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-        _device->CreateTexture2D(&t, nullptr, _gameTex.GetAddressOf());
-        _device->CreateRenderTargetView(_gameTex.Get(), nullptr, _gameRTV.GetAddressOf());
-        _device->CreateShaderResourceView(_gameTex.Get(), nullptr, _gameSRV.GetAddressOf());
-        SetDebugName(_gameSRV.Get(), "GameView_SRV");
+        m_device->CreateTexture2D(&t, nullptr, m_gameTex.GetAddressOf());
+        m_device->CreateRenderTargetView(m_gameTex.Get(), nullptr, m_gameRTV.GetAddressOf());
+        m_device->CreateShaderResourceView(m_gameTex.Get(), nullptr, m_gameSRV.GetAddressOf());
+        SetDebugName(m_gameSRV.Get(), "GameView_SRV");
     }
 
     // ---- CbScene 定数バッファ (b8) ----
@@ -157,13 +157,13 @@ void GraphicsDevice::Initialize(HWND hWnd)
         bd.ByteWidth = sizeof(GpuData::CbScene); // ShaderShared.h で定義
         bd.Usage = D3D11_USAGE_DEFAULT;
         bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-        hr = _device->CreateBuffer(&bd, nullptr, _sceneConstantBuffer.GetAddressOf());
+        hr = m_device->CreateBuffer(&bd, nullptr, m_sceneConstantBuffer.GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
 
     // デバイスとコンテキストの準備が完了した最後に Tracy コンテキストを生成
-    if (_device && _context) {
-        _tracyD3D11Ctx = TracyD3D11Context(_device.Get(), _context.Get());
+    if (m_device && m_context) {
+        m_tracyD3D11Ctx = TracyD3D11Context(m_device.Get(), m_context.Get());
         CCL_LOG_INFO(LogCategory::Render,"[GraphicsDevice] Tracy D3D11 Context initialized.");
         
     }
@@ -172,35 +172,35 @@ void GraphicsDevice::Initialize(HWND hWnd)
 void GraphicsDevice::Shutdown()
 {
     // ① コンテキスト状態クリア（サブシステム reset 後に呼ぶこと）
-    if (_context) {
-        _context->ClearState();
-        _context->Flush();
+    if (m_context) {
+        m_context->ClearState();
+        m_context->Flush();
     }
 
     // デバイス本体が破壊される「前」に Tracy コンテキストを破棄する
-    if (_tracyD3D11Ctx) {
-        TracyD3D11Destroy(_tracyD3D11Ctx);
-        _tracyD3D11Ctx = nullptr;
+    if (m_tracyD3D11Ctx) {
+        TracyD3D11Destroy(m_tracyD3D11Ctx);
+        m_tracyD3D11Ctx = nullptr;
         CCL_LOG_INFO(LogCategory::Render, "[GraphicsDevice] Tracy D3D11 Context destroyed.");
     }
 
     // ② GraphicsDevice 自身が持っているリソースを【先に】全て手放す！
-    _sceneConstantBuffer.Reset();
-    _gameSRV.Reset();
-    _gameRTV.Reset();
-    _gameTex.Reset();
-    _depthStencilView.Reset();
-    _depthSRV.Reset();
-    _backBufferRTV.Reset();
-    _swapChain.Reset();
-    _context.Reset();
+    m_sceneConstantBuffer.Reset();
+    m_gameSRV.Reset();
+    m_gameRTV.Reset();
+    m_gameTex.Reset();
+    m_depthStencilView.Reset();
+    m_depthSRV.Reset();
+    m_backBufferRTV.Reset();
+    m_swapChain.Reset();
+    m_context.Reset();
 
-    // ③ この時点でデバイス（_device）に残っているものは「真のリーク（犯人）」だけ！
+    // ③ この時点でデバイス（m_device）に残っているものは「真のリーク（犯人）」だけ！
     // ここでレポートを出力する デバッグ時のみ
 #ifdef ENABLE_EDITOR
-    if (_device) {
+    if (m_device) {
         Microsoft::WRL::ComPtr<ID3D11Debug> debug;
-        if (SUCCEEDED(_device.As(&debug))) {
+        if (SUCCEEDED(m_device.As(&debug))) {
             OutputDebugStringA("\n================= D3D11 LEAK REPORT =================\n");
             // これで、出力ウィンドウに「Texture2D」や「Buffer」などの名前がバッチリ出ます
             debug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL | D3D11_RLDO_IGNORE_INTERNAL);
@@ -210,13 +210,13 @@ void GraphicsDevice::Shutdown()
 #endif
 
     // ④ 最後にデバイス本体を破壊
-    _device.Reset();
+    m_device.Reset();
 }
 
 void GraphicsDevice::UpdateSceneConstantBuffer(const void* data, size_t /*size*/)
 {
-    if (_sceneConstantBuffer && _context && data) {
-        _context->UpdateSubresource(_sceneConstantBuffer.Get(), 0, nullptr, data, 0, 0);
+    if (m_sceneConstantBuffer && m_context && data) {
+        m_context->UpdateSubresource(m_sceneConstantBuffer.Get(), 0, nullptr, data, 0, 0);
     }
 }
 
@@ -224,26 +224,26 @@ void GraphicsDevice::Clear(float r, float g, float b, float a, bool useGameRTV)
 {
     float color[4]{ r, g, b, a };
     if (useGameRTV)
-        _context->ClearRenderTargetView(_gameRTV.Get(), color);
+        m_context->ClearRenderTargetView(m_gameRTV.Get(), color);
     else
-        _context->ClearRenderTargetView(_backBufferRTV.Get(), color);
-    _context->ClearDepthStencilView(_depthStencilView.Get(),
+        m_context->ClearRenderTargetView(m_backBufferRTV.Get(), color);
+    m_context->ClearDepthStencilView(m_depthStencilView.Get(),
         D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 }
 
 void GraphicsDevice::SetRenderTargets(bool useGameRTV)
 {
     if (useGameRTV)
-        _context->OMSetRenderTargets(1, _gameRTV.GetAddressOf(), _depthStencilView.Get());
+        m_context->OMSetRenderTargets(1, m_gameRTV.GetAddressOf(), m_depthStencilView.Get());
     else
-        _context->OMSetRenderTargets(1, _backBufferRTV.GetAddressOf(), _depthStencilView.Get());
-    _context->RSSetViewports(1, &_viewport);
+        m_context->OMSetRenderTargets(1, m_backBufferRTV.GetAddressOf(), m_depthStencilView.Get());
+    m_context->RSSetViewports(1, &m_viewport);
 }
 
 
 HRESULT GraphicsDevice::Present(UINT syncInterval)
 {
-    return _swapChain->Present(syncInterval, 0);
+    return m_swapChain->Present(syncInterval, 0);
 }
 
 /**
@@ -252,5 +252,5 @@ HRESULT GraphicsDevice::Present(UINT syncInterval)
  */
 HRESULT GraphicsDevice::GetDeviceRemovedReason() const noexcept
 {
-    return _device ? _device->GetDeviceRemovedReason() : DXGI_ERROR_DEVICE_REMOVED;
+    return m_device ? m_device->GetDeviceRemovedReason() : DXGI_ERROR_DEVICE_REMOVED;
 }

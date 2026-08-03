@@ -18,12 +18,12 @@ private:
         bool hasChildren;
     };
 
-    std::unordered_set<CCL::ECS::EntityID> _openNodes;
+    std::unordered_set<CCL::ECS::EntityID> m_openNodes;
 
-    // ★追加: 毎フレームのメモリ確保を防ぐためのキャッシュ用変数
-    std::vector<CCL::ECS::EntityID> _rootEntities;
-    std::vector<CCL::ECS::EntityID> _allEntities;
-    std::vector<FlatNode>           _flatList;
+    // 毎フレームのメモリ確保を防ぐためのキャッシュ用変数
+    std::vector<CCL::ECS::EntityID> m_rootEntities;
+    std::vector<CCL::ECS::EntityID> m_allEntities;
+    std::vector<FlatNode>           m_flatList;
 
     // 関数の宣言を以下のように World* を受け取るように変更
     void FlattenChildren(
@@ -36,7 +36,7 @@ private:
         const FlatNode& node,
         EditorContext& context);
 
-    // Shift+クリックによる範囲選択を処理する (_flatList 上で anchor→clicked を選択)
+    // Shift+クリックによる範囲選択を処理する (m_flatList 上で anchor→clicked を選択)
     void SelectRangeTo(CCL::ECS::EntityID clicked, EditorContext& context);
 
     bool IsDescendantOf(
@@ -44,5 +44,5 @@ private:
         CCL::ECS::EntityID ancestorEntity,
         CCL::ECS::World* world); // ← ここも World に変更
 
-    char _searchBuffer[256] = { 0 };
+    char m_searchBuffer[256] = { 0 };
 };

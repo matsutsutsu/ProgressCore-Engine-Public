@@ -34,12 +34,12 @@ DirectX::XMFLOAT4 HpColor(float ratio)
 void PlayerHealthHudSystem::Initialize()
 {
     // UI階層のルート。配下(ゲージ/ラベル)をこの Canvas の子にしてヒエラルキーで束ねる。
-    const EntityID canvas = CCL::GameUI::SpawnCanvas(*_world, "PlayerHpCanvas");
+    const EntityID canvas = CCL::GameUI::SpawnCanvas(*m_world, "PlayerHpCanvas");
 
     // --- ゲージ本体（左上・アンカー方式） ---
     auto barArch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
         UIProgressBarComponent>();
-    auto bar     = EntityFactory::SpawnNamed(*_world, "PlayerHpGauge", barArch);
+    auto bar     = EntityFactory::SpawnNamed(*m_world, "PlayerHpGauge", barArch);
 
     UITransformComponent t;
     t.anchor = {0.0f, 0.0f};   // 画面左上
@@ -60,7 +60,7 @@ void PlayerHealthHudSystem::Initialize()
     // --- ラベル（ゲージの上） ---
     auto labelArch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
         UITextComponent>();
-    auto label     = EntityFactory::SpawnNamed(*_world, "PlayerHpLabel", labelArch);
+    auto label     = EntityFactory::SpawnNamed(*m_world, "PlayerHpLabel", labelArch);
 
     UITransformComponent lt;
     lt.anchor = {0.0f, 0.0f};
@@ -80,8 +80,8 @@ void PlayerHealthHudSystem::Initialize()
 void PlayerHealthHudSystem::Update(float dt)
 {
     // 生成直後はコンポーネントが未反映のことがあるので null 許容。
-    auto *bar = (m_barID != InvalidEntityID) ? _world->GetComponent<UIProgressBarComponent>(m_barID) : nullptr;
-    auto *txt = (m_labelID != InvalidEntityID) ? _world->GetComponent<UITextComponent>(m_labelID) : nullptr;
+    auto *bar = (m_barID != InvalidEntityID) ? m_world->GetComponent<UIProgressBarComponent>(m_barID) : nullptr;
+    auto *txt = (m_labelID != InvalidEntityID) ? m_world->GetComponent<UITextComponent>(m_labelID) : nullptr;
     if (!bar) return;
 
     bool found = false;
@@ -94,11 +94,11 @@ void PlayerHealthHudSystem::Update(float dt)
                           : 0.0f;
 
         // 初回は瞬時に合わせる（起動時にバーがスッと減って見えないように）。
-        if (!_init)
+        if (!m_init)
         {
             bar->trailValue = ratio;
-            _prevRatio      = ratio;
-            _init           = true;
+            m_prevRatio      = ratio;
+            m_init           = true;
         }
 
         // 本体フィルは現在HPへ即追従＋残量で色分け。
@@ -107,16 +107,16 @@ void PlayerHealthHudSystem::Update(float dt)
         bar->fillColor = HpColor(ratio);
 
         // 被弾（HPが減った）を検出したら、遅延バーの「溜め」をリセットして失った分を見せる。
-        if (ratio < _prevRatio - 1e-4f) _trailHold = kTrailHold;
+        if (ratio < m_prevRatio - 1e-4f) m_trailHold = kTrailHold;
 
         // 遅延バー：回復/据え置きは即追従、被弾直後は溜めのあと ease で value まで減っていく。
         if (ratio >= bar->trailValue)
         {
             bar->trailValue = ratio; // 増加・回復は差分を見せず即キャッチアップ
         }
-        else if (_trailHold > 0.0f)
+        else if (m_trailHold > 0.0f)
         {
-            _trailHold -= dt;        // 溜め中は失った分を保持して見せる
+            m_trailHold -= dt;        // 溜め中は失った分を保持して見せる
         }
         else
         {
@@ -134,7 +134,7 @@ void PlayerHealthHudSystem::Update(float dt)
             txt->text = buf;
         }
 
-        _prevRatio = ratio;
+        m_prevRatio = ratio;
     });
 
     // プレイヤーが居ないシーン（タイトル等）ではHUDを隠す。

@@ -62,69 +62,69 @@ inline XMFLOAT4 LerpTint(const XMFLOAT4 &a, const XMFLOAT3 &b, float t)
 
 void JustEvadeEffectSystem::Update(float dt)
 {
-    auto *fx = _world->GetSingletonComponent<JustEvadeEffectComponent>();
+    auto *fx = m_world->GetSingletonComponent<JustEvadeEffectComponent>();
 
     const bool active = (fx && fx->timer > 0.0f);
 
-    auto *cg  = _world->GetSingletonComponent<ColorGradingConfigComponent>();
-    auto *rb  = _world->GetSingletonComponent<RadialBlurConfigComponent>();
-    auto *ca  = _world->GetSingletonComponent<ChromaticAberrationConfigComponent>();
-    auto *vig = _world->GetSingletonComponent<VignetteConfigComponent>();
+    auto *cg  = m_world->GetSingletonComponent<ColorGradingConfigComponent>();
+    auto *rb  = m_world->GetSingletonComponent<RadialBlurConfigComponent>();
+    auto *ca  = m_world->GetSingletonComponent<ChromaticAberrationConfigComponent>();
+    auto *vig = m_world->GetSingletonComponent<VignetteConfigComponent>();
 
     // ── 立ち下がり: 退避しておいた元の値へ完全復元し、スパイク系は OFF にして手放す ──
     if (!active)
     {
-        if (_wasActive)
+        if (m_wasActive)
         {
             if (cg)
             {
-                cg->enable              = _base.cgEnable;
-                cg->data.gradeSaturation = _base.cgSat;
-                cg->data.gradeContrast   = _base.cgContrast;
-                cg->data.gradeBrightness = _base.cgBright;
-                cg->data.gradeTint       = _base.cgTint;
-                cg->data.gradeMixAmount  = _base.cgMix;
+                cg->enable              = m_base.cgEnable;
+                cg->data.gradeSaturation = m_base.cgSat;
+                cg->data.gradeContrast   = m_base.cgContrast;
+                cg->data.gradeBrightness = m_base.cgBright;
+                cg->data.gradeTint       = m_base.cgTint;
+                cg->data.gradeMixAmount  = m_base.cgMix;
             }
             if (vig)
             {
-                vig->enable            = _base.vigEnable;
-                vig->data.vigIntensity  = _base.vigIntensity;
-                vig->data.vigColor      = _base.vigColor;
-                vig->data.vigPulseSpeed = _base.vigPulse;
+                vig->enable            = m_base.vigEnable;
+                vig->data.vigIntensity  = m_base.vigIntensity;
+                vig->data.vigColor      = m_base.vigColor;
+                vig->data.vigPulseSpeed = m_base.vigPulse;
             }
             if (rb) { rb->enable = false; rb->data.blurStrength   = 0.0f; }
             if (ca) { ca->enable = false; ca->data.chromaStrength = 0.0f; }
-            _wasActive = false;
+            m_wasActive = false;
         }
         return;
     }
 
     // ── 立ち上がり: 元の ColorGrading / Vignette を退避（演出後にここへ戻す） ──
-    if (!_wasActive)
+    if (!m_wasActive)
     {
         if (cg)
         {
-            _base.cgEnable   = cg->enable;
-            _base.cgSat      = cg->data.gradeSaturation;
-            _base.cgContrast = cg->data.gradeContrast;
-            _base.cgBright   = cg->data.gradeBrightness;
-            _base.cgTint     = cg->data.gradeTint;
-            _base.cgMix      = cg->data.gradeMixAmount;
+            m_base.cgEnable   = cg->enable;
+            m_base.cgSat      = cg->data.gradeSaturation;
+            m_base.cgContrast = cg->data.gradeContrast;
+            m_base.cgBright   = cg->data.gradeBrightness;
+            m_base.cgTint     = cg->data.gradeTint;
+            m_base.cgMix      = cg->data.gradeMixAmount;
         }
         if (vig)
         {
-            _base.vigEnable    = vig->enable;
-            _base.vigIntensity = vig->data.vigIntensity;
-            _base.vigColor     = vig->data.vigColor;
-            _base.vigPulse     = vig->data.vigPulseSpeed;
+            m_base.vigEnable    = vig->enable;
+            m_base.vigIntensity = vig->data.vigIntensity;
+            m_base.vigColor     = vig->data.vigColor;
+            m_base.vigPulse     = vig->data.vigPulseSpeed;
         }
-        _vigTime = 0.0f;
+        m_vigTime = 0.0f;
     }
 
     // ── 1. 減衰（実時間） ──
     fx->timer -= dt;
     if (fx->timer < 0.0f) fx->timer = 0.0f;
-    _vigTime += dt;
+    m_vigTime += dt;
 
     // ── 2. エンベロープ算出 ──
     const float elapsed = fx->duration - fx->timer; // 0 で発火、増えていく
@@ -147,12 +147,12 @@ void JustEvadeEffectSystem::Update(float dt)
     if (cg)
     {
         cg->enable               = true;
-        cg->data.gradeSaturation = Lerp(_base.cgSat, preset.saturation, body);
-        cg->data.gradeContrast   = Lerp(_base.cgContrast, preset.contrast, body);
-        cg->data.gradeBrightness = _base.cgBright; // 明るさは元のまま
-        cg->data.gradeTint       = LerpTint(_base.cgTint, preset.tint, body);
+        cg->data.gradeSaturation = Lerp(m_base.cgSat, preset.saturation, body);
+        cg->data.gradeContrast   = Lerp(m_base.cgContrast, preset.contrast, body);
+        cg->data.gradeBrightness = m_base.cgBright; // 明るさは元のまま
+        cg->data.gradeTint       = LerpTint(m_base.cgTint, preset.tint, body);
         // 元の mix を下回らないようにしつつ、演出のピークまで持ち上げる
-        cg->data.gradeMixAmount  = (std::max)(_base.cgMix, body * fx->gradeMixPeak);
+        cg->data.gradeMixAmount  = (std::max)(m_base.cgMix, body * fx->gradeMixPeak);
     }
 
     // ── 4. 放射ブラー（スパイク） ──
@@ -177,13 +177,13 @@ void JustEvadeEffectSystem::Update(float dt)
     if (vig)
     {
         vig->enable            = true;
-        vig->data.vigIntensity  = Lerp(_base.vigIntensity, fx->vignettePeak, body);
-        vig->data.vigColor      = LerpTint(_base.vigColor, preset.vigColor, body);
-        vig->data.vigPulseSpeed = Lerp(_base.vigPulse, fx->vignettePulse, body);
-        vig->data.vigTime       = _vigTime;
+        vig->data.vigIntensity  = Lerp(m_base.vigIntensity, fx->vignettePeak, body);
+        vig->data.vigColor      = LerpTint(m_base.vigColor, preset.vigColor, body);
+        vig->data.vigPulseSpeed = Lerp(m_base.vigPulse, fx->vignettePulse, body);
+        vig->data.vigTime       = m_vigTime;
     }
 
-    _wasActive = true;
+    m_wasActive = true;
 }
 
 // PostProcessSystem(R09) の前・カメラ確定後に走らせる（ScreenImpact と同じ R02）。

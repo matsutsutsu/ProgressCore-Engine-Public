@@ -33,7 +33,7 @@ HierarchyCleanupSystem::HierarchyCleanupSystem() : IfSystem("HierarchyCleanupSys
 
 void HierarchyCleanupSystem::Update(float dt)
 {
-    ExecuteCleanup(*_world);
+    ExecuteCleanup(*m_world);
 }
 
 // =========================================================================

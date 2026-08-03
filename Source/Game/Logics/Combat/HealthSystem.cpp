@@ -39,8 +39,8 @@ void HealthSystem::Update(float dt)
             if (health.currentHealth <= 0.0f)
             {
                 health.currentHealth = 0.0f;
-                if (!_world->HasComponent<Tag::DeadTag>(id))
-                    _world->AddComponent<Tag::DeadTag>(id);
+                if (!m_world->HasComponent<Tag::DeadTag>(id))
+                    m_world->AddComponent<Tag::DeadTag>(id);
             }
         });
 }
@@ -58,7 +58,7 @@ void HealthSystem::OnGui()
     ForEachWithID([&](CCL::ECS::EntityID id, HealthComponent& health,
         const TimeStateComponent& /*time*/)
         {
-            if (_world->HasComponent<Tag::DeadTag>(id)) ++deadCount;
+            if (m_world->HasComponent<Tag::DeadTag>(id)) ++deadCount;
             else                                         ++aliveCount;
         });
 
@@ -80,7 +80,7 @@ void HealthSystem::OnGui()
         ForEachWithID([&](CCL::ECS::EntityID id, HealthComponent& health,
             const TimeStateComponent& /*time*/)
             {
-                const bool isDead = _world->HasComponent<Tag::DeadTag>(id);
+                const bool isDead = m_world->HasComponent<Tag::DeadTag>(id);
 
                 ImGui::TableNextRow();
 
@@ -92,7 +92,7 @@ void HealthSystem::OnGui()
                 // 名前（NameComponent があれば name を、なければ ID をフォールバック）
                 ImGui::TableSetColumnIndex(0);
                 {
-                    const auto* nameComp = _world->GetComponent<NameComponent>(id);
+                    const auto* nameComp = m_world->GetComponent<NameComponent>(id);
                     if (nameComp && nameComp->name[0] != '\0')
                         ImGui::TextUnformatted(nameComp->name);
                     else

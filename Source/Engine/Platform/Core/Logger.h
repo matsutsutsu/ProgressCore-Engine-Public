@@ -148,8 +148,8 @@ private:
     Logger(const Logger&) = delete;
     Logger& operator=(const Logger&) = delete;
 
-    mutable std::mutex                     _mutex;
-    std::vector<std::shared_ptr<ILogSink>> _sinks;
+    mutable std::mutex                     m_mutex;
+    std::vector<std::shared_ptr<ILogSink>> m_sinks;
 };
 
 //==============================================================================

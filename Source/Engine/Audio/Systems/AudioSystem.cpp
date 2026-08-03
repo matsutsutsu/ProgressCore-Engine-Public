@@ -14,16 +14,16 @@ using namespace CCL::ECS;
 void AudioSystem::Initialize() {
     // ---------------------------------------------------------
     // イベント購読 (ListenEvent)
-    // 理由: 基底クラスの _eventCleanups に自動登録され、
+    // 理由: 基底クラスの m_eventCleanups に自動登録され、
     // システム破棄時に安全に Unsubscribe されるため。
     // ---------------------------------------------------------
     ListenEvent<PlaySoundEvent>([this](const PlaySoundEvent& e) {
-        if (!_world) return;
+        if (!m_world) return;
 
         // リソースへのアクセス前に必ず HasResource でNullチェックを行う (指示書準拠)
-        if (!_world->HasResource<std::shared_ptr<IAudioAPI>>()) return;
+        if (!m_world->HasResource<std::shared_ptr<IAudioAPI>>()) return;
 
-        auto& api = _world->GetResource<std::shared_ptr<IAudioAPI>>();
+        auto& api = m_world->GetResource<std::shared_ptr<IAudioAPI>>();
         if (api) {
             api->PlayOneShot3D(e.eventHash, e.position);
         }
@@ -31,11 +31,11 @@ void AudioSystem::Initialize() {
 }
 
 void AudioSystem::Update(float dt) {
-    if (!_world) return;
+    if (!m_world) return;
 
     // リソースの生存確認
-    if (!_world->HasResource<std::shared_ptr<IAudioAPI>>()) return;
-    auto& api = _world->GetResource<std::shared_ptr<IAudioAPI>>();
+    if (!m_world->HasResource<std::shared_ptr<IAudioAPI>>()) return;
+    auto& api = m_world->GetResource<std::shared_ptr<IAudioAPI>>();
     if (!api) return;
 
     // ---------------------------------------------------------
@@ -89,9 +89,9 @@ void AudioSystem::Update(float dt) {
     //   globalScale が 1 未満（ジャスト回避のヒットストップ・撃破スロー等）になると
     //   slow>0 になり、DXTKバックエンドが全再生音のピッチを下げてリバーブを掛ける。
     // ---------------------------------------------------------
-    if (_world->HasResource<TimeContext>())
+    if (m_world->HasResource<TimeContext>())
     {
-        const float globalScale = _world->GetResource<TimeContext>().globalScale;
+        const float globalScale = m_world->GetResource<TimeContext>().globalScale;
         const float slow        = std::clamp(1.0f - globalScale, 0.0f, 1.0f);
         api->SetGlobalSlow(slow);
     }

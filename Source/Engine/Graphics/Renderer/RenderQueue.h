@@ -63,29 +63,29 @@ public:
     * @details これにより SortAndBuildBatches が ShaderRegistry::Instance() を
     *          叩かなくなり、ホットパスの singleton 依存がゼロになる。
     */
-    void Initialize(ShaderRegistry* shaders) { _shaderRegistry = shaders; }
+    void Initialize(ShaderRegistry* shaders) { m_shaderRegistry = shaders; }
 
 
     // フレーム開始時にリストを空にする（メモリ再確保を防ぐため clear のみ）
     void BeginFrame() {
-        _opaqueCommands.clear();
-        _deferredTransparentCommands.clear();
-        _shadowCommands.clear();
-        _sortKeys.clear();
-        _batchesBuilt = false; // このフレームのソートはまだ未構築
+        m_opaqueCommands.clear();
+        m_deferredTransparentCommands.clear();
+        m_shadowCommands.clear();
+        m_sortKeys.clear();
+        m_batchesBuilt = false; // このフレームのソートはまだ未構築
     }
 
     // ECS(ウェイター)から注文を受け取る
     void SubmitOpaque(const RenderCommand& cmd) {
-        _opaqueCommands.push_back(cmd);
+        m_opaqueCommands.push_back(cmd);
     }
 
     void SubmitDeferredTransparent(const TransparencyCommand& cmd) {
-        _deferredTransparentCommands.push_back(cmd);
+        m_deferredTransparentCommands.push_back(cmd);
     }
 
     void SubmitShadow(const ShadowCommand& cmd) {
-        _shadowCommands.push_back(cmd);
+        m_shadowCommands.push_back(cmd);
     }
 
     /**
@@ -96,18 +96,18 @@ public:
     void SortAndBuildBatches()
     {
         // フレーム内で最初に呼んだパス（Z プリパス or 不透明パス）だけが実際に構築する。
-        // 以降の呼び出しは同じ _sortKeys を再利用し、二重ソートを避ける。
-        if (_batchesBuilt) return;
+        // 以降の呼び出しは同じ m_sortKeys を再利用し、二重ソートを避ける。
+        if (m_batchesBuilt) return;
 
-        _sortKeys.clear();
-        _sortKeys.reserve(_opaqueCommands.size());
+        m_sortKeys.clear();
+        m_sortKeys.reserve(m_opaqueCommands.size());
 
-        for (uint32_t i = 0; i < static_cast<uint32_t>(_opaqueCommands.size()); ++i) {
-            const auto& cmd = _opaqueCommands[i];
+        for (uint32_t i = 0; i < static_cast<uint32_t>(m_opaqueCommands.size()); ++i) {
+            const auto& cmd = m_opaqueCommands[i];
 
             // (I) ShaderRegistry::Instance() を廃止 → 注入済みポインタを使用
-            uint64_t shaderPart = (_shaderRegistry != nullptr)
-                ? static_cast<uint64_t>(_shaderRegistry->GetSortID(cmd.shaderHash)) & 0xFF
+            uint64_t shaderPart = (m_shaderRegistry != nullptr)
+                ? static_cast<uint64_t>(m_shaderRegistry->GetSortID(cmd.shaderHash)) & 0xFF
                 : 0;
 
             uint64_t modelPart = static_cast<uint64_t>(cmd.assetHash) & 0xFFFFFFFF;
@@ -115,29 +115,29 @@ public:
             if (cmd.overrideCount > 0 && cmd.overrideMaterials[0].IsValid())
                 matPart = cmd.overrideMaterials[0].index & 0xFFFFFF;
 
-            _sortKeys.push_back({ (shaderPart << 56) | (modelPart << 24) | matPart, i });
+            m_sortKeys.push_back({ (shaderPart << 56) | (modelPart << 24) | matPart, i });
         }
-        std::sort(_sortKeys.begin(), _sortKeys.end());
-        _batchesBuilt = true;
+        std::sort(m_sortKeys.begin(), m_sortKeys.end());
+        m_batchesBuilt = true;
     }
 
     // シェフ(ModelRenderer)が読み取るためのゲッター
-    const std::vector<RenderCommand>& GetOpaqueCommands() const { return _opaqueCommands; }
-    const std::vector<RenderKey>& GetSortedKeys() const { return _sortKeys; }
-    const std::vector<TransparencyCommand>& GetDeferredTransparentCommands() const { return _deferredTransparentCommands; }
+    const std::vector<RenderCommand>& GetOpaqueCommands() const { return m_opaqueCommands; }
+    const std::vector<RenderKey>& GetSortedKeys() const { return m_sortKeys; }
+    const std::vector<TransparencyCommand>& GetDeferredTransparentCommands() const { return m_deferredTransparentCommands; }
     // 距離ソートを TransparentPass 側でその場実行するための可変参照。
     // このリストは毎フレーム BeginFrame でクリア＆OpaquePass が再構築するため破壊的並べ替えで問題ない。
-    std::vector<TransparencyCommand>& GetDeferredTransparentCommandsMutable() { return _deferredTransparentCommands; }
-    const std::vector<ShadowCommand>& GetShadowCommands() const { return _shadowCommands; }
+    std::vector<TransparencyCommand>& GetDeferredTransparentCommandsMutable() { return m_deferredTransparentCommands; }
+    const std::vector<ShadowCommand>& GetShadowCommands() const { return m_shadowCommands; }
 
 
 private:
-    ShaderRegistry* _shaderRegistry = nullptr;
+    ShaderRegistry* m_shaderRegistry = nullptr;
 
-    bool                             _batchesBuilt = false; // 当該フレームで SortAndBuildBatches 済みか
+    bool                             m_batchesBuilt = false; // 当該フレームで SortAndBuildBatches 済みか
 
-    std::vector<RenderCommand>       _opaqueCommands;
-    std::vector<RenderKey>           _sortKeys;
-    std::vector<TransparencyCommand> _deferredTransparentCommands; // 不透明パスで弾かれた半透明
-    std::vector<ShadowCommand>       _shadowCommands;
+    std::vector<RenderCommand>       m_opaqueCommands;
+    std::vector<RenderKey>           m_sortKeys;
+    std::vector<TransparencyCommand> m_deferredTransparentCommands; // 不透明パスで弾かれた半透明
+    std::vector<ShadowCommand>       m_shadowCommands;
 };

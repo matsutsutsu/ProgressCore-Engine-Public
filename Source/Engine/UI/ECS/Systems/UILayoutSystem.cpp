@@ -15,24 +15,24 @@ using namespace CCL::ECS;
 void UILayoutSystem::Initialize()
 {
     // 描画リストのリソースをここで用意（未登録時のみ）。UIRenderer が2Dパスで読む。
-    if (!_world->HasResource<UIDrawList>())
-        _world->AddResource<UIDrawList>();
+    if (!m_world->HasResource<UIDrawList>())
+        m_world->AddResource<UIDrawList>();
 }
 
 void UILayoutSystem::Update(float /*dt*/)
 {
-    if (!_world->HasResource<UIDrawList>())
+    if (!m_world->HasResource<UIDrawList>())
         return;
 
     auto       &gfx     = Graphics::Instance();
     const float screenW = gfx.GetScreenWidth();
     const float screenH = gfx.GetScreenHeight();
 
-    auto &drawList = _world->GetResource<UIDrawList>();
+    auto &drawList = m_world->GetResource<UIDrawList>();
     // ※ クリアは消費側(UIRenderer::Flush 末尾)が行う。ここでは積むだけ。
 
     ForEachWithID([&](CCL::ECS::EntityID id, UITransformComponent &t, const UIImageComponent &img) {
-        CCL::UI::ComputeUIRect(*_world, id, t, screenW, screenH);
+        CCL::UI::ComputeUIRect(*m_world, id, t, screenW, screenH);
 
         if (!img.visible) return;
 

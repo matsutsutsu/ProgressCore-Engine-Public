@@ -25,14 +25,14 @@
  *   inputSRV (sceneHDR)
  *     → Extraction (full→half)
  *     → Downsample × N
- *     → Upsample   × N → _upChain[0] (half-res bloom glow)
- *     → Composite: _compositeRT = scene + glow * intensity  (full-res HDR)
+ *     → Upsample   × N → m_upChain[0] (half-res bloom glow)
+ *     → Composite: m_compositeRT = scene + glow * intensity  (full-res HDR)
  *     ← 返す
  *  @endcode
  *
  *  【使い方】
  *  @code
- *   auto* bloom = _postProcess->AddEffect<BloomEffect>();
+ *   auto* bloom = m_postProcess->AddEffect<BloomEffect>();
  *   bloom->intensity  = 1.5f;
  *   bloom->threshold  = 0.9f;
  *   bloom->SetEnabled(true);
@@ -76,14 +76,14 @@ private:
         Microsoft::WRL::ComPtr<ID3D11Buffer>         cbBloom;
         Microsoft::WRL::ComPtr<ID3D11SamplerState>  sampler;
     };
-    std::unique_ptr<BloomResources> _res;
+    std::unique_ptr<BloomResources> m_res;
 
     // Opaque ブレンドステート（旧 Graphics::Instance() 依存を排除）
-    Microsoft::WRL::ComPtr<ID3D11BlendState> _opaqueBlendState;
+    Microsoft::WRL::ComPtr<ID3D11BlendState> m_opaqueBlendState;
 
     // RT チェーン
-    std::vector<RenderTargetHandle> _downChain;
-    std::vector<RenderTargetHandle> _upChain;
+    std::vector<RenderTargetHandle> m_downChain;
+    std::vector<RenderTargetHandle> m_upChain;
   
     void CreateChains(UINT width, UINT height);
     void ReleaseChains();

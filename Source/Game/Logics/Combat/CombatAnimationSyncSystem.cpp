@@ -55,13 +55,13 @@ void CombatAnimationSyncSystem::Update(float /*dt*/)
         //   剣はキャラの子孫なので解決できる。空間生成の判定球は親が無く解決不能＝
         //   ownerEntity=Invalid のまま「常時判定の弾」として下でスキップされる。
         if (hb.ownerEntity == InvalidEntityID)
-            hb.ownerEntity = ResolveAnimatorOwner(_world, hitboxID);
+            hb.ownerEntity = ResolveAnimatorOwner(m_world, hitboxID);
 
         if (hb.ownerEntity == InvalidEntityID)
             return;
 
         // ── 2. 駆動元 Animator を取得（別エンティティ・読み取り専用） ──
-        const auto *animator = _world->GetComponent<AnimatorComponent>(hb.ownerEntity);
+        const auto *animator = m_world->GetComponent<AnimatorComponent>(hb.ownerEntity);
         if (!animator || !animator->currentSequence)
         {
             // オーナー無効 or シーケンス未設定 → 安全に非アクティブ化

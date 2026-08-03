@@ -30,7 +30,7 @@ void Input::Update(float dt)
         std::abs(gamePad->GetAxisRX()) > 0.1f || std::abs(gamePad->GetAxisRY()) > 0.1f ||
         gamePad->GetTriggerL() > 0.1f || gamePad->GetTriggerR() > 0.1f)
     {
-        _activeDeviceType = ActiveDeviceType::GamePad;
+        m_activeDeviceType = ActiveDeviceType::GamePad;
     }
 
     // [Mouse の判定]
@@ -38,24 +38,24 @@ void Input::Update(float dt)
     if (mouse->GetButtonDown() != 0 ||
         std::abs(mouse->GetVelocityX()) > 0.1f || std::abs(mouse->GetVelocityY()) > 0.1f)
     {
-        _activeDeviceType = ActiveDeviceType::KeyboardMouse;
+        m_activeDeviceType = ActiveDeviceType::KeyboardMouse;
     }
 
 	// 2. Logic用の入力バッファに「蓄積」する
 	//    |= (OR演算) を使うことで、Clearされるまでの間に一度でも押されれば
 	//    フラグが立ったままになります。
-	_logicPadButtonDown |= gamePad->GetButtonDown();
-	_logicMouseButtonDown |= mouse->GetButtonDown();
+	m_logicPadButtonDown |= gamePad->GetButtonDown();
+	m_logicMouseButtonDown |= mouse->GetButtonDown();
 	
     // キーボードのトリガー蓄積 & アクティブデバイス判定
     for (int i = 0; i < 256; i++) {
         bool triggered = keyboard->IsTriggered(i);
-        _logicKeyTriggered[i] |= triggered;
+        m_logicKeyTriggered[i] |= triggered;
 
         // [Keyboard の判定]
         // 何かキーが押されたら、強制的にキーボード＆マウス操作とみなす
         if (triggered) {
-            _activeDeviceType = ActiveDeviceType::KeyboardMouse;
+            m_activeDeviceType = ActiveDeviceType::KeyboardMouse;
         }
 	}
 }
@@ -65,7 +65,7 @@ void Input::Update(float dt)
 // ※ FrameWork.cpp の FixedUpdate が終わった後に呼ばれる
 void Input::ClearLogicInput()
 {
-	_logicPadButtonDown = 0;
-	_logicMouseButtonDown = 0;
-	std::memset(_logicKeyTriggered, 0, sizeof(_logicKeyTriggered));
+	m_logicPadButtonDown = 0;
+	m_logicMouseButtonDown = 0;
+	std::memset(m_logicKeyTriggered, 0, sizeof(m_logicKeyTriggered));
 }

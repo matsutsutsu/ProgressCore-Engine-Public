@@ -74,7 +74,7 @@
 #include <wrl/client.h>
 
 // COM オブジェクト解放用の小ユーティリティ（プロジェクト全体で使い回し可）
-// 例: SafeRelease(_pDevice);
+// 例: SafeRelease(m_pDevice);
 #ifndef SAFE_RELEASE
 #define SAFE_RELEASE(p) do { if (p) { (p)->Release(); (p) = nullptr; } } while(0)
 #endif

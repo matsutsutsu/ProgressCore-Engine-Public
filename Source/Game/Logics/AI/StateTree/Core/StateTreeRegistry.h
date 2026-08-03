@@ -46,23 +46,23 @@ namespace CCL::AI
         /// @param asset 構築済みの StateTreeAsset（ムーブで所有権を渡す）
         StateTreeHandle Register(StateTreeAsset&& asset)
         {
-            // ★ ホットリロード対応: 既に同じ名前のアセットが登録されているかチェック
-            auto it = _nameToHandle.find(asset.name);
-            if (it != _nameToHandle.end())
+            // ホットリロード対応: 既に同じ名前のアセットが登録されているかチェック
+            auto it = m_nameToHandle.find(asset.name);
+            if (it != m_nameToHandle.end())
             {
                 // 既存のメモリインデックスを取得し、中身を直接上書き(ムーブ)する
                 uint32_t idx = it->second.value;
-                _assets[idx] = std::move(asset);
+                m_assets[idx] = std::move(asset);
 
                 // エディタからの更新成功をログに出力
-                CCL_LOG_SUCCESS(LogCategory::Editor, "[StateTreeRegistry] アセット '%s' をホットリロードしました。", _assets[idx].name.c_str());
+                CCL_LOG_SUCCESS(LogCategory::Editor, "[StateTreeRegistry] アセット '%s' をホットリロードしました。", m_assets[idx].name.c_str());
                 return it->second;
             }
 
             // 新規登録の場合
-            const uint32_t idx = static_cast<uint32_t>(_assets.size());
-            _nameToHandle[asset.name] = StateTreeHandle{ idx };
-            _assets.push_back(std::move(asset));
+            const uint32_t idx = static_cast<uint32_t>(m_assets.size());
+            m_nameToHandle[asset.name] = StateTreeHandle{ idx };
+            m_assets.push_back(std::move(asset));
             return StateTreeHandle{ idx };
         }
 
@@ -74,26 +74,26 @@ namespace CCL::AI
         const StateTreeAsset* Get(StateTreeHandle handle) const
         {
             if (!handle.IsValid()) return nullptr;
-            if (handle.value >= _assets.size()) return nullptr;
-            return &_assets[handle.value];
+            if (handle.value >= m_assets.size()) return nullptr;
+            return &m_assets[handle.value];
         }
 
         StateTreeAsset* GetMutable(StateTreeHandle handle)
         {
             if (!handle.IsValid()) return nullptr;
-            if (handle.value >= _assets.size()) return nullptr;
-            return &_assets[handle.value];
+            if (handle.value >= m_assets.size()) return nullptr;
+            return &m_assets[handle.value];
         }
 
         /// @brief 名前からハンドルを取得。見つからなければ無効ハンドル。
         StateTreeHandle FindByName(const std::string& name) const
         {
-            auto it = _nameToHandle.find(name);
-            return (it != _nameToHandle.end()) ? it->second : StateTreeHandle{};
+            auto it = m_nameToHandle.find(name);
+            return (it != m_nameToHandle.end()) ? it->second : StateTreeHandle{};
         }
 
         /// @brief 登録済みアセット数
-        size_t AssetCount() const { return _assets.size(); }
+        size_t AssetCount() const { return m_assets.size(); }
 
         // ----------------------------------------------------------------
         // デバッグ
@@ -103,14 +103,14 @@ namespace CCL::AI
         std::vector<std::string> GetAllNames() const
         {
             std::vector<std::string> names;
-            names.reserve(_assets.size());
-            for (const auto& a : _assets) names.push_back(a.name);
+            names.reserve(m_assets.size());
+            for (const auto& a : m_assets) names.push_back(a.name);
             return names;
         }
 
     private:
-        std::vector<StateTreeAsset>                    _assets;
-        std::unordered_map<std::string, StateTreeHandle> _nameToHandle;
+        std::vector<StateTreeAsset>                    m_assets;
+        std::unordered_map<std::string, StateTreeHandle> m_nameToHandle;
     };
 
 } // namespace CCL::AI

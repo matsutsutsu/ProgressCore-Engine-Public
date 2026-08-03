@@ -61,44 +61,44 @@ void StateTreeWindow::DrawContents(EditorContext& context)
     ImGui::EndChild();
 
     // 描画後に遅延構造操作を適用（vector 破壊の回避）
-    if (_deferredOp == DeferredOp::AddChild) {
-        if (auto* s = Resolve(_deferredPath)) {
+    if (m_deferredOp == DeferredOp::AddChild) {
+        if (auto* s = Resolve(m_deferredPath)) {
             StateDef child; child.name = "NewState";
             s->children.push_back(child);
         }
-        _deferredOp = DeferredOp::None;
-    } else if (_deferredOp == DeferredOp::DeleteState) {
-        if (!_deferredPath.empty()) {
-            std::vector<int> parentPath = _deferredPath;
+        m_deferredOp = DeferredOp::None;
+    } else if (m_deferredOp == DeferredOp::DeleteState) {
+        if (!m_deferredPath.empty()) {
+            std::vector<int> parentPath = m_deferredPath;
             const int childIdx = parentPath.back();
             parentPath.pop_back();
             if (auto* parent = Resolve(parentPath)) {
                 if (childIdx >= 0 && childIdx < (int)parent->children.size())
                     parent->children.erase(parent->children.begin() + childIdx);
             }
-            _hasSelection = false;
+            m_hasSelection = false;
         }
-        _deferredOp = DeferredOp::None;
-    } else if (_deferredOp == DeferredOp::MoveUp || _deferredOp == DeferredOp::MoveDown) {
+        m_deferredOp = DeferredOp::None;
+    } else if (m_deferredOp == DeferredOp::MoveUp || m_deferredOp == DeferredOp::MoveDown) {
         // 兄弟内の並び順 = 評価優先度（SelectStates は先頭から早い者勝ちで評価するため）。
-        if (!_deferredPath.empty()) {
-            std::vector<int> parentPath = _deferredPath;
+        if (!m_deferredPath.empty()) {
+            std::vector<int> parentPath = m_deferredPath;
             const int childIdx = parentPath.back();
             parentPath.pop_back();
             if (auto* parent = Resolve(parentPath)) {
-                const int otherIdx = (_deferredOp == DeferredOp::MoveUp) ? childIdx - 1 : childIdx + 1;
+                const int otherIdx = (m_deferredOp == DeferredOp::MoveUp) ? childIdx - 1 : childIdx + 1;
                 if (otherIdx >= 0 && otherIdx < (int)parent->children.size()) {
                     std::swap(parent->children[childIdx], parent->children[otherIdx]);
 
                     // 選択中の状態が動いた側なら選択パスも追従させる
                     std::vector<int> selfPath  = parentPath; selfPath.push_back(childIdx);
                     std::vector<int> otherPath = parentPath; otherPath.push_back(otherIdx);
-                    if (_hasSelection && _selectedPath == selfPath)       _selectedPath = otherPath;
-                    else if (_hasSelection && _selectedPath == otherPath) _selectedPath = selfPath;
+                    if (m_hasSelection && m_selectedPath == selfPath)       m_selectedPath = otherPath;
+                    else if (m_hasSelection && m_selectedPath == otherPath) m_selectedPath = selfPath;
                 }
             }
         }
-        _deferredOp = DeferredOp::None;
+        m_deferredOp = DeferredOp::None;
     }
 #else
     (void)context;
@@ -124,18 +124,18 @@ void StateTreeWindow::DrawToolbar(EditorContext& context)
     if (ImGui::Button("Apply to World")) ApplyToWorld(context);
 
     ImGui::SameLine();
-    ImGui::Text("  Tree: %s", _def.name.c_str());
-    if (!_currentPath.empty()) {
+    ImGui::Text("  Tree: %s", m_def.name.c_str());
+    if (!m_currentPath.empty()) {
         ImGui::SameLine();
-        ImGui::TextDisabled("(%s)", _currentPath.c_str());
+        ImGui::TextDisabled("(%s)", m_currentPath.c_str());
     }
 
     // ツリー名の編集
     char nameBuf[128];
-    std::snprintf(nameBuf, sizeof(nameBuf), "%s", _def.name.c_str());
+    std::snprintf(nameBuf, sizeof(nameBuf), "%s", m_def.name.c_str());
     ImGui::SetNextItemWidth(200);
     if (ImGui::InputText("Name", nameBuf, sizeof(nameBuf)))
-        _def.name = nameBuf;
+        m_def.name = nameBuf;
 }
 
 // ============================================================
@@ -143,7 +143,7 @@ void StateTreeWindow::DrawToolbar(EditorContext& context)
 // ============================================================
 void StateTreeWindow::DrawTreePanel()
 {
-    DrawStateNode(_def.root, {});
+    DrawStateNode(m_def.root, {});
 }
 
 void StateTreeWindow::DrawStateNode(StateDef& state, std::vector<int> path)
@@ -154,36 +154,36 @@ void StateTreeWindow::DrawStateNode(StateDef& state, std::vector<int> path)
                              | ImGuiTreeNodeFlags_DefaultOpen
                              | ImGuiTreeNodeFlags_SpanAvailWidth;
     if (state.children.empty()) flags |= ImGuiTreeNodeFlags_Leaf;
-    if (path == _selectedPath && _hasSelection) flags |= ImGuiTreeNodeFlags_Selected;
+    if (path == m_selectedPath && m_hasSelection) flags |= ImGuiTreeNodeFlags_Selected;
 
     const bool open = ImGui::TreeNodeEx(state.name.c_str(), flags);
 
     if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
-        _selectedPath = path;
-        _hasSelection = true;
+        m_selectedPath = path;
+        m_hasSelection = true;
     }
 
     // 右クリックメニュー
     if (ImGui::BeginPopupContextItem()) {
         if (ImGui::MenuItem("Add Child State")) {
-            _deferredOp   = DeferredOp::AddChild;
-            _deferredPath = path;
+            m_deferredOp   = DeferredOp::AddChild;
+            m_deferredPath = path;
         }
         // ルート（path 空）は削除・並び替え不可（兄弟が存在しないため）
         if (!path.empty()) {
             if (ImGui::MenuItem("Delete State")) {
-                _deferredOp   = DeferredOp::DeleteState;
-                _deferredPath = path;
+                m_deferredOp   = DeferredOp::DeleteState;
+                m_deferredPath = path;
             }
             ImGui::Separator();
             // 優先度 = 兄弟内の並び順（上にあるほど先に評価される＝優先度が高い）
             if (ImGui::MenuItem("Move Up")) {
-                _deferredOp   = DeferredOp::MoveUp;
-                _deferredPath = path;
+                m_deferredOp   = DeferredOp::MoveUp;
+                m_deferredPath = path;
             }
             if (ImGui::MenuItem("Move Down")) {
-                _deferredOp   = DeferredOp::MoveDown;
-                _deferredPath = path;
+                m_deferredOp   = DeferredOp::MoveDown;
+                m_deferredPath = path;
             }
         }
         ImGui::EndPopup();
@@ -206,12 +206,12 @@ void StateTreeWindow::DrawStateNode(StateDef& state, std::vector<int> path)
 // ============================================================
 void StateTreeWindow::DrawInspectorPanel()
 {
-    if (!_hasSelection) {
+    if (!m_hasSelection) {
         ImGui::TextDisabled("状態を選択してください");
         return;
     }
-    StateDef* s = Resolve(_selectedPath);
-    if (!s) { _hasSelection = false; return; }
+    StateDef* s = Resolve(m_selectedPath);
+    if (!s) { m_hasSelection = false; return; }
 
     // 状態名
     char nameBuf[128];
@@ -361,12 +361,12 @@ void StateTreeWindow::DrawDebugPanel(EditorContext& context)
 // ============================================================
 void StateTreeWindow::NewTree()
 {
-    _def = StateTreeDef{};
-    _def.name = "NewStateTree";
-    _def.root.name = "Root";
-    _currentPath.clear();
-    _selectedPath.clear();
-    _hasSelection = false;
+    m_def = StateTreeDef{};
+    m_def.name = "NewStateTree";
+    m_def.root.name = "Root";
+    m_currentPath.clear();
+    m_selectedPath.clear();
+    m_hasSelection = false;
 }
 
 void StateTreeWindow::OpenTree()
@@ -377,24 +377,24 @@ void StateTreeWindow::OpenTree()
     const std::string rel = FileDialog::ConvertToRelativePath(*picked);
     StateTreeDef loaded;
     if (StateTreeSerializer::LoadDef(rel, loaded)) {
-        _def = std::move(loaded);
-        _currentPath = rel;
-        _selectedPath.clear();
-        _hasSelection = false;
+        m_def = std::move(loaded);
+        m_currentPath = rel;
+        m_selectedPath.clear();
+        m_hasSelection = false;
     }
 }
 
 void StateTreeWindow::SaveTree(bool saveAs)
 {
-    std::string target = _currentPath;
+    std::string target = m_currentPath;
     if (saveAs || target.empty()) {
         auto picked = FileDialog::SavePreset(
-            "StateTree", "Save State Tree", _def.name + ".json");
+            "StateTree", "Save State Tree", m_def.name + ".json");
         if (!picked) return;
         target = FileDialog::ConvertToRelativePath(*picked);
     }
-    if (StateTreeSerializer::SaveDef(target, _def))
-        _currentPath = target;
+    if (StateTreeSerializer::SaveDef(target, m_def))
+        m_currentPath = target;
 }
 
 void StateTreeWindow::ApplyToWorld(EditorContext& context)
@@ -404,7 +404,7 @@ void StateTreeWindow::ApplyToWorld(EditorContext& context)
         context.world->AddResource<StateTreeRegistry>();
 
     auto& reg = context.world->GetResource<StateTreeRegistry>();
-    StateTreeAsset compiled = StateTreeSerializer::Compile(_def);
+    StateTreeAsset compiled = StateTreeSerializer::Compile(m_def);
     reg.Register(std::move(compiled));   // ※同名は新ハンドルとして追加（下記メモ参照）
 }
 
@@ -413,7 +413,7 @@ void StateTreeWindow::ApplyToWorld(EditorContext& context)
 // ============================================================
 StateDef* StateTreeWindow::Resolve(const std::vector<int>& path)
 {
-    StateDef* cur = &_def.root;
+    StateDef* cur = &m_def.root;
     for (int idx : path) {
         if (idx < 0 || idx >= (int)cur->children.size()) return nullptr;
         cur = &cur->children[idx];

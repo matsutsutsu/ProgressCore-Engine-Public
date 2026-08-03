@@ -19,11 +19,11 @@ public:
     void OnResize(uint32_t width, uint32_t height) override;
     const char* GetName() const override { return "NormalPrepass"; }
 
-    ID3D11ShaderResourceView* GetNormalSRV() const noexcept { return _normalBuffer.GetSRV(); }
+    ID3D11ShaderResourceView* GetNormalSRV() const noexcept { return m_normalBuffer.GetSRV(); }
 
 private:
-    PipelineState  _pso;
-    InstanceBuffer _instanceBuffer;
-    NormalBuffer   _normalBuffer;
-    std::vector<InstanceData> _instanceScratch;
+    PipelineState  m_pso;
+    InstanceBuffer m_instanceBuffer;
+    NormalBuffer   m_normalBuffer;
+    std::vector<InstanceData> m_instanceScratch;
 };

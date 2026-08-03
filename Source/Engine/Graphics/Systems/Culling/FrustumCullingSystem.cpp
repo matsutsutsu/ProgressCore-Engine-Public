@@ -11,8 +11,8 @@ FrustumCullingSystem::FrustumCullingSystem() : IfSystem("FrustumCullingSystem") 
 
 void FrustumCullingSystem::Update(float dt)
 {
-    if (!_world->HasResource<Camera*>()) return;
-    auto* camera = _world->GetResource<Camera*>();
+    if (!m_world->HasResource<Camera*>()) return;
+    auto* camera = m_world->GetResource<Camera*>();
     if (!camera) return;
 
     // カメラ自身が計算済みの、絶対的に正確な最新Frustumを取得

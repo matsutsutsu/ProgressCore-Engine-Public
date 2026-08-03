@@ -14,12 +14,12 @@ public:
     void CheckAndReload(ID3D11Device* device) override;
 
 private:
-    Microsoft::WRL::ComPtr<ID3D11VertexShader>   _vs;
-    Microsoft::WRL::ComPtr<ID3D11GeometryShader> _gs;
-    Microsoft::WRL::ComPtr<ID3D11PixelShader>    _ps;
+    Microsoft::WRL::ComPtr<ID3D11VertexShader>   m_vs;
+    Microsoft::WRL::ComPtr<ID3D11GeometryShader> m_gs;
+    Microsoft::WRL::ComPtr<ID3D11PixelShader>    m_ps;
 
-    std::wstring _vsPath, _gsPath, _psPath;
-    std::filesystem::file_time_type _vsTime, _gsTime, _psTime;
+    std::wstring m_vsPath, m_gsPath, m_psPath;
+    std::filesystem::file_time_type m_vsTime, m_gsTime, m_psTime;
 
     void LoadShaders(ID3D11Device* device);
 };

@@ -36,8 +36,8 @@
 void OpaquePass::Initialize(const RenderServices &services)
 {
     IRenderPass::Initialize(services);
-    _psoOpaque = PipelineState(PipelineStateDesc::DefaultOpaque());
-    _instanceBuffer.Create(services.device, 8192);
+    m_psoOpaque = PipelineState(PipelineStateDesc::DefaultOpaque());
+    m_instanceBuffer.Create(services.device, 8192);
 }
 
 void OpaquePass::Execute(const RenderFrameContext &ctx)
@@ -45,28 +45,28 @@ void OpaquePass::Execute(const RenderFrameContext &ctx)
     ID3D11DeviceContext *dc = ctx.dc;
     if (!dc) return;
 
-    RenderQueue   *queue    = _services->renderQueue;
-    ModelRenderer *renderer = _services->modelRenderer;
+    RenderQueue   *queue    = m_services->renderQueue;
+    ModelRenderer *renderer = m_services->modelRenderer;
     if (!queue || !renderer) return;
 
     // カリング統計をフレーム毎にリセット（GetDrawnMeshCount / GetCulledMeshCount で参照）
-    _stat_drawnMeshes  = 0;
-    _stat_culledMeshes = 0;
+    m_stat_drawnMeshes  = 0;
+    m_stat_culledMeshes = 0;
 
     // ------------------------------------------------------------------
     // ① 共通リソースのバインド（シャドウマップ・サンプラー・不透明PSO）
     // ------------------------------------------------------------------
-    if (_services->shadowMap)
+    if (m_services->shadowMap)
     {
-        _services->shadowMap->Bind(dc, SLOT_SRV_SHADOW, SLOT_SMP_SHADOW, SLOT_CB_SHADOW);
+        m_services->shadowMap->Bind(dc, SLOT_SRV_SHADOW, SLOT_SMP_SHADOW, SLOT_CB_SHADOW);
     }
     ID3D11SamplerState *samplers[] = {
-        _services->renderState->GetSamplerState(SamplerState::LinearWrap)};
+        m_services->renderState->GetSamplerState(SamplerState::LinearWrap)};
     dc->PSSetSamplers(SLOT_SMP_LINEAR, 1, samplers);
-    _psoOpaque.Apply(dc, _services->renderState);
+    m_psoOpaque.Apply(dc, m_services->renderState);
 
     // 現在適用中の PSO。シェーダー固有 PSO と差があるときだけ切り替える。
-    const PipelineState *lastPso = &_psoOpaque;
+    const PipelineState *lastPso = &m_psoOpaque;
 
     const DirectX::XMVECTOR cameraPos = DirectX::XMLoadFloat3(&ctx.camera->GetEye());
 
@@ -88,7 +88,7 @@ void OpaquePass::Execute(const RenderFrameContext &ctx)
         const uint32_t currentIndex = sortKeys[i].originalIndex;
         const auto    &current      = opaqueCommands[currentIndex];
 
-        Shader          *shader    = _services->shaders->GetShader(current.shaderHash, _services->device);
+        Shader          *shader    = m_services->shaders->GetShader(current.shaderHash, m_services->device);
         IMaterialShader *matShader = shader ? shader->AsMaterial() : nullptr;
 
         if (!matShader)
@@ -96,14 +96,14 @@ void OpaquePass::Execute(const RenderFrameContext &ctx)
             ++i;
             continue;
         } // 不透明パスはマテリアルシェーダー必須
-        matShader->Begin(dc, *_services, ctx);
+        matShader->Begin(dc, *m_services, ctx);
 
         // シェーダー固有 PSO があれば上書き。無ければパス既定へ戻す。
         {
-            const PipelineState *want = shader->GetPSO() ? shader->GetPSO() : &_psoOpaque;
+            const PipelineState *want = shader->GetPSO() ? shader->GetPSO() : &m_psoOpaque;
             if (want != lastPso)
             {
-                want->Apply(dc, _services->renderState);
+                want->Apply(dc, m_services->renderState);
                 lastPso = want;
             }
         }
@@ -137,7 +137,7 @@ void OpaquePass::Execute(const RenderFrameContext &ctx)
             if (meshIdx < current.overrideCount)
             {
                 MaterialHandle h = current.overrideMaterials[meshIdx];
-                if (h.IsValid()) overrideMat = _services->resources->GetMaterial(h);
+                if (h.IsValid()) overrideMat = m_services->resources->GetMaterial(h);
             }
             const MaterialData *activeMat = overrideMat
                                                 ? overrideMat
@@ -188,8 +188,8 @@ void OpaquePass::Execute(const RenderFrameContext &ctx)
             // =========================================================
             // 不透明：インスタンスデータ構築（非スキンドはここでカリング）
             // =========================================================
-            _instanceScratch.clear();
-            _instanceScratch.reserve(batchCount);
+            m_instanceScratch.clear();
+            m_instanceScratch.reserve(batchCount);
             for (size_t k = 0; k < batchCount; ++k)
             {
                 const auto  &cmd = opaqueCommands[sortKeys[batchStart + k].originalIndex];
@@ -200,24 +200,24 @@ void OpaquePass::Execute(const RenderFrameContext &ctx)
                 {
                     // スキンドはカリングせず全数積む（ワールドは単位行列。変形は骨行列側）
                     DirectX::XMStoreFloat4x4(&data.world, DirectX::XMMatrixIdentity());
-                    _instanceScratch.push_back(data);
+                    m_instanceScratch.push_back(data);
                 }
                 else
                 {
                     data.world = MeshCull::ComputeMeshWorld(mesh, cmd.worldMatrix);
                     if (!MeshCull::IsMeshVisible(localAABB, data.world, frustum)) continue; // 視界外は積まない
-                    _instanceScratch.push_back(data);
+                    m_instanceScratch.push_back(data);
                 }
             }
 
             // 可視インスタンスが 0 個なら、このメッシュを丸ごとスキップする。
-            // ★ここが最重要：ドローコール・マテリアル更新・IA 設定・Map/Unmap を全て回避。
-            if (_instanceScratch.empty())
+            // ここが最重要：ドローコール・マテリアル更新・IA 設定・Map/Unmap を全て回避。
+            if (m_instanceScratch.empty())
             {
-                ++_stat_culledMeshes;
+                ++m_stat_culledMeshes;
                 continue;
             }
-            ++_stat_drawnMeshes;
+            ++m_stat_drawnMeshes;
 
             if (isSkinned)
             {
@@ -228,11 +228,11 @@ void OpaquePass::Execute(const RenderFrameContext &ctx)
                 dc->IASetIndexBuffer(mesh.data->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
                 dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
                 // スキンドはカリングしていないため scratch.size() == batchCount
-                for (size_t k = 0; k < _instanceScratch.size(); ++k)
+                for (size_t k = 0; k < m_instanceScratch.size(); ++k)
                 {
                     const auto &cmd = opaqueCommands[sortKeys[batchStart + k].originalIndex];
-                    _instanceBuffer.Write(dc, &_instanceScratch[k], 1);
-                    _instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
+                    m_instanceBuffer.Write(dc, &m_instanceScratch[k], 1);
+                    m_instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
                     renderer->UpdateSkeletonConstants(dc, cmd.model->GetMeshes()[meshIdx]);
                     dc->DrawIndexedInstanced(static_cast<UINT>(mesh.data->indices.size()), 1, 0, 0, 0);
                 }
@@ -245,22 +245,22 @@ void OpaquePass::Execute(const RenderFrameContext &ctx)
                 dc->IASetIndexBuffer(mesh.data->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
                 dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-                // ★ batchCount ではなく「カリング後の可視インスタンス数」で描画する
-                const size_t visibleCount = _instanceScratch.size();
+                // batchCount ではなく「カリング後の可視インスタンス数」で描画する
+                const size_t visibleCount = m_instanceScratch.size();
                 size_t       curOffset    = 0;
                 while (curOffset < visibleCount)
                 {
                     const size_t drawCount = (std::min)(
-                        visibleCount - curOffset, _instanceBuffer.GetMaxInstances());
-                    _instanceBuffer.Write(dc, _instanceScratch.data() + curOffset, drawCount);
-                    _instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
+                        visibleCount - curOffset, m_instanceBuffer.GetMaxInstances());
+                    m_instanceBuffer.Write(dc, m_instanceScratch.data() + curOffset, drawCount);
+                    m_instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
                     dc->DrawIndexedInstanced(static_cast<UINT>(mesh.data->indices.size()),
                         static_cast<UINT>(drawCount), 0, 0, 0);
                     curOffset += drawCount;
                 }
             }
-            _instanceBuffer.Unbind(dc, SLOT_SRV_INSTANCE);
+            m_instanceBuffer.Unbind(dc, SLOT_SRV_INSTANCE);
         }
-        matShader->End(dc, *_services);
+        matShader->End(dc, *m_services);
     }
 }

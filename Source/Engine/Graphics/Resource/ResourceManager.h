@@ -133,7 +133,7 @@ class ResourceManager
     std::unordered_map<uint32_t, CCL::Handle<CurveData>> m_animCurveRegistry;
 
     // スレッドセーフ用ミューテックス
-    std::mutex _mutex;
+    std::mutex m_mutex;
 
 #ifdef _DEBUG
     std::unordered_map<uint32_t, std::string> m_debugNameRegistry;

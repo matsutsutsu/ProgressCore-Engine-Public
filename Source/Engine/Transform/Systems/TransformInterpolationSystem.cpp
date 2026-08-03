@@ -25,8 +25,8 @@ static inline XMMATRIX ComposeLocalRender(const TransformComponent &t, float alp
 
 void TransformInterpolationSystem::Update(float dt)
 {
-    if (!_world->HasResource<RenderInterpState>()) return;
-    const float alpha = _world->GetResource<RenderInterpState>().alpha;
+    if (!m_world->HasResource<RenderInterpState>()) return;
+    const float alpha = m_world->GetResource<RenderInterpState>().alpha;
 
     // ---------------------------------------------------------------
     // Phase 1: ルート(parent==0)を並列で補間確定。
@@ -41,21 +41,21 @@ void TransformInterpolationSystem::Update(float dt)
     // ---------------------------------------------------------------
     // Phase 2: 非ルートをdepth順に「補間ローカル × 親renderWorldMatrix」で解決。
     //          TransformUpdateSystem::SolveHierarchy と対になる処理。
-    //          ★ cache自体はLogic権威データなので読み取り専用で使い、
-    //            書き込みは自前の _renderWorldDense に対してのみ行う。
+    //          cache自体はLogic権威データなので読み取り専用で使い、
+    //            書き込みは自前の m_renderWorldDense に対してのみ行う。
     // ---------------------------------------------------------------
-    if (!_world->HasResource<TransformHierarchyCache*>()) return;
-    TransformHierarchyCache *cache = _world->GetResource<TransformHierarchyCache*>();
+    if (!m_world->HasResource<TransformHierarchyCache*>()) return;
+    TransformHierarchyCache *cache = m_world->GetResource<TransformHierarchyCache*>();
     if (!cache) return;
 
     const size_t n = cache->Count();
-    if (_renderWorldDense.size() < n) _renderWorldDense.resize(n);
+    if (m_renderWorldDense.size() < n) m_renderWorldDense.resize(n);
 
     for (size_t i = 0; i < n; ++i) {
         const int idx = static_cast<int>(i);
         const EntityID id = cache->EntityAt(idx);
 
-        auto *t = _world->GetComponent<TransformComponent>(id);
+        auto *t = m_world->GetComponent<TransformComponent>(id);
         if (!t) continue;
 
         const XMMATRIX local = ComposeLocalRender(*t, alpha);
@@ -64,15 +64,15 @@ void TransformInterpolationSystem::Update(float dt)
         const int p = cache->ParentInOrderOf(idx);
         XMMATRIX parentW;
         if (p >= 0) {
-            parentW = XMLoadFloat4x4(&_renderWorldDense[p]);
+            parentW = XMLoadFloat4x4(&m_renderWorldDense[p]);
         }
         else {
-            auto *pt = _world->GetComponent<TransformComponent>(cache->ParentIdOf(idx));
+            auto *pt = m_world->GetComponent<TransformComponent>(cache->ParentIdOf(idx));
             parentW = pt ? XMLoadFloat4x4(&pt->renderWorldMatrix) : XMMatrixIdentity();
         }
 
         const XMMATRIX world = XMMatrixMultiply(local, parentW);
-        XMStoreFloat4x4(&_renderWorldDense[idx], world); // 後続の子が読むため保持
+        XMStoreFloat4x4(&m_renderWorldDense[idx], world); // 後続の子が読むため保持
         XMStoreFloat4x4(&t->renderWorldMatrix, world);   // 描画用に書き戻し
     }
 }

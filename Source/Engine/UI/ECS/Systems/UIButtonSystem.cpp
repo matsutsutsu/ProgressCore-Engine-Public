@@ -29,7 +29,7 @@ void UIButtonSystem::Update(float /*dt*/)
             img.color = btn.normalColor;
 
         // hover/focus で拡大演出（UIAnimationComponent があれば目標スケールを設定）。
-        if (auto *anim = _world->GetComponent<UIAnimationComponent>(id))
+        if (auto *anim = m_world->GetComponent<UIAnimationComponent>(id))
         {
             const bool hot     = inter.interactable && (inter.isHovered || inter.isFocused);
             anim->targetScale  = hot ? btn.hoverScale : 1.0f;
@@ -41,7 +41,7 @@ void UIButtonSystem::Update(float /*dt*/)
             const uint32_t hash = btn.onClickAction.empty()
                                       ? 0u
                                       : CCL::Utils::HashString(btn.onClickAction);
-            _world->GetEventBus().Publish(UIButtonClickedEvent{id, hash});
+            m_world->GetEventBus().Publish(UIButtonClickedEvent{id, hash});
 
             CCL_LOG_INFO(LogCategory::Game, "[UIButton] clicked entity=%llu action='%s'",
                 static_cast<unsigned long long>(id), btn.onClickAction.c_str());

@@ -29,5 +29,5 @@ private:
     /// @brief 非ルート解決フェーズで使う、depth順の描画用ワールド行列の一時バッファ。
     /// @note TransformUpdateSystemの_cache.WorldAt/StoreWorldとは別領域。
     ///       Logic権威データ（cache内部の物理worldMatrix）を汚さないために独立させている。
-    std::vector<DirectX::XMFLOAT4X4> _renderWorldDense;
+    std::vector<DirectX::XMFLOAT4X4> m_renderWorldDense;
 };

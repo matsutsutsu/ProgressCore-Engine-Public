@@ -60,8 +60,8 @@ void SyncCharacterRotation(const TransformComponent &trans, JPH::CharacterVirtua
 
 void BossActionSystem::Update(float rawDt)
 {
-    if (!_world->HasResource<BattleContext>()) return;
-    const auto &battle = _world->GetResource<BattleContext>();
+    if (!m_world->HasResource<BattleContext>()) return;
+    const auto &battle = m_world->GetResource<BattleContext>();
     if (!battle.HasPlayer()) return;
 
     Vector3 playerPos(battle.playerPos);
@@ -109,7 +109,7 @@ void BossActionSystem::OnGui()
     if (!ImGui::CollapsingHeader("Boss Action (Position Debugger)"))
         return;
 
-    auto view = _world->View<TransformComponent, BossActionComponent>();
+    auto view = m_world->View<TransformComponent, BossActionComponent>();
     if (view.begin() == view.end())
     {
         ImGui::TextDisabled("Boss entity not found in scene.");
@@ -118,7 +118,7 @@ void BossActionSystem::OnGui()
 
     for (auto e : view)
     {
-        auto *trans = _world->GetComponent<TransformComponent>(e);
+        auto *trans = m_world->GetComponent<TransformComponent>(e);
         if (!trans) continue;
 
         ImGui::PushID(static_cast<int>(e));

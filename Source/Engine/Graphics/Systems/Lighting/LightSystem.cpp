@@ -24,8 +24,8 @@ std::vector<CCL::ECS::TypeID> LightSystem::GetReadTypes() const
 void LightSystem::Update(float dt)
 {
     // Worldからライトマネージャーを取得
-    if (!_world || !_world->HasResource<LightManager *>()) return;
-    LightManager *lightManager = _world->GetResource<LightManager *>();
+    if (!m_world || !m_world->HasResource<LightManager *>()) return;
+    LightManager *lightManager = m_world->GetResource<LightManager *>();
     if (!lightManager) return;
 
     // 1. マネージャーの状態をリセット
@@ -33,10 +33,10 @@ void LightSystem::Update(float dt)
     lightManager->Clear();
 
     // 2. DirectionalLightComponent を持っているエンティティを収集
-    auto dirView = _world->View<DirectionalLightComponent, TransformComponent>();
+    auto dirView = m_world->View<DirectionalLightComponent, TransformComponent>();
     for (auto entity : dirView) {
-        auto *lightComp = _world->GetComponent<DirectionalLightComponent>(entity);
-        auto *transComp = _world->GetComponent<TransformComponent>(entity);
+        auto *lightComp = m_world->GetComponent<DirectionalLightComponent>(entity);
+        auto *transComp = m_world->GetComponent<TransformComponent>(entity);
 
         if (!lightComp || !transComp) continue;
 
@@ -57,10 +57,10 @@ void LightSystem::Update(float dt)
     }
 
     // --- 2. Point Light ---
-    auto pointView = _world->View<PointLightComponent, TransformComponent>();
+    auto pointView = m_world->View<PointLightComponent, TransformComponent>();
     for (auto entity : pointView) {
-        auto *lightComp = _world->GetComponent<PointLightComponent>(entity);
-        auto *transComp = _world->GetComponent<TransformComponent>(entity);
+        auto *lightComp = m_world->GetComponent<PointLightComponent>(entity);
+        auto *transComp = m_world->GetComponent<TransformComponent>(entity);
 
         if (!lightComp || !transComp) continue;
 
@@ -80,10 +80,10 @@ void LightSystem::Update(float dt)
     }
 
     // --- 3. Spot Light ---
-    auto spotView = _world->View<SpotLightComponent, TransformComponent>();
+    auto spotView = m_world->View<SpotLightComponent, TransformComponent>();
     for (auto entity : spotView) {
-        auto *lightComp = _world->GetComponent<SpotLightComponent>(entity);
-        auto *transComp = _world->GetComponent<TransformComponent>(entity);
+        auto *lightComp = m_world->GetComponent<SpotLightComponent>(entity);
+        auto *transComp = m_world->GetComponent<TransformComponent>(entity);
 
         if (!lightComp || !transComp) continue;
 

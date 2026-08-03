@@ -58,7 +58,7 @@ void EvaluateKeyframes(const std::vector<T> &keyframes, float time, float &outRa
     outK1 = &(*it);
     outK0 = &(*(it - 1));
 
-    // ★ ゼロ除算ガード: UE5等の書き出しでは、IK切り替えや瞬間ポーズ変更を表現するために
+    // ゼロ除算ガード: UE5等の書き出しでは、IK切り替えや瞬間ポーズ変更を表現するために
     //   同一時刻(またはごく僅かな差)に2つのキーフレームが置かれることがある。
     //   分母がほぼ0のまま除算すると outRate が NaN/Inf になり、その姿勢がそのまま
     //   Slerp/Lerpに渡って該当ボーンの向きが破綻する（"特定の部位だけおかしい"の一因になりうる）。
@@ -115,7 +115,7 @@ Model::Model(ID3D11Device *device, const char *filename, float sampleRate)
         dst.rotation = src.rotate;
         dst.scale    = src.scale;
 
-        // ★ 位置リターゲット対象フラグをここで一度だけ確定（毎フレームの文字列判定を廃止）。
+        // 位置リターゲット対象フラグをここで一度だけ確定（毎フレームの文字列判定を廃止）。
         //   index 0（ルート）と Pelvis/Hips/Root 系ボーンだけがアニメの位置移動をそのまま使う。
         dst.isRootOrPelvis = (i == 0) ||
                              ContainsCI(src.name, "pelvis") ||
@@ -201,11 +201,11 @@ Model::Model(ID3D11Device *device, const char *filename, float sampleRate)
             auto handle = ResourceManager::Instance().RegisterTexture(src.baseMap);
             dst.data->SetTexture("DiffuseMap"_hash, handle);
             dst.data->SetTexture("AlbedoMap"_hash, handle);
-            dst.data->SetScalar("useAlbedoMap"_hash, 1.0f); // ★フラグON
+            dst.data->SetScalar("useAlbedoMap"_hash, 1.0f); // フラグON
         }
         else
         {
-            dst.data->SetScalar("useAlbedoMap"_hash, 0.0f); // ★フラグOFF
+            dst.data->SetScalar("useAlbedoMap"_hash, 0.0f); // フラグOFF
         }
 
         if (src.normalMap)
@@ -221,11 +221,11 @@ Model::Model(ID3D11Device *device, const char *filename, float sampleRate)
         if (src.emissiveMap)
         {
             dst.data->SetTexture("EmissiveMap"_hash, ResourceManager::Instance().RegisterTexture(src.emissiveMap));
-            dst.data->SetScalar("useEmissiveMap"_hash, 1.0f); // ★フラグON
+            dst.data->SetScalar("useEmissiveMap"_hash, 1.0f); // フラグON
         }
         else
         {
-            dst.data->SetScalar("useEmissiveMap"_hash, 0.0f); // ★フラグOFF
+            dst.data->SetScalar("useEmissiveMap"_hash, 0.0f); // フラグOFF
         }
 
         if (src.occlusionMap)
@@ -238,11 +238,11 @@ Model::Model(ID3D11Device *device, const char *filename, float sampleRate)
             auto handle = ResourceManager::Instance().RegisterTexture(src.metalnessRoughnessMap);
             dst.data->SetTexture("MetalnessRoughnessMap"_hash, handle);
             dst.data->SetTexture("MetalRoughMap"_hash, handle);
-            dst.data->SetScalar("useMetalRoughMap"_hash, 1.0f); // ★フラグON
+            dst.data->SetScalar("useMetalRoughMap"_hash, 1.0f); // フラグON
         }
         else
         {
-            dst.data->SetScalar("useMetalRoughMap"_hash, 0.0f); // ★フラグOFF
+            dst.data->SetScalar("useMetalRoughMap"_hash, 0.0f); // フラグOFF
         }
     }
 
@@ -291,21 +291,21 @@ int Model::GetAnimationIndex(const char *name) const
     } // IsValidに変更
 
     // 初回だけ名前→indexの表を構築する（ロード後は不変なので以降は再利用）。
-    if (!_animIndexBuilt)
+    if (!m_animIndexBuilt)
     {
         const auto &animations = ResourceManager::Instance().GetModel(resource)->GetAnimations();
-        _animIndexCache.clear();
-        _animIndexCache.reserve(animations.size());
+        m_animIndexCache.clear();
+        m_animIndexCache.reserve(animations.size());
         for (size_t i = 0; i < animations.size(); ++i)
         {
             // 名前衝突時は先勝ち（従来の線形探索と同じ「最初に一致したもの」を維持）。
-            _animIndexCache.emplace(CCL::Utils::HashString(animations[i].name), static_cast<int>(i));
+            m_animIndexCache.emplace(CCL::Utils::HashString(animations[i].name), static_cast<int>(i));
         }
-        _animIndexBuilt = true;
+        m_animIndexBuilt = true;
     }
 
-    auto it = _animIndexCache.find(CCL::Utils::HashString(name));
-    return (it != _animIndexCache.end()) ? it->second : -1;
+    auto it = m_animIndexCache.find(CCL::Utils::HashString(name));
+    return (it != m_animIndexCache.end()) ? it->second : -1;
 }
 
 // ノードインデックス取得
@@ -384,7 +384,7 @@ void Model::ComputeNodePose(const ModelResource::Animation &animation, int nodeI
         DirectX::XMStoreFloat3(&nodePose.position, V);
     }
 
-    // ★ Translation Retargeting（プロポーション崩壊対策）。
+    // Translation Retargeting（プロポーション崩壊対策）。
     //   Root/Pelvis/Hips 系以外は、アニメの位置移動を無視してモデル本来の骨の長さ
     //   (bindNode.position)で上書きする。対象かどうかはロード時に確定した isRootOrPelvis を
     //   見るだけ（旧実装はここで骨名を毎フレーム小文字化＋部分一致しており処理落ちの主因だった）。
@@ -438,7 +438,7 @@ void Model::ComputeAnimation(int animationIndex, float time, std::vector<NodePos
         nodePoses.resize(nodes.size());
     }
 
-    // ★ ResourceManager 取得と Animation 参照はループ外で1回だけ（旧実装はノード数ぶん引き直していた）。
+    // ResourceManager 取得と Animation 参照はループ外で1回だけ（旧実装はノード数ぶん引き直していた）。
     const auto                     &animations = ResourceManager::Instance().GetModel(resource)->GetAnimations();
     const ModelResource::Animation &animation  = animations.at(animationIndex);
 
@@ -644,7 +644,7 @@ std::shared_ptr<Model> Model::CreateFromData(ID3D11Device *device,
     model->materials.resize(1);
     model->materials[0].name = "BatchMaterial";
 
-    // ★修正: 引数で渡されたマテリアルデータを共有する！
+    // 引数で渡されたマテリアルデータを共有する！
     if (baseMaterial)
     {
         model->materials[0].data = baseMaterial;
@@ -677,7 +677,7 @@ std::shared_ptr<Model> Model::CreateFromData(ID3D11Device *device,
     }
 
     // =================================================================
-    // ★ 追加: Model 側メッシュ（描画ループが参照する vector）を構築する
+    // Model 側メッシュ（描画ループが参照する vector）を構築する
     //    OpaquePass 等は model->GetMeshes()（= Model::meshes）を走査するため、
     //    ここを埋めないとドローコールが呼ばれない。
     //    通常コンストラクタの「参照を保存」処理と同じことを行う。
@@ -761,11 +761,11 @@ int Model::FindRealRootMotionNodeIndex(int animIndex) const
 
     if (animIndex < 0) return 0;
 
-    // ★ キャッシュヒット: 過去に一度でも計算済みならO(1)で返す。
+    // キャッシュヒット: 過去に一度でも計算済みならO(1)で返す。
     //   結果はこのクリップのアニメーションデータだけで決まる静的な値なので、
     //   毎フレーム ComputeAnimation を全ノード×2回走らせる必要はない。
-    if ((size_t)animIndex < _rootMotionNodeCache.size() && _rootMotionNodeCache[(size_t)animIndex] >= 0)
-        return _rootMotionNodeCache[(size_t)animIndex];
+    if ((size_t)animIndex < m_rootMotionNodeCache.size() && m_rootMotionNodeCache[(size_t)animIndex] >= 0)
+        return m_rootMotionNodeCache[(size_t)animIndex];
 
     int result = 0; // 誰も動いていなければ安全に0を返す（従来仕様を維持）
 
@@ -795,10 +795,10 @@ int Model::FindRealRootMotionNodeIndex(int animIndex) const
         }
     }
 
-    // ★ キャッシュへ格納。以降この animIndex での呼び出しは全て初回計算を再利用する。
-    if ((size_t)animIndex >= _rootMotionNodeCache.size())
-        _rootMotionNodeCache.resize((size_t)animIndex + 1, -1);
-    _rootMotionNodeCache[(size_t)animIndex] = result;
+    // キャッシュへ格納。以降この animIndex での呼び出しは全て初回計算を再利用する。
+    if ((size_t)animIndex >= m_rootMotionNodeCache.size())
+        m_rootMotionNodeCache.resize((size_t)animIndex + 1, -1);
+    m_rootMotionNodeCache[(size_t)animIndex] = result;
 
     return result;
 }
@@ -811,12 +811,12 @@ const Model::NodePose &Model::GetPinnedPoseAtZero(int animIndex, int nodeIndex) 
     const uint64_t key = (static_cast<uint64_t>(static_cast<uint32_t>(animIndex)) << 32) |
                          static_cast<uint32_t>(nodeIndex);
 
-    auto it = _pinnedPoseAtZeroCache.find(key);
-    if (it != _pinnedPoseAtZeroCache.end())
+    auto it = m_pinnedPoseAtZeroCache.find(key);
+    if (it != m_pinnedPoseAtZeroCache.end())
         return it->second; // キャッシュヒット：0秒ポーズを再計算せず返す
 
     // 初回のみ 0秒時点のポーズを計算して格納（以降は不変なので再利用）。
     NodePose pose;
     ComputeAnimation(animIndex, nodeIndex, 0.0f, pose);
-    return _pinnedPoseAtZeroCache.emplace(key, pose).first->second;
+    return m_pinnedPoseAtZeroCache.emplace(key, pose).first->second;
 }

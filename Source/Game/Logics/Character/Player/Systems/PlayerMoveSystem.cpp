@@ -30,7 +30,7 @@ void PlayerMoveSystem::Update(float rawDt)
                       PlayerComponent                    &player,
                       AnimParametersComponent            &animParams, // ★追加
                       const TimeStateComponent           &time) {
-        if (_world->HasComponent<Tag::DeadTag>(id))
+        if (m_world->HasComponent<Tag::DeadTag>(id))
             return;
         if (!joltHandle.character)
             return;
@@ -55,7 +55,7 @@ void PlayerMoveSystem::Update(float rawDt)
 }
 
 // -----------------------------------------------------------------------------------
-// [責務] 操作の遊び（バッファ）を作り、人間の反射神経のズレを吸収する
+// [責務] 接地状態の更新と、押した瞬間のジャンプ成立判定（コヨーテ/先行入力バッファは持たない）
 // -----------------------------------------------------------------------------------
 void PlayerMoveSystem::UpdateJumpLogic(float dt, bool isGrounded, CharacterMovementInputComponent &inputData, PlayerComponent &player, AnimParametersComponent &animParams)
 {
@@ -67,39 +67,25 @@ void PlayerMoveSystem::UpdateJumpLogic(float dt, bool isGrounded, CharacterMovem
             if (player.lastFallVelocity < -10.0f)
             {
                 float shakePower = std::abs(player.lastFallVelocity) * 0.03f;
-                _world->GetEventBus().Publish(CameraShakeRequestEvent{shakePower, 0.2f});
+                m_world->GetEventBus().Publish(CameraShakeRequestEvent{shakePower, 0.2f});
             }
         }
-        player.timeSinceGrounded = 0.0f;
-        player.currentJumpCount  = 0;
-    }
-    else
-    {
-        player.timeSinceGrounded += dt;
+        player.currentJumpCount = 0;
     }
 
     player.wasGroundedLastFrame = isGrounded;
     // 空中状態を一元更新（空中攻撃などが参照する唯一の判定元）
     player.isAirborne = !isGrounded;
 
-    // エッジ検出とバッファタイマーの更新
+    // 押した瞬間のみジャンプ（エッジ検出）。押しっぱなしでの連続ジャンプを防ぐ。
     bool isPressedThisFrame     = inputData.jumpRequested && !player.wasJumpButtonPressed;
     player.wasJumpButtonPressed = inputData.jumpRequested;
 
-    if (isPressedThisFrame)
-    {
-        player.jumpBufferTimer = player.jumpBufferWindow;
-    }
-    else if (player.jumpBufferTimer > 0.0f)
-    {
-        player.jumpBufferTimer -= dt;
-    }
-
-    // ジャンプ成立の判定
-    bool canFirstJump  = (player.timeSinceGrounded <= player.coyoteTimeWindow) && (player.currentJumpCount == 0);
+    // ジャンプ成立の判定：接地中の1段目、または空中での2段目まで。
+    bool canFirstJump  = isGrounded && (player.currentJumpCount == 0);
     bool canDoubleJump = (player.currentJumpCount > 0 && player.currentJumpCount < player.maxJumps);
 
-    if (player.jumpBufferTimer > 0.0f && (canFirstJump || canDoubleJump))
+    if (isPressedThisFrame && (canFirstJump || canDoubleJump))
     {
         player.currentJumpCount++;
         inputData.jumpRequested = true;
@@ -114,16 +100,11 @@ void PlayerMoveSystem::UpdateJumpLogic(float dt, bool isGrounded, CharacterMovem
         {
             animParams.SetTrigger(HASH_TRIG_DOUBLE_JUMP);
         }
-
-        player.jumpBufferTimer   = 0.0f;
-        player.timeSinceGrounded = 999.0f;
     }
     else
     {
         inputData.jumpRequested = false;
     }
-
-
 }
 
 // -----------------------------------------------------------------------------------

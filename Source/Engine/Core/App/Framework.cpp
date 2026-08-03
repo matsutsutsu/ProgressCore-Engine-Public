@@ -40,18 +40,24 @@
 #include "tracy/TracyD3D11.hpp"
 
 
+#if defined(_DEBUG)
+// D3D11 デバッグレイヤーで、致命的なメッセージが出た時点でデバッガを止める。
+// 現状どこからも呼んでいない（必要になったら Graphics 初期化直後に呼ぶ）。
+//
+// WARNING では止めない：D3D は実害のない警告も出すため、ここで止めると
+// 通常の起動すら進まなくなる。原因調査中に一時的に有効化する用途に留める。
 void InitializeDebugLayer(ID3D11Device *device)
 {
     ID3D11InfoQueue *infoQueue = nullptr;
     device->QueryInterface(__uuidof(ID3D11InfoQueue), (void **)&infoQueue);
 
     if (infoQueue) {
-        // 警告が出たらブレークポイントで止まるように設定
-        infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, TRUE);
+        infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, TRUE);
         infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, TRUE);
         infoQueue->Release();
     }
 }
+#endif
 
 // 垂直同期間隔設定
 static const int syncInterval = 1;

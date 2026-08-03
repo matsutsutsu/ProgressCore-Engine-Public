@@ -12,8 +12,8 @@ void AABBDebugDrawSystem::Update(float dt)
     if (!isDebugVisible) return;
 
     // ShapeRendererが存在しない場合はスキップ
-    if (!_world->HasResource<ShapeRenderer*>()) return;
-    auto* renderer = _world->GetResource<ShapeRenderer*>();
+    if (!m_world->HasResource<ShapeRenderer*>()) return;
+    auto* renderer = m_world->GetResource<ShapeRenderer*>();
     if (!renderer) return;
 
     // ヘッダで指定した Read / Write の型と完全に一致する引数で ForEach を回す

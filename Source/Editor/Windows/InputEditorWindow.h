@@ -33,18 +33,18 @@ private:
         std::vector<BindingData> bindings;
     };
 
-    std::vector<ActionData> _actions;
-    std::vector<AxisData> _axes;
+    std::vector<ActionData> m_actions;
+    std::vector<AxisData> m_axes;
 
-    std::string _configPath = "Assets/Config/InputConfig.json";
+    std::string m_configPath = "Assets/Config/InputConfig.json";
 
     // --- UI状態 ---
     // 「キー押下キャプチャ」を待っている対象バインディング。
     // nullptr のときはキャプチャ中でない。
-    BindingData* _captureTarget = nullptr;
+    BindingData* m_captureTarget = nullptr;
 
     // 1フレーム前のキャプチャ抑制用（ボタンを押した瞬間に確定しないように）
-    bool _captureArmed = false;
+    bool m_captureArmed = false;
 
     // --- 描画ヘルパー ---
     // 1つのバインディング行を描画する（Device / Key / Scale / Capture）

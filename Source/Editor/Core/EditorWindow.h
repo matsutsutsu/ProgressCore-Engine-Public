@@ -12,31 +12,31 @@
 // エディタウィンドウの基底クラス
 class EditorWindow {
 public:
-    EditorWindow(const std::string& name, bool defaultVisible = true) : _name(name), _isVisible(defaultVisible) {}
+    EditorWindow(const std::string& name, bool defaultVisible = true) : m_name(name), m_isVisible(defaultVisible) {}
     virtual ~EditorWindow() = default;
 
     // WindowManagerから呼ばれる描画の入り口
     void Render(EditorContext& context) {
-        if (!_isVisible) return;
+        if (!m_isVisible) return;
 
 		
         ZoneScoped; // 無名スコープを作成
         // Tracy上で見つけやすいようにプレフィックスを付ける
-        std::string zoneName = "UI Window: " + _name;
+        std::string zoneName = "UI Window: " + m_name;
         ZoneName(zoneName.c_str(), zoneName.size());
 
 #ifdef ENABLE_EDITOR
 
-        if (ImGui::Begin(_name.c_str(), &_isVisible)) {
+        if (ImGui::Begin(m_name.c_str(), &m_isVisible)) {
             DrawContents(context);
         }
         ImGui::End();
 #endif
     }
 
-    const std::string& GetName() const { return _name; }
-    bool GetVisible() const { return _isVisible; }
-    void SetVisible(bool open) { _isVisible = open; }
+    const std::string& GetName() const { return m_name; }
+    bool GetVisible() const { return m_isVisible; }
+    void SetVisible(bool open) { m_isVisible = open; }
 
 protected:
     // 各ウィンドウはこの関数をオーバーライドして中身を書く
@@ -44,6 +44,6 @@ protected:
 
     // クラスじゃなくてコンテキストにしてもいいかも
 
-    std::string _name;
-    bool _isVisible;
+    std::string m_name;
+    bool m_isVisible;
 };

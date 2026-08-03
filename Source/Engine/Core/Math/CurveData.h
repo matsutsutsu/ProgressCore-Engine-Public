@@ -59,7 +59,7 @@ struct CurveData
     ExtrapMode                 postInfinity = ExtrapMode::Constant;
     std::vector<CurveKeyframe> keys;
 
-    uint32_t _nextId = 1; // ID採番カウンタ
+    uint32_t m_nextId = 1; // ID採番カウンタ
 
     // -----------------------------------------------------------------------
     // 基本操作
@@ -70,7 +70,7 @@ struct CurveData
     }
     uint32_t GenId()
     {
-        return _nextId++;
+        return m_nextId++;
     }
 
     int IndexOfId(uint32_t id) const

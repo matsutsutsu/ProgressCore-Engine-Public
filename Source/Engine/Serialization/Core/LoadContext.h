@@ -33,7 +33,7 @@ namespace CCL::Serialization {
         void Reserve(size_t count)
         {
             // インデックス 1 始まりなので +1
-            _localToEntity.reserve(count + 1);
+            m_localToEntity.reserve(count + 1);
             EnsureSize(count + 1);
         }
 
@@ -43,7 +43,7 @@ namespace CCL::Serialization {
         {
             if (localIdx == SaveContext::InvalidLocalIndex) return;
             EnsureSize(localIdx + 1);
-            _localToEntity[localIdx] = realID;
+            m_localToEntity[localIdx] = realID;
         }
 
         // ローカルインデックスを実 EntityID に解決する。
@@ -51,23 +51,23 @@ namespace CCL::Serialization {
         CCL::ECS::EntityID Resolve(LocalIndex localIdx) const
         {
             if (localIdx == SaveContext::InvalidLocalIndex) return CCL::ECS::InvalidEntityID;
-            if (localIdx >= _localToEntity.size())          return CCL::ECS::InvalidEntityID;
-            return _localToEntity[localIdx];
+            if (localIdx >= m_localToEntity.size())          return CCL::ECS::InvalidEntityID;
+            return m_localToEntity[localIdx];
         }
 
         void Clear()
         {
-            _localToEntity.clear();
+            m_localToEntity.clear();
         }
 
     private:
         // [0] は「無効」用にダミー値 (InvalidEntityID) で確保しておく
-        std::vector<CCL::ECS::EntityID> _localToEntity{ CCL::ECS::InvalidEntityID };
+        std::vector<CCL::ECS::EntityID> m_localToEntity{ CCL::ECS::InvalidEntityID };
 
         void EnsureSize(size_t needed)
         {
-            if (_localToEntity.size() < needed) {
-                _localToEntity.resize(needed, CCL::ECS::InvalidEntityID);
+            if (m_localToEntity.size() < needed) {
+                m_localToEntity.resize(needed, CCL::ECS::InvalidEntityID);
             }
         }
     };

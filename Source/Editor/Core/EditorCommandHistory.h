@@ -26,47 +26,47 @@ public:
 
     void ExecuteCommand(std::unique_ptr<IEditorCommand> cmd) {
         cmd->Execute();
-        _undoStack.push_back(std::move(cmd));
-        _redoStack.clear(); // 新しい操作をしたら未来は消える
+        m_undoStack.push_back(std::move(cmd));
+        m_redoStack.clear(); // 新しい操作をしたら未来は消える
 
         // 🔍 【足跡 4】スタックに積まれたことを確認
-        CCL_LOG_INFO(LogCategory::Editor, "[CommandHistory] Command Executed. UndoStack Size: %zu", _undoStack.size());
+        CCL_LOG_INFO(LogCategory::Editor, "[CommandHistory] Command Executed. UndoStack Size: %zu", m_undoStack.size());
     }
 
     void Undo() {
-        if (_undoStack.empty()) {
+        if (m_undoStack.empty()) {
             CCL_LOG_WARN(LogCategory::Editor, "[CommandHistory] Undo failed: Stack is empty.");
             return;
         }
-        auto cmd = std::move(_undoStack.back());
-        _undoStack.pop_back();
+        auto cmd = std::move(m_undoStack.back());
+        m_undoStack.pop_back();
 
         cmd->Undo();
-        _redoStack.push_back(std::move(cmd));
+        m_redoStack.push_back(std::move(cmd));
 
         // 🔍 【足跡 5】Undoの成功を確認
-        CCL_LOG_SUCCESS(LogCategory::Editor, "[CommandHistory] UNDO Performed. Remaining Undo: %zu, Redo: %zu", _undoStack.size(), _redoStack.size());
+        CCL_LOG_SUCCESS(LogCategory::Editor, "[CommandHistory] UNDO Performed. Remaining Undo: %zu, Redo: %zu", m_undoStack.size(), m_redoStack.size());
     }
 
     void Redo() {
-        if (_redoStack.empty()) {
+        if (m_redoStack.empty()) {
             CCL_LOG_WARN(LogCategory::Editor, "[CommandHistory] Redo failed: Stack is empty.");
             return;
         }
 
-        auto cmd = std::move(_redoStack.back());
-        _redoStack.pop_back();
+        auto cmd = std::move(m_redoStack.back());
+        m_redoStack.pop_back();
 
         cmd->Execute();
-        _undoStack.push_back(std::move(cmd));
+        m_undoStack.push_back(std::move(cmd));
 
         // 🔍 【足跡 6】Redoの成功を確認
-        CCL_LOG_SUCCESS(LogCategory::Editor, "[CommandHistory] REDO Performed. Remaining Undo: %zu, Redo: %zu", _undoStack.size(), _redoStack.size());
+        CCL_LOG_SUCCESS(LogCategory::Editor, "[CommandHistory] REDO Performed. Remaining Undo: %zu, Redo: %zu", m_undoStack.size(), m_redoStack.size());
     }
 
 private:
-    std::vector<std::unique_ptr<IEditorCommand>> _undoStack;
-    std::vector<std::unique_ptr<IEditorCommand>> _redoStack;
+    std::vector<std::unique_ptr<IEditorCommand>> m_undoStack;
+    std::vector<std::unique_ptr<IEditorCommand>> m_redoStack;
 };
 
 // =========================================================
@@ -75,25 +75,25 @@ private:
 template <typename T>
 class ChangeComponentCommand : public IEditorCommand {
 private:
-    CCL::ECS::World* _world;
-    CCL::ECS::EntityID _entity;
-    T _oldData;
-    T _newData;
+    CCL::ECS::World* m_world;
+    CCL::ECS::EntityID m_entity;
+    T m_oldData;
+    T m_newData;
 
 public:
     ChangeComponentCommand(CCL::ECS::World* world, CCL::ECS::EntityID entity, const T& oldData, const T& newData)
-        : _world(world), _entity(entity), _oldData(oldData), _newData(newData) {
+        : m_world(world), m_entity(entity), m_oldData(oldData), m_newData(newData) {
     }
 
     void Execute() override {
-        if (auto* comp = _world->GetComponent<T>(_entity)) {
-            *comp = _newData;
+        if (auto* comp = m_world->GetComponent<T>(m_entity)) {
+            *comp = m_newData;
         }
     }
 
     void Undo() override {
-        if (auto* comp = _world->GetComponent<T>(_entity)) {
-            *comp = _oldData;
+        if (auto* comp = m_world->GetComponent<T>(m_entity)) {
+            *comp = m_oldData;
         }
     }
 };

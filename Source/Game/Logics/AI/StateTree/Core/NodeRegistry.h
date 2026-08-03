@@ -62,7 +62,7 @@ namespace CCL::AI
         NodeTypeID RegisterTask(const std::string& name,
             const std::string& category = "General")
         {
-            const NodeTypeID id = static_cast<NodeTypeID>(_taskEntries.size());
+            const NodeTypeID id = static_cast<NodeTypeID>(m_taskEntries.size());
 
             TaskEntry entry;
             entry.instance = std::make_unique<T>();
@@ -75,8 +75,8 @@ namespace CCL::AI
             FillParamMeta<T>(desc);     // Params があれば paramsSize / paramFields を埋める
             entry.desc = desc;
 
-            _taskNameToId[name] = id;
-            _taskEntries.push_back(std::move(entry));
+            m_taskNameToId[name] = id;
+            m_taskEntries.push_back(std::move(entry));
             return id;
         }
 
@@ -84,7 +84,7 @@ namespace CCL::AI
         NodeTypeID RegisterCondition(const std::string& name,
             const std::string& category = "General")
         {
-            const NodeTypeID id = static_cast<NodeTypeID>(_condEntries.size());
+            const NodeTypeID id = static_cast<NodeTypeID>(m_condEntries.size());
 
             CondEntry entry;
             entry.instance = std::make_unique<T>();
@@ -96,8 +96,8 @@ namespace CCL::AI
             FillParamMeta<T>(desc);     // 条件も Params を持てる
             entry.desc = desc;
 
-            _condNameToId[name] = id;
-            _condEntries.push_back(std::move(entry));
+            m_condNameToId[name] = id;
+            m_condEntries.push_back(std::move(entry));
             return id;
         }
 
@@ -106,12 +106,12 @@ namespace CCL::AI
         // ----------------------------------------------------------------
         ITask* GetTask(NodeTypeID id) const
         {
-            return (id < _taskEntries.size()) ? _taskEntries[id].instance.get() : nullptr;
+            return (id < m_taskEntries.size()) ? m_taskEntries[id].instance.get() : nullptr;
         }
 
         ICondition* GetCondition(NodeTypeID id) const
         {
-            return (id < _condEntries.size()) ? _condEntries[id].instance.get() : nullptr;
+            return (id < m_condEntries.size()) ? m_condEntries[id].instance.get() : nullptr;
         }
 
         // ----------------------------------------------------------------
@@ -119,23 +119,23 @@ namespace CCL::AI
         // ----------------------------------------------------------------
         const NodeDesc* GetTaskDesc(NodeTypeID id) const
         {
-            return (id < _taskEntries.size()) ? &_taskEntries[id].desc : nullptr;
+            return (id < m_taskEntries.size()) ? &m_taskEntries[id].desc : nullptr;
         }
 
         const NodeDesc* GetConditionDesc(NodeTypeID id) const
         {
-            return (id < _condEntries.size()) ? &_condEntries[id].desc : nullptr;
+            return (id < m_condEntries.size()) ? &m_condEntries[id].desc : nullptr;
         }
 
         NodeTypeID FindTaskByName(const std::string& name) const
         {
-            auto it = _taskNameToId.find(name);
-            return (it != _taskNameToId.end()) ? it->second : ST_INVALID_NODE_TYPE;
+            auto it = m_taskNameToId.find(name);
+            return (it != m_taskNameToId.end()) ? it->second : ST_INVALID_NODE_TYPE;
         }
         NodeTypeID FindConditionByName(const std::string& name) const
         {
-            auto it = _condNameToId.find(name);
-            return (it != _condNameToId.end()) ? it->second : ST_INVALID_NODE_TYPE;
+            auto it = m_condNameToId.find(name);
+            return (it != m_condNameToId.end()) ? it->second : ST_INVALID_NODE_TYPE;
         }
 
         const NodeDesc* FindTaskDescByName(const std::string& name) const
@@ -153,14 +153,14 @@ namespace CCL::AI
         // ----------------------------------------------------------------
         std::vector<NodeDesc> GetAllTaskDescs() const
         {
-            std::vector<NodeDesc> v; v.reserve(_taskEntries.size());
-            for (auto& e : _taskEntries) v.push_back(e.desc);
+            std::vector<NodeDesc> v; v.reserve(m_taskEntries.size());
+            for (auto& e : m_taskEntries) v.push_back(e.desc);
             return v;
         }
         std::vector<NodeDesc> GetAllConditionDescs() const
         {
-            std::vector<NodeDesc> v; v.reserve(_condEntries.size());
-            for (auto& e : _condEntries) v.push_back(e.desc);
+            std::vector<NodeDesc> v; v.reserve(m_condEntries.size());
+            for (auto& e : m_condEntries) v.push_back(e.desc);
             return v;
         }
 
@@ -185,10 +185,10 @@ namespace CCL::AI
         struct TaskEntry { std::unique_ptr<ITask>      instance; NodeDesc desc; };
         struct CondEntry { std::unique_ptr<ICondition> instance; NodeDesc desc; };
 
-        std::vector<TaskEntry> _taskEntries;
-        std::vector<CondEntry> _condEntries;
-        std::unordered_map<std::string, NodeTypeID> _taskNameToId;
-        std::unordered_map<std::string, NodeTypeID> _condNameToId;
+        std::vector<TaskEntry> m_taskEntries;
+        std::vector<CondEntry> m_condEntries;
+        std::unordered_map<std::string, NodeTypeID> m_taskNameToId;
+        std::unordered_map<std::string, NodeTypeID> m_condNameToId;
     };
 
 } // namespace CCL::AI

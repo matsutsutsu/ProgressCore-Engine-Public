@@ -14,10 +14,10 @@
 
 class BaseScene : public Scene {
   protected:
-    std::unique_ptr<CCL::ECS::ECSContext> _ecsContext;
-    CCL::ECS::World *_worldPtr = nullptr;
+    std::unique_ptr<CCL::ECS::ECSContext> m_ecsContext;
+    CCL::ECS::World *m_worldPtr = nullptr;
 
-    UIRenderer _uiRenderer; // UIDrawList を2Dパスで描画する
+    UIRenderer m_uiRenderer; // UIDrawList を2Dパスで描画する
 
   public:
     BaseScene()                   = default;
@@ -36,8 +36,8 @@ class BaseScene : public Scene {
     // 外部（ImGui等）から呼ばれる「安全なリクエスト関数」
     // =========================================================
     
-    CCL::ECS::World* GetWorld() override { return _worldPtr; }
-    CCL::ECS::SystemManager* GetSystemManager() override { return _ecsContext->GetSystemManager(); }
+    CCL::ECS::World* GetWorld() override { return m_worldPtr; }
+    CCL::ECS::SystemManager* GetSystemManager() override { return m_ecsContext->GetSystemManager(); }
 
     /**
      * @brief GPU デバイスロストからの復帰後に Framework から呼ばれる。

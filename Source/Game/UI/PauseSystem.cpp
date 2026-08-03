@@ -27,14 +27,14 @@ constexpr int VKEY_ESCAPE = 0x1B; // windows.h を持ち込まないための ES
 void PauseSystem::Initialize()
 {
     // ポーズ状態の共有リソースを用意（BaseScene が参照する）。
-    if (!_world->HasResource<GameFlowState>())
-        _world->AddResource<GameFlowState>();
+    if (!m_world->HasResource<GameFlowState>())
+        m_world->AddResource<GameFlowState>();
 
     // ポーズメニューのボタン購読。
     const uint32_t kResume = CCL::Utils::HashString("resume");
     const uint32_t kQuit   = CCL::Utils::HashString("pause_quit");
 
-    _world->GetEventBus().Subscribe<UIButtonClickedEvent>(
+    m_world->GetEventBus().Subscribe<UIButtonClickedEvent>(
         [this, kResume, kQuit](const UIButtonClickedEvent &e) {
             if (e.actionHash == kResume)
             {
@@ -42,23 +42,23 @@ void PauseSystem::Initialize()
             }
             else if (e.actionHash == kQuit)
             {
-                if (_transitioning) return;
-                _transitioning = true;
+                if (m_transitioning) return;
+                m_transitioning = true;
                 // 展示会用：タイトルへは戻さず、そのままアプリを終了する。
                 // ★ ここは（ジョブスケジューラ経由の）ワーカースレッドで走りうるため、
                 //    直接 PostQuitMessage を呼ぶと WM_QUIT が別スレッドのキューに積まれ、
                 //    メインスレッドの PeekMessage が拾えず終了しない。
                 //    → 終了要求フラグだけ立て、メインループ(Run)が拾って終了処理を行う。
-                if (_world->HasResource<GameFlowState>())
-                    _world->GetResource<GameFlowState>().quitRequested = true;
+                if (m_world->HasResource<GameFlowState>())
+                    m_world->GetResource<GameFlowState>().quitRequested = true;
             }
         });
 }
 
 void PauseSystem::Update(float /*dt*/)
 {
-    if (!_world->HasResource<Input *>()) return;
-    Input *input = _world->GetResource<Input *>();
+    if (!m_world->HasResource<Input *>()) return;
+    Input *input = m_world->GetResource<Input *>();
     if (!input) return;
 
     const bool toggle = input->GetKeyboard().IsTriggered(VKEY_ESCAPE)
@@ -67,22 +67,22 @@ void PauseSystem::Update(float /*dt*/)
 
     // ★ カーソル自由(UI操作)モード中は、編集中に誤ってポーズメニューが出ないよう
     //    ESC/START のポーズ切替を無視する（既にポーズ中の解除は許可）。
-    if (!_paused && _world->HasResource<GameFlowState>()
-        && _world->GetResource<GameFlowState>().uiInteract)
+    if (!m_paused && m_world->HasResource<GameFlowState>()
+        && m_world->GetResource<GameFlowState>().uiInteract)
     {
         return;
     }
 
-    if (!_paused) OpenPause();
+    if (!m_paused) OpenPause();
     else          ClosePause();
 }
 
 void PauseSystem::OpenPause()
 {
     using namespace CCL::GameUI;
-    World &w = *_world;
+    World &w = *m_world;
 
-    _paused = true;
+    m_paused = true;
     if (w.HasResource<GameFlowState>())
         w.GetResource<GameFlowState>().paused = true;
 
@@ -94,29 +94,29 @@ void PauseSystem::OpenPause()
     // オーバーレイ生成（HUDより手前へ sortOrder 高め）。
     // 出現アニメ：暗転→見出し→ボタンの順に少し遅延させてスッと出す（暗転はフェードのみ）。
     // UI階層：Canvas を親にして配下を束ねる（ヒエラルキーで入れ子表示・一括破棄）。
-    _overlay.clear();
+    m_overlay.clear();
     const EntityID canvas = SpawnCanvas(w, "PauseCanvas");
-    _overlay.push_back(canvas);
+    m_overlay.push_back(canvas);
 
-    _overlay.push_back(SpawnPanel(w, "PauseDim", {0.0f, 0.0f}, {4000.0f, 4000.0f},
+    m_overlay.push_back(SpawnPanel(w, "PauseDim", {0.0f, 0.0f}, {4000.0f, 4000.0f},
         {0.0f, 0.0f, 0.0f, 0.55f}, 200, 0.00f, 0.0f, canvas));
-    _overlay.push_back(SpawnLabel(w, "PauseTitle", "PAUSE", {-90.0f, -140.0f}, 56.0f, 220, 0.08f, canvas));
+    m_overlay.push_back(SpawnLabel(w, "PauseTitle", "PAUSE", {-90.0f, -140.0f}, 56.0f, 220, 0.08f, canvas));
 
     auto resume = SpawnButton(w, "BtnResume", "LblResume", "RESUME", {0.0f, 0.0f}, "resume", true, 210, 0.16f, canvas);
-    _overlay.push_back(resume.button);
-    _overlay.push_back(resume.label);
+    m_overlay.push_back(resume.button);
+    m_overlay.push_back(resume.label);
 
     auto quit = SpawnButton(w, "BtnPauseQuit", "LblPauseQuit", "QUIT", {0.0f, 90.0f},
         "pause_quit", false, 210, 0.24f, canvas);
-    _overlay.push_back(quit.button);
-    _overlay.push_back(quit.label);
+    m_overlay.push_back(quit.button);
+    m_overlay.push_back(quit.label);
 }
 
 void PauseSystem::ClosePause()
 {
-    World &w = *_world;
+    World &w = *m_world;
 
-    _paused = false;
+    m_paused = false;
     if (w.HasResource<GameFlowState>())
         w.GetResource<GameFlowState>().paused = false;
 
@@ -125,7 +125,7 @@ void PauseSystem::ClosePause()
         w.GetResource<TimeContext>().isPaused = false;
 
     // 生成したオーバーレイ実体を破棄（ソフト削除：次の構造適用で消える）。
-    for (EntityID id : _overlay)
+    for (EntityID id : m_overlay)
         w.Destroy(id);
-    _overlay.clear();
+    m_overlay.clear();
 }

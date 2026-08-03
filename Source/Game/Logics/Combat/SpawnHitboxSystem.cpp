@@ -59,14 +59,14 @@ void SpawnHitboxSystem::Update(float dt)
     ForEachWithID([&](CCL::ECS::EntityID id, HitboxLifetimeComponent& life) {
         life.remainingLife -= dt;
         if (life.remainingLife <= 0.0f)
-            _world->Destroy(id);
+            m_world->Destroy(id);
     });
 }
 
 void SpawnHitboxSystem::OnSpawnHitbox(const AnimEventSpawnHitboxMessage& msg)
 {
     // ── 1. 生成基準(owner)の Transform。無ければ位置が定まらないので生成しない ──
-    const auto* ownerT = _world->GetComponent<TransformComponent>(msg.owner);
+    const auto* ownerT = m_world->GetComponent<TransformComponent>(msg.owner);
     if (!ownerT)
     {
         CCL_LOG_WARN(LogCategory::Game,
@@ -94,7 +94,7 @@ void SpawnHitboxSystem::OnSpawnHitbox(const AnimEventSpawnHitboxMessage& msg)
     static const Archetype hitboxArch = ArchetypeHelper::Generate<
         TransformComponent, HitboxComponent, JoltRigidbodyComponent,
         JoltSphereColliderComponent, HitboxLifetimeComponent>();
-    auto ref = _world->Spawn(hitboxArch);
+    auto ref = m_world->Spawn(hitboxArch);
 
     // Transform: 親を持たないため local=world。生成直後に worldMatrix をベイクして
     // JoltBodySetupSystem(L03) が正しい位置で剛体を作れるようにする(原点湧き防止)。

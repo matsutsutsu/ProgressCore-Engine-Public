@@ -33,7 +33,7 @@
 
 using namespace CCL::ECS;
 
-// コンストラクタ／デストラクタは、_fadeQuad(unique_ptr<Sprite>) の破棄に
+// コンストラクタ／デストラクタは、m_fadeQuad(unique_ptr<Sprite>) の破棄に
 // Sprite の完全型が必要なため、Sprite を include したこの .cpp 側で定義する。
 SceneManager::SceneManager() = default;
 SceneManager::~SceneManager() = default;
@@ -155,9 +155,9 @@ void SceneManager::Clear()
 	// SceneManager 自身は Meyer's Singleton（static ローカル変数）のため、
 	// このインスタンスの実体の破棄は wWinMain リターン後の静的破棄タイミングまで
 	// 起きない＝Graphics::Shutdown()（デバイス破棄・リークレポート）より後になる。
-	// _fadeQuad はここで明示的に解放しておかないと、GraphicsDevice::Shutdown()
+	// m_fadeQuad はここで明示的に解放しておかないと、GraphicsDevice::Shutdown()
 	// の ReportLiveDeviceObjects で「真のリーク」として誤検出されてしまう。
-	_fadeQuad.reset();
+	m_fadeQuad.reset();
 }
 
 
@@ -253,7 +253,7 @@ void SceneManager::LoadScene(CCL::ECS::World* world, const std::string& filepath
 void SceneManager::ChangeScene(const std::string& name)
 {
     // 名前を記録しておく
-    _currentSceneName = name;
+    m_currentSceneName = name;
 
 	Scene* newScene = SceneFactory::Instance().Create(name);
 	if (newScene) {
@@ -270,7 +270,7 @@ void SceneManager::ChangeSceneAsync(const std::string& name)
     if (!target) return;
 
     // 表示上のシーン名は「最終的に遷移する先」を指しておく
-    _currentSceneName = name;
+    m_currentSceneName = name;
 
     // ローディング画面で包む。target の重い Initialize() は
     // SceneLoading がワーカースレッドで裏読みし、完了後に本線へ切り替える。
@@ -280,7 +280,7 @@ void SceneManager::ChangeSceneAsync(const std::string& name)
 
 void SceneManager::ChangeScene(Scene *scene)
 {
-    // ※ここでは _currentSceneName は自動更新されない
+    // ※ここでは m_currentSceneName は自動更新されない
     // 呼び出し側（GateSystem）で SetCurrentSceneName を呼んでからこれを使う
     if (nextScene != nullptr) {
         delete nextScene;
@@ -300,11 +300,11 @@ bool SceneManager::RequestTransition(const std::string& name, bool async)
     if (IsTransitioning()) return false; // 遷移中の多重要求は無視
 
     // 「名前指定の切替」を黒の瞬間に実行するよう予約し、フェードアウト開始。
-    _pendingValid = true;
-    _pendingName  = name;
-    _pendingAsync = async;
-    _pendingScene = nullptr;
-    _fade         = FadeState::Out; // 現在の _fadeAlpha（通常0）からアウト
+    m_pendingValid = true;
+    m_pendingName  = name;
+    m_pendingAsync = async;
+    m_pendingScene = nullptr;
+    m_fade         = FadeState::Out; // 現在の m_fadeAlpha（通常0）からアウト
     return true;
 }
 
@@ -316,66 +316,66 @@ bool SceneManager::RequestTransition(Scene* readyScene)
     //   すでに画面は黒（alpha=1）で、ローディングも黒の裏で完了している。
     //   ここで“新たに暗転し直す”とチラつくので、暗転はせず本命へ差し替えて
     //   そのままフェードイン（黒→ゲーム）する。
-    if (_asyncHold)
+    if (m_asyncHold)
     {
         ChangeScene(readyScene); // nextScene に本命をセット（次フレームで切替）
-        _asyncHold = false;
-        _fade      = FadeState::In; // alpha は 1 のまま → ゲームへ1回だけ明転
+        m_asyncHold = false;
+        m_fade      = FadeState::In; // alpha は 1 のまま → ゲームへ1回だけ明転
         return true;
     }
 
     if (IsTransitioning()) return false;
 
     // 通常の実体指定遷移（黒保持なし）：暗転から始める。
-    _pendingValid = true;
-    _pendingName.clear();
-    _pendingAsync = false;
-    _pendingScene = readyScene;
-    _fade         = FadeState::Out;
+    m_pendingValid = true;
+    m_pendingName.clear();
+    m_pendingAsync = false;
+    m_pendingScene = readyScene;
+    m_fade         = FadeState::Out;
     return true;
 }
 
 void SceneManager::FadeInFromBlack(float dur)
 {
-    _fadeInDur = (dur > 0.0001f) ? dur : 0.0001f;
-    _fadeAlpha = 1.0f;        // 黒から
-    _fade      = FadeState::In;
+    m_fadeInDur = (dur > 0.0001f) ? dur : 0.0001f;
+    m_fadeAlpha = 1.0f;        // 黒から
+    m_fade      = FadeState::In;
 }
 
 void SceneManager::AdvanceFade(float dt)
 {
-    switch (_fade)
+    switch (m_fade)
     {
     case FadeState::Out:
-        _fadeAlpha += dt / _fadeOutDur;
-        if (_fadeAlpha >= 1.0f)
+        m_fadeAlpha += dt / m_fadeOutDur;
+        if (m_fadeAlpha >= 1.0f)
         {
-            _fadeAlpha = 1.0f;
+            m_fadeAlpha = 1.0f;
             // 完全な黒の瞬間に、予約された切替を実行（nextScene がセットされる）。
             BeginPendingChange();
-            _fadeHoldTimer = 0.0f;
-            _fade = FadeState::Hold; // 黒を少し保持してから明転へ
+            m_fadeHoldTimer = 0.0f;
+            m_fade = FadeState::Hold; // 黒を少し保持してから明転へ
         }
         break;
 
     case FadeState::Hold:
         // 非同期ロード中は黒のまま待機（明転しない）。ロード完了時に
         // SceneLoading が RequestTransition(Scene*) を呼び、そこで In へ移る。
-        if (_asyncHold) break;
+        if (m_asyncHold) break;
 
         // 通常（同期切替）は黒を少しタメてから明転。この裏で新シーンの
         // 初回フレームが描かれ切る。
-        _fadeHoldTimer += dt;
-        if (_fadeHoldTimer >= _fadeHoldDur)
-            _fade = FadeState::In;
+        m_fadeHoldTimer += dt;
+        if (m_fadeHoldTimer >= m_fadeHoldDur)
+            m_fade = FadeState::In;
         break;
 
     case FadeState::In:
-        _fadeAlpha -= dt / _fadeInDur;
-        if (_fadeAlpha <= 0.0f)
+        m_fadeAlpha -= dt / m_fadeInDur;
+        if (m_fadeAlpha <= 0.0f)
         {
-            _fadeAlpha = 0.0f;
-            _fade      = FadeState::None;
+            m_fadeAlpha = 0.0f;
+            m_fade      = FadeState::None;
         }
         break;
 
@@ -387,32 +387,32 @@ void SceneManager::AdvanceFade(float dt)
 
 void SceneManager::BeginPendingChange()
 {
-    if (!_pendingValid) return;
-    _pendingValid = false;
+    if (!m_pendingValid) return;
+    m_pendingValid = false;
 
-    if (_pendingScene)
+    if (m_pendingScene)
     {
         // 実体指定：SceneLoading が裏読み完了した本命シーンへ切替。
-        ChangeScene(_pendingScene);
-        _pendingScene = nullptr;
+        ChangeScene(m_pendingScene);
+        m_pendingScene = nullptr;
     }
-    else if (_pendingAsync)
+    else if (m_pendingAsync)
     {
         // 名前＋非同期：黒のまま裏読みする（ローディング画面は見せない）。
         // 完了まで黒を保持し、本命が用意できたら“1回だけ”フェードインする。
-        ChangeSceneAsync(_pendingName);
-        _asyncHold = true;
+        ChangeSceneAsync(m_pendingName);
+        m_asyncHold = true;
     }
     else
     {
         // 名前＋同期：その場で切替（重い Initialize は黒の裏で走る）。
-        ChangeScene(_pendingName);
+        ChangeScene(m_pendingName);
     }
 }
 
 void SceneManager::DrawFade()
 {
-    if (_fadeAlpha <= 0.001f) return; // 透明なら描かない
+    if (m_fadeAlpha <= 0.001f) return; // 透明なら描かない
 
     auto& gfx = Graphics::Instance();
     auto* dc  = gfx.GetDeviceContext();
@@ -426,12 +426,12 @@ void SceneManager::DrawFade()
 
     // リニアだと明暗が一定速度で変わり「機械的」で違和感が出やすい。
     // smoothstep（両端が緩やかな S 字）で加減速をつけ、ヌルっと見せる。
-    const float a = _fadeAlpha;
+    const float a = m_fadeAlpha;
     const float eased = a * a * (3.0f - 2.0f * a);
 
     // 黒の全画面矩形（白ダミーテクスチャに黒＋alpha を掛ける）。遅延生成。
-    if (!_fadeQuad) _fadeQuad = std::make_unique<Sprite>(gfx.GetDevice());
-    _fadeQuad->Render(dc, 0.0f, 0.0f, 0.0f,
+    if (!m_fadeQuad) m_fadeQuad = std::make_unique<Sprite>(gfx.GetDevice());
+    m_fadeQuad->Render(dc, 0.0f, 0.0f, 0.0f,
         gfx.GetScreenWidth(), gfx.GetScreenHeight(), 0.0f,
         0.0f, 0.0f, 0.0f, eased);
 }

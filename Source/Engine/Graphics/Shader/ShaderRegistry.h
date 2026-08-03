@@ -18,20 +18,20 @@ public:
 
     // シングルトンの寿命が尽きる前に、明示的にリソースを手放す
     void ClearAll() {
-        _shaders.clear();
-        _factories.clear();
-        _shaderSortIDs.clear();
-        _warnedMissing.clear();
+        m_shaders.clear();
+        m_factories.clear();
+        m_shaderSortIDs.clear();
+        m_warnedMissing.clear();
     }
 
     // エンジン起動時等にシェーダーを登録する関数
     template<typename T>
     void RegisterShader(uint32_t shaderHash) {
-        _factories[shaderHash] = [](ID3D11Device* device) {
+        m_factories[shaderHash] = [](ID3D11Device* device) {
             return std::make_unique<T>(device);
             };
         // 新しいシェーダーが登録されるたびに、0から順にソート用の連番IDを割り当てる
-        _shaderSortIDs[shaderHash] = _nextSortID++;
+        m_shaderSortIDs[shaderHash] = m_nextSortID++;
     }
 
     // =======================================================
@@ -44,16 +44,16 @@ public:
         // PSO 設計図は factory ラムダの寿命まで生存させる必要があるため optional にコピー保持
         std::optional<PipelineStateDesc> psoCopy;
         if (psoDesc) psoCopy = *psoDesc;
-        _factories[shaderHash] = [vsCso, vsHlsl, psCso, psHlsl, psoCopy](ID3D11Device* device) {
+        m_factories[shaderHash] = [vsCso, vsHlsl, psCso, psHlsl, psoCopy](ID3D11Device* device) {
             return std::make_unique<MaterialShader>(device, vsCso, vsHlsl, psCso, psHlsl,
                 psoCopy ? &*psoCopy : nullptr);             
             };
-        _shaderSortIDs[shaderHash] = _nextSortID++;
+        m_shaderSortIDs[shaderHash] = m_nextSortID++;
     }
 
     // 全シェーダーの監視を一斉実行する関数
     void UpdateHotReload(ID3D11Device* device) {
-        for (auto& pair : _shaders) {
+        for (auto& pair : m_shaders) {
             if (pair.second) pair.second->CheckAndReload(device);
         }
     }
@@ -61,21 +61,21 @@ public:
     // 必要な時に生成、あるいはキャッシュを返す。未登録なら ErrorShader を返す。
     Shader* GetShader(uint32_t shaderHash, ID3D11Device* device) {
         // 1. すでにインスタンスがあればそれを返す
-        auto it = _shaders.find(shaderHash);
-        if (it != _shaders.end()) return it->second.get();
+        auto it = m_shaders.find(shaderHash);
+        if (it != m_shaders.end()) return it->second.get();
 
         // 2. ファクトリから生成
-        auto factoryIt = _factories.find(shaderHash);
-        if (factoryIt != _factories.end()) {
-            _shaders[shaderHash] = factoryIt->second(device);
-            return _shaders[shaderHash].get();
+        auto factoryIt = m_factories.find(shaderHash);
+        if (factoryIt != m_factories.end()) {
+            m_shaders[shaderHash] = factoryIt->second(device);
+            return m_shaders[shaderHash].get();
         }
 
         // 3. フォールバック：未登録ハッシュはマゼンタの ErrorShader で代替する
         //    Error 自身が未登録の場合のみ nullptr
         if (shaderHash != "Error"_hash) {
             // 毎フレーム呼ばれ得るので、同一ハッシュは一度だけ警告（スパム防止）
-            if (_warnedMissing.insert(shaderHash).second) {
+            if (m_warnedMissing.insert(shaderHash).second) {
                 CCL_LOG_WARN(LogCategory::Core,
                     "ShaderRegistry: 未登録シェーダー要求 (hash=0x%08X)。ErrorShader(マゼンタ)で代替。",
                     shaderHash);
@@ -90,8 +90,8 @@ public:
 
     // ハッシュ値から、8bitに収まる小さな連番IDを取得する
     uint8_t GetSortID(uint32_t shaderHash) const {
-        auto it = _shaderSortIDs.find(shaderHash);
-        return it != _shaderSortIDs.end() ? it->second : 0;
+        auto it = m_shaderSortIDs.find(shaderHash);
+        return it != m_shaderSortIDs.end() ? it->second : 0;
     }
 
     // ============================================================
@@ -105,11 +105,11 @@ public:
     // ============================================================
     void RegisterName(uint32_t shaderHash, const std::string &name)
     {
-        if (_hashToName.find(shaderHash) == _hashToName.end())
+        if (m_hashToName.find(shaderHash) == m_hashToName.end())
         {
-            _orderedNames.push_back({name, shaderHash});
+            m_orderedNames.push_back({name, shaderHash});
         }
-        _hashToName[shaderHash] = name; // 再登録（ホットリロード等）時は上書きのみ
+        m_hashToName[shaderHash] = name; // 再登録（ホットリロード等）時は上書きのみ
     }
 
     /**
@@ -119,20 +119,20 @@ public:
      */
     const std::vector<std::pair<std::string, uint32_t>> &GetRegisteredNames() const
     {
-        return _orderedNames;
+        return m_orderedNames;
     }
 
 private:
-    std::unordered_map<uint32_t, std::function<std::unique_ptr<Shader>(ID3D11Device*)>> _factories;
-    std::unordered_map<uint32_t, std::unique_ptr<Shader>> _shaders;
+    std::unordered_map<uint32_t, std::function<std::unique_ptr<Shader>(ID3D11Device*)>> m_factories;
+    std::unordered_map<uint32_t, std::unique_ptr<Shader>> m_shaders;
 
     // ソートID管理用
-    uint8_t _nextSortID = 0;
-    std::unordered_map<uint32_t, uint8_t> _shaderSortIDs;
+    uint8_t m_nextSortID = 0;
+    std::unordered_map<uint32_t, uint8_t> m_shaderSortIDs;
 
-    std::unordered_set<uint32_t> _warnedMissing; // 警告済みハッシュ（once-warn）
+    std::unordered_set<uint32_t> m_warnedMissing; // 警告済みハッシュ（once-warn）
 
-        std::unordered_map<uint32_t, std::string>     _hashToName;   // 重複登録の検出用
-    std::vector<std::pair<std::string, uint32_t>> _orderedNames; // 表示順を保持
+        std::unordered_map<uint32_t, std::string>     m_hashToName;   // 重複登録の検出用
+    std::vector<std::pair<std::string, uint32_t>> m_orderedNames; // 表示順を保持
 
 };

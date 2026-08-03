@@ -14,18 +14,18 @@ using namespace CCL::ECS;
 
 void UITextCollectSystem::Update(float /*dt*/)
 {
-    if (!_world->HasResource<UIDrawList>())
+    if (!m_world->HasResource<UIDrawList>())
         return;
 
     auto       &gfx     = Graphics::Instance();
     const float screenW = gfx.GetScreenWidth();
     const float screenH = gfx.GetScreenHeight();
 
-    auto &drawList = _world->GetResource<UIDrawList>();
+    auto &drawList = m_world->GetResource<UIDrawList>();
     // ※ クリアは消費側(UIRenderer::Flush 末尾)が行う。
 
     ForEachWithID([&](CCL::ECS::EntityID id, UITransformComponent &t, const UITextComponent &txt) {
-        CCL::UI::ComputeUIRect(*_world, id, t, screenW, screenH);
+        CCL::UI::ComputeUIRect(*m_world, id, t, screenW, screenH);
 
         if (!txt.visible || txt.text.empty()) return;
 

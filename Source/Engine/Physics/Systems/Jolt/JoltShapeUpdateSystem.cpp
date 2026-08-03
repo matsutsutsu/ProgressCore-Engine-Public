@@ -26,8 +26,8 @@ inline JPH::Quat EulerDegreeToJoltQuat(const XMFLOAT3& eulerDegree) {
 // 1. BoxCollider の更新
 // ===================================================================================
 void JoltBoxShapeUpdateSystem::Update(float dt) {
-    if (!_world->HasResource<JoltPhysicsManager*>()) return;
-    JPH::BodyInterface &bodyInterface = _world->GetResource<JoltPhysicsManager*>()->GetBodyInterface();
+    if (!m_world->HasResource<JoltPhysicsManager*>()) return;
+    JPH::BodyInterface &bodyInterface = m_world->GetResource<JoltPhysicsManager*>()->GetBodyInterface();
 
     ForEachWithID([&](CCL::ECS::EntityID id, const JoltHandleComponent &handle, JoltBoxColliderComponent &box) {
         if (!box.isDirty) return; 
@@ -52,8 +52,8 @@ void JoltBoxShapeUpdateSystem::Update(float dt) {
 // 2. SphereCollider の更新
 // ===================================================================================
 void JoltSphereShapeUpdateSystem::Update(float dt) {
-    if (!_world->HasResource<JoltPhysicsManager*>()) return;
-    JPH::BodyInterface &bodyInterface = _world->GetResource<JoltPhysicsManager*>()->GetBodyInterface();
+    if (!m_world->HasResource<JoltPhysicsManager*>()) return;
+    JPH::BodyInterface &bodyInterface = m_world->GetResource<JoltPhysicsManager*>()->GetBodyInterface();
 
     ForEachWithID([&](CCL::ECS::EntityID id, const JoltHandleComponent &handle, JoltSphereColliderComponent &sphere) {
         if (!sphere.isDirty) return; 
@@ -77,8 +77,8 @@ void JoltSphereShapeUpdateSystem::Update(float dt) {
 // 3. CapsuleCollider の更新
 // ===================================================================================
 void JoltCapsuleShapeUpdateSystem::Update(float dt) {
-    if (!_world->HasResource<JoltPhysicsManager*>()) return;
-    JPH::BodyInterface &bodyInterface = _world->GetResource<JoltPhysicsManager*>()->GetBodyInterface();
+    if (!m_world->HasResource<JoltPhysicsManager*>()) return;
+    JPH::BodyInterface &bodyInterface = m_world->GetResource<JoltPhysicsManager*>()->GetBodyInterface();
 
     ForEachWithID([&](CCL::ECS::EntityID id, const JoltHandleComponent &handle, JoltCapsuleColliderComponent &capsule) {
         if (!capsule.isDirty) return; 

@@ -24,7 +24,7 @@ void OverdriveSystem::Initialize()
 
     // ジャスト回避成功でゲージを多めに加算（近道）。発動中は加算しない（無限延長防止）。
     ListenEvent<JustEvadeSuccessEvent>([this](const JustEvadeSuccessEvent &ev) {
-        if (auto *od = _world->GetComponent<OverdriveComponent>(ev.playerID))
+        if (auto *od = m_world->GetComponent<OverdriveComponent>(ev.playerID))
         {
             if (!od->isActive)
                 od->AddGauge(od->gainOnJustEvade);
@@ -36,9 +36,9 @@ void OverdriveSystem::Update(float dt)
 {
     // 発動入力（Triggered：押した瞬間だけ true）。
     bool activatePressed = false;
-    if (_world->HasResource<std::shared_ptr<IInputAPI>>())
+    if (m_world->HasResource<std::shared_ptr<IInputAPI>>())
     {
-        auto input      = _world->GetResource<std::shared_ptr<IInputAPI>>();
+        auto input      = m_world->GetResource<std::shared_ptr<IInputAPI>>();
         activatePressed = input->GetAction("Overdrive");
     }
 
@@ -79,9 +79,9 @@ void OverdriveSystem::Update(float dt)
     });
 
     // 勢力別の追加倍率を TimeContext へ。TimeScaleSystem(L01) が実効dtへ折り込む。
-    if (_world->HasResource<TimeContext>())
+    if (m_world->HasResource<TimeContext>())
     {
-        auto &ctx                     = _world->GetResource<TimeContext>();
+        auto &ctx                     = m_world->GetResource<TimeContext>();
         ctx.overdriveEnemyScale       = enemyScale;
         ctx.overdriveEnvironmentScale = environmentScale;
         ctx.overdrivePlayerScale      = playerScale;

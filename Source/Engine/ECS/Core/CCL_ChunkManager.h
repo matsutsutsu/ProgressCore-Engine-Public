@@ -91,19 +91,19 @@ namespace CCL::ECS
         /// @brief 指定 Archetype と完全一致する Chunk のインデックスを返す
         size_t SearchEqualChunk(const Archetype& a) const;
 
-        std::vector<std::unique_ptr<Chunk>>& GetChunks() { return _chunks; }
-        const std::vector<std::unique_ptr<Chunk>>& GetChunks() const { return _chunks; }
+        std::vector<std::unique_ptr<Chunk>>& GetChunks() { return m_chunks; }
+        const std::vector<std::unique_ptr<Chunk>>& GetChunks() const { return m_chunks; }
 
         /// @brief 指定 EntityID がどの Chunk のどのインデックスにあるかを検索
         size_t SearchEntityIn(EntityID entity, size_t* entityIndexOut = nullptr) const;
 
         /// @brief Entity 移動時の通知コールバック型
         using EntityMoveCallback = std::function<void(EntityID, Chunk*, size_t)>;
-        void SetEntityMoveCallback(EntityMoveCallback cb) { _onEntityMove = cb; }
+        void SetEntityMoveCallback(EntityMoveCallback cb) { m_onEntityMove = cb; }
 
         /// @brief 構造変更用 mutex（System 側の shared_lock 用）
-        std::shared_mutex&       GetStructureMutex()       { return _structureMutex; }
-        const std::shared_mutex& GetStructureMutex() const { return _structureMutex; }
+        std::shared_mutex&       GetStructureMutex()       { return m_structureMutex; }
+        const std::shared_mutex& GetStructureMutex() const { return m_structureMutex; }
 
 
     private:
@@ -236,7 +236,7 @@ namespace CCL::ECS
          * @brief 全 Chunk に対して CompactHoles を呼び、削除穴を詰める。
          *
          * 詰める際に Entity の位置が変わるため、内部キャッシュと外部
-         * コールバック (_onEntityMove) の両方を更新します。
+         * コールバック (m_onEntityMove) の両方を更新します。
          */
         void CompactAllChunks();
 
@@ -276,7 +276,7 @@ namespace CCL::ECS
         // ----------------------------------------------------------
 
         /// @brief 全 Chunk のリスト。アーキタイプごとに1つ以上の Chunk が存在
-        std::vector<std::unique_ptr<Chunk>> _chunks;
+        std::vector<std::unique_ptr<Chunk>> m_chunks;
 
         /**
          * @brief 1 Chunk のメモリサイズ（固定 16 KB）。
@@ -287,10 +287,10 @@ namespace CCL::ECS
         static constexpr size_t CHUNK_SIZE_BYTES = 16384;
 
         /// @brief Entity 移動・生成時の通知コールバック（World 側のキャッシュ更新用）
-        EntityMoveCallback _onEntityMove = nullptr;
+        EntityMoveCallback m_onEntityMove = nullptr;
 
         /// @brief EntityID → (ChunkIndex, EntityIndex) の高速検索マップ
-        std::vector<EntityLocation> _entityLocationMap;
+        std::vector<EntityLocation> m_entityLocationMap;
 
         /**
          * @brief 構造変更用の共有 mutex
@@ -298,7 +298,7 @@ namespace CCL::ECS
          * - 読み取り（System 実行）: shared_lock（複数スレッド並列 OK）
          * - 書き込み（ApplyPendingOperations）: unique_lock（排他的）
          */
-        mutable std::shared_mutex _structureMutex;
+        mutable std::shared_mutex m_structureMutex;
     };
 
 } // namespace CCL::ECS

@@ -78,9 +78,9 @@ private:
 	// =========================================================
 	// インスタンシング ＆ マルチスレッド (TLS) 対応
 	// =========================================================
-	InstanceBuffer _instanceBuffer;
+	InstanceBuffer m_instanceBuffer;
 
-	uint64_t _instanceId;
+	uint64_t m_instanceId;
 	static std::atomic<uint64_t> s_instanceCounter;
 
 	struct ShapeDrawList {
@@ -93,8 +93,8 @@ private:
 		std::vector<InstanceData> solidTriangles;
 	};
 
-	std::mutex _listMutex;
-	std::vector<std::unique_ptr<ShapeDrawList>> _drawLists;
+	std::mutex m_listMutex;
+	std::vector<std::unique_ptr<ShapeDrawList>> m_drawLists;
 
 	ShapeDrawList& GetDrawList();
 };

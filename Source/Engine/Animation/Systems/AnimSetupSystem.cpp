@@ -18,15 +18,15 @@ void AnimSetupSystem::Update(float dt)
 
     // 1. 足りないコンポーネントを【個別に】調査する
     ForEachWithID([&](EntityID id, const AnimatorComponent &animator) {
-        if (!_world->HasComponent<AnimParametersComponent>(id))
+        if (!m_world->HasComponent<AnimParametersComponent>(id))
         {
             needsParams.push_back(id);
         }
-        if (!_world->HasComponent<AnimStateMachineComponent>(id))
+        if (!m_world->HasComponent<AnimStateMachineComponent>(id))
         {
             needsStateMachine.push_back(id);
         }
-        if (!_world->HasComponent<RootMotionComponent>(id))
+        if (!m_world->HasComponent<RootMotionComponent>(id))
         {
             needsRootMotion.push_back(id);
         }
@@ -35,15 +35,15 @@ void AnimSetupSystem::Update(float dt)
     // 2. 足りないものだけを【個別に】付与する（ループ外での安全な構造変更）
     for (auto id : needsParams)
     {
-        _world->AddComponent<AnimParametersComponent>(id);
+        m_world->AddComponent<AnimParametersComponent>(id);
     }
     for (auto id : needsStateMachine)
     {
-        _world->AddComponent<AnimStateMachineComponent>(id);
+        m_world->AddComponent<AnimStateMachineComponent>(id);
     }
     for (auto id : needsRootMotion)
     {
-        _world->AddComponent<RootMotionComponent>(id);
+        m_world->AddComponent<RootMotionComponent>(id);
     }
 }
 

@@ -57,7 +57,7 @@ struct ParticleEmitterDesc
     int             spriteMode        = 0;                  // sprite_anim_mode 0:ランダム 1:寿命
 
     // ---- 放出設定 ----
-    int             maxCount          = 1000;              // max_count ★唯一の権威
+    int             maxCount          = 1000;              // max_count 唯一の権威
     int             particleType      = 1;                  // particle_type 0:Point 1:Quad
     int             emitMode          = 0;                  // emit_mode 0:継続 1:バースト
     int             burstCount        = 0;                  // burst_count
@@ -81,9 +81,9 @@ struct ParticleEmitterDesc
     }
 
     /// @brief desc を変更した後に呼ぶ。次フレームで staticCB が再 upload される。
-    //void MarkDescChanged() { _staticDirty = true; }   // ★ step1から修正: _rampDirty を分離
+    //void MarkDescChanged() { m_staticDirty = true; }   // step1から修正: m_rampDirty を分離
     /// @brief gradientStops を変更した後に呼ぶ。次フレームで手続きランプを再ベイク。
-    //void MarkGradientChanged() { _rampDirty = true; }
+    //void MarkGradientChanged() { m_rampDirty = true; }
 };
 
 // =========================================================================
@@ -91,7 +91,7 @@ struct ParticleEmitterDesc
 //
 // 設計原則:
 //   - 権威データは desc に集約。CB は毎フレームシステムが desc から組み立てる。
-//   - _staticDirty: desc が変更された時だけ staticCB を再 upload するフラグ。
+//   - m_staticDirty: desc が変更された時だけ staticCB を再 upload するフラグ。
 //     TriggerBurst / isInitialized のような頻繁な変更は dynamicCB 側で処理。
 // =========================================================================
 struct GPUParticleComponent
@@ -105,7 +105,7 @@ struct GPUParticleComponent
 
     bool  isInitialized = false;            // false → UpdateSystem がバッファを再構築
     bool  needsGpuInit  = true;            // true  → InitCS を走らせる
-    bool  _staticDirty  = true;            // true  → staticCB を再 upload する
+    bool  m_staticDirty  = true;            // true  → staticCB を再 upload する
     float time          = 0.0f;            // 累積経過時間（フレームをまたいで保持）
     float burstTrigger  = 0.0f;            // TriggerBurst() で立て、UpdateSystem が消費
 
@@ -137,5 +137,5 @@ struct GPUParticleComponent
     void TriggerBurst() { burstTrigger = 1.0f; }
 
     /// @brief desc を変更した後に呼ぶ。次フレームで staticCB が再 upload される。
-    void MarkDescChanged() { _staticDirty = true; }
+    void MarkDescChanged() { m_staticDirty = true; }
 };

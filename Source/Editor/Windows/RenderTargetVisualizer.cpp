@@ -13,27 +13,27 @@ constexpr uint32_t kMaxBakeWidth = 512;
 
 bool RenderTargetVisualizer::EnsureInitialized(ID3D11Device* device)
 {
-    if (_initialized) return true;
+    if (m_initialized) return true;
     if (!device)      return false;
 
     // VS は既存の全画面三角形シェーダーを共用（SV_VertexID ベース、入力レイアウト不要）
     if (FAILED(GpuResourceUtils::LoadVertexShader(
-            device, "Assets/Shader/FullScreenVS.cso", nullptr, 0, nullptr, _vs.GetAddressOf())))
+            device, "Assets/Shader/FullScreenVS.cso", nullptr, 0, nullptr, m_vs.GetAddressOf())))
         return false;
 
     if (FAILED(GpuResourceUtils::LoadPixelShader(
-            device, "Assets/Shader/RenderTargetDebugPS.cso", _ps.GetAddressOf())))
+            device, "Assets/Shader/RenderTargetDebugPS.cso", m_ps.GetAddressOf())))
         return false;
 
     if (FAILED(GpuResourceUtils::CreateDynamicConstantBuffer(
-            device, sizeof(Cb), _cb.GetAddressOf())))
+            device, sizeof(Cb), m_cb.GetAddressOf())))
         return false;
 
     // デバッグ表示は補間で誤魔化さず、ピクセルを正確に見たいので POINT サンプラ。
     D3D11_SAMPLER_DESC sd = {};
     sd.Filter   = D3D11_FILTER_MIN_MAG_MIP_POINT;
     sd.AddressU = sd.AddressV = sd.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-    if (FAILED(device->CreateSamplerState(&sd, _sampler.GetAddressOf())))
+    if (FAILED(device->CreateSamplerState(&sd, m_sampler.GetAddressOf())))
         return false;
 
     // 不透明ブレンド（SSAOEffect 等と同じ防御）。直前パスの加算/乗算ブレンドが
@@ -41,28 +41,28 @@ bool RenderTargetVisualizer::EnsureInitialized(ID3D11Device* device)
     D3D11_BLEND_DESC bd = {};
     bd.RenderTarget[0].BlendEnable = FALSE;
     bd.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-    if (FAILED(device->CreateBlendState(&bd, _opaqueBlendState.GetAddressOf())))
+    if (FAILED(device->CreateBlendState(&bd, m_opaqueBlendState.GetAddressOf())))
         return false;
 
     // 深度テスト無効（描画先に DSV を付けないため、明示的に無効化して安全側に倒す）。
     D3D11_DEPTH_STENCIL_DESC dsd = {};
     dsd.DepthEnable   = FALSE;
     dsd.StencilEnable = FALSE;
-    if (FAILED(device->CreateDepthStencilState(&dsd, _noDepthState.GetAddressOf())))
+    if (FAILED(device->CreateDepthStencilState(&dsd, m_noDepthState.GetAddressOf())))
         return false;
 
-    _initialized = true;
+    m_initialized = true;
     return true;
 }
 
 RenderTarget* RenderTargetVisualizer::AcquirePoolTarget(ID3D11Device* device, uint32_t w, uint32_t h)
 {
     // 今フレームで poolIndex 番目の RT を確保（無ければ作る／サイズ不一致なら作り直す）。
-    if (_poolIndex >= _pool.size())
-        _pool.push_back(std::make_unique<RenderTarget>());
+    if (m_poolIndex >= m_pool.size())
+        m_pool.push_back(std::make_unique<RenderTarget>());
 
-    RenderTarget* rt = _pool[_poolIndex].get();
-    ++_poolIndex;
+    RenderTarget* rt = m_pool[m_poolIndex].get();
+    ++m_poolIndex;
 
     if (!rt->IsValid() || rt->GetWidth() != w || rt->GetHeight() != h)
     {
@@ -187,10 +187,10 @@ ID3D11ShaderResourceView* RenderTargetVisualizer::Visualize(ID3D11DeviceContext*
     cb.useArray      = p.useArray;
     cb.channelSelect = p.channelSelect;
     D3D11_MAPPED_SUBRESOURCE mapped;
-    if (SUCCEEDED(dc->Map(_cb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
+    if (SUCCEEDED(dc->Map(m_cb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
     {
         memcpy(mapped.pData, &cb, sizeof(cb));
-        dc->Unmap(_cb.Get(), 0);
+        dc->Unmap(m_cb.Get(), 0);
     }
 
     // パイプライン設定（全画面三角形）
@@ -199,13 +199,13 @@ ID3D11ShaderResourceView* RenderTargetVisualizer::Visualize(ID3D11DeviceContext*
     dc->IASetVertexBuffers(0, 1, &nullVB, &zeroStride, &zeroOffset);
     dc->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
     dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    dc->VSSetShader(_vs.Get(), nullptr, 0);
-    dc->PSSetShader(_ps.Get(), nullptr, 0);
-    dc->PSSetConstantBuffers(0, 1, _cb.GetAddressOf());
-    ID3D11SamplerState* smp = _sampler.Get();
+    dc->VSSetShader(m_vs.Get(), nullptr, 0);
+    dc->PSSetShader(m_ps.Get(), nullptr, 0);
+    dc->PSSetConstantBuffers(0, 1, m_cb.GetAddressOf());
+    ID3D11SamplerState* smp = m_sampler.Get();
     dc->PSSetSamplers(0, 1, &smp);
-    dc->OMSetBlendState(_opaqueBlendState.Get(), nullptr, 0xFFFFFFFF);
-    dc->OMSetDepthStencilState(_noDepthState.Get(), 0);
+    dc->OMSetBlendState(m_opaqueBlendState.Get(), nullptr, 0xFFFFFFFF);
+    dc->OMSetDepthStencilState(m_noDepthState.Get(), 0);
 
     // ソースを t0(Texture2D) か t1(Texture2DArray) に束ねる
     ID3D11ShaderResourceView* nullSRV = nullptr;

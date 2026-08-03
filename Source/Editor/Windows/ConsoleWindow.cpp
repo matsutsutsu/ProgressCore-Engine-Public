@@ -19,7 +19,7 @@
 ConsoleWindow::ConsoleWindow() : EditorWindow("Console")
 {
     // カテゴリフィルタを全 true で初期化
-    for (auto& f : _categoryFilters) f = true;
+    for (auto& f : m_categoryFilters) f = true;
 }
 
 namespace
@@ -72,7 +72,7 @@ namespace
 
 void ConsoleWindow::DrawContents(EditorContext& /*context*/)
 {
-    if (!_bufferSink)
+    if (!m_bufferSink)
     {
         ImGui::TextDisabled("ConsoleWindow: ImGuiBufferSink is not set.");
         ImGui::TextDisabled("Call ConsoleWindow::SetBufferSink() during initialization.");
@@ -90,20 +90,20 @@ void ConsoleWindow::DrawContents(EditorContext& /*context*/)
     bool copyAllRequested = ImGui::Button("Copy All");
 
     ImGui::SameLine();
-    ImGui::Checkbox("Auto-Scroll", &_autoScroll);
+    ImGui::Checkbox("Auto-Scroll", &m_autoScroll);
 
     ImGui::SameLine();
-    ImGui::Checkbox("Info", &_showInfo);
+    ImGui::Checkbox("Info", &m_showInfo);
     ImGui::SameLine();
-    ImGui::Checkbox("Success", &_showSuccess);
+    ImGui::Checkbox("Success", &m_showSuccess);
     ImGui::SameLine();
-    ImGui::Checkbox("Warning", &_showWarning);
+    ImGui::Checkbox("Warning", &m_showWarning);
     ImGui::SameLine();
-    ImGui::Checkbox("Error", &_showError);
+    ImGui::Checkbox("Error", &m_showError);
 
     // 検索ボックス
     ImGui::SetNextItemWidth(200);
-    ImGui::InputTextWithHint("##search", "Search...", _searchBuf, sizeof(_searchBuf));
+    ImGui::InputTextWithHint("##search", "Search...", m_searchBuf, sizeof(m_searchBuf));
 
     // --------------------------------------------------------------------
     // 2. カテゴリフィルタ
@@ -114,7 +114,7 @@ void ConsoleWindow::DrawContents(EditorContext& /*context*/)
     for (int i = 0; i < static_cast<int>(LogCategory::Count); ++i)
     {
         ImGui::Checkbox(GetLogCategoryName(static_cast<LogCategory>(i)),
-            &_categoryFilters[i]);
+            &m_categoryFilters[i]);
         if (i < static_cast<int>(LogCategory::Count) - 1) ImGui::SameLine();
     }
     ImGui::Separator();
@@ -131,27 +131,27 @@ void ConsoleWindow::DrawContents(EditorContext& /*context*/)
 
     // 前回の更新から0.1秒経過、または「Clear」ボタン等で強制更新が必要な場合のみコピーを走らせる
     if (s_updateTimer > 0.1f) {
-        s_cachedMessages = _bufferSink->Snapshot();
+        s_cachedMessages = m_bufferSink->Snapshot();
         s_cachedFiltered.clear();
         s_cachedFiltered.reserve(s_cachedMessages.size());
 
-        const bool hasSearch = (_searchBuf[0] != '\0');
+        const bool hasSearch = (m_searchBuf[0] != '\0');
         for (int i = 0; i < static_cast<int>(s_cachedMessages.size()); ++i)
         {
             const auto& m = s_cachedMessages[i];
 
             // フィルタ条件のチェック...
             switch (m.level) {
-            case LogLevel::Info:    if (!_showInfo)    continue; break;
-            case LogLevel::Success: if (!_showSuccess) continue; break;
-            case LogLevel::Warning: if (!_showWarning) continue; break;
-            case LogLevel::Error:   if (!_showError)   continue; break;
+            case LogLevel::Info:    if (!m_showInfo)    continue; break;
+            case LogLevel::Success: if (!m_showSuccess) continue; break;
+            case LogLevel::Warning: if (!m_showWarning) continue; break;
+            case LogLevel::Error:   if (!m_showError)   continue; break;
             }
-            if (!_categoryFilters[static_cast<int>(m.category)]) continue;
+            if (!m_categoryFilters[static_cast<int>(m.category)]) continue;
 
             if (hasSearch) {
-                if (m.text.find(_searchBuf) == std::string::npos &&
-                    m.file.find(_searchBuf) == std::string::npos) continue;
+                if (m.text.find(m_searchBuf) == std::string::npos &&
+                    m.file.find(m_searchBuf) == std::string::npos) continue;
             }
 
             s_cachedFiltered.push_back(i);
@@ -216,7 +216,7 @@ void ConsoleWindow::DrawContents(EditorContext& /*context*/)
     // --------------------------------------------------------------------
     // 6. 自動スクロール
     // --------------------------------------------------------------------
-    if (_autoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
+    if (m_autoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
     {
         ImGui::SetScrollHereY(1.0f);
     }

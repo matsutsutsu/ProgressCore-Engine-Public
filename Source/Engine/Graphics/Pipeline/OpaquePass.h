@@ -18,7 +18,7 @@
  *  可視インスタンスが 0 のメッシュはドローコールごとスキップする。
  *
  *  Services（永続）と FrameContext（揮発）を分離した新パイプライン規約に準拠。
- *  - Initialize : _services の保持 + PSO / InstanceBuffer の生成
+ *  - Initialize : m_services の保持 + PSO / InstanceBuffer の生成
  *  - Execute    : ctx（フレームデータ）のみ受け取り、旧 Shader API には
  *                 MakeLegacyContext で構築した互換ビューを渡す（移行期）
  */
@@ -47,23 +47,23 @@ class OpaquePass : public IRenderPass
     /// 直近フレームで実際に描画した（可視インスタンスを持つ）メッシュ数。
     uint32_t GetDrawnMeshCount() const
     {
-        return _stat_drawnMeshes;
+        return m_stat_drawnMeshes;
     }
     /// 直近フレームでフラスタムカリングにより丸ごとスキップしたメッシュ数。
     uint32_t GetCulledMeshCount() const
     {
-        return _stat_culledMeshes;
+        return m_stat_culledMeshes;
     }
 
   private:
-    PipelineState  _psoOpaque;
-    InstanceBuffer _instanceBuffer;
+    PipelineState  m_psoOpaque;
+    InstanceBuffer m_instanceBuffer;
 
     /// インスタンスデータ構築用のスクラッチ領域。メッシュ単位で再利用する。
     /// 関数 static を避け、可読性と将来のマルチスレッド化に配慮してメンバ化。
-    std::vector<InstanceData> _instanceScratch;
+    std::vector<InstanceData> m_instanceScratch;
 
     /// フラスタムカリングの統計（デバッグ確認用。ImGui やウォッチで参照）。
-    uint32_t _stat_drawnMeshes  = 0;
-    uint32_t _stat_culledMeshes = 0;
+    uint32_t m_stat_drawnMeshes  = 0;
+    uint32_t m_stat_culledMeshes = 0;
 };

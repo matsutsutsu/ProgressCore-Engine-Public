@@ -20,13 +20,13 @@ protected:
     void DrawContents(EditorContext& context) override;
 
 private:
-    RenderTargetVisualizer _viz;
+    RenderTargetVisualizer m_viz;
 
     // 表示コントロール（全エントリ共通）
-    float _thumbWidth    = 320.0f; // サムネイルの表示幅（px）
-    float _exposure      = 1.0f;   // HDR 表示の露出
-    int   _channelSelect = 0;      // 0=RGB 1=R 2=G 3=B 4=A
-    int   _arraySlice    = 0;      // 配列テクスチャの表示スライス
-    float _nearZ         = 0.1f;   // 深度線形化用（カメラから自動取得、無ければ手動）
-    float _farZ          = 1000.0f;
+    float m_thumbWidth    = 320.0f; // サムネイルの表示幅（px）
+    float m_exposure      = 1.0f;   // HDR 表示の露出
+    int   m_channelSelect = 0;      // 0=RGB 1=R 2=G 3=B 4=A
+    int   m_arraySlice    = 0;      // 配列テクスチャの表示スライス
+    float m_nearZ         = 0.1f;   // 深度線形化用（カメラから自動取得、無ければ手動）
+    float m_farZ          = 1000.0f;
 };

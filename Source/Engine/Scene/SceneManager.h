@@ -82,15 +82,15 @@ public:
     void FadeInFromBlack(float dur = 0.65f);
 
     // 遷移フェード中かどうか。
-    bool IsTransitioning() const { return _fade != FadeState::None; }
+    bool IsTransitioning() const { return m_fade != FadeState::None; }
 
     // シーンロード専用の汎用スレッドプール（各Worldの並列プールとは独立）。
     // SceneLoading がここへ「対象シーンの Initialize」ジョブを投げる。
-    CCL::ECS::JobSystem& GetLoaderJobs() { return _loaderJobs; }
+    CCL::ECS::JobSystem& GetLoaderJobs() { return m_loaderJobs; }
 
     // 現在のシーン名を取得・設定
-    const std::string& GetCurrentSceneName() const { return _currentSceneName; }
-    void SetCurrentSceneName(const std::string& name) { _currentSceneName = name; }
+    const std::string& GetCurrentSceneName() const { return m_currentSceneName; }
+    void SetCurrentSceneName(const std::string& name) { m_currentSceneName = name; }
 
     // --- ECSデータ駆動のシーン保存・読み込み ---
     void SaveScene(CCL::ECS::World* world, const std::string& filepath);
@@ -112,35 +112,35 @@ private:
     //   Hold を挟むことで「黒に着いた瞬間に即バウンド」する軽さを消し、
     //   その裏で新シーンの初回フレームを描き切ってからフェードインできる。
     enum class FadeState { None, Out, Hold, In };
-    FadeState _fade      = FadeState::None;
-    float     _fadeAlpha = 0.0f;  // 0=透明 / 1=黒
-    float     _fadeOutDur = 0.55f; // 暗転にかける秒数
-    float     _fadeInDur  = 0.65f; // 明転にかける秒数
-    float     _fadeHoldDur = 0.15f; // 完全な黒を保持する秒数
-    float     _fadeHoldTimer = 0.0f;
+    FadeState m_fade      = FadeState::None;
+    float     m_fadeAlpha = 0.0f;  // 0=透明 / 1=黒
+    float     m_fadeOutDur = 0.55f; // 暗転にかける秒数
+    float     m_fadeInDur  = 0.65f; // 明転にかける秒数
+    float     m_fadeHoldDur = 0.15f; // 完全な黒を保持する秒数
+    float     m_fadeHoldTimer = 0.0f;
 
     // 黒の瞬間に実行する「予約された切替」。名前指定と実体指定のどちらか。
-    bool        _pendingValid    = false;
-    std::string _pendingName;
-    bool        _pendingAsync    = false;
-    Scene*      _pendingScene    = nullptr; // 実体指定（SceneLoading からの本命切替）
+    bool        m_pendingValid    = false;
+    std::string m_pendingName;
+    bool        m_pendingAsync    = false;
+    Scene*      m_pendingScene    = nullptr; // 実体指定（SceneLoading からの本命切替）
 
     // 非同期ロードの「黒保持」中フラグ。
     //   true の間はローディング画面を見せず、黒（alpha=1）のまま裏読み完了を待つ。
     //   完了時に本命シーンへ差し替えて“1回だけ”フェードインする（暗→明→暗→明 の
     //   チラつきを避ける）。SceneLoading からの RequestTransition(Scene*) で解除。
-    bool _asyncHold = false;
+    bool m_asyncHold = false;
 
-    std::unique_ptr<Sprite> _fadeQuad; // 黒矩形（遅延生成）
+    std::unique_ptr<Sprite> m_fadeQuad; // 黒矩形（遅延生成）
 
     Scene* currentScene = nullptr; // 現在のシーン
     Scene* nextScene = nullptr;    // 次に遷移するシーン
 
     // 現在のシーン名を保持する変数
-    std::string _currentSceneName = "";
+    std::string m_currentSceneName = "";
 
     // シーン非同期ロード専用のスレッドプール（毎フレーム並列とは別インスタンス）。
     // ※ 各Worldの JobSystem はそのWorld自身をロードできない（鶏卵問題）ため、
     //    ロードはWorldに依存しないここのプールで回す。
-    CCL::ECS::JobSystem _loaderJobs;
+    CCL::ECS::JobSystem m_loaderJobs;
 };

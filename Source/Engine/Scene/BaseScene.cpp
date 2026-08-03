@@ -52,7 +52,7 @@ void BaseScene::Initialize()
 
     // =========================================================
     // カメラ初期設定
-    //   Graphics が _mainCamera を所有。BaseScene はここで初期値を書き込み、
+    //   Graphics が m_mainCamera を所有。BaseScene はここで初期値を書き込み、
     //   以降は CameraBrainSystem に全て任せる。
     // =========================================================
     Camera* cam = gfx.GetMainCamera();
@@ -67,51 +67,51 @@ void BaseScene::Initialize()
     // これで各Worldが自前のプールを持たず、アプリ全体で1プールを共有する。
     {
         ZoneScopedN("BaseScene: ECSContext create");
-        _ecsContext = std::make_unique<CCL::ECS::ECSContext>(
+        m_ecsContext = std::make_unique<CCL::ECS::ECSContext>(
             EngineServices::Instance().jobSystem.get());
     }
-    _worldPtr   = _ecsContext->GetWorld(); // 互換性用
+    m_worldPtr   = m_ecsContext->GetWorld(); // 互換性用
 
     // リソース登録
-    _worldPtr->AddResource<Input *>(&Input::Instance());
+    m_worldPtr->AddResource<Input *>(&Input::Instance());
 
     //  RenderInterpState は、RenderInterpSystem が参照するためにリソースとして登録する。
-    _worldPtr->AddResource<RenderInterpState>();
+    m_worldPtr->AddResource<RenderInterpState>();
 
 
     auto& services = EngineServices::Instance();
 
     // 1. InputとAudioは、そのままResourceに登録
-    _worldPtr->AddResource<std::shared_ptr<IInputAPI>>(services.inputFacade);
-    _worldPtr->AddResource<std::shared_ptr<IAudioAPI>>(services.audioManager);
+    m_worldPtr->AddResource<std::shared_ptr<IInputAPI>>(services.inputFacade);
+    m_worldPtr->AddResource<std::shared_ptr<IAudioAPI>>(services.audioManager);
 
     // 2. Physics (Jolt)
     // JoltPhysicsManager 本体はEngineServicesのものを使う
-    _worldPtr->AddResource<JoltPhysicsManager*>(services.physicsManager.get());
+    m_worldPtr->AddResource<JoltPhysicsManager*>(services.physicsManager.get());
 
     // 箱の型として「IPhysicsAPIのshared_ptr」を明示し、中身として「Joltのshared_ptr」を渡す
-    auto myFacade = std::make_shared<JoltPhysicsFacade>(_worldPtr);
-    _worldPtr->AddResource<std::shared_ptr<IPhysicsAPI>>(myFacade);
+    auto myFacade = std::make_shared<JoltPhysicsFacade>(m_worldPtr);
+    m_worldPtr->AddResource<std::shared_ptr<IPhysicsAPI>>(myFacade);
 
     // Graphics が所有するサブシステムを ECS へ接続する。
     // ECS システムがライトを変更すれば Graphics::Update() の Bind に反映される。
-    _worldPtr->AddResource<Camera*>(cam);
-    _worldPtr->AddResource<LightManager*>(gfx.GetLightManager());
-    _worldPtr->AddResource<PostProcessManager*>(gfx.GetPostProcessManager());
-    _worldPtr->AddResource<ShadowMap*>(gfx.GetShadowMap());
-    _worldPtr->AddResource<ModelRenderer*>(gfx.GetModelRenderer());
-    _worldPtr->AddResource<ParticleRenderer*>(gfx.GetParticleRenderer());
-    _worldPtr->AddResource<PrimitiveRenderer*>(gfx.GetPrimitiveRenderer());
-    _worldPtr->AddResource<ShapeRenderer*>(gfx.GetShapeRenderer());
+    m_worldPtr->AddResource<Camera*>(cam);
+    m_worldPtr->AddResource<LightManager*>(gfx.GetLightManager());
+    m_worldPtr->AddResource<PostProcessManager*>(gfx.GetPostProcessManager());
+    m_worldPtr->AddResource<ShadowMap*>(gfx.GetShadowMap());
+    m_worldPtr->AddResource<ModelRenderer*>(gfx.GetModelRenderer());
+    m_worldPtr->AddResource<ParticleRenderer*>(gfx.GetParticleRenderer());
+    m_worldPtr->AddResource<PrimitiveRenderer*>(gfx.GetPrimitiveRenderer());
+    m_worldPtr->AddResource<ShapeRenderer*>(gfx.GetShapeRenderer());
 
     // SystemManager のポインタをリソースとして登録
-    //_worldPtr->AddResource<CCL::ECS::SystemManager *>(_ecsContext->GetSystemManager());
+    //m_worldPtr->AddResource<CCL::ECS::SystemManager *>(m_ecsContext->GetSystemManager());
 
-    _worldPtr->AddResource<TimeContext>();
+    m_worldPtr->AddResource<TimeContext>();
 
     // ゲーム画面(RT)の表示矩形。エディタ(GameViewWindow)が毎フレーム書き込み、UIInputSystem が
     // マウス座標をUI空間へ写像するのに使う。Shipping/全画面では valid=false のまま（恒等写像）。
-    _worldPtr->AddResource<GameViewportInfo>();
+    m_worldPtr->AddResource<GameViewportInfo>();
 
 
     // システム登録 (派生クラスの処理が走る)。全システムのインスタンス生成・登録がここで走る。
@@ -127,32 +127,32 @@ void BaseScene::Start() {}
 void BaseScene::Finalize()
 {
     // C++シーンそのものが消滅する前に、物理空間を安全に掃除する
-    if (_worldPtr) {
+    if (m_worldPtr) {
         // 全エンティティに破壊予約をつける
         // (ここでは PersistentTag も関係なく全て破壊してよい。世界が終わるため)
-        auto& chunks = _worldPtr->GetChunkManager().GetChunks();
+        auto& chunks = m_worldPtr->GetChunkManager().GetChunks();
         for (auto& chunkPtr : chunks) {
             if (!chunkPtr) continue;
             auto* chunk = chunkPtr.get();
             for (size_t i = 0; i < chunk->GetEntityCount(); ++i) {
                 CCL::ECS::EntityID entity = chunk->GetEntityByIndex(i);
                 if (entity != CCL::ECS::InvalidEntityID) {
-                    TransformUpdateSystem::MarkForDestruction(*_worldPtr, entity, true);
+                    TransformUpdateSystem::MarkForDestruction(*m_worldPtr, entity, true);
                 }
             }
         }
 
         // Jolt剛体の即時消去
-        JoltCleanupSystem::ExecuteCleanup(*_worldPtr);
+        JoltCleanupSystem::ExecuteCleanup(*m_worldPtr);
         // 破棄される AudioEmitter の再生中サウンドを止める（BGM等の鳴りっぱなし防止）
-        AudioCleanupSystem::ExecuteCleanup(*_worldPtr);
-        HierarchyCleanupSystem::ExecuteCleanup(*_worldPtr);
+        AudioCleanupSystem::ExecuteCleanup(*m_worldPtr);
+        HierarchyCleanupSystem::ExecuteCleanup(*m_worldPtr);
 
         // ゴミ箱を空にする
-        _worldPtr->ScrutinyAndApply();
+        m_worldPtr->ScrutinyAndApply();
     }
 
-    // この直後、SceneManager側のClear()によって _ecsContext が破棄され、
+    // この直後、SceneManager側のClear()によって m_ecsContext が破棄され、
     // Worldもシステムも完全にメモリから解放されます。
 }
 
@@ -169,15 +169,15 @@ void BaseScene::Update(float elapsedTime)
     Graphics::Instance().Update();
 
 
-    if (_ecsContext) {
+    if (m_ecsContext) {
         // ポーズ中は UpdatePaused（構造変更の適用＋描画のみ）に切替える。
         // これによりポーズ中でもオーバーレイの生成/破棄が反映され、UIも描ける。
-        const bool paused = _worldPtr && _worldPtr->HasResource<GameFlowState>()
-                            && _worldPtr->GetResource<GameFlowState>().paused;
+        const bool paused = m_worldPtr && m_worldPtr->HasResource<GameFlowState>()
+                            && m_worldPtr->GetResource<GameFlowState>().paused;
         if (paused)
-            _ecsContext->UpdatePaused(elapsedTime);
+            m_ecsContext->UpdatePaused(elapsedTime);
         else
-            _ecsContext->UpdateRender(elapsedTime);
+            m_ecsContext->UpdateRender(elapsedTime);
     }
 
 }
@@ -187,13 +187,13 @@ void BaseScene::FixedUpdate(float fixedTime)
     ZoneScopedN("BaseScene::FixedUpdate");
 
     // ポーズ中はゲームロジック・物理を止める（描画は Update 側で継続）。
-    const bool paused = _worldPtr && _worldPtr->HasResource<GameFlowState>()
-                        && _worldPtr->GetResource<GameFlowState>().paused;
+    const bool paused = m_worldPtr && m_worldPtr->HasResource<GameFlowState>()
+                        && m_worldPtr->GetResource<GameFlowState>().paused;
     if (paused) return;
 
     // ECSコンテキストに更新を委譲（これだけで全てが正しい順序で回る）
-    if (_ecsContext) {
-        _ecsContext->UpdateLogic(fixedTime);
+    if (m_ecsContext) {
+        m_ecsContext->UpdateLogic(fixedTime);
     }
 }
 
@@ -207,9 +207,9 @@ void BaseScene::Render()
     auto* dc = gfx.GetDeviceContext();
 
     // EnvironmentSystem: フォグ / IBL / ノイズのバインド + CbScene のバインド
-    // ★ CbScene の中身は触らない（Graphics::Update() が書き込み済み）
-    if (_ecsContext && _ecsContext->GetSystemManager()) {
-        if (auto* env = _ecsContext->GetSystemManager()->GetSystem<EnvironmentSystem>()) {
+    // CbScene の中身は触らない（Graphics::Update() が書き込み済み）
+    if (m_ecsContext && m_ecsContext->GetSystemManager()) {
+        if (auto* env = m_ecsContext->GetSystemManager()->GetSystem<EnvironmentSystem>()) {
             const RenderServices& svc = gfx.GetRenderServices();
             env->BindGlobalResources(dc, svc);
         }
@@ -239,8 +239,8 @@ void BaseScene::Render()
             gfx.GetRenderState()->GetDepthStencilState(DepthState::NoTestNoWrite), 0);
 
         // ECSネイティブUI: UILayoutSystem(UpdateRender)が構築した UIDrawList を描く。
-        if (_worldPtr && _worldPtr->HasResource<UIDrawList>())
-            _uiRenderer.Flush(dc, gfx.GetDevice(), _worldPtr->GetResource<UIDrawList>());
+        if (m_worldPtr && m_worldPtr->HasResource<UIDrawList>())
+            m_uiRenderer.Flush(dc, gfx.GetDevice(), m_worldPtr->GetResource<UIDrawList>());
 
         OnRenderUI();
 
@@ -252,7 +252,7 @@ void BaseScene::Render()
 
 void BaseScene::DrawGUI()
 {
-    // ★拡張ポイント: ImGui描画
+    // 拡張ポイント: ImGui描画
     OnDrawImGui();
 }
 
@@ -280,10 +280,10 @@ void BaseScene::OnDeviceRecreated()
 	CCL_LOG_INFO(LogCategory::Core,"[BaseScene] OnDeviceRecreated: Device lost recovered. Reinitializing scene...\n");
     
     // --- 旧 ECS ワールドを安全に破棄 ---
-    // _ecsContext がリセットされると、内部のすべてのエンティティ・コンポーネント・
+    // m_ecsContext がリセットされると、内部のすべてのエンティティ・コンポーネント・
     // システムが解放される。この時点で旧リソースのハンドルも無効になる。
-    _ecsContext.reset();
-    _worldPtr = nullptr;
+    m_ecsContext.reset();
+    m_worldPtr = nullptr;
 
     // --- シーンを完全に再初期化 ---
     // Initialize() でECSインフラを再構築 → RegisterSystems() で全システムを再登録

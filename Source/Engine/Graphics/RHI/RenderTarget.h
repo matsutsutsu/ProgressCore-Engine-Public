@@ -37,7 +37,7 @@ public:
     /**
      * @brief 有効なリソースを保持しているか。
      */
-    bool IsValid() const noexcept { return _rtv != nullptr; }
+    bool IsValid() const noexcept { return m_rtv != nullptr; }
 
     /**
      * @brief このレンダーターゲットを指定色でクリアする。
@@ -51,18 +51,18 @@ public:
     void Activate(ID3D11DeviceContext* dc, ID3D11DepthStencilView* dsv = nullptr);
 
     // ---- アクセサ ----
-    ID3D11ShaderResourceView* GetSRV()    const noexcept { return _srv.Get(); }
-    ID3D11RenderTargetView* GetRTV()    const noexcept { return _rtv.Get(); }
-    UINT                      GetWidth()  const noexcept { return _width; }
-    UINT                      GetHeight() const noexcept { return _height; }
-    DXGI_FORMAT               GetFormat() const noexcept { return _format; }
+    ID3D11ShaderResourceView* GetSRV()    const noexcept { return m_srv.Get(); }
+    ID3D11RenderTargetView* GetRTV()    const noexcept { return m_rtv.Get(); }
+    UINT                      GetWidth()  const noexcept { return m_width; }
+    UINT                      GetHeight() const noexcept { return m_height; }
+    DXGI_FORMAT               GetFormat() const noexcept { return m_format; }
 
 private:
-    Microsoft::WRL::ComPtr<ID3D11Texture2D>          _texture;
-    Microsoft::WRL::ComPtr<ID3D11RenderTargetView>   _rtv;
-    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> _srv;
-    D3D11_VIEWPORT _viewport = {};
-    UINT           _width = 0;
-    UINT           _height = 0;
-    DXGI_FORMAT    _format = DXGI_FORMAT_UNKNOWN;
+    Microsoft::WRL::ComPtr<ID3D11Texture2D>          m_texture;
+    Microsoft::WRL::ComPtr<ID3D11RenderTargetView>   m_rtv;
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_srv;
+    D3D11_VIEWPORT m_viewport = {};
+    UINT           m_width = 0;
+    UINT           m_height = 0;
+    DXGI_FORMAT    m_format = DXGI_FORMAT_UNKNOWN;
 };

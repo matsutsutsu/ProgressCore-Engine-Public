@@ -29,9 +29,9 @@ class BossHealthHudSystem : public CCL::ECS::IfSystem<BossHealthHudSystem,
     CCL::ECS::EntityID m_barID   = CCL::ECS::InvalidEntityID; ///< ゲージ本体（UIProgressBar）
     CCL::ECS::EntityID m_labelID = CCL::ECS::InvalidEntityID; ///< ラベル（UIText）
 
-    float _prevRatio = 1.0f;  ///< 前フレームのHP比（被弾検出用）
-    float _trailHold = 0.0f;  ///< 被弾後、遅延バーが減り始めるまでの溜め(秒)
-    bool  _init      = false; ///< 初回にゲージ値をスナップ済みか
+    float m_prevRatio = 1.0f;  ///< 前フレームのHP比（被弾検出用）
+    float m_trailHold = 0.0f;  ///< 被弾後、遅延バーが減り始めるまでの溜め(秒)
+    bool  m_init      = false; ///< 初回にゲージ値をスナップ済みか
 
     // --- チューニング用 ---
     static constexpr float kTrailSpeed = 5.0f;  ///< 遅延バーの追従速度（大きいほど速く追いつく）

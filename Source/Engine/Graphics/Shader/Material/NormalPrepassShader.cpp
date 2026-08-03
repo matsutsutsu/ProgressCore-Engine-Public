@@ -31,7 +31,7 @@ void NormalPrepassShader::Begin(ID3D11DeviceContext* dc,
     dc->VSSetShader(vertexShader.Get(), nullptr, 0);
     dc->PSSetShader(pixelShader.Get(), nullptr, 0);
 
-    for (auto& pair : _constantBuffers) {
+    for (auto& pair : m_constantBuffers) {
         pair.second.BindVS(dc);
     }
 }

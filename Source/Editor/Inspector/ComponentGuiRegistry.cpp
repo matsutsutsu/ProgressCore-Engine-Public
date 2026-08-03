@@ -35,15 +35,15 @@ void ComponentGuiRegistry::Draw(
 {
     ResolveBindings(); // ★追加: 描画する直前に、IDマップが未完成なら完成させる
 
-    auto idIt = _typeIdToIndex.find(id);
-    if (idIt == _typeIdToIndex.end()) {
+    auto idIt = m_typeIdToIndex.find(id);
+    if (idIt == m_typeIdToIndex.end()) {
 #ifdef ENABLE_EDITOR
         ImGui::TextColored(ImVec4(1, 0.5f, 0, 1), "No GUI registered for this ID.");
 #endif
         return;
     }
-    auto it = _registry.find(idIt->second);
-    if (it != _registry.end()) {
+    auto it = m_registry.find(idIt->second);
+    if (it != m_registry.end()) {
         it->second.guiFunc(data, entity, world);
     }
 }

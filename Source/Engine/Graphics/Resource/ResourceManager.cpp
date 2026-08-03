@@ -41,7 +41,7 @@ std::string NormalizeAssetKey(const char *path)
 void ResourceManager::ClearAll()
 {
     // マルチスレッド対応の場合はロックをかける
-    std::lock_guard<std::mutex> lock(_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
 
     // 1. キャッシュ（Registry）のクリア
     m_textureRegistry.clear();
@@ -72,7 +72,7 @@ TextureHandle ResourceManager::LoadTexture(const char *filename)
 
     // 1. まずReadロック（またはミューテックス）でキャッシュを確認
     {
-        std::lock_guard<std::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(m_mutex);
         auto                        it = m_textureRegistry.find(hash);
         if (it != m_textureRegistry.end())
         {
@@ -88,7 +88,7 @@ TextureHandle ResourceManager::LoadTexture(const char *filename)
     {
         SetDebugName(srv.Get(), std::string("Tex_") + filename);
 
-        std::lock_guard<std::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(m_mutex);
 
         // 1. プールに空き部屋を作り、互換コンストラクタ経由で登録
         TextureHandle    handle = m_texturePool.Create(srv);
@@ -196,15 +196,15 @@ ModelHandle ResourceManager::LoadModelResource(const char *filename)
 
     // ============================================================
     // 非同期シーンロード対応：ワーカースレッドから呼ばれ得るため、
-    // 共有レジストリ m_modelRegistry への参照/更新を _mutex で保護する。
-    // ただし model->Load() は内部で LoadTexture()（同じ _mutex をロック）を
+    // 共有レジストリ m_modelRegistry への参照/更新を m_mutex で保護する。
+    // ただし model->Load() は内部で LoadTexture()（同じ m_mutex をロック）を
     // 呼ぶ可能性があり、ロックを跨いだまま呼ぶと自己デッドロックする。
     // → 「登録操作だけロック・重いロード本体はロック外」のダブルチェックロック。
     // ============================================================
 
     // 1) キャッシュ命中確認（ロック下）
     {
-        std::lock_guard<std::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(m_mutex);
         auto it = m_modelRegistry.find(hash);
         if (it != m_modelRegistry.end() && m_modelPool.Get(it->second) != nullptr)
             return it->second;
@@ -213,7 +213,7 @@ ModelHandle ResourceManager::LoadModelResource(const char *filename)
     // 2) 空きスロット確保（プール操作のためロック下）
     ModelHandle handle;
     {
-        std::lock_guard<std::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(m_mutex);
         handle = m_modelPool.Create();
     }
 
@@ -223,7 +223,7 @@ ModelHandle ResourceManager::LoadModelResource(const char *filename)
 
     // 4) レジストリ登録（ロック下・二重ロードは「先着を採用し自分は破棄」で解決）
     {
-        std::lock_guard<std::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(m_mutex);
         auto it = m_modelRegistry.find(hash);
         if (it != m_modelRegistry.end() && m_modelPool.Get(it->second) != nullptr)
         {
@@ -258,7 +258,7 @@ std::string ResourceManager::GetAssetPath(uint32_t hash)
 {
     if (hash == 0) return "";
 
-    std::lock_guard<std::mutex> lock(_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
     auto                        it = m_assetPathRegistry.find(hash);
     if (it != m_assetPathRegistry.end())
     {
@@ -278,7 +278,7 @@ ModelInstanceHandle ResourceManager::CreateModelInstance(const char *filename)
 
     // 文字列実体を中央レジストリに記憶しておく
     {
-        std::lock_guard<std::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(m_mutex);
         m_assetPathRegistry[hash] = filename;
     }
 
@@ -292,7 +292,7 @@ ModelInstanceHandle ResourceManager::CreateModelInstanceFromHash(uint32_t hash)
 
     std::string path;
     {
-        std::lock_guard<std::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(m_mutex);
         auto                        it = m_assetPathRegistry.find(hash);
         if (it != m_assetPathRegistry.end())
         {
@@ -353,7 +353,7 @@ const AnimSequence *ResourceManager::LoadAnimSequence(const char *filename)
         return nullptr;
 
     // LoadAnimCurve と同様にスレッドセーフにする(レジストリ/プールの競合防止)。
-    std::lock_guard<std::mutex> lock(_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
 
     uint32_t hash = HashString(NormalizeAssetKey(filename).c_str());
     auto     it   = m_animSequenceRegistry.find(hash);
@@ -429,7 +429,7 @@ const AnimSequence *ResourceManager::ReloadAnimSequence(const char *filename)
 
     AnimSequence *seq = nullptr;
     {
-        std::lock_guard<std::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(m_mutex);
         auto                        it = m_animSequenceRegistry.find(hash);
         if (it == m_animSequenceRegistry.end())
             seq = nullptr; // 未キャッシュ
@@ -455,7 +455,7 @@ const AnimSequence *ResourceManager::ReloadAnimSequence(const char *filename)
     if (jsonStr.empty())
         return seq; // 読めなければ既存内容を維持
 
-    std::lock_guard<std::mutex> lock(_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
     try
     {
         nlohmann::json j = nlohmann::json::parse(jsonStr);
@@ -484,7 +484,7 @@ const AnimSequence *ResourceManager::ReloadAnimSequence(const char *filename)
 
 const CurveData *ResourceManager::LoadAnimCurve(const char *filepath)
 {
-    std::lock_guard<std::mutex> lock(_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
     uint32_t                    hash = CCL::Utils::HashString(NormalizeAssetKey(filepath).c_str());
 
     auto it = m_animCurveRegistry.find(hash);
@@ -528,7 +528,7 @@ const CurveData *ResourceManager::LoadAnimCurve(const char *filepath)
 // ============================================================================
 RenderTargetHandle ResourceManager::CreateRenderTarget(int width, int height, DXGI_FORMAT format)
 {
-    std::lock_guard<std::mutex> lock(_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
     RenderTargetHandle          handle = m_renderTargetPool.Create();
     RenderTarget               *rt     = m_renderTargetPool.Get(handle);
     if (rt)
@@ -562,13 +562,13 @@ RenderTargetHandle ResourceManager::LoadRenderTarget(const std::string &name, ID
 
 RenderTarget *ResourceManager::GetRenderTarget(RenderTargetHandle handle)
 {
-    std::lock_guard<std::mutex> lock(_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
     return m_renderTargetPool.Get(handle);
 }
 
 void ResourceManager::UnloadRenderTarget(RenderTargetHandle handle)
 {
-    std::lock_guard<std::mutex> lock(_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
     RenderTarget               *rt = m_renderTargetPool.Get(handle);
     if (rt)
     {
@@ -770,7 +770,7 @@ ModelInstanceHandle ResourceManager::RegisterModelInstance(std::shared_ptr<Model
 {
     if (!model) return ModelInstanceHandle{};
 
-    std::lock_guard<std::mutex> lock(_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
     // ResourcePool<Model>::Create(Args&&...) は内部で placement-new Model(args...)。
     // Model のムーブコンストラクタ（暗黙 or 既存）でプールへ収める。
     return m_modelInstancePool.Create(std::move(*model));

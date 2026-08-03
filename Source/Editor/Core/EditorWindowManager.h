@@ -14,13 +14,13 @@ public:
     // 全ウィンドウの一括描画
     void Draw(EditorContext &context);
 
-    bool IsVisible() const { return _isVisible; }
+    bool IsVisible() const { return m_isVisible; }
 
 
     template<typename T>
     T* GetWindow()
     {
-        for (auto& window : _windows)
+        for (auto& window : m_windows)
         {
             if (auto* ptr = dynamic_cast<T*>(window.get()))
             {
@@ -40,7 +40,7 @@ private:
     void DrawMainMenuBar(EditorContext& context);
 
     // =========================================================
-    // ★ 追加: メニューバーを構成する各部品を関数に分割
+    // メニューバーを構成する各部品を関数に分割
     // =========================================================
     void DrawFileMenu(EditorContext& context);
     void DrawEntityMenu(EditorContext& context);
@@ -60,14 +60,14 @@ private:
     T* RegisterWindow(Args&&... args) {
         auto window = std::make_unique<T>(std::forward<Args>(args)...);
         T* ptr = window.get();
-        _windows.push_back(std::move(window));
-        return ptr; // ★ポインタを返すことで、登録した直後に設定をいじれるようになる
+        m_windows.push_back(std::move(window));
+        return ptr; // ポインタを返すことで、登録した直後に設定をいじれるようになる
     }
 
  
 
-    std::vector<std::unique_ptr<EditorWindow>> _windows;
+    std::vector<std::unique_ptr<EditorWindow>> m_windows;
 
     // UI全体の表示フラグ
-    bool _isVisible = true;
+    bool m_isVisible = true;
 };

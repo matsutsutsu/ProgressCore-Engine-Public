@@ -34,30 +34,30 @@ void DroneFormationSystem::Update(float dt)
 {
     ZoneScopedN("DroneFormationSystem::Updateeeeeeeeeeeeeeee");
 
-    _elapsed += dt;
+    m_elapsed += dt;
 
     auto &registry = FormationRegistry::Instance();
 
     // --- 場の情報を組み立てる（ボス位置・プレイヤー位置）---
     FormationContext ctx;
-    ctx.time = _elapsed;
+    ctx.time = m_elapsed;
     ctx.dt   = dt; // 攻撃の進行度（ヒンジ回転など）を進めるのに使う
 
     // ボス位置（BossCommandComponent を持つ最初のEntity）
     {
-        auto bossView = _world->View<BossCommandComponent, TransformComponent>();
+        auto bossView = m_world->View<BossCommandComponent, TransformComponent>();
         for (auto b : bossView)
         {
-            if (auto *t = _world->GetComponent<TransformComponent>(b))
+            if (auto *t = m_world->GetComponent<TransformComponent>(b))
                 ctx.bossPos = t->position;
             break;
         }
     }
 
     // プレイヤー位置（BattleContext から）
-    if (_world->HasResource<BattleContext>())
+    if (m_world->HasResource<BattleContext>())
     {
-        auto &battle  = _world->GetResource<BattleContext>();
+        auto &battle  = m_world->GetResource<BattleContext>();
         ctx.playerPos = battle.playerPos;
     }
 

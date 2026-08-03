@@ -88,14 +88,14 @@ class DroneManagerSystem : public CCL::ECS::IfSystem<DroneManagerSystem,
     CCL::ECS::EntityID FindBoss() const;
 
     // GUI 用パラメータ（DroneFormationSystem から移設）
-    int   _spawnCount  = 12;
-    float _spawnRadius = 8.0f;
-    float _spawnSpeed  = 40.0f;
+    int   m_spawnCount  = 12;
+    float m_spawnRadius = 8.0f;
+    float m_spawnSpeed  = 40.0f;
 
     // ---- シーン開始時の自動初期配備 ----
-    bool _autoSpawnEnabled = true;  ///< シーン開始時に初期ドローンを自動配備するか
-    bool _autoSpawnDone    = false; ///< 初回配備が完了したか（1回だけ実行するためのラッチ）
-    int  _initialSpawnCount = 100;  ///< 初期配備数（展示会向け。スペックに応じて調整可）
+    bool m_autoSpawnEnabled = true;  ///< シーン開始時に初期ドローンを自動配備するか
+    bool m_autoSpawnDone    = false; ///< 初回配備が完了したか（1回だけ実行するためのラッチ）
+    int  m_initialSpawnCount = 100;  ///< 初期配備数（展示会向け。スペックに応じて調整可）
 
   public:
     void OnGui() override; // 生成/破壊のデバッグUI

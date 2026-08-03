@@ -15,7 +15,7 @@
 //     std::vector<CurveData*> targets = { &seq.speedCurve, &seq.rootMotionCurve };
 //     CurveEditorWidget::Options opt;
 //     opt.height = 260.0f; opt.showPlayhead = true; opt.playheadX = previewTime;
-//     bool changed = _curveWidget.Draw("##seqCurves", targets, opt);
+//     bool changed = m_curveWidget.Draw("##seqCurves", targets, opt);
 //     if (changed) { /* プレビュー更新・ダーティ化など */ }
 // ===========================================================================
 class CurveEditorWidget
@@ -37,16 +37,16 @@ class CurveEditorWidget
     void SetActiveCurve(int idx);
     int  ActiveCurveIndex() const
     {
-        return _activeCurve;
+        return m_activeCurve;
     }
 
   private:
     // ビュー範囲（カーブ座標）
-    float _viewMinX = 0.0f, _viewMaxX = 1.0f;
-    float _viewMinY = -0.2f, _viewMaxY = 1.2f;
+    float m_viewMinX = 0.0f, m_viewMaxX = 1.0f;
+    float m_viewMinY = -0.2f, m_viewMaxY = 1.2f;
 
-    int                _activeCurve = 0; // 編集アクティブなカーブ（curves内index）
-    std::set<uint32_t> _sel;             // 選択キーID（アクティブカーブ内で有効）
+    int                m_activeCurve = 0; // 編集アクティブなカーブ（curves内index）
+    std::set<uint32_t> m_sel;             // 選択キーID（アクティブカーブ内で有効）
 
     enum class Drag
     {
@@ -56,17 +56,17 @@ class CurveEditorWidget
         TangentOut,
         BoxSelect
     };
-    Drag     _drag       = Drag::None;
-    uint32_t _tangentKey = 0;
+    Drag     m_drag       = Drag::None;
+    uint32_t m_tangentKey = 0;
 
     // MoveKeys 用スナップショット（キーID→元の time,value）
-    std::vector<std::pair<uint32_t, std::pair<float, float>>> _dragOrig;
-    float                                                     _dragStartX = 0.0f, _dragStartY = 0.0f;
-    float                                                     _boxStartX = 0.0f, _boxStartY = 0.0f;
+    std::vector<std::pair<uint32_t, std::pair<float, float>>> m_dragOrig;
+    float                                                     m_dragStartX = 0.0f, m_dragStartY = 0.0f;
+    float                                                     m_boxStartX = 0.0f, m_boxStartY = 0.0f;
 
     // コンテキストメニュー用
-    float    _ctxX = 0.0f, _ctxY = 0.0f;
-    uint32_t _ctxKey = 0;
+    float    m_ctxX = 0.0f, m_ctxY = 0.0f;
+    uint32_t m_ctxKey = 0;
 
     bool DrawCanvas(const char *strId, const std::vector<CurveData *> &curves, Options &opts);
     void DrawInspector(const std::vector<CurveData *> &curves, bool &modified);

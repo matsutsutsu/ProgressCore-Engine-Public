@@ -20,12 +20,12 @@ public:
 
   const char *GetName() const override { return "Distortion"; }
 
-  void SetEnabled(bool enabled) { _enabled = enabled; }
-  void UpdateParams(const GpuData::CbDistortionData &data) { _cbData = data; }
+  void SetEnabled(bool enabled) { m_enabled = enabled; }
+  void UpdateParams(const GpuData::CbDistortionData &data) { m_cbData = data; }
 
 private:
-  bool                      _enabled = true;
-  GpuData::CbDistortionData _cbData{};
+  bool                      m_enabled = true;
+  GpuData::CbDistortionData m_cbData{};
 
   struct Resources {
     Microsoft::WRL::ComPtr<ID3D11VertexShader> vs;
@@ -34,6 +34,6 @@ private:
     Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler;
   };
 
-  std::unique_ptr<Resources> _res;
-  RenderTargetHandle         _intermediateRT;
+  std::unique_ptr<Resources> m_res;
+  RenderTargetHandle         m_intermediateRT;
 };

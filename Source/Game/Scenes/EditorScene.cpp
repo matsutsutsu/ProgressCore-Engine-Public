@@ -27,17 +27,17 @@ void EditorScene::Initialize()
     ID3D11Device *device = Graphics::Instance().GetDevice();
     {
         ZoneScopedN("EditorScene: SpawnLightStartSet");
-        SceneInitializer::SpawnLightStartSet(*_worldPtr, device);
+        SceneInitializer::SpawnLightStartSet(*m_worldPtr, device);
     }
-    //Prefab::SpawnPrefab(*_worldPtr, "Assets/Prefabs/Camera/FreeCamera.json");
+    //Prefab::SpawnPrefab(*m_worldPtr, "Assets/Prefabs/Camera/FreeCamera.json");
 
     // ★ 起動コストの主因候補：テスト用エンティティ（ドローン多数など）の一括生成。
     {
         ZoneScopedN("EditorScene: SpawnGameTest");
-        SceneInitializer::SpawnGameTest(*_worldPtr, device);
+        SceneInitializer::SpawnGameTest(*m_worldPtr, device);
     }
 
-    //SceneManager::Instance().LoadScene(_worldPtr,"Assets/Scene/PlayerMovementScene.json");
+    //SceneManager::Instance().LoadScene(m_worldPtr,"Assets/Scene/PlayerMovementScene.json");
 
     //static auto enemyIds = EnemyAI::RegisterNodes();
 
@@ -48,8 +48,8 @@ void EditorScene::Initialize()
     static auto murielIds = MurielAI::RegisterNodes();
     (void)murielIds;
 
-    _worldPtr->AddResource<CCL::AI::StateTreeRegistry>();
-    auto &stReg       = _worldPtr->GetResource<CCL::AI::StateTreeRegistry>();
+    m_worldPtr->AddResource<CCL::AI::StateTreeRegistry>();
+    auto &stReg       = m_worldPtr->GetResource<CCL::AI::StateTreeRegistry>();
     //auto  enemyHandle = stReg.Register(EnemyAI::BuildEnemyAsset(enemyIds, 12.0f));
 
     // Muriel の StateTree アセットをJSONからロード（StateTreeWindowで組み立てたものがそのまま使われる）
@@ -62,9 +62,9 @@ void EditorScene::Initialize()
 
 
     // 敵AIが受け取るシーン全体の情報が入った共有のリソースを登録
-    _worldPtr->AddResource<BattleContext>();
+    m_worldPtr->AddResource<BattleContext>();
 
-    auto &battle           = _worldPtr->GetResource<BattleContext>();
+    auto &battle           = m_worldPtr->GetResource<BattleContext>();
     battle.droneAliveCount = 650; // 動作確認用の初期値（Murielの戦術はHP割合で判定するため、この値自体は戦術選択に影響しない）
 
 
@@ -78,9 +78,9 @@ void EditorScene::Finalize()
 
 void EditorScene::RegisterSystems()
 {
-    // SystemManagerへのアクセスを _ecsContext 経由に変更
+    // SystemManagerへのアクセスを m_ecsContext 経由に変更
     // (SystemGroupsの関数が参照を受け取る仕様であると推測されるため、ポインタをデリファレンスしています)
-    auto &sysManager = *(_ecsContext->GetSystemManager());
+    auto &sysManager = *(m_ecsContext->GetSystemManager());
     CCL::ECS::SystemRegistry::Instance().RegisterAll(sysManager);
 
     // ゲーム本編専用：ゲームオーバー検知＋リザルトUIオーバーレイ。

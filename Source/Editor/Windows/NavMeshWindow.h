@@ -11,5 +11,5 @@ protected:
 
 private:
     // ウィンドウ自体が設定の記憶を持つ（staticの排除）
-    NavMeshBuildSettings _navSettings;
+    NavMeshBuildSettings m_navSettings;
 };

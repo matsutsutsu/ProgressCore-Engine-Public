@@ -17,10 +17,10 @@ public:
     const char* GetName() const override { return "SkyboxPass"; }
 
 private:
-    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> _skyboxTex;
-    Microsoft::WRL::ComPtr<ID3D11VertexShader>       _vertexShader;
-    Microsoft::WRL::ComPtr<ID3D11PixelShader>        _pixelShader;
-    Microsoft::WRL::ComPtr<ID3D11Buffer>             _cbSkybox;
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_skyboxTex;
+    Microsoft::WRL::ComPtr<ID3D11VertexShader>       m_vertexShader;
+    Microsoft::WRL::ComPtr<ID3D11PixelShader>        m_pixelShader;
+    Microsoft::WRL::ComPtr<ID3D11Buffer>             m_cbSkybox;
 
     struct CbSkybox {
         DirectX::XMFLOAT4X4 invViewProj;

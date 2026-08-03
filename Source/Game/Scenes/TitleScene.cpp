@@ -11,7 +11,7 @@
 
 void TitleScene::RegisterSystems()
 {
-    auto &m = *(_ecsContext->GetSystemManager());
+    auto &m = *(m_ecsContext->GetSystemManager());
 
     // 通常シーンと同じく全システムを登録する（タイトルでも3D描画/アニメ/パーティクル等を使うため）。
     // 戦闘/AI系は必要リソース(BattleContext等)やエンティティが無い場合、各システム側が

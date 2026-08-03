@@ -47,15 +47,15 @@ namespace CCL::ECS
     public:
         /// @brief 無効ハンドルを構築する
         ComponentHandle()
-            : _world(nullptr)
-            , _id(InvalidEntityID)
+            : m_world(nullptr)
+            , m_id(InvalidEntityID)
         {
         }
 
         /// @brief 有効ハンドルを構築する（通常は World::GetHandle 経由で生成）
         ComponentHandle(World* world, EntityID id)
-            : _world(world)
-            , _id(id)
+            : m_world(world)
+            , m_id(id)
         {
         }
 
@@ -92,12 +92,12 @@ namespace CCL::ECS
         /// @brief 同じ World 上の同じ Entity を指すかで一致判定
         bool operator==(const ComponentHandle<T>& other) const
         {
-            return _world == other._world && _id == other._id;
+            return m_world == other.m_world && m_id == other.m_id;
         }
 
     private:
-        World*   _world;
-        EntityID _id;
+        World*   m_world;
+        EntityID m_id;
     };
 
 } // namespace CCL::ECS

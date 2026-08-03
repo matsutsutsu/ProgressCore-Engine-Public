@@ -37,9 +37,9 @@ void ParticleAnimationSyncSystem::Update(float /*dt*/)
             int      guard = 0;
             while (cur != InvalidEntityID && cur != 0 && guard++ < 32)
             {
-                if (_world->GetComponent<AnimatorComponent>(cur))
+                if (m_world->GetComponent<AnimatorComponent>(cur))
                     break; // 台本の持ち主を発見
-                const auto* pt = _world->GetComponent<TransformComponent>(cur);
+                const auto* pt = m_world->GetComponent<TransformComponent>(cur);
                 cur = pt ? static_cast<EntityID>(pt->parent) : InvalidEntityID;
             }
             particle.ownerEntity = (cur != 0) ? cur : InvalidEntityID;
@@ -49,7 +49,7 @@ void ParticleAnimationSyncSystem::Update(float /*dt*/)
         // ── 2. owner の Animator を読む（別エンティティ・読み取り専用） ──
         const AnimatorComponent* animator =
             (particle.ownerEntity != InvalidEntityID)
-                ? _world->GetComponent<AnimatorComponent>(particle.ownerEntity)
+                ? m_world->GetComponent<AnimatorComponent>(particle.ownerEntity)
                 : nullptr;
 
         if (!animator || !animator->currentSequence)

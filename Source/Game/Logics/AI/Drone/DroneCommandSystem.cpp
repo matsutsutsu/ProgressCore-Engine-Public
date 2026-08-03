@@ -16,10 +16,10 @@ void DroneCommandSystem::Update(float /*dt*/)
     bool               attack    = false;
     bool               hasBoss   = false;
 
-    auto bossView = _world->View<BossCommandComponent>();
+    auto bossView = m_world->View<BossCommandComponent>();
     for (auto b : bossView)
     {
-        if (auto *cmd = _world->GetComponent<BossCommandComponent>(b))
+        if (auto *cmd = m_world->GetComponent<BossCommandComponent>(b))
         {
             formation = cmd->requestFormation;
             attack    = cmd->droneAttackActive;

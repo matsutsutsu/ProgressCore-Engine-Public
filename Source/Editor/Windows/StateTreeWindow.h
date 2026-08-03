@@ -46,12 +46,12 @@ private:
 
     // --- 遅延構造操作（描画中の vector 破壊を避ける）---
     enum class DeferredOp { None, AddChild, DeleteState, MoveUp, MoveDown };
-    DeferredOp        _deferredOp = DeferredOp::None;
-    std::vector<int>  _deferredPath;
+    DeferredOp        m_deferredOp = DeferredOp::None;
+    std::vector<int>  m_deferredPath;
 
     // --- 状態 ---
-    CCL::AI::StateTreeDef _def;
-    std::string           _currentPath;     // 編集中ファイルの相対パス
-    std::vector<int>      _selectedPath;     // 選択中の状態へのパス（子indexの列）
-    bool                  _hasSelection = false;
+    CCL::AI::StateTreeDef m_def;
+    std::string           m_currentPath;     // 編集中ファイルの相対パス
+    std::vector<int>      m_selectedPath;     // 選択中の状態へのパス（子indexの列）
+    bool                  m_hasSelection = false;
 };

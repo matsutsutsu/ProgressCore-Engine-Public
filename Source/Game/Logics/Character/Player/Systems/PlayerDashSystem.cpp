@@ -28,8 +28,8 @@ namespace
 void PlayerDashSystem::Update(float rawDt)
 {
     // 接近先(ボス)と世界スロー倍率をフレーム先頭で拾っておく（1対1なので探索不要）。
-    const BattleContext *battle  = _world->HasResource<BattleContext>() ? &_world->GetResource<BattleContext>() : nullptr;
-    const TimeContext   *timeCtx = _world->HasResource<TimeContext>() ? &_world->GetResource<TimeContext>() : nullptr;
+    const BattleContext *battle  = m_world->HasResource<BattleContext>() ? &m_world->GetResource<BattleContext>() : nullptr;
+    const TimeContext   *timeCtx = m_world->HasResource<TimeContext>() ? &m_world->GetResource<TimeContext>() : nullptr;
 
     ForEachWithID([&](EntityID                        id,
                 CharacterMovementInputComponent &input,
@@ -38,7 +38,7 @@ void PlayerDashSystem::Update(float rawDt)
                 TimeStateComponent              &time) {
         // ルートモーション対応キャラなら、後段でダッシュ状態を「外部移動制御中」として伝える。
         //   これにより RootMotionSystem はダッシュを知らない汎用システムに保てる。
-        RootMotionComponent *rm = _world->GetComponent<RootMotionComponent>(id);
+        RootMotionComponent *rm = m_world->GetComponent<RootMotionComponent>(id);
 
         // ============================================================
         // 0. 接近（ジャスト回避スロー中にボスへ詰める「接近専用時間」）
@@ -165,9 +165,9 @@ void PlayerDashSystem::Update(float rawDt)
 
         // このプレイヤーを映しているカメラへ「画角を広げてほしい」要求を伝える。
         // カメラ(Engine)が DashComponent(Game) を読みに来ないようにするため、こちらから push する。
-        for (EntityID camID : _world->View<CameraBodyTPSComponent>())
+        for (EntityID camID : m_world->View<CameraBodyTPSComponent>())
         {
-            auto* tps = _world->GetComponent<CameraBodyTPSComponent>(camID);
+            auto* tps = m_world->GetComponent<CameraBodyTPSComponent>(camID);
             if (!tps || tps->target.id != id) continue;
             tps->wideFovRequest = dash.isDashing;
         }

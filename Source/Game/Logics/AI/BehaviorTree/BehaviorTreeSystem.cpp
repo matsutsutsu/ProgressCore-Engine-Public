@@ -168,7 +168,7 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
         IBTCondition* cond = BTActionRegistry::Instance().GetCondition(node.actionOrConditionId);
         if (cond) {
             BTContext ctx;
-            ctx.world       = _world;
+            ctx.world       = m_world;
             ctx.entity      = entity;
             ctx.bt          = &btComp;
             ctx.myTransform = &myTrans;
@@ -186,7 +186,7 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
         IBTAction* action = BTActionRegistry::Instance().GetAction(node.actionOrConditionId);
         if (action) {
             BTContext ctx;
-            ctx.world       = _world;
+            ctx.world       = m_world;
             ctx.entity      = entity;
             ctx.bt          = &btComp;
             ctx.myTransform = &myTrans;
@@ -288,10 +288,10 @@ void BehaviorTreeSystem::OnGui()
 {
     if (!ImGui::CollapsingHeader("Behavior Tree (Brain Debugger)")) return;
 
-    auto view = _world->View<BehaviorTreeComponent>();
+    auto view = m_world->View<BehaviorTreeComponent>();
     for (auto e : view)
     {
-        auto *btComp = _world->GetComponent<BehaviorTreeComponent>(e);
+        auto *btComp = m_world->GetComponent<BehaviorTreeComponent>(e);
         if (!btComp) continue;
 
         ImGui::PushID(static_cast<int>(e));

@@ -25,8 +25,8 @@
 
 void PostProcessSystem::Update(float dt) {
     // Worldからリソースとして取得する
-    if (!_world->HasResource<PostProcessManager *>()) return;
-    auto *postProcess = _world->GetResource<PostProcessManager *>();
+    if (!m_world->HasResource<PostProcessManager *>()) return;
+    auto *postProcess = m_world->GetResource<PostProcessManager *>();
 
     // -------------------------------------------------------
     // 1. デフォルト値でリセット
@@ -43,7 +43,7 @@ void PostProcessSystem::Update(float dt) {
     // -------------------------------------------------------
     // ※ 本来は「GlobalVolume」タグやカメラ位置判定を行うが、
     //    ここではシンプルに「有効になっているものが見つかったら採用」する
-    if(auto* comp = _world->GetSingletonComponent<BloomConfigComponent>()) {
+    if(auto* comp = m_world->GetSingletonComponent<BloomConfigComponent>()) {
 
         // 有効な設定が見つかったら上書き（後勝ち）
         if (comp && comp->enable) {
@@ -54,7 +54,7 @@ void PostProcessSystem::Update(float dt) {
     // -------------------------------------------------------
     // 3. ToneMapConfigComponent を検索
     // -------------------------------------------------------
-    if (auto* comp = _world->GetSingletonComponent<ToneMapConfigComponent>()) {      
+    if (auto* comp = m_world->GetSingletonComponent<ToneMapConfigComponent>()) {      
         finalToneMap = *comp;
     }
 
@@ -71,19 +71,19 @@ void PostProcessSystem::Update(float dt) {
     // 「コンポーネント無し = 無効」を毎フレーム明示するのが唯一の正しい実装。
 
     if (auto* ssao = postProcess->GetEffect<SSAOEffect>()) {
-      auto* comp = _world->GetSingletonComponent<SSAOConfigComponent>();
+      auto* comp = m_world->GetSingletonComponent<SSAOConfigComponent>();
       ssao->SetEnabled(comp && comp->enable);
       if (comp) ssao->UpdateParams(comp->data);
     }
 
     if (auto* contact = postProcess->GetEffect<ContactShadowEffect>()) {
-      auto* comp = _world->GetSingletonComponent<ContactShadowConfigComponent>();
+      auto* comp = m_world->GetSingletonComponent<ContactShadowConfigComponent>();
       contact->SetEnabled(comp && comp->enable);
       if (comp) contact->UpdateParams(comp->data);
     }
 
     if (auto *distortion = postProcess->GetEffect<DistortionEffect>()) {
-      auto* comp = _world->GetSingletonComponent<DistortionConfigComponent>();
+      auto* comp = m_world->GetSingletonComponent<DistortionConfigComponent>();
       distortion->SetEnabled(comp && comp->enable);
       if (comp) {
         comp->data.time += dt; // システム側でアニメーション時間を進める
@@ -92,13 +92,13 @@ void PostProcessSystem::Update(float dt) {
     }
 
     if (auto* radial = postProcess->GetEffect<RadialBlurEffect>()) {
-      auto* comp = _world->GetSingletonComponent<RadialBlurConfigComponent>();
+      auto* comp = m_world->GetSingletonComponent<RadialBlurConfigComponent>();
       radial->SetEnabled(comp && comp->enable);
       if (comp) radial->UpdateParams(comp->data);
     }
 
     if (auto* dof = postProcess->GetEffect<DepthOfFieldEffect>()) {
-      auto* comp = _world->GetSingletonComponent<DepthOfFieldConfigComponent>();
+      auto* comp = m_world->GetSingletonComponent<DepthOfFieldConfigComponent>();
       dof->SetEnabled(comp && comp->enable);
       if (comp) dof->UpdateParams(comp->data);
     }
@@ -109,13 +109,13 @@ void PostProcessSystem::Update(float dt) {
     }
 
     if (auto* chroma = postProcess->GetEffect<ChromaticAberrationEffect>()) {
-      auto* comp = _world->GetSingletonComponent<ChromaticAberrationConfigComponent>();
+      auto* comp = m_world->GetSingletonComponent<ChromaticAberrationConfigComponent>();
       chroma->SetEnabled(comp && comp->enable);
       if (comp) chroma->UpdateParams(comp->data);
     }
 
     if (auto* vignette = postProcess->GetEffect<VignetteEffect>()) {
-      auto* comp = _world->GetSingletonComponent<VignetteConfigComponent>();
+      auto* comp = m_world->GetSingletonComponent<VignetteConfigComponent>();
       vignette->SetEnabled(comp && comp->enable);
       if (comp) {
         comp->data.vigTime += dt;
@@ -124,7 +124,7 @@ void PostProcessSystem::Update(float dt) {
     }
 
     if (auto* grading = postProcess->GetEffect<ColorGradingEffect>()) {
-      auto* comp = _world->GetSingletonComponent<ColorGradingConfigComponent>();
+      auto* comp = m_world->GetSingletonComponent<ColorGradingConfigComponent>();
       grading->SetEnabled(comp && comp->enable);
       if (comp) grading->UpdateParams(comp->data);
     }

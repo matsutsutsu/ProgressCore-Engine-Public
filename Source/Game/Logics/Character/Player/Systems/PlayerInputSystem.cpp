@@ -18,11 +18,11 @@ PlayerInputSystem::PlayerInputSystem()
 
 void PlayerInputSystem::Update(float dt)
 {
-    if (!_world->HasResource<std::shared_ptr<IInputAPI>>()) return;
-    if (!_world->HasResource<Camera*>()) return;
+    if (!m_world->HasResource<std::shared_ptr<IInputAPI>>()) return;
+    if (!m_world->HasResource<Camera*>()) return;
 
-    auto inputAPI = _world->GetResource<std::shared_ptr<IInputAPI>>();
-    Camera* mainCamera = _world->GetResource<Camera*>();
+    auto inputAPI = m_world->GetResource<std::shared_ptr<IInputAPI>>();
+    Camera* mainCamera = m_world->GetResource<Camera*>();
 
     // 1. デバイスからの入力取得
     float moveX       = inputAPI->GetAxis("MoveX");

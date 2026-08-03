@@ -13,19 +13,19 @@ TestLauncherWindow::TestLauncherWindow() : EditorWindow("Test Launcher")
 
     // 1. 基本テスト
 
-    _basicTests.push_back({ "Animation Basic", SceneInitializer::SpawnAnimationTest });
-    _basicTests.push_back({ "Shader Test", SceneInitializer::SpawnShaderTest });
+    m_basicTests.push_back({ "Animation Basic", SceneInitializer::SpawnAnimationTest });
+    m_basicTests.push_back({ "Shader Test", SceneInitializer::SpawnShaderTest });
 
     // 2. パフォーマンステスト (名前, デフォルトのCount, 関数)
-    _perfTests.push_back({ "Galaxy Swarm", 100000, SceneInitializer::SpawnECSBenchmarkTest });
-    _perfTests.push_back({ "Voxel Ocean", 400, SceneInitializer::SpawnVoxelOceanTest });
+    m_perfTests.push_back({ "Galaxy Swarm", 100000, SceneInitializer::SpawnECSBenchmarkTest });
+    m_perfTests.push_back({ "Voxel Ocean", 400, SceneInitializer::SpawnVoxelOceanTest });
 
-    _perfTests.push_back({ "Model Grid", 500, SceneInitializer::SpawnModelGridTest });
+    m_perfTests.push_back({ "Model Grid", 500, SceneInitializer::SpawnModelGridTest });
 
-    _perfTests.push_back({"Jolt Tofu Avalanche", 5000, SceneInitializer::SpawnPhysicsAvalancheTest});
-    _perfTests.push_back({"Jolt Avalanche", 5000, SceneInitializer::SpawnJoltAvalancheTest});
+    m_perfTests.push_back({"Jolt Tofu Avalanche", 5000, SceneInitializer::SpawnPhysicsAvalancheTest});
+    m_perfTests.push_back({"Jolt Avalanche", 5000, SceneInitializer::SpawnJoltAvalancheTest});
    
-    _perfTests.push_back({"Boids Swarm", 5000, SceneInitializer::SpawnBoidsTest});
+    m_perfTests.push_back({"Boids Swarm", 5000, SceneInitializer::SpawnBoidsTest});
 
 }
 
@@ -67,7 +67,7 @@ void TestLauncherWindow::DrawContents(EditorContext& context)
     // カテゴリ1: パフォーマンステスト (Count付き)
     // =======================================================
     if (ImGui::CollapsingHeader("Performance Tests", ImGuiTreeNodeFlags_DefaultOpen)) {
-        for (auto& test : _perfTests) {
+        for (auto& test : m_perfTests) {
             ImGui::PushID(test.name.c_str()); // ID衝突防止
 
             if (ImGui::Button("Launch", ImVec2(80, 0))) {
@@ -91,7 +91,7 @@ void TestLauncherWindow::DrawContents(EditorContext& context)
     // カテゴリ3: 基本テスト (パラメータなし)
     // =======================================================
     if (ImGui::CollapsingHeader("Graphics & Physics Tests", ImGuiTreeNodeFlags_DefaultOpen)) {
-        for (auto& test : _basicTests) {
+        for (auto& test : m_basicTests) {
             ImGui::PushID(test.name.c_str());
             if (ImGui::Button("Launch", ImVec2(80, 0))) {
                 CleanupAndInitializeEnv(context);

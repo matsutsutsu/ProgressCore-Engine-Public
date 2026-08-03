@@ -68,16 +68,16 @@ namespace CCL::ECS
         // 新しいPendingOpをリスト_opsに追加します
         void Add(const PendingOp& op)
         {
-            _ops.push_back(op);
+            m_ops.push_back(op);
         }
 
-        std::vector<PendingOp>& Ops() { return _ops; }
+        std::vector<PendingOp>& Ops() { return m_ops; }
 
         // リストをクリアする際に、AddComponentの操作で一時的に確保された
         // ヒープメモリ（op.data）を安全に解放します
         void Clear()
         {
-            for (auto& op : _ops)
+            for (auto& op : m_ops)
             {
                 if (op.data == nullptr) continue;
 
@@ -88,12 +88,12 @@ namespace CCL::ECS
 
                 op.data = nullptr;
             }
-            _ops.clear();
+            m_ops.clear();
         }
 
-        bool Empty() const { return _ops.empty(); }
+        bool Empty() const { return m_ops.empty(); }
 
     private:
-        std::vector<PendingOp> _ops;
+        std::vector<PendingOp> m_ops;
     };
 }

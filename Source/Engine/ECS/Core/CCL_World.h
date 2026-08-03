@@ -153,7 +153,7 @@ namespace CCL::ECS
         void AddComponent(EntityID entity, Args&&... args)
         {
             // 1. FrameAllocator から一時メモリを借りる（ヒープより遥かに高速）
-            void* tempMem = _frameAllocator.Alloc(sizeof(T));
+            void* tempMem = m_frameAllocator.Alloc(sizeof(T));
 
             // 2. その場で T を構築
             new (tempMem) T(std::forward<Args>(args)...);
@@ -175,7 +175,7 @@ namespace CCL::ECS
             op.name        = td.name;
             op.factory     = nullptr; // std::function の経路は使わない（高速化）
 
-            _pendingOps.Add(op);
+            m_pendingOps.Add(op);
         }
 
         /// @brief コンポーネント削除リクエスト（型版）
@@ -249,11 +249,11 @@ namespace CCL::ECS
         // --------------------------------------------------------
 
         /// @brief ChunkManager への参照を返す（System / Editor 用）
-        ChunkManager&       GetChunkManager()       { return _chunkManager; }
-        const ChunkManager& GetChunkManager() const { return _chunkManager; }
+        ChunkManager&       GetChunkManager()       { return m_chunkManager; }
+        const ChunkManager& GetChunkManager() const { return m_chunkManager; }
 
         /// @brief PendingOps への参照を返す（高度な利用向け）
-        PendingOps& GetPendingOps() { return _pendingOps; }
+        PendingOps& GetPendingOps() { return m_pendingOps; }
 
 
         // --------------------------------------------------------
@@ -295,10 +295,10 @@ namespace CCL::ECS
         void AddResource(Args&&... args)
         {
             const size_t id = ResourceIDGenerator::GetID<T>();
-            if (id >= _resourcesArray.size()) {
-                _resourcesArray.resize(id + 1);
+            if (id >= m_resourcesArray.size()) {
+                m_resourcesArray.resize(id + 1);
             }
-            _resourcesArray[id] =
+            m_resourcesArray[id] =
                 std::make_unique<ResourceWrapper<T>>(std::forward<Args>(args)...);
         }
 
@@ -313,9 +313,9 @@ namespace CCL::ECS
         {
             // 型 T → ID → 配列インデックス という O(1) アクセス
             const size_t id = ResourceIDGenerator::GetID<T>();
-            assert(id < _resourcesArray.size() && _resourcesArray[id] != nullptr
+            assert(id < m_resourcesArray.size() && m_resourcesArray[id] != nullptr
                    && "Requested resource not found!");
-            return static_cast<ResourceWrapper<T>*>(_resourcesArray[id].get())->data;
+            return static_cast<ResourceWrapper<T>*>(m_resourcesArray[id].get())->data;
         }
 
         /// @brief リソース T が登録済みかを判定する
@@ -323,7 +323,7 @@ namespace CCL::ECS
         bool HasResource() const
         {
             const size_t id = ResourceIDGenerator::GetID<T>();
-            return id < _resourcesArray.size() && _resourcesArray[id] != nullptr;
+            return id < m_resourcesArray.size() && m_resourcesArray[id] != nullptr;
         }
 
 
@@ -474,7 +474,7 @@ namespace CCL::ECS
                 action(*reinterpret_cast<T*>(ptr));
             };
 
-            _pendingOps.Add(op);
+            m_pendingOps.Add(op);
         }
 
 
@@ -483,13 +483,13 @@ namespace CCL::ECS
         // --------------------------------------------------------
 
         /// @brief 「ECS 外との橋渡し」用の郵便局（イベントバス）
-        EventBus& GetEventBus() { return _eventBus; }
+        EventBus& GetEventBus() { return m_eventBus; }
 
         /// @brief 構造変更が今フレーム発生したかを返す（最適化フラグ）
-        bool IsStructureDirty() const { return _isStructureDirty; }
+        bool IsStructureDirty() const { return m_isStructureDirty; }
 
         /// @brief Dirty フラグを下ろす（ECSContext が再解決後に呼ぶ）
-        void ResetStructureDirty() { _isStructureDirty = false; }
+        void ResetStructureDirty() { m_isStructureDirty = false; }
 
 
     private:
@@ -513,20 +513,20 @@ namespace CCL::ECS
         // データメンバ
         // ----------------------------------------------------------
 
-        FrameAllocator _frameAllocator; ///< フレーム単位リセット型の高速アロケータ
-        ChunkManager   _chunkManager;   ///< Chunk 群の管理
-        PendingOps     _pendingOps;     ///< 遅延実行キュー
-        EventBus       _eventBus;       ///< World 専属のイベント配信ハブ
+        FrameAllocator m_frameAllocator; ///< フレーム単位リセット型の高速アロケータ
+        ChunkManager   m_chunkManager;   ///< Chunk 群の管理
+        PendingOps     m_pendingOps;     ///< 遅延実行キュー
+        EventBus       m_eventBus;       ///< World 専属のイベント配信ハブ
 
         // --- 世代管理 ---
-        std::vector<uint32_t> _entityGenerations;     ///< インデックスごとの現世代
-        std::vector<uint32_t> _freeIndices;           ///< 再利用待ちインデックス
-        uint32_t              _nextUnusedIndex = 1;   ///< 未使用領域の先頭インデックス
+        std::vector<uint32_t> m_entityGenerations;     ///< インデックスごとの現世代
+        std::vector<uint32_t> m_freeIndices;           ///< 再利用待ちインデックス
+        uint32_t              m_nextUnusedIndex = 1;   ///< 未使用領域の先頭インデックス
 
-        bool _isStructureDirty = true; ///< 構造変更フラグ（ECSContext と連動）
+        bool m_isStructureDirty = true; ///< 構造変更フラグ（ECSContext と連動）
 
         /// @brief 型消去で保持されるリソース群（GridResource 等）
-        std::vector<std::unique_ptr<ResourceBase>> _resourcesArray;
+        std::vector<std::unique_ptr<ResourceBase>> m_resourcesArray;
     };
 
 
@@ -544,10 +544,10 @@ namespace CCL::ECS
         const uint32_t gen   = EntityHandle::GetGeneration(entity);
 
         // 範囲外
-        if (index >= _entityGenerations.size()) return false;
+        if (index >= m_entityGenerations.size()) return false;
 
         // 世代不一致（削除・再利用済みの古い ID）
-        if (_entityGenerations[index] != gen) return false;
+        if (m_entityGenerations[index] != gen) return false;
 
         return true;
     }
@@ -559,10 +559,10 @@ namespace CCL::ECS
         if (!IsEntityValid(entity)) return nullptr;
 
         size_t entityIdxInChunk = 0;
-        size_t chunkIdx = _chunkManager.SearchEntityIn(entity, &entityIdxInChunk);
+        size_t chunkIdx = m_chunkManager.SearchEntityIn(entity, &entityIdxInChunk);
         if (chunkIdx == InvalidIndex) return nullptr;
 
-        auto& chunk = _chunkManager.GetChunks()[chunkIdx];
+        auto& chunk = m_chunkManager.GetChunks()[chunkIdx];
 
         // 削除予約済みなら無効
         if (chunk->IsEntityDestroyed(entityIdxInChunk)) return nullptr;
@@ -589,7 +589,7 @@ namespace CCL::ECS
         Archetype filter = ArchetypeHelper::Generate<Components...>();
 
         // 2. 全 Chunk を走査
-        auto& chunks = _chunkManager.GetChunks();
+        auto& chunks = m_chunkManager.GetChunks();
         for (const auto& upChunk : chunks) {
             if (!upChunk) continue;
             Chunk* chunk = upChunk.get();
@@ -627,8 +627,8 @@ namespace CCL::ECS
     template <typename T>
     inline T* ComponentHandle<T>::Get() const
     {
-        if (!_world) return nullptr;
-        return _world->GetComponent<T>(_id);
+        if (!m_world) return nullptr;
+        return m_world->GetComponent<T>(m_id);
     }
 
     template <typename T>

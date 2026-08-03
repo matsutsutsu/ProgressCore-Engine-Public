@@ -43,11 +43,11 @@ public:
 
 private:
 
-    Microsoft::WRL::ComPtr<ID3D11Buffer> _fogConstantBuffer;
+    Microsoft::WRL::ComPtr<ID3D11Buffer> m_fogConstantBuffer;
 
     // グローバルテクスチャ
-    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> _globalNoiseSRV;
-    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> _irradianceMapSRV;
-    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> _prefilterMapSRV;
-    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> _brdfLutSRV;
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_globalNoiseSRV;
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_irradianceMapSRV;
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_prefilterMapSRV;
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_brdfLutSRV;
 };

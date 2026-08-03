@@ -35,8 +35,8 @@ void GameScene::Initialize()
     static auto murielIds = MurielAI::RegisterNodes();
     (void)murielIds;
 
-    _worldPtr->AddResource<CCL::AI::StateTreeRegistry>();
-    auto &stReg = _worldPtr->GetResource<CCL::AI::StateTreeRegistry>();
+    m_worldPtr->AddResource<CCL::AI::StateTreeRegistry>();
+    auto &stReg = m_worldPtr->GetResource<CCL::AI::StateTreeRegistry>();
     {
         ZoneScopedN("GameScene: StateTree load+compile");
         CCL::AI::StateTreeDef murielDef;
@@ -45,7 +45,7 @@ void GameScene::Initialize()
     }
 
     // 敵AIが受け取るシーン全体の情報が入った共有リソース。
-    _worldPtr->AddResource<BattleContext>();
+    m_worldPtr->AddResource<BattleContext>();
 
     // --- 戦場レベルを読み込む ---
     // LoadLevel は内部で LoadScene（既存ワールドをPersistentTag以外全消去）→ ステージ復元
@@ -53,7 +53,7 @@ void GameScene::Initialize()
     // ゲーム実体を生成しないので、ここで全消去されて困るものは無い（リソース/システムは残る）。
     {
         ZoneScopedN("GameScene: LoadLevel BossBattleStage");
-        if (!LevelSerializer::LoadLevel(_worldPtr, kBossBattleLevel))
+        if (!LevelSerializer::LoadLevel(m_worldPtr, kBossBattleLevel))
             CCL_LOG_ERROR(LogCategory::Core, "GameScene: 戦場レベルの読み込みに失敗: %s", kBossBattleLevel);
     }
 
@@ -67,7 +67,7 @@ void GameScene::Finalize()
 
 void GameScene::RegisterSystems()
 {
-    auto &sysManager = *(_ecsContext->GetSystemManager());
+    auto &sysManager = *(m_ecsContext->GetSystemManager());
     CCL::ECS::SystemRegistry::Instance().RegisterAll(sysManager);
 
     // ゲーム本編専用：ゲームオーバー/クリア検知＋リザルトUIオーバーレイ。

@@ -14,18 +14,18 @@ using namespace CCL::ECS;
 
 void BattleContextSyncSystem::Update(float /*dt*/)
 {
-    if (!_world->HasResource<BattleContext>()) return;
-    auto& battle = _world->GetResource<BattleContext>();
+    if (!m_world->HasResource<BattleContext>()) return;
+    auto& battle = m_world->GetResource<BattleContext>();
 
     // --- プレイヤーを探して反映 ---
     {
         EntityID playerId = InvalidEntityID;
-        auto view = _world->View<PlayerComponent, TransformComponent>();
+        auto view = m_world->View<PlayerComponent, TransformComponent>();
         for (auto e : view) { playerId = e; break; }   // 1対1なので最初の1体でよい
 
         battle.playerEntity = playerId;
         if (playerId != InvalidEntityID) {
-            if (auto* t = _world->GetComponent<TransformComponent>(playerId)) {
+            if (auto* t = m_world->GetComponent<TransformComponent>(playerId)) {
                 battle.playerPos = t->position;
             }
         }
@@ -34,12 +34,12 @@ void BattleContextSyncSystem::Update(float /*dt*/)
     // --- ボスを探して反映 ---
     {
         EntityID bossId = InvalidEntityID;
-        auto view = _world->View<BossCommandComponent, TransformComponent>();
+        auto view = m_world->View<BossCommandComponent, TransformComponent>();
         for (auto e : view) { bossId = e; break; }
 
         battle.bossEntity = bossId;
         if (bossId != InvalidEntityID) {
-            if (auto* t = _world->GetComponent<TransformComponent>(bossId)) {
+            if (auto* t = m_world->GetComponent<TransformComponent>(bossId)) {
                 battle.bossPos = t->position;
             }
         }

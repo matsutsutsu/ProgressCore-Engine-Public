@@ -31,9 +31,9 @@ struct SystemProfileData {
 
 class ECSDebugWindow : public EditorWindow {
 private:
-    std::map<std::string, SystemProfileData> _systemTimings;
-    float _time = 0.0f;
-    bool  _pauseProfiler = false;
+    std::map<std::string, SystemProfileData> m_systemTimings;
+    float m_time = 0.0f;
+    bool  m_pauseProfiler = false;
 
 public:
     ECSDebugWindow();

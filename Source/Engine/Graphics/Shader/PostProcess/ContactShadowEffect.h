@@ -31,10 +31,10 @@ public:
 
     const char* GetName() const override { return "ContactShadow"; }
 
-    void UpdateParams(const GpuData::CbContactShadowData& data) { _cbData = data; }
+    void UpdateParams(const GpuData::CbContactShadowData& data) { m_cbData = data; }
 
 private:
-    GpuData::CbContactShadowData _cbData{};
+    GpuData::CbContactShadowData m_cbData{};
 
     struct Resources {
         Microsoft::WRL::ComPtr<ID3D11VertexShader> vs;
@@ -42,6 +42,6 @@ private:
         Microsoft::WRL::ComPtr<ID3D11Buffer>       cb;
         Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler;
     };
-    Microsoft::WRL::ComPtr<ID3D11BlendState> _opaqueBlendState;
-    std::unique_ptr<Resources> _res;
+    Microsoft::WRL::ComPtr<ID3D11BlendState> m_opaqueBlendState;
+    std::unique_ptr<Resources> m_res;
 };

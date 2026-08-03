@@ -19,8 +19,8 @@
 
 void GPUParticleRenderSystem::Update(float dt)
 {
-    if (!_world->HasResource<ParticleRenderer*>()) return;
-    auto* renderer = _world->GetResource<ParticleRenderer*>();
+    if (!m_world->HasResource<ParticleRenderer*>()) return;
+    auto* renderer = m_world->GetResource<ParticleRenderer*>();
 
     ForEachWithID([&](CCL::ECS::EntityID id,
         GPUParticleComponent& particle,
@@ -30,7 +30,7 @@ void GPUParticleRenderSystem::Update(float dt)
             if (!particle.isInitialized || !particle.computeBuffer.IsValid())  return;
 
             // プール休眠中は描画しない（Update側のスキップと対になる）。
-            if (auto* pooled = _world->GetComponent<PooledParticleComponent>(id))
+            if (auto* pooled = m_world->GetComponent<PooledParticleComponent>(id))
                 if (pooled->isSleeping) return;
 
             ParticleDrawCommand cmd;

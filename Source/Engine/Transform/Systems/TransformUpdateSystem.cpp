@@ -19,9 +19,9 @@ static inline XMMATRIX ComposeLocal(const TransformComponent& t) {
 void TransformUpdateSystem::Initialize()
 {
     // Render Stageの補間システムが同じ階層順序を参照できるよう公開する
-    if (!_world->HasResource<TransformHierarchyCache *>())
+    if (!m_world->HasResource<TransformHierarchyCache *>())
     {
-        _world->AddResource<TransformHierarchyCache *>(&_cache);
+        m_world->AddResource<TransformHierarchyCache *>(&m_cache);
     }
 }
 
@@ -32,7 +32,7 @@ void TransformUpdateSystem::Update(float dt)
     // 1. トポロジ変化検出＋ゴースト修復（compose しない＝軽量シリアル）
     if (ScanDetectTopology()) {
         RepairBrokenLinks();
-        _cache.Rebuild(*_world);
+        m_cache.Rebuild(*m_world);
     }
 
     // 2. ★ホットパス：ルートを並列インプレース計算（1万体の上下運動はここでスケール）
@@ -54,12 +54,12 @@ bool TransformUpdateSystem::ScanDetectTopology()
         EntityID parentId = t.parent;
 
         // ゴーストリンク修復（IsEntityValid は軽い。ここ1か所に集約）
-        if (parentId != 0 && !_world->IsEntityValid(parentId)) {
+        if (parentId != 0 && !m_world->IsEntityValid(parentId)) {
             t.parent = 0; t.prevSiblingID = 0; t.nextSiblingID = 0; t.isDirty = true;
             parentId = 0; needRebuild = true;
         }
 
-        const int oi = _cache.OrderOf(id);
+        const int oi = m_cache.OrderOf(id);
 
         if (parentId == 0) {
             if (oi >= 0) needRebuild = true;   // 非ルート→ルートに変化
@@ -68,10 +68,10 @@ bool TransformUpdateSystem::ScanDetectTopology()
         // 非ルート
         if (oi < 0) { needRebuild = true; return; }      // 新規の非ルート
         ++matchedNonRoots;
-        if (_cache.ParentIdOf(oi) != parentId) needRebuild = true;  // 再親付け
+        if (m_cache.ParentIdOf(oi) != parentId) needRebuild = true;  // 再親付け
         });
 
-    if (matchedNonRoots != _cache.Count()) needRebuild = true;       // 非ルートの破棄
+    if (matchedNonRoots != m_cache.Count()) needRebuild = true;       // 非ルートの破棄
     return needRebuild;
 }
 
@@ -93,29 +93,29 @@ void TransformUpdateSystem::ComputeRootsParallel()
 // =========================================================================
 void TransformUpdateSystem::SolveHierarchy()
 {
-    const size_t n = _cache.Count();
+    const size_t n = m_cache.Count();
     for (size_t i = 0; i < n; ++i) {
         const int idx = static_cast<int>(i);
-        const EntityID id = _cache.EntityAt(idx);
+        const EntityID id = m_cache.EntityAt(idx);
 
-        auto* t = _world->GetComponent<TransformComponent>(id);
+        auto* t = m_world->GetComponent<TransformComponent>(id);
         if (!t) continue;
 
         const XMMATRIX local = ComposeLocal(*t);
 
         // 親world：非ルート親 → dense（既に算出済み）／ルート親 → コンポーネント（並列パスで算出済み）
-        const int p = _cache.ParentInOrderOf(idx);
+        const int p = m_cache.ParentInOrderOf(idx);
         XMMATRIX parentW;
         if (p >= 0) {
-            parentW = _cache.WorldAt(p);
+            parentW = m_cache.WorldAt(p);
         }
         else {
-            auto* pt = _world->GetComponent<TransformComponent>(_cache.ParentIdOf(idx));
+            auto* pt = m_world->GetComponent<TransformComponent>(m_cache.ParentIdOf(idx));
             parentW = pt ? XMLoadFloat4x4(&pt->worldMatrix) : XMMatrixIdentity();
         }
 
         const XMMATRIX world = XMMatrixMultiply(local, parentW);
-        _cache.StoreWorld(idx, world);          // 後続の子が読むため dense にも残す
+        m_cache.StoreWorld(idx, world);          // 後続の子が読むため dense にも残す
         XMStoreFloat4x4(&t->worldMatrix, world); // その場で書き戻し
         t->isDirty = false;
     }
@@ -129,25 +129,25 @@ void TransformUpdateSystem::ProcessPendingParents()
     // 注意: View は全 Chunk 走査。0 件なら body は回らないが、頻発するなら
     //       PendingParentComponent 件数カウンタで早期 return 化するとさらに軽い。
     std::vector<EntityID> pending;
-    for (auto id : _world->View<PendingParentComponent>()) {
+    for (auto id : m_world->View<PendingParentComponent>()) {
         pending.push_back(id);
     }
 
     for (auto id : pending) {
-        auto* p = _world->GetComponent<PendingParentComponent>(id);
+        auto* p = m_world->GetComponent<PendingParentComponent>(id);
         if (p) {
             if (p->parentID == 0 || p->parentID == InvalidEntityID) {
-                if (_world->IsEntityValid(id)) {
-                    DetachChild(*_world, id);
-                    if (auto* trans = _world->GetComponent<TransformComponent>(id)) trans->isDirty = true;
+                if (m_world->IsEntityValid(id)) {
+                    DetachChild(*m_world, id);
+                    if (auto* trans = m_world->GetComponent<TransformComponent>(id)) trans->isDirty = true;
                 }
             }
-            else if (_world->IsEntityValid(p->parentID) && _world->IsEntityValid(id)) {
-                SetParent(*_world, id, p->parentID);
-                if (auto* trans = _world->GetComponent<TransformComponent>(id)) trans->isDirty = true;
+            else if (m_world->IsEntityValid(p->parentID) && m_world->IsEntityValid(id)) {
+                SetParent(*m_world, id, p->parentID);
+                if (auto* trans = m_world->GetComponent<TransformComponent>(id)) trans->isDirty = true;
             }
         }
-        _world->RequestRemoveComponent<PendingParentComponent>(id);
+        m_world->RequestRemoveComponent<PendingParentComponent>(id);
     }
 }
 
@@ -158,12 +158,12 @@ void TransformUpdateSystem::RepairBrokenLinks()
 {
     ForEachWithID([&](EntityID id, TransformComponent& trans) {
         if (trans.parent != 0) {
-            auto* parentTrans = _world->GetComponent<TransformComponent>(trans.parent);
+            auto* parentTrans = m_world->GetComponent<TransformComponent>(trans.parent);
             if (parentTrans) {
                 const bool isFirstChild = (parentTrans->firstChildID == id);
                 const bool hasSibling = (trans.nextSiblingID != 0 || trans.prevSiblingID != 0);
                 if (!isFirstChild && !hasSibling) {
-                    SetParent(*_world, id, trans.parent);  // 正しい親子関係を結び直す
+                    SetParent(*m_world, id, trans.parent);  // 正しい親子関係を結び直す
                 }
             }
         }

@@ -50,7 +50,7 @@ void CharacterAnimSyncSystem::Update(float /*dt*/)
         // ※ ゲーム固有の DashComponent を直接読まず、Engine 側のこのフラグ経由で見る。
         //    PlayerDashSystem が rm->externallyDriven = dash.isDashing を毎フレーム設定する。
         bool externallyDriven = false;
-        if (auto *rootMotion = _world->GetComponent<RootMotionComponent>(id))
+        if (auto *rootMotion = m_world->GetComponent<RootMotionComponent>(id))
         {
             externallyDriven = rootMotion->externallyDriven;
         }

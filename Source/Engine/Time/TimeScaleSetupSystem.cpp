@@ -11,7 +11,7 @@ void TimeScaleSetupSystem::Update(float dt)
 
     // 1. Transformを持つが TimeState を持たないエンティティを抽出
     ForEachWithID([&](EntityID id, const TransformComponent& transform) {
-        if (!_world->HasComponent<TimeStateComponent>(id)) {
+        if (!m_world->HasComponent<TimeStateComponent>(id)) {
             needsTimeState.push_back(id);
         }
         });
@@ -20,7 +20,7 @@ void TimeScaleSetupSystem::Update(float dt)
     // ※これはプレハブ側の設定漏れに対する救済措置であり、
     // 実行中に頻発する場合はエディタ側でPrefabを修正すべきです。
     for (auto id : needsTimeState) {
-        _world->AddComponent<TimeStateComponent>(id);
+        m_world->AddComponent<TimeStateComponent>(id);
 
         // 警告ログを出すことで、プログラマにプレハブの修正を促す（DODの観点から重要）
         CCL_LOG_WARN(LogCategory::Game,

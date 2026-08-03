@@ -60,17 +60,17 @@ void ShadowMapRenderSystem::RenderShadowMap()
     // ------------------------------------------------------------------
     // 1. 必要なリソースの取得（どれか欠けていたら何もしない）
     // ------------------------------------------------------------------
-    if (!_world->HasResource<ShadowMap*>() || !_world->HasResource<Camera*>() || !_world->HasResource<LightManager*>()) return;
+    if (!m_world->HasResource<ShadowMap*>() || !m_world->HasResource<Camera*>() || !m_world->HasResource<LightManager*>()) return;
 
-    ShadowMap* shadowMap = _world->GetResource<ShadowMap*>();
-    Camera* camera = _world->GetResource<Camera*>();
-    LightManager* lightManager = _world->GetResource<LightManager*>();
+    ShadowMap* shadowMap = m_world->GetResource<ShadowMap*>();
+    Camera* camera = m_world->GetResource<Camera*>();
+    LightManager* lightManager = m_world->GetResource<LightManager*>();
 
     // ------------------------------------------------------------------
     // 2. 設定コンポーネント(SSOT)からシャドウパラメータを同期する。
     //    テンプレートのクエリ対象に縛られず、シングルトン設定だけ拾って上書き。
     // ------------------------------------------------------------------
-    if (auto* config = _world->GetSingletonComponent<ShadowMapConfigComponent>()) {
+    if (auto* config = m_world->GetSingletonComponent<ShadowMapConfigComponent>()) {
         shadowMap->params.shadowBias = config->shadowBias;
         shadowMap->params.shadowColor = config->shadowColor;
         shadowMap->params.cascadeSplits[0] = config->cascadeSplits.x;

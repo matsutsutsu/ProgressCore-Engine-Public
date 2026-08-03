@@ -15,7 +15,7 @@ class TransformUpdateSystem : public CCL::ECS::IfSystem<TransformUpdateSystem,CC
 
     /// @brief 登録時に1回だけ呼ばれる。階層解決キャッシュをResourceとして公開する。
     /// @note TransformInterpolationSystem(Render Stage)が同じdepth順を読むために使う。
-    ///       所有権は本システムのまま（_cacheへの生ポインタを渡すだけ）。
+    ///       所有権は本システムのまま（m_cacheへの生ポインタを渡すだけ）。
     void Initialize() override;
 
 
@@ -58,5 +58,5 @@ class TransformUpdateSystem : public CCL::ECS::IfSystem<TransformUpdateSystem,CC
     /// @brief 非ルート（少数）を depth 順に compose×親world で解決し、その場で書き戻す。
     void SolveHierarchy();
 
-    TransformHierarchyCache _cache;
+    TransformHierarchyCache m_cache;
 };

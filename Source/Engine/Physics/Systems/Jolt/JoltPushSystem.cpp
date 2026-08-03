@@ -9,9 +9,9 @@
 
 
 void JoltPushSystem::Update(float dt) {
-  if (!_world->HasResource<JoltPhysicsManager*>())
+  if (!m_world->HasResource<JoltPhysicsManager*>())
     return;
-  auto &joltManager = _world->GetResource<JoltPhysicsManager*>();
+  auto &joltManager = m_world->GetResource<JoltPhysicsManager*>();
   JPH::BodyInterface &bodyInterface = joltManager->GetBodyInterface();
 
   // 並列処理で全エンティティを最速チェック

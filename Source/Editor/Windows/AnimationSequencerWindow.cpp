@@ -48,65 +48,65 @@ inline float FrameToSec(int frame)
 class AnimationSequenceImpl : public ImSequencer::SequenceInterface
 {
   public:
-    AnimSequence *_seq = nullptr;
+    AnimSequence *m_seq = nullptr;
 
     // キャッシュバッファ: [0] はマスタートラック(Duration)、[1]以降がイベント
-    mutable std::vector<std::pair<int, int>> _frameCacheMap;
+    mutable std::vector<std::pair<int, int>> m_frameCacheMap;
 
     AnimationSequenceImpl() = default;
 
     void SetSequence(AnimSequence *seq)
     {
-        _seq = seq;
+        m_seq = seq;
     }
 
     void SyncFrameCache() const
     {
-        if (!_seq)
+        if (!m_seq)
             return;
 
         // 常に「イベント数 + 1 (マスタートラック)」を確保する
-        _frameCacheMap.resize(_seq->events.size() + 1);
+        m_frameCacheMap.resize(m_seq->events.size() + 1);
 
         // [0] マスタートラック: 開始は常に0、終了は現在のアセット長(duration)
-        _frameCacheMap[0].first  = 0;
-        _frameCacheMap[0].second = SecToFrame(_seq->duration);
+        m_frameCacheMap[0].first  = 0;
+        m_frameCacheMap[0].second = SecToFrame(m_seq->duration);
 
         // [1] 以降: 各イベントの開始・終了
-        for (size_t i = 0; i < _seq->events.size(); ++i)
+        for (size_t i = 0; i < m_seq->events.size(); ++i)
         {
-            _frameCacheMap[i + 1].first  = SecToFrame(_seq->events[i].startTime);
-            _frameCacheMap[i + 1].second = SecToFrame(_seq->events[i].endTime);
+            m_frameCacheMap[i + 1].first  = SecToFrame(m_seq->events[i].startTime);
+            m_frameCacheMap[i + 1].second = SecToFrame(m_seq->events[i].endTime);
         }
     }
 
     // UI上でドラッグされたフレームを実データ(秒)に同期する
     void FlushFrameCache() const
     {
-        if (!_seq || _frameCacheMap.empty())
+        if (!m_seq || m_frameCacheMap.empty())
             return;
 
-        // ★ マスタートラックのドラッグを無効化し、アセット本来の長さ(duration)に強制ロックする
-        _frameCacheMap[0].first  = 0;
-        _frameCacheMap[0].second = SecToFrame(_seq->duration);
+        // マスタートラックのドラッグを無効化し、アセット本来の長さ(duration)に強制ロックする
+        m_frameCacheMap[0].first  = 0;
+        m_frameCacheMap[0].second = SecToFrame(m_seq->duration);
 
         // イベントの時間を同期
-        for (size_t i = 0; i < _seq->events.size(); ++i)
+        for (size_t i = 0; i < m_seq->events.size(); ++i)
         {
-            if (i + 1 < _frameCacheMap.size())
+            if (i + 1 < m_frameCacheMap.size())
             {
-                _seq->events[i].startTime = FrameToSec(_frameCacheMap[i + 1].first);
-                _seq->events[i].endTime   = FrameToSec(_frameCacheMap[i + 1].second);
+                m_seq->events[i].startTime = FrameToSec(m_frameCacheMap[i + 1].first);
+                m_seq->events[i].endTime   = FrameToSec(m_frameCacheMap[i + 1].second);
             }
         }
     }
 
     virtual int GetItemCount() const override
     {
-        if (!_seq)
+        if (!m_seq)
             return 0;
         // マスタートラックが必ず存在するため、常に 1 以上になる
-        return (int)_seq->events.size() + 1;
+        return (int)m_seq->events.size() + 1;
     }
 
     virtual int GetFrameMin() const override
@@ -115,9 +115,9 @@ class AnimationSequenceImpl : public ImSequencer::SequenceInterface
     }
     virtual int GetFrameMax() const override
     {
-        if (!_seq)
+        if (!m_seq)
             return 100;
-        int maxFrames = SecToFrame(_seq->duration);
+        int maxFrames = SecToFrame(m_seq->duration);
         return maxFrames > 0 ? maxFrames : 100;
     }
 
@@ -145,17 +145,17 @@ class AnimationSequenceImpl : public ImSequencer::SequenceInterface
 
     virtual const char *GetItemLabel(int index) const override
     {
-        if (!_seq)
+        if (!m_seq)
             return "";
         if (index == 0)
             return "Master (Duration)"; // 0番目は常にマスタートラック
 
         int evIdx = index - 1;
-        if (evIdx < 0 || evIdx >= (int)_seq->events.size())
+        if (evIdx < 0 || evIdx >= (int)m_seq->events.size())
             return "";
 
         static char buf[128];
-        const auto &ev = _seq->events[evIdx];
+        const auto &ev = m_seq->events[evIdx];
         switch (ev.type)
         {
         case AnimEventType::HitBox:
@@ -194,19 +194,19 @@ class AnimationSequenceImpl : public ImSequencer::SequenceInterface
 
     virtual void Get(int index, int **start, int **end, int *type, unsigned int *color) override
     {
-        if (!_seq)
+        if (!m_seq)
             return;
 
-        // ★ 注意: ここにあった SyncFrameCache() を削除しました！
+        // 注意: ここにあった SyncFrameCache() を削除しました！
         // 毎フレーム呼ばれる Get() 内でキャッシュを再生成するとドラッグ操作が破綻するためです。
 
-        if (index < 0 || index >= (int)_frameCacheMap.size())
+        if (index < 0 || index >= (int)m_frameCacheMap.size())
             return;
 
         if (start)
-            *start = &_frameCacheMap[index].first;
+            *start = &m_frameCacheMap[index].first;
         if (end)
-            *end = &_frameCacheMap[index].second;
+            *end = &m_frameCacheMap[index].second;
 
         // index 0 はマスタートラック、1以降が実イベント
         if (index == 0)
@@ -220,26 +220,26 @@ class AnimationSequenceImpl : public ImSequencer::SequenceInterface
         {
             int evIdx = index - 1;
             if (type)
-                *type = (int)_seq->events[evIdx].type;
+                *type = (int)m_seq->events[evIdx].type;
             if (color)
             {
                 static const unsigned int colors[] = {
                     0xFF323296, 0xFF329632, 0xFF969632, 0xFF963296,
                     0xFF1010A0, 0xFF96A032, 0xFF32A096, 0xFF505050,
                     0xFFC86432}; // Particle: 橙(まとい)
-                *color = colors[(int)_seq->events[evIdx].type % 9];
+                *color = colors[(int)m_seq->events[evIdx].type % 9];
             }
         }
     }
 
     virtual void Add(int type) override
     {
-        if (!_seq)
+        if (!m_seq)
             return;
         AnimNotifyEvent ev;
         ev.type      = (AnimEventType)type;
         ev.startTime = 0.0f;
-        ev.endTime   = (std::min)(0.5f, _seq->duration);
+        ev.endTime   = (std::min)(0.5f, m_seq->duration);
 
         if (type == (int)AnimEventType::Sound)
             ev.stringParam = "Cue_Default";
@@ -252,30 +252,30 @@ class AnimationSequenceImpl : public ImSequencer::SequenceInterface
         if (type == (int)AnimEventType::Particle)
             ev.stringParam = "Weapon_R";
 
-        _seq->events.push_back(ev);
+        m_seq->events.push_back(ev);
         SyncFrameCache();
     }
 
     virtual void Del(int index) override
     {
-        if (!_seq || index == 0)
+        if (!m_seq || index == 0)
             return; // マスターは削除不可
         int evIdx = index - 1;
-        if (evIdx >= 0 && evIdx < (int)_seq->events.size())
+        if (evIdx >= 0 && evIdx < (int)m_seq->events.size())
         {
-            _seq->events.erase(_seq->events.begin() + evIdx);
+            m_seq->events.erase(m_seq->events.begin() + evIdx);
             SyncFrameCache();
         }
     }
 
     virtual void Duplicate(int index) override
     {
-        if (!_seq || index == 0)
+        if (!m_seq || index == 0)
             return; // マスターは複製不可
         int evIdx = index - 1;
-        if (evIdx >= 0 && evIdx < (int)_seq->events.size())
+        if (evIdx >= 0 && evIdx < (int)m_seq->events.size())
         {
-            _seq->events.push_back(_seq->events[evIdx]);
+            m_seq->events.push_back(m_seq->events[evIdx]);
             SyncFrameCache();
         }
     }
@@ -288,11 +288,11 @@ class AnimationSequenceImpl : public ImSequencer::SequenceInterface
 AnimationSequencerWindow::AnimationSequencerWindow()
     : EditorWindow("Sequencer")
 {
-    _sequencerImpl = std::make_unique<AnimationSequenceImpl>();
+    m_sequencerImpl = std::make_unique<AnimationSequenceImpl>();
 
     // 初期状態バインド
-    _sequencerImpl->SetSequence(&_editingSequence);
-    _sequencerImpl->SyncFrameCache();
+    m_sequencerImpl->SetSequence(&m_editingSequence);
+    m_sequencerImpl->SyncFrameCache();
 
     SetVisible(true);
 }
@@ -339,58 +339,58 @@ void AnimationSequencerWindow::DrawContents(EditorContext &context)
 
     // 3. アニメーション選択UI
     char nameBuf[128];
-    strcpy_s(nameBuf, sizeof(nameBuf), _editingSequence.sequenceName.c_str());
+    strcpy_s(nameBuf, sizeof(nameBuf), m_editingSequence.sequenceName.c_str());
     ImGui::SetNextItemWidth(200);
     if (ImGui::InputText("Sequence Name", nameBuf, sizeof(nameBuf)))
-        _editingSequence.sequenceName = nameBuf;
+        m_editingSequence.sequenceName = nameBuf;
 
     ImGui::SameLine();
 
-    // ★ ロード直後の同期 (JSONのtargetAnimNameからコンボボックスの選択位置を復元する)
-    if (_prevSelectedAnimIndex == -2)
+    // ロード直後の同期 (JSONのtargetAnimNameからコンボボックスの選択位置を復元する)
+    if (m_prevSelectedAnimIndex == -2)
     {
-        _selectedAnimIndex = 0; // 見つからなかった場合のデフォルト
+        m_selectedAnimIndex = 0; // 見つからなかった場合のデフォルト
         for (int i = 0; i < (int)animations.size(); ++i)
         {
-            if (animations[i].name == _editingSequence.targetAnimName)
+            if (animations[i].name == m_editingSequence.targetAnimName)
             {
-                _selectedAnimIndex = i;
+                m_selectedAnimIndex = i;
                 break;
             }
         }
-        _prevSelectedAnimIndex = _selectedAnimIndex;
+        m_prevSelectedAnimIndex = m_selectedAnimIndex;
 
         // アセットの長さに強制同期
-        _editingSequence.duration = (std::max)(0.01f, animations[_selectedAnimIndex].secondsLength);
-        _sequencerImpl->SyncFrameCache();
-        _fitCurveView = true;
+        m_editingSequence.duration = (std::max)(0.01f, animations[m_selectedAnimIndex].secondsLength);
+        m_sequencerImpl->SyncFrameCache();
+        m_fitCurveView = true;
     }
 
     ImGui::SetNextItemWidth(250);
-    if (ImGui::BeginCombo("Target Animation", animations[_selectedAnimIndex].name.c_str()))
+    if (ImGui::BeginCombo("Target Animation", animations[m_selectedAnimIndex].name.c_str()))
     {
         for (int i = 0; i < (int)animations.size(); ++i)
         {
-            bool sel = (_selectedAnimIndex == i);
+            bool sel = (m_selectedAnimIndex == i);
             if (ImGui::Selectable(animations[i].name.c_str(), sel))
-                _selectedAnimIndex = i;
+                m_selectedAnimIndex = i;
             if (sel)
                 ImGui::SetItemDefaultFocus();
         }
         ImGui::EndCombo();
     }
 
-    // ★ コンボボックスで選択が変更された時の同期
-    if (_prevSelectedAnimIndex != _selectedAnimIndex)
+    // コンボボックスで選択が変更された時の同期
+    if (m_prevSelectedAnimIndex != m_selectedAnimIndex)
     {
-        _prevSelectedAnimIndex          = _selectedAnimIndex;
-        _editingSequence.targetAnimName = animations[_selectedAnimIndex].name;
+        m_prevSelectedAnimIndex          = m_selectedAnimIndex;
+        m_editingSequence.targetAnimName = animations[m_selectedAnimIndex].name;
 
         // アセット本来の長さにシーケンスの最大長を強制ロック
-        _editingSequence.duration = (std::max)(0.01f, animations[_selectedAnimIndex].secondsLength);
+        m_editingSequence.duration = (std::max)(0.01f, animations[m_selectedAnimIndex].secondsLength);
 
-        _sequencerImpl->SyncFrameCache();
-        _fitCurveView = true;
+        m_sequencerImpl->SyncFrameCache();
+        m_fitCurveView = true;
     }
 
     // 4. エディットモード切替の適用
@@ -424,75 +424,75 @@ void AnimationSequencerWindow::DrawContents(EditorContext &context)
 
 void AnimationSequencerWindow::ResetStateOnEntitySwitch(EditorContext &context, AnimatorComponent *animator)
 {
-    if (context.selectedEntity != _lastSelectedEntity)
+    if (context.selectedEntity != m_lastSelectedEntity)
     {
         if (context.isAnimEditMode)
         {
             animator->isEditorOverride = false;
-            if (_savedSequence)
-                animator->currentSequence = _savedSequence;
+            if (m_savedSequence)
+                animator->currentSequence = m_savedSequence;
             context.isAnimEditMode = false;
 
             // ルートモーションプレビューで動かした位置を、切替前のエンティティに対して復元する
-            // （_lastSelectedEntity はまだ更新前＝古いエンティティを指している）
-            if (_rootMotionActive)
+            // （m_lastSelectedEntity はまだ更新前＝古いエンティティを指している）
+            if (m_rootMotionActive)
             {
                 if (context.world)
                 {
-                    if (auto *oldTrans = context.world->GetComponent<TransformComponent>(_lastSelectedEntity))
-                        oldTrans->SetPosition(_rootMotionOriginPos);
+                    if (auto *oldTrans = context.world->GetComponent<TransformComponent>(m_lastSelectedEntity))
+                        oldTrans->SetPosition(m_rootMotionOriginPos);
                 }
-                _rootMotionActive = false;
+                m_rootMotionActive = false;
             }
         }
-        _editingSequence = AnimSequence{};
-        _savePath.clear();
-        _selectedAnimIndex     = -1;
-        _prevSelectedAnimIndex = -2;
-        _isPlaying             = false;
-        _wasEditMode           = false;
-        _savedSequence         = nullptr;
-        _selectedEntry         = -1;
-        _firstFrame            = 0;
-        _fitCurveView          = true;
+        m_editingSequence = AnimSequence{};
+        m_savePath.clear();
+        m_selectedAnimIndex     = -1;
+        m_prevSelectedAnimIndex = -2;
+        m_isPlaying             = false;
+        m_wasEditMode           = false;
+        m_savedSequence         = nullptr;
+        m_selectedEntry         = -1;
+        m_firstFrame            = 0;
+        m_fitCurveView          = true;
 
-        _sequencerImpl->SetSequence(&_editingSequence);
-        _sequencerImpl->SyncFrameCache();
-        _lastSelectedEntity = context.selectedEntity;
+        m_sequencerImpl->SetSequence(&m_editingSequence);
+        m_sequencerImpl->SyncFrameCache();
+        m_lastSelectedEntity = context.selectedEntity;
     }
 }
 
 void AnimationSequencerWindow::DrawFileIO()
 {
-    // ★ Duration はアセットから自動取得されるため、テキスト表示(閲覧専用)に変更
-    ImGui::Text("Editing: %s", _savePath.empty() ? "(New Sequence)" : _savePath.c_str());
+    // Duration はアセットから自動取得されるため、テキスト表示(閲覧専用)に変更
+    ImGui::Text("Editing: %s", m_savePath.empty() ? "(New Sequence)" : m_savePath.c_str());
     ImGui::SameLine();
 
     ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Duration: %.2f s (%d frames)",
-        _editingSequence.duration, SecToFrame(_editingSequence.duration));
+        m_editingSequence.duration, SecToFrame(m_editingSequence.duration));
     ImGui::SameLine();
 
     if (ImGui::Button("Save JSON..."))
     {
         if (auto path = FileDialog::SavePreset("AnimSequence", "Save Anim Sequence"))
         {
-            _savePath                     = FileDialog::ConvertToRelativePath(*path);
-            _editingSequence.sequenceName = std::filesystem::path(_savePath).stem().string();
+            m_savePath                     = FileDialog::ConvertToRelativePath(*path);
+            m_editingSequence.sequenceName = std::filesystem::path(m_savePath).stem().string();
 
-            _sequencerImpl->SyncFrameCache();
+            m_sequencerImpl->SyncFrameCache();
 
-            nlohmann::json j = _editingSequence;
-            if (FileSystem::WriteAllText(_savePath, j.dump(4)))
+            nlohmann::json j = m_editingSequence;
+            if (FileSystem::WriteAllText(m_savePath, j.dump(4)))
             {
-                CCL_LOG_SUCCESS(LogCategory::Editor, "Sequence Saved: %s", _savePath.c_str());
+                CCL_LOG_SUCCESS(LogCategory::Editor, "Sequence Saved: %s", m_savePath.c_str());
 
-                // ★ 保存直後にランタイム側キャッシュを同一インスタンスへ上書き再読込。
+                // 保存直後にランタイム側キャッシュを同一インスタンスへ上書き再読込。
                 //   これをしないと ResourceManager が起動時の古い内容を返し続け、
                 //   ゲーム再生に編集が反映されない（＝「保存したのに変わらない」の原因）。
-                ResourceManager::Instance().ReloadAnimSequence(_savePath.c_str());
+                ResourceManager::Instance().ReloadAnimSequence(m_savePath.c_str());
             }
             else
-                CCL_LOG_ERROR(LogCategory::Editor, "Sequence Save Failed: %s", _savePath.c_str());
+                CCL_LOG_ERROR(LogCategory::Editor, "Sequence Save Failed: %s", m_savePath.c_str());
         }
     }
     ImGui::SameLine();
@@ -507,17 +507,17 @@ void AnimationSequencerWindow::DrawFileIO()
                 try
                 {
                     nlohmann::json j = nlohmann::json::parse(text);
-                    _editingSequence = j.get<AnimSequence>();
-                    _savePath        = loadPath;
+                    m_editingSequence = j.get<AnimSequence>();
+                    m_savePath        = loadPath;
 
                     // ロード完了時にアニメーションリストとの同期を促すフラグ
-                    _prevSelectedAnimIndex = -2;
+                    m_prevSelectedAnimIndex = -2;
 
-                    _sequencerImpl->SetSequence(&_editingSequence);
-                    _sequencerImpl->SyncFrameCache();
+                    m_sequencerImpl->SetSequence(&m_editingSequence);
+                    m_sequencerImpl->SyncFrameCache();
 
-                    _selectedEntry = -1;
-                    _fitCurveView  = true;
+                    m_selectedEntry = -1;
+                    m_fitCurveView  = true;
                     CCL_LOG_SUCCESS(LogCategory::Editor, "Sequence Loaded: %s", loadPath.c_str());
                 }
                 catch (const std::exception &e)
@@ -533,32 +533,32 @@ void AnimationSequencerWindow::DrawEditModeToggle(EditorContext &context, Animat
 {
     if (context.isAnimEditMode)
     {
-        if (!_wasEditMode)
+        if (!m_wasEditMode)
         {
-            _savedSequence       = animator->currentSequence;
-            _wasEditMode         = true;
+            m_savedSequence       = animator->currentSequence;
+            m_wasEditMode         = true;
             context.animEditTime = animator->currentTimer;
         }
         animator->isEditorOverride = true;
-        animator->currentSequence  = &_editingSequence;
+        animator->currentSequence  = &m_editingSequence;
     }
-    else if (_wasEditMode)
+    else if (m_wasEditMode)
     {
-        animator->currentSequence  = _savedSequence;
+        animator->currentSequence  = m_savedSequence;
         animator->isEditorOverride = false;
-        _savedSequence             = nullptr;
-        _wasEditMode               = false;
-        _isPlaying                 = false;
+        m_savedSequence             = nullptr;
+        m_wasEditMode               = false;
+        m_isPlaying                 = false;
 
         // ルートモーションプレビューで動かした位置を元に戻す
-        if (_rootMotionActive)
+        if (m_rootMotionActive)
         {
             if (context.world)
             {
                 if (auto *trans = context.world->GetComponent<TransformComponent>(context.selectedEntity))
-                    trans->SetPosition(_rootMotionOriginPos);
+                    trans->SetPosition(m_rootMotionOriginPos);
             }
-            _rootMotionActive = false;
+            m_rootMotionActive = false;
         }
     }
 }
@@ -570,28 +570,28 @@ void AnimationSequencerWindow::DrawRootMotionPreview(EditorContext &context, Ani
     TransformComponent *trans = context.world->GetComponent<TransformComponent>(context.selectedEntity);
     if (!trans) return;
 
-    const CurveData &rmc = _editingSequence.rootMotionCurve;
+    const CurveData &rmc = m_editingSequence.rootMotionCurve;
     if (rmc.empty())
     {
         // カーブが無い（または全キー削除された）→ プレビュー駆動を終了し、
         // 次にキーが追加された瞬間の位置を新しい基準点として扱う。
-        _rootMotionActive = false;
+        m_rootMotionActive = false;
         return;
     }
 
-    const float dur      = _editingSequence.duration;
+    const float dur      = m_editingSequence.duration;
     const float progress = (dur > 0.0f) ? std::clamp(context.animEditTime / dur, 0.0f, 1.0f) : 0.0f;
 
-    if (!_rootMotionActive)
+    if (!m_rootMotionActive)
     {
         // このフレームで初めてカーブ駆動プレビューが有効になった → 現在位置を基準点として記録する。
         // 以後は毎フレーム「基準点 + 前方 * (curve(progress) - curve(0))」で絶対位置を再計算する。
-        // ループするたびに _rootMotionBasePos へ1周ぶんの前進を畳み込むので、
+        // ループするたびに m_rootMotionBasePos へ1周ぶんの前進を畳み込むので、
         // ループ境界で原点にスナップバックせず連続して前進する。
-        // _rootMotionOriginPos は累積しない「真の開始位置」で、編集モード終了時の復元に使う。
-        _rootMotionOriginPos = trans->position;
-        _rootMotionBasePos   = trans->position;
-        _rootMotionActive    = true;
+        // m_rootMotionOriginPos は累積しない「真の開始位置」で、編集モード終了時の復元に使う。
+        m_rootMotionOriginPos = trans->position;
+        m_rootMotionBasePos   = trans->position;
+        m_rootMotionActive    = true;
     }
 
     // ワールド前方ベクトル（worldMatrixのZ軸列。回転はキャッシュ済みのものを使う）
@@ -600,9 +600,9 @@ void AnimationSequencerWindow::DrawRootMotionPreview(EditorContext &context, Ani
     const float dist = rmc.Evaluate(progress) - rmc.Evaluate(0.0f);
 
     DirectX::XMFLOAT3 newPos = {
-        _rootMotionBasePos.x + fwd.x * dist,
-        _rootMotionBasePos.y + fwd.y * dist,
-        _rootMotionBasePos.z + fwd.z * dist,
+        m_rootMotionBasePos.x + fwd.x * dist,
+        m_rootMotionBasePos.y + fwd.y * dist,
+        m_rootMotionBasePos.z + fwd.z * dist,
     };
     trans->SetPosition(newPos);
 
@@ -615,48 +615,48 @@ void AnimationSequencerWindow::DrawRootMotionPreview(EditorContext &context, Ani
 void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, AnimatorComponent *animator, Model *model)
 {
     if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && ImGui::IsKeyPressed(ImGuiKey_Space))
-        _isPlaying = !_isPlaying;
+        m_isPlaying = !m_isPlaying;
 
-    const float dur      = _editingSequence.duration;
+    const float dur      = m_editingSequence.duration;
     const int   durFrame = SecToFrame(dur);
 
     if (context.isAnimEditMode)
     {
-        if (_isPlaying)
+        if (m_isPlaying)
         {
             const float progress0 = (dur > 0.0f) ? std::clamp(context.animEditTime / dur, 0.0f, 1.0f) : 0.0f;
-            const float speedMult = _editingSequence.speedCurve.empty()
+            const float speedMult = m_editingSequence.speedCurve.empty()
                                         ? 1.0f
-                                        : _editingSequence.speedCurve.Evaluate(progress0);
+                                        : m_editingSequence.speedCurve.Evaluate(progress0);
             context.animEditTime += ImGui::GetIO().DeltaTime * animator->playbackSpeed * speedMult;
             if (dur > 0.0f && context.animEditTime > dur)
             {
                 // ループ設定はプレビュー専用トグルを優先（アニメ設定と独立に試せる）
-                if (_loopPreview)
+                if (m_loopPreview)
                 {
                     context.animEditTime = std::fmod(context.animEditTime, dur);
 
-                    // ★ ルートモーションプレビューのループ連続化:
+                    // ルートモーションプレビューのループ連続化:
                     //   ここは「再生による折り返し」でのみ通る（スクラブでは通らない）ため、
                     //   1周ぶんの前進量を基準位置へ畳み込む。これにより次ループの進捗0が
                     //   前ループ終端と一致し、原点へのスナップバックが消える。
-                    if (_rootMotionActive && !_editingSequence.rootMotionCurve.empty() && context.world)
+                    if (m_rootMotionActive && !m_editingSequence.rootMotionCurve.empty() && context.world)
                     {
                         if (auto *trans = context.world->GetComponent<TransformComponent>(context.selectedEntity))
                         {
-                            const CurveData  &rmc       = _editingSequence.rootMotionCurve;
+                            const CurveData  &rmc       = m_editingSequence.rootMotionCurve;
                             const float       cycleDist = rmc.Evaluate(1.0f) - rmc.Evaluate(0.0f);
                             DirectX::XMFLOAT3 fwd       = trans->GetForward();
-                            _rootMotionBasePos.x += fwd.x * cycleDist;
-                            _rootMotionBasePos.y += fwd.y * cycleDist;
-                            _rootMotionBasePos.z += fwd.z * cycleDist;
+                            m_rootMotionBasePos.x += fwd.x * cycleDist;
+                            m_rootMotionBasePos.y += fwd.y * cycleDist;
+                            m_rootMotionBasePos.z += fwd.z * cycleDist;
                         }
                     }
                 }
                 else
                 {
                     context.animEditTime = dur;
-                    _isPlaying           = false; // 非ループは最後で停止
+                    m_isPlaying           = false; // 非ループは最後で停止
                 }
             }
             animator->currentTimer = context.animEditTime;
@@ -667,28 +667,28 @@ void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, Animator
         {
             context.animEditTime   = 0.0f;
             animator->currentTimer = 0.0f;
-            _isPlaying             = false;
+            m_isPlaying             = false;
         }
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip("先頭へ (Home)");
         ImGui::SameLine();
 
-        if (ImGui::Button(_isPlaying ? "|| Pause" : "> Play"))
-            _isPlaying = !_isPlaying;
+        if (ImGui::Button(m_isPlaying ? "|| Pause" : "> Play"))
+            m_isPlaying = !m_isPlaying;
         ImGui::SameLine();
 
         if (ImGui::Button(">|")) // 最後へ
         {
             context.animEditTime   = dur;
             animator->currentTimer = dur;
-            _isPlaying             = false;
+            m_isPlaying             = false;
         }
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip("最後へ (End)");
         ImGui::SameLine();
 
         // ループトグル
-        ImGui::Checkbox("Loop", &_loopPreview);
+        ImGui::Checkbox("Loop", &m_loopPreview);
         ImGui::SameLine();
 
         // ── 現在時刻の 秒 / frame / 全体長 表示 ──
@@ -701,7 +701,7 @@ void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, Animator
     }
     else
     {
-        _isPlaying = false;
+        m_isPlaying = false;
         ImGui::TextDisabled("Enable 'Edit Mode' to preview & scrub.");
     }
 
@@ -712,21 +712,21 @@ void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, Animator
         {
             context.animEditTime   = 0.0f;
             animator->currentTimer = 0.0f;
-            _isPlaying             = false;
+            m_isPlaying             = false;
         }
         if (ImGui::IsKeyPressed(ImGuiKey_End))
         {
             context.animEditTime   = dur;
             animator->currentTimer = dur;
-            _isPlaying             = false;
+            m_isPlaying             = false;
         }
     }
 
     // ── スナップ設定 ──
-    ImGui::Checkbox("Snap", &_snapEnabled);
+    ImGui::Checkbox("Snap", &m_snapEnabled);
     ImGui::SameLine();
     ImGui::SetNextItemWidth(80);
-    ImGui::DragInt("##snapStep", &_snapStep, 1, 1, 30, "%df");
+    ImGui::DragInt("##snapStep", &m_snapStep, 1, 1, 30, "%df");
     if (ImGui::IsItemHovered())
         ImGui::SetTooltip("スナップ単位（フレーム）");
     ImGui::SameLine();
@@ -735,13 +735,13 @@ void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, Animator
 
     // イベント追加
     auto AddEvt = [&](AnimEventType t) {
-        _sequencerImpl->Add((int)t);
-        auto &e     = _editingSequence.events.back();
+        m_sequencerImpl->Add((int)t);
+        auto &e     = m_editingSequence.events.back();
         int   s     = context.isAnimEditMode ? SecToFrame(context.animEditTime) : 0;
         e.startTime = FrameToSec(s);
         e.endTime   = FrameToSec(s + 30);
-        _sequencerImpl->SyncFrameCache();
-        _selectedEntry = (int)_editingSequence.events.size();
+        m_sequencerImpl->SyncFrameCache();
+        m_selectedEntry = (int)m_editingSequence.events.size();
     };
 
     if (ImGui::Button("+ Attack"))
@@ -771,45 +771,45 @@ void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, Animator
     int curFrame  = context.isAnimEditMode ? SecToFrame(context.animEditTime) : SecToFrame(animator->currentTimer);
     int prevFrame = curFrame;
 
-    _expanded    = true;
+    m_expanded    = true;
     bool changed = ImSequencer::Sequencer(
-        _sequencerImpl.get(), &curFrame, &_expanded, &_selectedEntry, &_firstFrame,
+        m_sequencerImpl.get(), &curFrame, &m_expanded, &m_selectedEntry, &m_firstFrame,
         ImSequencer::SEQUENCER_EDIT_STARTEND | ImSequencer::SEQUENCER_ADD |
             ImSequencer::SEQUENCER_DEL | ImSequencer::SEQUENCER_CHANGE_FRAME);
 
     // ── ドラッグ後のスナップ適用（選択イベントのフレーム境界を丸める）──
     if (changed)
     {
-        if (_snapEnabled && _snapStep > 0 &&
-            _selectedEntry > 0 && _selectedEntry < (int)_sequencerImpl->_frameCacheMap.size())
+        if (m_snapEnabled && m_snapStep > 0 &&
+            m_selectedEntry > 0 && m_selectedEntry < (int)m_sequencerImpl->m_frameCacheMap.size())
         {
-            auto &f    = _sequencerImpl->_frameCacheMap[_selectedEntry];
-            auto  snap = [&](int v) { return ((v + _snapStep / 2) / _snapStep) * _snapStep; };
+            auto &f    = m_sequencerImpl->m_frameCacheMap[m_selectedEntry];
+            auto  snap = [&](int v) { return ((v + m_snapStep / 2) / m_snapStep) * m_snapStep; };
             f.first    = snap(f.first);
             f.second   = snap(f.second);
             if (f.second <= f.first)
-                f.second = f.first + _snapStep; // 区間が潰れない最小幅
+                f.second = f.first + m_snapStep; // 区間が潰れない最小幅
         }
-        _sequencerImpl->FlushFrameCache();
+        m_sequencerImpl->FlushFrameCache();
     }
 
     // 削除処理
-    if (_selectedEntry > 0 && ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && ImGui::IsKeyPressed(ImGuiKey_Delete))
+    if (m_selectedEntry > 0 && ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && ImGui::IsKeyPressed(ImGuiKey_Delete))
     {
-        _sequencerImpl->Del(_selectedEntry);
-        _selectedEntry = -1;
+        m_sequencerImpl->Del(m_selectedEntry);
+        m_selectedEntry = -1;
     }
 
     // ナッジ(微調整)処理
     if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
     {
         if (ImGui::IsKeyPressed(ImGuiKey_Escape))
-            _selectedEntry = -1;
+            m_selectedEntry = -1;
 
         int nudge = ImGui::GetIO().KeyShift ? 5 : 1;
-        if (_selectedEntry > 0 && _selectedEntry < (int)_sequencerImpl->_frameCacheMap.size()) // マスターはナッジ不可
+        if (m_selectedEntry > 0 && m_selectedEntry < (int)m_sequencerImpl->m_frameCacheMap.size()) // マスターはナッジ不可
         {
-            auto &f     = _sequencerImpl->_frameCacheMap[_selectedEntry];
+            auto &f     = m_sequencerImpl->m_frameCacheMap[m_selectedEntry];
             bool  moved = false;
 
             if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
@@ -831,20 +831,20 @@ void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, Animator
             }
 
             if (moved)
-                _sequencerImpl->FlushFrameCache();
+                m_sequencerImpl->FlushFrameCache();
         }
     }
 
-    // ★ 修正: curFrame != prevFrame は「ImSequencerウィジェット内部の量子化/丸め」だけでも
+    // curFrame != prevFrame は「ImSequencerウィジェット内部の量子化/丸め」だけでも
     //   毎フレーム発生しうる（ユーザーが何も触っていなくても）。これを無条件に
     //   「ユーザーがスクラブした」とみなして animEditTime を整数フレームへ強制スナップし
-    //   さらに _isPlaying を止めてしまうと、再生中に不規則な停止と時間巻き戻り/早送りが
+    //   さらに m_isPlaying を止めてしまうと、再生中に不規則な停止と時間巻き戻り/早送りが
     //   起き、体感で「速度が速くなったり遅くなったりする」不具合になっていた。
     //   本物のドラッグ操作（左マウスボタン押下中）のときだけ反応するようにし、
-    //   通常再生中はスムーズな時間進行（上の _isPlaying ブロック）を唯一の権威にする。
+    //   通常再生中はスムーズな時間進行（上の m_isPlaying ブロック）を唯一の権威にする。
     if (curFrame != prevFrame && ImGui::IsMouseDown(ImGuiMouseButton_Left))
     {
-        _isPlaying             = false;
+        m_isPlaying             = false;
         context.animEditTime   = FrameToSec(curFrame);
         animator->currentTimer = context.animEditTime;
     }
@@ -872,26 +872,26 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
     ImGui::Separator();
 
     // マスター（全体の長さ）が選択されている場合、もしくは未選択の場合の表示
-    if (_selectedEntry == 0 || _selectedEntry == -1)
+    if (m_selectedEntry == 0 || m_selectedEntry == -1)
     {
-        if (_selectedEntry == 0)
+        if (m_selectedEntry == 0)
         {
             ImGui::TextColored(ImVec4(0.5f, 1, 0.5f, 1), "Master Track (Duration)");
             ImGui::TextDisabled("Modify the total length of the sequence.");
         }
 
         // アセットロック済みなので閲覧のみ
-        ImGui::Text("Duration: %.2f s", _editingSequence.duration);
+        ImGui::Text("Duration: %.2f s", m_editingSequence.duration);
         ImGui::Checkbox("Edit Mode (Preview)", &context.isAnimEditMode);
     }
-    else if (_selectedEntry > 0 && _selectedEntry <= (int)_editingSequence.events.size())
+    else if (m_selectedEntry > 0 && m_selectedEntry <= (int)m_editingSequence.events.size())
     {
-        auto &e  = _editingSequence.events[_selectedEntry - 1]; // イベントのインデックスは-1
+        auto &e  = m_editingSequence.events[m_selectedEntry - 1]; // イベントのインデックスは-1
         bool  ch = false;
 
         ImGui::TextColored(ImVec4(0.5f, 1, 0.5f, 1), "Selected Event");
         ImGui::Spacing();
-        ImGui::TextDisabled("Type: %s", _sequencerImpl->GetItemTypeName((int)e.type));
+        ImGui::TextDisabled("Type: %s", m_sequencerImpl->GetItemTypeName((int)e.type));
         // ── 開始/終了を秒で直接入力（ドラッグより精密）──
         {
             float startSec = e.startTime;
@@ -899,11 +899,11 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
             bool  timeCh   = false;
 
             ImGui::SetNextItemWidth(90);
-            if (ImGui::DragFloat("開始 (s)##start", &startSec, 0.01f, 0.0f, _editingSequence.duration, "%.2f"))
+            if (ImGui::DragFloat("開始 (s)##start", &startSec, 0.01f, 0.0f, m_editingSequence.duration, "%.2f"))
                 timeCh = true;
             ImGui::SameLine();
             ImGui::SetNextItemWidth(90);
-            if (ImGui::DragFloat("終了 (s)##end", &endSec, 0.01f, 0.0f, _editingSequence.duration, "%.2f"))
+            if (ImGui::DragFloat("終了 (s)##end", &endSec, 0.01f, 0.0f, m_editingSequence.duration, "%.2f"))
                 timeCh = true;
 
             // フレーム表示も併記
@@ -912,15 +912,15 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
             if (timeCh)
             {
                 // クランプと前後関係の保証
-                startSec = std::clamp(startSec, 0.0f, _editingSequence.duration);
-                endSec   = std::clamp(endSec, 0.0f, _editingSequence.duration);
+                startSec = std::clamp(startSec, 0.0f, m_editingSequence.duration);
+                endSec   = std::clamp(endSec, 0.0f, m_editingSequence.duration);
                 if (endSec < startSec)
                     endSec = startSec;
 
                 e.startTime = startSec;
                 e.endTime   = endSec;
                 ch          = true;
-                _sequencerImpl->SyncFrameCache(); // タイムライン側へ即反映
+                m_sequencerImpl->SyncFrameCache(); // タイムライン側へ即反映
             }
         }
         ImGui::Spacing();
@@ -1116,7 +1116,7 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
         }
 
         if (ch)
-            _sequencerImpl->SyncFrameCache();
+            m_sequencerImpl->SyncFrameCache();
     }
 }
 
@@ -1131,25 +1131,25 @@ void AnimationSequencerWindow::DrawCurvePane(float animTime)
     ImGui::SameLine();
     ImGui::Checkbox("ルートモーション##cv", &showRoot);
     ImGui::SameLine();
-    if (ImGui::Button("全体表示##cv")) _fitCurveView = true;
+    if (ImGui::Button("全体表示##cv")) m_fitCurveView = true;
     ImGui::SameLine();
     ImGui::TextDisabled("[ダブルクリック=キー追加 / 右orホイール=パン&ズーム / Alt+ハンドル=接線分離]");
 
-    _editingSequence.speedCurve.visible      = showSpeed;
-    _editingSequence.rootMotionCurve.visible = showRoot;
+    m_editingSequence.speedCurve.visible      = showSpeed;
+    m_editingSequence.rootMotionCurve.visible = showRoot;
 
-    const float dur      = _editingSequence.duration;
+    const float dur      = m_editingSequence.duration;
     const float progress = (dur > 0.0f) ? std::clamp(animTime / dur, 0.0f, 1.0f) : 0.0f;
 
     // 編集対象の切り替え（選択が毎フレーム消えないよう、変化時だけ SetActiveCurve）
-    int active = _curveWidget.ActiveCurveIndex();
+    int active = m_curveWidget.ActiveCurveIndex();
     int prev   = active;
     ImGui::RadioButton("速度を編集", &active, 0);
     ImGui::SameLine();
     ImGui::RadioButton("ルートモーションを編集", &active, 1);
-    if (active != prev) _curveWidget.SetActiveCurve(active);
+    if (active != prev) m_curveWidget.SetActiveCurve(active);
 
-    std::vector<CurveData *> targets = {&_editingSequence.speedCurve, &_editingSequence.rootMotionCurve};
+    std::vector<CurveData *> targets = {&m_editingSequence.speedCurve, &m_editingSequence.rootMotionCurve};
 
     // ================================================================
     // ルートモーション編集時専用ツール
@@ -1160,7 +1160,7 @@ void AnimationSequencerWindow::DrawCurvePane(float animTime)
     // ================================================================
     if (active == 1)
     {
-        CurveData &rc = _editingSequence.rootMotionCurve;
+        CurveData &rc = m_editingSequence.rootMotionCurve;
 
         auto rebuildPreset = [](CurveData &c, int type, float dist) {
             c.keys.clear();
@@ -1210,25 +1210,25 @@ void AnimationSequencerWindow::DrawCurvePane(float animTime)
         if (ImGui::Button("一定"))
         {
             rebuildPreset(rc, 0, keepDist);
-            _curveWidget.SetActiveCurve(1);
+            m_curveWidget.SetActiveCurve(1);
         }
         ImGui::SameLine();
         if (ImGui::Button("イーズイン"))
         {
             rebuildPreset(rc, 1, keepDist);
-            _curveWidget.SetActiveCurve(1);
+            m_curveWidget.SetActiveCurve(1);
         }
         ImGui::SameLine();
         if (ImGui::Button("イーズアウト"))
         {
             rebuildPreset(rc, 2, keepDist);
-            _curveWidget.SetActiveCurve(1);
+            m_curveWidget.SetActiveCurve(1);
         }
         ImGui::SameLine();
         if (ImGui::Button("スムーズ"))
         {
             rebuildPreset(rc, 3, keepDist);
-            _curveWidget.SetActiveCurve(1);
+            m_curveWidget.SetActiveCurve(1);
         }
 
         ImGui::TextDisabled("移動距離は末尾キーの「値」を右のインスペクタかキャンバスでドラッグして決めます。");
@@ -1239,23 +1239,23 @@ void AnimationSequencerWindow::DrawCurvePane(float animTime)
     opt.showInspector = true;
     opt.showPlayhead  = true;
     opt.playheadX     = progress;
-    opt.fitRequested  = _fitCurveView;
-    _fitCurveView     = false;
+    opt.fitRequested  = m_fitCurveView;
+    m_fitCurveView     = false;
 
-    _curveWidget.Draw("##seqCurves", targets, opt);
+    m_curveWidget.Draw("##seqCurves", targets, opt);
 
     // 現在の再生位置での評価値を即読み出し（数値でも確認できる）
-    const float sp = _editingSequence.speedCurve.empty() ? 1.0f : _editingSequence.speedCurve.Evaluate(progress);
-    const float rm = _editingSequence.rootMotionCurve.empty() ? 0.0f : _editingSequence.rootMotionCurve.Evaluate(progress);
+    const float sp = m_editingSequence.speedCurve.empty() ? 1.0f : m_editingSequence.speedCurve.Evaluate(progress);
+    const float rm = m_editingSequence.rootMotionCurve.empty() ? 0.0f : m_editingSequence.rootMotionCurve.Evaluate(progress);
 
     // ルートモーションの瞬間速度（傾き）も出す：実際の動きの速さが直感的に分かる
     float rmSpeed = 0.0f;
-    if (!_editingSequence.rootMotionCurve.empty() && dur > 0.0f)
+    if (!m_editingSequence.rootMotionCurve.empty() && dur > 0.0f)
     {
         const float      h   = 0.01f;
         const float      p0  = std::clamp(progress - h, 0.0f, 1.0f);
         const float      p1  = std::clamp(progress + h, 0.0f, 1.0f);
-        const CurveData &rc2 = _editingSequence.rootMotionCurve;
+        const CurveData &rc2 = m_editingSequence.rootMotionCurve;
         const float      dp  = (p1 - p0) * dur; // 秒
         if (dp > 1e-5f) rmSpeed = (rc2.Evaluate(p1) - rc2.Evaluate(p0)) / dp;
     }
@@ -1263,7 +1263,7 @@ void AnimationSequencerWindow::DrawCurvePane(float animTime)
     ImGui::TextColored(ImVec4(0.6f, 0.9f, 1.0f, 1.0f),
         "進捗 %.2f  |  速度倍率 %.3f  |  累積前進 %.3f m  |  前進速度 %.2f m/s", progress, sp, rm, rmSpeed);
 
-    if (active == 1 && !_editingSequence.rootMotionCurve.empty())
+    if (active == 1 && !m_editingSequence.rootMotionCurve.empty())
     {
         ImGui::TextDisabled("※ 上のシーンビューでキャラが実際に前進する量として確認できます。");
     }

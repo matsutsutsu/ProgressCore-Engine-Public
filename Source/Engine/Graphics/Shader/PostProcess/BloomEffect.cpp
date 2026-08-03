@@ -11,37 +11,37 @@ BloomEffect::~BloomEffect()
 
 void BloomEffect::Initialize(ID3D11Device* device, UINT width, UINT height)
 {
-    // ---- シェーダーリソース（旧 static g_bloomResources → メンバ _res）----
-    _res = std::make_unique<BloomResources>();
+    // ---- シェーダーリソース（旧 static g_bloomResources → メンバ m_res）----
+    m_res = std::make_unique<BloomResources>();
 
     GpuResourceUtils::LoadVertexShader(device, "Assets/Shader/FullscreenVS.cso",
-        nullptr, 0, nullptr, _res->vs.GetAddressOf());
+        nullptr, 0, nullptr, m_res->vs.GetAddressOf());
     GpuResourceUtils::LoadPixelShader(device, "Assets/Shader/BloomExtractionPS.cso",
-        _res->psExtract.GetAddressOf());
+        m_res->psExtract.GetAddressOf());
     GpuResourceUtils::LoadPixelShader(device, "Assets/Shader/BloomDownsamplePS.cso",
-        _res->psDown.GetAddressOf());
+        m_res->psDown.GetAddressOf());
     GpuResourceUtils::LoadPixelShader(device, "Assets/Shader/BloomUpsamplePS.cso",
-        _res->psUp.GetAddressOf());
+        m_res->psUp.GetAddressOf());
     // 新規: scene + glow 合成シェーダー (BloomCompositePS.cso)
     GpuResourceUtils::LoadPixelShader(device, "Assets/Shader/BloomCompositePS.cso",
-        _res->psComposite.GetAddressOf());
+        m_res->psComposite.GetAddressOf());
 
     GpuResourceUtils::CreateDynamicConstantBuffer(device, sizeof(GpuData::CbBloomData),
-        _res->cbBloom.GetAddressOf());
+        m_res->cbBloom.GetAddressOf());
 
     D3D11_SAMPLER_DESC sampDesc = {};
     sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
     sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
     sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
     sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-    device->CreateSamplerState(&sampDesc, _res->sampler.GetAddressOf());
+    device->CreateSamplerState(&sampDesc, m_res->sampler.GetAddressOf());
 
     // ---- Opaque BlendState（旧 Graphics::Instance() 依存を完全排除）----
     // パーティクル等の加算設定が残っている場合の安全リセット用
     D3D11_BLEND_DESC blendDesc = {};
     blendDesc.RenderTarget[0].BlendEnable = FALSE;
     blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-    HRESULT hr = device->CreateBlendState(&blendDesc, _opaqueBlendState.GetAddressOf());
+    HRESULT hr = device->CreateBlendState(&blendDesc, m_opaqueBlendState.GetAddressOf());
     _ASSERT_EXPR(SUCCEEDED(hr), L"BloomEffect: OpaqueBlendState 生成失敗");
 
     CreateChains(width, height);
@@ -55,16 +55,16 @@ void BloomEffect::Resize(ID3D11Device* /*device*/, UINT width, UINT height)
 
 void BloomEffect::CreateChains(UINT width, UINT height)
 {
-    _downChain.reserve(kMaxIterations);
-    _upChain.reserve(kMaxIterations);
+    m_downChain.reserve(kMaxIterations);
+    m_upChain.reserve(kMaxIterations);
 
     UINT w = width, h = height;
     for (int i = 0; i < kMaxIterations; ++i) {
         w = (std::max)(1u, w / 2);
         h = (std::max)(1u, h / 2);
-        _downChain.push_back(ResourceManager::Instance().CreateRenderTarget(
+        m_downChain.push_back(ResourceManager::Instance().CreateRenderTarget(
             w, h, DXGI_FORMAT_R16G16B16A16_FLOAT));
-        _upChain.push_back(ResourceManager::Instance().CreateRenderTarget(
+        m_upChain.push_back(ResourceManager::Instance().CreateRenderTarget(
             w, h, DXGI_FORMAT_R16G16B16A16_FLOAT));
     }
 
@@ -72,20 +72,20 @@ void BloomEffect::CreateChains(UINT width, UINT height)
 
 void BloomEffect::ReleaseChains()
 {
-    for (auto h : _downChain) ResourceManager::Instance().UnloadRenderTarget(h);
-    for (auto h : _upChain)   ResourceManager::Instance().UnloadRenderTarget(h);
+    for (auto h : m_downChain) ResourceManager::Instance().UnloadRenderTarget(h);
+    for (auto h : m_upChain)   ResourceManager::Instance().UnloadRenderTarget(h);
     
-    _downChain.clear();
-    _upChain.clear();
+    m_downChain.clear();
+    m_upChain.clear();
 
 }
 
 void BloomEffect::UpdateCbBloom(ID3D11DeviceContext* dc, const GpuData::CbBloomData& data)
 {
     D3D11_MAPPED_SUBRESOURCE mapped;
-    if (SUCCEEDED(dc->Map(_res->cbBloom.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {
+    if (SUCCEEDED(dc->Map(m_res->cbBloom.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {
         memcpy(mapped.pData, &data, sizeof(data));
-        dc->Unmap(_res->cbBloom.Get(), 0);
+        dc->Unmap(m_res->cbBloom.Get(), 0);
     }
 }
 
@@ -94,34 +94,34 @@ void BloomEffect::Process(
     ID3D11ShaderResourceView* inputSRV,
     ID3D11RenderTargetView* outputRTV) 
 {
-    if (!_res || _downChain.empty() || !inputSRV) return;
+    if (!m_res || m_downChain.empty() || !inputSRV) return;
 
     // ---- 共通ステート ----
     dc->IASetInputLayout(nullptr);
     dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    dc->VSSetShader(_res->vs.Get(), nullptr, 0);
+    dc->VSSetShader(m_res->vs.Get(), nullptr, 0);
 
     // パーティクル等の加算ブレンドが残っている場合のリセット
     // 旧: Graphics::Instance().GetRenderState()->GetBlendState(BlendState::Opaque)
     // 新: 自前の OpaqueBlendState（Initialize 時に生成済み）
-    dc->OMSetBlendState(_opaqueBlendState.Get(), nullptr, 0xFFFFFFFF);
+    dc->OMSetBlendState(m_opaqueBlendState.Get(), nullptr, 0xFFFFFFFF);
 
-    ID3D11SamplerState* samplers[] = { _res->sampler.Get() };
+    ID3D11SamplerState* samplers[] = { m_res->sampler.Get() };
     dc->PSSetSamplers(SLOT_SMP_BLOOM, 1, samplers);
 
     // =================================================================
-    // 1. 輝度抽出 (inputSRV → _downChain[0])
+    // 1. 輝度抽出 (inputSRV → m_downChain[0])
     // =================================================================
     {
-        RenderTarget* down0 = ResourceManager::Instance().GetRenderTarget(_downChain[0]);
+        RenderTarget* down0 = ResourceManager::Instance().GetRenderTarget(m_downChain[0]);
         if (!down0) return;
 
         cbData.texelWidth = 1.0f / (down0->GetWidth() * 2.0f);
         cbData.texelHeight = 1.0f / (down0->GetHeight() * 2.0f);
         UpdateCbBloom(dc, cbData);
-        dc->PSSetConstantBuffers(SLOT_CB_BLOOM, 1, _res->cbBloom.GetAddressOf());
+        dc->PSSetConstantBuffers(SLOT_CB_BLOOM, 1, m_res->cbBloom.GetAddressOf());
 
-        dc->PSSetShader(_res->psExtract.Get(), nullptr, 0);
+        dc->PSSetShader(m_res->psExtract.Get(), nullptr, 0);
         dc->PSSetShaderResources(SLOT_SRV_BLOOM_IN, 1, &inputSRV);
         down0->Activate(dc);
         dc->Draw(3, 0);
@@ -131,13 +131,13 @@ void BloomEffect::Process(
     }
 
     // =================================================================
-    // 2. ダウンサンプリング (_downChain[i] → _downChain[i+1])
+    // 2. ダウンサンプリング (m_downChain[i] → m_downChain[i+1])
     // =================================================================
-    dc->PSSetShader(_res->psDown.Get(), nullptr, 0);
+    dc->PSSetShader(m_res->psDown.Get(), nullptr, 0);
 
-    for (size_t i = 0; i < _downChain.size() - 1; ++i) {
-        RenderTarget* src = ResourceManager::Instance().GetRenderTarget(_downChain[i]);
-        RenderTarget* dst = ResourceManager::Instance().GetRenderTarget(_downChain[i + 1]);
+    for (size_t i = 0; i < m_downChain.size() - 1; ++i) {
+        RenderTarget* src = ResourceManager::Instance().GetRenderTarget(m_downChain[i]);
+        RenderTarget* dst = ResourceManager::Instance().GetRenderTarget(m_downChain[i + 1]);
         if (!src || !dst) continue;
 
         cbData.texelWidth = 1.0f / src->GetWidth();
@@ -156,16 +156,16 @@ void BloomEffect::Process(
     }
 
     // =================================================================
-    // 3. アップサンプリング (_downChain[last] → ... → _upChain[0])
+    // 3. アップサンプリング (m_downChain[last] → ... → m_upChain[0])
     // =================================================================
-    dc->PSSetShader(_res->psUp.Get(), nullptr, 0);
+    dc->PSSetShader(m_res->psUp.Get(), nullptr, 0);
 
-    RenderTarget* lastDown = ResourceManager::Instance().GetRenderTarget(_downChain.back());
+    RenderTarget* lastDown = ResourceManager::Instance().GetRenderTarget(m_downChain.back());
     ID3D11ShaderResourceView* currentSRV = lastDown ? lastDown->GetSRV() : nullptr;
 
-    for (int i = (int)_downChain.size() - 2; i >= 0; --i) {
-        RenderTarget* dst = ResourceManager::Instance().GetRenderTarget(_upChain[i]);
-        RenderTarget* highRes = ResourceManager::Instance().GetRenderTarget(_downChain[i]);
+    for (int i = (int)m_downChain.size() - 2; i >= 0; --i) {
+        RenderTarget* dst = ResourceManager::Instance().GetRenderTarget(m_upChain[i]);
+        RenderTarget* highRes = ResourceManager::Instance().GetRenderTarget(m_downChain[i]);
         if (!dst || !highRes) continue;
 
         cbData.texelWidth = (1.0f / dst->GetWidth()) * cbData.radius;
@@ -185,8 +185,8 @@ void BloomEffect::Process(
         currentSRV = dst->GetSRV();
     }
 
-    // _upChain[0] = bloom グロー (half-res)
-    RenderTarget* finalGlow = ResourceManager::Instance().GetRenderTarget(_upChain[0]);
+    // m_upChain[0] = bloom グロー (half-res)
+    RenderTarget* finalGlow = ResourceManager::Instance().GetRenderTarget(m_upChain[0]);
     if (!finalGlow) return;
 
     // =================================================================
@@ -194,8 +194,8 @@ void BloomEffect::Process(
     // =================================================================
     {
         UpdateCbBloom(dc, cbData);
-        dc->PSSetConstantBuffers(SLOT_CB_BLOOM, 1, _res->cbBloom.GetAddressOf());
-        dc->PSSetShader(_res->psComposite.Get(), nullptr, 0);
+        dc->PSSetConstantBuffers(SLOT_CB_BLOOM, 1, m_res->cbBloom.GetAddressOf());
+        dc->PSSetShader(m_res->psComposite.Get(), nullptr, 0);
 
         // 合成描画の前に、出力先(outputRTV)に対応する解像度でViewportを再設定する
         // ※幅と高さは inputSRV (sceneHDR) のサイズと同じはずです

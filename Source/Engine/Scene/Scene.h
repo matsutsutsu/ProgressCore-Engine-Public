@@ -13,7 +13,7 @@ class Scene
     // ★ 非同期ロード時はワーカースレッドが書き、メインスレッドが読むため atomic。
     //    acquire/release で「Initialize が構築した World の中身」の可視性まで保証する
     //    （release で立てた ready を acquire で観測した後は、World へ安全にアクセスできる）。
-    std::atomic<bool> _isReady{false};
+    std::atomic<bool> m_isReady{false};
 
 public:
     Scene() {}
@@ -21,10 +21,10 @@ public:
 
     // 初期化が完了しているかどうかのフラグ
     // LoadingSceneで裏読みした場合は true を返すようにする
-    bool IsReady() const { return _isReady.load(std::memory_order_acquire); }
+    bool IsReady() const { return m_isReady.load(std::memory_order_acquire); }
 
     // マネージャー（または裏読みスレッド）から「初期化完了」を通知するための関数
-    void SetReady() { _isReady.store(true, std::memory_order_release); }
+    void SetReady() { m_isReady.store(true, std::memory_order_release); }
 
     // 初期化
     virtual void Initialize() = 0;

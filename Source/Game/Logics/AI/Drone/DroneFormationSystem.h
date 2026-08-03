@@ -27,5 +27,5 @@ class DroneFormationSystem : public CCL::ECS::IfSystem<
     void Update(float dt) override;
 
   private:
-    float _elapsed = 0.0f; // 回転アニメ用の経過時間
+    float m_elapsed = 0.0f; // 回転アニメ用の経過時間
 };

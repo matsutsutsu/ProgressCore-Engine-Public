@@ -29,12 +29,12 @@ const DirectX::XMFLOAT4 kBossTrail = {1.00f, 0.82f, 0.35f, 0.95f}; // アンバ�
 void BossHealthHudSystem::Initialize()
 {
     // UI階層のルート。配下(ゲージ/ラベル)をこの Canvas の子にしてヒエラルキーで束ねる。
-    const EntityID canvas = CCL::GameUI::SpawnCanvas(*_world, "BossHpCanvas");
+    const EntityID canvas = CCL::GameUI::SpawnCanvas(*m_world, "BossHpCanvas");
 
     // --- ゲージ本体（画面上部中央・アンカー方式） ---
     auto barArch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
         UIProgressBarComponent>();
-    auto bar     = EntityFactory::SpawnNamed(*_world, "BossHpGauge", barArch);
+    auto bar     = EntityFactory::SpawnNamed(*m_world, "BossHpGauge", barArch);
 
     UITransformComponent t;
     t.anchor = {0.5f, 0.0f};   // 画面上辺の中央
@@ -57,7 +57,7 @@ void BossHealthHudSystem::Initialize()
     // --- ラベル（ゲージの上・中央寄せは近似オフセット） ---
     auto labelArch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
         UITextComponent>();
-    auto label     = EntityFactory::SpawnNamed(*_world, "BossHpLabel", labelArch);
+    auto label     = EntityFactory::SpawnNamed(*m_world, "BossHpLabel", labelArch);
 
     UITransformComponent lt;
     lt.anchor = {0.5f, 0.0f};
@@ -77,8 +77,8 @@ void BossHealthHudSystem::Initialize()
 
 void BossHealthHudSystem::Update(float dt)
 {
-    auto *bar = (m_barID != InvalidEntityID) ? _world->GetComponent<UIProgressBarComponent>(m_barID) : nullptr;
-    auto *txt = (m_labelID != InvalidEntityID) ? _world->GetComponent<UITextComponent>(m_labelID) : nullptr;
+    auto *bar = (m_barID != InvalidEntityID) ? m_world->GetComponent<UIProgressBarComponent>(m_barID) : nullptr;
+    auto *txt = (m_labelID != InvalidEntityID) ? m_world->GetComponent<UITextComponent>(m_labelID) : nullptr;
     if (!bar) return;
 
     // 生存中(HP>0)のボスを1体選ぶ。撃破済み(DeadTag/HP0)のボスは対象外にして戦後は隠す。
@@ -92,7 +92,7 @@ void BossHealthHudSystem::Update(float dt)
     {
         bar->visible = false;
         if (txt) txt->visible = false;
-        _init = false; // 次のボスに備えて初回スナップし直す
+        m_init = false; // 次のボスに備えて初回スナップし直す
         return;
     }
 
@@ -101,11 +101,11 @@ void BossHealthHudSystem::Update(float dt)
                       : 0.0f;
 
     // 初回は瞬時に合わせる（出現時にバーがスッと減って見えないように）。
-    if (!_init)
+    if (!m_init)
     {
         bar->trailValue = ratio;
-        _prevRatio      = ratio;
-        _init           = true;
+        m_prevRatio      = ratio;
+        m_init           = true;
     }
 
     bar->visible = true;
@@ -113,16 +113,16 @@ void BossHealthHudSystem::Update(float dt)
     if (txt) txt->visible = true;
 
     // 被弾（HPが減った）を検出したら、遅延バーの「溜め」をリセットして失った分を見せる。
-    if (ratio < _prevRatio - 1e-4f) _trailHold = kTrailHold;
+    if (ratio < m_prevRatio - 1e-4f) m_trailHold = kTrailHold;
 
     // 遅延バー：回復/据え置きは即追従、被弾直後は溜めのあと ease で value まで減っていく。
     if (ratio >= bar->trailValue)
     {
         bar->trailValue = ratio;
     }
-    else if (_trailHold > 0.0f)
+    else if (m_trailHold > 0.0f)
     {
-        _trailHold -= dt;
+        m_trailHold -= dt;
     }
     else
     {
@@ -130,7 +130,7 @@ void BossHealthHudSystem::Update(float dt)
         bar->trailValue += (ratio - bar->trailValue) * k;
     }
 
-    _prevRatio = ratio;
+    m_prevRatio = ratio;
 }
 
 REGISTER_LOGIC_SYSTEM(BossHealthHudSystem, Priority::LogicStage::L02_PostUpdate);

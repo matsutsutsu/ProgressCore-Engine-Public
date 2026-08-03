@@ -19,7 +19,7 @@ GPUParticleUpdateSystem::~GPUParticleUpdateSystem() = default;
 
 // =========================================================================
 // BuildStaticCb — desc (権威データ) から CbParticleStatic を組み立てる
-//   desc が変更された時のみ呼ばれる (_staticDirty フラグ管理)。
+//   desc が変更された時のみ呼ばれる (m_staticDirty フラグ管理)。
 // =========================================================================
 static GpuData::CbParticleStatic BuildStaticCb(const ParticleEmitterDesc& d)
 {
@@ -77,7 +77,7 @@ static GpuData::CbParticleDynamic BuildDynamicCb(
     float time, float dt, float burstTrigger, float emitEnabled)
 {
     GpuData::CbParticleDynamic cb = {};
-    // ★ world 回転を使う（local ではない）。ボーン追従(BoneAttachmentSystem)は
+    // world 回転を使う（local ではない）。ボーン追従(BoneAttachmentSystem)は
     //   worldMatrix にボーンの向きを焼き込むが local rotation は更新しないため、
     //   transform.rotation だと剣の向きに追従せず線分/速度の向きがずれる。
     cb.emit_rotation = transform.GetWorldRotation();
@@ -97,16 +97,16 @@ void GPUParticleUpdateSystem::InitializeParticle(ID3D11Device* device)
 {
     ZoneScopedN("GPUParticle: InitializeParticle (first frame)");
 
-    _device = device;
+    m_device = device;
     {
         ZoneScopedN("GPUParticle: ComputeShader compile");
-        _computeShader = std::make_unique<ParticleComputeShader>(device);
+        m_computeShader = std::make_unique<ParticleComputeShader>(device);
     }
 
     D3D11_SAMPLER_DESC sd = {};
     sd.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
     sd.AddressU = sd.AddressV = sd.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-    device->CreateSamplerState(&sd, _sampler.GetAddressOf());
+    device->CreateSamplerState(&sd, m_sampler.GetAddressOf());
 
     {
         ZoneScopedN("GPUParticle: CreateNoiseTexture (32^3)");
@@ -118,19 +118,19 @@ void GPUParticleUpdateSystem::Update(float dt)
 {
     ZoneScopedN("GPUParticleUpdateSystem::Update");
 
-    if (!_isLoaded) {
+    if (!m_isLoaded) {
         InitializeParticle(Graphics::Instance().GetDevice());
-        _isLoaded = true;
+        m_isLoaded = true;
     }
 
     ID3D11DeviceContext* dc = Graphics::Instance().GetDeviceContext();
-    if (!dc || !_computeShader) return;
+    if (!dc || !m_computeShader) return;
 
     {
         ZoneScopedN("GPUParticle: CheckAndReload (shader)");
-        _computeShader->CheckAndReload(_device);
+        m_computeShader->CheckAndReload(m_device);
     }
-    if (!_computeShader->GetInitCS() || !_computeShader->GetUpdateCS()) return;
+    if (!m_computeShader->GetInitCS() || !m_computeShader->GetUpdateCS()) return;
 
     // CS の UAV バインド前に前フレームの SRV スロットを全解放
     ID3D11ShaderResourceView* nullSRVs[16] = {};
@@ -144,8 +144,8 @@ void GPUParticleUpdateSystem::Update(float dt)
     //   TimeScaleSystem は LOGIC なので止まっており localDt が古い値のまま残る。ここで
     //   TimeContext.isPaused を見て dt=0 にすれば particle.time も emission も進まず完全に静止する。
     bool worldPaused = false;
-    if (_world->HasResource<TimeContext>())
-        worldPaused = _world->GetResource<TimeContext>().isPaused;
+    if (m_world->HasResource<TimeContext>())
+        worldPaused = m_world->GetResource<TimeContext>().isPaused;
 
     ZoneNamedN(dispatchZone, "GPUParticle: Emitter dispatch loop", true);
     ForEachWithID([&](CCL::ECS::EntityID id,
@@ -154,7 +154,7 @@ void GPUParticleUpdateSystem::Update(float dt)
         const TimeStateComponent& rawDt)
         {
             // プール休眠中のエミッタはGPU更新しない（Dispatchを丸ごと省く）。
-            if (auto* pooled = _world->GetComponent<PooledParticleComponent>(id))
+            if (auto* pooled = m_world->GetComponent<PooledParticleComponent>(id))
                 if (pooled->isSleeping) return;
 
             if (!particle.isInitialized)
@@ -165,12 +165,12 @@ void GPUParticleUpdateSystem::Update(float dt)
             if (!buffers || !buffers->particleUAV) return;
 
             if (particle.needsGpuInit)
-                DispatchInitCS(dc, _computeShader.get(), particle, transform, buffers);
+                DispatchInitCS(dc, m_computeShader.get(), particle, transform, buffers);
             else
             {
                 // ポーズ中は dt=0 で凍結。通常時は各エンティティのローカルdtで進める。
                 const float simDt = worldPaused ? 0.0f : rawDt.localDt;
-                DispatchUpdateCS(dc, _computeShader.get(), particle, transform, buffers, simDt);
+                DispatchUpdateCS(dc, m_computeShader.get(), particle, transform, buffers, simDt);
             }
         });
 
@@ -193,12 +193,12 @@ void GPUParticleUpdateSystem::RebuildParticleBuffer(GPUParticleComponent& partic
     ID3D11Device* device = Graphics::Instance().GetDevice();
     if (!device || particle.desc.maxCount <= 0) return;
 
-    // ★ 重いバッファ生成処理は全て ResourceManager に任せる（ゾンビコードの削除）
+    // 重いバッファ生成処理は全て ResourceManager に任せる（ゾンビコードの削除）
     particle.computeBuffer = ResourceManager::Instance().CreateParticleBuffer(device, particle.desc.maxCount);
 
     particle.isInitialized = true;
     particle.needsGpuInit = true;
-    particle._staticDirty = true;
+    particle.m_staticDirty = true;
     particle.time = 0.0f;
 }
 
@@ -216,12 +216,12 @@ void GPUParticleUpdateSystem::DispatchInitCS(
 
     if (!cs || !buf) return;
 
-    // Static CB: 初回は必ず upload (★ .Get() を追加)
+    // Static CB: 初回は必ず upload (.Get() を追加)
     auto staticCb = BuildStaticCb(particle.desc);
     dc->UpdateSubresource(buf->staticCB.Get(), 0, nullptr, &staticCb, 0, 0);
-    particle._staticDirty = false;
+    particle.m_staticDirty = false;
 
-    // Dynamic CB (InitCS では dt は 0.016f で代替) (★ .Get() を追加)
+    // Dynamic CB (InitCS では dt は 0.016f で代替) (.Get() を追加)
     //   emit ゲートを init にも渡す: OFF なら継続モードの pre-warm を抑止し、空から開始する。
     //   init 時は前フレーム姿勢が無いので現在姿勢で初期化(スメアなし)。
     const GpuData::float3 curPos = transform.GetWorldPosition();
@@ -233,13 +233,13 @@ void GPUParticleUpdateSystem::DispatchInitCS(
     particle.hasPrevTransform = true;
     dc->UpdateSubresource(buf->dynamicCB.Get(), 0, nullptr, &dynCb, 0, 0);
 
-    // b13, b14 を一括バインド (★ .Get() を追加)
+    // b13, b14 を一括バインド (.Get() を追加)
     ID3D11Buffer* cbs[2] = { buf->staticCB.Get(), buf->dynamicCB.Get() };
     dc->CSSetConstantBuffers(SLOT_CB_PARTICLE_STATIC, 2, cbs);
 
     dc->CSSetShader(cs->GetInitCS(), nullptr, 0);
 
-    // UAV バインド (★ .Get() を追加)
+    // UAV バインド (.Get() を追加)
     ID3D11UnorderedAccessView* uavs[] = { buf->particleUAV.Get() };
     dc->CSSetUnorderedAccessViews(SLOT_UAV_PARTICLE_BUF, 1, uavs, nullptr);
 
@@ -269,14 +269,14 @@ void GPUParticleUpdateSystem::DispatchUpdateCS(
 
     particle.time += dt;
 
-    // Static CB: desc が変更された時のみ upload (★ .Get() を追加)
-    if (particle._staticDirty) {
+    // Static CB: desc が変更された時のみ upload (.Get() を追加)
+    if (particle.m_staticDirty) {
         auto staticCb = BuildStaticCb(particle.desc);
         dc->UpdateSubresource(buf->staticCB.Get(), 0, nullptr, &staticCb, 0, 0);
-        particle._staticDirty = false;
+        particle.m_staticDirty = false;
     }
 
-    // Dynamic CB: 毎フレーム upload (★ .Get() を追加)
+    // Dynamic CB: 毎フレーム upload (.Get() を追加)
     //   前フレーム姿勢を渡してサブフレーム補間（スポーンを軌道上に連続配置）。
     const GpuData::float3 curPos = transform.GetWorldPosition();
     const GpuData::float4 curRot = transform.GetWorldRotation();
@@ -292,7 +292,7 @@ void GPUParticleUpdateSystem::DispatchUpdateCS(
     particle.hasPrevTransform = true;
     dc->UpdateSubresource(buf->dynamicCB.Get(), 0, nullptr, &dynCb, 0, 0);
 
-    // b13, b14 を一括バインド (★ .Get() を追加)
+    // b13, b14 を一括バインド (.Get() を追加)
     ID3D11Buffer* cbs[2] = { buf->staticCB.Get(), buf->dynamicCB.Get() };
     dc->CSSetConstantBuffers(SLOT_CB_PARTICLE_STATIC, 2, cbs);
 
@@ -304,17 +304,17 @@ void GPUParticleUpdateSystem::DispatchUpdateCS(
         dc->CSSetShaderResources(SLOT_SRV_MAT_TEX1, 1, v);
     }
     // ノイズ (t2)
-    if (_noiseSRV) {
-        ID3D11ShaderResourceView* v[] = { _noiseSRV.Get() };
+    if (m_noiseSRV) {
+        ID3D11ShaderResourceView* v[] = { m_noiseSRV.Get() };
         dc->CSSetShaderResources(SLOT_SRV_MAT_TEX2, 1, v);
     }
     // サンプラー (s1)
-    if (_sampler) {
-        ID3D11SamplerState* s[] = { _sampler.Get() };
+    if (m_sampler) {
+        ID3D11SamplerState* s[] = { m_sampler.Get() };
         dc->CSSetSamplers(SLOT_SMP_LINEAR, 1, s);
     }
 
-    // UAV バインド (★ .Get() を追加)
+    // UAV バインド (.Get() を追加)
     ID3D11UnorderedAccessView* uavs[] = { buf->particleUAV.Get() };
     dc->CSSetUnorderedAccessViews(SLOT_UAV_PARTICLE_BUF, 1, uavs, nullptr);
 
@@ -354,10 +354,10 @@ void GPUParticleUpdateSystem::CreateNoiseTexture(ID3D11Device* device)
     init.pSysMem = data.data();
     init.SysMemPitch = size * sizeof(float) * 4;
     init.SysMemSlicePitch = size * size * sizeof(float) * 4;
-    device->CreateTexture3D(&desc, &init, _noiseTexture.GetAddressOf());
-    device->CreateShaderResourceView(_noiseTexture.Get(), nullptr, _noiseSRV.GetAddressOf());
+    device->CreateTexture3D(&desc, &init, m_noiseTexture.GetAddressOf());
+    device->CreateShaderResourceView(m_noiseTexture.Get(), nullptr, m_noiseSRV.GetAddressOf());
 
-    SetDebugName(_noiseSRV.Get(), "GPUParticleUpdateSystem_NoiseSRV");
+    SetDebugName(m_noiseSRV.Get(), "GPUParticleUpdateSystem_NoiseSRV");
 }
 
 REGISTER_RENDER_SYSTEM(GPUParticleUpdateSystem, Priority::RenderStage::R07_PreMain);

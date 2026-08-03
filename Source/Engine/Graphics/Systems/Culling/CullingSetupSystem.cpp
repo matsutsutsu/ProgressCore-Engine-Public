@@ -18,20 +18,20 @@ void ModelCullingSetupSystem::Update(float dt)
 
     // 1. 足りないコンポーネントを【個別に】調査する
     ForEachWithID([&](EntityID id, const ModelComponent& model) {
-        if (!_world->HasComponent<BoundingBoxComponent>(id)) {
+        if (!m_world->HasComponent<BoundingBoxComponent>(id)) {
             needsBoundingBox.push_back(id);
         }
-        if (!_world->HasComponent<VisibilityComponent>(id)) {
+        if (!m_world->HasComponent<VisibilityComponent>(id)) {
             needsVisibility.push_back(id);
         }
         });
 
     // 2. 足りないものだけを【個別に】付与する
     for (auto id : needsBoundingBox) {
-        _world->AddComponent<BoundingBoxComponent>(id);
+        m_world->AddComponent<BoundingBoxComponent>(id);
     }
     for (auto id : needsVisibility) {
-        _world->AddComponent<VisibilityComponent>(id);
+        m_world->AddComponent<VisibilityComponent>(id);
     }
 }
 
@@ -46,20 +46,20 @@ void PrimitiveCullingSetupSystem::Update(float dt)
 
     // 1. 足りないコンポーネントを【個別に】調査する
     ForEachWithID([&](EntityID id, const PrimitiveComponent& prim) {
-        if (!_world->HasComponent<BoundingBoxComponent>(id)) {
+        if (!m_world->HasComponent<BoundingBoxComponent>(id)) {
             needsBoundingBox.push_back(id);
         }
-        if (!_world->HasComponent<VisibilityComponent>(id)) {
+        if (!m_world->HasComponent<VisibilityComponent>(id)) {
             needsVisibility.push_back(id);
         }
         });
 
     // 2. 足りないものだけを【個別に】付与する
     for (auto id : needsBoundingBox) {
-        _world->AddComponent<BoundingBoxComponent>(id);
+        m_world->AddComponent<BoundingBoxComponent>(id);
     }
     for (auto id : needsVisibility) {
-        _world->AddComponent<VisibilityComponent>(id);
+        m_world->AddComponent<VisibilityComponent>(id);
     }
 }
 

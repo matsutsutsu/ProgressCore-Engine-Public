@@ -39,10 +39,10 @@ public:
     const char* GetName() const override { return "RadialBlur"; }
 
     /// @brief ECS(PostProcessSystem)からパラメータを受け取る。
-    void UpdateParams(const GpuData::CbRadialBlurData& data) { _cbData = data; }
+    void UpdateParams(const GpuData::CbRadialBlurData& data) { m_cbData = data; }
 
 private:
-    GpuData::CbRadialBlurData _cbData{};
+    GpuData::CbRadialBlurData m_cbData{};
 
     struct Resources {
         Microsoft::WRL::ComPtr<ID3D11VertexShader> vs;
@@ -50,5 +50,5 @@ private:
         Microsoft::WRL::ComPtr<ID3D11Buffer>       cb;
         Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler;
     };
-    std::unique_ptr<Resources> _res;
+    std::unique_ptr<Resources> m_res;
 };

@@ -15,6 +15,6 @@ class TextEditorWindow : public EditorWindow {
     void SaveFile(const char *path);
 
   private:
-    char       _filePath[256];
-    std::vector<char> _textBuffer; // テキスト編集用の巨大バッファ
+    char       m_filePath[256];
+    std::vector<char> m_textBuffer; // テキスト編集用の巨大バッファ
 };

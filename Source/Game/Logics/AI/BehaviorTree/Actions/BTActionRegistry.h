@@ -25,44 +25,44 @@ namespace CCL::AI::BT
         template<typename T>
         void RegisterAction(ActionID id, const std::string& name = "")
         {
-            if (id >= _actions.size()) _actions.resize(id + 1);
-            _actions[id] = std::make_unique<T>();
-            if (!name.empty()) _actionNames[name] = id;
+            if (id >= m_actions.size()) m_actions.resize(id + 1);
+            m_actions[id] = std::make_unique<T>();
+            if (!name.empty()) m_actionNames[name] = id;
         }
 
         template<typename T>
         void RegisterCondition(ActionID id, const std::string& name = "")
         {
-            if (id >= _conditions.size()) _conditions.resize(id + 1);
-            _conditions[id] = std::make_unique<T>();
-            if (!name.empty()) _conditionNames[name] = id;
+            if (id >= m_conditions.size()) m_conditions.resize(id + 1);
+            m_conditions[id] = std::make_unique<T>();
+            if (!name.empty()) m_conditionNames[name] = id;
         }
 
         /// @brief コンストラクタ引数が要るアクション（Wait等）を構築済みで登録。
         void RegisterActionInstance(ActionID id, std::unique_ptr<IBTAction> action,
                                     const std::string& name = "")
         {
-            if (id >= _actions.size()) _actions.resize(id + 1);
-            _actions[id] = std::move(action);
-            if (!name.empty()) _actionNames[name] = id;
+            if (id >= m_actions.size()) m_actions.resize(id + 1);
+            m_actions[id] = std::move(action);
+            if (!name.empty()) m_actionNames[name] = id;
         }
 
         // --- 解決 ---
-        IBTAction*    GetAction(ActionID id)    const { return (id < _actions.size())    ? _actions[id].get()    : nullptr; }
-        IBTCondition* GetCondition(ActionID id) const { return (id < _conditions.size()) ? _conditions[id].get() : nullptr; }
+        IBTAction*    GetAction(ActionID id)    const { return (id < m_actions.size())    ? m_actions[id].get()    : nullptr; }
+        IBTCondition* GetCondition(ActionID id) const { return (id < m_conditions.size()) ? m_conditions[id].get() : nullptr; }
 
-        bool HasAction(ActionID id)    const { return id < _actions.size()    && _actions[id]    != nullptr; }
-        bool HasCondition(ActionID id) const { return id < _conditions.size() && _conditions[id] != nullptr; }
+        bool HasAction(ActionID id)    const { return id < m_actions.size()    && m_actions[id]    != nullptr; }
+        bool HasCondition(ActionID id) const { return id < m_conditions.size() && m_conditions[id] != nullptr; }
 
     private:
         BTActionRegistry() = default;
         BTActionRegistry(const BTActionRegistry&) = delete;
         BTActionRegistry& operator=(const BTActionRegistry&) = delete;
 
-        std::vector<std::unique_ptr<IBTAction>>    _actions;
-        std::vector<std::unique_ptr<IBTCondition>> _conditions;
-        std::unordered_map<std::string, ActionID>  _actionNames;
-        std::unordered_map<std::string, ActionID>  _conditionNames;
+        std::vector<std::unique_ptr<IBTAction>>    m_actions;
+        std::vector<std::unique_ptr<IBTCondition>> m_conditions;
+        std::unordered_map<std::string, ActionID>  m_actionNames;
+        std::unordered_map<std::string, ActionID>  m_conditionNames;
     };
 
 } // namespace CCL::AI::BT

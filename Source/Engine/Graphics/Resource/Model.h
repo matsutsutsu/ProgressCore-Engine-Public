@@ -201,22 +201,22 @@ class Model
     //   要素 -1 は「まだ計算していない」を表す番兵（有効なノード番号は常に0以上）。
     //   const 関数から書き込むため mutable。
     // ---------------------------------------------------------------
-    mutable std::vector<int> _rootMotionNodeCache;
+    mutable std::vector<int> m_rootMotionNodeCache;
 
     // ---------------------------------------------------------------
     // ★ アニメ名 → インデックスのキャッシュ。
     //   GetAnimationIndex は毎フレーム（ブレンド時は2回）呼ばれるが、旧実装は
     //   全アニメを std::string 比較で線形走査していた。名前とインデックスの対応は
     //   ロード後は不変なので、FNV-1a ハッシュ(HashString)をキーに一度だけ表を作り O(1) 化する。
-    //   初回 GetAnimationIndex 呼び出しで遅延構築する（_animIndexBuilt が番兵）。
+    //   初回 GetAnimationIndex 呼び出しで遅延構築する（m_animIndexBuilt が番兵）。
     // ---------------------------------------------------------------
-    mutable std::unordered_map<uint32_t, int> _animIndexCache;
-    mutable bool                              _animIndexBuilt = false;
+    mutable std::unordered_map<uint32_t, int> m_animIndexCache;
+    mutable bool                              m_animIndexBuilt = false;
 
     // ---------------------------------------------------------------
     // ★ ルートモーションのピン留め用「0秒ポーズ」キャッシュ。
     //   キーは (animIndex, nodeIndex) を 1つの 64bit に詰めたもの。
     //   0秒時点の姿勢はクリップ不変なので、初回計算後は再利用する。
     // ---------------------------------------------------------------
-    mutable std::unordered_map<uint64_t, NodePose> _pinnedPoseAtZeroCache;
+    mutable std::unordered_map<uint64_t, NodePose> m_pinnedPoseAtZeroCache;
 };

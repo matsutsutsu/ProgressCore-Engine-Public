@@ -52,7 +52,7 @@ public:
 
     static ComponentRegistry& Instance();
 
-    const std::unordered_map<std::string, MetaInfo>& GetAllMeta() const { return _nameToMeta; }
+    const std::unordered_map<std::string, MetaInfo>& GetAllMeta() const { return m_nameToMeta; }
 
     template <typename T>
     void Register(const std::string &name)
@@ -79,24 +79,24 @@ public:
         //   ComponentMeta<T>::isSerializable が無ければ true、false 指定なら false。
         info.isSerializable = HasIsSerializable<T>::value;
 
-        _nameToMeta[name]                          = std::move(info);
-        _typeIdToName[CCL::ECS::TypeInfo<T>::ID()] = name;
+        m_nameToMeta[name]                          = std::move(info);
+        m_typeIdToName[CCL::ECS::TypeInfo<T>::ID()] = name;
     }
 
     const MetaInfo* GetInfoByName(const std::string& name) const {
-        auto it = _nameToMeta.find(name);
-        return (it != _nameToMeta.end()) ? &it->second : nullptr;
+        auto it = m_nameToMeta.find(name);
+        return (it != m_nameToMeta.end()) ? &it->second : nullptr;
     }
 
     std::string GetNameByTypeID(CCL::ECS::TypeID id) const {
-        auto it = _typeIdToName.find(id);
-        return (it != _typeIdToName.end()) ? it->second : std::string{};
+        auto it = m_typeIdToName.find(id);
+        return (it != m_typeIdToName.end()) ? it->second : std::string{};
     }
 
 
 private:
-    std::unordered_map<std::string, MetaInfo> _nameToMeta;
-    std::unordered_map<CCL::ECS::TypeID, std::string> _typeIdToName;
+    std::unordered_map<std::string, MetaInfo> m_nameToMeta;
+    std::unordered_map<CCL::ECS::TypeID, std::string> m_typeIdToName;
 };
 
 
@@ -124,13 +124,13 @@ private:
 #include <cstdio>
 #define _CCL_DIAG_REG(Name, T)                                                                \
         do {                                                                                      \
-            char _buf[256];                                                                       \
-            bool _alreadyReg = (ComponentRegistry::Instance().GetInfoByName(Name) != nullptr);    \
-            sprintf_s(_buf, "[CCL_DIAG] AutoReg<%s> already=%d\n", Name, _alreadyReg);            \
-            OutputDebugStringA(_buf);                                                             \
-            sprintf_s(_buf, "[CCL_DIAG_ID] %s -> TypeInfo::ID() = %llu\n",                        \
+            char m_buf[256];                                                                       \
+            bool m_alreadyReg = (ComponentRegistry::Instance().GetInfoByName(Name) != nullptr);    \
+            sprintf_s(m_buf, "[CCL_DIAG] AutoReg<%s> already=%d\n", Name, m_alreadyReg);            \
+            OutputDebugStringA(m_buf);                                                             \
+            sprintf_s(m_buf, "[CCL_DIAG_ID] %s -> TypeInfo::ID() = %llu\n",                        \
                 Name, (unsigned long long)CCL::ECS::TypeInfo<T>::ID());                           \
-            OutputDebugStringA(_buf);                                                             \
+            OutputDebugStringA(m_buf);                                                             \
         } while(0)
 #else
 #define _CCL_DIAG_REG(Name, T) ((void)0)

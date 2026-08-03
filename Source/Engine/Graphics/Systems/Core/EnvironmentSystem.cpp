@@ -24,20 +24,20 @@ EnvironmentSystem::EnvironmentSystem() : SystemBase("EnvironmentSystem")
     // グローバルノイズテクスチャ
     auto noiseHandle = ResourceManager::Instance().LoadTexture("Assets/Textures/Shader/Noise.png");
     if (noiseHandle.IsValid())
-        _globalNoiseSRV = ResourceManager::Instance().GetTexture(noiseHandle);
+        m_globalNoiseSRV = ResourceManager::Instance().GetTexture(noiseHandle);
 
     // IBL テクスチャ
     auto irrHandle = ResourceManager::Instance().LoadTexture("Assets/Textures/IBL/ibl_sky_iem.dds");
     auto preHandle = ResourceManager::Instance().LoadTexture("Assets/Textures/IBL/ibl_sky_pmrem.dds");
     auto lutHandle = ResourceManager::Instance().LoadTexture("Assets/Textures/IBL/ibl_brdf_lut.png");
-    if (irrHandle.IsValid()) _irradianceMapSRV = ResourceManager::Instance().GetTexture(irrHandle);
-    if (preHandle.IsValid()) _prefilterMapSRV = ResourceManager::Instance().GetTexture(preHandle);
-    if (lutHandle.IsValid()) _brdfLutSRV = ResourceManager::Instance().GetTexture(lutHandle);
+    if (irrHandle.IsValid()) m_irradianceMapSRV = ResourceManager::Instance().GetTexture(irrHandle);
+    if (preHandle.IsValid()) m_prefilterMapSRV = ResourceManager::Instance().GetTexture(preHandle);
+    if (lutHandle.IsValid()) m_brdfLutSRV = ResourceManager::Instance().GetTexture(lutHandle);
 
     // フォグ用定数バッファ
     // TODO: ECS に Initialize(device) が追加されたら除去する
     GpuResourceUtils::CreateDynamicConstantBuffer(
-        Graphics::Instance().GetDevice(), sizeof(GpuData::CbFog), _fogConstantBuffer.GetAddressOf());
+        Graphics::Instance().GetDevice(), sizeof(GpuData::CbFog), m_fogConstantBuffer.GetAddressOf());
 }
 
 std::vector<CCL::ECS::TypeID> EnvironmentSystem::GetReadTypes() const
@@ -55,26 +55,26 @@ void EnvironmentSystem::Update(float /*dt*/)
 
 void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext* dc, const RenderServices& s)
 {
-    if (!_world) return;
+    if (!m_world) return;
 
     // =================================================================
     // ★ Bug Fix: CbScene の UpdateSubresource をここから削除した。
     //   Graphics::Update() が正しい行列データを書き込んだ後、
-    //   EnvironmentSystem が古い / 未更新の _sceneData で上書きすると
+    //   EnvironmentSystem が古い / 未更新の m_sceneData で上書きすると
     //   InstanceData がゼロ、CbScene の行列が壊れる等の描画バグを引き起こす。
     //   ここでは BindAllGlobalConstantBuffers でバインドするだけ。
     // =================================================================
 
     // 1. CbScene (b8) / CbSkeleton (b12) をパイプラインにバインドする
-    if (_world->HasResource<ModelRenderer*>()) {
-        if (auto* renderer = _world->GetResource<ModelRenderer*>()) {
+    if (m_world->HasResource<ModelRenderer*>()) {
+        if (auto* renderer = m_world->GetResource<ModelRenderer*>()) {
             renderer->BindAllGlobalConstantBuffers(dc);
         }
     }
 
     // 2. グローバルノイズテクスチャ (t13)
-    if (_globalNoiseSRV) {
-        ID3D11ShaderResourceView* srvs[] = { _globalNoiseSRV.Get() };
+    if (m_globalNoiseSRV) {
+        ID3D11ShaderResourceView* srvs[] = { m_globalNoiseSRV.Get() };
         dc->PSSetShaderResources(SLOT_SRV_GLOBAL_NOISE, 1, srvs);
     }
 
@@ -85,7 +85,7 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext* dc, const Rende
     GpuData::CbFog fogData = { {0.5f,0.5f,0.5f,0.0f},{0.0f,1000.0f,10.0f,0.0f},{},{},{},{},{} };
     ID3D11ShaderResourceView* fogNoiseSrv = nullptr;
 
-    if (auto* fog = _world->GetSingletonComponent<FogComponent>(); fog && fog->enabled) {
+    if (auto* fog = m_world->GetSingletonComponent<FogComponent>(); fog && fog->enabled) {
        fogData.gFogColor = fog->color;
        fogData.gFogParams = { fog->start, fog->end, fog->heightStart, fog->heightDensity };
        fogData.gFogCenter = fog->center;
@@ -109,28 +109,28 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext* dc, const Rende
        }
 
        // 万が一ロードに失敗した場合や未設定時のフェールセーフ（デフォルトノイズの使用）
-       if (!fogNoiseSrv && _globalNoiseSRV) {
-           fogNoiseSrv = _globalNoiseSRV.Get();
+       if (!fogNoiseSrv && m_globalNoiseSRV) {
+           fogNoiseSrv = m_globalNoiseSRV.Get();
        }
 
     }
 
-    if (_fogConstantBuffer) {
+    if (m_fogConstantBuffer) {
         D3D11_MAPPED_SUBRESOURCE mapped;
-        if (SUCCEEDED(dc->Map(_fogConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {
+        if (SUCCEEDED(dc->Map(m_fogConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {
             memcpy(mapped.pData, &fogData, sizeof(GpuData::CbFog));
-            dc->Unmap(_fogConstantBuffer.Get(), 0);
+            dc->Unmap(m_fogConstantBuffer.Get(), 0);
         }
-        dc->PSSetConstantBuffers(SLOT_CB_FOG, 1, _fogConstantBuffer.GetAddressOf());
+        dc->PSSetConstantBuffers(SLOT_CB_FOG, 1, m_fogConstantBuffer.GetAddressOf());
     }
     dc->PSSetShaderResources(SLOT_SRV_FOG_NOISE, 1, &fogNoiseSrv);
 
 
     // 4. IBL テクスチャ (t14, t15, t16)
     ID3D11ShaderResourceView* iblSRVs[3] = { nullptr, nullptr, nullptr };
-    if (_irradianceMapSRV) iblSRVs[0] = _irradianceMapSRV.Get();
-    if (_prefilterMapSRV)  iblSRVs[1] = _prefilterMapSRV.Get();
-    if (_brdfLutSRV)       iblSRVs[2] = _brdfLutSRV.Get();
+    if (m_irradianceMapSRV) iblSRVs[0] = m_irradianceMapSRV.Get();
+    if (m_prefilterMapSRV)  iblSRVs[1] = m_prefilterMapSRV.Get();
+    if (m_brdfLutSRV)       iblSRVs[2] = m_brdfLutSRV.Get();
     dc->PSSetShaderResources(SLOT_SRV_IBL_IRRADIANCE, 3, iblSRVs);
 
     // 5. IBL 用サンプラ (s3)

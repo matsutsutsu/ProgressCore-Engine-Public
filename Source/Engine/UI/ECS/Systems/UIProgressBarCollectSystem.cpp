@@ -16,15 +16,15 @@ using namespace CCL::ECS;
 
 void UIProgressBarCollectSystem::Update(float /*dt*/)
 {
-    if (!_world->HasResource<UIDrawList>()) return;
+    if (!m_world->HasResource<UIDrawList>()) return;
 
     auto       &gfx     = Graphics::Instance();
     const float screenW = gfx.GetScreenWidth();
     const float screenH = gfx.GetScreenHeight();
-    auto       &drawList = _world->GetResource<UIDrawList>();
+    auto       &drawList = m_world->GetResource<UIDrawList>();
 
     ForEachWithID([&](CCL::ECS::EntityID id, UITransformComponent &t, const UIProgressBarComponent &bar) {
-        CCL::UI::ComputeUIRect(*_world, id, t, screenW, screenH);
+        CCL::UI::ComputeUIRect(*m_world, id, t, screenW, screenH);
         if (!bar.visible) return;
 
         const float v = std::clamp(bar.value, 0.0f, 1.0f);

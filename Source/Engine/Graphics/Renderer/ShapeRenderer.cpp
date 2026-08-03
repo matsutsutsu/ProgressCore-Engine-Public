@@ -28,7 +28,7 @@ bool ShapeRenderer::IsVisible(const DirectX::BoundingOrientedBox& box) {
 // ====================================================================
 ShapeRenderer::ShapeRenderer(ID3D11Device* device)
 {
-    _instanceId = ++s_instanceCounter;
+    m_instanceId = ++s_instanceCounter;
 
     D3D11_INPUT_ELEMENT_DESC inputElementDesc[] = {
         { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
@@ -37,7 +37,7 @@ ShapeRenderer::ShapeRenderer(ID3D11Device* device)
     GpuResourceUtils::LoadVertexShader(device, "Assets/Shader/ShapeRendererVS.cso", inputElementDesc, _countof(inputElementDesc), inputLayout.GetAddressOf(), vertexShader.GetAddressOf());
     GpuResourceUtils::LoadPixelShader(device, "Assets/Shader/ShapeRendererPS.cso", pixelShader.GetAddressOf());
 
-    _instanceBuffer.Create(device); // インスタンスバッファ初期化
+    m_instanceBuffer.Create(device); // インスタンスバッファ初期化
 
     CreateBoxMesh(device, 1.0f, 1.0f, 1.0f);
     CreateSphereMesh(device, 1.0f, 32);
@@ -100,8 +100,8 @@ ShapeRenderer::ShapeDrawList& ShapeRenderer::GetDrawList() {
     thread_local ShapeDrawList* myLocalList = nullptr;
     thread_local uint64_t myRendererId = 0;
 
-    if (myRendererId != _instanceId) {
-        std::lock_guard<std::mutex> lock(_listMutex);
+    if (myRendererId != m_instanceId) {
+        std::lock_guard<std::mutex> lock(m_listMutex);
         auto newList = std::make_unique<ShapeDrawList>();
 
         // メモリの事前予約（大渋滞を防ぐ）
@@ -114,8 +114,8 @@ ShapeRenderer::ShapeDrawList& ShapeRenderer::GetDrawList() {
         newList->lines.reserve(50000);
 
         myLocalList = newList.get();
-        _drawLists.push_back(std::move(newList));
-        myRendererId = _instanceId;
+        m_drawLists.push_back(std::move(newList));
+        myRendererId = m_instanceId;
     }
     return *myLocalList;
 }
@@ -586,9 +586,9 @@ void ShapeRenderer::Render(ID3D11DeviceContext* dc, const DirectX::XMFLOAT4X4& v
     auto DrawInstanced = [&](Mesh& mesh, std::vector<InstanceData> ShapeDrawList::* memberPtr) {
         dc->IASetVertexBuffers(0, 1, mesh.vertexBuffer.GetAddressOf(), &stride, &offset);
 
-        std::lock_guard<std::mutex> lock(_listMutex);
+        std::lock_guard<std::mutex> lock(m_listMutex);
 
-        for (auto& listPtr : _drawLists) {
+        for (auto& listPtr : m_drawLists) {
             std::vector<InstanceData>& instances = (*listPtr).*memberPtr;
             if (instances.empty()) continue;
 
@@ -599,8 +599,8 @@ void ShapeRenderer::Render(ID3D11DeviceContext* dc, const DirectX::XMFLOAT4X4& v
                 size_t drawCount = (std::min)(totalCount - drawOffset, InstanceBuffer::MAX_INSTANCES);
                 std::vector<InstanceData> chunk(instances.begin() + drawOffset, instances.begin() + drawOffset + drawCount);
 
-                _instanceBuffer.Write(dc, chunk);
-                _instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
+                m_instanceBuffer.Write(dc, chunk);
+                m_instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
 
                 // インデックスバッファ無しで描画
                 dc->DrawInstanced(mesh.vertexCount, static_cast<UINT>(drawCount), 0, 0);
@@ -653,7 +653,7 @@ void ShapeRenderer::Render(ID3D11DeviceContext* dc, const DirectX::XMFLOAT4X4& v
 
     // =========================================================================
 
-    _instanceBuffer.Unbind(dc, SLOT_SRV_INSTANCE);
+    m_instanceBuffer.Unbind(dc, SLOT_SRV_INSTANCE);
 
     // ステートクリア
     dc->VSSetShader(nullptr, nullptr, 0);

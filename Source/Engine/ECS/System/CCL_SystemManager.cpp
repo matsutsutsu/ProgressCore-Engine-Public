@@ -27,13 +27,13 @@ namespace CCL::ECS
         bool isStructureDirty = false;
 
         // 1. まず「数」が違うなら確実に構造が変化している
-        if (chunks.size() != _cachedChunkPointers.size()) {
+        if (chunks.size() != m_cachedChunkPointers.size()) {
             isStructureDirty = true;
         }
         else {
             // 2. 数が同じでも、中身のチャンク（メモリアドレス）が入れ替わっていないか確認する
             for (size_t i = 0; i < chunks.size(); ++i) {
-                if (chunks[i].get() != _cachedChunkPointers[i]) {
+                if (chunks[i].get() != m_cachedChunkPointers[i]) {
                     isStructureDirty = true; // 1つでも違えばDirty
                     break;
                 }
@@ -48,10 +48,10 @@ namespace CCL::ECS
         // --- ここから下は「構造が変わった（エンティティ構成が変化した）時」だけ走る ---
 
         // キャッシュを最新の状態に更新しておく
-        _cachedChunkPointers.clear();
-        _cachedChunkPointers.reserve(chunks.size());
+        m_cachedChunkPointers.clear();
+        m_cachedChunkPointers.reserve(chunks.size());
         for (auto& chunkPtr : chunks) {
-            _cachedChunkPointers.push_back(chunkPtr.get());
+            m_cachedChunkPointers.push_back(chunkPtr.get());
         }
 
         // =========================================================
@@ -65,8 +65,8 @@ namespace CCL::ECS
             }
             };
 
-        clearTargets(_logicSystems);
-        clearTargets(_renderSystems);
+        clearTargets(m_logicSystems);
+        clearTargets(m_renderSystems);
 
 
         // =========================================================
@@ -106,8 +106,8 @@ namespace CCL::ECS
                 };
 
             // Logic と Render 両方のシステムに対してマッチングを行う
-            matchSystems(_logicSystems);
-            matchSystems(_renderSystems);
+            matchSystems(m_logicSystems);
+            matchSystems(m_renderSystems);
         }
     }
 
@@ -125,8 +125,8 @@ namespace CCL::ECS
             // ----------------------------------------------------
             // 少し目立つように装飾しても良いでしょう
             if (ImGui::Checkbox("Global Multi-Thread Enable", &globalMultiThreadEnabled)) {
-                for (auto &sys : _logicSystems) sys->enableMultiThread = globalMultiThreadEnabled;
-                for (auto &sys : _renderSystems) sys->enableMultiThread = globalMultiThreadEnabled;
+                for (auto &sys : m_logicSystems) sys->enableMultiThread = globalMultiThreadEnabled;
+                for (auto &sys : m_renderSystems) sys->enableMultiThread = globalMultiThreadEnabled;
                 
             }
 
@@ -215,12 +215,12 @@ namespace CCL::ECS
                         ImGui::TableNextRow();
                         ImGui::TableSetColumnIndex(0);
                         ImGui::TextDisabled("-- Logic Systems --");
-                        for (auto &sys : _logicSystems) drawSystemRow(sys);
+                        for (auto &sys : m_logicSystems) drawSystemRow(sys);
 
                         ImGui::TableNextRow();
                         ImGui::TableSetColumnIndex(0);
                         ImGui::TextDisabled("-- Render Systems --");
-                        for (auto &sys : _renderSystems) drawSystemRow(sys);
+                        for (auto &sys : m_renderSystems) drawSystemRow(sys);
 
                         ImGui::EndTable();
                     }
@@ -231,7 +231,7 @@ namespace CCL::ECS
                 // Tab 2: Logic Inspectors (各システムのOnGuiを表示)
                 // --------------------------------------------------------
                 if (ImGui::BeginTabItem("Logic Inspectors")) {
-                    for (auto &sys : _logicSystems) {
+                    for (auto &sys : m_logicSystems) {
                         // GUIを持っていないシステムはスキップ！
                         if (!sys->hasGui) continue;
 
@@ -261,7 +261,7 @@ namespace CCL::ECS
                 // Tab 3: Render Inspectors
                 // --------------------------------------------------------
                 if (ImGui::BeginTabItem("Render Inspectors")) {
-                    for (auto &sys : _renderSystems) {
+                    for (auto &sys : m_renderSystems) {
                         // GUIを持っていないシステムはスキップ！
                         if (!sys->hasGui) continue;
 

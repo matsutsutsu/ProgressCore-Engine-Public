@@ -160,7 +160,7 @@ private:
     /**
      * @brief ユニークな新しいIDを発行する
      */
-    uint32_t GetNextId() { return ++_idCounter; }
+    uint32_t GetNextId() { return ++m_idCounter; }
 
     /**
      * @brief キャンバス上の指定座標に新しいノードを生成する
@@ -206,21 +206,21 @@ private:
     bool DrawConditionCombo(const char* label, ActionID& currentId);
 
 private:
-    ax::NodeEditor::EditorContext* _nodeContext = nullptr; ///< Node Editorの内部状態（キャンバスのズーム等）
+    ax::NodeEditor::EditorContext* m_nodeContext = nullptr; ///< Node Editorの内部状態（キャンバスのズーム等）
 
-    std::vector<EditorBTNode> _nodes; ///< 画面上の全付箋（ノード）
-    std::vector<BTLink> _links;       ///< 画面上の全接続線（リンク）
-    uint32_t _idCounter = 1;          ///< IDを被らせないためのカウンター
+    std::vector<EditorBTNode> m_nodes; ///< 画面上の全付箋（ノード）
+    std::vector<BTLink> m_links;       ///< 画面上の全接続線（リンク）
+    uint32_t m_idCounter = 1;          ///< IDを被らせないためのカウンター
 
-    std::string _currentFilePath = "Assets/AI/BossAI_Graph.json"; ///< 現在開いているファイルのパス
-    bool _needInitialZoom = true;     ///< 初回起動時にカメラを全体に合わせるためのフラグ
-    int _framesSinceOpen = 0; // ウィンドウを開いてからのフレーム数を数える
+    std::string m_currentFilePath = "Assets/AI/BossAI_Graph.json"; ///< 現在開いているファイルのパス
+    bool m_needInitialZoom = true;     ///< 初回起動時にカメラを全体に合わせるためのフラグ
+    int m_framesSinceOpen = 0; // ウィンドウを開いてからのフレーム数を数える
 
-    bool _executionOrderDirty = true; ///< 毎フレームのソートループを防ぐための最適化フラグ
-    nlohmann::json _lastSavedState;   ///< 直前のグラフ状態（Undo判定用）
+    bool m_executionOrderDirty = true; ///< 毎フレームのソートループを防ぐための最適化フラグ
+    nlohmann::json m_lastSavedState;   ///< 直前のグラフ状態（Undo判定用）
 
-    ImVec2 _newNodeSpawnPos = { 0.0f, 0.0f }; ///< 右クリックした瞬間のスクリーン座標
+    ImVec2 m_newNodeSpawnPos = { 0.0f, 0.0f }; ///< 右クリックした瞬間のスクリーン座標
 
-    bool _autoFollow = false;         ///< 実行中ノードへの自動追従フラグ
-    uint32_t _lastTrackedNodeId = 0;  ///< 最後にカメラが追従したノードID
+    bool m_autoFollow = false;         ///< 実行中ノードへの自動追従フラグ
+    uint32_t m_lastTrackedNodeId = 0;  ///< 最後にカメラが追従したノードID
 };

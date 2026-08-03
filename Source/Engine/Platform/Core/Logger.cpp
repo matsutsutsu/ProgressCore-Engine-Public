@@ -35,20 +35,20 @@ Logger::~Logger()
 void Logger::AddSink(std::shared_ptr<ILogSink> sink)
 {
     if (!sink) return;
-    std::lock_guard lock(_mutex);
-    _sinks.push_back(std::move(sink));
+    std::lock_guard lock(m_mutex);
+    m_sinks.push_back(std::move(sink));
 }
 
 void Logger::RemoveSink(const std::shared_ptr<ILogSink>& sink)
 {
-    std::lock_guard lock(_mutex);
-    _sinks.erase(std::remove(_sinks.begin(), _sinks.end(), sink), _sinks.end());
+    std::lock_guard lock(m_mutex);
+    m_sinks.erase(std::remove(m_sinks.begin(), m_sinks.end(), sink), m_sinks.end());
 }
 
 void Logger::ClearSinks()
 {
-    std::lock_guard lock(_mutex);
-    _sinks.clear();
+    std::lock_guard lock(m_mutex);
+    m_sinks.clear();
 }
 
 void Logger::Log(LogCategory category, LogLevel level,
@@ -72,8 +72,8 @@ void Logger::Log(LogCategory category, LogLevel level,
     msg.text = buffer;
 
     // 3. 各シンクへ配信
-    std::lock_guard lock(_mutex);
-    for (const auto& sink : _sinks)
+    std::lock_guard lock(m_mutex);
+    for (const auto& sink : m_sinks)
     {
         // シンクの例外で他シンクが止まらないようにする
         try { sink->Write(msg); }
@@ -83,7 +83,7 @@ void Logger::Log(LogCategory category, LogLevel level,
     // 4. Error は即フラッシュ (クラッシュ直前の取りこぼし防止)
     if (level == LogLevel::Error)
     {
-        for (const auto& sink : _sinks)
+        for (const auto& sink : m_sinks)
         {
             try { sink->Flush(); }
             catch (...) {}
@@ -93,8 +93,8 @@ void Logger::Log(LogCategory category, LogLevel level,
 
 void Logger::Clear()
 {
-    std::lock_guard lock(_mutex);
-    for (const auto& sink : _sinks)
+    std::lock_guard lock(m_mutex);
+    for (const auto& sink : m_sinks)
     {
         try { sink->Clear(); }
         catch (...) {}
@@ -103,8 +103,8 @@ void Logger::Clear()
 
 void Logger::Flush()
 {
-    std::lock_guard lock(_mutex);
-    for (const auto& sink : _sinks)
+    std::lock_guard lock(m_mutex);
+    for (const auto& sink : m_sinks)
     {
         try { sink->Flush(); }
         catch (...) {}

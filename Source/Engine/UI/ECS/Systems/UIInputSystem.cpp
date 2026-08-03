@@ -34,8 +34,8 @@ constexpr int VKEY_SPACE  = 0x20;
 
 void UIInputSystem::Update(float /*dt*/)
 {
-    if (!_world->HasResource<Input *>()) return;
-    Input *input = _world->GetResource<Input *>();
+    if (!m_world->HasResource<Input *>()) return;
+    Input *input = m_world->GetResource<Input *>();
     if (!input) return;
 
     // --- 入力（マウス／キー／パッド） ---
@@ -52,9 +52,9 @@ void UIInputSystem::Update(float /*dt*/)
     //   エディタ: GameView がRTをレターボックス縮小して貼るため、その表示矩形で正規化して戻す。
     float mx = static_cast<float>(mouse.GetPositionX());
     float my = static_cast<float>(mouse.GetPositionY());
-    if (_world->HasResource<GameViewportInfo>())
+    if (m_world->HasResource<GameViewportInfo>())
     {
-        const GameViewportInfo &vp = _world->GetResource<GameViewportInfo>();
+        const GameViewportInfo &vp = m_world->GetResource<GameViewportInfo>();
         if (vp.valid && vp.w > 0.0f && vp.h > 0.0f)
         {
             mx = (mx - vp.x) / vp.w * screenW; // 画像内ローカル → [0..1] → UI空間
@@ -84,7 +84,7 @@ void UIInputSystem::Update(float /*dt*/)
     std::vector<Cand> cands;
 
     ForEachWithID([&](EntityID id, UITransformComponent &t, UIInteractableComponent &inter) {
-        CCL::UI::ComputeUIRect(*_world, id, t, screenW, screenH); // 階層(Canvas offset/scale)込みで解決
+        CCL::UI::ComputeUIRect(*m_world, id, t, screenW, screenH); // 階層(Canvas offset/scale)込みで解決
         if (!inter.interactable) return;
 
         // マウスヒット（最前面優先）

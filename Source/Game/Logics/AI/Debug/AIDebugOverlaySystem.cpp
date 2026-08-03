@@ -1,7 +1,7 @@
 /// @file  AIDebugOverlaySystem.cpp
 /// @brief 敵AIの状態（戦術/行動/ステータス）をキャラ頭上に3Dテキストで表示する。
 ///        描画は ImGui::NewFrame 後に走る「レンダーステージの Update」で行うため、
-///        System Manager のヘッダ開閉に依存せず _enabled の間ずっと表示される。
+///        System Manager のヘッダ開閉に依存せず m_enabled の間ずっと表示される。
 ///        位置は GameViewportInfo（エディタのゲーム画像矩形）で正しく写像する。
 #include "AIDebugOverlaySystem.h"
 
@@ -30,9 +30,9 @@ using namespace DirectX::SimpleMath;
 void AIDebugOverlaySystem::Update(float /*dt*/)
 {
 #ifdef ENABLE_EDITOR
-    if (!_enabled) return;
+    if (!m_enabled) return;
 
-    const auto *camera = _world->HasResource<Camera *>() ? _world->GetResource<Camera *>() : nullptr;
+    const auto *camera = m_world->HasResource<Camera *>() ? m_world->GetResource<Camera *>() : nullptr;
     if (!camera) return;
 
     const Matrix viewProj = camera->GetView() * camera->GetProjection();
@@ -42,9 +42,9 @@ void AIDebugOverlaySystem::Update(float /*dt*/)
     //   フルスクリーン/未取得: OS ウィンドウ全体へフォールバック。
     const ImVec2 mainPos = ImGui::GetMainViewport()->Pos;
     float ox, oy, vw, vh;
-    if (_world->HasResource<GameViewportInfo>() && _world->GetResource<GameViewportInfo>().valid)
+    if (m_world->HasResource<GameViewportInfo>() && m_world->GetResource<GameViewportInfo>().valid)
     {
-        const auto &vp = _world->GetResource<GameViewportInfo>();
+        const auto &vp = m_world->GetResource<GameViewportInfo>();
         ox = mainPos.x + vp.x;
         oy = mainPos.y + vp.y;
         vw = vp.w;
@@ -63,17 +63,17 @@ void AIDebugOverlaySystem::Update(float /*dt*/)
     ImDrawList *drawList = ImGui::GetForegroundDrawList();
     ImFont     *font     = ImGui::GetFont();
 
-    auto view = _world->View<StateTreeComponent, BehaviorTreeComponent, TransformComponent>();
+    auto view = m_world->View<StateTreeComponent, BehaviorTreeComponent, TransformComponent>();
     for (auto e : view)
     {
-        auto *st    = _world->GetComponent<StateTreeComponent>(e);
-        auto *bt    = _world->GetComponent<BehaviorTreeComponent>(e);
-        auto *trans = _world->GetComponent<TransformComponent>(e);
+        auto *st    = m_world->GetComponent<StateTreeComponent>(e);
+        auto *bt    = m_world->GetComponent<BehaviorTreeComponent>(e);
+        auto *trans = m_world->GetComponent<TransformComponent>(e);
         if (!st || !bt || !trans) continue;
 
         // --- World to Screen 変換（頭上オフセット）。Transform(coord) は w 除算込み ---
         Vector3 worldPos = trans->position;
-        worldPos.y += _headOffsetY;
+        worldPos.y += m_headOffsetY;
         Vector3 ndcPos = Vector3::Transform(worldPos, viewProj);
         if (ndcPos.z <= 0.0f || ndcPos.z >= 1.0f) continue; // 画面外・カメラ後方
 
@@ -84,9 +84,9 @@ void AIDebugOverlaySystem::Update(float /*dt*/)
 
         // 1) 戦術（StateTree）：GetStateName で実名解決
         std::string tacticName = "-";
-        if (st->activeDepth > 0 && _world->HasResource<CCL::AI::StateTreeRegistry>())
+        if (st->activeDepth > 0 && m_world->HasResource<CCL::AI::StateTreeRegistry>())
         {
-            auto &reg = _world->GetResource<CCL::AI::StateTreeRegistry>();
+            auto &reg = m_world->GetResource<CCL::AI::StateTreeRegistry>();
             if (const auto *asset = reg.Get(st->assetHandle))
                 tacticName = asset->GetStateName(st->GetLeafState());
         }
@@ -107,9 +107,9 @@ void AIDebugOverlaySystem::Update(float /*dt*/)
         // 3) ステータス：ボスHP と ドローン残数（企画の「ドローン数=HP」を一目で）
         char line3[96] = "";
         {
-            const auto *hp     = _world->GetComponent<HealthComponent>(e);
-            const int   drones = _world->HasResource<BattleContext>()
-                                     ? _world->GetResource<BattleContext>().droneAliveCount
+            const auto *hp     = m_world->GetComponent<HealthComponent>(e);
+            const int   drones = m_world->HasResource<BattleContext>()
+                                     ? m_world->GetResource<BattleContext>().droneAliveCount
                                      : -1;
             if (hp && drones >= 0)
                 snprintf(line3, sizeof(line3), "HP %.0f/%.0f  Drone %d",
@@ -131,14 +131,14 @@ void AIDebugOverlaySystem::Update(float /*dt*/)
         float  totalH = 0.0f, maxW = 0.0f;
         for (int i = 0; i < lineCount; ++i)
         {
-            sizes[i] = font->CalcTextSizeA(_fontSize, FLT_MAX, 0.0f, lines[i].text);
+            sizes[i] = font->CalcTextSizeA(m_fontSize, FLT_MAX, 0.0f, lines[i].text);
             totalH += sizes[i].y;
             maxW = (std::max)(maxW, sizes[i].x);
         }
 
         const float topY     = pixelY - totalH * 0.5f;
-        const float paddingX = _fontSize * 0.3f;
-        const float paddingY = _fontSize * 0.15f;
+        const float paddingX = m_fontSize * 0.3f;
+        const float paddingY = m_fontSize * 0.15f;
         drawList->AddRectFilled(
             ImVec2(pixelX - maxW * 0.5f - paddingX, topY - paddingY),
             ImVec2(pixelX + maxW * 0.5f + paddingX, topY + totalH + paddingY),
@@ -147,8 +147,8 @@ void AIDebugOverlaySystem::Update(float /*dt*/)
         const ImU32 outlineCol = IM_COL32(0, 0, 0, 255);
         auto        DrawOutlined = [&](float x, float y, ImU32 col, const char *text) {
             static const float offs[4][2] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
-            for (auto &o : offs) drawList->AddText(font, _fontSize, ImVec2(x + o[0], y + o[1]), outlineCol, text);
-            drawList->AddText(font, _fontSize, ImVec2(x, y), col, text);
+            for (auto &o : offs) drawList->AddText(font, m_fontSize, ImVec2(x + o[0], y + o[1]), outlineCol, text);
+            drawList->AddText(font, m_fontSize, ImVec2(x, y), col, text);
         };
 
         float y = topY;
@@ -165,9 +165,9 @@ void AIDebugOverlaySystem::Update(float /*dt*/)
 void AIDebugOverlaySystem::OnGui()
 {
     // 別ウィンドウは作らず、System Manager の各システム欄（このヘッダ配下）に直接出す。
-    ImGui::Checkbox("Show Floating Text", &_enabled);
-    ImGui::SliderFloat("Font Size", &_fontSize, 10.0f, 100.0f);
-    ImGui::SliderFloat("Head Offset Y", &_headOffsetY, 0.0f, 15.0f);
+    ImGui::Checkbox("Show Floating Text", &m_enabled);
+    ImGui::SliderFloat("Font Size", &m_fontSize, 10.0f, 100.0f);
+    ImGui::SliderFloat("Head Offset Y", &m_headOffsetY, 0.0f, 15.0f);
     ImGui::TextDisabled("ボス頭上に 戦術/行動/HP・ドローン数 を常時表示");
 }
 #else

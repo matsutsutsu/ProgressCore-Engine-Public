@@ -20,5 +20,5 @@ class TitleMenuSystem
     void Update(float /*dt*/) override {} ///< 毎フレーム処理は不要（イベント駆動）
 
   private:
-    bool _transitioning = false; ///< 二重遷移防止（連打・多重発火対策）
+    bool m_transitioning = false; ///< 二重遷移防止（連打・多重発火対策）
 };

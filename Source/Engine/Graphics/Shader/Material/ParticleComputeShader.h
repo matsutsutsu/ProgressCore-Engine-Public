@@ -18,17 +18,17 @@ public:
     void CheckAndReload(ID3D11Device* device) override;
 
     // システム側が実行(Dispatch)する際につまみ出すアクセサ
-    ID3D11ComputeShader* GetInitCS() const noexcept { return _initCS.Get(); }
-    ID3D11ComputeShader* GetUpdateCS() const noexcept { return _updateCS.Get(); }
+    ID3D11ComputeShader* GetInitCS() const noexcept { return m_initCS.Get(); }
+    ID3D11ComputeShader* GetUpdateCS() const noexcept { return m_updateCS.Get(); }
 
 private:
-    Microsoft::WRL::ComPtr<ID3D11ComputeShader> _initCS;
-    Microsoft::WRL::ComPtr<ID3D11ComputeShader> _updateCS;
+    Microsoft::WRL::ComPtr<ID3D11ComputeShader> m_initCS;
+    Microsoft::WRL::ComPtr<ID3D11ComputeShader> m_updateCS;
 
-    std::wstring _initCsPath;
-    std::wstring _updateCsPath;
-    std::filesystem::file_time_type _initCsTime;
-    std::filesystem::file_time_type _updateCsTime;
+    std::wstring m_initCsPath;
+    std::wstring m_updateCsPath;
+    std::filesystem::file_time_type m_initCsTime;
+    std::filesystem::file_time_type m_updateCsTime;
 
     void LoadShaders(ID3D11Device* device);
 };

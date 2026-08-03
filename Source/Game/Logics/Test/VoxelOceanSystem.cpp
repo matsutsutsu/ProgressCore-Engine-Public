@@ -10,8 +10,8 @@
 
 void VoxelOceanSystem::Update(float dt)
 {
-    if (!_world || !_world->HasResource<TimeContext>()) return;
-    auto &ctx = _world->GetResource<TimeContext>();
+    if (!m_world || !m_world->HasResource<TimeContext>()) return;
+    auto &ctx = m_world->GetResource<TimeContext>();
 
     // ------------------------------------------------------------
     // 1. タイムスケールの適用 (Environmentグループの時間を取得)

@@ -12,8 +12,8 @@ PrimitiveRenderSystem::PrimitiveRenderSystem() : IfSystem("PrimitiveRenderSystem
 void PrimitiveRenderSystem::Update(float dt)
 {
     // Worldからレンダラーのポインタを取得
-    if (!_world->HasResource<PrimitiveRenderer*>()) return;
-    auto* renderer = _world->GetResource<PrimitiveRenderer*>();
+    if (!m_world->HasResource<PrimitiveRenderer*>()) return;
+    auto* renderer = m_world->GetResource<PrimitiveRenderer*>();
     if (!renderer) return;
 
     ForEachParallel([&](const TransformComponent& trans, const PrimitiveComponent& prim, const VisibilityComponent& vis) { // ★追加

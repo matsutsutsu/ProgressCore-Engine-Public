@@ -14,8 +14,8 @@
 
 void JoltCharacterSetupSystem::Update(float dt)
 {
-    if (!_world->HasResource<JoltPhysicsManager *>()) return;
-    auto               &joltManager   = _world->GetResource<JoltPhysicsManager *>();
+    if (!m_world->HasResource<JoltPhysicsManager *>()) return;
+    auto               &joltManager   = m_world->GetResource<JoltPhysicsManager *>();
     JPH::PhysicsSystem *physicsSystem = joltManager->GetPhysicsSystem();
     JPH::BodyInterface &bodyInterface = joltManager->GetBodyInterface();
 
@@ -24,7 +24,7 @@ void JoltCharacterSetupSystem::Update(float dt)
                       const JoltCharacterConfigComponent &config) {
 
         // キャラクターは基本的にカプセル形状で作る（段差を登りやすくするため）
-        auto *capsule = _world->GetComponent<JoltCapsuleColliderComponent>(id);
+        auto *capsule = m_world->GetComponent<JoltCapsuleColliderComponent>(id);
         if (!capsule) return; // カプセルが無ければ作れない
 
         // ===============================================================
@@ -62,7 +62,7 @@ void JoltCharacterSetupSystem::Update(float dt)
 
         JoltCharacterHandleComponent handleComp;
         handleComp.character = character;
-        _world->AddComponent<JoltCharacterHandleComponent>(id, handleComp);
+        m_world->AddComponent<JoltCharacterHandleComponent>(id, handleComp);
 
         // ===============================================================
         // 3. ★presence プロキシ（Kinematic 剛体）の生成
@@ -91,7 +91,7 @@ void JoltCharacterSetupSystem::Update(float dt)
 
             JoltHandleComponent proxyHandle;
             proxyHandle.bodyID = proxy->GetID();
-            _world->AddComponent<JoltHandleComponent>(id, proxyHandle);
+            m_world->AddComponent<JoltHandleComponent>(id, proxyHandle);
         }
         // 生成失敗（上限到達）時は presence なしで続行（移動は CharacterVirtual が担うため動作はする）
     });

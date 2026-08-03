@@ -23,23 +23,23 @@ void HierarchyWindow::DrawContents(EditorContext& context)
     auto& chunks = chunkManager.GetChunks();
 
     // =========================================================================
-    // ★ 究極の修正: 毎フレーム必ずキャッシュを空にする！
+    // 究極の修正: 毎フレーム必ずキャッシュを空にする！
     // これを忘れると過去の親子関係が蓄積し、全てが循環参照と誤認されます。
     // =========================================================================
     {
         ZoneScopedN("Hierarchy [1]: Clear & Alloc");
 
-        _rootEntities.clear();
-        _allEntities.clear();
-        _flatList.clear();
+        m_rootEntities.clear();
+        m_allEntities.clear();
+        m_flatList.clear();
 
         // リアロケーション防止のため、あらかじめ1万体分のメモリを確保（推容疑者Cの対策）
-        _flatList.reserve(10000);
-        _allEntities.reserve(10000);
+        m_flatList.reserve(10000);
+        m_allEntities.reserve(10000);
     }
 
     // ---------------------------------------------------------
-    // ツールバー (生成 ＆ 検索)  ※ここが消えていた部分です！
+    // ツールバー (生成 ＆ 検索)
     // ---------------------------------------------------------
     if (ImGui::Button("Spawn Entity")) {
         auto arch = ArchetypeHelper::Generate<TransformComponent, NameComponent>();
@@ -49,10 +49,10 @@ void HierarchyWindow::DrawContents(EditorContext& context)
     ImGui::SameLine();
     // 検索バーの実装
     ImGui::SetNextItemWidth(-1.0f);
-    ImGui::InputTextWithHint("##Search", "Search Entity...", _searchBuffer, sizeof(_searchBuffer));
+    ImGui::InputTextWithHint("##Search", "Search Entity...", m_searchBuffer, sizeof(m_searchBuffer));
 
-    bool        isSearching = strlen(_searchBuffer) > 0;
-    std::string searchStr = _searchBuffer;
+    bool        isSearching = strlen(m_searchBuffer) > 0;
+    std::string searchStr = m_searchBuffer;
     // 小文字に変換して大文字小文字を区別しない検索にする
     std::transform(searchStr.begin(), searchStr.end(), searchStr.begin(), ::tolower);
 
@@ -60,13 +60,13 @@ void HierarchyWindow::DrawContents(EditorContext& context)
 
     {
         // =========================================================================
-        // ★ 計測プローブ 2: チャンク走査とツリー構築フェーズ
-        // ここが重い場合、_openNodes.count() か IsEntityDestroyed() が犯人です
+        // 計測プローブ 2: チャンク走査とツリー構築フェーズ
+        // ここが重い場合、m_openNodes.count() か IsEntityDestroyed() が犯人です
         // =========================================================================
         ZoneScopedN("Hierarchy [2]: Chunk Scan & Build");
 
         // =========================================================
-        // ★ 超高速 Pass: ルートエンティティの抽出だけを行う
+        // 超高速 Pass: ルートエンティティの抽出だけを行う
         // =========================================================
         for (auto& chunkPtr : chunks) {
             if (!chunkPtr) continue;
@@ -80,29 +80,29 @@ void HierarchyWindow::DrawContents(EditorContext& context)
                 CCL::ECS::EntityID entity = chunk->GetEntityByIndex(i);
                 if (entity == CCL::ECS::InvalidEntityID) continue;
 
-                // ★ 修正1: 無駄な毎フレームのアロケーションを防ぐため、検索時のみリストに追加する
+                // 無駄な毎フレームのアロケーションを防ぐため、検索時のみリストに追加する
                 if (isSearching) {
-                    _allEntities.push_back(entity);
+                    m_allEntities.push_back(entity);
                 }
 
                 // 親がいない(0)場合はルート
                 if (!transforms || transforms[i].parent == 0) {
                     if (isSearching) {
-                        _rootEntities.push_back(entity); // 検索ロジック用に一応残す
+                        m_rootEntities.push_back(entity); // 検索ロジック用に一応残す
                     }
                     else {
                         // ====================================================================
-                        // ★ 究極のDOD最適化: GetComponentを回避し、キャッシュから直接読む！
+                        // 究極のDOD最適化: GetComponentを回避し、キャッシュから直接読む！
                         // ====================================================================
                         bool hasChildren = (transforms != nullptr && transforms[i].firstChildID != 0);
 
                         // 直接UI用のフラットリストに追加
-                        _flatList.push_back({ entity, 0, hasChildren });
+                        m_flatList.push_back({ entity, 0, hasChildren });
 
                         // 子供がいて、かつ「このノードが開かれている」場合のみ、子供の再帰探索を走らせる
                         // （※閉じていれば、この先の重い処理は一切走らない！）
-                        if (hasChildren && _openNodes.count(entity) > 0) {
-                            FlattenChildren(transforms[i].firstChildID, 1, world, _flatList);
+                        if (hasChildren && m_openNodes.count(entity) > 0) {
+                            FlattenChildren(transforms[i].firstChildID, 1, world, m_flatList);
                         }
                     }
                 }
@@ -113,7 +113,7 @@ void HierarchyWindow::DrawContents(EditorContext& context)
 
     {
         // =========================================================================
-        // ★ 計測プローブ 3: 検索文字列処理フェーズ
+        // 計測プローブ 3: 検索文字列処理フェーズ
         // =========================================================================
         ZoneScopedN("Hierarchy [3]: Search String Process");
 
@@ -121,14 +121,14 @@ void HierarchyWindow::DrawContents(EditorContext& context)
         // 2. 平坦化フェーズ 
         // ---------------------------------------------------------
         if (isSearching) {
-            for (auto e : _allEntities) {
-                // ★検索中のみ、重い文字列処理を行う
+            for (auto e : m_allEntities) {
+                // 検索中のみ、重い文字列処理を行う
                 auto* nameComp = world->GetComponent<NameComponent>(e);
                 std::string nameLower = (nameComp && strlen(nameComp->name) > 0) ? nameComp->name : "entity " + std::to_string(e);
                 std::transform(nameLower.begin(), nameLower.end(), nameLower.begin(), ::tolower);
 
                 if (nameLower.find(searchStr) != std::string::npos) {
-                    _flatList.push_back({ e, 0, false });
+                    m_flatList.push_back({ e, 0, false });
                 }
             }
         }
@@ -136,7 +136,7 @@ void HierarchyWindow::DrawContents(EditorContext& context)
 
     {
         // =========================================================================
-        // ★ 計測プローブ 3: 検索文字列処理フェーズ
+        // 計測プローブ 3: 検索文字列処理フェーズ
         // =========================================================================
         ZoneScopedN("Hierarchy [3]: Search String Process");
 
@@ -146,10 +146,10 @@ void HierarchyWindow::DrawContents(EditorContext& context)
         ImGui::BeginChild("HierarchyTree", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
 
         ImGuiListClipper clipper;
-        clipper.Begin((int)_flatList.size());
+        clipper.Begin((int)m_flatList.size());
         while (clipper.Step()) {
             for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i) {
-                DrawFlatNode(_flatList[i], context); // 引数を減らす
+                DrawFlatNode(m_flatList[i], context); // 引数を減らす
             }
         }
         clipper.End();
@@ -165,7 +165,7 @@ void HierarchyWindow::DrawContents(EditorContext& context)
             const char* prefabPath = (const char*)payload->Data;
             CCL::ECS::EntityID newEntity = Prefab::SpawnPrefab(*context.world, prefabPath);
             if (newEntity != CCL::ECS::InvalidEntityID) {
-                // ★ プレハブ実体としてマーク(レベル保存で参照配置、シーン保存では除外)
+                // プレハブ実体としてマーク(レベル保存で参照配置、シーン保存では除外)
                 context.world->AddComponent<PrefabInstanceComponent>(
                     newEntity, PrefabInstanceComponent{ prefabPath });
                 context.SetSingleSelection(newEntity);
@@ -175,7 +175,7 @@ void HierarchyWindow::DrawContents(EditorContext& context)
     }
  
     // =========================================================================
-    // ★ 追加: ヒエラルキーの背景へのドロップ判定 (親の解除 / ルート化)
+    // ヒエラルキーの背景へのドロップ判定 (親の解除 / ルート化)
     // =========================================================================
     // 残りのウィンドウ領域をダミーアイテムで埋めて、ドロップ判定を有効にする
     ImGui::Dummy(ImGui::GetContentRegionAvail());
@@ -231,7 +231,7 @@ void HierarchyWindow::DrawFlatNode(
     EditorContext& context)
 {
     // =========================================================
-    // ★遅延評価: 画面に映る「たった40個」に対してだけ名前を生成する！
+    // 遅延評価: 画面に映る「たった40個」に対してだけ名前を生成する！
     // =========================================================
     std::string name = "Entity " + std::to_string(node.entityID);
     auto* nameComp = context.world->GetComponent<NameComponent>(node.entityID);
@@ -239,10 +239,10 @@ void HierarchyWindow::DrawFlatNode(
         name = nameComp->name;
     }
 
-    // ★重要: 深さに応じてUIの表示位置を右にずらす（見た目だけツリーにする）
+    // 重要: 深さに応じてUIの表示位置を右にずらす（見た目だけツリーにする）
     ImGui::Indent(node.depth * ImGui::GetTreeNodeToLabelSpacing());
 
-    // ★重要: ImGuiTreeNodeFlags_NoTreePushOnOpen を必ずつける！
+    // 重要: ImGuiTreeNodeFlags_NoTreePushOnOpen を必ずつける！
     // これにより、ImGuiの内部スタックを汚さず、単なる「見た目だけ」のツリーノードになります。
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
@@ -252,7 +252,7 @@ void HierarchyWindow::DrawFlatNode(
     if (context.IsSelected(node.entityID)) flags |= ImGuiTreeNodeFlags_Selected;
 
     // エンジン側で管理している開閉状態を ImGui に強制的に教える
-    bool isOpen = _openNodes.count(node.entityID) > 0;
+    bool isOpen = m_openNodes.count(node.entityID) > 0;
     ImGui::SetNextItemOpen(isOpen);
 
     // 描画
@@ -260,12 +260,12 @@ void HierarchyWindow::DrawFlatNode(
 
     // ユーザーが左の矢印(▶)をクリックして開閉状態を切り替えた時の処理
     if (ImGui::IsItemToggledOpen()) {
-        if (isOpen) _openNodes.erase(node.entityID); // 閉じる
-        else        _openNodes.insert(node.entityID); // 開く
+        if (isOpen) m_openNodes.erase(node.entityID); // 閉じる
+        else        m_openNodes.insert(node.entityID); // 開く
     }
 
     // =======================================================================
-    // ★ここから追加: ドラッグ＆ドロップの「送信元（Source）」としての設定
+    // ここから追加: ドラッグ＆ドロップの「送信元（Source）」としての設定
     // =======================================================================
     if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
 
@@ -279,7 +279,7 @@ void HierarchyWindow::DrawFlatNode(
     }
 
     // =========================================================================
-    // ★ 追加: ドラッグ＆ドロップ：受信先 (親子関係の設定)
+    // ドラッグ＆ドロップ：受信先 (親子関係の設定)
     // =========================================================================
     if (ImGui::BeginDragDropTarget()) {
         // "DND_ENTITY_ID" タグの荷物を受け取る
@@ -316,7 +316,7 @@ void HierarchyWindow::DrawFlatNode(
     // 条件1: アイテムの上でマウスがホバーされている
     // 条件2: マウスの左ボタンが「離された（Released）」瞬間である
     // 条件3: TreeNodeの開閉ボタン(矢印)が押されたわけではない
-    // 条件4: ★ ドラッグ操作をしていない（閾値以上マウスが移動していない）
+    // 条件4: ドラッグ操作をしていない（閾値以上マウスが移動していない）
     
     if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
 
@@ -407,7 +407,7 @@ void HierarchyWindow::DrawFlatNode(
 }
 
 
-// ★ 古い FlattenTree を丸ごと消して、これに差し替える
+// 古い FlattenTree を丸ごと消して、これに差し替える
 void HierarchyWindow::FlattenChildren(
     CCL::ECS::EntityID firstChildID,
     int depth,
@@ -425,7 +425,7 @@ void HierarchyWindow::FlattenChildren(
         outFlatList.push_back({ childID, depth, hasChildren });
 
         // この子供も開かれていたら、さらに孫を再帰探索する
-        if (hasChildren && _openNodes.count(childID) > 0) {
+        if (hasChildren && m_openNodes.count(childID) > 0) {
             FlattenChildren(childTrans->firstChildID, depth + 1, world, outFlatList);
         }
 
@@ -436,17 +436,17 @@ void HierarchyWindow::FlattenChildren(
 // =========================================================================
 // Shift+クリック範囲選択
 //   現在の主選択(アンカー)から clicked までを、画面に見えている並び順
-//   (_flatList) の上で連続選択する。
+//   (m_flatList) の上で連続選択する。
 // =========================================================================
 void HierarchyWindow::SelectRangeTo(CCL::ECS::EntityID clicked, EditorContext& context)
 {
     CCL::ECS::EntityID anchor = context.selectedEntity;
 
-    // _flatList 内でのアンカーとクリック先の位置を探す
+    // m_flatList 内でのアンカーとクリック先の位置を探す
     int anchorIdx = -1, clickedIdx = -1;
-    for (int i = 0; i < (int)_flatList.size(); ++i) {
-        if (_flatList[i].entityID == anchor)  anchorIdx = i;
-        if (_flatList[i].entityID == clicked) clickedIdx = i;
+    for (int i = 0; i < (int)m_flatList.size(); ++i) {
+        if (m_flatList[i].entityID == anchor)  anchorIdx = i;
+        if (m_flatList[i].entityID == clicked) clickedIdx = i;
     }
 
     // どちらかが見つからない(検索中で表示外など)場合は単純に追加選択にフォールバック
@@ -461,7 +461,7 @@ void HierarchyWindow::SelectRangeTo(CCL::ECS::EntityID clicked, EditorContext& c
     // 範囲を選択セットに置き換える (アンカーは維持、主選択は clicked にする)
     context.selectedEntities.clear();
     for (int i = lo; i <= hi; ++i) {
-        context.selectedEntities.push_back(_flatList[i].entityID);
+        context.selectedEntities.push_back(m_flatList[i].entityID);
     }
     context.selectedEntity = clicked;
 }

@@ -90,7 +90,7 @@ namespace CCL::ECS {
     class EventBus {
       private:
         // 「型のID」と「そのイベント専用の箱」のペアを管理する名簿
-        std::unordered_map<uint32_t, std::unique_ptr<IEventWrapper>> _subscribers;
+        std::unordered_map<uint32_t, std::unique_ptr<IEventWrapper>> m_subscribers;
 
       public:
         // 購読する (手紙が欲しいと登録する)
@@ -99,11 +99,11 @@ namespace CCL::ECS {
         {
             uint32_t typeId = EventTypeIDGenerator::GetID<EventType>();
 
-            if (_subscribers.find(typeId) == _subscribers.end()) {
-                _subscribers[typeId] = std::make_unique<EventWrapper<EventType>>();
+            if (m_subscribers.find(typeId) == m_subscribers.end()) {
+                m_subscribers[typeId] = std::make_unique<EventWrapper<EventType>>();
             }
 
-            auto wrapper = static_cast<EventWrapper<EventType> *>(_subscribers[typeId].get());
+            auto wrapper = static_cast<EventWrapper<EventType> *>(m_subscribers[typeId].get());
             return wrapper->Add(callback);
         }
 
@@ -112,8 +112,8 @@ namespace CCL::ECS {
         {
             uint32_t typeId = EventTypeIDGenerator::GetID<EventType>();
 
-            if (_subscribers.find(typeId) != _subscribers.end()) {
-                auto wrapper = static_cast<EventWrapper<EventType> *>(_subscribers[typeId].get());
+            if (m_subscribers.find(typeId) != m_subscribers.end()) {
+                auto wrapper = static_cast<EventWrapper<EventType> *>(m_subscribers[typeId].get());
                 wrapper->Remove(subId);
             }
         }
@@ -123,14 +123,14 @@ namespace CCL::ECS {
         {
             uint32_t typeId = EventTypeIDGenerator::GetID<EventType>();
 
-            if (_subscribers.find(typeId) != _subscribers.end()) {
-                auto wrapper = static_cast<EventWrapper<EventType> *>(_subscribers[typeId].get());
+            if (m_subscribers.find(typeId) != m_subscribers.end()) {
+                auto wrapper = static_cast<EventWrapper<EventType> *>(m_subscribers[typeId].get());
                 wrapper->Trigger(eventData);
             }
         }
 
         // 世界がリセットされる時に名簿を空にする
-        void Clear() { _subscribers.clear(); }
+        void Clear() { m_subscribers.clear(); }
     };
 
 } // namespace CCL::ECS

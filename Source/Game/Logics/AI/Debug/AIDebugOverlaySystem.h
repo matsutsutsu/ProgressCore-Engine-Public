@@ -29,14 +29,14 @@ public:
 
     // ★レンダーシステムとして登録し、ImGui::NewFrame の後に走る Update で頭上テキストを
     //   ImGui 前景リストへ直接描く。これにより System Manager のヘッダ開閉に関係なく
-    //   （＝フラグ _enabled が true の間）常時表示される。
+    //   （＝フラグ m_enabled が true の間）常時表示される。
     void Update(float dt) override;
 
     // System Manager 内に表示する操作 UI（ON/OFF・フォントサイズ）。別ウィンドウは作らない。
     void OnGui() override;
 
 private:
-    bool  _enabled    = true;
-    float _fontSize   = 25.0f;
-    float _headOffsetY = 15.0f; ///< キャラ原点からの頭上ワールドYオフセット（本体に被らせないよう調整）
+    bool  m_enabled    = true;
+    float m_fontSize   = 25.0f;
+    float m_headOffsetY = 15.0f; ///< キャラ原点からの頭上ワールドYオフセット（本体に被らせないよう調整）
 };

@@ -15,9 +15,9 @@ using namespace CCL::ECS;
 void JoltCollisionEventSystem::Update(float dt)
 {
     // リソースの存在確認（初期化前などのクラッシュ防止）
-    if (!_world->HasResource<JoltPhysicsManager*>()) return;
+    if (!m_world->HasResource<JoltPhysicsManager*>()) return;
 
-    auto& joltManager = _world->GetResource<JoltPhysicsManager*>();
+    auto& joltManager = m_world->GetResource<JoltPhysicsManager*>();
     JoltContactListener* listener = joltManager->GetContactListener();
     if (!listener) return;
 
@@ -30,7 +30,7 @@ void JoltCollisionEventSystem::Update(float dt)
     // ここはメインスレッド（またはECSの制御下）なので、安全に後続のシステムへ情報を渡せる。
     for (const auto& ev : events) {
         // EventBusを通じて、HitboxCollisionSystemなどがこれを受信する
-        _world->GetEventBus().Publish(ev);
+        m_world->GetEventBus().Publish(ev);
     }
 }
 

@@ -14,8 +14,8 @@ void ECSBenchmarkSystem::Update(float dt)
     // ====================================================================
     // 1. TimeContext の適用 (環境グループの時間を取得)
     // ====================================================================
-    if (!_world || !_world->HasResource<TimeContext>()) return;
-    auto &ctx = _world->GetResource<TimeContext>();
+    if (!m_world || !m_world->HasResource<TimeContext>()) return;
+    auto &ctx = m_world->GetResource<TimeContext>();
 
     // 背景のVFX扱いとするため、Environmentのスケールを適用
     float timeScale = ctx.groupScales[static_cast<size_t>(TimeGroup::Environment)];

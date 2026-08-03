@@ -14,7 +14,7 @@ namespace CCL::ECS {
       public:
          //  外部（ImGui）からバッチ構成を読み取るためのAPI
          const std::vector<std::vector<SystemBase*>>& GetBatches() const {
-             return _executionBatches;
+             return m_executionBatches;
          }
 
         // ------------------------------------------------------------
@@ -33,7 +33,7 @@ namespace CCL::ECS {
         //   トポロジカルソートの簡易版である。
         //
         // 出力:
-        //   _executionBatches :
+        //   m_executionBatches :
         //      外側 vector = 実行順序（Batch 0 → Batch 1 → ...）
         //      内側 vector = 同時に並列実行してよい System の集合
         //
@@ -48,7 +48,7 @@ namespace CCL::ECS {
         void BuildGraph(const std::vector<std::unique_ptr<SystemBase>> &systems)
         {
             // 概要：バッチクリアなどの初期化
-            _executionBatches.clear();
+            m_executionBatches.clear();
             if (systems.empty()) return;
 
             // 各システムが「どのバッチに入るか」を記録する
@@ -148,21 +148,21 @@ namespace CCL::ECS {
 
                 // 自分のバッチ番号は、「競合した相手のバッチ番号 + 1 (つまり次のターン)」にする！
                 // 誰とも競合しなかったら、-1 + 1 = 0 で、最初のターンに組み込まれる。
-                if (systemBatchIndex[i] >= _executionBatches.size()) {
-                    _executionBatches.resize(systemBatchIndex[i] + 1);
+                if (systemBatchIndex[i] >= m_executionBatches.size()) {
+                    m_executionBatches.resize(systemBatchIndex[i] + 1);
                 }
 
                 // バッチにシステムを登録
-                _executionBatches[systemBatchIndex[i]].push_back(systems[i].get());
+                m_executionBatches[systemBatchIndex[i]].push_back(systems[i].get());
             }
 
             // 構築されたバッチ（実行順序）をLoggerに出力する
            /* CCL_LOG_INFO(LogCategory::ECS, "=== TaskScheduler: Execution Graph Built ===");
-            for (size_t i = 0; i < _executionBatches.size(); ++i) {
+            for (size_t i = 0; i < m_executionBatches.size(); ++i) {
                 std::string batchInfo = "Batch " + std::to_string(i) + ": [";
-                for (size_t j = 0; j < _executionBatches[i].size(); ++j) {
-                    batchInfo += _executionBatches[i][j]->GetName();
-                    if (j < _executionBatches[i].size() - 1) batchInfo += ", ";
+                for (size_t j = 0; j < m_executionBatches[i].size(); ++j) {
+                    batchInfo += m_executionBatches[i][j]->GetName();
+                    if (j < m_executionBatches[i].size() - 1) batchInfo += ", ";
                 }
                 batchInfo += "]";
                 CCL_LOG_INFO(LogCategory::ECS, "%s", batchInfo.c_str());
@@ -174,7 +174,7 @@ namespace CCL::ECS {
         void Execute(float dt, JobSystem *jobSystem)
         {
             // バッチ（シフト表のまとまり）ごとに順番に見ていく
-            for (auto &batch : _executionBatches) {
+            for (auto &batch : m_executionBatches) {
                 if (batch.empty()) continue;
 
                  // ① バッチが1個 or プール未注入なら直列実行
@@ -215,6 +215,6 @@ namespace CCL::ECS {
 
         // 外側のvector: 順番に実行されるフェーズ（バッチ）
         // 内側のvector: そのフェーズ内で「同時に並列実行してよい」システムのリスト
-        std::vector<std::vector<SystemBase *>> _executionBatches;
+        std::vector<std::vector<SystemBase *>> m_executionBatches;
     };
 } // namespace CCL::ECS

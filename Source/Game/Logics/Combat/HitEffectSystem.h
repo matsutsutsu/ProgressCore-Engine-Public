@@ -30,7 +30,7 @@ class HitEffectSystem : public CCL::ECS::IfSystem<HitEffectSystem>
         CCL::ECS::EntityID id   = CCL::ECS::InvalidEntityID;
         float              life = 0.0f; ///< 残り寿命(秒・実時間)
     };
-    std::vector<ActiveVfx> _active;
+    std::vector<ActiveVfx> m_active;
 
     /// エミッタを保持する時間(秒)。粒子の最大寿命＋余韻より長く取り、消える前に破棄しないようにする。
     static constexpr float kVfxLifetime = 1.0f;

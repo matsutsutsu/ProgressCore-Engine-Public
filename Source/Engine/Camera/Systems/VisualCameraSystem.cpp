@@ -21,7 +21,7 @@ void CameraFollowSystem::Update(float dt)
 {
     ForEach([&](VirtualCamera &vcam, CameraBodyFollow &body) {
         // ターゲットのTransformを取得
-        auto *targetTrans = _world->GetComponent<TransformComponent>(body.target);
+        auto *targetTrans = m_world->GetComponent<TransformComponent>(body.target);
         if (!targetTrans) return;
 
         // 目標位置の計算 (TransformComponentにGetWorldPositionがない場合は .position
@@ -61,7 +61,7 @@ void CameraFollowSystem::Update(float dt)
 void CameraLookAtSystem::Update(float dt)
 {
     ForEach([&](VirtualCamera &vcam, CameraAimLookAt &aim) {
-        auto *targetTrans = _world->GetComponent<TransformComponent>(aim.target);
+        auto *targetTrans = m_world->GetComponent<TransformComponent>(aim.target);
         if (!targetTrans) return;
 
         // XMFLOAT3 worldPos    = targetTrans->GetWorldPosition();

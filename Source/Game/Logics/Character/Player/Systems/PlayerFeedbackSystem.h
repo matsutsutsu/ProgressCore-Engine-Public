@@ -24,8 +24,8 @@ class PlayerFeedbackSystem : public CCL::ECS::IfSystem<PlayerFeedbackSystem> {
     void UpdateDamageVignette(float dt);
 
     // --- 被弾ビネットのランタイム状態 ---
-    float _flashTimer  = 0.0f;  ///< 残り時間(秒・実時間)。>0 の間フラッシュ。被弾で満タンに。
-    bool  _flashActive = false; ///< 立ち上がり/立ち下がり検出用
+    float m_flashTimer  = 0.0f;  ///< 残り時間(秒・実時間)。>0 の間フラッシュ。被弾で満タンに。
+    bool  m_flashActive = false; ///< 立ち上がり/立ち下がり検出用
 
     // 立ち上がりで退避する「元の」ビネット値（立ち下がりでここへ完全復元する）。
     struct VigBaseline
@@ -36,7 +36,7 @@ class PlayerFeedbackSystem : public CCL::ECS::IfSystem<PlayerFeedbackSystem> {
         float             pulse     = 0.0f;
         float             radius    = 0.55f;
         float             softness  = 0.35f;
-    } _vigBase;
+    } m_vigBase;
 
     // --- チューニング用（ここを触れば手触りを調整できる） ---
     static constexpr float kFlashDuration = 0.35f; ///< フラッシュの長さ(秒)

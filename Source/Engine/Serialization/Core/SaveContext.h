@@ -48,11 +48,11 @@ namespace CCL::Serialization {
             //   元コードに「if (realID == 0) return 0」があったが、これだと
             //   先頭エンティティの参照を全部潰してしまうため、ここでは行わない。
 
-            auto it = _idToLocal.find(realID);
-            if (it != _idToLocal.end()) return it->second;
+            auto it = m_idToLocal.find(realID);
+            if (it != m_idToLocal.end()) return it->second;
 
-            LocalIndex newIdx = _nextLocalIndex++;
-            _idToLocal.emplace(realID, newIdx);
+            LocalIndex newIdx = m_nextLocalIndex++;
+            m_idToLocal.emplace(realID, newIdx);
             return newIdx;
         }
 
@@ -60,22 +60,22 @@ namespace CCL::Serialization {
         // ヘッダ書き出し時など、登録済みであるべき場面で使う。
         LocalIndex Lookup(CCL::ECS::EntityID realID) const
         {
-            auto it = _idToLocal.find(realID);
-            return it != _idToLocal.end() ? it->second : InvalidLocalIndex;
+            auto it = m_idToLocal.find(realID);
+            return it != m_idToLocal.end() ? it->second : InvalidLocalIndex;
         }
 
         // 登録されているエンティティ数
-        size_t Size() const { return _idToLocal.size(); }
+        size_t Size() const { return m_idToLocal.size(); }
 
         void Clear()
         {
-            _idToLocal.clear();
-            _nextLocalIndex = 1; // 0 は「無効」予約
+            m_idToLocal.clear();
+            m_nextLocalIndex = 1; // 0 は「無効」予約
         }
 
     private:
-        std::unordered_map<CCL::ECS::EntityID, LocalIndex> _idToLocal;
-        LocalIndex _nextLocalIndex = 1; // 1 から発行 (0 は無効)
+        std::unordered_map<CCL::ECS::EntityID, LocalIndex> m_idToLocal;
+        LocalIndex m_nextLocalIndex = 1; // 1 から発行 (0 は無効)
     };
 
 } // namespace CCL::Serialization

@@ -21,8 +21,8 @@ void PlayerLockOnSystem::Update(float /*dt*/)
         // ===================================================================
         if (player.lockOnTargetID != InvalidEntityID)
         {
-            if (!_world->IsEntityValid(player.lockOnTargetID) ||
-                _world->HasComponent<Tag::DeadTag>(player.lockOnTargetID))
+            if (!m_world->IsEntityValid(player.lockOnTargetID) ||
+                m_world->HasComponent<Tag::DeadTag>(player.lockOnTargetID))
             {
                 player.lockOnTargetID = InvalidEntityID;
             }
@@ -44,21 +44,21 @@ void PlayerLockOnSystem::Update(float /*dt*/)
             {
                 // ===========================================================
                 // 4. 【空間クエリ】世界中のドローンから「最もプレイヤーに近い個体」を探し出す
-                // _world->ForEachWithID ではなく、View() を使って対象IDを走査する
+                // m_world->ForEachWithID ではなく、View() を使って対象IDを走査する
                 // ===========================================================
                 EntityID closestEnemyID = InvalidEntityID;
                 float    closestDistSq  = 90.0f * 90.0f; // ロックオン可能な限界距離（例: 30メートル）の2乗
 
                 // 世界中のドローンのEntityIDを一覧取得する
-                auto droneView = _world->View<BossActionComponent, TransformComponent>();
+                auto droneView = m_world->View<BossActionComponent, TransformComponent>();
 
                 for (EntityID enemyID : droneView)
                 {
                     // 死亡している敵はスキップ
-                    if (_world->HasComponent<Tag::DeadTag>(enemyID)) continue;
+                    if (m_world->HasComponent<Tag::DeadTag>(enemyID)) continue;
 
                     // Transformを取得 (Viewで保証されているため即座にアクセス可能)
-                    auto* enemyTrans = _world->GetComponent<TransformComponent>(enemyID);
+                    auto* enemyTrans = m_world->GetComponent<TransformComponent>(enemyID);
                     if (!enemyTrans) continue;
 
                     // 平面での純粋な距離計算
@@ -84,9 +84,9 @@ void PlayerLockOnSystem::Update(float /*dt*/)
         //   カメラ(Engine)がプレイヤー(Game)を読みに来る形だと Engine→Game 依存に
         //   なるため、状態の持ち主であるこちらから書き込む。解除条件もここで完結する。
         // ===================================================================
-        for (EntityID camID : _world->View<CameraBodyTPSComponent>())
+        for (EntityID camID : m_world->View<CameraBodyTPSComponent>())
         {
-            auto* tps = _world->GetComponent<CameraBodyTPSComponent>(camID);
+            auto* tps = m_world->GetComponent<CameraBodyTPSComponent>(camID);
             if (!tps || tps->target.id != playerID) continue; // このプレイヤーを映していないカメラは対象外
 
             tps->lockOnTarget.id = player.lockOnTargetID;

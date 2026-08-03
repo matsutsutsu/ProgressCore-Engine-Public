@@ -21,7 +21,7 @@ struct AnimSequence;
 // [ Update() の内部構成（Tracyゾーンと対応） ]
 //   1. DispatchPointEvents : 点イベント(Sound/Effect/SpawnHitbox)の発火判定
 //   2. ComputeAndApplyPose : ブレンド計算・Force Root Lock・骨格ポーズの確定と適用
-//   （時間の進行とループ/終了判定は、_world 非依存の純粋関数として .cpp 側に隔離）
+//   （時間の進行とループ/終了判定は、m_world 非依存の純粋関数として .cpp 側に隔離）
 // ===================================================================================
 
 class AnimationSystem : public CCL::ECS::IfSystem<AnimationSystem,
@@ -39,7 +39,7 @@ class AnimationSystem : public CCL::ECS::IfSystem<AnimationSystem,
     void UpdateManual(CCL::ECS::EntityID entity, float time);
 
   private:
-    // --- Update() を構成する各フェーズ（_world アクセスが必要なもののみメンバ関数化） ---
+    // --- Update() を構成する各フェーズ（m_world アクセスが必要なもののみメンバ関数化） ---
 
     /// @brief 台本の点イベント(Sound/Effect/SpawnHitbox)を EventBus 経由で発火する。
     /// @details 区間状態イベント(HitBox/Trail/Blackboard)はここでは発火しない

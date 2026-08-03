@@ -42,7 +42,7 @@ public:
      * @brief CbScene バッファポインタをキャッシュする（Graphics から 1 回だけ呼ぶ）。
      * @details Graphics が所有する buffer を非所有ポインタとして保持する。
      */
-    void SetSceneConstantBuffer(ID3D11Buffer* sceneCB) noexcept { _sceneCB = sceneCB; }
+    void SetSceneConstantBuffer(ID3D11Buffer* sceneCB) noexcept { m_sceneCB = sceneCB; }
 
     /**
      * @brief CbScene・CbSkeleton を VS/PS の全スロットにバインドする。
@@ -57,13 +57,13 @@ public:
     void UpdateSkeletonConstants(ID3D11DeviceContext* dc, const Model::Mesh& mesh);
 
 private:
-    Microsoft::WRL::ComPtr<ID3D11Buffer> _cbSkeletonBuffer; ///< CbSkeleton (b12)
+    Microsoft::WRL::ComPtr<ID3D11Buffer> m_cbSkeletonBuffer; ///< CbSkeleton (b12)
 
     /// CbScene (b8) への非所有ポインタ。Graphics が所有し SetSceneConstantBuffer で受け取る。
-    ID3D11Buffer* _sceneCB = nullptr;
+    ID3D11Buffer* m_sceneCB = nullptr;
 
     struct CbSkeleton {
         DirectX::XMFLOAT4X4 boneTransforms[MAX_BONES];
     };
-    CbSkeleton _cbSkeletonCache = {};
+    CbSkeleton m_cbSkeletonCache = {};
 };

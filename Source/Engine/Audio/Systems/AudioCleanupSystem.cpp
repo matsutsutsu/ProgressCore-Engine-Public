@@ -10,8 +10,8 @@
 using namespace CCL::ECS;
 
 void AudioCleanupSystem::Update(float /*dt*/) {
-    if (!_world) return;
-    ExecuteCleanup(*_world);
+    if (!m_world) return;
+    ExecuteCleanup(*m_world);
 }
 
 // DestroyTag が付いた AudioEmitter を直接チャンク走査で狙い撃ち、鳴っている音を止める。

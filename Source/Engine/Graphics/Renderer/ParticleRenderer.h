@@ -36,14 +36,14 @@ class ParticleRenderer {
     void Render(const RenderServices& services, const RenderFrameContext& frameCtx);
 
   private:
-    std::vector<ParticleDrawCommand> _drawCommands;
+    std::vector<ParticleDrawCommand> m_drawCommands;
 
     // --- 描画用リソース ---
     Microsoft::WRL::ComPtr<ID3D11SamplerState>       sampler;
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> defaultTexture;
 
-    bool _isLoaded = false;
+    bool m_isLoaded = false;
 
-    PipelineState _psoAdditive;    // 加算パーティクル用
-    PipelineState _psoTransparent; // 半透明パーティクル用
+    PipelineState m_psoAdditive;    // 加算パーティクル用
+    PipelineState m_psoTransparent; // 半透明パーティクル用
 };

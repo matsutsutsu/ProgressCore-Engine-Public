@@ -10,8 +10,8 @@ class ParticleScene : public BaseScene {
     void Initialize() override;
     void Finalize() override;
 
-    CCL::ECS::World* GetWorld() override { return _worldPtr; }
-    CCL::ECS::SystemManager* GetSystemManager() override { return _ecsContext->GetSystemManager(); }
+    CCL::ECS::World* GetWorld() override { return m_worldPtr; }
+    CCL::ECS::SystemManager* GetSystemManager() override { return m_ecsContext->GetSystemManager(); }
   protected:
     void RegisterSystems() override;
 };

@@ -20,7 +20,7 @@
  *   };
  *
  *   // 登録（Graphics::Initialize 等で）
- *   _postProcess->AddEffect<VignetteEffect>();
+ *   m_postProcess->AddEffect<VignetteEffect>();
  *  @endcode
  */
 class IPostEffect
@@ -47,13 +47,13 @@ public:
     /** ImGui 等で表示するエフェクト名 */
     virtual const char* GetName() const = 0;
 
-    bool IsEnabled()     const noexcept { return _enabled; }
-    void SetEnabled(bool v)    noexcept { _enabled = v; }
+    bool IsEnabled()     const noexcept { return m_enabled; }
+    void SetEnabled(bool v)    noexcept { m_enabled = v; }
 
 protected:
     // ★既定は OFF（opt-in）。PostProcessSystem は「対応する設定コンポーネントが
     //   存在するエフェクトだけ」SetEnabled() を呼ぶため、既定 true にすると設定の
     //   無いエフェクト（SSAO/ContactShadow/DoF/…）が毎フレーム全走行して GPU を
     //   飽和させる。Bloom と同じく「設定があるときだけ有効」に統一する。
-    bool _enabled = false;
+    bool m_enabled = false;
 };

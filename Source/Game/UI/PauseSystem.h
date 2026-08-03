@@ -26,7 +26,7 @@ class PauseSystem
     void OpenPause();  ///< ポーズON：オーバーレイ生成
     void ClosePause(); ///< ポーズOFF：オーバーレイ破棄
 
-    bool _paused        = false;
-    bool _transitioning = false; ///< TITLE遷移予約後の連打無視
-    std::vector<CCL::ECS::EntityID> _overlay; ///< 生成したオーバーレイ実体（解除時に破棄）
+    bool m_paused        = false;
+    bool m_transitioning = false; ///< TITLE遷移予約後の連打無視
+    std::vector<CCL::ECS::EntityID> m_overlay; ///< 生成したオーバーレイ実体（解除時に破棄）
 };

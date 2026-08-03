@@ -12,7 +12,7 @@
 //
 // アーキテクチャ上の位置付け:
 //   World Resource として常駐し、Prefab::SpawnParticle / ReturnParticleToPool が
-//   _world->GetResource<ParticlePool>() で取得して使う。
+//   m_world->GetResource<ParticlePool>() で取得して使う。
 //
 // 設計方針(重要):
 //   - Prefab.cpp 内の static にせず、あえて World Resource として持つ。これにより
@@ -33,8 +33,8 @@ public:
     /// @return 取り出した emitterRoot の ID。空きが無ければ InvalidEntityID。
     CCL::ECS::EntityID Acquire(const std::string& key)
     {
-        auto it = _freeByKey.find(key);
-        if (it == _freeByKey.end() || it->second.empty())
+        auto it = m_freeByKey.find(key);
+        if (it == m_freeByKey.end() || it->second.empty())
             return CCL::ECS::InvalidEntityID;
         CCL::ECS::EntityID id = it->second.back();
         it->second.pop_back();
@@ -45,19 +45,19 @@ public:
     void Release(const std::string& key, CCL::ECS::EntityID rootId)
     {
         if (rootId == CCL::ECS::InvalidEntityID) return;
-        _freeByKey[key].push_back(rootId);
+        m_freeByKey[key].push_back(rootId);
     }
 
     /// @brief 全空きリストを空にする。EntityID実体の破棄は呼び出し側の責務。
-    void Clear() { _freeByKey.clear(); }
+    void Clear() { m_freeByKey.clear(); }
 
     /// @brief key の現在の空き数(デバッグ・プリウォーム判定用)。
     size_t FreeCount(const std::string& key) const
     {
-        auto it = _freeByKey.find(key);
-        return (it == _freeByKey.end()) ? 0 : it->second.size();
+        auto it = m_freeByKey.find(key);
+        return (it == m_freeByKey.end()) ? 0 : it->second.size();
     }
 
 private:
-    std::unordered_map<std::string, std::vector<CCL::ECS::EntityID>> _freeByKey;
+    std::unordered_map<std::string, std::vector<CCL::ECS::EntityID>> m_freeByKey;
 };

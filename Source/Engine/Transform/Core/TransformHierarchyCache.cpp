@@ -14,11 +14,11 @@ void TransformHierarchyCache::Rebuild(World& world)
 
     uint32_t maxIndex = 0;
     for (EntityID id : all) maxIndex = (std::max)(maxIndex, EntityHandle::GetIndex(id));
-    _idToOrder.assign(maxIndex + 1, -1);
+    m_idToOrder.assign(maxIndex + 1, -1);
 
-    _order.clear();
-    _parentInOrder.clear();
-    _parentId.clear();
+    m_order.clear();
+    m_parentInOrder.clear();
+    m_parentId.clear();
 
     std::vector<StackEntry> stack;
     stack.reserve(64);
@@ -43,16 +43,16 @@ void TransformHierarchyCache::Rebuild(World& world)
             stack.pop_back();
 
             const uint32_t pure = EntityHandle::GetIndex(e.id);
-            if (pure < _idToOrder.size() && _idToOrder[pure] != -1) continue;  // 循環/重複ガード
+            if (pure < m_idToOrder.size() && m_idToOrder[pure] != -1) continue;  // 循環/重複ガード
 
             auto* t = world.GetComponent<TransformComponent>(e.id);
             if (!t) continue;
 
-            const int myOrder = static_cast<int>(_order.size());
-            _order.push_back(e.id);
-            _parentInOrder.push_back(e.parentOrder);
-            _parentId.push_back(e.parentId);
-            if (pure < _idToOrder.size()) _idToOrder[pure] = myOrder;
+            const int myOrder = static_cast<int>(m_order.size());
+            m_order.push_back(e.id);
+            m_parentInOrder.push_back(e.parentOrder);
+            m_parentId.push_back(e.parentId);
+            if (pure < m_idToOrder.size()) m_idToOrder[pure] = myOrder;
 
             EntityID gc = t->firstChildID;
             while (gc != 0) {
@@ -71,13 +71,13 @@ void TransformHierarchyCache::Rebuild(World& world)
         if (!t) continue;
         if (static_cast<EntityID>(t->parent) == 0) continue;  // ルートは対象外
         const uint32_t pure = EntityHandle::GetIndex(id);
-        if (pure < _idToOrder.size() && _idToOrder[pure] != -1) continue;
-        const int myOrder = static_cast<int>(_order.size());
-        _order.push_back(id);
-        _parentInOrder.push_back(-1);
-        _parentId.push_back(static_cast<EntityID>(t->parent));
-        _idToOrder[pure] = myOrder;
+        if (pure < m_idToOrder.size() && m_idToOrder[pure] != -1) continue;
+        const int myOrder = static_cast<int>(m_order.size());
+        m_order.push_back(id);
+        m_parentInOrder.push_back(-1);
+        m_parentId.push_back(static_cast<EntityID>(t->parent));
+        m_idToOrder[pure] = myOrder;
     }
 
-    _worldScratch.assign(_order.size(), DirectX::XMFLOAT4X4{});
+    m_worldScratch.assign(m_order.size(), DirectX::XMFLOAT4X4{});
 }

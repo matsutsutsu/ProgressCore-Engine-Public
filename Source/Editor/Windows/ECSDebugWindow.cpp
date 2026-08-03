@@ -65,16 +65,16 @@ void ECSDebugWindow::DrawSystemsTab(CCL::ECS::SystemManager* systemManager) {
     // =======================================================
     // 1. ツールバー (UXの劇的改善)
     // =======================================================
-    ImGui::Checkbox("Pause Profiler", &_pauseProfiler);
+    ImGui::Checkbox("Pause Profiler", &m_pauseProfiler);
     ImGui::SameLine();
 
-    // ★ UX改善 1: 一括ON/OFFボタン
+    // UX改善 1: 一括ON/OFFボタン
     if (ImGui::Button("Hide All")) {
-        for (auto& pair : _systemTimings) pair.second.isVisible = false;
+        for (auto& pair : m_systemTimings) pair.second.isVisible = false;
     }
     ImGui::SameLine();
     if (ImGui::Button("Show All")) {
-        for (auto& pair : _systemTimings) pair.second.isVisible = true;
+        for (auto& pair : m_systemTimings) pair.second.isVisible = true;
     }
 
     ImGui::SameLine();
@@ -85,7 +85,7 @@ void ECSDebugWindow::DrawSystemsTab(CCL::ECS::SystemManager* systemManager) {
     // =========================================================
     if (ImGui::Button("Solo Top 5 Heaviest", ImVec2(150, 0))) {
         std::vector<std::pair<std::string, float>> heavySystems;
-        for (auto& pair : _systemTimings) {
+        for (auto& pair : m_systemTimings) {
             float latestTime = 0.0f;
             if (!pair.second.buffer.Data.empty()) {
                 int latestIdx = (pair.second.buffer.Offset == 0) ? pair.second.buffer.MaxSize - 1 : pair.second.buffer.Offset - 1;
@@ -100,12 +100,12 @@ void ECSDebugWindow::DrawSystemsTab(CCL::ECS::SystemManager* systemManager) {
             });
         // 上位5つだけ表示ON
         for (size_t i = 0; i < std::min<size_t>(5, heavySystems.size()); ++i) {
-            _systemTimings[heavySystems[i].first].isVisible = true;
+            m_systemTimings[heavySystems[i].first].isVisible = true;
         }
     }
 
 
-    // ★ UX改善 2: グラフのY軸上限を手動で固定するスライダー
+    // UX改善 2: グラフのY軸上限を手動で固定するスライダー
     // これにより、グラフが勝手に伸び縮みして目が回るのを防ぎます
     static float yAxisMax = 16.66f; // デフォルトは60fps(16.6ms)のライン
     ImGui::SameLine(0, 20);
@@ -115,22 +115,22 @@ void ECSDebugWindow::DrawSystemsTab(CCL::ECS::SystemManager* systemManager) {
 
     // データの記録用ヘルパー
     auto addData = [&](const std::string& name, float timeMs) {
-        // ★ 安全対策: 計測値がNaNや無限大になっていたら0に補正する（ズーム時のクラッシュ原因を排除）
+        // 安全対策: 計測値がNaNや無限大になっていたら0に補正する（ズーム時のクラッシュ原因を排除）
         if (std::isnan(timeMs) || std::isinf(timeMs) || timeMs < 0.0f) timeMs = 0.0f;
 
-        auto& data = _systemTimings[name];
+        auto& data = m_systemTimings[name];
         if (data.buffer.Data.empty()) {
-            float hue = fmod(_systemTimings.size() * 0.618033988749895f, 1.0f);
+            float hue = fmod(m_systemTimings.size() * 0.618033988749895f, 1.0f);
             float r, g, b;
             ImGui::ColorConvertHSVtoRGB(hue, 0.7f, 0.9f, r, g, b);
             data.color = ImVec4(r, g, b, 1.0f);
         }
-        data.buffer.AddPoint(_time, timeMs);
+        data.buffer.AddPoint(m_time, timeMs);
         };
 
     // 2. データの記録 (前回と同じ)
-    if (!_pauseProfiler) {
-        _time += dt;
+    if (!m_pauseProfiler) {
+        m_time += dt;
         for (const auto& sys : systemManager->GetLogicSystems()) {
             addData(sys->GetName(), sys->GetLastUpdateTime());
         }
@@ -143,24 +143,24 @@ void ECSDebugWindow::DrawSystemsTab(CCL::ECS::SystemManager* systemManager) {
     // 3. ImPlot による折れ線グラフの描画
     // =======================================================
 
-    // ★ 修正 1: 実行中はプロット全体のマウス入力(スクロールやドラッグ)を完全に遮断する
+    // 実行中はプロット全体のマウス入力(スクロールやドラッグ)を完全に遮断する
     // これにより、内部計算の衝突によるクラッシュを物理的に防ぎます。
     // Pause中は NoInputs が解除され、ホバーやスクロールが自由に行えるようになります。
-    ImPlotFlags plotFlags = _pauseProfiler ? ImPlotFlags_None : ImPlotFlags_NoInputs;
+    ImPlotFlags plotFlags = m_pauseProfiler ? ImPlotFlags_None : ImPlotFlags_NoInputs;
 
     if (ImPlot::BeginPlot("System Execution Times (ms)", ImVec2(-1, 250), plotFlags)) {
 
-        // ★ 修正 2: 軸のロックフラグは外し、デフォルト設定に戻す
+        // 軸のロックフラグは外し、デフォルト設定に戻す
         ImPlot::SetupAxes("Time (s)", "Execution Time (ms)", ImPlotAxisFlags_None, ImPlotAxisFlags_None);
 
-        // ★ 修正 3: Pause中は何もしない（ユーザーにカメラ操作を委ねる）、実行中のみ強制スクロール
-        if (!_pauseProfiler) {
-            ImPlot::SetupAxisLimits(ImAxis_X1, _time - 5.0, _time, ImGuiCond_Always);
+        // Pause中は何もしない（ユーザーにカメラ操作を委ねる）、実行中のみ強制スクロール
+        if (!m_pauseProfiler) {
+            ImPlot::SetupAxisLimits(ImAxis_X1, m_time - 5.0, m_time, ImGuiCond_Always);
             ImPlot::SetupAxisLimits(ImAxis_Y1, 0.0, yAxisMax, ImGuiCond_Always);
         }
 
-        for (auto& pair : _systemTimings) {
-            // ★ 修正 4: データが2点未満なら描画をスキップ（ImPlot内部での描画エラー防止）
+        for (auto& pair : m_systemTimings) {
+            // データが2点未満なら描画をスキップ（ImPlot内部での描画エラー防止）
             if (!pair.second.isVisible || pair.second.buffer.Data.size() < 2) continue;
 
             float thickness = pair.second.isHovered ? 3.0f : 1.0f;
@@ -193,7 +193,7 @@ void ECSDebugWindow::DrawSystemsTab(CCL::ECS::SystemManager* systemManager) {
         //  std::map（アルファベット順）を、負荷の高い順に並び替えてから描画する
         // =========================================================
         std::vector<std::pair<std::string, SystemProfileData*>> sortedData;
-        for (auto& pair : _systemTimings) {
+        for (auto& pair : m_systemTimings) {
             sortedData.push_back({ pair.first, &pair.second });
         }
 
@@ -249,7 +249,7 @@ void ECSDebugWindow::DrawSystemsTab(CCL::ECS::SystemManager* systemManager) {
 // ヘルパー関数: 型IDから一時的な文字列を生成
 // =========================================================
 const char* ECSDebugWindow::GetFriendlyTypeName(uint32_t id) {
-    // ★ 修正: Registryの既存機能を使って名前を逆引きする
+    // Registryの既存機能を使って名前を逆引きする
     const std::string& name = ComponentGuiRegistry::Instance().GetComponentName(id);
 
     // 辞書に登録されていればその名前を返す
@@ -335,7 +335,7 @@ void ECSDebugWindow::DrawMemoryTab(CCL::ECS::World* world) {
     // --- 左カラム: アーキタイプごとにグループ化されたチャンクリスト ---
     if (ImGui::BeginChild("ChunkList")) {
 
-        // ★ 改良 1: チャンクをアーキタイプハッシュごとに分類する
+        // 改良 1: チャンクをアーキタイプハッシュごとに分類する
         std::map<uint64_t, std::vector<int>> chunksByArchetype;
         for (size_t i = 0; i < chunks.size(); ++i) {
             if (chunks[i]) chunksByArchetype[chunks[i]->GetArchetypeHash()].push_back((int)i);
@@ -429,7 +429,7 @@ void ECSDebugWindow::DrawMemoryTab(CCL::ECS::World* world) {
                 ImGui::Spacing();
 
                 for (size_t e = 0; e < chunk->GetEntityCount(); ++e) {
-                    // ★ 改良: 削除済みのエンティティはスキップするか、目立たなくする
+                    // 改良: 削除済みのエンティティはスキップするか、目立たなくする
                     if (chunk->HasDestroyedEntities() && chunk->IsEntityDestroyed(e)) continue;
 
                     CCL::ECS::EntityID id = chunk->GetEntityByIndex(e);
@@ -443,7 +443,7 @@ void ECSDebugWindow::DrawMemoryTab(CCL::ECS::World* world) {
                                 if (data) {
 
                                     // =========================================================
-                                    // ★ 究極の進化: あなたの構築したGUIレジストリを呼び出すだけ！
+                                    // 究極の進化: あなたの構築したGUIレジストリを呼び出すだけ！
                                     // =========================================================
                                     // これにより、TransformならPosition(x,y,z)などのスライダーが自動生成されます。
                                     // Undo/Redo のフックも ComponentMetaImGui 内で自動処理されます。
@@ -488,7 +488,7 @@ void ECSDebugWindow::DrawPendingOpsTab(CCL::ECS::World* world) {
     ImGui::Text("Queue Size: %zu", ops.size());
     ImGui::SameLine();
 
-    // ★ 改良: ボタンの色を目立たせる
+    // 改良: ボタンの色を目立たせる
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.6f, 0.2f, 1.0f));
     if (ImGui::Button("Sync Now (ScrutinyAndApply)")) {
         world->ScrutinyAndApply();

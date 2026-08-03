@@ -17,18 +17,18 @@ namespace CCL::ECS {
             return instance;
         }
 
-        void AddRegistration(RegisterFunc func) { _registrations.push_back(func); }
+        void AddRegistration(RegisterFunc func) { m_registrations.push_back(func); }
 
         // ゲーム起動時に1回だけ呼ばれる
         void RegisterAll(SystemManager &manager)
         {
-            for (auto &reg : _registrations) {
+            for (auto &reg : m_registrations) {
                 reg(manager); // 溜め込んだ登録処理を一斉に実行
             }
         }
 
       private:
-        std::vector<RegisterFunc> _registrations;
+        std::vector<RegisterFunc> m_registrations;
     };
 
     // グローバル変数の初期化タイミングを利用して受付を済ませるためのヘルパー

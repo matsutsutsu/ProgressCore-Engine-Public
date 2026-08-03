@@ -44,24 +44,24 @@ public:
     void Shutdown();
 
     // ---- Core access ----
-    ID3D11Device* GetDevice()   const noexcept { return _device.Get(); }
-    ID3D11DeviceContext* GetContext()  const noexcept { return _context.Get(); }
-    IDXGISwapChain* GetSwapChain() const noexcept { return _swapChain.Get(); }
+    ID3D11Device* GetDevice()   const noexcept { return m_device.Get(); }
+    ID3D11DeviceContext* GetContext()  const noexcept { return m_context.Get(); }
+    IDXGISwapChain* GetSwapChain() const noexcept { return m_swapChain.Get(); }
 
     // ---- Render target access ----
-    ID3D11RenderTargetView* GetBackBufferRTV()    const noexcept { return _backBufferRTV.Get(); }
-    ID3D11DepthStencilView* GetDepthStencilView() const noexcept { return _depthStencilView.Get(); }
-    ID3D11ShaderResourceView* GetDepthSRV()       const noexcept { return _depthSRV.Get(); }
-    ID3D11RenderTargetView* GetGameRTV()          const noexcept { return _gameRTV.Get(); }
-    ID3D11ShaderResourceView* GetGameSRV()          const noexcept { return _gameSRV.Get(); }
+    ID3D11RenderTargetView* GetBackBufferRTV()    const noexcept { return m_backBufferRTV.Get(); }
+    ID3D11DepthStencilView* GetDepthStencilView() const noexcept { return m_depthStencilView.Get(); }
+    ID3D11ShaderResourceView* GetDepthSRV()       const noexcept { return m_depthSRV.Get(); }
+    ID3D11RenderTargetView* GetGameRTV()          const noexcept { return m_gameRTV.Get(); }
+    ID3D11ShaderResourceView* GetGameSRV()          const noexcept { return m_gameSRV.Get(); }
 
     // Tracyコンテキストへのアクセサ
     // ※ tracy::D3D11Ctx は TRACY_ENABLE 未定義（Shipping）だと存在しないため、
     //    両構成で定義される移植用エイリアス TracyD3D11Ctx（無効時は void*）を使う。
-    TracyD3D11Ctx GetTracyContext() const noexcept { return _tracyD3D11Ctx; }
+    TracyD3D11Ctx GetTracyContext() const noexcept { return m_tracyD3D11Ctx; }
 
     // ---- CbScene 定数バッファ ----
-    ID3D11Buffer* GetSceneConstantBuffer() const noexcept { return _sceneConstantBuffer.Get(); }
+    ID3D11Buffer* GetSceneConstantBuffer() const noexcept { return m_sceneConstantBuffer.Get(); }
 
     /**
      * @brief CbScene バッファの内容を GPU に転送する。
@@ -71,11 +71,11 @@ public:
     void UpdateSceneConstantBuffer(const void* data, size_t size);
 
     // ---- Viewport / screen size ----
-    HWND  GetWindowHandle() const noexcept { return _hWnd; }
-    float GetWidth()        const noexcept { return static_cast<float>(_width); }
-    float GetHeight()       const noexcept { return static_cast<float>(_height); }
-    UINT  GetWidthU()       const noexcept { return _width; }
-    UINT  GetHeightU()      const noexcept { return _height; }
+    HWND  GetWindowHandle() const noexcept { return m_hWnd; }
+    float GetWidth()        const noexcept { return static_cast<float>(m_width); }
+    float GetHeight()       const noexcept { return static_cast<float>(m_height); }
+    UINT  GetWidthU()       const noexcept { return m_width; }
+    UINT  GetHeightU()      const noexcept { return m_height; }
 
     // ---- Frame operations ----
     void Clear(float r, float g, float b, float a, bool useGameRTV);
@@ -85,22 +85,22 @@ public:
     HRESULT GetDeviceRemovedReason() const noexcept;
 
 private:
-    HWND _hWnd = nullptr;
-    UINT _width = 0;
-    UINT _height = 0;
+    HWND m_hWnd = nullptr;
+    UINT m_width = 0;
+    UINT m_height = 0;
 
-    Microsoft::WRL::ComPtr<ID3D11Device>             _device;
-    Microsoft::WRL::ComPtr<ID3D11DeviceContext>      _context;
-    Microsoft::WRL::ComPtr<IDXGISwapChain>           _swapChain;
-    Microsoft::WRL::ComPtr<ID3D11RenderTargetView>   _backBufferRTV;
-    Microsoft::WRL::ComPtr<ID3D11DepthStencilView>   _depthStencilView;
-    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> _depthSRV;
-    Microsoft::WRL::ComPtr<ID3D11Texture2D>          _gameTex;
-    Microsoft::WRL::ComPtr<ID3D11RenderTargetView>   _gameRTV;
-    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> _gameSRV;
-    Microsoft::WRL::ComPtr<ID3D11Buffer>             _sceneConstantBuffer;
-    D3D11_VIEWPORT                                   _viewport{};
+    Microsoft::WRL::ComPtr<ID3D11Device>             m_device;
+    Microsoft::WRL::ComPtr<ID3D11DeviceContext>      m_context;
+    Microsoft::WRL::ComPtr<IDXGISwapChain>           m_swapChain;
+    Microsoft::WRL::ComPtr<ID3D11RenderTargetView>   m_backBufferRTV;
+    Microsoft::WRL::ComPtr<ID3D11DepthStencilView>   m_depthStencilView;
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_depthSRV;
+    Microsoft::WRL::ComPtr<ID3D11Texture2D>          m_gameTex;
+    Microsoft::WRL::ComPtr<ID3D11RenderTargetView>   m_gameRTV;
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_gameSRV;
+    Microsoft::WRL::ComPtr<ID3D11Buffer>             m_sceneConstantBuffer;
+    D3D11_VIEWPORT                                   m_viewport{};
 
     // Tracy D3D11 コンテキストのポインタ（無効構成では TracyD3D11Ctx=void*）
-    TracyD3D11Ctx _tracyD3D11Ctx = nullptr;
+    TracyD3D11Ctx m_tracyD3D11Ctx = nullptr;
 };

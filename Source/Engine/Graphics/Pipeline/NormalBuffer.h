@@ -24,15 +24,15 @@ public:
     /// @param dsv シーンの深度バッファ。深度テストを効かせて正しい前後関係で法線を書く。
     void Activate(ID3D11DeviceContext* dc, ID3D11DepthStencilView* dsv);
 
-    ID3D11RenderTargetView*   GetRTV() const noexcept { return _rtv.Get(); }
-    ID3D11ShaderResourceView* GetSRV() const noexcept { return _srv.Get(); }
-    UINT                      GetWidth()  const noexcept { return _width; }
-    UINT                      GetHeight() const noexcept { return _height; }
+    ID3D11RenderTargetView*   GetRTV() const noexcept { return m_rtv.Get(); }
+    ID3D11ShaderResourceView* GetSRV() const noexcept { return m_srv.Get(); }
+    UINT                      GetWidth()  const noexcept { return m_width; }
+    UINT                      GetHeight() const noexcept { return m_height; }
 
 private:
-    Microsoft::WRL::ComPtr<ID3D11Texture2D>          _texture;
-    Microsoft::WRL::ComPtr<ID3D11RenderTargetView>   _rtv;
-    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> _srv;
-    UINT _width  = 0;
-    UINT _height = 0;
+    Microsoft::WRL::ComPtr<ID3D11Texture2D>          m_texture;
+    Microsoft::WRL::ComPtr<ID3D11RenderTargetView>   m_rtv;
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_srv;
+    UINT m_width  = 0;
+    UINT m_height = 0;
 };

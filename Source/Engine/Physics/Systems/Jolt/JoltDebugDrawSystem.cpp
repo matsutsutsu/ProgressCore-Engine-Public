@@ -27,8 +27,8 @@ namespace {
 void JoltBoxDebugDrawSystem::Update(float dt)
 {
     if (!isDebugVisible) return;
-    if (!_world->HasResource<ShapeRenderer*>()) return;
-    auto* renderer = _world->GetResource<ShapeRenderer*>();
+    if (!m_world->HasResource<ShapeRenderer*>()) return;
+    auto* renderer = m_world->GetResource<ShapeRenderer*>();
     if (!renderer) return;
 
     ForEach([&](const TransformComponent& trans, const JoltBoxColliderComponent& box) {
@@ -74,8 +74,8 @@ void JoltBoxDebugDrawSystem::Update(float dt)
 void JoltSphereDebugDrawSystem::Update(float dt)
 {
     if (!isDebugVisible) return;
-    if (!_world->HasResource<ShapeRenderer*>()) return;
-    auto* renderer = _world->GetResource<ShapeRenderer*>();
+    if (!m_world->HasResource<ShapeRenderer*>()) return;
+    auto* renderer = m_world->GetResource<ShapeRenderer*>();
     if (!renderer) return;
 
     ForEach([&](const TransformComponent& trans, const JoltSphereColliderComponent& sphere) {
@@ -108,8 +108,8 @@ void JoltSphereDebugDrawSystem::Update(float dt)
 void JoltCapsuleDebugDrawSystem::Update(float dt)
 {
     if (!isDebugVisible) return;
-    if (!_world->HasResource<ShapeRenderer*>()) return;
-    auto* renderer = _world->GetResource<ShapeRenderer*>();
+    if (!m_world->HasResource<ShapeRenderer*>()) return;
+    auto* renderer = m_world->GetResource<ShapeRenderer*>();
     if (!renderer) return;
 
     ForEach([&](const TransformComponent& trans, const JoltCapsuleColliderComponent& capsule) {
@@ -144,8 +144,8 @@ void JoltCapsuleDebugDrawSystem::Update(float dt)
 void JoltMeshDebugDrawSystem::Update(float dt)
 {
     if (!isDebugVisible) return;
-    if (!_world->HasResource<ShapeRenderer*>()) return;
-    auto* renderer = _world->GetResource<ShapeRenderer*>();
+    if (!m_world->HasResource<ShapeRenderer*>()) return;
+    auto* renderer = m_world->GetResource<ShapeRenderer*>();
     if (!renderer) return;
 
     // Transform, Meshタグ, Modelの3つが揃っているエンティティだけを描画

@@ -27,10 +27,10 @@ void ApplyCinematicSlow(TimeContext &ctx, float duration, float scale)
 
 void DefeatSlowMotionSystem::Update(float dt)
 {
-    if (!_world || !_world->HasResource<TimeContext>()) return;
-    auto &ctx = _world->GetResource<TimeContext>();
+    if (!m_world || !m_world->HasResource<TimeContext>()) return;
+    auto &ctx = m_world->GetResource<TimeContext>();
 
-    if (_cooldown > 0.0f) _cooldown -= dt;
+    if (m_cooldown > 0.0f) m_cooldown -= dt;
 
     bool normalKill    = false; // このフレームに敵を1体以上倒したか
     bool climax        = false; // ボス撃破 or ワールドクリア（大きいスロー）
@@ -38,7 +38,7 @@ void DefeatSlowMotionSystem::Update(float dt)
     int  aliveEnemies  = 0;     // 生存中の敵数（プレイヤー除く）
 
     ForEachWithID([&](EntityID id, HealthComponent &hp) {
-        const bool isPlayer = _world->HasComponent<PlayerComponent>(id);
+        const bool isPlayer = m_world->HasComponent<PlayerComponent>(id);
         const bool dead     = (hp.currentHealth <= 0.0f);
 
         if (!isPlayer && !dead) ++aliveEnemies;
@@ -52,7 +52,7 @@ void DefeatSlowMotionSystem::Update(float dt)
                 sawEnemyDeath = true;
                 normalKill    = true;
                 // ボスを倒したらクライマックス扱い。
-                if (_world->HasComponent<BossActionComponent>(id)) climax = true;
+                if (m_world->HasComponent<BossActionComponent>(id)) climax = true;
             }
         }
     });
@@ -63,12 +63,12 @@ void DefeatSlowMotionSystem::Update(float dt)
     if (climax)
     {
         ApplyCinematicSlow(ctx, kClimaxDur, kClimaxScale);
-        _cooldown = kCooldown; // 直後に通常スローが重ならないように
+        m_cooldown = kCooldown; // 直後に通常スローが重ならないように
     }
-    else if (normalKill && _cooldown <= 0.0f)
+    else if (normalKill && m_cooldown <= 0.0f)
     {
         ApplyCinematicSlow(ctx, kNormalDur, kNormalScale);
-        _cooldown = kCooldown;
+        m_cooldown = kCooldown;
     }
 }
 

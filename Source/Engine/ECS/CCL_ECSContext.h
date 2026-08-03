@@ -14,14 +14,14 @@ namespace CCL::ECS {
         // 別に書かなくてもいいけど、書いておくと「ECSContext ctx = ...」のような書き方を禁止できる
         explicit ECSContext(JobSystem* jobSystem = nullptr)
         {
-            _world         = std::make_unique<World>();
-            _systemManager = std::make_unique<SystemManager>();
+            m_world         = std::make_unique<World>();
+            m_systemManager = std::make_unique<SystemManager>();
 
             // SystemManagerに「お前が処理すべきデータはこれだ」と教える
-            _systemManager->SetWorld(_world.get());
+            m_systemManager->SetWorld(m_world.get());
 
             // 共有ジョブプールを注入（RegisterSystems より前に済ませる）
-            _systemManager->SetJobSystem(jobSystem);
+            m_systemManager->SetJobSystem(jobSystem);
         }
 
         ~ECSContext() = default;
@@ -39,17 +39,17 @@ namespace CCL::ECS {
 
 
             // 1. 溜まっていた構造変更（Entity生成/削除）を適用し、データを確定させる
-            _world->ScrutinyAndApply();
+            m_world->ScrutinyAndApply();
 
             // 2. 構造変更があったフレームのみターゲットを再解決する
-            if (_world->IsStructureDirty())
+            if (m_world->IsStructureDirty())
             {
-                _systemManager->ResolveTargetChunks(&_world->GetChunkManager());
-                _world->ResetStructureDirty(); // フラグを下ろす
+                m_systemManager->ResolveTargetChunks(&m_world->GetChunkManager());
+                m_world->ResetStructureDirty(); // フラグを下ろす
             }
 
             // 3. ロジックを回す
-            _systemManager->UpdateLogic(dt);
+            m_systemManager->UpdateLogic(dt);
         }
 
         // 描画系の更新（RenderUpdate等で呼ぶ）
@@ -60,27 +60,27 @@ namespace CCL::ECS {
             ZoneScopedN("World::RenderUpdate");
         
 
-            _systemManager->UpdateRender(dt); 
+            m_systemManager->UpdateRender(dt); 
         }
 
         // ポーズ画面用など、ロジックは止めて構造変更と描画だけを行う特殊更新
         void UpdatePaused(float dt)
         {
-            _world->ScrutinyAndApply();
-            _systemManager->ResolveTargetChunks(&_world->GetChunkManager());
-            _systemManager->UpdateRender(dt);
+            m_world->ScrutinyAndApply();
+            m_systemManager->ResolveTargetChunks(&m_world->GetChunkManager());
+            m_systemManager->UpdateRender(dt);
         }
 
 
         // ---------------------------------------------------------
         // アクセッサ
         // ---------------------------------------------------------
-        World   *GetWorld() const { return _world.get(); }
-        SystemManager *GetSystemManager() const { return _systemManager.get(); }
+        World   *GetWorld() const { return m_world.get(); }
+        SystemManager *GetSystemManager() const { return m_systemManager.get(); }
 
       private:
-        std::unique_ptr<World>   _world;
-        std::unique_ptr<SystemManager> _systemManager;
+        std::unique_ptr<World>   m_world;
+        std::unique_ptr<SystemManager> m_systemManager;
     };
 
 } // namespace CCL::ECS

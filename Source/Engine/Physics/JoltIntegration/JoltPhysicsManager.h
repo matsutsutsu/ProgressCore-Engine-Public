@@ -25,7 +25,7 @@
 //
 // 【使い方・ルール】
 // - ゲーム開始時に Initialize() を呼び、毎フレーム Step() を呼ぶ。
-// - System側からは _world->GetResource<JoltPhysicsManager>() 経由でアクセスし、
+// - System側からは m_world->GetResource<JoltPhysicsManager>() 経由でアクセスし、
 //   GetBodyInterface() を通じて剛体を操作する。直接 JPH::PhysicsSystem
 //   を弄らないこと。
 //

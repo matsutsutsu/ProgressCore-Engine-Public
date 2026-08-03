@@ -169,14 +169,14 @@ void InspectorWindow::DrawContents(EditorContext &context)
     {
         ImGui::SetNextItemWidth(-160.0f);
         ImGui::InputTextWithHint("##InspectorFilter", "コンポーネントを検索...",
-            _inspectorFilterBuffer, sizeof(_inspectorFilterBuffer));
+            m_inspectorFilterBuffer, sizeof(m_inspectorFilterBuffer));
 
         ImGui::SameLine();
         if (ImGui::SmallButton("全展開"))
-            _forceOpenState = 1;
+            m_forceOpenState = 1;
         ImGui::SameLine();
         if (ImGui::SmallButton("全折りたたみ"))
-            _forceOpenState = 0;
+            m_forceOpenState = 0;
 
         ImGui::SetNextItemWidth(-1.0f);
         if (ImGui::BeginCombo("##JumpTo", "コンポーネントへ移動...", ImGuiComboFlags_HeightLarge))
@@ -190,8 +190,8 @@ void InspectorWindow::DrawContents(EditorContext &context)
                 }
                 if (ImGui::Selectable(label.c_str()))
                 {
-                    _hasJumpTarget = true;
-                    _jumpToTypeID  = td.id;
+                    m_hasJumpTarget = true;
+                    m_jumpToTypeID  = td.id;
                 }
             }
             ImGui::EndCombo();
@@ -200,7 +200,7 @@ void InspectorWindow::DrawContents(EditorContext &context)
     }
 
     // フィルタ文字列を小文字化（大文字小文字を区別しない）
-    std::string inspectorFilter = _inspectorFilterBuffer;
+    std::string inspectorFilter = m_inspectorFilterBuffer;
     std::transform(inspectorFilter.begin(), inspectorFilter.end(),
         inspectorFilter.begin(), ::tolower);
     const bool filtering = !inspectorFilter.empty();
@@ -278,9 +278,9 @@ void InspectorWindow::DrawContents(EditorContext &context)
                     : ImVec4(0.92f, 0.92f, 0.94f, 1.0f)); // 通常（ほぼ白）
 
         // ② 一括開閉の指令があればこのフレームだけ強制（storage に永続化される）
-        if (_forceOpenState != -1)
+        if (m_forceOpenState != -1)
         {
-            ImGui::SetNextItemOpen(_forceOpenState == 1, ImGuiCond_Always);
+            ImGui::SetNextItemOpen(m_forceOpenState == 1, ImGuiCond_Always);
         }
         // 検索中は一致コンポーネントを自動で開き、すぐ中身を編集できるようにする
         if (filtering)
@@ -288,7 +288,7 @@ void InspectorWindow::DrawContents(EditorContext &context)
             ImGui::SetNextItemOpen(true, ImGuiCond_Always);
         }
         // ⑤ Jump 先は強制的に開いて中身を見せる
-        bool isJumpTarget = (_hasJumpTarget && typeID == _jumpToTypeID);
+        bool isJumpTarget = (m_hasJumpTarget && typeID == m_jumpToTypeID);
         if (isJumpTarget)
         {
             ImGui::SetNextItemOpen(true, ImGuiCond_Always);
@@ -303,7 +303,7 @@ void InspectorWindow::DrawContents(EditorContext &context)
         if (isJumpTarget)
         {
             ImGui::SetScrollHereY(0.1f);
-            _hasJumpTarget = false;
+            m_hasJumpTarget = false;
         }
 
         // -------------------------------------------------------
@@ -390,8 +390,8 @@ void InspectorWindow::DrawContents(EditorContext &context)
 
     // ⑤ Jump 対象が属するカテゴリを求めておく（畳まれていても開くため）
     std::string jumpCategory;
-    if (_hasJumpTarget) {
-        jumpCategory = registry.GetCategory(_jumpToTypeID);
+    if (m_hasJumpTarget) {
+        jumpCategory = registry.GetCategory(m_jumpToTypeID);
         if (jumpCategory.empty()) jumpCategory = "Misc";
     }
 
@@ -417,9 +417,9 @@ void InspectorWindow::DrawContents(EditorContext &context)
 
         ImGui::PushID(category.c_str());
 
-        if (_forceOpenState != -1)
-            ImGui::SetNextItemOpen(_forceOpenState == 1, ImGuiCond_Always);
-        if (_hasJumpTarget && category == jumpCategory)
+        if (m_forceOpenState != -1)
+            ImGui::SetNextItemOpen(m_forceOpenState == 1, ImGuiCond_Always);
+        if (m_hasJumpTarget && category == jumpCategory)
             ImGui::SetNextItemOpen(true, ImGuiCond_Always);
         // 検索中は該当カテゴリを自動で開き、一致コンポーネントをすぐ見せる
         if (filtering)
@@ -485,11 +485,11 @@ void InspectorWindow::DrawContents(EditorContext &context)
     {
         ImGui::Spacing();
         ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f),
-            "「%s」に一致するコンポーネントはありません", _inspectorFilterBuffer);
+            "「%s」に一致するコンポーネントはありません", m_inspectorFilterBuffer);
     }
 
     // ② このフレームで消費した一括開閉指令をクリア
-    _forceOpenState = -1;
+    m_forceOpenState = -1;
 
     ImGui::Separator();
     ImGui::Spacing();
@@ -498,7 +498,7 @@ void InspectorWindow::DrawContents(EditorContext &context)
     if (ImGui::Button("＋ コンポーネントを追加", ImVec2(-1, 30))) {
         ImGui::OpenPopup("AddComponentMenu");
         // メニューを開いた瞬間に検索ワードをリセットする
-        _compSearchBuffer[0] = '\0';
+        m_compSearchBuffer[0] = '\0';
     }
 
     // ポップアップの初期サイズを固定し、見栄えを整える
@@ -510,13 +510,13 @@ void InspectorWindow::DrawContents(EditorContext &context)
             ImGui::SetKeyboardFocusHere(); // ポップアップが開いた瞬間、自動で文字入力状態にする
         }
         ImGui::SetNextItemWidth(-1.0f);
-        ImGui::InputTextWithHint("##CompSearch", "コンポーネントを検索...", _compSearchBuffer, sizeof(_compSearchBuffer));
+        ImGui::InputTextWithHint("##CompSearch", "コンポーネントを検索...", m_compSearchBuffer, sizeof(m_compSearchBuffer));
         
         ImGui::Separator();
         ImGui::Spacing();
 
         // 検索文字列の小文字化（大文字小文字を区別せず検索するため）
-        std::string searchStr = _compSearchBuffer;
+        std::string searchStr = m_compSearchBuffer;
         std::transform(searchStr.begin(), searchStr.end(), searchStr.begin(), ::tolower);
 
         // 2. スクロール可能なリスト領域の開始

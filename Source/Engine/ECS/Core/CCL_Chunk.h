@@ -29,23 +29,23 @@
 //  2. 主要な変数（データの持ち方）
 //  Chunk が内部でどのようなデータを管理しているかを見てみましょう。
 //  
-//  _archetype(Archetype) : この Chunk が「何のコンポーネントを格納しているか」
+//  m_archetype(Archetype) : この Chunk が「何のコンポーネントを格納しているか」
 //  という定義情報です。
 //  
-//  _components(std::vector<std::vector<uint8_t>>) : Chunk の中身（実データ）です。
+//  m_components(std::vector<std::vector<uint8_t>>) : Chunk の中身（実データ）です。
 //  
 //  外側の vector は「コンポーネントの種類」の数だけあります。
 //  
 //  内側の vector は「全エンティティのそのコンポーネントの生データ」が
 //  ギッシリ詰まった連続メモリです。
 //  
-//  _ownerEntities(std::vector<EntityID>) : 
+//  m_ownerEntities(std::vector<EntityID>) : 
 //  この Chunk に入っている各スロットが、どの EntityID のものかを記録する配列です。
 //  
-//  _entityToIndex(std::unordered_map<EntityID, size_t>) : 
+//  m_entityToIndex(std::unordered_map<EntityID, size_t>) : 
 // 「EntityID」から「そのデータが Chunk 内の何番目にあるか」を高速に逆引きするための辞書です。
 //  
-//  _destroyedEntities(std::vector<size_t>) : 
+//  m_destroyedEntities(std::vector<size_t>) : 
 //  削除予約されたエンティティのインデックスを一時的に貯めておくリストです。
 //  
 //  3. 主要な関数（何ができるのか）
@@ -111,10 +111,10 @@ namespace CCL::ECS
 		// 引数のEntityをすぐにデータを消さず、「この番号は後で消す」という印をつける
         void MarkDestroyEntity(size_t entityIndex);
 
-        size_t GetEntityCount() const { return _entityCount; }
-        size_t GetChunkSize() const { return _entityStride; }
-        const Archetype& GetArchetype() const { return _archetype; }
-        EntityID GetEntityByIndex(size_t i) const { return _ownerEntities[i]; }
+        size_t GetEntityCount() const { return m_entityCount; }
+        size_t GetChunkSize() const { return m_entityStride; }
+        const Archetype& GetArchetype() const { return m_archetype; }
+        EntityID GetEntityByIndex(size_t i) const { return m_ownerEntities[i]; }
 
 		// 削除の「印」がついた箇所を詰め、メモリを隙間なく並べ替える
 		// ECSの高速性を維持する秘訣
@@ -123,12 +123,12 @@ namespace CCL::ECS
 
 
         // チャンクの最大収容数を返す
-        size_t GetCapacity() const { return _capacity; }
+        size_t GetCapacity() const { return m_capacity; }
 
         // デバッグ用：アーキタイプの簡易ハッシュ
         size_t GetArchetypeHash() const {
             size_t hash = 0;
-            for (const auto& t : _archetype) {
+            for (const auto& t : m_archetype) {
                 hash ^= std::hash<uint32_t>{}(t.id) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
             }
             return hash;
@@ -140,49 +140,49 @@ namespace CCL::ECS
 
         bool IsEntityDestroyed(size_t index) const
         {
-            return std::find(_destroyedEntities.begin(), _destroyedEntities.end(), index) !=
-                   _destroyedEntities.end();
+            return std::find(m_destroyedEntities.begin(), m_destroyedEntities.end(), index) !=
+                   m_destroyedEntities.end();
         }
 
         //@brief Chunkに格納されている全EntityIDの配列の先頭ポインタを取得します。
         //System側で「自分自身のEntityID」を知る必要がある場合（ScriptSystem等）に使用します。
         //@return const EntityID* ID配列の先頭ポインタ
         const EntityID* GetEntityIDs() const {
-            if (_ownerEntities.empty()) return nullptr;
-            return _ownerEntities.data();
+            if (m_ownerEntities.empty()) return nullptr;
+            return m_ownerEntities.data();
         }
 
         // 削除リストが空でないか（削除予定のエンティティがあるか）を返す
-        bool HasDestroyedEntities() const { return !_destroyedEntities.empty(); }
+        bool HasDestroyedEntities() const { return !m_destroyedEntities.empty(); }
 
     private:
 		// このChunkが「なんのコンポーネント」を持っているかの定義情報
-        Archetype _archetype;
-        size_t _capacity = 0;      // 最大容量を保持
+        Archetype m_archetype;
+        size_t m_capacity = 0;      // 最大容量を保持
 
 		// このChunkに所属するエンティティIDのリスト
-        std::vector<EntityID> _ownerEntities;
-        size_t _entityStride = 0;            
-        size_t _entityCount = 0;
+        std::vector<EntityID> m_ownerEntities;
+        size_t m_entityStride = 0;            
+        size_t m_entityCount = 0;
 
 		// 削除予定のエンティティインデックスリスト
-        std::vector<size_t> _destroyedEntities; 
+        std::vector<size_t> m_destroyedEntities; 
 
 		// Chunkの中身（実データ）
 		//  ・外側のvector: コンポーネントの種類ごと
 		//  ・内側のvector: そのコンポーネントの全エンティティ分の生データ
-        //std::vector<std::vector<uint8_t>> _components; // SoA配列
+        //std::vector<std::vector<uint8_t>> m_components; // SoA配列
 
         // 核心的修正：ネストしたvectorを廃止し、1Dメモリとオフセット管理に移行
-        std::vector<uint8_t> _memoryBlock;
-        std::vector<size_t>  _componentOffsets;
+        std::vector<uint8_t> m_memoryBlock;
+        std::vector<size_t>  m_componentOffsets;
 
 
     public:
         size_t GetComponentIndex(TypeID id) const
         {
-            for (size_t i = 0; i < _archetype.size(); ++i)
-                if (_archetype[i].id == id)
+            for (size_t i = 0; i < m_archetype.size(); ++i)
+                if (m_archetype[i].id == id)
                     return i;
             return InvalidIndex;
         }
@@ -204,7 +204,7 @@ namespace CCL::ECS
 
         const Archetype& GetTypeDatas() const // メソッド名はそのままに、戻り値を Archetype& に修正
         {
-            return _archetype;
+            return m_archetype;
         }
 
 		// 指定されたTypeIDのコンポーネントを持っているか？
@@ -234,7 +234,7 @@ namespace CCL::ECS
             if (index == InvalidIndex) return nullptr;
 
             // 3. 体育館の入り口から、目的の白線の位置まで進んだ場所を T* にキャストして返す
-            return reinterpret_cast<T *>(_memoryBlock.data() + _componentOffsets[index]);
+            return reinterpret_cast<T *>(m_memoryBlock.data() + m_componentOffsets[index]);
         }
 
         // const版 GetComponentArray (読み取り専用)
@@ -244,24 +244,24 @@ namespace CCL::ECS
 
             if (index == InvalidIndex) return nullptr;
 
-            return reinterpret_cast<const T *>(_memoryBlock.data() + _componentOffsets[index]);
+            return reinterpret_cast<const T *>(m_memoryBlock.data() + m_componentOffsets[index]);
         }
 
 
     private:
         // 「何番目のエンティティの、どのコンポーネント」が欲しいかを指定すると、
         // 　その正確なメモリ番地を計算して返します
-		// 第１引数 : コンポーネントのインデックス（_archetype 内の位置）
+		// 第１引数 : コンポーネントのインデックス（m_archetype 内の位置）
 		// 第２引数 : エンティティのインデックス（Chunk内の位置）
         void* GetComponentPtr(size_t compIdx, size_t entityIndex)
         {
             // 1. 指定されたコンポーネントの配列を取り出す
-            size_t baseOffset = _componentOffsets[compIdx];
+            size_t baseOffset = m_componentOffsets[compIdx];
             // 2. その型の1個あたりのサイズを取得
-            size_t sz = _archetype[compIdx].typeSize;
+            size_t sz = m_archetype[compIdx].typeSize;
             // 3. 配列の先頭アドレス + (何番目か * サイズ) で場所を特定
-            // 体育館の入り口(_memoryBlock) + エリアの開始位置(baseOffset) + 人数分進む
-            return _memoryBlock.data() + baseOffset + (entityIndex * sz);
+            // 体育館の入り口(m_memoryBlock) + エリアの開始位置(baseOffset) + 人数分進む
+            return m_memoryBlock.data() + baseOffset + (entityIndex * sz);
      
         }
 

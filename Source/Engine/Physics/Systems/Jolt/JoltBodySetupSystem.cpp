@@ -36,8 +36,8 @@ namespace {
 
 void JoltBodySetupSystem::Update(float dt)
 {
-    if (!_world->HasResource<JoltPhysicsManager*>()) return;
-    auto               &joltManager   = _world->GetResource<JoltPhysicsManager*>();
+    if (!m_world->HasResource<JoltPhysicsManager*>()) return;
+    auto               &joltManager   = m_world->GetResource<JoltPhysicsManager*>();
     JPH::BodyInterface &bodyInterface = joltManager->GetBodyInterface();
 
     // ★あなたのエンジンの IfSystem の恩恵により、
@@ -46,7 +46,7 @@ void JoltBodySetupSystem::Update(float dt)
                       const TransformComponent     &trans,
                       const JoltRigidbodyComponent &rigid) {
         // 【唯一の除外条件】すでに実体ID(Handle)が作られているならスキップ
-        if (_world->HasComponent<JoltHandleComponent>(id)) {
+        if (m_world->HasComponent<JoltHandleComponent>(id)) {
             return;
         }
 
@@ -55,7 +55,7 @@ void JoltBodySetupSystem::Update(float dt)
         // =======================================================
         // 1. Box Collider の生成
         // =======================================================
-        if (auto* box = _world->GetComponent<JoltBoxColliderComponent>(id)) {
+        if (auto* box = m_world->GetComponent<JoltBoxColliderComponent>(id)) {
             JPH::BoxShapeSettings baseSettings(JPH::Vec3(box->halfExtent.x, box->halfExtent.y, box->halfExtent.z));
             JPH::ShapeRefC baseShape = baseSettings.Create().Get();
 
@@ -70,7 +70,7 @@ void JoltBodySetupSystem::Update(float dt)
         // =======================================================
         // 2. Sphere Collider の生成
         // =======================================================
-        else if (auto* sphere = _world->GetComponent<JoltSphereColliderComponent>(id)) {
+        else if (auto* sphere = m_world->GetComponent<JoltSphereColliderComponent>(id)) {
             JPH::SphereShapeSettings baseSettings(sphere->radius);
             JPH::ShapeRefC baseShape = baseSettings.Create().Get();
 
@@ -85,7 +85,7 @@ void JoltBodySetupSystem::Update(float dt)
         // =======================================================
         // 3. Capsule Collider の生成
         // =======================================================
-        else if (auto* capsule = _world->GetComponent<JoltCapsuleColliderComponent>(id)) {
+        else if (auto* capsule = m_world->GetComponent<JoltCapsuleColliderComponent>(id)) {
             JPH::CapsuleShapeSettings baseSettings(capsule->halfHeight, capsule->radius);
             JPH::ShapeRefC baseShape = baseSettings.Create().Get();
 
@@ -100,10 +100,10 @@ void JoltBodySetupSystem::Update(float dt)
         // =======================================================
         // 4. Mesh Collider (地形) の自動抽出と生成
         // =======================================================
-        else if (auto* meshCol = _world->GetComponent<JoltMeshColliderComponent>(id)) {
+        else if (auto* meshCol = m_world->GetComponent<JoltMeshColliderComponent>(id)) {
 
             // 1. 同じEntityから、描画用のモデルコンポーネントを取得
-            auto* modelComp = _world->GetComponent<ModelComponent>(id);
+            auto* modelComp = m_world->GetComponent<ModelComponent>(id);
 
             // モデルが無い、ロードされていない、またはタグがOFFならスキップ
             if (!modelComp || !modelComp->GetModel() || !meshCol->isEnabled) return;
@@ -210,7 +210,7 @@ void JoltBodySetupSystem::Update(float dt)
         // Pull / Push / Cleanup システムがこのエンティティを認識し始める。
         JoltHandleComponent handleComp;
         handleComp.bodyID = body->GetID();
-        _world->AddComponent<JoltHandleComponent>(id, handleComp);
+        m_world->AddComponent<JoltHandleComponent>(id, handleComp);
     });
 }
 

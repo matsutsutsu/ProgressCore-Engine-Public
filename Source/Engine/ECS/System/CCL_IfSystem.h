@@ -77,22 +77,22 @@ namespace CCL::ECS
          *       MovementSystem() : IfSystem("MovementSystem") {}
          *       ...
          *   };
-         *   // この時点で _filter は {Position, Velocity} に自動設定済み
+         *   // この時点で m_filter は {Position, Velocity} に自動設定済み
          * @endcode
          */
         IfSystem(const std::string& name) : SystemBase(name)
         {
             // Read<T>/Write<T> のラッパーから生の型 RawType を取り出して Filter を生成
-            _filter = ArchetypeHelper::Generate<typename AccessTypes::RawType...>();
+            m_filter = ArchetypeHelper::Generate<typename AccessTypes::RawType...>();
         }
 
         /// @brief デストラクタ。登録済みイベント購読を全て自動解除する。
         virtual ~IfSystem() override
         {
-            for (auto& cleanup : _eventCleanups) {
+            for (auto& cleanup : m_eventCleanups) {
                 cleanup();
             }
-            _eventCleanups.clear();
+            m_eventCleanups.clear();
         }
 
 
@@ -103,7 +103,7 @@ namespace CCL::ECS
          * std::function 化することで「何のイベント型か」という型情報を内部に
          * 焼き付けつつ表面上は型消去できる（C++ の強力なパターン）。
          */
-        std::vector<std::function<void()>> _eventCleanups;
+        std::vector<std::function<void()>> m_eventCleanups;
 
 
     protected:
@@ -115,7 +115,7 @@ namespace CCL::ECS
          * @brief 派生クラスから呼ぶ「超簡単イベント登録 API」。
          *
          * 通常 EventBus の Subscribe / Unsubscribe は別々に管理する必要が
-         * ありますが、本 API を使うと購読解除関数が自動で _eventCleanups に
+         * ありますが、本 API を使うと購読解除関数が自動で m_eventCleanups に
          * 積まれるため、デストラクタで安全に一括解除されます。
          *
          * @tparam EventType 受信したいイベント型
@@ -124,16 +124,16 @@ namespace CCL::ECS
         template <typename EventType>
         void ListenEvent(std::function<void(const EventType&)> callback)
         {
-            if (!_world) return;
+            if (!m_world) return;
 
             // 1. EventBus に登録し、チケットIDを受け取る
-            auto ticketID = _world->GetEventBus().Subscribe<EventType>(callback);
+            auto ticketID = m_world->GetEventBus().Subscribe<EventType>(callback);
 
             // 2. 「このイベントを解除する」処理そのものをラムダにカプセル化して保管
             //    （EventType が何だったかをラムダ内に焼き付けて保存）
-            _eventCleanups.push_back([this, ticketID]() {
-                if (this->_world) {
-                    this->_world->GetEventBus().Unsubscribe<EventType>(ticketID);
+            m_eventCleanups.push_back([this, ticketID]() {
+                if (this->m_world) {
+                    this->m_world->GetEventBus().Unsubscribe<EventType>(ticketID);
                 }
             });
         }
@@ -161,7 +161,7 @@ namespace CCL::ECS
         template <typename... ExcludeTypes>
         void SetExclude()
         {
-            _excludeFilter = ArchetypeHelper::Generate<ExcludeTypes...>();
+            m_excludeFilter = ArchetypeHelper::Generate<ExcludeTypes...>();
         }
 
 
@@ -188,7 +188,7 @@ namespace CCL::ECS
         {
             using namespace CCL::ECS;
 
-            for (Chunk* chunk : _targetChunks)
+            for (Chunk* chunk : m_targetChunks)
             {
                 const size_t count = chunk->GetEntityCount();
                 if (count == 0) continue;
@@ -241,12 +241,12 @@ namespace CCL::ECS
             using namespace CCL::ECS;
 
             // 並列化が不可能/不要な状況なら直列版にフォールバック
-            if (!_jobSystem || !this->enableMultiThread) {
+            if (!m_jobSystem || !this->enableMultiThread) {
                 ForEach(func);
                 return;
             }
 
-            const size_t totalChunks = _targetChunks.size();
+            const size_t totalChunks = m_targetChunks.size();
             if (totalChunks == 0) return;
 
             unsigned int threadCount = std::thread::hardware_concurrency();
@@ -268,22 +268,22 @@ namespace CCL::ECS
             {
                 const size_t end = (std::min)(i + chunksPerJob, totalChunks);
 
-                _jobSystem->Execute(
+                m_jobSystem->Execute(
                     [this, i, end, func]() {
                         // 1. まず標準のスコープを作る（関数名がデフォルトになる）
                         ZoneScoped;
 
-                        // 2. SystemBaseの _name 変数を使って、Tracyに動的文字列をコピーさせる
+                        // 2. SystemBaseの m_name 変数を使って、Tracyに動的文字列をコピーさせる
                         // ※ "MovementSystem [Batch]" のように末尾にバッチ処理であることを明示すると
                         // 通常のUpdateの負荷(メインスレッド)と見分けがつきやすくなります。
-                        std::string batchName = " [Batch]" + _name;
+                        std::string batchName = " [Batch]" + m_name;
                         ZoneName(batchName.c_str(), batchName.size());
 
 
                         // --- ワーカースレッド内 ---
                         // [中ループ]: 担当範囲の Chunk を順に処理
                         for (size_t k = i; k < end; ++k) {
-                            Chunk*       chunk = _targetChunks[k];
+                            Chunk*       chunk = m_targetChunks[k];
                             const size_t count = chunk->GetEntityCount();
                             if (count == 0) continue;
 
@@ -315,7 +315,7 @@ namespace CCL::ECS
  
                 ZoneScopedN("MainThread Wait");
 
-                _jobSystem->WaitForCounter(&counter);
+                m_jobSystem->WaitForCounter(&counter);
             }
         }
 
@@ -338,7 +338,7 @@ namespace CCL::ECS
         {
             using namespace CCL::ECS;
 
-            for (Chunk* chunk : _targetChunks)
+            for (Chunk* chunk : m_targetChunks)
             {
                 const size_t count = chunk->GetEntityCount();
                 if (count == 0) continue;
@@ -381,12 +381,12 @@ namespace CCL::ECS
         {
             using namespace CCL::ECS;
 
-            if (!_jobSystem || !this->enableMultiThread) {
+            if (!m_jobSystem || !this->enableMultiThread) {
                 ForEachWithID(func);
                 return;
             }
 
-            const size_t totalChunks = _targetChunks.size();
+            const size_t totalChunks = m_targetChunks.size();
             if (totalChunks == 0) return;
 
             unsigned int threadCount = std::thread::hardware_concurrency();
@@ -405,20 +405,20 @@ namespace CCL::ECS
             {
                 const size_t end = (std::min)(i + chunksPerJob, totalChunks);
 
-                _jobSystem->Execute(
+                m_jobSystem->Execute(
                     [this, i, end, func]() {
                         // 1. まず標準のスコープを作る（関数名がデフォルトになる）
                         ZoneScoped;
 
-                        // 2. SystemBaseの _name 変数を使って、Tracyに動的文字列をコピーさせる
+                        // 2. SystemBaseの m_name 変数を使って、Tracyに動的文字列をコピーさせる
                         // ※ "MovementSystem [Batch]" のように末尾にバッチ処理であることを明示すると
                         // 通常のUpdateの負荷(メインスレッド)と見分けがつきやすくなります。
-                        std::string batchName = " [ Batch ] " + _name;
+                        std::string batchName = " [ Batch ] " + m_name;
                         ZoneName(batchName.c_str(), batchName.size());
 
 
                         for (size_t k = i; k < end; ++k) {
-                            Chunk*       chunk = _targetChunks[k];
+                            Chunk*       chunk = m_targetChunks[k];
                             const size_t count = chunk->GetEntityCount();
                             if (count == 0) continue;
 
@@ -451,7 +451,7 @@ namespace CCL::ECS
  
                 ZoneScopedN("MainThread Wait");
 
-                _jobSystem->WaitForCounter(&counter);
+                m_jobSystem->WaitForCounter(&counter);
             }
         }
 

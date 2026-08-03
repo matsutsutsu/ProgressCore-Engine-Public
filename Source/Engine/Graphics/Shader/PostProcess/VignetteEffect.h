@@ -20,10 +20,10 @@ public:
                  ID3D11RenderTargetView* outputRTV) override;
 
     const char* GetName() const override { return "Vignette"; }
-    void UpdateParams(const GpuData::CbVignetteData& data) { _cbData = data; }
+    void UpdateParams(const GpuData::CbVignetteData& data) { m_cbData = data; }
 
 private:
-    GpuData::CbVignetteData _cbData{};
+    GpuData::CbVignetteData m_cbData{};
 
     struct Resources {
         Microsoft::WRL::ComPtr<ID3D11VertexShader> vs;
@@ -31,5 +31,5 @@ private:
         Microsoft::WRL::ComPtr<ID3D11Buffer>       cb;
         Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler;
     };
-    std::unique_ptr<Resources> _res;
+    std::unique_ptr<Resources> m_res;
 };

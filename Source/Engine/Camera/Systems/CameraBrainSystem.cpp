@@ -15,7 +15,7 @@ using namespace DirectX;
 CameraBrainSystem::CameraBrainSystem() : SystemBase("CameraBrainSystem")
 {
     // 全てのVirtualCameraコンポーネントを持つエンティティを対象にする
-    _filter = CCL::ECS::ArchetypeHelper::Generate<VirtualCamera>();
+    m_filter = CCL::ECS::ArchetypeHelper::Generate<VirtualCamera>();
 }
 
 std::vector<CCL::ECS::TypeID> CameraBrainSystem::GetReadTypes() const
@@ -26,8 +26,8 @@ std::vector<CCL::ECS::TypeID> CameraBrainSystem::GetReadTypes() const
 void CameraBrainSystem::Update(float dt)
 {
     // Worldからカメラリソースを取得
-    if (!_world->HasResource<Camera *>()) return;
-    Camera *mainCamera = _world->GetResource<Camera *>();
+    if (!m_world->HasResource<Camera *>()) return;
+    Camera *mainCamera = m_world->GetResource<Camera *>();
     if (!mainCamera) return;
 
     // -------------------------------------------------------
@@ -37,7 +37,7 @@ void CameraBrainSystem::Update(float dt)
     int            maxPriority  = -99999;
     VirtualCamera *highestVCam  = nullptr;
 
-    for (auto *chunk : _targetChunks) {
+    for (auto *chunk : m_targetChunks) {
         auto  count = chunk->GetEntityCount();
         auto *vCams = chunk->GetComponentArray<VirtualCamera>();
         auto *ids   = chunk->GetEntityIDs();
@@ -58,20 +58,20 @@ void CameraBrainSystem::Update(float dt)
     // -------------------------------------------------------
     // 2. カメラ切り替え検知 & ブレンド開始
     // -------------------------------------------------------
-    if (highestCamID != _currentCamID) {
+    if (highestCamID != m_currentCamID) {
         // 初回起動時なら即切り替え
-        if (_currentCamID == InvalidEntityID) {
-            _currentCamID = highestCamID;
-            _blendTimer   = highestVCam->blendTime + 1.0f; // スキップ
+        if (m_currentCamID == InvalidEntityID) {
+            m_currentCamID = highestCamID;
+            m_blendTimer   = highestVCam->blendTime + 1.0f; // スキップ
         }
         else {
             // 遷移開始
-            _prevCamID    = _currentCamID;
-            _currentCamID = highestCamID;
-            _blendTimer   = 0.0f;
+            m_prevCamID    = m_currentCamID;
+            m_currentCamID = highestCamID;
+            m_blendTimer   = 0.0f;
 
             // 固定値ではなく、新しいカメラの設定値を使う
-            _blendDuration = highestVCam->blendTime;
+            m_blendDuration = highestVCam->blendTime;
         }
     }
 
@@ -91,15 +91,15 @@ void CameraBrainSystem::Update(float dt)
     float    targetNear = highestVCam->nearClip;
     float    targetFar  = highestVCam->farClip;
 
-    bool isBlending = (_blendTimer < _blendDuration);
+    bool isBlending = (m_blendTimer < m_blendDuration);
 
     if (isBlending) {
-        _blendTimer += dt;
-        float t = _blendTimer / _blendDuration;
+        m_blendTimer += dt;
+        float t = m_blendTimer / m_blendDuration;
         t       = (std::min)(t, 1.0f);
         t       = t * t * (3.0f - 2.0f * t); // Ease-in-out
 
-        VirtualCamera *prevVCam = _world->GetComponent<VirtualCamera>(_prevCamID);
+        VirtualCamera *prevVCam = m_world->GetComponent<VirtualCamera>(m_prevCamID);
 
         XMVECTOR srcPos, srcLook;
         float    srcFov, srcNear, srcFar;
@@ -113,11 +113,11 @@ void CameraBrainSystem::Update(float dt)
         }
         else {
             // バックアップを使用
-            srcPos  = XMLoadFloat3(&_lastPos);
-            srcLook = XMLoadFloat3(&_lastLook);
-            srcFov  = _lastFov;
-            srcNear = _lastNear;
-            srcFar  = _lastFar;
+            srcPos  = XMLoadFloat3(&m_lastPos);
+            srcLook = XMLoadFloat3(&m_lastLook);
+            srcFov  = m_lastFov;
+            srcNear = m_lastNear;
+            srcFar  = m_lastFar;
         }
 
         finalPos  = XMVectorLerp(srcPos, targetPos, t);
@@ -127,7 +127,7 @@ void CameraBrainSystem::Update(float dt)
         finalFar  = srcFar + (targetFar - srcFar) * t;
 
         if (t >= 1.0f) {
-            _prevCamID = InvalidEntityID;
+            m_prevCamID = InvalidEntityID;
         }
     }
     else {
@@ -158,11 +158,11 @@ void CameraBrainSystem::Update(float dt)
     mainCamera->SetPerspectiveFov(DirectX::XMConvertToRadians(finalFov), aspect, safeNear, safeFar);
 
     // 次フレームのためにバックアップ
-    _lastPos  = fPos;
-    _lastLook = fLook;
-    _lastFov  = finalFov;
-    _lastNear = safeNear;
-    _lastFar  = safeFar;
+    m_lastPos  = fPos;
+    m_lastLook = fLook;
+    m_lastFov  = finalFov;
+    m_lastNear = safeNear;
+    m_lastFar  = safeFar;
 }
 
 // ==========================================

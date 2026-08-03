@@ -6,8 +6,8 @@
 
 void JoltStepSystem::Update(float dt)
 {
-    if (!_world->HasResource<JoltPhysicsManager*>()) return;
-    auto &joltManager = _world->GetResource<JoltPhysicsManager*>();
+    if (!m_world->HasResource<JoltPhysicsManager*>()) return;
+    auto &joltManager = m_world->GetResource<JoltPhysicsManager*>();
 
     // 物理の時間を dt 秒だけ進める（内部でJoltの並列計算が走る）
     joltManager->Step(dt);
@@ -15,8 +15,8 @@ void JoltStepSystem::Update(float dt)
 
 void JoltPullSystem::Update(float dt)
 {
-    if (!_world->HasResource<JoltPhysicsManager*>()) return;
-    auto &joltManager = _world->GetResource<JoltPhysicsManager*>();
+    if (!m_world->HasResource<JoltPhysicsManager*>()) return;
+    auto &joltManager = m_world->GetResource<JoltPhysicsManager*>();
 
     // ★fix: Step 完了後・誰も物理ボディに書き込まないフェーズなので、
     //   ロックなし BodyInterface を使う（並列読み取り時のロック競合をなくす）。

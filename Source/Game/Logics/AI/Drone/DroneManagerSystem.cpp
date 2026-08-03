@@ -35,9 +35,9 @@ void DroneManagerSystem::EnsureDroneAIRegistered()
 {
     // EditorScene::Initialize が StateTreeRegistry を後から作り直すため、
     // 毎フレーム「DroneAI が未登録なら登録」する遅延方式にする。
-    if (!_world->HasResource<CCL::AI::StateTreeRegistry>()) return;
+    if (!m_world->HasResource<CCL::AI::StateTreeRegistry>()) return;
 
-    auto& stReg = _world->GetResource<CCL::AI::StateTreeRegistry>();
+    auto& stReg = m_world->GetResource<CCL::AI::StateTreeRegistry>();
     if (stReg.FindByName("DroneAI").IsValid()) return;
 
     stReg.Register(DroneAI::BuildDroneAsset(kDroneAIIds));
@@ -65,8 +65,8 @@ void DroneManagerSystem::Update(float /*dt*/)
     // シーン開始時：ボスとRegistryが揃い次第、初期ドローンを1回だけ配備する。
     TryAutoSpawnInitial();
 
-    if (!_world->HasResource<BattleContext>()) return;
-    auto& battle = _world->GetResource<BattleContext>();
+    if (!m_world->HasResource<BattleContext>()) return;
+    auto& battle = m_world->GetResource<BattleContext>();
 
     // 生存ドローンを数える
     int alive = GetAliveCount();
@@ -82,16 +82,16 @@ void DroneManagerSystem::Update(float /*dt*/)
 // ============================================================================
 void DroneManagerSystem::TryAutoSpawnInitial()
 {
-    if (!_autoSpawnEnabled || _autoSpawnDone) return;
+    if (!m_autoSpawnEnabled || m_autoSpawnDone) return;
 
     // ボスが未生成 or Registry未準備のフレームは何もせず次フレームに再試行。
-    if (!_world->HasResource<CCL::AI::StateTreeRegistry>()) return;
+    if (!m_world->HasResource<CCL::AI::StateTreeRegistry>()) return;
     if (FindBoss() == InvalidEntityID) return;
 
-    int spawned = SpawnDrones(_initialSpawnCount);
+    int spawned = SpawnDrones(m_initialSpawnCount);
     if (spawned > 0)
     {
-        _autoSpawnDone = true;   // 成功したらラッチして二度と自動生成しない
+        m_autoSpawnDone = true;   // 成功したらラッチして二度と自動生成しない
         CCL_LOG_INFO(LogCategory::Game,
             "[DroneManager] シーン開始：初期ドローン %d 機を自動配備", spawned);
     }
@@ -104,7 +104,7 @@ void DroneManagerSystem::TryAutoSpawnInitial()
 int DroneManagerSystem::GetAliveCount() const
 {
     int count = 0;
-    auto view = _world->View<DroneComponent>();
+    auto view = m_world->View<DroneComponent>();
     for (auto e : view) { (void)e; ++count; }
     return count;
 }
@@ -117,10 +117,10 @@ void DroneManagerSystem::ReindexAllDrones()
 
     // 連番を振る（0,1,2,... と totalDrones=total）
     uint16_t idx  = 0;
-    auto     view = _world->View<DroneComponent>();
+    auto     view = m_world->View<DroneComponent>();
     for (auto e : view)
     {
-        if (auto *d = _world->GetComponent<DroneComponent>(e))
+        if (auto *d = m_world->GetComponent<DroneComponent>(e))
         {
             d->localIndex  = idx++;
             d->totalDrones = static_cast<uint16_t>(total);
@@ -134,7 +134,7 @@ void DroneManagerSystem::ReindexAllDrones()
 // ============================================================================
 EntityID DroneManagerSystem::FindBoss() const
 {
-    auto bossView = _world->View<BossCommandComponent, TransformComponent>();
+    auto bossView = m_world->View<BossCommandComponent, TransformComponent>();
     for (auto b : bossView) return b;   // 最初の1体
     return InvalidEntityID;
 }
@@ -154,22 +154,22 @@ int DroneManagerSystem::SpawnDrones(int count)
         return 0;
     }
 
-    auto   *bossTrans = _world->GetComponent<TransformComponent>(bossId);
+    auto   *bossTrans = m_world->GetComponent<TransformComponent>(bossId);
     Vector3 basePos   = bossTrans ? Vector3(bossTrans->position) : Vector3::Zero;
     basePos.y += 5.0f;
 
     int spawned = 0;
     for (int i = 0; i < count; ++i)
     {
-        EntityID droneId = Prefab::SpawnPrefab(*_world, kDronePrefab);
+        EntityID droneId = Prefab::SpawnPrefab(*m_world, kDronePrefab);
         if (droneId == InvalidEntityID) continue;
 
-        if (auto *t = _world->GetComponent<TransformComponent>(droneId))
+        if (auto *t = m_world->GetComponent<TransformComponent>(droneId))
         {
             t->position = basePos;
             t->isDirty  = true;
         }
-        if (auto *d = _world->GetComponent<DroneComponent>(droneId))
+        if (auto *d = m_world->GetComponent<DroneComponent>(droneId))
         {
             d->ownerBossId = bossId;
             // 生成時の初期陣形：ボスの頭上高くで旋回する HighOrbit。
@@ -177,13 +177,13 @@ int DroneManagerSystem::SpawnDrones(int count)
             d->orbitRadius      = 8.0f;
             d->hasReachedSlot   = false;   // スポーン直後は必ず MoveToSlot から開始
         }
-        if (auto *tm = _world->GetComponent<TimeStateComponent>(droneId))
+        if (auto *tm = m_world->GetComponent<TimeStateComponent>(droneId))
         {
             tm->group = TimeGroup::Enemy;
         }
 
         // 個体 StateTree を使わせる（プレハブに無ければ追加）
-        if (auto *st = _world->GetComponent<StateTreeComponent>(droneId))
+        if (auto *st = m_world->GetComponent<StateTreeComponent>(droneId))
         {
             st->assetName   = "DroneAI";
             st->assetHandle = {};   // 再解決させる
@@ -192,22 +192,22 @@ int DroneManagerSystem::SpawnDrones(int count)
         {
             StateTreeComponent stComp;
             stComp.assetName = "DroneAI";
-            _world->AddComponent<StateTreeComponent>(droneId, stComp);
+            m_world->AddComponent<StateTreeComponent>(droneId, stComp);
         }
 
         ++spawned;
     }
 
     // AddComponent の遅延反映 + assetHandle 解決
-    _world->ScrutinyAndApply();
+    m_world->ScrutinyAndApply();
 
-    if (_world->HasResource<CCL::AI::StateTreeRegistry>())
+    if (m_world->HasResource<CCL::AI::StateTreeRegistry>())
     {
-        auto& stReg = _world->GetResource<CCL::AI::StateTreeRegistry>();
-        auto  view  = _world->View<DroneComponent, StateTreeComponent>();
+        auto& stReg = m_world->GetResource<CCL::AI::StateTreeRegistry>();
+        auto  view  = m_world->View<DroneComponent, StateTreeComponent>();
         for (auto e : view)
         {
-            if (auto *st = _world->GetComponent<StateTreeComponent>(e))
+            if (auto *st = m_world->GetComponent<StateTreeComponent>(e))
             {
                 if (st->assetName == "DroneAI" && !st->assetHandle.IsValid())
                 {
@@ -233,10 +233,10 @@ int DroneManagerSystem::SpawnDrones(int count)
 int DroneManagerSystem::DestroyDrones(int count)
 {
     int destroyed = 0;
-    auto view = _world->View<DroneComponent>();
+    auto view = m_world->View<DroneComponent>();
     for (auto e : view) {
         if (destroyed >= count) break;
-        _world->Destroy(e);
+        m_world->Destroy(e);
         ++destroyed;
     }
     CCL_LOG_INFO(LogCategory::Game, "[DroneManager] %d 機破壊", destroyed);
@@ -249,18 +249,18 @@ int DroneManagerSystem::DestroyDrones(int count)
 // ============================================================================
 void DroneManagerSystem::DestroyAll()
 {
-    auto view = _world->View<DroneComponent>();
-    for (auto e : view) _world->Destroy(e);
+    auto view = m_world->View<DroneComponent>();
+    for (auto e : view) m_world->Destroy(e);
     CCL_LOG_INFO(LogCategory::Game, "[DroneManager] 全機破壊");
 }
 
 void DroneManagerSystem::SetAllDroneState(DroneState state)
 {
     int  count = 0;
-    auto view  = _world->View<DroneComponent>();
+    auto view  = m_world->View<DroneComponent>();
     for (auto e : view)
     {
-        if (auto *d = _world->GetComponent<DroneComponent>(e))
+        if (auto *d = m_world->GetComponent<DroneComponent>(e))
         {
             d->currentState = state;
 
@@ -278,9 +278,9 @@ void DroneManagerSystem::SetAllDroneState(DroneState state)
             {
                 // BattleContext からプレイヤー位置を取得して方向を計算
                 DirectX::SimpleMath::Vector3 dir = -DirectX::SimpleMath::Vector3::UnitZ; // フェイルセーフ
-                if (_world->HasResource<BattleContext>())
+                if (m_world->HasResource<BattleContext>())
                 {
-                    auto                        &battle   = _world->GetResource<BattleContext>();
+                    auto                        &battle   = m_world->GetResource<BattleContext>();
                     DirectX::SimpleMath::Vector3 toPlayer = battle.playerPos - d->targetPosition;
                     toPlayer.y                            = 0.0f; // 水平方向のみ
                     if (toPlayer.LengthSquared() > 0.001f)
@@ -313,22 +313,22 @@ void DroneManagerSystem::OnGui()
 
         // ---- シーン開始時の自動初期配備 ----
         ImGui::TextColored(ImVec4(0.5f, 1.0f, 0.6f, 1.0f), "Auto Initial Spawn (シーン開始時)");
-        ImGui::Checkbox("Enable Auto Spawn", &_autoSpawnEnabled);
-        ImGui::SliderInt("Initial Count", &_initialSpawnCount, 1, 1000);
-        ImGui::Text("Auto Spawn Done: %s", _autoSpawnDone ? "yes" : "no");
+        ImGui::Checkbox("Enable Auto Spawn", &m_autoSpawnEnabled);
+        ImGui::SliderInt("Initial Count", &m_initialSpawnCount, 1, 1000);
+        ImGui::Text("Auto Spawn Done: %s", m_autoSpawnDone ? "yes" : "no");
         if (ImGui::Button("Re-arm Auto Spawn", ImVec2(160, 24)))
-            _autoSpawnDone = false;   // もう一度シーン開始時のように配備し直す
+            m_autoSpawnDone = false;   // もう一度シーン開始時のように配備し直す
         ImGui::Separator();
 
         ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "Spawn Settings");
-        ImGui::SliderInt("Spawn Count", &_spawnCount, 1, 100);
+        ImGui::SliderInt("Spawn Count", &m_spawnCount, 1, 100);
 
         // 現在数を表示（BattleContext と View 両方）
         int alive = GetAliveCount();
         ImGui::Text("Current Active Drones: %d", alive);
 
-        if (_world->HasResource<BattleContext>()) {
-            auto& b = _world->GetResource<BattleContext>();
+        if (m_world->HasResource<BattleContext>()) {
+            auto& b = m_world->GetResource<BattleContext>();
             ImGui::Text("BattleContext.droneAliveCount: %d", b.droneAliveCount);
             const char* tactic =
                 b.droneAliveCount <= 100 ? "Final" :
@@ -340,7 +340,7 @@ void DroneManagerSystem::OnGui()
         ImGui::Spacing();
 
         if (ImGui::Button("Spawn Drones", ImVec2(120, 30)))
-            SpawnDrones(_spawnCount);
+            SpawnDrones(m_spawnCount);
 
         ImGui::SameLine();
 
@@ -382,7 +382,7 @@ void DroneManagerSystem::OnGui()
 
         auto setBossCmd = [this](DroneFormationType f, bool attack) {
             EntityID boss = FindBoss();
-            if (auto *cmd = _world->GetComponent<BossCommandComponent>(boss))
+            if (auto *cmd = m_world->GetComponent<BossCommandComponent>(boss))
             {
                 cmd->requestFormation  = f;
                 cmd->droneAttackActive = attack;
@@ -414,7 +414,7 @@ void DroneManagerSystem::OnJustEvadeSuccess(const JustEvadeSuccessEvent &ev)
     // 撃破の中心＝回避した攻撃元の位置（ボス本体など座標が取れない/ドローンでない場合は単体処理のみ）。
     Vector3 center;
     bool    haveCenter = false;
-    if (auto *t = _world->GetComponent<TransformComponent>(ev.attackerID))
+    if (auto *t = m_world->GetComponent<TransformComponent>(ev.attackerID))
     {
         center     = t->position;
         haveCenter = true;
@@ -429,7 +429,7 @@ void DroneManagerSystem::OnJustEvadeSuccess(const JustEvadeSuccessEvent &ev)
     int   chain = 1;
     float rBase = 3.0f;
     float rPer  = 2.0f;
-    if (auto *evade = _world->GetComponent<JustEvadeComponent>(ev.playerID))
+    if (auto *evade = m_world->GetComponent<JustEvadeComponent>(ev.playerID))
     {
         chain = (evade->chainCount > 0) ? evade->chainCount : 1;
         rBase = evade->killRadiusBase;
@@ -440,13 +440,13 @@ void DroneManagerSystem::OnJustEvadeSuccess(const JustEvadeSuccessEvent &ev)
 
     // イテレート中の破棄を避けるため、対象を一旦集めてから破壊する。
     std::vector<EntityID> toKill;
-    auto view = _world->View<DroneComponent, TransformComponent>();
+    auto view = m_world->View<DroneComponent, TransformComponent>();
     for (EntityID id : view)
     {
         if (id == ev.attackerID) continue;
-        auto *d = _world->GetComponent<DroneComponent>(id);
+        auto *d = m_world->GetComponent<DroneComponent>(id);
         if (!d || d->currentState != DroneState::FireCharge) continue; // 「攻撃中だけが弱点」を維持
-        auto *t = _world->GetComponent<TransformComponent>(id);
+        auto *t = m_world->GetComponent<TransformComponent>(id);
         if (!t) continue;
         if (Vector3::DistanceSquared(center, t->position) <= radiusSq)
             toKill.push_back(id);
@@ -462,12 +462,12 @@ void DroneManagerSystem::OnJustEvadeSuccess(const JustEvadeSuccessEvent &ev)
 bool DroneManagerSystem::DestroyDrone(EntityID droneId)
 {
     // ドローンでないもの（ボス等）を誤って壊さないためのガード
-    if (!_world->GetComponent<DroneComponent>(droneId))
+    if (!m_world->GetComponent<DroneComponent>(droneId))
     {
         return false;
     }
 
-    _world->Destroy(droneId);
+    m_world->Destroy(droneId);
 
     CCL_LOG_INFO(LogCategory::Game, "[DroneManager] ドローン破壊 id=%llu（残り %d 機）",
         (unsigned long long)droneId, GetAliveCount() - 1);

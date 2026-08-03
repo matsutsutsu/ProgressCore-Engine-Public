@@ -17,10 +17,6 @@ CFIELD(maxJumps, "最大ジャンプ回数", "ジャンプ設定")
 CFIELD(currentJumpCount, "現在のジャンプ回数", "ジャンプ状態")
 CFIELD(wasJumpButtonPressed, "前フレームボタン状態", "ジャンプ状態")
 
-CFIELD_FLOAT_RANGED(coyoteTimeWindow, "コヨーテタイム", 0.01f, 0.0f, 1.0f, "操作感")
-CFIELD_FLOAT_RANGED(jumpBufferWindow, "先行入力バッファ", 0.01f, 0.0f, 1.0f, "操作感")
-CFIELD(timeSinceGrounded, "滞空時間", "状態")
-CFIELD(jumpBufferTimer, "ジャンプ予約タイマー", "状態")
 CFIELD(currentYaw, "現在のYaw角", "状態")
 CFIELD(currentRoll, "現在のRoll角", "状態")
 

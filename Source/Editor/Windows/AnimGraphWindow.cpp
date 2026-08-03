@@ -40,7 +40,7 @@ namespace {
     constexpr int ANY_STATE_NODE_ID = -13;  // & 3 == 3
     constexpr int ANY_STATE_OUT_PIN = -17;  // & 3 == 3
 
-    // リンクID。素性解決は _linkLut で行うため、ここは「同フレーム内で一意」であれば足りる。
+    // リンクID。素性解決は m_linkLut で行うため、ここは「同フレーム内で一意」であれば足りる。
     constexpr int NORMAL_LINK_BASE = 0x00100000;
     constexpr int ANY_LINK_BASE    = 0x00200000;
 }
@@ -65,7 +65,7 @@ static void DrawTriangleArrow(ImDrawList *drawList, const ImVec2 &p0, const ImVe
     dir.x /= length;
     dir.y /= length;
 
-    // ★ 矢印を線の真ん中ではなく、ターゲットノードの「直前（80px手前）」に配置する (Unity風)
+    // 矢印を線の真ん中ではなく、ターゲットノードの「直前（80px手前）」に配置する (Unity風)
     float  offset   = (std::min)(length * 0.8f, 80.0f);
     ImVec2 arrowPos = ImVec2(p1.x - dir.x * offset, p1.y - dir.y * offset);
 
@@ -167,26 +167,26 @@ static std::string DumpAnimGraphToString(const AnimStateGraph& graph) {
 }
 
 AnimGraphWindow::AnimGraphWindow() : EditorWindow("Anim Graph Editor") {
-    _nodeContext = ed::CreateEditor();
+    m_nodeContext = ed::CreateEditor();
 }
 
 AnimGraphWindow::~AnimGraphWindow() {
-    if (_nodeContext) ed::DestroyEditor(_nodeContext);
+    if (m_nodeContext) ed::DestroyEditor(m_nodeContext);
 }
 
 void AnimGraphWindow::DrawContents(EditorContext& context) {
-    ed::SetCurrentEditor(_nodeContext);
+    ed::SetCurrentEditor(m_nodeContext);
 
     // ================================================================
     // リアルタイム・デバッグ (選択中エンティティのステート同期)
     // ================================================================
-    _runtimeActiveStateHash = 0;
+    m_runtimeActiveStateHash = 0;
     // エンティティが選択されており、ワールドが存在する場合
     if (context.selectedEntity != CCL::ECS::InvalidEntityID && context.world) {
         auto* fsm = context.world->GetComponent<AnimStateMachineComponent>(context.selectedEntity);
         if (fsm) {
             // 現在のステートハッシュを記憶する
-            _runtimeActiveStateHash = fsm->currentStateHash;
+            m_runtimeActiveStateHash = fsm->currentStateHash;
         }
     }
 
@@ -262,13 +262,13 @@ void AnimGraphWindow::DrawNodeWorkspace()
     uint32_t ENTRY_HASH    = 0;
     uint32_t ANY_HASH      = 0xFFFFFFFF;
 
-    if (_currentGraph.entryStateHash != 0)
-        allTrans.push_back({ENTRY_HASH, _currentGraph.entryStateHash, false, ENTRY_LINK_ID});
+    if (m_currentGraph.entryStateHash != 0)
+        allTrans.push_back({ENTRY_HASH, m_currentGraph.entryStateHash, false, ENTRY_LINK_ID});
 
-    for (const auto &trans : _currentGraph.anyStateTransitions)
+    for (const auto &trans : m_currentGraph.anyStateTransitions)
         allTrans.push_back({ANY_HASH, trans.targetStateHash, true, ANY_LINK_BASE + (linkIdCounter++)});
 
-    for (const auto &s : _currentGraph.states)
+    for (const auto &s : m_currentGraph.states)
     {
         for (const auto &trans : s.transitions)
         {
@@ -317,7 +317,7 @@ void AnimGraphWindow::DrawNodeWorkspace()
     // --- ③ ノード描画と「動的ピン配置」 ---
     auto DrawBlockNode = [&](int nodeId, uint32_t nodeHash, const char *title, ImVec4 bgColor, bool isActive) {
         // 強調の優先度: 実行中(青パルス) > エディタ選択(黄) > 通常
-        const bool isSelected = (_selectedNodeId == nodeId);
+        const bool isSelected = (m_selectedNodeId == nodeId);
 
         ed::PushStyleColor(ed::StyleColor_NodeBg, bgColor);
 
@@ -397,52 +397,52 @@ void AnimGraphWindow::DrawNodeWorkspace()
 
     // 各ノードの描画実行
     DrawBlockNode(ENTRY_NODE_ID, ENTRY_HASH, "Entry", ImVec4(0.15f, 0.6f, 0.15f, 1.0f), false);
-    if (_needRestorePositions)
-        ed::SetNodePosition(ENTRY_NODE_ID, ImVec2(_currentGraph.entryPosX, _currentGraph.entryPosY));
+    if (m_needRestorePositions)
+        ed::SetNodePosition(ENTRY_NODE_ID, ImVec2(m_currentGraph.entryPosX, m_currentGraph.entryPosY));
 
     DrawBlockNode(ANY_STATE_NODE_ID, ANY_HASH, "Any State", ImVec4(0.1f, 0.6f, 0.6f, 1.0f), false);
-    if (_needRestorePositions)
-        ed::SetNodePosition(ANY_STATE_NODE_ID, ImVec2(_currentGraph.anyStatePosX, _currentGraph.anyStatePosY));
+    if (m_needRestorePositions)
+        ed::SetNodePosition(ANY_STATE_NODE_ID, ImVec2(m_currentGraph.anyStatePosX, m_currentGraph.anyStatePosY));
 
-    for (auto &state : _currentGraph.states)
+    for (auto &state : m_currentGraph.states)
     {
-        const bool isEntry     = (_currentGraph.entryStateHash == state.stateHash);
-        const bool isActive    = (_runtimeActiveStateHash == state.stateHash);
+        const bool isEntry     = (m_currentGraph.entryStateHash == state.stateHash);
+        const bool isActive    = (m_runtimeActiveStateHash == state.stateHash);
         ImVec4     nodeBgColor = isEntry ? ImVec4(0.9f, 0.5f, 0.1f, 1.0f) : (isActive ? ImVec4(0.2f, 0.5f, 0.8f, 1.0f) : ImVec4(0.35f, 0.35f, 0.35f, 1.0f));
 
         DrawBlockNode(StateNodeId(state.stateHash), state.stateHash, state.sequenceName.c_str(), nodeBgColor, isActive);
-        if (_needRestorePositions)
+        if (m_needRestorePositions)
             ed::SetNodePosition(StateNodeId(state.stateHash), ImVec2(state.nodePosX, state.nodePosY));
     }
 
-    if (_nodeToPlaceHash != 0)
+    if (m_nodeToPlaceHash != 0)
     {
-        for (const auto &s : _currentGraph.states)
+        for (const auto &s : m_currentGraph.states)
         {
-            if (s.stateHash == _nodeToPlaceHash)
+            if (s.stateHash == m_nodeToPlaceHash)
             {
-                ed::SetNodePosition(StateNodeId(_nodeToPlaceHash), ImVec2(s.nodePosX, s.nodePosY));
+                ed::SetNodePosition(StateNodeId(m_nodeToPlaceHash), ImVec2(s.nodePosX, s.nodePosY));
                 break;
             }
         }
-        ed::SelectNode(StateNodeId(_nodeToPlaceHash));
-        _nodeToPlaceHash = 0;
+        ed::SelectNode(StateNodeId(m_nodeToPlaceHash));
+        m_nodeToPlaceHash = 0;
     }
 
     // -----------------------------------------------------------------
-    // ★ 実行中のステート変化を検知して、遷移エフェクトのタイマーを発火させる
+    // 実行中のステート変化を検知して、遷移エフェクトのタイマーを発火させる
     // -----------------------------------------------------------------
-    if (_runtimeActiveStateHash != s_prevActiveState)
+    if (m_runtimeActiveStateHash != s_prevActiveState)
     {
-        if (s_prevActiveState != 0 && _runtimeActiveStateHash != 0)
+        if (s_prevActiveState != 0 && m_runtimeActiveStateHash != 0)
         {
             s_highlightSrc = s_prevActiveState;
-            s_highlightDst = _runtimeActiveStateHash;
+            s_highlightDst = m_runtimeActiveStateHash;
 
-            // ★ 高速遷移で残像が被らないよう、ハイライト時間を 0.3秒 に短縮
+            // 高速遷移で残像が被らないよう、ハイライト時間を 0.3秒 に短縮
             s_highlightTimer = 0.3f;
         }
-        s_prevActiveState = _runtimeActiveStateHash;
+        s_prevActiveState = m_runtimeActiveStateHash;
     }
     if (s_highlightTimer > 0.0f)
     {
@@ -452,13 +452,13 @@ void AnimGraphWindow::DrawNodeWorkspace()
     }
 
     // --- ④ 標準リンクの描画（NodeEditorに当たり判定と描画順を任せる） ---
-    _linkLut.clear();
+    m_linkLut.clear();
     for (const auto &t : allTrans)
     {
         int srcPin = GetOutPinId(t.src, t.dst);
         int dstPin = GetInPinId(t.src, t.dst);
 
-        bool isSelected = (_selectedLinkId == t.linkId);
+        bool isSelected = (m_selectedLinkId == t.linkId);
 
         // --- 遷移エフェクトの対象リンクかどうかを判定 ---
         bool isJustTransitioned = false;
@@ -488,12 +488,12 @@ void AnimGraphWindow::DrawNodeWorkspace()
         // --- 状況に応じたリンクの「色」と「太さ」の決定 ---
         ImVec4 linkColor = t.isAny ? ImVec4(0.4f, 0.8f, 0.8f, 1.0f) : ImVec4(0.6f, 0.6f, 0.6f, 1.0f);
 
-        if (_runtimeActiveStateHash == t.src)
+        if (m_runtimeActiveStateHash == t.src)
         {
             linkColor = ImVec4(0.3f, 0.7f, 1.0f, 1.0f); // 実行中のステートから伸びる線は「青」
         }
 
-        // ★ 選択時、または遷移直後は「オレンジ色」にハイライト
+        // 選択時、または遷移直後は「オレンジ色」にハイライト
         if (isSelected || isJustTransitioned)
         {
             linkColor = ImVec4(1.0f, 0.65f, 0.0f, 1.0f);
@@ -505,9 +505,9 @@ void AnimGraphWindow::DrawNodeWorkspace()
         // リンクの描画
         ed::Link(t.linkId, srcPin, dstPin, linkColor, thickness);
 
-        // ★ 視界のノイズになる ed::Flow は完全に削除しました
+        // 視界のノイズになる ed::Flow は完全に削除しました
 
-        _linkLut.push_back({t.linkId, LinkRef{t.src, t.dst, t.isAny}});
+        m_linkLut.push_back({t.linkId, LinkRef{t.src, t.dst, t.isAny}});
 
         // 矢印(三角形)の描画
         if (pinPositions.count(srcPin) && pinPositions.count(dstPin))
@@ -517,11 +517,11 @@ void AnimGraphWindow::DrawNodeWorkspace()
     }
 
     // --- ⑤ Make Transition 中のテンポラリ線描画 ---
-    if (_editorMode == EditorMode::CreatingTransition)
+    if (m_editorMode == EditorMode::CreatingTransition)
     {
-        uint32_t srcHash = _isTransitionSourceAnyState ? ANY_HASH : _transitionSourceHash;
+        uint32_t srcHash = m_isTransitionSourceAnyState ? ANY_HASH : m_transitionSourceHash;
 
-        int srcNodeId = _isTransitionSourceAnyState ? ANY_STATE_NODE_ID
+        int srcNodeId = m_isTransitionSourceAnyState ? ANY_STATE_NODE_ID
                                                     : (srcHash == ENTRY_HASH ? ENTRY_NODE_ID : StateNodeId(srcHash));
 
         ed::Suspend();
@@ -566,7 +566,7 @@ void AnimGraphWindow::DrawNodeWorkspace()
         }
 
         ImVec2 srcHalf((srcMax.x - srcMin.x) * 0.5f, (srcMax.y - srcMin.y) * 0.5f);
-        ImVec2 startPos = EdgePoint(srcCenter, srcHalf, dir); // ★外周から出す
+        ImVec2 startPos = EdgePoint(srcCenter, srcHalf, dir); // 外周から出す
 
         // 接続先候補のハイライト：ノードにぴったり合わせた枠（スクリーン実サイズ）
         ImU32      lineColor = IM_COL32(255, 255, 255, 255);
@@ -623,7 +623,7 @@ void AnimGraphWindow::DrawNodeWorkspace()
                 uint32_t targetHash = 0;
                 if (rawId != ENTRY_NODE_ID && rawId != ANY_STATE_NODE_ID)
                 {
-                    for (const auto &s : _currentGraph.states)
+                    for (const auto &s : m_currentGraph.states)
                     {
                         if (StateNodeId(s.stateHash) == rawId)
                         {
@@ -635,22 +635,22 @@ void AnimGraphWindow::DrawNodeWorkspace()
 
                 if (targetHash != 0 && targetHash != srcHash)
                 {
-                    if (_isTransitionSourceAnyState)
+                    if (m_isTransitionSourceAnyState)
                     {
                         bool exists = false;
-                        for (auto &t : _currentGraph.anyStateTransitions)
+                        for (auto &t : m_currentGraph.anyStateTransitions)
                             if (t.targetStateHash == targetHash)
                                 exists = true;
                         if (!exists)
                         {
                             AnimTransition t;
                             t.targetStateHash = targetHash;
-                            _currentGraph.anyStateTransitions.push_back(t);
+                            m_currentGraph.anyStateTransitions.push_back(t);
                         }
                     }
                     else
                     {
-                        for (auto &s : _currentGraph.states)
+                        for (auto &s : m_currentGraph.states)
                         {
                             if (s.stateHash == srcHash)
                             {
@@ -670,20 +670,20 @@ void AnimGraphWindow::DrawNodeWorkspace()
                     }
                 }
             }
-            _editorMode = EditorMode::Normal;
+            m_editorMode = EditorMode::Normal;
         }
         else if (ImGui::IsMouseClicked(1) || ImGui::IsKeyPressed(ImGuiKey_Escape))
         {
-            _editorMode = EditorMode::Normal;
+            m_editorMode = EditorMode::Normal;
         }
     }
 
     ed::PopStyleVar(3);
 
-    if (_needRestorePositions)
+    if (m_needRestorePositions)
     {
         ed::NavigateToContent();
-        _needRestorePositions = false;
+        m_needRestorePositions = false;
     }
 
     HandleInteraction();
@@ -694,12 +694,12 @@ void AnimGraphWindow::DrawNodeWorkspace()
     // 選択状態の取得
     ed::NodeId selNode;
     ed::LinkId selLink;
-    _selectedNodeId = 0;
-    _selectedLinkId = 0;
+    m_selectedNodeId = 0;
+    m_selectedLinkId = 0;
     if (ed::GetSelectedNodes(&selNode, 1) > 0)
-        _selectedNodeId = (int)(intptr_t)selNode.Get();
+        m_selectedNodeId = (int)(intptr_t)selNode.Get();
     else if (ed::GetSelectedLinks(&selLink, 1) > 0)
-        _selectedLinkId = (int)(intptr_t)selLink.Get();
+        m_selectedLinkId = (int)(intptr_t)selLink.Get();
 }
 
 void AnimGraphWindow::HandleInteraction()
@@ -714,22 +714,22 @@ void AnimGraphWindow::HandleInteraction()
                 int id = (int)(intptr_t)linkId.Get();
                 if (id == ENTRY_LINK_ID)
                 {
-                    _currentGraph.entryStateHash = 0;
+                    m_currentGraph.entryStateHash = 0;
                 }
                 else if (const LinkRef *ref = FindLink(id))
                 {
                     if (ref->isAnyState)
                     {
                         uint32_t dst = ref->dstHash;
-                        _currentGraph.anyStateTransitions.erase(
-                            std::remove_if(_currentGraph.anyStateTransitions.begin(), _currentGraph.anyStateTransitions.end(),
+                        m_currentGraph.anyStateTransitions.erase(
+                            std::remove_if(m_currentGraph.anyStateTransitions.begin(), m_currentGraph.anyStateTransitions.end(),
                                 [dst](const AnimTransition &t) { return t.targetStateHash == dst; }),
-                            _currentGraph.anyStateTransitions.end());
+                            m_currentGraph.anyStateTransitions.end());
                     }
                     else
                     {
                         uint32_t src = ref->srcHash, dst = ref->dstHash;
-                        for (auto &s : _currentGraph.states)
+                        for (auto &s : m_currentGraph.states)
                         {
                             if (s.stateHash == src)
                             {
@@ -758,7 +758,7 @@ void AnimGraphWindow::HandleInteraction()
             {
                 uint32_t targetHash = 0;
                 bool     found      = false;
-                for (auto &s : _currentGraph.states)
+                for (auto &s : m_currentGraph.states)
                 {
                     if (StateNodeId(s.stateHash) == rawId)
                     {
@@ -770,24 +770,24 @@ void AnimGraphWindow::HandleInteraction()
                 if (!found)
                     continue;
 
-                if (_currentGraph.entryStateHash == targetHash)
-                    _currentGraph.entryStateHash = 0;
+                if (m_currentGraph.entryStateHash == targetHash)
+                    m_currentGraph.entryStateHash = 0;
 
-                _currentGraph.anyStateTransitions.erase(
-                    std::remove_if(_currentGraph.anyStateTransitions.begin(), _currentGraph.anyStateTransitions.end(),
+                m_currentGraph.anyStateTransitions.erase(
+                    std::remove_if(m_currentGraph.anyStateTransitions.begin(), m_currentGraph.anyStateTransitions.end(),
                         [targetHash](const AnimTransition &t) { return t.targetStateHash == targetHash; }),
-                    _currentGraph.anyStateTransitions.end());
+                    m_currentGraph.anyStateTransitions.end());
 
-                for (auto &s : _currentGraph.states)
+                for (auto &s : m_currentGraph.states)
                     s.transitions.erase(
                         std::remove_if(s.transitions.begin(), s.transitions.end(),
                             [targetHash](const AnimTransition &t) { return t.targetStateHash == targetHash; }),
                         s.transitions.end());
 
-                _currentGraph.states.erase(
-                    std::remove_if(_currentGraph.states.begin(), _currentGraph.states.end(),
+                m_currentGraph.states.erase(
+                    std::remove_if(m_currentGraph.states.begin(), m_currentGraph.states.end(),
                         [targetHash](const AnimState &s) { return s.stateHash == targetHash; }),
-                    _currentGraph.states.end());
+                    m_currentGraph.states.end());
             }
         }
     }
@@ -796,7 +796,7 @@ void AnimGraphWindow::HandleInteraction()
 
 const AnimGraphWindow::LinkRef *AnimGraphWindow::FindLink(int linkId) const
 {
-    for (const auto &[id, ref] : _linkLut)
+    for (const auto &[id, ref] : m_linkLut)
         if (id == linkId)
             return &ref;
     return nullptr;
@@ -807,10 +807,10 @@ void AnimGraphWindow::DrawInspector()
     ImGui::Text("インスペクタ (Inspector)");
     ImGui::Separator();
 
-    if (_selectedNodeId != 0)
-        DrawStateSettings(_selectedNodeId);
-    else if (_selectedLinkId != 0)
-        DrawTransitionSettings(_selectedLinkId);
+    if (m_selectedNodeId != 0)
+        DrawStateSettings(m_selectedNodeId);
+    else if (m_selectedLinkId != 0)
+        DrawTransitionSettings(m_selectedLinkId);
     else
         ImGui::TextDisabled("項目を選択してください。\n(Select a Node or Link)");
 }
@@ -832,7 +832,7 @@ void AnimGraphWindow::DrawStateSettings(int nodeId)
         return;
     }
 
-    for (auto &state : _currentGraph.states)
+    for (auto &state : m_currentGraph.states)
     {
         if (StateNodeId(state.stateHash) != nodeId)
             continue;
@@ -866,7 +866,7 @@ void AnimGraphWindow::DrawStateSettings(int nodeId)
         ImGui::DragFloat("再生速度 (Playback Speed)", &state.playbackSpeed, 0.05f, 0.0f, 5.0f);
 
         ImGui::Separator();
-        if (_currentGraph.entryStateHash == state.stateHash)
+        if (m_currentGraph.entryStateHash == state.stateHash)
         {
             ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.0f, 1.0f), "[ 初期状態 (Entry State) ]");
             ImGui::TextDisabled("※このノードが最初に再生されます。");
@@ -896,7 +896,7 @@ void AnimGraphWindow::DrawTransitionSettings(int linkId)
     if (ref->isAnyState)
     {
         fromName = "Any State";
-        for (auto &t : _currentGraph.anyStateTransitions)
+        for (auto &t : m_currentGraph.anyStateTransitions)
             if (t.targetStateHash == ref->dstHash)
             {
                 trans = &t;
@@ -905,7 +905,7 @@ void AnimGraphWindow::DrawTransitionSettings(int linkId)
     }
     else
     {
-        for (auto &s : _currentGraph.states)
+        for (auto &s : m_currentGraph.states)
         {
             if (s.stateHash == ref->srcHash)
             {
@@ -923,7 +923,7 @@ void AnimGraphWindow::DrawTransitionSettings(int linkId)
     if (!trans)
         return;
 
-    for (const auto &s : _currentGraph.states)
+    for (const auto &s : m_currentGraph.states)
         if (s.stateHash == ref->dstHash)
         {
             toName = s.sequenceName;
@@ -936,7 +936,7 @@ void AnimGraphWindow::DrawTransitionSettings(int linkId)
     ImGui::Text("遷移先 (To): %s", toName.c_str());
     ImGui::Separator();
 
-    // ★ 共通関数に一本化（通常遷移／Any State 遷移で同一UI。二重管理を解消）
+    // 共通関数に一本化（通常遷移／Any State 遷移で同一UI。二重管理を解消）
     DrawTransitionConditionUI(*trans);
 }
 
@@ -947,8 +947,8 @@ void AnimGraphWindow::DrawToolbar()
     {
         if (auto path = FileDialog::SavePreset("AnimNode", "Save Anim Graph"))
         {
-            _currentFilePath = FileDialog::ConvertToRelativePath(*path);
-            SaveGraph(_currentFilePath);
+            m_currentFilePath = FileDialog::ConvertToRelativePath(*path);
+            SaveGraph(m_currentFilePath);
         }
     }
 
@@ -958,13 +958,13 @@ void AnimGraphWindow::DrawToolbar()
     {
         if (auto path = FileDialog::OpenPreset("AnimNode", "Select Anim Graph File"))
         {
-            _currentFilePath = FileDialog::ConvertToRelativePath(*path);
-            LoadGraph(_currentFilePath);
+            m_currentFilePath = FileDialog::ConvertToRelativePath(*path);
+            LoadGraph(m_currentFilePath);
         }
     }
 
     ImGui::SameLine();
-    ImGui::TextDisabled("File: %s", _currentFilePath.empty() ? "None" : _currentFilePath.c_str());
+    ImGui::TextDisabled("File: %s", m_currentFilePath.empty() ? "None" : m_currentFilePath.c_str());
 
     ImGui::SameLine();
     ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
@@ -986,12 +986,12 @@ void AnimGraphWindow::DrawToolbar()
             std::filesystem::create_directories("Build/Logs");
 
             // ファイル名が未設定(保存前)なら "Untitled_AnimGraph" を使う
-            std::string filename = _currentFilePath.empty()
+            std::string filename = m_currentFilePath.empty()
                                        ? "Untitled_AnimGraph"
-                                       : std::filesystem::path(_currentFilePath).stem().string();
+                                       : std::filesystem::path(m_currentFilePath).stem().string();
 
             std::string txtPath  = "Build/Logs/" + filename + ".txt";
-            std::string dumpText = DumpAnimGraphToString(_currentGraph);
+            std::string dumpText = DumpAnimGraphToString(m_currentGraph);
 
             std::ofstream txtOut(txtPath);
             if (txtOut.is_open())
@@ -1014,15 +1014,15 @@ void AnimGraphWindow::DrawToolbar()
 
 void AnimGraphWindow::SaveGraph(const std::string &path)
 {
-    if (_nodeContext)
+    if (m_nodeContext)
     {
-        ed::SetCurrentEditor(_nodeContext);
+        ed::SetCurrentEditor(m_nodeContext);
 
         ImVec2 entryPos         = ed::GetNodePosition(ENTRY_NODE_ID);
-        _currentGraph.entryPosX = entryPos.x;
-        _currentGraph.entryPosY = entryPos.y;
+        m_currentGraph.entryPosX = entryPos.x;
+        m_currentGraph.entryPosY = entryPos.y;
 
-        for (auto &state : _currentGraph.states)
+        for (auto &state : m_currentGraph.states)
         {
             ImVec2 pos     = ed::GetNodePosition(StateNodeId(state.stateHash));
             state.nodePosX = pos.x;
@@ -1030,19 +1030,19 @@ void AnimGraphWindow::SaveGraph(const std::string &path)
         }
 
         ImVec2 anyPos              = ed::GetNodePosition(ANY_STATE_NODE_ID);
-        _currentGraph.anyStatePosX = anyPos.x;
-        _currentGraph.anyStatePosY = anyPos.y;
+        m_currentGraph.anyStatePosX = anyPos.x;
+        m_currentGraph.anyStatePosY = anyPos.y;
     }
-    AnimGraphSerializer::SaveToJSON(_currentGraph, path);
+    AnimGraphSerializer::SaveToJSON(m_currentGraph, path);
 
     
 }
 
 void AnimGraphWindow::LoadGraph(const std::string& path) {
-    if (AnimGraphSerializer::LoadFromJSON(_currentGraph, path, {})) {
+    if (AnimGraphSerializer::LoadFromJSON(m_currentGraph, path, {})) {
         ed::ClearSelection();
-        // ★ ロードが成功したら、次のフレームで座標を復元するフラグを立てる
-        _needRestorePositions = true;
+        // ロードが成功したら、次のフレームで座標を復元するフラグを立てる
+        m_needRestorePositions = true;
     }
 }
 
@@ -1065,7 +1065,7 @@ void AnimGraphWindow::HandleContextMenu()
     else if (ed::ShowBackgroundContextMenu())
     {
         ImGui::OpenPopup("AnimCanvasContextMenu");
-        _newNodeSpawnPos = ImGui::GetMousePosOnOpeningCurrentPopup();
+        m_newNodeSpawnPos = ImGui::GetMousePosOnOpeningCurrentPopup();
     }
 
     if (ImGui::BeginPopup("NodeContextMenu"))
@@ -1079,7 +1079,7 @@ void AnimGraphWindow::HandleContextMenu()
             ctxName = "Any State";
         else
         {
-            for (const auto &s : _currentGraph.states)
+            for (const auto &s : m_currentGraph.states)
                 if (StateNodeId(s.stateHash) == s_contextNodeId)
                 {
                     ctxHash = s.stateHash;
@@ -1095,16 +1095,16 @@ void AnimGraphWindow::HandleContextMenu()
         {
             if (ImGui::MenuItem("Make Transition"))
             {
-                _editorMode = EditorMode::CreatingTransition;
+                m_editorMode = EditorMode::CreatingTransition;
                 if (s_contextNodeId == ANY_STATE_NODE_ID)
                 {
-                    _isTransitionSourceAnyState = true;
-                    _transitionSourceHash       = 0;
+                    m_isTransitionSourceAnyState = true;
+                    m_transitionSourceHash       = 0;
                 }
                 else
                 {
-                    _isTransitionSourceAnyState = false;
-                    _transitionSourceHash       = ctxHash;
+                    m_isTransitionSourceAnyState = false;
+                    m_transitionSourceHash       = ctxHash;
                 }
             }
         }
@@ -1114,13 +1114,13 @@ void AnimGraphWindow::HandleContextMenu()
         {
             if (ImGui::MenuItem("Set as Entry"))
             {
-                _currentGraph.entryStateHash = ctxHash;
+                m_currentGraph.entryStateHash = ctxHash;
             }
 
             if (ImGui::MenuItem("Duplicate"))
             {
                 // 同名+"_Copy" で複製。ハッシュは新規名から導出。
-                for (const auto &s : _currentGraph.states)
+                for (const auto &s : m_currentGraph.states)
                 {
                     if (s.stateHash == ctxHash)
                     {
@@ -1130,8 +1130,8 @@ void AnimGraphWindow::HandleContextMenu()
                         copy.nodePosX += 30.0f;
                         copy.nodePosY += 30.0f;
                         copy.transitions.clear(); // 複製は遷移を引き継がない（重複ハッシュ事故防止）
-                        _currentGraph.states.push_back(copy);
-                        _nodeToPlaceHash = copy.stateHash;
+                        m_currentGraph.states.push_back(copy);
+                        m_nodeToPlaceHash = copy.stateHash;
                         break;
                     }
                 }
@@ -1141,25 +1141,25 @@ void AnimGraphWindow::HandleContextMenu()
             if (ImGui::MenuItem("Delete"))
             {
                 // このノードへ入る/出る遷移を全削除してからノード削除
-                for (auto &s : _currentGraph.states)
+                for (auto &s : m_currentGraph.states)
                     s.transitions.erase(
                         std::remove_if(s.transitions.begin(), s.transitions.end(),
                             [ctxHash](const AnimTransition &t) { return t.targetStateHash == ctxHash; }),
                         s.transitions.end());
-                _currentGraph.anyStateTransitions.erase(
-                    std::remove_if(_currentGraph.anyStateTransitions.begin(), _currentGraph.anyStateTransitions.end(),
+                m_currentGraph.anyStateTransitions.erase(
+                    std::remove_if(m_currentGraph.anyStateTransitions.begin(), m_currentGraph.anyStateTransitions.end(),
                         [ctxHash](const AnimTransition &t) { return t.targetStateHash == ctxHash; }),
-                    _currentGraph.anyStateTransitions.end());
-                if (_currentGraph.entryStateHash == ctxHash)
-                    _currentGraph.entryStateHash = 0;
+                    m_currentGraph.anyStateTransitions.end());
+                if (m_currentGraph.entryStateHash == ctxHash)
+                    m_currentGraph.entryStateHash = 0;
 
-                _currentGraph.states.erase(
-                    std::remove_if(_currentGraph.states.begin(), _currentGraph.states.end(),
+                m_currentGraph.states.erase(
+                    std::remove_if(m_currentGraph.states.begin(), m_currentGraph.states.end(),
                         [ctxHash](const AnimState &s) { return s.stateHash == ctxHash; }),
-                    _currentGraph.states.end());
+                    m_currentGraph.states.end());
 
-                if (_selectedNodeId == s_contextNodeId)
-                    _selectedNodeId = 0;
+                if (m_selectedNodeId == s_contextNodeId)
+                    m_selectedNodeId = 0;
             }
         }
 
@@ -1172,22 +1172,22 @@ void AnimGraphWindow::HandleContextMenu()
         ImGui::Separator();
 
         ImGui::SetNextItemWidth(150);
-        ImGui::InputText("##NewStateNameCtx", _newStateName, sizeof(_newStateName));
+        ImGui::InputText("##NewStateNameCtx", m_newStateName, sizeof(m_newStateName));
         ImGui::SameLine();
 
-        if (ImGui::Button("新しいステートを追加") && _newStateName[0] != '\0')
+        if (ImGui::Button("新しいステートを追加") && m_newStateName[0] != '\0')
         {
             AnimState newState;
-            newState.stateHash    = CCL::Utils::HashString(_newStateName);
-            newState.sequenceName = _newStateName;
+            newState.stateHash    = CCL::Utils::HashString(m_newStateName);
+            newState.sequenceName = m_newStateName;
 
-            ImVec2 canvasPos  = ed::ScreenToCanvas(_newNodeSpawnPos);
+            ImVec2 canvasPos  = ed::ScreenToCanvas(m_newNodeSpawnPos);
             newState.nodePosX = canvasPos.x;
             newState.nodePosY = canvasPos.y;
 
-            _currentGraph.states.push_back(newState);
-            _nodeToPlaceHash = newState.stateHash;
-            _newStateName[0] = '\0';
+            m_currentGraph.states.push_back(newState);
+            m_nodeToPlaceHash = newState.stateHash;
+            m_newStateName[0] = '\0';
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
@@ -1204,7 +1204,7 @@ void AnimGraphWindow::DrawTransitionConditionUI(AnimTransition &trans)
     ImGui::Separator();
 
     // =========================================================================
-    // ★ ビットマスクによるキャンセル窓の要求指定 (チェックボックス化)
+    // ビットマスクによるキャンセル窓の要求指定 (チェックボックス化)
     // =========================================================================
     ImGui::Text("遷移を許可する窓 (Required Cancel Mask):");
     ImGui::TextDisabled("※複数チェック時は「いずれかの窓」で許可されます。");
@@ -1297,10 +1297,10 @@ void AnimGraphWindow::DrawTransitionConditionUI(AnimTransition &trans)
 
             ImGui::Separator();
 
-            if (_currentGraph.parameters.empty())
+            if (m_currentGraph.parameters.empty())
                 ImGui::TextDisabled("パラメータ未登録");
 
-            for (const auto &pd : _currentGraph.parameters)
+            for (const auto &pd : m_currentGraph.parameters)
             {
                 bool sel = (cond.paramHash == pd.hash && cond.op != AnimConditionOp::Finished);
                 if (ImGui::Selectable(pd.name.c_str(), sel))
@@ -1335,7 +1335,7 @@ void AnimGraphWindow::DrawTransitionConditionUI(AnimTransition &trans)
         {
             // 対象パラメータの型を検索
             AnimParamType pType = AnimParamType::Float;
-            for (const auto &pd : _currentGraph.parameters)
+            for (const auto &pd : m_currentGraph.parameters)
             {
                 if (pd.hash == cond.paramHash)
                 {
@@ -1423,7 +1423,7 @@ void AnimGraphWindow::DrawParameterPanel(EditorContext &context)
         p.name = "NewFloat";
         p.type = AnimParamType::Float;
         p.hash = CCL::Utils::HashString(p.name.c_str());
-        _currentGraph.parameters.push_back(p);
+        m_currentGraph.parameters.push_back(p);
     }
     ImGui::SameLine();
     if (ImGui::SmallButton("+ Bool"))
@@ -1432,7 +1432,7 @@ void AnimGraphWindow::DrawParameterPanel(EditorContext &context)
         p.name = "NewBool";
         p.type = AnimParamType::Bool;
         p.hash = CCL::Utils::HashString(p.name.c_str());
-        _currentGraph.parameters.push_back(p);
+        m_currentGraph.parameters.push_back(p);
     }
     ImGui::SameLine();
     if (ImGui::SmallButton("+ Trigger"))
@@ -1441,7 +1441,7 @@ void AnimGraphWindow::DrawParameterPanel(EditorContext &context)
         p.name = "NewTrigger";
         p.type = AnimParamType::Trigger;
         p.hash = CCL::Utils::HashString(p.name.c_str());
-        _currentGraph.parameters.push_back(p);
+        m_currentGraph.parameters.push_back(p);
     }
 
     ImGui::Separator();
@@ -1463,22 +1463,22 @@ void AnimGraphWindow::DrawParameterPanel(EditorContext &context)
 
     int deleteIndex = -1;
 
-    for (int i = 0; i < (int)_currentGraph.parameters.size(); ++i)
+    for (int i = 0; i < (int)m_currentGraph.parameters.size(); ++i)
     {
-        AnimParamDef &p = _currentGraph.parameters[i];
+        AnimParamDef &p = m_currentGraph.parameters[i];
         ImGui::PushID(i);
         ImGui::TableNextRow();
 
         // --- 列1: 名前（ダブルクリックでリネーム編集） ---
         ImGui::TableSetColumnIndex(0);
-        if (_paramRenameIndex == i)
+        if (m_paramRenameIndex == i)
         {
             ImGui::SetNextItemWidth(-1);
-            bool commit = ImGui::InputText("##rename", _paramNameBuf, sizeof(_paramNameBuf),
+            bool commit = ImGui::InputText("##rename", m_paramNameBuf, sizeof(m_paramNameBuf),
                 ImGuiInputTextFlags_EnterReturnsTrue);
             if (commit || ImGui::IsItemDeactivatedAfterEdit())
             {
-                std::string newName = _paramNameBuf;
+                std::string newName = m_paramNameBuf;
                 if (!newName.empty() && newName != p.name)
                 {
                     uint32_t oldHash = p.hash;
@@ -1488,7 +1488,7 @@ void AnimGraphWindow::DrawParameterPanel(EditorContext &context)
                     p.name = newName;
                     p.hash = newHash;
                 }
-                _paramRenameIndex = -1;
+                m_paramRenameIndex = -1;
             }
         }
         else
@@ -1500,8 +1500,8 @@ void AnimGraphWindow::DrawParameterPanel(EditorContext &context)
             ImGui::TextColored(col, "%s", p.name.c_str());
             if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0))
             {
-                _paramRenameIndex = i;
-                strncpy_s(_paramNameBuf, sizeof(_paramNameBuf), p.name.c_str(), _TRUNCATE);
+                m_paramRenameIndex = i;
+                strncpy_s(m_paramNameBuf, sizeof(m_paramNameBuf), p.name.c_str(), _TRUNCATE);
             }
             if (ImGui::IsItemHovered())
                 ImGui::SetTooltip("ID: 0x%08X\n(ダブルクリックでリネーム)", p.hash);
@@ -1572,7 +1572,7 @@ void AnimGraphWindow::DrawParameterPanel(EditorContext &context)
     {
         // 消すパラメータを参照している遷移条件も一緒に除去する。
         // これを怠ると、存在しないハッシュを参照する「壊れた条件」が残る。
-        const uint32_t deadHash = _currentGraph.parameters[deleteIndex].hash;
+        const uint32_t deadHash = m_currentGraph.parameters[deleteIndex].hash;
         auto stripConds = [deadHash](std::vector<AnimTransition> &transitions) {
             for (auto &t : transitions)
                 t.conditions.erase(
@@ -1580,11 +1580,11 @@ void AnimGraphWindow::DrawParameterPanel(EditorContext &context)
                         [deadHash](const AnimCondition &c) { return c.paramHash == deadHash; }),
                     t.conditions.end());
         };
-        for (auto &s : _currentGraph.states)
+        for (auto &s : m_currentGraph.states)
             stripConds(s.transitions);
-        stripConds(_currentGraph.anyStateTransitions);
+        stripConds(m_currentGraph.anyStateTransitions);
 
-        _currentGraph.parameters.erase(_currentGraph.parameters.begin() + deleteIndex);
+        m_currentGraph.parameters.erase(m_currentGraph.parameters.begin() + deleteIndex);
     }
 }
 
@@ -1600,8 +1600,8 @@ void AnimGraphWindow::RenameParameterReferences(uint32_t oldHash, const std::str
                     c.paramName = newName;
                 }
     };
-    for (auto &s : _currentGraph.states)
+    for (auto &s : m_currentGraph.states)
         patch(s.transitions);
-    patch(_currentGraph.anyStateTransitions);
+    patch(m_currentGraph.anyStateTransitions);
 }
 

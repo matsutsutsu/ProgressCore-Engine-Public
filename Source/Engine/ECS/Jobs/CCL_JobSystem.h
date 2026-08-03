@@ -79,15 +79,15 @@ namespace CCL::ECS {
             JobCounter *counter; // 終わったら減らすカウンター
         };
 
-        std::vector<std::thread> _workers;  // 働くシェフたち
-        std::queue<InternalJob>  _jobQueue; // 仕事の注文票ボード
+        std::vector<std::thread> m_workers;  // 働くシェフたち
+        std::queue<InternalJob>  m_jobQueue; // 仕事の注文票ボード
 
-        std::mutex _queueMutex; // ボードを守る「鍵」（排他制御）
+        std::mutex m_queueMutex; // ボードを守る「鍵」（排他制御）
                                 // これがないと複数のシェフが同時にチケットを取ろうとして破れます。
 
-        std::condition_variable _condition; // 寝ているシェフを起こす「ベル」
+        std::condition_variable m_condition; // 寝ているシェフを起こす「ベル」
 
-        bool _shutdown = false; // 「閉店」フラグ
+        bool m_shutdown = false; // 「閉店」フラグ
     };
 
 } // namespace CCL::ECS

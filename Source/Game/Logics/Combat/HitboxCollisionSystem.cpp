@@ -62,8 +62,8 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
     const DirectX::XMFLOAT3 &contactPos)
 {
     // 1. Hitbox(攻撃) と Hurtbox(被弾) の成立確認
-    auto *hitbox  = _world->GetComponent<HitboxComponent>(attackerCandidate);
-    auto *hurtbox = _world->GetComponent<HurtboxComponent>(victimCandidate);
+    auto *hitbox  = m_world->GetComponent<HitboxComponent>(attackerCandidate);
+    auto *hurtbox = m_world->GetComponent<HurtboxComponent>(victimCandidate);
     if (!hitbox || !hitbox->isActive || !hurtbox)
         return;
 
@@ -88,8 +88,8 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
     float   knockForce = 0.0f;
     if (hitbox->knockback > 0.0f)
     {
-        auto *atkT = _world->GetComponent<TransformComponent>(attackerCandidate);
-        auto *vicT = _world->GetComponent<TransformComponent>(victimCandidate);
+        auto *atkT = m_world->GetComponent<TransformComponent>(attackerCandidate);
+        auto *vicT = m_world->GetComponent<TransformComponent>(victimCandidate);
         if (atkT && vicT)
         {
             Vector3 d = Vector3(vicT->position) - Vector3(atkT->position);
@@ -106,7 +106,7 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
 
     // 5. DamageEvent(一時エンティティ)を生成して結果を載せる。HPは触らない。
     static const Archetype damageArchetype = ArchetypeHelper::Generate<DamageEventComponent>();
-    auto                   entityRef       = _world->Spawn(damageArchetype);
+    auto                   entityRef       = m_world->Spawn(damageArchetype);
 
     DamageEventComponent dmg{};
     dmg.targetID       = victimCandidate;

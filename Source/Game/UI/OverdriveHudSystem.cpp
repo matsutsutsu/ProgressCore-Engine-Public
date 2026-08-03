@@ -27,12 +27,12 @@ const DirectX::XMFLOAT4 kColCharge = {0.275f, 0.667f, 1.0f, 1.0f}; // 蓄積中�
 void OverdriveHudSystem::Initialize()
 {
     // UI階層のルート。配下(ゲージ/ラベル)をこの Canvas の子にしてヒエラルキーで束ねる。
-    const EntityID canvas = CCL::GameUI::SpawnCanvas(*_world, "OverdriveCanvas");
+    const EntityID canvas = CCL::GameUI::SpawnCanvas(*m_world, "OverdriveCanvas");
 
     // --- ゲージ本体（左下・アンカー方式） ---
     auto gaugeArch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
         UIProgressBarComponent>();
-    auto gauge     = EntityFactory::SpawnNamed(*_world, "OverdriveGauge", gaugeArch);
+    auto gauge     = EntityFactory::SpawnNamed(*m_world, "OverdriveGauge", gaugeArch);
 
     UITransformComponent gt;
     gt.anchor = {0.0f, 1.0f};   // 画面左下
@@ -50,7 +50,7 @@ void OverdriveHudSystem::Initialize()
     // --- ラベル（ゲージの上） ---
     auto labelArch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
         UITextComponent>();
-    auto label     = EntityFactory::SpawnNamed(*_world, "OverdriveLabel", labelArch);
+    auto label     = EntityFactory::SpawnNamed(*m_world, "OverdriveLabel", labelArch);
 
     UITransformComponent lt;
     lt.anchor = {0.0f, 1.0f};
@@ -70,8 +70,8 @@ void OverdriveHudSystem::Initialize()
 void OverdriveHudSystem::Update(float /*dt*/)
 {
     // 生成直後はコンポーネントが未反映のことがあるので null 許容。
-    auto *bar = (m_gaugeID != InvalidEntityID) ? _world->GetComponent<UIProgressBarComponent>(m_gaugeID) : nullptr;
-    auto *txt = (m_labelID != InvalidEntityID) ? _world->GetComponent<UITextComponent>(m_labelID) : nullptr;
+    auto *bar = (m_gaugeID != InvalidEntityID) ? m_world->GetComponent<UIProgressBarComponent>(m_gaugeID) : nullptr;
+    auto *txt = (m_labelID != InvalidEntityID) ? m_world->GetComponent<UITextComponent>(m_labelID) : nullptr;
     if (!bar && !txt) return;
 
     bool found = false;

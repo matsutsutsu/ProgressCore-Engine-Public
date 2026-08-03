@@ -18,16 +18,16 @@
 
 void PostProcessManager::Initialize(ID3D11Device* device, UINT width, UINT height)
 {
-    _device = device;
+    m_device = device;
 
-    // ★ 先に実サイズを確定させる。AddEffect() は各エフェクトの Initialize に
-    //   _width/_height を渡すため、ここで設定しておかないと 0×0 で中間RTの作成に
+    // 先に実サイズを確定させる。AddEffect() は各エフェクトの Initialize に
+    //   m_width/m_height を渡すため、ここで設定しておかないと 0×0 で中間RTの作成に
     //   失敗し「RenderTarget::Create invalid args (w=0 h=0)」がログに出てしまう。
-    _width  = width;
-    _height = height;
+    m_width  = width;
+    m_height = height;
 
-    _toneMapEffect = std::make_unique<ToneMapEffect>();
-    _toneMapEffect->Initialize(device);
+    m_toneMapEffect = std::make_unique<ToneMapEffect>();
+    m_toneMapEffect->Initialize(device);
 
     // ==========================================================
     // 2. エフェクトの生産ラインを構築
@@ -48,32 +48,32 @@ void PostProcessManager::Initialize(ID3D11Device* device, UINT width, UINT heigh
 
 PostProcessManager::~PostProcessManager()
 {
-    _effects.clear(); // 各 IPostEffect が自前の RT を解放する
+    m_effects.clear(); // 各 IPostEffect が自前の RT を解放する
 
-    if (_hdrBuffers[0].IsValid())  ResourceManager::Instance().UnloadRenderTarget(_hdrBuffers[0]);
-    if (_hdrBuffers[1].IsValid())  ResourceManager::Instance().UnloadRenderTarget(_hdrBuffers[1]);
-    if (_outputSDR.IsValid())      ResourceManager::Instance().UnloadRenderTarget(_outputSDR);
-    if (_sceneColorCopy.IsValid()) ResourceManager::Instance().UnloadRenderTarget(_sceneColorCopy);
+    if (m_hdrBuffers[0].IsValid())  ResourceManager::Instance().UnloadRenderTarget(m_hdrBuffers[0]);
+    if (m_hdrBuffers[1].IsValid())  ResourceManager::Instance().UnloadRenderTarget(m_hdrBuffers[1]);
+    if (m_outputSDR.IsValid())      ResourceManager::Instance().UnloadRenderTarget(m_outputSDR);
+    if (m_sceneColorCopy.IsValid()) ResourceManager::Instance().UnloadRenderTarget(m_sceneColorCopy);
 }
 
 void PostProcessManager::Resize(ID3D11Device* device, UINT width, UINT height)
 {
     if (width == 0 || height == 0) return;
-    _width = width;
-    _height = height;
+    m_width = width;
+    m_height = height;
 
-    if(_hdrBuffers[0].IsValid()) ResourceManager::Instance().UnloadRenderTarget(_hdrBuffers[0]);
-    if (_hdrBuffers[1].IsValid()) ResourceManager::Instance().UnloadRenderTarget(_hdrBuffers[1]);
-    if (_outputSDR.IsValid()) ResourceManager::Instance().UnloadRenderTarget(_outputSDR);
-    if (_sceneColorCopy.IsValid()) ResourceManager::Instance().UnloadRenderTarget(_sceneColorCopy);
+    if(m_hdrBuffers[0].IsValid()) ResourceManager::Instance().UnloadRenderTarget(m_hdrBuffers[0]);
+    if (m_hdrBuffers[1].IsValid()) ResourceManager::Instance().UnloadRenderTarget(m_hdrBuffers[1]);
+    if (m_outputSDR.IsValid()) ResourceManager::Instance().UnloadRenderTarget(m_outputSDR);
+    if (m_sceneColorCopy.IsValid()) ResourceManager::Instance().UnloadRenderTarget(m_sceneColorCopy);
 
-    _hdrBuffers[0] = ResourceManager::Instance().CreateRenderTarget(width, height, DXGI_FORMAT_R16G16B16A16_FLOAT);
-    _hdrBuffers[1] = ResourceManager::Instance().CreateRenderTarget(width, height, DXGI_FORMAT_R16G16B16A16_FLOAT);
-    _outputSDR = ResourceManager::Instance().CreateRenderTarget(width, height, DXGI_FORMAT_R8G8B8A8_UNORM);
-    _sceneColorCopy = ResourceManager::Instance().CreateRenderTarget(width, height, DXGI_FORMAT_R16G16B16A16_FLOAT);
+    m_hdrBuffers[0] = ResourceManager::Instance().CreateRenderTarget(width, height, DXGI_FORMAT_R16G16B16A16_FLOAT);
+    m_hdrBuffers[1] = ResourceManager::Instance().CreateRenderTarget(width, height, DXGI_FORMAT_R16G16B16A16_FLOAT);
+    m_outputSDR = ResourceManager::Instance().CreateRenderTarget(width, height, DXGI_FORMAT_R8G8B8A8_UNORM);
+    m_sceneColorCopy = ResourceManager::Instance().CreateRenderTarget(width, height, DXGI_FORMAT_R16G16B16A16_FLOAT);
 
     // 全エフェクトの中間 RT もリサイズ
-    for (auto& effect : _effects) {
+    for (auto& effect : m_effects) {
         effect->Resize(device, width, height);
     }
 }
@@ -82,8 +82,8 @@ void PostProcessManager::BeginScene(ID3D11DeviceContext* dc,
     const float          clearColor[4],
     ID3D11DepthStencilView* dsv)
 {
-    // 初期描画は A (_hdrBuffers[0]) に行う
-    RenderTarget* sceneHDR = ResourceManager::Instance().GetRenderTarget(_hdrBuffers[0]);
+    // 初期描画は A (m_hdrBuffers[0]) に行う
+    RenderTarget* sceneHDR = ResourceManager::Instance().GetRenderTarget(m_hdrBuffers[0]);
     if (!sceneHDR) return;
 
     float w = static_cast<float>(sceneHDR->GetWidth());
@@ -107,7 +107,7 @@ ID3D11ShaderResourceView* PostProcessManager::EndScene(ID3D11DeviceContext* dc,
     ID3D11ShaderResourceView* sceneDepthSRV,
     ID3D11ShaderResourceView* sceneNormalSRV)
 {
-    RenderTarget* outputSDR = ResourceManager::Instance().GetRenderTarget(_outputSDR);
+    RenderTarget* outputSDR = ResourceManager::Instance().GetRenderTarget(m_outputSDR);
     if (!outputSDR) return nullptr;
 
     // RTV 登録を解除
@@ -122,7 +122,7 @@ ID3D11ShaderResourceView* PostProcessManager::EndScene(ID3D11DeviceContext* dc,
     }
 
     // ================================================================
-    // ★ 究極のエコシステム: Ping-Pong 実行
+    // 究極のエコシステム: Ping-Pong 実行
     // ================================================================
     int readIdx = 0;
     int writeIdx = 1;
@@ -130,8 +130,8 @@ ID3D11ShaderResourceView* PostProcessManager::EndScene(ID3D11DeviceContext* dc,
 
     // 描画ループの直前・直後でこれを確認してください
     D3D11_VIEWPORT vpHDR = {};
-    vpHDR.Width = static_cast<float>(_width);  // メンバ変数の幅
-    vpHDR.Height = static_cast<float>(_height); // メンバ変数の高さ
+    vpHDR.Width = static_cast<float>(m_width);  // メンバ変数の幅
+    vpHDR.Height = static_cast<float>(m_height); // メンバ変数の高さ
     vpHDR.MinDepth = 0.0f;
     vpHDR.MaxDepth = 1.0f;
     dc->RSSetViewports(1, &vpHDR);
@@ -143,10 +143,10 @@ ID3D11ShaderResourceView* PostProcessManager::EndScene(ID3D11DeviceContext* dc,
     dc->QueryInterface(IID_PPV_ARGS(annotation.GetAddressOf()));
 #endif
 
-    for (auto& effect : _effects) {
+    for (auto& effect : m_effects) {
         if (!effect->IsEnabled()) continue;
 
-        // ★ GPUマーカー（デバッグビルド時のみ）
+        // GPUマーカー（デバッグビルド時のみ）
 #if defined(ENABLE_EDITOR)
         if (annotation) {
             std::wstring wname(effect->GetName(), effect->GetName() + strlen(effect->GetName()));
@@ -154,15 +154,15 @@ ID3D11ShaderResourceView* PostProcessManager::EndScene(ID3D11DeviceContext* dc,
         }
 #endif
 
-        RenderTarget* readRT = ResourceManager::Instance().GetRenderTarget(_hdrBuffers[readIdx]);
-        RenderTarget* writeRT = ResourceManager::Instance().GetRenderTarget(_hdrBuffers[writeIdx]);
+        RenderTarget* readRT = ResourceManager::Instance().GetRenderTarget(m_hdrBuffers[readIdx]);
+        RenderTarget* writeRT = ResourceManager::Instance().GetRenderTarget(m_hdrBuffers[writeIdx]);
 
         dc->RSSetViewports(1, &vpHDR);
 
         // A を読み込み B に書く
         effect->Process(dc, readRT->GetSRV(), writeRT->GetRTV());
 
-        // ★ マーカー終了
+        // マーカー終了
 #if defined(ENABLE_EDITOR)
         if (annotation) annotation->EndEvent();
 #endif
@@ -178,7 +178,7 @@ ID3D11ShaderResourceView* PostProcessManager::EndScene(ID3D11DeviceContext* dc,
     ID3D11ShaderResourceView* nullNormal = nullptr;
     dc->PSSetShaderResources(SLOT_SRV_SCENE_NORMAL, 1, &nullNormal);
 
-    RenderTarget* finalHDR = ResourceManager::Instance().GetRenderTarget(_hdrBuffers[readIdx]);
+    RenderTarget* finalHDR = ResourceManager::Instance().GetRenderTarget(m_hdrBuffers[readIdx]);
 
     // ================================================================
     // ToneMapping (分離したクラスに委譲)
@@ -189,15 +189,15 @@ ID3D11ShaderResourceView* PostProcessManager::EndScene(ID3D11DeviceContext* dc,
     ID3D11RenderTargetView* finalRTV = targetRTV ? targetRTV : outputSDR->GetRTV();
 
     // ハードコードが消え、スッキリ1行に！
-    _toneMapEffect->Process(dc, finalHDR->GetSRV(), finalRTV, toneMapConfig);
+    m_toneMapEffect->Process(dc, finalHDR->GetSRV(), finalRTV, toneMapConfig);
 
     return outputSDR->GetSRV();
 }
 
 void PostProcessManager::GrabSceneColor(ID3D11DeviceContext* dc)
 {
-    RenderTarget* scene = ResourceManager::Instance().GetRenderTarget(_hdrBuffers[0]);
-    RenderTarget* copy  = ResourceManager::Instance().GetRenderTarget(_sceneColorCopy);
+    RenderTarget* scene = ResourceManager::Instance().GetRenderTarget(m_hdrBuffers[0]);
+    RenderTarget* copy  = ResourceManager::Instance().GetRenderTarget(m_sceneColorCopy);
     if (!scene || !copy) return;
 
     ID3D11Resource* src = nullptr;

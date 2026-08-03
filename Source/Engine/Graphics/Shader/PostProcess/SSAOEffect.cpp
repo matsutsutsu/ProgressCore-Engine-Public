@@ -23,33 +23,33 @@ SSAOEffect::~SSAOEffect()
 
 void SSAOEffect::Initialize(ID3D11Device* device, UINT width, UINT height)
 {
-    _res = std::make_unique<Resources>();
+    m_res = std::make_unique<Resources>();
 
     GpuResourceUtils::LoadVertexShader(device, "Assets/Shader/FullscreenVS.cso",
-        nullptr, 0, nullptr, _res->vs.GetAddressOf());
+        nullptr, 0, nullptr, m_res->vs.GetAddressOf());
     GpuResourceUtils::LoadPixelShader(device, "Assets/Shader/SSAOPS.cso",
-        _res->psRaw.GetAddressOf());
+        m_res->psRaw.GetAddressOf());
     GpuResourceUtils::LoadPixelShader(device, "Assets/Shader/SSAOBlurPS.cso",
-        _res->psBlur.GetAddressOf());
+        m_res->psBlur.GetAddressOf());
     GpuResourceUtils::LoadPixelShader(device, "Assets/Shader/SSAOCompositePS.cso",
-        _res->psComposite.GetAddressOf());
+        m_res->psComposite.GetAddressOf());
 
     GpuResourceUtils::CreateDynamicConstantBuffer(device,
-        sizeof(GpuData::CbSSAOData), _res->cbSSAO.GetAddressOf());
+        sizeof(GpuData::CbSSAOData), m_res->cbSSAO.GetAddressOf());
     GpuResourceUtils::CreateDynamicConstantBuffer(device,
-        sizeof(GpuData::CbSSAOBlurData), _res->cbBlur.GetAddressOf());
+        sizeof(GpuData::CbSSAOBlurData), m_res->cbBlur.GetAddressOf());
 
     D3D11_SAMPLER_DESC sampDesc = {};
     sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
     sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
     sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
     sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-    device->CreateSamplerState(&sampDesc, _res->sampler.GetAddressOf());
+    device->CreateSamplerState(&sampDesc, m_res->sampler.GetAddressOf());
 
     D3D11_BLEND_DESC blendDesc = {};
     blendDesc.RenderTarget[0].BlendEnable = FALSE;
     blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-    HRESULT hr = device->CreateBlendState(&blendDesc, _opaqueBlendState.GetAddressOf());
+    HRESULT hr = device->CreateBlendState(&blendDesc, m_opaqueBlendState.GetAddressOf());
     _ASSERT_EXPR(SUCCEEDED(hr), L"SSAOEffect: OpaqueBlendState 生成失敗");
 
     CreateTargets(width, height);
@@ -57,18 +57,18 @@ void SSAOEffect::Initialize(ID3D11Device* device, UINT width, UINT height)
 
 void SSAOEffect::CreateTargets(UINT width, UINT height)
 {
-    _width = width;
-    _height = height;
-    _rawAO = ResourceManager::Instance().CreateRenderTarget(width, height, DXGI_FORMAT_R8_UNORM);
-    _blurH = ResourceManager::Instance().CreateRenderTarget(width, height, DXGI_FORMAT_R8_UNORM);
-    _blurV = ResourceManager::Instance().CreateRenderTarget(width, height, DXGI_FORMAT_R8_UNORM);
+    m_width = width;
+    m_height = height;
+    m_rawAO = ResourceManager::Instance().CreateRenderTarget(width, height, DXGI_FORMAT_R8_UNORM);
+    m_blurH = ResourceManager::Instance().CreateRenderTarget(width, height, DXGI_FORMAT_R8_UNORM);
+    m_blurV = ResourceManager::Instance().CreateRenderTarget(width, height, DXGI_FORMAT_R8_UNORM);
 }
 
 void SSAOEffect::ReleaseTargets()
 {
-    if (_rawAO.IsValid()) ResourceManager::Instance().UnloadRenderTarget(_rawAO);
-    if (_blurH.IsValid()) ResourceManager::Instance().UnloadRenderTarget(_blurH);
-    if (_blurV.IsValid()) ResourceManager::Instance().UnloadRenderTarget(_blurV);
+    if (m_rawAO.IsValid()) ResourceManager::Instance().UnloadRenderTarget(m_rawAO);
+    if (m_blurH.IsValid()) ResourceManager::Instance().UnloadRenderTarget(m_blurH);
+    if (m_blurV.IsValid()) ResourceManager::Instance().UnloadRenderTarget(m_blurV);
 }
 
 void SSAOEffect::Resize(ID3D11Device* /*device*/, UINT width, UINT height)
@@ -96,16 +96,16 @@ void SSAOEffect::Process(ID3D11DeviceContext* dc,
                          ID3D11ShaderResourceView* inputSRV,
                          ID3D11RenderTargetView* outputRTV)
 {
-    if (!_res || !inputSRV || !outputRTV) return;
+    if (!m_res || !inputSRV || !outputRTV) return;
 
-    if (_cbData.ssaoIntensity <= 0.0f) {
+    if (m_cbData.ssaoIntensity <= 0.0f) {
         CopyInputToOutput(dc, inputSRV, outputRTV);
         return;
     }
 
-    RenderTarget* rawAO = ResourceManager::Instance().GetRenderTarget(_rawAO);
-    RenderTarget* blurH = ResourceManager::Instance().GetRenderTarget(_blurH);
-    RenderTarget* blurV = ResourceManager::Instance().GetRenderTarget(_blurV);
+    RenderTarget* rawAO = ResourceManager::Instance().GetRenderTarget(m_rawAO);
+    RenderTarget* blurH = ResourceManager::Instance().GetRenderTarget(m_blurH);
+    RenderTarget* blurV = ResourceManager::Instance().GetRenderTarget(m_blurV);
     if (!rawAO || !blurH || !blurV || !rawAO->IsValid() || !blurH->IsValid() || !blurV->IsValid()) {
         CopyInputToOutput(dc, inputSRV, outputRTV);
         return;
@@ -113,10 +113,10 @@ void SSAOEffect::Process(ID3D11DeviceContext* dc,
 
     dc->IASetInputLayout(nullptr);
     dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    dc->VSSetShader(_res->vs.Get(), nullptr, 0);
-    dc->OMSetBlendState(_opaqueBlendState.Get(), nullptr, 0xFFFFFFFF);
+    dc->VSSetShader(m_res->vs.Get(), nullptr, 0);
+    dc->OMSetBlendState(m_opaqueBlendState.Get(), nullptr, 0xFFFFFFFF);
 
-    ID3D11SamplerState* smp = _res->sampler.Get();
+    ID3D11SamplerState* smp = m_res->sampler.Get();
     dc->PSSetSamplers(SLOT_SMP_LINEAR, 1, &smp);
 
     ID3D11RenderTargetView* nullRTV = nullptr;
@@ -124,12 +124,12 @@ void SSAOEffect::Process(ID3D11DeviceContext* dc,
     // ① 遮蔽値計算 (深度t4+法線t6 → rawAO)
     {
         D3D11_MAPPED_SUBRESOURCE mapped;
-        if (SUCCEEDED(dc->Map(_res->cbSSAO.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {
-            memcpy(mapped.pData, &_cbData, sizeof(GpuData::CbSSAOData));
-            dc->Unmap(_res->cbSSAO.Get(), 0);
+        if (SUCCEEDED(dc->Map(m_res->cbSSAO.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {
+            memcpy(mapped.pData, &m_cbData, sizeof(GpuData::CbSSAOData));
+            dc->Unmap(m_res->cbSSAO.Get(), 0);
         }
-        dc->PSSetConstantBuffers(SLOT_CB_SSAO, 1, _res->cbSSAO.GetAddressOf());
-        dc->PSSetShader(_res->psRaw.Get(), nullptr, 0);
+        dc->PSSetConstantBuffers(SLOT_CB_SSAO, 1, m_res->cbSSAO.GetAddressOf());
+        dc->PSSetShader(m_res->psRaw.Get(), nullptr, 0);
         rawAO->Activate(dc);
         dc->Draw(3, 0);
         dc->OMSetRenderTargets(1, &nullRTV, nullptr);
@@ -138,16 +138,16 @@ void SSAOEffect::Process(ID3D11DeviceContext* dc,
     auto runBlurPass = [&](ID3D11ShaderResourceView* input, RenderTarget* output, float stepX, float stepY) {
         GpuData::CbSSAOBlurData blurData{};
         blurData.blurTexelStep = { stepX, stepY };
-        blurData.blurDepthSigma = _blurDepthSigma;
-        blurData.blurMaxDistance = _cbData.ssaoMaxDistance;
+        blurData.blurDepthSigma = m_blurDepthSigma;
+        blurData.blurMaxDistance = m_cbData.ssaoMaxDistance;
 
         D3D11_MAPPED_SUBRESOURCE mapped;
-        if (SUCCEEDED(dc->Map(_res->cbBlur.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {
+        if (SUCCEEDED(dc->Map(m_res->cbBlur.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {
             memcpy(mapped.pData, &blurData, sizeof(blurData));
-            dc->Unmap(_res->cbBlur.Get(), 0);
+            dc->Unmap(m_res->cbBlur.Get(), 0);
         }
-        dc->PSSetConstantBuffers(SLOT_CB_SSAO_BLUR, 1, _res->cbBlur.GetAddressOf());
-        dc->PSSetShader(_res->psBlur.Get(), nullptr, 0);
+        dc->PSSetConstantBuffers(SLOT_CB_SSAO_BLUR, 1, m_res->cbBlur.GetAddressOf());
+        dc->PSSetShader(m_res->psBlur.Get(), nullptr, 0);
         dc->PSSetShaderResources(SLOT_SRV_BLOOM_IN, 1, &input);
         output->Activate(dc);
         dc->Draw(3, 0);
@@ -158,14 +158,14 @@ void SSAOEffect::Process(ID3D11DeviceContext* dc,
     };
 
     // ② ブラー H (rawAO → blurH)
-    runBlurPass(rawAO->GetSRV(), blurH, 1.0f / static_cast<float>(_width), 0.0f);
+    runBlurPass(rawAO->GetSRV(), blurH, 1.0f / static_cast<float>(m_width), 0.0f);
 
     // ③ ブラー V (blurH → blurV)
-    runBlurPass(blurH->GetSRV(), blurV, 0.0f, 1.0f / static_cast<float>(_height));
+    runBlurPass(blurH->GetSRV(), blurV, 0.0f, 1.0f / static_cast<float>(m_height));
 
     // ④ 合成 (シーン色 × ぼかし済みAO → outputRTV)
     {
-        dc->PSSetShader(_res->psComposite.Get(), nullptr, 0);
+        dc->PSSetShader(m_res->psComposite.Get(), nullptr, 0);
         dc->OMSetRenderTargets(1, &outputRTV, nullptr);
 
         ID3D11ShaderResourceView* srvs[] = { inputSRV, blurV->GetSRV() };

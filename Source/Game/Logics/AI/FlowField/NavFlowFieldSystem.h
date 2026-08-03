@@ -28,9 +28,9 @@ public:
 
 private:
 
-    int _lastPlayerI = -1;  // 前回更新時のプレイヤーのXセル
-    int _lastPlayerJ = -1;  // 前回更新時のプレイヤーのZセル
+    int m_lastPlayerI = -1;  // 前回更新時のプレイヤーのXセル
+    int m_lastPlayerJ = -1;  // 前回更新時のプレイヤーのZセル
 
     // BFS 用キュー。毎フレーム clear して再利用（capacity を保持しヒープ確保を避ける）。
-    std::vector<int> _bfsQueue;
+    std::vector<int> m_bfsQueue;
 };

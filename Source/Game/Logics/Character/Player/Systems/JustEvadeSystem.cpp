@@ -54,12 +54,12 @@ void JustEvadeSystem::Initialize()
     // JUST回避が成功した瞬間のイベントをリッスン
     ListenEvent<JustEvadeSuccessEvent>([this](const JustEvadeSuccessEvent &ev) {
         // 1. プレイヤーの時間を「150ミリ秒(0.15f)」完全に止める（ヒットストップ）
-        if (auto *timeState = _world->GetComponent<TimeStateComponent>(ev.playerID))
+        if (auto *timeState = m_world->GetComponent<TimeStateComponent>(ev.playerID))
         {
             timeState->hitStopTimer = 0.15f;
         }
 
-        auto& timeContext = _world->GetResource<TimeContext>();
+        auto& timeContext = m_world->GetResource<TimeContext>();
         timeContext.globalFreezeScale = 0.1f;
         timeContext.globalHitStopTimer = 0.5f;
 
@@ -68,7 +68,7 @@ void JustEvadeSystem::Initialize()
         //      現在のダッシュを終了し、「殴れる位置に着くための接近時間」へ移行する。
         //      実際の移動と時計の打ち消しは PlayerDashSystem が毎フレーム駆動する。
         // =======================================================
-        if (auto *dash = _world->GetComponent<DashComponent>(ev.playerID))
+        if (auto *dash = m_world->GetComponent<DashComponent>(ev.playerID))
         {
             dash->isDashing               = false; // 回避ダッシュを終了して接近へ
             dash->isJustEvadeWindowActive = false;
@@ -80,7 +80,7 @@ void JustEvadeSystem::Initialize()
         // =======================================================
         //  2. アニメーションを「ジャスト回避専用モーション」へ強制遷移
         // =======================================================
-        if (auto *animParams = _world->GetComponent<AnimParametersComponent>(ev.playerID))
+        if (auto *animParams = m_world->GetComponent<AnimParametersComponent>(ev.playerID))
         {
             animParams->SetTrigger(HASH_TRIG_JUST_EVADE);
         }
@@ -91,13 +91,13 @@ void JustEvadeSystem::Initialize()
         // シーンに置いた JustEvadeEffectComponent(singleton) の timer を立てるだけ。
         // 実際の色調/放射ブラー/色収差/ビネットの駆動は JustEvadeEffectSystem(R02) が
         // 毎フレーム行い、演出後は元の PP 値へ自動復元する。
-        if (auto *fx = _world->GetSingletonComponent<JustEvadeEffectComponent>())
+        if (auto *fx = m_world->GetSingletonComponent<JustEvadeEffectComponent>())
         {
             fx->Trigger();
         }
 
         // TODO(任意): 音響（甲高いガラス音）や残像の追加はここに足す。
-        // _world->GetEventBus().Publish(SoundRequestEvent{"event:/SFX/JustEvade", ev.playerID});
+        // m_world->GetEventBus().Publish(SoundRequestEvent{"event:/SFX/JustEvade", ev.playerID});
     });
 
 
@@ -178,7 +178,7 @@ void JustEvadeSystem::Update(float rawDt)
 // チェインを初期状態へ戻す（被弾などで呼ぶ）。効果値(速度/窓)は次フレームの Update が 0 段基準へ戻す。
 void JustEvadeSystem::BreakChain(EntityID playerID)
 {
-    if (auto *evade = _world->GetComponent<JustEvadeComponent>(playerID))
+    if (auto *evade = m_world->GetComponent<JustEvadeComponent>(playerID))
     {
         if (evade->chainCount != 0)
             CCL_LOG_INFO(LogCategory::Game, "CHAIN BROKEN (was x%d)", evade->chainCount);
@@ -222,8 +222,8 @@ void JustEvadeSystem::OnGui() {}
 
 void JustEvadeSystem::CheckJustEvade(EntityID playerCandidate, EntityID otherCandidate)
 {
-    auto *evade = _world->GetComponent<JustEvadeComponent>(playerCandidate);
-    auto *dash  = _world->GetComponent<DashComponent>(playerCandidate);
+    auto *evade = m_world->GetComponent<JustEvadeComponent>(playerCandidate);
+    auto *dash  = m_world->GetComponent<DashComponent>(playerCandidate);
 
     if (!evade || !dash) return;
 
@@ -241,7 +241,7 @@ void JustEvadeSystem::CheckJustEvade(EntityID playerCandidate, EntityID otherCan
     //   これが無いと、落下防止の見えない壁(INVISIBLE_WALL)や地形(NON_MOVING)に
     //   ダッシュで突っ込んだだけでジャスト回避が誤発動し、接近(isApproaching)で
     //   内側へ強制移動させられてしまう。ドローンやボスの攻撃は別レイヤーなので通過する。
-    if (auto *otherBody = _world->GetComponent<JoltRigidbodyComponent>(otherCandidate))
+    if (auto *otherBody = m_world->GetComponent<JoltRigidbodyComponent>(otherCandidate))
     {
         if (otherBody->objectLayer == PhysicsLayers::NON_MOVING ||
             otherBody->objectLayer == PhysicsLayers::INVISIBLE_WALL)
@@ -249,7 +249,7 @@ void JustEvadeSystem::CheckJustEvade(EntityID playerCandidate, EntityID otherCan
     }
 
      // 相手がドローンで、かつ「攻撃中」でなければ成立させない
-    auto *otherDrone = _world->GetComponent<DroneComponent>(otherCandidate);
+    auto *otherDrone = m_world->GetComponent<DroneComponent>(otherCandidate);
     if (otherDrone && !IsDroneHostile(otherDrone)) return;
     //   → 攻撃中でない陣形ドローンに突っ込んでも回避は起きない
     //   → otherDrone が nullptr（ボス本体の攻撃など）の場合は従来通り成立
@@ -271,11 +271,11 @@ void JustEvadeSystem::CheckJustEvade(EntityID playerCandidate, EntityID otherCan
     if (evade->chainCount < evade->maxChain) evade->chainCount++;
     evade->idleTimer = 0.0f; // 成立したので静止タイマーをリセット
 
-    _world->GetEventBus().Publish(JustEvadeSuccessEvent{playerCandidate, otherCandidate});
+    m_world->GetEventBus().Publish(JustEvadeSuccessEvent{playerCandidate, otherCandidate});
 
     // カメラへは「画角を瞬間的に広げてほしい」という汎用要求だけを伝える。
     // （カメラが JustEvadeSuccessEvent を直接購読すると Engine→Game 依存になるため）
-    _world->GetEventBus().Publish(CameraFovPunchRequestEvent{playerCandidate, 130.0f});
+    m_world->GetEventBus().Publish(CameraFovPunchRequestEvent{playerCandidate, 130.0f});
 
     CCL_LOG_SUCCESS(LogCategory::Game, "JUST EVADE SUCCESS!! PlayerID: %llu  (CHAIN x%d)", playerCandidate, evade->chainCount);
 }

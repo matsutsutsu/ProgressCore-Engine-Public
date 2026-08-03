@@ -22,7 +22,7 @@
 
 void RenderPipeline::Initialize(const RenderServices& services)
 {
-    _services = services;
+    m_services = services;
 }
 
 void RenderPipeline::BuildDefaultPipeline()
@@ -44,10 +44,10 @@ void RenderPipeline::BuildDefaultPipeline()
 void RenderPipeline::Shutdown()
 {
     // 追加と逆順で Shutdown（後から登録したパスが先に依存解放される設計）
-    for (auto it = _passes.rbegin(); it != _passes.rend(); ++it) {
+    for (auto it = m_passes.rbegin(); it != m_passes.rend(); ++it) {
         (*it)->Shutdown();
     }
-    _passes.clear();
+    m_passes.clear();
 }
 
 void RenderPipeline::Execute(const RenderFrameContext& ctx)
@@ -61,21 +61,21 @@ void RenderPipeline::Execute(const RenderFrameContext& ctx)
     ctx.dc->QueryInterface(IID_PPV_ARGS(annotation.GetAddressOf()));
 #endif
 
-    for (auto& pass : _passes) {
+    for (auto& pass : m_passes) {
         if (!pass->enabled) continue;
 
         // =========================================================
         // 各PassのCPU実行時間をTracyで計測
-        // アロケーションを防ぐため、キャッシュ済みの _tracyZoneName を直接渡す
+        // アロケーションを防ぐため、キャッシュ済みの m_tracyZoneName を直接渡す
         // =========================================================
         ZoneScoped;
-        ZoneName(pass->_tracyZoneName.c_str(), pass->_tracyZoneName.size());
+        ZoneName(pass->m_tracyZoneName.c_str(), pass->m_tracyZoneName.size());
 
 #if defined(ENABLE_EDITOR)
         if (annotation) {
-            int len = MultiByteToWideChar(CP_UTF8, 0, pass->_passName.c_str(), -1, nullptr, 0);
+            int len = MultiByteToWideChar(CP_UTF8, 0, pass->m_passName.c_str(), -1, nullptr, 0);
             std::wstring wname(len, 0);
-            MultiByteToWideChar(CP_UTF8, 0, pass->_passName.c_str(), -1, &wname[0], len);
+            MultiByteToWideChar(CP_UTF8, 0, pass->m_passName.c_str(), -1, &wname[0], len);
             annotation->BeginEvent(wname.c_str());
         }
 #endif
@@ -88,12 +88,12 @@ void RenderPipeline::Execute(const RenderFrameContext& ctx)
 
             // ★ 究極のハック:
             // TracyD3D11Zone マクロの内部実装を直接展開して、
-            // 作成済みの pass->_gpuSourceLocation を渡す。
+            // 作成済みの pass->m_gpuSourceLocation を渡す。
             // 変数名の重複を避けるため、一意なローカル変数を定義する。
-            tracy::D3D11ZoneScope __tracy_gpu_zone(tracyCtx, pass->_gpuSourceLocation, true);
+            tracy::D3D11ZoneScope __tracy_gpu_zone(tracyCtx, pass->m_gpuSourceLocation, true);
 
             // ※もし上記で「true が多すぎる（引数エラー）」が出た場合は、
-            //   tracy::D3D11ZoneScope __tracy_gpu_zone(tracyCtx, pass->_gpuSourceLocation); 
+            //   tracy::D3D11ZoneScope __tracy_gpu_zone(tracyCtx, pass->m_gpuSourceLocation); 
             //   に戻しつつ、以下の #else のブロックを使ってください。
 
             pass->Execute(ctx);
@@ -115,7 +115,7 @@ void RenderPipeline::Execute(const RenderFrameContext& ctx)
 
 void RenderPipeline::OnResize(uint32_t width, uint32_t height)
 {
-    for (auto& pass : _passes) {
+    for (auto& pass : m_passes) {
         pass->OnResize(width, height);
     }
 }

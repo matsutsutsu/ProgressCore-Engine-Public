@@ -32,8 +32,8 @@ private:
     };
 
 
-    std::vector<BasicTest>   _basicTests;
-    std::vector<CountTest>   _perfTests;
+    std::vector<BasicTest>   m_basicTests;
+    std::vector<CountTest>   m_perfTests;
  
     // 共通の環境リセット処理
     void CleanupAndInitializeEnv(EditorContext& context);

@@ -16,15 +16,15 @@ void NavMeshDebugDrawSystem::Update(float dt)
 {
     if (!isDebugVisible) return;
 
-    if (!_world->HasResource<ShapeRenderer*>()) return;
-    auto* renderer = _world->GetResource<ShapeRenderer*>();
+    if (!m_world->HasResource<ShapeRenderer*>()) return;
+    auto* renderer = m_world->GetResource<ShapeRenderer*>();
     if (!renderer) return;
 
     // ========================================================================
     // 1. NavMesh（歩行可能エリア）の描画
     // ========================================================================
-    if (_world->HasResource<NavigationData>()) {
-        auto& navData = _world->GetResource<NavigationData>();
+    if (m_world->HasResource<NavigationData>()) {
+        auto& navData = m_world->GetResource<NavigationData>();
         if (navData.navMesh && navData.showDebugDraw) {
             const dtNavMesh* navMesh = navData.navMesh;
 
@@ -77,10 +77,10 @@ void NavMeshDebugDrawSystem::Update(float dt)
     // ========================================================================
     // 2. AIキャラクターの経路と半径（太さ）の描画
     // ========================================================================
-    auto view = _world->View<TransformComponent, NavAgentComponent>();
+    auto view = m_world->View<TransformComponent, NavAgentComponent>();
     for (auto entity : view) {
-        auto* transform = _world->GetComponent<TransformComponent>(entity);
-        auto* agent = _world->GetComponent<NavAgentComponent>(entity);
+        auto* transform = m_world->GetComponent<TransformComponent>(entity);
+        auto* agent = m_world->GetComponent<NavAgentComponent>(entity);
 
         // ① ウェイポイント（赤い線）の描画
         if (!agent->waypoints.empty() && agent->currentWaypointIndex < agent->waypoints.size()) {

@@ -117,7 +117,7 @@ void AnimControllerSystem::Update(float dt)
     // ログフラグをローカルにコピーし、ラムダ式にキャプチャさせてスレッドセーフにする
     bool enableLog = false;
 #ifdef ENABLE_EDITOR
-    enableLog = _enableTransitionLog;
+    enableLog = m_enableTransitionLog;
 #endif
 
     // =====================================================================
@@ -303,7 +303,7 @@ void AnimControllerSystem::OnGui()
     ImGui::Text("Animation Controller Settings");
     ImGui::Separator();
 
-    ImGui::Checkbox("Enable Transition Logs", &_enableTransitionLog);
+    ImGui::Checkbox("Enable Transition Logs", &m_enableTransitionLog);
     if (ImGui::IsItemHovered())
     {
         ImGui::SetTooltip("チェックを入れると、ステートが切り替わった瞬間にコンソールへログを出力します。\n高速遷移によるログ汚染を防ぐため、デバッグ時のみONにしてください。");

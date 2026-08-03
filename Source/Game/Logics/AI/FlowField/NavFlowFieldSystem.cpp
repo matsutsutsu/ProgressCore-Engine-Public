@@ -19,27 +19,27 @@
 //    // ------------------------------------------------------------
 //    // 0. 出力先 Resource を用意（初回だけ生成）
 //    // ------------------------------------------------------------
-//    if (!_world->HasResource<NavGridFlowField>())
-//        _world->AddResource<NavGridFlowField>();
-//    auto& field = _world->GetResource<NavGridFlowField>();
+//    if (!m_world->HasResource<NavGridFlowField>())
+//        m_world->AddResource<NavGridFlowField>();
+//    auto& field = m_world->GetResource<NavGridFlowField>();
 //
 //    // ------------------------------------------------------------
 //    // 1. DungeonGrid が無ければ無効化して終了（非ダンジョンScene対応）
 //    // ------------------------------------------------------------
-//    if (!_world->HasResource<DungeonGrid>()) {
+//    if (!m_world->HasResource<DungeonGrid>()) {
 //        field.valid = false;
 //        return;
 //    }
-//    auto& grid = _world->GetResource<DungeonGrid>();
+//    auto& grid = m_world->GetResource<DungeonGrid>();
 //
 //    // ------------------------------------------------------------
 //    // 2. プレイヤー位置 → セル
 //    // ------------------------------------------------------------
 //    bool found = false;
 //    int  pi = 0, pj = 0;
-//    auto playerView = _world->View<PlayerComponent, TransformComponent>();
+//    auto playerView = m_world->View<PlayerComponent, TransformComponent>();
 //    for (auto e : playerView) {
-//        auto* t = _world->GetComponent<TransformComponent>(e);
+//        auto* t = m_world->GetComponent<TransformComponent>(e);
 //        grid.WorldToCell(t->position.x, t->position.z, pi, pj);
 //        found = true;
 //        break;
@@ -49,11 +49,11 @@
 //    // ========================================================
 //    // ★ 改善策1: プレイヤーのマスが変わっていなければ計算をサボる
 //    // ========================================================
-//    if (pi == _lastPlayerI && pj == _lastPlayerJ && field.valid) {
+//    if (pi == m_lastPlayerI && pj == m_lastPlayerJ && field.valid) {
 //        return; // 何もせず前回の field(距離場) を使い回す！
 //    }
-//    _lastPlayerI = pi;
-//    _lastPlayerJ = pj;
+//    m_lastPlayerI = pi;
+//    m_lastPlayerJ = pj;
 //
 //    // ------------------------------------------------------------
 //    // 3. 距離場を初期化（バッファは再利用：同サイズなら再確保されない）
@@ -74,9 +74,9 @@
 //    // ------------------------------------------------------------
 //    auto idx = [d](int i, int j) -> int { return i * d + j; };
 //
-//    _bfsQueue.clear();
+//    m_bfsQueue.clear();
 //    field.dist[idx(pi, pj)] = 0;
-//    _bfsQueue.push_back(idx(pi, pj));
+//    m_bfsQueue.push_back(idx(pi, pj));
 //
 //    const int di[4] = { 1, -1, 0, 0 };
 //    const int dj[4] = { 0, 0, 1, -1 };
@@ -86,8 +86,8 @@
 //    // ★ 探索の最大歩数（この範囲を超えたら追跡を諦める）
 //    const int MAX_SEARCH_DIST = 30;
 //
-//    while (head < _bfsQueue.size()) {
-//        const int cur = _bfsQueue[head++];
+//    while (head < m_bfsQueue.size()) {
+//        const int cur = m_bfsQueue[head++];
 //        const int ci = cur / d;
 //        const int cj = cur % d;
 //        const int cd = field.dist[cur];
@@ -109,7 +109,7 @@
 //            if (field.dist[nIdx] != -1) continue;   // 訪問済み
 //
 //            field.dist[nIdx] = cd + 1;
-//            _bfsQueue.push_back(nIdx);
+//            m_bfsQueue.push_back(nIdx);
 //        }
 //    }
 //
