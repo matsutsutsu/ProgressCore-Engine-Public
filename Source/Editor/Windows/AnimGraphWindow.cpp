@@ -209,7 +209,8 @@ void AnimGraphWindow::DrawContents(EditorContext& context) {
 
     // 右カラムを上下分割：上=パラメータパネル / 下=インスペクタ（Unity Animator 風）
     // 上部はパラメータ数に応じて高さを取りつつ、下部インスペクタを必ず残す。
-    const float paramPanelHeight = ImGui::GetContentRegionAvail().y * 0.4f;
+    // パラメータ一覧が潰れて見えないという要望を受け、上部の取り分を広げる（0.4→0.55）。
+    const float paramPanelHeight = ImGui::GetContentRegionAvail().y * 0.55f;
 
     ImGui::BeginChild("ParameterPanelChild", ImVec2(0, paramPanelHeight), true);
     DrawParameterPanel(context);
@@ -1450,13 +1451,14 @@ void AnimGraphWindow::DrawParameterPanel(EditorContext &context)
     if (context.selectedEntity != CCL::ECS::InvalidEntityID && context.world)
         liveParams = context.world->GetComponent<AnimParametersComponent>(context.selectedEntity);
 
-    if (!ImGui::BeginTable("ParamTable", 3,
+    if (!ImGui::BeginTable("ParamTable", 4,
             ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY))
         return;
 
     ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch);
     ImGui::TableSetupColumn("Type/Default", ImGuiTableColumnFlags_WidthFixed, 120.0f);
     ImGui::TableSetupColumn("Live", ImGuiTableColumnFlags_WidthFixed, 70.0f);
+    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 28.0f); // 削除ボタン列
     ImGui::TableHeadersRow();
 
     int deleteIndex = -1;
@@ -1542,7 +1544,17 @@ void AnimGraphWindow::DrawParameterPanel(EditorContext &context)
         else
             ImGui::TextDisabled("-");
 
-        // 右クリックで削除メニュー
+        // --- 列4: 削除ボタン（明示的に見える形で） ---
+        ImGui::TableSetColumnIndex(3);
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.60f, 0.20f, 0.20f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.85f, 0.25f, 0.25f, 1.0f));
+        if (ImGui::SmallButton("×"))
+            deleteIndex = i;
+        ImGui::PopStyleColor(2);
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("このパラメータを削除");
+
+        // 右クリックでも削除メニューを出す（従来動作の互換）
         if (ImGui::BeginPopupContextItem("paramCtx"))
         {
             if (ImGui::MenuItem("削除 (Delete)"))
@@ -1557,7 +1569,23 @@ void AnimGraphWindow::DrawParameterPanel(EditorContext &context)
 
     // ループ外で削除（イテレータ破壊回避）
     if (deleteIndex >= 0)
+    {
+        // 消すパラメータを参照している遷移条件も一緒に除去する。
+        // これを怠ると、存在しないハッシュを参照する「壊れた条件」が残る。
+        const uint32_t deadHash = _currentGraph.parameters[deleteIndex].hash;
+        auto stripConds = [deadHash](std::vector<AnimTransition> &transitions) {
+            for (auto &t : transitions)
+                t.conditions.erase(
+                    std::remove_if(t.conditions.begin(), t.conditions.end(),
+                        [deadHash](const AnimCondition &c) { return c.paramHash == deadHash; }),
+                    t.conditions.end());
+        };
+        for (auto &s : _currentGraph.states)
+            stripConds(s.transitions);
+        stripConds(_currentGraph.anyStateTransitions);
+
         _currentGraph.parameters.erase(_currentGraph.parameters.begin() + deleteIndex);
+    }
 }
 
 // パラメータ名変更時、全遷移・AnyState遷移の条件参照を張り替える。

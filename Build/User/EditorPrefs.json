@@ -1,6 +1,5 @@
 {
     "DialogHistory": {
-        "Scene": "Assets\\Scene",
-        "Texture": "Assets\\Textures\\VFX"
+        "AnimNode": "Assets\\Animations\\Nodes"
     }
 }
