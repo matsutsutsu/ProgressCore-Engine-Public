@@ -22,7 +22,6 @@
 #include "Engine/Platform/Core/Dialog.h"
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/Platform/Core/LogSinks.h"
-#include "Editor/Windows/ConsoleWindow.h"
 
 #include "EngineServices.h"
 #include "Engine/ECS/Jobs/CCL_JobSystem.h" // 共有ジョブプールの実体生成に必要
@@ -32,6 +31,7 @@
 #include <imgui.h>
 #include "Editor/Core/EditorWindowManager.h"
 #include "Editor/Core/EditorContext.h"
+#include "Editor/Windows/ConsoleWindow.h"        // ConsoleWindow は編集時のみ使用（GetWindow<ConsoleWindow>）
 #include "Engine/Graphics/Renderer/ImGuiRenderer.h"
 #include "Engine/Graphics/Renderer/RenderDebugRegistry.h"
 #endif
