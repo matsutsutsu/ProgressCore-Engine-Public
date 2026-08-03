@@ -3,11 +3,11 @@
 
 #include "PlayerComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
-#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
+#include "Engine/Serialization/Meta/ComponentCategories.h"
 
 // ===========================================================================
 // PlayerComponent メタデータ定義
-// ★修正: BEGIN_FULL を使用
+// BEGIN_FULL を使用
 // ===========================================================================
 COMPONENT_META_BEGIN_FULL(PlayerComponent, "Player Component", CCL::Categories::Gameplay, 130, false)
 

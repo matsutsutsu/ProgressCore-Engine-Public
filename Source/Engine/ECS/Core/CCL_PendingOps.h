@@ -33,15 +33,15 @@ namespace CCL::ECS
         void* data = nullptr;   // AddComponentの場合追加されるコンポーネント初期データが格納されているヒープメモリへのポインタ
         Destructor destructor;  // dataに格納されたコンポーネントデータを破棄するためのオブジェクト
 
-        // ★追加: 生成用ファクトリ関数 (Emplace用)
+        // 生成用ファクトリ関数 (Emplace用)
         // AddComponentで渡されたラムダ式をここに保存し、ChunkManagerまで運びます
         std::function<void(void *)> factory = nullptr;
 
-        // ★追加: 修正用の関数（Patch処理）
+        // 修正用の関数（Patch処理）
         // 既に存在するコンポーネントのポインタを受け取り、内部を書き換えるラムダ式
         std::function<void(void *)> patcher = nullptr;
 
-        // ★【追加】コピー・移動・代入用の関数ポインタ
+        // 【追加】コピー・移動・代入用の関数ポインタ
         // これらを ChunkManager まで伝達しないと、memcpy が発動してクラッシュします
         TypeData::ConstructFunc constructor = nullptr; // コピー構築 (Placement New)
         TypeData::AssignFunc    assigner    = nullptr; // 代入 (Operator=)
@@ -50,7 +50,7 @@ namespace CCL::ECS
         // デバッグ用の型名（XMTLで読み取り用）
         const char *name = nullptr;
 
-        // ★ 修正: Spawn時のアーキタイプを値で保持する
+        // Spawn時のアーキタイプを値で保持する
         //   旧実装: data = FrameAllocator上のArchetype* → Reset()後にダングリング→クラッシュ
         //   新実装: spawnArchetype に直接コピー → FrameAllocatorに依存しないので安全
         Archetype spawnArchetype;

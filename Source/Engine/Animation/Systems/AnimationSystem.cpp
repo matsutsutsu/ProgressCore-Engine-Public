@@ -42,7 +42,7 @@ float ComputeEffectiveSpeed(const AnimatorComponent &animator, const AnimSequenc
     if (animator.activeCurve)
     {
         float progress  = (seq->duration > 0.0f) ? (animator.currentTimer / seq->duration) : 0.0f;
-        // ★ ループ境界を跨いだフレームでは currentTimer が duration を超え progress>1 になり、
+        // ループ境界を跨いだフレームでは currentTimer が duration を超え progress>1 になり、
         //   速度カーブが外挿されて速度が一瞬跳ねる。進捗を [0,1] に丸めて外挿スパイクを防ぐ。
         progress        = std::clamp(progress, 0.0f, 1.0f);
         curveMultiplier = animator.activeCurve->Evaluate(progress);
@@ -270,7 +270,7 @@ void AnimationSystem::ComputeAndApplyPose(CCL::ECS::EntityID id, AnimatorCompone
     int animIndex = model->GetAnimationIndex(seq->targetAnimName.c_str());
     if (animIndex == -1) return;
 
-    // ★ 数学的アプローチによる真のルートボーン特定
+    // 数学的アプローチによる真のルートボーン特定
     const int rootNodeIndex = model->FindRealRootMotionNodeIndex(animIndex);
 
     if (animator.isBlending && animator.previousSequence)
@@ -289,7 +289,7 @@ void AnimationSystem::ComputeAndApplyPose(CCL::ECS::EntityID id, AnimatorCompone
             model->ComputeAnimation(prevAnimIndex, animator.previousTimer, animator.poseBufferB);
             model->ComputeAnimation(animIndex, animator.currentTimer, animator.poseBufferA);
 
-            // ★ Force Root Lock (ブレンド中の過去・現在両方のピン留め)
+            // Force Root Lock (ブレンド中の過去・現在両方のピン留め)
             //   非ブレンド経路と同じく「真のルートボーン」のXZだけを0秒姿勢へ固定する。
             //   [0]固定にすると、rootNodeIndex が0番以外(通常Hips=1)のリグでは遷移
             //   ブレンド中だけ焼き込み前進が漏れ、ブレンド終了でその場へ戻る「前に出て
@@ -318,7 +318,7 @@ void AnimationSystem::ComputeAndApplyPose(CCL::ECS::EntityID id, AnimatorCompone
         model->ComputeAnimation(animIndex, animator.currentTimer, animator.poseBufferA);
     }
 
-    // ★ Force Root Lock (真のルートボーンのピン留め)
+    // Force Root Lock (真のルートボーンのピン留め)
     //   ルートモーション対応キャラ(RootMotionComponent 保持)は、
     //   「位置の権威は常に Transform 側」なので enabled に関係なく必ずピン留めする。
     //     ・enabled  : 抽出した差分が Transform を動かす → ピンしないと二重に前進する
@@ -361,7 +361,7 @@ void AnimationSystem::UpdateManual(CCL::ECS::EntityID entity, float time)
     model->ComputeAnimation(animIndex, time, animator->poseBufferA);
 
     // ========================================================
-    // ★ Force Root Lock（エディタプレビュー版）
+    // Force Root Lock（エディタプレビュー版）
     //   実行時の Update() と同様に、ルートボーンのXZ移動をクリップの初期姿勢へ
     //   ピン留めする。これが無いと、クリップに焼き込まれたルートボーン自身の
     //   前進(スケルトンのアニメーション)と、RootMotionカーブ由来の Transform 移動

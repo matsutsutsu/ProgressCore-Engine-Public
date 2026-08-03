@@ -4,9 +4,9 @@
 
 #include "Engine/Camera/Components/CameraDollyCartComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
-#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
+#include "Engine/Serialization/Meta/ComponentCategories.h"
 
-#include <string.h> // ★修正: <cstring>よりもC++ではこれか標準文字列を推奨
+#include <string.h> // <cstring>よりもC++ではこれか標準文字列を推奨
 
 #ifdef ENABLE_EDITOR
 #include "Engine/Platform/Core/Dialog.h"     
@@ -21,8 +21,8 @@ struct ComponentMeta<CameraDollyCartComponent>
     CCL_META_USING_THIS(CameraDollyCartComponent)
 
     static constexpr const char *displayName    = "Camera Dolly Cart (Rail)";
-    static constexpr const char *category       = CCL::Categories::Camera; // ★修正: カテゴリを明示
-    static constexpr int         sortPriority   = 320; // ★追加: カメラ群の並び順
+    static constexpr const char *category       = CCL::Categories::Camera; // カテゴリを明示
+    static constexpr int         sortPriority   = 320; // カメラ群の並び順
     static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui   = true;
     static constexpr bool        isSerializable = true;

@@ -92,7 +92,7 @@ void CombatAnimationSyncSystem::Update(float /*dt*/)
             if (hb.tagHash != 0 && ev.tagHash != hb.tagHash)
                 continue;
 
-            // ★ 区間スイープ判定：点包含ではなく [previousFrameTimer, currentTimer] と
+            // 区間スイープ判定：点包含ではなく [previousFrameTimer, currentTimer] と
             //   [startTime, endTime] の重なりで判定する。これにより、高速再生や処理落ちで
             //   1フレームの進み幅が区間を丸ごと飛び越しても、その窓を跨いだフレームで
             //   確実にアクティブになる（＝短い/高速な攻撃判定が空振りしない）。
@@ -134,7 +134,7 @@ void CombatAnimationSyncSystem::Update(float /*dt*/)
                     hitboxID, activeEv->damage, activeEv->hitStopDuration, hb.tagHash);
             }
 
-            // ★ Sequencer の HitBox イベントに入力した値を毎フレーム Hitbox へ反映する。
+            // Sequencer の HitBox イベントに入力した値を毎フレーム Hitbox へ反映する。
             //   これが無いと攻撃力/ヒットストップが 0 のままで当たっても効かない。
             //   毎フレーム反映にすることで、隣接する別区間(コンボ)へ切り替わっても
             //   その区間の値が正しく入る。攻撃帰属(ownerID)はアニメの持ち主＝キャラ本体

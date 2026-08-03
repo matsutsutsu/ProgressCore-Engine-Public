@@ -8,7 +8,7 @@
 ///   - 勝利：敵（PlayerComponent を持たない HealthComponent）を一度観測した後、
 ///           生存している敵が 0 になったら → GAME CLEAR。
 ///           （開幕でまだ敵が湧いていない 0 体状態での即勝利を防ぐため観測フラグを持つ）
-///   - ★勝利は即表示しない：最後の敵撃破と同じフレームで DefeatSlowMotionSystem の撃破スローが
+///   - 勝利は即表示しない：最後の敵撃破と同じフレームで DefeatSlowMotionSystem の撃破スローが
 ///     始まるため、その余韻(実時間 kResultDelay 秒)を見せてからリザルトを出す。Update に渡る dt は
 ///     スロー非依存の実時間なので、実時間で待てば「スローが終わってからリザルト」になる。
 ///   - ボタンは UIButtonClickedEvent を購読して RETRY=ゲーム再読込 / TITLE=タイトルへ。

@@ -4,7 +4,7 @@
 #include "Game/Logics/AI/StateTree/Core/StateTreeComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
-#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
+#include "Engine/Serialization/Meta/ComponentCategories.h"
 #include "Engine/Platform/Core/Logger.h"
 
 #ifdef ENABLE_EDITOR
@@ -29,8 +29,8 @@ template <> struct ComponentMeta<StateTreeComponent> {
     CCL_META_USING_THIS(StateTreeComponent)
 
     static constexpr const char* displayName    = "StateTree";
-    static constexpr const char* category       = CCL::Categories::AI; // ★追加
-    static constexpr int         sortPriority   = 160; // ★追加
+    static constexpr const char* category       = CCL::Categories::AI;
+    static constexpr int         sortPriority   = 160;
     static constexpr bool        hasCustomGui   = true;
     static constexpr bool        isSerializable = true;
 

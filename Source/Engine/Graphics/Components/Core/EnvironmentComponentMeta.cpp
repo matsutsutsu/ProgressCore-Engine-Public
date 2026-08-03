@@ -7,7 +7,7 @@
 #include "Engine/Graphics/Components/PostProcess/ToneMapConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/DistortionConfigComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
-#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
+#include "Engine/Serialization/Meta/ComponentCategories.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Platform/Core/Dialog.h"
@@ -23,7 +23,7 @@
 template <> struct ComponentMeta<ToneMapConfigComponent> {
     CCL_META_USING_THIS(ToneMapConfigComponent)
     static constexpr const char* displayName    = "Tone Mapping";
-    static constexpr const char* category       = CCL::Categories::Effect; // ★修正
+    static constexpr const char* category       = CCL::Categories::Effect;
     static constexpr int         sortPriority   = 500;
     static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui   = true;
@@ -55,7 +55,7 @@ REGISTER_COMPONENT_EDITOR_GUI(ToneMapConfigComponent)
 
 // ============================================================================
 // Bloom / Distortion 
-// ★修正: BEGIN_FULL を使用してエフェクトとして明示的にカテゴリ化
+// BEGIN_FULL を使用してエフェクトとして明示的にカテゴリ化
 // ============================================================================
 COMPONENT_META_BEGIN_FULL(BloomConfigComponent, "BloomConfig", CCL::Categories::Effect, 510, false)
     CFIELD(enable, "有効", "Setup")
@@ -77,7 +77,7 @@ COMPONENT_META_END(DistortionConfigComponent)
 template <> struct ComponentMeta<FogComponent> {
     CCL_META_USING_THIS(FogComponent)
     static constexpr const char* displayName    = "Fog Settings";
-    static constexpr const char* category       = CCL::Categories::Rendering; // ★修正
+    static constexpr const char* category       = CCL::Categories::Rendering;
     static constexpr int         sortPriority   = 400;
     static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui   = true;
@@ -103,7 +103,6 @@ template <> struct ComponentMeta<FogComponent> {
             if (ImGui::Button("読込...##FogNoise")) {
                 if (auto path = FileDialog::OpenPreset("Texture", "テクスチャを選択", Graphics::Instance().GetWindowHandle())) {
 
-                    // ★修正: Engine:: プレフィックスを削除
                     std::string relativePath = FileDialog::ConvertToRelativePath(*path);
 
                     strcpy_s(comp.noiseTexturePath, relativePath.c_str());
@@ -179,7 +178,7 @@ REGISTER_COMPONENT_EDITOR_GUI(FogComponent)
 template <> struct ComponentMeta<ShadowMapConfigComponent> {
     CCL_META_USING_THIS(ShadowMapConfigComponent)
     static constexpr const char* displayName    = "ShadowMap Config";
-    static constexpr const char* category       = CCL::Categories::Rendering; // ★修正
+    static constexpr const char* category       = CCL::Categories::Rendering;
     static constexpr int         sortPriority   = 410;
     static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui   = true;

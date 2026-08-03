@@ -43,7 +43,7 @@ void SceneLoading::Initialize()
                 // WIC 経由のテクスチャ読み込みには、このスレッドでの COM 初期化が要る。
                 HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 
-                // ★ ここで対象シーンの重いロードが走る。
+                // ここで対象シーンの重いロードが走る。
                 //    DeviceContext（描画コマンド）は触らないこと。
                 //    リソース生成（CreateBuffer/CreateTexture）はフリースレッドなので可。
                 target->Initialize();

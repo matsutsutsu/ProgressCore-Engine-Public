@@ -109,7 +109,7 @@ namespace ComponentMetaImGui {
         }
         case FieldKind::UInt32: {
             uint32_t& v = RawField<uint32_t>(obj, fd.offset);
-            // ★ DragInt は min/max が int のため uint32 の上限(4294967295)を渡せない。
+            // DragInt は min/max が int のため uint32 の上限(4294967295)を渡せない。
             //    渡すと -1 に切り捨てられて min>max となり、クランプが無効化されるうえ
             //    int 経由の表示で INT_MAX 超の値(ハッシュ等)が負数として見えてしまう。
             //    uint32 のまま扱える DragScalar を使う。
@@ -247,7 +247,7 @@ namespace ComponentMetaImGui {
             // 自動生成描画（2カラムのプロパティグリッド）
             //   ・左カラム = 表示名（固定幅・自動クリップ。ホバーで変数名ツールチップ）
             //   ・右カラム = ウィジェット（常に幅いっぱいに広げるので見切れない）
-            //   ★ 同名カテゴリが離れて出現しても 1 つに統合してから描く。
+            //   同名カテゴリが離れて出現しても 1 つに統合してから描く。
             //     （連続前提で描くと同名の TreeNode/Table が 2 つでき、ImGui の
             //       ID 重複警告がホバー時に出るため）
             const auto& fields = ComponentMeta<T>::Fields();

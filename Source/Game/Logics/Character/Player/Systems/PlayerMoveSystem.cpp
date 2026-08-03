@@ -28,7 +28,7 @@ void PlayerMoveSystem::Update(float rawDt)
                       const JoltCharacterConfigComponent &config,
                       const JoltCharacterHandleComponent &joltHandle,
                       PlayerComponent                    &player,
-                      AnimParametersComponent            &animParams, // ★追加
+                      AnimParametersComponent            &animParams,
                       const TimeStateComponent           &time) {
         if (m_world->HasComponent<Tag::DeadTag>(id))
             return;
@@ -45,7 +45,7 @@ void PlayerMoveSystem::Update(float rawDt)
         // =========================================================
         // 1. 操作ハック（時間の魔法）
         // =========================================================
-        UpdateJumpLogic(dt, isGrounded, inputData, player, animParams); // ★引数追加
+        UpdateJumpLogic(dt, isGrounded, inputData, player, animParams); // 引数追加
 
         // =========================================================
         // 2. 視覚ハック（空間の魔法）
@@ -91,7 +91,7 @@ void PlayerMoveSystem::UpdateJumpLogic(float dt, bool isGrounded, CharacterMovem
         inputData.jumpRequested = true;
 
         // =========================================================
-        // ★ AAAアニメーションハック: 固有アクションの伝達
+        // AAAアニメーションハック: 固有アクションの伝達
         // 1段目は CharacterAnimSyncSystem が JoltのY速度変化を見て自動で OnJump を出す。
         // 空中での2段目は物理からは判別不可能なため、ここで専用の「宙返り」等を
         // 再生させるためのトリガーを発行する。

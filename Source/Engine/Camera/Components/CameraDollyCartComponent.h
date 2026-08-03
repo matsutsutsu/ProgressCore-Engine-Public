@@ -34,6 +34,6 @@ struct CameraDollyCartComponent
 
     std::shared_ptr<CameraPathAsset> loadedPath = nullptr;
 
-    // ★追加: 毎フレームのエラーログスパムを防止するための実行時フラグ
+    // 毎フレームのエラーログスパムを防止するための実行時フラグ
     bool hasLoadError = false;
 };

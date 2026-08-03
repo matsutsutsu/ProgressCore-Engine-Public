@@ -21,7 +21,7 @@ using namespace DirectX;
 
 ModelRenderSystem::ModelRenderSystem() : IfSystem("ModelRenderSystem")
 {
-    // ★ 当たり判定専用ジオメトリ(NoRenderTag)は走査対象から除外する。
+    // 当たり判定専用ジオメトリ(NoRenderTag)は走査対象から除外する。
     //    描画ループ側に分岐を足さずに「透明な当たり判定」を実現する。
     SetExclude<NoRenderTag>();
 }
@@ -39,7 +39,7 @@ void ModelRenderSystem::Update(float dt)
         const MaterialComponent& mat,
         const VisibilityComponent& vis) { 
 
-        // ★ 最重要：ここでカリング結果を見て、画面外なら即座に処理をスキップ（サボる）
+        // 最重要：ここでカリング結果を見て、画面外なら即座に処理をスキップ（サボる）
         if (!vis.isVisible) return;
 
         Model* model = modelComp.GetModel(); // ハンドルから取得
@@ -76,12 +76,12 @@ void ModelRenderSystem::Update(float dt)
         }
 
         // =========================================================
-        // ★最重要変更：ModelRenderer::Draw() を呼ぶのをやめ、伝票を作って提出！
+        // 最重要変更：ModelRenderer::Draw() を呼ぶのをやめ、伝票を作って提出！
         // =========================================================
         RenderCommand cmd;
         cmd.shaderHash = shaderHash;
 
-        // ★ ランタイム生成モデルにバッチ用の一意 identity を与える。
+        // ランタイム生成モデルにバッチ用の一意 identity を与える。
         //    assetHash==0 の実体ハンドルは modelHandle.index で区別する。
         //    上位ビット(0x80000000)で通常の assetHash 空間と分離
         if (modelComp.assetHash == 0 && modelComp.isRuntime &&

@@ -4,11 +4,11 @@
 #include "DashComponent.h"
 #include "JustEvadeComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
-#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
+#include "Engine/Serialization/Meta/ComponentCategories.h"
 
 // ===========================================================================
 // DashComponent メタデータ定義
-// ★修正: Movement カテゴリへ
+// Movement カテゴリへ
 // ===========================================================================
 COMPONENT_META_BEGIN_FULL(DashComponent, "Dash Component", CCL::Categories::Movement, 155, false)
 CFIELD_FLOAT_RANGED(dashSpeed, "ダッシュ速度", 1.0f, 0.0f, 200.0f, "設定")

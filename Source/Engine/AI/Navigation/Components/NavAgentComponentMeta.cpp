@@ -4,7 +4,7 @@
 
 #include "Engine/AI/Navigation/Components/NavAgentComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
-#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加: カテゴリ定数
+#include "Engine/Serialization/Meta/ComponentCategories.h" // カテゴリ定数
 
 #ifdef ENABLE_EDITOR
 #include "Editor/Inspector/ComponentGuiRegistry.h"
@@ -17,7 +17,7 @@ struct ComponentMeta<NavAgentComponent>
     CCL_META_USING_THIS(NavAgentComponent)
 
     static constexpr const char *displayName       = "Nav Agent";
-    static constexpr const char *category          = CCL::Categories::AI; // ★修正: 定数を使用
+    static constexpr const char *category          = CCL::Categories::AI; // 定数を使用
     static constexpr int         sortPriority      = 150;
     static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui      = true;

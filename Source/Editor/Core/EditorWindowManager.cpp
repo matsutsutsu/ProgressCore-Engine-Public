@@ -47,7 +47,7 @@
 #include <map>
 #include <sstream>
 
-// ★ Tracy プロファイラをインクルード
+// Tracy プロファイラをインクルード
 #include <tracy/Tracy.hpp>
 
 namespace fs = std::filesystem;
@@ -80,7 +80,7 @@ void EditorWindowManager::Initialize()
 }
 
 // =========================================================
-// ★ プレハブのフォルダ階層をメニュー化するためのヘルパー
+// プレハブのフォルダ階層をメニュー化するためのヘルパー
 // =========================================================
 namespace
 {
@@ -104,7 +104,7 @@ void DrawPrefabNodeTree(const std::string &nodeName, const PrefabNode &node, Edi
             {
                 DirectX::XMFLOAT3 spawnPos = {0, 5, 0};
                 CCL::ECS::EntityID e = Prefab::SpawnPrefab(*context.world, node.fullPath, spawnPos);
-                // ★ プレハブ実体としてマーク。レベル保存で {path, transform} 参照に、
+                // プレハブ実体としてマーク。レベル保存で {path, transform} 参照に、
                 //    シーン(ベイク)保存では除外対象になる。
                 if (e != CCL::ECS::InvalidEntityID)
                     context.world->AddComponent<PrefabInstanceComponent>(e, PrefabInstanceComponent{ node.fullPath });
@@ -257,7 +257,7 @@ void EditorWindowManager::Draw(EditorContext &context)
         }
     }
 
-    // ★ 窓描画後の確定したフォーカス状態を InputFacade へ反映。
+    // 窓描画後の確定したフォーカス状態を InputFacade へ反映。
     //   ゲームビューにフォーカスがある時だけマウス視点を通す（編集中に視点が
     //   マウスへ引っ張られるのを防ぐ）。
     if (auto &input = EngineServices::Instance().inputFacade)

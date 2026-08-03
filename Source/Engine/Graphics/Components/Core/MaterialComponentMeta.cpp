@@ -5,7 +5,7 @@
 #include "Engine/Graphics/Components/Core/MaterialComponent.h"
 #include "Engine/Graphics/Components/Core/ModelComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
-#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
+#include "Engine/Serialization/Meta/ComponentCategories.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Platform/Core/Dialog.h"
@@ -22,8 +22,8 @@ template <>
 struct ComponentMeta<MaterialComponent>
 {
     static constexpr const char *displayName    = "Material";
-    static constexpr const char *category       = CCL::Categories::Rendering; // ★修正
-    static constexpr int         sortPriority   = 20; // ★追加: Modelの直後に配置
+    static constexpr const char *category       = CCL::Categories::Rendering;
+    static constexpr int         sortPriority   = 20; // Modelの直後に配置
     static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui   = true;
     static constexpr bool        isSerializable = true;
@@ -151,7 +151,6 @@ struct ComponentMeta<MaterialComponent>
                 ImGui::SameLine();
                 if (ImGui::Button(".mat.jsonを読込"))
                 {
-                    // ★修正: Engine:: プレフィックスを削除
                     if (auto path = FileDialog::OpenPreset("Material", "マテリアルを選択", Graphics::Instance().GetWindowHandle()))
                     {
                         MaterialHandle newHandle = ResourceManager::Instance().LoadMaterialAsset(path->string());
@@ -216,7 +215,6 @@ struct ComponentMeta<MaterialComponent>
 
                         if (ImGui::Button("読込..."))
                         {
-                            // ★修正: Engine:: プレフィックスを削除
                             if (auto path = FileDialog::OpenPreset("Texture", "Select Texture", Graphics::Instance().GetWindowHandle()))
                             {
                                 const auto s = path->string();

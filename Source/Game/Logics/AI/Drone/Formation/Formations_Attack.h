@@ -113,7 +113,7 @@ struct GuillotineSlamFormation : public IFormation
 //   前方中央（プレイヤー方向の軸）へ振り込んでバチンと挟む。壁は低いので
 //   ジャンプで越えて避ける。要求回避＝ジャンプ（企画書②）。
 //
-// ★設計変更（前作ソースを参照して調整）:
+// 設計変更（前作ソースを参照して調整）:
 //   旧実装は壁の奥行きをボス→プレイヤー軸(dir)に沿って伸ばしていたため、
 //   機数が増えると壁がボスの「前後」に長い回廊になり、ボスを取り巻いて見えた。
 //   本実装は前作方式に合わせ、各機を「プレイヤー方向を軸に回転させた腕方向 armDir」
@@ -210,7 +210,7 @@ struct KamikazeSwarmFormation : public IFormation
         if (drone.currentState == DroneState::FireCharge)
             return;
 
-        drone.chargeFollowsTarget = false; // ★dashモード（fireDirection直進）
+        drone.chargeFollowsTarget = false; // dashモード（fireDirection直進）
 
         Vector3 dir = ctx.playerPos - ctx.bossPos;
         dir.y = 0.0f;
@@ -331,7 +331,7 @@ struct MegaClapSlamBase : public IFormation
     }
 
     // --- 調整値（グレーボックスで実測して詰める）---
-    //   ★特に lowerBase/upperBase の高さは「接地で下段に当たり・ジャンプ頂点で上段に当たる」
+    //   特に lowerBase/upperBase の高さは「接地で下段に当たり・ジャンプ頂点で上段に当たる」
     //     関係になるよう、プレイヤーのジャンプ高さと合わせて実測すること（企画書の要）。
     static constexpr float kSpeed      = 1.2f;  // 2フェーズ合計の速度 → 全閉まで ≈0.83s
     static constexpr float kStartGap   = 12.0f; // 開始の左右間隔

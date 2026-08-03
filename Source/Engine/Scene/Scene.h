@@ -10,7 +10,7 @@ class Scene
 {
   protected:
     // 状態管理は一番親のクラスが責任を持つ。
-    // ★ 非同期ロード時はワーカースレッドが書き、メインスレッドが読むため atomic。
+    // 非同期ロード時はワーカースレッドが書き、メインスレッドが読むため atomic。
     //    acquire/release で「Initialize が構築した World の中身」の可視性まで保証する
     //    （release で立てた ready を acquire で観測した後は、World へ安全にアクセスできる）。
     std::atomic<bool> m_isReady{false};

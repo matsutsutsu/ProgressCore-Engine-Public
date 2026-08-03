@@ -126,7 +126,7 @@ void Shader::UpdateMaterialProperties(ID3D11DeviceContext* dc, const MaterialDat
 
         // ⭕ 究極の最適化: 実行時のハッシュ計算すら不要。ロード時に計算済みの texInfo.nameHash を使う！
         if (mat.GetTexture(texInfo.nameHash, texHandle) && texHandle.IsValid()) {
-            // ★cppに分けたことで、ここでResourceManagerを安全に呼び出せる
+            // cppに分けたことで、ここでResourceManagerを安全に呼び出せる
             ID3D11ShaderResourceView* srv = ResourceManager::Instance().GetTexture(texHandle);
             dc->PSSetShaderResources(slot, 1, &srv);
 

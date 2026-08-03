@@ -190,7 +190,7 @@ void BossActionSystem::ProcessMeleeHold(BossActionComponent &bossDef, TransformC
 {
     // 近接攻撃中は足を止めて踏ん張る（薙ぎ払い）。
     //   アニメ本体は BT の SetTrigger で再生済み。当たり判定はアニメ内 HitBox イベントが握る。
-    //   ★将来 踏み込み/突進 を足すときは、ここで cmd.currentActionId により前進を分岐する。
+    //   将来 踏み込み/突進 を足すときは、ここで cmd.currentActionId により前進を分岐する。
     bossDef.currentMoveSpeed = 0.0f;
     input.desiredVelocity    = Vector3::Zero;
     input.overrideSpeed      = -1.0f;

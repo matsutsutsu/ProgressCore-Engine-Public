@@ -31,7 +31,7 @@ void EditorScene::Initialize()
     }
     //Prefab::SpawnPrefab(*m_worldPtr, "Assets/Prefabs/Camera/FreeCamera.json");
 
-    // ★ 起動コストの主因候補：テスト用エンティティ（ドローン多数など）の一括生成。
+    // 起動コストの主因候補：テスト用エンティティ（ドローン多数など）の一括生成。
     {
         ZoneScopedN("EditorScene: SpawnGameTest");
         SceneInitializer::SpawnGameTest(*m_worldPtr, device);

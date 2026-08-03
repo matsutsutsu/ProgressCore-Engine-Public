@@ -17,7 +17,7 @@
 // 2. JoltPullSystem
 //    - 実行フェーズ: Collision (または PostPhysics)
 //    - 計算が終わったJolt剛体の最新座標を読み取り、ECSの Transform に書き戻す。
-//    - ★CharacterVirtual を持つEntityは JoltCharacterUpdateSystem が同期済みのため、
+//    - CharacterVirtual を持つEntityは JoltCharacterUpdateSystem が同期済みのため、
 //      SetExclude で Chunk 単位から丸ごと除外する（ループ内の毎エンティティ判定を撤廃）。
 // ===================================================================================
 

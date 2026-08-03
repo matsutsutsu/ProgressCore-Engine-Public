@@ -107,7 +107,7 @@ public:
         int      maxRotated = 3)
         : m_path(std::move(path)), m_maxBytes(maxBytes), m_maxRotated(maxRotated)
     {
-        // ★ ここではファイルを開かない（遅延生成）。
+        // ここではファイルを開かない（遅延生成）。
         //   最初のログが実際に書き込まれるまでフォルダ/ファイルを作らないため、
         //   Shipping のようにログが ERROR のみの構成だと「1件も出なければ何も残らない」。
         //   これで正常終了時にログフォルダで散らからず、問題が起きた時だけ痕跡が残る。

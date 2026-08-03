@@ -19,7 +19,7 @@ void JoltCharacterContactListener::OnContactAdded(const JPH::CharacterVirtual *i
     JPH::CharacterContactSettings                                             &ioSettings)
 {
     // =================================================================================
-    // ★ イベントストームの遮断
+    // イベントストームの遮断
     // 相手が「動かない背景（壁や床）」なら、イベントを発行せずここで即座に捨てる
     // =================================================================================
     JPH::ObjectLayer hitLayer = m_bodyInterface->GetObjectLayer(inBodyID2);
@@ -41,7 +41,7 @@ void JoltCharacterContactListener::OnContactAdded(const JPH::CharacterVirtual *i
         JPH::Vec3 relVel    = inCharacter->GetLinearVelocity() - m_bodyInterface->GetLinearVelocity(inBodyID2);
         ev.relativeVelocity = {relVel.GetX(), relVel.GetY(), relVel.GetZ()};
 
-        // ★fix: EventBus 即時発行をやめ、剛体側と同じバッファへ蓄積する。
+        // fix: EventBus 即時発行をやめ、剛体側と同じバッファへ蓄積する。
         //   物理更新の途中でゲームロジックを割り込ませないための一貫化。
         if (m_sink) m_sink->PushEvent(ev);
     }

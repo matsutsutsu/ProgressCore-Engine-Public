@@ -70,7 +70,7 @@ void CharacterAnimSyncSystem::Update(float /*dt*/)
         }
         else if (!isGrounded && wasGrounded)
         {
-            // ★ AAAの挙動: 上方向への明確な速度がある場合のみ「ジャンプ」とみなす
+            // AAAの挙動: 上方向への明確な速度がある場合のみ「ジャンプ」とみなす
             // それ以外（歩いて落ちた等）はトリガーを飛ばさない。
             // グラフ側の [IsGrounded == false] の条件によって自動的に Fall へ遷移させる。
             if (currentYVel > 0.1f)

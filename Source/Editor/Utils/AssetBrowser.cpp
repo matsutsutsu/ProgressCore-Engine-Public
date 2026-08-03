@@ -9,7 +9,7 @@
 #include "ShellIconLoader.h"
 #include "Engine/Platform/Core/Logger.h"
 
-// ★ Tracy プロファイラをインクルード
+// Tracy プロファイラをインクルード
 #include <tracy/Tracy.hpp>
 
 using namespace DirectX;
@@ -336,21 +336,21 @@ void AssetBrowser::DrawFolderTree(AssetNode &node)
     std::string id = node.path.string();
     ImGui::PushID(id.c_str());
 
-    // ★ 改善1: 行全体を当たり判定にする
+    // 改善1: 行全体を当たり判定にする
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAvailWidth;
 
     if (node.isDirectory)
     {
         if (currentFolder == &node) flags |= ImGuiTreeNodeFlags_Selected;
 
-        // ★ 改善2: OpenOnArrow / OpenOnDoubleClick を意図的に「外す」
+        // 改善2: OpenOnArrow / OpenOnDoubleClick を意図的に「外す」
         // これにより、1回のクリック（シングルクリック）だけでフォルダが展開・収縮するようになります。
     }
     else
     {
         if (selectedAssetPath == node.path.string()) flags |= ImGuiTreeNodeFlags_Selected;
 
-        // ★ 改善3: ファイルの場合は「矢印なし（Leaf）」かつ「階層を掘らない」フラグを付与
+        // 改善3: ファイルの場合は「矢印なし（Leaf）」かつ「階層を掘らない」フラグを付与
         flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
     }
 
@@ -477,7 +477,7 @@ void AssetBrowser::DrawGridView()
             ImGui::PushStyleColor(ImGuiCol_Button, bgColor);
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.7f, 1.0f, 0.6f));
 
-            // ★ 究極の改善: 自前の画像を捨て、ファイルもフォルダもすべて OS のネイティブアイコンに一任する
+            // 究極の改善: 自前の画像を捨て、ファイルもフォルダもすべて OS のネイティブアイコンに一任する
             Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> iconSrv;
             iconSrv = ShellIconLoader::GetIconSRV(child.path.wstring(), device);
 

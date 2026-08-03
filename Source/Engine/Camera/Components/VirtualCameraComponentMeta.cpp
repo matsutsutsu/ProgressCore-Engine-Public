@@ -3,7 +3,7 @@
 
 #include "Engine/Camera/Components/VirtualCameraComponents.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
-#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
+#include "Engine/Serialization/Meta/ComponentCategories.h"
 #include <algorithm> 
 
 #ifdef ENABLE_EDITOR
@@ -13,7 +13,7 @@
 
 // ============================================================================
 // Virtual Camera Base 
-// ★修正: BEGIN_FULL を使用し、カテゴリと優先度を明記
+// BEGIN_FULL を使用し、カテゴリと優先度を明記
 // ============================================================================
 COMPONENT_META_BEGIN_FULL(VirtualCamera, "VirtualCamera", CCL::Categories::Camera, 300, false)
     CFIELD_INT_RANGED(priority, "優先度", -100, 100, "Camera Settings")
@@ -29,8 +29,8 @@ COMPONENT_META_END(VirtualCamera)
 template <> struct ComponentMeta<CameraBodyFollow> {
     CCL_META_USING_THIS(CameraBodyFollow)
     static constexpr const char* displayName    = "Camera Body (Follow)";
-    static constexpr const char* category       = CCL::Categories::Camera; // ★追加
-    static constexpr int         sortPriority   = 310; // ★追加
+    static constexpr const char* category       = CCL::Categories::Camera;
+    static constexpr int         sortPriority   = 310;
     static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui   = true;
     static constexpr bool        isSerializable = true;
@@ -88,8 +88,8 @@ REGISTER_COMPONENT_EDITOR_GUI(CameraBodyFollow)
 template <> struct ComponentMeta<CameraAimLookAt> {
     CCL_META_USING_THIS(CameraAimLookAt)
     static constexpr const char* displayName    = "Camera Aim (LookAt)";
-    static constexpr const char* category       = CCL::Categories::Camera; // ★追加
-    static constexpr int         sortPriority   = 320; // ★追加
+    static constexpr const char* category       = CCL::Categories::Camera;
+    static constexpr int         sortPriority   = 320;
     static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui   = true;
     static constexpr bool        isSerializable = true;
@@ -140,7 +140,7 @@ REGISTER_COMPONENT_EDITOR_GUI(CameraAimLookAt)
 
 // ============================================================================
 // Camera Shake 
-// ★修正: BEGIN_CAT を使用
+// BEGIN_CAT を使用
 // ============================================================================
 COMPONENT_META_BEGIN_FULL(CameraShake, "Camera Shake", CCL::Categories::Camera, 330, false)
     CFIELD_FLOAT_RANGED(amplitude, "揺れの強さ", 0.1f, 0.0f, 100.0f, "Shake State")
@@ -150,7 +150,7 @@ COMPONENT_META_END(CameraShake)
 
 // ============================================================================
 // Camera Body Free 
-// ★修正: BEGIN_CAT を使用
+// BEGIN_CAT を使用
 // ============================================================================
 COMPONENT_META_BEGIN_FULL(CameraBodyFree, "CameraBodyFree", CCL::Categories::Camera, 340, false)
     CFIELD_FLOAT_RANGED(moveSpeed, "移動速度", 0.1f, 0.0f, 100.0f, "Settings")

@@ -44,7 +44,7 @@ bool LevelSerializer::SaveLevel(World* world, const std::string& levelPath)
     const std::string sceneRel  = stem + ".scene.json";
     const fs::path     scenePath = lp.parent_path() / sceneRel;
 
-    // ★ 出力先を正規化する。ダイアログが拡張子なし/`.json`を返しても、必ず
+    // 出力先を正規化する。ダイアログが拡張子なし/`.json`を返しても、必ず
     //    `<stem>.level.json` と `<stem>.scene.json` のペアで書き出す。
     const fs::path     levelOut  = lp.parent_path() / (stem + ".level.json");
 

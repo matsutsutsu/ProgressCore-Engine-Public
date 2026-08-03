@@ -28,7 +28,7 @@ public:
 
 private:
     /// @brief コヨーテタイムと先行入力バッファを用いたジャンプ判定処理
-    // ★追加: 引数に AnimParametersComponent を追加
+    // 引数に AnimParametersComponent を追加
     void UpdateJumpLogic(float dt, bool isGrounded, CharacterMovementInputComponent &inputData, PlayerComponent &player, AnimParametersComponent &animParams);
 
     /// @brief プロシージャル・バンキング（傾き）の計算と、物理/描画の回転分離処理

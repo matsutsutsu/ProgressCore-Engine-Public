@@ -47,7 +47,7 @@ struct TimeContext {
     //   滑らかにスローになる。DefeatSlowMotionSystem が撃破時に発火する。
     SlowMotionData cinematicSlow;
 
-    // ★追加: 勢力別の倍率を配列化（O(1)アクセス・分岐予測ペナルティ排除用）
+    // 勢力別の倍率を配列化（O(1)アクセス・分岐予測ペナルティ排除用）
     // 初期値はすべて1.0f
     float groupScales[static_cast<size_t>(TimeGroup::Count)] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f };
 

@@ -26,13 +26,13 @@ class AssetBrowser
         fs::path               path;                // 実際のファイルパス
         bool                   isDirectory = false; // フォルダかどうか
         std::vector<AssetNode> children;            // 子要素
-        AssetNode             *parent = nullptr;    // ★追加: 親ノードへのポインタ（パンくずリスト用）
+        AssetNode             *parent = nullptr;    // 親ノードへのポインタ（パンくずリスト用）
     };
 
 
     // ディレクトリ走査
     void LoadDirectory(const fs::path &dirPath, AssetNode &node);
-    void SetParents(AssetNode &node, AssetNode *parent); // ★追加: ポインタの安全な再構築
+    void SetParents(AssetNode &node, AssetNode *parent); // ポインタの安全な再構築
 
     // ナビゲーション機能
     void NavigateTo(AssetNode *folder);
@@ -55,7 +55,7 @@ class AssetBrowser
     AssetNode   rootNode; // ルートノード
     std::string rootPath; // ルートパス
 
-    // ★ 状態管理アーキテクチャの刷新
+    // 状態管理アーキテクチャの刷新
     AssetNode  *currentFolder = nullptr; // 右ペインで表示中のフォルダ
     std::string selectedAssetPath;       // 選択中のアセットのパス
 

@@ -238,7 +238,7 @@ RenderState::RenderState(ID3D11Device* device)
 		desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
 		desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
 		desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-		// ★ ALPHA を除外（RGBのみ書き込む）。これが今回の肝。
+		// ALPHA を除外（RGBのみ書き込む）。これが今回の肝。
 		desc.RenderTarget[0].RenderTargetWriteMask =
 			D3D11_COLOR_WRITE_ENABLE_RED | D3D11_COLOR_WRITE_ENABLE_GREEN | D3D11_COLOR_WRITE_ENABLE_BLUE;
 		HRESULT hr = device->CreateBlendState(&desc,
@@ -320,7 +320,7 @@ RenderState::RenderState(ID3D11Device* device)
         D3D11_RASTERIZER_DESC desc{};
         desc.FillMode = D3D11_FILL_SOLID;
 
-        // ★ バックカリング（裏面カリング）
+        // バックカリング（裏面カリング）
         desc.CullMode              = D3D11_CULL_BACK;
         desc.FrontCounterClockwise = false;
 

@@ -9,7 +9,7 @@
 // これにより、ユーザーは AnimatorComponent をアタッチするだけでアニメーション機能一式を
 // 安全に使い始めることができ、コンポーネントの付け忘れバグを防止する（プレイヤー/ボス問わず）。
 //
-// ★ SetExclude は使わない：SetExclude<A, B, C>() は「A/B/Cのどれか1つでも持っていたら
+// SetExclude は使わない：SetExclude<A, B, C>() は「A/B/Cのどれか1つでも持っていたら
 //   除外」というOR判定のため、例えば AnimStateMachine だけを先にプレハブへ手動で
 //   書いた（Muriel.jsonのようなケース）エンティティが AnimParameters/RootMotion を
 //   永久に受け取れなくなる。毎フレーム HasComponent で個別に判定する方が

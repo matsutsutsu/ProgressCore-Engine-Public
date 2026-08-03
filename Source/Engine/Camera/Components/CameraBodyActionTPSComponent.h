@@ -46,7 +46,7 @@ struct CameraBodyTPSComponent
     float collisionInDamping   = 30.0f; ///< 障害物へ侵入時：内側へ寄せる速さ（大きい＝素早くめり込み回避）
     float collisionOutDamping  = 6.0f;  ///< 障害物が消えた時：外側へ戻す速さ（小さい＝ヌルッと戻る）
 
-    // ★ カメラが寄った時に、足元ではなく頭付近の高さへ持ち上げる強さ。
+    // カメラが寄った時に、足元ではなく頭付近の高さへ持ち上げる強さ。
     //   引き込み量に応じてカメラYを pivot(頭)の高さへ寄せる。0=そのまま(足元に落ちる), 1=完全に頭の高さ。
     float collisionHeadBias    = 1.0f;
 

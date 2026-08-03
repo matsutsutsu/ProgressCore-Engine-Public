@@ -39,7 +39,7 @@ namespace CCL::ECS
 
 
         // ------------------------------------------------------------------
-        // ★改良: ステージEnumを使った登録関数 (推奨)
+        // 改良: ステージEnumを使った登録関数 (推奨)
         // ------------------------------------------------------------------
 
         // Logic用: SystemGroup::Logic を自動指定
@@ -168,7 +168,7 @@ namespace CCL::ECS
         const TaskScheduler& GetLogicScheduler() const { return m_logicScheduler; }
         const TaskScheduler& GetRenderScheduler() const { return m_renderScheduler; }
 
-        // ★追加: 指定した型のシステムを取得する関数
+        // 指定した型のシステムを取得する関数
         // 使用例: auto* animSys = systemManager->GetSystem<AnimationSystem>();
         template <typename T> T *GetSystem() const
         {

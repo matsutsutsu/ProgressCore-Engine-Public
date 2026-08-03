@@ -42,7 +42,7 @@ void RootMotionSystem::Update(float /*rawDt*/)
         Model *model = modelComp.GetModel();
         if (!rm.enabled || !animator.currentSequence || !model)
         {
-            // ★このフレームはルートモーション非適用のステート。
+            // このフレームはルートモーション非適用のステート。
             //   このComponent(rm)は唯一の書き手なので、ここで確実にフラグを下ろさないと
             //   前回ルートモーションを使ったステート（例:Slash）の値が
             //   JoltCharacterUpdateSystem 側に残留し、以後ずっと通常移動を上書きし続ける
@@ -58,10 +58,10 @@ void RootMotionSystem::Update(float /*rawDt*/)
 
         if (animIndex == -1 || seq->duration <= 0.0f) return;
 
-        // ★ 究極の特定: 抽出対象を「実際に動いているボーン」にする
+        // 究極の特定: 抽出対象を「実際に動いているボーン」にする
         const int rootNodeIndex = model->FindRealRootMotionNodeIndex(animIndex);
 
-        // ★ 遷移（シーケンスの切り替わり）検知
+        // 遷移（シーケンスの切り替わり）検知
         if (rm.lastEvaluatedSeq != seq)
         {
             rm.lastEvaluatedSeq  = seq;
@@ -80,7 +80,7 @@ void RootMotionSystem::Update(float /*rawDt*/)
         }
 
         // ========================================================
-        // ★ カーブ駆動ルートモーション（進捗→累積前進距離 m）
+        // カーブ駆動ルートモーション（進捗→累積前進距離 m）
         //   rootMotionCurve が設定されていれば、ボーン抽出ではなく
         //   カーブの区間差分ぶんだけキャラの正面へ前進させる。
         // ========================================================

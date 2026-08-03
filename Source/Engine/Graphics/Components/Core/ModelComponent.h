@@ -135,7 +135,7 @@ struct ModelComponent
         }
     }
 
-    // ★ ランタイム生成 Model（Model::CreateFromData → RegisterModelInstance）の
+    // ランタイム生成 Model（Model::CreateFromData → RegisterModelInstance）の
     //    ハンドルを差し込む専用セッター。ダンジョンのチャンク等で使用。
     void SetRuntimeModel(ModelInstanceHandle handle) {
         if (modelHandle.IsValid() && ownsHandle) {

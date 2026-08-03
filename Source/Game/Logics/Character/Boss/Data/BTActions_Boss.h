@@ -1,6 +1,6 @@
 /// @file  BTActions_Boss.h
 /// @brief Drone Break 向け最小版。Move/Wait/Drone系のみ。
-///        ★ボス固有のコンポーネント(BossCommand)は BTContext から受け取らず、
+///        ボス固有のコンポーネント(BossCommand)は BTContext から受け取らず、
 ///          各アクションが world/entity から自分で取得する（汎用エンジン化のため）。
 #pragma once
 #include "Game/Logics/AI/BehaviorTree/Actions/BTAction.h"
@@ -52,7 +52,7 @@ struct ResetDamageAction : public IBTAction
 };
 
 // ====================================================================
-// ③ 移動（Move）★ボス固有：BossCommand を自分で取りに行く
+// ③ 移動（Move）ボス固有：BossCommand を自分で取りに行く
 //    「移動してほしい」意図を currentActionId に書く。
 //    タイマー 0.5s で一旦 Success させ、BT に再評価させる。
 // ====================================================================
@@ -83,7 +83,7 @@ struct MoveAction : public IBTAction
 };
 
 // ====================================================================
-// ④ ドローン系（2000番台）★ボス固有：BossCommand を自分で取りに行く
+// ④ ドローン系（2000番台）ボス固有：BossCommand を自分で取りに行く
 // ====================================================================
 struct DroneAction : public IBTAction
 {
@@ -108,7 +108,7 @@ struct DroneAction : public IBTAction
 };
 
 // ====================================================================
-// ⑤ ドローン攻撃リリース（Strike）★ボス固有：BossCommand を自分で取りに行く
+// ⑤ ドローン攻撃リリース（Strike）ボス固有：BossCommand を自分で取りに行く
 //    「今撃て」信号を立てる。DroneCommandSystem 経由で各ドローンが FireCharge へ。
 // ====================================================================
 struct DroneStrikeAction : public IBTAction
@@ -124,7 +124,7 @@ struct DroneStrikeAction : public IBTAction
 };
 
 // ====================================================================
-// ⑥ 近接攻撃（Melee）★ボス固有：アニメのトリガーを引く
+// ⑥ 近接攻撃（Melee）ボス固有：アニメのトリガーを引く
 //    設計：AIは「攻撃を決めてアニメのトリガーを引く」だけ。実際の当たり判定の
 //    タイミングは、アニメクリップ内の HitBox イベント(startTime/endTime)が握る
 //    （CombatAnimationSyncSystem が剣 Hitbox を区間ON/OFFする）。
@@ -133,7 +133,7 @@ struct DroneStrikeAction : public IBTAction
 //      - duration の間 Running（振り＋硬直ぶんBTを留める＝連打防止）
 //      - currentActionId を立て続け、BossActionSystem が足を止める/踏み込む等の
 //        物理挙動を担当する（薙ぎ払いは停止、将来の踏み込み/突進は前進）。
-//    ★前提：ボスに AnimParameters コンポーネントと、triggerHash に対応する
+//    前提：ボスに AnimParameters コンポーネントと、triggerHash に対応する
 //      遷移（例 "Slash"）が AnimStateMachine に用意されていること。
 // ====================================================================
 struct MeleeAttackAction : public IBTAction

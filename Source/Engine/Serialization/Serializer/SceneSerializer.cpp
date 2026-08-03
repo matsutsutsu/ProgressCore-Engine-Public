@@ -1,6 +1,6 @@
 // =====================================================================
 // SceneSerializer.cpp
-//   ★ 旧版の致命的問題を解消した実装。
+//   旧版の致命的問題を解消した実装。
 //
 //   解消した点:
 //     [旧] "if (components.contains("Transform"))" のようなハードコード分岐
@@ -140,8 +140,8 @@ bool SceneSerializer::Serialize(World* world, const std::string& filepath)
             for (size_t i = 0; i < count; ++i) {
                 if (chunk->IsEntityDestroyed(i)) continue;
                 EntityID id = ids[i];
-                if (prefabExcluded.count(id)) continue; // ★ プレハブ実体は焼かない
-                saveCtx.GetOrRegister(id);  // ★ ここで localIndex 発行
+                if (prefabExcluded.count(id)) continue; // プレハブ実体は焼かない
+                saveCtx.GetOrRegister(id);  // ここで localIndex 発行
                 targets.push_back(id);
             }
         }
@@ -164,7 +164,7 @@ bool SceneSerializer::Serialize(World* world, const std::string& filepath)
 void SceneSerializer::SerializeEntity(
     World* world, EntityID entityID, nlohmann::json& outJson, SaveContext& saveCtx)
 {
-    // ★ raw EntityID ではなく、ローカルインデックスで書き出す
+    // raw EntityID ではなく、ローカルインデックスで書き出す
     outJson[CCL::Serialization::Keys::EntityLocal] = saveCtx.GetOrRegister(entityID);
     outJson[CCL::Serialization::Keys::Components] = nlohmann::json::object();
 
@@ -185,10 +185,10 @@ void SceneSerializer::SerializeEntity(
         void* data = chunk->GetComponentPtrByType(typeData.id, index);
         const auto* meta = registry.GetInfoByName(name);
         if (!meta || !data) continue;
-        if (!meta->isSerializable) continue;   // ★ 保存対象外はスキップ
+        if (!meta->isSerializable) continue;   // 保存対象外はスキップ
 
         nlohmann::json compJson;
-        // ★ SaveContext を渡して、EntityLink フィールドが自動で localIndex に変換される
+        // SaveContext を渡して、EntityLink フィールドが自動で localIndex に変換される
         meta->serialize(compJson, data, &saveCtx);
         outJson[CCL::Serialization::Keys::Components][name] = std::move(compJson);
     }
@@ -199,7 +199,7 @@ void SceneSerializer::SerializeEntity(
 // =====================================================================
 std::vector<EntityID> SceneSerializer::Deserialize(World* world, const std::string& filepath)
 {
-    // ★ 変更後:
+    // 変更後:
     std::string jsonStr = FileSystem::ReadAllText(filepath);
     if (jsonStr.empty()) {
         return {};

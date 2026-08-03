@@ -88,7 +88,7 @@ void BehaviorTreeBuilder::Bake(BTAsset& outAsset) {
 
             BTNodeID newChildIndex = static_cast<BTNodeID>(outAsset.nodes.size());
 
-            // ★修正: 親ノードの children 配列に、子のインデックスを追加する
+            // 親ノードの children 配列に、子のインデックスを追加する
             outAsset.nodes[flatIndex].children.push_back(newChildIndex);
 
             outAsset.nodes.push_back(childRuntime);

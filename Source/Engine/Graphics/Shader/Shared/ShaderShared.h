@@ -1,7 +1,7 @@
 // Graphics/Shader/ShaderShared.h
 //
 // 【C++ と HLSL で共有する構造体レイアウトの単一ソース】
-// ★ スコープ : エンジン全体で使われる構造体のみを定義する。
+// スコープ : エンジン全体で使われる構造体のみを定義する。
 //    特定システム固有の構造体は各システムの SharedHeader に分ける。
 //    例: パーティクル → Particle/ParticleShared.h
 //
@@ -131,7 +131,7 @@ CB_STRUCT(CbSkeleton, SLOT_CB_SKELETON)
 
 // ==================================================================
 // カメラ / シーン定数バッファ
-//   ★ HLSL フィールド名をそのまま使う（C++側が合わせる）。
+//   HLSL フィールド名をそのまま使う（C++側が合わせる）。
 //      Graphics::Update() のみが書き込む。他システムは UpdateSubresource 禁止。
 // ==================================================================
 CB_STRUCT(CbScene, SLOT_CB_SCENE)
@@ -143,7 +143,7 @@ CB_STRUCT(CbScene, SLOT_CB_SCENE)
     ROW_MAJOR float4x4 gView;        // HLSL名: gView
     ROW_MAJOR float4x4 gProjection;  // HLSL名: gProjection
 
-    // ★追加: 時間パラメータ（Graphics::Update が毎フレーム書き込む）
+    // 時間パラメータ（Graphics::Update が毎フレーム書き込む）
     //   x: 経過秒(time)  y: デルタ秒(deltaTime)  z: sin(経過秒)  w: 予約
     //   末尾に追加しているため既存フィールドのオフセットは不変。
     //   Common.hlsli を include する全マテリアルから gTimeParams で参照可能。
@@ -154,7 +154,7 @@ CB_STRUCT(CbScene, SLOT_CB_SCENE)
 
 // ==================================================================
 // カスケードシャドウマップ定数バッファ
-//   ★ HLSL フィールド名をそのまま使う（snake_case は HLSL 起源）
+//   HLSL フィールド名をそのまま使う（snake_case は HLSL 起源）
 // ==================================================================
 CB_STRUCT(CbShadow, SLOT_CB_SHADOW)
 {
@@ -169,7 +169,7 @@ CB_STRUCT(CbShadow, SLOT_CB_SHADOW)
 
 // ==================================================================
 // フォグ定数バッファ
-//   ★ HLSL フィールド名をそのまま使う（g プレフィックスは HLSL 起源）
+//   HLSL フィールド名をそのまま使う（g プレフィックスは HLSL 起源）
 // ==================================================================
 CB_STRUCT(CbFog, SLOT_CB_FOG)
 {

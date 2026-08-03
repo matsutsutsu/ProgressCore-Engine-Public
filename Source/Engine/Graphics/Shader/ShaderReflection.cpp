@@ -5,7 +5,7 @@
 namespace ShaderReflect
 {
     // =======================================================
-    // ★追加：ハッシュ値による検索の実装
+    // ハッシュ値による検索の実装
     // =======================================================
     const VariableInfo* ConstantBufferInfo::FindVariable(uint32_t nameHash) const
     {
@@ -309,14 +309,14 @@ namespace ShaderReflect
     bool AutoConstantBuffer::Create(ID3D11Device* device, const ConstantBufferInfo& info)
     {
         bufferInfo = info;
-        cpuBuffer.resize(info.size, 0); // ★1: CPU側のデータ置き場を作る
+        cpuBuffer.resize(info.size, 0); // 1: CPU側のデータ置き場を作る
 
         D3D11_BUFFER_DESC desc = {};
-        desc.ByteWidth         = info.size; // ★2: シェーダーが要求した通りのサイズ
+        desc.ByteWidth         = info.size; // 2: シェーダーが要求した通りのサイズ
         desc.Usage             = D3D11_USAGE_DEFAULT;
         desc.BindFlags         = D3D11_BIND_CONSTANT_BUFFER;
 
-        // ★3: GPUへの小包を作る
+        // 3: GPUへの小包を作る
         HRESULT hr = device->CreateBuffer(&desc, nullptr, buffer.GetAddressOf());
         return SUCCEEDED(hr);
     }
@@ -327,7 +327,7 @@ namespace ShaderReflect
     {
         if (isDirty && buffer)
         {
-            // ★3: CPUの作業台(cpuBuffer)の中身を、GPUの小包(buffer)へ一気に転送する
+            // 3: CPUの作業台(cpuBuffer)の中身を、GPUの小包(buffer)へ一気に転送する
             dc->UpdateSubresource(buffer.Get(), 0, nullptr, cpuBuffer.data(), 0, 0);
             isDirty = false;
         }
@@ -345,7 +345,7 @@ namespace ShaderReflect
     {
         if (buffer)
         {
-            // ★ステップ1で取得したスロット番号(bindPoint)に、
+            // ステップ1で取得したスロット番号(bindPoint)に、
             // 　小包(buffer)をガチャンと挿し込む
             dc->PSSetConstantBuffers(bufferInfo.bindPoint, 1, buffer.GetAddressOf());
         }
@@ -366,7 +366,7 @@ namespace ShaderReflect
         }
     }
 
-    // ★追加実装
+    // 追加実装
     void AutoConstantBuffer::SetRawData(const void *data, size_t size)
     {
         if (cpuBuffer.empty()) return;

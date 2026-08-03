@@ -43,7 +43,7 @@
 #define SLOT_CB_CONTACTSHADOW   2   // コンタクトシャドウ(b2共有=時間的に排他)
 
 // --- Per-frame (Graphics / EnvironmentSystem がバインド) ---
-#define SLOT_CB_SCENE           8   // viewProjection, camera, dirLight ... ★Graphics::Update のみ書込
+#define SLOT_CB_SCENE           8   // viewProjection, camera, dirLight ... Graphics::Update のみ書込
 #define SLOT_CB_LIGHT           9   // 点光源/スポットライト配列
 #define SLOT_CB_SHADOW          10  // カスケード行列, バイアス
 #define SLOT_CB_FOG             11  // 高さフォグ, ノイズ, リム
@@ -54,7 +54,7 @@
 // --- Per-emitter (GPUParticleUpdateSystem / ParticleRenderer がバインド) ---
 // Static : Desc 由来の設定値。変更時のみ upload (176 bytes)
 // Dynamic: ランタイム値。毎フレーム upload (48 bytes)
-// ★ 2スロットを連続して取得し、SetConstantBuffers(STATIC, 2, ...) で一括バインド可能
+// 2スロットを連続して取得し、SetConstantBuffers(STATIC, 2, ...) で一括バインド可能
 #define SLOT_CB_PARTICLE_STATIC  6   // 旧 13
 #define SLOT_CB_PARTICLE_DYNAMIC 7   // 旧 14 (範囲外だった)
 

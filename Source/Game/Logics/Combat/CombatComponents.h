@@ -23,7 +23,7 @@ struct HitboxComponent
 
     float knockback = 0.0f; ///< ノックバックの強さ(0で無効)
 
-    // ★多段ヒット防止用の固定長配列
+    // 多段ヒット防止用の固定長配列
     static constexpr uint8_t MAX_HIT_TARGETS             = 8;
     CCL::ECS::EntityID       hitTargets[MAX_HIT_TARGETS] = {}; ///< ヒット済み対象のID
     uint8_t                  hitCount                    = 0;  ///< 現在ヒットした数

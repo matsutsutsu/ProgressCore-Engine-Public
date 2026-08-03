@@ -52,7 +52,7 @@ class JoltPhysicsManager {
     JPH::PhysicsSystem *GetPhysicsSystem() const { return m_physicsSystem.get(); }
     JPH::BodyInterface &GetBodyInterface() const { return m_physicsSystem->GetBodyInterface(); }
 
-    // ★ロックなし版。Step() 完了後で「誰も物理ボディに書き込まない」フェーズ限定で使う。
+    // ロックなし版。Step() 完了後で「誰も物理ボディに書き込まない」フェーズ限定で使う。
     //   （例: JoltPullSystem の読み取り専用同期）。それ以外では GetBodyInterface() を使うこと。
     JPH::BodyInterface &GetBodyInterfaceNoLock() const { return m_physicsSystem->GetBodyInterfaceNoLock(); }
 

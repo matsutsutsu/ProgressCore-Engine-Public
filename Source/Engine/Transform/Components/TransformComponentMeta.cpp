@@ -3,7 +3,7 @@
 
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
-#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
+#include "Engine/Serialization/Meta/ComponentCategories.h"
 #include <cmath>
 #include <algorithm>
 
@@ -32,8 +32,8 @@ template <> struct ComponentMeta<TransformComponent> {
     CCL_META_USING_THIS(TransformComponent)   
 
     static constexpr const char* displayName    = "Transform";
-    static constexpr const char* category       = CCL::Categories::Transform; // ★追加
-    static constexpr int         sortPriority   = 0; // ★マニュアル通り「常に最上段」を強制
+    static constexpr const char* category       = CCL::Categories::Transform;
+    static constexpr int         sortPriority   = 0; // マニュアル通り「常に最上段」を強制
     static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui   = true;
     static constexpr bool        isSerializable = true;

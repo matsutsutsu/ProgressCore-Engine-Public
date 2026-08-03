@@ -13,7 +13,7 @@
 
 
 // ==========================================================
-// 常にプロジェクトルートから #include を探す最強のハンドラ
+// 常にプロジェクトルートから #include を解決するハンドラ
 // ==========================================================
 class RootInclude : public ID3DInclude {
 public:
@@ -40,7 +40,7 @@ public:
 				pathsInfo += "  - " + path + "\n";
 			}
 
-			// ★ 修正：CCL_LOG_ERRORマクロを使用
+			// CCL_LOG_ERRORマクロを使用
 			CCL_LOG_ERROR(LogCategory::Render, "HLSL Include Failed!\nRequested File: %s\nCurrent Dir: %s\nChecked Paths:\n%s",
 				pFileName, currentDir, pathsInfo.c_str());
 
@@ -438,14 +438,14 @@ bool GpuResourceUtils::CompilePixelShader(ID3D11Device *device,
     Microsoft::WRL::ComPtr<ID3DBlob> shaderBlob = nullptr;
     Microsoft::WRL::ComPtr<ID3DBlob> errorBlob  = nullptr;
 
-    // さっき作った最強のハンドラをインスタンス化
+    // 上で定義したインクルードハンドラをインスタンス化
     RootInclude rootInclude;
 
     // 絶対パスに変換する必要はありません！相対パスのまま渡します。
     // そして D3D_COMPILE_STANDARD_FILE_INCLUDE の代わりに &rootInclude を渡します！
     HRESULT hr = D3DCompileFromFile(hlslPath.c_str(),
         nullptr,
-        &rootInclude, // ★ココが最大のポイント！
+        &rootInclude, // ココが最大のポイント！
         entryPoint,
         shaderModel,
         D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG,
@@ -554,12 +554,12 @@ bool GpuResourceUtils::CompileComputeShader(ID3D11Device* device,
 	// エラーハンドリング
 	if (FAILED(hr)) {
 		if (errorBlob) {
-			// ★ 修正：エラー内容をログに出力 (%ls は std::wstring 用のフォーマット指定子)
+			// エラー内容をログに出力 (%ls は std::wstring 用のフォーマット指定子)
 			CCL_LOG_ERROR(LogCategory::Render, "Compute Shader Compile Error [%ls]\n%s",
 				hlslPath.c_str(), (char*)errorBlob->GetBufferPointer());
 		}
 		else {
-			// ★ 修正：ファイルが見つからない場合
+			// ファイルが見つからない場合
 			CCL_LOG_ERROR(LogCategory::Render, "Compute Shader File not found or cannot be opened: %ls", hlslPath.c_str());
 		}
 		return false;

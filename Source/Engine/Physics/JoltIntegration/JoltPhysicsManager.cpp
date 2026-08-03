@@ -44,7 +44,7 @@ static bool AssertFailedImpl(
         inExpression,
         (inMessage ? inMessage : ""));
 
-    // ★確実にVisual Studioの出力ウィンドウにエラーを叩き出す
+    // 確実にVisual Studioの出力ウィンドウにエラーを叩き出す
     OutputDebugStringA(buffer);
 
     return true; // trueでデバッガをブレークさせる
@@ -97,7 +97,7 @@ void JoltPhysicsManager::Initialize()
     #endif
 
     // ジョブシステムは、物理計算を複数のCPUコアで並列に走らせるためのもの。
-    // ★fix: hardware_concurrency() は取得不能な環境で 0 を返す規格。
+    // fix: hardware_concurrency() は取得不能な環境で 0 を返す規格。
     //   そのまま "-1" するとアンダーフローして巨大値になりスレッド生成でクラッシュするため、
     //   必ず 1 以上にクランプする。
     const unsigned int hwThreads     = std::thread::hardware_concurrency();
@@ -144,7 +144,7 @@ void JoltPhysicsManager::Step(float deltaTime)
 {
     if (!m_isInitialized) return;
 
-    // ★fix: dtクランプ。
+    // fix: dtクランプ。
     //   ブレークポイント復帰・アプリ一時停止・ロードスパイク後などに巨大な dt が入ると、
     //   可変ステップの Jolt は簡単に爆発（貫通・吹き飛び）する。上限でクランプする。
     constexpr float kMaxStepTime = 1.0f / 30.0f; // 1フレームで進める物理時間の上限（秒）

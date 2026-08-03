@@ -41,7 +41,7 @@ PrimitiveRenderer::PrimitiveRenderer(ID3D11Device* device)
 		{ "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT,    0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 
-    // ★ GpuResourceUtils を使って、最新の .cso ファイルをロードする
+    // GpuResourceUtils を使って、最新の .cso ファイルをロードする
         // ※パス ("Assets/Shader/...") は、あなたのプロジェクトの .cso 出力先に合わせてください
     GpuResourceUtils::LoadVertexShader(
         device,

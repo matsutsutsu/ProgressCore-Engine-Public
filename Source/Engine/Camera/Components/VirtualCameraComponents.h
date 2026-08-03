@@ -1,5 +1,5 @@
 #pragma once
-#include "Engine/Serialization/Core/EntityLink.h" // ★追加: EntityLinkを使用するため
+#include "Engine/Serialization/Core/EntityLink.h" // EntityLinkを使用するため
 #include <DirectXMath.h>
 #include <algorithm> // for max
 
@@ -18,7 +18,7 @@ struct VirtualCamera {
 
 // 2. 「移動」戦略: ターゲット追従 (Body)
 struct CameraBodyFollow {
-    // ★ 修正: 生のIDではなく安全なEntityLinkを使用する
+    // 生のIDではなく安全なEntityLinkを使用する
     CCL::Serialization::EntityLink target;
     DirectX::XMFLOAT3  offset = { 0, 0, 0 };
     float              damping = 10.0f;
@@ -27,7 +27,7 @@ struct CameraBodyFollow {
 
 // 3. 「回転」戦略: ターゲット注視 (Aim)
 struct CameraAimLookAt {
-    // ★ 修正: EntityLinkを使用する
+    // EntityLinkを使用する
     CCL::Serialization::EntityLink target;
     DirectX::XMFLOAT3  offset = { 0, 0, 0 };
     float              damping = 10.0f;

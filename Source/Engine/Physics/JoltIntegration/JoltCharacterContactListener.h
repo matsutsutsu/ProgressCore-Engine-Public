@@ -12,7 +12,7 @@
 //
 // 【アーキテクチャ仕様】
 // - CharacterVirtual の ExtendedUpdate 実行中に一時的にアタッチされる。
-// - ★以前は EventBus へ即時 Publish していたが、物理更新の途中でゲームロジックが
+// - 以前は EventBus へ即時 Publish していたが、物理更新の途中でゲームロジックが
 //   割り込むと（構造変更等が混ざり）危険なため、剛体側と同じ JoltContactListener の
 //   バッファへ PushEvent() で蓄積する方式に統一した。
 //   実際の配送は物理更新後の L05 (JoltCollisionEventSystem) が一括で行う。

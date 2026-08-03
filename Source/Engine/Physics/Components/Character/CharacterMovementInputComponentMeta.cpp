@@ -3,11 +3,11 @@
 
 #include "CharacterMovementInputComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
-#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
+#include "Engine/Serialization/Meta/ComponentCategories.h"
 
 // ===========================================================================
 // CharacterMovementInputComponent メタデータ定義
-// ★修正: BEGIN_FULL を使用しカテゴリと並び順を明記
+// BEGIN_FULL を使用しカテゴリと並び順を明記
 // ===========================================================================
 COMPONENT_META_BEGIN_FULL(CharacterMovementInputComponent, "Character Movement Input", CCL::Categories::Movement, 150, false)
 

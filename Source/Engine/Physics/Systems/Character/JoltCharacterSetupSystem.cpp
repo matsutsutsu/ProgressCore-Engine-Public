@@ -65,7 +65,7 @@ void JoltCharacterSetupSystem::Update(float dt)
         m_world->AddComponent<JoltCharacterHandleComponent>(id, handleComp);
 
         // ===============================================================
-        // 3. ★presence プロキシ（Kinematic 剛体）の生成
+        // 3. presence プロキシ（Kinematic 剛体）の生成
         //    CharacterVirtual は既定でブロードフェーズに存在せず、他者(弾/レイ/敵)から
         //    見えない。そこで同一形状の Kinematic 剛体を1つ持たせ、毎フレーム
         //    CharacterVirtual に追従させることで「他者から見える体」を用意する。

@@ -38,14 +38,14 @@ void JustEvadeSystem::Initialize()
 {
     hasGui = true; // チェインHUDを OnGui で前面描画する
 
-    // ★ EventBus から物理衝突の報告を購読する
+    // EventBus から物理衝突の報告を購読する
     ListenEvent<JoltCollisionEvent>([this](const JoltCollisionEvent& ev) {
         // 双方向でプレイヤーがどちらに含まれているかチェックする
         CheckJustEvade(ev.entityA, ev.entityB);
         CheckJustEvade(ev.entityB, ev.entityA);
     });
 
-    // ★ 被弾でチェイン切断（ボス／ドローンいずれの攻撃を食らっても初期化）
+    // 被弾でチェイン切断（ボス／ドローンいずれの攻撃を食らっても初期化）
     ListenEvent<DamageTakenEvent>([this](const DamageTakenEvent &ev) {
         if (ev.isPlayer) BreakChain(ev.targetID);
     });
@@ -105,7 +105,7 @@ void JustEvadeSystem::Initialize()
 
 void JustEvadeSystem::Update(float rawDt)
 {
-    // ★ Update の責務変更: フラグのクリーンアップ
+    // Update の責務変更: フラグのクリーンアップ
     // イベントは同期的に飛んできてフラグを true にするため、
     // 次のフレームに成功判定が持ち越されないよう、フレームの最後に全フラグをリセットする。
     ForEach([&](JustEvadeComponent &evade, DashComponent &dash, CharacterMovementInputComponent &input, const TimeStateComponent &time) {
@@ -231,7 +231,7 @@ void JustEvadeSystem::CheckJustEvade(EntityID playerCandidate, EntityID otherCan
     if (!dash->isJustEvadeWindowActive) return;
 
     // 2. 【ガード条件】このダッシュですでに成功しているなら処理しない
-    // ★ここが最も重要：evade->isJustSuccess を「このダッシュ内での成功フラグ」として扱います
+    // ここが最も重要：evade->isJustSuccess を「このダッシュ内での成功フラグ」として扱います
     if (evade->isJustSuccess) return;
 
     // 3. 【ガード条件】同じ敵に対する多段発動を防ぐ (既存のブラックリスト機能)
@@ -265,7 +265,7 @@ void JustEvadeSystem::CheckJustEvade(EntityID playerCandidate, EntityID otherCan
     evade->lastEvadedTarget = otherCandidate;
     evade->resetTimer       = 1.0f;
 
-    // ★ チェイン加算（上限で頭打ち）。撃破範囲・受付の厳しさ・移動速度は、この段数を
+    // チェイン加算（上限で頭打ち）。撃破範囲・受付の厳しさ・移動速度は、この段数を
     //    各所（DroneManagerの範囲撃破 / PlayerDashの受付窓 / 移動速度倍率）が参照する。
     //    Publish より前に加算し、購読側が最新の段数を見られるようにする。
     if (evade->chainCount < evade->maxChain) evade->chainCount++;

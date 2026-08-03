@@ -1,9 +1,9 @@
 #include "InputEditorWindow.h"
 #include "Engine/Platform/Input/IInputAPI.h"
-#include "Engine/Platform/Input/InputKeyTable.h" // ★ 追加: 共通キーテーブル
+#include "Engine/Platform/Input/InputKeyTable.h" // 共通キーテーブル
 #include "Engine/Platform/Core/FileSystem.h"
 #include <imgui.h>
-#include <Xinput.h> // ★ Capture用 (パッド検出)
+#include <Xinput.h> // Capture用 (パッド検出)
 #include <fstream>
 #include <json.hpp>
 #include <cstring>

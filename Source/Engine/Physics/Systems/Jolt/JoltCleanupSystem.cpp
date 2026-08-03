@@ -37,10 +37,10 @@ void JoltCleanupSystem::ExecuteCleanup(CCL::ECS::World& world)
 
             JPH::BodyID& bodyID = joltHandles[i].bodyID;
 
-            // ★ 防波堤1: すでに破棄済み（無効なID）、または未初期化なら絶対にJoltへ渡さない
+            // 防波堤1: すでに破棄済み（無効なID）、または未初期化なら絶対にJoltへ渡さない
             if (bodyID.IsInvalid()) continue;
 
-            // ★ 防波堤2: Jolt空間に「追加(Add)」されている場合のみRemoveする
+            // 防波堤2: Jolt空間に「追加(Add)」されている場合のみRemoveする
             // (CreateはしたがAddしていない剛体をRemoveすると別のアサートが鳴るため)
             if (bodyInterface.IsAdded(bodyID)) {
                 bodyInterface.RemoveBody(bodyID);
@@ -49,7 +49,7 @@ void JoltCleanupSystem::ExecuteCleanup(CCL::ECS::World& world)
             // 剛体の完全消去
             bodyInterface.DestroyBody(bodyID);
 
-            // ★ 究極の修正: Joltから消し去った証拠として、コンポーネント側のIDを無効化する！
+            // 究極の修正: Joltから消し去った証拠として、コンポーネント側のIDを無効化する！
             // これにより、もしこのエンティティが次フレームまで生き残ってループに入っても、
             // 防波堤1で安全に弾かれるようになります。
             bodyID = JPH::BodyID(); // デフォルトコンストラクタは無効なID(cInvalidBodyID)を生成する

@@ -7,7 +7,7 @@
 
 #include "RootMotionComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
-#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
+#include "Engine/Serialization/Meta/ComponentCategories.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
 #ifdef ENABLE_EDITOR
@@ -36,7 +36,7 @@ struct ComponentMeta<RootMotionComponent>
     CCL_META_USING_THIS(RootMotionComponent)
 
     static constexpr const char *displayName       = "Root Motion";
-    static constexpr const char *category          = CCL::Categories::Animation; // ★修正: 定数を使用
+    static constexpr const char *category          = CCL::Categories::Animation; // 定数を使用
     static constexpr int         sortPriority      = 110;
     static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui      = true;

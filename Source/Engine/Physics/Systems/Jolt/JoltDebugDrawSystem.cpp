@@ -33,7 +33,7 @@ void JoltBoxDebugDrawSystem::Update(float dt)
 
     ForEach([&](const TransformComponent& trans, const JoltBoxColliderComponent& box) {
         // ====================================================================
-        // ★ 修正: ローカルではなく、計算済みのワールド座標と回転を取得
+        // ローカルではなく、計算済みのワールド座標と回転を取得
         // ====================================================================
         DirectX::XMFLOAT3 worldPos = trans.GetWorldPosition();
         DirectX::XMFLOAT4 worldRotQuat = trans.GetWorldRotation();
@@ -79,7 +79,7 @@ void JoltSphereDebugDrawSystem::Update(float dt)
     if (!renderer) return;
 
     ForEach([&](const TransformComponent& trans, const JoltSphereColliderComponent& sphere) {
-        // ★ ワールド座標と回転を取得
+        // ワールド座標と回転を取得
         DirectX::XMFLOAT3 worldPos = trans.GetWorldPosition();
         DirectX::XMFLOAT4 worldRotQuat = trans.GetWorldRotation();
 
@@ -113,7 +113,7 @@ void JoltCapsuleDebugDrawSystem::Update(float dt)
     if (!renderer) return;
 
     ForEach([&](const TransformComponent& trans, const JoltCapsuleColliderComponent& capsule) {
-        // ★ ワールド座標と回転を取得
+        // ワールド座標と回転を取得
         DirectX::XMFLOAT3 worldPos = trans.GetWorldPosition();
         DirectX::XMFLOAT4 worldRotQuat = trans.GetWorldRotation();
 
@@ -160,7 +160,7 @@ void JoltMeshDebugDrawSystem::Update(float dt)
         if (!res) return;
 
         // ====================================================================
-        // ★ 究極の最適化: TransformComponent はすでに「完全なワールド行列(worldMatrix)」
+        // 究極の最適化: TransformComponent はすでに「完全なワールド行列(worldMatrix)」
         // を持っているため、個別の成分を掛け合わせる必要すらありません。
         // ====================================================================
         XMMATRIX worldMat = XMLoadFloat4x4(&trans.worldMatrix);

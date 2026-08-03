@@ -16,7 +16,7 @@ class GPUParticleUpdateSystem : public CCL::ECS::IfSystem<GPUParticleUpdateSyste
                                     CCL::ECS::Read<TimeStateComponent>> {
   public:
     GPUParticleUpdateSystem() : IfSystem("GPUParticleUpdateSystem") {}
-    ~GPUParticleUpdateSystem();   // ★unique_ptr<前方宣言型> のため .cpp で = default
+    ~GPUParticleUpdateSystem();   // unique_ptr<前方宣言型> のため .cpp で = default
 
 
     void Update(float dt) override;

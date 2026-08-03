@@ -37,7 +37,7 @@ struct AnimatorComponent {
     bool  isLoop = true;
     bool  isFinished = false;
 
-    // ★ O(1)アクセスのための「栞（しおり）」
+    // O(1)アクセスのための「栞（しおり）」
     // 次にチェックするイベントのインデックス
     int nextEventIndex = 0;
 
@@ -86,7 +86,7 @@ struct AnimatorComponent {
                 previousSequence = currentSequence;
 
                 // ==========================================================
-                // ★ クリティカルな修正: 時間のはみ出し(オーバーフロー)を補正する
+                // クリティカルな修正: 時間のはみ出し(オーバーフロー)を補正する
                 // ==========================================================
                 if (currentSequence->duration > 0.0f)
                 {
@@ -131,7 +131,7 @@ struct AnimatorComponent {
         isLoop        = params.loop;
         playbackSpeed = params.speed;
         // ============================================================
-        // ★ 修正の核心: 明示的な curve 指定が無ければ、シーケンス自身が
+        // 修正の核心: 明示的な curve 指定が無ければ、シーケンス自身が
         //   埋め込みで持っているカーブ（Sequencerで編集・保存したもの）を
         //   自動的に採用する。これが無かったため「保存してもシーケンサー上
         //   でしか効果が確認できない」不具合が起きていた。

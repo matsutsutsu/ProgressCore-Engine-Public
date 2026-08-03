@@ -112,23 +112,23 @@ namespace ComponentMetaHelpers {
         std::remove_cv_t<std::remove_reference_t<decltype(std::declval<ThisType&>().Field)>>>(  \
         Display, #Field, offsetof(ThisType, Field), Category),
 
-// ★ツールチップ付き: CFIELD_T(field, "表示名", "カテゴリ", "説明")
+// ツールチップ付き: CFIELD_T(field, "表示名", "カテゴリ", "説明")
 #define CFIELD_T(Field, Display, Category, Tooltip)                                             \
     ComponentMetaHelpers::MakeFieldAuto<ThisType,                                               \
         std::remove_cv_t<std::remove_reference_t<decltype(std::declval<ThisType&>().Field)>>>(  \
         Display, #Field, offsetof(ThisType, Field), Category, Tooltip),
 
-// ★読み取り専用: CFIELD_RO(field, "表示名", "カテゴリ", "説明")  ※説明不要なら nullptr
+// 読み取り専用: CFIELD_RO(field, "表示名", "カテゴリ", "説明")  ※説明不要なら nullptr
 #define CFIELD_RO(Field, Display, Category, Tooltip)                                            \
     ComponentMetaHelpers::MakeFieldAuto<ThisType,                                               \
         std::remove_cv_t<std::remove_reference_t<decltype(std::declval<ThisType&>().Field)>>>(  \
         Display, #Field, offsetof(ThisType, Field), Category, Tooltip, true),
 
-// ★色 (XMFLOAT4 を ColorEdit4 で): CFIELD_COLOR(field, "表示名", "カテゴリ")
+// 色 (XMFLOAT4 を ColorEdit4 で): CFIELD_COLOR(field, "表示名", "カテゴリ")
 #define CFIELD_COLOR(Field, Display, Category)                                                  \
     FD_Color(Display, #Field, offsetof(ThisType, Field), Category),
 
-// ★色＋説明
+// 色＋説明
 #define CFIELD_COLOR_T(Field, Display, Category, Tooltip)                                       \
     FD_Color(Display, #Field, offsetof(ThisType, Field), Category, true, Tooltip),
 

@@ -58,7 +58,7 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext* dc, const Rende
     if (!m_world) return;
 
     // =================================================================
-    // ★ Bug Fix: CbScene の UpdateSubresource をここから削除した。
+    // Bug Fix: CbScene の UpdateSubresource をここから削除した。
     //   Graphics::Update() が正しい行列データを書き込んだ後、
     //   EnvironmentSystem が古い / 未更新の m_sceneData で上書きすると
     //   InstanceData がゼロ、CbScene の行列が壊れる等の描画バグを引き起こす。
@@ -102,7 +102,7 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext* dc, const Rende
            fog->noiseTextureHandle = ResourceManager::Instance().LoadTexture(fog->noiseTexturePath);
        }
 
-       // ★修正: ここで内側に再宣言していたため外側の fogNoiseSrv に反映されず、
+       // ここで内側に再宣言していたため外側の fogNoiseSrv に反映されず、
        //         フォグノイズSRV(t9)が常に null だった。外側の変数へ代入する。
        if (fog->noiseTextureHandle.IsValid()) {
            fogNoiseSrv = ResourceManager::Instance().GetTexture(fog->noiseTextureHandle);

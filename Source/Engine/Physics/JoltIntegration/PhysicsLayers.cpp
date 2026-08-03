@@ -71,7 +71,7 @@ bool ObjectVsBroadPhaseLayerFilterImpl::ShouldCollide(
 }
 
 // ──────────────────────────────────────────────
-// ObjectLayerPairFilterImpl  ★命中ルールの確定版（プレイヤー vs ボス）
+// ObjectLayerPairFilterImpl  命中ルールの確定版（プレイヤー vs ボス）
 //   本体同士: PLAYER × BOSS = true（押し合う）。壁は本体だけ止める。
 //   攻撃レイヤーは「相手の本体」にだけ当たる:
 //     PLAYER_ATTACK × BOSS   = true（プレイヤーの攻撃はボスに命中）

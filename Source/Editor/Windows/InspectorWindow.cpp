@@ -46,7 +46,7 @@ InspectorWindow::InspectorWindow() : EditorWindow("Inspector") {}
 
 void InspectorWindow::DrawContents(EditorContext &context)
 {
-    // ★ 修正：ポインタではなく実体を直接取得
+    // ポインタではなく実体を直接取得
     CCL::ECS::EntityID     selected = context.selectedEntity;
     CCL::ECS::World *world    = context.world;
 

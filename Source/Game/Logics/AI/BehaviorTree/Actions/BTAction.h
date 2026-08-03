@@ -1,7 +1,7 @@
 /// @file  BTAction.h
 /// @brief BehaviorTree のアクション・条件の基底。StateTree の ITask/ICondition と対。
 ///
-/// ★汎用化（ボス固有を排除）★
+/// 汎用化（ボス固有を排除）
 ///   BTContext からボス固有の command(BossCommand) / myAction(BossAction) を外した。
 ///   これらが必要なアクション（ボス用）は Execute の中で
 ///   ctx.world->GetComponent<BossCommandComponent>(ctx.entity) と自分で取りに行く。

@@ -7,7 +7,7 @@
  *   - BT 側は Wait / ResetDamage / Move / Drone(2000〜2029) を登録
  *   - 条件は BTConditions.h の8種を維持
  *
- * ★ g_ActionRegistry（BTWindowのAction候補リスト）はDrone系を「実装済みのみ」に
+ * g_ActionRegistry（BTWindowのAction候補リスト）はDrone系を「実装済みのみ」に
  *   絞ってある（OrbitCircle / GuillotineSlam / DroneStrike の3つ）。
  *   CCL::AI:: 側の定数と DroneAction の登録ループ(2000〜2029)自体は残しているので、
  *   Formation実装（Formations_Basic.h / Formations_Attack.h）が増えたら

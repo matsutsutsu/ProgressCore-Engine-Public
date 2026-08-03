@@ -3,7 +3,7 @@
 
 #include "Engine/Core/Components/NameComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
-#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
+#include "Engine/Serialization/Meta/ComponentCategories.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
 #ifdef ENABLE_EDITOR
@@ -36,8 +36,8 @@ namespace ComponentMetaJson {
 // ============================================================================
 template <> struct ComponentMeta<NameComponent> {
     static constexpr const char* displayName    = "Name";
-    static constexpr const char* category       = CCL::Categories::Meta; // ★修正: 最も重要なメタ情報
-    static constexpr int         sortPriority   = 0; // ★修正: Transformと同様に最上段に固定
+    static constexpr const char* category       = CCL::Categories::Meta; // 最も重要なメタ情報
+    static constexpr int         sortPriority   = 0; // Transformと同様に最上段に固定
     static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui   = true;
     static constexpr bool        isSerializable = true;

@@ -3,7 +3,7 @@
 
 void Keyboard::Update()
 {
-    ZoneScopedN("Keyboard::Update"); // ★ 追跡ポイント
+    ZoneScopedN("Keyboard::Update"); // 追跡ポイント
 
     // 現在の状態を過去の状態として保存
     memcpy(oldState, currentState, sizeof(currentState));

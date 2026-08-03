@@ -35,7 +35,7 @@ void TransformUpdateSystem::Update(float dt)
         m_cache.Rebuild(*m_world);
     }
 
-    // 2. ★ホットパス：ルートを並列インプレース計算（1万体の上下運動はここでスケール）
+    // 2. ホットパス：ルートを並列インプレース計算（1万体の上下運動はここでスケール）
     ComputeRootsParallel();
 
     // 3. 非ルート（少数）を depth 順に解決。フラットシーンでは Count()==0 で即抜け。

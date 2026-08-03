@@ -91,7 +91,7 @@ public:
     virtual void SetActionTriggerType(const std::string& actionName, TriggerType type) = 0;
 
     // =======================================================
-    // ★ 入力の取得（コア機能：超高速版）
+    // 入力の取得（コア機能：超高速版）
     //   GetAction は、エディタで設定された種別
     //   (Down / Triggered / Released) に従って評価される。
     //   ゲーム側はこの1関数を呼ぶだけでよい。

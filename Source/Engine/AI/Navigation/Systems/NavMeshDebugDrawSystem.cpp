@@ -8,7 +8,7 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Graphics/Renderer/ShapeRenderer.h"
 
-// ★AIエージェントの情報を読み取るためにインクルード
+// AIエージェントの情報を読み取るためにインクルード
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/AI/Navigation/Components/NavAgentComponent.h"
 
@@ -57,12 +57,12 @@ void NavMeshDebugDrawSystem::Update(float dt)
                         for (int m = 0; m < 3; ++m) {
                             if (t[m] < p->vertCount) {
                                 float* pos = &tile->verts[p->verts[t[m]] * 3];
-                                // ★ 面は線より下（+ 0.05f）
+                                // 面は線より下（+ 0.05f）
                                 v[m] = { pos[0], pos[1] + 0.05f, pos[2] };
                             }
                             else {
                                 float* pos = &tile->detailVerts[(pd->vertBase + t[m] - p->vertCount) * 3];
-                                // ★ 面は線より下（+ 0.05f）
+                                // 面は線より下（+ 0.05f）
                                 v[m] = { pos[0], pos[1] + 0.05f, pos[2] };
                             }
                         }

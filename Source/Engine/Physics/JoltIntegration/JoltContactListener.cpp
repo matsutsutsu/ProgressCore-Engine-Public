@@ -37,7 +37,7 @@ void JoltContactListener::PushEvent(const JoltCollisionEvent& ev)
 
 std::vector<JoltCollisionEvent> JoltContactListener::GetAndClearEvents()
 {
-    // ★fix: コピーではなく swap で受け渡す。
+    // fix: コピーではなく swap で受け渡す。
     //   ロックを保持する時間はポインタ入れ替えの一瞬だけで済み、コピーコストもゼロになる。
     std::vector<JoltCollisionEvent> out;
     {

@@ -111,7 +111,7 @@ void HierarchyCleanupSystem::ExecuteCleanup(CCL::ECS::World& world)
 
 // =========================================================================
 // 子供の再帰的収集 (static)
-//   ★プール対象(PooledParticleComponent)には潜らない。配下は emitterRoot と
+//   プール対象(PooledParticleComponent)には潜らない。配下は emitterRoot と
 //     一緒にプールへ返るため、ここで個別に列挙してはならない。
 // =========================================================================
 void HierarchyCleanupSystem::CollectChildrenRecursive(

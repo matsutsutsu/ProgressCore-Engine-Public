@@ -3,7 +3,7 @@
 #include "Engine/Core/Math/StringHash.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
-#include "Engine/Platform/Core/Logger.h" // ★追加
+#include "Engine/Platform/Core/Logger.h"
 
 #include "Engine/Transform/Components/TransformComponent.h" // 位置から敵方向を求める
 #include "Game/Logics/Combat/HealthComponent.h"             // 敵判定（生存中の敵）
@@ -17,8 +17,8 @@ using namespace DirectX::SimpleMath;
 
 // トリガーのハッシュ値を事前計算
 static const uint32_t HASH_TRIG_ATTACK      = CCL::Utils::HashString("Attack");
-static const uint32_t HASH_TRIG_DASH_ATTACK = CCL::Utils::HashString("DashAttack"); // ★ダッシュ攻撃用のハッシュを追加
-static const uint32_t HASH_TRIG_AIR_ATTACK  = CCL::Utils::HashString("AirAttack");  // ★空中攻撃用のハッシュ
+static const uint32_t HASH_TRIG_DASH_ATTACK = CCL::Utils::HashString("DashAttack"); // ダッシュ攻撃用のハッシュを追加
+static const uint32_t HASH_TRIG_AIR_ATTACK  = CCL::Utils::HashString("AirAttack");  // 空中攻撃用のハッシュ
 
 namespace
 {
@@ -90,7 +90,7 @@ void SetAttackFacing(World *world, EntityID playerID, PlayerComponent &player)
     to.y       = 0.0f;
     if (to.LengthSquared() < 1e-4f) return;
 
-    // ★ 近いときだけ向く：対象が attackFaceMaxDistance より遠ければ回頭しない。
+    // 近いときだけ向く：対象が attackFaceMaxDistance より遠ければ回頭しない。
     //   ロックオン中でも遠い敵には勝手に向かず、入力方向のまま攻撃できる（遠距離での暴発防止）。
     if (to.LengthSquared() > player.attackFaceMaxDistance * player.attackFaceMaxDistance) return;
 
@@ -101,7 +101,7 @@ void SetAttackFacing(World *world, EntityID playerID, PlayerComponent &player)
 
 void PlayerAttackSystem::Update(float dt)
 {
-    // ★引数に DashComponent を追加（宣言順に合わせる）
+    // 引数に DashComponent を追加（宣言順に合わせる）
     ForEachWithID([&](EntityID playerID,
                 const CharacterMovementInputComponent &inputData,
                 DashComponent                         &dash,
@@ -114,7 +114,7 @@ void PlayerAttackSystem::Update(float dt)
             SetAttackFacing(m_world, playerID, player);
 
             // ==============================================================
-            // ★ 空中攻撃の判定（最優先）
+            // 空中攻撃の判定（最優先）
             //   空中にいる間に攻撃したら、地上の通常/ダッシュ攻撃ではなく空中攻撃を出す。
             //   実際のアニメーション遷移・攻撃判定は「AirAttack」トリガーを受けて別途実装する。
             // ==============================================================
@@ -126,7 +126,7 @@ void PlayerAttackSystem::Update(float dt)
             else
             {
                 // ==============================================================
-                // ★ ダッシュ攻撃の判定 (速度・慣性ベース)
+                // ダッシュ攻撃の判定 (速度・慣性ベース)
                 // ==============================================================
                 // 閾値: ダッシュ最高速度の 50% 以上のスピードが出ている時とする
                 float thresholdSpeed = dash.dashSpeed * 0.5f;

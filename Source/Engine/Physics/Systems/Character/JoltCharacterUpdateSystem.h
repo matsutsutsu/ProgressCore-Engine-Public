@@ -13,7 +13,7 @@
 // 計算する専用システム。
 //
 // 【アーキテクチャ仕様】
-// - 実行フェーズ: PrePhysics (★ JoltStepSystem が走る前に終わらせるのが公式の絶対ルール)
+// - 実行フェーズ: PrePhysics (JoltStepSystem が走る前に終わらせるのが公式の絶対ルール)
 // - 対象: CharacterVirtual / Input / Config をすべて持つ Entity。
 //
 // 【接地判定の唯一の真実】

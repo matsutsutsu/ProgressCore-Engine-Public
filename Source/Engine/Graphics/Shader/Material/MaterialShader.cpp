@@ -83,7 +83,7 @@ void MaterialShader::CheckAndReload(ID3D11Device* device)
         {
             pixelShader = newPixelShader;
 
-            // ★超重要：リフレクション情報をゼロから作り直す
+            // 超重要：リフレクション情報をゼロから作り直す
             ResetReflection();
             m_reflection.LoadFromBytecode(newBlob->GetBufferPointer(), newBlob->GetBufferSize());
 

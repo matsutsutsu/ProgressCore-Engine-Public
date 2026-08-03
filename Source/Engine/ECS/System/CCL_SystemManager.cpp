@@ -21,7 +21,7 @@ namespace CCL::ECS
 
 
         // =========================================================
-        // ★ 厳格なキャッシュ判定（ポインタ配列の完全一致チェック）
+        // 厳格なキャッシュ判定（ポインタ配列の完全一致チェック）
         // =========================================================
         auto& chunks = cm->GetChunks(); // vector<unique_ptr<Chunk>>&
         bool isStructureDirty = false;
@@ -96,7 +96,7 @@ namespace CCL::ECS
                         continue;
                     }
 
-                    // ★ Include（必須）AND Exclude（除外）の両方を満たす場合のみ対象
+                    // Include（必須）AND Exclude（除外）の両方を満たす場合のみ対象
                     if (ArchetypeHelper::LhasR(chunkArch, filter) &&
                         ArchetypeHelper::LExcludesR(chunkArch, exclude))
                     {
@@ -115,7 +115,7 @@ namespace CCL::ECS
    void SystemManager::OnGui()
     {
 #ifdef ENABLE_EDITOR
-        // ★ エディタUI全体の処理負荷を計測
+        // エディタUI全体の処理負荷を計測
         ZoneScopedN("SystemManager::OnGui");
 
         if (ImGui::Begin("System Manager")) {

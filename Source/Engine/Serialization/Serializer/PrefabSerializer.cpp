@@ -1,6 +1,6 @@
 // =====================================================================
 // PrefabSerializer.cpp
-//   ★ 旧版の致命的問題を解消した実装。
+//   旧版の致命的問題を解消した実装。
 //
 //   解消した点:
 //     [旧] BFS 中に毎ステップで全リンク配列を線形検索 → O(N^2)
@@ -139,10 +139,10 @@ bool PrefabSerializer::Save(
             void* data = chunk->GetComponentPtrByType(typeData.id, index);
             const auto* meta = registry.GetInfoByName(cName);
             if (!meta || !data) continue;
-            if (!meta->isSerializable) continue;   // ★ 保存対象外はスキップ
+            if (!meta->isSerializable) continue;   // 保存対象外はスキップ
 
             nlohmann::json compJson;
-            // ★ SaveContext を渡すことで EntityLink が自動で localIndex 化される。
+            // SaveContext を渡すことで EntityLink が自動で localIndex 化される。
             //    Prefab 内の親子関係も外部 ID を残さず、自己完結したファイルになる。
             meta->serialize(compJson, data, &saveCtx);
             entityJson[CCL::Serialization::Keys::Components][cName] = std::move(compJson);

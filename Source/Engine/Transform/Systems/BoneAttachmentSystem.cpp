@@ -107,6 +107,6 @@ void BoneAttachmentSystem::BakeModelIfPresent(EntityID id, const XMFLOAT4X4& wor
     }
 }
 
-// ★ 必ず ModelPoseUpdateSystem より後に実行されるステージへ登録すること。
+// 必ず ModelPoseUpdateSystem より後に実行されるステージへ登録すること。
 //    下記 enum 名はあなたの SystemPriority.h の実値に合わせてください。
 REGISTER_LOGIC_SYSTEM(BoneAttachmentSystem, Priority::LogicStage::L03_PrePhysics);

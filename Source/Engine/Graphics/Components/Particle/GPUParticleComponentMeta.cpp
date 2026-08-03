@@ -7,7 +7,7 @@
 #include "Engine/Platform/Core/FileSystem.h"
 
 #include "Engine/Serialization/Meta/ComponentDefine.h"
-#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
+#include "Engine/Serialization/Meta/ComponentCategories.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
 #include <json.hpp>
@@ -135,7 +135,7 @@ void ReadDescFromJson(const json &j, ParticleEmitterDesc &d)
     STR("texturePath", d.texturePath, sizeof(d.texturePath));
     STR("colorRampPath", d.colorRampPath, sizeof(d.colorRampPath));
 }
-// ★ 修正: 自前で std::filesystem を使った ToRelativePath を完全削除
+// 自前で std::filesystem を使った ToRelativePath を完全削除
 } // namespace
 
 // =====================================================================
@@ -208,8 +208,8 @@ struct ComponentMeta<GPUParticleComponent>
     CCL_META_USING_THIS(GPUParticleComponent)
 
     static constexpr const char *displayName    = "GPU Particle Emitter";
-    static constexpr const char *category       = CCL::Categories::Effect; // ★追加
-    static constexpr int         sortPriority   = 450; // ★追加
+    static constexpr const char *category       = CCL::Categories::Effect;
+    static constexpr int         sortPriority   = 450;
     static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui   = true;
     static constexpr bool        isSerializable = true;
@@ -227,7 +227,7 @@ struct ComponentMeta<GPUParticleComponent>
         int        currentActiveTabId = -1;
 
         auto pickTexture = [&](char *dst, size_t cap, TextureHandle &handle, const char *title) {
-            // ★ 修正: エンジン管轄の FileDialog::ConvertToRelativePath を正しく使用
+            // エンジン管轄の FileDialog::ConvertToRelativePath を正しく使用
             if (auto path = FileDialog::OpenPreset("Texture", title, hWnd))
             {
                 strcpy_s(dst, cap, FileDialog::ConvertToRelativePath(*path).c_str());

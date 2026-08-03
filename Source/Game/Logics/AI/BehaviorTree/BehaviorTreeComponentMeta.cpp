@@ -7,7 +7,7 @@
 #include "Game/Logics/AI/Drone/DroneComponent.h"
 #include "Engine/Serialization/Registry/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
-#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
+#include "Engine/Serialization/Meta/ComponentCategories.h"
 
 #ifdef ENABLE_EDITOR
 #include "Editor/Inspector/ComponentGuiRegistry.h"
@@ -30,8 +30,8 @@ template <> struct ComponentMeta<BehaviorTreeComponent> {
     CCL_META_USING_THIS(BehaviorTreeComponent)
 
     static constexpr const char *displayName    = "Behavior Tree";
-    static constexpr const char *category       = CCL::Categories::AI; // ★追加
-    static constexpr int         sortPriority   = 150; // ★追加
+    static constexpr const char *category       = CCL::Categories::AI;
+    static constexpr int         sortPriority   = 150;
     static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui   = true;
     static constexpr bool        isSerializable = true;
@@ -88,8 +88,8 @@ template <> struct ComponentMeta<BossCommandComponent> {
     CCL_META_USING_THIS(BossCommandComponent)
 
     static constexpr const char* displayName    = "Boss Command (AI Output)";
-    static constexpr const char *category       = CCL::Categories::AI; // ★追加
-    static constexpr int         sortPriority   = 160; // ★追加
+    static constexpr const char *category       = CCL::Categories::AI;
+    static constexpr int         sortPriority   = 160;
     static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui   = false; 
     static constexpr bool        isSerializable = true;  
@@ -113,8 +113,8 @@ template <> struct ComponentMeta<DroneComponent> {
     CCL_META_USING_THIS(DroneComponent)
 
     static constexpr const char *displayName    = "Drone";
-    static constexpr const char *category       = CCL::Categories::AI; // ★追加
-    static constexpr int         sortPriority   = 170; // ★追加
+    static constexpr const char *category       = CCL::Categories::AI;
+    static constexpr int         sortPriority   = 170;
     static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui   = false;
     static constexpr bool        isSerializable = true;

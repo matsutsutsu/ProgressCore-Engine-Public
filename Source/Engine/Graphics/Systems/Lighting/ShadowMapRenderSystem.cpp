@@ -25,7 +25,7 @@ using namespace DirectX;
 ShadowMapRenderSystem::ShadowMapRenderSystem()
     : IfSystem("ShadowMapRenderSystem")
 {
-    // ★ 当たり判定専用ジオメトリ(NoRenderTag)は影も落とさない。
+    // 当たり判定専用ジオメトリ(NoRenderTag)は影も落とさない。
     //    これが無いと「見えないのに影だけ出る」状態になる。
     SetExclude<NoRenderTag>();
 }
@@ -142,7 +142,7 @@ void ShadowMapRenderSystem::RenderShadowMap()
             }
             else {
                 // このメッシュのワールド行列を作る。
-                // ★描画時の世界変換（node->globalTransform * entityWorld）と一致させること。
+                // 描画時の世界変換（node->globalTransform * entityWorld）と一致させること。
                 DirectX::XMMATRIX meshWorld = entityWorld;
                 if (mesh.node) {
                     meshWorld = DirectX::XMLoadFloat4x4(&mesh.node->globalTransform) * entityWorld;
@@ -166,7 +166,7 @@ void ShadowMapRenderSystem::RenderShadowMap()
             ShadowCommand cmd;
             cmd.model = pModel;
             cmd.mesh = &mesh;
-            // ★ worldMatrix は「エンティティのワールド行列」をそのまま積む。
+            // worldMatrix は「エンティティのワールド行列」をそのまま積む。
             //   node の合成は ShadowPass 側で行う仕様なので、ここでは合成しない。
             cmd.worldMatrix = trans.worldMatrix;
             cmd.cascadeMask = meshMask; // メッシュ個別のカスケードマスク

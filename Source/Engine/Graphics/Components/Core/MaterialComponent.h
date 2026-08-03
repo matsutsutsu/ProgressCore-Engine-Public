@@ -1,6 +1,6 @@
 #pragma once
 #include <memory>
-#include "Engine/Graphics/Resource/ResourceManager.h" // ★ハンドルを使うために追加
+#include "Engine/Graphics/Resource/ResourceManager.h" // ハンドルを使うために追加
 
 struct MaterialComponent
 {

@@ -16,7 +16,7 @@ void PrimitiveRenderSystem::Update(float dt)
     auto* renderer = m_world->GetResource<PrimitiveRenderer*>();
     if (!renderer) return;
 
-    ForEachParallel([&](const TransformComponent& trans, const PrimitiveComponent& prim, const VisibilityComponent& vis) { // ★追加
+    ForEachParallel([&](const TransformComponent& trans, const PrimitiveComponent& prim, const VisibilityComponent& vis) {
 
         // ここでカリング結果を見てスキップ
         if (!vis.isVisible) return;
@@ -64,7 +64,7 @@ void PrimitiveRenderSystem::Update(float dt)
         DirectX::XMFLOAT4X4 finalWorld;
         DirectX::XMStoreFloat4x4(&finalWorld, finalWorldMat);
 
-        // ★究極のハック：行列の使われない空き部屋（右端の1列）にパラメータを直接隠して送る
+        // 究極のハック：行列の使われない空き部屋（右端の1列）にパラメータを直接隠して送る
         if (prim.type == PrimitiveType::Capsule) {
             float totalHeight = (std::max)(h, r * 2.0f);
             float cylinderHeight = totalHeight - (r * 2.0f);

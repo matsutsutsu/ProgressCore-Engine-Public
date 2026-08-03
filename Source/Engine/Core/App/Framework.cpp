@@ -70,7 +70,7 @@ Framework::Framework(HWND hWnd)
 	ZoneScopedN("Framework::Constructor");
 
 
-	// ★ 最初にLoggerをセットアップ (他システムが起動時に CCL_LOG を呼ぶため)
+	// 最初にLoggerをセットアップ (他システムが起動時に CCL_LOG を呼ぶため)
 	{
 		ZoneScopedN("Init: Logger");
 		Logger::Instance().AddSink(std::make_shared<DebugStreamSink>());
@@ -100,7 +100,7 @@ Framework::Framework(HWND hWnd)
 		ImGuiRenderer::Initialize(hWnd, Graphics::Instance().GetDevice(), Graphics::Instance().GetDeviceContext());
 	}
 #endif
-	// ★ FileDialog を一括初期化（エディタ専用）
+	// FileDialog を一括初期化（エディタ専用）
 	//    プリセット登録 + 前回の履歴ロード（Build/User/EditorPrefs.json）がここで完結する。
 	//    ネイティブのファイル選択ダイアログはエディタ機能なので、Shipping では初期化しない
 	//    （＝EditorPrefs.json を生成しない）。
@@ -203,7 +203,7 @@ Framework::~Framework()
 #ifdef ENABLE_EDITOR
     {
         ZoneScopedN("Finalize:  SaveFileDialogHistory");
-        // ★ ダイアログ履歴を保存（エディタ専用。Shipping では初期化もしないので保存もしない）
+        // ダイアログ履歴を保存（エディタ専用。Shipping では初期化もしないので保存もしない）
         FileDialog::SaveHistory();
     }
 #endif
@@ -281,7 +281,7 @@ void Framework::Update(float elapsedTime)
 		ZoneScopedN("Framework::EditorUpdate");
 
 
-		// ★ 重要: 現在アクティブなシーンの情報をエディタに供給する（オブザーバー的アプローチ）
+		// 重要: 現在アクティブなシーンの情報をエディタに供給する（オブザーバー的アプローチ）
 		// ※ SceneManager に GetCurrentScene() などのアクセス関数を追加する必要があります
 		auto* currentScene = SceneManager::Instance().GetCurrentScene();
 		if (currentScene) {
@@ -307,7 +307,7 @@ void Framework::Update(float elapsedTime)
 void Framework::Render(float elapsedTime)
 {
 	// =========================================================
-	// ★ 究極の修正: 【一番最初】にTracyを回収する
+	// 究極の修正: 【一番最初】にTracyを回収する
 	// 前フレームの Present と Flush から最も時間が経過しているこの瞬間が、
 	// GPUのタイムスタンプ書き込みが完了している確率が最も高い安全地帯です。
 	// =========================================================
@@ -360,7 +360,7 @@ void Framework::Render(float elapsedTime)
 		// =========================================================
 		// 2. エディタ(UI)の描画（実際の画面＝バックバッファへ）
 		// =========================================================
-		// ★ false を渡して行き先をモニターに出力する実際の画面に戻す
+		// false を渡して行き先をモニターに出力する実際の画面に戻す
 		Graphics::Instance().Clear(0.1f, 0.1f, 0.1f, 1.0f, false);
 		Graphics::Instance().SetRenderTargets(false);
 
@@ -387,7 +387,7 @@ void Framework::Render(float elapsedTime)
 
 			// ゲームUIの後に、覆いかぶさるようにエディタUIを描画する
 			if (m_editorWindowManager) {
-				// ★ ここで完成したゲーム画面のテクスチャをUIに渡す！
+				// ここで完成したゲーム画面のテクスチャをUIに渡す！
 				m_editorContext.gameSRV = (void*)Graphics::Instance().GetGameSRV();
 
 				// デバッグ表示（Render Debug ウィンドウ）へ device レベルの SRV を登録する。
@@ -423,7 +423,7 @@ void Framework::Render(float elapsedTime)
 			const bool allowPlatformWindows =
 			    m_editorWindowManager &&
 			    m_editorWindowManager->IsVisible() &&
-			    m_editorContext.renderExternalWindows; // ★ pause縛りを外し、UI表示中は常に外部ウィンドウを描画
+			    m_editorContext.renderExternalWindows; // pause縛りを外し、UI表示中は常に外部ウィンドウを描画
 			ImGuiRenderer::SetPlatformWindowsEnabled(allowPlatformWindows);
 
 			// IMGUI描画
@@ -435,16 +435,16 @@ void Framework::Render(float elapsedTime)
 #endif
 
 	{
-        // ★超重要: GPUの描画待ち（VSync同期）の時間を計測
+        // 超重要: GPUの描画待ち（VSync同期）の時間を計測
         ZoneScopedN("Graphics::Present (VSync Wait)");
 		
 		// 画面表示
 		if (Graphics::Instance().Present(syncInterval)) {
-			// ★ 成功時のみ: GPUのキューを確実に押し出す
+			// 成功時のみ: GPUのキューを確実に押し出す
 			if (dc) dc->Flush();
 		}
 		else {
-			// ★ 失敗時(デバイスロスト等): 絶対に Flush や Collect を呼んではいけない
+			// 失敗時(デバイスロスト等): 絶対に Flush や Collect を呼んではいけない
 			// ① GPU リソース再構築
 			Graphics::Instance().RecoverFromDeviceLost();
 			// ② 現在のシーンに通知
@@ -546,7 +546,7 @@ int Framework::Run()
 			m_editorContext.stepOneFrame = false; // 要求は毎フレーム消費（連続送りはキー側のedge検出で防ぐ）
 #endif
 
-			// ★ ゲームのポーズ（PauseSystem）でも世界の時計は止まる。エディタ非依存・Shipping対応の
+			// ゲームのポーズ（PauseSystem）でも世界の時計は止まる。エディタ非依存・Shipping対応の
 			//   ため、engine層の TimeContext.isPaused を見て logicFrozen に合流させる。これを入れないと
 			//   accumulator だけ実時間で溜まり、alpha が 0↔1 に揺れて prev/current の固定姿勢を往復補間し、
 			//   ポーズ中なのにキャラ/パーティクルが「震える」。（上の解説コメント参照）
@@ -556,7 +556,7 @@ int Framework::Run()
 						pausedWorld->GetResource<TimeContext>().isPaused)
 						logicFrozen = true;
 
-			// ★ ポーズメニューの QUIT 要求をメインスレッドで消化する。
+			// ポーズメニューの QUIT 要求をメインスレッドで消化する。
 			//   システムの Update はジョブスケジューラ経由でワーカースレッドで走りうるため、
 			//   PostQuitMessage を各システムから直接呼ぶと WM_QUIT が別スレッドのキューに積まれ、
 			//   このメインループ(PeekMessage)が拾えず終了しない。フラグ経由で必ずここ(main)で呼ぶ。
@@ -598,7 +598,7 @@ int Framework::Run()
 			}
 
 			// ===========================================================================
-			// ★ あなたの提案による中央集権型シーン操作回路
+			// あなたの提案による中央集権型シーン操作回路
 			//   誰も世界の処理を始めていないこのクリーンな瞬間に対処することで、
 			//   以降の FixedUpdate, Update, Render は一貫して「新しい世界」を走る。
 			// ===========================================================================
@@ -694,14 +694,14 @@ int Framework::Run()
 
 			
 			// ===============================================================
-            // ★ 描画補間係数の算出とWorldへの供給
+            // 描画補間係数の算出とWorldへの供給
             //   accumulator / FIXED_DT = 次の物理ステップに対してどれだけ「先読み」しているか
             // ===============================================================
             if (auto *currentScene = SceneManager::Instance().GetCurrentScene())
             {
                 if (auto *world = currentScene->GetWorld())
                 {
-                    // ★ 規約準拠：必ず HasResource でガードしてから参照更新（O(1)・ヒープ確保なし）
+                    // 規約準拠：必ず HasResource でガードしてから参照更新（O(1)・ヒープ確保なし）
                     if (world->HasResource<RenderInterpState>())
                     {
                         // 一時停止中は補間せず最新の確定姿勢(alpha=1)を表示して震えを止める
@@ -730,7 +730,7 @@ int Framework::Run()
 // メッセージハンドラ
 LRESULT CALLBACK Framework::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-    // ★ OSからのメッセージ処理がスパイクの原因になることもあるため追跡
+    // OSからのメッセージ処理がスパイクの原因になることもあるため追跡
     ZoneScopedN("Framework::HandleMessage");
 
 #ifdef ENABLE_EDITOR

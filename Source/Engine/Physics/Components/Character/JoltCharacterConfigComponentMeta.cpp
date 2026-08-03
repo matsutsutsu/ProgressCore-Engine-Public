@@ -11,7 +11,7 @@
 // ===========================================================================
 COMPONENT_META_BEGIN_FULL(JoltCharacterConfigComponent, "Jolt Character Config", CCL::Categories::Physics, 205, false)
 
-// ★presence プロキシの物理レイヤー（剛体と同じ LayerNames を共有）
+// presence プロキシの物理レイヤー（剛体と同じ LayerNames を共有）
 CFIELD_ENUM_U8(objectLayer, "オブジェクトレイヤー", PhysicsLayers::LayerNames, PhysicsLayers::LayerCount, "物理")
 
 CFIELD_FLOAT_RANGED(maxSlopeAngle, "最大登坂角度(度)", 1.0f, 0.0f, 90.0f, "移動制限")

@@ -96,7 +96,7 @@ void SceneInitializer::SpawnModelGridTest(
         MaterialComponent
     >();
 
-    // 3. モデルデータのキャッシュ（★アーキテクトの極意）
+    // 3. モデルデータのキャッシュ（アーキテクトの極意）
     // ループの中で毎回 SetModel を呼ぶと、数万回もパスの検索とロードが走ってしまいます。
     // そのため、あらかじめ1つだけ「マスターとなる ModelComponent」を作り、使い回します。
     ModelComponent baseModelComp;
@@ -153,7 +153,7 @@ void SceneInitializer::SpawnECSBenchmarkTest(CCL::ECS::World &world, ID3D11Devic
         // 宇宙の星屑をイメージした青紫系のカラー
         e.Set(PrimitiveComponent{.type = PrimitiveType::Sphere, .color = {distColor(gen) * 0.5f, distColor(gen) * 0.5f, 1.0f, 1.0f}});
 
-        // ★修正: 不変データ（初期角度と半径）だけをセットする
+        // 不変データ（初期角度と半径）だけをセットする
         e.Set(OrbitBenchmarkComponent{
             .phaseOffset = distAngle(gen),
             .radius      = distRadius(gen)});
@@ -168,7 +168,7 @@ void SceneInitializer::SpawnVoxelOceanTest(
     // 1. アーキタイプの生成（圧倒的スピードでメモリを確保）
     const auto oceanArch = CCL::ECS::ArchetypeHelper::Generate<
         TransformComponent,
-        PrimitiveComponent,   // ★ ModelComponent から PrimitiveComponent に変更
+        PrimitiveComponent,   // ModelComponent から PrimitiveComponent に変更
         VoxelOceanComponent   // 海の波計算用
     >();
 
@@ -194,7 +194,7 @@ void SceneInitializer::SpawnVoxelOceanTest(
                     .rotation = {0,0,0,1},
                     .scale = {0.8f, 0.8f, 0.8f} // spacingより少し小さくして隙間を空けると綺麗です
                 })
-                // ★ PrimitiveComponentでBox(キューブ)を指定して色をセット
+                // PrimitiveComponentでBox(キューブ)を指定して色をセット
                 .Set(PrimitiveComponent{ 
                     .type = PrimitiveType::Box, 
                     .size = {1.0f, 1.0f, 1.0f}, 

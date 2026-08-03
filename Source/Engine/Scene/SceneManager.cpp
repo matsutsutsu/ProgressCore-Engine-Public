@@ -15,7 +15,7 @@
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Graphics/Renderer/Sprite.h"
 
-// ★ ロード前検証（破壊前のファイル存在確認）に使用
+// ロード前検証（破壊前のファイル存在確認）に使用
 #include "Engine/Platform/Core/FileSystem.h"
 #include "Engine/Platform/Core/Logger.h"
 
@@ -80,7 +80,7 @@ void SceneManager::Update(float elapsedTime)
 
 	if (nextScene != nullptr)
 	{
-		// ★ シーン切替フレーム（起動直後もここ）。重い初期化が集中するので個別に計測する。
+		// シーン切替フレーム（起動直後もここ）。重い初期化が集中するので個別に計測する。
 		ZoneScopedN("SceneManager: Scene Switch");
 
 		//古いシーンを終了処理
@@ -178,7 +178,7 @@ void SceneManager::SaveScene(CCL::ECS::World* world, const std::string& filepath
 void SceneManager::LoadScene(CCL::ECS::World* world, const std::string& filepath)
 {
     // ==========================================================
-    // 0. 事前検証 (★破壊する前にロード可能か確かめる)
+    // 0. 事前検証 (破壊する前にロード可能か確かめる)
     //   本関数は「全破壊 → デシリアライズ」の順で動く。
     //   ファイルが欠損/空だと破壊だけ実行され、ワールドが丸ごと消滅する。
     //   （Play-In-Editor で Play 前に Stop を押し、バックアップ未作成のまま
@@ -235,7 +235,7 @@ void SceneManager::LoadScene(CCL::ECS::World* world, const std::string& filepath
 
     // ==========================================================
     // 3. シーン構築
-    //   ★ 旧版にあった「手動 ID リマップ」ブロックを削除。
+    //   旧版にあった「手動 ID リマップ」ブロックを削除。
     //
     //   削除した理由:
     //     - SerializationContext::GetIdMap() はそもそも実装されていなかった仮コード

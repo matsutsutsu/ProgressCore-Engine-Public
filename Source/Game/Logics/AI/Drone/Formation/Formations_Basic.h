@@ -71,7 +71,7 @@ struct HighOrbitFormation : public IFormation
         const float r = kOrbitRadius;
 
         Vector3 offset(std::cos(angle) * r, 0.0f, std::sin(angle) * r);
-        offset.y = kHighOrbitHeight; // ★ ボスの頭上高く（地上の間合いを塞がない）
+        offset.y = kHighOrbitHeight; // ボスの頭上高く（地上の間合いを塞がない）
 
         drone.targetPosition = ctx.bossPos + offset;
 

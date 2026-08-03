@@ -34,6 +34,6 @@ public:
     // 前回作ったジオメトリ収集関数（privateにしてもOKです）
     static NavMeshBuildData GatherGeometry(CCL::ECS::World& world);
 
-    // ★今回追加するBake本体関数
+    // 今回追加するBake本体関数
     static bool BuildNavMesh(CCL::ECS::World& world, const NavMeshBuildSettings& settings);
 };

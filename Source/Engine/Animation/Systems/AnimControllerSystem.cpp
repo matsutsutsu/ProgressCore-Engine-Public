@@ -28,7 +28,7 @@ static bool IsInCancelWindow(const AnimatorComponent &animator, uint32_t require
             ev.type != AnimEventType::CancelWindow)
             continue;
 
-        // ★ DODの極み: 窓のマスクと、遷移が要求するマスクのビットが「1つでも」被っていればOK
+        // DODの極み: 窓のマスクと、遷移が要求するマスクのビットが「1つでも」被っていればOK
         if ((ev.cancelMask & requiredMask) == 0)
             continue;
 
@@ -128,10 +128,10 @@ void AnimControllerSystem::Update(float dt)
                               AnimStateMachineComponent &fsm,
                               AnimatorComponent         &animator,
                               AnimParametersComponent   &params,
-                              const TimeStateComponent  &time) { // ★ TimeStateComponent を追加
+                              const TimeStateComponent  &time) { // TimeStateComponent を追加
         if (animator.isEditorOverride) return;
 
-        // ★★★ コアロジック: ステート評価の前に、先行入力バッファの寿命を削ぎ落とす ★★★
+        // コアロジック: ステート評価の前に、先行入力バッファの寿命を削ぎ落とす 
         // time.localDt を使うことで、ヒットストップやスローモーション中も完璧に同期する
         params.TickTriggers(time.localDt);
 
@@ -165,11 +165,11 @@ void AnimControllerSystem::Update(float dt)
         auto EvaluateTransitions = [&](const std::vector<AnimTransition> &transitions, bool isAnyState) -> bool {
             for (const auto &transition : transitions)
             {
-                // ★ DOD/FSMの定石: Any Stateからの遷移の場合、自分自身への遷移は無視する（無限ループ防止）
+                // DOD/FSMの定石: Any Stateからの遷移の場合、自分自身への遷移は無視する（無限ループ防止）
                 if (isAnyState && transition.targetStateHash == fsm.currentStateHash)
                     continue;
 
-               // ★ ビットマスク版の判定関数を呼び出す
+               // ビットマスク版の判定関数を呼び出す
                 if (!IsInCancelWindow(animator, transition.requiredCancelMask)) continue;
 
                 bool allConditionsMet = true;
@@ -232,10 +232,10 @@ void AnimControllerSystem::Update(float dt)
             return false; // 条件を満たす遷移が無かった
         };
 
-        // ★ 優先度1: まず Any State の遷移リストをチェックする (割り込み判定)
+        // 優先度1: まず Any State の遷移リストをチェックする (割り込み判定)
         if (!EvaluateTransitions(fsm.internalGraph.anyStateTransitions, true))
         {
-            // ★ 優先度2: 割り込みが無ければ、現在のステートの遷移リストをチェックする
+            // 優先度2: 割り込みが無ければ、現在のステートの遷移リストをチェックする
             EvaluateTransitions(currentState->transitions, false);
         }
 

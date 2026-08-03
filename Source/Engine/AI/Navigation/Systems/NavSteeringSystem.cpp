@@ -72,7 +72,7 @@ void NavSteeringSystem::Update(float dt) {
                 Quaternion targetRot = Quaternion::CreateFromAxisAngle(Vector3::UnitY, targetYaw);
 
 
-                // ★フレーム落ちした際に係数が1.0を超えて逆回転するのを防ぐ
+                // フレーム落ちした際に係数が1.0を超えて逆回転するのを防ぐ
                 float slerpAmount = (std::min)(10.0f * dt, 1.0f);
                 transform.rotation = Quaternion::Slerp(transform.rotation, targetRot, slerpAmount);
 

@@ -27,7 +27,7 @@ private:
     // 2. 個数を指定できるパフォーマンステスト
     struct CountTest {
         std::string name;
-        int count; // ★ UIで操作するための変数
+        int count; // UIで操作するための変数
         std::function<void(CCL::ECS::World&, ID3D11Device*, int)> callback;
     };
 

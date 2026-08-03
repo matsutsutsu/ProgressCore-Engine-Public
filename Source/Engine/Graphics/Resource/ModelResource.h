@@ -186,7 +186,7 @@ public:
 	const std::vector<Mesh>& GetMeshes() const { return meshes; }
 	const std::vector<Node>& GetNodes() const { return nodes; }
 	const std::vector<Animation>& GetAnimations() const { return animations; }
-        // ★追加: 書き込み可能 (エディタ用)
+        // 書き込み可能 (エディタ用)
         std::vector<Animation>      &GetAnimationsMutable() { return animations; }
 	const std::vector<Material>& GetMaterials() const { return materials; }
 

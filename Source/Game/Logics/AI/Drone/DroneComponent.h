@@ -33,7 +33,7 @@ enum class DroneFormationType : uint8_t {
 
 
 
-    // ★ 第2形態用・新規フォーメーション
+    // 第2形態用・新規フォーメーション
     HighLowOrbit,      ///< 【双層の輪廻】偶数・奇数で高さが分かれる2段円陣
     CrossHelix,        ///< 【交差螺旋】2群に分かれて逆回転する弾幕陣形
     KamikazeSwarm,      ///< 【暴雨の号令】息もつかせぬ超連続カミカゼ突撃

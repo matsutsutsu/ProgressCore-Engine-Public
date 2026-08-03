@@ -17,7 +17,7 @@ void PlayerLockOnSystem::Update(float /*dt*/)
         
         // ===================================================================
         // 1. ロックオン対象がすでに死亡、または世界から消滅している場合は自動解除（安全ハック）
-        // ★修正: Exists ではなく IsEntityValid を使用する
+        // Exists ではなく IsEntityValid を使用する
         // ===================================================================
         if (player.lockOnTargetID != InvalidEntityID)
         {

@@ -27,7 +27,7 @@ NavMeshBuildData NavMeshBuilder::GatherGeometry(CCL::ECS::World& world) {
         // 安全のためのnullチェック
         if (!transform || !modelComp) continue;
 
-        // ★アーキテクチャの要：動くもの（キャラクター等）はNavMeshに焼き付けない
+        // アーキテクチャの要：動くもの（キャラクター等）はNavMeshに焼き付けない
         if (!transform->isStatic) {
             continue;
         }
@@ -198,7 +198,7 @@ bool NavMeshBuilder::BuildNavMesh(CCL::ECS::World& world, const NavMeshBuildSett
     for (int i = 0; i < pmesh->npolys; ++i) {
         if (pmesh->areas[i] == RC_WALKABLE_AREA) {
             pmesh->areas[i] = 0; // Detourのデフォルトエリア（0）として扱う
-            pmesh->flags[i] = 1; // ★これが超重要！ 1 (0x01) を設定しないとフィルターで無視される
+            pmesh->flags[i] = 1; // これが超重要！ 1 (0x01) を設定しないとフィルターで無視される
         }
     }
 
@@ -275,7 +275,7 @@ bool NavMeshBuilder::BuildNavMesh(CCL::ECS::World& world, const NavMeshBuildSett
     rcFreePolyMesh(pmesh);
     rcFreePolyMeshDetail(dmesh);
 
-    // ★重要: この navData (と navDataSize) が、ファイルにセーブすべき「完成品」です。
+    // 重要: この navData (と navDataSize) が、ファイルにセーブすべき「完成品」です。
     // 今はテストのため、そのままランタイム用の dtNavMesh を作ってみます。
 
     dtNavMesh* runtimeNavMesh = dtAllocNavMesh();

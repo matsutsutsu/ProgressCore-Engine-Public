@@ -231,7 +231,7 @@ void GamePad::SetVibration(float left, float right, float duration)
 // =================================================================
 void GamePad::ApplyVibrationHardware(float left, float right)
 {
-    ZoneScopedN("GamePad::ApplyVibrationHardware"); // ★ モーター制御の負荷追跡
+    ZoneScopedN("GamePad::ApplyVibrationHardware"); // モーター制御の負荷追跡
 
 	// 1. 安全確保 (フェイルセーフ)
 	// 外部から 1.5f や -0.5f などの異常値が送られてきた場合に備え、

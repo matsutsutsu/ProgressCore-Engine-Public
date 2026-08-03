@@ -46,7 +46,7 @@ struct MaterialColor {
 struct MaterialTextureRef {
     uint32_t nameHash;
     TextureHandle handle;  // 実行時のみ有効
-    std::string assetPath; // ★保存用（ファイルパス）
+    std::string assetPath; // 保存用（ファイルパス）
 };
 
 // 完全に連続したメモリレイアウトを持つ新生 MaterialData

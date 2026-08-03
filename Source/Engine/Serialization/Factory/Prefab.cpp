@@ -144,7 +144,7 @@ namespace Prefab {
                     world.AddComponent<PooledParticleComponent>(id, newComp); // 遅延適用
                 }
             }
-            // ★ 新規追加分を確定させてから手順2・3で読む (拡張時のみの稀パスなので安価)
+            // 新規追加分を確定させてから手順2・3で読む (拡張時のみの稀パスなので安価)
             world.ScrutinyAndApply();
         }
 

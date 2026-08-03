@@ -33,7 +33,7 @@ ComponentGuiRegistry &ComponentGuiRegistry::Instance()
 void ComponentGuiRegistry::Draw(
     TypeID id, void* data, EntityID entity, CCL::ECS::World* world)
 {
-    ResolveBindings(); // ★追加: 描画する直前に、IDマップが未完成なら完成させる
+    ResolveBindings(); // 描画する直前に、IDマップが未完成なら完成させる
 
     auto idIt = m_typeIdToIndex.find(id);
     if (idIt == m_typeIdToIndex.end()) {

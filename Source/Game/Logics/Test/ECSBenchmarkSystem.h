@@ -6,7 +6,7 @@
 
 class ECSBenchmarkSystem : public CCL::ECS::IfSystem<ECSBenchmarkSystem,
                                CCL::ECS::Write<TransformComponent>,
-                               CCL::ECS::Read<OrbitBenchmarkComponent>> // ★ 自身は書き換えないのでRead権限！
+                               CCL::ECS::Read<OrbitBenchmarkComponent>> // 自身は書き換えないのでRead権限！
 {
   public:
     // GUIから調整可能な共通パラメータ群

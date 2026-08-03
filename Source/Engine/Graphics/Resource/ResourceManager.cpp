@@ -130,7 +130,7 @@ TextureHandle ResourceManager::RegisterTexture(Microsoft::WRL::ComPtr<ID3D11Shad
     if (!srv) return TextureHandle{};
 
     // ==========================================================
-    // ★ 抜け道(裏口)から登録された SRV にも名札を付ける！
+    // 抜け道(裏口)から登録された SRV にも名札を付ける！
     // ==========================================================
     SetDebugName(srv.Get(), "RegisteredTexture_UnknownSource");
 
@@ -440,7 +440,7 @@ const AnimSequence *ResourceManager::ReloadAnimSequence(const char *filename)
     // まだ一度もロードされていなければ、通常ロードに任せる（新規キャッシュ生成）。
     if (!seq)
     {
-        // ★ ここに来る＝「キャッシュキーが見つからなかった」ということ。
+        // ここに来る＝「キャッシュキーが見つからなかった」ということ。
         //   保存前に既に同じファイルがどこかで読み込まれているはずなのに毎回ここに来る場合、
         //   Sequencerの保存パスとゲーム側が参照しているパス文字列がズレている（別ファイル
         //   として扱われている）可能性が高い。m_debugNameRegistry と見比べて確認できる。
@@ -459,7 +459,7 @@ const AnimSequence *ResourceManager::ReloadAnimSequence(const char *filename)
     try
     {
         nlohmann::json j = nlohmann::json::parse(jsonStr);
-        *seq             = j.get<AnimSequence>(); // ★ 同一インスタンスへ上書き
+        *seq             = j.get<AnimSequence>(); // 同一インスタンスへ上書き
     }
     catch (const std::exception &e)
     {

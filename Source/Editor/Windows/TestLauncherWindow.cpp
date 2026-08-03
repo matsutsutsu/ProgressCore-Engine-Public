@@ -77,7 +77,7 @@ void TestLauncherWindow::DrawContents(EditorContext& context)
             }
             ImGui::SameLine();
 
-            // ★ 個数を弄れるスライダー
+            // 個数を弄れるスライダー
             ImGui::SetNextItemWidth(120.0f);
             ImGui::DragInt("Count", &test.count, 10.0f, 1, 1000000);
 

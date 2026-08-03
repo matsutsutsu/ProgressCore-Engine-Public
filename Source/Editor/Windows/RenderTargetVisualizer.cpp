@@ -169,7 +169,7 @@ ID3D11ShaderResourceView* RenderTargetVisualizer::Visualize(ID3D11DeviceContext*
     PipelineStateBackup backup;
     backup.Save(dc);
 
-    // ★重要: 出力ステージ(RTV/DSV)を SRV バインドより前に完全に空にする。
+    // 重要: 出力ステージ(RTV/DSV)を SRV バインドより前に完全に空にする。
     // GraphicsDevice::SetRenderTargets() はエディタUI描画中も深度バッファを
     // DSV として常時バインドし続けており、SceneDepth を可視化する際 src が
     // その DSV と "同一リソース" になりうる。DSV を外さないまま同じリソースを

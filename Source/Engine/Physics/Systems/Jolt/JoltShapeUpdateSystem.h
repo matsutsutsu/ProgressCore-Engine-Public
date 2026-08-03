@@ -35,7 +35,7 @@ class JoltCapsuleShapeUpdateSystem : public CCL::ECS::IfSystem<JoltCapsuleShapeU
                                          CCL::ECS::Write<JoltCapsuleColliderComponent>> {
 public:
     JoltCapsuleShapeUpdateSystem() : IfSystem("JoltCapsuleShapeUpdateSystem") {
-        // ★キャラの presence プロキシは CharacterSetup が「足元オフセット付き」で作る。
+        // キャラの presence プロキシは CharacterSetup が「足元オフセット付き」で作る。
         //   このシステムは capsule.localOffset を使うため、キャラに適用すると
         //   CharacterVirtual と形状がズレる。よってキャラは除外する。
         SetExclude<JoltCharacterHandleComponent>();

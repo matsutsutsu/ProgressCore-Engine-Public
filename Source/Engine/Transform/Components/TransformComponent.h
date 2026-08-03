@@ -24,7 +24,7 @@ struct TransformComponent {
     DirectX::XMFLOAT3   scale       = {1, 1, 1};    // 親からの相対サイズ (Local Scale)
 
 
-    // ★ 描画補間用（Fix Your Timestepパターン）
+    // 描画補間用（Fix Your Timestepパターン）
     /**
      * @brief 直前のFixedUpdate確定時点でのローカル位置。
      * @note TransformSnapshotSystem が毎FixedUpdateの先頭で position をここへ退避する。
@@ -46,7 +46,7 @@ struct TransformComponent {
     bool isTeleported = false;
 
     // =========================================================
-    // ★ 状態管理フラグ
+    // 状態管理フラグ
     // =========================================================
     /**
      * @brief 行列の再計算を強制するフラグ。
@@ -71,7 +71,7 @@ struct TransformComponent {
     // =========================================================
     // 親子関係データ
     //
-    // ★ parentID だけ EntityLink に変更。
+    // parentID だけ EntityLink に変更。
     //   これによりシリアライザが自動でローカルインデックス変換を行う。
     //
     // firstChildID / prevSiblingID / nextSiblingID は
@@ -82,7 +82,7 @@ struct TransformComponent {
     //   → もしくは Fields() に含めなければ最初からスキップ。
     //     (現状実装では Fields() に含めない方が明快)
     // =========================================================
-    CCL::Serialization::EntityLink parent;         // ★ 保存対象: 親エンティティ参照
+    CCL::Serialization::EntityLink parent;         // 保存対象: 親エンティティ参照
 
     CCL::ECS::EntityID firstChildID  = 0; // 最初の子 (リストの先頭)
     CCL::ECS::EntityID prevSiblingID = 0; // 前の兄弟
@@ -104,7 +104,7 @@ struct TransformComponent {
 
 
     // =========================================================
-    // ★開発体験(DX)を最高にするための直感的Setter
+    // 開発体験(DX)を最高にするための直感的Setter
     // =========================================================
     void SetPosition(const DirectX::XMFLOAT3 &newPos) {
       position = newPos;

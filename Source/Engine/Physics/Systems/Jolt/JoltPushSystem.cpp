@@ -33,7 +33,7 @@ void JoltPushSystem::Update(float dt) {
         
         JPH::RVec3 joltPos(worldPos.x, worldPos.y, worldPos.z);
         JPH::Quat  joltRot(worldRot.x, worldRot.y, worldRot.z, worldRot.w);
-        joltRot = joltRot.Normalized(); // ★超重要: わずかな計算誤差でもJoltは荒ぶるため必ず正規化する
+        joltRot = joltRot.Normalized(); // 超重要: わずかな計算誤差でもJoltは荒ぶるため必ず正規化する
 
         // ====================================================================
         // 処理A: フラグが立った時の「強制ワープ」
@@ -69,5 +69,5 @@ void JoltPushSystem::Update(float dt) {
       });
 }
 
-// ★物理計算の前にワープを完了させる
+// 物理計算の前にワープを完了させる
 REGISTER_LOGIC_SYSTEM(JoltPushSystem, Priority::LogicStage::L03_PrePhysics);

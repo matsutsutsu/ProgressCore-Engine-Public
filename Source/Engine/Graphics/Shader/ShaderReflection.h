@@ -151,12 +151,12 @@ namespace ShaderReflect
         template<typename T>
         bool SetValue(const std::string& varName, const T& value)
         {
-            // ★1: 変数の名前から、バッファ内の「位置(offset)」を探す
+            // 1: 変数の名前から、バッファ内の「位置(offset)」を探す
             const VariableInfo *varInfo = bufferInfo.FindVariable(varName);
             if (!varInfo) return false;
             if (sizeof(T) > varInfo->size) return false;
 
-            // ★2: CPU側の作業台(cpuBuffer)の適切な位置に、データをメモリコピーする
+            // 2: CPU側の作業台(cpuBuffer)の適切な位置に、データをメモリコピーする
             memcpy(cpuBuffer.data() + varInfo->offset, &value, sizeof(T));
             isDirty = true; // 「更新されたよ」というフラグを立てる
             return true;
@@ -192,7 +192,7 @@ namespace ShaderReflect
         UINT GetBindPoint() const { return bufferInfo.bindPoint; }
         const ConstantBufferInfo& GetInfo() const { return bufferInfo; }
 
-        // ★追加: 構造体などの生データを直接セットする
+        // 構造体などの生データを直接セットする
         void SetRawData(const void *data, size_t size);
 
     private:

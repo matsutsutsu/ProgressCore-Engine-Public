@@ -9,7 +9,7 @@
 MemoryAnalyzerWindow::MemoryAnalyzerWindow()
     : EditorWindow("Memory Analyzer")
     , m_cachedTotalVram(0)
-    , m_updateTimer(0.2f) // ★修正1: メンバ初期化子リストの構文エラーを修正
+    , m_updateTimer(0.2f)
 {
 }
 
@@ -39,7 +39,7 @@ void MemoryAnalyzerWindow::DrawContents(EditorContext& context)
 
         // 重いアセット（VRAM消費量が多い順）に降順ソート
         std::sort(m_cachedTextures.begin(), m_cachedTextures.end(), [](const CachedAssetInfo& a, const CachedAssetInfo& b) {
-            return a.sizeBytes > b.sizeBytes; // ★修正2: 存在しないメンバ「second」へのアクセスを修正
+            return a.sizeBytes > b.sizeBytes;
             });
     }
 

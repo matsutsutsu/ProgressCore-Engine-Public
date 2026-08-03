@@ -6,7 +6,7 @@
 #include "CullingComponents.h"
 #include "Engine/Graphics/Components/Core/NoRenderTag.h" // 当たり判定専用ジオメトリ用タグ
 #include "Engine/Serialization/Meta/ComponentDefine.h"
-#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
+#include "Engine/Serialization/Meta/ComponentCategories.h"
 
 #ifdef ENABLE_EDITOR
 #include "Editor/Inspector/ComponentGuiRegistry.h"
@@ -20,8 +20,8 @@ template <> struct ComponentMeta<BoundingBoxComponent> {
     CCL_META_USING_THIS(BoundingBoxComponent)
 
     static constexpr const char* displayName    = "Bounding Box";
-    static constexpr const char* category       = CCL::Categories::Internal; // ★修正: 内部ステートとして隔離
-    static constexpr int         sortPriority   = 900; // ★追加: インスペクタの最下層へ
+    static constexpr const char* category       = CCL::Categories::Internal; // 内部ステートとして隔離
+    static constexpr int         sortPriority   = 900; // インスペクタの最下層へ
     static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui   = false; 
     static constexpr bool        isSerializable = false; 
@@ -50,8 +50,8 @@ template <> struct ComponentMeta<VisibilityComponent> {
     CCL_META_USING_THIS(VisibilityComponent)
 
     static constexpr const char* displayName    = "Visibility";
-    static constexpr const char* category       = CCL::Categories::Internal; // ★修正
-    static constexpr int         sortPriority   = 910; // ★追加
+    static constexpr const char* category       = CCL::Categories::Internal;
+    static constexpr int         sortPriority   = 910;
     static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui   = false; 
     static constexpr bool        isSerializable = false; 
@@ -76,7 +76,7 @@ REGISTER_COMPONENT_EDITOR_GUI(VisibilityComponent)
 // NoRenderTag
 //   「描画しない（当たり判定専用）」を表すタグ。付いていること自体が意味を持つ
 //   ためフィールドは持たない。見えない壁/床に使う。
-//   ★ 作者が付ける設定データなので isSerializable = true（シーン/プレハブに保存）。
+//   作者が付ける設定データなので isSerializable = true（シーン/プレハブに保存）。
 // ===========================================================================
 template <> struct ComponentMeta<NoRenderTag> {
     CCL_META_USING_THIS(NoRenderTag)
@@ -86,7 +86,7 @@ template <> struct ComponentMeta<NoRenderTag> {
     static constexpr int         sortPriority   = 920;
     static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui   = false;
-    static constexpr bool        isSerializable = true; // ★保存する（次回ロードでも透明のまま）
+    static constexpr bool        isSerializable = true; // 保存する（次回ロードでも透明のまま）
 
     static bool CustomGui(NoRenderTag&, unsigned long long, void*) { return false; }
 

@@ -7,7 +7,7 @@
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"
 #include "Engine/Physics/Components/Character/CharacterMovementInputComponent.h"
 
-// ※ 名前空間で囲まない (ガイドライン準拠)
+
 class PlayerInputSystem : public CCL::ECS::IfSystem<
     PlayerInputSystem,
     CCL::ECS::Write<CharacterMovementInputComponent>,

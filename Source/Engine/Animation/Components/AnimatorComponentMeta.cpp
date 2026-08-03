@@ -7,7 +7,7 @@
 #include "Engine/Animation/Components/AnimParametersComponent.h"
 #include "Engine/Graphics/Components/Core/ModelComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
-#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
+#include "Engine/Serialization/Meta/ComponentCategories.h"
 
 #include "Engine/Animation/Core/AnimGraphSerializer.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
@@ -29,7 +29,7 @@ struct ComponentMeta<AnimatorComponent>
     CCL_META_USING_THIS(AnimatorComponent)
 
     static constexpr const char *displayName       = "Animator";
-    static constexpr const char *category          = CCL::Categories::Animation; // ★修正
+    static constexpr const char *category          = CCL::Categories::Animation;
     static constexpr int         sortPriority      = 100;
     static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui      = true;
@@ -102,7 +102,7 @@ struct ComponentMeta<AnimStateMachineComponent>
     CCL_META_USING_THIS(AnimStateMachineComponent)
 
     static constexpr const char *displayName       = "Anim State Machine";
-    static constexpr const char *category          = CCL::Categories::Animation; // ★修正
+    static constexpr const char *category          = CCL::Categories::Animation;
     static constexpr int         sortPriority      = 105;
     static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui      = true;
@@ -219,7 +219,7 @@ template <>
 struct ComponentMeta<AnimParametersComponent>
 {
     static constexpr const char *displayName       = "Anim Parameters";
-    static constexpr const char *category          = CCL::Categories::Animation; // ★修正
+    static constexpr const char *category          = CCL::Categories::Animation;
     static constexpr int         sortPriority      = 120;
     static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui      = true;

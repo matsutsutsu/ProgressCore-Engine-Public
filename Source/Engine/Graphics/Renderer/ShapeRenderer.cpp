@@ -62,16 +62,16 @@ ShapeRenderer::ShapeRenderer(ID3D11Device* device)
     // 2. 深度ステート（Zテストはするが、Z書き込みは絶対にしない）※点滅防止の要
     D3D11_DEPTH_STENCIL_DESC dsDesc = {};
     dsDesc.DepthEnable = TRUE;
-    dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO; // ★書き込みOFF
+    dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO; // 書き込みOFF
     dsDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
     device->CreateDepthStencilState(&dsDesc, m_depthTestNoWriteState.GetAddressOf());
 
     // 3. ラスタライザステート（カリングOFF＝両面描画する）
     D3D11_RASTERIZER_DESC rsDesc = {};
     rsDesc.FillMode = D3D11_FILL_SOLID;
-    rsDesc.CullMode = D3D11_CULL_NONE; // ★裏面も描く
+    rsDesc.CullMode = D3D11_CULL_NONE; // 裏面も描く
     // =========================================================
-    // ★ここが点滅を完全に殺す魔法のパラメータ
+    // ここが点滅を完全に殺す魔法のパラメータ
     // =========================================================
     // 深度バッファの精度に対して、少しだけカメラ側に引き寄せる（マイナス値）
     rsDesc.DepthBias = -1000;            // 固定値のオフセット
@@ -85,7 +85,7 @@ ShapeRenderer::ShapeRenderer(ID3D11Device* device)
 
     // Zテストを無効化（常に上書き描画する）ステートの作成
     D3D11_DEPTH_STENCIL_DESC depthDesc = {};
-    depthDesc.DepthEnable = FALSE; // ★最重要: 深度テストをしない
+    depthDesc.DepthEnable = FALSE; // 最重要: 深度テストをしない
     depthDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO; // 深度バッファに書き込まない
     depthDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;     // 常にテスト通過
 
@@ -365,7 +365,7 @@ void ShapeRenderer::DrawTriangle(const DirectX::XMFLOAT3& v1, const DirectX::XMF
     DrawLine(v1, v2, color); DrawLine(v2, v3, color); DrawLine(v3, v1, color);
 }
 
-// ★最強のトリック：任意の3点を Transform 行列に変換して描画キューに積む
+// 任意の3点を Transform 行列に変換して描画キューに積む
 void ShapeRenderer::DrawSolidTriangle(const DirectX::XMFLOAT3& v0, const DirectX::XMFLOAT3& v1, const DirectX::XMFLOAT3& v2, const DirectX::XMFLOAT4& color)
 {
     using namespace DirectX;
@@ -382,7 +382,7 @@ void ShapeRenderer::DrawSolidTriangle(const DirectX::XMFLOAT3& v0, const DirectX
     // アフィン変換行列の構築
     XMMATRIX M;
     // ====================================================================
-    // ★大修正：XMVectorSelectの罠を避け、安全にW成分を設定する
+    // 大修正：XMVectorSelectの罠を避け、安全にW成分を設定する
     // ====================================================================
     M.r[0] = XMVectorSetW(X, 0.0f);  // X軸のベクトル (w=0)
     M.r[1] = XMVectorSetW(Y, 0.0f);  // Y軸のベクトル (w=0)
@@ -534,14 +534,14 @@ void ShapeRenderer::CreateBoneMesh(ID3D11Device* device, float length) {
 // ==========================================
 void ShapeRenderer::CreateTriangleFaceMesh(ID3D11Device* device)
 {
-    // ★大修正：余計な Normal などを一切省き、他の図形と全く同じ XMFLOAT3 (12バイト) だけにする！
+    // 大修正：余計な Normal などを一切省き、他の図形と全く同じ XMFLOAT3 (12バイト) だけにする！
     std::vector<DirectX::XMFLOAT3> vertices = {
         DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f),
         DirectX::XMFLOAT3(0.0f, 0.0f, 1.0f),
         DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f)
     };
 
-    // ★あなたのエンジンに既に用意されている、安全なバッファ生成関数を使う
+    // あなたのエンジンに既に用意されている、安全なバッファ生成関数を使う
     CreateMesh(device, vertices, triangleFaceMesh);
 }
 
@@ -618,7 +618,7 @@ void ShapeRenderer::Render(ID3D11DeviceContext* dc, const DirectX::XMFLOAT4X4& v
     DrawInstanced(boneMesh, &ShapeDrawList::bones);
     DrawInstanced(lineMesh, &ShapeDrawList::lines); // デバッグで数万本出ても全く落ちない
     // =========================================================================
-      // ★ここから下を丸ごと書き換えます（面を描く直前の最強ステート適用）
+      // 面を描く直前のレンダーステート適用
       // =========================================================================
 
       // 1. 他の描画に影響を与えないよう、現在のステートを退避

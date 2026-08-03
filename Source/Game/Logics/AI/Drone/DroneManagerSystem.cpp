@@ -217,7 +217,7 @@ int DroneManagerSystem::SpawnDrones(int count)
         }
     }
 
-    // ★スポーン後：全ドローンに localIndex / totalDrones を振り直す
+    // スポーン後：全ドローンに localIndex / totalDrones を振り直す
     //   （既存＋新規をまとめて連番にしないと円が歪む）
     ReindexAllDrones();
 

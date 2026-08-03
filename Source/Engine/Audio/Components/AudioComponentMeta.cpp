@@ -3,7 +3,7 @@
 
 #include "Engine/Audio/Components/AudioEmitterComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
-#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
+#include "Engine/Serialization/Meta/ComponentCategories.h"
 #include "Engine/Core/Math/StringHash.h"
 
 #ifdef ENABLE_EDITOR
@@ -22,7 +22,7 @@ struct ComponentMeta<AudioEmitterComponent>
     CCL_META_USING_THIS(AudioEmitterComponent)
 
     static constexpr const char *displayName       = "Audio Emitter";
-    static constexpr const char *category          = CCL::Categories::Audio; // ★修正
+    static constexpr const char *category          = CCL::Categories::Audio;
     static constexpr int         sortPriority      = 400;
     static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui      = true;

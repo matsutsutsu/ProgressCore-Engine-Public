@@ -120,7 +120,7 @@ void ConsoleWindow::DrawContents(EditorContext& /*context*/)
     ImGui::Separator();
 
     // ====================================================================
-    // ★ 究極の修正: 毎フレームの Snapshot (ディープコピー) を防ぐキャッシュ機構
+    // 究極の修正: 毎フレームの Snapshot (ディープコピー) を防ぐキャッシュ機構
     // ====================================================================
     static std::vector<LogMessage> s_cachedMessages;
     static std::vector<int>        s_cachedFiltered;
@@ -160,14 +160,14 @@ void ConsoleWindow::DrawContents(EditorContext& /*context*/)
     }
 
     // ====================================================================
-    // ★ 追加: スクロール可能なログ領域の開始（これが消えていたのが原因）
+    // スクロール可能なログ領域の開始
     // ====================================================================
     ImGui::BeginChild("LogScrollRegion", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
 
     // --------------------------------------------------------------------
     // 5. 描画 (Clipper で高速化)
     // --------------------------------------------------------------------
-    // ★ 以降の描画処理は、毎フレーム計算するのではなく、キャッシュされた s_cachedFiltered と s_cachedMessages を使う
+    // 以降の描画処理は、毎フレーム計算するのではなく、キャッシュされた s_cachedFiltered と s_cachedMessages を使う
     ImGuiListClipper clipper;
     clipper.Begin(static_cast<int>(s_cachedFiltered.size()));
     while (clipper.Step())

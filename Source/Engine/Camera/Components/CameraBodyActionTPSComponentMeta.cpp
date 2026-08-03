@@ -3,7 +3,7 @@
 
 #include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
-#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
+#include "Engine/Serialization/Meta/ComponentCategories.h"
 
 #include <string>
 #include <algorithm> 
@@ -23,8 +23,8 @@ struct ComponentMeta<CameraBodyTPSComponent>
     CCL_META_USING_THIS(CameraBodyTPSComponent)
 
     static constexpr const char *displayName    = "Camera Body Action TPS";
-    static constexpr const char *category       = CCL::Categories::Camera; // ★追加
-    static constexpr int         sortPriority   = 350; // ★追加
+    static constexpr const char *category       = CCL::Categories::Camera;
+    static constexpr int         sortPriority   = 350;
     static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui   = true;
     static constexpr bool        isSerializable = true;
@@ -116,7 +116,7 @@ struct ComponentMeta<CameraBodyTPSComponent>
         return changed;
     }
 #else
-    // ★ 修正: 構造体名(CameraBodyTPSComponent)と完全に一致させること！
+    // 構造体名(CameraBodyTPSComponent)と完全に一致させること！
     static bool CustomGui(CameraBodyTPSComponent &, unsigned long long, void *) { return false; }
 #endif
 
@@ -166,6 +166,6 @@ struct ComponentMeta<CameraBodyTPSComponent>
     }
 };
 
-// ★修正: カテゴリを "Camera"（生文字）から "CameraBodyTPS" などの正式な識別子名に変更
+// カテゴリを "Camera"（生文字）から "CameraBodyTPS" などの正式な識別子名に変更
 REGISTER_COMPONENT(CameraBodyTPSComponent, "CameraBodyTPS")
 REGISTER_COMPONENT_EDITOR_GUI(CameraBodyTPSComponent)

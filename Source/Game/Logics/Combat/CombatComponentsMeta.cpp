@@ -13,7 +13,7 @@
 
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
-#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
+#include "Engine/Serialization/Meta/ComponentCategories.h"
 
 #ifdef ENABLE_EDITOR
 #include "Editor/Inspector/ComponentGuiRegistry.h"
@@ -25,7 +25,7 @@ using json = nlohmann::json;
 
 // ===========================================================================
 // 1. Hitbox / Hurtbox
-// ★修正: Combat カテゴリへの明示的配置
+// Combat カテゴリへの明示的配置
 // ===========================================================================
 COMPONENT_META_BEGIN_FULL(HitboxComponent, "Hitbox", CCL::Categories::Combat, 170, false)
     CFIELD_FLOAT_RANGED(damageAmount, "ダメージ量", 1.0f, 0.0f, 9999.0f, "基本")
@@ -46,8 +46,8 @@ template <> struct ComponentMeta<BoneAttachmentComponent> {
     CCL_META_USING_THIS(BoneAttachmentComponent)
 
     static constexpr const char* displayName    = "Bone Attachment";
-    static constexpr const char* category       = CCL::Categories::Hierarchy; // ★追加
-    static constexpr int         sortPriority   = 5; // ★追加: Transformの直後にする
+    static constexpr const char* category       = CCL::Categories::Hierarchy;
+    static constexpr int         sortPriority   = 5; // Transformの直後にする
     static constexpr bool        hasCustomGui   = true;
     static constexpr bool        isSerializable = true;
 
@@ -183,8 +183,8 @@ namespace ComponentMetaJson {
 // ===================================================================
 template <> struct ComponentMeta<CombatRosterComponent> {
     static constexpr const char* displayName    = "Combat Roster";
-    static constexpr const char* category       = CCL::Categories::Combat; // ★追加
-    static constexpr int         sortPriority   = 175; // ★追加
+    static constexpr const char* category       = CCL::Categories::Combat;
+    static constexpr int         sortPriority   = 175;
     static constexpr bool        hasCustomGui   = true;
     static constexpr bool        isSerializable = true;
 
@@ -296,8 +296,8 @@ REGISTER_COMPONENT_EDITOR_GUI(CombatRosterComponent)
 // ===================================================================
 template <> struct ComponentMeta<DamageEventComponent> {
     static constexpr const char* displayName    = "Damage Event";
-    static constexpr const char* category       = CCL::Categories::Internal; // ★追加
-    static constexpr int         sortPriority   = 900; // ★追加
+    static constexpr const char* category       = CCL::Categories::Internal;
+    static constexpr int         sortPriority   = 900;
     static constexpr bool        hasCustomGui   = false;
     static constexpr bool        isSerializable = false;
 
@@ -333,8 +333,8 @@ REGISTER_COMPONENT_EDITOR_GUI(HitboxLifetimeComponent)
 // ===================================================================
 template <> struct ComponentMeta<HealthComponent> {
     static constexpr const char* displayName    = "Health";
-    static constexpr const char* category       = CCL::Categories::Gameplay; // ★追加
-    static constexpr int         sortPriority   = 100; // ★追加
+    static constexpr const char* category       = CCL::Categories::Gameplay;
+    static constexpr int         sortPriority   = 100;
     static constexpr bool        hasCustomGui   = true;
     static constexpr bool        isSerializable = true;
 

@@ -4,10 +4,10 @@
 
 // 必要に応じて、あなたのエンジンのマネージャー類をインクルードしてください
 
-// ★カメラのコンポーネントを使うためにインクルードを追加
+// カメラのコンポーネントを使うためにインクルードを追加
 #include "Engine/Camera/Components/VirtualCameraComponents.h"
 
-// ★被弾ビネット用：既存のビネット設定(singleton)を一時的に駆動する。
+// 被弾ビネット用：既存のビネット設定(singleton)を一時的に駆動する。
 //   回避演出中の二重駆動を避けるため JustEvadeEffectComponent も参照する。
 #include "Engine/Graphics/Components/PostProcess/VignetteConfigComponent.h"
 #include "Engine/Graphics/Components/Impact/JustEvadeEffectComponent.h"

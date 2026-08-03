@@ -20,7 +20,7 @@ ShadowMap::ShadowMap(ID3D11Device* device, UINT width, UINT height)
     desc.Width = width;
     desc.Height = height;
     desc.MipLevels = 1;
-    desc.ArraySize = SHADOW_CASCADE_COUNT; // ★変更: 3枚の配列にする
+    desc.ArraySize = SHADOW_CASCADE_COUNT; // 3枚の配列にする
     desc.Format = DXGI_FORMAT_R24G8_TYPELESS;
     desc.SampleDesc.Count = 1;
     desc.SampleDesc.Quality = 0;
@@ -36,8 +36,8 @@ ShadowMap::ShadowMap(ID3D11Device* device, UINT width, UINT height)
     for (int i = 0; i < SHADOW_CASCADE_COUNT; ++i) {
         D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
         dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-        dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY; // ★配列として扱う
-        dsvDesc.Texture2DArray.FirstArraySlice = i;                 // ★i番目の層を指定
+        dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY; // 配列として扱う
+        dsvDesc.Texture2DArray.FirstArraySlice = i;                 // i番目の層を指定
         dsvDesc.Texture2DArray.ArraySize = 1;                       // 1層だけ書き込む
 
         hr = device->CreateDepthStencilView(depthBuffer.Get(), &dsvDesc, depthStencilViews[i].GetAddressOf());
@@ -47,11 +47,11 @@ ShadowMap::ShadowMap(ID3D11Device* device, UINT width, UINT height)
     // 3. 読み込む用の口 (SRV) を作成 (3枚まとめてシェーダーに送る)
     D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc{};
     srvDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
-    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY; // ★配列として読む
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY; // 配列として読む
     srvDesc.Texture2DArray.MostDetailedMip = 0;
     srvDesc.Texture2DArray.MipLevels = 1;
     srvDesc.Texture2DArray.FirstArraySlice = 0;
-    srvDesc.Texture2DArray.ArraySize = SHADOW_CASCADE_COUNT;    // ★3枚全部読む
+    srvDesc.Texture2DArray.ArraySize = SHADOW_CASCADE_COUNT;    // 3枚全部読む
 
     hr = device->CreateShaderResourceView(depthBuffer.Get(), &srvDesc, shaderResourceView.GetAddressOf());
     _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));

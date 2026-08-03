@@ -40,7 +40,7 @@ void JoltBodySetupSystem::Update(float dt)
     auto               &joltManager   = m_world->GetResource<JoltPhysicsManager*>();
     JPH::BodyInterface &bodyInterface = joltManager->GetBodyInterface();
 
-    // ★あなたのエンジンの IfSystem の恩恵により、
+    // あなたのエンジンの IfSystem の恩恵により、
     // Transform と Rigidbody を持っているエンティティ「だけ」がここに流れてくる！
     ForEachWithID([&](CCL::ECS::EntityID            id,
                       const TransformComponent     &trans,
@@ -59,7 +59,7 @@ void JoltBodySetupSystem::Update(float dt)
             JPH::BoxShapeSettings baseSettings(JPH::Vec3(box->halfExtent.x, box->halfExtent.y, box->halfExtent.z));
             JPH::ShapeRefC baseShape = baseSettings.Create().Get();
 
-            // ★ オフセットと回転を適用したラッパー(包み紙)でくるむ
+            // オフセットと回転を適用したラッパー(包み紙)でくるむ
             JPH::RotatedTranslatedShapeSettings offsetSettings(
                 JPH::Vec3(box->localOffset.x, box->localOffset.y, box->localOffset.z),
                 EulerDegreeToJoltQuat(box->localRotationEuler),
@@ -74,7 +74,7 @@ void JoltBodySetupSystem::Update(float dt)
             JPH::SphereShapeSettings baseSettings(sphere->radius);
             JPH::ShapeRefC baseShape = baseSettings.Create().Get();
 
-            // ★ 球は回転の影響を受けないため、位置ズレのみ適用
+            // 球は回転の影響を受けないため、位置ズレのみ適用
             JPH::RotatedTranslatedShapeSettings offsetSettings(
                 JPH::Vec3(sphere->localOffset.x, sphere->localOffset.y, sphere->localOffset.z),
                 JPH::Quat::sIdentity(),
@@ -89,7 +89,7 @@ void JoltBodySetupSystem::Update(float dt)
             JPH::CapsuleShapeSettings baseSettings(capsule->halfHeight, capsule->radius);
             JPH::ShapeRefC baseShape = baseSettings.Create().Get();
 
-            // ★ オフセットと回転を適用
+            // オフセットと回転を適用
             JPH::RotatedTranslatedShapeSettings offsetSettings(
                 JPH::Vec3(capsule->localOffset.x, capsule->localOffset.y, capsule->localOffset.z),
                 EulerDegreeToJoltQuat(capsule->localRotationEuler),
@@ -140,7 +140,7 @@ void JoltBodySetupSystem::Update(float dt)
             JPH::MeshShapeSettings meshSettings(joltVertices, joltTriangles);
             JPH::ShapeRefC rawMeshShape = meshSettings.Create().Get();
 
-            // 4. ★最重要: Transform のスケールを物理メッシュに適用する！
+            // 4. 最重要: Transform のスケールを物理メッシュに適用する！
             // エディタで家を「3倍」に拡大した場合、物理判定も「3倍」に膨らませる
             JPH::ScaledShapeSettings scaledSettings(
                 rawMeshShape,
@@ -158,7 +158,7 @@ void JoltBodySetupSystem::Update(float dt)
         DirectX::XMFLOAT4 worldRot = trans.GetWorldRotation();
 
         JPH::Quat initRot(worldRot.x, worldRot.y, worldRot.z, worldRot.w);
-        initRot = initRot.Normalized(); // ★Joltが荒ぶるのを防ぐための必須処理(正規化)
+        initRot = initRot.Normalized(); // Joltが荒ぶるのを防ぐための必須処理(正規化)
 
         JPH::BodyCreationSettings bodySettings(shape,
             JPH::RVec3(worldPos.x, worldPos.y, worldPos.z),
@@ -192,7 +192,7 @@ void JoltBodySetupSystem::Update(float dt)
 
         JPH::Body *body = bodyInterface.CreateBody(bodySettings);
 
-        // ★追加: 剛体の生成に失敗した場合（上限到達など）のフェイルセーフ
+        // 剛体の生成に失敗した場合（上限到達など）のフェイルセーフ
         if (body == nullptr)
         {
             // CCL_LOG_ERROR("Physics", "Failed to create Jolt Body! EntityID: %d. Max bodies reached?", id);

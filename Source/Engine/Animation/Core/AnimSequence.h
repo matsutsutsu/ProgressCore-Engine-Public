@@ -53,7 +53,7 @@ enum class CancelGroup : uint32_t
 };
 
 // ===================================================================================
-// ★ UI表示用のメタデータとアクセサ (Single Source of Truth)
+// UI表示用のメタデータとアクセサ (Single Source of Truth)
 // ===================================================================================
 struct CancelFlagDef
 {
@@ -70,7 +70,7 @@ inline const std::vector<CancelFlagDef> &GetCancelFlagDefs()
         {(uint32_t)CancelGroup::Dodge, "回避 (Dodge)"},
         {(uint32_t)CancelGroup::Jump, "ジャンプ (Jump)"},
         {(uint32_t)CancelGroup::Skill, "スキル (Skill)"}
-        // ★新しいアクションを追加する場合は、ここにも名前を追加するだけで全UIが自動更新される！
+        // 新しいアクションを追加する場合は、ここにも名前を追加するだけで全UIが自動更新される！
     };
     return defs;
 }

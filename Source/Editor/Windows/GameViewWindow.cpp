@@ -7,10 +7,10 @@
 #include "Engine/Platform/Core/FileSystem.h"
 #include "Engine/Platform/Core/Logger.h"
 
-// ★ ShapeRenderer のインクルード
+// ShapeRenderer のインクルード
 #include "Engine/Graphics/Renderer/ShapeRenderer.h"
 
-// ★ ピッキング用: スクリーン→レイ変換 と カリング用ワールドAABB
+// ピッキング用: スクリーン→レイ変換 と カリング用ワールドAABB
 #include "Engine/Core/Math/ScreenToWorld.h"
 #include "Engine/Graphics/Components/Culling/CullingComponents.h"
 #include "Engine/UI/ECS/GameViewportInfo.h" // UIクリック判定へゲーム画像の表示矩形を橋渡し
@@ -153,7 +153,7 @@ void SavePathAssetToJson(const std::string &path, const std::vector<Vector3> &po
 // =========================================================================
 void GameViewWindow::DrawContents(EditorContext &context)
 {
-    // ★ この関数は ImGui::Begin("Game View") と End の間で呼ばれるので、
+    // この関数は ImGui::Begin("Game View") と End の間で呼ばれるので、
     //   ここでの IsWindowFocused は「ゲームビュー窓」のフォーカス状態を指す。
     //   これを EditorWindowManager が拾い、フォーカス中のみマウス視点を通す。
     context.gameViewFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
@@ -182,7 +182,7 @@ void GameViewWindow::DrawContents(EditorContext &context)
     {
         ImGui::Image(context.gameSRV, imageSize);
 
-        // ★ ゲーム画像の表示矩形を UIInputSystem へ橋渡し（UIクリック判定の座標写像用）。
+        // ゲーム画像の表示矩形を UIInputSystem へ橋渡し（UIクリック判定の座標写像用）。
         //   screenPos は ImGui スクリーン座標(マルチビューポートでは OS デスクトップ基準)なので、
         //   メインビューポート原点を引いて「メインウィンドウのクライアント座標」へ直す。
         //   これはプラットフォーム Mouse::GetPositionX/Y と同じ空間。
@@ -277,7 +277,7 @@ void GameViewWindow::DrawContents(EditorContext &context)
                         context.currentGizmoMode,
                         reinterpret_cast<float *>(&transformMat));
 
-                    // ★ エッジトリガー：操作中の処理と終了時の重い処理の分離
+                    // エッジトリガー：操作中の処理と終了時の重い処理の分離
                     static bool wasUsingGizmo = false;
                     bool        isUsingGizmo  = ImGuizmo::IsUsing();
 
@@ -289,7 +289,7 @@ void GameViewWindow::DrawContents(EditorContext &context)
                     }
                     else if (wasUsingGizmo && !isUsingGizmo)
                     {
-                        // ★ マウスを離した瞬間 (立ち下がりエッジ)
+                        // マウスを離した瞬間 (立ち下がりエッジ)
                         // ここで初めてLUTを再構築し、JSONアセットとして上書き保存する
                         BuildLookupTable(*cart->loadedPath);
                         SavePathAssetToJson(cart->pathAsset, cart->loadedPath->points);

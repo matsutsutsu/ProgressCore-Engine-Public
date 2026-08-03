@@ -25,7 +25,7 @@ namespace CCL::Serialization {
     inline constexpr uint32_t SceneFileMagic = 0x53'4C'43'43u;   // 'C','C','L','S'
 
     // 現在のシーンフォーマットバージョン。
-    // ★ 互換性破壊を伴う変更を入れたら必ずインクリメントすること。
+    // 互換性破壊を伴う変更を入れたら必ずインクリメントすること。
     inline constexpr uint32_t CurrentSceneVersion = 1;
 
     // サポートする最古バージョン (これ未満はロード拒否)

@@ -152,7 +152,7 @@ inline FieldDescriptor FD_String(const char* name, const char* jsonName, size_t 
 //     CustomGui()    : hasCustomGui = true のときの描画関数
 //     Fields()       : シリアライズ & 自動インスペクタの対象フィールド一覧
 //
-//   ★ シリアライズのカスタマイズは ComponentMeta ではなく
+//   シリアライズのカスタマイズは ComponentMeta ではなく
 //     ComponentMetaJson::ComponentSerializer<T> を特殊化して行う
 //     (ComponentMetaJson.h)。ここには serialize 系メンバーを持たせない。
 // =====================================================================

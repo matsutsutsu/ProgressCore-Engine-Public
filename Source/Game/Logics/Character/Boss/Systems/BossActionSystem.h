@@ -2,7 +2,7 @@
  * @file BossActionSystem.h
  * @brief AIの出力(BossCommandComponent)を読み取り、ボス本体の物理移動に変換する「筋肉」。
  *
- * ★最小構成版★
+ * 最小構成版
  *   Character/Boss/ に配置。AI（脳・BehaviorTreeSystem）とは明確に分離し、
  *   「AIの意図を物理に変換するだけ」の実行層としての責務に限定する。
  *

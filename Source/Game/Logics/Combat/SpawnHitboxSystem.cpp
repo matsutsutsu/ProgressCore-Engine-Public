@@ -102,7 +102,7 @@ void SpawnHitboxSystem::OnSpawnHitbox(const AnimEventSpawnHitboxMessage& msg)
     t.position = spawnPosF;
     t.rotation = ownerRot; // 球は回転無関係だが、向きを揃えておく
     t.isDirty  = true;
-    t.UpdateMatrix();      // ★ worldMatrix 即時ベイク
+    t.UpdateMatrix();      // worldMatrix 即時ベイク
     ref.Set(t);
 
     // Hitbox: 生成時から判定ON。ownerEntity=Invalid のまま＝常時判定の弾扱い。

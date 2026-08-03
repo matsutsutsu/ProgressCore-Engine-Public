@@ -45,7 +45,7 @@ void PauseSystem::Initialize()
                 if (m_transitioning) return;
                 m_transitioning = true;
                 // 展示会用：タイトルへは戻さず、そのままアプリを終了する。
-                // ★ ここは（ジョブスケジューラ経由の）ワーカースレッドで走りうるため、
+                // ここは（ジョブスケジューラ経由の）ワーカースレッドで走りうるため、
                 //    直接 PostQuitMessage を呼ぶと WM_QUIT が別スレッドのキューに積まれ、
                 //    メインスレッドの PeekMessage が拾えず終了しない。
                 //    → 終了要求フラグだけ立て、メインループ(Run)が拾って終了処理を行う。
@@ -65,7 +65,7 @@ void PauseSystem::Update(float /*dt*/)
                      || input->GetGamePad().IsTriggered(GamePad::BTN_START);
     if (!toggle) return;
 
-    // ★ カーソル自由(UI操作)モード中は、編集中に誤ってポーズメニューが出ないよう
+    // カーソル自由(UI操作)モード中は、編集中に誤ってポーズメニューが出ないよう
     //    ESC/START のポーズ切替を無視する（既にポーズ中の解除は許可）。
     if (!m_paused && m_world->HasResource<GameFlowState>()
         && m_world->GetResource<GameFlowState>().uiInteract)

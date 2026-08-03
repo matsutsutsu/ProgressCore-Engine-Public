@@ -35,7 +35,7 @@ void StateTreeSystem::Update(float /*dt*/)
     if (!m_world->HasResource<StateTreeRegistry>()) return;
     auto& registry = m_world->GetResource<StateTreeRegistry>();
 
-    // ★ 理想の設計：並列化（Parallel）への移行と極小フィルターの適用
+    // 理想の設計：並列化（Parallel）への移行と極小フィルターの適用
     // 引数型・const・参照は、IfSystem のテンプレート定義と完全一致させる。
     ForEachWithIDParallel(
         [&](EntityID entity,
@@ -47,7 +47,7 @@ void StateTreeSystem::Update(float /*dt*/)
         const StateTreeAsset* asset = registry.Get(st.assetHandle);
         if (!asset || asset->states.empty()) return;
 
-        // ★ 時間管理の絶対ルール：生 dt ではなく time.localDt を徹底適用
+        // 時間管理の絶対ルール：生 dt ではなく time.localDt を徹底適用
         TickStateTree(*asset, st, entity, time.localDt);
     });
 }

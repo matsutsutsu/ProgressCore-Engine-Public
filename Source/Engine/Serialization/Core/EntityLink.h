@@ -36,7 +36,7 @@ namespace CCL::Serialization {
 
         // ---- 暗黙変換 (EntityID として扱える) ----
         //
-        // ★ operator== / operator!= は意図的に持たない。
+        // operator== / operator!= は意図的に持たない。
         //   代わりに、この暗黙変換で EntityID 同士の比較に帰着させる。
         //
         //   なぜそうするか:

@@ -13,7 +13,7 @@
 // サイズはわずか4バイト。ポインタではなくIDを持つことでキャッシュ効率を最大化する。
 //
 // 【使い方・ルール】
-// - ★絶対に手動で AddComponent しないこと！
+// - 絶対に手動で AddComponent しないこと！
 // - JoltBodySetupSystem が剛体を生成した証として自動で付与する。
 // - PushSystem や PullSystem
 // は、このコンポーネントを持つEntityのみを物理同期の対象とする。

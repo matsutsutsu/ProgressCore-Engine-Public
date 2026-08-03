@@ -35,7 +35,7 @@ void HitEffectSystem::Initialize()
         DirectX::XMMATRIX rootWorld = DirectX::XMMatrixIdentity();
         if (auto *t = m_world->GetComponent<TransformComponent>(rootID))
         {
-            // ★重要：プレハブのルートには宙吊りの parent 参照(例: parent=3)が残っており、
+            // 重要: プレハブのルートには宙吊りの parent 参照(例: parent=3)が残っており、
             //   単体スポーン時に無関係なエンティティの子として解決されると、その位置・
             //   スケールを継承して「位置ズレ＋細長い粒子」になる。必ず親を切り離す。
             t->parent   = 0; // 親なし＝ワールド直下のルートにする
@@ -73,7 +73,7 @@ void HitEffectSystem::Initialize()
 
             if (auto *cgp = m_world->GetComponent<GPUParticleComponent>(cid))
             {
-                // ★スメア防止：エミッタが原点→命中位置へ動いた分だけ粒子が線状に
+                // スメア防止：エミッタが原点→命中位置へ動いた分だけ粒子が線状に
                 //   引き伸ばされるのを防ぐ。前フレーム姿勢を「現在(命中位置)」で初期化させる。
                 cgp->hasPrevTransform = false;
                 cgp->TriggerBurst();

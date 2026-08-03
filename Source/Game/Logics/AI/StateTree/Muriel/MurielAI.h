@@ -14,7 +14,7 @@
 ///     → その BT が currentActionId を出力
 ///     → BossActionSystem が実行
 ///
-/// ★木構造をここでハードコードしない理由★
+/// 木構造をここでハードコードしない理由
 ///   RegisterNodes() でこのファイルの Task/Condition を NodeRegistry に
 ///   登録さえすれば、StateTreeWindow のパレットに自動で出てくる。
 ///   木構造（どの状態がどの順で並ぶか）は Assets/AI/MurielAI.json を
@@ -40,7 +40,7 @@
 namespace MurielAI
 {
 // ====================================================================
-// ★ブリッジタスク★ 使う BehaviorTree を切り替える
+// ブリッジタスク使う BehaviorTree を切り替える
 // ====================================================================
 /// @brief StateTree の状態に滞在している間、その戦術用の BT を有効化する。
 ///        assetPath を書き換えるだけで、既存の BossAISystem がロードする。

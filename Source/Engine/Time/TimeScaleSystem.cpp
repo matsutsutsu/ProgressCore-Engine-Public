@@ -21,7 +21,7 @@ void TimeScaleSystem::Update(float rawDt)
     auto& ctx = m_world->GetResource<TimeContext>();
 
     // =========================================================
-    // ★ デバッグ：世界時間の凍結とコマ送り
+    // デバッグ：世界時間の凍結とコマ送り
     // =========================================================
     if (ctx.isPaused)
     {
@@ -59,13 +59,13 @@ void TimeScaleSystem::Update(float rawDt)
     updateSlowMotion(ctx.worldSlow);
 
     // 計算したスロー倍率を配列（groupScales）に書き込む。
-    // ★ 毎フレーム必ず「ベース値」を代入し直すこと（= 代入）。ここを *= の累積にすると
+    // 毎フレーム必ず「ベース値」を代入し直すこと（= 代入）。ここを *= の累積にすると
     //   OVERDRIVE の倍率が毎フレーム掛かり続けて 0 に収束し、発動終了後も戻らなくなる。
     ctx.groupScales[static_cast<size_t>(TimeGroup::Player)]      = ctx.playerSlow.currentComputedScale;
     ctx.groupScales[static_cast<size_t>(TimeGroup::Enemy)]       = ctx.enemySlow.currentComputedScale;
     ctx.groupScales[static_cast<size_t>(TimeGroup::Environment)] = ctx.worldSlow.currentComputedScale;
 
-    // ★ OVERDRIVE の勢力別追加倍率を折り込む（非発動時は 1.0 なので影響なし）。
+    // OVERDRIVE の勢力別追加倍率を折り込む（非発動時は 1.0 なので影響なし）。
     //   これで「世界(敵＋環境)はスロー・プレイヤーは高速」の無双状態が実効dtに乗る。
     //   環境(Environment)も下げることで、ステージのGPUパーティクル/VFXも一緒にスローになり、
     //   「時間が遅くなった」ことが画面全体の動きで読めるようになる。
@@ -112,7 +112,7 @@ void TimeScaleSystem::Update(float rawDt)
         }
 
         // 【レイヤー2 & 3】 スケールの合成
-        // ★最適化：switch文による分岐予測ペナルティを排除し、O(1)の配列アクセスで取得
+        // 最適化：switch文による分岐予測ペナルティを排除し、O(1)の配列アクセスで取得
         float groupScale = ctx.groupScales[static_cast<size_t>(time.group)];
 
         // 各種スケールを乗算して最終的な実効dtを確定

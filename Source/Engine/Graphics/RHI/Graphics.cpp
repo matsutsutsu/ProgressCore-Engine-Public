@@ -117,7 +117,7 @@ void Graphics::SetupRenderPipeline()
 
 // ============================================================
 //  Update（毎フレーム）
-//  ★ CbScene の書き込み権限はここのみ。EnvironmentSystem は上書きしない。
+//  CbScene の書き込み権限はここのみ。EnvironmentSystem は上書きしない。
 // ============================================================
 void Graphics::Update()
 {
@@ -132,7 +132,7 @@ void Graphics::Update()
 
     if (!m_gfxDevice.GetSceneConstantBuffer()) return;
 
-    // ★ CbScene を構築（唯一の書き込み箇所）
+    // CbScene を構築（唯一の書き込み箇所）
     GpuData::CbScene data{};
 
     // XMFLOAT4X4 は row_major ストレージ = HLSL の row_major float4x4 と一致

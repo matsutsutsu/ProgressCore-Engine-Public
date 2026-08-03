@@ -1,7 +1,7 @@
 /// @file  IFormation.h
 /// @brief 陣形計算の基底インターフェース。1陣形=1クラス（switch廃止）。
 ///
-/// ★DOD上の設計原則（就職作品の要点）★
+/// DOD上の設計原則（就職作品の要点）
 ///   仮想関数（vtable）はコンポーネントに持たせない。
 ///   FormationSystem が「今の陣形タイプ」で registry から IFormation を1回引き、
 ///   Calculate の中で全ドローンをまとめて処理する。

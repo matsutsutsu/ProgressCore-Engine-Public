@@ -43,7 +43,7 @@ bool AnimGraphSerializer::LoadFromJSON(AnimStateGraph &outGraph, const std::stri
         return false;
     }
 
-    // ★ AnimSequence ポインタの紐付け (Binding)
+    // AnimSequence ポインタの紐付け (Binding)
     //   注意: availableSequences の要素アドレスを保持するため、
     //   この vector は呼び出し側でロード後も生存している必要がある。
     //   呼び出し側が空(ResourceManager経由で後から紐付け)の場合は nullptr のまま。

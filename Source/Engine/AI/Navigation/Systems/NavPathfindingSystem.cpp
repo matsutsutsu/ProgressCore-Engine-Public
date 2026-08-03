@@ -59,7 +59,7 @@ void NavPathfindingSystem::Update(float dt) {
         navQuery->findNearestPoly(endPos, extents, &filter, &endRef, nearestEnd);
 
         // ====================================================================
-        // ★診断ログ: なぜ失敗したのかを特定する
+        // 診断ログ: なぜ失敗したのかを特定する
         // ====================================================================
         if (!startRef) {
             CCL_LOG_ERROR(LogCategory::Core, "Pathfinding Failed: AI is outside the NavMesh! AI Pos: (%.2f, %.2f, %.2f)", startPos[0], startPos[1], startPos[2]);
@@ -97,11 +97,11 @@ void NavPathfindingSystem::Update(float dt) {
                     });
             }
 
-            // ★成功ログ
+            // 成功ログ
             CCL_LOG_INFO(LogCategory::Core, "Pathfinding Success! Generated %d waypoints.", straightPathCount);
         }
         else {
-            // ★失敗ログ（ポリゴンは見つかったが道が繋がっていない）
+            // 失敗ログ（ポリゴンは見つかったが道が繋がっていない）
             CCL_LOG_ERROR(LogCategory::Core, "Pathfinding Failed: No valid path between start and end.");
         }
     });

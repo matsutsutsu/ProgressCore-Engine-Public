@@ -180,7 +180,7 @@ bool JoltPhysicsFacade::CheckGrounded(CCL::ECS::EntityID entity, float distance)
     JPH::RVec3         rayDir(0.0f, -distance, 0.0f);
     JPH::RayCastResult hit;
 
-    // ★fix: 素通しフィルタをやめ、地面(NON_MOVING)だけにヒットさせる。
+    // fix: 素通しフィルタをやめ、地面(NON_MOVING)だけにヒットさせる。
     //   これで弾(センサー)・他キャラ・敵に接地判定が誤反応しなくなる。
     JPH::SpecifiedBroadPhaseLayerFilter bpFilter(BroadPhaseLayers::NON_MOVING);
     JPH::SpecifiedObjectLayerFilter     objFilter(PhysicsLayers::NON_MOVING);
@@ -214,7 +214,7 @@ PhysicsHitInfo JoltPhysicsFacade::RayCast(const XMFLOAT3 &origin, const XMFLOAT3
         }
     }
 
-    // ★fix: IgnoreSingleBodyFilter の代わりに、自分＋センサーを除外するフィルタを使う。
+    // fix: IgnoreSingleBodyFilter の代わりに、自分＋センサーを除外するフィルタを使う。
     //   （弾同士や自弾のセンサーがレイを遮ってしまう誤爆を防ぐ）
     RaycastBodyFilter bodyFilter(ignoreBodyID);
 

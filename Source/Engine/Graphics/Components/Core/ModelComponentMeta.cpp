@@ -7,7 +7,7 @@
 #include "Engine/Platform/Core/Dialog.h"
 
 #include "Engine/Serialization/Meta/ComponentDefine.h"
-#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
+#include "Engine/Serialization/Meta/ComponentCategories.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
 #ifdef ENABLE_EDITOR
@@ -39,8 +39,8 @@ namespace ComponentMetaJson {
 // ============================================================================
 template <> struct ComponentMeta<ModelComponent> {
     static constexpr const char* displayName    = "Model";
-    static constexpr const char* category       = CCL::Categories::Rendering; // ★追加
-    static constexpr int         sortPriority   = 10; // ★追加: Transformの直後に配置されるべき重要コンポーネント
+    static constexpr const char* category       = CCL::Categories::Rendering;
+    static constexpr int         sortPriority   = 10; // Transformの直後に配置されるべき重要コンポーネント
     static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui   = true;
     static constexpr bool        isSerializable = true;
@@ -61,7 +61,7 @@ template <> struct ComponentMeta<ModelComponent> {
         ImGui::Separator();
 
         if (ImGui::Button("モデルを読み込む...", ImVec2(-1, 0))) {
-            // ★修正: std::filesystem の依存を排除し、厳格に FileDialog::ConvertToRelativePath を使用
+            // std::filesystem の依存を排除し、厳格に FileDialog::ConvertToRelativePath を使用
             if (auto path = FileDialog::OpenPreset("Model", "モデルを選択",
                 Graphics::Instance().GetWindowHandle()))
             {

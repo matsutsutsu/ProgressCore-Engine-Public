@@ -21,7 +21,7 @@ struct EntityKilledEvent {
     CCL::ECS::EntityID killedEntityID;
     DirectX::XMFLOAT3 position;
     bool isPlayer;
-    int droppedCoinAmount; // ★ 死亡時に落とす金額をイベントに持たせる
+    int droppedCoinAmount; // 死亡時に落とす金額をイベントに持たせる
 };
 
 // 誰かがダメージを受けた時に発行されるイベント

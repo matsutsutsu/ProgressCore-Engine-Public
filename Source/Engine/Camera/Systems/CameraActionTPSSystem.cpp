@@ -76,7 +76,7 @@ void CameraActionTPSSystem::Update(float dt)
             ? m_world->GetResource<std::shared_ptr<IPhysicsAPI>>()
             : nullptr;
 
-    // ★ 追従対象(プレイヤー)を「役割」で毎フレーム解決しておく。
+    // 追従対象(プレイヤー)を「役割」で毎フレーム解決しておく。
     //    プレハブ/レベルで別々に配置されても、ここで自動接続されるため
     //    以前のようにハードコードで target を焼き込む必要がない。
 
@@ -109,7 +109,7 @@ void CameraActionTPSSystem::Update(float dt)
             wantCursorLock = true;
 
         // 4. 注視点（LookAt）の算出
-        // ★ position（非補間）ではなく renderWorldMatrix の平行移動成分（補間済み）を使う
+        // position（非補間）ではなく renderWorldMatrix の平行移動成分（補間済み）を使う
         Vector3 targetWorldPos = targetTrans->GetRenderWorldPosition();
 
         Vector3 idealLookAt = targetWorldPos + tps.targetOffset;
@@ -186,7 +186,7 @@ void CameraActionTPSSystem::Update(float dt)
 
         if (enemyTrans)
         {
-            // ★ TPSロックオンのフレーミング（遠距離でプレイヤーが画面外に出る問題の対策）:
+            // TPSロックオンのフレーミング（遠距離でプレイヤーが画面外に出る問題の対策）:
             //   (1) 注視点はプレイヤー→敵へ寄せるが、ずれ量に上限(lockOnMaxLookShift)を設け、
             //       遠距離でもプレイヤーを必ずフレーム内に残す。
             //   (2) 回り込み中心はプレイヤー基準にする。従来は注視点(中間地点)を中心に
@@ -279,7 +279,7 @@ void CameraActionTPSSystem::Update(float dt)
         // 回り込み中心から後方へ（衝突を反映した）距離ぶん引いた位置がカメラ本体。
         Vector3 finalPos = tps.currentPivot - (backwardDir * tps.currentCamDistance);
 
-        // ★ カメラが寄った時は「足元」ではなく「頭付近」へ寄せる。
+        // カメラが寄った時は「足元」ではなく「頭付近」へ寄せる。
         //   引き込み量(pullRatio)に応じて、カメラのY(高さ)を pivot(頭)の高さへ持ち上げる。
         //   これで壁/床でカメラが近づいても視点が足元に落ちず、頭〜肩の高さを保つ。
         {

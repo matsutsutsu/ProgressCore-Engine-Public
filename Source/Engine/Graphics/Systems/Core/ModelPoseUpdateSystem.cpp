@@ -17,6 +17,6 @@ void ModelPoseUpdateSystem::Update(float dt) {
         });
 }
 
-// ★ Logic(L02) から Render に移動。補間(R00)の後・BoundsUpdate(R04)/描画(R08)の前。
+// Logic(L02) から Render に移動。補間(R00)の後・BoundsUpdate(R04)/描画(R08)の前。
 //    R03_Animation がスケルタル更新の枠なので、その直前の R02〜R03 帯に置く。
 REGISTER_RENDER_SYSTEM(ModelPoseUpdateSystem, Priority::RenderStage::R03_Animation);

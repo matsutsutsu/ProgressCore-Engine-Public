@@ -47,7 +47,7 @@ void GameResultSystem::Initialize()
             {
                 m_transitioning = true;
                 // 展示会用：タイトルへは戻さず、そのままアプリを終了する。
-                // ★ この購読はワーカースレッドで走りうるため、直接 PostQuitMessage を
+                // この購読はワーカースレッドで走りうるため、直接 PostQuitMessage を
                 //    呼ぶと WM_QUIT が別スレッドに積まれメインループが拾えない。
                 //    → フラグだけ立て、メインスレッドの Run() が拾って終了する。
                 if (m_world->HasResource<GameFlowState>())
@@ -102,7 +102,7 @@ void GameResultSystem::Update(float dt)
     m_dbgPlayerPresent = playerPresent;
     m_dbgAliveEnemies  = aliveEnemies;
 
-    // ★ セーフガード：プレイヤーが1体も存在しないシーンでは勝敗判定を行わない。
+    // セーフガード：プレイヤーが1体も存在しないシーンでは勝敗判定を行わない。
     //   ステージ実装確認用のテストScene（プレイヤー未生成）では、敵扱いの HealthComponent が
     //   生存0になった瞬間に GAME CLEAR が誤発火していた。プレイヤー不在＝プレイセッションでは
     //   ないため、ここで判定自体を打ち切る（リザルトを一切出さない）。

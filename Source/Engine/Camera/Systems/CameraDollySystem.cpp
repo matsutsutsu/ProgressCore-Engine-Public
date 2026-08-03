@@ -146,13 +146,13 @@ void CameraDollySystem::Update(float /*rawDt*/)
                 }
                 catch (const std::exception &e)
                 {
-                    cart.hasLoadError = true; // ★追加: パース失敗なら再試行しない
+                    cart.hasLoadError = true; // パース失敗なら再試行しない
                     CCL_LOG_ERROR(LogCategory::Game, "Failed to parse Camera Path: %s\n%s", cart.pathAsset.c_str(), e.what());
                 }
             }
             else
             {
-                cart.hasLoadError = true; // ★追加: ファイル不在または空なら再試行しない
+                cart.hasLoadError = true; // ファイル不在または空なら再試行しない
                 CCL_LOG_ERROR(LogCategory::Game, "Camera Path file not found or empty: %s", cart.pathAsset.c_str());
             }
         }
@@ -176,7 +176,7 @@ void CameraDollySystem::Update(float /*rawDt*/)
         // 4. 注視点 (LookAt) の計算
         if (cart.lookForward)
         {
-            // ★圧倒的改善：lookAheadOffset が「メートル単位」になったため、
+            // lookAheadOffset が「メートル単位」になったため、
             // 「常に 2m 先の軌道を見る」といった直感的な制御が成立する。
             float aheadDist = std::clamp(cart.currentDistance + cart.lookAheadOffset, 0.0f, asset.totalLength);
 

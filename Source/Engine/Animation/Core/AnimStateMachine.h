@@ -192,7 +192,7 @@ inline void from_json(const json &j, AnimTransition &t)
     else
         t.logicType = AnimTransitionLogic::AND;
 
-    // ★ 文字列からの移行対応：もし古いrequiredWindowがあれば無視し、Maskを読む
+    // 文字列からの移行対応：もし古いrequiredWindowがあれば無視し、Maskを読む
     t.requiredCancelMask = j.value("requiredCancelMask", 0u);
 
     j.at("conditions").get_to(t.conditions);

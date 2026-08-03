@@ -40,7 +40,7 @@ GLTFImporter::GLTFImporter(const char *filename)
     : filepath(filename)
 {
     // =====================================================================
-    // ★ デバッグ用：OSレベルでファイルが見えているかを「絶対パス」で検証
+    // デバッグ用：OSレベルでファイルが見えているかを「絶対パス」で検証
     // =====================================================================
     //std::filesystem::path absolutePath = std::filesystem::absolute(filepath);
 
@@ -610,7 +610,7 @@ void GLTFImporter::LoadAnimations(AnimationList &animations, const NodeList &nod
             minTime                        = (std::min)(minTime, gltfKeyframeTimes[0]);
             maxTime                        = (std::max)(animation.secondsLength, gltfKeyframeTimes[gltfInputAccessor.count - 1]);
 
-            // ★ 補間モードの取得。
+            // 補間モードの取得。
             // glTF仕様: interpolation が "CUBICSPLINE" の場合、出力バッファは
             // 1キーフレームにつき [入接線, 値, 出接線] の3要素組で並ぶ。
             // これを見落として「1キーフレーム=1要素」のまま読むと、値ではなく

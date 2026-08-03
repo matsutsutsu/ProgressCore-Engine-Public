@@ -36,7 +36,7 @@ void ParticleRenderer::Initialize(ID3D11Device *device)
     device->CreateShaderResourceView(tex.Get(), nullptr, defaultTexture.GetAddressOf());
     SetDebugName(defaultTexture.Get(), "Particle_DefaultTexture_SRV");
 
-    // ★ 金型の事前構築
+    // 金型の事前構築
     // 半透明ベースをもらってきて、一部（トポロジーとブレンド）だけをパーティクル用に改造する！
     PipelineStateDesc baseDesc = PipelineStateDesc::DefaultTransparent();
     baseDesc.topology = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST; // 点に変更
@@ -71,7 +71,7 @@ void ParticleRenderer::Render(const RenderServices& services, const RenderFrameC
     const RenderState* rs = services.renderState;
 
     // =========================================================
-    // ★ 修正: Registryからシェーダーを取得し、Begin()を委譲
+    // Registryからシェーダーを取得し、Begin()を委譲
     // =========================================================
     Shader* shader = services.shaders->GetShader("Particle"_hash, services.device);
     if (!shader) return;
@@ -118,12 +118,12 @@ void ParticleRenderer::Render(const RenderServices& services, const RenderFrameC
             curRenderMode = cmd.renderMode;
         }
 
-        // 粒子バッファ SRV (★ .Get() を追加)
+        // 粒子バッファ SRV (.Get() を追加)
         ID3D11ShaderResourceView* srvs[] = { buffers->particleSRV.Get() };
         dc->VSSetShaderResources(SLOT_SRV_PARTICLE_BUF, 1, srvs);
         dc->GSSetShaderResources(SLOT_SRV_PARTICLE_BUF, 1, srvs);
 
-        // ★ staticCB(b6) + dynamicCB(b7) を一括バインド (★ .Get() を追加)
+        // staticCB(b6) + dynamicCB(b7) を一括バインド (.Get() を追加)
         if (buffers->staticCB && buffers->dynamicCB) {
             ID3D11Buffer* cbs[2] = { buffers->staticCB.Get(), buffers->dynamicCB.Get() };
             dc->VSSetConstantBuffers(SLOT_CB_PARTICLE_STATIC, 2, cbs);

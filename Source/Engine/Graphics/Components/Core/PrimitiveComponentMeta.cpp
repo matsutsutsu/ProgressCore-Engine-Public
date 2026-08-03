@@ -3,7 +3,7 @@
 
 #include "PrimitiveComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
-#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
+#include "Engine/Serialization/Meta/ComponentCategories.h"
 #include <iterator>
 
 #ifdef ENABLE_EDITOR
@@ -23,8 +23,8 @@ template <> struct ComponentMeta<PrimitiveComponent> {
     CCL_META_USING_THIS(PrimitiveComponent)
 
     static constexpr const char* displayName    = "Primitive Renderer";
-    static constexpr const char* category       = CCL::Categories::Rendering; // ★修正
-    static constexpr int         sortPriority   = 80; // ★追加: 描画系の並び順
+    static constexpr const char* category       = CCL::Categories::Rendering;
+    static constexpr int         sortPriority   = 80; // 描画系の並び順
     static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui   = true;
     static constexpr bool        isSerializable = true;

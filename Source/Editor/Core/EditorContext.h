@@ -16,11 +16,11 @@ struct EditorContext {
     CCL::ECS::World *world          = nullptr;
     CCL::ECS::SystemManager *systemManager  = nullptr;
 
-    // ★ アクティブ(主)選択。Inspector/Gizmo/各種エディタが「今フォーカス中の1体」
+    // アクティブ(主)選択。Inspector/Gizmo/各種エディタが「今フォーカス中の1体」
     //   として参照する。複数選択時は「最後に触れた1体」を指す。
     CCL::ECS::EntityID       selectedEntity = CCL::ECS::InvalidEntityID;
 
-    // ★ 選択セット (複数選択)。selectedEntity は常にこの中の1つ(主選択)。
+    // 選択セット (複数選択)。selectedEntity は常にこの中の1つ(主選択)。
     //   ハイライトや一括操作(複製/削除)はこのセット全体を対象にする。
     //   単一選択時は要素1、未選択時は空。
     std::vector<CCL::ECS::EntityID> selectedEntities;
@@ -116,17 +116,17 @@ struct EditorContext {
     std::string pendingLoadLevelPath;
     std::string pendingSaveLevelPath;
 
-    // ★ 一時停止トグル。
+    // 一時停止トグル。
     //   true の間だけゲームロジック(FixedUpdate)の進行を止める「ただの一時停止」。
     //   セーブ/ロードやシーンのバックアップは一切行わない。
     //   起動時は false（＝従来通り実行状態）で始まる。
     bool isPaused = false;
 
-    // ★ コマ送り要求。一時停止中に true にすると、次の1フレームだけ物理を進めて
+    // コマ送り要求。一時停止中に true にすると、次の1フレームだけ物理を進めて
     //   すぐ false に戻る（Framework が消費）。停止中の1フレーム送り用。
     bool stepOneFrame = false;
 
-    // ★ 「カーソル自由(UI操作)モード」の手動トグル状態（F2）。
+    // 「カーソル自由(UI操作)モード」の手動トグル状態（F2）。
     //   これ または isAnimEditMode が true のとき、GameFlowState.uiInteract が立ち、
     //   ゲームを止めずにカーソルが解放される（実行中に ImGui を操作できる）。
     bool cursorFreeToggle = false;
@@ -136,23 +136,23 @@ struct EditorContext {
      float animEditTime   = 0.0f;
 
 #ifdef ENABLE_EDITOR
-     // ★ ImGuizmo用の状態管理
+     // ImGuizmo用の状態管理
      ImGuizmo::OPERATION currentGizmoOperation = ImGuizmo::TRANSLATE;
      ImGuizmo::MODE      currentGizmoMode = ImGuizmo::LOCAL;
 #endif
 
-     // ★ パスエディタと3Dビューポートの連携用
+     // パスエディタと3Dビューポートの連携用
      int editingPathNodeIndex = -1; // -1 なら何も選択していない
 
-     // ★ ImGuiに渡すためのゲーム画面テクスチャ
+     // ImGuiに渡すためのゲーム画面テクスチャ
      void* gameSRV = nullptr;
 
-     // ★ ゲームビュー(ImGuiウィンドウ)にフォーカスがあるか。
+     // ゲームビュー(ImGuiウィンドウ)にフォーカスがあるか。
      //   GameViewWindow が毎フレーム更新し、EditorWindowManager が
      //   「全画面 or フォーカス中」を InputFacade へ伝えてマウス視点の可否を切り替える。
      bool gameViewFocused = false;
 
-     // ★ 切り離した OS ウィンドウ(ImGuiマルチビューポート)を実際に描画するか。
+     // 切り離した OS ウィンドウ(ImGuiマルチビューポート)を実際に描画するか。
      //   true の間だけ Exe 外へドラッグしたウィンドウが表示・操作できる。
      //   各外部ウィンドウは個別スワップチェーンを毎フレーム Present するため、
      //   負荷が気になる場面では false にして描画を止められる。既定は有効。

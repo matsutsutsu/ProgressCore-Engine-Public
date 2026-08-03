@@ -3,7 +3,7 @@
 
 #include "TimeState.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
-#include "Engine/Serialization/Meta/ComponentCategories.h" // ★追加
+#include "Engine/Serialization/Meta/ComponentCategories.h"
 
 #ifdef ENABLE_EDITOR
 #include "Editor/Inspector/ComponentGuiRegistry.h"
@@ -18,8 +18,8 @@ template <> struct ComponentMeta<TimeStateComponent> {
     CCL_META_USING_THIS(TimeStateComponent)
 
     static constexpr const char* displayName    = "Time State";
-    static constexpr const char* category       = CCL::Categories::Gameplay; // ★追加
-    static constexpr int         sortPriority   = 190; // ★追加
+    static constexpr const char* category       = CCL::Categories::Gameplay;
+    static constexpr int         sortPriority   = 190;
     static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui   = true;
     static constexpr bool        isSerializable = true;
