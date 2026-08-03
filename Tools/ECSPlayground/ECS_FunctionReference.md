@@ -317,7 +317,7 @@ Chunk に削除マークを付け、住所録から抹消し、結果リスト�
 |---|---|
 | `UpdateEntityLocation(entity, chunkIdx, entityIdx)` | 住所録に書き込む。足りなければ `resize` |
 | `RemoveEntityLocation(entity)` | erase せず `InvalidIndex` で上書き（墓石を残す） |
-| `GetChunkIndex(chunk*)` | Chunk ポインタ → 配列添字。**線形探索**（既知の弱点） |
+| `GetChunkIndex(chunk*)` | Chunk ポインタ → 配列添字。**線形探索**（Chunk数が増えたら map 化の候補） |
 | `SearchEqualChunk(archetype)` | 型構成が完全一致する Chunk を探す。線形探索 |
 
 ### CalculateChunkCapacity(archetype) → size_t

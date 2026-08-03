@@ -1,10 +1,10 @@
 # Shader 仕様書 / 使い方ガイド
 
-このドキュメントは、**個々の HLSL を全部読まなくても、シェーダーの追加・利用・理解ができる**ことを目的とした単一の参照資料です。AI インスタンスに読ませる場合も、まずこれを読めば全体像とルールが掴めます。
+このドキュメントは、**個々の HLSL を全部読まなくても、シェーダーの追加・利用・理解ができる**ことを目的とした単一の参照資料です。
 
 > 関連ドキュメント: レンダリング経路の全体像は `Render_Architecture_Map.md`、スロット共有の詳細契約は `ShaderBindingContract.md`（存在すれば）を参照。本書は「シェーダー本体の仕様と追加手順」に特化。
 
-**凡例**: ✅=ソース確認済み / ⚠️=役割のみ（本体未確認、パラメータは各ファイル参照）
+**凡例**: ✅=現行の実装で使用中 / ⚠️=マニフェスト未登録（現在は未使用）
 
 ---
 
@@ -190,23 +190,55 @@ PBR の陰影を保ったまま透明度だけ調整。
 - **PSO**: `cull: none`
 - **用途**: 草・葉の板ポリ（十字配置カード等）。`alphaClipThreshold` は 0.5 目安（1.0 だと全消え）。閉じた立体や不透明テクスチャに使っても Basic と同じ見た目にしかならない（切り抜くものが無い/裏面が見えないため）。
 
-### Basic ⚠️ （unlit）
-テクスチャ×色をそのまま出す最小シェーダー。パラメータは `BasicPS.hlsl` 参照。
+### Basic ✅ （unlit・不透明）
+テクスチャ×色をそのまま出す最小シェーダー。ライティング計算を一切行わない。
+- **CB**: `materialColor`(f4) ※このシェーダーのみ `SLOT_CB_MESH` に置いている（他は `SLOT_CB_MATERIAL`）
+- **Tex**: DiffuseMap t0
+- **PSO**: マニフェスト側に指定なし（既定の不透明設定）
+- **用途**: UI 的な板、デバッグ表示、ライティング不要のオブジェクト。最も軽い。
 
-### Lambert ⚠️ （lit）
-拡散反射のみの簡易ライティング。詳細は `LambertPS.hlsl`。
+### Lambert ✅ （lit・不透明）
+名前に反して**拡散反射のみではない**。`CalculateAllLights` で平行光源・点光源・スポットライトを
+一括計算するため、鏡面反射も含まれる。法線マップは扱わない。
+- **CB**: `materialColor`(f4)
+- **Tex**: DiffuseMap t0
+- **処理**: α<0.01 で `discard` → 影の重み → 全ライト計算（diffuse+specular）→ 半球環境光 → 高さフォグ
+- **PSO**: マニフェスト側に指定なし（既定の不透明設定）
+- **用途**: 法線マップ不要な一般オブジェクト。Phong から法線マップと各種エフェクトを外した位置づけ。
 
-### Phong ⚠️ （lit）
-古典的な拡散＋鏡面。詳細は `PhongPS.hlsl`。
+### Phong ✅ （lit・不透明・法線マップ対応）
+マテリアル系で**最も機能が多い**シェーダー。名前は Phong だが、実態は法線マップ＋各種エフェクト込み。
+- **CB**: `materialColor`(f4)
+- **Tex**: DiffuseMap t0 / NormalMap t1 / DissolveNoiseMap（グローバルノイズ枠）
+- **頂点経由**: `customParams.x`=ディゾルブ進行度, `customParams.z`=被弾フラッシュ強度
+- **処理**: ディゾルブクリップ → 法線マップ適用 → 影 → 全ライト計算 → 半球環境光
+  → リムライト → 高さフォグ → ヒットフラッシュ → ディゾルブ発光エッジ
+- **PSO**: マニフェスト側に指定なし（既定の不透明設定）
+- **用途**: キャラクター・敵など、被弾演出と消滅演出が要るオブジェクトの標準シェーダー。
 
-### Toon ⚠️ （lit）
-セルルック。`ToonLighting.hlsli` を使用。ランプテクスチャ（RampTexture）で階調制御。詳細は `ToonPS.hlsl`。
+### Toon ✅ （lit・不透明・セルルック）
+ランプテクスチャで階調を制御するセルシェーディング。
+- **CB**: `materialColor`(f4), `gRimColor`(f4), `gRimPower`(f), `gRimIntensity`(f), `gToonPadding`(f2)
+- **Tex**: DiffuseMap t0 / NormalMap t1 / ToonRampMap t2 / DissolveNoiseMap（グローバルノイズ枠）
+- **頂点経由**: `customParams.x`=ディゾルブ進行度
+- **処理**: ディゾルブクリップ → 法線マップ → `CalcToonDirectionalLight`（ランプ参照）
+  → 半球環境光 → Toon 専用リムライト → 影色 → 高さフォグ → ディゾルブ発光エッジ
+- **注意**: トゥーン化されるのは**平行光源のみ**。点光源・スポットライトは計算に入らない。
+- **用途**: セルルックのキャラクター。共通リムライトは呼ばず、専用リムで置き換えている。
 
-### Dissolve ⚠️ （要確認）
-溶けるように消える表現。`customParams.x` を進行度として使う設計（PS のみ存在し **VS が無い**）。**マニフェストの `<N>VS`/`<N>PS` 前提と食い違うため、どの VS を使って登録しているか要確認**（別 VS 流用なら明文化が必要）。
+### Dissolve ⚠️ （未登録・現在は未使用）
+**`Assets/Shader/shaders.json` に登録されておらず、`Source`/`Assets` からの参照も無い。**
+PS のみ存在し VS が無いのは、マニフェスト経由で読み込まれていないため。
+ディゾルブ表現は現在 `MaterialEffect.hlsli` の `ApplyDissolveClip` / `ApplyDissolveEdge` として
+Phong・Toon に組み込む方式に移行しており、本ファイルはその前段階の実装。
+- **旧実装のCB**: `materialColor`(f4), `dissolveThreshold`(f), `edgeWidth`(f), `padding`(f2), `edgeColor`(f4)
+  ※現行方式が `customParams.x` を使うのに対し、こちらは**専用CBで進行度を渡す**設計だった
+- **扱い**: 使うならマニフェスト登録と VS の用意が必要。使わないなら削除してよい。
 
-### Sprite ⚠️ （2D・別カテゴリ）
-2D スプライト用。`Sprite.hlsli` を使い、頂点レイアウトも 3D マテリアルと異なる可能性が高い。通常の `overrideMaterials` 経路とは別扱い。
+### Sprite ✅ （2D・マニフェスト外）
+2D スプライト用。`Source/Engine/Graphics/Renderer/Sprite.cpp` が直接扱い、
+`shaders.json` には登録されない（マテリアル差し替え経路の対象外）。
+`Sprite.hlsli` を共有し、頂点レイアウトも 3D マテリアルとは別系統。
 
 ### カスタム（非マテリアル・RegisterShader<T>）
 | 名前 | クラス | 役割 |

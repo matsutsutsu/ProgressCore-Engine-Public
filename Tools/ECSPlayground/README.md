@@ -191,6 +191,6 @@ vcxproj への登録も不要なので、思いついた検証をその場で書
 
 - `ForEachParallel` に変えて、`TaskScheduler` がどうバッチを組むか見る
 - System を 2 本登録し、片方が `Write<Position>`、もう片方が `Read<Position>` の
-  ときに直列化されるかを確認する（アーキテクチャ文書 15章の CRITICAL 項目）
+  ときに直列化されるかを確認する（アーキテクチャ文書 15章「意図的なトレードオフ」を参照）
 - Chunk 容量（682体）を超える数を生成し、2 個目の Chunk が作られる瞬間を見る
 - `EventBus` の `Publish` / `Subscribe` を試す
