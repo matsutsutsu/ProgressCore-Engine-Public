@@ -30,7 +30,7 @@ float SampleCascade(float4 worldPos, int cascadeIndex)
     float cascadeScale = pow(3.0f, cascadeIndex);
     float dynamicBias = shadow_bias * cascadeScale;
 
-    float depth = shadow_texcoord.z - shadow_bias;
+    float depth = shadow_texcoord.z - dynamicBias;
     float shadowWeight = 0.0f;
     
     uint width, height, elements;
