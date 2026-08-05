@@ -15,7 +15,8 @@ void main(uint3 dtid : SV_DispatchThreadID)
     if (id >= (uint)max_count) return;
 
     particle p = particle_buffer[id];
-    // ★ p.type = type は廃止。GS/PS は CbParticleStatic.particle_type を直接読む。
+    // 種別は粒子ごとに持たず、GS/PS が CbParticleStatic.particle_type を直接読む
+    // （全粒子で同一の値のため、1粒子あたり4バイトを節約する）。
 
     if (emit_mode == 1)  // バーストモード
     {
@@ -144,7 +145,7 @@ void UpdateParticle(inout particle p)
     p.angle += p.angular_speed * delta_time;
 
     // ---- 色更新 ----
-    // ★ p.type は廃止。CbParticleStatic.particle_type を使う。
+    // 種別は定数バッファ側の particle_type を参照する
     if (particle_type == 0)
     {
         p.color.rgb = manual_color.rgb;

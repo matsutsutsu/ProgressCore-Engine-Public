@@ -23,7 +23,7 @@
 		<!-- ===== C++ Compile (ゲームコアのみ) ===== -->
 		<ClCompile>
 			<!-- ========================================================= -->
-			<!-- ★ Debug と Development の時は Joltのデバッグマクロを入れる -->
+			<!-- Debug と Development の時は Joltのデバッグマクロを入れる -->
 			<!-- ========================================================= -->
 			<PreprocessorDefinitions Condition="'$(Configuration)'!='Shipping'">
 				_WINDOWS;
@@ -49,7 +49,7 @@
 			<RuntimeLibrary Condition="!$(Configuration.Contains('Debug')) and '$(Configuration)'!='Shipping'">MultiThreadedDLL</RuntimeLibrary>
 
 			<!-- ========================================================= -->
-			<!-- ★ Shipping の時は Joltのデバッグマクロを全て外す -->
+			<!-- Shipping の時は Joltのデバッグマクロを全て外す -->
 			<!-- ========================================================= -->
 			<PreprocessorDefinitions Condition="'$(Configuration)'=='Shipping'">
 				_WINDOWS;

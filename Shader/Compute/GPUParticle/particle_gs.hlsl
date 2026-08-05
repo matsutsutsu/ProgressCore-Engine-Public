@@ -18,7 +18,7 @@ void main(point VS_OUT input[1], inout TriangleStream<GS_OUT> output)
 
     if (p.age <= 0.0f || p.age >= p.lifespan) return;
 
-    // ★ アスペクト比をプロジェクション行列から導出（ハードコード廃止）
+    // アスペクト比はプロジェクション行列から導出する（解像度変更に追従させるため）
     // gProjection[0][0] = cot(fovY/2) / aspect, gProjection[1][1] = cot(fovY/2)
     // よって aspect = _m11 / _m00
     float aspect = gProjection._m11 / gProjection._m00;
@@ -57,7 +57,7 @@ void main(point VS_OUT input[1], inout TriangleStream<GS_OUT> output)
         elem.position.xy += rot * float2(size, size * aspect);
         elem.color        = p.color;
 
-        // ★ type は全粒子共通 → CbParticleStatic.particle_type から読む (per-particle フィールド廃止)
+        // 種別は全粒子共通なので、粒子構造体ではなく定数バッファから読む
         elem.type = (uint)particle_type;
 
         uint2 grid = sprite_sheet_grid;

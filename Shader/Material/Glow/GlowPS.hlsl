@@ -6,13 +6,13 @@
 // このシェーダー自身は普通に色とアルファを計算するだけで良い
 // （前回の particle_ps.hlsl と同じ設計方針：加算/半透明の切り替えは PSO の仕事、
 //   シェーダーは色計算に徹する）。
-// ★ BlendState::Additive は SrcBlend=SRC_ALPHA なので、出力アルファが
+// BlendState::Additive は SrcBlend=SRC_ALPHA なので、出力アルファが
 //    そのまま光の強さの倍率になる点に注意（下記 main 内コメント参照）。
 #include "Shader/Common/Common.hlsli"
 
 // ==============================================================================
 // 定数バッファ & リソース
-//   ★ 変数名がそのまま MaterialData の nameHash キーになる
+//   変数名がそのまま MaterialData の nameHash キーになる
 //     (SetColor("glowColor"_hash, ...) / SetScalar("intensity"_hash, ...) と対応)
 // ==============================================================================
 cbuffer CbMesh : register(REG_CB(SLOT_CB_MATERIAL))
@@ -35,7 +35,7 @@ float4 main(VS_OUT pin) : SV_TARGET
 
     float3 finalColor = glowColor.rgb * tex.rgb * intensity;
 
-    // ★重要: 加算合成(BlendState::Additive)は SrcBlend=SRC_ALPHA, DestBlend=ONE。
+    // 重要: 加算合成(BlendState::Additive)は SrcBlend=SRC_ALPHA, DestBlend=ONE。
     //         つまり出力アルファがそのまま「光の強さの倍率」として効く（ONE,ONEではない）。
     //         テクスチャのアルファをそのまま返すと、輝度マスクとしてソフトな縁の
     //         フェードアウトが自然にでき、テクスチャ無し(useEmissiveMap=0)なら

@@ -52,9 +52,8 @@ float4 main(GS_OUT pin) : SV_TARGET
     //------------------------------------------
     float4 texColor = color_map.Sample(sampler_linear, uv);
     
-    // ★ 修正4 & 6: render_mode分岐と #if 0 クルフトを全削除！
-    // 描画モード（加算/半透明）の切り替えはC++側のPSO (BlendState) が行います。
-    // シェーダーは純粋にテクスチャの色とアルファを掛け合わせるだけに徹します。
+    // 描画モード（加算/半透明）の切り替えは C++ 側の PSO (BlendState) が担う。
+    // シェーダー側では分岐を持たず、テクスチャの色とアルファを掛けるだけに留める。
     color.rgb *= texColor.rgb;
     color.a *= texColor.a;
 

@@ -718,8 +718,6 @@
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_Basic.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_Attack.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\IFormation.h" />
-    <ClInclude Include="Source\Game\Logics\AI\FlowField\NavFlowFieldSystem.h" />
-    <ClInclude Include="Source\Game\Logics\AI\FlowField\NavGridFlowField.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\Muriel\MurielAI.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\NodeParamField.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\NodeRegistry.h" />
@@ -1533,7 +1531,6 @@
     <ClCompile Include="Source\Game\Logics\AI\Drone\DroneCommandSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\DroneMovementSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\DroneHitSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\AI\FlowField\NavFlowFieldSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\StateTree\Core\StateTreeComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\StateTree\Serialization\StateTreeSerializer.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\StateTree\System\AIDebugSystem.cpp" />

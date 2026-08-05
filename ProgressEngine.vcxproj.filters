@@ -408,9 +408,6 @@
     <Filter Include="Source\Game\Logics\Combat\_Meta">
       <UniqueIdentifier>{0a94ac07-4f26-4cc2-a563-eb0d04156a23}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Game\Logics\AI\FlowField">
-      <UniqueIdentifier>{178d9d97-d69d-42b8-995e-320e262d6a28}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Game\Logics\AI\StateTree\Core">
       <UniqueIdentifier>{22b60c6b-b385-492f-a70c-b2c726f3d987}</UniqueIdentifier>
     </Filter>
@@ -1761,12 +1758,6 @@
     <ClInclude Include="Source\Editor\Windows\TestLauncherWindow.h">
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\FlowField\NavGridFlowField.h">
-      <Filter>Source\Game\Logics\AI\FlowField</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\FlowField\NavFlowFieldSystem.h">
-      <Filter>Source\Game\Logics\AI\FlowField</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\NodeParamField.h">
       <Filter>Source\Game\Logics\AI\StateTree\Core</Filter>
     </ClInclude>
@@ -2890,9 +2881,6 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\TestLauncherWindow.cpp">
       <Filter>Source\Editor\Windows\Game</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\FlowField\NavFlowFieldSystem.cpp">
-      <Filter>Source\Game\Logics\AI\FlowField</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\StateTree\Core\StateTreeComponentMeta.cpp">
       <Filter>Source\Game\Logics\AI\StateTree\Core</Filter>
