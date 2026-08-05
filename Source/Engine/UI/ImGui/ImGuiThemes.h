@@ -19,7 +19,7 @@ namespace ImGuiThemes
     void ApplySkeltonDarcula();
     void ApplyLight();
     void ApplyClassic();
-    void ApplyAAATheme();
+    void ApplyEditorDark();
 
     void ApplyUnityDark();
     void ApplyVisualStudioDark();

@@ -18,7 +18,7 @@
 namespace CCL::ECS {
 
     // =======================================================
-    // 1. 型IDジェネレータ (重い typeid を排除する魔法)
+    // 1. 型IDジェネレータ（RTTI の typeid を使わず、型ごとに連番を割り当てる）
     // =======================================================
     class EventTypeIDGenerator {
         static inline uint32_t counter = 0;

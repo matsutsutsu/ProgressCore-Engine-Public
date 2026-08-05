@@ -86,7 +86,6 @@ void RenderPipeline::Execute(const RenderFrameContext& ctx)
 #if defined(TRACY_ENABLE)
         if (auto tracyCtx = Graphics::Instance().GetTracyContext()) {
 
-            // 究極のハック:
             // TracyD3D11Zone マクロの内部実装を直接展開して、
             // 作成済みの pass->m_gpuSourceLocation を渡す。
             // 変数名の重複を避けるため、一意なローカル変数を定義する。

@@ -1,6 +1,6 @@
 #include "TimeScaleSystem.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
-#include "Engine/Core/Systems/SystemPriority.h" // 優先度Enumへのパスは適宜調整してください
+#include "Engine/Core/Systems/SystemPriority.h" // 実行ステージの列挙
 #include <algorithm>
 #ifdef ENABLE_EDITOR
 #include <imgui.h>

@@ -202,7 +202,7 @@ void GraphicsDevice::Shutdown()
         Microsoft::WRL::ComPtr<ID3D11Debug> debug;
         if (SUCCEEDED(m_device.As(&debug))) {
             OutputDebugStringA("\n================= D3D11 LEAK REPORT =================\n");
-            // これで、出力ウィンドウに「Texture2D」や「Buffer」などの名前がバッチリ出ます
+            // 出力ウィンドウに未解放の Texture2D / Buffer などが型名付きで列挙される
             debug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL | D3D11_RLDO_IGNORE_INTERNAL);
             OutputDebugStringA("=====================================================\n\n");
         }

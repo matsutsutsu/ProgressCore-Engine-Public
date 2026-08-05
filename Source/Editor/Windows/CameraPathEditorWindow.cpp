@@ -168,10 +168,9 @@ void CameraPathEditorWindow::DrawContents(EditorContext &context)
             pathModified = true;
         }
 
-        // --- 💡 3Dギズモ(ImGuizmo) との連携用データ注入 ---
-        // ここで選択した頂点の座標をギズモで動かせるように、
-        // 外部（SceneViewなど）から参照できる形にするのが AAA の定石だ。
-        // Context 経由で「現在編集中のパス頂点」のポインタを渡すなどの拡張が考えられる。
+        // --- 3Dギズモ(ImGuizmo) 連携は未実装 ---
+        // 選択頂点を SceneView 側から掴めるようにするには、編集中の頂点ポインタを
+        // Context 経由で公開する必要がある。現状はリスト上の数値編集のみ。
     }
 
     // -------------------------------------------------------------

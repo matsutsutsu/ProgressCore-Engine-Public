@@ -1,11 +1,9 @@
 #pragma once
 #include "Engine/ECS/Core/CCL_World.h"
 
-// モデルクラスのパスは適宜合わせてください
 #include <d3d11.h>
 #include <memory>
 
-// SceneInitializer.h
 class SceneInitializer {
   public:
     // ライトなどの最初のシーン設定
@@ -44,14 +42,13 @@ class SceneInitializer {
     static void SpawnPhysicsAvalancheTest(CCL::ECS::World& world, ID3D11Device* device, int count);
 
     // =======================================================
-    // 物理エンジンの極限テスト（数万個の雪崩）
+    // 物理負荷テスト：剛体を数万個落として Jolt のスループットを見る
     // =======================================================
     static void SpawnJoltAvalancheTest(CCL::ECS::World &world, ID3D11Device *device, int count);
 
-    // 究極の群れシミュレーション
+    // 群れ挙動（Boids）の負荷テスト
     static void SpawnBoidsTest(CCL::ECS::World &world, ID3D11Device *device, int count);
 
-    // 既存の宣言の下に追加
     static void SpawnLissajousTest(CCL::ECS::World& world, ID3D11Device* device, int count);
     static void SpawnTornadoTest(CCL::ECS::World& world, ID3D11Device* device, int count);
     static void SpawnVectorFlowTest(CCL::ECS::World& world, ID3D11Device* device, int count);

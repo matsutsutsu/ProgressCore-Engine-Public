@@ -58,7 +58,7 @@ void RootMotionSystem::Update(float /*rawDt*/)
 
         if (animIndex == -1 || seq->duration <= 0.0f) return;
 
-        // 究極の特定: 抽出対象を「実際に動いているボーン」にする
+        // ルート名だけで決め打ちせず、実際に移動量を持つノードを抽出対象にする
         const int rootNodeIndex = model->FindRealRootMotionNodeIndex(animIndex);
 
         // 遷移（シーケンスの切り替わり）検知

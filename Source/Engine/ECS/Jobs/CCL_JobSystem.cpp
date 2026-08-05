@@ -143,8 +143,8 @@ namespace CCL::ECS {
                 std::unique_lock<std::mutex> lock(m_queueMutex);
 
                 // 2. 「仕事が来る」または「閉店(m_shutdown)」まで寝て待つ
-                // wait関数は賢いので、寝ている間は「鍵を一時的に返却」してくれる。
-                // ベル(m_condition)が鳴ったら飛び起きて、再び「鍵を奪い取って」から処理を再開する。
+                // wait は待機に入る際に lock を解放し、起床時に再取得してから戻る。
+                // そのため待っている間、他スレッドは注文ボードを触れる。
                 m_condition.wait(lock, [this] { return m_shutdown || !m_jobQueue.empty(); });
 
                 // 起きた時に「閉店」かつ「仕事も空っぽ」なら、帰宅(return)する

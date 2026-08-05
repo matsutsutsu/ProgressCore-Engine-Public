@@ -12,7 +12,7 @@
 #include "Editor/Core/EditorWindow.h"
 #include "Engine/Animation/Core/AnimSequence.h"
 #include "Engine/ECS/Common/CCL_Types.h"
-#include "Editor/Utils/CurveEditorWidget.h" // パスは配置に合わせて調整
+#include "Editor/Utils/CurveEditorWidget.h" // 速度カーブ編集ウィジェット
 #include <DirectXMath.h>
 #include <memory>
 #include <string>

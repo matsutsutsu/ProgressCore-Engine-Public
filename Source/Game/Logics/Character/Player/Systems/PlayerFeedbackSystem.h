@@ -13,10 +13,10 @@ class PlayerFeedbackSystem : public CCL::ECS::IfSystem<PlayerFeedbackSystem> {
     PlayerFeedbackSystem();
     virtual ~PlayerFeedbackSystem() = default;
 
-    // ここで EventBus の購読（Subscribe）を設定します
+    // EventBus への購読（被弾・撃破イベント）を登録する
     void Initialize() override;
 
-    // 被弾ビネットの時間経過（フェードアウト）をここで駆動します
+    // 被弾ビネットの時間経過（フェードアウト）を駆動する
     void Update(float dt) override;
 
   private:

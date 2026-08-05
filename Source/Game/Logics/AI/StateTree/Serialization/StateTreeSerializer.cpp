@@ -4,7 +4,7 @@
 #include "Game/Logics/AI/StateTree/Core/NodeRegistry.h"
 
 #include "Engine/Platform/Core/FileSystem.h"                       // ReadAllText / WriteAllText
-#include "Engine/Platform/Core/Logger.h"      // パスは環境に合わせて調整してください
+#include "Engine/Platform/Core/Logger.h"      // 読み込み失敗の報告
 
 #include <cstring>   // memcpy
 

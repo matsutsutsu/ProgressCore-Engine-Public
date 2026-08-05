@@ -627,7 +627,7 @@ ParticleBufferHandle ResourceManager::CreateParticleBuffer(ID3D11Device *device,
     cbDesc.ByteWidth = (cbDesc.ByteWidth + 15) / 16 * 16;
     hr               = device->CreateBuffer(&cbDesc, nullptr, buffers->dynamicCB.ReleaseAndGetAddressOf());
 
-    // ⑤ 究極のデバッグ武器：名札付け
+    // ⑤ デバッグ名の付与（D3D11 のリークレポートに型名付きで出る）
     SetDebugName(buffers->particleBuffer.Get(), "Particle_StructuredBuffer");
     SetDebugName(buffers->particleUAV.Get(), "Particle_UAV");
     SetDebugName(buffers->particleSRV.Get(), "Particle_SRV");

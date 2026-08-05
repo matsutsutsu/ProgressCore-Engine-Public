@@ -79,10 +79,10 @@ public:
         raw->m_tracyZoneName = "Pass: " + name;
 
         // =========================================================
-        // 究極の解決策: 型(T)ごとに固有の静的(static)GPUタグを生成する！
+        // 型(T)ごとに固有の静的GPUタグを生成する
         // =========================================================
 #if defined(TRACY_ENABLE)
-        // テンプレート関数内の static 変数は、型(T)が違うたびに別々のものとしてメモリに作られます
+        // テンプレート関数内の static は型(T)ごとに別実体になるため、パス種別ごとに1つ確保される
         static std::string staticGpuName = "GPU: " + name;
         static const tracy::SourceLocationData loc = {
             staticGpuName.c_str(), __FUNCTION__, __FILE__, (uint32_t)__LINE__, 0

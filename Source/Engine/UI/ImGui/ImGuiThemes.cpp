@@ -22,7 +22,7 @@ void ImGuiThemes::ApplyClassic()
 }
 
 
-void ImGuiThemes::ApplyAAATheme()
+void ImGuiThemes::ApplyEditorDark()
 {
     ImGuiStyle& style = ImGui::GetStyle();
     ImVec4* colors = style.Colors;

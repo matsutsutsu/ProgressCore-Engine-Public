@@ -7,9 +7,9 @@
 namespace EntityFactory {
 
     // ========================================================================
-    //  ECSコアを汚さずに「名前付きSpawn」を実現する魔法のヘルパー関数
+    //  名前付き生成のヘルパー。NameComponent の付与を ECS コア側に持ち込まないための層。
     // ========================================================================
-    // アーキタイプ変数と名前を渡すだけで、自動でNameComponentを付与して生成します。
+    // アーキタイプと名前を渡すと、NameComponent を付けたエンティティを生成して返す。
     inline CCL::ECS::EntityRef SpawnNamed(CCL::ECS::World &world,
                                             const char *name,
                                             const CCL::ECS::Archetype &baseArch)

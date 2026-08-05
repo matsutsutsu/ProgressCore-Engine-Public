@@ -134,7 +134,7 @@ bool BehaviorTreeWindow::DrawConditionCombo(const char* label, ActionID& current
 BehaviorTreeWindow::BehaviorTreeWindow() : EditorWindow("Behavior Tree Editor") {
 
     // =========================================================================
-    // 究極の修正1: 過去のクラッシュデータが記録されたiniファイルの読み込みを完全に拒絶する
+    // ini への保存を無効化する。前回クラッシュ時の不正なノード座標が残ると復帰できないため。
     // =========================================================================
     ed::Config config;
     config.SettingsFile = nullptr; // これにより、常に初期状態でクリーンに起動する
@@ -320,7 +320,7 @@ void BehaviorTreeWindow::DrawContents(EditorContext& context) {
     ed::SetCurrentEditor(m_nodeContext);
 
     // =========================================================================
-    // 究極の修正2: 描画領域が小さすぎるフレームは、絶対に中身を描画させない
+    // 描画領域が極小のフレームは中身を描かない（ドッキング操作中にサイズが 0 付近まで潰れる）
     // =========================================================================
     ImVec2 availableSize = ImGui::GetContentRegionAvail();
     if (availableSize.x < 50.0f || availableSize.y < 50.0f)
@@ -450,7 +450,7 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext& context) {
     }
 
     // =========================================================================
-    // 究極の修正3: ここでも安全確保（念には念を）
+    // 子ウィンドウ側でも同じ極小サイズの判定を行う
     // =========================================================================
     ImVec2 avail = ImGui::GetContentRegionAvail();
     if (avail.x < 50.0f || avail.y < 50.0f)
@@ -505,7 +505,9 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext& context) {
             ImVec2 labelScreenPos = ImGui::GetCursorScreenPos();
 
             // ===============================================================
-            // 無限膨張バグを防ぐため、あなたの正解コードである 1.0f x 1.0f を使用！
+            // ヘッダーは Dummy で領域を取らず「絵」として描く。
+            // ノード幅ぶんの Dummy を置くと、その幅がさらにノード幅へ反映されて
+            // 毎フレーム膨張していくため、最小サイズに留める。
             // ===============================================================
             ImGui::Dummy(ImVec2(1.0f, 1.0f));
 
@@ -523,7 +525,7 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext& context) {
             if (currentZoom < 0.6f) {
                 // ズームアウト時はフォントを拡大して視認性を保つ
 
-                // 究極の修正：ゼロ除算（Infinity）を防ぎ、最大フォントサイズを 64.0f 等に制限する
+                // zoom が 0 に近づくと除算結果が発散するため、下限と上限の両方で抑える
                 float safeZoom = (std::max)(0.01f, currentZoom);
                 float customFontSize = (std::min)(64.0f, ImGui::GetFontSize() / safeZoom * 0.8f);
 
@@ -796,7 +798,7 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext& context) {
     }
 
     // =======================================================
-    // 究極の改修：実行中ノードへのスマート・オートフォロー
+    // 実行中ノードへのオートフォロー（追従中もユーザーの選択は保持する）
     // =======================================================
     if (m_autoFollow && currentActiveNodeId != 0) {
         if (m_lastTrackedNodeId != currentActiveNodeId) {
@@ -909,7 +911,7 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext& context) {
 
     HandleContextMenu();
 
-    // 究極の修正: ed::End() の「前」で、数フレーム待機してからカメラを動かす
+    // 初回のズーム合わせは ed::End() より前で行う。ノードサイズが確定するまで数フレーム待つ。
     if (m_needInitialZoom) {
         m_framesSinceOpen++;
 

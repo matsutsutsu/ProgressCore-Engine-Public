@@ -107,7 +107,7 @@ void JoltPhysicsManager::Initialize()
 
     // 4. 物理システムのパラメータ設定
     #if PhysicsPerformanceCounters
-    // 群衆対応のAAAスケール
+    // 大量の剛体を想定した上限値
     const uint cMaxBodies             = 65536; // 最大6万体まで許容
     const uint cNumBodyMutexes        = 0;     // デフォルトのミューテックス数
     const uint cMaxBodyPairs          = 65536; // 密集によるペア爆発に備える

@@ -477,7 +477,7 @@ void AssetBrowser::DrawGridView()
             ImGui::PushStyleColor(ImGuiCol_Button, bgColor);
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.7f, 1.0f, 0.6f));
 
-            // 究極の改善: 自前の画像を捨て、ファイルもフォルダもすべて OS のネイティブアイコンに一任する
+            // アイコンは自前で用意せず、エクスプローラと同じ OS 標準アイコンを使う
             Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> iconSrv;
             iconSrv = ShellIconLoader::GetIconSRV(child.path.wstring(), device);
 

@@ -12,7 +12,7 @@
 /// という「ワールド単位の1パス」を行う。
 #pragma once
 #include "Engine/ECS/System/CCL_IfSystem.h"
-#include "Game/Logics/Character/Player/PlayerComponent.h"   // パスは適宜合わせてください
+#include "Game/Logics/Character/Player/PlayerComponent.h"   // 流れ場の発生源＝プレイヤー位置
 #include <vector>
 
 // ※ namespace で囲まない（プロジェクト規約）

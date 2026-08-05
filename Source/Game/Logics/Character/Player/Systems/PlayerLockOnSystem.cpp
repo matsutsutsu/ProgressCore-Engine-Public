@@ -16,8 +16,8 @@ void PlayerLockOnSystem::Update(float /*dt*/)
     ForEachWithID([&](EntityID playerID, PlayerComponent &player, const TransformComponent &playerTrans) {
         
         // ===================================================================
-        // 1. ロックオン対象がすでに死亡、または世界から消滅している場合は自動解除（安全ハック）
-        // Exists ではなく IsEntityValid を使用する
+        // 1. ロックオン対象が死亡済み、または破棄済みなら自動解除する。
+        //    世代違いのIDを掴んだままにしないため Exists ではなく IsEntityValid で判定する。
         // ===================================================================
         if (player.lockOnTargetID != InvalidEntityID)
         {

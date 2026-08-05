@@ -64,6 +64,5 @@ void PrimitiveCullingSetupSystem::Update(float dt)
 }
 
 // 実行順序：カリング計算（AABB生成や交差判定）の前に登録する
-// ※必要に応じてあなたのSystemPriorityの設定に合わせて変更してください
 REGISTER_RENDER_SYSTEM(ModelCullingSetupSystem, Priority::RenderStage::R05_Culling);
 REGISTER_RENDER_SYSTEM(PrimitiveCullingSetupSystem, Priority::RenderStage::R05_Culling);

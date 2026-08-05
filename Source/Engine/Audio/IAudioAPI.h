@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 #include <DirectXMath.h>
-#include "Engine/Core/Math/StringHash.h" // ※プロジェクトのパスに合わせてください
+#include "Engine/Core/Math/StringHash.h" // イベント名をハッシュ化して引くため
 
 /**
  * @brief ゲーム内のすべての音声再生を管理するオーディオAPIのインターフェース。

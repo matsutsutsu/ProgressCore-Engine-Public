@@ -89,24 +89,24 @@ void SceneInitializer::SpawnModelGridTest(
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Camera/FreeCamera.json");
 
     // 2. アーキタイプ（設計図）の生成
-    // メモリを連続して確保するため、アーキタイプを事前に定義します
+    // 生成時にチャンクを分散させないよう、構成を先に確定させておく
     const auto modelArch = CCL::ECS::ArchetypeHelper::Generate<
         TransformComponent,
         ModelComponent,
         MaterialComponent
     >();
 
-    // 3. モデルデータのキャッシュ（アーキテクトの極意）
-    // ループの中で毎回 SetModel を呼ぶと、数万回もパスの検索とロードが走ってしまいます。
-    // そのため、あらかじめ1つだけ「マスターとなる ModelComponent」を作り、使い回します。
+    // 3. モデルデータのキャッシュ
+    // ループ内で毎回 SetModel を呼ぶとパス検索とロードが個体数ぶん走るため、
+    // マスターとなる ModelComponent を1つだけ作って全体で使い回す。
     ModelComponent baseModelComp;
-    baseModelComp.SetModel("Assets/Models/Test/DamagedHelmet.glb"); // ※お手持ちのモデルのパスに変更してください
+    baseModelComp.SetModel("Assets/Models/Test/DamagedHelmet.glb");
 
     // 4. グリッド配置の計算
-    // count の平方根を切り上げて、XとZの1辺あたりの配置数を決めます
+    // count の平方根を切り上げて、XとZの1辺あたりの配置数を決める
     int sideSize = static_cast<int>(std::ceil(std::sqrt(count)));
 
-    float spacing = 2.0f; // モデル同士の間隔（モデルの大きさに合わせて調整してください）
+    float spacing = 2.0f; // モデル同士の間隔
     float offset = (sideSize * spacing) / 2.0f; // 全体の中心を (0,0) に持ってくるためのオフセット
 
     // 5. 大量生成ループ
@@ -291,8 +291,6 @@ void SceneInitializer::SpawnPhysicsAvalancheTest(
 }
 
 
-// ※PrimitiveComponent などのインクルードは適宜行ってください
-
 void SceneInitializer::SpawnJoltAvalancheTest(CCL::ECS::World &world, ID3D11Device *device, int count)
 {
     // ====================================================================
@@ -306,8 +304,7 @@ void SceneInitializer::SpawnJoltAvalancheTest(CCL::ECS::World &world, ID3D11Devi
     floor.Set(PrimitiveComponent{.type = PrimitiveType::Box, .color = {0.2f, 0.2f, 0.25f, 1.0f}});
     floor.Set(JoltBoxColliderComponent{.halfExtent = {100.0f, 5.0f, 100.0f}});
 
-    // ※ エンジンの仕様に合わせて Static を指定してください
-    // 例: JoltMotionType::Static など
+    // 床は動かさないので Static + NON_MOVING レイヤに置く
     floor.Set(JoltRigidbodyComponent{
         .motionType  = JPH::EMotionType::Static,
         .objectLayer = PhysicsLayers::NON_MOVING,

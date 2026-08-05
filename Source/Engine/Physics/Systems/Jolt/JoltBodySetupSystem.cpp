@@ -40,8 +40,8 @@ void JoltBodySetupSystem::Update(float dt)
     auto               &joltManager   = m_world->GetResource<JoltPhysicsManager*>();
     JPH::BodyInterface &bodyInterface = joltManager->GetBodyInterface();
 
-    // あなたのエンジンの IfSystem の恩恵により、
-    // Transform と Rigidbody を持っているエンティティ「だけ」がここに流れてくる！
+    // IfSystem の型フィルタにより、Transform と Rigidbody を併せ持つ個体だけが渡ってくる。
+    // そのため、ここでの所持チェックは不要。
     ForEachWithID([&](CCL::ECS::EntityID            id,
                       const TransformComponent     &trans,
                       const JoltRigidbodyComponent &rigid) {

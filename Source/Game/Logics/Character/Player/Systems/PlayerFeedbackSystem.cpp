@@ -2,9 +2,7 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Game/Logics/GameEvent/GameEvents.h"
 
-// 必要に応じて、あなたのエンジンのマネージャー類をインクルードしてください
-
-// カメラのコンポーネントを使うためにインクルードを追加
+// カメラシェイク要求を出すために参照する
 #include "Engine/Camera/Components/VirtualCameraComponents.h"
 
 // 被弾ビネット用：既存のビネット設定(singleton)を一時的に駆動する。

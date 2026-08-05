@@ -33,7 +33,6 @@ void PlayerInputSystem::Update(float dt)
     bool  isLockOn    = inputAPI->GetAction("LockOn"); // Rボタンなどのアクションを追加
 
     // 2. カメラ空間ベースのベクトル生成 (TPS特有の処理)
-    // ※Cameraクラスの仕様に合わせて GetForward() 等の関数名は適宜読み替えること
     Vector3 camForward = mainCamera->GetFront();
     Vector3 camRight = mainCamera->GetRight();
 

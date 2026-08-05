@@ -124,7 +124,7 @@ void Shader::UpdateMaterialProperties(ID3D11DeviceContext* dc, const MaterialDat
         UINT slot = texInfo.bindPoint;
         TextureHandle texHandle;
 
-        // ⭕ 究極の最適化: 実行時のハッシュ計算すら不要。ロード時に計算済みの texInfo.nameHash を使う！
+        // 実行時のハッシュ計算は不要。ロード時に算出済みの texInfo.nameHash をそのまま引く。
         if (mat.GetTexture(texInfo.nameHash, texHandle) && texHandle.IsValid()) {
             // cppに分けたことで、ここでResourceManagerを安全に呼び出せる
             ID3D11ShaderResourceView* srv = ResourceManager::Instance().GetTexture(texHandle);

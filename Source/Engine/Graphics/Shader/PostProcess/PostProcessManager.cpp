@@ -122,7 +122,7 @@ ID3D11ShaderResourceView* PostProcessManager::EndScene(ID3D11DeviceContext* dc,
     }
 
     // ================================================================
-    // 究極のエコシステム: Ping-Pong 実行
+    // Ping-Pong 実行：2枚のRTを読み書きで入れ替えながらパスを重ねる
     // ================================================================
     int readIdx = 0;
     int writeIdx = 1;

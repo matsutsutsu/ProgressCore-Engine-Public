@@ -43,12 +43,12 @@ void PlayerMoveSystem::Update(float rawDt)
         inputData.rootMotionVelocity = Vector3::Zero;
 
         // =========================================================
-        // 1. 操作ハック（時間の魔法）
+        // 1. 接地判定とジャンプ成立の確定
         // =========================================================
-        UpdateJumpLogic(dt, isGrounded, inputData, player, animParams); // 引数追加
+        UpdateJumpLogic(dt, isGrounded, inputData, player, animParams);
 
         // =========================================================
-        // 2. 視覚ハック（空間の魔法）
+        // 2. 旋回とバンク（体の傾き）の反映
         // =========================================================
         UpdateBankingAndRotation(dt, inputData, config.walkSpeed, player, trans, joltHandle.character.GetPtr());
     });
@@ -91,7 +91,7 @@ void PlayerMoveSystem::UpdateJumpLogic(float dt, bool isGrounded, CharacterMovem
         inputData.jumpRequested = true;
 
         // =========================================================
-        // AAAアニメーションハック: 固有アクションの伝達
+        // 2段ジャンプ専用トリガーの発行
         // 1段目は CharacterAnimSyncSystem が JoltのY速度変化を見て自動で OnJump を出す。
         // 空中での2段目は物理からは判別不可能なため、ここで専用の「宙返り」等を
         // 再生させるためのトリガーを発行する。

@@ -23,8 +23,8 @@ void HierarchyWindow::DrawContents(EditorContext& context)
     auto& chunks = chunkManager.GetChunks();
 
     // =========================================================================
-    // 究極の修正: 毎フレーム必ずキャッシュを空にする！
-    // これを忘れると過去の親子関係が蓄積し、全てが循環参照と誤認されます。
+    // 毎フレーム必ずキャッシュを空にする。
+    // 残したままだと過去の親子関係が蓄積し、循環参照として誤検出される。
     // =========================================================================
     {
         ZoneScopedN("Hierarchy [1]: Clear & Alloc");
@@ -92,7 +92,7 @@ void HierarchyWindow::DrawContents(EditorContext& context)
                     }
                     else {
                         // ====================================================================
-                        // 究極のDOD最適化: GetComponentを回避し、キャッシュから直接読む！
+                        // GetComponent の検索を避け、走査中のチャンク配列から直接読む
                         // ====================================================================
                         bool hasChildren = (transforms != nullptr && transforms[i].firstChildID != 0);
 
