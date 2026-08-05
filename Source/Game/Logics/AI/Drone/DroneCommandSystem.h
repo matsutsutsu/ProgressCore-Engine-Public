@@ -1,7 +1,7 @@
 /// @file  DroneCommandSystem.h
 /// @brief ボスの命令（BossCommandComponent）を全ドローンへ配布する「伝令」システム。
 ///
-/// 役割分担（企画書の3層構造「Managerが"何を"、個体が"どうやって"」の伝令部分）:
+/// 役割分担（Manager が"何を"、個体が"どうやって"を持つ構成の、伝令にあたる部分）:
 ///   DroneManagerSystem   … 何機いるか（戸籍係）
 ///   DroneCommandSystem   … ボスの命令を全機へ配る（伝令）      ← このファイル
 ///   DroneFormationSystem … どこへ並ぶか（振付師）

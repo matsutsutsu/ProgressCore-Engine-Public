@@ -1,7 +1,7 @@
 /// @file  DroneManagerSystem.h
 /// @brief ドローンの「生死・数」を管理する司令塔システム。
 ///
-/// 責務（企画書の「陣形Manager」とは別物）:
+/// 責務（陣形計算を行う DroneFormationSystem とは別物）:
 ///   - Spawn   : ドローンをプレハブから生成する
 ///   - Count   : 生存数を数えて BattleContext.droneAliveCount に書き込む（＝ボスHP）
 ///   - Destroy : ドローンを破壊する（デバッグ・被弾処理の受け皿）

@@ -26,7 +26,7 @@ class JoltSandboxGuiSystem : public CCL::ECS::IfSystem<JoltSandboxGuiSystem,
     }
     virtual ~JoltSandboxGuiSystem() = default;
 
-    // 今回の要件通り、Updateは空（何もしない）
+    // 毎フレームの処理は持たない。GUI 操作をトリガーにした生成しか行わないため。
     void Update(float dt) override
     {
     }

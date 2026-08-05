@@ -198,7 +198,7 @@ void BloomEffect::Process(
         dc->PSSetShader(m_res->psComposite.Get(), nullptr, 0);
 
         // 合成描画の前に、出力先(outputRTV)に対応する解像度でViewportを再設定する
-        // ※幅と高さは inputSRV (sceneHDR) のサイズと同じはずです
+        // 出力先の実サイズは inputSRV(sceneHDR) から取得する（縮小バッファのままだと合成がずれる）
         D3D11_TEXTURE2D_DESC desc;
         Microsoft::WRL::ComPtr<ID3D11Resource> res;
         inputSRV->GetResource(&res);

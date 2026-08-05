@@ -8,7 +8,7 @@
 struct JustEvadeSuccessEvent
 {
     CCL::ECS::EntityID playerID;   // 回避を成功させたプレイヤー
-    CCL::ECS::EntityID attackerID; // 攻撃してきた敵（今回は不使用でも用意しておく）
+    CCL::ECS::EntityID attackerID; // 攻撃してきた敵。現状の購読側は未使用だが、反撃演出用に残す
 };
 
 // ※ カメラへの演出要求（CameraShakeRequestEvent / CameraFovPunchRequestEvent）は

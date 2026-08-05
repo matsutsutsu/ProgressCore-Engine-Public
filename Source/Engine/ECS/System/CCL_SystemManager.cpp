@@ -123,7 +123,7 @@ namespace CCL::ECS
             // ----------------------------------------------------
             // マスタースイッチ (上部に大きく配置)
             // ----------------------------------------------------
-            // 少し目立つように装飾しても良いでしょう
+            // 全システムの並列実行を一括で切り替える（並列化による不具合の切り分け用）
             if (ImGui::Checkbox("Global Multi-Thread Enable", &globalMultiThreadEnabled)) {
                 for (auto &sys : m_logicSystems) sys->enableMultiThread = globalMultiThreadEnabled;
                 for (auto &sys : m_renderSystems) sys->enableMultiThread = globalMultiThreadEnabled;

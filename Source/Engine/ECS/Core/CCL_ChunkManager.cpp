@@ -302,14 +302,13 @@ namespace CCL::ECS
 
 
                     //  ----------------------------------------------------------------------------
-                    //  補足: op->data の型について
-                    //    PendingOp::data は void*（非const）。td.mover の引数も (void* dst, void* src)
-                    //    なのでそのまま渡せる。constructor は (void*, const void*) だが、現状の
-                    //    呼び出しは op->data を const として渡しているだけで実体は非const。問題なし。
+                    //  型について:
+                    //    PendingOp::data は非const の void* で、td.mover の (void* dst, void* src)
+                    //    にそのまま渡せる。constructor 側は (void*, const void*) だが実体は非const。
                     //
-                    //  補足: MoveEntityBetweenChunks（チャンク間移動）側は既に 297 行目で
-                    //    tdDst.mover を優先しているため修正不要。今回の不具合は「新規 AddComponent
-                    //    適用」経路（InsertNewEntity）だけが constructor を使っていたことが原因。
+                    //  チャンク間移動（MoveEntityBetweenChunks）は元から mover を優先している。
+                    //  ムーブ専用型を壊すのは AddComponent 適用時（InsertNewEntity）の経路だけなので、
+                    //  ここでも mover があればそちらを使う。
                     //============================================================================
                 }
             }

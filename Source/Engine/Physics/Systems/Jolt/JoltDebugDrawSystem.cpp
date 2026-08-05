@@ -17,7 +17,7 @@ namespace {
         return {pitch, yaw, roll};
     }
     
-    // デバッグ用の色（薄い緑色など、お好みで変更してください）
+    // コライダー可視化の色。シーンの色と被らないよう明るい緑にしている。
     const DirectX::XMFLOAT4 COLLIDER_COLOR = {0.2f, 1.0f, 0.2f, 1.0f}; 
 }
 

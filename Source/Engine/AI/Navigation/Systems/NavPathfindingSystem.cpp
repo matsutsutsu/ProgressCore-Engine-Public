@@ -28,7 +28,7 @@ void NavPathfindingSystem::Update(float dt) {
     dtNavMeshQuery* navQuery = navData.navQuery;
     if (!navQuery) return;
 
-    // 探索フィルター（今回は全エリアを歩行可能として扱う設定）
+    // 探索フィルター。エリア種別を分けていないため全ポリゴンを歩行可能として扱う。
     dtQueryFilter filter;
     filter.setIncludeFlags(0xFFFF);
     filter.setExcludeFlags(0);

@@ -104,7 +104,7 @@ void AIDebugOverlaySystem::Update(float /*dt*/)
             }
         }
 
-        // 3) ステータス：ボスHP と ドローン残数（企画の「ドローン数=HP」を一目で）
+        // 3) ステータス：ボスHP と ドローン残数（両者が一致しているかを目視で確認する）
         char line3[96] = "";
         {
             const auto *hp     = m_world->GetComponent<HealthComponent>(e);

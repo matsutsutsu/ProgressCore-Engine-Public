@@ -254,7 +254,7 @@ void ModelResource::Load(ID3D11Device* device, const char* filename)
 		importer.LoadMeshes(meshes, nodes);
 
 		// アニメーションデータ読み取り
-		importer.LoadAnimations(animations, nodes, 30.0f); //samplerate（第3引数）はお好み
+		importer.LoadAnimations(animations, nodes, 30.0f); // 第3引数はサンプリングレート(fps)
 
 		//独自形式のモデルファイルを保存
 		Serialize(filepath.string().c_str());
