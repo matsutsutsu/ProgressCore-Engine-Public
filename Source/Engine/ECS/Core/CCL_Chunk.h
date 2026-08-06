@@ -140,6 +140,7 @@ namespace CCL::ECS
 
         bool IsEntityDestroyed(size_t index) const
         {
+            // ? ここどういった処理なのか
             return std::find(m_destroyedEntities.begin(), m_destroyedEntities.end(), index) !=
                    m_destroyedEntities.end();
         }

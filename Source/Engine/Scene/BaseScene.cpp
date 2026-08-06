@@ -142,6 +142,11 @@ void BaseScene::Finalize()
             }
         }
 
+        // ★ DestroyTag を「今すぐ」適用する。AddComponent<DestroyTag> は遅延(pendingOps)なので、
+        //   これを挟まないと下の JoltCleanup が「DestroyTag付きチャンク」を1つも見つけられず、
+        //   共有 Jolt 空間に前シーンの剛体が残る（再戦時に見えないコライダーで引っかかる原因）。
+        m_worldPtr->ScrutinyAndApply();
+
         // Jolt剛体の即時消去
         JoltCleanupSystem::ExecuteCleanup(*m_worldPtr);
         // 破棄される AudioEmitter の再生中サウンドを止める（BGM等の鳴りっぱなし防止）

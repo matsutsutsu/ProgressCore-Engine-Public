@@ -1,9 +1,12 @@
-// --- JoltCleanupSystem.h ---
 #pragma once
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Core/Components/DestroyTag.h"
 #include "Engine/Physics/Components/Jolt/JoltHandleComponent.h"
 
+// @brief DestroyTagがついたEntityのJoltの剛体を削除するシステム
+// @note HierarchyCleanupSystemとの順番は実はどっちでもいい
+//       実際に消されたとしても遅延実行なので問題なく剛体削除処理は通るので
+//     、HierarchyCleanupSystemが先に走っても問題ない
 class JoltCleanupSystem : public CCL::ECS::IfSystem<JoltCleanupSystem,
     CCL::ECS::Read<Tag::DestroyTag>, CCL::ECS::Read<JoltHandleComponent>> {
 public:

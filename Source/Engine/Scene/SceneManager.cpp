@@ -218,6 +218,10 @@ void SceneManager::LoadScene(CCL::ECS::World* world, const std::string& filepath
     // ここでシステムを直接呼ぶことで、1フレーム待たずに「今すぐ」物理空間とメモリを消し去る
     // ==========================================================
 
+    // 破棄されるエンティティを即時適用
+    // DestroyTagを即時に適用することで下のシステムのCleanupも作動するため
+    world->ScrutinyAndApply();
+
     // ① Joltの剛体を即座に消去する
     JoltCleanupSystem::ExecuteCleanup(*world);
 
