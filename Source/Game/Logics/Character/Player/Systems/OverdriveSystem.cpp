@@ -19,9 +19,6 @@ using namespace CCL::ECS;
 
 void OverdriveSystem::Initialize()
 {
-    // ※ ゲージHUDは ECS UI（OverdriveHudSystem + UIProgressBar/UIText）へ移行済み。
-    //    旧 ImGui foreground 直描き(OnGui)は撤去（製品ビルドで消えないHUDにするため）。
-
     // ジャスト回避成功でゲージを多めに加算（近道）。発動中は加算しない（無限延長防止）。
     ListenEvent<JustEvadeSuccessEvent>([this](const JustEvadeSuccessEvent &ev) {
         if (auto *od = m_world->GetComponent<OverdriveComponent>(ev.playerID))

@@ -143,7 +143,9 @@ void PlayerDashSystem::Update(float rawDt)
                 // Dash終了 (クールダウンへ移行)
                 dash.isDashing               = false;
                 dash.isInvincible            = false;
-                dash.isJustEvadeWindowActive = false; // 念のため
+                // 受付窓は上の経過判定でも閉じるが、ダッシュが途中終了した経路では
+                // 閉じ損ねるため、終了時に必ず落とす
+                dash.isJustEvadeWindowActive = false;
                 dash.currentTimer            = dash.dashCooldown;
                 input.overrideSpeed          = -1.0f;
             }

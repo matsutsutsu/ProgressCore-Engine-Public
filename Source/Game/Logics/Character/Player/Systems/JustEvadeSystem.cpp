@@ -21,13 +21,17 @@
 
 using namespace CCL::ECS;
 
-// JustEvadeSystem.cpp に追加（無名関数 or メンバ）
-static bool IsDroneHostile(const DroneComponent *drone)
+namespace
+{
+/// @brief そのドローンが「今ぶつかったらジャスト回避が成立する相手」かを判定する。
+///        陣形を組んでいるだけのドローンに突っ込んでも回避が暴発しないための門番。
+bool IsDroneHostile(const DroneComponent *drone)
 {
     if (!drone) return false;
     // 突撃系の状態だけを「危険」とみなす
     return drone->currentState == DroneState::FireCharge;
 }
+} // namespace
 
 
 // アニメーション掲示板へ書き込むトリガーのハッシュ
@@ -213,7 +217,8 @@ void JustEvadeSystem::OnGui()
     // OVERDRIVE ゲージ(左下)と被らないよう、その少し上に表示する
     const float x = 48.0f;
     const float y = io.DisplaySize.y - 120.0f;
-    dl->AddText(ImGui::GetFont(), 34.0f, ImVec2(x + 1.0f, y + 1.0f), IM_COL32(0, 0, 0, 200), buf); // 影
+    // 明るい背景でも数字が読めるよう、1px ずらした黒を先に敷いてから本体を重ねる
+    dl->AddText(ImGui::GetFont(), 34.0f, ImVec2(x + 1.0f, y + 1.0f), IM_COL32(0, 0, 0, 200), buf);
     dl->AddText(ImGui::GetFont(), 34.0f, ImVec2(x, y), col, buf);
 }
 #else

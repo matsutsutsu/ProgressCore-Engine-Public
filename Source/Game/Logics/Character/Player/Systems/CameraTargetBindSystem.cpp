@@ -13,7 +13,7 @@ using namespace CCL::ECS;
 
 namespace
 {
-    /// @brief PlayerComponent を持つ最初のエンティティ(=プレイヤー)を役割で探す。
+    /// PlayerComponent を持つ最初のエンティティ(=プレイヤー)を役割で探す。
     EntityID FindPlayer(World *world)
     {
         if (!world) return InvalidEntityID;
@@ -31,14 +31,14 @@ namespace
         return InvalidEntityID;
     }
 
-    /// @brief target が無効(未接続 / リロードでID変化 / リスポーン)なら player へ繋ぎ直す。
-    ///        有効な相手を指している場合(手動設定など)は尊重して上書きしない。
+    // target が無効(未接続 / リロードでID変化 / リスポーン)なら player へ繋ぎ直す。
+    // 有効な相手を指している場合(手動設定など)は尊重して上書きしない。
     void BindIfInvalid(World *world, CCL::Serialization::EntityLink &target, EntityID player)
     {
         if (player == InvalidEntityID) return;
         if (!world->IsEntityValid(target.id)) target.id = player;
     }
-} // namespace
+} 
 
 void CameraTargetBindSystem::Update(float /*dt*/)
 {

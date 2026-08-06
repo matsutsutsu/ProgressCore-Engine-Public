@@ -97,7 +97,7 @@ void SetAttackFacing(World *world, EntityID playerID, PlayerComponent &player)
     player.attackFaceYaw   = std::atan2(to.x, to.z); // PlayerMoveSystem と同じ atan2(x,z) 規約
     player.attackFaceTimer = kFaceDuration;
 }
-} // namespace
+} 
 
 void PlayerAttackSystem::Update(float dt)
 {

@@ -9,7 +9,7 @@
 
 #include "Game/Logics/GameEvent/GameEvents.h"
 #include "Engine/Camera/CameraEvents.h" // CameraShakeRequestEvent（着地の画面揺れ要求）
-#include "Engine/Core/Math/StringHash.h" // ハッシュ計算用
+#include "Engine/Core/Math/StringHash.h"
 
 
 using namespace CCL::ECS;
@@ -17,7 +17,7 @@ using namespace DirectX::SimpleMath;
 
 static const uint32_t HASH_TRIG_DOUBLE_JUMP = CCL::Utils::HashString("OnDoubleJump");
 
-// 攻撃時オートフェイシングの回頭速度（通常の turnSpeed より速く、キビッと敵へ向く）。
+// 攻撃時オートフェイシングの回頭速度。
 static constexpr float kAttackTurnSpeed = 18.0f;
 
 void PlayerMoveSystem::Update(float rawDt)
@@ -55,7 +55,7 @@ void PlayerMoveSystem::Update(float rawDt)
 }
 
 // -----------------------------------------------------------------------------------
-// [責務] 接地状態の更新と、押した瞬間のジャンプ成立判定（コヨーテ/先行入力バッファは持たない）
+// [責務] 接地状態の更新と、押した瞬間のジャンプ成立判定
 // -----------------------------------------------------------------------------------
 void PlayerMoveSystem::UpdateJumpLogic(float dt, bool isGrounded, CharacterMovementInputComponent &inputData, PlayerComponent &player, AnimParametersComponent &animParams)
 {

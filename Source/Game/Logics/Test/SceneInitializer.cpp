@@ -28,8 +28,8 @@ void SceneInitializer::SpawnCameraTest(
     // プレイヤー
     EntityID playerID = Prefab::SpawnPrefab(world, "Assets/Prefabs/Player.json", {0, 0, 0});
 
-    // 追従カメラ (ID指定ではなくJSONパス)
-    // CameraBrainSystemが入っていれば自動リンクされるが、念のため手動リンクのコードも残しておく例
+    // 追従カメラ。CameraBrainSystem があれば自動でプレイヤーへリンクされるが、
+    // このシーンは Brain を積まない構成でも動かせるよう、下で手動リンクもしている。
     EntityID camID = Prefab::SpawnPrefab(world, "Assets/Prefabs/Camera/FollowCamera.json");
 
     // フリーカメラ

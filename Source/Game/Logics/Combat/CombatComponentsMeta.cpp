@@ -2,6 +2,7 @@
 /// @brief 戦闘関連コンポーネントのシリアライズ/インスペクタ定義。
 
 #include "Engine/ECS/Core/CCL_World.h"
+#include <algorithm> // for std::clamp
 #include "Game/Logics/Combat/CombatComponents.h"
 #include "Game/Logics/Combat/CombatRosterComponent.h"
 #include "Game/Logics/Combat/HealthComponent.h"
@@ -141,10 +142,17 @@ namespace ComponentMetaJson {
             }
         }
         static void Load(const json& j, CombatRosterComponent& comp, LoadContext* ctx) {
-            if (j.contains("count")) {
-                comp.count = j["count"].get<int>();
-                if (comp.count > 4) comp.count = 4;
+            // count は entries の実数から決める。JSON に count が無い場合でも読めるようにするため。
+            // （count だけを信用すると、キーが欠けたJSONで黙って0件になる）
+            comp.count = 0;
+            if (j.contains("entries") && j["entries"].is_array()) {
+                comp.count = static_cast<int>(j["entries"].size());
             }
+            else if (j.contains("count")) {
+                comp.count = j["count"].get<int>();
+            }
+            comp.count = std::clamp(comp.count, 0, CombatRosterComponent::kMaxEntries);
+
             if (j.contains("entries") && j["entries"].is_array()) {
                 int idx = 0;
                 for (const auto& entry : j["entries"]) {

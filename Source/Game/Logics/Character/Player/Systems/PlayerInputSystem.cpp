@@ -48,7 +48,6 @@ void PlayerInputSystem::Update(float dt)
         moveDir.Normalize();
     }
 
-    // 4. Chunk一括更新 (SoA)
     ForEach([&](CharacterMovementInputComponent& inputData, PlayerComponent& player) {
 
         // 要求速度、攻撃意思、ジャンプ意思の書き込み
