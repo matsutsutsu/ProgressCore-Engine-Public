@@ -21,17 +21,14 @@
 
 using namespace CCL::ECS;
 
-namespace
-{
-/// @brief そのドローンが「今ぶつかったらジャスト回避が成立する相手」かを判定する。
-///        陣形を組んでいるだけのドローンに突っ込んでも回避が暴発しないための門番。
-bool IsDroneHostile(const DroneComponent *drone)
+// そのドローンが「今ぶつかったらジャスト回避が成立する相手」かを判定する門番。
+// 陣形を組んでいるだけのドローンに突っ込んでも回避が暴発しないようにする。
+bool JustEvadeSystem::IsDroneHostile(const DroneComponent *drone) const
 {
     if (!drone) return false;
     // 突撃系の状態だけを「危険」とみなす
     return drone->currentState == DroneState::FireCharge;
 }
-} // namespace
 
 
 // アニメーション掲示板へ書き込むトリガーのハッシュ

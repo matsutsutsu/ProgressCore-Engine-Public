@@ -5,11 +5,12 @@
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"
 #include "Engine/Physics/Components/Character/CharacterMovementInputComponent.h"
 #include "Engine/Animation/Components/AnimParametersComponent.h"
-#include "Game/Logics/Character/Player/Components/DashComponent.h" 
+#include "Game/Logics/Character/Player/Components/DashComponent.h"
+#include <SimpleMath.h>
 
 class PlayerAttackSystem : public CCL::ECS::IfSystem< PlayerAttackSystem,
       CCL::ECS::Read<CharacterMovementInputComponent>,
-      CCL::ECS::Write<DashComponent>, 
+      CCL::ECS::Write<DashComponent>,
       CCL::ECS::Write<AnimParametersComponent>,
       CCL::ECS::Write<PlayerComponent>>
 {
@@ -21,4 +22,13 @@ class PlayerAttackSystem : public CCL::ECS::IfSystem< PlayerAttackSystem,
     virtual ~PlayerAttackSystem() = default;
 
     void Update(float dt) override;
+
+  private:
+    /// 前方コーン内で最も近い「生存中の敵」を探す。ロックオンが無い時のフォールバック。
+    /// 敵＝HealthComponent を持ち PlayerComponent を持たない生存エンティティ。
+    CCL::ECS::EntityID FindBestFrontEnemy(CCL::ECS::EntityID selfID, const DirectX::SimpleMath::Vector3 &selfPos,
+                                          const DirectX::SimpleMath::Vector3 &forward, float range, float coneCos);
+
+    /// 攻撃対象へ向く yaw を求め、attackFaceTimer を立てる（対象が無ければ何もしない）。
+    void SetAttackFacing(CCL::ECS::EntityID playerID, PlayerComponent &player);
 };

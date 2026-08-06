@@ -22,28 +22,27 @@ static const uint32_t HASH_TRIG_AIR_ATTACK  = CCL::Utils::HashString("AirAttack"
 
 namespace
 {
-// --- オートフェイシングのチューニング ---
+// --- オートフェイシングのチューニング（定数のみ：変更頻度が低いため file-scope に置く） ---
 constexpr float kFaceDuration = 0.22f;              ///< 攻撃時に敵へ回頭させる時間(秒)
 const     float kFaceConeCos  = std::cos(1.221730f); ///< 前方±70°の内積閾値（cos70°）
 //   ※自動フェイシングの最大距離は PlayerComponent.attackFaceMaxDistance（エディタ調整可）を使う。
+}
 
-/// @brief 前方コーン内で最も近い「生存中の敵」を探す。ロックオンが無い時のフォールバック。
-///        敵＝HealthComponent を持ち PlayerComponent を持たない生存エンティティ。
-EntityID FindBestFrontEnemy(World *world, EntityID selfID, const Vector3 &selfPos,
-                            const Vector3 &forward, float range, float coneCos)
+EntityID PlayerAttackSystem::FindBestFrontEnemy(EntityID selfID, const Vector3 &selfPos,
+                                                const Vector3 &forward, float range, float coneCos)
 {
     EntityID best       = InvalidEntityID;
     float    bestDistSq = range * range;
 
-    for (EntityID id : world->View<HealthComponent, TransformComponent>())
+    for (EntityID id : m_world->View<HealthComponent, TransformComponent>())
     {
         if (id == selfID) continue;
-        if (world->HasComponent<PlayerComponent>(id)) continue; // 味方（プレイヤー）は除外
-        if (world->HasComponent<Tag::DeadTag>(id)) continue;
+        if (m_world->HasComponent<PlayerComponent>(id)) continue; // 味方（プレイヤー）は除外
+        if (m_world->HasComponent<Tag::DeadTag>(id)) continue;
 
-        const auto *hp = world->GetComponent<HealthComponent>(id);
+        const auto *hp = m_world->GetComponent<HealthComponent>(id);
         if (hp && hp->currentHealth <= 0.0f) continue;
-        const auto *tr = world->GetComponent<TransformComponent>(id);
+        const auto *tr = m_world->GetComponent<TransformComponent>(id);
         if (!tr) continue;
 
         Vector3 to = Vector3(tr->position) - selfPos;
@@ -61,30 +60,29 @@ EntityID FindBestFrontEnemy(World *world, EntityID selfID, const Vector3 &selfPo
     return best;
 }
 
-/// @brief 攻撃対象へ向く yaw を求め、attackFaceTimer を立てる（対象が無ければ何もしない）。
-void SetAttackFacing(World *world, EntityID playerID, PlayerComponent &player)
+void PlayerAttackSystem::SetAttackFacing(EntityID playerID, PlayerComponent &player)
 {
-    const auto *ptrans = world->GetComponent<TransformComponent>(playerID);
+    const auto *ptrans = m_world->GetComponent<TransformComponent>(playerID);
     if (!ptrans) return;
     const Vector3 playerPos(ptrans->position);
 
     // 1. 対象決定：ロックオン中の敵を最優先。無ければ前方最寄りの敵。
     EntityID target = InvalidEntityID;
     if (player.lockOnTargetID != InvalidEntityID &&
-        world->IsEntityValid(player.lockOnTargetID) &&
-        !world->HasComponent<Tag::DeadTag>(player.lockOnTargetID))
+        m_world->IsEntityValid(player.lockOnTargetID) &&
+        !m_world->HasComponent<Tag::DeadTag>(player.lockOnTargetID))
     {
         target = player.lockOnTargetID;
     }
     else
     {
         const Vector3 forward(std::sin(player.currentYaw), 0.0f, std::cos(player.currentYaw));
-        target = FindBestFrontEnemy(world, playerID, playerPos, forward, player.attackFaceMaxDistance, kFaceConeCos);
+        target = FindBestFrontEnemy(playerID, playerPos, forward, player.attackFaceMaxDistance, kFaceConeCos);
     }
     if (target == InvalidEntityID) return; // 敵が居なければ向いてる方向のまま攻撃
 
     // 2. 対象方向の yaw を求めて回頭を予約（実際の回頭は PlayerMoveSystem が担う）。
-    const auto *etrans = world->GetComponent<TransformComponent>(target);
+    const auto *etrans = m_world->GetComponent<TransformComponent>(target);
     if (!etrans) return;
     Vector3 to = Vector3(etrans->position) - playerPos;
     to.y       = 0.0f;
@@ -97,7 +95,6 @@ void SetAttackFacing(World *world, EntityID playerID, PlayerComponent &player)
     player.attackFaceYaw   = std::atan2(to.x, to.z); // PlayerMoveSystem と同じ atan2(x,z) 規約
     player.attackFaceTimer = kFaceDuration;
 }
-} 
 
 void PlayerAttackSystem::Update(float dt)
 {
@@ -111,7 +108,7 @@ void PlayerAttackSystem::Update(float dt)
         if (inputData.isAttackRequested && !player.wasAttackButtonPressed)
         {
             // 攻撃の瞬間に対象へ回頭を予約（地上/空中どちらも）。
-            SetAttackFacing(m_world, playerID, player);
+            SetAttackFacing(playerID, player);
 
             // ==============================================================
             // 空中攻撃の判定（最優先）
@@ -132,8 +129,9 @@ void PlayerAttackSystem::Update(float dt)
                 float thresholdSpeed = dash.dashSpeed * 0.5f;
                 float currentSpeedSq = inputData.currentVelocity.LengthSquared();
 
-                // isDashing が true、または慣性によって十分な速度が出ている場合
-                if (dash.isDashing || currentSpeedSq >= (thresholdSpeed * thresholdSpeed))
+                // 走行中(isRunning)／回避バースト中(isDashing)は常にダッシュ攻撃。
+                // 加えて慣性で十分な速度が残っている場合も許可（走行解除直後の猶予）。
+                if (dash.isDashing || player.isRunning || currentSpeedSq >= (thresholdSpeed * thresholdSpeed))
                 {
                     // ダッシュ攻撃のトリガーを発行
                     animParams.SetTrigger(HASH_TRIG_DASH_ATTACK, 0.25f);

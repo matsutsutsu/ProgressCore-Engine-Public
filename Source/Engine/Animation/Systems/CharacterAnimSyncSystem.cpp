@@ -85,23 +85,30 @@ void CharacterAnimSyncSystem::Update(float /*dt*/)
         // 移動速度がConfigの基準速度(walkSpeed)より速い/遅い場合、
         // アニメーションの再生速度(playbackSpeed)を動的に伸縮させて足の接地点を床に噛み合わせる。
 
-        if (isGrounded && currentSpeed > 0.1f && !externallyDriven)
+        // フットスライド補正（再生速度の伸縮）は「ロコモーション＝ループ再生のクリップ」
+        // にのみ適用する。攻撃などの一撃モーション(非ループ)は移動速度で高速化させたくない
+        // ため対象外。※これを外すと走行(Run)中の高速度で攻撃アニメまで最大2.5倍速になる。
+        if (animator.isLoop)
         {
-            // 歩き/走り中: 実際の移動速度 ÷ 基準歩行速度 = 再生倍率
-            // (例: 速度が12なら、基準6の2倍速でアニメを再生し、足が滑るのを防ぐ)
-            float speedRatio = currentSpeed / (std::max)(0.1f, config.walkSpeed);
+            if (isGrounded && currentSpeed > 0.1f && !externallyDriven)
+            {
+                // 歩き/走り中: 実際の移動速度 ÷ 基準歩行速度 = 再生倍率
+                // (例: 速度が12なら、基準6の2倍速でアニメを再生し、足が滑るのを防ぐ)
+                float speedRatio = currentSpeed / (std::max)(0.1f, config.walkSpeed);
 
-            // 倍率が極端にならないようクランプ（0.5倍 ～ 2.5倍）
-            speedRatio = std::clamp(speedRatio, 0.5f, 2.5f);
+                // 倍率が極端にならないようクランプ（0.5倍 ～ 2.5倍）
+                speedRatio = std::clamp(speedRatio, 0.5f, 2.5f);
 
-            // Animatorのベース再生速度を上書き（※逆再生などは考慮しない簡易版）
-            animator.playbackSpeed = speedRatio;
+                // Animatorのベース再生速度を上書き（※逆再生などは考慮しない簡易版）
+                animator.playbackSpeed = speedRatio;
+            }
+            else
+            {
+                // 停止時、空中、ダッシュ中などは等速(1.0)に戻す
+                animator.playbackSpeed = 1.0f;
+            }
         }
-        else
-        {
-            // 停止時、空中、ダッシュ中などは等速(1.0)に戻す
-            animator.playbackSpeed = 1.0f;
-        }
+        // 非ループ(攻撃等)は Play 時に設定された再生速度を尊重し、ここでは触らない。
     });
 }
 

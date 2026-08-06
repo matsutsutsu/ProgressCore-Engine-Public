@@ -5,7 +5,23 @@
 
 struct PlayerComponent {
 
+    /// @brief 地上ロコモーション状態。PlayerDashSystem が一元的に更新する。
+    ///        空中かどうかは isAirborne が別管理（地上/空中は直交する軸）。
+    enum class GroundLocomotion : unsigned char { Walk, Run, Dodge };
+
     float turnSpeed = 10.0f;
+
+    // =========================================================
+    // 走行（Run）状態：歩き⇔走りの二段ロコモーション
+    //   回避（Dodge バースト）を終えると走行へ移行し、以降 runSpeed で走り続ける。
+    //   移動入力がある限り維持し、無入力が runIdleReleaseTime 続いたら歩きへ自動解除。
+    //   isRunning はダッシュ攻撃の作動条件にも使う（＝走っている間ずっとダッシュ攻撃が出せる）。
+    // =========================================================
+    float runSpeed           = 24.0f; ///< 走行状態の移動速度（walkSpeed と dashSpeed の中間が目安）
+    float runIdleReleaseTime = 0.4f;  ///< 無入力がこの秒数続いたら走行を自動解除して歩きへ
+    bool  isRunning          = false; ///< 走行状態か
+    float runIdleTimer       = 0.0f;  ///< 無入力の継続時間（>=runIdleReleaseTime で解除）
+    GroundLocomotion locomotion = GroundLocomotion::Walk; ///< 現在の地上ロコモーション（アニメ/演出参照用）
 
     // --- 2段ジャンプ設定・状態 ---
     int  maxJumps             = 2;     ///< 最大ジャンプ可能回数 (2段なら2)

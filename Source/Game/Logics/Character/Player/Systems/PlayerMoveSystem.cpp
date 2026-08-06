@@ -132,33 +132,33 @@ void PlayerMoveSystem::UpdateBankingAndRotation(float dt, const CharacterMovemen
     }
     else
     {
-    Vector3 horizontalMove(inputData.desiredVelocity.x, 0.0f, inputData.desiredVelocity.z);
+        Vector3 horizontalMove(inputData.desiredVelocity.x, 0.0f, inputData.desiredVelocity.z);
 
-    if (horizontalMove.LengthSquared() > 0.001f)
-    {
-        horizontalMove.Normalize();
-        float targetYaw = atan2f(horizontalMove.x, horizontalMove.z);
+        if (horizontalMove.LengthSquared() > 0.001f)
+        {
+            horizontalMove.Normalize();
+            float targetYaw = atan2f(horizontalMove.x, horizontalMove.z);
 
-        float angleDiff = targetYaw - player.currentYaw;
-        while (angleDiff > DirectX::XM_PI)
-            angleDiff -= DirectX::XM_2PI;
-        while (angleDiff < -DirectX::XM_PI)
-            angleDiff += DirectX::XM_2PI;
+            float angleDiff = targetYaw - player.currentYaw;
+            while (angleDiff > DirectX::XM_PI)
+                angleDiff -= DirectX::XM_2PI;
+            while (angleDiff < -DirectX::XM_PI)
+                angleDiff += DirectX::XM_2PI;
 
-        player.currentYaw += angleDiff * player.turnSpeed * dt;
+            player.currentYaw += angleDiff * player.turnSpeed * dt;
 
-        float speedRatio = (walkSpeed > 0.001f) ? (inputData.currentVelocity.Length() / walkSpeed) : 0.0f;
-        float targetRoll = -(angleDiff * 10.0f) * player.bankingMultiplier * speedRatio;
+            float speedRatio = (walkSpeed > 0.001f) ? (inputData.currentVelocity.Length() / walkSpeed) : 0.0f;
+            float targetRoll = -(angleDiff * 10.0f) * player.bankingMultiplier * speedRatio;
 
-        float maxRollRad = DirectX::XMConvertToRadians(player.maxBankingAngle);
-        targetRoll       = std::clamp(targetRoll, -maxRollRad, maxRollRad);
+            float maxRollRad = DirectX::XMConvertToRadians(player.maxBankingAngle);
+            targetRoll       = std::clamp(targetRoll, -maxRollRad, maxRollRad);
 
-        player.currentRoll = std::lerp(player.currentRoll, targetRoll, 8.0f * dt);
-    }
-    else
-    {
-        player.currentRoll = std::lerp(player.currentRoll, 0.0f, 10.0f * dt);
-    }
+            player.currentRoll = std::lerp(player.currentRoll, targetRoll, 8.0f * dt);
+        }
+        else
+        {
+            player.currentRoll = std::lerp(player.currentRoll, 0.0f, 10.0f * dt);
+        }
     }
 
     Quaternion yawRot  = Quaternion::CreateFromAxisAngle(Vector3::UnitY, player.currentYaw);
