@@ -11,6 +11,11 @@ struct DashComponent {
     // ジャスト回避の「シビアさ」を決める受付時間
     float justEvadeWindow = 0.08f;
 
+    // 回避の無敵時間。isInvincible が立っている間、被弾処理が実際に見る
+    // HealthComponent.invincibilityTimer を毎フレームこの値で維持し、ダメージ/ドローン接触を
+    // すり抜けさせる。回避（ダッシュ/接近）が終わってもこの秒数だけ無敵が残る（着地保険）。
+    float invincibleWindow = 0.06f;
+
     // チェイン段数による受付窓の倍率(1.0=通常, 小さいほど厳しい)。PlayerChain 側が毎フレーム設定する。
     float justEvadeWindowScale = 1.0f;
 

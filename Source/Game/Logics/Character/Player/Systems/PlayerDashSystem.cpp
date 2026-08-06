@@ -5,6 +5,7 @@
 #include "Engine/Camera/Components/CameraBodyActionTPSComponent.h" // 画角要求(wideFovRequest)をカメラへ push する
 #include "Engine/Animation/Components/RootMotionComponent.h" // ダッシュ中の外部移動制御を伝える
 #include "Game/Logics/AI/Battle/BattleContext.h"
+#include "Game/Logics/Combat/HealthComponent.h" // 回避の無敵：被弾処理が見る i-frame タイマーへ反映する
 
 #include <algorithm>
 
@@ -39,6 +40,19 @@ void PlayerDashSystem::Update(float rawDt)
         // ルートモーション対応キャラなら、後段でダッシュ状態を「外部移動制御中」として伝える。
         //   これにより RootMotionSystem はダッシュを知らない汎用システムに保てる。
         RootMotionComponent *rm = m_world->GetComponent<RootMotionComponent>(id);
+
+        // ★ 回避の無敵時間：isInvincible（ダッシュ／接近）の間、被弾処理が実際に参照する
+        //   HealthComponent.invincibilityTimer を毎フレームこの値へ維持し、ダメージ/ドローン
+        //   接触をすり抜けさせる。ヒットストップ中は localDt=0 でこのタイマーが減らないため凍結され、
+        //   接近の「溜め」中も無敵が保たれる。isInvincible が落ちれば自然減衰で無敵が切れる。
+        if (dash.isInvincible)
+        {
+            if (auto *health = m_world->GetComponent<HealthComponent>(id))
+            {
+                if (health->invincibilityTimer < dash.invincibleWindow)
+                    health->invincibilityTimer = dash.invincibleWindow;
+            }
+        }
 
         // ============================================================
         // 0. 接近（ジャスト回避スロー中にボスへ詰める「接近専用時間」）

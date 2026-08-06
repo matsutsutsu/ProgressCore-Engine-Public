@@ -15,6 +15,7 @@ CFIELD_FLOAT_RANGED(dashSpeed, "ダッシュ速度", 1.0f, 0.0f, 200.0f, "設定
 CFIELD_FLOAT_RANGED(dashDuration, "ダッシュ継続時間", 0.01f, 0.0f, 5.0f, "設定")
 CFIELD_FLOAT_RANGED(dashCooldown, "ダッシュ再使用時間", 0.01f, 0.0f, 10.0f, "設定")
 CFIELD_FLOAT_RANGED(justEvadeWindow, "ジャスト回避受付時間", 0.01f, 0.0f, 10.0f, "設定")
+CFIELD_FLOAT_RANGED(invincibleWindow, "回避の無敵時間", 0.01f, 0.0f, 2.0f, "設定")
 
 CFIELD_FLOAT_RANGED(approachSpeed, "接近速度", 1.0f, 0.0f, 300.0f, "設定")
 CFIELD_FLOAT_RANGED(approachDuration, "接近継続時間", 0.01f, 0.0f, 3.0f, "設定")
