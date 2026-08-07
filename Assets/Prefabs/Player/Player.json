@@ -9,19 +9,19 @@
                 "Animation": null,
                 "Animator": {
                     "isLoop": false,
-                    "playbackSpeed": 0.5
+                    "playbackSpeed": 1.0
                 },
                 "Character Movement Input": {
                     "currentVelocity": [
-                        -24.138036727905273,
+                        -16.14686393737793,
                         0.0,
-                        -6.732337951660156
+                        39.846763610839844
                     ],
                     "dashRequested": false,
                     "desiredVelocity": [
-                        -0.9632361531257629,
+                        -0.3755607008934021,
                         0.0,
-                        -0.2686561346054077
+                        0.9267978668212891
                     ],
                     "isAttackRequested": false,
                     "jumpRequested": false,
@@ -40,21 +40,22 @@
                     "currentTimer": -0.006666665896773338,
                     "dashCooldown": 0.1599999964237213,
                     "dashDirection": [
-                        0.5852976441383362,
+                        0.9518871307373047,
                         0.0,
-                        -0.8108185529708862
+                        0.30644896626472473
                     ],
                     "dashDuration": 0.1599999964237213,
                     "dashSpeed": 114.0,
+                    "invincibleWindow": 0.05999999865889549,
                     "isApproaching": false,
                     "isDashing": false,
                     "isInvincible": false,
                     "justEvadeWindow": 0.07999999821186066
                 },
                 "HealthComponent": {
-                    "currentHealth": 95.0,
+                    "currentHealth": 263.0,
                     "invincibilityDuration": 0.5,
-                    "maxHealth": 100.0
+                    "maxHealth": 300.0
                 },
                 "Hurtbox": {
                     "damageMultiplier": 1.0
@@ -87,7 +88,7 @@
                     "walkSpeed": 43.599998474121094
                 },
                 "Just Evade Component": {
-                    "chainCount": 1,
+                    "chainCount": 0,
                     "chainSpeedMax": 0.4000000059604645,
                     "chainSpeedPerLevel": 0.07999999821186066,
                     "idleBreakTime": 4.0,
@@ -117,18 +118,18 @@
                     "playerTimeScale": 1.149999976158142
                 },
                 "Player Component": {
+                    "attackFaceMaxDistance": 5.0,
                     "bankingMultiplier": 0.5,
-                    "coyoteTimeWindow": 0.15000000596046448,
                     "currentJumpCount": 0,
-                    "currentRoll": 5.801273069207539e-16,
-                    "currentYaw": -20.692350387573242,
+                    "currentRoll": -3.4084947998823736e-14,
+                    "currentYaw": 5.898183822631836,
                     "isAirborne": false,
-                    "jumpBufferTimer": 0.0,
-                    "jumpBufferWindow": 0.15000000596046448,
+                    "isRunning": false,
                     "lastFallVelocity": 0.0,
                     "maxBankingAngle": 30.0,
                     "maxJumps": 2,
-                    "timeSinceGrounded": 0.0,
+                    "runIdleReleaseTime": 0.4000000059604645,
+                    "runSpeed": 65.5,
                     "turnSpeed": 10.0,
                     "wasGroundedLastFrame": true,
                     "wasJumpButtonPressed": false
@@ -145,15 +146,15 @@
                     "isStatic": false,
                     "parent": 3,
                     "position": [
-                        3.985450506210327,
-                        -0.05943213775753975,
-                        -66.8139419555664
+                        14.34908390045166,
+                        -0.21196825802326202,
+                        73.17544555664063
                     ],
                     "rotation": [
-                        2.310203748390687e-16,
-                        0.7964471578598022,
-                        -1.7540384741521653e-16,
-                        -0.6047081351280212
+                        -3.260466136174086e-15,
+                        0.19131413102149963,
+                        1.6727680980828386e-14,
+                        -0.9815288782119751
                     ],
                     "scale": [
                         3.5,
@@ -263,10 +264,10 @@
                 },
                 "Hitbox": {
                     "damageAmount": 5.0,
-                    "hitStopDuration": 0.15000000596046448,
+                    "hitStopDuration": 0.10000000149011612,
                     "hitStopScale": 0.0,
                     "isActive": false,
-                    "knockback": 10.0
+                    "knockback": 5.0
                 },
                 "Jolt Capsule Collider": {
                     "halfHeight": 2.5999999046325684,

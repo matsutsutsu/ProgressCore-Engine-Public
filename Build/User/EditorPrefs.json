@@ -1,5 +1,5 @@
 {
     "DialogHistory": {
-        "Texture": "Assets\\Textures\\VFX"
+        "Prefab": "Assets\\Prefabs\\Player"
     }
 }
