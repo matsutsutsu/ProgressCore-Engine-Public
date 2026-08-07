@@ -160,12 +160,12 @@ void InspectorWindow::DrawContents(EditorContext &context)
     //   カテゴリ見出し(折りたたみ) → その中に各コンポーネント、の二段構造。
     //   ・カテゴリは ComponentMeta<T>::category (既定 "Misc") を GUI レジストリ
     //     経由で引く。std::map なので見出しはアルファベット順に並ぶ。
-    //   ・フィルタ / Jump / 一括開閉(Expand,Collapse) は drawOne 内でそのまま機能する。
+    //   ・フィルタ / 一括開閉(Expand,Collapse) は drawOne 内でそのまま機能する。
     // =========================================================
     const auto &archetype = world->GetEntityArchetype(selected);
     auto       &registry  = ComponentGuiRegistry::Instance();
 
-    // === ① フィルタ ＋ ② 一括開閉 ＋ ⑤ Jump to ツールバー ===========
+    // === ① フィルタ ＋ ② 一括開閉 ツールバー ===========
     {
         ImGui::SetNextItemWidth(-160.0f);
         ImGui::InputTextWithHint("##InspectorFilter", "コンポーネントを検索...",
@@ -178,24 +178,6 @@ void InspectorWindow::DrawContents(EditorContext &context)
         if (ImGui::SmallButton("全折りたたみ"))
             m_forceOpenState = 0;
 
-        ImGui::SetNextItemWidth(-1.0f);
-        if (ImGui::BeginCombo("##JumpTo", "コンポーネントへ移動...", ImGuiComboFlags_HeightLarge))
-        {
-            for (const auto &td : archetype)
-            {
-                std::string label = registry.GetName(td.id);
-                if (label.find("Unknown") != std::string::npos && td.name != nullptr)
-                {
-                    label = td.name;
-                }
-                if (ImGui::Selectable(label.c_str()))
-                {
-                    m_hasJumpTarget = true;
-                    m_jumpToTypeID  = td.id;
-                }
-            }
-            ImGui::EndCombo();
-        }
         ImGui::Separator();
     }
 
@@ -287,24 +269,11 @@ void InspectorWindow::DrawContents(EditorContext &context)
         {
             ImGui::SetNextItemOpen(true, ImGuiCond_Always);
         }
-        // ⑤ Jump 先は強制的に開いて中身を見せる
-        bool isJumpTarget = (m_hasJumpTarget && typeID == m_jumpToTypeID);
-        if (isJumpTarget)
-        {
-            ImGui::SetNextItemOpen(true, ImGuiCond_Always);
-        }
 
         bool headerOpen = ImGui::CollapsingHeader(
             compName.c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap);
 
         ImGui::PopStyleColor(4);
-
-        // ⑤ Jump 先ヘッダーを画面上部付近までスクロール（このフレーム限り）
-        if (isJumpTarget)
-        {
-            ImGui::SetScrollHereY(0.1f);
-            m_hasJumpTarget = false;
-        }
 
         // -------------------------------------------------------
         // ③ 削除ボタンのステルス化 (ヘッダーに溶け込ませる)
@@ -388,13 +357,6 @@ void InspectorWindow::DrawContents(EditorContext &context)
             return *a < *b;
         });
 
-    // ⑤ Jump 対象が属するカテゴリを求めておく（畳まれていても開くため）
-    std::string jumpCategory;
-    if (m_hasJumpTarget) {
-        jumpCategory = registry.GetCategory(m_jumpToTypeID);
-        if (jumpCategory.empty()) jumpCategory = "Misc";
-    }
-
     // -------------------------------------------------------------
     // カテゴリ見出し（折りたたみ可能）→ 中に各コンポーネント
     // -------------------------------------------------------------
@@ -419,8 +381,6 @@ void InspectorWindow::DrawContents(EditorContext &context)
 
         if (m_forceOpenState != -1)
             ImGui::SetNextItemOpen(m_forceOpenState == 1, ImGuiCond_Always);
-        if (m_hasJumpTarget && category == jumpCategory)
-            ImGui::SetNextItemOpen(true, ImGuiCond_Always);
         // 検索中は該当カテゴリを自動で開き、一致コンポーネントをすぐ見せる
         if (filtering)
             ImGui::SetNextItemOpen(true, ImGuiCond_Always);

@@ -18,8 +18,4 @@ private:
     // ② 一括開閉の一時指令: -1=なし / 0=全部閉じる / 1=全部開く
     int m_forceOpenState = -1;
 
-    // ⑤ Jump to の対象（このフレームでスクロールしたら消費）
-    bool             m_hasJumpTarget = false;
-    CCL::ECS::TypeID m_jumpToTypeID  = 0;
-
 };

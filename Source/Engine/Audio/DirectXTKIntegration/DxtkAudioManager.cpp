@@ -470,6 +470,21 @@ void DxtkAudioManager::StopEvent(uint32_t playingId, bool allowFadeOut)
     m_impl->playing.erase(it);
 }
 
+void DxtkAudioManager::StopAll()
+{
+    std::lock_guard<std::mutex> lk(m_impl->mtx);
+
+    // 継続再生（PlayEvent/PlayEvent3D）を即時停止して破棄。
+    for (auto &kv : m_impl->playing)
+        if (kv.second.inst) kv.second.inst->Stop(/*immediate*/ true);
+    m_impl->playing.clear();
+
+    // 再生途中の3Dワンショットも即時停止して破棄。
+    for (auto &p : m_impl->oneShot3D)
+        if (p.inst) p.inst->Stop(/*immediate*/ true);
+    m_impl->oneShot3D.clear();
+}
+
 void DxtkAudioManager::SetEventParameter(uint32_t playingId, const char *paramName, float value)
 {
     if (!paramName) return;

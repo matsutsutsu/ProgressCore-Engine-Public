@@ -25,7 +25,6 @@
 #include "Engine/Transform/Systems/TransformUpdateSystem.h"
 #include "Engine/Transform/Systems/HierarchyCleanupSystem.h"
 #include "Engine/Physics/Systems/Jolt/JoltCleanupSystem.h"
-#include "Engine/Audio/Systems/AudioCleanupSystem.h"
 
 #include "Engine/UI/ECS/UIDrawList.h" // ECSネイティブUIの描画リスト
 #include "Engine/UI/ECS/GameViewportInfo.h" // GameView表示矩形（UIクリック判定の座標写像用）
@@ -149,8 +148,16 @@ void BaseScene::Finalize()
 
         // Jolt剛体の即時消去
         JoltCleanupSystem::ExecuteCleanup(*m_worldPtr);
-        // 破棄される AudioEmitter の再生中サウンドを止める（BGM等の鳴りっぱなし防止）
-        AudioCleanupSystem::ExecuteCleanup(*m_worldPtr);
+
+        // ★ 音の後始末は「共有オーディオエンジンを丸ごと黙らせる」StopAll に一本化する。
+        //   このシーンの World はこの直後に完全破棄されるので、per-emitter の StopEvent
+        //   （DestroyTagが正しく付き playingId が正確、という前提に依存＝取りこぼしやすい）
+        //   ではなく、前提ゼロの StopAll で確実に止める。再戦時にBGMが二重に鳴る不具合の根治。
+        if (m_worldPtr->HasResource<std::shared_ptr<IAudioAPI>>()) {
+            if (auto& audio = m_worldPtr->GetResource<std::shared_ptr<IAudioAPI>>())
+                audio->StopAll();
+        }
+
         HierarchyCleanupSystem::ExecuteCleanup(*m_worldPtr);
 
         // ゴミ箱を空にする
