@@ -47,6 +47,10 @@ struct ParticleEmitterDesc
 
     // ---- 物理 ----
     float           gravity           = 0.0f;
+    /// @brief 速度の上限 (units/s)。0以下 = 無制限。
+    /// @note  既定の 10 は、以前シェーダにハードコードされていた値。既存アセットの
+    ///        見た目を変えないためこの値にしてある。速い火花を作るなら上げること。
+    float           maxSpeed          = 10.0f;              // max_speed
     float           velocityStretch   = 0.0f;
     float           noiseScale        = 1.0f;
     float           noiseStrength     = 0.0f;
@@ -106,6 +110,12 @@ struct ParticleEmitter
     bool  needsGpuInit  = true;             // true  → InitCS を走らせる
     bool  staticDirty   = true;             // true  → staticCB を再 upload する
     float burstTrigger  = 0.0f;             // TriggerBurst() で立て、UpdateSystem が消費
+
+    /// @brief このエミッタ実体の乱数種。GPU へ instance_seed として渡る。
+    /// @note  0 は「未割り当て」。UpdateSystem が最初の更新で採番し、以降は変えない。
+    ///        これにより、同じプレハブから出した VFX でも粒子の配置が個体ごとに変わる。
+    ///        非シリアライズ（保存すると全インスタンスが同じ種を共有してしまうため）。
+    GpuData::uint instanceSeed = 0;
 
     // ---- アニメ連動の発生ゲート（TrailComponent と同じ区間ゲート方式） ----
     // emitting=false の間、UpdateSystem は emit_enabled=0 を GPU へ渡し、

@@ -48,6 +48,7 @@ void WriteDescToJson(json &j, const ParticleEmitterDesc &d)
 
     j["localOffsetY"]    = SafeF(d.localOffsetY);
     j["gravity"]         = SafeF(d.gravity);
+    j["maxSpeed"]        = SafeF(d.maxSpeed);
     j["velocityStretch"] = SafeF(d.velocityStretch);
     j["noiseScale"]      = SafeF(d.noiseScale);
     j["noiseStrength"]   = SafeF(d.noiseStrength);
@@ -104,6 +105,9 @@ void ReadDescFromJson(const json &j, ParticleEmitterDesc &d)
 
     F("localOffsetY", d.localOffsetY);
     F("gravity", d.gravity);
+    // 旧アセットには maxSpeed が無い。その場合は既定の 10（＝以前のハードコード値）
+    // が維持されるので、読み込んだだけで見た目が変わることはない。
+    F("maxSpeed", d.maxSpeed);
     F("velocityStretch", d.velocityStretch);
     F("noiseScale", d.noiseScale);
     F("noiseStrength", d.noiseStrength);
@@ -304,7 +308,13 @@ struct ComponentMeta<GPUParticleComponent>
                 if (ImGui::Combo(u8"描画タイプ (Render Type)", &d.particleType, typeNames, IM_ARRAYSIZE(typeNames))) changed = true;
 
                 const char *modes[] = {"Continuous (継続)", "Burst (爆発)"};
-                if (ImGui::Combo(u8"発生モード (Mode)", &d.emitMode, modes, IM_ARRAYSIZE(modes))) changed = true;
+                if (ImGui::Combo(u8"発生モード (Mode)", &d.emitMode, modes, IM_ARRAYSIZE(modes)))
+                {
+                    // Burst は burstCount 個しか出さない。0 のまま切り替えると
+                    //   無言で1個も出なくなるので、既定として最大数を入れておく。
+                    if (d.emitMode == 1 && d.burstCount <= 0) d.burstCount = d.maxCount;
+                    changed = true;
+                }
 
                 if (ImGui::Checkbox(u8"アニメ制御 (Anim Controlled)", &p->animControlled)) changed = true;
                 if (ImGui::IsItemHovered())
@@ -374,6 +384,18 @@ struct ComponentMeta<GPUParticleComponent>
                 changed |= ImGui::DragFloat2(u8"回転速度 (Rot Speed Min/Max)", &d.angularSpeed.x, 0.1f, -100.0f, 100.0f, "%.2f");
                 changed |= ImGui::DragFloat(u8"重力 (Gravity)", &d.gravity, 0.1f);
 
+                changed |= ImGui::DragFloat(u8"最高速度 (Max Speed)", &d.maxSpeed, 0.5f, 0.0f, 1000.0f, "%.1f");
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip(u8"粒子の速度の上限 (0 = 無制限)。\n"
+                                      u8"初速をこれより大きくしても、この値まで抑えられます。");
+                // 初速がクランプされて効いていない状態は気付きにくいので明示する。
+                if (d.maxSpeed > 0.0f && d.emitSpeed.y > d.maxSpeed)
+                {
+                    ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.2f, 1.0f),
+                                       u8"※ 初速の最大 %.1f は最高速度 %.1f で頭打ちになります",
+                                       d.emitSpeed.y, d.maxSpeed);
+                }
+
                 ImGui::SeparatorText(u8"乱流・ノイズ (Turbulence)");
                 changed |= ImGui::DragFloat(u8"ノイズ強度 (Strength)", &d.noiseStrength, 0.1f);
                 changed |= ImGui::DragFloat(u8"ノイズサイズ (Scale)", &d.noiseScale, 0.01f);
@@ -431,7 +453,14 @@ struct ComponentMeta<GPUParticleComponent>
                 ImGui::SeparatorText(u8"特殊効果 (Effects)");
                 changed |= ImGui::DragFloat(u8"速度ストレッチ (Velocity Stretch)", &d.velocityStretch, 0.01f, 0.0f, 10.0f);
                 if (ImGui::IsItemHovered()) ImGui::SetTooltip(u8"移動方向に引き伸ばします (0.0=無効)");
+                // スプライトシート使用中は UV スクロールが使えない（コマの外へ滲むため）。
+                //   無言で壊れるより、触れないようにして理由を出す。
+                const bool usesSpriteSheet = (d.spriteGrid.x * d.spriteGrid.y > 1);
+                ImGui::BeginDisabled(usesSpriteSheet);
                 changed |= ImGui::DragFloat2(u8"UVスクロール (UV Scroll Speed)", &d.uvScrollSpeed.x, 0.01f);
+                ImGui::EndDisabled();
+                if (usesSpriteSheet)
+                    ImGui::TextDisabled(u8"※ スプライトシート使用中は UV スクロールは無効です");
 
                 ImGui::SeparatorText(u8"スプライトアニメ (Sprite Sheet)");
                 int grid[2] = {(int)d.spriteGrid.x, (int)d.spriteGrid.y};

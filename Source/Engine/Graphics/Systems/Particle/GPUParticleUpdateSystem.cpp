@@ -35,6 +35,7 @@ static GpuData::CbParticleStatic BuildStaticCb(const ParticleEmitterDesc& d)
     cb.noise_scale = d.noiseScale;
     cb.noise_strength = d.noiseStrength;
     cb.gravity = d.gravity;
+    cb.max_speed = d.maxSpeed;
     cb.velocity_stretch = d.velocityStretch;
     cb.uv_scroll_speed = d.uvScrollSpeed;
     cb.emit_stretch = d.emitStretch;
@@ -72,7 +73,8 @@ static GpuData::CbParticleStatic BuildStaticCb(const ParticleEmitterDesc& d)
 static GpuData::CbParticleDynamic BuildDynamicCb(
     const TransformComponent& transform,
     const GpuData::float3& prevPos, const GpuData::float4& prevRot,
-    float time, float dt, float burstTrigger, float emitEnabled)
+    float time, float dt, float burstTrigger, float emitEnabled,
+    GpuData::uint instanceSeed)
 {
     GpuData::CbParticleDynamic cb = {};
     // world 回転を使う（local ではない）。ボーン追従(BoneAttachmentSystem)は
@@ -84,6 +86,9 @@ static GpuData::CbParticleDynamic BuildDynamicCb(
     cb.delta_time = dt;
     cb.burst_trigger = burstTrigger;
     cb.emit_enabled = emitEnabled; // 継続放出の発生ゲート(アニメ連動)。false時は再生成を止める。
+    // エミッタ実体ごとの乱数種。spawn() がこれを混ぜて粒子ごとの種を作るので、
+    //   同じプレハブから出した VFX でも粒子配置が個体ごとに変わる。
+    cb.instance_seed = instanceSeed;
     // 前フレーム姿勢: spawn 側で現フレームとの間を補間してスポーンを軌道上に連続配置する。
     cb.prev_emit_rotation  = prevRot;
     cb.prev_world_position = prevPos;
@@ -166,6 +171,12 @@ void GPUParticleUpdateSystem::Update(float dt)
             // ---- エミッタごとに Dispatch ----
             for (ParticleEmitter& emitter : particle.emitters)
             {
+                // 実体ごとの乱数種を一度だけ採番する（0 = 未割り当て）。
+                //   ここで採るのは、プレハブ生成・シーン読込・エディタでの追加の
+                //   どの経路で作られても必ず通る唯一の場所だから。
+                if (emitter.instanceSeed == 0)
+                    emitter.instanceSeed = NextInstanceSeed();
+
                 if (!emitter.isInitialized)
                     RebuildParticleBuffer(emitter);
 
@@ -191,6 +202,14 @@ void GPUParticleUpdateSystem::Update(float dt)
 // =========================================================================
 // [WARNING] フレームスパイク注意: CreateBuffer を呼ぶ重い処理。
 //   将来 ResourceManager でバッファプール化を推奨。
+// =========================================================================
+GpuData::uint GPUParticleUpdateSystem::NextInstanceSeed()
+{
+    const GpuData::uint seed = m_nextInstanceSeed++;
+    if (m_nextInstanceSeed == 0) m_nextInstanceSeed = 1; // 一周したら 0 を飛ばす
+    return seed;
+}
+
 // =========================================================================
 void GPUParticleUpdateSystem::RebuildParticleBuffer(ParticleEmitter& emitter)
 {
@@ -239,7 +258,7 @@ void GPUParticleUpdateSystem::DispatchInitCS(
     const GpuData::float3 curPos = transform.GetWorldPosition();
     const GpuData::float4 curRot = transform.GetWorldRotation();
     auto dynCb = BuildDynamicCb(transform, curPos, curRot, frame.time, 0.016f, emitter.burstTrigger,
-        emitter.emitting ? 1.0f : 0.0f);
+        emitter.emitting ? 1.0f : 0.0f, emitter.instanceSeed);
     dc->UpdateSubresource(buf->dynamicCB.Get(), 0, nullptr, &dynCb, 0, 0);
 
     // b13, b14 を一括バインド (.Get() を追加)
@@ -288,7 +307,7 @@ void GPUParticleUpdateSystem::DispatchUpdateCS(
     //   time / dt / 前フレーム姿勢は効果全体で共通なので frame から受け取る。
     auto dynCb = BuildDynamicCb(transform, frame.prevPos, frame.prevRot,
         frame.time, frame.dt, emitter.burstTrigger,
-        emitter.emitting ? 1.0f : 0.0f);
+        emitter.emitting ? 1.0f : 0.0f, emitter.instanceSeed);
 
     dc->UpdateSubresource(buf->dynamicCB.Get(), 0, nullptr, &dynCb, 0, 0);
 

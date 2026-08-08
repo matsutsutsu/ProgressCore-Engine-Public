@@ -38,6 +38,11 @@ class GPUParticleUpdateSystem : public CCL::ECS::IfSystem<GPUParticleUpdateSyste
         GpuData::float4 prevRot = { 0.0f, 0.0f, 0.0f, 1.0f };
     };
 
+    /// @brief エミッタ実体に一意な乱数種を発行する（0 は「未割り当て」なので返さない）。
+    /// @note  連番をそのまま返す。シェーダ側が wangHash で散らすので偏りは出ず、
+    ///        実行ごとに同じ順序になるためデバッグ時に絵を再現できる。
+    GpuData::uint NextInstanceSeed();
+
     /// @brief StructuredBuffer / UAV / SRV / 定数バッファ一式を作り直す（重い処理）。
     void RebuildParticleBuffer(ParticleEmitter& emitter);
 
@@ -57,6 +62,9 @@ private:
 
     ID3D11Device* m_device = nullptr;
     bool          m_isLoaded = false;
+
+    /// 次に発行する乱数種。0 は「未割り当て」の意味に使うので 1 から始める。
+    GpuData::uint m_nextInstanceSeed = 1;
 
     std::unique_ptr<ParticleComputeShader> m_computeShader; // Init/Update CS（HotReload対応）
 

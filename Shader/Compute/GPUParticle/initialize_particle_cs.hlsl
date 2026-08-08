@@ -9,7 +9,7 @@ void main(uint3 dtid : SV_DispatchThreadID)
     if (id >= (uint)max_count) return;  // 旧: max_particle_count
 
     particle p = particle_buffer[id];
-    spawn(id, p);
+    spawn(id, p, 0u); // 初期化なので salt は 0（ここが種の連鎖の起点になる）
 
     if (emit_mode == 1)  // 旧: emission_mode → emit_mode
     {

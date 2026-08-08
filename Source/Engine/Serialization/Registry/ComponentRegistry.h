@@ -119,22 +119,9 @@ private:
 #define _CCL_USED
 #endif
 
-#ifndef NDEBUG
-#include <Windows.h>
-#include <cstdio>
-#define _CCL_DIAG_REG(Name, T)                                                                \
-        do {                                                                                      \
-            char m_buf[256];                                                                       \
-            bool m_alreadyReg = (ComponentRegistry::Instance().GetInfoByName(Name) != nullptr);    \
-            sprintf_s(m_buf, "[CCL_DIAG] AutoReg<%s> already=%d\n", Name, m_alreadyReg);            \
-            OutputDebugStringA(m_buf);                                                             \
-            sprintf_s(m_buf, "[CCL_DIAG_ID] %s -> TypeInfo::ID() = %llu\n",                        \
-                Name, (unsigned long long)CCL::ECS::TypeInfo<T>::ID());                           \
-            OutputDebugStringA(m_buf);                                                             \
-        } while(0)
-#else
+// コンポーネント自動登録時の診断ログ（[CCL_DIAG]/[CCL_DIAG_ID]）は不要になったため無効化。
+// 再度追跡したくなったら、下を Debug 限定の OutputDebugStringA 実装に差し戻せばよい。
 #define _CCL_DIAG_REG(Name, T) ((void)0)
-#endif
 
 #define REGISTER_COMPONENT(T, Name)                                                               \
     namespace {                                                                                   \
