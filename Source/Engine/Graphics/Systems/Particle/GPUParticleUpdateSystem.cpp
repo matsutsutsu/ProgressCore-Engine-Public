@@ -347,8 +347,10 @@ void GPUParticleUpdateSystem::DispatchUpdateCS(
     dc->CSSetShaderResources(SLOT_SRV_MAT_TEX1, 1, nullSRV);
     dc->CSSetShaderResources(SLOT_SRV_MAT_TEX2, 1, nullSRV);
 
-    if (emitter.desc.emitMode == 1)
-        emitter.burstTrigger = 0.0f;
+    // 発火要求は1フレームで使い切る。
+    //   継続モードでも必ず消すこと。継続中はシェーダが burst_trigger を読まないので、
+    //   立てっぱなしのまま Burst へ切り替えると、その瞬間に意図しない発火が起きる。
+    emitter.burstTrigger = 0.0f;
 }
 
 void GPUParticleUpdateSystem::CreateNoiseTexture(ID3D11Device* device)

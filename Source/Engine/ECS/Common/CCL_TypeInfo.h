@@ -46,14 +46,24 @@ namespace CCL::ECS
     {
     public:
         /**
-         * @brief 型 T に紐づく永続ユニーク ID。
-         * @note  inline static により全翻訳単位で同一実体になる。
+         * @brief 型 T に紐づく永続ユニーク ID を返す。
+         *
+         * @note 採番を「関数ローカル static」で行うのが要点。初回呼び出し時に
+         *       初期化されるので、静的初期化中に呼ばれても必ず正しい値を返す。
+         *
+         *       かつては `inline static const TypeID s_id = ID_Emitter::EmitTypeID();`
+         *       というメンバ変数だった。inline static 変数の動的初期化は他の翻訳
+         *       単位の静的初期化と順序が保証されない(unordered initialization)ため、
+         *       REGISTER_COMPONENT の登録処理(静的初期化中に走る)が s_id の初期化
+         *       前に ID() を呼ぶと、ゼロ初期化のままの 0 を読んでいた。
+         *       結果 ComponentRegistry の TypeID→名前の対応表が 0 番に化け、
+         *       「プレハブは読み込めるのに保存すると特定コンポーネントが消える」
+         *       という無言の破損が起きていた(どの型が壊れるかはリンク順次第)。
+         *       ID_Emitter 自身が同じ理由で関数ローカル static を採用している。
          */
-        inline static const TypeID s_id = ID_Emitter::EmitTypeID();
-
-        /// @brief 型 T の TypeID を返す（ただの変数読み込みなので超高速）
         static TypeID ID()
         {
+            static const TypeID s_id = ID_Emitter::EmitTypeID();
             return s_id;
         }
 
