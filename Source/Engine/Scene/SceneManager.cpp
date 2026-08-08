@@ -47,14 +47,20 @@ void SceneManager::Initialize()
 	// 静的初期化時に済ませている（"Editor" / "Particle" / "Title" / "Game"）。
 	// ここでは名前で参照するだけなので、具体シーンのヘッダは不要。
 
-	// 最初に表示するシーン（生成予約のみ。実体の重い初期化は初回 Update で走る）。
+	// 最初に表示するシーン。
 	// 展示会用：タイトルは見せず、起動直後に GameScene(=BossBattleStage) の戦闘へ直行する。
 	// （Shipping で発生していたタイトルの緑点滅もタイトルを経由しないことで回避される。）
 	// 従来の編集用 EditorScene / TitleScene はメニューやコードから任意に開ける。
-	ChangeScene("Game");
+	//
+	// ★ 同期 ChangeScene ではなく非同期 ChangeSceneAsync を使う。
+	//   ChangeScene("Game") だと重い GameScene::Initialize（レベル/モデル読込で数秒）が
+	//   初回 Update でメインスレッドをブロックし、その間 Render が回らず「白画面で数秒待つ」
+	//   状態になる。ChangeSceneAsync は軽い SceneLoading を先に表示し、重い初期化はワーカー
+	//   スレッドへ逃がすので、起動直後からローディング画面が描画され白画面が消える。
+	ChangeSceneAsync("Game");
 	//ChangeScene("Particle");
 
-	// 起動直後は黒から表示へフェードイン（初回シーンのポップインを隠す）。
+	// 起動直後は黒から表示へフェードイン（初回のローディング画面のポップインを隠す）。
 	FadeInFromBlack();
 }
 
