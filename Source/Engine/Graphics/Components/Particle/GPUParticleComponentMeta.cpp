@@ -146,25 +146,62 @@ namespace ComponentMetaJson
 template <>
 struct ComponentSerializer<GPUParticleComponent>
 {
+    /// @brief 保存は常に新フォーマット（emitters 配列）で書く。
     static void Save(json &j, const GPUParticleComponent &comp, SaveContext * /*ctx*/)
     {
-        WriteDescToJson(j, comp.desc);
+        json arr = json::array();
+        for (const auto &emitter : comp.emitters)
+        {
+            json ej;
+            WriteDescToJson(ej, emitter.desc); // 1エミッタぶんの変換は既存関数をそのまま使う
+            arr.push_back(ej);
+        }
+        j["emitters"]       = arr;
         j["animControlled"] = comp.animControlled; // 発生をアニメ区間で駆動するか
     }
 
+    /// @brief 読み込みは新旧どちらのフォーマットも受け付ける。
+    /// @note 旧フォーマットはエミッタ設定がトップレベルにベタ書きされている
+    ///       （emitters 配列が無い）。既存プレハブを作り直さずに済むよう、
+    ///       その場合は「エミッタ1個のエフェクト」として読む。
     static void Load(const json &j, GPUParticleComponent &comp, LoadContext * /*ctx*/)
     {
-        ReadDescFromJson(j, comp.desc);
+        comp.emitters.clear();
+
+        if (j.contains("emitters") && j["emitters"].is_array())
+        {
+            for (const auto &ej : j["emitters"])
+            {
+                ParticleEmitter emitter;
+                ReadDescFromJson(ej, emitter.desc);
+                comp.emitters.push_back(emitter);
+            }
+        }
+        else
+        {
+            ParticleEmitter emitter;
+            ReadDescFromJson(j, emitter.desc); // 旧フォーマット
+            comp.emitters.push_back(emitter);
+        }
+
+        // 空配列は許容しない（システム側が最低1個を前提にできるようにする）。
+        if (comp.emitters.empty()) comp.emitters.push_back(ParticleEmitter{});
+
         comp.animControlled = j.value("animControlled", false);
 
-        auto &rm       = ResourceManager::Instance();
-        comp.texture   = (comp.desc.texturePath[0] != '\0') ? rm.LoadTexture(comp.desc.texturePath) : TextureHandle{};
-        comp.colorRamp = (comp.desc.colorRampPath[0] != '\0') ? rm.LoadTexture(comp.desc.colorRampPath) : TextureHandle{};
+        auto &rm = ResourceManager::Instance();
+        for (auto &emitter : comp.emitters)
+        {
+            emitter.texture =
+                (emitter.desc.texturePath[0] != '\0') ? rm.LoadTexture(emitter.desc.texturePath) : TextureHandle{};
+            emitter.colorRamp =
+                (emitter.desc.colorRampPath[0] != '\0') ? rm.LoadTexture(emitter.desc.colorRampPath) : TextureHandle{};
 
-        comp.isInitialized = false;
-        comp.needsGpuInit  = true;
-        comp.m_staticDirty  = true;
-        comp.burstTrigger  = 0.0f;
+            emitter.isInitialized = false;
+            emitter.needsGpuInit  = true;
+            emitter.staticDirty   = true;
+            emitter.burstTrigger  = 0.0f;
+        }
     }
 };
 } // namespace ComponentMetaJson
@@ -219,9 +256,11 @@ struct ComponentMeta<GPUParticleComponent>
     {
         bool  changed = false;
         auto *p       = &compRef;
-        auto &d       = p->desc;
         auto &rm      = ResourceManager::Instance();
         HWND  hWnd    = Graphics::Instance().GetWindowHandle();
+
+        // 空配列だと以下が全て破綻するので、ここで最低1個を保証する。
+        if (p->emitters.empty()) p->emitters.push_back(ParticleEmitter{});
 
         static int lastActiveTabId    = -1;
         int        currentActiveTabId = -1;
@@ -249,6 +288,43 @@ struct ComponentMeta<GPUParticleComponent>
         }
         ImGui::Separator();
 
+        // =============================================================
+        // エミッタ選択タブ
+        //   1エンティティ = 1エフェクト。そのエフェクトを構成するエミッタを
+        //   ここで切り替えて、下の設定タブで個別に編集する。
+        // =============================================================
+        int selected = 0;
+        if (ImGui::BeginTabBar("EmitterTabs", ImGuiTabBarFlags_AutoSelectNewTabs))
+        {
+            for (int i = 0; i < static_cast<int>(p->emitters.size()); ++i)
+            {
+                const std::string label = std::string(u8"エミッタ ") + std::to_string(i);
+                if (ImGui::BeginTabItem(label.c_str()))
+                {
+                    selected = i; // アクティブなタブが編集対象
+                    ImGui::EndTabItem();
+                }
+            }
+            if (ImGui::TabItemButton("+"))
+            {
+                p->emitters.push_back(ParticleEmitter{});
+                changed = true;
+            }
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip(u8"このエフェクトにエミッタを追加します");
+            ImGui::EndTabBar();
+        }
+        if (selected >= static_cast<int>(p->emitters.size())) selected = 0; // 保険
+
+        // 削除は「このGUIを描き終えてから」行う。ここで消すと以下で参照が壊れる。
+        bool requestErase = false;
+        if (p->emitters.size() > 1)
+        {
+            if (ImGui::SmallButton(u8"このエミッタを削除")) requestErase = true;
+        }
+
+        auto &emitter = p->emitters[selected];
+        auto &d       = emitter.desc;
+
         ImGui::BeginChild("ParticleEditorChild", ImVec2(0, 380.0f), ImGuiChildFlags_Border, ImGuiWindowFlags_NavFlattened);
 
         if (ImGui::BeginTabBar("ParticleTabs"))
@@ -263,9 +339,9 @@ struct ComponentMeta<GPUParticleComponent>
                 {
                     if (tempMax > 0 && tempMax != d.maxCount)
                     {
-                        d.maxCount       = tempMax;
-                        p->isInitialized = false;
-                        changed          = true;
+                        d.maxCount            = tempMax;
+                        emitter.isInitialized = false; // バッファを作り直させる
+                        changed               = true;
                     }
                 }
                 const char *typeNames[] = {"Point (Color Only)", "Quad (Texture)"};
@@ -281,7 +357,8 @@ struct ComponentMeta<GPUParticleComponent>
                 if (d.emitMode == 1)
                 { 
                     if (ImGui::DragInt(u8"発生数 (Count)", &d.burstCount, 1, 0, 10000)) changed = true;
-                    if (ImGui::Button(u8"発火テスト (Trigger)", ImVec2(-1, 0))) p->TriggerBurst();
+                    // このエミッタだけを試し撃ちする（他のエミッタは動かさない）。
+                    if (ImGui::Button(u8"発火テスト (Trigger)", ImVec2(-1, 0))) emitter.burstTrigger = 1.0f;
                 }
                 else
                 { 
@@ -416,16 +493,16 @@ struct ComponentMeta<GPUParticleComponent>
                 ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 65.0f);
                 if (ImGui::InputText("##texPath", d.texturePath, sizeof(d.texturePath))) changed = true;
                 ImGui::SameLine();
-                if (ImGui::Button(u8"読込##Main")) pickTexture(d.texturePath, sizeof(d.texturePath), p->texture, "Select Texture");
+                if (ImGui::Button(u8"読込##Main")) pickTexture(d.texturePath, sizeof(d.texturePath), emitter.texture, "Select Texture");
 
-                if (ID3D11ShaderResourceView *srv = rm.GetTexture(p->texture))
+                if (ID3D11ShaderResourceView *srv = rm.GetTexture(emitter.texture))
                 {
                     ImGui::Image((void *)srv, ImVec2(64, 64), ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 0.5f));
                     ImGui::SameLine();
                     if (ImGui::Button(u8"クリア##Main"))
                     {
                         memset(d.texturePath, 0, sizeof(d.texturePath));
-                        p->texture = TextureHandle{};
+                        emitter.texture = TextureHandle{};
                         changed    = true;
                     }
                 }
@@ -435,16 +512,16 @@ struct ComponentMeta<GPUParticleComponent>
                 ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 65.0f);
                 if (ImGui::InputText("##rampPath", d.colorRampPath, sizeof(d.colorRampPath))) changed = true;
                 ImGui::SameLine();
-                if (ImGui::Button(u8"読込##Ramp")) pickTexture(d.colorRampPath, sizeof(d.colorRampPath), p->colorRamp, "Select Color Ramp");
+                if (ImGui::Button(u8"読込##Ramp")) pickTexture(d.colorRampPath, sizeof(d.colorRampPath), emitter.colorRamp, "Select Color Ramp");
 
-                if (ID3D11ShaderResourceView *srv = rm.GetTexture(p->colorRamp))
+                if (ID3D11ShaderResourceView *srv = rm.GetTexture(emitter.colorRamp))
                 {
                     ImGui::Image((void *)srv, ImVec2(128, 16), ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 0.5f));
                     ImGui::SameLine();
                     if (ImGui::Button(u8"クリア##Ramp"))
                     {
                         memset(d.colorRampPath, 0, sizeof(d.colorRampPath));
-                        p->colorRamp = TextureHandle{};
+                        emitter.colorRamp = TextureHandle{};
                         changed      = true;
                     }
                 }
@@ -461,7 +538,19 @@ struct ComponentMeta<GPUParticleComponent>
             lastActiveTabId = currentActiveTabId;
         }
 
-        ImGui::EndChild(); 
+        ImGui::EndChild();
+
+        // エミッタ削除はここで実行する。GUIを描き終えた後なので、
+        //   上で握っていた emitter / d の参照が壊れる心配がない。
+        if (requestErase)
+        {
+            // GPUリソースを取りこぼさないよう、消す前に解放しておく。
+            if (p->emitters[selected].computeBuffer.IsValid())
+                rm.UnloadParticleBuffer(p->emitters[selected].computeBuffer);
+
+            p->emitters.erase(p->emitters.begin() + selected);
+            changed = true;
+        }
 
         if (changed) p->MarkDescChanged();
 

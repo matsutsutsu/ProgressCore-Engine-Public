@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -494,8 +494,6 @@
     <ClInclude Include="Source\Engine\Graphics\Components\Lighting\ShadowMapConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\Particle\GPUParticleBuffer.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\Particle\GPUParticleComponent.h" />
-    <ClInclude Include="Source\Engine\Graphics\Components\Particle\ParticlePool.h" />
-    <ClInclude Include="Source\Engine\Graphics\Components\Particle\PooledParticleComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\BloomConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\DistortionConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\RadialBlurConfigComponent.h" />
@@ -599,6 +597,7 @@
     <ClInclude Include="Source\Engine\Graphics\Systems\Particle\GPUParticleRenderSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Particle\GPUParticleUpdateSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Particle\ParticleAnimationSyncSystem.h" />
+    <ClInclude Include="Source\Engine\Graphics\Systems\Particle\VfxSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\PostProcess\PostProcessSystem.h" />
     <ClInclude Include="Source\Engine\Physics\Components\Character\CharacterMovementInputComponent.h" />
     <ClInclude Include="Source\Engine\Physics\Components\Character\KnockbackComponent.h" />
@@ -1460,6 +1459,7 @@
     <ClCompile Include="Source\Engine\Graphics\Systems\Particle\GPUParticleRenderSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Particle\GPUParticleUpdateSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Particle\ParticleAnimationSyncSystem.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Systems\Particle\VfxSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\PostProcess\PostProcessSystem.cpp" />
     <ClCompile Include="Source\Engine\Physics\Components\Character\CharacterMovementInputComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Physics\Components\Character\KnockbackComponentMeta.cpp" />

@@ -37,8 +37,7 @@ class TransformUpdateSystem : public CCL::ECS::IfSystem<TransformUpdateSystem,CC
         CCL::ECS::World &world, CCL::ECS::EntityID entity, bool destroyChildren = true);
 
 
-    // 名前を変更: DestroyEntityWithHierarchy -> MarkForDestruction
-    // 直接消すのではなく、「削除タグ」を再帰的に付与する関数に変更
+    // DestroyTagを引数のEntityの子供含めて全て立てる処理
     static void MarkForDestruction(
         CCL::ECS::World &world, CCL::ECS::EntityID entity, bool destroyChildren = true);
 

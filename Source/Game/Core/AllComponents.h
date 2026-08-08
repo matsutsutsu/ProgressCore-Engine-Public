@@ -36,7 +36,6 @@
 #include "Engine/Graphics/Components/PostProcess/ToneMapConfigComponent.h"
 
 #include "Engine/Graphics/Components/Particle/GPUParticleComponent.h"
-#include "Engine/Graphics/Components/Particle/PooledParticleComponent.h"
 
 // ゲームロジック
 

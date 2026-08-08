@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="External">
@@ -939,9 +939,6 @@
     <ClInclude Include="Source\Engine\Graphics\Renderer\ParticleRenderer.h">
       <Filter>Source\Engine\Graphics\Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Components\Particle\PooledParticleComponent.h">
-      <Filter>Source\Engine\Graphics\Components\Particle</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\Factory\EntityFactory.h">
       <Filter>Source\Engine\Serialization\Factory</Filter>
     </ClInclude>
@@ -1425,6 +1422,9 @@
     <ClInclude Include="Source\Engine\Graphics\Systems\Particle\ParticleAnimationSyncSystem.h">
       <Filter>Source\Engine\Graphics\Systems\Particle</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Systems\Particle\VfxSystem.h">
+      <Filter>Source\Engine\Graphics\Systems\Particle</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Systems\PostProcess\PostProcessSystem.h">
       <Filter>Source\Engine\Graphics\Systems\PostProcess</Filter>
     </ClInclude>
@@ -1751,9 +1751,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Math\ScreenToWorld.h">
       <Filter>Source\Engine\Core\Math</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Components\Particle\ParticlePool.h">
-      <Filter>Source\Engine\Graphics\Components\Particle</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\TestLauncherWindow.h">
       <Filter>Source\Editor\Windows\Game</Filter>
@@ -2667,6 +2664,9 @@
       <Filter>Source\Engine\Graphics\Systems\Particle</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Systems\Particle\ParticleAnimationSyncSystem.cpp">
+      <Filter>Source\Engine\Graphics\Systems\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Systems\Particle\VfxSystem.cpp">
       <Filter>Source\Engine\Graphics\Systems\Particle</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Systems\PostProcess\PostProcessSystem.cpp">

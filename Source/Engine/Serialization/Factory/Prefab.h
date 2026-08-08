@@ -16,12 +16,6 @@ namespace Prefab {
     // 初期化 (デバイス保持など)
     void Initialize(ID3D11Device *device);
 
-    // プリウォーム (事前生成)
-    void PrewarmParticles(World &world);
-
-    // パーティクルをプールに戻す関数
-    void ReturnParticleToPool(World &world, EntityID id);
-
     // =========================================================================
     // 新システム: IDではなくファイルパスで生成する
     // =========================================================================
@@ -44,11 +38,5 @@ namespace Prefab {
         const std::string            &path,
         const DirectX::XMFLOAT3      &position,
         float                         rotationY);
-
-    // パーティクル生成 (既存のまま維持)
-    EntityID SpawnParticle(World &world,
-        const std::string              &path,
-        EntityID                        parentID,
-        const DirectX::XMFLOAT3        &localPos);
 
 } // namespace CCL::Prefab

@@ -54,7 +54,7 @@ void ParticleAnimationSyncSystem::Update(float /*dt*/)
 
         if (!animator || !animator->currentSequence)
         {
-            particle.emitting = false; // 台本なし → 発生停止（安全側）
+            particle.SetEmitting(false); // 台本なし → 全エミッタ発生停止（安全側）
             return;
         }
 
@@ -72,7 +72,9 @@ void ParticleAnimationSyncSystem::Update(float /*dt*/)
                 break;
             }
         }
-        particle.emitting = inside;
+        // 区間の内外を全エミッタへ一括反映する。タグ別に出し分けたくなったら、
+        //   ev.tagHash と各エミッタを対応づける仕組みをここに足す。
+        particle.SetEmitting(inside);
     });
 }
 

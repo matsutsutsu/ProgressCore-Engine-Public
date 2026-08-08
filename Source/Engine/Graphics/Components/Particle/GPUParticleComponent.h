@@ -3,6 +3,7 @@
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/ECS/Common/CCL_Types.h" // EntityID (アニメ連動オーナーのキャッシュ用)
 #include <cstring>
+#include <vector>
 #include <d3d11.h>
 #include <wrl/client.h>   // ComPtr (proceduralRampSRV 用)
 
@@ -79,40 +80,56 @@ struct ParticleEmitterDesc
         std::memset(texturePath,    0, sizeof(texturePath));
         std::memset(colorRampPath,  0, sizeof(colorRampPath));
     }
-
-    /// @brief desc を変更した後に呼ぶ。次フレームで staticCB が再 upload される。
-    //void MarkDescChanged() { m_staticDirty = true; }   // step1から修正: m_rampDirty を分離
-    /// @brief gradientStops を変更した後に呼ぶ。次フレームで手続きランプを再ベイク。
-    //void MarkGradientChanged() { m_rampDirty = true; }
 };
 
 // =========================================================================
-// GPUParticleComponent — ランタイム状態のみを保持する薄いコンポーネント
+// ParticleEmitter — エミッタ1個ぶん（設定 + そのエミッタ固有のランタイム状態）
 //
 // 設計原則:
 //   - 権威データは desc に集約。CB は毎フレームシステムが desc から組み立てる。
-//   - m_staticDirty: desc が変更された時だけ staticCB を再 upload するフラグ。
-//     TriggerBurst / isInitialized のような頻繁な変更は dynamicCB 側で処理。
+//   - staticDirty: desc が変更された時だけ staticCB を再 upload するフラグ。
+//     burstTrigger / isInitialized のような頻繁な変更は dynamicCB 側で処理。
+//   - GPUリソース(粒子バッファ)はエミッタ単位で持つ。将来ここを「効果全体で1本の
+//     バッファをスライスで分ける」形に変えれば Dispatch を1回に畳めるが、
+//     アセット形式(desc の配列)は変えずに済むよう、この境界で切ってある。
 // =========================================================================
-struct GPUParticleComponent
+struct ParticleEmitter
 {
-    ParticleEmitterDesc  desc;              // 権威データ（編集・保存対象）
+    ParticleEmitterDesc desc;               // 権威データ（編集・保存対象）
 
-    // ---- ランタイム状態 ----
+    // ---- ランタイム状態（非シリアライズ） ----
     TextureHandle        texture;
     TextureHandle        colorRamp;
     ParticleBufferHandle computeBuffer;
 
     bool  isInitialized = false;            // false → UpdateSystem がバッファを再構築
-    bool  needsGpuInit  = true;            // true  → InitCS を走らせる
-    bool  m_staticDirty  = true;            // true  → staticCB を再 upload する
-    float time          = 0.0f;            // 累積経過時間（フレームをまたいで保持）
-    float burstTrigger  = 0.0f;            // TriggerBurst() で立て、UpdateSystem が消費
+    bool  needsGpuInit  = true;             // true  → InitCS を走らせる
+    bool  staticDirty   = true;             // true  → staticCB を再 upload する
+    float burstTrigger  = 0.0f;             // TriggerBurst() で立て、UpdateSystem が消費
 
     // ---- アニメ連動の発生ゲート（TrailComponent と同じ区間ゲート方式） ----
     // emitting=false の間、UpdateSystem は emit_enabled=0 を GPU へ渡し、
     // 継続モードの粒子の「再生成」だけを止める（既存粒子は寿命まで生きて尾を引いて消える）。
-    bool emitting = true;                   ///< 発生マスタースイッチ(runtime)。GPUへ emit_enabled として渡る。
+    bool emitting = true;                   ///< 発生マスタースイッチ。GPUへ emit_enabled として渡る。
+};
+
+// =========================================================================
+// GPUParticleComponent — 1エンティティ = 1エフェクト（エミッタ複数）
+//
+// 設計原則:
+//   - エフェクトを構成するエミッタを配列で持つ。Unreal Niagara の
+//     「1 System = 複数 Emitter」と同じ考え方で、アートが1アセットとして
+//     まとめて編集・調整できるようにする。
+//   - 位置・時間・アニメ連動といった「効果全体で共通」の状態はここに置き、
+//     エミッタ固有の状態は ParticleEmitter 側に置く。
+// =========================================================================
+struct GPUParticleComponent
+{
+    /// @brief このエフェクトを構成するエミッタ群。常に1個以上（エディタで増減）。
+    std::vector<ParticleEmitter> emitters{ ParticleEmitter{} };
+
+    // ---- 効果全体で共通のランタイム状態 ----
+    float time = 0.0f;                      ///< 累積経過時間（エミッタ間で共有）
 
     /// @brief true: 祖先(Animator)の Particle 区間イベントで emitting を自動駆動する。
     ///        false: emitting は手動（常時ON）。既定は手動。※これのみシリアライズ対象。
@@ -122,20 +139,22 @@ struct GPUParticleComponent
     ///        ParticleAnimationSyncSystem が親を辿って一度だけ解決しキャッシュする。
     CCL::ECS::EntityID ownerEntity = CCL::ECS::InvalidEntityID;
 
-    // ---- サブフレーム補間用: 前フレームのエミッタ姿勢(runtime・非シリアライズ) ----
+    // ---- サブフレーム補間用: 前フレームの姿勢(runtime・非シリアライズ) ----
     // 速い剣の振りでもスポーンが1フレームの「櫛」にならず軌道上に連続配置されるよう、
     // UpdateSystem が毎フレーム「前フレームのワールド姿勢」を保持し、spawn 時に補間する。
-    GpuData::float3 prevWorldPos    = { 0.0f, 0.0f, 0.0f };
-    GpuData::float4 prevWorldRot    = { 0.0f, 0.0f, 0.0f, 1.0f };
+    // エミッタは同じエンティティに乗っているので、この値は全エミッタで共通。
+    GpuData::float3 prevWorldPos     = { 0.0f, 0.0f, 0.0f };
+    GpuData::float4 prevWorldRot     = { 0.0f, 0.0f, 0.0f, 1.0f };
     bool            hasPrevTransform = false; // false の初回は現在姿勢で初期化(スメアなし)
 
-    // ---- コンストラクタ ----
-    GPUParticleComponent()  = default;
-    explicit GPUParticleComponent(int count) { desc.maxCount = count; }
+    GPUParticleComponent() = default;
 
-    /// @brief バーストを1フレームだけ発動させる。
-    void TriggerBurst() { burstTrigger = 1.0f; }
+    /// @brief 全エミッタのバーストを1フレームだけ発動させる。
+    void TriggerBurst() { for (auto& e : emitters) e.burstTrigger = 1.0f; }
 
     /// @brief desc を変更した後に呼ぶ。次フレームで staticCB が再 upload される。
-    void MarkDescChanged() { m_staticDirty = true; }
+    void MarkDescChanged() { for (auto& e : emitters) e.staticDirty = true; }
+
+    /// @brief 全エミッタの発生ゲートを一括で開閉する（アニメ連動用）。
+    void SetEmitting(bool on) { for (auto& e : emitters) e.emitting = on; }
 };

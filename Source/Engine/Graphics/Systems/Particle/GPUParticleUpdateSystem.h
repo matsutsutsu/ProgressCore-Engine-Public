@@ -26,20 +26,32 @@ class GPUParticleUpdateSystem : public CCL::ECS::IfSystem<GPUParticleUpdateSyste
     /// @brief 初回のみ呼ばれる。CS管理クラス・サンプラー・ノイズ生成。
     void InitializeParticle(ID3D11Device* device);
 
+    /// @brief 「そのフレームの、効果全体で共通の値」。
+    ///        time や前フレーム姿勢はエンティティ単位の値なので、エミッタのループに
+    ///        入る前に1回だけ確定させ、各エミッタへ読み取り専用で配る。
+    ///        （time をループ内で進めるとエミッタ数ぶん多重に加算されてしまう）
+    struct EffectFrame
+    {
+        float           time    = 0.0f;                  ///< 累積時間（加算済みの値）
+        float           dt      = 0.0f;                  ///< このフレームの経過秒
+        GpuData::float3 prevPos = { 0.0f, 0.0f, 0.0f };  ///< 前フレームのワールド座標
+        GpuData::float4 prevRot = { 0.0f, 0.0f, 0.0f, 1.0f };
+    };
+
     /// @brief StructuredBuffer / UAV / SRV / 定数バッファ一式を作り直す（重い処理）。
-    void RebuildParticleBuffer(GPUParticleComponent& particle);
+    void RebuildParticleBuffer(ParticleEmitter& emitter);
 
     void CreateNoiseTexture(ID3D11Device* device);
 
     /// @brief 1エミッタ分の初期化CSをDispatch。終了後 needsGpuInit を false にする。
     void DispatchInitCS(ID3D11DeviceContext* dc, ParticleComputeShader* cs,
-        GPUParticleComponent& particle, const TransformComponent& transform,
-        GPUParticleBufferSet* buffers);
+        ParticleEmitter& emitter, const TransformComponent& transform,
+        GPUParticleBufferSet* buffers, const EffectFrame& frame);
 
     /// @brief 1エミッタ分の更新CSをDispatch。CB更新・ランプ/ノイズ/サンプラーをバインド。
     void DispatchUpdateCS(ID3D11DeviceContext* dc, ParticleComputeShader* cs,
-        GPUParticleComponent& particle, const TransformComponent& transform,
-        GPUParticleBufferSet* buffers, float dt);
+        ParticleEmitter& emitter, const TransformComponent& transform,
+        GPUParticleBufferSet* buffers, const EffectFrame& frame);
 
 private:
 
