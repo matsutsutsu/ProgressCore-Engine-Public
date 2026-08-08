@@ -772,6 +772,7 @@
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerAttackSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerAnimParamSyncSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerDashSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerActionVfxSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerFeedbackSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerInputSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerLockOnSystem.h" />
@@ -1565,6 +1566,7 @@
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\CameraTargetBindSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerAnimParamSyncSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerDashSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerActionVfxSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerFeedbackSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerInputSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerLockOnSystem.cpp" />

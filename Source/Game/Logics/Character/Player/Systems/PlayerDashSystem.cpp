@@ -6,6 +6,7 @@
 #include "Engine/Animation/Components/RootMotionComponent.h" // ダッシュ中の外部移動制御を伝える
 #include "Game/Logics/AI/Battle/BattleContext.h"
 #include "Game/Logics/Combat/HealthComponent.h" // 回避の無敵：被弾処理が見る i-frame タイマーへ反映する
+#include "Game/Logics/GameEvent/GameEvents.h"   // ダッシュ開始を announce（その場VFX用）
 
 #include <algorithm>
 
@@ -154,6 +155,9 @@ bool PlayerDashSystem::UpdateDash(DashComponent &dash, PlayerComponent &player,
             dash.dashDirection = (forward.LengthSquared() > 0.001f) ? forward : Vector3::UnitZ;
         }
         dash.dashDirection.Normalize();
+
+        // その場VFX用に「ダッシュ開始」を announce する（VFX/プレハブは購読側が知る）。
+        m_world->GetEventBus().Publish(PlayerDashedEvent{trans.position});
     }
 
     if (!dash.isDashing) return false; // ダッシュしていない → 呼び出し側で歩き/走り

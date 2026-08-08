@@ -45,7 +45,7 @@ void PlayerMoveSystem::Update(float rawDt)
         // =========================================================
         // 1. 接地判定とジャンプ成立の確定
         // =========================================================
-        UpdateJumpLogic(dt, isGrounded, inputData, player, animParams);
+        UpdateJumpLogic(dt, isGrounded, inputData, player, animParams, trans.position);
 
         // =========================================================
         // 2. 旋回とバンク（体の傾き）の反映
@@ -57,7 +57,7 @@ void PlayerMoveSystem::Update(float rawDt)
 // -----------------------------------------------------------------------------------
 // [責務] 接地状態の更新と、押した瞬間のジャンプ成立判定
 // -----------------------------------------------------------------------------------
-void PlayerMoveSystem::UpdateJumpLogic(float dt, bool isGrounded, CharacterMovementInputComponent &inputData, PlayerComponent &player, AnimParametersComponent &animParams)
+void PlayerMoveSystem::UpdateJumpLogic(float dt, bool isGrounded, CharacterMovementInputComponent &inputData, PlayerComponent &player, AnimParametersComponent &animParams, const DirectX::XMFLOAT3 &worldPos)
 {
     // 直前の落下速度から「着地」の衝撃を計算しイベント発火
     if (isGrounded)
@@ -100,6 +100,10 @@ void PlayerMoveSystem::UpdateJumpLogic(float dt, bool isGrounded, CharacterMovem
         {
             animParams.SetTrigger(HASH_TRIG_DOUBLE_JUMP);
         }
+
+        // その場VFX用に「跳んだ」事実を announce する。何段目かを載せ、VFXの出し分けは
+        // 購読側(PlayerActionVfxSystem)へ委ねる（現状は2段目だけ土煙を出す）。
+        m_world->GetEventBus().Publish(PlayerJumpedEvent{worldPos, player.currentJumpCount});
     }
     else
     {

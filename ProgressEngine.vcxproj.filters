@@ -1812,6 +1812,9 @@
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerDashSystem.h">
       <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerActionVfxSystem.h">
+      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.h">
       <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
     </ClInclude>
@@ -2916,6 +2919,9 @@
       <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerDashSystem.cpp">
+      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerActionVfxSystem.cpp">
       <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.cpp">
