@@ -4,7 +4,6 @@
 #include "Engine/Graphics/Components/Particle/GPUParticleComponent.h"
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Platform/Core/Dialog.h"
-#include "Engine/Platform/Core/FileSystem.h"
 
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
@@ -207,36 +206,6 @@ struct ComponentSerializer<GPUParticleComponent>
 } // namespace ComponentMetaJson
 
 // =====================================================================
-// プリセット保存/読込ヘルパー
-// =====================================================================
-namespace
-{
-bool SavePreset(const std::string &path, const GPUParticleComponent &comp)
-{
-    json j;
-    ComponentMetaJson::ComponentSerializer<GPUParticleComponent>::Save(j, comp, nullptr);
-    return FileSystem::WriteAllText(path, j.dump(4));
-}
-
-bool LoadPreset(const std::string &path, GPUParticleComponent &comp)
-{
-    if (!FileSystem::Exists(path)) return false;
-    const std::string text = FileSystem::ReadAllText(path);
-    if (text.empty()) return false;
-    try
-    {
-        json j = json::parse(text);
-        ComponentMetaJson::ComponentSerializer<GPUParticleComponent>::Load(j, comp, nullptr);
-        return true;
-    }
-    catch (...)
-    {
-        return false;
-    }
-}
-} // namespace
-
-// =====================================================================
 // ComponentMeta<GPUParticleComponent>
 // =====================================================================
 template <>
@@ -274,19 +243,6 @@ struct ComponentMeta<GPUParticleComponent>
                 changed = true;
             }
         };
-
-        if (ImGui::Button(u8"プリセット保存 (Save Preset)"))
-        {
-            if (auto path = FileDialog::SavePreset("GPUParticlePreset", u8"Save Particle Preset", {}, hWnd))
-                SavePreset(path->string(), *p);
-        }
-        ImGui::SameLine();
-        if (ImGui::Button(u8"プリセット読込 (Load Preset)"))
-        {
-            if (auto path = FileDialog::OpenPreset("GPUParticlePreset", u8"Load Particle Preset", hWnd))
-                if (LoadPreset(path->string(), *p)) changed = true;
-        }
-        ImGui::Separator();
 
         // =============================================================
         // エミッタ選択タブ

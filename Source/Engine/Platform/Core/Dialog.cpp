@@ -312,12 +312,6 @@ void FileDialog::Initialize(const std::filesystem::path& settingsPath)
         .filters = { {"Audio Files", "*.wav;*.ogg;*.mp3;*.flac"}, {"All Files", "*.*"} },
         .defaultDir = "Assets/Audio",
         });
-    RegisterPreset("GPUParticlePreset", {
-        .filters    = { {"Particle Preset", "*.json"}, {"All Files", "*.*"} },
-        .defaultDir = "Assets/Particles",
-        .defaultExt = "json",
-    });
-
     RegisterPreset("BehaviorTreeNode", {
     .filters    =  { { "Behavior Tree", "*.json" } },
     .defaultDir = "Assets/BehaviorTree",
