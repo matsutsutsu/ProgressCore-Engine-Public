@@ -76,14 +76,13 @@ Framework::Framework(HWND hWnd)
 		Logger::Instance().AddSink(std::make_shared<DebugStreamSink>());
 		// ログファイルの出力先。開発時は Build/ 配下に集約、製品(Shipping)は exe 隣の Logs/ に。
 		// FileSink は遅延生成なので、Shipping では ERROR が実際に出た時だけファイルが作られる
-		//（正常終了なら何も残らない）。
+		//（正常終了なら何も残らない）。起動ごとに前回分を Engine.prev.log へ退避する2世代式。
 #ifdef ENABLE_EDITOR
 		const char* kLogPath = "Build/Logs/Engine.log";
 #else
 		const char* kLogPath = "Logs/Engine.log";
 #endif
-		Logger::Instance().AddSink(std::make_shared<FileSink>(
-			kLogPath, 10ull * 1024 * 1024, 3));
+		Logger::Instance().AddSink(std::make_shared<FileSink>(kLogPath));
 		m_consoleLogSink = std::make_shared<ImGuiBufferSink>(2000);
 		Logger::Instance().AddSink(m_consoleLogSink);
 	}
