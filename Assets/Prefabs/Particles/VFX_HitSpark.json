@@ -32,7 +32,7 @@
                                 3.1415927410125732
                             ],
                             "drag": 2.5,
-                            "emitMode": 0,
+                            "emitMode": 1,
                             "emitRadius": [
                                 0.0,
                                 0.11999999731779099
@@ -109,7 +109,7 @@
                             ],
                             "attractorRadius": 0.0,
                             "attractorStrength": 0.0,
-                            "burstCount": 0,
+                            "burstCount": 120,
                             "color": [
                                 1.0,
                                 1.0,
@@ -123,7 +123,7 @@
                                 0.30000001192092896
                             ],
                             "drag": 0.0,
-                            "emitMode": 0,
+                            "emitMode": 1,
                             "emitRadius": [
                                 0.0,
                                 0.5

@@ -6,7 +6,7 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
-#include "Engine/Graphics/Systems/Particle/VfxSystem.h"
+#include "Engine/Graphics/Systems/Particle/VFXSystem.h"
 #include "Game/Logics/GameEvent/GameEvents.h"
 
 using namespace CCL::ECS;
@@ -20,15 +20,16 @@ const char *kHitSparkPrefab = "Assets/Prefabs/Particles/VFX_HitSpark";
 void HitEffectSystem::Initialize()
 {
     // 確定ヒットの通知を受けて、その位置にスパークのバーストを1個出す。
-    //   プールからの貸し出し・姿勢の確定・バースト発火・寿命後の返却は VfxSystem が
+    //   プレハブの生成・姿勢の確定・バースト発火・粒子が消えた後の破棄は VFXSystem が
     //   引き受けるので、ここは「どこに出すか」だけを書けばよい。
+    //   ※ヒットスパークは全エミッタが Burst なので自動で片付く。戻り値は保持しなくてよい。
     ListenEvent<HitImpactEvent>(
-        [this](const HitImpactEvent &e) { Vfx::Play(*m_world, kHitSparkPrefab, e.position); });
+        [this](const HitImpactEvent &e) { VFX::Play(*m_world, kHitSparkPrefab, e.position); });
 }
 
 void HitEffectSystem::Update(float /*dt*/)
 {
-    // 何もしない。再生中インスタンスの寿命管理は VfxSystem(L08) が持つ。
+    // 何もしない。再生中インスタンスの後始末は VFXSystem(L08) が持つ。
     //   購読のためだけに System として存在している。
 }
 
