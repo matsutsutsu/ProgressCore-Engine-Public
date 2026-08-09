@@ -41,9 +41,9 @@
                 },
                 {
                     "op": 0,
-                    "paramHash": 45180367,
-                    "paramName": "IsGrounded",
-                    "threshold": 0.0
+                    "paramHash": 2646078375,
+                    "paramName": "IsAirborne",
+                    "threshold": 1.0
                 }
             ],
             "logicType": 0,
@@ -164,6 +164,20 @@
             "defaultFloat": 0.0,
             "hash": 45180367,
             "name": "IsGrounded",
+            "type": 1
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 2646078375,
+            "name": "IsAirborne",
+            "type": 1
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 3258288856,
+            "name": "MoveInput",
             "type": 1
         },
         {
@@ -598,6 +612,20 @@
                     "targetStateHash": 190275004
                 },
                 {
+                    "blendDuration": 0.10000000149011612,
+                    "conditions": [
+                        {
+                            "op": 0,
+                            "paramHash": 3258288856,
+                            "paramName": "MoveInput",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 1,
+                    "targetStateHash": 2371348074
+                },
+                {
                     "blendDuration": 0.20000000298023224,
                     "conditions": [
                         {
@@ -610,26 +638,6 @@
                     "logicType": 0,
                     "requiredCancelMask": 0,
                     "targetStateHash": 1168775091
-                },
-                {
-                    "blendDuration": 0.20000000298023224,
-                    "conditions": [
-                        {
-                            "op": 4,
-                            "paramHash": 0,
-                            "paramName": "",
-                            "threshold": 0.0
-                        },
-                        {
-                            "op": 1,
-                            "paramHash": 174817312,
-                            "paramName": "Speed",
-                            "threshold": 2.0
-                        }
-                    ],
-                    "logicType": 0,
-                    "requiredCancelMask": 0,
-                    "targetStateHash": 2371348074
                 }
             ]
         },
@@ -647,6 +655,20 @@
             "stateHash": 190275004,
             "transitions": [
                 {
+                    "blendDuration": 0.10000000149011612,
+                    "conditions": [
+                        {
+                            "op": 0,
+                            "paramHash": 3258288856,
+                            "paramName": "MoveInput",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 1,
+                    "targetStateHash": 2371348074
+                },
+                {
                     "blendDuration": 0.20000000298023224,
                     "conditions": [
                         {
@@ -659,26 +681,6 @@
                     "logicType": 0,
                     "requiredCancelMask": 0,
                     "targetStateHash": 1168775091
-                },
-                {
-                    "blendDuration": 0.20000000298023224,
-                    "conditions": [
-                        {
-                            "op": 4,
-                            "paramHash": 0,
-                            "paramName": "",
-                            "threshold": 0.0
-                        },
-                        {
-                            "op": 1,
-                            "paramHash": 174817312,
-                            "paramName": "Speed",
-                            "threshold": 2.0
-                        }
-                    ],
-                    "logicType": 0,
-                    "requiredCancelMask": 0,
-                    "targetStateHash": 2371348074
                 }
             ]
         },

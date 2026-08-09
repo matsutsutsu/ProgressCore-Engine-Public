@@ -2,7 +2,7 @@
 #include "Engine/Scene/SceneFactory.h" // REGISTER_SCENE（ファイル末尾で自己登録）
 #include "Engine/Serialization/Factory/Prefab.h"
 #include "Engine/Graphics/RHI/Graphics.h"
-#include "Game/Logics/Test/SceneInitializer.h"
+#include "Engine/Serialization/Serializer/LevelSerializer.h" // レベル読み込み
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 
@@ -11,17 +11,20 @@ void ParticleScene::Initialize()
 {
     BaseScene::Initialize();
 
+        // --- 戦場レベルを読み込む ---
+    // LoadLevel は内部で LoadScene（既存ワールドをPersistentTag以外全消去）→ ステージ復元
+    // → プレハブ実体(ライト/カメラ/プレイヤー/ボス/ステージ)を再生成する。BaseScene::Initialize は
+    // ゲーム実体を生成しないので、ここで全消去されて困るものは無い（リソース/システムは残る）。
+    {
+        // 起動時に読み込む戦場レベル。ライト/カメラ/プレイヤー/ボス/ステージを全て含む。
+        std::string particleLevel = "Assets/Scene/ParticleScene.level.json";
 
 
-    ID3D11Device *device = Graphics::Instance().GetDevice();
-    SceneInitializer::SpawnLightStartSet(*m_worldPtr, device);
-
-    Prefab::SpawnPrefab(*m_worldPtr, "Assets/Prefabs/Camera/FreeCamera");
-
-
-
-    // ParticleScene固有: 特定のパーティクルを生成
-    Prefab::SpawnPrefab(*m_worldPtr, "Assets/Prefabs/Particles/VFX_Scene_Start");
+        ZoneScopedN("ParticleScene: LoadLevel ParticleScene");
+        if (!LevelSerializer::LoadLevel(m_worldPtr, particleLevel))
+            CCL_LOG_ERROR(LogCategory::Core, "ParticleScene: パーティクルシーンレベルの読み込みに失敗: %s", particleLevel.c_str());
+    }
+  
 }
 
 void ParticleScene::Finalize()

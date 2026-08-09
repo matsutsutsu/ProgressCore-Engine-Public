@@ -18,11 +18,7 @@
 
 #include "tracy/Tracy.hpp"
 
-namespace
-{
-// 起動時に読み込む戦場レベル。ライト/カメラ/プレイヤー/ボス/ステージを全て含む。
-constexpr const char *kBossBattleLevel = "Assets/Scene/BossBattleStage.level.json";
-} // namespace
+
 
 void GameScene::Initialize()
 {
@@ -51,10 +47,16 @@ void GameScene::Initialize()
     // LoadLevel は内部で LoadScene（既存ワールドをPersistentTag以外全消去）→ ステージ復元
     // → プレハブ実体(ライト/カメラ/プレイヤー/ボス/ステージ)を再生成する。BaseScene::Initialize は
     // ゲーム実体を生成しないので、ここで全消去されて困るものは無い（リソース/システムは残る）。
+
     {
         ZoneScopedN("GameScene: LoadLevel BossBattleStage");
-        if (!LevelSerializer::LoadLevel(m_worldPtr, kBossBattleLevel))
-            CCL_LOG_ERROR(LogCategory::Core, "GameScene: 戦場レベルの読み込みに失敗: %s", kBossBattleLevel);
+
+        // 起動時に読み込む戦場レベル。ライト/カメラ/プレイヤー/ボス/ステージを全て含む。
+        std::string bossBattleLevel = "Assets/Scene/BossBattleStage.level.json";
+
+
+        if (!LevelSerializer::LoadLevel(m_worldPtr, bossBattleLevel))
+            CCL_LOG_ERROR(LogCategory::Core, "GameScene: 戦場レベルの読み込みに失敗: %s", bossBattleLevel.c_str());
     }
 
     CCL_LOG_INFO(LogCategory::Core, "GameScene Initialize");

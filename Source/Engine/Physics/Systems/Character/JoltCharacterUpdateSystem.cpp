@@ -157,8 +157,13 @@ DirectX::SimpleMath::Vector3 JoltCharacterUpdateSystem::CalculateHorizontalVeloc
 
     Vector3 targetVelocity = input.desiredVelocity * targetSpeed;
 
-    float friction        = 10.0f;
-    input.currentVelocity = Vector3::Lerp(input.currentVelocity, targetVelocity, friction * safeDt);
+    // 加速と減速でレートを分ける（config で調整可能）。目標速度が現在速度以上なら加速、
+    // 下回るなら減速レートを使う。これで「即最高速へ乗る」「狙ったぶんだけ滑って止まる」を
+    // 別々に調整できる（従来はどちらも固定 10 だった）。
+    const float curSpeed = input.currentVelocity.Length();
+    const float tgtSpeed = targetVelocity.Length();
+    const float rate     = (tgtSpeed >= curSpeed) ? config.acceleration : config.deceleration;
+    input.currentVelocity = Vector3::Lerp(input.currentVelocity, targetVelocity, rate * safeDt);
 
     return input.currentVelocity;
 }

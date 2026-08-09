@@ -49,6 +49,15 @@ struct PlayerComponent {
     ///        空中攻撃の作動条件など「空中かどうか」を見たいシステムはこのフラグを参照する。
     bool isAirborne = false;
 
+    /// @brief 接地を離れてからの経過時間(秒)。0=接地中。
+    ///        小さな段差を降りた一瞬で空中扱いにしないためのグレース判定に使う。
+    float timeSinceGrounded = 0.0f;
+
+    /// @brief この秒数までの「接地離れ」は空中とみなさない猶予。段差を降りただけで
+    ///        空中攻撃が暴発したり地上攻撃がキャンセルされるのを防ぐ（コヨーテとは別物：
+    ///        ジャンプ成立判定には使わず、isAirborne の立ち上がりだけを遅らせる）。
+    float airborneGraceTime = 0.12f;
+
     // --- 攻撃入力状態 ---
     bool wasAttackButtonPressed = false; ///< 前フレームの攻撃ボタン押下状態 (連打・押しっぱなし防止用)
 

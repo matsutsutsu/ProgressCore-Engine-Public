@@ -1,0 +1,26 @@
+{
+    "instances": [
+        {
+            "position": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "prefab": "./Assets\\Prefabs\\Test\\ShaderPlane.json",
+            "rotation": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "scale": [
+                10.0,
+                10.0,
+                10.0
+            ]
+        }
+    ],
+    "scene": "ParticleScene.scene.json",
+    "type": "level",
+    "version": 1
+}

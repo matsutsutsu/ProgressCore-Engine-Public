@@ -19,11 +19,15 @@
 
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Animation/Components/AnimParametersComponent.h"
+#include "Engine/Physics/Components/Character/CharacterMovementInputComponent.h"
 #include "Game/Logics/Character/Player/Components/DashComponent.h"
+#include "Game/Logics/Character/Player/Components/PlayerComponent.h"
 
 class PlayerAnimParamSyncSystem
     : public CCL::ECS::IfSystem<PlayerAnimParamSyncSystem,
           CCL::ECS::Read<DashComponent>,
+          CCL::ECS::Read<PlayerComponent>,
+          CCL::ECS::Read<CharacterMovementInputComponent>,
           CCL::ECS::Write<AnimParametersComponent>>
 {
   public:

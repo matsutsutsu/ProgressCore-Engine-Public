@@ -59,6 +59,12 @@ void PlayerMoveSystem::Update(float rawDt)
 // -----------------------------------------------------------------------------------
 void PlayerMoveSystem::UpdateJumpLogic(float dt, bool isGrounded, CharacterMovementInputComponent &inputData, PlayerComponent &player, AnimParametersComponent &animParams, const DirectX::XMFLOAT3 &worldPos)
 {
+    // 接地を離れてからの経過時間を更新（空中判定のグレースに使う）。
+    if (isGrounded)
+        player.timeSinceGrounded = 0.0f;
+    else
+        player.timeSinceGrounded += dt;
+
     // 直前の落下速度から「着地」の衝撃を計算しイベント発火
     if (isGrounded)
     {
@@ -74,8 +80,11 @@ void PlayerMoveSystem::UpdateJumpLogic(float dt, bool isGrounded, CharacterMovem
     }
 
     player.wasGroundedLastFrame = isGrounded;
-    // 空中状態を一元更新（空中攻撃などが参照する唯一の判定元）
-    player.isAirborne = !isGrounded;
+
+    // 空中状態を一元更新（空中攻撃などが参照する唯一の判定元）。
+    //   接地を離れて airborneGraceTime を超えて初めて「空中」とみなす。これにより
+    //   小さな段差を降りた一瞬で空中攻撃が暴発したり地上攻撃がキャンセルされるのを防ぐ。
+    player.isAirborne = (player.timeSinceGrounded > player.airborneGraceTime);
 
     // 押した瞬間のみジャンプ（エッジ検出）。押しっぱなしでの連続ジャンプを防ぐ。
     bool isPressedThisFrame     = inputData.jumpRequested && !player.wasJumpButtonPressed;
@@ -89,6 +98,11 @@ void PlayerMoveSystem::UpdateJumpLogic(float dt, bool isGrounded, CharacterMovem
     {
         player.currentJumpCount++;
         inputData.jumpRequested = true;
+
+        // 意図的なジャンプは即座に空中扱いへ（グレースは「落下」だけに効かせ、
+        // ジャンプ直後の空中攻撃が地上攻撃に化けないようにする）。
+        player.timeSinceGrounded = player.airborneGraceTime;
+        player.isAirborne        = true;
 
         // =========================================================
         // 2段ジャンプ専用トリガーの発行

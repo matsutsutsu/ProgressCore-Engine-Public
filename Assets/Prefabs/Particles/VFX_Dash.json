@@ -20,9 +20,9 @@
                             "attractorStrength": 0.0,
                             "burstCount": 300,
                             "color": [
+                                0.0,
+                                0.8494207859039307,
                                 1.0,
-                                0.5432432293891907,
-                                0.30000001192092896,
                                 1.0
                             ],
                             "colorMode": 0,
@@ -43,8 +43,8 @@
                                 0.0
                             ],
                             "emitSpeed": [
-                                6.0,
-                                13.0
+                                11.300000190734863,
+                                20.0
                             ],
                             "emitStretch": [
                                 1.0,
@@ -56,8 +56,8 @@
                             ],
                             "gravity": 9.0,
                             "lifespan": [
-                                0.14000000059604645,
-                                0.3400000035762787
+                                0.3400000035762787,
+                                0.6399999856948853
                             ],
                             "lineEnd": [
                                 0.0,
@@ -110,7 +110,7 @@
                             ],
                             "attractorRadius": 0.0,
                             "attractorStrength": 0.0,
-                            "burstCount": 120,
+                            "burstCount": 1,
                             "color": [
                                 1.0,
                                 1.0,
@@ -121,22 +121,22 @@
                             "colorRampPath": "",
                             "coneAngle": [
                                 0.0,
-                                0.30000001192092896
+                                0.0
                             ],
                             "drag": 0.0,
                             "emitMode": 1,
                             "emitRadius": [
                                 0.0,
-                                0.5
+                                0.0
                             ],
                             "emitShape": 0,
                             "emitSize": [
                                 0.10000000149011612,
-                                0.05000000074505806
+                                1.0
                             ],
                             "emitSpeed": [
-                                1.0,
-                                3.0
+                                0.0,
+                                0.0
                             ],
                             "emitStretch": [
                                 1.0,
@@ -148,8 +148,8 @@
                             ],
                             "gravity": 0.0,
                             "lifespan": [
-                                1.0,
-                                2.0
+                                0.699999988079071,
+                                0.699999988079071
                             ],
                             "lineEnd": [
                                 0.0,
@@ -162,7 +162,7 @@
                                 0.0
                             ],
                             "localOffsetY": 0.0,
-                            "maxCount": 120,
+                            "maxCount": 1,
                             "maxSpeed": 10.0,
                             "noiseScale": 1.0,
                             "noiseStrength": 0.0,
@@ -170,7 +170,7 @@
                             "renderMode": 0,
                             "scale": [
                                 1.0,
-                                1.0
+                                10.0
                             ],
                             "spawnDelay": [
                                 0.0,
@@ -181,7 +181,7 @@
                                 1
                             ],
                             "spriteMode": 0,
-                            "texturePath": "",
+                            "texturePath": "Assets/Textures/VFX/VFX_Flash_Ring.png",
                             "uvScrollSpeed": [
                                 0.0,
                                 0.0
@@ -192,7 +192,7 @@
                     ]
                 },
                 "Name": {
-                    "name": "VFX_HitSpark"
+                    "name": "VFX_Dash"
                 },
                 "TimeState": {
                     "buffScale": 1.0,
@@ -227,6 +227,6 @@
         }
     ],
     "magic": 1397506883,
-    "name": "VFX_HitSpark",
+    "name": "VFX_Dash",
     "version": 1
 }
