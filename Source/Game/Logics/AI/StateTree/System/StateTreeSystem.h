@@ -49,19 +49,16 @@ private:
 
     /// @brief 1状態のタスクに EnterState を呼ぶ。
     void EnterState(const CCL::AI::StateTreeAsset& asset,
-                    StateTreeComponent&            st,
                     uint16_t                       stateIdx,
                     CCL::ECS::EntityID             entity);
 
     /// @brief 1状態のタスクに ExitState を呼ぶ。
     void ExitState(const CCL::AI::StateTreeAsset& asset,
-                   StateTreeComponent&            st,
                    uint16_t                       stateIdx,
                    CCL::ECS::EntityID             entity);
 
     /// @brief 1状態のタスクを Tick する。
     void TickTasks(const CCL::AI::StateTreeAsset& asset,
-                   StateTreeComponent&            st,
                    uint16_t                       stateIdx,
                    CCL::ECS::EntityID             entity,
                    float                          dt);

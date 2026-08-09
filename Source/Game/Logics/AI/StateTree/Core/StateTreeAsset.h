@@ -18,8 +18,9 @@
 ///   ┌─────────────────────────────────────────────────────┐
 ///   │ StateTreeComponent  (各 Entity が持つ極小コンポ)      │
 ///   │   activeStates[]: 今アクティブな状態パス（深さ分）    │
-///   │   scratch[]    : インスタンスデータ（タイマー等）      │
 ///   └─────────────────────────────────────────────────────┘
+///   ※ ノードが個体別の可変状態を必要とする場合は、専用領域を持たず
+///     ゲーム側 Component（例: DroneComponent.stateTimer）に持たせる。
 #pragma once
 #include <cstdint>
 #include <string>
@@ -111,16 +112,11 @@ namespace CCL::AI
         // ノードのタスクのID
         // 例：１番の攻撃タスクを指定する
         NodeTypeID typeId       = ST_INVALID_NODE_TYPE; ///< 種別 ID
-        
+
         // --- マニュアル（固定設定）の読み込み位置 ---
         // 例：攻撃タスクの威力をOffsetのSizeの領域に書いてあるからそれを見る
         uint32_t   paramOffset  = 0;    ///< paramBlob 内のパラメータ先頭
         uint32_t   paramSize    = 0;    ///< パラメータのバイト数
-        
-        // --- メモ帳（変動データ）の書き込み位置 ---
-        // 例：攻撃にかかった時間は scratchの４行目（Offset）に書き込む
-        uint32_t   instanceOffset = 0;  ///< scratch 内のオフセット
-        uint32_t   instanceSize   = 0;
     };
 
 
@@ -179,10 +175,6 @@ namespace CCL::AI
 
         // --- 名前ブロブ（デバッグ・エディタ用、実行時ロジックでは使わない）---
         std::vector<char>       nameBlob;
-
-        // --- インスタンスデータの総量 ---
-        // StateTreeComponent::scratch がこれ以上必要な場合はコンパイルエラーにする。
-        uint32_t instanceTotalSize = 0;
 
 
         // ================================================================
@@ -245,11 +237,9 @@ namespace CCL::AI
         /// @param typeId   NodeRegistry から取得した種別 ID
         /// @param paramOff AddParams<T>() で取得したオフセット
         /// @param paramSz  sizeof(Params)
-        /// @param instSz   sizeof(Instance)（なければ 0）
         void AddTask(uint16_t stateIdx,
                      NodeTypeID typeId,
-                     uint32_t paramOff, uint32_t paramSz,
-                     uint32_t instSz = 0)
+                     uint32_t paramOff, uint32_t paramSz)
         {
             StateNode& st = states[stateIdx];
             if (st.taskCount == 0)
@@ -259,9 +249,6 @@ namespace CCL::AI
             ref.typeId          = typeId;
             ref.paramOffset     = paramOff;
             ref.paramSize       = paramSz;
-            ref.instanceOffset  = instanceTotalSize;   // scratch の現在末尾に割り当て
-            ref.instanceSize    = instSz;
-            instanceTotalSize  += instSz;
 
             tasks.push_back(ref);
             ++st.taskCount;

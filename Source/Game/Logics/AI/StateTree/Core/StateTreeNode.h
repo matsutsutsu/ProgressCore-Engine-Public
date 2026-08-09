@@ -3,7 +3,8 @@
 ///
 /// 設計の核心:
 ///   - ITask / ICondition は「種別ごとに1インスタンス」のステートレス共有オブジェクト。
-///     個体差（タイマー値など）は ExecContext::instance (scratch 領域) 側に置く。
+///     個体差（タイマー値など）が要る場合は、専用の scratch 領域ではなく
+///     ゲーム側の Component（例: DroneComponent.stateTimer）に持たせる方針。
 ///   - virtual 呼び出しは「個体数」ではなく「種別数（数十個）」分しか起きないので
 ///     キャッシュミスの影響は無視できる。ホットなのは StateTreeSystem の ForEachParallel。
 ///   - ここでは Component や World への依存を一切持たない。
@@ -30,7 +31,7 @@ namespace CCL::AI
     ///
     /// メモリレイアウト:
     ///   params    → StateTreeAsset::paramBlob 内の該当オフセット (読み取り専用)
-    ///   instance  → StateTreeComponent::scratch 内の該当オフセット (読み書き可)
+    ///   個体別の可変状態が必要なら world/entity からゲーム側 Component を引いて書く。
     struct ExecContext
     {
         CCL::ECS::World* world    = nullptr;
@@ -38,9 +39,6 @@ namespace CCL::AI
 
         // このノードのパラメータ（JSONから焼き込まれた定数。読み取り専用）
         const void*  params   = nullptr;
-
-        // このノードの個体別インスタンスデータ（scratchから割り当て済み）
-        void*        instance = nullptr;
 
         float dt = 0.0f;
     };
@@ -73,10 +71,6 @@ namespace CCL::AI
     struct ITask
     {
         virtual ~ITask() = default;
-
-        /// @brief scratch に確保すべきインスタンスデータのバイト数。
-        ///        Instance 構造体を持たないタスクは 0 を返す（デフォルト）。
-        virtual uint32_t InstanceDataSize() const { return 0; }
 
         /// @brief この状態に入った瞬間に1度だけ呼ばれる。
         ///        タイマーリセット・アニメーション開始要求などに使用。

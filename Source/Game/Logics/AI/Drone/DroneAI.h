@@ -218,10 +218,10 @@ namespace DroneAI
             asset.AddEnterCondition(active, ids.wantsAttack, 0, 0);   // パラメータ無し
 
             // 入場時に突撃を初期化（タメ・方向ロック）。EnterState を持つので先に置く。
-            asset.AddTask(active, ids.beginCharge, 0, 0, 0);
+            asset.AddTask(active, ids.beginCharge, 0, 0);
 
             SetDroneStateTask::Params tp{ static_cast<int>(DroneState::FireCharge) };
-            asset.AddTask(active, ids.setState, asset.AddParams(tp), sizeof(tp), 0);
+            asset.AddTask(active, ids.setState, asset.AddParams(tp), sizeof(tp));
         }
 
         // --- MoveToSlot ---
@@ -232,7 +232,7 @@ namespace DroneAI
             asset.AddEnterCondition(moveToSlot, ids.notAtTarget, asset.AddParams(cp), sizeof(cp));
 
             SetDroneStateTask::Params tp{ static_cast<int>(DroneState::MoveToTarget) };
-            asset.AddTask(moveToSlot, ids.setState, asset.AddParams(tp), sizeof(tp), 0);
+            asset.AddTask(moveToSlot, ids.setState, asset.AddParams(tp), sizeof(tp));
         }
 
         // --- Forming（フォールバック・入場条件なし）---
@@ -240,7 +240,7 @@ namespace DroneAI
             const uint16_t forming = asset.AddState("Forming", root);
 
             SetDroneStateTask::Params tp{ static_cast<int>(DroneState::Idle) };
-            asset.AddTask(forming, ids.setState, asset.AddParams(tp), sizeof(tp), 0);
+            asset.AddTask(forming, ids.setState, asset.AddParams(tp), sizeof(tp));
         }
 
         (void)root;

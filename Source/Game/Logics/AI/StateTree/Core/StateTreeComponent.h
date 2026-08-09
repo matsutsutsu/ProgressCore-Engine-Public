@@ -7,7 +7,6 @@
 /// と書くだけで、スポーン後に自動でハンドルが設定される。
 #pragma once
 #include <cstdint>
-#include <cstring>
 #include <string>
 
 #include "Game/Logics/AI/StateTree/Core/StateTreeAsset.h"
@@ -39,25 +38,8 @@ struct StateTreeComponent
     uint8_t  activeDepth = 0;
 
     // ----------------------------------------------------------------
-    // インスタンスデータ置き場（実行時専用・保存しない）
-    // ----------------------------------------------------------------
-    static constexpr int SCRATCH_SIZE = 64;
-    uint8_t scratch[SCRATCH_SIZE] = {};
-
-    // ----------------------------------------------------------------
     // ヘルパー
     // ----------------------------------------------------------------
-    void* GetInstancePtr(uint32_t offset)
-    {
-        if (offset >= SCRATCH_SIZE) return nullptr;
-        return scratch + offset;
-    }
-    const void* GetInstancePtr(uint32_t offset) const
-    {
-        if (offset >= SCRATCH_SIZE) return nullptr;
-        return scratch + offset;
-    }
-    void ClearScratch() { std::memset(scratch, 0, SCRATCH_SIZE); }
     uint16_t GetLeafState() const
     {
         if (activeDepth == 0) return CCL::AI::ST_INVALID;

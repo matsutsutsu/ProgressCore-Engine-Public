@@ -152,8 +152,7 @@ namespace
             const NodeDesc* desc = reg.GetTaskDesc(id);
             const uint32_t off = BuildParamBlob(asset, desc, t.params);
             asset.AddTask(idx, id, off,
-                          desc ? desc->paramsSize   : 0,
-                          desc ? desc->instanceSize : 0);
+                          desc ? desc->paramsSize : 0);
         }
 
         // 子
