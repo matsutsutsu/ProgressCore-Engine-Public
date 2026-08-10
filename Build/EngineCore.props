@@ -66,8 +66,6 @@
 				$(SolutionDir)External\DirectXTex;
 				$(SolutionDir)External\nlohmann;
 				$(SolutionDir)External\DirectXTK-main\Inc;
-				$(SolutionDir)External\Lua\src;
-				$(SolutionDir)External\sol2\include;
 				$(SolutionDir)External\JoltPhysics\include;
 				$(SolutionDir)External\RecastNavigation\Recast\Include;
 				$(SolutionDir)External\RecastNavigation\Detour\Include;

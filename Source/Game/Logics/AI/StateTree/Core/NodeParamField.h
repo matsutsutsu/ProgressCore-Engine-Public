@@ -9,7 +9,7 @@
 /// ComponentMeta::Fields() と同じ役割を StateTree ノードに持たせるもの。
 #pragma once
 #include <cstdint>
-#include <cstddef>   // offsetof
+#include <cstddef> 
 #include <string>
 #include <vector>
 

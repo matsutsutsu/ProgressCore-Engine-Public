@@ -1,42 +1,25 @@
-/// @file  StateTreeAsset.h
-/// @brief StateTree の「木の形」を保持する不変アセット。全 Entity で共有される。
-///
-/// 設計の最重要ポイント 
-///   このアセットは「木の構造」と「ノードのパラメータ」だけを持つ。
-///   「今どの状態にいるか（インスタンス状態）」は StateTreeComponent 側に置く。
-///
-/// メモリイメージ:
-///   ┌─────────────────────────────────────────────────────┐
-///   │ StateTreeAsset  (World Resource。1種類の敵に1個)      │
-///   │   states[]     : StateNode の配列（木の骨格）         │
-///   │   tasks[]      : NodeRef  の配列（使うタスク種別+位置）│
-///   │   conditions[] : NodeRef  の配列（使う条件種別+位置） │
-///   │   transitions[]: Transition の配列（遷移ルール）       │
-///   │   paramBlob[]  : 全ノードのパラメータを連続配置した塊  │
-///   └─────────────────────────────────────────────────────┘
-///           ↑ 参照（StateTreeHandle = u32 インデックス）
-///   ┌─────────────────────────────────────────────────────┐
-///   │ StateTreeComponent  (各 Entity が持つ極小コンポ)      │
-///   │   activeStates[]: 今アクティブな状態パス（深さ分）    │
-///   └─────────────────────────────────────────────────────┘
-///   ※ ノードが個体別の可変状態を必要とする場合は、専用領域を持たず
-///     ゲーム側 Component（例: DroneComponent.stateTimer）に持たせる。
 #pragma once
 #include <cstdint>
 #include <string>
 #include <vector>
-
 #include "StateTreeNode.h"   // NodeTypeID, ITask, ICondition の前方参照
 
 
+/**
+ * @brief StateTree のアセット関連の定義
+ * @details アセットはStateTreeのTree構造とノードパラメータを持つ
+ *          Assetsは静的データ、Componentは動的データという役割分担
+ */
 namespace CCL::AI
 {
     // @brief 敵自身がどのStateTreeのデータを参照するかのハンドル
-    // @details 
+    // @details 雑魚敵は１番、ボスは２番、というように敵種別ごとに StateTreeAsset を参照するためのハンドル
     struct StateTreeHandle
     {
         uint32_t value = 0xFFFFFFFF;
         bool IsValid() const { return value != 0xFFFFFFFF; }
+
+        //ハンドル同士で比較するための演算子オーバーロード
         bool operator==(const StateTreeHandle& o) const { return value == o.value; }
         bool operator!=(const StateTreeHandle& o) const { return value != o.value; }
     };

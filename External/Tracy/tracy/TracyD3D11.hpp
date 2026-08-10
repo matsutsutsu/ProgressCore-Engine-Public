@@ -108,7 +108,7 @@ public:
                 continue;
             }
 
-            if (disjoint.Disjoint)
+            if (disjoint.Disjoint || disjoint.Frequency == 0)
                 continue;
 
             UINT64 timestamp = 0;
@@ -132,7 +132,7 @@ public:
         MemWrite( &item->gpuNewContext.thread, uint32_t(0) );   // #TODO: why not GetThreadHandle()?
         MemWrite( &item->gpuNewContext.period, 1.0f );
         MemWrite( &item->gpuNewContext.context, m_contextId);
-        MemWrite( &item->gpuNewContext.flags, uint8_t(0) );
+        MemWrite( &item->gpuNewContext.flags, GpuContextFlags(0) );
         MemWrite( &item->gpuNewContext.type, GpuContextType::Direct3D11 );
 
 #ifdef TRACY_ON_DEMAND
@@ -217,22 +217,22 @@ public:
             return;
         }
 
+        if (disjoint.Frequency == 0)
+        {
+            m_previousCheckpoint = m_nextCheckpoint;
+            TracyD3D11Panic("zero GPU timestamp frequency; dropping.");
+            return;
+        }
+
         auto begin = m_previousCheckpoint;
         auto end = m_nextCheckpoint;
-        auto i = begin;
-        for (; i != end; ++i)
+        for (auto i = begin; i != end; ++i)
         {
             uint32_t k = RingIndex(i);
             UINT64 timestamp = 0;
-
-            // POLL（非ブロッキング・単発）で回収する。
-            // まだ書き込み中(S_FALSE)なら CPU をスピンさせず、ここで打ち切る。
-            // 重要：破棄せず「回収できた i まで」だけチェックポイントを進め、
-            //       残り [i, end) は次フレームの Collect が続きから回収する。
-            //   → 空 while による CPU スピン（旧実装）も、
-            //     無条件前進による GPU ゾーン全消失（前回の誤修正）も両方回避する。
             if (m_immediateDevCtx->GetData(m_queries[k], &timestamp, sizeof(timestamp), 0) != S_OK)
             {
+                TracyD3D11Panic("timestamp expected to be ready, but it was not!");
                 break;
             }
             timestamp *= (1000000000ull / disjoint.Frequency);
@@ -244,17 +244,10 @@ public:
             Profiler::QueueSerialFinish();
         }
 
-        // 実際に回収できたところまでだけ前進させる（未回収ぶんのドロップ防止の肝）。
-        m_previousCheckpoint = i;
-
-        // このレンジを最後まで回収し切ったときだけ disjoint を張り直す。
-        // 途中までなら disjoint はそのまま残し、次フレームに続きから回収する。
         // disjoint timestamp queries should only be invoked once per frame or less
         // https://learn.microsoft.com/en-us/windows/win32/api/d3d11/ne-d3d11-d3d11_query
-        if (i == end)
-        {
-            m_immediateDevCtx->Begin(m_disjointQuery);
-        }
+        m_immediateDevCtx->Begin(m_disjointQuery);
+        m_previousCheckpoint = m_nextCheckpoint;
     }
 
 private:
@@ -379,6 +372,9 @@ public:
         const auto queryId = m_ctx->NextQueryId();
         m_ctx->m_immediateDevCtx->End(m_ctx->GetQueryObjectFromId(queryId));
 
+#ifdef TRACY_ON_DEMAND
+        if( GetProfiler().ConnectionId() != m_connectionId ) return;
+#endif
         auto* item = Profiler::QueueSerial();
         MemWrite( &item->hdr.type, QueueType::GpuZoneEndSerial );
         MemWrite( &item->gpuZoneEnd.cpuTime, Profiler::GetTime() );
@@ -392,6 +388,7 @@ private:
     tracy_force_inline D3D11ZoneScope( D3D11Ctx* ctx, bool active )
 #ifdef TRACY_ON_DEMAND
         : m_active( active && GetProfiler().IsConnected() )
+        , m_connectionId( GetProfiler().ConnectionId() )
 #else
         : m_active( active )
 #endif
@@ -415,6 +412,10 @@ private:
     }
 
     const bool m_active;
+
+#ifdef TRACY_ON_DEMAND
+    uint64_t m_connectionId = 0;
+#endif
 
     D3D11Ctx* m_ctx;
 };
