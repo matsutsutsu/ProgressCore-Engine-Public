@@ -8,6 +8,7 @@
 #include "Engine/Transform/Components/TransformComponent.h" // 位置から敵方向を求める
 #include "Game/Logics/Combat/HealthComponent.h"             // 敵判定（生存中の敵）
 #include "Game/Logics/Combat/DeadTag.h"                     // 死亡除外
+#include "Game/Logics/Character/Player/Components/CleaveComponent.h" // 切り払い準備中は攻撃を抑止
 
 #include <SimpleMath.h>
 #include <cmath>
@@ -104,6 +105,17 @@ void PlayerAttackSystem::Update(float dt)
                 DashComponent                         &dash,
                 AnimParametersComponent               &animParams,
                 PlayerComponent                       &player) {
+        // 切り払いの準備(Ready)/突進(Lunging)中は、左クリックを「切り払いの発動」に使う。
+        // ここで通常/ダッシュ/空中攻撃を出さないよう抑止し、エッジ状態だけ更新して抜ける。
+        if (const auto *cleave = m_world->GetComponent<CleaveComponent>(playerID))
+        {
+            if (cleave->phase != CleaveComponent::Phase::Idle)
+            {
+                player.wasAttackButtonPressed = inputData.isAttackRequested;
+                return;
+            }
+        }
+
         // 前フレームで押されておらず、今フレームで押された瞬間（エッジ検出）
         if (inputData.isAttackRequested && !player.wasAttackButtonPressed)
         {

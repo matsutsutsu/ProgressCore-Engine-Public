@@ -26,6 +26,7 @@ using namespace CCL::ECS;
 bool JustEvadeSystem::IsDroneHostile(const DroneComponent *drone) const
 {
     if (!drone) return false;
+    if (drone->knockbackTimer > 0.0f) return false; // 切り払いで吹き飛ばし中は無害（誤ジャスト回避を防ぐ）
     // 突撃系の状態だけを「危険」とみなす
     return drone->currentState == DroneState::FireCharge;
 }

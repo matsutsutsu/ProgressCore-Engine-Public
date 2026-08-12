@@ -21,6 +21,25 @@ void DroneMovementSystem::Update(float rawDt)
         float dt = time.localDt;
 
         // ====================================================================
+        // 【切り払いによる吹き飛ばし】通常AIより最優先。押しのけられている間は
+        // 進行方向へ漂って減衰し、通常の追従・突撃を一切行わない（判定は別途無効）。
+        // ====================================================================
+        if (drone.knockbackTimer > 0.0f)
+        {
+            drone.knockbackTimer -= dt;
+            trans.position = trans.position + drone.knockbackVelocity * dt;
+
+            // 数フレームで初速→ほぼ0へ減衰（以後は無効タイマーが切れるまで漂う）。
+            float decay = 1.0f - 6.0f * dt;
+            if (decay < 0.0f) decay = 0.0f;
+            drone.knockbackVelocity = drone.knockbackVelocity * decay;
+
+            drone.currentVelocity = Vector3::Zero;
+            trans.isDirty = true;
+            return; // 通常AI・積分をスキップ（吹き飛ばし中は隊列へ戻らない）
+        }
+
+        // ====================================================================
         // 【リード（Leash）によるスタック救済】ボスから遠すぎたら強制ワープ
         // ====================================================================
         //if (const auto *bossTrans = m_world->GetComponent<TransformComponent>(drone.ownerBossId))

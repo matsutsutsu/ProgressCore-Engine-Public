@@ -181,8 +181,11 @@ void CameraActionTPSSystem::Update(float dt)
 
 
         // 回り込み中心(pivot)と距離。通常は注視点中心、ロックオン中はプレイヤー中心。
+        // 寄り要求中（切り払い準備など）は基準距離を closeUpDistance へ寄せる。
+        //   実際の寄り/戻りは currentCamDistance の指数減衰で滑らかに補間される。
+        const float baseDistance = tps.closeUpRequest ? tps.closeUpDistance : tps.distance;
         Vector3 posPivotTarget = idealLookAt;
-        float   camDistance    = tps.distance;
+        float   camDistance    = baseDistance;
 
         if (enemyTrans)
         {
@@ -203,7 +206,7 @@ void CameraActionTPSSystem::Update(float dt)
 
             const float sep = (enemyCore - pivot).Length();
             posPivotTarget  = pivot; // カメラはプレイヤーを中心に回り込む
-            camDistance     = tps.distance +
+            camDistance     = baseDistance +
                               std::clamp(sep * tps.lockOnDistanceGain, 0.0f, tps.lockOnMaxExtraDistance);
         }
         else

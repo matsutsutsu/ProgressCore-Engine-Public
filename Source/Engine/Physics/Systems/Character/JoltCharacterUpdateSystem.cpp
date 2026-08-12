@@ -80,6 +80,15 @@ void JoltCharacterUpdateSystem::Update(float rawDt)
         }
 
         JPH::Vec3 finalVel(newHorizontalVel.x, newVy, newHorizontalVel.z);
+
+        // アクション層からの3D速度上書き（切り払いの3D突進など）。重力(newVy)も水平計算も
+        // 無視して velocity3D を丸ごと使う＝向いた方向へ上下含めて真っ直ぐ飛ぶ。
+        if (input.use3DVelocity)
+        {
+            finalVel              = JPH::Vec3(input.velocity3D.x, input.velocity3D.y, input.velocity3D.z);
+            input.currentVelocity = input.velocity3D; // 突進解除後の慣性引き継ぎ用に更新
+        }
+
         ch->SetLinearVelocity(finalVel);
 
         // 4. 物理更新と Transform / presenceプロキシへの同期

@@ -131,4 +131,13 @@ struct DroneComponent {
     ///        タメ→リリースへ進む。攻撃陣形が forming 中に localIndex から設定し、
     ///        OrbitCircle(中立)で 0 にリセットする。
     float fireDelay = 0.0f;
+
+    /// @brief 切り払い(CLEAVE)で吹き飛ばされている残り時間（実行時専用・非シリアライズ）。
+    ///        >0 の間は通常AI(移動)を止めて knockbackVelocity で漂い、攻撃/被弾判定も失う
+    ///        （押した先で自分に当たる理不尽を防ぎ、切り開いた道を通れる保証にする）。
+    ///        0 になると通常AIが復帰し、バネ制御で隊列へ戻る。
+    float knockbackTimer = 0.0f;
+
+    /// @brief 吹き飛ばし中の速度（進行方向へ一律。数フレームで減衰しつつ漂う）。
+    DirectX::SimpleMath::Vector3 knockbackVelocity = DirectX::SimpleMath::Vector3::Zero;
 };

@@ -13,15 +13,15 @@
                 },
                 "Character Movement Input": {
                     "currentVelocity": [
-                        42.18831253051758,
+                        -2.106401205062866,
                         0.0,
-                        8.284455299377441
+                        34.36076736450195
                     ],
                     "dashRequested": false,
                     "desiredVelocity": [
-                        0.9812600016593933,
+                        -0.06118764355778694,
                         0.0,
-                        0.19268855452537537
+                        0.9981262683868408
                     ],
                     "isAttackRequested": false,
                     "jumpRequested": false,
@@ -31,6 +31,18 @@
                         0.0
                     ],
                     "overrideSpeed": -1.0
+                },
+                "Cleave Component": {
+                    "cleaveCooldown": 0.4000000059604645,
+                    "cleaveDuration": 0.18000000715255737,
+                    "cleaveSpeed": 100.0,
+                    "readyDuration": 1.5,
+                    "fanHalfAngle": 45.0,
+                    "fanRange": 6.0,
+                    "knockbackSpeed": 200.0,
+                    "knockbackTime": 2.0,
+                    "slowDuration": 0.3499999940395355,
+                    "slowScale": 0.1
                 },
                 "Dash Component": {
                     "approachDuration": 0.3499999940395355,
@@ -53,7 +65,7 @@
                     "justEvadeWindow": 0.07999999821186066
                 },
                 "HealthComponent": {
-                    "currentHealth": 223.0,
+                    "currentHealth": 300.0,
                     "invincibilityDuration": 0.5,
                     "maxHealth": 300.0
                 },
@@ -123,8 +135,8 @@
                     "attackFaceMaxDistance": 5.0,
                     "bankingMultiplier": 0.5,
                     "currentJumpCount": 0,
-                    "currentRoll": 0.00022612606699112803,
-                    "currentYaw": -11.189476013183594,
+                    "currentRoll": -1.1315497150388154e-11,
+                    "currentYaw": -25.193967819213867,
                     "isAirborne": false,
                     "isRunning": false,
                     "lastFallVelocity": 0.0,
@@ -149,15 +161,15 @@
                     "isStatic": false,
                     "parent": 3,
                     "position": [
-                        -32.39923858642578,
-                        0.08379456400871277,
-                        -36.668270111083984
+                        42.84048843383789,
+                        -0.04818869009613991,
+                        -43.92716979980469
                     ],
                     "rotation": [
-                        7.183336128946394e-05,
-                        0.635339081287384,
-                        8.731104026082903e-05,
-                        0.7722333073616028
+                        1.731732975334549e-13,
+                        -0.03060816414654255,
+                        -5.6550974840419155e-12,
+                        0.9995314478874207
                     ],
                     "scale": [
                         3.5,
@@ -272,7 +284,7 @@
                 },
                 "Hitbox": {
                     "damageAmount": 5.0,
-                    "hitStopDuration": 0.10000000149011612,
+                    "hitStopDuration": 0.07000000029802322,
                     "hitStopScale": 0.0,
                     "isActive": false,
                     "knockback": 5.0

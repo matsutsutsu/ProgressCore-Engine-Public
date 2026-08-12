@@ -57,6 +57,8 @@ struct JustEvadeEffectComponent
 
     // --- ランタイム状態（非シリアライズ） ---
     float timer = 0.0f; ///< 残り時間(秒)。>0 の間だけ演出が出る。
+    bool  hold  = false; ///< true の間はモノクロを「サステイン保持」（切り払い準備の照準中など）。
+                         ///< スパイク(放射ブラー/色収差)は出さず、静かな脱色だけを維持する。
 
     /// @brief ジャスト回避成功時に呼ぶ。timer を満タンに戻して演出を開始する。
     void Trigger()

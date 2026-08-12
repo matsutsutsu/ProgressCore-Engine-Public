@@ -19,6 +19,11 @@ struct CameraBodyTPSComponent
     ///        カメラがゲーム固有の DashComponent を読みに行かずに済むようにするためのフィールド。
     bool  wideFovRequest = false;
 
+    // --- 寄り（クローズアップ）要求：切り払い準備などで一時的にカメラを近づける ---
+    /// @brief true の間だけ基準距離を closeUpDistance へ寄せる。ゲーム側が毎フレーム設定する。
+    bool  closeUpRequest  = false;
+    float closeUpDistance = 3.5f; ///< 寄り要求中の基準距離(m)。distance より近く。
+
     // --- オービット（回転）制御 ---
     float currentYaw   = 0.0f;   ///< 現在の水平角度(度)
     float currentPitch = 15.0f;  ///< 現在の垂直角度(度)
