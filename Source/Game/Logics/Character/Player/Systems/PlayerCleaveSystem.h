@@ -28,6 +28,13 @@ private:
     /// 準備(Ready)へ入る（照準方向をセットし、全体スロー＋モノクロを開始）。
     void EnterReady(CleaveComponent &cleave, const DirectX::SimpleMath::Vector3 &dir);
 
+    /// チェイン段数に応じて減衰した現在のスロー倍率／準備猶予（企画_03 3.1.1）。
+    float CurrentSlowScale(const CleaveComponent &cleave) const;
+    float CurrentReadyDuration(const CleaveComponent &cleave) const;
+
+    /// ボス(BossActionComponent)の位置を取得（不在なら false）。前進判定に使う。
+    bool TryGetBossPos(DirectX::SimpleMath::Vector3 &out) const;
+
     /// 準備中：全体スロー(cinematicSlow=globalScale経由で自機含む)を維持する。
     void HoldGlobalSlow(const CleaveComponent &cleave);
     /// スローを即解除（突進の瞬間に等速へスナップ）。
@@ -40,12 +47,14 @@ private:
     /// このプレイヤーを映す TPS カメラへ「寄り(クローズアップ)」要求を push する。
     void PushCameraCloseUp(CCL::ECS::EntityID playerID, bool close);
 
-    /// 突進(Lunging)を開始。
-    void StartLunge(CleaveComponent &cleave, const DirectX::SimpleMath::Vector3 &dir);
+    /// 突進(Lunging)を開始。突進開始時のボス距離を記録する（前進判定用）。
+    void StartLunge(CleaveComponent &cleave, const DirectX::SimpleMath::Vector3 &dir,
+                    const DirectX::SimpleMath::Vector3 &playerPos);
 
-    /// 突進終了：当てていれば再準備で連鎖、外していれば解除しクールダウンへ。
+    /// 突進終了：ヒットかつボスへ前進していれば再準備で連鎖、そうでなければ解除しクールダウンへ。
     void EndLunge(CleaveComponent &cleave, CharacterMovementInputComponent &input,
-                  RootMotionComponent *rm, const DirectX::SimpleMath::Vector3 &aim);
+                  RootMotionComponent *rm, const DirectX::SimpleMath::Vector3 &aim,
+                  const DirectX::SimpleMath::Vector3 &playerPos);
 
     /// 待機(Idle)へ戻しクールダウンを張る（時間切れ・空振り時）。
     void ExitToIdle(CleaveComponent &cleave, CharacterMovementInputComponent &input, RootMotionComponent *rm);

@@ -23,14 +23,32 @@ struct CleaveComponent {
     float knockbackTime  = 2.0f;  ///< 吹き飛ばし〜隊列復帰までの無効時間(秒)
 
     // --- スロー演出（準備中、cinematicSlow=globalScale経由で自機含む全体を遅くする） ---
-    float slowScale    = 0.1f;  ///< 準備中の全体タイムスケール（0.1=10%速度でよりゆっくり）。1.0で無効
+    float slowScale    = 0.1f;  ///< 準備中の全体タイムスケール（1段目の値。0.1=10%速度）。1.0で無効
     float slowDuration = 0.35f; ///< スローのイーズ時間(秒)。解除後この時間で等速へ戻る
+
+    // --- チェイン段数によるスロー減衰（企画_03 3.1.1） ---
+    //   固定のまま毎段再発生させると「無料の思考時間」がコア(高速移動)を無効化するため段階的に減衰させる。
+    //   slowScale は段ごとに +step（危険が増す）、readyDuration は段ごとに ×step（迷える時間が減る）。
+    //   ストック(最大3)実装後は4段目以降に到達しないため、上限/下限クランプは保護用（→到達しなくなる）。
+    float slowScaleStep     = 0.15f; ///< 1段ごとに slowScale へ加算（大きいほど早く危険に）
+    float slowScaleMax      = 0.50f; ///< slowScale の上限
+    float readyDurationStep = 0.65f; ///< 1段ごとに readyDuration へ乗算（小さいほど早く急かす）
+    float readyDurationMin  = 0.50f; ///< readyDuration の下限(秒)。反応0.25s＋粗い照準0.3〜0.5sの死守ライン
+
+    // --- チェイン成立：前進案（企画_03 3.5） ---
+    //   「当てた」ではなく「前へ出た（ボスへ寄った）」を条件にし、上空の待機群での稼ぎを排除する。
+    float chainAdvanceThreshold = 1.0f; ///< 突進でボスへこれ以上(m)寄れば連鎖成立
+
+    // --- プレイテスト用トグル（グレーボックスで A/B する。1回のテストで答えを出す） ---
+    bool enableStageDecay     = true; ///< false=段階減衰オフ（常に1段目の値）
+    bool chainRequiresAdvance = true; ///< false=前進を問わず hitCount>=1 で連鎖（旧挙動）
 
     // --- State（実行時） ---
     Phase phase      = Phase::Idle;
     float phaseTimer = 0.0f; ///< Ready:残り猶予 / Lunging:残り突進時間 / Idle:クールダウン残
     int   hitCount   = 0;    ///< 直近の突進で当てたドローン数（0なら連鎖終了）
     int   chainCount = 0;    ///< 現在の連鎖段数（当てるたびに+1、解除で0）
+    float distToBossOnLungeStart = -1.0f; ///< 突進開始時のボス距離(m)。-1=ボス不在＝前進判定を無効化
 
     // 入力エッジ検出（GetAction はレベル値のため押した瞬間を自前で拾う）
     bool wasCleavePressed  = false; ///< 右クリック（準備）用

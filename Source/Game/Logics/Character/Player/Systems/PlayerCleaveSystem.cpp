@@ -13,6 +13,7 @@
 #include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"      // 寄り(クローズアップ)要求をpush
 #include "Game/Logics/AI/Drone/DroneComponent.h"
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"
+#include "Game/Logics/Character/Boss/Data/BossActionComponent.h" // 前進判定：ボス位置の取得
 
 #include <DirectXMath.h>
 #include <memory>
@@ -81,7 +82,7 @@ void PlayerCleaveSystem::Update(float rawDt)
             cleave.phaseTimer -= rawDt;
 
             if (releaseEdge)
-                StartLunge(cleave, camAim); // 左クリック→突進
+                StartLunge(cleave, camAim, Vector3(trans.position)); // 左クリック→突進
             else if (cleave.phaseTimer <= 0.0f)
                 ExitToIdle(cleave, input, rm);  // 放置→自動解除
             break;
@@ -99,7 +100,7 @@ void PlayerCleaveSystem::Update(float rawDt)
             ApplyFanKnockback(Vector3(trans.position), cleave);
 
             if (cleave.phaseTimer <= 0.0f)
-                EndLunge(cleave, input, rm, camAim);
+                EndLunge(cleave, input, rm, camAim, Vector3(trans.position));
             break;
         }
 
@@ -111,25 +112,56 @@ void PlayerCleaveSystem::Update(float rawDt)
 void PlayerCleaveSystem::EnterReady(CleaveComponent &cleave, const Vector3 &dir)
 {
     cleave.phase      = CleaveComponent::Phase::Ready;
-    cleave.phaseTimer = cleave.readyDuration;
+    cleave.phaseTimer = CurrentReadyDuration(cleave); // 段数に応じて短縮した猶予
     cleave.direction  = dir;
     cleave.hitCount   = 0;
-    HoldGlobalSlow(cleave); // 全体スロー開始
+    HoldGlobalSlow(cleave); // 全体スロー開始（段数に応じて弱まる）
     SetMonochrome(true);    // 画面モノクロ（時間が止まった実感）
+}
+
+// チェイン段数 n（chainCount+1）に応じてスロー倍率を +step で強める（＝危険が増す）。上限でクランプ。
+float PlayerCleaveSystem::CurrentSlowScale(const CleaveComponent &cleave) const
+{
+    if (!cleave.enableStageDecay) return cleave.slowScale;
+    float s = cleave.slowScale + cleave.slowScaleStep * static_cast<float>(cleave.chainCount);
+    return (s < cleave.slowScaleMax) ? s : cleave.slowScaleMax;
+}
+
+// チェイン段数に応じて準備猶予を ×step で短縮（＝迷える時間が減る）。下限でクランプ。
+float PlayerCleaveSystem::CurrentReadyDuration(const CleaveComponent &cleave) const
+{
+    if (!cleave.enableStageDecay) return cleave.readyDuration;
+    float d = cleave.readyDuration * std::pow(cleave.readyDurationStep, static_cast<float>(cleave.chainCount));
+    return (d > cleave.readyDurationMin) ? d : cleave.readyDurationMin;
+}
+
+bool PlayerCleaveSystem::TryGetBossPos(Vector3 &out) const
+{
+    for (EntityID id : m_world->View<BossActionComponent, TransformComponent>())
+    {
+        if (auto *t = m_world->GetComponent<TransformComponent>(id))
+        {
+            out = Vector3(t->position);
+            return true;
+        }
+    }
+    return false;
 }
 
 // TimeContext.cinematicSlow を毎フレーム満タンに張り直して「準備中ずっと全体スロー」を維持する。
 // cinematicSlow は globalScale に乗るため group に依らず全エンティティ（自機=group:None 含む）が
 // 遅くなる。準備を抜けたら張り直しをやめる→timer が自然に減り TimeScaleSystem がイーズで等速へ戻す。
+// 倍率は段数に応じて減衰させる（CurrentSlowScale）。
 void PlayerCleaveSystem::HoldGlobalSlow(const CleaveComponent &cleave)
 {
-    if (cleave.slowDuration <= 0.0f || cleave.slowScale >= 1.0f) return; // 無効設定
+    const float scale = CurrentSlowScale(cleave);
+    if (cleave.slowDuration <= 0.0f || scale >= 1.0f) return; // 無効設定
     if (!m_world->HasResource<TimeContext>()) return;
 
     auto &ctx                     = m_world->GetResource<TimeContext>();
     ctx.cinematicSlow.timer       = cleave.slowDuration;
     ctx.cinematicSlow.duration    = cleave.slowDuration;
-    ctx.cinematicSlow.targetScale = cleave.slowScale;
+    ctx.cinematicSlow.targetScale = scale;
 }
 
 // 突進の瞬間に等速へ「スナップ」させる（イーズを待たず即 1.0 へ）。
@@ -156,35 +188,59 @@ void PlayerCleaveSystem::FaceAim(PlayerComponent &player, const Vector3 &dir)
     player.attackFaceTimer = 0.1f;
 }
 
-void PlayerCleaveSystem::StartLunge(CleaveComponent &cleave, const Vector3 &dir)
+void PlayerCleaveSystem::StartLunge(CleaveComponent &cleave, const Vector3 &dir, const Vector3 &playerPos)
 {
     cleave.phase      = CleaveComponent::Phase::Lunging;
     cleave.phaseTimer = cleave.cleaveDuration;
     cleave.direction  = dir;
     cleave.hitCount   = 0;
+
+    // 前進判定用に、突進開始時点のボスまでの距離を記録する（ボス不在なら -1）。
+    Vector3 bossPos;
+    cleave.distToBossOnLungeStart = TryGetBossPos(bossPos) ? Vector3::Distance(playerPos, bossPos) : -1.0f;
+
     // 突進中は通常速度・通常色にする（切り込みを速く見せる）。
     ClearGlobalSlow();
     SetMonochrome(false);
 }
 
 void PlayerCleaveSystem::EndLunge(CleaveComponent &cleave, CharacterMovementInputComponent &input,
-                                  RootMotionComponent *rm, const Vector3 &aim)
+                                  RootMotionComponent *rm, const Vector3 &aim, const Vector3 &playerPos)
 {
     input.overrideSpeed = -1.0f;
     input.use3DVelocity = false; // 3D突進を解除（以後は通常の重力・水平移動へ戻す）
     if (rm) rm->externallyDriven = false;
 
-    if (cleave.hitCount > 0)
+    // 前進案（3.5）：ヒットに加え「ボスへ chainAdvanceThreshold 以上寄れたか」を連鎖条件にする。
+    //   ・chainRequiresAdvance=false … 前進を問わず hitCount>=1 で連鎖（旧挙動）
+    //   ・ボス不在(距離<0) … 前進判定を無効化し hitCount>=1 のみ（雑魚戦/チュートリアル）
+    float advance = 0.0f;
+    bool  advanced = true;
+    if (cleave.chainRequiresAdvance && cleave.distToBossOnLungeStart >= 0.0f)
     {
-        // 当てた → 連鎖継続。再び準備(全体スロー＋モノクロ)へ戻し、左クリックで次の切り払いへ。
+        Vector3 bossPos;
+        if (TryGetBossPos(bossPos))
+        {
+            advance  = cleave.distToBossOnLungeStart - Vector3::Distance(playerPos, bossPos);
+            advanced = (advance >= cleave.chainAdvanceThreshold);
+        }
+    }
+
+    const bool chain = (cleave.hitCount > 0) && advanced;
+
+    if (chain)
+    {
+        // 当てて前へ出た → 連鎖継続。再び準備(全体スロー＋モノクロ)へ戻し、左クリックで次の切り払いへ。
         cleave.chainCount++;
-        CCL_LOG_INFO(LogCategory::Game, "[Cleave] hit! chain=%d (hits=%d) -> Ready", cleave.chainCount, cleave.hitCount);
+        CCL_LOG_INFO(LogCategory::Game, "[Cleave] chain=%d (hits=%d, advance=%.1fm) -> Ready",
+                     cleave.chainCount, cleave.hitCount, advance);
         EnterReady(cleave, aim);
     }
     else
     {
-        // 空振り → 連鎖終了。クールダウンへ（スロー/モノクロは既に突進開始時に解除済み）。
-        CCL_LOG_INFO(LogCategory::Game, "[Cleave] whiff -> end. chain was %d", cleave.chainCount);
+        // 空振り or 前進せず → 連鎖終了。クールダウンへ（スロー/モノクロは突進開始時に解除済み）。
+        CCL_LOG_INFO(LogCategory::Game, "[Cleave] end (hits=%d, advance=%.1fm). chain was %d",
+                     cleave.hitCount, advance, cleave.chainCount);
         cleave.phase      = CleaveComponent::Phase::Idle;
         cleave.phaseTimer = cleave.cleaveCooldown;
         cleave.chainCount = 0;

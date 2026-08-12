@@ -42,7 +42,14 @@
                     "knockbackSpeed": 200.0,
                     "knockbackTime": 2.0,
                     "slowDuration": 0.3499999940395355,
-                    "slowScale": 0.1
+                    "slowScale": 0.1,
+                    "slowScaleStep": 0.15,
+                    "slowScaleMax": 0.5,
+                    "readyDurationStep": 0.65,
+                    "readyDurationMin": 0.5,
+                    "chainAdvanceThreshold": 1.0,
+                    "enableStageDecay": true,
+                    "chainRequiresAdvance": true
                 },
                 "Dash Component": {
                     "approachDuration": 0.3499999940395355,
