@@ -420,6 +420,7 @@
     <ClInclude Include="Source\Engine\Core\App\EngineServices.h" />
     <ClInclude Include="Source\Engine\Core\App\Framework.h" />
     <ClInclude Include="Source\Engine\Core\App\GameFlowState.h" />
+    <ClInclude Include="Source\Engine\Core\Profiling\TracySection.h" />
     <ClInclude Include="Source\Engine\Core\Components\DestroyTag.h" />
     <ClInclude Include="Source\Engine\Core\Components\NameComponent.h" />
     <ClInclude Include="Source\Engine\Core\Components\PersistentTag.h" />

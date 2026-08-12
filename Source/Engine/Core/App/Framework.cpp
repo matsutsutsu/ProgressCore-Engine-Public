@@ -38,6 +38,7 @@
 
 #include "tracy/Tracy.hpp"
 #include "tracy/TracyD3D11.hpp"
+#include "Engine/Core/Profiling/TracySection.h" // フレーム内フェーズ(Simulation/Render)の帯
 
 
 #if defined(_DEBUG)
@@ -658,6 +659,13 @@ int Framework::Run()
 			int updateCount = 0;
 			const int MAX_STEPS = 4; // 1フレームに許容する最大更新回数
 
+			// --- Simulation フェーズ（固定タイムステップの論理・物理）---
+			//   Tracy Section で1つの帯にする。プロファイラ側で「この工程だけ」に時間範囲を
+			//   絞れるので、ForEachParallel のフォークジョイン（join待ちのカーネル時間）を
+			//   この帯の中だけで追跡でき、固定タイムステップ構造の説明にも使える。
+			{
+			TRACY_SECTION("Simulation");
+
 			// コマ送り：accumulator に関係なく、確実に1物理ステップだけ進める。
 			//   一時停止中なので下の通常ループ(while)は accumulator が溜まらず回らない。
 			if (doSingleStep)
@@ -691,6 +699,8 @@ int Framework::Run()
 				accumulator = fmod(accumulator, FIXED_DT);
 			}
 
+			} // ← Simulation セクション終了
+
 			
 			// ===============================================================
             // 描画補間係数の算出とWorldへの供給
@@ -713,8 +723,10 @@ int Framework::Run()
 
 			// 5. 残った時間 (accumulator) を使って「補間」を行うのが理想だが、
 			//    まずは可変フレームで描画更新を行う
-			Update(frameTime);
-			Render(frameTime);
+			//   Update / Render もそれぞれ Section の帯にして、タイムライン上で
+			//   Simulation と描画工程を色分け・絞り込みできるようにする。
+			{ TRACY_SECTION("Update"); Update(frameTime); }
+			{ TRACY_SECTION("Render"); Render(frameTime); }
 
 
 			// ここで1フレーム終了をTracyに通知

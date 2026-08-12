@@ -152,7 +152,9 @@ static ULONG ETWError( ULONG result )
 {
     if( result == ERROR_SUCCESS )
         return result;
-    static constexpr tracy::SourceLocationData srcLocHere{ nullptr, __FUNCTION__, __FILE__, __LINE__, Color_Red4 };
+    // NOTE(local patch): MSVC(14.38) では __FUNCTION__ が定数式にならず constexpr に置けない。
+    //   このオブジェクトは実行時にアドレスを渡すだけで constexpr 評価は不要なので const で十分。
+    static const tracy::SourceLocationData srcLocHere{ nullptr, __FUNCTION__, __FILE__, __LINE__, Color_Red4 };
     tracy::ScopedZone ___tracy_scoped_zone( &srcLocHere, 0, true );
     char message[128] = {};
     int written = snprintf( message, sizeof( message ), "ETW Error %u (0x%x): ", result, result );

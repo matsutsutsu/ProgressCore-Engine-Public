@@ -246,6 +246,9 @@
     <Filter Include="Source\Engine\Core\App">
       <UniqueIdentifier>{4aff0f95-be75-41c1-8df8-7b07aa6bba85}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Core\Profiling">
+      <UniqueIdentifier>{2b7e1c34-9d5a-4f21-8c60-1a3e5d7b9f02}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Core\Components">
       <UniqueIdentifier>{6f9158c7-7a95-45b0-b115-584392699565}</UniqueIdentifier>
     </Filter>
@@ -1163,6 +1166,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\App\Framework.h">
       <Filter>Source\Engine\Core\App</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Profiling\TracySection.h">
+      <Filter>Source\Engine\Core\Profiling</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Components\DestroyTag.h">
       <Filter>Source\Engine\Core\Components</Filter>
