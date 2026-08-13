@@ -11,6 +11,7 @@
 #include "Game/Logics/GameEvent/GameEvents.h"
 #include "Engine/Camera/CameraEvents.h" // FOVパンチ要求（カメラへの演出指示）
 #include "Engine/Time/TimeState.h"
+#include "Engine/Time/TimeService.h" // 時間操作は意図ファサード経由
 #include "Engine/Graphics/Components/Impact/JustEvadeEffectComponent.h"
 #include "Engine/Physics/Components/RigidBody/JoltRigidBodyComponent.h" // 壁/地形との接触を除外するため
 
@@ -55,15 +56,9 @@ void JustEvadeSystem::Initialize()
 
     // JUST回避が成功した瞬間のイベントをリッスン
     ListenEvent<JustEvadeSuccessEvent>([this](const JustEvadeSuccessEvent &ev) {
-        // 1. プレイヤーの時間を「150ミリ秒(0.15f)」完全に止める（ヒットストップ）
-        if (auto *timeState = m_world->GetComponent<TimeStateComponent>(ev.playerID))
-        {
-            timeState->hitStopTimer = 0.15f;
-        }
-
-        auto& timeContext = m_world->GetResource<TimeContext>();
-        timeContext.globalFreezeScale = 0.1f;
-        timeContext.globalHitStopTimer = 0.5f;
+        // 1. プレイヤーを一瞬止め、世界全体をウィッチタイム（0.5秒・10%速度）にする。
+        Time::HitStopEntity(*m_world, ev.playerID, 0.15f); // 自機だけ完全停止(150ms)
+        Time::HitStop(*m_world, 0.5f, 0.1f);               // 世界全体を0.5秒だけ10%へ
 
         // =======================================================
         //  1.5 接近（ジャスト回避の近道）の起動

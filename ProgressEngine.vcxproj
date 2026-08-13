@@ -633,6 +633,7 @@
     <ClInclude Include="Source\Engine\Time\TimeScaleSetupSystem.h" />
     <ClInclude Include="Source\Engine\Time\TimeScaleSystem.h" />
     <ClInclude Include="Source\Engine\Time\TimeState.h" />
+    <ClInclude Include="Source\Engine\Time\TimeService.h" />
     <ClInclude Include="Source\Engine\Transform\Components\BoneAttachmentComponent.h" />
     <ClInclude Include="Source\Engine\Transform\Components\PendingParentComponent.h" />
     <ClInclude Include="Source\Engine\Transform\Components\TransformComponent.h" />
@@ -1119,6 +1120,7 @@
     <ClCompile Include="Source\Engine\Time\TimeComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Time\TimeScaleSetupSystem.cpp" />
     <ClCompile Include="Source\Engine\Time\TimeScaleSystem.cpp" />
+    <ClCompile Include="Source\Engine\Time\TimeService.cpp" />
     <ClCompile Include="Source\Engine\Transform\Components\TransformComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Transform\Core\TransformHierarchyCache.cpp" />
     <ClCompile Include="Source\Engine\Transform\Systems\BoneAttachmentRenderSystem.cpp" />

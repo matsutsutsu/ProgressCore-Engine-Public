@@ -17,6 +17,7 @@
 #include "Game/Logics/GameEvent/GameEvents.h"
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"
 #include "Engine/Time/TimeState.h"
+#include "Engine/Time/TimeService.h" // ヒットストップは意図ファサード経由
 #include "Engine/Physics/Components/Character/KnockbackComponent.h"
 #include "Engine/Graphics/Components/Impact/ScreenImpactComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"       // 被弾者の向き（前後左右判定）
@@ -110,16 +111,9 @@ void DamageResolutionSystem::Update(float dt) {
                 // TimeScaleSystem(L01) が次フレームから hitStopTimer を消費し localDt=0 にする。
                 if (event.hitStopDuration > 0.0f)
                 {
-                    if (auto *vt = m_world->GetComponent<TimeStateComponent>(event.targetID))
-                    {
-                        vt->hitStopTimer = event.hitStopDuration;
-                        vt->freezeScale  = event.hitStopScale;
-                    }
-                    if (auto *at = m_world->GetComponent<TimeStateComponent>(event.attackerID))
-                    {
-                        at->hitStopTimer = event.hitStopDuration;
-                        at->freezeScale  = event.hitStopScale;
-                    }
+                    // 被弾側＋攻撃側の双方を止める（意図ファサード経由）。
+                    Time::HitStopEntity(*m_world, event.targetID, event.hitStopDuration, event.hitStopScale);
+                    Time::HitStopEntity(*m_world, event.attackerID, event.hitStopDuration, event.hitStopScale);
                 }
 
                 // --- ノックバック適用 ---

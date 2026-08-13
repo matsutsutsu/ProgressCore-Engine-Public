@@ -5,30 +5,16 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
-#include "Engine/Time/TimeState.h"
+#include "Engine/Time/TimeService.h" // 全体スローは意図ファサード経由
 
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"   // プレイヤー識別
 #include "Game/Logics/Character/Boss/Data/BossActionComponent.h"      // ボス識別
 
 using namespace CCL::ECS;
 
-namespace
-{
-// 世界全体を一括でシネマティックスローにする（globalScale 経由なので全 group に効く）。
-// UI(TimeGroup::UI) は TimeStateComponent の group で 1.0 のまま扱われるため、
-// メニュー/HUD の操作感は落ちない。
-void ApplyCinematicSlow(TimeContext &ctx, float duration, float scale)
-{
-    ctx.cinematicSlow.timer       = duration;
-    ctx.cinematicSlow.duration    = duration;
-    ctx.cinematicSlow.targetScale = scale;
-}
-} // namespace
-
 void DefeatSlowMotionSystem::Update(float dt)
 {
-    if (!m_world || !m_world->HasResource<TimeContext>()) return;
-    auto &ctx = m_world->GetResource<TimeContext>();
+    if (!m_world) return;
 
     if (m_cooldown > 0.0f) m_cooldown -= dt;
 
@@ -62,12 +48,12 @@ void DefeatSlowMotionSystem::Update(float dt)
 
     if (climax)
     {
-        ApplyCinematicSlow(ctx, kClimaxDur, kClimaxScale);
+        Time::SlowWorld(*m_world, kClimaxScale, kClimaxDur);
         m_cooldown = kCooldown; // 直後に通常スローが重ならないように
     }
     else if (normalKill && m_cooldown <= 0.0f)
     {
-        ApplyCinematicSlow(ctx, kNormalDur, kNormalScale);
+        Time::SlowWorld(*m_world, kNormalScale, kNormalDur);
         m_cooldown = kCooldown;
     }
 }

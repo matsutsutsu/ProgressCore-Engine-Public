@@ -1545,6 +1545,9 @@
     <ClInclude Include="Source\Engine\Time\TimeState.h">
       <Filter>Source\Engine\Time</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Time\TimeService.h">
+      <Filter>Source\Engine\Time</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Core\Systems\SystemPriority.h">
       <Filter>Source\Engine\Core\Systems</Filter>
     </ClInclude>
@@ -2601,6 +2604,9 @@
       <Filter>Source\Engine\Time</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Time\TimeScaleSystem.cpp">
+      <Filter>Source\Engine\Time</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Time\TimeService.cpp">
       <Filter>Source\Engine\Time</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Systems\Culling\AABBDebugDrawSystem.cpp">

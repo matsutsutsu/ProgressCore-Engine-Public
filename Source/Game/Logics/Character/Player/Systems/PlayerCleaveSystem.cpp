@@ -11,6 +11,7 @@
 #include "Engine/Animation/Components/RootMotionComponent.h"
 #include "Engine/Graphics/Components/Impact/JustEvadeEffectComponent.h" // 画面モノクロ演出を流用
 #include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"      // 寄り(クローズアップ)要求をpush
+#include "Engine/Time/TimeService.h"                                   // 全体スローは意図ファサード経由
 #include "Game/Logics/AI/Drone/DroneComponent.h"
 #include "Game/Logics/GameEvent/GameEvents.h"                          // ゲージ供給：ジャスト回避イベント
 
@@ -167,29 +168,17 @@ float PlayerCleaveSystem::CurrentReadyDuration(const CleaveComponent &cleave) co
     return v[s];
 }
 
-// TimeContext.cinematicSlow を毎フレーム満タンに張り直して「準備中ずっと全体スロー」を維持する。
-// cinematicSlow は globalScale に乗るため group に依らず全エンティティ（自機=group:None 含む）が
-// 遅くなる。準備を抜けたら張り直しをやめる→timer が自然に減り TimeScaleSystem がイーズで等速へ戻す。
-// 倍率は段ごとの固定値（CurrentSlowScale）。
+// 準備中の全体スローを維持する。段ごとの固定倍率（CurrentSlowScale）を「このフレーム分」要求する。
+// 呼ぶのをやめる（＝準備を抜ける）と slowDuration 秒でイーズ復帰する。
 void PlayerCleaveSystem::HoldGlobalSlow(const CleaveComponent &cleave)
 {
-    const float scale = CurrentSlowScale(cleave);
-    if (cleave.slowDuration <= 0.0f || scale >= 1.0f) return; // 無効設定
-    if (!m_world->HasResource<TimeContext>()) return;
-
-    auto &ctx                     = m_world->GetResource<TimeContext>();
-    ctx.cinematicSlow.timer       = cleave.slowDuration;
-    ctx.cinematicSlow.duration    = cleave.slowDuration;
-    ctx.cinematicSlow.targetScale = scale;
+    Time::SustainWorldSlow(*m_world, CurrentSlowScale(cleave), cleave.slowDuration);
 }
 
 // 突進の瞬間に等速へ「スナップ」させる（イーズを待たず即 1.0 へ）。
 void PlayerCleaveSystem::ClearGlobalSlow()
 {
-    if (!m_world->HasResource<TimeContext>()) return;
-    auto &ctx = m_world->GetResource<TimeContext>();
-    ctx.cinematicSlow.timer                = 0.0f;
-    ctx.cinematicSlow.currentComputedScale = 1.0f;
+    Time::ClearWorldSlow(*m_world);
 }
 
 // ジャスト回避の演出singleton(JustEvadeEffectComponent)を hold で流用し、準備中だけモノクロ保持。
