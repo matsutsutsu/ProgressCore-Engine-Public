@@ -109,7 +109,7 @@ void PlayerAttackSystem::Update(float dt)
         // ここで通常/ダッシュ/空中攻撃を出さないよう抑止し、エッジ状態だけ更新して抜ける。
         if (const auto *cleave = m_world->GetComponent<CleaveComponent>(playerID))
         {
-            if (cleave->phase != CleaveComponent::Phase::Idle)
+            if (cleave->phase != CleavePhase::Idle)
             {
                 player.wasAttackButtonPressed = inputData.isAttackRequested;
                 return;

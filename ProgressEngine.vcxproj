@@ -711,8 +711,6 @@
     <ClInclude Include="Source\Game\Logics\Character\Player\Components\JustEvadeComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Components\PlayerComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\OverdriveSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Player\Components\OverdriveComponent.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Components\UITransformComponent.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Components\UIImageComponent.h" />
     <ClInclude Include="Source\Engine\UI\ECS\GameViewportInfo.h" />
@@ -730,8 +728,8 @@
     <ClInclude Include="Source\Engine\UI\ECS\Systems\UIButtonSystem.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Components\UIProgressBarComponent.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Systems\UIProgressBarCollectSystem.h" />
-    <ClInclude Include="Source\Game\UI\OverdriveHudSystem.h" />
     <ClInclude Include="Source\Game\UI\PlayerHealthHudSystem.h" />
+    <ClInclude Include="Source\Game\UI\CleaveGaugeHudSystem.h" />
     <ClInclude Include="Source\Game\UI\BossHealthHudSystem.h" />
     <ClInclude Include="Source\Game\UI\TitleMenuSystem.h" />
     <ClInclude Include="Source\Game\UI\MenuUiFactory.h" />
@@ -1167,8 +1165,6 @@
     <ClCompile Include="Source\Game\Logics\Character\Player\Components\CleaveComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Components\PlayerComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\OverdriveSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Player\Components\OverdriveComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\Components\UIComponentsMeta.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\UIRenderer.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UILayoutSystem.cpp" />
@@ -1177,8 +1173,8 @@
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIInputSystem.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIButtonSystem.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIProgressBarCollectSystem.cpp" />
-    <ClCompile Include="Source\Game\UI\OverdriveHudSystem.cpp" />
     <ClCompile Include="Source\Game\UI\PlayerHealthHudSystem.cpp" />
+    <ClCompile Include="Source\Game\UI\CleaveGaugeHudSystem.cpp" />
     <ClCompile Include="Source\Game\UI\BossHealthHudSystem.cpp" />
     <ClCompile Include="Source\Game\UI\TitleMenuSystem.cpp" />
     <ClCompile Include="Source\Game\UI\GameResultSystem.cpp" />

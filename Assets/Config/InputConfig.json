@@ -77,20 +77,6 @@
         {
             "Bindings": [
                 {
-                    "Device": "Keyboard",
-                    "Key": "Q"
-                },
-                {
-                    "Device": "GamePad_Button",
-                    "Key": "BTN_LEFT_TRIGGER"
-                }
-            ],
-            "Name": "Overdrive",
-            "Trigger": "Triggered"
-        },
-        {
-            "Bindings": [
-                {
                     "Device": "Mouse_Button",
                     "Key": "BTN_RIGHT"
                 },

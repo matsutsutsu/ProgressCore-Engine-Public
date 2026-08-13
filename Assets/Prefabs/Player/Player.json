@@ -36,20 +36,22 @@
                     "cleaveCooldown": 0.4000000059604645,
                     "cleaveDuration": 0.18000000715255737,
                     "cleaveSpeed": 100.0,
-                    "readyDuration": 1.5,
                     "fanHalfAngle": 45.0,
                     "fanRange": 6.0,
                     "knockbackSpeed": 200.0,
                     "knockbackTime": 2.0,
                     "slowDuration": 0.3499999940395355,
-                    "slowScale": 0.1,
-                    "slowScaleStep": 0.15,
-                    "slowScaleMax": 0.5,
-                    "readyDurationStep": 0.65,
-                    "readyDurationMin": 0.5,
-                    "chainAdvanceThreshold": 1.0,
+                    "slowScale1": 0.1,
+                    "slowScale2": 0.25,
+                    "slowScale3": 0.4,
+                    "readyDuration1": 1.5,
+                    "readyDuration2": 0.95,
+                    "readyDuration3": 0.6,
                     "enableStageDecay": true,
-                    "chainRequiresAdvance": true
+                    "maxGauge": 100.0,
+                    "maxStock": 3,
+                    "gaugeOnJustEvade": 50.0,
+                    "gaugeOnDash": 8.0
                 },
                 "Dash Component": {
                     "approachDuration": 0.3499999940395355,
@@ -125,17 +127,6 @@
                 },
                 "Name": {
                     "name": "Player"
-                },
-                "Overdrive": {
-                    "currentGauge": 100.0,
-                    "duration": 6.0,
-                    "enemyTimeScale": 0.3499999940395355,
-                    "environmentTimeScale": 0.3499999940395355,
-                    "gainOnDash": 4.0,
-                    "gainOnJustEvade": 25.0,
-                    "isActive": false,
-                    "maxGauge": 100.0,
-                    "playerTimeScale": 1.149999976158142
                 },
                 "Player Component": {
                     "airborneGraceTime": 0.47999998927116394,

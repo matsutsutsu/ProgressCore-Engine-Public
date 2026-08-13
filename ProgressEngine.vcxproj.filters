@@ -771,10 +771,10 @@
     <ClInclude Include="Source\Engine\UI\ECS\Systems\UIProgressBarCollectSystem.h">
       <Filter>Source\Engine\UI\ECS\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\UI\OverdriveHudSystem.h">
+    <ClInclude Include="Source\Game\UI\PlayerHealthHudSystem.h">
       <Filter>Source\Game\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\UI\PlayerHealthHudSystem.h">
+    <ClInclude Include="Source\Game\UI\CleaveGaugeHudSystem.h">
       <Filter>Source\Game\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\BossHealthHudSystem.h">
@@ -1737,12 +1737,6 @@
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.h">
       <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\OverdriveSystem.h">
-      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Player\Components\OverdriveComponent.h">
-      <Filter>Source\Game\Logics\Character\Player\Components</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Platform\Input\InputKeyTable.h">
       <Filter>Source\Engine\Platform\Input</Filter>
     </ClInclude>
@@ -2078,10 +2072,10 @@
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIProgressBarCollectSystem.cpp">
       <Filter>Source\Engine\UI\ECS\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\UI\OverdriveHudSystem.cpp">
+    <ClCompile Include="Source\Game\UI\PlayerHealthHudSystem.cpp">
       <Filter>Source\Game\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\UI\PlayerHealthHudSystem.cpp">
+    <ClCompile Include="Source\Game\UI\CleaveGaugeHudSystem.cpp">
       <Filter>Source\Game\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\BossHealthHudSystem.cpp">
@@ -2752,12 +2746,6 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.cpp">
       <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\OverdriveSystem.cpp">
-      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Player\Components\OverdriveComponentMeta.cpp">
-      <Filter>Source\Game\Logics\Character\Player\Components</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\Components\DashComponentsMeta.cpp">
       <Filter>Source\Game\Logics\Character\Player\Components</Filter>
