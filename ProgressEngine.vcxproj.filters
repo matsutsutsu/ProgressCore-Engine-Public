@@ -2804,9 +2804,6 @@
     <ClCompile Include="Source\Engine\Physics\Systems\Character\JoltCharacterDebugDrawSystem.cpp">
       <Filter>Source\Engine\Physics\Systems\Character</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Animation\Components\RootMotionComponentMeta.cpp">
-      <Filter>Source\Engine\Animation\Core</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Editor\Utils\CurveEditorWidget.cpp">
       <Filter>Source\Editor\Utils</Filter>
     </ClCompile>
@@ -2878,6 +2875,9 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Scenes\ParticleScene.cpp">
       <Filter>Source\Game\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\Components\RootMotionComponentMeta.cpp">
+      <Filter>Source\Engine\Animation\Components</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

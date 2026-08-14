@@ -65,26 +65,6 @@
             "targetStateHash": 2262072404
         },
         {
-            "blendDuration": 0.10000000149011612,
-            "conditions": [
-                {
-                    "op": 3,
-                    "paramHash": 3987189933,
-                    "paramName": "DashAttack",
-                    "threshold": 0.0
-                },
-                {
-                    "op": 1,
-                    "paramHash": 174817312,
-                    "paramName": "Speed",
-                    "threshold": 45.0
-                }
-            ],
-            "logicType": 0,
-            "requiredCancelMask": 0,
-            "targetStateHash": 3987189933
-        },
-        {
             "blendDuration": 0.20000000298023224,
             "conditions": [
                 {
@@ -157,6 +137,13 @@
             "defaultFloat": 0.0,
             "hash": 1116791579,
             "name": "IsDashing",
+            "type": 1
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 725382108,
+            "name": "DashAttackReady",
             "type": 1
         },
         {
@@ -330,12 +317,38 @@
                     "targetStateHash": 1168775091
                 },
                 {
+                    "blendDuration": 0.10000000149011612,
+                    "conditions": [
+                        {
+                            "op": 3,
+                            "paramHash": 2343121693,
+                            "paramName": "Attack",
+                            "threshold": 0.0
+                        },
+                        {
+                            "op": 0,
+                            "paramHash": 725382108,
+                            "paramName": "DashAttackReady",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 3987189933
+                },
+                {
                     "blendDuration": 0.20000000298023224,
                     "conditions": [
                         {
                             "op": 3,
                             "paramHash": 2343121693,
                             "paramName": "Attack",
+                            "threshold": 0.0
+                        },
+                        {
+                            "op": 0,
+                            "paramHash": 725382108,
+                            "paramName": "DashAttackReady",
                             "threshold": 0.0
                         }
                     ],
@@ -358,6 +371,20 @@
             "speedCurveName": "",
             "stateHash": 1750693397,
             "transitions": [
+                {
+                    "blendDuration": 0.10000000149011612,
+                    "conditions": [
+                        {
+                            "op": 3,
+                            "paramHash": 2343121693,
+                            "paramName": "Attack",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 3987189933
+                },
                 {
                     "blendDuration": 0.20000000298023224,
                     "conditions": [
@@ -444,8 +471,8 @@
                     "conditions": [
                         {
                             "op": 3,
-                            "paramHash": 899714431,
-                            "paramName": "AirAttack",
+                            "paramHash": 2343121693,
+                            "paramName": "Attack",
                             "threshold": 0.0
                         }
                     ],
@@ -459,8 +486,8 @@
             "applyRootMotion": false,
             "isLoop": true,
             "lockVerticalRootMotion": false,
-            "nodePosX": 788.0,
-            "nodePosY": 91.0,
+            "nodePosX": 797.0,
+            "nodePosY": 32.0,
             "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Jump_Loop.json",
@@ -487,8 +514,8 @@
                     "conditions": [
                         {
                             "op": 3,
-                            "paramHash": 899714431,
-                            "paramName": "AirAttack",
+                            "paramHash": 2343121693,
+                            "paramName": "Attack",
                             "threshold": 0.0
                         }
                     ],
@@ -504,7 +531,7 @@
             "lockVerticalRootMotion": false,
             "nodePosX": 1126.0,
             "nodePosY": -134.0,
-            "playbackSpeed": 2.0,
+            "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/DoubleJump.json",
             "sequenceName": "DoubleJump",
@@ -530,8 +557,8 @@
                     "conditions": [
                         {
                             "op": 3,
-                            "paramHash": 899714431,
-                            "paramName": "AirAttack",
+                            "paramHash": 2343121693,
+                            "paramName": "Attack",
                             "threshold": 0.0
                         }
                     ],
@@ -545,8 +572,8 @@
             "applyRootMotion": false,
             "isLoop": false,
             "lockVerticalRootMotion": false,
-            "nodePosX": 518.0,
-            "nodePosY": 97.0,
+            "nodePosX": 510.0,
+            "nodePosY": 90.0,
             "playbackSpeed": 2.0,
             "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Jump_End.json",
@@ -590,7 +617,7 @@
             "lockVerticalRootMotion": false,
             "nodePosX": -70.0,
             "nodePosY": 472.0,
-            "playbackSpeed": 1.0,
+            "playbackSpeed": 0.699999988079071,
             "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Attack_1.json",
             "sequenceName": "Attack_1",
@@ -647,7 +674,7 @@
             "lockVerticalRootMotion": false,
             "nodePosX": 58.0,
             "nodePosY": 637.0,
-            "playbackSpeed": 1.0,
+            "playbackSpeed": 0.699999988079071,
             "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Attack_2.json",
             "sequenceName": "Attack_2",
@@ -688,8 +715,8 @@
             "applyRootMotion": true,
             "isLoop": false,
             "lockVerticalRootMotion": false,
-            "nodePosX": -69.0,
-            "nodePosY": 62.0,
+            "nodePosX": -73.0,
+            "nodePosY": 66.0,
             "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/DashAttack.json",

@@ -69,6 +69,9 @@ struct PlayerComponent {
     float attackFaceMaxDistance = 5.0f; ///< この距離以内の敵にだけ攻撃時オートフェイシングする(m)。
                                         ///< 遠い敵（ロックオン中でも）には向かず、入力方向のまま攻撃する。
 
+    // プレイヤー固有アクションの入力意思（PlayerInputSystem が毎フレーム書き込む）
+    bool               cleaveRequested = false;                           ///< 切り払い(右クリック)が押された瞬間だけ true になるトリガー意思
+
     // ロックオンデータ
     bool               lockOnToggleRequested = false;                     ///< Rボタンが押された瞬間だけ true になるトリガー意思
     CCL::Serialization::EntityLink lockOnTargetID  = CCL::ECS::InvalidEntityID; ///< 現在ロックオンしている敵のEntityID

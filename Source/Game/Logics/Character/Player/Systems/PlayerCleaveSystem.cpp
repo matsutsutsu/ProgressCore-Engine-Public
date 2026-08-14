@@ -6,7 +6,6 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Platform/Core/Logger.h"
-#include "Engine/Platform/Input/IInputAPI.h"
 #include "Engine/Graphics/RHI/Camera.h"
 #include "Engine/Animation/Components/RootMotionComponent.h"
 #include "Engine/Graphics/Components/Impact/JustEvadeEffectComponent.h" // 画面モノクロ演出を流用
@@ -48,17 +47,6 @@ void PlayerCleaveSystem::AddCleaveGauge(CleaveComponent &cleave, float amount)
 
 void PlayerCleaveSystem::Update(float rawDt)
 {
-    // 入力：右クリック=準備(Cleave)、左クリック=突進(Attack)。
-    // どちらも InputConfig で "Triggered" 登録なので GetAction が「押した瞬間の1フレーム」を返す。
-    bool cleavePressed  = false;
-    bool releasePressed = false;
-    if (m_world->HasResource<std::shared_ptr<IInputAPI>>())
-    {
-        auto input     = m_world->GetResource<std::shared_ptr<IInputAPI>>();
-        cleavePressed  = input->GetAction("Cleave");
-        releasePressed = input->GetAction("Attack");
-    }
-
     // 向いている方向を取得する（CLEAVE の突進はカメラの向いた3D方向へ進むため Y を残す）。
     Vector3 camAim = Vector3::UnitZ;
     if (m_world->HasResource<Camera *>())
@@ -82,6 +70,10 @@ void PlayerCleaveSystem::Update(float rawDt)
                       const DashComponent             &dash,
                       const TransformComponent        &trans)
         {
+        // 入力の意思（PlayerInputSystem が集約済み）：右クリック=準備(プレイヤー固有)、左クリック=突進/チェイン。
+        const bool cleavePressed  = player.cleaveRequested;
+        const bool releasePressed = input.isAttackRequested;
+
         // RootMotion は実行時後付け・任意依存なのでここだけ GetComponent（無ければ nullptr）。
         RootMotionComponent *rm = m_world->GetComponent<RootMotionComponent>(id);
 

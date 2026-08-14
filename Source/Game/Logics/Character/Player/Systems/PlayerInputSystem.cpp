@@ -28,6 +28,7 @@ void PlayerInputSystem::Update(float dt)
     float moveX       = inputAPI->GetAxis("MoveX");
     float moveY       = inputAPI->GetAxis("MoveY");
     bool  isAttacking = inputAPI->GetAction("Attack");
+    bool  isCleaving  = inputAPI->GetAction("Cleave"); // 切り払い(右クリック)入力の取得
     bool  isJumping   = inputAPI->GetAction("Jump");
     bool  isDashing   = inputAPI->GetAction("Dash"); // ダッシュ入力の取得
     bool  isLockOn    = inputAPI->GetAction("LockOn"); // Rボタンなどのアクションを追加
@@ -55,6 +56,7 @@ void PlayerInputSystem::Update(float dt)
         inputData.isAttackRequested = isAttacking;
         inputData.jumpRequested     = isJumping;
         inputData.dashRequested     = isDashing; // ダッシュ要求をコンポーネントへ渡す
+        player.cleaveRequested       = isCleaving; // 切り払い(右クリック)はプレイヤー固有意思へ
         player.lockOnToggleRequested = isLockOn;  // ロックオン要求をコンポーネントへ渡す
 
         });
