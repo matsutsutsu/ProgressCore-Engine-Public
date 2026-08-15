@@ -2,11 +2,15 @@
 #include <vector>
 #include <string>
 #include <cstdint>
+#include <memory> // 階層ステートマシン：AnimState が子グラフを unique_ptr で持つ
 #include <json.hpp>
 #include "Engine/Animation/Core/AnimSequence.h"
-#include "Engine/Core/Math/StringHash.h" 
+#include "Engine/Core/Math/StringHash.h"
 
 struct CurveData;
+
+// 階層ステートマシンの再帰参照（AnimState が子 AnimStateGraph を持つ）用の前方宣言。
+struct AnimStateGraph;
 
 // 条件演算子
 enum class AnimConditionOp
@@ -69,6 +73,12 @@ struct AnimTransition
     // 文字列を完全に廃止し、ビットマスクに変更
     uint32_t requiredCancelMask = 0;
 
+    /// @brief 軽量サブステートマシン用。0=どこからでも（従来の anyState）。
+    ///        非0の時は「現在ステートの groupId がこの値と一致する場合のみ有効」な
+    ///        グループ・スコープ付き anyState 遷移になる（＝そのグループ内からの割り込み）。
+    ///        通常ステートの transitions では未使用（0のまま）。anyStateTransitions でのみ意味を持つ。
+    uint32_t sourceGroupId = 0;
+
     std::vector<AnimCondition> conditions;
 };
 
@@ -93,6 +103,12 @@ struct AnimState
     ///        false（既定）は従来通りYをクリップの動きのまま活かす（ジャンプ攻撃等向け）。
     bool lockVerticalRootMotion = false;
 
+    /// @brief 軽量サブステートマシン用のグループID（0=無所属）。同じ groupId のステート群に対し、
+    ///        anyStateTransitions 側の sourceGroupId で「そのグループ限定の割り込み遷移」を1本張れる。
+    ///        例：Combat 群に groupId=1 を付け、AnyState に「sourceGroupId=1 → Idle [Finished]」を
+    ///        1本置けば、各攻撃ステートから個別に Idle 線を引かずに済む（減線）。
+    uint32_t groupId = 0;
+
     float nodePosX = 0.0f;
     float nodePosY = 0.0f;
 
@@ -101,6 +117,26 @@ struct AnimState
     const AnimSequence   *sequence   = nullptr;
 
     std::vector<AnimTransition> transitions;
+
+    // =====================================================================
+    // 階層ステートマシン（サブステートマシン）
+    //   isSubMachine==false（葉）：従来通り sequence を再生するステート。
+    //   isSubMachine==true（節）：自分は再生せず、子グラフ(subGraph)を内包する。
+    //     ランタイムはこのステートに「入る」と subGraph の entry へ潜り、
+    //     エディタはこのノードを「ダブルクリックで潜る」対象として扱う。
+    //   ※ AnimStateGraph ⊃ AnimState ⊃ AnimStateGraph の再帰型のため subGraph は
+    //     unique_ptr で保持する。値コピー時は subGraph をディープコピーする
+    //     （特殊メンバは AnimStateGraph 定義後に out-of-line 定義。pimpl と同型）。
+    // =====================================================================
+    bool                            isSubMachine = false;
+    std::unique_ptr<AnimStateGraph> subGraph; // isSubMachine のときのみ有効
+
+    AnimState();
+    ~AnimState();
+    AnimState(const AnimState &other);            // ディープコピー（subGraph を複製）
+    AnimState &operator=(const AnimState &other); // ディープコピー
+    AnimState(AnimState &&) noexcept;             // move は既定
+    AnimState &operator=(AnimState &&) noexcept;  // move は既定
 };
 
 // グラフ全体
@@ -120,10 +156,72 @@ struct AnimStateGraph
     std::vector<AnimParamDef> parameters;
 };
 
+// -----------------------------------------------------------------
+// AnimState の特殊メンバ（AnimStateGraph が完全型になったここで定義する）。
+//   unique_ptr<AnimStateGraph> の複製/破棄には完全型が要るため out-of-line。
+//   コピーは subGraph を「新しい実体」として複製するディープコピー。
+//   （葉ステートは subGraph==nullptr なので複製コストはゼロ）
+// -----------------------------------------------------------------
+inline AnimState::AnimState()                              = default;
+inline AnimState::~AnimState()                             = default;
+inline AnimState::AnimState(AnimState &&) noexcept         = default;
+inline AnimState &AnimState::operator=(AnimState &&) noexcept = default;
+
+inline AnimState::AnimState(const AnimState &o)
+    : stateHash(o.stateHash)
+    , sequenceName(o.sequenceName)
+    , sequenceFilePath(o.sequenceFilePath)
+    , isLoop(o.isLoop)
+    , playbackSpeed(o.playbackSpeed)
+    , speedCurveName(o.speedCurveName)
+    , rootMotionCurveName(o.rootMotionCurveName)
+    , applyRootMotion(o.applyRootMotion)
+    , lockVerticalRootMotion(o.lockVerticalRootMotion)
+    , groupId(o.groupId)
+    , nodePosX(o.nodePosX)
+    , nodePosY(o.nodePosY)
+    , speedCurve(o.speedCurve)           // 束縛ポインタは共有資源なので浅コピーでよい
+    , rootMotionCurve(o.rootMotionCurve)
+    , sequence(o.sequence)
+    , transitions(o.transitions)
+    , isSubMachine(o.isSubMachine)
+    , subGraph(o.subGraph ? std::make_unique<AnimStateGraph>(*o.subGraph) : nullptr)
+{
+}
+
+inline AnimState &AnimState::operator=(const AnimState &o)
+{
+    if (this == &o) return *this;
+    stateHash              = o.stateHash;
+    sequenceName           = o.sequenceName;
+    sequenceFilePath       = o.sequenceFilePath;
+    isLoop                 = o.isLoop;
+    playbackSpeed          = o.playbackSpeed;
+    speedCurveName         = o.speedCurveName;
+    rootMotionCurveName    = o.rootMotionCurveName;
+    applyRootMotion        = o.applyRootMotion;
+    lockVerticalRootMotion = o.lockVerticalRootMotion;
+    groupId                = o.groupId;
+    nodePosX               = o.nodePosX;
+    nodePosY               = o.nodePosY;
+    speedCurve             = o.speedCurve;
+    rootMotionCurve        = o.rootMotionCurve;
+    sequence               = o.sequence;
+    transitions            = o.transitions;
+    isSubMachine           = o.isSubMachine;
+    subGraph               = o.subGraph ? std::make_unique<AnimStateGraph>(*o.subGraph) : nullptr;
+    return *this;
+}
+
 // =================================================================
 // nlohmann/json 変換
 // =================================================================
 using json = nlohmann::json;
+
+// 階層（再帰）シリアライズの相互参照解決：AnimState⇄AnimStateGraph の
+//   to_json/from_json が互いを呼ぶため、AnimStateGraph 側を前方宣言しておく。
+inline void to_json(json &j, const AnimStateGraph &g);
+inline void from_json(const json &j, AnimStateGraph &g);
 
 // --- AnimParamDef ---
 inline void to_json(json &j, const AnimParamDef &p)
@@ -174,6 +272,7 @@ inline void to_json(json &j, const AnimTransition &t)
         {"blendDuration", t.blendDuration},
         {"logicType", (int)t.logicType},
         {"requiredCancelMask", t.requiredCancelMask},
+        {"sourceGroupId", t.sourceGroupId},
         {"conditions", t.conditions}};
 }
 inline void from_json(const json &j, AnimTransition &t)
@@ -195,6 +294,9 @@ inline void from_json(const json &j, AnimTransition &t)
     // 文字列からの移行対応：もし古いrequiredWindowがあれば無視し、Maskを読む
     t.requiredCancelMask = j.value("requiredCancelMask", 0u);
 
+    // 軽量サブステートマシン用（未指定の旧データは 0＝従来のどこからでも）。
+    t.sourceGroupId = j.value("sourceGroupId", 0u);
+
     j.at("conditions").get_to(t.conditions);
 }
 
@@ -211,9 +313,15 @@ inline void to_json(json &j, const AnimState &s)
         {"rootMotionCurveName", s.rootMotionCurveName},
         {"applyRootMotion", s.applyRootMotion},
         {"lockVerticalRootMotion", s.lockVerticalRootMotion},
+        {"groupId", s.groupId},
         {"nodePosX", s.nodePosX},
         {"nodePosY", s.nodePosY},
+        {"isSubMachine", s.isSubMachine},
         {"transitions", s.transitions}};
+
+    // サブマシンのときだけ子グラフを再帰的に書き出す（葉ステートには出さない）。
+    if (s.isSubMachine && s.subGraph)
+        j["subGraph"] = *s.subGraph;
 }
 inline void from_json(const json &j, AnimState &s)
 {
@@ -233,11 +341,24 @@ inline void from_json(const json &j, AnimState &s)
         j.at("applyRootMotion").get_to(s.applyRootMotion);
     if (j.contains("lockVerticalRootMotion"))
         j.at("lockVerticalRootMotion").get_to(s.lockVerticalRootMotion);
+    s.groupId = j.value("groupId", 0u); // 軽量サブステートマシン用（旧データは 0＝無所属）
     if (j.contains("nodePosX"))
         j.at("nodePosX").get_to(s.nodePosX);
     if (j.contains("nodePosY"))
         j.at("nodePosY").get_to(s.nodePosY);
     j.at("transitions").get_to(s.transitions);
+
+    // 階層ステートマシン：サブマシンなら子グラフを再帰読込（旧データは false＝葉）。
+    s.isSubMachine = j.value("isSubMachine", false);
+    if (s.isSubMachine && j.contains("subGraph"))
+    {
+        s.subGraph = std::make_unique<AnimStateGraph>();
+        j.at("subGraph").get_to(*s.subGraph);
+    }
+    else
+    {
+        s.subGraph.reset();
+    }
 }
 
 // --- AnimStateGraph ---
@@ -271,9 +392,31 @@ inline void from_json(const json &j, AnimStateGraph &g)
     j.at("states").get_to(g.states);
 }
 
+// 階層のどの深さにある stateHash でも再帰的に探す（葉/サブマシン問わず）。
+//   ※ stateHash は名前ハッシュのため、階層をまたいで一意である前提（同名衝突は避ける）。
+inline const AnimState *FindStateRecursive(const AnimStateGraph &g, uint32_t hash)
+{
+    for (const auto &s : g.states)
+    {
+        if (s.stateHash == hash) return &s;
+        if (s.isSubMachine && s.subGraph)
+            if (const AnimState *r = FindStateRecursive(*s.subGraph, hash))
+                return r;
+    }
+    return nullptr;
+}
+
 struct AnimStateMachineComponent
 {
     std::string    graphPath;
     AnimStateGraph internalGraph;
+
+    /// @brief 実際に再生中の「葉」ステートの hash（= activePath の末尾）。
+    ///        他システム(RootMotion/エディタ表示)はこれを「今のステート」として読む。
     uint32_t       currentStateHash = 0;
+
+    /// @brief 階層ステートマシンの現在地パス [root側..., 葉]。
+    ///        例: [Combat, Attack_1] = トップで Combat(サブマシン)、その中で Attack_1(葉)。
+    ///        AnimControllerSystem が外→内に評価し毎フレーム維持する。空なら entry から再構築。
+    std::vector<uint32_t> activePath;
 };

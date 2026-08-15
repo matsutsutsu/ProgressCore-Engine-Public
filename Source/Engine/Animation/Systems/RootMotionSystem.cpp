@@ -27,15 +27,11 @@ void RootMotionSystem::Update(float /*rawDt*/)
             return;
         }
 
+        // 再生中の葉ステートは階層のどこにでも居りうるので再帰検索で引く
+        //（サブマシンにネストされていてもトップ平坦検索で取りこぼさない）。
         bool applyRoot = false;
-        for (const auto &st : fsm.internalGraph.states)
-        {
-            if (st.stateHash == fsm.currentStateHash)
-            {
-                applyRoot = st.applyRootMotion;
-                break;
-            }
-        }
+        if (const AnimState *st = FindStateRecursive(fsm.internalGraph, fsm.currentStateHash))
+            applyRoot = st->applyRootMotion;
 
         rm.enabled = applyRoot;
 

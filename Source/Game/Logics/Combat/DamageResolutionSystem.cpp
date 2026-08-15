@@ -36,13 +36,13 @@ using namespace DirectX::SimpleMath;
 
 namespace
 {
-    // ヒットリアクションのトリガー名（規約：攻撃が「来た方向」で命名する）。
-    //   前=正面から食らった / 後=背後から / 右=右側から / 左=左側から。
+    // ヒットリアクション：方向は HitDir(0=前/1=後/2=左/3=右)、再生合図は Hit トリガー1本。
+    //   （旧：HitFront/Back/Left/Right の4トリガー撃ち分け → AnimGraph 側で HitReaction
+    //     サブマシンに集約したため「方向を数値で送る＋1トリガー」に変更）
+    //   規約：攻撃が「来た方向」を基準（前=正面から食らった / 後=背後から / 右=右側から / 左=左側から）。
     //   ※クリップを「のけぞる向き」で名付けている場合は前後・左右を入れ替えて使うこと。
-    const uint32_t HASH_HIT_FRONT = CCL::Utils::HashString("HitFront");
-    const uint32_t HASH_HIT_BACK  = CCL::Utils::HashString("HitBack");
-    const uint32_t HASH_HIT_LEFT  = CCL::Utils::HashString("HitLeft");
-    const uint32_t HASH_HIT_RIGHT = CCL::Utils::HashString("HitRight");
+    const uint32_t HASH_HIT     = CCL::Utils::HashString("Hit");
+    const uint32_t HASH_HIT_DIR = CCL::Utils::HashString("HitDir");
     
     /// @brief 被弾方向から前後左右のヒットリアクションを選んで再生する。
     ///        アニメーターを持たない相手（ドローン等）は自動でスキップされる。
@@ -72,20 +72,22 @@ namespace
             fromAttacker = -ev.knockbackDir;
         fromAttacker.y = 0.0f;
     
-        // 方向不明（環境ダメージ等）は正面リアクションで代替する。
-        uint32_t trig = HASH_HIT_FRONT;
+        // 方向 → HitDir(0=前/1=後/2=左/3=右)。方向不明（環境ダメージ等）は前(0)で代替。
+        float hitDir = 0.0f;
         if (fromAttacker.LengthSquared() > 1e-6f)
         {
             fromAttacker.Normalize();
             const float f = fromAttacker.Dot(fwd);   // +で前
             const float r = fromAttacker.Dot(right); // +で右
             if (std::abs(f) >= std::abs(r))
-                trig = (f >= 0.0f) ? HASH_HIT_FRONT : HASH_HIT_BACK;
+                hitDir = (f >= 0.0f) ? 0.0f : 1.0f; // 前 / 後
             else
-                trig = (r >= 0.0f) ? HASH_HIT_RIGHT : HASH_HIT_LEFT;
+                hitDir = (r >= 0.0f) ? 3.0f : 2.0f; // 右 / 左
         }
-    
-        anim->SetTrigger(trig, 0.15f);
+
+        // 方向を先に確定させてから再生合図（HitReaction サブマシンが HitDir で分岐する）。
+        anim->SetFloat(HASH_HIT_DIR, hitDir);
+        anim->SetTrigger(HASH_HIT, 0.15f);
     }
 } // namespace
 

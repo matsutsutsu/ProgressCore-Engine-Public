@@ -22,11 +22,11 @@
         },
         {
             "name": "Sequencer",
-            "visible": true
+            "visible": false
         },
         {
             "name": "Anim Graph Editor",
-            "visible": false
+            "visible": true
         },
         {
             "name": "Behavior Tree Editor",
