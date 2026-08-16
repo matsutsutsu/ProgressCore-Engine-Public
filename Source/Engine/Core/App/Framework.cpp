@@ -512,6 +512,16 @@ int Framework::Run()
 		}
 		else
 		{
+			// ★ vsync待ちの集約点：前フレームの提示が終わるまでここでブロックする。
+			//   Waitable スワップチェーン(FRAME_LATENCY_WAITABLE_OBJECT)のおかげで、
+			//   フリップモデルで各パス(特にフレーム先頭の ShadowPass)へ紛れ込んでいた
+			//   「垂直同期待ち」が、この1本の明示ゾーンに集約される。
+			//   → Tracy 上で ShadowPass 等が本来の実コストで読めるようになる＋入力遅延も減る。
+			{
+				ZoneScopedN("Wait: Frame Latency (VSync)");
+				Graphics::Instance().WaitForFrameLatency();
+			}
+
 			timer.Tick();
 			CalculateFrameStats();
 
