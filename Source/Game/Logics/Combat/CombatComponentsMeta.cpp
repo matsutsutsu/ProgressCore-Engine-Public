@@ -163,7 +163,10 @@ namespace ComponentMetaJson {
                     }
                     if (entry.contains("id")) {
                         uint64_t rawId = entry["id"].get<uint64_t>();
-                        comp.entries[idx].id = ctx ? ctx->Resolve(rawId)
+                        // 保存時は EntityID ではなく LocalIndex(uint32) に変換されている。
+                        // 明示キャストしないと C4244（64→32 の暗黙縮小）が出る。
+                        comp.entries[idx].id = ctx
+                            ? ctx->Resolve(static_cast<CCL::Serialization::LoadContext::LocalIndex>(rawId))
                             : static_cast<CCL::ECS::EntityID>(rawId);
                     }
                     ++idx;

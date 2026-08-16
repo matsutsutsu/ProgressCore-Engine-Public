@@ -190,7 +190,9 @@ void HierarchyWindow::DrawContents(EditorContext& context)
             else {
                 context.world->AddComponent<PendingParentComponent>(draggedEntity);
             }
-            CCL_LOG_INFO(LogCategory::Editor, "Unparenting: Entity %u is now root", draggedEntity);
+            // EntityID は 64bit なので %u ではなく %llu（%u だと世代が落ちる）
+            CCL_LOG_INFO(LogCategory::Editor, "Unparenting: Entity %llu is now root",
+                static_cast<unsigned long long>(draggedEntity));
         }
         ImGui::EndDragDropTarget();
     }
@@ -273,7 +275,10 @@ void HierarchyWindow::DrawFlatNode(
         ImGui::SetDragDropPayload("DND_ENTITY_ID", &node.entityID, sizeof(CCL::ECS::EntityID));
 
         // ドラッグ中、マウスカーソルの横に表示されるプレビューUI
-        ImGui::Text("Drop Entity: %u", node.entityID);
+        //   EntityID は 64bit。%u は 4byte しか読まないため、上位32bit の世代が
+        //   落ちて「使い回されたIDが同じ番号に見える」表示バグになる（可変長引数なので
+        //   コンパイラも警告を出さない）。%llu + 明示キャストで受ける。
+        ImGui::Text("Drop Entity: %llu", static_cast<unsigned long long>(node.entityID));
 
         ImGui::EndDragDropSource();
     }
@@ -299,7 +304,10 @@ void HierarchyWindow::DrawFlatNode(
 					ppc.parentID = targetParent;
                     context.world->AddComponent<PendingParentComponent>(draggedEntity, ppc);
                 }
-                CCL_LOG_INFO(LogCategory::Editor, "Parenting: Entity %u is now child of %u", draggedEntity, targetParent);
+                // EntityID は 64bit なので %u ではなく %llu（%u だと世代が落ちる）
+                CCL_LOG_INFO(LogCategory::Editor, "Parenting: Entity %llu is now child of %llu",
+                    static_cast<unsigned long long>(draggedEntity),
+                    static_cast<unsigned long long>(targetParent));
             }
         }
         else {

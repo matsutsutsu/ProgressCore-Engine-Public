@@ -1,6 +1,7 @@
 #include "CCL_JobSystem.h"
 
- 
+#include <cstdio>   // snprintf（Tracy のスレッド名組み立て）
+
 #include "tracy/Tracy.hpp"
 
 
@@ -12,15 +13,33 @@ namespace CCL::ECS {
     // =======================================================================
     JobSystem::JobSystem()
     {
-        // 1. パソコンの脳みそ（物理コア数）を調べる
-        unsigned int coreCount = std::thread::hardware_concurrency();
-        if (coreCount == 0) coreCount = 4; // 分からなければとりあえず4人雇う
+        // 1. パソコンの脳みそ（論理コア数）を調べる
+        //    hardware_concurrency() は「取得できなければ 0 を返す」規格なので、
+        //    そのまま引き算するとアンダーフローする。必ず先に潰しておく。
+        unsigned int hwThreads = std::thread::hardware_concurrency();
+        if (hwThreads == 0) hwThreads = 4; // 分からなければとりあえず4人雇う
 
-        // 2. コアの数だけシェフ（スレッド）を作成
+        // 2. 雇うシェフの人数を決める（コア数 - 1）
+        //
+        // なぜ「-1」なのか:
+        //   WaitForCounter() は、ただ待つのではなく自分でもキューから仕事を取って
+        //   実行する（下の実装を参照）。つまり「依頼した側のスレッド（多くはメイン
+        //   スレッド）も、実質1人のシェフとして厨房に入る」。
+        //   ここでコア数フルに雇うと 総並列度 = コア数 + 1 になり、
+        //   走れるコアより走りたいスレッドの方が多い状態（オーバーサブスクリプション）
+        //   になる。OSが強制的にスレッドを切り替えるので、その分だけ純粋に損。
+        //
+        //   Jolt の JobSystemThreadPool も同じ理由で hardware_concurrency() - 1 を
+        //   ワーカー数にしている（JoltPhysicsManager.cpp）。数え方を揃えておかないと、
+        //   Tracy で両者のスレッド数を比較したときに理由のない差として見えてしまう。
+        const unsigned int workerCount = (hwThreads > 1) ? (hwThreads - 1) : 1;
+
+        // 3. 人数分のシェフ（スレッド）を作成
         // m_workers.emplace_back した瞬間に、スレッドが生成され
         // WorkerLoop() という関数が別世界（別スレッド）で動き出します。
-        for (unsigned int i = 0; i < coreCount; ++i) {
-            m_workers.emplace_back([this] { WorkerLoop(); });
+        m_workers.reserve(workerCount);
+        for (unsigned int i = 0; i < workerCount; ++i) {
+            m_workers.emplace_back([this, i] { WorkerLoop(i); });
         }
     }
 
@@ -79,6 +98,38 @@ namespace CCL::ECS {
     }
 
     // =======================================================================
+    // まとめて依頼（ExecuteBatch）
+    // =======================================================================
+    void JobSystem::ExecuteBatch(Job *inJobs, size_t inCount, JobCounter *counter)
+    {
+        if (inCount == 0) return;
+
+        // 1. カウンターは「まとめて先に」増やす（理由は Execute と同じ）
+        if (counter) {
+            counter->count.fetch_add(static_cast<int>(inCount));
+        }
+
+        {
+            // 2. ロックは1回だけ。ここが Execute() をN回呼ぶ場合との違い。
+            std::unique_lock<std::mutex> lock(m_queueMutex);
+            for (size_t i = 0; i < inCount; ++i) {
+                m_jobQueue.push({std::move(inJobs[i]), counter});
+            }
+        }
+
+        // 3. 起こし方
+        //    1件なら1人だけ起こせば十分。複数件なら全員起こす。
+        //    件数ぶん notify_one を呼ぶと通知回数がそのまま増えてしまうため、
+        //    複数件は notify_all 1回で済ませる。
+        if (inCount == 1) {
+            m_condition.notify_one();
+        }
+        else {
+            m_condition.notify_all();
+        }
+    }
+
+    // =======================================================================
     // 完了待ち（WaitForCounter）
     // =======================================================================
     void JobSystem::WaitForCounter(JobCounter *counter)
@@ -124,11 +175,20 @@ namespace CCL::ECS {
     // =======================================================================
     // シェフの業務マニュアル（WorkerLoop）
     // =======================================================================
-    void JobSystem::WorkerLoop()
+    void JobSystem::WorkerLoop(unsigned int workerIndex)
     {
- 
-        // スレッドに名前を付ける
-        tracy::SetThreadName("Worker Thread");
+        // スレッドに名前を付ける（Tracy のスレッド一覧に出る名前）
+        //   全員 "Worker Thread" だと、プロファイラ上でどのスレッドが何本目か分からず
+        //   「何本が実際に働いていて、何本が寝ているか」を読めない。通し番号を振る。
+        //   物理側は "Jolt Worker N" と名付けてあるので（JoltPhysicsManager.cpp）、
+        //   タイムライン上で ECS 並列と物理並列を目で分離できる。
+        //
+        //   なお tracy::SetThreadName はマクロではなく実体のある関数で、
+        //   TracyClient.cpp が TRACY_ENABLE の有無に関わらずコンパイルするため
+        //   Shipping ビルドでもリンクできる（中身は何もしない）。
+        char threadName[32];
+        snprintf(threadName, sizeof(threadName), "ECS Worker %u", workerIndex);
+        tracy::SetThreadName(threadName);
 
 
 

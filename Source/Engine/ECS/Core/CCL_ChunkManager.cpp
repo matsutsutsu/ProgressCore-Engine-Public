@@ -25,11 +25,17 @@ namespace CCL::ECS
     //    住所録 m_entityLocationMap は「index を配列の添字」にして引く。
     //    世代が何であれ「配列のどこか」は同じなので、index だけあればよい。
     //    世代の照合は World::IsEntityValid の担当（役割分担）。
+    //
+    //  実装メモ
+    //    ビットレイアウト（マスク・シフト量）の定義は CCL_Types.h の EntityHandle
+    //    に一本化してある。ここで 0xFFFFFFFF を直接書くとレイアウトの定義が
+    //    二箇所に散るため、EntityHandle::GetIndex を経由している。
+    //    戻り値が size_t なのは、呼び出し側が vector の添字として使うため。
     // ============================================================================
     /// @brief EntityID から世代情報を切り捨て、純粋なインデックスを取り出す
     inline size_t GetPureIndex(EntityID id)
     {
-        return static_cast<size_t>(id & 0xFFFFFFFF);
+        return static_cast<size_t>(EntityHandle::GetIndex(id));
     }
 
     // ================================================================

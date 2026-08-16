@@ -1,9 +1,9 @@
 #pragma once
 #include <cstdint>
+#include "Engine/ECS/Common/CCL_Types.h"
 
 // 前方宣言
 namespace CCL::ECS { class World; }
-namespace CCL::ECS { using EntityID = unsigned long long; }
 
 /// @brief StateTreeのノードの基本情報と構造体定義
 namespace CCL::AI

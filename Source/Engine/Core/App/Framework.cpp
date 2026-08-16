@@ -146,7 +146,13 @@ Framework::Framework(HWND hWnd)
 	{
 		ZoneScopedN("Init: Physics (Jolt)");
 		services.physicsManager = std::make_shared<JoltPhysicsManager>();
-		services.physicsManager->Initialize();
+
+		// 共有スレッドプールを渡すと、物理ジョブも ECS と同じプールで走る
+		// （JoltJobSystemAdapter 経由。プールが1本になり、物理ジョブが
+		//   Tracy にジョブ名付きゾーンとして表示されるようになる）。
+		// 従来どおり Jolt 純正プールに戻したい場合は、引数を外して
+		// Initialize() と呼ぶだけでよい（比較計測用に両方残してある）。
+		services.physicsManager->Initialize(services.jobSystem.get());
 	}
 
 

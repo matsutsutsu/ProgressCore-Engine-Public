@@ -1452,6 +1452,9 @@
     <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsFacade.h">
       <Filter>Source\Engine\Physics\JoltIntegration</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltJobSystemAdapter.h">
+      <Filter>Source\Engine\Physics\JoltIntegration</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsManager.h">
       <Filter>Source\Engine\Physics\JoltIntegration</Filter>
     </ClInclude>
@@ -2556,6 +2559,9 @@
       <Filter>Source\Engine\Physics\JoltIntegration</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsFacade.cpp">
+      <Filter>Source\Engine\Physics\JoltIntegration</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltJobSystemAdapter.cpp">
       <Filter>Source\Engine\Physics\JoltIntegration</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsManager.cpp">

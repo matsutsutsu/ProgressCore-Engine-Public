@@ -43,13 +43,15 @@ template <> struct ComponentMeta<CameraBodyFollow> {
 
         int targetInt = static_cast<int>(comp.target.id);
         if (ImGui::InputInt("ターゲットID", &targetInt)) {
-            comp.target.id = static_cast<unsigned long long>((std::max)(0, targetInt));
+            comp.target.id = static_cast<CCL::ECS::EntityID>((std::max)(0, targetInt));
             changed = true;
         }
 
         if (ImGui::BeginDragDropTarget()) {
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_ENTITY_ID")) {
-                unsigned long long droppedID = *(const unsigned long long*)payload->Data;
+                // ペイロードは HierarchyWindow が sizeof(CCL::ECS::EntityID) で積んでいる。
+                // 読み側で生の型を書くと、EntityID の幅を変えたときにここだけ食い違う。
+                CCL::ECS::EntityID droppedID = *(const CCL::ECS::EntityID*)payload->Data;
                 comp.target.id = droppedID; 
                 changed = true;
             }
@@ -102,13 +104,15 @@ template <> struct ComponentMeta<CameraAimLookAt> {
 
         int targetInt = static_cast<int>(comp.target.id);
         if (ImGui::InputInt("ターゲットID", &targetInt)) {
-            comp.target.id = static_cast<unsigned long long>((std::max)(0, targetInt));
+            comp.target.id = static_cast<CCL::ECS::EntityID>((std::max)(0, targetInt));
             changed = true;
         }
 
         if (ImGui::BeginDragDropTarget()) {
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_ENTITY_ID")) {
-                unsigned long long droppedID = *(const unsigned long long*)payload->Data;
+                // ペイロードは HierarchyWindow が sizeof(CCL::ECS::EntityID) で積んでいる。
+                // 読み側で生の型を書くと、EntityID の幅を変えたときにここだけ食い違う。
+                CCL::ECS::EntityID droppedID = *(const CCL::ECS::EntityID*)payload->Data;
                 comp.target.id = droppedID; 
                 changed = true;
             }

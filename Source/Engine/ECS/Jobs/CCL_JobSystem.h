@@ -61,16 +61,43 @@ namespace CCL::ECS {
         void Execute(Job job, JobCounter *counter = nullptr);
 
         /**
+         * @brief 複数の仕事を「1回のロックで」まとめてキューに追加する。
+         *
+         * Execute() を N 回呼ぶと mutex の獲得・解放が N 回発生する。
+         * 1回の投入が数百〜数千件になる用途（Jolt の物理ジョブなど）では
+         * このロック競合そのものが並列化の利得を食い潰すため、
+         * まとめて1回のロックで積むための入口を用意している。
+         *
+         * @param inJobs  実行したい処理の配列（中身はムーブされる）
+         * @param inCount 件数
+         * @param counter 完了を追跡するカウンター（nullptrなら追跡しない）
+         */
+        void ExecuteBatch(Job *inJobs, size_t inCount, JobCounter *counter = nullptr);
+
+        /**
          * @brief 指定したカウンターが0になるまで、メインスレッドを待機させる
          * （料理が全部出るまで、店長は足止めを食らう）
          * @param counter 監視対象のカウンター
          */
         void WaitForCounter(JobCounter *counter);
 
+        /**
+         * @brief 生成済みワーカースレッドの本数を返す。
+         *
+         * 「同時に実行できるジョブ数」はこれに +1（依頼側スレッドも
+         * WaitForCounter の中で仕事を手伝うため）。
+         * Jolt 側の GetMaxConcurrency() がこの値を必要とする。
+         */
+        unsigned int GetWorkerCount() const { return static_cast<unsigned int>(m_workers.size()); }
+
       private:
         // シェフ（ワーカースレッド）が実行する業務マニュアル
         // 生まれた瞬間から死ぬまで、このループの中で働き続けます。
-        void WorkerLoop();
+        //
+        // workerIndex は Tracy 上のスレッド名（"ECS Worker 0" など）に使う。
+        // 全員を同じ名前にすると、プロファイラ上でどのスレッドがどれか判別できず、
+        // 物理(Jolt Worker N)との棲み分けも見えなくなるため通し番号を振る。
+        void WorkerLoop(unsigned int workerIndex);
 
       private:
         // 内部で扱うジョブ構造体

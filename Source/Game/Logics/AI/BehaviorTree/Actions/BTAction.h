@@ -11,10 +11,10 @@
 
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"        // BTNodeState, ActionID, BTNodeID
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"  // BehaviorTreeComponent
+#include "Engine/ECS/Common/CCL_Types.h"
 
 // 前方宣言
 namespace CCL::ECS { class World; }
-namespace CCL::ECS        { using EntityID = unsigned long long; }
 struct TransformComponent;
 
 
