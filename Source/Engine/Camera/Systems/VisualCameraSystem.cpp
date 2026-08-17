@@ -202,9 +202,8 @@ void CameraFreeControlSystem::Update(float dt)
         // ※SimpleMathが使えるなら Quaternion::LookRotation(Front, Up) ですが、
         // ここでは汎用的にYaw/Pitchから生成します
         Quaternion qRot = Quaternion::CreateFromYawPitchRoll(yawRad, -pitchRad, 0.0f);
-        // ※Pitchの符号は座標系によりますが、CreateFromYawPitchRollは通常正負が逆になることがあるため調整
-        //  あるいは Frontベクトルから直接LookAt行列を作って分解するのが確実ですが、
-        //  今回はvCamへの反映がメインなので簡易計算します。
+        // CreateFromYawPitchRoll は座標系の取り方で Pitch の符号が反転するため、
+        // Front ベクトルから LookAt 行列を作って分解する方を採用する。
 
         // FrontからLookAt行列を作り、そこからQuaternion抽出（これが一番確実）
         XMMATRIX lookMat = XMMatrixLookToLH(XMVectorZero(), Front, WorldUp);

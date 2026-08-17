@@ -8,6 +8,7 @@
 #include "Engine/Transform/Components/TransformComponent.h" // 位置から敵方向を求める
 #include "Game/Logics/Combat/HealthComponent.h"             // 敵判定（生存中の敵）
 #include "Game/Logics/Combat/DeadTag.h"                     // 死亡除外
+#include "Game/Logics/Character/Player/Components/CleaveComponent.h" // 切り払い準備中は攻撃を抑止
 
 #include <SimpleMath.h>
 #include <cmath>
@@ -15,35 +16,34 @@
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
-// トリガーのハッシュ値を事前計算
-static const uint32_t HASH_TRIG_ATTACK      = CCL::Utils::HashString("Attack");
-static const uint32_t HASH_TRIG_DASH_ATTACK = CCL::Utils::HashString("DashAttack"); // ダッシュ攻撃用のハッシュを追加
-static const uint32_t HASH_TRIG_AIR_ATTACK  = CCL::Utils::HashString("AirAttack");  // 空中攻撃用のハッシュ
+// 攻撃の意思を表す唯一のトリガー。通常/ダッシュ/空中/コンボの分岐はグラフ側が
+//   パラメータ(Speed/IsAirborne/IsDashing)とキャンセル窓で判断するため、
+//   コードは DashAttack / AirAttack のトリガーを積まない（分岐知識をデータに一元化）。
+static const uint32_t HASH_TRIG_ATTACK = CCL::Utils::HashString("Attack");
 
 namespace
 {
-// --- オートフェイシングのチューニング ---
+// --- オートフェイシングのチューニング（定数のみ：変更頻度が低いため file-scope に置く） ---
 constexpr float kFaceDuration = 0.22f;              ///< 攻撃時に敵へ回頭させる時間(秒)
 const     float kFaceConeCos  = std::cos(1.221730f); ///< 前方±70°の内積閾値（cos70°）
 //   ※自動フェイシングの最大距離は PlayerComponent.attackFaceMaxDistance（エディタ調整可）を使う。
+}
 
-/// @brief 前方コーン内で最も近い「生存中の敵」を探す。ロックオンが無い時のフォールバック。
-///        敵＝HealthComponent を持ち PlayerComponent を持たない生存エンティティ。
-EntityID FindBestFrontEnemy(World *world, EntityID selfID, const Vector3 &selfPos,
-                            const Vector3 &forward, float range, float coneCos)
+EntityID PlayerAttackSystem::FindBestFrontEnemy(EntityID selfID, const Vector3 &selfPos,
+                                                const Vector3 &forward, float range, float coneCos)
 {
     EntityID best       = InvalidEntityID;
     float    bestDistSq = range * range;
 
-    for (EntityID id : world->View<HealthComponent, TransformComponent>())
+    for (EntityID id : m_world->View<HealthComponent, TransformComponent>())
     {
         if (id == selfID) continue;
-        if (world->HasComponent<PlayerComponent>(id)) continue; // 味方（プレイヤー）は除外
-        if (world->HasComponent<Tag::DeadTag>(id)) continue;
+        if (m_world->HasComponent<PlayerComponent>(id)) continue; // 味方（プレイヤー）は除外
+        if (m_world->HasComponent<Tag::DeadTag>(id)) continue;
 
-        const auto *hp = world->GetComponent<HealthComponent>(id);
+        const auto *hp = m_world->GetComponent<HealthComponent>(id);
         if (hp && hp->currentHealth <= 0.0f) continue;
-        const auto *tr = world->GetComponent<TransformComponent>(id);
+        const auto *tr = m_world->GetComponent<TransformComponent>(id);
         if (!tr) continue;
 
         Vector3 to = Vector3(tr->position) - selfPos;
@@ -61,30 +61,29 @@ EntityID FindBestFrontEnemy(World *world, EntityID selfID, const Vector3 &selfPo
     return best;
 }
 
-/// @brief 攻撃対象へ向く yaw を求め、attackFaceTimer を立てる（対象が無ければ何もしない）。
-void SetAttackFacing(World *world, EntityID playerID, PlayerComponent &player)
+void PlayerAttackSystem::SetAttackFacing(EntityID playerID, PlayerComponent &player)
 {
-    const auto *ptrans = world->GetComponent<TransformComponent>(playerID);
+    const auto *ptrans = m_world->GetComponent<TransformComponent>(playerID);
     if (!ptrans) return;
     const Vector3 playerPos(ptrans->position);
 
     // 1. 対象決定：ロックオン中の敵を最優先。無ければ前方最寄りの敵。
     EntityID target = InvalidEntityID;
     if (player.lockOnTargetID != InvalidEntityID &&
-        world->IsEntityValid(player.lockOnTargetID) &&
-        !world->HasComponent<Tag::DeadTag>(player.lockOnTargetID))
+        m_world->IsEntityValid(player.lockOnTargetID) &&
+        !m_world->HasComponent<Tag::DeadTag>(player.lockOnTargetID))
     {
         target = player.lockOnTargetID;
     }
     else
     {
         const Vector3 forward(std::sin(player.currentYaw), 0.0f, std::cos(player.currentYaw));
-        target = FindBestFrontEnemy(world, playerID, playerPos, forward, player.attackFaceMaxDistance, kFaceConeCos);
+        target = FindBestFrontEnemy(playerID, playerPos, forward, player.attackFaceMaxDistance, kFaceConeCos);
     }
     if (target == InvalidEntityID) return; // 敵が居なければ向いてる方向のまま攻撃
 
     // 2. 対象方向の yaw を求めて回頭を予約（実際の回頭は PlayerMoveSystem が担う）。
-    const auto *etrans = world->GetComponent<TransformComponent>(target);
+    const auto *etrans = m_world->GetComponent<TransformComponent>(target);
     if (!etrans) return;
     Vector3 to = Vector3(etrans->position) - playerPos;
     to.y       = 0.0f;
@@ -97,7 +96,6 @@ void SetAttackFacing(World *world, EntityID playerID, PlayerComponent &player)
     player.attackFaceYaw   = std::atan2(to.x, to.z); // PlayerMoveSystem と同じ atan2(x,z) 規約
     player.attackFaceTimer = kFaceDuration;
 }
-} // namespace
 
 void PlayerAttackSystem::Update(float dt)
 {
@@ -107,54 +105,40 @@ void PlayerAttackSystem::Update(float dt)
                 DashComponent                         &dash,
                 AnimParametersComponent               &animParams,
                 PlayerComponent                       &player) {
+        // 切り払いの準備(Ready)/突進(Lunging)中は、左クリックを「切り払いの発動」に使う。
+        // ここで通常/ダッシュ/空中攻撃を出さないよう抑止し、エッジ状態だけ更新して抜ける。
+        if (const auto *cleave = m_world->GetComponent<CleaveComponent>(playerID))
+        {
+            if (cleave->phase != CleavePhase::Idle)
+            {
+                player.wasAttackButtonPressed = inputData.isAttackRequested;
+                return;
+            }
+        }
+
         // 前フレームで押されておらず、今フレームで押された瞬間（エッジ検出）
         if (inputData.isAttackRequested && !player.wasAttackButtonPressed)
         {
             // 攻撃の瞬間に対象へ回頭を予約（地上/空中どちらも）。
-            SetAttackFacing(m_world, playerID, player);
+            SetAttackFacing(playerID, player);
 
-            // ==============================================================
-            // 空中攻撃の判定（最優先）
-            //   空中にいる間に攻撃したら、地上の通常/ダッシュ攻撃ではなく空中攻撃を出す。
-            //   実際のアニメーション遷移・攻撃判定は「AirAttack」トリガーを受けて別途実装する。
-            // ==============================================================
-            if (player.isAirborne)
+            // 攻撃の意思は常に単一の Attack トリガーで表現する。
+            //   「通常 / ダッシュ攻撃 / 空中攻撃 / コンボ継続」の分岐は、アニメグラフが
+            //   パラメータ(Speed / IsAirborne / IsDashing)とキャンセル窓で判断する。
+            //   これで“どの攻撃か”の知識をグラフ(データ)へ一元化し、コードは状態名を見ない。
+            //   → ダッシュ攻撃後に速度が残っていても Attack を積み続けるだけで
+            //      DashAttack → Attack_1 → Attack_2 がグラフの遷移で自然に繋がる。
+            animParams.SetTrigger(HASH_TRIG_ATTACK, 0.25f);
+
+            // ダッシュ中に攻撃したら、ダッシュの無敵・ジャスト回避受付を打ち切り、
+            // 再ダッシュの暴発を防ぐクールダウンを入れる（グラフが DashAttack を選ぶ際の側効果）。
+            // ※状態名の直書きではなく、コンポーネントの実状態 dash.isDashing に基づく処理。
+            if (dash.isDashing)
             {
-                animParams.SetTrigger(HASH_TRIG_AIR_ATTACK, 0.25f);
-                CCL_LOG_INFO(LogCategory::Game, "Air Attack Triggered!");
-            }
-            else
-            {
-                // ==============================================================
-                // ダッシュ攻撃の判定 (速度・慣性ベース)
-                // ==============================================================
-                // 閾値: ダッシュ最高速度の 50% 以上のスピードが出ている時とする
-                float thresholdSpeed = dash.dashSpeed * 0.5f;
-                float currentSpeedSq = inputData.currentVelocity.LengthSquared();
-
-                // isDashing が true、または慣性によって十分な速度が出ている場合
-                if (dash.isDashing || currentSpeedSq >= (thresholdSpeed * thresholdSpeed))
-                {
-                    // ダッシュ攻撃のトリガーを発行
-                    animParams.SetTrigger(HASH_TRIG_DASH_ATTACK, 0.25f);
-
-                    // 【重要】ダッシュ中に攻撃を出した場合は、ダッシュの無敵や受付窓を強制キャンセルする
-                    if (dash.isDashing)
-                    {
-                        dash.isDashing               = false;
-                        dash.isInvincible            = false;
-                        dash.isJustEvadeWindowActive = false;
-                        // すぐに次のダッシュが出せないよう、クールダウンを発生させる
-                        dash.currentTimer = dash.dashCooldown;
-                    }
-
-                    CCL_LOG_INFO(LogCategory::Game, "Dash Attack Triggered! SpeedSq: %.1f", currentSpeedSq);
-                }
-                else
-                {
-                    // 停止時、または通常の歩き状態なら通常攻撃
-                    animParams.SetTrigger(HASH_TRIG_ATTACK, 0.25f);
-                }
+                dash.isDashing               = false;
+                dash.isInvincible            = false;
+                dash.isJustEvadeWindowActive = false;
+                dash.currentTimer            = dash.dashCooldown;
             }
         }
 

@@ -25,8 +25,13 @@
 #include "Engine/ECS/CCL_ECSContext.h"
 #include "Engine/ECS/System/CCL_IfSystem.h"
 
+#include <algorithm>
+#include <chrono>
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <thread>
+#include <vector>
 
 // コンソールの文字コードを合わせるためだけに使用（ECS 本体とは無関係）
 #if defined(_WIN32)
@@ -256,6 +261,7 @@ static void Experiment3_DestroyAndGeneration()
     //    フレームワーク内部用の RequestDestroyEntity() を直接呼びます。
     std::printf("\nids[2] を破棄:\n");
     PrintEntityID("破棄する ID", ids[2]);
+    // PendigOpsでDestroyを予約するだけ
     world.RequestDestroyEntity(ids[2]);
 
     world.ScrutinyAndApply();   // ★BP CompactHoles が穴を前詰めする瞬間
@@ -391,6 +397,328 @@ static void Experiment5_System()
 
 
 // ===========================================================================
+// ベンチマーク用の共通部品
+// ===========================================================================
+
+// 最適化でループごと消されるのを防ぐための捨て先。
+// 計算結果をここに書いておくと、コンパイラは「使われている」と判断して
+// ループを削除できなくなる。
+static volatile float g_sink = 0.0f;
+
+/// @brief f を trials 回まわして、最速のミリ秒を返す。
+///
+/// 平均ではなく「最速」を採るのが計測の定石。
+/// 遅い回はOSのスレッド切り替えや他プロセスの影響を含んでいるだけで、
+/// 測りたいコードの実力ではないため。
+template <typename F>
+static double BenchBestMs(int trials, F&& f)
+{
+    double best = 1e18;
+    for (int t = 0; t < trials; ++t)
+    {
+        const auto s = std::chrono::steady_clock::now();
+        f();
+        const auto e = std::chrono::steady_clock::now();
+        const double ms = std::chrono::duration<double, std::milli>(e - s).count();
+        best = (std::min)(best, ms);
+    }
+    return best;
+}
+
+
+// ===========================================================================
+// 実験6: AoS と SoA の速度を実測する
+// ---------------------------------------------------------------------------
+// 面接で「ECSは速い」と言うなら、この数字を持っておきたい。
+//
+// 【測り方の考え方】
+//   同じ「Position.x を全部足す」という処理を、
+//     AoS : 1体分のデータがひとかたまりに並んだ配列
+//     SoA : Position だけが連続して並んだ ECS の Chunk
+//   の2通りで実行して時間を比べる。
+//
+//   ★AoS が不利になるのは「使わないデータまで巻き込んで読む」から。
+//     なので 1体あたりのサイズが大きいほど差が開く。
+//     それを見せるために「細い構成」と「太い構成」の2種類を測る。
+// ===========================================================================
+
+// --- 細い構成: 24バイト（Position + Velocity）---
+struct NarrowAoS
+{
+    Position pos;
+    Velocity vel;
+};
+
+// --- 太い構成: 152バイト（実際のゲームのキャラに近い量）---
+struct Matrix4x4 { float m[16]; };   // 64B  行列
+struct AIState   { int   a[8];  };   // 32B  AI の状態
+struct RenderData{ int   b[8];  };   // 32B  描画情報
+
+struct FatAoS
+{
+    Position   pos;   // 12B  ← 今回使うのはこれだけ
+    Velocity   vel;   // 12B
+    Matrix4x4  mat;   // 64B
+    AIState    ai;    // 32B
+    RenderData rd;    // 32B
+};
+
+/// @brief ECS 側に N 体作り、Position.x に連番を入れる
+static void BuildSoAWorld(World& world, const Archetype& arch, int count)
+{
+    // Set を使わず素の Spawn にしているのは、
+    // 10万件の PendingOp を積むと生成側が重くなり、
+    // 「メモリ配置の比較」というこの実験の主旨がぼやけるため。
+    for (int i = 0; i < count; ++i) world.RequestSpawnEntity(arch);
+    world.ScrutinyAndApply();
+
+    // 実体化後に Chunk の配列へ直接書き込む
+    float v = 0.0f;
+    for (auto& up : world.GetChunkManager().GetChunks())
+    {
+        Chunk* c = up.get();
+        if (!c) continue;
+        Position* p = c->GetComponentArray<Position>();
+        if (!p) continue;
+        const size_t n = c->GetEntityCount();
+        for (size_t i = 0; i < n; ++i) { p[i].x = v; v += 1.0f; }
+    }
+}
+
+/// @brief ECS の Chunk を舐めて Position.x を合計する（SoA 側の計測対象）
+static float SumSoA(World& world)
+{
+    float sum = 0.0f;
+    for (auto& up : world.GetChunkManager().GetChunks())
+    {
+        Chunk* c = up.get();
+        if (!c) continue;
+        Position* p = c->GetComponentArray<Position>();   // ループの外で1回だけ取る
+        if (!p) continue;
+        const size_t n = c->GetEntityCount();
+        for (size_t i = 0; i < n; ++i) sum += p[i].x;     // 12バイト刻みの連続アクセス
+    }
+    return sum;
+}
+
+template <typename AoSType>
+static void RunOneLayoutCase(const char* label, int count, size_t usefulBytes, int trials)
+{
+    // ---- AoS 側の準備 ----
+    std::vector<AoSType> aos(count);
+    for (int i = 0; i < count; ++i) aos[i].pos.x = (float)i;
+
+    // ---- SoA 側の準備 ----
+    World world;
+    Archetype arch;
+    if (sizeof(AoSType) == sizeof(NarrowAoS))
+        arch = ArchetypeHelper::Generate<Position, Velocity>();
+    else
+        arch = ArchetypeHelper::Generate<Position, Velocity, Matrix4x4, AIState, RenderData>();
+    BuildSoAWorld(world, arch, count);
+
+    const double aosMs = BenchBestMs(trials, [&]() {
+        float sum = 0.0f;
+        for (int i = 0; i < count; ++i) sum += aos[i].pos.x;   // stride = sizeof(AoSType)
+        g_sink = sum;
+    });
+
+    const double soaMs = BenchBestMs(trials, [&]() {
+        g_sink = SumSoA(world);
+    });
+
+    const size_t aosTouched = (size_t)count * sizeof(AoSType);
+    const size_t soaTouched = (size_t)count * usefulBytes;
+
+    std::printf("\n--- %s ---\n", label);
+    std::printf("  1体 %zu バイト / %d 体\n", sizeof(AoSType), count);
+    std::printf("  AoS : %8.3f ms   読み込む量 %7.1f MB\n",
+                aosMs, aosTouched / (1024.0 * 1024.0));
+    std::printf("  SoA : %8.3f ms   読み込む量 %7.1f MB\n",
+                soaMs, soaTouched / (1024.0 * 1024.0));
+    std::printf("  → SoA が %.2f 倍速い（読み込む量の差は %.1f 倍）\n",
+                aosMs / soaMs, (double)aosTouched / (double)soaTouched);
+}
+
+static void Experiment6_AoSvsSoA()
+{
+    Line("実験6: AoS と SoA の速度比較（実測）");
+
+    std::printf("「Position.x を全部足す」処理を、AoS（1体ごとにまとめて配置）と\n");
+    std::printf("SoA（型ごとに連続配置）で実行して時間を比べます。\n");
+    std::printf("使うのは Position の 12 バイトだけ。残りは読む必要のないデータです。\n");
+    std::printf("\n※データ生成に少し時間がかかります（数秒）。\n");
+
+    // ---- ケース1: キャッシュに収まる小さいデータ ----
+    //   ここでは差がほとんど出ない。それを先に見せるのが大事。
+    RunOneLayoutCase<FatAoS>(
+        "ケース1: 太い構成・少数（キャッシュに収まる）", 20000, sizeof(Position), 50);
+
+    // ---- ケース2: キャッシュに収まらない大きいデータ ----
+    RunOneLayoutCase<FatAoS>(
+        "ケース2: 太い構成・大量（キャッシュに収まらない）", 300000, sizeof(Position), 10);
+
+    // ---- ケース3: 1体が細い。AoS側の総量をケース2と揃えて公平に比較する ----
+    //   152B × 30万 ≒ 24B × 200万。どちらもキャッシュに収まらない量なので、
+    //   ここでの差は純粋に「1体あたりの無駄の量」だけを反映する。
+    RunOneLayoutCase<NarrowAoS>(
+        "ケース3: 細い構成・大量（総量はケース2と同等）", 2000000, sizeof(Position), 10);
+
+    std::printf("\n===== 読み取り方 =====\n");
+    std::printf("\n[前提] CPU はメモリを 64 バイト単位（キャッシュライン）で読みます。\n");
+    std::printf("  AoS では Position の隣に使わないデータが並んでいるため、\n");
+    std::printf("  それらも巻き込んで読み込まれ、その分が無駄になります。\n");
+
+    std::printf("\n[ケース1で差が出ない理由]  ★ここが一番大事★\n");
+    std::printf("  データが小さいと、AoS でも全部 CPU のキャッシュに載ってしまいます。\n");
+    std::printf("  一度載ってしまえばメモリまで取りに行く必要がないので、\n");
+    std::printf("  並び方の差が消えます。\n");
+    std::printf("  → 「ECSは常に速い」は誤りです。データ量がキャッシュを超えて\n");
+    std::printf("     初めて効いてきます。\n");
+
+    std::printf("\n[ケース2で差が出る理由]\n");
+    std::printf("  キャッシュに収まらないので、実際にメモリまで読みに行く回数が効きます。\n");
+    std::printf("  AoS は使わないデータまで運ぶので、その分だけ遅くなります。\n");
+
+    std::printf("\n[ケース2と3の差が、この実験の結論]\n");
+    std::printf("  2と3は AoS 側が読む総量をほぼ同じに揃えてあります（どちらも約45MB）。\n");
+    std::printf("  それでも倍率が違うのは、1体あたりの「無駄の割合」が違うからです。\n");
+    std::printf("    ケース2: 152 バイト中 12 バイトしか使わない → 無駄だらけ → 大差\n");
+    std::printf("    ケース3:  24 バイト中 12 バイトを使う      → 無駄は半分 → 小差\n");
+    std::printf("  → 効果は「1体あたり、使わないデータがどれだけ多いか」で決まります。\n");
+    std::printf("     コンポーネントの種類が多いゲームほど ECS が効く、ということです。\n");
+
+    std::printf("\n[実測値が理論値ほど伸びない理由]\n");
+    std::printf("  CPU には先読み（プリフェッチ）機能があり、連続アクセスなら\n");
+    std::printf("  次に必要なデータを裏で先に取ってきてくれます。\n");
+    std::printf("  AoS も「連続」ではあるので、この恩恵をある程度受けられます。\n");
+}
+
+
+// ===========================================================================
+// 実験7: ForEach と ForEachParallel の比較
+// ---------------------------------------------------------------------------
+// 並列化がどれだけ効くかは「処理の重さ」で全く変わる、という話。
+// ===========================================================================
+
+class BenchMoveSystem
+    : public IfSystem<BenchMoveSystem, Write<Position>, Read<Velocity>>
+{
+public:
+    bool parallel = false;   ///< true なら ForEachParallel を使う
+    bool heavy    = false;   ///< true なら1体あたりの計算量を増やす
+
+    BenchMoveSystem() : IfSystem("BenchMoveSystem") {}
+
+    void Update(float dt) override
+    {
+        if (heavy)
+        {
+            // CPU をしっかり使う処理（計算律速）
+            auto f = [](Position& p, const Velocity& v) {
+                float a = p.x;
+                for (int k = 0; k < 24; ++k)
+                    a = std::sqrt(a * a + v.x * v.x) * 0.999f + 0.001f;
+                p.x = a;
+            };
+            if (parallel) ForEachParallel(f); else ForEach(f);
+        }
+        else
+        {
+            // ほとんど計算しない処理（メモリ律速）
+            auto f = [dt](Position& p, const Velocity& v) {
+                p.x += v.x * dt;
+                p.y += v.y * dt;
+                p.z += v.z * dt;
+            };
+            if (parallel) ForEachParallel(f); else ForEach(f);
+        }
+    }
+};
+
+static void Experiment7_ParallelScaling()
+{
+    Line("実験7: ForEach と ForEachParallel の比較");
+
+    const int count  = 200000;
+    const int trials = 10;
+    const unsigned hw = std::thread::hardware_concurrency();
+
+    std::printf("エンティティ数 %d 体 / 論理コア数 %u\n", count, hw);
+
+    JobSystem  jobSystem;
+    ECSContext ctx(&jobSystem);
+    World* world = ctx.GetWorld();
+
+    BenchMoveSystem* sys =
+        ctx.GetSystemManager()->RegisterSystem<BenchMoveSystem>(
+            Priority::LogicStage::L02_Update);
+
+    Archetype arch = ArchetypeHelper::Generate<Position, Velocity>();
+    for (int i = 0; i < count; ++i) world->Spawn(arch);
+
+    // 1回まわして構造を確定させ、System に担当 Chunk を配る。
+    // （これをやらないと _targetChunks が空のままで何も処理されない）
+    ctx.UpdateLogic(0.016f);
+
+    // Velocity に値を入れておく（全部 0 だと計算が退化するため）
+    for (auto& up : world->GetChunkManager().GetChunks())
+    {
+        Chunk* c = up.get();
+        if (!c) continue;
+        Velocity* v = c->GetComponentArray<Velocity>();
+        if (!v) continue;
+        for (size_t i = 0; i < c->GetEntityCount(); ++i) v[i].x = 1.0f;
+    }
+
+    // ここからは System::Update を直接呼ぶ。
+    // ScrutinyAndApply やスケジューラの時間を混ぜず、
+    // ForEach 本体だけを測るため。
+    auto measure = [&](bool par, bool hv) {
+        sys->parallel = par;
+        sys->heavy    = hv;
+        return BenchBestMs(trials, [&]() { sys->Update(0.016f); });
+    };
+
+    std::printf("\n--- 軽い処理（p += v * dt だけ）---\n");
+    const double lightSerial   = measure(false, false);
+    const double lightParallel = measure(true,  false);
+    const double lightGain     = lightSerial / lightParallel;
+    std::printf("  ForEach         : %8.3f ms\n", lightSerial);
+    std::printf("  ForEachParallel : %8.3f ms\n", lightParallel);
+    std::printf("  → %.2f 倍（コア数 %u に対して効率 %.0f%%）\n",
+                lightGain, hw, lightGain / hw * 100.0);
+
+    std::printf("\n--- 重い処理（1体につき sqrt を24回）---\n");
+    const double heavySerial   = measure(false, true);
+    const double heavyParallel = measure(true,  true);
+    const double heavyGain     = heavySerial / heavyParallel;
+    std::printf("  ForEach         : %8.3f ms\n", heavySerial);
+    std::printf("  ForEachParallel : %8.3f ms\n", heavyParallel);
+    std::printf("  → %.2f 倍（コア数 %u に対して効率 %.0f%%）\n",
+                heavyGain, hw, heavyGain / hw * 100.0);
+
+    std::printf("\n===== 読み取り方 =====\n");
+    std::printf("\n[見るべきは倍率そのものより「効率」]\n");
+    std::printf("  コア数が %u なら、理想は %u 倍です。実際にどこまで届いたかを見ます。\n", hw, hw);
+
+    std::printf("\n[軽い処理の効率が低い理由]\n");
+    std::printf("  この処理は計算がほとんど無く、速度がメモリの転送能力で決まります\n");
+    std::printf("  （メモリ律速）。スレッドを増やしてもメモリ帯域は増えないので、\n");
+    std::printf("  待ち時間は減らず、理想倍率には届きません。\n");
+    std::printf("  加えて、仕事を配って集めるコストが相対的に大きく効いてきます。\n");
+
+    std::printf("\n[重い処理の効率が高い理由]\n");
+    std::printf("  計算そのものが重い（計算律速）ので、コアを増やした分だけ\n");
+    std::printf("  素直に速くなります。並列化が最も効くのはこのタイプです。\n");
+
+    std::printf("\n★結論: 並列化すれば何でも速くなるわけではありません。\n");
+    std::printf("  「1体あたりの計算が重いSystem」を選んで並列化するのが正解です。\n");
+    std::printf("  軽い処理を並列化しても、コア数ほどの効果は得られません。\n");
+}
+
+
+// ===========================================================================
 // main
 // ===========================================================================
 
@@ -403,7 +731,9 @@ static void RunExperiment(int n)
     case 3: Experiment3_DestroyAndGeneration();break;
     case 4: Experiment4_ArchetypeTransition(); break;
     case 5: Experiment5_System();              break;
-    default: std::printf("1〜5 の番号を入力してください。\n"); break;
+    case 6: Experiment6_AoSvsSoA();            break;
+    case 7: Experiment7_ParallelScaling();     break;
+    default: std::printf("1〜7 の番号を入力してください。\n"); break;
     }
 }
 
@@ -425,6 +755,8 @@ int main()
         std::printf(" 3 : 破棄・穴詰め・世代による ID 再利用\n");
         std::printf(" 4 : アーキタイプ遷移（Chunk の引っ越し）\n");
         std::printf(" 5 : System と ForEach\n");
+        std::printf(" 6 : 【ベンチ】AoS と SoA の速度比較\n");
+        std::printf(" 7 : 【ベンチ】ForEach と ForEachParallel の比較\n");
         std::printf(" a : 全部まとめて実行\n");
         std::printf(" q : 終了\n");
         std::printf("-----------------------------------------\n");
@@ -439,11 +771,11 @@ int main()
         if (c == 'q' || c == 'Q') break;
 
         if (c == 'a' || c == 'A') {
-            for (int i = 1; i <= 5; ++i) RunExperiment(i);
+            for (int i = 1; i <= 7; ++i) RunExperiment(i);
             continue;
         }
 
-        if (c >= '1' && c <= '5') {
+        if (c >= '1' && c <= '7') {
             RunExperiment(c - '0');
             continue;
         }

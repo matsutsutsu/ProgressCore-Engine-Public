@@ -28,12 +28,12 @@ void PlayerInputSystem::Update(float dt)
     float moveX       = inputAPI->GetAxis("MoveX");
     float moveY       = inputAPI->GetAxis("MoveY");
     bool  isAttacking = inputAPI->GetAction("Attack");
+    bool  isCleaving  = inputAPI->GetAction("Cleave"); // 切り払い(右クリック)入力の取得
     bool  isJumping   = inputAPI->GetAction("Jump");
     bool  isDashing   = inputAPI->GetAction("Dash"); // ダッシュ入力の取得
     bool  isLockOn    = inputAPI->GetAction("LockOn"); // Rボタンなどのアクションを追加
 
     // 2. カメラ空間ベースのベクトル生成 (TPS特有の処理)
-    // ※Cameraクラスの仕様に合わせて GetForward() 等の関数名は適宜読み替えること
     Vector3 camForward = mainCamera->GetFront();
     Vector3 camRight = mainCamera->GetRight();
 
@@ -49,7 +49,6 @@ void PlayerInputSystem::Update(float dt)
         moveDir.Normalize();
     }
 
-    // 4. Chunk一括更新 (SoA)
     ForEach([&](CharacterMovementInputComponent& inputData, PlayerComponent& player) {
 
         // 要求速度、攻撃意思、ジャンプ意思の書き込み
@@ -57,6 +56,7 @@ void PlayerInputSystem::Update(float dt)
         inputData.isAttackRequested = isAttacking;
         inputData.jumpRequested     = isJumping;
         inputData.dashRequested     = isDashing; // ダッシュ要求をコンポーネントへ渡す
+        player.cleaveRequested       = isCleaving; // 切り払い(右クリック)はプレイヤー固有意思へ
         player.lockOnToggleRequested = isLockOn;  // ロックオン要求をコンポーネントへ渡す
 
         });

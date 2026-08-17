@@ -58,7 +58,7 @@ void BoidSystem::Update(float dt)
         int   neighborCount = 0;
         float radiusSq      = settings.neighborRadius * settings.neighborRadius;
 
-        // O(N) ループ: snapshotPtr は連続メモリ空間なのでハードウェアプリフェッチャが完璧に動作する
+        // O(N) の全探索。snapshotPtr は連続メモリなので前方向の走査ならプリフェッチが効く
         for (size_t i = 0; i < totalBoids; ++i)
         {
             const auto &other = snapshotPtr[i];

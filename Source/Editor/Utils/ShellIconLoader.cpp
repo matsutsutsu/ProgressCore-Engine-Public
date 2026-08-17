@@ -32,7 +32,7 @@ Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ShellIconLoader::GetIconSRV(
         return srv;
     }
 
-    // AAA品質の最適化: 実ファイルを解析せず、「拡張子」をキーにしてキャッシュを回す
+    // 実ファイルを開かず拡張子をキーにキャッシュする（同種ファイルは1回の取得で済む）
     std::wstring ext = std::filesystem::path(filePath).extension().wstring();
     std::transform(ext.begin(), ext.end(), ext.begin(), ::towlower);
 
@@ -62,8 +62,8 @@ Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ShellIconLoader::LoadShellIconS
     const std::wstring &filePath, ID3D11Device *device)
 {
     SHFILEINFOW sfi = {};
-    // 魔法のフラグ: SHGFI_USEFILEATTRIBUTES
-    // 実ファイルの存在や中身を無視し、「この拡張子ならOS上ではどのアイコンになるか」だけを爆速で取得する
+    // SHGFI_USEFILEATTRIBUTES を付けると、実ファイルへのアクセスを伴わず
+    // 「その拡張子に対応するアイコン」だけを取得できる（ディスクI/Oが発生しない）
     if (SHGetFileInfoW(filePath.c_str(), FILE_ATTRIBUTE_NORMAL, &sfi, sizeof(sfi), SHGFI_ICON | SHGFI_LARGEICON | SHGFI_USEFILEATTRIBUTES))
     {
         HICON hIcon = sfi.hIcon;

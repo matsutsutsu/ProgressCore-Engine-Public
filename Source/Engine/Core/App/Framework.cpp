@@ -38,6 +38,7 @@
 
 #include "tracy/Tracy.hpp"
 #include "tracy/TracyD3D11.hpp"
+#include "Engine/Core/Profiling/TracySection.h" // フレーム内フェーズ(Simulation/Render)の帯
 
 
 #if defined(_DEBUG)
@@ -76,14 +77,13 @@ Framework::Framework(HWND hWnd)
 		Logger::Instance().AddSink(std::make_shared<DebugStreamSink>());
 		// ログファイルの出力先。開発時は Build/ 配下に集約、製品(Shipping)は exe 隣の Logs/ に。
 		// FileSink は遅延生成なので、Shipping では ERROR が実際に出た時だけファイルが作られる
-		//（正常終了なら何も残らない）。
+		//（正常終了なら何も残らない）。起動ごとに前回分を Engine.prev.log へ退避する2世代式。
 #ifdef ENABLE_EDITOR
 		const char* kLogPath = "Build/Logs/Engine.log";
 #else
 		const char* kLogPath = "Logs/Engine.log";
 #endif
-		Logger::Instance().AddSink(std::make_shared<FileSink>(
-			kLogPath, 10ull * 1024 * 1024, 3));
+		Logger::Instance().AddSink(std::make_shared<FileSink>(kLogPath));
 		m_consoleLogSink = std::make_shared<ImGuiBufferSink>(2000);
 		Logger::Instance().AddSink(m_consoleLogSink);
 	}
@@ -146,7 +146,13 @@ Framework::Framework(HWND hWnd)
 	{
 		ZoneScopedN("Init: Physics (Jolt)");
 		services.physicsManager = std::make_shared<JoltPhysicsManager>();
-		services.physicsManager->Initialize();
+
+		// 共有スレッドプールを渡すと、物理ジョブも ECS と同じプールで走る
+		// （JoltJobSystemAdapter 経由。プールが1本になり、物理ジョブが
+		//   Tracy にジョブ名付きゾーンとして表示されるようになる）。
+		// 従来どおり Jolt 純正プールに戻したい場合は、引数を外して
+		// Initialize() と呼ぶだけでよい（比較計測用に両方残してある）。
+		services.physicsManager->Initialize(services.jobSystem.get());
 	}
 
 
@@ -307,9 +313,9 @@ void Framework::Update(float elapsedTime)
 void Framework::Render(float elapsedTime)
 {
 	// =========================================================
-	// 究極の修正: 【一番最初】にTracyを回収する
-	// 前フレームの Present と Flush から最も時間が経過しているこの瞬間が、
-	// GPUのタイムスタンプ書き込みが完了している確率が最も高い安全地帯です。
+	// Tracy の GPU タイムスタンプ回収はフレーム先頭で行う。
+	// 前フレームの Present / Flush から最も時間が経っており、
+	// GPU 側の書き込みが完了している可能性が最も高いため。
 	// =========================================================
 	if (auto tracyCtx = Graphics::Instance().GetTracyContext()) {
 		TracyD3D11Collect(tracyCtx);
@@ -506,6 +512,16 @@ int Framework::Run()
 		}
 		else
 		{
+			// ★ vsync待ちの集約点：前フレームの提示が終わるまでここでブロックする。
+			//   Waitable スワップチェーン(FRAME_LATENCY_WAITABLE_OBJECT)のおかげで、
+			//   フリップモデルで各パス(特にフレーム先頭の ShadowPass)へ紛れ込んでいた
+			//   「垂直同期待ち」が、この1本の明示ゾーンに集約される。
+			//   → Tracy 上で ShadowPass 等が本来の実コストで読めるようになる＋入力遅延も減る。
+			{
+				ZoneScopedN("Wait: Frame Latency (VSync)");
+				Graphics::Instance().WaitForFrameLatency();
+			}
+
 			timer.Tick();
 			CalculateFrameStats();
 
@@ -598,7 +614,7 @@ int Framework::Run()
 			}
 
 			// ===========================================================================
-			// あなたの提案による中央集権型シーン操作回路
+			// シーン切り替えをフレーム先頭の一点に集約する
 			//   誰も世界の処理を始めていないこのクリーンな瞬間に対処することで、
 			//   以降の FixedUpdate, Update, Render は一貫して「新しい世界」を走る。
 			// ===========================================================================
@@ -659,6 +675,13 @@ int Framework::Run()
 			int updateCount = 0;
 			const int MAX_STEPS = 4; // 1フレームに許容する最大更新回数
 
+			// --- Simulation フェーズ（固定タイムステップの論理・物理）---
+			//   Tracy Section で1つの帯にする。プロファイラ側で「この工程だけ」に時間範囲を
+			//   絞れるので、ForEachParallel のフォークジョイン（join待ちのカーネル時間）を
+			//   この帯の中だけで追跡でき、固定タイムステップ構造の説明にも使える。
+			{
+			TRACY_SECTION("Simulation");
+
 			// コマ送り：accumulator に関係なく、確実に1物理ステップだけ進める。
 			//   一時停止中なので下の通常ループ(while)は accumulator が溜まらず回らない。
 			if (doSingleStep)
@@ -692,6 +715,8 @@ int Framework::Run()
 				accumulator = fmod(accumulator, FIXED_DT);
 			}
 
+			} // ← Simulation セクション終了
+
 			
 			// ===============================================================
             // 描画補間係数の算出とWorldへの供給
@@ -714,8 +739,10 @@ int Framework::Run()
 
 			// 5. 残った時間 (accumulator) を使って「補間」を行うのが理想だが、
 			//    まずは可変フレームで描画更新を行う
-			Update(frameTime);
-			Render(frameTime);
+			//   Update / Render もそれぞれ Section の帯にして、タイムライン上で
+			//   Simulation と描画工程を色分け・絞り込みできるようにする。
+			{ TRACY_SECTION("Update"); Update(frameTime); }
+			{ TRACY_SECTION("Render"); Render(frameTime); }
 
 
 			// ここで1フレーム終了をTracyに通知

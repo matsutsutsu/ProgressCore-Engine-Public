@@ -27,9 +27,10 @@ public:
     void Update(float dt) override;
 
 private:
-    /// @brief コヨーテタイムと先行入力バッファを用いたジャンプ判定処理
-    // 引数に AnimParametersComponent を追加
-    void UpdateJumpLogic(float dt, bool isGrounded, CharacterMovementInputComponent &inputData, PlayerComponent &player, AnimParametersComponent &animParams);
+    /// @brief 接地・ジャンプ成立の判定処理（押した瞬間のエッジ検出／2段ジャンプ）。
+    ///        接地離れは airborneGraceTime の猶予付きで isAirborne へ反映する。
+    ///        ジャンプ成立時は worldPos を載せて PlayerJumpedEvent を発行する（その場VFX用）。
+    void UpdateJumpLogic(float dt, bool isGrounded, CharacterMovementInputComponent &inputData, PlayerComponent &player, AnimParametersComponent &animParams, const DirectX::XMFLOAT3 &worldPos);
 
     /// @brief プロシージャル・バンキング（傾き）の計算と、物理/描画の回転分離処理
     void UpdateBankingAndRotation(float dt, const CharacterMovementInputComponent &inputData, float walkSpeed, PlayerComponent &player, TransformComponent &trans, JPH::CharacterVirtual *character);

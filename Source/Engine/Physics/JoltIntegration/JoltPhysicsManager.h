@@ -9,8 +9,12 @@
 #include "Engine/Physics/JoltIntegration/PhysicsLayers.h"
 
 #include "JoltContactListener.h"
+#include "JoltJobSystemAdapter.h"
 
 #include <memory>
+
+// ECS側の共有スレッドプール（前方宣言。実体は CCL_JobSystem.h）
+namespace CCL::ECS { class JobSystem; }
 
 // ===================================================================================
 // ファイル名: JoltPhysicsManager.h
@@ -45,7 +49,17 @@ class JoltPhysicsManager {
     JoltPhysicsManager(const JoltPhysicsManager &)            = delete;
     JoltPhysicsManager &operator=(const JoltPhysicsManager &) = delete;
 
-    void Initialize();
+    /**
+     * @brief 物理世界を初期化する。
+     *
+     * @param inSharedPool
+     *   ECS と共有するスレッドプール。渡すと物理ジョブもこのプールで走る
+     *   （JoltJobSystemAdapter 経由。スレッドプールが1本に統合され、
+     *     物理ジョブが Tracy にジョブ名付きゾーンとして出るようになる）。
+     *   nullptr を渡すと Jolt 純正の JobSystemThreadPool を自前で立てる
+     *   従来の挙動になる。切り分け・比較用に残してある。
+     */
+    void Initialize(CCL::ECS::JobSystem *inSharedPool = nullptr);
     void Step(float deltaTime);
 
     // ECSシステムから物理空間にアクセスするためのゲッター
@@ -66,7 +80,14 @@ class JoltPhysicsManager {
     // Joltのコアシステム（破棄順序を制御するため unique_ptr で管理）
     std::unique_ptr<JPH::PhysicsSystem>       m_physicsSystem;
     std::unique_ptr<JPH::TempAllocatorImpl>   m_tempAllocator;
-    std::unique_ptr<JPH::JobSystemThreadPool> m_jobSystem;
+
+    // --- ジョブシステムは2択。実体を持つのはどちらか一方だけ ---
+    //   統合モード: ECS の共有プールに委譲するアダプタ
+    std::unique_ptr<JoltJobSystemAdapter>     m_adapterJobSystem;
+    //   従来モード: Jolt 純正のスレッドプール
+    std::unique_ptr<JPH::JobSystemThreadPool> m_nativeJobSystem;
+    //   実際に PhysicsSystem::Update へ渡す方（上のどちらかを指す。所有しない）
+    JPH::JobSystem                           *m_activeJobSystem = nullptr;
     // リスナーのインスタンスを保持
     std::unique_ptr<JoltContactListener> m_contactListener;
 

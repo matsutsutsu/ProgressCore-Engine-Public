@@ -11,8 +11,6 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Platform/Core/Logger.h"
 
-#include <cstring>  // memset
-
 using namespace CCL::ECS;
 using namespace CCL::AI;
 
@@ -65,7 +63,7 @@ void StateTreeSystem::TickStateTree(const StateTreeAsset& asset,
 
     if (!SelectStates(asset, entity, newPath, newDepth)) {
         for (int d = (int)st.activeDepth - 1; d >= 0; --d)
-            ExitState(asset, st, st.activeStates[d], entity);
+            ExitState(asset, st.activeStates[d], entity);
         st.activeDepth = 0;
         return;
     }
@@ -76,17 +74,17 @@ void StateTreeSystem::TickStateTree(const StateTreeAsset& asset,
         ++common;
 
     for (int d = (int)st.activeDepth - 1; d >= (int)common; --d)
-        ExitState(asset, st, st.activeStates[d], entity);
+        ExitState(asset, st.activeStates[d], entity);
 
     for (uint8_t d = 0; d < newDepth; ++d)
         st.activeStates[d] = newPath[d];
     st.activeDepth = newDepth;
 
     for (uint8_t d = common; d < newDepth; ++d)
-        EnterState(asset, st, st.activeStates[d], entity);
+        EnterState(asset, st.activeStates[d], entity);
 
     if (st.activeDepth > 0)
-        TickTasks(asset, st, st.GetLeafState(), entity, dt);
+        TickTasks(asset, st.GetLeafState(), entity, dt);
 }
 
 // ============================================================
@@ -144,7 +142,6 @@ bool StateTreeSystem::EvaluateEnterConditions(const StateTreeAsset& asset,
         ctx.world    = m_world;
         ctx.entity   = entity;
         ctx.params   = ref.paramSize > 0 ? asset.paramBlob.data() + ref.paramOffset : nullptr;
-        ctx.instance = nullptr;
         ctx.dt       = 0.0f;
 
         if (!cond->Evaluate(ctx)) return false;
@@ -156,7 +153,6 @@ bool StateTreeSystem::EvaluateEnterConditions(const StateTreeAsset& asset,
 // EnterState / ExitState
 // ============================================================
 void StateTreeSystem::EnterState(const StateTreeAsset& asset,
-                                 StateTreeComponent&   st,
                                  uint16_t              stateIdx,
                                  EntityID              entity)
 {
@@ -174,18 +170,13 @@ void StateTreeSystem::EnterState(const StateTreeAsset& asset,
         ctx.world    = m_world;
         ctx.entity   = entity;
         ctx.params   = ref.paramSize > 0 ? asset.paramBlob.data() + ref.paramOffset : nullptr;
-        ctx.instance = st.GetInstancePtr(ref.instanceOffset);
         ctx.dt       = 0.0f;
-
-        if (ref.instanceSize > 0 && ctx.instance)
-            std::memset(ctx.instance, 0, ref.instanceSize);
 
         task->EnterState(ctx);
     }
 }
 
 void StateTreeSystem::ExitState(const StateTreeAsset& asset,
-                                StateTreeComponent&   st,
                                 uint16_t              stateIdx,
                                 EntityID              entity)
 {
@@ -203,7 +194,6 @@ void StateTreeSystem::ExitState(const StateTreeAsset& asset,
         ctx.world    = m_world;
         ctx.entity   = entity;
         ctx.params   = ref.paramSize > 0 ? asset.paramBlob.data() + ref.paramOffset : nullptr;
-        ctx.instance = st.GetInstancePtr(ref.instanceOffset);
         ctx.dt       = 0.0f;
 
         task->ExitState(ctx);
@@ -214,7 +204,6 @@ void StateTreeSystem::ExitState(const StateTreeAsset& asset,
 // TickTasks
 // ============================================================
 void StateTreeSystem::TickTasks(const StateTreeAsset& asset,
-                                StateTreeComponent&   st,
                                 uint16_t              stateIdx,
                                 EntityID              entity,
                                 float                 dt)
@@ -233,7 +222,6 @@ void StateTreeSystem::TickTasks(const StateTreeAsset& asset,
         ctx.world    = m_world;
         ctx.entity   = entity;
         ctx.params   = ref.paramSize > 0 ? asset.paramBlob.data() + ref.paramOffset : nullptr;
-        ctx.instance = st.GetInstancePtr(ref.instanceOffset);
         ctx.dt       = dt;
 
         task->Tick(ctx);

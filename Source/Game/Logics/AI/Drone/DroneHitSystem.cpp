@@ -40,6 +40,7 @@ namespace
     ///        陣形追従の突撃(縦割り等)は突入中ずっと危険、ダッシュ系はタメ後のみ危険。
     bool IsDangerous(const DroneComponent& d)
     {
+        if (d.knockbackTimer > 0.0f)                  return false;   // 切り払いで吹き飛ばし中は無害
         if (d.currentState != DroneState::FireCharge) return false;
         if (d.fireDelay > 0.0f)                       return false;   // 発射待ち中
         return d.chargeFollowsTarget || d.stateTimer <= 0.0f;

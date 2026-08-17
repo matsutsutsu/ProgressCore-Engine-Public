@@ -44,7 +44,9 @@ struct ComponentMeta<CameraBodyTPSComponent>
             {
                 if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("DND_ENTITY_ID"))
                 {
-                    link.id    = *(const unsigned long long *)payload->Data;
+                    // ペイロードは HierarchyWindow が sizeof(CCL::ECS::EntityID) で積んでいる。
+                    // 読み側で生の型を書くと、EntityID の幅を変えたときにここだけ食い違う。
+                    link.id    = *(const CCL::ECS::EntityID *)payload->Data;
                     dndChanged = true;
                 }
                 ImGui::EndDragDropTarget();

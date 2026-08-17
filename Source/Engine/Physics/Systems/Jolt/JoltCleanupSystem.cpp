@@ -49,9 +49,8 @@ void JoltCleanupSystem::ExecuteCleanup(CCL::ECS::World& world)
             // 剛体の完全消去
             bodyInterface.DestroyBody(bodyID);
 
-            // 究極の修正: Joltから消し去った証拠として、コンポーネント側のIDを無効化する！
-            // これにより、もしこのエンティティが次フレームまで生き残ってループに入っても、
-            // 防波堤1で安全に弾かれるようになります。
+            // Jolt から破棄したらコンポーネント側のIDも無効化する。
+            // エンティティが次フレームまで残っていても、先頭の有効判定で弾かれ二重破棄にならない。
             bodyID = JPH::BodyID(); // デフォルトコンストラクタは無効なID(cInvalidBodyID)を生成する
         }
     }

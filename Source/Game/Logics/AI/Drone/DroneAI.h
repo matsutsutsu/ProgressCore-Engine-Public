@@ -1,22 +1,21 @@
 /// @file  DroneAI.h
-/// @brief ドローン個体の StateTree（企画書 第1段：判断層）。
+/// @brief ドローン個体の判断層（StateTree）。
 ///
-/// 役割分担（MurielAI と同じパターン）:
-///   判断層（このファイル）  … 「今このドローンは何をすべきか」を決める
-///   実行層（DroneMovementSystem・既存）… DroneComponent.currentState を見て物理的に動く
+/// 判断と移動を分離している:
+///   判断層（このファイル）           … 「今このドローンは何をすべきか」を決める
+///   実行層（DroneMovementSystem）… DroneComponent.currentState を見て物理的に動かす
 ///
-/// StateTree は DroneComponent.currentState を直接書き換えるだけ。
-/// 「どう動くか」の実装（Lerp/Slerp等）には一切関与しない。
+/// StateTree は DroneComponent.currentState を書き換えるだけで、
+/// 補間や速度計算（Lerp/Slerp等）には一切関与しない。
+/// 1000機ぶんの判断を毎フレーム回すため、判断側は分岐と代入のみに抑えている。
 ///
-/// 状態（企画書の5状態のうち、今回実装する3状態）:
-///   MoveToSlot（移動）: 目標位置から一定距離以上離れている → currentState = MoveToTarget
-///   Active（攻撃実行） : 攻撃命令を受けている            → currentState = FireCharge
-///   Forming（陣形維持・フォールバック）: それ以外         → currentState = Idle
+/// 状態と DroneState の対応:
+///   MoveToSlot（移動）  : 目標位置から一定距離以上離れている → MoveToTarget
+///   Active（攻撃実行）  : 攻撃命令を受けている               → FireCharge
+///   Forming（陣形維持） : それ以外                           → Idle
 ///
-///   ※ Forming と Idle は企画書では別概念（Forming=到着後の維持）だが、
-///     DroneState::Idle の「有機的追従」が丁度その役割を担うため、
-///     StateTree側では1状態(Forming)→1DroneState(Idle)の対応とする。
-///   ※ Return（帰投）は今回未実装（企画書の第1段の中でも後回しにする対象）。
+///   Forming は「持ち場に着いた後の維持」を指すが、DroneState::Idle の
+///   ゆらぎを伴う追従がそのまま維持の挙動になるため、専用の状態は設けていない。
 #pragma once
 #include "Game/Logics/AI/StateTree/Core/StateTreeAsset.h"
 #include "Game/Logics/AI/StateTree/Core/StateTreeNode.h"
@@ -36,7 +35,7 @@
 namespace DroneAI
 {
     // ====================================================================
-    // タスク：DroneComponent.currentState を書き換える（ボスのSetActiveBTと同じ形）
+    // タスク：DroneComponent.currentState を書き換える
     // ====================================================================
     struct SetDroneStateTask : public CCL::AI::ITask
     {
@@ -219,10 +218,10 @@ namespace DroneAI
             asset.AddEnterCondition(active, ids.wantsAttack, 0, 0);   // パラメータ無し
 
             // 入場時に突撃を初期化（タメ・方向ロック）。EnterState を持つので先に置く。
-            asset.AddTask(active, ids.beginCharge, 0, 0, 0);
+            asset.AddTask(active, ids.beginCharge, 0, 0);
 
             SetDroneStateTask::Params tp{ static_cast<int>(DroneState::FireCharge) };
-            asset.AddTask(active, ids.setState, asset.AddParams(tp), sizeof(tp), 0);
+            asset.AddTask(active, ids.setState, asset.AddParams(tp), sizeof(tp));
         }
 
         // --- MoveToSlot ---
@@ -233,7 +232,7 @@ namespace DroneAI
             asset.AddEnterCondition(moveToSlot, ids.notAtTarget, asset.AddParams(cp), sizeof(cp));
 
             SetDroneStateTask::Params tp{ static_cast<int>(DroneState::MoveToTarget) };
-            asset.AddTask(moveToSlot, ids.setState, asset.AddParams(tp), sizeof(tp), 0);
+            asset.AddTask(moveToSlot, ids.setState, asset.AddParams(tp), sizeof(tp));
         }
 
         // --- Forming（フォールバック・入場条件なし）---
@@ -241,7 +240,7 @@ namespace DroneAI
             const uint16_t forming = asset.AddState("Forming", root);
 
             SetDroneStateTask::Params tp{ static_cast<int>(DroneState::Idle) };
-            asset.AddTask(forming, ids.setState, asset.AddParams(tp), sizeof(tp), 0);
+            asset.AddTask(forming, ids.setState, asset.AddParams(tp), sizeof(tp));
         }
 
         (void)root;

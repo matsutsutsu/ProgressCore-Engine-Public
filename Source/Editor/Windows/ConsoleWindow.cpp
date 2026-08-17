@@ -120,7 +120,7 @@ void ConsoleWindow::DrawContents(EditorContext& /*context*/)
     ImGui::Separator();
 
     // ====================================================================
-    // 究極の修正: 毎フレームの Snapshot (ディープコピー) を防ぐキャッシュ機構
+    // ログ件数が変わったときだけ Snapshot を取り直し、毎フレームのディープコピーを避ける
     // ====================================================================
     static std::vector<LogMessage> s_cachedMessages;
     static std::vector<int>        s_cachedFiltered;

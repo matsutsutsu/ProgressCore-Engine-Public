@@ -3,7 +3,7 @@
 /// @brief プレイヤーHPゲージHUDを ECS UI で構築し、HealthComponent に毎フレーム連動させる。
 ///
 /// 設計方針:
-///   - OverdriveHudSystem と同じ「Initialize で UI エンティティ生成 → Update でデータ連動」の型。
+///   - CleaveGaugeHudSystem と同じ「Initialize で UI エンティティ生成 → Update でデータ連動」の型。
 ///   - 本体フィルは現在HPへ即追従。被弾時は UIProgressBar の「遅延ダメージ（チップ）バー」を使い、
 ///     失った分(value..trailValue)を一瞬見せてからスッと減らす（格ゲー風のHPバー演出）。
 ///   - プレイヤー(HealthComponent かつ PlayerComponent)だけを対象にする。居ないシーンでは隠す。

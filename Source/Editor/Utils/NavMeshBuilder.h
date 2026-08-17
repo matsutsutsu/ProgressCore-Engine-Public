@@ -31,9 +31,9 @@ struct NavMeshBuildData {
 
 class NavMeshBuilder {
 public:
-    // 前回作ったジオメトリ収集関数（privateにしてもOKです）
+    // シーン中のジオメトリを収集して1つの頂点/インデックス配列にまとめる
     static NavMeshBuildData GatherGeometry(CCL::ECS::World& world);
 
-    // 今回追加するBake本体関数
+    // 収集したジオメトリから NavMesh を生成し、World のリソースへ登録する
     static bool BuildNavMesh(CCL::ECS::World& world, const NavMeshBuildSettings& settings);
 };

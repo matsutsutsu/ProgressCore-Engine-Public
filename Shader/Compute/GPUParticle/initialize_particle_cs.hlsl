@@ -9,7 +9,7 @@ void main(uint3 dtid : SV_DispatchThreadID)
     if (id >= (uint)max_count) return;  // 旧: max_particle_count
 
     particle p = particle_buffer[id];
-    spawn(id, p);
+    spawn(id, p, 0u); // 初期化なので salt は 0（ここが種の連鎖の起点になる）
 
     if (emit_mode == 1)  // 旧: emission_mode → emit_mode
     {
@@ -36,7 +36,7 @@ void main(uint3 dtid : SV_DispatchThreadID)
     else
     {
         // 継続モードだが発生ゲートOFF（アニメ連動で最初は空にしておく）: 死亡待機で開始。
-        // ★ age を staggered にしておく。全粒子を同じ age にすると、ゲートが開いた瞬間に
+        // age を staggered にしておく。全粒子を同じ age にすると、ゲートが開いた瞬間に
         //    一斉スポーンして「最初の1フレームだけ大量に出て以降出ない」不具合になる。
         //    id で位相をばらけさせ、ゲート開放後に順次スポーン（定常流）させる。
         p.state   = STATE_DEAD;

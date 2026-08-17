@@ -1,14 +1,13 @@
 #include "TimeScaleSystem.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
-#include "Engine/Core/Systems/SystemPriority.h" // 優先度Enumへのパスは適宜調整してください
+#include "Engine/Core/Systems/SystemPriority.h" // 実行ステージの列挙
+#include "Engine/Time/TimeService.h"            // Debug GUI から意図ファサードを叩く
 #include <algorithm>
 #ifdef ENABLE_EDITOR
 #include <imgui.h>
 #endif
 
-TimeScaleSystem::TimeScaleSystem() : IfSystem("TimeScaleSystem")
-{
-}
+TimeScaleSystem::TimeScaleSystem() : IfSystem("TimeScaleSystem"){}
 
 void TimeScaleSystem::Initialize()
 {
@@ -54,24 +53,8 @@ void TimeScaleSystem::Update(float rawDt)
         }
         };
 
-    updateSlowMotion(ctx.playerSlow);
-    updateSlowMotion(ctx.enemySlow);
-    updateSlowMotion(ctx.worldSlow);
-
-    // 計算したスロー倍率を配列（groupScales）に書き込む。
-    // 毎フレーム必ず「ベース値」を代入し直すこと（= 代入）。ここを *= の累積にすると
-    //   OVERDRIVE の倍率が毎フレーム掛かり続けて 0 に収束し、発動終了後も戻らなくなる。
-    ctx.groupScales[static_cast<size_t>(TimeGroup::Player)]      = ctx.playerSlow.currentComputedScale;
-    ctx.groupScales[static_cast<size_t>(TimeGroup::Enemy)]       = ctx.enemySlow.currentComputedScale;
-    ctx.groupScales[static_cast<size_t>(TimeGroup::Environment)] = ctx.worldSlow.currentComputedScale;
-
-    // OVERDRIVE の勢力別追加倍率を折り込む（非発動時は 1.0 なので影響なし）。
-    //   これで「世界(敵＋環境)はスロー・プレイヤーは高速」の無双状態が実効dtに乗る。
-    //   環境(Environment)も下げることで、ステージのGPUパーティクル/VFXも一緒にスローになり、
-    //   「時間が遅くなった」ことが画面全体の動きで読めるようになる。
-    ctx.groupScales[static_cast<size_t>(TimeGroup::Player)]      *= ctx.overdrivePlayerScale;
-    ctx.groupScales[static_cast<size_t>(TimeGroup::Enemy)]       *= ctx.overdriveEnemyScale;
-    ctx.groupScales[static_cast<size_t>(TimeGroup::Environment)] *= ctx.overdriveEnvironmentScale;
+    // groupScale レイヤーは現状どの system も書かない（全て1.0）。将来 Time::SlowGroup 等を
+    // 足す時は「毎フレーム 1.0 へリセット → min で要求を合成」の形でここに層を用意する。
 
     // =========================================================
     // 2. 親時計（世界全体）の計算
@@ -133,31 +116,27 @@ void TimeScaleSystem::OnGui()
     ImGui::SeparatorText("World Time Master");
     ImGui::DragFloat("Base Global Scale", &ctx.baseGlobalScale, 0.01f, 0.0f, 5.0f, "%.3f");
 
-    ImGui::SeparatorText("Faction Scales (groupScales)");
-    // 配列の値を直接いじれるようにする
-    ImGui::DragFloat("Player Scale", &ctx.groupScales[static_cast<size_t>(TimeGroup::Player)], 0.01f, 0.0f, 3.0f, "%.2f");
-    ImGui::DragFloat("Enemy Scale", &ctx.groupScales[static_cast<size_t>(TimeGroup::Enemy)], 0.01f, 0.0f, 3.0f, "%.2f");
+    // 出力（TimeScaleSystem が算出）は読み取り専用で見せる。直接いじると翌フレーム上書きされるため。
+    ImGui::SeparatorText("Live Status (read-only)");
+    ImGui::Text("Global Scale   : %.3f", ctx.globalScale);
+    ImGui::Text("HitStop Timer  : %.3f sec", ctx.globalHitStopTimer);
+    ImGui::Text("Cinematic Slow : x%.2f (t=%.2f)", ctx.cinematicSlow.currentComputedScale, ctx.cinematicSlow.timer);
 
-    ImGui::SeparatorText("Live Status");
-    ImGui::Text("Active Global Scale : %.3f", ctx.globalScale);
-    ImGui::Text("HitStop Timer       : %.3f sec", ctx.globalHitStopTimer);
+    // 操作は生フィールド直書きではなく Time ファサード経由（実運用と同じ経路）。
+    ImGui::SeparatorText("Debug Actions (Time facade)");
+    if (ImGui::Button("HitStop 0.15s"))          Time::HitStop(*m_world, 0.15f, 0.0f);
+    ImGui::SameLine();
+    if (ImGui::Button("Witch Time (2s @10%)"))   Time::HitStop(*m_world, 2.0f, 0.1f);
+    if (ImGui::Button("Slow World (1s @25%)"))   Time::SlowWorld(*m_world, 0.25f, 1.0f);
+    ImGui::SameLine();
+    if (ImGui::Button("Clear Slow"))             Time::ClearWorldSlow(*m_world);
 
-    ImGui::SeparatorText("Debug Actions");
-    if (ImGui::Button("Trigger Witch Time (2.0s, 10% Speed)")) {
-        ctx.globalHitStopTimer = 2.0f;
-        ctx.globalFreezeScale = 0.1f;
-    }
-
-    // デバッグ用のコマ送り機能
-    ImGui::SeparatorText("Debug Pause & Step");
-    ImGui::Checkbox("Pause Game (F10)", &ctx.isPaused);
-    if (ctx.isPaused)
-    {
-        if (ImGui::Button("Step 1 Frame (F11)"))
-        {
-            ctx.stepNextFrame = true;
-        }
-    }
+    ImGui::SeparatorText("Pause & Step");
+    bool paused = ctx.isPaused;
+    if (ImGui::Checkbox("Pause Game (F10)", &paused))
+        paused ? Time::Pause(*m_world) : Time::Resume(*m_world);
+    if (ctx.isPaused && ImGui::Button("Step 1 Frame (F11)"))
+        Time::StepFrame(*m_world);
 }
 #else
 void TimeScaleSystem::OnGui() {}

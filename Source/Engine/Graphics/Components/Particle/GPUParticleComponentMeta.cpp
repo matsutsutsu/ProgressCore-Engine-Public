@@ -4,7 +4,6 @@
 #include "Engine/Graphics/Components/Particle/GPUParticleComponent.h"
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Platform/Core/Dialog.h"
-#include "Engine/Platform/Core/FileSystem.h"
 
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
@@ -49,6 +48,7 @@ void WriteDescToJson(json &j, const ParticleEmitterDesc &d)
 
     j["localOffsetY"]    = SafeF(d.localOffsetY);
     j["gravity"]         = SafeF(d.gravity);
+    j["maxSpeed"]        = SafeF(d.maxSpeed);
     j["velocityStretch"] = SafeF(d.velocityStretch);
     j["noiseScale"]      = SafeF(d.noiseScale);
     j["noiseStrength"]   = SafeF(d.noiseStrength);
@@ -105,6 +105,9 @@ void ReadDescFromJson(const json &j, ParticleEmitterDesc &d)
 
     F("localOffsetY", d.localOffsetY);
     F("gravity", d.gravity);
+    // 旧アセットには maxSpeed が無い。その場合は既定の 10（＝以前のハードコード値）
+    // が維持されるので、読み込んだだけで見た目が変わることはない。
+    F("maxSpeed", d.maxSpeed);
     F("velocityStretch", d.velocityStretch);
     F("noiseScale", d.noiseScale);
     F("noiseStrength", d.noiseStrength);
@@ -146,58 +149,65 @@ namespace ComponentMetaJson
 template <>
 struct ComponentSerializer<GPUParticleComponent>
 {
+    /// @brief 保存は常に新フォーマット（emitters 配列）で書く。
     static void Save(json &j, const GPUParticleComponent &comp, SaveContext * /*ctx*/)
     {
-        WriteDescToJson(j, comp.desc);
+        json arr = json::array();
+        for (const auto &emitter : comp.emitters)
+        {
+            json ej;
+            WriteDescToJson(ej, emitter.desc); // 1エミッタぶんの変換は既存関数をそのまま使う
+            arr.push_back(ej);
+        }
+        j["emitters"]       = arr;
         j["animControlled"] = comp.animControlled; // 発生をアニメ区間で駆動するか
     }
 
+    /// @brief 読み込みは新旧どちらのフォーマットも受け付ける。
+    /// @note 旧フォーマットはエミッタ設定がトップレベルにベタ書きされている
+    ///       （emitters 配列が無い）。既存プレハブを作り直さずに済むよう、
+    ///       その場合は「エミッタ1個のエフェクト」として読む。
     static void Load(const json &j, GPUParticleComponent &comp, LoadContext * /*ctx*/)
     {
-        ReadDescFromJson(j, comp.desc);
+        comp.emitters.clear();
+
+        if (j.contains("emitters") && j["emitters"].is_array())
+        {
+            for (const auto &ej : j["emitters"])
+            {
+                ParticleEmitter emitter;
+                ReadDescFromJson(ej, emitter.desc);
+                comp.emitters.push_back(emitter);
+            }
+        }
+        else
+        {
+            ParticleEmitter emitter;
+            ReadDescFromJson(j, emitter.desc); // 旧フォーマット
+            comp.emitters.push_back(emitter);
+        }
+
+        // 空配列は許容しない（システム側が最低1個を前提にできるようにする）。
+        if (comp.emitters.empty()) comp.emitters.push_back(ParticleEmitter{});
+
         comp.animControlled = j.value("animControlled", false);
 
-        auto &rm       = ResourceManager::Instance();
-        comp.texture   = (comp.desc.texturePath[0] != '\0') ? rm.LoadTexture(comp.desc.texturePath) : TextureHandle{};
-        comp.colorRamp = (comp.desc.colorRampPath[0] != '\0') ? rm.LoadTexture(comp.desc.colorRampPath) : TextureHandle{};
+        auto &rm = ResourceManager::Instance();
+        for (auto &emitter : comp.emitters)
+        {
+            emitter.texture =
+                (emitter.desc.texturePath[0] != '\0') ? rm.LoadTexture(emitter.desc.texturePath) : TextureHandle{};
+            emitter.colorRamp =
+                (emitter.desc.colorRampPath[0] != '\0') ? rm.LoadTexture(emitter.desc.colorRampPath) : TextureHandle{};
 
-        comp.isInitialized = false;
-        comp.needsGpuInit  = true;
-        comp.m_staticDirty  = true;
-        comp.burstTrigger  = 0.0f;
+            emitter.isInitialized = false;
+            emitter.needsGpuInit  = true;
+            emitter.staticDirty   = true;
+            emitter.burstTrigger  = 0.0f;
+        }
     }
 };
 } // namespace ComponentMetaJson
-
-// =====================================================================
-// プリセット保存/読込ヘルパー
-// =====================================================================
-namespace
-{
-bool SavePreset(const std::string &path, const GPUParticleComponent &comp)
-{
-    json j;
-    ComponentMetaJson::ComponentSerializer<GPUParticleComponent>::Save(j, comp, nullptr);
-    return FileSystem::WriteAllText(path, j.dump(4));
-}
-
-bool LoadPreset(const std::string &path, GPUParticleComponent &comp)
-{
-    if (!FileSystem::Exists(path)) return false;
-    const std::string text = FileSystem::ReadAllText(path);
-    if (text.empty()) return false;
-    try
-    {
-        json j = json::parse(text);
-        ComponentMetaJson::ComponentSerializer<GPUParticleComponent>::Load(j, comp, nullptr);
-        return true;
-    }
-    catch (...)
-    {
-        return false;
-    }
-}
-} // namespace
 
 // =====================================================================
 // ComponentMeta<GPUParticleComponent>
@@ -215,13 +225,109 @@ struct ComponentMeta<GPUParticleComponent>
     static constexpr bool        isSerializable = true;
 
 #ifdef ENABLE_EDITOR
+    // -----------------------------------------------------------------
+    // インスペクタ用の小さな部品。
+    //   ラムダや匿名 namespace ではなくメンバ関数にしておくと、VS の
+    //   関数ジャンプで辿れて「どこで何を描いているか」を探しやすい。
+    // -----------------------------------------------------------------
+
+    /// @brief 「最小〜最大」の対を1行で編集する。
+    /// @note  DragFloat2 と違い、どちらが最小かが画面に出て、かつ ImGui 側が
+    ///        最小>最大への入れ替わりを抑えてくれる。呼び出し側で毎回書いていた
+    ///        手動クランプ( if (x > y) y = x; )が不要になる。
+    static bool RangeDrag(const char *label, GpuData::float2 &range,
+                          float speed, float lo, float hi, const char *fmt)
+    {
+        return ImGui::DragFloatRange2(label, &range.x, &range.y, speed, lo, hi, fmt, fmt);
+    }
+
+    /// @brief ラジアン保持の角度範囲を「度」で編集する。
+    /// @note  データはラジアンのまま。UI だけ度にする。
+    ///        「0.30 rad」と出ていても何度なのか分からないため。
+    static bool AngleRangeDrag(const char *label, GpuData::float2 &radians, float maxDeg)
+    {
+        constexpr float kRadToDeg = 57.2957795f;
+        constexpr float kDegToRad = 0.01745329f;
+
+        float lo = radians.x * kRadToDeg;
+        float hi = radians.y * kRadToDeg;
+        if (!ImGui::DragFloatRange2(label, &lo, &hi, 0.5f, 0.0f, maxDeg,
+                                    u8"最小 %.0f°", u8"最大 %.0f°"))
+            return false;
+
+        radians.x = lo * kDegToRad;
+        radians.y = hi * kDegToRad;
+        return true;
+    }
+
+    /// @brief 直前のウィジェットの右に「(?)」を出し、ホバーで説明を表示する。
+    static void Help(const char *text)
+    {
+        ImGui::SameLine();
+        ImGui::TextDisabled("(?)");
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", text);
+    }
+
     static bool CustomGui(GPUParticleComponent &compRef, unsigned long long /*entityID*/ = 0, void * /*worldPtr*/ = nullptr)
     {
         bool  changed = false;
         auto *p       = &compRef;
-        auto &d       = p->desc;
         auto &rm      = ResourceManager::Instance();
         HWND  hWnd    = Graphics::Instance().GetWindowHandle();
+
+        // 空配列だと以下が全て破綻するので、ここで最低1個を保証する。
+        if (p->emitters.empty()) p->emitters.push_back(ParticleEmitter{});
+
+        // =============================================================
+        // エフェクト全体の操作
+        //   1エンティティ = 1エフェクト。ここに置くのは「エフェクト単位」の
+        //   項目だけに限る。エミッタ個別の設定を混ぜると、どのエミッタに
+        //   効いているのか画面から読めなくなる。
+        // =============================================================
+        ImGui::SeparatorText(u8"エフェクト全体 (Effect)");
+
+        // 複数エミッタを重ねた見た目は「同時に出したとき」しか確認できない。
+        //   1つずつ発火しても本番と違う絵になるので、まとめて撃つ手段を用意する。
+        //   実装は TriggerBurst() 1行（全エミッタの burstTrigger を立てるだけ）。
+        if (ImGui::Button(u8"▶ 全エミッタを同時に発火 (Burst All)", ImVec2(-1, 28)))
+            p->TriggerBurst();
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip(u8"このエフェクトの全エミッタを同じフレームで発火します。\n"
+                              u8"VFX::Play() で再生したときと同じ見え方になります。");
+
+        // 構成の要約。エミッタを増やしたとき粒子の総数を見失いやすいので出す。
+        int totalMax = 0, burstCount = 0, continuousCount = 0;
+        for (const auto &e : p->emitters)
+        {
+            totalMax += e.desc.maxCount;
+            (e.desc.emitMode == 1) ? ++burstCount : ++continuousCount;
+        }
+        ImGui::TextDisabled(u8"エミッタ %d 個 (Burst %d / 継続 %d)　粒子上限 合計 %d",
+                            static_cast<int>(p->emitters.size()), burstCount, continuousCount, totalMax);
+
+        // 継続放出が混ざっていると Burst All の結果が本番と一致しない。
+        //   継続エミッタは発火とは無関係に出続けるので、その旨を明示する。
+        if (continuousCount > 0 && burstCount > 0)
+        {
+            ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.2f, 1.0f),
+                               u8"※ 継続放出のエミッタが %d 個あります。"
+                               u8"これらは発火に関係なく出続けます", continuousCount);
+        }
+
+        if (ImGui::Checkbox(u8"アニメ制御 (Anim Controlled)", &p->animControlled)) changed = true;
+        Help(u8"ONにすると祖先(Animator)の Particle 区間イベント中だけ発生します。\n"
+             u8"剣ボーンに子付けして「まとい」演出に使います。\n"
+             u8"※これはエフェクト全体の設定で、全エミッタに一括で効きます。");
+
+        // アニメ制御は継続エミッタを完全に黙らせる。Animator を持つ祖先が居ない
+        //   エンティティで ON にすると「安全側」として発生停止のまま固定されるため、
+        //   単体で置いたエフェクトが無言で1粒も出なくなる。ここで気付けるようにする。
+        if (p->animControlled && continuousCount > 0)
+        {
+            ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.2f, 1.0f),
+                               u8"※ アニメ制御ON。Animator を持つ祖先の下に無いと"
+                               u8"継続エミッタは1粒も出ません");
+        }
 
         static int lastActiveTabId    = -1;
         int        currentActiveTabId = -1;
@@ -236,18 +342,53 @@ struct ComponentMeta<GPUParticleComponent>
             }
         };
 
-        if (ImGui::Button(u8"プリセット保存 (Save Preset)"))
+        // =============================================================
+        // エミッタ選択タブ
+        //   1エンティティ = 1エフェクト。そのエフェクトを構成するエミッタを
+        //   ここで切り替えて、下の設定タブで個別に編集する。
+        // =============================================================
+        int selected = 0;
+        if (ImGui::BeginTabBar("EmitterTabs", ImGuiTabBarFlags_AutoSelectNewTabs))
         {
-            if (auto path = FileDialog::SavePreset("GPUParticlePreset", u8"Save Particle Preset", {}, hWnd))
-                SavePreset(path->string(), *p);
+            for (int i = 0; i < static_cast<int>(p->emitters.size()); ++i)
+            {
+                const ParticleEmitterDesc &ed = p->emitters[i].desc;
+
+                // タブ見出しに中身の要約を出す。「エミッタ 0/1/2」だけだと
+                //   どれが煙でどれが火花か開くまで分からない。
+                // ### 以降が ImGui の識別子になる。前半(表示文字)が値の変更で
+                //   変わってもタブの選択状態が飛ばないよう、ここは必ず固定する。
+                const std::string label =
+                    std::to_string(i) + ": " +
+                    (ed.emitMode == 1 ? "Burst " + std::to_string(ed.burstCount)
+                                      : u8"継続 " + std::to_string(ed.maxCount)) +
+                    "###emitter" + std::to_string(i);
+
+                if (ImGui::BeginTabItem(label.c_str()))
+                {
+                    selected = i; // アクティブなタブが編集対象
+                    ImGui::EndTabItem();
+                }
+            }
+            if (ImGui::TabItemButton("+"))
+            {
+                p->emitters.push_back(ParticleEmitter{});
+                changed = true;
+            }
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip(u8"このエフェクトにエミッタを追加します");
+            ImGui::EndTabBar();
         }
-        ImGui::SameLine();
-        if (ImGui::Button(u8"プリセット読込 (Load Preset)"))
+        if (selected >= static_cast<int>(p->emitters.size())) selected = 0; // 保険
+
+        // 削除は「このGUIを描き終えてから」行う。ここで消すと以下で参照が壊れる。
+        bool requestErase = false;
+        if (p->emitters.size() > 1)
         {
-            if (auto path = FileDialog::OpenPreset("GPUParticlePreset", u8"Load Particle Preset", hWnd))
-                if (LoadPreset(path->string(), *p)) changed = true;
+            if (ImGui::SmallButton(u8"このエミッタを削除")) requestErase = true;
         }
-        ImGui::Separator();
+
+        auto &emitter = p->emitters[selected];
+        auto &d       = emitter.desc;
 
         ImGui::BeginChild("ParticleEditorChild", ImVec2(0, 380.0f), ImGuiChildFlags_Border, ImGuiWindowFlags_NavFlattened);
 
@@ -263,34 +404,95 @@ struct ComponentMeta<GPUParticleComponent>
                 {
                     if (tempMax > 0 && tempMax != d.maxCount)
                     {
-                        d.maxCount       = tempMax;
-                        p->isInitialized = false;
-                        changed          = true;
+                        d.maxCount            = tempMax;
+                        emitter.isInitialized = false; // バッファを作り直させる
+                        changed               = true;
                     }
                 }
                 const char *typeNames[] = {"Point (Color Only)", "Quad (Texture)"};
                 if (ImGui::Combo(u8"描画タイプ (Render Type)", &d.particleType, typeNames, IM_ARRAYSIZE(typeNames))) changed = true;
 
                 const char *modes[] = {"Continuous (継続)", "Burst (爆発)"};
-                if (ImGui::Combo(u8"発生モード (Mode)", &d.emitMode, modes, IM_ARRAYSIZE(modes))) changed = true;
+                if (ImGui::Combo(u8"発生モード (Mode)", &d.emitMode, modes, IM_ARRAYSIZE(modes)))
+                {
+                    // Burst は burstCount 個しか出さない。0 のまま切り替えると
+                    //   無言で1個も出なくなるので、既定として最大数を入れておく。
+                    if (d.emitMode == 1 && d.burstCount <= 0) d.burstCount = d.maxCount;
 
-                if (ImGui::Checkbox(u8"アニメ制御 (Anim Controlled)", &p->animControlled)) changed = true;
-                if (ImGui::IsItemHovered())
-                    ImGui::SetTooltip(u8"ONにすると祖先(Animator)の Particle 区間イベント中だけ発生します。\n剣ボーンに子付けして「まとい」演出に使います。");
+                    // モードごとに「粒子バッファの初期状態」が別物なので必ず作り直す。
+                    //   initialize_particle_cs は
+                    //     Burst → 全粒子を死亡待機 (age = lifespan + 1)
+                    //     継続  → age = (id / max_count) * lifespan で位相をずらす
+                    //   を作る。この位相ずらしが継続放出を「定常流」にしている本体で、
+                    //   切り替えただけだと前モードの状態が残り、全粒子が一斉に
+                    //   生き死にする（GSが age<=0 を捨てるので、一斉に消える瞬間ができる）。
+                    emitter.needsGpuInit = true;
 
-                if (d.emitMode == 1)
-                { 
-                    if (ImGui::DragInt(u8"発生数 (Count)", &d.burstCount, 1, 0, 10000)) changed = true;
-                    if (ImGui::Button(u8"発火テスト (Trigger)", ImVec2(-1, 0))) p->TriggerBurst();
+                    // 前モードの撃ち残しを持ち込まない。継続中は burstTrigger が
+                    //   消費されないので、放置すると Burst に戻した瞬間に暴発する。
+                    emitter.burstTrigger = 0.0f;
+
+                    changed = true;
                 }
-                else
-                { 
-                    if (ImGui::DragFloat2(u8"発生間隔 (Delay Min/Max)", &d.spawnDelay.x, 0.001f, 0.0f, 5.0f, "%.4f"))
+
+                // 継続モードは emit_enabled(=emitting) が閉じていると1粒も出ない。
+                //   Burst 側は emit_enabled を一切見ないので、この非対称が
+                //   「Burstでは出るのに継続にすると全く出ない」の正体になり得る。
+                //   状態が見えないと原因を追えないので、ここに出しておく。
+                if (d.emitMode == 0)
+                {
+                    if (emitter.emitting)
                     {
-                        if (d.spawnDelay.x > d.spawnDelay.y) d.spawnDelay.y = d.spawnDelay.x;
-                        changed = true;
+                        ImGui::TextColored(ImVec4(0.4f, 0.9f, 0.4f, 1.0f), u8"発生ゲート: ON (放出中)");
+                    }
+                    else
+                    {
+                        ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f),
+                                           u8"発生ゲート: OFF — 継続モードでは1粒も出ません");
+                        if (p->animControlled)
+                            ImGui::TextDisabled(u8"　アニメ制御がONです。Animator を持つ祖先が居ないか、\n"
+                                                u8"　その Particle 区間の外にいます。");
+                        else
+                            ImGui::TextDisabled(u8"　VFX::Stop() で停止された状態です。");
                     }
                 }
+
+                // ※ アニメ制御はエフェクト全体の設定なので、このタブではなく
+                //    上の「エフェクト全体」に置いてある（エミッタ個別と誤解されるため）。
+
+                if (d.emitMode == 1)
+                {
+                    if (ImGui::DragInt(u8"発生数 (Count)", &d.burstCount, 1, 0, 10000)) changed = true;
+                    Help(u8"1回の発火で出す粒子の数。\n"
+                         u8"最大許容量(Max Capacity)を超える分は出ません。");
+                    if (d.burstCount > d.maxCount)
+                    {
+                        ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.2f, 1.0f),
+                                           u8"※ 発生数 %d は最大許容量 %d で頭打ちになります",
+                                           d.burstCount, d.maxCount);
+                    }
+                    // このエミッタだけを試し撃ちする（他のエミッタは動かさない）。
+                    //   全部まとめて撃つボタンは上の「エフェクト全体」にある。
+                    if (ImGui::Button(u8"このエミッタだけ発火 (Trigger)", ImVec2(-1, 0)))
+                        emitter.burstTrigger = 1.0f;
+                }
+                else
+                {
+                    if (RangeDrag(u8"発生間隔 (秒)", d.spawnDelay, 0.001f, 0.0f, 5.0f, "%.4f"))
+                        changed = true;
+                    Help(u8"次の粒子が生まれるまでの待ち時間。\n"
+                         u8"この最小〜最大の間でランダムに決まります。\n"
+                         u8"小さいほど密に出ます (0 = 毎フレーム)。");
+                }
+
+                // 継続モードの調整中、いまバッファに残っている粒子を捨てて
+                //   「生まれたて」の状態から見直したいことが多いので手動再初期化を置く。
+                //   InitCS を1回走らせるだけ（バッファ自体は作り直さない）。
+                if (ImGui::Button(u8"粒子を初期化しなおす (Reset)", ImVec2(-1, 0)))
+                    emitter.needsGpuInit = true;
+                Help(u8"いま出ている粒子を捨てて、このエミッタを最初の状態から出し直します。\n"
+                     u8"継続モードでは id ごとに位相をずらした状態で作り直されるので、\n"
+                     u8"出方がおかしくなったときはまずこれを試してください。");
 
                 ImGui::SeparatorText(u8"形状と位置 (Shape & Position)");
 
@@ -307,27 +509,30 @@ struct ComponentMeta<GPUParticleComponent>
                     changed |= ImGui::DragFloat3(u8"刃先オフセット (Blade Tip)", &d.lineEnd.x, 0.05f);
                     if (ImGui::IsItemHovered())
                         ImGui::SetTooltip(u8"始点(Pos Offset)から刃先までのローカルオフセット。\n剣の刃が伸びる軸に長さぶん設定する (例: Y+ に刃長)。");
-                    if (ImGui::DragFloat2(u8"筒の太さ (Tube Radius Min/Max)", &d.emitRadius.x, 0.005f, 0.0f, 10.0f, "%.3f"))
-                    {
-                        if (d.emitRadius.x > d.emitRadius.y) d.emitRadius.y = d.emitRadius.x;
+                    if (RangeDrag(u8"筒の太さ", d.emitRadius, 0.005f, 0.0f, 10.0f, "%.3f"))
                         changed = true;
-                    }
+                    Help(u8"刃を包む筒の半径。粒子はこの最小〜最大の間に散ります。\n"
+                         u8"最小=最大 にすると刃の表面だけに張り付きます。");
                 }
                 else
                 {
                     changed |= ImGui::DragFloat(u8"高さ範囲 Y (Height Volume)", &d.localOffsetY, 0.1f, 0.0f, 50.0f);
-                    if (ImGui::DragFloat2(u8"半径 (Radius Min/Max)", &d.emitRadius.x, 0.01f, 0.0f, 100.0f, "%.2f"))
-                    {
-                        if (d.emitRadius.x > d.emitRadius.y) d.emitRadius.y = d.emitRadius.x;
+                    Help(u8"発生位置を上下にばらす幅。0 なら平らな円盤から出ます。");
+
+                    if (RangeDrag(u8"半径", d.emitRadius, 0.01f, 0.0f, 100.0f, "%.2f"))
                         changed = true;
-                    }
+                    Help(u8"円盤の内側〜外側。最小を上げるとドーナツ状になります。");
+
                     changed |= ImGui::DragFloat2(u8"形状比率 XZ (Stretch)", &d.emitStretch.x, 0.01f, 0.0f, 10.0f, "%.2f");
+                    Help(u8"円盤を潰して楕円にします。左=X倍率 右=Z倍率 (1,1 が真円)。");
                 }
-                if (ImGui::DragFloat2(u8"放出角度 (Cone Angle Min/Max)", &d.coneAngle.x, 0.01f, 0.0f, 3.1415f, "%.2f rad"))
-                {
-                    if (d.coneAngle.x > d.coneAngle.y) d.coneAngle.y = d.coneAngle.x;
-                    changed = true;
-                }
+
+                // 角度は度で見せる。ラジアン表示だと何度なのか判断できない。
+                if (AngleRangeDrag(u8"放出角度", d.coneAngle, 180.0f)) changed = true;
+                Help(u8"エミッタの上方向(+Y)から何度傾けて飛ばすか。\n"
+                     u8"  0° = 真上へ一直線   90° = 真横   180° = 真下\n"
+                     u8"最小〜最大の間でランダムに決まります。\n"
+                     u8"0°〜180° にすると全方向(球状)に飛びます。");
 
                 ImGui::EndTabItem();
             }
@@ -337,21 +542,64 @@ struct ComponentMeta<GPUParticleComponent>
                 currentActiveTabId = 1; 
                 ImGui::Spacing();
                 ImGui::SeparatorText(u8"速度 (Velocity)");
-                changed |= ImGui::DragFloat2(u8"初速度 (Speed Min/Max)", &d.emitSpeed.x, 0.1f, -100.0f, 100.0f, "%.2f");
-                changed |= ImGui::DragFloat2(u8"回転速度 (Rot Speed Min/Max)", &d.angularSpeed.x, 0.1f, -100.0f, 100.0f, "%.2f");
+                if (RangeDrag(u8"初速度", d.emitSpeed, 0.1f, -100.0f, 100.0f, "%.2f")) changed = true;
+                Help(u8"生まれた瞬間の速さ。最小〜最大の間でランダムに決まります。\n"
+                     u8"マイナスにすると放出角度の逆向きへ飛びます。");
+
+                if (RangeDrag(u8"回転速度", d.angularSpeed, 0.1f, -100.0f, 100.0f, "%.2f")) changed = true;
+                Help(u8"粒子自身がその場で回る速さ (rad/秒)。\n"
+                     u8"最小をマイナス・最大をプラスにすると左右バラバラに回ります。");
+
                 changed |= ImGui::DragFloat(u8"重力 (Gravity)", &d.gravity, 0.1f);
+                Help(u8"毎秒この量だけ Y 速度が変わります。\n"
+                     u8"マイナスで落下、プラスで上昇 (煙は +0.5 程度が自然)。");
+
+                changed |= ImGui::DragFloat(u8"最高速度 (Max Speed)", &d.maxSpeed, 0.5f, 0.0f, 1000.0f, "%.1f");
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip(u8"粒子の速度の上限 (0 = 無制限)。\n"
+                                      u8"初速をこれより大きくしても、この値まで抑えられます。");
+                // 初速がクランプされて効いていない状態は気付きにくいので明示する。
+                if (d.maxSpeed > 0.0f && d.emitSpeed.y > d.maxSpeed)
+                {
+                    ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.2f, 1.0f),
+                                       u8"※ 初速の最大 %.1f は最高速度 %.1f で頭打ちになります",
+                                       d.emitSpeed.y, d.maxSpeed);
+                }
 
                 ImGui::SeparatorText(u8"乱流・ノイズ (Turbulence)");
                 changed |= ImGui::DragFloat(u8"ノイズ強度 (Strength)", &d.noiseStrength, 0.1f);
+                Help(u8"揺らぎの強さ。0 でノイズ計算そのものを飛ばします(軽い)。");
+                // 強度0のとき Scale は絵に効かない。触れるのに何も起きないと迷うので閉じる。
+                ImGui::BeginDisabled(d.noiseStrength <= 0.0f);
                 changed |= ImGui::DragFloat(u8"ノイズサイズ (Scale)", &d.noiseScale, 0.01f);
+                ImGui::EndDisabled();
+                Help(u8"揺らぎの粒の大きさ。小さいほど細かくバラけ、\n"
+                     u8"大きいほど隣同士がまとまって流れます。");
+                if (d.noiseStrength <= 0.0f)
+                    ImGui::TextDisabled(u8"※ ノイズ強度が 0 のためサイズは効きません");
 
                 ImGui::SeparatorText(u8"引力・斥力 (Force Field)");
-                changed |= ImGui::Checkbox(u8"エミッタ相対空間 (Local Space)", &d.attractorLocal);
-                changed |= ImGui::DragFloat3(u8"中心位置 (Center)", &d.attractorPos.x, 0.05f);
+                // 強度も渦も0なら Force Field 全体が無効。まとめて閉じて意図を示す。
+                const bool forceFieldOff = (d.attractorStrength == 0.0f && d.vortexStrength == 0.0f);
                 changed |= ImGui::DragFloat(u8"強度 (+:引力 -:斥力)", &d.attractorStrength, 0.1f);
-                changed |= ImGui::DragFloat(u8"影響半径 (Radius)", &d.attractorRadius, 0.05f, 0.0f, 100.0f);
+                Help(u8"中心へ引き寄せる力。プラスで吸い込み、マイナスで押し出します。\n"
+                     u8"0 なら引力なし。");
                 changed |= ImGui::DragFloat(u8"渦の強さ (Vortex)", &d.vortexStrength, 0.1f);
+                Help(u8"中心軸のまわりを回す力。引力と併用すると渦を巻きます。");
+
+                ImGui::BeginDisabled(forceFieldOff);
+                changed |= ImGui::Checkbox(u8"エミッタ相対空間 (Local Space)", &d.attractorLocal);
+                Help(u8"ON: 中心位置をエミッタからの相対で見る(一緒に動く)。\n"
+                     u8"OFF: ワールド座標に固定する(その場に置いた渦になる)。");
+                changed |= ImGui::DragFloat3(u8"中心位置 (Center)", &d.attractorPos.x, 0.05f);
+                changed |= ImGui::DragFloat(u8"影響半径 (Radius)", &d.attractorRadius, 0.05f, 0.0f, 100.0f);
+                Help(u8"力が届く距離。0 = 無限に届く。");
+                ImGui::EndDisabled();
+                if (forceFieldOff)
+                    ImGui::TextDisabled(u8"※ 強度・渦がどちらも 0 のため引力は無効です");
+
                 changed |= ImGui::DragFloat(u8"空気抵抗・減衰 (Drag)", &d.drag, 0.05f, 0.0f, 20.0f);
+                Help(u8"速度を毎秒この割合だけ削ります。大きいほど早く止まります。");
 
                 ImGui::EndTabItem();
             }
@@ -361,16 +609,37 @@ struct ComponentMeta<GPUParticleComponent>
                 currentActiveTabId = 2; 
                 ImGui::Spacing();
                 ImGui::SeparatorText(u8"寿命 (Lifespan)");
-                if (ImGui::DragFloat2(u8"生存時間 (Life Min/Max)", &d.lifespan.x, 0.05f, 0.01f, 60.0f, "%.2f sec"))
-                {
-                    if (d.lifespan.x > d.lifespan.y) d.lifespan.y = d.lifespan.x;
-                    changed = true;
-                }
+                if (RangeDrag(u8"生存時間 (秒)", d.lifespan, 0.05f, 0.01f, 60.0f, "%.2f")) changed = true;
+                Help(u8"粒子が消えるまでの時間。最小〜最大の間でランダムに決まります。\n"
+                     u8"Burst の場合、VFXSystem はこの最大値を見て後始末の時刻を決めます。");
 
-                ImGui::SeparatorText(u8"サイズ・スケール (Size & Scale)");
-                changed |= ImGui::DragFloat2(u8"時間変化 (Size Start/End)", &d.emitSize.x, 0.01f, 0.0f, 100.0f, "%.2f");
-                changed |= ImGui::DragFloat2(u8"全体スケール (Global Scale)", &d.scale.x, 0.01f, 0.0f, 100.0f, "%.2f");
-                changed |= ImGui::DragFloat2(u8"フェード (Fade In/Out sec)", &d.fadeDuration.x, 0.01f, 0.0f, 10.0f, "%.2f");
+                ImGui::SeparatorText(u8"サイズ (Size)");
+                // ここは min/max ではなく「誕生時 → 消滅時」。RangeDrag を使うと
+                //   大きく生まれて小さく消える設定 (start > end) が作れなくなるので
+                //   意図して DragFloat2 のまま残す。
+                changed |= ImGui::DragFloat2(u8"サイズ 誕生→消滅", &d.emitSize.x, 0.01f, 0.0f, 100.0f, "%.2f");
+                Help(u8"左=生まれた瞬間のサイズ  右=消える瞬間のサイズ。\n"
+                     u8"左>右 で縮みながら消え、左<右 で膨らみながら消えます。\n"
+                     u8"※実際のサイズはこの値に 0〜1 のランダムが掛かるので、\n"
+                     u8"  「この値が上限」と考えてください。");
+
+                changed |= ImGui::DragFloat2(u8"サイズ倍率 誕生/消滅", &d.scale.x, 0.01f, 0.0f, 100.0f, "%.2f");
+                Help(u8"上のサイズに掛ける倍率。全体を一括で大きく/小さくするときに使います。\n"
+                     u8"左が誕生時、右が消滅時に掛かります (1,1 で等倍)。");
+
+                ImGui::SeparatorText(u8"フェード (Fade)");
+                changed |= ImGui::DragFloat2(u8"フェード 入り/明け (秒)", &d.fadeDuration.x, 0.01f, 0.0f, 10.0f, "%.2f");
+                Help(u8"左=生まれてから不透明になるまでの秒数(フェードイン)\n"
+                     u8"右=消える前に薄くなり始める秒数(フェードアウト)。\n"
+                     u8"合計が生存時間より長いと、完全に不透明になりません。");
+                // 合計が寿命を超えていると「なぜか薄いまま」になる。原因が見えないので明示する。
+                if (d.fadeDuration.x + d.fadeDuration.y > d.lifespan.x)
+                {
+                    ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.2f, 1.0f),
+                                       u8"※ フェード合計 %.2f 秒 > 生存時間の最小 %.2f 秒。"
+                                       u8"短命な粒子は不透明になりません",
+                                       d.fadeDuration.x + d.fadeDuration.y, d.lifespan.x);
+                }
 
                 ImGui::EndTabItem();
             }
@@ -398,7 +667,14 @@ struct ComponentMeta<GPUParticleComponent>
                 ImGui::SeparatorText(u8"特殊効果 (Effects)");
                 changed |= ImGui::DragFloat(u8"速度ストレッチ (Velocity Stretch)", &d.velocityStretch, 0.01f, 0.0f, 10.0f);
                 if (ImGui::IsItemHovered()) ImGui::SetTooltip(u8"移動方向に引き伸ばします (0.0=無効)");
+                // スプライトシート使用中は UV スクロールが使えない（コマの外へ滲むため）。
+                //   無言で壊れるより、触れないようにして理由を出す。
+                const bool usesSpriteSheet = (d.spriteGrid.x * d.spriteGrid.y > 1);
+                ImGui::BeginDisabled(usesSpriteSheet);
                 changed |= ImGui::DragFloat2(u8"UVスクロール (UV Scroll Speed)", &d.uvScrollSpeed.x, 0.01f);
+                ImGui::EndDisabled();
+                if (usesSpriteSheet)
+                    ImGui::TextDisabled(u8"※ スプライトシート使用中は UV スクロールは無効です");
 
                 ImGui::SeparatorText(u8"スプライトアニメ (Sprite Sheet)");
                 int grid[2] = {(int)d.spriteGrid.x, (int)d.spriteGrid.y};
@@ -416,16 +692,16 @@ struct ComponentMeta<GPUParticleComponent>
                 ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 65.0f);
                 if (ImGui::InputText("##texPath", d.texturePath, sizeof(d.texturePath))) changed = true;
                 ImGui::SameLine();
-                if (ImGui::Button(u8"読込##Main")) pickTexture(d.texturePath, sizeof(d.texturePath), p->texture, "Select Texture");
+                if (ImGui::Button(u8"読込##Main")) pickTexture(d.texturePath, sizeof(d.texturePath), emitter.texture, "Select Texture");
 
-                if (ID3D11ShaderResourceView *srv = rm.GetTexture(p->texture))
+                if (ID3D11ShaderResourceView *srv = rm.GetTexture(emitter.texture))
                 {
                     ImGui::Image((void *)srv, ImVec2(64, 64), ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 0.5f));
                     ImGui::SameLine();
                     if (ImGui::Button(u8"クリア##Main"))
                     {
                         memset(d.texturePath, 0, sizeof(d.texturePath));
-                        p->texture = TextureHandle{};
+                        emitter.texture = TextureHandle{};
                         changed    = true;
                     }
                 }
@@ -435,16 +711,16 @@ struct ComponentMeta<GPUParticleComponent>
                 ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 65.0f);
                 if (ImGui::InputText("##rampPath", d.colorRampPath, sizeof(d.colorRampPath))) changed = true;
                 ImGui::SameLine();
-                if (ImGui::Button(u8"読込##Ramp")) pickTexture(d.colorRampPath, sizeof(d.colorRampPath), p->colorRamp, "Select Color Ramp");
+                if (ImGui::Button(u8"読込##Ramp")) pickTexture(d.colorRampPath, sizeof(d.colorRampPath), emitter.colorRamp, "Select Color Ramp");
 
-                if (ID3D11ShaderResourceView *srv = rm.GetTexture(p->colorRamp))
+                if (ID3D11ShaderResourceView *srv = rm.GetTexture(emitter.colorRamp))
                 {
                     ImGui::Image((void *)srv, ImVec2(128, 16), ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 0.5f));
                     ImGui::SameLine();
                     if (ImGui::Button(u8"クリア##Ramp"))
                     {
                         memset(d.colorRampPath, 0, sizeof(d.colorRampPath));
-                        p->colorRamp = TextureHandle{};
+                        emitter.colorRamp = TextureHandle{};
                         changed      = true;
                     }
                 }
@@ -461,7 +737,19 @@ struct ComponentMeta<GPUParticleComponent>
             lastActiveTabId = currentActiveTabId;
         }
 
-        ImGui::EndChild(); 
+        ImGui::EndChild();
+
+        // エミッタ削除はここで実行する。GUIを描き終えた後なので、
+        //   上で握っていた emitter / d の参照が壊れる心配がない。
+        if (requestErase)
+        {
+            // GPUリソースを取りこぼさないよう、消す前に解放しておく。
+            if (p->emitters[selected].computeBuffer.IsValid())
+                rm.UnloadParticleBuffer(p->emitters[selected].computeBuffer);
+
+            p->emitters.erase(p->emitters.begin() + selected);
+            changed = true;
+        }
 
         if (changed) p->MarkDescChanged();
 

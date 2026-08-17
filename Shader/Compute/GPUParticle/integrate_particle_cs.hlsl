@@ -15,7 +15,8 @@ void main(uint3 dtid : SV_DispatchThreadID)
     if (id >= (uint)max_count) return;
 
     particle p = particle_buffer[id];
-    // ★ p.type = type は廃止。GS/PS は CbParticleStatic.particle_type を直接読む。
+    // 種別は粒子ごとに持たず、GS/PS が CbParticleStatic.particle_type を直接読む
+    // （全粒子で同一の値のため、1粒子あたり4バイトを節約する）。
 
     if (emit_mode == 1)  // バーストモード
     {
@@ -23,7 +24,11 @@ void main(uint3 dtid : SV_DispatchThreadID)
         {
             if (p.state == STATE_DEAD || p.age > p.lifespan)
             {
-                spawn(id, p);
+                // 前の人生の種を salt に渡して数珠つなぎにする。
+                //   これが無いと、同じエミッタで2回目のバーストを撃ったとき
+                //   1回目とまったく同じ粒子が生まれる。
+                const uint salt = p.seed;
+                spawn(id, p, salt);
                 p.state = STATE_ALIVE;
             }
         }
@@ -56,7 +61,12 @@ void main(uint3 dtid : SV_DispatchThreadID)
         {
             if (emit_enabled > 0.5f)
             {
-                spawn(id, p);           // ゲートON: 軌道上(サブフレーム補間)にスポーン
+                // ゲートON: 軌道上(サブフレーム補間)にスポーン。
+                //   前の人生の種を salt に渡して数珠つなぎにする。これが無いと
+                //   粒子番号5番は生まれ変わるたびに同じ軌道を描き、エミッタ全体が
+                //   完全に周期的な（同じ模様を繰り返す）見た目になる。
+                const uint salt = p.seed;
+                spawn(id, p, salt);
                 p.state = STATE_ALIVE;
             }
             else
@@ -80,21 +90,21 @@ void main(uint3 dtid : SV_DispatchThreadID)
 
 void UpdateParticle(inout particle p)
 {
-    float3 force = 0.0f;
-
-    // 重力
-    force += p.mass * float3(0.0f, gravity, 0.0f);
+    // 重力。等加速度なので質量には依らない
+    // （以前は force に p.mass を掛けたあと p.mass で割っていたが、常に相殺していた）。
+    p.velocity += float3(0.0f, gravity, 0.0f) * delta_time;
 
     // 乱流ノイズ (p.seed で粒子ごとに独立した UV オフセットを与える)
-    float seed_f  = (float)(p.seed & 0xFFFFu) / 65535.0f;
-    float3 uvw    = p.position * noise_scale
-                  + float3(seed_f * 0.37f, time * 0.1f, seed_f * 0.61f + 0.2f);
-    float3 noise  = noise_3d.SampleLevel(sampler_linear, uvw, 0).xyz;
-    float3 noiseDir = noise * 2.0f - 1.0f;
-    p.velocity += noiseDir * noise_strength * delta_time;
-
-    // 力 → 加速度 → 速度更新
-    p.velocity += force / p.mass * delta_time;
+    //   強度0のエミッタまで3Dテクスチャを引くと丸損なので、使うときだけサンプルする。
+    if (noise_strength > 0.0f)
+    {
+        float seed_f  = (float)(p.seed & 0xFFFFu) / 65535.0f;
+        float3 uvw    = p.position * noise_scale
+                      + float3(seed_f * 0.37f, time * 0.1f, seed_f * 0.61f + 0.2f);
+        float3 noise  = noise_3d.SampleLevel(sampler_linear, uvw, 0).xyz;
+        float3 noiseDir = noise * 2.0f - 1.0f;
+        p.velocity += noiseDir * noise_strength * delta_time;
+    }
 
     // ---- Force Field (引力/斥力/渦) ----
     if (force_flags & 1u)
@@ -131,11 +141,13 @@ void UpdateParticle(inout particle p)
         p.velocity *= saturate(1.0f - drag * delta_time);
 
 
-    // 速度クランプ
-    float spd = length(p.velocity);
-    const float max_speed = 10.0f;
-    if (spd > max_speed)
-        p.velocity = normalize(p.velocity) * max_speed;
+    // 速度クランプ (max_speed <= 0 は「制限なし」。attractor_radius と同じ約束)
+    if (max_speed > 0.0f)
+    {
+        float spd = length(p.velocity);
+        if (spd > max_speed)
+            p.velocity = p.velocity * (max_speed / spd); // normalize + 乗算の分を1回に
+    }
 
     // 位置更新
     p.position += p.velocity * delta_time;
@@ -144,7 +156,7 @@ void UpdateParticle(inout particle p)
     p.angle += p.angular_speed * delta_time;
 
     // ---- 色更新 ----
-    // ★ p.type は廃止。CbParticleStatic.particle_type を使う。
+    // 種別は定数バッファ側の particle_type を参照する
     if (particle_type == 0)
     {
         p.color.rgb = manual_color.rgb;
@@ -155,7 +167,9 @@ void UpdateParticle(inout particle p)
         {
             p.color     = color_ramp.SampleLevel(sampler_linear,
                                 float2(0.5f, p.age / p.lifespan), 0);
-            p.color     = pow(p.color, 2.3f);
+            // ガンマ補正。負値が来ると pow が NaN を返すので saturate で挟む
+            // （テクスチャ由来なので通常 0〜1 だが、警告 X3571 を消す意味も兼ねる）。
+            p.color     = pow(saturate(p.color), 2.3f);
         }
         else
         {

@@ -29,7 +29,7 @@ cbuffer CbMesh : register(REG_CB(SLOT_CB_MATERIAL))
     float useOcclusionMap;
     float useEmissiveMap;
 
-    // ★追加: ゴーストとしての透明度。0=完全に透明、1=不透明相当。
+    // ゴーストとしての透明度。0=完全に透明、1=不透明相当。
     //   目安: 0.3〜0.5 で「幽霊らしい」薄さになる。
     //   ※ "Fill All Missing With Defaults" は一律1.0を入れるため、
     //      Ghostとして使うなら追加後に必ずこの値を下げること。
@@ -108,7 +108,7 @@ float4 main(VS_OUT pin) : SV_TARGET
 
     finalColor = ApplyHeightFog(surf.pos, cameraPosition.xyz, finalColor, LinearSampler, surf.normal);
 
-    // ★ここだけがPBR_PS.hlslとの違い: 最終アルファに ghostAlpha を掛ける。
+    // ここだけがPBR_PS.hlslとの違い: 最終アルファに ghostAlpha を掛ける。
     //   色計算(finalColor)自体は完全に不透明PBRと同じで、
     //   「薄くなる」のはPSOの半透明合成とこのアルファ値の掛け算による。
     return float4(finalColor, alpha * ghostAlpha);

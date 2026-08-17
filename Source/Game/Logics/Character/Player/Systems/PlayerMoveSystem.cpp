@@ -9,7 +9,7 @@
 
 #include "Game/Logics/GameEvent/GameEvents.h"
 #include "Engine/Camera/CameraEvents.h" // CameraShakeRequestEvent（着地の画面揺れ要求）
-#include "Engine/Core/Math/StringHash.h" // ハッシュ計算用
+#include "Engine/Core/Math/StringHash.h"
 
 
 using namespace CCL::ECS;
@@ -17,7 +17,7 @@ using namespace DirectX::SimpleMath;
 
 static const uint32_t HASH_TRIG_DOUBLE_JUMP = CCL::Utils::HashString("OnDoubleJump");
 
-// 攻撃時オートフェイシングの回頭速度（通常の turnSpeed より速く、キビッと敵へ向く）。
+// 攻撃時オートフェイシングの回頭速度。
 static constexpr float kAttackTurnSpeed = 18.0f;
 
 void PlayerMoveSystem::Update(float rawDt)
@@ -43,22 +43,28 @@ void PlayerMoveSystem::Update(float rawDt)
         inputData.rootMotionVelocity = Vector3::Zero;
 
         // =========================================================
-        // 1. 操作ハック（時間の魔法）
+        // 1. 接地判定とジャンプ成立の確定
         // =========================================================
-        UpdateJumpLogic(dt, isGrounded, inputData, player, animParams); // 引数追加
+        UpdateJumpLogic(dt, isGrounded, inputData, player, animParams, trans.position);
 
         // =========================================================
-        // 2. 視覚ハック（空間の魔法）
+        // 2. 旋回とバンク（体の傾き）の反映
         // =========================================================
         UpdateBankingAndRotation(dt, inputData, config.walkSpeed, player, trans, joltHandle.character.GetPtr());
     });
 }
 
 // -----------------------------------------------------------------------------------
-// [責務] 接地状態の更新と、押した瞬間のジャンプ成立判定（コヨーテ/先行入力バッファは持たない）
+// [責務] 接地状態の更新と、押した瞬間のジャンプ成立判定
 // -----------------------------------------------------------------------------------
-void PlayerMoveSystem::UpdateJumpLogic(float dt, bool isGrounded, CharacterMovementInputComponent &inputData, PlayerComponent &player, AnimParametersComponent &animParams)
+void PlayerMoveSystem::UpdateJumpLogic(float dt, bool isGrounded, CharacterMovementInputComponent &inputData, PlayerComponent &player, AnimParametersComponent &animParams, const DirectX::XMFLOAT3 &worldPos)
 {
+    // 接地を離れてからの経過時間を更新（空中判定のグレースに使う）。
+    if (isGrounded)
+        player.timeSinceGrounded = 0.0f;
+    else
+        player.timeSinceGrounded += dt;
+
     // 直前の落下速度から「着地」の衝撃を計算しイベント発火
     if (isGrounded)
     {
@@ -74,8 +80,11 @@ void PlayerMoveSystem::UpdateJumpLogic(float dt, bool isGrounded, CharacterMovem
     }
 
     player.wasGroundedLastFrame = isGrounded;
-    // 空中状態を一元更新（空中攻撃などが参照する唯一の判定元）
-    player.isAirborne = !isGrounded;
+
+    // 空中状態を一元更新（空中攻撃などが参照する唯一の判定元）。
+    //   接地を離れて airborneGraceTime を超えて初めて「空中」とみなす。これにより
+    //   小さな段差を降りた一瞬で空中攻撃が暴発したり地上攻撃がキャンセルされるのを防ぐ。
+    player.isAirborne = (player.timeSinceGrounded > player.airborneGraceTime);
 
     // 押した瞬間のみジャンプ（エッジ検出）。押しっぱなしでの連続ジャンプを防ぐ。
     bool isPressedThisFrame     = inputData.jumpRequested && !player.wasJumpButtonPressed;
@@ -90,8 +99,13 @@ void PlayerMoveSystem::UpdateJumpLogic(float dt, bool isGrounded, CharacterMovem
         player.currentJumpCount++;
         inputData.jumpRequested = true;
 
+        // 意図的なジャンプは即座に空中扱いへ（グレースは「落下」だけに効かせ、
+        // ジャンプ直後の空中攻撃が地上攻撃に化けないようにする）。
+        player.timeSinceGrounded = player.airborneGraceTime;
+        player.isAirborne        = true;
+
         // =========================================================
-        // AAAアニメーションハック: 固有アクションの伝達
+        // 2段ジャンプ専用トリガーの発行
         // 1段目は CharacterAnimSyncSystem が JoltのY速度変化を見て自動で OnJump を出す。
         // 空中での2段目は物理からは判別不可能なため、ここで専用の「宙返り」等を
         // 再生させるためのトリガーを発行する。
@@ -100,6 +114,10 @@ void PlayerMoveSystem::UpdateJumpLogic(float dt, bool isGrounded, CharacterMovem
         {
             animParams.SetTrigger(HASH_TRIG_DOUBLE_JUMP);
         }
+
+        // その場VFX用に「跳んだ」事実を announce する。何段目かを載せ、VFXの出し分けは
+        // 購読側(PlayerActionVfxSystem)へ委ねる（現状は2段目だけ土煙を出す）。
+        m_world->GetEventBus().Publish(PlayerJumpedEvent{worldPos, player.currentJumpCount});
     }
     else
     {
@@ -132,33 +150,33 @@ void PlayerMoveSystem::UpdateBankingAndRotation(float dt, const CharacterMovemen
     }
     else
     {
-    Vector3 horizontalMove(inputData.desiredVelocity.x, 0.0f, inputData.desiredVelocity.z);
+        Vector3 horizontalMove(inputData.desiredVelocity.x, 0.0f, inputData.desiredVelocity.z);
 
-    if (horizontalMove.LengthSquared() > 0.001f)
-    {
-        horizontalMove.Normalize();
-        float targetYaw = atan2f(horizontalMove.x, horizontalMove.z);
+        if (horizontalMove.LengthSquared() > 0.001f)
+        {
+            horizontalMove.Normalize();
+            float targetYaw = atan2f(horizontalMove.x, horizontalMove.z);
 
-        float angleDiff = targetYaw - player.currentYaw;
-        while (angleDiff > DirectX::XM_PI)
-            angleDiff -= DirectX::XM_2PI;
-        while (angleDiff < -DirectX::XM_PI)
-            angleDiff += DirectX::XM_2PI;
+            float angleDiff = targetYaw - player.currentYaw;
+            while (angleDiff > DirectX::XM_PI)
+                angleDiff -= DirectX::XM_2PI;
+            while (angleDiff < -DirectX::XM_PI)
+                angleDiff += DirectX::XM_2PI;
 
-        player.currentYaw += angleDiff * player.turnSpeed * dt;
+            player.currentYaw += angleDiff * player.turnSpeed * dt;
 
-        float speedRatio = (walkSpeed > 0.001f) ? (inputData.currentVelocity.Length() / walkSpeed) : 0.0f;
-        float targetRoll = -(angleDiff * 10.0f) * player.bankingMultiplier * speedRatio;
+            float speedRatio = (walkSpeed > 0.001f) ? (inputData.currentVelocity.Length() / walkSpeed) : 0.0f;
+            float targetRoll = -(angleDiff * 10.0f) * player.bankingMultiplier * speedRatio;
 
-        float maxRollRad = DirectX::XMConvertToRadians(player.maxBankingAngle);
-        targetRoll       = std::clamp(targetRoll, -maxRollRad, maxRollRad);
+            float maxRollRad = DirectX::XMConvertToRadians(player.maxBankingAngle);
+            targetRoll       = std::clamp(targetRoll, -maxRollRad, maxRollRad);
 
-        player.currentRoll = std::lerp(player.currentRoll, targetRoll, 8.0f * dt);
-    }
-    else
-    {
-        player.currentRoll = std::lerp(player.currentRoll, 0.0f, 10.0f * dt);
-    }
+            player.currentRoll = std::lerp(player.currentRoll, targetRoll, 8.0f * dt);
+        }
+        else
+        {
+            player.currentRoll = std::lerp(player.currentRoll, 0.0f, 10.0f * dt);
+        }
     }
 
     Quaternion yawRot  = Quaternion::CreateFromAxisAngle(Vector3::UnitY, player.currentYaw);

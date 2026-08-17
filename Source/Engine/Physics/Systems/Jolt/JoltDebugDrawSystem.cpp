@@ -17,7 +17,7 @@ namespace {
         return {pitch, yaw, roll};
     }
     
-    // デバッグ用の色（薄い緑色など、お好みで変更してください）
+    // コライダー可視化の色。シーンの色と被らないよう明るい緑にしている。
     const DirectX::XMFLOAT4 COLLIDER_COLOR = {0.2f, 1.0f, 0.2f, 1.0f}; 
 }
 
@@ -160,8 +160,8 @@ void JoltMeshDebugDrawSystem::Update(float dt)
         if (!res) return;
 
         // ====================================================================
-        // 究極の最適化: TransformComponent はすでに「完全なワールド行列(worldMatrix)」
-        // を持っているため、個別の成分を掛け合わせる必要すらありません。
+        // TransformComponent は合成済みの worldMatrix を保持しているため、
+        // ここで位置・回転・スケールから組み直す必要はない。
         // ====================================================================
         XMMATRIX worldMat = XMLoadFloat4x4(&trans.worldMatrix);
 

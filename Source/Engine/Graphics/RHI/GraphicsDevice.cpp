@@ -55,7 +55,10 @@ void GraphicsDevice::Initialize(HWND hWnd)
         }
     }
 
-    // ---- デバイス & スワップチェーン ----
+    // ---- デバイス（スワップチェーンは後で waitable 付きで別途生成する）----
+    // 以前は D3D11CreateDeviceAndSwapChain で一括生成していたが、vsync待ちを明示制御する
+    // FRAME_LATENCY_WAITABLE_OBJECT は CreateSwapChainForHwnd 経由でしか使えないため、
+    // 「デバイス生成」と「スワップチェーン生成」を分離する。
     {
         UINT createDeviceFlags = 0;
 #if defined(DEBUG) || defined(_DEBUG)
@@ -67,30 +70,66 @@ void GraphicsDevice::Initialize(HWND hWnd)
             D3D_FEATURE_LEVEL_9_2,  D3D_FEATURE_LEVEL_9_1,
         };
 
-        DXGI_SWAP_CHAIN_DESC desc{};
-        desc.BufferDesc.Width = m_width;
-        desc.BufferDesc.Height = m_height;
-        desc.BufferDesc.RefreshRate = { 60, 1 };
-        desc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-        desc.SampleDesc = { 1, 0 };
-        desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-        desc.BufferCount = 2;
-        desc.OutputWindow = hWnd;
-        desc.Windowed = TRUE;
-        desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-
         // アダプタを明示指定する場合、DriverType は D3D_DRIVER_TYPE_UNKNOWN でなければならない
         // (pAdapter != nullptr と D3D_DRIVER_TYPE_HARDWARE の同時指定は E_INVALIDARG になる)。
         const D3D_DRIVER_TYPE driverType = chosenAdapter ? D3D_DRIVER_TYPE_UNKNOWN : D3D_DRIVER_TYPE_HARDWARE;
 
         D3D_FEATURE_LEVEL featureLevel;
-        hr = D3D11CreateDeviceAndSwapChain(
+        hr = D3D11CreateDevice(
             chosenAdapter.Get(), driverType, nullptr,
             createDeviceFlags, featureLevels, ARRAYSIZE(featureLevels),
-            D3D11_SDK_VERSION, &desc,
-            m_swapChain.GetAddressOf(), m_device.GetAddressOf(),
-            &featureLevel, m_context.GetAddressOf());
+            D3D11_SDK_VERSION,
+            m_device.GetAddressOf(), &featureLevel, m_context.GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+
+        // ---- このデバイスを作った DXGI ファクトリ(2)を取得 ----
+        Microsoft::WRL::ComPtr<IDXGIFactory2> factory2;
+        {
+            Microsoft::WRL::ComPtr<IDXGIDevice>  dxgiDevice;
+            Microsoft::WRL::ComPtr<IDXGIAdapter> adapter;
+            hr = m_device.As(&dxgiDevice);
+            _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+            hr = dxgiDevice->GetAdapter(adapter.GetAddressOf());
+            _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+            hr = adapter->GetParent(IID_PPV_ARGS(factory2.GetAddressOf()));
+            _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+        }
+
+        // ---- Waitable スワップチェーン ----
+        //   FRAME_LATENCY_WAITABLE_OBJECT: 「今フレームの提示が終わるまで次フレームの構築を
+        //   始めない」ための待機オブジェクトを持つスワップチェーンを作る。これにより vsync待ちを
+        //   フレーム先頭の WaitForFrameLatency() 一箇所へ集約でき、待ち時間が ShadowPass など
+        //   個別パスの CPU ゾーンへ紛れ込まなくなる（Tracy が読みやすくなる）＋入力遅延も減る。
+        DXGI_SWAP_CHAIN_DESC1 scd{};
+        scd.Width       = m_width;
+        scd.Height      = m_height;
+        scd.Format      = DXGI_FORMAT_R8G8B8A8_UNORM;
+        scd.SampleDesc  = { 1, 0 };
+        scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+        scd.BufferCount = 2;
+        scd.SwapEffect  = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+        scd.Flags       = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
+
+        Microsoft::WRL::ComPtr<IDXGISwapChain1> swapChain1;
+        hr = factory2->CreateSwapChainForHwnd(
+            m_device.Get(), hWnd, &scd, nullptr /*fullscreen desc=windowed*/, nullptr,
+            swapChain1.GetAddressOf());
+        _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+        hr = swapChain1.As(&m_swapChain); // IDXGISwapChain へ格納（IDXGISwapChain1 は派生）
+        _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+
+        // ---- 最大フレーム遅延=2 ＋ 待機ハンドル取得 ----
+        //   ここを1にすると CPU と GPU が「順番待ち」になり両者の時間が足し算になる。
+        //   1画面ぶん(例:16.7ms)を超えると vsync が30FPSに落とす（60→30固定の原因）。
+        //   2にすると CPU(次フレーム)と GPU(現フレーム)が1枚ぶん重なって並行動作でき、
+        //   60FPSを維持できる。待ちは WaitForFrameLatency() の1箇所に集約されたままで、
+        //   既定(3)より遅延も低い＝プロファイルの綺麗さと性能の両立。
+        Microsoft::WRL::ComPtr<IDXGISwapChain2> swapChain2;
+        if (SUCCEEDED(m_swapChain.As(&swapChain2)))
+        {
+            swapChain2->SetMaximumFrameLatency(2);
+            m_frameLatencyWaitable = swapChain2->GetFrameLatencyWaitableObject();
+        }
     }
 
     // ---- バックバッファ RTV ----
@@ -193,6 +232,9 @@ void GraphicsDevice::Shutdown()
     m_depthSRV.Reset();
     m_backBufferRTV.Reset();
     m_swapChain.Reset();
+    // 待機ハンドルはスワップチェーンと共に無効化されるので参照を捨てる（stale待ち防止）。
+    // デバイスロスト復帰時は Initialize が新スワップチェーンから取り直す。
+    m_frameLatencyWaitable = nullptr;
     m_context.Reset();
 
     // ③ この時点でデバイス（m_device）に残っているものは「真のリーク（犯人）」だけ！
@@ -202,7 +244,7 @@ void GraphicsDevice::Shutdown()
         Microsoft::WRL::ComPtr<ID3D11Debug> debug;
         if (SUCCEEDED(m_device.As(&debug))) {
             OutputDebugStringA("\n================= D3D11 LEAK REPORT =================\n");
-            // これで、出力ウィンドウに「Texture2D」や「Buffer」などの名前がバッチリ出ます
+            // 出力ウィンドウに未解放の Texture2D / Buffer などが型名付きで列挙される
             debug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL | D3D11_RLDO_IGNORE_INTERNAL);
             OutputDebugStringA("=====================================================\n\n");
         }
@@ -253,4 +295,14 @@ HRESULT GraphicsDevice::Present(UINT syncInterval)
 HRESULT GraphicsDevice::GetDeviceRemovedReason() const noexcept
 {
     return m_device ? m_device->GetDeviceRemovedReason() : DXGI_ERROR_DEVICE_REMOVED;
+}
+
+void GraphicsDevice::WaitForFrameLatency() const noexcept
+{
+    // 待機ハンドルが無い(未生成/生成失敗)場合はブロックしない＝従来どおり即進行。
+    if (!m_frameLatencyWaitable) return;
+
+    // 前フレームの提示が終わって次を作ってよくなるまで待つ。
+    //   タイムアウト1秒はハング時の保険（通常はvsync間隔で即シグナルされる）。
+    WaitForSingleObjectEx(m_frameLatencyWaitable, 1000, TRUE);
 }

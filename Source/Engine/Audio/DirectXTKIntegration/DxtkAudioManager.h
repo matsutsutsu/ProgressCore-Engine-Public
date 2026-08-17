@@ -47,6 +47,7 @@ class DxtkAudioManager : public IAudioAPI
     uint32_t PlayEvent(uint32_t eventHash) override;
     uint32_t PlayEvent3D(uint32_t eventHash, const DirectX::XMFLOAT3 &position) override;
     void StopEvent(uint32_t playingId, bool allowFadeOut = true) override;
+    void StopAll() override; ///< 継続再生・3Dワンショットを全停止（シーン終了時の確実な後始末）
     void SetEventParameter(uint32_t playingId, const char *paramName, float value) override;
     void SetEvent3DAttributes(uint32_t playingId, const DirectX::XMFLOAT3 &pos) override;
 

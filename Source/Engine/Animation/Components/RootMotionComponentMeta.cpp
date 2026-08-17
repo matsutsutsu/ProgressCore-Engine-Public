@@ -16,6 +16,12 @@
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #endif
 
+/**
+ * @file RootMotionComponentMeta.cpp
+ * @details RootMotionComponentは全て動的なパラメータで構成されているので
+ * 　　　　 シリアライズでデータ保存はしない。
+ */
+
 namespace ComponentMetaJson
 {
 template <>
@@ -69,5 +75,5 @@ struct ComponentMeta<RootMotionComponent>
     }
 };
 
-REGISTER_COMPONENT(RootMotionComponent, "Animation")
+REGISTER_COMPONENT(RootMotionComponent, "RootMotion")
 REGISTER_COMPONENT_EDITOR_GUI(RootMotionComponent)

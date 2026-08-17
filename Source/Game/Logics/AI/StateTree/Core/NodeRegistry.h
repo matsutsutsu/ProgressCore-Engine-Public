@@ -3,7 +3,7 @@
 ///        （M2 改訂版：paramsサイズ・instanceサイズ・フィールド記述子を型から自動収集）
 ///
 /// 改訂点:
-///   - NodeDesc に paramsSize / instanceSize / paramFields を追加
+///   - NodeDesc に paramsSize / paramFields を追加
 ///   - RegisterTask<T> / RegisterCondition<T> が T::Params と T::ParamFields() を
 ///     if constexpr で検出して NodeDesc に格納（Params を持たないノードは 0 扱い）
 ///   - typeId / 名前から NodeDesc を引くアクセサを追加（ローダ・エディタが使う）
@@ -38,7 +38,6 @@ namespace CCL::AI
         std::string name;        ///< JSON/エディタの識別名
         std::string category;    ///< エディタのグループ分け
         uint32_t    paramsSize = 0;  ///< sizeof(T::Params)（無ければ 0）
-        uint32_t    instanceSize = 0;  ///< T::InstanceDataSize()（条件は 0）
         std::vector<NodeParamField> paramFields;  ///< Params の各フィールド記述
     };
 
@@ -71,7 +70,6 @@ namespace CCL::AI
             desc.typeId = id;
             desc.name = name;
             desc.category = category;
-            desc.instanceSize = entry.instance->InstanceDataSize();
             FillParamMeta<T>(desc);     // Params があれば paramsSize / paramFields を埋める
             entry.desc = desc;
 

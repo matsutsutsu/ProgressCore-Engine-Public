@@ -1,11 +1,11 @@
 /// @file  DroneMovementSystem.h
 /// @brief 振付師が決定した目標座標へ向かってドローンを物理的に移動・回転させるシステム。
 ///
-/// リファクタリング（基礎3ステート版）
-///   DroneState を Idle / MoveToTarget / FireCharge の3つに絞った。
-///   LockOn・Hold・HorizontalCharge・Shaking は演出の上乗せであり、
-///   企画の基礎ループ（陣形を組む→隊列を直す→突撃する）には不要なため一旦削除。
-///   必要になった時点で「1ステート=1関数」の形のまま追加すればよい。
+/// DroneState を Idle / MoveToTarget / FireCharge の3つに絞っている。
+///   LockOn・Hold・HorizontalCharge・Shaking は演出の上乗せで、
+///   「陣形を組む→隊列を直す→突撃する」という基礎ループには不要だった。
+///   状態を増やすほど 1000機ぶんの分岐が増えるため、意図的に最小構成にしている。
+///   追加が必要になっても「1ステート=1関数」の形は崩さない。
 ///
 /// 実行順序: L03_PrePhysics（PushSystem より前）で trans を確定させる。
 #pragma once

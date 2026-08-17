@@ -4,7 +4,6 @@
 #include <fstream>
 #include <iostream>
 
-// ※お使いのJSONライブラリに合わせてください
 #include <json.hpp>
 using json = nlohmann::json;
 

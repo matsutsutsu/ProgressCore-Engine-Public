@@ -2,6 +2,7 @@
 /// @brief 戦闘関連コンポーネントのシリアライズ/インスペクタ定義。
 
 #include "Engine/ECS/Core/CCL_World.h"
+#include <algorithm> // for std::clamp
 #include "Game/Logics/Combat/CombatComponents.h"
 #include "Game/Logics/Combat/CombatRosterComponent.h"
 #include "Game/Logics/Combat/HealthComponent.h"
@@ -141,10 +142,17 @@ namespace ComponentMetaJson {
             }
         }
         static void Load(const json& j, CombatRosterComponent& comp, LoadContext* ctx) {
-            if (j.contains("count")) {
-                comp.count = j["count"].get<int>();
-                if (comp.count > 4) comp.count = 4;
+            // count は entries の実数から決める。JSON に count が無い場合でも読めるようにするため。
+            // （count だけを信用すると、キーが欠けたJSONで黙って0件になる）
+            comp.count = 0;
+            if (j.contains("entries") && j["entries"].is_array()) {
+                comp.count = static_cast<int>(j["entries"].size());
             }
+            else if (j.contains("count")) {
+                comp.count = j["count"].get<int>();
+            }
+            comp.count = std::clamp(comp.count, 0, CombatRosterComponent::kMaxEntries);
+
             if (j.contains("entries") && j["entries"].is_array()) {
                 int idx = 0;
                 for (const auto& entry : j["entries"]) {
@@ -155,7 +163,10 @@ namespace ComponentMetaJson {
                     }
                     if (entry.contains("id")) {
                         uint64_t rawId = entry["id"].get<uint64_t>();
-                        comp.entries[idx].id = ctx ? ctx->Resolve(rawId)
+                        // 保存時は EntityID ではなく LocalIndex(uint32) に変換されている。
+                        // 明示キャストしないと C4244（64→32 の暗黙縮小）が出る。
+                        comp.entries[idx].id = ctx
+                            ? ctx->Resolve(static_cast<CCL::Serialization::LoadContext::LocalIndex>(rawId))
                             : static_cast<CCL::ECS::EntityID>(rawId);
                     }
                     ++idx;

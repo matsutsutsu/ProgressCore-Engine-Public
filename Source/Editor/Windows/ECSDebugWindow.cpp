@@ -443,10 +443,10 @@ void ECSDebugWindow::DrawMemoryTab(CCL::ECS::World* world) {
                                 if (data) {
 
                                     // =========================================================
-                                    // 究極の進化: あなたの構築したGUIレジストリを呼び出すだけ！
+                                    // 描画は GUI レジストリに委譲する
                                     // =========================================================
-                                    // これにより、TransformならPosition(x,y,z)などのスライダーが自動生成されます。
-                                    // Undo/Redo のフックも ComponentMetaImGui 内で自動処理されます。
+                                    // 型ごとのウィジェット（Transform なら Position の x/y/z スライダー等）は
+                                    // ComponentMeta の定義から生成される。Undo/Redo のフックも同様。
                                     ComponentGuiRegistry::Instance().Draw(td.id, data, id, world);
 
 

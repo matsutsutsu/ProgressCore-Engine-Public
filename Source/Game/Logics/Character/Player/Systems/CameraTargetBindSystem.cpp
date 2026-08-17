@@ -11,51 +11,45 @@
 
 using namespace CCL::ECS;
 
-namespace
+EntityID CameraTargetBindSystem::FindPlayer()
 {
-    /// @brief PlayerComponent を持つ最初のエンティティ(=プレイヤー)を役割で探す。
-    EntityID FindPlayer(World *world)
+    if (!m_world) return InvalidEntityID;
+    for (auto &chunkPtr : m_world->GetChunkManager().GetChunks())
     {
-        if (!world) return InvalidEntityID;
-        for (auto &chunkPtr : world->GetChunkManager().GetChunks())
+        if (!chunkPtr) continue;
+        Chunk *chunk = chunkPtr.get();
+        if (!chunk->HasComponent<PlayerComponent>()) continue;
+        for (size_t i = 0; i < chunk->GetEntityCount(); ++i)
         {
-            if (!chunkPtr) continue;
-            Chunk *chunk = chunkPtr.get();
-            if (!chunk->HasComponent<PlayerComponent>()) continue;
-            for (size_t i = 0; i < chunk->GetEntityCount(); ++i)
-            {
-                if (chunk->IsEntityDestroyed(i)) continue;
-                return chunk->GetEntityByIndex(i);
-            }
+            if (chunk->IsEntityDestroyed(i)) continue;
+            return chunk->GetEntityByIndex(i);
         }
-        return InvalidEntityID;
     }
+    return InvalidEntityID;
+}
 
-    /// @brief target が無効(未接続 / リロードでID変化 / リスポーン)なら player へ繋ぎ直す。
-    ///        有効な相手を指している場合(手動設定など)は尊重して上書きしない。
-    void BindIfInvalid(World *world, CCL::Serialization::EntityLink &target, EntityID player)
-    {
-        if (player == InvalidEntityID) return;
-        if (!world->IsEntityValid(target.id)) target.id = player;
-    }
-} // namespace
+void CameraTargetBindSystem::BindIfInvalid(CCL::Serialization::EntityLink &target, EntityID player)
+{
+    if (player == InvalidEntityID) return;
+    if (!m_world->IsEntityValid(target.id)) target.id = player;
+}
 
 void CameraTargetBindSystem::Update(float /*dt*/)
 {
-    const EntityID playerId = FindPlayer(m_world);
+    const EntityID playerId = FindPlayer();
     if (playerId == InvalidEntityID) return;
 
     // カメラ本体(VirtualCamera)を持つエンティティを走査し、
     // 載っている「体(Body)」の種類ごとに target を繋ぎ直す。
     ForEachWithID([&](EntityID camID, const VirtualCamera & /*vcam*/) {
         if (auto *follow = m_world->GetComponent<CameraBodyFollow>(camID))
-            BindIfInvalid(m_world, follow->target, playerId);
+            BindIfInvalid(follow->target, playerId);
 
         if (auto *aim = m_world->GetComponent<CameraAimLookAt>(camID))
-            BindIfInvalid(m_world, aim->target, playerId);
+            BindIfInvalid(aim->target, playerId);
 
         if (auto *tps = m_world->GetComponent<CameraBodyTPSComponent>(camID))
-            BindIfInvalid(m_world, tps->target, playerId);
+            BindIfInvalid(tps->target, playerId);
     });
 }
 

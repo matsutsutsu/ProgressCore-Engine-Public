@@ -2,8 +2,8 @@
 #include "AnimStateMachine.h"
 #include <string>
 
-// 便宜上、AnimSequenceを検索するためのダミーリソース管理の仕組みを想定しています。
-// 実際のプロジェクトの ResourceManager 等に合わせて調整してください。
+// AnimSequence の解決は名前引きに留め、ResourceManager への依存はここに持ち込まない。
+// （保存/読込だけを担い、実体の取得は呼び出し側の責務とする）
 class AnimGraphSerializer {
 public:
     // グラフをJSONファイルとして保存する

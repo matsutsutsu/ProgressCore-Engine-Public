@@ -22,7 +22,7 @@ VS_OUT main(VS_IN vin, uint instanceID : SV_InstanceID)
         cylinderHeight = max(world[2].w, 0.0f);
     }
 
-    // ★重要：後の座標変換がおかしくならないように、空き部屋を全て 0.0 に掃除する
+    // 重要：後の座標変換がおかしくならないように、空き部屋を全て 0.0 に掃除する
     world[0].w = 0.0f;
     world[1].w = 0.0f;
     world[2].w = 0.0f;
@@ -35,7 +35,7 @@ VS_OUT main(VS_IN vin, uint instanceID : SV_InstanceID)
     // =========================================================
     if (isCapsule)
     {
-        // ★ C++側で行列をスケールしていない（Identity）ため、
+        // C++側で行列をスケールしていない（Identity）ため、
         // ゼロスケールによる「回転情報の破壊（真っ平らバグ）」は発生しません。
         // 面倒なスケールの逆算（length等）も不要になり、処理も高速化しました！
 

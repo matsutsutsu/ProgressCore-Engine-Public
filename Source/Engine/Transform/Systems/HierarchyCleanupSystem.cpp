@@ -3,24 +3,15 @@
 // --------------------------
 // 役割:
 //   DestroyTag を起点に、死亡Entityとその子階層を安全に回収するL07システム。
-//   通常Entityは破棄、プール対象(PooledParticleComponent)の階層はプールへ返す。
 //
 // 実装の意図(Why):
-//   - 反復中の構造変更は危険なため、まず「誰を消す/返すか」を executionList に確定
+//   - 反復中の構造変更は危険なため、まず「誰を消すか」を executionList に確定
 //     させてから一括処理する。
-//   - プール対象の emitterRoot は【階層を保ったまま】プールへ返す必要がある。よって
-//     (a)子収集でプール対象には潜らない(配下はrootと一緒に返るため列挙しない)、
-//     (b)プール対象はフラット化(子のparent=0化)しない、
-//     (c)プール対象は破棄せず Prefab::ReturnParticleToPool で返却する。
-//   - これを怠るとプール対象の子エミッタが個別破棄され、空のemitterRootがプールに
-//     戻る(=壊れる)。複数エミッタ構成を維持するための必須処理。
 // ===========================================================================
 #include "HierarchyCleanupSystem.h"
 #include "Engine/Transform/Systems/TransformUpdateSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include <algorithm>
-#include "Engine/Serialization/Factory/Prefab.h"
-#include "Engine/Graphics/Components/Particle/PooledParticleComponent.h"
 #include <vector>
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -68,25 +59,13 @@ void HierarchyCleanupSystem::ExecuteCleanup(CCL::ECS::World& world)
     std::sort(executionList.begin(), executionList.end());
     executionList.erase(std::unique(executionList.begin(), executionList.end()), executionList.end());
 
-    // 3. 削除/返却の実行。
+    // 3. 削除の実行。
     for (EntityID targetID : executionList) {
 
-        // --- プール対象(emitterRoot)は階層を保ったままプールへ返す ---
-        // フラット化も破棄もしない。ReturnParticleToPool が親切り離し・休眠・返却を行う。
-        if (world.HasComponent<PooledParticleComponent>(targetID)) {
-            Prefab::ReturnParticleToPool(world, targetID);
-            // 万一 DestroyTag が付いていても破棄させない(返却を優先)。
-            if (world.HasComponent<Tag::DestroyTag>(targetID))
-                world.RequestRemoveComponent<Tag::DestroyTag>(targetID);
-            continue;
-        }
-
-        // --- 通常Entity ---
         if (world.HasComponent<TransformComponent>(targetID)) {
             auto* trans = world.GetComponent<TransformComponent>(targetID);
 
             // 死ぬ前に直下の子をルート化(死んだ親IDを子のparentに残さない)。
-            // ※プール対象の子はStep1で潜っていないため、ここではフラット化されない。
             if (trans && trans->firstChildID != 0) {
                 EntityID childID = trans->firstChildID;
                 while (childID != 0) {
@@ -111,8 +90,6 @@ void HierarchyCleanupSystem::ExecuteCleanup(CCL::ECS::World& world)
 
 // =========================================================================
 // 子供の再帰的収集 (static)
-//   プール対象(PooledParticleComponent)には潜らない。配下は emitterRoot と
-//     一緒にプールへ返るため、ここで個別に列挙してはならない。
 // =========================================================================
 void HierarchyCleanupSystem::CollectChildrenRecursive(
     CCL::ECS::World& world, EntityID currentID, std::vector<EntityID>& outList)
@@ -126,12 +103,9 @@ void HierarchyCleanupSystem::CollectChildrenRecursive(
         if (!childTrans) break;
 
         outList.push_back(childID);
-        EntityID nextSibling = childTrans->nextSiblingID;
+        EntityID nextSibling = childTrans->nextSiblingID; // 再帰前に次兄弟を退避
 
-        // プール対象なら配下に潜らない(rootごと返却するため列挙不要)。
-        if (!world.HasComponent<PooledParticleComponent>(childID)) {
-            CollectChildrenRecursive(world, childID, outList);
-        }
+        CollectChildrenRecursive(world, childID, outList);
 
         childID = nextSibling;
     }

@@ -76,6 +76,9 @@ public:
     void Clear(float r, float g, float b, float a, bool useGameRTV) { m_gfxDevice.Clear(r, g, b, a, useGameRTV); }
     void SetRenderTargets(bool useGameRTV) { m_gfxDevice.SetRenderTargets(useGameRTV); }
 
+    // フレーム先頭で呼ぶ vsync待ちの集約点（Waitable スワップチェーン）。
+    void WaitForFrameLatency() const noexcept { m_gfxDevice.WaitForFrameLatency(); }
+
     /**
      * @brief スワップチェーンを提示する。デバイスロスト検出時は false を返す。
      * @return デバイスロストなら false。呼び出し元は IsDeviceLost() を確認すること。

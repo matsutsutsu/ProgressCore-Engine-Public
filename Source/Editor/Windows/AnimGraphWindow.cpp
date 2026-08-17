@@ -43,6 +43,19 @@ namespace {
     // リンクID。素性解決は m_linkLut で行うため、ここは「同フレーム内で一意」であれば足りる。
     constexpr int NORMAL_LINK_BASE = 0x00100000;
     constexpr int ANY_LINK_BASE    = 0x00200000;
+
+    // ツリー全体（root＋全サブグラフ）の「全 transition リスト」へ関数を適用する。
+    //   パラメータ削除/リネーム時に、階層のどこにある条件も漏れなく張り替えるために使う。
+    template <class F>
+    void ForEachTransitionList(AnimStateGraph &g, F fn)
+    {
+        for (auto &s : g.states)
+        {
+            fn(s.transitions);
+            if (s.isSubMachine && s.subGraph) ForEachTransitionList(*s.subGraph, fn);
+        }
+        fn(g.anyStateTransitions);
+    }
 }
 
 // =====================================================================
@@ -174,8 +187,101 @@ AnimGraphWindow::~AnimGraphWindow() {
     if (m_nodeContext) ed::DestroyEditor(m_nodeContext);
 }
 
+// =====================================================================
+// 階層ナビゲーション
+// =====================================================================
+
+// m_editPath に沿って m_rootGraph を辿り、「今編集中の階層グラフ」を返す。
+//   途中でサブマシンが見つからない（削除された等）場合は root へ戻す（安全策）。
+AnimStateGraph &AnimGraphWindow::CurrentView()
+{
+    AnimStateGraph *g = &m_rootGraph;
+    for (uint32_t h : m_editPath)
+    {
+        AnimState *sub = nullptr;
+        for (auto &s : g->states)
+            if (s.stateHash == h && s.isSubMachine && s.subGraph) { sub = &s; break; }
+        if (!sub) { m_editPath.clear(); return m_rootGraph; }
+        g = sub->subGraph.get();
+    }
+    return *g;
+}
+
+// 指定サブマシンが現在の階層に実在する時だけ潜る。
+void AnimGraphWindow::EnterSubMachine(uint32_t subMachineHash)
+{
+    AnimStateGraph &view = CurrentView();
+    for (auto &s : view.states)
+        if (s.stateHash == subMachineHash && s.isSubMachine && s.subGraph)
+        {
+            m_editPath.push_back(subMachineHash);
+            m_selectedNodeId = 0;
+            m_selectedLinkId = 0;
+            m_needRestorePositions = true; // 潜り先のノード位置を復元する
+            return;
+        }
+}
+
+// 階層全体で衝突しない stateHash を採る（同名衝突は評価器の誤爆やパス崩れの元）。
+//   衝突時は name に "_2","_3"... を付与して一意化し、その最終 name の hash を返す。
+uint32_t AnimGraphWindow::MakeUniqueStateHash(std::string &name)
+{
+    const std::string base = name;
+    for (int i = 1; i < 10000; ++i)
+    {
+        uint32_t h = CCL::Utils::HashString(name.c_str());
+        if (!FindStateRecursive(m_rootGraph, h)) return h;
+        name = base + "_" + std::to_string(i + 1); // 次の候補名
+    }
+    return CCL::Utils::HashString(name.c_str());
+}
+
+// 「Root > Combat > ...」のパンくず。各段クリックでその階層へ戻る。
+void AnimGraphWindow::DrawBreadcrumb()
+{
+    if (ImGui::Button("Root")) { m_editPath.clear(); m_needRestorePositions = true; }
+
+    AnimStateGraph *g = &m_rootGraph;
+    for (size_t i = 0; i < m_editPath.size(); ++i)
+    {
+        const char *name = "?";
+        AnimState  *sub  = nullptr;
+        for (auto &s : g->states)
+            if (s.stateHash == m_editPath[i]) { name = s.sequenceName.c_str(); sub = &s; break; }
+
+        ImGui::SameLine(); ImGui::TextDisabled(">"); ImGui::SameLine();
+        ImGui::PushID((int)i);
+        const bool clicked = ImGui::Button(name);
+        ImGui::PopID();
+        if (clicked)
+        {
+            m_editPath.resize(i + 1); // この段まで戻る
+            m_needRestorePositions = true;
+            break;
+        }
+        if (sub && sub->subGraph) g = sub->subGraph.get(); else break;
+    }
+
+    // 潜っている階層に Entry が無いと、そのサブマシンに入っても何も再生されない。警告する。
+    AnimStateGraph &view = CurrentView();
+    if (!m_editPath.empty() && view.entryStateHash == 0 && !view.states.empty())
+    {
+        ImGui::SameLine();
+        ImGui::TextColored(ImVec4(1.0f, 0.55f, 0.2f, 1.0f),
+            "  [!] Entry 未設定（ノード右クリック → Set as Entry）");
+    }
+}
+
 void AnimGraphWindow::DrawContents(EditorContext& context) {
     ed::SetCurrentEditor(m_nodeContext);
+
+    // このフレームの頭で「潜る」予約を消化（前フレームのダブルクリック等）。
+    //   描画中に m_editPath を書き換えると参照が飛ぶため、フレーム境界で処理する。
+    if (m_pendingEnterSub != 0)
+    {
+        EnterSubMachine(m_pendingEnterSub);
+        m_pendingEnterSub = 0;
+    }
 
     // ================================================================
     // リアルタイム・デバッグ (選択中エンティティのステート同期)
@@ -191,6 +297,7 @@ void AnimGraphWindow::DrawContents(EditorContext& context) {
     }
 
     DrawToolbar();
+    DrawBreadcrumb(); // 階層パンくず（Root > Combat > ...）
 
     // カラム幅の強制上書きを初回のみにし、ユーザーが境界線をドラッグできるようにする
     static bool initColumns = true;
@@ -226,6 +333,9 @@ void AnimGraphWindow::DrawContents(EditorContext& context) {
 
 void AnimGraphWindow::DrawNodeWorkspace()
 {
+    // 「今見ている階層」を局所参照で束ねる（以降の m_currentGraph は現在の階層グラフを指す）。
+    AnimStateGraph &m_currentGraph = CurrentView();
+
     ed::Begin("My Anim Node Editor");
 
     ed::PushStyleVar(ed::StyleVar_LinkStrength, 0.0f); // 直線
@@ -408,9 +518,18 @@ void AnimGraphWindow::DrawNodeWorkspace()
     {
         const bool isEntry     = (m_currentGraph.entryStateHash == state.stateHash);
         const bool isActive    = (m_runtimeActiveStateHash == state.stateHash);
-        ImVec4     nodeBgColor = isEntry ? ImVec4(0.9f, 0.5f, 0.1f, 1.0f) : (isActive ? ImVec4(0.2f, 0.5f, 0.8f, 1.0f) : ImVec4(0.35f, 0.35f, 0.35f, 1.0f));
 
-        DrawBlockNode(StateNodeId(state.stateHash), state.stateHash, state.sequenceName.c_str(), nodeBgColor, isActive);
+        // サブマシン(節)は紫系で色分けし、名前に [Sub] を付けて「潜れる」ことを明示する。
+        ImVec4 nodeBgColor;
+        if (state.isSubMachine)
+            nodeBgColor = ImVec4(0.32f, 0.24f, 0.48f, 1.0f);
+        else
+            nodeBgColor = isEntry ? ImVec4(0.9f, 0.5f, 0.1f, 1.0f)
+                                  : (isActive ? ImVec4(0.2f, 0.5f, 0.8f, 1.0f)
+                                              : ImVec4(0.35f, 0.35f, 0.35f, 1.0f));
+
+        std::string title = state.isSubMachine ? ("[Sub] " + state.sequenceName) : state.sequenceName;
+        DrawBlockNode(StateNodeId(state.stateHash), state.stateHash, title.c_str(), nodeBgColor, isActive);
         if (m_needRestorePositions)
             ed::SetNodePosition(StateNodeId(state.stateHash), ImVec2(state.nodePosX, state.nodePosY));
     }
@@ -704,6 +823,16 @@ void AnimGraphWindow::DrawNodeWorkspace()
 
 void AnimGraphWindow::HandleInteraction()
 {
+    AnimStateGraph &m_currentGraph = CurrentView(); // 現在の階層を編集対象にする
+
+    // ダブルクリックしたノードがサブマシンなら、フレーム末に潜る予約をする。
+    if (ed::NodeId dbl = ed::GetDoubleClickedNode())
+    {
+        int raw = (int)(intptr_t)dbl.Get();
+        for (auto &s : m_currentGraph.states)
+            if (StateNodeId(s.stateHash) == raw && s.isSubMachine) { m_pendingEnterSub = s.stateHash; break; }
+    }
+
     if (ed::BeginDelete())
     {
         ed::LinkId linkId;
@@ -817,6 +946,8 @@ void AnimGraphWindow::DrawInspector()
 
 void AnimGraphWindow::DrawStateSettings(int nodeId)
 {
+    AnimStateGraph &m_currentGraph = CurrentView(); // 現在の階層のステートを対象にする
+
     if (nodeId == ENTRY_NODE_ID)
     {
         ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.0f, 1.0f), "開始地点 (Entry Node)");
@@ -866,6 +997,20 @@ void AnimGraphWindow::DrawStateSettings(int nodeId)
         ImGui::DragFloat("再生速度 (Playback Speed)", &state.playbackSpeed, 0.05f, 0.0f, 5.0f);
 
         ImGui::Separator();
+        // 軽量サブステートマシン：グループID。同じ番号のステート群に対して、AnyState 遷移側の
+        //   「Source Group」を同じ番号にすると、その群限定の割り込み遷移になる（減線）。
+        {
+            int gid = (int)state.groupId;
+            if (ImGui::InputInt("グループID (Group ID)", &gid))
+                state.groupId = (uint32_t)(gid < 0 ? 0 : gid);
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("軽量サブステートマシンのグループ番号 (0=無所属)。\n"
+                                  "同じ番号のステート群に対し、AnyState の遷移で『Source Group』を\n"
+                                  "同じ番号にすると、その群のどの状態からでも効く割り込みになります。\n"
+                                  "例: Combat 群=1 にして『Source Group=1 → Idle [Finished]』を1本置く。");
+        }
+
+        ImGui::Separator();
         if (m_currentGraph.entryStateHash == state.stateHash)
         {
             ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.0f, 1.0f), "[ 初期状態 (Entry State) ]");
@@ -877,6 +1022,8 @@ void AnimGraphWindow::DrawStateSettings(int nodeId)
 
 void AnimGraphWindow::DrawTransitionSettings(int linkId)
 {
+    AnimStateGraph &m_currentGraph = CurrentView(); // 現在の階層の遷移を対象にする
+
     if (linkId == ENTRY_LINK_ID)
     {
         ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.0f, 1.0f), "初期状態への遷移 (Entry Transition)");
@@ -936,6 +1083,20 @@ void AnimGraphWindow::DrawTransitionSettings(int linkId)
     ImGui::Text("遷移先 (To): %s", toName.c_str());
     ImGui::Separator();
 
+    // 軽量サブステートマシン：AnyState 遷移のみ「グループ限定スコープ」を指定できる。
+    //   0=どこからでも（従来）。非0にすると、現在ステートの Group ID が一致する時だけ有効。
+    if (ref->isAnyState)
+    {
+        int sg = (int)trans->sourceGroupId;
+        if (ImGui::InputInt("スコープ限定 (Source Group)", &sg))
+            trans->sourceGroupId = (uint32_t)(sg < 0 ? 0 : sg);
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("0=どこからでも (従来の Any State)。\n"
+                              "非0にすると、現在ステートの Group ID がこの番号と一致する時だけ有効な\n"
+                              "『そのグループ限定の割り込み遷移』になります。");
+        ImGui::Separator();
+    }
+
     // 共通関数に一本化（通常遷移／Any State 遷移で同一UI。二重管理を解消）
     DrawTransitionConditionUI(*trans);
 }
@@ -991,7 +1152,7 @@ void AnimGraphWindow::DrawToolbar()
                                        : std::filesystem::path(m_currentFilePath).stem().string();
 
             std::string txtPath  = "Build/Logs/" + filename + ".txt";
-            std::string dumpText = DumpAnimGraphToString(m_currentGraph);
+            std::string dumpText = DumpAnimGraphToString(CurrentView());
 
             std::ofstream txtOut(txtPath);
             if (txtOut.is_open())
@@ -1018,29 +1179,32 @@ void AnimGraphWindow::SaveGraph(const std::string &path)
     {
         ed::SetCurrentEditor(m_nodeContext);
 
-        ImVec2 entryPos         = ed::GetNodePosition(ENTRY_NODE_ID);
-        m_currentGraph.entryPosX = entryPos.x;
-        m_currentGraph.entryPosY = entryPos.y;
+        // ライブなノード位置は「今画面に見えている階層(view)」のノードに書き戻す。
+        AnimStateGraph &view = CurrentView();
 
-        for (auto &state : m_currentGraph.states)
+        ImVec2 entryPos  = ed::GetNodePosition(ENTRY_NODE_ID);
+        view.entryPosX   = entryPos.x;
+        view.entryPosY   = entryPos.y;
+
+        for (auto &state : view.states)
         {
             ImVec2 pos     = ed::GetNodePosition(StateNodeId(state.stateHash));
             state.nodePosX = pos.x;
             state.nodePosY = pos.y;
         }
 
-        ImVec2 anyPos              = ed::GetNodePosition(ANY_STATE_NODE_ID);
-        m_currentGraph.anyStatePosX = anyPos.x;
-        m_currentGraph.anyStatePosY = anyPos.y;
+        ImVec2 anyPos    = ed::GetNodePosition(ANY_STATE_NODE_ID);
+        view.anyStatePosX = anyPos.x;
+        view.anyStatePosY = anyPos.y;
     }
-    AnimGraphSerializer::SaveToJSON(m_currentGraph, path);
-
-    
+    // 保存はツリー全体（root）を書き出す（サブマシンの中身も再帰的に含まれる）。
+    AnimGraphSerializer::SaveToJSON(m_rootGraph, path);
 }
 
 void AnimGraphWindow::LoadGraph(const std::string& path) {
-    if (AnimGraphSerializer::LoadFromJSON(m_currentGraph, path, {})) {
+    if (AnimGraphSerializer::LoadFromJSON(m_rootGraph, path, {})) {
         ed::ClearSelection();
+        m_editPath.clear(); // 読込後は root 表示から始める
         // ロードが成功したら、次のフレームで座標を復元するフラグを立てる
         m_needRestorePositions = true;
     }
@@ -1050,6 +1214,8 @@ void AnimGraphWindow::LoadGraph(const std::string& path) {
 
 void AnimGraphWindow::HandleContextMenu()
 {
+    AnimStateGraph &m_currentGraph = CurrentView(); // 現在の階層に対して生成/削除する
+
     ed::Suspend();
 
     static int s_contextNodeId = 0;
@@ -1177,16 +1343,45 @@ void AnimGraphWindow::HandleContextMenu()
 
         if (ImGui::Button("新しいステートを追加") && m_newStateName[0] != '\0')
         {
+            std::string nm = m_newStateName;
             AnimState newState;
-            newState.stateHash    = CCL::Utils::HashString(m_newStateName);
-            newState.sequenceName = m_newStateName;
+            newState.stateHash    = MakeUniqueStateHash(nm); // 階層全体で一意化
+            newState.sequenceName = nm;
 
             ImVec2 canvasPos  = ed::ScreenToCanvas(m_newNodeSpawnPos);
             newState.nodePosX = canvasPos.x;
             newState.nodePosY = canvasPos.y;
 
-            m_currentGraph.states.push_back(newState);
-            m_nodeToPlaceHash = newState.stateHash;
+            m_currentGraph.states.push_back(std::move(newState));
+            // この階層にまだ Entry が無ければ、最初に置いた状態を自動で初期状態にする
+            //（特に新規サブマシンは entry 未設定なので、これが無いと何も再生されない）。
+            if (m_currentGraph.entryStateHash == 0)
+                m_currentGraph.entryStateHash = m_currentGraph.states.back().stateHash;
+            m_nodeToPlaceHash = m_currentGraph.states.back().stateHash;
+            m_newStateName[0] = '\0';
+            ImGui::CloseCurrentPopup();
+        }
+
+        // サブステートマシン（潜れる箱）を追加：中身は空の子グラフ。
+        //   生成後、そのノードをダブルクリックで潜って中身を編集する。
+        if (ImGui::Button("サブステートマシンを追加") && m_newStateName[0] != '\0')
+        {
+            std::string nm = m_newStateName;
+            AnimState sub;
+            sub.stateHash    = MakeUniqueStateHash(nm);
+            sub.sequenceName = nm;
+            sub.isSubMachine = true;
+            sub.subGraph     = std::make_unique<AnimStateGraph>(); // 空の子グラフ
+
+            ImVec2 canvasPos = ed::ScreenToCanvas(m_newNodeSpawnPos);
+            sub.nodePosX = canvasPos.x;
+            sub.nodePosY = canvasPos.y;
+
+            m_currentGraph.states.push_back(std::move(sub));
+            // 親階層にまだ Entry が無ければ、このサブマシンを初期状態にする（root が空の場合等）。
+            if (m_currentGraph.entryStateHash == 0)
+                m_currentGraph.entryStateHash = m_currentGraph.states.back().stateHash;
+            m_nodeToPlaceHash = m_currentGraph.states.back().stateHash;
             m_newStateName[0] = '\0';
             ImGui::CloseCurrentPopup();
         }
@@ -1199,6 +1394,9 @@ void AnimGraphWindow::HandleContextMenu()
 
 void AnimGraphWindow::DrawTransitionConditionUI(AnimTransition &trans)
 {
+    // パラメータはステートマシン全体で共有するため、ドロップダウンは常に root を参照する。
+    AnimStateGraph &m_currentGraph = m_rootGraph;
+
     ImGui::Text("遷移設定 (Transition Settings)");
     ImGui::DragFloat("ブレンド時間 (Blend Duration)", &trans.blendDuration, 0.01f, 0.0f, 2.0f, "%.2f s");
     ImGui::Separator();
@@ -1413,6 +1611,9 @@ void AnimGraphWindow::DrawTransitionConditionUI(AnimTransition &trans)
 // ===========================================================================
 void AnimGraphWindow::DrawParameterPanel(EditorContext &context)
 {
+    // パラメータはステートマシン全体で共有（root が唯一の所有者）。
+    AnimStateGraph &m_currentGraph = m_rootGraph;
+
     ImGui::Text("パラメータ (Parameters)");
     ImGui::SameLine();
 
@@ -1580,9 +1781,8 @@ void AnimGraphWindow::DrawParameterPanel(EditorContext &context)
                         [deadHash](const AnimCondition &c) { return c.paramHash == deadHash; }),
                     t.conditions.end());
         };
-        for (auto &s : m_currentGraph.states)
-            stripConds(s.transitions);
-        stripConds(m_currentGraph.anyStateTransitions);
+        // 階層のどこにある条件も漏れなく除去（root＋全サブグラフ）。
+        ForEachTransitionList(m_rootGraph, stripConds);
 
         m_currentGraph.parameters.erase(m_currentGraph.parameters.begin() + deleteIndex);
     }
@@ -1600,8 +1800,7 @@ void AnimGraphWindow::RenameParameterReferences(uint32_t oldHash, const std::str
                     c.paramName = newName;
                 }
     };
-    for (auto &s : m_currentGraph.states)
-        patch(s.transitions);
-    patch(m_currentGraph.anyStateTransitions);
+    // 階層のどこにある条件も漏れなく張り替える（root＋全サブグラフ）。
+    ForEachTransitionList(m_rootGraph, patch);
 }
 

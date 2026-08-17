@@ -30,35 +30,21 @@ struct SlowMotionData {
 struct TimeContext {
 	// 全体の基本初期スケール（通常は1.0f、ゲーム全体の速度調整に使用）
     float baseGlobalScale = 1.0f;
-    float globalScale = 1.0f;
-    float cinematicScale = 1.0f;
+    float globalScale = 1.0f; // TimeScaleSystem が毎フレーム算出する実効の全体倍率（読み取り用）
 
-    // --- 全体ヒットストップ（完全停止系） ---
+    // --- 全体ヒットストップ（完全停止系）。Time::HitStop が設定する ---
     float globalHitStopTimer = 0.0f;
     float globalFreezeScale = 1.0f;
 
-    // --- 持続的スロー（バフ・演出系） ---
-    SlowMotionData playerSlow;
-    SlowMotionData enemySlow;
-    SlowMotionData worldSlow;
-
-    // --- 全体シネマティックスロー（撃破スロー等） ---
-    //   globalScale に乗るため group に依らず、TimeStateComponent を持つ全エンティティが
-    //   滑らかにスローになる。DefeatSlowMotionSystem が撃破時に発火する。
+    // --- 全体スロー（イーズ復帰）。撃破スロー/切り払い準備など。Time::SlowWorld / SustainWorldSlow が設定 ---
+    //   globalScale に乗るため group に依らず、TimeStateComponent を持つ全エンティティが滑らかにスローになる。
     SlowMotionData cinematicSlow;
 
-    // 勢力別の倍率を配列化（O(1)アクセス・分岐予測ペナルティ排除用）
-    // 初期値はすべて1.0f
+    // 勢力別の倍率（groupScale レイヤー）。現状は全て1.0（＝無効）。
+    //   将来「敵だけスロー」等を足す時はここへ書く層を用意する（Time::SlowGroup など）。
     float groupScales[static_cast<size_t>(TimeGroup::Count)] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f };
 
-    // --- OVERDRIVE（勢力別の追加倍率。OverdriveSystem が設定、非発動時は1.0） ---
-    //   発動中: 敵(Enemy)を遅く、プレイヤー(Player)を速くして「自分だけ高速」を作る。
-    //   TimeScaleSystem が groupScales に掛け合わせて実効dtへ反映する。
-    float overdrivePlayerScale      = 1.0f;
-    float overdriveEnemyScale       = 1.0f;
-    float overdriveEnvironmentScale = 1.0f; ///< 環境（ステージ/パーティクル/VFX）のスロー倍率
-
-    // --- デバッグ用（コマ送り） ---
+    // --- デバッグ用（コマ送り）。Time::Pause / Resume / StepFrame が設定 ---
     bool isPaused      = false;
     bool stepNextFrame = false;
 };

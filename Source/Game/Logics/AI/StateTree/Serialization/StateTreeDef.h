@@ -11,7 +11,7 @@
 #pragma once
 #include <string>
 #include <vector>
-#include <json.hpp>   // パスは環境に合わせて調整してください
+#include <json.hpp>
 
 namespace CCL::AI
 {

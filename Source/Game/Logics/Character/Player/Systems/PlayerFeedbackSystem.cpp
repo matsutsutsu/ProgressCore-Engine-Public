@@ -2,9 +2,7 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Game/Logics/GameEvent/GameEvents.h"
 
-// 必要に応じて、あなたのエンジンのマネージャー類をインクルードしてください
-
-// カメラのコンポーネントを使うためにインクルードを追加
+// カメラシェイク要求を出すために参照する
 #include "Engine/Camera/Components/VirtualCameraComponents.h"
 
 // 被弾ビネット用：既存のビネット設定(singleton)を一時的に駆動する。
@@ -50,7 +48,8 @@ void PlayerFeedbackSystem::Initialize()
                 // ダメージ量(e.damageAmount)に基づいて揺れの強さを計算
                 // 例：10ダメージなら強さ1.0。上限を設けて揺れすぎを防ぐ
                 float shakeStrength = std::clamp(e.damageAmount * 0.1f, 0.2f, 3.0f);
-                float shakeDuration = 0.5f; // 揺れる時間は0.5秒
+                // 被弾の重さは伝えつつ、操作不能に感じない長さの上限として 0.5 秒にしている
+                float shakeDuration = 0.5f;
 
                 // すでに CameraShake コンポーネントを持っているか確認
                 if (auto *shake = m_world->GetComponent<CameraShake>(camID)) {

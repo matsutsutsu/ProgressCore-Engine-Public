@@ -27,15 +27,11 @@ void RootMotionSystem::Update(float /*rawDt*/)
             return;
         }
 
+        // 再生中の葉ステートは階層のどこにでも居りうるので再帰検索で引く
+        //（サブマシンにネストされていてもトップ平坦検索で取りこぼさない）。
         bool applyRoot = false;
-        for (const auto &st : fsm.internalGraph.states)
-        {
-            if (st.stateHash == fsm.currentStateHash)
-            {
-                applyRoot = st.applyRootMotion;
-                break;
-            }
-        }
+        if (const AnimState *st = FindStateRecursive(fsm.internalGraph, fsm.currentStateHash))
+            applyRoot = st->applyRootMotion;
 
         rm.enabled = applyRoot;
 
@@ -58,7 +54,7 @@ void RootMotionSystem::Update(float /*rawDt*/)
 
         if (animIndex == -1 || seq->duration <= 0.0f) return;
 
-        // 究極の特定: 抽出対象を「実際に動いているボーン」にする
+        // ルート名だけで決め打ちせず、実際に移動量を持つノードを抽出対象にする
         const int rootNodeIndex = model->FindRealRootMotionNodeIndex(animIndex);
 
         // 遷移（シーケンスの切り替わり）検知

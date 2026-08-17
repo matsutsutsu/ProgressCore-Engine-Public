@@ -1,7 +1,7 @@
 /// @file  DroneHitSystem.h
 /// @brief 突撃(FireCharge リリース)中のドローンがプレイヤーに触れたら被弾させるシステム。
 ///
-/// 役割分担(企画書の3層のうち「実行の結果=当たり判定」を担う):
+/// 役割分担（判断・実行・当たり判定のうち、当たり判定を担う）:
 ///   DroneAI(StateTree)     … いつ攻撃するか(currentState=FireCharge)を決める
 ///   DroneMovementSystem    … タメ→リリースの物理挙動を動かす
 ///   DroneHitSystem(本ファイル) … リリース中に触れたら DamageEvent を積む ← ここ

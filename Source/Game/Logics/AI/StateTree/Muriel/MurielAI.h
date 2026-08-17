@@ -83,9 +83,9 @@ struct SetActiveBTTask : public CCL::AI::ITask
 // 条件：ドローン残数で戦術を切り替える（ドローン数 = ボスHP）
 // ====================================================================
 /// @brief ドローン残数が指定値以下か。
-/// @note  ドローン数の取得方法はプロジェクトに合わせて調整。
-///        ここでは仮に BehaviorTreeComponent.blackboard を経由する想定。
-///        実際は DroneManager リソース等から取得するのが綺麗。
+/// @note  残数は BehaviorTreeComponent.blackboard 経由で取得する。
+///        DroneManager をリソース化して直接引く方が依存は浅くなるが、
+///        条件ノードを Blackboard 以外に依存させたくないため現状は経由させている。
 struct DroneCountBelowCondition : public CCL::AI::ICondition
 {
     struct Params

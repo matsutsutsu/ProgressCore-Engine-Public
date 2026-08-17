@@ -123,7 +123,12 @@ CB_PARTICLE_STRUCT(CbParticleStatic, SLOT_CB_PARTICLE_STATIC)
     int    max_count;               // offset 160: 粒子の最大数
     int    emit_mode;               // offset 164: 0:継続 1:バースト
     int    burst_count;             // offset 168: バースト時の発生数
-    float  _pad_static;             // offset 172
+
+    /// offset 172: 速度の上限 (units/s)。0以下 = 無制限。
+    ///   以前はシェーダに 10.0 がハードコードされており、初速を 10 より大きく設定しても
+    ///   無言で 10 に潰されていた（設定が効かない罠）。desc から渡して見えるようにする。
+    ///   ※元は _pad_static だった空き。CB のサイズ・オフセットは変わらない。
+    float  max_speed;               // offset 172
 
     // ---- Force Field ---- (offset 176-207)
     float4 attractor_pos;           // offset 176: xyz=中心, w=強さ(正:引力 負:斥力)
@@ -154,7 +159,13 @@ CB_PARTICLE_STRUCT(CbParticleDynamic, SLOT_CB_PARTICLE_DYNAMIC)
     float  delta_time;              // offset 32: 1フレームの秒数
     float  burst_trigger;           // offset 36: >0 でバースト発動、システムが消費して 0 に戻す
     float  emit_enabled;            // offset 40: 継続放出モードの発生ゲート (0:停止 それ以外:発生)。アニメ連動用。
-    float  _pad_dynamic;            // offset 44
+
+    /// offset 44: エミッタ実体ごとの乱数種。
+    ///   粒子の乱数は従来 spawn 時の粒子番号(id)だけを種にしていたため、同じプレハブから
+    ///   出した VFX は何個出しても寸分違わない同じ粒子配置になっていた。この値を混ぜて
+    ///   インスタンスごとに独立した乱数ストリームにする。0 は「未割り当て」を意味する。
+    ///   ※元は _pad_dynamic だった空き。CB のサイズ・オフセットは変わらない。
+    uint   instance_seed;           // offset 44
 
     // ---- 前フレームのエミッタ姿勢（サブフレーム補間でスポーンを軌道上に連続配置する） ----
     float4 prev_emit_rotation;      // offset 48: 前フレームのワールド回転

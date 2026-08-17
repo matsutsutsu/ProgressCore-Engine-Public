@@ -16,7 +16,7 @@ NavMeshBuildData NavMeshBuilder::GatherGeometry(CCL::ECS::World& world) {
     NavMeshBuildData data;
     int vertexOffset = 0; // 複数のモデル・メッシュを繋ぎ合わせるための頂点オフセット
 
-    // あなたのECSの機能を使って、TransformとModelを持つEntityIDのリストを取得
+    // Transform と Model を併せ持つエンティティを列挙する
     std::vector<CCL::ECS::EntityID> entities = world.View<TransformComponent, ModelComponent>();
 
     for (CCL::ECS::EntityID entity : entities) {
@@ -288,7 +288,7 @@ bool NavMeshBuilder::BuildNavMesh(CCL::ECS::World& world, const NavMeshBuildSett
         return false;
     }
 
-    // あなたのECSの強力なResource機能を使ってWorldに登録する！
+    // 生成した NavMesh は World のリソースとして共有する
     if (!world.HasResource<NavigationData>()) {
         world.AddResource<NavigationData>();
     }

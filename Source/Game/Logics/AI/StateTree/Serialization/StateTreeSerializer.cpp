@@ -4,7 +4,7 @@
 #include "Game/Logics/AI/StateTree/Core/NodeRegistry.h"
 
 #include "Engine/Platform/Core/FileSystem.h"                       // ReadAllText / WriteAllText
-#include "Engine/Platform/Core/Logger.h"      // パスは環境に合わせて調整してください
+#include "Engine/Platform/Core/Logger.h"      // 読み込み失敗の報告
 
 #include <cstring>   // memcpy
 
@@ -152,8 +152,7 @@ namespace
             const NodeDesc* desc = reg.GetTaskDesc(id);
             const uint32_t off = BuildParamBlob(asset, desc, t.params);
             asset.AddTask(idx, id, off,
-                          desc ? desc->paramsSize   : 0,
-                          desc ? desc->instanceSize : 0);
+                          desc ? desc->paramsSize : 0);
         }
 
         // 子

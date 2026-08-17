@@ -42,11 +42,9 @@ namespace CCL::Serialization {
             // 無効 ID は即 0 を返す (ファイル上の「参照なし」表現)
             if (realID == CCL::ECS::InvalidEntityID) return InvalidLocalIndex;
 
-            // ※ EntityID == 0 を「無効」と扱うか「有効な ID #0」と扱うかは
-            //   エンジン仕様による。今回のコードでは ID=0 を実エンティティに割り当てている
-            //   ようなので、0 を InvalidEntityID と混同しないようガード。
-            //   元コードに「if (realID == 0) return 0」があったが、これだと
-            //   先頭エンティティの参照を全部潰してしまうため、ここでは行わない。
+            // このエンジンは ID=0 を実エンティティへ割り当てるため、0 を無効値として
+            // 早期リターンしてはいけない（先頭エンティティへの参照が全て潰れる）。
+            // 無効判定は InvalidEntityID との比較だけで行う。
 
             auto it = m_idToLocal.find(realID);
             if (it != m_idToLocal.end()) return it->second;

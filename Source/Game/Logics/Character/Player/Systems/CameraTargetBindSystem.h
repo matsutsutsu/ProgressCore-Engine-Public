@@ -20,6 +20,7 @@
 
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Camera/Components/VirtualCameraComponents.h"
+#include "Engine/Serialization/Core/EntityLink.h"
 
 class CameraTargetBindSystem
     : public CCL::ECS::IfSystem<CameraTargetBindSystem,
@@ -33,4 +34,12 @@ class CameraTargetBindSystem
     virtual ~CameraTargetBindSystem() = default;
 
     void Update(float dt) override;
+
+  private:
+    /// PlayerComponent を持つ最初のエンティティ(=プレイヤー)を役割で探す。
+    CCL::ECS::EntityID FindPlayer();
+
+    /// target が無効(未接続 / リロードでID変化 / リスポーン)なら player へ繋ぎ直す。
+    /// 有効な相手を指している場合(手動設定など)は尊重して上書きしない。
+    void BindIfInvalid(CCL::Serialization::EntityLink &target, CCL::ECS::EntityID player);
 };

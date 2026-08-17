@@ -77,15 +77,15 @@
         {
             "Bindings": [
                 {
-                    "Device": "Keyboard",
-                    "Key": "Q"
+                    "Device": "Mouse_Button",
+                    "Key": "BTN_RIGHT"
                 },
                 {
                     "Device": "GamePad_Button",
-                    "Key": "BTN_LEFT_TRIGGER"
+                    "Key": "BTN_B"
                 }
             ],
-            "Name": "Overdrive",
+            "Name": "Cleave",
             "Trigger": "Triggered"
         }
     ],

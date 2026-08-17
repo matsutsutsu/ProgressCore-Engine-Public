@@ -25,7 +25,8 @@ CFIELD_FLOAT_RANGED(characterMass, "質量(kg)", 1.0f, 0.1f, 1000.0f, "物理")
 CFIELD_FLOAT_RANGED(gravityScale, "重力倍率", 0.1f, 0.0f, 50.0f, "物理")
 CFIELD_FLOAT_RANGED(fallGravityScale, "落下重力倍率", 0.1f, 0.0f, 50.0f, "物理")
 
-CFIELD_FLOAT_RANGED(deceleration, "減速摩擦力", 0.1f, 1.0f, 50.0f, "操作感")
+CFIELD_FLOAT_RANGED(acceleration, "加速の速さ", 0.1f, 1.0f, 50.0f, "操作感")
+CFIELD_FLOAT_RANGED(deceleration, "減速の速さ", 0.1f, 1.0f, 50.0f, "操作感")
 CFIELD_FLOAT_RANGED(apexGravityScale, "頂点重力倍率", 0.1f, 0.0f, 10.0f, "操作感")
 CFIELD_FLOAT_RANGED(apexVelocityThreshold, "頂点判定閾値", 0.1f, 0.0f, 10.0f, "操作感")
 

@@ -6,8 +6,13 @@
 #include <algorithm> // std::min / std::max
 #include <cmath>     // std::ceil
 #include <cstdarg>
+#include <cstdio>    // snprintf
 #include <thread>
 #include <windows.h> // OutputDebugStringA
+
+#include "tracy/Tracy.hpp"             // ZoneScopedN / tracy::SetThreadName
+#include "Engine/ECS/Jobs/CCL_JobSystem.h" // 共有プールのワーカー数取得
+#include "Engine/Platform/Core/Logger.h"   // 起動時の構成ログ
 
 using namespace JPH;
 
@@ -63,7 +68,15 @@ JoltPhysicsManager::~JoltPhysicsManager()
     // Systemを先に開放しないと、Systemの中で使っているAllocatorやFilterが先に消えてしまい、
     // Systemのデストラクタでアクセス違反になる
     m_physicsSystem.reset();
-    m_jobSystem.reset();
+
+    // ジョブシステムは「使っていた方」だけ実体を持つ。
+    // どちらも reset() して構わない（未使用側は最初から空）。
+    // ※ アダプタが指している共有プールは EngineServices の所有物なので、
+    //    ここでは破棄しない（アダプタは参照しているだけ）。
+    m_activeJobSystem = nullptr;
+    m_adapterJobSystem.reset();
+    m_nativeJobSystem.reset();
+
     m_tempAllocator.reset();
 
     UnregisterTypes();
@@ -72,7 +85,7 @@ JoltPhysicsManager::~JoltPhysicsManager()
     Factory::sInstance = nullptr;
 }
 
-void JoltPhysicsManager::Initialize()
+void JoltPhysicsManager::Initialize(CCL::ECS::JobSystem *inSharedPool)
 {
     if (m_isInitialized) return;
 
@@ -100,14 +113,91 @@ void JoltPhysicsManager::Initialize()
     // fix: hardware_concurrency() は取得不能な環境で 0 を返す規格。
     //   そのまま "-1" するとアンダーフローして巨大値になりスレッド生成でクラッシュするため、
     //   必ず 1 以上にクランプする。
+    //
+    // なぜ「コア数 - 1」なのか:
+    //   Jolt のドキュメント（JobSystemThreadPool.h の Init）に
+    //     "the number of concurrent jobs is 1 more because the main thread will
+    //      also run jobs while waiting for a barrier to complete"
+    //   とある通り、バリア待ちの間はメインスレッドもジョブを実行する。
+    //   つまり総並列度は (ワーカー数 + 1)。コア数フルに立てるとコア数+1になり、
+    //   OSのコンテキストスイッチで損をする。
+    //   ECS 側の自作 JobSystem も同じ理由で -1 に揃えてある（CCL_JobSystem.cpp）。
     const unsigned int hwThreads     = std::thread::hardware_concurrency();
     const int          workerThreads = (hwThreads > 1) ? static_cast<int>(hwThreads - 1) : 1;
-    m_jobSystem = std::make_unique<JobSystemThreadPool>(
-        cMaxPhysicsJobs, cMaxPhysicsBarriers, workerThreads);
+
+    if (inSharedPool != nullptr)
+    {
+        // ============================================================
+        // 統合モード: ECS と同じスレッドプールで物理ジョブを走らせる
+        // ============================================================
+        //
+        // 利点
+        //   ・スレッドプールが1本になる（プール2本ぶんのスレッドを立てない）
+        //   ・物理ジョブの実行が JoltJobSystemAdapter::RunJob を通るので、
+        //     Tracy に「ジョブ名付きのゾーン」として並ぶ
+        //
+        // 元に戻したいときは Framework.cpp の Initialize 呼び出しから
+        // 引数を外して nullptr にするだけでよい（下の else 側に落ちる）。
+        m_adapterJobSystem = std::make_unique<JoltJobSystemAdapter>();
+        m_adapterJobSystem->Init(inSharedPool, cMaxPhysicsJobs, cMaxPhysicsBarriers);
+        m_activeJobSystem = m_adapterJobSystem.get();
+
+        // どちらのモードで動いているか、Tracy計装が実際にビルドに入っているかを
+        // 起動ログに残す。「Tracyに出ない」ときの切り分けを推測でやらないため。
+    #if defined(TRACY_ENABLE) && defined(JPH_PROFILE_ENABLED)
+        const char *tracyState = "ON";
+    #else
+        const char *tracyState = "OFF (TRACY_ENABLE / JPH_PROFILE_ENABLED のどちらかが未定義)";
+    #endif
+        CCL_LOG_INFO(LogCategory::Physics,
+            "JobSystem = SHARED (JoltJobSystemAdapter) / workers=%u / job zones=%s",
+            inSharedPool->GetWorkerCount(), tracyState);
+    }
+    else
+    {
+        // ============================================================
+        // 従来モード: Jolt 純正のスレッドプールを使う
+        // ============================================================
+        //
+        // --- 構築順に注意 ---
+        //
+        // 引数付きコンストラクタ JobSystemThreadPool(maxJobs, maxBarriers, numThreads) は
+        // その場で Init() を呼び、ワーカースレッドを起動してしまう。
+        // SetThreadInitFunction は JobSystemThreadPool.h に
+        //   "must be set before calling Init()"
+        // と明記されている通り、起動後に設定してももう呼ばれない。
+        // そのため「デフォルト構築 → フック設定 → Init()」の順にする。
+        m_nativeJobSystem = std::make_unique<JobSystemThreadPool>();
+
+        // --- Tracy へワーカースレッドを名前付きで登録する ---
+        //
+        // SetThreadInitFunction は Jolt が公式に用意しているフックで、
+        // 各ワーカースレッドの起動直後に、そのスレッド自身の上で呼ばれる。
+        // ここで tracy::SetThreadName を呼ぶと "Jolt Worker 0..N" として
+        // OSレベルのスレッド名が付く（VSのスレッドウィンドウにも出る）。
+        //
+        // 注意: 名前を付けても Tracy のタイムラインに行は生えない。
+        //       Tracy が行を作るのは「イベントを送信したスレッド」だけで、
+        //       Jolt のジョブ関数には Tracy のゾーンが1つも無いため。
+        //       ジョブ単位で見たい場合が、上の統合モード（アダプタ）の用途。
+        m_nativeJobSystem->SetThreadInitFunction([](int threadIndex) {
+            char name[32];
+            snprintf(name, sizeof(name), "Jolt Worker %d", threadIndex);
+            tracy::SetThreadName(name);
+        });
+
+        // フックを仕込んでからワーカースレッドを起動する
+        m_nativeJobSystem->Init(cMaxPhysicsJobs, cMaxPhysicsBarriers, workerThreads);
+        m_activeJobSystem = m_nativeJobSystem.get();
+
+        CCL_LOG_INFO(LogCategory::Physics,
+            "JobSystem = NATIVE (JPH::JobSystemThreadPool) / workers=%d / job zones=なし",
+            workerThreads);
+    }
 
     // 4. 物理システムのパラメータ設定
     #if PhysicsPerformanceCounters
-    // 群衆対応のAAAスケール
+    // 大量の剛体を想定した上限値
     const uint cMaxBodies             = 65536; // 最大6万体まで許容
     const uint cNumBodyMutexes        = 0;     // デフォルトのミューテックス数
     const uint cMaxBodyPairs          = 65536; // 密集によるペア爆発に備える
@@ -142,6 +232,11 @@ void JoltPhysicsManager::Initialize()
 // 毎フレーム呼び出す更新関数
 void JoltPhysicsManager::Step(float deltaTime)
 {
+    // Simulation セクション（Framework.cpp の TRACY_SECTION）の中に置かれる Zone。
+    // 「メインスレッドから見た物理の総時間」がこれで測れる。
+    // 物理ワーカーが並列で何をしているかは "Jolt Worker N" スレッドの帯を見る。
+    ZoneScopedN("Physics: Jolt Update");
+
     if (!m_isInitialized) return;
 
     // fix: dtクランプ。
@@ -156,5 +251,10 @@ void JoltPhysicsManager::Step(float deltaTime)
     int             collisionSteps = static_cast<int>(std::ceil(deltaTime / kFixedStep));
     if (collisionSteps < 1) collisionSteps = 1;
 
-    m_physicsSystem->Update(deltaTime, collisionSteps, m_tempAllocator.get(), m_jobSystem.get());
+    // 衝突ステップ数を Zone に添付しておく。
+    // 処理落ち時は dt が伸びて collisionSteps が増える＝物理が重くなる、という
+    // 「スパイクの原因」が Tracy 上でそのまま読める。
+    ZoneValue(static_cast<uint64_t>(collisionSteps));
+
+    m_physicsSystem->Update(deltaTime, collisionSteps, m_tempAllocator.get(), m_activeJobSystem);
 }

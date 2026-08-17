@@ -25,11 +25,17 @@ namespace CCL::ECS
     //    住所録 m_entityLocationMap は「index を配列の添字」にして引く。
     //    世代が何であれ「配列のどこか」は同じなので、index だけあればよい。
     //    世代の照合は World::IsEntityValid の担当（役割分担）。
+    //
+    //  実装メモ
+    //    ビットレイアウト（マスク・シフト量）の定義は CCL_Types.h の EntityHandle
+    //    に一本化してある。ここで 0xFFFFFFFF を直接書くとレイアウトの定義が
+    //    二箇所に散るため、EntityHandle::GetIndex を経由している。
+    //    戻り値が size_t なのは、呼び出し側が vector の添字として使うため。
     // ============================================================================
     /// @brief EntityID から世代情報を切り捨て、純粋なインデックスを取り出す
     inline size_t GetPureIndex(EntityID id)
     {
-        return static_cast<size_t>(id & 0xFFFFFFFF);
+        return static_cast<size_t>(EntityHandle::GetIndex(id));
     }
 
     // ================================================================
@@ -302,14 +308,13 @@ namespace CCL::ECS
 
 
                     //  ----------------------------------------------------------------------------
-                    //  補足: op->data の型について
-                    //    PendingOp::data は void*（非const）。td.mover の引数も (void* dst, void* src)
-                    //    なのでそのまま渡せる。constructor は (void*, const void*) だが、現状の
-                    //    呼び出しは op->data を const として渡しているだけで実体は非const。問題なし。
+                    //  型について:
+                    //    PendingOp::data は非const の void* で、td.mover の (void* dst, void* src)
+                    //    にそのまま渡せる。constructor 側は (void*, const void*) だが実体は非const。
                     //
-                    //  補足: MoveEntityBetweenChunks（チャンク間移動）側は既に 297 行目で
-                    //    tdDst.mover を優先しているため修正不要。今回の不具合は「新規 AddComponent
-                    //    適用」経路（InsertNewEntity）だけが constructor を使っていたことが原因。
+                    //  チャンク間移動（MoveEntityBetweenChunks）は元から mover を優先している。
+                    //  ムーブ専用型を壊すのは AddComponent 適用時（InsertNewEntity）の経路だけなので、
+                    //  ここでも mover があればそちらを使う。
                     //============================================================================
                 }
             }

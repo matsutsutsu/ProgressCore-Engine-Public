@@ -65,11 +65,24 @@ float3 RotateByQuat(float3 v, float4 q)
 //
 // particle_scale は誕生/消滅サイズにベイクして p.scale フィールドを廃止。
 // p.seed を per-particle 安定シードとして設定。
+//
+// @param salt 生まれ変わりごとに変える追加の種。継続放出で同じ粒子番号を
+//             使い回すとき、前回の p.seed を渡して数珠つなぎにする。
+//             初期化(InitCS)では 0 を渡す。
 //=====================================================================
-void spawn(in uint id, inout particle p)
+void spawn(in uint id, inout particle p, in uint salt)
 {
-    // per-particle 安定シード (id を基底とした独立ストリーム)
-    p.seed = wangHash(id);
+    // ---- per-particle 安定シード ----
+    //   種は3つの要素から作る。どれが欠けても「同じ絵の繰り返し」が起きる。
+    //     id            … 同じエミッタ内で粒子どうしを散らす
+    //     instance_seed … 同じプレハブから出した VFX どうしを散らす
+    //                     （無いと、並んで出たスパーク2つが寸分違わない）
+    //     salt          … 同じ粒子番号の生まれ変わりどうしを散らす
+    //                     （無いと、継続放出のエミッタが完全に周期的になる）
+    //
+    //   足す前に wangHash で散らすのが要点。そのまま足すと
+    //   (インスタンス1・粒子5) と (インスタンス2・粒子4) が同じ値になり衝突する。
+    p.seed = wangHash(id + wangHash(instance_seed + salt));
 
     float r_rand     = randUint(p.seed +  1u);
     float a_rand     = randUint(p.seed +  2u);
@@ -144,6 +157,9 @@ void spawn(in uint id, inout particle p)
 
     p.velocity     = RotateByQuat(localVel, emitRot);
     p.angular_speed = lerp(emit_angular_speed.x, emit_angular_speed.y, randUint(p.seed + 11u));
+    // mass は現在どこからも参照されない予約枠（重力は質量に依らないため）。
+    //   将来「効果全体で1本の粒子バッファ」に統合するとき、この4バイトを
+    //   「この粒子がどのエミッタのものか」の添字に転用できるよう残してある。
     p.mass          = 1.0f;
     p.angle         = PI * ang_rand;
     p.color         = float4(1, 1, 1, 1);

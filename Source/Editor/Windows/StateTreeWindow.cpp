@@ -7,7 +7,7 @@
 #include "Game/Logics/AI/StateTree/Core/StateTreeRegistry.h"
 #include "Game/Logics/AI/StateTree/Core/StateTreeComponent.h"
 
-#include "Engine/Platform/Core/Dialog.h"          // Engine::FileDialog（パスは適宜）
+#include "Engine/Platform/Core/Dialog.h"          // Engine::FileDialog（保存/読込ダイアログ）
 #include "Engine/ECS/Core/CCL_World.h"
 
 #ifdef ENABLE_EDITOR

@@ -82,6 +82,14 @@ public:
     void SetRenderTargets(bool useGameRTV);
     HRESULT Present(UINT syncInterval);
 
+    /**
+     * @brief 次フレームを構築してよくなるまで(前フレームの提示完了まで)ブロックする。
+     * @details Waitable スワップチェーンの待機オブジェクトを待つ。フレーム先頭で1回だけ呼ぶ。
+     *          これで vsync待ちがこの1箇所に集約され、各描画パスの計測に紛れ込まない。
+     *          待機ハンドルが無い(生成失敗)場合は即座に返る。
+     */
+    void WaitForFrameLatency() const noexcept;
+
     HRESULT GetDeviceRemovedReason() const noexcept;
 
 private:
@@ -92,6 +100,10 @@ private:
     Microsoft::WRL::ComPtr<ID3D11Device>             m_device;
     Microsoft::WRL::ComPtr<ID3D11DeviceContext>      m_context;
     Microsoft::WRL::ComPtr<IDXGISwapChain>           m_swapChain;
+
+    // Waitable スワップチェーンの待機オブジェクト（フレーム先頭で待つ）。
+    //   スワップチェーンが所有する扱いなので明示 CloseHandle はしない（プロセス終了で回収）。
+    HANDLE m_frameLatencyWaitable = nullptr;
     Microsoft::WRL::ComPtr<ID3D11RenderTargetView>   m_backBufferRTV;
     Microsoft::WRL::ComPtr<ID3D11DepthStencilView>   m_depthStencilView;
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_depthSRV;

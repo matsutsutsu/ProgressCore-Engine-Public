@@ -23,6 +23,7 @@
 #include "Engine/Serialization/Core/SceneFormat.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Platform/Core/FileSystem.h"
+#include "Engine/Platform/Core/Logger.h"
 
 
 #include <json.hpp>
@@ -122,6 +123,8 @@ bool PrefabSerializer::Save(
     auto& registry = ComponentRegistry::Instance();
     auto& chunkManager = world->GetChunkManager();
 
+    size_t savedComponentCount = 0;   // 実際に書き出せたコンポーネント総数（診断用）
+
     for (EntityID id : entitiesToSave) {
         nlohmann::json entityJson;
         entityJson[CCL::Serialization::Keys::EntityLocal] = saveCtx.GetOrRegister(id);
@@ -129,28 +132,62 @@ bool PrefabSerializer::Save(
 
         size_t index = 0;
         size_t chunkIdx = chunkManager.SearchEntityIn(id, &index);
-        if (chunkIdx == InvalidIndex) continue;
+        if (chunkIdx == InvalidIndex) {
+            // 生成予約中(ScrutinyAndApply 前)などで実体がまだ無い。黙って落とすと
+            // 「保存したのに空」の原因が分からなくなるので必ず知らせる。
+            CCL_LOG_WARN(LogCategory::Editor,
+                "[Prefab] Entity %llu の実体が見つかりません。保存から除外しました",
+                static_cast<unsigned long long>(id));
+            continue;
+        }
 
         Chunk* chunk = chunkManager.GetChunks()[chunkIdx].get();
         for (const auto& typeData : chunk->GetArchetype()) {
+            // ここから下の continue は「このコンポーネントは保存されない」を意味する。
+            //   無言で落とすとプレハブが静かに壊れるので、理由を必ずログに出す。
+            //   ※ typeData.name は typeid ベースの型名 (例: "struct GPUParticleComponent")。
+            const char* typeName = typeData.name ? typeData.name : "(unknown type)";
+
             std::string cName = registry.GetNameByTypeID(typeData.id);
-            if (cName.empty()) continue;
+            if (cName.empty()) {
+                CCL_LOG_WARN(LogCategory::Editor,
+                    "[Prefab] %s は ComponentRegistry に未登録のため保存されません "
+                    "(REGISTER_COMPONENT を確認)", typeName);
+                continue;
+            }
 
             void* data = chunk->GetComponentPtrByType(typeData.id, index);
             const auto* meta = registry.GetInfoByName(cName);
-            if (!meta || !data) continue;
-            if (!meta->isSerializable) continue;   // 保存対象外はスキップ
+            if (!meta || !data) {
+                CCL_LOG_WARN(LogCategory::Editor,
+                    "[Prefab] %s (%s) のデータを取得できず保存されません",
+                    cName.c_str(), typeName);
+                continue;
+            }
+            if (!meta->isSerializable) continue;   // 実行時専用。設計通りなので無言でよい
 
             nlohmann::json compJson;
             // SaveContext を渡すことで EntityLink が自動で localIndex 化される。
             //    Prefab 内の親子関係も外部 ID を残さず、自己完結したファイルになる。
             meta->serialize(compJson, data, &saveCtx);
             entityJson[CCL::Serialization::Keys::Components][cName] = std::move(compJson);
+            ++savedComponentCount;
         }
         root[CCL::Serialization::Keys::Entities].push_back(std::move(entityJson));
     }
 
     // ---- 5. ファイル書き出し ----
     std::string jsonStr = root.dump(4);
-    return FileSystem::WriteAllText(filepath, jsonStr);
+    if (!FileSystem::WriteAllText(filepath, jsonStr)) {
+        CCL_LOG_ERROR(LogCategory::Editor, "[Prefab] %s の書き出しに失敗しました", filepath.c_str());
+        return false;
+    }
+
+    // 何がファイルに入ったかを必ず1行残す。「保存したのに中身が違う」ときに
+    //   選択エンティティを間違えたのかどうかを、ここだけ見て切り分けられる。
+    CCL_LOG_INFO(LogCategory::Editor,
+        "[Prefab] %s を保存 (エンティティ %zu 個 / コンポーネント %zu 個)",
+        filepath.c_str(), entitiesToSave.size(), savedComponentCount);
+
+    return true;
 }

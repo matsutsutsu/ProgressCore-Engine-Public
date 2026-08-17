@@ -2,7 +2,7 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 	<ItemDefinitionGroup>
 		<ClCompile>
-			<!-- ★ エディタ用マクロとプロファイラ有効化 -->
+			<!-- エディタ用マクロとプロファイラ有効化 -->
 			<PreprocessorDefinitions>
 				ENABLE_EDITOR;
 				TRACY_ENABLE;

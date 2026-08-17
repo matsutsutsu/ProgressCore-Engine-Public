@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="External">
@@ -44,12 +44,6 @@
     </Filter>
     <Filter Include="Source\Editor\Utils">
       <UniqueIdentifier>{60ef720e-bd36-459c-9412-2e6afd85512e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="External\Lua">
-      <UniqueIdentifier>{15050559-562a-4842-b055-0311184a821c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="External\sol2">
-      <UniqueIdentifier>{e61c19fd-3a88-43cb-9158-8fc825baca78}</UniqueIdentifier>
     </Filter>
     <Filter Include="External\Tracy">
       <UniqueIdentifier>{3e611eaa-b59d-4272-94fa-84f269d616af}</UniqueIdentifier>
@@ -252,6 +246,9 @@
     <Filter Include="Source\Engine\Core\App">
       <UniqueIdentifier>{4aff0f95-be75-41c1-8df8-7b07aa6bba85}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Core\Profiling">
+      <UniqueIdentifier>{2b7e1c34-9d5a-4f21-8c60-1a3e5d7b9f02}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Core\Components">
       <UniqueIdentifier>{6f9158c7-7a95-45b0-b115-584392699565}</UniqueIdentifier>
     </Filter>
@@ -407,9 +404,6 @@
     </Filter>
     <Filter Include="Source\Game\Logics\Combat\_Meta">
       <UniqueIdentifier>{0a94ac07-4f26-4cc2-a563-eb0d04156a23}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\AI\FlowField">
-      <UniqueIdentifier>{178d9d97-d69d-42b8-995e-320e262d6a28}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Game\Logics\AI\StateTree\Core">
       <UniqueIdentifier>{22b60c6b-b385-492f-a70c-b2c726f3d987}</UniqueIdentifier>
@@ -600,93 +594,6 @@
     <ClInclude Include="Source\Editor\Utils\ShellIconLoader.h">
       <Filter>Source\Editor\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="External\sol2\sol\sol.hpp">
-      <Filter>External\sol2</Filter>
-    </ClInclude>
-    <ClInclude Include="External\Lua\src\lapi.h">
-      <Filter>External\Lua</Filter>
-    </ClInclude>
-    <ClInclude Include="External\Lua\src\lauxlib.h">
-      <Filter>External\Lua</Filter>
-    </ClInclude>
-    <ClInclude Include="External\Lua\src\lcode.h">
-      <Filter>External\Lua</Filter>
-    </ClInclude>
-    <ClInclude Include="External\Lua\src\lctype.h">
-      <Filter>External\Lua</Filter>
-    </ClInclude>
-    <ClInclude Include="External\Lua\src\ldebug.h">
-      <Filter>External\Lua</Filter>
-    </ClInclude>
-    <ClInclude Include="External\Lua\src\ldo.h">
-      <Filter>External\Lua</Filter>
-    </ClInclude>
-    <ClInclude Include="External\Lua\src\lfunc.h">
-      <Filter>External\Lua</Filter>
-    </ClInclude>
-    <ClInclude Include="External\Lua\src\lgc.h">
-      <Filter>External\Lua</Filter>
-    </ClInclude>
-    <ClInclude Include="External\Lua\src\ljumptab.h">
-      <Filter>External\Lua</Filter>
-    </ClInclude>
-    <ClInclude Include="External\Lua\src\llex.h">
-      <Filter>External\Lua</Filter>
-    </ClInclude>
-    <ClInclude Include="External\Lua\src\llimits.h">
-      <Filter>External\Lua</Filter>
-    </ClInclude>
-    <ClInclude Include="External\Lua\src\lmem.h">
-      <Filter>External\Lua</Filter>
-    </ClInclude>
-    <ClInclude Include="External\Lua\src\lobject.h">
-      <Filter>External\Lua</Filter>
-    </ClInclude>
-    <ClInclude Include="External\Lua\src\lopcodes.h">
-      <Filter>External\Lua</Filter>
-    </ClInclude>
-    <ClInclude Include="External\Lua\src\lopnames.h">
-      <Filter>External\Lua</Filter>
-    </ClInclude>
-    <ClInclude Include="External\Lua\src\lparser.h">
-      <Filter>External\Lua</Filter>
-    </ClInclude>
-    <ClInclude Include="External\Lua\src\lprefix.h">
-      <Filter>External\Lua</Filter>
-    </ClInclude>
-    <ClInclude Include="External\Lua\src\lstate.h">
-      <Filter>External\Lua</Filter>
-    </ClInclude>
-    <ClInclude Include="External\Lua\src\lstring.h">
-      <Filter>External\Lua</Filter>
-    </ClInclude>
-    <ClInclude Include="External\Lua\src\ltable.h">
-      <Filter>External\Lua</Filter>
-    </ClInclude>
-    <ClInclude Include="External\Lua\src\ltm.h">
-      <Filter>External\Lua</Filter>
-    </ClInclude>
-    <ClInclude Include="External\Lua\src\lua.h">
-      <Filter>External\Lua</Filter>
-    </ClInclude>
-    <ClInclude Include="External\Lua\src\lua.hpp">
-      <Filter>External\Lua</Filter>
-    </ClInclude>
-    <ClInclude Include="External\Lua\src\luaconf.h">
-      <Filter>External\Lua</Filter>
-    </ClInclude>
-    <ClInclude Include="External\Lua\src\lualib.h">
-      <Filter>External\Lua</Filter>
-    </ClInclude>
-    <ClInclude Include="External\Lua\src\lundump.h">
-      <Filter>External\Lua</Filter>
-    </ClInclude>
-    <ClInclude Include="External\Lua\src\lvm.h">
-      <Filter>External\Lua</Filter>
-    </ClInclude>
-    <ClInclude Include="External\Lua\src\lzio.h">
-      <Filter>External\Lua</Filter>
-    </ClInclude>
     <ClInclude Include="External\ImGuizmo\GraphEditor.h">
       <Filter>External\ImGuizmo</Filter>
     </ClInclude>
@@ -864,10 +771,10 @@
     <ClInclude Include="Source\Engine\UI\ECS\Systems\UIProgressBarCollectSystem.h">
       <Filter>Source\Engine\UI\ECS\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\UI\OverdriveHudSystem.h">
+    <ClInclude Include="Source\Game\UI\PlayerHealthHudSystem.h">
       <Filter>Source\Game\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\UI\PlayerHealthHudSystem.h">
+    <ClInclude Include="Source\Game\UI\CleaveGaugeHudSystem.h">
       <Filter>Source\Game\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\BossHealthHudSystem.h">
@@ -941,9 +848,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Renderer\ParticleRenderer.h">
       <Filter>Source\Engine\Graphics\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Components\Particle\PooledParticleComponent.h">
-      <Filter>Source\Engine\Graphics\Components\Particle</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\Factory\EntityFactory.h">
       <Filter>Source\Engine\Serialization\Factory</Filter>
@@ -1263,6 +1167,9 @@
     <ClInclude Include="Source\Engine\Core\App\Framework.h">
       <Filter>Source\Engine\Core\App</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Profiling\TracySection.h">
+      <Filter>Source\Engine\Core\Profiling</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Core\Components\DestroyTag.h">
       <Filter>Source\Engine\Core\Components</Filter>
     </ClInclude>
@@ -1428,6 +1335,9 @@
     <ClInclude Include="Source\Engine\Graphics\Systems\Particle\ParticleAnimationSyncSystem.h">
       <Filter>Source\Engine\Graphics\Systems\Particle</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Systems\Particle\VFXSystem.h">
+      <Filter>Source\Engine\Graphics\Systems\Particle</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Systems\PostProcess\PostProcessSystem.h">
       <Filter>Source\Engine\Graphics\Systems\PostProcess</Filter>
     </ClInclude>
@@ -1542,6 +1452,9 @@
     <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsFacade.h">
       <Filter>Source\Engine\Physics\JoltIntegration</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltJobSystemAdapter.h">
+      <Filter>Source\Engine\Physics\JoltIntegration</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsManager.h">
       <Filter>Source\Engine\Physics\JoltIntegration</Filter>
     </ClInclude>
@@ -1633,6 +1546,9 @@
       <Filter>Source\Engine\Time</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Time\TimeState.h">
+      <Filter>Source\Engine\Time</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Time\TimeService.h">
       <Filter>Source\Engine\Time</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Systems\SystemPriority.h">
@@ -1755,17 +1671,8 @@
     <ClInclude Include="Source\Engine\Core\Math\ScreenToWorld.h">
       <Filter>Source\Engine\Core\Math</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Components\Particle\ParticlePool.h">
-      <Filter>Source\Engine\Graphics\Components\Particle</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Editor\Windows\TestLauncherWindow.h">
       <Filter>Source\Editor\Windows\Game</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\FlowField\NavGridFlowField.h">
-      <Filter>Source\Game\Logics\AI\FlowField</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\FlowField\NavFlowFieldSystem.h">
-      <Filter>Source\Game\Logics\AI\FlowField</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\NodeParamField.h">
       <Filter>Source\Game\Logics\AI\StateTree\Core</Filter>
@@ -1815,6 +1722,9 @@
     <ClInclude Include="Source\Game\Logics\Character\Player\Components\DashComponent.h">
       <Filter>Source\Game\Logics\Character\Player\Components</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Player\Components\CleaveComponent.h">
+      <Filter>Source\Game\Logics\Character\Player\Components</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Player\Components\JustEvadeComponent.h">
       <Filter>Source\Game\Logics\Character\Player\Components</Filter>
     </ClInclude>
@@ -1824,14 +1734,14 @@
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerDashSystem.h">
       <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerCleaveSystem.h">
+      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerActionVfxSystem.h">
+      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.h">
       <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\OverdriveSystem.h">
-      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Player\Components\OverdriveComponent.h">
-      <Filter>Source\Game\Logics\Character\Player\Components</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Platform\Input\InputKeyTable.h">
       <Filter>Source\Engine\Platform\Input</Filter>
@@ -2048,102 +1958,6 @@
     <ClCompile Include="Source\Editor\Utils\ShellIconLoader.cpp">
       <Filter>Source\Editor\Utils</Filter>
     </ClCompile>
-    <ClCompile Include="External\Lua\src\lapi.c">
-      <Filter>External\Lua</Filter>
-    </ClCompile>
-    <ClCompile Include="External\Lua\src\lauxlib.c">
-      <Filter>External\Lua</Filter>
-    </ClCompile>
-    <ClCompile Include="External\Lua\src\lbaselib.c">
-      <Filter>External\Lua</Filter>
-    </ClCompile>
-    <ClCompile Include="External\Lua\src\lcode.c">
-      <Filter>External\Lua</Filter>
-    </ClCompile>
-    <ClCompile Include="External\Lua\src\lcorolib.c">
-      <Filter>External\Lua</Filter>
-    </ClCompile>
-    <ClCompile Include="External\Lua\src\lctype.c">
-      <Filter>External\Lua</Filter>
-    </ClCompile>
-    <ClCompile Include="External\Lua\src\ldblib.c">
-      <Filter>External\Lua</Filter>
-    </ClCompile>
-    <ClCompile Include="External\Lua\src\ldebug.c">
-      <Filter>External\Lua</Filter>
-    </ClCompile>
-    <ClCompile Include="External\Lua\src\ldo.c">
-      <Filter>External\Lua</Filter>
-    </ClCompile>
-    <ClCompile Include="External\Lua\src\ldump.c">
-      <Filter>External\Lua</Filter>
-    </ClCompile>
-    <ClCompile Include="External\Lua\src\lfunc.c">
-      <Filter>External\Lua</Filter>
-    </ClCompile>
-    <ClCompile Include="External\Lua\src\lgc.c">
-      <Filter>External\Lua</Filter>
-    </ClCompile>
-    <ClCompile Include="External\Lua\src\linit.c">
-      <Filter>External\Lua</Filter>
-    </ClCompile>
-    <ClCompile Include="External\Lua\src\liolib.c">
-      <Filter>External\Lua</Filter>
-    </ClCompile>
-    <ClCompile Include="External\Lua\src\llex.c">
-      <Filter>External\Lua</Filter>
-    </ClCompile>
-    <ClCompile Include="External\Lua\src\lmathlib.c">
-      <Filter>External\Lua</Filter>
-    </ClCompile>
-    <ClCompile Include="External\Lua\src\lmem.c">
-      <Filter>External\Lua</Filter>
-    </ClCompile>
-    <ClCompile Include="External\Lua\src\loadlib.c">
-      <Filter>External\Lua</Filter>
-    </ClCompile>
-    <ClCompile Include="External\Lua\src\lobject.c">
-      <Filter>External\Lua</Filter>
-    </ClCompile>
-    <ClCompile Include="External\Lua\src\lopcodes.c">
-      <Filter>External\Lua</Filter>
-    </ClCompile>
-    <ClCompile Include="External\Lua\src\loslib.c">
-      <Filter>External\Lua</Filter>
-    </ClCompile>
-    <ClCompile Include="External\Lua\src\lparser.c">
-      <Filter>External\Lua</Filter>
-    </ClCompile>
-    <ClCompile Include="External\Lua\src\lstate.c">
-      <Filter>External\Lua</Filter>
-    </ClCompile>
-    <ClCompile Include="External\Lua\src\lstring.c">
-      <Filter>External\Lua</Filter>
-    </ClCompile>
-    <ClCompile Include="External\Lua\src\lstrlib.c">
-      <Filter>External\Lua</Filter>
-    </ClCompile>
-    <ClCompile Include="External\Lua\src\ltable.c">
-      <Filter>External\Lua</Filter>
-    </ClCompile>
-    <ClCompile Include="External\Lua\src\ltablib.c">
-      <Filter>External\Lua</Filter>
-    </ClCompile>
-    <ClCompile Include="External\Lua\src\ltm.c">
-      <Filter>External\Lua</Filter>
-    </ClCompile>
-    <ClCompile Include="External\Lua\src\lundump.c">
-      <Filter>External\Lua</Filter>
-    </ClCompile>
-    <ClCompile Include="External\Lua\src\lutf8lib.c">
-      <Filter>External\Lua</Filter>
-    </ClCompile>
-    <ClCompile Include="External\Lua\src\lvm.c">
-      <Filter>External\Lua</Filter>
-    </ClCompile>
-    <ClCompile Include="External\Lua\src\lzio.c">
-      <Filter>External\Lua</Filter>
-    </ClCompile>
     <ClCompile Include="External\ImGuizmo\GraphEditor.cpp">
       <Filter>External\ImGuizmo</Filter>
     </ClCompile>
@@ -2264,10 +2078,10 @@
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIProgressBarCollectSystem.cpp">
       <Filter>Source\Engine\UI\ECS\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\UI\OverdriveHudSystem.cpp">
+    <ClCompile Include="Source\Game\UI\PlayerHealthHudSystem.cpp">
       <Filter>Source\Game\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\UI\PlayerHealthHudSystem.cpp">
+    <ClCompile Include="Source\Game\UI\CleaveGaugeHudSystem.cpp">
       <Filter>Source\Game\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\BossHealthHudSystem.cpp">
@@ -2678,6 +2492,9 @@
     <ClCompile Include="Source\Engine\Graphics\Systems\Particle\ParticleAnimationSyncSystem.cpp">
       <Filter>Source\Engine\Graphics\Systems\Particle</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Systems\Particle\VFXSystem.cpp">
+      <Filter>Source\Engine\Graphics\Systems\Particle</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Systems\PostProcess\PostProcessSystem.cpp">
       <Filter>Source\Engine\Graphics\Systems\PostProcess</Filter>
     </ClCompile>
@@ -2744,6 +2561,9 @@
     <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsFacade.cpp">
       <Filter>Source\Engine\Physics\JoltIntegration</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltJobSystemAdapter.cpp">
+      <Filter>Source\Engine\Physics\JoltIntegration</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsManager.cpp">
       <Filter>Source\Engine\Physics\JoltIntegration</Filter>
     </ClCompile>
@@ -2790,6 +2610,9 @@
       <Filter>Source\Engine\Time</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Time\TimeScaleSystem.cpp">
+      <Filter>Source\Engine\Time</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Time\TimeService.cpp">
       <Filter>Source\Engine\Time</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Systems\Culling\AABBDebugDrawSystem.cpp">
@@ -2891,9 +2714,6 @@
     <ClCompile Include="Source\Editor\Windows\TestLauncherWindow.cpp">
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\FlowField\NavFlowFieldSystem.cpp">
-      <Filter>Source\Game\Logics\AI\FlowField</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\StateTree\Core\StateTreeComponentMeta.cpp">
       <Filter>Source\Game\Logics\AI\StateTree\Core</Filter>
     </ClCompile>
@@ -2930,16 +2750,19 @@
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerDashSystem.cpp">
       <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerCleaveSystem.cpp">
+      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerActionVfxSystem.cpp">
+      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.cpp">
       <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\OverdriveSystem.cpp">
-      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Player\Components\OverdriveComponentMeta.cpp">
+    <ClCompile Include="Source\Game\Logics\Character\Player\Components\DashComponentsMeta.cpp">
       <Filter>Source\Game\Logics\Character\Player\Components</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Player\Components\DashComponentsMeta.cpp">
+    <ClCompile Include="Source\Game\Logics\Character\Player\Components\CleaveComponentMeta.cpp">
       <Filter>Source\Game\Logics\Character\Player\Components</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Camera\Components\CameraBodyActionTPSComponentMeta.cpp">
@@ -2986,9 +2809,6 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Physics\Systems\Character\JoltCharacterDebugDrawSystem.cpp">
       <Filter>Source\Engine\Physics\Systems\Character</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Animation\Components\RootMotionComponentMeta.cpp">
-      <Filter>Source\Engine\Animation\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Utils\CurveEditorWidget.cpp">
       <Filter>Source\Editor\Utils</Filter>
@@ -3061,6 +2881,9 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Scenes\ParticleScene.cpp">
       <Filter>Source\Game\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\Components\RootMotionComponentMeta.cpp">
+      <Filter>Source\Engine\Animation\Components</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

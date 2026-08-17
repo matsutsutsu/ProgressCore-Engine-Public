@@ -193,7 +193,10 @@ namespace
 
         OPENFILENAMEW ofn{};
         ofn.lStructSize = sizeof(ofn);
-        ofn.hwndOwner = params.ownerHwnd;
+        // オーナー窓が未指定なら、現在アクティブなアプリ窓を親にする。
+        //   オーナー無しのモーダルダイアログはゲーム窓の裏に隠れ、単一スレッドの
+        //   ゲームループを止めたまま前面に出ず「フリーズ」に見える事故を防ぐ。
+        ofn.hwndOwner = params.ownerHwnd ? params.ownerHwnd : ::GetActiveWindow();
         ofn.lpstrFilter = wFilter.c_str();
         ofn.nFilterIndex = 1;
         ofn.lpstrFile = fileBuf.data();
@@ -312,12 +315,6 @@ void FileDialog::Initialize(const std::filesystem::path& settingsPath)
         .filters = { {"Audio Files", "*.wav;*.ogg;*.mp3;*.flac"}, {"All Files", "*.*"} },
         .defaultDir = "Assets/Audio",
         });
-    RegisterPreset("GPUParticlePreset", {
-        .filters    = { {"Particle Preset", "*.json"}, {"All Files", "*.*"} },
-        .defaultDir = "Assets/Particles",
-        .defaultExt = "json",
-    });
-
     RegisterPreset("BehaviorTreeNode", {
     .filters    =  { { "Behavior Tree", "*.json" } },
     .defaultDir = "Assets/BehaviorTree",
@@ -384,7 +381,8 @@ std::optional<std::filesystem::path> FileDialog::Save(const FileDialogParams& pa
 
     OPENFILENAMEW ofn{};
     ofn.lStructSize = sizeof(ofn);
-    ofn.hwndOwner = params.ownerHwnd;
+    // オーナー窓が未指定なら現在アクティブなアプリ窓を親にする（Open 側と同じ理由）。
+    ofn.hwndOwner = params.ownerHwnd ? params.ownerHwnd : ::GetActiveWindow();
     ofn.lpstrFilter = wFilter.c_str();
     ofn.nFilterIndex = 1;
     ofn.lpstrFile = fileBuf.data();

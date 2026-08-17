@@ -71,7 +71,7 @@ ShapeRenderer::ShapeRenderer(ID3D11Device* device)
     rsDesc.FillMode = D3D11_FILL_SOLID;
     rsDesc.CullMode = D3D11_CULL_NONE; // 裏面も描く
     // =========================================================
-    // ここが点滅を完全に殺す魔法のパラメータ
+    // Z ファイティングによる点滅を抑えるための深度バイアス
     // =========================================================
     // 深度バッファの精度に対して、少しだけカメラ側に引き寄せる（マイナス値）
     rsDesc.DepthBias = -1000;            // 固定値のオフセット
@@ -541,7 +541,7 @@ void ShapeRenderer::CreateTriangleFaceMesh(ID3D11Device* device)
         DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f)
     };
 
-    // あなたのエンジンに既に用意されている、安全なバッファ生成関数を使う
+    // 頂点バッファ生成は CreateMesh に集約している（失敗時のログ出力込み）
     CreateMesh(device, vertices, triangleFaceMesh);
 }
 

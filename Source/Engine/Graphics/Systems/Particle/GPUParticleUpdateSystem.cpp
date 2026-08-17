@@ -11,15 +11,13 @@
 
 #include "Engine/Graphics/Shader/ShaderReflection.h"
 
-#include "Engine/Graphics/Components/Particle/PooledParticleComponent.h"
-
 #include <tracy/Tracy.hpp>
 
 GPUParticleUpdateSystem::~GPUParticleUpdateSystem() = default;
 
 // =========================================================================
 // BuildStaticCb — desc (権威データ) から CbParticleStatic を組み立てる
-//   desc が変更された時のみ呼ばれる (m_staticDirty フラグ管理)。
+//   desc が変更された時のみ呼ばれる (ParticleEmitter::staticDirty フラグ管理)。
 // =========================================================================
 static GpuData::CbParticleStatic BuildStaticCb(const ParticleEmitterDesc& d)
 {
@@ -37,6 +35,7 @@ static GpuData::CbParticleStatic BuildStaticCb(const ParticleEmitterDesc& d)
     cb.noise_scale = d.noiseScale;
     cb.noise_strength = d.noiseStrength;
     cb.gravity = d.gravity;
+    cb.max_speed = d.maxSpeed;
     cb.velocity_stretch = d.velocityStretch;
     cb.uv_scroll_speed = d.uvScrollSpeed;
     cb.emit_stretch = d.emitStretch;
@@ -74,7 +73,8 @@ static GpuData::CbParticleStatic BuildStaticCb(const ParticleEmitterDesc& d)
 static GpuData::CbParticleDynamic BuildDynamicCb(
     const TransformComponent& transform,
     const GpuData::float3& prevPos, const GpuData::float4& prevRot,
-    float time, float dt, float burstTrigger, float emitEnabled)
+    float time, float dt, float burstTrigger, float emitEnabled,
+    GpuData::uint instanceSeed)
 {
     GpuData::CbParticleDynamic cb = {};
     // world 回転を使う（local ではない）。ボーン追従(BoneAttachmentSystem)は
@@ -86,6 +86,9 @@ static GpuData::CbParticleDynamic BuildDynamicCb(
     cb.delta_time = dt;
     cb.burst_trigger = burstTrigger;
     cb.emit_enabled = emitEnabled; // 継続放出の発生ゲート(アニメ連動)。false時は再生成を止める。
+    // エミッタ実体ごとの乱数種。spawn() がこれを混ぜて粒子ごとの種を作るので、
+    //   同じプレハブから出した VFX でも粒子配置が個体ごとに変わる。
+    cb.instance_seed = instanceSeed;
     // 前フレーム姿勢: spawn 側で現フレームとの間を補間してスポーンを軌道上に連続配置する。
     cb.prev_emit_rotation  = prevRot;
     cb.prev_world_position = prevPos;
@@ -148,30 +151,49 @@ void GPUParticleUpdateSystem::Update(float dt)
         worldPaused = m_world->GetResource<TimeContext>().isPaused;
 
     ZoneNamedN(dispatchZone, "GPUParticle: Emitter dispatch loop", true);
-    ForEachWithID([&](CCL::ECS::EntityID id,
-        GPUParticleComponent& particle,
+    ForEach([&](GPUParticleComponent& particle,
         const TransformComponent& transform,
         const TimeStateComponent& rawDt)
         {
-            // プール休眠中のエミッタはGPU更新しない（Dispatchを丸ごと省く）。
-            if (auto* pooled = m_world->GetComponent<PooledParticleComponent>(id))
-                if (pooled->isSleeping) return;
+            // ---- 効果全体で共通の値を、エミッタのループに入る前に1回だけ確定させる ----
+            //   特に time は「エンティティの時間」なので、ループ内で進めると
+            //   エミッタ数ぶん多重に加算されてしまう。
+            EffectFrame frame;
+            frame.dt = worldPaused ? 0.0f : rawDt.localDt; // ポーズ中は dt=0 で凍結
+            particle.time += frame.dt;
+            frame.time = particle.time;
 
-            if (!particle.isInitialized)
-                RebuildParticleBuffer(particle);
+            const GpuData::float3 curPos = transform.GetWorldPosition();
+            const GpuData::float4 curRot = transform.GetWorldRotation();
+            frame.prevPos = particle.hasPrevTransform ? particle.prevWorldPos : curPos;
+            frame.prevRot = particle.hasPrevTransform ? particle.prevWorldRot : curRot;
 
-            GPUParticleBufferSet* buffers =
-                ResourceManager::Instance().GetParticleBuffer(particle.computeBuffer);
-            if (!buffers || !buffers->particleUAV) return;
-
-            if (particle.needsGpuInit)
-                DispatchInitCS(dc, m_computeShader.get(), particle, transform, buffers);
-            else
+            // ---- エミッタごとに Dispatch ----
+            for (ParticleEmitter& emitter : particle.emitters)
             {
-                // ポーズ中は dt=0 で凍結。通常時は各エンティティのローカルdtで進める。
-                const float simDt = worldPaused ? 0.0f : rawDt.localDt;
-                DispatchUpdateCS(dc, m_computeShader.get(), particle, transform, buffers, simDt);
+                // 実体ごとの乱数種を一度だけ採番する（0 = 未割り当て）。
+                //   ここで採るのは、プレハブ生成・シーン読込・エディタでの追加の
+                //   どの経路で作られても必ず通る唯一の場所だから。
+                if (emitter.instanceSeed == 0)
+                    emitter.instanceSeed = NextInstanceSeed();
+
+                if (!emitter.isInitialized)
+                    RebuildParticleBuffer(emitter);
+
+                GPUParticleBufferSet* buffers =
+                    ResourceManager::Instance().GetParticleBuffer(emitter.computeBuffer);
+                if (!buffers || !buffers->particleUAV) continue;
+
+                if (emitter.needsGpuInit)
+                    DispatchInitCS(dc, m_computeShader.get(), emitter, transform, buffers, frame);
+                else
+                    DispatchUpdateCS(dc, m_computeShader.get(), emitter, transform, buffers, frame);
             }
+
+            // 次フレームのために現在姿勢を保存（全エミッタで共通なのでループの外）。
+            particle.prevWorldPos     = curPos;
+            particle.prevWorldRot     = curRot;
+            particle.hasPrevTransform = true;
         });
 
     dc->CSSetShader(nullptr, nullptr, 0);
@@ -181,25 +203,33 @@ void GPUParticleUpdateSystem::Update(float dt)
 // [WARNING] フレームスパイク注意: CreateBuffer を呼ぶ重い処理。
 //   将来 ResourceManager でバッファプール化を推奨。
 // =========================================================================
-void GPUParticleUpdateSystem::RebuildParticleBuffer(GPUParticleComponent& particle)
+GpuData::uint GPUParticleUpdateSystem::NextInstanceSeed()
+{
+    const GpuData::uint seed = m_nextInstanceSeed++;
+    if (m_nextInstanceSeed == 0) m_nextInstanceSeed = 1; // 一周したら 0 を飛ばす
+    return seed;
+}
+
+// =========================================================================
+void GPUParticleUpdateSystem::RebuildParticleBuffer(ParticleEmitter& emitter)
 {
     ZoneScopedN("GPUParticle: RebuildParticleBuffer (CreateBuffer)");
 
-    if (particle.computeBuffer.IsValid()) {
-        ResourceManager::Instance().UnloadParticleBuffer(particle.computeBuffer);
-        particle.computeBuffer = ParticleBufferHandle{};
+    if (emitter.computeBuffer.IsValid()) {
+        ResourceManager::Instance().UnloadParticleBuffer(emitter.computeBuffer);
+        emitter.computeBuffer = ParticleBufferHandle{};
     }
 
     ID3D11Device* device = Graphics::Instance().GetDevice();
-    if (!device || particle.desc.maxCount <= 0) return;
+    if (!device || emitter.desc.maxCount <= 0) return;
 
     // 重いバッファ生成処理は全て ResourceManager に任せる（ゾンビコードの削除）
-    particle.computeBuffer = ResourceManager::Instance().CreateParticleBuffer(device, particle.desc.maxCount);
+    emitter.computeBuffer = ResourceManager::Instance().CreateParticleBuffer(device, emitter.desc.maxCount);
 
-    particle.isInitialized = true;
-    particle.needsGpuInit = true;
-    particle.m_staticDirty = true;
-    particle.time = 0.0f;
+    emitter.isInitialized = true;
+    emitter.needsGpuInit  = true;
+    emitter.staticDirty   = true;
+    // ※ time は効果全体の値なので、1エミッタの作り直しではリセットしない。
 }
 
 // =========================================================================
@@ -208,29 +238,27 @@ void GPUParticleUpdateSystem::RebuildParticleBuffer(GPUParticleComponent& partic
 void GPUParticleUpdateSystem::DispatchInitCS(
     ID3D11DeviceContext* dc,
     ParticleComputeShader* cs,
-    GPUParticleComponent& particle,
+    ParticleEmitter& emitter,
     const TransformComponent& transform,
-    GPUParticleBufferSet* buf)
+    GPUParticleBufferSet* buf,
+    const EffectFrame& frame)
 {
     ZoneScopedN("GPUParticle: DispatchInitCS (first frame)");
 
     if (!cs || !buf) return;
 
     // Static CB: 初回は必ず upload (.Get() を追加)
-    auto staticCb = BuildStaticCb(particle.desc);
+    auto staticCb = BuildStaticCb(emitter.desc);
     dc->UpdateSubresource(buf->staticCB.Get(), 0, nullptr, &staticCb, 0, 0);
-    particle.m_staticDirty = false;
+    emitter.staticDirty = false;
 
     // Dynamic CB (InitCS では dt は 0.016f で代替) (.Get() を追加)
     //   emit ゲートを init にも渡す: OFF なら継続モードの pre-warm を抑止し、空から開始する。
     //   init 時は前フレーム姿勢が無いので現在姿勢で初期化(スメアなし)。
     const GpuData::float3 curPos = transform.GetWorldPosition();
     const GpuData::float4 curRot = transform.GetWorldRotation();
-    auto dynCb = BuildDynamicCb(transform, curPos, curRot, particle.time, 0.016f, particle.burstTrigger,
-        particle.emitting ? 1.0f : 0.0f);
-    particle.prevWorldPos     = curPos;
-    particle.prevWorldRot     = curRot;
-    particle.hasPrevTransform = true;
+    auto dynCb = BuildDynamicCb(transform, curPos, curRot, frame.time, 0.016f, emitter.burstTrigger,
+        emitter.emitting ? 1.0f : 0.0f, emitter.instanceSeed);
     dc->UpdateSubresource(buf->dynamicCB.Get(), 0, nullptr, &dynCb, 0, 0);
 
     // b13, b14 を一括バインド (.Get() を追加)
@@ -243,13 +271,13 @@ void GPUParticleUpdateSystem::DispatchInitCS(
     ID3D11UnorderedAccessView* uavs[] = { buf->particleUAV.Get() };
     dc->CSSetUnorderedAccessViews(SLOT_UAV_PARTICLE_BUF, 1, uavs, nullptr);
 
-    UINT groups = (static_cast<UINT>(particle.desc.maxCount) + 15) / 16;
+    UINT groups = (static_cast<UINT>(emitter.desc.maxCount) + 15) / 16;
     dc->Dispatch(groups, 1, 1);
 
     ID3D11UnorderedAccessView* nullUAV[] = { nullptr };
     dc->CSSetUnorderedAccessViews(SLOT_UAV_PARTICLE_BUF, 1, nullUAV, nullptr);
 
-    particle.needsGpuInit = false;
+    emitter.needsGpuInit = false;
 }
 
 // =========================================================================
@@ -258,38 +286,29 @@ void GPUParticleUpdateSystem::DispatchInitCS(
 void GPUParticleUpdateSystem::DispatchUpdateCS(
     ID3D11DeviceContext* dc,
     ParticleComputeShader* cs,
-    GPUParticleComponent& particle,
+    ParticleEmitter& emitter,
     const TransformComponent& transform,
     GPUParticleBufferSet* buf,
-    float dt)
+    const EffectFrame& frame)
 {
     ZoneScopedN("GPUParticle: DispatchUpdateCS");
 
     if (!cs || !buf) return;
 
-    particle.time += dt;
-
     // Static CB: desc が変更された時のみ upload (.Get() を追加)
-    if (particle.m_staticDirty) {
-        auto staticCb = BuildStaticCb(particle.desc);
+    if (emitter.staticDirty) {
+        auto staticCb = BuildStaticCb(emitter.desc);
         dc->UpdateSubresource(buf->staticCB.Get(), 0, nullptr, &staticCb, 0, 0);
-        particle.m_staticDirty = false;
+        emitter.staticDirty = false;
     }
 
     // Dynamic CB: 毎フレーム upload (.Get() を追加)
     //   前フレーム姿勢を渡してサブフレーム補間（スポーンを軌道上に連続配置）。
-    const GpuData::float3 curPos = transform.GetWorldPosition();
-    const GpuData::float4 curRot = transform.GetWorldRotation();
-    const GpuData::float3 prevPos = particle.hasPrevTransform ? particle.prevWorldPos : curPos;
-    const GpuData::float4 prevRot = particle.hasPrevTransform ? particle.prevWorldRot : curRot;
+    //   time / dt / 前フレーム姿勢は効果全体で共通なので frame から受け取る。
+    auto dynCb = BuildDynamicCb(transform, frame.prevPos, frame.prevRot,
+        frame.time, frame.dt, emitter.burstTrigger,
+        emitter.emitting ? 1.0f : 0.0f, emitter.instanceSeed);
 
-    auto dynCb = BuildDynamicCb(transform, prevPos, prevRot, particle.time, dt, particle.burstTrigger,
-        particle.emitting ? 1.0f : 0.0f);
-
-    // 次フレームのために現在姿勢を保存
-    particle.prevWorldPos     = curPos;
-    particle.prevWorldRot     = curRot;
-    particle.hasPrevTransform = true;
     dc->UpdateSubresource(buf->dynamicCB.Get(), 0, nullptr, &dynCb, 0, 0);
 
     // b13, b14 を一括バインド (.Get() を追加)
@@ -299,7 +318,7 @@ void GPUParticleUpdateSystem::DispatchUpdateCS(
     dc->CSSetShader(cs->GetUpdateCS(), nullptr, 0);
 
     // カラーランプ (t1)
-    if (auto* ramp = ResourceManager::Instance().GetTexture(particle.colorRamp)) {
+    if (auto* ramp = ResourceManager::Instance().GetTexture(emitter.colorRamp)) {
         ID3D11ShaderResourceView* v[] = { ramp };
         dc->CSSetShaderResources(SLOT_SRV_MAT_TEX1, 1, v);
     }
@@ -318,7 +337,7 @@ void GPUParticleUpdateSystem::DispatchUpdateCS(
     ID3D11UnorderedAccessView* uavs[] = { buf->particleUAV.Get() };
     dc->CSSetUnorderedAccessViews(SLOT_UAV_PARTICLE_BUF, 1, uavs, nullptr);
 
-    UINT groups = (static_cast<UINT>(particle.desc.maxCount) + 15) / 16;
+    UINT groups = (static_cast<UINT>(emitter.desc.maxCount) + 15) / 16;
     dc->Dispatch(groups, 1, 1);
 
     // 後始末
@@ -328,8 +347,10 @@ void GPUParticleUpdateSystem::DispatchUpdateCS(
     dc->CSSetShaderResources(SLOT_SRV_MAT_TEX1, 1, nullSRV);
     dc->CSSetShaderResources(SLOT_SRV_MAT_TEX2, 1, nullSRV);
 
-    if (particle.desc.emitMode == 1)
-        particle.burstTrigger = 0.0f;
+    // 発火要求は1フレームで使い切る。
+    //   継続モードでも必ず消すこと。継続中はシェーダが burst_trigger を読まないので、
+    //   立てっぱなしのまま Burst へ切り替えると、その瞬間に意図しない発火が起きる。
+    emitter.burstTrigger = 0.0f;
 }
 
 void GPUParticleUpdateSystem::CreateNoiseTexture(ID3D11Device* device)

@@ -2,7 +2,7 @@
 #include <DirectXMath.h>
 #include <vector>
 #include <string>
-#include "Engine/Core/Math/StringHash.h" // あなたのStringHashヘッダ
+#include "Engine/Core/Math/StringHash.h" // テクスチャ名をハッシュ化して引くため
 #include "Engine/Graphics/Resource/GraphicsTypes.h"
 #include "Engine/Graphics/Resource/ResourcePool.h"
 

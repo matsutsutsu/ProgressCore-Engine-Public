@@ -8,7 +8,7 @@
 struct JustEvadeSuccessEvent
 {
     CCL::ECS::EntityID playerID;   // 回避を成功させたプレイヤー
-    CCL::ECS::EntityID attackerID; // 攻撃してきた敵（今回は不使用でも用意しておく）
+    CCL::ECS::EntityID attackerID; // 攻撃してきた敵。現状の購読側は未使用だが、反撃演出用に残す
 };
 
 // ※ カメラへの演出要求（CameraShakeRequestEvent / CameraFovPunchRequestEvent）は
@@ -36,4 +36,17 @@ struct DamageTakenEvent {
 struct HitImpactEvent {
     DirectX::XMFLOAT3 position = {0.0f, 0.0f, 0.0f}; // 接触点(ワールド座標)
     float             power    = 1.0f;               // 命中の強さ(ダメージ量など。演出スケール用)
+};
+
+// プレイヤーがジャンプした瞬間に発行されるイベント。
+// その場に土煙などのVFXを出すために PlayerActionVfxSystem が購読する
+// （移動系システムはVFX/プレハブを知らずに「跳んだ」事実だけを announce する）。
+struct PlayerJumpedEvent {
+    DirectX::XMFLOAT3 position  = {0.0f, 0.0f, 0.0f}; // ジャンプ時のプレイヤー位置(ワールド)
+    int               jumpCount = 1;                  // 何段目のジャンプか（2以上＝2段ジャンプ）
+};
+
+// プレイヤーがダッシュ（回避バースト）を開始した瞬間に発行されるイベント。
+struct PlayerDashedEvent {
+    DirectX::XMFLOAT3 position = {0.0f, 0.0f, 0.0f}; // ダッシュ開始時のプレイヤー位置(ワールド)
 };

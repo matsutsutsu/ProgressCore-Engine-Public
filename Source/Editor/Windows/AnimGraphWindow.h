@@ -50,6 +50,19 @@ class AnimGraphWindow : public EditorWindow
     void SaveGraph(const std::string &path);
 
     // =====================================================================
+    // 階層ナビゲーション（サブステートマシンに潜る/戻る）
+    //   m_rootGraph が保存対象のツリー全体。m_editPath が「今どのサブマシンに
+    //   潜っているか」の hash 列（空=root表示）。CurrentView() は m_editPath に
+    //   沿って m_rootGraph を辿り「今編集中の階層グラフ」への参照を返す。
+    //   各描画メソッドは冒頭で `AnimStateGraph& m_currentGraph = CurrentView();`
+    //   と局所参照を張るので、既存の描画コードは無修正で現在の階層を編集できる。
+    // =====================================================================
+    AnimStateGraph &CurrentView();
+    void            DrawBreadcrumb(); ///< 「Root > Combat > ...」パンくず。クリックで浅い階層へ戻る。
+    void            EnterSubMachine(uint32_t subMachineHash); ///< 指定サブマシンへ潜る
+    uint32_t        MakeUniqueStateHash(std::string &name); ///< 階層全体で衝突しない hash を採る（name は必要なら連番付与で書き換え）
+
+    // =====================================================================
     // リンクID → 遷移の素性 の対応表（毎フレーム DrawNodeWorkspace で再構築）
     //   削除・選択を「描画順の数え直し」ではなくこの表で解決することで、
     //   遷移を1本消しても後続リンクの対応がズレない。
@@ -66,7 +79,8 @@ class AnimGraphWindow : public EditorWindow
     const LinkRef                       *FindLink(int linkId) const;
 
   private:
-    AnimStateGraph m_currentGraph;
+    AnimStateGraph        m_rootGraph;  ///< ツリー全体（保存/読込の対象）
+    std::vector<uint32_t> m_editPath;   ///< 潜っているサブマシンの hash 列（空=root）
     std::string    m_currentFilePath = "Assets/Animations/PlayerAnimGraph.json";
 
     ax::NodeEditor::EditorContext *m_nodeContext = nullptr;
@@ -76,6 +90,7 @@ class AnimGraphWindow : public EditorWindow
     int m_selectedLinkId = 0; ///< ed のリンクID
 
     uint32_t m_nodeToPlaceHash  = 0;
+    uint32_t m_pendingEnterSub  = 0; ///< このフレーム末に潜るサブマシン hash（0=なし。描画中の破壊回避で遅延実行）
     char     m_newStateName[64] = "";
 
     bool   m_needRestorePositions = false;

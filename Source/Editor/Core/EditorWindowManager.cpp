@@ -3,6 +3,7 @@
 #include "Engine/Serialization/Serializer/SceneSerializer.h"
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Scene/SceneManager.h"
+#include "Engine/Scene/SceneFactory.h" // 登録済みシーン一覧（Sceneメニューの自動生成）
 #include "Engine/Platform/Core/Dialog.h"
 
 #include "Editor/Core/EditorCommandHistory.h"
@@ -46,6 +47,7 @@
 #include <shellapi.h>
 #include <map>
 #include <sstream>
+#include <algorithm> // std::sort（Sceneメニューの名前順ソート）
 
 // Tracy プロファイラをインクルード
 #include <tracy/Tracy.hpp>
@@ -435,14 +437,37 @@ void EditorWindowManager::DrawSceneMenu(EditorContext &context)
     ZoneScopedN("EditorWindowManager::DrawSceneMenu");
     if (ImGui::BeginMenu("Scene"))
     {
-        if (ImGui::MenuItem("Particle Scene")) SceneManager::Instance().ChangeScene("Particle");
-        if (ImGui::MenuItem("Editor Scene")) SceneManager::Instance().ChangeScene("Editor");
-        ImGui::Separator();
-        // 非同期ロード版：ローディング画面を挟んで裏読み遷移する（動作確認用）
-        if (ImGui::MenuItem("Editor Scene (Async)")) SceneManager::Instance().ChangeSceneAsync("Editor");
-        ImGui::Separator();
-        // ゲームループ：タイトル画面から START でゲームへ（動作確認用）
-        if (ImGui::MenuItem("Title Scene")) SceneManager::Instance().ChangeScene("Title");
+        auto &sceneMgr = SceneManager::Instance();
+
+        // SceneFactory へ REGISTER_SCENE で自己登録された全シーンをそのまま列挙する。
+        //   これでシーンを1つ追加するたびにこのメニューへ手で書き足す必要がなくなる。
+        //   registry は unordered_map で順序が不定なので、表示は名前順にソートして安定させる。
+        std::vector<std::string> sceneNames = SceneFactory::Instance().GetSceneNames();
+        std::sort(sceneNames.begin(), sceneNames.end());
+
+        const std::string &currentName  = sceneMgr.GetCurrentSceneName();
+        const bool         transitioning = sceneMgr.IsTransitioning();
+
+        if (transitioning)
+            ImGui::TextDisabled("遷移中...");
+
+        for (const std::string &name : sceneNames)
+        {
+            const bool isCurrent = (name == currentName);
+
+            // 現在のシーンはチェックを付け、選べないようにする（自分自身への遷移を防ぐ）。
+            // 遷移中も多重遷移を避けるため全項目を無効化する。
+            ImGui::BeginDisabled(isCurrent || transitioning);
+            if (ImGui::MenuItem(name.c_str(), nullptr, /*selected*/ isCurrent))
+            {
+                // 全シーン共通で「フェード付き非同期遷移」に統一する。
+                //   RequestTransition(async=true): 暗転 → 黒の裏で対象シーンを裏読み
+                //   → 読み込み完了後に1回だけ明転。メインスレッドを止めない。
+                sceneMgr.RequestTransition(name, /*async*/ true);
+            }
+            ImGui::EndDisabled();
+        }
+
         ImGui::EndMenu();
     }
 }

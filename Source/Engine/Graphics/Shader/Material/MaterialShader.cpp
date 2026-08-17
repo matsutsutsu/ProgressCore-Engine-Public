@@ -77,7 +77,7 @@ void MaterialShader::CheckAndReload(ID3D11Device* device)
         Microsoft::WRL::ComPtr<ID3D11PixelShader> newPixelShader;
         Microsoft::WRL::ComPtr<ID3DBlob>          newBlob;
 
-        // HLSLを動的コンパイル (※あなたの GpuResourceUtils の実装に合わせてください)
+        // HLSL をその場でコンパイルする（ホットリロード用。失敗時は旧シェーダを維持）
         if (GpuResourceUtils::CompilePixelShader(device, m_psHlslPath, "main", "ps_5_0",
             newPixelShader.GetAddressOf(), newBlob.GetAddressOf()))
         {

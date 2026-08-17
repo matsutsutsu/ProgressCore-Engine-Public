@@ -1,41 +1,25 @@
-/// @file  StateTreeAsset.h
-/// @brief StateTree の「木の形」を保持する不変アセット。全 Entity で共有される。
-///
-/// 設計の最重要ポイント 
-///   このアセットは「木の構造」と「ノードのパラメータ」だけを持つ。
-///   「今どの状態にいるか（インスタンス状態）」は StateTreeComponent 側に置く。
-///
-/// メモリイメージ:
-///   ┌─────────────────────────────────────────────────────┐
-///   │ StateTreeAsset  (World Resource。1種類の敵に1個)      │
-///   │   states[]     : StateNode の配列（木の骨格）         │
-///   │   tasks[]      : NodeRef  の配列（使うタスク種別+位置）│
-///   │   conditions[] : NodeRef  の配列（使う条件種別+位置） │
-///   │   transitions[]: Transition の配列（遷移ルール）       │
-///   │   paramBlob[]  : 全ノードのパラメータを連続配置した塊  │
-///   └─────────────────────────────────────────────────────┘
-///           ↑ 参照（StateTreeHandle = u32 インデックス）
-///   ┌─────────────────────────────────────────────────────┐
-///   │ StateTreeComponent  (各 Entity が持つ極小コンポ)      │
-///   │   activeStates[]: 今アクティブな状態パス（深さ分）    │
-///   │   scratch[]    : インスタンスデータ（タイマー等）      │
-///   └─────────────────────────────────────────────────────┘
 #pragma once
 #include <cstdint>
 #include <string>
 #include <vector>
-
 #include "StateTreeNode.h"   // NodeTypeID, ITask, ICondition の前方参照
 
 
+/**
+ * @brief StateTree のアセット関連の定義
+ * @details アセットはStateTreeのTree構造とノードパラメータを持つ
+ *          Assetsは静的データ、Componentは動的データという役割分担
+ */
 namespace CCL::AI
 {
     // @brief 敵自身がどのStateTreeのデータを参照するかのハンドル
-    // @details 
+    // @details 雑魚敵は１番、ボスは２番、というように敵種別ごとに StateTreeAsset を参照するためのハンドル
     struct StateTreeHandle
     {
         uint32_t value = 0xFFFFFFFF;
         bool IsValid() const { return value != 0xFFFFFFFF; }
+
+        //ハンドル同士で比較するための演算子オーバーロード
         bool operator==(const StateTreeHandle& o) const { return value == o.value; }
         bool operator!=(const StateTreeHandle& o) const { return value != o.value; }
     };
@@ -111,16 +95,11 @@ namespace CCL::AI
         // ノードのタスクのID
         // 例：１番の攻撃タスクを指定する
         NodeTypeID typeId       = ST_INVALID_NODE_TYPE; ///< 種別 ID
-        
+
         // --- マニュアル（固定設定）の読み込み位置 ---
         // 例：攻撃タスクの威力をOffsetのSizeの領域に書いてあるからそれを見る
         uint32_t   paramOffset  = 0;    ///< paramBlob 内のパラメータ先頭
         uint32_t   paramSize    = 0;    ///< パラメータのバイト数
-        
-        // --- メモ帳（変動データ）の書き込み位置 ---
-        // 例：攻撃にかかった時間は scratchの４行目（Offset）に書き込む
-        uint32_t   instanceOffset = 0;  ///< scratch 内のオフセット
-        uint32_t   instanceSize   = 0;
     };
 
 
@@ -179,10 +158,6 @@ namespace CCL::AI
 
         // --- 名前ブロブ（デバッグ・エディタ用、実行時ロジックでは使わない）---
         std::vector<char>       nameBlob;
-
-        // --- インスタンスデータの総量 ---
-        // StateTreeComponent::scratch がこれ以上必要な場合はコンパイルエラーにする。
-        uint32_t instanceTotalSize = 0;
 
 
         // ================================================================
@@ -245,11 +220,9 @@ namespace CCL::AI
         /// @param typeId   NodeRegistry から取得した種別 ID
         /// @param paramOff AddParams<T>() で取得したオフセット
         /// @param paramSz  sizeof(Params)
-        /// @param instSz   sizeof(Instance)（なければ 0）
         void AddTask(uint16_t stateIdx,
                      NodeTypeID typeId,
-                     uint32_t paramOff, uint32_t paramSz,
-                     uint32_t instSz = 0)
+                     uint32_t paramOff, uint32_t paramSz)
         {
             StateNode& st = states[stateIdx];
             if (st.taskCount == 0)
@@ -259,9 +232,6 @@ namespace CCL::AI
             ref.typeId          = typeId;
             ref.paramOffset     = paramOff;
             ref.paramSize       = paramSz;
-            ref.instanceOffset  = instanceTotalSize;   // scratch の現在末尾に割り当て
-            ref.instanceSize    = instSz;
-            instanceTotalSize  += instSz;
 
             tasks.push_back(ref);
             ++st.taskCount;

@@ -20,7 +20,7 @@ float4 main(VS_OUT pin) : SV_TARGET
     // 光の当たらない裏側が「完全な真っ黒」になって視認性が落ちるのを防ぐため、最低限の明るさを足します。
     float ambient = 0.3f;
     
-    // ★追加: ECSで設定した「色」と「強さ(intensity)」をしっかり掛け合わせる
+    // ECS 側で設定した色と強さ(intensity)を掛け合わせて実効的な光色にする
     float3 lightFinalColor = gDirLight.color * gDirLight.intensity;
     
     // 5. 最終カラーの合成

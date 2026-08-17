@@ -11,6 +11,7 @@
 #include "Game/Logics/GameEvent/GameEvents.h"
 #include "Engine/Camera/CameraEvents.h" // FOVパンチ要求（カメラへの演出指示）
 #include "Engine/Time/TimeState.h"
+#include "Engine/Time/TimeService.h" // 時間操作は意図ファサード経由
 #include "Engine/Graphics/Components/Impact/JustEvadeEffectComponent.h"
 #include "Engine/Physics/Components/RigidBody/JoltRigidBodyComponent.h" // 壁/地形との接触を除外するため
 
@@ -21,10 +22,12 @@
 
 using namespace CCL::ECS;
 
-// JustEvadeSystem.cpp に追加（無名関数 or メンバ）
-static bool IsDroneHostile(const DroneComponent *drone)
+// そのドローンが「今ぶつかったらジャスト回避が成立する相手」かを判定する門番。
+// 陣形を組んでいるだけのドローンに突っ込んでも回避が暴発しないようにする。
+bool JustEvadeSystem::IsDroneHostile(const DroneComponent *drone) const
 {
     if (!drone) return false;
+    if (drone->knockbackTimer > 0.0f) return false; // 切り払いで吹き飛ばし中は無害（誤ジャスト回避を防ぐ）
     // 突撃系の状態だけを「危険」とみなす
     return drone->currentState == DroneState::FireCharge;
 }
@@ -53,15 +56,9 @@ void JustEvadeSystem::Initialize()
 
     // JUST回避が成功した瞬間のイベントをリッスン
     ListenEvent<JustEvadeSuccessEvent>([this](const JustEvadeSuccessEvent &ev) {
-        // 1. プレイヤーの時間を「150ミリ秒(0.15f)」完全に止める（ヒットストップ）
-        if (auto *timeState = m_world->GetComponent<TimeStateComponent>(ev.playerID))
-        {
-            timeState->hitStopTimer = 0.15f;
-        }
-
-        auto& timeContext = m_world->GetResource<TimeContext>();
-        timeContext.globalFreezeScale = 0.1f;
-        timeContext.globalHitStopTimer = 0.5f;
+        // 1. プレイヤーを一瞬止め、世界全体をウィッチタイム（0.5秒・10%速度）にする。
+        Time::HitStopEntity(*m_world, ev.playerID, 0.15f); // 自機だけ完全停止(150ms)
+        Time::HitStop(*m_world, 0.5f, 0.1f);               // 世界全体を0.5秒だけ10%へ
 
         // =======================================================
         //  1.5 接近（ジャスト回避の近道）の起動
@@ -213,7 +210,8 @@ void JustEvadeSystem::OnGui()
     // OVERDRIVE ゲージ(左下)と被らないよう、その少し上に表示する
     const float x = 48.0f;
     const float y = io.DisplaySize.y - 120.0f;
-    dl->AddText(ImGui::GetFont(), 34.0f, ImVec2(x + 1.0f, y + 1.0f), IM_COL32(0, 0, 0, 200), buf); // 影
+    // 明るい背景でも数字が読めるよう、1px ずらした黒を先に敷いてから本体を重ねる
+    dl->AddText(ImGui::GetFont(), 34.0f, ImVec2(x + 1.0f, y + 1.0f), IM_COL32(0, 0, 0, 200), buf);
     dl->AddText(ImGui::GetFont(), 34.0f, ImVec2(x, y), col, buf);
 }
 #else

@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 #include <DirectXMath.h>
-#include "Engine/Core/Math/StringHash.h" // ※プロジェクトのパスに合わせてください
+#include "Engine/Core/Math/StringHash.h" // イベント名をハッシュ化して引くため
 
 /**
  * @brief ゲーム内のすべての音声再生を管理するオーディオAPIのインターフェース。
@@ -103,6 +103,16 @@ public:
      * @param allowFadeOut trueならバックエンドが設定したフェードアウト時間を尊重して止まる。
      */
     virtual void StopEvent(uint32_t playingId, bool allowFadeOut = true) = 0;
+
+    /**
+     * @brief 現在バックエンドが鳴らしている継続再生（BGM/環境音）と3Dワンショットを
+     *        まとめて即時停止し、追跡していた再生インスタンスを全て破棄する。
+     * @note  シーン終了時（World全破棄）の“確実な後始末”に使う。
+     *        per-emitter の StopEvent は「DestroyTagが正しく付き、playingIdが正確」な
+     *        前提に依存するが、これは前提ゼロで共有エンジンを黙らせるため、
+     *        再戦時にBGMが二重に鳴る等の取りこぼしを構造的に防ぐ。
+     */
+    virtual void StopAll() = 0;
 
     /**
      * @brief 指定したIDの音声に対して、動的パラメータ（音量/ピッチ等）を送る。

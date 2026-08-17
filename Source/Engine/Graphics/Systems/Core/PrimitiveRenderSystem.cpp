@@ -64,7 +64,7 @@ void PrimitiveRenderSystem::Update(float dt)
         DirectX::XMFLOAT4X4 finalWorld;
         DirectX::XMStoreFloat4x4(&finalWorld, finalWorldMat);
 
-        // 究極のハック：行列の使われない空き部屋（右端の1列）にパラメータを直接隠して送る
+        // 定数バッファを増やさずに済ませるため、ワールド行列の未使用列にパラメータを載せて送る
         if (prim.type == PrimitiveType::Capsule) {
             float totalHeight = (std::max)(h, r * 2.0f);
             float cylinderHeight = totalHeight - (r * 2.0f);

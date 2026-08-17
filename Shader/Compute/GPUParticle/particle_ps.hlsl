@@ -36,9 +36,14 @@ float4 main(GS_OUT pin) : SV_TARGET
     // UVスクロール
     // ---------------------------------------------------------
     float2 uv = pin.texcoord;
-    
-    // 時間経過(time) × 速度(speed) を足してズラす
-    uv += uv_scroll_speed * time;    
+
+    // スプライトシート使用時はスクロールしない。
+    //   pin.texcoord は GS で「コマの矩形内」に収めた値なので、ここでズラすと
+    //   コマの外へはみ出して隣の絵が滲む（無言で壊れる組み合わせだった）。
+    //   併用したい場合はコマ内で折り返す実装が必要。インスペクタ側でも
+    //   スプライトシート使用中は UV スクロールの入力を無効化してある。
+    if (sprite_sheet_grid.x * sprite_sheet_grid.y <= 1)
+        uv += uv_scroll_speed * time;   // 時間経過(time) × 速度(speed) を足してズラす
 
 	//------------------------------------------
     // 【テクスチャの明度を掛ける処理】
@@ -52,9 +57,8 @@ float4 main(GS_OUT pin) : SV_TARGET
     //------------------------------------------
     float4 texColor = color_map.Sample(sampler_linear, uv);
     
-    // ★ 修正4 & 6: render_mode分岐と #if 0 クルフトを全削除！
-    // 描画モード（加算/半透明）の切り替えはC++側のPSO (BlendState) が行います。
-    // シェーダーは純粋にテクスチャの色とアルファを掛け合わせるだけに徹します。
+    // 描画モード（加算/半透明）の切り替えは C++ 側の PSO (BlendState) が担う。
+    // シェーダー側では分岐を持たず、テクスチャの色とアルファを掛けるだけに留める。
     color.rgb *= texColor.rgb;
     color.a *= texColor.a;
 

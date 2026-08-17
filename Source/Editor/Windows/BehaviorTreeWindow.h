@@ -87,8 +87,8 @@ struct EditorBTNode {
     int decoratorType = 0;
     float decoratorParam = 0.0f;
 
-    // ランタイムとエディタを紐付ける魔法の変数
-    // Bake時に「フラット配列の何番目になったか」を記憶しておく
+    // ランタイム側のノードと対応付けるためのインデックス。
+    // Bake 時に「フラット配列の何番目になったか」を記憶しておく
     int runtimeFlatIndex = -1;
 };
 

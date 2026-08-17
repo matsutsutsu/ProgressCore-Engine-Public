@@ -64,7 +64,9 @@ void JustEvadeEffectSystem::Update(float dt)
 {
     auto *fx = m_world->GetSingletonComponent<JustEvadeEffectComponent>();
 
-    const bool active = (fx && fx->timer > 0.0f);
+    // hold=true（切り払い準備の照準中）は timer に依らずモノクロを保持し続ける。
+    const bool holding = (fx && fx->hold);
+    const bool active  = (fx && (fx->hold || fx->timer > 0.0f));
 
     auto *cg  = m_world->GetSingletonComponent<ColorGradingConfigComponent>();
     auto *rb  = m_world->GetSingletonComponent<RadialBlurConfigComponent>();
@@ -121,27 +123,42 @@ void JustEvadeEffectSystem::Update(float dt)
         m_vigTime = 0.0f;
     }
 
-    // ── 1. 減衰（実時間） ──
-    fx->timer -= dt;
-    if (fx->timer < 0.0f) fx->timer = 0.0f;
+    // ── 1. 減衰（実時間）。hold 中は timer を進めず保持する ──
+    if (!holding)
+    {
+        fx->timer -= dt;
+        if (fx->timer < 0.0f) fx->timer = 0.0f;
+    }
     m_vigTime += dt;
 
     // ── 2. エンベロープ算出 ──
-    const float elapsed = fx->duration - fx->timer; // 0 で発火、増えていく
-    //  body: アタック(0→1) → サステイン(1) → リリース(1→0)
+    //  hold 中：モノクロを body=1 で維持し、スパイク(放射ブラー/色収差)は出さない。
+    //           色スタイルも serialized な fx->style に依らず Monochrome を強制する。
     float body;
-    if (fx->attackTime > 0.0f && elapsed < fx->attackTime)
-        body = elapsed / fx->attackTime;
-    else if (fx->releaseTime > 0.0f && fx->timer < fx->releaseTime)
-        body = fx->timer / fx->releaseTime;
+    float spike;
+    StylePreset preset;
+    if (holding)
+    {
+        body   = 1.0f;
+        spike  = 0.0f;
+        preset = GetStylePreset(static_cast<uint8_t>(JustEvadeStyle::Monochrome));
+    }
     else
-        body = 1.0f;
-    body = Sat01(body);
+    {
+        const float elapsed = fx->duration - fx->timer; // 0 で発火、増えていく
+        //  body: アタック(0→1) → サステイン(1) → リリース(1→0)
+        if (fx->attackTime > 0.0f && elapsed < fx->attackTime)
+            body = elapsed / fx->attackTime;
+        else if (fx->releaseTime > 0.0f && fx->timer < fx->releaseTime)
+            body = fx->timer / fx->releaseTime;
+        else
+            body = 1.0f;
+        body = Sat01(body);
 
-    //  spike: t=0 最大 → spikeDecay 秒で 0（放射ブラー/色収差の一撃）
-    const float spike = (fx->spikeDecay > 0.0f) ? Sat01(1.0f - elapsed / fx->spikeDecay) : 0.0f;
-
-    const StylePreset preset = GetStylePreset(fx->style);
+        //  spike: t=0 最大 → spikeDecay 秒で 0（放射ブラー/色収差の一撃）
+        spike  = (fx->spikeDecay > 0.0f) ? Sat01(1.0f - elapsed / fx->spikeDecay) : 0.0f;
+        preset = GetStylePreset(fx->style);
+    }
 
     // ── 3. 色調（ColorGrading）: base → style を body で補間。mix を上げて反映 ──
     if (cg)

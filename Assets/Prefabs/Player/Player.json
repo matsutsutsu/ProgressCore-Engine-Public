@@ -9,19 +9,19 @@
                 "Animation": null,
                 "Animator": {
                     "isLoop": false,
-                    "playbackSpeed": 0.5
+                    "playbackSpeed": 1.0
                 },
                 "Character Movement Input": {
                     "currentVelocity": [
-                        -24.138036727905273,
+                        -2.106401205062866,
                         0.0,
-                        -6.732337951660156
+                        34.36076736450195
                     ],
                     "dashRequested": false,
                     "desiredVelocity": [
-                        -0.9632361531257629,
+                        -0.06118764355778694,
                         0.0,
-                        -0.2686561346054077
+                        0.9981262683868408
                     ],
                     "isAttackRequested": false,
                     "jumpRequested": false,
@@ -32,6 +32,27 @@
                     ],
                     "overrideSpeed": -1.0
                 },
+                "Cleave Component": {
+                    "cleaveCooldown": 0.4000000059604645,
+                    "cleaveDuration": 0.18000000715255737,
+                    "cleaveSpeed": 100.0,
+                    "fanHalfAngle": 45.0,
+                    "fanRange": 6.0,
+                    "knockbackSpeed": 200.0,
+                    "knockbackTime": 2.0,
+                    "slowDuration": 0.3499999940395355,
+                    "slowScale1": 0.1,
+                    "slowScale2": 0.25,
+                    "slowScale3": 0.4,
+                    "readyDuration1": 1.5,
+                    "readyDuration2": 0.95,
+                    "readyDuration3": 0.6,
+                    "enableStageDecay": true,
+                    "maxGauge": 100.0,
+                    "maxStock": 3,
+                    "gaugeOnJustEvade": 50.0,
+                    "gaugeOnDash": 8.0
+                },
                 "Dash Component": {
                     "approachDuration": 0.3499999940395355,
                     "approachPlayerScale": 1.0,
@@ -40,21 +61,22 @@
                     "currentTimer": -0.006666665896773338,
                     "dashCooldown": 0.1599999964237213,
                     "dashDirection": [
-                        0.5852976441383362,
+                        -0.7813547849655151,
                         0.0,
-                        -0.8108185529708862
+                        -0.6240871548652649
                     ],
                     "dashDuration": 0.1599999964237213,
                     "dashSpeed": 114.0,
+                    "invincibleWindow": 0.05999999865889549,
                     "isApproaching": false,
                     "isDashing": false,
                     "isInvincible": false,
                     "justEvadeWindow": 0.07999999821186066
                 },
                 "HealthComponent": {
-                    "currentHealth": 95.0,
+                    "currentHealth": 300.0,
                     "invincibilityDuration": 0.5,
-                    "maxHealth": 100.0
+                    "maxHealth": 300.0
                 },
                 "Hurtbox": {
                     "damageMultiplier": 1.0
@@ -74,6 +96,7 @@
                     "radius": 1.0
                 },
                 "Jolt Character Config": {
+                    "acceleration": 12.0,
                     "apexGravityScale": 0.699999988079071,
                     "apexVelocityThreshold": 0.30000001192092896,
                     "characterMass": 148.0,
@@ -87,7 +110,7 @@
                     "walkSpeed": 43.599998474121094
                 },
                 "Just Evade Component": {
-                    "chainCount": 1,
+                    "chainCount": 0,
                     "chainSpeedMax": 0.4000000059604645,
                     "chainSpeedPerLevel": 0.07999999821186066,
                     "idleBreakTime": 4.0,
@@ -105,29 +128,20 @@
                 "Name": {
                     "name": "Player"
                 },
-                "Overdrive": {
-                    "currentGauge": 100.0,
-                    "duration": 6.0,
-                    "enemyTimeScale": 0.3499999940395355,
-                    "environmentTimeScale": 0.3499999940395355,
-                    "gainOnDash": 4.0,
-                    "gainOnJustEvade": 25.0,
-                    "isActive": false,
-                    "maxGauge": 100.0,
-                    "playerTimeScale": 1.149999976158142
-                },
                 "Player Component": {
+                    "airborneGraceTime": 0.47999998927116394,
+                    "attackFaceMaxDistance": 5.0,
                     "bankingMultiplier": 0.5,
-                    "coyoteTimeWindow": 0.15000000596046448,
                     "currentJumpCount": 0,
-                    "currentRoll": 5.801273069207539e-16,
-                    "currentYaw": -20.692350387573242,
+                    "currentRoll": -1.1315497150388154e-11,
+                    "currentYaw": -25.193967819213867,
                     "isAirborne": false,
-                    "jumpBufferTimer": 0.0,
-                    "jumpBufferWindow": 0.15000000596046448,
+                    "isRunning": false,
                     "lastFallVelocity": 0.0,
                     "maxBankingAngle": 30.0,
                     "maxJumps": 2,
+                    "runIdleReleaseTime": 0.4000000059604645,
+                    "runSpeed": 65.5,
                     "timeSinceGrounded": 0.0,
                     "turnSpeed": 10.0,
                     "wasGroundedLastFrame": true,
@@ -145,15 +159,15 @@
                     "isStatic": false,
                     "parent": 3,
                     "position": [
-                        3.985450506210327,
-                        -0.05943213775753975,
-                        -66.8139419555664
+                        42.84048843383789,
+                        -0.04818869009613991,
+                        -43.92716979980469
                     ],
                     "rotation": [
-                        2.310203748390687e-16,
-                        0.7964471578598022,
-                        -1.7540384741521653e-16,
-                        -0.6047081351280212
+                        1.731732975334549e-13,
+                        -0.03060816414654255,
+                        -5.6550974840419155e-12,
+                        0.9995314478874207
                     ],
                     "scale": [
                         3.5,
@@ -170,103 +184,108 @@
                     "boneName": "hand_r"
                 },
                 "GPUParticle": {
-                    "angularSpeed": [
-                        0.0,
-                        0.0
-                    ],
                     "animControlled": true,
-                    "attractorLocal": true,
-                    "attractorPos": [
-                        0.0,
-                        0.0,
-                        0.0
-                    ],
-                    "attractorRadius": 0.0,
-                    "attractorStrength": 0.0,
-                    "burstCount": 0,
-                    "color": [
-                        1.0,
-                        1.0,
-                        1.0,
-                        1.0
-                    ],
-                    "colorMode": 1,
-                    "colorRampPath": "Assets/Textures/VFX/VFX_Ramp_Fire.png",
-                    "coneAngle": [
-                        0.0,
-                        3.140000104904175
-                    ],
-                    "drag": 0.0,
-                    "emitMode": 0,
-                    "emitRadius": [
-                        0.0,
-                        0.11999999731779099
-                    ],
-                    "emitShape": 1,
-                    "emitSize": [
-                        0.10000000149011612,
-                        0.05000000074505806
-                    ],
-                    "emitSpeed": [
-                        1.0,
-                        1.0
-                    ],
-                    "emitStretch": [
-                        1.0,
-                        1.0
-                    ],
-                    "fadeDuration": [
-                        0.20000000298023224,
-                        0.30000001192092896
-                    ],
-                    "gravity": 0.0,
-                    "lifespan": [
-                        0.30000001192092896,
-                        0.8899999856948853
-                    ],
-                    "lineEnd": [
-                        0.0,
-                        4.349999904632568,
-                        0.0
-                    ],
-                    "localOffset": [
-                        0.0,
-                        0.0,
-                        0.0
-                    ],
-                    "localOffsetY": 0.0,
-                    "maxCount": 8000,
-                    "noiseScale": 1.0,
-                    "noiseStrength": 0.0,
-                    "particleType": 1,
-                    "renderMode": 0,
-                    "scale": [
-                        0.5,
-                        0.5
-                    ],
-                    "spawnDelay": [
-                        0.00800000037997961,
-                        0.0560000017285347
-                    ],
-                    "spriteGrid": [
-                        1,
-                        1
-                    ],
-                    "spriteMode": 0,
-                    "texturePath": "",
-                    "uvScrollSpeed": [
-                        0.0,
-                        0.0
-                    ],
-                    "velocityStretch": 0.0,
-                    "vortexStrength": 0.0
+                    "emitters": [
+                        {
+                            "angularSpeed": [
+                                0.0,
+                                0.0
+                            ],
+                            "attractorLocal": true,
+                            "attractorPos": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "attractorRadius": 0.0,
+                            "attractorStrength": 0.0,
+                            "burstCount": 0,
+                            "color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "colorMode": 1,
+                            "colorRampPath": "Assets/Textures/VFX/VFX_Ramp_Fire.png",
+                            "coneAngle": [
+                                0.0,
+                                3.140000104904175
+                            ],
+                            "drag": 0.0,
+                            "emitMode": 0,
+                            "emitRadius": [
+                                0.0,
+                                0.11999999731779099
+                            ],
+                            "emitShape": 1,
+                            "emitSize": [
+                                0.10000000149011612,
+                                0.05000000074505806
+                            ],
+                            "emitSpeed": [
+                                1.0,
+                                1.0
+                            ],
+                            "emitStretch": [
+                                1.0,
+                                1.0
+                            ],
+                            "fadeDuration": [
+                                0.20000000298023224,
+                                0.30000001192092896
+                            ],
+                            "gravity": 0.0,
+                            "lifespan": [
+                                0.30000001192092896,
+                                0.8899999856948853
+                            ],
+                            "lineEnd": [
+                                0.0,
+                                4.349999904632568,
+                                0.0
+                            ],
+                            "localOffset": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "localOffsetY": 0.0,
+                            "maxCount": 8000,
+                            "maxSpeed": 10.0,
+                            "noiseScale": 1.0,
+                            "noiseStrength": 0.0,
+                            "particleType": 1,
+                            "renderMode": 0,
+                            "scale": [
+                                0.5,
+                                0.5
+                            ],
+                            "spawnDelay": [
+                                0.00800000037997961,
+                                0.0560000017285347
+                            ],
+                            "spriteGrid": [
+                                1,
+                                1
+                            ],
+                            "spriteMode": 0,
+                            "texturePath": "",
+                            "uvScrollSpeed": [
+                                0.0,
+                                0.0
+                            ],
+                            "velocityStretch": 0.0,
+                            "vortexStrength": 0.0
+                        }
+                    ]
                 },
                 "Hitbox": {
                     "damageAmount": 5.0,
-                    "hitStopDuration": 0.15000000596046448,
+                    "hitStopDuration": 0.07000000029802322,
                     "hitStopScale": 0.0,
                     "isActive": false,
-                    "knockback": 10.0
+                    "knockback": 5.0
                 },
                 "Jolt Capsule Collider": {
                     "halfHeight": 2.5999999046325684,

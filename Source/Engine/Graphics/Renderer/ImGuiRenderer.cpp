@@ -59,7 +59,7 @@ void ImGuiRenderer::Initialize(HWND hWnd, ID3D11Device* device, ID3D11DeviceCont
 
 	// 【ドッキング】
 	// ウィンドウ同士を結合（Docking）したり、画面分割するための機能を有効化。
-	// AAAエンジンのような複雑なレイアウト（Scene, Game, Inspector等の配置）に必須です。
+	// Scene / Game / Inspector を並べるエディタ用レイアウトに必要。
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
 	// 【マルチビューポート】
@@ -131,7 +131,7 @@ void ImGuiRenderer::Initialize(HWND hWnd, ID3D11Device* device, ID3D11DeviceCont
 	//ImGuiThemes::ApplyUnityDark();
 	//ImGuiThemes::ApplyVisualStudioDark();
 
-	//ImGuiThemes::ApplyAAATheme();
+	//ImGuiThemes::ApplyEditorDark();
 	//ImGuiThemes::ApplyCatppuccinMocha();
 	//ImGuiThemes::ApplyTokyoNight();
 	//ImGuiThemes::ApplyDracula();

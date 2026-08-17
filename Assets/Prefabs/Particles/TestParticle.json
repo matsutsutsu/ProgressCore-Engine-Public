@@ -2,8 +2,105 @@
     "entities": [
         {
             "components": {
+                "GPUParticle": {
+                    "animControlled": false,
+                    "emitters": [
+                        {
+                            "angularSpeed": [
+                                0.0,
+                                0.0
+                            ],
+                            "attractorLocal": true,
+                            "attractorPos": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "attractorRadius": 0.0,
+                            "attractorStrength": 0.0,
+                            "burstCount": 0,
+                            "color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "colorMode": 0,
+                            "colorRampPath": "",
+                            "coneAngle": [
+                                0.0,
+                                0.30000001192092896
+                            ],
+                            "drag": 0.0,
+                            "emitMode": 0,
+                            "emitRadius": [
+                                0.0,
+                                0.5
+                            ],
+                            "emitShape": 0,
+                            "emitSize": [
+                                0.10000000149011612,
+                                0.05000000074505806
+                            ],
+                            "emitSpeed": [
+                                1.0,
+                                3.0
+                            ],
+                            "emitStretch": [
+                                1.0,
+                                1.0
+                            ],
+                            "fadeDuration": [
+                                0.20000000298023224,
+                                0.30000001192092896
+                            ],
+                            "gravity": 0.0,
+                            "lifespan": [
+                                1.0,
+                                2.0
+                            ],
+                            "lineEnd": [
+                                0.0,
+                                1.0,
+                                0.0
+                            ],
+                            "localOffset": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "localOffsetY": 0.0,
+                            "maxCount": 1000,
+                            "maxSpeed": 10.0,
+                            "noiseScale": 1.0,
+                            "noiseStrength": 0.0,
+                            "particleType": 1,
+                            "renderMode": 0,
+                            "scale": [
+                                1.0,
+                                1.0
+                            ],
+                            "spawnDelay": [
+                                0.0,
+                                0.0
+                            ],
+                            "spriteGrid": [
+                                1,
+                                1
+                            ],
+                            "spriteMode": 0,
+                            "texturePath": "",
+                            "uvScrollSpeed": [
+                                0.0,
+                                0.0
+                            ],
+                            "velocityStretch": 0.0,
+                            "vortexStrength": 0.0
+                        }
+                    ]
+                },
                 "Name": {
-                    "name": "ParticleEmitter"
+                    "name": "TestParticle"
                 },
                 "TimeState": {
                     "buffScale": 1.0,
@@ -15,10 +112,10 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 3,
+                    "parent": 2,
                     "position": [
                         0.0,
-                        5.0,
+                        0.0,
                         0.0
                     ],
                     "rotation": [
@@ -35,130 +132,9 @@
                 }
             },
             "lid": 1
-        },
-        {
-            "components": {
-                "GPUParticle": {
-                    "angularSpeed": [
-                        0.0,
-                        0.0
-                    ],
-                    "attractorLocal": true,
-                    "attractorPos": [
-                        0.0,
-                        0.0,
-                        0.0
-                    ],
-                    "attractorRadius": 0.0,
-                    "attractorStrength": 0.0,
-                    "burstCount": 0,
-                    "color": [
-                        1.0,
-                        1.0,
-                        1.0,
-                        1.0
-                    ],
-                    "colorMode": 0,
-                    "colorRampPath": "",
-                    "coneAngle": [
-                        0.0,
-                        0.30000001192092896
-                    ],
-                    "drag": 0.0,
-                    "emitMode": 0,
-                    "emitRadius": [
-                        0.0,
-                        0.5
-                    ],
-                    "emitSize": [
-                        0.10000000149011612,
-                        0.05000000074505806
-                    ],
-                    "emitSpeed": [
-                        1.0,
-                        3.0
-                    ],
-                    "emitStretch": [
-                        1.0,
-                        1.0
-                    ],
-                    "fadeDuration": [
-                        0.20000000298023224,
-                        0.30000001192092896
-                    ],
-                    "gravity": 0.0,
-                    "lifespan": [
-                        1.0,
-                        2.0
-                    ],
-                    "localOffset": [
-                        0.0,
-                        0.0,
-                        0.0
-                    ],
-                    "localOffsetY": 0.0,
-                    "maxCount": 1000,
-                    "noiseScale": 1.0,
-                    "noiseStrength": 0.0,
-                    "particleType": 1,
-                    "renderMode": 0,
-                    "scale": [
-                        1.0,
-                        1.0
-                    ],
-                    "spawnDelay": [
-                        0.0,
-                        0.0
-                    ],
-                    "spriteGrid": [
-                        1,
-                        1
-                    ],
-                    "spriteMode": 0,
-                    "texturePath": "",
-                    "uvScrollSpeed": [
-                        0.0,
-                        0.0
-                    ],
-                    "velocityStretch": 0.0,
-                    "vortexStrength": 0.0
-                },
-                "Name": {
-                    "name": "GPUParticle"
-                },
-                "TimeState": {
-                    "buffScale": 1.0,
-                    "cinematicScale": 1.0,
-                    "freezeScale": 0.0,
-                    "group": 0,
-                    "hitStopTimer": 0.0,
-                    "localDt": 0.01666666753590107
-                },
-                "Transform": {
-                    "isStatic": false,
-                    "parent": 1,
-                    "position": [
-                        0.0,
-                        5.0,
-                        0.0
-                    ],
-                    "rotation": [
-                        0.0,
-                        0.0,
-                        0.0,
-                        1.0
-                    ],
-                    "scale": [
-                        1.0,
-                        1.0,
-                        1.0
-                    ]
-                }
-            },
-            "lid": 2
         }
     ],
     "magic": 1397506883,
-    "name": "ParticleEmitter",
+    "name": "TestParticle",
     "version": 1
 }
