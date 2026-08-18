@@ -1893,6 +1893,12 @@
     <ClInclude Include="Source\Game\Logics\Character\Boss\Data\BossActionComponent.h">
       <Filter>Source\Game\Logics\Character\Boss\Data</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Data\BossPhaseComponent.h">
+      <Filter>Source\Game\Logics\Character\Boss\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossPhaseSystem.h">
+      <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Boss\Data\BTActions_Boss.h">
       <Filter>Source\Game\Logics\Character\Boss\Data</Filter>
     </ClInclude>
@@ -2863,6 +2869,12 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Boss\Data\BossActionComponentMeta.cpp">
       <Filter>Source\Game\Logics\Character\Boss\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Data\BossPhaseComponentMeta.cpp">
+      <Filter>Source\Game\Logics\Character\Boss\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossPhaseSystem.cpp">
+      <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossActionSystem.cpp">
       <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>

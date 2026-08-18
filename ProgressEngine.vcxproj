@@ -704,6 +704,8 @@
     <ClInclude Include="Source\Game\Logics\AI\StateTree\System\StateTreeResolveSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\StateTree\System\StateTreeSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Boss\Data\BossActionComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Data\BossPhaseComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossPhaseSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Boss\Data\BTActions_Boss.h" />
     <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossActionSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossAnimSyncSystem.h" />
@@ -1163,6 +1165,8 @@
     <ClCompile Include="Source\Game\Logics\AI\StateTree\System\StateTreeResolveSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\StateTree\System\StateTreeSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Boss\Data\BossActionComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Data\BossPhaseComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossPhaseSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossActionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossAnimSyncSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossPerceptionSystem.cpp" />

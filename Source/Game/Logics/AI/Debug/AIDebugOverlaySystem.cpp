@@ -6,8 +6,6 @@
 #include "AIDebugOverlaySystem.h"
 
 #include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
-#include "Game/Logics/AI/StateTree/Core/StateTreeRegistry.h" // 戦術状態名の実名解決
-#include "Game/Logics/AI/StateTree/Core/StateTreeAsset.h"    // GetStateName
 #include "Game/Logics/AI/Battle/BattleContext.h"             // ドローン残数
 #include "Game/Logics/Combat/HealthComponent.h"              // ボスHP
 #include "Engine/UI/ECS/GameViewportInfo.h"                  // ゲーム画像の画面矩形（位置ズレ対策）
@@ -63,13 +61,13 @@ void AIDebugOverlaySystem::Update(float /*dt*/)
     ImDrawList *drawList = ImGui::GetForegroundDrawList();
     ImFont     *font     = ImGui::GetFont();
 
-    auto view = m_world->View<StateTreeComponent, BehaviorTreeComponent, TransformComponent>();
+    auto view = m_world->View<BossPhaseComponent, BehaviorTreeComponent, TransformComponent>();
     for (auto e : view)
     {
-        auto *st    = m_world->GetComponent<StateTreeComponent>(e);
+        auto *ph    = m_world->GetComponent<BossPhaseComponent>(e);
         auto *bt    = m_world->GetComponent<BehaviorTreeComponent>(e);
         auto *trans = m_world->GetComponent<TransformComponent>(e);
-        if (!st || !bt || !trans) continue;
+        if (!ph || !bt || !trans) continue;
 
         // --- World to Screen 変換（頭上オフセット）。Transform(coord) は w 除算込み ---
         Vector3 worldPos = trans->position;
@@ -80,18 +78,11 @@ void AIDebugOverlaySystem::Update(float /*dt*/)
         const float pixelX = ox + (ndcPos.x + 1.0f) * 0.5f * vw;
         const float pixelY = oy + (1.0f - ndcPos.y) * 0.5f * vh;
 
-        // === 3層の状態をまとめて（戦術 / 行動 / ステータス）===
+        // === 3層の状態をまとめて（大状態 / 行動 / ステータス）===
 
-        // 1) 戦術（StateTree）：GetStateName で実名解決
-        std::string tacticName = "-";
-        if (st->activeDepth > 0 && m_world->HasResource<CCL::AI::StateTreeRegistry>())
-        {
-            auto &reg = m_world->GetResource<CCL::AI::StateTreeRegistry>();
-            if (const auto *asset = reg.Get(st->assetHandle))
-                tacticName = asset->GetStateName(st->GetLeafState());
-        }
+        // 1) 大状態（BossPhaseSystem が決めたもの）
         char line1[80];
-        snprintf(line1, sizeof(line1), "[%s]", tacticName.c_str());
+        snprintf(line1, sizeof(line1), "[%s]", ToString(ph->phase));
 
         // 2) 行動（BT）：現在実行中アクション名を辞書から逆引き
         std::string actionName = "Idle";
@@ -120,7 +111,7 @@ void AIDebugOverlaySystem::Update(float /*dt*/)
 
         struct DbgLine { const char *text; ImU32 col; };
         const DbgLine lines[3] = {
-            {line1,               IM_COL32(255, 200,  80, 255)},  // 戦術：オレンジ
+            {line1,               IM_COL32(255, 200,  80, 255)},  // 大状態：オレンジ
             {actionName.c_str(),  IM_COL32(255, 255, 255, 255)},  // 行動：白
             {line3,               IM_COL32(150, 235, 150, 255)},  // ステータス：緑
         };
@@ -168,7 +159,7 @@ void AIDebugOverlaySystem::OnGui()
     ImGui::Checkbox("Show Floating Text", &m_enabled);
     ImGui::SliderFloat("Font Size", &m_fontSize, 10.0f, 100.0f);
     ImGui::SliderFloat("Head Offset Y", &m_headOffsetY, 0.0f, 15.0f);
-    ImGui::TextDisabled("ボス頭上に 戦術/行動/HP・ドローン数 を常時表示");
+    ImGui::TextDisabled("ボス頭上に 大状態/行動/HP・ドローン数 を常時表示");
 }
 #else
 void AIDebugOverlaySystem::OnGui() {}
