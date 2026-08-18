@@ -1860,7 +1860,7 @@
     <ClInclude Include="Source\Game\Logics\AI\Drone\DroneMovementSystem.h">
       <Filter>Source\Game\Logics\AI\Drone</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\Drone\DroneAI.h">
+    <ClInclude Include="Source\Game\Logics\AI\Drone\DroneBrainSystem.h">
       <Filter>Source\Game\Logics\AI\Drone</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Drone\DroneManagerSystem.h">
@@ -2841,6 +2841,9 @@
       <Filter>Source\Game\Logics\AI\Drone</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\Drone\DroneMovementSystem.cpp">
+      <Filter>Source\Game\Logics\AI\Drone</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\Drone\DroneBrainSystem.cpp">
       <Filter>Source\Game\Logics\AI\Drone</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\Drone\DroneManagerSystem.cpp">

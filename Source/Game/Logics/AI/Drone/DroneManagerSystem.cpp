@@ -5,7 +5,6 @@
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h" // BossCommandComponent
-#include "Game/Logics/AI/StateTree/Core/StateTreeComponent.h"
 #include "Game/Logics/Character/Player/Components/JustEvadeComponent.h" // チェイン段数の参照
 #include "Engine/Transform/Components/TransformComponent.h"
 #include <vector>
@@ -27,29 +26,8 @@ using namespace DirectX::SimpleMath;
 // ドローンのプレハブパス（既存コードから）
 static constexpr const char* kDronePrefab = "Assets/Prefabs/Enemy/Drone.json";
 
-// ノード種別はプロセス内で1回だけ登録（NodeRegistry はシングルトン）
-static const DroneAI::DroneAIIDs kDroneAIIds = DroneAI::RegisterNodes();
-
-
-void DroneManagerSystem::EnsureDroneAIRegistered()
-{
-    // EditorScene::Initialize が StateTreeRegistry を後から作り直すため、
-    // 毎フレーム「DroneAI が未登録なら登録」する遅延方式にする。
-    if (!m_world->HasResource<CCL::AI::StateTreeRegistry>()) return;
-
-    auto& stReg = m_world->GetResource<CCL::AI::StateTreeRegistry>();
-    if (stReg.FindByName("DroneAI").IsValid()) return;
-
-    stReg.Register(DroneAI::BuildDroneAsset(kDroneAIIds));
-    CCL_LOG_INFO(LogCategory::AI, "[DroneManager] DroneAI(StateTree) 登録完了");
-}
-
-
 void DroneManagerSystem::Initialize()
 {
-    // ノード種別は static 初期化で登録済み。アセットは EnsureDroneAIRegistered で遅延登録。
-    EnsureDroneAIRegistered();
-
     ListenEvent<JustEvadeSuccessEvent>([this](const JustEvadeSuccessEvent &ev) {
         OnJustEvadeSuccess(ev);
     });
@@ -60,9 +38,7 @@ void DroneManagerSystem::Initialize()
 // ============================================================================
 void DroneManagerSystem::Update(float /*dt*/)
 {
-    EnsureDroneAIRegistered();
-
-    // シーン開始時：ボスとRegistryが揃い次第、初期ドローンを1回だけ配備する。
+    // シーン開始時：ボスが揃い次第、初期ドローンを1回だけ配備する。
     TryAutoSpawnInitial();
 
     if (!m_world->HasResource<BattleContext>()) return;
@@ -72,7 +48,7 @@ void DroneManagerSystem::Update(float /*dt*/)
     int alive = GetAliveCount();
 
     // 「ドローン数 = ボスHP」を BattleContext に反映
-    // → これで司令官StateTree の DroneCountBelowCondition が本物の数を見る
+    // → これでボス側の戦術判断が本物の数を見る
     battle.droneAliveCount = alive;
 }
 
@@ -84,8 +60,7 @@ void DroneManagerSystem::TryAutoSpawnInitial()
 {
     if (!m_autoSpawnEnabled || m_autoSpawnDone) return;
 
-    // ボスが未生成 or Registry未準備のフレームは何もせず次フレームに再試行。
-    if (!m_world->HasResource<CCL::AI::StateTreeRegistry>()) return;
+    // ボスが未生成のフレームは何もせず次フレームに再試行。
     if (FindBoss() == InvalidEntityID) return;
 
     int spawned = SpawnDrones(m_initialSpawnCount);
@@ -145,8 +120,6 @@ EntityID DroneManagerSystem::FindBoss() const
 // ============================================================================
 int DroneManagerSystem::SpawnDrones(int count)
 {
-    EnsureDroneAIRegistered();
-
     EntityID bossId = FindBoss();
     if (bossId == InvalidEntityID)
     {
@@ -182,40 +155,11 @@ int DroneManagerSystem::SpawnDrones(int count)
             tm->group = TimeGroup::Enemy;
         }
 
-        // 個体 StateTree を使わせる（プレハブに無ければ追加）
-        if (auto *st = m_world->GetComponent<StateTreeComponent>(droneId))
-        {
-            st->assetName   = "DroneAI";
-            st->assetHandle = {};   // 再解決させる
-        }
-        else
-        {
-            StateTreeComponent stComp;
-            stComp.assetName = "DroneAI";
-            m_world->AddComponent<StateTreeComponent>(droneId, stComp);
-        }
-
         ++spawned;
     }
 
-    // AddComponent の遅延反映 + assetHandle 解決
+    // Prefab 生成の遅延反映（この後の View で新規ドローンを拾えるようにする）
     m_world->ScrutinyAndApply();
-
-    if (m_world->HasResource<CCL::AI::StateTreeRegistry>())
-    {
-        auto& stReg = m_world->GetResource<CCL::AI::StateTreeRegistry>();
-        auto  view  = m_world->View<DroneComponent, StateTreeComponent>();
-        for (auto e : view)
-        {
-            if (auto *st = m_world->GetComponent<StateTreeComponent>(e))
-            {
-                if (st->assetName == "DroneAI" && !st->assetHandle.IsValid())
-                {
-                    st->assetHandle = stReg.FindByName("DroneAI");
-                }
-            }
-        }
-    }
 
     // スポーン後：全ドローンに localIndex / totalDrones を振り直す
     //   （既存＋新規をまとめて連番にしないと円が歪む）
@@ -373,7 +317,7 @@ void DroneManagerSystem::OnGui()
         // ================================================================
         // 陣形攻撃テスト（縦割り）：BTを組まずに手動でパイプラインを検証する
         //   ボスの BossCommandComponent へ直接命令を書き、
-        //   DroneCommandSystem → DroneAI(StateTree) → Formation の流れを確認する。
+        //   DroneCommandSystem → DroneBrainSystem → Formation の流れを確認する。
         //   ※ボスBTが毎フレーム陣形を指示している場合はそちらに上書きされるので、
         //     テスト時はボスBTを Move のみ等にしておくこと。
         // ================================================================
@@ -478,5 +422,5 @@ bool DroneManagerSystem::DestroyDrone(EntityID droneId)
     return true;
 }
 
-// L02_Update で計数（StateTreeSystem と同じステージ。順序は問わない）
+// L02_Update で計数（判断・陣形と同じステージ。順序は問わない）
 REGISTER_LOGIC_SYSTEM(DroneManagerSystem, Priority::LogicStage::L02_Update)

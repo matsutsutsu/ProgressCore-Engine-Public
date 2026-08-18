@@ -103,15 +103,15 @@ struct DroneComponent {
     DroneFormationType currentFormation = DroneFormationType::Hidden;
     DroneState currentState = DroneState::Idle;
 
-    /// @brief 陣形スロットへの初回到着が完了したか（StateTree 用ラッチ）。
-    ///        true になると Forming(Idle) に固定され、回転する targetPosition との
-    ///        距離では MoveToSlot に戻らない（点滅防止）。
+    /// @brief 陣形スロットへの初回到着が完了したか（DroneBrainSystem のラッチ）。
+    ///        true になると Idle に固定され、回転する targetPosition との
+    ///        距離では MoveToTarget に戻らない（点滅防止）。
     bool hasReachedSlot = false;
 
     /// @brief ボスから「今攻撃せよ」の命令が来ているか（実行時専用・非シリアライズ）。
     ///        DroneCommandSystem が毎フレーム BossCommandComponent.droneAttackActive を
-    ///        ここへ配布し、個体 StateTree の WantsAttackCondition が読む。
-    ///        true → Active(FireCharge) へ遷移する。
+    ///        ここへ配布し、DroneBrainSystem が読む。
+    ///        true → FireCharge へ遷移する。
     bool wantsAttack = false;
 
     /// @brief 陣形攻撃の進行度（0.0→1.0、実行時専用・非シリアライズ）。
@@ -122,7 +122,7 @@ struct DroneComponent {
     /// @brief FireCharge 中の移動モード（実行時専用・非シリアライズ）。
     ///        false : fireDirection へ直進（弾幕・突撃系のデフォルト）。
     ///        true  : targetPosition を剛体追従（縦割りのように陣形自体が動く攻撃）。
-    ///                攻撃陣形が毎フレーム true にし、BeginChargeTask が攻撃開始時に false へ戻す。
+    ///                攻撃陣形が毎フレーム true にし、DroneBrainSystem が攻撃開始時に false へ戻す。
     bool chargeFollowsTarget = false;
 
     /// @brief dashモードの「発射待ち時間」（実行時専用・非シリアライズ）。

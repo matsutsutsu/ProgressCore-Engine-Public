@@ -40,6 +40,6 @@ void DroneCommandSystem::Update(float /*dt*/)
     });
 }
 
-// 伝令はボスBT(L02_Update)が書いた命令を読み、Formation/StateTree より前に配りたい。
+// 伝令はボスBT(L02_Update)が書いた命令を読み、Formation より前に配りたい。
 // 同ステージ内の順序差は 1 フレーム程度で体感に影響しないため L02_Update に置く。
 REGISTER_LOGIC_SYSTEM(DroneCommandSystem, Priority::LogicStage::L02_Update)
