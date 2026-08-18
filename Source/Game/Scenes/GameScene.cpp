@@ -8,9 +8,6 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Platform/Core/Logger.h"
 
-#include "Game/Logics/AI/StateTree/Core/StateTreeRegistry.h"
-#include "Game/Logics/AI/StateTree/Serialization/StateTreeSerializer.h"
-#include "Game/Logics/AI/StateTree/Muriel/MurielAI.h"
 #include "Game/Logics/AI/Battle/BattleContext.h" // 敵AIが参照する戦況共有リソース
 
 #include "Game/UI/GameResultSystem.h" // ゲームオーバー/クリア検知＋リザルトUI
@@ -25,20 +22,6 @@ void GameScene::Initialize()
     ZoneScopedN("GameScene::Initialize");
 
     BaseScene::Initialize(); // 共通初期化（リソース登録＋RegisterSystems）
-
-    // --- 敵AI(Muriel)の語彙とStateTreeを準備 ---
-    // 木構造は StateTreeWindow で編集した Assets/AI/MurielAI.json を読む（ここでは組まない）。
-    static auto murielIds = MurielAI::RegisterNodes();
-    (void)murielIds;
-
-    m_worldPtr->AddResource<CCL::AI::StateTreeRegistry>();
-    auto &stReg = m_worldPtr->GetResource<CCL::AI::StateTreeRegistry>();
-    {
-        ZoneScopedN("GameScene: StateTree load+compile");
-        CCL::AI::StateTreeDef murielDef;
-        if (CCL::AI::StateTreeSerializer::LoadDef("Assets/AI/MurielAI.json", murielDef))
-            stReg.Register(CCL::AI::StateTreeSerializer::Compile(murielDef));
-    }
 
     // 敵AIが受け取るシーン全体の情報が入った共有リソース。
     m_worldPtr->AddResource<BattleContext>();

@@ -9,10 +9,7 @@
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 
-#include "Game/Logics/AI/StateTree/Core/StateTreeRegistry.h"
-#include "Game/Logics/AI/StateTree/Serialization/StateTreeSerializer.h"
-
-#include "Game/Logics/AI/StateTree/Muriel/MurielAI.h"
+#include "Game/Logics/AI/Battle/BattleContext.h" // 敵AIが参照する戦況共有リソース
 
 #include "Game/UI/GameResultSystem.h" // ゲームオーバー検知＋リザルトUI
 #include "Game/UI/PauseSystem.h"      // ESC/STARTでポーズ＋ポーズメニュー
@@ -38,28 +35,6 @@ void EditorScene::Initialize()
     }
 
     //SceneManager::Instance().LoadScene(m_worldPtr,"Assets/Scene/PlayerMovementScene.json");
-
-    //static auto enemyIds = EnemyAI::RegisterNodes();
-
-
-
-    // Muriel の Task/Condition（語彙）を NodeRegistry へ登録
-    // 木構造はここでは組まない。StateTreeWindow で編集した Assets/AI/MurielAI.json を読む。
-    static auto murielIds = MurielAI::RegisterNodes();
-    (void)murielIds;
-
-    m_worldPtr->AddResource<CCL::AI::StateTreeRegistry>();
-    auto &stReg       = m_worldPtr->GetResource<CCL::AI::StateTreeRegistry>();
-    //auto  enemyHandle = stReg.Register(EnemyAI::BuildEnemyAsset(enemyIds, 12.0f));
-
-    // Muriel の StateTree アセットをJSONからロード（StateTreeWindowで組み立てたものがそのまま使われる）
-    {
-        ZoneScopedN("EditorScene: StateTree load+compile");
-        CCL::AI::StateTreeDef murielDef;
-        if (CCL::AI::StateTreeSerializer::LoadDef("Assets/AI/MurielAI.json", murielDef))
-            stReg.Register(CCL::AI::StateTreeSerializer::Compile(murielDef));
-    }
-
 
     // 敵AIが受け取るシーン全体の情報が入った共有のリソースを登録
     m_worldPtr->AddResource<BattleContext>();
