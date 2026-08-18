@@ -15,6 +15,11 @@
  * @note 調整パラメータはここに持たせない。第2形態のBTパスとHP閾値は
  *       BehaviorTreeComponent の phase2AssetPath / phase2HealthThreshold を使う
  *       （既にプレハブでシリアライズ済みのフィールドを再利用する）。
+ *
+ * 形態移行の流れ:
+ *   Combat --HP<=閾値--> Transition --演出時間経過--> Combat2
+ *   Transition の間は BT を止め、無敵にし、群れを頭上へ退避させる。
+ *   これで「攻撃が途切れて仕切り直す」間ができ、形態が変わったことが画面で分かる。
  */
 #pragma once
 #include <cstdint>
@@ -23,18 +28,20 @@
 // ===================================================================================
 // [ 列挙型 ] ボスの大状態
 // ===================================================================================
-/// @note 第2形態を足すときはここに Transition / Combat2 を挿し、
-///       BossPhaseSystem の遷移判定を1行、OnEnterPhase を1ケース増やすだけで済む。
+/// @note 並び順がそのままインスペクタの列挙値になるので、途中に挿すと
+///       保存済みプレハブの値がずれる。増やすときは末尾に足すこと。
 enum class BossPhase : uint8_t
 {
-    Combat, ///< 戦闘中。BT（プレハブの assetPath）が技を選ぶ
-    Dead,   ///< 死亡。終端状態。ここからは抜けない
+    Combat,     ///< 第1形態。BT（プレハブの assetPath）が技を選ぶ
+    Dead,       ///< 死亡。終端状態。ここからは抜けない
+    Transition, ///< 形態移行の演出中。BTを止め、無敵になり、群れを頭上へ退避させる
+    Combat2,    ///< 第2形態。BT を phase2AssetPath のものへ差し替えて戦う
 };
 
 /// @brief 表示名。インスペクタの列挙表示とデバッグ頭上表示で共有する
 ///        （名前の二重管理を避けるため、enum と同じ場所に置く）。
 inline constexpr const char *kBossPhaseNames[] = {
-    "Combat", "Dead",
+    "Combat", "Dead", "Transition", "Combat2",
 };
 inline constexpr size_t kBossPhaseCount = sizeof(kBossPhaseNames) / sizeof(kBossPhaseNames[0]);
 

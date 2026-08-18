@@ -1,5 +1,5 @@
 /// @file  BossPhaseSystem.h
-/// @brief ボスの大状態（戦闘中／死亡）を決める判断層。
+/// @brief ボスの大状態（第1形態 / 移行演出 / 第2形態 / 死亡）を決める判断層。
 ///
 /// 責務は「大状態の遷移」と「入場した瞬間だけの処理」の2つに限る。
 /// 具体的な技の選択はボスBTが、物理への変換は BossActionSystem が担う。
@@ -11,17 +11,17 @@
 ///   BossActionSystem     … 物理に変換する（実行）  L02_PostUpdate
 ///
 /// なぜ汎用ステートマシンを使わないか:
-///   状態が2つで、ボスは1体しか存在しない。BTの root Selector が既に
+///   状態が4つで、ボスは1体しか存在しない。BTの root Selector が既に
 ///   「優先度順の状態選択」そのものなので、木構造の機構を別に持つ意味がない。
-///   BTで書けない唯一の部分が「入った瞬間に1回だけ」（死亡アニメの発火など）で、
-///   それだけのためにこの小さなFSMを置いている。
+///   BTで書けない唯一の部分が「入った瞬間に1回だけ」（BTの差し替え・無敵付与・
+///   アニメ発火）で、それだけのためにこの小さなFSMを置いている。
 ///
 /// 実行順序: L02_PreUpdate。BehaviorTreeSystem(L02_Update) が assetPath を読む前に
 ///   大状態を確定させる必要があるため、ここは動かせない。
 #pragma once
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/Character/Boss/Data/BossPhaseComponent.h"
-#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h" // BossCommandComponent
+#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h" // BehaviorTreeComponent / BossCommandComponent
 #include "Game/Logics/Combat/HealthComponent.h"
 #include "Engine/Animation/Components/AnimParametersComponent.h"
 #include "Engine/Time/TimeState.h"
@@ -29,9 +29,10 @@
 class BossPhaseSystem : public CCL::ECS::IfSystem<
                             BossPhaseSystem,
                             CCL::ECS::Write<BossPhaseComponent>,
+                            CCL::ECS::Write<BehaviorTreeComponent>,
                             CCL::ECS::Write<BossCommandComponent>,
                             CCL::ECS::Write<AnimParametersComponent>,
-                            CCL::ECS::Read<HealthComponent>,
+                            CCL::ECS::Write<HealthComponent>,
                             CCL::ECS::Read<TimeStateComponent>>
 {
   public:
@@ -45,19 +46,34 @@ class BossPhaseSystem : public CCL::ECS::IfSystem<
 
   private:
     /// @brief 今フレームの遷移先を決める。優先度順で、上から最初に成立したものが勝つ。
-    /// @note  第2形態を足すときはここに分岐を1〜2行足す。
-    BossPhase DecideNextPhase(const BossPhaseComponent &phase,
-                              const HealthComponent    &health) const;
+    BossPhase DecideNextPhase(const BossPhaseComponent    &phase,
+                              const BehaviorTreeComponent &bt,
+                              const HealthComponent       &health) const;
 
     /// @brief 状態に入った瞬間だけ走る処理。BTでは書けないのがこの部分。
-    void OnEnterPhase(BossPhase                 next,
-                      BossPhaseComponent       &phase,
-                      BossCommandComponent     &cmd,
-                      AnimParametersComponent  &anim) const;
+    void OnEnterPhase(BossPhase                next,
+                      BossPhaseComponent      &phase,
+                      BehaviorTreeComponent   &bt,
+                      BossCommandComponent    &cmd,
+                      AnimParametersComponent &anim,
+                      HealthComponent         &health) const;
 
     /// @brief 状態に滞在している間、毎フレーム走る処理。
-    void TickPhase(const BossPhaseComponent &phase, BossCommandComponent &cmd) const;
+    void TickPhase(const BossPhaseComponent &phase,
+                   BehaviorTreeComponent    &bt,
+                   BossCommandComponent     &cmd,
+                   HealthComponent          &health) const;
 
-    /// @brief 死亡アニメのトリガー名。AnimGraph 側のトリガー名と一致させること。
+    /// @brief 死亡アニメのトリガー名。
+    /// @note  現状 Muriel の AnimGraph に Death ステートが無いため、この発火は
+    ///        何も起こさない（アニメを追加すればそのまま繋がる）。
     static constexpr const char *kDeathTrigger = "Death";
+
+    /// @brief 形態移行時の咆哮アニメのトリガー名。
+    /// @note  同上。AnimGraph に Roar ステートを足すと演出が乗る。
+    ///        アニメが無くても「停止＋無敵＋群れの退避」で移行は成立する。
+    static constexpr const char *kRoarTrigger = "Roar";
+
+    /// @brief 形態移行の演出時間（秒）。この間ボスは無敵で、BTは止まる。
+    static constexpr float kTransitionDuration = 2.5f;
 };

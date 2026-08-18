@@ -13,7 +13,7 @@
                 },
                 "BehaviorTreeComponent": {
                     "assetPath": "Assets/BehaviorTree/BossCombat.json",
-                    "phase2AssetPath": "Data/BehaviorTree/BossAI_Phase2.json",
+                    "phase2AssetPath": "Assets/BehaviorTree/BossCombatPhase2.json",
                     "phase2HealthThreshold": 50.0
                 },
                 "BossActionComponent": {
