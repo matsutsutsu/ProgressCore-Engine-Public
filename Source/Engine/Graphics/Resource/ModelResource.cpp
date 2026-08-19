@@ -11,6 +11,7 @@
 
 #include "Engine/Core/Math/Misc.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
+#include "Engine/Graphics/Resource/ResourceManager.h" // テクスチャSRVのパス単位キャッシュ
 #include <winsock.h>
 
 
@@ -351,16 +352,22 @@ void ModelResource::BuildModel(ID3D11Device* device, const char* dirname)
 						::strcpy_s(fullpath, ddspath);
 				}
 
-				// マルチバイト→ワイド文字変換
-				wchar_t wfilename[256];
-				::MultiByteToWideChar(CP_ACP, 0, fullpath, -1, wfilename, 256);
-
-				// 実際にテクスチャをロード
-				HRESULT hr = GpuResourceUtils::LoadTexture(device, fullpath, outSRV.GetAddressOf());
-				if (FAILED(hr))
+				// 実際にテクスチャをロード。
+				// GpuResourceUtils を直に叩くとモデルごとに毎回デコードが走るため、
+				// パス単位でSRVをキャッシュする ResourceManager を経由する。
+				// 同じテクスチャを複数モデルが参照していても実デコードは1回で済む。
+				// （BuildModel は ResourceManager::LoadModelResource の「ロック外」区間から
+				//   呼ばれる契約なので、ここで LoadTexture を呼んでも自己デッドロックしない）
+				ResourceManager &resourceManager = ResourceManager::Instance();
+				TextureHandle    handle          = resourceManager.LoadTexture(fullpath);
+				if (ID3D11ShaderResourceView *srv = resourceManager.GetTexture(handle))
+				{
+					outSRV = srv; // ComPtr の代入で AddRef されるので寿命は独立
+				}
+				else
 				{
 					// ロード失敗時は白テクスチャを代用
-					hr = GpuResourceUtils::CreateDummyTexture(device, 0xFFFFFFFF, outSRV.GetAddressOf());
+					HRESULT hr = GpuResourceUtils::CreateDummyTexture(device, 0xFFFFFFFF, outSRV.GetAddressOf());
 					_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 				}
 			};
