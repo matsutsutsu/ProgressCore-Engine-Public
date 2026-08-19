@@ -21,5 +21,10 @@ class UITextCollectSystem : public CCL::ECS::IfSystem<UITextCollectSystem,
     {
     }
 
+
+    /// @brief 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
+    ///        UILayout が確定した computedPos/computedSize を読んで描画リストへ積む。
+    std::vector<const char *> GetRunAfter() const override { return {"UILayoutSystem"}; }
+
     void Update(float dt) override;
 };

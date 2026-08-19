@@ -24,6 +24,11 @@ class DroneFormationSystem : public CCL::ECS::IfSystem<
 
     void Initialize() override;
 
+
+    /// @brief 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
+    ///        DroneCommand が drone.currentFormation を書き、こちらがそれを読んでスロットを計算する。
+    std::vector<const char *> GetRunAfter() const override { return {"DroneCommandSystem"}; }
+
     void Update(float dt) override;
 
   private:

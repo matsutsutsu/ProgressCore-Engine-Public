@@ -20,5 +20,10 @@ class UIButtonSystem : public CCL::ECS::IfSystem<UIButtonSystem,
     {
     }
 
+
+    /// @brief 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
+    ///        UIInput が更新した UIInteractableComponent の状態を読んで見た目を切り替える。
+    std::vector<const char *> GetRunAfter() const override { return {"UIInputSystem"}; }
+
     void Update(float dt) override;
 };

@@ -20,6 +20,16 @@ class TransformUpdateSystem : public CCL::ECS::IfSystem<TransformUpdateSystem,CC
 
 
     // フレーム毎の更新処理
+
+    /// @brief 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
+    ///        本システムは親子関係を解決してワールド行列を確定させる、L02_PostUpdate の
+    ///        締めくくり。同ステージでローカル Transform を書き換えるシステムより後に
+    ///        走らないと、確定したはずの行列が後から書き換わる。
+    std::vector<const char *> GetRunAfter() const override
+    {
+        return {"BossActionSystem", "JoltSandboxGuiSystem"};
+    }
+
     void Update(float dt) override;
 
 

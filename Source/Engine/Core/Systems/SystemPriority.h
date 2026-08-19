@@ -32,6 +32,9 @@ namespace Priority {
         L06_DamageApply = 610, // ① ダメージイベントの消費とHP減算 (DamageResolutionSystem)
         L06_StatusEffect = 620, // ② 毒やバフの適用 (将来用)
         L06_HealthManagement = 630, // ③ HPの最終確認と死亡判定 (HealthSystem)
+        L06_HudSync = 650, // ④ 確定したHP/ゲージ等をHUDへ反映。
+                           //   必ず HealthManagement(630) の後に置く。
+                           //   ※ここより前だと HUD が常に1フレーム前の値を表示する。
 
         L07_Cleanup = 700,  // 死亡エンティティの回収、メモリ整理
         L08_Prefab = 800,  // プレハブ生成
