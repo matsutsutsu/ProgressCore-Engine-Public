@@ -78,5 +78,5 @@ void GameScene::Render()
     BaseScene::Render();
 }
 
-// SceneFactory への自動登録（SceneManager が本クラスを include せずに済むようにする）
+// SceneFactory への自動登録
 REGISTER_SCENE(GameScene, "Game")

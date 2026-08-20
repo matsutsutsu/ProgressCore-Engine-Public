@@ -11,7 +11,7 @@ void ParticleScene::Initialize()
 {
     BaseScene::Initialize();
 
-        // --- 戦場レベルを読み込む ---
+    // --- 戦場レベルを読み込む ---
     // LoadLevel は内部で LoadScene（既存ワールドをPersistentTag以外全消去）→ ステージ復元
     // → プレハブ実体(ライト/カメラ/プレイヤー/ボス/ステージ)を再生成する。BaseScene::Initialize は
     // ゲーム実体を生成しないので、ここで全消去されて困るものは無い（リソース/システムは残る）。

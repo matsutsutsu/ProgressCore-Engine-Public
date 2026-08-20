@@ -1,27 +1,12 @@
 #include "ECSDebugWindow.h"
-#include <implot.h>
 #include "Engine/ECS/Core/CCL_Chunk.h"
-#include "Engine/ECS/Core/CCL_PendingOps.h"
 
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 
-// ---------------------------------------------------------
-// ScrollingBuffer の実装
-// ---------------------------------------------------------
-ScrollingBuffer::ScrollingBuffer(int max_size) {
-    MaxSize = max_size;
-    Offset = 0;
-    Data.reserve(MaxSize);
-}
-
-void ScrollingBuffer::AddPoint(float x, float y) {
-    if (Data.size() < MaxSize)
-        Data.push_back(ImVec2(x, y));
-    else {
-        Data[Offset] = ImVec2(x, y);
-        Offset = (Offset + 1) % MaxSize;
-    }
-}
+#include <algorithm>
+#include <map>
+#include <string>
+#include <vector>
 
 // ---------------------------------------------------------
 // ECSDebugWindow の実装
@@ -40,210 +25,14 @@ void ECSDebugWindow::DrawContents(EditorContext& context) {
             ImGui::EndTabItem();
         }
 
-        if (ImGui::BeginTabItem("Systems Profiler")) {
-            DrawSystemsTab(context.systemManager);
-            ImGui::EndTabItem();
-        }
-
         // 実行グラフのタブ
         if (ImGui::BeginTabItem("Execution Graph")) {
             DrawExecutionGraphTab(context.systemManager);
             ImGui::EndTabItem();
         }
-
-        if (ImGui::BeginTabItem("Pending Ops")) {
-            DrawPendingOpsTab(context.world);
-            ImGui::EndTabItem();
-        }
         ImGui::EndTabBar();
     }
 }
-
-void ECSDebugWindow::DrawSystemsTab(CCL::ECS::SystemManager* systemManager) {
-    float dt = ImGui::GetIO().DeltaTime;
-
-    // =======================================================
-    // 1. ツールバー (UXの劇的改善)
-    // =======================================================
-    ImGui::Checkbox("Pause Profiler", &m_pauseProfiler);
-    ImGui::SameLine();
-
-    // UX改善 1: 一括ON/OFFボタン
-    if (ImGui::Button("Hide All")) {
-        for (auto& pair : m_systemTimings) pair.second.isVisible = false;
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Show All")) {
-        for (auto& pair : m_systemTimings) pair.second.isVisible = true;
-    }
-
-    ImGui::SameLine();
-
-    // =========================================================
-    // 「Top 5 Heaviest」ソロ表示ボタンの追加
-    // 一瞬でノイズを削ぎ落とし、重い処理だけをグラフに浮き彫りにします。
-    // =========================================================
-    if (ImGui::Button("Solo Top 5 Heaviest", ImVec2(150, 0))) {
-        std::vector<std::pair<std::string, float>> heavySystems;
-        for (auto& pair : m_systemTimings) {
-            float latestTime = 0.0f;
-            if (!pair.second.buffer.Data.empty()) {
-                int latestIdx = (pair.second.buffer.Offset == 0) ? pair.second.buffer.MaxSize - 1 : pair.second.buffer.Offset - 1;
-                latestTime = pair.second.buffer.Data[latestIdx].y;
-            }
-            heavySystems.push_back({ pair.first, latestTime });
-            pair.second.isVisible = false; // 一旦全非表示
-        }
-        // 降順ソート
-        std::sort(heavySystems.begin(), heavySystems.end(), [](const auto& a, const auto& b) {
-            return a.second > b.second;
-            });
-        // 上位5つだけ表示ON
-        for (size_t i = 0; i < std::min<size_t>(5, heavySystems.size()); ++i) {
-            m_systemTimings[heavySystems[i].first].isVisible = true;
-        }
-    }
-
-
-    // UX改善 2: グラフのY軸上限を手動で固定するスライダー
-    // これにより、グラフが勝手に伸び縮みして目が回るのを防ぎます
-    static float yAxisMax = 16.66f; // デフォルトは60fps(16.6ms)のライン
-    ImGui::SameLine(0, 20);
-    ImGui::SetNextItemWidth(150);
-    ImGui::SliderFloat("Y-Axis Max (ms)", &yAxisMax, 1.0f, 60.0f, "%.1f");
-
-
-    // データの記録用ヘルパー
-    auto addData = [&](const std::string& name, float timeMs) {
-        // 安全対策: 計測値がNaNや無限大になっていたら0に補正する（ズーム時のクラッシュ原因を排除）
-        if (std::isnan(timeMs) || std::isinf(timeMs) || timeMs < 0.0f) timeMs = 0.0f;
-
-        auto& data = m_systemTimings[name];
-        if (data.buffer.Data.empty()) {
-            float hue = fmod(m_systemTimings.size() * 0.618033988749895f, 1.0f);
-            float r, g, b;
-            ImGui::ColorConvertHSVtoRGB(hue, 0.7f, 0.9f, r, g, b);
-            data.color = ImVec4(r, g, b, 1.0f);
-        }
-        data.buffer.AddPoint(m_time, timeMs);
-        };
-
-    // 2. データの記録 (前回と同じ)
-    if (!m_pauseProfiler) {
-        m_time += dt;
-        for (const auto& sys : systemManager->GetLogicSystems()) {
-            addData(sys->GetName(), sys->GetLastUpdateTime());
-        }
-        for (const auto& sys : systemManager->GetRenderSystems()) {
-            addData(sys->GetName(), sys->GetLastUpdateTime());
-        }
-    }
-
-    // =======================================================
-    // 3. ImPlot による折れ線グラフの描画
-    // =======================================================
-
-    // 実行中はプロット全体のマウス入力(スクロールやドラッグ)を完全に遮断する
-    // これにより、内部計算の衝突によるクラッシュを物理的に防ぎます。
-    // Pause中は NoInputs が解除され、ホバーやスクロールが自由に行えるようになります。
-    ImPlotFlags plotFlags = m_pauseProfiler ? ImPlotFlags_None : ImPlotFlags_NoInputs;
-
-    if (ImPlot::BeginPlot("System Execution Times (ms)", ImVec2(-1, 250), plotFlags)) {
-
-        // 軸のロックフラグは外し、デフォルト設定に戻す
-        ImPlot::SetupAxes("Time (s)", "Execution Time (ms)", ImPlotAxisFlags_None, ImPlotAxisFlags_None);
-
-        // Pause中は何もしない（ユーザーにカメラ操作を委ねる）、実行中のみ強制スクロール
-        if (!m_pauseProfiler) {
-            ImPlot::SetupAxisLimits(ImAxis_X1, m_time - 5.0, m_time, ImGuiCond_Always);
-            ImPlot::SetupAxisLimits(ImAxis_Y1, 0.0, yAxisMax, ImGuiCond_Always);
-        }
-
-        for (auto& pair : m_systemTimings) {
-            // データが2点未満なら描画をスキップ（ImPlot内部での描画エラー防止）
-            if (!pair.second.isVisible || pair.second.buffer.Data.size() < 2) continue;
-
-            float thickness = pair.second.isHovered ? 3.0f : 1.0f;
-            ImPlot::SetNextLineStyle(pair.second.color, thickness);
-
-            ImPlot::PlotLine(pair.first.c_str(),
-                &pair.second.buffer.Data[0].x,
-                &pair.second.buffer.Data[0].y,
-                pair.second.buffer.Data.size(),
-                0, // flags
-                pair.second.buffer.Offset,
-                sizeof(ImVec2));
-        }
-        ImPlot::EndPlot();
-    }
-
-    ImGui::Separator();
-
-    // =======================================================
-    // 4. 詳細テーブル
-    // =======================================================
-    ImGui::Text("Current Performance Breakdown");
-    if (ImGui::BeginTable("SystemPerfTable", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Sortable | ImGuiTableFlags_ScrollY, ImVec2(0, 0))) {
-        ImGui::TableSetupColumn("System Name", ImGuiTableColumnFlags_WidthStretch);
-        ImGui::TableSetupColumn("Latest Time (ms)", ImGuiTableColumnFlags_WidthFixed, 100.0f);
-        ImGui::TableSetupColumn("Load Bar", ImGuiTableColumnFlags_WidthFixed, 150.0f);
-        ImGui::TableHeadersRow();
-
-        // =========================================================
-        //  std::map（アルファベット順）を、負荷の高い順に並び替えてから描画する
-        // =========================================================
-        std::vector<std::pair<std::string, SystemProfileData*>> sortedData;
-        for (auto& pair : m_systemTimings) {
-            sortedData.push_back({ pair.first, &pair.second });
-        }
-
-        // ラムダ式で最新時間を取得して降順ソート
-        std::sort(sortedData.begin(), sortedData.end(), [](const auto& a, const auto& b) {
-            auto getLatestTime = [](const SystemProfileData* data) {
-                if (data->buffer.Data.empty()) return 0.0f;
-                int idx = (data->buffer.Offset == 0) ? data->buffer.MaxSize - 1 : data->buffer.Offset - 1;
-                return data->buffer.Data[idx].y;
-                };
-            return getLatestTime(a.second) > getLatestTime(b.second);
-            });
-
-        // 並び替えたリストでテーブルを描画
-        for (auto& pair : sortedData) {
-            SystemProfileData& data = *pair.second;
-            if (data.buffer.Data.empty()) continue;
-
-            int latestIdx = (data.buffer.Offset == 0) ? data.buffer.MaxSize - 1 : data.buffer.Offset - 1;
-            float latestTime = data.buffer.Data[latestIdx].y;
-
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-
-            ImGui::PushID(pair.first.c_str());
-            ImGui::Checkbox("##vis", &data.isVisible);
-            ImGui::SameLine();
-
-            ImGui::ColorButton("##col", data.color, ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoDragDrop, ImVec2(14, 14));
-            ImGui::SameLine();
-
-            ImGui::Selectable(pair.first.c_str(), false, ImGuiSelectableFlags_SpanAllColumns);
-            data.isHovered = ImGui::IsItemHovered();
-
-            ImGui::PopID();
-
-            ImGui::TableNextColumn();
-            ImGui::Text("%.3f ms", latestTime);
-
-            ImGui::TableNextColumn();
-            float ratio = latestTime / yAxisMax; // 16.666f固定ではなくスライダーの最大値を基準にする
-            ImVec4 barColor = (ratio > 0.5f) ? ImVec4(1, 0, 0, 1) : ImVec4(0, 1, 0, 1);
-            ImGui::PushStyleColor(ImGuiCol_PlotHistogram, barColor);
-            ImGui::ProgressBar(ratio, ImVec2(-1, 14), "");
-            ImGui::PopStyleColor();
-        }
-        ImGui::EndTable();
-    }
-}
-
 
 // =========================================================
 // ヘルパー関数: 型IDから一時的な文字列を生成
@@ -478,63 +267,51 @@ void ECSDebugWindow::DrawMemoryTab(CCL::ECS::World* world) {
     ImGui::Columns(1);
 }
 
-// =========================================================
-// タブ3: Pending Operations (遅延処理の可視化)
-// =========================================================
-void ECSDebugWindow::DrawPendingOpsTab(CCL::ECS::World* world) {
-    auto& pending = world->GetPendingOps();
-    auto& ops = pending.Ops();
-
-    ImGui::Text("Queue Size: %zu", ops.size());
-    ImGui::SameLine();
-
-    // 改良: ボタンの色を目立たせる
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.6f, 0.2f, 1.0f));
-    if (ImGui::Button("Sync Now (ScrutinyAndApply)")) {
-        world->ScrutinyAndApply();
-    }
-    ImGui::PopStyleColor();
-    ImGui::Separator();
-
-    if (ImGui::BeginChild("OpsLog", ImVec2(0, 0), true)) {
-        for (const auto& op : ops) {
-            const char* typeName = "Unknown";
-            ImVec4 color = ImVec4(1, 1, 1, 1);
-
-            // 操作に応じた色分け
-            switch (op.kind) {
-            case CCL::ECS::PendingOpKind::Spawn:           typeName = "SPAWN";   color = ImVec4(0.2f, 1.0f, 0.2f, 1.0f); break;
-            case CCL::ECS::PendingOpKind::Destroy:         typeName = "DESTROY"; color = ImVec4(1.0f, 0.3f, 0.3f, 1.0f); break;
-            case CCL::ECS::PendingOpKind::AddComponent:    typeName = "ADD";     color = ImVec4(0.2f, 0.7f, 1.0f, 1.0f); break;
-            case CCL::ECS::PendingOpKind::RemoveComponent: typeName = "REMOVE";  color = ImVec4(1.0f, 0.6f, 0.2f, 1.0f); break;
-            }
-
-            ImGui::TextColored(color, "[%s]", typeName);
-            ImGui::SameLine();
-            ImGui::Text("EntityID: %llu | TypeID: %u", op.entity, op.type);
-        }
-    }
-    ImGui::EndChild();
-}
-
 // ---------------------------------------------------------
 //  実行グラフの可視化
+//    TaskScheduler が解決した「バッチ」を上から順に描く。
+//    同じバッチ内のシステムはワーカースレッドで並列実行される（依存が無い）。
+//    バッチは上から順に直列に処理される（前のバッチ完了を待つ）。
 // ---------------------------------------------------------
 void ECSDebugWindow::DrawExecutionGraphTab(CCL::ECS::SystemManager* systemManager) {
-    ImGui::TextWrapped("Shows the current parallel execution batches resolved by the TaskScheduler.");
+    ImGui::TextWrapped(
+        "TaskScheduler が解決した並列実行バッチ。同じバッチ内は並列（ワーカースレッド）、"
+        "バッチ同士は上から順に直列に実行される。");
     ImGui::Spacing();
 
     auto drawGraph = [](const char* title, const CCL::ECS::TaskScheduler& scheduler) {
-        ImGui::SeparatorText(title);
         const auto& batches = scheduler.GetBatches();
+
+        // 集計: 総システム数・最大並列幅（＝同時に走る最大本数）
+        size_t totalSystems = 0;
+        size_t maxWidth = 0;
+        for (const auto& b : batches) {
+            totalSystems += b.size();
+            if (b.size() > maxWidth) maxWidth = b.size();
+        }
+
+        ImGui::SeparatorText(title);
         if (batches.empty()) {
             ImGui::TextDisabled("Graph not built yet or no systems registered.");
             return;
         }
+
+        ImGui::Text("Batches: %zu    Systems: %zu    Max Parallel Width: %zu",
+            batches.size(), totalSystems, maxWidth);
+        ImGui::Spacing();
+
         for (size_t i = 0; i < batches.size(); ++i) {
-            ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Batch %zu (Parallel):", i);
+            const auto& batch = batches[i];
+            const bool parallel = batch.size() > 1;
+
+            // 並列バッチは緑（複数スレッドで同時実行）、単独バッチは灰（メイン等で直列）。
+            const ImVec4 col = parallel ? ImVec4(0.40f, 0.90f, 0.50f, 1.0f)
+                                        : ImVec4(0.70f, 0.70f, 0.70f, 1.0f);
+            ImGui::TextColored(col, "Batch %zu  [%s x%zu]",
+                i, parallel ? "Parallel" : "Serial", batch.size());
+
             ImGui::Indent();
-            for (auto* sys : batches[i]) {
+            for (auto* sys : batch) {
                 ImGui::BulletText("%s", sys->GetName().c_str());
             }
             ImGui::Unindent();
