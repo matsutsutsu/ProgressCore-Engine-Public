@@ -4,6 +4,7 @@
 #include "DroneManagerSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
+#include "Game/Logics/AI/Drone/Squad/SquadState.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h" // BossCommandComponent
 #include "Game/Logics/Character/Player/Components/JustEvadeComponent.h" // チェイン段数の参照
 #include "Engine/Transform/Components/TransformComponent.h"
@@ -90,16 +91,60 @@ void DroneManagerSystem::ReindexAllDrones()
     int total = GetAliveCount();
     if (total <= 0) return;
 
+    // 1小隊は8機以下である前提でビットマスクを使う（空きスロット探索用）
+    static_assert(SquadRegistry::kSquadSize <= 8, "小隊の人数が uint8_t のビット数を超えている");
+
+    // --- 使用中のスロットを小隊ごとに集める ---
+    //   小隊の所属は一度決めたら維持する。撃破のたびに振り直すと、
+    //   生き残った機の所属まで入れ替わって毎回別の隊になってしまい、
+    //   「同じ5機で組んでいる部隊」に見えなくなる。
+    uint8_t usedSlots[SquadRegistry::kMaxSquads] = {};
+    {
+        auto scan = m_world->View<DroneComponent>();
+        for (auto e : scan)
+        {
+            const auto *d = m_world->GetComponent<DroneComponent>(e);
+            if (!d) continue;
+            if (d->squadId >= SquadRegistry::kMaxSquads) continue;
+            if (d->slotInSquad >= SquadRegistry::kSquadSize) continue;
+            usedSlots[d->squadId] =
+                static_cast<uint8_t>(usedSlots[d->squadId] | (1u << d->slotInSquad));
+        }
+    }
+
     // 連番を振る（0,1,2,... と totalDrones=total）
     uint16_t idx  = 0;
     auto     view = m_world->View<DroneComponent>();
     for (auto e : view)
     {
-        if (auto *d = m_world->GetComponent<DroneComponent>(e))
+        auto *d = m_world->GetComponent<DroneComponent>(e);
+        if (!d) continue;
+
+        d->localIndex  = idx++;
+        d->totalDrones = static_cast<uint16_t>(total);
+
+        // 既に小隊へ入っている機はそのまま
+        if (d->squadId < SquadRegistry::kMaxSquads) continue;
+
+        // --- 未所属の機を、空きスロットのある小隊へ入れる ---
+        //   欠員（撃破された機の位置）から先に埋めるので、
+        //   同じスロットに2機が重なることがない。
+        bool placed = false;
+        for (uint8_t s = 0; s < SquadRegistry::kMaxSquads && !placed; ++s)
         {
-            d->localIndex  = idx++;
-            d->totalDrones = static_cast<uint16_t>(total);
+            for (uint8_t slot = 0; slot < SquadRegistry::kSquadSize; ++slot)
+            {
+                if (usedSlots[s] & (1u << slot)) continue;
+
+                d->squadId     = s;
+                d->slotInSquad = slot;
+                usedSlots[s]   = static_cast<uint8_t>(usedSlots[s] | (1u << slot));
+                placed         = true;
+                break;
+            }
         }
+        // 小隊が満杯（32小隊×5機＝160機を超える）なら無所属のまま。
+        // その機は従来どおり localIndex ベースの大技で使われる。
     }
 }
  
@@ -345,6 +390,94 @@ void DroneManagerSystem::OnGui()
         ImGui::SameLine();
         if (ImGui::Button("3) Return (周回へ)", ImVec2(140, 26)))
             setBossCmd(DroneFormationType::OrbitCircle, false);
+
+        // ================================================================
+        // 個別行動テスト
+        //   ①カミカゼ：出撃は一斉だが、飛び切った機から順に離脱して隊列へ戻る
+        //     （DroneAttackPhase による個別寿命の確認）
+        //   ②小隊突撃：5機編隊が接近 → 先頭がプレイヤーを追って突入
+        //     （SquadUpdateSystem + SquadAssaultFormation の確認）
+        //   ③硬直は切り払いを当てて確認する（Stunned → バラバラに復帰）
+        // ================================================================
+        ImGui::Spacing();
+        ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.8f, 1.0f), "個別行動テスト");
+
+        if (ImGui::Button("カミカゼ：構え", ImVec2(150, 26)))
+            setBossCmd(DroneFormationType::KamikazeSwarm, false);
+        ImGui::SameLine();
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.9f, 0.3f, 0.2f, 1.0f));
+        if (ImGui::Button("カミカゼ：発射", ImVec2(150, 26)))
+            setBossCmd(DroneFormationType::KamikazeSwarm, true);
+        ImGui::PopStyleColor();
+
+        if (ImGui::Button("小隊：接近", ImVec2(150, 26)))
+            setBossCmd(DroneFormationType::SquadAssault, false);
+        ImGui::SameLine();
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.9f, 0.3f, 0.2f, 1.0f));
+        if (ImGui::Button("小隊：突入", ImVec2(150, 26)))
+            setBossCmd(DroneFormationType::SquadAssault, true);
+        ImGui::PopStyleColor();
+
+        // 小隊の調整（実行中に変えられる。しなり具合は目で見ないと決まらない）
+        if (m_world->HasResource<SquadRegistry>())
+        {
+            auto &tuning = m_world->GetResource<SquadRegistry>().tuning;
+            if (ImGui::TreeNodeEx("小隊の調整", ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                ImGui::TextColored(ImVec4(1.0f, 0.9f, 0.4f, 1.0f), "蛇のしなり");
+                ImGui::SliderFloat("追従バネ",   &tuning.followGain,     1.0f, 30.0f, "%.1f");
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("間隔のずれを直す強さ。小さいほど胴体が伸び縮みして柔らかく見える");
+                ImGui::SliderFloat("後席の鈍さ", &tuning.slotLagPerSlot, 0.0f, 0.25f, "%.2f");
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("1つ後ろの席ごとにバネを弱める割合。大きいほど尾が遅れて曲がる");
+
+                ImGui::Spacing();
+                ImGui::TextColored(ImVec4(0.6f, 0.9f, 1.0f, 1.0f), "隊列の形");
+                ImGui::SliderFloat("胴体の間隔", &tuning.chainGap, 1.0f, 10.0f, "%.1f m");
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("前の機体との距離。小さいほど蛇が詰まって1本に見える");
+
+                ImGui::Spacing();
+                ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.5f, 1.0f), "突入");
+                ImGui::SliderFloat("突入速度",   &tuning.strikeSpeed,      10.0f, 90.0f, "%.0f m/s");
+                ImGui::SliderFloat("突入時間",   &tuning.strikeDuration,    0.5f,  5.0f, "%.1f s");
+                ImGui::SliderFloat("再突入間隔", &tuning.approachMinTime,   0.0f,  6.0f, "%.1f s");
+                ImGui::SliderFloat("旋回上限",   &tuning.maxTurnRateDeg,   10.0f, 360.0f, "%.0f deg/s");
+                ImGui::SliderFloat("直線化距離", &tuning.terminalLockDist,  0.0f, 30.0f, "%.1f m");
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("この距離まで詰めたら追尾をやめて直線になる。0 にすると完全追尾＝ジャスト回避が成立しない");
+
+                ImGui::Spacing();
+                ImGui::TextColored(ImVec4(0.7f, 1.0f, 0.7f, 1.0f), "接近");
+                ImGui::SliderFloat("接近半径", &tuning.approachRadius, 5.0f, 60.0f, "%.0f m");
+                ImGui::SliderFloat("接近高度", &tuning.approachHeight, 0.0f, 30.0f, "%.0f m");
+
+                if (ImGui::Button("既定値に戻す", ImVec2(140, 24)))
+                    tuning = SquadTuning{};
+
+                ImGui::TreePop();
+            }
+        }
+
+        // 小隊の中身（頭の位置とフェーズ）を見えるようにしておく
+        if (m_world->HasResource<SquadRegistry>())
+        {
+            const auto &reg = m_world->GetResource<SquadRegistry>();
+            int         shown = 0;
+            for (uint8_t i = 0; i < SquadRegistry::kMaxSquads && shown < 6; ++i)
+            {
+                const auto &s = reg.squads[i];
+                if (s.aliveCount == 0) continue;
+                const char *phaseName = (s.phase == SquadPhase::Regroup)  ? "Regroup"
+                                      : (s.phase == SquadPhase::Approach) ? "Approach"
+                                                                          : "Strike";
+                ImGui::Text("小隊%2d: %d機  %-8s  (%.0f, %.0f, %.0f)",
+                            i, s.aliveCount, phaseName,
+                            s.anchorPos.x, s.anchorPos.y, s.anchorPos.z);
+                ++shown;
+            }
+        }
 
         ImGui::Unindent();
     }

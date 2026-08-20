@@ -60,6 +60,9 @@ enum class DroneFormationType : uint8_t {
     // 波状縦割りの方向読み用（TsunamiWave=左→右, これ=右→左）
     TsunamiWave_RL, ///< 【波状縦割り・右→右左】右端から順に倒れてくる波
 
+    /// 【小隊突撃】5機編隊を組み、先頭がプレイヤーを追って突っ込む。
+    ///   全機で1つの形を作る他の技と違い、小隊ごとに独立して動く。
+    SquadAssault,
 };
 
 // ドローン個体の具体的な物理ステート
@@ -68,6 +71,45 @@ enum class DroneState : uint8_t
     Idle,         ///< 【有機的追従】バネ制御でフワフワと目標に追従する待機・陣形維持状態
     MoveToTarget, ///< 【機械的移動】直線的に指定位置へ素早く整列する状態
     FireCharge,   ///< 【高速突撃】目標へ向かって突撃する攻撃状態（ジャスト回避の対象）
+    Stunned,      ///< 【硬直】切り払いで吹き飛ばされ、制御を失って漂う状態（無害・通常AI停止）
+    Returning,    ///< 【離脱】突撃を終えて上方へ抜ける状態（無害。この後 MoveToTarget で隊列へ）
+};
+
+/// @brief FireCharge 中に「どうやって動くか」。
+///
+/// bool（追従するか否か）では足りなくなったので enum にした。
+/// 剛体追従とバネ追従は見た目がまったく別物で、混同すると
+/// 「隊列が1枚の板に見える」という致命的な劣化になる。
+enum class ChargeMode : uint8_t
+{
+    /// fireDirection へ直進する。方向は突入時にロックされる（弾幕・カミカゼ）。
+    Straight,
+
+    /// targetPosition へ毎フレーム貼り付ける。形が一切歪まない剛体。
+    ///   縦割り・挟み込みのように「壁that形を保ったまま動く」技専用。
+    RigidFollow,
+
+    /// targetPosition へバネで寄る。速度に応じて後ろへ流れ、曲がると遅れて曲がる。
+    ///   隊列を組んで飛ぶ技（小隊）はこちら。剛体にすると追従に見えない。
+    SoftFollow,
+};
+
+/// @brief 突撃1回ぶんの寿命を「個体が」持つためのフェーズ。
+///
+/// なぜ必要か:
+///   ボスの「今撃て」信号を毎フレーム全機へ配る方式（レベル）のままだと、
+///   飛び切った機が「もう終わった」と判断しても次フレームに攻撃へ引き戻され、
+///   個別行動が原理的に成立しない。信号は立ち上がり（エッジ）でだけ Charging を立て、
+///   以降は各機が自分で Returning → None へ進める。
+///   結果として「出撃は一斉、帰投はバラバラ」になる。
+///
+/// @note 陣形自体が動く攻撃（縦割り等）はこの寿命を使わない。
+///       どちらを使うかは IFormation::GetLifecycle() が陣形ごとに宣言する。
+enum class DroneAttackPhase : uint8_t
+{
+    None,      ///< 攻撃していない（陣形待機中／帰投完了後）
+    Charging,  ///< 突撃中。飛距離か経過時間で各機が自分で切り上げる
+    Returning, ///< 突き抜けた後の離脱中。当たり判定を持たない
 };
 
 /**
@@ -89,11 +131,34 @@ struct DroneComponent {
     // 前回のフレームで加算した視覚的な揺れ（ノイズ）のオフセット
     DirectX::SimpleMath::Vector3 currentShakeOffset = DirectX::SimpleMath::Vector3::Zero;
 
+    /// @brief 突撃を開始した地点（実行時専用・非シリアライズ）。
+    ///        ここからの飛距離で「もう飛び切った」を個体が判断する。
+    DirectX::SimpleMath::Vector3 chargeStartPos = DirectX::SimpleMath::Vector3::Zero;
+
+    /// @brief 隊列追従（ChargeMode::SoftFollow）で先渡しする速度（実行時専用・非シリアライズ）。
+    ///        バネだけで速度を作ると必ず「速度 ÷ バネ定数」ぶん遅れ、
+    ///        速い突入ほど隊列が間延びして数珠が千切れて見える。
+    ///        「1つ前の機体の速度」をここへ渡し、バネにはずれの補正だけをさせる。
+    ///        小隊全体の速度を渡してはいけない。全機が同じ方向へ同じ速さで飛び、
+    ///        先頭への追従が見えなくなる（各自がプレイヤーへ突っ込む絵になる）。
+    ///        書き手は小隊陣形（Formation）。
+    DirectX::SimpleMath::Vector3 followFeedForward = DirectX::SimpleMath::Vector3::Zero;
+
     // --- 4バイト型 (float) ---
     float stateTimer = 0.0f;
     float hoverTimeOffset = 0.0f;
     float moveSpeed = 30.0f;
     float orbitRadius = 8.0f;
+
+    /// @brief 吹き飛ばし減衰後の「立て直し」時間（実行時専用・非シリアライズ）。
+    ///        knockbackTimer が切れた瞬間にセットされ、この間は Stunned のまま
+    ///        その場で姿勢を戻す。localIndex でばらつかせ、群れが一斉ではなく
+    ///        バラバラに復帰するようにしている。
+    float recoverTimer = 0.0f;
+
+    /// @brief 突撃を開始してからの経過時間（実行時専用・非シリアライズ）。
+    ///        飛距離判定が成立しない場合（壁際・プレイヤーが遠すぎる）の保険。
+    float chargeTimer = 0.0f;
 
     // --- 2バイト型 (uint16_t) ---
     uint16_t localIndex = 0;
@@ -102,6 +167,21 @@ struct DroneComponent {
     // --- 1バイト型 (enum/bool) ---
     DroneFormationType currentFormation = DroneFormationType::Hidden;
     DroneState currentState = DroneState::Idle;
+
+    /// @brief 突撃1回ぶんの進行フェーズ（実行時専用・非シリアライズ）。
+    ///        書き手は DroneCommandSystem（開始・中断）と DroneBrainSystem（終了判断）。
+    DroneAttackPhase attackPhase = DroneAttackPhase::None;
+
+    /// @brief 所属小隊。SquadRegistry::kNoSquad(0xFF) は無所属。
+    ///        書き手は DroneManagerSystem のみ。一度割り当てたら維持する
+    ///        （撃破のたびに振り直すと小隊がシャッフルされてしまう）。
+    ///        128機を使う大技は無所属のまま localIndex/totalDrones で動くので、
+    ///        小隊制と既存の陣形はそのまま共存する。
+    uint8_t squadId = 0xFF;
+
+    /// @brief 小隊内の位置。0 が先頭機で、大きいほど後方につく。
+    ///        編隊オフセットの参照と、追従の鈍さ（後ろほど遅れる）に使う。
+    uint8_t slotInSquad = 0;
 
     /// @brief 陣形スロットへの初回到着が完了したか（DroneBrainSystem のラッチ）。
     ///        true になると Idle に固定され、回転する targetPosition との
@@ -120,10 +200,8 @@ struct DroneComponent {
     float attackProgress = 0.0f;
 
     /// @brief FireCharge 中の移動モード（実行時専用・非シリアライズ）。
-    ///        false : fireDirection へ直進（弾幕・突撃系のデフォルト）。
-    ///        true  : targetPosition を剛体追従（縦割りのように陣形自体が動く攻撃）。
-    ///                攻撃陣形が毎フレーム true にし、DroneBrainSystem が攻撃開始時に false へ戻す。
-    bool chargeFollowsTarget = false;
+    ///        攻撃陣形が毎フレーム設定し、DroneBrainSystem が攻撃開始時に Straight へ戻す。
+    ChargeMode chargeMode = ChargeMode::Straight;
 
     /// @brief dashモードの「発射待ち時間」（実行時専用・非シリアライズ）。
     ///        弾幕(KamikazeSwarm)のように順番に撃つ攻撃で、各機の発射順を作る。

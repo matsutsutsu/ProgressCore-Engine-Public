@@ -13,7 +13,6 @@ using namespace DirectX::SimpleMath;
 void DroneBrainSystem::Update(float /*dt*/)
 {
     // 突撃方向のフォールバックに使うプレイヤー座標は、毎フレーム1回だけ読む。
-    //   （旧 BeginChargeTask は突入した機体ごとにリソースを引いていた）
     Vector3 playerPos = Vector3::Zero;
     bool    hasPlayer = false;
     if (m_world->HasResource<BattleContext>())
@@ -23,13 +22,23 @@ void DroneBrainSystem::Update(float /*dt*/)
         hasPlayer = true;
     }
 
-    // TimeStateComponent はビューに含めるだけで読まない。
-    //   DroneMovementSystem と同一のアーキタイプを舐めるための一致であり、
-    //   タイマーを判断側へ移すときにそのまま time.localDt を使えるようにしてある。
+    // 各機の時計を使う（被弾でヒットストップがかかった機はタイマーも止まる）。
     ForEachParallel([&](const TransformComponent &trans, DroneComponent &drone,
-                        const TimeStateComponent & /*time*/) {
+                        const TimeStateComponent &time) {
+        const float dt = time.localDt;
+
         // ------------------------------------------------------------
-        // 【最優先】攻撃命令が来ている
+        // 【最優先】切り払いで吹き飛ばされている／立て直している
+        //   通常AIより先に見る。押しのけられている間は隊列にも攻撃にも戻らない。
+        // ------------------------------------------------------------
+        if (UpdateStun(drone, dt))
+        {
+            drone.currentState = DroneState::Stunned;
+            return;
+        }
+
+        // ------------------------------------------------------------
+        // 攻撃命令が来ている
         //   ボスBT(DroneStrikeAction) → BossCommandComponent.droneAttackActive →
         //   DroneCommandSystem → drone.wantsAttack という経路で降りてくる。
         // ------------------------------------------------------------
@@ -40,10 +49,41 @@ void DroneBrainSystem::Update(float /*dt*/)
             if (drone.currentState != DroneState::FireCharge)
             {
                 BeginCharge(drone, playerPos, hasPlayer);
+                drone.chargeStartPos = Vector3(trans.position);
+                drone.chargeTimer    = 0.0f;
+            }
+
+            // 個別寿命の攻撃だけが「自分で終了を決める」。
+            //   陣形追従型（Broadcast）は attackPhase を持たないのでここは素通りする。
+            if (drone.attackPhase == DroneAttackPhase::Charging &&
+                HasFinishedCharge(trans, drone, dt))
+            {
+                drone.attackPhase    = DroneAttackPhase::Returning;
+                drone.stateTimer     = kBreakawayTime;  // 離脱カーブの長さとして持ち替える
+                drone.fireDirection  = Vector3::Zero;   // 次の突撃で方向を取り直させる
+                drone.hasReachedSlot = false;           // 帰投後は並び直す
+                drone.currentState   = DroneState::Returning;
+                return;
             }
 
             drone.currentState = DroneState::FireCharge;
             return;
+        }
+
+        // ------------------------------------------------------------
+        // 突き抜けた後の離脱（帰り道）
+        //   FireCharge ではないので、この間は当たり判定もジャスト回避の対象も外れる。
+        // ------------------------------------------------------------
+        if (drone.attackPhase == DroneAttackPhase::Returning)
+        {
+            drone.stateTimer -= dt;
+            if (drone.stateTimer > 0.0f)
+            {
+                drone.currentState = DroneState::Returning;
+                return;
+            }
+            // 離脱おわり。以降は下の接近判定が拾って隊列へ連れ戻す。
+            drone.attackPhase = DroneAttackPhase::None;
         }
 
         // ------------------------------------------------------------
@@ -62,6 +102,57 @@ void DroneBrainSystem::Update(float /*dt*/)
         // ------------------------------------------------------------
         drone.currentState = DroneState::Idle;
     });
+}
+
+
+bool DroneBrainSystem::UpdateStun(DroneComponent &drone, float dt) const
+{
+    // --- 吹き飛ばし中 ---
+    if (drone.knockbackTimer > 0.0f)
+    {
+        drone.knockbackTimer -= dt;
+        if (drone.knockbackTimer > 0.0f) return true;
+
+        // 吹き飛ばしが収まった瞬間に「立て直し」へ引き継ぐ。
+        drone.knockbackTimer = 0.0f;
+        drone.recoverTimer   = kRecoverBase + (drone.localIndex % 5) * kRecoverStagger;
+
+        // 押しのけられた時点で突撃は成立しない。攻撃を捨てて隊列へ戻る判断に切り替える。
+        drone.attackPhase   = DroneAttackPhase::None;
+        drone.fireDirection = Vector3::Zero;
+
+        // Idle のゆるいバネで漂い戻るのではなく、MoveToTarget で機敏に隊列へ戻す。
+        //   「自分で判断して持ち場に帰った」ように見せるための1行。
+        drone.hasReachedSlot = false;
+        return true;
+    }
+
+    // --- 立て直し中（その場で姿勢を戻すだけ）---
+    if (drone.recoverTimer > 0.0f)
+    {
+        drone.recoverTimer -= dt;
+        if (drone.recoverTimer < 0.0f) drone.recoverTimer = 0.0f;
+        return true;
+    }
+
+    return false;
+}
+
+
+bool DroneBrainSystem::HasFinishedCharge(const TransformComponent &trans,
+                                         DroneComponent           &drone,
+                                         float                     dt) const
+{
+    // 発射待ち中はまだ飛んでいない（順次発射の自分の番を待っている）。
+    //   ここで数え始めると、後ろの機が飛ぶ前に寿命切れになる。
+    if (drone.fireDelay > 0.0f) return false;
+
+    drone.chargeTimer += dt;
+
+    const float flownSq = (Vector3(trans.position) - drone.chargeStartPos).LengthSquared();
+    if (flownSq > kChargeRange * kChargeRange) return true;
+
+    return drone.chargeTimer > kChargeTimeout;
 }
 
 
@@ -90,7 +181,7 @@ void DroneBrainSystem::BeginCharge(DroneComponent &drone,
     // 攻撃開始時のガード：直進モードから始める。
     //   陣形自体が動く攻撃（縦割り等）は Formation 側が毎フレーム true に上書きする。
     //   これにより前回の攻撃の追従モードが直進系の攻撃へ漏れない。
-    drone.chargeFollowsTarget = false;
+    drone.chargeMode = ChargeMode::Straight;
 
     // タメ時間。※追従モードでは ProcessFireCharge がタメを無視する。
     drone.stateTimer = kChargeWindup;

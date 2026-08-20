@@ -105,8 +105,23 @@ void BehaviorTreeSystem::Update(float rawDt)
         btComp.previousRunningNodeId = btComp.runningNodeId;
         btComp.runningNodeId = 0xFFFF;
 
+        // --- デバッグ：強制ノードが切り替わったら実行状態を捨てる ---
+        //   前の技の「途中まで進んだシーケンス」や Wait の残り時間が新しい枝へ
+        //   持ち越されると、1回目だけ挙動がおかしくなって原因が分からなくなる。
+        if (btComp.debugForcedNodeId != btComp.debugAppliedForcedNodeId) {
+            btComp.debugAppliedForcedNodeId = btComp.debugForcedNodeId;
+            std::fill(btComp.runningNodes.begin(), btComp.runningNodes.end(), -1);
+            std::fill(btComp.nodeTimers.begin(),   btComp.nodeTimers.end(),   -1.0f);
+        }
+
         // --- 評価実行 ---
-        EvaluateTreeRecursive(0, btComp, trans, *btComp.sharedAsset, entity, dt);
+        //   強制指定があればその枝から、無ければ通常どおりルート(0)から。
+        //   エンジン側の変更はこの1行だけで、木の構造には一切触れない。
+        BTNodeID startNode = 0;
+        if (btComp.debugForcedNodeId >= 0 && btComp.debugForcedNodeId < static_cast<int>(nodeCount)) {
+            startNode = static_cast<BTNodeID>(btComp.debugForcedNodeId);
+        }
+        EvaluateTreeRecursive(startNode, btComp, trans, *btComp.sharedAsset, entity, dt);
     });
 }
 
@@ -284,6 +299,148 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
 
 
 #ifdef ENABLE_EDITOR
+namespace {
+    /// @brief ActionRegistry.h の辞書から表示名を逆引きする。見つからなければ nullptr。
+    const char *LookupEntryName(const ActionEntry *table, int count, ActionID id)
+    {
+        for (int i = 0; i < count; ++i) {
+            if (table[i].id == id) return table[i].name;
+        }
+        return nullptr;
+    }
+
+    /// @brief この枝で最初に見つかる Action の表示名。
+    /// @note  Sequence や Selector は名前を持たない（名前はエディタのグラフ側にしか無い）ので、
+    ///        「その枝が何をする枝なのか」を中身の先頭アクションで示す。
+    ///        ドローン攻撃は必ず「陣形指示 → Wait → Strike → …」の順なので、
+    ///        先頭アクション名がそのまま技名になる。
+    const char *FirstActionNameInSubtree(const BTAsset &asset, BTNodeID nodeId)
+    {
+        const BTNode &node = asset.nodes[nodeId];
+        if (node.type == BTNodeType::Action) {
+            return LookupEntryName(g_ActionRegistry, g_ActionRegistryCount, node.actionOrConditionId);
+        }
+        for (BTNodeID child : node.children) {
+            if (const char *name = FirstActionNameInSubtree(asset, child)) return name;
+        }
+        return nullptr;
+    }
+
+    const char *NodeTypeName(BTNodeType type)
+    {
+        switch (type) {
+        case BTNodeType::Selector:       return "Selector";
+        case BTNodeType::Sequence:       return "Sequence";
+        case BTNodeType::Condition:      return "Condition";
+        case BTNodeType::Action:         return "Action";
+        case BTNodeType::Decorator:      return "Decorator";
+        case BTNodeType::RandomSelector: return "RandomSelector";
+        default:                         return "Unknown";
+        }
+    }
+}
+
+
+void BehaviorTreeSystem::DrawNodeRowRecursive(const BTAsset         &asset,
+                                              BTNodeID               nodeId,
+                                              BehaviorTreeComponent &btComp,
+                                              EntityID               entity)
+{
+    const BTNode &node = asset.nodes[nodeId];
+
+    // --- 行のラベル（種類＋中身が分かる名前）---
+    std::string label = NodeTypeName(node.type);
+    if (node.type == BTNodeType::Action) {
+        const char *name = LookupEntryName(g_ActionRegistry, g_ActionRegistryCount, node.actionOrConditionId);
+        label += name ? std::string(" : ") + name
+                      : std::string(" : id=") + std::to_string(node.actionOrConditionId);
+    }
+    else if (node.type == BTNodeType::Condition) {
+        const char *name = LookupEntryName(g_ConditionRegistry, g_ConditionRegistryCount, node.actionOrConditionId);
+        label += name ? std::string(" : ") + name
+                      : std::string(" : id=") + std::to_string(node.actionOrConditionId);
+    }
+    else if (const char *hint = FirstActionNameInSubtree(asset, nodeId)) {
+        label += std::string(" [") + hint + "]";
+    }
+
+    ImGui::PushID(static_cast<int>(nodeId));
+
+    // --- 実行ボタン（もう一度押すと解除）---
+    const bool isForced = (btComp.debugForcedNodeId == static_cast<int>(nodeId));
+    if (ImGui::SmallButton(isForced ? "解除" : "実行")) {
+        btComp.debugForcedNodeId = isForced ? -1 : static_cast<int>(nodeId);
+
+        // 切り替えの後始末：前の技の「今撃て」信号が残ると、止めたはずのドローンが
+        // 飛び続けて何を見ているのか分からなくなる。
+        // 評価エンジン側はボス固有の概念を持たない方針なので、これはデバッグUIだけで行う。
+        if (auto *cmd = m_world->GetComponent<BossCommandComponent>(entity)) {
+            cmd->droneAttackActive = false;
+        }
+    }
+    ImGui::SameLine();
+
+    // --- 今フレームの評価結果で色を変える（走っている枝が一目で分かる）---
+    ImVec4 color(0.75f, 0.75f, 0.75f, 1.0f);
+    if (nodeId < btComp.debugNodeStates.size()) {
+        switch (btComp.debugNodeStates[nodeId]) {
+        case BTDebugState::Running: color = ImVec4(1.00f, 0.85f, 0.20f, 1.0f); break;
+        case BTDebugState::Success: color = ImVec4(0.40f, 1.00f, 0.50f, 1.0f); break;
+        case BTDebugState::Failure: color = ImVec4(0.90f, 0.45f, 0.40f, 1.0f); break;
+        default: break;
+        }
+    }
+
+    if (node.children.empty()) {
+        ImGui::TextColored(color, "#%d %s", static_cast<int>(nodeId), label.c_str());
+    }
+    else {
+        ImGui::PushStyleColor(ImGuiCol_Text, color);
+        const bool open = ImGui::TreeNodeEx("##node", ImGuiTreeNodeFlags_DefaultOpen,
+                                            "#%d %s", static_cast<int>(nodeId), label.c_str());
+        ImGui::PopStyleColor();
+        if (open) {
+            for (BTNodeID child : node.children) {
+                DrawNodeRowRecursive(asset, child, btComp, entity);
+            }
+            ImGui::TreePop();
+        }
+    }
+
+    ImGui::PopID();
+}
+
+
+void BehaviorTreeSystem::DrawForcedNodeGui(BehaviorTreeComponent &btComp, EntityID entity)
+{
+    if (!btComp.sharedAsset || btComp.sharedAsset->nodes.empty()) {
+        ImGui::TextDisabled("BT が読み込まれていません");
+        return;
+    }
+
+    if (btComp.debugForcedNodeId >= 0) {
+        ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.2f, 1.0f),
+                           "強制実行中: #%d", btComp.debugForcedNodeId);
+        ImGui::SameLine();
+        if (ImGui::SmallButton("通常のBTへ戻す")) {
+            btComp.debugForcedNodeId = -1;
+            if (auto *cmd = m_world->GetComponent<BossCommandComponent>(entity)) {
+                cmd->droneAttackActive = false;
+            }
+        }
+    }
+    else {
+        ImGui::TextDisabled("通常評価（ルートから）");
+    }
+
+    ImGui::TextDisabled("「実行」を押した枝だけを繰り返し評価します（条件・抽選を無視）。");
+    ImGui::TextDisabled("技を丸ごと見るなら Sequence の行を、単発で見るなら Action の行を押す。");
+    ImGui::Separator();
+
+    DrawNodeRowRecursive(*btComp.sharedAsset, 0, btComp, entity);
+}
+
+
 void BehaviorTreeSystem::OnGui()
 {
     if (!ImGui::CollapsingHeader("Behavior Tree (Brain Debugger)")) return;
@@ -312,6 +469,12 @@ void BehaviorTreeSystem::OnGui()
 
         ImGui::Text("Distance To Target: %.2fm", btComp->blackboard.distanceToTarget);
         ImGui::Text("HP: %.1f%%", btComp->blackboard.healthPercentage);
+
+        // 木を並べて「この技を今すぐ出す」を選べるようにする
+        if (ImGui::TreeNodeEx("強制実行（デバッグ）", ImGuiTreeNodeFlags_DefaultOpen)) {
+            DrawForcedNodeGui(*btComp, e);
+            ImGui::TreePop();
+        }
 
         ImGui::PopID();
     }

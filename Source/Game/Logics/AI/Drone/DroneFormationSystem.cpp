@@ -7,6 +7,7 @@
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h" // BossCommandComponent
 #include "Game/Logics/AI/Drone/Formation/Formations_Basic.h"
 #include "Game/Logics/AI/Drone/Formation/Formations_Attack.h"
+#include "Game/Logics/AI/Drone/Formation/Formations_Squad.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -26,6 +27,7 @@ void DroneFormationSystem::Initialize()
     // このシステムを持つ全シーンに自動反映される。
     CCL::AI::Formation::Basic::RegisterAll();
     CCL::AI::Formation::Attack::RegisterAll(); // 攻撃陣形（縦割り等）
+    CCL::AI::Formation::Squad::RegisterAll();  // 小隊陣形（5機編隊）
 
     CCL_LOG_INFO(LogCategory::AI, "[DroneFormationSystem] 陣形クラス登録完了");
 }
@@ -60,6 +62,11 @@ void DroneFormationSystem::Update(float dt)
         auto &battle  = m_world->GetResource<BattleContext>();
         ctx.playerPos = battle.playerPos;
     }
+
+    // 小隊の頭の位置（SquadUpdateSystem が今フレーム更新済み）。
+    //   ここでは読むだけ。書き手を1つに固定しておくと、並列化しても壊れない。
+    if (m_world->HasResource<SquadRegistry>())
+        ctx.squads = &m_world->GetResource<SquadRegistry>();
 
     // --- 各ドローンの目標座標を計算 ---
     //   ポリモーフィズムは「陣形を引くとき」だけ。ループ自体は連続アクセス。

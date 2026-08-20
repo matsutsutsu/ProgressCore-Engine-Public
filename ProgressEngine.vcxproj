@@ -689,6 +689,9 @@
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\FormationRegistry.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_Basic.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_Attack.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_Squad.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Squad\SquadState.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Squad\SquadUpdateSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\IFormation.h" />
     <ClInclude Include="Source\Game\Logics\Character\Boss\Data\BossActionComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Boss\Data\BossPhaseComponent.h" />
@@ -1142,6 +1145,7 @@
     <ClCompile Include="Source\Game\Logics\AI\Drone\DroneCommandSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\DroneMovementSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\DroneBrainSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\Drone\Squad\SquadUpdateSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\DroneHitSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Boss\Data\BossActionComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Boss\Data\BossPhaseComponentMeta.cpp" />

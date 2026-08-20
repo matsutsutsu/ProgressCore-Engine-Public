@@ -38,12 +38,17 @@ namespace
     /// @brief このドローンが「今まさに突撃していて危険」か。
     ///        タメ(stateTimer>0)・発射待ち(fireDelay>0)は危険ではない。
     ///        陣形追従の突撃(縦割り等)は突入中ずっと危険、ダッシュ系はタメ後のみ危険。
+    /// @note  硬直(Stunned)と離脱(Returning)は FireCharge ではないので、この1行で
+    ///        まとめて除外される。「突き抜けた後の帰り道は当たらない」は状態の分離から
+    ///        自動的に出てくるもので、専用の判定は要らない。
     bool IsDangerous(const DroneComponent& d)
     {
         if (d.knockbackTimer > 0.0f)                  return false;   // 切り払いで吹き飛ばし中は無害
-        if (d.currentState != DroneState::FireCharge) return false;
+        if (d.currentState != DroneState::FireCharge) return false;   // Stunned / Returning もここで落ちる
         if (d.fireDelay > 0.0f)                       return false;   // 発射待ち中
-        return d.chargeFollowsTarget || d.stateTimer <= 0.0f;
+        // 追従系（剛体・バネ）はタメを持たないので突入中ずっと危険。
+        // 直進系だけがタメ（stateTimer>0）の間は無害。
+        return d.chargeMode != ChargeMode::Straight || d.stateTimer <= 0.0f;
     }
 }
 

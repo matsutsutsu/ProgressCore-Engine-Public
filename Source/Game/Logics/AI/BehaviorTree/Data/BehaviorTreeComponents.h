@@ -55,6 +55,16 @@ struct BehaviorTreeComponent {
     AssetID assetId = 0;
     float phase2HealthThreshold = 50.0f;
 
+    // --- デバッグ専用（実行時のみ・非シリアライズ）---
+    /// @brief この BTNodeID の枝「だけ」を評価する。-1 で通常どおりルートから評価する。
+    ///        狙った技をその場で出して確認するためのもので、木そのものは書き換えない。
+    ///        書き手はデバッグUI（BehaviorTreeSystem::OnGui）。
+    int debugForcedNodeId = -1;
+
+    /// @brief 上を適用済みかの記録。切り替わった瞬間に実行状態をリセットするために使う。
+    ///        書き手は BehaviorTreeSystem。
+    int debugAppliedForcedNodeId = -1;
+
     // --- プリミティブ型 (2バイト) ---
     BTNodeID runningNodeId = 0;
     BTNodeID previousRunningNodeId = 0xFFFF;
@@ -77,4 +87,11 @@ struct BossCommandComponent {
     ///        BTの DroneStrikeAction が true、DroneAction(陣形指示) が false にする。
     ///        DroneCommandSystem が各ドローンの wantsAttack へ配布する。
     bool droneAttackActive = false;
+
+    /// @brief 前フレームの droneAttackActive（実行時専用・非シリアライズ）。
+    ///        書き手は DroneCommandSystem のみ。信号の「立ち上がり」を検出して
+    ///        個別寿命の突撃（DroneAttackPhase::Charging）を1回だけ発火させるために使う。
+    ///        これが無いと、信号が立っている間ずっと全機が攻撃へ引き戻され、
+    ///        飛び切った機の個別帰投が成立しない。
+    bool prevDroneAttackActive = false;
 };

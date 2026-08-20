@@ -529,6 +529,9 @@
     <Filter Include="Source\Game\Logics\AI\Drone\Formation">
       <UniqueIdentifier>{7fb876f4-9c60-4a35-9ec9-43da0f2894c5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\AI\Drone\Squad">
+      <UniqueIdentifier>{3c1e5b92-8a44-4f17-b0d6-5e2c7a91d408}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Game\Logics\Character\Boss">
       <UniqueIdentifier>{b874cd55-47ee-462e-bbe1-8d273659c62b}</UniqueIdentifier>
     </Filter>
@@ -1821,6 +1824,15 @@
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_Attack.h">
       <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_Squad.h">
+      <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Squad\SquadState.h">
+      <Filter>Source\Game\Logics\AI\Drone\Squad</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Squad\SquadUpdateSystem.h">
+      <Filter>Source\Game\Logics\AI\Drone\Squad</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\IFormation.h">
       <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
     </ClInclude>
@@ -2779,6 +2791,9 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\Drone\DroneBrainSystem.cpp">
       <Filter>Source\Game\Logics\AI\Drone</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\Drone\Squad\SquadUpdateSystem.cpp">
+      <Filter>Source\Game\Logics\AI\Drone\Squad</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\Drone\DroneManagerSystem.cpp">
       <Filter>Source\Game\Logics\AI\Drone</Filter>

@@ -45,6 +45,17 @@ class DroneBrainSystem : public CCL::ECS::IfSystem<
     ///        初回到着を hasReachedSlot にラッチし、接近フェーズと維持フェーズを分離する。
     bool NeedsApproach(const TransformComponent &trans, DroneComponent &drone) const;
 
+    /// @brief 吹き飛ばし・立て直しのタイマーを進める。
+    /// @return true なら硬直中（この機は今フレーム通常AIを行わない）。
+    /// @note  タイマーの減算を判断層に置いているのは、「いつ状態が変わるか」を
+    ///        決めるのが判断の仕事だから。移動層は結果の状態を見て動かすだけにする。
+    bool UpdateStun(DroneComponent &drone, float dt) const;
+
+    /// @brief 突撃を切り上げるべきか（個別寿命の攻撃のみ）。
+    /// @note  飛距離が本命で、経過時間は壁際・遠距離で飛距離が伸びない場合の保険。
+    ///        発射待ち(fireDelay)の間はまだ飛んでいないので寿命を数え始めない。
+    bool HasFinishedCharge(const TransformComponent &trans, DroneComponent &drone, float dt) const;
+
     /// @brief FireCharge へ「入った瞬間」だけ走る初期化（タメ時間と突撃方向のロック）。
     /// @note  ここで方向を固定するので、DroneMovementSystem の「タメ→リリース」が
     ///        コミットした直進として成立する（ホーミングしない）。
@@ -57,4 +68,21 @@ class DroneBrainSystem : public CCL::ECS::IfSystem<
 
     /// @brief 突撃前のタメ時間。ProcessFireCharge が stateTimer>0 を予備動作として扱う。
     static constexpr float kChargeWindup = 0.4f;
+
+    /// @brief 吹き飛ばしが収まってから通常AIへ戻るまでの基本時間。
+    static constexpr float kRecoverBase = 0.30f;
+
+    /// @brief 立て直し時間の機体差。localIndex%5 に掛けて復帰タイミングをずらす。
+    ///        一斉に立ち直ると「同じスクリプトの群れ」に見えるため。
+    static constexpr float kRecoverStagger = 0.08f;
+
+    /// @brief この距離を飛んだら突撃は終わり、と各機が判断する。
+    static constexpr float kChargeRange = 40.0f;
+
+    /// @brief 突撃の最長時間（保険）。壁際やプレイヤーが遠い場合でも必ず終わらせる。
+    static constexpr float kChargeTimeout = 2.0f;
+
+    /// @brief 突き抜けた後、上方へ抜けながら減速する時間。
+    ///        ここを 0 にすると突撃の勢いのまま急旋回して不自然になる。
+    static constexpr float kBreakawayTime = 0.5f;
 };

@@ -92,9 +92,10 @@ namespace CCL::AI {
     inline constexpr ActionID A_DroneMegaShieldChargeUpperFirst = 2028;
     inline constexpr ActionID A_DroneMegaShieldChargeLowerFirst = 2029;
     inline constexpr ActionID A_DroneTsunamiWaveRL = 2030; ///< 波状縦割り（右→左）。enum TsunamiWave_RL に対応
+    inline constexpr ActionID A_DroneSquadAssault = 2031; ///< 小隊突撃。enum SquadAssault に対応
 
     inline constexpr ActionID A_DroneFirst = 2000;
-    inline constexpr ActionID A_DroneLast  = 2030;
+    inline constexpr ActionID A_DroneLast  = 2031;
 }
 
 // ============================================================================
@@ -141,6 +142,7 @@ inline constexpr ActionEntry g_ActionRegistry[] = {
     { CCL::AI::A_DroneSideSlapWhip,   "ドローン：横なぎ回転 (Side Slap Whip)", "Drone" },
     { CCL::AI::A_DroneTsunamiWave,    "ドローン：波状縦割り・左→右 (Wave)", "Drone" },
     { CCL::AI::A_DroneTsunamiWaveRL,  "ドローン：波状縦割り・右→左 (Wave)", "Drone" },
+    { CCL::AI::A_DroneSquadAssault,   "ドローン：小隊突撃 (Squad Assault)", "Drone" },
     { CCL::AI::A_DroneStrike,         "ドローン：攻撃実行 (Strike/リリース)", "Drone" },
 };
 inline constexpr int g_ActionRegistryCount = sizeof(g_ActionRegistry) / sizeof(ActionEntry);

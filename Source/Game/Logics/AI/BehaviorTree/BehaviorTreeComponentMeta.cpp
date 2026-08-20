@@ -17,11 +17,18 @@
 #include <imgui.h>
 #endif
 
+// DroneFormationType と1対1で並べる（順番がずれると別の陣形名が表示される）
 static const char *DroneFormationNames[] = {
-    "Hidden", "OrbitCircle", "SequentialAttack", "DeathRing", "AegisShield",
-    "HighOrbit", "LowOrbit", "SpreadLockOn", "AllCharge", "CloseGuard", "ChargeTunnel"};
+    "Hidden", "OrbitCircle", "HighOrbitSnipe", "DeathRing", "AegisShield",
+    "HighOrbit", "LowOrbit", "SpreadLockOn", "AllCharge", "CloseGuard",
+    "BarrierBurst", "ChargeTunnel", "HoldPosition", "DirectionalCharge", "CycloneBurst",
+    "HighLowOrbit", "CrossHelix", "KamikazeSwarm", "HighLowCycloneBurst", "SweepingBeam",
+    "InfinityEight", "SwarmRiver", "SideSlapWhip", "InfinitySnipe", "GuillotineSlam",
+    "ClapSlam", "TsunamiWave", "MegaClapSlam_UpperFirst", "MegaClapSlam_LowerFirst",
+    "MegaShieldCharge_UpperFirst", "MegaShieldCharge_LowerFirst", "TsunamiWave_RL",
+    "SquadAssault"};
 static const char *DroneStateNames[] = {
-    "Idle", "MoveToTarget", "LockOn", "FireCharge"};
+    "Idle", "MoveToTarget", "FireCharge", "Stunned", "Returning"};
 
 // =======================================================================
 // 1. BehaviorTreeComponent

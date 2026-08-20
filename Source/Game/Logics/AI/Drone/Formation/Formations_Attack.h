@@ -31,7 +31,7 @@ namespace CCL::AI::Formation::Attack
 //   → 下端(height=0)は θ に依らず不動＝軸。上段ほど大きく前へ倒れる。
 //
 //   θ は attackProgress(0→1) から求める。倒れは重力的に加速させたいので easeIn。
-//   移動は chargeFollowsTarget=true で「targetPosition を剛体追従」させる
+//   移動は ChargeMode::RigidFollow で「targetPosition を剛体追従」させる
 //   （fireDirection 直進ではなく、壁が形を保ったまま回る）。
 // ====================================================================
 struct GuillotineSlamFormation : public IFormation
@@ -42,7 +42,7 @@ struct GuillotineSlamFormation : public IFormation
 
         // この攻撃は「陣形自体が動く」ので、突撃中も targetPosition を更新し続ける。
         // 移動側にはそれを剛体追従させる（直進ではなく回転）。
-        drone.chargeFollowsTarget = true;
+        drone.chargeMode = ChargeMode::RigidFollow;
 
         // --- ボス→プレイヤーの水平方向と、それに直交する「刃の幅」方向 ---
         Vector3 dir = ctx.playerPos - ctx.bossPos;
@@ -123,7 +123,7 @@ struct GuillotineSlamFormation : public IFormation
 // 動きの核心＝左右の腕が前方中央へ振れて閉じる（剛体スライド）:
 //   localIndex 偶数＝右腕／奇数＝左腕。腕内の番号 k を (距離セグメント × 高さ) に割付。
 //   進行度 attackProgress(0→1) で腕の角度を kStartAngle(真横)→kEndAngle(前方中央) へ。
-//   chargeFollowsTarget=true で targetPosition を剛体追従させる。
+//   ChargeMode::RigidFollow で targetPosition を剛体追従させる。
 // ====================================================================
 struct ClapSlamFormation : public IFormation
 {
@@ -131,7 +131,7 @@ struct ClapSlamFormation : public IFormation
     {
         using namespace DirectX::SimpleMath;
 
-        drone.chargeFollowsTarget = true; // 腕が形を保ったまま閉じる（剛体スライド）
+        drone.chargeMode = ChargeMode::RigidFollow; // 腕が形を保ったまま閉じる（剛体スライド）
 
         // ボス→プレイヤーの水平方向＝挟み込みの中心軸。腕はこの線上へ閉じる。
         Vector3 centerDir = ctx.playerPos - ctx.bossPos;
@@ -190,7 +190,7 @@ struct ClapSlamFormation : public IFormation
 //   プレイヤーはジャスト回避で凌ぐ。要求回避＝ジャスト回避。
 //
 // 縦割り／挟み込みとの違い＝移動モードが逆:
-//   これらは chargeFollowsTarget=false のまま＝各機が fireDirection へ独立に直進する
+//   これらは ChargeMode::Straight のまま＝各機が fireDirection へ独立に直進する
 //   「弾（fire-and-forget）」。DroneMovementSystem の「タメ→リリース」がそのまま弾になる。
 //
 // 「順番に」の作り方:
@@ -202,15 +202,21 @@ struct ClapSlamFormation : public IFormation
 // ====================================================================
 struct KamikazeSwarmFormation : public IFormation
 {
+    /// 撃ち出したら各機が独立して飛ぶ技なので、終了判断は個体に持たせる。
+    /// （飛び切った機から順に離脱→隊列へ戻る＝「帰投がバラバラ」になる）
+    ChargeLifecycle GetLifecycle() const override { return ChargeLifecycle::Individual; }
+
     void Calculate(DroneComponent &drone, const FormationContext &ctx) override
     {
         using namespace DirectX::SimpleMath;
 
         // 発射後は各機が独立して飛ぶので、撃ち出したら陣形は関与しない（凍結）。
+        //   ※ Returning（離脱中）はあえて凍結しない。帰る先の待機リングを更新し続け、
+        //     離脱が終わった機がそのまま隊列へ吸い込まれるようにするため。
         if (drone.currentState == DroneState::FireCharge)
             return;
 
-        drone.chargeFollowsTarget = false; // dashモード（fireDirection直進）
+        drone.chargeMode = ChargeMode::Straight; // dashモード（fireDirection直進）
 
         Vector3 dir = ctx.playerPos - ctx.bossPos;
         dir.y = 0.0f;
@@ -264,7 +270,7 @@ struct MegaClapSlamBase : public IFormation
     {
         using namespace DirectX::SimpleMath;
 
-        drone.chargeFollowsTarget = true; // 壁が形を保ってスライド（follow-target）
+        drone.chargeMode = ChargeMode::RigidFollow; // 壁が形を保ってスライド（follow-target）
 
         Vector3 dir = ctx.playerPos - ctx.bossPos;
         dir.y = 0.0f;
@@ -360,7 +366,7 @@ struct SideSlapWhipFormation : public IFormation
     void Calculate(DroneComponent &drone, const FormationContext &ctx) override
     {
         using namespace DirectX::SimpleMath;
-        drone.chargeFollowsTarget = true;
+        drone.chargeMode = ChargeMode::RigidFollow;
 
         Vector3 dir = ctx.playerPos - ctx.bossPos;
         dir.y = 0.0f;
@@ -421,7 +427,7 @@ struct WaveGuillotineBase : public IFormation
     void Calculate(DroneComponent &drone, const FormationContext &ctx) override
     {
         using namespace DirectX::SimpleMath;
-        drone.chargeFollowsTarget = true;
+        drone.chargeMode = ChargeMode::RigidFollow;
 
         Vector3 dir = ctx.playerPos - ctx.bossPos;
         dir.y = 0.0f;
