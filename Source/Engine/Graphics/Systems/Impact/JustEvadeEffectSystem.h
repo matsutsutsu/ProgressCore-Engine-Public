@@ -46,6 +46,8 @@ private:
         float                vigIntensity = 0.4f;
         DirectX::XMFLOAT4    vigColor     = {0.0f, 0.0f, 0.0f, 1.0f};
         float                vigPulse     = 0.0f;
+        float                vigRadius    = 0.55f; ///< ★他システム(被弾フラッシュ)が触っても確実に戻せるよう退避
+        float                vigSoftness  = 0.35f;
     };
     Baseline m_base;
     float    m_vigTime = 0.0f; ///< ビネット脈動用の位相（演出中に加算）
