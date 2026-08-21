@@ -23,17 +23,14 @@
 #include "Engine/Time/TimeState.h"
 #include <SimpleMath.h>
 
-class DroneBrainSystem : public CCL::ECS::IfSystem<
-                             DroneBrainSystem,
+class DroneBrainSystem : public CCL::ECS::IfSystem<DroneBrainSystem,
                              CCL::ECS::Read<TransformComponent>,
                              CCL::ECS::Write<DroneComponent>,
                              CCL::ECS::Read<TimeStateComponent>>
 {
   public:
-    DroneBrainSystem()
-        : IfSystem("DroneBrainSystem")
-    {
-    }
+    DroneBrainSystem() : IfSystem("DroneBrainSystem"){}
+
     virtual ~DroneBrainSystem() override = default;
 
     virtual void Update(float dt) override;
