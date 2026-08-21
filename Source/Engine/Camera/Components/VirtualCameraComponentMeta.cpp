@@ -64,6 +64,9 @@ template <> struct ComponentMeta<CameraBodyFollow> {
         changed |= ImGui::DragFloat3("追従オフセット", &comp.offset.x, 0.1f);
         changed |= ImGui::DragFloat("減衰", &comp.damping, 0.1f, 0.0f, 100.0f);
         changed |= ImGui::Checkbox("Y高さを固定", &comp.lockY);
+        if (comp.lockY) {
+            changed |= ImGui::DragFloat("固定する高さ", &comp.lockedY, 0.1f);
+        }
 
         return changed;
     }
@@ -77,6 +80,7 @@ template <> struct ComponentMeta<CameraBodyFollow> {
             CFIELD(offset, "追従オフセット", "Follow Settings")
             CFIELD_FLOAT_RANGED(damping, "減衰", 0.1f, 0.0f, 100.0f, "Follow Settings")
             CFIELD(lockY, "Y高さを固定", "Follow Settings")
+            CFIELD_FLOAT_RANGED(lockedY, "固定する高さ", 0.1f, -1000.0f, 1000.0f, "Follow Settings")
         };
         return fields;
     }
@@ -146,10 +150,14 @@ REGISTER_COMPONENT_EDITOR_GUI(CameraAimLookAt)
 // Camera Shake 
 // BEGIN_CAT を使用
 // ============================================================================
+// duration(残り時間) / elapsed / seed は SetShake が毎回上書きする実行時状態なので
+// シリアライズ対象から外している。保存しておくと、非ゼロの残り時間が焼き込まれた
+// プレハブがロード直後に勝手に揺れ始める。
 COMPONENT_META_BEGIN_FULL(CameraShake, "Camera Shake", CCL::Categories::Camera, 330, false)
-    CFIELD_FLOAT_RANGED(amplitude, "揺れの強さ", 0.1f, 0.0f, 100.0f, "Shake State")
-    CFIELD_FLOAT_RANGED(duration, "残り時間", 0.01f, 0.0f, 10.0f, "Shake State")
-    CFIELD_FLOAT_RANGED(maxDuration, "最大時間", 0.01f, 0.0f, 10.0f, "Shake State")
+    CFIELD_FLOAT_RANGED(amplitude, "揺れの強さ", 0.1f, 0.0f, 100.0f, "Shake Settings")
+    CFIELD_FLOAT_RANGED(maxDuration, "最大時間", 0.01f, 0.0f, 10.0f, "Shake Settings")
+    CFIELD_FLOAT_RANGED(frequency, "揺れの周波数(Hz)", 0.5f, 0.1f, 120.0f, "Shake Settings")
+    CFIELD_FLOAT_RANGED(rotationRatio, "回転成分の割合", 0.01f, 0.0f, 2.0f, "Shake Settings")
 COMPONENT_META_END(CameraShake)
 
 // ============================================================================

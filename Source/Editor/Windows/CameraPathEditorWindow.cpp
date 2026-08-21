@@ -3,6 +3,7 @@
 
 #include "CameraPathEditorWindow.h"
 #include "Engine/Camera/Components/CameraDollyCartComponent.h"
+#include "Engine/Camera/Systems/CameraDollySystem.h"
 #include "Engine/Platform/Core/FileSystem.h"
 #include "Engine/Platform/Core/Logger.h"
 #include <json.hpp>
@@ -62,7 +63,8 @@ void CameraPathEditorWindow::DrawContents(EditorContext &context)
         return;
     }
 
-    auto &points       = cart->loadedPath->points;
+    auto &asset        = *cart->loadedPath;
+    auto &points       = asset.points;
     bool  pathModified = false;
 
     // -------------------------------------------------------------
@@ -73,10 +75,18 @@ void CameraPathEditorWindow::DrawContents(EditorContext &context)
 
     if (ImGui::Button("Save to JSON", ImVec2(120, 30)))
     {
-        SavePathToJson(cart->pathAsset, points);
+        SavePathToJson(cart->pathAsset, asset);
     }
     ImGui::SameLine();
     ImGui::Checkbox("Auto Save", &m_isAutoSave);
+
+    // ループ設定。CameraDollySystem がこれを見て、終端で止めるか巻き戻すかを決める。
+    if (ImGui::Checkbox("Loop (closed path)", &asset.isLoop))
+    {
+        pathModified = true;
+    }
+    ImGui::SameLine();
+    ImGui::TextDisabled("Length: %.2fm", asset.totalLength);
 
     ImGui::Spacing();
 
@@ -176,13 +186,29 @@ void CameraPathEditorWindow::DrawContents(EditorContext &context)
     // -------------------------------------------------------------
     // 変更の反映と自動保存
     // -------------------------------------------------------------
-    if (pathModified && m_isAutoSave)
+    if (pathModified)
     {
-        SavePathToJson(cart->pathAsset, points);
+        // 制御点や isLoop を触ったら LUT を作り直す。
+        // これが無いと totalLength と距離→t の対応表が古いままになり、
+        // 編集後の軌道上で台車の速度と位置がずれる（再ロードするまで直らない）。
+        CameraDollySystem::BuildLookupTable(asset);
+
+        // 進行度が新しい全長を超えていたら丸めておく
+        if (asset.totalLength > 0.0f && cart->currentDistance > asset.totalLength)
+        {
+            cart->currentDistance = asset.isLoop
+                                        ? CameraDollySystem::WrapDistance(cart->currentDistance, asset.totalLength)
+                                        : asset.totalLength;
+        }
+
+        if (m_isAutoSave)
+        {
+            SavePathToJson(cart->pathAsset, asset);
+        }
     }
 }
 
-void CameraPathEditorWindow::SavePathToJson(const std::string &relativePath, const std::vector<Vector3> &points)
+void CameraPathEditorWindow::SavePathToJson(const std::string &relativePath, const CameraPathAsset &asset)
 {
     if (relativePath.empty())
         return;
@@ -190,12 +216,15 @@ void CameraPathEditorWindow::SavePathToJson(const std::string &relativePath, con
     nlohmann::json j;
     j["points"] = nlohmann::json::array();
 
-    for (const auto &p : points)
+    for (const auto &p : asset.points)
     {
         j["points"].push_back({{"x", p.x},
             {"y", p.y},
             {"z", p.z}});
     }
+
+    // ループ設定も書き出す（CameraDollySystem がロード時に読む）
+    j["isLoop"] = asset.isLoop;
 
     // FileSystem経由で書き出し
     FileSystem::WriteAllText(relativePath, j.dump(4));

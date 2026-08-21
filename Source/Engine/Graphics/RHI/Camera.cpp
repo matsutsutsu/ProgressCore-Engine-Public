@@ -83,8 +83,16 @@ void Camera::SetOrthographic(float width, float height, float nearZ, float farZ)
 	this->nearZ = nearZ;
 	this->farZ = farZ;
 
-	this->fovY = fovY;
-	this->aspect = aspect;
+	// 以前ここは this->fovY = fovY; / this->aspect = aspect; と書かれていたが、
+	// 引数に fovY / aspect は無いため「自分自身への代入」＝何もしないコードだった。
+	// その結果、正射影へ切り替えても GetFovY() / GetAspect() は透視時の古い値を
+	// 返し続けていた（ShadowMapRenderSystem が GetAspect() を読んでいる）。
+	// 正射影に画角の概念は無いので 0 を番兵として入れ、アスペクトは実寸から求める。
+	this->fovY = 0.0f;
+	if (height != 0.0f) this->aspect = width / height;
+
+	// 行列が変わったのでFrustumを更新
+	UpdateFrustum();
 }
 
 // ====================================================================

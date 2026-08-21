@@ -19,6 +19,7 @@ class CameraBrainSystem : public CCL::ECS::SystemBase {
     // 前回のカメラ状態（遷移元が消滅した場合のバックアップ用）
     DirectX::XMFLOAT3 m_lastPos  = {0, 0, -10};
     DirectX::XMFLOAT3 m_lastLook = {0, 0, 0};
+    DirectX::XMFLOAT3 m_lastUp   = {0, 1, 0};
     float             m_lastFov  = 45.0f;
     // Near/Farのバックアップ
     float m_lastNear = 0.1f;
@@ -32,4 +33,10 @@ class CameraBrainSystem : public CCL::ECS::SystemBase {
     std::vector<CCL::ECS::TypeID> GetReadTypes() const override;
 
     void Update(float dt) override;
+
+  private:
+    /// @brief 採用可能な vCam のうち、最も優先度の高いものを選ぶ。
+    /// @param outID   選ばれた vCam のエンティティID（見つからなければ InvalidEntityID）
+    /// @return        選ばれた vCam。見つからなければ nullptr。
+    VirtualCamera *SelectHighestPriorityCamera(CCL::ECS::EntityID &outID);
 };

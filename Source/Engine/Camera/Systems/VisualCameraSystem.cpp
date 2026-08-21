@@ -3,9 +3,13 @@
 // 実装で必要なものをここで初めてインクルードする
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Platform/Input/Input.h"
+#include "Engine/Platform/Input/IInputAPI.h"
+#include "Engine/Core/App/GameFlowState.h"
 // ※ target の役割ベース自動接続は、ゲーム側の CameraTargetBindSystem(R00b) が担う。
 #include <SimpleMath.h>
-#include <cstdlib>
+#include <algorithm>
+#include <cmath>
+#include <memory>
 
 // システムの実行順序の定義ヘッダー
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -24,24 +28,29 @@ void CameraFollowSystem::Update(float dt)
         auto *targetTrans = m_world->GetComponent<TransformComponent>(body.target);
         if (!targetTrans) return;
 
-        // 目標位置の計算 (TransformComponentにGetWorldPositionがない場合は .position
-        // を直接使用) XMFLOAT3 worldPos = targetTrans->GetWorldPosition();
-        XMFLOAT3 worldPos  = targetTrans->position;
+        // position（親を無視した生のローカル座標）ではなく、補間済みワールド行列の
+        // 平行移動成分を使う。親子付けされたターゲットでも正しく追え、カクつきもない。
+        // TPS カメラ側と同じ基準に揃えている。
+        XMFLOAT3 worldPos  = targetTrans->GetRenderWorldPosition();
         XMVECTOR targetPos = XMLoadFloat3(&worldPos);
         XMVECTOR offset    = XMLoadFloat3(&body.offset);
 
         // シンプルな加算（本来はターゲットの回転を考慮して回すべきだが、まずは固定オフセットで）
         XMVECTOR desiredPos = targetPos + offset;
 
-        // Y軸固定オプション
+        // Y軸固定オプション：高さだけターゲットに追従させず、指定高さに貼り付ける。
+        // 階段や段差でカメラが上下に跳ねるのを止めたい時に使う。
         if (body.lockY) {
-            // Yだけ現在のvCamの高さを維持（あるいは固定値）
-            // 実装省略：必要ならここで desiredPos のYを書き換え
+            desiredPos = XMVectorSetY(desiredPos, body.lockedY);
         }
 
-        // 初期化フレーム対策（まだ計算されていないならワープ）
-        if (!vcam.isValid) {
+        // 初期化フレーム対策（まだ一度も位置を書いていないならワープ）
+        // 注視点側(CameraLookAtSystem)とはフラグを分けている。1bit を共有していた頃は、
+        // 先に走った側がフラグを立て、もう片方が原点から補間を始めていた。
+        if (!vcam.posInitialized) {
             XMStoreFloat3(&vcam.resultPos, desiredPos);
+            vcam.posInitialized = true;
+            vcam.RefreshValid();
             return;
         }
 
@@ -52,6 +61,7 @@ void CameraFollowSystem::Update(float dt)
         XMVECTOR newPos = XMVectorLerp(currentPos, desiredPos, t);
 
         XMStoreFloat3(&vcam.resultPos, newPos);
+        vcam.RefreshValid();
     });
 }
 
@@ -64,17 +74,17 @@ void CameraLookAtSystem::Update(float dt)
         auto *targetTrans = m_world->GetComponent<TransformComponent>(aim.target);
         if (!targetTrans) return;
 
-        // XMFLOAT3 worldPos    = targetTrans->GetWorldPosition();
-        XMFLOAT3 worldPos    = targetTrans->position;
+        // Follow 側と同じく補間済みワールド座標を使う
+        XMFLOAT3 worldPos    = targetTrans->GetRenderWorldPosition();
         XMVECTOR targetPos   = XMLoadFloat3(&worldPos);
         XMVECTOR offset      = XMLoadFloat3(&aim.offset);
         XMVECTOR desiredLook = targetPos + offset;
 
         // 初期化フレーム対策
-        if (!vcam.isValid) {
+        if (!vcam.lookInitialized) {
             XMStoreFloat3(&vcam.resultLookAt, desiredLook);
-            // 有効フラグを立てる（PositionとLookAt両方計算済みとする）
-            vcam.isValid = true;
+            vcam.lookInitialized = true;
+            vcam.RefreshValid();
             return;
         }
 
@@ -84,12 +94,44 @@ void CameraLookAtSystem::Update(float dt)
         XMVECTOR newLook     = XMVectorLerp(currentLook, desiredLook, t);
 
         XMStoreFloat3(&vcam.resultLookAt, newLook);
+        vcam.RefreshValid();
     });
 }
 
 // =========================================================
 // 3. CameraShakeSystem
 // =========================================================
+
+std::uint32_t CameraShakeSystem::HashUInt(std::uint32_t x)
+{
+    // Wang hash 相当。乗算とシフトだけで十分に散る。
+    x = (x ^ 61u) ^ (x >> 16);
+    x *= 9u;
+    x = x ^ (x >> 4);
+    x *= 0x27d4eb2du;
+    x = x ^ (x >> 15);
+    return x;
+}
+
+float CameraShakeSystem::ValueNoise(std::uint32_t seed, float t)
+{
+    // 整数格子の乱数値を smoothstep で補間する 1D バリューノイズ。
+    // rand() と違いグローバル状態を持たないので、並列実行しても再現性がある。
+    const float f  = std::floor(t);
+    const auto  i0 = static_cast<std::uint32_t>(static_cast<std::int32_t>(f));
+    const float fr = t - f;
+
+    auto sample = [seed](std::uint32_t i) -> float {
+        // 0..1 を -1..1 へ写す
+        return (HashUInt(i + seed) / static_cast<float>(0xFFFFFFFFu)) * 2.0f - 1.0f;
+    };
+
+    const float a = sample(i0);
+    const float b = sample(i0 + 1u);
+    const float s = fr * fr * (3.0f - 2.0f * fr); // smoothstep
+    return std::lerp(a, b, s);
+}
+
 void CameraShakeSystem::Update(float dt)
 {
     ForEach([&](VirtualCamera &vcam, CameraShake &shake) {
@@ -104,24 +146,50 @@ void CameraShakeSystem::Update(float dt)
         // 線形(traumaそのまま)だと機械的な揺れに見えるため
         float shakePower = trauma * trauma * shake.amplitude;
 
-        // 2. ランダムオフセット生成 (-1.0 ~ 1.0 * power)
-        // 簡易的なrand()を使用。より高品質にするならPerlinNoiseを使う。
-        float rx = ((float)rand() / RAND_MAX * 2.0f - 1.0f) * shakePower;
-        float ry = ((float)rand() / RAND_MAX * 2.0f - 1.0f) * shakePower;
-        float rz = ((float)rand() / RAND_MAX * 2.0f - 1.0f) * shakePower;
+        // 2. 時間駆動ノイズでオフセット生成
+        //    経過時間 × 周波数 を位相にするので、fps が変わっても波形は同じ。
+        //    以前は毎フレーム rand() を引いていたため、144fps では 60fps の
+        //    2倍以上の周波数で震え、環境ごとに手触りが変わっていた。
+        //    チャンネルごとにシードをずらし、軸が同じ動きをしないようにする。
+        shake.elapsed += dt;
+        const float phase = shake.elapsed * shake.frequency;
 
-        // 3. 計算済みの結果に加算 (Position)
-        XMVECTOR pos = XMLoadFloat3(&vcam.resultPos);
-        pos += XMVectorSet(rx, ry, rz, 0);
-        XMStoreFloat3(&vcam.resultPos, pos);
+        const float nx = ValueNoise(shake.seed + 0u, phase) * shakePower;
+        const float ny = ValueNoise(shake.seed + 977u, phase) * shakePower;
+        const float rx = ValueNoise(shake.seed + 4231u, phase) * shakePower;
+        const float ry = ValueNoise(shake.seed + 8419u, phase) * shakePower;
 
-        // 4. 計算済みの結果に加算 (LookAt)
-        // 注視点も少しずらすと、より「衝撃」感が出る
-        XMVECTOR look = XMLoadFloat3(&vcam.resultLookAt);
-        look += XMVectorSet(rx * 0.5f, ry * 0.5f, 0, 0); // Z軸はあまり揺らさない
-        XMStoreFloat3(&vcam.resultLookAt, look);
+        // 3. カメラのローカル軸を求める
+        //    ワールド軸で揺らすと、カメラの向き次第で「手前に突っ込む揺れ」になる。
+        //    画面の右/上方向へ揺らせば、どの向きでも同じ見え方になる。
+        Vector3 eye  = vcam.resultPos;
+        Vector3 look = vcam.resultLookAt;
+        Vector3 up   = vcam.resultUp;
 
-        // 5. 時間経過
+        Vector3 forward = look - eye;
+        if (forward.LengthSquared() < 1e-8f) return; // 視線が縮退していたら揺らさない
+        forward.Normalize();
+
+        Vector3 right = up.Cross(forward);
+        if (right.LengthSquared() < 1e-8f) return; // 真上/真下を向いていて右が取れない
+        right.Normalize();
+
+        Vector3 localUp = forward.Cross(right);
+        localUp.Normalize();
+
+        // 4. 平行移動の揺れ：視点と注視点を同じだけずらす（＝カメラごと平行に震える）
+        const Vector3 posOffset = right * nx + localUp * ny;
+        Vector3       newEye    = eye + posOffset;
+        Vector3       newLook   = look + posOffset;
+
+        // 5. 回転の揺れ：注視点だけを余分にずらす（＝画面が振れる）
+        //    平行移動だけだと「衝撃」に見えないので、少量だけ回転成分を混ぜる。
+        newLook += (right * rx + localUp * ry) * shake.rotationRatio;
+
+        vcam.resultPos    = newEye;
+        vcam.resultLookAt = newLook;
+
+        // 6. 時間経過
         shake.duration -= dt;
         if (shake.duration < 0.0f) shake.duration = 0.0f;
     });
@@ -130,6 +198,24 @@ void CameraShakeSystem::Update(float dt)
 // =========================================================
 // 4. CameraFreeControlSystem
 // =========================================================
+
+bool CameraFreeControlSystem::IsInputBlocked() const
+{
+    // ポーズ中 / カーソル自由(UI操作)モード中は、フリーカメラも動かさない。
+    if (m_world->HasResource<GameFlowState>()) {
+        const auto &flow = m_world->GetResource<GameFlowState>();
+        if (flow.paused || flow.uiInteract) return true;
+    }
+
+    // エディタで他ウィンドウ(ImGuiのテキスト入力など)を操作中なら食わない。
+    // これが無いと、インスペクタに数値を打ち込んでいる最中に WASD でカメラが飛ぶ。
+    if (m_world->HasResource<std::shared_ptr<IInputAPI>>()) {
+        auto inputAPI = m_world->GetResource<std::shared_ptr<IInputAPI>>();
+        if (inputAPI && !inputAPI->IsGameInputActive()) return true;
+    }
+    return false;
+}
+
 void CameraFreeControlSystem::Update(float dt)
 {
     // シングルトンから入力取得
@@ -139,20 +225,29 @@ void CameraFreeControlSystem::Update(float dt)
 
     using namespace DirectX;
 
+    // TPS カメラ側(cursorFreeOverride)と同じ条件で入力を遮断する。
+    // 遮断中も vcam の同期だけは続けたいので、入力量をゼロにする形で扱う。
+    const bool inputBlocked = IsInputBlocked();
+
     // マウスデルタ
-    float deltaX     = static_cast<float>(mouse.GetPositionX() - mouse.GetOldPositionX());
-    float deltaY     = static_cast<float>(mouse.GetPositionY() - mouse.GetOldPositionY());
-    int   wheelDelta = mouse.GetWheel();
+    float deltaX     = inputBlocked ? 0.0f : static_cast<float>(mouse.GetPositionX() - mouse.GetOldPositionX());
+    float deltaY     = inputBlocked ? 0.0f : static_cast<float>(mouse.GetPositionY() - mouse.GetOldPositionY());
+    int   wheelDelta = inputBlocked ? 0 : mouse.GetWheel();
+
+    const bool rmbHeld = !inputBlocked && mouse.IsDown(Mouse::BTN_RIGHT);
 
     ForEach([&](VirtualCamera &vcam, CameraBodyFree &body, TransformComponent &trans) {
         // --- 1. 回転計算 (FreeCameraSystemと同じロジック) ---
-        if (mouse.IsDown(Mouse::BTN_RIGHT)) {
+        if (rmbHeld) {
             // 感度適用 (body.lookSpeedは度数法想定: 0.2f程度)
             body.currentYaw += deltaX * body.lookSpeed;
             body.currentPitch -= deltaY * body.lookSpeed;
 
             // ピッチ制限 (-89 ~ 89度)
             body.currentPitch = std::clamp(body.currentPitch, -89.9f, 89.9f);
+
+            // ヨーは無限に積算すると float 精度が落ちて回転がカクつくため畳んでおく
+            body.currentYaw = std::fmod(body.currentYaw, 360.0f);
 
             // 移動速度調整をここ（右クリック中）に移動する
             if (wheelDelta != 0) {
@@ -170,49 +265,37 @@ void CameraFreeControlSystem::Update(float dt)
         XMVECTOR Front = XMVector3Normalize(XMVectorSet(
             cosf(pitchRad) * sinf(yawRad), sinf(pitchRad), cosf(pitchRad) * cosf(yawRad), 0.0f));
 
-        // 右ベクトル (Right) と 上ベクトル (Up) の計算
+        // 右ベクトル (Right) の計算
         XMVECTOR WorldUp = XMVectorSet(0, 1, 0, 0);
         XMVECTOR Right   = XMVector3Normalize(XMVector3Cross(WorldUp, Front));
-        // カメラ固有の上方向（移動用にはWorldUpを使うことが多いが、回転同期のために計算）
-        XMVECTOR Up = XMVector3Normalize(XMVector3Cross(Front, Right));
 
-        //// --- 2. 移動速度調整 (ホイール) ---
-        //if (wheelDelta != 0) {
-        //    body.moveSpeed *= (wheelDelta > 0) ? 1.2f : 0.8f;
-        //    body.moveSpeed = std::clamp(body.moveSpeed, 0.1f, 1000.0f);
-        //}
-
-        // --- 3. 移動計算 ---
+        // --- 2. 移動計算 ---
         XMVECTOR Pos = XMLoadFloat3(&trans.position);
         float    s   = body.moveSpeed * dt;
 
         // FreeCameraComponentと同じ操作系
-        if (kb.IsDown('W')) Pos += Front * s;
-        if (kb.IsDown('S')) Pos -= Front * s;
-        if (kb.IsDown('D')) Pos += Right * s;
-        if (kb.IsDown('A')) Pos -= Right * s;
-        if (kb.IsDown('E')) Pos += WorldUp * s; // 真上上昇
-        if (kb.IsDown('Q')) Pos -= WorldUp * s; // 真下下降
+        if (!inputBlocked) {
+            if (kb.IsDown('W')) Pos += Front * s;
+            if (kb.IsDown('S')) Pos -= Front * s;
+            if (kb.IsDown('D')) Pos += Right * s;
+            if (kb.IsDown('A')) Pos -= Right * s;
+            if (kb.IsDown('E')) Pos += WorldUp * s; // 真上上昇
+            if (kb.IsDown('Q')) Pos -= WorldUp * s; // 真下下降
+        }
 
         // 結果をTransformに書き戻す
         XMStoreFloat3(&trans.position, Pos);
 
         // 回転もTransformに反映させておく（デバッグ表示などで正しい向きに見えるように）
-        // LookRotation (Front, Up) から Quaternion を作成
-        // ※SimpleMathが使えるなら Quaternion::LookRotation(Front, Up) ですが、
-        // ここでは汎用的にYaw/Pitchから生成します
-        Quaternion qRot = Quaternion::CreateFromYawPitchRoll(yawRad, -pitchRad, 0.0f);
         // CreateFromYawPitchRoll は座標系の取り方で Pitch の符号が反転するため、
-        // Front ベクトルから LookAt 行列を作って分解する方を採用する。
-
-        // FrontからLookAt行列を作り、そこからQuaternion抽出（これが一番確実）
+        // Front ベクトルから LookTo 行列を作り、それを逆行列化して分解する。
         XMMATRIX lookMat = XMMatrixLookToLH(XMVectorZero(), Front, WorldUp);
         // LookToはView行列(逆行列)を作るので、Inverseしてワールド回転にする
         XMVECTOR det;
         XMMATRIX worldRot = XMMatrixInverse(&det, lookMat);
         trans.rotation    = Quaternion::CreateFromRotationMatrix(worldRot);
 
-        // --- 4. VirtualCameraへの同期 ---
+        // --- 3. VirtualCameraへの同期 ---
         // 現在の位置
         vcam.resultPos = trans.position;
 
@@ -223,8 +306,8 @@ void CameraFreeControlSystem::Update(float dt)
         // アップベクトル
         vcam.resultUp = Vector3(0, 1, 0);
 
-        // 計算完了フラグ
-        vcam.isValid = true;
+        // 位置・注視点とも自前で確定させたので採用可能
+        vcam.MarkResolved();
     });
 }
 

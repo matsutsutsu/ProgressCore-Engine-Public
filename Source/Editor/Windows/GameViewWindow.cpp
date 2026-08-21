@@ -3,6 +3,8 @@
 #include "GameViewWindow.h"
 #include "Engine/Graphics/RHI/Camera.h"
 #include "Engine/Camera/Components/CameraDollyCartComponent.h"
+#include "Engine/Camera/Systems/CameraDollySystem.h"
+#include "Editor/Windows/CameraPathEditorWindow.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Platform/Core/FileSystem.h"
 #include "Engine/Platform/Core/Logger.h"
@@ -32,59 +34,9 @@ using namespace DirectX::SimpleMath;
 // =========================================================================
 namespace
 {
-const DirectX::SimpleMath::Vector3 &GetPointClamped(const std::vector<Vector3> &pts, int index)
-{
-    int clamped = std::clamp(index, 0, static_cast<int>(pts.size()) - 1);
-    return pts[clamped]; // 実体への参照が返るため、&演算子でのアドレス取得が合法になる
-}
-
-Vector3 EvaluateCatmullRom(const std::vector<Vector3> &pts, float t)
-{
-    if (pts.empty())
-        return Vector3::Zero;
-    if (pts.size() == 1)
-        return pts[0];
-
-    int   index = static_cast<int>(std::floor(t));
-    float frac  = t - std::floor(t);
-
-    XMVECTOR p0 = XMLoadFloat3(&GetPointClamped(pts, index - 1));
-    XMVECTOR p1 = XMLoadFloat3(&GetPointClamped(pts, index));
-    XMVECTOR p2 = XMLoadFloat3(&GetPointClamped(pts, index + 1));
-    XMVECTOR p3 = XMLoadFloat3(&GetPointClamped(pts, index + 2));
-
-    XMVECTOR result = XMVectorCatmullRom(p0, p1, p2, p3, frac);
-
-    Vector3 finalPos;
-    XMStoreFloat3(&finalPos, result);
-    return finalPos;
-}
-
-// ギズモで点が動かされた後、等速移動用の LUT を再構築する
-void BuildLookupTable(CameraPathAsset &asset)
-{
-    asset.lut.clear();
-    if (asset.points.size() < 2)
-        return;
-
-    int   resolutionPerSegment = 20;
-    int   totalSamples         = static_cast<int>(asset.points.size() - 1) * resolutionPerSegment;
-    float maxT                 = static_cast<float>(asset.points.size() - 1);
-
-    asset.lut.push_back({0.0f, 0.0f});
-    Vector3 prevPos             = EvaluateCatmullRom(asset.points, 0.0f);
-    float   accumulatedDistance = 0.0f;
-
-    for (int i = 1; i <= totalSamples; ++i)
-    {
-        float   t       = (static_cast<float>(i) / totalSamples) * maxT;
-        Vector3 currPos = EvaluateCatmullRom(asset.points, t);
-        accumulatedDistance += Vector3::Distance(prevPos, currPos);
-        asset.lut.push_back({accumulatedDistance, t});
-        prevPos = currPos;
-    }
-    asset.totalLength = accumulatedDistance;
-}
+// スプライン評価と LUT 構築は CameraDollySystem の public static を使う。
+// 以前はここに丸ごと複製があり、CameraDollySystem 側に isLoop を足しても
+// エディタのプレビュー線だけ旧仕様のまま、という食い違いが発生していた。
 
 // =========================================================================
 // レイ-AABB による最近傍エンティティ選択(ピッキング)
@@ -132,20 +84,9 @@ CCL::ECS::EntityID PickEntity(CCL::ECS::World &world,
     return best;
 }
 
-// エディタからの自動保存用
-void SavePathAssetToJson(const std::string &path, const std::vector<Vector3> &points)
-{
-    if (path.empty())
-        return;
-    nlohmann::json j;
-    j["points"] = nlohmann::json::array();
-    for (const auto &p : points)
-    {
-        j["points"].push_back({{"x", p.x}, {"y", p.y}, {"z", p.z}});
-    }
-    FileSystem::WriteAllText(path, j.dump(4));
-    CCL_LOG_INFO(LogCategory::Editor, "Camera Path Auto-Saved and LUT Rebuilt: %s", path.c_str());
-}
+// JSON への書き出しは CameraPathEditorWindow::SavePathToJson に一本化した。
+// ここにも複製があったため、isLoop を書き出さない旧版でギズモ操作のたびに
+// ループ設定が消えていた。
 } // namespace
 
 // =========================================================================
@@ -231,8 +172,8 @@ void GameViewWindow::DrawContents(EditorContext &context)
                 {
                     for (size_t i = 0; i < asset.lut.size() - 1; ++i)
                     {
-                        Vector3 p0 = EvaluateCatmullRom(asset.points, asset.lut[i].t);
-                        Vector3 p1 = EvaluateCatmullRom(asset.points, asset.lut[i + 1].t);
+                        Vector3 p0 = CameraDollySystem::EvaluateCatmullRom(asset.points, asset.lut[i].t, asset.isLoop);
+                        Vector3 p1 = CameraDollySystem::EvaluateCatmullRom(asset.points, asset.lut[i + 1].t, asset.isLoop);
                         // スプラインは黄色で描画
                         shapeRenderer->DrawLine(p0, p1, XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f));
                     }
@@ -291,8 +232,8 @@ void GameViewWindow::DrawContents(EditorContext &context)
                     {
                         // マウスを離した瞬間 (立ち下がりエッジ)
                         // ここで初めてLUTを再構築し、JSONアセットとして上書き保存する
-                        BuildLookupTable(*cart->loadedPath);
-                        SavePathAssetToJson(cart->pathAsset, cart->loadedPath->points);
+                        CameraDollySystem::BuildLookupTable(*cart->loadedPath);
+                        CameraPathEditorWindow::SavePathToJson(cart->pathAsset, *cart->loadedPath);
                     }
 
                     wasUsingGizmo = isUsingGizmo;

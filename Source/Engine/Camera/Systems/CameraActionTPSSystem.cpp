@@ -38,17 +38,24 @@ void CameraActionTPSSystem::Initialize()
         });
     });
 
-  // 着地などの汎用カメラシェイクを受信
+    // 着地などの汎用カメラシェイクを受信
     ListenEvent<CameraShakeRequestEvent>([this](const CameraShakeRequestEvent &ev) {
 
         ForEachWithID([&](EntityID id, VirtualCamera &vcam, CameraBodyTPSComponent &tps, TransformComponent &trans) {
-            if (!m_world->HasComponent<CameraShake>(id))
-            {
-                m_world->AddComponent<CameraShake>(id);
-            }
+            // 【重要】World::AddComponent は PendingOp に積むだけで、実体の追加は
+            //   ScrutinyAndApply まで遅延される。したがって AddComponent の直後に
+            //   GetComponent しても nullptr が返り、SetShake が呼ばれないまま
+            //   「最初のシェイク要求だけが黙って消える」ことになる。
+            //   既にあるなら書き換え、無いなら値ごと構築して積む、の二択にする。
             if (auto *shake = m_world->GetComponent<CameraShake>(id))
             {
                 shake->SetShake(ev.amplitude, ev.duration);
+            }
+            else
+            {
+                CameraShake newShake;
+                newShake.SetShake(ev.amplitude, ev.duration);
+                m_world->AddComponent<CameraShake>(id, newShake);
             }
         });
     });
@@ -113,7 +120,7 @@ void CameraActionTPSSystem::Update(float dt)
         Vector3 targetWorldPos = targetTrans->GetRenderWorldPosition();
 
         Vector3 idealLookAt = targetWorldPos + tps.targetOffset;
- 
+
 
         // ===================================================================
         // ロックオン状態(lockOnTarget / isLockOnActive)は、その持ち主である
@@ -179,6 +186,13 @@ void CameraActionTPSSystem::Update(float dt)
             tps.currentPitch = std::clamp(tps.currentPitch, tps.minPitch, tps.maxPitch);
         }
 
+        // ヨーは周回するたび無限に積算されるので ±360 に畳む。
+        //   放置すると float の有効桁が回転量に食われ、長時間プレイで視点が
+        //   カクつくようになる（プレハブに -4572 度が保存されていた）。
+        //   ロックオン側は yawDiff で最短回転を取っているため、この畳み込みで
+        //   角度が飛んでも挙動は変わらない。
+        tps.currentYaw = std::fmod(tps.currentYaw, 360.0f);
+
 
         // 回り込み中心(pivot)と距離。通常は注視点中心、ロックオン中はプレイヤー中心。
         // 寄り要求中（切り払い準備など）は基準距離を closeUpDistance へ寄せる。
@@ -241,6 +255,9 @@ void CameraActionTPSSystem::Update(float dt)
         tps.currentPivot  = Vector3::Lerp(tps.currentPivot, posPivotTarget, posBlend);
 
         // 6. 球面座標から配置位置の算出
+        //    【符号の規約】pitch が正 → backwardDir.y が正 → finalPos は pivot より「下」。
+        //    つまり maxPitch はカメラが真下に回り込んで見上げる限界、
+        //          minPitch は上から見下ろす限界を表す。
         float pitchRad = XMConvertToRadians(tps.currentPitch);
         float yawRad   = XMConvertToRadians(tps.currentYaw);
 
@@ -285,10 +302,32 @@ void CameraActionTPSSystem::Update(float dt)
         // カメラが寄った時は「足元」ではなく「頭付近」へ寄せる。
         //   引き込み量(pullRatio)に応じて、カメラのY(高さ)を pivot(頭)の高さへ持ち上げる。
         //   これで壁/床でカメラが近づいても視点が足元に落ちず、頭〜肩の高さを保つ。
+        float range     = (std::max)(0.001f, desiredDist - tps.collisionMinDistance);
+        float pullRatio = std::clamp((desiredDist - tps.currentCamDistance) / range, 0.0f, 1.0f);
+        float liftAmount = pullRatio * tps.collisionHeadBias;
+        finalPos.y      = std::lerp(finalPos.y, tps.currentPivot.y, liftAmount);
+
+        // 持ち上げた先は上のレイキャストの経路上に無い（Y方向へずらしたため）。
+        //   庇や階段裏では、寄せたはずのカメラが持ち上げによって再びジオメトリの
+        //   内側へ入ってしまう。持ち上げが実際に効いた時だけ、確定位置へ向けて
+        //   もう一度だけ地形を確認して押し戻す。
+        if (tps.collisionEnabled && physicsAPI && liftAmount > 0.001f)
         {
-            float range     = (std::max)(0.001f, desiredDist - tps.collisionMinDistance);
-            float pullRatio = std::clamp((desiredDist - tps.currentCamDistance) / range, 0.0f, 1.0f);
-            finalPos.y      = std::lerp(finalPos.y, tps.currentPivot.y, pullRatio * tps.collisionHeadBias);
+            Vector3     toCam    = finalPos - tps.currentPivot;
+            const float liftDist = toCam.Length();
+            if (liftDist > 1e-4f)
+            {
+                Vector3 liftDir = toCam / liftDist;
+                XMFLOAT3 o      = {tps.currentPivot.x, tps.currentPivot.y, tps.currentPivot.z};
+                XMFLOAT3 d      = {liftDir.x, liftDir.y, liftDir.z};
+                PhysicsHitInfo hit = physicsAPI->RayCastStatic(o, d, liftDist + tps.collisionRadius);
+                if (hit.hit)
+                {
+                    float safeDist = std::clamp(hit.distance - tps.collisionRadius,
+                                                tps.collisionMinDistance, liftDist);
+                    finalPos = tps.currentPivot + liftDir * safeDist;
+                }
+            }
         }
 
         // 7. 動的FOV
@@ -309,7 +348,8 @@ void CameraActionTPSSystem::Update(float dt)
         vcam.resultPos    = finalPos;
         vcam.resultLookAt = tps.currentLookAt;
         vcam.resultUp     = Vector3::Up;
-        vcam.isValid      = true;
+        // 位置・注視点とも自前で確定させたので Brain が採用してよい
+        vcam.MarkResolved();
     });
 
     // =====================================================================
