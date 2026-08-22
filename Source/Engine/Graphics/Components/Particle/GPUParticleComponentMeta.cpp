@@ -31,6 +31,7 @@ void WriteDescToJson(json &j, const ParticleEmitterDesc &d)
 {
     j["emitRadius"]    = {SafeF(d.emitRadius.x), SafeF(d.emitRadius.y)};
     j["emitSize"]      = {SafeF(d.emitSize.x), SafeF(d.emitSize.y)};
+    j["sizeRandom"]    = SafeF(d.sizeRandom);
     j["coneAngle"]     = {SafeF(d.coneAngle.x), SafeF(d.coneAngle.y)};
     j["emitSpeed"]     = {SafeF(d.emitSpeed.x), SafeF(d.emitSpeed.y)};
     j["angularSpeed"]  = {SafeF(d.angularSpeed.x), SafeF(d.angularSpeed.y)};
@@ -91,6 +92,8 @@ void ReadDescFromJson(const json &j, ParticleEmitterDesc &d)
 
     F2("emitRadius", d.emitRadius);
     F2("emitSize", d.emitSize);
+    // 旧アセットには sizeRandom が無い。その場合は既定の 1（＝従来のランダム）を保つ。
+    F("sizeRandom", d.sizeRandom);
     F2("coneAngle", d.coneAngle);
     F2("emitSpeed", d.emitSpeed);
     F2("angularSpeed", d.angularSpeed);
@@ -620,8 +623,24 @@ struct ComponentMeta<GPUParticleComponent>
                 changed |= ImGui::DragFloat2(u8"サイズ 誕生→消滅", &d.emitSize.x, 0.01f, 0.0f, 100.0f, "%.2f");
                 Help(u8"左=生まれた瞬間のサイズ  右=消える瞬間のサイズ。\n"
                      u8"左>右 で縮みながら消え、左<右 で膨らみながら消えます。\n"
-                     u8"※実際のサイズはこの値に 0〜1 のランダムが掛かるので、\n"
-                     u8"  「この値が上限」と考えてください。");
+                     u8"衝撃波は 左を小さく・右を大きく してください。");
+
+                changed |= ImGui::SliderFloat(u8"サイズのばらつき", &d.sizeRandom, 0.0f, 1.0f, "%.2f");
+                Help(u8"0 = 上のサイズちょうどで固定（毎回まったく同じ大きさ）\n"
+                     u8"1 = 0〜上のサイズ の一様ランダム\n"
+                     u8"煙や火花は 1 が自然ですが、衝撃波のように「1枚を決まった\n"
+                     u8"大きさに広げる」効果は 0 にしないと毎回大きさが変わります。");
+
+                // 少数しか出さない効果では、ばらつきがそのまま「毎回違う見た目」になる。
+                //   粒子が多ければ平均化されて気付かないので、少ないときだけ助言する。
+                const int spawnedCount = (d.emitMode == 1) ? d.burstCount : d.maxCount;
+                if (d.sizeRandom > 0.0f && spawnedCount > 0 && spawnedCount <= 8)
+                {
+                    ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.2f, 1.0f),
+                                       u8"※ %d 個しか出さない設定です。ばらつきが毎回そのまま\n"
+                                       u8"   見た目の差になります。固定したいなら 0 にしてください",
+                                       spawnedCount);
+                }
 
                 changed |= ImGui::DragFloat2(u8"サイズ倍率 誕生/消滅", &d.scale.x, 0.01f, 0.0f, 100.0f, "%.2f");
                 Help(u8"上のサイズに掛ける倍率。全体を一括で大きく/小さくするときに使います。\n"

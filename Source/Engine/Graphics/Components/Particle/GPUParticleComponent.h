@@ -24,6 +24,11 @@ struct ParticleEmitterDesc
     // ---- 発生形状 ----
     GpuData::float2 emitRadius        = { 0.0f, 0.5f };    // emit_radius    発生半径 min/max
     GpuData::float2 emitSize          = { 0.1f, 0.05f };   // emit_size      サイズ 誕生/消滅
+
+    /// @brief サイズのランダム量。0 = emitSize ちょうどで固定、1 = 0〜emitSize の一様ランダム。
+    /// @note  既定 1 は従来の挙動（乱数がシェーダに固定で入っていた）と同じ。
+    ///        衝撃波のように毎回同じ大きさで出したい効果は 0 にする。
+    float           sizeRandom        = 1.0f;              // size_random
     GpuData::float2 coneAngle         = { 0.0f, 0.3f };    // cone_angle     放出角度範囲 (rad)
     GpuData::float2 emitSpeed         = { 1.0f, 3.0f };    // emit_speed     初速度範囲
     GpuData::float2 angularSpeed      = { 0.0f, 0.0f };    // emit_angular_speed

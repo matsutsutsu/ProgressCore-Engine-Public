@@ -173,8 +173,14 @@ void spawn(in uint id, inout particle p, in uint salt)
 
     // ---- サイズ (particle_scale をベイク) ----
     // size.x: 誕生時サイズ, size.y: 消滅時サイズ
-    p.size.x = emit_size.x * size_rand               * particle_scale.x;
-    p.size.y = emit_size.y * randUint(p.seed + 13u)  * particle_scale.y;
+    //   size_random はばらつき量。1 なら 0〜指定値の一様ランダム(従来の挙動)、
+    //   0 なら指定値ちょうど。衝撃波のように「毎回まったく同じ大きさ」で
+    //   出したい効果は 0 にする。誕生と消滅で別の乱数を引くので、
+    //   1 のままだと大きく生まれて大きく消えることもあれば逆もある。
+    float birth_rand = lerp(1.0f - size_random, 1.0f, size_rand);
+    float death_rand = lerp(1.0f - size_random, 1.0f, randUint(p.seed + 13u));
+    p.size.x = emit_size.x * birth_rand * particle_scale.x;
+    p.size.y = emit_size.y * death_rand * particle_scale.y;
 
     // ---- スプライトシート初期コマ ----
     int total = (int)(sprite_sheet_grid.x * sprite_sheet_grid.y);
