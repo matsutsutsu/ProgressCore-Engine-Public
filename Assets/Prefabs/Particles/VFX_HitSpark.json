@@ -96,7 +96,8 @@
                                 0.0
                             ],
                             "velocityStretch": 0.05000000074505806,
-                            "vortexStrength": 0.0
+                            "vortexStrength": 0.0,
+                            "name": "火花"
                         },
                         {
                             "angularSpeed": [
@@ -189,7 +190,8 @@
                                 0.0
                             ],
                             "velocityStretch": 0.019999999552965164,
-                            "vortexStrength": 0.0
+                            "vortexStrength": 0.0,
+                            "name": "残り火"
                         },
                         {
                             "angularSpeed": [
@@ -282,7 +284,8 @@
                                 0.0
                             ],
                             "velocityStretch": 0.0,
-                            "vortexStrength": 0.0
+                            "vortexStrength": 0.0,
+                            "name": "フラッシュ"
                         }
                     ]
                 },

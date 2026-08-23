@@ -12,6 +12,7 @@
 #include <json.hpp>
 #include <cmath>
 #include <string>
+#include <cstring>
 
 #ifdef ENABLE_EDITOR
 #include "Editor/Inspector/ComponentGuiRegistry.h"
@@ -69,6 +70,7 @@ void WriteDescToJson(json &j, const ParticleEmitterDesc &d)
     j["drag"]              = d.drag;
     j["attractorLocal"]    = d.attractorLocal;
 
+    j["name"]          = std::string(d.name);
     j["texturePath"]   = std::string(d.texturePath);
     j["colorRampPath"] = std::string(d.colorRampPath);
 }
@@ -138,6 +140,7 @@ void ReadDescFromJson(const json &j, ParticleEmitterDesc &d)
     F("vortexStrength", d.vortexStrength);
     F("drag", d.drag);
 
+    STR("name", d.name, sizeof(d.name));
     STR("texturePath", d.texturePath, sizeof(d.texturePath));
     STR("colorRampPath", d.colorRampPath, sizeof(d.colorRampPath));
 }
@@ -317,6 +320,19 @@ struct ComponentMeta<GPUParticleComponent>
                                u8"これらは発火に関係なく出続けます", continuousCount);
         }
 
+        // 非表示の層があるまま調整を続けると「なぜか薄い」の原因になる。
+        //   保存されない設定なので、気付ける形で常に出しておく。
+        int hiddenCount = 0;
+        for (const auto &e : p->emitters) if (!e.previewVisible) ++hiddenCount;
+        if (hiddenCount > 0)
+        {
+            ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.2f, 1.0f),
+                               u8"※ %d 個のエミッタを非表示中（プレビュー用・保存されません）", hiddenCount);
+            ImGui::SameLine();
+            if (ImGui::SmallButton(u8"全部表示に戻す"))
+                for (auto &e : p->emitters) e.previewVisible = true;
+        }
+
         if (ImGui::Checkbox(u8"アニメ制御 (Anim Controlled)", &p->animControlled)) changed = true;
         Help(u8"ONにすると祖先(Animator)の Particle 区間イベント中だけ発生します。\n"
              u8"剣ボーンに子付けして「まとい」演出に使います。\n"
@@ -355,17 +371,24 @@ struct ComponentMeta<GPUParticleComponent>
         {
             for (int i = 0; i < static_cast<int>(p->emitters.size()); ++i)
             {
-                const ParticleEmitterDesc &ed = p->emitters[i].desc;
+                const ParticleEmitter     &em = p->emitters[i];
+                const ParticleEmitterDesc &ed = em.desc;
 
-                // タブ見出しに中身の要約を出す。「エミッタ 0/1/2」だけだと
-                //   どれが煙でどれが火花か開くまで分からない。
-                // ### 以降が ImGui の識別子になる。前半(表示文字)が値の変更で
-                //   変わってもタブの選択状態が飛ばないよう、ここは必ず固定する。
+                // 見出しは「名前」を最優先にする。名前が付いていれば
+                //   火花/残り火/フラッシュ のどれを開こうとしているかが一目で分かる。
+                //   未命名のときだけ、モードと個数の要約で代用する。
+                // ### 以降が ImGui の識別子になる。前半(表示文字)が名前や値の
+                //   変更で変わってもタブの選択状態が飛ばないよう、ここは必ず固定する。
+                std::string caption = (ed.name[0] != '\0')
+                    ? std::string(ed.name)
+                    : (ed.emitMode == 1 ? "Burst " + std::to_string(ed.burstCount)
+                                        : u8"継続 " + std::to_string(ed.maxCount));
+
+                // 非表示中はひと目で分かるようにする。戻し忘れ防止。
+                if (!em.previewVisible) caption = u8"[非表示] " + caption;
+
                 const std::string label =
-                    std::to_string(i) + ": " +
-                    (ed.emitMode == 1 ? "Burst " + std::to_string(ed.burstCount)
-                                      : u8"継続 " + std::to_string(ed.maxCount)) +
-                    "###emitter" + std::to_string(i);
+                    std::to_string(i) + ": " + caption + "###emitter" + std::to_string(i);
 
                 if (ImGui::BeginTabItem(label.c_str()))
                 {
@@ -383,15 +406,48 @@ struct ComponentMeta<GPUParticleComponent>
         }
         if (selected >= static_cast<int>(p->emitters.size())) selected = 0; // 保険
 
-        // 削除は「このGUIを描き終えてから」行う。ここで消すと以下で参照が壊れる。
-        bool requestErase = false;
-        if (p->emitters.size() > 1)
-        {
-            if (ImGui::SmallButton(u8"このエミッタを削除")) requestErase = true;
-        }
-
         auto &emitter = p->emitters[selected];
         auto &d       = emitter.desc;
+
+        // ---- 選択中エミッタの識別と操作 ----
+        //   「どの層を編集しているか」をここで確定させてから、下の設定タブに入る。
+        ImGui::SetNextItemWidth(-1.0f);
+        if (ImGui::InputTextWithHint("##emitterName", u8"エミッタ名 (例: 火花 / 残り火 / フラッシュ)",
+                                     d.name, IM_ARRAYSIZE(d.name)))
+            changed = true;
+
+        // 表示スイッチ。1層ずつ消して「どれがどれか」を目で確かめるための道具。
+        //   保存されないので、戻し忘れてもアセットは壊れない。
+        if (ImGui::Checkbox(u8"表示", &emitter.previewVisible)) {}
+        Help(u8"チェックを外すとこのエミッタだけ描画しません。\n"
+             u8"どの層がどの見た目を担当しているか確かめるのに使います。\n"
+             u8"プレビュー用の設定でプレハブには保存されません。");
+
+        ImGui::SameLine();
+        if (ImGui::SmallButton(u8"このエミッタだけ表示 (Solo)"))
+        {
+            for (int i = 0; i < static_cast<int>(p->emitters.size()); ++i)
+                p->emitters[i].previewVisible = (i == selected);
+        }
+        ImGui::SameLine();
+        if (ImGui::SmallButton(u8"全部表示"))
+        {
+            for (auto &e : p->emitters) e.previewVisible = true;
+        }
+
+        // 追加と削除は「このGUIを描き終えてから」行う。ここで vector を触ると
+        //   下で参照している emitter / d が壊れる。
+        bool requestErase     = false;
+        bool requestDuplicate = false;
+
+        if (ImGui::SmallButton(u8"このエミッタを複製"))  requestDuplicate = true;
+        Help(u8"選択中のエミッタを丸ごとコピーして末尾に追加します。\n"
+             u8"似た層をもう1枚重ねたいとき、一から設定し直さずに済みます。");
+        if (p->emitters.size() > 1)
+        {
+            ImGui::SameLine();
+            if (ImGui::SmallButton(u8"このエミッタを削除")) requestErase = true;
+        }
 
         ImGui::BeginChild("ParticleEditorChild", ImVec2(0, 380.0f), ImGuiChildFlags_Border, ImGuiWindowFlags_NavFlattened);
 
@@ -760,6 +816,26 @@ struct ComponentMeta<GPUParticleComponent>
 
         // エミッタ削除はここで実行する。GUIを描き終えた後なので、
         //   上で握っていた emitter / d の参照が壊れる心配がない。
+        if (requestDuplicate)
+        {
+            // desc だけを引き継ぎ、GPU側の実体（バッファ・ハンドル・乱数種）は
+            //   引き継がない。ハンドルを複製すると、同じバッファを2つのエミッタが
+            //   指してしまい、片方を消したときにもう片方が壊れる。
+            ParticleEmitter copy;
+            copy.desc = p->emitters[selected].desc;
+
+            // 名前の重複を避けて " copy" を足す。ただし入りきる時だけ。
+            //   strcat_s はバッファ不足だと不正パラメータハンドラを呼んで落ちるので、
+            //   長い名前を付けられていても安全なように、事前に空きを確かめる。
+            const char *suffix = " copy";
+            const size_t used  = strnlen_s(copy.desc.name, sizeof(copy.desc.name));
+            if (used + strlen(suffix) < sizeof(copy.desc.name))
+                strcat_s(copy.desc.name, sizeof(copy.desc.name), suffix);
+
+            p->emitters.push_back(copy);
+            changed = true;
+        }
+
         if (requestErase)
         {
             // GPUリソースを取りこぼさないよう、消す前に解放しておく。
