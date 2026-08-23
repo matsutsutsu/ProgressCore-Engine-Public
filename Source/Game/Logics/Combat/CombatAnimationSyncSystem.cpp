@@ -129,9 +129,7 @@ void CombatAnimationSyncSystem::Update(float /*dt*/)
                 std::memset(hb.hitTargets, 0, sizeof(hb.hitTargets));
                 hb.isActive = true;
 
-                CCL_LOG_INFO(LogCategory::Game,
-                    "[HitboxSync] Activated. Entity %llu dmg=%.1f hitStop=%.2f (tagHash 0x%08X)",
-                    hitboxID, activeEv->damage, activeEv->hitStopDuration, hb.tagHash);
+                //CCL_LOG_INFO(LogCategory::Game, "[HitboxSync] Activated. Entity %llu dmg=%.1f hitStop=%.2f (tagHash 0x%08X)", hitboxID, activeEv->damage, activeEv->hitStopDuration, hb.tagHash);
             }
 
             // Sequencer の HitBox イベントに入力した値を毎フレーム Hitbox へ反映する。
@@ -150,8 +148,7 @@ void CombatAnimationSyncSystem::Update(float /*dt*/)
             // 【立ち下がりエッジ】区間を抜けた / アニメがキャンセルされた
             hb.isActive = false;
 
-            CCL_LOG_INFO(LogCategory::Game,
-                "[HitboxSync] Deactivated. Entity %llu (tagHash 0x%08X)", hitboxID, hb.tagHash);
+            //CCL_LOG_INFO(LogCategory::Game, "[HitboxSync] Deactivated. Entity %llu (tagHash 0x%08X)", hitboxID, hb.tagHash);
         }
     });
 }

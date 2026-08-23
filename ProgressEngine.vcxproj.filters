@@ -1023,6 +1023,9 @@
     <ClInclude Include="Source\Editor\Windows\NavMeshWindow.h">
       <Filter>Source\Editor\Windows\AI</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\FormationEditorWindow.h">
+      <Filter>Source\Editor\Windows\AI</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\Windows\BehaviorTreeWindow.h">
       <Filter>Source\Editor\Windows\AI</Filter>
     </ClInclude>
@@ -1839,6 +1842,12 @@
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\FormationRegistry.h">
       <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\FormationSpec.h">
+      <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_DataDriven.h">
+      <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_Basic.h">
       <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
     </ClInclude>
@@ -2223,6 +2232,9 @@
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\NavMeshWindow.cpp">
+      <Filter>Source\Editor\Windows\AI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\FormationEditorWindow.cpp">
       <Filter>Source\Editor\Windows\AI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\BehaviorTreeWindow.cpp">

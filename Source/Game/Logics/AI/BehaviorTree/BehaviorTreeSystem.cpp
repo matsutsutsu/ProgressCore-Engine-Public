@@ -92,6 +92,16 @@ void BehaviorTreeSystem::Update(float rawDt)
             btComp.runningNodes.resize(nodeCount, -1);
         }
 
+        // --- デバッグ：評価を止める ---
+        //   タイマー減算より前に抜ける。止めている間も Wait が進むと、再開した瞬間に
+        //   溜まった分が一気に消化されて枝が飛ぶ。木は「凍る」のが正しい。
+        //   状態表示だけは消しておかないと、BTウィンドウに緑が残って動いて見える。
+        if (btComp.debugPaused) {
+            std::fill(btComp.debugNodeStates.begin(), btComp.debugNodeStates.end(), BTDebugState::None);
+            btComp.runningNodeId = 0xFFFF;
+            return;
+        }
+
         // --- タイマー減算 ---
         for (size_t i = 0; i < btComp.nodeTimers.size(); ++i) {
             if (btComp.nodeTimers[i] > 0.0f) {
@@ -416,6 +426,22 @@ void BehaviorTreeSystem::DrawForcedNodeGui(BehaviorTreeComponent &btComp, Entity
     if (!btComp.sharedAsset || btComp.sharedAsset->nodes.empty()) {
         ImGui::TextDisabled("BT が読み込まれていません");
         return;
+    }
+
+    // 木を凍らせる。調整中の指示が次のフレームで別の技に塗り潰されるのを止める。
+    //   移動中に止めるとボスが歩き続けるので、行動要求も併せて切る。
+    bool paused = btComp.debugPaused;
+    if (ImGui::Checkbox("AIを止める（調整に集中）", &paused)) {
+        btComp.debugPaused = paused;
+        if (paused) {
+            if (auto *cmd = m_world->GetComponent<BossCommandComponent>(entity)) {
+                cmd->currentActionId = 0; // None → BossActionSystem は Idle
+            }
+        }
+    }
+    if (btComp.debugPaused) {
+        ImGui::SameLine();
+        ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "停止中（陣形指示は保持される）");
     }
 
     if (btComp.debugForcedNodeId >= 0) {

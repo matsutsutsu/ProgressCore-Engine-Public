@@ -65,6 +65,19 @@ struct BehaviorTreeComponent {
     ///        書き手は BehaviorTreeSystem。
     int debugAppliedForcedNodeId = -1;
 
+    /// @brief 木の評価を止める。BossCommandComponent が上書きされなくなるので、
+    ///        エディタから書いた指示（陣形など）がそのまま残る。
+    ///
+    /// なぜ要るか:
+    ///   陣形やアニメを詰めている間もボスは技を選び続けるので、調整中の指示が
+    ///   次のフレームに別の技で塗り潰される。assetPath を空にすれば止まるが
+    ///   （BossPhaseSystem の第2形態移行がその手）、パスを失うので調整用途には使えない。
+    ///
+    /// @note 止めても currentActionId は保持される。移動中に止めるとボスが歩き続けるので、
+    ///       止める側が併せて 0 を書く（＝BossActionSystem が Idle になる）。
+    ///       書き手はデバッグUI（BehaviorTreeSystem::OnGui / FormationEditorWindow）。
+    bool debugPaused = false;
+
     // --- プリミティブ型 (2バイト) ---
     BTNodeID runningNodeId = 0;
     BTNodeID previousRunningNodeId = 0xFFFF;

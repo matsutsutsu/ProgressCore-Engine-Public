@@ -71,6 +71,10 @@
         {
             "name": "Building Scatter",
             "visible": false
+        },
+        {
+            "name": "Formation Editor",
+            "visible": true
         }
     ]
 }
