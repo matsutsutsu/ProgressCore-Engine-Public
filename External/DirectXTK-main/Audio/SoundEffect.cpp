@@ -4,8 +4,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
-// http://go.microsoft.com/fwlink/?LinkId=248929
-// http://go.microsoft.com/fwlink/?LinkID=615561
+// https://go.microsoft.com/fwlink/?LinkId=248929
+// https://go.microsoft.com/fwlink/?LinkID=615561
 //--------------------------------------------------------------------------------------
 
 #include "pch.h"
@@ -50,7 +50,9 @@ public:
         , mXMAMemory(nullptr)
     #endif
     {
-        assert(mEngine != nullptr);
+        if (!engine)
+            throw std::invalid_argument("AudioEngine is required");
+
         mEngine->RegisterNotify(this, false);
     }
 

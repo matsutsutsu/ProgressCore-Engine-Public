@@ -3,7 +3,11 @@
 
 cmake_minimum_required (VERSION 3.21)
 
-set(DIRECTXTK_VERSION 1.9.2)
+if(POLICY CMP0162)
+   cmake_policy(SET CMP0162 NEW)
+endif()
+
+set(DIRECTXTK_VERSION 1.9.4)
 
 if(XBOX_CONSOLE_TARGET STREQUAL "durango")
   set(CMAKE_TRY_COMPILE_TARGET_TYPE "STATIC_LIBRARY")
@@ -60,14 +64,28 @@ if(XBOX_CONSOLE_TARGET STREQUAL "durango")
   set(BUILD_GAMEINPUT OFF)
   set(BUILD_WGI OFF)
   set(BUILD_XINPUT OFF)
-  set(BUILD_XBOXONE_SHADERS ON)
   set(BUILD_XAUDIO_WIN10 OFF)
   set(BUILD_XAUDIO_WIN8 ON)
+  set(BUILD_XAUDIO_REDIST OFF)
+  set(BUILD_XBOXONE_SHADERS ON)
   set(BUILD_TOOLS OFF)
 elseif(WINDOWS_STORE)
   set(BUILD_GAMEINPUT OFF)
   set(BUILD_WGI ON)
+  set(BUILD_XINPUT OFF)
+  set(BUILD_XAUDIO_WIN10 ON)
+  set(BUILD_XAUDIO_WIN8 OFF)
+  set(BUILD_XAUDIO_REDIST OFF)
   set(BUILD_TOOLS OFF)
+elseif(MINGW)
+  set(BUILD_WGI OFF)
+  set(BUILD_XAUDIO_WIN10 OFF)
+  set(BUILD_XAUDIO_WIN8 OFF)
+  if (NOT BUILD_GAMEINPUT)
+    set(BUILD_XINPUT ON)
+  endif()
+elseif(WIN32 AND (NOT BUILD_GAMEINPUT) AND (NOT BUILD_WGI))
+  set(BUILD_XINPUT ON)
 endif()
 
 include(GNUInstallDirs)
@@ -101,6 +119,8 @@ set(LIBRARY_SOURCES
     Src/DDSTextureLoader.cpp
     Src/DebugEffect.cpp
     Src/DGSLEffect.cpp
+    Src/NPREffect.cpp
+    Src/NPREffectFactory.cpp
     Src/DGSLEffectFactory.cpp
     Src/DirectXHelpers.cpp
     Src/DualPostProcess.cpp
@@ -132,6 +152,7 @@ set(SHADER_SOURCES
     Src/Shaders/AlphaTestEffect.fx
     Src/Shaders/BasicEffect.fx
     Src/Shaders/DebugEffect.fx
+    Src/Shaders/NPREffect.fx
     Src/Shaders/DGSLEffect.fx
     Src/Shaders/DGSLLambert.hlsl
     Src/Shaders/DGSLPhong.hlsl
@@ -145,32 +166,17 @@ set(SHADER_SOURCES
     Src/Shaders/SpriteEffect.fx
     Src/Shaders/ToneMap.fx)
 
-# Xbox-specific extensions
-if(DEFINED XBOX_CONSOLE_TARGET)
-  set(LIBRARY_HEADERS ${LIBRARY_HEADERS}
-      Inc/XboxDDSTextureLoader.h)
-
-  set(LIBRARY_SOURCES ${LIBRARY_SOURCES}
-      Src/XboxDDSTextureLoader.cpp)
-endif()
-
 # These source files are identical in both DX11 and DX12 version.
-set(LIBRARY_HEADERS ${LIBRARY_HEADERS}
-    Inc/GamePad.h
-    Inc/Keyboard.h
-    Inc/Mouse.h
+list(APPEND LIBRARY_HEADERS
     Inc/SimpleMath.h
     Inc/SimpleMath.inl)
 
-set(LIBRARY_SOURCES ${LIBRARY_SOURCES}
+list(APPEND LIBRARY_SOURCES
     Src/BinaryReader.cpp
-    Src/GamePad.cpp
     Src/Geometry.cpp
-    Src/Keyboard.cpp
-    Src/Mouse.cpp
     Src/SimpleMath.cpp)
 
-set(LIBRARY_SOURCES ${LIBRARY_SOURCES}
+list(APPEND LIBRARY_SOURCES
     Src/AlignedNew.h
     Src/Bezier.h
     Src/BinaryReader.h
@@ -184,7 +190,7 @@ set(LIBRARY_SOURCES ${LIBRARY_SOURCES}
     Src/vbo.h
     Src/TeapotData.inc)
 
-set(SHADER_SOURCES ${SHADER_SOURCES}
+list(APPEND SHADER_SOURCES
     Src/Shaders/Common.fxh
     Src/Shaders/Lighting.fxh
     Src/Shaders/PBRCommon.fxh
@@ -193,18 +199,32 @@ set(SHADER_SOURCES ${SHADER_SOURCES}
     Src/Shaders/Structures.fxh
     Src/Shaders/Utilities.fxh)
 
-if(MINGW)
-  set(BUILD_XAUDIO_WIN10 OFF)
-  set(BUILD_XAUDIO_WIN8 OFF)
+# Xbox-specific extensions
+if(DEFINED XBOX_CONSOLE_TARGET)
+  list(APPEND LIBRARY_HEADERS
+      Inc/XboxDDSTextureLoader.h)
+
+  list(APPEND LIBRARY_SOURCES
+      Src/XboxDDSTextureLoader.cpp)
 endif()
 
-if(WINDOWS_STORE
-   OR BUILD_XAUDIO_WIN10 OR BUILD_XAUDIO_WIN8
-   OR BUILD_XAUDIO_REDIST)
-    set(LIBRARY_HEADERS ${LIBRARY_HEADERS}
+if(BUILD_XINPUT OR BUILD_WGI OR BUILD_GAMEINPUT)
+  list(APPEND LIBRARY_HEADERS
+      Inc/GamePad.h
+      Inc/Keyboard.h
+      Inc/Mouse.h)
+
+  list(APPEND LIBRARY_SOURCES
+      Src/GamePad.cpp
+      Src/Keyboard.cpp
+      Src/Mouse.cpp)
+endif()
+
+if(BUILD_XAUDIO_WIN10 OR BUILD_XAUDIO_WIN8 OR BUILD_XAUDIO_REDIST)
+    list(APPEND LIBRARY_HEADERS
         Inc/Audio.h)
 
-    set(LIBRARY_SOURCES ${LIBRARY_SOURCES}
+    list(APPEND LIBRARY_SOURCES
         Audio/AudioEngine.cpp
         Audio/DynamicSoundEffectInstance.cpp
         Audio/SoundCommon.cpp
@@ -229,8 +249,7 @@ else()
     file(TO_CMAKE_PATH ${COMPILED_SHADERS} COMPILED_SHADERS)
 endif()
 
-set(LIBRARY_SOURCES ${LIBRARY_SOURCES}
-    ${COMPILED_SHADERS}/SpriteEffect_SpriteVertexShader.inc)
+list(APPEND LIBRARY_SOURCES ${COMPILED_SHADERS}/SpriteEffect_SpriteVertexShader.inc)
 
 if(BUILD_XBOXONE_SHADERS)
     message(STATUS "Using Shader Model 5.0 for Xbox One for shaders")
@@ -245,18 +264,25 @@ if(NOT USE_PREBUILT_SHADERS)
     else()
         find_program(DIRECTX_FXC_TOOL FXC.EXE
           HINTS "C:/Program Files (x86)/Windows Kits/10/bin/${CMAKE_SYSTEM_VERSION}/${DIRECTX_HOST_ARCH}"
+                "C:/Program Files (x86)/Windows Kits/10/bin/${CMAKE_SYSTEM_VERSION}.0/${DIRECTX_HOST_ARCH}"
                 "C:/Program Files (x86)/Windows Kits/10/bin/${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}/${DIRECTX_HOST_ARCH}")
-        message(STATUS "Using LegacyShaderCompiler found in ${DIRECTX_FXC_TOOL}")
+        if(DIRECTX_FXC_TOOL)
+          message(STATUS "Using LegacyShaderCompiler found in ${DIRECTX_FXC_TOOL}")
+        endif()
     endif()
     add_custom_command(
         OUTPUT "${COMPILED_SHADERS}/SpriteEffect_SpriteVertexShader.inc"
         MAIN_DEPENDENCY "${PROJECT_SOURCE_DIR}/Src/Shaders/CompileShaders.cmd"
         DEPENDS ${SHADER_SOURCES}
         COMMENT "Generating HLSL shaders..."
-        COMMAND ${CMAKE_COMMAND} -E env CompileShadersOutput="${COMPILED_SHADERS}" $<$<BOOL:${DIRECTX_FXC_TOOL}>:LegacyShaderCompiler=${DIRECTX_FXC_TOOL}> CompileShaders.cmd ARGS ${ShaderOpts} > "${COMPILED_SHADERS}/compileshaders.log"
+        COMMAND ${CMAKE_COMMAND} -E env CompileShadersOutput="${COMPILED_SHADERS}" $<$<BOOL:${DIRECTX_FXC_TOOL}>:LegacyShaderCompiler=${DIRECTX_FXC_TOOL}> "${PROJECT_SOURCE_DIR}/Src/Shaders/CompileShaders.cmd" ARGS ${ShaderOpts} > "${COMPILED_SHADERS}/compileshaders.log"
         WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/Src/Shaders"
         USES_TERMINAL)
 endif()
+
+add_library(${PROJECT_NAME})
+
+target_sources(${PROJECT_NAME} PRIVATE ${LIBRARY_HEADERS} ${LIBRARY_SOURCES})
 
 if(WIN32 AND BUILD_SHARED_LIBS)
   message(STATUS "Build library as a DLL")
@@ -265,20 +291,20 @@ if(WIN32 AND BUILD_SHARED_LIBS)
       "${CMAKE_CURRENT_SOURCE_DIR}/build/DirectXTK.rc.in"
       "${CMAKE_CURRENT_BINARY_DIR}/DirectXTK.rc" @ONLY)
 
-  add_library(${PROJECT_NAME} SHARED ${LIBRARY_SOURCES} ${LIBRARY_HEADERS} "${CMAKE_CURRENT_BINARY_DIR}/DirectXTK.rc")
+  target_sources(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/DirectXTK.rc")
 
   target_compile_definitions(${PROJECT_NAME} PRIVATE DIRECTX_TOOLKIT_EXPORT)
   target_compile_definitions(${PROJECT_NAME} INTERFACE DIRECTX_TOOLKIT_IMPORT)
 
   if(XBOX_CONSOLE_TARGET MATCHES "durango")
-    target_link_libraries(${PROJECT_NAME} PRIVATE kernelx.lib combase.lib d3d12_x.lib xi.lib)
+    target_link_libraries(${PROJECT_NAME} PRIVATE kernelx.lib combase.lib d3d11_x.lib xi.lib)
+  else()
+    target_link_libraries(${PROJECT_NAME} PRIVATE d3d11.lib dxguid.lib)
   endif()
 
-  if(MINGW)
+  if(MINGW AND BUILD_XINPUT)
     target_link_libraries(${PROJECT_NAME} PRIVATE xinput1_4.lib)
   endif()
-else()
-  add_library(${PROJECT_NAME} ${LIBRARY_SOURCES} ${LIBRARY_HEADERS})
 endif()
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${COMPILED_SHADERS} Src)
@@ -292,14 +318,13 @@ source_group(Inc REGULAR_EXPRESSION Inc/*.*)
 source_group(Src REGULAR_EXPRESSION Src/*.*)
 
 target_include_directories(${PROJECT_NAME} PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Inc>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/directxtk>)
+   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Inc>)
+target_include_directories(${PROJECT_NAME} SYSTEM INTERFACE
+   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/directxtk>)
 
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_11)
 
-if(WINDOWS_STORE
-   OR BUILD_XAUDIO_WIN10 OR BUILD_XAUDIO_WIN8
-   OR BUILD_XAUDIO_REDIST)
+if(BUILD_XAUDIO_WIN10 OR BUILD_XAUDIO_WIN8 OR BUILD_XAUDIO_REDIST)
     target_include_directories(${PROJECT_NAME} PRIVATE Audio)
 endif()
 
@@ -312,11 +337,12 @@ endif()
 
 if(directxmath_FOUND)
     message(STATUS "Using DirectXMath package")
-    target_link_libraries(${PROJECT_NAME} PRIVATE Microsoft::DirectXMath)
+    if(NOT MINGW)
+      target_link_libraries(${PROJECT_NAME} PRIVATE Microsoft::DirectXMath)
+    endif()
 endif()
 
-if(BUILD_XAUDIO_REDIST
-   AND (NOT BUILD_XAUDIO_WIN10) AND (NOT BUILD_XAUDIO_WIN8) AND (NOT WINDOWS_STORE))
+if(BUILD_XAUDIO_REDIST AND (NOT BUILD_XAUDIO_WIN10) AND (NOT BUILD_XAUDIO_WIN8))
     message(STATUS "Using XAudio2Redist for DirectX Tool Kit for Audio.")
     find_package(xaudio2redist CONFIG REQUIRED)
     target_link_libraries(${PROJECT_NAME} PUBLIC Microsoft::XAudio2Redist)
@@ -380,10 +406,9 @@ install(FILES
   DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PACKAGE_NAME})
 
 # Create pkg-config file
-include(build/JoinPaths.cmake)
 # from: https://github.com/jtojnar/cmake-snips#concatenating-paths-when-building-pkg-config-files
-join_paths(DIRECTXTK_INCLUDEDIR_FOR_PKG_CONFIG "\${prefix}" "${CMAKE_INSTALL_INCLUDEDIR}")
-join_paths(DIRECTXTK_LIBDIR_FOR_PKG_CONFIG "\${prefix}"     "${CMAKE_INSTALL_LIBDIR}")
+cmake_path(APPEND DIRECTXTK_INCLUDEDIR_FOR_PKG_CONFIG "\${prefix}" "${CMAKE_INSTALL_INCLUDEDIR}")
+cmake_path(APPEND DIRECTXTK_LIBDIR_FOR_PKG_CONFIG "\${prefix}"     "${CMAKE_INSTALL_LIBDIR}")
 
 set(DIRECTXTK_DEP_L "")
 if(directxmath_FOUND)
@@ -403,6 +428,8 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/DirectXTK.pc"
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 
 #--- Command-line tools
+set(TOOL_EXES "")
+
 if(BUILD_TOOLS AND WIN32)
   set(TOOL_EXES xwbtool)
 
@@ -425,7 +452,10 @@ if(directxmath_FOUND)
     endforeach()
 endif()
 
-if(TOOL_EXES)
+if (BUILD_TOOLS AND (CMAKE_GENERATOR MATCHES "Visual Studio"))
+  message(STATUS "Building tools: MakeSpriteFont;${TOOL_EXES}")
+  add_subdirectory(MakeSpriteFont)
+elseif(TOOL_EXES)
   message(STATUS "Building tools: ${TOOL_EXES}")
 endif()
 
@@ -438,7 +468,7 @@ if(MSVC)
     if(NO_WCHAR_T)
       message(STATUS "Using non-native wchar_t as unsigned short")
       foreach(t IN LISTS TOOL_EXES ITEMS ${PROJECT_NAME})
-        target_compile_options(${t} PRIVATE "/Zc:wchar_t-")
+        target_compile_options(${t} PRIVATE /Zc:wchar_t-)
       endforeach()
     endif()
 endif()
@@ -452,13 +482,14 @@ endforeach()
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|IntelLLVM")
     set(WarningsLib -Wall -Wpedantic -Wextra)
     if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 16.0)
-        list(APPEND WarningsLib "-Wno-unsafe-buffer-usage")
+        list(APPEND WarningsLib -Wno-unsafe-buffer-usage)
     endif()
     target_compile_options(${PROJECT_NAME} PRIVATE ${WarningsLib})
 
-    set(WarningsEXE ${WarningsLib} "-Wno-c++98-compat" "-Wno-c++98-compat-pedantic" "-Wno-switch-default"
-        "-Wno-double-promotion" "-Wno-exit-time-destructors" "-Wno-gnu-anonymous-struct"
-        "-Wno-missing-prototypes" "-Wno-nested-anon-types" "-Wno-unused-const-variable")
+    set(WarningsEXE ${WarningsLib}
+      -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-switch-default
+      -Wno-double-promotion -Wno-exit-time-destructors -Wno-gnu-anonymous-struct
+      -Wno-missing-prototypes -Wno-nested-anon-types -Wno-unused-const-variable -Wno-padded)
     foreach(t IN LISTS TOOL_EXES)
       target_compile_options(${t} PRIVATE ${WarningsEXE})
     endforeach()
@@ -470,8 +501,6 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
         target_compile_options(${t} PRIVATE "-Wno-attributes")
       endif()
     endforeach()
-elseif(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
-    set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 14)
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     if(BUILD_SHARED_LIBS)
       target_compile_options(${PROJECT_NAME} PRIVATE /wd4251 /wd4275)
@@ -513,6 +542,7 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     endforeach()
 
     if(BUILD_FUZZING AND (NOT WINDOWS_STORE))
+      # Prevent fuzzing builds (which is otherwise configured as a Release mode) from disabling assertions
       string(REPLACE "/DNDEBUG" "" CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE})
       string(REPLACE "/DNDEBUG" "" CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_CXX_FLAGS_RELWITHDEBINFO})
 
@@ -553,7 +583,7 @@ if(WIN32)
     endif()
 endif()
 
-if(BUILD_TOOLS AND WIN32)
+if(BUILD_TOOLS AND WIN32 AND (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR))
     set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT xwbtool)
 endif()
 

@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 //
 // http://go.microsoft.com/fwlink/?LinkId=248926
-// http://go.microsoft.com/fwlink/?LinkId=248929
-// http://go.microsoft.com/fwlink/?LinkID=615561
+// https://go.microsoft.com/fwlink/?LinkId=248929
+// https://go.microsoft.com/fwlink/?LinkID=615561
 
 
 // Vertex shader input structures.
@@ -58,6 +58,21 @@ struct VSInputNmTxVc
     float3 Normal   : NORMAL;
     float2 TexCoord : TEXCOORD0;
     float4 Color    : COLOR;
+};
+
+struct VSInputNmInst
+{
+    float4 Position    : SV_Position;
+    float3 Normal      : NORMAL;
+    float4x3 Transform : InstMatrix;
+};
+
+struct VSInputNmVcInst
+{
+    float4 Position    : SV_Position;
+    float3 Normal      : NORMAL;
+    float4 Color       : COLOR;
+    float4x3 Transform : InstMatrix;
 };
 
 struct VSInputNmTxInst

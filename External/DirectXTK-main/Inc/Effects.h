@@ -4,7 +4,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
-// http://go.microsoft.com/fwlink/?LinkId=248929
+// https://go.microsoft.com/fwlink/?LinkId=248929
 //--------------------------------------------------------------------------------------
 
 #pragma once
@@ -225,7 +225,7 @@ namespace DirectX
             // Vertex color setting.
             DIRECTX_TOOLKIT_API void __cdecl SetVertexColorEnabled(bool value);
 
-            // Texture setting.
+            // Texture settings.
             DIRECTX_TOOLKIT_API void __cdecl SetTextureEnabled(bool value);
             DIRECTX_TOOLKIT_API void __cdecl SetTexture(_In_opt_ ID3D11ShaderResourceView* value);
 
@@ -578,13 +578,14 @@ namespace DirectX
             static constexpr int MaxTextures = 8;
 
         protected:
-            // Private implementation.
+            // Internal implementation.
             class Impl;
 
             std::unique_ptr<Impl> pImpl;
 
             DIRECTX_TOOLKIT_API DGSLEffect(_In_ ID3D11Device* device, _In_opt_ ID3D11PixelShader* pixelShader, bool skinningEnabled);
 
+        private:
             // Unsupported interface methods.
             DIRECTX_TOOLKIT_API void __cdecl SetPerPixelLighting(bool value) override;
         };
@@ -604,7 +605,7 @@ namespace DirectX
 
             ~SkinnedDGSLEffect() override;
 
-            // Animation setting.
+            // Animation settings.
             void __cdecl SetWeightsPerVertex(int value) override;
             void __cdecl SetBoneTransforms(_In_reads_(count) XMMATRIX const* value, size_t count) override;
             void __cdecl ResetBoneTransforms() override;
@@ -680,13 +681,14 @@ namespace DirectX
             DIRECTX_TOOLKIT_API void __cdecl SetInstancingEnabled(bool value);
 
         protected:
-            // Private implementation.
+            // Internal implementation.
             class Impl;
 
             std::unique_ptr<Impl> pImpl;
 
             DIRECTX_TOOLKIT_API NormalMapEffect(_In_ ID3D11Device* device, bool skinningEnabled);
 
+        private:
             // Unsupported interface methods.
             DIRECTX_TOOLKIT_API void __cdecl SetLightingEnabled(bool value) override;
             DIRECTX_TOOLKIT_API void __cdecl SetPerPixelLighting(bool value) override;
@@ -786,13 +788,14 @@ namespace DirectX
             DIRECTX_TOOLKIT_API void __cdecl SetRenderTargetSizeInPixels(int width, int height);
 
         protected:
-            // Private implementation.
+            // Internal implementation.
             class Impl;
 
             std::unique_ptr<Impl> pImpl;
 
             DIRECTX_TOOLKIT_API PBREffect(_In_ ID3D11Device* device, bool skinningEnabled);
 
+        private:
             // Unsupported interface methods.
             DIRECTX_TOOLKIT_API void __cdecl SetLightingEnabled(bool value) override;
             DIRECTX_TOOLKIT_API void __cdecl SetPerPixelLighting(bool value) override;
@@ -876,6 +879,129 @@ namespace DirectX
             class Impl;
 
             std::unique_ptr<Impl> pImpl;
+        };
+
+        //------------------------------------------------------------------------------
+        // Built-in shader for non-photorealistic rendering
+        class NPREffect : public IEffect, public IEffectMatrices, public IEffectLights
+        {
+        public:
+            enum Mode : uint32_t
+            {
+                Mode_Cel = 0,       // Cel (toon) shading
+                Mode_Gooch,         // Gooch shading
+                Mode_MatCap,        // Material Capture shading
+            };
+
+            DIRECTX_TOOLKIT_API inline explicit NPREffect(_In_ ID3D11Device* device) :
+                NPREffect(device, false)
+            {}
+
+            DIRECTX_TOOLKIT_API NPREffect(NPREffect&&) noexcept;
+            DIRECTX_TOOLKIT_API NPREffect& operator= (NPREffect&&) noexcept;
+
+            NPREffect(NPREffect const&) = delete;
+            NPREffect& operator= (NPREffect const&) = delete;
+
+            DIRECTX_TOOLKIT_API ~NPREffect() override;
+
+            // IEffect methods.
+            DIRECTX_TOOLKIT_API void __cdecl Apply(_In_ ID3D11DeviceContext* deviceContext) override;
+
+            DIRECTX_TOOLKIT_API void __cdecl GetVertexShaderBytecode(
+                _Out_ void const** pShaderByteCode,
+                _Out_ size_t* pByteCodeLength) override;
+
+            // Camera settings.
+            DIRECTX_TOOLKIT_API void XM_CALLCONV SetWorld(FXMMATRIX value) override;
+            DIRECTX_TOOLKIT_API void XM_CALLCONV SetView(FXMMATRIX value) override;
+            DIRECTX_TOOLKIT_API void XM_CALLCONV SetProjection(FXMMATRIX value) override;
+            DIRECTX_TOOLKIT_API void XM_CALLCONV SetMatrices(FXMMATRIX world, CXMMATRIX view, CXMMATRIX projection) override;
+
+            // Material settings.
+            DIRECTX_TOOLKIT_API void XM_CALLCONV SetDiffuseColor(FXMVECTOR value);
+            DIRECTX_TOOLKIT_API void XM_CALLCONV SetSpecularColor(FXMVECTOR value);
+            DIRECTX_TOOLKIT_API void __cdecl SetSpecularThreshold(float threshold, float smoothing);
+            DIRECTX_TOOLKIT_API void __cdecl DisableSpecular();
+            DIRECTX_TOOLKIT_API void __cdecl SetAlpha(float value);
+            DIRECTX_TOOLKIT_API void XM_CALLCONV SetColorAndAlpha(FXMVECTOR value);
+
+            // Light settings.
+            DIRECTX_TOOLKIT_API void XM_CALLCONV SetLightDirection(int whichLight, FXMVECTOR value) override;
+            DIRECTX_TOOLKIT_API void __cdecl EnableDefaultLighting() override;
+
+            static constexpr int MaxDirectionalLights = 1;
+
+            // Texture settings.
+            DIRECTX_TOOLKIT_API void __cdecl SetTextureEnabled(bool value);
+            DIRECTX_TOOLKIT_API void __cdecl SetTexture(_In_opt_ ID3D11ShaderResourceView* value);
+
+            // Shader mode setting.
+            DIRECTX_TOOLKIT_API void __cdecl SetMode(Mode mode);
+
+            // Cel shading setting.
+            DIRECTX_TOOLKIT_API void __cdecl SetCelShaderBands(int bands);
+
+            // Gooch shading settings.
+            DIRECTX_TOOLKIT_API void XM_CALLCONV SetGoochCoolColor(FXMVECTOR value, float alpha = 0.25f);
+            DIRECTX_TOOLKIT_API void XM_CALLCONV SetGoochWarmColor(FXMVECTOR value, float beta = 0.25f);
+
+            // MatCap shading setting.
+            DIRECTX_TOOLKIT_API void __cdecl SetMatCap(_In_opt_ ID3D11ShaderResourceView* value);
+
+            // Rim lighting settings.
+            DIRECTX_TOOLKIT_API void XM_CALLCONV SetRimLightingColor(FXMVECTOR value);
+            DIRECTX_TOOLKIT_API void __cdecl SetRimLightingPower(float power);
+            DIRECTX_TOOLKIT_API void __cdecl SetRimLightingIntensity(float strength);
+            DIRECTX_TOOLKIT_API void __cdecl SetRimLightingRange(float start, float end);
+            DIRECTX_TOOLKIT_API void __cdecl DisableRimLighting();
+
+            // Vertex color setting.
+            DIRECTX_TOOLKIT_API void __cdecl SetVertexColorEnabled(bool value);
+
+            // Normal compression settings.
+            DIRECTX_TOOLKIT_API void __cdecl SetBiasedVertexNormals(bool value);
+
+            // Instancing settings.
+            DIRECTX_TOOLKIT_API void __cdecl SetInstancingEnabled(bool value);
+
+        protected:
+            // Internal implementation.
+            class Impl;
+
+            std::unique_ptr<Impl> pImpl;
+
+            DIRECTX_TOOLKIT_API NPREffect(_In_ ID3D11Device* device, bool skinningEnabled);
+
+        private:
+            // Unsupported interface methods.
+            DIRECTX_TOOLKIT_API void __cdecl SetLightingEnabled(bool value) override;
+            DIRECTX_TOOLKIT_API void __cdecl SetPerPixelLighting(bool value) override;
+            DIRECTX_TOOLKIT_API void XM_CALLCONV SetAmbientLightColor(FXMVECTOR value) override;
+            DIRECTX_TOOLKIT_API void __cdecl SetLightEnabled(int whichLight, bool value) override;
+            DIRECTX_TOOLKIT_API void XM_CALLCONV SetLightDiffuseColor(int whichLight, FXMVECTOR value) override;
+            DIRECTX_TOOLKIT_API void XM_CALLCONV SetLightSpecularColor(int whichLight, FXMVECTOR value) override;
+        };
+
+        class DIRECTX_TOOLKIT_API SkinnedNPREffect : public NPREffect, public IEffectSkinning
+        {
+        public:
+            explicit SkinnedNPREffect(_In_ ID3D11Device* device) :
+                NPREffect(device, true)
+            {}
+
+            SkinnedNPREffect(SkinnedNPREffect&&) = default;
+            SkinnedNPREffect& operator= (SkinnedNPREffect&&) = default;
+
+            SkinnedNPREffect(SkinnedNPREffect const&) = delete;
+            SkinnedNPREffect& operator= (SkinnedNPREffect const&) = delete;
+
+            ~SkinnedNPREffect() override;
+
+            // Animation settings.
+            void __cdecl SetWeightsPerVertex(int value) override;
+            void __cdecl SetBoneTransforms(_In_reads_(count) XMMATRIX const* value, size_t count) override;
+            void __cdecl ResetBoneTransforms() override;
         };
 
         //------------------------------------------------------------------------------
@@ -1018,6 +1144,55 @@ namespace DirectX
             DIRECTX_TOOLKIT_API void __cdecl EnableForceSRGB(bool forceSRGB) noexcept;
 
             DIRECTX_TOOLKIT_API void __cdecl SetDirectory(_In_opt_z_ const wchar_t* path) noexcept;
+
+            // Properties.
+            DIRECTX_TOOLKIT_API ID3D11Device* GetDevice() const noexcept;
+
+        private:
+            // Private implementation.
+            class Impl;
+
+            std::shared_ptr<Impl> pImpl;
+        };
+
+
+        // Factory for Non-Photorealistic Rendering (NPR)
+        class NPREffectFactory : public IEffectFactory
+        {
+        public:
+            DIRECTX_TOOLKIT_API explicit NPREffectFactory(_In_ ID3D11Device* device);
+
+            DIRECTX_TOOLKIT_API NPREffectFactory(NPREffectFactory&&) noexcept;
+            DIRECTX_TOOLKIT_API NPREffectFactory& operator= (NPREffectFactory&&) noexcept;
+
+            NPREffectFactory(NPREffectFactory const&) = delete;
+            NPREffectFactory& operator= (NPREffectFactory const&) = delete;
+
+            DIRECTX_TOOLKIT_API ~NPREffectFactory() override;
+
+            // IEffectFactory methods.
+            DIRECTX_TOOLKIT_API std::shared_ptr<IEffect> __cdecl CreateEffect(
+                _In_ const EffectInfo& info,
+                _In_opt_ ID3D11DeviceContext* deviceContext) override;
+            DIRECTX_TOOLKIT_API void __cdecl CreateTexture(
+                _In_z_ const wchar_t* name,
+                _In_opt_ ID3D11DeviceContext* deviceContext,
+                _Outptr_ ID3D11ShaderResourceView** textureView) override;
+
+            // Settings.
+            DIRECTX_TOOLKIT_API void __cdecl ReleaseCache();
+
+            DIRECTX_TOOLKIT_API void __cdecl SetSharing(bool enabled) noexcept;
+
+            DIRECTX_TOOLKIT_API void __cdecl EnableForceSRGB(bool forceSRGB) noexcept;
+
+            DIRECTX_TOOLKIT_API void __cdecl SetDirectory(_In_opt_z_ const wchar_t* path) noexcept;
+
+            DIRECTX_TOOLKIT_API void __cdecl SetMode(NPREffect::Mode mode) noexcept;
+
+            DIRECTX_TOOLKIT_API void __cdecl SetDefaultMatCap(_In_opt_ ID3D11ShaderResourceView* textureView) noexcept;
+
+            DIRECTX_TOOLKIT_API void __cdecl SetEmissiveAsMatCap(bool value) noexcept;
 
             // Properties.
             DIRECTX_TOOLKIT_API ID3D11Device* GetDevice() const noexcept;

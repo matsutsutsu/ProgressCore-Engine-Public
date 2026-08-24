@@ -8,7 +8,6 @@
 #include <Jolt/ObjectStream/TypeDeclarations.h>
 #include <Jolt/Core/StreamIn.h>
 #include <Jolt/Core/StreamOut.h>
-#include <Jolt/Core/StreamUtils.h>
 
 JPH_NAMESPACE_BEGIN
 

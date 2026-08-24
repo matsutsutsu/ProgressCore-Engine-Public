@@ -4,7 +4,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
-// http://go.microsoft.com/fwlink/?LinkId=248929
+// https://go.microsoft.com/fwlink/?LinkId=248929
 //--------------------------------------------------------------------------------------
 
 #include "pch.h"
@@ -70,11 +70,6 @@ public:
     {
         if (!device)
             throw std::invalid_argument("Direct3D device is null");
-
-        if (device->GetFeatureLevel() < D3D_FEATURE_LEVEL_10_0)
-        {
-            mUseNormalMapEffect = false;
-        }
     }
 
     Impl(const Impl&) = delete;
@@ -87,15 +82,16 @@ public:
     void CreateTexture(_In_z_ const wchar_t* texture, _In_opt_ ID3D11DeviceContext* deviceContext, _Outptr_ ID3D11ShaderResourceView** textureView);
 
     void ReleaseCache();
-    void SetSharing(bool enabled) noexcept { mSharing = enabled; }
-    void EnableNormalMapEffect(bool enabled) noexcept { mUseNormalMapEffect = enabled; }
-    void EnableForceSRGB(bool forceSRGB) noexcept { mForceSRGB = forceSRGB; }
 
     static SharedResourcePool<ID3D11Device*, Impl> instancePool;
 
     wchar_t mPath[MAX_PATH];
 
     ComPtr<ID3D11Device> mDevice;
+
+    bool mSharing;
+    bool mUseNormalMapEffect;
+    bool mForceSRGB;
 
 private:
     using EffectCache = std::map< std::wstring, std::shared_ptr<IEffect> >;
@@ -107,10 +103,6 @@ private:
     EffectCache  mEffectNormalMap;
     EffectCache  mEffectNormalMapSkinned;
     TextureCache mTextureCache;
-
-    bool mSharing;
-    bool mUseNormalMapEffect;
-    bool mForceSRGB;
 
     std::mutex mutex;
 };
@@ -513,17 +505,17 @@ void EffectFactory::ReleaseCache()
 
 void EffectFactory::SetSharing(bool enabled) noexcept
 {
-    pImpl->SetSharing(enabled);
+    pImpl->mSharing = enabled;
 }
 
 void EffectFactory::EnableNormalMapEffect(bool enabled) noexcept
 {
-    pImpl->EnableNormalMapEffect(enabled);
+    pImpl->mUseNormalMapEffect = enabled;
 }
 
 void EffectFactory::EnableForceSRGB(bool forceSRGB) noexcept
 {
-    pImpl->EnableForceSRGB(forceSRGB);
+    pImpl->mForceSRGB = forceSRGB;
 }
 
 void EffectFactory::SetDirectory(_In_opt_z_ const wchar_t* path) noexcept
