@@ -4,7 +4,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
-// http://go.microsoft.com/fwlink/?LinkId=248929
+// https://go.microsoft.com/fwlink/?LinkId=248929
 //--------------------------------------------------------------------------------------
 
 #include "pch.h"
@@ -109,6 +109,8 @@ public:
     bool mSetViewport;
     D3D11_VIEWPORT mViewPort;
 
+    XMMATRIX GetViewportTransform(_In_ ID3D11DeviceContext* deviceContext, DXGI_MODE_ROTATION rotation);
+
 private:
     // Implementation helper methods.
     void GrowSpriteQueue();
@@ -125,7 +127,6 @@ private:
         FXMVECTOR inverseTextureSize);
 
     static XMVECTOR GetTextureSize(_In_ ID3D11ShaderResourceView* texture);
-    XMMATRIX GetViewportTransform(_In_ ID3D11DeviceContext* deviceContext, DXGI_MODE_ROTATION rotation);
 
 
     // Constants.
@@ -234,6 +235,16 @@ const XMFLOAT2 SpriteBatch::Float2Zero(0, 0);
 SpriteBatch::Impl::DeviceResources::DeviceResources(_In_ ID3D11Device* device)
     : stateObjects(device)
 {
+    if (!device)
+    {
+        throw std::invalid_argument("Direct3D device is null");
+    }
+
+    if (device->GetFeatureLevel() < D3D_FEATURE_LEVEL_10_0)
+    {
+        throw std::runtime_error("DirectX Tool Kit requires Feature Level 10.0 or later");
+    }
+
     CreateShaders(device);
     CreateIndexBuffer(device);
 }
@@ -1191,4 +1202,11 @@ void SpriteBatch::SetViewport(const D3D11_VIEWPORT& viewPort)
 {
     pImpl->mSetViewport = true;
     pImpl->mViewPort = viewPort;
+}
+
+
+_Use_decl_annotations_
+void SpriteBatch::GetViewportTransform(ID3D11DeviceContext* deviceContext, XMMATRIX& transformMatrix) const
+{
+    transformMatrix = pImpl->GetViewportTransform(deviceContext, pImpl->mRotation);
 }

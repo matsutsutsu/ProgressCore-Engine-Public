@@ -1,10 +1,28 @@
 # DirectX Tool Kit for DirectX 11
 
-http://go.microsoft.com/fwlink/?LinkId=248929
+https://go.microsoft.com/fwlink/?LinkId=248929
 
 Release available for download on [GitHub](https://github.com/microsoft/DirectXTK/releases)
 
 ## Release History
+
+### May 7, 2026
+* SpriteFont file loader updated to fix a potential overflow issue in 32-bit (x86) builds
+* XWB reader updated to resolve a potential overflow issue when reading a malformed wavebank file
+* CMake project updates
+* Minor comments cleanup
+
+### March 31, 2026
+* Added SpriteFont **SetPixelAlignment** method for opt-in pixel snapping support
+* VS 2026 support
+* Retire VS 2019 projects
+* CMake project updates
+* MakeSpriteFont, xbwtool: updated to support feedback
+
+### October 27, 2025
+* GamePad, Keyboard, and Mouse _GameInput_ implementation now supports v0 - v3 of the API
+* Code review, particularly for invalid args validation
+* CMake project update to use 3.21 minimum
 
 ### July 9, 2025
 * GamePad, Keyboard, and Mouse _GameInput_ implementation now supports v0, v1, and v2 of the API

@@ -4,7 +4,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
-// http://go.microsoft.com/fwlink/?LinkID=615561
+// https://go.microsoft.com/fwlink/?LinkID=615561
 //--------------------------------------------------------------------------------------
 
 #include "pch.h"
@@ -262,11 +262,6 @@ PBREffect::Impl::Impl(_In_ ID3D11Device* device)
     lightColor{},
     boneConstants{}
 {
-    if (device->GetFeatureLevel() < D3D_FEATURE_LEVEL_10_0)
-    {
-        throw std::runtime_error("PBREffect requires Feature Level 10.0 or later");
-    }
-
     static_assert(static_cast<int>(std::size(EffectBase<PBREffectTraits>::VertexShaderIndices)) == PBREffectTraits::ShaderPermutationCount, "array/max mismatch");
     static_assert(static_cast<int>(std::size(EffectBase<PBREffectTraits>::VertexShaderBytecode)) == PBREffectTraits::VertexShaderCount, "array/max mismatch");
     static_assert(static_cast<int>(std::size(EffectBase<PBREffectTraits>::PixelShaderBytecode)) == PBREffectTraits::PixelShaderCount, "array/max mismatch");
@@ -356,33 +351,12 @@ void PBREffect::Impl::Apply(_In_ ID3D11DeviceContext* deviceContext)
     constants.prevWorldViewProj = constants.worldViewProj;
 
     // Compute derived parameter values.
-    matrices.SetConstants(dirtyFlags, constants.worldViewProj);
-
-    // World inverse transpose matrix.
-    if (dirtyFlags & EffectDirtyFlags::WorldInverseTranspose)
-    {
-        constants.world = XMMatrixTranspose(matrices.world);
-
-        const XMMATRIX worldInverse = XMMatrixInverse(nullptr, matrices.world);
-
-        constants.worldInverseTranspose[0] = worldInverse.r[0];
-        constants.worldInverseTranspose[1] = worldInverse.r[1];
-        constants.worldInverseTranspose[2] = worldInverse.r[2];
-
-        dirtyFlags &= ~EffectDirtyFlags::WorldInverseTranspose;
-        dirtyFlags |= EffectDirtyFlags::ConstantBuffer;
-    }
-
-    // Eye position vector.
-    if (dirtyFlags & EffectDirtyFlags::EyePosition)
-    {
-        const XMMATRIX viewInverse = XMMatrixInverse(nullptr, matrices.view);
-
-        constants.eyePosition = viewInverse.r[3];
-
-        dirtyFlags &= ~EffectDirtyFlags::EyePosition;
-        dirtyFlags |= EffectDirtyFlags::ConstantBuffer;
-    }
+    matrices.SetConstants(
+        dirtyFlags,
+        constants.world,
+        constants.worldInverseTranspose,
+        constants.worldViewProj,
+        constants.eyePosition);
 
     if (weightsPerVertex > 0)
     {
