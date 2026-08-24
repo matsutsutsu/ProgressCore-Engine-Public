@@ -31,7 +31,7 @@
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/Combat/CombatComponents.h" // HitboxLifetimeComponent
 
-struct AnimEventSpawnHitboxMessage; // 前方宣言（実体は .cpp で include）
+struct AnimEventSpawnHitboxMessage; // 前方宣言
 
 /// @brief アニメ由来の球状ヒットボックス生成と、その寿命管理を担うシステム。
 class SpawnHitboxSystem

@@ -59,7 +59,7 @@ void PlayerInputSystem::Update(float dt)
         player.cleaveRequested       = isCleaving; // 切り払い(右クリック)はプレイヤー固有意思へ
         player.lockOnToggleRequested = isLockOn;  // ロックオン要求をコンポーネントへ渡す
 
-        });
+    });
 }
 
 

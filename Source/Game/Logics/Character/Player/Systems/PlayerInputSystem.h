@@ -8,8 +8,7 @@
 #include "Engine/Physics/Components/Character/CharacterMovementInputComponent.h"
 
 
-class PlayerInputSystem : public CCL::ECS::IfSystem<
-    PlayerInputSystem,
+class PlayerInputSystem : public CCL::ECS::IfSystem<PlayerInputSystem,
     CCL::ECS::Write<CharacterMovementInputComponent>,
     CCL::ECS::Write<PlayerComponent>>
 {

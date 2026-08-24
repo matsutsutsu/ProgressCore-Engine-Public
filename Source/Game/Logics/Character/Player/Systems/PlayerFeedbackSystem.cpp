@@ -19,8 +19,8 @@
 
 namespace
 {
-inline float Lerp(float a, float b, float t) { return a + (b - a) * t; }
-} // namespace
+    inline float Lerp(float a, float b, float t) { return a + (b - a) * t; }
+} 
 
 PlayerFeedbackSystem::PlayerFeedbackSystem() : IfSystem("PlayerFeedbackSystem") {}
 
