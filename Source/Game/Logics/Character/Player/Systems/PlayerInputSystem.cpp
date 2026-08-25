@@ -30,8 +30,14 @@ void PlayerInputSystem::Update(float dt)
     //   ※「早期 return」ではなく「中立値を書き込む」のが要点。return するだけだと直前の移動方向や
     //     cleaveRequested がコンポーネントに残り、動きっぱなし／技が押されっぱなしで暴発し続ける。
     //   プレイヤー入力を読むのは本システムだけなので、ここで取得を止めれば全操作が一括で止まる。
-    const bool blockGameInput =
-        m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().uiInteract;
+    //   カットシーン中(cinematic)も同じ経路で止める。導入カメラ演出の最中に
+    //   プレイヤーが動くと、演出が終わった瞬間に想定外の位置にいることになる。
+    bool blockGameInput = false;
+    if (m_world->HasResource<GameFlowState>())
+    {
+        const auto &flow = m_world->GetResource<GameFlowState>();
+        blockGameInput   = flow.uiInteract || flow.cinematic;
+    }
 
     // 既定は「入力なし(中立)」。ブロック中はこの中立値のまま下の ForEach で書き込む＝停止。
     Vector3 moveDir     = Vector3::Zero;

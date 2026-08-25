@@ -1722,6 +1722,12 @@
     <ClInclude Include="Source\Engine\Camera\Systems\CameraActionTPSSystem.h">
       <Filter>Source\Engine\Camera\Systems\_Game</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Camera\Components\CameraBodyIntroOrbitComponent.h">
+      <Filter>Source\Engine\Camera\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Camera\Systems\CameraIntroOrbitSystem.h">
+      <Filter>Source\Engine\Camera\Systems\_Game</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\CameraTargetBindSystem.h">
       <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
     </ClInclude>
@@ -2739,6 +2745,12 @@
       <Filter>Source\Engine\Camera\Systems\_Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Camera\Systems\CameraActionTPSSystem.cpp">
+      <Filter>Source\Engine\Camera\Systems\_Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Camera\Components\CameraBodyIntroOrbitComponentMeta.cpp">
+      <Filter>Source\Engine\Camera\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Camera\Systems\CameraIntroOrbitSystem.cpp">
       <Filter>Source\Engine\Camera\Systems\_Game</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Camera\Components\CameraDollyCartComponentMeta.cpp">

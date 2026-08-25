@@ -60,6 +60,25 @@
         {
             "position": [
                 0.0,
+                57.5,
+                94.3
+            ],
+            "prefab": "Assets/Prefabs/Camera/BossIntroCamera.json",
+            "rotation": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "position": [
+                0.0,
                 -50.0,
                 0.0
             ],

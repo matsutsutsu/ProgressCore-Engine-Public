@@ -51,7 +51,7 @@ class CameraShakeSystem : public CCL::ECS::IfSystem<CameraShakeSystem,
     std::vector<const char *> GetRunAfter() const override
     {
         return {"CameraActionTPSSystem", "CameraFollowSystem", "CameraLookAtSystem",
-                "CameraFreeControlSystem"};
+                "CameraFreeControlSystem", "CameraIntroOrbitSystem"};
     }
 
   private:

@@ -14,6 +14,7 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Platform/Core/Logger.h"
+#include "Engine/Core/App/GameFlowState.h" // カットシーン中はAIを止める
 
 #include <algorithm>
 
@@ -56,7 +57,13 @@ void BehaviorTreeSystem::Initialize()
 
 void BehaviorTreeSystem::Update(float rawDt)
 {
-    ForEachWithIDParallel([this](EntityID entity,
+    // カットシーン中(導入カメラ演出など)はAIを凍らせる。
+    //   並列 ForEach の外で1回だけ読む（中で毎回リソース検索しない、かつ
+    //   ワーカースレッドから同時にリソースを引かないため）。
+    const bool cinematic =
+        m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().cinematic;
+
+    ForEachWithIDParallel([this, cinematic](EntityID entity,
                                  BehaviorTreeComponent& btComp,
                                  const TransformComponent& trans,
                                  const TimeStateComponent& time)
@@ -96,7 +103,9 @@ void BehaviorTreeSystem::Update(float rawDt)
         //   タイマー減算より前に抜ける。止めている間も Wait が進むと、再開した瞬間に
         //   溜まった分が一気に消化されて枝が飛ぶ。木は「凍る」のが正しい。
         //   状態表示だけは消しておかないと、BTウィンドウに緑が残って動いて見える。
-        if (btComp.debugPaused) {
+        //   カットシーン中も同じ扱い（凍らせる）。演出を見ている間にボスが
+        //   攻撃を始めていると、演出が明けた瞬間に被弾している事故が起きる。
+        if (btComp.debugPaused || cinematic) {
             std::fill(btComp.debugNodeStates.begin(), btComp.debugNodeStates.end(), BTDebugState::None);
             btComp.runningNodeId = 0xFFFF;
             return;

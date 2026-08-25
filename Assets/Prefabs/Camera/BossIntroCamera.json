@@ -1,0 +1,63 @@
+{
+    "entities": [
+        {
+            "components": {
+                "CameraBodyIntroOrbit": {
+                    "activePriority": 300,
+                    "allowSkip": true,
+                    "duration": 5.0,
+                    "easeMode": 2,
+                    "endAngle": -90.0,
+                    "endFov": 40.0,
+                    "endHeight": 2.0,
+                    "endRadius": 48.0,
+                    "idlePriority": -1000,
+                    "playOnStart": true,
+                    "startAngle": 90.0,
+                    "startDelay": 0.2,
+                    "startFov": 65.0,
+                    "startHeight": 45.0,
+                    "startRadius": 100.0,
+                    "targetOffset": [
+                        0.0,
+                        12.0,
+                        0.0
+                    ]
+                },
+                "Name": {
+                    "name": "BossIntroCamera"
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "position": [
+                        0.0,
+                        57.5,
+                        94.3
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "VirtualCamera": {
+                    "blendTime": 1.0,
+                    "farClip": 3000.0,
+                    "fov": 65.0,
+                    "nearClip": 0.10000000149011612,
+                    "priority": 300
+                }
+            },
+            "lid": 1
+        }
+    ],
+    "magic": 1397506883,
+    "name": "BossIntroCamera",
+    "version": 1
+}

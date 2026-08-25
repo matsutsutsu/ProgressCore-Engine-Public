@@ -416,6 +416,8 @@
     <ClInclude Include="Source\Engine\Camera\Components\CameraDollyCartComponent.h" />
     <ClInclude Include="Source\Engine\Camera\Components\VirtualCameraComponents.h" />
     <ClInclude Include="Source\Engine\Camera\Systems\CameraActionTPSSystem.h" />
+    <ClInclude Include="Source\Engine\Camera\Components\CameraBodyIntroOrbitComponent.h" />
+    <ClInclude Include="Source\Engine\Camera\Systems\CameraIntroOrbitSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\CameraTargetBindSystem.h" />
     <ClInclude Include="Source\Engine\Camera\Systems\CameraBrainSystem.h" />
     <ClInclude Include="Source\Engine\Camera\Systems\CameraDollySystem.h" />
@@ -973,6 +975,8 @@
     <ClCompile Include="Source\Engine\Camera\Components\CameraDollyCartComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Camera\Components\VirtualCameraComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Camera\Systems\CameraActionTPSSystem.cpp" />
+    <ClCompile Include="Source\Engine\Camera\Components\CameraBodyIntroOrbitComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Camera\Systems\CameraIntroOrbitSystem.cpp" />
     <ClCompile Include="Source\Engine\Camera\Systems\CameraBrainSystem.cpp" />
     <ClCompile Include="Source\Engine\Camera\Systems\CameraDollySystem.cpp" />
     <ClCompile Include="Source\Engine\Camera\Systems\CameraListenerSystem.cpp" />
