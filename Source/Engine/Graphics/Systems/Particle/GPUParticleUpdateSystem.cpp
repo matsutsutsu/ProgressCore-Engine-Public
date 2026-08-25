@@ -97,9 +97,12 @@ static GpuData::CbParticleDynamic BuildDynamicCb(
 }
 
 // =========================================================================
-void GPUParticleUpdateSystem::InitializeParticle(ID3D11Device* device)
+void GPUParticleUpdateSystem::Initialize()
 {
-    ZoneScopedN("GPUParticle: InitializeParticle (first frame)");
+    ZoneScopedN("GPUParticle: Initialize");
+
+    ID3D11Device* device = Graphics::Instance().GetDevice();
+    if (!device) return;
 
     m_device = device;
     {
@@ -121,11 +124,6 @@ void GPUParticleUpdateSystem::InitializeParticle(ID3D11Device* device)
 void GPUParticleUpdateSystem::Update(float dt)
 {
     ZoneScopedN("GPUParticleUpdateSystem::Update");
-
-    if (!m_isLoaded) {
-        InitializeParticle(Graphics::Instance().GetDevice());
-        m_isLoaded = true;
-    }
 
     ID3D11DeviceContext* dc = Graphics::Instance().GetDeviceContext();
     if (!dc || !m_computeShader) return;

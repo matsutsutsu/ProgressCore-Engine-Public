@@ -16,7 +16,11 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
+// Shipping(Release)ではImGui本体もインクルードパスも構成から外れるため、
+// エディタ有効時のみ取り込む。
+#ifdef ENABLE_EDITOR
 #include <imgui.h>
+#endif
 #include <algorithm>
 
 namespace
@@ -108,6 +112,7 @@ void PlayerFeedbackSystem::Update(float dt)
 
 void PlayerFeedbackSystem::OnGui()
 {
+#ifdef ENABLE_EDITOR
     // =========================================================================
     // Camera Shake
     // =========================================================================
@@ -285,6 +290,7 @@ void PlayerFeedbackSystem::OnGui()
 
         ImGui::TreePop();
     }
+#endif
 }
 
 // ===================================================================================

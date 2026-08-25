@@ -18,6 +18,7 @@ class JustEvadeSystem : public CCL::ECS::IfSystem<JustEvadeSystem,
     JustEvadeSystem()
         : IfSystem("JustEvadeSystem")
     {
+        hasGui = true; // チェインHUDを OnGui で前面描画する
     }
 
     void Initialize() override;

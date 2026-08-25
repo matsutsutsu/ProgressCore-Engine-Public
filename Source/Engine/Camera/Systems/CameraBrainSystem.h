@@ -7,7 +7,8 @@
 // 前方宣言 (インクルード削減のため)
 class Camera;
 
-class CameraBrainSystem : public CCL::ECS::SystemBase {
+class CameraBrainSystem
+    : public CCL::ECS::IfSystem<CameraBrainSystem, CCL::ECS::Read<VirtualCamera>> {
   private:
     // ブレンド管理用
     CCL::ECS::EntityID m_currentCamID = CCL::ECS::InvalidEntityID; // 現在のメイン
@@ -26,11 +27,7 @@ class CameraBrainSystem : public CCL::ECS::SystemBase {
     float m_lastFar  = 1000.0f;
 
   public:
-    CameraBrainSystem();
-    virtual ~CameraBrainSystem() = default;
-
-    // どのデータにアクセスするかをスケジューラに自己申告する
-    std::vector<CCL::ECS::TypeID> GetReadTypes() const override;
+    CameraBrainSystem() : IfSystem("CameraBrainSystem") {}
 
     void Update(float dt) override;
 
@@ -38,5 +35,5 @@ class CameraBrainSystem : public CCL::ECS::SystemBase {
     /// @brief 採用可能な vCam のうち、最も優先度の高いものを選ぶ。
     /// @param outID   選ばれた vCam のエンティティID（見つからなければ InvalidEntityID）
     /// @return        選ばれた vCam。見つからなければ nullptr。
-    VirtualCamera *SelectHighestPriorityCamera(CCL::ECS::EntityID &outID);
+    const VirtualCamera *SelectHighestPriorityCamera(CCL::ECS::EntityID &outID);
 };

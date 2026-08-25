@@ -7,8 +7,6 @@ class TimeScaleSystem : public CCL::ECS::IfSystem<TimeScaleSystem, CCL::ECS::Wri
 public:
     TimeScaleSystem();
 
-    void Initialize() override;
-
     // 実際の時間の計算処理
     void Update(float rawDt) override;
 

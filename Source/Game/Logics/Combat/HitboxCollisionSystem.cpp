@@ -50,7 +50,6 @@ void HitboxCollisionSystem::Initialize()
         CheckAndSpawnDamageEvent(ev.entityB, ev.entityA, ev.contactPosition);
     });
 
-    CCL_LOG_INFO(LogCategory::Game, "HitboxCollisionSystem Initialized.");
 }
 
 void HitboxCollisionSystem::Update(float /*dt*/)

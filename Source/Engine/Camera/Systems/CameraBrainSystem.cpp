@@ -12,56 +12,37 @@
 using namespace CCL::ECS;
 using namespace DirectX;
 
-CameraBrainSystem::CameraBrainSystem() : SystemBase("CameraBrainSystem")
+const VirtualCamera *CameraBrainSystem::SelectHighestPriorityCamera(EntityID &outID)
 {
-    // 全てのVirtualCameraコンポーネントを持つエンティティを対象にする
-    m_filter = CCL::ECS::ArchetypeHelper::Generate<VirtualCamera>();
-}
+    EntityID             highestCamID = InvalidEntityID;
+    int                  maxPriority  = 0;
+    const VirtualCamera *highestVCam  = nullptr;
 
-std::vector<CCL::ECS::TypeID> CameraBrainSystem::GetReadTypes() const
-{
-    return {CCL::ECS::TypeInfo<VirtualCamera>::ID()};
-}
+    ForEachWithID([&](EntityID id, const VirtualCamera &vCam) {
+        // まだ一度も位置/注視点を計算していない vCam は採用しない。
+        // これを見ないと、生成直後（resultPos が {0,0,0} のまま）の vCam が
+        // 最高優先度になった瞬間、メインカメラが原点にスナップする。
+        if (!vCam.isValid) return;
 
-VirtualCamera *CameraBrainSystem::SelectHighestPriorityCamera(EntityID &outID)
-{
-    EntityID       highestCamID = InvalidEntityID;
-    int            maxPriority  = 0;
-    VirtualCamera *highestVCam  = nullptr;
-
-    for (auto *chunk : m_targetChunks) {
-        auto  count = chunk->GetEntityCount();
-        auto *vCams = chunk->GetComponentArray<VirtualCamera>();
-        auto *ids   = chunk->GetEntityIDs();
-
-        for (size_t i = 0; i < count; ++i) {
-            if (chunk->IsEntityDestroyed(i)) continue;
-
-            // まだ一度も位置/注視点を計算していない vCam は採用しない。
-            // これを見ないと、生成直後（resultPos が {0,0,0} のまま）の vCam が
-            // 最高優先度になった瞬間、メインカメラが原点にスナップする。
-            if (!vCams[i].isValid) continue;
-
-            if (highestVCam == nullptr) {
-                maxPriority  = vCams[i].priority;
-                highestCamID = ids[i];
-                highestVCam  = &vCams[i];
-                continue;
-            }
-
-            // 優先度が同値のときのタイブレーク。
-            //   チャンクの走査順はアーキタイプの生成順に依存するため、
-            //   「先に見つかった方が勝ち」だとシーンや生成順で結果が変わり、
-            //   再現しない不具合になる。EntityID で決定的に決める（後勝ち）。
-            const bool wins = (vCams[i].priority > maxPriority) ||
-                              (vCams[i].priority == maxPriority && ids[i] > highestCamID);
-            if (wins) {
-                maxPriority  = vCams[i].priority;
-                highestCamID = ids[i];
-                highestVCam  = &vCams[i];
-            }
+        if (highestVCam == nullptr) {
+            maxPriority  = vCam.priority;
+            highestCamID = id;
+            highestVCam  = &vCam;
+            return;
         }
-    }
+
+        // 優先度が同値のときのタイブレーク。
+        //   チャンクの走査順はアーキタイプの生成順に依存するため、
+        //   「先に見つかった方が勝ち」だとシーンや生成順で結果が変わり、
+        //   再現しない不具合になる。EntityID で決定的に決める（後勝ち）。
+        const bool wins = (vCam.priority > maxPriority) ||
+                          (vCam.priority == maxPriority && id > highestCamID);
+        if (wins) {
+            maxPriority  = vCam.priority;
+            highestCamID = id;
+            highestVCam  = &vCam;
+        }
+    });
 
     outID = highestCamID;
     return highestVCam;
@@ -77,8 +58,8 @@ void CameraBrainSystem::Update(float dt)
     // -------------------------------------------------------
     // 1. 最も優先度が高い vCam を探す
     // -------------------------------------------------------
-    EntityID       highestCamID = InvalidEntityID;
-    VirtualCamera *highestVCam  = SelectHighestPriorityCamera(highestCamID);
+    EntityID             highestCamID = InvalidEntityID;
+    const VirtualCamera *highestVCam  = SelectHighestPriorityCamera(highestCamID);
 
     if (highestCamID == InvalidEntityID || highestVCam == nullptr) return;
 

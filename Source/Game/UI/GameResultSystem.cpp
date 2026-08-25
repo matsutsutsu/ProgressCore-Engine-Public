@@ -24,8 +24,6 @@ using namespace CCL::ECS;
 
 void GameResultSystem::Initialize()
 {
-    hasGui = true; // デバッグ用の検知状態パネルを OnGui で出す
-
     // 終了要求フラグの置き場を用意（メインスレッドの Run が毎フレーム参照する）。
     if (!m_world->HasResource<GameFlowState>())
         m_world->AddResource<GameFlowState>();
@@ -34,7 +32,7 @@ void GameResultSystem::Initialize()
     const uint32_t kRetry = CCL::Utils::HashString("retry");
     const uint32_t kQuit  = CCL::Utils::HashString("result_quit");
 
-    m_world->GetEventBus().Subscribe<UIButtonClickedEvent>(
+    ListenEvent<UIButtonClickedEvent>(
         [this, kRetry, kQuit](const UIButtonClickedEvent &e) {
             if (m_transitioning) return;
 

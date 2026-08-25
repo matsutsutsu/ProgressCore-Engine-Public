@@ -20,7 +20,10 @@ class GameResultSystem
     : public CCL::ECS::IfSystem<GameResultSystem, CCL::ECS::Read<HealthComponent>>
 {
   public:
-    GameResultSystem() : IfSystem("GameResultSystem") {}
+    GameResultSystem() : IfSystem("GameResultSystem")
+    {
+        hasGui = true; // デバッグ用の検知状態パネルを OnGui で出す
+    }
 
     void Initialize() override; ///< ボタンイベント購読
     void Update(float dt) override; ///< 勝敗検知

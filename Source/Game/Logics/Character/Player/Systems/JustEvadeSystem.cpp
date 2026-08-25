@@ -39,8 +39,6 @@ static const uint32_t HASH_TRIG_JUST_EVADE = CCL::Utils::HashString("OnJustEvade
 
 void JustEvadeSystem::Initialize()
 {
-    hasGui = true; // チェインHUDを OnGui で前面描画する
-
     // EventBus から物理衝突の報告を購読する
     ListenEvent<JoltCollisionEvent>([this](const JoltCollisionEvent& ev) {
         // 双方向でプレイヤーがどちらに含まれているかチェックする
