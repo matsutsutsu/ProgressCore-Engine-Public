@@ -50,15 +50,11 @@ void SceneManager::Initialize()
 	// 最初に表示するシーン。
 	// 展示会用：タイトルは見せず、起動直後に GameScene(=BossBattleStage) の戦闘へ直行する。
 	// （Shipping で発生していたタイトルの緑点滅もタイトルを経由しないことで回避される。）
-	// 従来の編集用 EditorScene / TitleScene はメニューやコードから任意に開ける。
-	//
-	// ★ 同期 ChangeScene ではなく非同期 ChangeSceneAsync を使う。
-	//   ChangeScene("Game") だと重い GameScene::Initialize（レベル/モデル読込で数秒）が
-	//   初回 Update でメインスレッドをブロックし、その間 Render が回らず「白画面で数秒待つ」
-	//   状態になる。ChangeSceneAsync は軽い SceneLoading を先に表示し、重い初期化はワーカー
-	//   スレッドへ逃がすので、起動直後からローディング画面が描画され白画面が消える。
-	ChangeSceneAsync("Game");
-	//ChangeScene("Particle");
+	// 従来の編集用 EditorScene / TitleScene はメニューやコードから任意に開ける
+	//constexpr const char *kStartupScene = "Game";
+	constexpr const char *kStartupScene = "Editor";
+
+	ChangeSceneAsync(kStartupScene);
 
 	// 起動直後は黒から表示へフェードイン（初回のローディング画面のポップインを隠す）。
 	FadeInFromBlack();

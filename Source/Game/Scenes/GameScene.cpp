@@ -4,11 +4,11 @@
 #include "Engine/Scene/SceneFactory.h" // REGISTER_SCENE（ファイル末尾で自己登録）
 
 #include "Engine/Serialization/Serializer/LevelSerializer.h" // レベル読み込み
+#include "Engine/Serialization/Factory/Prefab.h"             // 導入カメラ演出の生成
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Platform/Core/Logger.h"
 
-#include "Game/Logics/AI/Battle/BattleContext.h" // 敵AIが参照する戦況共有リソース
 
 #include "Game/UI/GameResultSystem.h" // ゲームオーバー/クリア検知＋リザルトUI
 #include "Game/UI/PauseSystem.h"      // ESC/STARTでポーズ＋ポーズメニュー
@@ -23,14 +23,8 @@ void GameScene::Initialize()
 
     BaseScene::Initialize(); // 共通初期化（リソース登録＋RegisterSystems）
 
-    // 敵AIが受け取るシーン全体の情報が入った共有リソース。
-    m_worldPtr->AddResource<BattleContext>();
-
-    // --- 戦場レベルを読み込む ---
+    // 戦場レベルを読み込む 
     // LoadLevel は内部で LoadScene（既存ワールドをPersistentTag以外全消去）→ ステージ復元
-    // → プレハブ実体(ライト/カメラ/プレイヤー/ボス/ステージ)を再生成する。BaseScene::Initialize は
-    // ゲーム実体を生成しないので、ここで全消去されて困るものは無い（リソース/システムは残る）。
-
     {
         ZoneScopedN("GameScene: LoadLevel BossBattleStage");
 
@@ -40,6 +34,22 @@ void GameScene::Initialize()
 
         if (!LevelSerializer::LoadLevel(m_worldPtr, bossBattleLevel))
             CCL_LOG_ERROR(LogCategory::Core, "GameScene: 戦場レベルの読み込みに失敗: %s", bossBattleLevel.c_str());
+    }
+
+    // 導入カメラ演出
+    // レベル(BossBattleStage.level.json)ではなく、ここで足すのが要点。
+    //   レベルは EditorScene も読むため、レベル側に入れるとデバッグ起動のたびに
+    //   数秒のムービーを待たされる。「本編でだけ再生する」ものは本編のシーンが持つ。
+    {
+        ZoneScopedN("GameScene: SpawnPrefab BossIntroCamera");
+
+        const std::string introCameraPrefab = "Assets/Prefabs/Camera/BossIntroCamera.json";
+        if (Prefab::SpawnPrefab(*m_worldPtr, introCameraPrefab) == CCL::ECS::InvalidEntityID)
+        {
+            // 演出が出ないだけでゲームは成立するので、失敗しても止めない。
+            CCL_LOG_ERROR(LogCategory::Core,
+                "GameScene: 導入カメラ演出の生成に失敗: %s", introCameraPrefab.c_str());
+        }
     }
 
     CCL_LOG_INFO(LogCategory::Core, "GameScene Initialize");

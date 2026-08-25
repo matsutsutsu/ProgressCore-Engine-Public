@@ -1,15 +1,12 @@
 #include "EditorScene.h"
 #include "Engine/Scene/SceneFactory.h" // REGISTER_SCENE（ファイル末尾で自己登録）
-#include "Game/Logics/Test/SceneInitializer.h"
-#include "Engine/Graphics/RHI/Graphics.h"
 #include "tracy/Tracy.hpp"
 
 #include "Engine/Serialization/Factory/Prefab.h"
+#include "Engine/Serialization/Serializer/LevelSerializer.h" // 戦場レベルの読み込み
 #include "Engine/Platform/Core/Logger.h"
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
-
-#include "Game/Logics/AI/Battle/BattleContext.h" // 敵AIが参照する戦況共有リソース
 
 #include "Game/UI/GameResultSystem.h" // ゲームオーバー検知＋リザルトUI
 #include "Game/UI/PauseSystem.h"      // ESC/STARTでポーズ＋ポーズメニュー
@@ -20,27 +17,14 @@ void EditorScene::Initialize()
 
     BaseScene::Initialize(); // 共通初期化
 
-
-    ID3D11Device *device = Graphics::Instance().GetDevice();
+    // シーン読み込み
     {
-        ZoneScopedN("EditorScene: SpawnLightStartSet");
-        SceneInitializer::SpawnLightStartSet(*m_worldPtr, device);
+        ZoneScopedN("EditorScene: LoadLevel BossBattleStage");
+
+        const std::string bossBattleLevel = "Assets/Scene/BossBattleStage.level.json";
+        if (!LevelSerializer::LoadLevel(m_worldPtr, bossBattleLevel))
+            CCL_LOG_ERROR(LogCategory::Core, "EditorScene: 戦場レベルの読み込みに失敗: %s", bossBattleLevel.c_str());
     }
-    //Prefab::SpawnPrefab(*m_worldPtr, "Assets/Prefabs/Camera/FreeCamera.json");
-
-    // 起動コストの主因候補：テスト用エンティティ（ドローン多数など）の一括生成。
-    {
-        ZoneScopedN("EditorScene: SpawnGameTest");
-        SceneInitializer::SpawnGameTest(*m_worldPtr, device);
-    }
-
-    //SceneManager::Instance().LoadScene(m_worldPtr,"Assets/Scene/PlayerMovementScene.json");
-
-    // 敵AIが受け取るシーン全体の情報が入った共有のリソースを登録
-    m_worldPtr->AddResource<BattleContext>();
-
-    auto &battle           = m_worldPtr->GetResource<BattleContext>();
-    battle.droneAliveCount = 650; // 動作確認用の初期値（Murielの戦術はHP割合で判定するため、この値自体は戦術選択に影響しない）
 
 
     CCL_LOG_INFO(LogCategory::Core, "EditorScene Initialize");

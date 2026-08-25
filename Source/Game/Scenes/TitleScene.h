@@ -1,7 +1,7 @@
 #pragma once
 /// @file TitleScene.h
 /// @brief タイトル画面シーン。UIシステム一式＋TitleMenuSystem だけを登録する軽量シーン。
-///        ゲーム本編（EditorScene）とは違い SpawnGameTest 等は行わない。
+///        GameScene / EditorScene と違い、戦場レベルの読み込みは行わない。
 #include "Engine/Scene/BaseScene.h"
 
 class TitleScene : public BaseScene

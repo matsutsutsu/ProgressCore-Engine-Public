@@ -14,8 +14,10 @@ void TitleScene::RegisterSystems()
     auto &m = *(m_ecsContext->GetSystemManager());
 
     // 通常シーンと同じく全システムを登録する（タイトルでも3D描画/アニメ/パーティクル等を使うため）。
-    // 戦闘/AI系は必要リソース(BattleContext等)やエンティティが無い場合、各システム側が
-    // HasResource ガードで自動的に no-op になるため、タイトルに登録しても安全。
+    // 戦闘/AI系はタイトルに登録しても安全:
+    //   BattleContext は BattleContextSyncSystem が必ず登録するので存在するが、
+    //   プレイヤー/ボス/ドローンの実体が無いため、各システムの ForEach が空回りして
+    //   実質 no-op になる（HasPlayer()/HasBoss() も false のまま）。
     CCL::ECS::SystemRegistry::Instance().RegisterAll(m);
 
     // タイトル専用：メニュー生成＋クリックで遷移（グローバル登録しないのでここで手動登録）

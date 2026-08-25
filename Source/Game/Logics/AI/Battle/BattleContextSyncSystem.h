@@ -11,6 +11,14 @@
 /// 設計方針:
 ///   1対1なので探索コストは軽微。View を2回（Player, Boss）回すだけ。
 ///   他のあらゆるAI/移動系システムより前に実行する必要があるため L01_Input。
+///
+/// リソースの所有:
+///   BattleContext の登録は本システムが行う（唯一の書き込み元が所有者を兼ねる）。
+///   以前は各シーンの Initialize が AddResource していたが、
+///     ・シーンがAIの内部事情を知る必要が出る
+///     ・シーンを増やすたびに書き忘れると、AI系が丸ごと黙って no-op になる
+///   という問題があった。SquadUpdateSystem が SquadRegistry を、
+///   UI 系が GameFlowState を自分で登録しているのと同じ形に揃えている。
 #pragma once
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"
@@ -28,5 +36,12 @@ class BattleContextSyncSystem : public CCL::ECS::IfSystem<
         : IfSystem("BattleContextSyncSystem")
     {
     }
+    void Initialize() override;
     void Update(float dt) override;
+
+  private:
+    /// @brief BattleContext が未登録なら登録する。
+    /// @note  Update からも呼ぶ。シーン途中でリソースが失われる経路は本来無いが、
+    ///        GetResource は未登録だと assert で落ちるため、入口を一本化しておく。
+    void EnsureContext();
 };
