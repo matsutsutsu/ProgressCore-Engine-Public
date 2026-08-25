@@ -617,48 +617,15 @@ void PlayerFeedbackSystem::UpdateDamageChromaticAberration(float dt)
     // -------------------------------------------------------------------------
     // 演出終了
     // -------------------------------------------------------------------------
+    //
+    // 触るのは自分のスロットだけ。設定本体(enable/data)や他演出のスロットには
+    // 一切書かないので、命中バーストやジャスト回避演出の最中に被弾しても
+    // 互いを消し合わない。最終強度の合成は PostProcessSystem が行う。
 
     if (m_chromaticTimer <= 0.0f)
     {
-        if (m_chromaticActive)
-        {
-            chromatic->enable =
-                m_chromaticBase.enable;
-
-            chromatic->data.chromaCenter =
-                m_chromaticBase.center;
-
-            chromatic->data.chromaStrength =
-                m_chromaticBase.strength;
-
-            chromatic->data.chromaFalloff =
-                m_chromaticBase.falloff;
-
-            m_chromaticActive = false;
-        }
-
+        chromatic->burstDamage = 0.0f;
         return;
-    }
-
-    // -------------------------------------------------------------------------
-    // 演出開始時にBaselineを保存
-    // -------------------------------------------------------------------------
-
-    if (!m_chromaticActive)
-    {
-        m_chromaticBase.enable =
-            chromatic->enable;
-
-        m_chromaticBase.center =
-            chromatic->data.chromaCenter;
-
-        m_chromaticBase.strength =
-            chromatic->data.chromaStrength;
-
-        m_chromaticBase.falloff =
-            chromatic->data.chromaFalloff;
-
-        m_chromaticActive = true;
     }
 
     // -------------------------------------------------------------------------
@@ -668,7 +635,7 @@ void PlayerFeedbackSystem::UpdateDamageChromaticAberration(float dt)
     TickTimer(m_chromaticTimer, dt);
 
     // -------------------------------------------------------------------------
-    // エンベロープ
+    // エンベロープ → 上乗せ量
     // -------------------------------------------------------------------------
 
     const float env =
@@ -676,20 +643,7 @@ void PlayerFeedbackSystem::UpdateDamageChromaticAberration(float dt)
             m_chromaticTimer,
             m_chromaticDuration);
 
-    // -------------------------------------------------------------------------
-    // Chromatic Aberrationへ反映
-    // -------------------------------------------------------------------------
-
-    chromatic->enable = true;
-
-    chromatic->data.chromaCenter = m_chromaticBase.center;
-
-    chromatic->data.chromaStrength = Lerp(
-        m_chromaticBase.strength,
-        m_chromaticPeak,
-        env);
-
-    chromatic->data.chromaFalloff = m_chromaticBase.falloff;
+    chromatic->burstDamage = m_chromaticPeak * env;
 }
 
 // System Registration

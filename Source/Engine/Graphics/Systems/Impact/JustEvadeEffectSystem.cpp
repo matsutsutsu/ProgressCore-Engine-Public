@@ -60,6 +60,19 @@ inline XMFLOAT4 LerpTint(const XMFLOAT4 &a, const XMFLOAT3 &b, float t)
 }
 } // namespace
 
+std::vector<CCL::ECS::TypeID> JustEvadeEffectSystem::GetReadTypes() const
+{
+    return {TypeInfo<JustEvadeEffectComponent>::ID()};
+}
+
+std::vector<CCL::ECS::TypeID> JustEvadeEffectSystem::GetWriteTypes() const
+{
+    return {TypeInfo<ColorGradingConfigComponent>::ID(),
+            TypeInfo<RadialBlurConfigComponent>::ID(),
+            TypeInfo<ChromaticAberrationConfigComponent>::ID(),
+            TypeInfo<VignetteConfigComponent>::ID()};
+}
+
 void JustEvadeEffectSystem::Update(float dt)
 {
     auto *fx = m_world->GetSingletonComponent<JustEvadeEffectComponent>();
@@ -96,8 +109,9 @@ void JustEvadeEffectSystem::Update(float dt)
                 vig->data.vigRadius     = m_base.vigRadius;   // ★被弾フラッシュが縮めていても確実に戻す
                 vig->data.vigSoftness   = m_base.vigSoftness;
             }
-            if (rb) { rb->enable = false; rb->data.blurStrength   = 0.0f; }
-            if (ca) { ca->enable = false; ca->data.chromaStrength = 0.0f; }
+            // スパイク系は自分のスロットだけ 0 に戻す（設定本体・他演出には触れない）。
+            if (rb) rb->burstJustEvade = 0.0f;
+            if (ca) ca->burstJustEvade = 0.0f;
             m_wasActive = false;
         }
         return;
@@ -177,22 +191,10 @@ void JustEvadeEffectSystem::Update(float dt)
     }
 
     // ── 4. 放射ブラー（スパイク） ──
-    if (rb)
-    {
-        rb->enable           = true;
-        rb->data.blurCenter  = XMFLOAT2(0.5f, 0.5f);
-        rb->data.blurStrength = fx->radialPeak * spike;
-        rb->data.blurFalloff  = 2.0f;
-    }
+    if (rb) rb->burstJustEvade = fx->radialPeak * spike;
 
     // ── 5. 色収差（スパイク） ──
-    if (ca)
-    {
-        ca->enable             = true;
-        ca->data.chromaCenter  = XMFLOAT2(0.5f, 0.5f);
-        ca->data.chromaStrength = fx->chromaPeak * spike;
-        ca->data.chromaFalloff  = 2.0f;
-    }
+    if (ca) ca->burstJustEvade = fx->chromaPeak * spike;
 
     // ── 6. ビネット脈動（body で強度・色を出し入れ） ──
     if (vig)

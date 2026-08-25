@@ -156,27 +156,7 @@ class PlayerFeedbackSystem
     // 被弾色収差を毎フレーム更新する。
     void UpdateDamageChromaticAberration(float dt);
 
-    // -------------------------------------------------------------------------
-    // Baseline
-    // -------------------------------------------------------------------------
-
-    // 被弾演出開始前の色収差設定を保持する。
-    struct ChromaticBaseline
-    {
-        bool enable = true;
-
-        DirectX::XMFLOAT2 center = {0.5f, 0.5f};
-
-        float strength = 0.0f;
-
-        float falloff = 2.0f;
-    };
-
     float m_chromaticTimer = 0.0f;
-
-    bool m_chromaticActive = false;
-
-    ChromaticBaseline m_chromaticBase;
 
     // -------------------------------------------------------------------------
     // Chromatic Aberration Tuning

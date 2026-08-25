@@ -14,8 +14,10 @@
 //   - 立ち上がり(rising edge)で「そのシーンが元々持っていた ColorGrading / Vignette の値」を
 //     スナップショットし、立ち下がりで完全に復元する。これにより演出が終わっても
 //     ユーザーがシーンに設定した色調を壊さない。
-//   - 放射ブラー/色収差は既定 enable=false なので、ScreenImpact と同様に立ち下がりで OFF。
-//   - timer が 0 の間は何も書かない。
+//   - 放射ブラー/色収差は「自分のスロット(burstJustEvade)」だけを書く。設定本体は
+//     触らず、最終強度の合成と描画ON/OFFは PostProcessSystem に任せる。
+//     こうしないと、同時に走る命中バーストや被弾フラッシュと値を奪い合う。
+//   - timer が 0 の間は何も書かない。立ち下がりで自分のスロットだけ 0 に戻す。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include <DirectXMath.h>
@@ -25,6 +27,15 @@ class JustEvadeEffectSystem : public CCL::ECS::SystemBase
 {
 public:
     JustEvadeEffectSystem() : SystemBase("JustEvadeEffectSystem") {}
+
+    std::vector<CCL::ECS::TypeID> GetReadTypes() const override;
+
+    /// @note 触る PP 設定はすべて書き換えるので Write として申告する（並列実行の競合防止）。
+    std::vector<CCL::ECS::TypeID> GetWriteTypes() const override;
+
+    /// @note ScreenImpactSystem と同一ステージで同じ PP を書くため、順序を確定させる。
+    ///       スロットが別なので結果は順序に依存しないが、順序不定の警告を出さないため。
+    std::vector<const char *> GetRunAfter() const override { return {"ScreenImpactSystem"}; }
 
     void Update(float dt) override;
 

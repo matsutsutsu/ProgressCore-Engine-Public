@@ -8,12 +8,25 @@
 ///                   strength を一時的に上げ、時間で0へ戻す使い方を想定。
 #pragma once
 #include "Engine/Graphics/Shader/Shared/PostProcessShared.h"
+#include <algorithm>
 
 /// @brief 放射状ブラーのON/OFFとGPUパラメータを保持する設定コンポーネント。
 /// @note  data が GPU定数バッファ構造体のため、シリアライズはパターンC(カスタム)。
+/// @note  演出からの上乗せは burst* スロットへ書く。理由は
+///        ChromaticAberrationConfigComponent と同じ（後勝ちで消し合うのを防ぐ）。
 struct RadialBlurConfigComponent
 {
     bool enable = false;
 
     GpuData::CbRadialBlurData data{ { 0.5f, 0.5f }, 0.0f, 2.0f };
+
+    float burstImpact    = 0.0f; ///< 命中バースト（ScreenImpactSystem）
+    float burstJustEvade = 0.0f; ///< ジャスト回避スパイク（JustEvadeEffectSystem）
+
+    /// @brief 実際に描画へ渡す強度。素の値と全演出スロットの最大値。
+    float ResolvedStrength() const
+    {
+        const float base = enable ? data.blurStrength : 0.0f;
+        return (std::max)({base, burstImpact, burstJustEvade});
+    }
 };

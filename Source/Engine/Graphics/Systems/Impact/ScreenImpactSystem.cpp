@@ -28,33 +28,20 @@ void ScreenImpactSystem::Update(float dt)
 
     const bool active = (impact && impact->timer > 0.0f);
 
-    // ── PP設定への書き込みヘルパー（設定 singleton が無ければ何もしない） ──
-    auto writeRadial = [&](bool en, float strength) {
+    // ── PP への要求（自分のスロットだけを書く。設定本体には触れない） ──
+    auto writeBurst = [&](float radialStrength, float chromaStrength) {
         if (auto* c = m_world->GetSingletonComponent<RadialBlurConfigComponent>())
-        {
-            c->enable          = en;
-            c->data.blurCenter = XMFLOAT2(0.5f, 0.5f);
-            c->data.blurStrength = strength;
-            c->data.blurFalloff  = 2.0f;
-        }
-    };
-    auto writeChroma = [&](bool en, float strength) {
+            c->burstImpact = radialStrength;
         if (auto* c = m_world->GetSingletonComponent<ChromaticAberrationConfigComponent>())
-        {
-            c->enable            = en;
-            c->data.chromaCenter = XMFLOAT2(0.5f, 0.5f);
-            c->data.chromaStrength = strength;
-            c->data.chromaFalloff  = 2.0f;
-        }
+            c->burstImpact = chromaStrength;
     };
 
     if (!active)
     {
-        // 立ち下がり: 一度だけ PP を OFF にして手放す（以後は触らない）。
+        // 立ち下がり: 自分のスロットだけ 0 に戻して手放す（以後は触らない）。
         if (m_wasActive)
         {
-            writeRadial(false, 0.0f);
-            writeChroma(false, 0.0f);
+            writeBurst(0.0f, 0.0f);
             m_wasActive = false;
         }
         return;
@@ -68,8 +55,7 @@ void ScreenImpactSystem::Update(float dt)
     const float strength = t * impact->power; // 命中直後=最大 → 0 へ
 
     // ── 2. PPバースト（放射ブラー＋色収差） ──
-    writeRadial(true, impact->radialStrength * strength);
-    writeChroma(true, impact->chromaticStrength * strength);
+    writeBurst(impact->radialStrength * strength, impact->chromaticStrength * strength);
 
     // ── 3. カメラシェイク（CameraBrain 確定後の MainCamera に重ねる） ──
     if (m_world->HasResource<Camera*>())
