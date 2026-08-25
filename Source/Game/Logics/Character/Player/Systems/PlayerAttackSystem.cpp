@@ -29,6 +29,7 @@ const     float kFaceConeCos  = std::cos(1.221730f); ///< 前方±70°の内積�
 //   ※自動フェイシングの最大距離は PlayerComponent.attackFaceMaxDistance（エディタ調整可）を使う。
 }
 
+// プレイヤーの前方の一番近い敵を探す処理
 EntityID PlayerAttackSystem::FindBestFrontEnemy(EntityID selfID, const Vector3 &selfPos,
                                                 const Vector3 &forward, float range, float coneCos)
 {

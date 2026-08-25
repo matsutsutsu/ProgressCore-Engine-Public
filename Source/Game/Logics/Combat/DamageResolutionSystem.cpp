@@ -144,8 +144,17 @@ void DamageResolutionSystem::Update(float dt) {
                 // 購読側が各自の演出を行う：PlayerFeedbackSystem（プレイヤーのカメラシェイク＋被弾ビネット）、
                 // JustEvadeSystem（被弾でジャスト回避チェイン切断）など。isPlayer は受け取り側の判定用フラグ。
                 const bool isPlayer = m_world->HasComponent<PlayerComponent>(event.targetID);
+                m_world->GetEventBus().Publish(DamageTakenEvent{event.targetID, event.finalDamage, isPlayer});
+
+                // --- 攻撃命中確定の通知 ---
+                // AttackHitConfirmedEvent:「誰の攻撃が命中したか」
                 m_world->GetEventBus().Publish(
-                    DamageTakenEvent{event.targetID, event.finalDamage, isPlayer});
+                    AttackHitConfirmedEvent{
+                        event.attackerID,
+                        event.targetID,
+                        event.finalDamage,
+                        event.hitStopDuration,
+                        event.hitStopScale});
 
                 // --- ヒットリアクション（前後左右）の再生 ---
                 // 生き残った時だけ怯ませる。致命打は死亡アニメ側に任せる（怯みと二重再生しない）。

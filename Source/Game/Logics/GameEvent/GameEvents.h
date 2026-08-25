@@ -25,11 +25,31 @@ struct EntityKilledEvent {
 };
 
 // 誰かがダメージを受けた時に発行されるイベント
+// 現在の使用System：PlayerFeedbackSystem,JustEvadeSystem
 struct DamageTakenEvent {
     CCL::ECS::EntityID targetID;     // ダメージを受けた人
     float              damageAmount; // 受けたダメージ量
     bool               isPlayer;     // プレイヤーかどうか（受け取り側が判定しやすくする便利フラグ）
 };
+
+// ===========================================================================
+// 攻撃命中確定イベント
+//
+// 「攻撃者の攻撃が実際に相手へダメージを与えた」ことを通知する。
+// DamageTakenEvent が「被弾側」のイベントなのに対して、こちらは「攻撃側」のイベント。
+// ===========================================================================
+struct AttackHitConfirmedEvent
+{
+    CCL::ECS::EntityID attackerID;
+    CCL::ECS::EntityID victimID;
+
+    float damage = 0.0f;
+
+    // ヒットストップなど、命中の重さを判断するための情報。
+    float hitStopDuration = 0.0f;
+    float hitStopScale    = 1.0f;
+};
+
 
 // 攻撃が「確定ヒット」した瞬間に発行されるイベント（無敵ですり抜けた時は出ない）。
 // 命中位置に衝突エフェクト(GPUパーティクル)を出すために HitEffectSystem が購読する。
