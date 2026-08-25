@@ -120,6 +120,41 @@
             "endPin": 56,
             "id": 95,
             "startPin": 44
+        },
+        {
+            "endPin": 104,
+            "id": 106,
+            "startPin": 26
+        },
+        {
+            "endPin": 108,
+            "id": 109,
+            "startPin": 105
+        },
+        {
+            "endPin": 111,
+            "id": 112,
+            "startPin": 105
+        },
+        {
+            "endPin": 114,
+            "id": 115,
+            "startPin": 105
+        },
+        {
+            "endPin": 117,
+            "id": 118,
+            "startPin": 105
+        },
+        {
+            "endPin": 120,
+            "id": 121,
+            "startPin": 105
+        },
+        {
+            "endPin": 123,
+            "id": 124,
+            "startPin": 105
         }
     ],
     "editor_nodes": [
@@ -372,9 +407,79 @@
             "posX": 4702.0,
             "posY": 766.0,
             "type": 4
+        },
+        {
+            "actionId": 0,
+            "id": 103,
+            "inputPinId": 104,
+            "name": "小隊突撃",
+            "outputPinId": 105,
+            "posX": 6100.0,
+            "posY": 558.0,
+            "type": 2
+        },
+        {
+            "actionId": 2031,
+            "id": 107,
+            "inputPinId": 108,
+            "name": "小隊突撃(編隊)",
+            "outputPinId": 0,
+            "posX": 5200.0,
+            "posY": 750.0,
+            "type": 4
+        },
+        {
+            "actionId": 103,
+            "id": 110,
+            "inputPinId": 111,
+            "name": "Wait2.0(接近)",
+            "outputPinId": 0,
+            "posX": 5500.0,
+            "posY": 750.0,
+            "type": 4
+        },
+        {
+            "actionId": 1006,
+            "id": 113,
+            "inputPinId": 114,
+            "name": "Strike(突入)",
+            "outputPinId": 0,
+            "posX": 5800.0,
+            "posY": 750.0,
+            "type": 4
+        },
+        {
+            "actionId": 111,
+            "id": 116,
+            "inputPinId": 117,
+            "name": "Wait3.0(突入)",
+            "outputPinId": 0,
+            "posX": 6094.0,
+            "posY": 750.0,
+            "type": 4
+        },
+        {
+            "actionId": 2004,
+            "id": 119,
+            "inputPinId": 120,
+            "name": "HighOrbit(帰投)",
+            "outputPinId": 0,
+            "posX": 6400.0,
+            "posY": 750.0,
+            "type": 4
+        },
+        {
+            "actionId": 103,
+            "id": 122,
+            "inputPinId": 123,
+            "name": "Wait2.0(CD)",
+            "outputPinId": 0,
+            "posX": 6700.0,
+            "posY": 750.0,
+            "type": 4
         }
     ],
-    "last_id_counter": 102,
+    "last_id_counter": 124,
     "nodes": [
         {
             "actionOrConditionId": 0,
@@ -407,7 +512,8 @@
             "actionOrConditionId": 0,
             "children": [
                 10,
-                11
+                11,
+                12
             ],
             "type": "RandomSelector"
         },
@@ -444,24 +550,36 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                12,
                 13,
                 14,
                 15,
                 16,
-                17
+                17,
+                18
             ],
             "type": "Sequence"
         },
         {
             "actionOrConditionId": 0,
             "children": [
-                18,
                 19,
                 20,
                 21,
                 22,
-                23
+                23,
+                24
+            ],
+            "type": "Sequence"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
+                25,
+                26,
+                27,
+                28,
+                29,
+                30
             ],
             "type": "Sequence"
         },
@@ -512,6 +630,36 @@
         },
         {
             "actionOrConditionId": 103,
+            "children": [],
+            "type": "Action"
+        },
+        {
+            "actionOrConditionId": 2004,
+            "children": [],
+            "type": "Action"
+        },
+        {
+            "actionOrConditionId": 103,
+            "children": [],
+            "type": "Action"
+        },
+        {
+            "actionOrConditionId": 2031,
+            "children": [],
+            "type": "Action"
+        },
+        {
+            "actionOrConditionId": 103,
+            "children": [],
+            "type": "Action"
+        },
+        {
+            "actionOrConditionId": 1006,
+            "children": [],
+            "type": "Action"
+        },
+        {
+            "actionOrConditionId": 111,
             "children": [],
             "type": "Action"
         },

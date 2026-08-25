@@ -93,6 +93,8 @@ void JustEvadeEffectSystem::Update(float dt)
                 vig->data.vigIntensity  = m_base.vigIntensity;
                 vig->data.vigColor      = m_base.vigColor;
                 vig->data.vigPulseSpeed = m_base.vigPulse;
+                vig->data.vigRadius     = m_base.vigRadius;   // ★被弾フラッシュが縮めていても確実に戻す
+                vig->data.vigSoftness   = m_base.vigSoftness;
             }
             if (rb) { rb->enable = false; rb->data.blurStrength   = 0.0f; }
             if (ca) { ca->enable = false; ca->data.chromaStrength = 0.0f; }
@@ -119,6 +121,8 @@ void JustEvadeEffectSystem::Update(float dt)
             m_base.vigIntensity = vig->data.vigIntensity;
             m_base.vigColor     = vig->data.vigColor;
             m_base.vigPulse     = vig->data.vigPulseSpeed;
+            m_base.vigRadius    = vig->data.vigRadius;
+            m_base.vigSoftness  = vig->data.vigSoftness;
         }
         m_vigTime = 0.0f;
     }

@@ -61,6 +61,12 @@ void PlayerCleaveSystem::Update(float rawDt)
         }
     }
 
+    // ★ hold(モノクロ演出)を実状態から確定させるための集計。
+    //   誰か1人でも Ready 中なら true。ForEach 後にこの値で hold を上書きするため、
+    //   準備中にプレイヤーが死亡/消滅して FSM が回らなくなっても hold が立ちっぱなしに
+    //   ならない（＝「何もないのにモノクロ/ビネットが残り続ける」不具合の根治）。
+    bool anyReady = false;
+
     // 準備の猶予・クールダウンは「実時間(rawDt)」で進める。全体スロー中でも一定の秒数で
     // 解除されるようにするため（スローされた localDt を使うと時間が伸びてしまう）。
     ForEachWithID([&](EntityID                        id,
@@ -128,7 +134,13 @@ void PlayerCleaveSystem::Update(float rawDt)
 
         // このプレイヤーを映すカメラへ「準備中は寄る」を毎フレーム伝える（未要求へ自動リセット）。
         PushCameraCloseUp(id, cleave.phase == CleavePhase::Ready);
+
+        if (cleave.phase == CleavePhase::Ready) anyReady = true;
     });
+
+    // ★ hold を毎フレーム実状態で確定させる（EnterReady/StartLunge/ExitToIdle の
+    //   個別呼び出しに依存せず、ここが唯一の真実）。準備が中断されても確実に解除される。
+    SetMonochrome(anyReady);
 }
 
 // 準備状態に入る。照準方向をセットし、全体スロー＋モノクロを開始する。

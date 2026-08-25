@@ -142,6 +142,15 @@ namespace CCL::ECS
                 m_logicScheduler.BuildGraph(m_logicSystems);
                 m_renderScheduler.BuildGraph(m_renderSystems);
                 m_isGraphDirty = false;
+
+                // 「同一ステージで型は競合するのに前後が宣言されていない」組を報告する。
+                // 直列化はされるので同時実行事故は起きないが、どちらが先かは
+                // ソートの並び順まかせ＝潜在的な順序バグ。ここに出たペアに実依存が
+                // あるなら GetRunAfter を書くか、ステージを分けること。
+                if (logSchedulerAmbiguities) {
+                    m_logicScheduler.LogAmbiguities("Logic");
+                    m_renderScheduler.LogAmbiguities("Render");
+                }
             }
 
             // スケジューラによる超並列実行！
@@ -198,15 +207,35 @@ namespace CCL::ECS
         // (デバッグ時に「とりあえず全部シングルで動かしてみる」用)
         bool globalMultiThreadEnabled = true;
 
+        // 依存グラフ構築時に「順序が不定なペア」をログへ出すか。
+        // 一覧が長くて邪魔なときだけ false にする。
+        bool logSchedulerAmbiguities = true;
+
     private:
 
         // 優先度（昇順）でシステムを並び替える
         void SortSystems(SystemGroup group) {
             auto& targetList = (group == SystemGroup::Logic) ? m_logicSystems : m_renderSystems;
 
+            // 優先度が同値のときは System 名で決着を付ける。
+            //
+            // なぜ必要か:
+            //   以前はステージ値だけで std::sort していた。std::sort は安定ソート
+            //   ではないため、同値のシステム同士の相対順序は保証されない。しかも
+            //   本関数は RegisterSystemInternal のたびに呼ばれ、その登録順自体が
+            //   REGISTER_LOGIC_SYSTEM マクロによるグローバル変数の初期化順
+            //   （＝翻訳単位をまたぐ静的初期化順序）に依存していた。
+            //   結果、.vcxproj にファイルを足しただけで実行順が入れ替わり得た。
+            //   BoneAttachment と JoltPush の順序逆転はこれが原因。
+            //
+            //   名前で決着を付けても「正しい順序」にはならないが、少なくとも
+            //   毎回同じ順序になる。順序を実際に保証したい箇所は
+            //   GetRunAfter / GetRunBefore で明示的に宣言すること。
             std::sort(targetList.begin(), targetList.end(),
                 [](const std::unique_ptr<SystemBase>& a, const std::unique_ptr<SystemBase>& b) {
-                    return a->GetPriority() < b->GetPriority();
+                    if (a->GetPriority() != b->GetPriority())
+                        return a->GetPriority() < b->GetPriority();
+                    return a->GetName() < b->GetName();
                 }
             );
         }

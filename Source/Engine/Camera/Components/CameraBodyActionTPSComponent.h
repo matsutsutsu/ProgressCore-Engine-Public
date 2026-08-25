@@ -25,10 +25,17 @@ struct CameraBodyTPSComponent
     float closeUpDistance = 3.5f; ///< 寄り要求中の基準距離(m)。distance より近く。
 
     // --- オービット（回転）制御 ---
-    float currentYaw   = 0.0f;   ///< 現在の水平角度(度)
-    float currentPitch = 15.0f;  ///< 現在の垂直角度(度)
-    float minPitch     = -70.0f; ///< 垂直角度の最低制限（地面めり込み防止）
-    float maxPitch     = 80.0f;  ///< 垂直角度の最高制限
+    // 【ピッチの符号規約】CameraActionTPSSystem は
+    //     backwardDir.y = sin(pitch) / finalPos = pivot - backwardDir * distance
+    //   で配置するため、pitch が正のときカメラは pivot より「下」に来る。
+    //     ・pitch が負 → カメラが上 → 見下ろし
+    //     ・pitch が正 → カメラが下 → 見上げ
+    //   よって minPitch は見下ろし側の限界、maxPitch は見上げ側（＝地面へ潜る側）の限界。
+    //   以前ここのコメントが逆だったため、調整のたびに符号を取り違えていた。
+    float currentYaw   = 0.0f;   ///< 現在の水平角度(度)。プレハブの値は「初期ヨー角」として使われる。
+    float currentPitch = 15.0f;  ///< 現在の垂直角度(度)。プレハブの値は「初期ピッチ角」として使われる。
+    float minPitch     = -70.0f; ///< 見下ろし側の限界(度)。負に振るほど真上から覗き込む。
+    float maxPitch     = 80.0f;  ///< 見上げ側の限界(度)。正に振るほどカメラが低くなり地面に潜る。
 
     float lookSpeedX = 120.0f; ///< ゲームパッド右スティックX軸の回転速度(度/秒)。dtで積分される。
     float lookSpeedY = 120.0f; ///< ゲームパッド右スティックY軸の回転速度(度/秒)。dtで積分される。

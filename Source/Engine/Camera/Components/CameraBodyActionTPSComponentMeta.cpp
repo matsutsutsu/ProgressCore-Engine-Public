@@ -125,9 +125,10 @@ struct ComponentMeta<CameraBodyTPSComponent>
     static const std::vector<FieldDescriptor> &Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
+            // lockOnTarget / isLockOnActive はゲーム側(PlayerLockOnSystem)が毎フレーム
+            // 書き込む実行時状態。インスペクタでは触れるようにしつつ、シリアライズ
+            // 対象からは外す（保存しても次回起動時に EntityID は一致しない）。
             CFIELD(target, "追従ターゲット", "Settings")
-            CFIELD(lockOnTarget, "ロックオン対象", "Settings")
-            CFIELD(isLockOnActive, "ロックオン有効化", "LockOn")
             CFIELD_FLOAT_RANGED(lockOnPitch, "ロックオン固定ピッチ", 0.5f, -60.0f, 60.0f, "LockOn")
             CFIELD_FLOAT_RANGED(lockOnSubjugationRatio, "敵への注視偏重率", 0.01f, 0.0f, 0.5f, "LockOn")
             CFIELD_FLOAT_RANGED(lockOnRotationDamping, "自動回り込み速度", 0.1f, 1.0f, 20.0f, "LockOn")
@@ -161,8 +162,9 @@ struct ComponentMeta<CameraBodyTPSComponent>
             CFIELD_FLOAT_RANGED(collisionHeadBias, "寄った時の頭寄せ", 0.01f, 0.0f, 1.0f, "Collision")
             CFIELD_FLOAT_RANGED(lookaheadMultiplier, "前方注視係数", 0.05f, 0.0f, 5.0f, "Lookahead")
             CFIELD_FLOAT_RANGED(lookaheadDamping, "注視遅延", 0.1f, 0.0f, 50.0f, "Lookahead")
-
-            CFIELD_FLOAT3_FAST(currentLookahead, "現在の注視オフセット", 0.1f, "State")
+            // currentLookahead は毎フレーム再計算される純粋な実行時状態。
+            // 保存すると、プレイ中の値がプレハブへ焼き込まれて git の差分を汚し、
+            // 次回ロード時に初期位置が微妙にずれる。
         };
         return fields;
     }

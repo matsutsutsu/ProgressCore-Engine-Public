@@ -51,8 +51,7 @@ void SceneInitializer::SpawnAnimationTest(CCL::ECS::World& world, ID3D11Device* 
 {
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/Camera/FreeCamera.json");
     EntityFactory::SpawnPrefab(world, "Assets/Prefabs/World/ExampleStage.json");
-    EntityFactory::SpawnPrefab(world, "Assets/Prefabs/AnimationModel.json");
-   
+    EntityFactory::SpawnPrefab(world, "Assets/Prefabs/AnimationModel.json");   
 }
 
 void SceneInitializer::SpawnGameTest(CCL::ECS::World &world, ID3D11Device *device)

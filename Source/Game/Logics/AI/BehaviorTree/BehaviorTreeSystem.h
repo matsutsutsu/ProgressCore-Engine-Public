@@ -48,4 +48,17 @@ class BehaviorTreeSystem : public CCL::ECS::IfSystem<
         const BTAsset            &asset,
         CCL::ECS::EntityID        entity,
         float                     dt);
+
+#ifdef ENABLE_EDITOR
+    /// @brief デバッグUI：木を一覧にして「この枝を今すぐ実行」を選ばせる。
+    /// @note  技を出す条件（距離・抽選）を待たずに狙った攻撃だけを確認するためのもの。
+    ///        木のデータは書き換えず、評価の開始ノードを差し替えるだけ。
+    void DrawForcedNodeGui(BehaviorTreeComponent &btComp, CCL::ECS::EntityID entity);
+
+    /// @brief 上の再帰部分。1ノード=1行を描き、実行ボタンを添える。
+    void DrawNodeRowRecursive(const BTAsset         &asset,
+                              BTNodeID               nodeId,
+                              BehaviorTreeComponent &btComp,
+                              CCL::ECS::EntityID     entity);
+#endif
 };

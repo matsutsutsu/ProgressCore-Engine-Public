@@ -31,6 +31,11 @@ public:
     }
     virtual ~AnimControllerSystem() = default;
 
+
+    /// @brief 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
+    ///        AnimSetup が不足コンポーネントを付与してから状態遷移を評価する。
+    std::vector<const char *> GetRunAfter() const override { return {"AnimSetupSystem"}; }
+
     void Update(float dt) override;
 
     // エディタ用のシステムインスペクタ描画

@@ -1,3 +1,28 @@
+/// @file  CCL_ChunkManager.cpp
+/// @brief Chunk（同じ型構成のエンティティを集めた箱）の生成・引っ越し・破棄。ECS の構造変更の実装本体。
+///
+/// 【構造変更はフレーム境界でしか起きない】
+///   システム実行中に Chunk の中身が動くと、走っているループが握るポインタが無効になる。
+///   Spawn / Destroy / AddComponent / RemoveComponent はすべて PendingOps へ予約として積まれ、
+///   World::ScrutinyAndApply から ApplyPendingOperations が一括で適用する。
+///   即時実行版（AddEntity / DestroyEntity / CreateChunk）は初期化とテスト用で、
+///   ゲームコードからの経路ではない。
+///
+/// 【住所録 m_entityLocationMap】
+///   「EntityID → (Chunk番号, 席番号)」を index 添字の配列で持つので O(1) で引ける。
+///   代わりに席が動く操作（生成・引っ越し・穴詰め）すべてで更新しないと、
+///   SearchEntityIn が古い席を返して「別のエンティティのデータが見える」形で壊れる。
+///   更新は UpdateEntityLocation / RemoveEntityLocation の2つに集約してある。
+///
+/// 【破棄は2段階】
+///   中身を destructor で壊すのと、空いた席を詰めるのを分離している。
+///   1体消すたびに詰めると席がずれるたびに住所録の更新が要るため、
+///   穴詰め（CompactAllChunks）はフレーム末尾に1回だけまとめる。
+///
+/// 【型消去】
+///   Chunk は生メモリなので、構築も破棄も TypeData が持つ関数ポインタ経由で行う。
+///   factory / mover / constructor / assigner / memcpy のどれを選ぶかが値の壊れ方を
+///   決めるため、各関数のコメントで優先順位とその理由を明示している。
 #include "CCL_ChunkManager.h"
 #include <algorithm>
 #include <cstring>
@@ -9,46 +34,22 @@ namespace CCL::ECS
 {
     using namespace CCL::ECS;
 
-    // ----------------------------------------------------------------
-    // 内部ユーティリティ
-    // ----------------------------------------------------------------
+    // ---- 内部ユーティリティ ------------------------------------------------
 
-    // ============================================================================
-    // GetPureIndex  ─ EntityID から世代を捨てて index だけ取り出す
-    // ----------------------------------------------------------------------------
-    //  一言で : 下位32bit（index）だけを残すビット演算。
-    //
-    //  EntityID は 64bit で [上位32bit = 世代][下位32bit = index] の構造。
-    //  0xFFFFFFFF と & を取ると、上位32bit が 0 になり index だけが残る。
-    //
-    //  なぜ世代を捨てるのか
-    //    住所録 m_entityLocationMap は「index を配列の添字」にして引く。
-    //    世代が何であれ「配列のどこか」は同じなので、index だけあればよい。
-    //    世代の照合は World::IsEntityValid の担当（役割分担）。
-    //
-    //  実装メモ
-    //    ビットレイアウト（マスク・シフト量）の定義は CCL_Types.h の EntityHandle
-    //    に一本化してある。ここで 0xFFFFFFFF を直接書くとレイアウトの定義が
-    //    二箇所に散るため、EntityHandle::GetIndex を経由している。
-    //    戻り値が size_t なのは、呼び出し側が vector の添字として使うため。
-    // ============================================================================
-    /// @brief EntityID から世代情報を切り捨て、純粋なインデックスを取り出す
+    /// @brief EntityID から世代を捨て、住所録の添字に使う index を取り出す。
+    /// @note  世代の照合はしない。それは World::IsEntityValid の担当。
+    ///        ビットレイアウトの定義が二箇所に散るのを避けるため、0xFFFFFFFF を
+    ///        直に書かず EntityHandle::GetIndex を通している。
     inline size_t GetPureIndex(EntityID id)
     {
         return static_cast<size_t>(EntityHandle::GetIndex(id));
     }
 
-    // ================================================================
-    // 公開 API
-    // ================================================================
+    // ---- 公開 API ----------------------------------------------------------
 
-    // ============================================================================
-    // ChunkManager::CreateChunk  ─ その型構成の箱が無ければ1つ作る
-    // ----------------------------------------------------------------------------
-    //  一言で : 既に同じ Archetype の Chunk があれば何もしないで return。
-    //  定員は CalculateChunkCapacity（16KB ÷ 1体のバイト数）で決める。
-    //  注意   : 「空きがあるか」は見ない。空きも見たいなら GetOrCreateAvailableChunk。
-    // ============================================================================
+    /// その型構成の箱が無ければ1つ作る。
+    /// 「空きがあるか」は見ないので、満員でも既存があれば何もしない。
+    /// 空きまで保証したいときは GetOrCreateAvailableChunk を使う。
     void ChunkManager::CreateChunk(const Archetype& archetype)
     {
         for (auto& c : m_chunks)
@@ -58,17 +59,12 @@ namespace CCL::ECS
         }
         m_chunks.emplace_back(std::make_unique<Chunk>());
 
-        // アーキタイプから計算した定員を渡す
         size_t capacity = CalculateChunkCapacity(archetype);
         m_chunks.back()->Create(archetype, capacity);
     }
 
-    // ============================================================================
-    // ChunkManager::FinalizeAll  ─ 全 Chunk を畳んで住所録も空にする
-    // ----------------------------------------------------------------------------
-    //  一言で : World の終了時・Clear 時に呼ばれる後片付け。
-    //  unique_lock で排他するのは、構造を壊す操作だから。
-    // ============================================================================
+    /// World の終了・Clear 時の後片付け。
+    /// 構造そのものを壊す操作なので、共有ロックではなく unique_lock を取る。
     void ChunkManager::FinalizeAll()
     {
         std::unique_lock<std::shared_mutex> lock(m_structureMutex);
@@ -80,34 +76,20 @@ namespace CCL::ECS
         m_entityLocationMap.clear();
     }
 
-    // ============================================================================
-    // ChunkManager::AddEntity  ─ エンティティを箱に入れる（即時実行版）
-    // ----------------------------------------------------------------------------
-    //  一言で : 空きのある Chunk を探し（無ければ作り）、席を確保して住所録に登録。
-    //
-    //  流れ
-    //    1. find_if で「型が一致 かつ 満員でない」Chunk を探す
-    //    2. 無ければ新規作成（定員は CalculateChunkCapacity で計算）
-    //    3. InsertEntity で席を確保（ゼロクリア込み）
-    //    4. UpdateEntityLocation で住所録に登録
-    //
-    //  注意
-    //    こちらは予約を経由しない【即時実行】ルート。
-    //    通常のゲームコードから来る Spawn は PendingOps 経由で
-    //    ApplyPendingOperations → InsertNewEntity を通る。
-    // ============================================================================
+    /// 空きのある Chunk へ席を確保し、住所録に登録する。
+    /// @note 予約を経由しない【即時実行】ルート。ゲームコードからの Spawn はここへ来ず、
+    ///       PendingOps → ApplyPendingOperations → InsertNewEntity を通る。
+    ///       こちらは初期値を書き込まないので、席はゼロクリアのままになる。
     void ChunkManager::AddEntity(EntityID entity, const Archetype& archetype)
     {
         std::unique_lock<std::shared_mutex> lock(m_structureMutex);
 
-        // 1. 同 Archetype かつ空きがある Chunk を探す
         auto it = std::find_if(m_chunks.begin(), m_chunks.end(),
             [&](const std::unique_ptr<Chunk>& c) {
                 return c->GetArchetype() == archetype &&
                        c->GetEntityCount() < c->GetCapacity();
             });
 
-        // 2. 無ければ新規作成
         if (it == m_chunks.end())
         {
             m_chunks.emplace_back(std::make_unique<Chunk>());
@@ -116,22 +98,17 @@ namespace CCL::ECS
             it = std::prev(m_chunks.end());
         }
 
-        // 3. 挿入
         (*it)->InsertEntity(entity);
 
-        // 4. 位置を登録
         size_t chunkIdx  = std::distance(m_chunks.begin(), it);
         size_t entityIdx = (*it)->GetEntityCount() - 1;
         UpdateEntityLocation(entity, chunkIdx, entityIdx);
     }
 
-    // ============================================================================
-    // ChunkManager::DestroyEntity  ─ 削除マークを付けて住所録から消す（即時実行版）
-    // ----------------------------------------------------------------------------
-    //  一言で : MarkDestroyEntity（印を付けるだけ）+ 住所録の抹消。
-    //  注意   : デストラクタは呼んでいない。予約経由の破棄は ApplyDestroyOp が
-    //           destructor を呼んでからここと同じことをする。
-    // ============================================================================
+    /// 即時実行版の破棄。席に印を付けて住所録から消すだけで、destructor は呼ばない。
+    /// @note デストラクタまで面倒を見るのは予約経由の ApplyDestroyOp のほう。
+    ///       RAII を持つコンポーネントがある Entity をこちらで消すとリークするので、
+    ///       ゲームコードからは World::RequestDestroyEntity を使うこと。
     void ChunkManager::DestroyEntity(EntityID entity)
     {
         std::unique_lock<std::shared_mutex> lock(m_structureMutex);
@@ -145,69 +122,40 @@ namespace CCL::ECS
         }
     }
 
-    // ============================================================================
-    // ChunkManager::SearchEntityIn  ─ 「その Entity は今どこにいるか」を O(1) で答える
-    // ----------------------------------------------------------------------------
-    //  一言で : 住所録を index で引くだけ。全 Chunk を探し回ったりはしない。
-    //
-    //  引数
-    //    entity         : 探したい EntityID
-    //    outEntityIndex : ポインタを渡すと「Chunk 内の席番号」が書き込まれる。
-    //                     席番号が要らないときは nullptr でよい（既定値）
-    //
-    //  戻り値
-    //    見つかれば Chunk のインデックス（m_chunks の添字）
-    //    見つからなければ InvalidIndex
-    //
-    //  処理
-    //    1. GetPureIndex で世代を捨てて index にする
-    //    2. 範囲外なら InvalidIndex
-    //    3. m_entityLocationMap[index] を配列アクセス一発で取る ← O(1)の正体
-    //    4. chunkIndex が InvalidIndex なら「墓石」＝破棄済み
-    //    5. 席番号を書き戻して Chunk 番号を返す
-    //
-    //  注意: 世代チェックをしない
-    //    古い世代の ID を渡すと、index を再利用した【別の】エンティティの
-    //    住所が返ってくる。世代照合は World::IsEntityValid の担当。
-    //    World::GetComponent は先に IsEntityValid を通してからここへ来る。
-    //
-    //  「墓石」とは
-    //    RemoveEntityLocation は要素を erase せず InvalidIndex で上書きする。
-    //    配列の添字が index と対応している以上、途中を削ると全部ずれるため。
-    // ============================================================================
+    /// 「その Entity は今どこにいるか」を住所録から O(1) で引く。全 Chunk は走査しない。
+    ///
+    /// @param outEntityIndex Chunk 内の席番号の書き込み先。不要なら nullptr。
+    /// @return Chunk の添字。居なければ InvalidIndex。
+    ///
+    /// @note 世代チェックをしない。古い世代の ID を渡すと、index を再利用した
+    ///       【別の】エンティティの住所が返る。照合は World::IsEntityValid の担当で、
+    ///       World::GetComponent はそちらを通してからここへ来る。
+    ///
+    /// @note chunkIndex == InvalidIndex は「墓石」。RemoveEntityLocation は要素を
+    ///       erase せず無効値で上書きするため（添字が index と対応している以上、
+    ///       途中を削ると後ろの住所が全部ずれる）。
     size_t ChunkManager::SearchEntityIn(EntityID entity, size_t* outEntityIndex) const
     {
         size_t index = GetPureIndex(entity);
 
         if (index >= m_entityLocationMap.size()) return InvalidIndex;
 
-        // O(1) のキャッシュヒット確定アクセス
         const auto& loc = m_entityLocationMap[index];
 
-        // 墓石（無効化済み）
+        // 墓石（破棄済みで席が無い）
         if (loc.chunkIndex == InvalidIndex) return InvalidIndex;
 
         if (outEntityIndex) *outEntityIndex = loc.entityIndex;
         return loc.chunkIndex;
     }
 
-    // ============================================================================
-    // ChunkManager::GetOrCreateAvailableChunk  ─ 空きのある箱を返す（無ければ作る）
-    // ----------------------------------------------------------------------------
-    //  一言で : 「型が一致 かつ 満員でない」Chunk を探し、無ければ新規作成して返す。
-    //
-    //  戻り値は Chunk& （参照）。必ず有効な箱が返るので nullptr チェックは不要。
-    //
-    //  定員を超えたときに2個目の Chunk が生まれるのはここ
-    //    条件に GetEntityCount() < GetCapacity() が入っているため、
-    //    683体目を入れようとすると既存 Chunk が弾かれて新しい箱が作られる。
-    //
-    //  std::find_if(begin, end, ラムダ)
-    //    条件に合う最初の要素を探す標準関数。見つからなければ end() が返る。
-    // ============================================================================
+    /// 「型が一致 かつ 満員でない」Chunk を返す。無ければ作るので戻り値は必ず有効
+    /// （参照で返しているのはこのため。呼び出し側に nullptr チェックは要らない）。
+    ///
+    /// 同じ型構成の2個目以降の Chunk が生まれるのはここ。検索条件に
+    /// GetEntityCount() < GetCapacity() が入っているので、定員に達した箱は弾かれる。
     Chunk& ChunkManager::GetOrCreateAvailableChunk(const Archetype& archetype)
     {
-        // ? 何やっているのか全体的にわからん
         auto it = std::find_if(m_chunks.begin(), m_chunks.end(),
             [&](const std::unique_ptr<Chunk>& c) {
                 return c->GetArchetype() == archetype &&
@@ -224,49 +172,27 @@ namespace CCL::ECS
         return **it;
     }
 
-    // ============================================================================
-    // ChunkManager::InsertNewEntity  ─ Spawn 経路の実体化処理
-    // ----------------------------------------------------------------------------
-    //  一言で : 新しいエンティティの席を取り、初期値を全部書き込む。
-    //
-    //  引数
-    //    dstChunk : 入れる先の箱
-    //    entityID : 実体化するエンティティ
-    //    addOps   : この Entity への AddComponent 予約の一覧（＝初期値の供給源）
-    //
-    //  流れ
-    //    1. AddEntity で席を確保し、住所録を更新
-    //    2. 箱が持つ全ての型について、初期値を書き込んでいく
-    //    3. addOps を【逆順】に探して、その型の初期値があるか調べる
-    //    4. あれば構築、無ければデフォルト構築 or ゼロクリア
-    //    5. m_onEntityMove で「実体化した」ことを外へ通知
-    //
-    //  なぜ addOps を逆順ループするのか
-    //    同じ型に対して Set を複数回呼んだとき、【最後の値を勝たせる】仕様のため。
-    //    後ろから探して最初に見つかったものを採用し、break する。
-    //
-    //  構築の優先順位（大事）
-    //    factory     : 構築関数があればそれで直接構築（コピー禁止型もOK）
-    //    mover       : op->data からムーブ構築。元は「抜け殻」になる
-    //    constructor : ムーブが無ければコピー構築
-    //    memcpy      : どれも無ければ生バイトコピー
-    //
-    //    mover を最優先するのは、後で PendingOps::Clear が元データに
-    //    destructor を呼んでも、RAII リソース（ハンドル等）が解放されないようにするため。
-    // ============================================================================
+    /// Spawn 経路の実体化。席を取り、Chunk が持つ全ての型に初期値を書き込む。
+    /// @param addOps この Entity への AddComponent 予約＝初期値の供給源。
+    ///
+    /// @note addOps を【逆順】に走査するのは、同じ型へ Set を複数回呼んだとき
+    ///       「最後の値を勝たせる」仕様のため。後ろから見て最初の一致で break する。
+    ///
+    /// @note 構築の優先順位が値の壊れ方を決める:
+    ///         factory > mover > constructor > memcpy
+    ///       mover を constructor より先に見るのが要点。ここでコピー構築すると、
+    ///       後段の PendingOps::Clear が元データに destructor を呼んだ時点で
+    ///       RAII リソース（ModelInstanceHandle 等）が解放され、複製先が死ぬ。
     void ChunkManager::InsertNewEntity(
         Chunk& dstChunk,
         EntityID entityID,
         const std::vector<PendingOp*>& addOps)
     {
-        // 1. 席を確保して、正しいインデックスを直接受け取る
         size_t newIndex = dstChunk.AddEntity(entityID);
 
-        // 位置を登録
         size_t chunkIdx = GetChunkIndex(&dstChunk);
         UpdateEntityLocation(entityID, chunkIdx, newIndex);
 
-        // 2. チャンクの全構成要素を初期化
         for (const TypeData& td : dstChunk.GetTypeDatas())
         {
             void* dstPtr = dstChunk.GetComponentPtrByType(td.id, newIndex);
@@ -274,30 +200,25 @@ namespace CCL::ECS
 
             bool filled = false;
 
-            // 3. PendingOp に該当する初期データがあるか探す
-            // 最後にした AddComponent の値で上書きする仕様のため逆順ループ
+            // 逆順＝後から積まれた AddComponent の値を勝たせる
             for (int i = (int)addOps.size() - 1; i >= 0; --i)
             {
                 auto* op = addOps[i];
                 if (op->type == td.id)
                 {
-                    // factory があれば直接構築 (Emplace)
-                     // コピー禁止型もここで Move 構築される
+                    // factory は Emplace 経路。コピー禁止型もここで構築される
                     if (op->factory) {
                         op->factory(dstPtr);
                     }
-                    // 一時メモリからの移送はムーブを最優先する。
-                    //    （元の構造を保ち、constructor の if だけを mover 優先に変更）
-                    //    mover があれば op->data を「抜け殻」にしてムーブ構築。
-                    //    これにより後段の PendingOps::Clear で元を destructor しても
-                    //    RAII リソース（ModelInstanceHandle 等）が解放されない。
+                    // 一時メモリからの移送は必ずムーブを先に試す。
+                    // PendingOp::data は非const の void* なので mover(void*, void*) へそのまま渡せる。
                     if (op->data && td.mover)
                     {
-                        td.mover(dstPtr, op->data);       // ムーブ構築（元は無効化される）
+                        td.mover(dstPtr, op->data);       // 元は抜け殻になる（＝Clear で壊されても安全）
                     }
                     else if (op->data && td.constructor)
                     {
-                        td.constructor(dstPtr, op->data); // フォールバック: コピー構築
+                        td.constructor(dstPtr, op->data); // ムーブを持たない型のフォールバック
                     }
                     else if (op->data)
                     {
@@ -305,21 +226,10 @@ namespace CCL::ECS
                     }
                     filled = true;
                     break;
-
-
-                    //  ----------------------------------------------------------------------------
-                    //  型について:
-                    //    PendingOp::data は非const の void* で、td.mover の (void* dst, void* src)
-                    //    にそのまま渡せる。constructor 側は (void*, const void*) だが実体は非const。
-                    //
-                    //  チャンク間移動（MoveEntityBetweenChunks）は元から mover を優先している。
-                    //  ムーブ専用型を壊すのは AddComponent 適用時（InsertNewEntity）の経路だけなので、
-                    //  ここでも mover があればそちらを使う。
-                    //============================================================================
                 }
             }
 
-            // 4. データが無ければデフォルト構築 or ゼロクリア
+            // 初期値の指定が無い型はデフォルト構築、それも無ければゼロクリア
             if (!filled)
             {
                 if (td.defaultConstructor)
@@ -333,19 +243,14 @@ namespace CCL::ECS
             }
         }
 
-        // 5. 生成完了の通知
+        // World 側のコンポーネントキャッシュへ実体化を知らせる
         if (m_onEntityMove) {
             m_onEntityMove(entityID, &dstChunk, newIndex);
         }
     }
 
-    // ============================================================================
-    // ChunkManager::SearchEqualChunk  ─ 型構成が完全一致する箱を探す
-    // ----------------------------------------------------------------------------
-    //  一言で : 先頭から線形探索して、Archetype が == の Chunk の添字を返す。
-    //  「空きがあるか」は見ないので、満員の箱も返る点に注意。
-    //  見つからなければ InvalidIndex。
-    // ============================================================================
+    /// 型構成が完全一致する Chunk を線形探索する。
+    /// 空きの有無は見ないので、満員の箱も返る。
     size_t ChunkManager::SearchEqualChunk(const Archetype& a) const
     {
         for (size_t i = 0; i < m_chunks.size(); ++i)
@@ -356,14 +261,9 @@ namespace CCL::ECS
         return InvalidIndex;
     }
 
-    // ============================================================================
-    // ChunkManager::UpdateEntityLocation  ─ 住所録に「今どこにいるか」を書き込む
-    // ----------------------------------------------------------------------------
-    //  一言で : m_entityLocationMap[index] = (Chunk番号, 席番号) を書くだけ。
-    //  index が配列サイズを超えていたら resize して伸ばす。
-    //  席が動くたび（生成/引っ越し/穴詰め）に必ず呼ばれる。ここが漏れると
-    //  SearchEntityIn が古い場所を返してバグる。
-    // ============================================================================
+    /// 住所録に「今どこにいるか」を書く。席が動く操作（生成・引っ越し・穴詰め）は
+    /// 必ずここを通すこと。1箇所でも漏れると SearchEntityIn が古い席を返し、
+    /// 別のエンティティのデータを掴む形で壊れる。
     void ChunkManager::UpdateEntityLocation(EntityID entity, size_t chunkIdx, size_t entityIdx)
     {
         size_t index = GetPureIndex(entity);
@@ -375,34 +275,22 @@ namespace CCL::ECS
         m_entityLocationMap[index] = EntityLocation(chunkIdx, entityIdx);
     }
 
-    // ============================================================================
-    // ChunkManager::RemoveEntityLocation  ─ 住所録から抹消する
-    // ----------------------------------------------------------------------------
-    //  一言で : erase せず InvalidIndex で上書きして「墓石」を残す。
-    //
-    //  なぜ erase しないのか
-    //    m_entityLocationMap は「index を配列の添字」にして引く設計。
-    //    途中の要素を erase すると後ろが全部前にずれて、
-    //    他の全エンティティの住所が壊れてしまう。
-    //    だから穴は開けたまま、無効値で塗り潰す。
-    // ============================================================================
+    /// 住所録から抹消する。erase せず無効値で上書きして「墓石」を残す。
+    /// m_entityLocationMap は index を配列の添字にして引く設計なので、
+    /// 途中の要素を erase すると後ろが全部前へずれ、他の全エンティティの住所が壊れる。
     void ChunkManager::RemoveEntityLocation(EntityID entity)
     {
         size_t index = GetPureIndex(entity);
 
         if (index < m_entityLocationMap.size()) {
-            // erase ではなく無効値で上書き（再利用時の整合性のため）
             m_entityLocationMap[index] = EntityLocation(InvalidIndex, InvalidIndex);
         }
     }
 
-    // ============================================================================
-    // ChunkManager::GetChunkIndex  ─ Chunk ポインタ → m_chunks の添字
-    // ----------------------------------------------------------------------------
-    //  一言で : ポインタが一致する Chunk を先頭から探すだけ。
-    //  注意   : 【線形探索】なので Chunk が増えると遅くなる（既知の弱点）。
-    //           引っ越しが多いフレームでは O(移動数 × Chunk数) になる。
-    // ============================================================================
+    /// Chunk ポインタから m_chunks の添字を引く。
+    /// @note 【線形探索】。Chunk 数に比例して遅くなり、引っ越しの多いフレームでは
+    ///       O(移動数 × Chunk数) になる。既知の弱点で、必要になったら
+    ///       Chunk 側に自分の添字を持たせて潰す。
     size_t ChunkManager::GetChunkIndex(const Chunk* chunk) const
     {
         for (size_t i = 0; i < m_chunks.size(); ++i) {
@@ -413,23 +301,13 @@ namespace CCL::ECS
         return InvalidIndex;
     }
 
-    // ============================================================================
-    // ChunkManager::CalculateChunkCapacity  ─ 1つの箱に何体入るかを決める
-    // ----------------------------------------------------------------------------
-    //  一言で : 16384バイト ÷ 1体あたりのバイト数。
-    //
-    //  実験1の「定員682体」はここで出た値
-    //    Position(12) + Velocity(12) = 24 バイト
-    //    16384 / 24 = 682
-    //
-    //  なぜ 16KB 固定なのか
-    //    CPU の L1/L2 キャッシュに収まりやすいサイズだから。
-    //    箱ごとキャッシュに載れば、ループが劇的に速くなる。
-    //
-    //  例外処理
-    //    stride == 0（タグ型のみでサイズ0）→ 割り算できないので 1024 を返す
-    //    1体が16KBを超える            → 0 になってしまうので最低 1 を返す
-    // ============================================================================
+    /// 1つの箱に何体入るかを決める。CHUNK_SIZE_BYTES ÷ 1体あたりのバイト数。
+    ///
+    /// 箱のサイズを 16KB 固定にしているのは、箱ごと CPU キャッシュに載せるため。
+    /// 定員はコンポーネント構成で変わる（例: Position+Velocity=24B なら 682体）。
+    ///
+    /// @note 例外が2つ。タグ型だけで stride==0 のときは割れないので 1024、
+    ///       1体が 16KB を超えるときは 0 になってしまうので最低 1 を返す。
     size_t ChunkManager::CalculateChunkCapacity(const Archetype& archetype) const
     {
         size_t stride = 0;
@@ -437,48 +315,30 @@ namespace CCL::ECS
             stride += t.typeSize;
         }
 
-        // 例外1: タグのみ（サイズ 0）
         if (stride == 0) return 1024;
 
-        // 例外2: 1 体が大きすぎて 16KB に収まらない場合、最低 1 体は確保
         size_t capacity = CHUNK_SIZE_BYTES / stride;
         return capacity > 0 ? capacity : 1;
     }
 
-    // ================================================================
-    // Archetype 遷移（既存メソッド・挙動は元のまま）
-    // ================================================================
-    // ============================================================================
-    // ChunkManager::MoveEntityBetweenChunks  ─ アーキタイプ遷移の本体（引っ越し）
-    // ----------------------------------------------------------------------------
-    //  一言で : コンポーネント構成が変わったエンティティを、別の箱へ引っ越させる。
-    //
-    //  なぜ引っ越しが必要か
-    //    Chunk は「同じ型構成のエンティティだけ」を集める箱。
-    //    Health を1つ足しただけで型構成が変わるので、元の箱には居られなくなる。
-    //
-    //  引数
-    //    srcChunk/srcIndex : 今いる箱と席番号
-    //    dstChunk          : 引っ越し先（GetOrCreateAvailableChunk が用意済み）
-    //    addOps            : 新しく足す型の初期値
-    //    removeTypeIDs     : 外す型の一覧
-    //
-    //  流れ
-    //    1. 引っ越し先に席を確保し、住所録を【先に】更新する
-    //    2. 両者の Archetype から TypeID→添字 の逆引きマップを作る
-    //    3. 引っ越し先の各列を、次の3パターンで埋める
-    //         パターンA: 元の箱にもある型 → mover でデータを運ぶ（値が保持される）
-    //         パターンB: 新しく足された型 → addOps の初期値で構築
-    //         パターンC: どちらでもない   → ゼロクリア
-    //    4. 元の箱の全コンポーネントに destructor を呼ぶ
-    //    5. m_onEntityMove で引っ越し完了を通知
-    //    6. 元の席に削除マークを付ける（実際に詰まるのは CompactHoles）
-    //
-    //  戻り値 : 引っ越せたら true。既に破棄済みだった場合は false。
-    //
-    //  実験4で追っているのがこの関数。
-    //  Position の値が引っ越し後も (7,8,9) のままなのはパターンAのおかげ。
-    // ============================================================================
+    // ---- Archetype 遷移 ----------------------------------------------------
+
+    /// 型構成が変わったエンティティを別の箱へ引っ越させる。
+    /// Chunk は「同じ型構成だけ」を集める箱なので、Health を1つ足した時点で
+    /// 元の箱には居られなくなる。これがアーキタイプ遷移の実体。
+    ///
+    /// 引っ越し先の各列は3パターンで埋まる:
+    ///   A: 元の箱にもある型 → mover で運ぶ。引っ越しても値が保持されるのはここ
+    ///   B: 新しく足された型 → addOps の初期値で構築
+    ///   C: どちらでもない   → ゼロクリア
+    ///
+    /// @note 住所録の更新をデータ移送より【先に】やっている。以降の
+    ///       GetComponentPtrByType が新しい席を前提にしているため。
+    ///
+    /// @note 元の席は MarkDestroyEntity で印を付けるだけ。実際に詰まるのは
+    ///       フレーム末尾の CompactAllChunks。
+    ///
+    /// @return 引っ越せたら true。既に破棄済みだった場合は false。
     bool ChunkManager::MoveEntityBetweenChunks(
         Chunk& srcChunk,
         size_t srcIndex,
@@ -487,23 +347,20 @@ namespace CCL::ECS
         const std::vector<PendingOp*>& addOps,
         const std::vector<TypeID>& removeTypeIDs)
     {
-        // 既に削除されていれば移動不可
         if (srcChunk.IsEntityDestroyed(srcIndex)) {
             return false;
         }
 
-        // 1. 宛先 Chunk に席を確保
         dstChunk.InsertEntity(entity);
         size_t dstIndex = dstChunk.GetEntityCount() - 1;
 
-        // 新しい住所をマスターマップに登録（重要）
+        // データを運ぶ前に住所を更新する（以降は新しい席を前提に読む）
         size_t dstChunkIdx = GetChunkIndex(&dstChunk);
         UpdateEntityLocation(entity, dstChunkIdx, dstIndex);
 
         const Archetype& srcArch = srcChunk.GetArchetype();
         const Archetype& dstArch = dstChunk.GetArchetype();
 
-        // TypeID → インデックスの逆引きマップを作成
         auto BuildIndexMap = [](const Archetype& a) {
             std::unordered_map<TypeID, size_t> m;
             for (size_t i = 0; i < a.size(); ++i) m[a[i].id] = i;
@@ -512,13 +369,12 @@ namespace CCL::ECS
         auto srcMap = BuildIndexMap(srcArch);
         auto dstMap = BuildIndexMap(dstArch);
 
-        // 2. 宛先 Chunk の各列を順に埋める
         for (size_t di = 0; di < dstArch.size(); ++di)
         {
             const TypeData& tdDst = dstArch[di];
             void* dstPtr = dstChunk.GetComponentPtrByType(tdDst.id, dstIndex);
 
-            // パターンA: 元の家からそのまま持ってくる
+            // パターンA: 元の箱から運ぶ
             auto itSrc = srcMap.find(tdDst.id);
             if (itSrc != srcMap.end())
             {
@@ -534,7 +390,7 @@ namespace CCL::ECS
                     std::memcpy(dstPtr, srcPtr, tdDst.typeSize);
                 }
             }
-            // パターンB: 新規追加された荷物
+            // パターンB: 新しく足された型
             else
             {
                 bool filled = false;
@@ -555,7 +411,7 @@ namespace CCL::ECS
                         }
                     }
                 }
-                // パターンC: 何も指定がなければ 0 クリア
+                // パターンC: 指定が無ければゼロクリア
                 if (!filled)
                 {
                     std::memset(dstPtr, 0, tdDst.typeSize);
@@ -563,7 +419,6 @@ namespace CCL::ECS
             }
         }
 
-        // 元 Chunk のデータを全て破棄
         for (size_t si = 0; si < srcArch.size(); ++si)
         {
             const TypeData& tdSrc = srcArch[si];
@@ -571,134 +426,70 @@ namespace CCL::ECS
             tdSrc.destructor.Destruct(srcPtr);
         }
 
-        // 引っ越し完了を通知
         if (m_onEntityMove) {
             m_onEntityMove(entity, &dstChunk, dstIndex);
         }
 
-        // 元 Chunk のエンティティを削除マーク
         srcChunk.MarkDestroyEntity(srcIndex);
 
         return true;
     }
 
 
-    // ================================================================
-    // ApplyPendingOperations - 分割版オーケストレータ
-    // ================================================================
-    //
-    // 設計方針:
-    //   かつて 280 行あった巨大関数を以下の責務に分解しています。
-    //   挙動は完全に元と同一を保証しています。
-    //
-    //   ApplyPendingOperations (本関数)
+    // ---- 予約の適用 --------------------------------------------------------
+    //   ApplyPendingOperations
     //     ├─ GroupOpsByEntity()
-    //     ├─ for each entity:
-    //     │   └─ ProcessEntityOps()
-    //     │       ├─ HasDestroyOp()
-    //     │       ├─ ApplyDestroyOp()
-    //     │       ├─ DetermineNextArchetype()
-    //     │       ├─ CalculateArchetypeDiff()
-    //     │       ├─ UpdateExistingComponents()
-    //     │       └─ ApplyPatchOps()
+    //     ├─ for each entity: ProcessEntityOps()
+    //     │     ├─ HasDestroyOp() / ApplyDestroyOp()
+    //     │     ├─ DetermineNextArchetype()
+    //     │     ├─ CalculateArchetypeDiff()
+    //     │     ├─ InsertNewEntity() / MoveEntityBetweenChunks() / UpdateExistingComponents()
+    //     │     └─ ApplyPatchOps()
     //     └─ CompactAllChunks()
-    // ================================================================
 
-    // ============================================================================
-    // ChunkManager::ApplyPendingOperations  ─ 溜まった予約を全部実行する総司令塔
-    // ----------------------------------------------------------------------------
-    //  一言で : 予約リストを実際のメモリ操作に変換する。ここが構造変更の心臓部。
-    //
-    //  呼ばれる場所
-    //    World::ScrutinyAndApply の1箇所だけ（＝フレームの境界でしか呼ばれない）。
-    //
-    //  戻り値
-    //    実際に破棄された EntityID のリスト。
-    //    World 側がこれを受け取って RecycleEntityID（世代++）に回す。
-    //
-    //  流れ
-    //    Phase 0 : unique_lock で排他（この間 System は動けない）
-    //    Phase 0': 予約が空なら即 return（何もしないのが一番速い）
-    //    Phase 1 : GroupOpsByEntity()   予約を Entity ごとに束ね直す
-    //    Phase 2 : Entity ごとに ProcessEntityOps() を呼ぶ
-    //    Phase 3 : CompactAllChunks()   全 Chunk の穴をまとめて詰める
-    //
-    //  なぜ穴詰めを最後にまとめるのか
-    //    1体消すたびに詰め直すと無駄が多いうえ、席がずれるたびに
-    //    住所録を更新し直すことになるため。
-    //
-    //  ＜デバッガの道しるべ＞
-    //    Phase1 → Phase2 の順に F11 で入っていくと流れが掴める。
-    //    実際の処理の本体は Phase2 の ProcessEntityOps。
-    // ============================================================================
+    /// 溜まった予約を実際のメモリ操作へ変換する。ECS の構造変更はすべてここを通る。
+    ///
+    /// 呼ばれるのは World::ScrutinyAndApply の1箇所だけ＝フレーム境界のみ。
+    /// 実行中は unique_lock を握るので、この間システムは1つも動けない。
+    ///
+    /// @note 穴詰めを Entity ごとにやらず最後の CompactAllChunks へまとめているのは、
+    ///       1体消すたびに詰めると席がずれるたびに住所録の更新が要るため。
+    ///
+    /// @return 実際に破棄した EntityID。World がこれを RecycleEntityID（世代++）へ回す。
     std::vector<EntityID> ChunkManager::ApplyPendingOperations(PendingOps& pendingOps)
     {
-        // 排他ロックを取得（この間 System は待機）
         std::unique_lock<std::shared_mutex> lock(m_structureMutex);
 
         std::vector<EntityID> destroyedEntities;
         if (pendingOps.Ops().empty()) return destroyedEntities;
 
-        // Phase 1: PendingOps を Entity ごとに束ねる
-        //
-        //  ＜なぜ auto なのか＞
-        //    実際の型は std::unordered_map<EntityID, std::vector<PendingOp*>>。
-        //    書き下すと長いので auto にしているだけで、意味は一切変わらない。
-        //    デバッガで型を確かめたいときは、変数にマウスを乗せるか
-        //    「自動変数」ウィンドウを見れば実際の型が表示される。
-        //
-        //  ＜なぜ束ねる必要があるのか（こちらが本質）＞
-        //    PendingOps は「予約された順」に一列に並んでいるだけなので、
-        //    同じ Entity への操作があちこちに散らばっている。
-        //    先に Entity 単位へまとめておくと「この Entity の最終的な型構成は何か」を
-        //    一度で計算でき、箱の引っ越しを1回で済ませられる。
-        //    束ねないと、コンポーネントを足すたびに引っ越しが発生してしまう。
+        // 先に Entity 単位へ束ね直す。予約は積まれた順に一列なので同じ Entity への
+        // 操作が散らばっており、そのまま処理すると「コンポーネントを足すたびに引っ越し」
+        // が起きる。まとめておけば最終的な型構成を一度で計算でき、引っ越しは1回で済む。
         auto opsByEntity = GroupOpsByEntity(pendingOps);
 
-        // Phase 2: 各 Entity の操作を処理
-        //
-        //  ＜unordered_set とは＞
-        //    「重複を許さない入れ物」で、中身の有無を高速に判定できるもの。
-        //      std::vector        : 順番あり / 重複OK  / 存在確認は線形探索 O(n)
-        //      std::unordered_set : 順番なし / 重複なし / 存在確認はハッシュで O(1)
-        //    map との違いは「キーと値のペア」か「キーだけ」かの一点。
-        //
-        //  ＜ここで使う理由＞
-        //    alreadyDestroyed は「この Entity はもう破棄済みか？」を何度も
-        //    問い合わせる用途（ProcessEntityOps 内の find がそれ）。
-        //    vector だと毎回全走査になるが、set なら一発で判定できる。
+        // 多重破棄の防止。存在確認を何度も引くので O(1) の set で持つ。
         std::unordered_set<EntityID> alreadyDestroyed;
 
-        // 構造化束縛：map から「キー(EntityID)」と「値(予約リスト)」を同時に取り出す書き方
         for (auto& [entityID, ops] : opsByEntity)
         {
             ProcessEntityOps(entityID, ops, alreadyDestroyed, destroyedEntities);
         }
 
-        // Phase 3: 全 Chunk の穴詰め
         CompactAllChunks();
 
         return destroyedEntities;
     }
 
 
-    // ----------------------------------------------------------------
-    // Phase 1: PendingOps を Entity ID ごとにグループ化
-    // ----------------------------------------------------------------
-    // ============================================================================
-    // ChunkManager::GroupOpsByEntity  ─ バラバラの予約を Entity ごとに束ね直す
-    // ----------------------------------------------------------------------------
-    //  一言で : 一列に並んだ予約を、EntityID をキーにした map へ詰め替えるだけ。
-    //
-    //   入力（予約された順に一列）        出力（Entity ごとにまとまる）
-    //     Entity10 AddTransform             Entity10 → [AddTransform, AddModel]
-    //     Entity20 RemovePhysics       →    Entity20 → [RemovePhysics]
-    //     Entity10 AddModel                 Entity30 → [Spawn]
-    //     Entity30 Spawn
-    //
-    //  値が PendingOp*（ポインタ）なのは、実体をコピーせず参照するだけで済むから。
-    //  元の pendingOps が生きている間だけ有効。
-    // ============================================================================
+    /// 一列に並んだ予約を EntityID をキーにした map へ詰め替える。
+    ///   Entity10 AddTransform         Entity10 → [AddTransform, AddModel]
+    ///   Entity20 RemovePhysics   →    Entity20 → [RemovePhysics]
+    ///   Entity10 AddModel             Entity30 → [Spawn]
+    ///   Entity30 Spawn
+    ///
+    /// @note 値は PendingOp*。実体をコピーしないので、戻り値は元の pendingOps が
+    ///       生きている間だけ有効。
     std::unordered_map<EntityID, std::vector<PendingOp*>>
     ChunkManager::GroupOpsByEntity(PendingOps& pendingOps)
     {
@@ -710,131 +501,79 @@ namespace CCL::ECS
     }
 
 
-    // ----------------------------------------------------------------
-    // Phase 2: 1 Entity 分の処理オーケストレータ
-    // ----------------------------------------------------------------
-    // ============================================================================
-    // ChunkManager::ProcessEntityOps  ─ 1体分の予約をまとめて処理する
-    // ----------------------------------------------------------------------------
-    //  一言で : 最重要のオーケストレータ。この Entity の「最終形」を決めて確定させる。
-    //
-    //  引数
-    //    ops               : この Entity への予約すべて
-    //    alreadyDestroyed  : もう破棄した Entity の集合（多重破棄の防止）
-    //    destroyedEntities : 実際に破棄した ID の蓄積先（World へ返る）
-    //
-    //  6ステップの流れ
-    //    1. Destroy が混ざっていたら最優先で破棄して即 return
-    //       （消えるものに他の操作をしても無意味なので）
-    //    2. 今どこにいるか調べ、既に死んでいないか二重チェック
-    //    3. DetermineNextArchetype : 次の型構成の「出発点」を決める
-    //    4. CalculateArchetypeDiff : Add/Remove を反映して「最終形」にする
-    //    5. 3分岐で確定
-    //         Spawn なら         → InsertNewEntity（新規に席を作る）
-    //         型構成が変わった   → MoveEntityBetweenChunks（引っ越し）
-    //         型構成が同じ       → UpdateExistingComponents（値の上書きだけ）
-    //    6. ApplyPatchOps : 部分書き換えを最後に適用
-    //
-    //  ステップ5の3分岐がこの ECS の要
-    //    「型構成が変わったかどうか」で引っ越すか否かが決まる。
-    //    同じ型に値を入れ直すだけなら引っ越しは起きない（速い）。
-    // ============================================================================
+    /// 1体分の予約をまとめて処理し、この Entity の最終形を確定させる。
+    ///
+    /// 要はステップ5の3分岐で、「型構成が変わったか」だけで引っ越すか否かが決まる。
+    ///   Spawn            → InsertNewEntity（新しく席を作る）
+    ///   型構成が変わった → MoveEntityBetweenChunks（引っ越し）
+    ///   型構成が同じ     → UpdateExistingComponents（値の上書きだけ）
+    /// 同じ型へ値を入れ直すだけなら引っ越しは起きないので、こちらは十分に速い。
+    ///
+    /// @param alreadyDestroyed  破棄済み Entity の集合。多重破棄の防止に使う
+    /// @param destroyedEntities 破棄した ID の蓄積先。World まで返る
     void ChunkManager::ProcessEntityOps(
         EntityID entityID,
         const std::vector<PendingOp*>& ops,
         std::unordered_set<EntityID>& alreadyDestroyed,
         std::vector<EntityID>& destroyedEntities)
     {
-        // -------------------------------------------------------
-        // ステップ 1: 破棄(Destroy) の優先チェック
-        // -------------------------------------------------------
+        // ステップ1: 破棄が混ざっていれば最優先。消えるものに他の操作をしても無意味
         if (HasDestroyOp(ops)) {
             ApplyDestroyOp(entityID, alreadyDestroyed, destroyedEntities);
-            return; // 破棄が確定したら他の操作は全て無視
-        }
-
-        // -------------------------------------------------------
-        // ステップ 2: 既存状態の確認と生存チェック
-        // -------------------------------------------------------
-        size_t srcIndex = 0;
-        // EntityIDを入れるとどのChunkのIndexにあるかを出す関数
-        size_t chunkIdx = SearchEntityIn(entityID, &srcIndex);
-        // Chunkがあるなら実際に取得する
-        Chunk* srcChunk = (chunkIdx != InvalidIndex) ? m_chunks[chunkIdx].get() : nullptr;
-
-        // 削除済みエンティティへの操作をスキップ
-        // ? なんでここスキップする必要あるの？最初に破棄チェックでreturn返しているのに
-        if (alreadyDestroyed.find(entityID) != alreadyDestroyed.end()) {
             return;
         }
 
-        // 既に削除マークがついている場合もスキップ
-        // ? ここもどういった時に削除マークがつくのかどういった処理なのかしりたい
+        // ステップ2: 今どこにいるか
+        size_t srcIndex = 0;
+        size_t chunkIdx = SearchEntityIn(entityID, &srcIndex);
+        Chunk* srcChunk = (chunkIdx != InvalidIndex) ? m_chunks[chunkIdx].get() : nullptr;
+
+        // 以下2つは防御的チェック。opsByEntity は EntityID がキーで1体につき1回しか
+        // ここへ来ず、MarkDestroyEntity を呼ぶ3箇所（DestroyEntity / ApplyDestroyOp /
+        // MoveEntityBetweenChunks）はいずれも住所録を先に更新するため、現状この分岐は
+        // 踏まれない。破棄判定を1箇所に頼らないための保険として残している。
+        if (alreadyDestroyed.find(entityID) != alreadyDestroyed.end()) {
+            return;
+        }
         if (srcChunk && srcChunk->IsEntityDestroyed(srcIndex)) {
             return;
         }
 
-        // -------------------------------------------------------
-        // ステップ 3: 次の Archetype のベースを決定
-        // -------------------------------------------------------
+        // ステップ3: 差分を適用する前のベースとなる型構成を決める
         Archetype nextArch;
         bool isNewSpawn = false;
-        // 変更する予約のArchetypeを決める　Spawnならあたらしく　既存ならそのままなど
         if (!DetermineNextArchetype(ops, srcChunk, nextArch, isNewSpawn)) {
-            return; // 存在しないし Spawn でもないなら何もしない
+            return; // 存在しないし Spawn でもない
         }
 
-        // -------------------------------------------------------
-        // ステップ 4: Add/Remove 差分の計算と nextArch への反映
-        // -------------------------------------------------------
+        // ステップ4: Add/Remove を反映して最終形にする
         std::vector<PendingOp*> addOps;
         std::vector<TypeID> removeIDs;
         CalculateArchetypeDiff(ops, nextArch, addOps, removeIDs);
 
-        // -------------------------------------------------------
-        // ステップ 5: 最終確定処理
-        // -------------------------------------------------------
-        // 新しいSpawnなら
+        // ステップ5: 3分岐で確定させる
         if (isNewSpawn) {
-            // Spawn: 直接 nextArch を持つ Chunk へ挿入
-            // 指定したArchetypeの中から定員が空いているものを探す、なかったらChunk作成する
             Chunk& dstChunk = GetOrCreateAvailableChunk(nextArch);
-            // 見つけたらそのチャンクにEntityを入れてComponentなどのデータの初期値もセットする
             InsertNewEntity(dstChunk, entityID, addOps);
         }
-        // 元のArchetypeと比べて変更されていたら
         else if (!(nextArch == srcChunk->GetArchetype())) {
-            // Archetype 変更: 別 Chunk へ引っ越し
             Chunk& dstChunk = GetOrCreateAvailableChunk(nextArch);
 
-            // MoveEntityBetweenChunks 前に再度削除チェック
             if (!srcChunk->IsEntityDestroyed(srcIndex)) {
                 MoveEntityBetweenChunks(*srcChunk, srcIndex, dstChunk, entityID, addOps, removeIDs);
             }
         }
         else {
-            // Archetype が変わらない（既存 Component を上書き）
             UpdateExistingComponents(srcChunk, srcIndex, ops);
         }
 
-        // -------------------------------------------------------
-        // ステップ 6: Patch（部分修正）の適用
-        // -------------------------------------------------------
-        // データが引っ越しを終わった後に一部のデータを書き換える
-        // Patchを適応する。
+        // ステップ6: Patch は引っ越しでアドレスが変わった後に適用する（ApplyPatchOps 参照）
         ApplyPatchOps(entityID, ops);
     }
 
 
-    // ----------------------------------------------------------------
-    // ステップ 1 補助: Destroy マーカー検出
-    // ----------------------------------------------------------------
-    // ============================================================================
-    // ChunkManager::HasDestroyOp  ─ 予約に Destroy が混ざっているか調べるだけ
-    // ----------------------------------------------------------------------------
-    //  一言で : ops を先頭から見て kind == Destroy が1つでもあれば true。
-    //  Destroy を最優先で判定するために、他の処理より先に呼ばれる。
-    // ============================================================================
+    /// 予約に Destroy が1つでも混ざっているか。
+    /// 他の判定より先に呼ばれ、true なら残りの予約はすべて捨てられる。
     bool ChunkManager::HasDestroyOp(const std::vector<PendingOp*>& ops) const
     {
         for (auto* op : ops) {
@@ -846,91 +585,57 @@ namespace CCL::ECS
     }
 
 
-    // ----------------------------------------------------------------
-    // ステップ 1 補助: Destroy 確定処理
-    // ----------------------------------------------------------------
-    // ============================================================================
-    // ChunkManager::ApplyDestroyOp  ─ 破棄の確定処理
-    // ----------------------------------------------------------------------------
-    //  一言で : 全コンポーネントの destructor を呼び、削除マークを付け、住所録から消す。
-    //
-    //  流れ
-    //    1. alreadyDestroyed に居たらスキップ（多重破棄の防止）
-    //    2. SearchEntityIn で存在確認。居なければ何もしない
-    //    3. 既に削除マークがあれば、記録だけして return
-    //    4. Archetype を回して全コンポーネントに destructor を呼ぶ
-    //       （生メモリなので型ごとの関数ポインタ経由で破棄する＝型消去）
-    //    5. MarkDestroyEntity で席に印を付ける（穴を詰めるのは後）
-    //    6. 住所録から抹消し、結果リストへ積む
-    //
-    //  ここで destructor を呼ぶのに MarkDestroyEntity が印を付けるだけなのは、
-    //  「中身の破棄」と「席の詰め直し」を分離しているから。
-    //  席を詰めるのはフレーム最後の CompactAllChunks の仕事。
-    // ============================================================================
+    /// 破棄の確定処理。全コンポーネントの destructor を呼び、席に印を付け、住所録から消す。
+    ///
+    /// destructor は呼ぶのに席は MarkDestroyEntity で印を付けるだけなのは、
+    /// 「中身の破棄」と「席の詰め直し」を分離しているため。詰めるのは
+    /// フレーム末尾の CompactAllChunks の仕事。
+    ///
+    /// @note Chunk は生メモリなので、破棄は TypeData が持つ destructor の
+    ///       関数ポインタ経由で行う（型消去）。ここを飛ばすと RAII を持つ
+    ///       コンポーネントがリークする。
     void ChunkManager::ApplyDestroyOp(
         EntityID entityID,
         std::unordered_set<EntityID>& alreadyDestroyed,
         std::vector<EntityID>& destroyedEntities)
     {
-        // 既に削除済みならスキップ
         if (alreadyDestroyed.find(entityID) != alreadyDestroyed.end()) {
             return;
         }
 
-        // 既存エンティティの存在確認
         size_t entityIndex = 0;
         size_t chunkIdx = SearchEntityIn(entityID, &entityIndex);
-        if (chunkIdx == InvalidIndex) return; // 存在しないなら何もしない
+        if (chunkIdx == InvalidIndex) return; // 既に居ない
 
         Chunk* cptr = m_chunks[chunkIdx].get();
 
-        // 既に削除マークがあれば二重処理を回避
+        // 印だけ付いていて destructor がまだの状態。破棄済みとして記録し、二重に壊さない
         if (cptr->IsEntityDestroyed(entityIndex)) {
             alreadyDestroyed.insert(entityID);
             return;
         }
 
-        // 全コンポーネントのデストラクタを順に呼び出す
         for (const TypeData& td : cptr->GetArchetype()) {
-            // td.id 型の entityIndex 番目データの住所を取得
             void* ptr = cptr->GetComponentPtrByType(td.id, entityIndex);
-
-            // その型専用のデストラクタで適切に破棄
             td.destructor.Destruct(ptr);
         }
 
-        // 削除マーク
         cptr->MarkDestroyEntity(entityIndex);
-
-        // 住所録から完全抹消
         RemoveEntityLocation(entityID);
 
-        // 結果リストへ登録
         alreadyDestroyed.insert(entityID);
         destroyedEntities.push_back(entityID);
     }
 
 
-    // ----------------------------------------------------------------
-    // ステップ 3 補助: 次の Archetype を決定
-    // ----------------------------------------------------------------
-    // ============================================================================
-    // ChunkManager::DetermineNextArchetype  ─ 次の型構成の「出発点」を決める
-    // ----------------------------------------------------------------------------
-    //  一言で : Add/Remove を適用する前の【ベースとなる型構成】を選ぶ。
-    //
-    //  判定
-    //    ops に Spawn がある     → op.spawnArchetype を採用、isNewSpawn = true
-    //    Spawn が無く既存がいる  → 今いる Chunk の Archetype を引き継ぐ
-    //    どちらも無い            → false を返す（存在しないし Spawn でもない＝何もできない）
-    //
-    //  出力は参照引数で返す
-    //    outArchetype  : 決まったベースの型構成
-    //    outIsNewSpawn : 新規生成かどうか（ProcessEntityOps の3分岐で使う）
-    //
-    //  spawnArchetype が【値】で保持されている理由は
-    //  World::RequestSpawnEntity のコメントを参照（FrameAllocator のダングリング対策）。
-    // ============================================================================
+    /// Add/Remove を適用する前の【ベースとなる型構成】を選ぶ。
+    ///   ops に Spawn がある    → op.spawnArchetype を採用し、outIsNewSpawn = true
+    ///   Spawn が無く既存が居る → 今いる Chunk の Archetype を引き継ぐ
+    ///   どちらでもない         → false（何もできない）
+    ///
+    /// @note spawnArchetype が PendingOp の【値】メンバなのは、参照で持つと
+    ///       FrameAllocator の寿命が切れた瞬間にダングリングするため。
+    ///       経緯は World::RequestSpawnEntity のコメント。
     bool ChunkManager::DetermineNextArchetype(
         const std::vector<PendingOp*>& ops,
         Chunk* srcChunk,
@@ -939,53 +644,32 @@ namespace CCL::ECS
     {
         outIsNewSpawn = false;
 
-        // ops の中に Spawn があるか探す
         for (auto* op : ops) {
             if (op->kind == PendingOpKind::Spawn) {
-                // spawnArchetype は PendingOp の値メンバなので
-                // FrameAllocator のライフタイムに無関係で常に安全
                 outArchetype = op->spawnArchetype;
                 outIsNewSpawn = true;
                 return true;
             }
         }
 
- 
         if (!srcChunk) {
-            // 存在しないし Spawn でもない → 何もできない
             return false;
         }
-        // Spawn でないなら、既存 Chunk の Archetype を引き継ぐ
         outArchetype = srcChunk->GetArchetype();
         return true;
     }
 
 
-    // ----------------------------------------------------------------
-    // ステップ 4 補助: Add/Remove 差分計算
-    // ----------------------------------------------------------------
-    // ============================================================================
-    // ChunkManager::CalculateArchetypeDiff  ─ Add/Remove を反映して「最終形」を作る
-    // ----------------------------------------------------------------------------
-    //  一言で : ベースの型構成に予約を適用して、この Entity が最終的に持つ形にする。
-    //
-    //  引数
-    //    nextArch     : [入出力] 入ってきたベースを、この関数が書き換えて最終形にする
-    //    outAddOps    : 初期値として使う AddComponent 予約の抽出先
-    //    outRemoveIDs : 外す型の TypeID の抽出先
-    //
-    //  AddComponent のとき
-    //    ・outAddOps には【必ず】積む（既に型を持っていても値の上書きに使うため）
-    //    ・型がまだ無ければ TypeData を組み立てて nextArch.Add()
-    //      このとき destructor/constructor/assigner/mover の関数ポインタも
-    //      一緒に詰める。これが無いと後で memcpy にフォールバックしてしまう
-    //
-    //  RemoveComponent のとき
-    //    outRemoveIDs に積み、nextArch.Sub() で型を外す
-    //
-    //  Archetype は TypeID 昇順ソートを保つ決まりなので、
-    //  Add/Sub は内部で二分探索して正しい位置に挿入・削除する。
-    // ============================================================================
+    /// ベースの型構成へ予約を反映し、この Entity が最終的に持つ形にする。
+    ///
+    /// @param nextArch [入出力] 入ってきたベースをこの関数が書き換えて最終形にする
+    ///
+    /// @note AddComponent は、既にその型を持っていても outAddOps へ【必ず】積む。
+    ///       型構成が変わらない場合の「値の上書き」にも同じリストを使うため。
+    ///
+    /// @note 型を新設するときは destructor/constructor/assigner/mover の関数ポインタも
+    ///       一緒に TypeData へ詰める。ここが欠けると型消去の経路が全部 memcpy へ
+    ///       落ち、RAII を持つコンポーネントが壊れる。
     void ChunkManager::CalculateArchetypeDiff(
         const std::vector<PendingOp*>& ops,
         Archetype& nextArch,
@@ -994,18 +678,17 @@ namespace CCL::ECS
     {
         for (auto* op : ops) {
             if (op->kind == PendingOpKind::AddComponent) {
-                // 「初期値データ」として addOps には必ず入れる
                 outAddOps.push_back(op);
 
-                // 既に Archetype に含まれていなければ追加
+                // Archetype は内部の std::vector<TypeData> に begin()/end() を公開しているので
+                // 範囲 for で回せる（CCL_Archetype.h）
                 bool has = false;
-                // ? nextArchってvectorでもないのにfor文で回すってどういうこと
                 for (auto& td : nextArch) {
                     if (td.id == op->type) { has = true; break; }
                 }
                 if (!has) {
-                    // 関数ポインタを含めた完全な TypeData を構築して追加
-                    // ? わからん
+                    // PendingOp が型情報を運んでくるのは、AddComponent<T> のテンプレートを
+                    // 通った時点でしか T の関数ポインタを取れないため。ここで詰め直す
                     TypeData newType;
                     newType.id          = op->type;
                     newType.typeSize    = op->typeSize;
@@ -1015,6 +698,8 @@ namespace CCL::ECS
                     newType.mover       = op->mover;
                     newType.name        = op->name;
 
+                    // Archetype は TypeID 昇順を保つ決まりなので、Add/Sub は
+                    // 内部で二分探索して正しい位置へ挿入・削除する
                     nextArch.Add(newType);
                 }
             }
@@ -1026,56 +711,35 @@ namespace CCL::ECS
     }
 
 
-    // ----------------------------------------------------------------
-    // ステップ 5 補助: 同一 Archetype 内のコンポーネント値更新
-    // ----------------------------------------------------------------
-    // ============================================================================
-    // ChunkManager::UpdateExistingComponents  ─ 型構成が変わらないときの値の上書き
-    // ----------------------------------------------------------------------------
-    //  一言で : 引っ越し無しで、既にあるコンポーネントの中身だけを書き換える。
-    //
-    //  いつ呼ばれるか
-    //    ProcessEntityOps のステップ5で「最終形 == 今の型構成」だったとき。
-    //    例：既に Position を持っている Entity に、もう一度 Position を Set した場合。
-    //
-    //  2つのパターン
-    //    factory がある : 上書き代入ができない型（ムーブ専用など）なので
-    //                     「destructor で破棄 → factory で新規構築」の手順を踏む
-    //    data がある    : assigner（代入演算子）で上書き。
-    //                     assigner が無ければ memcpy で生バイトコピー
-    //
-    //  既に構築済みのメモリなので、ここで代入演算子を使うのが安全。
-    //  （まだ構築されていない場所には代入できないので、新規時は constructor を使う）
-    // ============================================================================
+    /// 型構成が変わらないときの値の上書き。引っ越さずに中身だけを書き換える。
+    /// 呼ばれるのは ProcessEntityOps のステップ5で「最終形 == 今の型構成」だったとき
+    /// （例: 既に Position を持つ Entity へもう一度 Position を Set した）。
+    ///
+    /// @note ここは【既に構築済みのメモリ】なので、新規構築の経路とは使う関数が違う。
+    ///       constructor は未構築の場所にしか使えないため、代わりに assigner（代入演算子）を使う。
+    ///       ムーブ専用型など代入できない型は factory 経由で「破棄 → 再構築」する。
     void ChunkManager::UpdateExistingComponents(
         Chunk* srcChunk, size_t srcIndex,
         const std::vector<PendingOp*>& ops)
     {
         for (auto* op : ops) {
-            // 値上書きなので AddComponent 以外は無視
+            // 値の上書きだけを扱うので AddComponent 以外は無視
             if (op->kind != PendingOpKind::AddComponent) continue;
 
-            // チャンク内の番号を指定して、該当するコンポーネントのアドレスを取得する
             void* dstPtr = srcChunk->GetComponentPtrByType(op->type, srcIndex);
-            // アドレスが無効、または factory と data の両方が無い場合はスキップ
             if (!dstPtr || (!op->factory && !op->data)) continue;
 
             const Archetype& arch = srcChunk->GetArchetype();
-            // そういえばArchetypeをfor文で回すのってどういうこと？
-            // って思ったけど、Archetypeはstd::vector<TypeData>のtypedefだからfor文で回せるのか
             for (const auto& td : arch) {
                 if (td.id != op->type) continue;
 
-                // パターン1: factory がある場合 (Move-Only 型など)
-                //   上書き代入ができないため「破棄 → 新規構築」の手順を踏む
+                // ムーブ専用型など、代入できない型
                 if (op->factory) {
-                    td.destructor.Destruct(dstPtr); // 既存を破棄
-                    op->factory(dstPtr);            // 新規構築
+                    td.destructor.Destruct(dstPtr);
+                    op->factory(dstPtr);
                 }
-                // パターン2: data がある場合（従来のコピー可能型）
                 else if (op->data) {
                     if (td.assigner) {
-                        // 既に構築済みなので代入演算子が安全
                         td.assigner(dstPtr, op->data);
                     }
                     else {
@@ -1088,29 +752,20 @@ namespace CCL::ECS
     }
 
 
-    // ----------------------------------------------------------------
-    // ステップ 6 補助: Patch（部分書き換え）の適用
-    // ----------------------------------------------------------------
-    // ============================================================================
-    // ChunkManager::ApplyPatchOps  ─ 部分書き換え（Patch）を最後に適用する
-    // ----------------------------------------------------------------------------
-    //  一言で : PatchComponent で登録したラムダを、確定した最終アドレスに対して呼ぶ。
-    //
-    //  なぜ一番最後なのか
-    //    引っ越し（MoveEntityBetweenChunks）が起きるとアドレスが変わるため。
-    //    先に patch すると、これから捨てられる古い場所を書いてしまう。
-    //    だから移動が全部終わってから SearchEntityIn で【最終的な場所】を引き直す。
-    //
-    //  op->patcher は void* を受け取るラムダ。
-    //  World::PatchComponent が、型安全なラムダをこの形に包んで積んでいる。
-    // ============================================================================
+    /// PatchComponent で登録したラムダを、確定した最終アドレスに対して呼ぶ。
+    ///
+    /// これが一番最後なのは、引っ越しが起きるとアドレスが変わるため。先に patch すると
+    /// これから捨てられる古い席を書いてしまうので、移動が全部終わってから
+    /// SearchEntityIn で【最終的な場所】を引き直す。
+    ///
+    /// @note op->patcher は void* を取るラムダ。型安全なラムダをこの形へ包むのは
+    ///       World::PatchComponent の側。
     void ChunkManager::ApplyPatchOps(
         EntityID entityID,
         const std::vector<PendingOp*>& ops)
     {
-        // 移動・生成が完了した「最終的な場所」を取得
+        // 引っ越し後の最終的な席を引き直す
         size_t finalIndex = 0;
-        // 戻り値にChunkManager内のChunkのID、引数にそのChunk内のIndexを返す
         size_t finalChunkIdx = SearchEntityIn(entityID, &finalIndex);
         if (finalChunkIdx == InvalidIndex) return;
 
@@ -1119,9 +774,7 @@ namespace CCL::ECS
         for (auto* op : ops) {
             if (op->kind != PendingOpKind::PatchComponent) continue;
 
-            // 指定されたチャンクの指定されたコンポーネントのアドレスを取得
             void* ptr = finalChunk->GetComponentPtrByType(op->type, finalIndex);
-            // アドレスが有効で、かつ patcher が登録されていれば呼び出す
             if (ptr && op->patcher) {
                 op->patcher(ptr);
             }
@@ -1129,35 +782,19 @@ namespace CCL::ECS
     }
 
 
-    // ----------------------------------------------------------------
-    // Phase 3: 全 Chunk の穴詰め
-    // ----------------------------------------------------------------
-    // ============================================================================
-    // ChunkManager::CompactAllChunks  ─ 全 Chunk の穴をまとめて詰める（Phase 3）
-    // ----------------------------------------------------------------------------
-    //  一言で : 全部の箱に CompactHoles を呼び、席がずれた分だけ住所録を直す。
-    //
-    //  渡しているラムダが重要
-    //    CompactHoles は要素を動かすたびにこのコールバックを呼ぶ。
-    //    その中で
-    //      ・UpdateEntityLocation で内部の住所録を更新
-    //      ・m_onEntityMove で World 側のキャッシュにも通知
-    //    の両方をやっている。
-    //
-    //  これを忘れると、詰めた後に SearchEntityIn が古い席を返して
-    //  「別のエンティティのデータが見える」という嫌なバグになる。
-    //
-    //  実験3で最後尾の entity が穴の位置へ移動して見えるのは、この関数の結果。
-    // ============================================================================
+    /// 全 Chunk の穴をまとめて詰める。フレーム末尾に1回だけ回る。
+    ///
+    /// 渡しているラムダが本体。CompactHoles は要素を動かすたびにこれを呼ぶので、
+    /// その中で住所録と World 側のキャッシュを両方更新している。
+    /// どちらかを落とすと、詰めた後に SearchEntityIn が古い席を返し、
+    /// 別のエンティティのデータを掴む形で壊れる。
     void ChunkManager::CompactAllChunks()
     {
         for (auto& c : m_chunks) {
             c->CompactHoles([this](EntityID entity, Chunk* chunk, size_t newIndex) {
-                // 位置キャッシュを更新
                 size_t chunkIdx = GetChunkIndex(chunk);
                 UpdateEntityLocation(entity, chunkIdx, newIndex);
 
-                // 外部コールバック（World 側のキャッシュ更新）も呼ぶ
                 if (m_onEntityMove) {
                     m_onEntityMove(entity, chunk, newIndex);
                 }

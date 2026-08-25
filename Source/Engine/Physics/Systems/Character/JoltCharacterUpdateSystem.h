@@ -45,6 +45,11 @@ public:
     JoltCharacterUpdateSystem() : IfSystem("JoltCharacterUpdateSystem") {}
     virtual ~JoltCharacterUpdateSystem() = default;
 
+
+    /// @brief 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
+    ///        Setup が生成した JoltCharacterHandle を使う。生成が後に回ると1フレーム空振りする。
+    std::vector<const char *> GetRunAfter() const override { return {"JoltCharacterSetupSystem"}; }
+
     void Update(float dt) override;
 
     /// @brief 強制ワープフラグが立っていればJoltを即座に移動させる

@@ -101,12 +101,29 @@ void PlayerFeedbackSystem::UpdateDamageVignette(float dt)
     if (!vig) return; // ビネット設定が無いシーンでは何もしない
 
     // ジャスト回避演出がビネットを駆動中なら譲る（二重駆動を避ける安全弁）。
-    // ※通常は「食らう」と「回避成功（無敵）」は同時に起きない。
+    // ※ timer だけでなく hold(切り払い準備の照準保持)も見る。hold 中は timer==0 でも
+    //   JustEvade がビネットを駆動しているため、これを見落とすと二重駆動で取り合いになる。
     if (auto *je = m_world->GetSingletonComponent<JustEvadeEffectComponent>())
     {
-        if (je->timer > 0.0f)
+        if (je->timer > 0.0f || je->hold)
         {
-            m_flashActive = false; // 復元は JustEvade 側に任せて手を引く
+            // ★手を引く前に、被弾フラッシュを「元の値」へ完全復元しておく。
+            //   これを怠ると、この直後に走る JustEvadeEffectSystem が
+            //   「フラッシュ中の赤いビネット値」を自分の base として退避し、
+            //   演出終了時にそこへ復元してしまう＝ビネットが残る不具合になる。
+            //   （実行順は FixedUpdate(本systemのLogic) → Render(JustEvade) なので、
+            //     ここで戻しておけば JustEvade は正しい base を退避できる）
+            if (m_flashActive)
+            {
+                vig->enable             = m_vigBase.enable;
+                vig->data.vigIntensity  = m_vigBase.intensity;
+                vig->data.vigColor      = m_vigBase.color;
+                vig->data.vigPulseSpeed = m_vigBase.pulse;
+                vig->data.vigRadius     = m_vigBase.radius;
+                vig->data.vigSoftness   = m_vigBase.softness;
+                m_flashActive = false;
+            }
+            m_flashTimer = 0.0f; // 回避/切り払い演出を優先し、残った被弾フラッシュはキャンセル
             return;
         }
     }

@@ -2,39 +2,21 @@
 #include "Editor/Core/EditorWindow.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemManager.h"
-#include <vector>
-#include <string>
-#include <map>
+#include <cstdint>
 
 #ifdef ENABLE_EDITOR
 #include <imgui.h>
 #endif
 
 // =========================================================
-// プロファイラー用の履歴保持バッファ (リングバッファ)
+// ECS デバッガ
+//   固有の価値がある2機能に絞る:
+//     - Memory & Chunks : アーキタイプ別チャンク構成とメモリの可視化・インスペクタ
+//     - Execution Graph : TaskScheduler が解決した並列実行バッチの可視化
+//   ※ システムの処理負荷計測は Tracy と System Manager ウィンドウに集約したため、
+//      当ウィンドウからは Profiler / Pending Ops を撤去した。
 // =========================================================
-struct ScrollingBuffer {
-    int MaxSize;
-    int Offset;
-    ImVector<ImVec2> Data;
-
-    ScrollingBuffer(int max_size = 600);
-    void AddPoint(float x, float y);
-};
-
-struct SystemProfileData {
-    ScrollingBuffer buffer;
-    ImVec4 color = ImVec4(1, 1, 1, 1); // 線の色
-    bool isVisible = true;             // グラフに表示するかどうか
-    bool isHovered = false;            // テーブル上でマウスが乗っているか
-};
-
 class ECSDebugWindow : public EditorWindow {
-private:
-    std::map<std::string, SystemProfileData> m_systemTimings;
-    float m_time = 0.0f;
-    bool  m_pauseProfiler = false;
-
 public:
     ECSDebugWindow();
 
@@ -42,13 +24,10 @@ protected:
     void DrawContents(EditorContext& context) override;
 
 private:
-    // 各タブの描画処理を分割
+    // 各タブの描画処理
     void DrawMemoryTab(CCL::ECS::World* world);
-    void DrawSystemsTab(CCL::ECS::SystemManager* systemManager);
-    void DrawPendingOpsTab(CCL::ECS::World* world);
-    // 実行グラフ描画用メソッド
     void DrawExecutionGraphTab(CCL::ECS::SystemManager* systemManager);
 
-    // 型IDから名前を取得するヘルパー関数の宣言
+    // 型IDから名前を取得するヘルパー
     const char* GetFriendlyTypeName(uint32_t id);
 };

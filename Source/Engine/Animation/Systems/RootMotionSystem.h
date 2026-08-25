@@ -25,5 +25,10 @@ class RootMotionSystem : public CCL::ECS::IfSystem<RootMotionSystem,
         : IfSystem("RootMotionSystem")
     {
     }
+
+    /// @brief 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
+    ///        AnimController が決めた遷移結果に対してルートモーションを適用する。
+    std::vector<const char *> GetRunAfter() const override { return {"AnimControllerSystem"}; }
+
     void Update(float dt) override;
 };

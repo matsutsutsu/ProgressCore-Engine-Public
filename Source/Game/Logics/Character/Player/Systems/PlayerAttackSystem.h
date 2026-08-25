@@ -21,6 +21,11 @@ class PlayerAttackSystem : public CCL::ECS::IfSystem< PlayerAttackSystem,
     }
     virtual ~PlayerAttackSystem() = default;
 
+
+    /// @brief 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
+    ///        PlayerInput が書いた CharacterMovementInput / PlayerComponent を読む。
+    std::vector<const char *> GetRunAfter() const override { return {"PlayerInputSystem"}; }
+
     void Update(float dt) override;
 
   private:

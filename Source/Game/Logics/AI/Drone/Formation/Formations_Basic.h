@@ -45,7 +45,7 @@ struct OrbitCircleFormation : public IFormation
         // （BT が攻撃と攻撃の間に必ず OrbitCircle を挟むので、次の攻撃へ前回の値が漏れない）。
         drone.attackProgress      = 0.0f;
         drone.fireDelay           = 0.0f;
-        drone.chargeFollowsTarget = false;
+        drone.chargeMode = ChargeMode::Straight;
     }
 };
 
@@ -84,7 +84,7 @@ struct HighOrbitFormation : public IFormation
         // OrbitCircle と同じ役割。BT が攻撃の合間にこの陣形を挟む前提。
         drone.attackProgress      = 0.0f;
         drone.fireDelay           = 0.0f;
-        drone.chargeFollowsTarget = false;
+        drone.chargeMode = ChargeMode::Straight;
     }
 
     // --- 調整値 ---

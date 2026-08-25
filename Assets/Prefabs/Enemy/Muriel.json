@@ -12,8 +12,8 @@
                     "playbackSpeed": 0.5
                 },
                 "BehaviorTreeComponent": {
-                    "assetPath": "Assets/BehaviorTree/BossSlashTest.json",
-                    "phase2AssetPath": "Data/BehaviorTree/BossAI_Phase2.json",
+                    "assetPath": "Assets/BehaviorTree/BossCombat.json",
+                    "phase2AssetPath": "Assets/BehaviorTree/BossCombatPhase2.json",
                     "phase2HealthThreshold": 50.0
                 },
                 "BossActionComponent": {
@@ -31,6 +31,10 @@
                     "currentActionId": 1000,
                     "requestFormation": 0,
                     "targetPlayerId": 0
+                },
+                "BossPhaseComponent": {
+                    "phase": 0,
+                    "timer": 0.0
                 },
                 "Character Movement Input": {
                     "currentVelocity": [
@@ -100,9 +104,6 @@
                 },
                 "Name": {
                     "name": "Muriel"
-                },
-                "StateTree": {
-                    "assetName": "Muriel"
                 },
                 "TimeState": {
                     "buffScale": 1.0,

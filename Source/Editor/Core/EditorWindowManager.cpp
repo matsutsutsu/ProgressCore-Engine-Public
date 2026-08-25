@@ -32,9 +32,9 @@
 #include "Editor/Windows/TestLauncherWindow.h"
 #include "Editor/Windows/CurveEditorWindow.h"
 #include "Editor/Windows/CameraPathEditorWindow.h"
-#include "Editor/Windows/StateTreeWindow.h"
 #include "Editor/Windows/RenderDebugWindow.h"
 #include "Editor/Windows/BuildingScatterWindow.h"
+#include "Editor/Windows/FormationEditorWindow.h"
 
 #include "Engine/Serialization/Factory/Prefab.h"
 #include "Engine/Core/Components/PrefabInstanceComponent.h"
@@ -67,7 +67,6 @@ void EditorWindowManager::Initialize()
     RegisterWindow<AnimationSequencerWindow>();
     RegisterWindow<AnimGraphWindow>();
     RegisterWindow<BehaviorTreeWindow>();
-    RegisterWindow<StateTreeWindow>();
     RegisterWindow<CameraPathEditorWindow>();
     RegisterWindow<CurveEditorWindow>();
 
@@ -79,6 +78,7 @@ void EditorWindowManager::Initialize()
     RegisterWindow<GameViewWindow>();
     RegisterWindow<RenderDebugWindow>();
     RegisterWindow<BuildingScatterWindow>();
+    RegisterWindow<FormationEditorWindow>();
 }
 
 // =========================================================

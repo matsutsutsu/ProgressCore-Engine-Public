@@ -31,6 +31,11 @@ void GPUParticleRenderSystem::Update(float dt)
             {
                 if (!emitter.isInitialized || !emitter.computeBuffer.IsValid()) continue;
 
+                // インスペクタで非表示にされた層は描画コマンドを積まない。
+                //   シミュレーション(R07)は止めないので、表示に戻せば続きから見える。
+                //   製品ビルドでは常に true（非シリアライズのプレビュー用スイッチ）。
+                if (!emitter.previewVisible) continue;
+
                 ParticleDrawCommand cmd;
                 cmd.computeBuffer = emitter.computeBuffer;
                 cmd.texture       = emitter.texture;

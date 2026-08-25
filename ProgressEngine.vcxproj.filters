@@ -387,9 +387,6 @@
     <Filter Include="Source\Engine\Graphics\Shader\Particle">
       <UniqueIdentifier>{7331b261-1c5e-4858-beb7-97a5a94cb0a9}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Game\Logics\AI\StateTree">
-      <UniqueIdentifier>{b7c28ac1-c302-46fc-943a-869af40a6ac0}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\Time">
       <UniqueIdentifier>{7a88023c-be1b-4e90-9f95-822c9f974cc6}</UniqueIdentifier>
     </Filter>
@@ -404,15 +401,6 @@
     </Filter>
     <Filter Include="Source\Game\Logics\Combat\_Meta">
       <UniqueIdentifier>{0a94ac07-4f26-4cc2-a563-eb0d04156a23}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\AI\StateTree\Core">
-      <UniqueIdentifier>{22b60c6b-b385-492f-a70c-b2c726f3d987}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\AI\StateTree\Serialization">
-      <UniqueIdentifier>{a32cdd2f-a91a-4919-b36e-523cc7758841}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\AI\StateTree\System">
-      <UniqueIdentifier>{f31dd04f-c457-4af4-a232-8466a46c1cb3}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Game\Logics\Character\Player\Components">
       <UniqueIdentifier>{b32b3cba-14b1-49d4-a485-70088a470068}</UniqueIdentifier>
@@ -541,6 +529,9 @@
     <Filter Include="Source\Game\Logics\AI\Drone\Formation">
       <UniqueIdentifier>{7fb876f4-9c60-4a35-9ec9-43da0f2894c5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\AI\Drone\Squad">
+      <UniqueIdentifier>{3c1e5b92-8a44-4f17-b0d6-5e2c7a91d408}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Game\Logics\Character\Boss">
       <UniqueIdentifier>{b874cd55-47ee-462e-bbe1-8d273659c62b}</UniqueIdentifier>
     </Filter>
@@ -549,9 +540,6 @@
     </Filter>
     <Filter Include="Source\Game\Logics\Character\Boss\Systems">
       <UniqueIdentifier>{26282c6a-b038-4c3e-9623-0dd3a09282da}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\AI\StateTree\Muriel">
-      <UniqueIdentifier>{eb9849a2-7b3c-4a70-bca8-37b07ab5252d}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Game\Logics\AI\Debug">
       <UniqueIdentifier>{da596e9b-e651-47b7-a01a-cd4a8da293d7}</UniqueIdentifier>
@@ -1033,6 +1021,9 @@
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\NavMeshWindow.h">
+      <Filter>Source\Editor\Windows\AI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\FormationEditorWindow.h">
       <Filter>Source\Editor\Windows\AI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\BehaviorTreeWindow.h">
@@ -1536,9 +1527,6 @@
     <ClInclude Include="Source\Engine\Graphics\Components\Particle\GPUParticleBuffer.h">
       <Filter>Source\Engine\Graphics\Components\Particle</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\StateTreeWindow.h">
-      <Filter>Source\Editor\Windows\AI</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Time\TimeScaleSetupSystem.h">
       <Filter>Source\Engine\Time</Filter>
     </ClInclude>
@@ -1674,36 +1662,6 @@
     <ClInclude Include="Source\Editor\Windows\TestLauncherWindow.h">
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\NodeParamField.h">
-      <Filter>Source\Game\Logics\AI\StateTree\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\NodeRegistry.h">
-      <Filter>Source\Game\Logics\AI\StateTree\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\StateTreeAsset.h">
-      <Filter>Source\Game\Logics\AI\StateTree\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\StateTreeComponent.h">
-      <Filter>Source\Game\Logics\AI\StateTree\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\StateTreeNode.h">
-      <Filter>Source\Game\Logics\AI\StateTree\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\StateTreeRegistry.h">
-      <Filter>Source\Game\Logics\AI\StateTree\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\Serialization\StateTreeDef.h">
-      <Filter>Source\Game\Logics\AI\StateTree\Serialization</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\Serialization\StateTreeSerializer.h">
-      <Filter>Source\Game\Logics\AI\StateTree\Serialization</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\System\StateTreeResolveSystem.h">
-      <Filter>Source\Game\Logics\AI\StateTree\System</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\System\StateTreeSystem.h">
-      <Filter>Source\Game\Logics\AI\StateTree\System</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Player\Components\PlayerComponent.h">
       <Filter>Source\Game\Logics\Character\Player\Components</Filter>
     </ClInclude>
@@ -1794,9 +1752,6 @@
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTConditions.h">
       <Filter>Source\Game\Logics\AI\BehaviorTree\Actions</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\Muriel\MurielAI.h">
-      <Filter>Source\Game\Logics\AI\StateTree\Muriel</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Animation\Systems\AnimSetupSystem.h">
       <Filter>Source\Engine\Animation\Systems</Filter>
     </ClInclude>
@@ -1848,9 +1803,6 @@
     <ClInclude Include="Source\Game\Logics\AI\Battle\BattleContext.h">
       <Filter>Source\Game\Logics\AI\Battle</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\System\AIDebugSystem.h">
-      <Filter>Source\Game\Logics\AI\StateTree\System</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Drone\DroneComponent.h">
       <Filter>Source\Game\Logics\AI\Drone</Filter>
     </ClInclude>
@@ -1860,7 +1812,7 @@
     <ClInclude Include="Source\Game\Logics\AI\Drone\DroneMovementSystem.h">
       <Filter>Source\Game\Logics\AI\Drone</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\Drone\DroneAI.h">
+    <ClInclude Include="Source\Game\Logics\AI\Drone\DroneBrainSystem.h">
       <Filter>Source\Game\Logics\AI\Drone</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Drone\DroneManagerSystem.h">
@@ -1875,10 +1827,25 @@
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_Attack.h">
       <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_Squad.h">
+      <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Squad\SquadState.h">
+      <Filter>Source\Game\Logics\AI\Drone\Squad</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Squad\SquadUpdateSystem.h">
+      <Filter>Source\Game\Logics\AI\Drone\Squad</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\IFormation.h">
       <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\FormationRegistry.h">
+      <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\FormationSpec.h">
+      <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_DataDriven.h">
       <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_Basic.h">
@@ -1892,6 +1859,12 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Boss\Data\BossActionComponent.h">
       <Filter>Source\Game\Logics\Character\Boss\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Data\BossPhaseComponent.h">
+      <Filter>Source\Game\Logics\Character\Boss\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossPhaseSystem.h">
+      <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Boss\Data\BTActions_Boss.h">
       <Filter>Source\Game\Logics\Character\Boss\Data</Filter>
@@ -2261,6 +2234,9 @@
     <ClCompile Include="Source\Editor\Windows\NavMeshWindow.cpp">
       <Filter>Source\Editor\Windows\AI</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\FormationEditorWindow.cpp">
+      <Filter>Source\Editor\Windows\AI</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\Windows\BehaviorTreeWindow.cpp">
       <Filter>Source\Editor\Windows\AI</Filter>
     </ClCompile>
@@ -2600,9 +2576,6 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\ParticleShader.cpp">
       <Filter>Source\Engine\Graphics\Shader\Material\Particle</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\StateTreeWindow.cpp">
-      <Filter>Source\Editor\Windows\AI</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Time\TimeComponentMeta.cpp">
       <Filter>Source\Engine\Time</Filter>
     </ClCompile>
@@ -2714,18 +2687,6 @@
     <ClCompile Include="Source\Editor\Windows\TestLauncherWindow.cpp">
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\StateTree\Core\StateTreeComponentMeta.cpp">
-      <Filter>Source\Game\Logics\AI\StateTree\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\StateTree\Serialization\StateTreeSerializer.cpp">
-      <Filter>Source\Game\Logics\AI\StateTree\Serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\StateTree\System\StateTreeResolveSystem.cpp">
-      <Filter>Source\Game\Logics\AI\StateTree\System</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\StateTree\System\StateTreeSystem.cpp">
-      <Filter>Source\Game\Logics\AI\StateTree\System</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\Components\PlayerComponentMeta.cpp">
       <Filter>Source\Game\Logics\Character\Player\Components</Filter>
     </ClCompile>
@@ -2834,14 +2795,17 @@
     <ClCompile Include="Source\Game\Logics\Test\BoidSystem.cpp">
       <Filter>Source\Game\Logics\Test</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\StateTree\System\AIDebugSystem.cpp">
-      <Filter>Source\Game\Logics\AI\StateTree\System</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\Drone\DroneFormationSystem.cpp">
       <Filter>Source\Game\Logics\AI\Drone</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\Drone\DroneMovementSystem.cpp">
       <Filter>Source\Game\Logics\AI\Drone</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\Drone\DroneBrainSystem.cpp">
+      <Filter>Source\Game\Logics\AI\Drone</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\Drone\Squad\SquadUpdateSystem.cpp">
+      <Filter>Source\Game\Logics\AI\Drone\Squad</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\Drone\DroneManagerSystem.cpp">
       <Filter>Source\Game\Logics\AI\Drone</Filter>
@@ -2860,6 +2824,12 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Boss\Data\BossActionComponentMeta.cpp">
       <Filter>Source\Game\Logics\Character\Boss\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Data\BossPhaseComponentMeta.cpp">
+      <Filter>Source\Game\Logics\Character\Boss\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossPhaseSystem.cpp">
+      <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossActionSystem.cpp">
       <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
@@ -2970,9 +2940,6 @@
     </None>
     <None Include="Source\Game\Logics\AI\Drone\Drone_Guide.md">
       <Filter>Source\Game\Logics\AI\Drone</Filter>
-    </None>
-    <None Include="Source\Game\Logics\AI\StateTree\StateTree_Guide.md">
-      <Filter>Source\Game\Logics\AI\StateTree</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

@@ -43,6 +43,8 @@
 #include <chrono>
 #include <unordered_set>
 
+#include <tracy/Tracy.hpp>
+
 using namespace CCL::ECS;
 using namespace CCL::ECS;
 using CCL::Serialization::SaveContext;
@@ -199,8 +201,16 @@ void SceneSerializer::SerializeEntity(
 // =====================================================================
 std::vector<EntityID> SceneSerializer::Deserialize(World* world, const std::string& filepath)
 {
-    // 変更後:
-    std::string jsonStr = FileSystem::ReadAllText(filepath);
+    ZoneScopedN("SceneSerializer::Deserialize");
+
+    // ここは VFX::Play から「再生のたびに」通る。プレハブ1個ぶんとはいえ、
+    //   ディスク読み込みと JSON パースを毎回やっている。連撃中にどれだけ
+    //   積み上がるのかを Tracy で見えるようにしておく（対策を選ぶのは数字を見てから）。
+    std::string jsonStr;
+    {
+        ZoneScopedN("SceneSerializer: ReadAllText (disk)");
+        jsonStr = FileSystem::ReadAllText(filepath);
+    }
     if (jsonStr.empty()) {
         return {};
     }
@@ -208,6 +218,7 @@ std::vector<EntityID> SceneSerializer::Deserialize(World* world, const std::stri
     nlohmann::json root;
     try
     {
+        ZoneScopedN("SceneSerializer: json::parse");
         root = nlohmann::json::parse(jsonStr);
     }
     catch (const std::exception &e)

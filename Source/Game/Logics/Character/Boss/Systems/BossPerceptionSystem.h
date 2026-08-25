@@ -11,7 +11,7 @@
 /// 一切知らないままでいられる（ドローン等、HPや対象の概念が違うAIにも使い回せる）。
 ///
 /// 実行順序: BehaviorTreeSystem (L02_Update) より前に blackboard を最新化する必要がある。
-///           L01_Input に置き、StateTreeResolveSystem 等と同じ「前処理」層とする。
+///           L01_Input に置き、判断より前の「前処理」層とする。
 #pragma once
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"

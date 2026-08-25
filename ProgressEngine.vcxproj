@@ -340,6 +340,11 @@
     <ClInclude Include="Source\Editor\Windows\AssetBrowserWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\FormationEditorWindow.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="Source\Editor\Windows\BehaviorTreeWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
@@ -378,7 +383,6 @@
     <ClInclude Include="Source\Editor\Windows\NavMeshWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\StateTreeWindow.h" />
     <ClInclude Include="Source\Editor\Windows\TestLauncherWindow.h" />
     <ClInclude Include="Source\Editor\Windows\TextEditorWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -682,28 +686,23 @@
     <ClInclude Include="Source\Game\Logics\AI\Debug\AIDebugSpatialSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\DroneComponent.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\DroneFormationSystem.h" />
-    <ClInclude Include="Source\Game\Logics\AI\Drone\DroneAI.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Drone\DroneBrainSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\DroneManagerSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\DroneMovementSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\DroneCommandSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\DroneHitSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\FormationRegistry.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\FormationSpec.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_DataDriven.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_Basic.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_Attack.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_Squad.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Squad\SquadState.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Squad\SquadUpdateSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\IFormation.h" />
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\Muriel\MurielAI.h" />
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\NodeParamField.h" />
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\NodeRegistry.h" />
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\StateTreeAsset.h" />
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\StateTreeComponent.h" />
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\StateTreeNode.h" />
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\StateTreeRegistry.h" />
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\Serialization\StateTreeDef.h" />
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\Serialization\StateTreeSerializer.h" />
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\System\AIDebugSystem.h" />
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\System\StateTreeResolveSystem.h" />
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\System\StateTreeSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Boss\Data\BossActionComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Data\BossPhaseComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossPhaseSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Boss\Data\BTActions_Boss.h" />
     <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossActionSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossAnimSyncSystem.h" />
@@ -898,6 +897,11 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\FormationEditorWindow.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Source\Editor\Windows\BehaviorTreeWindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
@@ -940,9 +944,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\NavMeshWindow.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\StateTreeWindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\TestLauncherWindow.cpp">
@@ -1155,13 +1156,12 @@
     <ClCompile Include="Source\Game\Logics\AI\Drone\DroneManagerSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\DroneCommandSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\DroneMovementSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\Drone\DroneBrainSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\Drone\Squad\SquadUpdateSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\DroneHitSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\AI\StateTree\Core\StateTreeComponentMeta.cpp" />
-    <ClCompile Include="Source\Game\Logics\AI\StateTree\Serialization\StateTreeSerializer.cpp" />
-    <ClCompile Include="Source\Game\Logics\AI\StateTree\System\AIDebugSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\AI\StateTree\System\StateTreeResolveSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\AI\StateTree\System\StateTreeSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Boss\Data\BossActionComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Data\BossPhaseComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossPhaseSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossActionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossAnimSyncSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossPerceptionSystem.cpp" />
@@ -1263,10 +1263,6 @@
       </SubType>
     </None>
     <None Include="Source\Game\Logics\AI\Drone\Drone_Guide.md">
-      <SubType>
-      </SubType>
-    </None>
-    <None Include="Source\Game\Logics\AI\StateTree\StateTree_Guide.md">
       <SubType>
       </SubType>
     </None>

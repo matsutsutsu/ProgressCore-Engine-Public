@@ -33,10 +33,6 @@
             "visible": true
         },
         {
-            "name": "State Tree Editor",
-            "visible": false
-        },
-        {
             "name": "Camera Path Editor",
             "visible": false
         },
@@ -74,6 +70,10 @@
         },
         {
             "name": "Building Scatter",
+            "visible": false
+        },
+        {
+            "name": "Formation Editor",
             "visible": false
         }
     ]
