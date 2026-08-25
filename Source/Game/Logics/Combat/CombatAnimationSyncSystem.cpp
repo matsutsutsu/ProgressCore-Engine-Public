@@ -46,8 +46,6 @@ void CombatAnimationSyncSystem::Update(float /*dt*/)
     //   駆動元(owner)の Animator は別エンティティへの「読み取り専用」参照。
     //   本システムは L05_Collision、Animator 書き込み系は L02_* のため、
     //   ステージの壁により実行順が直列化されレースしない。
-    //
-    //   旧実装の文字列ハッシュ比較は enum 比較に置換済み（型安全・高速化）。
     // =====================================================================
     ForEachWithID([this](EntityID hitboxID, HitboxComponent &hb) {
         // ── 1. 駆動元(owner)の解決 ──
@@ -83,7 +81,7 @@ void CombatAnimationSyncSystem::Update(float /*dt*/)
 
         for (const auto &ev : seq->events)
         {
-            // enum 比較（旧: HashString(ev.eventName) == "HitBox"）
+            // enum 比較
             if (ev.type != AnimEventType::HitBox)
                 continue;
 

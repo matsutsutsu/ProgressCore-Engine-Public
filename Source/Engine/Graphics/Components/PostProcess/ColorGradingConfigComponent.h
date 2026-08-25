@@ -7,9 +7,6 @@ struct ColorGradingConfigComponent
 
     GpuData::CbColorGradingData data{
         { 1.0f, 1.0f, 1.0f, 1.0f },
-        1.0f,
-        1.0f,
-        1.0f,
-        1.0f
+        1.0f, 1.0f, 1.0f, 1.0f
     };
 };

@@ -10,8 +10,7 @@
 struct BattleContext;
 struct RootMotionComponent;
 
-class PlayerDashSystem : public CCL::ECS::IfSystem<
-    PlayerDashSystem,
+class PlayerDashSystem : public CCL::ECS::IfSystem<PlayerDashSystem,
     CCL::ECS::Write<CharacterMovementInputComponent>,
     CCL::ECS::Write<DashComponent>,
     CCL::ECS::Write<PlayerComponent>,

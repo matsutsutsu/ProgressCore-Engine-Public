@@ -4,7 +4,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
-// http://go.microsoft.com/fwlink/?LinkId=248929
+// https://go.microsoft.com/fwlink/?LinkId=248929
 //--------------------------------------------------------------------------------------
 
 #include "pch.h"
@@ -230,11 +230,6 @@ DebugEffect::Impl::Impl(_In_ ID3D11Device* device)
     instancing(false),
     debugMode(DebugEffect::Mode_Default)
 {
-    if (device->GetFeatureLevel() < D3D_FEATURE_LEVEL_10_0)
-    {
-        throw std::runtime_error("DebugEffect requires Feature Level 10.0 or later");
-    }
-
     static_assert(static_cast<int>(std::size(EffectBase<DebugEffectTraits>::VertexShaderIndices)) == DebugEffectTraits::ShaderPermutationCount, "array/max mismatch");
     static_assert(static_cast<int>(std::size(EffectBase<DebugEffectTraits>::VertexShaderBytecode)) == DebugEffectTraits::VertexShaderCount, "array/max mismatch");
     static_assert(static_cast<int>(std::size(EffectBase<DebugEffectTraits>::PixelShaderBytecode)) == DebugEffectTraits::PixelShaderCount, "array/max mismatch");
@@ -279,22 +274,13 @@ void DebugEffect::Impl::Apply(_In_ ID3D11DeviceContext* deviceContext)
     assert(deviceContext != nullptr);
 
     // Compute derived parameter values.
-    matrices.SetConstants(dirtyFlags, constants.worldViewProj);
-
-    // World inverse transpose matrix.
-    if (dirtyFlags & EffectDirtyFlags::WorldInverseTranspose)
-    {
-        constants.world = XMMatrixTranspose(matrices.world);
-
-        const XMMATRIX worldInverse = XMMatrixInverse(nullptr, matrices.world);
-
-        constants.worldInverseTranspose[0] = worldInverse.r[0];
-        constants.worldInverseTranspose[1] = worldInverse.r[1];
-        constants.worldInverseTranspose[2] = worldInverse.r[2];
-
-        dirtyFlags &= ~EffectDirtyFlags::WorldInverseTranspose;
-        dirtyFlags |= EffectDirtyFlags::ConstantBuffer;
-    }
+    XMVECTOR eyePosition{};
+    matrices.SetConstants(
+        dirtyFlags,
+        constants.world,
+        constants.worldInverseTranspose,
+        constants.worldViewProj,
+        eyePosition);
 
     // Set shaders and constant buffers.
     ApplyShaders(deviceContext, GetCurrentShaderPermutation());

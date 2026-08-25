@@ -635,15 +635,15 @@ AABox DebugRenderer::sCalculateBounds(const Vertex *inVertices, int inVertexCoun
 	return bounds;
 }
 
-DebugRenderer::Batch DebugRenderer::CreateTriangleBatch(const Float3 *inVertices, int inVertexCount, const IndexedTriangleNoMaterial *inTriangles, int inTriangleCount)
+DebugRenderer::Batch DebugRenderer::CreateTriangleBatch(const VertexList &inVertices, const IndexedTriangleNoMaterialList &inTriangles)
 {
 	JPH_PROFILE_FUNCTION();
 
 	Array<Vertex> vertices;
 
 	// Create render vertices
-	vertices.resize(inVertexCount);
-	for (int v = 0; v < inVertexCount; ++v)
+	vertices.resize(inVertices.size());
+	for (size_t v = 0; v < inVertices.size(); ++v)
 	{
 		vertices[v].mPosition = inVertices[v];
 		vertices[v].mNormal = Float3(0, 0, 0);
@@ -652,7 +652,7 @@ DebugRenderer::Batch DebugRenderer::CreateTriangleBatch(const Float3 *inVertices
 	}
 
 	// Calculate normals
-	for (int i = 0; i < inTriangleCount; ++i)
+	for (size_t i = 0; i < inTriangles.size(); ++i)
 	{
 		const IndexedTriangleNoMaterial &tri = inTriangles[i];
 
@@ -671,7 +671,7 @@ DebugRenderer::Batch DebugRenderer::CreateTriangleBatch(const Float3 *inVertices
 	for (size_t i = 0; i < vertices.size(); ++i)
 		Vec3::sLoadFloat3Unsafe(vertices[i].mNormal).Normalized().StoreFloat3(&vertices[i].mNormal);
 
-	return CreateTriangleBatch(&vertices[0], (int)vertices.size(), &inTriangles[0].mIdx[0], 3 * inTriangleCount);
+	return CreateTriangleBatch(&vertices[0], (int)vertices.size(), &inTriangles[0].mIdx[0], (int)(3 * inTriangles.size()));
 }
 
 DebugRenderer::Batch DebugRenderer::CreateTriangleBatchForConvex(SupportFunction inGetSupport, int inLevel, AABox *outBounds)

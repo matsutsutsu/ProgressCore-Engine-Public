@@ -2,15 +2,15 @@
 
 # DirectX Tool Kit for DirectX 11
 
-http://go.microsoft.com/fwlink/?LinkId=248929
+https://go.microsoft.com/fwlink/?LinkId=248929
 
 Copyright (c) Microsoft Corporation.
 
-## July 9, 2025
+## May 7, 2026
 
 This package contains the "DirectX Tool Kit", a collection of helper classes for writing Direct3D 11 C++ code for Win32 desktop applications for Windows 8.1 or later, Xbox One, and Universal Windows Platform (UWP) apps for Windows 10 and Windows 11.
 
-This code is designed to build with Visual Studio 2019 (16.11), Visual Studio 2022, clang for Windows v12 or later, or MinGW 12.2. Use of the Windows 10 May 2020 Update SDK ([19041](https://walbourn.github.io/windows-10-may-2020-update-sdk/)) or later is required for Visual Studio.
+This code is designed to build with Visual Studio 2022, Visual Studio 2026, clang for Windows v12 or later, or MinGW. Use of the Windows 10 May 2020 Update SDK ([19041](https://walbourn.github.io/windows-10-may-2020-update-sdk/)) or later is required for Visual Studio.
 
 These components are designed to work without requiring any content from the legacy DirectX SDK. For details, see [Where is the DirectX SDK?](https://aka.ms/dxsdk).
 
@@ -62,9 +62,25 @@ These components are designed to work without requiring any content from the leg
 
   * Contains miscellaneous build files and scripts.
 
+* ``skills\``
+
+  * Contains published CoPilot skills for use by developers.
+
 ## Documentation
 
 Documentation is available on the [GitHub wiki](https://github.com/Microsoft/DirectXTK/wiki).
+
+## CoPilot Usage
+
+For CoPilot CLI assistance with using DirectX Tool Kit, try:
+
+```bash
+winget install GitHub.Copilot
+winget install GitHub.cli
+gh skill install microsoft/directxtk
+copilot
+/skills list
+```
 
 ## Notices
 
@@ -78,15 +94,19 @@ FOR SECURITY ADVISORIES, see [GitHub](https://github.com/microsoft/DirectXTK/sec
 
 For a full change history, see [CHANGELOG.md](https://github.com/microsoft/DirectXTK/blob/main/CHANGELOG.md).
 
-* The CMake projects require 3.21 or later. VS 2019 users will need to install a standalone version of CMake 3.21 or later and add it to their PATH.
+* The _directxtk_desktop_win10_ and _directxtk_uwp_ NuGet packages are deprecated. The best way to integrate the latest DirectX Tool Kit into your C++ project is using [vcpkg](https://github.com/microsoft/vcpkg/tree/master/ports/directxtk).
+
+* The CMake projects require 3.21 or later.
+
+* Starting with the July 2026 release, support for Direct3D Hardware Feature Level 9.x has been retired. All shaders are built using Shader Model 4, and therefore require `D3D_FEATURE_LEVEL_10_0` or greater.
 
 * Starting with the March 2025 release, Windows 7 and Windows 8.0 support has been retired. For _DirectX ToolKit for Audio_ this means that `DirectXTKAudio_Desktop_*_Win7` has been removed, and `DirectXTKAudio_Desktop_*_Win8` has been integrated into the `DirectXTK_Desktop_*` vcxproj which uses XAudio 2.8 for Windows 8.1 compatibility.
 
   * Remove any References to or use of `DirectXTKAudio_Desktop_*_Win8.vcxproj` or `DirectXTKAudio_Desktop_*_Win7`. If using `DirectXTK_Desktop_*.vcxproj` you will be using XAudio 2.8 as before. Client code will need to build with `_WIN32_WINNT=0x0603`.
 
-  * With the `directxtk_desktop_2019` NuGet package, you will be using XAudio 2.8 and no longer use the XAudio2Redist NuGet package. Client code will build with `_WIN32_WINNT=0x0603`.
-
   * If you want to use XAudio2Redist with Windows 8.1, the CMake project supports this with the build option `BUILD_XAUDIO_REDIST`. The CMake build option `BUILD_XAUDIO_WIN7` was renamed.
+
+  * When using XAudio 2.8 for Windows 8.1, there is no xWMA format support. This is available when using XAudio 2.9 or XAudio2Redist.
 
 * Starting with the February 2023 release, the Mouse class implementation of relative mouse movement was updated to accumulate changes between calls to ``GetState``. By default, each time you call ``GetState`` the deltas are reset which works for scenarios where you use relative movement but only call the method once per frame. If you call it more than once per frame, then add an explicit call to ``EndOfInputFrame`` to use an explicit reset model instead.
 
@@ -104,19 +124,17 @@ For a full change history, see [CHANGELOG.md](https://github.com/microsoft/Direc
 
 * The UWP projects and the Win10 classic desktop project include configurations for the ARM64 platform. Building these requires installing the ARM64 toolset.
 
-* For ARM64/AArch64 development, the VS 2022 compiler is strongly recommended over the VS 2019 toolset. The Windows SDK (26100 or later) is not compatible with VS 2019 for Win32 on ARM64 development. _Note that the ARM32/AArch32 platform is [deprecated](https://learn.microsoft.com/windows/arm/arm32-to-arm64)_.
-
 * When using clang/LLVM for the ARM64/AArch64 platform, the Windows 11 SDK ([22000](https://walbourn.github.io/windows-sdk-for-windows-11/)) or later is required.
 
 * The ``CompileShaders.cmd`` script must have Windows-style (CRLF) line-endings. If it is changed to Linux-style (LF) line-endings, it can fail to build all the required shaders.
 
 * As of the October 2024 release, the xwbtool command-line tool also supports GNU-style long options using ``--``. All existing switches continue to function. MakeSpriteFont supports only `--version` and ``--help`` for POSIX-style parameters.
 
-* Xbox One support for DirectX 11 requires the legacy Xbox One XDK. See February 2023 or earlier releases of _DirectX Tool Kit_ for the required MSBuild project files. It can also be built using the current CMake project from an _Xbox One XDK Developer Command Prompt_ with the addition of CMake 3.20 or later to the path via the `x64-Debug-Durango` or `x64-Release-Durango` CMake preset.
+* Xbox One support for DirectX 11 requires the legacy Xbox One XDK. See February 2023 or earlier releases of _DirectX Tool Kit_ for the required MSBuild project files. It can also be built using the current CMake project from an _Xbox One XDK Developer Command Prompt_ with the addition of CMake 3.21 or later to the path via the `x64-Debug-Durango` or `x64-Release-Durango` CMake preset.
 
 ## Support
 
-For questions, consider using [Stack Overflow](https://stackoverflow.com/questions/tagged/directxtk) with the _directxtk_ tag, or the [DirectX Discord Server](https://discord.gg/directx) in the _dx9-dx11-developers_ channel.
+For questions, consider using [Stack Overflow](https://stackoverflow.com/questions/tagged/directxtk) with the _directxtk_ tag, or the [DirectX Discord Server](https://discord.gg/directx) in the _dx9-dx11-developers_ or _input-and-audio_ channels.
 
 For bug reports and feature requests, please use GitHub [issues](https://github.com/microsoft/DirectXTK/issues) for this project.
 
@@ -152,4 +170,8 @@ Thanks to Roberto Sonnino for his help with the ``CMO``, DGSL rendering, and the
 
 Thanks to Pete Lewis and Justin Saunders for the normal-mapped and PBR shaders implementation.
 
-Thanks to Andrew Farrier and Scott Matloff for their on-going help with code reviews.
+Thanks to Imre Eilertsen for creating winget ports for the command-line tools.
+
+Thanks to Andrew Farrier, Jon Martin, and Scott Matloff for their help with code reviews.
+
+Thanks to Shawn Hargreaves and Nada Ouf for their continued support for this library.

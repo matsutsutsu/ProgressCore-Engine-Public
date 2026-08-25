@@ -4,7 +4,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
-// http://go.microsoft.com/fwlink/?LinkId=248929
+// https://go.microsoft.com/fwlink/?LinkId=248929
 //--------------------------------------------------------------------------------------
 
 #pragma once
@@ -52,6 +52,14 @@ namespace DirectX
         XMMATRIX worldView;
 
         void SetConstants(_Inout_ int& dirtyFlags, _Inout_ XMMATRIX& worldViewProjConstant);
+
+        // Helper for effects that don't use EffectLights, but have eye position.
+        void SetConstants(
+            _Inout_ int& dirtyFlags,
+            _Inout_ XMMATRIX& worldConstant,
+            _Inout_updates_(3) XMVECTOR worldInverseTransposeConstant[3],
+            _Inout_ XMMATRIX& worldViewProjConstant,
+            _Inout_ XMVECTOR& eyePositionConstant);
     };
 
 
@@ -64,7 +72,10 @@ namespace DirectX
         float start;
         float end;
 
-        void XM_CALLCONV SetConstants(_Inout_ int& dirtyFlags, _In_ FXMMATRIX worldView, _Inout_ XMVECTOR& fogVectorConstant);
+        void XM_CALLCONV SetConstants(
+            _Inout_ int& dirtyFlags,
+            _In_ FXMMATRIX worldView,
+            _Inout_ XMVECTOR& fogVectorConstant);
     };
 
 
@@ -98,12 +109,34 @@ namespace DirectX
 
 
         // Methods.
-        void InitializeConstants(_Out_ XMVECTOR& specularColorAndPowerConstant, _Out_writes_all_(MaxDirectionalLights) XMVECTOR* lightDirectionConstant, _Out_writes_all_(MaxDirectionalLights) XMVECTOR* lightDiffuseConstant, _Out_writes_all_(MaxDirectionalLights) XMVECTOR* lightSpecularConstant) const;
-        void SetConstants(_Inout_ int& dirtyFlags, _In_ EffectMatrices const& matrices, _Inout_ XMMATRIX& worldConstant, _Inout_updates_(3) XMVECTOR worldInverseTransposeConstant[3], _Inout_ XMVECTOR& eyePositionConstant, _Inout_ XMVECTOR& diffuseColorConstant, _Inout_ XMVECTOR& emissiveColorConstant, bool lightingEnabled);
+        void InitializeConstants(
+            _Out_ XMVECTOR& specularColorAndPowerConstant,
+            _Out_writes_all_(MaxDirectionalLights) XMVECTOR* lightDirectionConstant,
+            _Out_writes_all_(MaxDirectionalLights) XMVECTOR* lightDiffuseConstant,
+            _Out_writes_all_(MaxDirectionalLights) XMVECTOR* lightSpecularConstant) const;
+        void SetConstants(
+            _Inout_ int& dirtyFlags,
+            _In_ EffectMatrices const& matrices,
+            _Inout_ XMMATRIX& worldConstant,
+            _Inout_updates_(3) XMVECTOR worldInverseTransposeConstant[3],
+            _Inout_ XMVECTOR& eyePositionConstant,
+            _Inout_ XMVECTOR& diffuseColorConstant,
+            _Inout_ XMVECTOR& emissiveColorConstant,
+            bool lightingEnabled);
 
-        int SetLightEnabled(int whichLight, bool value, _Inout_updates_(MaxDirectionalLights) XMVECTOR* lightDiffuseConstant, _Inout_updates_(MaxDirectionalLights) XMVECTOR* lightSpecularConstant);
-        int XM_CALLCONV SetLightDiffuseColor(int whichLight, FXMVECTOR value, _Inout_updates_(MaxDirectionalLights) XMVECTOR* lightDiffuseConstant);
-        int XM_CALLCONV SetLightSpecularColor(int whichLight, FXMVECTOR value, _Inout_updates_(MaxDirectionalLights) XMVECTOR* lightSpecularConstant);
+        int SetLightEnabled(
+            int whichLight,
+            bool value,
+            _Inout_updates_(MaxDirectionalLights) XMVECTOR* lightDiffuseConstant,
+            _Inout_updates_(MaxDirectionalLights) XMVECTOR* lightSpecularConstant);
+        int XM_CALLCONV SetLightDiffuseColor(
+            int whichLight,
+            FXMVECTOR value,
+            _Inout_updates_(MaxDirectionalLights) XMVECTOR* lightDiffuseConstant);
+        int XM_CALLCONV SetLightSpecularColor(
+            int whichLight,
+            FXMVECTOR value,
+            _Inout_updates_(MaxDirectionalLights) XMVECTOR* lightSpecularConstant);
 
         static void ValidateLightIndex(int whichLight);
         static void EnableDefaultLighting(_In_ IEffectLights* effect);
@@ -123,9 +156,19 @@ namespace DirectX
     class EffectDeviceResources
     {
     public:
-        EffectDeviceResources(_In_ ID3D11Device* device) noexcept
+        EffectDeviceResources(_In_ ID3D11Device* device)
             : mDevice(device)
-        {}
+        {
+            if (!device)
+            {
+                throw std::invalid_argument("Direct3D device is null");
+            }
+
+            if (device->GetFeatureLevel() < D3D_FEATURE_LEVEL_10_0)
+            {
+                throw std::runtime_error("DirectX Tool Kit requires Feature Level 10.0 or later");
+            }
+        }
 
         ID3D11VertexShader* DemandCreateVertexShader(_Inout_ Microsoft::WRL::ComPtr<ID3D11VertexShader>& vertexShader, ShaderBytecode const& bytecode);
         ID3D11PixelShader * DemandCreatePixelShader(_Inout_ Microsoft::WRL::ComPtr<ID3D11PixelShader> & pixelShader, ShaderBytecode const& bytecode);
@@ -253,7 +296,7 @@ namespace DirectX
         class DeviceResources : protected EffectDeviceResources
         {
         public:
-            DeviceResources(_In_ ID3D11Device* device) noexcept
+            DeviceResources(_In_ ID3D11Device* device)
                 : EffectDeviceResources(device),
                 mVertexShaders{},
                 mPixelShaders{}

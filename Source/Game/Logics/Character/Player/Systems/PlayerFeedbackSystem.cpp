@@ -1,183 +1,690 @@
 #include "PlayerFeedbackSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
-#include "Game/Logics/GameEvent/GameEvents.h"
 
-// カメラシェイク要求を出すために参照する
 #include "Engine/Camera/Components/VirtualCameraComponents.h"
+#include "Game/Logics/Character/Player/Components/PlayerComponent.h"
 
-// 被弾ビネット用：既存のビネット設定(singleton)を一時的に駆動する。
-//   回避演出中の二重駆動を避けるため JustEvadeEffectComponent も参照する。
+// Post Process
 #include "Engine/Graphics/Components/PostProcess/VignetteConfigComponent.h"
+#include "Engine/Graphics/Components/PostProcess/ChromaticAberrationConfigComponent.h"
+// Other Effects
 #include "Engine/Graphics/Components/Impact/JustEvadeEffectComponent.h"
 
-// #include "Engine/Platform/Input/Input.h"
-// #include "Engine/Audio/AudioManager.h"
+#include "Engine/Platform/Input/IInputAPI.h"
 
-// システムの実行順序の定義ヘッダー
+// System
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
+#include <imgui.h>
+#include <algorithm>
+
 namespace
 {
-inline float Lerp(float a, float b, float t) { return a + (b - a) * t; }
+// =========================================================================
+// Utility
+// =========================================================================
+
+float TickTimer(float &timer, float dt)
+{
+    timer = std::max(0.0f, timer - dt);
+    return timer;
+}
+
+// =========================================================================
+// Envelope
+// =========================================================================
+//
+// タイマーの残り時間を0～1へ正規化し、
+// e^2のカーブを適用する。
+//
+// 被弾直後
+//     env = 1
+//
+// 時間経過
+//     env → 0
+//
+// 「パッと出て、スッと消える」演出にする。
+// =========================================================================
+
+float CalculateEnvelope(float timer, float duration)
+{
+    if (duration <= 0.0f)
+        return 0.0f;
+
+    const float normalizedTime =
+        std::clamp(timer / duration, 0.0f, 1.0f);
+
+    return normalizedTime * normalizedTime;
+}
+
+// =========================================================================
+// Lerp
+// =========================================================================
+
+float Lerp(float a, float b, float t)
+{
+    return a + (b - a) * t;
+}
 } // namespace
 
-PlayerFeedbackSystem::PlayerFeedbackSystem() : IfSystem("PlayerFeedbackSystem") {}
+PlayerFeedbackSystem::PlayerFeedbackSystem()
+    : IfSystem("PlayerFeedbackSystem")
+{
+    hasGui = true;
+}
 
 void PlayerFeedbackSystem::Initialize()
 {
-    if (!m_world) return;
+    // =========================================================================
+    // プレイヤー被弾
+    // =========================================================================
 
-    // =======================================================================
-    // 放送局（EventBus）から「ダメージを受けた」というニュースを受信する
-    // =======================================================================
-    // これを書くだけで、基底クラスが裏でチケットを保管し、
-    // システムが破棄されるときに自動的にEventBusから登録を抹消（Unsubscribe）してくれる！
-    ListenEvent<DamageTakenEvent>([this](const DamageTakenEvent& e) {
-        // もしダメージを受けたのが「プレイヤー」だったら、各種演出を発動！
-        if (e.isPlayer) {
+    ListenEvent<DamageTakenEvent>(
+        [this](const DamageTakenEvent &event) {
+            if (!event.isPlayer)
+                return;
 
-            // -----------------------------------------------------------------
-            // 演出1：カメラシェイク
-            // （ダメージ量 e.damageAmount に応じて揺れの強さを変えるとリッチになります）
-            // -----------------------------------------------------------------
-            // ワールド内に存在するすべての VirtualCamera を探す
-            auto vcamView = m_world->View<VirtualCamera>();
-            for (auto camID : vcamView) {
+            OnPlayerDamaged(event);
+        });
 
-                // ダメージ量(e.damageAmount)に基づいて揺れの強さを計算
-                // 例：10ダメージなら強さ1.0。上限を設けて揺れすぎを防ぐ
-                float shakeStrength = std::clamp(e.damageAmount * 0.1f, 0.2f, 3.0f);
-                // 被弾の重さは伝えつつ、操作不能に感じない長さの上限として 0.5 秒にしている
-                float shakeDuration = 0.5f;
+    // =========================================================================
+    // プレイヤー攻撃命中
+    // =========================================================================
 
-                // すでに CameraShake コンポーネントを持っているか確認
-                if (auto *shake = m_world->GetComponent<CameraShake>(camID)) {
-                    // 持っていれば上書きして揺らす
-                    shake->SetShake(shakeStrength, shakeDuration);
-                }
-                else {
-                    // 持っていなければ新しく取り付けて揺らす
-                    CameraShake newShake;
-                    newShake.SetShake(shakeStrength, shakeDuration);
-                    m_world->AddComponent<CameraShake>(camID, newShake);
-                }
-            }
-
-            // -----------------------------------------------------------------
-            // 演出2：コントローラーの振動（ゲームパッド用）
-            // -----------------------------------------------------------------
-            // auto& pad = Input::Instance().GetGamePad();
-            // pad.SetVibration(0.5f, 0.5f, 0.2f); // 左モーター, 右モーター, 秒数
-
-            // -----------------------------------------------------------------
-            // 演出3：ダメージSEの再生
-            // -----------------------------------------------------------------
-            // AudioManager::Instance().PlaySE("Player_Damage");
-
-            // -----------------------------------------------------------------
-            // 演出4：被弾ビネット（画面端の赤フラッシュ）
-            // タイマを立てるだけ。実際の見た目は Update() が VignetteConfig を駆動して作る。
-            // 連続被弾でも最新の一撃で満タンにリフレッシュする。
-            // -----------------------------------------------------------------
-            m_flashTimer = kFlashDuration;
-        }
-    });
+    ListenEvent<AttackHitConfirmedEvent>(
+        [this](const AttackHitConfirmedEvent &event) {
+            OnPlayerAttackHit(event);
+        });
 }
+
 
 void PlayerFeedbackSystem::Update(float dt)
 {
-    // 被弾ビネットの時間経過（パッと出てスッと引く）を毎フレーム駆動する。
     UpdateDamageVignette(dt);
+
+    UpdateDamageChromaticAberration(dt);
 }
 
-// ---------------------------------------------------------------------------
-// 被弾ビネット本体：既存の VignetteConfigComponent(singleton) を一時的に赤く光らせ、
-// 演出後は立ち下がりで元の値へ完全復元する（JustEvadeEffectSystem と同じ「壊さない」型）。
-// 触るのは intensity / color / pulse のみ。
-// ---------------------------------------------------------------------------
+void PlayerFeedbackSystem::OnGui()
+{
+    // =========================================================================
+    // Camera Shake
+    // =========================================================================
+
+    if (ImGui::TreeNode("Damage Camera Shake"))
+    {
+        ImGui::DragFloat(
+            "Damage Multiplier",
+            &m_shakeDamageMultiplier,
+            0.01f,
+            0.0f,
+            2.0f,
+            "%.2f");
+
+        ImGui::DragFloat(
+            "Min Strength",
+            &m_shakeMinStrength,
+            0.01f,
+            0.0f,
+            10.0f,
+            "%.2f");
+
+        ImGui::DragFloat(
+            "Max Strength",
+            &m_shakeMaxStrength,
+            0.01f,
+            0.0f,
+            20.0f,
+            "%.2f");
+
+        ImGui::DragFloat(
+            "Duration",
+            &m_shakeDuration,
+            0.01f,
+            0.0f,
+            5.0f,
+            "%.2f sec");
+
+        ImGui::TreePop();
+    }
+
+    // =========================================================================
+    // Controller Vibration
+    // =========================================================================
+
+    if (ImGui::TreeNode("Damage Controller Vibration"))
+    {
+        ImGui::SliderFloat(
+            "Left Motor",
+            &m_vibrationLeft,
+            0.0f,
+            1.0f,
+            "%.2f");
+
+        ImGui::SliderFloat(
+            "Right Motor",
+            &m_vibrationRight,
+            0.0f,
+            1.0f,
+            "%.2f");
+
+        ImGui::DragFloat(
+            "Duration##Vibration",
+            &m_vibrationDuration,
+            0.01f,
+            0.0f,
+            5.0f,
+            "%.2f sec");
+
+        ImGui::TreePop();
+    }
+
+    // =========================================================================
+    // Attack Hit Controller Vibration
+    // =========================================================================
+
+    if (ImGui::TreeNode("Attack Hit Controller Vibration"))
+    {
+        ImGui::SliderFloat(
+            "Left Motor##AttackHit",
+            &m_attackHitVibrationLeft,
+            0.0f,
+            1.0f,
+            "%.2f");
+
+        ImGui::SliderFloat(
+            "Right Motor##AttackHit",
+            &m_attackHitVibrationRight,
+            0.0f,
+            1.0f,
+            "%.2f");
+
+        ImGui::DragFloat(
+            "Duration##AttackHitVibration",
+            &m_attackHitVibrationDuration,
+            0.005f,
+            0.0f,
+            1.0f,
+            "%.3f sec");
+
+        ImGui::SliderFloat(
+            "Feedback Scale",
+            &m_attackHitFeedbackScale,
+            0.0f,
+            2.0f,
+            "%.2f");
+
+        ImGui::TreePop();
+    }
+
+
+
+    // =========================================================================
+    // Damage Vignette
+    // =========================================================================
+
+    if (ImGui::TreeNode("Damage Vignette"))
+    {
+        ImGui::DragFloat(
+            "Duration##Vignette",
+            &m_vignetteDuration,
+            0.01f,
+            0.01f,
+            5.0f,
+            "%.2f sec");
+
+        ImGui::SliderFloat(
+            "Peak Intensity",
+            &m_vignettePeak,
+            0.0f,
+            2.0f,
+            "%.2f");
+
+        ImGui::ColorEdit3(
+            "Flash Color",
+            &m_vignetteR);
+
+        ImGui::SliderFloat(
+            "Radius",
+            &m_vignetteRadius,
+            0.0f,
+            1.0f,
+            "%.2f");
+
+        ImGui::SliderFloat(
+            "Softness",
+            &m_vignetteSoftness,
+            0.0f,
+            1.0f,
+            "%.2f");
+
+        ImGui::TreePop();
+    }
+
+    // =========================================================================
+    // Damage Chromatic Aberration
+    // =========================================================================
+
+    if (ImGui::TreeNode("Damage Chromatic Aberration"))
+    {
+        ImGui::DragFloat(
+            "Duration##Chromatic",
+            &m_chromaticDuration,
+            0.01f,
+            0.01f,
+            5.0f,
+            "%.2f sec");
+
+        ImGui::SliderFloat(
+            "Peak Strength",
+            &m_chromaticPeak,
+            0.0f,
+            1.0f,
+            "%.3f");
+
+        ImGui::TreePop();
+    }
+}
+
+// ===================================================================================
+// Damage Feedback
+// ===================================================================================
+
+void PlayerFeedbackSystem::OnPlayerDamaged(
+    const DamageTakenEvent &event)
+{
+    StartDamageCameraShake(event.damageAmount);
+
+    StartDamageVibration();
+
+    StartDamageVignette();
+
+    StartDamageChromaticAberration();
+
+    // TODO:
+    // StartDamageSound();
+}
+
+// ===================================================================================
+// Player Attack Hit
+// ===================================================================================
+
+void PlayerFeedbackSystem::OnPlayerAttackHit(
+    const AttackHitConfirmedEvent &event)
+{
+    // 攻撃者がプレイヤーでなければ無視。
+    if (!m_world->HasComponent<PlayerComponent>(event.attackerID)) return;
+
+    StartAttackHitVibration(event);
+
+    // TODO:
+    // StartAttackHitCameraShake(event);
+    // StartAttackHitSound(event);
+}
+
+
+// ===================================================================================
+// Camera Shake
+// ===================================================================================
+
+void PlayerFeedbackSystem::StartDamageCameraShake(
+    float damageAmount)
+{
+    const float shakeStrength =
+        std::clamp(
+            damageAmount * m_shakeDamageMultiplier,
+            m_shakeMinStrength,
+            m_shakeMaxStrength);
+
+    auto vcamView = m_world->View<VirtualCamera>();
+
+    for (auto camID : vcamView)
+    {
+        if (auto *shake =
+                m_world->GetComponent<CameraShake>(camID))
+        {
+            shake->SetShake(
+                shakeStrength,
+                m_shakeDuration);
+        }
+        else
+        {
+            CameraShake newShake;
+
+            newShake.SetShake(
+                shakeStrength,
+                m_shakeDuration);
+
+            m_world->AddComponent<CameraShake>(
+                camID,
+                newShake);
+        }
+    }
+}
+
+// ===================================================================================
+// Controller Vibration
+// ===================================================================================
+
+void PlayerFeedbackSystem::StartDamageVibration()
+{
+    if (!m_world->HasResource<std::shared_ptr<IInputAPI>>())
+        return;
+
+    auto inputAPI =
+        m_world->GetResource<std::shared_ptr<IInputAPI>>();
+
+    if (!inputAPI)
+        return;
+
+    inputAPI->SetVibration(
+        m_vibrationLeft,
+        m_vibrationRight,
+        m_vibrationDuration);
+}
+
+void PlayerFeedbackSystem::StartAttackHitVibration(
+    const AttackHitConfirmedEvent &event)
+{
+    if (!m_world->HasResource<std::shared_ptr<IInputAPI>>()) return;
+
+    auto inputAPI = m_world->GetResource<std::shared_ptr<IInputAPI>>();
+
+    if (!inputAPI) return;
+
+    // ---------------------------------------------------------
+    // 命中の強さに応じて振動をスケーリング
+    // ---------------------------------------------------------
+
+  
+    const float power =
+        std::clamp(
+            event.damage / m_attackHitFeedbackScale,
+            0.25f,
+            1.0f);
+
+    const float left = m_attackHitVibrationLeft * power;
+
+    const float right = m_attackHitVibrationRight * power;
+
+    inputAPI->SetVibration(
+        left,
+        right,
+        m_attackHitVibrationDuration);
+}
+
+
+// ===================================================================================
+// Damage Vignette
+// ===================================================================================
+
+void PlayerFeedbackSystem::StartDamageVignette()
+{
+    m_vignetteTimer = m_vignetteDuration;
+}
+
+// ===================================================================================
+// Update Damage Vignette
+// ===================================================================================
+
 void PlayerFeedbackSystem::UpdateDamageVignette(float dt)
 {
-    auto *vig = m_world->GetSingletonComponent<VignetteConfigComponent>();
-    if (!vig) return; // ビネット設定が無いシーンでは何もしない
+    auto *vignette = m_world->GetSingletonComponent<VignetteConfigComponent>();
 
-    // ジャスト回避演出がビネットを駆動中なら譲る（二重駆動を避ける安全弁）。
-    // ※ timer だけでなく hold(切り払い準備の照準保持)も見る。hold 中は timer==0 でも
-    //   JustEvade がビネットを駆動しているため、これを見落とすと二重駆動で取り合いになる。
-    if (auto *je = m_world->GetSingletonComponent<JustEvadeEffectComponent>())
+    if (!vignette) return;
+
+       
+    // -------------------------------------------------------------------------
+    // Just Evadeとの競合を確認
+    // -------------------------------------------------------------------------
+
+    if (auto *justEvade =
+            m_world->GetSingletonComponent<JustEvadeEffectComponent>())
     {
-        if (je->timer > 0.0f || je->hold)
+        if (justEvade->timer > 0.0f ||justEvade->hold)       
         {
-            // ★手を引く前に、被弾フラッシュを「元の値」へ完全復元しておく。
-            //   これを怠ると、この直後に走る JustEvadeEffectSystem が
-            //   「フラッシュ中の赤いビネット値」を自分の base として退避し、
-            //   演出終了時にそこへ復元してしまう＝ビネットが残る不具合になる。
-            //   （実行順は FixedUpdate(本systemのLogic) → Render(JustEvade) なので、
-            //     ここで戻しておけば JustEvade は正しい base を退避できる）
-            if (m_flashActive)
+            // JustEvade側が正しいBaselineを取得できるよう、
+            // 被弾ビネットの値を先に元へ戻す。
+            if (m_vignetteActive)
             {
-                vig->enable             = m_vigBase.enable;
-                vig->data.vigIntensity  = m_vigBase.intensity;
-                vig->data.vigColor      = m_vigBase.color;
-                vig->data.vigPulseSpeed = m_vigBase.pulse;
-                vig->data.vigRadius     = m_vigBase.radius;
-                vig->data.vigSoftness   = m_vigBase.softness;
-                m_flashActive = false;
+                vignette->enable = m_vignetteBase.enable;                 
+                vignette->data.vigIntensity = m_vignetteBase.intensity;
+                vignette->data.vigColor = m_vignetteBase.color;
+                vignette->data.vigPulseSpeed = m_vignetteBase.pulse;
+                vignette->data.vigRadius = m_vignetteBase.radius;
+                vignette->data.vigSoftness = m_vignetteBase.softness;
+
+                m_vignetteActive = false;
             }
-            m_flashTimer = 0.0f; // 回避/切り払い演出を優先し、残った被弾フラッシュはキャンセル
+
+            m_vignetteTimer = 0.0f;
+
             return;
         }
     }
 
-    const bool active = (m_flashTimer > 0.0f);
+    // -------------------------------------------------------------------------
+    // 演出終了
+    // -------------------------------------------------------------------------
 
-    // ── 立ち下がり：退避しておいた元の値へ完全復元する ──
-    if (!active)
+    if (m_vignetteTimer <= 0.0f)
     {
-        if (m_flashActive)
+        if (m_vignetteActive)
         {
-            vig->enable             = m_vigBase.enable;
-            vig->data.vigIntensity  = m_vigBase.intensity;
-            vig->data.vigColor      = m_vigBase.color;
-            vig->data.vigPulseSpeed = m_vigBase.pulse;
-            vig->data.vigRadius     = m_vigBase.radius;
-            vig->data.vigSoftness   = m_vigBase.softness;
-            m_flashActive = false;
+            vignette->enable =
+                m_vignetteBase.enable;
+
+            vignette->data.vigIntensity =
+                m_vignetteBase.intensity;
+
+            vignette->data.vigColor =
+                m_vignetteBase.color;
+
+            vignette->data.vigPulseSpeed =
+                m_vignetteBase.pulse;
+
+            vignette->data.vigRadius =
+                m_vignetteBase.radius;
+
+            vignette->data.vigSoftness =
+                m_vignetteBase.softness;
+
+            m_vignetteActive = false;
         }
+
         return;
     }
 
-    // ── 立ち上がり：元のビネット値を退避（演出後にここへ戻す） ──
-    if (!m_flashActive)
+    // -------------------------------------------------------------------------
+    // 演出開始時にBaselineを保存
+    // -------------------------------------------------------------------------
+
+    if (!m_vignetteActive)
     {
-        m_vigBase.enable    = vig->enable;
-        m_vigBase.intensity = vig->data.vigIntensity;
-        m_vigBase.color     = vig->data.vigColor;
-        m_vigBase.pulse     = vig->data.vigPulseSpeed;
-        m_vigBase.radius    = vig->data.vigRadius;
-        m_vigBase.softness  = vig->data.vigSoftness;
+        m_vignetteBase.enable =
+            vignette->enable;
+
+        m_vignetteBase.intensity =
+            vignette->data.vigIntensity;
+
+        m_vignetteBase.color =
+            vignette->data.vigColor;
+
+        m_vignetteBase.pulse =
+            vignette->data.vigPulseSpeed;
+
+        m_vignetteBase.radius =
+            vignette->data.vigRadius;
+
+        m_vignetteBase.softness =
+            vignette->data.vigSoftness;
+
+        m_vignetteActive = true;
     }
 
-    // ── 減衰（実時間。スロー窓でも体感の長さが一致する） ──
-    m_flashTimer -= dt;
-    if (m_flashTimer < 0.0f) m_flashTimer = 0.0f;
+    // -------------------------------------------------------------------------
+    // タイマー更新
+    // -------------------------------------------------------------------------
 
-    // ── エンベロープ：被弾で即最大 → env=e² で素早く減衰（パッと出てスッと引く） ──
-    const float e   = m_flashTimer / kFlashDuration; // 1→0
-    const float env = e * e;                        // 後半ほど速く引いてキレを出す
+    TickTimer(
+        m_vignetteTimer,
+        dt);
 
-    vig->enable            = true;
-    vig->data.vigIntensity = Lerp(m_vigBase.intensity, kFlashPeak, env);
-    vig->data.vigColor     = DirectX::XMFLOAT4{Lerp(m_vigBase.color.x, kFlashR, env),
-                                               Lerp(m_vigBase.color.y, kFlashG, env),
-                                               Lerp(m_vigBase.color.z, kFlashB, env), 1.0f};
-    // 半径を縮め・ふちを広げて、赤を四隅だけでなく画面の内側まで届かせる。
-    vig->data.vigRadius     = Lerp(m_vigBase.radius, kFlashRadius, env);
-    vig->data.vigSoftness   = Lerp(m_vigBase.softness, kFlashSoftness, env);
-    vig->data.vigPulseSpeed = 0.0f; // フラッシュ中は脈動させない
+    // -------------------------------------------------------------------------
+    // エンベロープ
+    // -------------------------------------------------------------------------
 
-    m_flashActive = true;
+    const float env =
+        CalculateEnvelope(
+            m_vignetteTimer,
+            m_vignetteDuration);
+
+    // -------------------------------------------------------------------------
+    // Vignetteへ反映
+    // -------------------------------------------------------------------------
+
+    vignette->enable = true;
+
+    vignette->data.vigIntensity =
+        Lerp(
+            m_vignetteBase.intensity,
+            m_vignettePeak,
+            env);
+
+    vignette->data.vigColor =
+        DirectX::XMFLOAT4{
+            Lerp(
+                m_vignetteBase.color.x,
+                m_vignetteR,
+                env),
+
+            Lerp(
+                m_vignetteBase.color.y,
+                m_vignetteG,
+                env),
+
+            Lerp(
+                m_vignetteBase.color.z,
+                m_vignetteB,
+                env),
+
+            1.0f};
+
+    vignette->data.vigRadius =
+        Lerp(
+            m_vignetteBase.radius,
+            m_vignetteRadius,
+            env);
+
+    vignette->data.vigSoftness =
+        Lerp(
+            m_vignetteBase.softness,
+            m_vignetteSoftness,
+            env);
+
+    vignette->data.vigPulseSpeed = 0.0f;
 }
 
-// 演出系のシステムなので、物理やロジックが終わった後（PostUpdate等）に実行するのが安全です
+// ===================================================================================
+// Damage Chromatic Aberration
+// ===================================================================================
+
+void PlayerFeedbackSystem::StartDamageChromaticAberration()
+{
+    m_chromaticTimer = m_chromaticDuration;
+}
+
+// ===================================================================================
+// Update Damage Chromatic Aberration
+// ===================================================================================
+
+void PlayerFeedbackSystem::UpdateDamageChromaticAberration(float dt)
+{
+    auto *chromatic =
+        m_world->GetSingletonComponent<
+            ChromaticAberrationConfigComponent>();
+
+    if (!chromatic)
+        return;
+
+    // -------------------------------------------------------------------------
+    // 演出終了
+    // -------------------------------------------------------------------------
+
+    if (m_chromaticTimer <= 0.0f)
+    {
+        if (m_chromaticActive)
+        {
+            chromatic->enable =
+                m_chromaticBase.enable;
+
+            chromatic->data.chromaCenter =
+                m_chromaticBase.center;
+
+            chromatic->data.chromaStrength =
+                m_chromaticBase.strength;
+
+            chromatic->data.chromaFalloff =
+                m_chromaticBase.falloff;
+
+            m_chromaticActive = false;
+        }
+
+        return;
+    }
+
+    // -------------------------------------------------------------------------
+    // 演出開始時にBaselineを保存
+    // -------------------------------------------------------------------------
+
+    if (!m_chromaticActive)
+    {
+        m_chromaticBase.enable =
+            chromatic->enable;
+
+        m_chromaticBase.center =
+            chromatic->data.chromaCenter;
+
+        m_chromaticBase.strength =
+            chromatic->data.chromaStrength;
+
+        m_chromaticBase.falloff =
+            chromatic->data.chromaFalloff;
+
+        m_chromaticActive = true;
+    }
+
+    // -------------------------------------------------------------------------
+    // タイマー更新
+    // -------------------------------------------------------------------------
+
+    TickTimer(m_chromaticTimer, dt);
+
+    // -------------------------------------------------------------------------
+    // エンベロープ
+    // -------------------------------------------------------------------------
+
+    const float env =
+        CalculateEnvelope(
+            m_chromaticTimer,
+            m_chromaticDuration);
+
+    // -------------------------------------------------------------------------
+    // Chromatic Aberrationへ反映
+    // -------------------------------------------------------------------------
+
+    chromatic->enable = true;
+
+    chromatic->data.chromaCenter = m_chromaticBase.center;
+
+    chromatic->data.chromaStrength = Lerp(
+        m_chromaticBase.strength,
+        m_chromaticPeak,
+        env);
+
+    chromatic->data.chromaFalloff = m_chromaticBase.falloff;
+}
+
+// System Registration
 REGISTER_LOGIC_SYSTEM(PlayerFeedbackSystem, Priority::LogicStage::L06_Resolution);

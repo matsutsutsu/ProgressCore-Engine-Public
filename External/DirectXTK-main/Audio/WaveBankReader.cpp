@@ -6,8 +6,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
-// http://go.microsoft.com/fwlink/?LinkId=248929
-// http://go.microsoft.com/fwlink/?LinkID=615561
+// https://go.microsoft.com/fwlink/?LinkId=248929
+// https://go.microsoft.com/fwlink/?LinkID=615561
 //-------------------------------------------------------------------------------------
 
 #include "pch.h"
@@ -37,6 +37,7 @@ namespace
     constexpr size_t DVD_BLOCK_SIZE = DVD_SECTOR_SIZE * 16;
 
     constexpr size_t ALIGNMENT_MIN = 4;
+    constexpr size_t ALIGNMENT_MAX = 0xFFFF;
     constexpr size_t ALIGNMENT_DVD = DVD_SECTOR_SIZE;
 
     constexpr size_t MAX_DATA_SEGMENT_SIZE = 0xFFFFFFFF;
@@ -407,20 +408,33 @@ namespace
 
         const uint32_t seekSize = header.Segments[HEADER::SEGIDX_SEEKTABLES].dwLength;
 
-        if ((index * sizeof(uint32_t)) > seekSize)
+        // The segment opens with dwEntryCount uint32_t offsets. Require the whole element
+        // to be inside the segment, not merely its first byte.
+        if ((uint64_t(index) + 1u) * sizeof(uint32_t) > seekSize)
             return nullptr;
 
         auto table = reinterpret_cast<const uint32_t*>(seekTable);
-        uint32_t offset = table[index];
-        if (offset == uint32_t(-1))
+        const uint32_t entry = table[index];
+        if (entry == uint32_t(-1))
             return nullptr;
 
-        offset += sizeof(uint32_t) * data.dwEntryCount;
+        // Both terms come from the file and their sum exceeds a uint32_t for large values,
+        // so accumulate in 64-bit; a truncated sum would wrap past the bounds check below.
+        const uint64_t offset = uint64_t(entry) + uint64_t(sizeof(uint32_t)) * uint64_t(data.dwEntryCount);
 
-        if (offset > seekSize)
+        // The subtable leads with its own entry count, so that value must itself be fully
+        // inside the segment before anything may read it.
+        if ((offset + sizeof(uint32_t)) > seekSize)
             return nullptr;
 
-        return reinterpret_cast<const uint32_t*>(seekTable + offset);
+        auto result = reinterpret_cast<const uint32_t*>(seekTable + offset);
+
+        // Validate the declared count against the bytes actually remaining. Consumers index
+        // result[0] through result[*result], so that many elements plus the count must fit.
+        if ((uint64_t(*result) + 1u) * sizeof(uint32_t) > (uint64_t(seekSize) - offset))
+            return nullptr;
+
+        return result;
     }
 }
 
@@ -517,6 +531,9 @@ HRESULT WaveBankReader::Impl::Open(const wchar_t* szFileName) noexcept(false)
     Close();
     Clear();
 
+    if (!szFileName)
+        return E_INVALIDARG;
+
     m_prepared = false;
 
     m_event.reset(CreateEventEx(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_MODIFY_STATE | SYNCHRONIZE));
@@ -600,12 +617,12 @@ HRESULT WaveBankReader::Impl::Open(const wchar_t* szFileName) noexcept(false)
 
     if (m_data.dwFlags & BANKDATA::TYPE_STREAMING)
     {
-        if (m_data.dwAlignment < ALIGNMENT_DVD)
+        if ((m_data.dwAlignment < ALIGNMENT_DVD) || (m_data.dwAlignment > ALIGNMENT_MAX))
             return E_FAIL;
         if (m_data.dwAlignment % DVD_SECTOR_SIZE)
             return E_FAIL;
     }
-    else if (m_data.dwAlignment < ALIGNMENT_MIN)
+    else if ((m_data.dwAlignment < ALIGNMENT_MIN) || (m_data.dwAlignment > ALIGNMENT_MAX))
     {
         return E_FAIL;
     }
@@ -632,7 +649,14 @@ HRESULT WaveBankReader::Impl::Open(const wchar_t* szFileName) noexcept(false)
     }
 
     const DWORD metadataBytes = m_header.Segments[HEADER::SEGIDX_ENTRYMETADATA].dwLength;
-    if (metadataBytes != (m_data.dwEntryCount * m_data.dwEntryMetaDataElementSize))
+
+    uint64_t expectedSize = uint64_t(m_data.dwEntryCount) * m_data.dwEntryMetaDataElementSize;
+    if (expectedSize > MAX_DATA_SEGMENT_SIZE)
+    {
+        return HRESULT_FROM_WIN32(ERROR_ARITHMETIC_OVERFLOW);
+    }
+
+    if (metadataBytes != static_cast<DWORD>(expectedSize))
     {
         return E_FAIL;
     }
@@ -641,7 +665,13 @@ HRESULT WaveBankReader::Impl::Open(const wchar_t* szFileName) noexcept(false)
     const DWORD namesBytes = m_header.Segments[HEADER::SEGIDX_ENTRYNAMES].dwLength;
     if (namesBytes > 0)
     {
-        if (namesBytes >= (m_data.dwEntryNameElementSize * m_data.dwEntryCount))
+        expectedSize = uint64_t(m_data.dwEntryCount) * m_data.dwEntryNameElementSize;
+        if (expectedSize > UINT32_MAX)
+        {
+            return HRESULT_FROM_WIN32(ERROR_ARITHMETIC_OVERFLOW);
+        }
+
+        if (namesBytes >= static_cast<DWORD>(expectedSize))
         {
             std::unique_ptr<char[]> temp(new (std::nothrow) char[namesBytes]);
             if (!temp)
@@ -748,8 +778,11 @@ HRESULT WaveBankReader::Impl::Open(const wchar_t* szFileName) noexcept(false)
 
         if (be)
         {
+            // Step only over whole uint32_t elements: seekLen comes from the file and is
+            // not guaranteed to be a multiple of 4, while the buffer is exactly seekLen
+            // bytes, so a trailing partial element would be read and written out of bounds.
             auto ptr = reinterpret_cast<uint32_t*>(m_seekData.get());
-            for (size_t j = 0; j < seekLen; j += 4, ++ptr)
+            for (size_t j = 0; (j + sizeof(uint32_t)) <= seekLen; j += 4, ++ptr)
             {
                 *ptr = _byteswap_ulong(*ptr);
             }
@@ -1029,7 +1062,7 @@ HRESULT WaveBankReader::Impl::GetWaveData(uint32_t index, const uint8_t** pData,
 #endif
 
     if (!waveData)
-        return E_FAIL;
+        return E_POINTER;
 
     if (m_data.dwFlags & BANKDATA::TYPE_STREAMING)
     {
@@ -1168,7 +1201,9 @@ HRESULT WaveBankReader::Impl::GetMetadata(uint32_t index, Metadata& metadata) co
     {
         const uint64_t offset = uint64_t(metadata.offsetBytes) + uint64_t(m_header.Segments[HEADER::SEGIDX_ENTRYWAVEDATA].dwOffset);
         if (offset > UINT32_MAX)
+        {
             return HRESULT_FROM_WIN32(ERROR_ARITHMETIC_OVERFLOW);
+        }
 
         metadata.offsetBytes = static_cast<uint32_t>(offset);
     }
@@ -1223,10 +1258,13 @@ HRESULT WaveBankReader::Open(const wchar_t* szFileName) noexcept
 _Use_decl_annotations_
 uint32_t WaveBankReader::Find(const char* name) const
 {
-    auto it = pImpl->m_names.find(name);
-    if (it != pImpl->m_names.cend())
+    if (name)
     {
-        return it->second;
+        auto it = pImpl->m_names.find(name);
+        if (it != pImpl->m_names.cend())
+        {
+            return it->second;
+        }
     }
 
     return uint32_t(-1);

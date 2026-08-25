@@ -23,21 +23,21 @@ using DirectX::SimpleMath::Vector3;
 
 namespace
 {
-/// @brief hitTargets に target が既に記録済みか(多段ヒット防止)。
-bool AlreadyHit(const HitboxComponent &box, EntityID target)
-{
-    for (uint8_t i = 0; i < box.hitCount; ++i)
-        if (box.hitTargets[i] == target)
-            return true;
-    return false;
-}
-
-/// @brief hitTargets に target を追記する(満杯なら何もしない)。
-void RecordHit(HitboxComponent &box, EntityID target)
-{
-    if (box.hitCount < HitboxComponent::MAX_HIT_TARGETS)
-        box.hitTargets[box.hitCount++] = target;
-}
+    /// @brief hitTargets に target が既に記録済みか(多段ヒット防止)。
+    bool AlreadyHit(const HitboxComponent &box, EntityID target)
+    {
+        for (uint8_t i = 0; i < box.hitCount; ++i)
+            if (box.hitTargets[i] == target)
+                return true;
+        return false;
+    }
+    
+    /// @brief hitTargets に target を追記する(満杯なら何もしない)。
+    void RecordHit(HitboxComponent &box, EntityID target)
+    {
+        if (box.hitCount < HitboxComponent::MAX_HIT_TARGETS)
+            box.hitTargets[box.hitCount++] = target;
+    }
 } // namespace
 
 void HitboxCollisionSystem::Initialize()
@@ -64,16 +64,15 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
     // 1. Hitbox(攻撃) と Hurtbox(被弾) の成立確認
     auto *hitbox  = m_world->GetComponent<HitboxComponent>(attackerCandidate);
     auto *hurtbox = m_world->GetComponent<HurtboxComponent>(victimCandidate);
-    if (!hitbox || !hitbox->isActive || !hurtbox)
-        return;
+    if (!hitbox || !hitbox->isActive || !hurtbox) return;
 
     // 自傷防止（owner と被弾者が同じなら無視）
-    if (hitbox->ownerID == victimCandidate)
-        return;
+    if (hitbox->ownerID == victimCandidate) return;
 
     // 2. 多段ヒット防止(同一攻撃が同一相手を二度叩かない)
-    if (AlreadyHit(*hitbox, victimCandidate))
-        return;
+    if (AlreadyHit(*hitbox, victimCandidate)) return;
+
+    // 当たった相手を記録しておく（多重ヒット防止のため）
     RecordHit(*hitbox, victimCandidate);
 
     // 3. 最終ダメージ = 基礎 × 被ダメ倍率(弱点)
@@ -82,6 +81,7 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
 
     // 4. 命中位置：物理衝突の接触点(ワールド座標)をそのまま使う。加工しない。
     const Vector3 hitPos(contactPos);
+
 
     // 5. ノックバック方向(攻撃者→被弾者のXZ方向)
     Vector3 knockDir   = Vector3::Zero;

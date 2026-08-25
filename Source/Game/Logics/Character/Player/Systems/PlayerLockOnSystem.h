@@ -17,8 +17,5 @@ class PlayerLockOnSystem : public CCL::ECS::IfSystem<PlayerLockOnSystem,
     }
     virtual ~PlayerLockOnSystem() = default;
 
-    void Initialize() override
-    {
-    }
     void Update(float dt) override;
 };

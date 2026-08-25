@@ -29,6 +29,7 @@ const     float kFaceConeCos  = std::cos(1.221730f); ///< 前方±70°の内積�
 //   ※自動フェイシングの最大距離は PlayerComponent.attackFaceMaxDistance（エディタ調整可）を使う。
 }
 
+// プレイヤーの前方の一番近い敵を探す処理
 EntityID PlayerAttackSystem::FindBestFrontEnemy(EntityID selfID, const Vector3 &selfPos,
                                                 const Vector3 &forward, float range, float coneCos)
 {
@@ -99,7 +100,6 @@ void PlayerAttackSystem::SetAttackFacing(EntityID playerID, PlayerComponent &pla
 
 void PlayerAttackSystem::Update(float dt)
 {
-    // 引数に DashComponent を追加（宣言順に合わせる）
     ForEachWithID([&](EntityID playerID,
                 const CharacterMovementInputComponent &inputData,
                 DashComponent                         &dash,
@@ -107,6 +107,7 @@ void PlayerAttackSystem::Update(float dt)
                 PlayerComponent                       &player) {
         // 切り払いの準備(Ready)/突進(Lunging)中は、左クリックを「切り払いの発動」に使う。
         // ここで通常/ダッシュ/空中攻撃を出さないよう抑止し、エッジ状態だけ更新して抜ける。
+        // TODO:ここいちいちGetComponentせずにSystemのArchetypeに含めておく
         if (const auto *cleave = m_world->GetComponent<CleaveComponent>(playerID))
         {
             if (cleave->phase != CleavePhase::Idle)

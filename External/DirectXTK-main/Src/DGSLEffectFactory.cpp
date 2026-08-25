@@ -4,7 +4,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
-// http://go.microsoft.com/fwlink/?LinkId=248929
+// https://go.microsoft.com/fwlink/?LinkId=248929
 //--------------------------------------------------------------------------------------
 
 #include "pch.h"
@@ -34,7 +34,10 @@ public:
         mDevice(device),
         mSharing(true),
         mForceSRGB(false)
-    {}
+    {
+        if (!device)
+            throw std::invalid_argument("Direct3D device is null");
+    }
 
     Impl(const Impl&) = delete;
     Impl& operator=(const Impl&) = delete;
@@ -48,14 +51,15 @@ public:
     void CreatePixelShader(_In_z_ const wchar_t* shader, _Outptr_ ID3D11PixelShader** pixelShader);
 
     void ReleaseCache();
-    void SetSharing(bool enabled) noexcept { mSharing = enabled; }
-    void EnableForceSRGB(bool forceSRGB) noexcept { mForceSRGB = forceSRGB; }
 
     static SharedResourcePool<ID3D11Device*, Impl> instancePool;
 
     wchar_t mPath[MAX_PATH];
 
     ComPtr<ID3D11Device> mDevice;
+
+    bool mSharing;
+    bool mForceSRGB;
 
 private:
     using EffectCache = std::map< std::wstring, std::shared_ptr<IEffect> >;
@@ -66,9 +70,6 @@ private:
     EffectCache  mEffectCacheSkinning;
     TextureCache mTextureCache;
     ShaderCache  mShaderCache;
-
-    bool mSharing;
-    bool mForceSRGB;
 
     std::mutex mutex;
 };
@@ -241,13 +242,6 @@ std::shared_ptr<IEffect> DGSLEffectFactory::Impl::CreateDGSLEffect(DGSLEffectFac
         else if (!_wcsicmp(root, L"unlit"))
         {
             lighting = false;
-        }
-        else if (mDevice->GetFeatureLevel() < D3D_FEATURE_LEVEL_10_0)
-        {
-            // DGSL shaders are not compatible with Feature Level 9.x, use fallback shader
-            wcscat_s(root, L".cso");
-
-            factory->CreatePixelShader(root, ps.GetAddressOf());
         }
         else
         {
@@ -587,12 +581,12 @@ void DGSLEffectFactory::ReleaseCache()
 
 void DGSLEffectFactory::SetSharing(bool enabled) noexcept
 {
-    pImpl->SetSharing(enabled);
+    pImpl->mSharing = enabled;
 }
 
 void DGSLEffectFactory::EnableForceSRGB(bool forceSRGB) noexcept
 {
-    pImpl->EnableForceSRGB(forceSRGB);
+    pImpl->mForceSRGB = forceSRGB;
 }
 
 void DGSLEffectFactory::SetDirectory(_In_opt_z_ const wchar_t* path) noexcept

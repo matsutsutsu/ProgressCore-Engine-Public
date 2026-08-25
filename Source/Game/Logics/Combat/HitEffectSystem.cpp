@@ -1,5 +1,3 @@
-/// @file HitEffectSystem.cpp
-/// 役割・設計方針は HitEffectSystem.h を参照。
 #include "HitEffectSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
@@ -13,9 +11,9 @@ using namespace CCL::ECS;
 
 namespace
 {
-// スパークのバーストエミッタ・プレハブ（.json は Prefab 側が補完する）。
-const char *kHitSparkPrefab = "Assets/Prefabs/Particles/VFX_HitSpark";
-} // namespace
+    // スパークのバーストエミッタ・プレハブ
+    const char *kHitSparkPrefab = "Assets/Prefabs/Particles/VFX_HitSpark";
+} 
 
 void HitEffectSystem::Initialize()
 {
