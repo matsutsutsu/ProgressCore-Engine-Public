@@ -10,7 +10,7 @@
 #include "Engine/Graphics/Components/PostProcess/VignetteConfigComponent.h"
 #include "Engine/Graphics/Components/Impact/JustEvadeEffectComponent.h"
 
-// #include "Engine/Platform/Input/Input.h"
+#include "Engine/Platform/Input/IInputAPI.h"
 // #include "Engine/Audio/AudioManager.h"
 
 // システムの実行順序の定義ヘッダー
@@ -26,13 +26,7 @@ PlayerFeedbackSystem::PlayerFeedbackSystem() : IfSystem("PlayerFeedbackSystem") 
 
 void PlayerFeedbackSystem::Initialize()
 {
-    if (!m_world) return;
-
-    // =======================================================================
-    // 放送局（EventBus）から「ダメージを受けた」というニュースを受信する
-    // =======================================================================
-    // これを書くだけで、基底クラスが裏でチケットを保管し、
-    // システムが破棄されるときに自動的にEventBusから登録を抹消（Unsubscribe）してくれる！
+    // DamageTakenEventが来たらカメラシェイクなどの被弾イベント処理を実行する
     ListenEvent<DamageTakenEvent>([this](const DamageTakenEvent& e) {
         // もしダメージを受けたのが「プレイヤー」だったら、各種演出を発動！
         if (e.isPlayer) {
@@ -56,7 +50,7 @@ void PlayerFeedbackSystem::Initialize()
                     // 持っていれば上書きして揺らす
                     shake->SetShake(shakeStrength, shakeDuration);
                 }
-                else {
+                else { // TODO:なかったら取り付ける実装に関してはログのほうがいいかも？
                     // 持っていなければ新しく取り付けて揺らす
                     CameraShake newShake;
                     newShake.SetShake(shakeStrength, shakeDuration);
@@ -67,8 +61,12 @@ void PlayerFeedbackSystem::Initialize()
             // -----------------------------------------------------------------
             // 演出2：コントローラーの振動（ゲームパッド用）
             // -----------------------------------------------------------------
-            // auto& pad = Input::Instance().GetGamePad();
-            // pad.SetVibration(0.5f, 0.5f, 0.2f); // 左モーター, 右モーター, 秒数
+
+            if (!m_world->HasResource<std::shared_ptr<IInputAPI>>()) return;   
+            auto inputAPI = m_world->GetResource<std::shared_ptr<IInputAPI>>();
+
+            // コントローラー振動させる
+            inputAPI->SetVibration(0.5f, 0.5f, 0.2f);
 
             // -----------------------------------------------------------------
             // 演出3：ダメージSEの再生
@@ -98,6 +96,7 @@ void PlayerFeedbackSystem::Update(float dt)
 // ---------------------------------------------------------------------------
 void PlayerFeedbackSystem::UpdateDamageVignette(float dt)
 {
+    // TODO:こういう処理はSystem側で保持しておいてnullだったら探すというほうがいいかも
     auto *vig = m_world->GetSingletonComponent<VignetteConfigComponent>();
     if (!vig) return; // ビネット設定が無いシーンでは何もしない
 
