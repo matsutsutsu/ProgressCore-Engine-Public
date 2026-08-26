@@ -3,20 +3,20 @@
         {
             "components": {
                 "DroneComponent": {
-                    "currentFormation": 5,
-                    "currentState": 0,
-                    "hasReachedSlot": false,
-                    "localIndex": 5,
+                    "currentFormation": 32,
+                    "currentState": 2,
+                    "hasReachedSlot": true,
+                    "localIndex": 24,
                     "moveSpeed": 30.0,
                     "orbitRadius": 8.0,
-                    "ownerBossId": 0,
-                    "stateTimer": 0.0,
+                    "ownerBossId": 3,
+                    "stateTimer": 0.4000000059604645,
                     "targetPosition": [
-                        4.56719446182251,
-                        2.0,
-                        -6.5681610107421875
+                        30.486202239990234,
+                        12.574103355407715,
+                        36.91989517211914
                     ],
-                    "totalDrones": 12
+                    "totalDrones": 100
                 },
                 "Jolt Rigidbody": {
                     "friction": 0.20000000298023224,
@@ -59,15 +59,15 @@
                     "isStatic": false,
                     "parent": 2,
                     "position": [
-                        4.296149253845215,
-                        2.0214531421661377,
-                        -6.764354705810547
+                        29.662322998046875,
+                        12.665600776672363,
+                        37.027591705322266
                     ],
                     "rotation": [
-                        0.0,
-                        0.2872009873390198,
-                        0.0,
-                        -0.957870364189148
+                        0.045855823904275894,
+                        -0.5844951272010803,
+                        -0.03346260264515877,
+                        -0.8094090819358826
                     ],
                     "scale": [
                         1.0,

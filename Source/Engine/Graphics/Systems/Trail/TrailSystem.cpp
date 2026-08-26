@@ -21,6 +21,54 @@
 using namespace CCL::ECS;
 using namespace DirectX;
 
+static DirectX::XMFLOAT3 CatmullRom(
+    const DirectX::XMFLOAT3 &p0,
+    const DirectX::XMFLOAT3 &p1,
+    const DirectX::XMFLOAT3 &p2,
+    const DirectX::XMFLOAT3 &p3,
+    float                    t)
+{
+    using namespace DirectX;
+
+    const XMVECTOR v0 = XMLoadFloat3(&p0);
+    const XMVECTOR v1 = XMLoadFloat3(&p1);
+    const XMVECTOR v2 = XMLoadFloat3(&p2);
+    const XMVECTOR v3 = XMLoadFloat3(&p3);
+
+    const XMVECTOR result =
+        0.5f *
+        (2.0f * v1 +
+            (-v0 + v2) * t +
+            (2.0f * v0 - 5.0f * v1 + 4.0f * v2 - v3) * (t * t) +
+            (-v0 + 3.0f * v1 - 3.0f * v2 + v3) * (t * t * t));
+
+    XMFLOAT3 out;
+    XMStoreFloat3(&out, result);
+    return out;
+}
+
+auto applyWidth = [](const XMFLOAT3 &base, const XMFLOAT3 &tip, float width) {
+    XMFLOAT3 center;
+    center.x = (base.x + tip.x) * 0.5f;
+    center.y = (base.y + tip.y) * 0.5f;
+    center.z = (base.z + tip.z) * 0.5f;
+
+    XMFLOAT3 resultBase;
+    XMFLOAT3 resultTip;
+
+    resultBase.x = center.x + (base.x - center.x) * width;
+    resultBase.y = center.y + (base.y - center.y) * width;
+    resultBase.z = center.z + (base.z - center.z) * width;
+
+    resultTip.x = center.x + (tip.x - center.x) * width;
+    resultTip.y = center.y + (tip.y - center.y) * width;
+    resultTip.z = center.z + (tip.z - center.z) * width;
+
+    return std::pair<XMFLOAT3, XMFLOAT3>(resultBase, resultTip);
+};
+
+
+
 void TrailSystem::Update(float dt)
 {
     auto& renderer = TrailRenderer::Instance();
@@ -102,22 +150,93 @@ void TrailSystem::Update(float dt)
         verts.clear();
         verts.reserve((trail.count - 1) * 6);
 
+        constexpr int SUBDIVISIONS = 4;
+
+        auto getSegment = [&](int index) -> const TrailComponent::Segment & {
+            index = std::clamp(index, 0, trail.count - 1);
+            return trail.segments[(trail.head + index) % MAX];
+        };
+
         for (int i = 0; i < trail.count - 1; ++i)
         {
-            int i0 = (trail.head + i) % MAX;
-            int i1 = (trail.head + i + 1) % MAX;
-            const TrailComponent::Segment& s0 = trail.segments[i0];
-            const TrailComponent::Segment& s1 = trail.segments[i1];
+            const auto &s0 = getSegment(i - 1);
+            const auto &s1 = getSegment(i);
+            const auto &s2 = getSegment(i + 1);
+            const auto &s3 = getSegment(i + 2);
 
-            TrailRenderer::Vertex b0 = makeVert(s0.base, s0.age);
-            TrailRenderer::Vertex t0 = makeVert(s0.tip,  s0.age);
-            TrailRenderer::Vertex b1 = makeVert(s1.base, s1.age);
-            TrailRenderer::Vertex t1 = makeVert(s1.tip,  s1.age);
+            for (int j = 0; j < SUBDIVISIONS; ++j)
+            {
+                const float t0 =
+                    static_cast<float>(j) /
+                    static_cast<float>(SUBDIVISIONS);
 
-            // 四角形 (b0,t0,t1,b1) を2三角形へ。加算＆両面なので巻き順は不問。
-            verts.push_back(b0); verts.push_back(t0); verts.push_back(t1);
-            verts.push_back(b0); verts.push_back(t1); verts.push_back(b1);
+                const float t1 =
+                    static_cast<float>(j + 1) /
+                    static_cast<float>(SUBDIVISIONS);
+
+                XMFLOAT3 base0 =
+                    CatmullRom(s0.base, s1.base, s2.base, s3.base, t0);
+
+                XMFLOAT3 tip0 =
+                    CatmullRom(s0.tip, s1.tip, s2.tip, s3.tip, t0);
+
+                XMFLOAT3 base1 =
+                    CatmullRom(s0.base, s1.base, s2.base, s3.base, t1);
+
+                XMFLOAT3 tip1 =
+                    CatmullRom(s0.tip, s1.tip, s2.tip, s3.tip, t1);
+
+                const float age0 =
+                    std::lerp(s1.age, s2.age, t0);
+
+                const float age1 =
+                    std::lerp(s1.age, s2.age, t1);
+
+                // 0 = 古い尾、1 = 新しい部分
+                const float life0 =
+                    std::clamp(1.0f - age0 * invLife, 0.0f, 1.0f);
+
+                const float life1 =
+                    std::clamp(1.0f - age1 * invLife, 0.0f, 1.0f);
+
+                // 新しい部分ほど太く、古い部分ほど細くする。
+                const float width0 =
+                    trail.width *
+                    std::pow(life0, trail.widthCurvePower);
+
+                const float width1 =
+                    trail.width *
+                    std::pow(life1, trail.widthCurvePower);
+
+                auto [scaledBase0, scaledTip0] =
+                    applyWidth(base0, tip0, width0);
+
+                auto [scaledBase1, scaledTip1] =
+                    applyWidth(base1, tip1, width1);
+
+                TrailRenderer::Vertex b0 =
+                    makeVert(scaledBase0, age0);
+
+                TrailRenderer::Vertex t0v =
+                    makeVert(scaledTip0, age0);
+
+                TrailRenderer::Vertex b1 =
+                    makeVert(scaledBase1, age1);
+
+                TrailRenderer::Vertex t1v =
+                    makeVert(scaledTip1, age1);
+
+                verts.push_back(b0);
+                verts.push_back(t0v);
+                verts.push_back(t1v);
+
+                verts.push_back(b0);
+                verts.push_back(t1v);
+                verts.push_back(b1);
+            }
         }
+
+
 
         renderer.SubmitTriangleList(verts.data(), verts.size());
     });

@@ -58,4 +58,7 @@ struct TrailComponent
     Segment segments[MAX_SEGMENTS] = {}; ///< 断面リング
     int     head  = 0; ///< 最古区間の index
     int     count = 0; ///< 有効区間数
+
+    float width           = 1.0f; ///< トレイル全体の基本幅。1.0で元の太さ。
+    float widthCurvePower = 1.5f; ///< 尾に向かって細くなる強さ。大きいほど急激に細くなる。
 };
