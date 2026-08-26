@@ -73,16 +73,63 @@ struct CameraBodyTPSComponent
     // =======================================================================
     // ターゲット・ロックオンシステム用パラメータ
     // =======================================================================
-    CCL::Serialization::EntityLink lockOnTarget;                   ///< ロックオン対象のエネミーEntity
-    bool                           isLockOnActive         = false; ///< ロックオンが現在有効かどうか
-    float                          lockOnPitch            = 12.0f; ///< ロックオン中の固定理想ピッチ角(度)
-    float                          lockOnSubjugationRatio = 0.35f; ///< 敵への注視偏重率 (0.0=プレイヤー中心, 0.5=完全な中間地点)
-    float                          lockOnRotationDamping  = 6.0f;  ///< ロックオン時のカメラ角度の自動回り込み補間速度
 
-    // --- ロックオン・フレーミング（遠距離でもプレイヤーを画面内に保つ） ---
-    float lockOnMaxLookShift      = 3.0f;  ///< 注視点がプレイヤーから敵側へずれる上限(m)。大きいほど敵寄り。
-    float lockOnDistanceGain      = 0.35f; ///< 敵との離間1mあたり追加で引くカメラ距離(m)。0で引き無し。
-    float lockOnMaxExtraDistance  = 8.0f;  ///< 離間による追加引きの上限(m)。引きすぎでプレイヤーが小さくなるのを防ぐ。
+    CCL::Serialization::EntityLink lockOnTarget;
+
+    bool isLockOnActive = false;
+
+    // =======================================================================
+    // ロックオン開始時のカメラ姿勢
+    // =======================================================================
+
+    /// @brief ロックオン開始時に目標とするピッチ。
+    ///        ロックオン中ずっと固定するわけではない。
+    float lockOnPitch = 12.0f;
+
+    /// @brief ロックオン開始時のピッチ移動速度。
+    float lockOnPitchDamping = 8.0f;
+
+    // =======================================================================
+    // ロックオン・フレーミング
+    // =======================================================================
+
+    /// @brief 敵への注視偏重率。
+    float lockOnSubjugationRatio = 0.35f;
+
+    float lockOnMaxLookShift = 3.0f;
+
+    float lockOnDistanceGain = 0.35f;
+
+    float lockOnMaxExtraDistance = 8.0f;
+
+    // =======================================================================
+    // ロックオン・カメラアシスト
+    // =======================================================================
+
+    /// @brief ロックオン中も手動カメラ操作を許可する。
+    bool lockOnAllowManualCamera = true;
+
+    /// @brief 敵がこの角度以内なら自動補正しない。
+    float lockOnYawDeadZone = 20.0f;
+
+    /// @brief 自動補正の強さ。
+    float lockOnAssistStrength = 3.0f;
+
+    /// @brief 自動補正の最大速度（度/秒）。
+    float lockOnMaxCorrectionSpeed = 180.0f;
+
+    /// @brief プレイヤーがカメラ操作した後、
+    ///        自動補正を停止する時間。
+    float lockOnManualOverrideTime = 0.25f;
+
+    // =======================================================================
+    // 実行時内部状態
+    // =======================================================================
+
+    float lockOnManualOverrideTimer = 0.0f;
+
+    bool wasLockOnActive = false;
+
 
     // --- 実行時内部状態（シリアライズ不要） ---
     DirectX::SimpleMath::Vector3 currentLookAt = {0.0f, 0.0f, 0.0f}; ///< 補間計算用の仮想注視点座標

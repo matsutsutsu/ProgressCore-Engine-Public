@@ -42,11 +42,7 @@ void CameraActionTPSSystem::Initialize()
     ListenEvent<CameraShakeRequestEvent>([this](const CameraShakeRequestEvent &ev) {
 
         ForEachWithID([&](EntityID id, VirtualCamera &vcam, CameraBodyTPSComponent &tps, TransformComponent &trans) {
-            // 【重要】World::AddComponent は PendingOp に積むだけで、実体の追加は
-            //   ScrutinyAndApply まで遅延される。したがって AddComponent の直後に
-            //   GetComponent しても nullptr が返り、SetShake が呼ばれないまま
-            //   「最初のシェイク要求だけが黙って消える」ことになる。
-            //   既にあるなら書き換え、無いなら値ごと構築して積む、の二択にする。
+            // CameraShakeComponentがある場合は振動、ない場合はAddComponentして遅延実行で振動
             if (auto *shake = m_world->GetComponent<CameraShake>(id))
             {
                 shake->SetShake(ev.amplitude, ev.duration);
@@ -64,8 +60,7 @@ void CameraActionTPSSystem::Initialize()
 
 void CameraActionTPSSystem::Update(float dt)
 {
-    if (!m_world->HasResource<std::shared_ptr<IInputAPI>>())
-        return;
+    if (!m_world->HasResource<std::shared_ptr<IInputAPI>>()) return;
     auto inputAPI = m_world->GetResource<std::shared_ptr<IInputAPI>>();
 
     // ゲームパッド右スティック（倒し量：-1..1）。あとで dt を掛けて積分する。
@@ -76,6 +71,15 @@ void CameraActionTPSSystem::Update(float dt)
     float mouseDX = inputAPI->GetMouseDeltaX();
     float mouseDY = inputAPI->GetMouseDeltaY();
     bool  rmbHeld = inputAPI->GetAction("FreeLook"); // 右クリック押下中か
+
+    const float cameraInputThreshold = 0.05f;
+
+    bool manualCameraInput =
+        std::abs(lookX) > cameraInputThreshold ||
+        std::abs(lookY) > cameraInputThreshold ||
+        std::abs(mouseDX) > 0.5f ||
+        std::abs(mouseDY) > 0.5f;
+
 
     // カメラ衝突用の物理API（地形とだけ交差判定する）。無ければ衝突回避はスキップ。
     std::shared_ptr<IPhysicsAPI> physicsAPI =
@@ -137,54 +141,241 @@ void CameraActionTPSSystem::Update(float dt)
             tps.isLockOnActive = false;
         }
 
-        // 3. オービット（回転角）の決定
-        if (enemyTrans)
+        // ===================================================================
+        // プレイヤーによるカメラ操作
+        //
+        // ロックオン中でも基本的に操作可能。
+        // ロックオンは「カメラを奪う」のではなく「補助する」。
+        // ===================================================================
+
+        if (tps.lockOnAllowManualCamera || !enemyTrans)
         {
-            // ロックオン角度計算（現状は非補間のposition同士なので、動きが速いと敵の方向がわずかにガクつく可能性）
-            Vector3 playerToEnemy = enemyTrans->GetRenderWorldPosition() - targetTrans->GetRenderWorldPosition();
+            // ---------------------------------------------------------------
+            // ゲームパッド
+            // ---------------------------------------------------------------
 
-            // X軸=cos, Z軸=sin の球面座標系に完全に噛み合わせる
-            float idealYawRad = atan2f(playerToEnemy.z, playerToEnemy.x);
-            float idealYawDeg = XMConvertToDegrees(idealYawRad);
+            tps.currentYaw -= lookX * tps.lookSpeedX * dt;
+            tps.currentPitch += lookY * tps.lookSpeedY * dt;
 
-            // 最短回転（角度の180度跨ぎでカメラが逆回転するのを防ぐハック）
-            float yawDiff = idealYawDeg - tps.currentYaw;
-            while (yawDiff > 180.0f)
-                yawDiff -= 360.0f;
-            while (yawDiff < -180.0f)
-                yawDiff += 360.0f;
+            // ---------------------------------------------------------------
+            // マウス
+            // ---------------------------------------------------------------
 
-            // 滑らかな自動回り込み補間
-            float rotBlend = 1.0f - std::exp(-tps.lockOnRotationDamping * dt);
-            tps.currentYaw += yawDiff * rotBlend;
+            if ((!tps.mouseLookRequiresButton || rmbHeld) &&
+                !cursorFreeOverride)
+            {
+                float invert =
+                    tps.mouseInvertY ? -1.0f : 1.0f;
 
-            // ピッチ角はエディタの設定値へ自動追従
-            tps.currentPitch = std::lerp(tps.currentPitch, tps.lockOnPitch, rotBlend);
+                tps.currentYaw -=
+                    mouseDX * tps.mouseSensitivityX;
+
+                tps.currentPitch +=
+                    (-mouseDY) *
+                    tps.mouseSensitivityY *
+                    invert;
+            }
+        }
+
+        // ===================================================================
+        // 3. オービット（回転角）の決定
+        //
+        // ロックオン中もプレイヤーのカメラ操作を許可する。
+        // ロックオンは「カメラを奪う」のではなく「カメラを補助する」。
+        // ===================================================================
+
+        // ===================================================================
+        // 3-1. プレイヤーによる手動カメラ操作
+        // ===================================================================
+
+        if (!enemyTrans || tps.lockOnAllowManualCamera)
+        {
+            // ---------------------------------------------------------------
+            // ゲームパッド
+            // ---------------------------------------------------------------
+
+            // 右スティックは速度入力なので dt を掛ける。
+            tps.currentYaw -=
+                lookX * tps.lookSpeedX * dt;
+
+            tps.currentPitch +=
+                lookY * tps.lookSpeedY * dt;
+
+            // ---------------------------------------------------------------
+            // マウス
+            // ---------------------------------------------------------------
+
+            if ((!tps.mouseLookRequiresButton || rmbHeld) &&
+                !cursorFreeOverride)
+            {
+                float invert =
+                    tps.mouseInvertY ? -1.0f : 1.0f;
+
+                // マウスは1フレームの移動量なので dt を掛けない。
+                tps.currentYaw -=
+                    mouseDX * tps.mouseSensitivityX;
+
+                tps.currentPitch +=
+                    (-mouseDY) *
+                    tps.mouseSensitivityY *
+                    invert;
+            }
+        }
+
+        // ===================================================================
+        // 3-2. プレイヤーがカメラを操作したか判定
+        // ===================================================================
+
+        const float stickThreshold = 0.05f;
+        const float mouseThreshold = 0.5f;
+
+        const bool manualCameraInput =
+            std::abs(lookX) > stickThreshold ||
+            std::abs(lookY) > stickThreshold ||
+            std::abs(mouseDX) > mouseThreshold ||
+            std::abs(mouseDY) > mouseThreshold;
+
+        // ===================================================================
+        // 3-3. 手動操作中はロックオン自動補正を一時停止
+        // ===================================================================
+
+        if (manualCameraInput)
+        {
+            tps.lockOnManualOverrideTimer =
+                tps.lockOnManualOverrideTime;
         }
         else
         {
-            // ===============================================================
-            // 【通常モード】: マウス／スティックによる自由カメラ操作
-            //   ・スティック: 倒し量なので dt を掛けて積分（速度入力）。
-            //   ・マウス    : 既に移動量なので dt を掛けない（デルタ入力）。
-            //                 mouseLookRequiresButton=true のときは右クリック中のみ。
-            // ===============================================================
-            // スティック（速度入力）。右入力でカメラが右を向くよう水平は減算。
-            tps.currentYaw   -= lookX * tps.lookSpeedX * dt;
-            tps.currentPitch += lookY * tps.lookSpeedY * dt;
-
-            // マウス（デルタ入力）。カーソル自由/ポーズ/他UI操作中は回さない。
-            if ((!tps.mouseLookRequiresButton || rmbHeld) && !cursorFreeOverride)
-            {
-                float invert = tps.mouseInvertY ? -1.0f : 1.0f;
-                // マウスを右へ動かす(mouseDX>0)とカメラも右を向くよう、yaw規約に合わせて減算。
-                tps.currentYaw   -= mouseDX * tps.mouseSensitivityX;
-                // 画面Yは下方向が正。マウスを上へ動かす(mouseDY<0)とカメラも上を向くよう符号反転。
-                tps.currentPitch += (-mouseDY) * tps.mouseSensitivityY * invert;
-            }
-
-            tps.currentPitch = std::clamp(tps.currentPitch, tps.minPitch, tps.maxPitch);
+            tps.lockOnManualOverrideTimer =
+                std::max(
+                    0.0f,
+                    tps.lockOnManualOverrideTimer - dt);
         }
+
+        // ===================================================================
+        // 3-4. ロックオン開始を検出
+        // ===================================================================
+
+        const bool lockOnJustStarted =
+            tps.isLockOnActive &&
+            !tps.wasLockOnActive;
+
+        if (lockOnJustStarted)
+        {
+            // ロックオン開始時だけピッチを
+            // lockOnPitch へ滑らかに近づける。
+            //
+            // ロックオン中ずっと固定するわけではない。
+            const float pitchBlend =
+                1.0f -
+                std::exp(-tps.lockOnPitchDamping * dt);
+
+            tps.currentPitch =
+                std::lerp(
+                    tps.currentPitch,
+                    tps.lockOnPitch,
+                    pitchBlend);
+        }
+
+        // ===================================================================
+        // 3-5. ロックオン中のYaw自動アシスト
+        // ===================================================================
+
+        if (enemyTrans &&
+            tps.lockOnManualOverrideTimer <= 0.0f)
+        {
+            const Vector3 playerPos =
+                targetTrans->GetRenderWorldPosition();
+
+            const Vector3 enemyPos =
+                enemyTrans->GetRenderWorldPosition();
+
+            const Vector3 playerToEnemy =
+                enemyPos - playerPos;
+
+            // ---------------------------------------------------------------
+            // 敵の方向をYaw角に変換
+            // ---------------------------------------------------------------
+
+            const float idealYawRad =
+                atan2f(
+                    playerToEnemy.z,
+                    playerToEnemy.x);
+
+            const float idealYawDeg =
+                XMConvertToDegrees(idealYawRad);
+
+            // ---------------------------------------------------------------
+            // 現在のカメラYawとの差
+            // ---------------------------------------------------------------
+
+            float yawDiff =
+                idealYawDeg -
+                tps.currentYaw;
+
+            // -180 ～ +180 に正規化
+            while (yawDiff > 180.0f)
+                yawDiff -= 360.0f;
+
+            while (yawDiff < -180.0f)
+                yawDiff += 360.0f;
+
+            // ---------------------------------------------------------------
+            // Dead Zone
+            //
+            // 敵が少しずれているだけならカメラを動かさない。
+            // ---------------------------------------------------------------
+
+            if (std::abs(yawDiff) >
+                tps.lockOnYawDeadZone)
+            {
+                // Dead Zoneを超えた分だけ補正する。
+                const float excess =
+                    std::abs(yawDiff) -
+                    tps.lockOnYawDeadZone;
+
+                // 超えた量に応じて補正速度を増やす。
+                float correctionSpeed =
+                    excess *
+                    tps.lockOnAssistStrength;
+
+                // 最大速度を制限。
+                correctionSpeed =
+                    std::min(
+                        correctionSpeed,
+                        tps.lockOnMaxCorrectionSpeed);
+
+                // 度/秒 → 今フレームの角度へ。
+                float correction =
+                    correctionSpeed * dt;
+
+                // 敵が左なら左へ、
+                // 敵が右なら右へ。
+                if (yawDiff < 0.0f)
+                    correction = -correction;
+
+                tps.currentYaw += correction;
+            }
+        }
+
+        // ===================================================================
+        // 3-6. Pitch制限
+        // ===================================================================
+
+        tps.currentPitch =
+            std::clamp(
+                tps.currentPitch,
+                tps.minPitch,
+                tps.maxPitch);
+
+        // ===================================================================
+        // 3-7. ロックオン状態を保存
+        // ===================================================================
+
+        tps.wasLockOnActive =
+            tps.isLockOnActive;
+
+        
 
         // ヨーは周回するたび無限に積算されるので ±360 に畳む。
         //   放置すると float の有効桁が回転量に食われ、長時間プレイで視点が

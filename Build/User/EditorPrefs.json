@@ -1,3 +1,5 @@
 {
-    "DialogHistory": {}
+    "DialogHistory": {
+        "BehaviorTree": "Assets\\BehaviorTree"
+    }
 }
