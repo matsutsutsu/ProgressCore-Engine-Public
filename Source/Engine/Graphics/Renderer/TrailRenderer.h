@@ -58,7 +58,9 @@ private:
     /// @brief 初回のみ device からシェーダ/入力レイアウト/動的バッファ/PSO を生成。
     void EnsureInitialized(ID3D11Device* device);
 
-    static constexpr size_t MAX_VERTICES = 8192; ///< 1フレーム上限（約2730三角形）
+    /// @brief 1フレーム上限。筒(Tube)は1本で約3,300頂点使うため、板だけの頃の
+    ///        8192 では足元2本＋剣で溢れる。32768頂点でも動的VBは約0.9MB。
+    static constexpr size_t MAX_VERTICES = 32768;
 
     bool m_initialized = false;
 

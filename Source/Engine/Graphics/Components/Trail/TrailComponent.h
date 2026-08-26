@@ -22,6 +22,26 @@
 // ===========================================================================
 #include "Engine/ECS/Common/CCL_Types.h"
 #include <DirectXMath.h>
+#include <cstdint>
+
+/// @brief 断面の作り方。
+/// @details Ribbon は板1枚なので、面が視線と平行になった瞬間に線へ潰れる。
+///          剣の軌跡は「振る面を見せる」ものなのでそれで正しいが、足元の尾のように
+///          どこから見ても体積が欲しい用途では Cross / Tube を使う。
+enum class TrailShape : uint8_t
+{
+    Ribbon = 0, ///< 根本→先端の線分を掃いた板1枚（従来どおり。剣向き）
+    Cross  = 1, ///< 板を進行方向まわりに複製して十字に（安い・真横でも消えない）
+    Tube   = 2, ///< 断面を円にして押し出した筒（足元の尾など、体積が欲しいとき）
+};
+
+/// @brief CFIELD_ENUM_U8 用の表示名テーブル（enum の並びと一致させること）。
+static constexpr const char *TrailShapeNames[] = {
+    "Ribbon (板1枚)",
+    "Cross (十字)",
+    "Tube (筒)",
+};
+static constexpr int TrailShapeCount = 3;
 
 /// @brief 武器の軌跡(加算リボン)を残すためのコンポーネント。
 struct TrailComponent
@@ -61,4 +81,19 @@ struct TrailComponent
 
     float width           = 1.0f; ///< トレイル全体の基本幅。1.0で元の太さ。
     float widthCurvePower = 1.5f; ///< 尾に向かって細くなる強さ。大きいほど急激に細くなる。
+
+    // --- 断面形状（config。既定は従来と同じ板1枚） ---
+    uint8_t shape = static_cast<uint8_t>(TrailShape::Ribbon); ///< 断面の作り方
+
+    /// @brief Cross / Tube の半径。0 なら「根本→先端の長さの半分」を使う。
+    /// @note  足元に付ける場合は baseOffset/tipOffset をほぼ同じ点にして、
+    ///        ここで太さを決めるほうが扱いやすい。
+    float thickness = 0.0f;
+
+    int tubeSides = 6; ///< Tube の円周分割数（3〜16）。増やすほど滑らかで重い。
+
+    /// @brief Tube のシルエット強調。1で「輪郭だけ光る筒」、0で「均一な塊」。
+    /// @note  加算合成は全面が同じ明るさだと のっぺりした塊に見えるため、
+    ///        視線に対して横を向く面ほど明るくして丸みを出す。
+    float rimPower = 0.7f;
 };
