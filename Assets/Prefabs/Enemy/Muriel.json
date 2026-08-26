@@ -6,7 +6,6 @@
                 "AnimStateMachine": {
                     "graphPath": "Assets/Animations/Nodes/MurielAnimNode.json"
                 },
-                "Animation": null,
                 "Animator": {
                     "isLoop": true,
                     "playbackSpeed": 0.5
@@ -146,7 +145,7 @@
                     "hitStopDuration": 0.15000000596046448,
                     "hitStopScale": 0.0,
                     "isActive": false,
-                    "knockback": 5.0
+                    "knockback": 15.0
                 },
                 "Jolt Capsule Collider": {
                     "halfHeight": 3.700000047683716,

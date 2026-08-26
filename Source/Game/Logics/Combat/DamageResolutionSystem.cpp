@@ -40,6 +40,16 @@ namespace
     //   規約：攻撃が「来た方向」を基準（前=正面から食らった / 後=背後から / 右=右側から / 左=左側から）。
     const uint32_t HASH_HIT     = CCL::Utils::HashString("Hit");
     const uint32_t HASH_HIT_DIR = CCL::Utils::HashString("HitDir");
+
+    // 方向別トリガ（HitDir と同じ並び：0=前 / 1=後 / 2=左 / 3=右）。
+    //   プレイヤーのグラフは Hit + HitDir で HitReaction サブマシンへ入るが、
+    //   ボスのグラフは方向別トリガで4状態へ直接入る古い形のまま。両方立てておく。
+    //   （ボスは Hit/HitDir を持たないため、のけぞりが一度も再生されていなかった）
+    const uint32_t HASH_HIT_DIRECTIONAL[4] = {
+        CCL::Utils::HashString("HitFront"),
+        CCL::Utils::HashString("HitBack"),
+        CCL::Utils::HashString("HitLeft"),
+        CCL::Utils::HashString("HitRight")};
     
     /// @brief 被弾方向から前後左右のヒットリアクションを選んで再生する。
     ///        アニメーターを持たない相手（ドローン等）は自動でスキップされる。
@@ -85,6 +95,12 @@ namespace
         // 方向を先に確定させてから再生合図（HitReaction サブマシンが HitDir で分岐する）。
         anim->SetFloat(HASH_HIT_DIR, hitDir);
         anim->SetTrigger(HASH_HIT, 0.15f);
+
+        // 方向別トリガしか持たないグラフ（ボス）向け。持っていないパラメータへの
+        // SetTrigger は無視されるので、両形式のグラフが混在していても安全。
+        const int dirIndex = static_cast<int>(hitDir);
+        if (dirIndex >= 0 && dirIndex < 4)
+            anim->SetTrigger(HASH_HIT_DIRECTIONAL[dirIndex], 0.15f);
     }
 } // namespace
 

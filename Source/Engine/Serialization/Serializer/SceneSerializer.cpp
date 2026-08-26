@@ -305,7 +305,16 @@ std::vector<EntityID> SceneSerializer::DeserializeRaw(World* world, const nlohma
                 const std::string& compName = it.key();
                 const auto& compJson = it.value();
                 const auto* meta = registry.GetInfoByName(compName);
-                if (!meta) continue;
+                if (!meta) {
+                    // 登録名と綴りが違うキーは、ここまで無言で捨てられていた。
+                    // 「プレハブに書いたのに付いていない」が原因不明の挙動として
+                    // 残るため、必ず気付けるよう警告を出す。
+                    CCL_LOG_WARN(LogCategory::Core,
+                        "[Scene] コンポーネント '%s' は ComponentRegistry に未登録のため無視されました"
+                        "（登録名の綴り違い／未登録のメタ定義を確認）",
+                        compName.c_str());
+                    continue;
+                }
                 // 通常のデシリアライズ（ここでゴミの parentID が入る可能性がある）
                 meta->deserializeToWorld(world, newID, compJson, &loadCtx);
             }
