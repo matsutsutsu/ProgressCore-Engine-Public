@@ -8,13 +8,18 @@
 //   - Additive ブレンドは (SrcAlpha, One)。従って頂点アルファがそのまま加算強度になり、
 //     rgb を事前乗算(premultiply)する必要はない。
 //   - RTV/DSV は明示バインドしない。先行パスが張った HDR ターゲットに重ねて描く。
+//   - 歪みレイヤは SceneColorGrabPass が確保したシーンカラーを読む。半透明/パーティクル
+//     パスが t5 を上書きしている可能性があるため、毎フレームここで取り直して張る。
+//     読むのは「コピー」なので、書き込み先の HDR ターゲットとの読み書き衝突は起きない。
 // ===========================================================================
 #include "TrailRenderer.h"
 
 #include "Engine/Graphics/RHI/RenderContext.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 #include "Engine/Graphics/RHI/Camera.h"
+#include "Engine/Graphics/RHI/RenderState.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
+#include "Engine/Graphics/Shader/PostProcess/PostProcessManager.h"
 
 #include <algorithm>
 #include <cstring>
@@ -49,7 +54,10 @@ void TrailRenderer::EnsureInitialized(ID3D11Device* device)
     GpuResourceUtils::LoadPixelShader(
         device, "Assets/Shader/TrailPS.cso", m_pixelShader.GetAddressOf());
 
-    // 動的頂点バッファ（毎フレーム WRITE_DISCARD で上書き）
+    GpuResourceUtils::LoadPixelShader(
+        device, "Assets/Shader/TrailDistortPS.cso", m_distortPixelShader.GetAddressOf());
+
+    // 動的頂点バッファ（毎フレーム WRITE_DISCARD で上書き。加算→歪みの順に詰める）
     D3D11_BUFFER_DESC vbDesc = {};
     vbDesc.ByteWidth      = static_cast<UINT>(sizeof(Vertex) * MAX_VERTICES);
     vbDesc.Usage          = D3D11_USAGE_DYNAMIC;
@@ -69,7 +77,24 @@ void TrailRenderer::EnsureInitialized(ID3D11Device* device)
     desc.topology   = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
     m_pso = PipelineState(desc);
 
+    // PSO: 歪み。背景を屈折像で置き換えるので αブレンド。RGB のみ書く
+    // UITransparency を使い、HDR ターゲットの α=1 を保つ。
+    desc.blend   = BlendState::UITransparency;
+    m_distortPso = PipelineState(desc);
+
     m_initialized = true;
+}
+
+size_t TrailRenderer::ClampToCapacity(size_t vertexCount) const
+{
+    const size_t used = m_vertices.size() + m_distortVertices.size();
+    if (used + vertexCount <= MAX_VERTICES)
+        return vertexCount;
+
+    // 容量超過分は三角形境界(3頂点単位)で切り捨てる。
+    size_t remain = MAX_VERTICES - used;
+    remain -= remain % 3;
+    return std::min(vertexCount, remain);
 }
 
 void TrailRenderer::SubmitTriangleList(const Vertex* verts, size_t vertexCount)
@@ -79,30 +104,39 @@ void TrailRenderer::SubmitTriangleList(const Vertex* verts, size_t vertexCount)
 
     std::lock_guard<std::mutex> lock(m_mutex);
 
-    // 容量超過分は三角形境界(3頂点単位)で切り捨てる。
-    if (m_vertices.size() + vertexCount > MAX_VERTICES)
-    {
-        size_t remain = MAX_VERTICES - m_vertices.size();
-        remain -= remain % 3;
-        if (remain == 0)
-            return;
-        vertexCount = std::min(vertexCount, remain);
-    }
+    vertexCount = ClampToCapacity(vertexCount);
+    if (vertexCount == 0)
+        return;
 
     m_vertices.insert(m_vertices.end(), verts, verts + vertexCount);
+}
+
+void TrailRenderer::SubmitDistortTriangleList(const Vertex* verts, size_t vertexCount)
+{
+    if (!verts || vertexCount == 0)
+        return;
+
+    std::lock_guard<std::mutex> lock(m_mutex);
+
+    vertexCount = ClampToCapacity(vertexCount);
+    if (vertexCount == 0)
+        return;
+
+    m_distortVertices.insert(m_distortVertices.end(), verts, verts + vertexCount);
 }
 
 void TrailRenderer::Render(const RenderServices& services, const RenderFrameContext& ctx)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
 
-    if (m_vertices.empty())
+    if (m_vertices.empty() && m_distortVertices.empty())
         return;
 
     // 前提が欠けていたら安全側で破棄（次フレームに持ち越さない）。
     if (!ctx.dc || !ctx.camera || !services.device || !services.renderState)
     {
         m_vertices.clear();
+        m_distortVertices.clear();
         return;
     }
 
@@ -110,10 +144,14 @@ void TrailRenderer::Render(const RenderServices& services, const RenderFrameCont
     if (!m_initialized)
     {
         m_vertices.clear();
+        m_distortVertices.clear();
         return;
     }
 
     ID3D11DeviceContext* dc = ctx.dc;
+
+    const size_t additiveCount = m_vertices.size();
+    const size_t distortCount  = m_distortVertices.size();
 
     // 1. 定数バッファ（viewProjection をそのまま）
     {
@@ -127,19 +165,21 @@ void TrailRenderer::Render(const RenderServices& services, const RenderFrameCont
         }
     }
 
-    // 2. 頂点アップロード
-    const size_t vertexCount = std::min(m_vertices.size(), MAX_VERTICES);
+    // 2. 頂点アップロード（加算を先頭、歪みをその後ろへ連結）
     {
         D3D11_MAPPED_SUBRESOURCE mapped;
         if (SUCCEEDED(dc->Map(m_vertexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
         {
-            std::memcpy(mapped.pData, m_vertices.data(), vertexCount * sizeof(Vertex));
+            Vertex* dst = static_cast<Vertex*>(mapped.pData);
+            if (additiveCount > 0)
+                std::memcpy(dst, m_vertices.data(), additiveCount * sizeof(Vertex));
+            if (distortCount > 0)
+                std::memcpy(dst + additiveCount, m_distortVertices.data(), distortCount * sizeof(Vertex));
             dc->Unmap(m_vertexBuffer.Get(), 0);
         }
     }
 
-    // 3. ステート＆描画
-    m_pso.Apply(dc, services.renderState);
+    // 3. 共通ステート
     dc->IASetInputLayout(m_inputLayout.Get());
 
     UINT stride = sizeof(Vertex), offset = 0;
@@ -147,14 +187,46 @@ void TrailRenderer::Render(const RenderServices& services, const RenderFrameCont
     dc->IASetVertexBuffers(0, 1, &vb, &stride, &offset);
 
     dc->VSSetShader(m_vertexShader.Get(), nullptr, 0);
-    dc->PSSetShader(m_pixelShader.Get(), nullptr, 0);
 
     ID3D11Buffer* cb = m_constantBuffer.Get();
     dc->VSSetConstantBuffers(0, 1, &cb); // b0
 
-    dc->Draw(static_cast<UINT>(vertexCount), 0);
+    // 4. 歪みレイヤ（加算の芯を上に乗せるため先に描く）
+    ID3D11ShaderResourceView* sceneColorSRV = nullptr;
+    if (distortCount > 0 && services.postProcess)
+        sceneColorSRV = services.postProcess->GetSceneColorSRV();
 
-    // 4. 後続パスへ状態を残さない（PrimitiveRenderer に倣う）
+    if (sceneColorSRV)
+    {
+        // 歪み PS は gView / gTimeParams / gScreenParams を CbScene(b8) から読む。
+        if (services.sceneConstantBuffer)
+        {
+            ID3D11Buffer* sceneCb = services.sceneConstantBuffer;
+            dc->PSSetConstantBuffers(SLOT_CB_SCENE, 1, &sceneCb);
+        }
+
+        ID3D11SamplerState* sampler = services.renderState->GetSamplerState(SamplerState::LinearClamp);
+        dc->PSSetSamplers(SLOT_SMP_LINEAR, 1, &sampler);
+        dc->PSSetShaderResources(SLOT_SRV_SCENE_COLOR, 1, &sceneColorSRV);
+
+        m_distortPso.Apply(dc, services.renderState);
+        dc->PSSetShader(m_distortPixelShader.Get(), nullptr, 0);
+        dc->Draw(static_cast<UINT>(distortCount), static_cast<UINT>(additiveCount));
+
+        // 後続パスが同じスロットを RTV として使えるよう SRV を外す。
+        ID3D11ShaderResourceView* nullSRV = nullptr;
+        dc->PSSetShaderResources(SLOT_SRV_SCENE_COLOR, 1, &nullSRV);
+    }
+
+    // 5. 加算レイヤ
+    if (additiveCount > 0)
+    {
+        m_pso.Apply(dc, services.renderState);
+        dc->PSSetShader(m_pixelShader.Get(), nullptr, 0);
+        dc->Draw(static_cast<UINT>(additiveCount), 0);
+    }
+
+    // 6. 後続パスへ状態を残さない（PrimitiveRenderer に倣う）
     dc->VSSetShader(nullptr, nullptr, 0);
     dc->PSSetShader(nullptr, nullptr, 0);
     dc->RSSetState(nullptr);
@@ -162,16 +234,19 @@ void TrailRenderer::Render(const RenderServices& services, const RenderFrameCont
     dc->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF);
 
     m_vertices.clear();
+    m_distortVertices.clear();
 }
 
 void TrailRenderer::Shutdown()
 {
     std::lock_guard<std::mutex> lock(m_mutex);
     m_vertices.clear();
+    m_distortVertices.clear();
     m_vertexBuffer.Reset();
     m_constantBuffer.Reset();
     m_inputLayout.Reset();
     m_vertexShader.Reset();
     m_pixelShader.Reset();
+    m_distortPixelShader.Reset();
     m_initialized = false;
 }

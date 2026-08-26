@@ -3075,6 +3075,9 @@
     <FxCompile Include="Shader\Renderer\Trail\TrailPS.hlsl">
       <Filter>Shader\Renderer\Trail</Filter>
     </FxCompile>
+    <FxCompile Include="Shader\Renderer\Trail\TrailDistortPS.hlsl">
+      <Filter>Shader\Renderer\Trail</Filter>
+    </FxCompile>
     <FxCompile Include="Shader\Pass\SkyBox\SkyboxVS.hlsl">
       <Filter>Shader\Pass\SkyBox</Filter>
     </FxCompile>

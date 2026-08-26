@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <memory>
 #include <vector>
 #include <type_traits>
@@ -60,6 +60,11 @@ public:
         ID3D11ShaderResourceView* sceneNormalSRV = nullptr);
 
     void GrabSceneColor(ID3D11DeviceContext* dc);
+
+    /// @brief GrabSceneColor が確保したシーンカラーのコピー。未確保なら nullptr。
+    /// @note  半透明/パーティクル描画が t5 を上書きしている可能性があるため、
+    ///        屈折を描くレンダラは毎回ここから取り直して自分でバインドする。
+    ID3D11ShaderResourceView* GetSceneColorSRV() const;
 
     // ================================================================
     //  エフェクト管理 API

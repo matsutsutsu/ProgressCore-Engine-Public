@@ -35,6 +35,10 @@ COMPONENT_META_BEGIN_FULL(TrailComponent, "Weapon Trail", CCL::Categories::Effec
     CFIELD_FLOAT_RANGED(lifeTime, "寿命(秒)", 0.005f, 0.0f, 2.0f, "見た目")
     CFIELD_FLOAT_RANGED(minDistance, "最小距離", 0.005f, 0.0f, 1.0f, "形状")
 
+    CFIELD_FLOAT_RANGED(distortion, "歪み量(px)", 0.1f, 0.0f, 64.0f, "歪み")
+    CFIELD_FLOAT_RANGED(distortionChroma, "歪みの色ズレ", 0.01f, 0.0f, 1.0f, "歪み")
+    CFIELD_FLOAT_RANGED(distortionNoise, "陽炎ゆらぎ", 0.01f, 0.0f, 1.0f, "歪み")
+
     CFIELD(emitting, "発生中", "状態")
     CFIELD_T(animControlled, "アニメ制御", "状態",
              "ONで Trail アニメイベントの区間中だけ発生。OFFは手動(Emitting)運用。")

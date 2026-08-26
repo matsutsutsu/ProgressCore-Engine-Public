@@ -141,10 +141,10 @@ float TrailSystem::RingRadius(const TrailComponent &trail, const Ring &ring) con
     return XMVectorGetX(XMVector3Length(XMLoadFloat3(&ring.half)));
 }
 
-TrailRenderer::Vertex TrailSystem::MakeVertex(const TrailComponent &trail,
-    const DirectX::XMFLOAT3                                        &pos,
-    float                                                           age,
-    float                                                           intensity) const
+TrailSystem::VertexPair TrailSystem::MakeVertex(const TrailComponent &trail,
+    const DirectX::XMFLOAT3                                          &pos,
+    float                                                             age,
+    float                                                             intensity) const
 {
     const float invLife = (trail.lifeTime > 0.0f) ? (1.0f / trail.lifeTime) : 0.0f;
 
@@ -152,11 +152,36 @@ TrailRenderer::Vertex TrailSystem::MakeVertex(const TrailComponent &trail,
     if (fade < 0.0f)
         fade = 0.0f;
 
-    TrailRenderer::Vertex v;
-    v.position = pos;
-    v.color    = XMFLOAT4(trail.color.x, trail.color.y, trail.color.z,
-        trail.color.w * fade * intensity);
-    return v;
+    const float mask = fade * intensity;
+
+    VertexPair pair;
+    pair.additive.position = pos;
+    pair.additive.color    = XMFLOAT4(trail.color.x, trail.color.y, trail.color.z,
+        trail.color.w * mask);
+
+    // 歪みは色ではなくパラメータを運ぶ（意味は TrailDistortPS.hlsl と対）。
+    // 加算色のアルファ(trail.color.w)を掛けないのは、「見た目は薄いが強く歪む」
+    // 陽炎のような使い方を潰さないため。歪みの強さは distortion だけで決める。
+    pair.distort.position = pos;
+    pair.distort.color    = XMFLOAT4(trail.distortion, trail.distortionChroma,
+        trail.distortionNoise, mask);
+    return pair;
+}
+
+void TrailSystem::EmitSink::PushTriangle(const VertexPair &a,
+    const VertexPair                                      &b,
+    const VertexPair                                      &c) const
+{
+    additive->push_back(a.additive);
+    additive->push_back(b.additive);
+    additive->push_back(c.additive);
+
+    if (!distort)
+        return;
+
+    distort->push_back(a.distort);
+    distort->push_back(b.distort);
+    distort->push_back(c.distort);
 }
 
 // ===========================================================================
@@ -164,7 +189,7 @@ TrailRenderer::Vertex TrailSystem::MakeVertex(const TrailComponent &trail,
 // ===========================================================================
 void TrailSystem::EmitRibbon(const TrailComponent &trail,
     const std::vector<Ring>                       &rings,
-    std::vector<TrailRenderer::Vertex>            &outVerts) const
+    const EmitSink                                &sink) const
 {
     for (size_t i = 0; i + 1 < rings.size(); ++i)
     {
@@ -176,28 +201,23 @@ void TrailSystem::EmitRibbon(const TrailComponent &trail,
         const XMFLOAT3 b1 = {r1.center.x - r1.half.x, r1.center.y - r1.half.y, r1.center.z - r1.half.z};
         const XMFLOAT3 t1 = {r1.center.x + r1.half.x, r1.center.y + r1.half.y, r1.center.z + r1.half.z};
 
-        const TrailRenderer::Vertex vb0 = MakeVertex(trail, b0, r0.age, 1.0f);
-        const TrailRenderer::Vertex vt0 = MakeVertex(trail, t0, r0.age, 1.0f);
-        const TrailRenderer::Vertex vb1 = MakeVertex(trail, b1, r1.age, 1.0f);
-        const TrailRenderer::Vertex vt1 = MakeVertex(trail, t1, r1.age, 1.0f);
+        const VertexPair vb0 = MakeVertex(trail, b0, r0.age, 1.0f);
+        const VertexPair vt0 = MakeVertex(trail, t0, r0.age, 1.0f);
+        const VertexPair vb1 = MakeVertex(trail, b1, r1.age, 1.0f);
+        const VertexPair vt1 = MakeVertex(trail, t1, r1.age, 1.0f);
 
-        outVerts.push_back(vb0);
-        outVerts.push_back(vt0);
-        outVerts.push_back(vt1);
-
-        outVerts.push_back(vb0);
-        outVerts.push_back(vt1);
-        outVerts.push_back(vb1);
+        sink.PushTriangle(vb0, vt0, vt1);
+        sink.PushTriangle(vb0, vt1, vb1);
     }
 }
 
 void TrailSystem::EmitCross(const TrailComponent &trail,
     const std::vector<Ring>                      &rings,
-    std::vector<TrailRenderer::Vertex>           &outVerts) const
+    const EmitSink                               &sink) const
 {
     // 1枚目は板と同じ。2枚目は進行方向まわりに 90 度回した面。
     // これだけで「どの角度から見ても必ずどちらかの面が正面を向く」ようになる。
-    EmitRibbon(trail, rings, outVerts);
+    EmitRibbon(trail, rings, sink);
 
     for (size_t i = 0; i + 1 < rings.size(); ++i)
     {
@@ -228,25 +248,20 @@ void TrailSystem::EmitCross(const TrailComponent &trail,
         XMStoreFloat3(&b1, XMVectorSubtract(XMLoadFloat3(&r1.center), h1));
         XMStoreFloat3(&t1, XMVectorAdd(XMLoadFloat3(&r1.center), h1));
 
-        const TrailRenderer::Vertex vb0 = MakeVertex(trail, b0, r0.age, 1.0f);
-        const TrailRenderer::Vertex vt0 = MakeVertex(trail, t0, r0.age, 1.0f);
-        const TrailRenderer::Vertex vb1 = MakeVertex(trail, b1, r1.age, 1.0f);
-        const TrailRenderer::Vertex vt1 = MakeVertex(trail, t1, r1.age, 1.0f);
+        const VertexPair vb0 = MakeVertex(trail, b0, r0.age, 1.0f);
+        const VertexPair vt0 = MakeVertex(trail, t0, r0.age, 1.0f);
+        const VertexPair vb1 = MakeVertex(trail, b1, r1.age, 1.0f);
+        const VertexPair vt1 = MakeVertex(trail, t1, r1.age, 1.0f);
 
-        outVerts.push_back(vb0);
-        outVerts.push_back(vt0);
-        outVerts.push_back(vt1);
-
-        outVerts.push_back(vb0);
-        outVerts.push_back(vt1);
-        outVerts.push_back(vb1);
+        sink.PushTriangle(vb0, vt0, vt1);
+        sink.PushTriangle(vb0, vt1, vb1);
     }
 }
 
 void TrailSystem::EmitTube(const TrailComponent &trail,
     const std::vector<Ring>                     &rings,
     const DirectX::XMFLOAT3                     &cameraEye,
-    std::vector<TrailRenderer::Vertex>          &outVerts) const
+    const EmitSink                              &sink) const
 {
     const int sides = std::clamp(trail.tubeSides, 3, 16);
 
@@ -322,18 +337,13 @@ void TrailSystem::EmitTube(const TrailComponent &trail,
             ringVertex(i + 1, k, p10, i10);
             ringVertex(i + 1, k1, p11, i11);
 
-            const TrailRenderer::Vertex v00 = MakeVertex(trail, p00, rings[i].age, i00);
-            const TrailRenderer::Vertex v01 = MakeVertex(trail, p01, rings[i].age, i01);
-            const TrailRenderer::Vertex v10 = MakeVertex(trail, p10, rings[i + 1].age, i10);
-            const TrailRenderer::Vertex v11 = MakeVertex(trail, p11, rings[i + 1].age, i11);
+            const VertexPair v00 = MakeVertex(trail, p00, rings[i].age, i00);
+            const VertexPair v01 = MakeVertex(trail, p01, rings[i].age, i01);
+            const VertexPair v10 = MakeVertex(trail, p10, rings[i + 1].age, i10);
+            const VertexPair v11 = MakeVertex(trail, p11, rings[i + 1].age, i11);
 
-            outVerts.push_back(v00);
-            outVerts.push_back(v01);
-            outVerts.push_back(v11);
-
-            outVerts.push_back(v00);
-            outVerts.push_back(v11);
-            outVerts.push_back(v10);
+            sink.PushTriangle(v00, v01, v11);
+            sink.PushTriangle(v00, v11, v10);
         }
     }
 }
@@ -356,6 +366,7 @@ void TrailSystem::Update(float dt)
     // 頂点と断面列の一時バッファ（エンティティ間で使い回してアロケーションを抑える）。
     // ForEach はシングルスレッド版のため関数ローカルで安全。
     std::vector<TrailRenderer::Vertex> verts;
+    std::vector<TrailRenderer::Vertex> distortVerts;
     std::vector<Ring>                  rings;
 
     ForEach([&](const TransformComponent &transform, TrailComponent &trail) {
@@ -420,22 +431,29 @@ void TrailSystem::Update(float dt)
             return;
 
         verts.clear();
+        distortVerts.clear();
+
+        EmitSink sink;
+        sink.additive = &verts;
+        if (trail.distortion > 0.0f)
+            sink.distort = &distortVerts;
 
         switch (static_cast<TrailShape>(trail.shape))
         {
         case TrailShape::Cross:
-            EmitCross(trail, rings, verts);
+            EmitCross(trail, rings, sink);
             break;
         case TrailShape::Tube:
-            EmitTube(trail, rings, cameraEye, verts);
+            EmitTube(trail, rings, cameraEye, sink);
             break;
         case TrailShape::Ribbon:
         default:
-            EmitRibbon(trail, rings, verts);
+            EmitRibbon(trail, rings, sink);
             break;
         }
 
         renderer.SubmitTriangleList(verts.data(), verts.size());
+        renderer.SubmitDistortTriangleList(distortVerts.data(), distortVerts.size());
     });
 }
 
