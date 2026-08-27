@@ -11,6 +11,7 @@
 //   - 区間の老化・寿命切れ破棄・新区間の追記（移動量ゲート付き）。
 //   - 尾ほど薄くフェードする頂点カラーを付けてリボンを構築・提出。
 //   - distortion>0 のときは同じ形状を歪みレイヤにも積む（生成は1回だけ）。
+//   - useZigZag のときは断面の中心を折れ線状にずらす（稲妻表現）。
 //
 // 位置付け:
 //   R08_Main（メイン描画ステージ）で走り、同フレームの TrailPass が描画する。
@@ -45,6 +46,12 @@ private:
         DirectX::XMFLOAT3 half   = {};   ///< 中心→先端（幅カーブ適用済み）
         float             age    = 0.0f; ///< フェード用の経過秒
         float             taper  = 1.0f; ///< 尾ほど細くする係数（thickness 指定時に使う）
+
+        /// @brief この断面の出どころ（元区間の通し番号と、区間内の位置0〜1）。
+        /// @note  ジグザグが「どの折れ点の上にいるか」を、フレームごとに変わる
+        ///        配列 index ではなく区間そのものから決めるために持ち回る。
+        uint32_t segStamp = 0;
+        float    segT     = 0.0f;
     };
 
     /// @brief 同じ位置に置く「加算レイヤ用」と「歪みレイヤ用」の頂点ペア。
@@ -79,6 +86,11 @@ private:
     /// @brief 断面 i の進行方向（末尾は直前の向きを流用）。
     DirectX::XMVECTOR RingTangent(const std::vector<Ring> &rings, size_t i) const;
 
+    /// @brief 進行方向に垂直な断面内の正規直交基底を作る。
+    /// @note  half が進行方向と平行だと基底が潰れるため、その場合は適当な直交軸へ逃がす。
+    void RingBasis(DirectX::FXMVECTOR tangent, const DirectX::XMFLOAT3 &half,
+                   DirectX::XMVECTOR &outU, DirectX::XMVECTOR &outV) const;
+
     /// @brief Cross / Tube が使う半径。thickness=0 なら半ベクトル長を採用。
     float RingRadius(const TrailComponent &trail, const Ring &ring) const;
 
@@ -87,12 +99,10 @@ private:
                           const DirectX::XMFLOAT3 &pos,
                           float age, float intensity) const;
 
-    /// @brief 滑らかな軌跡を基準に、意図的な折れ曲がりを加える。
-    DirectX::XMFLOAT3 MakeJaggedPosition(
-        const TrailComponent    &trail,
-        const DirectX::XMFLOAT3 &position,
-        const DirectX::XMFLOAT3 &tangent,
-        int                      segmentIndex,
-        int                      subdivisionIndex,
-        int                      subdivisionCount) const;
+    /// @brief 折れ点1つ分のずらしベクトル。断面内の基底 u,v 上で決める。
+    DirectX::XMVECTOR ZigZagOffset(const TrailComponent &trail, uint32_t node,
+                                   DirectX::FXMVECTOR u, DirectX::FXMVECTOR v) const;
+
+    /// @brief 滑らかな断面列を、稲妻状の折れ線へずらす（中心のみ動かす）。
+    void ApplyZigZag(const TrailComponent &trail, std::vector<Ring> &rings) const;
 };

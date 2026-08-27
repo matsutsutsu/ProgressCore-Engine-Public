@@ -74,6 +74,12 @@ struct TrailComponent
         DirectX::XMFLOAT3 base = {}; ///< 記録時の根本ワールド座標
         DirectX::XMFLOAT3 tip  = {}; ///< 記録時の先端ワールド座標
         float             age  = 0.0f; ///< 記録からの経過秒。lifeTime 超で破棄。
+
+        /// @brief 刻んだ順の通し番号。ジグザグの折れ方を決める識別子。
+        /// @note  リング内の index は最古が死ぬたびに繰り下がるため、index を
+        ///        乱数の種にすると模様が尾へ向かって流れてしまう。区間そのものに
+        ///        番号を持たせることで、一度決まった折れ方が最後まで動かない。
+        uint32_t stamp = 0;
     };
 
     static constexpr int MAX_SEGMENTS = 24; ///< リングの容量（尾の最大分割数）
@@ -81,6 +87,8 @@ struct TrailComponent
     Segment segments[MAX_SEGMENTS] = {}; ///< 断面リング
     int     head  = 0; ///< 最古区間の index
     int     count = 0; ///< 有効区間数
+
+    uint32_t nextStamp = 0; ///< 次に刻む区間へ渡す通し番号
 
     float width           = 1.0f; ///< トレイル全体の基本幅。1.0で元の太さ。
     float widthCurvePower = 1.5f; ///< 尾に向かって細くなる強さ。大きいほど急激に細くなる。
@@ -122,11 +130,21 @@ struct TrailComponent
     // --- runtime ---
     float burstTimer = 0.0f; ///< 一時Trail表示の残り時間
 
-    // --- ジグザグ形状 ---
-    bool     useZigZag       = false; ///< トレイルをランダムに折れ曲げる
-    float    zigZagAmplitude = 0.08f; ///< 折れ曲がり量
-    int      zigZagFrequency = 2;     ///< 1区間あたりの折れ点数
-    uint32_t zigZagSeed      = 1337;  ///< 決定論的乱数シード
+    // --- ジグザグ（稲妻状の折れ）レイヤ（config） ---
+    /// @brief 芯線を折れ線にする。断面の作り方(shape)とは独立に効く。
+    /// @note  尾の「通り道」そのものをずらすので、板・十字・筒のどれでも使える。
+    bool useZigZag = false;
+
+    /// @brief 折れ点1つあたりの最大ずらし量（ワールド単位）。
+    float zigZagAmplitude = 0.5f;
+
+    /// @brief 1区間あたりの折れ点数。増やすほど細かく尖る。
+    /// @note  補間ON時は1区間が4断面に分かれるため、ここを上げすぎると
+    ///        折れ点が断面より細かくなり、角が潰れて ただのノイズに見える。
+    int zigZagFrequency = 2;
+
+    /// @brief 折れ方のパターン。値を変えると別の稲妻になる。
+    uint32_t zigZagSeed = 1337;
 
 
     /// @brief 一時的にTrailを出現させるための関数

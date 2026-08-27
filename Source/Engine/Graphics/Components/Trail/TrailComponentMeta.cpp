@@ -39,6 +39,11 @@ CFIELD_FLOAT_RANGED(distortion, "歪み量(px)", 0.1f, 0.0f, 64.0f, "歪み")
 CFIELD_FLOAT_RANGED(distortionChroma, "歪みの色ズレ", 0.01f, 0.0f, 1.0f, "歪み")
 CFIELD_FLOAT_RANGED(distortionNoise, "陽炎ゆらぎ", 0.01f, 0.0f, 1.0f, "歪み")
 
+CFIELD_T(useZigZag, "ジグザグ", "ジグザグ", "軌跡の芯線を稲妻のように折り曲げる。断面の形とは独立に効く。")
+CFIELD_FLOAT_RANGED(zigZagAmplitude, "折れ幅", 0.01f, 0.0f, 5.0f, "ジグザグ")
+CFIELD_INT_RANGED(zigZagFrequency, "1区間の折れ点数", 1, 8, "ジグザグ")
+CFIELD_T(zigZagSeed, "折れ方のパターン", "ジグザグ", "値を変えると別の折れ方になる。同じ値なら毎回同じ形。")
+
 CFIELD_FLOAT_RANGED(burstDuration, "ダッシュ時のTrail出現時間", 0.1f, 0.0f, 10.0f, "時間")
 CFIELD_RO(burstTimer, "一時Trail表示の残り時間", "時間",nullptr)
 

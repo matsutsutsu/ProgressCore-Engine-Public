@@ -10,6 +10,8 @@
 //   - リングは固定長。満杯時は最古を捨てて上書きし、ヒープ確保を避ける。
 //   - 「区間の補間(BuildRings)」と「形状の生成(Emit*)」を分けている。板1枚では面が
 //     視線と平行になった瞬間に線へ潰れるため、同じ断面列から十字・筒も作れるようにした。
+//   - ジグザグは断面列の「中心」だけをずらす後処理にした。形状生成の前に挟むことで、
+//     板・十字・筒のどれでも同じ稲妻の芯線を共有できる。
 // ===========================================================================
 #include "TrailSystem.h"
 
@@ -51,6 +53,19 @@ static DirectX::XMFLOAT3 CatmullRom(
     XMFLOAT3 out;
     XMStoreFloat3(&out, result);
     return out;
+}
+
+/// @brief 折れ点番号から決定論的な擬似乱数(0〜1)を作る。
+/// @note  断面列は毎フレーム作り直されるため、乱数を保存すると模様が保てない。
+///        番号から毎回引き直すことで、同じ区間は何フレーム後も同じ折れ方になる。
+static float Hash01(uint32_t x)
+{
+    x ^= x >> 16;
+    x *= 0x7FEB352Du;
+    x ^= x >> 15;
+    x *= 0x846CA68Bu;
+    x ^= x >> 16;
+    return static_cast<float>(x >> 8) * (1.0f / 16777216.0f);
 }
 
 /// @brief 1区間あたりの補間分割数。断面列の密度。
@@ -110,8 +125,10 @@ void TrailSystem::BuildRings(const TrailComponent &trail, std::vector<Ring> &out
                 (segment.tip.y - ring.center.y) * w,
                 (segment.tip.z - ring.center.z) * w};
 
-            ring.age   = segment.age;
-            ring.taper = w;
+            ring.age      = segment.age;
+            ring.taper     = w;
+            ring.segStamp  = segment.stamp;
+            ring.segT      = 0.0f;
 
             outRings.push_back(ring);
         }
@@ -179,8 +196,10 @@ void TrailSystem::BuildRings(const TrailComponent &trail, std::vector<Ring> &out
                 (tip.y - ring.center.y) * w,
                 (tip.z - ring.center.z) * w};
 
-            ring.age   = age;
-            ring.taper = w;
+            ring.age      = age;
+            ring.taper     = w;
+            ring.segStamp  = s1.stamp;
+            ring.segT      = t;
 
             outRings.push_back(ring);
         }
@@ -203,6 +222,30 @@ DirectX::XMVECTOR TrailSystem::RingTangent(const std::vector<Ring> &rings, size_
         dir = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 
     return XMVector3Normalize(dir);
+}
+
+void TrailSystem::RingBasis(DirectX::FXMVECTOR tangent,
+    const DirectX::XMFLOAT3                        &half,
+    DirectX::XMVECTOR                              &outU,
+    DirectX::XMVECTOR                              &outV) const
+{
+    // 半ベクトルから接線成分を抜くと、断面内に収まる基準軸 U になる。
+    // こうしておくと thickness=0 のとき筒が板と同じ太さで揃う。
+    XMVECTOR u = XMLoadFloat3(&half);
+    u          = XMVectorSubtract(u, XMVectorScale(tangent, XMVectorGetX(XMVector3Dot(u, tangent))));
+
+    if (XMVectorGetX(XMVector3LengthSq(u)) < 1e-12f)
+    {
+        // 板の向きが進行方向と平行＝断面が潰れている。適当な直交軸で代用する。
+        // 根本と先端をほぼ同じ点に置く使い方（足元の尾など）では常にこちらを通る。
+        const XMVECTOR helper = (std::abs(XMVectorGetY(tangent)) > 0.99f)
+                                    ? XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f)
+                                    : XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+        u = XMVector3Cross(tangent, helper);
+    }
+
+    outU = XMVector3Normalize(u);
+    outV = XMVector3Normalize(XMVector3Cross(tangent, outU));
 }
 
 float TrailSystem::RingRadius(const TrailComponent &trail, const Ring &ring) const
@@ -255,6 +298,82 @@ void TrailSystem::EmitSink::PushTriangle(const VertexPair &a,
     distort->push_back(a.distort);
     distort->push_back(b.distort);
     distort->push_back(c.distort);
+}
+
+// ===========================================================================
+// ジグザグ（稲妻状の折れ）
+// ===========================================================================
+DirectX::XMVECTOR TrailSystem::ZigZagOffset(const TrailComponent &trail,
+    uint32_t                                                      node,
+    DirectX::FXMVECTOR                                            u,
+    DirectX::FXMVECTOR                                            v) const
+{
+    const uint32_t key = node * 2654435761u + trail.zigZagSeed;
+
+    const float ax = Hash01(key) * 2.0f - 1.0f;
+    const float ay = Hash01(key ^ 0x85EBCA6Bu) * 2.0f - 1.0f;
+
+    XMVECTOR dir = XMVectorAdd(XMVectorScale(u, ax), XMVectorScale(v, ay));
+    if (XMVectorGetX(XMVector3LengthSq(dir)) < 1e-12f)
+        dir = u;
+    dir = XMVector3Normalize(dir);
+
+    // 向きだけを乱数に任せ、長さには下限を持たせる。長さまで一様乱数にすると
+    // ときどき折れ点がほぼ真っ直ぐになり、稲妻らしい鋭さが途切れるため。
+    const float mag = trail.zigZagAmplitude * (0.45f + 0.55f * Hash01(key ^ 0xC2B2AE35u));
+    return XMVectorScale(dir, mag);
+}
+
+void TrailSystem::ApplyZigZag(const TrailComponent &trail, std::vector<Ring> &rings) const
+{
+    if (rings.size() < 2 || trail.zigZagAmplitude <= 0.0f)
+        return;
+
+    const int   frequency = std::clamp(trail.zigZagFrequency, 1, 8);
+    const float freqF     = static_cast<float>(frequency);
+
+    // 折れは「滑らかな軌跡」を基準に決めるので、接線にはずらす前の中心が要る。
+    // 先頭から順に書き換えるため、直前の1点だけ控えておけば足りる。
+    XMFLOAT3 prevSmooth = rings[0].center;
+
+    for (size_t i = 0; i < rings.size(); ++i)
+    {
+        const bool     hasNext = (i + 1 < rings.size());
+        const XMVECTOR a       = hasNext ? XMLoadFloat3(&rings[i].center) : XMLoadFloat3(&prevSmooth);
+        const XMVECTOR b       = hasNext ? XMLoadFloat3(&rings[i + 1].center) : XMLoadFloat3(&rings[i].center);
+
+        XMVECTOR tangent = XMVectorSubtract(b, a);
+        if (XMVectorGetX(XMVector3LengthSq(tangent)) < 1e-12f)
+            tangent = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+        tangent = XMVector3Normalize(tangent);
+
+        prevSmooth = rings[i].center;
+
+        XMVECTOR u, v;
+        RingBasis(tangent, rings[i].half, u, v);
+
+        // 折れ点は「区間の通し番号 × 折れ点数」で数える。区間ごとに +1 される
+        // 番号なので、区間をまたいでも番号が途切れず、模様が空間に焼き付く。
+        const float    phase = rings[i].segT * freqF;
+        const float    step  = std::floor(phase);
+        const uint32_t node  = rings[i].segStamp * static_cast<uint32_t>(frequency)
+                            + static_cast<uint32_t>(step);
+
+        // 折れ点の間は直線で結ぶ。ここを曲線にすると角が丸まり、稲妻に見えない。
+        const XMVECTOR offset = XMVectorLerp(ZigZagOffset(trail, node, u, v),
+            ZigZagOffset(trail, node + 1, u, v),
+            phase - step);
+
+        // 先端側は刃（足元）に付いていなければならないので、直近の数断面は効かせない。
+        // ここを外すと軌跡の根元が本体から浮いて、毎フレーム跳ねて見える。
+        const float attach = std::clamp(
+            static_cast<float>(rings.size() - 1 - i) / static_cast<float>(SUBDIVISIONS),
+            0.0f,
+            1.0f);
+
+        XMStoreFloat3(&rings[i].center,
+            XMVectorAdd(XMLoadFloat3(&rings[i].center), XMVectorScale(offset, attach)));
+    }
 }
 
 // ===========================================================================
@@ -352,26 +471,8 @@ void TrailSystem::EmitTube(const TrailComponent &trail,
 
     for (size_t i = 0; i < rings.size(); ++i)
     {
-        const XMVECTOR tangent = RingTangent(rings, i);
-
-        // 半ベクトルから接線成分を抜いて、断面内の基準軸 U を作る。
-        XMVECTOR u = XMLoadFloat3(&rings[i].half);
-        u          = XMVectorSubtract(u, XMVectorScale(tangent, XMVectorGetX(XMVector3Dot(u, tangent))));
-
-        if (XMVectorGetX(XMVector3LengthSq(u)) < 1e-12f)
-        {
-            // 板の向きが進行方向と平行＝断面が潰れている。適当な直交軸で代用する。
-            const XMVECTOR helper = (std::abs(XMVectorGetY(tangent)) > 0.99f)
-                                        ? XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f)
-                                        : XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-            u = XMVector3Cross(tangent, helper);
-        }
-
-        u = XMVector3Normalize(u);
-
         Frame f;
-        f.u      = u;
-        f.v      = XMVector3Normalize(XMVector3Cross(tangent, u));
+        RingBasis(RingTangent(rings, i), rings[i].half, f.u, f.v);
         f.radius = RingRadius(trail, rings[i]);
         frames.push_back(f);
     }
@@ -494,9 +595,10 @@ void TrailSystem::Update(float dt)
                 writeIdx   = trail.head;
                 trail.head = (trail.head + 1) % MAX;
             }
-            trail.segments[writeIdx].base = baseF;
-            trail.segments[writeIdx].tip  = tipF;
-            trail.segments[writeIdx].age  = 0.0f;
+            trail.segments[writeIdx].base  = baseF;
+            trail.segments[writeIdx].tip   = tipF;
+            trail.segments[writeIdx].age   = 0.0f;
+            trail.segments[writeIdx].stamp = trail.nextStamp++;
         }
 
         // ── 4. 区間列を断面列へ補間し、形状に応じた三角形を提出 ──
@@ -506,6 +608,11 @@ void TrailSystem::Update(float dt)
         BuildRings(trail, rings);
         if (rings.size() < 2)
             return;
+
+        // 形状(板/十字/筒)を作る前に芯線を折る。こうすると3形状すべてが
+        // 同じ稲妻をなぞり、形状ごとにジグザグを実装せずに済む。
+        if (trail.useZigZag)
+            ApplyZigZag(trail, rings);
 
         verts.clear();
         distortVerts.clear();
