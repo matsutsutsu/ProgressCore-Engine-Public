@@ -149,10 +149,10 @@ void BossActionSystem::ProcessIdle(BossActionComponent &bossDef, TransformCompon
     input.desiredVelocity = Vector3::Zero;
     input.overrideSpeed   = -1.0f;
     
-    Vector3 dirToPlayer = playerPos - trans.position;
-    dirToPlayer.y       = 0.0f;
-    TurnToward(trans, dirToPlayer, bossDef.idleTurnSpeed, dt);
-    SyncCharacterRotation(trans, joltHandle.character.GetPtr());
+    //Vector3 dirToPlayer = playerPos - trans.position;
+    //dirToPlayer.y       = 0.0f;
+    //TurnToward(trans, dirToPlayer, bossDef.idleTurnSpeed, dt);
+    //SyncCharacterRotation(trans, joltHandle.character.GetPtr());
 }
 
 void BossActionSystem::ProcessMove(BossActionComponent &bossDef, TransformComponent &trans,
