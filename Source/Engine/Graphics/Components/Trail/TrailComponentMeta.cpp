@@ -22,24 +22,28 @@ using json = nlohmann::json;
 // TrailComponent（Effect カテゴリ。Model/Material の少し後ろに並べる）
 // ===========================================================================
 COMPONENT_META_BEGIN_FULL(TrailComponent, "Weapon Trail", CCL::Categories::Effect, 180, false)
-    CFIELD_ENUM_U8(shape, "断面の形", TrailShapeNames, TrailShapeCount, "形状")
-    CFIELD_FLOAT3_FAST(baseOffset, "根本オフセット", 0.01f, "形状")
-    CFIELD_FLOAT3_FAST(tipOffset, "先端オフセット", 0.01f, "形状")
-    CFIELD_FLOAT_RANGED(width, "基本幅", 0.01f, 0.0f, 3.0f, "形状")
-    CFIELD_FLOAT_RANGED(widthCurvePower, "幅カーブ", 0.1f, 0.1f, 5.0f, "形状")
-    CFIELD_FLOAT_RANGED(thickness, "太さ(0=根本〜先端の半分)", 0.01f, 0.0f, 10.0f, "形状")
-    CFIELD_INT_RANGED(tubeSides, "筒の分割数", 3, 16, "形状")
-    CFIELD_FLOAT_RANGED(rimPower, "筒の輪郭強調", 0.05f, 0.0f, 1.0f, "見た目")
+CFIELD_ENUM_U8(shape, "断面の形", TrailShapeNames, TrailShapeCount, "形状")
+CFIELD_FLOAT3_FAST(baseOffset, "根本オフセット", 0.01f, "形状")
+CFIELD_FLOAT3_FAST(tipOffset, "先端オフセット", 0.01f, "形状")
+CFIELD_FLOAT_RANGED(width, "基本幅", 0.01f, 0.0f, 3.0f, "形状")
+CFIELD_FLOAT_RANGED(widthCurvePower, "幅カーブ", 0.1f, 0.1f, 5.0f, "形状")
+CFIELD_FLOAT_RANGED(thickness, "太さ(0=根本〜先端の半分)", 0.01f, 0.0f, 10.0f, "形状")
+CFIELD_INT_RANGED(tubeSides, "筒の分割数", 3, 16, "形状")
+CFIELD_FLOAT_RANGED(rimPower, "筒の輪郭強調", 0.05f, 0.0f, 1.0f, "見た目")
 
-    CFIELD_COLOR(color, "色(加算)", "見た目")
-    CFIELD_FLOAT_RANGED(lifeTime, "寿命(秒)", 0.005f, 0.0f, 2.0f, "見た目")
-    CFIELD_FLOAT_RANGED(minDistance, "最小距離", 0.005f, 0.0f, 1.0f, "形状")
+CFIELD_COLOR(color, "色(加算)", "見た目")
+CFIELD_FLOAT_RANGED(lifeTime, "寿命(秒)", 0.005f, 0.0f, 2.0f, "見た目")
+CFIELD_FLOAT_RANGED(minDistance, "最小距離", 0.005f, 0.0f, 1.0f, "形状")
 
-    CFIELD_FLOAT_RANGED(distortion, "歪み量(px)", 0.1f, 0.0f, 64.0f, "歪み")
-    CFIELD_FLOAT_RANGED(distortionChroma, "歪みの色ズレ", 0.01f, 0.0f, 1.0f, "歪み")
-    CFIELD_FLOAT_RANGED(distortionNoise, "陽炎ゆらぎ", 0.01f, 0.0f, 1.0f, "歪み")
+CFIELD_FLOAT_RANGED(distortion, "歪み量(px)", 0.1f, 0.0f, 64.0f, "歪み")
+CFIELD_FLOAT_RANGED(distortionChroma, "歪みの色ズレ", 0.01f, 0.0f, 1.0f, "歪み")
+CFIELD_FLOAT_RANGED(distortionNoise, "陽炎ゆらぎ", 0.01f, 0.0f, 1.0f, "歪み")
+
+CFIELD_FLOAT_RANGED(burstDuration, "ダッシュ時のTrail出現時間", 0.1f, 0.0f, 10.0f, "時間")
+CFIELD_RO(burstTimer, "一時Trail表示の残り時間", "時間",nullptr)
 
     CFIELD(emitting, "発生中", "状態")
     CFIELD_T(animControlled, "アニメ制御", "状態",
              "ONで Trail アニメイベントの区間中だけ発生。OFFは手動(Emitting)運用。")
-COMPONENT_META_END(TrailComponent)
+    CFIELD(useInterpolation, "CatMull-Rom補間切り替えフラグ", "状態")
+    COMPONENT_META_END(TrailComponent)

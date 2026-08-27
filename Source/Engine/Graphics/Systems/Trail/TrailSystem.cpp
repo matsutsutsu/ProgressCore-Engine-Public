@@ -66,7 +66,6 @@ void TrailSystem::BuildRings(const TrailComponent &trail, std::vector<Ring> &out
         return;
 
     const int   MAX     = TrailComponent::MAX_SEGMENTS;
-    const float invLife = (trail.lifeTime > 0.0f) ? (1.0f / trail.lifeTime) : 0.0f;
 
     auto getSegment = [&](int index) -> const TrailComponent::Segment & {
         index = std::clamp(index, 0, trail.count - 1);
@@ -75,6 +74,63 @@ void TrailSystem::BuildRings(const TrailComponent &trail, std::vector<Ring> &out
 
     outRings.reserve(static_cast<size_t>(trail.count - 1) * SUBDIVISIONS + 1);
 
+    // =========================================================
+    // 補間なし
+    // =========================================================
+    if (!trail.useInterpolation)
+    {
+        outRings.reserve(static_cast<size_t>(trail.count));
+
+        for (int i = 0; i < trail.count; ++i)
+        {
+            const auto &segment = getSegment(i);
+
+            const float invLife =
+                (trail.lifeTime > 0.0f)
+                    ? (1.0f / trail.lifeTime)
+                    : 0.0f;
+
+            const float life =
+                std::clamp(1.0f - segment.age * invLife, 0.0f, 1.0f);
+
+            const float taper =
+                std::pow(life, trail.widthCurvePower);
+
+            const float w = trail.width * taper;
+
+            Ring ring;
+
+            ring.center = {
+                (segment.base.x + segment.tip.x) * 0.5f,
+                (segment.base.y + segment.tip.y) * 0.5f,
+                (segment.base.z + segment.tip.z) * 0.5f};
+
+            ring.half = {
+                (segment.tip.x - ring.center.x) * w,
+                (segment.tip.y - ring.center.y) * w,
+                (segment.tip.z - ring.center.z) * w};
+
+            ring.age   = segment.age;
+            ring.taper = w;
+
+            outRings.push_back(ring);
+        }
+
+        return;
+    }
+
+    // =========================================================
+    // 補間あり（現在のCatmull-Rom処理）
+    // =========================================================
+
+    const float invLife =
+        (trail.lifeTime > 0.0f)
+            ? (1.0f / trail.lifeTime)
+            : 0.0f;
+
+    outRings.reserve(
+        static_cast<size_t>(trail.count - 1) * SUBDIVISIONS + 1);
+
     for (int i = 0; i < trail.count - 1; ++i)
     {
         const auto &s0 = getSegment(i - 1);
@@ -82,30 +138,47 @@ void TrailSystem::BuildRings(const TrailComponent &trail, std::vector<Ring> &out
         const auto &s2 = getSegment(i + 1);
         const auto &s3 = getSegment(i + 2);
 
-        // 最後の区間だけ終端(t=1)も出す。断面列を継ぎ目のない1本の列にするため。
-        const int jEnd = (i == trail.count - 2) ? SUBDIVISIONS : SUBDIVISIONS - 1;
+        const int jEnd =
+            (i == trail.count - 2)
+                ? SUBDIVISIONS
+                : SUBDIVISIONS - 1;
 
         for (int j = 0; j <= jEnd; ++j)
         {
-            const float t = static_cast<float>(j) / static_cast<float>(SUBDIVISIONS);
+            const float t =
+                static_cast<float>(j) /
+                static_cast<float>(SUBDIVISIONS);
 
-            const XMFLOAT3 base = CatmullRom(s0.base, s1.base, s2.base, s3.base, t);
-            const XMFLOAT3 tip  = CatmullRom(s0.tip, s1.tip, s2.tip, s3.tip, t);
+            const XMFLOAT3 base =
+                CatmullRom(s0.base, s1.base, s2.base, s3.base, t);
 
-            const float age  = std::lerp(s1.age, s2.age, t);
-            const float life = std::clamp(1.0f - age * invLife, 0.0f, 1.0f);
+            const XMFLOAT3 tip =
+                CatmullRom(s0.tip, s1.tip, s2.tip, s3.tip, t);
 
-            // 新しい部分ほど太く、古い部分ほど細くする。
-            const float taper = std::pow(life, trail.widthCurvePower);
-            const float w     = trail.width * taper;
+            const float age =
+                std::lerp(s1.age, s2.age, t);
+
+            const float life =
+                std::clamp(1.0f - age * invLife, 0.0f, 1.0f);
+
+            const float taper =
+                std::pow(life, trail.widthCurvePower);
+
+            const float w =
+                trail.width * taper;
 
             Ring ring;
-            ring.center = {(base.x + tip.x) * 0.5f,
+
+            ring.center = {
+                (base.x + tip.x) * 0.5f,
                 (base.y + tip.y) * 0.5f,
                 (base.z + tip.z) * 0.5f};
-            ring.half  = {(tip.x - ring.center.x) * w,
+
+            ring.half = {
+                (tip.x - ring.center.x) * w,
                 (tip.y - ring.center.y) * w,
                 (tip.z - ring.center.z) * w};
+
             ring.age   = age;
             ring.taper = w;
 
@@ -370,6 +443,10 @@ void TrailSystem::Update(float dt)
     std::vector<Ring>                  rings;
 
     ForEach([&](const TransformComponent &transform, TrailComponent &trail) {
+
+        // 一時表示タイマーを更新
+        trail.UpdateBurstTimer(dt);
+
         // ── 1. 現在の刃2端点をワールド空間へ（w=1 で並進込み変換） ──
         const XMMATRIX W     = XMLoadFloat4x4(&transform.renderWorldMatrix);
         const XMVECTOR baseW = XMVector3Transform(XMLoadFloat3(&trail.baseOffset), W);

@@ -55,6 +55,9 @@ struct TrailComponent
     float minDistance = 0.02f; ///< 先端がこれ以上動いたら新区間を刻む（静止時の汚れ防止）
     bool  emitting    = true;  ///< 発生マスタースイッチ。animControlled=false のとき手動運用。
 
+    /// @brief Catmull-Rom補間の切り替えフラグ
+    bool useInterpolation = true;
+
     /// @brief true: 祖先(Animator)の Trail 区間イベントで emitting を自動駆動する。
     ///        false: emitting は手動（インスペクタ/常時ON）。既定は手動。
     bool animControlled = false;
@@ -112,4 +115,40 @@ struct TrailComponent
     /// @note  板(Ribbon)が正面を向いていると法線由来の歪みはほぼ 0 になる。
     ///        剣の軌跡のように「面を見せる」使い方で歪ませたいときはここを上げる。
     float distortionNoise = 0.0f;
+
+    // --- ダッシュ等、一時的にTrailをONにするための設定 ---
+    float burstDuration = 0.25f; ///< 一時的にTrailを出す時間
+
+    // --- runtime ---
+    float burstTimer = 0.0f; ///< 一時Trail表示の残り時間
+
+    // --- ジグザグ形状 ---
+    bool     useZigZag       = false; ///< トレイルをランダムに折れ曲げる
+    float    zigZagAmplitude = 0.08f; ///< 折れ曲がり量
+    int      zigZagFrequency = 2;     ///< 1区間あたりの折れ点数
+    uint32_t zigZagSeed      = 1337;  ///< 決定論的乱数シード
+
+
+    /// @brief 一時的にTrailを出現させるための関数
+    /// @param duration：トレイルを出す秒数
+    void ActivateFor(float duration)
+    {
+        burstTimer = duration;
+        emitting   = true;
+    }
+
+    /// @brief 一時Trail出現タイマーの更新
+    void UpdateBurstTimer(float dt)
+    {
+        if (burstTimer <= 0.0f)
+            return;
+
+        burstTimer -= dt;
+
+        if (burstTimer <= 0.0f)
+        {
+            burstTimer = 0.0f;
+            emitting   = false;
+        }
+    }
 };

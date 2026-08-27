@@ -86,4 +86,13 @@ private:
     VertexPair MakeVertex(const TrailComponent &trail,
                           const DirectX::XMFLOAT3 &pos,
                           float age, float intensity) const;
+
+    /// @brief 滑らかな軌跡を基準に、意図的な折れ曲がりを加える。
+    DirectX::XMFLOAT3 MakeJaggedPosition(
+        const TrailComponent    &trail,
+        const DirectX::XMFLOAT3 &position,
+        const DirectX::XMFLOAT3 &tangent,
+        int                      segmentIndex,
+        int                      subdivisionIndex,
+        int                      subdivisionCount) const;
 };

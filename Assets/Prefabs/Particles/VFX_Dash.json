@@ -40,7 +40,7 @@
                             "emitShape": 0,
                             "emitSize": [
                                 0.10000000149011612,
-                                0.699999988079071
+                                0.5
                             ],
                             "emitSpeed": [
                                 0.0,
@@ -56,8 +56,8 @@
                             ],
                             "gravity": 0.0,
                             "lifespan": [
-                                0.5,
-                                0.5
+                                0.3499999940395355,
+                                0.3499999940395355
                             ],
                             "lineEnd": [
                                 0.0,
@@ -102,7 +102,7 @@
                         {
                             "angularSpeed": [
                                 0.0,
-                                0.0
+                                2.9000000953674316
                             ],
                             "attractorLocal": true,
                             "attractorPos": [
@@ -111,34 +111,34 @@
                                 0.0
                             ],
                             "attractorRadius": 0.0,
-                            "attractorStrength": 0.0,
-                            "burstCount": 1,
+                            "attractorStrength": 5.0,
+                            "burstCount": 35,
                             "color": [
-                                0.9884169697761536,
-                                0.40434905886650085,
-                                0.15265128016471863,
+                                1.0,
+                                0.3706563711166382,
+                                0.0,
                                 1.0
                             ],
                             "colorMode": 0,
                             "colorRampPath": "",
                             "coneAngle": [
                                 0.0,
-                                0.0
+                                3.141592264175415
                             ],
                             "drag": 0.0,
                             "emitMode": 1,
                             "emitRadius": [
                                 0.0,
-                                0.0
+                                0.5
                             ],
                             "emitShape": 0,
                             "emitSize": [
-                                0.10000000149011612,
-                                0.4000000059604645
+                                0.699999988079071,
+                                0.699999988079071
                             ],
                             "emitSpeed": [
-                                0.0,
-                                0.0
+                                3.0,
+                                8.0
                             ],
                             "emitStretch": [
                                 1.0,
@@ -148,10 +148,10 @@
                                 0.0,
                                 0.6000000238418579
                             ],
-                            "gravity": 0.0,
+                            "gravity": 1.0,
                             "lifespan": [
-                                0.5,
-                                0.5
+                                0.6499999761581421,
+                                0.949999988079071
                             ],
                             "lineEnd": [
                                 0.0,
@@ -164,18 +164,18 @@
                                 0.0
                             ],
                             "localOffsetY": 0.0,
-                            "maxCount": 1,
+                            "maxCount": 35,
                             "maxSpeed": 10.0,
-                            "name": "Circle copy",
+                            "name": "Dust",
                             "noiseScale": 1.0,
-                            "noiseStrength": 0.0,
+                            "noiseStrength": 12.699999809265137,
                             "particleType": 1,
                             "renderMode": 0,
                             "scale": [
                                 1.0,
-                                10.0
+                                1.0
                             ],
-                            "sizeRandom": 0.0,
+                            "sizeRandom": 1.0,
                             "spawnDelay": [
                                 0.0,
                                 0.0
@@ -185,7 +185,7 @@
                                 1
                             ],
                             "spriteMode": 0,
-                            "texturePath": "Assets/Textures/VFX/VFX_Hit_Impact_03.png",
+                            "texturePath": "Assets/Textures/VFX/VFX_Circle.png",
                             "uvScrollSpeed": [
                                 0.0,
                                 0.0

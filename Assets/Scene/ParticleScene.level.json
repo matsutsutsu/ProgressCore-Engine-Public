@@ -3,6 +3,25 @@
         {
             "position": [
                 0.0,
+                5.0,
+                0.0
+            ],
+            "prefab": "Assets/Prefabs/Particles/VFX_Jump.json",
+            "rotation": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "position": [
+                0.0,
                 0.0,
                 0.0
             ],

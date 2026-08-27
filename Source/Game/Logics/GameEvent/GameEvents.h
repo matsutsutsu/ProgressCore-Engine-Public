@@ -69,4 +69,5 @@ struct PlayerJumpedEvent {
 // プレイヤーがダッシュ（回避バースト）を開始した瞬間に発行されるイベント。
 struct PlayerDashedEvent {
     DirectX::XMFLOAT3 position = {0.0f, 0.0f, 0.0f}; // ダッシュ開始時のプレイヤー位置(ワールド)
+    CCL::ECS::EntityID playerID = CCL::ECS::InvalidEntityID;
 };

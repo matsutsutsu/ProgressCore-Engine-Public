@@ -17,24 +17,24 @@ using namespace CCL::ECS;
 
 namespace
 {
-// Hitbox エンティティから親を辿り、最初に見つかった Animator 保持エンティティを返す。
-// 剣はキャラ(=Animatorを持つ)の子孫にぶら下がる前提。空間生成の判定球は親を持たない
-// ため見つからず InvalidEntityID を返す（＝常時判定の弾のまま）。
-EntityID ResolveAnimatorOwner(CCL::ECS::World* world, EntityID hitboxID)
-{
-    EntityID cur = InvalidEntityID;
-    if (const auto* t = world->GetComponent<TransformComponent>(hitboxID))
-        cur = t->parent; // EntityLink → EntityID 暗黙変換
-    int guard = 0;
-    while (cur != InvalidEntityID && cur != 0 && guard++ < 32)
+    // Hitbox エンティティから親を辿り、最初に見つかった Animator 保持エンティティを返す。
+    // 剣はキャラ(=Animatorを持つ)の子孫にぶら下がる前提。空間生成の判定球は親を持たない
+    // ため見つからず InvalidEntityID を返す（＝常時判定の弾のまま）。
+    EntityID ResolveAnimatorOwner(CCL::ECS::World* world, EntityID hitboxID)
     {
-        if (world->GetComponent<AnimatorComponent>(cur))
-            return cur; // 台本の持ち主を発見
-        const auto* pt = world->GetComponent<TransformComponent>(cur);
-        cur = pt ? static_cast<EntityID>(pt->parent) : InvalidEntityID;
+        EntityID cur = InvalidEntityID;
+        if (const auto* t = world->GetComponent<TransformComponent>(hitboxID))
+            cur = t->parent; // EntityLink → EntityID 暗黙変換
+        int guard = 0;
+        while (cur != InvalidEntityID && cur != 0 && guard++ < 32)
+        {
+            if (world->GetComponent<AnimatorComponent>(cur))
+                return cur; // 台本の持ち主を発見
+            const auto* pt = world->GetComponent<TransformComponent>(cur);
+            cur = pt ? static_cast<EntityID>(pt->parent) : InvalidEntityID;
+        }
+        return InvalidEntityID;
     }
-    return InvalidEntityID;
-}
 } // namespace
 
 void CombatAnimationSyncSystem::Update(float /*dt*/)
