@@ -1,4 +1,4 @@
-// ===========================================================================
+﻿// ===========================================================================
 // JustEvadeEffectSystem.cpp
 // 役割・設計方針は JustEvadeEffectSystem.h を参照。
 //
@@ -7,8 +7,10 @@
 //     spike エンベロープ（t=0最大→即減衰）で放射ブラー/色収差の「バキッ」を作る。
 //   - dt はフレーム実時間。スロー窓(globalHitStopTimer)も実時間で減るので、演出の
 //     長さ(duration)と体感のスロー時間が一致する。
-//   - 立ち上がりで元の ColorGrading/Vignette を退避、立ち下がりで完全復元することで、
-//     シーン側の色調設定を壊さない。
+//   - PP 設定は直接書き換えず、自分のキー("JustEvade")で確保したスロットへ書く。
+//     素の設定との合成は PostProcessSystem が行う。退避と復元をやめたのは、
+//     被弾フラッシュと同時に走ったとき互いの変更後の値を「元の値」として保存し合い、
+//     シーンの設定を壊してしまうため。
 // ===========================================================================
 #include "JustEvadeEffectSystem.h"
 
@@ -16,11 +18,13 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
-#include "Engine/Graphics/Components/Impact/JustEvadeEffectComponent.h"
+#include "Game/Logics/Effects/Components/JustEvadeEffectComponent.h"
 #include "Engine/Graphics/Components/PostProcess/ColorGradingConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/RadialBlurConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/ChromaticAberrationConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/VignetteConfigComponent.h"
+
+#include "Engine/Core/Math/StringHash.h"
 
 #include <algorithm>
 
@@ -29,6 +33,11 @@ using namespace DirectX;
 
 namespace
 {
+/// スロットの識別子と重ね順。エンジンは中身を知らないので、名前と優先度は使う側が決める。
+/// 命中バースト(10)より強くしておき、同時に出たら回避側が前に出るようにする。
+const uint32_t kSource   = CCL::Utils::HashString("JustEvade");
+constexpr int  kPriority = 20;
+
 // スタイルごとの色プリセット（脱色先・色味・コントラスト・ビネット色）。
 struct StylePreset
 {
@@ -52,12 +61,7 @@ StylePreset GetStylePreset(uint8_t style)
     }
 }
 
-inline float Lerp(float a, float b, float t) { return a + (b - a) * t; }
 inline float Sat01(float v) { return std::clamp(v, 0.0f, 1.0f); }
-inline XMFLOAT4 LerpTint(const XMFLOAT4 &a, const XMFLOAT3 &b, float t)
-{
-    return {Lerp(a.x, b.x, t), Lerp(a.y, b.y, t), Lerp(a.z, b.z, t), 1.0f};
-}
 } // namespace
 
 std::vector<CCL::ECS::TypeID> JustEvadeEffectSystem::GetReadTypes() const
@@ -86,59 +90,18 @@ void JustEvadeEffectSystem::Update(float dt)
     auto *ca  = m_world->GetSingletonComponent<ChromaticAberrationConfigComponent>();
     auto *vig = m_world->GetSingletonComponent<VignetteConfigComponent>();
 
-    // ── 立ち下がり: 退避しておいた元の値へ完全復元し、スパイク系は OFF にして手放す ──
+    // ── 立ち下がり: 自分のスロットだけ手放す（設定本体・他演出には一切触れない） ──
     if (!active)
     {
         if (m_wasActive)
         {
-            if (cg)
-            {
-                cg->enable              = m_base.cgEnable;
-                cg->data.gradeSaturation = m_base.cgSat;
-                cg->data.gradeContrast   = m_base.cgContrast;
-                cg->data.gradeBrightness = m_base.cgBright;
-                cg->data.gradeTint       = m_base.cgTint;
-                cg->data.gradeMixAmount  = m_base.cgMix;
-            }
-            if (vig)
-            {
-                vig->enable            = m_base.vigEnable;
-                vig->data.vigIntensity  = m_base.vigIntensity;
-                vig->data.vigColor      = m_base.vigColor;
-                vig->data.vigPulseSpeed = m_base.vigPulse;
-                vig->data.vigRadius     = m_base.vigRadius;   // ★被弾フラッシュが縮めていても確実に戻す
-                vig->data.vigSoftness   = m_base.vigSoftness;
-            }
-            // スパイク系は自分のスロットだけ 0 に戻す（設定本体・他演出には触れない）。
-            if (rb) rb->burstJustEvade = 0.0f;
-            if (ca) ca->burstJustEvade = 0.0f;
+            if (cg)  cg->overrides.Release(kSource);
+            if (vig) vig->overrides.Release(kSource);
+            if (rb)  rb->overrides.Release(kSource);
+            if (ca)  ca->overrides.Release(kSource);
             m_wasActive = false;
         }
         return;
-    }
-
-    // ── 立ち上がり: 元の ColorGrading / Vignette を退避（演出後にここへ戻す） ──
-    if (!m_wasActive)
-    {
-        if (cg)
-        {
-            m_base.cgEnable   = cg->enable;
-            m_base.cgSat      = cg->data.gradeSaturation;
-            m_base.cgContrast = cg->data.gradeContrast;
-            m_base.cgBright   = cg->data.gradeBrightness;
-            m_base.cgTint     = cg->data.gradeTint;
-            m_base.cgMix      = cg->data.gradeMixAmount;
-        }
-        if (vig)
-        {
-            m_base.vigEnable    = vig->enable;
-            m_base.vigIntensity = vig->data.vigIntensity;
-            m_base.vigColor     = vig->data.vigColor;
-            m_base.vigPulse     = vig->data.vigPulseSpeed;
-            m_base.vigRadius    = vig->data.vigRadius;
-            m_base.vigSoftness  = vig->data.vigSoftness;
-        }
-        m_vigTime = 0.0f;
     }
 
     // ── 1. 減衰（実時間）。hold 中は timer を進めず保持する ──
@@ -147,7 +110,6 @@ void JustEvadeEffectSystem::Update(float dt)
         fx->timer -= dt;
         if (fx->timer < 0.0f) fx->timer = 0.0f;
     }
-    m_vigTime += dt;
 
     // ── 2. エンベロープ算出 ──
     //  hold 中：モノクロを body=1 で維持し、スパイク(放射ブラー/色収差)は出さない。
@@ -178,32 +140,55 @@ void JustEvadeEffectSystem::Update(float dt)
         preset = GetStylePreset(fx->style);
     }
 
-    // ── 3. 色調（ColorGrading）: base → style を body で補間。mix を上げて反映 ──
+    // ── 3. 色調（ColorGrading）: 目標値を weight=body で乗せる ──
+    //   素の設定からの補間は PostProcessSystem 側の Resolve() が行うので、
+    //   ここでは「どこへ寄せたいか」と「どれだけ寄せるか」だけを書く。
     if (cg)
     {
-        cg->enable               = true;
-        cg->data.gradeSaturation = Lerp(m_base.cgSat, preset.saturation, body);
-        cg->data.gradeContrast   = Lerp(m_base.cgContrast, preset.contrast, body);
-        cg->data.gradeBrightness = m_base.cgBright; // 明るさは元のまま
-        cg->data.gradeTint       = LerpTint(m_base.cgTint, preset.tint, body);
-        // 元の mix を下回らないようにしつつ、演出のピークまで持ち上げる
-        cg->data.gradeMixAmount  = (std::max)(m_base.cgMix, body * fx->gradeMixPeak);
+        if (auto *ov = cg->overrides.Acquire(kSource, kPriority))
+        {
+            ov->weight            = body;
+            ov->params.saturation = preset.saturation;
+            ov->params.contrast   = preset.contrast;
+            ov->params.tint       = {preset.tint.x, preset.tint.y, preset.tint.z, 1.0f};
+            ov->params.mixPeak    = fx->gradeMixPeak;
+        }
     }
 
     // ── 4. 放射ブラー（スパイク） ──
-    if (rb) rb->burstJustEvade = fx->radialPeak * spike;
+    if (rb)
+    {
+        if (auto *ov = rb->overrides.Acquire(kSource, kPriority))
+        {
+            ov->weight          = spike;
+            ov->params.strength = fx->radialPeak;
+        }
+    }
 
     // ── 5. 色収差（スパイク） ──
-    if (ca) ca->burstJustEvade = fx->chromaPeak * spike;
+    if (ca)
+    {
+        if (auto *ov = ca->overrides.Acquire(kSource, kPriority))
+        {
+            ov->weight          = spike;
+            ov->params.strength = fx->chromaPeak;
+        }
+    }
 
     // ── 6. ビネット脈動（body で強度・色を出し入れ） ──
+    //   半径/柔らかさは素の設定のまま使いたいので、上書き値にも素の値をそのまま入れる。
+    //   脈動の位相(vigTime)は PostProcessSystem が所有するのでここでは触らない。
     if (vig)
     {
-        vig->enable            = true;
-        vig->data.vigIntensity  = Lerp(m_base.vigIntensity, fx->vignettePeak, body);
-        vig->data.vigColor      = LerpTint(m_base.vigColor, preset.vigColor, body);
-        vig->data.vigPulseSpeed = Lerp(m_base.vigPulse, fx->vignettePulse, body);
-        vig->data.vigTime       = m_vigTime;
+        if (auto *ov = vig->overrides.Acquire(kSource, kPriority))
+        {
+            ov->weight            = body;
+            ov->params.intensity  = fx->vignettePeak;
+            ov->params.color      = {preset.vigColor.x, preset.vigColor.y, preset.vigColor.z, 1.0f};
+            ov->params.pulseSpeed = fx->vignettePulse;
+            ov->params.radius     = vig->data.vigRadius;
+            ov->params.softness   = vig->data.vigSoftness;
+        }
     }
 
     m_wasActive = true;

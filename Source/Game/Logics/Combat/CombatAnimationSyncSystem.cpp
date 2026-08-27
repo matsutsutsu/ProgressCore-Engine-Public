@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @file CombatAnimationSyncSystem.cpp
  * @brief HitboxComponent を主役に走査し、ownerEntity の Animator を読んで
  *        攻撃判定の区間状態を Hitbox に同期する（イテレーション反転設計）。
@@ -12,6 +12,7 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/Core/Math/StringHash.h"
+#include "Engine/Physics/JoltIntegration/HitDiagnostics.h" // 計測ログ(暫定)
 
 using namespace CCL::ECS;
 
@@ -66,8 +67,8 @@ void CombatAnimationSyncSystem::Update(float /*dt*/)
             if (hb.isActive)
             {
                 hb.isActive = false;
-                CCL_LOG_INFO(LogCategory::Game,
-                    "[HitboxSync] Force deactivated (no owner/seq). Entity %llu", hitboxID);
+                HITDIAG_LOG(LogCategory::Game,
+                    "[HitDiag/Sync]   OFF  hitbox=%llu (owner/sequence が無効)", hitboxID);
             }
             return;
         }
@@ -123,11 +124,16 @@ void CombatAnimationSyncSystem::Update(float /*dt*/)
             // 【立ち上がりエッジ】多段ヒット防止の履歴をクリア（区間に入った最初の1回だけ）
             if (!hb.isActive)
             {
+                HITDIAG_LOG(LogCategory::Game,
+                    "[HitDiag/Sync]   ON   hitbox=%llu 履歴クリア(hitCount %u -> 0) "
+                    "区間=[%.3f,%.3f] timer=[%.3f -> %.3f]",
+                    hitboxID, static_cast<unsigned>(hb.hitCount),
+                    activeEv->startTime, activeEv->endTime,
+                    animator->previousFrameTimer, animator->currentTimer);
+
                 hb.hitCount = 0;
                 std::memset(hb.hitTargets, 0, sizeof(hb.hitTargets));
                 hb.isActive = true;
-
-                //CCL_LOG_INFO(LogCategory::Game, "[HitboxSync] Activated. Entity %llu dmg=%.1f hitStop=%.2f (tagHash 0x%08X)", hitboxID, activeEv->damage, activeEv->hitStopDuration, hb.tagHash);
             }
 
             // Sequencer の HitBox イベントに入力した値を毎フレーム Hitbox へ反映する。
@@ -146,7 +152,12 @@ void CombatAnimationSyncSystem::Update(float /*dt*/)
             // 【立ち下がりエッジ】区間を抜けた / アニメがキャンセルされた
             hb.isActive = false;
 
-            //CCL_LOG_INFO(LogCategory::Game, "[HitboxSync] Deactivated. Entity %llu (tagHash 0x%08X)", hitboxID, hb.tagHash);
+            // ここが出ないまま次の攻撃に入ると、履歴クリアが走らず AlreadyHit で
+            // 弾かれ続ける。ON と OFF が対で出ているかを必ず確認すること。
+            HITDIAG_LOG(LogCategory::Game,
+                "[HitDiag/Sync]   OFF  hitbox=%llu hitCount=%u timer=[%.3f -> %.3f]",
+                hitboxID, static_cast<unsigned>(hb.hitCount),
+                animator->previousFrameTimer, animator->currentTimer);
         }
     });
 }

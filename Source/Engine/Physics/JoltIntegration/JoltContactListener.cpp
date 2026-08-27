@@ -2,9 +2,22 @@
 #include <Jolt/Physics/Body/Body.h> // Bodyの中身(完全な型)を知るために絶対に必要
 #include <utility>                  // std::swap
 
-void JoltContactListener::OnContactAdded(const JPH::Body& inBody1, const JPH::Body& inBody2,
-                                         const JPH::ContactManifold& inManifold,
-                                         JPH::ContactSettings& ioSettings)
+#include "Engine/Physics/JoltIntegration/HitDiagnostics.h" // 計測ログ(暫定)
+
+namespace
+{
+/// @brief 攻撃判定に関わる接触だけを計測対象にする。
+/// @note  地面や壁との接触まで出すとログが埋まって読めなくなるため、
+///        センサー(＝Hitbox の剣)が絡む対だけに絞る。
+bool IsAttackContact(const JPH::Body &a, const JPH::Body &b)
+{
+    return a.IsSensor() || b.IsSensor();
+}
+} // namespace
+
+void JoltContactListener::EmitContactEvent(const JPH::Body& inBody1, const JPH::Body& inBody2,
+                                           const JPH::ContactManifold& inManifold,
+                                           const char* inPhase)
 {
     // 1. Joltの剛体に埋め込んでおいた ECSの EntityID を取り出す
     auto entityA = static_cast<CCL::ECS::EntityID>(inBody1.GetUserData());
@@ -27,6 +40,43 @@ void JoltContactListener::OnContactAdded(const JPH::Body& inBody1, const JPH::Bo
 
     // 3. スレッドセーフに配列へ追加
     PushEvent(newEvent);
+
+    if (IsAttackContact(inBody1, inBody2))
+    {
+        HITDIAG_LOG(LogCategory::Physics,
+            "[HitDiag/Contact] Body %-7s A=%llu B=%llu (body %u/%u, sensor %d/%d) -> イベント発行",
+            inPhase, entityA, entityB,
+            inBody1.GetID().GetIndex(), inBody2.GetID().GetIndex(),
+            inBody1.IsSensor() ? 1 : 0, inBody2.IsSensor() ? 1 : 0);
+    }
+}
+
+void JoltContactListener::OnContactAdded(const JPH::Body& inBody1, const JPH::Body& inBody2,
+                                         const JPH::ContactManifold& inManifold,
+                                         JPH::ContactSettings& /*ioSettings*/)
+{
+    EmitContactEvent(inBody1, inBody2, inManifold, "Add");
+}
+
+void JoltContactListener::OnContactPersisted(const JPH::Body& inBody1, const JPH::Body& inBody2,
+                                             const JPH::ContactManifold& inManifold,
+                                             JPH::ContactSettings& /*ioSettings*/)
+{
+    // Added と全く同じ扱いにする。Jolt は同じボディ対の2回目以降を Persisted に回すため
+    // (ContactListener.h の注記)、ここを実装しないと「重なり続けている間」の接触が
+    // 全て消える。攻撃判定の窓が開くより先に剣が相手へ入っていると Added は
+    // isActive=false のときに消費済みで、窓の中には Persisted しか残らず不発になる。
+    // 多段ヒットは HitboxCollisionSystem の AlreadyHit が防ぐので毎フレーム流して良い。
+    EmitContactEvent(inBody1, inBody2, inManifold, "Persist");
+}
+
+void JoltContactListener::OnContactRemoved(const JPH::SubShapeIDPair& inSubShapePair)
+{
+    // Body へ触れないので BodyID の index だけ。Add/Persist のログと突き合わせる。
+    HITDIAG_LOG(LogCategory::Physics,
+        "[HitDiag/Contact] Body Remove  body %u/%u",
+        inSubShapePair.GetBody1ID().GetIndex(),
+        inSubShapePair.GetBody2ID().GetIndex());
 }
 
 void JoltContactListener::PushEvent(const JoltCollisionEvent& ev)

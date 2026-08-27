@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 // ===========================================================================
 // ScreenImpactSystem.h
 // --------------------
@@ -12,7 +12,7 @@
 //   - CameraBrainSystem(R01b) が MainCamera を確定した「後」に走る必要があるため
 //     R02_Environment に登録する。放射ブラー/色収差の設定書き込みは、それを読む
 //     PostProcessSystem(R09) より前なので同フレームで反映される。
-//   - PP へは「自分のスロット(burstImpact)」だけを書く。設定本体(enable/data)は
+//   - PP へは「自分のキーで確保したスロット」だけを書く。設定本体(enable/data)は
 //     シーンの持ち物なので触らない。最終強度の合成と描画ON/OFFの判断は
 //     PostProcessSystem が行う。これにより、同時に走る他の演出
 //     （ジャスト回避スパイク・被弾フラッシュ）と値を奪い合わない。
@@ -20,7 +20,7 @@
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 
-#include "Engine/Graphics/Components/Impact/ScreenImpactComponent.h"
+#include "Game/Logics/Effects/Components/ScreenImpactComponent.h"
 #include "Engine/Graphics/Components/PostProcess/RadialBlurConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/ChromaticAberrationConfigComponent.h"
 

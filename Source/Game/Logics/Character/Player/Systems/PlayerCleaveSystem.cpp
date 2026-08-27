@@ -8,7 +8,7 @@
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/Graphics/RHI/Camera.h"
 #include "Engine/Animation/Components/RootMotionComponent.h"
-#include "Engine/Graphics/Components/Impact/JustEvadeEffectComponent.h" // 画面モノクロ演出を流用
+#include "Game/Logics/Effects/Components/JustEvadeEffectComponent.h" // 画面モノクロ演出を流用
 #include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"      // 寄り(クローズアップ)要求をpush
 #include "Engine/Time/TimeService.h"                                   // 全体スローは意図ファサード経由
 #include "Game/Logics/AI/Drone/DroneComponent.h"

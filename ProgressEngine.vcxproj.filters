@@ -288,9 +288,6 @@
     <Filter Include="Source\Engine\Graphics\Components\Trail">
       <UniqueIdentifier>{2b1c4d6e-9a70-4c11-8f23-5d7e0a1b2c34}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Graphics\Components\Impact">
-      <UniqueIdentifier>{5e4f7091-2da3-4f44-bc56-8091a2b3c4d6}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\Graphics\Systems\Core">
       <UniqueIdentifier>{bf771668-5e61-4ceb-b31f-a98b88ea309d}</UniqueIdentifier>
     </Filter>
@@ -308,9 +305,6 @@
     </Filter>
     <Filter Include="Source\Engine\Graphics\Systems\Trail">
       <UniqueIdentifier>{3c2d5e7f-0b81-4d22-9a34-6e8f1b2c3d45}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\Graphics\Systems\Impact">
-      <UniqueIdentifier>{6f5a819b-3eb4-4055-cd67-9102b3c4d5e7}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Physics\JoltIntegration">
       <UniqueIdentifier>{ec8eebb9-31b8-4275-9553-1d6ebf289568}</UniqueIdentifier>
@@ -395,6 +389,15 @@
     </Filter>
     <Filter Include="Source\Engine\Graphics\Shader\_Shared">
       <UniqueIdentifier>{18957b19-91a2-477b-b87c-fa95d9ba54d2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\Effects">
+      <UniqueIdentifier>{c56416d2-881e-42d4-93ad-605ae08b8d28}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\Effects\Components">
+      <UniqueIdentifier>{e8c1e436-3b93-4f33-8cf8-edf258a6f0b6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\Effects\Systems">
+      <UniqueIdentifier>{fb72dd16-b0c1-4427-8784-7ae29d8c2c4f}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Game\Logics\Combat">
       <UniqueIdentifier>{f9e98694-67ee-43f9-8feb-4ed9c3cab61a}</UniqueIdentifier>
@@ -1224,17 +1227,17 @@
     <ClInclude Include="Source\Engine\Graphics\Systems\Trail\TrailAnimationSyncSystem.h">
       <Filter>Source\Engine\Graphics\Systems\Trail</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Components\Impact\JustEvadeEffectComponent.h">
-      <Filter>Source\Engine\Graphics\Components\Impact</Filter>
+    <ClInclude Include="Source\Game\Logics\Effects\Components\JustEvadeEffectComponent.h">
+      <Filter>Source\Game\Logics\Effects\Components</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Systems\Impact\JustEvadeEffectSystem.h">
-      <Filter>Source\Engine\Graphics\Systems\Impact</Filter>
+    <ClInclude Include="Source\Game\Logics\Effects\Systems\JustEvadeEffectSystem.h">
+      <Filter>Source\Game\Logics\Effects\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Components\Impact\ScreenImpactComponent.h">
-      <Filter>Source\Engine\Graphics\Components\Impact</Filter>
+    <ClInclude Include="Source\Game\Logics\Effects\Components\ScreenImpactComponent.h">
+      <Filter>Source\Game\Logics\Effects\Components</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Systems\Impact\ScreenImpactSystem.h">
-      <Filter>Source\Engine\Graphics\Systems\Impact</Filter>
+    <ClInclude Include="Source\Game\Logics\Effects\Systems\ScreenImpactSystem.h">
+      <Filter>Source\Game\Logics\Effects\Systems</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Pipeline\PostProcessPass.h">
       <Filter>Source\Engine\Graphics\Pipeline</Filter>
@@ -1437,6 +1440,9 @@
     <ClInclude Include="Source\Engine\Physics\JoltIntegration\IPhysicsAPI.h">
       <Filter>Source\Engine\Physics\JoltIntegration</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\JoltIntegration\HitDiagnostics.h">
+      <Filter>Source\Engine\Physics\JoltIntegration</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltContactListener.h">
       <Filter>Source\Engine\Physics\JoltIntegration</Filter>
     </ClInclude>
@@ -1603,6 +1609,9 @@
       <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\RadialBlurConfigComponent.h">
+      <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\PostEffectOverrides.h">
       <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\VignetteConfigComponent.h">
@@ -2387,17 +2396,17 @@
     <ClCompile Include="Source\Engine\Graphics\Systems\Trail\TrailAnimationSyncSystem.cpp">
       <Filter>Source\Engine\Graphics\Systems\Trail</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Graphics\Components\Impact\JustEvadeEffectComponentMeta.cpp">
-      <Filter>Source\Engine\Graphics\Components\Impact</Filter>
+    <ClCompile Include="Source\Game\Logics\Effects\Components\JustEvadeEffectComponentMeta.cpp">
+      <Filter>Source\Game\Logics\Effects\Components</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Graphics\Systems\Impact\JustEvadeEffectSystem.cpp">
-      <Filter>Source\Engine\Graphics\Systems\Impact</Filter>
+    <ClCompile Include="Source\Game\Logics\Effects\Systems\JustEvadeEffectSystem.cpp">
+      <Filter>Source\Game\Logics\Effects\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Graphics\Components\Impact\ScreenImpactComponentMeta.cpp">
-      <Filter>Source\Engine\Graphics\Components\Impact</Filter>
+    <ClCompile Include="Source\Game\Logics\Effects\Components\ScreenImpactComponentMeta.cpp">
+      <Filter>Source\Game\Logics\Effects\Components</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Graphics\Systems\Impact\ScreenImpactSystem.cpp">
-      <Filter>Source\Engine\Graphics\Systems\Impact</Filter>
+    <ClCompile Include="Source\Game\Logics\Effects\Systems\ScreenImpactSystem.cpp">
+      <Filter>Source\Game\Logics\Effects\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Pipeline\PostProcessPass.cpp">
       <Filter>Source\Engine\Graphics\Pipeline</Filter>

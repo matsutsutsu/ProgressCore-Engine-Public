@@ -1,4 +1,4 @@
-#include "PlayerFeedbackSystem.h"
+﻿#include "PlayerFeedbackSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
 
 #include "Engine/Camera/Components/VirtualCameraComponents.h"
@@ -8,7 +8,6 @@
 #include "Engine/Graphics/Components/PostProcess/VignetteConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/ChromaticAberrationConfigComponent.h"
 // Other Effects
-#include "Engine/Graphics/Components/Impact/JustEvadeEffectComponent.h"
 
 #include "Engine/Platform/Input/IInputAPI.h"
 
@@ -21,10 +20,21 @@
 #ifdef ENABLE_EDITOR
 #include <imgui.h>
 #endif
+#include "Engine/Core/Math/StringHash.h"
+
 #include <algorithm>
 
 namespace
 {
+// =========================================================================
+// PostProcess スロット
+// =========================================================================
+// スロットの識別子と重ね順。エンジンは中身を知らないので、名前と優先度は使う側が決める。
+// 命中バースト(10)・ジャスト回避(20)より弱い。被弾は他の演出に譲る。
+
+const uint32_t kSource   = CCL::Utils::HashString("PlayerDamage");
+constexpr int  kPriority = 5;
+
 // =========================================================================
 // Utility
 // =========================================================================
@@ -437,159 +447,30 @@ void PlayerFeedbackSystem::StartDamageVignette()
 void PlayerFeedbackSystem::UpdateDamageVignette(float dt)
 {
     auto *vignette = m_world->GetSingletonComponent<VignetteConfigComponent>();
-
     if (!vignette) return;
 
-       
-    // -------------------------------------------------------------------------
-    // Just Evadeとの競合を確認
-    // -------------------------------------------------------------------------
-
-    if (auto *justEvade =
-            m_world->GetSingletonComponent<JustEvadeEffectComponent>())
-    {
-        if (justEvade->timer > 0.0f ||justEvade->hold)       
-        {
-            // JustEvade側が正しいBaselineを取得できるよう、
-            // 被弾ビネットの値を先に元へ戻す。
-            if (m_vignetteActive)
-            {
-                vignette->enable = m_vignetteBase.enable;                 
-                vignette->data.vigIntensity = m_vignetteBase.intensity;
-                vignette->data.vigColor = m_vignetteBase.color;
-                vignette->data.vigPulseSpeed = m_vignetteBase.pulse;
-                vignette->data.vigRadius = m_vignetteBase.radius;
-                vignette->data.vigSoftness = m_vignetteBase.softness;
-
-                m_vignetteActive = false;
-            }
-
-            m_vignetteTimer = 0.0f;
-
-            return;
-        }
-    }
-
-    // -------------------------------------------------------------------------
-    // 演出終了
-    // -------------------------------------------------------------------------
-
+    // 演出終了。自分のスロットを手放すだけでよい（素の設定も他演出も触らない）。
     if (m_vignetteTimer <= 0.0f)
     {
-        if (m_vignetteActive)
-        {
-            vignette->enable =
-                m_vignetteBase.enable;
-
-            vignette->data.vigIntensity =
-                m_vignetteBase.intensity;
-
-            vignette->data.vigColor =
-                m_vignetteBase.color;
-
-            vignette->data.vigPulseSpeed =
-                m_vignetteBase.pulse;
-
-            vignette->data.vigRadius =
-                m_vignetteBase.radius;
-
-            vignette->data.vigSoftness =
-                m_vignetteBase.softness;
-
-            m_vignetteActive = false;
-        }
-
+        vignette->overrides.Release(kSource);
         return;
     }
 
-    // -------------------------------------------------------------------------
-    // 演出開始時にBaselineを保存
-    // -------------------------------------------------------------------------
+    TickTimer(m_vignetteTimer, dt);
 
-    if (!m_vignetteActive)
+    const float env = CalculateEnvelope(m_vignetteTimer, m_vignetteDuration);
+
+    // 「どこへ寄せたいか(目標値)」と「どれだけ寄せるか(weight)」だけを書く。
+    // 素の設定からの補間と、他演出との重ね合わせは Resolve() が担当する。
+    if (auto *ov = vignette->overrides.Acquire(kSource, kPriority))
     {
-        m_vignetteBase.enable =
-            vignette->enable;
-
-        m_vignetteBase.intensity =
-            vignette->data.vigIntensity;
-
-        m_vignetteBase.color =
-            vignette->data.vigColor;
-
-        m_vignetteBase.pulse =
-            vignette->data.vigPulseSpeed;
-
-        m_vignetteBase.radius =
-            vignette->data.vigRadius;
-
-        m_vignetteBase.softness =
-            vignette->data.vigSoftness;
-
-        m_vignetteActive = true;
+        ov->weight            = env;
+        ov->params.intensity  = m_vignettePeak;
+        ov->params.color      = DirectX::XMFLOAT4{m_vignetteR, m_vignetteG, m_vignetteB, 1.0f};
+        ov->params.radius     = m_vignetteRadius;
+        ov->params.softness   = m_vignetteSoftness;
+        ov->params.pulseSpeed = 0.0f;
     }
-
-    // -------------------------------------------------------------------------
-    // タイマー更新
-    // -------------------------------------------------------------------------
-
-    TickTimer(
-        m_vignetteTimer,
-        dt);
-
-    // -------------------------------------------------------------------------
-    // エンベロープ
-    // -------------------------------------------------------------------------
-
-    const float env =
-        CalculateEnvelope(
-            m_vignetteTimer,
-            m_vignetteDuration);
-
-    // -------------------------------------------------------------------------
-    // Vignetteへ反映
-    // -------------------------------------------------------------------------
-
-    vignette->enable = true;
-
-    vignette->data.vigIntensity =
-        Lerp(
-            m_vignetteBase.intensity,
-            m_vignettePeak,
-            env);
-
-    vignette->data.vigColor =
-        DirectX::XMFLOAT4{
-            Lerp(
-                m_vignetteBase.color.x,
-                m_vignetteR,
-                env),
-
-            Lerp(
-                m_vignetteBase.color.y,
-                m_vignetteG,
-                env),
-
-            Lerp(
-                m_vignetteBase.color.z,
-                m_vignetteB,
-                env),
-
-            1.0f};
-
-    vignette->data.vigRadius =
-        Lerp(
-            m_vignetteBase.radius,
-            m_vignetteRadius,
-            env);
-
-    vignette->data.vigSoftness =
-        Lerp(
-            m_vignetteBase.softness,
-            m_vignetteSoftness,
-            env);
-
-    vignette->data.vigPulseSpeed = 0.0f;
 }
 
 // ===================================================================================
@@ -624,7 +505,7 @@ void PlayerFeedbackSystem::UpdateDamageChromaticAberration(float dt)
 
     if (m_chromaticTimer <= 0.0f)
     {
-        chromatic->burstDamage = 0.0f;
+        chromatic->overrides.Release(kSource);
         return;
     }
 
@@ -643,7 +524,11 @@ void PlayerFeedbackSystem::UpdateDamageChromaticAberration(float dt)
             m_chromaticTimer,
             m_chromaticDuration);
 
-    chromatic->burstDamage = m_chromaticPeak * env;
+    if (auto *ov = chromatic->overrides.Acquire(kSource, kPriority))
+    {
+        ov->weight          = env;
+        ov->params.strength = m_chromaticPeak;
+    }
 }
 
 // System Registration

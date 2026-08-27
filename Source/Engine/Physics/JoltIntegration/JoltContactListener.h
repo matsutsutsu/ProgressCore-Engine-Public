@@ -30,6 +30,26 @@ public:
         JPH::ContactSettings& ioSettings) override;
 
     /**
+     * @brief 接触が継続しているフレームに呼ばれる（2フレーム目以降）。
+     * @note  Added と全く同じ扱いにする。Jolt は同じボディ対の2回目以降を Added では
+     *        なく Persisted に回すため(ContactListener.h の注記)、ここを実装しないと
+     *        「重なり続けている間」の接触が全て消え、攻撃判定の窓より先に武器が相手へ
+     *        入っているケース（突進攻撃など）が丸ごと不発になる。
+     * @note  実行コンテキスト: Jolt Worker Thread (マルチスレッド)
+     */
+    virtual void OnContactPersisted(const JPH::Body& inBody1, const JPH::Body& inBody2,
+        const JPH::ContactManifold& inManifold,
+        JPH::ContactSettings& ioSettings) override;
+
+    /**
+     * @brief 接触が解消された時に呼ばれる。
+     * @note  計測ログのみ。接触が正しく解放されているかの確認用で、判定には使わない。
+     * @warning このコールバック中は Body へ一切アクセスできない(Jolt の仕様)。
+     *          そのため EntityID は解決できず BodyID の index のみ記録する。
+     */
+    virtual void OnContactRemoved(const JPH::SubShapeIDPair& inSubShapePair) override;
+
+    /**
      * @brief 外部（キャラクターリスナー等）から衝突イベントをスレッドセーフに追加する。
      * @note どのスレッドから呼んでも安全。剛体・キャラ双方のイベントをこの1つのバッファに集約する。
      */
@@ -44,6 +64,11 @@ public:
     std::vector<JoltCollisionEvent> GetAndClearEvents();
 
 private:
+    /// @brief Added / Persisted 共通の実体。接触1件をイベント化してバッファへ積む。
+    /// @param inPhase 計測ログ用の表示ラベル("Add" / "Persist")。判定には影響しない。
+    void EmitContactEvent(const JPH::Body& inBody1, const JPH::Body& inBody2,
+        const JPH::ContactManifold& inManifold, const char* inPhase);
+
     std::mutex                      m_mutex;  ///< スレッド間競合を防ぐための排他ロック
     std::vector<JoltCollisionEvent> m_events; ///< 蓄積される衝突イベントのバッファ
 };

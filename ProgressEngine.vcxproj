@@ -475,6 +475,7 @@
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\BloomConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\DistortionConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\RadialBlurConfigComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\PostEffectOverrides.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\VignetteConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\ChromaticAberrationConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\ColorGradingConfigComponent.h" />
@@ -493,10 +494,10 @@
     <ClInclude Include="Source\Engine\Graphics\Renderer\TrailRenderer.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Trail\TrailSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Trail\TrailAnimationSyncSystem.h" />
-    <ClInclude Include="Source\Engine\Graphics\Components\Impact\ScreenImpactComponent.h" />
-    <ClInclude Include="Source\Engine\Graphics\Systems\Impact\ScreenImpactSystem.h" />
-    <ClInclude Include="Source\Engine\Graphics\Components\Impact\JustEvadeEffectComponent.h" />
-    <ClInclude Include="Source\Engine\Graphics\Systems\Impact\JustEvadeEffectSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Effects\Components\ScreenImpactComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Effects\Systems\ScreenImpactSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Effects\Components\JustEvadeEffectComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Effects\Systems\JustEvadeEffectSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\PostProcessPass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\PrimitivePass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\SetupPass.h" />
@@ -590,6 +591,7 @@
     <ClInclude Include="Source\Engine\Physics\Components\RigidBody\JoltRigidBodyComponent.h" />
     <ClInclude Include="Source\Engine\Physics\JoltIntegration\IPhysicsAPI.h" />
     <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltCharacterContactListener.h" />
+    <ClInclude Include="Source\Engine\Physics\JoltIntegration\HitDiagnostics.h" />
     <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltContactListener.h" />
     <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsFacade.h" />
     <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltJobSystemAdapter.h" />
@@ -1020,10 +1022,10 @@
     <ClCompile Include="Source\Engine\Graphics\Renderer\TrailRenderer.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Trail\TrailSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Trail\TrailAnimationSyncSystem.cpp" />
-    <ClCompile Include="Source\Engine\Graphics\Components\Impact\ScreenImpactComponentMeta.cpp" />
-    <ClCompile Include="Source\Engine\Graphics\Systems\Impact\ScreenImpactSystem.cpp" />
-    <ClCompile Include="Source\Engine\Graphics\Components\Impact\JustEvadeEffectComponentMeta.cpp" />
-    <ClCompile Include="Source\Engine\Graphics\Systems\Impact\JustEvadeEffectSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Effects\Components\ScreenImpactComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Effects\Systems\ScreenImpactSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Effects\Components\JustEvadeEffectComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Effects\Systems\JustEvadeEffectSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\PostProcessPass.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\PrimitivePass.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\SetupPass.cpp" />

@@ -1,4 +1,4 @@
-#include "JustEvadeSystem.h"
+﻿#include "JustEvadeSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -12,7 +12,7 @@
 #include "Engine/Camera/CameraEvents.h" // FOVパンチ要求（カメラへの演出指示）
 #include "Engine/Time/TimeState.h"
 #include "Engine/Time/TimeService.h" // 時間操作は意図ファサード経由
-#include "Engine/Graphics/Components/Impact/JustEvadeEffectComponent.h"
+#include "Game/Logics/Effects/Components/JustEvadeEffectComponent.h"
 #include "Engine/Physics/Components/RigidBody/JoltRigidBodyComponent.h" // 壁/地形との接触を除外するため
 
 #include <cstdio>
@@ -39,11 +39,11 @@ static const uint32_t HASH_TRIG_JUST_EVADE = CCL::Utils::HashString("OnJustEvade
 
 void JustEvadeSystem::Initialize()
 {
-    // EventBus から物理衝突の報告を購読する
+    // EventBus から物理衝突の報告を購読する。
+    // ここで判定まで済ませると処理が発行元(JoltCollisionEventSystem)のタスク上で走り、
+    // 本システムが申告した Write 型がスケジューラから見えなくなる。積むだけに留める。
     ListenEvent<JoltCollisionEvent>([this](const JoltCollisionEvent& ev) {
-        // 双方向でプレイヤーがどちらに含まれているかチェックする
-        CheckJustEvade(ev.entityA, ev.entityB);
-        CheckJustEvade(ev.entityB, ev.entityA);
+        m_pendingContacts.push_back(ev);
     });
 
     // 被弾でチェイン切断（ボス／ドローンいずれの攻撃を食らっても初期化）
@@ -98,9 +98,29 @@ void JustEvadeSystem::Initialize()
 
 }
 
+std::vector<CCL::ECS::TypeID> JustEvadeSystem::GetWriteTypes() const
+{
+    // テンプレート引数から自動生成された分（JustEvade/Dash/MovementInput/TimeState）に、
+    // JustEvadeSuccessEvent ハンドラが書く分を足す。ハンドラは CheckJustEvade から
+    // 同期 Publish される＝本システムの Update 内で走るので、ここでの申告が正しい。
+    std::vector<CCL::ECS::TypeID> types = IfSystem::GetWriteTypes();
+    types.push_back(TypeInfo<AnimParametersComponent>::ID());
+    types.push_back(TypeInfo<JustEvadeEffectComponent>::ID());
+    return types;
+}
+
 void JustEvadeSystem::Update(float rawDt)
 {
-    // Update の責務変更: フラグのクリーンアップ
+    // 1. このフレームの接触を判定する（双方向でプレイヤー側を探す）。
+    //    クリーンアップより先に回すこと。成立フラグを立ててから後段の後始末に渡す。
+    for (const JoltCollisionEvent &ev : m_pendingContacts)
+    {
+        CheckJustEvade(ev.entityA, ev.entityB);
+        CheckJustEvade(ev.entityB, ev.entityA);
+    }
+    m_pendingContacts.clear();
+
+    // 2. フラグのクリーンアップ
     // イベントは同期的に飛んできてフラグを true にするため、
     // 次のフレームに成功判定が持ち越されないよう、フレームの最後に全フラグをリセットする。
     ForEach([&](JustEvadeComponent &evade, DashComponent &dash, CharacterMovementInputComponent &input, const TimeStateComponent &time) {
@@ -171,6 +191,10 @@ void JustEvadeSystem::Update(float rawDt)
 }
 
 // チェインを初期状態へ戻す（被弾などで呼ぶ）。効果値(速度/窓)は次フレームの Update が 0 段基準へ戻す。
+// @note ここだけは Update の外（DamageTakenEvent の発行元＝DamageResolutionSystem の
+//       タスク・L06_DamageApply）で走る。書くのは chainCount/idleTimer だけで、
+//       L06 に JustEvadeComponent を触るシステムは他に無いため競合しない。
+//       バッファリングして次フレームに回すとチェイン切断が1フレーム遅れるので即時のままにする。
 void JustEvadeSystem::BreakChain(EntityID playerID)
 {
     if (auto *evade = m_world->GetComponent<JustEvadeComponent>(playerID))
@@ -276,5 +300,10 @@ void JustEvadeSystem::CheckJustEvade(EntityID playerCandidate, EntityID otherCan
     CCL_LOG_SUCCESS(LogCategory::Game, "JUST EVADE SUCCESS!! PlayerID: %llu  (CHAIN x%d)", playerCandidate, evade->chainCount);
 }
 
-// イベントを受け取り終わった後の状態を初期化するため、最も遅い Cleanup フェーズに登録する
-REGISTER_LOGIC_SYSTEM(JustEvadeSystem, Priority::LogicStage::L07_Cleanup);
+// 接触判定と同じ L05_Collision に置く。
+//   以前は L07_Cleanup だったが、判定本体は JoltCollisionEvent のコールバック＝L05 で
+//   走っており、申告した Write 型が実際の実行箇所に効いていなかった。判定を Update へ
+//   移したうえでステージも L05 に合わせ、申告と実行を一致させる。
+//   後始末(フラグ/チェイン)の消費側は DroneManagerSystem・PlayerDashSystem いずれも
+//   L02_Update なので、L05 でも L07 でも「次フレームで反映」となり挙動は変わらない。
+REGISTER_LOGIC_SYSTEM(JustEvadeSystem, Priority::LogicStage::L05_Collision);

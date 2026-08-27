@@ -130,17 +130,18 @@ void PostProcessSystem::Update(float dt) {
 
     if (auto* vignette = postProcess->GetEffect<VignetteEffect>()) {
       auto* comp = m_world->GetSingletonComponent<VignetteConfigComponent>();
-      vignette->SetEnabled(comp && comp->enable);
+      vignette->SetEnabled(comp && comp->ResolvedEnable());
       if (comp) {
+        // 脈動の位相は演出ではなく常に進む連続値。ここだけが所有者。
         comp->data.vigTime += dt;
-        vignette->UpdateParams(comp->data);
+        vignette->UpdateParams(comp->Resolve());
       }
     }
 
     if (auto* grading = postProcess->GetEffect<ColorGradingEffect>()) {
       auto* comp = m_world->GetSingletonComponent<ColorGradingConfigComponent>();
-      grading->SetEnabled(comp && comp->enable);
-      if (comp) grading->UpdateParams(comp->data);
+      grading->SetEnabled(comp && comp->ResolvedEnable());
+      if (comp) grading->UpdateParams(comp->Resolve());
     }
 
     postProcess->toneMapConfig = finalToneMap;

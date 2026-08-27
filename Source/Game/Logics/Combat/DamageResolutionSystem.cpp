@@ -19,7 +19,7 @@
 #include "Engine/Time/TimeState.h"
 #include "Engine/Time/TimeService.h" // ヒットストップは意図ファサード経由
 #include "Engine/Physics/Components/Character/KnockbackComponent.h"
-#include "Engine/Graphics/Components/Impact/ScreenImpactComponent.h"
+#include "Game/Logics/Effects/Components/ScreenImpactComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"       // 被弾者の向き（前後左右判定）
 #include "Engine/Animation/Components/AnimParametersComponent.h"  // ヒットリアクションのトリガー発行
 #include "Engine/Core/Math/StringHash.h"

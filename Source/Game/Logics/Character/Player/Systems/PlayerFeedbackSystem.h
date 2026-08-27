@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include <DirectXMath.h>
 #include "Game/Logics/GameEvent/GameEvents.h"
@@ -94,38 +94,9 @@ class PlayerFeedbackSystem
     // 被弾ビネットを毎フレーム更新する。
     void UpdateDamageVignette(float dt);
 
-    // -------------------------------------------------------------------------
-    // Baseline
-    // -------------------------------------------------------------------------
-
-    // 被弾演出開始前のビネット設定を保持する。
-    //
-    // 演出終了後に元の設定へ完全に戻すことで、
-    // 他のシステムが使用していたビネット設定を壊さないようにする。
-    struct VignetteBaseline
-    {
-        bool enable = true;
-
-        float intensity = 0.4f;
-
-        DirectX::XMFLOAT4 color = {
-            0.0f,
-            0.0f,
-            0.0f,
-            1.0f};
-
-        float pulse = 0.0f;
-
-        float radius = 0.55f;
-
-        float softness = 0.35f;
-    };
-
+    // 被弾ビネットの残り時間。素の設定の退避は持たない
+    // （PostProcess のスロットへ目標値と weight を書くだけでよい）。
     float m_vignetteTimer = 0.0f;
-
-    bool m_vignetteActive = false;
-
-    VignetteBaseline m_vignetteBase;
 
     // -------------------------------------------------------------------------
     // Vignette Tuning

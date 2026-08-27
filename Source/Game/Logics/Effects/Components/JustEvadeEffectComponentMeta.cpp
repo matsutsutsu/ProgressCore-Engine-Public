@@ -3,7 +3,7 @@
 ///        ランタイム状態(timer)は Fields() に載せない＝保存対象外。
 
 #include "Engine/ECS/Core/CCL_World.h"
-#include "Engine/Graphics/Components/Impact/JustEvadeEffectComponent.h"
+#include "Game/Logics/Effects/Components/JustEvadeEffectComponent.h"
 
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"

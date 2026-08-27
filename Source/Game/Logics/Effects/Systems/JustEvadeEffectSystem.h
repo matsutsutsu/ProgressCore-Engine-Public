@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 // ===========================================================================
 // JustEvadeEffectSystem.h
 // -----------------------
@@ -14,7 +14,7 @@
 //   - 立ち上がり(rising edge)で「そのシーンが元々持っていた ColorGrading / Vignette の値」を
 //     スナップショットし、立ち下がりで完全に復元する。これにより演出が終わっても
 //     ユーザーがシーンに設定した色調を壊さない。
-//   - 放射ブラー/色収差は「自分のスロット(burstJustEvade)」だけを書く。設定本体は
+//   - PP へは「自分のキーで確保したスロット」だけを書く。設定本体は
 //     触らず、最終強度の合成と描画ON/OFFは PostProcessSystem に任せる。
 //     こうしないと、同時に走る命中バーストや被弾フラッシュと値を奪い合う。
 //   - timer が 0 の間は何も書かない。立ち下がりで自分のスロットだけ 0 に戻す。
@@ -40,26 +40,8 @@ public:
     void Update(float dt) override;
 
 private:
-    bool m_wasActive = false; ///< 前フレームで演出が出ていたか（立ち上がり/下がり検出）
-
-    // 立ち上がりで退避する「元の」PP値（立ち下がりでここへ完全復元する）。
-    struct Baseline
-    {
-        // ColorGrading
-        bool                 cgEnable   = true;
-        float                cgSat      = 1.0f;
-        float                cgContrast = 1.0f;
-        float                cgBright   = 1.0f;
-        DirectX::XMFLOAT4    cgTint     = {1.0f, 1.0f, 1.0f, 1.0f};
-        float                cgMix      = 1.0f;
-        // Vignette
-        bool                 vigEnable    = true;
-        float                vigIntensity = 0.4f;
-        DirectX::XMFLOAT4    vigColor     = {0.0f, 0.0f, 0.0f, 1.0f};
-        float                vigPulse     = 0.0f;
-        float                vigRadius    = 0.55f; ///< ★他システム(被弾フラッシュ)が触っても確実に戻せるよう退避
-        float                vigSoftness  = 0.35f;
-    };
-    Baseline m_base;
-    float    m_vigTime = 0.0f; ///< ビネット脈動用の位相（演出中に加算）
+    /// @brief 前フレームで演出が出ていたか（立ち下がりで自分のスロットを手放すため）。
+    /// @note  素の PP 設定を退避するメンバは持たない。各スロットへ「目標値と weight」を
+    ///        書くだけで、素の設定との合成は PostProcessSystem の Resolve() が行う。
+    bool m_wasActive = false;
 };
