@@ -2,6 +2,7 @@
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include <DirectXMath.h>
 #include "Game/Logics/GameEvent/GameEvents.h"
+#include "Game/Logics/Character/Player/Components/DashComponent.h"
 
 // ===================================================================================
 // PlayerFeedbackSystem
@@ -13,6 +14,7 @@
 //   - コントローラー振動
 //   - 被弾ビネット
 //   - 被弾色収差
+//   - ダッシュ/接近の集中線（放射ブラー）
 //   - ダメージSE（将来的に追加予定）
 //
 // 実際のポストエフェクト描画はPostProcessSystem側が担当し、
@@ -20,8 +22,11 @@
 //
 // OnGui()では、ゲーム実行中に演出パラメータを調整できる。
 // ===================================================================================
+/// @note Read<DashComponent> はダッシュ集中線のため。ダッシュ状態は PlayerDashSystem(L02)
+///       が確定させ、本システム(L06)は読むだけなのでステージの壁で直列化される。
 class PlayerFeedbackSystem
-    : public CCL::ECS::IfSystem<PlayerFeedbackSystem>
+    : public CCL::ECS::IfSystem<PlayerFeedbackSystem,
+          CCL::ECS::Read<DashComponent>>
 {
   public:
     PlayerFeedbackSystem();
@@ -138,4 +143,23 @@ class PlayerFeedbackSystem
 
     // 被弾直後の色収差強度。
     float m_chromaticPeak = 0.2f;
+
+    // =========================================================================
+    // Dash Radial Blur
+    // =========================================================================
+
+    // ダッシュ/接近の集中線を毎フレーム更新する。
+    // @note 専用タイマーを持たず DashComponent の残り時間から直接引く。
+    //       ヒットストップ等で dash 側のタイマーが止まれば集中線もそのまま固まる。
+    void UpdateDashRadialBlur();
+
+    // -------------------------------------------------------------------------
+    // Dash Radial Blur Tuning
+    // -------------------------------------------------------------------------
+
+    // 回避ダッシュ中の集中線の強さ（開始直後が最大、終わりに向けて抜ける）。
+    float m_dashBlurPeak = 0.35f;
+
+    // ジャスト回避後の接近中の集中線の強さ。通常ダッシュより速いので強めが合う。
+    float m_approachBlurPeak = 0.55f;
 };

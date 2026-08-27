@@ -7,6 +7,7 @@
 // Post Process
 #include "Engine/Graphics/Components/PostProcess/VignetteConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/ChromaticAberrationConfigComponent.h"
+#include "Engine/Graphics/Components/PostProcess/RadialBlurConfigComponent.h"
 // Other Effects
 
 #include "Engine/Platform/Input/IInputAPI.h"
@@ -34,6 +35,11 @@ namespace
 
 const uint32_t kSource   = CCL::Utils::HashString("PlayerDamage");
 constexpr int  kPriority = 5;
+
+// ダッシュ集中線は常時出る環境演出なので最弱。命中バーストやジャスト回避に前を譲る。
+// （放射ブラーの合成は最大値なので実際は順序に依存しないが、意図として明示しておく）
+const uint32_t kDashSource   = CCL::Utils::HashString("PlayerDash");
+constexpr int  kDashPriority = 1;
 
 // =========================================================================
 // Utility
@@ -118,6 +124,50 @@ void PlayerFeedbackSystem::Update(float dt)
     UpdateDamageVignette(dt);
 
     UpdateDamageChromaticAberration(dt);
+
+    UpdateDashRadialBlur();
+}
+
+// ===================================================================================
+// Dash Radial Blur
+// ===================================================================================
+
+void PlayerFeedbackSystem::UpdateDashRadialBlur()
+{
+    auto *blur = m_world->GetSingletonComponent<RadialBlurConfigComponent>();
+    if (!blur) return;
+
+    // ダッシュ状態そのものから毎フレーム引く。被弾演出のような専用タイマーは持たない。
+    // currentTimer はダッシュ終了後クールダウンに再利用されるため、必ず isDashing で門番する。
+    float env  = 0.0f;
+    float peak = 0.0f;
+
+    ForEach([&](const DashComponent &dash) {
+        if (dash.isDashing)
+        {
+            const float e = CalculateEnvelope(dash.currentTimer, dash.dashDuration);
+            if (e > env) { env = e; peak = m_dashBlurPeak; }
+        }
+        else if (dash.isApproaching)
+        {
+            const float e = CalculateEnvelope(dash.approachTimer, dash.approachDuration);
+            if (e > env) { env = e; peak = m_approachBlurPeak; }
+        }
+    });
+
+    // 誰もダッシュしていない → スロットを手放す。ForEach が空振りしても必ずここを通るので
+    // プレイヤーが消えた場合でも集中線が出っぱなしにならない。
+    if (env <= 0.0f || peak <= 0.0f)
+    {
+        blur->overrides.Release(kDashSource);
+        return;
+    }
+
+    if (auto *ov = blur->overrides.Acquire(kDashSource, kDashPriority))
+    {
+        ov->weight          = env;
+        ov->params.strength = peak;
+    }
 }
 
 void PlayerFeedbackSystem::OnGui()
@@ -297,6 +347,31 @@ void PlayerFeedbackSystem::OnGui()
             0.0f,
             1.0f,
             "%.3f");
+
+        ImGui::TreePop();
+    }
+
+    // =========================================================================
+    // Dash Radial Blur
+    // =========================================================================
+
+    if (ImGui::TreeNode("Dash Radial Blur"))
+    {
+        ImGui::SliderFloat(
+            "Dash Peak",
+            &m_dashBlurPeak,
+            0.0f,
+            1.0f,
+            "%.3f");
+
+        ImGui::SliderFloat(
+            "Approach Peak",
+            &m_approachBlurPeak,
+            0.0f,
+            1.0f,
+            "%.3f");
+
+        ImGui::TextDisabled("継続時間は DashComponent 側の設定に従う");
 
         ImGui::TreePop();
     }
