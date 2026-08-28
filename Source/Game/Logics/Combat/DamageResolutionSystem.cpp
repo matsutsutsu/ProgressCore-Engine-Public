@@ -141,6 +141,11 @@ void DamageResolutionSystem::Update(float dt) {
                     {
                         kb->velocity = event.knockbackDir * event.knockbackForce;
                         kb->timer    = kb->duration;
+
+                        // 操作を受け付けない硬直。滑る時間(timer)とは別枠で持つ。
+                        // 連続被弾では長い方を残す（後から来た弱い攻撃で硬直が短縮されない）。
+                        if (kb->stunDuration > kb->stunTimer)
+                            kb->stunTimer = kb->stunDuration;
                     }
                 }
 

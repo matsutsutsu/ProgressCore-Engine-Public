@@ -5,6 +5,7 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Core/App/GameFlowState.h" // エディタ操作中(F2=uiInteract)は入力を遮断する
+#include "Engine/Physics/Components/Character/KnockbackComponent.h" // 被弾硬直中は入力を遮断する
 
 #include "Engine/Core/Math/ScreenToWorld.h"
 
@@ -64,15 +65,28 @@ void PlayerInputSystem::Update(float dt)
             moveDir.Normalize();
     }
 
-    ForEach([&](CharacterMovementComponent &movement, PlayerInputComponent &pin) {
+    ForEachWithID([&](EntityID id, CharacterMovementComponent &movement, PlayerInputComponent &pin) {
 
-        movement.desiredVelocity = moveDir;
+        // 被弾硬直中は操作を受け付けない。KnockbackComponent は被弾するキャラに常設だが、
+        // 万一付いていなくても「操作できないまま復帰できない」より「硬直しない」方が
+        // 安全なので、アーキタイプ条件にはせず任意依存として引く。
+        bool stunned = false;
+        if (const auto *kb = m_world->GetComponent<KnockbackComponent>(id))
+            stunned = kb->IsStunned();
+
+        const bool blocked = blockGameInput || stunned;
+
+        // 移動要求だけは「止める」ではなく「中立を書く」。書かずに抜けると直前の
+        // 進行方向が残り、硬直中も歩き続ける。
+        movement.desiredVelocity = blocked ? Vector3::Zero : moveDir;
 
         // 立ち上がり(前ステップは押されておらず、今は押されている)だけを意思として通す。
         //   ロジックは同じ描画フレーム内で複数回走ることがあり、そのあいだ生の押下状態は
         //   変化しない。ここで畳んでおかないと、1回の押下が複数回のアクションになる。
-        auto edge = [blockGameInput](bool raw, bool &prev) {
-            const bool pressed = !blockGameInput && raw && !prev;
+        //   遮断中も prev は raw に追随させる。追随を止めると、遮断が解けた瞬間に
+        //   押しっぱなしのボタンが立ち上がり扱いになって技が暴発する。
+        auto edge = [blocked](bool raw, bool &prev) {
+            const bool pressed = !blocked && raw && !prev;
             prev               = raw;
             return pressed;
         };

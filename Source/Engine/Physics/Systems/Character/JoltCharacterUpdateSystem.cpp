@@ -77,6 +77,15 @@ void JoltCharacterUpdateSystem::Update(float rawDt)
                     kb->velocity = Vector3::Zero;
                 }
             }
+
+            // 操作を受け付けない硬直。localDt 基準なのでヒットストップ中は凍り、
+            // 止まっている間に硬直だけ消化されることがない。
+            if (kb->stunTimer > 0.0f)
+            {
+                kb->stunTimer -= safeDt;
+                if (kb->stunTimer < 0.0f)
+                    kb->stunTimer = 0.0f;
+            }
         }
 
         JPH::Vec3 finalVel(newHorizontalVel.x, newVy, newHorizontalVel.z);
