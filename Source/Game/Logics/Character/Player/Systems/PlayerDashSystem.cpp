@@ -244,12 +244,11 @@ void PlayerDashSystem::UpdateGroundLocomotion(PlayerComponent &player, Character
 // ---------------------------------------------------------------------------
 void PlayerDashSystem::PushWideFovRequest(EntityID playerID, bool wide)
 {
-    for (EntityID camID : m_world->View<CameraBodyTPSComponent>())
-    {
+    m_world->ViewEach<CameraBodyTPSComponent>([&](EntityID camID) {
         auto *tps = m_world->GetComponent<CameraBodyTPSComponent>(camID);
-        if (!tps || tps->target.id != playerID) continue;
+        if (!tps || tps->target.id != playerID) return;
         tps->wideFovRequest = wide;
-    }
+    });
 }
 
 // ---------------------------------------------------------------------------

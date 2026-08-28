@@ -266,16 +266,16 @@ void PlayerCleaveSystem::ExitToIdle(CleaveComponent &cleave, RootMotionComponent
 // 寄り要求だけを伝える（カメラは切り払いの事情を知らない）。
 void PlayerCleaveSystem::PushCameraCloseUp(EntityID playerID, bool close)
 {
-    for (EntityID camID : m_world->View<CameraBodyTPSComponent>())
-    {
+    m_world->ViewEach<CameraBodyTPSComponent>([&](EntityID camID) {
         auto *tps = m_world->GetComponent<CameraBodyTPSComponent>(camID);
-        if (!tps || tps->target.id != playerID) continue;
+        if (!tps || tps->target.id != playerID) return;
         tps->closeUpRequest = close;
-    }
+    });
 }
 
 // 前方扇の範囲内にいるドローンを進行方向へ吹き飛ばす。
 // TODO: 距離ベースで全ドローンを走査している。数が増えたら物理エンジン(オーバーラップ)経由に置き換えたい。
+//       走査自体は ViewEach で確保なしにしてあるので、残るコストは距離計算のみ。
 void PlayerCleaveSystem::ApplyFanKnockback(const Vector3 &origin, CleaveComponent &cleave)
 {
     const float rangeSq = cleave.fanRange * cleave.fanRange;
@@ -283,29 +283,29 @@ void PlayerCleaveSystem::ApplyFanKnockback(const Vector3 &origin, CleaveComponen
     const Vector3 fwd   = cleave.direction; // 正規化済み（3D：上下含む進行方向）
 
     // ドローンのみ走査＝ボスは自動的に対象外（切り払いは攻撃ではなく「道を作る技」）。
-    for (EntityID id : m_world->View<DroneComponent, TransformComponent>())
-    {
+    // 突進中は毎フレーム走るので、機数ぶんの vector を作らない ViewEach を使う。
+    m_world->ViewEach<DroneComponent, TransformComponent>([&](EntityID id) {
         auto *drone = m_world->GetComponent<DroneComponent>(id);
         auto *t     = m_world->GetComponent<TransformComponent>(id);
-        if (!drone || !t) continue;
+        if (!drone || !t) return;
 
         // 既に吹き飛ばし中の機体は同じ切り払いで二重ヒットさせない。
-        if (drone->knockbackTimer > 0.0f) continue;
+        if (drone->knockbackTimer > 0.0f) return;
 
         // 進行方向(3D)を軸にした扇で判定＝上下に斬り上げ/斬り下げても道が開く。
         Vector3 to = Vector3(t->position) - origin;
         const float distSq = to.LengthSquared();
-        if (distSq < 1e-4f || distSq > rangeSq) continue;
+        if (distSq < 1e-4f || distSq > rangeSq) return;
 
         Vector3 dir = to;
         dir.Normalize();
-        if (dir.Dot(fwd) < cosHalf) continue; // 前方扇の外は無視
+        if (dir.Dot(fwd) < cosHalf) return; // 前方扇の外は無視
 
         // 進行方向へ一律に吹き飛ばす（放射状にしない）＝「切り開いた道は通れる」保証。
         drone->knockbackVelocity = fwd * cleave.knockbackSpeed;
         drone->knockbackTimer    = cleave.knockbackTime;
         cleave.hitCount++;
-    }
+    });
 }
 
 // PlayerDashSystem(L02_Update) の後で overrideSpeed を上書きし、DroneMovementSystem

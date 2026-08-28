@@ -75,13 +75,13 @@ void DroneManagerSystem::TryAutoSpawnInitial()
 
 
 // ============================================================================
-// GetAliveCount：View で数えるだけ
+// GetAliveCount：数えるだけなので確保しない
+//   毎フレーム呼ばれる。View だと機数ぶんの vector を作ってから捨てることになる。
 // ============================================================================
 int DroneManagerSystem::GetAliveCount() const
 {
     int count = 0;
-    auto view = m_world->View<DroneComponent>();
-    for (auto e : view) { (void)e; ++count; }
+    m_world->ViewEach<DroneComponent>([&count](EntityID) { ++count; });
     return count;
 }
 

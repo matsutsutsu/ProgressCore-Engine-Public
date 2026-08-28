@@ -50,17 +50,13 @@ void PlayerLockOnSystem::Update(float /*dt*/)
                 EntityID closestEnemyID = InvalidEntityID;
                 float    closestDistSq  = 90.0f * 90.0f; // ロックオン可能な限界距離（例: 30メートル）の2乗
 
-                // 世界中のドローンのEntityIDを一覧取得する
-                auto droneView = m_world->View<BossActionComponent, TransformComponent>();
-
-                for (EntityID enemyID : droneView)
-                {
+                // 候補を一覧に貯めず、その場で最短を更新していく
+                m_world->ViewEach<BossActionComponent, TransformComponent>([&](EntityID enemyID) {
                     // 死亡している敵はスキップ
-                    if (m_world->HasComponent<Tag::DeadTag>(enemyID)) continue;
+                    if (m_world->HasComponent<Tag::DeadTag>(enemyID)) return;
 
-                    // Transformを取得 (Viewで保証されているため即座にアクセス可能)
                     auto* enemyTrans = m_world->GetComponent<TransformComponent>(enemyID);
-                    if (!enemyTrans) continue;
+                    if (!enemyTrans) return;
 
                     // 平面での純粋な距離計算
                     float distSq = Vector3::DistanceSquared(playerTrans.position, enemyTrans->position);
@@ -69,7 +65,7 @@ void PlayerLockOnSystem::Update(float /*dt*/)
                         closestDistSq  = distSq;
                         closestEnemyID = enemyID;
                     }
-                }
+                });
 
                 // 5. ターゲットが確定したらプレイヤーの状態に書き込む
                 if (closestEnemyID != InvalidEntityID)
@@ -85,14 +81,13 @@ void PlayerLockOnSystem::Update(float /*dt*/)
         //   カメラ(Engine)がプレイヤー(Game)を読みに来る形だと Engine→Game 依存に
         //   なるため、状態の持ち主であるこちらから書き込む。解除条件もここで完結する。
         // ===================================================================
-        for (EntityID camID : m_world->View<CameraBodyTPSComponent>())
-        {
+        m_world->ViewEach<CameraBodyTPSComponent>([&](EntityID camID) {
             auto* tps = m_world->GetComponent<CameraBodyTPSComponent>(camID);
-            if (!tps || tps->target.id != playerID) continue; // このプレイヤーを映していないカメラは対象外
+            if (!tps || tps->target.id != playerID) return; // このプレイヤーを映していないカメラは対象外
 
             tps->lockOnTarget.id = player.lockOnTargetID;
             tps->isLockOnActive  = (player.lockOnTargetID != InvalidEntityID);
-        }
+        });
     });
 }
 

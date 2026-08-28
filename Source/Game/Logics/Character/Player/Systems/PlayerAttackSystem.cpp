@@ -35,29 +35,29 @@ EntityID PlayerAttackSystem::FindBestFrontEnemy(EntityID selfID, const Vector3 &
     EntityID best       = InvalidEntityID;
     float    bestDistSq = range * range;
 
-    for (EntityID id : m_world->View<HealthComponent, TransformComponent>())
-    {
-        if (id == selfID) continue;
-        if (m_world->HasComponent<PlayerComponent>(id)) continue; // 味方（プレイヤー）は除外
-        if (m_world->HasComponent<Tag::DeadTag>(id)) continue;
+    // 候補はドローンぶんだけ増えるので、一覧に貯めずその場で絞り込む。
+    m_world->ViewEach<HealthComponent, TransformComponent>([&](EntityID id) {
+        if (id == selfID) return;
+        if (m_world->HasComponent<PlayerComponent>(id)) return; // 味方（プレイヤー）は除外
+        if (m_world->HasComponent<Tag::DeadTag>(id)) return;
 
         const auto *hp = m_world->GetComponent<HealthComponent>(id);
-        if (hp && hp->currentHealth <= 0.0f) continue;
+        if (hp && hp->currentHealth <= 0.0f) return;
         const auto *tr = m_world->GetComponent<TransformComponent>(id);
-        if (!tr) continue;
+        if (!tr) return;
 
         Vector3 to = Vector3(tr->position) - selfPos;
         to.y       = 0.0f;
         const float distSq = to.LengthSquared();
-        if (distSq < 1e-4f || distSq > bestDistSq) continue;
+        if (distSq < 1e-4f || distSq > bestDistSq) return;
 
         Vector3 dir = to;
         dir.Normalize();
-        if (dir.Dot(forward) < coneCos) continue; // 前方コーンの外は無視
+        if (dir.Dot(forward) < coneCos) return; // 前方コーンの外は無視
 
         bestDistSq = distSq; // より近い敵を採用
         best       = id;
-    }
+    });
     return best;
 }
 
