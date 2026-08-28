@@ -48,7 +48,6 @@ void SpawnHitboxSystem::Initialize()
         OnSpawnHitbox(msg);
     });
 
-    CCL_LOG_INFO(LogCategory::Game, "SpawnHitboxSystem Initialized.");
 }
 
 void SpawnHitboxSystem::Update(float dt)

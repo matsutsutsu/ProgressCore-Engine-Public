@@ -5,12 +5,12 @@
 ///   DroneManagerSystem   … 何機いるか（戸籍係）
 ///   DroneCommandSystem   … ボスの命令を全機へ配る（伝令）      ← このファイル
 ///   DroneFormationSystem … どこへ並ぶか（振付師）
-///   DroneAI(StateTree)   … 命令をどう実行するか（個体判断）
+///   DroneBrainSystem     … 命令をどう実行するか（個体判断）
 ///
 /// なぜ独立システムか:
 ///   ボスBT は BossCommandComponent（自分の出力）にだけ書き込み、1000機のドローンを
 ///   直接触らない（神クラス化の回避）。命令をドローン個体の入力へ変換する一点を
-///   このシステムに集約することで、BT・Formation・StateTree の責務が汚れない。
+///   このシステムに集約することで、BT・Formation・判断層の責務が汚れない。
 ///
 /// データフロー:
 ///   BossCommandComponent.requestFormation  → 各 DroneComponent.currentFormation

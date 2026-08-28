@@ -35,7 +35,7 @@ void PauseSystem::Initialize()
     const uint32_t kResume = CCL::Utils::HashString("resume");
     const uint32_t kQuit   = CCL::Utils::HashString("pause_quit");
 
-    m_world->GetEventBus().Subscribe<UIButtonClickedEvent>(
+    ListenEvent<UIButtonClickedEvent>(
         [this, kResume, kQuit](const UIButtonClickedEvent &e) {
             if (e.actionHash == kResume)
             {

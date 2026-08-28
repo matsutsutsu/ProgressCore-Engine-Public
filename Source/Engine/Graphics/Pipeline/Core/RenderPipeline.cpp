@@ -1,4 +1,4 @@
-#include "RenderPipeline.h"
+﻿#include "RenderPipeline.h"
 
 #include <d3d11_1.h> // ID3DUserDefinedAnnotation
 #include <wrl/client.h>
@@ -36,7 +36,7 @@ void RenderPipeline::BuildDefaultPipeline()
     AddPass<SceneColorGrabPass>(); // 4.5 屈折用シーンカラーグラブ
     AddPass<TransparentPass>(); // 5. 半透明
     AddPass<ParticlePass>();    // 6. パーティクル
-    AddPass<TrailPass>();       // 6.5 武器トレイル(加算)。Bloom に拾わせるため PP の前
+    AddPass<TrailPass>();       // 6.5 武器トレイル(歪み+加算)。Bloom に拾わせるため PP の前
     AddPass<PrimitivePass>();   // 7. デバッグプリミティブ
     AddPass<PostProcessPass>(); // 8. ポストプロセス・最終出力
 }

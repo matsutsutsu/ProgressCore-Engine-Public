@@ -50,7 +50,7 @@
             "endTime": 0.25,
             "hitStopDuration": 0.05000000074505806,
             "hitStopScale": 0.0,
-            "knockback": 5.0,
+            "knockback": 25.0,
             "offset": {
                 "x": 0.0,
                 "y": 0.0,
@@ -68,9 +68,9 @@
             "effectFollow": false,
             "effectScale": 1.0,
             "endTime": 0.6666666865348816,
-            "hitStopDuration": 0.07000000029802322,
+            "hitStopDuration": 0.09000000357627869,
             "hitStopScale": 0.0,
-            "knockback": 5.0,
+            "knockback": 20.0,
             "offset": {
                 "x": 0.0,
                 "y": 0.0,

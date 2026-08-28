@@ -18,13 +18,12 @@ class GPUParticleUpdateSystem : public CCL::ECS::IfSystem<GPUParticleUpdateSyste
     GPUParticleUpdateSystem() : IfSystem("GPUParticleUpdateSystem") {}
     ~GPUParticleUpdateSystem();   // unique_ptr<前方宣言型> のため .cpp で = default
 
+    /// @brief CS管理クラス・サンプラー・ノイズテクスチャを用意する。
+    void Initialize() override;
 
     void Update(float dt) override;
 
   private:
-
-    /// @brief 初回のみ呼ばれる。CS管理クラス・サンプラー・ノイズ生成。
-    void InitializeParticle(ID3D11Device* device);
 
     /// @brief 「そのフレームの、効果全体で共通の値」。
     ///        time や前フレーム姿勢はエンティティ単位の値なので、エミッタのループに
@@ -61,7 +60,6 @@ class GPUParticleUpdateSystem : public CCL::ECS::IfSystem<GPUParticleUpdateSyste
 private:
 
     ID3D11Device* m_device = nullptr;
-    bool          m_isLoaded = false;
 
     /// 次に発行する乱数種。0 は「未割り当て」の意味に使うので 1 から始める。
     GpuData::uint m_nextInstanceSeed = 1;

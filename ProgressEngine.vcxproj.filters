@@ -288,9 +288,6 @@
     <Filter Include="Source\Engine\Graphics\Components\Trail">
       <UniqueIdentifier>{2b1c4d6e-9a70-4c11-8f23-5d7e0a1b2c34}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Graphics\Components\Impact">
-      <UniqueIdentifier>{5e4f7091-2da3-4f44-bc56-8091a2b3c4d6}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\Graphics\Systems\Core">
       <UniqueIdentifier>{bf771668-5e61-4ceb-b31f-a98b88ea309d}</UniqueIdentifier>
     </Filter>
@@ -308,9 +305,6 @@
     </Filter>
     <Filter Include="Source\Engine\Graphics\Systems\Trail">
       <UniqueIdentifier>{3c2d5e7f-0b81-4d22-9a34-6e8f1b2c3d45}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\Graphics\Systems\Impact">
-      <UniqueIdentifier>{6f5a819b-3eb4-4055-cd67-9102b3c4d5e7}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Physics\JoltIntegration">
       <UniqueIdentifier>{ec8eebb9-31b8-4275-9553-1d6ebf289568}</UniqueIdentifier>
@@ -387,9 +381,6 @@
     <Filter Include="Source\Engine\Graphics\Shader\Particle">
       <UniqueIdentifier>{7331b261-1c5e-4858-beb7-97a5a94cb0a9}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Game\Logics\AI\StateTree">
-      <UniqueIdentifier>{b7c28ac1-c302-46fc-943a-869af40a6ac0}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\Time">
       <UniqueIdentifier>{7a88023c-be1b-4e90-9f95-822c9f974cc6}</UniqueIdentifier>
     </Filter>
@@ -399,32 +390,26 @@
     <Filter Include="Source\Engine\Graphics\Shader\_Shared">
       <UniqueIdentifier>{18957b19-91a2-477b-b87c-fa95d9ba54d2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\Effects">
+      <UniqueIdentifier>{c56416d2-881e-42d4-93ad-605ae08b8d28}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\Effects\Components">
+      <UniqueIdentifier>{e8c1e436-3b93-4f33-8cf8-edf258a6f0b6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\Effects\Systems">
+      <UniqueIdentifier>{fb72dd16-b0c1-4427-8784-7ae29d8c2c4f}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Game\Logics\Combat">
       <UniqueIdentifier>{f9e98694-67ee-43f9-8feb-4ed9c3cab61a}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Game\Logics\Combat\_Meta">
       <UniqueIdentifier>{0a94ac07-4f26-4cc2-a563-eb0d04156a23}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Game\Logics\AI\StateTree\Core">
-      <UniqueIdentifier>{22b60c6b-b385-492f-a70c-b2c726f3d987}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\AI\StateTree\Serialization">
-      <UniqueIdentifier>{a32cdd2f-a91a-4919-b36e-523cc7758841}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\AI\StateTree\System">
-      <UniqueIdentifier>{f31dd04f-c457-4af4-a232-8466a46c1cb3}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Game\Logics\Character\Player\Components">
       <UniqueIdentifier>{b32b3cba-14b1-49d4-a485-70088a470068}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Game\Logics\Character\Player\Systems">
       <UniqueIdentifier>{edfdb3db-8c16-43a6-90ca-2bed32f4f008}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\Camera\Systems\_Core">
-      <UniqueIdentifier>{757c0289-fe6f-444b-8c34-d73d583b4abb}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\Camera\Systems\_Game">
-      <UniqueIdentifier>{206d07c2-08fd-4a68-a742-55052fcc5297}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Game\Logics\AI\BehaviorTree\Actions">
       <UniqueIdentifier>{3135afad-6920-43ec-93d8-8f46096aaa44}</UniqueIdentifier>
@@ -541,6 +526,9 @@
     <Filter Include="Source\Game\Logics\AI\Drone\Formation">
       <UniqueIdentifier>{7fb876f4-9c60-4a35-9ec9-43da0f2894c5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\AI\Drone\Squad">
+      <UniqueIdentifier>{3c1e5b92-8a44-4f17-b0d6-5e2c7a91d408}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Game\Logics\Character\Boss">
       <UniqueIdentifier>{b874cd55-47ee-462e-bbe1-8d273659c62b}</UniqueIdentifier>
     </Filter>
@@ -550,11 +538,14 @@
     <Filter Include="Source\Game\Logics\Character\Boss\Systems">
       <UniqueIdentifier>{26282c6a-b038-4c3e-9623-0dd3a09282da}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Game\Logics\AI\StateTree\Muriel">
-      <UniqueIdentifier>{eb9849a2-7b3c-4a70-bca8-37b07ab5252d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Game\Logics\AI\Debug">
       <UniqueIdentifier>{da596e9b-e651-47b7-a01a-cd4a8da293d7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Camera\Systems\Game">
+      <UniqueIdentifier>{206d07c2-08fd-4a68-a742-55052fcc5297}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Camera\Systems\Core">
+      <UniqueIdentifier>{757c0289-fe6f-444b-8c34-d73d583b4abb}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -1035,6 +1026,9 @@
     <ClInclude Include="Source\Editor\Windows\NavMeshWindow.h">
       <Filter>Source\Editor\Windows\AI</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\FormationEditorWindow.h">
+      <Filter>Source\Editor\Windows\AI</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\Windows\BehaviorTreeWindow.h">
       <Filter>Source\Editor\Windows\AI</Filter>
     </ClInclude>
@@ -1233,17 +1227,17 @@
     <ClInclude Include="Source\Engine\Graphics\Systems\Trail\TrailAnimationSyncSystem.h">
       <Filter>Source\Engine\Graphics\Systems\Trail</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Components\Impact\JustEvadeEffectComponent.h">
-      <Filter>Source\Engine\Graphics\Components\Impact</Filter>
+    <ClInclude Include="Source\Game\Logics\Effects\Components\JustEvadeEffectComponent.h">
+      <Filter>Source\Game\Logics\Effects\Components</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Systems\Impact\JustEvadeEffectSystem.h">
-      <Filter>Source\Engine\Graphics\Systems\Impact</Filter>
+    <ClInclude Include="Source\Game\Logics\Effects\Systems\JustEvadeEffectSystem.h">
+      <Filter>Source\Game\Logics\Effects\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Components\Impact\ScreenImpactComponent.h">
-      <Filter>Source\Engine\Graphics\Components\Impact</Filter>
+    <ClInclude Include="Source\Game\Logics\Effects\Components\ScreenImpactComponent.h">
+      <Filter>Source\Game\Logics\Effects\Components</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Systems\Impact\ScreenImpactSystem.h">
-      <Filter>Source\Engine\Graphics\Systems\Impact</Filter>
+    <ClInclude Include="Source\Game\Logics\Effects\Systems\ScreenImpactSystem.h">
+      <Filter>Source\Game\Logics\Effects\Systems</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Pipeline\PostProcessPass.h">
       <Filter>Source\Engine\Graphics\Pipeline</Filter>
@@ -1446,6 +1440,9 @@
     <ClInclude Include="Source\Engine\Physics\JoltIntegration\IPhysicsAPI.h">
       <Filter>Source\Engine\Physics\JoltIntegration</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\JoltIntegration\HitDiagnostics.h">
+      <Filter>Source\Engine\Physics\JoltIntegration</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltContactListener.h">
       <Filter>Source\Engine\Physics\JoltIntegration</Filter>
     </ClInclude>
@@ -1536,9 +1533,6 @@
     <ClInclude Include="Source\Engine\Graphics\Components\Particle\GPUParticleBuffer.h">
       <Filter>Source\Engine\Graphics\Components\Particle</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\StateTreeWindow.h">
-      <Filter>Source\Editor\Windows\AI</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Time\TimeScaleSetupSystem.h">
       <Filter>Source\Engine\Time</Filter>
     </ClInclude>
@@ -1617,6 +1611,9 @@
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\RadialBlurConfigComponent.h">
       <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\PostEffectOverrides.h">
+      <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\VignetteConfigComponent.h">
       <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
     </ClInclude>
@@ -1674,36 +1671,6 @@
     <ClInclude Include="Source\Editor\Windows\TestLauncherWindow.h">
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\NodeParamField.h">
-      <Filter>Source\Game\Logics\AI\StateTree\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\NodeRegistry.h">
-      <Filter>Source\Game\Logics\AI\StateTree\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\StateTreeAsset.h">
-      <Filter>Source\Game\Logics\AI\StateTree\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\StateTreeComponent.h">
-      <Filter>Source\Game\Logics\AI\StateTree\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\StateTreeNode.h">
-      <Filter>Source\Game\Logics\AI\StateTree\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\Core\StateTreeRegistry.h">
-      <Filter>Source\Game\Logics\AI\StateTree\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\Serialization\StateTreeDef.h">
-      <Filter>Source\Game\Logics\AI\StateTree\Serialization</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\Serialization\StateTreeSerializer.h">
-      <Filter>Source\Game\Logics\AI\StateTree\Serialization</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\System\StateTreeResolveSystem.h">
-      <Filter>Source\Game\Logics\AI\StateTree\System</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\System\StateTreeSystem.h">
-      <Filter>Source\Game\Logics\AI\StateTree\System</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Player\Components\PlayerComponent.h">
       <Filter>Source\Game\Logics\Character\Player\Components</Filter>
     </ClInclude>
@@ -1753,16 +1720,22 @@
       <Filter>Source\Engine\Camera\Components</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Camera\Systems\CameraListenerSystem.h">
-      <Filter>Source\Engine\Camera\Systems\_Game</Filter>
+      <Filter>Source\Engine\Camera\Systems\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Camera\Systems\CameraBrainSystem.h">
-      <Filter>Source\Engine\Camera\Systems\_Core</Filter>
+      <Filter>Source\Engine\Camera\Systems\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Camera\Systems\VisualCameraSystem.h">
-      <Filter>Source\Engine\Camera\Systems\_Core</Filter>
+      <Filter>Source\Engine\Camera\Systems\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Camera\Systems\CameraActionTPSSystem.h">
-      <Filter>Source\Engine\Camera\Systems\_Game</Filter>
+      <Filter>Source\Engine\Camera\Systems\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Camera\Components\CameraBodyIntroOrbitComponent.h">
+      <Filter>Source\Engine\Camera\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Camera\Systems\CameraIntroOrbitSystem.h">
+      <Filter>Source\Engine\Camera\Systems\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\CameraTargetBindSystem.h">
       <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
@@ -1771,7 +1744,7 @@
       <Filter>Source\Engine\Camera\Components</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Camera\Systems\CameraDollySystem.h">
-      <Filter>Source\Engine\Camera\Systems\_Game</Filter>
+      <Filter>Source\Engine\Camera\Systems\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\CameraPathEditorWindow.h">
       <Filter>Source\Editor\Windows\Game</Filter>
@@ -1793,9 +1766,6 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTConditions.h">
       <Filter>Source\Game\Logics\AI\BehaviorTree\Actions</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\Muriel\MurielAI.h">
-      <Filter>Source\Game\Logics\AI\StateTree\Muriel</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\Systems\AnimSetupSystem.h">
       <Filter>Source\Engine\Animation\Systems</Filter>
@@ -1848,9 +1818,6 @@
     <ClInclude Include="Source\Game\Logics\AI\Battle\BattleContext.h">
       <Filter>Source\Game\Logics\AI\Battle</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\StateTree\System\AIDebugSystem.h">
-      <Filter>Source\Game\Logics\AI\StateTree\System</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Drone\DroneComponent.h">
       <Filter>Source\Game\Logics\AI\Drone</Filter>
     </ClInclude>
@@ -1860,7 +1827,7 @@
     <ClInclude Include="Source\Game\Logics\AI\Drone\DroneMovementSystem.h">
       <Filter>Source\Game\Logics\AI\Drone</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\Drone\DroneAI.h">
+    <ClInclude Include="Source\Game\Logics\AI\Drone\DroneBrainSystem.h">
       <Filter>Source\Game\Logics\AI\Drone</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Drone\DroneManagerSystem.h">
@@ -1875,10 +1842,25 @@
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_Attack.h">
       <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_Squad.h">
+      <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Squad\SquadState.h">
+      <Filter>Source\Game\Logics\AI\Drone\Squad</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Squad\SquadUpdateSystem.h">
+      <Filter>Source\Game\Logics\AI\Drone\Squad</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\IFormation.h">
       <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\FormationRegistry.h">
+      <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\FormationSpec.h">
+      <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_DataDriven.h">
       <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_Basic.h">
@@ -1892,6 +1874,12 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Boss\Data\BossActionComponent.h">
       <Filter>Source\Game\Logics\Character\Boss\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Data\BossPhaseComponent.h">
+      <Filter>Source\Game\Logics\Character\Boss\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossPhaseSystem.h">
+      <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Boss\Data\BTActions_Boss.h">
       <Filter>Source\Game\Logics\Character\Boss\Data</Filter>
@@ -2261,6 +2249,9 @@
     <ClCompile Include="Source\Editor\Windows\NavMeshWindow.cpp">
       <Filter>Source\Editor\Windows\AI</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\FormationEditorWindow.cpp">
+      <Filter>Source\Editor\Windows\AI</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\Windows\BehaviorTreeWindow.cpp">
       <Filter>Source\Editor\Windows\AI</Filter>
     </ClCompile>
@@ -2405,17 +2396,17 @@
     <ClCompile Include="Source\Engine\Graphics\Systems\Trail\TrailAnimationSyncSystem.cpp">
       <Filter>Source\Engine\Graphics\Systems\Trail</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Graphics\Components\Impact\JustEvadeEffectComponentMeta.cpp">
-      <Filter>Source\Engine\Graphics\Components\Impact</Filter>
+    <ClCompile Include="Source\Game\Logics\Effects\Components\JustEvadeEffectComponentMeta.cpp">
+      <Filter>Source\Game\Logics\Effects\Components</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Graphics\Systems\Impact\JustEvadeEffectSystem.cpp">
-      <Filter>Source\Engine\Graphics\Systems\Impact</Filter>
+    <ClCompile Include="Source\Game\Logics\Effects\Systems\JustEvadeEffectSystem.cpp">
+      <Filter>Source\Game\Logics\Effects\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Graphics\Components\Impact\ScreenImpactComponentMeta.cpp">
-      <Filter>Source\Engine\Graphics\Components\Impact</Filter>
+    <ClCompile Include="Source\Game\Logics\Effects\Components\ScreenImpactComponentMeta.cpp">
+      <Filter>Source\Game\Logics\Effects\Components</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Graphics\Systems\Impact\ScreenImpactSystem.cpp">
-      <Filter>Source\Engine\Graphics\Systems\Impact</Filter>
+    <ClCompile Include="Source\Game\Logics\Effects\Systems\ScreenImpactSystem.cpp">
+      <Filter>Source\Game\Logics\Effects\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Pipeline\PostProcessPass.cpp">
       <Filter>Source\Engine\Graphics\Pipeline</Filter>
@@ -2600,9 +2591,6 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\ParticleShader.cpp">
       <Filter>Source\Engine\Graphics\Shader\Material\Particle</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\StateTreeWindow.cpp">
-      <Filter>Source\Editor\Windows\AI</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Time\TimeComponentMeta.cpp">
       <Filter>Source\Engine\Time</Filter>
     </ClCompile>
@@ -2714,18 +2702,6 @@
     <ClCompile Include="Source\Editor\Windows\TestLauncherWindow.cpp">
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\StateTree\Core\StateTreeComponentMeta.cpp">
-      <Filter>Source\Game\Logics\AI\StateTree\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\StateTree\Serialization\StateTreeSerializer.cpp">
-      <Filter>Source\Game\Logics\AI\StateTree\Serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\StateTree\System\StateTreeResolveSystem.cpp">
-      <Filter>Source\Game\Logics\AI\StateTree\System</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\StateTree\System\StateTreeSystem.cpp">
-      <Filter>Source\Game\Logics\AI\StateTree\System</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\Components\PlayerComponentMeta.cpp">
       <Filter>Source\Game\Logics\Character\Player\Components</Filter>
     </ClCompile>
@@ -2769,22 +2745,28 @@
       <Filter>Source\Engine\Camera\Components</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Camera\Systems\CameraListenerSystem.cpp">
-      <Filter>Source\Engine\Camera\Systems\_Game</Filter>
+      <Filter>Source\Engine\Camera\Systems\Game</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Camera\Systems\CameraBrainSystem.cpp">
-      <Filter>Source\Engine\Camera\Systems\_Core</Filter>
+      <Filter>Source\Engine\Camera\Systems\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Camera\Systems\VisualCameraSystem.cpp">
-      <Filter>Source\Engine\Camera\Systems\_Core</Filter>
+      <Filter>Source\Engine\Camera\Systems\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Camera\Systems\CameraActionTPSSystem.cpp">
-      <Filter>Source\Engine\Camera\Systems\_Game</Filter>
+      <Filter>Source\Engine\Camera\Systems\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Camera\Components\CameraBodyIntroOrbitComponentMeta.cpp">
+      <Filter>Source\Engine\Camera\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Camera\Systems\CameraIntroOrbitSystem.cpp">
+      <Filter>Source\Engine\Camera\Systems\Game</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Camera\Components\CameraDollyCartComponentMeta.cpp">
       <Filter>Source\Engine\Camera\Components</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Camera\Systems\CameraDollySystem.cpp">
-      <Filter>Source\Engine\Camera\Systems\_Game</Filter>
+      <Filter>Source\Engine\Camera\Systems\Game</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\CameraPathEditorWindow.cpp">
       <Filter>Source\Editor\Windows\Game</Filter>
@@ -2834,14 +2816,17 @@
     <ClCompile Include="Source\Game\Logics\Test\BoidSystem.cpp">
       <Filter>Source\Game\Logics\Test</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\StateTree\System\AIDebugSystem.cpp">
-      <Filter>Source\Game\Logics\AI\StateTree\System</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\Drone\DroneFormationSystem.cpp">
       <Filter>Source\Game\Logics\AI\Drone</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\Drone\DroneMovementSystem.cpp">
       <Filter>Source\Game\Logics\AI\Drone</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\Drone\DroneBrainSystem.cpp">
+      <Filter>Source\Game\Logics\AI\Drone</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\Drone\Squad\SquadUpdateSystem.cpp">
+      <Filter>Source\Game\Logics\AI\Drone\Squad</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\Drone\DroneManagerSystem.cpp">
       <Filter>Source\Game\Logics\AI\Drone</Filter>
@@ -2860,6 +2845,12 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Boss\Data\BossActionComponentMeta.cpp">
       <Filter>Source\Game\Logics\Character\Boss\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Data\BossPhaseComponentMeta.cpp">
+      <Filter>Source\Game\Logics\Character\Boss\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossPhaseSystem.cpp">
+      <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossActionSystem.cpp">
       <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
@@ -2970,9 +2961,6 @@
     </None>
     <None Include="Source\Game\Logics\AI\Drone\Drone_Guide.md">
       <Filter>Source\Game\Logics\AI\Drone</Filter>
-    </None>
-    <None Include="Source\Game\Logics\AI\StateTree\StateTree_Guide.md">
-      <Filter>Source\Game\Logics\AI\StateTree</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -3094,6 +3082,9 @@
       <Filter>Shader\Renderer\Trail</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Renderer\Trail\TrailPS.hlsl">
+      <Filter>Shader\Renderer\Trail</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Renderer\Trail\TrailDistortPS.hlsl">
       <Filter>Shader\Renderer\Trail</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Pass\SkyBox\SkyboxVS.hlsl">

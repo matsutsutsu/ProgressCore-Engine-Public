@@ -25,6 +25,7 @@ static GpuData::CbParticleStatic BuildStaticCb(const ParticleEmitterDesc& d)
     cb.emit_local_offset = { d.localOffset.x, d.localOffset.y, d.localOffset.z, d.localOffsetY };
     cb.emit_radius = d.emitRadius;
     cb.emit_size = d.emitSize;
+    cb.size_random = d.sizeRandom;
     cb.cone_angle = d.coneAngle;
     cb.emit_speed = d.emitSpeed;
     cb.emit_angular_speed = d.angularSpeed;
@@ -96,9 +97,12 @@ static GpuData::CbParticleDynamic BuildDynamicCb(
 }
 
 // =========================================================================
-void GPUParticleUpdateSystem::InitializeParticle(ID3D11Device* device)
+void GPUParticleUpdateSystem::Initialize()
 {
-    ZoneScopedN("GPUParticle: InitializeParticle (first frame)");
+    ZoneScopedN("GPUParticle: Initialize");
+
+    ID3D11Device* device = Graphics::Instance().GetDevice();
+    if (!device) return;
 
     m_device = device;
     {
@@ -120,11 +124,6 @@ void GPUParticleUpdateSystem::InitializeParticle(ID3D11Device* device)
 void GPUParticleUpdateSystem::Update(float dt)
 {
     ZoneScopedN("GPUParticleUpdateSystem::Update");
-
-    if (!m_isLoaded) {
-        InitializeParticle(Graphics::Instance().GetDevice());
-        m_isLoaded = true;
-    }
 
     ID3D11DeviceContext* dc = Graphics::Instance().GetDeviceContext();
     if (!dc || !m_computeShader) return;

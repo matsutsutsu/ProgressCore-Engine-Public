@@ -1,4 +1,4 @@
-// ===========================================================================
+﻿// ===========================================================================
 // HitboxCollisionSystem.cpp
 // 役割・責務・パイプライン上の位置付けは HitboxCollisionSystem.h を参照。
 //
@@ -17,45 +17,68 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Platform/Core/Logger.h"
+#include "Engine/Physics/JoltIntegration/HitDiagnostics.h" // 計測ログ(暫定)
+
+#include <cstdio>
 
 using namespace CCL::ECS;
 using DirectX::SimpleMath::Vector3;
 
 namespace
 {
-/// @brief hitTargets に target が既に記録済みか(多段ヒット防止)。
-bool AlreadyHit(const HitboxComponent &box, EntityID target)
-{
-    for (uint8_t i = 0; i < box.hitCount; ++i)
-        if (box.hitTargets[i] == target)
-            return true;
-    return false;
-}
+    /// @brief hitTargets に target が既に記録済みか(多段ヒット防止)。
+    bool AlreadyHit(const HitboxComponent &box, EntityID target)
+    {
+        for (uint8_t i = 0; i < box.hitCount; ++i)
+            if (box.hitTargets[i] == target)
+                return true;
+        return false;
+    }
 
-/// @brief hitTargets に target を追記する(満杯なら何もしない)。
-void RecordHit(HitboxComponent &box, EntityID target)
-{
-    if (box.hitCount < HitboxComponent::MAX_HIT_TARGETS)
-        box.hitTargets[box.hitCount++] = target;
-}
+#if HITBOX_DIAGNOSTICS
+    /// @brief hitTargets の中身を "12,34," 形式に整形する（計測ログ用）。
+    /// @note  多段ヒット履歴が前の攻撃から残っていないかを目視するために出す。
+    void FormatHitTargets(const HitboxComponent &box, char *out, size_t outSize)
+    {
+        size_t used = 0;
+        out[0]      = '\0';
+        for (uint8_t i = 0; i < box.hitCount && used + 24 < outSize; ++i)
+            used += static_cast<size_t>(
+                std::snprintf(out + used, outSize - used, "%llu,",
+                    static_cast<unsigned long long>(box.hitTargets[i])));
+    }
+#endif
+
+    /// @brief hitTargets に target を追記する(満杯なら何もしない)。
+    void RecordHit(HitboxComponent &box, EntityID target)
+    {
+        if (box.hitCount < HitboxComponent::MAX_HIT_TARGETS)
+            box.hitTargets[box.hitCount++] = target;
+    }
 } // namespace
 
 void HitboxCollisionSystem::Initialize()
 {
-    // 物理衝突(Jolt)の報告を購読し、双方向(A→B, B→A)で命中判定する。
-    // EventBus は同期配送のため、コールバックはこの Initialize 完了後の
-    // 物理ステージ内で呼ばれる。
+    // 物理衝突(Jolt)の報告を購読する。
+    // EventBus は同期配送なので、ここで判定まで済ませると処理が発行元
+    // (JoltCollisionEventSystem)のタスク上で走り、本システムが宣言した Read/Write が
+    // スケジューラから見えなくなる。積むだけに留め、判定は自分の Update で行う。
     ListenEvent<JoltCollisionEvent>([this](const JoltCollisionEvent &ev) {
-        CheckAndSpawnDamageEvent(ev.entityA, ev.entityB, ev.contactPosition);
-        CheckAndSpawnDamageEvent(ev.entityB, ev.entityA, ev.contactPosition);
+        m_pendingContacts.push_back(ev);
     });
-
-    CCL_LOG_INFO(LogCategory::Game, "HitboxCollisionSystem Initialized.");
 }
 
 void HitboxCollisionSystem::Update(float /*dt*/)
 {
-    // イベント駆動のため Update は空。判定は ListenEvent コールバックで行う。
+    // 双方向(A→B, B→A)で命中判定する。どちらが攻撃側かは Hitbox の有無で決まる。
+    for (const JoltCollisionEvent &ev : m_pendingContacts)
+    {
+        CheckAndSpawnDamageEvent(ev.entityA, ev.entityB, ev.contactPosition);
+        CheckAndSpawnDamageEvent(ev.entityB, ev.entityA, ev.contactPosition);
+    }
+
+    // 消費済みは必ず捨てる。次フレームへ持ち越すと同じ接触を二重に評価してしまう。
+    m_pendingContacts.clear();
 }
 
 void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate, EntityID victimCandidate,
@@ -64,16 +87,49 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
     // 1. Hitbox(攻撃) と Hurtbox(被弾) の成立確認
     auto *hitbox  = m_world->GetComponent<HitboxComponent>(attackerCandidate);
     auto *hurtbox = m_world->GetComponent<HurtboxComponent>(victimCandidate);
-    if (!hitbox || !hitbox->isActive || !hurtbox)
+
+    // 攻撃側ですらない＝双方向呼び出しの片割れ。正常なので無言で戻る。
+    if (!hitbox) return;
+
+    // ここから先は「Hitbox を持つ側からの呼び出し」なので、落ちた理由を必ず残す。
+    if (!hurtbox)
+    {
+        HITDIAG_LOG(LogCategory::Game,
+            "[HitDiag/Reject] no-hurtbox  atk=%llu vic=%llu", attackerCandidate, victimCandidate);
         return;
+    }
+
+    if (!hitbox->isActive)
+    {
+        HITDIAG_LOG(LogCategory::Game,
+            "[HitDiag/Reject] inactive    atk=%llu vic=%llu (判定区間が閉じている)",
+            attackerCandidate, victimCandidate);
+        return;
+    }
 
     // 自傷防止（owner と被弾者が同じなら無視）
     if (hitbox->ownerID == victimCandidate)
+    {
+        HITDIAG_LOG(LogCategory::Game,
+            "[HitDiag/Reject] self-hit    atk=%llu vic=%llu", attackerCandidate, victimCandidate);
         return;
+    }
 
     // 2. 多段ヒット防止(同一攻撃が同一相手を二度叩かない)
     if (AlreadyHit(*hitbox, victimCandidate))
+    {
+#if HITBOX_DIAGNOSTICS
+        char targets[128];
+        FormatHitTargets(*hitbox, targets, sizeof(targets));
+        HITDIAG_LOG(LogCategory::Game,
+            "[HitDiag/Reject] AlreadyHit  atk=%llu vic=%llu hitCount=%u targets=[%s]",
+            attackerCandidate, victimCandidate,
+            static_cast<unsigned>(hitbox->hitCount), targets);
+#endif
         return;
+    }
+
+    // 当たった相手を記録しておく（多重ヒット防止のため）
     RecordHit(*hitbox, victimCandidate);
 
     // 3. 最終ダメージ = 基礎 × 被ダメ倍率(弱点)
@@ -82,6 +138,7 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
 
     // 4. 命中位置：物理衝突の接触点(ワールド座標)をそのまま使う。加工しない。
     const Vector3 hitPos(contactPos);
+
 
     // 5. ノックバック方向(攻撃者→被弾者のXZ方向)
     Vector3 knockDir   = Vector3::Zero;
@@ -119,8 +176,8 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
     dmg.hitPosition     = hitPos;
     entityRef.Set(dmg);
 
-    CCL_LOG_INFO(LogCategory::Game,
-        "[Hitbox] %llu -> %llu  dmg=%.1f",
+    HITDIAG_LOG(LogCategory::Game,
+        "[HitDiag/Hit]    %llu -> %llu  dmg=%.1f",
         attackerCandidate, victimCandidate, finalDamage);
 }
 

@@ -91,10 +91,19 @@ void PostProcessSystem::Update(float dt) {
       }
     }
 
+    // 放射ブラー / 色収差は複数の演出システムが同時に要求しうる。
+    // 各システムは自分の burst スロットへ書くだけで、最終値の決定はここに集約する。
+    // enable(素の設定)が false でも演出は出す必要があるため、パスのON/OFFは
+    // 合成後の強度が 0 かどうかで判断する。
     if (auto* radial = postProcess->GetEffect<RadialBlurEffect>()) {
       auto* comp = m_world->GetSingletonComponent<RadialBlurConfigComponent>();
-      radial->SetEnabled(comp && comp->enable);
-      if (comp) radial->UpdateParams(comp->data);
+      const float strength = comp ? comp->ResolvedStrength() : 0.0f;
+      radial->SetEnabled(strength > 0.0f);
+      if (comp) {
+        auto data = comp->data;
+        data.blurStrength = strength;
+        radial->UpdateParams(data);
+      }
     }
 
     if (auto* dof = postProcess->GetEffect<DepthOfFieldEffect>()) {
@@ -110,23 +119,29 @@ void PostProcessSystem::Update(float dt) {
 
     if (auto* chroma = postProcess->GetEffect<ChromaticAberrationEffect>()) {
       auto* comp = m_world->GetSingletonComponent<ChromaticAberrationConfigComponent>();
-      chroma->SetEnabled(comp && comp->enable);
-      if (comp) chroma->UpdateParams(comp->data);
+      const float strength = comp ? comp->ResolvedStrength() : 0.0f;
+      chroma->SetEnabled(strength > 0.0f);
+      if (comp) {
+        auto data = comp->data;
+        data.chromaStrength = strength;
+        chroma->UpdateParams(data);
+      }
     }
 
     if (auto* vignette = postProcess->GetEffect<VignetteEffect>()) {
       auto* comp = m_world->GetSingletonComponent<VignetteConfigComponent>();
-      vignette->SetEnabled(comp && comp->enable);
+      vignette->SetEnabled(comp && comp->ResolvedEnable());
       if (comp) {
+        // 脈動の位相は演出ではなく常に進む連続値。ここだけが所有者。
         comp->data.vigTime += dt;
-        vignette->UpdateParams(comp->data);
+        vignette->UpdateParams(comp->Resolve());
       }
     }
 
     if (auto* grading = postProcess->GetEffect<ColorGradingEffect>()) {
       auto* comp = m_world->GetSingletonComponent<ColorGradingConfigComponent>();
-      grading->SetEnabled(comp && comp->enable);
-      if (comp) grading->UpdateParams(comp->data);
+      grading->SetEnabled(comp && comp->ResolvedEnable());
+      if (comp) grading->UpdateParams(comp->Resolve());
     }
 
     postProcess->toneMapConfig = finalToneMap;

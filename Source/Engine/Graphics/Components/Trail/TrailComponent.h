@@ -22,6 +22,26 @@
 // ===========================================================================
 #include "Engine/ECS/Common/CCL_Types.h"
 #include <DirectXMath.h>
+#include <cstdint>
+
+/// @brief 断面の作り方。
+/// @details Ribbon は板1枚なので、面が視線と平行になった瞬間に線へ潰れる。
+///          剣の軌跡は「振る面を見せる」ものなのでそれで正しいが、足元の尾のように
+///          どこから見ても体積が欲しい用途では Cross / Tube を使う。
+enum class TrailShape : uint8_t
+{
+    Ribbon = 0, ///< 根本→先端の線分を掃いた板1枚（従来どおり。剣向き）
+    Cross  = 1, ///< 板を進行方向まわりに複製して十字に（安い・真横でも消えない）
+    Tube   = 2, ///< 断面を円にして押し出した筒（足元の尾など、体積が欲しいとき）
+};
+
+/// @brief CFIELD_ENUM_U8 用の表示名テーブル（enum の並びと一致させること）。
+static constexpr const char *TrailShapeNames[] = {
+    "Ribbon (板1枚)",
+    "Cross (十字)",
+    "Tube (筒)",
+};
+static constexpr int TrailShapeCount = 3;
 
 /// @brief 武器の軌跡(加算リボン)を残すためのコンポーネント。
 struct TrailComponent
@@ -34,6 +54,9 @@ struct TrailComponent
     float lifeTime    = 0.18f; ///< 1区間が消えるまでの秒数（尾の長さ）
     float minDistance = 0.02f; ///< 先端がこれ以上動いたら新区間を刻む（静止時の汚れ防止）
     bool  emitting    = true;  ///< 発生マスタースイッチ。animControlled=false のとき手動運用。
+
+    /// @brief Catmull-Rom補間の切り替えフラグ
+    bool useInterpolation = true;
 
     /// @brief true: 祖先(Animator)の Trail 区間イベントで emitting を自動駆動する。
     ///        false: emitting は手動（インスペクタ/常時ON）。既定は手動。
@@ -51,6 +74,12 @@ struct TrailComponent
         DirectX::XMFLOAT3 base = {}; ///< 記録時の根本ワールド座標
         DirectX::XMFLOAT3 tip  = {}; ///< 記録時の先端ワールド座標
         float             age  = 0.0f; ///< 記録からの経過秒。lifeTime 超で破棄。
+
+        /// @brief 刻んだ順の通し番号。ジグザグの折れ方を決める識別子。
+        /// @note  リング内の index は最古が死ぬたびに繰り下がるため、index を
+        ///        乱数の種にすると模様が尾へ向かって流れてしまう。区間そのものに
+        ///        番号を持たせることで、一度決まった折れ方が最後まで動かない。
+        uint32_t stamp = 0;
     };
 
     static constexpr int MAX_SEGMENTS = 24; ///< リングの容量（尾の最大分割数）
@@ -58,4 +87,86 @@ struct TrailComponent
     Segment segments[MAX_SEGMENTS] = {}; ///< 断面リング
     int     head  = 0; ///< 最古区間の index
     int     count = 0; ///< 有効区間数
+
+    uint32_t nextStamp = 0; ///< 次に刻む区間へ渡す通し番号
+
+    float width           = 1.0f; ///< トレイル全体の基本幅。1.0で元の太さ。
+    float widthCurvePower = 1.5f; ///< 尾に向かって細くなる強さ。大きいほど急激に細くなる。
+
+    // --- 断面形状（config。既定は従来と同じ板1枚） ---
+    uint8_t shape = static_cast<uint8_t>(TrailShape::Ribbon); ///< 断面の作り方
+
+    /// @brief Cross / Tube の半径。0 なら「根本→先端の長さの半分」を使う。
+    /// @note  足元に付ける場合は baseOffset/tipOffset をほぼ同じ点にして、
+    ///        ここで太さを決めるほうが扱いやすい。
+    float thickness = 0.0f;
+
+    int tubeSides = 6; ///< Tube の円周分割数（3〜16）。増やすほど滑らかで重い。
+
+    /// @brief Tube のシルエット強調。1で「輪郭だけ光る筒」、0で「均一な塊」。
+    /// @note  加算合成は全面が同じ明るさだと のっぺりした塊に見えるため、
+    ///        視線に対して横を向く面ほど明るくして丸みを出す。
+    float rimPower = 0.7f;
+
+    // --- 歪み（屈折）レイヤ（config） ---
+    /// @brief 背景をずらす最大量(ピクセル)。0 で歪みレイヤ自体を作らない。
+    /// @note  加算レイヤと全く同じ形状を、SceneColorGrabPass が確保済みの
+    ///        シーンカラーを屈折させて描く2枚目として重ねる。
+    ///        ずらし方向は面の法線をビュー空間へ落とした xy なので、
+    ///        面がカメラを向くほど 0 に近づき、輪郭で最も強く歪む。
+    float distortion = 0.0f;
+
+    /// @brief 屈折の色ズレ(0〜1)。RGB のずらし量に差をつけてプリズム感を出す。
+    float distortionChroma = 0.0f;
+
+    /// @brief 陽炎ゆらぎ(0〜1)。グローバルノイズでずらし方向を乱す。
+    /// @note  板(Ribbon)が正面を向いていると法線由来の歪みはほぼ 0 になる。
+    ///        剣の軌跡のように「面を見せる」使い方で歪ませたいときはここを上げる。
+    float distortionNoise = 0.0f;
+
+    // --- ダッシュ等、一時的にTrailをONにするための設定 ---
+    float burstDuration = 0.25f; ///< 一時的にTrailを出す時間
+
+    // --- runtime ---
+    float burstTimer = 0.0f; ///< 一時Trail表示の残り時間
+
+    // --- ジグザグ（稲妻状の折れ）レイヤ（config） ---
+    /// @brief 芯線を折れ線にする。断面の作り方(shape)とは独立に効く。
+    /// @note  尾の「通り道」そのものをずらすので、板・十字・筒のどれでも使える。
+    bool useZigZag = false;
+
+    /// @brief 折れ点1つあたりの最大ずらし量（ワールド単位）。
+    float zigZagAmplitude = 0.5f;
+
+    /// @brief 1区間あたりの折れ点数。増やすほど細かく尖る。
+    /// @note  補間ON時は1区間が4断面に分かれるため、ここを上げすぎると
+    ///        折れ点が断面より細かくなり、角が潰れて ただのノイズに見える。
+    int zigZagFrequency = 2;
+
+    /// @brief 折れ方のパターン。値を変えると別の稲妻になる。
+    uint32_t zigZagSeed = 1337;
+
+
+    /// @brief 一時的にTrailを出現させるための関数
+    /// @param duration：トレイルを出す秒数
+    void ActivateFor(float duration)
+    {
+        burstTimer = duration;
+        emitting   = true;
+    }
+
+    /// @brief 一時Trail出現タイマーの更新
+    void UpdateBurstTimer(float dt)
+    {
+        if (burstTimer <= 0.0f)
+            return;
+
+        burstTimer -= dt;
+
+        if (burstTimer <= 0.0f)
+        {
+            burstTimer = 0.0f;
+            emitting   = false;
+        }
+    }
 };

@@ -43,6 +43,8 @@
 #include <chrono>
 #include <unordered_set>
 
+#include <tracy/Tracy.hpp>
+
 using namespace CCL::ECS;
 using namespace CCL::ECS;
 using CCL::Serialization::SaveContext;
@@ -199,8 +201,16 @@ void SceneSerializer::SerializeEntity(
 // =====================================================================
 std::vector<EntityID> SceneSerializer::Deserialize(World* world, const std::string& filepath)
 {
-    // 変更後:
-    std::string jsonStr = FileSystem::ReadAllText(filepath);
+    ZoneScopedN("SceneSerializer::Deserialize");
+
+    // ここは VFX::Play から「再生のたびに」通る。プレハブ1個ぶんとはいえ、
+    //   ディスク読み込みと JSON パースを毎回やっている。連撃中にどれだけ
+    //   積み上がるのかを Tracy で見えるようにしておく（対策を選ぶのは数字を見てから）。
+    std::string jsonStr;
+    {
+        ZoneScopedN("SceneSerializer: ReadAllText (disk)");
+        jsonStr = FileSystem::ReadAllText(filepath);
+    }
     if (jsonStr.empty()) {
         return {};
     }
@@ -208,6 +218,7 @@ std::vector<EntityID> SceneSerializer::Deserialize(World* world, const std::stri
     nlohmann::json root;
     try
     {
+        ZoneScopedN("SceneSerializer: json::parse");
         root = nlohmann::json::parse(jsonStr);
     }
     catch (const std::exception &e)
@@ -294,7 +305,16 @@ std::vector<EntityID> SceneSerializer::DeserializeRaw(World* world, const nlohma
                 const std::string& compName = it.key();
                 const auto& compJson = it.value();
                 const auto* meta = registry.GetInfoByName(compName);
-                if (!meta) continue;
+                if (!meta) {
+                    // 登録名と綴りが違うキーは、ここまで無言で捨てられていた。
+                    // 「プレハブに書いたのに付いていない」が原因不明の挙動として
+                    // 残るため、必ず気付けるよう警告を出す。
+                    CCL_LOG_WARN(LogCategory::Core,
+                        "[Scene] コンポーネント '%s' は ComponentRegistry に未登録のため無視されました"
+                        "（登録名の綴り違い／未登録のメタ定義を確認）",
+                        compName.c_str());
+                    continue;
+                }
                 // 通常のデシリアライズ（ここでゴミの parentID が入る可能性がある）
                 meta->deserializeToWorld(world, newID, compJson, &loadCtx);
             }

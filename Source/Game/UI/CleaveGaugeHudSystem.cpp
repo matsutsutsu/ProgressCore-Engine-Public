@@ -104,4 +104,4 @@ void CleaveGaugeHudSystem::Update(float /*dt*/)
     }
 }
 
-REGISTER_LOGIC_SYSTEM(CleaveGaugeHudSystem, Priority::LogicStage::L02_PostUpdate);
+REGISTER_LOGIC_SYSTEM(CleaveGaugeHudSystem, Priority::LogicStage::L06_HudSync);

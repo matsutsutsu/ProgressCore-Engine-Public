@@ -159,7 +159,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 4,
+                    "parent": 5,
                     "position": [
                         0.0,
                         5.0,
@@ -193,8 +193,8 @@
         {
             "components": {
                 "CameraBodyFree": {
-                    "currentPitch": -21.800003051757813,
-                    "currentYaw": 1.5999865531921387,
+                    "currentPitch": -22.39999771118164,
+                    "currentYaw": 0.9999675154685974,
                     "lookSpeed": 0.20000000298023224,
                     "moveSpeed": 8.0
                 },
@@ -211,17 +211,17 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 4,
+                    "parent": 5,
                     "position": [
-                        -0.11276976019144058,
-                        4.771481037139893,
-                        -9.504467010498047
+                        0.01761108636856079,
+                        7.898261070251465,
+                        -11.3286714553833
                     ],
                     "rotation": [
-                        0.18907704949378967,
-                        0.01371016912162304,
-                        -0.0026401628274470568,
-                        0.9818629622459412
+                        0.1942269653081894,
+                        0.008560062386095524,
+                        -0.0016949378186836839,
+                        0.9809178709983826
                     ],
                     "scale": [
                         1.0,
@@ -241,8 +241,11 @@
         },
         {
             "components": {
+                "BoneAttachmentComponent": {
+                    "boneName": "hand_r"
+                },
                 "GPUParticle": {
-                    "animControlled": false,
+                    "animControlled": true,
                     "emitters": [
                         {
                             "angularSpeed": [
@@ -264,26 +267,26 @@
                                 1.0,
                                 1.0
                             ],
-                            "colorMode": 0,
-                            "colorRampPath": "",
+                            "colorMode": 1,
+                            "colorRampPath": "Assets/Textures/VFX/VFX_Ramp_Fire.png",
                             "coneAngle": [
                                 0.0,
-                                0.30000001192092896
+                                3.140000104904175
                             ],
                             "drag": 0.0,
                             "emitMode": 0,
                             "emitRadius": [
                                 0.0,
-                                0.5
+                                0.11999999731779099
                             ],
-                            "emitShape": 0,
+                            "emitShape": 1,
                             "emitSize": [
-                                0.10000000149011612,
-                                0.05000000074505806
+                                0.0,
+                                0.0
                             ],
                             "emitSpeed": [
                                 1.0,
-                                3.0
+                                1.0
                             ],
                             "emitStretch": [
                                 1.0,
@@ -295,12 +298,12 @@
                             ],
                             "gravity": 0.0,
                             "lifespan": [
-                                1.0,
-                                2.0
+                                0.30000001192092896,
+                                0.8899999856948853
                             ],
                             "lineEnd": [
                                 0.0,
-                                1.0,
+                                4.349999904632568,
                                 0.0
                             ],
                             "localOffset": [
@@ -309,26 +312,28 @@
                                 0.0
                             ],
                             "localOffsetY": 0.0,
-                            "maxCount": 1000,
+                            "maxCount": 8000,
                             "maxSpeed": 10.0,
+                            "name": "",
                             "noiseScale": 1.0,
                             "noiseStrength": 0.0,
                             "particleType": 1,
                             "renderMode": 0,
                             "scale": [
-                                1.0,
-                                1.0
+                                0.5,
+                                0.5
                             ],
+                            "sizeRandom": 1.0,
                             "spawnDelay": [
-                                0.0,
-                                0.0
+                                0.00800000037997961,
+                                0.0560000017285347
                             ],
                             "spriteGrid": [
                                 1,
                                 1
                             ],
                             "spriteMode": 0,
-                            "texturePath": "",
+                            "texturePath": "Assets/Textures/VFX/VFX_Circle.png",
                             "uvScrollSpeed": [
                                 0.0,
                                 0.0
@@ -338,8 +343,47 @@
                         }
                     ]
                 },
+                "Hitbox": {
+                    "damageAmount": 15.0,
+                    "hitStopDuration": 0.20999999344348907,
+                    "hitStopScale": 0.0,
+                    "isActive": false,
+                    "knockback": 20.0
+                },
+                "Jolt Capsule Collider": {
+                    "halfHeight": 2.5999999046325684,
+                    "localOffset": [
+                        0.0,
+                        2.200000047683716,
+                        0.0
+                    ],
+                    "localRotationEuler": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "radius": 0.5
+                },
+                "Jolt Rigidbody": {
+                    "friction": 0.20000000298023224,
+                    "gravityFactor": 1.0,
+                    "initialVelocity": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "isSensor": true,
+                    "motionType": 1,
+                    "objectLayer": 3,
+                    "restitution": 0.0,
+                    "useCCD": false
+                },
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Weapon/Sword.gltf"
+                },
                 "Name": {
-                    "name": "TestParticle"
+                    "name": "Sword"
                 },
                 "TimeState": {
                     "buffScale": 1.0,
@@ -353,8 +397,8 @@
                     "isStatic": false,
                     "parent": 4,
                     "position": [
-                        0.0,
-                        0.0,
+                        0.10000000149011612,
+                        0.019999999552965164,
                         0.0
                     ],
                     "rotation": [
@@ -364,16 +408,96 @@
                         1.0
                     ],
                     "scale": [
-                        1.0,
-                        1.0,
-                        1.0
+                        0.30000001192092896,
+                        0.5,
+                        0.30000001192092896
                     ]
+                },
+                "Weapon Trail": {
+                    "animControlled": true,
+                    "baseOffset": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "color": [
+                        1.0,
+                        0.3706563711166382,
+                        0.0,
+                        1.0
+                    ],
+                    "distortion": 0.0,
+                    "distortionChroma": 0.0,
+                    "distortionNoise": 0.0,
+                    "emitting": false,
+                    "lifeTime": 0.18000000715255737,
+                    "minDistance": 0.019999999552965164,
+                    "rimPower": 0.699999988079071,
+                    "shape": 0,
+                    "thickness": 0.0,
+                    "tipOffset": [
+                        0.0,
+                        2.7200000286102295,
+                        0.0
+                    ],
+                    "tubeSides": 6,
+                    "width": 1.0,
+                    "widthCurvePower": 0.10000000149011612
                 }
             },
             "lid": 3
+        },
+        {
+            "components": {
+                "AnimParameters": null,
+                "AnimStateMachine": {
+                    "graphPath": "Assets/Animations/Nodes/PlayerAnimNode.json"
+                },
+                "Animator": {
+                    "isLoop": true,
+                    "playbackSpeed": 1.0
+                },
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Player/SK_SciFITrooper_Man_03.glb"
+                },
+                "Name": {
+                    "name": "Player"
+                },
+                "RootMotion": null,
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 5,
+                    "position": [
+                        -5.599999904632568,
+                        0.0,
+                        5.099999904632568
+                    ],
+                    "rotation": [
+                        1.2611686178923354e-44,
+                        0.9576292037963867,
+                        1.5414283107572988e-44,
+                        0.288004070520401
+                    ],
+                    "scale": [
+                        3.5,
+                        3.5,
+                        3.5
+                    ]
+                }
+            },
+            "lid": 4
         }
     ],
     "magic": 1397506883,
-    "timestamp": 1786249815,
+    "timestamp": 1787791199,
     "version": 1
 }

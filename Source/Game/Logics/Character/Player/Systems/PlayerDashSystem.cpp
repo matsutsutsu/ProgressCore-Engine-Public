@@ -36,7 +36,7 @@ void PlayerDashSystem::Update(float rawDt)
             return;
 
         // ダッシュ（開始/継続/終了→走行）。ダッシュでなければ地上ロコモーション（走行/歩き）。
-        if (!UpdateDash(dash, player, input, trans, time))
+        if (!UpdateDash(dash, player, input, trans, time,id))
             UpdateGroundLocomotion(player, input, time.localDt);
 
         // ダッシュ中は「外部が移動を制御中」を root motion へ伝える（＝抽出を止めさせる）。
@@ -128,7 +128,7 @@ bool PlayerDashSystem::UpdateApproach(float rawDt, const BattleContext *battle, 
 // ---------------------------------------------------------------------------
 bool PlayerDashSystem::UpdateDash(DashComponent &dash, PlayerComponent &player,
                                   CharacterMovementInputComponent &input, const TransformComponent &trans,
-                                  const TimeStateComponent &time)
+                                  const TimeStateComponent &time, CCL::ECS::EntityID id)
 {
     // クールタイムの減算。
     if (!dash.isDashing && dash.currentTimer > 0.0f)
@@ -157,7 +157,7 @@ bool PlayerDashSystem::UpdateDash(DashComponent &dash, PlayerComponent &player,
         dash.dashDirection.Normalize();
 
         // その場VFX用に「ダッシュ開始」を announce する（VFX/プレハブは購読側が知る）。
-        m_world->GetEventBus().Publish(PlayerDashedEvent{trans.position});
+        m_world->GetEventBus().Publish(PlayerDashedEvent{trans.position,id});
     }
 
     if (!dash.isDashing) return false; // ダッシュしていない → 呼び出し側で歩き/走り

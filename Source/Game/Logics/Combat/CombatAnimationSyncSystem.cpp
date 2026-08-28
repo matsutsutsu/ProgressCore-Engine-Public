@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @file CombatAnimationSyncSystem.cpp
  * @brief HitboxComponent を主役に走査し、ownerEntity の Animator を読んで
  *        攻撃判定の区間状態を Hitbox に同期する（イテレーション反転設計）。
@@ -12,29 +12,30 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/Core/Math/StringHash.h"
+#include "Engine/Physics/JoltIntegration/HitDiagnostics.h" // 計測ログ(暫定)
 
 using namespace CCL::ECS;
 
 namespace
 {
-// Hitbox エンティティから親を辿り、最初に見つかった Animator 保持エンティティを返す。
-// 剣はキャラ(=Animatorを持つ)の子孫にぶら下がる前提。空間生成の判定球は親を持たない
-// ため見つからず InvalidEntityID を返す（＝常時判定の弾のまま）。
-EntityID ResolveAnimatorOwner(CCL::ECS::World* world, EntityID hitboxID)
-{
-    EntityID cur = InvalidEntityID;
-    if (const auto* t = world->GetComponent<TransformComponent>(hitboxID))
-        cur = t->parent; // EntityLink → EntityID 暗黙変換
-    int guard = 0;
-    while (cur != InvalidEntityID && cur != 0 && guard++ < 32)
+    // Hitbox エンティティから親を辿り、最初に見つかった Animator 保持エンティティを返す。
+    // 剣はキャラ(=Animatorを持つ)の子孫にぶら下がる前提。空間生成の判定球は親を持たない
+    // ため見つからず InvalidEntityID を返す（＝常時判定の弾のまま）。
+    EntityID ResolveAnimatorOwner(CCL::ECS::World* world, EntityID hitboxID)
     {
-        if (world->GetComponent<AnimatorComponent>(cur))
-            return cur; // 台本の持ち主を発見
-        const auto* pt = world->GetComponent<TransformComponent>(cur);
-        cur = pt ? static_cast<EntityID>(pt->parent) : InvalidEntityID;
+        EntityID cur = InvalidEntityID;
+        if (const auto* t = world->GetComponent<TransformComponent>(hitboxID))
+            cur = t->parent; // EntityLink → EntityID 暗黙変換
+        int guard = 0;
+        while (cur != InvalidEntityID && cur != 0 && guard++ < 32)
+        {
+            if (world->GetComponent<AnimatorComponent>(cur))
+                return cur; // 台本の持ち主を発見
+            const auto* pt = world->GetComponent<TransformComponent>(cur);
+            cur = pt ? static_cast<EntityID>(pt->parent) : InvalidEntityID;
+        }
+        return InvalidEntityID;
     }
-    return InvalidEntityID;
-}
 } // namespace
 
 void CombatAnimationSyncSystem::Update(float /*dt*/)
@@ -46,8 +47,6 @@ void CombatAnimationSyncSystem::Update(float /*dt*/)
     //   駆動元(owner)の Animator は別エンティティへの「読み取り専用」参照。
     //   本システムは L05_Collision、Animator 書き込み系は L02_* のため、
     //   ステージの壁により実行順が直列化されレースしない。
-    //
-    //   旧実装の文字列ハッシュ比較は enum 比較に置換済み（型安全・高速化）。
     // =====================================================================
     ForEachWithID([this](EntityID hitboxID, HitboxComponent &hb) {
         // ── 1. 駆動元(owner)の解決 ──
@@ -68,8 +67,8 @@ void CombatAnimationSyncSystem::Update(float /*dt*/)
             if (hb.isActive)
             {
                 hb.isActive = false;
-                CCL_LOG_INFO(LogCategory::Game,
-                    "[HitboxSync] Force deactivated (no owner/seq). Entity %llu", hitboxID);
+                HITDIAG_LOG(LogCategory::Game,
+                    "[HitDiag/Sync]   OFF  hitbox=%llu (owner/sequence が無効)", hitboxID);
             }
             return;
         }
@@ -83,7 +82,7 @@ void CombatAnimationSyncSystem::Update(float /*dt*/)
 
         for (const auto &ev : seq->events)
         {
-            // enum 比較（旧: HashString(ev.eventName) == "HitBox"）
+            // enum 比較
             if (ev.type != AnimEventType::HitBox)
                 continue;
 
@@ -125,13 +124,16 @@ void CombatAnimationSyncSystem::Update(float /*dt*/)
             // 【立ち上がりエッジ】多段ヒット防止の履歴をクリア（区間に入った最初の1回だけ）
             if (!hb.isActive)
             {
+                HITDIAG_LOG(LogCategory::Game,
+                    "[HitDiag/Sync]   ON   hitbox=%llu 履歴クリア(hitCount %u -> 0) "
+                    "区間=[%.3f,%.3f] timer=[%.3f -> %.3f]",
+                    hitboxID, static_cast<unsigned>(hb.hitCount),
+                    activeEv->startTime, activeEv->endTime,
+                    animator->previousFrameTimer, animator->currentTimer);
+
                 hb.hitCount = 0;
                 std::memset(hb.hitTargets, 0, sizeof(hb.hitTargets));
                 hb.isActive = true;
-
-                CCL_LOG_INFO(LogCategory::Game,
-                    "[HitboxSync] Activated. Entity %llu dmg=%.1f hitStop=%.2f (tagHash 0x%08X)",
-                    hitboxID, activeEv->damage, activeEv->hitStopDuration, hb.tagHash);
             }
 
             // Sequencer の HitBox イベントに入力した値を毎フレーム Hitbox へ反映する。
@@ -150,8 +152,12 @@ void CombatAnimationSyncSystem::Update(float /*dt*/)
             // 【立ち下がりエッジ】区間を抜けた / アニメがキャンセルされた
             hb.isActive = false;
 
-            CCL_LOG_INFO(LogCategory::Game,
-                "[HitboxSync] Deactivated. Entity %llu (tagHash 0x%08X)", hitboxID, hb.tagHash);
+            // ここが出ないまま次の攻撃に入ると、履歴クリアが走らず AlreadyHit で
+            // 弾かれ続ける。ON と OFF が対で出ているかを必ず確認すること。
+            HITDIAG_LOG(LogCategory::Game,
+                "[HitDiag/Sync]   OFF  hitbox=%llu hitCount=%u timer=[%.3f -> %.3f]",
+                hitboxID, static_cast<unsigned>(hb.hitCount),
+                animator->previousFrameTimer, animator->currentTimer);
         }
     });
 }

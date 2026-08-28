@@ -10,8 +10,7 @@
 struct BattleContext;
 struct RootMotionComponent;
 
-class PlayerDashSystem : public CCL::ECS::IfSystem<
-    PlayerDashSystem,
+class PlayerDashSystem : public CCL::ECS::IfSystem<PlayerDashSystem,
     CCL::ECS::Write<CharacterMovementInputComponent>,
     CCL::ECS::Write<DashComponent>,
     CCL::ECS::Write<PlayerComponent>,
@@ -37,7 +36,7 @@ private:
     // このフレームをダッシュとして消費したら true（呼び出し側は地上ロコモーションを行わない）。
     bool UpdateDash(DashComponent &dash, PlayerComponent &player,
                     CharacterMovementInputComponent &input, const TransformComponent &trans,
-                    const TimeStateComponent &time);
+                    const TimeStateComponent &time, CCL::ECS::EntityID id);
 
     // 非ダッシュ時の地上ロコモーション（走行/歩き）。走行はトグル＋無入力で自動解除。
     void UpdateGroundLocomotion(PlayerComponent &player, CharacterMovementInputComponent &input, float dt);

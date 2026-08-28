@@ -55,6 +55,29 @@ struct BehaviorTreeComponent {
     AssetID assetId = 0;
     float phase2HealthThreshold = 50.0f;
 
+    // --- デバッグ専用（実行時のみ・非シリアライズ）---
+    /// @brief この BTNodeID の枝「だけ」を評価する。-1 で通常どおりルートから評価する。
+    ///        狙った技をその場で出して確認するためのもので、木そのものは書き換えない。
+    ///        書き手はデバッグUI（BehaviorTreeSystem::OnGui）。
+    int debugForcedNodeId = -1;
+
+    /// @brief 上を適用済みかの記録。切り替わった瞬間に実行状態をリセットするために使う。
+    ///        書き手は BehaviorTreeSystem。
+    int debugAppliedForcedNodeId = -1;
+
+    /// @brief 木の評価を止める。BossCommandComponent が上書きされなくなるので、
+    ///        エディタから書いた指示（陣形など）がそのまま残る。
+    ///
+    /// なぜ要るか:
+    ///   陣形やアニメを詰めている間もボスは技を選び続けるので、調整中の指示が
+    ///   次のフレームに別の技で塗り潰される。assetPath を空にすれば止まるが
+    ///   （BossPhaseSystem の第2形態移行がその手）、パスを失うので調整用途には使えない。
+    ///
+    /// @note 止めても currentActionId は保持される。移動中に止めるとボスが歩き続けるので、
+    ///       止める側が併せて 0 を書く（＝BossActionSystem が Idle になる）。
+    ///       書き手はデバッグUI（BehaviorTreeSystem::OnGui / FormationEditorWindow）。
+    bool debugPaused = false;
+
     // --- プリミティブ型 (2バイト) ---
     BTNodeID runningNodeId = 0;
     BTNodeID previousRunningNodeId = 0xFFFF;
@@ -77,4 +100,11 @@ struct BossCommandComponent {
     ///        BTの DroneStrikeAction が true、DroneAction(陣形指示) が false にする。
     ///        DroneCommandSystem が各ドローンの wantsAttack へ配布する。
     bool droneAttackActive = false;
+
+    /// @brief 前フレームの droneAttackActive（実行時専用・非シリアライズ）。
+    ///        書き手は DroneCommandSystem のみ。信号の「立ち上がり」を検出して
+    ///        個別寿命の突撃（DroneAttackPhase::Charging）を1回だけ発火させるために使う。
+    ///        これが無いと、信号が立っている間ずっと全機が攻撃へ引き戻され、
+    ///        飛び切った機の個別帰投が成立しない。
+    bool prevDroneAttackActive = false;
 };

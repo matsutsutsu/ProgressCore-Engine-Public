@@ -25,10 +25,17 @@ struct CameraBodyTPSComponent
     float closeUpDistance = 3.5f; ///< 寄り要求中の基準距離(m)。distance より近く。
 
     // --- オービット（回転）制御 ---
-    float currentYaw   = 0.0f;   ///< 現在の水平角度(度)
-    float currentPitch = 15.0f;  ///< 現在の垂直角度(度)
-    float minPitch     = -70.0f; ///< 垂直角度の最低制限（地面めり込み防止）
-    float maxPitch     = 80.0f;  ///< 垂直角度の最高制限
+    // 【ピッチの符号規約】CameraActionTPSSystem は
+    //     backwardDir.y = sin(pitch) / finalPos = pivot - backwardDir * distance
+    //   で配置するため、pitch が正のときカメラは pivot より「下」に来る。
+    //     ・pitch が負 → カメラが上 → 見下ろし
+    //     ・pitch が正 → カメラが下 → 見上げ
+    //   よって minPitch は見下ろし側の限界、maxPitch は見上げ側（＝地面へ潜る側）の限界。
+    //   以前ここのコメントが逆だったため、調整のたびに符号を取り違えていた。
+    float currentYaw   = 0.0f;   ///< 現在の水平角度(度)。プレハブの値は「初期ヨー角」として使われる。
+    float currentPitch = 15.0f;  ///< 現在の垂直角度(度)。プレハブの値は「初期ピッチ角」として使われる。
+    float minPitch     = -70.0f; ///< 見下ろし側の限界(度)。負に振るほど真上から覗き込む。
+    float maxPitch     = 80.0f;  ///< 見上げ側の限界(度)。正に振るほどカメラが低くなり地面に潜る。
 
     float lookSpeedX = 120.0f; ///< ゲームパッド右スティックX軸の回転速度(度/秒)。dtで積分される。
     float lookSpeedY = 120.0f; ///< ゲームパッド右スティックY軸の回転速度(度/秒)。dtで積分される。
@@ -66,16 +73,63 @@ struct CameraBodyTPSComponent
     // =======================================================================
     // ターゲット・ロックオンシステム用パラメータ
     // =======================================================================
-    CCL::Serialization::EntityLink lockOnTarget;                   ///< ロックオン対象のエネミーEntity
-    bool                           isLockOnActive         = false; ///< ロックオンが現在有効かどうか
-    float                          lockOnPitch            = 12.0f; ///< ロックオン中の固定理想ピッチ角(度)
-    float                          lockOnSubjugationRatio = 0.35f; ///< 敵への注視偏重率 (0.0=プレイヤー中心, 0.5=完全な中間地点)
-    float                          lockOnRotationDamping  = 6.0f;  ///< ロックオン時のカメラ角度の自動回り込み補間速度
 
-    // --- ロックオン・フレーミング（遠距離でもプレイヤーを画面内に保つ） ---
-    float lockOnMaxLookShift      = 3.0f;  ///< 注視点がプレイヤーから敵側へずれる上限(m)。大きいほど敵寄り。
-    float lockOnDistanceGain      = 0.35f; ///< 敵との離間1mあたり追加で引くカメラ距離(m)。0で引き無し。
-    float lockOnMaxExtraDistance  = 8.0f;  ///< 離間による追加引きの上限(m)。引きすぎでプレイヤーが小さくなるのを防ぐ。
+    CCL::Serialization::EntityLink lockOnTarget;
+
+    bool isLockOnActive = false;
+
+    // =======================================================================
+    // ロックオン開始時のカメラ姿勢
+    // =======================================================================
+
+    /// @brief ロックオン開始時に目標とするピッチ。
+    ///        ロックオン中ずっと固定するわけではない。
+    float lockOnPitch = 12.0f;
+
+    /// @brief ロックオン開始時のピッチ移動速度。
+    float lockOnPitchDamping = 8.0f;
+
+    // =======================================================================
+    // ロックオン・フレーミング
+    // =======================================================================
+
+    /// @brief 敵への注視偏重率。
+    float lockOnSubjugationRatio = 0.35f;
+
+    float lockOnMaxLookShift = 3.0f;
+
+    float lockOnDistanceGain = 0.35f;
+
+    float lockOnMaxExtraDistance = 8.0f;
+
+    // =======================================================================
+    // ロックオン・カメラアシスト
+    // =======================================================================
+
+    /// @brief ロックオン中も手動カメラ操作を許可する。
+    bool lockOnAllowManualCamera = true;
+
+    /// @brief 敵がこの角度以内なら自動補正しない。
+    float lockOnYawDeadZone = 20.0f;
+
+    /// @brief 自動補正の強さ。
+    float lockOnAssistStrength = 3.0f;
+
+    /// @brief 自動補正の最大速度（度/秒）。
+    float lockOnMaxCorrectionSpeed = 180.0f;
+
+    /// @brief プレイヤーがカメラ操作した後、
+    ///        自動補正を停止する時間。
+    float lockOnManualOverrideTime = 0.25f;
+
+    // =======================================================================
+    // 実行時内部状態
+    // =======================================================================
+
+    float lockOnManualOverrideTimer = 0.0f;
+
+    bool wasLockOnActive = false;
+
 
     // --- 実行時内部状態（シリアライズ不要） ---
     DirectX::SimpleMath::Vector3 currentLookAt = {0.0f, 0.0f, 0.0f}; ///< 補間計算用の仮想注視点座標

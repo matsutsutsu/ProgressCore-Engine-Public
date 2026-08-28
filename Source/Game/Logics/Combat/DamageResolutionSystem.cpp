@@ -19,7 +19,7 @@
 #include "Engine/Time/TimeState.h"
 #include "Engine/Time/TimeService.h" // ヒットストップは意図ファサード経由
 #include "Engine/Physics/Components/Character/KnockbackComponent.h"
-#include "Engine/Graphics/Components/Impact/ScreenImpactComponent.h"
+#include "Game/Logics/Effects/Components/ScreenImpactComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"       // 被弾者の向き（前後左右判定）
 #include "Engine/Animation/Components/AnimParametersComponent.h"  // ヒットリアクションのトリガー発行
 #include "Engine/Core/Math/StringHash.h"
@@ -37,12 +37,19 @@ using namespace DirectX::SimpleMath;
 namespace
 {
     // ヒットリアクション：方向は HitDir(0=前/1=後/2=左/3=右)、再生合図は Hit トリガー1本。
-    //   （旧：HitFront/Back/Left/Right の4トリガー撃ち分け → AnimGraph 側で HitReaction
-    //     サブマシンに集約したため「方向を数値で送る＋1トリガー」に変更）
     //   規約：攻撃が「来た方向」を基準（前=正面から食らった / 後=背後から / 右=右側から / 左=左側から）。
-    //   ※クリップを「のけぞる向き」で名付けている場合は前後・左右を入れ替えて使うこと。
     const uint32_t HASH_HIT     = CCL::Utils::HashString("Hit");
     const uint32_t HASH_HIT_DIR = CCL::Utils::HashString("HitDir");
+
+    // 方向別トリガ（HitDir と同じ並び：0=前 / 1=後 / 2=左 / 3=右）。
+    //   プレイヤーのグラフは Hit + HitDir で HitReaction サブマシンへ入るが、
+    //   ボスのグラフは方向別トリガで4状態へ直接入る古い形のまま。両方立てておく。
+    //   （ボスは Hit/HitDir を持たないため、のけぞりが一度も再生されていなかった）
+    const uint32_t HASH_HIT_DIRECTIONAL[4] = {
+        CCL::Utils::HashString("HitFront"),
+        CCL::Utils::HashString("HitBack"),
+        CCL::Utils::HashString("HitLeft"),
+        CCL::Utils::HashString("HitRight")};
     
     /// @brief 被弾方向から前後左右のヒットリアクションを選んで再生する。
     ///        アニメーターを持たない相手（ドローン等）は自動でスキップされる。
@@ -88,6 +95,12 @@ namespace
         // 方向を先に確定させてから再生合図（HitReaction サブマシンが HitDir で分岐する）。
         anim->SetFloat(HASH_HIT_DIR, hitDir);
         anim->SetTrigger(HASH_HIT, 0.15f);
+
+        // 方向別トリガしか持たないグラフ（ボス）向け。持っていないパラメータへの
+        // SetTrigger は無視されるので、両形式のグラフが混在していても安全。
+        const int dirIndex = static_cast<int>(hitDir);
+        if (dirIndex >= 0 && dirIndex < 4)
+            anim->SetTrigger(HASH_HIT_DIRECTIONAL[dirIndex], 0.15f);
     }
 } // namespace
 
@@ -147,8 +160,17 @@ void DamageResolutionSystem::Update(float dt) {
                 // 購読側が各自の演出を行う：PlayerFeedbackSystem（プレイヤーのカメラシェイク＋被弾ビネット）、
                 // JustEvadeSystem（被弾でジャスト回避チェイン切断）など。isPlayer は受け取り側の判定用フラグ。
                 const bool isPlayer = m_world->HasComponent<PlayerComponent>(event.targetID);
+                m_world->GetEventBus().Publish(DamageTakenEvent{event.targetID, event.finalDamage, isPlayer});
+
+                // --- 攻撃命中確定の通知 ---
+                // AttackHitConfirmedEvent:「誰の攻撃が命中したか」
                 m_world->GetEventBus().Publish(
-                    DamageTakenEvent{event.targetID, event.finalDamage, isPlayer});
+                    AttackHitConfirmedEvent{
+                        event.attackerID,
+                        event.targetID,
+                        event.finalDamage,
+                        event.hitStopDuration,
+                        event.hitStopScale});
 
                 // --- ヒットリアクション（前後左右）の再生 ---
                 // 生き残った時だけ怯ませる。致命打は死亡アニメ側に任せる（怯みと二重再生しない）。

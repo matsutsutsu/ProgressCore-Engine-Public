@@ -12,9 +12,20 @@
 using namespace CCL::ECS;
 
 
+void BattleContextSyncSystem::Initialize()
+{
+    EnsureContext();
+}
+
+void BattleContextSyncSystem::EnsureContext()
+{
+    if (m_world->HasResource<BattleContext>()) return;
+    m_world->AddResource<BattleContext>();
+}
+
 void BattleContextSyncSystem::Update(float /*dt*/)
 {
-    if (!m_world->HasResource<BattleContext>()) return;
+    EnsureContext();
     auto& battle = m_world->GetResource<BattleContext>();
 
     // --- プレイヤーを探して反映 ---

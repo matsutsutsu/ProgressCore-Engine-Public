@@ -133,4 +133,4 @@ void BossHealthHudSystem::Update(float dt)
     m_prevRatio = ratio;
 }
 
-REGISTER_LOGIC_SYSTEM(BossHealthHudSystem, Priority::LogicStage::L02_PostUpdate);
+REGISTER_LOGIC_SYSTEM(BossHealthHudSystem, Priority::LogicStage::L06_HudSync);

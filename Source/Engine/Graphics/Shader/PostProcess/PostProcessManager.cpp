@@ -1,4 +1,4 @@
-#include "PostProcessManager.h"
+﻿#include "PostProcessManager.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 
@@ -210,4 +210,10 @@ void PostProcessManager::GrabSceneColor(ID3D11DeviceContext* dc)
 
     ID3D11ShaderResourceView* srv = copy->GetSRV();
     dc->PSSetShaderResources(SLOT_SRV_SCENE_COLOR, 1, &srv);
+}
+
+ID3D11ShaderResourceView* PostProcessManager::GetSceneColorSRV() const
+{
+    RenderTarget* copy = ResourceManager::Instance().GetRenderTarget(m_sceneColorCopy);
+    return copy ? copy->GetSRV() : nullptr;
 }

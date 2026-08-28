@@ -125,6 +125,22 @@ void Graphics::Update()
     ShaderRegistry::Instance().UpdateHotReload(m_gfxDevice.GetDevice());
 #endif
 
+    // ------------------------------------------------------------------
+    // カメラのアスペクト比をバックバッファの実寸へ追従させる。
+    //   CameraBrainSystem は GetAspect() を読んでそのまま書き戻すだけなので、
+    //   初期化時以外にアスペクトを更新する箇所が存在せず、ウィンドウサイズが
+    //   変わると絵が横伸びしていた。ここを唯一の更新点にしておけば、
+    //   将来リサイズ処理を足したときにカメラ側は自動で追従する。
+    //   （fovY == 0 は正射影の番兵。その場合は触らない）
+    // ------------------------------------------------------------------
+    if (m_gfxDevice.GetHeight() > 0.0f && m_mainCamera.GetFovY() > 0.0f) {
+        const float aspect = m_gfxDevice.GetWidth() / m_gfxDevice.GetHeight();
+        if (std::fabs(aspect - m_mainCamera.GetAspect()) > 1e-4f) {
+            m_mainCamera.SetPerspectiveFov(m_mainCamera.GetFovY(), aspect,
+                                           m_mainCamera.GetNear(), m_mainCamera.GetFar());
+        }
+    }
+
     // CbLight (b9) を GPU に転送・バインド（毎フレーム最初に実行）
     if (m_lightManager) {
         m_lightManager->Bind(m_gfxDevice.GetContext(), SLOT_CB_LIGHT);

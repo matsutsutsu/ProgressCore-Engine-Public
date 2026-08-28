@@ -17,9 +17,12 @@ class PlayerActionVfxSystem : public CCL::ECS::IfSystem<PlayerActionVfxSystem>
   public:
     PlayerActionVfxSystem()
         : IfSystem("PlayerActionVfxSystem")
-    {
-    }
+    {}
 
     void Initialize() override;     ///< PlayerJumpedEvent / PlayerDashedEvent を購読
     void Update(float dt) override; ///< 毎フレームの仕事は無い（再生と寿命は VFXSystem 側）
+
+private:
+    void ActivePlayerFootTrails(CCL::ECS::EntityID playerID);
+
 };

@@ -5,6 +5,7 @@
 /// （旧 LockOn の役割を吸収）。これにより外部からは FireCharge 1つを
 /// 見ているだけで「予備動作→突撃」という企画上重要な予兆表現ができる。
 #include "DroneMovementSystem.h"
+#include "Game/Logics/AI/Drone/Squad/SquadState.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/ECS/Core/CCL_World.h"
@@ -15,29 +16,22 @@ using namespace DirectX::SimpleMath;
 
 void DroneMovementSystem::Update(float rawDt)
 {
+    // 小隊の調整値を写し取る（並列ループの中で resource を引かないため）
+    if (m_world->HasResource<SquadRegistry>())
+    {
+        const auto &tuning = m_world->GetResource<SquadRegistry>().tuning;
+        m_followGain       = tuning.followGain;
+        m_slotLagPerSlot   = tuning.slotLagPerSlot;
+    }
+
     ForEachParallel([this](TransformComponent &trans, DroneComponent &drone,
                         const TimeStateComponent &time) {
         // ドローン各自の時計を使用（被弾でヒットストップ等がかかった時にピタッと止まる）
         float dt = time.localDt;
 
-        // ====================================================================
-        // 【切り払いによる吹き飛ばし】通常AIより最優先。押しのけられている間は
-        // 進行方向へ漂って減衰し、通常の追従・突撃を一切行わない（判定は別途無効）。
-        // ====================================================================
-        if (drone.knockbackTimer > 0.0f)
-        {
-            drone.knockbackTimer -= dt;
-            trans.position = trans.position + drone.knockbackVelocity * dt;
-
-            // 数フレームで初速→ほぼ0へ減衰（以後は無効タイマーが切れるまで漂う）。
-            float decay = 1.0f - 6.0f * dt;
-            if (decay < 0.0f) decay = 0.0f;
-            drone.knockbackVelocity = drone.knockbackVelocity * decay;
-
-            drone.currentVelocity = Vector3::Zero;
-            trans.isDirty = true;
-            return; // 通常AI・積分をスキップ（吹き飛ばし中は隊列へ戻らない）
-        }
+        // ※ 切り払いの吹き飛ばしは Stunned ステートとして下の switch で扱う。
+        //    「硬直しているか」の判断（タイマー管理）は DroneBrainSystem の仕事で、
+        //    ここは決まった状態を動きに変換するだけに保つ。
 
         // ====================================================================
         // 【リード（Leash）によるスタック救済】ボスから遠すぎたら強制ワープ
@@ -73,6 +67,12 @@ void DroneMovementSystem::Update(float rawDt)
         case DroneState::FireCharge:
             ProcessFireCharge(trans, drone, dt);
             break;
+        case DroneState::Stunned:
+            ProcessStunned(trans, drone, dt);
+            break;
+        case DroneState::Returning:
+            ProcessReturning(trans, drone, dt);
+            break;
         }
 
         // 速度を積分して座標を確定する（Jolt へは Push が同期する）
@@ -93,7 +93,7 @@ void DroneMovementSystem::Update(float rawDt)
 
 inline void DroneMovementSystem::ProcessMoveToTarget(TransformComponent &trans, DroneComponent &drone, float dt)
 {
-    float pGain   = 20.0f;
+    float pGain   = 20.0f * SlotLag(drone);
     float damping = 15.0f;
 
     Vector3 displacement   = drone.targetPosition - trans.position;
@@ -122,7 +122,7 @@ inline void DroneMovementSystem::ProcessMoveToTarget(TransformComponent &trans, 
 inline void DroneMovementSystem::ProcessIdle(TransformComponent &trans, DroneComponent &drone, float dt)
 {
     Vector3 displacement   = drone.targetPosition - trans.position;
-    float   pGain          = 10.0f;
+    float   pGain          = 10.0f * SlotLag(drone);
     float   damping        = 8.0f;
     Vector3 targetVelocity = displacement * pGain;
 
@@ -157,7 +157,13 @@ inline void DroneMovementSystem::ProcessFireCharge(TransformComponent &trans, Dr
     //   fireDirection 直進ではなく、Formation が毎フレーム動かす targetPosition を
     //   剛体追従する（壁が形を保ったまま回る）。タメ（stateTimer）は使わない。
     // ------------------------------------------------------------
-    if (drone.chargeFollowsTarget)
+    if (drone.chargeMode == ChargeMode::SoftFollow)
+    {
+        ProcessChargeSoftFollow(trans, drone, dt);
+        return;
+    }
+
+    if (drone.chargeMode == ChargeMode::RigidFollow)
     {
         // 今フレームで targetPosition に一致させる＝剛体（壁がたわまない）。
         drone.currentVelocity = Vector3::Zero;
@@ -234,6 +240,85 @@ inline void DroneMovementSystem::ProcessFireCharge(TransformComponent &trans, Dr
         float      targetYaw = atan2f(-drone.targetLookDirection.x, -drone.targetLookDirection.z);
         Quaternion targetRot = Quaternion::CreateFromAxisAngle(Vector3::UnitY, targetYaw);
         trans.rotation       = Quaternion::Slerp(trans.rotation, targetRot, 25.0f * dt);
+    }
+}
+
+/// @brief 隊列追従の突入。目標へバネで寄るので、速いほど後ろへ流れ、曲がると遅れて曲がる。
+///
+/// 剛体追従（RigidFollow）との違いがこの技の生死を分ける:
+///   剛体は毎フレーム座標へ貼り付けるので隊列が1ミリも歪まない。5機で飛んでも
+///   「1枚の板が近づいてくる」ようにしか見えず、追従しているように見えない。
+///   バネなら速度に比例して後方へずれ、頭が曲がった分だけ遅れて曲がるため、
+///   隊列がしなって「前の機体についていっている」ように見える。
+inline void DroneMovementSystem::ProcessChargeSoftFollow(TransformComponent &trans, DroneComponent &drone, float dt)
+{
+    // 後方の機ほどバネを弱める＝遅れが増える＝しなりが大きくなる
+    const float pGain = m_followGain * SlotLag(drone);
+
+    // 隊列全体の速度（先渡し）＋ 目標からのずれの補正（バネ）。
+    //   先渡しがあるぶんバネは小さくてよく、間隔を保ったまま柔らかく追従できる。
+    Vector3 displacement   = drone.targetPosition - trans.position;
+    Vector3 targetVelocity = drone.followFeedForward + displacement * pGain;
+
+    // 頭の突入速度を追い越せる上限にしておく（低いと千切れて置いていかれる）
+    const float maxSpeed = drone.moveSpeed * kSoftFollowMaxSpeedScale;
+    if (targetVelocity.LengthSquared() > maxSpeed * maxSpeed)
+    {
+        targetVelocity.Normalize();
+        targetVelocity *= maxSpeed;
+    }
+
+    drone.currentVelocity = Vector3::Lerp(drone.currentVelocity, targetVelocity,
+                                          (std::min)(kSoftFollowDamping * dt, 1.0f));
+
+    // 機首は「目標」ではなく「実際に進んでいる方向」へ向ける。
+    //   遅れて曲がる機体は機首も遅れて回るので、隊列のしなりが姿勢にも出る。
+    Vector3 look = drone.currentVelocity;
+    if (look.LengthSquared() > 0.01f)
+    {
+        look.Normalize();
+        const float targetYaw   = atan2f(look.x, -look.z);
+        const float targetPitch = asinf(std::clamp(look.y, -1.0f, 1.0f));
+        Quaternion  targetRot   = Quaternion::CreateFromYawPitchRoll(targetYaw, targetPitch, 0.0f);
+        trans.rotation          = Quaternion::Slerp(trans.rotation, targetRot, (std::min)(12.0f * dt, 1.0f));
+    }
+}
+
+/// @brief 硬直。吹き飛ばし速度で漂いながら減衰し、制御を失った姿勢を見せる。
+///        立て直し中は knockbackVelocity が既に 0 付近なので、自然にその場で止まる。
+inline void DroneMovementSystem::ProcessStunned(TransformComponent &trans, DroneComponent &drone, float dt)
+{
+    // 共通の積分（trans.position += currentVelocity * dt）に乗せる。
+    drone.currentVelocity = drone.knockbackVelocity;
+
+    float decay = 1.0f - kKnockbackDecay * dt;
+    if (decay < 0.0f) decay = 0.0f;
+    drone.knockbackVelocity = drone.knockbackVelocity * decay;
+
+    // 姿勢制御を失っている表現。目標方向へ向き直そうとしない（Slerp を掛けない）のが要点で、
+    // 「命令を実行している機体」との違いがここで出る。
+    Quaternion tumble = Quaternion::CreateFromAxisAngle(Vector3::UnitY, 4.0f * dt);
+    trans.rotation    = Quaternion::Concatenate(trans.rotation, tumble);
+}
+
+/// @brief 離脱。突撃の勢いを残したまま上方へ抜け、減速しながら進行方向を向く。
+inline void DroneMovementSystem::ProcessReturning(TransformComponent &trans, DroneComponent &drone, float dt)
+{
+    drone.currentVelocity += Vector3::UnitY * (kBreakawayLift * dt);
+
+    float drag = 1.0f - kBreakawayDrag * dt;
+    if (drag < 0.0f) drag = 0.0f;
+    drone.currentVelocity = drone.currentVelocity * drag;
+
+    // 実際に進んでいる方向へ機首を向ける（目標ではなく速度を見る＝飛行機的な挙動）。
+    Vector3 look = drone.currentVelocity;
+    if (look.LengthSquared() > 0.001f)
+    {
+        look.Normalize();
+        float      targetYaw   = atan2f(look.x, -look.z);
+        float      targetPitch = asinf(std::clamp(look.y, -1.0f, 1.0f));
+        Quaternion targetRot   = Quaternion::CreateFromYawPitchRoll(targetYaw, targetPitch, 0.0f);
+        trans.rotation         = Quaternion::Slerp(trans.rotation, targetRot, (std::min)(8.0f * dt, 1.0f));
     }
 }
 

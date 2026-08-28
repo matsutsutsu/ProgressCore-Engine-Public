@@ -50,14 +50,14 @@
             "endTime": 0.5833333134651184,
             "hitStopDuration": 0.10000000149011612,
             "hitStopScale": 0.0,
-            "knockback": 5.0,
+            "knockback": 15.0,
             "offset": {
                 "x": 0.0,
                 "y": 0.0,
                 "z": 0.0
             },
             "radius": 1.0,
-            "startTime": 0.21666666865348816,
+            "startTime": 0.25,
             "stringParam": "Weapon_R",
             "type": 0
         },
@@ -77,7 +77,7 @@
                 "z": 0.0
             },
             "radius": 1.0,
-            "startTime": 0.23000000417232513,
+            "startTime": 0.21666666865348816,
             "stringParam": "Weapon_R",
             "type": 8
         }

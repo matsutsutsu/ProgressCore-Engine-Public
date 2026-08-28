@@ -16,8 +16,6 @@ using namespace CCL::ECS;
 // =========================================================================
 void VFXSystem::Initialize()
 {
-    m_active.clear();
-
     // VFX::Play から自分を引けるようにする。
     // World が消えればこの登録も一緒に消えるので、シーンを切り替えても
     // 古いポインタが残らない。
@@ -96,7 +94,26 @@ void VFXSystem::Update(float dt)
 {
     for (size_t i = 0; i < m_active.size();)
     {
-        m_active[i].remain -= dt;
+        const EntityID id = m_active[i].id;
+
+        // 他所から先に消されていたら、待つ意味がないので予約を捨てる。
+        if (!m_world->IsEntityValid(id))
+        {
+            m_active[i] = m_active.back();
+            m_active.pop_back();
+            continue;
+        }
+
+        // 秒読みは「そのエンティティの時計」で進める。
+        //   粒子の見た目は GPUParticleUpdateSystem が localDt で動かしているので、
+        //   ここだけ実時間で数えると、ヒットストップやジャスト回避のスロー中に
+        //   粒子がまだ飛んでいるのに寿命切れと判定して消してしまう。
+        //   （0.3倍のスロー中なら、粒子の人生の3割しか進んでいない時点で破棄される）
+        float step = dt;
+        if (const auto *time = m_world->GetComponent<TimeStateComponent>(id))
+            step = time->localDt;
+
+        m_active[i].remain -= step;
 
         if (m_active[i].remain > 0.0f)
         {
@@ -105,7 +122,7 @@ void VFXSystem::Update(float dt)
         }
 
         // 破棄する。実際に消すのは HierarchyCleanupSystem(L07)。
-        TransformUpdateSystem::MarkForDestruction(*m_world, m_active[i].id);
+        TransformUpdateSystem::MarkForDestruction(*m_world, id);
 
         // 末尾を持ってきて詰める(順番はどうでもいいので これが一番速い)。
         m_active[i] = m_active.back();

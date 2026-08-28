@@ -1,0 +1,102 @@
+{
+    "instances": [
+        {
+            "position": [
+                0.0,
+                5.0,
+                0.0
+            ],
+            "prefab": "Assets/Prefabs/Light/GameLighting.json",
+            "rotation": [
+                0.699999988079071,
+                0.0,
+                -0.5,
+                0.9200000166893005
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "position": [
+                0.0,
+                6.0,
+                -22.0
+            ],
+            "prefab": "Assets/Prefabs/Camera/FreeCamera.json",
+            "rotation": [
+                0.06975647807121277,
+                0.0,
+                0.0,
+                0.9975640773773193
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "position": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "prefab": "Assets/Prefabs/Preview/PreviewFloor.json",
+            "rotation": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "scale": [
+                25.0,
+                1.0,
+                25.0
+            ]
+        },
+        {
+            "position": [
+                -8.0,
+                0.0,
+                0.0
+            ],
+            "prefab": "Assets/Prefabs/Preview/PlayerPreview.json",
+            "rotation": [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                3.5,
+                3.5,
+                3.5
+            ]
+        },
+        {
+            "position": [
+                8.0,
+                0.0,
+                0.0
+            ],
+            "prefab": "Assets/Prefabs/Preview/MurielPreview.json",
+            "rotation": [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                3.5,
+                3.5,
+                3.5
+            ]
+        }
+    ],
+    "scene": "AnimSequencer.scene.json",
+    "type": "level",
+    "version": 1
+}

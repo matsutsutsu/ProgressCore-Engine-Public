@@ -7,9 +7,7 @@
 #include <imgui.h>
 #endif
 
-TimeScaleSystem::TimeScaleSystem() : IfSystem("TimeScaleSystem"){}
-
-void TimeScaleSystem::Initialize()
+TimeScaleSystem::TimeScaleSystem() : IfSystem("TimeScaleSystem")
 {
     hasGui = true;
 }

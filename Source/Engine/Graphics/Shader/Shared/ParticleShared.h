@@ -140,8 +140,17 @@ CB_PARTICLE_STRUCT(CbParticleStatic, SLOT_CB_PARTICLE_STATIC)
     // ---- 発生形状: 線分(剣の刃に沿って撒く) ---- (offset 208-223)
     float3 emit_line_end;           // offset 208: 線分の終点。emit_local_offset を始点とするローカルオフセット(刃先)
     float  emit_shape;              // offset 220: 0:既存の楕円ディスク 1:線分(base→tip をemit_rotationで刃に沿わせる)
+
+    // ---- サイズのばらつき ---- (offset 224-239)
+    /// offset 224: サイズのランダム量。0 = 指定値ちょうどで固定、1 = 0〜指定値の一様ランダム。
+    ///   従来はこのランダムがシェーダに固定で入っており、粒子サイズは常に
+    ///   「0〜emit_size の一様乱数」だった。1枚だけ出して広げる衝撃波のような
+    ///   効果は毎回サイズが変わってしまい作れなかったため、量を外から決められるようにした。
+    ///   既定は 1（＝従来と同じ挙動）。既存アセットの見た目を変えないため。
+    float  size_random;             // offset 224
+    float3 _pad_static2;            // offset 228: 16バイト境界合わせ
 };
-// 合計: 224 bytes
+// 合計: 240 bytes
 
 // ==================================================================
 // CbParticleDynamic — ランタイム値 (毎フレーム upload, 48 bytes)
@@ -179,7 +188,7 @@ CB_PARTICLE_STRUCT(CbParticleDynamic, SLOT_CB_PARTICLE_DYNAMIC)
 // ==================================================================
 #ifdef __cplusplus
 static_assert(sizeof(GpuParticle) == 80, "GpuParticle size mismatch");
-static_assert(sizeof(CbParticleStatic) == 224, "CbParticleStatic size mismatch");
+static_assert(sizeof(CbParticleStatic) == 240, "CbParticleStatic size mismatch");
 static_assert(sizeof(CbParticleDynamic) == 80, "CbParticleDynamic size mismatch");
 
 } // namespace GpuData

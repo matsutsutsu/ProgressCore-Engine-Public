@@ -6,22 +6,21 @@
                 "AnimStateMachine": {
                     "graphPath": "Assets/Animations/Nodes/PlayerAnimNode.json"
                 },
-                "Animation": null,
                 "Animator": {
                     "isLoop": false,
-                    "playbackSpeed": 1.0
+                    "playbackSpeed": 0.699999988079071
                 },
                 "Character Movement Input": {
                     "currentVelocity": [
-                        -2.106401205062866,
+                        -20.458736419677734,
                         0.0,
-                        34.36076736450195
+                        16.677066802978516
                     ],
                     "dashRequested": false,
                     "desiredVelocity": [
-                        -0.06118764355778694,
+                        -0.775105357170105,
                         0.0,
-                        0.9981262683868408
+                        0.6318320035934448
                     ],
                     "isAttackRequested": false,
                     "jumpRequested": false,
@@ -30,28 +29,31 @@
                         0.0,
                         0.0
                     ],
-                    "overrideSpeed": -1.0
+                    "overrideSpeed": 26.3947811126709
                 },
                 "Cleave Component": {
+                    "chainCount": 0,
                     "cleaveCooldown": 0.4000000059604645,
                     "cleaveDuration": 0.18000000715255737,
                     "cleaveSpeed": 100.0,
+                    "enableStageDecay": true,
                     "fanHalfAngle": 45.0,
                     "fanRange": 6.0,
+                    "gaugeOnDash": 8.0,
+                    "gaugeOnJustEvade": 50.0,
+                    "hitCount": 0,
                     "knockbackSpeed": 200.0,
                     "knockbackTime": 2.0,
-                    "slowDuration": 0.3499999940395355,
-                    "slowScale1": 0.1,
-                    "slowScale2": 0.25,
-                    "slowScale3": 0.4,
-                    "readyDuration1": 1.5,
-                    "readyDuration2": 0.95,
-                    "readyDuration3": 0.6,
-                    "enableStageDecay": true,
                     "maxGauge": 100.0,
                     "maxStock": 3,
-                    "gaugeOnJustEvade": 50.0,
-                    "gaugeOnDash": 8.0
+                    "readyDuration1": 1.5,
+                    "readyDuration2": 0.949999988079071,
+                    "readyDuration3": 0.6000000238418579,
+                    "slowDuration": 0.3499999940395355,
+                    "slowScale1": 0.10000000149011612,
+                    "slowScale2": 0.25,
+                    "slowScale3": 0.4000000059604645,
+                    "stock": 3
                 },
                 "Dash Component": {
                     "approachDuration": 0.3499999940395355,
@@ -61,9 +63,9 @@
                     "currentTimer": -0.006666665896773338,
                     "dashCooldown": 0.1599999964237213,
                     "dashDirection": [
-                        -0.7813547849655151,
-                        0.0,
-                        -0.6240871548652649
+                        0.2512670159339905,
+                        -0.0,
+                        -0.9679178595542908
                     ],
                     "dashDuration": 0.1599999964237213,
                     "dashSpeed": 114.0,
@@ -121,6 +123,9 @@
                     "windowScaleMin": 0.5,
                     "windowScalePerLevel": 0.10000000149011612
                 },
+                "Knockback": {
+                    "duration": 0.18000000715255737
+                },
                 "Material": null,
                 "Model": {
                     "assetPath": "Assets/Models/Player/SK_SciFITrooper_Man_03.glb"
@@ -130,11 +135,11 @@
                 },
                 "Player Component": {
                     "airborneGraceTime": 0.47999998927116394,
-                    "attackFaceMaxDistance": 5.0,
+                    "attackFaceMaxDistance": 15.0,
                     "bankingMultiplier": 0.5,
                     "currentJumpCount": 0,
-                    "currentRoll": -1.1315497150388154e-11,
-                    "currentYaw": -25.193967819213867,
+                    "currentRoll": 5.086760404514502e-22,
+                    "currentYaw": -88.85147857666016,
                     "isAirborne": false,
                     "isRunning": false,
                     "lastFallVelocity": 0.0,
@@ -147,6 +152,7 @@
                     "wasGroundedLastFrame": true,
                     "wasJumpButtonPressed": false
                 },
+                "RootMotion": null,
                 "TimeState": {
                     "buffScale": 1.0,
                     "cinematicScale": 1.0,
@@ -157,17 +163,17 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 3,
+                    "parent": 5,
                     "position": [
-                        42.84048843383789,
-                        -0.04818869009613991,
-                        -43.92716979980469
+                        -21.942358016967773,
+                        -0.4459317922592163,
+                        77.29603576660156
                     ],
                     "rotation": [
-                        1.731732975334549e-13,
-                        -0.03060816414654255,
-                        -5.6550974840419155e-12,
-                        0.9995314478874207
+                        -1.0912376010794674e-22,
+                        -0.42905011773109436,
+                        2.2973861089764553e-22,
+                        0.9032806754112244
                     ],
                     "scale": [
                         3.5,
@@ -177,6 +183,152 @@
                 }
             },
             "lid": 1
+        },
+        {
+            "components": {
+                "BoneAttachmentComponent": {
+                    "boneName": "ball_r"
+                },
+                "Name": {
+                    "name": "PlayerFootTrail_R"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 1,
+                    "position": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "Weapon Trail": {
+                    "animControlled": false,
+                    "baseOffset": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "burstDuration": 2.0,
+                    "burstTimer": 0.0,
+                    "color": [
+                        1.0,
+                        0.291930615901947,
+                        0.019304990768432617,
+                        1.0
+                    ],
+                    "distortion": 0.0,
+                    "distortionChroma": 0.0,
+                    "distortionNoise": 0.0,
+                    "emitting": false,
+                    "lifeTime": 0.25999999046325684,
+                    "minDistance": 1.0,
+                    "rimPower": 0.0,
+                    "shape": 2,
+                    "thickness": 0.8999999761581421,
+                    "tipOffset": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "tubeSides": 4,
+                    "useInterpolation": false,
+                    "width": 0.3400000035762787,
+                    "widthCurvePower": 0.10000000149011612
+                }
+            },
+            "lid": 2
+        },
+        {
+            "components": {
+                "BoneAttachmentComponent": {
+                    "boneName": "ball_l"
+                },
+                "Name": {
+                    "name": "PlayerFootTrail_L"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 1,
+                    "position": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "Weapon Trail": {
+                    "animControlled": false,
+                    "baseOffset": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "burstDuration": 2.0,
+                    "burstTimer": 0.0,
+                    "color": [
+                        1.0,
+                        0.291930615901947,
+                        0.019304990768432617,
+                        1.0
+                    ],
+                    "distortion": 0.0,
+                    "distortionChroma": 0.0,
+                    "distortionNoise": 0.0,
+                    "emitting": false,
+                    "lifeTime": 0.25999999046325684,
+                    "minDistance": 1.0,
+                    "rimPower": 0.0,
+                    "shape": 2,
+                    "thickness": 0.8999999761581421,
+                    "tipOffset": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "tubeSides": 4,
+                    "useInterpolation": false,
+                    "width": 0.3400000035762787,
+                    "widthCurvePower": 0.10000000149011612
+                }
+            },
+            "lid": 3
         },
         {
             "components": {
@@ -220,8 +372,8 @@
                             ],
                             "emitShape": 1,
                             "emitSize": [
-                                0.10000000149011612,
-                                0.05000000074505806
+                                0.0,
+                                0.0
                             ],
                             "emitSpeed": [
                                 1.0,
@@ -253,6 +405,7 @@
                             "localOffsetY": 0.0,
                             "maxCount": 8000,
                             "maxSpeed": 10.0,
+                            "name": "",
                             "noiseScale": 1.0,
                             "noiseStrength": 0.0,
                             "particleType": 1,
@@ -261,6 +414,7 @@
                                 0.5,
                                 0.5
                             ],
+                            "sizeRandom": 1.0,
                             "spawnDelay": [
                                 0.00800000037997961,
                                 0.0560000017285347
@@ -270,7 +424,7 @@
                                 1
                             ],
                             "spriteMode": 0,
-                            "texturePath": "",
+                            "texturePath": "Assets/Textures/VFX/VFX_Circle.png",
                             "uvScrollSpeed": [
                                 0.0,
                                 0.0
@@ -282,10 +436,10 @@
                 },
                 "Hitbox": {
                     "damageAmount": 5.0,
-                    "hitStopDuration": 0.07000000029802322,
+                    "hitStopDuration": 0.09000000357627869,
                     "hitStopScale": 0.0,
                     "isActive": false,
-                    "knockback": 5.0
+                    "knockback": 10.0
                 },
                 "Jolt Capsule Collider": {
                     "halfHeight": 2.5999999046325684,
@@ -357,23 +511,35 @@
                         0.0,
                         0.0
                     ],
+                    "burstDuration": 0.25,
+                    "burstTimer": 0.0,
                     "color": [
                         1.0,
                         0.3706563711166382,
                         0.0,
                         1.0
                     ],
+                    "distortion": 0.0,
+                    "distortionChroma": 0.0,
+                    "distortionNoise": 0.0,
                     "emitting": false,
                     "lifeTime": 0.18000000715255737,
                     "minDistance": 0.019999999552965164,
+                    "rimPower": 0.699999988079071,
+                    "shape": 0,
+                    "thickness": 0.0,
                     "tipOffset": [
                         0.0,
                         2.7200000286102295,
                         0.0
-                    ]
+                    ],
+                    "tubeSides": 6,
+                    "useInterpolation": true,
+                    "width": 1.0,
+                    "widthCurvePower": 0.10000000149011612
                 }
             },
-            "lid": 2
+            "lid": 4
         }
     ],
     "magic": 1397506883,

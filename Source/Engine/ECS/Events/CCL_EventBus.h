@@ -17,6 +17,9 @@
 
 namespace CCL::ECS {
 
+    // Subscribe/Unsubscribe の friend 指定に使う前方宣言。
+    template <class Derived, class... AccessTypes> class IfSystem;
+
     // =======================================================
     // 1. 型IDジェネレータ（RTTI の typeid を使わず、型ごとに連番を割り当てる）
     // =======================================================
@@ -92,7 +95,18 @@ namespace CCL::ECS {
         // 「型のID」と「そのイベント専用の箱」のペアを管理する名簿
         std::unordered_map<uint32_t, std::unique_ptr<IEventWrapper>> m_subscribers;
 
-      public:
+        // -------------------------------------------------------
+        // 購読・解除は private（IfSystem::ListenEvent だけが呼べる）
+        //
+        // なぜ塞ぐか:
+        //   ここを直接叩くと解除チケットが誰にも管理されず、System が破棄された後も
+        //   コールバックが名簿に残る。ListenEvent は解除処理を m_eventCleanups に
+        //   積んでデストラクタで必ず外すため、購読の入口を1本に強制する。
+        //
+        // 購読したい System は IfSystem を継承して ListenEvent<EventType>(...) を使うこと。
+        // -------------------------------------------------------
+        template <class Derived, class... AccessTypes> friend class IfSystem;
+
         // 購読する (手紙が欲しいと登録する)
         template <typename EventType>
         EventSubscriptionID Subscribe(std::function<void(const EventType &)> callback)
@@ -118,6 +132,7 @@ namespace CCL::ECS {
             }
         }
 
+      public:
         // 手紙を投函する (全員に配る)
         template <typename EventType> void Publish(const EventType &eventData)
         {

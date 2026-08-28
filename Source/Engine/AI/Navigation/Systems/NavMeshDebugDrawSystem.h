@@ -6,7 +6,7 @@ public:
     
     NavMeshDebugDrawSystem() : IfSystem("NavMeshDebugDrawSystem") {
         // システム生成時に最初からデバッグ描画をONにする
-        this->isDebugVisible = true;
+        isDebugVisible = true;
     }
 
     void Update(float dt) override;

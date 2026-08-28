@@ -24,13 +24,13 @@
         {
             "attackLayer": 3,
             "cancelMask": 0,
-            "damage": 5.0,
+            "damage": 15.0,
             "effectFollow": false,
             "effectScale": 1.0,
             "endTime": 0.5,
-            "hitStopDuration": 0.15000000596046448,
+            "hitStopDuration": 0.20999999344348907,
             "hitStopScale": 0.0,
-            "knockback": 10.0,
+            "knockback": 35.0,
             "offset": {
                 "x": 0.0,
                 "y": 0.0,

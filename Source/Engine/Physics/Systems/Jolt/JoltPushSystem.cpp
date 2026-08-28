@@ -54,20 +54,21 @@ void JoltPushSystem::Update(float dt) {
             // この剛体が「Kinematic（プログラム/アニメーション駆動）」なら、
             // 毎フレームECS側の最新のワールド座標を物理エンジンに押し付ける
             if (bodyInterface.GetMotionType(joltBody.bodyID) == JPH::EMotionType::Kinematic) {
-                
-                // SetPositionAndRotation を使うことで、アニメーションの動きに合わせて
-                // 正確にJoltのコリジョン枠が追従します。
-                // (もし他の剛体を押しのけたい場合は bodyInterface.MoveKinematic を使います)
+
+                // SetPositionAndRotation（瞬間移動）で「遅延ゼロ」に追従させる。
+                //   MoveKinematic は目標到達がステップ末＝1フレーム遅れ、速い攻撃の振りでは
+                //   大きくズレてしまう（遅い移動では当たるのに攻撃で当たらない原因になる）。
+                //   ここが正確でないと接触イベントが正しく発生しないため、位置の正確さを最優先する。
                 bodyInterface.SetPositionAndRotation(
-                    joltBody.bodyID,
-                    joltPos,
-                    joltRot,
-                    JPH::EActivation::Activate
-                );
+                    joltBody.bodyID, joltPos, joltRot, JPH::EActivation::Activate);
             }
         }
       });
 }
 
-// 物理計算の前にワープを完了させる
-REGISTER_LOGIC_SYSTEM(JoltPushSystem, Priority::LogicStage::L03_PrePhysics);
+// 物理計算の前にワープを完了させる。
+//   ただし BoneAttachmentSystem(L03_PrePhysics) が剣などの worldMatrix を
+//   ボーン追従で確定させた「後」に読む必要があるため、1段後ろの L03_PushToPhysics に置く。
+//   （L03_PrePhysics のままだと BoneAttachment より先に走り、追従前の素の位置を
+//     ボディへ焼いてしまい、剣が振りに追従せず攻撃が当たらない。）
+REGISTER_LOGIC_SYSTEM(JoltPushSystem, Priority::LogicStage::L03_PushToPhysics);

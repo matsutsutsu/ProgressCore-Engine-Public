@@ -1,6 +1,7 @@
 #pragma once
 /// @file CameraTargetBindSystem.h
-/// @brief カメラの追従/注視ターゲットを「役割(PlayerComponent)」で解決して繋ぎ直すシステム。
+/// @brief カメラの追従/注視ターゲットを「役割」で解決して繋ぎ直すシステム。
+///        追従カメラ→PlayerComponent、導入演出カメラ→BossPhaseComponent。
 ///
 /// なぜゲーム側にあるか:
 ///   「どのエンティティがプレイヤーか」はゲームの知識であり、Engine のカメラが
@@ -38,6 +39,11 @@ class CameraTargetBindSystem
   private:
     /// PlayerComponent を持つ最初のエンティティ(=プレイヤー)を役割で探す。
     CCL::ECS::EntityID FindPlayer();
+
+    /// BossPhaseComponent を持つ最初のエンティティ(=ボス)を役割で探す。
+    /// 導入カメラ演出がボスを注視対象にするために使う。ボスが居ないシーンでは
+    /// InvalidEntityID が返り、演出システム側が安全に演出を打ち切る。
+    CCL::ECS::EntityID FindBoss();
 
     /// target が無効(未接続 / リロードでID変化 / リスポーン)なら player へ繋ぎ直す。
     /// 有効な相手を指している場合(手動設定など)は尊重して上書きしない。

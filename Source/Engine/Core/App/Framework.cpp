@@ -536,9 +536,10 @@ int Framework::Run()
 			// ※実行するたびに番号が変わる場合は、この方法は使えません
 
 			// TODO:シャドウマップでメモリリーク
-			//_CrtSetBreakAlloc(121715);
-			//_CrtSetBreakAlloc(121457);
-			//_CrtSetBreakAlloc(121196);
+            //_CrtSetBreakAlloc(47488014);
+            //_CrtSetBreakAlloc(12539300);
+			//_CrtSetBreakAlloc(221793);
+            //_CrtSetBreakAlloc(221800);
 			 
 			//_CrtSetBreakAlloc(57272);
 

@@ -1,25 +1,26 @@
 /// @file  AIDebugOverlaySystem.h
-/// @brief AIの状態（StateTree戦術 + BT行動）をキャラクター頭上に3Dテキストで
+/// @brief AIの状態（大状態 + BT行動 + ステータス）をキャラクター頭上に3Dテキストで
 ///        表示する専用デバッグシステム。
 ///
 /// 設計方針:
-///   StateTreeComponent と BehaviorTreeComponent の両方を横断して読む必要があるため、
+///   BossPhaseComponent と BehaviorTreeComponent の両方を横断して読む必要があるため、
 ///   どちらか片方のシステムに間借りさせず、専用システムとして独立させる
 ///   （BehaviorTreeSystemはBT評価に、BossActionSystemは物理移動に責務を限定するため）。
 ///
-/// 表示内容（頭上2行）:
-///   1行目: [戦術: Pressure]   … 司令官StateTreeが選んだ戦術
-///   2行目: [行動: ボス：移動]  … BTが選んだ具体的アクション
+/// 表示内容（頭上3行）:
+///   1行目: [Combat]           … BossPhaseSystem が決めた大状態
+///   2行目: ボス：移動          … BTが選んだ具体的アクション
+///   3行目: HP 895/1000 Drone 100 … ステータス
 #pragma once
 #include "Engine/ECS/System/CCL_IfSystem.h"
-#include "Game/Logics/AI/StateTree/Core/StateTreeComponent.h"
+#include "Game/Logics/Character/Boss/Data/BossPhaseComponent.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 
 
 class AIDebugOverlaySystem : public CCL::ECS::IfSystem<
     AIDebugOverlaySystem,
-    CCL::ECS::Read<StateTreeComponent>,
+    CCL::ECS::Read<BossPhaseComponent>,
     CCL::ECS::Read<BehaviorTreeComponent>,
     CCL::ECS::Read<TransformComponent>
 >
@@ -36,7 +37,8 @@ public:
     void OnGui() override;
 
 private:
-    bool  m_enabled    = true;
+    //bool  m_enabled    = true;
+    bool  m_enabled    = false;
     float m_fontSize   = 25.0f;
     float m_headOffsetY = 15.0f; ///< キャラ原点からの頭上ワールドYオフセット（本体に被らせないよう調整）
 };

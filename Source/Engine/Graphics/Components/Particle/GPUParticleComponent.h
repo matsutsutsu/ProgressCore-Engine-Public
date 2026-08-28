@@ -21,9 +21,20 @@
 // =========================================================================
 struct ParticleEmitterDesc
 {
+    /// @brief このエミッタが何を担当しているかの表示名（「火花」「残り火」等）。
+    /// @note  絵には一切影響しない、編集のためだけの情報。1エフェクトが複数の層で
+    ///        できていると、モードと個数だけでは開くまで中身が分からないため。
+    ///        texturePath と同じく固定長配列（desc を素直にコピーできる形を保つ）。
+    char            name[32]          = "";
+
     // ---- 発生形状 ----
     GpuData::float2 emitRadius        = { 0.0f, 0.5f };    // emit_radius    発生半径 min/max
     GpuData::float2 emitSize          = { 0.1f, 0.05f };   // emit_size      サイズ 誕生/消滅
+
+    /// @brief サイズのランダム量。0 = emitSize ちょうどで固定、1 = 0〜emitSize の一様ランダム。
+    /// @note  既定 1 は従来の挙動（乱数がシェーダに固定で入っていた）と同じ。
+    ///        衝撃波のように毎回同じ大きさで出したい効果は 0 にする。
+    float           sizeRandom        = 1.0f;              // size_random
     GpuData::float2 coneAngle         = { 0.0f, 0.3f };    // cone_angle     放出角度範囲 (rad)
     GpuData::float2 emitSpeed         = { 1.0f, 3.0f };    // emit_speed     初速度範囲
     GpuData::float2 angularSpeed      = { 0.0f, 0.0f };    // emit_angular_speed
@@ -121,6 +132,12 @@ struct ParticleEmitter
     // emitting=false の間、UpdateSystem は emit_enabled=0 を GPU へ渡し、
     // 継続モードの粒子の「再生成」だけを止める（既存粒子は寿命まで生きて尾を引いて消える）。
     bool emitting = true;                   ///< 発生マスタースイッチ。GPUへ emit_enabled として渡る。
+
+    /// @brief インスペクタでの表示 ON/OFF。false の間は描画コマンドを積まない。
+    /// @note  「どの層がどれか」を確かめるためのプレビュー用スイッチ。非シリアライズ。
+    ///        保存対象にすると、消したまま出荷して層が欠けたことに気付けなくなる。
+    ///        シミュレーションは止めないので、戻せば続きから見える。
+    bool previewVisible = true;
 };
 
 // =========================================================================

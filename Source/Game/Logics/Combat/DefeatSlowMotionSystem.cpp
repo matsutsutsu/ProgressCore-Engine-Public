@@ -1,5 +1,3 @@
-/// @file DefeatSlowMotionSystem.cpp
-/// 役割・設計方針は DefeatSlowMotionSystem.h を参照。
 #include "DefeatSlowMotionSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"

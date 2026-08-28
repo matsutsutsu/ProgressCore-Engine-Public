@@ -17,6 +17,11 @@ class JoltBoxShapeUpdateSystem : public CCL::ECS::IfSystem<JoltBoxShapeUpdateSys
                                      CCL::ECS::Write<JoltBoxColliderComponent>> {
 public:
     JoltBoxShapeUpdateSystem() : IfSystem("JoltBoxShapeUpdateSystem") {}
+
+    /// @brief 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
+    ///        JoltBodySetup が生成した bodyID に対して SetShape する。生成が後に回るとその1フレームは形状更新が空振りする。
+    std::vector<const char *> GetRunAfter() const override { return {"JoltBodySetupSystem"}; }
+
     void Update(float dt) override;
 };
 
@@ -26,6 +31,11 @@ class JoltSphereShapeUpdateSystem : public CCL::ECS::IfSystem<JoltSphereShapeUpd
                                         CCL::ECS::Write<JoltSphereColliderComponent>> {
 public:
     JoltSphereShapeUpdateSystem() : IfSystem("JoltSphereShapeUpdateSystem") {}
+
+    /// @brief 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
+    ///        JoltBodySetup が生成した bodyID に対して SetShape する。生成が後に回るとその1フレームは形状更新が空振りする。
+    std::vector<const char *> GetRunAfter() const override { return {"JoltBodySetupSystem"}; }
+
     void Update(float dt) override;
 };
 
@@ -40,5 +50,10 @@ public:
         //   CharacterVirtual と形状がズレる。よってキャラは除外する。
         SetExclude<JoltCharacterHandleComponent>();
     }
+
+    /// @brief 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
+    ///        JoltBodySetup が生成した bodyID に対して SetShape する。生成が後に回るとその1フレームは形状更新が空振りする。
+    std::vector<const char *> GetRunAfter() const override { return {"JoltBodySetupSystem"}; }
+
     void Update(float dt) override;
 };

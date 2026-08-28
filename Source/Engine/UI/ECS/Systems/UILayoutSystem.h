@@ -23,5 +23,10 @@ class UILayoutSystem : public CCL::ECS::IfSystem<UILayoutSystem,
     }
 
     void Initialize() override;
+
+    /// @brief 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
+    ///        アニメ・出現演出が UITransform を動かし終えてから画面ピクセルへ確定させる。
+    std::vector<const char *> GetRunAfter() const override { return {"UIAnimationSystem", "UIAppearSystem"}; }
+
     void Update(float dt) override;
 };

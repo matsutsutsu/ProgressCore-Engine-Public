@@ -1,5 +1,5 @@
 /// @file  BTAction.h
-/// @brief BehaviorTree のアクション・条件の基底。StateTree の ITask/ICondition と対。
+/// @brief BehaviorTree のアクション・条件の基底。
 ///
 /// 汎用化（ボス固有を排除）
 ///   BTContext からボス固有の command(BossCommand) / myAction(BossAction) を外した。

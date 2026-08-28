@@ -70,15 +70,7 @@ namespace CCL::ECS
     public:
         /**
          * @brief コンストラクタで AccessTypes... から Filter (Archetype) を自動構築。
-         *
-         * @code
-         *   class MovementSystem : public IfSystem<MovementSystem, Write<Position>, Read<Velocity>>
-         *   {
-         *       MovementSystem() : IfSystem("MovementSystem") {}
-         *       ...
-         *   };
-         *   // この時点で m_filter は {Position, Velocity} に自動設定済み
-         * @endcode
+         * @param name：デバッグ・GUI表示用の名前
          */
         IfSystem(const std::string& name) : SystemBase(name)
         {

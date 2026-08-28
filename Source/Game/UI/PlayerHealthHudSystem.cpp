@@ -145,4 +145,4 @@ void PlayerHealthHudSystem::Update(float dt)
     }
 }
 
-REGISTER_LOGIC_SYSTEM(PlayerHealthHudSystem, Priority::LogicStage::L02_PostUpdate);
+REGISTER_LOGIC_SYSTEM(PlayerHealthHudSystem, Priority::LogicStage::L06_HudSync);

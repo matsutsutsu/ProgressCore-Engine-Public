@@ -9,13 +9,12 @@
 /// 役割分担:
 ///   DroneManagerSystem   … 何機いるか（戸籍係）  ← このファイル
 ///   DroneFormationSystem … どう並ぶか（振付師）  ← 既存・陣形計算に専念させる
+///   DroneBrainSystem     … 何をするか（判断層）
 ///
-/// これにより「ドローン数 = ボスHP」で司令官StateTreeの戦術が切り替わる。
+/// これにより「ドローン数 = ボスHP」でボスの戦術が切り替わる。
 #pragma once
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/AI/Drone/DroneComponent.h"
-#include "Game/Logics/AI/Drone/DroneAI.h"
-#include "Game/Logics/AI/StateTree/Core/StateTreeRegistry.h"
 #include "Engine/Time/TimeState.h"
 #include "Game/Logics/GameEvent/GameEvents.h"
 
@@ -73,12 +72,8 @@ class DroneManagerSystem : public CCL::ECS::IfSystem<DroneManagerSystem,
     bool DestroyDrone(CCL::ECS::EntityID droneId);
 
   private:
-    /// @brief DroneAI アセットを StateTreeRegistry に登録する（未登録時のみ）。
-    ///        EditorScene が Registry を再生成する順序問題を吸収するため遅延登録。
-    void EnsureDroneAIRegistered();
-
-    /// @brief ボスと StateTreeRegistry が準備でき次第、初期ドローンを1回だけ配備する。
-    ///        シーン開始直後はボス未生成のフレームがあるため、準備が整うまで毎フレーム再試行する。
+    /// @brief ボスが準備でき次第、初期ドローンを1回だけ配備する。
+    ///        シーン開始直後はボス未生成のフレームがあるため、揃うまで毎フレーム再試行する。
     void TryAutoSpawnInitial();
 
     /// @brief JustEvadeSuccessEvent を受けたときの処理

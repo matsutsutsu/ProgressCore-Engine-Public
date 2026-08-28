@@ -1,167 +1,111 @@
+/// @file  IAudioAPI.h
+/// @brief 音声再生の抽象境界。ゲームコードはバックエンド（DirectXTK / FMOD）を一切知らない。
+///
+/// 【イベント名はハッシュで引く】
+///   ゲームコードは "sfx:/shoot" のような文字列で書けるが、実行時に毎回
+///   文字列比較すると再生のたびにコストが乗る。名前は StringHash で uint32_t に潰し、
+///   ソート済み配列の二分探索で引く。文字列版はファイル末尾のインラインヘルパーで、
+///   ハッシュ化してハッシュ版へ委譲するだけ。
+///
+/// 【FMOD 前提の名残がある】
+///   Bank / Event という語彙は FMOD 由来。現行バックエンドは DirectXTK Audio
+///   （DxtkAudioManager）で、Bank の概念が無いため LoadBank は空実装になっている。
+///   インターフェースを削っていないのは FMOD へ戻す余地を残しているため。
 #pragma once
 #include <string>
 #include <vector>
 #include <DirectXMath.h>
 #include "Engine/Core/Math/StringHash.h" // イベント名をハッシュ化して引くため
 
-/**
- * @brief ゲーム内のすべての音声再生を管理するオーディオAPIのインターフェース。
- * * 物理エンジンや描画エンジンから完全に独立し、ECSシステムに対して
- * イベント駆動ベースの音声再生機能を提供する。
- * 具体的なバックエンド（現状は DirectXTK Audio = DxtkAudioManager）はこの抽象を実装する。
- */
 class IAudioAPI {
 public:
     virtual ~IAudioAPI() = default;
 
-    // =======================================================
-    // システム管理ライフサイクル
-    // =======================================================
+    // ---- ライフサイクル ----------------------------------------------------
 
-    /**
-     * @brief オーディオシステムの初期化。Scene遷移時などに1度だけ呼ばれるべき。
-     */
+    /// @brief バックエンドを起こす。Scene 遷移ごとに1度だけ呼ぶ。
     virtual void Initialize() = 0;
 
-    /**
-     * @brief 毎フレームのオーディオ処理の更新。
-     * 3D音響の計算更新や、再生が終了したメモリの自動お掃除を行う。
-     */
+    /// @brief 3D音響の再計算と、再生し終えたインスタンスの回収。毎フレーム必須。
     virtual void Update() = 0;
 
-    // =======================================================
-    // データロード
-    // =======================================================
+    // ---- データロード ------------------------------------------------------
 
-    /**
-     * @brief JSON設定ファイルからAudioのBankとEventを一括ロードする。
-     * @param configFilePath 例: "Assets/Config/AudioConfig.json"
-     */
+    /// @brief JSON から「イベント名 → 音源ファイル」の対応を一括ロードする。
+    /// @param configFilePath 実運用のパスは "Assets/Config/AudioConfigDXTK.json"（Framework が渡す）
     virtual void LoadConfig(const std::string& configFilePath) = 0;
 
-    /**
-     * @brief 音声波形の塊（Bank）をメモリにロードする。
-     * @param bankFilePath 例: "Assets/Audio/Master.bank"
-     */
+    /// @brief 音声波形の塊をメモリへ載せる。
+    /// @note  FMOD 時代の API。DirectXTK バックエンドでは Bank の概念が無く空実装。
     virtual void LoadBank(const char* bankFilePath) = 0;
 
-    /**
-     * @brief イベントの設計図を辞書に登録する。
-     * @param eventPath 例: "event:/SFX/Shoot"
-     */
+    /// @brief イベント名を辞書へ1件登録する。通常は LoadConfig が内部で呼ぶ。
     virtual void LoadEvent(const char* eventPath) = 0;
 
-    /**
-     * @brief ロードされたイベント辞書のソートを確定させる。
-     * @note データ駆動での一括ロード完了後に必ず1回呼び出すこと。二分探索によるO(log N)検索を可能にするため。
-     */
+    /// @brief 辞書をソートして検索可能な状態にする。ロード完了後に必ず1回呼ぶこと。
+    /// @note  これを忘れると二分探索の前提が崩れ、登録済みの音が「無い」と判定される。
     virtual void FinalizeEventLoading() = 0;
 
-    // =======================================================
-    // 💥 ワンショット再生 (Fire & Forget)
-    // =======================================================
-    // 銃声、足音、UIのクリック音など「鳴らしたら後はシステム任せで良い音」用。
-    // 再生後の停止制御やパラメータ変更はできません。
+    // ---- ワンショット再生（撃ちっぱなし）------------------------------------
+    // 銃声・足音・UIクリックなど、鳴らした後に触らない音。
+    // 制御用IDを返さないので、後から停止もパラメータ変更もできない。
 
-    /**
-     * @brief ワンショット音声を2D（画面全体）で再生する。
-     * @param eventHash 対象イベントのハッシュ値
-     */
+    /// @brief 距離減衰なしで再生する（UI・システム音）。
     virtual void PlayOneShot(uint32_t eventHash) = 0;
 
-    /**
-     * @brief ワンショット音声を3D空間の指定座標で再生する。
-     * @param eventHash 対象イベントのハッシュ値
-     * @param position ワールド座標
-     */
+    /// @brief ワールド座標で再生する。発音位置はその瞬間に固定され、以降は追従しない。
     virtual void PlayOneShot3D(uint32_t eventHash, const DirectX::XMFLOAT3& position) = 0;
 
-    // =======================================================
-    // 🎵 継続再生と制御 (BGM / 環境音)
-    // =======================================================
-    // BGMや車のエンジン音など「後から止めたい」「ピッチを変えたい」音用。
-    // 必ず戻り値のID（Handle）を保持し、それを鍵として制御します。
+    // ---- 継続再生（後から制御する音）----------------------------------------
+    // BGM・エンジン音など、停止やピッチ変更が要る音。
+    // 呼び出し側は戻り値のIDを保持する責任を持つ。捨てると止められなくなる。
 
-    /**
-     * @brief 音声を再生し、それを後から制御するためのIDを発行する。
-     * @param eventHash 対象イベントのハッシュ値
-     * @return uint32_t 再生中インスタンスを識別するユニークなID。失敗時は0を返す。
-     */
+    /// @brief 距離減衰なしで再生し、制御用IDを発行する。
+    /// @return 再生インスタンスのID。再生に失敗した場合は 0（＝無効値）。
     virtual uint32_t PlayEvent(uint32_t eventHash) = 0;
 
-    /**
-     * @brief 3D空間の指定座標で継続再生用のインスタンスを生成・再生し、制御用IDを発行する。
-     * @param eventHash 対象イベントのハッシュ値
-     * @param position 初期ワールド座標
-     * @return uint32_t 制御用ID (playingId)。失敗時は0。
-     */
+    /// @brief ワールド座標で再生し、制御用IDを発行する。座標は SetEvent3DAttributes で更新できる。
+    /// @return 再生インスタンスのID。再生に失敗した場合は 0（＝無効値）。
     virtual uint32_t PlayEvent3D(uint32_t eventHash, const DirectX::XMFLOAT3& position) = 0;
 
-    /**
-     * @brief 指定したIDの音声を停止する。
-     * @param playingId PlayEvent() で受け取ったID
-     * @param allowFadeOut trueならバックエンドが設定したフェードアウト時間を尊重して止まる。
-     */
+    /// @brief 指定IDの音を止める。
+    /// @param allowFadeOut false にすると設定されたフェード時間を無視して即座に切る。
     virtual void StopEvent(uint32_t playingId, bool allowFadeOut = true) = 0;
 
-    /**
-     * @brief 現在バックエンドが鳴らしている継続再生（BGM/環境音）と3Dワンショットを
-     *        まとめて即時停止し、追跡していた再生インスタンスを全て破棄する。
-     * @note  シーン終了時（World全破棄）の“確実な後始末”に使う。
-     *        per-emitter の StopEvent は「DestroyTagが正しく付き、playingIdが正確」な
-     *        前提に依存するが、これは前提ゼロで共有エンジンを黙らせるため、
-     *        再戦時にBGMが二重に鳴る等の取りこぼしを構造的に防ぐ。
-     */
+    /// @brief バックエンドが鳴らしている音を全て即時停止し、追跡中のインスタンスを破棄する。
+    /// @note  シーン終了時の後始末はこちらを使う。
+    ///        個別の StopEvent は「DestroyTag が正しく付き playingId が生きている」前提に
+    ///        依存するが、こちらは前提ゼロで黙らせるため、再戦時に BGM が二重に鳴る類の
+    ///        取りこぼしを構造的に潰せる。
     virtual void StopAll() = 0;
 
-    /**
-     * @brief 指定したIDの音声に対して、動的パラメータ（音量/ピッチ等）を送る。
-     * @param playingId PlayEvent() で受け取ったID
-     * @param paramName パラメータ名 (例: "volume", "pitch", "pan")
-     * @param value 変更する数値
-     */
+    /// @brief 再生中の音へ動的パラメータを送る。
+    /// @param paramName バックエンドが解釈する名前（"volume" / "pitch" / "pan"）
     virtual void SetEventParameter(uint32_t playingId, const char* paramName, float value) = 0;
 
-    /**
-     * @brief 継続再生中のイベントの3D座標と向きを更新する。
-     * @param playingId PlayEvent() が返したID
-     * @param pos 最新のワールド座標
-     */
+    /// @brief 継続再生中の音の発音位置を更新する。移動する音源は毎フレーム呼ぶ。
     virtual void SetEvent3DAttributes(uint32_t playingId, const DirectX::XMFLOAT3& pos) = 0;
 
-    // =======================================================
-    // 3Dリスナー設定
-    // =======================================================
+    // ---- 3Dリスナー --------------------------------------------------------
 
-    /**
-     * @brief プレイヤー（耳）の位置と向きをオーディオエンジンに伝える。
-     * これにより、音源からの距離による減衰や、左右のパンニングが計算される。
-     */
+    /// @brief 聴き手（＝カメラ）の位置と姿勢を渡す。距離減衰とパンニングの基準になる。
     virtual void SetListenerPosition(const DirectX::XMFLOAT3& pos, const DirectX::XMFLOAT3& forward, const DirectX::XMFLOAT3& up) = 0;
 
-    // =======================================================
-    // 演出：ワールド全体のスロー（ジャスト回避・撃破スロー等）
-    // =======================================================
-    /**
-     * @brief ゲームの「スロー度」を音へ反映する。0=通常速度, 1=最スロー。
-     * @note バックエンドが対応していれば全再生音のピッチ低下やフィルタ/リバーブへ反映する。
-     *       既定は空実装（＝非対応バックエンドでは無視され、既存コードは無変更で済む）。
-     *       駆動は AudioSystem が TimeContext の時間倍率から毎フレーム行う。
-     */
+    // ---- 演出フック --------------------------------------------------------
+
+    /// @brief ワールドのスロー度を音へ反映する（0=通常速度, 1=最スロー）。
+    /// @note  ジャスト回避・撃破スローで全再生音のピッチを落とすために使う。
+    ///        AudioSystem が TimeContext の時間倍率から毎フレーム駆動する。
+    ///        既定を空実装にしてあるので、非対応バックエンドを足しても呼び出し側は無変更でよい。
     virtual void SetGlobalSlow(float /*slow01*/) {}
 
-    // =======================================================
-    // エディタ支援：登録済みイベント名の一覧
-    // =======================================================
-    /**
-     * @brief ロード済みのイベント名（例: "bgm:/game"）を返す。インスペクタのドロップダウン用。
-     * @note 既定は空（非対応バックエンドでは一覧を出さず手入力にフォールバックすればよい）。
-     */
+    /// @brief ロード済みのイベント名一覧。インスペクタのドロップダウン用。
+    /// @note  既定は空。返さないバックエンドではエディタ側が手入力へフォールバックする。
     virtual std::vector<std::string> GetEventNames() const { return {}; }
 
-    // =======================================================
-    // 既存コードやスクリプトから呼びやすくするためのインラインヘルパー
-    // =======================================================
+    // ---- 文字列で呼ぶためのヘルパー ----------------------------------------
+    // ハッシュ版へ委譲するだけ。ホットパスでは呼び出し側でハッシュを持ち回ること。
+
     void PlayOneShot(const char* eventPath) { PlayOneShot(CCL::Utils::HashString(eventPath)); }
     void PlayOneShot3D(const char* eventPath, const DirectX::XMFLOAT3& position) { PlayOneShot3D(CCL::Utils::HashString(eventPath), position); }
     uint32_t PlayEvent(const char* eventPath) { return PlayEvent(CCL::Utils::HashString(eventPath)); }

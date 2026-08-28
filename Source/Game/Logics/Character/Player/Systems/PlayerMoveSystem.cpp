@@ -150,27 +150,37 @@ void PlayerMoveSystem::UpdateBankingAndRotation(float dt, const CharacterMovemen
     }
     else
     {
+        // 移動方向を取得
         Vector3 horizontalMove(inputData.desiredVelocity.x, 0.0f, inputData.desiredVelocity.z);
 
         if (horizontalMove.LengthSquared() > 0.001f)
         {
+            // 移動方向を正規化してプレイヤーが向くべき方向(Yaw)を求める
             horizontalMove.Normalize();
             float targetYaw = atan2f(horizontalMove.x, horizontalMove.z);
 
+            // 現在の向きと目標方向との差分を求める
             float angleDiff = targetYaw - player.currentYaw;
             while (angleDiff > DirectX::XM_PI)
                 angleDiff -= DirectX::XM_2PI;
             while (angleDiff < -DirectX::XM_PI)
                 angleDiff += DirectX::XM_2PI;
 
+            // 実際に旋回する処理　滑らかに回転するようにしている
             player.currentYaw += angleDiff * player.turnSpeed * dt;
 
+            // プレイヤーの傾き（バンキング）を計算する
+            // どれぐらい早く動いているか
+            // 現在の速度が最大速度の何％ぐらいなのか求める
             float speedRatio = (walkSpeed > 0.001f) ? (inputData.currentVelocity.Length() / walkSpeed) : 0.0f;
+            // どれぐらい方向転換しているか
             float targetRoll = -(angleDiff * 10.0f) * player.bankingMultiplier * speedRatio;
 
+            // 傾き角度の制限
             float maxRollRad = DirectX::XMConvertToRadians(player.maxBankingAngle);
             targetRoll       = std::clamp(targetRoll, -maxRollRad, maxRollRad);
 
+            // Lerpで滑らかに傾ける
             player.currentRoll = std::lerp(player.currentRoll, targetRoll, 8.0f * dt);
         }
         else

@@ -21,7 +21,10 @@ namespace Priority {
 
         L02_PostUpdate = 250,  // すべてのUpdate系システムの後に実行される、主にアニメーションの更新と物理への反映をここで行う
 
-        L03_PrePhysics = 300, // 空間分割(Grid)など、物理・衝突判定の準備
+        L03_PrePhysics = 300, // 空間分割(Grid)・ボーン追従(BoneAttachment)など、物理・衝突判定の準備
+        L03_PushToPhysics = 350, // アニメ/追従で確定した Transform を Jolt の Kinematic 剛体へ押し込む。
+                                 //   必ず BoneAttachment(L03_PrePhysics) の後・物理ステップ(L04)の前に置く。
+                                 //   ※ここが BoneAttachment より前だと、剣ボディが振りに追従せず当たらない。
         L04_Physics = 400, // 物理エンジン(積分)とTransform(親子関係)の更新
         L05_Collision = 500, // 当たり判定 (Broad -> Narrow)
 
@@ -29,6 +32,9 @@ namespace Priority {
         L06_DamageApply = 610, // ① ダメージイベントの消費とHP減算 (DamageResolutionSystem)
         L06_StatusEffect = 620, // ② 毒やバフの適用 (将来用)
         L06_HealthManagement = 630, // ③ HPの最終確認と死亡判定 (HealthSystem)
+        L06_HudSync = 650, // ④ 確定したHP/ゲージ等をHUDへ反映。
+                           //   必ず HealthManagement(630) の後に置く。
+                           //   ※ここより前だと HUD が常に1フレーム前の値を表示する。
 
         L07_Cleanup = 700,  // 死亡エンティティの回収、メモリ整理
         L08_Prefab = 800,  // プレハブ生成

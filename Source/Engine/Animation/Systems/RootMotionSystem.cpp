@@ -15,6 +15,25 @@ void RootMotionSystem::Update(float /*rawDt*/)
                 const TransformComponent        &trans,
                 const TimeStateComponent        &time,
                 const ModelComponent            &modelComp) {
+        // エディタ（アニメーションシーケンサー）が Animator を握っている間は一切適用しない。
+        //   編集中は currentSequence が編集バッファへ差し替わり、タイムラインのスクラブで
+        //   currentTimer が自由に飛ぶ。その差分をここで前進量として読むと、ルートモーションを
+        //   持たないアニメを見ているだけでもキャラが歩き出す。
+        //   AnimationSystem / AnimControllerSystem は同じフラグで既に停止している。
+        if (animator.isEditorOverride)
+        {
+            rm.enabled          = false;
+            rm.lastEvaluatedSeq = nullptr; // 編集終了後の最初のフレームで基準時刻を取り直す
+
+            // 直前のルートモーション値が残ると、フラグを下ろしても通常移動の目標速度として
+            // 生き続けて歩き続ける。ここで確実に0へ倒す。
+            input.isRootMotionActive = false;
+            input.rootMotionVelocity = Vector3::Zero;
+            input.desiredVelocity    = Vector3::Zero;
+            input.overrideSpeed      = 0.0f;
+            return;
+        }
+
         // 外部システム（ダッシュ等の移動アクション）がこのフレームの移動を制御中なら、
         // root motion による移動は一切適用しない。「いつ制御中か」の判断はゲーム側が
         // externallyDriven に設定する。ここでは特定機構（ダッシュ）を知らない。

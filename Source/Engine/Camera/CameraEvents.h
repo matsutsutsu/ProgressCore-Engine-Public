@@ -26,3 +26,22 @@ struct CameraFovPunchRequestEvent
     CCL::ECS::EntityID targetID; ///< このエンティティを追従しているカメラが対象
     float              fov;      ///< 瞬間的に設定する画角（度）
 };
+
+/// @brief 導入カメラ演出（ボス登場のオービット等）の再生要求。
+///        ゲーム開始時は playOnStart で自動再生されるため、これは
+///        「形態移行でもう一度見せたい」といった任意タイミング用。
+struct CameraIntroPlayRequestEvent
+{
+    /// @brief 再生したいカメラのEntity。InvalidEntityID なら全ての導入カメラを再生する。
+    CCL::ECS::EntityID cameraID = CCL::ECS::InvalidEntityID;
+};
+
+/// @brief 導入カメラ演出が終わった通知（スキップによる終了も含む）。
+///        ゲーム側はこれを受けて、戦闘開始・UI表示などを始める。
+///        カメラ自身の優先度降格とプレイヤー操作の返却は演出システムが行うので、
+///        受け手がそれらを気にする必要はない。
+struct CameraIntroFinishedEvent
+{
+    CCL::ECS::EntityID cameraID = CCL::ECS::InvalidEntityID;
+    bool               skipped  = false; ///< プレイヤーがスキップしたか
+};

@@ -18,103 +18,11 @@
                             ],
                             "attractorRadius": 0.0,
                             "attractorStrength": 0.0,
-                            "burstCount": 300,
-                            "color": [
-                                0.0,
-                                0.8494207859039307,
-                                1.0,
-                                1.0
-                            ],
-                            "colorMode": 0,
-                            "colorRampPath": "",
-                            "coneAngle": [
-                                0.0,
-                                3.1415927410125732
-                            ],
-                            "drag": 2.5,
-                            "emitMode": 1,
-                            "emitRadius": [
-                                0.0,
-                                0.11999999731779099
-                            ],
-                            "emitShape": 0,
-                            "emitSize": [
-                                0.10999999940395355,
-                                0.0
-                            ],
-                            "emitSpeed": [
-                                11.300000190734863,
-                                20.0
-                            ],
-                            "emitStretch": [
-                                1.0,
-                                1.0
-                            ],
-                            "fadeDuration": [
-                                0.019999999552965164,
-                                0.11999999731779099
-                            ],
-                            "gravity": 9.0,
-                            "lifespan": [
-                                0.3400000035762787,
-                                0.6399999856948853
-                            ],
-                            "lineEnd": [
-                                0.0,
-                                1.0,
-                                0.0
-                            ],
-                            "localOffset": [
-                                0.0,
-                                0.0,
-                                0.0
-                            ],
-                            "localOffsetY": 0.0,
-                            "maxCount": 300,
-                            "maxSpeed": 10.0,
-                            "noiseScale": 1.0,
-                            "noiseStrength": 0.0,
-                            "particleType": 1,
-                            "renderMode": 0,
-                            "scale": [
-                                1.0,
-                                1.0
-                            ],
-                            "spawnDelay": [
-                                0.0,
-                                0.0
-                            ],
-                            "spriteGrid": [
-                                1,
-                                1
-                            ],
-                            "spriteMode": 0,
-                            "texturePath": "",
-                            "uvScrollSpeed": [
-                                0.0,
-                                0.0
-                            ],
-                            "velocityStretch": 0.0,
-                            "vortexStrength": 0.0
-                        },
-                        {
-                            "angularSpeed": [
-                                0.0,
-                                0.0
-                            ],
-                            "attractorLocal": true,
-                            "attractorPos": [
-                                0.0,
-                                0.0,
-                                0.0
-                            ],
-                            "attractorRadius": 0.0,
-                            "attractorStrength": 0.0,
-                            "burstCount": 1,
+                            "burstCount": 10,
                             "color": [
                                 1.0,
-                                1.0,
-                                1.0,
+                                0.5328184962272644,
+                                0.0,
                                 1.0
                             ],
                             "colorMode": 0,
@@ -132,7 +40,7 @@
                             "emitShape": 0,
                             "emitSize": [
                                 0.10000000149011612,
-                                1.0
+                                0.5
                             ],
                             "emitSpeed": [
                                 0.0,
@@ -143,13 +51,13 @@
                                 1.0
                             ],
                             "fadeDuration": [
-                                0.20000000298023224,
-                                0.30000001192092896
+                                0.0,
+                                0.6000000238418579
                             ],
                             "gravity": 0.0,
                             "lifespan": [
-                                0.699999988079071,
-                                0.699999988079071
+                                0.3499999940395355,
+                                0.3499999940395355
                             ],
                             "lineEnd": [
                                 0.0,
@@ -162,8 +70,9 @@
                                 0.0
                             ],
                             "localOffsetY": 0.0,
-                            "maxCount": 1,
+                            "maxCount": 10,
                             "maxSpeed": 10.0,
+                            "name": "Circle",
                             "noiseScale": 1.0,
                             "noiseStrength": 0.0,
                             "particleType": 1,
@@ -172,6 +81,7 @@
                                 1.0,
                                 10.0
                             ],
+                            "sizeRandom": 0.0,
                             "spawnDelay": [
                                 0.0,
                                 0.0
@@ -182,6 +92,100 @@
                             ],
                             "spriteMode": 0,
                             "texturePath": "Assets/Textures/VFX/VFX_Flash_Ring.png",
+                            "uvScrollSpeed": [
+                                0.0,
+                                0.0
+                            ],
+                            "velocityStretch": 0.0,
+                            "vortexStrength": 0.0
+                        },
+                        {
+                            "angularSpeed": [
+                                0.0,
+                                2.9000000953674316
+                            ],
+                            "attractorLocal": true,
+                            "attractorPos": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "attractorRadius": 0.0,
+                            "attractorStrength": 5.0,
+                            "burstCount": 35,
+                            "color": [
+                                1.0,
+                                0.3706563711166382,
+                                0.0,
+                                1.0
+                            ],
+                            "colorMode": 0,
+                            "colorRampPath": "",
+                            "coneAngle": [
+                                0.0,
+                                3.141592264175415
+                            ],
+                            "drag": 0.0,
+                            "emitMode": 1,
+                            "emitRadius": [
+                                0.0,
+                                0.5
+                            ],
+                            "emitShape": 0,
+                            "emitSize": [
+                                0.699999988079071,
+                                0.699999988079071
+                            ],
+                            "emitSpeed": [
+                                3.0,
+                                8.0
+                            ],
+                            "emitStretch": [
+                                1.0,
+                                1.0
+                            ],
+                            "fadeDuration": [
+                                0.0,
+                                0.6000000238418579
+                            ],
+                            "gravity": 1.0,
+                            "lifespan": [
+                                0.6499999761581421,
+                                0.949999988079071
+                            ],
+                            "lineEnd": [
+                                0.0,
+                                1.0,
+                                0.0
+                            ],
+                            "localOffset": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "localOffsetY": 0.0,
+                            "maxCount": 35,
+                            "maxSpeed": 10.0,
+                            "name": "Dust",
+                            "noiseScale": 1.0,
+                            "noiseStrength": 12.699999809265137,
+                            "particleType": 1,
+                            "renderMode": 0,
+                            "scale": [
+                                1.0,
+                                1.0
+                            ],
+                            "sizeRandom": 1.0,
+                            "spawnDelay": [
+                                0.0,
+                                0.0
+                            ],
+                            "spriteGrid": [
+                                1,
+                                1
+                            ],
+                            "spriteMode": 0,
+                            "texturePath": "Assets/Textures/VFX/VFX_Circle.png",
                             "uvScrollSpeed": [
                                 0.0,
                                 0.0
@@ -207,7 +211,7 @@
                     "parent": 2,
                     "position": [
                         0.0,
-                        0.0,
+                        5.0,
                         0.0
                     ],
                     "rotation": [

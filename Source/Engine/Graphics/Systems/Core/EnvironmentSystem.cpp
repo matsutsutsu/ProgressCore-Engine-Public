@@ -7,7 +7,6 @@
 #include "Engine/Graphics/Shader/Shared/ShaderShared.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 
-// TODO: ECS に Initialize(device) が追加されたら除去する
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Graphics/RHI/RenderContext.h"  // RenderServices
 #include "Engine/Graphics/Shader/Shared/ShaderShared.h"
@@ -20,6 +19,10 @@
 
 
 EnvironmentSystem::EnvironmentSystem() : SystemBase("EnvironmentSystem")
+{
+}
+
+void EnvironmentSystem::Initialize()
 {
     // グローバルノイズテクスチャ
     auto noiseHandle = ResourceManager::Instance().LoadTexture("Assets/Textures/Shader/Noise.png");
@@ -35,7 +38,6 @@ EnvironmentSystem::EnvironmentSystem() : SystemBase("EnvironmentSystem")
     if (lutHandle.IsValid()) m_brdfLutSRV = ResourceManager::Instance().GetTexture(lutHandle);
 
     // フォグ用定数バッファ
-    // TODO: ECS に Initialize(device) が追加されたら除去する
     GpuResourceUtils::CreateDynamicConstantBuffer(
         Graphics::Instance().GetDevice(), sizeof(GpuData::CbFog), m_fogConstantBuffer.GetAddressOf());
 }

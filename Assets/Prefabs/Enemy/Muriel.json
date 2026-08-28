@@ -6,21 +6,20 @@
                 "AnimStateMachine": {
                     "graphPath": "Assets/Animations/Nodes/MurielAnimNode.json"
                 },
-                "Animation": null,
                 "Animator": {
                     "isLoop": true,
-                    "playbackSpeed": 0.5
+                    "playbackSpeed": 1.0
                 },
                 "BehaviorTreeComponent": {
-                    "assetPath": "Assets/BehaviorTree/BossSlashTest.json",
-                    "phase2AssetPath": "Data/BehaviorTree/BossAI_Phase2.json",
+                    "assetPath": "Assets/BehaviorTree/BossCombat.json",
+                    "phase2AssetPath": "Assets/BehaviorTree/BossCombatPhase2.json",
                     "phase2HealthThreshold": 50.0
                 },
                 "BossActionComponent": {
                     "acceleration": 10.0,
                     "chargeSpeed": 25.0,
-                    "currentMoveSpeed": 3.0,
-                    "currentState": 1,
+                    "currentMoveSpeed": 0.0,
+                    "currentState": 2,
                     "deceleration": 15.0,
                     "idleTurnSpeed": 4.0,
                     "runSpeed": 8.0,
@@ -28,21 +27,25 @@
                     "walkSpeed": 3.0
                 },
                 "BossCommandComponent": {
-                    "currentActionId": 1000,
-                    "requestFormation": 0,
+                    "currentActionId": 1101,
+                    "requestFormation": 5,
                     "targetPlayerId": 0
+                },
+                "BossPhaseComponent": {
+                    "phase": 0,
+                    "timer": 0.0
                 },
                 "Character Movement Input": {
                     "currentVelocity": [
-                        0.8640531301498413,
                         0.0,
-                        -2.861654758453369
+                        0.0,
+                        0.0
                     ],
                     "dashRequested": false,
                     "desiredVelocity": [
-                        0.2769808769226074,
                         0.0,
-                        -0.9608754515647888
+                        0.0,
+                        0.0
                     ],
                     "isAttackRequested": false,
                     "jumpRequested": false,
@@ -51,10 +54,10 @@
                         0.0,
                         0.0
                     ],
-                    "overrideSpeed": 3.0
+                    "overrideSpeed": -1.0
                 },
                 "HealthComponent": {
-                    "currentHealth": 895.0,
+                    "currentHealth": 1000.0,
                     "invincibilityDuration": 0.20000000298023224,
                     "maxHealth": 1000.0
                 },
@@ -76,6 +79,7 @@
                     "radius": 1.399999976158142
                 },
                 "Jolt Character Config": {
+                    "acceleration": 12.0,
                     "apexGravityScale": 0.699999988079071,
                     "apexVelocityThreshold": 0.30000001192092896,
                     "characterMass": 148.0,
@@ -89,7 +93,16 @@
                     "walkSpeed": 30.0
                 },
                 "Just Evade Component": {
-                    "isJustSuccess": false
+                    "chainCount": 0,
+                    "chainSpeedMax": 0.4000000059604645,
+                    "chainSpeedPerLevel": 0.07999999821186066,
+                    "idleBreakTime": 4.0,
+                    "isJustSuccess": false,
+                    "killRadiusBase": 3.0,
+                    "killRadiusPerLevel": 2.0,
+                    "maxChain": 5,
+                    "windowScaleMin": 0.5,
+                    "windowScalePerLevel": 0.10000000149011612
                 },
                 "Knockback": {
                     "duration": 0.18000000715255737
@@ -101,9 +114,7 @@
                 "Name": {
                     "name": "Muriel"
                 },
-                "StateTree": {
-                    "assetName": "Muriel"
-                },
+                "RootMotion": null,
                 "TimeState": {
                     "buffScale": 1.0,
                     "cinematicScale": 1.0,
@@ -116,15 +127,15 @@
                     "isStatic": false,
                     "parent": 3,
                     "position": [
-                        1.024121880531311,
-                        -0.04281148314476013,
-                        28.65264129638672
+                        -29.04907989501953,
+                        0.17921487987041473,
+                        29.291643142700195
                     ],
                     "rotation": [
-                        0.0,
-                        0.9892306923866272,
-                        0.0,
-                        0.1463644802570343
+                        -0.0,
+                        -0.3307424485683441,
+                        -0.0,
+                        0.9437210559844971
                     ],
                     "scale": [
                         3.5,
@@ -142,10 +153,10 @@
                 },
                 "Hitbox": {
                     "damageAmount": 5.0,
-                    "hitStopDuration": 0.15000000596046448,
+                    "hitStopDuration": 0.20000000298023224,
                     "hitStopScale": 0.0,
                     "isActive": false,
-                    "knockback": 5.0
+                    "knockback": 14.0
                 },
                 "Jolt Capsule Collider": {
                     "halfHeight": 3.700000047683716,
@@ -217,20 +228,32 @@
                         0.0,
                         0.0
                     ],
+                    "burstDuration": 0.25,
+                    "burstTimer": 0.0,
                     "color": [
+                        0.7722007632255554,
                         1.0,
-                        0.0,
-                        0.0,
+                        0.9920841455459595,
                         1.0
                     ],
+                    "distortion": 0.0,
+                    "distortionChroma": 0.0,
+                    "distortionNoise": 0.0,
                     "emitting": false,
                     "lifeTime": 0.18000000715255737,
                     "minDistance": 0.019999999552965164,
+                    "rimPower": 0.699999988079071,
+                    "shape": 0,
+                    "thickness": 0.0,
                     "tipOffset": [
                         0.0,
                         2.4700000286102295,
                         0.0
-                    ]
+                    ],
+                    "tubeSides": 6,
+                    "useInterpolation": true,
+                    "width": 1.0,
+                    "widthCurvePower": 0.5
                 }
             },
             "lid": 2

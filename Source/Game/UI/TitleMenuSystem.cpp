@@ -34,7 +34,7 @@ void TitleMenuSystem::Initialize()
     const uint32_t kStart = CCL::Utils::HashString("start_game");
     const uint32_t kQuit  = CCL::Utils::HashString("quit");
 
-    world.GetEventBus().Subscribe<UIButtonClickedEvent>(
+    ListenEvent<UIButtonClickedEvent>(
         [this, kStart, kQuit](const UIButtonClickedEvent &e) {
             if (m_transitioning) return; // 遷移予約後は無視（二重遷移防止）
 
