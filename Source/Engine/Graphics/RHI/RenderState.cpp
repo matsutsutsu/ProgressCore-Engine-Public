@@ -1,6 +1,14 @@
 #include "Engine/Core/Math/Misc.h"
 #include "RenderState.h"
 
+namespace
+{
+	// 異方性フィルタリングの最大比率（D3D11 の上限は 16）。
+	//   8 と 16 の見た目の差は小さく、8 でも斜め面のボケはほぼ解消する。
+	//   数値はサンプリング回数の上限なので、上げるほど帯域を食う。
+	constexpr UINT kMaxAnisotropy = 8;
+}
+
 // コンストラクタ
 RenderState::RenderState(ID3D11Device* device)
 {
@@ -82,6 +90,46 @@ RenderState::RenderState(ID3D11Device* device)
 		desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 		HRESULT hr = device->CreateSamplerState(&desc,
 			samplerStates[static_cast<int>(SamplerState::LinearClamp)].GetAddressOf());
+		_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+	}
+	// 異方性フィルタリング＆テクスチャ繰り返しあり（モデルの標準サンプラ）
+	{
+		D3D11_SAMPLER_DESC desc;
+		desc.MipLODBias = 0.0f;
+		desc.MaxAnisotropy = kMaxAnisotropy;
+		desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+		desc.MinLOD = -D3D11_FLOAT32_MAX;
+		desc.MaxLOD = D3D11_FLOAT32_MAX;
+		desc.BorderColor[0] = 1.0f;
+		desc.BorderColor[1] = 1.0f;
+		desc.BorderColor[2] = 1.0f;
+		desc.BorderColor[3] = 1.0f;
+		desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+		desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+		desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+		desc.Filter = D3D11_FILTER_ANISOTROPIC;
+		HRESULT hr = device->CreateSamplerState(&desc,
+			samplerStates[static_cast<int>(SamplerState::AnisotropicWrap)].GetAddressOf());
+		_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+	}
+	// 異方性フィルタリング＆テクスチャ繰り返しなし
+	{
+		D3D11_SAMPLER_DESC desc;
+		desc.MipLODBias = 0.0f;
+		desc.MaxAnisotropy = kMaxAnisotropy;
+		desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+		desc.MinLOD = -D3D11_FLOAT32_MAX;
+		desc.MaxLOD = D3D11_FLOAT32_MAX;
+		desc.BorderColor[0] = 1.0f;
+		desc.BorderColor[1] = 1.0f;
+		desc.BorderColor[2] = 1.0f;
+		desc.BorderColor[3] = 1.0f;
+		desc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+		desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+		desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+		desc.Filter = D3D11_FILTER_ANISOTROPIC;
+		HRESULT hr = device->CreateSamplerState(&desc,
+			samplerStates[static_cast<int>(SamplerState::AnisotropicClamp)].GetAddressOf());
 		_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 	}
 
