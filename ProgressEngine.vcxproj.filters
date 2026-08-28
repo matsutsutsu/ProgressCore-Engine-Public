@@ -411,12 +411,6 @@
     <Filter Include="Source\Game\Logics\Character\Player\Systems">
       <UniqueIdentifier>{edfdb3db-8c16-43a6-90ca-2bed32f4f008}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Camera\Systems\_Core">
-      <UniqueIdentifier>{757c0289-fe6f-444b-8c34-d73d583b4abb}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\Camera\Systems\_Game">
-      <UniqueIdentifier>{206d07c2-08fd-4a68-a742-55052fcc5297}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Game\Logics\AI\BehaviorTree\Actions">
       <UniqueIdentifier>{3135afad-6920-43ec-93d8-8f46096aaa44}</UniqueIdentifier>
     </Filter>
@@ -546,6 +540,12 @@
     </Filter>
     <Filter Include="Source\Game\Logics\AI\Debug">
       <UniqueIdentifier>{da596e9b-e651-47b7-a01a-cd4a8da293d7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Camera\Systems\Game">
+      <UniqueIdentifier>{206d07c2-08fd-4a68-a742-55052fcc5297}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Camera\Systems\Core">
+      <UniqueIdentifier>{757c0289-fe6f-444b-8c34-d73d583b4abb}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -1720,22 +1720,22 @@
       <Filter>Source\Engine\Camera\Components</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Camera\Systems\CameraListenerSystem.h">
-      <Filter>Source\Engine\Camera\Systems\_Game</Filter>
+      <Filter>Source\Engine\Camera\Systems\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Camera\Systems\CameraBrainSystem.h">
-      <Filter>Source\Engine\Camera\Systems\_Core</Filter>
+      <Filter>Source\Engine\Camera\Systems\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Camera\Systems\VisualCameraSystem.h">
-      <Filter>Source\Engine\Camera\Systems\_Core</Filter>
+      <Filter>Source\Engine\Camera\Systems\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Camera\Systems\CameraActionTPSSystem.h">
-      <Filter>Source\Engine\Camera\Systems\_Game</Filter>
+      <Filter>Source\Engine\Camera\Systems\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Camera\Components\CameraBodyIntroOrbitComponent.h">
       <Filter>Source\Engine\Camera\Components</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Camera\Systems\CameraIntroOrbitSystem.h">
-      <Filter>Source\Engine\Camera\Systems\_Game</Filter>
+      <Filter>Source\Engine\Camera\Systems\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\CameraTargetBindSystem.h">
       <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
@@ -1744,7 +1744,7 @@
       <Filter>Source\Engine\Camera\Components</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Camera\Systems\CameraDollySystem.h">
-      <Filter>Source\Engine\Camera\Systems\_Game</Filter>
+      <Filter>Source\Engine\Camera\Systems\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\CameraPathEditorWindow.h">
       <Filter>Source\Editor\Windows\Game</Filter>
@@ -2745,28 +2745,28 @@
       <Filter>Source\Engine\Camera\Components</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Camera\Systems\CameraListenerSystem.cpp">
-      <Filter>Source\Engine\Camera\Systems\_Game</Filter>
+      <Filter>Source\Engine\Camera\Systems\Game</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Camera\Systems\CameraBrainSystem.cpp">
-      <Filter>Source\Engine\Camera\Systems\_Core</Filter>
+      <Filter>Source\Engine\Camera\Systems\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Camera\Systems\VisualCameraSystem.cpp">
-      <Filter>Source\Engine\Camera\Systems\_Core</Filter>
+      <Filter>Source\Engine\Camera\Systems\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Camera\Systems\CameraActionTPSSystem.cpp">
-      <Filter>Source\Engine\Camera\Systems\_Game</Filter>
+      <Filter>Source\Engine\Camera\Systems\Game</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Camera\Components\CameraBodyIntroOrbitComponentMeta.cpp">
       <Filter>Source\Engine\Camera\Components</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Camera\Systems\CameraIntroOrbitSystem.cpp">
-      <Filter>Source\Engine\Camera\Systems\_Game</Filter>
+      <Filter>Source\Engine\Camera\Systems\Game</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Camera\Components\CameraDollyCartComponentMeta.cpp">
       <Filter>Source\Engine\Camera\Components</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Camera\Systems\CameraDollySystem.cpp">
-      <Filter>Source\Engine\Camera\Systems\_Game</Filter>
+      <Filter>Source\Engine\Camera\Systems\Game</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\CameraPathEditorWindow.cpp">
       <Filter>Source\Editor\Windows\Game</Filter>
