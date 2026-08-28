@@ -19,7 +19,6 @@ CFIELD(isRunning, "走行中", "状態")
 
 CFIELD(maxJumps, "最大ジャンプ回数", "ジャンプ設定")
 CFIELD(currentJumpCount, "現在のジャンプ回数", "ジャンプ状態")
-CFIELD(wasJumpButtonPressed, "前フレームボタン状態", "ジャンプ状態")
 
 CFIELD(currentYaw, "現在のYaw角", "状態")
 CFIELD(currentRoll, "現在のRoll角", "状態")

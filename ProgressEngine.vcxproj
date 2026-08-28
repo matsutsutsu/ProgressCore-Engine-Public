@@ -578,7 +578,7 @@
     <ClInclude Include="Source\Engine\Graphics\Systems\Particle\ParticleAnimationSyncSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Particle\VFXSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\PostProcess\PostProcessSystem.h" />
-    <ClInclude Include="Source\Engine\Physics\Components\Character\CharacterMovementInputComponent.h" />
+    <ClInclude Include="Source\Engine\Physics\Components\Character\CharacterMovementComponent.h" />
     <ClInclude Include="Source\Engine\Physics\Components\Character\KnockbackComponent.h" />
     <ClInclude Include="Source\Engine\Physics\Components\Character\JoltCharacterConfigComponent.h" />
     <ClInclude Include="Source\Engine\Physics\Components\Character\JoltCharacterHandleComponent.h" />
@@ -715,6 +715,7 @@
     <ClInclude Include="Source\Game\Logics\Character\Player\Components\CleaveComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Components\JustEvadeComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Components\PlayerComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Components\PlayerInputComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Components\UITransformComponent.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Components\UIImageComponent.h" />
@@ -1091,7 +1092,7 @@
     <ClCompile Include="Source\Engine\Graphics\Systems\Particle\ParticleAnimationSyncSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Particle\VFXSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\PostProcess\PostProcessSystem.cpp" />
-    <ClCompile Include="Source\Engine\Physics\Components\Character\CharacterMovementInputComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Physics\Components\Character\CharacterMovementComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Physics\Components\Character\KnockbackComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Physics\Components\Character\JoltCharacterConfigComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Physics\Components\Jolt\JoltPhysicsComponentMeta.cpp" />
@@ -1174,6 +1175,7 @@
     <ClCompile Include="Source\Game\Logics\Character\Player\Components\DashComponentsMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Components\CleaveComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Components\PlayerComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Components\PlayerInputComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\Components\UIComponentsMeta.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\UIRenderer.cpp" />

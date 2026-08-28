@@ -8,7 +8,6 @@
 #include "Engine/Transform/Components/TransformComponent.h" // 位置から敵方向を求める
 #include "Game/Logics/Combat/HealthComponent.h"             // 敵判定（生存中の敵）
 #include "Game/Logics/Combat/DeadTag.h"                     // 死亡除外
-#include "Game/Logics/Character/Player/Components/CleaveComponent.h" // 切り払い準備中は攻撃を抑止
 
 #include <SimpleMath.h>
 #include <cmath>
@@ -101,24 +100,17 @@ void PlayerAttackSystem::SetAttackFacing(EntityID playerID, PlayerComponent &pla
 void PlayerAttackSystem::Update(float dt)
 {
     ForEachWithID([&](EntityID playerID,
-                const CharacterMovementInputComponent &inputData,
-                DashComponent                         &dash,
-                AnimParametersComponent               &animParams,
-                PlayerComponent                       &player) {
-        // 切り払いの準備(Ready)/突進(Lunging)中は、左クリックを「切り払いの発動」に使う。
-        // ここで通常/ダッシュ/空中攻撃を出さないよう抑止し、エッジ状態だけ更新して抜ける。
-        // TODO:ここいちいちGetComponentせずにSystemのArchetypeに含めておく
-        if (const auto *cleave = m_world->GetComponent<CleaveComponent>(playerID))
-        {
-            if (cleave->phase != CleavePhase::Idle)
-            {
-                player.wasAttackButtonPressed = inputData.isAttackRequested;
-                return;
-            }
-        }
+                const PlayerInputComponent &pin,
+                DashComponent              &dash,
+                AnimParametersComponent    &animParams,
+                PlayerComponent            &player,
+                const CleaveComponent      &cleave) {
+        // 攻撃ボタンは Idle のときだけ「攻撃」を意味する。Ready/Lunging 中の解釈は
+        // PlayerCleaveSystem が持つ（対応表は CleavePhase の宣言を参照）。
+        if (cleave.phase != CleavePhase::Idle)
+            return;
 
-        // 前フレームで押されておらず、今フレームで押された瞬間（エッジ検出）
-        if (inputData.isAttackRequested && !player.wasAttackButtonPressed)
+        if (pin.attackPressed)
         {
             // 攻撃の瞬間に対象へ回頭を予約（地上/空中どちらも）。
             SetAttackFacing(playerID, player);
@@ -142,9 +134,6 @@ void PlayerAttackSystem::Update(float dt)
                 dash.currentTimer            = dash.dashCooldown;
             }
         }
-
-        // 次のフレームのエッジ検出のために状態を保存
-        player.wasAttackButtonPressed = inputData.isAttackRequested;
     });
 }
 

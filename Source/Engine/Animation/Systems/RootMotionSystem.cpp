@@ -6,10 +6,24 @@
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
+namespace
+{
+/// @brief ルートモーションの出力を「使っていない」状態へ倒す。
+/// @note  このシステムは離脱経路が多く、経路ごとに違うフィールドを消していたため
+///        「速度だけ 0 が残る」「フラグだけ立ったまま古い速度が使われる」が起きていた。
+///        消すべきものを1箇所にまとめ、どの経路からも同じ状態で抜けるようにする。
+///        overrideSpeed は書かない（読み手が既定へ戻すため、書かない＝上書きしない）。
+void ClearRootMotionOutput(CharacterMovementComponent &movement)
+{
+    movement.isRootMotionActive = false;
+    movement.rootMotionVelocity = Vector3::Zero;
+}
+} // namespace
+
 void RootMotionSystem::Update(float /*rawDt*/)
 {
     ForEach([&](RootMotionComponent             &rm,
-                CharacterMovementInputComponent &input,
+                CharacterMovementComponent &movement,
                 const AnimatorComponent         &animator,
                 const AnimStateMachineComponent &fsm,
                 const TransformComponent        &trans,
@@ -27,10 +41,8 @@ void RootMotionSystem::Update(float /*rawDt*/)
 
             // 直前のルートモーション値が残ると、フラグを下ろしても通常移動の目標速度として
             // 生き続けて歩き続ける。ここで確実に0へ倒す。
-            input.isRootMotionActive = false;
-            input.rootMotionVelocity = Vector3::Zero;
-            input.desiredVelocity    = Vector3::Zero;
-            input.overrideSpeed      = 0.0f;
+            ClearRootMotionOutput(movement);
+            movement.desiredVelocity = Vector3::Zero;
             return;
         }
 
@@ -39,10 +51,9 @@ void RootMotionSystem::Update(float /*rawDt*/)
         // externallyDriven に設定する。ここでは特定機構（ダッシュ）を知らない。
         if (rm.externallyDriven)
         {
-            rm.enabled                = false;
-            rm.lastEvaluatedSeq       = nullptr;
-            input.isRootMotionActive  = false;
-            input.rootMotionVelocity  = Vector3::Zero;
+            rm.enabled          = false;
+            rm.lastEvaluatedSeq = nullptr;
+            ClearRootMotionOutput(movement);
             return;
         }
 
@@ -62,16 +73,19 @@ void RootMotionSystem::Update(float /*rawDt*/)
             //   前回ルートモーションを使ったステート（例:Slash）の値が
             //   JoltCharacterUpdateSystem 側に残留し、以後ずっと通常移動を上書きし続ける
             //  （＝Move等の意図した移動が「一度も動かなく見える」バグの原因）。
-            rm.lastEvaluatedSeq       = nullptr;
-            input.isRootMotionActive  = false;
-            input.rootMotionVelocity  = Vector3::Zero;
+            rm.lastEvaluatedSeq = nullptr;
+            ClearRootMotionOutput(movement);
             return;
         }
 
         const AnimSequence *seq       = animator.currentSequence;
         int                 animIndex = model->GetAnimationIndex(seq->targetAnimName.c_str());
 
-        if (animIndex == -1 || seq->duration <= 0.0f) return;
+        if (animIndex == -1 || seq->duration <= 0.0f)
+        {
+            ClearRootMotionOutput(movement);
+            return;
+        }
 
         // ルート名だけで決め打ちせず、実際に移動量を持つノードを抽出対象にする
         const int rootNodeIndex = model->FindRealRootMotionNodeIndex(animIndex);
@@ -83,14 +97,18 @@ void RootMotionSystem::Update(float /*rawDt*/)
             rm.prevTimer         = animator.currentTimer;
             rm.prevPreviousTimer = animator.previousTimer;
             // 遷移直後のフレームは基準点を合わせるため移動をスキップ
+            ClearRootMotionOutput(movement);
             return;
         }
 
         const float ldt = time.localDt;
         if (ldt <= 0.0001f)
         {
-            input.desiredVelocity = Vector3::Zero;
-            input.overrideSpeed   = 0.0f;
+            // ヒットストップ/ポーズ中。速度は求められない（0除算）ので出力を倒す。
+            //   フラグだけ立てたまま抜けると、読み手が古い rootMotionVelocity を
+            //   現在速度として焼き直し、バンク角やダッシュ攻撃判定に漏れる。
+            ClearRootMotionOutput(movement);
+            movement.desiredVelocity = Vector3::Zero;
             return;
         }
 
@@ -120,10 +138,10 @@ void RootMotionSystem::Update(float /*rawDt*/)
 
             const float speed = dist / ldt; // 前進速度(m/s)。負値=後退
 
-            input.desiredVelocity    = forward;
-            input.overrideSpeed      = speed;
-            input.isRootMotionActive = true;
-            input.rootMotionVelocity = forward * speed;
+            movement.desiredVelocity    = forward;
+            movement.overrideSpeed      = speed;
+            movement.isRootMotionActive = true;
+            movement.rootMotionVelocity = forward * speed;
             return; // ボーン抽出はスキップ
         }
 
@@ -212,12 +230,12 @@ void RootMotionSystem::Update(float /*rawDt*/)
             forward.Normalize();
         }
 
-        input.desiredVelocity = forward;
-        input.overrideSpeed   = speed;
+        movement.desiredVelocity = forward;
+        movement.overrideSpeed   = speed;
 
         // ダッシュ用の変数を汚染せず、専用領域に書き込む
-        input.isRootMotionActive = true;
-        input.rootMotionVelocity = forward * speed;
+        movement.isRootMotionActive = true;
+        movement.rootMotionVelocity = forward * speed;
     });
 }
 

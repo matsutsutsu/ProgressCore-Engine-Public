@@ -23,21 +23,13 @@
                         2.4225282669067383
                     ]
                 },
-                "Character Movement Input": {
+                "Character Movement": {
                     "currentVelocity": [
-                        -7.006492321624085e-45,
-                        0.0,
-                        -7.006492321624085e-45
-                    ],
-                    "dashRequested": false,
-                    "desiredVelocity": [
                         0.0,
                         0.0,
                         0.0
                     ],
-                    "isAttackRequested": false,
-                    "jumpRequested": false,
-                    "lookTargetPos": [
+                    "desiredVelocity": [
                         0.0,
                         0.0,
                         0.0

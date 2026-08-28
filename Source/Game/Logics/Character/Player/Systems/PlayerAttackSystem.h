@@ -3,16 +3,18 @@
 /// @brief プレイヤーの入力意思を評価し、アニメーションの先行入力バッファ（トリガー）を登録するシステム
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"
-#include "Engine/Physics/Components/Character/CharacterMovementInputComponent.h"
+#include "Game/Logics/Character/Player/Components/PlayerInputComponent.h"
 #include "Engine/Animation/Components/AnimParametersComponent.h"
 #include "Game/Logics/Character/Player/Components/DashComponent.h"
+#include "Game/Logics/Character/Player/Components/CleaveComponent.h" // 切り払い中は通常攻撃を抑止
 #include <SimpleMath.h>
 
 class PlayerAttackSystem : public CCL::ECS::IfSystem< PlayerAttackSystem,
-      CCL::ECS::Read<CharacterMovementInputComponent>,
+      CCL::ECS::Read<PlayerInputComponent>,
       CCL::ECS::Write<DashComponent>,
       CCL::ECS::Write<AnimParametersComponent>,
-      CCL::ECS::Write<PlayerComponent>>
+      CCL::ECS::Write<PlayerComponent>,
+      CCL::ECS::Read<CleaveComponent>>
 {
   public:
     PlayerAttackSystem()
@@ -23,7 +25,7 @@ class PlayerAttackSystem : public CCL::ECS::IfSystem< PlayerAttackSystem,
 
 
     /// @brief 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
-    ///        PlayerInput が書いた CharacterMovementInput / PlayerComponent を読む。
+    ///        PlayerInput が書いた PlayerInputComponent を読む。
     std::vector<const char *> GetRunAfter() const override { return {"PlayerInputSystem"}; }
 
     void Update(float dt) override;

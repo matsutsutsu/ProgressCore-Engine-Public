@@ -11,7 +11,7 @@
  *   それ以外（0）             … 待機。プレイヤーの方をゆっくり向く
  *
  * 移動パイプライン:
- *   BossCommand → BossActionSystem → CharacterMovementInputComponent
+ *   BossCommand → BossActionSystem → CharacterMovementComponent
  *   → JoltCharacterUpdateSystem（CharacterVirtual）
  *
  * 実行順序: BehaviorTreeSystem（脳・L02_Update）より後、
@@ -20,7 +20,7 @@
 #pragma once
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Transform/Components/TransformComponent.h"
-#include "Engine/Physics/Components/Character/CharacterMovementInputComponent.h"
+#include "Engine/Physics/Components/Character/CharacterMovementComponent.h"
 #include "Engine/Physics/Components/Character/JoltCharacterConfigComponent.h"
 #include "Engine/Physics/Components/Character/JoltCharacterHandleComponent.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h" // BossCommandComponent
@@ -29,7 +29,7 @@
 
 class BossActionSystem : public CCL::ECS::IfSystem<
     BossActionSystem,
-    CCL::ECS::Write<CharacterMovementInputComponent>,
+    CCL::ECS::Write<CharacterMovementComponent>,
     CCL::ECS::Write<BossActionComponent>,
     CCL::ECS::Write<TransformComponent>,
     CCL::ECS::Read<BossCommandComponent>,
@@ -47,12 +47,12 @@ public:
 
 private:
     void ProcessIdle(BossActionComponent& bossDef, TransformComponent& trans,
-                     CharacterMovementInputComponent& input,
+                     CharacterMovementComponent& movement,
                      const JoltCharacterHandleComponent& joltHandle,
                      const DirectX::SimpleMath::Vector3& playerPos, float dt);
 
     void ProcessMove(BossActionComponent& bossDef, TransformComponent& trans,
-                     CharacterMovementInputComponent& input,
+                     CharacterMovementComponent& movement,
                      const JoltCharacterConfigComponent& config,
                      const JoltCharacterHandleComponent& joltHandle,
                      const DirectX::SimpleMath::Vector3& playerPos, float dt);
@@ -60,7 +60,7 @@ private:
     /// @brief 近接攻撃中の物理挙動。薙ぎ払いは足を止めてプレイヤーを向く。
     ///        踏み込み/突進を足すときは、ここで currentActionId により前進を分岐する。
     void ProcessMeleeHold(BossActionComponent& bossDef, TransformComponent& trans,
-                          CharacterMovementInputComponent& input,
+                          CharacterMovementComponent& movement,
                           const JoltCharacterHandleComponent& joltHandle,
                           const DirectX::SimpleMath::Vector3& playerPos, float dt);
 };

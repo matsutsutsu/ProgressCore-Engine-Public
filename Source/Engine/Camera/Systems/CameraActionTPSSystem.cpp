@@ -6,7 +6,7 @@
 #include "Engine/Platform/Input/IInputAPI.h"
 #include "Engine/Camera/CameraEvents.h"
 
-#include "Engine/Physics/Components/Character/CharacterMovementInputComponent.h"
+#include "Engine/Physics/Components/Character/CharacterMovementComponent.h"
 #include "Engine/Physics/JoltIntegration/IPhysicsAPI.h" // カメラ衝突（地形レイキャスト）
 #include "Engine/Core/App/GameFlowState.h" // ポーズ中はカーソルロックを解除するため
 
@@ -417,10 +417,10 @@ void CameraActionTPSSystem::Update(float dt)
         else
         {
             // 通常時のみルックアヘッド（進行方向への視点ズレ）を適用
-            auto *targetInput = m_world->GetComponent<CharacterMovementInputComponent>(tps.target.id);
-            if (targetInput)
+            auto *targetMovement = m_world->GetComponent<CharacterMovementComponent>(tps.target.id);
+            if (targetMovement)
             {
-                Vector3 vel             = targetInput->currentVelocity;
+                Vector3 vel             = targetMovement->currentVelocity;
                 vel.y                   = 0.0f;
                 Vector3 targetLookahead = vel * tps.lookaheadMultiplier;
                 float   laBlend         = 1.0f - std::exp(-tps.lookaheadDamping * dt);

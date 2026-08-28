@@ -15,7 +15,7 @@ void JoltCharacterDebugDrawSystem::Update(float dt)
     if (!renderer) return;
 
     ForEach([&](const TransformComponent              &trans,
-                const CharacterMovementInputComponent &input,
+                const CharacterMovementComponent &movement,
                 const JoltCharacterHandleComponent    &handle) {
         if (!handle.character) return;
 
@@ -30,9 +30,9 @@ void JoltCharacterDebugDrawSystem::Update(float dt)
 
         // 1. 理想の速度（青色の矢印）
         XMFLOAT3 desiredVel = {
-            input.currentVelocity.x * DRAW_SCALE,
-            input.currentVelocity.y * DRAW_SCALE,
-            input.currentVelocity.z * DRAW_SCALE};
+            movement.currentVelocity.x * DRAW_SCALE,
+            movement.currentVelocity.y * DRAW_SCALE,
+            movement.currentVelocity.z * DRAW_SCALE};
         XMFLOAT3 desiredEnd = {pos.x + desiredVel.x, pos.y + desiredVel.y, pos.z + desiredVel.z};
         renderer->DrawArrow(pos, desiredEnd, HEAD_SIZE, {0.2f, 0.2f, 1.0f, 1.0f});
 

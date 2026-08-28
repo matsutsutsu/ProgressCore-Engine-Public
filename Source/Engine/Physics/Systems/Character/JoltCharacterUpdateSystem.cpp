@@ -27,7 +27,7 @@ void JoltCharacterUpdateSystem::Update(float rawDt)
     ForEachWithID([&](EntityID                            id,
                       TransformComponent                 &trans,
                       const JoltCharacterHandleComponent &handle,
-                      CharacterMovementInputComponent    &input,
+                      CharacterMovementComponent    &movement,
                       const JoltCharacterConfigComponent &config,
                       const TimeStateComponent           &time) {
         if (!handle.character)
@@ -54,10 +54,10 @@ void JoltCharacterUpdateSystem::Update(float rawDt)
 
         // 2. 鉛直方向（重力とジャンプ）の計算
         float currentVy = ch->GetLinearVelocity().GetY();
-        float newVy     = CalculateVerticalVelocity(safeDt, currentVy, config, input, isGrounded, gravityY);
+        float newVy     = CalculateVerticalVelocity(safeDt, currentVy, config, movement, isGrounded, gravityY);
 
         // 3. 水平方向（慣性ドリフト減速）の計算
-        Vector3 newHorizontalVel = CalculateHorizontalVelocity(safeDt, config, input);
+        Vector3 newHorizontalVel = CalculateHorizontalVelocity(safeDt, config, movement);
 
         // 3.5 ノックバック（被弾で書き込まれた速度を減衰させつつ水平速度へ加算）。
         //     CharacterVirtual 経由で動かすので壁抜けしない。残り時間比で線形に減衰させ、
@@ -83,10 +83,11 @@ void JoltCharacterUpdateSystem::Update(float rawDt)
 
         // アクション層からの3D速度上書き（切り払いの3D突進など）。重力(newVy)も水平計算も
         // 無視して velocity3D を丸ごと使う＝向いた方向へ上下含めて真っ直ぐ飛ぶ。
-        if (input.use3DVelocity)
+        if (movement.use3DVelocity)
         {
-            finalVel              = JPH::Vec3(input.velocity3D.x, input.velocity3D.y, input.velocity3D.z);
-            input.currentVelocity = input.velocity3D; // 突進解除後の慣性引き継ぎ用に更新
+            finalVel              = JPH::Vec3(movement.velocity3D.x, movement.velocity3D.y, movement.velocity3D.z);
+            movement.currentVelocity = movement.velocity3D; // 突進解除後の慣性引き継ぎ用に更新
+            movement.use3DVelocity   = false;            // 1フレーム限りの依頼として消費する
         }
 
         ch->SetLinearVelocity(finalVel);
@@ -111,15 +112,18 @@ void JoltCharacterUpdateSystem::ApplyTeleportIfNeeded(TransformComponent &trans,
     }
 }
 
-float JoltCharacterUpdateSystem::CalculateVerticalVelocity(float safeDt, float currentVy, const JoltCharacterConfigComponent &config, const CharacterMovementInputComponent &input, bool isGrounded, float gravityY)
+float JoltCharacterUpdateSystem::CalculateVerticalVelocity(float safeDt, float currentVy, const JoltCharacterConfigComponent &config, CharacterMovementComponent &movement, bool isGrounded, float gravityY)
 {
     float vy = currentVy;
     if (isGrounded && vy <= 0.0f) vy = 0.0f;
 
-    if (input.jumpRequested)
+    // ジャンプ成立は1フレーム限りの命令。読んだ側で消費することで、命令を出した側
+    //（PlayerMoveSystem 等）が不成立フレームに false を書き戻す責任を持たなくてよい。
+    if (movement.jumpImpulse)
     {
-        vy         = config.jumpSpeed;
-        isGrounded = false; // ジャンプした瞬間は空中扱いにする
+        movement.jumpImpulse = false;
+        vy                = config.jumpSpeed;
+        isGrounded        = false; // ジャンプした瞬間は空中扱いにする
     }
 
     // 空中の時のみ重力を適用する
@@ -144,37 +148,44 @@ float JoltCharacterUpdateSystem::CalculateVerticalVelocity(float safeDt, float c
     return vy;
 }
 
-DirectX::SimpleMath::Vector3 JoltCharacterUpdateSystem::CalculateHorizontalVelocity(float safeDt, const JoltCharacterConfigComponent &config, CharacterMovementInputComponent &input)
+DirectX::SimpleMath::Vector3 JoltCharacterUpdateSystem::CalculateHorizontalVelocity(float safeDt, const JoltCharacterConfigComponent &config, CharacterMovementComponent &movement)
 {
+    // 速度上書きは1フレーム限りの依頼として、読んだ時点で既定へ戻す。
+    //   上書きしたい側は「効かせたいフレームに毎回書く」だけでよくなり、離脱経路ごとに
+    //   -1.0f を書き戻す必要が消える。以前は解除の書き忘れが「ずっと速い／ずっと止まる」
+    //   として残り続けていた（RootMotionSystem の早期 return が典型）。
+    const float requestedSpeed = movement.overrideSpeed;
+    movement.overrideSpeed        = -1.0f;
+
     // 1. ルートモーション中: 慣性(Lerp)を殺し、アニメーションの速度を100%適用する
-    if (input.isRootMotionActive)
+    if (movement.isRootMotionActive)
     {
-        input.currentVelocity = input.rootMotionVelocity;
-        return input.currentVelocity;
+        movement.currentVelocity = movement.rootMotionVelocity;
+        return movement.currentVelocity;
     }
 
     // 2. 通常移動 / ダッシュ中: 慣性(Lerp)をかけて心地よい操作感を作る
     float targetSpeed = config.walkSpeed;
 
-    if (input.overrideSpeed >= 0.0f)
+    if (requestedSpeed >= 0.0f)
     {
-        targetSpeed = input.overrideSpeed;
+        targetSpeed = requestedSpeed;
     }
 
     // アクション層の速度倍率(チェイン段数などによる移動速度上昇)。負値の暴走を防ぐためクランプ。
-    targetSpeed *= (input.speedMultiplier > 0.0f) ? input.speedMultiplier : 1.0f;
+    targetSpeed *= (movement.speedMultiplier > 0.0f) ? movement.speedMultiplier : 1.0f;
 
-    Vector3 targetVelocity = input.desiredVelocity * targetSpeed;
+    Vector3 targetVelocity = movement.desiredVelocity * targetSpeed;
 
     // 加速と減速でレートを分ける（config で調整可能）。目標速度が現在速度以上なら加速、
     // 下回るなら減速レートを使う。これで「即最高速へ乗る」「狙ったぶんだけ滑って止まる」を
     // 別々に調整できる（従来はどちらも固定 10 だった）。
-    const float curSpeed = input.currentVelocity.Length();
+    const float curSpeed = movement.currentVelocity.Length();
     const float tgtSpeed = targetVelocity.Length();
     const float rate     = (tgtSpeed >= curSpeed) ? config.acceleration : config.deceleration;
-    input.currentVelocity = Vector3::Lerp(input.currentVelocity, targetVelocity, rate * safeDt);
+    movement.currentVelocity = Vector3::Lerp(movement.currentVelocity, targetVelocity, rate * safeDt);
 
-    return input.currentVelocity;
+    return movement.currentVelocity;
 }
 
 void JoltCharacterUpdateSystem::UpdatePhysicsAndSync(float safeDt, float moveDt, JoltPhysicsManager *joltManager, JPH::CharacterVirtual *ch, const JoltCharacterConfigComponent &config, TransformComponent &trans, EntityID id)

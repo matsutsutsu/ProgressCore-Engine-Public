@@ -24,9 +24,10 @@ struct PlayerComponent {
     GroundLocomotion locomotion = GroundLocomotion::Walk; ///< 現在の地上ロコモーション（アニメ/演出参照用）
 
     // --- 2段ジャンプ設定・状態 ---
-    int  maxJumps             = 2;     ///< 最大ジャンプ可能回数 (2段なら2)
-    int  currentJumpCount     = 0;     ///< 現在消費したジャンプ回数
-    bool wasJumpButtonPressed = false; ///< 前フレームのボタン押下状態 (連打防止用)
+    //   押下の立ち上がり判定は PlayerInputComponent.jumpPressed が済ませている。
+    //   ここが持つのは「何段目まで跳んだか」だけ。
+    int maxJumps         = 2; ///< 最大ジャンプ可能回数 (2段なら2)
+    int currentJumpCount = 0; ///< 現在消費したジャンプ回数
 
     // =========================================================
     // 視覚的慣性 (バンキング)
@@ -58,9 +59,6 @@ struct PlayerComponent {
     ///        ジャンプ成立判定には使わず、isAirborne の立ち上がりだけを遅らせる）。
     float airborneGraceTime = 0.12f;
 
-    // --- 攻撃入力状態 ---
-    bool wasAttackButtonPressed = false; ///< 前フレームの攻撃ボタン押下状態 (連打・押しっぱなし防止用)
-
     // --- 攻撃時のターゲット自動フェイシング（オートエイム） ---
     //   攻撃入力の瞬間、PlayerAttackSystem が対象（ロックオン先／前方最寄り敵）方向の yaw を求めて
     //   attackFaceTimer を立てる。PlayerMoveSystem が >0 の間、移動より優先で currentYaw を敵へ回頭させる。
@@ -69,11 +67,8 @@ struct PlayerComponent {
     float attackFaceMaxDistance = 5.0f; ///< この距離以内の敵にだけ攻撃時オートフェイシングする(m)。
                                         ///< 遠い敵（ロックオン中でも）には向かず、入力方向のまま攻撃する。
 
-    // プレイヤー固有アクションの入力意思（PlayerInputSystem が毎フレーム書き込む）
-    bool               cleaveRequested = false;                           ///< 切り払い(右クリック)が押された瞬間だけ true になるトリガー意思
-
-    // ロックオンデータ
-    bool               lockOnToggleRequested = false;                     ///< Rボタンが押された瞬間だけ true になるトリガー意思
-    CCL::Serialization::EntityLink lockOnTargetID  = CCL::ECS::InvalidEntityID; ///< 現在ロックオンしている敵のEntityID
+    // --- ロックオン ---
+    //   切り替え要求は PlayerInputComponent.lockOnPressed。ここは結果だけを持つ。
+    CCL::Serialization::EntityLink lockOnTargetID = CCL::ECS::InvalidEntityID; ///< 現在ロックオンしている敵のEntityID
 
 };

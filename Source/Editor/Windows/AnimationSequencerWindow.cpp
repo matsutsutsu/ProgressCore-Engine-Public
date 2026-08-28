@@ -332,7 +332,7 @@ void AnimationSequencerWindow::DrawContents(EditorContext &context)
     }
 
     // 1. エンティティ切替の検出と初期化
-    ResetStateOnEntitySwitch(context, animator);
+    ResetStateOnEntitySwitch(context);
 
     // 2. セーブ・ロード処理
     DrawFileIO();
@@ -422,29 +422,16 @@ void AnimationSequencerWindow::DrawContents(EditorContext &context)
 // サブ描画関数群
 // -----------------------------------------------------------------------------------
 
-void AnimationSequencerWindow::ResetStateOnEntitySwitch(EditorContext &context, AnimatorComponent *animator)
+void AnimationSequencerWindow::ResetStateOnEntitySwitch(EditorContext &context)
 {
     if (context.selectedEntity != m_lastSelectedEntity)
     {
-        if (context.isAnimEditMode)
-        {
-            animator->isEditorOverride = false;
-            if (m_savedSequence)
-                animator->currentSequence = m_savedSequence;
-            context.isAnimEditMode = false;
+        // 解除対象は「切替前」のエンティティ。選択中の Animator へ復元すると、
+        // 旧エンティティの override が残ったまま、新エンティティに別モデルの台本が
+        // 差し込まれる（m_lastSelectedEntity はまだ更新前＝古い方を指している）。
+        if (m_editingEntity != CCL::ECS::InvalidEntityID)
+            ReleaseEditMode(context, m_editingEntity);
 
-            // ルートモーションプレビューで動かした位置を、切替前のエンティティに対して復元する
-            // （m_lastSelectedEntity はまだ更新前＝古いエンティティを指している）
-            if (m_rootMotionActive)
-            {
-                if (context.world)
-                {
-                    if (auto *oldTrans = context.world->GetComponent<TransformComponent>(m_lastSelectedEntity))
-                        oldTrans->SetPosition(m_rootMotionOriginPos);
-                }
-                m_rootMotionActive = false;
-            }
-        }
         m_editingSequence = AnimSequence{};
         m_savePath.clear();
         m_selectedAnimIndex     = -1;
@@ -541,26 +528,66 @@ void AnimationSequencerWindow::DrawEditModeToggle(EditorContext &context, Animat
         }
         animator->isEditorOverride = true;
         animator->currentSequence  = &m_editingSequence;
+
+        // 「今フレームも編集モードを維持した」印。これが途切れたフレームを
+        // OnFrameBegin が検出して解除する（ウィンドウを閉じた/畳んだ場合の保険）。
+        m_editingEntity     = context.selectedEntity;
+        m_editModeRefreshed = true;
     }
     else if (m_wasEditMode)
     {
-        animator->currentSequence  = m_savedSequence;
-        animator->isEditorOverride = false;
-        m_savedSequence             = nullptr;
-        m_wasEditMode               = false;
-        m_isPlaying                 = false;
+        ReleaseEditMode(context, context.selectedEntity);
+    }
+}
+
+// -----------------------------------------------------------------------------------
+// 編集モードの解除（唯一の出口）。役割は AnimationSequencerWindow.h を参照。
+// -----------------------------------------------------------------------------------
+void AnimationSequencerWindow::ReleaseEditMode(EditorContext &context, CCL::ECS::EntityID target)
+{
+    if (context.world && target != CCL::ECS::InvalidEntityID)
+    {
+        if (auto *animator = context.world->GetComponent<AnimatorComponent>(target))
+        {
+            if (m_savedSequence)
+                animator->currentSequence = m_savedSequence;
+            animator->isEditorOverride = false;
+        }
 
         // ルートモーションプレビューで動かした位置を元に戻す
         if (m_rootMotionActive)
         {
-            if (context.world)
-            {
-                if (auto *trans = context.world->GetComponent<TransformComponent>(context.selectedEntity))
-                    trans->SetPosition(m_rootMotionOriginPos);
-            }
-            m_rootMotionActive = false;
+            if (auto *trans = context.world->GetComponent<TransformComponent>(target))
+                trans->SetPosition(m_rootMotionOriginPos);
         }
     }
+
+    m_rootMotionActive     = false;
+    m_savedSequence        = nullptr;
+    m_wasEditMode          = false;
+    m_isPlaying            = false;
+    m_editingEntity        = CCL::ECS::InvalidEntityID;
+    m_editModeRefreshed    = false;
+    context.isAnimEditMode = false;
+}
+
+// -----------------------------------------------------------------------------------
+// 描画されなかったフレームの検出（ウィンドウを閉じた/畳んだ/選択を外した）。
+// -----------------------------------------------------------------------------------
+void AnimationSequencerWindow::OnFrameBegin(EditorContext &context)
+{
+    if (m_editingEntity == CCL::ECS::InvalidEntityID)
+        return;
+
+    // 直前のフレームで DrawContents が維持していれば、まだ編集は生きている。
+    const bool maintained = m_editModeRefreshed;
+    m_editModeRefreshed   = false;
+    if (maintained)
+        return;
+
+    // 維持されなかった＝もう画面に出ていない。ここで解除しないと isEditorOverride が
+    // 残り、対象エンティティのアニメ・アニメ遷移・ルートモーションが全部止まったままになる。
+    ReleaseEditMode(context, m_editingEntity);
 }
 
 void AnimationSequencerWindow::DrawRootMotionPreview(EditorContext &context, AnimatorComponent * /*animator*/)

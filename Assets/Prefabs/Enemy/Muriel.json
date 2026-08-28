@@ -35,21 +35,13 @@
                     "phase": 0,
                     "timer": 0.0
                 },
-                "Character Movement Input": {
+                "Character Movement": {
                     "currentVelocity": [
                         0.0,
                         0.0,
                         0.0
                     ],
-                    "dashRequested": false,
                     "desiredVelocity": [
-                        0.0,
-                        0.0,
-                        0.0
-                    ],
-                    "isAttackRequested": false,
-                    "jumpRequested": false,
-                    "lookTargetPos": [
                         0.0,
                         0.0,
                         0.0

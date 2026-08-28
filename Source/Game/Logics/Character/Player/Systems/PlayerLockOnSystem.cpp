@@ -13,7 +13,8 @@ using namespace DirectX::SimpleMath;
 
 void PlayerLockOnSystem::Update(float /*dt*/)
 {
-    ForEachWithID([&](EntityID playerID, PlayerComponent &player, const TransformComponent &playerTrans) {
+    ForEachWithID([&](EntityID playerID, PlayerComponent &player,
+                      const PlayerInputComponent &pin, const TransformComponent &playerTrans) {
         
         // ===================================================================
         // 1. ロックオン対象が死亡済み、または破棄済みなら自動解除する。
@@ -28,12 +29,12 @@ void PlayerLockOnSystem::Update(float /*dt*/)
             }
         }
 
-        // 2. Rボタンの要求があった時だけトグル処理を行う
-        if (player.lockOnToggleRequested)
+        // 2. Rボタンを押した瞬間だけトグル処理を行う。
+        //    押下の立ち上がり判定は PlayerInputSystem が済ませているので、ここでフラグを
+        //    消費してはいけない。消費しても入力側が同じフレームの次ステップで書き直すため、
+        //    1回の押下でトグルが2回走って元に戻る（＝Rが効かない）ことがあった。
+        if (pin.lockOnPressed)
         {
-            // トリガーフラグを消費（毎フレームの暴発防止）
-            player.lockOnToggleRequested = false;
-
             // 3. すでにロックオン中なら、ボタン押下で「ロックオン解除」とする（トグル挙動）
             if (player.lockOnTargetID != InvalidEntityID)
             {

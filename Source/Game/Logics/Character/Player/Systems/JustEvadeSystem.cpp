@@ -123,7 +123,7 @@ void JustEvadeSystem::Update(float rawDt)
     // 2. フラグのクリーンアップ
     // イベントは同期的に飛んできてフラグを true にするため、
     // 次のフレームに成功判定が持ち越されないよう、フレームの最後に全フラグをリセットする。
-    ForEach([&](JustEvadeComponent &evade, DashComponent &dash, CharacterMovementInputComponent &input, const TimeStateComponent &time) {
+    ForEach([&](JustEvadeComponent &evade, DashComponent &dash, CharacterMovementComponent &movement, const TimeStateComponent &time) {
         // 毎フレームリセットではなく、ダッシュが終わった瞬間にリセットする
         if (!dash.isDashing)
         {
@@ -153,7 +153,7 @@ void JustEvadeSystem::Update(float rawDt)
         // 移動速度上昇（上限 chainSpeedMax）。JoltCharacterUpdateSystem が walk/override 速度に掛ける。
         float speedUp = chain * evade.chainSpeedPerLevel;
         if (speedUp > evade.chainSpeedMax) speedUp = evade.chainSpeedMax;
-        input.speedMultiplier = 1.0f + speedUp;
+        movement.speedMultiplier = 1.0f + speedUp;
 
         // ジャスト受付窓の厳しさ（下限 windowScaleMin）。PlayerDashSystem が窓幅に掛ける。
         float wScale = 1.0f - chain * evade.windowScalePerLevel;
@@ -167,7 +167,7 @@ void JustEvadeSystem::Update(float rawDt)
         // ==========================================================
         if (evade.idleBreakTime > 0.0f && chain > 0)
         {
-            bool moving = input.desiredVelocity.LengthSquared() > 0.001f;
+            bool moving = movement.desiredVelocity.LengthSquared() > 0.001f;
             bool acting = dash.isDashing || dash.isApproaching;
             if (moving || acting)
             {
@@ -213,7 +213,7 @@ void JustEvadeSystem::BreakChain(EntityID playerID)
 void JustEvadeSystem::OnGui()
 {
     const JustEvadeComponent *found = nullptr;
-    ForEach([&](JustEvadeComponent &evade, DashComponent &, CharacterMovementInputComponent &, const TimeStateComponent &) {
+    ForEach([&](JustEvadeComponent &evade, DashComponent &, CharacterMovementComponent &, const TimeStateComponent &) {
         if (!found) found = &evade;
     });
     if (!found || found->chainCount <= 0) return;

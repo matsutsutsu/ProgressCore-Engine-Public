@@ -10,26 +10,18 @@
                     "isLoop": false,
                     "playbackSpeed": 0.699999988079071
                 },
-                "Character Movement Input": {
+                "Character Movement": {
                     "currentVelocity": [
-                        -20.458736419677734,
-                        0.0,
-                        16.677066802978516
-                    ],
-                    "dashRequested": false,
-                    "desiredVelocity": [
-                        -0.775105357170105,
-                        0.0,
-                        0.6318320035934448
-                    ],
-                    "isAttackRequested": false,
-                    "jumpRequested": false,
-                    "lookTargetPos": [
                         0.0,
                         0.0,
                         0.0
                     ],
-                    "overrideSpeed": 26.3947811126709
+                    "desiredVelocity": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "overrideSpeed": -1.0
                 },
                 "Cleave Component": {
                     "chainCount": 0,
@@ -149,9 +141,9 @@
                     "runSpeed": 65.5,
                     "timeSinceGrounded": 0.0,
                     "turnSpeed": 10.0,
-                    "wasGroundedLastFrame": true,
-                    "wasJumpButtonPressed": false
+                    "wasGroundedLastFrame": true
                 },
+                "Player Input": {},
                 "RootMotion": null,
                 "TimeState": {
                     "buffScale": 1.0,

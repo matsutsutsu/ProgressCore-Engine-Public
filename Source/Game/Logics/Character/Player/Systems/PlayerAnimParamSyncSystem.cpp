@@ -16,7 +16,7 @@ static const uint32_t HASH_DASH_ATTACK_READY  = CCL::Utils::HashString("DashAtta
 void PlayerAnimParamSyncSystem::Update(float /*dt*/)
 {
     ForEach([&](const DashComponent &dash, const PlayerComponent &player,
-                const CharacterMovementInputComponent &input, AnimParametersComponent &animParams) {
+                const CharacterMovementComponent &movement, AnimParametersComponent &animParams) {
         animParams.SetBool(HASH_IS_DASHING, dash.isDashing);
 
         // グレース付きの空中判定を掲示板へ。アニメグラフはこれを条件に使うことで、
@@ -26,7 +26,7 @@ void PlayerAnimParamSyncSystem::Update(float /*dt*/)
         // プレイヤーの「移動しようとしている意思」を掲示板へ。攻撃はルートモーション駆動で
         // Speed(実速度) が入力を反映しないため、攻撃のキャンセル窓で「移動へ抜ける」判定には
         // 実速度でなく入力意思(desiredVelocity)を使う。
-        const bool wantsMove = input.desiredVelocity.LengthSquared() > 0.01f;
+        const bool wantsMove = movement.desiredVelocity.LengthSquared() > 0.01f;
         animParams.SetBool(HASH_MOVE_INPUT, wantsMove);
 
         // 「この攻撃をダッシュ攻撃にすべきか」をコード側の実測で判定してフラグ化する。
@@ -35,7 +35,7 @@ void PlayerAnimParamSyncSystem::Update(float /*dt*/)
         //      DashAttack / 通常 Attack_1 を分岐する（数値判定はコード、遷移はグラフに分離）。
         const float dashAtkSpeed   = dash.dashSpeed * 0.5f;
         const bool  dashAttackReady = dash.isDashing || player.isRunning
-            || input.currentVelocity.LengthSquared() >= (dashAtkSpeed * dashAtkSpeed);
+            || movement.currentVelocity.LengthSquared() >= (dashAtkSpeed * dashAtkSpeed);
         animParams.SetBool(HASH_DASH_ATTACK_READY, dashAttackReady);
     });
 }
