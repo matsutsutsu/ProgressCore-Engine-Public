@@ -41,14 +41,15 @@ template <> struct ComponentMeta<SSAOConfigComponent> {
 #ifdef ENABLE_EDITOR
     static bool CustomGui(SSAOConfigComponent& c,
                           unsigned long long /*entityID*/ = 0, void* /*world*/ = nullptr) {
+        namespace mi = ComponentMetaImGui;
         bool changed = false;
-        if (ImGui::Checkbox("有効", &c.enable)) changed = true;
+        changed |= mi::Checkbox("有効", &c.enable);
 
         ImGui::BeginDisabled(!c.enable);
-        if (ImGui::DragFloat("半径(m)", &c.data.ssaoRadius, 0.01f, 0.05f, 3.0f)) changed = true;
-        if (ImGui::DragFloat("強度", &c.data.ssaoIntensity, 0.01f, 0.0f, 1.0f)) changed = true;
-        if (ImGui::DragFloat("バイアス", &c.data.ssaoBias, 0.001f, 0.0f, 0.2f)) changed = true;
-        if (ImGui::DragFloat("最大距離(m)", &c.data.ssaoMaxDistance, 1.0f, 1.0f, 500.0f)) changed = true;
+        changed |= mi::DragFloat("半径(m)",     &c.data.ssaoRadius,      0.01f,  0.05f, 3.0f);
+        changed |= mi::DragFloat("強度",        &c.data.ssaoIntensity,   0.01f,  0.0f,  1.0f);
+        changed |= mi::DragFloat("バイアス",     &c.data.ssaoBias,        0.001f, 0.0f,  0.2f);
+        changed |= mi::DragFloat("最大距離(m)", &c.data.ssaoMaxDistance, 1.0f,   1.0f,  500.0f);
 
         ImGui::Separator();
         ImGui::TextDisabled("AOは演出ではなく絵の基礎品質。\n薄く常時掛けるのが正しい使い方。");

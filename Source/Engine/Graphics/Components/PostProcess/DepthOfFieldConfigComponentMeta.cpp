@@ -39,14 +39,15 @@ template <> struct ComponentMeta<DepthOfFieldConfigComponent> {
 #ifdef ENABLE_EDITOR
     static bool CustomGui(DepthOfFieldConfigComponent& c,
                           unsigned long long /*entityID*/ = 0, void* /*world*/ = nullptr) {
+        namespace mi = ComponentMetaImGui;
         bool changed = false;
-        if (ImGui::Checkbox("有効", &c.enable)) changed = true;
+        changed |= mi::Checkbox("有効", &c.enable);
 
         ImGui::BeginDisabled(!c.enable);
-        if (ImGui::DragFloat("フォーカス距離", &c.data.dofFocusDistance, 0.1f, 0.0f, 500.0f)) changed = true;
-        if (ImGui::DragFloat("フォーカス範囲", &c.data.dofFocusRange, 0.1f, 0.0f, 100.0f)) changed = true;
-        if (ImGui::DragFloat("減衰", &c.data.dofFalloff, 0.1f, 0.1f, 100.0f)) changed = true;
-        if (ImGui::DragFloat("最大ブラー", &c.data.dofMaxBlur, 0.001f, 0.0f, 0.05f)) changed = true;
+        changed |= mi::DragFloat("フォーカス距離", &c.data.dofFocusDistance, 0.1f,   0.0f, 500.0f);
+        changed |= mi::DragFloat("フォーカス範囲", &c.data.dofFocusRange,    0.1f,   0.0f, 100.0f);
+        changed |= mi::DragFloat("減衰",           &c.data.dofFalloff,       0.1f,   0.1f, 100.0f);
+        changed |= mi::DragFloat("最大ブラー",     &c.data.dofMaxBlur,       0.001f, 0.0f, 0.05f);
         ImGui::EndDisabled();
 
         return changed;

@@ -60,12 +60,13 @@ template <> struct ComponentMeta<CameraBodyFollow> {
 
         ImGui::TextColored(ImVec4(0.5f, 0.8f, 1.0f, 1.0f), "[ ここにHierarchyからエンティティをドロップ ]");
 
+        namespace mi = ComponentMetaImGui;
         ImGui::SeparatorText("追従設定");
-        changed |= ImGui::DragFloat3("追従オフセット", &comp.offset.x, 0.1f);
-        changed |= ImGui::DragFloat("減衰", &comp.damping, 0.1f, 0.0f, 100.0f);
-        changed |= ImGui::Checkbox("Y高さを固定", &comp.lockY);
+        changed |= mi::DragFloat3("追従オフセット", &comp.offset.x, 0.1f);
+        changed |= mi::DragFloat("減衰", &comp.damping, 0.1f, 0.0f, 100.0f);
+        changed |= mi::Checkbox("Y高さを固定", &comp.lockY);
         if (comp.lockY) {
-            changed |= ImGui::DragFloat("固定する高さ", &comp.lockedY, 0.1f);
+            changed |= mi::DragFloat("固定する高さ", &comp.lockedY, 0.1f);
         }
 
         return changed;
@@ -124,9 +125,10 @@ template <> struct ComponentMeta<CameraAimLookAt> {
         }
         ImGui::TextColored(ImVec4(0.5f, 0.8f, 1.0f, 1.0f), "[ ここにHierarchyからエンティティをドロップ ]");
 
+        namespace mi = ComponentMetaImGui;
         ImGui::SeparatorText("注視設定");
-        changed |= ImGui::DragFloat3("注視オフセット", &comp.offset.x, 0.1f);
-        changed |= ImGui::DragFloat("減衰", &comp.damping, 0.1f, 0.0f, 100.0f);
+        changed |= mi::DragFloat3("注視オフセット", &comp.offset.x, 0.1f);
+        changed |= mi::DragFloat("減衰", &comp.damping, 0.1f, 0.0f, 100.0f);
 
         return changed;
     }

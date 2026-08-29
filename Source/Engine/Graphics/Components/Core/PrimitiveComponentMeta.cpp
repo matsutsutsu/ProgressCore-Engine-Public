@@ -31,33 +31,34 @@ template <> struct ComponentMeta<PrimitiveComponent> {
 
 #ifdef ENABLE_EDITOR
     static bool CustomGui(PrimitiveComponent& comp, unsigned long long /*entityID*/ = 0, void* /*world*/ = nullptr) {
+        namespace mi = ComponentMetaImGui;
         bool changed = false;
 
         ImGui::SeparatorText("形状設定");
 
         int currentType = static_cast<int>(comp.type);
-        if (ImGui::Combo("形状タイプ", &currentType, PrimitiveTypeNames, std::size(PrimitiveTypeNames))) {
+        if (mi::Combo("形状タイプ", &currentType, PrimitiveTypeNames, (int)std::size(PrimitiveTypeNames))) {
             comp.type = static_cast<PrimitiveType>(currentType);
             changed = true;
         }
 
         ImGui::SeparatorText("寸法");
-        
+
         if (comp.type == PrimitiveType::Box) {
-            changed |= ImGui::DragFloat3("サイズ(ボックス)", &comp.size.x, 0.1f);
-        } 
+            changed |= mi::DragFloat3("サイズ(ボックス)", &comp.size.x, 0.1f);
+        }
         else if (comp.type == PrimitiveType::Sphere) {
-            changed |= ImGui::DragFloat("半径", &comp.radius, 0.1f, 0.0f, 1000.0f);
-        } 
+            changed |= mi::DragFloat("半径", &comp.radius, 0.1f, 0.0f, 1000.0f);
+        }
         else {
-            changed |= ImGui::DragFloat("半径", &comp.radius, 0.1f, 0.0f, 1000.0f);
-            changed |= ImGui::DragFloat("高さ", &comp.height, 0.1f, 0.0f, 1000.0f);
+            changed |= mi::DragFloat("半径", &comp.radius, 0.1f, 0.0f, 1000.0f);
+            changed |= mi::DragFloat("高さ", &comp.height, 0.1f, 0.0f, 1000.0f);
         }
 
         ImGui::SeparatorText("見た目");
-        
-        changed |= ImGui::ColorEdit4("色", &comp.color.x);
-        changed |= ImGui::Checkbox("ワイヤーフレーム", &comp.isWireframe);
+
+        changed |= mi::Color4("色", &comp.color.x);
+        changed |= mi::Checkbox("ワイヤーフレーム", &comp.isWireframe);
 
         return changed;
     }

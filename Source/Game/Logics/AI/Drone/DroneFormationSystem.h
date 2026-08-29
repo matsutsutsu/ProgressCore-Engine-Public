@@ -18,15 +18,11 @@ struct FormationSpecAsset
 };
 
 /// @brief ドローンの目標座標を陣形に応じて計算するシステム。
-class DroneFormationSystem : public CCL::ECS::IfSystem<
-                                 DroneFormationSystem,
+class DroneFormationSystem : public CCL::ECS::IfSystem<DroneFormationSystem,
                                  CCL::ECS::Write<DroneComponent>>
 {
   public:
-    DroneFormationSystem()
-        : IfSystem("DroneFormationSystem")
-    {
-    }
+    DroneFormationSystem() : IfSystem("DroneFormationSystem"){}
 
     void Initialize() override;
 

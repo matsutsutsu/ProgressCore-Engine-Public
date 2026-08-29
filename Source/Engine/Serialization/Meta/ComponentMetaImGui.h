@@ -44,6 +44,124 @@ namespace ComponentMetaImGui {
 
 
     // ------------------------------------------------------------------------
+    // Help: 直前のウィジェットの右に "(?)" を出し、ホバーで説明を表示する共通ヘルパー。
+    //   もともと GPUParticleComponentMeta 内のローカル実装だったものを、どのメタからも
+    //   使える MetaImGui の標準機能へ昇格させたもの。CustomGui 内で
+    //   `ComponentMetaImGui::Help("...")` と呼ぶ（各メタで再定義しないこと）。
+    // ------------------------------------------------------------------------
+    inline void Help(const char* text)
+    {
+        ImGui::SameLine();
+        ImGui::TextDisabled("(?)");
+        if (text && text[0] && ImGui::IsItemHovered())
+            ImGui::SetTooltip("%s", text);
+    }
+
+    // ------------------------------------------------------------------------
+    // Prop: CustomGui 用の「ラベル左・ウィジェット右」行ヘルパー。
+    //   自動グリッド(Fields ベース)と同じ見た目を、テーブルを組まずに1行ずつ出せる。
+    //    ・左にラベルを描き、直後のウィジェット開始位置を固定列頭にそろえ、
+    //     SetNextItemWidth(-FLT_MIN) で右端いっぱいに広げる。
+    //   使い方（ウィジェットのラベルは "##..." で隠すこと）:
+    //       ComponentMetaImGui::Prop("速度");        ImGui::DragFloat("##spd", &v);
+    //       ComponentMetaImGui::Prop("色", "RGBA");  ImGui::ColorEdit4("##col", c);
+    //   ※ インスペクタ全体を「ラベル左」で統一するための標準ヘルパー。
+    // ------------------------------------------------------------------------
+    inline void Prop(const char* label, const char* tooltip = nullptr)
+    {
+        // ラベル列の固定幅（自動グリッドの比率に近い値。インデント下でも列頭がそろう）。
+        constexpr float kLabelWidth = 150.0f;
+
+        const float startX = ImGui::GetCursorPosX();
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted(label ? label : "");
+        if (tooltip && tooltip[0] && ImGui::IsItemHovered())
+            ImGui::SetTooltip("%s", tooltip);
+
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(startX + kLabelWidth);
+        ImGui::SetNextItemWidth(-FLT_MIN); // 直後のウィジェットを右端まで広げる
+    }
+
+    // ========================================================================
+    //  1行フィールドヘルパー（CustomGui を「1行1フィールド」で書くための糖衣）
+    //    ・Prop(ラベル左) → 隠しラベルのウィジェット → changed を返す、を1関数に集約。
+    //    ・ID は値ポインタ(v)で一意化するので、同名ラベルが並んでも衝突しない。
+    //    ・使い方（CustomGui 内）:
+    //        namespace mi = ComponentMetaImGui;
+    //        changed |= mi::DragFloat("強度", &v, 0.01f, 0.0f, 1.0f);
+    //        changed |= mi::Checkbox("有効", &b);
+    //        changed |= mi::Color3("色", &c.x);
+    //    これだけで自動グリッドと同じ「ラベル左・幅いっぱい」に揃う。
+    // ========================================================================
+    inline bool DragFloat(const char* label, float* v, float speed = 0.1f,
+                          float lo = 0.0f, float hi = 0.0f, const char* tip = nullptr)
+    {
+        ImGui::PushID(v); Prop(label, tip);
+        bool ch = ImGui::DragFloat("##v", v, speed, lo, hi); ImGui::PopID(); return ch;
+    }
+    inline bool DragFloat2(const char* label, float* v2, float speed = 0.1f,
+                           float lo = 0.0f, float hi = 0.0f, const char* tip = nullptr)
+    {
+        ImGui::PushID(v2); Prop(label, tip);
+        bool ch = ImGui::DragFloat2("##v", v2, speed, lo, hi); ImGui::PopID(); return ch;
+    }
+    inline bool DragFloat3(const char* label, float* v3, float speed = 0.1f,
+                           float lo = 0.0f, float hi = 0.0f, const char* tip = nullptr)
+    {
+        ImGui::PushID(v3); Prop(label, tip);
+        bool ch = ImGui::DragFloat3("##v", v3, speed, lo, hi); ImGui::PopID(); return ch;
+    }
+    inline bool DragFloat4(const char* label, float* v4, float speed = 0.1f,
+                           float lo = 0.0f, float hi = 0.0f, const char* tip = nullptr)
+    {
+        ImGui::PushID(v4); Prop(label, tip);
+        bool ch = ImGui::DragFloat4("##v", v4, speed, lo, hi); ImGui::PopID(); return ch;
+    }
+    inline bool DragInt(const char* label, int* v, float speed = 1.0f,
+                        int lo = 0, int hi = 0, const char* tip = nullptr)
+    {
+        ImGui::PushID(v); Prop(label, tip);
+        bool ch = ImGui::DragInt("##v", v, speed, lo, hi); ImGui::PopID(); return ch;
+    }
+    inline bool SliderFloat(const char* label, float* v, float lo, float hi, const char* tip = nullptr)
+    {
+        ImGui::PushID(v); Prop(label, tip);
+        bool ch = ImGui::SliderFloat("##v", v, lo, hi); ImGui::PopID(); return ch;
+    }
+    inline bool Checkbox(const char* label, bool* v, const char* tip = nullptr)
+    {
+        ImGui::PushID(v); Prop(label, tip);
+        bool ch = ImGui::Checkbox("##v", v); ImGui::PopID(); return ch;
+    }
+    inline bool Color3(const char* label, float* rgb, const char* tip = nullptr)
+    {
+        ImGui::PushID(rgb); Prop(label, tip);
+        bool ch = ImGui::ColorEdit3("##v", rgb); ImGui::PopID(); return ch;
+    }
+    inline bool Color4(const char* label, float* rgba, const char* tip = nullptr)
+    {
+        ImGui::PushID(rgba); Prop(label, tip);
+        bool ch = ImGui::ColorEdit4("##v", rgba); ImGui::PopID(); return ch;
+    }
+    inline bool Combo(const char* label, int* cur, const char* const items[], int count, const char* tip = nullptr)
+    {
+        ImGui::PushID(cur); Prop(label, tip);
+        bool ch = ImGui::Combo("##v", cur, items, count); ImGui::PopID(); return ch;
+    }
+    // std::string を直接編集する InputText（内部でバッファを管理。call 側の char[] 定型を排除）。
+    inline bool InputText(const char* label, std::string& s, const char* tip = nullptr, size_t maxLen = 256)
+    {
+        ImGui::PushID(&s); Prop(label, tip);
+        char buf[256];
+        strncpy_s(buf, sizeof(buf), s.c_str(), _TRUNCATE);
+        bool ch = ImGui::InputText("##v", buf, (maxLen < sizeof(buf)) ? maxLen : sizeof(buf));
+        if (ch) s = buf;
+        ImGui::PopID();
+        return ch;
+    }
+
+    // ------------------------------------------------------------------------
     // フィールドのツールチップ文字列を組み立てる。
     //   ・tooltip（CFIELD_T の説明）があれば先頭に
     //   ・続けて「変数名: <jsonName>」を必ず付ける

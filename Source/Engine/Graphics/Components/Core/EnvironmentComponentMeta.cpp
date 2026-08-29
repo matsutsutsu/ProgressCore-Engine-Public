@@ -15,6 +15,8 @@
 #ifdef ENABLE_EDITOR
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
+// このファイルは CustomGui が複数あるので、1行フィールドヘルパーの別名を file スコープで用意。
+namespace mi = ComponentMetaImGui;
 #endif
 
 // ============================================================================
@@ -32,9 +34,9 @@ template <> struct ComponentMeta<ToneMapConfigComponent> {
 #ifdef ENABLE_EDITOR
     static bool CustomGui(ToneMapConfigComponent& comp, unsigned long long /* entityID */ = 0, void* /* worldPtr */ = nullptr) {
         bool changed = false;
-        changed |= ImGui::DragFloat("露出", &comp.data.exposure, 0.01f, 0.0f, 10.0f);
-        changed |= ImGui::DragFloat("色収差", &comp.data.chromaticAberration, 0.001f, -0.1f, 0.1f);
-        changed |= ImGui::ColorEdit3("色補正(Tint)", &comp.data.colorTint.x);
+        changed |= mi::DragFloat("露出", &comp.data.exposure, 0.01f, 0.0f, 10.0f);
+        changed |= mi::DragFloat("色収差", &comp.data.chromaticAberration, 0.001f, -0.1f, 0.1f);
+        changed |= mi::Color3("色補正(Tint)", &comp.data.colorTint.x);
         return changed;
     }
 #else
@@ -87,14 +89,14 @@ template <> struct ComponentMeta<FogComponent> {
     static bool CustomGui(FogComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr) {
         bool changed = false;
 
-        changed |= ImGui::Checkbox("フォグ有効", &comp.enabled);
-        changed |= ImGui::ColorEdit4("基本色", &comp.color.x);
+        changed |= mi::Checkbox("フォグ有効", &comp.enabled);
+        changed |= mi::Color4("基本色", &comp.color.x);
 
         if (ImGui::CollapsingHeader("距離と高さ", ImGuiTreeNodeFlags_DefaultOpen)) {
-            changed |= ImGui::DragFloat("開始距離", &comp.start, 0.5f);
-            changed |= ImGui::DragFloat("終了距離", &comp.end, 0.5f);
-            changed |= ImGui::DragFloat("高さ基準", &comp.heightStart, 0.1f);
-            changed |= ImGui::DragFloat("高さ密度", &comp.heightDensity, 0.01f);
+            changed |= mi::DragFloat("開始距離", &comp.start, 0.5f);
+            changed |= mi::DragFloat("終了距離", &comp.end, 0.5f);
+            changed |= mi::DragFloat("高さ基準", &comp.heightStart, 0.1f);
+            changed |= mi::DragFloat("高さ密度", &comp.heightDensity, 0.01f);
         }
 
         if (ImGui::CollapsingHeader("ノイズとアニメーション", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -126,21 +128,21 @@ template <> struct ComponentMeta<FogComponent> {
                 }
             }
 
-            changed |= ImGui::DragFloat("ノイズ強度", &comp.noiseStrength, 0.01f, 0.0f, 1.0f);
-            changed |= ImGui::DragFloat("スケール", &comp.noiseScale, 0.001f);
-            changed |= ImGui::DragFloat2("スクロール速度", &comp.noiseSpeed.x, 0.01f);
+            changed |= mi::DragFloat("ノイズ強度", &comp.noiseStrength, 0.01f, 0.0f, 1.0f);
+            changed |= mi::DragFloat("スケール", &comp.noiseScale, 0.001f);
+            changed |= mi::DragFloat2("スクロール速度", &comp.noiseSpeed.x, 0.01f);
         }
 
         if (ImGui::CollapsingHeader("スカイボックス地平線フォグ", ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::TextDisabled("空(虚空)を基本色で霧化。強度は基本色のαと連動。");
-            changed |= ImGui::DragFloat("地平線高さ", &comp.skyFogHeight, 0.01f, -1.0f, 1.0f);
-            changed |= ImGui::DragFloat("フェード幅", &comp.skyFogSoftness, 0.01f, 0.0f, 2.0f);
+            changed |= mi::DragFloat("地平線高さ", &comp.skyFogHeight, 0.01f, -1.0f, 1.0f);
+            changed |= mi::DragFloat("フェード幅", &comp.skyFogSoftness, 0.01f, 0.0f, 2.0f);
         }
 
         if (ImGui::CollapsingHeader("リムライト", ImGuiTreeNodeFlags_DefaultOpen)) {
-            changed |= ImGui::ColorEdit3("リム色", &comp.rimColor.x);
-            changed |= ImGui::DragFloat("強さ", &comp.rimStrength, 0.1f, 0.0f, 10.0f);
-            changed |= ImGui::DragFloat("強度(Power)", &comp.rimPower, 0.1f, 0.1f, 20.0f);
+            changed |= mi::Color3("リム色", &comp.rimColor.x);
+            changed |= mi::DragFloat("強さ", &comp.rimStrength, 0.1f, 0.0f, 10.0f);
+            changed |= mi::DragFloat("強度(Power)", &comp.rimPower, 0.1f, 0.1f, 20.0f);
         }
 
         return changed;
@@ -189,9 +191,9 @@ template <> struct ComponentMeta<ShadowMapConfigComponent> {
         bool changed = false;
         ImGui::SeparatorText("シャドウ設定");
 
-        changed |= ImGui::DragFloat3("カスケード分割(近/中/遠)", &c.cascadeSplits.x, 1.0f, 1.0f, 1000.0f);
-        changed |= ImGui::DragFloat("バイアス", &c.shadowBias, 0.0001f, 0.0f, 0.01f, "%.5f");
-        changed |= ImGui::ColorEdit4("シャドウ色", &c.shadowColor.x);
+        changed |= mi::DragFloat3("カスケード分割(近/中/遠)", &c.cascadeSplits.x, 1.0f, 1.0f, 1000.0f);
+        changed |= mi::DragFloat("バイアス", &c.shadowBias, 0.0001f, 0.0f, 0.01f, "%.5f");
+        changed |= mi::Color4("シャドウ色", &c.shadowColor.x);
 
         return changed;
     }

@@ -51,12 +51,13 @@ struct ComponentMeta<RootMotionComponent>
 #ifdef ENABLE_EDITOR
     static bool CustomGui(RootMotionComponent &comp, unsigned long long /*entityID*/ = 0, void * /*world*/ = nullptr)
     {
+        namespace mi = ComponentMetaImGui;
         ImGui::TextDisabled("[Runtime State: システムによって自動制御されます]");
         ImGui::Separator();
 
         ImGui::BeginDisabled();
-        ImGui::Checkbox("有効", &comp.enabled);
-        ImGui::DragFloat("前回タイマー", &comp.prevTimer, 0.01f, 0.0f, 10.0f);
+        mi::Checkbox("有効", &comp.enabled);
+        mi::DragFloat("前回タイマー", &comp.prevTimer, 0.01f, 0.0f, 10.0f);
         ImGui::EndDisabled();
 
         return false;

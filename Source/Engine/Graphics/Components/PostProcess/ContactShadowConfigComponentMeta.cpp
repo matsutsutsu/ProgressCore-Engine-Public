@@ -43,15 +43,16 @@ template <> struct ComponentMeta<ContactShadowConfigComponent> {
 #ifdef ENABLE_EDITOR
     static bool CustomGui(ContactShadowConfigComponent& c,
                           unsigned long long /*entityID*/ = 0, void* /*world*/ = nullptr) {
+        namespace mi = ComponentMetaImGui;
         bool changed = false;
-        if (ImGui::Checkbox("有効", &c.enable)) changed = true;
+        changed |= mi::Checkbox("有効", &c.enable);
 
         ImGui::BeginDisabled(!c.enable);
-        if (ImGui::DragFloat("レイ長(m)", &c.data.csRayLength, 0.01f, 0.05f, 2.0f)) changed = true;
-        if (ImGui::DragFloat("厚み(m)", &c.data.csThickness, 0.01f, 0.01f, 1.0f)) changed = true;
-        if (ImGui::DragFloat("バイアス", &c.data.csBias, 0.001f, 0.0f, 0.2f)) changed = true;
-        if (ImGui::DragFloat("強度", &c.data.csIntensity, 0.01f, 0.0f, 1.0f)) changed = true;
-        if (ImGui::DragFloat("最大距離(m)", &c.data.csMaxDistance, 1.0f, 1.0f, 200.0f)) changed = true;
+        changed |= mi::DragFloat("レイ長(m)",   &c.data.csRayLength,   0.01f,  0.05f, 2.0f);
+        changed |= mi::DragFloat("厚み(m)",     &c.data.csThickness,   0.01f,  0.01f, 1.0f);
+        changed |= mi::DragFloat("バイアス",     &c.data.csBias,        0.001f, 0.0f,  0.2f);
+        changed |= mi::DragFloat("強度",        &c.data.csIntensity,   0.01f,  0.0f,  1.0f);
+        changed |= mi::DragFloat("最大距離(m)", &c.data.csMaxDistance, 1.0f,   1.0f,  200.0f);
 
         ImGui::Separator();
         ImGui::TextDisabled("光源方向へ深度を辿る影。\nライトを動かすと影の向きも変わる。");

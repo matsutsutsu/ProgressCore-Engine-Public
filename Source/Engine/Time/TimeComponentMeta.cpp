@@ -26,21 +26,22 @@ template <> struct ComponentMeta<TimeStateComponent> {
 
 #ifdef ENABLE_EDITOR
     static bool CustomGui(TimeStateComponent& comp, unsigned long long /*entityID*/ = 0, void* /*world*/ = nullptr) {
+        namespace mi = ComponentMetaImGui;
         bool changed = false;
 
         ImGui::Text("ローカルDt: %.4f", comp.localDt);
         ImGui::Spacing();
 
         int currentGroup = static_cast<int>(comp.group);
-        if (ImGui::Combo("時間グループ", &currentGroup, TimeGroupNames, 5)) {
+        if (mi::Combo("時間グループ", &currentGroup, TimeGroupNames, 5)) {
             comp.group = static_cast<TimeGroup>(currentGroup);
             changed = true;
         }
 
-        changed |= ImGui::DragFloat("ヒットストップタイマー", &comp.hitStopTimer, 0.01f, 0.0f, 5.0f);
-        changed |= ImGui::DragFloat("停止倍率", &comp.freezeScale, 0.01f, 0.0f, 1.0f);
-        changed |= ImGui::DragFloat("バフ倍率", &comp.buffScale, 0.01f, 0.0f, 5.0f);
-        changed |= ImGui::DragFloat("シネマ倍率", &comp.cinematicScale, 0.01f, 0.0f, 5.0f);
+        changed |= mi::DragFloat("ヒットストップタイマー", &comp.hitStopTimer, 0.01f, 0.0f, 5.0f);
+        changed |= mi::DragFloat("停止倍率", &comp.freezeScale, 0.01f, 0.0f, 1.0f);
+        changed |= mi::DragFloat("バフ倍率", &comp.buffScale, 0.01f, 0.0f, 5.0f);
+        changed |= mi::DragFloat("シネマ倍率", &comp.cinematicScale, 0.01f, 0.0f, 5.0f);
 
         return changed;
     }
