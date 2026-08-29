@@ -23,8 +23,6 @@ CFIELD(currentJumpCount, "現在のジャンプ回数", "ジャンプ状態")
 CFIELD(currentYaw, "現在のYaw角", "状態")
 CFIELD(currentRoll, "現在のRoll角", "状態")
 
-CFIELD(wasGroundedLastFrame, "前フレーム接地状態", "状態")
-CFIELD(lastFallVelocity, "直前落下速度", "状態")
 CFIELD(isAirborne, "空中状態", "状態")
 CFIELD(timeSinceGrounded, "接地離れ経過時間", "状態")
 

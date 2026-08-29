@@ -8,7 +8,6 @@
 #include <DirectXMath.h>
 
 #include "Game/Logics/GameEvent/GameEvents.h"
-#include "Engine/Camera/CameraEvents.h" // CameraShakeRequestEvent（着地の画面揺れ要求）
 #include "Engine/Core/Math/StringHash.h"
 
 
@@ -58,25 +57,14 @@ void PlayerMoveSystem::UpdateJumpLogic(float dt, bool isGrounded, bool jumpPress
 {
     // 接地を離れてからの経過時間を更新（空中判定のグレースに使う）。
     if (isGrounded)
-        player.timeSinceGrounded = 0.0f;
-    else
-        player.timeSinceGrounded += dt;
-
-    // 直前の落下速度から「着地」の衝撃を計算しイベント発火
-    if (isGrounded)
     {
-        if (!player.wasGroundedLastFrame)
-        {
-            if (player.lastFallVelocity < -10.0f)
-            {
-                float shakePower = std::abs(player.lastFallVelocity) * 0.03f;
-                m_world->GetEventBus().Publish(CameraShakeRequestEvent{shakePower, 0.2f});
-            }
-        }
-        player.currentJumpCount = 0;
+        player.timeSinceGrounded = 0.0f;
+        player.currentJumpCount  = 0;
     }
-
-    player.wasGroundedLastFrame = isGrounded;
+    else
+    {
+        player.timeSinceGrounded += dt;
+    }
 
     // 空中状態を一元更新（空中攻撃などが参照する唯一の判定元）。
     //   接地を離れて airborneGraceTime を超えて初めて「空中」とみなす。これにより

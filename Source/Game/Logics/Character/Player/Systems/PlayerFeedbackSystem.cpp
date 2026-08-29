@@ -1,7 +1,7 @@
 ﻿#include "PlayerFeedbackSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
 
-#include "Engine/Camera/Components/VirtualCameraComponents.h"
+#include "Engine/Camera/CameraEvents.h" // CameraShakeRequestEvent（画面揺れの唯一の入口）
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"
 
 // Post Process
@@ -179,37 +179,33 @@ void PlayerFeedbackSystem::OnGui()
 
     if (ImGui::TreeNode("Damage Camera Shake"))
     {
+        ImGui::TextWrapped(
+            "ここで決めるのは被弾の「衝撃量」だけ。振幅・周波数・揺れる長さは"
+            "カメラの Camera Shake コンポーネント側で調整する。");
+
         ImGui::DragFloat(
-            "Damage Multiplier",
-            &m_shakeDamageMultiplier,
+            "Trauma / Damage",
+            &m_traumaPerDamage,
+            0.005f,
+            0.0f,
+            1.0f,
+            "%.3f");
+
+        ImGui::DragFloat(
+            "Min Trauma",
+            &m_traumaMin,
             0.01f,
             0.0f,
-            2.0f,
+            1.0f,
             "%.2f");
 
         ImGui::DragFloat(
-            "Min Strength",
-            &m_shakeMinStrength,
+            "Max Trauma",
+            &m_traumaMax,
             0.01f,
             0.0f,
-            10.0f,
+            1.0f,
             "%.2f");
-
-        ImGui::DragFloat(
-            "Max Strength",
-            &m_shakeMaxStrength,
-            0.01f,
-            0.0f,
-            20.0f,
-            "%.2f");
-
-        ImGui::DragFloat(
-            "Duration",
-            &m_shakeDuration,
-            0.01f,
-            0.0f,
-            5.0f,
-            "%.2f sec");
 
         ImGui::TreePop();
     }
@@ -422,36 +418,16 @@ void PlayerFeedbackSystem::OnPlayerAttackHit(
 void PlayerFeedbackSystem::StartDamageCameraShake(
     float damageAmount)
 {
-    const float shakeStrength =
+    // 以前はここから全ての VirtualCamera へ直接 SetShake していたため、
+    // 着地の揺れを被弾の揺れが上書きして消していた。要求を出すだけにすると、
+    // 受け側(CameraShakeSystem)が蓄積して1つの揺れにまとめてくれる。
+    const float trauma =
         std::clamp(
-            damageAmount * m_shakeDamageMultiplier,
-            m_shakeMinStrength,
-            m_shakeMaxStrength);
+            damageAmount * m_traumaPerDamage,
+            m_traumaMin,
+            m_traumaMax);
 
-    auto vcamView = m_world->View<VirtualCamera>();
-
-    for (auto camID : vcamView)
-    {
-        if (auto *shake =
-                m_world->GetComponent<CameraShake>(camID))
-        {
-            shake->SetShake(
-                shakeStrength,
-                m_shakeDuration);
-        }
-        else
-        {
-            CameraShake newShake;
-
-            newShake.SetShake(
-                shakeStrength,
-                m_shakeDuration);
-
-            m_world->AddComponent<CameraShake>(
-                camID,
-                newShake);
-        }
-    }
+    m_world->GetEventBus().Publish(CameraShakeRequestEvent{trauma});
 }
 
 // ===================================================================================

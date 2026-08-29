@@ -4,14 +4,16 @@
 // --------------------
 // 役割:
 //   ScreenImpactComponent(singleton) の timer を減衰させ、その強さを
-//   「カメラシェイク」と「放射ブラー/色収差のバースト」へ毎フレーム反映する。
+//   「放射ブラー/色収差のバースト」へ毎フレーム反映する。
 //
 // 設計方針:
-//   - エンティティ走査は不要。singleton 設定と Camera リソースだけを触るため
-//     SystemBase を直接継承する（PostProcessSystem と同じ流儀）。
-//   - CameraBrainSystem(R01b) が MainCamera を確定した「後」に走る必要があるため
-//     R02_Environment に登録する。放射ブラー/色収差の設定書き込みは、それを読む
-//     PostProcessSystem(R09) より前なので同フレームで反映される。
+//   - エンティティ走査は不要。singleton 設定だけを触るため SystemBase を直接
+//     継承する（PostProcessSystem と同じ流儀）。
+//   - 画面の揺れはここでは扱わない。カメラを直接書くと CameraShake 経由の
+//     他の揺れと合成規則が二重になるため、命中時の揺れは
+//     CameraShakeRequestEvent としてカメラ側の一元経路へ送る。
+//   - 放射ブラー/色収差の設定書き込みは、それを読む PostProcessSystem(R09) より
+//     前であればよい。R02_Environment に登録する。
 //   - PP へは「自分のキーで確保したスロット」だけを書く。設定本体(enable/data)は
 //     シーンの持ち物なので触らない。最終強度の合成と描画ON/OFFの判断は
 //     PostProcessSystem が行う。これにより、同時に走る他の演出

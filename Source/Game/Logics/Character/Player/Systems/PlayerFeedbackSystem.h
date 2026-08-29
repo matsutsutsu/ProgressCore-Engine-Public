@@ -55,19 +55,21 @@ class PlayerFeedbackSystem
     // Camera Shake
     // -------------------------------------------------------------------------
 
+    /// @note カメラには触れず CameraShakeRequestEvent を出すだけ。振幅・周波数・
+    ///       揺れる長さはカメラ側(CameraShake)の一元管理で、ここが持つのは
+    ///       「被弾のダメージ量をどれくらいの衝撃と見なすか」だけ。
     void StartDamageCameraShake(float damageAmount);
 
-    // ダメージ量 → カメラシェイク強度の倍率。
-    float m_shakeDamageMultiplier = 0.1f;
+    // ダメージ量 → 衝撃量(trauma) の換算係数。
+    // @note 実際の揺れは trauma の2乗に比例する。0.3 と 0.6 では揺れが4倍違うので、
+    //       「小さい被弾も一応揺れてほしい」なら下限を高めに取る必要がある。
+    float m_traumaPerDamage = 0.07f;
 
-    // カメラシェイクの最低強度。
-    float m_shakeMinStrength = 0.2f;
+    // 被弾時の衝撃量の下限（かすり傷でも最低これだけは揺らす）。
+    float m_traumaMin = 0.45f;
 
-    // カメラシェイクの最大強度。
-    float m_shakeMaxStrength = 3.0f;
-
-    // カメラシェイク継続時間。
-    float m_shakeDuration = 0.5f;
+    // 被弾時の衝撃量の上限（1.0 でカメラの最大の揺れ）。
+    float m_traumaMax = 1.0f;
 
     // -------------------------------------------------------------------------
     // Controller Vibration

@@ -38,24 +38,9 @@ void CameraActionTPSSystem::Initialize()
         });
     });
 
-    // 着地などの汎用カメラシェイクを受信
-    ListenEvent<CameraShakeRequestEvent>([this](const CameraShakeRequestEvent &ev) {
-
-        ForEachWithID([&](EntityID id, VirtualCamera &vcam, CameraBodyTPSComponent &tps, TransformComponent &trans) {
-            // CameraShakeComponentがある場合は振動、ない場合はAddComponentして遅延実行で振動
-            if (auto *shake = m_world->GetComponent<CameraShake>(id))
-            {
-                shake->SetShake(ev.amplitude, ev.duration);
-            }
-            else
-            {
-                CameraShake newShake;
-                newShake.SetShake(ev.amplitude, ev.duration);
-                m_world->AddComponent<CameraShake>(id, newShake);
-            }
-        });
-    });
-
+    // ※ 画面の揺れ(CameraShakeRequestEvent)はここでは受けない。
+    //    揺れの受け口は CameraShakeSystem 1箇所に集約してある。Body の役割は
+    //    カメラをどこに置くかであって、演出の合成規則を持つ場所ではない。
 }
 
 void CameraActionTPSSystem::Update(float dt)

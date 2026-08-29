@@ -2,6 +2,12 @@
     "entities": [
         {
             "components": {
+                "Camera Shake": {
+                    "amplitude": 3.0,
+                    "decayRate": 1.2,
+                    "frequency": 22.0,
+                    "rotationRatio": 0.35
+                },
                 "CameraBodyTPS": {
                     "baseFov": 70.0,
                     "collisionEnabled": true,

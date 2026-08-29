@@ -150,14 +150,16 @@ REGISTER_COMPONENT_EDITOR_GUI(CameraAimLookAt)
 // Camera Shake 
 // BEGIN_CAT を使用
 // ============================================================================
-// duration(残り時間) / elapsed / seed は SetShake が毎回上書きする実行時状態なので
-// シリアライズ対象から外している。保存しておくと、非ゼロの残り時間が焼き込まれた
+// trauma(蓄積量) / elapsed / seed は要求が来るたびに書き換わる実行時状態なので
+// シリアライズ対象から外している。保存しておくと、非ゼロの蓄積量が焼き込まれた
 // プレハブがロード直後に勝手に揺れ始める。
+// 揺れの「強さ・速さ・長さ」はすべてここに集約されている。発生源は衝撃量(trauma)
+// だけを送るので、演出の調整はこの4つを触れば全ての揺れに効く。
 COMPONENT_META_BEGIN_FULL(CameraShake, "Camera Shake", CCL::Categories::Camera, 330, false)
-    CFIELD_FLOAT_RANGED(amplitude, "揺れの強さ", 0.1f, 0.0f, 100.0f, "Shake Settings")
-    CFIELD_FLOAT_RANGED(maxDuration, "最大時間", 0.01f, 0.0f, 10.0f, "Shake Settings")
+    CFIELD_FLOAT_RANGED(amplitude, "最大振幅", 0.1f, 0.0f, 100.0f, "Shake Settings")
     CFIELD_FLOAT_RANGED(frequency, "揺れの周波数(Hz)", 0.5f, 0.1f, 120.0f, "Shake Settings")
     CFIELD_FLOAT_RANGED(rotationRatio, "回転成分の割合", 0.01f, 0.0f, 2.0f, "Shake Settings")
+    CFIELD_FLOAT_RANGED(decayRate, "減衰速度(/秒)", 0.05f, 0.05f, 20.0f, "Shake Settings")
 COMPONENT_META_END(CameraShake)
 
 // ============================================================================

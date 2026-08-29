@@ -134,14 +134,12 @@
                     "currentYaw": -88.85147857666016,
                     "isAirborne": false,
                     "isRunning": false,
-                    "lastFallVelocity": 0.0,
                     "maxBankingAngle": 30.0,
                     "maxJumps": 2,
                     "runIdleReleaseTime": 0.4000000059604645,
                     "runSpeed": 65.5,
                     "timeSinceGrounded": 0.0,
-                    "turnSpeed": 10.0,
-                    "wasGroundedLastFrame": true
+                    "turnSpeed": 10.0
                 },
                 "Player Input": {},
                 "RootMotion": null,

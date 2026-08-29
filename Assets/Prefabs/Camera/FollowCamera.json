@@ -26,10 +26,11 @@
                     ],
                     "target": 4294967348
                 },
-                "CameraShake": {
+                "Camera Shake": {
                     "amplitude": 3.0,
-                    "duration": 0.0,
-                    "maxDuration": 0.5
+                    "decayRate": 1.2,
+                    "frequency": 22.0,
+                    "rotationRatio": 0.35
                 },
                 "Name": {
                     "name": "FollowCamera"
