@@ -21,8 +21,10 @@
 //     が祖先(Animator)の Trail 区間イベントを見て emitting を毎フレーム上書きする。
 // ===========================================================================
 #include "Engine/ECS/Common/CCL_Types.h"
+#include "Engine/Graphics/Resource/ResourceTypes.h" // TextureHandle
 #include <DirectXMath.h>
 #include <cstdint>
+#include <string>
 
 /// @brief 断面の作り方。
 /// @details Ribbon は板1枚なので、面が視線と平行になった瞬間に線へ潰れる。
@@ -50,6 +52,27 @@ struct TrailComponent
     DirectX::XMFLOAT3 baseOffset = {0.0f, 0.0f, 0.0f}; ///< 刃の根本（ローカル）
     DirectX::XMFLOAT3 tipOffset  = {0.0f, 1.0f, 0.0f}; ///< 刃の先端（ローカル）
     DirectX::XMFLOAT4 color      = {0.6f, 0.8f, 1.0f, 1.0f}; ///< 加算色rgb + 基準アルファa
+
+    // --- テクスチャ（config。空なら従来どおり単色。設定すると色×テクスチャで描く） ---
+    /// @brief トレイルに貼るテクスチャの相対パス（例: "Assets/Textures/Trail/slash.dds"）。
+    /// @note  U＝尾の長さ方向(先端0→末尾1)、V＝幅方向(根本0→先端1)。
+    ///        αで輪郭形状、RGBで模様、U方向グラデで寿命色変化などが出せる。
+    ///        空文字なら白テクスチャ扱い＝これまでと同じ単色トレイル（後方互換）。
+    std::string texturePath;
+
+    /// @brief UV のタイリング回数（x=長さ方向, y=幅方向）。既定は等倍。
+    DirectX::XMFLOAT2 uvTiling = {1.0f, 1.0f};
+
+    /// @brief UV スクロール速度（x=長さ方向, y=幅方向, 単位/秒）。0で静止。
+    ///        流れるエネルギーや揺らぎを出すときに使う。
+    DirectX::XMFLOAT2 uvScroll = {0.0f, 0.0f};
+
+    // --- テクスチャのランタイム状態（非シリアライズ） ---
+    /// @brief texturePath の遅延ロード先。パス変更時は Invalid にして再解決させる。
+    TextureHandle textureHandle;
+
+    /// @brief uvScroll を積算した現在のオフセット。TrailSystem が毎フレーム進める。
+    DirectX::XMFLOAT2 uvScrollOffset = {0.0f, 0.0f};
 
     float lifeTime    = 0.18f; ///< 1区間が消えるまでの秒数（尾の長さ）
     float minDistance = 0.02f; ///< 先端がこれ以上動いたら新区間を刻む（静止時の汚れ防止）

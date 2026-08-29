@@ -377,7 +377,7 @@
                                 1.0
                             ],
                             "colorMode": 1,
-                            "colorRampPath": "Assets/Textures/VFX/VFX_Ramp_Fire.png",
+                            "colorRampPath": "Assets/Textures/VFX/Ramp/T_Ramp_Fire.png",
                             "coneAngle": [
                                 0.0,
                                 3.140000104904175
@@ -442,7 +442,7 @@
                                 1
                             ],
                             "spriteMode": 0,
-                            "texturePath": "Assets/Textures/VFX/VFX_Circle.png",
+                            "texturePath": "Assets/Textures/VFX/Particle/T_Particle_Circle_01.png",
                             "uvScrollSpeed": [
                                 0.0,
                                 0.0

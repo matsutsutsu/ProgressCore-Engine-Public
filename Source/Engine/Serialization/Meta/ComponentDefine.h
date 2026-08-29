@@ -132,6 +132,12 @@ namespace ComponentMetaHelpers {
 #define CFIELD_COLOR_T(Field, Display, Category, Tooltip)                                       \
     FD_Color(Display, #Field, offsetof(ThisType, Field), Category, true, Tooltip),
 
+// ファイルパス (std::string) を「テキスト＋[...]ダイアログ」で編集する。
+//   Preset は FileDialog のプリセット名 (例 "Texture")。直打ちに加えダイアログで選べる。
+//   使い方: CFIELD_ASSET(field, "表示名", "カテゴリ", "Texture", "説明")  ※説明不要なら nullptr
+#define CFIELD_ASSET(Field, Display, Category, Preset, Tooltip)                                  \
+    FD_String(Display, #Field, offsetof(ThisType, Field), Category, true, Tooltip, false, Preset),
+
 // --- 細かい制御が必要な特殊版 (デフォルト推論を上書き) -----------------------
 
 /** @brief range / drag speed を指定する float */

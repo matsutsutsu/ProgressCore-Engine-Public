@@ -32,6 +32,11 @@ CFIELD_INT_RANGED(tubeSides, "筒の分割数", 3, 16, "形状")
 CFIELD_FLOAT_RANGED(rimPower, "筒の輪郭強調", 0.05f, 0.0f, 1.0f, "見た目")
 
 CFIELD_COLOR(color, "色(加算)", "見た目")
+CFIELD_ASSET(texturePath, "テクスチャ", "テクスチャ", "Texture",
+         "トレイルに貼る画像([...]で選択)。"
+         "空なら単色。U=長さ方向/V=幅方向。αで輪郭、RGBで模様、U方向グラデで寿命色変化。")
+CFIELD_T(uvTiling, "UVタイリング(長さ,幅)", "テクスチャ", "テクスチャの繰り返し回数。x=長さ方向, y=幅方向。")
+CFIELD_T(uvScroll, "UVスクロール速度(長さ,幅)", "テクスチャ", "毎秒のUV移動量。流れる/揺らぐ表現に。0で静止。")
 CFIELD_FLOAT_RANGED(lifeTime, "寿命(秒)", 0.005f, 0.0f, 2.0f, "見た目")
 CFIELD_FLOAT_RANGED(minDistance, "最小距離", 0.005f, 0.0f, 1.0f, "形状")
 

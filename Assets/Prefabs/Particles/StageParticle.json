@@ -91,7 +91,7 @@
                                 1
                             ],
                             "spriteMode": 0,
-                            "texturePath": "Assets/Textures/VFX/VFX_Circle.png",
+                            "texturePath": "Assets/Textures/VFX/Particle/T_Particle_Circle_01.png",
                             "uvScrollSpeed": [
                                 0.0,
                                 0.0

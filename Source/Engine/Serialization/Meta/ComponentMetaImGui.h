@@ -10,6 +10,10 @@
 #include <type_traits>
 #include "Editor/Core/EditorCommandHistory.h"
 #include "Engine/Platform/Core/Logger.h"
+#include "Engine/Platform/Core/Dialog.h"   // FileDialog (パスフィールドのダイアログ)
+#include "Engine/Graphics/RHI/Graphics.h"  // 親ウィンドウ HWND
+#include "Engine/Graphics/Resource/ResourceManager.h" // パスフィールドのサムネイルプレビュー
+#include "Engine/Graphics/Resource/ResourceTypes.h"   // TextureHandle
 #include <imgui.h>
 
 namespace ComponentMetaImGui {
@@ -293,7 +297,53 @@ namespace ComponentMetaImGui {
             std::string& v = RawField<std::string>(obj, fd.offset);
             char         buf[256];
             strncpy_s(buf, sizeof(buf), v.c_str(), _TRUNCATE);
-            if (ImGui::InputText(W, buf, sizeof(buf))) { v = buf; changed = true; }
+
+            // filePreset 指定時は「サムネイル＋パス欄＋[選択][クリア]」。直打ちも残す。
+            if (fd.filePreset) {
+                // 現在のパスからプレビュー用SRVを解決（ResourceManager はパスでキャッシュ）。
+                ID3D11ShaderResourceView* srv = nullptr;
+                if (!v.empty()) {
+                    TextureHandle h = ResourceManager::Instance().LoadTexture(v.c_str());
+                    if (h.IsValid()) srv = ResourceManager::Instance().GetTexture(h);
+                }
+
+                // サムネイル（2行分の高さ）。ホバーで拡大プレビュー＋パス表示。
+                const float thumb = ImGui::GetFrameHeightWithSpacing() + ImGui::GetFrameHeight();
+                if (srv) {
+                    ImTextureID tid = (ImTextureID)(uintptr_t)srv;
+                    ImGui::Image(tid, ImVec2(thumb, thumb));
+                    if (ImGui::IsItemHovered()) {
+                        ImGui::BeginTooltip();
+                        ImGui::Image(tid, ImVec2(192.0f, 192.0f));
+                        ImGui::TextUnformatted(v.c_str());
+                        ImGui::EndTooltip();
+                    }
+                }
+                else {
+                    // 未設定 / 読込失敗はプレースホルダ枠。
+                    ImGui::Button(v.empty() ? "無し" : "?", ImVec2(thumb, thumb));
+                }
+
+                ImGui::SameLine();
+                ImGui::BeginGroup();
+                // パス（直打ち可能・幅いっぱい）
+                ImGui::SetNextItemWidth(-FLT_MIN);
+                if (ImGui::InputText("##v", buf, sizeof(buf))) { v = buf; changed = true; }
+                // ボタン行：ファイルダイアログを開く / クリア
+                if (ImGui::Button("選択")) {
+                    if (auto path = FileDialog::OpenPreset(fd.filePreset, "ファイルを選択",
+                                                           Graphics::Instance().GetWindowHandle())) {
+                        v = FileDialog::ConvertToRelativePath(*path);
+                        changed = true;
+                    }
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("クリア")) { v.clear(); changed = true; }
+                ImGui::EndGroup();
+            }
+            else {
+                if (ImGui::InputText(W, buf, sizeof(buf))) { v = buf; changed = true; }
+            }
             break;
         }
         default: break;

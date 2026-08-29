@@ -56,6 +56,8 @@ struct FieldDescriptor {
     bool               serialize = true;               // false なら JSON に書き出さない
     const char        *tooltip   = nullptr;            // ホバー時のヒント (nullptr で無し)
     bool               readonly  = false;              // true なら表示のみ (編集不可)
+    const char        *filePreset = nullptr;           // 非nullなら String をファイルダイアログ付きで描く
+                                                       // (FileDialog のプリセット名。例 "Texture")
 };
 
 // ---------------------------------------------------------------------
@@ -137,8 +139,8 @@ inline FieldDescriptor FD_Color(const char* name, const char* jsonName, size_t o
 }
 inline FieldDescriptor FD_String(const char* name, const char* jsonName, size_t offset,
     const char* category = nullptr, bool serialize = true,
-    const char* tooltip = nullptr, bool readonly = false) {
-    return { name, jsonName, FieldKind::String, offset, 0.0f, 0.0f, 0.0f, category, nullptr, 0, serialize, tooltip, readonly };
+    const char* tooltip = nullptr, bool readonly = false, const char* filePreset = nullptr) {
+    return { name, jsonName, FieldKind::String, offset, 0.0f, 0.0f, 0.0f, category, nullptr, 0, serialize, tooltip, readonly, filePreset };
 }
 
 

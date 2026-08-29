@@ -16,6 +16,7 @@
 #include "TrailSystem.h"
 
 #include "Engine/Graphics/Renderer/TrailRenderer.h"
+#include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Graphics/RHI/Camera.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
@@ -260,7 +261,8 @@ float TrailSystem::RingRadius(const TrailComponent &trail, const Ring &ring) con
 TrailSystem::VertexPair TrailSystem::MakeVertex(const TrailComponent &trail,
     const DirectX::XMFLOAT3                                          &pos,
     float                                                             age,
-    float                                                             intensity) const
+    float                                                             intensity,
+    float                                                             vCoord) const
 {
     const float invLife = (trail.lifeTime > 0.0f) ? (1.0f / trail.lifeTime) : 0.0f;
 
@@ -270,10 +272,17 @@ TrailSystem::VertexPair TrailSystem::MakeVertex(const TrailComponent &trail,
 
     const float mask = fade * intensity;
 
+    // U＝長さ方向(先端0→末尾1)＝age正規化。tiling を掛け、スクロールオフセットを加える。
+    const float uAlong = std::clamp(age * invLife, 0.0f, 1.0f);
+    const XMFLOAT2 uv  = {
+        uAlong * trail.uvTiling.x + trail.uvScrollOffset.x,
+        vCoord * trail.uvTiling.y + trail.uvScrollOffset.y};
+
     VertexPair pair;
     pair.additive.position = pos;
     pair.additive.color    = XMFLOAT4(trail.color.x, trail.color.y, trail.color.z,
         trail.color.w * mask);
+    pair.additive.uv       = uv;
 
     // 歪みは色ではなくパラメータを運ぶ（意味は TrailDistortPS.hlsl と対）。
     // 加算色のアルファ(trail.color.w)を掛けないのは、「見た目は薄いが強く歪む」
@@ -281,6 +290,7 @@ TrailSystem::VertexPair TrailSystem::MakeVertex(const TrailComponent &trail,
     pair.distort.position = pos;
     pair.distort.color    = XMFLOAT4(trail.distortion, trail.distortionChroma,
         trail.distortionNoise, mask);
+    pair.distort.uv       = uv; // 歪みPSは未使用だが同レイアウトなので埋めておく
     return pair;
 }
 
@@ -393,10 +403,11 @@ void TrailSystem::EmitRibbon(const TrailComponent &trail,
         const XMFLOAT3 b1 = {r1.center.x - r1.half.x, r1.center.y - r1.half.y, r1.center.z - r1.half.z};
         const XMFLOAT3 t1 = {r1.center.x + r1.half.x, r1.center.y + r1.half.y, r1.center.z + r1.half.z};
 
-        const VertexPair vb0 = MakeVertex(trail, b0, r0.age, 1.0f);
-        const VertexPair vt0 = MakeVertex(trail, t0, r0.age, 1.0f);
-        const VertexPair vb1 = MakeVertex(trail, b1, r1.age, 1.0f);
-        const VertexPair vt1 = MakeVertex(trail, t1, r1.age, 1.0f);
+        // V＝幅方向。根本(b)=0 / 先端(t)=1。
+        const VertexPair vb0 = MakeVertex(trail, b0, r0.age, 1.0f, 0.0f);
+        const VertexPair vt0 = MakeVertex(trail, t0, r0.age, 1.0f, 1.0f);
+        const VertexPair vb1 = MakeVertex(trail, b1, r1.age, 1.0f, 0.0f);
+        const VertexPair vt1 = MakeVertex(trail, t1, r1.age, 1.0f, 1.0f);
 
         sink.PushTriangle(vb0, vt0, vt1);
         sink.PushTriangle(vb0, vt1, vb1);
@@ -440,10 +451,11 @@ void TrailSystem::EmitCross(const TrailComponent &trail,
         XMStoreFloat3(&b1, XMVectorSubtract(XMLoadFloat3(&r1.center), h1));
         XMStoreFloat3(&t1, XMVectorAdd(XMLoadFloat3(&r1.center), h1));
 
-        const VertexPair vb0 = MakeVertex(trail, b0, r0.age, 1.0f);
-        const VertexPair vt0 = MakeVertex(trail, t0, r0.age, 1.0f);
-        const VertexPair vb1 = MakeVertex(trail, b1, r1.age, 1.0f);
-        const VertexPair vt1 = MakeVertex(trail, t1, r1.age, 1.0f);
+        // V＝幅方向。2枚目(十字面)も根本=0 / 先端=1 で揃える。
+        const VertexPair vb0 = MakeVertex(trail, b0, r0.age, 1.0f, 0.0f);
+        const VertexPair vt0 = MakeVertex(trail, t0, r0.age, 1.0f, 1.0f);
+        const VertexPair vb1 = MakeVertex(trail, b1, r1.age, 1.0f, 0.0f);
+        const VertexPair vt1 = MakeVertex(trail, t1, r1.age, 1.0f, 1.0f);
 
         sink.PushTriangle(vb0, vt0, vt1);
         sink.PushTriangle(vb0, vt1, vb1);
@@ -511,10 +523,14 @@ void TrailSystem::EmitTube(const TrailComponent &trail,
             ringVertex(i + 1, k, p10, i10);
             ringVertex(i + 1, k1, p11, i11);
 
-            const VertexPair v00 = MakeVertex(trail, p00, rings[i].age, i00);
-            const VertexPair v01 = MakeVertex(trail, p01, rings[i].age, i01);
-            const VertexPair v10 = MakeVertex(trail, p10, rings[i + 1].age, i10);
-            const VertexPair v11 = MakeVertex(trail, p11, rings[i + 1].age, i11);
+            // V＝円周位置。継ぎ目を避けるため wrap 前の k, k+1 を使う。
+            const float vK  = static_cast<float>(k) / static_cast<float>(sides);
+            const float vK1 = static_cast<float>(k + 1) / static_cast<float>(sides);
+
+            const VertexPair v00 = MakeVertex(trail, p00, rings[i].age, i00, vK);
+            const VertexPair v01 = MakeVertex(trail, p01, rings[i].age, i01, vK1);
+            const VertexPair v10 = MakeVertex(trail, p10, rings[i + 1].age, i10, vK);
+            const VertexPair v11 = MakeVertex(trail, p11, rings[i + 1].age, i11, vK1);
 
             sink.PushTriangle(v00, v01, v11);
             sink.PushTriangle(v00, v11, v10);
@@ -547,6 +563,10 @@ void TrailSystem::Update(float dt)
 
         // 一時表示タイマーを更新
         trail.UpdateBurstTimer(dt);
+
+        // UVスクロールのオフセットを進める（桁あふれ防止で適当に wrap）。
+        trail.uvScrollOffset.x = std::fmod(trail.uvScrollOffset.x + trail.uvScroll.x * dt, 1024.0f);
+        trail.uvScrollOffset.y = std::fmod(trail.uvScrollOffset.y + trail.uvScroll.y * dt, 1024.0f);
 
         // ── 1. 現在の刃2端点をワールド空間へ（w=1 で並進込み変換） ──
         const XMMATRIX W     = XMLoadFloat4x4(&transform.renderWorldMatrix);
@@ -636,7 +656,17 @@ void TrailSystem::Update(float dt)
             break;
         }
 
-        renderer.SubmitTriangleList(verts.data(), verts.size());
+        // テクスチャを解決（パス設定時のみ）。ResourceManager はパスでキャッシュするため
+        // 毎フレーム呼んでもロードは初回だけ。パスを変えれば別ハンドルへ自動追従する。
+        ID3D11ShaderResourceView *trailSRV = nullptr;
+        if (!trail.texturePath.empty())
+        {
+            trail.textureHandle = ResourceManager::Instance().LoadTexture(trail.texturePath.c_str());
+            if (trail.textureHandle.IsValid())
+                trailSRV = ResourceManager::Instance().GetTexture(trail.textureHandle);
+        }
+
+        renderer.SubmitTriangleList(verts.data(), verts.size(), trailSRV);
         renderer.SubmitDistortTriangleList(distortVerts.data(), distortVerts.size());
     });
 }

@@ -95,9 +95,11 @@ private:
     float RingRadius(const TrailComponent &trail, const Ring &ring) const;
 
     /// @brief 尾ほど薄くフェードする加算色と、対になる歪みパラメータを作る。
+    /// @param vCoord テクスチャ V 座標（幅方向。Ribbon/Cross は根本0/先端1、Tube は円周位置）。
+    ///              U（長さ方向）は age から算出し、tiling/scroll を掛けて uv を組む。
     VertexPair MakeVertex(const TrailComponent &trail,
                           const DirectX::XMFLOAT3 &pos,
-                          float age, float intensity) const;
+                          float age, float intensity, float vCoord) const;
 
     /// @brief 折れ点1つ分のずらしベクトル。断面内の基底 u,v 上で決める。
     DirectX::XMVECTOR ZigZagOffset(const TrailComponent &trail, uint32_t node,
