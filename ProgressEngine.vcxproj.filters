@@ -804,6 +804,9 @@
     <ClInclude Include="Source\Engine\UI\ImGui\ImGuiThemes.h">
       <Filter>Source\Engine\UI\ImGui</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Math\Interpolation.h">
+      <Filter>Source\Engine\Core\Math</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Core\Math\StringHash.h">
       <Filter>Source\Engine\Core\Math</Filter>
     </ClInclude>

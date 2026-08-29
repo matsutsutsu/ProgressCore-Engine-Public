@@ -10,6 +10,7 @@
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
+#include "Engine/Core/Math/Interpolation.h" // SmoothStep()
 
 #include <algorithm>
 #include <cmath>
@@ -62,7 +63,7 @@ float CameraIntroOrbitSystem::ApplyEase(float t, CameraEaseMode mode)
     {
     case CameraEaseMode::EaseIn:    return t * t;
     case CameraEaseMode::EaseOut:   return 1.0f - (1.0f - t) * (1.0f - t);
-    case CameraEaseMode::EaseInOut: return t * t * (3.0f - 2.0f * t); // smoothstep
+    case CameraEaseMode::EaseInOut: return CCL::Math::SmoothStep(t);
     case CameraEaseMode::Linear:
     default:                        return t;
     }

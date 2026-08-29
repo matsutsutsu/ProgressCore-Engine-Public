@@ -5,6 +5,7 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Platform/Input/IInputAPI.h"
 #include "Engine/Camera/CameraEvents.h"
+#include "Engine/Core/Math/Interpolation.h" // Damp(): フレームレート非依存の追従係数
 
 #include "Engine/Physics/Components/Character/CharacterMovementComponent.h"
 #include "Engine/Physics/JoltIntegration/IPhysicsAPI.h" // カメラ衝突（地形レイキャスト）
@@ -408,7 +409,7 @@ void CameraActionTPSSystem::Update(float dt)
                 Vector3 vel             = targetMovement->currentVelocity;
                 vel.y                   = 0.0f;
                 Vector3 targetLookahead = vel * tps.lookaheadMultiplier;
-                float   laBlend         = 1.0f - std::exp(-tps.lookaheadDamping * dt);
+                float   laBlend         = CCL::Math::Damp(tps.lookaheadDamping, dt);
                 tps.currentLookahead    = Vector3::Lerp(tps.currentLookahead, targetLookahead, laBlend);
                 idealLookAt += tps.currentLookahead;
             }
@@ -426,7 +427,7 @@ void CameraActionTPSSystem::Update(float dt)
         }
 
         // 5. 指数減衰による追従（注視点と回り込み中心をそれぞれ滑らかに追う）
-        float posBlend    = 1.0f - std::exp(-tps.positionDamping * dt);
+        float posBlend    = CCL::Math::Damp(tps.positionDamping, dt);
         tps.currentLookAt = Vector3::Lerp(tps.currentLookAt, idealLookAt, posBlend);
         tps.currentPivot  = Vector3::Lerp(tps.currentPivot, posPivotTarget, posBlend);
 
@@ -469,7 +470,7 @@ void CameraActionTPSSystem::Update(float dt)
 
         // fast-in / slow-out：内側へ寄せるのは素早く、外側へ戻すのはゆっくり補間する。
         float colDamping = (resolvedDist < tps.currentCamDistance) ? tps.collisionInDamping : tps.collisionOutDamping;
-        float colBlend   = 1.0f - std::exp(-colDamping * dt);
+        float colBlend   = CCL::Math::Damp(colDamping, dt);
         tps.currentCamDistance = std::lerp(tps.currentCamDistance, resolvedDist, colBlend);
 
         // 回り込み中心から後方へ（衝突を反映した）距離ぶん引いた位置がカメラ本体。
@@ -510,7 +511,7 @@ void CameraActionTPSSystem::Update(float dt)
         // 「画角を広げたい」という要求はゲーム側(PlayerDashSystem 等)が
         // wideFovRequest に書き込む。カメラは理由を知らずに要求だけを見る。
         float targetFov = tps.wideFovRequest ? tps.dashFov : tps.baseFov;
-        float fovBlend = 1.0f - std::exp(-tps.fovDamping * dt);
+        float fovBlend = CCL::Math::Damp(tps.fovDamping, dt);
         vcam.fov       = std::lerp(vcam.fov, targetFov, fovBlend);
 
         // 8. TransformとVirtualCameraバッファの更新

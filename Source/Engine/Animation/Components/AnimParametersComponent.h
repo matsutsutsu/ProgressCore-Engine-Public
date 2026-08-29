@@ -81,7 +81,12 @@ struct AnimParametersComponent
 
     /// @brief トリガーを発火させる（先行入力バッファへの登録）
     /// @param hash トリガーのハッシュ
-    /// @param bufferTime 先行入力の猶予時間（秒）。デフォルト0.25秒(約15フレーム)
+    /// @param bufferTime 先行入力の猶予時間（秒）。既定 0.15 秒（60fps で約9フレーム）
+    /// @note  「押した瞬間」を bufferTime だけ生かしておくのが役割で、遷移してよい
+    ///        タイミングまでは決めない。実際に遷移が通るのは、寿命が残っていることに
+    ///        加えてシーケンサの ComboWindow / CancelWindow の区間内にいる時だけ
+    ///        （AnimControllerSystem::ConditionsMet が両方を AND で見る）。
+    ///        早すぎる入力を「待たせる」のがここ、「弾く」のが窓側。
     void SetTrigger(uint32_t hash, float bufferTime = 0.15f)
     {
         for (auto &t : triggers)

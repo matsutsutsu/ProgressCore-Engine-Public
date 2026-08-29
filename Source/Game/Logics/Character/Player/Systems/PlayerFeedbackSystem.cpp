@@ -77,15 +77,6 @@ float CalculateEnvelope(float timer, float duration)
 
     return normalizedTime * normalizedTime;
 }
-
-// =========================================================================
-// Lerp
-// =========================================================================
-
-float Lerp(float a, float b, float t)
-{
-    return a + (b - a) * t;
-}
 } // namespace
 
 PlayerFeedbackSystem::PlayerFeedbackSystem()

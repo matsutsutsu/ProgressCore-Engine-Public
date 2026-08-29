@@ -6,6 +6,7 @@
 #include "Engine/ECS/Common/CCL_Archetype.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
+#include "Engine/Core/Math/Interpolation.h" // Damp(): フレームレート非依存の追従係数
 #include "Engine/Serialization/Factory/EntityFactory.h"
 
 #include "Engine/Transform/Components/TransformComponent.h" // UI階層（親子）
@@ -126,7 +127,7 @@ void BossHealthHudSystem::Update(float dt)
     }
     else
     {
-        const float k = 1.0f - std::exp(-kTrailSpeed * dt); // フレームレート非依存の指数減衰
+        const float k = CCL::Math::Damp(kTrailSpeed, dt);
         bar->trailValue += (ratio - bar->trailValue) * k;
     }
 

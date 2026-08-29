@@ -93,7 +93,7 @@ struct DataDrivenFormation : public IFormation
         {
             // 腕：列は「腕の向き」への距離。YawSweep がその向きを Y 軸まわりに振る。
             const float angle = (spec.transform.type == SpecTransform::YawSweep)
-                                  ? sign * Lerp(spec.transform.from, spec.transform.to, amount) * kDegToRad
+                                  ? sign * std::lerp(spec.transform.from, spec.transform.to, amount) * kDegToRad
                                   : 0.0f;
 
             const Quaternion swing  = Quaternion::CreateFromAxisAngle(Vector3::UnitY, angle);
@@ -110,7 +110,7 @@ struct DataDrivenFormation : public IFormation
             {
                 // ヒンジ：高さベクトルを下端まわりに up→forward へ倒す。
                 //   b=0 の席（最下段）は角度に依らず動かない＝そこが回転軸になる。
-                const float theta = Lerp(spec.transform.from, spec.transform.to, amount) * kDegToRad;
+                const float theta = std::lerp(spec.transform.from, spec.transform.to, amount) * kDegToRad;
                 const float c     = std::cos(theta);
                 const float s     = std::sin(theta);
 
@@ -119,7 +119,7 @@ struct DataDrivenFormation : public IFormation
             }
             else if (spec.transform.type == SpecTransform::Translate)
             {
-                const float   d        = sign * Lerp(spec.transform.from, spec.transform.to, amount);
+                const float   d        = sign * std::lerp(spec.transform.from, spec.transform.to, amount);
                 const Vector3 moveAxis = AxisVector(spec.transform.axis, right, fwd);
 
                 pos  = origin + colAxis * a + Vector3::UnitY * b + moveAxis * d;
@@ -260,8 +260,6 @@ struct DataDrivenFormation : public IFormation
   private:
     static constexpr float kEpsilon  = 0.001f;
     static constexpr float kDegToRad = 3.14159265358979f / 180.0f;
-
-    static float Lerp(float from, float to, float t) { return from + (to - from) * t; }
 
     /// @brief 進行度を進める。書き手が陣形であることは DroneComponent.h の規約どおり。
     void AdvanceProgress(DroneComponent &drone, float dt) const

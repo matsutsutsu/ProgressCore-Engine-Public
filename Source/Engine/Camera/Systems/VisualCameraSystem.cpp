@@ -6,6 +6,7 @@
 #include "Engine/Platform/Input/IInputAPI.h"
 #include "Engine/Core/App/GameFlowState.h"
 #include "Engine/Camera/CameraEvents.h" // CameraShakeRequestEvent（揺れ要求の唯一の入口）
+#include "Engine/Core/Math/Interpolation.h" // Damp() / SmootherStep()
 // ※ target の役割ベース自動接続は、ゲーム側の CameraTargetBindSystem(R00b) が担う。
 #include <SimpleMath.h>
 #include <algorithm>
@@ -63,8 +64,7 @@ void CameraFollowSystem::Update(float dt)
 
         // 現在位置からの補間 (Damping)
         XMVECTOR currentPos = XMLoadFloat3(&vcam.resultPos);
-        // Lerp係数: 1.0 - exp(-damping * dt) がフレームレート非依存の正しい減衰計算
-        float    t      = 1.0f - std::exp(-body.damping * dt);
+        float    t      = CCL::Math::Damp(body.damping, dt);
         XMVECTOR newPos = XMVectorLerp(currentPos, desiredPos, t);
 
         XMStoreFloat3(&vcam.resultPos, newPos);
@@ -97,7 +97,7 @@ void CameraLookAtSystem::Update(float dt)
 
         // 現在のLookAtからの補間
         XMVECTOR currentLook = XMLoadFloat3(&vcam.resultLookAt);
-        float    t           = 1.0f - std::exp(-aim.damping * dt);
+        float    t           = CCL::Math::Damp(aim.damping, dt);
         XMVECTOR newLook     = XMVectorLerp(currentLook, desiredLook, t);
 
         XMStoreFloat3(&vcam.resultLookAt, newLook);
@@ -143,9 +143,9 @@ float CameraShakeSystem::GradientNoise(std::uint32_t seed, float t)
     const float v0 = gradient(i0) * fr;
     const float v1 = gradient(i0 + 1u) * (fr - 1.0f);
 
-    // quintic fade。smoothstep と違い2階微分まで連続なので、格子をまたぐ瞬間に
-    // 加速度が折れず、規則的な「カクつき」が乗らない。
-    const float u = fr * fr * fr * (fr * (fr * 6.0f - 15.0f) + 10.0f);
+    // 格子をまたぐ瞬間に加速度が折れないよう SmoothStep ではなく SmootherStep を使う。
+    // ここで折れると、周波数の格子が規則的なカクつきとして見えてしまう。
+    const float u = CCL::Math::SmootherStep(fr);
 
     // 1D 勾配ノイズの振れ幅はおよそ ±0.5 なので、-1..1 の想定に合わせて広げる。
     return std::lerp(v0, v1, u) * 2.0f;

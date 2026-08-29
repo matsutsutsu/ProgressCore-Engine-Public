@@ -3,6 +3,7 @@
 #include "Engine/Graphics/Components/PostProcess/PostEffectOverrides.h"
 
 #include <DirectXMath.h>
+#include <cmath> // std::lerp
 
 /// @brief ビネットの一時上書きの中身。寄せ先の目標値だけを持つ（強さは weight 側）。
 struct VignetteOverrideParams
@@ -45,18 +46,16 @@ struct VignetteConfigComponent
     {
         GpuData::CbVignetteData out = data;
         overrides.ForEachActive([&out](const VignetteOverrideParams &p, float t) {
-            out.vigColor.x    = Lerp(out.vigColor.x, p.color.x, t);
-            out.vigColor.y    = Lerp(out.vigColor.y, p.color.y, t);
-            out.vigColor.z    = Lerp(out.vigColor.z, p.color.z, t);
-            out.vigColor.w    = Lerp(out.vigColor.w, p.color.w, t);
-            out.vigIntensity  = Lerp(out.vigIntensity, p.intensity, t);
-            out.vigRadius     = Lerp(out.vigRadius, p.radius, t);
-            out.vigSoftness   = Lerp(out.vigSoftness, p.softness, t);
-            out.vigPulseSpeed = Lerp(out.vigPulseSpeed, p.pulseSpeed, t);
+            out.vigColor.x    = std::lerp(out.vigColor.x, p.color.x, t);
+            out.vigColor.y    = std::lerp(out.vigColor.y, p.color.y, t);
+            out.vigColor.z    = std::lerp(out.vigColor.z, p.color.z, t);
+            out.vigColor.w    = std::lerp(out.vigColor.w, p.color.w, t);
+            out.vigIntensity  = std::lerp(out.vigIntensity, p.intensity, t);
+            out.vigRadius     = std::lerp(out.vigRadius, p.radius, t);
+            out.vigSoftness   = std::lerp(out.vigSoftness, p.softness, t);
+            out.vigPulseSpeed = std::lerp(out.vigPulseSpeed, p.pulseSpeed, t);
         });
         return out;
     }
 
-private:
-    static float Lerp(float a, float b, float t) { return a + (b - a) * t; }
 };

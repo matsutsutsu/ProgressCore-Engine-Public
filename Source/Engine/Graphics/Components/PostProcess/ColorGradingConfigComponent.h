@@ -3,6 +3,7 @@
 #include "Engine/Graphics/Components/PostProcess/PostEffectOverrides.h"
 
 #include <DirectXMath.h>
+#include <cmath> // std::lerp
 
 /// @brief 色調補正の一時上書きの中身。寄せ先の目標値だけを持つ（強さは weight 側）。
 struct ColorGradingOverrideParams
@@ -40,12 +41,12 @@ struct ColorGradingConfigComponent
     {
         GpuData::CbColorGradingData out = data;
         overrides.ForEachActive([&out](const ColorGradingOverrideParams &p, float t) {
-            out.gradeTint.x     = Lerp(out.gradeTint.x, p.tint.x, t);
-            out.gradeTint.y     = Lerp(out.gradeTint.y, p.tint.y, t);
-            out.gradeTint.z     = Lerp(out.gradeTint.z, p.tint.z, t);
-            out.gradeTint.w     = Lerp(out.gradeTint.w, p.tint.w, t);
-            out.gradeSaturation = Lerp(out.gradeSaturation, p.saturation, t);
-            out.gradeContrast   = Lerp(out.gradeContrast, p.contrast, t);
+            out.gradeTint.x     = std::lerp(out.gradeTint.x, p.tint.x, t);
+            out.gradeTint.y     = std::lerp(out.gradeTint.y, p.tint.y, t);
+            out.gradeTint.z     = std::lerp(out.gradeTint.z, p.tint.z, t);
+            out.gradeTint.w     = std::lerp(out.gradeTint.w, p.tint.w, t);
+            out.gradeSaturation = std::lerp(out.gradeSaturation, p.saturation, t);
+            out.gradeContrast   = std::lerp(out.gradeContrast, p.contrast, t);
 
             const float mix = p.mixPeak * t;
             if (mix > out.gradeMixAmount)
@@ -54,6 +55,4 @@ struct ColorGradingConfigComponent
         return out;
     }
 
-private:
-    static float Lerp(float a, float b, float t) { return a + (b - a) * t; }
 };

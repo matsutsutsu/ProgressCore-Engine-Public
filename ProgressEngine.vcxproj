@@ -433,6 +433,7 @@
     <ClInclude Include="Source\Engine\Core\Components\PrefabInstanceComponent.h" />
     <ClInclude Include="Source\Engine\Core\Components\RenderInterpState.h" />
     <ClInclude Include="Source\Engine\Core\Math\CurveData.h" />
+    <ClInclude Include="Source\Engine\Core\Math\Interpolation.h" />
     <ClInclude Include="Source\Engine\Core\Math\Misc.h" />
     <ClInclude Include="Source\Engine\Core\Math\ScreenToWorld.h" />
     <ClInclude Include="Source\Engine\Core\Math\StringHash.h" />
