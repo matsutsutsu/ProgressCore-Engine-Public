@@ -48,9 +48,10 @@ private:
 
     Microsoft::WRL::ComPtr<ID3D11Buffer> m_fogConstantBuffer;
 
-    // グローバルテクスチャ
+    // グローバルテクスチャ（既定＝SkyboxComponent 未設定時のフォールバック）
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_globalNoiseSRV;
-    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_irradianceMapSRV;
-    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_prefilterMapSRV;
-    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_brdfLutSRV;
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_irradianceMapSRV; // 既定 IEM
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_prefilterMapSRV;  // 既定 PMREM
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_brdfLutSRV;       // BRDF LUT（空非依存の定数）
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_defaultSkyboxSRV; // 既定スカイボックス背景
 };

@@ -76,6 +76,11 @@ struct RenderFrameContext
     ID3D11ShaderResourceView* sceneDepthSRV = nullptr;
     ID3D11ShaderResourceView* sceneNormalSRV = nullptr;
 
+    /// @brief 現在のスカイボックス背景 SRV（SkyboxComponent 由来 or 既定）。
+    ///        EnvironmentSystem が解決して Graphics に預け、MakeFrameContext がここへ渡す。
+    ///        SkyboxPass はこれを使って描画する（null なら SkyboxPass 側の既定にフォールバック）。
+    ID3D11ShaderResourceView* skyboxSRV = nullptr;
+
     // ---- メタ情報 ----
     float    deltaTime = 0.0f;
     uint64_t frameIndex = 0;

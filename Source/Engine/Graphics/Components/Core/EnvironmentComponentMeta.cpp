@@ -192,7 +192,9 @@ template <> struct ComponentMeta<ShadowMapConfigComponent> {
         ImGui::SeparatorText("シャドウ設定");
 
         changed |= mi::DragFloat3("カスケード分割(近/中/遠)", &c.cascadeSplits.x, 1.0f, 1.0f, 1000.0f);
-        changed |= mi::DragFloat("バイアス", &c.shadowBias, 0.0001f, 0.0f, 0.01f, "%.5f");
+        // バイアスは極小値なので書式指定 "%.5f" が要る。Prop でラベル左だけ揃え、ウィジェットは生の ImGui。
+        mi::Prop("バイアス");
+        changed |= ImGui::DragFloat("##bias", &c.shadowBias, 0.0001f, 0.0f, 0.01f, "%.5f");
         changed |= mi::Color4("シャドウ色", &c.shadowColor.x);
 
         return changed;

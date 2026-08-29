@@ -12,6 +12,7 @@
 #include "Engine/Graphics/Shader/Shared/ShaderShared.h"
 
 #include "Engine/Graphics/Components/Lighting/FogComponent.h"
+#include "Engine/Graphics/Components/Lighting/SkyboxComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
@@ -29,13 +30,15 @@ void EnvironmentSystem::Initialize()
     if (noiseHandle.IsValid())
         m_globalNoiseSRV = ResourceManager::Instance().GetTexture(noiseHandle);
 
-    // IBL テクスチャ
+    // IBL テクスチャ（既定＝SkyboxComponent 未設定時のフォールバック）
     auto irrHandle = ResourceManager::Instance().LoadTexture("Assets/Textures/IBL/ibl_sky_iem.dds");
     auto preHandle = ResourceManager::Instance().LoadTexture("Assets/Textures/IBL/ibl_sky_pmrem.dds");
     auto lutHandle = ResourceManager::Instance().LoadTexture("Assets/Textures/IBL/ibl_brdf_lut.png");
+    auto skyHandle = ResourceManager::Instance().LoadTexture("Assets/Textures/IBL/skybox_highres.dds");
     if (irrHandle.IsValid()) m_irradianceMapSRV = ResourceManager::Instance().GetTexture(irrHandle);
     if (preHandle.IsValid()) m_prefilterMapSRV = ResourceManager::Instance().GetTexture(preHandle);
     if (lutHandle.IsValid()) m_brdfLutSRV = ResourceManager::Instance().GetTexture(lutHandle);
+    if (skyHandle.IsValid()) m_defaultSkyboxSRV = ResourceManager::Instance().GetTexture(skyHandle);
 
     // フォグ用定数バッファ
     GpuResourceUtils::CreateDynamicConstantBuffer(
@@ -128,12 +131,41 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext* dc, const Rende
     dc->PSSetShaderResources(SLOT_SRV_FOG_NOISE, 1, &fogNoiseSrv);
 
 
-    // 4. IBL テクスチャ (t14, t15, t16)
-    ID3D11ShaderResourceView* iblSRVs[3] = { nullptr, nullptr, nullptr };
-    if (m_irradianceMapSRV) iblSRVs[0] = m_irradianceMapSRV.Get();
-    if (m_prefilterMapSRV)  iblSRVs[1] = m_prefilterMapSRV.Get();
-    if (m_brdfLutSRV)       iblSRVs[2] = m_brdfLutSRV.Get();
+    // =================================================================
+    // 4. スカイボックス / IBL の解決（SkyboxComponent 由来 or 既定）
+    //   SkyboxComponent(singleton) が空・IEM・PMREM の .dds パスを持つ。
+    //   FogComponent.noiseTexturePath と同じ遅延ロード方式で解決し、
+    //   未設定/失敗時は Initialize で用意した既定へフォールバックする。
+    //   → 「1コンポーネントに指すだけで空とIBLがセットで差し替わる」を実現。
+    // =================================================================
+    ID3D11ShaderResourceView* skyboxSRV     = m_defaultSkyboxSRV.Get();
+    ID3D11ShaderResourceView* irradianceSRV = m_irradianceMapSRV.Get();
+    ID3D11ShaderResourceView* prefilterSRV  = m_prefilterMapSRV.Get();
+
+    if (auto* sky = m_world->GetSingletonComponent<SkyboxComponent>()) {
+        auto& rm = ResourceManager::Instance();
+
+        // パスが設定されていてハンドルが未解決なら遅延ロード（パス変更→handle無効化で再ロード）。
+        auto resolve = [&](char* path, TextureHandle& handle,
+                           ID3D11ShaderResourceView* fallback) -> ID3D11ShaderResourceView* {
+            if (path[0] == '\0') return fallback;           // 空欄は既定
+            if (!handle.IsValid()) handle = rm.LoadTexture(path);
+            ID3D11ShaderResourceView* srv = handle.IsValid() ? rm.GetTexture(handle) : nullptr;
+            return srv ? srv : fallback;                    // ロード失敗も既定へ
+        };
+
+        skyboxSRV     = resolve(sky->skyboxTexturePath, sky->skyboxHandle,     m_defaultSkyboxSRV.Get());
+        irradianceSRV = resolve(sky->irradiancePath,    sky->irradianceHandle, m_irradianceMapSRV.Get());
+        prefilterSRV  = resolve(sky->prefilterPath,     sky->prefilterHandle,  m_prefilterMapSRV.Get());
+    }
+
+    // 4a. IBL テクスチャ (t14 IEM, t15 PMREM, t16 BRDF LUT=空非依存の定数)
+    ID3D11ShaderResourceView* iblSRVs[3] = { irradianceSRV, prefilterSRV, m_brdfLutSRV.Get() };
     dc->PSSetShaderResources(SLOT_SRV_IBL_IRRADIANCE, 3, iblSRVs);
+
+    // 4b. スカイボックス背景は SkyboxPass が描画時に t17 へ刺す。ここでは Graphics に預けるだけ
+    //     （SkyboxPass はワールドを見られないため、MakeFrameContext 経由で渡す）。
+    Graphics::Instance().SetSkyboxSRV(skyboxSRV);
 
     // 5. IBL 用サンプラ (s3)
     if (s.renderState) {

@@ -148,6 +148,11 @@ public:
 
     void SetSceneNormalSRV(ID3D11ShaderResourceView* srv) noexcept { m_sceneNormalSRV = srv; }
 
+    /// @brief 現在フレームのスカイボックス背景 SRV を預ける（EnvironmentSystem が毎フレーム設定）。
+    ///        MakeFrameContext がこれを RenderFrameContext.skyboxSRV へ渡し、SkyboxPass が使う。
+    ///        非所有ポインタ（実体は ResourceManager 側が保持）。
+    void SetSkyboxSRV(ID3D11ShaderResourceView* srv) noexcept { m_pendingSkyboxSRV = srv; }
+
 private:
 
     // ---- カメラ（Graphics が唯一の所有者） ----
@@ -178,4 +183,7 @@ private:
     bool m_deviceLost = false; ///< Present() がデバイスロストを検出するとセットされる
 
     ID3D11ShaderResourceView* m_sceneNormalSRV = nullptr;
+
+    /// @brief 今フレームのスカイボックス SRV（EnvironmentSystem が毎フレーム更新。非所有）。
+    ID3D11ShaderResourceView* m_pendingSkyboxSRV = nullptr;
 };

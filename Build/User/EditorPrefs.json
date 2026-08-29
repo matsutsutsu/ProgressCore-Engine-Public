@@ -1,3 +1,5 @@
 {
-    "DialogHistory": {}
+    "DialogHistory": {
+        "Texture": "Assets\\Textures\\IBL"
+    }
 }
