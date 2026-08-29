@@ -51,10 +51,14 @@ void MaterialShader::Update(ID3D11DeviceContext* dc,
 {
     // overrideMaterial が非 null ならそちらを優先する。
     // mesh.material を書き換えない（const_cast 廃止）。
-    const MaterialData* mat = overrideMaterial
-        ? overrideMaterial : (mesh.material && mesh.material->data ? mesh.material->data.get() : nullptr);
+    const MaterialData* baseMat = (mesh.material && mesh.material->data) ? mesh.material->data.get() : nullptr;
+    const MaterialData* mat     = overrideMaterial ? overrideMaterial : baseMat;
 
-    if (mat) UpdateMaterialProperties(dc, *mat);
+    // override 使用時、テクスチャが欠けているスロットはモデル本来の材質(baseMat)で補う。
+    //   （シーン保存で失われた assetPath 無しのモデル埋め込みテクスチャ対策）
+    const MaterialData* fallback = (overrideMaterial && baseMat != overrideMaterial) ? baseMat : nullptr;
+
+    if (mat) UpdateMaterialProperties(dc, *mat, fallback);
 }
 
 void MaterialShader::End(ID3D11DeviceContext* dc, const RenderServices& /*s*/)

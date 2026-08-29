@@ -78,29 +78,32 @@ void Shader::UnbindResources(ID3D11DeviceContext* dc)
 }
 
 // マテリアルのプロパティを定数バッファに転送し、テクスチャをバインドする
-void Shader::UpdateMaterialProperties(ID3D11DeviceContext* dc, const MaterialData& mat)
+void Shader::UpdateMaterialProperties(ID3D11DeviceContext* dc, const MaterialData& mat,
+                                      const MaterialData* fallbackMat)
 {
 	// 定数バッファにマテリアルのスカラー値とカラー値を流し込む
     for (auto& cbPair : m_constantBuffers) {
         auto& cb = cbPair.second;
-        bool isUpdated = false;
 
         // ========================================================
-        // ① 定数バッファへの値の流し込み（ループの修正）
+        // ① 定数バッファへの値の流し込み
+        //
+        //   マテリアルCBはシェーダー1インスタンスで共有される。
+        //   以前は「この材質が1つも値を書かなかったCBは再アップロードしない」
+        //   最適化のせいで、直前に描いたオブジェクトのCB値が残ったまま
+        //   次のオブジェクトへ漏れていた（＝無関係な敵/ドローンが真っ黒になる原因）。
+        //   材質ごとに必ずゼロへ戻し、この材質の値を積み直して常にアップロードする。
         // ========================================================
+        cb.ResetToZero();
 
         for (const auto& prop : mat.scalars) {
-           
-            if (cb.SetValue(prop.nameHash, prop.value)) isUpdated = true;
+            cb.SetValue(prop.nameHash, prop.value);
         }
-
         for (const auto& prop : mat.colors) {
-            if (cb.SetValue(prop.nameHash, prop.value)) isUpdated = true;
+            cb.SetValue(prop.nameHash, prop.value);
         }
 
-        if (isUpdated) {
-            cb.UpdateBuffer(dc);
-        }
+        cb.UpdateBuffer(dc); // 常に転送（ゼロ初期化を確実に反映するため）
     }
 
     // ========================================================
@@ -125,7 +128,15 @@ void Shader::UpdateMaterialProperties(ID3D11DeviceContext* dc, const MaterialDat
         TextureHandle texHandle;
 
         // 実行時のハッシュ計算は不要。ロード時に算出済みの texInfo.nameHash をそのまま引く。
-        if (mat.GetTexture(texInfo.nameHash, texHandle) && texHandle.IsValid()) {
+        bool hasTex = mat.GetTexture(texInfo.nameHash, texHandle) && texHandle.IsValid();
+
+        // override 材質がこのスロットのテクスチャを持たない（＝保存で失われた
+        // モデル埋め込みテクスチャ等）場合は、生きているモデル材質から補う。
+        if (!hasTex && fallbackMat) {
+            hasTex = fallbackMat->GetTexture(texInfo.nameHash, texHandle) && texHandle.IsValid();
+        }
+
+        if (hasTex) {
             // cppに分けたことで、ここでResourceManagerを安全に呼び出せる
             ID3D11ShaderResourceView* srv = ResourceManager::Instance().GetTexture(texHandle);
             dc->PSSetShaderResources(slot, 1, &srv);
