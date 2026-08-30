@@ -466,6 +466,7 @@
     <ClInclude Include="Source\Engine\Graphics\Components\Core\MaterialComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\Core\ModelComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\Core\NoRenderTag.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\Core\NoShadowTag.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\Core\PrimitiveComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\Culling\CullingComponents.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\Lighting\FogComponent.h" />
@@ -839,6 +840,10 @@
     </ClCompile>
     <ClCompile Include="External\ImGuizmo\ImSequencer.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <!-- C4828: このファイルは非UTF-8のバイトを含むため警告が400件出る。外部ライブラリを
+           書き換えると更新時に差分が消えるので、このファイル限定で抑止する。
+           目的は「自分のコードの警告がゼロかどうか」をビルドログで判断できる状態を保つこと。 -->
+      <DisableSpecificWarnings>4828</DisableSpecificWarnings>
     </ClCompile>
     <ClCompile Include="External\implot-master\implot.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>

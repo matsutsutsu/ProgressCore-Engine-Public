@@ -24,6 +24,14 @@ using json = nlohmann::json;
 // 長い名前空間を "ed" に短縮するお作法
 namespace ed = ax::NodeEditor;
 
+namespace {
+/// @brief node-editor が返すID(uintptr_t)を、こちら側のID型(uint32_t)へ戻す。
+/// @note  EditorBTNode::id / BTPin::id はどちらも uint32_t で発行しており、それを
+///        ライブラリに預けているだけなので、切り詰めても情報は落ちない。
+///        各所で素の static_cast を書くと「なぜ安全か」が散らばるため1箇所に集める。
+inline uint32_t ToEditorId(uintptr_t id) { return static_cast<uint32_t>(id); }
+} // namespace
+
 
 // グラフの構造変化を記録する専用コマンド
 class BTGraphChangeCommand : public IEditorCommand {
@@ -593,7 +601,7 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext& context) {
 
             if (state == BTDebugState::Running) {
                 // 実行中（Running）は黄色く脈打つ
-                float blink = (sinf(ImGui::GetTime() * 15.0f) * 0.5f) + 0.5f;
+                float blink = (sinf(static_cast<float>(ImGui::GetTime()) * 15.0f) * 0.5f) + 0.5f;
                 borderColor = ImColor(255, 200, 0, 200 + static_cast<int>(55 * blink));
                 borderWidth = 3.0f;
 
@@ -775,7 +783,7 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext& context) {
 
                 // 3. 状態に応じた「血流エフェクト」の適用
                 if (state == BTDebugState::Running) { // 実行中
-                    float time = ImGui::GetTime();
+                    float time = static_cast<float>(ImGui::GetTime());
                     float pulse = (std::sin(time * 10.0f) + 1.0f) * 0.5f;
                     float alpha = 0.5f + (pulse * 0.5f);
 
@@ -855,12 +863,12 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext& context) {
 
                         // 3. ユーザーのドラッグ方向に依存せず、必ず startPinId に「出力ピン(親)」、endPinId に「入力ピン(子)」を入れる
                         if (startIsInput) {
-                            newLink.startPinId = endPinId.Get();
-                            newLink.endPinId = startPinId.Get();
+                            newLink.startPinId = ToEditorId(endPinId.Get());
+                            newLink.endPinId   = ToEditorId(startPinId.Get());
                         }
                         else {
-                            newLink.startPinId = startPinId.Get();
-                            newLink.endPinId = endPinId.Get();
+                            newLink.startPinId = ToEditorId(startPinId.Get());
+                            newLink.endPinId   = ToEditorId(endPinId.Get());
                         }
 
                         m_links.push_back(newLink);
@@ -888,7 +896,7 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext& context) {
         ed::NodeId deletedNodeId = 0;
         while (ed::QueryDeletedNode(&deletedNodeId)) {
             if (ed::AcceptDeletedItem()) {
-                DeleteNodeAndLinks(deletedNodeId.Get());
+                DeleteNodeAndLinks(ToEditorId(deletedNodeId.Get()));
                 itemsDeleted = true;
             }
         }
@@ -944,7 +952,7 @@ void BehaviorTreeWindow::DrawInspector() {
     int nodeCount = ed::GetSelectedNodes(selectedNodes.data(), static_cast<int>(selectedNodes.size()));
 
     if (nodeCount > 0) {
-        uint32_t selectedId = selectedNodes[0].Get();
+        uint32_t selectedId = ToEditorId(selectedNodes[0].Get());
         auto it = std::find_if(m_nodes.begin(), m_nodes.end(), [&](const EditorBTNode& n) { return n.id == selectedId; });
 
         if (it != m_nodes.end()) {
@@ -1341,7 +1349,7 @@ nlohmann::json BehaviorTreeWindow::BuildBakedNodes() {
                 childJson["decoratorParam"] = child->decoratorParam;
             }
 
-            child->runtimeFlatIndex = jsonNodes.size();
+            child->runtimeFlatIndex = static_cast<int>(jsonNodes.size());
 
             // 親ノードの "children" 配列に、この子のインデックスを追加する
             jsonNodes[task.flatIndex]["children"].push_back(jsonNodes.size());
@@ -1444,7 +1452,7 @@ void BehaviorTreeWindow::DuplicateSelectedNodes() {
 
     // 1. ノードの複製
     for (int i = 0; i < nodeCount; ++i) {
-        uint32_t oldId = selectedNodeIds[i].Get();
+        uint32_t oldId = ToEditorId(selectedNodeIds[i].Get());
         auto it = std::find_if(m_nodes.begin(), m_nodes.end(), [oldId](const EditorBTNode& n) { return n.id == oldId; });
 
         if (it != m_nodes.end()) {

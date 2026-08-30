@@ -148,13 +148,17 @@ namespace ComponentMetaHelpers {
 #define CFIELD_INT_RANGED(Field, Display, Min, Max, Category)                                   \
     FD_Int(Display, #Field, offsetof(ThisType, Field), Min, Max, Category),
 
-/** @brief uint8 ベースの enum (ImGui Combo に enum 名を出す) */
+/** @brief uint8 ベースの enum (ImGui Combo に enum 名を出す)
+ *  @note EnumCount には std::size(...) を渡すのが自然だが戻り値は size_t で、
+ *        FieldDescriptor::enumCount は int。呼び出し側に static_cast を書かせず
+ *        済むよう、ここで畳んで縮小変換警告を断つ。enum の要素数が int を
+ *        溢れることは無いので情報は落ちない。 */
 #define CFIELD_ENUM_U8(Field, Display, EnumNames, EnumCount, Category)                          \
-    FD_EnumU8(Display, #Field, offsetof(ThisType, Field), EnumNames, EnumCount, Category),
+    FD_EnumU8(Display, #Field, offsetof(ThisType, Field), EnumNames, static_cast<int>(EnumCount), Category),
 
 /** @brief int ベースの enum */
 #define CFIELD_ENUM_INT(Field, Display, EnumNames, EnumCount, Category)                         \
-    FD_EnumInt(Display, #Field, offsetof(ThisType, Field), EnumNames, EnumCount, Category),
+    FD_EnumInt(Display, #Field, offsetof(ThisType, Field), EnumNames, static_cast<int>(EnumCount), Category),
 
 /** @brief drag speed を指定する Float3 (Position や Scale など) */
 #define CFIELD_FLOAT3_FAST(Field, Display, Speed, Category)                                     \

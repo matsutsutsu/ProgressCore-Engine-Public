@@ -111,5 +111,9 @@ template <> struct ComponentMeta<SkyboxComponent> {
     }
 };
 
-REGISTER_COMPONENT(SkyboxComponent, "Skybox")
+// 登録名は必ず displayName から取る。ここに文字列を直書きすると、インスペクタの
+// 見出し(displayName)と JSONキー/追加メニュー(登録名)が食い違い、プレハブに
+// 見出しどおりのキーを書いても無言でコンポーネントが付かなくなる。
+// （COMPONENT_META_END マクロが自動でやっている事を、手書きメタでも守る）
+REGISTER_COMPONENT(SkyboxComponent, ComponentMeta<SkyboxComponent>::displayName)
 REGISTER_COMPONENT_EDITOR_GUI(SkyboxComponent)

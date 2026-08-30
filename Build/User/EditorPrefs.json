@@ -1,6 +1,3 @@
 {
-    "DialogHistory": {
-        "Prefab": "Assets\\Prefabs\\Particles",
-        "Texture": "Assets\\Textures\\VFX\\Particle"
-    }
+    "DialogHistory": {}
 }

@@ -4,6 +4,7 @@
 #include "ComponentMeta.h"
 #include "Engine/Serialization/Core/EntityLink.h"
 #include <DirectXMath.h>
+#include <algorithm> // std::max（ラベル列の後退防止）
 #include <cstring>
 #include <cfloat>
 #include <string>
@@ -83,7 +84,15 @@ namespace ComponentMetaImGui {
             ImGui::SetTooltip("%s", tooltip);
 
         ImGui::SameLine();
-        ImGui::SetCursorPosX(startX + kLabelWidth);
+
+        // 列頭へそろえる。ただし「後退させない」のが要点。
+        //   SetCursorPosX は絶対位置なので、kLabelWidth より長いラベル
+        //   （例「ロックオン開始ピッチ補間 (lockOnPitchDamping)」＝約300px）では
+        //   カーソルが左へ戻り、ウィジェットがラベルの上に重なって描かれる。
+        //   長いラベルの行はそろえず、その分だけ右へずらす。
+        const float alignedX = startX + kLabelWidth;
+        ImGui::SetCursorPosX((std::max)(ImGui::GetCursorPosX(), alignedX));
+
         ImGui::SetNextItemWidth(-FLT_MIN); // 直後のウィジェットを右端まで広げる
     }
 

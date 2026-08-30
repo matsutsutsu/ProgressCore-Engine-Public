@@ -48,6 +48,11 @@ struct ComponentSerializer<MaterialComponent>
 
     static void Load(const json &j, MaterialComponent &c, CCL::Serialization::LoadContext *)
     {
+        // 同じコンポーネントへ再ロードされた場合に備え、古いハンドルを先に返す。
+        // （「既定に戻す」ボタンと同じ後始末。ここだけ抜けているとプール枠が漏れる）
+        for (auto handle : c.overrideMaterials)
+            ResourceManager::Instance().UnloadMaterial(handle);
+
         c.overrideMaterials.clear();
         c.overridePaths.clear();
 

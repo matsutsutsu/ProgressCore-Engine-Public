@@ -25,7 +25,10 @@
 
 // --- Per-material (Shader::Update がバインド) ---
 #define SLOT_CB_MATERIAL        0   // 材質パラメータ (baseColor, roughness, useXXXMap...)
-#define SLOT_CB_MESH            1   // メッシュ単位パラメータ
+#define SLOT_CB_MESH            1   // 材質パラメータの続き (OutlineShader の CbOutline 等)
+                                    //   ※「メッシュ単位」ではない。b0〜b7 は
+                                    //     Shader::UpdateMaterialProperties が材質ごとに
+                                    //     ゼロクリアするので、材質以外の値は置けない。
 #define SLOT_CB_SKYBOX          2
 
 // --- Per-pass / ポストプロセス (各パスがバインド) ---

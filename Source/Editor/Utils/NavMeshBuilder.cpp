@@ -80,8 +80,10 @@ NavMeshBuildData NavMeshBuilder::GatherGeometry(CCL::ECS::World& world) {
 bool NavMeshBuilder::BuildNavMesh(CCL::ECS::World& world, const NavMeshBuildSettings& settings) {
     // 1. ジオメトリの収集
     NavMeshBuildData geom = GatherGeometry(world);
-    int nverts = geom.vertices.size() / 3;
-    int ntris = geom.indices.size() / 3;
+    // Recast の API が int を取るため明示的に縮める。ナビメッシュ用ジオメトリが
+    // int を溢れる規模になることは無い。
+    const int nverts = static_cast<int>(geom.vertices.size() / 3);
+    const int ntris  = static_cast<int>(geom.indices.size() / 3);
 
     if (nverts == 0 || ntris == 0) {
         CCL_LOG_ERROR(LogCategory::Core,"NavMesh Build Failed: No static geometry found.");

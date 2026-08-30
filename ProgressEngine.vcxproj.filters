@@ -1905,6 +1905,9 @@
     <ClInclude Include="Source\Engine\Graphics\Components\Core\NoRenderTag.h">
       <Filter>Source\Engine\Graphics\Components\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Components\Core\NoShadowTag.h">
+      <Filter>Source\Engine\Graphics\Components\Core</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Debug\AIDebugOverlaySystem.h">
       <Filter>Source\Game\Logics\AI\Debug</Filter>
     </ClInclude>
