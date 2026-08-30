@@ -96,10 +96,13 @@ namespace CCL::GameUI
     /// @brief 単色パネル（暗転オーバーレイ等）を生成する。size を大きくすれば全画面を覆える。
     /// @param appearDelay >=0 で出現アニメを再生（秒・遅延）。負(既定)ならアニメ無し。
     /// @param appearSlideY 出現時の上スライド量(px)。暗転パネルは 0（フェードのみ）が自然。
+    /// @param colorBottom 指定すると color(上端)→colorBottom(下端) の縦グラデーションになる。
+    ///        暗転パネルは真っ黒のベタより、上下で濃さを変えたほうが安っぽく見えない。
     inline CCL::ECS::EntityID SpawnPanel(CCL::ECS::World &world, const char *name,
         DirectX::XMFLOAT2 offset, DirectX::XMFLOAT2 size, DirectX::XMFLOAT4 color, int sortOrder,
         float appearDelay = -1.0f, float appearSlideY = 28.0f,
-        CCL::ECS::EntityID parent = CCL::ECS::InvalidEntityID)
+        CCL::ECS::EntityID parent = CCL::ECS::InvalidEntityID,
+        const DirectX::XMFLOAT4 *colorBottom = nullptr)
     {
         auto arch = CCL::ECS::ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
             UIImageComponent, UIAppearComponent>();
@@ -114,6 +117,11 @@ namespace CCL::GameUI
         UIImageComponent img;
         img.color     = color;
         img.sortOrder = sortOrder;
+        if (colorBottom)
+        {
+            img.useGradient = true;
+            img.colorBottom = *colorBottom;
+        }
 
         UIAppearComponent ap;
         ap.slideY = appearSlideY;

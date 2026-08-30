@@ -1644,6 +1644,9 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\VignetteEffect.h">
       <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\PauseBlurEffect.h">
+      <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\ChromaticAberrationEffect.h">
       <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
     </ClInclude>
@@ -2660,6 +2663,9 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\VignetteEffect.cpp">
       <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\PauseBlurEffect.cpp">
+      <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\ChromaticAberrationEffect.cpp">
       <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
     </ClCompile>
@@ -3115,6 +3121,9 @@
       <Filter>Shader\PostProcess</Filter>
     </FxCompile>
     <FxCompile Include="Shader\PostProcess\VignettePS.hlsl">
+      <Filter>Shader\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\PostProcess\PauseBlurPS.hlsl">
       <Filter>Shader\PostProcess</Filter>
     </FxCompile>
     <FxCompile Include="Shader\PostProcess\ChromaticAberrationPS.hlsl">

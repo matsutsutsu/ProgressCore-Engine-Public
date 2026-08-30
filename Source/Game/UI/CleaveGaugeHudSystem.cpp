@@ -43,6 +43,7 @@ void CleaveGaugeHudSystem::Initialize()
     UIProgressBarComponent gb;
     gb.fillColor = kColCharge;
     gb.sortOrder = 100;
+    gb.gradient  = 0.45f;
 
     gauge.Set(CCL::GameUI::MakeUINode(canvas)).Set(gt).Set(gb);
     m_gaugeID = gauge.ID();
@@ -61,7 +62,7 @@ void CleaveGaugeHudSystem::Initialize()
     UITextComponent lx;
     lx.text      = "CLEAVE";
     lx.pixelSize = 18.0f;
-    lx.sortOrder = 102;
+    lx.sortOrder = 110; // ゲージは sortOrder+4 まで使うので、被らない位置へ
 
     label.Set(CCL::GameUI::MakeUINode(canvas)).Set(lt).Set(lx);
     m_labelID = label.ID();

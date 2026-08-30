@@ -98,8 +98,11 @@ void PauseSystem::OpenPause()
     const EntityID canvas = SpawnCanvas(w, "PauseCanvas");
     m_overlay.push_back(canvas);
 
+    // 暗転は上下で濃さを変える。均一なベタ黒は「未実装の板」に見えやすく、
+    // 中央付近が薄いほうが背後のゲーム画面が残って「一時停止している」感が出る。
+    static const DirectX::XMFLOAT4 kDimBottom = {0.02f, 0.02f, 0.05f, 0.78f};
     m_overlay.push_back(SpawnPanel(w, "PauseDim", {0.0f, 0.0f}, {4000.0f, 4000.0f},
-        {0.0f, 0.0f, 0.0f, 0.55f}, 200, 0.00f, 0.0f, canvas));
+        {0.0f, 0.0f, 0.0f, 0.45f}, 200, 0.00f, 0.0f, canvas, &kDimBottom));
     m_overlay.push_back(SpawnLabel(w, "PauseTitle", "PAUSE", {-90.0f, -140.0f}, 56.0f, 220, 0.08f, canvas));
 
     auto resume = SpawnButton(w, "BtnResume", "LblResume", "RESUME", {0.0f, 0.0f}, "resume", true, 210, 0.16f, canvas);

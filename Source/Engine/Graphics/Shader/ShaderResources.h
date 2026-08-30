@@ -44,6 +44,7 @@
 #define SLOT_CB_SSAO            2   // SSAO(b2共有=時間的に排他)
 #define SLOT_CB_SSAO_BLUR       2   // SSAOブラー(b2共有=時間的に排他)
 #define SLOT_CB_CONTACTSHADOW   2   // コンタクトシャドウ(b2共有=時間的に排他)
+#define SLOT_CB_PAUSEBLUR       2   // ポーズ中の背景ぼかし(b2共有=時間的に排他)
 
 // --- Per-frame (Graphics / EnvironmentSystem がバインド) ---
 #define SLOT_CB_SCENE           8   // viewProjection, camera, dirLight ... Graphics::Update のみ書込
