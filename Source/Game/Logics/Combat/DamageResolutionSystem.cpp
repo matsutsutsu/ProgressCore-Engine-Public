@@ -20,6 +20,7 @@
 #include "Engine/Time/TimeService.h" // ヒットストップは意図ファサード経由
 #include "Engine/Physics/Components/Character/KnockbackComponent.h"
 #include "Game/Logics/Effects/Components/ScreenImpactComponent.h"
+#include "Engine/Camera/CameraEvents.h" // 命中時の画面揺れ要求（カメラは直接触らない）
 #include "Engine/Transform/Components/TransformComponent.h"       // 被弾者の向き（前後左右判定）
 #include "Engine/Animation/Components/AnimParametersComponent.h"  // ヒットリアクションのトリガー発行
 #include "Engine/Core/Math/StringHash.h"
@@ -141,18 +142,29 @@ void DamageResolutionSystem::Update(float dt) {
                     {
                         kb->velocity = event.knockbackDir * event.knockbackForce;
                         kb->timer    = kb->duration;
+
+                        // 操作を受け付けない硬直。滑る時間(timer)とは別枠で持つ。
+                        // 連続被弾では長い方を残す（後から来た弱い攻撃で硬直が短縮されない）。
+                        if (kb->stunDuration > kb->stunTimer)
+                            kb->stunTimer = kb->stunDuration;
                     }
                 }
 
                 // --- 命中演出（画面）のトリガ ---
                 // シーンに ScreenImpact singleton があれば、ダメージ量に応じた強さで
-                // カメラシェイク＋PPバーストを起動する（VFXは直接呼ばずデータで流す方針）。
-                // ScreenImpactSystem(R02) が減衰させ、camera / PostProcess へ反映する。
+                // PPバーストを起動する（VFXは直接呼ばずデータで流す方針）。
+                // ScreenImpactSystem(R02) が減衰させ PostProcess へ反映する。
                 if (auto *impact = m_world->GetSingletonComponent<ScreenImpactComponent>())
                 {
                     constexpr float kRefDamage = 25.0f; // これで power=1.0 の基準ダメージ
                     const float power = std::clamp(event.finalDamage / kRefDamage, 0.3f, 1.5f);
-                    impact->Trigger(power, static_cast<float>(eventEntity & 0xFF) * 0.137f);
+                    impact->Trigger(power);
+
+                    // 画面の揺れはカメラ側の一元経路へ回す。1フレームに何発命中しても
+                    // 受け側が最大値だけを採るので、多数のドローンに同時命中しても
+                    // 揺れが一気に飽和することはない。
+                    m_world->GetEventBus().Publish(
+                        CameraShakeRequestEvent{std::min(impact->shakeTrauma * power, 1.0f)});
                 }
 
                 // --- 被弾フィードバックの通知 ---

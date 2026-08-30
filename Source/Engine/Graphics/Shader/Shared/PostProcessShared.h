@@ -72,6 +72,14 @@ PP_STRUCT(CbVignetteData, SLOT_CB_VIGNETTE) {
 // ============================================================================
 // ChromaticAberration パラメータレイアウト（合計16バイト）
 // ============================================================================
+// ============================================================================
+// PauseBlur パラメータレイアウト（合計16バイト）
+// ============================================================================
+PP_STRUCT(CbPauseBlurData, SLOT_CB_PAUSEBLUR) {
+  float pauseBlurRadius; ///< サンプル円の半径(UV単位)。0 で素通し。
+  float pauseBlurPad[3];
+};
+
 PP_STRUCT(CbChromaticData, SLOT_CB_CHROMATIC) {
   float2 chromaCenter;
   float  chromaStrength;

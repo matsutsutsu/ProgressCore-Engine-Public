@@ -25,12 +25,14 @@ template <> struct ComponentMeta<DirectionalLightComponent> {
 
 #ifdef ENABLE_EDITOR
     static bool CustomGui(DirectionalLightComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr) {
+        namespace mi = ComponentMetaImGui;
         bool changed = false;
-        changed |= ImGui::ColorEdit3("ライト色", &comp.color.x);
-        changed |= ImGui::DragFloat("強度", &comp.intensity, 0.05f, 0.0f, 100.0f);
+        // ★ 1行ヘルパーで「ラベル左・幅いっぱい」に統一。
+        changed |= mi::Color3   ("ライト色", &comp.color.x);
+        changed |= mi::DragFloat("強度",     &comp.intensity, 0.05f, 0.0f, 100.0f);
         ImGui::Separator();
-        changed |= ImGui::ColorEdit4("空の色", &comp.skyColor.x);
-        changed |= ImGui::ColorEdit4("地面の色", &comp.groundColor.x);
+        changed |= mi::Color4   ("空の色",   &comp.skyColor.x);
+        changed |= mi::Color4   ("地面の色", &comp.groundColor.x);
         return changed;
     }
 #else
@@ -63,15 +65,16 @@ template <> struct ComponentMeta<PointLightComponent> {
 
 #ifdef ENABLE_EDITOR
     static bool CustomGui(PointLightComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr) {
+        namespace mi = ComponentMetaImGui;
         bool changed = false;
-        changed |= ImGui::ColorEdit3("ライト色", &comp.color.x);
-        changed |= ImGui::DragFloat("強度", &comp.intensity, 0.05f, 0.0f, 100.0f);
-        changed |= ImGui::DragFloat("範囲", &comp.range, 0.5f, 0.0f, 1000.0f);
+        changed |= mi::Color3   ("ライト色", &comp.color.x);
+        changed |= mi::DragFloat("強度",     &comp.intensity, 0.05f, 0.0f, 100.0f);
+        changed |= mi::DragFloat("範囲",     &comp.range, 0.5f, 0.0f, 1000.0f);
         ImGui::Separator();
         ImGui::Text("Attenuation (減衰パラメータ)");
-        changed |= ImGui::DragFloat("定数減衰", &comp.constant, 0.01f, 0.0f, 10.0f);
-        changed |= ImGui::DragFloat("線形減衰", &comp.linear, 0.01f, 0.0f, 10.0f);
-        changed |= ImGui::DragFloat("二次減衰", &comp.quadratic, 0.001f, 0.0f, 1.0f);
+        changed |= mi::DragFloat("定数減衰", &comp.constant, 0.01f, 0.0f, 10.0f);
+        changed |= mi::DragFloat("線形減衰", &comp.linear, 0.01f, 0.0f, 10.0f);
+        changed |= mi::DragFloat("二次減衰", &comp.quadratic, 0.001f, 0.0f, 1.0f);
         return changed;
     }
 #else
@@ -106,14 +109,15 @@ template <> struct ComponentMeta<SpotLightComponent> {
 
 #ifdef ENABLE_EDITOR
     static bool CustomGui(SpotLightComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr) {
+        namespace mi = ComponentMetaImGui;
         bool changed = false;
-        changed |= ImGui::ColorEdit3("ライト色", &comp.color.x);
-        changed |= ImGui::DragFloat("強度", &comp.intensity, 0.05f, 0.0f, 100.0f);
-        changed |= ImGui::DragFloat("範囲", &comp.range, 0.5f, 0.0f, 1000.0f);
+        changed |= mi::Color3   ("ライト色", &comp.color.x);
+        changed |= mi::DragFloat("強度",     &comp.intensity, 0.05f, 0.0f, 100.0f);
+        changed |= mi::DragFloat("範囲",     &comp.range, 0.5f, 0.0f, 1000.0f);
         ImGui::Separator();
         ImGui::Text("コーン角度(Cos値)");
-        changed |= ImGui::SliderFloat("内側コーン(Cos)", &comp.innerCos, 0.0f, 1.0f);
-        changed |= ImGui::SliderFloat("外側コーン(Cos)", &comp.outerCos, 0.0f, 1.0f);
+        changed |= mi::SliderFloat("内側コーン(Cos)", &comp.innerCos, 0.0f, 1.0f);
+        changed |= mi::SliderFloat("外側コーン(Cos)", &comp.outerCos, 0.0f, 1.0f);
         if (comp.innerCos < comp.outerCos) { comp.innerCos = comp.outerCos; changed = true; }
         return changed;
     }

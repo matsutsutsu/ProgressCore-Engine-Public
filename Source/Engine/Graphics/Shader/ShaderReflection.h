@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <algorithm>
 #include <DirectXMath.h>
 
 // ハッシュ値を使用するためにインクルード
@@ -194,6 +195,17 @@ namespace ShaderReflect
 
         // 構造体などの生データを直接セットする
         void SetRawData(const void *data, size_t size);
+
+        // CPUバッファを全ゼロに戻す（材質ごとに「前の材質の残り値」を排除するため）。
+        //   定数バッファはシェーダー1インスタンスで共有されるので、
+        //   材質を適用する前に必ずこれで初期化してから値を積み直す。
+        //   ※ 呼び出しは Shader::UpdateMaterialProperties から。適用範囲と
+        //     「b0〜b7 に材質以外を置いてはいけない」理由はそちらに書いてある。
+        void ResetToZero()
+        {
+            std::fill(cpuBuffer.begin(), cpuBuffer.end(), static_cast<BYTE>(0));
+            isDirty = true;
+        }
 
     private:
         Microsoft::WRL::ComPtr<ID3D11Buffer> buffer;

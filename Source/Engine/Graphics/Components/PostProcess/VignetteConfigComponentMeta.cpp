@@ -48,15 +48,18 @@ template <> struct ComponentMeta<VignetteConfigComponent> {
 #ifdef ENABLE_EDITOR
     static bool CustomGui(VignetteConfigComponent& c,
                           unsigned long long /*entityID*/ = 0, void* /*world*/ = nullptr) {
+        namespace mi = ComponentMetaImGui;
         bool changed = false;
-        if (ImGui::Checkbox("有効", &c.enable)) changed = true;
+
+        // ★ 1行ヘルパーで「ラベル左・幅いっぱい」に統一（自動グリッドと同じ見た目）。
+        changed |= mi::Checkbox("有効", &c.enable);
 
         ImGui::BeginDisabled(!c.enable);
-        if (ImGui::ColorEdit3("色", &c.data.vigColor.x)) changed = true;
-        if (ImGui::DragFloat("強度", &c.data.vigIntensity, 0.01f, 0.0f, 1.0f)) changed = true;
-        if (ImGui::DragFloat("半径", &c.data.vigRadius, 0.01f, 0.0f, 1.0f)) changed = true;
-        if (ImGui::DragFloat("柔らかさ", &c.data.vigSoftness, 0.01f, 0.01f, 1.0f)) changed = true;
-        if (ImGui::DragFloat("脈動速度", &c.data.vigPulseSpeed, 0.05f, 0.0f, 8.0f)) changed = true;
+        changed |= mi::Color3   ("色",       &c.data.vigColor.x);
+        changed |= mi::DragFloat("強度",     &c.data.vigIntensity, 0.01f, 0.0f, 1.0f);
+        changed |= mi::DragFloat("半径",     &c.data.vigRadius,    0.01f, 0.0f, 1.0f);
+        changed |= mi::DragFloat("柔らかさ", &c.data.vigSoftness,  0.01f, 0.01f, 1.0f);
+        changed |= mi::DragFloat("脈動速度", &c.data.vigPulseSpeed, 0.05f, 0.0f, 8.0f);
 
         ImGui::Separator();
         if (ImGui::Button("プリセット:弱め(常時)")) {

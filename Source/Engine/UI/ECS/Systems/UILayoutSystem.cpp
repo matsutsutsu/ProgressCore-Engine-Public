@@ -42,6 +42,10 @@ void UILayoutSystem::Update(float /*dt*/)
         item.size        = t.computedSize;
         item.color       = img.color;
         item.color.w    *= t.alpha; // 演出用の不透明度を反映（フェードイン等）
+        item.useGradient = img.useGradient;
+        item.colorBottom = img.colorBottom;
+        item.colorBottom.w *= t.alpha; // 下端にも同じフェードを掛ける（片側だけ残らないように）
+        item.additive    = img.additive;
         item.rotation    = t.rotation;
         item.sortOrder   = img.sortOrder;
         item.texturePath = img.texturePath;

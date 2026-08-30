@@ -17,6 +17,7 @@ struct VSInput
 {
     float3 position : POSITION;
     float4 color    : COLOR;
+    float2 uv       : TEXCOORD0;
 };
 
 struct VSOutput
@@ -24,6 +25,7 @@ struct VSOutput
     float4 position : SV_POSITION;
     float4 color    : COLOR;
     float3 worldPos : TEXCOORD0;
+    float2 uv       : TEXCOORD1;
 };
 
 VSOutput main(VSInput input)
@@ -32,5 +34,6 @@ VSOutput main(VSInput input)
     output.position = mul(float4(input.position, 1.0f), viewProjection);
     output.color    = input.color;
     output.worldPos = input.position;
+    output.uv       = input.uv;
     return output;
 }

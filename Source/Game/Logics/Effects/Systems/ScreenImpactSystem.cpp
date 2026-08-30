@@ -4,25 +4,22 @@
 //
 // 実装の意図(Why):
 //   - 強さ strength = (timer/duration) * power。残り時間で線形に減衰し、命中直後が最大。
-//   - カメラ揺れは MainCamera の right/up 基準（画面空間）に減衰正弦のオフセットを重ねる。
-//     eye と focus を同量ずらす並進シェイクなので視線方向は崩れない（酔いにくい）。
-//   - dt はフレーム実時間。ヒットストップ中(ゲーム時間停止)でも揺れは進むため、
-//     「時が止まって画面だけ震える」定番の手触りになる。
+//   - dt はフレーム実時間。ヒットストップ中(ゲーム時間停止)でもバーストは進むため、
+//     「時が止まって画面だけ荒れる」定番の手触りになる。
+//   - 画面の揺れはここでは扱わない。以前は MainCamera を直接書いていたが、
+//     CameraBrain が確定させた結果の上に加算する形になり、CameraShake 経由の
+//     他の揺れ（着地・被弾）とは別の合成規則になっていた。今は命中時に
+//     DamageResolutionSystem が CameraShakeRequestEvent を出す1本に揃えてある。
 // ===========================================================================
 #include "ScreenImpactSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
-#include "Engine/Graphics/RHI/Camera.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
 #include "Engine/Core/Math/StringHash.h"
 
-#include <DirectXMath.h>
-#include <cmath>
-
 using namespace CCL::ECS;
-using namespace DirectX;
 
 namespace
 {
@@ -86,35 +83,6 @@ void ScreenImpactSystem::Update(float dt)
 
     // ── 2. PPバースト（放射ブラー＋色収差） ──
     writeBurst(impact->radialStrength * strength, impact->chromaticStrength * strength);
-
-    // ── 3. カメラシェイク（CameraBrain 確定後の MainCamera に重ねる） ──
-    if (m_world->HasResource<Camera*>())
-    {
-        if (Camera* cam = m_world->GetResource<Camera*>())
-        {
-            const float amp   = impact->shakeAmplitude * strength;
-            const float phase = (impact->duration - impact->timer) * impact->shakeFrequency;
-
-            // 種で位相をずらし、XとYで異なる周波数比にして単調な往復を避ける。
-            const float ox = std::sin(phase          + impact->seed);
-            const float oy = std::sin(phase * 1.37f  + impact->seed * 2.1f);
-
-            const XMFLOAT3 eye   = cam->GetEye();
-            const XMFLOAT3 focus = cam->GetFocus();
-            const XMFLOAT3 up    = cam->GetUp();
-            const XMFLOAT3 right = cam->GetRight();
-
-            const XMVECTOR offset =
-                XMVectorAdd(XMVectorScale(XMLoadFloat3(&right), ox * amp),
-                            XMVectorScale(XMLoadFloat3(&up),    oy * amp));
-
-            XMFLOAT3 eye2, focus2;
-            XMStoreFloat3(&eye2,   XMVectorAdd(XMLoadFloat3(&eye),   offset));
-            XMStoreFloat3(&focus2, XMVectorAdd(XMLoadFloat3(&focus), offset));
-
-            cam->SetLookAt(eye2, focus2, up);
-        }
-    }
 
     m_wasActive = true;
 }

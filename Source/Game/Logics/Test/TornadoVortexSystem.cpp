@@ -24,4 +24,8 @@ void TornadoVortexSystem::Update(float dt)
         });
 }
 
-REGISTER_LOGIC_SYSTEM(TornadoVortexSystem, Priority::LogicStage::L02_Update);
+// 自動登録を止めている（実験用のため本編では使わない）。
+//   登録したままだと全シーンへ入り、走らないのに実行順の解決対象としてだけ残って、
+//   起動時の「順序不定ペア」警告を埋めてしまう（7本で 101 件中 47 件を占めていた）。
+//   使うときはこの行のコメントを外す。
+// REGISTER_LOGIC_SYSTEM(TornadoVortexSystem, Priority::LogicStage::L02_Update);

@@ -2,9 +2,10 @@
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Time/TimeState.h"
 #include "Engine/Transform/Components/TransformComponent.h"
-#include "Engine/Physics/Components/Character/CharacterMovementInputComponent.h"
+#include "Engine/Physics/Components/Character/CharacterMovementComponent.h"
 #include "Game/Logics/Character/Player/Components/CleaveComponent.h"
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h" // Archetype条件（回頭に書く）
+#include "Game/Logics/Character/Player/Components/PlayerInputComponent.h" // 準備/発動の押下
 #include "Game/Logics/Character/Player/Components/DashComponent.h"   // Archetype条件（救済ゲージで読む）
 
 // RootMotion は実行時後付け(AnimSetupSystem)＝任意依存なので前方宣言＋GetComponentで扱う。
@@ -18,12 +19,13 @@ struct RootMotionComponent;
  * 2. 準備状態で左クリックをすると突進状態になる
  * 3. 突進状態で敵に当たると再び準備状態になり連鎖が続く
  * 4. 突進が終了するとクールダウン状態になり、一定時間後に再び準備状態に戻る
- * ※ 入力は "Triggered" 登録＝GetAction がそのまま「押した瞬間」を返すため、自前のエッジ検出は持たない。
+ * ※ 押下の立ち上がり判定は PlayerInputSystem が済ませている（PlayerInputComponent）。
  */
 class PlayerCleaveSystem : public CCL::ECS::IfSystem<PlayerCleaveSystem,
-                               CCL::ECS::Write<CharacterMovementInputComponent>,
+                               CCL::ECS::Write<CharacterMovementComponent>,
                                CCL::ECS::Write<CleaveComponent>,
                                CCL::ECS::Write<PlayerComponent>,
+                               CCL::ECS::Read<PlayerInputComponent>,
                                CCL::ECS::Read<DashComponent>,
                                CCL::ECS::Read<TransformComponent>>
 {
@@ -58,11 +60,11 @@ private:
     void StartLunge(CleaveComponent &cleave, const DirectX::SimpleMath::Vector3 &dir);
 
     /// 突進終了：ヒットかつ残ストックがあれば再準備で連鎖、そうでなければ解除しクールダウンへ。
-    void EndLunge(CleaveComponent &cleave, CharacterMovementInputComponent &input,
-                  RootMotionComponent *rm, const DirectX::SimpleMath::Vector3 &aim);
+    void EndLunge(CleaveComponent &cleave, RootMotionComponent *rm,
+                  const DirectX::SimpleMath::Vector3 &aim);
 
     /// 待機(Idle)へ戻しクールダウンを張る（時間切れ・空振り時）。
-    void ExitToIdle(CleaveComponent &cleave, CharacterMovementInputComponent &input, RootMotionComponent *rm);
+    void ExitToIdle(CleaveComponent &cleave, RootMotionComponent *rm);
 
     /// 前方の扇内のドローンを進行方向へ吹き飛ばす（ボスは対象外＝ドローンのみ走査）。
     void ApplyFanKnockback(const DirectX::SimpleMath::Vector3 &origin, CleaveComponent &cleave);

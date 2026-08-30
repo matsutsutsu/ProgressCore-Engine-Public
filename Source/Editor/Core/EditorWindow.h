@@ -17,6 +17,10 @@ public:
 
     // WindowManagerから呼ばれる描画の入り口
     void Render(EditorContext& context) {
+        // 表示状態に関係なく毎フレーム走る。ワールド側へ効き続ける状態（編集モード等）を
+        // 持つウィンドウは、閉じられた/畳まれた瞬間に自分で後始末しないと状態が焼き付く。
+        OnFrameBegin(context);
+
         if (!m_isVisible) return;
 
 		
@@ -41,6 +45,10 @@ public:
 protected:
     // 各ウィンドウはこの関数をオーバーライドして中身を書く
     virtual void DrawContents(EditorContext& context) = 0;
+
+    // 非表示・折りたたみ・DrawContents の早期returnでも必ず呼ばれる。
+    // 「描画されている間しか維持できない状態」の解除に使う。
+    virtual void OnFrameBegin(EditorContext& /*context*/) {}
 
     // クラスじゃなくてコンテキストにしてもいいかも
 

@@ -29,6 +29,7 @@ struct ComponentMeta<CameraBodyIntroOrbit>
     static bool CustomGui(CameraBodyIntroOrbit &comp, unsigned long long /*entityID*/ = 0,
                           void * /*world*/ = nullptr)
     {
+        namespace mi = ComponentMetaImGui;
         bool changed = false;
 
         ImGui::SeparatorText(u8"注視対象");
@@ -49,29 +50,29 @@ struct ComponentMeta<CameraBodyIntroOrbit>
         }
         ImGui::TextColored(ImVec4(0.5f, 0.8f, 1.0f, 1.0f),
                            u8"[ ここに Hierarchy からボスをドロップ ]");
-        changed |= ImGui::DragFloat3(u8"注視オフセット (targetOffset)", &comp.targetOffset.x, 0.1f);
+        changed |= mi::DragFloat3(u8"注視オフセット (targetOffset)", &comp.targetOffset.x, 0.1f);
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip(u8"足元ではなく胸〜頭を見るための持ち上げ量。");
 
         ImGui::SeparatorText(u8"軌道 (開始 → 終了)");
         ImGui::TextDisabled(u8"角度は TPS カメラと同じ規約。200→20 で半周回り込む。");
-        changed |= ImGui::DragFloat(u8"開始 水平角(度)", &comp.startAngle, 1.0f, -720.0f, 720.0f);
-        changed |= ImGui::DragFloat(u8"終了 水平角(度)", &comp.endAngle, 1.0f, -720.0f, 720.0f);
-        changed |= ImGui::DragFloat(u8"開始 距離(m)", &comp.startRadius, 0.5f, 0.5f, 200.0f);
-        changed |= ImGui::DragFloat(u8"終了 距離(m)", &comp.endRadius, 0.5f, 0.5f, 200.0f);
-        changed |= ImGui::DragFloat(u8"開始 高さ(m)", &comp.startHeight, 0.2f, -50.0f, 100.0f);
-        changed |= ImGui::DragFloat(u8"終了 高さ(m)", &comp.endHeight, 0.2f, -50.0f, 100.0f);
+        changed |= mi::DragFloat(u8"開始 水平角(度)", &comp.startAngle, 1.0f, -720.0f, 720.0f);
+        changed |= mi::DragFloat(u8"終了 水平角(度)", &comp.endAngle, 1.0f, -720.0f, 720.0f);
+        changed |= mi::DragFloat(u8"開始 距離(m)", &comp.startRadius, 0.5f, 0.5f, 200.0f);
+        changed |= mi::DragFloat(u8"終了 距離(m)", &comp.endRadius, 0.5f, 0.5f, 200.0f);
+        changed |= mi::DragFloat(u8"開始 高さ(m)", &comp.startHeight, 0.2f, -50.0f, 100.0f);
+        changed |= mi::DragFloat(u8"終了 高さ(m)", &comp.endHeight, 0.2f, -50.0f, 100.0f);
 
         ImGui::SeparatorText(u8"画角 (Dynamic Lens)");
-        changed |= ImGui::DragFloat(u8"開始 画角(度)", &comp.startFov, 0.5f, 10.0f, 150.0f);
-        changed |= ImGui::DragFloat(u8"終了 画角(度)", &comp.endFov, 0.5f, 10.0f, 150.0f);
+        changed |= mi::DragFloat(u8"開始 画角(度)", &comp.startFov, 0.5f, 10.0f, 150.0f);
+        changed |= mi::DragFloat(u8"終了 画角(度)", &comp.endFov, 0.5f, 10.0f, 150.0f);
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip(u8"終了を狭くすると望遠の圧縮効果でボスに圧が出る。");
 
         ImGui::SeparatorText(u8"再生");
         int easeIdx = static_cast<int>(comp.easeMode);
-        if (ImGui::Combo(u8"補間カーブ (easeMode)", &easeIdx, kCameraEaseModeNames,
-                         static_cast<int>(kCameraEaseModeCount)))
+        if (mi::Combo(u8"補間カーブ (easeMode)", &easeIdx, kCameraEaseModeNames,
+                      static_cast<int>(kCameraEaseModeCount)))
         {
             comp.easeMode = static_cast<CameraEaseMode>(easeIdx);
             changed       = true;
@@ -79,18 +80,18 @@ struct ComponentMeta<CameraBodyIntroOrbit>
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip(u8"Linear は等速で「監視カメラ」に見える。演出は EaseOut 推奨。");
 
-        changed |= ImGui::DragFloat(u8"演出の長さ(秒)", &comp.duration, 0.1f, 0.1f, 60.0f);
-        changed |= ImGui::DragFloat(u8"開始待ち(秒)", &comp.startDelay, 0.05f, 0.0f, 10.0f);
-        changed |= ImGui::Checkbox(u8"シーン開始で自動再生 (playOnStart)", &comp.playOnStart);
-        changed |= ImGui::Checkbox(u8"スキップ許可 (allowSkip)", &comp.allowSkip);
+        changed |= mi::DragFloat(u8"演出の長さ(秒)", &comp.duration, 0.1f, 0.1f, 60.0f);
+        changed |= mi::DragFloat(u8"開始待ち(秒)", &comp.startDelay, 0.05f, 0.0f, 10.0f);
+        changed |= mi::Checkbox(u8"シーン開始で自動再生 (playOnStart)", &comp.playOnStart);
+        changed |= mi::Checkbox(u8"スキップ許可 (allowSkip)", &comp.allowSkip);
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip(u8"攻撃/ジャンプでスキップ。展示会では ON 推奨。");
 
         ImGui::SeparatorText(u8"カメラ優先度");
-        changed |= ImGui::DragInt(u8"再生中 (activePriority)", &comp.activePriority, 1, -1000, 1000);
+        changed |= mi::DragInt(u8"再生中 (activePriority)", &comp.activePriority, 1, -1000, 1000);
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip(u8"プレイヤー追従カメラ(200)より高くすること。");
-        changed |= ImGui::DragInt(u8"待機中 (idlePriority)", &comp.idlePriority, 1, -1000, 1000);
+        changed |= mi::DragInt(u8"待機中 (idlePriority)", &comp.idlePriority, 1, -1000, 1000);
 
         // --- 実行時状態の可視化とテスト再生 ---
         ImGui::SeparatorText(u8"状態 (実行時)");

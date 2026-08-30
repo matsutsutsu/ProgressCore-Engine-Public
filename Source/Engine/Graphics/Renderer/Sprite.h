@@ -36,6 +36,19 @@ public:
 		float r, float g, float b, float a	// 色
 	) const;
 
+	// 描画実行（4隅それぞれに色を指定する本体）
+	//   4隅で色を変えられる＝頂点補間でグラデーションになる。単色版は同じ色を4つ渡すだけ。
+	//   色の並びは頂点と同じ 左上 / 右上 / 左下 / 右下。
+	void Render(ID3D11DeviceContext* dc,
+		float dx, float dy,					// 左上位置
+		float dz,							// 奥行
+		float dw, float dh,					// 幅、高さ
+		float sx, float sy,					// 画像切り抜き位置
+		float sw, float sh,					// 画像切り抜きサイズ
+		float angle,						// 角度
+		const DirectX::XMFLOAT4(&cornerColors)[4]	// 左上/右上/左下/右下 の色
+	) const;
+
 	// 描画実行（テクスチャ切り抜き指定なし）
 	void Render(ID3D11DeviceContext* dc,
 		float dx, float dy,					// 左上位置

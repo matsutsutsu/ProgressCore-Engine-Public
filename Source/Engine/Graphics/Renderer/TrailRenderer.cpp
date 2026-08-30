@@ -40,10 +40,11 @@ void TrailRenderer::EnsureInitialized(ID3D11Device* device)
     if (m_initialized || !device)
         return;
 
-    // 入力レイアウト: POSITION(float3) + COLOR(float4)
+    // 入力レイアウト: POSITION(float3) + COLOR(float4) + TEXCOORD(float2)
     const D3D11_INPUT_ELEMENT_DESC layout[] = {
         {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0, 0,                            D3D11_INPUT_PER_VERTEX_DATA, 0},
         {"COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
     };
 
     GpuResourceUtils::LoadVertexShader(
@@ -68,6 +69,9 @@ void TrailRenderer::EnsureInitialized(ID3D11Device* device)
     // 動的定数バッファ（viewProjection）
     GpuResourceUtils::CreateDynamicConstantBuffer(
         device, sizeof(CbTrail), m_constantBuffer.GetAddressOf());
+
+    // テクスチャ未設定トレイル用の 1x1 白（色×白＝そのまま＝従来の単色を再現）
+    GpuResourceUtils::CreateDummyTexture(device, 0xFFFFFFFF, m_whiteTex.GetAddressOf());
 
     // PSO: 加算 / 深度テストのみ / 両面 / 三角形リスト
     PipelineStateDesc desc;
@@ -97,7 +101,8 @@ size_t TrailRenderer::ClampToCapacity(size_t vertexCount) const
     return std::min(vertexCount, remain);
 }
 
-void TrailRenderer::SubmitTriangleList(const Vertex* verts, size_t vertexCount)
+void TrailRenderer::SubmitTriangleList(const Vertex* verts, size_t vertexCount,
+                                       ID3D11ShaderResourceView* texture)
 {
     if (!verts || vertexCount == 0)
         return;
@@ -109,6 +114,12 @@ void TrailRenderer::SubmitTriangleList(const Vertex* verts, size_t vertexCount)
         return;
 
     m_vertices.insert(m_vertices.end(), verts, verts + vertexCount);
+
+    // 直前バッチと同じテクスチャなら連結して1ドローにまとめる（頂点は連続なので安全）。
+    if (!m_addBatches.empty() && m_addBatches.back().srv == texture)
+        m_addBatches.back().count += vertexCount;
+    else
+        m_addBatches.push_back({ texture, vertexCount });
 }
 
 void TrailRenderer::SubmitDistortTriangleList(const Vertex* verts, size_t vertexCount)
@@ -136,6 +147,7 @@ void TrailRenderer::Render(const RenderServices& services, const RenderFrameCont
     if (!ctx.dc || !ctx.camera || !services.device || !services.renderState)
     {
         m_vertices.clear();
+        m_addBatches.clear();
         m_distortVertices.clear();
         return;
     }
@@ -144,6 +156,7 @@ void TrailRenderer::Render(const RenderServices& services, const RenderFrameCont
     if (!m_initialized)
     {
         m_vertices.clear();
+        m_addBatches.clear();
         m_distortVertices.clear();
         return;
     }
@@ -218,12 +231,31 @@ void TrailRenderer::Render(const RenderServices& services, const RenderFrameCont
         dc->PSSetShaderResources(SLOT_SRV_SCENE_COLOR, 1, &nullSRV);
     }
 
-    // 5. 加算レイヤ
+    // 5. 加算レイヤ（テクスチャ単位でバッチを分けて描く）
     if (additiveCount > 0)
     {
         m_pso.Apply(dc, services.renderState);
         dc->PSSetShader(m_pixelShader.Get(), nullptr, 0);
-        dc->Draw(static_cast<UINT>(additiveCount), 0);
+
+        // トレイルテクスチャは繰り返し/スクロールを効かせたいので Wrap サンプラ。
+        ID3D11SamplerState* trailSmp = services.renderState->GetSamplerState(SamplerState::LinearWrap);
+        dc->PSSetSamplers(SLOT_SMP_LINEAR, 1, &trailSmp);
+
+        UINT start = 0;
+        for (const AddBatch& batch : m_addBatches)
+        {
+            if (batch.count == 0)
+                continue;
+            // null は白テクスチャで代替（＝色そのまま＝従来の単色トレイル）。
+            ID3D11ShaderResourceView* srv = batch.srv ? batch.srv : m_whiteTex.Get();
+            dc->PSSetShaderResources(0, 1, &srv); // t0: gTrailTex
+            dc->Draw(static_cast<UINT>(batch.count), start);
+            start += static_cast<UINT>(batch.count);
+        }
+
+        // 後続パスへ SRV を残さない。
+        ID3D11ShaderResourceView* nullSRV = nullptr;
+        dc->PSSetShaderResources(0, 1, &nullSRV);
     }
 
     // 6. 後続パスへ状態を残さない（PrimitiveRenderer に倣う）
@@ -234,6 +266,7 @@ void TrailRenderer::Render(const RenderServices& services, const RenderFrameCont
     dc->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF);
 
     m_vertices.clear();
+    m_addBatches.clear();
     m_distortVertices.clear();
 }
 
@@ -241,7 +274,9 @@ void TrailRenderer::Shutdown()
 {
     std::lock_guard<std::mutex> lock(m_mutex);
     m_vertices.clear();
+    m_addBatches.clear();
     m_distortVertices.clear();
+    m_whiteTex.Reset();
     m_vertexBuffer.Reset();
     m_constantBuffer.Reset();
     m_inputLayout.Reset();

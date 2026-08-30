@@ -18,29 +18,8 @@
                     ],
                     "totalDrones": 100
                 },
-                "Jolt Rigidbody": {
-                    "friction": 0.20000000298023224,
-                    "gravityFactor": 1.0,
-                    "initialVelocity": [
-                        0.0,
-                        0.0,
-                        0.0
-                    ],
-                    "isSensor": false,
-                    "motionType": 1,
-                    "objectLayer": 4,
-                    "restitution": 0.0,
-                    "useCCD": false
-                },
-                "Jolt Sphere Collider": {
-                    "localOffset": [
-                        0.0,
-                        0.0,
-                        0.0
-                    ],
-                    "radius": 0.5
-                },
                 "Material": null,
+                "No Shadow": {},
                 "Model": {
                     "assetPath": "Assets/Models/Enemy/Drone/SM_Drone.glb"
                 },

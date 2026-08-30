@@ -74,7 +74,7 @@
         {
             "components": {
                 "GPUParticle": {
-                    "colorRampPath": "Assets/Textures/VFX/VFX_Ramp_Fire.png",
+                    "colorRampPath": "Assets/Textures/VFX/Ramp/T_Ramp_Fire.png",
                     "config": {
                         "burst_count": 100,
                         "burst_trigger": 0.0,
@@ -149,7 +149,7 @@
                         "velocity_stretch": 0.0
                     },
                     "maxParticles": 3000,
-                    "texturePath": "Assets/Textures/VFX/VFX_Shape_Star_04.png"
+                    "texturePath": "Assets/Textures/VFX/Particle/T_Particle_ShapeStar_06.png"
                 },
                 "PooledParticle": {
                     "isSleeping": false,
@@ -180,7 +180,7 @@
         {
             "components": {
                 "GPUParticle": {
-                    "colorRampPath": "Assets/Textures/VFX/VFX_Ramp_Fire.png",
+                    "colorRampPath": "Assets/Textures/VFX/Ramp/T_Ramp_Fire.png",
                     "config": {
                         "burst_count": 100,
                         "burst_trigger": 0.0,
@@ -255,7 +255,7 @@
                         "velocity_stretch": 0.0
                     },
                     "maxParticles": 500,
-                    "texturePath": "Assets/Textures/VFX/VFX_Shape_Star_04.png"
+                    "texturePath": "Assets/Textures/VFX/Particle/T_Particle_ShapeStar_06.png"
                 },
                 "PooledParticle": {
                     "isSleeping": false,

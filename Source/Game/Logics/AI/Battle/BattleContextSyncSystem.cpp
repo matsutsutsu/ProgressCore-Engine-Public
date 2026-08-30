@@ -30,9 +30,11 @@ void BattleContextSyncSystem::Update(float /*dt*/)
 
     // --- プレイヤーを探して反映 ---
     {
+        // 1対1なので最初の1体でよい。毎フレーム走るため確保はしない。
         EntityID playerId = InvalidEntityID;
-        auto view = m_world->View<PlayerComponent, TransformComponent>();
-        for (auto e : view) { playerId = e; break; }   // 1対1なので最初の1体でよい
+        m_world->ViewEach<PlayerComponent, TransformComponent>([&](EntityID e) {
+            if (playerId == InvalidEntityID) playerId = e;
+        });
 
         battle.playerEntity = playerId;
         if (playerId != InvalidEntityID) {
@@ -45,8 +47,9 @@ void BattleContextSyncSystem::Update(float /*dt*/)
     // --- ボスを探して反映 ---
     {
         EntityID bossId = InvalidEntityID;
-        auto view = m_world->View<BossCommandComponent, TransformComponent>();
-        for (auto e : view) { bossId = e; break; }
+        m_world->ViewEach<BossCommandComponent, TransformComponent>([&](EntityID e) {
+            if (bossId == InvalidEntityID) bossId = e;
+        });
 
         battle.bossEntity = bossId;
         if (bossId != InvalidEntityID) {

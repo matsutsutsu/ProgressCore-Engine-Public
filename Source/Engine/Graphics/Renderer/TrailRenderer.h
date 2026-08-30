@@ -40,6 +40,7 @@ public:
     {
         DirectX::XMFLOAT3 position;
         DirectX::XMFLOAT4 color;
+        DirectX::XMFLOAT2 uv; ///< x=尾の長さ方向, y=幅方向。テクスチャ貼付け用。
     };
 
     static TrailRenderer& Instance()
@@ -50,7 +51,10 @@ public:
 
     /// @brief ECS(TrailSystem)から加算レイヤの三角形頂点を積む（スレッド安全）。
     /// @note  vertexCount は3の倍数を想定。容量超過分は三角形境界で切り捨てる。
-    void SubmitTriangleList(const Vertex* verts, size_t vertexCount);
+    /// @param texture このトレイルに貼るテクスチャSRV。null なら白（＝従来の単色）。
+    ///               全トレイルを1バッファに詰めつつ、SRV 単位でドローを分けて描く。
+    void SubmitTriangleList(const Vertex* verts, size_t vertexCount,
+                            ID3D11ShaderResourceView* texture = nullptr);
 
     /// @brief 歪みレイヤの三角形頂点を積む（スレッド安全）。形状は加算と同一。
     void SubmitDistortTriangleList(const Vertex* verts, size_t vertexCount);
@@ -87,10 +91,21 @@ private:
     Microsoft::WRL::ComPtr<ID3D11Buffer>       m_vertexBuffer;   ///< DYNAMIC 頂点バッファ
     Microsoft::WRL::ComPtr<ID3D11Buffer>       m_constantBuffer; ///< b0: viewProjection
 
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_whiteTex; ///< テクスチャ無しトレイル用の1x1白
+
     PipelineState m_pso;        ///< 加算 / TestOnly / CullNone / TriangleList
     PipelineState m_distortPso; ///< αブレンド(RGBのみ) / TestOnly / CullNone
 
-    std::vector<Vertex> m_vertices;        ///< フレーム内の加算レイヤ頂点
-    std::vector<Vertex> m_distortVertices; ///< フレーム内の歪みレイヤ頂点
-    std::mutex          m_mutex;
+    /// @brief 加算レイヤの「テクスチャ単位ドロー範囲」。頂点は m_vertices に連続で詰め、
+    ///        SRV が変わる境界で1バッチにする（加算は順序非依存なので分割自由）。
+    struct AddBatch
+    {
+        ID3D11ShaderResourceView* srv = nullptr; ///< null は白テクスチャ
+        size_t                    count = 0;     ///< この範囲の頂点数
+    };
+
+    std::vector<Vertex>   m_vertices;        ///< フレーム内の加算レイヤ頂点（全バッチ連結）
+    std::vector<AddBatch> m_addBatches;      ///< m_vertices を SRV 単位に分ける範囲
+    std::vector<Vertex>   m_distortVertices; ///< フレーム内の歪みレイヤ頂点
+    std::mutex            m_mutex;
 };

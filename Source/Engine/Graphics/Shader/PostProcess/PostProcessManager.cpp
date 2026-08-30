@@ -12,6 +12,7 @@
 #include "VignetteEffect.h"
 #include "ChromaticAberrationEffect.h"
 #include "ColorGradingEffect.h"
+#include "PauseBlurEffect.h"
 #include "SSAOEffect.h"
 #include "ContactShadowEffect.h"
 
@@ -42,6 +43,9 @@ void PostProcessManager::Initialize(ID3D11Device* device, UINT width, UINT heigh
     AddEffect<ChromaticAberrationEffect>();
     AddEffect<VignetteEffect>();
     AddEffect<ColorGradingEffect>();
+    // 最後尾。ブルーム・色調補正まで済んだ「完成した絵」をぼかす。
+    // UI は 2Dパス（ポストプロセスの後）で描くので、メニューはぼけない。
+    AddEffect<PauseBlurEffect>();
 
     Resize(device, width, height);
 }

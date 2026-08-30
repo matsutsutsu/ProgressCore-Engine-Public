@@ -5,6 +5,7 @@
 
 #include "CullingComponents.h"
 #include "Engine/Graphics/Components/Core/NoRenderTag.h" // 当たり判定専用ジオメトリ用タグ
+#include "Engine/Graphics/Components/Core/NoShadowTag.h" // 影を落とさせない用タグ
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
 
@@ -98,3 +99,33 @@ template <> struct ComponentMeta<NoRenderTag> {
 };
 REGISTER_COMPONENT(NoRenderTag, "NoRenderTag")
 REGISTER_COMPONENT_EDITOR_GUI(NoRenderTag)
+
+// ===========================================================================
+// NoShadowTag
+//   「影を落とさない」を表すタグ。通常描画には出る点が NoRenderTag と違う。
+//   カスケード3枚ぶんのラスタライズを丸ごと省けるので、大量に出る小物
+//   （ドローン等）に付けると描画負荷が大きく下がる。
+//   絵の判断なので作者が付ける設定データ。isSerializable = true。
+// ===========================================================================
+template <> struct ComponentMeta<NoShadowTag> {
+    CCL_META_USING_THIS(NoShadowTag)
+
+    static constexpr const char* displayName    = "No Shadow";
+    static constexpr const char* category       = CCL::Categories::Rendering;
+    static constexpr int         sortPriority   = 921;
+    static constexpr bool        hiddenInInspector = false;
+    static constexpr bool        hasCustomGui   = false;
+    static constexpr bool        isSerializable = true; // 保存する（次回ロードでも影なしのまま）
+
+    static bool CustomGui(NoShadowTag&, unsigned long long, void*) { return false; }
+
+    static const std::vector<FieldDescriptor>& Fields() {
+        // フィールド無し（タグの有無だけが意味を持つ）
+        static const std::vector<FieldDescriptor> fields = {};
+        return fields;
+    }
+};
+// 登録名は displayName と一致させる（プレハブ JSON のキーになるため、
+// 表示名とズレると「付けたのに読まれない」無言の不具合になる）。
+REGISTER_COMPONENT(NoShadowTag, ComponentMeta<NoShadowTag>::displayName)
+REGISTER_COMPONENT_EDITOR_GUI(NoShadowTag)

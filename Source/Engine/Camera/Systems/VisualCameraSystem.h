@@ -3,6 +3,7 @@
 #include "Engine/Camera/Components/VirtualCameraComponents.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 
+#include <atomic>
 #include <cstdint>
 #include <vector>
 
@@ -41,8 +42,22 @@ class CameraShakeSystem : public CCL::ECS::IfSystem<CameraShakeSystem,
                               CCL::ECS::Write<VirtualCamera>,
                               CCL::ECS::Write<CameraShake>> {
   public:
-    CameraShakeSystem() : IfSystem("CameraShakeSystem") {}
+    CameraShakeSystem() : IfSystem("CameraShakeSystem")
+    {
+        hasGui = true;
+    }
+
+    /// @brief 揺れ要求(CameraShakeRequestEvent)の購読を開始する。
+    /// @note  画面を揺らす経路はこの1本だけ。発生源がカメラを直接触ると、
+    ///        誰の揺れが誰の揺れを消したのか追えなくなる。
+    void Initialize() override;
+
     void Update(float dt) override;
+
+    /// @brief 揺れが「届いていない」のか「弱すぎて見えない」のかを切り分けるための表示。
+    /// @note  揺れは trauma の2乗に比例するので、効いていても目視では無に見えることがある。
+    ///        揺らせるカメラが 0 台なら要求は捨てられている（CameraShake の付け忘れ）。
+    void OnGui() override;
 
     // 【重要】シェイクは「Body が確定させた resultPos / resultLookAt への加算」である。
     // Body より先に走ると加算結果がそのまま上書きされ、揺れが完全に消える。
@@ -55,12 +70,21 @@ class CameraShakeSystem : public CCL::ECS::IfSystem<CameraShakeSystem,
     }
 
   private:
-    /// @brief 32bit 整数ハッシュ。ValueNoise の格子点から擬似乱数を作る。
+    /// @brief 32bit 整数ハッシュ。ノイズの格子点から擬似乱数を作る。
     static std::uint32_t HashUInt(std::uint32_t x);
 
-    /// @brief 時間駆動の1次元バリューノイズ（-1..1）。
+    /// @brief 時間駆動の1次元勾配ノイズ（Perlin, おおむね -1..1）。
     ///        同じ (seed, t) なら常に同じ値を返すため、fps に依らず波形が一定になる。
-    static float ValueNoise(std::uint32_t seed, float t);
+    static float GradientNoise(std::uint32_t seed, float t);
+
+    /// @brief このフレームに届いた揺れ要求のうち最大のもの。Update で消費する。
+    /// @note  イベントはロジック側の任意のスレッドから同期的に飛んでくる。ここで一度
+    ///        受け止めることで、CameraShake への書き込みを Update の1箇所に閉じる。
+    std::atomic<float> m_pendingTrauma{0.0f};
+
+    // --- エディタ表示用のスナップショット（Update が毎フレーム更新する） ---
+    int   m_shakableCameraCount = 0;    ///< CameraShake を持つカメラの数
+    float m_lastTrauma          = 0.0f; ///< 最後に見たカメラの蓄積量
 };
 
 // ---------------------------------------------------------

@@ -266,13 +266,9 @@ struct ComponentMeta<GPUParticleComponent>
         return true;
     }
 
-    /// @brief 直前のウィジェットの右に「(?)」を出し、ホバーで説明を表示する。
-    static void Help(const char *text)
-    {
-        ImGui::SameLine();
-        ImGui::TextDisabled("(?)");
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", text);
-    }
+    /// @brief 「(?)」ヘルプは MetaImGui の標準機能へ移設済み。ここは委譲するだけ
+    ///        （既存の多数の呼び出し `Help("...")` を壊さないための薄いラッパ）。
+    static void Help(const char *text) { ComponentMetaImGui::Help(text); }
 
     static bool CustomGui(GPUParticleComponent &compRef, unsigned long long /*entityID*/ = 0, void * /*worldPtr*/ = nullptr)
     {

@@ -41,13 +41,14 @@ template <> struct ComponentMeta<RadialBlurConfigComponent> {
 #ifdef ENABLE_EDITOR
     static bool CustomGui(RadialBlurConfigComponent& c,
                           unsigned long long /*entityID*/ = 0, void* /*world*/ = nullptr) {
+        namespace mi = ComponentMetaImGui;
         bool changed = false;
-        if (ImGui::Checkbox("有効", &c.enable)) changed = true;
+        changed |= mi::Checkbox("有効", &c.enable);
 
         ImGui::BeginDisabled(!c.enable);
-        if (ImGui::DragFloat2("中心(UV)", &c.data.blurCenter.x, 0.01f, 0.0f, 1.0f)) changed = true;
-        if (ImGui::DragFloat("強度", &c.data.blurStrength, 0.005f, 0.0f, 1.0f)) changed = true;
-        if (ImGui::DragFloat("減衰", &c.data.blurFalloff, 0.05f, 0.0f, 8.0f)) changed = true;
+        changed |= mi::DragFloat2("中心(UV)", &c.data.blurCenter.x, 0.01f,  0.0f, 1.0f);
+        changed |= mi::DragFloat ("強度",     &c.data.blurStrength, 0.005f, 0.0f, 1.0f);
+        changed |= mi::DragFloat ("減衰",     &c.data.blurFalloff,  0.05f,  0.0f, 8.0f);
         ImGui::EndDisabled();
 
         return changed;

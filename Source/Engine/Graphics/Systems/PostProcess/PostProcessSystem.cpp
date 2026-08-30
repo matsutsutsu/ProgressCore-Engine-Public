@@ -16,12 +16,15 @@
 #include "Engine/Graphics/Components/PostProcess/SSAOConfigComponent.h"
 #include "Engine/Graphics/Shader/PostProcess/ContactShadowEffect.h"
 #include "Engine/Graphics/Components/PostProcess/ContactShadowConfigComponent.h"
+#include "Engine/Graphics/Shader/PostProcess/PauseBlurEffect.h"
+#include "Engine/Core/App/GameFlowState.h" // ポーズ中だけ背景をぼかすため
 
 
 
 // システムの実行順序の定義ヘッダー
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
+#include "Engine/Core/Math/Interpolation.h" // Damp(): フレームレート非依存の追従
 
 void PostProcessSystem::Update(float dt) {
     // Worldからリソースとして取得する
@@ -142,6 +145,25 @@ void PostProcessSystem::Update(float dt) {
       auto* comp = m_world->GetSingletonComponent<ColorGradingConfigComponent>();
       grading->SetEnabled(comp && comp->ResolvedEnable());
       if (comp) grading->UpdateParams(comp->Resolve());
+    }
+
+    // ポーズ中の背景ぼかし。
+    //   世界の時計は止まっていても、このSystemは描画ステージなので実時間の dt が来る。
+    //   だから「止まっている間に演出が進む」ことができ、パッと切り替わらずに沈み込む。
+    if (auto *blur = postProcess->GetEffect<PauseBlurEffect>()) {
+        const bool paused = m_world->HasResource<GameFlowState>()
+                         && m_world->GetResource<GameFlowState>().paused;
+
+        // 目標へ指数で寄せる。ポーズ解除は入りより速くして、操作再開を待たせない。
+        const float target = paused ? 1.0f : 0.0f;
+        const float speed  = paused ? kPauseBlurInSpeed : kPauseBlurOutSpeed;
+        m_pauseBlur += (target - m_pauseBlur) * CCL::Math::Damp(speed, dt);
+        if (!paused && m_pauseBlur < 0.002f) m_pauseBlur = 0.0f; // 端数で薄くぼけ続けないよう切る
+
+        GpuData::CbPauseBlurData data{};
+        data.pauseBlurRadius = m_pauseBlur * kPauseBlurMaxRadius;
+        blur->UpdateParams(data);
+        blur->SetEnabled(m_pauseBlur > 0.0f);
     }
 
     postProcess->toneMapConfig = finalToneMap;

@@ -8,7 +8,6 @@
 #include "Engine/Transform/Components/TransformComponent.h" // 位置から敵方向を求める
 #include "Game/Logics/Combat/HealthComponent.h"             // 敵判定（生存中の敵）
 #include "Game/Logics/Combat/DeadTag.h"                     // 死亡除外
-#include "Game/Logics/Character/Player/Components/CleaveComponent.h" // 切り払い準備中は攻撃を抑止
 
 #include <SimpleMath.h>
 #include <cmath>
@@ -36,29 +35,29 @@ EntityID PlayerAttackSystem::FindBestFrontEnemy(EntityID selfID, const Vector3 &
     EntityID best       = InvalidEntityID;
     float    bestDistSq = range * range;
 
-    for (EntityID id : m_world->View<HealthComponent, TransformComponent>())
-    {
-        if (id == selfID) continue;
-        if (m_world->HasComponent<PlayerComponent>(id)) continue; // 味方（プレイヤー）は除外
-        if (m_world->HasComponent<Tag::DeadTag>(id)) continue;
+    // 候補はドローンぶんだけ増えるので、一覧に貯めずその場で絞り込む。
+    m_world->ViewEach<HealthComponent, TransformComponent>([&](EntityID id) {
+        if (id == selfID) return;
+        if (m_world->HasComponent<PlayerComponent>(id)) return; // 味方（プレイヤー）は除外
+        if (m_world->HasComponent<Tag::DeadTag>(id)) return;
 
         const auto *hp = m_world->GetComponent<HealthComponent>(id);
-        if (hp && hp->currentHealth <= 0.0f) continue;
+        if (hp && hp->currentHealth <= 0.0f) return;
         const auto *tr = m_world->GetComponent<TransformComponent>(id);
-        if (!tr) continue;
+        if (!tr) return;
 
         Vector3 to = Vector3(tr->position) - selfPos;
         to.y       = 0.0f;
         const float distSq = to.LengthSquared();
-        if (distSq < 1e-4f || distSq > bestDistSq) continue;
+        if (distSq < 1e-4f || distSq > bestDistSq) return;
 
         Vector3 dir = to;
         dir.Normalize();
-        if (dir.Dot(forward) < coneCos) continue; // 前方コーンの外は無視
+        if (dir.Dot(forward) < coneCos) return; // 前方コーンの外は無視
 
         bestDistSq = distSq; // より近い敵を採用
         best       = id;
-    }
+    });
     return best;
 }
 
@@ -101,24 +100,17 @@ void PlayerAttackSystem::SetAttackFacing(EntityID playerID, PlayerComponent &pla
 void PlayerAttackSystem::Update(float dt)
 {
     ForEachWithID([&](EntityID playerID,
-                const CharacterMovementInputComponent &inputData,
-                DashComponent                         &dash,
-                AnimParametersComponent               &animParams,
-                PlayerComponent                       &player) {
-        // 切り払いの準備(Ready)/突進(Lunging)中は、左クリックを「切り払いの発動」に使う。
-        // ここで通常/ダッシュ/空中攻撃を出さないよう抑止し、エッジ状態だけ更新して抜ける。
-        // TODO:ここいちいちGetComponentせずにSystemのArchetypeに含めておく
-        if (const auto *cleave = m_world->GetComponent<CleaveComponent>(playerID))
-        {
-            if (cleave->phase != CleavePhase::Idle)
-            {
-                player.wasAttackButtonPressed = inputData.isAttackRequested;
-                return;
-            }
-        }
+                const PlayerInputComponent &pin,
+                DashComponent              &dash,
+                AnimParametersComponent    &animParams,
+                PlayerComponent            &player,
+                const CleaveComponent      &cleave) {
+        // 攻撃ボタンは Idle のときだけ「攻撃」を意味する。Ready/Lunging 中の解釈は
+        // PlayerCleaveSystem が持つ（対応表は CleavePhase の宣言を参照）。
+        if (cleave.phase != CleavePhase::Idle)
+            return;
 
-        // 前フレームで押されておらず、今フレームで押された瞬間（エッジ検出）
-        if (inputData.isAttackRequested && !player.wasAttackButtonPressed)
+        if (pin.attackPressed)
         {
             // 攻撃の瞬間に対象へ回頭を予約（地上/空中どちらも）。
             SetAttackFacing(playerID, player);
@@ -142,9 +134,6 @@ void PlayerAttackSystem::Update(float dt)
                 dash.currentTimer            = dash.dashCooldown;
             }
         }
-
-        // 次のフレームのエッジ検出のために状態を保存
-        player.wasAttackButtonPressed = inputData.isAttackRequested;
     });
 }
 

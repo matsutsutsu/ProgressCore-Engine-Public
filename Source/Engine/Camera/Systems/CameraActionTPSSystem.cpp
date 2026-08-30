@@ -5,8 +5,9 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Platform/Input/IInputAPI.h"
 #include "Engine/Camera/CameraEvents.h"
+#include "Engine/Core/Math/Interpolation.h" // Damp(): フレームレート非依存の追従係数
 
-#include "Engine/Physics/Components/Character/CharacterMovementInputComponent.h"
+#include "Engine/Physics/Components/Character/CharacterMovementComponent.h"
 #include "Engine/Physics/JoltIntegration/IPhysicsAPI.h" // カメラ衝突（地形レイキャスト）
 #include "Engine/Core/App/GameFlowState.h" // ポーズ中はカーソルロックを解除するため
 
@@ -38,24 +39,9 @@ void CameraActionTPSSystem::Initialize()
         });
     });
 
-    // 着地などの汎用カメラシェイクを受信
-    ListenEvent<CameraShakeRequestEvent>([this](const CameraShakeRequestEvent &ev) {
-
-        ForEachWithID([&](EntityID id, VirtualCamera &vcam, CameraBodyTPSComponent &tps, TransformComponent &trans) {
-            // CameraShakeComponentがある場合は振動、ない場合はAddComponentして遅延実行で振動
-            if (auto *shake = m_world->GetComponent<CameraShake>(id))
-            {
-                shake->SetShake(ev.amplitude, ev.duration);
-            }
-            else
-            {
-                CameraShake newShake;
-                newShake.SetShake(ev.amplitude, ev.duration);
-                m_world->AddComponent<CameraShake>(id, newShake);
-            }
-        });
-    });
-
+    // ※ 画面の揺れ(CameraShakeRequestEvent)はここでは受けない。
+    //    揺れの受け口は CameraShakeSystem 1箇所に集約してある。Body の役割は
+    //    カメラをどこに置くかであって、演出の合成規則を持つ場所ではない。
 }
 
 void CameraActionTPSSystem::Update(float dt)
@@ -417,13 +403,13 @@ void CameraActionTPSSystem::Update(float dt)
         else
         {
             // 通常時のみルックアヘッド（進行方向への視点ズレ）を適用
-            auto *targetInput = m_world->GetComponent<CharacterMovementInputComponent>(tps.target.id);
-            if (targetInput)
+            auto *targetMovement = m_world->GetComponent<CharacterMovementComponent>(tps.target.id);
+            if (targetMovement)
             {
-                Vector3 vel             = targetInput->currentVelocity;
+                Vector3 vel             = targetMovement->currentVelocity;
                 vel.y                   = 0.0f;
                 Vector3 targetLookahead = vel * tps.lookaheadMultiplier;
-                float   laBlend         = 1.0f - std::exp(-tps.lookaheadDamping * dt);
+                float   laBlend         = CCL::Math::Damp(tps.lookaheadDamping, dt);
                 tps.currentLookahead    = Vector3::Lerp(tps.currentLookahead, targetLookahead, laBlend);
                 idealLookAt += tps.currentLookahead;
             }
@@ -441,7 +427,7 @@ void CameraActionTPSSystem::Update(float dt)
         }
 
         // 5. 指数減衰による追従（注視点と回り込み中心をそれぞれ滑らかに追う）
-        float posBlend    = 1.0f - std::exp(-tps.positionDamping * dt);
+        float posBlend    = CCL::Math::Damp(tps.positionDamping, dt);
         tps.currentLookAt = Vector3::Lerp(tps.currentLookAt, idealLookAt, posBlend);
         tps.currentPivot  = Vector3::Lerp(tps.currentPivot, posPivotTarget, posBlend);
 
@@ -484,7 +470,7 @@ void CameraActionTPSSystem::Update(float dt)
 
         // fast-in / slow-out：内側へ寄せるのは素早く、外側へ戻すのはゆっくり補間する。
         float colDamping = (resolvedDist < tps.currentCamDistance) ? tps.collisionInDamping : tps.collisionOutDamping;
-        float colBlend   = 1.0f - std::exp(-colDamping * dt);
+        float colBlend   = CCL::Math::Damp(colDamping, dt);
         tps.currentCamDistance = std::lerp(tps.currentCamDistance, resolvedDist, colBlend);
 
         // 回り込み中心から後方へ（衝突を反映した）距離ぶん引いた位置がカメラ本体。
@@ -525,7 +511,7 @@ void CameraActionTPSSystem::Update(float dt)
         // 「画角を広げたい」という要求はゲーム側(PlayerDashSystem 等)が
         // wideFovRequest に書き込む。カメラは理由を知らずに要求だけを見る。
         float targetFov = tps.wideFovRequest ? tps.dashFov : tps.baseFov;
-        float fovBlend = 1.0f - std::exp(-tps.fovDamping * dt);
+        float fovBlend = CCL::Math::Damp(tps.fovDamping, dt);
         vcam.fov       = std::lerp(vcam.fov, targetFov, fovBlend);
 
         // 8. TransformとVirtualCameraバッファの更新

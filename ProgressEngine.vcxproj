@@ -433,6 +433,7 @@
     <ClInclude Include="Source\Engine\Core\Components\PrefabInstanceComponent.h" />
     <ClInclude Include="Source\Engine\Core\Components\RenderInterpState.h" />
     <ClInclude Include="Source\Engine\Core\Math\CurveData.h" />
+    <ClInclude Include="Source\Engine\Core\Math\Interpolation.h" />
     <ClInclude Include="Source\Engine\Core\Math\Misc.h" />
     <ClInclude Include="Source\Engine\Core\Math\ScreenToWorld.h" />
     <ClInclude Include="Source\Engine\Core\Math\StringHash.h" />
@@ -465,9 +466,11 @@
     <ClInclude Include="Source\Engine\Graphics\Components\Core\MaterialComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\Core\ModelComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\Core\NoRenderTag.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\Core\NoShadowTag.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\Core\PrimitiveComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\Culling\CullingComponents.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\Lighting\FogComponent.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\Lighting\SkyboxComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\Lighting\LightComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\Lighting\ShadowMapConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\Particle\GPUParticleBuffer.h" />
@@ -547,6 +550,7 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\DistortionEffect.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\RadialBlurEffect.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\VignetteEffect.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\PauseBlurEffect.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\ChromaticAberrationEffect.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\ColorGradingEffect.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\DepthOfFieldEffect.h" />
@@ -578,7 +582,7 @@
     <ClInclude Include="Source\Engine\Graphics\Systems\Particle\ParticleAnimationSyncSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Particle\VFXSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\PostProcess\PostProcessSystem.h" />
-    <ClInclude Include="Source\Engine\Physics\Components\Character\CharacterMovementInputComponent.h" />
+    <ClInclude Include="Source\Engine\Physics\Components\Character\CharacterMovementComponent.h" />
     <ClInclude Include="Source\Engine\Physics\Components\Character\KnockbackComponent.h" />
     <ClInclude Include="Source\Engine\Physics\Components\Character\JoltCharacterConfigComponent.h" />
     <ClInclude Include="Source\Engine\Physics\Components\Character\JoltCharacterHandleComponent.h" />
@@ -715,6 +719,7 @@
     <ClInclude Include="Source\Game\Logics\Character\Player\Components\CleaveComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Components\JustEvadeComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Components\PlayerComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Components\PlayerInputComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Components\UITransformComponent.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Components\UIImageComponent.h" />
@@ -836,6 +841,10 @@
     </ClCompile>
     <ClCompile Include="External\ImGuizmo\ImSequencer.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <!-- C4828: このファイルは非UTF-8のバイトを含むため警告が400件出る。外部ライブラリを
+           書き換えると更新時に差分が消えるので、このファイル限定で抑止する。
+           目的は「自分のコードの警告がゼロかどうか」をビルドログで判断できる状態を保つこと。 -->
+      <DisableSpecificWarnings>4828</DisableSpecificWarnings>
     </ClCompile>
     <ClCompile Include="External\implot-master\implot.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -999,6 +1008,7 @@
     <ClCompile Include="Source\Engine\ECS\Jobs\CCL_JobSystem.cpp" />
     <ClCompile Include="Source\Engine\ECS\System\CCL_SystemManager.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Core\EnvironmentComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Components\Lighting\SkyboxComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\PostProcess\RadialBlurConfigComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\PostProcess\VignetteConfigComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\PostProcess\ChromaticAberrationConfigComponentMeta.cpp" />
@@ -1066,6 +1076,7 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\DistortionEffect.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\RadialBlurEffect.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\VignetteEffect.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\PauseBlurEffect.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\ChromaticAberrationEffect.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\ColorGradingEffect.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\DepthOfFieldEffect.cpp" />
@@ -1091,7 +1102,7 @@
     <ClCompile Include="Source\Engine\Graphics\Systems\Particle\ParticleAnimationSyncSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Particle\VFXSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\PostProcess\PostProcessSystem.cpp" />
-    <ClCompile Include="Source\Engine\Physics\Components\Character\CharacterMovementInputComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Physics\Components\Character\CharacterMovementComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Physics\Components\Character\KnockbackComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Physics\Components\Character\JoltCharacterConfigComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Physics\Components\Jolt\JoltPhysicsComponentMeta.cpp" />
@@ -1174,6 +1185,7 @@
     <ClCompile Include="Source\Game\Logics\Character\Player\Components\DashComponentsMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Components\CleaveComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Components\PlayerComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Components\PlayerInputComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\Components\UIComponentsMeta.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\UIRenderer.cpp" />
@@ -1553,6 +1565,11 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
     </FxCompile>
     <FxCompile Include="Shader\PostProcess\VignettePS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\PostProcess\PauseBlurPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>

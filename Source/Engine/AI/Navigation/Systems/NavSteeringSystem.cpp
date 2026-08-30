@@ -21,7 +21,7 @@ using namespace CCL::ECS;
 // [ ECSデータパイプライン ]
 // 📤 WRITE : TransformComponent (現在地)
 // 📥 WRITE : NavAgentComponent  (waypoints, currentDesiredSpeed)
-// 📤 WRITE : CharacterMovementInputComponent (物理エンジンへの入力速度)
+// 📤 WRITE : CharacterMovementComponent (物理エンジンへの入力速度)
 // 📤 WRITE : NavAgentComponent  (currentWaypointIndex の更新)
 // ===================================================================================
 
@@ -30,11 +30,11 @@ void NavSteeringSystem::Update(float dt) {
     ForEachWithID([&](EntityID entity,
         TransformComponent& transform,
         NavAgentComponent& navAgent,
-        CharacterMovementInputComponent& input) {
+        CharacterMovementComponent& movement) {
 
             // 1. パスがない、または到着済みの場合は停止命令を出す
             if (navAgent.waypoints.empty() || navAgent.currentWaypointIndex >= navAgent.waypoints.size()) {
-                input.desiredVelocity = Vector3::Zero;
+                movement.desiredVelocity = Vector3::Zero;
                 return;
             }
 
@@ -63,8 +63,8 @@ void NavSteeringSystem::Update(float dt) {
             // 4. キャラクターコントローラーへの「最終入力ベクトル」を生成
             if (distToTarget > 0.001f && speed > 0.0f) {
                 dirToTarget.Normalize();
-                input.desiredVelocity = dirToTarget * speed;
-                //input.desiredLookDir = dirToTarget;
+                movement.desiredVelocity = dirToTarget * speed;
+                //movement.desiredLookDir = dirToTarget;
 
                 // AIの視線を滑らかに回転させる (Y軸回転)
                 // atan2f を使って、XとZのベクトルから「向くべき角度(Yaw)」を計算
@@ -80,7 +80,7 @@ void NavSteeringSystem::Update(float dt) {
             }
 
             else {
-                input.desiredVelocity = Vector3::Zero;
+                movement.desiredVelocity = Vector3::Zero;
             }
         });
 }

@@ -30,15 +30,18 @@ namespace ed = ax::NodeEditor;
 // =====================================================================
 namespace {
     inline int StateNodeId(uint32_t h) { return (int)(h * 4u + 0u); }
-    inline int StateInPin (uint32_t h) { return (int)(h * 4u + 1u); }
-    inline int StateOutPin(uint32_t h) { return (int)(h * 4u + 2u); }
+
+    // 遷移(リンク)1本ごとの端点ピン。種は linkId（遷移ごとに一意）。
+    //   下位2ビットが「何のIDか」を表す規則を全体で共有している:
+    //     0 = ステートノード / 1 = 遷移の出力ピン / 2 = 遷移の入力ピン / 3 = 予約ID
+    //   この規則に乗せると、ハッシュを使わずに衝突しないことが採番だけで保証できる。
+    inline int TransOutPin(int linkId) { return linkId * 4 + 1; }
+    inline int TransInPin (int linkId) { return linkId * 4 + 2; }
 
     // 予約ID（すべて mod4 == 3。ノード/ピンのスロット0,1,2と交差しない）
     constexpr int ENTRY_NODE_ID     = -1;   // 0xFFFFFFFF & 3 == 3
-    constexpr int ENTRY_OUT_PIN     = -5;   // & 3 == 3
     constexpr int ENTRY_LINK_ID     = -9;   // & 3 == 3
     constexpr int ANY_STATE_NODE_ID = -13;  // & 3 == 3
-    constexpr int ANY_STATE_OUT_PIN = -17;  // & 3 == 3
 
     // リンクID。素性解決は m_linkLut で行うため、ここは「同フレーム内で一意」であれば足りる。
     constexpr int NORMAL_LINK_BASE = 0x00100000;
@@ -348,15 +351,14 @@ void AnimGraphWindow::DrawNodeWorkspace()
     std::unordered_map<int, ImVec2> pinPositions;
     ImDrawList                     *drawList = ImGui::GetWindowDrawList();
 
-    // --- ① 安定したピンIDを動的発行するヘルパー ---
-    auto GetOutPinId = [](uint32_t src, uint32_t dst) -> int {
-        uint64_t combined = ((uint64_t)src << 32) | (uint64_t)dst;
-        return (int)((std::hash<uint64_t>{}(combined) & 0x3FFFFFFF) | 0x40000000);
-    };
-    auto GetInPinId = [](uint32_t src, uint32_t dst) -> int {
-        uint64_t combined = ((uint64_t)src << 32) | (uint64_t)dst;
-        return (int)((std::hash<uint64_t>{}(combined) & 0x3FFFFFFF) | 0x10000000);
-    };
+    // --- ① ピンIDは遷移ごとに一意な linkId から採番する ---
+    //   元は (src, dst) の組をハッシュしていたため、同じ元→先に遷移を2本張ると
+    //   両者が同一のピンIDになった。node-editor は同じフレームで同じIDの BeginPin を
+    //   2回受け取ると内部の対応表が壊れ、グラフを開いた瞬間にフリーズする。
+    //   ハッシュをやめて TransOutPin/TransInPin の採番規則に乗せたので、
+    //   ステートノードとも、出力↔入力どうしでも、衝突しないことが式で保証される。
+    auto GetOutPinId = [](int linkId) -> int { return TransOutPin(linkId); };
+    auto GetInPinId  = [](int linkId) -> int { return TransInPin(linkId); };
 
     // --- ② 全遷移の事前リスト化と、予測中心座標の計算 ---
     struct TransInfo
@@ -477,10 +479,10 @@ void AnimGraphWindow::DrawNodeWorkspace()
 
                 ImVec2 pinLocal = ImVec2(startPos.x + NODE_WIDTH / 2 + offset.x, startPos.y + nodeHeight / 2 + offset.y);
                 ImGui::SetCursorPos(pinLocal);
-                ed::BeginPin(GetOutPinId(t.src, t.dst), ed::PinKind::Output);
+                ed::BeginPin(GetOutPinId(t.linkId), ed::PinKind::Output);
                 ImGui::Dummy(ImVec2(1, 1));
                 ed::EndPin();
-                pinPositions[GetOutPinId(t.src, t.dst)] = ImVec2(screenPos.x + NODE_WIDTH / 2 + offset.x, screenPos.y + nodeHeight / 2 + offset.y);
+                pinPositions[GetOutPinId(t.linkId)] = ImVec2(screenPos.x + NODE_WIDTH / 2 + offset.x, screenPos.y + nodeHeight / 2 + offset.y);
             }
             if (t.dst == nodeHash)
             {
@@ -489,10 +491,10 @@ void AnimGraphWindow::DrawNodeWorkspace()
 
                 ImVec2 pinLocal = ImVec2(startPos.x + NODE_WIDTH / 2 + offset.x, startPos.y + nodeHeight / 2 + offset.y);
                 ImGui::SetCursorPos(pinLocal);
-                ed::BeginPin(GetInPinId(t.src, t.dst), ed::PinKind::Input);
+                ed::BeginPin(GetInPinId(t.linkId), ed::PinKind::Input);
                 ImGui::Dummy(ImVec2(1, 1));
                 ed::EndPin();
-                pinPositions[GetInPinId(t.src, t.dst)] = ImVec2(screenPos.x + NODE_WIDTH / 2 + offset.x, screenPos.y + nodeHeight / 2 + offset.y);
+                pinPositions[GetInPinId(t.linkId)] = ImVec2(screenPos.x + NODE_WIDTH / 2 + offset.x, screenPos.y + nodeHeight / 2 + offset.y);
             }
         }
 
@@ -574,8 +576,8 @@ void AnimGraphWindow::DrawNodeWorkspace()
     m_linkLut.clear();
     for (const auto &t : allTrans)
     {
-        int srcPin = GetOutPinId(t.src, t.dst);
-        int dstPin = GetInPinId(t.src, t.dst);
+        int srcPin = GetOutPinId(t.linkId);
+        int dstPin = GetInPinId(t.linkId);
 
         bool isSelected = (m_selectedLinkId == t.linkId);
 

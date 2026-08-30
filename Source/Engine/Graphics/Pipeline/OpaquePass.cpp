@@ -60,8 +60,11 @@ void OpaquePass::Execute(const RenderFrameContext &ctx)
     {
         m_services->shadowMap->Bind(dc, SLOT_SRV_SHADOW, SLOT_SMP_SHADOW, SLOT_CB_SHADOW);
     }
+    // 材質テクスチャは異方性フィルタで引く。DDS化でミップチェーンが入ったことにより、
+    // トライリニアだと斜めに寝た面（床・壁）で必要より数段粗いミップが選ばれ、
+    // 遠景が淡く潰れる。ここは透明パスもそのまま引き継いで使う。
     ID3D11SamplerState *samplers[] = {
-        m_services->renderState->GetSamplerState(SamplerState::LinearWrap)};
+        m_services->renderState->GetSamplerState(SamplerState::AnisotropicWrap)};
     dc->PSSetSamplers(SLOT_SMP_LINEAR, 1, samplers);
     m_psoOpaque.Apply(dc, m_services->renderState);
 

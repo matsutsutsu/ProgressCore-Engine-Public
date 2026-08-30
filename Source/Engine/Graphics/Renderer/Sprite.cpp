@@ -119,7 +119,7 @@ void Sprite::Render(ID3D11DeviceContext* dc,
 	float sx, float sy,					// 画像切り抜き位置
 	float sw, float sh,					// 画像切り抜きサイズ
 	float angle,						// 角度
-	float r, float g, float b, float a	// 色
+	const DirectX::XMFLOAT4(&cornerColors)[4]	// 左上/右上/左下/右下 の色
 	) const
 {
 	// 頂点座標
@@ -193,10 +193,9 @@ void Sprite::Render(ID3D11DeviceContext* dc,
 		v[i].position.y = positions[i].y;
 		v[i].position.z = dz;
 
-		v[i].color.x = r;
-		v[i].color.y = g;
-		v[i].color.z = b;
-		v[i].color.w = a;
+		// 4隅で別々の色を入れる。ラスタライザが間を補間するので、
+		// これだけでグラデーションになる（シェーダは変更不要）。
+		v[i].color = cornerColors[i];
 
 		v[i].texcoord.x = texcoords[i].x / textureWidth;
 		v[i].texcoord.y = texcoords[i].y / textureHeight;
@@ -218,6 +217,22 @@ void Sprite::Render(ID3D11DeviceContext* dc,
 
 	// 描画
 	dc->Draw(4, 0);
+}
+
+// 描画実行（単色。4隅に同じ色を渡して本体へ委譲する）
+void Sprite::Render(ID3D11DeviceContext* dc,
+	float dx, float dy,
+	float dz,
+	float dw, float dh,
+	float sx, float sy,
+	float sw, float sh,
+	float angle,
+	float r, float g, float b, float a
+	) const
+{
+	const DirectX::XMFLOAT4 c = { r, g, b, a };
+	const DirectX::XMFLOAT4 corners[4] = { c, c, c, c };
+	Render(dc, dx, dy, dz, dw, dh, sx, sy, sw, sh, angle, corners);
 }
 
 // 描画実行（テクスチャ切り抜き指定なし）

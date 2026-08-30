@@ -40,24 +40,25 @@ template <> struct ComponentMeta<TransformComponent> {
 
 #ifdef ENABLE_EDITOR
     static bool CustomGui(TransformComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr) {
+        namespace mi = ComponentMetaImGui;
         bool changed = false;
 
-        if (ImGui::DragFloat3("位置", &comp.position.x, 0.1f)) {
+        if (mi::DragFloat3("位置", &comp.position.x, 0.1f)) {
             comp.isTeleported = true; comp.isStatic = false; changed = true;
         }
 
         DirectX::XMFLOAT3 euler = QuatToEulerDegrees(comp.rotation);
-        if (ImGui::DragFloat3("回転", &euler.x, 1.0f)) {
+        if (mi::DragFloat3("回転", &euler.x, 1.0f)) {
             comp.rotation = EulerDegreesToQuat(euler);
             comp.isTeleported = true; comp.isStatic = false; changed = true;
         }
 
-        if (ImGui::DragFloat3("スケール", &comp.scale.x, 0.1f)) {
+        if (mi::DragFloat3("スケール", &comp.scale.x, 0.1f)) {
             comp.isStatic = false; changed = true;
         }
 
         ImGui::Spacing();
-        changed |= ImGui::Checkbox("静的(Static)", &comp.isStatic);
+        changed |= mi::Checkbox("静的(Static)", &comp.isStatic);
         return changed;
     }
 #else

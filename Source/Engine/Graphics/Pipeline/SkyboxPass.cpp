@@ -59,7 +59,11 @@ void SkyboxPass::Execute(const RenderFrameContext& ctx)
     dc->VSSetShader(m_vertexShader.Get(), nullptr, 0);
     dc->PSSetShader(m_pixelShader.Get(), nullptr, 0);
     dc->VSSetConstantBuffers(SLOT_CB_SKYBOX, 1, m_cbSkybox.GetAddressOf());
-    dc->PSSetShaderResources(SLOT_SRV_SKYBOX_BG, 1, m_skyboxTex.GetAddressOf());
+
+    // 背景テクスチャは EnvironmentSystem が SkyboxComponent から解決したものを ctx 経由で受け取る。
+    // 無ければ（コンポーネント/EnvironmentSystem 不在時）この Pass 自前の既定へフォールバックする。
+    ID3D11ShaderResourceView* skyTex = ctx.skyboxSRV ? ctx.skyboxSRV : m_skyboxTex.Get();
+    dc->PSSetShaderResources(SLOT_SRV_SKYBOX_BG, 1, &skyTex);
 
     dc->IASetInputLayout(nullptr);
     dc->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);

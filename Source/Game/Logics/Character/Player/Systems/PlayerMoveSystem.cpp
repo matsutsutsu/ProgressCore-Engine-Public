@@ -8,7 +8,6 @@
 #include <DirectXMath.h>
 
 #include "Game/Logics/GameEvent/GameEvents.h"
-#include "Engine/Camera/CameraEvents.h" // CameraShakeRequestEvent（着地の画面揺れ要求）
 #include "Engine/Core/Math/StringHash.h"
 
 
@@ -24,7 +23,8 @@ void PlayerMoveSystem::Update(float rawDt)
 {
     ForEachWithID([&](EntityID                            id,
                       TransformComponent                 &trans,
-                      CharacterMovementInputComponent    &inputData,
+                      CharacterMovementComponent    &movement,
+                      const PlayerInputComponent         &pin,
                       const JoltCharacterConfigComponent &config,
                       const JoltCharacterHandleComponent &joltHandle,
                       PlayerComponent                    &player,
@@ -38,66 +38,50 @@ void PlayerMoveSystem::Update(float rawDt)
         float dt         = time.localDt;
         bool  isGrounded = (joltHandle.character->GetGroundState() == JPH::CharacterVirtual::EGroundState::OnGround);
 
-        // 毎フレーム、ルートモーションのフラグとダッシュの上書きをリセットする
-        inputData.isRootMotionActive = false;
-        inputData.rootMotionVelocity = Vector3::Zero;
-
         // =========================================================
         // 1. 接地判定とジャンプ成立の確定
         // =========================================================
-        UpdateJumpLogic(dt, isGrounded, inputData, player, animParams, trans.position);
+        UpdateJumpLogic(dt, isGrounded, pin.jumpPressed, movement, player, animParams, trans.position);
 
         // =========================================================
         // 2. 旋回とバンク（体の傾き）の反映
         // =========================================================
-        UpdateBankingAndRotation(dt, inputData, config.walkSpeed, player, trans, joltHandle.character.GetPtr());
+        UpdateBankingAndRotation(dt, movement, config.walkSpeed, player, trans, joltHandle.character.GetPtr());
     });
 }
 
 // -----------------------------------------------------------------------------------
-// [責務] 接地状態の更新と、押した瞬間のジャンプ成立判定
+// [責務] 接地状態の更新と、ジャンプ成立の判定
 // -----------------------------------------------------------------------------------
-void PlayerMoveSystem::UpdateJumpLogic(float dt, bool isGrounded, CharacterMovementInputComponent &inputData, PlayerComponent &player, AnimParametersComponent &animParams, const DirectX::XMFLOAT3 &worldPos)
+void PlayerMoveSystem::UpdateJumpLogic(float dt, bool isGrounded, bool jumpPressed, CharacterMovementComponent &movement, PlayerComponent &player, AnimParametersComponent &animParams, const DirectX::XMFLOAT3 &worldPos)
 {
     // 接地を離れてからの経過時間を更新（空中判定のグレースに使う）。
     if (isGrounded)
-        player.timeSinceGrounded = 0.0f;
-    else
-        player.timeSinceGrounded += dt;
-
-    // 直前の落下速度から「着地」の衝撃を計算しイベント発火
-    if (isGrounded)
     {
-        if (!player.wasGroundedLastFrame)
-        {
-            if (player.lastFallVelocity < -10.0f)
-            {
-                float shakePower = std::abs(player.lastFallVelocity) * 0.03f;
-                m_world->GetEventBus().Publish(CameraShakeRequestEvent{shakePower, 0.2f});
-            }
-        }
-        player.currentJumpCount = 0;
+        player.timeSinceGrounded = 0.0f;
+        player.currentJumpCount  = 0;
     }
-
-    player.wasGroundedLastFrame = isGrounded;
+    else
+    {
+        player.timeSinceGrounded += dt;
+    }
 
     // 空中状態を一元更新（空中攻撃などが参照する唯一の判定元）。
     //   接地を離れて airborneGraceTime を超えて初めて「空中」とみなす。これにより
     //   小さな段差を降りた一瞬で空中攻撃が暴発したり地上攻撃がキャンセルされるのを防ぐ。
     player.isAirborne = (player.timeSinceGrounded > player.airborneGraceTime);
 
-    // 押した瞬間のみジャンプ（エッジ検出）。押しっぱなしでの連続ジャンプを防ぐ。
-    bool isPressedThisFrame     = inputData.jumpRequested && !player.wasJumpButtonPressed;
-    player.wasJumpButtonPressed = inputData.jumpRequested;
-
     // ジャンプ成立の判定：接地中の1段目、または空中での2段目まで。
     bool canFirstJump  = isGrounded && (player.currentJumpCount == 0);
     bool canDoubleJump = (player.currentJumpCount > 0 && player.currentJumpCount < player.maxJumps);
 
-    if (isPressedThisFrame && (canFirstJump || canDoubleJump))
+    if (jumpPressed && (canFirstJump || canDoubleJump))
     {
         player.currentJumpCount++;
-        inputData.jumpRequested = true;
+
+        // 「跳ぶと決まった」を物理へ渡す。解除は読み手(JoltCharacterUpdateSystem)が行うため
+        // 不成立時に false を書き戻す必要はない。
+        movement.jumpImpulse = true;
 
         // 意図的なジャンプは即座に空中扱いへ（グレースは「落下」だけに効かせ、
         // ジャンプ直後の空中攻撃が地上攻撃に化けないようにする）。
@@ -119,16 +103,12 @@ void PlayerMoveSystem::UpdateJumpLogic(float dt, bool isGrounded, CharacterMovem
         // 購読側(PlayerActionVfxSystem)へ委ねる（現状は2段目だけ土煙を出す）。
         m_world->GetEventBus().Publish(PlayerJumpedEvent{worldPos, player.currentJumpCount});
     }
-    else
-    {
-        inputData.jumpRequested = false;
-    }
 }
 
 // -----------------------------------------------------------------------------------
 // [責務] アニメーションを使わずに旋回の勢いを「体の傾き」として視覚化し、物理エンジンには純粋な方向のみを渡す
 // -----------------------------------------------------------------------------------
-void PlayerMoveSystem::UpdateBankingAndRotation(float dt, const CharacterMovementInputComponent &inputData, float walkSpeed, PlayerComponent &player, TransformComponent &trans, JPH::CharacterVirtual *character)
+void PlayerMoveSystem::UpdateBankingAndRotation(float dt, const CharacterMovementComponent &movement, float walkSpeed, PlayerComponent &player, TransformComponent &trans, JPH::CharacterVirtual *character)
 {
     // =========================================================
     // 攻撃時オートフェイシング（移動より優先）
@@ -151,7 +131,7 @@ void PlayerMoveSystem::UpdateBankingAndRotation(float dt, const CharacterMovemen
     else
     {
         // 移動方向を取得
-        Vector3 horizontalMove(inputData.desiredVelocity.x, 0.0f, inputData.desiredVelocity.z);
+        Vector3 horizontalMove(movement.desiredVelocity.x, 0.0f, movement.desiredVelocity.z);
 
         if (horizontalMove.LengthSquared() > 0.001f)
         {
@@ -172,7 +152,7 @@ void PlayerMoveSystem::UpdateBankingAndRotation(float dt, const CharacterMovemen
             // プレイヤーの傾き（バンキング）を計算する
             // どれぐらい早く動いているか
             // 現在の速度が最大速度の何％ぐらいなのか求める
-            float speedRatio = (walkSpeed > 0.001f) ? (inputData.currentVelocity.Length() / walkSpeed) : 0.0f;
+            float speedRatio = (walkSpeed > 0.001f) ? (movement.currentVelocity.Length() / walkSpeed) : 0.0f;
             // どれぐらい方向転換しているか
             float targetRoll = -(angleDiff * 10.0f) * player.bankingMultiplier * speedRatio;
 

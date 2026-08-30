@@ -4,11 +4,19 @@
 #include "Engine/Scene/SceneManager.h"
 #include "Engine/UI/Text/TextRenderer.h"
 #include "Engine/Graphics/Renderer/Sprite.h"
+#include "Engine/Core/Math/Interpolation.h" // Damp(): フレームレート非依存の追従係数
 
 #include <objbase.h> // CoInitializeEx / CoUninitialize（ワーカースレッドの COM 初期化）
 #include <string>
 #include <algorithm> // std::min
 #include <cmath>     // std::exp
+
+namespace
+{
+/// 進捗バーが目標値へ追いつく速さ。大きいほどキビキビ動くが、
+/// 速すぎると読み込みが一瞬で終わったように見えて不安を与える。
+constexpr float kProgressDamping = 8.0f;
+} // namespace
 
 SceneLoading::SceneLoading(Scene *nextScene) : m_nextScene(nextScene) {}
 
@@ -84,7 +92,7 @@ void SceneLoading::Update(float elapsedTime)
     //   ・指数減衰でヌルっと追従させる
     const float target = done ? 1.0f
                               : std::min(0.9f, (time / kMinLoadTime) * 0.9f);
-    m_progress += (target - m_progress) * (1.0f - std::exp(-8.0f * elapsedTime));
+    m_progress += (target - m_progress) * CCL::Math::Damp(kProgressDamping, elapsedTime);
 
     // --- 遷移条件 ---
     //   ① 裏読み完了（done） かつ

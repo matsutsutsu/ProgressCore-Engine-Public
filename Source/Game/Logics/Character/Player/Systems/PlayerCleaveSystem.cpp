@@ -70,15 +70,18 @@ void PlayerCleaveSystem::Update(float rawDt)
     // 準備の猶予・クールダウンは「実時間(rawDt)」で進める。全体スロー中でも一定の秒数で
     // 解除されるようにするため（スローされた localDt を使うと時間が伸びてしまう）。
     ForEachWithID([&](EntityID                        id,
-                      CharacterMovementInputComponent &input,
+                      CharacterMovementComponent &movement,
                       CleaveComponent                 &cleave,
                       PlayerComponent                 &player,
+                      const PlayerInputComponent      &pin,
                       const DashComponent             &dash,
                       const TransformComponent        &trans)
         {
-        // 入力の意思（PlayerInputSystem が集約済み）：右クリック=準備(プレイヤー固有)、左クリック=突進/チェイン。
-        const bool cleavePressed  = player.cleaveRequested;
-        const bool releasePressed = input.isAttackRequested;
+        // 入力の意思（PlayerInputSystem が押した瞬間まで解決済み）：
+        //   右クリック=準備 / 左クリック=突進・チェイン。
+        //   左クリックは Ready のときだけここへ届く（対応表は CleavePhase の宣言を参照）。
+        const bool cleavePressed  = pin.cleavePressed;
+        const bool releasePressed = pin.attackPressed;
 
         // RootMotion は実行時後付け・任意依存なのでここだけ GetComponent（無ければ nullptr）。
         RootMotionComponent *rm = m_world->GetComponent<RootMotionComponent>(id);
@@ -111,24 +114,29 @@ void PlayerCleaveSystem::Update(float rawDt)
             if (releasePressed)
                 StartLunge(cleave, camAim); // 左クリック→突進
             else if (cleave.phaseTimer <= 0.0f)
-                ExitToIdle(cleave, input, rm);  // 放置→自動解除
+                ExitToIdle(cleave, rm);  // 放置→自動解除
             break;
 
         // 突進状態：突進中のフェーズ。
         case CleavePhase::Lunging:
             cleave.phaseTimer -= rawDt;
 
-            // 重力を無視して「向いた3D方向」へ丸ごと速度を上書き＝上下含めて真っ直ぐ突進。
-            input.use3DVelocity = true;
-            input.velocity3D    = cleave.direction * cleave.cleaveSpeed;
-            input.overrideSpeed = -1.0f;   // 水平上書きは使わない（3D側で駆動）
-            input.dashRequested = false;   // 突進中はダッシュ入力を握り潰す
-            if (rm) rm->externallyDriven = true;
-
             ApplyFanKnockback(Vector3(trans.position), cleave);
 
             if (cleave.phaseTimer <= 0.0f)
-                EndLunge(cleave, input, rm, camAim);
+            {
+                EndLunge(cleave, rm, camAim);
+            }
+            else
+            {
+                // 重力を無視して「向いた3D方向」へ丸ごと速度を上書き＝上下含めて真っ直ぐ突進。
+                //   上書き要求は1フレーム限りなので、突進が続くフレームだけ出し直す。
+                //   終了フレームで出さないことが、そのまま通常移動への復帰になる。
+                //   水平の overrideSpeed は書かない（3D側で駆動するため）。
+                movement.use3DVelocity = true;
+                movement.velocity3D    = cleave.direction * cleave.cleaveSpeed;
+                if (rm) rm->externallyDriven = true;
+            }
             break;
         }
 
@@ -218,11 +226,9 @@ void PlayerCleaveSystem::StartLunge(CleaveComponent &cleave, const Vector3 &dir)
 
 // 突進終了：ヒットありかつ残ストックがあれば再準備で連鎖、そうでなければ解除しクールダウンへ。
 // （※「群れを切り開いた末にボスへ届く」因果の担保＝前進/BREAK は殻構造の実装時に導入する）
-void PlayerCleaveSystem::EndLunge(CleaveComponent &cleave, CharacterMovementInputComponent &input,
-                                  RootMotionComponent *rm, const Vector3 &aim)
+void PlayerCleaveSystem::EndLunge(CleaveComponent &cleave, RootMotionComponent *rm, const Vector3 &aim)
 {
-    input.overrideSpeed = -1.0f;
-    input.use3DVelocity = false; // 3D突進を解除（以後は通常の重力・水平移動へ戻す）
+    // 3D突進の解除は「出し直すのをやめる」だけでよい（上書き要求は読まれた時点で戻る）。
     if (rm) rm->externallyDriven = false;
 
     // 連鎖にはストック残が要る（ストック上限＝チェイン上限）。ヒット＋残ストックで継続。
@@ -246,13 +252,11 @@ void PlayerCleaveSystem::EndLunge(CleaveComponent &cleave, CharacterMovementInpu
     }
 }
 
-void PlayerCleaveSystem::ExitToIdle(CleaveComponent &cleave, CharacterMovementInputComponent &input, RootMotionComponent *rm)
+void PlayerCleaveSystem::ExitToIdle(CleaveComponent &cleave, RootMotionComponent *rm)
 {
-    cleave.phase        = CleavePhase::Idle;
-    cleave.phaseTimer   = cleave.cleaveCooldown;
-    cleave.chainCount   = 0;
-    input.overrideSpeed = -1.0f;
-    input.use3DVelocity = false;
+    cleave.phase      = CleavePhase::Idle;
+    cleave.phaseTimer = cleave.cleaveCooldown;
+    cleave.chainCount = 0;
     if (rm) rm->externallyDriven = false;
     SetMonochrome(false);
     // 全体スローの張り直しをやめるだけで、TimeScaleSystem が自然にイーズで等速へ戻す。
@@ -262,16 +266,16 @@ void PlayerCleaveSystem::ExitToIdle(CleaveComponent &cleave, CharacterMovementIn
 // 寄り要求だけを伝える（カメラは切り払いの事情を知らない）。
 void PlayerCleaveSystem::PushCameraCloseUp(EntityID playerID, bool close)
 {
-    for (EntityID camID : m_world->View<CameraBodyTPSComponent>())
-    {
+    m_world->ViewEach<CameraBodyTPSComponent>([&](EntityID camID) {
         auto *tps = m_world->GetComponent<CameraBodyTPSComponent>(camID);
-        if (!tps || tps->target.id != playerID) continue;
+        if (!tps || tps->target.id != playerID) return;
         tps->closeUpRequest = close;
-    }
+    });
 }
 
 // 前方扇の範囲内にいるドローンを進行方向へ吹き飛ばす。
 // TODO: 距離ベースで全ドローンを走査している。数が増えたら物理エンジン(オーバーラップ)経由に置き換えたい。
+//       走査自体は ViewEach で確保なしにしてあるので、残るコストは距離計算のみ。
 void PlayerCleaveSystem::ApplyFanKnockback(const Vector3 &origin, CleaveComponent &cleave)
 {
     const float rangeSq = cleave.fanRange * cleave.fanRange;
@@ -279,29 +283,29 @@ void PlayerCleaveSystem::ApplyFanKnockback(const Vector3 &origin, CleaveComponen
     const Vector3 fwd   = cleave.direction; // 正規化済み（3D：上下含む進行方向）
 
     // ドローンのみ走査＝ボスは自動的に対象外（切り払いは攻撃ではなく「道を作る技」）。
-    for (EntityID id : m_world->View<DroneComponent, TransformComponent>())
-    {
+    // 突進中は毎フレーム走るので、機数ぶんの vector を作らない ViewEach を使う。
+    m_world->ViewEach<DroneComponent, TransformComponent>([&](EntityID id) {
         auto *drone = m_world->GetComponent<DroneComponent>(id);
         auto *t     = m_world->GetComponent<TransformComponent>(id);
-        if (!drone || !t) continue;
+        if (!drone || !t) return;
 
         // 既に吹き飛ばし中の機体は同じ切り払いで二重ヒットさせない。
-        if (drone->knockbackTimer > 0.0f) continue;
+        if (drone->knockbackTimer > 0.0f) return;
 
         // 進行方向(3D)を軸にした扇で判定＝上下に斬り上げ/斬り下げても道が開く。
         Vector3 to = Vector3(t->position) - origin;
         const float distSq = to.LengthSquared();
-        if (distSq < 1e-4f || distSq > rangeSq) continue;
+        if (distSq < 1e-4f || distSq > rangeSq) return;
 
         Vector3 dir = to;
         dir.Normalize();
-        if (dir.Dot(fwd) < cosHalf) continue; // 前方扇の外は無視
+        if (dir.Dot(fwd) < cosHalf) return; // 前方扇の外は無視
 
         // 進行方向へ一律に吹き飛ばす（放射状にしない）＝「切り開いた道は通れる」保証。
         drone->knockbackVelocity = fwd * cleave.knockbackSpeed;
         drone->knockbackTimer    = cleave.knockbackTime;
         cleave.hitCount++;
-    }
+    });
 }
 
 // PlayerDashSystem(L02_Update) の後で overrideSpeed を上書きし、DroneMovementSystem

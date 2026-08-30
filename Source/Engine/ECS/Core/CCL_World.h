@@ -398,6 +398,27 @@ namespace CCL::ECS
         template <class... Components>
         inline std::vector<EntityID> View();
 
+        /**
+         * @brief View と同じ条件のエンティティを、確保せずに1件ずつ fn(EntityID) へ渡す。
+         *
+         * @details View は結果を vector に貯めるため、呼ぶたびにヒープ確保が起きる。
+         *          毎フレーム走る処理や、ドローンのように大量に該当するクエリでは
+         *          その確保自体が無視できないので、貯めずに流すこちらを使う。
+         *
+         * @code
+         *   world->ViewEach<DroneComponent, TransformComponent>([&](EntityID id) { ... });
+         * @endcode
+         *
+         * @note View と違い、空席と削除予約済みのエンティティは渡らない。
+         * @note コールバック内で AddComponent/DestroyEntity を呼んでよい（構造変更は
+         *       ScrutinyAndApply まで遅延されるため、走査中にチャンクは動かない）。
+         *       ただし即時に効く操作を足す場合はこの前提が崩れる点に注意。
+         * @note 高頻度ループでは System の自動 ChunkMatch(ForEach) の方がさらに速い。
+         *       本関数は「自分のアーキタイプ外を覗きたい」ときの手段。
+         */
+        template <class... Components, class Func>
+        inline void ViewEach(Func&& fn);
+
 
 		// --------------------------------------------------------
 		// Singleton Component Access
@@ -407,18 +428,14 @@ namespace CCL::ECS
          * @brief シングルトンコンポーネントを取得する。
          *
          * シングルトンコンポーネントはエンティティが1つだけ存在することを前提としています。
-         * 複数存在する場合は開発ビルドで警告されます。
+         *
+         * @note 見つけた時点で打ち切るため、ヒープ確保も全チャンク走査も起きない。
+         *       毎フレーム引き直してよい（＝ポインタを持ち回らなくてよい）。
+         *       生ポインタを跨いで保持するとチャンク移動/圧縮でダングリングするので、
+         *       保持したい場合は GetHandle() を使うこと。
          */
-        template<typename T>
-        T* GetSingletonComponent() {
-            auto view = View<T>();
-            if (view.empty()) return nullptr;
-            // 開発ビルドでは複数存在を警告（シングルトン契約の明示）
-            #ifdef ENABLE_EDITOR
-             //CCL_ASSERT(view.size() == 1, "Singleton component has multiple instances");
-            #endif
-            return GetComponent<T>(view[0]);
-        }
+        template <typename T>
+        inline T* GetSingletonComponent();
 
 
         // --------------------------------------------------------
@@ -602,6 +619,59 @@ namespace CCL::ECS
             }
         }
         return entities;
+    }
+
+
+    template <class... Components, class Func>
+    inline void World::ViewEach(Func&& fn)
+    {
+        const Archetype filter = ArchetypeHelper::Generate<Components...>();
+
+        for (const auto& upChunk : m_chunkManager.GetChunks()) {
+            if (!upChunk) continue;
+            Chunk* chunk = upChunk.get();
+            if (!ArchetypeHelper::LhasR(chunk->GetArchetype(), filter)) continue;
+
+            const size_t    count         = chunk->GetEntityCount();
+            const EntityID* ids           = chunk->GetEntityIDs();
+            const bool      hasDestroyed  = chunk->HasDestroyedEntities();
+
+            for (size_t i = 0; i < count; ++i) {
+                // RemoveEntity で空いた席（穴は CompactHoles まで詰められない）
+                if (ids[i] == InvalidEntityID) continue;
+                // 削除予約済み。hasDestroyed が false の間は判定自体を飛ばす
+                if (hasDestroyed && chunk->IsEntityDestroyed(i)) continue;
+
+                fn(ids[i]);
+            }
+        }
+    }
+
+
+    template <typename T>
+    inline T* World::GetSingletonComponent()
+    {
+        const Archetype filter = ArchetypeHelper::Generate<T>();
+        const TypeID    tid    = TypeInfo<T>::ID();
+
+        // 1件見つけた時点で返す。vector に貯めてから先頭を取り直す必要はない。
+        for (const auto& upChunk : m_chunkManager.GetChunks()) {
+            if (!upChunk) continue;
+            Chunk* chunk = upChunk.get();
+            if (!ArchetypeHelper::LhasR(chunk->GetArchetype(), filter)) continue;
+
+            const size_t    count        = chunk->GetEntityCount();
+            const EntityID* ids          = chunk->GetEntityIDs();
+            const bool      hasDestroyed = chunk->HasDestroyedEntities();
+
+            for (size_t i = 0; i < count; ++i) {
+                if (ids[i] == InvalidEntityID) continue;
+                if (hasDestroyed && chunk->IsEntityDestroyed(i)) continue;
+
+                return static_cast<T*>(chunk->GetComponentPtrByType(tid, i));
+            }
+        }
+        return nullptr;
     }
 
 

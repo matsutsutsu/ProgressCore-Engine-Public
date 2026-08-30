@@ -122,8 +122,7 @@
                     "chromaticStrength": 0.012000000104308128,
                     "duration": 0.2199999988079071,
                     "radialStrength": 0.3499999940395355,
-                    "shakeAmplitude": 0.18000000715255737,
-                    "shakeFrequency": 38.0
+                    "shakeTrauma": 0.18
                 },
                 "ShadowMapConfig": {
                     "cascadeSplits": [

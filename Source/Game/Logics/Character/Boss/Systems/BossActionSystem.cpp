@@ -66,7 +66,7 @@ void BossActionSystem::Update(float rawDt)
 
     Vector3 playerPos(battle.playerPos);
 
-    ForEach([&](CharacterMovementInputComponent &input,
+    ForEach([&](CharacterMovementComponent &movement,
                 BossActionComponent &bossDef,
                 TransformComponent &trans,
                 const BossCommandComponent &cmd,
@@ -89,14 +89,14 @@ void BossActionSystem::Update(float rawDt)
         switch (bossDef.currentState)
         {
         case BossActionState::Move:
-            ProcessMove(bossDef, trans, input, config, joltHandle, playerPos, dt);
+            ProcessMove(bossDef, trans, movement, config, joltHandle, playerPos, dt);
             break;
         case BossActionState::Melee:
             // 近接攻撃中：足を止めて斬る（アニメ本体は BT の SetTrigger で再生済み）
-            ProcessMeleeHold(bossDef, trans, input, joltHandle, playerPos, dt);
+            ProcessMeleeHold(bossDef, trans, movement, joltHandle, playerPos, dt);
             break;
         default:
-            ProcessIdle(bossDef, trans, input, joltHandle, playerPos, dt);
+            ProcessIdle(bossDef, trans, movement, joltHandle, playerPos, dt);
             break;
         }
     });
@@ -140,15 +140,15 @@ void BossActionSystem::OnGui() {}
 #endif
 
 void BossActionSystem::ProcessIdle(BossActionComponent &bossDef, TransformComponent &trans,
-    CharacterMovementInputComponent &input, const JoltCharacterHandleComponent &joltHandle,
+    CharacterMovementComponent &movement, const JoltCharacterHandleComponent &joltHandle,
     const Vector3 &playerPos, float dt)
 {
     bossDef.currentMoveSpeed = (std::max)(0.0f,
         bossDef.currentMoveSpeed - bossDef.deceleration * dt);
 
-    input.desiredVelocity = Vector3::Zero;
-    input.overrideSpeed   = -1.0f;
-    
+    // 上書きは書かない＝config.walkSpeed 基準へ戻る（要求は読み手が毎フレーム消費する）。
+    movement.desiredVelocity = Vector3::Zero;
+
     //Vector3 dirToPlayer = playerPos - trans.position;
     //dirToPlayer.y       = 0.0f;
     //TurnToward(trans, dirToPlayer, bossDef.idleTurnSpeed, dt);
@@ -156,7 +156,7 @@ void BossActionSystem::ProcessIdle(BossActionComponent &bossDef, TransformCompon
 }
 
 void BossActionSystem::ProcessMove(BossActionComponent &bossDef, TransformComponent &trans,
-    CharacterMovementInputComponent &input, const JoltCharacterConfigComponent &config,
+    CharacterMovementComponent &movement, const JoltCharacterConfigComponent &config,
     const JoltCharacterHandleComponent &joltHandle,
     const Vector3 &playerPos, float dt)
 {
@@ -166,8 +166,7 @@ void BossActionSystem::ProcessMove(BossActionComponent &bossDef, TransformCompon
     if (dirToPlayer.LengthSquared() <= 0.001f)
     {
         bossDef.currentMoveSpeed = 0.0f;
-        input.desiredVelocity    = Vector3::Zero;
-        input.overrideSpeed      = -1.0f;
+        movement.desiredVelocity    = Vector3::Zero;
         return;
     }
 
@@ -177,23 +176,22 @@ void BossActionSystem::ProcessMove(BossActionComponent &bossDef, TransformCompon
     bossDef.currentMoveSpeed = (std::min)(bossDef.walkSpeed,
         bossDef.currentMoveSpeed + bossDef.acceleration * dt);
 
-    input.desiredVelocity = dirToPlayer;
-    input.overrideSpeed   = (std::min)(bossDef.currentMoveSpeed, config.walkSpeed);
+    movement.desiredVelocity = dirToPlayer;
+    movement.overrideSpeed   = (std::min)(bossDef.currentMoveSpeed, config.walkSpeed);
 
     TurnToward(trans, dirToPlayer, bossDef.turnSpeed, dt);
     SyncCharacterRotation(trans, joltHandle.character.GetPtr());
 }
 
 void BossActionSystem::ProcessMeleeHold(BossActionComponent &bossDef, TransformComponent &trans,
-    CharacterMovementInputComponent &input, const JoltCharacterHandleComponent &joltHandle,
+    CharacterMovementComponent &movement, const JoltCharacterHandleComponent &joltHandle,
     const Vector3 &playerPos, float dt)
 {
     // 近接攻撃中は足を止めて踏ん張る（薙ぎ払い）。
     //   アニメ本体は BT の SetTrigger で再生済み。当たり判定はアニメ内 HitBox イベントが握る。
     //   将来 踏み込み/突進 を足すときは、ここで cmd.currentActionId により前進を分岐する。
     bossDef.currentMoveSpeed = 0.0f;
-    input.desiredVelocity    = Vector3::Zero;
-    input.overrideSpeed      = -1.0f;
+    movement.desiredVelocity    = Vector3::Zero;
 
     // 斬る相手（プレイヤー）の方を向く（移動中と同じ速さでしっかり正対）
     Vector3 dirToPlayer = playerPos - trans.position;

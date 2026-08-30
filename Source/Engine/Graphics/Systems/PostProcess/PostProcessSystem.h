@@ -34,6 +34,13 @@ public:
             CCL::ECS::TypeInfo<ColorGradingConfigComponent>::ID()};
     }
 
-    void Update(float dt) override;
+    void Update(float dt) override;
 
+  private:
+    /// ポーズぼかしの現在量 0..1。実時間で 0↔1 を行き来する（世界の時計は止まっているため）。
+    float m_pauseBlur = 0.0f;
+
+    static constexpr float kPauseBlurInSpeed  = 11.0f; ///< ポーズに入るときの追従速度
+    static constexpr float kPauseBlurOutSpeed = 20.0f; ///< 解除は速く戻す（操作再開を待たせない）
+    static constexpr float kPauseBlurMaxRadius = 0.006f; ///< 最大サンプル半径(UV単位)
 };

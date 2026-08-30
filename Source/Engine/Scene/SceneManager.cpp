@@ -13,6 +13,7 @@
 
 // フェード描画用（黒の全画面矩形）。
 #include "Engine/Graphics/RHI/Graphics.h"
+#include "Engine/Core/Math/Interpolation.h" // SmoothStep()
 #include "Engine/Graphics/Renderer/Sprite.h"
 
 // ロード前検証（破壊前のファイル存在確認）に使用
@@ -432,8 +433,7 @@ void SceneManager::DrawFade()
 
     // リニアだと明暗が一定速度で変わり「機械的」で違和感が出やすい。
     // smoothstep（両端が緩やかな S 字）で加減速をつけ、ヌルっと見せる。
-    const float a = m_fadeAlpha;
-    const float eased = a * a * (3.0f - 2.0f * a);
+    const float eased = CCL::Math::SmoothStep(m_fadeAlpha);
 
     // 黒の全画面矩形（白ダミーテクスチャに黒＋alpha を掛ける）。遅延生成。
     if (!m_fadeQuad) m_fadeQuad = std::make_unique<Sprite>(gfx.GetDevice());

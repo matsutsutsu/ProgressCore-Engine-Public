@@ -252,7 +252,8 @@ void BaseScene::Render()
 
         // ECSネイティブUI: UILayoutSystem(UpdateRender)が構築した UIDrawList を描く。
         if (m_worldPtr && m_worldPtr->HasResource<UIDrawList>())
-            m_uiRenderer.Flush(dc, gfx.GetDevice(), m_worldPtr->GetResource<UIDrawList>());
+            m_uiRenderer.Flush(dc, gfx.GetDevice(), m_worldPtr->GetResource<UIDrawList>(),
+                               gfx.GetRenderState());
 
         OnRenderUI();
 

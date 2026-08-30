@@ -103,7 +103,11 @@ protected:
     int FetchSamplerSlot(const std::string& name);
     void ApplyShaderPipeline(ID3D11DeviceContext* dc, ID3D11VertexShader* vs, ID3D11PixelShader* ps, ID3D11InputLayout* layout);
     void UnbindResources(ID3D11DeviceContext* dc);
-    void UpdateMaterialProperties(ID3D11DeviceContext* dc, const MaterialData& mat);
+    // fallbackMat: override 材質がテクスチャスロットを持たない場合の代替（通常はメッシュ本来の材質）。
+    //   → override をシーン保存すると assetPath 無しのモデル埋め込みテクスチャは失われるため、
+    //     そのスロットは fallbackMat（生きているモデル材質）のテクスチャで補う。null 可。
+    void UpdateMaterialProperties(ID3D11DeviceContext* dc, const MaterialData& mat,
+                                  const MaterialData* fallbackMat = nullptr);
     std::filesystem::file_time_type GetLastWriteTime(const std::wstring& filepath);
     // ホットリロード時に古い情報を全て消し去るための関数
     void ResetReflection();

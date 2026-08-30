@@ -28,11 +28,14 @@ class PlayerHealthHudSystem : public CCL::ECS::IfSystem<PlayerHealthHudSystem,
     CCL::ECS::EntityID m_barID   = CCL::ECS::InvalidEntityID; ///< ゲージ本体（UIProgressBar）
     CCL::ECS::EntityID m_labelID = CCL::ECS::InvalidEntityID; ///< ラベル（UIText）
 
-    float m_prevRatio = 1.0f;   ///< 前フレームのHP比（被弾検出用）
+    float m_prevRatio = 1.0f;  ///< 前フレームのHP比（被弾検出用）
+    float m_shake     = 0.0f;  ///< 被弾の揺れ残量 0..1（毎フレーム減衰させる）
+    float m_shakeTime = 0.0f;  ///< 揺れの位相[秒]。世界の時計(dt)で進めるのでポーズ中は止まる。
     float m_trailHold = 0.0f;   ///< 被弾後、遅延バーが減り始めるまでの溜め(秒)
     bool  m_init      = false;  ///< 初回にゲージ値をスナップ済みか
 
     // --- チューニング用 ---
     static constexpr float kTrailSpeed = 6.0f;  ///< 遅延バーの追従速度（大きいほど速く追いつく）
     static constexpr float kTrailHold  = 0.30f; ///< 被弾後、遅延バーが減り始めるまでの溜め(秒)
+    static constexpr float kShakeDecay = 9.0f;  ///< 揺れの減衰速度（大きいほど短くビクッと終わる）
 };

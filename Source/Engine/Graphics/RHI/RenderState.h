@@ -11,6 +11,14 @@ enum class SamplerState
 	LinearWrap,
 	LinearClamp,
 
+	// 異方性フィルタリング。斜めに寝た面（床・壁・地面）のテクスチャ用。
+	//   トライリニアは UV の変化量が大きい方の軸に合わせてミップを選ぶため、
+	//   視線に対して寝ている面ほど必要より粗いミップが選ばれて過剰にボケる。
+	//   異方性は短辺側の解像度に合わせて長辺方向へ複数回サンプリングし直すので、
+	//   遠景・斜め面の解像感が保たれる。
+	AnisotropicWrap,
+	AnisotropicClamp,
+
 	EnumCount
 };
 

@@ -45,15 +45,16 @@ template <> struct ComponentMeta<ColorGradingConfigComponent> {
 #ifdef ENABLE_EDITOR
     static bool CustomGui(ColorGradingConfigComponent& c,
                           unsigned long long /*entityID*/ = 0, void* /*world*/ = nullptr) {
+        namespace mi = ComponentMetaImGui;
         bool changed = false;
-        if (ImGui::Checkbox("有効", &c.enable)) changed = true;
+        changed |= mi::Checkbox("有効", &c.enable);
 
         ImGui::BeginDisabled(!c.enable);
-        if (ImGui::ColorEdit3("色補正", &c.data.gradeTint.x)) changed = true;
-        if (ImGui::DragFloat("彩度", &c.data.gradeSaturation, 0.01f, 0.0f, 2.0f)) changed = true;
-        if (ImGui::DragFloat("コントラスト",   &c.data.gradeContrast,   0.01f, 0.0f, 2.0f)) changed = true;
-        if (ImGui::DragFloat("明るさ", &c.data.gradeBrightness, 0.01f, 0.0f, 2.0f)) changed = true;
-        if (ImGui::DragFloat("ミックス",        &c.data.gradeMixAmount,  0.01f, 0.0f, 1.0f)) changed = true;
+        changed |= mi::Color3   ("色補正",       &c.data.gradeTint.x);
+        changed |= mi::DragFloat("彩度",         &c.data.gradeSaturation, 0.01f, 0.0f, 2.0f);
+        changed |= mi::DragFloat("コントラスト", &c.data.gradeContrast,   0.01f, 0.0f, 2.0f);
+        changed |= mi::DragFloat("明るさ",       &c.data.gradeBrightness, 0.01f, 0.0f, 2.0f);
+        changed |= mi::DragFloat("ミックス",     &c.data.gradeMixAmount,  0.01f, 0.0f, 1.0f);
 
         ImGui::Separator();
         ImGui::TextDisabled("フィルタプリセット");

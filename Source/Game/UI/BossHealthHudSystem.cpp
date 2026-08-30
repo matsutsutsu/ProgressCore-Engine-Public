@@ -6,6 +6,7 @@
 #include "Engine/ECS/Common/CCL_Archetype.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
+#include "Engine/Core/Math/Interpolation.h" // Damp(): フレームレート非依存の追従係数
 #include "Engine/Serialization/Factory/EntityFactory.h"
 
 #include "Engine/Transform/Components/TransformComponent.h" // UI階層（親子）
@@ -47,6 +48,7 @@ void BossHealthHudSystem::Initialize()
     b.showTrail  = true;       // 遅延ダメージ（チップ）バーを有効化
     b.fillColor  = kBossFill;
     b.trailColor = kBossTrail;
+    b.gradient   = 0.45f;      // 下端を暗く＝ベタ塗りに見えない
     b.value      = 1.0f;
     b.trailValue = 1.0f;
     b.visible    = false;      // 出現するまで隠しておく
@@ -68,7 +70,7 @@ void BossHealthHudSystem::Initialize()
     UITextComponent lx;
     lx.text      = "BOSS";
     lx.pixelSize = 18.0f;
-    lx.sortOrder = 103; // フィル(102)より手前
+    lx.sortOrder = 110; // ゲージは sortOrder+4 まで使うので、被らない位置へ
     lx.visible   = false;
 
     label.Set(CCL::GameUI::MakeUINode(canvas)).Set(lt).Set(lx);
@@ -82,10 +84,14 @@ void BossHealthHudSystem::Update(float dt)
     if (!bar) return;
 
     // 生存中(HP>0)のボスを1体選ぶ。撃破済み(DeadTag/HP0)のボスは対象外にして戦後は隠す。
-    const HealthComponent *boss = nullptr;
-    ForEach([&](const HealthComponent &hp, const BossActionComponent & /*tag*/) {
+    // ID も控えるのは、BehaviorTreeComponent を型フィルタに足さずに引くため。
+    //   フィルタに足すと「BTを持たないボス」でHUDごと消えるので、任意所持の情報は
+    //   GetComponent で取りに行く。
+    const HealthComponent *boss   = nullptr;
+    EntityID               bossID = InvalidEntityID;
+    ForEachWithID([&](EntityID id, const HealthComponent &hp, const BossActionComponent & /*tag*/) {
         if (boss) return;
-        if (hp.currentHealth > 0.0f) boss = &hp;
+        if (hp.currentHealth > 0.0f) { boss = &hp; bossID = id; }
     });
 
     if (!boss)
@@ -93,6 +99,7 @@ void BossHealthHudSystem::Update(float dt)
         bar->visible = false;
         if (txt) txt->visible = false;
         m_init = false; // 次のボスに備えて初回スナップし直す
+        m_shake = 0.0f;
         return;
     }
 
@@ -113,7 +120,19 @@ void BossHealthHudSystem::Update(float dt)
     if (txt) txt->visible = true;
 
     // 被弾（HPが減った）を検出したら、遅延バーの「溜め」をリセットして失った分を見せる。
-    if (ratio < m_prevRatio - 1e-4f) m_trailHold = kTrailHold;
+    if (ratio < m_prevRatio - 1e-4f)
+    {
+        m_trailHold = kTrailHold;
+        m_shake     = 1.0f;   // 当たった瞬間にゲージを揺らす
+        m_shakeTime = 0.0f;   // 位相を頭出し＝毎回同じ「ビクッ」から始まる
+    }
+
+    // 揺れは指数減衰。ウィジェットは揺れ量を持つだけで、減らすのは供給側の仕事。
+    m_shakeTime      += dt;
+    m_shake          -= m_shake * CCL::Math::Damp(kShakeDecay, dt);
+    if (m_shake < 0.02f) m_shake = 0.0f; // 端数で1px残り続けないように切る
+    bar->shake        = m_shake;
+    bar->shakeElapsed = m_shakeTime;
 
     // 遅延バー：回復/据え置きは即追従、被弾直後は溜めのあと ease で value まで減っていく。
     if (ratio >= bar->trailValue)
@@ -126,7 +145,7 @@ void BossHealthHudSystem::Update(float dt)
     }
     else
     {
-        const float k = 1.0f - std::exp(-kTrailSpeed * dt); // フレームレート非依存の指数減衰
+        const float k = CCL::Math::Damp(kTrailSpeed, dt);
         bar->trailValue += (ratio - bar->trailValue) * k;
     }
 

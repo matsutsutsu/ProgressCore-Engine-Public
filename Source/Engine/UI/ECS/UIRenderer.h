@@ -10,10 +10,13 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 class Sprite;
 class TextRenderer;
+class RenderState;
 struct UIDrawList;
+struct UIDrawItem;
 
 class UIRenderer
 {
@@ -23,9 +26,24 @@ class UIRenderer
     ~UIRenderer();
 
     /// @brief 描画リストを sortOrder 昇順で描画し、末尾でリストをクリアする（2Dパス内から呼ぶ）。
-    void Flush(ID3D11DeviceContext *dc, ID3D11Device *device, UIDrawList &list);
+    /// @param renderState 加算合成へ切り替えるために使う。nullptr なら additive 指定を無視して
+    ///        呼び出し側が設定済みの合成のまま1巡で描く（発光しないが消えはしない）。
+    void Flush(ID3D11DeviceContext *dc, ID3D11Device *device, UIDrawList &list,
+               RenderState *renderState = nullptr);
 
   private:
+    /// @brief DrawItems がどのアイテムを描くか。
+    enum class BlendPass
+    {
+        All,      ///< additive を無視して全部（合成を切り替えられない時のフォールバック）
+        Normal,   ///< additive == false のものだけ
+        Additive, ///< additive == true  のものだけ
+    };
+
+    /// @brief 並び替え済みのアイテム列から、pass に該当するものだけを描く。
+    void DrawItems(ID3D11DeviceContext *dc, ID3D11Device *device,
+                   const std::vector<const UIDrawItem *> &ordered, BlendPass pass);
+
     Sprite       *GetSprite(ID3D11Device *device, const std::string &path); // 空パス=白ダミー
     TextRenderer *GetText(ID3D11Device *device);                            // 遅延初期化
 

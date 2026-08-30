@@ -6,6 +6,7 @@
 #include "Engine/ECS/Common/CCL_Archetype.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
+#include "Engine/Core/Math/Interpolation.h" // Damp(): フレームレート非依存の追従係数
 #include "Engine/Serialization/Factory/EntityFactory.h"
 
 #include "Engine/Transform/Components/TransformComponent.h" // UI階層（親子）
@@ -51,6 +52,7 @@ void PlayerHealthHudSystem::Initialize()
     b.sortOrder  = 100;
     b.showTrail  = true;       // 遅延ダメージ（チップ）バーを有効化
     b.fillColor  = HpColor(1.0f);
+    b.gradient   = 0.45f;  // 下端を暗く＝ベタ塗りに見えない
     b.value      = 1.0f;
     b.trailValue = 1.0f;
 
@@ -71,7 +73,7 @@ void PlayerHealthHudSystem::Initialize()
     UITextComponent lx;
     lx.text      = "HP";
     lx.pixelSize = 18.0f;
-    lx.sortOrder = 103; // フィル(102)より手前
+    lx.sortOrder = 110; // ゲージは sortOrder+4 まで使うので、被らない位置へ
 
     label.Set(CCL::GameUI::MakeUINode(canvas)).Set(lt).Set(lx);
     m_labelID = label.ID();
@@ -107,7 +109,19 @@ void PlayerHealthHudSystem::Update(float dt)
         bar->fillColor = HpColor(ratio);
 
         // 被弾（HPが減った）を検出したら、遅延バーの「溜め」をリセットして失った分を見せる。
-        if (ratio < m_prevRatio - 1e-4f) m_trailHold = kTrailHold;
+        if (ratio < m_prevRatio - 1e-4f)
+        {
+            m_trailHold = kTrailHold;
+            m_shake     = 1.0f;   // 「今当たった」をゲージの震えで伝える（遅延バーは「失った量」）
+            m_shakeTime = 0.0f;   // 位相を頭出し＝毎回同じ「ビクッ」から始まる
+        }
+
+        // 揺れの減衰は供給側の仕事。ウィジェットは揺れ量を持つだけにしておく。
+        m_shakeTime      += dt;
+        m_shake          -= m_shake * CCL::Math::Damp(kShakeDecay, dt);
+        if (m_shake < 0.02f) m_shake = 0.0f; // 端数で1px残り続けないように切る
+        bar->shake        = m_shake;
+        bar->shakeElapsed = m_shakeTime;
 
         // 遅延バー：回復/据え置きは即追従、被弾直後は溜めのあと ease で value まで減っていく。
         if (ratio >= bar->trailValue)
@@ -120,7 +134,7 @@ void PlayerHealthHudSystem::Update(float dt)
         }
         else
         {
-            const float k = 1.0f - std::exp(-kTrailSpeed * dt); // フレームレート非依存の指数減衰
+            const float k = CCL::Math::Damp(kTrailSpeed, dt);
             bar->trailValue += (ratio - bar->trailValue) * k;   // スッと value まで追いつく
         }
 
@@ -141,6 +155,7 @@ void PlayerHealthHudSystem::Update(float dt)
     if (!found)
     {
         bar->visible = false;
+        m_shake      = 0.0f;
         if (txt) txt->visible = false;
     }
 }

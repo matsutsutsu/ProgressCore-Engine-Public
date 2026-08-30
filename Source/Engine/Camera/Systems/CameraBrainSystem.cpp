@@ -4,6 +4,7 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Graphics/RHI/Camera.h"
 #include <algorithm>
+#include "Engine/Core/Math/Interpolation.h" // SmoothStep()
 
 // システムの実行順序の定義ヘッダー
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -107,9 +108,8 @@ void CameraBrainSystem::Update(float dt)
 
     if (isBlending) {
         m_blendTimer += dt;
-        float t = m_blendTimer / m_blendDuration;
-        t       = (std::min)(t, 1.0f);
-        t       = t * t * (3.0f - 2.0f * t); // Ease-in-out
+        // SmoothStep が 0..1 に丸めるので、ここでの上限クランプは不要。
+        const float t = CCL::Math::SmoothStep(m_blendTimer / m_blendDuration);
 
         VirtualCamera *prevVCam = m_world->GetComponent<VirtualCamera>(m_prevCamID);
 

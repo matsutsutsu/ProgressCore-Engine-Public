@@ -804,6 +804,9 @@
     <ClInclude Include="Source\Engine\UI\ImGui\ImGuiThemes.h">
       <Filter>Source\Engine\UI\ImGui</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Math\Interpolation.h">
+      <Filter>Source\Engine\Core\Math</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Core\Math\StringHash.h">
       <Filter>Source\Engine\Core\Math</Filter>
     </ClInclude>
@@ -1563,7 +1566,7 @@
     <ClInclude Include="Source\Engine\Transform\Systems\BoneAttachmentSystem.h">
       <Filter>Source\Engine\Transform\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Physics\Components\Character\CharacterMovementInputComponent.h">
+    <ClInclude Include="Source\Engine\Physics\Components\Character\CharacterMovementComponent.h">
       <Filter>Source\Engine\Physics\Components\Character</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Physics\Components\Character\KnockbackComponent.h">
@@ -1641,6 +1644,9 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\VignetteEffect.h">
       <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\PauseBlurEffect.h">
+      <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\ChromaticAberrationEffect.h">
       <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
     </ClInclude>
@@ -1672,6 +1678,9 @@
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Player\Components\PlayerComponent.h">
+      <Filter>Source\Game\Logics\Character\Player\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Player\Components\PlayerInputComponent.h">
       <Filter>Source\Game\Logics\Character\Player\Components</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerAttackSystem.h">
@@ -1897,6 +1906,9 @@
       <Filter>Source\Game\Logics\AI\Battle</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Components\Core\NoRenderTag.h">
+      <Filter>Source\Engine\Graphics\Components\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Components\Core\NoShadowTag.h">
       <Filter>Source\Engine\Graphics\Components\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Debug\AIDebugOverlaySystem.h">
@@ -2633,7 +2645,7 @@
     <ClCompile Include="Source\Engine\Physics\Components\Character\JoltCharacterConfigComponentMeta.cpp">
       <Filter>Source\Engine\Physics\Components\Character</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Physics\Components\Character\CharacterMovementInputComponentMeta.cpp">
+    <ClCompile Include="Source\Engine\Physics\Components\Character\CharacterMovementComponentMeta.cpp">
       <Filter>Source\Engine\Physics\Components\Character</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Physics\Components\Character\KnockbackComponentMeta.cpp">
@@ -2649,6 +2661,9 @@
       <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\VignetteEffect.cpp">
+      <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\PauseBlurEffect.cpp">
       <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\ChromaticAberrationEffect.cpp">
@@ -2703,6 +2718,9 @@
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\Components\PlayerComponentMeta.cpp">
+      <Filter>Source\Game\Logics\Character\Player\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Player\Components\PlayerInputComponentMeta.cpp">
       <Filter>Source\Game\Logics\Character\Player\Components</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerAttackSystem.cpp">
@@ -3103,6 +3121,9 @@
       <Filter>Shader\PostProcess</Filter>
     </FxCompile>
     <FxCompile Include="Shader\PostProcess\VignettePS.hlsl">
+      <Filter>Shader\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\PostProcess\PauseBlurPS.hlsl">
       <Filter>Shader\PostProcess</Filter>
     </FxCompile>
     <FxCompile Include="Shader\PostProcess\ChromaticAberrationPS.hlsl">

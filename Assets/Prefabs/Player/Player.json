@@ -10,26 +10,22 @@
                     "isLoop": false,
                     "playbackSpeed": 0.699999988079071
                 },
-                "Character Movement Input": {
+                "Character Movement": {
                     "currentVelocity": [
-                        -20.458736419677734,
+                        1.8810491561889648,
                         0.0,
-                        16.677066802978516
+                        -26.327669143676758
                     ],
-                    "dashRequested": false,
                     "desiredVelocity": [
-                        -0.775105357170105,
+                        0.07126595079898834,
                         0.0,
-                        0.6318320035934448
+                        -0.9974573850631714
                     ],
-                    "isAttackRequested": false,
-                    "jumpRequested": false,
-                    "lookTargetPos": [
-                        0.0,
-                        0.0,
-                        0.0
-                    ],
-                    "overrideSpeed": 26.3947811126709
+                    "isRootMotionActive": true,
+                    "jumpImpulse": false,
+                    "overrideSpeed": -1.0,
+                    "speedMultiplier": 1.0,
+                    "use3DVelocity": false
                 },
                 "Cleave Component": {
                     "chainCount": 0,
@@ -63,9 +59,9 @@
                     "currentTimer": -0.006666665896773338,
                     "dashCooldown": 0.1599999964237213,
                     "dashDirection": [
-                        0.2512670159339905,
-                        -0.0,
-                        -0.9679178595542908
+                        0.39009982347488403,
+                        0.0,
+                        -0.9207726120948792
                     ],
                     "dashDuration": 0.1599999964237213,
                     "dashSpeed": 114.0,
@@ -124,9 +120,19 @@
                     "windowScalePerLevel": 0.10000000149011612
                 },
                 "Knockback": {
-                    "duration": 0.18000000715255737
+                    "duration": 0.18000000715255737,
+                    "stunDuration": 0.3499999940395355,
+                    "stunTimer": 0.0
                 },
-                "Material": null,
+                "Material": {
+                    "customParams": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "paths": []
+                },
                 "Model": {
                     "assetPath": "Assets/Models/Player/SK_SciFITrooper_Man_03.glb"
                 },
@@ -138,19 +144,23 @@
                     "attackFaceMaxDistance": 15.0,
                     "bankingMultiplier": 0.5,
                     "currentJumpCount": 0,
-                    "currentRoll": 5.086760404514502e-22,
-                    "currentYaw": -88.85147857666016,
+                    "currentRoll": 2.802596928649634e-45,
+                    "currentYaw": -78.61114501953125,
                     "isAirborne": false,
                     "isRunning": false,
-                    "lastFallVelocity": 0.0,
                     "maxBankingAngle": 30.0,
                     "maxJumps": 2,
                     "runIdleReleaseTime": 0.4000000059604645,
                     "runSpeed": 65.5,
                     "timeSinceGrounded": 0.0,
-                    "turnSpeed": 10.0,
-                    "wasGroundedLastFrame": true,
-                    "wasJumpButtonPressed": false
+                    "turnSpeed": 10.0
+                },
+                "Player Input": {
+                    "attackPressed": false,
+                    "cleavePressed": false,
+                    "dashPressed": false,
+                    "jumpPressed": false,
+                    "lockOnPressed": false
                 },
                 "RootMotion": null,
                 "TimeState": {
@@ -165,15 +175,15 @@
                     "isStatic": false,
                     "parent": 5,
                     "position": [
-                        -21.942358016967773,
-                        -0.4459317922592163,
-                        77.29603576660156
+                        -7.267144680023193,
+                        -0.25490307807922363,
+                        -75.06671142578125
                     ],
                     "rotation": [
-                        -1.0912376010794674e-22,
-                        -0.42905011773109436,
-                        2.2973861089764553e-22,
-                        0.9032806754112244
+                        -1.401298464324817e-45,
+                        -0.9993641376495361,
+                        0.0,
+                        -0.03565564751625061
                     ],
                     "scale": [
                         3.5,
@@ -251,8 +261,12 @@
                     ],
                     "tubeSides": 4,
                     "useInterpolation": false,
+                    "useZigZag": false,
                     "width": 0.3400000035762787,
-                    "widthCurvePower": 0.10000000149011612
+                    "widthCurvePower": 0.10000000149011612,
+                    "zigZagAmplitude": 0.5,
+                    "zigZagFrequency": 2,
+                    "zigZagSeed": 1337
                 }
             },
             "lid": 2
@@ -324,8 +338,12 @@
                     ],
                     "tubeSides": 4,
                     "useInterpolation": false,
+                    "useZigZag": false,
                     "width": 0.3400000035762787,
-                    "widthCurvePower": 0.10000000149011612
+                    "widthCurvePower": 0.10000000149011612,
+                    "zigZagAmplitude": 0.5,
+                    "zigZagFrequency": 2,
+                    "zigZagSeed": 1337
                 }
             },
             "lid": 3
@@ -359,7 +377,7 @@
                                 1.0
                             ],
                             "colorMode": 1,
-                            "colorRampPath": "Assets/Textures/VFX/VFX_Ramp_Fire.png",
+                            "colorRampPath": "Assets/Textures/VFX/Ramp/T_Ramp_Fire.png",
                             "coneAngle": [
                                 0.0,
                                 3.140000104904175
@@ -424,7 +442,7 @@
                                 1
                             ],
                             "spriteMode": 0,
-                            "texturePath": "Assets/Textures/VFX/VFX_Circle.png",
+                            "texturePath": "Assets/Textures/VFX/Particle/T_Particle_Circle_01.png",
                             "uvScrollSpeed": [
                                 0.0,
                                 0.0
@@ -439,7 +457,7 @@
                     "hitStopDuration": 0.09000000357627869,
                     "hitStopScale": 0.0,
                     "isActive": false,
-                    "knockback": 10.0
+                    "knockback": 20.0
                 },
                 "Jolt Capsule Collider": {
                     "halfHeight": 2.5999999046325684,
@@ -469,7 +487,17 @@
                     "restitution": 0.0,
                     "useCCD": false
                 },
-                "Material": null,
+                "Material": {
+                    "customParams": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "paths": [
+                        "C:\\Users\\2240209\\Desktop\\ProgressCore-Engine\\Assets\\Textures\\Materials\\SwordMaterial.json"
+                    ]
+                },
                 "Model": {
                     "assetPath": "Assets/Models/Weapon/Sword.gltf"
                 },
@@ -535,8 +563,12 @@
                     ],
                     "tubeSides": 6,
                     "useInterpolation": true,
+                    "useZigZag": false,
                     "width": 1.0,
-                    "widthCurvePower": 0.10000000149011612
+                    "widthCurvePower": 0.10000000149011612,
+                    "zigZagAmplitude": 0.5,
+                    "zigZagFrequency": 2,
+                    "zigZagSeed": 1337
                 }
             },
             "lid": 4

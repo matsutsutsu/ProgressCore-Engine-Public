@@ -32,9 +32,21 @@ class AnimationSequencerWindow : public EditorWindow
   protected:
     void DrawContents(EditorContext &context) override;
 
+    /// @brief ウィンドウが描画されなくなっても編集モードを確実に解除する。
+    /// @details 編集モードは Animator の isEditorOverride を立て、対象エンティティの
+    ///          アニメ更新を全システムで止める。DrawContents はウィンドウを閉じる・畳む・
+    ///          選択を外すと呼ばれないため、解除をそこに置くと状態が焼き付いて
+    ///          「そのエンティティのアニメが二度と動かない」になる。
+    void OnFrameBegin(EditorContext &context) override;
+
   private:
     // --- 描画・更新を分割したサブ関数群 ---
-    void ResetStateOnEntitySwitch(EditorContext &context, AnimatorComponent *animator);
+    void ResetStateOnEntitySwitch(EditorContext &context);
+
+    /// @brief 編集モードを解除し、対象エンティティを編集前の状態へ戻す。
+    /// @param target 解除対象。切替時は「切替前」のエンティティを渡すこと
+    ///               （選択中のものへ復元すると、別モデルの台本を差し込んでしまう）。
+    void ReleaseEditMode(EditorContext &context, CCL::ECS::EntityID target);
     void DrawFileIO();
     void DrawEditModeToggle(EditorContext &context, AnimatorComponent *animator);
     void DrawTimelinePane(EditorContext &context, AnimatorComponent *animator, Model *model);
@@ -82,4 +94,11 @@ class AnimationSequencerWindow : public EditorWindow
 
     // --- エンティティ切替検出 ---
     CCL::ECS::EntityID m_lastSelectedEntity = CCL::ECS::InvalidEntityID;
+
+    /// @brief 編集モードで isEditorOverride を握っているエンティティ。Invalid=握っていない。
+    CCL::ECS::EntityID m_editingEntity = CCL::ECS::InvalidEntityID;
+
+    /// @brief このフレームに DrawContents が編集モードを維持したか。
+    ///        維持されないフレームが来たら OnFrameBegin が解除する。
+    bool m_editModeRefreshed = false;
 };

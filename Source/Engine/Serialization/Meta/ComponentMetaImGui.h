@@ -4,12 +4,17 @@
 #include "ComponentMeta.h"
 #include "Engine/Serialization/Core/EntityLink.h"
 #include <DirectXMath.h>
+#include <algorithm> // std::max（ラベル列の後退防止）
 #include <cstring>
 #include <cfloat>
 #include <string>
 #include <type_traits>
 #include "Editor/Core/EditorCommandHistory.h"
 #include "Engine/Platform/Core/Logger.h"
+#include "Engine/Platform/Core/Dialog.h"   // FileDialog (パスフィールドのダイアログ)
+#include "Engine/Graphics/RHI/Graphics.h"  // 親ウィンドウ HWND
+#include "Engine/Graphics/Resource/ResourceManager.h" // パスフィールドのサムネイルプレビュー
+#include "Engine/Graphics/Resource/ResourceTypes.h"   // TextureHandle
 #include <imgui.h>
 
 namespace ComponentMetaImGui {
@@ -42,6 +47,132 @@ namespace ComponentMetaImGui {
     template <typename T>
     struct HasIsDirty<T, std::void_t<decltype(std::declval<T>().isDirty)>> : std::true_type {};
 
+
+    // ------------------------------------------------------------------------
+    // Help: 直前のウィジェットの右に "(?)" を出し、ホバーで説明を表示する共通ヘルパー。
+    //   もともと GPUParticleComponentMeta 内のローカル実装だったものを、どのメタからも
+    //   使える MetaImGui の標準機能へ昇格させたもの。CustomGui 内で
+    //   `ComponentMetaImGui::Help("...")` と呼ぶ（各メタで再定義しないこと）。
+    // ------------------------------------------------------------------------
+    inline void Help(const char* text)
+    {
+        ImGui::SameLine();
+        ImGui::TextDisabled("(?)");
+        if (text && text[0] && ImGui::IsItemHovered())
+            ImGui::SetTooltip("%s", text);
+    }
+
+    // ------------------------------------------------------------------------
+    // Prop: CustomGui 用の「ラベル左・ウィジェット右」行ヘルパー。
+    //   自動グリッド(Fields ベース)と同じ見た目を、テーブルを組まずに1行ずつ出せる。
+    //    ・左にラベルを描き、直後のウィジェット開始位置を固定列頭にそろえ、
+    //     SetNextItemWidth(-FLT_MIN) で右端いっぱいに広げる。
+    //   使い方（ウィジェットのラベルは "##..." で隠すこと）:
+    //       ComponentMetaImGui::Prop("速度");        ImGui::DragFloat("##spd", &v);
+    //       ComponentMetaImGui::Prop("色", "RGBA");  ImGui::ColorEdit4("##col", c);
+    //   ※ インスペクタ全体を「ラベル左」で統一するための標準ヘルパー。
+    // ------------------------------------------------------------------------
+    inline void Prop(const char* label, const char* tooltip = nullptr)
+    {
+        // ラベル列の固定幅（自動グリッドの比率に近い値。インデント下でも列頭がそろう）。
+        constexpr float kLabelWidth = 150.0f;
+
+        const float startX = ImGui::GetCursorPosX();
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted(label ? label : "");
+        if (tooltip && tooltip[0] && ImGui::IsItemHovered())
+            ImGui::SetTooltip("%s", tooltip);
+
+        ImGui::SameLine();
+
+        // 列頭へそろえる。ただし「後退させない」のが要点。
+        //   SetCursorPosX は絶対位置なので、kLabelWidth より長いラベル
+        //   （例「ロックオン開始ピッチ補間 (lockOnPitchDamping)」＝約300px）では
+        //   カーソルが左へ戻り、ウィジェットがラベルの上に重なって描かれる。
+        //   長いラベルの行はそろえず、その分だけ右へずらす。
+        const float alignedX = startX + kLabelWidth;
+        ImGui::SetCursorPosX((std::max)(ImGui::GetCursorPosX(), alignedX));
+
+        ImGui::SetNextItemWidth(-FLT_MIN); // 直後のウィジェットを右端まで広げる
+    }
+
+    // ========================================================================
+    //  1行フィールドヘルパー（CustomGui を「1行1フィールド」で書くための糖衣）
+    //    ・Prop(ラベル左) → 隠しラベルのウィジェット → changed を返す、を1関数に集約。
+    //    ・ID は値ポインタ(v)で一意化するので、同名ラベルが並んでも衝突しない。
+    //    ・使い方（CustomGui 内）:
+    //        namespace mi = ComponentMetaImGui;
+    //        changed |= mi::DragFloat("強度", &v, 0.01f, 0.0f, 1.0f);
+    //        changed |= mi::Checkbox("有効", &b);
+    //        changed |= mi::Color3("色", &c.x);
+    //    これだけで自動グリッドと同じ「ラベル左・幅いっぱい」に揃う。
+    // ========================================================================
+    inline bool DragFloat(const char* label, float* v, float speed = 0.1f,
+                          float lo = 0.0f, float hi = 0.0f, const char* tip = nullptr)
+    {
+        ImGui::PushID(v); Prop(label, tip);
+        bool ch = ImGui::DragFloat("##v", v, speed, lo, hi); ImGui::PopID(); return ch;
+    }
+    inline bool DragFloat2(const char* label, float* v2, float speed = 0.1f,
+                           float lo = 0.0f, float hi = 0.0f, const char* tip = nullptr)
+    {
+        ImGui::PushID(v2); Prop(label, tip);
+        bool ch = ImGui::DragFloat2("##v", v2, speed, lo, hi); ImGui::PopID(); return ch;
+    }
+    inline bool DragFloat3(const char* label, float* v3, float speed = 0.1f,
+                           float lo = 0.0f, float hi = 0.0f, const char* tip = nullptr)
+    {
+        ImGui::PushID(v3); Prop(label, tip);
+        bool ch = ImGui::DragFloat3("##v", v3, speed, lo, hi); ImGui::PopID(); return ch;
+    }
+    inline bool DragFloat4(const char* label, float* v4, float speed = 0.1f,
+                           float lo = 0.0f, float hi = 0.0f, const char* tip = nullptr)
+    {
+        ImGui::PushID(v4); Prop(label, tip);
+        bool ch = ImGui::DragFloat4("##v", v4, speed, lo, hi); ImGui::PopID(); return ch;
+    }
+    inline bool DragInt(const char* label, int* v, float speed = 1.0f,
+                        int lo = 0, int hi = 0, const char* tip = nullptr)
+    {
+        ImGui::PushID(v); Prop(label, tip);
+        bool ch = ImGui::DragInt("##v", v, speed, lo, hi); ImGui::PopID(); return ch;
+    }
+    inline bool SliderFloat(const char* label, float* v, float lo, float hi, const char* tip = nullptr)
+    {
+        ImGui::PushID(v); Prop(label, tip);
+        bool ch = ImGui::SliderFloat("##v", v, lo, hi); ImGui::PopID(); return ch;
+    }
+    inline bool Checkbox(const char* label, bool* v, const char* tip = nullptr)
+    {
+        ImGui::PushID(v); Prop(label, tip);
+        bool ch = ImGui::Checkbox("##v", v); ImGui::PopID(); return ch;
+    }
+    inline bool Color3(const char* label, float* rgb, const char* tip = nullptr)
+    {
+        ImGui::PushID(rgb); Prop(label, tip);
+        bool ch = ImGui::ColorEdit3("##v", rgb); ImGui::PopID(); return ch;
+    }
+    inline bool Color4(const char* label, float* rgba, const char* tip = nullptr)
+    {
+        ImGui::PushID(rgba); Prop(label, tip);
+        bool ch = ImGui::ColorEdit4("##v", rgba); ImGui::PopID(); return ch;
+    }
+    inline bool Combo(const char* label, int* cur, const char* const items[], int count, const char* tip = nullptr)
+    {
+        ImGui::PushID(cur); Prop(label, tip);
+        bool ch = ImGui::Combo("##v", cur, items, count); ImGui::PopID(); return ch;
+    }
+    // std::string を直接編集する InputText（内部でバッファを管理。call 側の char[] 定型を排除）。
+    inline bool InputText(const char* label, std::string& s, const char* tip = nullptr, size_t maxLen = 256)
+    {
+        ImGui::PushID(&s); Prop(label, tip);
+        char buf[256];
+        strncpy_s(buf, sizeof(buf), s.c_str(), _TRUNCATE);
+        bool ch = ImGui::InputText("##v", buf, (maxLen < sizeof(buf)) ? maxLen : sizeof(buf));
+        if (ch) s = buf;
+        ImGui::PopID();
+        return ch;
+    }
 
     // ------------------------------------------------------------------------
     // フィールドのツールチップ文字列を組み立てる。
@@ -175,7 +306,53 @@ namespace ComponentMetaImGui {
             std::string& v = RawField<std::string>(obj, fd.offset);
             char         buf[256];
             strncpy_s(buf, sizeof(buf), v.c_str(), _TRUNCATE);
-            if (ImGui::InputText(W, buf, sizeof(buf))) { v = buf; changed = true; }
+
+            // filePreset 指定時は「サムネイル＋パス欄＋[選択][クリア]」。直打ちも残す。
+            if (fd.filePreset) {
+                // 現在のパスからプレビュー用SRVを解決（ResourceManager はパスでキャッシュ）。
+                ID3D11ShaderResourceView* srv = nullptr;
+                if (!v.empty()) {
+                    TextureHandle h = ResourceManager::Instance().LoadTexture(v.c_str());
+                    if (h.IsValid()) srv = ResourceManager::Instance().GetTexture(h);
+                }
+
+                // サムネイル（2行分の高さ）。ホバーで拡大プレビュー＋パス表示。
+                const float thumb = ImGui::GetFrameHeightWithSpacing() + ImGui::GetFrameHeight();
+                if (srv) {
+                    ImTextureID tid = (ImTextureID)(uintptr_t)srv;
+                    ImGui::Image(tid, ImVec2(thumb, thumb));
+                    if (ImGui::IsItemHovered()) {
+                        ImGui::BeginTooltip();
+                        ImGui::Image(tid, ImVec2(192.0f, 192.0f));
+                        ImGui::TextUnformatted(v.c_str());
+                        ImGui::EndTooltip();
+                    }
+                }
+                else {
+                    // 未設定 / 読込失敗はプレースホルダ枠。
+                    ImGui::Button(v.empty() ? "無し" : "?", ImVec2(thumb, thumb));
+                }
+
+                ImGui::SameLine();
+                ImGui::BeginGroup();
+                // パス（直打ち可能・幅いっぱい）
+                ImGui::SetNextItemWidth(-FLT_MIN);
+                if (ImGui::InputText("##v", buf, sizeof(buf))) { v = buf; changed = true; }
+                // ボタン行：ファイルダイアログを開く / クリア
+                if (ImGui::Button("選択")) {
+                    if (auto path = FileDialog::OpenPreset(fd.filePreset, "ファイルを選択",
+                                                           Graphics::Instance().GetWindowHandle())) {
+                        v = FileDialog::ConvertToRelativePath(*path);
+                        changed = true;
+                    }
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("クリア")) { v.clear(); changed = true; }
+                ImGui::EndGroup();
+            }
+            else {
+                if (ImGui::InputText(W, buf, sizeof(buf))) { v = buf; changed = true; }
+            }
             break;
         }
         default: break;
