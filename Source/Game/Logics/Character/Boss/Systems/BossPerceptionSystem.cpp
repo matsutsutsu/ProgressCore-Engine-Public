@@ -59,5 +59,7 @@ void BossPerceptionSystem::Update(float /*rawDt*/)
     });
 }
 
-// BehaviorTreeSystem (L02) より前に認識を最新化しておく
-REGISTER_LOGIC_SYSTEM(BossPerceptionSystem, Priority::LogicStage::L01_Input);
+// L02_PreUpdate：BehaviorTreeSystem(L02_Update) が blackboard を読む前に認識を確定させる。
+//   同ステージの BossPhaseSystem / DroneBrainSystem とは互いに依存しない
+//   （あちらは blackboard を読まない）ので、順序が決まらなくても問題ない。
+REGISTER_LOGIC_SYSTEM(BossPerceptionSystem, Priority::LogicStage::L02_PreUpdate);

@@ -55,13 +55,9 @@ struct AIBlackboard {
 struct BehaviorTreeComponent {
     // --- 巨大なオブジェクト群 (ポインタ/コンテナ系) ---
     /// @brief 木の実体。BTAssetCache が同じパスに対して1つだけ作り、全Entityで共有する。
-    /// @note  const なのは「共有物を実行時に書き換えない」ことを型で保証するため。
-    ///        書き換えたい場合はアセットを編集して BTAssetCache::Reload を通す。
     std::shared_ptr<const BTAsset> sharedAsset;
 
     /// @brief 読み込むBTのパス。空なら「BTを持たない」＝評価しない。
-    /// @note  既定を実在しないパスにしておくと、新しく敵を作るたびにロード失敗ログから
-    ///        始まることになるので空にしてある。プレハブ側で必ず指定する。
     std::string assetPath;
     std::string loadedAssetPath = "";
     std::string lastFrameTreeLog = "";

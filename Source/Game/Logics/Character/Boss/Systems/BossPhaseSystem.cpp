@@ -37,7 +37,7 @@ void BossPhaseSystem::Update(float /*rawDt*/)
     });
 }
 
-
+// 状態遷移を切り替えるかどうか判定する処理
 BossPhase BossPhaseSystem::DecideNextPhase(const BossPhaseComponent &phase,
                                            const HealthComponent    &health) const
 {
@@ -64,7 +64,7 @@ BossPhase BossPhaseSystem::DecideNextPhase(const BossPhaseComponent &phase,
     return phase.phase;
 }
 
-
+// 状態に入った瞬間だけ走る処理
 void BossPhaseSystem::OnEnterPhase(BossPhase                next,
                                    BossPhaseComponent      &phase,
                                    BehaviorTreeComponent   &bt,
@@ -124,7 +124,7 @@ void BossPhaseSystem::OnEnterPhase(BossPhase                next,
     }
 }
 
-
+// 状態に滞在している間、毎フレーム走る処理
 void BossPhaseSystem::TickPhase(const BossPhaseComponent &phase,
                                 BossCommandComponent     &cmd,
                                 HealthComponent          &health) const

@@ -20,6 +20,7 @@
 ///   大状態を確定させる必要があるため、ここは動かせない。
 #pragma once
 #include "Engine/ECS/System/CCL_IfSystem.h"
+#include <vector>
 #include "Game/Logics/Character/Boss/Components/BossPhaseComponent.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h" // BehaviorTreeComponent
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
@@ -42,6 +43,21 @@ class BossPhaseSystem : public CCL::ECS::IfSystem<
     {
     }
     ~BossPhaseSystem() override = default;
+
+    /// @brief 知覚の後に走らせる。
+    ///
+    /// なぜ宣言が要るか:
+    ///   BossPerceptionSystem も L02_PreUpdate にいて、両者とも
+    ///   BehaviorTreeComponent を Write する（あちらは blackboard、こちらは assetPath）。
+    ///   TaskScheduler は型の粒度でしか見ないので、実際には触る場所が重ならなくても
+    ///   「競合するのに前後が宣言されていない」＝順序不定として起動時に報告される。
+    ///   今は順序が変わっても結果は同じだが、
+    ///   将来ここで blackboard.healthPercentage を見たくなったときに
+    ///   「感知 → 大状態」の順でないと成立しないので、その向きで固定しておく。
+    std::vector<const char *> GetRunAfter() const override
+    {
+        return {"BossPerceptionSystem"};
+    }
 
     void Update(float dt) override;
 

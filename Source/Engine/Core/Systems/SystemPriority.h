@@ -15,7 +15,18 @@ namespace Priority {
         L01_TimeSetup = 110, // 動的なTimeStateの付与 (TimeScaleSetupSystem)
         L01_TimeScale = 120, // 全エンティティの実効dtの計算 (TimeScaleSystem)
 
-		L02_PreUpdate = 150, // AIの感知前に必要なシステムをここに配置 (例: 視界の更新など)
+        // 世界の事実の集計フェーズ
+        L01_WorldState = 130, // 「誰から見ても同じ値」を確定させる (BattleContextSyncSystem)
+                              //   AI層(L02〜)が読むより厳密に前でなければならない。
+                              //   ※ L02_PreUpdate に置いてはいけない: DroneBrainSystem が
+                              //     同ステージで BattleContext を読むため、書き手と読み手が
+                              //     同居して順序が決まらなくなる。しかもリソースへのアクセスは
+                              //     IfSystem の Read<>/Write<> 申告に載らないので、
+                              //     スケジューラはこの依存を検出できない。
+
+		L02_PreUpdate = 150, // AIの感知フェーズ。L02_Update の入力を確定させるものをここへ。
+                             //   例: 知覚(BossPerceptionSystem) / 大状態(BossPhaseSystem) /
+                             //       個体判断(DroneBrainSystem)
 
         L02_Update = 200, // AI、移動、弾の更新など (並列化の主戦場)
 

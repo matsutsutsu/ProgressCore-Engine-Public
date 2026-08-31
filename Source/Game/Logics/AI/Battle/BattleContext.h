@@ -18,49 +18,31 @@
 #include "Engine/ECS/Common/CCL_Types.h"
 #include <DirectXMath.h>
 
-/// @brief 戦場全体で共有される唯一の「戦況」。World Resource として1つ持つ。
+// 戦場全体で共有される唯一の「戦況」
 struct BattleContext
 {
-    // ----------------------------------------------------------------
-    // 登場人物（1対1なので各1体。探索不要で直接参照する）
-    // ----------------------------------------------------------------
+    // プレイヤーとボスのEntityID
+    // 今は２つだけど、今後雑魚敵など増やす予定
     CCL::ECS::EntityID playerEntity = CCL::ECS::InvalidEntityID;
     CCL::ECS::EntityID bossEntity   = CCL::ECS::InvalidEntityID;
 
-    /// @brief プレイヤーの現在座標（毎フレーム更新される事実）。
-    ///        ボス・ドローンはこれを見れば「常にロックオン」できる。
+    // プレイヤーとボスの座標
     DirectX::XMFLOAT3 playerPos = {0, 0, 0};
     DirectX::XMFLOAT3 bossPos   = {0, 0, 0};
 
-    // ----------------------------------------------------------------
-    // ドローン（残数がそのままボスの体力を表す）
-    // ----------------------------------------------------------------
-    /// @brief 生存しているドローンの数。戦術（Control/Pressure/...）の切替に使う。
-    ///        DroneManagerSystem が毎フレーム集計して書き込む。
+    // ドローンの生存数
+    // 残数がそのままボスの体力を表す。DroneManagerSystem が毎フレーム数えて書き込む
+    // （誰から見ても同じ値なので、個体の Blackboard ではなくここに置く）
     int droneAliveCount = 1000;
 
-    /// @brief ドローンの最大数（弱体化の割合計算などに使う）。
-    int droneMaxCount = 1000;
-
-    // ----------------------------------------------------------------
-    // BREAK システム（ジャスト回避を重ねてボスの体勢を崩す）
-    // ----------------------------------------------------------------
-    /// @brief ジャスト回避成功で溜まるゲージ（0.0〜1.0）。
+    // BREAK ゲージ
+    // ジャスト回避成功で溜まるゲージ（0.0～1.0）
     float breakGauge = 0.0f;
 
-    /// @brief 現在 BREAK 発動中か（発動中はボス戦術が Broken になる）。
+    // 現在 BREAK 発動中か（発動中はボス戦術が Broken になる）
     bool isBreaking = false;
 
-    // ----------------------------------------------------------------
-    // ヘルパー
-    // ----------------------------------------------------------------
-    /// @brief ドローン残数の割合（1.0=満タン, 0.0=全滅）。
-    float DroneRatio() const
-    {
-        if (droneMaxCount <= 0) return 0.0f;
-        return static_cast<float>(droneAliveCount) / static_cast<float>(droneMaxCount);
-    }
-
+    // プレイヤーが存在するか
     bool HasPlayer() const
     {
         return playerEntity != CCL::ECS::InvalidEntityID;
