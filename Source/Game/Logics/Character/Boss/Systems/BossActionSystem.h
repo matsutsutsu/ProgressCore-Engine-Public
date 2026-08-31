@@ -1,6 +1,5 @@
 /**
- * @file BossActionSystem.h
- * @brief AIの出力(BossCommandComponent)を読み取り、ボス本体の物理移動に変換する「筋肉」。
+ * AIの出力(BossCommandComponent)を読み取り、ボス本体の物理移動に変換する「筋肉」。
  *
  * 最小構成版
  *   Character/Boss/ に配置。AI（脳・BehaviorTreeSystem）とは明確に分離し、
@@ -57,7 +56,7 @@ private:
                      const JoltCharacterHandleComponent& joltHandle,
                      const DirectX::SimpleMath::Vector3& playerPos, float dt);
 
-    /// @brief 近接攻撃中の物理挙動。薙ぎ払いは足を止めてプレイヤーを向く。
+    /// 近接攻撃中の物理挙動。薙ぎ払いは足を止めてプレイヤーを向く。
     ///        踏み込み/突進を足すときは、ここで currentActionId により前進を分岐する。
     void ProcessMeleeHold(BossActionComponent& bossDef, TransformComponent& trans,
                           CharacterMovementComponent& movement,

@@ -1,3 +1,21 @@
+/**
+ * BTアセット（JSON）をランタイム用の BTAsset へ読み込む実装。
+ *
+ * 役割:
+ *   エディタが書き出した JSON の nodes[] を、BTNode の配列へ変換する。
+ *   行動・条件は保存キー（"A_BossSlash" などの文字列）で解決し、
+ *   数値IDは旧アセット互換のフォールバックとしてのみ使う。
+ *
+ * なぜこの形か:
+ *   数値IDを正にすると、IDを詰め直せない・JSONを開いても何の技か読めない・
+ *   技を足すときに番号を取り合う、の3つが同時に起きる。名前を正にすると全部消える
+ *   （経緯は ActionRegistry.h の冒頭にまとめてある）。
+ *
+ * 注意点:
+ *   古い書式のアセットは、この読み込み時に新しい形へ読み替える
+ *   （MigrateLegacyWait / MigrateLegacyCondition）。読み替わるのはメモリ上だけなので、
+ *   ファイル自体を新形式にするにはBTエディタで開いて保存し直す必要がある。
+ */
 #include "BehaviorTreeLoader.h"
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/Platform/Core/FileSystem.h"

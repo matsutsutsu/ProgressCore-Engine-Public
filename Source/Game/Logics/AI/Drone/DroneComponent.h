@@ -1,22 +1,23 @@
-/// @file  DroneComponent.h
-/// @brief ドローン1機ぶんの状態。ロジックを持たず、システム間の共有メモリとして機能する。
-///
-/// ── このファイルの読み方 ──────────────────────────────────
-///
-/// 【書き手は1フィールドにつき1システム】
-///   読むのは誰でもよいが、書くのは1システムだけ。これが 1000 機を
-///   ForEachParallel で並列に回せる根拠になっている。
-///   コンポーネントはただの公開メモリなので、この規約をコンパイラは強制できない。
-///   代わりに全フィールドへ「書き手」を明記する。ここを破ると即データ競合になる。
-///
-/// 【[RT] タグ】
-///   実行時専用。セーブにもプレハブにも乗らない（ComponentMeta::Fields() に出さない）。
-///
-/// 【並び順】
-///   意味のまとまりで並べる。SoA チャンクは DroneComponent を配列として
-///   連続配置するので sizeof がそのまま帯域になるが、型サイズ順に手で並べ替える
-///   運用は追加のたびに崩れる（実際に崩れていた）。末尾の static_assert で
-///   測って見張る方式にしている。
+/**
+ * ドローン1機ぶんの状態。ロジックを持たず、システム間の共有メモリとして機能する。
+ *
+ * ── このファイルの読み方 ──────────────────────────────────
+ *
+ * 【書き手は1フィールドにつき1システム】
+ *   読むのは誰でもよいが、書くのは1システムだけ。これが 1000 機を
+ *   ForEachParallel で並列に回せる根拠になっている。
+ *   コンポーネントはただの公開メモリなので、この規約をコンパイラは強制できない。
+ *   代わりに全フィールドへ「書き手」を明記する。ここを破ると即データ競合になる。
+ *
+ * 【[RT] タグ】
+ *   実行時専用。セーブにもプレハブにも乗らない（ComponentMeta::Fields() に出さない）。
+ *
+ * 【並び順】
+ *   意味のまとまりで並べる。SoA チャンクは DroneComponent を配列として
+ *   連続配置するので sizeof がそのまま帯域になるが、型サイズ順に手で並べ替える
+ *   運用は追加のたびに崩れる（実際に崩れていた）。末尾の static_assert で
+ *   測って見張る方式にしている。
+ */
 #pragma once
 #include <array>
 #include <cstdint>
@@ -27,7 +28,7 @@
 #include "Engine/Serialization/Core/EntityLink.h"
 
 
-/// @brief 陣形の一覧。ここが唯一の定義で、enum も表示名もこの表から作る。
+/// 陣形の一覧。ここが唯一の定義で、enum も表示名もこの表から作る。
 ///
 /// 列は (識別子, 保存値, 表示名)。
 ///
@@ -57,7 +58,7 @@
     X(TsunamiWave_RL,          31, "波状縦割り・右→左")     \
     X(SquadAssault,            32, "小隊突撃")
 
-/// @brief ボスがドローン群へ出す「どの形を作れ」の指示。
+/// ボスがドローン群へ出す「どの形を作れ」の指示。
 /// @note  BossCommandComponent 側でもそのまま使う。
 enum class DroneFormationType : uint8_t
 {
@@ -66,12 +67,12 @@ enum class DroneFormationType : uint8_t
 #undef CCL_DRONE_FORMATION_ENUM
 };
 
-/// @brief 保存値として使いうる番号の上限+1（欠番ぶんを含む）。
+/// 保存値として使いうる番号の上限+1（欠番ぶんを含む）。
 /// @note  インスペクタの列挙表示は「値をそのまま配列の添字にする」ため、
 ///        名前テーブルは詰めた長さではなくこの長さで作る必要がある。
 inline constexpr size_t kDroneFormationSlotCount = 33;
 
-/// @brief インスペクタの列挙表示用の陣形名。欠番は "(欠番)" で埋める。
+/// インスペクタの列挙表示用の陣形名。欠番は "(欠番)" で埋める。
 ///
 /// なぜ enum と同じファイルに置くか:
 ///   以前は DroneComponent と BossCommandComponent のメタ定義が同じ .cpp に
@@ -89,7 +90,7 @@ static constexpr std::array<const char *, kDroneFormationSlotCount> MakeDroneFor
 }
 inline constexpr auto kDroneFormationNames = MakeDroneFormationNames();
 
-/// @brief ドローン個体の物理ステート。書き手は DroneBrainSystem のみ。
+/// ドローン個体の物理ステート。書き手は DroneBrainSystem のみ。
 ///
 /// Stunned と Returning が FireCharge と別の値であること自体が仕様になっている。
 ///   当たり判定もジャスト回避も「FireCharge か」だけを見るので、
@@ -104,7 +105,7 @@ enum class DroneState : uint8_t
 };
 
 
-/// @brief FireCharge 中の移動方式。書き手は攻撃陣形（Formation）。
+/// FireCharge 中の移動方式。書き手は攻撃陣形（Formation）。
 ///
 /// bool（追従するか否か）では足りなくなったので enum にした。
 /// 剛体追従とバネ追従は見た目がまったく別物で、混同すると
@@ -117,7 +118,7 @@ enum class ChargeMode : uint8_t
 };
 
 
-/// @brief 突撃1回ぶんの寿命を「個体が」持つためのフェーズ。
+/// 突撃1回ぶんの寿命を「個体が」持つためのフェーズ。
 ///
 /// なぜ必要か:
 ///   ボスの「今撃て」信号を毎フレーム全機へ配る方式（レベル）のままだと、
@@ -136,7 +137,7 @@ enum class DroneAttackPhase : uint8_t
 };
 
 
-/// @brief ドローン1機ぶんの状態。
+/// ドローン1機ぶんの状態。
 struct DroneComponent
 {
     // ================================================================

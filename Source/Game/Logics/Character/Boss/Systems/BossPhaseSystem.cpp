@@ -1,5 +1,6 @@
-/// @file  BossPhaseSystem.cpp
-/// @brief ボス大状態の実装。遷移判定 → 入場処理（1回だけ）→ 滞在処理、の3段構成。
+/**
+ * ボス大状態の実装。遷移判定 → 入場処理（1回だけ）→ 滞在処理、の3段構成。
+ */
 #include "BossPhaseSystem.h"
 
 #include "Game/Logics/AI/Drone/DroneComponent.h" // DroneFormationType（群れへの指示）

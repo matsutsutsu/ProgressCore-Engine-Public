@@ -1,9 +1,10 @@
-/// @file  BossPerceptionSystem.cpp
-/// @brief ボスの状況認識の実装。BattleContext（世界の事実）を読んで
-///        blackboard（各ボスの主観的認識）を更新する。
-///
-/// BattleContext.playerPos を使うことで、「プレイヤーをViewで探す」処理を
-/// 各システムで重複させない（1対1なので探索はBattleContext更新側で1回のみ）。
+/**
+ * ボスの状況認識の実装。BattleContext（世界の事実）を読んで
+ *        blackboard（各ボスの主観的認識）を更新する。
+ *
+ * BattleContext.playerPos を使うことで、「プレイヤーをViewで探す」処理を
+ * 各システムで重複させない（1対1なので探索はBattleContext更新側で1回のみ）。
+ */
 #include "BossPerceptionSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"

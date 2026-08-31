@@ -1,6 +1,5 @@
 /**
- * @file BehaviorTreeComponentMeta.cpp
- * @brief 汎用AIコンポーネント（BehaviorTree / Drone）のエディタ/シリアライズ用メタデータ定義
+ * 汎用AIコンポーネント（BehaviorTree / Drone）のエディタ/シリアライズ用メタデータ定義
  *
  * @note BossCommandComponent のメタは BossCommandComponentMeta.cpp へ移した。
  *       構造体自体がボス側へ移ったので、メタだけここに残すと置き場がちぐはぐになる。

@@ -1,18 +1,19 @@
-/// @file  FormationSpec.h
-/// @brief 陣形1つぶんの「データ」。C++ で書いていた陣形クラスをパラメータへ開いたもの。
-///
-/// なぜ必要か:
-///   既存の攻撃陣形を分解すると、どれも
-///     ①localIndex を席へ割り付け ②席から座標を作り ③形全体を1つ動かす
-///   の3段で、違うのは数値と軸だけだった。C++ に書かれているとその数値を1つ変える
-///   たびにリビルドが要る。ここをデータにすると実行中に変えられる。
-///
-/// カバー範囲（意図的な線引き）:
-///   「形が attackProgress の関数で決まる」技だけを対象にする。
-///   KamikazeSwarm（各機が飛距離で自分から切り上げる）と SquadAssault（1つ前の機体に
-///   追従する）は個体がフィールドへ状態をラッチするので、この形式では書けない。
-///   OrbitCircle 系は進行度ではなく経過時間で回るのでこれも対象外。
-///   ＝ ChargeLifecycle::Broadcast の陣形だけがデータになる、と同じ線引きになる。
+/**
+ * 陣形1つぶんの「データ」。C++ で書いていた陣形クラスをパラメータへ開いたもの。
+ *
+ * なぜ必要か:
+ *   既存の攻撃陣形を分解すると、どれも
+ *     ①localIndex を席へ割り付け ②席から座標を作り ③形全体を1つ動かす
+ *   の3段で、違うのは数値と軸だけだった。C++ に書かれているとその数値を1つ変える
+ *   たびにリビルドが要る。ここをデータにすると実行中に変えられる。
+ *
+ * カバー範囲（意図的な線引き）:
+ *   「形が attackProgress の関数で決まる」技だけを対象にする。
+ *   KamikazeSwarm（各機が飛距離で自分から切り上げる）と SquadAssault（1つ前の機体に
+ *   追従する）は個体がフィールドへ状態をラッチするので、この形式では書けない。
+ *   OrbitCircle 系は進行度ではなく経過時間で回るのでこれも対象外。
+ *   ＝ ChargeLifecycle::Broadcast の陣形だけがデータになる、と同じ線引きになる。
+ */
 #pragma once
 #include <algorithm>
 #include <cstdint>
@@ -26,7 +27,7 @@
 namespace CCL::AI::Formation
 {
 
-/// @brief 陣形の基底3軸。Forward は「ボス→プレイヤーの水平方向」で毎フレーム作り直す。
+/// 陣形の基底3軸。Forward は「ボス→プレイヤーの水平方向」で毎フレーム作り直す。
 enum class SpecAxis : uint8_t
 {
     Right,
@@ -34,14 +35,14 @@ enum class SpecAxis : uint8_t
     Forward,
 };
 
-/// @brief 席の並べ方。
+/// 席の並べ方。
 enum class SpecShape : uint8_t
 {
     Grid, ///< 直交格子。列は columnAxis 方向、行は上方向（刃・壁）
     Arm,  ///< 放射状。列は「腕の向き」への距離、行は上方向（腕・薙ぎ払い）
 };
 
-/// @brief 形全体にかける動き。既存の攻撃陣形はこの3つしか使っていない。
+/// 形全体にかける動き。既存の攻撃陣形はこの3つしか使っていない。
 enum class SpecTransform : uint8_t
 {
     None,
@@ -50,14 +51,14 @@ enum class SpecTransform : uint8_t
     Translate, ///< 形ごと平行移動する（2段挟み込みが左右から寄る）
 };
 
-/// @brief localIndex をグループへ配る順序。
+/// localIndex をグループへ配る順序。
 enum class SpecSplit : uint8_t
 {
     Interleaved, ///< 1機ずつ交互に配る（i % groupCount）
     Block,       ///< 連続したかたまりで配る（i / perGroup）
 };
 
-/// @brief 時間差を「何の単位で」つけるか。
+/// 時間差を「何の単位で」つけるか。
 enum class SpecPhaseSource : uint8_t
 {
     None,   ///< 全機同時に動く
@@ -65,7 +66,7 @@ enum class SpecPhaseSource : uint8_t
     Tier,   ///< 段ごとにずらす（2段挟み込み＝上下の先攻後攻）
 };
 
-/// @brief 機首の向け方。
+/// 機首の向け方。
 ///
 /// Auto で足りるのは、向きが形と変換からほぼ一意に決まるため。
 ///   ヒンジ → 倒れていく接線 / 腕 → 腕の伸びる向き / 平行移動 → 動く向きの逆（内向き）
@@ -80,7 +81,7 @@ enum class SpecLook : uint8_t
 // 陣形データ本体
 // ============================================================================
 
-/// @brief 陣形1つぶんのパラメータ。1ファイル = 1陣形（Assets/Formations/*.json）。
+/// 陣形1つぶんのパラメータ。1ファイル = 1陣形（Assets/Formations/*.json）。
 struct FormationSpec
 {
     std::string name = "Formation";

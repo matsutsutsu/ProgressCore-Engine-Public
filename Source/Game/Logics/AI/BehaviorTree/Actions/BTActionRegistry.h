@@ -1,5 +1,6 @@
-/// @file  BTActionRegistry.h
-/// @brief ActionID → アクション/条件クラスを解決するレジストリ。switch廃止の核。
+/**
+ * ActionID → アクション/条件クラスを解決するレジストリ。switch廃止の核。
+ */
 #pragma once
 #include <memory>
 #include <string>
@@ -38,7 +39,7 @@ namespace CCL::AI::BT
             if (!name.empty()) m_conditionNames[name] = id;
         }
 
-        /// @brief コンストラクタ引数が要るアクション（Wait等）を構築済みで登録。
+        /// コンストラクタ引数が要るアクション（Wait等）を構築済みで登録。
         void RegisterActionInstance(ActionID id, std::unique_ptr<IBTAction> action,
                                     const std::string& name = "")
         {

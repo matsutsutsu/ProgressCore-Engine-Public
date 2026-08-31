@@ -1,15 +1,5 @@
-#pragma once
-#include <cstdint>
-#include <memory>
-#include <string>
-#include <vector>
-#include "SimpleMath.h"
-#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"
-#include "Engine/ECS/Common/CCL_Types.h"
-
 /**
- * @file BehaviorTreeComponents.h
- * @brief ECSエンティティが保持するAIの状態管理コンポーネント
+ * ECSエンティティが保持するAIの状態管理コンポーネント
  *
  * 役割：
  *   各エンティティ固有の「現在の思考位置」や「判断材料（Blackboard）」を管理する。
@@ -26,11 +16,19 @@
  *       ボスの行動要求・陣形要求     → BossCommandComponent
  *   この線引きが崩れると、敵の種類を足すたびにこのファイルが太る。
  */
+#pragma once
+#include <cstdint>
+#include <memory>
+#include <string>
+#include <vector>
+#include "SimpleMath.h"
+#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"
+#include "Engine/ECS/Common/CCL_Types.h"
 
  // AIの判断材料を格納するブラックボード（Blackboard）
 struct AIBlackboard {
     // --- ターゲット ---
-    /// @brief このAIが狙っている相手。書き手は知覚システム（BossPerceptionSystem）。
+    /// このAIが狙っている相手。書き手は知覚システム（BossPerceptionSystem）。
     ///
     /// なぜ座標だけでなくIDを持つか:
     ///   以前は BattleContext.playerPos を全AIへ直接配っており、「誰を狙うか」という
@@ -54,10 +52,10 @@ struct AIBlackboard {
 // 例えば、どのノードを実行中か、どのアセットを使うかなどの情報を持つ
 struct BehaviorTreeComponent {
     // --- 巨大なオブジェクト群 (ポインタ/コンテナ系) ---
-    /// @brief 木の実体。BTAssetCache が同じパスに対して1つだけ作り、全Entityで共有する。
+    /// 木の実体。BTAssetCache が同じパスに対して1つだけ作り、全Entityで共有する。
     std::shared_ptr<const BTAsset> sharedAsset;
 
-    /// @brief 読み込むBTのパス。空なら「BTを持たない」＝評価しない。
+    /// 読み込むBTのパス。空なら「BTを持たない」＝評価しない。
     std::string assetPath;
     std::string loadedAssetPath = "";
     std::string lastFrameTreeLog = "";
@@ -73,16 +71,16 @@ struct BehaviorTreeComponent {
     AssetID assetId = 0;
 
     // --- デバッグ専用（実行時のみ・非シリアライズ）---
-    /// @brief この BTNodeID の枝「だけ」を評価する。-1 で通常どおりルートから評価する。
+    /// この BTNodeID の枝「だけ」を評価する。-1 で通常どおりルートから評価する。
     ///        狙った技をその場で出して確認するためのもので、木そのものは書き換えない。
     ///        書き手はデバッグUI（BehaviorTreeSystem::OnGui）。
     int debugForcedNodeId = -1;
 
-    /// @brief 上を適用済みかの記録。切り替わった瞬間に実行状態をリセットするために使う。
+    /// 上を適用済みかの記録。切り替わった瞬間に実行状態をリセットするために使う。
     ///        書き手は BehaviorTreeSystem。
     int debugAppliedForcedNodeId = -1;
 
-    /// @brief 木の評価を止める。BossCommandComponent が上書きされなくなるので、
+    /// 木の評価を止める。BossCommandComponent が上書きされなくなるので、
     ///        エディタから書いた指示（陣形など）がそのまま残る。
     ///
     /// なぜ要るか:

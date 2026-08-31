@@ -1,5 +1,6 @@
-/// @file  DroneBrainSystem.cpp
-/// @brief ドローン判断層の実装。優先度順に上から最初に成立したものが currentState になる。
+/**
+ * ドローン判断層の実装。優先度順に上から最初に成立したものが currentState になる。
+ */
 #include "DroneBrainSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"

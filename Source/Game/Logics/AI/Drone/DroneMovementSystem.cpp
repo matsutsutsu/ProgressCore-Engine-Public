@@ -1,9 +1,10 @@
-/// @file  DroneMovementSystem.cpp
-/// @brief ドローン移動システムの実装（基礎3ステート版）。
-///
-/// FireCharge は内部で stateTimer を使い「タメ→リリース」の2フェーズを持つ
-/// （旧 LockOn の役割を吸収）。これにより外部からは FireCharge 1つを
-/// 見ているだけで「予備動作→突撃」という企画上重要な予兆表現ができる。
+/**
+ * ドローン移動システムの実装（基礎3ステート版）。
+ *
+ * FireCharge は内部で stateTimer を使い「タメ→リリース」の2フェーズを持つ
+ * （旧 LockOn の役割を吸収）。これにより外部からは FireCharge 1つを
+ * 見ているだけで「予備動作→突撃」という企画上重要な予兆表現ができる。
+ */
 #include "DroneMovementSystem.h"
 #include "Game/Logics/AI/Drone/Squad/SquadState.h"
 #include "Engine/Core/Systems/SystemPriority.h"
@@ -148,7 +149,7 @@ inline void DroneMovementSystem::ProcessIdle(TransformComponent &trans, DroneCom
     }
 }
 
-/// @brief 突撃。stateTimer > 0 の間は「タメ」（旧LockOnを吸収）、
+/// 突撃。stateTimer > 0 の間は「タメ」（旧LockOnを吸収）、
 ///        0になった瞬間から「リリース」（高速直進）に切り替わる2フェーズ構造。
 inline void DroneMovementSystem::ProcessFireCharge(TransformComponent &trans, DroneComponent &drone, float dt)
 {
@@ -243,7 +244,7 @@ inline void DroneMovementSystem::ProcessFireCharge(TransformComponent &trans, Dr
     }
 }
 
-/// @brief 隊列追従の突入。目標へバネで寄るので、速いほど後ろへ流れ、曲がると遅れて曲がる。
+/// 隊列追従の突入。目標へバネで寄るので、速いほど後ろへ流れ、曲がると遅れて曲がる。
 ///
 /// 剛体追従（RigidFollow）との違いがこの技の生死を分ける:
 ///   剛体は毎フレーム座標へ貼り付けるので隊列が1ミリも歪まない。5機で飛んでも
@@ -284,7 +285,7 @@ inline void DroneMovementSystem::ProcessChargeSoftFollow(TransformComponent &tra
     }
 }
 
-/// @brief 硬直。吹き飛ばし速度で漂いながら減衰し、制御を失った姿勢を見せる。
+/// 硬直。吹き飛ばし速度で漂いながら減衰し、制御を失った姿勢を見せる。
 ///        立て直し中は knockbackVelocity が既に 0 付近なので、自然にその場で止まる。
 inline void DroneMovementSystem::ProcessStunned(TransformComponent &trans, DroneComponent &drone, float dt)
 {
@@ -301,7 +302,7 @@ inline void DroneMovementSystem::ProcessStunned(TransformComponent &trans, Drone
     trans.rotation    = Quaternion::Concatenate(trans.rotation, tumble);
 }
 
-/// @brief 離脱。突撃の勢いを残したまま上方へ抜け、減速しながら進行方向を向く。
+/// 離脱。突撃の勢いを残したまま上方へ抜け、減速しながら進行方向を向く。
 inline void DroneMovementSystem::ProcessReturning(TransformComponent &trans, DroneComponent &drone, float dt)
 {
     drone.currentVelocity += Vector3::UnitY * (kBreakawayLift * dt);

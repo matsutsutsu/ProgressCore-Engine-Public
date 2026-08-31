@@ -1,6 +1,5 @@
 /**
- * @file BossCommandComponentMeta.cpp
- * @brief BossCommandComponent のシリアライズ/インスペクタ定義。
+ * BossCommandComponent のシリアライズ/インスペクタ定義。
  *
  * @note targetPlayerId は撤去した。シリアライズ欄はあったが、コード上どこからも
  *       読まれていない死にフィールドだった。「誰を狙うか」は

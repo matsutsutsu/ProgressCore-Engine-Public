@@ -1,14 +1,15 @@
-/// @file  DroneHitSystem.cpp
-/// @brief 突撃(FireCharge リリース)中のドローンがプレイヤーに接触したら DamageEvent を生成する実装。
-///
-/// 実装の意図(Why):
-///   - 既存の戦闘パイプラインへ「DamageEvent を1個積む」だけで合流する。HP減算・
-///     ノックバック・ヒットストップ・被弾演出は DamageResolutionSystem(L06) 以降が担う。
-///   - プレイヤーの無敵時間(HealthComponent.invincibilityTimer)が多段ヒットを吸収するので、
-///     1フレームにつき DamageEvent は「最も近い危険ドローン1体」ぶんだけ生成すれば足りる
-///     (50機同時接触でも無敵で1発に収束するため、無駄なイベント生成をしない)。
-///   - 「危険」= リリース局面のみ。タメ(引き絞り)・発射待ち(fireDelay)は当たらない
-///     = ジャスト回避で狙う「読ませ→避け」の窓と一致させる。
+/**
+ * 突撃(FireCharge リリース)中のドローンがプレイヤーに接触したら DamageEvent を生成する実装。
+ *
+ * 実装の意図(Why):
+ *   - 既存の戦闘パイプラインへ「DamageEvent を1個積む」だけで合流する。HP減算・
+ *     ノックバック・ヒットストップ・被弾演出は DamageResolutionSystem(L06) 以降が担う。
+ *   - プレイヤーの無敵時間(HealthComponent.invincibilityTimer)が多段ヒットを吸収するので、
+ *     1フレームにつき DamageEvent は「最も近い危険ドローン1体」ぶんだけ生成すれば足りる
+ *     (50機同時接触でも無敵で1発に収束するため、無駄なイベント生成をしない)。
+ *   - 「危険」= リリース局面のみ。タメ(引き絞り)・発射待ち(fireDelay)は当たらない
+ *     = ジャスト回避で狙う「読ませ→避け」の窓と一致させる。
+ */
 #include "DroneHitSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
@@ -35,7 +36,7 @@ namespace
     constexpr float kHitStopDuration = 0.05f;  ///< 命中時のヒットストップ(秒)
     constexpr float kHitStopScale    = 0.0f;   ///< ヒットストップ中のタイムスケール(0=完全停止)
 
-    /// @brief このドローンが「今まさに突撃していて危険」か。
+    /// このドローンが「今まさに突撃していて危険」か。
     ///        タメ(stateTimer>0)・発射待ち(fireDelay>0)は危険ではない。
     ///        陣形追従の突撃(縦割り等)は突入中ずっと危険、ダッシュ系はタメ後のみ危険。
     /// @note  硬直(Stunned)と離脱(Returning)は FireCharge ではないので、この1行で

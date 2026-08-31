@@ -1,7 +1,8 @@
-/// @file  BTActions_Boss.h
-/// @brief Drone Break 向け最小版。Move/Wait/Drone系のみ。
-///        ボス固有のコンポーネント(BossCommand)は BTContext から受け取らず、
-///          各アクションが world/entity から自分で取得する（汎用エンジン化のため）。
+/**
+ * Drone Break 向け最小版。Move/Wait/Drone系のみ。
+ *        ボス固有のコンポーネント(BossCommand)は BTContext から受け取らず、
+ *          各アクションが world/entity から自分で取得する（汎用エンジン化のため）。
+ */
 #pragma once
 #include "Game/Logics/AI/BehaviorTree/Actions/BTAction.h"
 #include "Game/Logics/AI/BehaviorTree/Actions/BTActionRegistry.h"
@@ -18,7 +19,7 @@ namespace CCL::AI::BT::BossActions
 // ====================================================================
 // ① 待機系（汎用：bt の nodeTimers だけ使う。ボス非依存）
 // ====================================================================
-/// @brief 待つ。待ち時間はノードの param（秒）から取る。
+/// 待つ。待ち時間はノードの param（秒）から取る。
 /// @note  以前は「0.5秒」「1.0秒」…と12個の ActionID に分かれていた。
 ///        引数をIDで表すとIDが増える一方で、しかも中間の値を作れない。
 struct WaitAction : public IBTAction

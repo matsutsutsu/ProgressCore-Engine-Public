@@ -1,5 +1,6 @@
-/// @file  SquadUpdateSystem.cpp
-/// @brief 小隊の頭（anchor）を動かす実装。フェーズ遷移＋1小隊ぶんの移動計算。
+/**
+ * 小隊の頭（anchor）を動かす実装。フェーズ遷移＋1小隊ぶんの移動計算。
+ */
 #include "SquadUpdateSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"

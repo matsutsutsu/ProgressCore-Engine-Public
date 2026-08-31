@@ -1,6 +1,7 @@
-/// @file  DroneManagerSystem.cpp
-/// @brief ドローンの生成・計数・破壊の実装。既存 DroneFormationSystem::OnGui の
-///        生成ロジックを移植し、BattleContext への計数反映を追加した。
+/**
+ * ドローンの生成・計数・破壊の実装。既存 DroneFormationSystem::OnGui の
+ *        生成ロジックを移植し、BattleContext への計数反映を追加した。
+ */
 #include "DroneManagerSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"

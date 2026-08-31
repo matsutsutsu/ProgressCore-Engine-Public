@@ -1,6 +1,5 @@
 /**
- * @file BossActionComponentMeta.cpp
- * @brief BossActionComponent (筋肉) のシリアライズ/インスペクタ定義。最小構成版。
+ * BossActionComponent (筋肉) のシリアライズ/インスペクタ定義。最小構成版。
  */
 #include "BossActionComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"

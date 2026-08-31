@@ -1,6 +1,5 @@
 /**
- * @file BossPhaseComponent.h
- * @brief ボスの「大状態」（戦闘中／死亡）を保持するコンポーネント。
+ * ボスの「大状態」（戦闘中／死亡）を保持するコンポーネント。
  *
  * 位置づけ（ボスの3層のうち一番上）:
  *   BossPhase（このコンポーネント） … 大きく何をしているか。BTの差し替えと入場演出を担う
@@ -40,14 +39,14 @@ enum class BossPhase : uint8_t
     Combat2,    ///< 第2形態。BT を phase2AssetPath のものへ差し替えて戦う
 };
 
-/// @brief 表示名。インスペクタの列挙表示とデバッグ頭上表示で共有する
+/// 表示名。インスペクタの列挙表示とデバッグ頭上表示で共有する
 ///        （名前の二重管理を避けるため、enum と同じ場所に置く）。
 inline constexpr const char *kBossPhaseNames[] = {
     "Combat", "Dead", "Transition", "Combat2",
 };
 inline constexpr size_t kBossPhaseCount = sizeof(kBossPhaseNames) / sizeof(kBossPhaseNames[0]);
 
-/// @brief BossPhase を表示用文字列にする。範囲外は "?" を返す。
+/// BossPhase を表示用文字列にする。範囲外は "?" を返す。
 inline const char *ToString(BossPhase p)
 {
     const size_t i = static_cast<size_t>(p);
@@ -59,17 +58,17 @@ inline const char *ToString(BossPhase p)
 // ===================================================================================
 struct BossPhaseComponent
 {
-    /// @brief 第2形態で使うBTのパス。空なら形態移行そのものをしない
+    /// 第2形態で使うBTのパス。空なら形態移行そのものをしない
     ///        （設定漏れでボスが止まるのを防ぐための安全弁）。
     std::string phase2AssetPath;
 
-    /// @brief 第2形態へ移行するHP割合（0〜100）。
+    /// 第2形態へ移行するHP割合（0〜100）。
     float phase2HealthThreshold = 50.0f;
 
-    /// @brief 現在の大状態。書き手は BossPhaseSystem のみ。
+    /// 現在の大状態。書き手は BossPhaseSystem のみ。
     BossPhase phase = BossPhase::Combat;
 
-    /// @brief 状態滞在タイマー（秒）。入場時にセットし、毎フレーム減る。
+    /// 状態滞在タイマー（秒）。入場時にセットし、毎フレーム減る。
     ///        「咆哮の演出が終わるまで無敵」のような時間で終わる状態に使う。
     float timer = 0.0f;
 };

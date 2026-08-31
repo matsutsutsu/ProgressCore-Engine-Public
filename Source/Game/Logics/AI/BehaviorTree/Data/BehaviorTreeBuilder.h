@@ -1,16 +1,14 @@
+/**
+ * ビヘイビアツリー構築用ビルダーの定義
+ *
+ * 役割:
+ *   人間が理解しやすい階層的な記述（メソッドチェーン）をサポートし、
+ *   それをランタイム用の高速なフラット配列に変換するためのインターフェース。
+ */
 #pragma once
 #include <vector>
 #include <memory>
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"
-
-/**
- * @file BehaviorTreeBuilder.h
- * @brief ビヘイビアツリー構築用ビルダーの定義
- * * 役割：
- * 人間が理解しやすい階層的な記述（メソッドチェーン）をサポートし、
- * それをランタイム用の高速なフラット配列に変換するためのインターフェース。
- */
-
 
 class BehaviorTreeBuilder {
 private:

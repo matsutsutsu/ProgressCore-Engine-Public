@@ -1,8 +1,9 @@
-/// @file  AIDebugOverlaySystem.cpp
-/// @brief 敵AIの状態（戦術/行動/ステータス）をキャラ頭上に3Dテキストで表示する。
-///        描画は ImGui::NewFrame 後に走る「レンダーステージの Update」で行うため、
-///        System Manager のヘッダ開閉に依存せず m_enabled の間ずっと表示される。
-///        位置は GameViewportInfo（エディタのゲーム画像矩形）で正しく写像する。
+/**
+ * 敵AIの状態（戦術/行動/ステータス）をキャラ頭上に3Dテキストで表示する。
+ *        描画は ImGui::NewFrame 後に走る「レンダーステージの Update」で行うため、
+ *        System Manager のヘッダ開閉に依存せず m_enabled の間ずっと表示される。
+ *        位置は GameViewportInfo（エディタのゲーム画像矩形）で正しく写像する。
+ */
 #include "AIDebugOverlaySystem.h"
 
 #include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"

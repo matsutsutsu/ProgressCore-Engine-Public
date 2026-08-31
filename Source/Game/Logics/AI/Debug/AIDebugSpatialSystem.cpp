@@ -1,5 +1,6 @@
-/// @file  AIDebugSpatialSystem.cpp
-/// @brief AIDebugSpatialSystem の実装。ShapeRenderer で間合いリングと照準線を描く。
+/**
+ * AIDebugSpatialSystem の実装。ShapeRenderer で間合いリングと照準線を描く。
+ */
 #include "AIDebugSpatialSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"

@@ -1,17 +1,18 @@
+/**
+ * ビヘイビアツリーの配列化（Bake）処理の実装
+ *
+ * 役割:
+ *   構築された中間ツリーを幅優先探索（BFS）で走査し、
+ *   親子・兄弟関係が配列上で可能な限り「連続」するように配置する。
+ *
+ * なぜこの形か:
+ *   CPUは次にアクセスするメモリアドレスを予測し、周辺データをまとめてキャッシュに載せる。
+ *   BFSによる配列化を行うことで、BTの評価時に「次に読む子ノード」が既にキャッシュに
+ *   存在する確率を劇的に高めている。
+ */
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeBuilder.h"
 #include "Engine/Platform/Core/Logger.h"
 
-/**
- * @file BehaviorTreeBuilder.cpp
- * @brief ビヘイビアツリーの配列化（Bake）処理の実装
- * * 役割：
- * 構築された中間ツリーを幅優先探索（BFS）で走査し、
- * 親子・兄弟関係が配列上で可能な限り「連続」するように配置する。
- * * なぜこの設計か（Why）：
- * CPUは次にアクセスするメモリアドレスを予測し、周辺データをまとめてキャッシュに載せる。
- * BFSによる配列化を行うことで、BTの評価時に「次に読む子ノード」が既にキャッシュに
- * 存在する確率を劇的に高めている。
- */
 
 BehaviorTreeBuilder::BehaviorTreeBuilder() : m_root(nullptr), m_currentNode(nullptr) {}
 

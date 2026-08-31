@@ -1,5 +1,6 @@
-/// @file  Formations_Basic.h
-/// @brief 基本的な陣形クラスをまとめて定義（役割ごとに1ファイル）。
+/**
+ * 基本的な陣形クラスをまとめて定義（役割ごとに1ファイル）。
+ */
 #pragma once
 #include "Game/Logics/AI/Drone/Formation/IFormation.h"
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"

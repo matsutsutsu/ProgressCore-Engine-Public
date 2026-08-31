@@ -1,4 +1,10 @@
-/// @file  BTAssetCache.cpp
+/**
+ * BTアセットキャッシュの実装。
+ *
+ * 注意点:
+ *   設計の理由と使い方は BTAssetCache.h に書いてある。ここには書かない
+ *   （同じ説明が2箇所にあると、片方だけ古くなって嘘になる）。
+ */
 #include "BTAssetCache.h"
 
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeLoader.h"

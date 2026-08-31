@@ -1,7 +1,5 @@
 /**
- * @file BossActionComponent.h
- * @brief AIコマンド(脳)を受け取って動く、ボス本体の物理状態（筋肉）。
- *
+ * AIコマンド(脳)を受け取って動く、ボス本体の物理状態（筋肉）。
  */
 #pragma once
 #include <SimpleMath.h>

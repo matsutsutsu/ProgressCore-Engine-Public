@@ -1,18 +1,19 @@
-/// @file  Formations_DataDriven.h
-/// @brief FormationSpec（JSON）を解釈して targetPosition を作る陣形。
-///        Formations_Attack.h の各クラスが「1クラス=1つの技」なのに対し、
-///        こちらは「1インスタンス=1つのアセット」になる。
-///
-/// 既存設計を壊さない理由:
-///   IFormation の派生が1つ増えるだけ。FormationRegistry も
-///   DroneFormationSystem のループも従来どおりで、C++ の陣形クラスと同居できる。
-///   同じ DroneFormationType に両方を登録しておき、実行中に切り替えて
-///   見た目が変わらないかを確かめられる（＝データ化が正しいかの検証手段）。
-///
-/// 対象外（意図的）:
-///   個体が状態をラッチする技（KamikazeSwarm の個別帰投、SquadAssault の追従）は
-///   attackProgress の関数として書けないので C++ に残す。FormationSpec.h の
-///   ファイルヘッダに線引きの理由を書いてある。
+/**
+ * FormationSpec（JSON）を解釈して targetPosition を作る陣形。
+ *        Formations_Attack.h の各クラスが「1クラス=1つの技」なのに対し、
+ *        こちらは「1インスタンス=1つのアセット」になる。
+ *
+ * 既存設計を壊さない理由:
+ *   IFormation の派生が1つ増えるだけ。FormationRegistry も
+ *   DroneFormationSystem のループも従来どおりで、C++ の陣形クラスと同居できる。
+ *   同じ DroneFormationType に両方を登録しておき、実行中に切り替えて
+ *   見た目が変わらないかを確かめられる（＝データ化が正しいかの検証手段）。
+ *
+ * 対象外（意図的）:
+ *   個体が状態をラッチする技（KamikazeSwarm の個別帰投、SquadAssault の追従）は
+ *   attackProgress の関数として書けないので C++ に残す。FormationSpec.h の
+ *   ファイルヘッダに線引きの理由を書いてある。
+ */
 #pragma once
 #include <cmath>
 
@@ -22,7 +23,7 @@
 namespace CCL::AI::Formation
 {
 
-/// @brief FormationSpec を毎フレーム評価する陣形。
+/// FormationSpec を毎フレーム評価する陣形。
 ///
 /// 仮想呼び出しは「陣形の種類ごとに1回」のまま（DroneFormationSystem がループを回す）
 /// なので、データ化してもドローン1機ごとの間接呼び出しは増えない。
@@ -30,10 +31,10 @@ struct DataDrivenFormation : public IFormation
 {
     FormationSpec spec;
 
-    /// @brief 元アセットのパス。エディタからの保存・再読み込みに使う。
+    /// 元アセットのパス。エディタからの保存・再読み込みに使う。
     std::string assetPath;
 
-    /// @brief localIndex から割り当てた席。
+    /// localIndex から割り当てた席。
     ///
     /// エディタが色分けと機数の内訳表示に使うので公開している。
     /// 同じ割付をエディタ側で書き直すと、片方だけ直したときに絵と実機がずれる。
@@ -170,7 +171,7 @@ struct DataDrivenFormation : public IFormation
     //   Individual（各機が飛距離で自分から切り上げる）はこの形式の対象外なので、
     //   ここで返せてしまうと「データにできない技をデータで書けたように見える」。
 
-    /// @brief localIndex を (グループ, 列, 行) の席へ割り付ける。
+    /// localIndex を (グループ, 列, 行) の席へ割り付ける。
     Seat AssignSeat(const DroneComponent &drone) const
     {
         const int total  = (drone.totalDrones > 0) ? drone.totalDrones : 1;
@@ -237,7 +238,7 @@ struct DataDrivenFormation : public IFormation
         return seat;
     }
 
-    /// @brief この席が波の「何番目」か（0=最初に動く, 1=最後）。
+    /// この席が波の「何番目」か（0=最初に動く, 1=最後）。
     float PhaseT(const Seat &seat) const
     {
         float t = 0.0f;
@@ -261,7 +262,7 @@ struct DataDrivenFormation : public IFormation
     static constexpr float kEpsilon  = 0.001f;
     static constexpr float kDegToRad = 3.14159265358979f / 180.0f;
 
-    /// @brief 進行度を進める。書き手が陣形であることは DroneComponent.h の規約どおり。
+    /// 進行度を進める。書き手が陣形であることは DroneComponent.h の規約どおり。
     void AdvanceProgress(DroneComponent &drone, float dt) const
     {
         if (drone.wantsAttack)
@@ -270,7 +271,7 @@ struct DataDrivenFormation : public IFormation
             drone.attackProgress = 0.0f;
     }
 
-    /// @brief 全体の進行度から、この席ぶんの進行度を切り出す。
+    /// 全体の進行度から、この席ぶんの進行度を切り出す。
     ///
     /// 全体を phaseOverlap 幅の窓が滑っていく形にする。窓が狭いほど波が細く、
     /// 1.0 なら全席が同時に動く（時間差なし）。
@@ -284,7 +285,7 @@ struct DataDrivenFormation : public IFormation
         return std::clamp((progress - start) / overlap, 0.0f, 1.0f);
     }
 
-    /// @brief 進行度 → 変換量。カーブ未設定なら既存陣形と同じ easeIn にする。
+    /// 進行度 → 変換量。カーブ未設定なら既存陣形と同じ easeIn にする。
     float EaseAmount(float local) const
     {
         if (spec.timing.curve.empty()) return local * local;
