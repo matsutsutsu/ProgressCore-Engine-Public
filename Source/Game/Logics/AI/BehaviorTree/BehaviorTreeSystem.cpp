@@ -91,8 +91,7 @@ void BehaviorTreeSystem::SyncAssets()
         btComp.debugNodeStates.assign(nodeCount, BTDebugState::None);
         btComp.nodeTimers.assign(nodeCount, -1.0f);
         btComp.runningNodes.assign(nodeCount, -1);
-        btComp.runningNodeId         = 0xFFFF;
-        btComp.previousRunningNodeId = 0xFFFF;
+        btComp.runningNodeId = 0xFFFF;
     });
 }
 
@@ -149,7 +148,6 @@ void BehaviorTreeSystem::Update(float rawDt)
         std::fill(btComp.debugNodeStates.begin(), btComp.debugNodeStates.end(), BTDebugState::None);
 
         // --- Running しおりのリセット ---
-        btComp.previousRunningNodeId = btComp.runningNodeId;
         btComp.runningNodeId = 0xFFFF;
 
         // --- デバッグ：強制ノードが切り替わったら実行状態を捨てる ---

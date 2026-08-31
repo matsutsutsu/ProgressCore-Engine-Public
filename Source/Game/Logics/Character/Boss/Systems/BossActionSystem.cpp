@@ -147,11 +147,6 @@ void BossActionSystem::ProcessIdle(BossActionComponent &bossDef, TransformCompon
 
     // 上書きは書かない＝config.walkSpeed 基準へ戻る（要求は読み手が毎フレーム消費する）。
     movement.desiredVelocity = Vector3::Zero;
-
-    //Vector3 dirToPlayer = playerPos - trans.position;
-    //dirToPlayer.y       = 0.0f;
-    //TurnToward(trans, dirToPlayer, bossDef.idleTurnSpeed, dt);
-    //SyncCharacterRotation(trans, joltHandle.character.GetPtr());
 }
 
 void BossActionSystem::ProcessMove(BossActionComponent &bossDef, TransformComponent &trans,
@@ -170,7 +165,6 @@ void BossActionSystem::ProcessMove(BossActionComponent &bossDef, TransformCompon
     }
 
     dirToPlayer.Normalize();
-    bossDef.moveDirection = dirToPlayer;
 
     bossDef.currentMoveSpeed = (std::min)(bossDef.walkSpeed,
         bossDef.currentMoveSpeed + bossDef.acceleration * dt);

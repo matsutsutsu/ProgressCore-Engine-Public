@@ -8,6 +8,7 @@
 #include "BossPerceptionSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
+#include "Game/Logics/GameEvent/GameEvents.h" // DamageTakenEvent
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
@@ -16,6 +17,23 @@
 
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
+
+void BossPerceptionSystem::Initialize()
+{
+    // 被弾量を blackboard へ積む。
+    //   これまで accumulatedDamage は「ゼロに戻す人」と「読む人」だけがいて、
+    //   増やす人が存在しなかった。そのため C_DamageThresholdExceeded は
+    //   木に置いても永久に偽で、回避行動へ移る枝が一度も通らなかった。
+    //   イベント購読にしているのは、Combat 側（DamageResolutionSystem）に
+    //   AI のコンポーネントを知らせないため。
+    ListenEvent<DamageTakenEvent>([this](const DamageTakenEvent &ev) {
+        if (ev.isPlayer) return; // プレイヤーの被弾は敵AIの判断材料ではない
+
+        if (auto *bt = m_world->GetComponent<BehaviorTreeComponent>(ev.targetID))
+            bt->blackboard.accumulatedDamage += ev.damageAmount;
+    });
+}
+
 
 void BossPerceptionSystem::Update(float /*rawDt*/)
 {

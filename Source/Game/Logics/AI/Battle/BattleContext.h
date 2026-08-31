@@ -4,7 +4,7 @@
  * 設計思想 :
  *   ゲームAIの「ブラックボード」と、ECSの「リソース」を役割で使い分ける。
  *     - BattleContext（このリソース）= 世界に1つの客観的事実
- *         誰から見ても同じ値（プレイヤー座標・ドローン残数・BREAKゲージ）。
+ *         誰から見ても同じ値（プレイヤー座標・ドローン残数など）。
  *     - AIBlackboard（各AIが持つ）     = そのAIエージェント個人の主観的認識
  *         「このボスから見た距離」「このドローンの担当スロット」など。
  *
@@ -35,13 +35,6 @@ struct BattleContext
     // 残数がそのままボスの体力を表す。DroneManagerSystem が毎フレーム数えて書き込む
     // （誰から見ても同じ値なので、個体の Blackboard ではなくここに置く）
     int droneAliveCount = 1000;
-
-    // BREAK ゲージ
-    // ジャスト回避成功で溜まるゲージ（0.0～1.0）
-    float breakGauge = 0.0f;
-
-    // 現在 BREAK 発動中か（発動中はボス戦術が Broken になる）
-    bool isBreaking = false;
 
     // プレイヤーが存在するか
     bool HasPlayer() const

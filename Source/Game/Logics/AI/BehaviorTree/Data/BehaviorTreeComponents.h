@@ -1,19 +1,19 @@
 /**
- * ECSエンティティが保持するAIの状態管理コンポーネント
+ * ECSエンティティが保持するAIの状態管理コンポーネント。
  *
- * 役割：
- *   各エンティティ固有の「現在の思考位置」や「判断材料（Blackboard）」を管理する。
+ * 役割:
+ *   各エンティティ固有の「今どのノードを走っているか」と
+ *   「判断材料（Blackboard）」を持つ。
  *
- * 設計思想：
- *   「思考（Data）」と「状態（Component）」を分離。
- *   コンポーネントには実行時のみ必要な最小限の状態のみを持たせ、
- *   巨大な木構造自体はアセットとして全Entityで共有する（BTAssetCache）。
+ * なぜこの形か:
+ *   「思考の構造（アセット）」と「実行状態（コンポーネント）」を分けている。
+ *   木の実体は BTAssetCache が同じパスに1本だけ持ち、全Entityで共有する。
+ *   個体が抱えるのは実行状態だけなので、敵を増やしても木は増えない。
  *
  * ここに置いてよいものの境界:
- *   どの敵でも意味を持つものだけ。特定の敵にしか無い概念（ボスの第2形態、
- *   ドローンの陣形など）は、その敵のコンポーネントへ置く。
- *   例: 第2形態のBTパスとHP閾値 → BossPhaseComponent
- *       ボスの行動要求・陣形要求     → BossCommandComponent
+ *   どの敵でも意味を持つものだけ。特定の敵にしか無い概念は、その敵のコンポーネントへ置く。
+ *     第2形態のBTパスとHP閾値 → BossPhaseComponent
+ *     ボスの行動要求・陣形要求 → BossCommandComponent
  *   この線引きが崩れると、敵の種類を足すたびにこのファイルが太る。
  */
 #pragma once
@@ -25,76 +25,64 @@
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"
 #include "Engine/ECS/Common/CCL_Types.h"
 
- // AIの判断材料を格納するブラックボード（Blackboard）
+
+/**
+ * AIの判断材料（ブラックボード）。
+ *
+ * 役割:
+ *   知覚システム（BossPerceptionSystem）が毎フレーム書き、BTの条件・行動が読む。
+ *   書き手はその1系統だけ。
+ *
+ * なぜ座標だけでなくターゲットIDを持つか:
+ *   以前は BattleContext.playerPos を全AIへ直接配っていて、「誰を狙うか」という概念が
+ *   コード上に存在しなかった（敵が1体しかいないので成立していた）。IDがあれば、
+ *   雑魚を群れで出したとき個体ごとに相手を変えられ、行動側が座標以外も引ける。
+ */
 struct AIBlackboard {
     // --- ターゲット ---
-    /// このAIが狙っている相手。書き手は知覚システム（BossPerceptionSystem）。
-    ///
-    /// なぜ座標だけでなくIDを持つか:
-    ///   以前は BattleContext.playerPos を全AIへ直接配っており、「誰を狙うか」という
-    ///   概念がコード上に存在しなかった（1体しか敵がいなかったので成立していた）。
-    ///   雑魚を群れで出すと、個体ごとに狙う相手が変わる。IDを持たせておけば、
-    ///   行動側は「ターゲットのHP」「ターゲットの向き」など座標以外も引ける。
-    CCL::ECS::EntityID targetEntity = CCL::ECS::InvalidEntityID;
+    CCL::ECS::EntityID           targetEntity     = CCL::ECS::InvalidEntityID; ///< 狙っている相手
+    DirectX::SimpleMath::Vector3 targetPosition;                               ///< その座標
+    float                        distanceToTarget = 0.0f;                      ///< そこまでの距離
 
-    DirectX::SimpleMath::Vector3 targetPosition;     // ターゲットの座標
-    float distanceToTarget = 0.0f;                   // ターゲットとの距離
+    // --- 自分の状態 ---
+    float healthPercentage = 100.0f;    ///< 残りHPの割合（0〜100）
 
-    // --- 自分のステータス ---
-    float healthPercentage = 100.0f;                 // 自分の残りHP（0〜100）
-
-    // --- ダメージ蓄積・回避システム ---
-    float accumulatedDamage    = 0.0f;               // 現在溜まっているダメージ量
-    float evadeDamageThreshold = 20.0f;              // いくつダメージを受けたら逃げるかの閾値
+    // --- ダメージ蓄積（閾値を超えたら回避行動へ）---
+    float accumulatedDamage    = 0.0f;  ///< 溜まっているダメージ量
+    float evadeDamageThreshold = 20.0f; ///< 逃げ出す閾値
 };
 
-// AIの内部状態とブラックボード（直列化対象）
-// 例えば、どのノードを実行中か、どのアセットを使うかなどの情報を持つ
+
+/**
+ * BT1体ぶんの実行状態。
+ *
+ * 木を止める2つの手段（用途が違う）:
+ *   debugPaused        … 評価だけ止める。パスは残るので、陣形やアニメの調整中に
+ *                        指示が次のフレームで別の技に塗り潰されるのを防げる
+ *   assetPath を空にする … 木ごと手放す。形態移行（BossPhaseSystem）はこちらを使う
+ *   ※ debugPaused で止めても行動要求は残る。移動中に止めるとボスが歩き続けるので、
+ *     止める側が併せて BossCommandComponent::currentActionId に 0 を書く
+ *
+ * debug〜 は実行時のみ・非シリアライズ。書き手はBTデバッガ（BehaviorTreeSystem::OnGui）。
+ */
 struct BehaviorTreeComponent {
-    // --- 巨大なオブジェクト群 (ポインタ/コンテナ系) ---
-    /// 木の実体。BTAssetCache が同じパスに対して1つだけ作り、全Entityで共有する。
-    std::shared_ptr<const BTAsset> sharedAsset;
+    // --- 使う木 ---
+    std::shared_ptr<const BTAsset> sharedAsset;  ///< 木の実体。BTAssetCache が全Entityで1本だけ持つ
+    std::string assetPath;                       ///< 読み込むBTのパス。空なら評価しない
+    std::string loadedAssetPath;                 ///< 実際に読み込めたパス。表示と差し替え判定に使う
 
-    /// 読み込むBTのパス。空なら「BTを持たない」＝評価しない。
-    std::string assetPath;
-    std::string loadedAssetPath = "";
-    std::string lastFrameTreeLog = "";
-
-    std::vector<BTDebugState> debugNodeStates;
-    std::vector<float> nodeTimers;
-    std::vector<int> runningNodes;
-
-    // --- 構造体 ---
+    // --- 判断材料 ---
     AIBlackboard blackboard;
 
-    // --- プリミティブ型 (4バイト) ---
-    AssetID assetId = 0;
+    // --- 実行状態（配列は木と同じ長さ。確保は BehaviorTreeSystem::SyncAssets）---
+    std::vector<float> nodeTimers;               ///< ノードごとの残り時間。-1 は未開始
+    std::vector<int>   runningNodes;             ///< 複合ノードのしおり。次にどの子から再開するか
+    BTNodeID           runningNodeId = 0;        ///< 今フレーム Running を返した最初のノード
 
-    // --- デバッグ専用（実行時のみ・非シリアライズ）---
-    /// この BTNodeID の枝「だけ」を評価する。-1 で通常どおりルートから評価する。
-    ///        狙った技をその場で出して確認するためのもので、木そのものは書き換えない。
-    ///        書き手はデバッグUI（BehaviorTreeSystem::OnGui）。
-    int debugForcedNodeId = -1;
-
-    /// 上を適用済みかの記録。切り替わった瞬間に実行状態をリセットするために使う。
-    ///        書き手は BehaviorTreeSystem。
-    int debugAppliedForcedNodeId = -1;
-
-    /// 木の評価を止める。BossCommandComponent が上書きされなくなるので、
-    ///        エディタから書いた指示（陣形など）がそのまま残る。
-    ///
-    /// なぜ要るか:
-    ///   陣形やアニメを詰めている間もボスは技を選び続けるので、調整中の指示が
-    ///   次のフレームに別の技で塗り潰される。assetPath を空にすれば止まるが
-    ///   （BossPhaseSystem の第2形態移行がその手）、パスを失うので調整用途には使えない。
-    ///
-    /// @note 止めても currentActionId は保持される。移動中に止めるとボスが歩き続けるので、
-    ///       止める側が併せて 0 を書く（＝BossActionSystem が Idle になる）。
-    ///       書き手はデバッグUI（BehaviorTreeSystem::OnGui / FormationEditorWindow）。
-    bool debugPaused = false;
-
-    // --- プリミティブ型 (2バイト) ---
-    BTNodeID runningNodeId = 0;
-    BTNodeID previousRunningNodeId = 0xFFFF;
-    ActionID lastLogActionId = 0xFFFF;
+    // --- デバッグ（実行時のみ・非シリアライズ）---
+    std::vector<BTDebugState> debugNodeStates;   ///< 今フレームの評価結果。BTウィンドウの色分けに使う
+    ActionID lastLogActionId          = 0xFFFF;  ///< 最後に実行した行動。デバッガの見出しに出す
+    int      debugForcedNodeId        = -1;      ///< この枝だけを評価する。-1 で通常どおりルートから
+    int      debugAppliedForcedNodeId = -1;      ///< 上を適用済みか。切り替わった瞬間に実行状態を捨てる
+    bool     debugPaused              = false;   ///< 木を凍らせる（上の説明を参照）
 };
