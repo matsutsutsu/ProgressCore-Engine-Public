@@ -18,6 +18,7 @@
 ///   運用は追加のたびに崩れる（実際に崩れていた）。末尾の static_assert で
 ///   測って見張る方式にしている。
 #pragma once
+#include <array>
 #include <cstdint>
 #include <cstddef>
 #include "SimpleMath.h"
@@ -69,6 +70,24 @@ enum class DroneFormationType : uint8_t
 /// @note  インスペクタの列挙表示は「値をそのまま配列の添字にする」ため、
 ///        名前テーブルは詰めた長さではなくこの長さで作る必要がある。
 inline constexpr size_t kDroneFormationSlotCount = 33;
+
+/// @brief インスペクタの列挙表示用の陣形名。欠番は "(欠番)" で埋める。
+///
+/// なぜ enum と同じファイルに置くか:
+///   以前は DroneComponent と BossCommandComponent のメタ定義が同じ .cpp に
+///   同居していて、この表もその .cpp のローカル変数だった。両者を別ファイルへ
+///   分けたときに表が二重化しかけたので、出どころ（DRONE_FORMATION_LIST）の
+///   隣へ移した。名前と値の対応を人間が保つ必要がなくなる。
+static constexpr std::array<const char *, kDroneFormationSlotCount> MakeDroneFormationNames()
+{
+    std::array<const char *, kDroneFormationSlotCount> names{};
+    for (auto &n : names) n = "(欠番)";
+#define CCL_DRONE_FORMATION_NAME(Name, Value, Display) names[Value] = Display;
+    DRONE_FORMATION_LIST(CCL_DRONE_FORMATION_NAME)
+#undef CCL_DRONE_FORMATION_NAME
+    return names;
+}
+inline constexpr auto kDroneFormationNames = MakeDroneFormationNames();
 
 /// @brief ドローン個体の物理ステート。書き手は DroneBrainSystem のみ。
 ///

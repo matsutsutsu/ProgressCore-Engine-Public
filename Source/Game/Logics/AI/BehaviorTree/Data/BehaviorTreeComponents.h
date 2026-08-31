@@ -1,47 +1,69 @@
 #pragma once
 #include <cstdint>
 #include <memory>
+#include <string>
+#include <vector>
 #include "SimpleMath.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"
-#include "Game/Logics/AI/Drone/DroneComponent.h"
-
-#include "Engine/Serialization/Core/EntityLink.h"
+#include "Engine/ECS/Common/CCL_Types.h"
 
 /**
  * @file BehaviorTreeComponents.h
  * @brief ECSエンティティが保持するAIの状態管理コンポーネント
- * * 役割：
- * 各エンティティ固有の「現在の思考位置」や「判断材料（Blackboard）」を管理する。
- * * 設計思想：
- * 「思考（Data）」と「状態（Component）」を分離。
- * コンポーネントには実行時のみ必要な最小限の状態のみを持たせ、
- * 巨大な木構造自体はアセットとして全Entityで共有する（メモリ節約）。
+ *
+ * 役割：
+ *   各エンティティ固有の「現在の思考位置」や「判断材料（Blackboard）」を管理する。
+ *
+ * 設計思想：
+ *   「思考（Data）」と「状態（Component）」を分離。
+ *   コンポーネントには実行時のみ必要な最小限の状態のみを持たせ、
+ *   巨大な木構造自体はアセットとして全Entityで共有する（BTAssetCache）。
+ *
+ * ここに置いてよいものの境界:
+ *   どの敵でも意味を持つものだけ。特定の敵にしか無い概念（ボスの第2形態、
+ *   ドローンの陣形など）は、その敵のコンポーネントへ置く。
+ *   例: 第2形態のBTパスとHP閾値 → BossPhaseComponent
+ *       ボスの行動要求・陣形要求     → BossCommandComponent
+ *   この線引きが崩れると、敵の種類を足すたびにこのファイルが太る。
  */
 
  // AIの判断材料を格納するブラックボード（Blackboard）
 struct AIBlackboard {
-    // --- 座標・空間データ ---
-    DirectX::SimpleMath::Vector3 targetPosition; // ターゲットの座標
-    float distanceToTarget = 0.0f;               // ターゲットとの距離
+    // --- ターゲット ---
+    /// @brief このAIが狙っている相手。書き手は知覚システム（BossPerceptionSystem）。
+    ///
+    /// なぜ座標だけでなくIDを持つか:
+    ///   以前は BattleContext.playerPos を全AIへ直接配っており、「誰を狙うか」という
+    ///   概念がコード上に存在しなかった（1体しか敵がいなかったので成立していた）。
+    ///   雑魚を群れで出すと、個体ごとに狙う相手が変わる。IDを持たせておけば、
+    ///   行動側は「ターゲットのHP」「ターゲットの向き」など座標以外も引ける。
+    CCL::ECS::EntityID targetEntity = CCL::ECS::InvalidEntityID;
 
-    // --- ステータス・フェーズデータ ---
-    float healthPercentage = 100.0f;             // 自分の残りHP
-    int currentPhase = 1;                        // ボスの現在のフェーズ（1=前半戦, 2=後半戦）
+    DirectX::SimpleMath::Vector3 targetPosition;     // ターゲットの座標
+    float distanceToTarget = 0.0f;                   // ターゲットとの距離
+
+    // --- 自分のステータス ---
+    float healthPercentage = 100.0f;                 // 自分の残りHP（0〜100）
 
     // --- ダメージ蓄積・回避システム ---
-    float accumulatedDamage = 0.0f;              // 現在溜まっているダメージ量
-    float evadeDamageThreshold = 20.0f;          // いくつダメージを受けたら逃げるかの閾値
+    float accumulatedDamage    = 0.0f;               // 現在溜まっているダメージ量
+    float evadeDamageThreshold = 20.0f;              // いくつダメージを受けたら逃げるかの閾値
 };
 
 // AIの内部状態とブラックボード（直列化対象）
 // 例えば、どのノードを実行中か、どのアセットを使うかなどの情報を持つ
 struct BehaviorTreeComponent {
     // --- 巨大なオブジェクト群 (ポインタ/コンテナ系) ---
-    std::shared_ptr<BTAsset> sharedAsset;
+    /// @brief 木の実体。BTAssetCache が同じパスに対して1つだけ作り、全Entityで共有する。
+    /// @note  const なのは「共有物を実行時に書き換えない」ことを型で保証するため。
+    ///        書き換えたい場合はアセットを編集して BTAssetCache::Reload を通す。
+    std::shared_ptr<const BTAsset> sharedAsset;
 
-    std::string assetPath = "Data/BehaviorTree/BossAI.json";
+    /// @brief 読み込むBTのパス。空なら「BTを持たない」＝評価しない。
+    /// @note  既定を実在しないパスにしておくと、新しく敵を作るたびにロード失敗ログから
+    ///        始まることになるので空にしてある。プレハブ側で必ず指定する。
+    std::string assetPath;
     std::string loadedAssetPath = "";
-    std::string phase2AssetPath = "Data/BehaviorTree/BossAI_Phase2.json";
     std::string lastFrameTreeLog = "";
 
     std::vector<BTDebugState> debugNodeStates;
@@ -53,7 +75,6 @@ struct BehaviorTreeComponent {
 
     // --- プリミティブ型 (4バイト) ---
     AssetID assetId = 0;
-    float phase2HealthThreshold = 50.0f;
 
     // --- デバッグ専用（実行時のみ・非シリアライズ）---
     /// @brief この BTNodeID の枝「だけ」を評価する。-1 で通常どおりルートから評価する。
@@ -82,29 +103,4 @@ struct BehaviorTreeComponent {
     BTNodeID runningNodeId = 0;
     BTNodeID previousRunningNodeId = 0xFFFF;
     ActionID lastLogActionId = 0xFFFF;
-};
-
-
-
-// AIシステムからの「出力」を受け取るコンポーネント（毎フレームリセットされる使い捨てデータ）
-// 例えば、AIが「近接攻撃してほしい」「ここに移動してほしい」といった命令をこのコンポーネントに書き込む
-struct BossCommandComponent {
-    CCL::Serialization::EntityLink targetPlayerId; // 誰を狙うか
-
-    DroneFormationType requestFormation = DroneFormationType::Hidden;
-
-    // AIが現在「筋肉にやってほしい」と要求しているActionIDをそのまま渡す
-    ActionID currentActionId = 0;
-
-    /// @brief ドローン陣形攻撃の「今撃て」信号（実行時専用・非シリアライズ）。
-    ///        BTの DroneStrikeAction が true、DroneAction(陣形指示) が false にする。
-    ///        DroneCommandSystem が各ドローンの wantsAttack へ配布する。
-    bool droneAttackActive = false;
-
-    /// @brief 前フレームの droneAttackActive（実行時専用・非シリアライズ）。
-    ///        書き手は DroneCommandSystem のみ。信号の「立ち上がり」を検出して
-    ///        個別寿命の突撃（DroneAttackPhase::Charging）を1回だけ発火させるために使う。
-    ///        これが無いと、信号が立っている間ずっと全機が攻撃へ引き戻され、
-    ///        飛び切った機の個別帰投が成立しない。
-    bool prevDroneAttackActive = false;
 };

@@ -6,7 +6,7 @@
 #include "Game/Logics/AI/BehaviorTree/Actions/BTAction.h"
 #include "Game/Logics/AI/BehaviorTree/Actions/BTActionRegistry.h"
 #include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
-#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h" // BossCommandComponent
+#include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
 #include "Game/Logics/AI/Drone/DroneComponent.h"
 #include "Engine/ECS/Core/CCL_World.h"                               // world->GetComponent
 #include "Engine/Animation/Components/AnimParametersComponent.h"     // SetTrigger（近接アニメ）

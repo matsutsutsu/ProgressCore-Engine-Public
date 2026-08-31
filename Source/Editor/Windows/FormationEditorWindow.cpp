@@ -2,7 +2,8 @@
 /// @brief 陣形(FormationSpec)の編集UIとプレビュー。
 #include "FormationEditorWindow.h"
 
-#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h" // BossCommandComponent
+#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h" // BehaviorTreeComponent
+#include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
 #include "Game/Logics/AI/Drone/DroneFormationSystem.h"
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
 

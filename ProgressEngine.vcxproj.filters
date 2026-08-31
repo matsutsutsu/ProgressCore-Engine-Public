@@ -1041,6 +1041,18 @@
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeComponents.h">
       <Filter>Source\Game\Logics\AI\BehaviorTree\Data</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BTAssetCache.h">
+      <Filter>Source\Game\Logics\AI\BehaviorTree\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Components\BossCommandComponent.h">
+      <Filter>Source\Game\Logics\Character\Boss\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Actions\BTConditions_Boss.h">
+      <Filter>Source\Game\Logics\Character\Boss\Actions</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Combat\EnemyTag.h">
+      <Filter>Source\Game\Logics\Combat</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeData.h">
       <Filter>Source\Game\Logics\AI\BehaviorTree\Data</Filter>
     </ClInclude>
@@ -1922,6 +1934,15 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Data\BTAssetCache.cpp">
+      <Filter>Source\Game\Logics\AI\BehaviorTree\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Components\BossCommandComponentMeta.cpp">
+      <Filter>Source\Game\Logics\Character\Boss\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Combat\EnemyTagMeta.cpp">
+      <Filter>Source\Game\Logics\Combat</Filter>
+    </ClCompile>
     <ClCompile Include="External\implot-master\implot.cpp">
       <Filter>External\ImPlot</Filter>
     </ClCompile>

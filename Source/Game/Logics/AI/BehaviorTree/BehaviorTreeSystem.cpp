@@ -4,10 +4,11 @@
 ///        ExecuteAction/EvaluateCondition の巨大switchは廃止。
 #include "BehaviorTreeSystem.h"
 
-#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeLoader.h"
+#include "Game/Logics/AI/BehaviorTree/Data/BTAssetCache.h"
 #include "Game/Logics/AI/BehaviorTree/Actions/BTActionRegistry.h"
 
-#include "Game/Logics/AI/BehaviorTree/Actions/BTConditions.h"
+#include "Game/Logics/AI/BehaviorTree/Actions/BTConditions.h"       // 汎用条件
+#include "Game/Logics/Character/Boss/Actions/BTConditions_Boss.h"   // ボス固有条件
 #include "Game/Logics/Character/Boss/Actions/BTActions_Boss.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
@@ -17,9 +18,12 @@
 #include "Engine/Core/App/GameFlowState.h" // カットシーン中はAIを止める
 
 #include <algorithm>
+#include <cstdio>
 
 #ifdef ENABLE_EDITOR
 #include <imgui.h>
+// デバッグUIだけがボスを知る。製品ビルドではこの include ごと消える。
+#include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
 #endif
  
 
@@ -49,9 +53,46 @@ BehaviorTreeSystem::BehaviorTreeSystem() : IfSystem("BehaviorTreeSystem")
 
 void BehaviorTreeSystem::Initialize()
 {
+    // 敵の種類を足したら、その敵の RegisterAll をここに1行足す。
+    //   エンジン側のこの1行だけがBTの語彙を集める入口。自己登録マクロにもできるが、
+    //   「どの敵の行動が生きているか」が1画面で分かる利点のほうが今の規模では大きい。
+    BT::CommonConditions::RegisterAll();
     BT::BossConditions::RegisterAll();
     BT::BossActions::RegisterAll();
     CCL_LOG_INFO(LogCategory::AI, "[BehaviorTreeSystem] BTノード登録完了");
+}
+
+
+void BehaviorTreeSystem::SyncAssets()
+{
+    auto &cache = BTAssetCache::Instance();
+
+    // 直列で回す。ここでやることは「パスに対応する木を受け取り直す」だけで、
+    // 変化が無ければポインタ比較1回で終わる。
+    //   以前はこの処理が並列ForEachの内側にあり、ファイル読み込み・JSONパース・
+    //   ロガー呼び出しがワーカースレッドから同時に走っていた。
+    ForEach([&](BehaviorTreeComponent    &btComp,
+                const TransformComponent & /*trans*/,
+                const TimeStateComponent & /*time*/) {
+        std::shared_ptr<const BTAsset> desired =
+            btComp.assetPath.empty() ? nullptr : cache.GetOrLoad(btComp.assetPath);
+
+        if (desired == btComp.sharedAsset) return; // 大半のフレームはここで終わる
+
+        btComp.sharedAsset     = desired;
+        btComp.loadedAssetPath = desired ? btComp.assetPath : std::string();
+
+        // 木が入れ替わったら実行状態は捨てる。
+        //   前の木の「途中まで進んだシーケンス」や Wait の残り時間を持ち越すと、
+        //   差し替え直後の1回だけ挙動がおかしくなって原因が分からなくなる。
+        //   バッファの確保をここに集約したので、評価側（並列）は一切確保しない。
+        const size_t nodeCount = desired ? desired->nodes.size() : 0;
+        btComp.debugNodeStates.assign(nodeCount, BTDebugState::None);
+        btComp.nodeTimers.assign(nodeCount, -1.0f);
+        btComp.runningNodes.assign(nodeCount, -1);
+        btComp.runningNodeId         = 0xFFFF;
+        btComp.previousRunningNodeId = 0xFFFF;
+    });
 }
 
 
@@ -63,6 +104,12 @@ void BehaviorTreeSystem::Update(float rawDt)
     const bool cinematic =
         m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().cinematic;
 
+    // --- ① アセットの解決（直列）---
+    //   木の読み込みは共有物の準備であって、個体ごとの処理ではない。
+    //   並列ループへ持ち込まないことで、ファイルI/Oもログもメインスレッドに留まる。
+    SyncAssets();
+
+    // --- ② 評価（並列）---
     ForEachWithIDParallel([this, cinematic](EntityID entity,
                                  BehaviorTreeComponent& btComp,
                                  const TransformComponent& trans,
@@ -70,34 +117,14 @@ void BehaviorTreeSystem::Update(float rawDt)
     {
         float dt = time.localDt;
 
-        // --- 動的ロード（assetPath が変わったら読み直す）---
-        if (btComp.assetPath != btComp.loadedAssetPath) {
-            if (!btComp.assetPath.empty()) {
-                if (!btComp.sharedAsset) {
-                    btComp.sharedAsset = std::make_shared<BTAsset>();
-                }
-                if (BehaviorTreeLoader::LoadFromJson(btComp.assetPath, *btComp.sharedAsset)) {
-                    btComp.loadedAssetPath = btComp.assetPath;
-                }
-                else {
-                    CCL_LOG_WARN(LogCategory::AI,
-                        "[BehaviorTreeSystem] BTロード失敗のため再試行可能: %s",
-                        btComp.assetPath.c_str());
-                }
-            }
-            else {
-                btComp.loadedAssetPath.clear();
-            }
-        }
         if (!btComp.sharedAsset || btComp.sharedAsset->nodes.empty()) return;
 
-        // --- バッファ確保 ---
-        size_t nodeCount = btComp.sharedAsset->nodes.size();
-        if (btComp.debugNodeStates.size() != nodeCount) {
-            btComp.debugNodeStates.resize(nodeCount, BTDebugState::None);
-            btComp.nodeTimers.resize(nodeCount, -1.0f);
-            btComp.runningNodes.resize(nodeCount, -1);
-        }
+        const size_t nodeCount = btComp.sharedAsset->nodes.size();
+
+        // バッファは SyncAssets が木と同じ長さに揃えてある。ここで確保はしない
+        // （並列ループ内で std::vector を伸ばすのを避けるため）。
+        // 万一ずれていたら、その個体だけこのフレームを見送る。
+        if (btComp.nodeTimers.size() != nodeCount) return;
 
         // --- デバッグ：評価を止める ---
         //   タイマー減算より前に抜ける。止めている間も Wait が進むと、再開した瞬間に
@@ -347,6 +374,14 @@ namespace {
         return nullptr;
     }
 
+    /// @brief param を短く整形する。小数第1位まで（10.0 → "10.0"）。
+    std::string FormatParam(float v)
+    {
+        char buf[32];
+        std::snprintf(buf, sizeof(buf), "%.1f", v);
+        return buf;
+    }
+
     const char *NodeTypeName(BTNodeType type)
     {
         switch (type) {
@@ -375,11 +410,17 @@ void BehaviorTreeSystem::DrawNodeRowRecursive(const BTAsset         &asset,
         const char *name = LookupEntryName(g_ActionRegistry, g_ActionRegistryCount, node.actionOrConditionId);
         label += name ? std::string(" : ") + name
                       : std::string(" : id=") + std::to_string(node.actionOrConditionId);
+        if (GetActionParamLabel(node.actionOrConditionId))
+            label += " (" + FormatParam(node.param) + ")";
     }
     else if (node.type == BTNodeType::Condition) {
         const char *name = LookupEntryName(g_ConditionRegistry, g_ConditionRegistryCount, node.actionOrConditionId);
         label += name ? std::string(" : ") + name
                       : std::string(" : id=") + std::to_string(node.actionOrConditionId);
+        // 間合いは param に入っている。出さないと「距離が N m 未満」が並ぶだけで
+        // どの行が何mの判定なのか分からない。
+        if (GetConditionParamLabel(node.actionOrConditionId))
+            label += " (" + FormatParam(node.param) + ")";
     }
     else if (const char *hint = FirstActionNameInSubtree(asset, nodeId)) {
         label += std::string(" [") + hint + "]";

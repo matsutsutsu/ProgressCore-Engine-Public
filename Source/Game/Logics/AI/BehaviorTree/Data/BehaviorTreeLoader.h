@@ -35,6 +35,14 @@ private:
     ///        作業中のブランチから古い木を開いたときに黙って壊れないよう残す。
     static void MigrateLegacyWait(BTNode& node);
 
+    /// @brief 間合いがActionIDに埋まっていた頃の条件（C_RangeClose 等）を
+    ///        「C_DistanceLessThan/GreaterThan + param(距離)」へ読み替える。
+    /// @param savedKey アセットに書かれていた "condition" 文字列（無ければ空でよい）
+    /// @note  対応表は ActionRegistry.h の g_LegacyConditions。読み替えたことはログに出す。
+    ///        意味を完全には復元できないもの（帯だった C_RangeMedium）は警告にする。
+    static void MigrateLegacyCondition(BTNode& node, const std::string& savedKey,
+                                       const std::string& path);
+
     // 再帰的にノードをテキスト化する内部関数
     static std::string DumpNodeRecursive(const BTAsset& asset, BTNodeID nodeId, const std::string& prefix, bool isLast);
 };

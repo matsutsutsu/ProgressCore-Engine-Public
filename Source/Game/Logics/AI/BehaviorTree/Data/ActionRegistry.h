@@ -79,14 +79,18 @@
 namespace CCL::AI
 {
 // --- 条件 (1〜99) ---
-inline constexpr ActionID C_RangeClose              = 1; ///< 距離 < 15m
-inline constexpr ActionID C_RangeMedium             = 2; ///< 距離 15〜40m
-inline constexpr ActionID C_IsPhase2                = 3; ///< フェーズ >= 2
-inline constexpr ActionID C_ShouldTransitionPhase2  = 4; ///< 第1形態 かつ HP <= 閾値
-inline constexpr ActionID C_RangeMostClose          = 5; ///< 距離 < 8m
-inline constexpr ActionID C_DamageThresholdExceeded = 6; ///< 蓄積ダメージ >= 閾値
-inline constexpr ActionID C_RangeFar                = 7; ///< 距離 > 40m
-inline constexpr ActionID C_IsAtStageEdge           = 8; ///< 原点から48m以上
+/// @note 1(C_RangeClose) / 2(C_RangeMedium) / 5(C_RangeMostClose) / 7(C_RangeFar) は
+///       「距離 < 15m」のように間合いをIDへ焼き込んでいた頃の欠番。
+///       行動側で待機を A_Wait 1つへ畳んだのと同じ理由で、間合いは param へ移し、
+///       C_DistanceLessThan / C_DistanceGreaterThan の2つに統合した。
+///       敵ごとに間合いが違うのは当たり前なので、IDで表すと敵の種類×間合いの数だけIDが増える。
+///       旧アセットは g_LegacyConditions（下部）が読み替えるので、開き直す必要はない。
+inline constexpr ActionID C_IsPhase2                = 3;  ///< フェーズ >= 2
+inline constexpr ActionID C_ShouldTransitionPhase2  = 4;  ///< 第1形態 かつ HP <= 閾値
+inline constexpr ActionID C_DamageThresholdExceeded = 6;  ///< 蓄積ダメージ >= 閾値
+inline constexpr ActionID C_IsAtStageEdge           = 8;  ///< 原点から param m 以上
+inline constexpr ActionID C_DistanceLessThan        = 9;  ///< ターゲットとの距離 < param
+inline constexpr ActionID C_DistanceGreaterThan     = 10; ///< ターゲットとの距離 > param
 
 // --- 行動 ---
 /// @note 100〜111 は「待機0.5秒」〜「待機10.0秒」だった欠番。待ち時間は param へ移したので、
@@ -167,17 +171,15 @@ inline constexpr ActionEntry g_ActionRegistry[] = {
 inline constexpr int g_ActionRegistryCount = sizeof(g_ActionRegistry) / sizeof(ActionEntry);
 
 inline constexpr ActionEntry g_ConditionRegistry[] = {
-    { 0,                                 "None",                      "なし (None)",                             BTCategory::None,  "" },
+    { 0,                                 "None",                      "なし (None)",                             BTCategory::None,  ""                      },
 
-    { CCL::AI::C_RangeClose,              "C_RangeClose",              "距離 < 15m",                             BTCategory::Range, "" },
-    { CCL::AI::C_RangeMedium,             "C_RangeMedium",             "距離 15-40m",                            BTCategory::Range, "" },
-    { CCL::AI::C_RangeMostClose,          "C_RangeMostClose",          "距離 < 8m",                              BTCategory::Range, "" },
-    { CCL::AI::C_RangeFar,                "C_RangeFar",                "距離 > 40m",                             BTCategory::Range, "" },
+    { CCL::AI::C_DistanceLessThan,        "C_DistanceLessThan",        "距離が N m 未満",                        BTCategory::Range, "距離 [m]"              },
+    { CCL::AI::C_DistanceGreaterThan,     "C_DistanceGreaterThan",     "距離が N m 超",                          BTCategory::Range, "距離 [m]"              },
 
-    { CCL::AI::C_IsPhase2,                "C_IsPhase2",                "フェーズ >= 2",                          BTCategory::State, "" },
-    { CCL::AI::C_ShouldTransitionPhase2,  "C_ShouldTransitionPhase2",  "第2形態移行条件 (HP半分以下 & 第1形態)", BTCategory::State, "" },
-    { CCL::AI::C_DamageThresholdExceeded, "C_DamageThresholdExceeded", "ダメージ蓄積 > 閾値",                    BTCategory::State, "" },
-    { CCL::AI::C_IsAtStageEdge,           "C_IsAtStageEdge",           "ステージの端にいる",                     BTCategory::State, "" },
+    { CCL::AI::C_IsPhase2,                "C_IsPhase2",                "フェーズ >= 2",                          BTCategory::State, ""                      },
+    { CCL::AI::C_ShouldTransitionPhase2,  "C_ShouldTransitionPhase2",  "第2形態移行条件 (HP半分以下 & 第1形態)", BTCategory::State, ""                      },
+    { CCL::AI::C_DamageThresholdExceeded, "C_DamageThresholdExceeded", "ダメージ蓄積 > 閾値",                    BTCategory::State, ""                      },
+    { CCL::AI::C_IsAtStageEdge,           "C_IsAtStageEdge",           "原点から N m 以上（ステージの端）",      BTCategory::State, "原点からの距離 [m]"    },
 };
 inline constexpr int g_ConditionRegistryCount = sizeof(g_ConditionRegistry) / sizeof(ActionEntry);
 
@@ -201,6 +203,58 @@ inline constexpr std::string_view RedirectKey(std::string_view key)
 {
     // 例: if (key == "A_BossSlash") return "A_BossSweep";
     return key;
+}
+
+// ============================================================================
+// 旧条件の読み替え（間合いがIDに焼き込まれていた頃 → param へ）
+// ============================================================================
+/// @brief 旧キー／旧数値ID から「新しいID + param」への対応表。
+///
+/// RedirectKey ではなくこの表が要る理由:
+///   RedirectKey は「名前→名前」しか移せない。旧条件は名前の中に数値（8m/15m/40m）を
+///   持っていたので、読み替えと同時に param を与えないと意味が復元できない。
+///
+/// @note 読み替えはビルド時ではなく読み込み時に効く。アセットを開いて保存し直せば
+///       新しいキーで書き直されるので、そのアセットはこの表を通らなくなる。
+struct LegacyConditionEntry
+{
+    const char *key;       ///< 旧アセットに書かれているキー
+    ActionID    legacyId;  ///< 旧アセットの数値ID（キーが欠けている古い木のため）
+    ActionID    newId;     ///< 読み替え先
+    float       param;     ///< 旧IDが意味していた距離
+    bool        ambiguous; ///< 1ノードでは意味を完全に復元できない（下記参照）
+};
+
+inline constexpr LegacyConditionEntry g_LegacyConditions[] = {
+    { "C_RangeMostClose", 5, CCL::AI::C_DistanceLessThan,     8.0f, false },
+    { "C_RangeClose",     1, CCL::AI::C_DistanceLessThan,    15.0f, false },
+    { "C_RangeFar",       7, CCL::AI::C_DistanceGreaterThan, 40.0f, false },
+
+    // C_RangeMedium は「15〜40m」という帯だった。上下2つの境界を1ノードでは表せないので、
+    // 上限（<40m）だけを引き継ぐ。近い順に並べた Selector の下では、手前の枝が
+    // 15m未満を先に拾うため挙動は変わらない。単独で置かれていた場合だけ意味が広がるので、
+    // 読み込み側がログを出して気づけるようにしてある（ambiguous）。
+    { "C_RangeMedium",    2, CCL::AI::C_DistanceLessThan,    40.0f, true  },
+};
+inline constexpr int g_LegacyConditionCount =
+    sizeof(g_LegacyConditions) / sizeof(LegacyConditionEntry);
+
+/// @brief 旧条件なら読み替え先を返す。現行のキー/IDなら nullptr。
+/// @param key       アセットの "condition" 文字列（無ければ空でよい）
+/// @param numericId アセットの actionOrConditionId（キーが欠けている木のための保険）
+inline const LegacyConditionEntry *FindLegacyCondition(std::string_view key, ActionID numericId)
+{
+    for (int i = 0; i < g_LegacyConditionCount; ++i) {
+        if (!key.empty() && key == g_LegacyConditions[i].key) return &g_LegacyConditions[i];
+    }
+    // キーが無い木は数値IDで拾う。現行の条件と番号が衝突しないよう、
+    // 旧IDは g_ConditionRegistry から外したまま（＝欠番）にしてある。
+    if (key.empty()) {
+        for (int i = 0; i < g_LegacyConditionCount; ++i) {
+            if (numericId == g_LegacyConditions[i].legacyId) return &g_LegacyConditions[i];
+        }
+    }
+    return nullptr;
 }
 
 // ============================================================================
@@ -342,5 +396,13 @@ inline bool IsBossMeleeAction(ActionID id) { return id == CCL::AI::A_BossSlash; 
 inline const char *GetActionParamLabel(ActionID id)
 {
     const ActionEntry *e = FindActionEntry(id);
+    return (e && e->paramLabel && e->paramLabel[0]) ? e->paramLabel : nullptr;
+}
+
+/// @brief この条件が使う param の意味。使わないなら nullptr。
+/// @note  行動側と同じ仕組み。距離条件をIDではなく引数で表すために足した。
+inline const char *GetConditionParamLabel(ActionID id)
+{
+    const ActionEntry *e = FindConditionEntry(id);
     return (e && e->paramLabel && e->paramLabel[0]) ? e->paramLabel : nullptr;
 }

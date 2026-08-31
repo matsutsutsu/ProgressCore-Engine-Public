@@ -1,0 +1,69 @@
+/// @file  BTAssetCache.cpp
+#include "BTAssetCache.h"
+
+#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeLoader.h"
+#include "Engine/Platform/Core/Logger.h"
+
+BTAssetCache &BTAssetCache::Instance()
+{
+    static BTAssetCache cache;
+    return cache;
+}
+
+std::shared_ptr<const BTAsset> BTAssetCache::GetOrLoad(const std::string &path)
+{
+    if (path.empty()) return nullptr;
+
+    std::lock_guard<std::mutex> lock(m_mutex);
+
+    auto it = m_assets.find(path);
+    if (it != m_assets.end()) return it->second;
+
+    // 失敗済みは黙って諦める（ログは初回の1回だけ出してある）
+    if (m_failed.count(path)) return nullptr;
+
+    return LoadLocked(path);
+}
+
+std::shared_ptr<const BTAsset> BTAssetCache::Reload(const std::string &path)
+{
+    if (path.empty()) return nullptr;
+
+    std::lock_guard<std::mutex> lock(m_mutex);
+
+    // 失敗の記録も消す。「直したから読み直してほしい」という指示なので、
+    // ここで消さないと直した後も永久に読まれない。
+    m_assets.erase(path);
+    m_failed.erase(path);
+
+    return LoadLocked(path);
+}
+
+std::shared_ptr<const BTAsset> BTAssetCache::LoadLocked(const std::string &path)
+{
+    auto asset = std::make_shared<BTAsset>();
+    if (!BehaviorTreeLoader::LoadFromJson(path, *asset)) {
+        m_failed.insert(path);
+        CCL_LOG_WARN(LogCategory::AI,
+            "[BTAssetCache] 読み込みに失敗したので、このパスは以降スキップする: %s "
+            "(直したらインスペクタの「AI再読込」を押す)", path.c_str());
+        return nullptr;
+    }
+
+    std::shared_ptr<const BTAsset> shared = asset;
+    m_assets[path] = shared;
+    return shared;
+}
+
+void BTAssetCache::Clear()
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_assets.clear();
+    m_failed.clear();
+}
+
+size_t BTAssetCache::Count() const
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_assets.size();
+}

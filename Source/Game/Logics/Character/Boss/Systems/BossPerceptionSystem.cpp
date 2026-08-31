@@ -33,11 +33,29 @@ void BossPerceptionSystem::Update(float /*rawDt*/)
                 (health.currentHealth / health.maxHealth) * 100.0f;
         }
 
-        // --- プレイヤーとの距離の同期（世界の事実 BattleContext を使う）---
-        Vector3 myPos(trans.position);
-        Vector3 playerPos(battle.playerPos);
-        btComp.blackboard.distanceToTarget = Vector3::Distance(myPos, playerPos);
-        btComp.blackboard.targetPosition   = playerPos;
+        // --- ターゲットの決定 ---
+        //   1対1なので今は常にプレイヤー。ここが「誰を狙うか」を決める唯一の場所で、
+        //   雑魚を群れで出すときは、この1行を「一番近い/一番脅威の相手を選ぶ」に
+        //   差し替えるだけで済むようにしてある。
+        //   以前は狙う相手という概念がコード上に無く、BattleContext.playerPos を
+        //   全AIへ直接配っていた（敵が1体しかいないから成立していた）。
+        btComp.blackboard.targetEntity = battle.playerEntity;
+
+        // --- ターゲットの座標・距離の同期 ---
+        //   プレイヤーの座標は BattleContext が毎フレーム集計済みなので、そこから取る
+        //   （全AIが同じ Transform を引き直さないための一元化）。
+        //   プレイヤー以外を狙うようになったら、そのときだけ Transform を引く。
+        Vector3 targetPos(battle.playerPos);
+        if (btComp.blackboard.targetEntity != battle.playerEntity)
+        {
+            const auto *targetTrans =
+                m_world->GetComponent<TransformComponent>(btComp.blackboard.targetEntity);
+            if (!targetTrans) return; // ターゲットが消えている。今フレームは更新しない
+            targetPos = Vector3(targetTrans->position);
+        }
+
+        btComp.blackboard.targetPosition   = targetPos;
+        btComp.blackboard.distanceToTarget = Vector3::Distance(Vector3(trans.position), targetPos);
     });
 }
 

@@ -20,7 +20,7 @@ void BossPhaseSystem::Update(float /*rawDt*/)
                 HealthComponent         &health,
                 const TimeStateComponent &time) {
         // --- 遷移判定 ---
-        const BossPhase next = DecideNextPhase(phase, bt, health);
+        const BossPhase next = DecideNextPhase(phase, health);
 
         // --- 入場処理：状態が変わったフレームだけ走る ---
         if (next != phase.phase)
@@ -30,7 +30,7 @@ void BossPhaseSystem::Update(float /*rawDt*/)
         }
 
         // --- 滞在処理 ---
-        TickPhase(phase, bt, cmd, health);
+        TickPhase(phase, cmd, health);
 
         // 時間で終わる状態（移行演出）のためのタイマー
         if (phase.timer > 0.0f) phase.timer -= time.localDt;
@@ -38,9 +38,8 @@ void BossPhaseSystem::Update(float /*rawDt*/)
 }
 
 
-BossPhase BossPhaseSystem::DecideNextPhase(const BossPhaseComponent    &phase,
-                                           const BehaviorTreeComponent &bt,
-                                           const HealthComponent       &health) const
+BossPhase BossPhaseSystem::DecideNextPhase(const BossPhaseComponent &phase,
+                                           const HealthComponent    &health) const
 {
     // 死は終端。一度入ったら他の状態へは戻さない。
     if (phase.phase == BossPhase::Dead) return BossPhase::Dead;
@@ -54,12 +53,12 @@ BossPhase BossPhaseSystem::DecideNextPhase(const BossPhaseComponent    &phase,
         return (phase.timer > 0.0f) ? BossPhase::Transition : BossPhase::Combat2;
 
     // 第1形態で HP が閾値を割ったら移行演出へ。
-    //   閾値は BehaviorTreeComponent.phase2HealthThreshold（0〜100 のパーセント）。
+    //   閾値は BossPhaseComponent.phase2HealthThreshold（0〜100 のパーセント）。
     //   第2形態のBTが設定されていない場合は移行しない（設定漏れでボスが止まるのを防ぐ）。
-    if (phase.phase == BossPhase::Combat && !bt.phase2AssetPath.empty() && health.maxHealth > 0.0f)
+    if (phase.phase == BossPhase::Combat && !phase.phase2AssetPath.empty() && health.maxHealth > 0.0f)
     {
         const float hpPercent = (health.currentHealth / health.maxHealth) * 100.0f;
-        if (hpPercent <= bt.phase2HealthThreshold) return BossPhase::Transition;
+        if (hpPercent <= phase.phase2HealthThreshold) return BossPhase::Transition;
     }
 
     return phase.phase;
@@ -98,7 +97,7 @@ void BossPhaseSystem::OnEnterPhase(BossPhase                next,
 
     case BossPhase::Combat2:
         // 第2形態のBTへ差し替える。assetPath が変わると BehaviorTreeSystem が自動ロードする。
-        bt.assetPath = bt.phase2AssetPath;
+        bt.assetPath = phase.phase2AssetPath;
         health.invincibilityTimer = 0.0f; // 無敵解除
         phase.timer               = 0.0f;
         CCL_LOG_INFO(LogCategory::AI, "[BossPhase] 第2形態 開始 → %s", bt.assetPath.c_str());
@@ -127,13 +126,13 @@ void BossPhaseSystem::OnEnterPhase(BossPhase                next,
 
 
 void BossPhaseSystem::TickPhase(const BossPhaseComponent &phase,
-                                BehaviorTreeComponent    &bt,
                                 BossCommandComponent     &cmd,
                                 HealthComponent          &health) const
 {
-    // BTの条件ノード（IsPhase2 / ShouldTransitionPhase2）が読む形態番号を同期する。
-    // ここが唯一の書き手。
-    bt.blackboard.currentPhase = (phase.phase == BossPhase::Combat2) ? 2 : 1;
+    // 以前はここで blackboard.currentPhase（int）へ形態番号を写していた。
+    //   BTの条件ノード（IsPhase2 / ShouldTransitionPhase2）が BossPhaseComponent を
+    //   直接読むようになったので、写し替えそのものが不要になった。
+    //   情報源が1つになるぶん、同期漏れでズレる余地が消える。
 
     switch (phase.phase)
     {

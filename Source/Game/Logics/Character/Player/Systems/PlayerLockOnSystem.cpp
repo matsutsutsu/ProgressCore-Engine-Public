@@ -2,6 +2,7 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Game/Logics/Character/Boss/Components/BossActionComponent.h" // 敵を標的にする
 #include "Game/Logics/Combat/DeadTag.h"         // 死亡確認用
+#include "Game/Logics/Combat/EnemyTag.h"        // ロックオン候補の絞り込み
 #include "Engine/Camera/Components/CameraBodyActionTPSComponent.h" // ロックオン状態をカメラへ push する
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
@@ -51,7 +52,10 @@ void PlayerLockOnSystem::Update(float /*dt*/)
                 float    closestDistSq  = 90.0f * 90.0f; // ロックオン可能な限界距離（例: 30メートル）の2乗
 
                 // 候補を一覧に貯めず、その場で最短を更新していく
-                m_world->ViewEach<BossActionComponent, TransformComponent>([&](EntityID enemyID) {
+                // ロックオン候補は EnemyTag を持つもの。
+                //   以前は BossActionComponent の有無で探していた＝ボス以外はロックオン
+                //   できない作りだった。敵の種類が増えたときに条件を書き足さなくて済む。
+                m_world->ViewEach<Tag::EnemyTag, TransformComponent>([&](EntityID enemyID) {
                     // 死亡している敵はスキップ
                     if (m_world->HasComponent<Tag::DeadTag>(enemyID)) return;
 

@@ -1,9 +1,12 @@
 /**
  * @file BehaviorTreeComponentMeta.cpp
- * @brief AI関連コンポーネントのエディタ/シリアライズ用メタデータ定義
+ * @brief 汎用AIコンポーネント（BehaviorTree / Drone）のエディタ/シリアライズ用メタデータ定義
+ *
+ * @note BossCommandComponent のメタは BossCommandComponentMeta.cpp へ移した。
+ *       構造体自体がボス側へ移ったので、メタだけここに残すと置き場がちぐはぐになる。
  */
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"
-#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeLoader.h"
+#include "Game/Logics/AI/BehaviorTree/Data/BTAssetCache.h"
 #include "Game/Logics/AI/Drone/DroneComponent.h"
 #include <array>
 #include "Engine/Serialization/Registry/ComponentRegistry.h"
@@ -13,31 +16,13 @@
 #ifdef ENABLE_EDITOR
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
-#include "Engine/Platform/Core/Dialog.h"     
-#include "Engine/Platform/Core/FileSystem.h" 
+#include "Engine/Platform/Core/Dialog.h"
+#include "Engine/Platform/Core/FileSystem.h"
 #include <imgui.h>
 #endif
 
-/// @brief インスペクタの列挙表示用の陣形名。
-///
-/// なぜ欠番ぶんも含む長さで作るのか:
-///   列挙表示は「保存値をそのまま配列の添字にする」実装なので、実装済みだけを
-///   詰めた配列にすると、値5(HighOrbit)が3番目の名前で表示される。
-///
-/// なぜ手書きの配列をやめたのか:
-///   以前は33個の名前を並び順で対応させていた。enum を1行消すだけで
-///   以降の全部が1つずれ、しかもコンパイルは通る。DRONE_FORMATION_LIST から
-///   生成すれば、名前と値の対応を人間が保つ必要がなくなる。
-static constexpr std::array<const char *, kDroneFormationSlotCount> MakeDroneFormationNames()
-{
-    std::array<const char *, kDroneFormationSlotCount> names{};
-    for (auto &n : names) n = "(欠番)";
-#define CCL_DRONE_FORMATION_NAME(Name, Value, Display) names[Value] = Display;
-    DRONE_FORMATION_LIST(CCL_DRONE_FORMATION_NAME)
-#undef CCL_DRONE_FORMATION_NAME
-    return names;
-}
-static constexpr auto kDroneFormationNames = MakeDroneFormationNames();
+// 陣形名のテーブル（kDroneFormationNames）は DroneComponent.h にある。
+// 列挙の定義と同じ場所に置くことで、名前と値の対応を人間が保つ必要をなくしている。
 
 static const char *DroneStateNames[] = {
     "Idle", "MoveToTarget", "FireCharge", "Stunned", "Returning"};
@@ -64,19 +49,25 @@ template <> struct ComponentMeta<BehaviorTreeComponent> {
         if (ImGui::Button("ビヘイビアツリーを読込... (JSON)", ImVec2(-1, 0))) {
             if (auto pathOpt = FileDialog::OpenPreset("BehaviorTree", "Select Behavior Tree", GetActiveWindow())) {
                 comp.assetPath = FileDialog::ConvertToRelativePath(*pathOpt);
-                if (!comp.sharedAsset) comp.sharedAsset = std::make_shared<BTAsset>();
-                BehaviorTreeLoader::LoadFromJson(comp.assetPath, *comp.sharedAsset);
-                comp.loadedAssetPath = comp.assetPath;
+
+                // その場で1回取りに行く（BehaviorTreeSystem も次のフレームに同じことをするが、
+                // ゲームを止めて編集しているときにノード数が出ないと不便なため）。
+                comp.sharedAsset     = BTAssetCache::Instance().GetOrLoad(comp.assetPath);
+                comp.loadedAssetPath = comp.sharedAsset ? comp.assetPath : std::string();
                 changed = true;
             }
         }
 
         ImGui::Separator();
+        // キャッシュを捨てて読み直す。同じ木を使っている他のエンティティも、
+        // 次のフレームの BehaviorTreeSystem::SyncAssets で新しい木を受け取り直す。
         if (ImGui::Button("AI再読込")) {
-            if (!comp.sharedAsset) comp.sharedAsset = std::make_shared<BTAsset>();
-            BehaviorTreeLoader::LoadFromJson(comp.assetPath, *comp.sharedAsset);
+            comp.sharedAsset     = BTAssetCache::Instance().Reload(comp.assetPath);
+            comp.loadedAssetPath = comp.sharedAsset ? comp.assetPath : std::string();
             changed = true;
         }
+        ImGui::SameLine();
+        ImGui::TextDisabled("(読込済みの木: %zu 本)", BTAssetCache::Instance().Count());
 
         ImGui::Separator();
         size_t nodeCount = comp.sharedAsset ? comp.sharedAsset->nodes.size() : 0;
@@ -90,10 +81,10 @@ template <> struct ComponentMeta<BehaviorTreeComponent> {
 #endif
 
     static const std::vector<FieldDescriptor> &Fields() {
+        // 第2形態のパスとHP閾値は BossPhaseComponent へ移動済み
+        // （どの敵でも持つ汎用データではないため）。
         static const std::vector<FieldDescriptor> fields = {
-            CFIELD(assetPath, "AIパス", "File")
-            CFIELD(phase2AssetPath, "第2形態AIパス", "File")
-            CFIELD_FLOAT_RANGED(phase2HealthThreshold, "第2形態移行HP閾値", 0.1f, 0.0f, 100.0f, "File")};
+            CFIELD(assetPath, "AIパス", "File")};
         return fields;
     }
 };
@@ -101,32 +92,7 @@ REGISTER_COMPONENT(BehaviorTreeComponent, "BehaviorTreeComponent")
 REGISTER_COMPONENT_EDITOR_GUI(BehaviorTreeComponent)
 
 // =======================================================================
-// 2. BossCommandComponent
-// =======================================================================
-template <> struct ComponentMeta<BossCommandComponent> {
-    CCL_META_USING_THIS(BossCommandComponent)
-
-    static constexpr const char* displayName    = "Boss Command (AI Output)";
-    static constexpr const char *category       = CCL::Categories::AI;
-    static constexpr int         sortPriority   = 160;
-    static constexpr bool        hiddenInInspector = false;
-    static constexpr bool        hasCustomGui   = false; 
-    static constexpr bool        isSerializable = true;  
-
-    static const std::vector<FieldDescriptor>& Fields() {
-        static const std::vector<FieldDescriptor> fields = {
-            CFIELD(currentActionId, "現在のActionID", "Current Command")
-            CFIELD_ENUM_U8(requestFormation, "フォーメーション要求", kDroneFormationNames.data(), kDroneFormationNames.size(), "Drone Control")
-            CFIELD(targetPlayerId, "ターゲット(Player)ID", "Drone Control")
-        };
-        return fields;
-    }
-};
-REGISTER_COMPONENT(BossCommandComponent, "BossCommandComponent")
-REGISTER_COMPONENT_EDITOR_GUI(BossCommandComponent)
-
-// =======================================================================
-// 3. DroneComponent
+// 2. DroneComponent
 // =======================================================================
 template <> struct ComponentMeta<DroneComponent> {
     CCL_META_USING_THIS(DroneComponent)
@@ -140,7 +106,7 @@ template <> struct ComponentMeta<DroneComponent> {
 
     static const std::vector<FieldDescriptor> &Fields() {
         static const std::vector<FieldDescriptor> fields = {
-            CFIELD(ownerBossId, "親ボスID", "Hierarchy") 
+            CFIELD(ownerBossId, "親ボスID", "Hierarchy")
             CFIELD(localIndex, "ローカルインデックス", "Formation")
             CFIELD(totalDrones, "総ドローン数", "Formation")
             CFIELD_ENUM_U8(currentFormation, "現在の指示", kDroneFormationNames.data(), kDroneFormationNames.size(), "State")

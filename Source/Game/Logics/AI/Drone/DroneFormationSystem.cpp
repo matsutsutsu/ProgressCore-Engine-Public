@@ -3,7 +3,7 @@
 #include "DroneFormationSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
-#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h" // BossCommandComponent
+#include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
 #include "Game/Logics/AI/Drone/Formation/Formations_Attack.h"
 #include "Game/Logics/AI/Drone/Formation/Formations_Basic.h"

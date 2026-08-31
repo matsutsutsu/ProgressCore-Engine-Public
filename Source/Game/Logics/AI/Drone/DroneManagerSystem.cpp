@@ -5,7 +5,7 @@
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
 #include "Game/Logics/AI/Drone/Squad/SquadState.h"
-#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h" // BossCommandComponent
+#include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
 #include "Game/Logics/Character/Player/Components/JustEvadeComponent.h" // チェイン段数の参照
 #include "Engine/Transform/Components/TransformComponent.h"
 #include <vector>

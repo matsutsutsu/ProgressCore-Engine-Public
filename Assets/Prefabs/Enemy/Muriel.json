@@ -11,9 +11,7 @@
                     "playbackSpeed": 1.0
                 },
                 "BehaviorTreeComponent": {
-                    "assetPath": "Assets/BehaviorTree/BossCombat.json",
-                    "phase2AssetPath": "Assets/BehaviorTree/BossCombatPhase2.json",
-                    "phase2HealthThreshold": 50.0
+                    "assetPath": "Assets/BehaviorTree/BossCombat.json"
                 },
                 "BossActionComponent": {
                     "acceleration": 10.0,
@@ -28,10 +26,11 @@
                 },
                 "BossCommandComponent": {
                     "currentActionId": 1101,
-                    "requestFormation": 5,
-                    "targetPlayerId": 0
+                    "requestFormation": 5
                 },
                 "BossPhaseComponent": {
+                    "phase2AssetPath": "Assets/BehaviorTree/BossCombatPhase2.json",
+                    "phase2HealthThreshold": 50.0,
                     "phase": 0,
                     "timer": 0.0
                 },
@@ -48,6 +47,7 @@
                     ],
                     "overrideSpeed": -1.0
                 },
+                "EnemyTag": {},
                 "HealthComponent": {
                     "currentHealth": 1000.0,
                     "invincibilityDuration": 0.20000000298023224,

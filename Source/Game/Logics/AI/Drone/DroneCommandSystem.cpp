@@ -2,7 +2,7 @@
 /// @brief ボス命令をドローンへ配布する実装。1v1 前提で最初のボスの命令を全機へ配る。
 #include "DroneCommandSystem.h"
 
-#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h" // BossCommandComponent
+#include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"        // 陣形ごとの攻撃寿命
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"

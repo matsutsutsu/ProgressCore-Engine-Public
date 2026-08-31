@@ -39,6 +39,7 @@ bool BehaviorTreeLoader::LoadFromJson(const std::string& path, BTAsset& outAsset
             node.param = jNode.value("param", jNode.value("decoratorParam", 0.0f));
 
             MigrateLegacyWait(node);
+            MigrateLegacyCondition(node, jNode.value("condition", std::string()), path);
 
             if (jNode.contains("children") && jNode["children"].is_array()) {
                 for (auto& childId : jNode["children"]) {
@@ -100,6 +101,35 @@ void BehaviorTreeLoader::MigrateLegacyWait(BTNode& node)
 
     node.param               = kLegacyWaitSeconds[node.actionOrConditionId - kFirst];
     node.actionOrConditionId = CCL::AI::A_Wait;
+}
+
+
+void BehaviorTreeLoader::MigrateLegacyCondition(BTNode& node, const std::string& savedKey,
+                                                const std::string& path)
+{
+    if (node.type != BTNodeType::Condition) return;
+
+    // 現行の条件として解決済みなら何もしない（キーが正、数値IDは保険）。
+    const LegacyConditionEntry* legacy = FindLegacyCondition(savedKey, node.actionOrConditionId);
+    if (!legacy) return;
+
+    node.actionOrConditionId = legacy->newId;
+    node.param               = legacy->param;
+
+    if (legacy->ambiguous) {
+        // 「15〜40m」のような帯は1ノードでは表せない。上限だけを引き継いだので、
+        // 単独で置かれていた場合は意味が広がっている。黙って変えると気づけないため
+        // ファイル名つきで知らせる。
+        CCL_LOG_WARN(LogCategory::AI,
+            "[BT] 旧条件 \"%s\" を「距離 < %.1fm」へ読み替えた: %s "
+            "（元は帯だったので、下限が必要なら条件ノードを2つに分けること）",
+            legacy->key, legacy->param, path.c_str());
+    }
+    else {
+        CCL_LOG_INFO(LogCategory::AI,
+            "[BT] 旧条件 \"%s\" を param %.1f 付きの新条件へ読み替えた: %s",
+            legacy->key, legacy->param, path.c_str());
+    }
 }
 
 

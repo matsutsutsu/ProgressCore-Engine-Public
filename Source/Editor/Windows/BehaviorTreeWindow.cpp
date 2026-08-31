@@ -173,7 +173,10 @@ void WriteKeyAndParam(nlohmann::json &j, const EditorBTNode &node)
     else if (node.type == EditorBTNodeType::Action)
         j["action"] = SaveKeyOf(node.type, node.actionOrConditionId);
 
-    if (node.type == EditorBTNodeType::Action || node.type == EditorBTNodeType::Decorator)
+    // Condition も param を持つ（距離条件の間合いなど）。
+    //   以前は行動とデコレータしか引数を持たなかったので条件は書き出していなかった。
+    if (node.type == EditorBTNodeType::Action || node.type == EditorBTNodeType::Decorator ||
+        node.type == EditorBTNodeType::Condition)
         j["param"] = node.param;
 }
 
@@ -194,6 +197,23 @@ void MigrateLegacyWait(EditorBTNode &node)
 
     node.param               = kLegacyWaitSeconds[node.actionOrConditionId - kFirst];
     node.actionOrConditionId = CCL::AI::A_Wait;
+}
+
+/// @brief 間合いがIDに埋まっていた頃の条件を「距離条件 + param」へ読み替える。
+/// @note  ランタイム側（BehaviorTreeLoader::MigrateLegacyCondition）と同じ変換で、
+///        対応表は ActionRegistry.h の g_LegacyConditions を共有している。
+///        エディタで開いて保存し直せば、そのアセットは新形式へ移行する。
+void MigrateLegacyCondition(EditorBTNode &node, const nlohmann::json &jn)
+{
+    if (node.type != EditorBTNodeType::Condition) return;
+
+    const std::string savedKey = jn.value("condition", std::string());
+    const LegacyConditionEntry *legacy =
+        FindLegacyCondition(savedKey, node.actionOrConditionId);
+    if (!legacy) return;
+
+    node.actionOrConditionId = legacy->newId;
+    node.param               = legacy->param;
 }
 
 /// @brief 保存された行動/条件を復元する。キーが正で、数値IDは旧アセット互換。
@@ -318,6 +338,7 @@ void BehaviorTreeWindow::RestoreGraphState(const nlohmann::json& state) {
         RestoreActionId(node, jn);
         node.param = jn.value("param", jn.value("decoratorParam", 0.0f));
         MigrateLegacyWait(node);
+        MigrateLegacyCondition(node, jn);
         node.posX = jn.value("posX", 0.0f);
         node.posY = jn.value("posY", 0.0f);
 
@@ -761,8 +782,16 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext& context) {
             }
         }
         else if (node.type == EditorBTNodeType::Condition) {
-            ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "? %s",
-                GetConditionDisplayName(node.actionOrConditionId));
+            // 間合いは param に入っているので、ノードの見た目にも出す。
+            //   出さないと「距離が N m 未満」が並ぶだけで、どれが何mか分からない。
+            if (const char *paramLabel = GetConditionParamLabel(node.actionOrConditionId)) {
+                ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "? %s  [%s %.1f]",
+                    GetConditionDisplayName(node.actionOrConditionId), paramLabel, node.param);
+            }
+            else {
+                ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "? %s",
+                    GetConditionDisplayName(node.actionOrConditionId));
+            }
         }
         // =======================================================
         //  デコレーターの表示とリアルタイム・プログレスバー
@@ -1108,6 +1137,19 @@ void BehaviorTreeWindow::DrawInspector() {
                     m_executionOrderDirty = true;
                     needsUndo = true;
                     undoMessage = "Change Condition";
+
+                    // 引数を使う条件へ切り替えたのに 0 のままだと「距離0m未満」に
+                    // なって永久に成立しない。最初の1回だけ既定値を入れておく。
+                    if (GetConditionParamLabel(it->actionOrConditionId) && it->param <= 0.0f)
+                        it->param = 10.0f;
+                }
+
+                // 引数を持つ条件（間合いなど）だけ入力欄を出す。行動側と同じ仕組み。
+                if (const char *paramLabel = GetConditionParamLabel(it->actionOrConditionId)) {
+                    if (ImGui::DragFloat(paramLabel, &it->param, 0.5f, 0.0f, 500.0f, "%.1f")) {
+                        needsUndo = true;
+                        undoMessage = "Change Condition Param";
+                    }
                 }
             }
             else if (it->type == EditorBTNodeType::Action) {
@@ -1478,6 +1520,7 @@ void BehaviorTreeWindow::LoadGraph(const std::string& path) {
         RestoreActionId(node, jn);
         node.param = jn.value("param", jn.value("decoratorParam", 0.0f));
         MigrateLegacyWait(node);
+        MigrateLegacyCondition(node, jn);
         node.posX = jn["posX"];
         node.posY = jn["posY"];
         // グループサイズを復元

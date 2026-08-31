@@ -25,6 +25,8 @@ template <> struct ComponentMeta<BossPhaseComponent> {
 
     static const std::vector<FieldDescriptor>& Fields() {
         static const std::vector<FieldDescriptor> fields = {
+            CFIELD(phase2AssetPath, "第2形態AIパス", "Phase")
+            CFIELD_FLOAT_RANGED(phase2HealthThreshold, "第2形態移行HP閾値", 0.1f, 0.0f, 100.0f, "Phase")
             CFIELD_ENUM_U8(phase, "現在の大状態", kBossPhaseNames, kBossPhaseCount, "State")
             CFIELD_FLOAT_RANGED(timer, "状態滞在タイマー", 0.1f, 0.0f, 60.0f, "State")
         };

@@ -12,9 +12,10 @@
  *   実装コストと間接化だけが増えて、データ駆動の利点（再ビルドなしの編集）は
  *   BT側で既に得られている。敵が増えたら「敵ごとに小さく書く」で足りる。
  *
- * @note 調整パラメータはここに持たせない。第2形態のBTパスとHP閾値は
- *       BehaviorTreeComponent の phase2AssetPath / phase2HealthThreshold を使う
- *       （既にプレハブでシリアライズ済みのフィールドを再利用する）。
+ * @note 第2形態のBTパスとHP閾値はここに持つ。以前は BehaviorTreeComponent 側にあったが、
+ *       あれは「どの敵でも持つ汎用データ」の置き場なので、ボスにしか無い概念を置くと
+ *       敵を増やすたびに敵ごとのフィールドが溜まる。読み手（BossPhaseSystem）と
+ *       同じ層に置くのが素直。
  *
  * 形態移行の流れ:
  *   Combat --HP<=閾値--> Transition --演出時間経過--> Combat2
@@ -24,6 +25,7 @@
 #pragma once
 #include <cstdint>
 #include <cstddef>
+#include <string>
 
 // ===================================================================================
 // [ 列挙型 ] ボスの大状態
@@ -57,6 +59,13 @@ inline const char *ToString(BossPhase p)
 // ===================================================================================
 struct BossPhaseComponent
 {
+    /// @brief 第2形態で使うBTのパス。空なら形態移行そのものをしない
+    ///        （設定漏れでボスが止まるのを防ぐための安全弁）。
+    std::string phase2AssetPath;
+
+    /// @brief 第2形態へ移行するHP割合（0〜100）。
+    float phase2HealthThreshold = 50.0f;
+
     /// @brief 現在の大状態。書き手は BossPhaseSystem のみ。
     BossPhase phase = BossPhase::Combat;
 

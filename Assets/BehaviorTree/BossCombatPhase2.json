@@ -294,7 +294,7 @@
             "type": 2
         },
         {
-            "actionId": 5,
+            "actionId": 9,
             "id": 9,
             "inputPinId": 10,
             "name": "距離<8m",
@@ -302,7 +302,8 @@
             "posX": 0.0,
             "posY": 560.0,
             "type": 3,
-            "condition": "C_RangeMostClose"
+            "condition": "C_DistanceLessThan",
+            "param": 8.0
         },
         {
             "actionId": 1101,
@@ -339,7 +340,7 @@
             "type": 2
         },
         {
-            "actionId": 7,
+            "actionId": 10,
             "id": 18,
             "inputPinId": 19,
             "name": "距離>40m",
@@ -347,7 +348,8 @@
             "posX": 1000.0,
             "posY": 560.0,
             "type": 3,
-            "condition": "C_RangeFar"
+            "condition": "C_DistanceGreaterThan",
+            "param": 40.0
         },
         {
             "actionId": 1000,
@@ -919,8 +921,9 @@
         },
         {
             "type": "Condition",
-            "condition": "C_RangeMostClose",
-            "actionOrConditionId": 5,
+            "condition": "C_DistanceLessThan",
+            "param": 8.0,
+            "actionOrConditionId": 9,
             "children": []
         },
         {
@@ -939,8 +942,9 @@
         },
         {
             "type": "Condition",
-            "condition": "C_RangeFar",
-            "actionOrConditionId": 7,
+            "condition": "C_DistanceGreaterThan",
+            "param": 40.0,
+            "actionOrConditionId": 10,
             "children": []
         },
         {
