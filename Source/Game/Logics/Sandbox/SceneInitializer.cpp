@@ -8,12 +8,12 @@
 #include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"
 
 #include "Game/Core/AllComponents.h"
-#include "Game/Logics/Test/OrbitBenchmarkComponent.h"
-#include "Game/Logics/Test/VoxelOceanComponent.h"
-#include "Game/Logics/Test/LissajousOrbitComponent.h"
-#include "Game/Logics/Test/TornadoVortexComponent.h"
-#include "Game/Logics/Test/VectorFlowComponent.h"
-#include "Game/Logics/Test/BoidComponent.h"
+#include "Game/Logics/Sandbox/OrbitBenchmarkComponent.h"
+#include "Game/Logics/Sandbox/VoxelOceanComponent.h"
+#include "Game/Logics/Sandbox/LissajousOrbitComponent.h"
+#include "Game/Logics/Sandbox/TornadoVortexComponent.h"
+#include "Game/Logics/Sandbox/VectorFlowComponent.h"
+#include "Game/Logics/Sandbox/BoidComponent.h"
 
 #include <cmath>
 #include <random>

@@ -8,7 +8,7 @@
 #include "Game/Logics/AI/BehaviorTree/Actions/BTActionRegistry.h"
 
 #include "Game/Logics/AI/BehaviorTree/Actions/BTConditions.h"
-#include "Game/Logics/Character/Boss/Data/BTActions_Boss.h"
+#include "Game/Logics/Character/Boss/Actions/BTActions_Boss.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -208,6 +208,7 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
             ctx.myTransform = &myTrans;
             ctx.nodeId      = nodeId;
             ctx.dt          = dt;
+            ctx.param       = node.param;
             result = cond->Evaluate(ctx) ? BTNodeState::Success : BTNodeState::Failure;
         } else {
             result = BTNodeState::Failure;
@@ -226,6 +227,7 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
             ctx.myTransform = &myTrans;
             ctx.nodeId      = nodeId;
             ctx.dt          = dt;
+            ctx.param       = node.param;
             result = action->Execute(ctx);
         } else {
             result = BTNodeState::Failure;
@@ -242,7 +244,7 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
         if (!node.children.empty()) {
             BTNodeID childId = node.children[0];
             if (decType == 2) {   // Retry
-                int retryCount = static_cast<int>(node.decoratorParam);
+                int retryCount = static_cast<int>(node.param);
                 for (int r = 0; r < retryCount; ++r) {
                     result = EvaluateTreeRecursive(childId, btComp, myTrans, asset, entity, dt);
                     if (result != BTNodeState::Failure) break;
@@ -256,7 +258,7 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
                 else if (result == BTNodeState::Failure) result = BTNodeState::Success;
             }
             else if (decType == 1) {   // Cooldown（成功時にタイマー開始）
-                if (result == BTNodeState::Success) btComp.nodeTimers[nodeId] = node.decoratorParam;
+                if (result == BTNodeState::Success) btComp.nodeTimers[nodeId] = node.param;
             }
             else if (decType == 3) {   // Async
                 if (result == BTNodeState::Running) {

@@ -10,7 +10,7 @@
 ///     ボスが未出現／撃破済みのときはHUDを隠す（＝ボス戦中だけ画面上部に出る）。
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/Combat/HealthComponent.h"
-#include "Game/Logics/Character/Boss/Data/BossActionComponent.h"
+#include "Game/Logics/Character/Boss/Components/BossActionComponent.h"
 
 class BossHealthHudSystem : public CCL::ECS::IfSystem<BossHealthHudSystem,
                                 CCL::ECS::Read<HealthComponent>,

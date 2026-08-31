@@ -92,7 +92,7 @@ struct HighOrbitFormation : public IFormation
     static constexpr float kOrbitRadius     = 20.0f; // 円の半径（固定。詰まる/広すぎるならここを変える）
 };
 
-// … 今後 DeathRing / AegisShield / AllCharge などをここに1クラスずつ追加 …
+// … 陣形を1つ足すたびに1クラスずつここへ追加する …
 
 // ====================================================================
 // 登録
@@ -102,7 +102,6 @@ inline void RegisterAll()
     auto &reg = FormationRegistry::Instance();
     reg.Register<OrbitCircleFormation>(DroneFormationType::OrbitCircle);
     reg.Register<HighOrbitFormation>(DroneFormationType::HighOrbit);
-    // reg.Register<DeathRingFormation>(DroneFormationType::DeathRing);
     // … 追加した分だけ登録 …
 }
 

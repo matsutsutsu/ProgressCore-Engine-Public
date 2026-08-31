@@ -61,15 +61,22 @@ enum class BTNodeState : uint8_t {
     Running
 };
 
-// 1つのノード定義。メモリレイアウトを意識し、8バイトに収める。
+/// @brief 1つのノード定義。
 struct BTNode {
 	BTNodeType type;                // ノードの種類（Selector, Sequence, Condition, Action）
     ActionID   actionOrConditionId; // Action/Conditionの種類を判別するID
 
-    // デコレーター用パラメータ
-    BTDecoratorType decoratorType;
-    float decoratorParam; // クールダウン秒数やリトライ回数など
+    BTDecoratorType decoratorType;  // Decorator のときだけ意味を持つ
 
+    /// @brief このノードの数値パラメータ。意味はノードの種類が決める。
+    ///        Action     … その行動の引数（待機の秒数、近接の硬直など）
+    ///        Decorator  … クールダウン秒数 / リトライ回数
+    ///
+    /// 1つに統合した理由:
+    ///   以前は「待機0.5秒」「待機1.0秒」…と、待ち時間の違いを12個の ActionID で
+    ///   表していた。引数をIDで表すとIDが際限なく増え、しかも中間の値を作れない。
+    ///   ノードが値を1つ持てば、待機は ActionID 1つで済む。
+    float param;
 
     // 確実に子ノードのID（配列のインデックス）を保持するリストに変更
     std::vector<BTNodeID> children;

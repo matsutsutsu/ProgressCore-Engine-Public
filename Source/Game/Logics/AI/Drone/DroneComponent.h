@@ -19,59 +19,56 @@
 ///   測って見張る方式にしている。
 #pragma once
 #include <cstdint>
+#include <cstddef>
 #include "SimpleMath.h"
 #include "Engine/Serialization/Meta/ComponentMeta.h"
 #include "Engine/ECS/Common/CCL_Types.h"
 #include "Engine/Serialization/Core/EntityLink.h"
 
 
+/// @brief 陣形の一覧。ここが唯一の定義で、enum も表示名もこの表から作る。
+///
+/// 列は (識別子, 保存値, 表示名)。
+///
+/// なぜ値を手で書くのか（＝並び順に頼らないのか）:
+///   この数値はプレハブとシーンにそのまま保存されている（Muriel.json の
+///   requestFormation、Drone.json の currentFormation）。並び順を保存値にすると、
+///   途中の1行を消しただけで保存済みデータが別の陣形を指す。値を書いておけば
+///   行の削除も並べ替えも安全になる。
+///
+/// なぜ欠番があるのか:
+///   構想だけで実装されなかった技（DeathRing / SweepingBeam など21件）を
+///   2026-08 に削除した跡。欠番は埋めず、増やすときは 33 以降を使う。
+///
+/// @note 追加するときは、ここに1行足したうえで FormationRegistry へ
+///       IFormation 実装を登録する。登録が無い型は指定しても静止するだけ。
+#define DRONE_FORMATION_LIST(X)                             \
+    X(Hidden,                   0, "収納（命令なし）")      \
+    X(OrbitCircle,              1, "降下円陣")              \
+    X(HighOrbit,                5, "頭上円陣")              \
+    X(KamikazeSwarm,           17, "弾幕")                  \
+    X(SideSlapWhip,            22, "横なぎ回転")            \
+    X(GuillotineSlam,          24, "縦割り")                \
+    X(ClapSlam,                25, "挟み込み1段")           \
+    X(TsunamiWave,             26, "波状縦割り・左→右")     \
+    X(MegaClapSlam_UpperFirst, 27, "挟み込み2段・上段先攻") \
+    X(MegaClapSlam_LowerFirst, 28, "挟み込み2段・下段先攻") \
+    X(TsunamiWave_RL,          31, "波状縦割り・右→左")     \
+    X(SquadAssault,            32, "小隊突撃")
+
 /// @brief ボスがドローン群へ出す「どの形を作れ」の指示。
 /// @note  BossCommandComponent 側でもそのまま使う。
-///        未実装の値は FormationRegistry が nullptr を返し、指定されても静止するだけ。
-enum class DroneFormationType : uint8_t {
-    Hidden,          ///< ボスに収納されている状態
-    OrbitCircle,     ///< ボスを中心に円陣を描く
-    HighOrbitSnipe,  ///< 【上空狙撃】上空待機からゆっくりと順番に狙撃し、一定距離で停止する
-    DeathRing,       ///< プレイヤーの周囲を囲む「処刑の輪」
-    AegisShield,     ///< ボスの前面に壁を作る「絶対防衛陣」
-    HighOrbit,       ///< ボスの頭上高くで旋回
-    LowOrbit,        ///< ボスと同じ高さで旋回
-    SpreadLockOn,    ///< 大きく広がって静止（タメ）
-    AllCharge,       ///< 現在のプレイヤー位置へ一斉突撃
-    CloseGuard,      ///< ボスに密着してガードする
-    BarrierBurst,    ///< 収縮からの全方位拡散爆発
-    ChargeTunnel,    ///< 突進用の通路制限
-    HoldPosition,    ///< 現在の空間位置に固定
-    DirectionalCharge, ///< 全員で同じ方向へ一斉平行突撃
-    CycloneBurst,    ///< 円陣から収縮・加速して平面放射
-
-    // ---- 第2形態用 ----
-    HighLowOrbit,        ///< 【双層の輪廻】偶数・奇数で高さが分かれる2段円陣
-    CrossHelix,          ///< 【交差螺旋】2群に分かれて逆回転する弾幕陣形
-    KamikazeSwarm,       ///< 【暴雨の号令】息もつかせぬ超連続カミカゼ突撃
-    HighLowCycloneBurst, ///< 【双層の竜巻】上下2段でタイミングをずらした時間差放射
-
-    // ---- 第2形態・128機用 ----
-    SweepingBeam,    ///< 【絶望の秒針】超巨大な回転レーザー
-    InfinityEight,   ///< 【輪廻の軌道】上空で8の字を描く
-    SwarmRiver,      ///< 【暴虐の濁流】うねりながら押し寄せる波
-
-    SideSlapWhip,    ///< 【側面薙ぎ払い】右側に縦列で並び、左へ一気に薙ぎ払う
-    InfinitySnipe,   ///< 8の字を描きながら交差射撃
-    GuillotineSlam,  ///< 【縦割り】頭上に巨大な刃を作り、正面に振り下ろす
-    ClapSlam,        ///< 【両手挟み】左右に1列で展開し、正面でバチンと挟み込む
-
-    TsunamiWave,                 ///< 【波状縦割り・左→右】真ん中から降りて波のように押し寄せる
-    MegaClapSlam_UpperFirst,     ///< 128機マトリクス：上段が先に挟み込む
-    MegaClapSlam_LowerFirst,     ///< 128機マトリクス：下段が先に挟み込む
-    MegaShieldCharge_UpperFirst, ///< 128機マトリクス：上段が先に盾突撃
-    MegaShieldCharge_LowerFirst, ///< 128機マトリクス：下段が先に盾突撃
-    TsunamiWave_RL,              ///< 【波状縦割り・右→左】右端から順に倒れてくる波
-
-    SquadAssault,    ///< 【小隊突撃】5機で一列縦隊を組み、先頭がプレイヤーを追う。
-                     ///  全機で1つの形を作る他の技と違い、小隊ごとに独立して動く
+enum class DroneFormationType : uint8_t
+{
+#define CCL_DRONE_FORMATION_ENUM(Name, Value, Display) Name = Value,
+    DRONE_FORMATION_LIST(CCL_DRONE_FORMATION_ENUM)
+#undef CCL_DRONE_FORMATION_ENUM
 };
 
+/// @brief 保存値として使いうる番号の上限+1（欠番ぶんを含む）。
+/// @note  インスペクタの列挙表示は「値をそのまま配列の添字にする」ため、
+///        名前テーブルは詰めた長さではなくこの長さで作る必要がある。
+inline constexpr size_t kDroneFormationSlotCount = 33;
 
 /// @brief ドローン個体の物理ステート。書き手は DroneBrainSystem のみ。
 ///

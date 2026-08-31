@@ -80,12 +80,13 @@ struct EditorBTNode {
     float width = 400.0f;
     float height = 400.0f;
 
-    float paramValue1 = 0.0f; // 例: 突進速度
-    std::string targetKey = "Player"; // 例: Blackboardのキー
-
     // デコレーター設定
     int decoratorType = 0;
-    float decoratorParam = 0.0f;
+
+    /// @brief このノードの数値パラメータ。BTNode::param と1対1で対応する。
+    ///        Action    … 行動の引数（待機の秒数、近接の硬直など）
+    ///        Decorator … クールダウン秒数 / リトライ回数
+    float param = 0.0f;
 
     // ランタイム側のノードと対応付けるためのインデックス。
     // Bake 時に「フラット配列の何番目になったか」を記憶しておく

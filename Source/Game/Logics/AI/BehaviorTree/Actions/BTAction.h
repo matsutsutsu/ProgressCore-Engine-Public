@@ -39,6 +39,11 @@ namespace CCL::AI::BT
         // --- ノード情報 ---
         BTNodeID nodeId = 0;   // nodeTimers[nodeId] を引くのに使う
         float    dt     = 0.0f;
+
+        /// @brief このノードに設定された数値パラメータ（BTNode::param）。
+        ///        待機の秒数や近接の硬直など、行動の引数をここから受け取る。
+        ///        使わない行動は無視してよい（既定 0）。
+        float    param  = 0.0f;
     };
 
 

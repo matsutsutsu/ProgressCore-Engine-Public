@@ -20,7 +20,7 @@
 ///   大状態を確定させる必要があるため、ここは動かせない。
 #pragma once
 #include "Engine/ECS/System/CCL_IfSystem.h"
-#include "Game/Logics/Character/Boss/Data/BossPhaseComponent.h"
+#include "Game/Logics/Character/Boss/Components/BossPhaseComponent.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h" // BehaviorTreeComponent / BossCommandComponent
 #include "Game/Logics/Combat/HealthComponent.h"
 #include "Engine/Animation/Components/AnimParametersComponent.h"

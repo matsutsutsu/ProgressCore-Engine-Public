@@ -9,7 +9,7 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Serialization/Core/EntityLink.h"
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"
-#include "Game/Logics/Character/Boss/Data/BossPhaseComponent.h"
+#include "Game/Logics/Character/Boss/Components/BossPhaseComponent.h"
 
 using namespace CCL::ECS;
 

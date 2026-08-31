@@ -5,6 +5,7 @@
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeLoader.h"
 #include "Game/Logics/AI/Drone/DroneComponent.h"
+#include <array>
 #include "Engine/Serialization/Registry/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
@@ -17,16 +18,27 @@
 #include <imgui.h>
 #endif
 
-// DroneFormationType と1対1で並べる（順番がずれると別の陣形名が表示される）
-static const char *DroneFormationNames[] = {
-    "Hidden", "OrbitCircle", "HighOrbitSnipe", "DeathRing", "AegisShield",
-    "HighOrbit", "LowOrbit", "SpreadLockOn", "AllCharge", "CloseGuard",
-    "BarrierBurst", "ChargeTunnel", "HoldPosition", "DirectionalCharge", "CycloneBurst",
-    "HighLowOrbit", "CrossHelix", "KamikazeSwarm", "HighLowCycloneBurst", "SweepingBeam",
-    "InfinityEight", "SwarmRiver", "SideSlapWhip", "InfinitySnipe", "GuillotineSlam",
-    "ClapSlam", "TsunamiWave", "MegaClapSlam_UpperFirst", "MegaClapSlam_LowerFirst",
-    "MegaShieldCharge_UpperFirst", "MegaShieldCharge_LowerFirst", "TsunamiWave_RL",
-    "SquadAssault"};
+/// @brief インスペクタの列挙表示用の陣形名。
+///
+/// なぜ欠番ぶんも含む長さで作るのか:
+///   列挙表示は「保存値をそのまま配列の添字にする」実装なので、実装済みだけを
+///   詰めた配列にすると、値5(HighOrbit)が3番目の名前で表示される。
+///
+/// なぜ手書きの配列をやめたのか:
+///   以前は33個の名前を並び順で対応させていた。enum を1行消すだけで
+///   以降の全部が1つずれ、しかもコンパイルは通る。DRONE_FORMATION_LIST から
+///   生成すれば、名前と値の対応を人間が保つ必要がなくなる。
+static constexpr std::array<const char *, kDroneFormationSlotCount> MakeDroneFormationNames()
+{
+    std::array<const char *, kDroneFormationSlotCount> names{};
+    for (auto &n : names) n = "(欠番)";
+#define CCL_DRONE_FORMATION_NAME(Name, Value, Display) names[Value] = Display;
+    DRONE_FORMATION_LIST(CCL_DRONE_FORMATION_NAME)
+#undef CCL_DRONE_FORMATION_NAME
+    return names;
+}
+static constexpr auto kDroneFormationNames = MakeDroneFormationNames();
+
 static const char *DroneStateNames[] = {
     "Idle", "MoveToTarget", "FireCharge", "Stunned", "Returning"};
 
@@ -104,7 +116,7 @@ template <> struct ComponentMeta<BossCommandComponent> {
     static const std::vector<FieldDescriptor>& Fields() {
         static const std::vector<FieldDescriptor> fields = {
             CFIELD(currentActionId, "現在のActionID", "Current Command")
-            CFIELD_ENUM_U8(requestFormation, "フォーメーション要求", DroneFormationNames, std::size(DroneFormationNames), "Drone Control")
+            CFIELD_ENUM_U8(requestFormation, "フォーメーション要求", kDroneFormationNames.data(), kDroneFormationNames.size(), "Drone Control")
             CFIELD(targetPlayerId, "ターゲット(Player)ID", "Drone Control")
         };
         return fields;
@@ -131,7 +143,7 @@ template <> struct ComponentMeta<DroneComponent> {
             CFIELD(ownerBossId, "親ボスID", "Hierarchy") 
             CFIELD(localIndex, "ローカルインデックス", "Formation")
             CFIELD(totalDrones, "総ドローン数", "Formation")
-            CFIELD_ENUM_U8(currentFormation, "現在の指示", DroneFormationNames, std::size(DroneFormationNames), "State")
+            CFIELD_ENUM_U8(currentFormation, "現在の指示", kDroneFormationNames.data(), kDroneFormationNames.size(), "State")
             CFIELD_ENUM_U8(currentState, "現在ステート", DroneStateNames, std::size(DroneStateNames), "State")
             CFIELD(hasReachedSlot, "スロット到着済み", "State")
             CFIELD(stateTimer, "状態タイマー", "State")

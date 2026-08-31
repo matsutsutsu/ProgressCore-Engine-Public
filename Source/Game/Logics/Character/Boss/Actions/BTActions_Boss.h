@@ -18,11 +18,11 @@ namespace CCL::AI::BT::BossActions
 // ====================================================================
 // ① 待機系（汎用：bt の nodeTimers だけ使う。ボス非依存）
 // ====================================================================
+/// @brief 待つ。待ち時間はノードの param（秒）から取る。
+/// @note  以前は「0.5秒」「1.0秒」…と12個の ActionID に分かれていた。
+///        引数をIDで表すとIDが増える一方で、しかも中間の値を作れない。
 struct WaitAction : public IBTAction
 {
-    float duration;
-    explicit WaitAction(float sec) : duration(sec) {}
-
     BTNodeState Execute(BTContext &ctx) override
     {
         auto &timers = ctx.bt->nodeTimers;
@@ -30,7 +30,7 @@ struct WaitAction : public IBTAction
             return BTNodeState::Failure;
 
         if (timers[ctx.nodeId] == -1.0f)
-            timers[ctx.nodeId] = duration;
+            timers[ctx.nodeId] = ctx.param;
 
         if (timers[ctx.nodeId] > 0.0f)
             return BTNodeState::Running;
@@ -94,10 +94,13 @@ struct DroneAction : public IBTAction
     {
         ctx.bt->lastLogActionId = id;
 
+        // 対応する陣形を引く。ActionRegistry.h の DRONE_ACTION_LIST が唯一の対応表。
+        DroneFormationType formation = DroneFormationType::Hidden;
+        if (!TryGetDroneFormation(id, formation)) return BTNodeState::Failure;
+
         // ボス固有の出力先（requestFormation）を自分で取得して書く
         if (auto *cmd = ctx.world->GetComponent<BossCommandComponent>(ctx.entity)) {
-            cmd->requestFormation =
-                static_cast<DroneFormationType>(id - 2000 + 1);
+            cmd->requestFormation = formation;
 
             // 陣形の指示 = 「形を作る（予備動作/帰投）」フェーズなので攻撃信号は下ろす。
             // 突撃（リリース）は後続の DroneStrikeAction が明示的に立てる。
@@ -139,11 +142,11 @@ struct DroneStrikeAction : public IBTAction
 struct MeleeAttackAction : public IBTAction
 {
     uint32_t triggerHash;
-    float    duration;
+    float    defaultDuration; ///< ノードの param が未設定(0)のときに使う硬直
     ActionID id;
 
-    MeleeAttackAction(uint32_t hash, float dur, ActionID actionId)
-        : triggerHash(hash), duration(dur), id(actionId) {}
+    MeleeAttackAction(uint32_t hash, float fallbackDur, ActionID actionId)
+        : triggerHash(hash), defaultDuration(fallbackDur), id(actionId) {}
 
     BTNodeState Execute(BTContext &ctx) override
     {
@@ -158,7 +161,8 @@ struct MeleeAttackAction : public IBTAction
         // 開始フレーム：アニメのトリガーを1回だけ引く（＝攻撃発生の合図）
         if (timers[ctx.nodeId] == -1.0f)
         {
-            timers[ctx.nodeId] = duration;
+            // 硬直はノード側で調整できる。0 のままなら従来どおりの既定値を使う。
+            timers[ctx.nodeId] = (ctx.param > 0.0f) ? ctx.param : defaultDuration;
             if (auto *anim = ctx.world->GetComponent<AnimParametersComponent>(ctx.entity))
                 anim->SetTrigger(triggerHash);
         }
@@ -178,29 +182,22 @@ inline void RegisterAll()
 {
     auto &reg = BTActionRegistry::Instance();
 
-    // 近接：薙ぎ払い（アニメのトリガー名 "Slash" / 硬直 0.8s）
+    // 近接：薙ぎ払い（アニメのトリガー名 "Slash"）。硬直の既定は 0.8s で、
+    //   ノードの param が入っていればそちらが勝つ。
     reg.RegisterActionInstance(::CCL::AI::A_BossSlash,
         std::make_unique<MeleeAttackAction>(CCL::Utils::HashString("Slash"), 0.8f, ::CCL::AI::A_BossSlash));
 
-    reg.RegisterActionInstance(::CCL::AI::A_Wait0_5s,  std::make_unique<WaitAction>(0.5f));
-    reg.RegisterActionInstance(::CCL::AI::A_Wait1_0s,  std::make_unique<WaitAction>(1.0f));
-    reg.RegisterActionInstance(::CCL::AI::A_Wait1_5s,  std::make_unique<WaitAction>(1.5f));
-    reg.RegisterActionInstance(::CCL::AI::A_Wait2_0s,  std::make_unique<WaitAction>(2.0f));
-    reg.RegisterActionInstance(::CCL::AI::A_Wait3_0s,  std::make_unique<WaitAction>(3.0f));
-    reg.RegisterActionInstance(::CCL::AI::A_Wait4_0s,  std::make_unique<WaitAction>(4.0f));
-    reg.RegisterActionInstance(::CCL::AI::A_Wait5_0s,  std::make_unique<WaitAction>(5.0f));
-    reg.RegisterActionInstance(::CCL::AI::A_Wait6_0s,  std::make_unique<WaitAction>(6.0f));
-    reg.RegisterActionInstance(::CCL::AI::A_Wait7_0s,  std::make_unique<WaitAction>(7.0f));
-    reg.RegisterActionInstance(::CCL::AI::A_Wait8_0s,  std::make_unique<WaitAction>(8.0f));
-    reg.RegisterActionInstance(::CCL::AI::A_Wait9_0s,  std::make_unique<WaitAction>(9.0f));
-    reg.RegisterActionInstance(::CCL::AI::A_Wait10_0s, std::make_unique<WaitAction>(10.0f));
+    reg.RegisterAction<WaitAction>(::CCL::AI::A_Wait);
 
     reg.RegisterAction<ResetDamageAction>(::CCL::AI::A_ResetDamage);
     reg.RegisterAction<MoveAction>(::CCL::AI::A_Move);
     reg.RegisterAction<DroneStrikeAction>(::CCL::AI::A_DroneStrike);
 
-    for (ActionID id = ::CCL::AI::A_DroneFirst; id <= ::CCL::AI::A_DroneLast; ++id)
-        reg.RegisterActionInstance(id, std::make_unique<DroneAction>(id));
+    // 陣形指示は全部おなじ DroneAction。ActionRegistry.h の表から直接登録するので、
+    // 技を足しても消してもここは触らない（連番ループだと欠番も登録してしまう）。
+#define CCL_REGISTER_DRONE_ACTION(Name, Id, Formation, Display)     reg.RegisterActionInstance(::CCL::AI::Name, std::make_unique<DroneAction>(::CCL::AI::Name));
+    BT_DRONE_ACTION_LIST(CCL_REGISTER_DRONE_ACTION)
+#undef CCL_REGISTER_DRONE_ACTION
 }
 
 } // namespace CCL::AI::BT::BossActions

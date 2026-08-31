@@ -92,11 +92,11 @@ bool BehaviorTreeWindow::DrawActionCombo(const char* label, ActionID& currentId)
     const char* preview = GetActionDisplayName(currentId);
 
     if (ImGui::BeginCombo(label, preview)) {
-        const char* lastCategory = nullptr;
+        BTCategory lastCategory = BTCategory::None;
         for (int i = 0; i < g_ActionRegistryCount; ++i) {
             const ActionEntry& e = g_ActionRegistry[i];
-            if (e.category && (!lastCategory || std::strcmp(e.category, lastCategory) != 0)) {
-                ImGui::SeparatorText(e.category);
+            if (i == 0 || e.category != lastCategory) {
+                ImGui::SeparatorText(CategoryName(e.category));
                 lastCategory = e.category;
             }
             const bool selected = (e.id == currentId);
@@ -118,11 +118,11 @@ bool BehaviorTreeWindow::DrawConditionCombo(const char* label, ActionID& current
     const char* preview = GetConditionDisplayName(currentId);
 
     if (ImGui::BeginCombo(label, preview)) {
-        const char* lastCategory = nullptr;
+        BTCategory lastCategory = BTCategory::None;
         for (int i = 0; i < g_ConditionRegistryCount; ++i) {
             const ActionEntry& e = g_ConditionRegistry[i];
-            if (e.category && (!lastCategory || std::strcmp(e.category, lastCategory) != 0)) {
-                ImGui::SeparatorText(e.category);
+            if (i == 0 || e.category != lastCategory) {
+                ImGui::SeparatorText(CategoryName(e.category));
                 lastCategory = e.category;
             }
             const bool selected = (e.id == currentId);
@@ -152,6 +152,69 @@ BehaviorTreeWindow::BehaviorTreeWindow() : EditorWindow("Behavior Tree Editor") 
     CreateNode(EditorBTNodeType::Root, "ROOT", 0.0f, 0.0f);
 }
 
+namespace {
+/// @brief ノードをアセットに保存するときのキー文字列。
+/// @note  数値IDではなく名前で保存する。IDは追加のたびに増えるだけの内部都合で、
+///        JSONを開いた人間には読めないため。未登録IDは "None" として書き出す
+///        （数値IDも併記されるので、情報は失われない）。
+const char *SaveKeyOf(EditorBTNodeType type, ActionID id)
+{
+    const ActionEntry *e = (type == EditorBTNodeType::Condition) ? FindConditionEntry(id)
+                                                                 : FindActionEntry(id);
+    return e ? e->key : "None";
+}
+
+/// @brief 保存キーと param を書き出す。意味を持つノードにだけ書く。
+/// @note  Selector/Sequence に "action": "None" が並ぶとJSONが読みづらくなるため。
+void WriteKeyAndParam(nlohmann::json &j, const EditorBTNode &node)
+{
+    if (node.type == EditorBTNodeType::Condition)
+        j["condition"] = SaveKeyOf(node.type, node.actionOrConditionId);
+    else if (node.type == EditorBTNodeType::Action)
+        j["action"] = SaveKeyOf(node.type, node.actionOrConditionId);
+
+    if (node.type == EditorBTNodeType::Action || node.type == EditorBTNodeType::Decorator)
+        j["param"] = node.param;
+}
+
+/// @brief 待ち時間がActionIDに埋まっていた頃のグラフを「A_Wait + param」へ読み替える。
+/// @note  ランタイム側（BehaviorTreeLoader::MigrateLegacyWait）と同じ変換。
+///        エディタで開いて保存し直せば、そのアセットは新形式へ移行する。
+void MigrateLegacyWait(EditorBTNode &node)
+{
+    if (node.type != EditorBTNodeType::Action) return;
+
+    static constexpr float kLegacyWaitSeconds[] = {
+        0.5f, 1.0f, 1.5f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f
+    };
+    constexpr ActionID kFirst = 100;
+    constexpr ActionID kLast  = 111;
+
+    if (node.actionOrConditionId < kFirst || node.actionOrConditionId > kLast) return;
+
+    node.param               = kLegacyWaitSeconds[node.actionOrConditionId - kFirst];
+    node.actionOrConditionId = CCL::AI::A_Wait;
+}
+
+/// @brief 保存された行動/条件を復元する。キーが正で、数値IDは旧アセット互換。
+void RestoreActionId(EditorBTNode &node, const nlohmann::json &jn)
+{
+    node.actionOrConditionId = static_cast<ActionID>(jn.value("actionId", 0));
+
+    const bool  isCondition = (node.type == EditorBTNodeType::Condition);
+    const char *keyField    = isCondition ? "condition" : "action";
+    if (!jn.contains(keyField) || !jn[keyField].is_string()) return;
+
+    const std::string key = jn[keyField].get<std::string>();
+    if (key.empty() || key == "None") return;
+
+    ActionID resolved = 0;
+    const bool found = isCondition ? TryFindConditionIdByKey(key, resolved)
+                                   : TryFindActionIdByKey(key, resolved);
+    if (found) node.actionOrConditionId = resolved;
+}
+} // namespace
+
 BehaviorTreeWindow::~BehaviorTreeWindow() {
     if (m_nodeContext) ed::DestroyEditor(m_nodeContext);
 }
@@ -172,6 +235,7 @@ nlohmann::json BehaviorTreeWindow::GetGraphStateAsJson() {
         jn["type"] = static_cast<int>(node.type);
         jn["name"] = node.name;
         jn["actionId"] = static_cast<int>(node.actionOrConditionId);
+        WriteKeyAndParam(jn, node);
 
         // ピンのID
         jn["inputPinId"] = node.inputPin.id;
@@ -197,7 +261,6 @@ nlohmann::json BehaviorTreeWindow::GetGraphStateAsJson() {
         // デコレーター固有のデータ
         if (node.type == EditorBTNodeType::Decorator) {
             jn["decoratorType"] = node.decoratorType;
-            jn["decoratorParam"] = node.decoratorParam;
         }
 
         jNodes.push_back(jn);
@@ -252,7 +315,9 @@ void BehaviorTreeWindow::RestoreGraphState(const nlohmann::json& state) {
         node.id = jn["id"];
         node.type = static_cast<EditorBTNodeType>(jn["type"].get<int>());
         node.name = jn.value("name", "Unknown");
-        node.actionOrConditionId = static_cast<ActionID>(jn.value("actionId", 0));
+        RestoreActionId(node, jn);
+        node.param = jn.value("param", jn.value("decoratorParam", 0.0f));
+        MigrateLegacyWait(node);
         node.posX = jn.value("posX", 0.0f);
         node.posY = jn.value("posY", 0.0f);
 
@@ -262,7 +327,6 @@ void BehaviorTreeWindow::RestoreGraphState(const nlohmann::json& state) {
         }
         if (node.type == EditorBTNodeType::Decorator) {
             node.decoratorType = jn.value("decoratorType", 0);
-            node.decoratorParam = jn.value("decoratorParam", 0.0f);
         }
 
         node.inputPin = { jn.value("inputPinId", 0u), node.id, true };
@@ -677,8 +741,14 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext& context) {
         }
 
         if (node.type == EditorBTNodeType::Action) {
-            ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "> %s",
-                GetActionDisplayName(node.actionOrConditionId));
+            if (const char *paramLabel = GetActionParamLabel(node.actionOrConditionId)) {
+                ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "> %s  [%s %.2f]",
+                    GetActionDisplayName(node.actionOrConditionId), paramLabel, node.param);
+            }
+            else {
+                ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "> %s",
+                    GetActionDisplayName(node.actionOrConditionId));
+            }
 
             // Waitアクション時の残り時間リアルタイム表示
             if (activeAI && node.runtimeFlatIndex >= 0
@@ -714,7 +784,7 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext& context) {
                         ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Cooling: %.1fs", currentTimer);
 
                         // プログレスバー（ゲージ）の描画
-                        float maxTime = (std::max)(0.001f, node.decoratorParam); // ゼロ除算防止
+                        float maxTime = (std::max)(0.001f, node.param); // ゼロ除算防止
                         float fraction = 1.0f - (currentTimer / maxTime); // 0.0(空) 〜 1.0(満タン)
 
                         // プログレスバーの色を赤っぽくする
@@ -1047,6 +1117,19 @@ void BehaviorTreeWindow::DrawInspector() {
                     m_executionOrderDirty = true;
                     needsUndo = true;
                     undoMessage = "Change Action";
+
+                    // 引数を使う行動へ切り替えたのに 0 のままだと「置いたのに何も起きない」
+                    // ように見えるので、最初の1回だけ既定値を入れておく。
+                    if (GetActionParamLabel(it->actionOrConditionId) && it->param <= 0.0f)
+                        it->param = 1.0f;
+                }
+
+                // 引数を持つ行動（待機の秒数、近接の硬直など）だけ入力欄を出す
+                if (const char *paramLabel = GetActionParamLabel(it->actionOrConditionId)) {
+                    if (ImGui::DragFloat(paramLabel, &it->param, 0.1f, 0.0f, 60.0f, "%.2f")) {
+                        needsUndo = true;
+                        undoMessage = "Change Action Param";
+                    }
                 }
 
                 // 選択中アクションの補足（最小構成 BossAction との対応）
@@ -1085,7 +1168,7 @@ void BehaviorTreeWindow::DrawInspector() {
 
                 if (it->decoratorType == 1) { // Cooldown
                     // ドラッグ中は数値を変えるだけ
-                    ImGui::DragFloat("待機時間 (秒)", &it->decoratorParam, 0.1f, 0.0f, 60.0f);
+                    ImGui::DragFloat("待機時間 (秒)", &it->param, 0.1f, 0.0f, 60.0f);
 
                     // マウスを離した時だけUndo記録
                     if (ImGui::IsItemDeactivatedAfterEdit()) {
@@ -1094,9 +1177,9 @@ void BehaviorTreeWindow::DrawInspector() {
                     }
                 }
                 else if (it->decoratorType == 2) { // Retry
-                    int retryCount = static_cast<int>(it->decoratorParam);
+                    int retryCount = static_cast<int>(it->param);
                     if (ImGui::DragInt("リトライ回数", &retryCount, 1, 1, 10)) {
-                        it->decoratorParam = static_cast<float>(retryCount);
+                        it->param = static_cast<float>(retryCount);
                     }
                     if (ImGui::IsItemDeactivatedAfterEdit()) {
                         needsUndo = true;
@@ -1210,6 +1293,7 @@ void BehaviorTreeWindow::SaveGraph(const std::string& path) {
         jn["type"] = static_cast<int>(node.type);
         jn["name"] = node.name;
         jn["actionId"] = static_cast<int>(node.actionOrConditionId);
+        WriteKeyAndParam(jn, node);
 
         // ピンのIDを保存。これがリンクの復元に不可欠。
         jn["inputPinId"] = node.inputPin.id;
@@ -1226,7 +1310,6 @@ void BehaviorTreeWindow::SaveGraph(const std::string& path) {
         // デコレーターのパラメータを保存する
         if (node.type == EditorBTNodeType::Decorator) {
             jn["decoratorType"] = node.decoratorType;
-            jn["decoratorParam"] = node.decoratorParam;
         }
 
         jNodes.push_back(jn);
@@ -1324,6 +1407,7 @@ nlohmann::json BehaviorTreeWindow::BuildBakedNodes() {
     nlohmann::json rootJson;
     rootJson["type"] = getRuntimeTypeString(actualRoot->type);
     rootJson["actionOrConditionId"] = static_cast<int>(actualRoot->actionOrConditionId);
+    WriteKeyAndParam(rootJson, *actualRoot);
     rootJson["children"] = nlohmann::json::array(); // 配列として初期化
     jsonNodes.push_back(rootJson);
 
@@ -1341,12 +1425,12 @@ nlohmann::json BehaviorTreeWindow::BuildBakedNodes() {
             nlohmann::json childJson;
             childJson["type"] = getRuntimeTypeString(child->type);
             childJson["actionOrConditionId"] = static_cast<int>(child->actionOrConditionId);
+            WriteKeyAndParam(childJson, *child);
             childJson["children"] = nlohmann::json::array(); // 配列として初期化
 
             // デコレーター情報のBake
             if (child->type == EditorBTNodeType::Decorator) {
                 childJson["decoratorType"] = child->decoratorType;
-                childJson["decoratorParam"] = child->decoratorParam;
             }
 
             child->runtimeFlatIndex = static_cast<int>(jsonNodes.size());
@@ -1391,7 +1475,9 @@ void BehaviorTreeWindow::LoadGraph(const std::string& path) {
         node.id = jn["id"];
         node.type = static_cast<EditorBTNodeType>(jn["type"].get<int>());
         node.name = jn["name"];
-        node.actionOrConditionId = static_cast<ActionID>(jn["actionId"].get<int>());
+        RestoreActionId(node, jn);
+        node.param = jn.value("param", jn.value("decoratorParam", 0.0f));
+        MigrateLegacyWait(node);
         node.posX = jn["posX"];
         node.posY = jn["posY"];
         // グループサイズを復元
@@ -1405,7 +1491,7 @@ void BehaviorTreeWindow::LoadGraph(const std::string& path) {
         // =======================================================
         if (node.type == EditorBTNodeType::Decorator) {
             node.decoratorType = jn.value("decoratorType", 0);
-            node.decoratorParam = jn.value("decoratorParam", 0.0f);
+
         }
 
         // GetNextId() を使わず、保存されたIDをそのままセットする

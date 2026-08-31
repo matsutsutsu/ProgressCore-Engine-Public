@@ -15,7 +15,7 @@
 ///   これにより物理のジッタや押し出しでアニメがちらつかず、ボスの意図どおりに動く。
 #pragma once
 #include "Engine/ECS/System/CCL_IfSystem.h"
-#include "Game/Logics/Character/Boss/Data/BossActionComponent.h"
+#include "Game/Logics/Character/Boss/Components/BossActionComponent.h"
 #include "Engine/Animation/Components/AnimParametersComponent.h"
 
 class BossAnimSyncSystem : public CCL::ECS::IfSystem<

@@ -126,13 +126,10 @@
     <Filter Include="Source\Engine\UI\ImGui">
       <UniqueIdentifier>{4c3ff29b-8223-48fe-9ed2-adbda18fe524}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Game\GameEvent">
-      <UniqueIdentifier>{6d456466-192c-420e-8be4-6fe0a14e4d5b}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\Serialization\Meta">
       <UniqueIdentifier>{bb611d4c-bc75-4a8d-8a31-1810ea67ad4d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Game\Logics\Test">
+    <Filter Include="Source\Game\Logics\Sandbox">
       <UniqueIdentifier>{7de38b51-de5a-4cbe-a640-02ac89b89766}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Audio">
@@ -354,9 +351,6 @@
     <Filter Include="Source\Engine\Scene">
       <UniqueIdentifier>{7f38b8d1-c534-467b-a01f-b70e1a1e78c4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Game\Logics\AI\BehaviorTree\_Meta">
-      <UniqueIdentifier>{8ef38902-d889-483c-9b95-bbfdb73fdd31}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\Transform">
       <UniqueIdentifier>{e93fa87e-0ab4-4452-a394-951efe2500a8}</UniqueIdentifier>
     </Filter>
@@ -402,8 +396,8 @@
     <Filter Include="Source\Game\Logics\Combat">
       <UniqueIdentifier>{f9e98694-67ee-43f9-8feb-4ed9c3cab61a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Game\Logics\Combat\_Meta">
-      <UniqueIdentifier>{0a94ac07-4f26-4cc2-a563-eb0d04156a23}</UniqueIdentifier>
+    <Filter Include="Source\Game\Logics\GameEvent">
+      <UniqueIdentifier>{23990d84-3342-4689-a3d4-461184605054}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Game\Logics\Character\Player\Components">
       <UniqueIdentifier>{b32b3cba-14b1-49d4-a485-70088a470068}</UniqueIdentifier>
@@ -532,8 +526,11 @@
     <Filter Include="Source\Game\Logics\Character\Boss">
       <UniqueIdentifier>{b874cd55-47ee-462e-bbe1-8d273659c62b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Game\Logics\Character\Boss\Data">
+    <Filter Include="Source\Game\Logics\Character\Boss\Components">
       <UniqueIdentifier>{564ce338-6c03-425b-b433-b62c4bf26631}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\Character\Boss\Actions">
+      <UniqueIdentifier>{515f7851-360f-4db1-aa18-84123b33f484}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Game\Logics\Character\Boss\Systems">
       <UniqueIdentifier>{26282c6a-b038-4c3e-9623-0dd3a09282da}</UniqueIdentifier>
@@ -687,8 +684,8 @@
     <ClInclude Include="Source\Engine\Serialization\Factory\Prefab.h">
       <Filter>Source\Engine\Serialization\Factory</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Test\SceneInitializer.h">
-      <Filter>Source\Game\Logics\Test</Filter>
+    <ClInclude Include="Source\Game\Logics\Sandbox\SceneInitializer.h">
+      <Filter>Source\Game\Logics\Sandbox</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Combat\HealthComponent.h">
       <Filter>Source\Game\Logics\Combat</Filter>
@@ -814,13 +811,13 @@
       <Filter>Source\Engine\Graphics\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\GameEvent\GameOverResource.h">
-      <Filter>Source\Game\GameEvent</Filter>
+      <Filter>Source\Game\Logics\GameEvent</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\GameEvent\GameStateMode.h">
-      <Filter>Source\Game\GameEvent</Filter>
+      <Filter>Source\Game\Logics\GameEvent</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\GameEvent\GameEvents.h">
-      <Filter>Source\Game\GameEvent</Filter>
+      <Filter>Source\Game\Logics\GameEvent</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Combat\DeadTag.h">
       <Filter>Source\Game\Logics\Combat</Filter>
@@ -846,17 +843,17 @@
     <ClInclude Include="Source\Engine\Serialization\Factory\EntityFactory.h">
       <Filter>Source\Engine\Serialization\Factory</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Test\OrbitBenchmarkComponent.h">
-      <Filter>Source\Game\Logics\Test</Filter>
+    <ClInclude Include="Source\Game\Logics\Sandbox\OrbitBenchmarkComponent.h">
+      <Filter>Source\Game\Logics\Sandbox</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Test\ECSBenchmarkSystem.h">
-      <Filter>Source\Game\Logics\Test</Filter>
+    <ClInclude Include="Source\Game\Logics\Sandbox\ECSBenchmarkSystem.h">
+      <Filter>Source\Game\Logics\Sandbox</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Test\VoxelOceanComponent.h">
-      <Filter>Source\Game\Logics\Test</Filter>
+    <ClInclude Include="Source\Game\Logics\Sandbox\VoxelOceanComponent.h">
+      <Filter>Source\Game\Logics\Sandbox</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Test\VoxelOceanSystem.h">
-      <Filter>Source\Game\Logics\Test</Filter>
+    <ClInclude Include="Source\Game\Logics\Sandbox\VoxelOceanSystem.h">
+      <Filter>Source\Game\Logics\Sandbox</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderRegistry.h">
       <Filter>Source\Engine\Graphics\Shader</Filter>
@@ -969,23 +966,23 @@
     <ClInclude Include="External\imgui-node-editor\imgui_node_editor_internal.h">
       <Filter>External\imgui-node-editor</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Test\LissajousOrbitComponent.h">
-      <Filter>Source\Game\Logics\Test</Filter>
+    <ClInclude Include="Source\Game\Logics\Sandbox\LissajousOrbitComponent.h">
+      <Filter>Source\Game\Logics\Sandbox</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Test\LissajousOrbitSystem.h">
-      <Filter>Source\Game\Logics\Test</Filter>
+    <ClInclude Include="Source\Game\Logics\Sandbox\LissajousOrbitSystem.h">
+      <Filter>Source\Game\Logics\Sandbox</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Test\TornadoVortexComponent.h">
-      <Filter>Source\Game\Logics\Test</Filter>
+    <ClInclude Include="Source\Game\Logics\Sandbox\TornadoVortexComponent.h">
+      <Filter>Source\Game\Logics\Sandbox</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Test\TornadoVortexSystem.h">
-      <Filter>Source\Game\Logics\Test</Filter>
+    <ClInclude Include="Source\Game\Logics\Sandbox\TornadoVortexSystem.h">
+      <Filter>Source\Game\Logics\Sandbox</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Test\VectorFlowComponent.h">
-      <Filter>Source\Game\Logics\Test</Filter>
+    <ClInclude Include="Source\Game\Logics\Sandbox\VectorFlowComponent.h">
+      <Filter>Source\Game\Logics\Sandbox</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Test\VectorFlowSystem.h">
-      <Filter>Source\Game\Logics\Test</Filter>
+    <ClInclude Include="Source\Game\Logics\Sandbox\VectorFlowSystem.h">
+      <Filter>Source\Game\Logics\Sandbox</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\AnimationSequencerWindow.h">
       <Filter>Source\Editor\Windows\Animation</Filter>
@@ -1815,14 +1812,14 @@
     <ClInclude Include="Source\Engine\Serialization\Meta\ComponentCategories.h">
       <Filter>Source\Engine\Serialization\Meta</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Test\JoltSandboxGuiSystem.h">
-      <Filter>Source\Game\Logics\Test</Filter>
+    <ClInclude Include="Source\Game\Logics\Sandbox\JoltSandboxGuiSystem.h">
+      <Filter>Source\Game\Logics\Sandbox</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Test\BoidComponent.h">
-      <Filter>Source\Game\Logics\Test</Filter>
+    <ClInclude Include="Source\Game\Logics\Sandbox\BoidComponent.h">
+      <Filter>Source\Game\Logics\Sandbox</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Test\BoidSystem.h">
-      <Filter>Source\Game\Logics\Test</Filter>
+    <ClInclude Include="Source\Game\Logics\Sandbox\BoidSystem.h">
+      <Filter>Source\Game\Logics\Sandbox</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Battle\BattleContext.h">
       <Filter>Source\Game\Logics\AI\Battle</Filter>
@@ -1881,17 +1878,17 @@
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeSystem.h">
       <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Boss\Data\BossActionComponent.h">
-      <Filter>Source\Game\Logics\Character\Boss\Data</Filter>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Components\BossActionComponent.h">
+      <Filter>Source\Game\Logics\Character\Boss\Components</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Boss\Data\BossPhaseComponent.h">
-      <Filter>Source\Game\Logics\Character\Boss\Data</Filter>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Components\BossPhaseComponent.h">
+      <Filter>Source\Game\Logics\Character\Boss\Components</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossPhaseSystem.h">
       <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Boss\Data\BTActions_Boss.h">
-      <Filter>Source\Game\Logics\Character\Boss\Data</Filter>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Actions\BTActions_Boss.h">
+      <Filter>Source\Game\Logics\Character\Boss\Actions</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossActionSystem.h">
       <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
@@ -1919,6 +1916,9 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Scenes\ParticleScene.h">
       <Filter>Source\Game\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Components\Lighting\SkyboxComponent.h">
+      <Filter>Source\Engine\Graphics\Components\Lighting</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2036,8 +2036,8 @@
     <ClCompile Include="Source\Engine\Serialization\Factory\Prefab.cpp">
       <Filter>Source\Engine\Serialization\Factory</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Test\SceneInitializer.cpp">
-      <Filter>Source\Game\Logics\Test</Filter>
+    <ClCompile Include="Source\Game\Logics\Sandbox\SceneInitializer.cpp">
+      <Filter>Source\Game\Logics\Sandbox</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Scenes\EditorScene.cpp">
       <Filter>Source\Game\Scenes</Filter>
@@ -2111,11 +2111,11 @@
     <ClCompile Include="Source\Engine\Graphics\Renderer\ParticleRenderer.cpp">
       <Filter>Source\Engine\Graphics\Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Test\ECSBenchmarkSystem.cpp">
-      <Filter>Source\Game\Logics\Test</Filter>
+    <ClCompile Include="Source\Game\Logics\Sandbox\ECSBenchmarkSystem.cpp">
+      <Filter>Source\Game\Logics\Sandbox</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Test\VoxelOceanSystem.cpp">
-      <Filter>Source\Game\Logics\Test</Filter>
+    <ClCompile Include="Source\Game\Logics\Sandbox\VoxelOceanSystem.cpp">
+      <Filter>Source\Game\Logics\Sandbox</Filter>
     </ClCompile>
     <ClCompile Include="External\RecastNavigation\Recast\Source\Recast.cpp">
       <Filter>External\RecastNavigation\Recast</Filter>
@@ -2222,17 +2222,14 @@
     <ClCompile Include="External\imgui-node-editor\imgui_node_editor_api.cpp">
       <Filter>External\imgui-node-editor</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeComponentMeta.cpp">
-      <Filter>Source\Game\Logics\AI\BehaviorTree\_Meta</Filter>
+    <ClCompile Include="Source\Game\Logics\Sandbox\LissajousOrbitSystem.cpp">
+      <Filter>Source\Game\Logics\Sandbox</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Test\LissajousOrbitSystem.cpp">
-      <Filter>Source\Game\Logics\Test</Filter>
+    <ClCompile Include="Source\Game\Logics\Sandbox\TornadoVortexSystem.cpp">
+      <Filter>Source\Game\Logics\Sandbox</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Test\TornadoVortexSystem.cpp">
-      <Filter>Source\Game\Logics\Test</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Test\VectorFlowSystem.cpp">
-      <Filter>Source\Game\Logics\Test</Filter>
+    <ClCompile Include="Source\Game\Logics\Sandbox\VectorFlowSystem.cpp">
+      <Filter>Source\Game\Logics\Sandbox</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\AnimationSequencerWindow.cpp">
       <Filter>Source\Editor\Windows\Animation</Filter>
@@ -2289,7 +2286,7 @@
       <Filter>Source\Game\Logics\Combat</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Combat\CombatComponentsMeta.cpp">
-      <Filter>Source\Game\Logics\Combat\_Meta</Filter>
+      <Filter>Source\Game\Logics\Combat</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\GameViewWindow.cpp">
       <Filter>Source\Editor\Windows\Editor</Filter>
@@ -2753,7 +2750,7 @@
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.cpp">
       <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Player\Components\DashComponentsMeta.cpp">
+    <ClCompile Include="Source\Game\Logics\Character\Player\Components\DashComponentMeta.cpp">
       <Filter>Source\Game\Logics\Character\Player\Components</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\Components\CleaveComponentMeta.cpp">
@@ -2828,11 +2825,11 @@
     <ClCompile Include="Source\Engine\Transform\Systems\BoneAttachmentRenderSystem.cpp">
       <Filter>Source\Engine\Transform\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Test\JoltSandboxGuiSystem.cpp">
-      <Filter>Source\Game\Logics\Test</Filter>
+    <ClCompile Include="Source\Game\Logics\Sandbox\JoltSandboxGuiSystem.cpp">
+      <Filter>Source\Game\Logics\Sandbox</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Test\BoidSystem.cpp">
-      <Filter>Source\Game\Logics\Test</Filter>
+    <ClCompile Include="Source\Game\Logics\Sandbox\BoidSystem.cpp">
+      <Filter>Source\Game\Logics\Sandbox</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\Drone\DroneFormationSystem.cpp">
       <Filter>Source\Game\Logics\AI\Drone</Filter>
@@ -2861,11 +2858,11 @@
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeSystem.cpp">
       <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Boss\Data\BossActionComponentMeta.cpp">
-      <Filter>Source\Game\Logics\Character\Boss\Data</Filter>
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Components\BossActionComponentMeta.cpp">
+      <Filter>Source\Game\Logics\Character\Boss\Components</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Boss\Data\BossPhaseComponentMeta.cpp">
-      <Filter>Source\Game\Logics\Character\Boss\Data</Filter>
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Components\BossPhaseComponentMeta.cpp">
+      <Filter>Source\Game\Logics\Character\Boss\Components</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossPhaseSystem.cpp">
       <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
@@ -2893,6 +2890,12 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Animation\Components\RootMotionComponentMeta.cpp">
       <Filter>Source\Engine\Animation\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Components\Lighting\SkyboxComponentMeta.cpp">
+      <Filter>Source\Engine\Graphics\Components\Lighting</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeComponentMeta.cpp">
+      <Filter>Source\Game\Logics\AI\BehaviorTree\Data</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

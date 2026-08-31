@@ -58,7 +58,7 @@ void DroneFormationSystem::Initialize()
     // 「DroneFormationSystem が動く」ということは「陣形クラスが必要」
     // ということなので、ここに書くのが最も自然。
     //
-    // 陣形を追加した時（例：DeathRingFormation等）も、
+    // 陣形を追加した時も、
     // Formations_Basic.h の RegisterAll() に1行足すだけで、
     // このシステムを持つ全シーンに自動反映される。
     CCL::AI::Formation::Basic::RegisterAll();

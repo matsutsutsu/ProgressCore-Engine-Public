@@ -13,7 +13,7 @@
 ///   3行目: HP 895/1000 Drone 100 … ステータス
 #pragma once
 #include "Engine/ECS/System/CCL_IfSystem.h"
-#include "Game/Logics/Character/Boss/Data/BossPhaseComponent.h"
+#include "Game/Logics/Character/Boss/Components/BossPhaseComponent.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 

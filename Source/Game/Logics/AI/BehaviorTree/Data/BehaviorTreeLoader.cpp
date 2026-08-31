@@ -31,10 +31,14 @@ bool BehaviorTreeLoader::LoadFromJson(const std::string& path, BTAsset& outAsset
         for (auto& jNode : j["nodes"]) {
             BTNode node;
             node.type = StringToNodeType(jNode.value("type", "Action"));
-            node.actionOrConditionId = static_cast<ActionID>(jNode.value("actionOrConditionId", 0));
+            node.actionOrConditionId = ResolveActionOrConditionId(&jNode, node.type, path);
 
             node.decoratorType = static_cast<BTDecoratorType>(jNode.value("decoratorType", 0));
-            node.decoratorParam = jNode.value("decoratorParam", 0.0f);
+
+            // param は旧名 decoratorParam から引き継ぐ（Decorator しか値を持たなかった頃の名前）。
+            node.param = jNode.value("param", jNode.value("decoratorParam", 0.0f));
+
+            MigrateLegacyWait(node);
 
             if (jNode.contains("children") && jNode["children"].is_array()) {
                 for (auto& childId : jNode["children"]) {
@@ -55,6 +59,49 @@ bool BehaviorTreeLoader::LoadFromJson(const std::string& path, BTAsset& outAsset
     CCL_LOG_SUCCESS(LogCategory::AI, "BT Asset Loaded: %s (Nodes: %zu)", path.c_str(), outAsset.nodes.size());
     return true;
 }
+
+ActionID BehaviorTreeLoader::ResolveActionOrConditionId(const void* jNodePtr, BTNodeType type,
+                                                        const std::string& path)
+{
+    const json& jNode = *static_cast<const json*>(jNodePtr);
+
+    const ActionID numericId = static_cast<ActionID>(jNode.value("actionOrConditionId", 0));
+
+    const bool isCondition = (type == BTNodeType::Condition);
+    const char* keyField   = isCondition ? "condition" : "action";
+    if (!jNode.contains(keyField) || !jNode[keyField].is_string()) return numericId;
+
+    const std::string key = jNode[keyField].get<std::string>();
+    if (key.empty() || key == "None") return numericId;
+
+    ActionID resolved = 0;
+    const bool found = isCondition ? TryFindConditionIdByKey(key, resolved)
+                                   : TryFindActionIdByKey(key, resolved);
+    if (found) return resolved;
+
+    CCL_LOG_WARN(LogCategory::AI,
+        "BTの未知のキー \"%s\" (%s)。数値ID %u で読み込む", key.c_str(), path.c_str(), numericId);
+    return numericId;
+}
+
+
+void BehaviorTreeLoader::MigrateLegacyWait(BTNode& node)
+{
+    if (node.type != BTNodeType::Action) return;
+
+    // 旧 A_Wait0_5s(100) 〜 A_Wait10_0s(111)。順序がそのまま秒数だった。
+    static constexpr float kLegacyWaitSeconds[] = {
+        0.5f, 1.0f, 1.5f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f
+    };
+    constexpr ActionID kFirst = 100;
+    constexpr ActionID kLast  = 111;
+
+    if (node.actionOrConditionId < kFirst || node.actionOrConditionId > kLast) return;
+
+    node.param               = kLegacyWaitSeconds[node.actionOrConditionId - kFirst];
+    node.actionOrConditionId = CCL::AI::A_Wait;
+}
+
 
 BTNodeType BehaviorTreeLoader::StringToNodeType(const std::string& typeStr) {
     if (typeStr == "Selector")  return BTNodeType::Selector;
@@ -118,8 +165,8 @@ std::string BehaviorTreeLoader::DumpNodeRecursive(const BTAsset& asset, BTNodeID
     else if (node.type == BTNodeType::Decorator) {
         switch (node.decoratorType) {
         case BTDecoratorType::Inverter: result += " (Invert)"; break;
-        case BTDecoratorType::Cooldown: result += " (Cooldown: " + std::to_string(node.decoratorParam) + "s)"; break;
-        case BTDecoratorType::Retry:    result += " (Retry: " + std::to_string((int)node.decoratorParam) + " times)"; break;
+        case BTDecoratorType::Cooldown: result += " (Cooldown: " + std::to_string(node.param) + "s)"; break;
+        case BTDecoratorType::Retry:    result += " (Retry: " + std::to_string((int)node.param) + " times)"; break;
         case BTDecoratorType::Async:    result += " (Async)"; break;
         }
     }

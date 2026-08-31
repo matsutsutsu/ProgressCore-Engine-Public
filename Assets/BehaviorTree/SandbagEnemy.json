@@ -34,29 +34,33 @@
             "type": 1
         },
         {
-            "actionId": 111,
+            "actionId": 112,
             "id": 8,
             "inputPinId": 9,
             "name": "アクション (Action)",
             "outputPinId": 0,
             "posX": -2.0,
             "posY": 302.0,
-            "type": 4
+            "type": 4,
+            "param": 10.0,
+            "action": "A_Wait"
         }
     ],
     "last_id_counter": 10,
     "nodes": [
         {
+            "type": "Selector",
             "actionOrConditionId": 0,
             "children": [
                 1
-            ],
-            "type": "Selector"
+            ]
         },
         {
-            "actionOrConditionId": 111,
-            "children": [],
-            "type": "Action"
+            "type": "Action",
+            "action": "A_Wait",
+            "param": 10.0,
+            "actionOrConditionId": 112,
+            "children": []
         }
     ]
 }

@@ -14,7 +14,7 @@
 #pragma once
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Transform/Components/TransformComponent.h"
-#include "Game/Logics/Character/Boss/Data/BossActionComponent.h"
+#include "Game/Logics/Character/Boss/Components/BossActionComponent.h"
 
 /// @brief ボスの間合いリングと照準線を ShapeRenderer で world 描画するデバッグ用レンダーシステム。
 class AIDebugSpatialSystem : public CCL::ECS::IfSystem<

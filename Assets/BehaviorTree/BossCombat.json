@@ -196,7 +196,8 @@
             "outputPinId": 0,
             "posX": -294.0,
             "posY": 580.0,
-            "type": 3
+            "type": 3,
+            "condition": "C_RangeMostClose"
         },
         {
             "actionId": 1101,
@@ -206,17 +207,21 @@
             "outputPinId": 0,
             "posX": -34.0,
             "posY": 580.0,
-            "type": 4
+            "type": 4,
+            "action": "A_BossSlash",
+            "param": 0.0
         },
         {
-            "actionId": 101,
+            "actionId": 112,
             "id": 13,
             "inputPinId": 14,
             "name": "Wait1.0(硬直)",
             "outputPinId": 0,
             "posX": 226.0,
             "posY": 580.0,
-            "type": 4
+            "type": 4,
+            "param": 1.0,
+            "action": "A_Wait"
         },
         {
             "actionId": 0,
@@ -236,7 +241,8 @@
             "outputPinId": 0,
             "posX": 650.0,
             "posY": 580.0,
-            "type": 3
+            "type": 3,
+            "condition": "C_RangeFar"
         },
         {
             "actionId": 1000,
@@ -246,7 +252,9 @@
             "outputPinId": 0,
             "posX": 910.0,
             "posY": 580.0,
-            "type": 4
+            "type": 4,
+            "action": "A_Move",
+            "param": 0.0
         },
         {
             "actionId": 1000,
@@ -256,7 +264,9 @@
             "outputPinId": 0,
             "posX": 1170.0,
             "posY": 580.0,
-            "type": 4
+            "type": 4,
+            "action": "A_Move",
+            "param": 0.0
         },
         {
             "actionId": 0,
@@ -286,17 +296,21 @@
             "outputPinId": 0,
             "posX": 1576.0,
             "posY": 744.0,
-            "type": 4
+            "type": 4,
+            "action": "A_DroneGuillotineSlam",
+            "param": 0.0
         },
         {
-            "actionId": 102,
+            "actionId": 112,
             "id": 32,
             "inputPinId": 33,
             "name": "Wait(予備)",
             "outputPinId": 0,
             "posX": 1836.0,
             "posY": 744.0,
-            "type": 4
+            "type": 4,
+            "param": 1.5,
+            "action": "A_Wait"
         },
         {
             "actionId": 1006,
@@ -306,17 +320,21 @@
             "outputPinId": 0,
             "posX": 2062.0,
             "posY": 750.0,
-            "type": 4
+            "type": 4,
+            "action": "A_DroneStrike",
+            "param": 0.0
         },
         {
-            "actionId": 103,
+            "actionId": 112,
             "id": 36,
             "inputPinId": 37,
             "name": "Wait(攻撃)",
             "outputPinId": 0,
             "posX": 2356.0,
             "posY": 744.0,
-            "type": 4
+            "type": 4,
+            "param": 2.0,
+            "action": "A_Wait"
         },
         {
             "actionId": 2004,
@@ -326,17 +344,21 @@
             "outputPinId": 0,
             "posX": 2590.0,
             "posY": 750.0,
-            "type": 4
+            "type": 4,
+            "action": "A_DroneHighOrbit",
+            "param": 0.0
         },
         {
-            "actionId": 103,
+            "actionId": 112,
             "id": 40,
             "inputPinId": 41,
             "name": "Wait(CD)",
             "outputPinId": 0,
             "posX": 2862.0,
             "posY": 750.0,
-            "type": 4
+            "type": 4,
+            "param": 2.0,
+            "action": "A_Wait"
         },
         {
             "actionId": 0,
@@ -356,17 +378,21 @@
             "outputPinId": 0,
             "posX": 3358.0,
             "posY": 750.0,
-            "type": 4
+            "type": 4,
+            "action": "A_DroneClapSlam",
+            "param": 0.0
         },
         {
-            "actionId": 102,
+            "actionId": 112,
             "id": 47,
             "inputPinId": 48,
             "name": "Wait(予備)",
             "outputPinId": 0,
             "posX": 3662.0,
             "posY": 750.0,
-            "type": 4
+            "type": 4,
+            "param": 1.5,
+            "action": "A_Wait"
         },
         {
             "actionId": 1006,
@@ -376,17 +402,21 @@
             "outputPinId": 0,
             "posX": 3886.0,
             "posY": 750.0,
-            "type": 4
+            "type": 4,
+            "action": "A_DroneStrike",
+            "param": 0.0
         },
         {
-            "actionId": 103,
+            "actionId": 112,
             "id": 51,
             "inputPinId": 52,
             "name": "Wait(攻撃)",
             "outputPinId": 0,
             "posX": 4174.0,
             "posY": 750.0,
-            "type": 4
+            "type": 4,
+            "param": 2.0,
+            "action": "A_Wait"
         },
         {
             "actionId": 2004,
@@ -396,17 +426,21 @@
             "outputPinId": 0,
             "posX": 4420.0,
             "posY": 756.0,
-            "type": 4
+            "type": 4,
+            "action": "A_DroneHighOrbit",
+            "param": 0.0
         },
         {
-            "actionId": 103,
+            "actionId": 112,
             "id": 55,
             "inputPinId": 56,
             "name": "Wait(CD)",
             "outputPinId": 0,
             "posX": 4702.0,
             "posY": 766.0,
-            "type": 4
+            "type": 4,
+            "param": 2.0,
+            "action": "A_Wait"
         },
         {
             "actionId": 0,
@@ -426,17 +460,21 @@
             "outputPinId": 0,
             "posX": 5200.0,
             "posY": 750.0,
-            "type": 4
+            "type": 4,
+            "action": "A_DroneSquadAssault",
+            "param": 0.0
         },
         {
-            "actionId": 103,
+            "actionId": 112,
             "id": 110,
             "inputPinId": 111,
             "name": "Wait2.0(接近)",
             "outputPinId": 0,
             "posX": 5500.0,
             "posY": 750.0,
-            "type": 4
+            "type": 4,
+            "param": 2.0,
+            "action": "A_Wait"
         },
         {
             "actionId": 1006,
@@ -446,17 +484,21 @@
             "outputPinId": 0,
             "posX": 5800.0,
             "posY": 750.0,
-            "type": 4
+            "type": 4,
+            "action": "A_DroneStrike",
+            "param": 0.0
         },
         {
-            "actionId": 111,
+            "actionId": 112,
             "id": 116,
             "inputPinId": 117,
             "name": "Wait3.0(突入)",
             "outputPinId": 0,
             "posX": 6094.0,
             "posY": 750.0,
-            "type": 4
+            "type": 4,
+            "param": 10.0,
+            "action": "A_Wait"
         },
         {
             "actionId": 2004,
@@ -466,88 +508,103 @@
             "outputPinId": 0,
             "posX": 6400.0,
             "posY": 750.0,
-            "type": 4
+            "type": 4,
+            "action": "A_DroneHighOrbit",
+            "param": 0.0
         },
         {
-            "actionId": 103,
+            "actionId": 112,
             "id": 122,
             "inputPinId": 123,
             "name": "Wait2.0(CD)",
             "outputPinId": 0,
             "posX": 6700.0,
             "posY": 750.0,
-            "type": 4
+            "type": 4,
+            "param": 2.0,
+            "action": "A_Wait"
         }
     ],
     "last_id_counter": 124,
     "nodes": [
         {
+            "type": "Selector",
             "actionOrConditionId": 0,
             "children": [
                 1,
                 2,
                 3
-            ],
-            "type": "Selector"
+            ]
         },
         {
+            "type": "Sequence",
             "actionOrConditionId": 0,
             "children": [
                 4,
                 5,
                 6
-            ],
-            "type": "Sequence"
+            ]
         },
         {
+            "type": "Sequence",
             "actionOrConditionId": 0,
             "children": [
                 7,
                 8,
                 9
-            ],
-            "type": "Sequence"
+            ]
         },
         {
+            "type": "RandomSelector",
             "actionOrConditionId": 0,
             "children": [
                 10,
                 11,
                 12
-            ],
-            "type": "RandomSelector"
+            ]
         },
         {
+            "type": "Condition",
+            "condition": "C_RangeMostClose",
             "actionOrConditionId": 5,
-            "children": [],
-            "type": "Condition"
+            "children": []
         },
         {
+            "type": "Action",
+            "action": "A_BossSlash",
+            "param": 0.0,
             "actionOrConditionId": 1101,
-            "children": [],
-            "type": "Action"
+            "children": []
         },
         {
-            "actionOrConditionId": 101,
-            "children": [],
-            "type": "Action"
+            "type": "Action",
+            "action": "A_Wait",
+            "param": 1.0,
+            "actionOrConditionId": 112,
+            "children": []
         },
         {
+            "type": "Condition",
+            "condition": "C_RangeFar",
             "actionOrConditionId": 7,
-            "children": [],
-            "type": "Condition"
+            "children": []
         },
         {
+            "type": "Action",
+            "action": "A_Move",
+            "param": 0.0,
             "actionOrConditionId": 1000,
-            "children": [],
-            "type": "Action"
+            "children": []
         },
         {
+            "type": "Action",
+            "action": "A_Move",
+            "param": 0.0,
             "actionOrConditionId": 1000,
-            "children": [],
-            "type": "Action"
+            "children": []
         },
         {
+            "type": "Sequence",
             "actionOrConditionId": 0,
             "children": [
                 13,
@@ -556,10 +613,10 @@
                 16,
                 17,
                 18
-            ],
-            "type": "Sequence"
+            ]
         },
         {
+            "type": "Sequence",
             "actionOrConditionId": 0,
             "children": [
                 19,
@@ -568,10 +625,10 @@
                 22,
                 23,
                 24
-            ],
-            "type": "Sequence"
+            ]
         },
         {
+            "type": "Sequence",
             "actionOrConditionId": 0,
             "children": [
                 25,
@@ -580,98 +637,133 @@
                 28,
                 29,
                 30
-            ],
-            "type": "Sequence"
+            ]
         },
         {
+            "type": "Action",
+            "action": "A_DroneGuillotineSlam",
+            "param": 0.0,
             "actionOrConditionId": 2023,
-            "children": [],
-            "type": "Action"
+            "children": []
         },
         {
-            "actionOrConditionId": 102,
-            "children": [],
-            "type": "Action"
+            "type": "Action",
+            "action": "A_Wait",
+            "param": 1.5,
+            "actionOrConditionId": 112,
+            "children": []
         },
         {
+            "type": "Action",
+            "action": "A_DroneStrike",
+            "param": 0.0,
             "actionOrConditionId": 1006,
-            "children": [],
-            "type": "Action"
+            "children": []
         },
         {
-            "actionOrConditionId": 103,
-            "children": [],
-            "type": "Action"
+            "type": "Action",
+            "action": "A_Wait",
+            "param": 2.0,
+            "actionOrConditionId": 112,
+            "children": []
         },
         {
+            "type": "Action",
+            "action": "A_DroneHighOrbit",
+            "param": 0.0,
             "actionOrConditionId": 2004,
-            "children": [],
-            "type": "Action"
+            "children": []
         },
         {
-            "actionOrConditionId": 103,
-            "children": [],
-            "type": "Action"
+            "type": "Action",
+            "action": "A_Wait",
+            "param": 2.0,
+            "actionOrConditionId": 112,
+            "children": []
         },
         {
+            "type": "Action",
+            "action": "A_DroneClapSlam",
+            "param": 0.0,
             "actionOrConditionId": 2024,
-            "children": [],
-            "type": "Action"
+            "children": []
         },
         {
-            "actionOrConditionId": 102,
-            "children": [],
-            "type": "Action"
+            "type": "Action",
+            "action": "A_Wait",
+            "param": 1.5,
+            "actionOrConditionId": 112,
+            "children": []
         },
         {
+            "type": "Action",
+            "action": "A_DroneStrike",
+            "param": 0.0,
             "actionOrConditionId": 1006,
-            "children": [],
-            "type": "Action"
+            "children": []
         },
         {
-            "actionOrConditionId": 103,
-            "children": [],
-            "type": "Action"
+            "type": "Action",
+            "action": "A_Wait",
+            "param": 2.0,
+            "actionOrConditionId": 112,
+            "children": []
         },
         {
+            "type": "Action",
+            "action": "A_DroneHighOrbit",
+            "param": 0.0,
             "actionOrConditionId": 2004,
-            "children": [],
-            "type": "Action"
+            "children": []
         },
         {
-            "actionOrConditionId": 103,
-            "children": [],
-            "type": "Action"
+            "type": "Action",
+            "action": "A_Wait",
+            "param": 2.0,
+            "actionOrConditionId": 112,
+            "children": []
         },
         {
+            "type": "Action",
+            "action": "A_DroneSquadAssault",
+            "param": 0.0,
             "actionOrConditionId": 2031,
-            "children": [],
-            "type": "Action"
+            "children": []
         },
         {
-            "actionOrConditionId": 103,
-            "children": [],
-            "type": "Action"
+            "type": "Action",
+            "action": "A_Wait",
+            "param": 2.0,
+            "actionOrConditionId": 112,
+            "children": []
         },
         {
+            "type": "Action",
+            "action": "A_DroneStrike",
+            "param": 0.0,
             "actionOrConditionId": 1006,
-            "children": [],
-            "type": "Action"
+            "children": []
         },
         {
-            "actionOrConditionId": 111,
-            "children": [],
-            "type": "Action"
+            "type": "Action",
+            "action": "A_Wait",
+            "param": 10.0,
+            "actionOrConditionId": 112,
+            "children": []
         },
         {
+            "type": "Action",
+            "action": "A_DroneHighOrbit",
+            "param": 0.0,
             "actionOrConditionId": 2004,
-            "children": [],
-            "type": "Action"
+            "children": []
         },
         {
-            "actionOrConditionId": 103,
-            "children": [],
-            "type": "Action"
+            "type": "Action",
+            "action": "A_Wait",
+            "param": 2.0,
+            "actionOrConditionId": 112,
+            "children": []
         }
     ]
 }
