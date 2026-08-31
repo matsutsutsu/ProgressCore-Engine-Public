@@ -16,6 +16,15 @@
 
 namespace CCL::AI::BT::BossActions
 {
+/// 自分が出した行動要求だけを取り下げる。
+/// @param expected 自分が書いた ActionID。別の行動が既に書き換えていたら触らない
+///        （同じフレームに次の技が要求を出している場合、それを消してしまわないため）。
+inline void ClearCommandIfMine(BTContext &ctx, ActionID expected)
+{
+    if (auto *cmd = ctx.world->GetComponent<BossCommandComponent>(ctx.entity))
+        if (cmd->currentActionId == expected) cmd->currentActionId = 0;
+}
+
 // ====================================================================
 // ① 待機系（汎用：bt の nodeTimers だけ使う。ボス非依存）
 // ====================================================================
@@ -67,9 +76,15 @@ struct MoveAction : public IBTAction
 
         ctx.bt->lastLogActionId = ::CCL::AI::A_Move;
 
-        // 完了
+        // 完了：要求を取り下げる。
+        //   currentActionId は「今こうしてほしい」という毎フレームの依頼なので、
+        //   終わったら消す。消さないと BossActionSystem が最後の依頼を握ったままになり、
+        //   次にボス本体の行動が選ばれるまでその姿勢で固まる（＝ドローン攻撃の間ずっと硬直）。
         if (timers[ctx.nodeId] == 0.0f)
+        {
+            ClearCommandIfMine(ctx, ::CCL::AI::A_Move);
             return BTNodeState::Success;
+        }
 
         // 未実行 → タイマー設定
         if (timers[ctx.nodeId] == -1.0f)
@@ -128,25 +143,28 @@ struct DroneStrikeAction : public IBTAction
 };
 
 // ====================================================================
-// ⑥ 近接攻撃（Melee）ボス固有：アニメのトリガーを引く
-//    設計：AIは「攻撃を決めてアニメのトリガーを引く」だけ。実際の当たり判定の
+// ⑥ トリガー駆動の技（ボス固有）：アニメのトリガーを引いて param 秒 BT を留める
+//    設計：AIは「技を決めてアニメのトリガーを引く」だけ。実際の当たり判定の
 //    タイミングは、アニメクリップ内の HitBox イベント(startTime/endTime)が握る
 //    （CombatAnimationSyncSystem が剣 Hitbox を区間ON/OFFする）。
 //    このアクションは:
-//      - 開始フレームに1回だけ SetTrigger（＝攻撃発生の合図）
-//      - duration の間 Running（振り＋硬直ぶんBTを留める＝連打防止）
-//      - currentActionId を立て続け、BossActionSystem が足を止める/踏み込む等の
-//        物理挙動を担当する（薙ぎ払いは停止、将来の踏み込み/突進は前進）。
+//      - 開始フレームに1回だけ SetTrigger（＝技の発生の合図）
+//      - duration の間 Running（動作＋硬直ぶんBTを留める＝連打防止）
+//      - currentActionId を立て続け、BossActionSystem が足を止める/踏み込む/
+//        跳ぶ/退く等の物理挙動を担当する。
+//    「近接攻撃」ではなく「トリガー駆動」と呼ぶ理由:
+//      後方ステップ（A_BossBackStep）も同じ形をしている。攻撃かどうかはこの
+//      クラスの関心ではなく、違いは triggerHash と BossActionSystem 側の物理だけ。
 //    前提：ボスに AnimParameters コンポーネントと、triggerHash に対応する
 //      遷移（例 "Slash"）が AnimStateMachine に用意されていること。
 // ====================================================================
-struct MeleeAttackAction : public IBTAction
+struct TriggeredMotionAction : public IBTAction
 {
     uint32_t triggerHash;
     float    defaultDuration; ///< ノードの param が未設定(0)のときに使う硬直
     ActionID id;
 
-    MeleeAttackAction(uint32_t hash, float fallbackDur, ActionID actionId)
+    TriggeredMotionAction(uint32_t hash, float fallbackDur, ActionID actionId)
         : triggerHash(hash), defaultDuration(fallbackDur), id(actionId) {}
 
     BTNodeState Execute(BTContext &ctx) override
@@ -156,10 +174,14 @@ struct MeleeAttackAction : public IBTAction
 
         ctx.bt->lastLogActionId = id;
 
-        // 硬直終了 → 完了
-        if (timers[ctx.nodeId] == 0.0f) return BTNodeState::Success;
+        // 硬直終了 → 完了。MoveAction と同じ理由で要求を取り下げる
+        if (timers[ctx.nodeId] == 0.0f)
+        {
+            ClearCommandIfMine(ctx, id);
+            return BTNodeState::Success;
+        }
 
-        // 開始フレーム：アニメのトリガーを1回だけ引く（＝攻撃発生の合図）
+        // 開始フレーム：アニメのトリガーを1回だけ引く（＝技の発生の合図）
         if (timers[ctx.nodeId] == -1.0f)
         {
             // 硬直はノード側で調整できる。0 のままなら従来どおりの既定値を使う。
@@ -168,7 +190,7 @@ struct MeleeAttackAction : public IBTAction
                 anim->SetTrigger(triggerHash);
         }
 
-        // 硬直中：近接中であることを BossActionSystem へ伝える（停止/前進の制御に使う）
+        // 動作中：どの技を出しているかを BossActionSystem へ伝える（停止/前進/跳躍/後退の制御に使う）
         if (auto *cmd = ctx.world->GetComponent<BossCommandComponent>(ctx.entity))
             cmd->currentActionId = id;
 
@@ -186,7 +208,24 @@ inline void RegisterAll()
     // 近接：薙ぎ払い（アニメのトリガー名 "Slash"）。硬直の既定は 0.8s で、
     //   ノードの param が入っていればそちらが勝つ。
     reg.RegisterActionInstance(::CCL::AI::A_BossSlash,
-        std::make_unique<MeleeAttackAction>(CCL::Utils::HashString("Slash"), 0.8f, ::CCL::AI::A_BossSlash));
+        std::make_unique<TriggeredMotionAction>(CCL::Utils::HashString("Slash"), 0.8f, ::CCL::AI::A_BossSlash));
+
+    // 突進斬り：溜め0.35 + 踏み込み0.35 + 硬直、で全体1.4秒。
+    //   段の長さは BossActionComponent 側（dashWindupTime / dashDriveTime）で調整する。
+    //   ここの数値は「BTがこの技に留まる全体時間」で、後隙の長さを決める。
+    reg.RegisterActionInstance(::CCL::AI::A_BossDashSlash,
+        std::make_unique<TriggeredMotionAction>(CCL::Utils::HashString("DashSlash"), 1.4f, ::CCL::AI::A_BossDashSlash));
+
+    // 跳躍斬り：溜め0.15 + 滞空0.45 + 着地硬直、で全体1.1秒。
+    reg.RegisterActionInstance(::CCL::AI::A_BossJumpAttack,
+        std::make_unique<TriggeredMotionAction>(CCL::Utils::HashString("JumpAttack"), 1.1f, ::CCL::AI::A_BossJumpAttack));
+
+    // 後方ステップ：後退0.35 + 硬直、で全体0.9秒。攻撃判定は持たない。
+    //   硬直をステップ本体（0.35秒）より長く取ってあるのは、退いた直後に
+    //   何もできない時間を作るため。0にすると「殴られる→即離脱→即接近」を
+    //   延々と繰り返し、プレイヤーが手を出す隙が消える。
+    reg.RegisterActionInstance(::CCL::AI::A_BossBackStep,
+        std::make_unique<TriggeredMotionAction>(CCL::Utils::HashString("BackStep"), 0.9f, ::CCL::AI::A_BossBackStep));
 
     reg.RegisterAction<WaitAction>(::CCL::AI::A_Wait);
 

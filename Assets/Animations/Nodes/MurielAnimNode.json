@@ -71,6 +71,48 @@
             "logicType": 0,
             "requiredCancelMask": 0,
             "targetStateHash": 448068029
+        },
+        {
+            "blendDuration": 0.15,
+            "conditions": [
+                {
+                    "op": 3,
+                    "paramHash": 1991396666,
+                    "paramName": "DashSlash",
+                    "threshold": 0.0
+                }
+            ],
+            "logicType": 0,
+            "requiredCancelMask": 0,
+            "targetStateHash": 1991396666
+        },
+        {
+            "blendDuration": 0.15,
+            "conditions": [
+                {
+                    "op": 3,
+                    "paramHash": 1204849781,
+                    "paramName": "JumpAttack",
+                    "threshold": 0.0
+                }
+            ],
+            "logicType": 0,
+            "requiredCancelMask": 0,
+            "targetStateHash": 1204849781
+        },
+        {
+            "blendDuration": 0.1,
+            "conditions": [
+                {
+                    "op": 3,
+                    "paramHash": 1451197408,
+                    "paramName": "BackStep",
+                    "threshold": 0.0
+                }
+            ],
+            "logicType": 0,
+            "requiredCancelMask": 0,
+            "targetStateHash": 1451197408
         }
     ],
     "entryPosX": -48.0,
@@ -124,6 +166,27 @@
             "defaultFloat": 0.0,
             "hash": 1939215512,
             "name": "HitRight",
+            "type": 2
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 1991396666,
+            "name": "DashSlash",
+            "type": 2
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 1204849781,
+            "name": "JumpAttack",
+            "type": 2
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 1451197408,
+            "name": "BackStep",
             "type": 2
         }
     ],
@@ -354,6 +417,153 @@
                     "logicType": 0,
                     "requiredCancelMask": 0,
                     "targetStateHash": 1168775091
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "isLoop": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 298.0,
+            "nodePosY": 260.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/DashSlash.json",
+            "sequenceName": "DashSlash",
+            "speedCurveName": "",
+            "stateHash": 1991396666,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 1168775091
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        },
+                        {
+                            "op": 1,
+                            "paramHash": 174817312,
+                            "paramName": "Speed",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 2133600820
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "isLoop": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 298.0,
+            "nodePosY": 400.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/JumpAttack.json",
+            "sequenceName": "JumpAttack",
+            "speedCurveName": "",
+            "stateHash": 1204849781,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 1168775091
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        },
+                        {
+                            "op": 1,
+                            "paramHash": 174817312,
+                            "paramName": "Speed",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 2133600820
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "isLoop": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 298.0,
+            "nodePosY": 540.0,
+            "playbackSpeed": 2.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/BackStep.json",
+            "sequenceName": "BackStep",
+            "speedCurveName": "",
+            "stateHash": 1451197408,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 1168775091
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        },
+                        {
+                            "op": 1,
+                            "paramHash": 174817312,
+                            "paramName": "Speed",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 2133600820
                 }
             ]
         }

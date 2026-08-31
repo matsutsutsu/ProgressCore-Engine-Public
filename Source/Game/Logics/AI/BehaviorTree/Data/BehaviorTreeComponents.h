@@ -47,9 +47,15 @@ struct AIBlackboard {
     // --- 自分の状態 ---
     float healthPercentage = 100.0f;    ///< 残りHPの割合（0〜100）
 
-    // --- ダメージ蓄積（閾値を超えたら回避行動へ）---
-    float accumulatedDamage    = 0.0f;  ///< 溜まっているダメージ量
-    float evadeDamageThreshold = 20.0f; ///< 逃げ出す閾値
+    // --- 被弾の蓄積（一定割合を受けたら距離を取る）---
+    /// 閾値そのものはここに持たない。BTノードの param（最大HPに対する％）で決める。
+    ///
+    /// なぜ絶対量ではなく割合を見るか:
+    ///   「20ダメージ受けたら退く」だと、ボスの最大HPを増やした瞬間に
+    ///   「HPを1%削っただけで退く」になる。強さの調整と回避の頻度が
+    ///   連動してしまい、片方を触るともう片方が壊れる。
+    float accumulatedDamage      = 0.0f; ///< 前回リセットからの被弾量（実数値）
+    float accumulatedDamageRatio = 0.0f; ///< 上を最大HPで割ったもの [%]。書き手は BossPerceptionSystem
 };
 
 

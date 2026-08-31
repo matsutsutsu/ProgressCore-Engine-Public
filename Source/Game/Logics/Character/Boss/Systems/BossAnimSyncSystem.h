@@ -3,9 +3,10 @@
  *
  * 設計上の位置づけ（プレイヤーと対称）:
  *   プレイヤー: PlayerAttackSystem(攻撃トリガー) + CharacterAnimSyncSystem(移動パラメータ)
- *   ボス      : MeleeAttackAction(攻撃トリガー)  + BossAnimSyncSystem(移動パラメータ) ← これ
+ *   ボス      : TriggeredMotionAction(技のトリガー) + BossAnimSyncSystem(移動パラメータ) ← これ
  *
- *   ・攻撃(Slash)の一発トリガーは MeleeAttackAction が SetTrigger する（BTの攻撃開始時）。
+ *   ・技(Slash / DashSlash / JumpAttack / BackStep)の一発トリガーは
+ *     TriggeredMotionAction が SetTrigger する（BTがその技を選んだ瞬間）。
  *   ・Idle / Move の切替は、ここでボスの「意図(currentMoveSpeed/currentState)」を
  *     Speed / IsMoving パラメータへ書き込み、AnimStateMachine が遷移する。
  *

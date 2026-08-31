@@ -35,12 +35,16 @@ struct DistanceGreaterThan : public IBTCondition
     }
 };
 
-/// 蓄積ダメージが閾値を超えた。
+/// 前回リセットしてからの被弾が、最大HPの param % に達した。
+/// @note  param 未設定(0)のときは 20%。閾値をブラックボードではなくノードに置いたのは、
+///        間合いを param へ移したのと同じ理由。第1形態と第2形態で退く頻度を変えたい、
+///        雑魚とボスで別の値にしたい、という要求が「敵の数×閾値」のIDを増やさずに通る。
 struct DamageThresholdExceeded : public IBTCondition
 {
     bool Evaluate(BTContext &ctx) override
     {
-        return ctx.bt->blackboard.accumulatedDamage >= ctx.bt->blackboard.evadeDamageThreshold;
+        const float thresholdPercent = (ctx.param > 0.0f) ? ctx.param : 20.0f;
+        return ctx.bt->blackboard.accumulatedDamageRatio >= thresholdPercent;
     }
 };
 

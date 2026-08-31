@@ -260,6 +260,66 @@
             "endPin": 178,
             "id": 179,
             "startPin": 160
+        },
+        {
+            "id": 197,
+            "startPin": 5,
+            "endPin": 181
+        },
+        {
+            "id": 198,
+            "startPin": 182,
+            "endPin": 184
+        },
+        {
+            "id": 199,
+            "startPin": 185,
+            "endPin": 187
+        },
+        {
+            "id": 200,
+            "startPin": 185,
+            "endPin": 189
+        },
+        {
+            "id": 201,
+            "startPin": 185,
+            "endPin": 192
+        },
+        {
+            "id": 202,
+            "startPin": 190,
+            "endPin": 194
+        },
+        {
+            "id": 203,
+            "startPin": 190,
+            "endPin": 196
+        },
+        {
+            "id": 215,
+            "startPin": 5,
+            "endPin": 205
+        },
+        {
+            "id": 216,
+            "startPin": 206,
+            "endPin": 208
+        },
+        {
+            "id": 217,
+            "startPin": 206,
+            "endPin": 210
+        },
+        {
+            "id": 218,
+            "startPin": 206,
+            "endPin": 212
+        },
+        {
+            "id": 219,
+            "startPin": 206,
+            "endPin": 214
         }
     ],
     "editor_nodes": [
@@ -876,9 +936,143 @@
             "type": 4,
             "param": 2.0,
             "action": "A_Wait"
+        },
+        {
+            "id": 180,
+            "type": 6,
+            "name": "中距離の近接(CD7秒)",
+            "posX": 500.0,
+            "posY": 400.0,
+            "inputPinId": 181,
+            "outputPinId": 182,
+            "decoratorType": 1,
+            "param": 7.0
+        },
+        {
+            "id": 183,
+            "type": 2,
+            "name": "踏み込みor跳躍",
+            "posX": 500.0,
+            "posY": 1232.0,
+            "inputPinId": 184,
+            "outputPinId": 185
+        },
+        {
+            "id": 186,
+            "type": 3,
+            "name": "距離<30m",
+            "posX": 240.0,
+            "posY": 1382.0,
+            "inputPinId": 187,
+            "outputPinId": 0,
+            "condition": "C_DistanceLessThan",
+            "actionId": 9,
+            "param": 30.0
+        },
+        {
+            "id": 188,
+            "type": 7,
+            "name": "近接2択",
+            "posX": 500.0,
+            "posY": 1382.0,
+            "inputPinId": 189,
+            "outputPinId": 190
+        },
+        {
+            "id": 191,
+            "type": 4,
+            "name": "Wait(後隙)",
+            "posX": 760.0,
+            "posY": 1382.0,
+            "inputPinId": 192,
+            "outputPinId": 0,
+            "action": "A_Wait",
+            "actionId": 112,
+            "param": 0.9
+        },
+        {
+            "id": 193,
+            "type": 4,
+            "name": "突進斬り",
+            "posX": 370.0,
+            "posY": 1532.0,
+            "inputPinId": 194,
+            "outputPinId": 0,
+            "action": "A_BossDashSlash",
+            "actionId": 1102,
+            "param": 1.4
+        },
+        {
+            "id": 195,
+            "type": 4,
+            "name": "跳躍斬り",
+            "posX": 630.0,
+            "posY": 1532.0,
+            "inputPinId": 196,
+            "outputPinId": 0,
+            "action": "A_BossJumpAttack",
+            "actionId": 1103,
+            "param": 1.1
+        },
+        {
+            "id": 204,
+            "type": 2,
+            "name": "被弾がかさんだら退く",
+            "posX": -500.0,
+            "posY": 400.0,
+            "inputPinId": 205,
+            "outputPinId": 206
+        },
+        {
+            "id": 207,
+            "type": 3,
+            "name": "被弾 >= 最大HPの6%",
+            "posX": -890.0,
+            "posY": 1932.0,
+            "inputPinId": 208,
+            "outputPinId": 0,
+            "condition": "C_DamageThresholdExceeded",
+            "actionId": 6,
+            "param": 6.0
+        },
+        {
+            "id": 209,
+            "type": 3,
+            "name": "距離<14m",
+            "posX": -630.0,
+            "posY": 1932.0,
+            "inputPinId": 210,
+            "outputPinId": 0,
+            "condition": "C_DistanceLessThan",
+            "actionId": 9,
+            "param": 14.0
+        },
+        {
+            "id": 211,
+            "type": 4,
+            "name": "被弾カウントを戻す",
+            "posX": -370.0,
+            "posY": 1932.0,
+            "inputPinId": 212,
+            "outputPinId": 0,
+            "action": "A_ResetDamage",
+            "actionId": 1005,
+            "param": 0.0
+        },
+        {
+            "id": 213,
+            "type": 4,
+            "name": "後方ステップ",
+            "posX": -110.0,
+            "posY": 1932.0,
+            "inputPinId": 214,
+            "outputPinId": 0,
+            "action": "A_BossBackStep",
+            "actionId": 1104,
+            "param": 0.8
         }
     ],
-    "last_id_counter": 179,
+    "last_id_counter": 219,
     "nodes": [
         {
             "type": "Selector",
@@ -886,38 +1080,87 @@
             "children": [
                 1,
                 2,
-                3
-            ]
-        },
-        {
-            "type": "Sequence",
-            "actionOrConditionId": 0,
-            "children": [
+                3,
                 4,
-                5,
-                6
+                5
             ]
         },
         {
             "type": "Sequence",
             "actionOrConditionId": 0,
             "children": [
+                6,
                 7,
                 8,
                 9
             ]
         },
         {
-            "type": "RandomSelector",
+            "type": "Sequence",
             "actionOrConditionId": 0,
             "children": [
                 10,
                 11,
-                12,
-                13,
-                14,
-                15
+                12
             ]
+        },
+        {
+            "type": "Decorator",
+            "param": 7.0,
+            "actionOrConditionId": 0,
+            "decoratorType": 1,
+            "children": [
+                13
+            ]
+        },
+        {
+            "type": "Sequence",
+            "actionOrConditionId": 0,
+            "children": [
+                14,
+                15,
+                16
+            ]
+        },
+        {
+            "type": "RandomSelector",
+            "actionOrConditionId": 0,
+            "children": [
+                17,
+                18,
+                19,
+                20,
+                21,
+                22
+            ]
+        },
+        {
+            "type": "Condition",
+            "condition": "C_DamageThresholdExceeded",
+            "param": 6.0,
+            "actionOrConditionId": 6,
+            "children": []
+        },
+        {
+            "type": "Condition",
+            "condition": "C_DistanceLessThan",
+            "param": 14.0,
+            "actionOrConditionId": 9,
+            "children": []
+        },
+        {
+            "type": "Action",
+            "action": "A_ResetDamage",
+            "param": 0.0,
+            "actionOrConditionId": 1005,
+            "children": []
+        },
+        {
+            "type": "Action",
+            "action": "A_BossBackStep",
+            "param": 0.8,
+            "actionOrConditionId": 1104,
+            "children": []
         },
         {
             "type": "Condition",
@@ -939,6 +1182,15 @@
             "param": 0.5,
             "actionOrConditionId": 112,
             "children": []
+        },
+        {
+            "type": "Sequence",
+            "actionOrConditionId": 0,
+            "children": [
+                23,
+                24,
+                25
+            ]
         },
         {
             "type": "Condition",
@@ -965,73 +1217,95 @@
             "type": "Sequence",
             "actionOrConditionId": 0,
             "children": [
-                16,
-                17,
-                18,
-                19,
-                20,
-                21
-            ]
-        },
-        {
-            "type": "Sequence",
-            "actionOrConditionId": 0,
-            "children": [
-                22,
-                23,
-                24,
-                25,
                 26,
-                27
-            ]
-        },
-        {
-            "type": "Sequence",
-            "actionOrConditionId": 0,
-            "children": [
+                27,
                 28,
                 29,
                 30,
-                31,
-                32,
-                33
+                31
             ]
         },
         {
             "type": "Sequence",
             "actionOrConditionId": 0,
             "children": [
+                32,
+                33,
                 34,
                 35,
                 36,
-                37,
-                38,
-                39
+                37
             ]
         },
         {
             "type": "Sequence",
             "actionOrConditionId": 0,
             "children": [
+                38,
+                39,
                 40,
                 41,
                 42,
-                43,
-                44,
-                45
+                43
             ]
         },
         {
             "type": "Sequence",
             "actionOrConditionId": 0,
             "children": [
+                44,
+                45,
                 46,
                 47,
                 48,
-                49,
-                50,
-                51
+                49
             ]
+        },
+        {
+            "type": "Sequence",
+            "actionOrConditionId": 0,
+            "children": [
+                50,
+                51,
+                52,
+                53,
+                54,
+                55
+            ]
+        },
+        {
+            "type": "Sequence",
+            "actionOrConditionId": 0,
+            "children": [
+                56,
+                57,
+                58,
+                59,
+                60,
+                61
+            ]
+        },
+        {
+            "type": "Condition",
+            "condition": "C_DistanceLessThan",
+            "param": 30.0,
+            "actionOrConditionId": 9,
+            "children": []
+        },
+        {
+            "type": "RandomSelector",
+            "actionOrConditionId": 0,
+            "children": [
+                62,
+                63
+            ]
+        },
+        {
+            "type": "Action",
+            "action": "A_Wait",
+            "param": 0.9,
+            "actionOrConditionId": 112,
+            "children": []
         },
         {
             "type": "Action",
@@ -1283,6 +1557,20 @@
             "action": "A_Wait",
             "param": 2.0,
             "actionOrConditionId": 112,
+            "children": []
+        },
+        {
+            "type": "Action",
+            "action": "A_BossDashSlash",
+            "param": 1.4,
+            "actionOrConditionId": 1102,
+            "children": []
+        },
+        {
+            "type": "Action",
+            "action": "A_BossJumpAttack",
+            "param": 1.1,
+            "actionOrConditionId": 1103,
             "children": []
         }
     ]

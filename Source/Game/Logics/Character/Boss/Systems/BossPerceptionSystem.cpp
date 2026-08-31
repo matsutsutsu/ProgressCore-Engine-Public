@@ -50,6 +50,13 @@ void BossPerceptionSystem::Update(float /*rawDt*/)
         {
             btComp.blackboard.healthPercentage =
                 (health.currentHealth / health.maxHealth) * 100.0f;
+
+            // 蓄積した被弾を最大HPに対する割合へ直す。
+            //   積む側（上の DamageTakenEvent 購読）は素の数値しか知らないので、
+            //   HealthComponent を引けるこの場所で割合に直す。条件側が HP を
+            //   引き直さずに済み、「被弾量を読む人」は割合だけを見ればよくなる。
+            btComp.blackboard.accumulatedDamageRatio =
+                (btComp.blackboard.accumulatedDamage / health.maxHealth) * 100.0f;
         }
 
         // --- ターゲットの決定 ---

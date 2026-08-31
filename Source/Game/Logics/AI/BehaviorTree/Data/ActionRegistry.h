@@ -88,7 +88,7 @@ namespace CCL::AI
 ///       旧アセットは g_LegacyConditions（下部）が読み替えるので、開き直す必要はない。
 inline constexpr ActionID C_IsPhase2                = 3;  ///< フェーズ >= 2
 inline constexpr ActionID C_ShouldTransitionPhase2  = 4;  ///< 第1形態 かつ HP <= 閾値
-inline constexpr ActionID C_DamageThresholdExceeded = 6;  ///< 蓄積ダメージ >= 閾値
+inline constexpr ActionID C_DamageThresholdExceeded = 6;  ///< 蓄積被弾 >= 最大HPの param %
 inline constexpr ActionID C_IsAtStageEdge           = 8;  ///< 原点から param m 以上
 inline constexpr ActionID C_DistanceLessThan        = 9;  ///< ターゲットとの距離 < param
 inline constexpr ActionID C_DistanceGreaterThan     = 10; ///< ターゲットとの距離 > param
@@ -100,7 +100,15 @@ inline constexpr ActionID A_Wait        = 112;  ///< 待つ。秒数は param
 inline constexpr ActionID A_Move        = 1000; ///< プレイヤーへ移動。BossActionSystem が実行
 inline constexpr ActionID A_ResetDamage = 1005; ///< ブラックボードの蓄積ダメージをリセット
 inline constexpr ActionID A_DroneStrike = 1006; ///< ドローンへ「今撃て」信号（陣形攻撃のリリース）
-inline constexpr ActionID A_BossSlash   = 1101; ///< 薙ぎ払い。硬直は param（未設定なら既定0.8s）
+/// @note 1100番台はボスの近接。すべて「アニメのトリガーを引き、param 秒だけBTを留める」
+///       という同じ形（TriggeredMotionAction）で、違いは物理挙動だけ。
+///       物理の中身は BossActionSystem が ActionID ごとに分岐して担当する。
+inline constexpr ActionID A_BossSlash     = 1101; ///< 薙ぎ払い。足を止めて斬る自衛技
+inline constexpr ActionID A_BossDashSlash = 1102; ///< 突進斬り。方向を固定して踏み込み、間合いを詰める
+inline constexpr ActionID A_BossJumpAttack = 1103; ///< 跳躍斬り。放物線で跳び、着地で斬る
+/// @note 1104 は攻撃ではないが、同じ「トリガーを引いて param 秒留まる」形なので同居させる。
+///       桁は台帳であって分類ではない（このファイル冒頭の説明のとおり）。
+inline constexpr ActionID A_BossBackStep = 1104; ///< 後方ステップ。被弾がかさんだら間合いを切る
 
 // --- ドローン陣形技 (2000番台) ---
 #define CCL_BT_DEFINE_DRONE_ID(Name, Id, Formation, Display) inline constexpr ActionID Name = Id;
@@ -159,7 +167,10 @@ inline constexpr ActionEntry g_ActionRegistry[] = {
 
     { CCL::AI::A_Move,        "A_Move",        "ボス：移動 (Move To Player)", BTCategory::Boss,   ""              },
     { CCL::AI::A_ResetDamage, "A_ResetDamage", "ボス：蓄積ダメージリセット",  BTCategory::Boss,   ""              },
-    { CCL::AI::A_BossSlash,   "A_BossSlash",   "ボス：薙ぎ払い (Slash)",      BTCategory::Boss,   "硬直 [秒]"     },
+    { CCL::AI::A_BossSlash,      "A_BossSlash",      "ボス：薙ぎ払い (Slash)",       BTCategory::Boss,   "全体時間 [秒]" },
+    { CCL::AI::A_BossDashSlash,  "A_BossDashSlash",  "ボス：突進斬り (Dash Slash)",  BTCategory::Boss,   "全体時間 [秒]" },
+    { CCL::AI::A_BossJumpAttack, "A_BossJumpAttack", "ボス：跳躍斬り (Jump Attack)", BTCategory::Boss,   "全体時間 [秒]" },
+    { CCL::AI::A_BossBackStep,   "A_BossBackStep",   "ボス：後方ステップ (Back Step)", BTCategory::Boss, "全体時間 [秒]" },
 
     { CCL::AI::A_DroneStrike, "A_DroneStrike", "ドローン：攻撃実行 (Strike)", BTCategory::Drone,  ""              },
 
@@ -179,7 +190,7 @@ inline constexpr ActionEntry g_ConditionRegistry[] = {
 
     { CCL::AI::C_IsPhase2,                "C_IsPhase2",                "フェーズ >= 2",                          BTCategory::State, ""                      },
     { CCL::AI::C_ShouldTransitionPhase2,  "C_ShouldTransitionPhase2",  "第2形態移行条件 (HP半分以下 & 第1形態)", BTCategory::State, ""                      },
-    { CCL::AI::C_DamageThresholdExceeded, "C_DamageThresholdExceeded", "ダメージ蓄積 > 閾値",                    BTCategory::State, ""                      },
+    { CCL::AI::C_DamageThresholdExceeded, "C_DamageThresholdExceeded", "被弾の蓄積 >= 最大HPの N %",             BTCategory::State, "最大HPに対する割合 [%]" },
     { CCL::AI::C_IsAtStageEdge,           "C_IsAtStageEdge",           "原点から N m 以上（ステージの端）",      BTCategory::State, "原点からの距離 [m]"    },
 };
 inline constexpr int g_ConditionRegistryCount = sizeof(g_ConditionRegistry) / sizeof(ActionEntry);
@@ -389,8 +400,17 @@ inline bool IsWaitAction(ActionID id) { return id == CCL::AI::A_Wait; }
 inline bool IsBossPhysicalAction(ActionID id) { return id == CCL::AI::A_Move; }
 
 /// ボスの近接アクション（アニメトリガーで攻撃する系）か。
-///        今後 踏み込み/突進 を足したらここに条件を追加する。
-inline bool IsBossMeleeAction(ActionID id) { return id == CCL::AI::A_BossSlash; }
+/// @note  「近接かどうか」の判定であって、物理挙動の分岐ではない。
+///        足を止めるのか踏み込むのか跳ぶのかは BossActionSystem が ActionID ごとに決める。
+inline bool IsBossMeleeAction(ActionID id)
+{
+    return id == CCL::AI::A_BossSlash
+        || id == CCL::AI::A_BossDashSlash
+        || id == CCL::AI::A_BossJumpAttack;
+}
+
+/// 後方ステップ（回避）か。攻撃ではないので上の近接判定には含めない。
+inline bool IsBossEvadeAction(ActionID id) { return id == CCL::AI::A_BossBackStep; }
 
 /// この行動が使う param の意味。使わないなら nullptr。
 /// @note  エディタが入力欄を出すかの判定に使う。

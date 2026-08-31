@@ -20,8 +20,8 @@ static const uint32_t HASH_IS_MOVING = CCL::Utils::HashString("IsMoving");
 void BossAnimSyncSystem::Update(float /*dt*/)
 {
     ForEach([&](const BossActionComponent &boss, AnimParametersComponent &anim) {
-        // Move 中だけ「移動」とみなす。Melee/None は停止（Speed=0 → Idle）。
-        //   ※攻撃(Slash)は MeleeAttackAction のトリガーが上位で再生するので、
+        // Move 中だけ「移動」とみなす。技中・None は停止（Speed=0 → Idle）。
+        //   ※技(Slash 等)は TriggeredMotionAction のトリガーが上位で再生するので、
         //     ここで Speed=0(=Idleベース) でも問題ない。
         const bool isMoving = (boss.currentState == BossActionState::Move);
 
