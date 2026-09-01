@@ -66,6 +66,12 @@ class SquadUpdateSystem : public CCL::ECS::IfSystem<
                            const SquadTuning                  &tuning,
                            float                               dt) const;
 
+    /// 頭が床へ沈まないように高度を止める。全フェーズの移動計算の最後に必ず通す。
+    /// @note  位置だけ止めても直らない。速度と向きの下向き成分も一緒に抜くこと。
+    ///        追従機は「1つ前の機体の速度」を先渡しで受け取るので、頭の速度が
+    ///        下を向いたままだと胴体が床へ押し込まれ続ける。
+    void ClampAltitude(SquadState &squad, const SquadTuning &tuning) const;
+
     // ---- 調整値（グレーボックスで実測して詰める）----
 
     /// 待機時、ボス頭上のどの高さに小隊を置くか。地上の間合いを塞がない高さ。

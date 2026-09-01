@@ -165,6 +165,7 @@ void SquadUpdateSystem::UpdateSquad(SquadState        &squad,
         SteerTowardPlayer(squad, playerPos, tuning, dt);
         squad.anchorVelocity = squad.anchorForward * tuning.strikeSpeed;
         squad.anchorPos      = squad.anchorPos + squad.anchorVelocity * dt;
+        ClampAltitude(squad, tuning);
         return;
     }
 
@@ -226,6 +227,32 @@ void SquadUpdateSystem::UpdateSquad(SquadState        &squad,
             blended.Normalize();
             squad.anchorForward = blended;
         }
+    }
+
+    ClampAltitude(squad, tuning);
+}
+
+
+void SquadUpdateSystem::ClampAltitude(SquadState &squad, const SquadTuning &tuning) const
+{
+    const float floorY = kSquadGroundY + tuning.minAltitude;
+    if (squad.anchorPos.y >= floorY) return;
+
+    squad.anchorPos.y = floorY;
+
+    // 位置を止めるだけでは直らない。速度が下を向いたままだと、
+    // 追従機はそれを followFeedForward として受け取り、床へ押し込まれ続ける。
+    if (squad.anchorVelocity.y < 0.0f) squad.anchorVelocity.y = 0.0f;
+
+    // 向きも寝かせる。真下を向いたまま突入速度を掛けると、速度の大半が
+    // 止められた縦方向に消えて、床に貼り付いたまま前へ進まなくなる。
+    // 水平成分だけ残せば、そのまま床すれすれを這って通り過ぎる絵になる。
+    if (squad.anchorForward.y < 0.0f)
+    {
+        squad.anchorForward.y = 0.0f;
+        if (squad.anchorForward.LengthSquared() < 0.001f)
+            squad.anchorForward = Vector3::UnitZ;   // 真下を向いていた場合の退避
+        squad.anchorForward.Normalize();
     }
 }
 

@@ -114,6 +114,13 @@ struct SquadAssaultFormation : public IFormation
             drone.targetPosition = prevPos - prevDir * tuning.chainGap;
         }
 
+        // 床下を指す持ち場は作らない。
+        //   頭の高度は SquadUpdateSystem が止めているが、追従機の持ち場は
+        //   「1つ前の機体の進行方向の真後ろ」なので、前の機が上向きに抜けた瞬間だけ
+        //   その真後ろが床下になる。バネの行き先そのものを床上に丸めておく。
+        const float floorY = kSquadGroundY + tuning.minAltitude;
+        if (drone.targetPosition.y < floorY) drone.targetPosition.y = floorY;
+
         // 視線は移動側が「実際に進んでいる方向」で上書きする。
         // ここでは突撃方向の基準としてだけ持たせる。
         drone.targetLookDirection = fwd;

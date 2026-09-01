@@ -455,6 +455,12 @@ void DroneManagerSystem::OnGui()
                 ImGui::SliderFloat("接近半径", &tuning.approachRadius, 5.0f, 60.0f, "%.0f m");
                 ImGui::SliderFloat("接近高度", &tuning.approachHeight, 0.0f, 30.0f, "%.0f m");
 
+                ImGui::Spacing();
+                ImGui::TextColored(ImVec4(0.9f, 0.8f, 0.6f, 1.0f), "地面");
+                ImGui::SliderFloat("最低高度", &tuning.minAltitude, 0.0f, 10.0f, "%.1f m");
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("床からこれ以下へは沈まない。突入はプレイヤー（ほぼ床の高さ）を目指すので、ここを 0 にすると地面に埋まる");
+
                 if (ImGui::Button("既定値に戻す", ImVec2(140, 24)))
                     tuning = SquadTuning{};
 
