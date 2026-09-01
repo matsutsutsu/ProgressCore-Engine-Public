@@ -1,6 +1,4 @@
-/**
- * ボス命令をドローンへ配布する実装。1v1 前提で最初のボスの命令を全機へ配る。
- */
+// ボス命令をドローンへ配布する実装。1v1 前提で最初のボスの命令を全機へ配る。
 #include "DroneCommandSystem.h"
 
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"

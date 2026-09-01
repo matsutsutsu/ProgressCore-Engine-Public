@@ -1,15 +1,13 @@
-/**
- * 攻撃系の陣形クラス（予備動作フェーズで「形」を作り、fireDirection を仕込む）。
- *        Formations_Basic.h（周回・待機系）と対に、攻撃技をここへ1クラスずつ追加する。
- *
- * 攻撃陣形の責務:
- *   - 予備動作フェーズ（currentState != FireCharge）中に targetPosition で「形」を作る。
- *     プレイヤーはこの形から回避方向を読み取る。これがゲームの中心的な体験にあたる。
- *   - 同時に fireDirection（突撃方向）を仕込んでおく。FireCharge へ移った瞬間、
- *     DroneMovementSystem が fireDirection に沿って「タメ→リリース」を行う。
- *   - FireCharge 中は座標・方向を凍結し、コミットした直進を保証する
- *     （ホーミングさせない＝ジャスト回避で抜けられる）。
- */
+// 攻撃系の陣形クラス（予備動作フェーズで「形」を作り、fireDirection を仕込む）。
+//        Formations_Basic.h（周回・待機系）と対に、攻撃技をここへ1クラスずつ追加する。
+//
+// 攻撃陣形の責務:
+//   - 予備動作フェーズ（currentState != FireCharge）中に targetPosition で「形」を作る。
+//     プレイヤーはこの形から回避方向を読み取る。これがゲームの中心的な体験にあたる。
+//   - 同時に fireDirection（突撃方向）を仕込んでおく。FireCharge へ移った瞬間、
+//     DroneMovementSystem が fireDirection に沿って「タメ→リリース」を行う。
+//   - FireCharge 中は座標・方向を凍結し、コミットした直進を保証する
+//     （ホーミングさせない＝ジャスト回避で抜けられる）。
 #pragma once
 #include "Game/Logics/AI/Drone/Formation/IFormation.h"
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
@@ -203,8 +201,8 @@ struct ClapSlamFormation : public IFormation
 // ====================================================================
 struct KamikazeSwarmFormation : public IFormation
 {
-    /// 撃ち出したら各機が独立して飛ぶ技なので、終了判断は個体に持たせる。
-    /// （飛び切った機から順に離脱→隊列へ戻る＝「帰投がバラバラ」になる）
+    // 撃ち出したら各機が独立して飛ぶ技なので、終了判断は個体に持たせる。
+    // （飛び切った機から順に離脱→隊列へ戻る＝「帰投がバラバラ」になる）
     ChargeLifecycle GetLifecycle() const override { return ChargeLifecycle::Individual; }
 
     void Calculate(DroneComponent &drone, const FormationContext &ctx) override
@@ -264,7 +262,7 @@ struct KamikazeSwarmFormation : public IFormation
 // ====================================================================
 struct MegaClapSlamBase : public IFormation
 {
-    /// 上段が先に閉じるか（派生で指定）。
+    // 上段が先に閉じるか（派生で指定）。
     virtual bool UpperFirst() const = 0;
 
     void Calculate(DroneComponent &drone, const FormationContext &ctx) override
@@ -422,7 +420,7 @@ struct SideSlapWhipFormation : public IFormation
 // ====================================================================
 struct WaveGuillotineBase : public IFormation
 {
-    /// この刃の「波内位置」(0=最初に倒れる, 1=最後)。派生が向きを決める。
+    // この刃の「波内位置」(0=最初に倒れる, 1=最後)。派生が向きを決める。
     virtual float WaveT(int bladeIndex, int numBlades) const = 0;
 
     void Calculate(DroneComponent &drone, const FormationContext &ctx) override

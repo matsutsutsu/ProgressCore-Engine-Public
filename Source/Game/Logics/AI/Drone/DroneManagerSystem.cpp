@@ -1,7 +1,5 @@
-/**
- * ドローンの生成・計数・破壊の実装。既存 DroneFormationSystem::OnGui の
- *        生成ロジックを移植し、BattleContext への計数反映を追加した。
- */
+// ドローンの生成・計数・破壊の実装。既存 DroneFormationSystem::OnGui の
+//        生成ロジックを移植し、BattleContext への計数反映を追加した。
 #include "DroneManagerSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
@@ -564,4 +562,4 @@ bool DroneManagerSystem::DestroyDrone(EntityID droneId)
 }
 
 // L02_Update で計数（判断・陣形と同じステージ。順序は問わない）
-REGISTER_LOGIC_SYSTEM(DroneManagerSystem, Priority::LogicStage::L02_Update)
+REGISTER_LOGIC_SYSTEM(DroneManagerSystem, Priority::LogicStage::L02_Update)

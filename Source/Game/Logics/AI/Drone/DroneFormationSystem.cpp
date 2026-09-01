@@ -1,6 +1,4 @@
-/**
- * IFormation 方式の陣形計算。registry から陣形を引いて targetPosition を計算。
- */
+// IFormation 方式の陣形計算。registry から陣形を引いて targetPosition を計算。
 #include "DroneFormationSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
@@ -22,11 +20,11 @@ using namespace CCL::AI::Formation;
 
 namespace
 {
-/// データ実装（JSON）を持つ陣形の一覧。
-///
-/// ここに並んでいるのは「形が attackProgress の関数で決まる」技だけ。
-/// カミカゼ（各機が飛距離で自分から切り上げる）と小隊突撃（1つ前の機体に追従する）は
-/// 個体が状態をラッチするので、データにできない＝この表に載らない。
+// データ実装（JSON）を持つ陣形の一覧。
+//
+// ここに並んでいるのは「形が attackProgress の関数で決まる」技だけ。
+// カミカゼ（各機が飛距離で自分から切り上げる）と小隊突撃（1つ前の機体に追従する）は
+// 個体が状態をラッチするので、データにできない＝この表に載らない。
 constexpr FormationSpecAsset kSpecAssets[] = {
     {DroneFormationType::GuillotineSlam,          "GuillotineSlam"         },
     {DroneFormationType::ClapSlam,                "ClapSlam"               },

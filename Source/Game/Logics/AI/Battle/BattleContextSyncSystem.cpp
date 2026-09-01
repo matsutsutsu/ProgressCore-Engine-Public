@@ -1,6 +1,4 @@
-/**
- * プレイヤー・ボスを探して BattleContext に反映する実装。
- */
+// プレイヤー・ボスを探して BattleContext に反映する実装。
 #include "BattleContextSyncSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"

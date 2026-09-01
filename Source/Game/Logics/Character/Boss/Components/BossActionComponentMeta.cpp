@@ -1,6 +1,4 @@
-/**
- * BossActionComponent (筋肉) のシリアライズ/インスペクタ定義。最小構成版。
- */
+// BossActionComponent (筋肉) のシリアライズ/インスペクタ定義。最小構成版。
 #include "BossActionComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
@@ -10,7 +8,7 @@
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #endif
 
-/// @note BossActionState と1対1で並べる（順番がずれると別の状態名が表示される）。
+// @note BossActionState と1対1で並べる（順番がずれると別の状態名が表示される）。
 static const char* BossStateNames[] = {
     "None", "Move", "Melee", "DashSlash", "JumpAttack", "BackStep",
 };
@@ -48,4 +46,4 @@ template <> struct ComponentMeta<BossActionComponent> {
 };
 
 REGISTER_COMPONENT(BossActionComponent, "BossActionComponent")
-REGISTER_COMPONENT_EDITOR_GUI(BossActionComponent)
+REGISTER_COMPONENT_EDITOR_GUI(BossActionComponent)

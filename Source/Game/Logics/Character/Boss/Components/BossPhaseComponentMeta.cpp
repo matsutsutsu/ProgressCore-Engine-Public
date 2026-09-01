@@ -1,6 +1,4 @@
-/**
- * BossPhaseComponent のシリアライズ/インスペクタ定義。
- */
+// BossPhaseComponent のシリアライズ/インスペクタ定義。
 #include "BossPhaseComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"

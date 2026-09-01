@@ -1,6 +1,4 @@
-/**
- * ActionID → アクション/条件クラスを解決するレジストリ。switch廃止の核。
- */
+// ActionID → アクション/条件クラスを解決するレジストリ。switch廃止の核。
 #pragma once
 #include <memory>
 #include <vector>
@@ -35,7 +33,7 @@ namespace CCL::AI::BT
             m_conditions[id] = std::make_unique<T>();
         }
 
-        /// コンストラクタ引数が要るアクション（Wait等）を構築済みで登録。
+        // コンストラクタ引数が要るアクション（Wait等）を構築済みで登録。
         void RegisterActionInstance(ActionID id, std::unique_ptr<IBTAction> action)
         {
             if (id >= m_actions.size()) m_actions.resize(id + 1);

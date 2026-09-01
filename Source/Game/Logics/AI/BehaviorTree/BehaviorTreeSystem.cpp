@@ -1,8 +1,6 @@
-/**
- * 汎用 BehaviorTree 評価エンジンの実装。
- *        BossAISystem のエンジン部分を registry 駆動で書き直した。
- *        ExecuteAction/EvaluateCondition の巨大switchは廃止。
- */
+// 汎用 BehaviorTree 評価エンジンの実装。
+//        BossAISystem のエンジン部分を registry 駆動で書き直した。
+//        ExecuteAction/EvaluateCondition の巨大switchは廃止。
 #include "BehaviorTreeSystem.h"
 
 #include "Game/Logics/AI/BehaviorTree/Data/BTAssetCache.h"
@@ -347,7 +345,7 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
 
 #ifdef ENABLE_EDITOR
 namespace {
-    /// ActionRegistry.h の辞書から表示名を逆引きする。見つからなければ nullptr。
+    // ActionRegistry.h の辞書から表示名を逆引きする。見つからなければ nullptr。
     const char *LookupEntryName(const ActionEntry *table, int count, ActionID id)
     {
         for (int i = 0; i < count; ++i) {
@@ -356,11 +354,11 @@ namespace {
         return nullptr;
     }
 
-    /// この枝で最初に見つかる Action の表示名。
-    /// @note  Sequence や Selector は名前を持たない（名前はエディタのグラフ側にしか無い）ので、
-    ///        「その枝が何をする枝なのか」を中身の先頭アクションで示す。
-    ///        ドローン攻撃は必ず「陣形指示 → Wait → Strike → …」の順なので、
-    ///        先頭アクション名がそのまま技名になる。
+    // この枝で最初に見つかる Action の表示名。
+    // @note  Sequence や Selector は名前を持たない（名前はエディタのグラフ側にしか無い）ので、
+    //        「その枝が何をする枝なのか」を中身の先頭アクションで示す。
+    //        ドローン攻撃は必ず「陣形指示 → Wait → Strike → …」の順なので、
+    //        先頭アクション名がそのまま技名になる。
     const char *FirstActionNameInSubtree(const BTAsset &asset, BTNodeID nodeId)
     {
         const BTNode &node = asset.nodes[nodeId];
@@ -373,7 +371,7 @@ namespace {
         return nullptr;
     }
 
-    /// param を短く整形する。小数第1位まで（10.0 → "10.0"）。
+    // param を短く整形する。小数第1位まで（10.0 → "10.0"）。
     std::string FormatParam(float v)
     {
         char buf[32];
@@ -561,4 +559,4 @@ void BehaviorTreeSystem::OnGui() {}
 #endif
 
 
-REGISTER_LOGIC_SYSTEM(BehaviorTreeSystem, Priority::LogicStage::L02_Update);
+REGISTER_LOGIC_SYSTEM(BehaviorTreeSystem, Priority::LogicStage::L02_Update);

@@ -1,10 +1,8 @@
-/**
- * ボスの状況認識の実装。BattleContext（世界の事実）を読んで
- *        blackboard（各ボスの主観的認識）を更新する。
- *
- * BattleContext.playerPos を使うことで、「プレイヤーをViewで探す」処理を
- * 各システムで重複させない（1対1なので探索はBattleContext更新側で1回のみ）。
- */
+// ボスの状況認識の実装。BattleContext（世界の事実）を読んで
+//        blackboard（各ボスの主観的認識）を更新する。
+//
+// BattleContext.playerPos を使うことで、「プレイヤーをViewで探す」処理を
+// 各システムで重複させない（1対1なので探索はBattleContext更新側で1回のみ）。
 #include "BossPerceptionSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
@@ -88,4 +86,4 @@ void BossPerceptionSystem::Update(float /*rawDt*/)
 // L02_PreUpdate：BehaviorTreeSystem(L02_Update) が blackboard を読む前に認識を確定させる。
 //   同ステージの BossPhaseSystem / DroneBrainSystem とは互いに依存しない
 //   （あちらは blackboard を読まない）ので、順序が決まらなくても問題ない。
-REGISTER_LOGIC_SYSTEM(BossPerceptionSystem, Priority::LogicStage::L02_PreUpdate);
+REGISTER_LOGIC_SYSTEM(BossPerceptionSystem, Priority::LogicStage::L02_PreUpdate);

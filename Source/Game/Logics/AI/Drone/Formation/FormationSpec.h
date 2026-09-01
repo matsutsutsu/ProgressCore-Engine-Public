@@ -1,19 +1,17 @@
-/**
- * 陣形1つぶんの「データ」。C++ で書いていた陣形クラスをパラメータへ開いたもの。
- *
- * なぜ必要か:
- *   既存の攻撃陣形を分解すると、どれも
- *     ①localIndex を席へ割り付け ②席から座標を作り ③形全体を1つ動かす
- *   の3段で、違うのは数値と軸だけだった。C++ に書かれているとその数値を1つ変える
- *   たびにリビルドが要る。ここをデータにすると実行中に変えられる。
- *
- * カバー範囲（意図的な線引き）:
- *   「形が attackProgress の関数で決まる」技だけを対象にする。
- *   KamikazeSwarm（各機が飛距離で自分から切り上げる）と SquadAssault（1つ前の機体に
- *   追従する）は個体がフィールドへ状態をラッチするので、この形式では書けない。
- *   OrbitCircle 系は進行度ではなく経過時間で回るのでこれも対象外。
- *   ＝ ChargeLifecycle::Broadcast の陣形だけがデータになる、と同じ線引きになる。
- */
+// 陣形1つぶんの「データ」。C++ で書いていた陣形クラスをパラメータへ開いたもの。
+//
+// なぜ必要か:
+//   既存の攻撃陣形を分解すると、どれも
+//     ①localIndex を席へ割り付け ②席から座標を作り ③形全体を1つ動かす
+//   の3段で、違うのは数値と軸だけだった。C++ に書かれているとその数値を1つ変える
+//   たびにリビルドが要る。ここをデータにすると実行中に変えられる。
+//
+// カバー範囲（意図的な線引き）:
+//   「形が attackProgress の関数で決まる」技だけを対象にする。
+//   KamikazeSwarm（各機が飛距離で自分から切り上げる）と SquadAssault（1つ前の機体に
+//   追従する）は個体がフィールドへ状態をラッチするので、この形式では書けない。
+//   OrbitCircle 系は進行度ではなく経過時間で回るのでこれも対象外。
+//   ＝ ChargeLifecycle::Broadcast の陣形だけがデータになる、と同じ線引きになる。
 #pragma once
 #include <algorithm>
 #include <cstdint>
@@ -27,7 +25,7 @@
 namespace CCL::AI::Formation
 {
 
-/// 陣形の基底3軸。Forward は「ボス→プレイヤーの水平方向」で毎フレーム作り直す。
+// 陣形の基底3軸。Forward は「ボス→プレイヤーの水平方向」で毎フレーム作り直す。
 enum class SpecAxis : uint8_t
 {
     Right,
@@ -35,53 +33,53 @@ enum class SpecAxis : uint8_t
     Forward,
 };
 
-/// 席の並べ方。
+// 席の並べ方。
 enum class SpecShape : uint8_t
 {
-    Grid, ///< 直交格子。列は columnAxis 方向、行は上方向（刃・壁）
-    Arm,  ///< 放射状。列は「腕の向き」への距離、行は上方向（腕・薙ぎ払い）
+    Grid, // 直交格子。列は columnAxis 方向、行は上方向（刃・壁）
+    Arm,  // 放射状。列は「腕の向き」への距離、行は上方向（腕・薙ぎ払い）
 };
 
-/// 形全体にかける動き。既存の攻撃陣形はこの3つしか使っていない。
+// 形全体にかける動き。既存の攻撃陣形はこの3つしか使っていない。
 enum class SpecTransform : uint8_t
 {
     None,
-    Hinge,     ///< 下端を軸に up→forward へ倒す（縦割り・波状縦割り）
-    YawSweep,  ///< 腕の向きを Y 軸まわりに振る（挟み込み・薙ぎ払い）
-    Translate, ///< 形ごと平行移動する（2段挟み込みが左右から寄る）
+    Hinge,     // 下端を軸に up→forward へ倒す（縦割り・波状縦割り）
+    YawSweep,  // 腕の向きを Y 軸まわりに振る（挟み込み・薙ぎ払い）
+    Translate, // 形ごと平行移動する（2段挟み込みが左右から寄る）
 };
 
-/// localIndex をグループへ配る順序。
+// localIndex をグループへ配る順序。
 enum class SpecSplit : uint8_t
 {
-    Interleaved, ///< 1機ずつ交互に配る（i % groupCount）
-    Block,       ///< 連続したかたまりで配る（i / perGroup）
+    Interleaved, // 1機ずつ交互に配る（i % groupCount）
+    Block,       // 連続したかたまりで配る（i / perGroup）
 };
 
-/// 時間差を「何の単位で」つけるか。
+// 時間差を「何の単位で」つけるか。
 enum class SpecPhaseSource : uint8_t
 {
-    None,   ///< 全機同時に動く
-    Column, ///< 列ごとにずらす（波状縦割り＝波が横へ走る）
-    Tier,   ///< 段ごとにずらす（2段挟み込み＝上下の先攻後攻）
+    None,   // 全機同時に動く
+    Column, // 列ごとにずらす（波状縦割り＝波が横へ走る）
+    Tier,   // 段ごとにずらす（2段挟み込み＝上下の先攻後攻）
 };
 
-/// 機首の向け方。
-///
-/// Auto で足りるのは、向きが形と変換からほぼ一意に決まるため。
-///   ヒンジ → 倒れていく接線 / 腕 → 腕の伸びる向き / 平行移動 → 動く向きの逆（内向き）
-/// 例外は挟み込みで、腕自体は横を向いたままプレイヤーへ機首を向ける。
+// 機首の向け方。
+//
+// Auto で足りるのは、向きが形と変換からほぼ一意に決まるため。
+//   ヒンジ → 倒れていく接線 / 腕 → 腕の伸びる向き / 平行移動 → 動く向きの逆（内向き）
+// 例外は挟み込みで、腕自体は横を向いたままプレイヤーへ機首を向ける。
 enum class SpecLook : uint8_t
 {
     Auto,
-    ToPlayer, ///< プレイヤーへ水平に（挟み込み）
+    ToPlayer, // プレイヤーへ水平に（挟み込み）
 };
 
 // ============================================================================
 // 陣形データ本体
 // ============================================================================
 
-/// 陣形1つぶんのパラメータ。1ファイル = 1陣形（Assets/Formations/*.json）。
+// 陣形1つぶんのパラメータ。1ファイル = 1陣形（Assets/Formations/*.json）。
 struct FormationSpec
 {
     std::string name = "Formation";
@@ -91,19 +89,19 @@ struct FormationSpec
     // ------------------------------------------------------------------
     struct Assign
     {
-        /// 符号で分かれるグループ数。左右の腕なら 2。変換の向きが反転する。
+        // 符号で分かれるグループ数。左右の腕なら 2。変換の向きが反転する。
         int sideGroups = 1;
 
-        /// 時間差で動くグループ数。上下2段なら 2。phaseSource=Tier のときの単位になる。
+        // 時間差で動くグループ数。上下2段なら 2。phaseSource=Tier のときの単位になる。
         int tierGroups = 1;
 
         SpecSplit split = SpecSplit::Block;
 
-        /// 格子の行数。0 なら「正方に近い自動格子（列が先に進む）」。
-        ///
-        /// 0 と 1以上で列・行の進み方が逆になる。既存陣形がそう書かれていたため:
-        ///   縦割り  … cols=√総数 を出して col=i%cols（列が先）＝刃を横へ敷き詰める
-        ///   それ以外… rows は固定値で row=i%rows（行が先）＝1列を縦に埋めてから隣の列へ
+        // 格子の行数。0 なら「正方に近い自動格子（列が先に進む）」。
+        //
+        // 0 と 1以上で列・行の進み方が逆になる。既存陣形がそう書かれていたため:
+        //   縦割り  … cols=√総数 を出して col=i%cols（列が先）＝刃を横へ敷き詰める
+        //   それ以外… rows は固定値で row=i%rows（行が先）＝1列を縦に埋めてから隣の列へ
         int rows = 0;
     } assign;
 
@@ -114,22 +112,22 @@ struct FormationSpec
     {
         SpecShape type = SpecShape::Grid;
 
-        /// Grid のとき列を並べる軸。縦割りは Right（横へ敷く）、2段挟み込みは Forward（奥行き）。
+        // Grid のとき列を並べる軸。縦割りは Right（横へ敷く）、2段挟み込みは Forward（奥行き）。
         SpecAxis columnAxis = SpecAxis::Right;
 
-        float spacingA = 2.0f; ///< 列方向の間隔 [m]（Arm では半径方向の間隔）
-        float spacingB = 2.0f; ///< 行方向（上方向）の間隔 [m]
+        float spacingA = 2.0f; // 列方向の間隔 [m]（Arm では半径方向の間隔）
+        float spacingB = 2.0f; // 行方向（上方向）の間隔 [m]
 
-        /// 列方向を中央揃えにするか。
-        ///   true  … 形の中心がボス正面に来る（刃・壁）
-        ///   false … baseA から片側へ伸びる（腕）
+        // 列方向を中央揃えにするか。
+        //   true  … 形の中心がボス正面に来る（刃・壁）
+        //   false … baseA から片側へ伸びる（腕）
         bool  centerColumns = true;
-        float baseA         = 0.0f; ///< centerColumns=false のときの列方向の起点（Arm の最内半径）
+        float baseA         = 0.0f; // centerColumns=false のときの列方向の起点（Arm の最内半径）
 
-        float baseB     = 0.0f; ///< 行方向の起点＝形の下端 [m]
-        float tierStepB = 0.0f; ///< 段が1つ上がるごとに足す高さ [m]（上下2段の段差）
+        float baseB     = 0.0f; // 行方向の起点＝形の下端 [m]
+        float tierStepB = 0.0f; // 段が1つ上がるごとに足す高さ [m]（上下2段の段差）
 
-        /// ボスからの原点オフセット。
+        // ボスからの原点オフセット。
         float originForward = 0.0f;
         float originUp      = 0.0f;
         float originRight   = 0.0f;
@@ -146,16 +144,16 @@ struct FormationSpec
     {
         SpecTransform type = SpecTransform::None;
 
-        /// Translate のときの移動軸。Hinge は「right を軸に up→forward」で固定、
-        /// YawSweep は「Y 軸まわり」で固定なので参照しない。
+        // Translate のときの移動軸。Hinge は「right を軸に up→forward」で固定、
+        // YawSweep は「Y 軸まわり」で固定なので参照しない。
         SpecAxis axis = SpecAxis::Right;
 
-        float from = 0.0f; ///< 進行度0での値。Hinge/YawSweep は角度[度]、Translate は距離[m]
-        float to   = 0.0f; ///< 進行度1での値
+        float from = 0.0f; // 進行度0での値。Hinge/YawSweep は角度[度]、Translate は距離[m]
+        float to   = 0.0f; // 進行度1での値
 
-        /// side グループごとに符号を反転するか（左右の腕が対称に動く）。
+        // side グループごとに符号を反転するか（左右の腕が対称に動く）。
         bool mirrorBySide = false;
-        /// 反転の向きを入れ替える。side=0 を負側にしたいときに立てる。
+        // 反転の向きを入れ替える。side=0 を負側にしたいときに立てる。
         bool mirrorFlip = false;
     } transform;
 
@@ -164,18 +162,18 @@ struct FormationSpec
     // ------------------------------------------------------------------
     struct Timing
     {
-        float speed = 2.5f; ///< attackProgress の進む速さ [1/秒]。1/speed 秒で振り切る
+        float speed = 2.5f; // attackProgress の進む速さ [1/秒]。1/speed 秒で振り切る
 
-        /// 進行度(0→1) → 変換量(0→1)。キーが無ければ p*p（既存陣形と同じ easeIn）。
-        ///
-        /// 既存陣形は eased = p*p で固定されており、「タメてから一気に」
-        /// 「途中で止めて見せる」が原理的に作れなかった。ここをカーブにすると、
-        /// その表現が初めてデータ側で作れるようになる。
+        // 進行度(0→1) → 変換量(0→1)。キーが無ければ p*p（既存陣形と同じ easeIn）。
+        //
+        // 既存陣形は eased = p*p で固定されており、「タメてから一気に」
+        // 「途中で止めて見せる」が原理的に作れなかった。ここをカーブにすると、
+        // その表現が初めてデータ側で作れるようになる。
         CurveData curve;
 
         SpecPhaseSource phaseSource  = SpecPhaseSource::None;
-        float           phaseOverlap = 1.0f;  ///< 1単位が動き切るのに使う進行度の幅（0.35＝波が細い）
-        bool            phaseReverse = false; ///< 順序を反転（波が左→右／右→左）
+        float           phaseOverlap = 1.0f;  // 1単位が動き切るのに使う進行度の幅（0.35＝波が細い）
+        bool            phaseReverse = false; // 順序を反転（波が左→右／右→左）
     } timing;
 
     // ------------------------------------------------------------------
@@ -185,10 +183,10 @@ struct FormationSpec
     {
         bool     enabled   = false;
         SpecAxis axis      = SpecAxis::Right;
-        float    amplitude = 0.0f;  ///< 震え幅 [m]
-        float    frequency = 10.0f; ///< 震えの速さ [rad/秒]
+        float    amplitude = 0.0f;  // 震え幅 [m]
+        float    frequency = 10.0f; // 震えの速さ [rad/秒]
 
-        /// 「先に動く側」と見なす phaseT の上限。これ以下の席だけが震える。
+        // 「先に動く側」と見なす phaseT の上限。これ以下の席だけが震える。
         float leadThreshold = 0.18f;
     } tell;
 
@@ -198,8 +196,8 @@ struct FormationSpec
     SpecLook   look       = SpecLook::Auto;
     ChargeMode chargeMode = ChargeMode::RigidFollow;
 
-    bool  clampToGround   = false; ///< 水平を越えて倒れる形が地面へ潜るのを止める
-    float groundClearance = 0.5f;  ///< ボス足元からの最低高さ [m]
+    bool  clampToGround   = false; // 水平を越えて倒れる形が地面へ潜るのを止める
+    float groundClearance = 0.5f;  // ボス足元からの最低高さ [m]
 };
 
 // ============================================================================

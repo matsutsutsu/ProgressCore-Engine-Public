@@ -1,6 +1,4 @@
-/**
- * ボスアクションシステムの実装（最小構成：待機・移動のみ）。
- */
+// ボスアクションシステムの実装（最小構成：待機・移動のみ）。
 #include "BossActionSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"

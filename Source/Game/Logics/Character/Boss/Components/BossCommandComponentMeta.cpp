@@ -1,10 +1,8 @@
-/**
- * BossCommandComponent のシリアライズ/インスペクタ定義。
- *
- * @note targetPlayerId は撤去した。シリアライズ欄はあったが、コード上どこからも
- *       読まれていない死にフィールドだった。「誰を狙うか」は
- *       AIBlackboard::targetEntity（知覚システムが毎フレーム解決する）が持つ。
- */
+// BossCommandComponent のシリアライズ/インスペクタ定義。
+//
+// @note targetPlayerId は撤去した。シリアライズ欄はあったが、コード上どこからも
+//       読まれていない死にフィールドだった。「誰を狙うか」は
+//       AIBlackboard::targetEntity（知覚システムが毎フレーム解決する）が持つ。
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
 #include "Game/Logics/AI/Drone/DroneComponent.h" // kDroneFormationNames
 #include "Engine/Serialization/Registry/ComponentRegistry.h"

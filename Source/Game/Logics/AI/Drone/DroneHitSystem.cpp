@@ -1,15 +1,13 @@
-/**
- * 突撃(FireCharge リリース)中のドローンがプレイヤーに接触したら DamageEvent を生成する実装。
- *
- * 実装の意図(Why):
- *   - 既存の戦闘パイプラインへ「DamageEvent を1個積む」だけで合流する。HP減算・
- *     ノックバック・ヒットストップ・被弾演出は DamageResolutionSystem(L06) 以降が担う。
- *   - プレイヤーの無敵時間(HealthComponent.invincibilityTimer)が多段ヒットを吸収するので、
- *     1フレームにつき DamageEvent は「最も近い危険ドローン1体」ぶんだけ生成すれば足りる
- *     (50機同時接触でも無敵で1発に収束するため、無駄なイベント生成をしない)。
- *   - 「危険」= リリース局面のみ。タメ(引き絞り)・発射待ち(fireDelay)は当たらない
- *     = ジャスト回避で狙う「読ませ→避け」の窓と一致させる。
- */
+// 突撃(FireCharge リリース)中のドローンがプレイヤーに接触したら DamageEvent を生成する実装。
+//
+// 実装の意図(Why):
+//   - 既存の戦闘パイプラインへ「DamageEvent を1個積む」だけで合流する。HP減算・
+//     ノックバック・ヒットストップ・被弾演出は DamageResolutionSystem(L06) 以降が担う。
+//   - プレイヤーの無敵時間(HealthComponent.invincibilityTimer)が多段ヒットを吸収するので、
+//     1フレームにつき DamageEvent は「最も近い危険ドローン1体」ぶんだけ生成すれば足りる
+//     (50機同時接触でも無敵で1発に収束するため、無駄なイベント生成をしない)。
+//   - 「危険」= リリース局面のみ。タメ(引き絞り)・発射待ち(fireDelay)は当たらない
+//     = ジャスト回避で狙う「読ませ→避け」の窓と一致させる。
 #include "DroneHitSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
@@ -30,18 +28,18 @@ using DirectX::SimpleMath::Vector3;
 namespace
 {
     // --- 調整項目(グレーボックスで実測して詰める) ---
-    constexpr float kHitRadius       = 2.5f;   ///< ドローンとプレイヤーの接触半径(m)
-    constexpr float kDamage          = 8.0f;   ///< 1ヒットの基礎ダメージ
-    constexpr float kKnockback       = 12.0f;  ///< ノックバック強さ(0で無効)
-    constexpr float kHitStopDuration = 0.05f;  ///< 命中時のヒットストップ(秒)
-    constexpr float kHitStopScale    = 0.0f;   ///< ヒットストップ中のタイムスケール(0=完全停止)
+    constexpr float kHitRadius       = 2.5f;   // ドローンとプレイヤーの接触半径(m)
+    constexpr float kDamage          = 8.0f;   // 1ヒットの基礎ダメージ
+    constexpr float kKnockback       = 12.0f;  // ノックバック強さ(0で無効)
+    constexpr float kHitStopDuration = 0.05f;  // 命中時のヒットストップ(秒)
+    constexpr float kHitStopScale    = 0.0f;   // ヒットストップ中のタイムスケール(0=完全停止)
 
-    /// このドローンが「今まさに突撃していて危険」か。
-    ///        タメ(stateTimer>0)・発射待ち(fireDelay>0)は危険ではない。
-    ///        陣形追従の突撃(縦割り等)は突入中ずっと危険、ダッシュ系はタメ後のみ危険。
-    /// @note  硬直(Stunned)と離脱(Returning)は FireCharge ではないので、この1行で
-    ///        まとめて除外される。「突き抜けた後の帰り道は当たらない」は状態の分離から
-    ///        自動的に出てくるもので、専用の判定は要らない。
+    // このドローンが「今まさに突撃していて危険」か。
+    //        タメ(stateTimer>0)・発射待ち(fireDelay>0)は危険ではない。
+    //        陣形追従の突撃(縦割り等)は突入中ずっと危険、ダッシュ系はタメ後のみ危険。
+    // @note  硬直(Stunned)と離脱(Returning)は FireCharge ではないので、この1行で
+    //        まとめて除外される。「突き抜けた後の帰り道は当たらない」は状態の分離から
+    //        自動的に出てくるもので、専用の判定は要らない。
     bool IsDangerous(const DroneComponent& d)
     {
         if (d.knockbackTimer > 0.0f)                  return false;   // 切り払いで吹き飛ばし中は無害

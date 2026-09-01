@@ -1,6 +1,4 @@
-/**
- * ボスの移動アニメ駆動の実装。BossActionComponent → AnimParameters の翻訳。
- */
+// ボスの移動アニメ駆動の実装。BossActionComponent → AnimParameters の翻訳。
 #include "BossAnimSyncSystem.h"
 
 #include "Engine/Core/Math/StringHash.h"

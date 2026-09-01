@@ -1,10 +1,8 @@
-/**
- * ドローン移動システムの実装（基礎3ステート版）。
- *
- * FireCharge は内部で stateTimer を使い「タメ→リリース」の2フェーズを持つ
- * （旧 LockOn の役割を吸収）。これにより外部からは FireCharge 1つを
- * 見ているだけで「予備動作→突撃」という企画上重要な予兆表現ができる。
- */
+// ドローン移動システムの実装（基礎3ステート版）。
+//
+// FireCharge は内部で stateTimer を使い「タメ→リリース」の2フェーズを持つ
+// （旧 LockOn の役割を吸収）。これにより外部からは FireCharge 1つを
+// 見ているだけで「予備動作→突撃」という企画上重要な予兆表現ができる。
 #include "DroneMovementSystem.h"
 #include "Game/Logics/AI/Drone/Squad/SquadState.h"
 #include "Engine/Core/Systems/SystemPriority.h"
@@ -149,8 +147,8 @@ inline void DroneMovementSystem::ProcessIdle(TransformComponent &trans, DroneCom
     }
 }
 
-/// 突撃。stateTimer > 0 の間は「タメ」（旧LockOnを吸収）、
-///        0になった瞬間から「リリース」（高速直進）に切り替わる2フェーズ構造。
+// 突撃。stateTimer > 0 の間は「タメ」（旧LockOnを吸収）、
+//        0になった瞬間から「リリース」（高速直進）に切り替わる2フェーズ構造。
 inline void DroneMovementSystem::ProcessFireCharge(TransformComponent &trans, DroneComponent &drone, float dt)
 {
     // ------------------------------------------------------------
@@ -244,13 +242,13 @@ inline void DroneMovementSystem::ProcessFireCharge(TransformComponent &trans, Dr
     }
 }
 
-/// 隊列追従の突入。目標へバネで寄るので、速いほど後ろへ流れ、曲がると遅れて曲がる。
-///
-/// 剛体追従（RigidFollow）との違いがこの技の生死を分ける:
-///   剛体は毎フレーム座標へ貼り付けるので隊列が1ミリも歪まない。5機で飛んでも
-///   「1枚の板が近づいてくる」ようにしか見えず、追従しているように見えない。
-///   バネなら速度に比例して後方へずれ、頭が曲がった分だけ遅れて曲がるため、
-///   隊列がしなって「前の機体についていっている」ように見える。
+// 隊列追従の突入。目標へバネで寄るので、速いほど後ろへ流れ、曲がると遅れて曲がる。
+//
+// 剛体追従（RigidFollow）との違いがこの技の生死を分ける:
+//   剛体は毎フレーム座標へ貼り付けるので隊列が1ミリも歪まない。5機で飛んでも
+//   「1枚の板が近づいてくる」ようにしか見えず、追従しているように見えない。
+//   バネなら速度に比例して後方へずれ、頭が曲がった分だけ遅れて曲がるため、
+//   隊列がしなって「前の機体についていっている」ように見える。
 inline void DroneMovementSystem::ProcessChargeSoftFollow(TransformComponent &trans, DroneComponent &drone, float dt)
 {
     // 後方の機ほどバネを弱める＝遅れが増える＝しなりが大きくなる
@@ -285,8 +283,8 @@ inline void DroneMovementSystem::ProcessChargeSoftFollow(TransformComponent &tra
     }
 }
 
-/// 硬直。吹き飛ばし速度で漂いながら減衰し、制御を失った姿勢を見せる。
-///        立て直し中は knockbackVelocity が既に 0 付近なので、自然にその場で止まる。
+// 硬直。吹き飛ばし速度で漂いながら減衰し、制御を失った姿勢を見せる。
+//        立て直し中は knockbackVelocity が既に 0 付近なので、自然にその場で止まる。
 inline void DroneMovementSystem::ProcessStunned(TransformComponent &trans, DroneComponent &drone, float dt)
 {
     // 共通の積分（trans.position += currentVelocity * dt）に乗せる。
@@ -302,7 +300,7 @@ inline void DroneMovementSystem::ProcessStunned(TransformComponent &trans, Drone
     trans.rotation    = Quaternion::Concatenate(trans.rotation, tumble);
 }
 
-/// 離脱。突撃の勢いを残したまま上方へ抜け、減速しながら進行方向を向く。
+// 離脱。突撃の勢いを残したまま上方へ抜け、減速しながら進行方向を向く。
 inline void DroneMovementSystem::ProcessReturning(TransformComponent &trans, DroneComponent &drone, float dt)
 {
     drone.currentVelocity += Vector3::UnitY * (kBreakawayLift * dt);
@@ -324,4 +322,4 @@ inline void DroneMovementSystem::ProcessReturning(TransformComponent &trans, Dro
 }
 
 // L03_PrePhysics で確定させる（PushSystem より前に trans を仕上げる）
-REGISTER_LOGIC_SYSTEM(DroneMovementSystem, Priority::LogicStage::L03_PrePhysics);
+REGISTER_LOGIC_SYSTEM(DroneMovementSystem, Priority::LogicStage::L03_PrePhysics);

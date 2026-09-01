@@ -1,12 +1,10 @@
-/**
- * BehaviorTree のアクション・条件の基底。
- *
- * 汎用化（ボス固有を排除）
- *   BTContext からボス固有の command(BossCommand) / myAction(BossAction) を外した。
- *   これらが必要なアクション（ボス用）は Execute の中で
- *   ctx.world->GetComponent<BossCommandComponent>(ctx.entity) と自分で取りに行く。
- *   → BTエンジンとContextが「ボス」を一切知らなくなり、ドローンにも流用できる。
- */
+// BehaviorTree のアクション・条件の基底。
+//
+// 汎用化（ボス固有を排除）
+//   BTContext からボス固有の command(BossCommand) / myAction(BossAction) を外した。
+//   これらが必要なアクション（ボス用）は Execute の中で
+//   ctx.world->GetComponent<BossCommandComponent>(ctx.entity) と自分で取りに行く。
+//   → BTエンジンとContextが「ボス」を一切知らなくなり、ドローンにも流用できる。
 #pragma once
 #include <cstdint>
 
@@ -24,8 +22,8 @@ namespace CCL::AI::BT
     // ====================================================================
     // BTContext — アクション/条件が受け取る情報のカバン（汎用のみ）
     // ====================================================================
-    /// どのエンティティのBTでも使える汎用データだけを持つ。
-    ///        ボス固有のコンポーネントは world/entity から自分で取得する。
+    // どのエンティティのBTでも使える汎用データだけを持つ。
+    //        ボス固有のコンポーネントは world/entity から自分で取得する。
     struct BTContext
     {
         CCL::ECS::World* world  = nullptr;
@@ -41,9 +39,9 @@ namespace CCL::AI::BT
         BTNodeID nodeId = 0;   // nodeTimers[nodeId] を引くのに使う
         float    dt     = 0.0f;
 
-        /// このノードに設定された数値パラメータ（BTNode::param）。
-        ///        待機の秒数や近接の硬直など、行動の引数をここから受け取る。
-        ///        使わない行動は無視してよい（既定 0）。
+        // このノードに設定された数値パラメータ（BTNode::param）。
+        //        待機の秒数や近接の硬直など、行動の引数をここから受け取る。
+        //        使わない行動は無視してよい（既定 0）。
         float    param  = 0.0f;
     };
 
@@ -54,7 +52,7 @@ namespace CCL::AI::BT
     struct IBTAction
     {
         virtual ~IBTAction() = default;
-        /// 1フレームの行動。Success / Failure / Running を返す。
+        // 1フレームの行動。Success / Failure / Running を返す。
         virtual BTNodeState Execute(BTContext& ctx) = 0;
     };
 
