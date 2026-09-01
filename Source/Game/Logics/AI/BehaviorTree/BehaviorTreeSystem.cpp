@@ -29,6 +29,27 @@ using namespace CCL::AI;
 using namespace CCL::AI::BT;
 
 namespace {
+    // xorshift32。BTの抽選だけに使う軽い乱数。
+    //
+    // 質は要らない（子の並べ替えにしか使わない）が、再現性は要る。
+    // 状態を BehaviorTreeComponent が持つので個体ごとに独立し、
+    // ワーカースレッドをまたいでも列が混ざらない。
+    uint32_t NextRandom(uint32_t &state)
+    {
+        state ^= state << 13;
+        state ^= state >> 17;
+        state ^= state << 5;
+        return state;
+    }
+
+    // 個体の乱数を EntityID から初期化する。0 は「未初期化」の印なので必ず非ゼロにする。
+    void SeedRandomIfNeeded(BehaviorTreeComponent &btComp, CCL::ECS::EntityID entity)
+    {
+        if (btComp.rngState != 0) return;
+        btComp.rngState = (static_cast<uint32_t>(entity) * 2654435761u) ^ 0x9E3779B9u;
+        if (btComp.rngState == 0) btComp.rngState = 0x6D2B79F5u;
+    }
+
     // 特定のサブツリー配下の Action ノードのタイマーだけをリセットする
     void ResetChildActionsRecursive(BTNodeID nodeId, BehaviorTreeComponent& btComp, const BTAsset& asset)
     {
@@ -55,7 +76,75 @@ void BehaviorTreeSystem::Initialize()
     BT::CommonConditions::RegisterAll();
     BT::BossConditions::RegisterAll();
     BT::BossActions::RegisterAll();
+
+    VerifyRegistrations();
+
     CCL_LOG_INFO(LogCategory::AI, "[BehaviorTreeSystem] BTノード登録完了");
+}
+
+
+void BehaviorTreeSystem::VerifyRegistrations()
+{
+    // 辞書（ActionRegistry.h）と実装レジストリ（BTActionRegistry）の突き合わせ。
+    //
+    // なぜ要るか:
+    //   辞書に載っていればエディタの候補には出るが、RegisterAll に書き忘れると
+    //   GetAction が nullptr を返し、評価側は黙って Failure を返す。
+    //   「エディタで選べるのに置いても何も起きない技」という、木を疑ってしまう
+    //   一番たちの悪い形になる。辞書は手書きなので、この食い違いは必ず起きる前提で見張る。
+    //
+    // static_assert にできない理由:
+    //   登録は実行時（RegisterAll）なので、コンパイル時には分からない。
+    const auto &reg = BTActionRegistry::Instance();
+
+    int missing = 0;
+    for (int i = 0; i < g_ActionRegistryCount; ++i) {
+        const ActionEntry &e = g_ActionRegistry[i];
+        if (e.id == 0) continue; // None は実装を持たない
+        if (reg.HasAction(e.id)) continue;
+
+        CCL_LOG_ERROR(LogCategory::AI,
+            "[BT] 行動 \"%s\"(ID %u) は辞書にあるが実装が登録されていない。"
+            "木に置いても何も起きず Failure になる（RegisterAll への追加漏れ）",
+            e.key, static_cast<unsigned>(e.id));
+        ++missing;
+    }
+    for (int i = 0; i < g_ConditionRegistryCount; ++i) {
+        const ActionEntry &e = g_ConditionRegistry[i];
+        if (e.id == 0) continue;
+        if (reg.HasCondition(e.id)) continue;
+
+        CCL_LOG_ERROR(LogCategory::AI,
+            "[BT] 条件 \"%s\"(ID %u) は辞書にあるが実装が登録されていない。"
+            "常に false になる（RegisterAll への追加漏れ）",
+            e.key, static_cast<unsigned>(e.id));
+        ++missing;
+    }
+
+    if (missing == 0) {
+        CCL_LOG_INFO(LogCategory::AI,
+            "[BT] 辞書と実装の突き合わせOK（行動 %d / 条件 %d）。"
+            "スケジューラへの追加申告: 書き込み %zu 型 / 読み取り %zu 型",
+            g_ActionRegistryCount - 1, g_ConditionRegistryCount - 1,
+            reg.ExtraWriteTypes().size(), reg.ExtraReadTypes().size());
+    }
+}
+
+
+std::vector<CCL::ECS::TypeID> BehaviorTreeSystem::GetReadTypes() const
+{
+    auto types = Base::GetReadTypes();
+    const auto &extra = BTActionRegistry::Instance().ExtraReadTypes();
+    types.insert(types.end(), extra.begin(), extra.end());
+    return types;
+}
+
+std::vector<CCL::ECS::TypeID> BehaviorTreeSystem::GetWriteTypes() const
+{
+    auto types = Base::GetWriteTypes();
+    const auto &extra = BTActionRegistry::Instance().ExtraWriteTypes();
+    types.insert(types.end(), extra.begin(), extra.end());
+    return types;
 }
 
 
@@ -145,6 +234,9 @@ void BehaviorTreeSystem::Update(float rawDt)
 
         // --- Running しおりのリセット ---
         btComp.runningNodeId = 0xFFFF;
+
+        // 抽選の種。個体ごとに1回だけ蒔く。
+        SeedRandomIfNeeded(btComp, entity);
 
         // --- デバッグ：強制ノードが切り替わったら実行状態を捨てる ---
         //   前の技の「途中まで進んだシーケンス」や Wait の残り時間が新しい枝へ
@@ -258,41 +350,66 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
     }
 
     case BTNodeType::Decorator: {
-        int decType = static_cast<int>(node.decoratorType);
-        if (decType == 1 && btComp.nodeTimers[nodeId] > 0.0f) {   // Cooldown中
+        // 生の int ではなく enum で分岐する。数値で書くと、種類を足したときに
+        // どの数字がどの修飾なのかがこの関数の中からは分からなくなる。
+        const BTDecoratorType decType = node.decoratorType;
+
+        // --- クールダウン中は子を評価せず即 Failure ---
+        //
+        // タイマーは nodeTimers[nodeId] に置く。Action の残り時間と同じ配列を
+        // 共有しているが、添字がノードIDなので衝突しない。
+        // 未使用は -1（＞0 ではない）なので、初期状態は「クールダウンなし」になる。
+        if (decType == BTDecoratorType::Cooldown && btComp.nodeTimers[nodeId] > 0.0f) {
             result = BTNodeState::Failure;
             break;
         }
-        if (!node.children.empty()) {
-            BTNodeID childId = node.children[0];
-            if (decType == 2) {   // Retry
-                int retryCount = static_cast<int>(node.param);
-                for (int r = 0; r < retryCount; ++r) {
-                    result = EvaluateTreeRecursive(childId, btComp, myTrans, asset, entity, dt);
-                    if (result != BTNodeState::Failure) break;
-                }
-            } else {
-                result = EvaluateTreeRecursive(childId, btComp, myTrans, asset, entity, dt);
-            }
 
-            if (decType == 0) {   // Inverter
-                if (result == BTNodeState::Success)      result = BTNodeState::Failure;
-                else if (result == BTNodeState::Failure) result = BTNodeState::Success;
+        if (node.children.empty()) break;
+
+        const BTNodeID childId = node.children[0];
+
+        if (decType == BTDecoratorType::Retry) {
+            // param は「試行回数」。0 だと一度も子を評価せず Failure のまま抜ける
+            //   （読み込み時に警告している）。最低1回は回す。
+            const int retryCount = (std::max)(1, static_cast<int>(node.param));
+            for (int r = 0; r < retryCount; ++r) {
+                result = EvaluateTreeRecursive(childId, btComp, myTrans, asset, entity, dt);
+                if (result != BTNodeState::Failure) break;
             }
-            else if (decType == 1) {   // Cooldown（成功時にタイマー開始）
-                if (result == BTNodeState::Success) btComp.nodeTimers[nodeId] = node.param;
+        }
+        else {
+            result = EvaluateTreeRecursive(childId, btComp, myTrans, asset, entity, dt);
+        }
+
+        switch (decType) {
+        case BTDecoratorType::Inverter:
+            if (result == BTNodeState::Success)      result = BTNodeState::Failure;
+            else if (result == BTNodeState::Failure) result = BTNodeState::Success;
+            break;
+
+        case BTDecoratorType::Cooldown:
+            // 子が「やり切った」ときだけ待ち時間を開始する。
+            //   Running（技の最中）で開始してしまうと、技が終わる前にクールダウンが
+            //   減り始め、体感の間隔が param より短くなる。
+            //   Failure（条件を満たさず不発）で開始すると、出していない技に
+            //   クールダウンがかかる。
+            if (result == BTNodeState::Success) btComp.nodeTimers[nodeId] = node.param;
+            break;
+
+        case BTDecoratorType::Async: {
+            if (result != BTNodeState::Running) break;
+            const BTNode &childNode = asset.nodes[childId];
+            if (childNode.type == BTNodeType::Action) {
+                result = (btComp.nodeTimers[childId] != -1.0f)
+                             ? BTNodeState::Success : BTNodeState::Running;
+            } else {
+                result = BTNodeState::Success;
             }
-            else if (decType == 3) {   // Async
-                if (result == BTNodeState::Running) {
-                    const BTNode& childNode = asset.nodes[childId];
-                    if (childNode.type == BTNodeType::Action) {
-                        result = (btComp.nodeTimers[childId] != -1.0f)
-                            ? BTNodeState::Success : BTNodeState::Running;
-                    } else {
-                        result = BTNodeState::Success;
-                    }
-                }
-            }
+            break;
+        }
+
+        case BTDecoratorType::Retry:
+            break; // 上のループで結果は確定済み
         }
         break;
     }
@@ -305,11 +422,15 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
             btComp.runningNodes[nodeId] = -1;
             break;
         }
-        constexpr int MAX_CHILDREN = 16;
-        BTNodeID shuffled[MAX_CHILDREN];
-        int count = (std::min)((int)node.children.size(), MAX_CHILDREN);
+        // 上限を超える木は読み込み時に警告済み（BehaviorTreeLoader）。
+        //   ここで黙って切り捨てるだけだと実行中に気づけないので、検出は読み込み側に置く。
+        BTNodeID shuffled[kMaxRandomSelectorChildren];
+        int count = (std::min)((int)node.children.size(), kMaxRandomSelectorChildren);
         for (int i = 0; i < count; ++i) shuffled[i] = node.children[i];
-        for (int i = count - 1; i > 0; --i) { int j = rand() % (i + 1); std::swap(shuffled[i], shuffled[j]); }
+        for (int i = count - 1; i > 0; --i) {
+            const int j = static_cast<int>(NextRandom(btComp.rngState) % static_cast<uint32_t>(i + 1));
+            std::swap(shuffled[i], shuffled[j]);
+        }
 
         result = BTNodeState::Failure;
         for (int i = 0; i < count; ++i) {

@@ -15,16 +15,24 @@
 //
 // このシステムは単スレッド。SquadState への書き込みはここだけに閉じる。
 #pragma once
+#include <vector>
+
 #include "Engine/ECS/System/CCL_IfSystem.h"
+#include "Engine/ECS/Common/CCL_TypeInfo.h"
 #include "Game/Logics/AI/Drone/DroneComponent.h"
 #include "Game/Logics/AI/Drone/Squad/SquadState.h"
 #include "Engine/Transform/Components/TransformComponent.h"
+#include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
 
 class SquadUpdateSystem : public CCL::ECS::IfSystem<
                               SquadUpdateSystem,
                               CCL::ECS::Read<DroneComponent>,
                               CCL::ECS::Read<TransformComponent>>
 {
+    using Base = CCL::ECS::IfSystem<SquadUpdateSystem,
+                                    CCL::ECS::Read<DroneComponent>,
+                                    CCL::ECS::Read<TransformComponent>>;
+
   public:
     SquadUpdateSystem()
         : IfSystem("SquadUpdateSystem")
@@ -35,7 +43,22 @@ class SquadUpdateSystem : public CCL::ECS::IfSystem<
     void Initialize() override;
 
     // 伝令が配った陣形指示を読んでから小隊の行動を決める。
-    std::vector<const char *> GetRunAfter() const override { return {"DroneCommandSystem"}; }
+    //   BehaviorTreeSystem も直接名指しする。あちらが BossCommandComponent を書き、
+    //   こちらが同じフレームにそれを読むので、直接の前後関係として宣言しないと
+    //   起動時に「順序不定」として報告される（間接的に後ろになるだけでは宣言不足）。
+    std::vector<const char *> GetRunAfter() const override
+    {
+        return {"BehaviorTreeSystem", "DroneCommandSystem"};
+    }
+
+    // Update がボスの BossCommandComponent を View で引いて requestFormation を読む。
+    //   テンプレート引数には足せない（ForEach の絞り込み条件を兼ねているため）。
+    std::vector<CCL::ECS::TypeID> GetReadTypes() const override
+    {
+        auto types = Base::GetReadTypes();
+        types.push_back(CCL::ECS::TypeInfo<BossCommandComponent>::ID());
+        return types;
+    }
 
     void Update(float dt) override;
 

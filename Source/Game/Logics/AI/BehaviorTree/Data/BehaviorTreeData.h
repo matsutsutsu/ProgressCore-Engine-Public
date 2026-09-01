@@ -62,16 +62,26 @@ enum class BTNodeState : uint8_t {
     Running
 };
 
+// RandomSelector が抽選できる子の上限。
+//
+// 評価はワーカースレッドで走るので、抽選用の並べ替えバッファはスタックの固定長で取る
+// （ヒープ確保を毎フレーム持ち込まないため）。上限を超えた木は読み込み時に警告する
+// ＝ 実行中に黙って技が消えることはない（BehaviorTreeLoader が見張る）。
+inline constexpr int kMaxRandomSelectorChildren = 16;
+
 // 1つのノード定義
+//
+// @note 既定値を書いてあるのは、読み込み側が代入を1つ忘れても不定値を読まないため。
+//       以前は全メンバが未初期化で、代入漏れが起きても静かに動いてしまう形だった。
 struct BTNode {
     // ノードの種類（Selector, Sequence, Condition, Action）
-	BTNodeType type;
+	BTNodeType type = BTNodeType::Action;
 
     // Action/Conditionの種類を判別するID
-    ActionID   actionOrConditionId; 
+    ActionID   actionOrConditionId = 0;
 
-    // Action/Conditionの種類を判別するID
-    BTDecoratorType decoratorType;
+    // Decorator のときだけ意味を持つ修飾の種類
+    BTDecoratorType decoratorType = BTDecoratorType::Inverter;
 
     // このノードの数値パラメータ。意味はノードの種類が決める。
     //        Action     … その行動の引数（待機の秒数、近接の硬直など）
@@ -81,7 +91,7 @@ struct BTNode {
     //   以前は「待機0.5秒」「待機1.0秒」…と、待ち時間の違いを12個の ActionID で
     //   表していた。引数をIDで表すとIDが際限なく増え、しかも中間の値を作れない。
     //   ノードが値を1つ持てば、待機は ActionID 1つで済む。
-    float param;
+    float param = 0.0f;
 
     // 確実に子ノードのID（配列のインデックス）を保持するリストに変更
     std::vector<BTNodeID> children;

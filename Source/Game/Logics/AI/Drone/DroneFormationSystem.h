@@ -3,11 +3,14 @@
 //        targetPosition を計算する。移動は既存 DroneMovementSystem が担当。
 #pragma once
 #include <string>
+#include <vector>
 
 #include "Engine/ECS/System/CCL_IfSystem.h"
+#include "Engine/ECS/Common/CCL_TypeInfo.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Game/Logics/AI/Drone/DroneComponent.h"
 #include "Game/Logics/AI/Drone/Formation/IFormation.h"
+#include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
 
 // データ実装（JSON）を持つ陣形1件。ファイルは Assets/Formations/<name>.json。
 struct FormationSpecAsset
@@ -20,6 +23,8 @@ struct FormationSpecAsset
 class DroneFormationSystem : public CCL::ECS::IfSystem<DroneFormationSystem,
                                  CCL::ECS::Write<DroneComponent>>
 {
+    using Base = CCL::ECS::IfSystem<DroneFormationSystem, CCL::ECS::Write<DroneComponent>>;
+
   public:
     DroneFormationSystem() : IfSystem("DroneFormationSystem"){}
 
@@ -29,7 +34,17 @@ class DroneFormationSystem : public CCL::ECS::IfSystem<DroneFormationSystem,
     //        DroneCommand が drone.currentFormation を書き、こちらがそれを読んでスロットを計算する。
     std::vector<const char *> GetRunAfter() const override
     {
-        return {"DroneCommandSystem", "SquadUpdateSystem"};
+        return {"BehaviorTreeSystem", "DroneCommandSystem", "SquadUpdateSystem"};
+    }
+
+    // MakeContext がボスの Transform と BossCommandComponent を View で引くので申告する。
+    //   テンプレート引数には足せない（ForEach の絞り込みまで変わってしまうため）。
+    std::vector<CCL::ECS::TypeID> GetReadTypes() const override
+    {
+        auto types = Base::GetReadTypes();
+        types.push_back(CCL::ECS::TypeInfo<BossCommandComponent>::ID());
+        types.push_back(CCL::ECS::TypeInfo<TransformComponent>::ID());
+        return types;
     }
 
     void Update(float dt) override;

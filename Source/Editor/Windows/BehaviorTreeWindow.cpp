@@ -1205,6 +1205,13 @@ void BehaviorTreeWindow::DrawInspector() {
 
                 const char* decNames[] = { "0: 結果反転 (Inverter)", "1: クールダウン (Cooldown)", "2: リトライ (Retry)", "3: 非同期 (Async)" };
                 if (ImGui::Combo("タイプ", &it->decoratorType, decNames, IM_ARRAYSIZE(decNames))) {
+                    // 既定値を入れておく。0 のままだと Cooldown は毎フレーム素通り、
+                    // Retry は子を一度も評価しない＝どちらも「置いたのに効かない」になる。
+                    // 行動・条件の param が同じ理由で自動補完されるのに揃える。
+                    if (it->param <= 0.0f) {
+                        if (it->decoratorType == 1)      it->param = 5.0f; // Cooldown [秒]
+                        else if (it->decoratorType == 2) it->param = 3.0f; // Retry [回]
+                    }
                     m_executionOrderDirty = true;
                     needsUndo = true;
                     undoMessage = "Change Decorator Type";
@@ -1452,6 +1459,15 @@ nlohmann::json BehaviorTreeWindow::BuildBakedNodes() {
     rootJson["type"] = getRuntimeTypeString(actualRoot->type);
     rootJson["actionOrConditionId"] = static_cast<int>(actualRoot->actionOrConditionId);
     WriteKeyAndParam(rootJson, *actualRoot);
+
+    // 子ノードと同じく decoratorType を書く。
+    //   ここが抜けていたため、ROOT 直下にデコレーターを置くと nodes[] に種類が残らず、
+    //   読み込み側の既定値 0（Inverter）として解釈されていた。
+    //   ＝「Cooldown を置いたのに反転として動く」＝クールダウンが効かない。
+    if (actualRoot->type == EditorBTNodeType::Decorator) {
+        rootJson["decoratorType"] = actualRoot->decoratorType;
+    }
+
     rootJson["children"] = nlohmann::json::array(); // 配列として初期化
     jsonNodes.push_back(rootJson);
 

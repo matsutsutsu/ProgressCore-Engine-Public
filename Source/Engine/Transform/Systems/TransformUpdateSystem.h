@@ -28,7 +28,7 @@ class TransformUpdateSystem : public CCL::ECS::IfSystem<TransformUpdateSystem,CC
     // 走らないと、確定したはずの行列が後から書き換わる。
     std::vector<const char *> GetRunAfter() const override
     {
-        return {"BossActionSystem", "JoltSandboxGuiSystem"};
+        return {"BossActionSystem"};
     }
 
     void Update(float dt) override;

@@ -73,6 +73,8 @@ bool BehaviorTreeLoader::LoadFromJson(const std::string& path, BTAsset& outAsset
         return false;
     }
 
+    ValidateNodes(outAsset, path);
+
     CCL_LOG_SUCCESS(LogCategory::AI, "BT Asset Loaded: %s (Nodes: %zu)", path.c_str(), outAsset.nodes.size());
     return true;
 }
@@ -145,6 +147,48 @@ void BehaviorTreeLoader::MigrateLegacyCondition(BTNode& node, const std::string&
         CCL_LOG_INFO(LogCategory::AI,
             "[BT] 旧条件 \"%s\" を param %.1f 付きの新条件へ読み替えた: %s",
             legacy->key, legacy->param, path.c_str());
+    }
+}
+
+
+void BehaviorTreeLoader::ValidateNodes(const BTAsset& asset, const std::string& path)
+{
+    // 「木としては読めるが、置いた本人の意図どおりには絶対に動かない」形をここで潰す。
+    //   実行時に気づけない類のものだけを対象にする（評価はワーカースレッドで走るので
+    //   その場でログを出せないし、出しても毎フレーム流れて読めない）。
+    for (size_t i = 0; i < asset.nodes.size(); ++i) {
+        const BTNode& node = asset.nodes[i];
+
+        if (node.type == BTNodeType::Decorator) {
+            // クールダウン0秒＝毎フレーム通過。デコレーターを置いた意味が消える。
+            //   エディタで新規作成したデコレーターの param は 0 なので、
+            //   「Cooldown を選んだが待機時間を触っていない」だけでこの状態になる。
+            if (node.decoratorType == BTDecoratorType::Cooldown && node.param <= 0.0f) {
+                CCL_LOG_WARN(LogCategory::AI,
+                    "[BT] nodes[%zu] のクールダウンが %.2f 秒。0以下は毎フレーム素通りする"
+                    "（＝クールダウンが効かない）: %s",
+                    i, node.param, path.c_str());
+            }
+            // 試行回数0＝子を一度も評価しない。実行時は常に Failure になる。
+            if (node.decoratorType == BTDecoratorType::Retry && node.param < 1.0f) {
+                CCL_LOG_WARN(LogCategory::AI,
+                    "[BT] nodes[%zu] のリトライ回数が %.0f。1未満は子を評価できない: %s",
+                    i, node.param, path.c_str());
+            }
+            if (node.children.empty()) {
+                CCL_LOG_WARN(LogCategory::AI,
+                    "[BT] nodes[%zu] のデコレーターに子が繋がっていない: %s", i, path.c_str());
+            }
+        }
+
+        // 抽選バッファはスタック固定長。超えたぶんは実行時に黙って抽選から漏れる。
+        if (node.type == BTNodeType::RandomSelector &&
+            node.children.size() > static_cast<size_t>(kMaxRandomSelectorChildren)) {
+            CCL_LOG_ERROR(LogCategory::AI,
+                "[BT] nodes[%zu] の RandomSelector に子が %zu 個ある。%d 個までしか抽選されない"
+                "（超えたぶんの技は一生出ない）: %s",
+                i, node.children.size(), kMaxRandomSelectorChildren, path.c_str());
+        }
     }
 }
 

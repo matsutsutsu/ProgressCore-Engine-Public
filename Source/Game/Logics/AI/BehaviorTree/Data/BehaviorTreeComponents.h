@@ -70,6 +70,17 @@ struct BehaviorTreeComponent {
     std::vector<int>   runningNodes;             // 複合ノードのしおり。次にどの子から再開するか
     BTNodeID           runningNodeId = 0;        // 今フレーム Running を返した最初のノード
 
+    /// RandomSelector の抽選に使う乱数の状態。書き手は BehaviorTreeSystem。
+    ///
+    /// なぜ rand() をやめたか:
+    ///   評価はワーカースレッドで走るので、グローバルな乱数列を共有すると
+    ///   「どの個体がどの順で引いたか」がスレッドのタイミングで変わる。同じ状況を
+    ///   再現できず、抽選が絡むバグを追えなくなる。個体ごとに状態を持てば、
+    ///   同じ入力からは必ず同じ技が出る。
+    ///
+    /// 0 は「まだ種を蒔いていない」の意味。EntityID から初期化する。
+    uint32_t rngState = 0;
+
     // --- デバッグ（実行時のみ・非シリアライズ）---
     std::vector<BTDebugState> debugNodeStates;   // 今フレームの評価結果。BTウィンドウの色分けに使う
     ActionID lastLogActionId          = 0xFFFF;  // 最後に実行した行動。デバッガの見出しに出す

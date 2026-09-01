@@ -21,6 +21,11 @@ namespace CCL::AI::BT::BossConditions
 // 写し替えが1つ減るぶん、ズレようがなくなる。
 struct IsPhase2 : public IBTCondition
 {
+    std::vector<CCL::ECS::TypeID> GetExtraReadTypes() const override
+    {
+        return TypeIDsOf<BossPhaseComponent>();
+    }
+
     bool Evaluate(BTContext &ctx) override
     {
         const auto *phase = ctx.world->GetComponent<BossPhaseComponent>(ctx.entity);
@@ -31,6 +36,11 @@ struct IsPhase2 : public IBTCondition
 // 第1形態で、HPが移行閾値を割っているか。
 struct ShouldTransitionPhase2 : public IBTCondition
 {
+    std::vector<CCL::ECS::TypeID> GetExtraReadTypes() const override
+    {
+        return TypeIDsOf<BossPhaseComponent>();
+    }
+
     bool Evaluate(BTContext &ctx) override
     {
         const auto *phase = ctx.world->GetComponent<BossPhaseComponent>(ctx.entity);

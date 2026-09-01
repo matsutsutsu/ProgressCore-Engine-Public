@@ -69,6 +69,12 @@ struct ResetDamageAction : public IBTAction
 // ====================================================================
 struct MoveAction : public IBTAction
 {
+    // BossCommandComponent を world から直接書くので申告する（BTAction.h の説明を参照）。
+    std::vector<CCL::ECS::TypeID> GetExtraWriteTypes() const override
+    {
+        return TypeIDsOf<BossCommandComponent>();
+    }
+
     BTNodeState Execute(BTContext &ctx) override
     {
         auto &timers = ctx.bt->nodeTimers;
@@ -107,6 +113,11 @@ struct DroneAction : public IBTAction
     ActionID id;
     explicit DroneAction(ActionID actionId) : id(actionId) {}
 
+    std::vector<CCL::ECS::TypeID> GetExtraWriteTypes() const override
+    {
+        return TypeIDsOf<BossCommandComponent>();
+    }
+
     BTNodeState Execute(BTContext &ctx) override
     {
         ctx.bt->lastLogActionId = id;
@@ -133,6 +144,11 @@ struct DroneAction : public IBTAction
 // ====================================================================
 struct DroneStrikeAction : public IBTAction
 {
+    std::vector<CCL::ECS::TypeID> GetExtraWriteTypes() const override
+    {
+        return TypeIDsOf<BossCommandComponent>();
+    }
+
     BTNodeState Execute(BTContext &ctx) override
     {
         ctx.bt->lastLogActionId = ::CCL::AI::A_DroneStrike;
@@ -167,6 +183,14 @@ struct TriggeredMotionAction : public IBTAction
 
     TriggeredMotionAction(uint32_t hash, float fallbackDur, ActionID actionId)
         : triggerHash(hash), defaultDuration(fallbackDur), id(actionId) {}
+
+    // AnimParametersComponent の申告が本命。これが抜けていたため、同じ L02_Update の
+    // AnimControllerSystem（トリガーを消費する側）と並列に走り、同一の
+    // std::vector へ push_back と erase が同時に入っていた。
+    std::vector<CCL::ECS::TypeID> GetExtraWriteTypes() const override
+    {
+        return TypeIDsOf<BossCommandComponent, AnimParametersComponent>();
+    }
 
     BTNodeState Execute(BTContext &ctx) override
     {

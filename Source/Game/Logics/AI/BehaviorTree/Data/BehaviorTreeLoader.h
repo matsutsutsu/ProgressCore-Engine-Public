@@ -13,6 +13,11 @@ public:
 private:
     static BTNodeType StringToNodeType(const std::string& typeStr);
 
+    /// 読み込めたが意図どおりには動かない形を報告する。
+    /// @note 評価は並列で走るため実行時には気づけない。単一スレッドで、しかも
+    ///       ファイル名を言えるここが唯一の検出場所。
+    static void ValidateNodes(const BTAsset& asset, const std::string& path);
+
     /**
      * 1ノードぶんの行動/条件を決める。キー文字列が正で、数値IDは旧アセット互換。
      * @param jNode  ノードのJSON（nlohmann::json だがヘッダに持ち込みたくないので void*）

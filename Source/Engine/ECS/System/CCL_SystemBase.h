@@ -289,4 +289,4 @@ namespace CCL::ECS
     // decltype( - )  ...引数の型を返す
     // std::is_same_v<type1, type2> ...2つの型が同じかどうかを判定する
 
-} // namespace CCL::ECS
+} 

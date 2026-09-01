@@ -28,7 +28,7 @@ void BossAnimSyncSystem::Update(float /*dt*/)
     });
 }
 
-// CharacterAnimSyncSystem(L02_PreUpdate=150) の後に走り、ボスの Speed を
-// 「意図ベース」で上書きする（物理速度のジッタを排除）。
-// アニメ評価(後段)はこの最終値を読む。
-REGISTER_LOGIC_SYSTEM(BossAnimSyncSystem, Priority::LogicStage::L02_Update);
+// 掲示板(AnimParameters)への書き込みは、消費側 AnimControllerSystem(L02_Update=200) より
+// 必ず前に済ませる。ボスは Jolt Character を持たず CharacterAnimSync の対象外なので、
+// ここが Speed/IsMoving の唯一の書き手。Player 側の掲示板書き手と同じ L02_PreUpdate に置く。
+REGISTER_LOGIC_SYSTEM(BossAnimSyncSystem, Priority::LogicStage::L02_PreUpdate);
