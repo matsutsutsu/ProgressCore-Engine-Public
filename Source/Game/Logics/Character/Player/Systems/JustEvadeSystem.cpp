@@ -17,9 +17,7 @@
 #include "Engine/Physics/Components/RigidBody/JoltRigidBodyComponent.h" // 壁/地形との接触を除外するため
 
 #include <cstdio>
-#ifdef ENABLE_EDITOR
 #include <imgui.h>
-#endif
 
 using namespace CCL::ECS;
 
@@ -211,7 +209,6 @@ void JustEvadeSystem::BreakChain(EntityID playerID)
 // ============================================================================
 //  チェインHUD：段数を前面に大きく表示する（爽快感のフィードバック）
 // ============================================================================
-#ifdef ENABLE_EDITOR
 void JustEvadeSystem::OnGui()
 {
     const JustEvadeComponent *found = nullptr;
@@ -238,9 +235,6 @@ void JustEvadeSystem::OnGui()
     dl->AddText(ImGui::GetFont(), 34.0f, ImVec2(x + 1.0f, y + 1.0f), IM_COL32(0, 0, 0, 200), buf);
     dl->AddText(ImGui::GetFont(), 34.0f, ImVec2(x, y), col, buf);
 }
-#else
-void JustEvadeSystem::OnGui() {}
-#endif
 
 void JustEvadeSystem::CheckJustEvade(EntityID playerCandidate, EntityID otherCandidate)
 {

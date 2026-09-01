@@ -3,9 +3,7 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 
 // 必要なインクルードを追加
-#ifdef ENABLE_EDITOR
 #include <imgui.h>
-#endif
 #include "Engine/Time/TimeState.h"
 
 void VoxelOceanSystem::Update(float dt)
@@ -51,7 +49,6 @@ void VoxelOceanSystem::Update(float dt)
 // -------------------------------------------------------------
 // GUIでのリアルタイム編集
 // -------------------------------------------------------------
-#ifdef ENABLE_EDITOR
 void VoxelOceanSystem::OnGui()
 {
     if (ImGui::CollapsingHeader("Voxel Ocean Settings", ImGuiTreeNodeFlags_DefaultOpen))
@@ -69,9 +66,6 @@ void VoxelOceanSystem::OnGui()
         ImGui::Unindent();
     }
 }
-#else
-void VoxelOceanSystem::OnGui() {}
-#endif
 
 
 // LogicグループのUpdateフェーズで回す

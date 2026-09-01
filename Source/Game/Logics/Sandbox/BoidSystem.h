@@ -43,7 +43,6 @@ class BoidSystem : public CCL::ECS::IfSystem<BoidSystem,
     BoidSystem()
         : IfSystem("BoidSystem")
     {
-        hasGui = true; // GUIを持つことを明示
     }
     virtual ~BoidSystem() = default;
 

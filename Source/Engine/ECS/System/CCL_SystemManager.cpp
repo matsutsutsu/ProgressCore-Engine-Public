@@ -1,9 +1,7 @@
 #include "CCL_SystemManager.h"
 #include "Engine/ECS/Core/CCL_Chunk.h"
 
-#ifdef ENABLE_EDITOR
 #include <imgui.h>
-#endif
 
 namespace CCL::ECS
 {
@@ -114,7 +112,6 @@ namespace CCL::ECS
 
    void SystemManager::OnGui()
     {
-#ifdef ENABLE_EDITOR
         // エディタUI全体の処理負荷を計測
         ZoneScopedN("SystemManager::OnGui");
 
@@ -292,7 +289,6 @@ namespace CCL::ECS
             }
         }
         ImGui::End();
-#endif
     }
 
 }

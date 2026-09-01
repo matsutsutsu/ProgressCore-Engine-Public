@@ -4,9 +4,7 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 
 // 必要なインクルードを追加
-#ifdef ENABLE_EDITOR
 #include <imgui.h>
-#endif
 #include "Engine/Time/TimeState.h"
 
 void ECSBenchmarkSystem::Update(float dt)
@@ -63,7 +61,6 @@ void ECSBenchmarkSystem::Update(float dt)
 // -------------------------------------------------------------
 // GUIでのリアルタイム編集
 // -------------------------------------------------------------
-#ifdef ENABLE_EDITOR
 void ECSBenchmarkSystem::OnGui()
 {
     if (ImGui::CollapsingHeader("Galaxy Swarm Benchmark", ImGuiTreeNodeFlags_DefaultOpen))
@@ -86,9 +83,6 @@ void ECSBenchmarkSystem::OnGui()
         ImGui::Unindent();
     }
 }
-#else
-void ECSBenchmarkSystem::OnGui() {}
-#endif
 
 // 自動登録を止めている（実験用のため本編では使わない）。
 //   登録したままだと全シーンへ入り、走らないのに実行順の解決対象としてだけ残って、

@@ -45,7 +45,6 @@ class BehaviorTreeSystem : public CCL::ECS::IfSystem<
         CCL::ECS::EntityID        entity,
         float                     dt);
 
-#ifdef ENABLE_EDITOR
     // デバッグUI：木を一覧にして「この枝を今すぐ実行」を選ばせる。
     //
     // 技を出す条件（距離・抽選）を待たずに狙った攻撃だけを確認するためのもの。
@@ -57,5 +56,4 @@ class BehaviorTreeSystem : public CCL::ECS::IfSystem<
                               BTNodeID               nodeId,
                               BehaviorTreeComponent &btComp,
                               CCL::ECS::EntityID     entity);
-#endif
 };

@@ -77,6 +77,11 @@ namespace CCL::ECS
             // 生ポインタを取得（戻り値用）
             T* ptr = sys.get();
 
+            // インスペクタに出すかは OnGui を override したかで決まる。
+            //   派生側にフラグを書かせない。書き忘れると一覧から静かに消えるだけで
+            //   気付けないので、宣言そのものを唯一の情報源にする。
+            ptr->hasGui = HasOwnOnGui<T>;
+
             // --- 重要：初期化処理 ---
             // 生成時にWorldを渡す
             if (m_world) ptr->SetWorld(m_world);

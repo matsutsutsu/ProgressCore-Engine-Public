@@ -25,7 +25,7 @@ class AIDebugOverlaySystem : public CCL::ECS::IfSystem<
 >
 {
 public:
-    AIDebugOverlaySystem() : IfSystem("AIDebugOverlaySystem") { hasGui = true; }
+    AIDebugOverlaySystem() : IfSystem("AIDebugOverlaySystem") {}
 
     // レンダーシステムとして登録し、ImGui::NewFrame の後に走る Update で頭上テキストを
     //   ImGui 前景リストへ直接描く。これにより System Manager のヘッダ開閉に関係なく

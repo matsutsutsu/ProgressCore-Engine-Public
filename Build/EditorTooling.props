@@ -12,7 +12,8 @@
 
 			<AdditionalIncludeDirectories>
 				$(SolutionDir)Source\Editor;
-				$(SolutionDir)External\imgui-docking;
+				<!-- imgui-docking は EngineCore.props（全構成共通）へ移した。
+				     ここに残すのはエディタ本体でしか使わないものだけ。 -->
 				$(SolutionDir)External\imgui-node-editor;
 				$(SolutionDir)External\ImGuizmo;
 				$(SolutionDir)External\implot-master;

@@ -18,12 +18,16 @@
 // ===========================================================================
 
 #include <chrono>
+#include <type_traits>
 #include <memory>
 #include <shared_mutex>
 #include <string>
 #include <vector>
 
 #include "Engine/ECS/Common/CCL_Archetype.h"
+
+// Tracy（プロファイラ）は UpdateImpl 内のインライン実装で参照される
+#include "tracy/Tracy.hpp"
 
 // Chunk / World / JobSystem はポインタとしてしか使わないため前方宣言で十分。
 // これにより SystemBase.h は重い実装ヘッダに依存しません。
@@ -33,8 +37,7 @@ namespace CCL::ECS {
     class JobSystem;
 }
 
-// Tracy（プロファイラ）は UpdateImpl 内のインライン実装で参照される
-#include "tracy/Tracy.hpp"
+
 
 
 
@@ -132,7 +135,9 @@ namespace CCL::ECS
 
         bool IsDebugVisible() const { return isDebugVisible; }
 
-        // このシステムがエディタ用のGUIを持っているかどうか
+        // このシステムがエディタ用のGUIを持っているかどうか。
+        //   登録時に SystemManager が OnGui の override 有無から自動で立てる。
+        //   派生側で手書きしない（書き忘れて一覧から消える事故を無くすため）。
         bool hasGui = false;
 
         // ImGui によるインスペクタ描画（必要なら派生側で override）
@@ -266,5 +271,22 @@ namespace CCL::ECS
         float       m_lastUpdateTime    = 0.0f; // 直近の Update 時間 (ms)
         float       m_displayUpdateTime = 0.0f; // 表示用に滑らかにした値 (EMA)
     };
+
+
+    // -----------------------------------------------------------------------
+    // T が自分で OnGui() を宣言しているか（＝インスペクタに出すべきか）。
+    //
+    //   &T::OnGui の「型」で判る。override していれば void (T::*)() になり、
+    //   基底のものを継承しているだけなら void (SystemBase::*)() のままになる
+    //   （&X::member の型は、名前を書いたクラスではなく宣言元のクラスで決まる）。
+    //
+    //   これで派生側はフラグを書く必要が無くなる。OnGui を宣言する以外に
+    //   一覧へ載せる方法が存在しない＝載せ忘れが起こらない。
+    // -----------------------------------------------------------------------
+    template <class T>
+    inline constexpr bool HasOwnOnGui =
+        !std::is_same_v<decltype(&T::OnGui), void (SystemBase::*)()>;
+    // decltype( - )  ...引数の型を返す
+    // std::is_same_v<type1, type2> ...2つの型が同じかどうかを判定する
 
 } // namespace CCL::ECS

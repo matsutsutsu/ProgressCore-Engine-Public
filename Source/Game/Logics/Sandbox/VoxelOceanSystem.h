@@ -26,7 +26,6 @@ class VoxelOceanSystem : public CCL::ECS::IfSystem<VoxelOceanSystem,
     VoxelOceanSystem()
         : IfSystem("VoxelOceanSystem")
     {
-        hasGui = true;
     }
     virtual ~VoxelOceanSystem() = default;
 

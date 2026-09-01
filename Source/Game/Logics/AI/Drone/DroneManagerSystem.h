@@ -31,7 +31,6 @@ class DroneManagerSystem : public CCL::ECS::IfSystem<DroneManagerSystem,
     DroneManagerSystem()
         : IfSystem("DroneManagerSystem")
     {
-        hasGui = true;
     }
 
     void Initialize() override;

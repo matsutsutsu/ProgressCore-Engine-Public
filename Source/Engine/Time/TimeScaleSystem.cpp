@@ -3,13 +3,10 @@
 #include "Engine/Core/Systems/SystemPriority.h" // 実行ステージの列挙
 #include "Engine/Time/TimeService.h"            // Debug GUI から意図ファサードを叩く
 #include <algorithm>
-#ifdef ENABLE_EDITOR
 #include <imgui.h>
-#endif
 
 TimeScaleSystem::TimeScaleSystem() : IfSystem("TimeScaleSystem")
 {
-    hasGui = true;
 }
 
 void TimeScaleSystem::Update(float rawDt)
@@ -105,7 +102,6 @@ void TimeScaleSystem::Update(float rawDt)
 // ============================================================================
 // デバッガ・GUI
 // ============================================================================
-#ifdef ENABLE_EDITOR
 void TimeScaleSystem::OnGui()
 {
     if (!m_world || !m_world->HasResource<TimeContext>()) return;
@@ -136,8 +132,5 @@ void TimeScaleSystem::OnGui()
     if (ctx.isPaused && ImGui::Button("Step 1 Frame (F11)"))
         Time::StepFrame(*m_world);
 }
-#else
-void TimeScaleSystem::OnGui() {}
-#endif
 
 REGISTER_LOGIC_SYSTEM(TimeScaleSystem, Priority::LogicStage::L01_TimeScale);

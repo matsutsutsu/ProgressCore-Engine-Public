@@ -26,7 +26,6 @@ class ECSBenchmarkSystem : public CCL::ECS::IfSystem<ECSBenchmarkSystem,
     ECSBenchmarkSystem()
         : IfSystem("ECSBenchmarkSystem")
     {
-        hasGui = true;
     }
     virtual ~ECSBenchmarkSystem() = default;
 

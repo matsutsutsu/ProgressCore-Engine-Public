@@ -22,7 +22,7 @@ class AIDebugSpatialSystem : public CCL::ECS::IfSystem<
                                 CCL::ECS::Read<BossActionComponent>>
 {
   public:
-    AIDebugSpatialSystem() : IfSystem("AIDebugSpatialSystem") { hasGui = true; }
+    AIDebugSpatialSystem() : IfSystem("AIDebugSpatialSystem") {}
 
     // ShapeRenderer への描画発行（毎フレーム）。
     void Update(float dt) override;

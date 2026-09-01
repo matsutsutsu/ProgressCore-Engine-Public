@@ -2,9 +2,7 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
-#ifdef ENABLE_EDITOR
 #include <imgui.h>
-#endif
 #include "Engine/Time/TimeState.h"
 #include <cmath>
 
@@ -162,7 +160,6 @@ void BoidSystem::Update(float dt)
 // -------------------------------------------------------------
 // GUIでのリアルタイム編集
 // -------------------------------------------------------------
-#ifdef ENABLE_EDITOR
 void BoidSystem::OnGui()
 {
     if (ImGui::CollapsingHeader("Boids Swarm Settings", ImGuiTreeNodeFlags_DefaultOpen))
@@ -188,9 +185,6 @@ void BoidSystem::OnGui()
         ImGui::Unindent();
     }
 }
-#else
-void BoidSystem::OnGui() {}
-#endif
 
 // 自動登録を止めている（実験用のため本編では使わない）。
 //   登録したままだと全シーンへ入り、走らないのに実行順の解決対象としてだけ残って、

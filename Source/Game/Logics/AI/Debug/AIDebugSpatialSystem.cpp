@@ -9,16 +9,13 @@
 
 #include <DirectXMath.h>
 
-#ifdef ENABLE_EDITOR
 #include <imgui.h>
-#endif
 
 using namespace CCL::ECS;
 using namespace DirectX;
 
 void AIDebugSpatialSystem::Update(float /*dt*/)
 {
-#ifdef ENABLE_EDITOR
     if (!m_enabled) return;
 
     // ShapeRenderer が無ければ描けない（NavMesh 等と同じ前提）。
@@ -56,10 +53,8 @@ void AIDebugSpatialSystem::Update(float /*dt*/)
             renderer->DrawArrow(center, pTarget, 0.5f, colLine);
         }
     });
-#endif 
 }
 
-#ifdef ENABLE_EDITOR
 void AIDebugSpatialSystem::OnGui()
 {
     // 別ウィンドウは作らず、System Manager の各システム欄（このヘッダ配下）に直接出す。
@@ -69,9 +64,11 @@ void AIDebugSpatialSystem::OnGui()
     ImGui::SliderFloat("Ring Far  (>m)", &m_ringFar, 10.0f, 80.0f);
     ImGui::TextDisabled("BTの分岐しきい値(8m/40m)を地面に可視化");
 }
-#else
-void AIDebugSpatialSystem::OnGui() {}
-#endif
 
 // NavMeshDebugDrawSystem と同じ R08_Main で ShapeRenderer に積む。
+//
+// 登録ごと切ることで「製品ビルドには存在しない」を1行で言い切る。
+// 中身を #ifdef で刻むと、動かないコードが実行順の解決対象としてだけ残る。
+#ifdef ENABLE_EDITOR
 REGISTER_RENDER_SYSTEM(AIDebugSpatialSystem, Priority::RenderStage::R08_Main);
+#endif

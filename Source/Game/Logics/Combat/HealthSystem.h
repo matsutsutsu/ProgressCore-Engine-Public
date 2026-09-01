@@ -35,7 +35,6 @@ class HealthSystem : public CCL::ECS::IfSystem<HealthSystem,
 public:
     HealthSystem() : IfSystem("HealthSystem")
     {
-        hasGui = true; 
     }
 
     void Update(float dt) override;

@@ -21,7 +21,6 @@ class GameResultSystem
   public:
     GameResultSystem() : IfSystem("GameResultSystem")
     {
-        hasGui = true; // デバッグ用の検知状態パネルを OnGui で出す
     }
 
     void Initialize() override; // ボタンイベント購読

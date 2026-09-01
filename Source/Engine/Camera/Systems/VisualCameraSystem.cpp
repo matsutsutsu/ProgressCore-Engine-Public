@@ -15,9 +15,7 @@
 #include <memory>
 
 // Shipping(Release)では ImGui 本体もインクルードパスも構成から外れる。
-#ifdef ENABLE_EDITOR
 #include <imgui.h>
-#endif
 
 // システムの実行順序の定義ヘッダー
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -247,7 +245,6 @@ void CameraShakeSystem::Update(float dt)
 
 void CameraShakeSystem::OnGui()
 {
-#ifdef ENABLE_EDITOR
     ImGui::Text("揺らせるカメラ: %d 台", m_shakableCameraCount);
     if (m_shakableCameraCount == 0)
     {
@@ -272,7 +269,6 @@ void CameraShakeSystem::OnGui()
             m_world->GetEventBus().Publish(CameraShakeRequestEvent{t});
         ImGui::PopID();
     }
-#endif
 }
 
 // =========================================================

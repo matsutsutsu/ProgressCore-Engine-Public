@@ -36,7 +36,7 @@ class BossActionSystem : public CCL::ECS::IfSystem<
 >
 {
 public:
-   BossActionSystem() : IfSystem("BossActionSystem") { hasGui = true; }
+   BossActionSystem() : IfSystem("BossActionSystem") {}
     ~BossActionSystem() override = default;
  
     void Update(float dt) override;

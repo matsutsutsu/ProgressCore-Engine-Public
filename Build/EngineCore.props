@@ -79,6 +79,14 @@
 				     ヘッダ探索パスは共通のここに置いて全構成で見つかるようにする。 -->
 				$(SolutionDir)External\Tracy;
 
+				<!-- ImGui のコアも Tracy と同じ扱いにする。System の OnGui は全構成で
+				     コンパイルし、呼ぶかどうかだけを実行時に決める（Framework 側で分岐）。
+				     こうしないと OnGui を持つ全システムが #ifdef で二重定義になり、
+				     Debug と Release でコードパスが分かれて「Releaseだけ壊れる」の温床になる。
+				     エディタ本体（node-editor/ImGuizmo/implot/Source\Editor）は
+				     EditorTooling.props 側に残し、Shipping には入れない。 -->
+				$(SolutionDir)External\imgui-docking;
+
 				$(ProjectDir)Engine\Core;
 				
 				%(AdditionalIncludeDirectories)

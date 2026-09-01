@@ -22,7 +22,6 @@ class JoltSandboxGuiSystem : public CCL::ECS::IfSystem<JoltSandboxGuiSystem,
     JoltSandboxGuiSystem()
         : IfSystem("JoltSandboxGuiSystem")
     {
-        hasGui = true; // GUIを持つことを明示
     }
     virtual ~JoltSandboxGuiSystem() = default;
 

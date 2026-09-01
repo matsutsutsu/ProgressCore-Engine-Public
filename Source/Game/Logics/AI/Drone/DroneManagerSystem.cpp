@@ -17,9 +17,7 @@
 #include <SimpleMath.h>
 
 
-#ifdef ENABLE_EDITOR
 #include <imgui.h>
-#endif
 
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
@@ -294,7 +292,6 @@ void DroneManagerSystem::SetAllDroneState(DroneState state)
 // ============================================================================
 void DroneManagerSystem::OnGui()
 {
-#ifdef ENABLE_EDITOR
     if (ImGui::CollapsingHeader("Drone Manager (Spawn / Count / Destroy)",
                                 ImGuiTreeNodeFlags_DefaultOpen))
     {
@@ -487,7 +484,6 @@ void DroneManagerSystem::OnGui()
 
         ImGui::Unindent();
     }
-#endif
 }
 
 // イベントハンドラ：ジャスト回避で攻撃元ドローンを破壊し、チェイン段数に応じて

@@ -15,9 +15,7 @@
 
 #include <cstdint>
 
-#ifdef ENABLE_EDITOR
 #include <imgui.h>
-#endif
 
 using namespace CCL::ECS;
 
@@ -155,7 +153,6 @@ void GameResultSystem::ShowResultUI(bool win)
 //  デバッグ：勝敗検知の内部状態を可視化し、必要なら判定を止められるようにする。
 //  ※ImGuiはエディタ専用。Shipping(Release)ビルドではスタブに差し替える。
 // ============================================================================
-#ifdef ENABLE_EDITOR
 void GameResultSystem::OnGui()
 {
     ImGui::SeparatorText("リザルト検知 (デバッグ)");
@@ -182,6 +179,3 @@ void GameResultSystem::OnGui()
     }
     ImGui::TextDisabled("※プレイヤー不在のSceneでは自動でリザルトを抑止します");
 }
-#else
-void GameResultSystem::OnGui() {}
-#endif

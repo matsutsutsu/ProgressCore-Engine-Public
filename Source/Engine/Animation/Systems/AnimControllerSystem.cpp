@@ -2,9 +2,7 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include <cmath>
-#ifdef ENABLE_EDITOR
 #include <imgui.h>
-#endif
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Animation/Core/AnimGraphSerializer.h"
 #include "Engine/Platform/Core/Logger.h"
@@ -160,13 +158,9 @@ void FireTransition(const AnimStateGraph &graph, int level, const AnimTransition
              .rootMotionCurve        = leaf->rootMotionCurve,
              .lockVerticalRootMotion = leaf->lockVerticalRootMotion});
     }
-#ifdef ENABLE_EDITOR
     if (enableLog)
         CCL_LOG_SUCCESS(LogCategory::Game, "[AnimController] -> [%s] (depth=%d)",
             leaf->sequenceName.c_str(), (int)fsm.activePath.size());
-#else
-    (void)enableLog;
-#endif
 }
 
 // level 階層を評価。発火して path/再生を更新したら true（このフレームの評価は打ち切り）。
@@ -294,9 +288,7 @@ void AnimControllerSystem::Update(float dt)
 
     // ログフラグをローカルにコピーし、ラムダ式にキャプチャさせてスレッドセーフにする
     bool enableLog = false;
-#ifdef ENABLE_EDITOR
     enableLog = m_enableTransitionLog;
-#endif
 
     // =====================================================================
     // フェーズ2【並列】純粋なステートマシン評価
@@ -343,7 +335,6 @@ void AnimControllerSystem::Update(float dt)
 
 
 // システムのインスペクタ表示
-#ifdef ENABLE_EDITOR
 void AnimControllerSystem::OnGui()
 {
     ImGui::Text("Animation Controller Settings");
@@ -355,9 +346,6 @@ void AnimControllerSystem::OnGui()
         ImGui::SetTooltip("チェックを入れると、ステートが切り替わった瞬間にコンソールへログを出力します。\n高速遷移によるログ汚染を防ぐため、デバッグ時のみONにしてください。");
     }
 }
-#else
-void AnimControllerSystem::OnGui() {}
-#endif
 
 
 REGISTER_LOGIC_SYSTEM(AnimControllerSystem, Priority::LogicStage::L02_Update);

@@ -19,11 +19,9 @@
 #include <algorithm>
 #include <cstdio>
 
-#ifdef ENABLE_EDITOR
 #include <imgui.h>
 // デバッグ用に使うのでここに置く
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
-#endif
  
 
 using namespace CCL::ECS;
@@ -47,7 +45,6 @@ namespace {
 
 BehaviorTreeSystem::BehaviorTreeSystem() : IfSystem("BehaviorTreeSystem")
 {
-    hasGui = true;
 }
 
 void BehaviorTreeSystem::Initialize()
@@ -344,7 +341,6 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
 }
 
 
-#ifdef ENABLE_EDITOR
 namespace {
     // ActionRegistry.h の辞書から表示名を逆引きする。見つからなければ nullptr。
     const char *LookupEntryName(const ActionEntry *table, int count, ActionID id)
@@ -556,9 +552,6 @@ void BehaviorTreeSystem::OnGui()
         ImGui::PopID();
     }
 }
-#else
-void BehaviorTreeSystem::OnGui() {}
-#endif
 
 
 REGISTER_LOGIC_SYSTEM(BehaviorTreeSystem, Priority::LogicStage::L02_Update);

@@ -44,7 +44,6 @@ class CameraShakeSystem : public CCL::ECS::IfSystem<CameraShakeSystem,
   public:
     CameraShakeSystem() : IfSystem("CameraShakeSystem")
     {
-        hasGui = true;
     }
 
     // 揺れ要求(CameraShakeRequestEvent)の購読を開始する。

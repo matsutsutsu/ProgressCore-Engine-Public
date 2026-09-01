@@ -27,7 +27,6 @@ public:
     // 基底クラスのコンストラクタ呼び出しもフルパスで指定
     AnimControllerSystem() : IfSystem("AnimControllerSystem") 
     {
-        hasGui = true;    
     }
     virtual ~AnimControllerSystem() = default;
 
@@ -42,8 +41,6 @@ public:
     void OnGui() override;
 
   private:
-#ifdef ENABLE_EDITOR
     // 状態遷移ログを出力するかどうかのフラグ（デフォルトOFFでコンソール汚染を防ぐ）
     bool m_enableTransitionLog = false;
-#endif
 };

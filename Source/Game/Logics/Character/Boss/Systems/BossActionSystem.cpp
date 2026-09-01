@@ -13,9 +13,7 @@
 #include <cmath>
 #include <algorithm>
 
-#ifdef ENABLE_EDITOR
 #include <imgui.h>
-#endif
 
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
@@ -115,7 +113,6 @@ void BossActionSystem::Update(float rawDt)
 }
 
 
-#ifdef ENABLE_EDITOR
 void BossActionSystem::OnGui()
 {
     if (!ImGui::CollapsingHeader("Boss Action (Position Debugger)"))
@@ -147,9 +144,6 @@ void BossActionSystem::OnGui()
         ImGui::PopID();
     }
 }
-#else
-void BossActionSystem::OnGui() {}
-#endif
 
 void BossActionSystem::ProcessIdle(BossActionComponent &bossDef, TransformComponent &trans,
     CharacterMovementComponent &movement, const JoltCharacterHandleComponent &joltHandle,

@@ -18,9 +18,7 @@
 
 // Shipping(Release)ではImGui本体もインクルードパスも構成から外れるため、
 // エディタ有効時のみ取り込む。
-#ifdef ENABLE_EDITOR
 #include <imgui.h>
-#endif
 #include "Engine/Core/Math/StringHash.h"
 
 #include <algorithm>
@@ -82,7 +80,6 @@ float CalculateEnvelope(float timer, float duration)
 PlayerFeedbackSystem::PlayerFeedbackSystem()
     : IfSystem("PlayerFeedbackSystem")
 {
-    hasGui = true;
 }
 
 void PlayerFeedbackSystem::Initialize()
@@ -163,7 +160,6 @@ void PlayerFeedbackSystem::UpdateDashRadialBlur()
 
 void PlayerFeedbackSystem::OnGui()
 {
-#ifdef ENABLE_EDITOR
     // =========================================================================
     // Camera Shake
     // =========================================================================
@@ -362,7 +358,6 @@ void PlayerFeedbackSystem::OnGui()
 
         ImGui::TreePop();
     }
-#endif
 }
 
 // ===================================================================================
