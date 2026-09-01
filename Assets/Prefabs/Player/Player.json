@@ -495,7 +495,7 @@
                         0.0
                     ],
                     "paths": [
-                        "C:\\Users\\2240209\\Desktop\\ProgressCore-Engine\\Assets\\Textures\\Materials\\SwordMaterial.json"
+                        "Assets/Materials/SwordMaterial.json"
                     ]
                 },
                 "Model": {

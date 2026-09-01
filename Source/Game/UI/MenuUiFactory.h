@@ -19,8 +19,10 @@
 #include "Engine/UI/ECS/Components/UIAnimationComponent.h"
 #include "Engine/UI/ECS/Components/UIAppearComponent.h"
 #include "Engine/UI/ECS/Components/UITextComponent.h"
+#include "Game/UI/InputIconComponent.h" // メニュー操作ヒントのアイコン
 
 #include <string>
+#include <vector>
 
 namespace CCL::GameUI
 {
@@ -196,5 +198,81 @@ namespace CCL::GameUI
         const EntityID lblID = lbl.ID();
 
         return {btnID, lblID};
+    }
+
+    /// @brief メニュー下部の操作ヒント（[決定] [選択]）を生成する。
+    ///
+    /// なぜファクトリに置くか:
+    ///   タイトル・ポーズ・リザルトの3画面がまったく同じ行を出す。生成側に書くと
+    ///   3箇所で座標とアイコン種別がズレていき、片方だけ直す事故が起きる。
+    ///
+    /// @param yOffset 画面中央からの縦位置(px)。ボタン群の下に来る値を渡すこと。
+    /// @param out     生成したエンティティを積む（呼び出し側が一括破棄するため）。
+    /// @note アイコンの実体は InputIconSystem が毎フレーム解決する。ここは種別を宣言するだけ。
+    inline void SpawnMenuHints(CCL::ECS::World &world, CCL::ECS::EntityID parent, float yOffset,
+        std::vector<CCL::ECS::EntityID> &out, int sortOrder = 230, float appearDelay = -1.0f)
+    {
+        using namespace CCL::ECS;
+
+        struct HintDef { InputIconKind kind; const char *label; const char *name; float x; };
+        // 決定を左、選択を右。押す頻度が高いものを先に読ませる。
+        const HintDef defs[] = {
+            {InputIconKind::MenuConfirm,  "CONFIRM", "HintConfirm",  -150.0f},
+            {InputIconKind::MenuNavigate, "SELECT",  "HintNavigate",   30.0f},
+        };
+
+        constexpr float kIcon = 28.0f;
+        constexpr float kText = 16.0f;
+
+        for (const HintDef &d : defs)
+        {
+            auto iconArch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
+                UIImageComponent, InputIconComponent, UIAppearComponent>();
+            auto icon = EntityFactory::SpawnNamed(world, d.name, iconArch);
+
+            UITransformComponent it;
+            it.anchor = {0.5f, 0.5f};
+            it.pivot  = {0.5f, 0.5f};
+            it.offset = {d.x, yOffset};
+            it.size   = {kIcon, kIcon};
+
+            UIImageComponent img;
+            img.sortOrder = sortOrder;
+            img.visible   = false; // InputIconSystem が張り替えるまで出さない
+
+            InputIconComponent ic;
+            ic.kind = d.kind;
+
+            UIAppearComponent ap;
+            ap.slideY = 0.0f; // ヒントはスライドさせずフェードだけ（主役はボタン）
+            ConfigureAppear(it, ap, appearDelay);
+
+            icon.Set(MakeUINode(parent)).Set(it).Set(img).Set(ic).Set(ap);
+            out.push_back(icon.ID());
+
+            // ラベルはアイコンの右隣。文字は左上基準なので縦中央へ寄せる。
+            auto lblArch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
+                UITextComponent, UIAppearComponent>();
+            auto lbl = EntityFactory::SpawnNamed(world, (std::string(d.name) + "Label").c_str(), lblArch);
+
+            UITransformComponent lt;
+            lt.anchor = {0.5f, 0.5f};
+            lt.pivot  = {0.5f, 0.5f};
+            lt.offset = {d.x + kIcon + 44.0f, yOffset - (kText * 0.5f)};
+            lt.size   = {120.0f, kText};
+
+            UITextComponent tx;
+            tx.text      = d.label;
+            tx.pixelSize = kText;
+            tx.color     = {0.78f, 0.80f, 0.86f, 1.0f}; // ボタン文字より一段落として主役を譲る
+            tx.sortOrder = sortOrder + 1;
+
+            UIAppearComponent lap;
+            lap.slideY = 0.0f;
+            ConfigureAppear(lt, lap, appearDelay);
+
+            lbl.Set(MakeUINode(parent)).Set(lt).Set(tx).Set(lap);
+            out.push_back(lbl.ID());
+        }
     }
 } // namespace CCL::GameUI

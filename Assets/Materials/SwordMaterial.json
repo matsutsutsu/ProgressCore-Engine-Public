@@ -1,0 +1,134 @@
+{
+    "Material": {
+        "alphaCutoff": 0.5,
+        "alphaMode": 0,
+        "colors": [
+            {
+                "nameHash": 2011925719,
+                "value": {
+                    "w": 1.0,
+                    "x": 1.0,
+                    "y": 1.0,
+                    "z": 1.0
+                }
+            },
+            {
+                "nameHash": 3017126927,
+                "value": {
+                    "w": 1.0,
+                    "x": 1.0,
+                    "y": 1.0,
+                    "z": 1.0
+                }
+            },
+            {
+                "nameHash": 3277330129,
+                "value": {
+                    "w": 1.0,
+                    "x": 0.42501747608184814,
+                    "y": 0.42501747608184814,
+                    "z": 0.42501747608184814
+                }
+            },
+            {
+                "nameHash": 487382682,
+                "value": {
+                    "w": 1.0,
+                    "x": 1.0,
+                    "y": 1.0,
+                    "z": 1.0
+                }
+            },
+            {
+                "nameHash": 1031692888,
+                "value": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                }
+            }
+        ],
+        "scalars": [
+            {
+                "nameHash": 3723718503,
+                "value": 3.7200000286102295
+            },
+            {
+                "nameHash": 3139841781,
+                "value": 1.7799999713897705
+            },
+            {
+                "nameHash": 2108445091,
+                "value": 1.0
+            },
+            {
+                "nameHash": 110761566,
+                "value": 0.5
+            },
+            {
+                "nameHash": 3936267532,
+                "value": 5.0
+            },
+            {
+                "nameHash": 3205489848,
+                "value": 1.0
+            },
+            {
+                "nameHash": 597743964,
+                "value": 0.019999999552965164
+            },
+            {
+                "nameHash": 1161528673,
+                "value": 1.0
+            },
+            {
+                "nameHash": 2633638647,
+                "value": 1.0
+            },
+            {
+                "nameHash": 3975467331,
+                "value": 1.0
+            },
+            {
+                "nameHash": 252191334,
+                "value": 1.0
+            }
+        ],
+        "shaderHash": 3792258943,
+        "textures": [
+            {
+                "assetPath": "",
+                "nameHash": 3288145784
+            },
+            {
+                "assetPath": "",
+                "nameHash": 2646384649
+            },
+            {
+                "assetPath": "",
+                "nameHash": 1832272046
+            },
+            {
+                "assetPath": "",
+                "nameHash": 2909645500
+            },
+            {
+                "assetPath": "",
+                "nameHash": 3423049160
+            },
+            {
+                "assetPath": "",
+                "nameHash": 1292088972
+            },
+            {
+                "assetPath": "",
+                "nameHash": 1127752731
+            },
+            {
+                "assetPath": "",
+                "nameHash": 4148941893
+            }
+        ]
+    }
+}

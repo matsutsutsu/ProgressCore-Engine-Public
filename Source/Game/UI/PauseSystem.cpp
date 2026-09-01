@@ -113,6 +113,9 @@ void PauseSystem::OpenPause()
         "pause_quit", false, 210, 0.24f, canvas);
     m_overlay.push_back(quit.button);
     m_overlay.push_back(quit.label);
+
+    // 操作ヒント（[決定] [選択]）。ボタンより一拍遅らせて出す。
+    SpawnMenuHints(w, canvas, 175.0f, m_overlay, 230, 0.32f);
 }
 
 void PauseSystem::ClosePause()

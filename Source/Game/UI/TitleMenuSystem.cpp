@@ -30,6 +30,11 @@ void TitleMenuSystem::Initialize()
     CCL::GameUI::SpawnButton(world, "BtnStart", "LblStart", "START", {0.0f, -20.0f}, "start_game", true);
     CCL::GameUI::SpawnButton(world, "BtnQuit", "LblQuit", "QUIT", {0.0f, 70.0f}, "quit", false);
 
+    // --- 操作ヒント（[決定] [選択]） ---
+    //   タイトルのUIはシーンごと破棄されるので、個別のIDは持たない。
+    std::vector<CCL::ECS::EntityID> hints;
+    CCL::GameUI::SpawnMenuHints(world, CCL::ECS::InvalidEntityID, 160.0f, hints);
+
     // --- ボタンクリックの購読（actionHash で遷移を分岐） ---
     const uint32_t kStart = CCL::Utils::HashString("start_game");
     const uint32_t kQuit  = CCL::Utils::HashString("quit");

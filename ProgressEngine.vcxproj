@@ -744,6 +744,9 @@
     <ClInclude Include="Source\Game\UI\MenuUiFactory.h" />
     <ClInclude Include="Source\Game\UI\GameResultSystem.h" />
     <ClInclude Include="Source\Game\UI\PauseSystem.h" />
+    <ClInclude Include="Source\Game\UI\InputPromptSystem.h" />
+    <ClInclude Include="Source\Game\UI\InputIconComponent.h" />
+    <ClInclude Include="Source\Game\UI\InputIconSystem.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Components\UIAnimationComponent.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Components\UIAppearComponent.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Components\UICanvasComponent.h" />
@@ -1198,6 +1201,8 @@
     <ClCompile Include="Source\Game\UI\TitleMenuSystem.cpp" />
     <ClCompile Include="Source\Game\UI\GameResultSystem.cpp" />
     <ClCompile Include="Source\Game\UI\PauseSystem.cpp" />
+    <ClCompile Include="Source\Game\UI\InputPromptSystem.cpp" />
+    <ClCompile Include="Source\Game\UI\InputIconSystem.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIAnimationSystem.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIAppearSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerAttackSystem.cpp" />

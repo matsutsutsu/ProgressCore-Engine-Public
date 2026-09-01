@@ -145,6 +145,11 @@ void GameResultSystem::ShowResultUI(bool win)
     // ボタン（RETRY が初期フォーカス）
     SpawnButton(w, "BtnRetry", "LblRetry", "RETRY", {0.0f, 0.0f}, "retry", true, 210, 0.16f, canvas);
     SpawnButton(w, "BtnQuit", "LblQuit", "QUIT", {0.0f, 90.0f}, "result_quit", false, 210, 0.24f, canvas);
+
+    // 操作ヒント（[決定] [選択]）。Canvas の子なので、この画面を畳むときに一緒に消える。
+    //   ここでは受け皿だけ用意する（Canvas ごと破棄するため個別のIDは持たない）。
+    std::vector<EntityID> hints;
+    SpawnMenuHints(w, canvas, 175.0f, hints, 230, 0.32f);
 }
 
 // ============================================================================
