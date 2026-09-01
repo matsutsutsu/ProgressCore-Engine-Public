@@ -29,7 +29,7 @@ public:
     EnvironmentSystem();
     virtual ~EnvironmentSystem() = default;
 
-    /// @brief テクスチャ・定数バッファを用意する（登録直後に SystemManager が呼ぶ）。
+    // テクスチャ・定数バッファを用意する（登録直後に SystemManager が呼ぶ）。
     void Initialize() override;
 
     std::vector<CCL::ECS::TypeID> GetReadTypes() const override;

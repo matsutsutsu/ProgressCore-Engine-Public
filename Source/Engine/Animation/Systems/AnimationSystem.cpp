@@ -33,7 +33,7 @@ namespace
 // -----------------------------------------------------------------------------------
 
 // TODO: 実行中にこの部分の処理負荷がとてつもないフレームがあったから後で調べる まれに出てくる
-/// @brief 速度カーブによる時間の歪み(Time Warping)を考慮した実効再生速度を返す。
+// 速度カーブによる時間の歪み(Time Warping)を考慮した実効再生速度を返す。
 float ComputeEffectiveSpeed(const AnimatorComponent &animator, const AnimSequence *seq)
 {
     ZoneScopedN("Anim::ComputeEffectiveSpeed");
@@ -50,8 +50,10 @@ float ComputeEffectiveSpeed(const AnimatorComponent &animator, const AnimSequenc
     return animator.playbackSpeed * curveMultiplier;
 }
 
-/// @brief currentTimer（と、ブレンド中なら previousTimer）を dt ぶん進める。
-/// @return 順方向に進んだか（逆再生・シーク検出用。イベント発火可否の判定に使う）。
+/**
+ * @brief currentTimer（と、ブレンド中なら previousTimer）を dt ぶん進める。
+ * @return 順方向に進んだか（逆再生・シーク検出用。イベント発火可否の判定に使う）。
+ */
 bool AdvanceTimers(AnimatorComponent &animator, const AnimSequence *seq, float localDt)
 {
     ZoneScopedN("Anim::AdvanceTimers");
@@ -99,7 +101,7 @@ bool AdvanceTimers(AnimatorComponent &animator, const AnimSequence *seq, float l
     return movedForward;
 }
 
-/// @brief duration境界でのループ/終了判定。currentTimer を正規化する。
+// duration境界でのループ/終了判定。currentTimer を正規化する。
 void ResolveLoopAndFinish(AnimatorComponent &animator, const AnimSequence *seq)
 {
     ZoneScopedN("Anim::ResolveLoopAndFinish");
@@ -133,14 +135,16 @@ void ResolveLoopAndFinish(AnimatorComponent &animator, const AnimSequence *seq)
     }
 }
 
-/// @brief ルートボーンのXZ（と条件付きでY）を基準姿勢へピン留めする共通ヘルパー。
-/// @details XZは常に「対象クリップ自身の0秒目」を基準にする（前進量を殺す目的なので
-///          クリップごとの基準で正しい）。Yは lockVertical が true のときだけ、
-///          ModelResource のバインドポーズ（実行中不変の基準姿勢）を基準にする。
-///          クリップ自身の0秒目のYを基準にすると、そこが既に膝を曲げた姿勢の場合
-///          アニメ全体がその分浮く/沈む不具合になるため（過去に実際に発生した不具合）。
-/// @note    旧実装ではこのロジックがブレンド中の過去/現在バッファ・非ブレンド確定後の
-///          計3箇所にほぼ同一のコードとして重複していた。ここに一本化する。
+// ルートボーンのXZ（と条件付きでY）を基準姿勢へピン留めする共通ヘルパー。
+//
+// XZは常に「対象クリップ自身の0秒目」を基準にする（前進量を殺す目的なので
+// クリップごとの基準で正しい）。Yは lockVertical が true のときだけ、
+// ModelResource のバインドポーズ（実行中不変の基準姿勢）を基準にする。
+// クリップ自身の0秒目のYを基準にすると、そこが既に膝を曲げた姿勢の場合
+// アニメ全体がその分浮く/沈む不具合になるため（過去に実際に発生した不具合）。
+//
+// 旧実装ではこのロジックがブレンド中の過去/現在バッファ・非ブレンド確定後の
+// 計3箇所にほぼ同一のコードとして重複していた。ここに一本化する。
 void PinRootMotionNode(Model *model, int animIndex, int rootNodeIndex,
     std::vector<Model::NodePose> &poseBuffer, bool lockVertical)
 {

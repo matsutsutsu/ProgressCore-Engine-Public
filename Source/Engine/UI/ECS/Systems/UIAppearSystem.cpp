@@ -1,5 +1,4 @@
-/// @file UIAppearSystem.cpp
-/// 役割・設計方針は UIAppearSystem.h を参照。
+// 役割・設計方針は UIAppearSystem.h を参照。
 #include "UIAppearSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"

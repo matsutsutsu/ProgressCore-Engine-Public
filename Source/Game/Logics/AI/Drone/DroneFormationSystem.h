@@ -40,9 +40,11 @@ class DroneFormationSystem : public CCL::ECS::IfSystem<DroneFormationSystem,
     //   ウィンドウ側で世界の探索をやり直さずに借りられるようにする。
     // ------------------------------------------------------------------
 
-    // ボス位置・プレイヤー位置など「場の情報」を組み立てる。
-    // @param dt 陣形へ渡す経過時間。0 を渡すと進行度が進まないので、
-    //           形を止めたまま評価したいとき（実装の照合）に使える。
+    /**
+     * ボス位置・プレイヤー位置など「場の情報」を組み立てる。
+     * @param dt 陣形へ渡す経過時間。0 を渡すと進行度が進まないので、
+     *           形を止めたまま評価したいとき（実装の照合）に使える。
+     */
     CCL::AI::Formation::FormationContext MakeContext(float dt) const;
 
     // Assets/Formations/*.json を読み、データ実装として registry へ登録する。

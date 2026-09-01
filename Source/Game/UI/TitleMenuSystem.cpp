@@ -1,5 +1,4 @@
-/// @file TitleMenuSystem.cpp
-/// 役割・設計方針は TitleMenuSystem.h を参照。
+// 役割・設計方針は TitleMenuSystem.h を参照。
 
 #include "TitleMenuSystem.h"
 

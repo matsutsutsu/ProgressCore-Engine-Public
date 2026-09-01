@@ -11,7 +11,7 @@ struct PathSample
     float t;        // その距離に対応するパラメータ t
 };
 
-/// @brief スプライン軌道の座標群を保持する実行時リソース
+// スプライン軌道の座標群を保持する実行時リソース
 struct CameraPathAsset
 {
     std::vector<DirectX::SimpleMath::Vector3> points;
@@ -22,7 +22,7 @@ struct CameraPathAsset
     float                   totalLength = 0.0f; // 軌道の総延長 (m)
 };
 
-/// @brief レールカメラの台車コンポーネント
+// レールカメラの台車コンポーネント
 struct CameraDollyCartComponent
 {
     std::string pathAsset = "";

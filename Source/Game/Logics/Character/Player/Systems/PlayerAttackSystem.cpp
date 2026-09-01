@@ -23,8 +23,8 @@ static const uint32_t HASH_TRIG_ATTACK = CCL::Utils::HashString("Attack");
 namespace
 {
 // --- オートフェイシングのチューニング（定数のみ：変更頻度が低いため file-scope に置く） ---
-constexpr float kFaceDuration = 0.22f;              ///< 攻撃時に敵へ回頭させる時間(秒)
-const     float kFaceConeCos  = std::cos(1.221730f); ///< 前方±70°の内積閾値（cos70°）
+constexpr float kFaceDuration = 0.22f;              // 攻撃時に敵へ回頭させる時間(秒)
+const     float kFaceConeCos  = std::cos(1.221730f); // 前方±70°の内積閾値（cos70°）
 //   ※自動フェイシングの最大距離は PlayerComponent.attackFaceMaxDistance（エディタ調整可）を使う。
 }
 

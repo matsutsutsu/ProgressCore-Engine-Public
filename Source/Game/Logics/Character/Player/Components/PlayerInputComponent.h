@@ -22,20 +22,21 @@
 //     CharacterMovementComponent.desiredVelocity が共通の窓口になる。
 // ===========================================================================
 
-/// @brief プレイヤーのボタン操作を「押した瞬間」まで解決して保持する。
+// プレイヤーのボタン操作を「押した瞬間」まで解決して保持する。
 struct PlayerInputComponent
 {
     // --- このフレームの意思（PlayerInputSystem が毎ステップ確定させる） ---
-    bool attackPressed = false; ///< 攻撃（左クリック）を押した瞬間
-    bool jumpPressed   = false; ///< ジャンプを押した瞬間
-    bool dashPressed   = false; ///< 回避ダッシュを押した瞬間
-    bool cleavePressed = false; ///< 切り払いの準備（右クリック）を押した瞬間
-    bool lockOnPressed = false; ///< ロックオンのトグルを押した瞬間
+    bool attackPressed = false; // 攻撃（左クリック）を押した瞬間
+    bool jumpPressed   = false; // ジャンプを押した瞬間
+    bool dashPressed   = false; // 回避ダッシュを押した瞬間
+    bool cleavePressed = false; // 切り払いの準備（右クリック）を押した瞬間
+    bool lockOnPressed = false; // ロックオンのトグルを押した瞬間
 
     // --- エッジ検出のための前ステップ状態（PlayerInputSystem 専用） ---
-    /// @note UI操作やカットシーンで入力を遮断している間も、生の押下状態はここへ
-    ///       追随させる。追随を止めると、遮断が解けた瞬間に「押しっぱなし」が
-    ///       立ち上がり扱いになってアクションが暴発する。
+    //
+    // UI操作やカットシーンで入力を遮断している間も、生の押下状態はここへ
+    // 追随させる。追随を止めると、遮断が解けた瞬間に「押しっぱなし」が
+    // 立ち上がり扱いになってアクションが暴発する。
     bool prevAttack = false;
     bool prevJump   = false;
     bool prevDash   = false;

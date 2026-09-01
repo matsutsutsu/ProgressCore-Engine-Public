@@ -1,5 +1,4 @@
-/// @file  CameraPathEditorWindow.cpp
-/// @brief CameraPathEditorWindowの実装。選択エンティティのパスアセットを抽出し、編集・保存を提供する。
+// CameraPathEditorWindowの実装。選択エンティティのパスアセットを抽出し、編集・保存を提供する。
 
 #include "CameraPathEditorWindow.h"
 #include "Engine/Camera/Components/CameraDollyCartComponent.h"

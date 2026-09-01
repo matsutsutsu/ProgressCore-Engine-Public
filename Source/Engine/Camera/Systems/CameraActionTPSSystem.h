@@ -1,6 +1,5 @@
 #pragma once
-/// @file CameraActionTPSSystem.h
-/// @brief ハイスピードアクションTPSカメラの挙動を毎フレーム計算する独立システム。
+// ハイスピードアクションTPSカメラの挙動を毎フレーム計算する独立システム。
 
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Camera/Components/VirtualCameraComponents.h"

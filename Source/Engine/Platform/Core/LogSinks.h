@@ -38,7 +38,7 @@ namespace LogFormat
         }
     }
 
-    /// 整形済みの1行ログを生成 (タイムスタンプ含む)
+    // 整形済みの1行ログを生成 (タイムスタンプ含む)
     inline std::string Format(const LogMessage& msg)
     {
         using namespace std::chrono;
@@ -167,7 +167,7 @@ private:
         }
     }
 
-    /// Engine.log -> Engine.prev.log （親フォルダはそのまま、"前回分"の固定名）
+    // Engine.log -> Engine.prev.log （親フォルダはそのまま、"前回分"の固定名）
     std::filesystem::path PrevPath() const
     {
         auto p = m_path;
@@ -178,7 +178,7 @@ private:
     std::filesystem::path m_path;
     std::ofstream         m_stream;
     std::mutex            m_mutex;
-    bool                  m_opened = false; ///< 遅延生成済みか（最初の Write で true）
+    bool                  m_opened = false; // 遅延生成済みか（最初の Write で true）
 };
 
 //==============================================================================
@@ -208,7 +208,7 @@ public:
         m_buffer.clear();
     }
 
-    /// ConsoleWindow 用: ロック内でコピーして返す (UI側はロックを長く持たない)
+    // ConsoleWindow 用: ロック内でコピーして返す (UI側はロックを長く持たない)
     std::vector<LogMessage> Snapshot() const
     {
         std::lock_guard lock(m_mutex);

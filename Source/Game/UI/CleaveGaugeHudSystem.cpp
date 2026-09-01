@@ -1,5 +1,4 @@
-/// @file CleaveGaugeHudSystem.cpp
-/// 役割・設計方針は CleaveGaugeHudSystem.h を参照。
+// 役割・設計方針は CleaveGaugeHudSystem.h を参照。
 #include "CleaveGaugeHudSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"

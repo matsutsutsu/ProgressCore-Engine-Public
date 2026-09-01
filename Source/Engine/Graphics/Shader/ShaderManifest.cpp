@@ -1,10 +1,9 @@
-/// @file  ShaderManifest.cpp
-/// @brief ShaderManifest の実装。shaders.json を FileSystem 経由で読み、
-///        マテリアル/カスタムシェーダーを ShaderRegistry へ登録する。
-///
-///  Why: シェーダー追加のたびに Graphics.cpp を編集・再ビルドしていた摩擦を消す。
-///       マテリアルは JSON だけで完結。ErrorShader(マゼンタ)へ落ちる前に
-///       cso 欠落を警告し、typo を早期検知できるようにしている。
+// ShaderManifest の実装。shaders.json を FileSystem 経由で読み、
+//       マテリアル/カスタムシェーダーを ShaderRegistry へ登録する。
+//
+// Why: シェーダー追加のたびに Graphics.cpp を編集・再ビルドしていた摩擦を消す。
+//      マテリアルは JSON だけで完結。ErrorShader(マゼンタ)へ落ちる前に
+//      cso 欠落を警告し、typo を早期検知できるようにしている。
 #include "ShaderManifest.h"
 
 #include "Engine/Graphics/Shader/ShaderRegistry.h"

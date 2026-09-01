@@ -1,5 +1,4 @@
-/// @file  VignetteEffect.h
-/// @brief ビネット(画面端の減光/着色)ポストエフェクト。
+// ビネット(画面端の減光/着色)ポストエフェクト。
 #pragma once
 #include "IPostEffect.h"
 #include "Engine/Graphics/Shader/Shared/PostProcessShared.h"

@@ -1,7 +1,4 @@
-/**
- * @file BehaviorTreeWindow.cpp
- * @brief BehaviorTree エディタの実装
- */
+// BehaviorTree エディタの実装
 #include "BehaviorTreeWindow.h"
 #include "Editor/Core/EditorCommandHistory.h"
 #include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
@@ -25,10 +22,11 @@ using json = nlohmann::json;
 namespace ed = ax::NodeEditor;
 
 namespace {
-/// @brief node-editor が返すID(uintptr_t)を、こちら側のID型(uint32_t)へ戻す。
-/// @note  EditorBTNode::id / BTPin::id はどちらも uint32_t で発行しており、それを
-///        ライブラリに預けているだけなので、切り詰めても情報は落ちない。
-///        各所で素の static_cast を書くと「なぜ安全か」が散らばるため1箇所に集める。
+// node-editor が返すID(uintptr_t)を、こちら側のID型(uint32_t)へ戻す。
+//
+// EditorBTNode::id / BTPin::id はどちらも uint32_t で発行しており、それを
+// ライブラリに預けているだけなので、切り詰めても情報は落ちない。
+// 各所で素の static_cast を書くと「なぜ安全か」が散らばるため1箇所に集める。
 inline uint32_t ToEditorId(uintptr_t id) { return static_cast<uint32_t>(id); }
 } // namespace
 
@@ -153,10 +151,11 @@ BehaviorTreeWindow::BehaviorTreeWindow() : EditorWindow("Behavior Tree Editor") 
 }
 
 namespace {
-/// @brief ノードをアセットに保存するときのキー文字列。
-/// @note  数値IDではなく名前で保存する。IDは追加のたびに増えるだけの内部都合で、
-///        JSONを開いた人間には読めないため。未登録IDは "None" として書き出す
-///        （数値IDも併記されるので、情報は失われない）。
+// ノードをアセットに保存するときのキー文字列。
+//
+// 数値IDではなく名前で保存する。IDは追加のたびに増えるだけの内部都合で、
+// JSONを開いた人間には読めないため。未登録IDは "None" として書き出す
+// （数値IDも併記されるので、情報は失われない）。
 const char *SaveKeyOf(EditorBTNodeType type, ActionID id)
 {
     const ActionEntry *e = (type == EditorBTNodeType::Condition) ? FindConditionEntry(id)
@@ -164,8 +163,9 @@ const char *SaveKeyOf(EditorBTNodeType type, ActionID id)
     return e ? e->key : "None";
 }
 
-/// @brief 保存キーと param を書き出す。意味を持つノードにだけ書く。
-/// @note  Selector/Sequence に "action": "None" が並ぶとJSONが読みづらくなるため。
+// 保存キーと param を書き出す。意味を持つノードにだけ書く。
+//
+// Selector/Sequence に "action": "None" が並ぶとJSONが読みづらくなるため。
 void WriteKeyAndParam(nlohmann::json &j, const EditorBTNode &node)
 {
     if (node.type == EditorBTNodeType::Condition)
@@ -180,9 +180,10 @@ void WriteKeyAndParam(nlohmann::json &j, const EditorBTNode &node)
         j["param"] = node.param;
 }
 
-/// @brief 待ち時間がActionIDに埋まっていた頃のグラフを「A_Wait + param」へ読み替える。
-/// @note  ランタイム側（BehaviorTreeLoader::MigrateLegacyWait）と同じ変換。
-///        エディタで開いて保存し直せば、そのアセットは新形式へ移行する。
+// 待ち時間がActionIDに埋まっていた頃のグラフを「A_Wait + param」へ読み替える。
+//
+// ランタイム側（BehaviorTreeLoader::MigrateLegacyWait）と同じ変換。
+// エディタで開いて保存し直せば、そのアセットは新形式へ移行する。
 void MigrateLegacyWait(EditorBTNode &node)
 {
     if (node.type != EditorBTNodeType::Action) return;
@@ -199,10 +200,11 @@ void MigrateLegacyWait(EditorBTNode &node)
     node.actionOrConditionId = CCL::AI::A_Wait;
 }
 
-/// @brief 間合いがIDに埋まっていた頃の条件を「距離条件 + param」へ読み替える。
-/// @note  ランタイム側（BehaviorTreeLoader::MigrateLegacyCondition）と同じ変換で、
-///        対応表は ActionRegistry.h の g_LegacyConditions を共有している。
-///        エディタで開いて保存し直せば、そのアセットは新形式へ移行する。
+// 間合いがIDに埋まっていた頃の条件を「距離条件 + param」へ読み替える。
+//
+// ランタイム側（BehaviorTreeLoader::MigrateLegacyCondition）と同じ変換で、
+// 対応表は ActionRegistry.h の g_LegacyConditions を共有している。
+// エディタで開いて保存し直せば、そのアセットは新形式へ移行する。
 void MigrateLegacyCondition(EditorBTNode &node, const nlohmann::json &jn)
 {
     if (node.type != EditorBTNodeType::Condition) return;
@@ -216,7 +218,7 @@ void MigrateLegacyCondition(EditorBTNode &node, const nlohmann::json &jn)
     node.param               = legacy->param;
 }
 
-/// @brief 保存された行動/条件を復元する。キーが正で、数値IDは旧アセット互換。
+// 保存された行動/条件を復元する。キーが正で、数値IDは旧アセット互換。
 void RestoreActionId(EditorBTNode &node, const nlohmann::json &jn)
 {
     node.actionOrConditionId = static_cast<ActionID>(jn.value("actionId", 0));

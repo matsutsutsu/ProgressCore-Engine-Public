@@ -1,5 +1,4 @@
-/// @file  NormalPrepass.cpp
-/// @brief NormalPrepass の実装。ShadowPass と同型の「専用シェーダー二度描き」パターン。
+// NormalPrepass の実装。ShadowPass と同型の「専用シェーダー二度描き」パターン。
 #include "NormalPrepass.h"
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Graphics/RHI/Camera.h"

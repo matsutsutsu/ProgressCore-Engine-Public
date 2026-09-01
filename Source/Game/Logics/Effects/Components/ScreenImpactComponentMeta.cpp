@@ -1,6 +1,5 @@
-/// @file  ScreenImpactComponentMeta.cpp
-/// @brief 命中演出(ScreenImpactComponent)のシリアライズ/インスペクタ定義。
-///        ランタイム状態(timer/power/seed)は Fields() に載せない＝保存対象外。
+// 命中演出(ScreenImpactComponent)のシリアライズ/インスペクタ定義。
+// ランタイム状態(timer/power/seed)は Fields() に載せない＝保存対象外。
 
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Game/Logics/Effects/Components/ScreenImpactComponent.h"

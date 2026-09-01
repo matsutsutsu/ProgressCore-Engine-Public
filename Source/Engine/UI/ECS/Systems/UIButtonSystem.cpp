@@ -1,5 +1,4 @@
-/// @file UIButtonSystem.cpp
-/// 役割・設計方針は UIButtonSystem.h を参照。
+// 役割・設計方針は UIButtonSystem.h を参照。
 #include "UIButtonSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"

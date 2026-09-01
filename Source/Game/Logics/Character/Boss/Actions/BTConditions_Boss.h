@@ -15,9 +15,10 @@
 namespace CCL::AI::BT::BossConditions
 {
 // 第2形態か。
-// @note  以前は blackboard.currentPhase（int）を BossPhaseSystem が毎フレーム
-//        同期して、それを読んでいた。大状態が唯一の情報源なので直接読む。
-//        写し替えが1つ減るぶん、ズレようがなくなる。
+//
+// 以前は blackboard.currentPhase（int）を BossPhaseSystem が毎フレーム
+// 同期して、それを読んでいた。大状態が唯一の情報源なので直接読む。
+// 写し替えが1つ減るぶん、ズレようがなくなる。
 struct IsPhase2 : public IBTCondition
 {
     bool Evaluate(BTContext &ctx) override

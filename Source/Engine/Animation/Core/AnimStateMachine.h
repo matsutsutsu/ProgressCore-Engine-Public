@@ -22,16 +22,17 @@ enum class AnimConditionOp
     Finished
 };
 
-/// @brief 複数条件の結合方法。AND=全て満たす / OR=いずれか満たす。
+// 複数条件の結合方法。AND=全て満たす / OR=いずれか満たす。
 enum class AnimTransitionLogic
 {
     AND,
     OR
 };
 
-/// @brief パラメータの型。Unity Animator の Float/Bool/Trigger に相当。
-/// @details Int は当面 Float で代用できるため持たない（必要になれば末尾に追加）。
-///          シリアライズは int 値。途中挿入禁止・末尾追加のみ。
+// パラメータの型。Unity Animator の Float/Bool/Trigger に相当。
+//
+// Int は当面 Float で代用できるため持たない（必要になれば末尾に追加）。
+// シリアライズは int 値。途中挿入禁止・末尾追加のみ。
 enum class AnimParamType : uint8_t
 {
     Float,
@@ -39,18 +40,20 @@ enum class AnimParamType : uint8_t
     Trigger
 };
 
-/// @brief パラメータの定義（グラフが所有する「宣言」）。
-/// @details ランタイムの実値は AnimParametersComponent が持つ。本構造体は名前・型・
-///          デフォルト値のみを保持し、エディタのパラメータパネルで編集される。
-/// @note    hash は name の派生（HashString(name)）。name 変更時は hash を再計算し、
-///          参照している AnimCondition.paramHash も張り替えること（エディタ側責務）。
+// パラメータの定義（グラフが所有する「宣言」）。
+//
+// ランタイムの実値は AnimParametersComponent が持つ。本構造体は名前・型・
+// デフォルト値のみを保持し、エディタのパラメータパネルで編集される。
+//
+// hash は name の派生（HashString(name)）。name 変更時は hash を再計算し、
+// 参照している AnimCondition.paramHash も張り替えること（エディタ側責務）。
 struct AnimParamDef
 {
     std::string   name         = "NewParam";
     uint32_t      hash         = 0;
     AnimParamType type         = AnimParamType::Float;
-    float         defaultFloat = 0.0f;  ///< type==Float のときの初期値
-    bool          defaultBool  = false; ///< type==Bool のときの初期値
+    float         defaultFloat = 0.0f;  // type==Float のときの初期値
+    bool          defaultBool  = false; // type==Bool のときの初期値
 };
 
 // 遷移条件
@@ -73,10 +76,10 @@ struct AnimTransition
     // 文字列を完全に廃止し、ビットマスクに変更
     uint32_t requiredCancelMask = 0;
 
-    /// @brief 軽量サブステートマシン用。0=どこからでも（従来の anyState）。
-    ///        非0の時は「現在ステートの groupId がこの値と一致する場合のみ有効」な
-    ///        グループ・スコープ付き anyState 遷移になる（＝そのグループ内からの割り込み）。
-    ///        通常ステートの transitions では未使用（0のまま）。anyStateTransitions でのみ意味を持つ。
+    // 軽量サブステートマシン用。0=どこからでも（従来の anyState）。
+    // 非0の時は「現在ステートの groupId がこの値と一致する場合のみ有効」な
+    // グループ・スコープ付き anyState 遷移になる（＝そのグループ内からの割り込み）。
+    // 通常ステートの transitions では未使用（0のまま）。anyStateTransitions でのみ意味を持つ。
     uint32_t sourceGroupId = 0;
 
     std::vector<AnimCondition> conditions;
@@ -94,19 +97,20 @@ struct AnimState
     std::string speedCurveName;
     std::string rootMotionCurveName;
 
-    /// @brief このステートでルートモーション(rootMotionCurve駆動の前進)を適用するか。
-    /// @details Unity の "Apply Root Motion" 相当。遷移時に RootMotionComponent.enabled へ反映。
+    // このステートでルートモーション(rootMotionCurve駆動の前進)を適用するか。
+    //
+    // Unity の "Apply Root Motion" 相当。遷移時に RootMotionComponent.enabled へ反映。
     bool applyRootMotion = false;
 
-    /// @brief true なら Force Root Lock でルートボーンのYも初期姿勢へピン留めする。
-    ///        地上攻撃など「浮いてほしくない」ステート用。
-    ///        false（既定）は従来通りYをクリップの動きのまま活かす（ジャンプ攻撃等向け）。
+    // true なら Force Root Lock でルートボーンのYも初期姿勢へピン留めする。
+    // 地上攻撃など「浮いてほしくない」ステート用。
+    // false（既定）は従来通りYをクリップの動きのまま活かす（ジャンプ攻撃等向け）。
     bool lockVerticalRootMotion = false;
 
-    /// @brief 軽量サブステートマシン用のグループID（0=無所属）。同じ groupId のステート群に対し、
-    ///        anyStateTransitions 側の sourceGroupId で「そのグループ限定の割り込み遷移」を1本張れる。
-    ///        例：Combat 群に groupId=1 を付け、AnyState に「sourceGroupId=1 → Idle [Finished]」を
-    ///        1本置けば、各攻撃ステートから個別に Idle 線を引かずに済む（減線）。
+    // 軽量サブステートマシン用のグループID（0=無所属）。同じ groupId のステート群に対し、
+    // anyStateTransitions 側の sourceGroupId で「そのグループ限定の割り込み遷移」を1本張れる。
+    // 例：Combat 群に groupId=1 を付け、AnyState に「sourceGroupId=1 → Idle [Finished]」を
+    // 1本置けば、各攻撃ステートから個別に Idle 線を引かずに済む（減線）。
     uint32_t groupId = 0;
 
     float nodePosX = 0.0f;
@@ -152,7 +156,7 @@ struct AnimStateGraph
     float                       anyStatePosX = 0.0f;
     float                       anyStatePosY = 0.0f;
 
-    /// @brief このグラフで使うパラメータ定義の一覧（Unity の Parameters タブ相当）。
+    // このグラフで使うパラメータ定義の一覧（Unity の Parameters タブ相当）。
     std::vector<AnimParamDef> parameters;
 };
 
@@ -411,12 +415,12 @@ struct AnimStateMachineComponent
     std::string    graphPath;
     AnimStateGraph internalGraph;
 
-    /// @brief 実際に再生中の「葉」ステートの hash（= activePath の末尾）。
-    ///        他システム(RootMotion/エディタ表示)はこれを「今のステート」として読む。
+    // 実際に再生中の「葉」ステートの hash（= activePath の末尾）。
+    // 他システム(RootMotion/エディタ表示)はこれを「今のステート」として読む。
     uint32_t       currentStateHash = 0;
 
-    /// @brief 階層ステートマシンの現在地パス [root側..., 葉]。
-    ///        例: [Combat, Attack_1] = トップで Combat(サブマシン)、その中で Attack_1(葉)。
-    ///        AnimControllerSystem が外→内に評価し毎フレーム維持する。空なら entry から再構築。
+    // 階層ステートマシンの現在地パス [root側..., 葉]。
+    // 例: [Combat, Attack_1] = トップで Combat(サブマシン)、その中で Attack_1(葉)。
+    // AnimControllerSystem が外→内に評価し毎フレーム維持する。空なら entry から再構築。
     std::vector<uint32_t> activePath;
 };

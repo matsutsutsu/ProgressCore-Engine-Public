@@ -35,37 +35,37 @@ class PlayerCleaveSystem : public CCL::ECS::IfSystem<PlayerCleaveSystem,
     void Update(float dt) override;
 
 private:
-    /// ゲージを加算し、満タンぶんをストックへ変換する（最大3ストック）。
+    // ゲージを加算し、満タンぶんをストックへ変換する（最大3ストック）。
     void AddCleaveGauge(CleaveComponent &cleave, float amount);
-    /// 準備(Ready)へ入る（照準方向をセットし、全体スロー＋モノクロを開始）。
+    // 準備(Ready)へ入る（照準方向をセットし、全体スロー＋モノクロを開始）。
     void EnterReady(CleaveComponent &cleave, const DirectX::SimpleMath::Vector3 &dir);
 
-    /// チェイン段数(0/1/2)に応じた段ごとの固定スロー倍率／準備猶予を返す。
+    // チェイン段数(0/1/2)に応じた段ごとの固定スロー倍率／準備猶予を返す。
     float CurrentSlowScale(const CleaveComponent &cleave) const;
     float CurrentReadyDuration(const CleaveComponent &cleave) const;
 
-    /// 準備中：全体スロー(cinematicSlow=globalScale経由で自機含む)を維持する。
+    // 準備中：全体スロー(cinematicSlow=globalScale経由で自機含む)を維持する。
     void HoldGlobalSlow(const CleaveComponent &cleave);
-    /// スローを即解除（突進の瞬間に等速へスナップ）。
+    // スローを即解除（突進の瞬間に等速へスナップ）。
     void ClearGlobalSlow();
-    /// 画面モノクロ演出の ON/OFF（ジャスト回避の演出singletonを hold で流用）。
+    // 画面モノクロ演出の ON/OFF（ジャスト回避の演出singletonを hold で流用）。
     void SetMonochrome(bool on);
-    /// 照準方向へプレイヤーを向ける。
+    // 照準方向へプレイヤーを向ける。
     void FaceAim(PlayerComponent &player, const DirectX::SimpleMath::Vector3 &dir);
 
-    /// このプレイヤーを映す TPS カメラへ「寄り(クローズアップ)」要求を push する。
+    // このプレイヤーを映す TPS カメラへ「寄り(クローズアップ)」要求を push する。
     void PushCameraCloseUp(CCL::ECS::EntityID playerID, bool close);
 
-    /// 突進(Lunging)を開始。
+    // 突進(Lunging)を開始。
     void StartLunge(CleaveComponent &cleave, const DirectX::SimpleMath::Vector3 &dir);
 
-    /// 突進終了：ヒットかつ残ストックがあれば再準備で連鎖、そうでなければ解除しクールダウンへ。
+    // 突進終了：ヒットかつ残ストックがあれば再準備で連鎖、そうでなければ解除しクールダウンへ。
     void EndLunge(CleaveComponent &cleave, RootMotionComponent *rm,
                   const DirectX::SimpleMath::Vector3 &aim);
 
-    /// 待機(Idle)へ戻しクールダウンを張る（時間切れ・空振り時）。
+    // 待機(Idle)へ戻しクールダウンを張る（時間切れ・空振り時）。
     void ExitToIdle(CleaveComponent &cleave, RootMotionComponent *rm);
 
-    /// 前方の扇内のドローンを進行方向へ吹き飛ばす（ボスは対象外＝ドローンのみ走査）。
+    // 前方の扇内のドローンを進行方向へ吹き飛ばす（ボスは対象外＝ドローンのみ走査）。
     void ApplyFanKnockback(const DirectX::SimpleMath::Vector3 &origin, CleaveComponent &cleave);
 };

@@ -1,5 +1,4 @@
-/// @file TitleScene.cpp
-/// 役割・設計方針は TitleScene.h を参照。
+// 役割・設計方針は TitleScene.h を参照。
 #include "TitleScene.h"
 #include "Engine/Scene/SceneFactory.h" // REGISTER_SCENE（ファイル末尾で自己登録）
 

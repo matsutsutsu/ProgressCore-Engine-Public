@@ -26,7 +26,7 @@
 #include "Engine/Graphics/Components/PostProcess/RadialBlurConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/ChromaticAberrationConfigComponent.h"
 
-/// @brief 命中演出（カメラ揺れ＋PPバースト）を駆動するシステム。
+// 命中演出（カメラ揺れ＋PPバースト）を駆動するシステム。
 class ScreenImpactSystem : public CCL::ECS::SystemBase
 {
 public:
@@ -37,9 +37,9 @@ public:
         return {CCL::ECS::TypeInfo<ScreenImpactComponent>::ID()};
     }
 
-    /// @note PP 設定は読むだけでなく書き換えるので Write として申告する。
-    ///       Read のままだと、同じ PP を書く他システムと同一バッチに置かれて
-    ///       並列実行され、書き込みが競合する。
+    // PP 設定は読むだけでなく書き換えるので Write として申告する。
+    // Read のままだと、同じ PP を書く他システムと同一バッチに置かれて
+    // 並列実行され、書き込みが競合する。
     std::vector<CCL::ECS::TypeID> GetWriteTypes() const override
     {
         return {CCL::ECS::TypeInfo<RadialBlurConfigComponent>::ID(),
@@ -49,5 +49,5 @@ public:
     void Update(float dt) override;
 
 private:
-    bool m_wasActive = false; ///< 前フレームで演出が出ていたか（立ち下がりでPP OFF）
+    bool m_wasActive = false; // 前フレームで演出が出ていたか（立ち下がりでPP OFF）
 };

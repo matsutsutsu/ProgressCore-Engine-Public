@@ -25,25 +25,27 @@
 // ===========================================================================
 #include <cstdint>
 
-/// @brief TParams 型の上書きを最大 N 個まで保持するスロット群。
+// TParams 型の上書きを最大 N 個まで保持するスロット群。
 template <class TParams, int N = 4>
 struct PostEffectOverrides
 {
     struct Slot
     {
-        uint32_t source   = 0;    ///< 発生源の識別子。0 は空きスロット。
-        int      priority = 0;    ///< 大きいほど後に重なる（＝手前に出る）。
-        float    weight   = 0.0f; ///< 0 で無効。素の設定から params へ寄せる割合。
-        TParams  params{};        ///< 寄せ先の目標値。
+        uint32_t source   = 0;    // 発生源の識別子。0 は空きスロット。
+        int      priority = 0;    // 大きいほど後に重なる（＝手前に出る）。
+        float    weight   = 0.0f; // 0 で無効。素の設定から params へ寄せる割合。
+        TParams  params{};        // 寄せ先の目標値。
     };
 
     static constexpr int CAPACITY = N;
 
     Slot slots[N];
 
-    /// @brief 自分のスロットを返す。まだ無ければ空きを1つ確保する。
-    /// @return 満杯で確保できなければ nullptr。呼び出し側はその演出を諦める。
-    /// @note   同じ source で2回呼んでも同じスロットが返る（毎フレーム呼んでよい）。
+    /**
+     * @brief 自分のスロットを返す。まだ無ければ空きを1つ確保する。
+     * @return 満杯で確保できなければ nullptr。呼び出し側はその演出を諦める。
+     * @note   同じ source で2回呼んでも同じスロットが返る（毎フレーム呼んでよい）。
+     */
     Slot *Acquire(uint32_t source, int priority)
     {
         if (source == 0)
@@ -70,7 +72,7 @@ struct PostEffectOverrides
         return freeSlot;
     }
 
-    /// @brief 自分のスロットを手放す。演出終了時に呼ぶ。
+    // 自分のスロットを手放す。演出終了時に呼ぶ。
     void Release(uint32_t source)
     {
         for (Slot &s : slots)
@@ -81,7 +83,7 @@ struct PostEffectOverrides
             }
     }
 
-    /// @brief 効いている上書きが1つでもあるか（素の設定が OFF でも描画するかの判定用）。
+    // 効いている上書きが1つでもあるか（素の設定が OFF でも描画するかの判定用）。
     bool AnyActive() const
     {
         for (const Slot &s : slots)
@@ -90,9 +92,10 @@ struct PostEffectOverrides
         return false;
     }
 
-    /// @brief 効いているスロットを priority 昇順に fn(params, weight) へ渡す。
-    /// @note  N が小さい前提の挿入ソート。ヒープ確保はしない。
-    ///        重ね合成では順序が結果を変えるため、宣言順ではなく priority で決める。
+    // 効いているスロットを priority 昇順に fn(params, weight) へ渡す。
+    //
+    // N が小さい前提の挿入ソート。ヒープ確保はしない。
+    // 重ね合成では順序が結果を変えるため、宣言順ではなく priority で決める。
     template <class TFunc>
     void ForEachActive(TFunc fn) const
     {

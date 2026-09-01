@@ -1,4 +1,3 @@
-/// @file CharacterAnimSyncSystem.cpp
 
 #include "CharacterAnimSyncSystem.h"
 #include "Engine/Animation/Components/RootMotionComponent.h" // externallyDriven（外部が移動を駆動中か）

@@ -40,8 +40,8 @@
 //   構想だけで実装されなかった技（DeathRing / SweepingBeam など21件）を
 //   2026-08 に削除した跡。欠番は埋めず、増やすときは 33 以降を使う。
 //
-// @note 追加するときは、ここに1行足したうえで FormationRegistry へ
-//       IFormation 実装を登録する。登録が無い型は指定しても静止するだけ。
+// 追加するときは、ここに1行足したうえで FormationRegistry へ
+// IFormation 実装を登録する。登録が無い型は指定しても静止するだけ。
 #define DRONE_FORMATION_LIST(X)                             \
     X(Hidden,                   0, "収納（命令なし）")      \
     X(OrbitCircle,              1, "降下円陣")              \
@@ -57,7 +57,8 @@
     X(SquadAssault,            32, "小隊突撃")
 
 // ボスがドローン群へ出す「どの形を作れ」の指示。
-// @note  BossCommandComponent 側でもそのまま使う。
+//
+// BossCommandComponent 側でもそのまま使う。
 enum class DroneFormationType : uint8_t
 {
 #define CCL_DRONE_FORMATION_ENUM(Name, Value, Display) Name = Value,
@@ -66,8 +67,9 @@ enum class DroneFormationType : uint8_t
 };
 
 // 保存値として使いうる番号の上限+1（欠番ぶんを含む）。
-// @note  インスペクタの列挙表示は「値をそのまま配列の添字にする」ため、
-//        名前テーブルは詰めた長さではなくこの長さで作る必要がある。
+//
+// インスペクタの列挙表示は「値をそのまま配列の添字にする」ため、
+// 名前テーブルは詰めた長さではなくこの長さで作る必要がある。
 inline constexpr size_t kDroneFormationSlotCount = 33;
 
 // インスペクタの列挙表示用の陣形名。欠番は "(欠番)" で埋める。
@@ -125,8 +127,8 @@ enum class ChargeMode : uint8_t
 //   以降は各機が自分で Returning → None へ進める。
 //   結果として「出撃は一斉、帰投はバラバラ」になる。
 //
-// @note 陣形自体が動く攻撃（縦割り等）はこの寿命を使わない。
-//       どちらを使うかは IFormation::GetLifecycle() が陣形ごとに宣言する。
+// 陣形自体が動く攻撃（縦割り等）はこの寿命を使わない。
+// どちらを使うかは IFormation::GetLifecycle() が陣形ごとに宣言する。
 enum class DroneAttackPhase : uint8_t
 {
     None,      // 攻撃していない（陣形待機中／帰投完了後）

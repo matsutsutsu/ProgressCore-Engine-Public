@@ -1,5 +1,4 @@
-/// @file  ContactShadowEffect.cpp
-/// @brief ContactShadowEffect の実装。深度(t4)を光源方向へレイマーチする。
+// ContactShadowEffect の実装。深度(t4)を光源方向へレイマーチする。
 #include "ContactShadowEffect.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"

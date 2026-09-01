@@ -1,7 +1,7 @@
 #pragma once
 #include <SimpleMath.h>
 
-/// @brief ダッシュのパラメータと状態をひとまとめに管理するコンポーネント
+// ダッシュのパラメータと状態をひとまとめに管理するコンポーネント
 struct DashComponent {
     // --- Config (プランナー調整用) ---
     float dashSpeed = 40.0f;
@@ -22,10 +22,10 @@ struct DashComponent {
     // --- 接近 (ジャスト回避スロー中にボスへ詰める「接近専用時間」) Config ---
     // 狙い: ジャスト回避成立で短いスローが発生し、その間にボスへ接近できる（殴れる位置に着くための時間）。
     //       大火力を出す時間ではなく、あくまで距離を詰めるための時間。
-    float approachSpeed       = 60.0f; ///< 接近時の移動速度（通常ダッシュより速い「詰め」）
-    float approachDuration    = 0.35f; ///< 接近を行う実時間(秒)。ヒットストップ明け後から計測する。
-    float approachPlayerScale = 1.0f;  ///< 接近中、世界スローを打ち消してプレイヤーを動かす実効時間倍率(1.0=実時間, >1で高速)
-    float approachStopRange   = 4.0f;  ///< ボスにこの距離まで近づいたら接近終了（めり込み防止）
+    float approachSpeed       = 60.0f; // 接近時の移動速度（通常ダッシュより速い「詰め」）
+    float approachDuration    = 0.35f; // 接近を行う実時間(秒)。ヒットストップ明け後から計測する。
+    float approachPlayerScale = 1.0f;  // 接近中、世界スローを打ち消してプレイヤーを動かす実効時間倍率(1.0=実時間, >1で高速)
+    float approachStopRange   = 4.0f;  // ボスにこの距離まで近づいたら接近終了（めり込み防止）
 
     // --- State (実行時の状態) ---
     bool isDashing = false;

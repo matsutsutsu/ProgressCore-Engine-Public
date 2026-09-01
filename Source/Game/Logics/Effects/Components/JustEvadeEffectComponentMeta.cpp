@@ -1,6 +1,5 @@
-/// @file  JustEvadeEffectComponentMeta.cpp
-/// @brief ジャスト回避演出(JustEvadeEffectComponent)のシリアライズ/インスペクタ定義。
-///        ランタイム状態(timer)は Fields() に載せない＝保存対象外。
+// ジャスト回避演出(JustEvadeEffectComponent)のシリアライズ/インスペクタ定義。
+// ランタイム状態(timer)は Fields() に載せない＝保存対象外。
 
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Game/Logics/Effects/Components/JustEvadeEffectComponent.h"

@@ -1,6 +1,5 @@
-/// @file UIComponentsMeta.cpp
-/// @brief ECSネイティブUIコンポーネントのメタ定義（インスペクタ編集・シリアライズ）。
-///        computed*（レイアウト結果）は保存対象外。
+// ECSネイティブUIコンポーネントのメタ定義（インスペクタ編集・シリアライズ）。
+// computed*（レイアウト結果）は保存対象外。
 
 #include "UITransformComponent.h"
 #include "UIImageComponent.h"

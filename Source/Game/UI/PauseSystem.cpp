@@ -1,5 +1,4 @@
-/// @file PauseSystem.cpp
-/// 役割・設計方針は PauseSystem.h を参照。
+// 役割・設計方針は PauseSystem.h を参照。
 
 #include "PauseSystem.h"
 

@@ -1,5 +1,4 @@
-/// @file GameResultSystem.cpp
-/// 役割・設計方針は GameResultSystem.h を参照。
+// 役割・設計方針は GameResultSystem.h を参照。
 
 #include "GameResultSystem.h"
 

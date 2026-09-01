@@ -145,9 +145,11 @@ namespace CCL::ECS
                    m_destroyedEntities.end();
         }
 
-        //@brief Chunkに格納されている全EntityIDの配列の先頭ポインタを取得します。
-        //System側で「自分自身のEntityID」を知る必要がある場合（ScriptSystem等）に使用します。
-        //@return const EntityID* ID配列の先頭ポインタ
+        /**
+         * @brief Chunkに格納されている全EntityIDの配列の先頭ポインタを取得します。
+         * System側で「自分自身のEntityID」を知る必要がある場合（ScriptSystem等）に使用します。
+         * @return const EntityID* ID配列の先頭ポインタ
+         */
         const EntityID* GetEntityIDs() const {
             if (m_ownerEntities.empty()) return nullptr;
             return m_ownerEntities.data();

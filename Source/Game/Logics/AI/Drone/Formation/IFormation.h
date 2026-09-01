@@ -26,7 +26,8 @@ struct FormationContext
     float                        dt        = 0.0f; // このフレームの経過時間（攻撃の進行度を進めるのに使う）
 
     // 全小隊の状態（小隊陣形のみ使用。未登録なら nullptr）。
-    // @note  既存の陣形はこのフィールドを見ないので、追加しても影響を受けない。
+    //
+    // 既存の陣形はこのフィールドを見ないので、追加しても影響を受けない。
     const ::SquadRegistry       *squads    = nullptr;
 };
 
@@ -54,15 +55,18 @@ struct IFormation
 {
     virtual ~IFormation() = default;
 
-    // 1機分の目標座標・視線を計算して drone に書き込む。
-    // @param drone  対象ドローン（targetPosition 等を書き換える）
-    // @param ctx    場の情報（ボス位置・プレイヤー位置・時間）
+    /**
+     * 1機分の目標座標・視線を計算して drone に書き込む。
+     * @param drone  対象ドローン（targetPosition 等を書き換える）
+     * @param ctx    場の情報（ボス位置・プレイヤー位置・時間）
+     */
     virtual void Calculate(DroneComponent &drone,
         const FormationContext            &ctx) = 0;
 
     // この陣形の攻撃を誰が終わらせるか。
-    // @note  DroneCommandSystem が陣形ごとに1回だけ引く（機体ごとには引かない）。
+    //
+    // DroneCommandSystem が陣形ごとに1回だけ引く（機体ごとには引かない）。
     virtual ChargeLifecycle GetLifecycle() const { return ChargeLifecycle::Broadcast; }
 };
 
-} // namespace CCL::AI::Formation
+} // namespace CCL::AI::Formation

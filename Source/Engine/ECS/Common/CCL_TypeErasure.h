@@ -105,7 +105,7 @@ namespace CCL::ECS
     class Copier
     {
     public:
-        /// @brief この Copier がコピーを担当する型 T を登録する
+        // この Copier がコピーを担当する型 T を登録する
         template <class T>
         void Create()
         {

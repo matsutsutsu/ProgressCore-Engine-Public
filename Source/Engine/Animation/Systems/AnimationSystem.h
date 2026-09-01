@@ -41,13 +41,14 @@ class AnimationSystem : public CCL::ECS::IfSystem<AnimationSystem,
   private:
     // --- Update() を構成する各フェーズ（m_world アクセスが必要なもののみメンバ関数化） ---
 
-    /// @brief 台本の点イベント(Sound/Effect/SpawnHitbox)を EventBus 経由で発火する。
-    /// @details 区間状態イベント(HitBox/Trail/Blackboard)はここでは発火しない
-    ///          （専用システムが区間ポーリングで読む）。
+    // 台本の点イベント(Sound/Effect/SpawnHitbox)を EventBus 経由で発火する。
+    //
+    // 区間状態イベント(HitBox/Trail/Blackboard)はここでは発火しない
+    // （専用システムが区間ポーリングで読む）。
     void DispatchPointEvents(CCL::ECS::EntityID id, AnimatorComponent &animator,
         const AnimSequence *seq, bool movedForward);
 
-    /// @brief ブレンド計算・Force Root Lock を経て、最終的な骨格ポーズを Model へ適用する。
+    // ブレンド計算・Force Root Lock を経て、最終的な骨格ポーズを Model へ適用する。
     void ComputeAndApplyPose(CCL::ECS::EntityID id, AnimatorComponent &animator,
         Model *model, const AnimSequence *seq);
 };

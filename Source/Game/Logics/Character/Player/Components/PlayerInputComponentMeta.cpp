@@ -1,8 +1,8 @@
-/// @file PlayerInputComponentMeta.cpp
-/// @brief PlayerInputComponent のシリアライズおよびインスペクタGUI定義。
-/// @note  全て毎フレーム再計算される実行時状態のため、インスペクタでは読み取り専用にする。
-///        保存対象から外さないのは、プレハブがこのコンポーネントの有無を
-///        components のキーで表現しているため（キーが無い＝付いていない）。
+// PlayerInputComponent のシリアライズおよびインスペクタGUI定義。
+//
+// 全て毎フレーム再計算される実行時状態のため、インスペクタでは読み取り専用にする。
+// 保存対象から外さないのは、プレハブがこのコンポーネントの有無を
+// components のキーで表現しているため（キーが無い＝付いていない）。
 
 #include "PlayerInputComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"

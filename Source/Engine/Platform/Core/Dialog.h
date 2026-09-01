@@ -37,8 +37,8 @@ enum class DialogResult
  */
 struct FileFilter
 {
-    std::string label;     ///< 表示名
-    std::string pattern;   ///< セミコロン区切りのワイルドカード
+    std::string label;     // 表示名
+    std::string pattern;   // セミコロン区切りのワイルドカード
 };
 
 /**
@@ -50,13 +50,13 @@ struct FileFilter
  */
 struct FileDialogParams
 {
-    std::string title;                       ///< ダイアログタイトル (UTF-8)
-    std::string contextId;                   ///< 履歴キー ("Model","Scene"等). 空ならtitle使用
-    std::vector<FileFilter> filters;         ///< ファイルフィルタ. 空ならAll Files
-    std::filesystem::path initialPath;       ///< 明示初期パス. 設定時は履歴より優先
-    std::filesystem::path defaultFileName;   ///< Save時のデフォルトファイル名
-    std::string defaultExt;                  ///< Save時のデフォルト拡張子 (例: "scene")
-    HWND ownerHwnd = nullptr;                ///< オーナーウィンドウ
+    std::string title;                       // ダイアログタイトル (UTF-8)
+    std::string contextId;                   // 履歴キー ("Model","Scene"等). 空ならtitle使用
+    std::vector<FileFilter> filters;         // ファイルフィルタ. 空ならAll Files
+    std::filesystem::path initialPath;       // 明示初期パス. 設定時は履歴より優先
+    std::filesystem::path defaultFileName;   // Save時のデフォルトファイル名
+    std::string defaultExt;                  // Save時のデフォルト拡張子 (例: "scene")
+    HWND ownerHwnd = nullptr;                // オーナーウィンドウ
 };
 
 /**
@@ -65,7 +65,7 @@ struct FileDialogParams
 struct FileDialogPreset
 {
     std::vector<FileFilter> filters;
-    std::filesystem::path defaultDir;        ///< 履歴が無い時のデフォルト初期位置
+    std::filesystem::path defaultDir;        // 履歴が無い時のデフォルト初期位置
     std::string defaultExt;
 };
 

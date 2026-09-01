@@ -65,7 +65,7 @@ class JoltJobSystemAdapter final : public JPH::JobSystemWithBarrier
   public:
     JoltJobSystemAdapter() = default;
 
-    /// @brief 積んだジョブが全て消化されるのを待ってから破棄する（詳細は .cpp）
+    // 積んだジョブが全て消化されるのを待ってから破棄する（詳細は .cpp）
     ~JoltJobSystemAdapter() override;
 
     /**
@@ -82,40 +82,40 @@ class JoltJobSystemAdapter final : public JPH::JobSystemWithBarrier
     // JPH::JobSystem の実装
     // ------------------------------------------------------------------
 
-    /// @brief 同時に実行できるジョブ数を返す（Jolt が仕事の分割数を決めるのに使う）
+    // 同時に実行できるジョブ数を返す（Jolt が仕事の分割数を決めるのに使う）
     int GetMaxConcurrency() const override;
 
-    /// @brief ジョブを1つ確保する。依存が0なら即座にキューへ積まれる。
+    // ジョブを1つ確保する。依存が0なら即座にキューへ積まれる。
     JobHandle CreateJob(const char           *inName,
                         JPH::ColorArg         inColor,
                         const JobFunction    &inJobFunction,
                         JPH::uint32           inNumDependencies = 0) override;
 
   protected:
-    /// @brief 実行可能になったジョブを1件キューへ積む
+    // 実行可能になったジョブを1件キューへ積む
     void QueueJob(Job *inJob) override;
 
-    /// @brief 実行可能になったジョブを複数まとめてキューへ積む
+    // 実行可能になったジョブを複数まとめてキューへ積む
     void QueueJobs(Job **inJobs, JPH::uint inNumJobs) override;
 
-    /// @brief ジョブの後始末（参照カウントが0になったとき Jolt から呼ばれる）
+    // ジョブの後始末（参照カウントが0になったとき Jolt から呼ばれる）
     void FreeJob(Job *inJob) override;
 
   private:
-    /// @brief ワーカースレッド上で実際にジョブを走らせる。Tracyゾーンはここで張る。
+    // ワーカースレッド上で実際にジョブを走らせる。Tracyゾーンはここで張る。
     void RunJob(Job *inJob);
 
-    /// @brief Jobの実体を置くフリーリスト。Jolt純正実装と同じ方式。
-    ///        毎フレーム数百〜数千個 new/delete しないための固定プール。
+    // Jobの実体を置くフリーリスト。Jolt純正実装と同じ方式。
+    // 毎フレーム数百〜数千個 new/delete しないための固定プール。
     using AvailableJobs = JPH::FixedSizeFreeList<Job>;
     AvailableJobs m_jobs;
 
-    /// @brief 実行を委譲する自作スレッドプール（所有しない）
+    // 実行を委譲する自作スレッドプール（所有しない）
     CCL::ECS::JobSystem *m_pool = nullptr;
 
-    /// @brief 共有プールへ積んだが、まだ RunJob を抜けていないジョブの数。
-    ///
-    /// 破棄時に「自分宛のラムダがキューに残っていないか」を判定するために使う。
-    /// 詳しい理由は .cpp のデストラクタのコメントを参照。
+    // 共有プールへ積んだが、まだ RunJob を抜けていないジョブの数。
+    //
+    // 破棄時に「自分宛のラムダがキューに残っていないか」を判定するために使う。
+    // 詳しい理由は .cpp のデストラクタのコメントを参照。
     std::atomic<int> m_queuedJobCount{0};
 };

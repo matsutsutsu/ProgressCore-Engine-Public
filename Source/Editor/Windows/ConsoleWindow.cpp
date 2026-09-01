@@ -56,7 +56,7 @@ namespace
         }
     }
 
-    /// 1行を CSV/コピー用に整形
+    // 1行を CSV/コピー用に整形
     std::string FormatLine(const LogMessage& m)
     {
         char buf[2048];

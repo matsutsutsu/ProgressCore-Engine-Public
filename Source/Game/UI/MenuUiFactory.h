@@ -1,11 +1,10 @@
 #pragma once
-/// @file MenuUiFactory.h
-/// @brief メニュー系UI（タイトル/リザルト等）の共通生成ヘルパー。
-///        ボタン・ラベル・暗転パネルを ECS UI エンティティとして生成する。
-///
-/// 設計方針:
-///   - タイトルとリザルトで同じボタン生成をするため、重複を1か所に集約。
-///   - 生成のみを担当（状態管理や遷移は各システム側の責務）。
+// メニュー系UI（タイトル/リザルト等）の共通生成ヘルパー。
+//        ボタン・ラベル・暗転パネルを ECS UI エンティティとして生成する。
+//
+// 設計方針:
+//   - タイトルとリザルトで同じボタン生成をするため、重複を1か所に集約。
+//   - 生成のみを担当（状態管理や遷移は各システム側の責務）。
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/Common/CCL_Archetype.h"
 #include "Engine/Serialization/Factory/EntityFactory.h"
@@ -26,15 +25,15 @@
 
 namespace CCL::GameUI
 {
-    /// @brief SpawnButton が返す、生成したボタンとラベルの EntityID ペア。
-    ///        （解除時に両方を破棄できるよう、ラベルの ID も返す）
+    // SpawnButton が返す、生成したボタンとラベルの EntityID ペア。
+    // （解除時に両方を破棄できるよう、ラベルの ID も返す）
     struct MenuButtonIds
     {
         CCL::ECS::EntityID button = CCL::ECS::InvalidEntityID;
         CCL::ECS::EntityID label  = CCL::ECS::InvalidEntityID;
     };
 
-    /// @brief 出現アニメを設定するヘルパ。appearDelay>=0 なら再生ON＋開始を不可視(alpha=0)にする。
+    // 出現アニメを設定するヘルパ。appearDelay>=0 なら再生ON＋開始を不可視(alpha=0)にする。
     inline void ConfigureAppear(UITransformComponent &t, UIAppearComponent &ap, float appearDelay)
     {
         if (appearDelay >= 0.0f)
@@ -45,9 +44,9 @@ namespace CCL::GameUI
         }
     }
 
-    /// @brief UI階層用の TransformComponent を作る。parent 未指定(Invalid)ならルート(0)にする。
-    ///        UI のレイアウトは UITransform が担うが、親子リンクはこの TransformComponent を再利用する
-    ///        （エディタの Hierarchy 表示・ドラッグ親子付け・UILayout の入れ子解決をこれ1本で賄う）。
+    // UI階層用の TransformComponent を作る。parent 未指定(Invalid)ならルート(0)にする。
+    // UI のレイアウトは UITransform が担うが、親子リンクはこの TransformComponent を再利用する
+    // （エディタの Hierarchy 表示・ドラッグ親子付け・UILayout の入れ子解決をこれ1本で賄う）。
     inline TransformComponent MakeUINode(CCL::ECS::EntityID parent)
     {
         TransformComponent tr;
@@ -56,7 +55,7 @@ namespace CCL::GameUI
         return tr;
     }
 
-    /// @brief UI階層のルート「キャンバス」を生成する。矩形は常に画面全体。配下UIはこの子にする。
+    // UI階層のルート「キャンバス」を生成する。矩形は常に画面全体。配下UIはこの子にする。
     inline CCL::ECS::EntityID SpawnCanvas(CCL::ECS::World &world, const char *name)
     {
         auto arch = CCL::ECS::ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
@@ -66,9 +65,11 @@ namespace CCL::GameUI
         return e.ID();
     }
 
-    /// @brief 画面中央アンカーのテキストラベルを生成する。
-    /// @param appearDelay >=0 で出現アニメを再生（秒・遅延）。負(既定)ならアニメ無し。
-    /// @param parent      UI親（Canvas等）。指定するとその子になり矩形も親基準で解決される。
+    /**
+     * @brief 画面中央アンカーのテキストラベルを生成する。
+     * @param appearDelay >=0 で出現アニメを再生（秒・遅延）。負(既定)ならアニメ無し。
+     * @param parent      UI親（Canvas等）。指定するとその子になり矩形も親基準で解決される。
+     */
     inline CCL::ECS::EntityID SpawnLabel(CCL::ECS::World &world, const char *name,
         const std::string &text, DirectX::XMFLOAT2 offset, float pixelSize, int sortOrder = 11,
         float appearDelay = -1.0f, CCL::ECS::EntityID parent = CCL::ECS::InvalidEntityID)
@@ -95,11 +96,13 @@ namespace CCL::GameUI
         return e.ID();
     }
 
-    /// @brief 単色パネル（暗転オーバーレイ等）を生成する。size を大きくすれば全画面を覆える。
-    /// @param appearDelay >=0 で出現アニメを再生（秒・遅延）。負(既定)ならアニメ無し。
-    /// @param appearSlideY 出現時の上スライド量(px)。暗転パネルは 0（フェードのみ）が自然。
-    /// @param colorBottom 指定すると color(上端)→colorBottom(下端) の縦グラデーションになる。
-    ///        暗転パネルは真っ黒のベタより、上下で濃さを変えたほうが安っぽく見えない。
+    /**
+     * @brief 単色パネル（暗転オーバーレイ等）を生成する。size を大きくすれば全画面を覆える。
+     * @param appearDelay >=0 で出現アニメを再生（秒・遅延）。負(既定)ならアニメ無し。
+     * @param appearSlideY 出現時の上スライド量(px)。暗転パネルは 0（フェードのみ）が自然。
+     * @param colorBottom 指定すると color(上端)→colorBottom(下端) の縦グラデーションになる。
+     *        暗転パネルは真っ黒のベタより、上下で濃さを変えたほうが安っぽく見えない。
+     */
     inline CCL::ECS::EntityID SpawnPanel(CCL::ECS::World &world, const char *name,
         DirectX::XMFLOAT2 offset, DirectX::XMFLOAT2 size, DirectX::XMFLOAT4 color, int sortOrder,
         float appearDelay = -1.0f, float appearSlideY = 28.0f,
@@ -133,11 +136,13 @@ namespace CCL::GameUI
         return e.ID();
     }
 
-    /// @brief ボタン（背景パネル＋当たり判定＋ボタン見た目＋拡大演出）と、その上に重ねる
-    ///        ラベル（テキスト）を生成する。戻り値＝生成したボタン/ラベルの EntityID ペア。
-    /// @param sortOrder ボタン背景の描画順。ラベルは +1 で少し手前に置く。
-    /// @param appearDelay >=0 で出現アニメを再生（秒・遅延）。負(既定)ならアニメ無し。
-    ///        ボタン本体とラベルの両方に同じ遅延で適用する。
+    /**
+     * @brief ボタン（背景パネル＋当たり判定＋ボタン見た目＋拡大演出）と、その上に重ねる
+     *        ラベル（テキスト）を生成する。戻り値＝生成したボタン/ラベルの EntityID ペア。
+     * @param sortOrder ボタン背景の描画順。ラベルは +1 で少し手前に置く。
+     * @param appearDelay >=0 で出現アニメを再生（秒・遅延）。負(既定)ならアニメ無し。
+     *        ボタン本体とラベルの両方に同じ遅延で適用する。
+     */
     inline MenuButtonIds SpawnButton(CCL::ECS::World &world, const char *btnName,
         const char *labelName, const std::string &label, DirectX::XMFLOAT2 offset,
         const std::string &action, bool focused, int sortOrder = 10, float appearDelay = -1.0f,
@@ -200,15 +205,17 @@ namespace CCL::GameUI
         return {btnID, lblID};
     }
 
-    /// @brief メニュー下部の操作ヒント（[決定] [選択]）を生成する。
-    ///
-    /// なぜファクトリに置くか:
-    ///   タイトル・ポーズ・リザルトの3画面がまったく同じ行を出す。生成側に書くと
-    ///   3箇所で座標とアイコン種別がズレていき、片方だけ直す事故が起きる。
-    ///
-    /// @param yOffset 画面中央からの縦位置(px)。ボタン群の下に来る値を渡すこと。
-    /// @param out     生成したエンティティを積む（呼び出し側が一括破棄するため）。
-    /// @note アイコンの実体は InputIconSystem が毎フレーム解決する。ここは種別を宣言するだけ。
+    /**
+     * @brief メニュー下部の操作ヒント（[決定] [選択]）を生成する。
+     *
+     * なぜファクトリに置くか:
+     *   タイトル・ポーズ・リザルトの3画面がまったく同じ行を出す。生成側に書くと
+     *   3箇所で座標とアイコン種別がズレていき、片方だけ直す事故が起きる。
+     *
+     * @param yOffset 画面中央からの縦位置(px)。ボタン群の下に来る値を渡すこと。
+     * @param out     生成したエンティティを積む（呼び出し側が一括破棄するため）。
+     * @note アイコンの実体は InputIconSystem が毎フレーム解決する。ここは種別を宣言するだけ。
+     */
     inline void SpawnMenuHints(CCL::ECS::World &world, CCL::ECS::EntityID parent, float yOffset,
         std::vector<CCL::ECS::EntityID> &out, int sortOrder = 230, float appearDelay = -1.0f)
     {

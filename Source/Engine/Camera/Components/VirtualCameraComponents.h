@@ -23,11 +23,11 @@ struct VirtualCamera {
     //   1bit を両者で共有していた頃は、先に走った側のフラグを見て
     //   もう片方が初回ワープをスキップし、原点から補間を始めていた。
     // -----------------------------------------------------------------
-    bool posInitialized = false;  ///< resultPos が一度でも確定したか
-    bool lookInitialized = false; ///< resultLookAt が一度でも確定したか
-    bool isValid = false;         ///< 位置・注視点が揃って採用可能か
+    bool posInitialized = false;  // resultPos が一度でも確定したか
+    bool lookInitialized = false; // resultLookAt が一度でも確定したか
+    bool isValid = false;         // 位置・注視点が揃って採用可能か
 
-    /// @brief 位置・注視点の両方を自前で確定させる Body（TPS/Free/Dolly）用。
+    // 位置・注視点の両方を自前で確定させる Body（TPS/Free/Dolly）用。
     void MarkResolved()
     {
         posInitialized = true;
@@ -35,7 +35,7 @@ struct VirtualCamera {
         isValid = true;
     }
 
-    /// @brief 片側だけを書くシステム（Follow / LookAt）から呼ぶ。両方揃って初めて有効化する。
+    // 片側だけを書くシステム（Follow / LookAt）から呼ぶ。両方揃って初めて有効化する。
     void RefreshValid() { isValid = posInitialized && lookInitialized; }
 };
 
@@ -45,8 +45,8 @@ struct CameraBodyFollow {
     CCL::Serialization::EntityLink target;
     DirectX::XMFLOAT3  offset = { 0, 0, 0 };
     float              damping = 10.0f;
-    bool               lockY = false;   ///< true: 高さ(Y)をターゲットに追従させず lockedY に固定する
-    float              lockedY = 0.0f;  ///< lockY 有効時に維持する高さ(m)
+    bool               lockY = false;   // true: 高さ(Y)をターゲットに追従させず lockedY に固定する
+    float              lockedY = 0.0f;  // lockY 有効時に維持する高さ(m)
 };
 
 // 3. 「回転」戦略: ターゲット注視 (Aim)
@@ -79,17 +79,17 @@ struct CameraAimLookAt {
 //    対象を選ぶ条件を書かずに済む。
 struct CameraShake {
     // --- チューニング（シリアライズする） ---
-    float amplitude     = 3.0f;  ///< trauma=1.0 のときの最大振幅(ワールド単位)
-    float frequency     = 22.0f; ///< 揺れの周波数(Hz)。大きいほど細かく震える。
-    float rotationRatio = 0.35f; ///< 注視点だけ余分にずらす割合。0=平行移動のみ, 大きいほど画面が振れる。
-    float decayRate     = 1.2f;  ///< trauma が1秒あたりに減る量。1/decayRate が最大の揺れの長さ(秒)。
+    float amplitude     = 3.0f;  // trauma=1.0 のときの最大振幅(ワールド単位)
+    float frequency     = 22.0f; // 揺れの周波数(Hz)。大きいほど細かく震える。
+    float rotationRatio = 0.35f; // 注視点だけ余分にずらす割合。0=平行移動のみ, 大きいほど画面が振れる。
+    float decayRate     = 1.2f;  // trauma が1秒あたりに減る量。1/decayRate が最大の揺れの長さ(秒)。
 
     // --- 実行時内部状態（シリアライズしない） ---
-    float         trauma  = 0.0f; ///< 衝撃の蓄積量(0..1)。0 で停止。
-    float         elapsed = 0.0f; ///< 揺れ始めからの経過時間(秒)。ノイズの位相に使う。
-    std::uint32_t seed    = 0u;   ///< 揺れごとに変える乱数シード。毎回同じ揺れにしないため。
+    float         trauma  = 0.0f; // 衝撃の蓄積量(0..1)。0 で停止。
+    float         elapsed = 0.0f; // 揺れ始めからの経過時間(秒)。ノイズの位相に使う。
+    std::uint32_t seed    = 0u;   // 揺れごとに変える乱数シード。毎回同じ揺れにしないため。
 
-    /// @brief 衝撃を積む。書き込みは CameraShakeSystem からのみ行う。
+    // 衝撃を積む。書き込みは CameraShakeSystem からのみ行う。
     void AddTrauma(float amount)
     {
         if (amount <= 0.0f) return;

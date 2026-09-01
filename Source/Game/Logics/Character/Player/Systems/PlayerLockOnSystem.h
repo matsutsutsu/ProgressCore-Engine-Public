@@ -1,6 +1,5 @@
 #pragma once
-/// @file PlayerLockOnSystem.h
-/// @brief プレイヤーのロックオン入力要求を検知し、空間クエリ（距離計算）を用いてターゲットを決定・解除するシステム。
+// プレイヤーのロックオン入力要求を検知し、空間クエリ（距離計算）を用いてターゲットを決定・解除するシステム。
 
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"

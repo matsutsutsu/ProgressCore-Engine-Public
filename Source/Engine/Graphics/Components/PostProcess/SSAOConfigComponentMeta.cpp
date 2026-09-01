@@ -1,5 +1,4 @@
-/// @file  SSAOConfigComponentMeta.cpp
-/// @brief SSAOConfigComponent のシリアライズ/インスペクタ定義(パターンC)。
+// SSAOConfigComponent のシリアライズ/インスペクタ定義(パターンC)。
 #include "Engine/Graphics/Components/PostProcess/SSAOConfigComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"

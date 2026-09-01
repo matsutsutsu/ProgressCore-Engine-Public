@@ -80,7 +80,7 @@ struct LogMessage
     LogLevel                              level = LogLevel::Info;
     std::chrono::system_clock::time_point time{};
     std::thread::id                       threadId{};
-    std::string                           file;       ///< ファイル名 (フルパスではなく短縮済み)
+    std::string                           file;       // ファイル名 (フルパスではなく短縮済み)
     int                                   line = 0;
     std::string                           text;
 };
@@ -95,13 +95,13 @@ class ILogSink
 public:
     virtual ~ILogSink() = default;
 
-    /// @brief ログ1件を受け取り、シンク固有の方法で出力する
+    // ログ1件を受け取り、シンク固有の方法で出力する
     virtual void Write(const LogMessage& msg) = 0;
 
-    /// @brief 出力をフラッシュする (ファイルバッファを書き出す等)
+    // 出力をフラッシュする (ファイルバッファを書き出す等)
     virtual void Flush() {}
 
-    /// @brief 履歴をクリアする (ImGuiBufferSink等で使用、不要なシンクは何もしなくて良い)
+    // 履歴をクリアする (ImGuiBufferSink等で使用、不要なシンクは何もしなくて良い)
     virtual void Clear() {}
 };
 
@@ -114,16 +114,16 @@ public:
 class Logger
 {
 public:
-    /// @brief シングルトンアクセス
+    // シングルトンアクセス
     static Logger& Instance();
 
-    /// @brief シンクを登録する (起動時に推奨)
+    // シンクを登録する (起動時に推奨)
     void AddSink(std::shared_ptr<ILogSink> sink);
 
-    /// @brief シンクを除去する
+    // シンクを除去する
     void RemoveSink(const std::shared_ptr<ILogSink>& sink);
 
-    /// @brief 全シンクをクリアする
+    // 全シンクをクリアする
     void ClearSinks();
 
     /**
@@ -136,10 +136,10 @@ public:
     void Log(LogCategory category, LogLevel level,
         const std::source_location& loc, const char* fmt, ...);
 
-    /// @brief 全シンクの履歴クリアを要求 (ImGuiBufferSink等のみ反応)
+    // 全シンクの履歴クリアを要求 (ImGuiBufferSink等のみ反応)
     void Clear();
 
-    /// @brief 全シンクのフラッシュを要求
+    // 全シンクのフラッシュを要求
     void Flush();
 
 private:

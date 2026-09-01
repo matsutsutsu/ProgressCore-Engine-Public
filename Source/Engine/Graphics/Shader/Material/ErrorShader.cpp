@@ -1,5 +1,4 @@
-/// @file  ErrorShader.cpp
-/// @brief ErrorShader の実装。標準モデルレイアウトで頂点を変換し、PSで一律マゼンタを出力する。
+// ErrorShader の実装。標準モデルレイアウトで頂点を変換し、PSで一律マゼンタを出力する。
 #include "ErrorShader.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 #include "Engine/Graphics/Resource/ModelResource.h"

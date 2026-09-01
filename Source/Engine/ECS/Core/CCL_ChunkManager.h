@@ -32,10 +32,10 @@ namespace CCL::ECS
         ChunkManager() = default;
         ~ChunkManager() = default;
 
-        /// @brief 指定 Archetype 用の新しい Chunk を作成して保持リストに追加
+        // 指定 Archetype 用の新しい Chunk を作成して保持リストに追加
         void CreateChunk(const Archetype& archetype);
 
-        /// @brief 全 Chunk に Finalize を呼び、全 Entity とデータを破棄
+        // 全 Chunk に Finalize を呼び、全 Entity とデータを破棄
         void FinalizeAll();
 
         /**
@@ -44,7 +44,7 @@ namespace CCL::ECS
          */
         void AddEntity(EntityID entity, const Archetype& archetype);
 
-        /// @brief 指定 Entity を破棄リストに入れる（即時実行）
+        // 指定 Entity を破棄リストに入れる（即時実行）
         void DestroyEntity(EntityID entity);
 
         /**
@@ -88,20 +88,20 @@ namespace CCL::ECS
             const std::vector<TypeID>& removeTypeIDs
         );
 
-        /// @brief 指定 Archetype と完全一致する Chunk のインデックスを返す
+        // 指定 Archetype と完全一致する Chunk のインデックスを返す
         size_t SearchEqualChunk(const Archetype& a) const;
 
         std::vector<std::unique_ptr<Chunk>>& GetChunks() { return m_chunks; }
         const std::vector<std::unique_ptr<Chunk>>& GetChunks() const { return m_chunks; }
 
-        /// @brief 指定 EntityID がどの Chunk のどのインデックスにあるかを検索
+        // 指定 EntityID がどの Chunk のどのインデックスにあるかを検索
         size_t SearchEntityIn(EntityID entity, size_t* entityIndexOut = nullptr) const;
 
-        /// @brief Entity 移動時の通知コールバック型
+        // Entity 移動時の通知コールバック型
         using EntityMoveCallback = std::function<void(EntityID, Chunk*, size_t)>;
         void SetEntityMoveCallback(EntityMoveCallback cb) { m_onEntityMove = cb; }
 
-        /// @brief 構造変更用 mutex（System 側の shared_lock 用）
+        // 構造変更用 mutex（System 側の shared_lock 用）
         std::shared_mutex&       GetStructureMutex()       { return m_structureMutex; }
         const std::shared_mutex& GetStructureMutex() const { return m_structureMutex; }
 
@@ -111,7 +111,7 @@ namespace CCL::ECS
         // Chunk 操作系ヘルパー
         // ----------------------------------------------------------
 
-        /// @brief 指定 Archetype で空きがある Chunk を返す（無ければ作成）
+        // 指定 Archetype で空きがある Chunk を返す（無ければ作成）
         Chunk& GetOrCreateAvailableChunk(const Archetype& archetype);
 
         /**
@@ -170,7 +170,7 @@ namespace CCL::ECS
             std::unordered_set<EntityID>& alreadyDestroyed,
             std::vector<EntityID>& destroyedEntities);
 
-        /// @brief ops に Destroy マーカーが含まれているかを判定する
+        // ops に Destroy マーカーが含まれているかを判定する
         bool HasDestroyOp(const std::vector<PendingOp*>& ops) const;
 
         /**
@@ -245,11 +245,11 @@ namespace CCL::ECS
         // EntityLocation キャッシュ管理
         // ----------------------------------------------------------
 
-        /// @brief Entity の位置情報をキャッシュする内部構造体
+        // Entity の位置情報をキャッシュする内部構造体
         struct EntityLocation
         {
-            size_t chunkIndex;  ///< どの Chunk にいるか
-            size_t entityIndex; ///< Chunk 内のどのインデックスか
+            size_t chunkIndex;  // どの Chunk にいるか
+            size_t entityIndex; // Chunk 内のどのインデックスか
 
             EntityLocation()
                 : chunkIndex(InvalidIndex), entityIndex(InvalidIndex) {}
@@ -257,16 +257,16 @@ namespace CCL::ECS
                 : chunkIndex(ci), entityIndex(ei) {}
         };
 
-        /// @brief Entity の位置を更新する（内部ヘルパー）
+        // Entity の位置を更新する（内部ヘルパー）
         void UpdateEntityLocation(EntityID entity, size_t chunkIdx, size_t entityIdx);
 
-        /// @brief Entity の位置情報を削除する（内部ヘルパー）
+        // Entity の位置情報を削除する（内部ヘルパー）
         void RemoveEntityLocation(EntityID entity);
 
-        /// @brief Chunk* から内部配列のインデックスを取得
+        // Chunk* から内部配列のインデックスを取得
         size_t GetChunkIndex(const Chunk* chunk) const;
 
-        /// @brief 1 Chunk あたりの収容人数を Archetype から算出
+        // 1 Chunk あたりの収容人数を Archetype から算出
         size_t CalculateChunkCapacity(const Archetype& archetype) const;
 
 
@@ -275,7 +275,7 @@ namespace CCL::ECS
         // データメンバ
         // ----------------------------------------------------------
 
-        /// @brief 全 Chunk のリスト。アーキタイプごとに1つ以上の Chunk が存在
+        // 全 Chunk のリスト。アーキタイプごとに1つ以上の Chunk が存在
         std::vector<std::unique_ptr<Chunk>> m_chunks;
 
         /**
@@ -286,10 +286,10 @@ namespace CCL::ECS
          */
         static constexpr size_t CHUNK_SIZE_BYTES = 16384;
 
-        /// @brief Entity 移動・生成時の通知コールバック（World 側のキャッシュ更新用）
+        // Entity 移動・生成時の通知コールバック（World 側のキャッシュ更新用）
         EntityMoveCallback m_onEntityMove = nullptr;
 
-        /// @brief EntityID → (ChunkIndex, EntityIndex) の高速検索マップ
+        // EntityID → (ChunkIndex, EntityIndex) の高速検索マップ
         std::vector<EntityLocation> m_entityLocationMap;
 
         /**

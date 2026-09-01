@@ -1,5 +1,4 @@
-/// @file  MaterialComponentMeta.cpp
-/// @brief MaterialComponent のシリアライズ/インスペクタ定義。
+// MaterialComponent のシリアライズ/インスペクタ定義。
 
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Graphics/Components/Core/MaterialComponent.h"

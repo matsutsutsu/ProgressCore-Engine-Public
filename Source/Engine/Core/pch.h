@@ -36,20 +36,20 @@
 // この順序を間違えるとマクロが効かなくなるため、必ずファイル冒頭に置きます。
 // ===========================================================================
 
-/// @brief 不要な Windows API（ネットワーク・コマンドライン引数解析等）を除外
-///        →ビルド速度向上、シンボル衝突防止
+// 不要な Windows API（ネットワーク・コマンドライン引数解析等）を除外
+// →ビルド速度向上、シンボル衝突防止
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 
-/// @brief Windows.h が定義する min/max マクロを無効化
-///        →std::min / std::max / (std::min)() 構文との衝突防止
-///        ※絶対必須。これが無いと至る所でビルドエラーが発生する。
+// Windows.h が定義する min/max マクロを無効化
+// →std::min / std::max / (std::min)() 構文との衝突防止
+// ※絶対必須。これが無いと至る所でビルドエラーが発生する。
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
 
-/// @brief Windows ヘッダの軽量化（コンソール系の不要ヘッダを除外）
+// Windows ヘッダの軽量化（コンソール系の不要ヘッダを除外）
 #ifndef VC_EXTRALEAN
 #define VC_EXTRALEAN
 #endif

@@ -18,22 +18,22 @@ namespace CCL { namespace ECS { class World; } }
 namespace Time
 {
     // --- 全体（World） ---
-    /// 世界全体を一瞬止める（ヒットストップ）。freezeScale=0で完全停止、0.1で10%速度。長い方が優先。
+    // 世界全体を一瞬止める（ヒットストップ）。freezeScale=0で完全停止、0.1で10%速度。長い方が優先。
     void HitStop(CCL::ECS::World &world, float seconds, float freezeScale = 0.0f);
-    /// 世界全体を一時スロー（イーズ復帰）。撃破スロー等の一発演出。強い方・長い方が優先。
+    // 世界全体を一時スロー（イーズ復帰）。撃破スロー等の一発演出。強い方・長い方が優先。
     void SlowWorld(CCL::ECS::World &world, float scale, float seconds);
-    /// 「このフレーム、世界全体をスロー」。押し続ける間は毎フレーム呼ぶ（切り払い準備など）。
-    ///  呼ぶのをやめると easeOutSeconds 秒でイーズ復帰する。
+    // 「このフレーム、世界全体をスロー」。押し続ける間は毎フレーム呼ぶ（切り払い準備など）。
+    //  呼ぶのをやめると easeOutSeconds 秒でイーズ復帰する。
     void SustainWorldSlow(CCL::ECS::World &world, float scale, float easeOutSeconds = 0.3f);
-    /// 世界スローを即解除（イーズを待たず等速へスナップ）。
+    // 世界スローを即解除（イーズを待たず等速へスナップ）。
     void ClearWorldSlow(CCL::ECS::World &world);
 
     // --- 個別（Entity） ---
-    /// 1体だけを一瞬止める（命中時のヒットストップ等）。長い方が優先。
+    // 1体だけを一瞬止める（命中時のヒットストップ等）。長い方が優先。
     void HitStopEntity(CCL::ECS::World &world, CCL::ECS::EntityID id, float seconds, float freezeScale = 0.0f);
 
     // --- 制御 ---
     void Pause(CCL::ECS::World &world);
     void Resume(CCL::ECS::World &world);
-    void StepFrame(CCL::ECS::World &world); ///< 一時停止中に1フレームだけ進める
+    void StepFrame(CCL::ECS::World &world); // 一時停止中に1フレームだけ進める
 }

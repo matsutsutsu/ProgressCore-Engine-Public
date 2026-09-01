@@ -85,10 +85,11 @@ namespace ShaderReflect
         // バイトコードからリフレクション情報を取得
         bool LoadFromBytecode(const void* bytecode, size_t bytecodeSize);
 
-        /// @brief 既存の情報を保持したまま、別ステージの bytecode を「合成」する。
-        /// @details VS と PS を1つの ReflectionData にまとめる用途。
-        ///          CB/テクスチャ/サンプラ/UAV は「名前」で重複排除する
-        ///          （同名は同一リソースとみなし、先に入っている方を優先）。
+        // 既存の情報を保持したまま、別ステージの bytecode を「合成」する。
+        //
+        // VS と PS を1つの ReflectionData にまとめる用途。
+        // CB/テクスチャ/サンプラ/UAV は「名前」で重複排除する
+        // （同名は同一リソースとみなし、先に入っている方を優先）。
         void MergeFromBytecode(const void* bytecode, size_t bytecodeSize);
 
 

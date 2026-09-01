@@ -38,18 +38,18 @@ class OpaquePass : public IRenderPass
      */
     void Execute(const RenderFrameContext &ctx) override;
 
-    /// GPU マーカー（Pix/RenderDoc）用の表示名。
+    // GPU マーカー（Pix/RenderDoc）用の表示名。
     const char *GetName() const override
     {
         return "OpaquePass";
     }
 
-    /// 直近フレームで実際に描画した（可視インスタンスを持つ）メッシュ数。
+    // 直近フレームで実際に描画した（可視インスタンスを持つ）メッシュ数。
     uint32_t GetDrawnMeshCount() const
     {
         return m_stat_drawnMeshes;
     }
-    /// 直近フレームでフラスタムカリングにより丸ごとスキップしたメッシュ数。
+    // 直近フレームでフラスタムカリングにより丸ごとスキップしたメッシュ数。
     uint32_t GetCulledMeshCount() const
     {
         return m_stat_culledMeshes;
@@ -59,11 +59,11 @@ class OpaquePass : public IRenderPass
     PipelineState  m_psoOpaque;
     InstanceBuffer m_instanceBuffer;
 
-    /// インスタンスデータ構築用のスクラッチ領域。メッシュ単位で再利用する。
-    /// 関数 static を避け、可読性と将来のマルチスレッド化に配慮してメンバ化。
+    // インスタンスデータ構築用のスクラッチ領域。メッシュ単位で再利用する。
+    // 関数 static を避け、可読性と将来のマルチスレッド化に配慮してメンバ化。
     std::vector<InstanceData> m_instanceScratch;
 
-    /// フラスタムカリングの統計（デバッグ確認用。ImGui やウォッチで参照）。
+    // フラスタムカリングの統計（デバッグ確認用。ImGui やウォッチで参照）。
     uint32_t m_stat_drawnMeshes  = 0;
     uint32_t m_stat_culledMeshes = 0;
 };

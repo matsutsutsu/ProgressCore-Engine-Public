@@ -1,5 +1,4 @@
-/// @file PlayerComponentMeta.cpp
-/// @brief PlayerComponentのシリアライズおよびインスペクタGUI用のメタデータ定義
+// PlayerComponentのシリアライズおよびインスペクタGUI用のメタデータ定義
 
 #include "PlayerComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"

@@ -192,10 +192,11 @@ void JustEvadeSystem::Update(float rawDt)
 }
 
 // チェインを初期状態へ戻す（被弾などで呼ぶ）。効果値(速度/窓)は次フレームの Update が 0 段基準へ戻す。
-// @note ここだけは Update の外（DamageTakenEvent の発行元＝DamageResolutionSystem の
-//       タスク・L06_DamageApply）で走る。書くのは chainCount/idleTimer だけで、
-//       L06 に JustEvadeComponent を触るシステムは他に無いため競合しない。
-//       バッファリングして次フレームに回すとチェイン切断が1フレーム遅れるので即時のままにする。
+//
+// ここだけは Update の外（DamageTakenEvent の発行元＝DamageResolutionSystem の
+// タスク・L06_DamageApply）で走る。書くのは chainCount/idleTimer だけで、
+// L06 に JustEvadeComponent を触るシステムは他に無いため競合しない。
+// バッファリングして次フレームに回すとチェイン切断が1フレーム遅れるので即時のままにする。
 void JustEvadeSystem::BreakChain(EntityID playerID)
 {
     if (auto *evade = m_world->GetComponent<JustEvadeComponent>(playerID))

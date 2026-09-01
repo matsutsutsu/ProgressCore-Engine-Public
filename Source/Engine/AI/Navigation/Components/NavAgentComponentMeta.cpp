@@ -1,6 +1,5 @@
-/// @file  NavAgentComponentMeta.cpp
-/// @brief NavAgentComponent のシリアライズ/インスペクタ定義。
-///        目標位置の設定や、エディタ上での経路計算テスト機能を提供する。
+// NavAgentComponent のシリアライズ/インスペクタ定義。
+// 目標位置の設定や、エディタ上での経路計算テスト機能を提供する。
 
 #include "Engine/AI/Navigation/Components/NavAgentComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"

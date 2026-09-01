@@ -1,5 +1,4 @@
-/// @file  CoreComponentMeta.cpp
-/// @brief NameComponent のシリアライズ/インスペクタ定義。
+// NameComponent のシリアライズ/インスペクタ定義。
 
 #include "Engine/Core/Components/NameComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"

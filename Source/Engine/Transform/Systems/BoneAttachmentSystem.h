@@ -18,12 +18,12 @@ public:
     void Update(float dt) override;
 
 private:
-    /// @brief 1 つの attach 先を解決し、worldMatrix を確定させる。
+    // 1 つの attach 先を解決し、worldMatrix を確定させる。
     void ResolveAttachment(CCL::ECS::EntityID id, TransformComponent& trans, BoneAttachmentComponent& attach);
 
-    /// @brief attach 先のローカル小階層へ world を再伝播する（対象は小規模前提）。
+    // attach 先のローカル小階層へ world を再伝播する（対象は小規模前提）。
     void PropagateSubtree(CCL::ECS::EntityID firstChild, const DirectX::XMFLOAT4X4& parentWorld);
 
-    /// @brief 当該エンティティが Model を持つなら world で bake し直す。
+    // 当該エンティティが Model を持つなら world で bake し直す。
     void BakeModelIfPresent(CCL::ECS::EntityID id, const DirectX::XMFLOAT4X4& world);
 };

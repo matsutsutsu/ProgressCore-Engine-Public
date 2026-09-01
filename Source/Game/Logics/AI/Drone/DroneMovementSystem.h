@@ -45,16 +45,19 @@ class DroneMovementSystem : public CCL::ECS::IfSystem<
     inline void ProcessFireCharge(TransformComponent &trans, DroneComponent &drone, float dt);
 
     // 隊列を組んだままの突入。targetPosition へバネで追従する。
-    // @note  剛体追従と違って形が歪む。歪むことがこの技の見た目の核。
+    //
+    // 剛体追従と違って形が歪む。歪むことがこの技の見た目の核。
     inline void ProcessChargeSoftFollow(TransformComponent &trans, DroneComponent &drone, float dt);
 
     // 切り払いで吹き飛ばされ、制御を失って漂う。通常の追従・突撃を一切行わない。
-    // @note  タイマーの管理は DroneBrainSystem 側。ここは「漂って減衰する」動きだけを持つ。
+    //
+    // タイマーの管理は DroneBrainSystem 側。ここは「漂って減衰する」動きだけを持つ。
     inline void ProcessStunned(TransformComponent &trans, DroneComponent &drone, float dt);
 
     // 突き抜けた後、上方へ抜けながら減速する離脱カーブ。
-    // @note  その場で急旋回させると突撃の勢いが嘘になるため、一度抜けさせてから
-    //        MoveToTarget に隊列復帰を任せる。
+    //
+    // その場で急旋回させると突撃の勢いが嘘になるため、一度抜けさせてから
+    // MoveToTarget に隊列復帰を任せる。
     inline void ProcessReturning(TransformComponent &trans, DroneComponent &drone, float dt);
 
     // 吹き飛ばし速度の減衰率（1/秒）。数フレームで初速→ほぼ0にする。
@@ -73,9 +76,10 @@ class DroneMovementSystem : public CCL::ECS::IfSystem<
     static constexpr float kSoftFollowMaxSpeedScale = 2.4f;
 
     // slotInSquad から追従の鈍さ係数を出す。
-    // @note  後方の機ほどワンテンポ遅れて曲がるので、隊列がムチのようにしなる。
-    //        「編隊で飛んでいる」感の大半はこの遅れから出ている。
-    //        小隊に属さない機は slotInSquad=0 なので影響を受けない。
+    //
+    // 後方の機ほどワンテンポ遅れて曲がるので、隊列がムチのようにしなる。
+    // 「編隊で飛んでいる」感の大半はこの遅れから出ている。
+    // 小隊に属さない機は slotInSquad=0 なので影響を受けない。
     float SlotLag(const DroneComponent &drone) const
     {
         const float lag = 1.0f - static_cast<float>(drone.slotInSquad) * m_slotLagPerSlot;
@@ -86,4 +90,4 @@ class DroneMovementSystem : public CCL::ECS::IfSystem<
     //   並列ループから resource を引かずに済むよう、Update の先頭で1回だけコピーする。
     float m_followGain     = 10.0f;
     float m_slotLagPerSlot = 0.06f;
-};
+};

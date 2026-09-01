@@ -1,5 +1,4 @@
-/// @file CleaveComponentMeta.cpp
-/// @brief CleaveComponent のメタ定義（シリアライズ／インスペクタ）。
+// CleaveComponent のメタ定義（シリアライズ／インスペクタ）。
 
 #include "CleaveComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"

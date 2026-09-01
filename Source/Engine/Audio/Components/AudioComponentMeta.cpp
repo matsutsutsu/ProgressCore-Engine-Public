@@ -1,5 +1,4 @@
-/// @file  AudioComponentMeta.cpp
-/// @brief AudioEmitterComponent のシリアライズ/インスペクタ定義。
+// AudioEmitterComponent のシリアライズ/インスペクタ定義。
 
 #include "Engine/Audio/Components/AudioEmitterComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"

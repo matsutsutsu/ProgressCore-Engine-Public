@@ -1,6 +1,5 @@
 #pragma once
-/// @file PlayerMoveSystem.h
-/// @brief 意思データを物理エンジン(Jolt CharacterVirtual)の速度情報へ変換し流し込むシステム。
+// 意思データを物理エンジン(Jolt CharacterVirtual)の速度情報へ変換し流し込むシステム。
 
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Transform/Components/TransformComponent.h"
@@ -29,13 +28,13 @@ public:
     void Update(float dt) override;
 
 private:
-    /// @brief 接地状態の更新と、ジャンプ成立の判定（2段ジャンプの可否）。
-    ///        押下の立ち上がりは PlayerInputComponent が解決済みなので、ここは
-    ///        「跳んでよいか」だけを判断し、結果を jumpImpulse として物理へ渡す。
-    ///        接地離れは airborneGraceTime の猶予付きで isAirborne へ反映する。
-    ///        ジャンプ成立時は worldPos を載せて PlayerJumpedEvent を発行する（その場VFX用）。
+    // 接地状態の更新と、ジャンプ成立の判定（2段ジャンプの可否）。
+    // 押下の立ち上がりは PlayerInputComponent が解決済みなので、ここは
+    // 「跳んでよいか」だけを判断し、結果を jumpImpulse として物理へ渡す。
+    // 接地離れは airborneGraceTime の猶予付きで isAirborne へ反映する。
+    // ジャンプ成立時は worldPos を載せて PlayerJumpedEvent を発行する（その場VFX用）。
     void UpdateJumpLogic(float dt, bool isGrounded, bool jumpPressed, CharacterMovementComponent &movement, PlayerComponent &player, AnimParametersComponent &animParams, const DirectX::XMFLOAT3 &worldPos);
 
-    /// @brief プロシージャル・バンキング（傾き）の計算と、物理/描画の回転分離処理
+    // プロシージャル・バンキング（傾き）の計算と、物理/描画の回転分離処理
     void UpdateBankingAndRotation(float dt, const CharacterMovementComponent &movement, float walkSpeed, PlayerComponent &player, TransformComponent &trans, JPH::CharacterVirtual *character);
 };

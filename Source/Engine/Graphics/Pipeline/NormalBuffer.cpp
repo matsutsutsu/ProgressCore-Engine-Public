@@ -1,5 +1,4 @@
-/// @file  NormalBuffer.cpp
-/// @brief NormalBuffer の実装。
+// NormalBuffer の実装。
 #include "NormalBuffer.h"
 #include "Engine/Platform/Core/Logger.h"
 

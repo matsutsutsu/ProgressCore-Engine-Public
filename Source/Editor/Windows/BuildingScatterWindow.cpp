@@ -1,6 +1,5 @@
-/// @file  BuildingScatterWindow.cpp
-/// @brief BuildingScatterWindow の実装。中心から一定距離離した円環内に建物を
-///        ランダム配置し、親グループ配下にまとめる。
+// BuildingScatterWindow の実装。中心から一定距離離した円環内に建物を
+// ランダム配置し、親グループ配下にまとめる。
 
 #include "Editor/Windows/BuildingScatterWindow.h"
 

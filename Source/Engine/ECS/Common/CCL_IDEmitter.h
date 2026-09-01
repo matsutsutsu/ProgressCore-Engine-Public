@@ -25,21 +25,21 @@ namespace CCL::ECS
     class ID_Emitter
     {
     public:
-        /// @brief 新しい EntityID を採番して返す
+        // 新しい EntityID を採番して返す
         static EntityID EmitEntityID()
         {
             static EntityID s_nextEntityID = 0;
             return s_nextEntityID++;
         }
 
-        /// @brief 新しい TypeID を採番して返す
+        // 新しい TypeID を採番して返す
         static TypeID EmitTypeID()
         {
             static TypeID s_nextTypeID = 0;
             return s_nextTypeID++;
         }
 
-        /// @brief 新しい SystemID を採番して返す
+        // 新しい SystemID を採番して返す
         static SystemID EmitSystemID()
         {
             static SystemID s_nextSystemID = 0;

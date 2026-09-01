@@ -1,8 +1,5 @@
-﻿/**
- * @file CombatAnimationSyncSystem.cpp
- * @brief HitboxComponent を主役に走査し、ownerEntity の Animator を読んで
- *        攻撃判定の区間状態を Hitbox に同期する（イテレーション反転設計）。
- */
+﻿// HitboxComponent を主役に走査し、ownerEntity の Animator を読んで
+// 攻撃判定の区間状態を Hitbox に同期する（イテレーション反転設計）。
 #include "CombatAnimationSyncSystem.h"
 #include "Engine/Animation/Components/AnimatorComponent.h"
 #include "Engine/Animation/Core/AnimSequence.h"

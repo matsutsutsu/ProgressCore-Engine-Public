@@ -21,8 +21,9 @@ class AnimationSequenceImpl;
 struct AnimatorComponent; // 実体は struct
 class Model;
 
-/// @brief アニメーション台本(AnimSequence)編集ウィンドウ。
-/// @details 1ウィンドウ=1編集バッファ。選択エンティティが変わると再バインドする。
+// アニメーション台本(AnimSequence)編集ウィンドウ。
+//
+// 1ウィンドウ=1編集バッファ。選択エンティティが変わると再バインドする。
 class AnimationSequencerWindow : public EditorWindow
 {
   public:
@@ -32,20 +33,23 @@ class AnimationSequencerWindow : public EditorWindow
   protected:
     void DrawContents(EditorContext &context) override;
 
-    /// @brief ウィンドウが描画されなくなっても編集モードを確実に解除する。
-    /// @details 編集モードは Animator の isEditorOverride を立て、対象エンティティの
-    ///          アニメ更新を全システムで止める。DrawContents はウィンドウを閉じる・畳む・
-    ///          選択を外すと呼ばれないため、解除をそこに置くと状態が焼き付いて
-    ///          「そのエンティティのアニメが二度と動かない」になる。
+    // ウィンドウが描画されなくなっても編集モードを確実に解除する。
+    //
+    // 編集モードは Animator の isEditorOverride を立て、対象エンティティの
+    // アニメ更新を全システムで止める。DrawContents はウィンドウを閉じる・畳む・
+    // 選択を外すと呼ばれないため、解除をそこに置くと状態が焼き付いて
+    // 「そのエンティティのアニメが二度と動かない」になる。
     void OnFrameBegin(EditorContext &context) override;
 
   private:
     // --- 描画・更新を分割したサブ関数群 ---
     void ResetStateOnEntitySwitch(EditorContext &context);
 
-    /// @brief 編集モードを解除し、対象エンティティを編集前の状態へ戻す。
-    /// @param target 解除対象。切替時は「切替前」のエンティティを渡すこと
-    ///               （選択中のものへ復元すると、別モデルの台本を差し込んでしまう）。
+    /**
+     * @brief 編集モードを解除し、対象エンティティを編集前の状態へ戻す。
+     * @param target 解除対象。切替時は「切替前」のエンティティを渡すこと
+     *               （選択中のものへ復元すると、別モデルの台本を差し込んでしまう）。
+     */
     void ReleaseEditMode(EditorContext &context, CCL::ECS::EntityID target);
     void DrawFileIO();
     void DrawEditModeToggle(EditorContext &context, AnimatorComponent *animator);
@@ -53,52 +57,53 @@ class AnimationSequencerWindow : public EditorWindow
     void DrawInspectorPane(EditorContext &context);
     void DrawCurvePane(float animTime);
 
-    /// @brief 編集モード中、rootMotionCurve の進捗→累積前進距離を選択エンティティの
-    ///        Transform に直接反映し、その場で移動量を確認できるようにする。
-    /// @details ベース位置は「カーブ駆動プレビューが有効になった瞬間の位置」を1回だけ
-    ///          記録し、以後は毎フレーム base + forward * (curve(progress) - curve(0))
-    ///          で絶対位置を再計算する（スクラブしても加算ドリフトしない）。
+    // 編集モード中、rootMotionCurve の進捗→累積前進距離を選択エンティティの
+    // Transform に直接反映し、その場で移動量を確認できるようにする。
+    //
+    // ベース位置は「カーブ駆動プレビューが有効になった瞬間の位置」を1回だけ
+    // 記録し、以後は毎フレーム base + forward * (curve(progress) - curve(0))
+    // で絶対位置を再計算する（スクラブしても加算ドリフトしない）。
     void DrawRootMotionPreview(EditorContext &context, AnimatorComponent *animator);
 
   private:
     // --- pImpl（ImSequencer 依存をcppに隠蔽） ---
     std::unique_ptr<AnimationSequenceImpl> m_sequencerImpl;
-    CurveEditorWidget                      m_curveWidget; ///< 速度/RootMotionカーブの共通編集ウィジェット
+    CurveEditorWidget                      m_curveWidget; // 速度/RootMotionカーブの共通編集ウィジェット
 
     // --- ImSequencer 表示状態 ---
     bool m_expanded      = true;
     int  m_selectedEntry = -1;
     int  m_firstFrame    = 0;
-    bool m_fitCurveView  = true; ///< 次フレームでカーブビューを全体表示にフィット
+    bool m_fitCurveView  = true; // 次フレームでカーブビューを全体表示にフィット
 
     // --- タイムライン操作の使い勝手 ---
-    bool m_snapEnabled = true; ///< イベント区間ドラッグ/ナッジのスナップ有効
-    int  m_snapStep    = 5;    ///< スナップ単位（フレーム）
-    bool m_loopPreview = true; ///< プレビュー再生のループ
+    bool m_snapEnabled = true; // イベント区間ドラッグ/ナッジのスナップ有効
+    int  m_snapStep    = 5;    // スナップ単位（フレーム）
+    bool m_loopPreview = true; // プレビュー再生のループ
 
     // --- 編集対象バッファ・UI状態（旧: ファイル/関数スコープ static） ---
-    AnimSequence m_editingSequence;               ///< 編集中の台本（旧: g_EditingSequence）
-    std::string  m_savePath;                      ///< 保存先パス（旧: g_SavePath）
-    int          m_selectedAnimIndex     = -1;    ///< 選択中アニメ（旧: s_SelectedAnimIndex）
-    int          m_prevSelectedAnimIndex = -2;    ///< コンボ変化検出（旧: prevSelectedIndex）
-    bool         m_isPlaying             = false; ///< プレビュー再生中（旧: s_isPlaying）
-    bool         m_wasEditMode           = false; ///< 前フレームEditMode（旧: s_wasEditMode）
+    AnimSequence m_editingSequence;               // 編集中の台本（旧: g_EditingSequence）
+    std::string  m_savePath;                      // 保存先パス（旧: g_SavePath）
+    int          m_selectedAnimIndex     = -1;    // 選択中アニメ（旧: s_SelectedAnimIndex）
+    int          m_prevSelectedAnimIndex = -2;    // コンボ変化検出（旧: prevSelectedIndex）
+    bool         m_isPlaying             = false; // プレビュー再生中（旧: s_isPlaying）
+    bool         m_wasEditMode           = false; // 前フレームEditMode（旧: s_wasEditMode）
 
     // --- 編集モード解除時の currentSequence 復元用 ---
     const AnimSequence *m_savedSequence = nullptr;
 
     // --- ルートモーションカーブのプレビュー用状態 ---
-    DirectX::XMFLOAT3 m_rootMotionOriginPos = {0.0f, 0.0f, 0.0f}; ///< プレビュー開始時点の位置（終了時の復元用。累積しない）
-    DirectX::XMFLOAT3 m_rootMotionBasePos   = {0.0f, 0.0f, 0.0f}; ///< 現在ループの基準位置（ループごとに1周ぶん前進を畳み込む）
-    bool              m_rootMotionActive    = false;              ///< 今このフレーム、カーブ駆動で位置を書き換えているか
+    DirectX::XMFLOAT3 m_rootMotionOriginPos = {0.0f, 0.0f, 0.0f}; // プレビュー開始時点の位置（終了時の復元用。累積しない）
+    DirectX::XMFLOAT3 m_rootMotionBasePos   = {0.0f, 0.0f, 0.0f}; // 現在ループの基準位置（ループごとに1周ぶん前進を畳み込む）
+    bool              m_rootMotionActive    = false;              // 今このフレーム、カーブ駆動で位置を書き換えているか
 
     // --- エンティティ切替検出 ---
     CCL::ECS::EntityID m_lastSelectedEntity = CCL::ECS::InvalidEntityID;
 
-    /// @brief 編集モードで isEditorOverride を握っているエンティティ。Invalid=握っていない。
+    // 編集モードで isEditorOverride を握っているエンティティ。Invalid=握っていない。
     CCL::ECS::EntityID m_editingEntity = CCL::ECS::InvalidEntityID;
 
-    /// @brief このフレームに DrawContents が編集モードを維持したか。
-    ///        維持されないフレームが来たら OnFrameBegin が解除する。
+    // このフレームに DrawContents が編集モードを維持したか。
+    // 維持されないフレームが来たら OnFrameBegin が解除する。
     bool m_editModeRefreshed = false;
 };

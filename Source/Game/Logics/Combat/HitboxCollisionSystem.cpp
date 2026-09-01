@@ -26,7 +26,7 @@ using DirectX::SimpleMath::Vector3;
 
 namespace
 {
-    /// @brief hitTargets に target が既に記録済みか(多段ヒット防止)。
+    // hitTargets に target が既に記録済みか(多段ヒット防止)。
     bool AlreadyHit(const HitboxComponent &box, EntityID target)
     {
         for (uint8_t i = 0; i < box.hitCount; ++i)
@@ -36,8 +36,9 @@ namespace
     }
 
 #if HITBOX_DIAGNOSTICS
-    /// @brief hitTargets の中身を "12,34," 形式に整形する（計測ログ用）。
-    /// @note  多段ヒット履歴が前の攻撃から残っていないかを目視するために出す。
+    // hitTargets の中身を "12,34," 形式に整形する（計測ログ用）。
+    //
+    // 多段ヒット履歴が前の攻撃から残っていないかを目視するために出す。
     void FormatHitTargets(const HitboxComponent &box, char *out, size_t outSize)
     {
         size_t used = 0;
@@ -49,7 +50,7 @@ namespace
     }
 #endif
 
-    /// @brief hitTargets に target を追記する(満杯なら何もしない)。
+    // hitTargets に target を追記する(満杯なら何もしない)。
     void RecordHit(HitboxComponent &box, EntityID target)
     {
         if (box.hitCount < HitboxComponent::MAX_HIT_TARGETS)

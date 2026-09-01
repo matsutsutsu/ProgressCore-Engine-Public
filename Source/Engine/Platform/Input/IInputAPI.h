@@ -114,12 +114,14 @@ public:
     //   説明だけが古い操作を出し続ける（＝嘘をつくUI）ため。割り当ての情報源は1つに保つ。
     // =======================================================
 
-    /// @brief アクションに割り当てられたバインドのうち、指定デバイス側の「代表1件」を返す。
-    /// @param device      KeyboardMouse なら Keyboard/Mouse_Button、GamePad ならパッド系から選ぶ。
-    /// @param outBinding  見つかった割り当て。false のときは書き換えない。
-    /// @return 割り当てが1件も無ければ false（そのデバイスでは操作できないアクション）。
-    /// @note  複数割り当てがある場合は「先に登録されたもの」を代表とする。JSON の記載順が
-    ///        そのまま優先順になるので、見せたい方を上に書けばよい。
+    /**
+     * @brief アクションに割り当てられたバインドのうち、指定デバイス側の「代表1件」を返す。
+     * @param device      KeyboardMouse なら Keyboard/Mouse_Button、GamePad ならパッド系から選ぶ。
+     * @param outBinding  見つかった割り当て。false のときは書き換えない。
+     * @return 割り当てが1件も無ければ false（そのデバイスでは操作できないアクション）。
+     * @note  複数割り当てがある場合は「先に登録されたもの」を代表とする。JSON の記載順が
+     *        そのまま優先順になるので、見せたい方を上に書けばよい。
+     */
     virtual bool GetPrimaryBinding(uint32_t actionHash, ActiveDeviceType device,
                                    InputBinding &outBinding) const = 0;
 

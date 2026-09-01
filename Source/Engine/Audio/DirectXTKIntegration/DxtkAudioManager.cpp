@@ -1,5 +1,4 @@
-/// @file DxtkAudioManager.cpp
-/// 役割・設計方針は DxtkAudioManager.h を参照。
+// 役割・設計方針は DxtkAudioManager.h を参照。
 
 #include "DxtkAudioManager.h"
 
@@ -150,14 +149,14 @@ struct DxtkAudioManager::Impl
     struct Playing
     {
         std::unique_ptr<SoundEffectInstance> inst;
-        AudioEmitter emitter;         ///< 3D用（is3D=false のときは未使用）
-        float        userPitch = 0.0f; ///< SetEventParameter("pitch") で設定したピッチ（スロー分は別途加算）
+        AudioEmitter emitter;         // 3D用（is3D=false のときは未使用）
+        float        userPitch = 0.0f; // SetEventParameter("pitch") で設定したピッチ（スロー分は別途加算）
         bool         is3D      = false;
     };
 
     std::unique_ptr<AudioEngine> engine;
     bool                         ready     = false;
-    bool                         mfStarted = false; ///< Media Foundation 初期化済み（mp3等のデコードに必要）
+    bool                         mfStarted = false; // Media Foundation 初期化済み（mp3等のデコードに必要）
 
     // イベント名ハッシュ → ロード済みWAV。
     std::unordered_map<uint32_t, std::unique_ptr<SoundEffect>> sounds;
@@ -175,11 +174,11 @@ struct DxtkAudioManager::Impl
     AudioListener listener;
 
     // スロー演出。
-    float slow       = 0.0f; ///< 現在値（補間後）
-    float slowTarget = 0.0f; ///< 目標値
+    float slow       = 0.0f; // 現在値（補間後）
+    float slowTarget = 0.0f; // 目標値
     bool  reverbOn   = false;
 
-    std::mutex mtx; ///< sounds/playing/oneShot3D を保護（AudioSystem が並列から呼ぶため）
+    std::mutex mtx; // sounds/playing/oneShot3D を保護（AudioSystem が並列から呼ぶため）
 
     // スロー分を加味した実効ピッチを1インスタンスへ適用する。
     void ApplyPitch(Playing &p, float slowOffset) const

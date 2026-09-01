@@ -33,7 +33,7 @@
 
 struct AnimEventSpawnHitboxMessage; // 前方宣言
 
-/// @brief アニメ由来の球状ヒットボックス生成と、その寿命管理を担うシステム。
+// アニメ由来の球状ヒットボックス生成と、その寿命管理を担うシステム。
 class SpawnHitboxSystem
     : public CCL::ECS::IfSystem<SpawnHitboxSystem,
           CCL::ECS::Write<HitboxLifetimeComponent>>
@@ -45,8 +45,10 @@ public:
     void Update(float dt) override;
 
 private:
-    /// @brief 1通の生成依頼から、判定球エンティティを1つ生成する。
-    /// @param msg 生成パラメータ(owner/offset/radius/damage/hitStop/lifeTime)。
-    /// @note  owner に Transform が無い場合は基準が定まらないため生成しない(安全側)。
+    /**
+     * @brief 1通の生成依頼から、判定球エンティティを1つ生成する。
+     * @param msg 生成パラメータ(owner/offset/radius/damage/hitStop/lifeTime)。
+     * @note  owner に Transform が無い場合は基準が定まらないため生成しない(安全側)。
+     */
     void OnSpawnHitbox(const AnimEventSpawnHitboxMessage& msg);
 };

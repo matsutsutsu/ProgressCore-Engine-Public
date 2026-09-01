@@ -1,7 +1,7 @@
 // 汎用AIコンポーネント（BehaviorTree / Drone）のエディタ/シリアライズ用メタデータ定義
 //
-// @note BossCommandComponent のメタは BossCommandComponentMeta.cpp へ移した。
-//       構造体自体がボス側へ移ったので、メタだけここに残すと置き場がちぐはぐになる。
+// BossCommandComponent のメタは BossCommandComponentMeta.cpp へ移した。
+// 構造体自体がボス側へ移ったので、メタだけここに残すと置き場がちぐはぐになる。
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BTAssetCache.h"
 #include "Game/Logics/AI/Drone/DroneComponent.h"

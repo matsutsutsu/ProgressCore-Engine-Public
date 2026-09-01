@@ -29,7 +29,7 @@
 using namespace CCL::ECS;
 using namespace DirectX;
 
-/// @brief 断面列を滑らかにするための Catmull-Rom 補間。
+// 断面列を滑らかにするための Catmull-Rom 補間。
 static DirectX::XMFLOAT3 CatmullRom(
     const DirectX::XMFLOAT3 &p0,
     const DirectX::XMFLOAT3 &p1,
@@ -56,9 +56,10 @@ static DirectX::XMFLOAT3 CatmullRom(
     return out;
 }
 
-/// @brief 折れ点番号から決定論的な擬似乱数(0〜1)を作る。
-/// @note  断面列は毎フレーム作り直されるため、乱数を保存すると模様が保てない。
-///        番号から毎回引き直すことで、同じ区間は何フレーム後も同じ折れ方になる。
+// 折れ点番号から決定論的な擬似乱数(0〜1)を作る。
+//
+// 断面列は毎フレーム作り直されるため、乱数を保存すると模様が保てない。
+// 番号から毎回引き直すことで、同じ区間は何フレーム後も同じ折れ方になる。
 static float Hash01(uint32_t x)
 {
     x ^= x >> 16;
@@ -69,7 +70,7 @@ static float Hash01(uint32_t x)
     return static_cast<float>(x >> 8) * (1.0f / 16777216.0f);
 }
 
-/// @brief 1区間あたりの補間分割数。断面列の密度。
+// 1区間あたりの補間分割数。断面列の密度。
 static constexpr int SUBDIVISIONS = 4;
 
 // ===========================================================================

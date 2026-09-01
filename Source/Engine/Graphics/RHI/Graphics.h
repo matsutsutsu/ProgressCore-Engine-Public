@@ -148,9 +148,9 @@ public:
 
     void SetSceneNormalSRV(ID3D11ShaderResourceView* srv) noexcept { m_sceneNormalSRV = srv; }
 
-    /// @brief 現在フレームのスカイボックス背景 SRV を預ける（EnvironmentSystem が毎フレーム設定）。
-    ///        MakeFrameContext がこれを RenderFrameContext.skyboxSRV へ渡し、SkyboxPass が使う。
-    ///        非所有ポインタ（実体は ResourceManager 側が保持）。
+    // 現在フレームのスカイボックス背景 SRV を預ける（EnvironmentSystem が毎フレーム設定）。
+    // MakeFrameContext がこれを RenderFrameContext.skyboxSRV へ渡し、SkyboxPass が使う。
+    // 非所有ポインタ（実体は ResourceManager 側が保持）。
     void SetSkyboxSRV(ID3D11ShaderResourceView* srv) noexcept { m_pendingSkyboxSRV = srv; }
 
 private:
@@ -158,14 +158,14 @@ private:
     // ---- カメラ（Graphics が唯一の所有者） ----
 	// ユニークポインタにしない理由は、ECS システムが毎フレームこの Camera の内容を書き換えるため。参照の安定性を保ちたい。
 	// ユニークにするとNullの可能性が出てきて面倒
-    Camera m_mainCamera; ///< Camera() がデフォルト値で初期化。ECS システムが毎フレーム書き込む。
+    Camera m_mainCamera; // Camera() がデフォルト値で初期化。ECS システムが毎フレーム書き込む。
 
     // ---- D3D11 RHI 層（H で分離） ----
     GraphicsDevice m_gfxDevice;
 
     // ---- レンダリングパイプライン（Graphics が直接所有） ----
     RenderPipeline  m_pipeline;
-    RenderServices  m_renderServices; ///< パイプライン構築後にキャッシュ
+    RenderServices  m_renderServices; // パイプライン構築後にキャッシュ
 
     // ---- 描画サブシステム ----
     std::unique_ptr<RenderState>        m_renderState;
@@ -180,10 +180,10 @@ private:
     void SetupRenderPipeline();
     void UnbindAllResources(ID3D11DeviceContext* dc);
 
-    bool m_deviceLost = false; ///< Present() がデバイスロストを検出するとセットされる
+    bool m_deviceLost = false; // Present() がデバイスロストを検出するとセットされる
 
     ID3D11ShaderResourceView* m_sceneNormalSRV = nullptr;
 
-    /// @brief 今フレームのスカイボックス SRV（EnvironmentSystem が毎フレーム更新。非所有）。
+    // 今フレームのスカイボックス SRV（EnvironmentSystem が毎フレーム更新。非所有）。
     ID3D11ShaderResourceView* m_pendingSkyboxSRV = nullptr;
 };

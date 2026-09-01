@@ -1,5 +1,4 @@
-/// @file DashComponentMeta.cpp
-/// @brief Dash / JustEvade のメタ定義。
+// Dash / JustEvade のメタ定義。
 
 #include "DashComponent.h"
 #include "JustEvadeComponent.h"

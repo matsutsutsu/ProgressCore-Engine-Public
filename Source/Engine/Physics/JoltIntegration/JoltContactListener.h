@@ -1,13 +1,11 @@
-/**
- * @file JoltContactListener.h
- * @brief Jolt物理空間とECS空間を繋ぐ、スレッドセーフな衝突イベントの蓄積バッファ（ポスト）
- *
- * @note Joltのワーカースレッドから非同期に呼ばれるため、内部状態の変更には必ずミューテックスによる保護が必要。
- * @warning このクラス内で直接ECSのWorldやコンポーネントにアクセスしてはならない（データ競合によるクラッシュを招く）。
- *
- * @note キャラクター側(JoltCharacterContactListener)もこのバッファに PushEvent() で相乗りし、
- *       物理更新後の L05 で JoltCollisionEventSystem が一括配送する。
- */
+// Jolt物理空間とECS空間を繋ぐ、スレッドセーフな衝突イベントの蓄積バッファ（ポスト）
+//
+// Joltのワーカースレッドから非同期に呼ばれるため、内部状態の変更には必ずミューテックスによる保護が必要。
+//
+// 注意: このクラス内で直接ECSのWorldやコンポーネントにアクセスしてはならない（データ競合によるクラッシュを招く）。
+//
+// キャラクター側(JoltCharacterContactListener)もこのバッファに PushEvent() で相乗りし、
+// 物理更新後の L05 で JoltCollisionEventSystem が一括配送する。
 #pragma once
 #include <Jolt/Jolt.h>
 #include <Jolt/Physics/Collision/ContactListener.h>
@@ -64,11 +62,13 @@ public:
     std::vector<JoltCollisionEvent> GetAndClearEvents();
 
 private:
-    /// @brief Added / Persisted 共通の実体。接触1件をイベント化してバッファへ積む。
-    /// @param inPhase 計測ログ用の表示ラベル("Add" / "Persist")。判定には影響しない。
+    /**
+     * @brief Added / Persisted 共通の実体。接触1件をイベント化してバッファへ積む。
+     * @param inPhase 計測ログ用の表示ラベル("Add" / "Persist")。判定には影響しない。
+     */
     void EmitContactEvent(const JPH::Body& inBody1, const JPH::Body& inBody2,
         const JPH::ContactManifold& inManifold, const char* inPhase);
 
-    std::mutex                      m_mutex;  ///< スレッド間競合を防ぐための排他ロック
-    std::vector<JoltCollisionEvent> m_events; ///< 蓄積される衝突イベントのバッファ
+    std::mutex                      m_mutex;  // スレッド間競合を防ぐための排他ロック
+    std::vector<JoltCollisionEvent> m_events; // 蓄積される衝突イベントのバッファ
 };

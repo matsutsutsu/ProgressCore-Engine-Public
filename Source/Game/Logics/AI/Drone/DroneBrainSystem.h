@@ -36,25 +36,30 @@ class DroneBrainSystem : public CCL::ECS::IfSystem<DroneBrainSystem,
 
   private:
     // 陣形スロットへの初回接近がまだ必要か。
-    // @note  毎フレーム動く targetPosition（円陣回転）との距離だけで判定すると、
-    //        Idle の追従で閾値以内に収まり MoveToTarget が1フレームだけ点滅する。
-    //        初回到着を hasReachedSlot にラッチし、接近フェーズと維持フェーズを分離する。
+    //
+    // 毎フレーム動く targetPosition（円陣回転）との距離だけで判定すると、
+    // Idle の追従で閾値以内に収まり MoveToTarget が1フレームだけ点滅する。
+    // 初回到着を hasReachedSlot にラッチし、接近フェーズと維持フェーズを分離する。
     bool NeedsApproach(const TransformComponent &trans, DroneComponent &drone) const;
 
-    // 吹き飛ばし・立て直しのタイマーを進める。
-    // @return true なら硬直中（この機は今フレーム通常AIを行わない）。
-    // @note  タイマーの減算を判断層に置いているのは、「いつ状態が変わるか」を
-    //        決めるのが判断の仕事だから。移動層は結果の状態を見て動かすだけにする。
+    /**
+     * 吹き飛ばし・立て直しのタイマーを進める。
+     * @return true なら硬直中（この機は今フレーム通常AIを行わない）。
+     * @note  タイマーの減算を判断層に置いているのは、「いつ状態が変わるか」を
+     *        決めるのが判断の仕事だから。移動層は結果の状態を見て動かすだけにする。
+     */
     bool UpdateStun(DroneComponent &drone, float dt) const;
 
     // 突撃を切り上げるべきか（個別寿命の攻撃のみ）。
-    // @note  飛距離が本命で、経過時間は壁際・遠距離で飛距離が伸びない場合の保険。
-    //        発射待ち(fireDelay)の間はまだ飛んでいないので寿命を数え始めない。
+    //
+    // 飛距離が本命で、経過時間は壁際・遠距離で飛距離が伸びない場合の保険。
+    // 発射待ち(fireDelay)の間はまだ飛んでいないので寿命を数え始めない。
     bool HasFinishedCharge(const TransformComponent &trans, DroneComponent &drone, float dt) const;
 
     // FireCharge へ「入った瞬間」だけ走る初期化（タメ時間と突撃方向のロック）。
-    // @note  ここで方向を固定するので、DroneMovementSystem の「タメ→リリース」が
-    //        コミットした直進として成立する（ホーミングしない）。
+    //
+    // ここで方向を固定するので、DroneMovementSystem の「タメ→リリース」が
+    // コミットした直進として成立する（ホーミングしない）。
     void BeginCharge(DroneComponent &drone,
                      const DirectX::SimpleMath::Vector3 &playerPos,
                      bool hasPlayer) const;

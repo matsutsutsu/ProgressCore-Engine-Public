@@ -62,9 +62,10 @@ class BossPhaseSystem : public CCL::ECS::IfSystem<
 
   private:
     // 今フレームの遷移先を決める。優先度順で、上から最初に成立したものが勝つ。
-    // @note  移行の条件（第2形態のBTパスとHP閾値）は BossPhaseComponent が持つ。
-    //        以前は BehaviorTreeComponent 側にあったが、あれは汎用データの置き場なので、
-    //        ボスにしか無い概念は読み手と同じ層へ移した。
+    //
+    // 移行の条件（第2形態のBTパスとHP閾値）は BossPhaseComponent が持つ。
+    // 以前は BehaviorTreeComponent 側にあったが、あれは汎用データの置き場なので、
+    // ボスにしか無い概念は読み手と同じ層へ移した。
     BossPhase DecideNextPhase(const BossPhaseComponent &phase,
                               const HealthComponent    &health) const;
 
@@ -82,13 +83,15 @@ class BossPhaseSystem : public CCL::ECS::IfSystem<
                    HealthComponent          &health) const;
 
     // 死亡アニメのトリガー名。
-    // @note  現状 Muriel の AnimGraph に Death ステートが無いため、この発火は
-    //        何も起こさない（アニメを追加すればそのまま繋がる）。
+    //
+    // 現状 Muriel の AnimGraph に Death ステートが無いため、この発火は
+    // 何も起こさない（アニメを追加すればそのまま繋がる）。
     static constexpr const char *kDeathTrigger = "Death";
 
     // 形態移行時の咆哮アニメのトリガー名。
-    // @note  同上。AnimGraph に Roar ステートを足すと演出が乗る。
-    //        アニメが無くても「停止＋無敵＋群れの退避」で移行は成立する。
+    //
+    // 同上。AnimGraph に Roar ステートを足すと演出が乗る。
+    // アニメが無くても「停止＋無敵＋群れの退避」で移行は成立する。
     static constexpr const char *kRoarTrigger = "Roar";
 
     // 形態移行の演出時間（秒）。この間ボスは無敵で、BTは止まる。

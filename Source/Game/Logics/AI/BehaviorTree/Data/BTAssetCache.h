@@ -15,7 +15,7 @@
 //   BehaviorTreeSystem が毎フレーム、並列ループの手前（＝メインスレッド）で
 //   GetOrLoad を呼び、返ってきた shared_ptr を各コンポーネントへ配る。
 //
-// @note 返すのは const。全Entityで共有する実体なので、実行時に書き換えてはいけない。
+// 返すのは const。全Entityで共有する実体なので、実行時に書き換えてはいけない。
 #pragma once
 #include <memory>
 #include <mutex>
@@ -30,16 +30,19 @@ class BTAssetCache
 public:
     static BTAssetCache &Instance();
 
-    // パスに対応する木を返す。初回だけ読み込み、以降は同じものを返す。
-    // @return 読み込めなければ nullptr。
-    // @note   失敗したパスは記録して二度と読みに行かない。毎フレーム再試行すると、
-    //         パスを1つ間違えただけでログが埋まり、他の警告が見えなくなるため。
-    //         直したら Reload（インスペクタの「AI再読込」）を通す。
+    /**
+     * パスに対応する木を返す。初回だけ読み込み、以降は同じものを返す。
+     * @return 読み込めなければ nullptr。
+     * @note   失敗したパスは記録して二度と読みに行かない。毎フレーム再試行すると、
+     *         パスを1つ間違えただけでログが埋まり、他の警告が見えなくなるため。
+     *         直したら Reload（インスペクタの「AI再読込」）を通す。
+     */
     std::shared_ptr<const BTAsset> GetOrLoad(const std::string &path);
 
     // ファイルを読み直して差し替える。エディタで木を保存した後に使う。
-    // @note  差し替えるのはキャッシュの中身。各エンティティは次のフレームの
-    //        BehaviorTreeSystem の先頭で、新しいポインタを受け取り直す。
+    //
+    // 差し替えるのはキャッシュの中身。各エンティティは次のフレームの
+    // BehaviorTreeSystem の先頭で、新しいポインタを受け取り直す。
     std::shared_ptr<const BTAsset> Reload(const std::string &path);
 
     // 全部捨てる。シーン切り替えなどで使う想定。

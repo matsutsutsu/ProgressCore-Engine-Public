@@ -10,7 +10,7 @@
 
 namespace
 {
-    /// フルパスからファイル名のみを抽出する
+    // フルパスからファイル名のみを抽出する
     const char* ExtractFileName(const char* fullPath) noexcept
     {
         if (!fullPath) return "";

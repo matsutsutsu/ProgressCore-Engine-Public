@@ -40,6 +40,6 @@ public:
 
     void Update(float dt) override;
 
-    /// 全エンティティのHP状態をImGuiで一覧表示する。
+    // 全エンティティのHP状態をImGuiで一覧表示する。
     void OnGui() override;
 };

@@ -355,10 +355,11 @@ namespace {
     }
 
     // この枝で最初に見つかる Action の表示名。
-    // @note  Sequence や Selector は名前を持たない（名前はエディタのグラフ側にしか無い）ので、
-    //        「その枝が何をする枝なのか」を中身の先頭アクションで示す。
-    //        ドローン攻撃は必ず「陣形指示 → Wait → Strike → …」の順なので、
-    //        先頭アクション名がそのまま技名になる。
+    //
+    // Sequence や Selector は名前を持たない（名前はエディタのグラフ側にしか無い）ので、
+    // 「その枝が何をする枝なのか」を中身の先頭アクションで示す。
+    // ドローン攻撃は必ず「陣形指示 → Wait → Strike → …」の順なので、
+    // 先頭アクション名がそのまま技名になる。
     const char *FirstActionNameInSubtree(const BTAsset &asset, BTNodeID nodeId)
     {
         const BTNode &node = asset.nodes[nodeId];
@@ -559,4 +560,4 @@ void BehaviorTreeSystem::OnGui() {}
 #endif
 
 
-REGISTER_LOGIC_SYSTEM(BehaviorTreeSystem, Priority::LogicStage::L02_Update);
+REGISTER_LOGIC_SYSTEM(BehaviorTreeSystem, Priority::LogicStage::L02_Update);

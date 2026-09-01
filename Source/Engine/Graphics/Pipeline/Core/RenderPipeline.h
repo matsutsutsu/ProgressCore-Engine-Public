@@ -109,7 +109,7 @@ public:
      */
     void OnResize(uint32_t width, uint32_t height);
 
-    /// 登録されているパス数を返す（デバッグ・テスト用）。
+    // 登録されているパス数を返す（デバッグ・テスト用）。
     size_t GetPassCount() const noexcept { return m_passes.size(); }
 
     /**

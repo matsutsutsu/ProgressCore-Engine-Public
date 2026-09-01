@@ -139,9 +139,9 @@ namespace CCL::ECS {
         // 順序が不定なペア（同一ステージ・型競合あり・順序宣言なし）
         // ------------------------------------------------------------
         struct Ambiguity {
-            std::string first;    ///< 今の並びで先に走る方
-            std::string second;   ///< 今の並びで後に走る方
-            int         priority; ///< 両者が属するステージ値
+            std::string first;    // 今の並びで先に走る方
+            std::string second;   // 今の並びで後に走る方
+            int         priority; // 両者が属するステージ値
         };
 
         const std::vector<Ambiguity> &GetAmbiguities() const { return m_ambiguities; }

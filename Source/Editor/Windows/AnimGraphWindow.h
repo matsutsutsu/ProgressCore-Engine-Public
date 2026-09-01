@@ -14,9 +14,10 @@ struct EditorContext;
 }
 } // namespace ax
 
-/// @brief アニメーションのステートマシン(AnimStateGraph)をノードグラフで編集するウィンドウ。
-/// @details 編集対象は m_currentGraph。リンクの削除・選択は位置依存ではなく
-///          毎フレーム再構築する m_linkLut(linkId→遷移の素性)で解決する。
+// アニメーションのステートマシン(AnimStateGraph)をノードグラフで編集するウィンドウ。
+//
+// 編集対象は m_currentGraph。リンクの削除・選択は位置依存ではなく
+// 毎フレーム再構築する m_linkLut(linkId→遷移の素性)で解決する。
 class AnimGraphWindow : public EditorWindow
 {
   public:
@@ -32,7 +33,7 @@ class AnimGraphWindow : public EditorWindow
     void DrawInspector();
 
     // インスペクタの描画を役割ごとに分割
-    void DrawStateSettings(int nodeId); ///< 引数は ed のノードID(予約負値 or hash*4)
+    void DrawStateSettings(int nodeId); // 引数は ed のノードID(予約負値 or hash*4)
     void DrawTransitionSettings(int linkId);
 
     // Transition の共通UI描画
@@ -40,7 +41,7 @@ class AnimGraphWindow : public EditorWindow
 
     // パラメータパネル（Unity の Parameters タブ相当）
     void DrawParameterPanel(EditorContext &context);
-    /// @brief パラメータ名変更時、参照している全条件の paramHash/paramName を張り替える。
+    // パラメータ名変更時、参照している全条件の paramHash/paramName を張り替える。
     void RenameParameterReferences(uint32_t oldHash, const std::string &newName, uint32_t newHash);
 
     void HandleInteraction();
@@ -58,9 +59,9 @@ class AnimGraphWindow : public EditorWindow
     //   と局所参照を張るので、既存の描画コードは無修正で現在の階層を編集できる。
     // =====================================================================
     AnimStateGraph &CurrentView();
-    void            DrawBreadcrumb(); ///< 「Root > Combat > ...」パンくず。クリックで浅い階層へ戻る。
-    void            EnterSubMachine(uint32_t subMachineHash); ///< 指定サブマシンへ潜る
-    uint32_t        MakeUniqueStateHash(std::string &name); ///< 階層全体で衝突しない hash を採る（name は必要なら連番付与で書き換え）
+    void            DrawBreadcrumb(); // 「Root > Combat > ...」パンくず。クリックで浅い階層へ戻る。
+    void            EnterSubMachine(uint32_t subMachineHash); // 指定サブマシンへ潜る
+    uint32_t        MakeUniqueStateHash(std::string &name); // 階層全体で衝突しない hash を採る（name は必要なら連番付与で書き換え）
 
     // =====================================================================
     // リンクID → 遷移の素性 の対応表（毎フレーム DrawNodeWorkspace で再構築）
@@ -79,18 +80,18 @@ class AnimGraphWindow : public EditorWindow
     const LinkRef                       *FindLink(int linkId) const;
 
   private:
-    AnimStateGraph        m_rootGraph;  ///< ツリー全体（保存/読込の対象）
-    std::vector<uint32_t> m_editPath;   ///< 潜っているサブマシンの hash 列（空=root）
+    AnimStateGraph        m_rootGraph;  // ツリー全体（保存/読込の対象）
+    std::vector<uint32_t> m_editPath;   // 潜っているサブマシンの hash 列（空=root）
     std::string    m_currentFilePath = "Assets/Animations/PlayerAnimGraph.json";
 
     ax::NodeEditor::EditorContext *m_nodeContext = nullptr;
 
     // 選択状態（0 = 未選択）
-    int m_selectedNodeId = 0; ///< ed のノードID（予約負値 or hash*4）
-    int m_selectedLinkId = 0; ///< ed のリンクID
+    int m_selectedNodeId = 0; // ed のノードID（予約負値 or hash*4）
+    int m_selectedLinkId = 0; // ed のリンクID
 
     uint32_t m_nodeToPlaceHash  = 0;
-    uint32_t m_pendingEnterSub  = 0; ///< このフレーム末に潜るサブマシン hash（0=なし。描画中の破壊回避で遅延実行）
+    uint32_t m_pendingEnterSub  = 0; // このフレーム末に潜るサブマシン hash（0=なし。描画中の破壊回避で遅延実行）
     char     m_newStateName[64] = "";
 
     bool   m_needRestorePositions = false;
@@ -99,8 +100,8 @@ class AnimGraphWindow : public EditorWindow
     // デバッグ用：現在実行中のステート
     uint32_t m_runtimeActiveStateHash = 0;
 
-    int  m_paramRenameIndex = -1; ///< リネーム編集中のパラメータindex（-1=なし）
-    char m_paramNameBuf[64] = ""; ///< リネーム入力バッファ
+    int  m_paramRenameIndex = -1; // リネーム編集中のパラメータindex（-1=なし）
+    char m_paramNameBuf[64] = ""; // リネーム入力バッファ
 
     // =====================================================================
     // エディタの独自ステート管理 (Unity風 Make Transition用)

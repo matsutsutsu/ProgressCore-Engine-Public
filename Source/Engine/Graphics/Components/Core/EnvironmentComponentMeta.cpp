@@ -1,5 +1,4 @@
-/// @file  EnvironmentComponentMeta.cpp
-/// @brief 環境設定関連コンポーネントのシリアライズ/インスペクタ定義。
+// 環境設定関連コンポーネントのシリアライズ/インスペクタ定義。
 
 #include "Engine/Graphics/Components/Lighting/FogComponent.h"
 #include "Engine/Graphics/Components/Lighting/ShadowMapConfigComponent.h"

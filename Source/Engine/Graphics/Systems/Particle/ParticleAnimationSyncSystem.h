@@ -22,7 +22,7 @@
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Graphics/Components/Particle/GPUParticleComponent.h"
 
-/// @brief Particle アニメイベント区間で GPUParticleComponent::emitting を駆動するシステム。
+// Particle アニメイベント区間で GPUParticleComponent::emitting を駆動するシステム。
 class ParticleAnimationSyncSystem
     : public CCL::ECS::IfSystem<ParticleAnimationSyncSystem,
           CCL::ECS::Read<TransformComponent>,

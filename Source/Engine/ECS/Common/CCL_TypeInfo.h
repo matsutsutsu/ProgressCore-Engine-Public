@@ -78,7 +78,7 @@ namespace CCL::ECS
             return sizeof(T);
         }
 
-        /// @brief 型名（実装依存。デバッグ・シリアライズで使用）
+        // 型名（実装依存。デバッグ・シリアライズで使用）
         static const char* Name()
         {
             static std::string name = typeid(T).name(); // "struct Transform" 等
@@ -186,26 +186,26 @@ namespace CCL::ECS
         // ----------------------------------------------------------
         // データメンバ
         // ----------------------------------------------------------
-        /// @brief コンポーネント型を識別する ID（整数比較なので最速）
+        // コンポーネント型を識別する ID（整数比較なので最速）
         TypeID     id        = InvalidTypeID;
 
-        /// @brief 1個あたりのメモリサイズ（SoA 配置・コピー計算に使用）
+        // 1個あたりのメモリサイズ（SoA 配置・コピー計算に使用）
         size_t     typeSize  = 0;
 
-        /// @brief デストラクタ呼出を型消去で保持
+        // デストラクタ呼出を型消去で保持
         Destructor destructor;
 
-        /// @brief デバッグ・シリアライズ用の型名
+        // デバッグ・シリアライズ用の型名
         const char* name     = nullptr;
 
 
         // ----------------------------------------------------------
         // 関数ポインタ型エイリアス
         // ----------------------------------------------------------
-        using ConstructFunc        = void(*)(void*, const void*); ///< placement new
-        using AssignFunc           = void(*)(void*, const void*); ///< operator=
-        using MoveFunc             = void(*)(void*, void*);       ///< ムーブ構築
-        using DefaultConstructFunc = void(*)(void*);              ///< デフォルト構築
+        using ConstructFunc        = void(*)(void*, const void*); // placement new
+        using AssignFunc           = void(*)(void*, const void*); // operator=
+        using MoveFunc             = void(*)(void*, void*);       // ムーブ構築
+        using DefaultConstructFunc = void(*)(void*);              // デフォルト構築
 
         ConstructFunc        constructor        = nullptr;
         AssignFunc           assigner           = nullptr;

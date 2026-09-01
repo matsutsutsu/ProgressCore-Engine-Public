@@ -44,7 +44,8 @@ class BattleContextSyncSystem : public CCL::ECS::IfSystem<
 
   private:
     // BattleContext が未登録なら登録する。
-    // @note  Update からも呼ぶ。シーン途中でリソースが失われる経路は本来無いが、
-    //        GetResource は未登録だと assert で落ちるため、入口を一本化しておく。
+    //
+    // Update からも呼ぶ。シーン途中でリソースが失われる経路は本来無いが、
+    // GetResource は未登録だと assert で落ちるため、入口を一本化しておく。
     void EnsureContext();
-};
+};

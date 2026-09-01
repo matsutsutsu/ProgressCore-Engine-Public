@@ -1,6 +1,5 @@
-/// @file  ModelComponentMeta.cpp
-/// @brief ModelComponent のシリアライズ/インスペクタ定義。
-///        assetHash は保存せず、解決済みの assetPath を保存する (カスタムシリアライズ)。
+// ModelComponent のシリアライズ/インスペクタ定義。
+// assetHash は保存せず、解決済みの assetPath を保存する (カスタムシリアライズ)。
 
 #include "Engine/Graphics/Components/Core/ModelComponent.h"
 #include "Engine/Graphics/RHI/Graphics.h"

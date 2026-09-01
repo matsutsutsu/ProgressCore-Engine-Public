@@ -3,7 +3,7 @@
 #include "Engine/Graphics/Components/Particle/GPUParticleComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 
-/// @brief 描画コマンドを収集して ParticleRenderer のバケツへ積むだけの軽量システム。
+// 描画コマンドを収集して ParticleRenderer のバケツへ積むだけの軽量システム。
 class GPUParticleRenderSystem : public CCL::ECS::IfSystem<GPUParticleRenderSystem,
     CCL::ECS::Write<GPUParticleComponent>,
     CCL::ECS::Read<TransformComponent>> {

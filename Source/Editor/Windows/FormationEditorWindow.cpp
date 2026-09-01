@@ -1,5 +1,4 @@
-/// @file  FormationEditorWindow.cpp
-/// @brief 陣形(FormationSpec)の編集UIとプレビュー。
+// 陣形(FormationSpec)の編集UIとプレビュー。
 #include "FormationEditorWindow.h"
 
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h" // BehaviorTreeComponent
@@ -23,7 +22,7 @@ namespace
 //   実機と同じ IFormation を評価するので、形の作られ方は本番と一致する。
 constexpr float kPreviewPlayerDistance = 20.0f;
 
-/// @brief Vector3 の成分を軸番号で引く（0=X/右, 1=Y/上, 2=Z/前）。
+// Vector3 の成分を軸番号で引く（0=X/右, 1=Y/上, 2=Z/前）。
 float AxisValue(const Vector3 &v, int axis)
 {
     return (axis == 0) ? v.x : (axis == 1) ? v.y : v.z;
@@ -39,7 +38,7 @@ FormationContext MakePreviewContext()
     return ctx;
 }
 
-/// @brief 目盛りの間隔を「1/2/5 × 10^n」から選ぶ。等間隔だと桁が変わるたびに読めなくなる。
+// 目盛りの間隔を「1/2/5 × 10^n」から選ぶ。等間隔だと桁が変わるたびに読めなくなる。
 float NiceStep(float span)
 {
     const float raw = (span > 0.0f) ? span / 6.0f : 1.0f;

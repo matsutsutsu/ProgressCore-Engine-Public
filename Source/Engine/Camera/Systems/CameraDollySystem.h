@@ -1,5 +1,4 @@
-/// @file  CameraDollySystem.h
-/// @brief スプライン軌道上のカメラ（台車）を移動させ、VirtualCamera に座標を書き込むシステム。
+// スプライン軌道上のカメラ（台車）を移動させ、VirtualCamera に座標を書き込むシステム。
 
 #pragma once
 #include "Engine/ECS/System/CCL_IfSystem.h"
@@ -32,30 +31,31 @@ class CameraDollySystem : public CCL::ECS::IfSystem<
     //   台車の速度と位置がずれる）
     // =====================================================================
     // --- スプライン評価 ---------------------------------------------------
-    /// @brief 制御点を取り出す。isLoop なら端をまたいで巻き戻す（＝閉曲線になる）。
+    // 制御点を取り出す。isLoop なら端をまたいで巻き戻す（＝閉曲線になる）。
     static const DirectX::SimpleMath::Vector3 &
     GetPoint(const std::vector<DirectX::SimpleMath::Vector3> &pts, int index, bool loop);
 
-    /// @brief パラメータ t（区間番号 + 小数）位置の座標を Catmull-Rom で求める。
+    // パラメータ t（区間番号 + 小数）位置の座標を Catmull-Rom で求める。
     static DirectX::SimpleMath::Vector3
     EvaluateCatmullRom(const std::vector<DirectX::SimpleMath::Vector3> &pts, float t, bool loop);
 
-    /// @brief t の最大値。開曲線なら points-1、閉曲線なら points（最後の点→始点の区間ぶん）。
+    // t の最大値。開曲線なら points-1、閉曲線なら points（最後の点→始点の区間ぶん）。
     static float MaxParam(const CameraPathAsset &asset);
 
     // --- 弧長パラメータ化 -------------------------------------------------
-    /// @brief 「距離 → t」の対応表を作る。JSONロード直後に1回だけ実行する。
+    // 「距離 → t」の対応表を作る。JSONロード直後に1回だけ実行する。
     static void BuildLookupTable(CameraPathAsset &asset);
 
-    /// @brief 距離(m)からパラメータ t を逆算する（LUTの二分探索＋線形補間）。
+    // 距離(m)からパラメータ t を逆算する（LUTの二分探索＋線形補間）。
     static float GetTFromDistance(const CameraPathAsset &asset, float targetDist);
 
-    /// @brief ループ軌道用に距離を [0, totalLength) へ巻き戻す。
+    // ループ軌道用に距離を [0, totalLength) へ巻き戻す。
     static float WrapDistance(float dist, float totalLength);
 
   private:
     // --- リソース ---------------------------------------------------------
-    /// @brief pathAsset の JSON を読み込み、LUT まで構築する。失敗時は hasLoadError を立てる。
-    /// @note  同期I/Oなので初回フレームでヒッチする。将来はアセットマネージャへ移すこと。
+    // pathAsset の JSON を読み込み、LUT まで構築する。失敗時は hasLoadError を立てる。
+    //
+    // 同期I/Oなので初回フレームでヒッチする。将来はアセットマネージャへ移すこと。
     void LoadPathIfNeeded(CameraDollyCartComponent &cart) const;
 };

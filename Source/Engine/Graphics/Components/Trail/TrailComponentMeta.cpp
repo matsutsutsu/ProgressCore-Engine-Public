@@ -1,7 +1,6 @@
-/// @file TrailComponentMeta.cpp
-/// @brief 武器トレイル(TrailComponent)のシリアライズ/インスペクタ定義。
-///        ランタイムのリングバッファ(segments/head/count)は Fields() に載せない
-///        ＝保存対象外。config フィールドのみ保存・編集する。
+// 武器トレイル(TrailComponent)のシリアライズ/インスペクタ定義。
+// ランタイムのリングバッファ(segments/head/count)は Fields() に載せない
+// ＝保存対象外。config フィールドのみ保存・編集する。
 
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Graphics/Components/Trail/TrailComponent.h"

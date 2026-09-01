@@ -1,8 +1,7 @@
-/// @file  RadialBlurEffect.cpp
-/// @brief RadialBlurEffect の実装。フルスクリーン1パスで放射状ブラーを適用する。
-///        Why: 中間RTを介さず inputSRV→outputRTV へ直接描く。ping-pong により
-///        両者は必ず別テクスチャなので read/write 競合は起きず、Distortion のような
-///        中間RT+CopyResource(帯域2倍)を避けられる。
+// RadialBlurEffect の実装。フルスクリーン1パスで放射状ブラーを適用する。
+// Why: 中間RTを介さず inputSRV→outputRTV へ直接描く。ping-pong により
+// 両者は必ず別テクスチャなので read/write 競合は起きず、Distortion のような
+// 中間RT+CopyResource(帯域2倍)を避けられる。
 #include "RadialBlurEffect.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"

@@ -1,5 +1,4 @@
-/// @file  LightComponentMeta.cpp
-/// @brief ライト関連コンポーネント (Directional, Point, Spot) のシリアライズ/インスペクタ定義。
+// ライト関連コンポーネント (Directional, Point, Spot) のシリアライズ/インスペクタ定義。
 
 #include "Engine/Graphics/Components/Lighting/LightComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"

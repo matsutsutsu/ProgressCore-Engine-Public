@@ -78,7 +78,7 @@ namespace CCL::ECS
             m_filter = ArchetypeHelper::Generate<typename AccessTypes::RawType...>();
         }
 
-        /// @brief デストラクタ。登録済みイベント購読を全て自動解除する。
+        // デストラクタ。登録済みイベント購読を全て自動解除する。
         virtual ~IfSystem() override
         {
             for (auto& cleanup : m_eventCleanups) {
@@ -502,7 +502,7 @@ namespace CCL::ECS
                     std::get<Is>(arrays)[i])...);
         }
 
-        /// @brief ForEachImpl の EntityID 付き版
+        // ForEachImpl の EntityID 付き版
         template <typename Func, typename Tuple, size_t... Is>
         void ForEachWithIDImpl(Func&& func, EntityID id, Tuple& arrays, size_t i,
                                 std::index_sequence<Is...>)

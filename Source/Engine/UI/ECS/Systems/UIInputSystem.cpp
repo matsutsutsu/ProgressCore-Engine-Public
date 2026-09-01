@@ -1,8 +1,7 @@
-/// @file UIInputSystem.cpp
-/// 役割・設計方針は UIInputSystem.h を参照。
-///
-/// このSystemは「マウス（hover/press/click）」と「パッド/キーのフォーカス移動＋決定」の
-/// 両方を1箇所で扱う。clicked のリセット/確定を単一Systemに集約し、二重書きの競合を防ぐ。
+// 役割・設計方針は UIInputSystem.h を参照。
+//
+// このSystemは「マウス（hover/press/click）」と「パッド/キーのフォーカス移動＋決定」の
+// 両方を1箇所で扱う。clicked のリセット/確定を単一Systemに集約し、二重書きの競合を防ぐ。
 #include "UIInputSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"

@@ -13,18 +13,19 @@ class TransformUpdateSystem : public CCL::ECS::IfSystem<TransformUpdateSystem,CC
     TransformUpdateSystem();
     virtual ~TransformUpdateSystem() = default;
 
-    /// @brief 登録時に1回だけ呼ばれる。階層解決キャッシュをResourceとして公開する。
-    /// @note TransformInterpolationSystem(Render Stage)が同じdepth順を読むために使う。
-    ///       所有権は本システムのまま（m_cacheへの生ポインタを渡すだけ）。
+    // 登録時に1回だけ呼ばれる。階層解決キャッシュをResourceとして公開する。
+    //
+    // TransformInterpolationSystem(Render Stage)が同じdepth順を読むために使う。
+    // 所有権は本システムのまま（m_cacheへの生ポインタを渡すだけ）。
     void Initialize() override;
 
 
     // フレーム毎の更新処理
 
-    /// @brief 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
-    ///        本システムは親子関係を解決してワールド行列を確定させる、L02_PostUpdate の
-    ///        締めくくり。同ステージでローカル Transform を書き換えるシステムより後に
-    ///        走らないと、確定したはずの行列が後から書き換わる。
+    // 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
+    // 本システムは親子関係を解決してワールド行列を確定させる、L02_PostUpdate の
+    // 締めくくり。同ステージでローカル Transform を書き換えるシステムより後に
+    // 走らないと、確定したはずの行列が後から書き換わる。
     std::vector<const char *> GetRunAfter() const override
     {
         return {"BossActionSystem", "JoltSandboxGuiSystem"};
@@ -58,13 +59,13 @@ class TransformUpdateSystem : public CCL::ECS::IfSystem<TransformUpdateSystem,CC
     // リンク切れを修復する関数（メインスレッド実行用）
     void RepairBrokenLinks();
 
-    /// @brief Chunk 線形 1 パス。compose は行わず、トポロジ変化検出とゴースト修復のみ。
+    // Chunk 線形 1 パス。compose は行わず、トポロジ変化検出とゴースト修復のみ。
     bool ScanDetectTopology();
 
-    /// @brief ルート（parent==0）を並列・インプレースで計算。フラットな大多数はここで完結。
+    // ルート（parent==0）を並列・インプレースで計算。フラットな大多数はここで完結。
     void ComputeRootsParallel();
 
-    /// @brief 非ルート（少数）を depth 順に compose×親world で解決し、その場で書き戻す。
+    // 非ルート（少数）を depth 順に compose×親world で解決し、その場で書き戻す。
     void SolveHierarchy();
 
     TransformHierarchyCache m_cache;

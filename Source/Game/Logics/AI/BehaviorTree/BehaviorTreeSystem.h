@@ -43,9 +43,10 @@ class BehaviorTreeSystem : public CCL::ECS::IfSystem<
 
   private:
     // 各エンティティに「パスに対応する木」を配り直す（直列）。
-    // @note  読み込みそのものは BTAssetCache が持つ。ここは配布と、
-    //        木が入れ替わったときの実行状態の破棄だけを行う。
-    //        並列ループの手前で呼ぶ前提（ファイルI/Oをワーカースレッドへ持ち込まない）。
+    //
+    // 読み込みそのものは BTAssetCache が持つ。ここは配布と、
+    // 木が入れ替わったときの実行状態の破棄だけを行う。
+    // 並列ループの手前で呼ぶ前提（ファイルI/Oをワーカースレッドへ持ち込まない）。
     void SyncAssets();
 
     // 木を再帰的に評価する汎用エンジン。
@@ -60,8 +61,9 @@ class BehaviorTreeSystem : public CCL::ECS::IfSystem<
 
 #ifdef ENABLE_EDITOR
     // デバッグUI：木を一覧にして「この枝を今すぐ実行」を選ばせる。
-    // @note  技を出す条件（距離・抽選）を待たずに狙った攻撃だけを確認するためのもの。
-    //        木のデータは書き換えず、評価の開始ノードを差し替えるだけ。
+    //
+    // 技を出す条件（距離・抽選）を待たずに狙った攻撃だけを確認するためのもの。
+    // 木のデータは書き換えず、評価の開始ノードを差し替えるだけ。
     void DrawForcedNodeGui(BehaviorTreeComponent &btComp, CCL::ECS::EntityID entity);
 
     // 上の再帰部分。1ノード=1行を描き、実行ボタンを添える。
@@ -70,4 +72,4 @@ class BehaviorTreeSystem : public CCL::ECS::IfSystem<
                               BehaviorTreeComponent &btComp,
                               CCL::ECS::EntityID     entity);
 #endif
-};
+};

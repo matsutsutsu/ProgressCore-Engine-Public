@@ -57,9 +57,9 @@ public:
     void UpdateSkeletonConstants(ID3D11DeviceContext* dc, const Model::Mesh& mesh);
 
 private:
-    Microsoft::WRL::ComPtr<ID3D11Buffer> m_cbSkeletonBuffer; ///< CbSkeleton (b12)
+    Microsoft::WRL::ComPtr<ID3D11Buffer> m_cbSkeletonBuffer; // CbSkeleton (b12)
 
-    /// CbScene (b8) への非所有ポインタ。Graphics が所有し SetSceneConstantBuffer で受け取る。
+    // CbScene (b8) への非所有ポインタ。Graphics が所有し SetSceneConstantBuffer で受け取る。
     ID3D11Buffer* m_sceneCB = nullptr;
 
     struct CbSkeleton {

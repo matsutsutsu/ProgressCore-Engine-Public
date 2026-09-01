@@ -68,22 +68,22 @@ namespace CCL::ECS
 
         virtual ~SystemBase() = default;
 
-        /// @brief ID_Emitter から発行されたユニーク SystemID
+        // ID_Emitter から発行されたユニーク SystemID
         SystemID GetSystemID() const { return m_systemID; }
 
-        /// @brief アーキタイプフィルタ（このSystemが必要とするコンポーネント構成）
+        // アーキタイプフィルタ（このSystemが必要とするコンポーネント構成）
         const Archetype& GetFilter() const { return m_filter; }
 
-        /// @brief 除外フィルタ（このコンポーネントを持つEntityは処理対象外にする）
+        // 除外フィルタ（このコンポーネントを持つEntityは処理対象外にする）
         const Archetype& GetExcludeFilter() const { return m_excludeFilter; }
 
-        /// @brief このフレームで処理対象とする Chunk を追加（SystemManager から呼ばれる）
+        // このフレームで処理対象とする Chunk を追加（SystemManager から呼ばれる）
         void AddTargetChunk(CCL::ECS::Chunk* chunk)
         {
             m_targetChunks.push_back(chunk);
         }
 
-        /// @brief 処理対象 Chunk のリストをクリアする
+        // 処理対象 Chunk のリストをクリアする
         void ClearTargetChunks()
         {
             m_targetChunks.clear();
@@ -127,7 +127,7 @@ namespace CCL::ECS
         }
 
 
-        /// @brief デバッグ描画の有効/無効を切り替えるフラグ
+        // デバッグ描画の有効/無効を切り替えるフラグ
         bool isDebugVisible = false;
 
         bool IsDebugVisible() const { return isDebugVisible; }
@@ -135,26 +135,26 @@ namespace CCL::ECS
         // このシステムがエディタ用のGUIを持っているかどうか
         bool hasGui = false;
 
-        /// @brief ImGui によるインスペクタ描画（必要なら派生側で override）
+        // ImGui によるインスペクタ描画（必要なら派生側で override）
         virtual void OnGui() {}
 
-        /// @brief 今フレームの処理対象 Chunk リストを取得
+        // 今フレームの処理対象 Chunk リストを取得
         const std::vector<CCL::ECS::Chunk*>& GetTargetChunks() const
         {
             return m_targetChunks;
         }
 
-        /// @brief World 参照をセット（SystemManager が登録時に呼ぶ）
+        // World 参照をセット（SystemManager が登録時に呼ぶ）
         void SetWorld(World* world) { m_world = world; }
 
         // --------------------------------------------------------
         // 優先度
         // --------------------------------------------------------
 
-        /// @brief 優先度をセット（SystemManager から呼ばれる）
+        // 優先度をセット（SystemManager から呼ばれる）
         void SetPriority(int priority) { m_priority = priority; }
 
-        /// @brief 保存された優先度を返す（オーバーライド不要）
+        // 保存された優先度を返す（オーバーライド不要）
         virtual int GetPriority() const { return m_priority; }
 
 
@@ -162,7 +162,7 @@ namespace CCL::ECS
         // メタ情報・計測
         // --------------------------------------------------------
 
-        /// @brief System 名（デバッグ・GUI 表示用）
+        // System 名（デバッグ・GUI 表示用）
         const std::string& GetName() const { return m_name; }
 
         float GetLastUpdateTime() const { return m_lastUpdateTime; }
@@ -176,14 +176,14 @@ namespace CCL::ECS
         // ジョブシステム・mutex
         // --------------------------------------------------------
 
-        /// @brief 並列化に使う JobSystem を渡す（SystemManager から呼ばれる）
+        // 並列化に使う JobSystem を渡す（SystemManager から呼ばれる）
         void SetJobSystem(JobSystem* js) { m_jobSystem = js; }
 
-        /// @brief ChunkManager の構造変更用 mutex を渡す（読み取りロックに使用）
+        // ChunkManager の構造変更用 mutex を渡す（読み取りロックに使用）
         void SetStructureMutex(std::shared_mutex* mutex) { m_structureMutex = mutex; }
 
 
-        /// @brief このSystemをマルチスレッド実行するか（デバッグ用に切り替え可）
+        // このSystemをマルチスレッド実行するか（デバッグ用に切り替え可）
         bool enableMultiThread = true;
 
 
@@ -191,10 +191,10 @@ namespace CCL::ECS
         // 依存解析用（TaskScheduler が並列実行の安全性を判定するために使用）
         // --------------------------------------------------------
 
-        /// @brief このSystemが読み取りで使う Component 型 ID のリスト
+        // このSystemが読み取りで使う Component 型 ID のリスト
         virtual std::vector<TypeID> GetReadTypes()  const { return {}; }
 
-        /// @brief このSystemが書き込みで使う Component 型 ID のリスト
+        // このSystemが書き込みで使う Component 型 ID のリスト
         virtual std::vector<TypeID> GetWriteTypes() const { return {}; }
 
 
@@ -222,10 +222,10 @@ namespace CCL::ECS
         //   ステージ（優先度）をまたぐ指定は無意味。ステージが違えば順序は
         //   もともと保証されているため、同一ステージ内でのみ効く。
 
-        /// @brief このSystemより「先に」実行されるべき System 名のリスト
+        // このSystemより「先に」実行されるべき System 名のリスト
         virtual std::vector<const char *> GetRunAfter() const { return {}; }
 
-        /// @brief このSystemより「後に」実行されるべき System 名のリスト
+        // このSystemより「後に」実行されるべき System 名のリスト
         virtual std::vector<const char *> GetRunBefore() const { return {}; }
 
 
@@ -234,37 +234,37 @@ namespace CCL::ECS
         // データメンバ（派生クラスからアクセス可能）
         // ----------------------------------------------------------
 
-        /// @brief このSystemが今フレーム処理するべき Chunk 群
+        // このSystemが今フレーム処理するべき Chunk 群
         std::vector<CCL::ECS::Chunk*> m_targetChunks;
 
-        /// @brief 必要 Component 構成（派生側で IfSystem コンストラクタが自動設定）
+        // 必要 Component 構成（派生側で IfSystem コンストラクタが自動設定）
         Archetype m_filter;
 
-        /// @brief 除外コンポーネント構成（IfSystem::SetExclude で設定）
+        // 除外コンポーネント構成（IfSystem::SetExclude で設定）
         Archetype m_excludeFilter;
 
-        /// @brief ユニークな SystemID
+        // ユニークな SystemID
         SystemID m_systemID = InvalidSystemID;
 
-        /// @brief 所属する World への参照（SystemManager が登録時に注入）
+        // 所属する World への参照（SystemManager が登録時に注入）
         World* m_world = nullptr;
 
-        /// @brief デフォルト優先度（中間値）。SystemManager 経由で上書き
+        // デフォルト優先度（中間値）。SystemManager 経由で上書き
         int m_priority = 1000;
 
-        /// @brief JobSystem への参照（並列 ForEach 等で使用）
+        // JobSystem への参照（並列 ForEach 等で使用）
         JobSystem* m_jobSystem = nullptr;
 
-        /// @brief ChunkManager の構造変更用 mutex（読み取りロック用）
+        // ChunkManager の構造変更用 mutex（読み取りロック用）
         std::shared_mutex* m_structureMutex = nullptr;
 
 
         // ----------------------------------------------------------
         // メタ情報・計測関連
         // ----------------------------------------------------------
-        std::string m_name;                  ///< System の表示名
-        float       m_lastUpdateTime    = 0.0f; ///< 直近の Update 時間 (ms)
-        float       m_displayUpdateTime = 0.0f; ///< 表示用に滑らかにした値 (EMA)
+        std::string m_name;                  // System の表示名
+        float       m_lastUpdateTime    = 0.0f; // 直近の Update 時間 (ms)
+        float       m_displayUpdateTime = 0.0f; // 表示用に滑らかにした値 (EMA)
     };
 
 } // namespace CCL::ECS

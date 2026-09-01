@@ -21,9 +21,9 @@ public:
     void Update(float dt) override;
 
 private:
-    /// @brief 1つのattach先の描画用worldを、親の補間済みworldとボーンglobalから確定する。
+    // 1つのattach先の描画用worldを、親の補間済みworldとボーンglobalから確定する。
     void ResolveRenderAttachment(CCL::ECS::EntityID id, TransformComponent& trans, const BoneAttachmentComponent& attach);
 
-    /// @brief attach先のローカル小階層へ描画用worldを再伝播する。
+    // attach先のローカル小階層へ描画用worldを再伝播する。
     void PropagateRenderSubtree(CCL::ECS::EntityID firstChild, const DirectX::XMFLOAT4X4& parentRenderWorld);
 };

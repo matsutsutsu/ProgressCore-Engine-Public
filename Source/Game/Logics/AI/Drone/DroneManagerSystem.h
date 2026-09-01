@@ -43,14 +43,18 @@ class DroneManagerSystem : public CCL::ECS::IfSystem<DroneManagerSystem,
     // 外部（GUI やゲームロジック）から呼ぶ操作
     // ----------------------------------------------------------------
 
-    // ドローンを count 機スポーンする。
-    // @param count      生成数
-    // @param basePos    生成中心（通常はボス位置）。nullptr ならワールド原点付近
-    // @return 実際に生成できた数
+    /**
+     * ドローンを count 機スポーンする。
+     * @param count      生成数
+     * @param basePos    生成中心（通常はボス位置）。nullptr ならワールド原点付近
+     * @return 実際に生成できた数
+     */
     int SpawnDrones(int count);
 
-    // ドローンを count 機破壊する（デバッグ用・被弾処理の暫定）。
-    // @return 実際に破壊した数
+    /**
+     * ドローンを count 機破壊する（デバッグ用・被弾処理の暫定）。
+     * @return 実際に破壊した数
+     */
     int DestroyDrones(int count);
 
     // 全ドローンを破壊する。
@@ -65,9 +69,11 @@ class DroneManagerSystem : public CCL::ECS::IfSystem<DroneManagerSystem,
     // 全ドローンの currentState を一括変更する（デバッグ用）。
     void SetAllDroneState(DroneState state);
 
-    // 指定した1機のドローンを破壊する。
-    //        DroneComponent を持たない/既に破壊済みの EntityID を渡しても安全（何もしない）。
-    // @return 破壊できたら true
+    /**
+     * 指定した1機のドローンを破壊する。
+     *        DroneComponent を持たない/既に破壊済みの EntityID を渡しても安全（何もしない）。
+     * @return 破壊できたら true
+     */
     bool DestroyDrone(CCL::ECS::EntityID droneId);
 
   private:
@@ -93,4 +99,4 @@ class DroneManagerSystem : public CCL::ECS::IfSystem<DroneManagerSystem,
 
   public:
     void OnGui() override; // 生成/破壊のデバッグUI
-};
+};

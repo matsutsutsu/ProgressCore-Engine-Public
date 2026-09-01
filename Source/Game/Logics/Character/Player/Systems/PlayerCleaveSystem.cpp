@@ -1,5 +1,4 @@
-/// @file PlayerCleaveSystem.cpp
-/// 役割・設計方針は PlayerCleaveSystem.h を参照。
+// 役割・設計方針は PlayerCleaveSystem.h を参照。
 #include "PlayerCleaveSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"

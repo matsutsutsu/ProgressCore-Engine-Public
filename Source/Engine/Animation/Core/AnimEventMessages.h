@@ -11,43 +11,44 @@
 #include "SimpleMath.h"
 #include <string>
 
-/// @brief 攻撃判定 ON/OFF 通知（点イベント方式を使う場合用。現在は区間ポーリングが主）。
+// 攻撃判定 ON/OFF 通知（点イベント方式を使う場合用。現在は区間ポーリングが主）。
 struct AnimEventHitBoxMessage
 {
     CCL::ECS::EntityID entity;
-    bool               isActive; ///< true で判定ON、false で判定OFF
+    bool               isActive; // true で判定ON、false で判定OFF
 };
 
-/// @brief 音響システム宛て。FMOD イベント再生を依頼する。
+// 音響システム宛て。FMOD イベント再生を依頼する。
 struct AnimEventSoundMessage
 {
     CCL::ECS::EntityID entity;
-    std::string        eventPath; ///< FMOD イベントパス（例: "event:/SFX/SwordSwing"）
+    std::string        eventPath; // FMOD イベントパス（例: "event:/SFX/SwordSwing"）
 };
 
-/// @brief エフェクトシステム宛て。Effekseer エフェクト生成を依頼する。
+// エフェクトシステム宛て。Effekseer エフェクト生成を依頼する。
 struct AnimEventEffectMessage
 {
     CCL::ECS::EntityID           entity;
-    std::string                  effectPath; ///< .efk / .efkefc パス
-    DirectX::SimpleMath::Vector3 offset;     ///< 発生位置オフセット
-    float                        scale;      ///< スケール倍率
-    bool                         follow;     ///< 親(キャラ)に追従するか
+    std::string                  effectPath; // .efk / .efkefc パス
+    DirectX::SimpleMath::Vector3 offset;     // 発生位置オフセット
+    float                        scale;      // スケール倍率
+    bool                         follow;     // 親(キャラ)に追従するか
 };
 
-/// @brief 戦闘システム宛て。空間に独立した球状ヒットボックスの生成を依頼する。
-/// @note  offset は owner のローカル基準（前方＝キャラの向き）。購読側で owner の
-///        ワールド回転を掛けてワールド位置へ変換する。lifeTime は Sequencer の
-///        ブロック長(endTime-startTime)を渡し、球はその区間だけ生存する。
+// 戦闘システム宛て。空間に独立した球状ヒットボックスの生成を依頼する。
+//
+// offset は owner のローカル基準（前方＝キャラの向き）。購読側で owner の
+// ワールド回転を掛けてワールド位置へ変換する。lifeTime は Sequencer の
+// ブロック長(endTime-startTime)を渡し、球はその区間だけ生存する。
 struct AnimEventSpawnHitboxMessage
 {
-    CCL::ECS::EntityID           owner;           ///< 攻撃の帰属（このアニメを再生中のエンティティ）
-    DirectX::SimpleMath::Vector3 offset;          ///< 生成位置オフセット（owner ローカル）
-    float                        radius;          ///< 球半径
-    float                        damage;          ///< 攻撃力
-    float                        hitStopDuration; ///< ヒットストップ時間
-    float                        hitStopScale;    ///< ヒットストップ中のタイムスケール(0で完全停止)
-    float                        lifeTime;        ///< 判定球の生存時間(秒)。区間長 endTime-startTime。
-    uint8_t                      attackLayer;     ///< 判定球の物理レイヤー(index)。誰に当てるか。
-    float                        knockback;       ///< ノックバックの強さ(0で無効)。
+    CCL::ECS::EntityID           owner;           // 攻撃の帰属（このアニメを再生中のエンティティ）
+    DirectX::SimpleMath::Vector3 offset;          // 生成位置オフセット（owner ローカル）
+    float                        radius;          // 球半径
+    float                        damage;          // 攻撃力
+    float                        hitStopDuration; // ヒットストップ時間
+    float                        hitStopScale;    // ヒットストップ中のタイムスケール(0で完全停止)
+    float                        lifeTime;        // 判定球の生存時間(秒)。区間長 endTime-startTime。
+    uint8_t                      attackLayer;     // 判定球の物理レイヤー(index)。誰に当てるか。
+    float                        knockback;       // ノックバックの強さ(0で無効)。
 };

@@ -1,7 +1,6 @@
 #pragma once
-/// @file UIAppearSystem.h
-/// @brief UIAppearComponent を駆動し、オーバーレイの出現アニメ（フェード＋上スライド）を再生する。
-/// 位置付け: RenderStage::R10_UI（UpdateRender中・毎フレーム1回、dtで進行）。
+// UIAppearComponent を駆動し、オーバーレイの出現アニメ（フェード＋上スライド）を再生する。
+// 位置付け: RenderStage::R10_UI（UpdateRender中・毎フレーム1回、dtで進行）。
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/UI/ECS/Components/UITransformComponent.h"
 #include "Engine/UI/ECS/Components/UIAppearComponent.h"

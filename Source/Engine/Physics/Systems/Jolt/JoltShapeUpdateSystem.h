@@ -18,8 +18,8 @@ class JoltBoxShapeUpdateSystem : public CCL::ECS::IfSystem<JoltBoxShapeUpdateSys
 public:
     JoltBoxShapeUpdateSystem() : IfSystem("JoltBoxShapeUpdateSystem") {}
 
-    /// @brief 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
-    ///        JoltBodySetup が生成した bodyID に対して SetShape する。生成が後に回るとその1フレームは形状更新が空振りする。
+    // 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
+    // JoltBodySetup が生成した bodyID に対して SetShape する。生成が後に回るとその1フレームは形状更新が空振りする。
     std::vector<const char *> GetRunAfter() const override { return {"JoltBodySetupSystem"}; }
 
     void Update(float dt) override;
@@ -32,8 +32,8 @@ class JoltSphereShapeUpdateSystem : public CCL::ECS::IfSystem<JoltSphereShapeUpd
 public:
     JoltSphereShapeUpdateSystem() : IfSystem("JoltSphereShapeUpdateSystem") {}
 
-    /// @brief 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
-    ///        JoltBodySetup が生成した bodyID に対して SetShape する。生成が後に回るとその1フレームは形状更新が空振りする。
+    // 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
+    // JoltBodySetup が生成した bodyID に対して SetShape する。生成が後に回るとその1フレームは形状更新が空振りする。
     std::vector<const char *> GetRunAfter() const override { return {"JoltBodySetupSystem"}; }
 
     void Update(float dt) override;
@@ -51,8 +51,8 @@ public:
         SetExclude<JoltCharacterHandleComponent>();
     }
 
-    /// @brief 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
-    ///        JoltBodySetup が生成した bodyID に対して SetShape する。生成が後に回るとその1フレームは形状更新が空振りする。
+    // 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
+    // JoltBodySetup が生成した bodyID に対して SetShape する。生成が後に回るとその1フレームは形状更新が空振りする。
     std::vector<const char *> GetRunAfter() const override { return {"JoltBodySetupSystem"}; }
 
     void Update(float dt) override;

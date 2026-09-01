@@ -1,4 +1,3 @@
-/// @file PlayerAnimParamSyncSystem.cpp
 
 #include "PlayerAnimParamSyncSystem.h"
 #include "Engine/Core/Math/StringHash.h"

@@ -1,5 +1,4 @@
-/// @file UIRenderer.cpp
-/// 役割・設計方針は UIRenderer.h を参照。
+// 役割・設計方針は UIRenderer.h を参照。
 #include "UIRenderer.h"
 
 #include "Engine/Graphics/RHI/RenderState.h"

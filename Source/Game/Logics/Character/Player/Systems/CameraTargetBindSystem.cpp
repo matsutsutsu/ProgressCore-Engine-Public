@@ -1,4 +1,3 @@
-/// @file CameraTargetBindSystem.cpp
 
 #include "CameraTargetBindSystem.h"
 

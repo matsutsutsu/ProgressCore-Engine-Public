@@ -232,7 +232,7 @@ void GPUParticleUpdateSystem::RebuildParticleBuffer(ParticleEmitter& emitter)
 }
 
 // =========================================================================
-/// @brief InitCS を1エミッタ分 Dispatch する。
+// InitCS を1エミッタ分 Dispatch する。
 // =========================================================================
 void GPUParticleUpdateSystem::DispatchInitCS(
     ID3D11DeviceContext* dc,
@@ -280,7 +280,7 @@ void GPUParticleUpdateSystem::DispatchInitCS(
 }
 
 // =========================================================================
-/// @brief UpdateCS を1エミッタ分 Dispatch する。
+// UpdateCS を1エミッタ分 Dispatch する。
 // =========================================================================
 void GPUParticleUpdateSystem::DispatchUpdateCS(
     ID3D11DeviceContext* dc,

@@ -80,10 +80,10 @@ public:
      */
     virtual const char* GetName() const { return "UnnamedPass"; }
 
-    /// パスを一時的に無効化するフラグ。エディタからのトグル用。
+    // パスを一時的に無効化するフラグ。エディタからのトグル用。
     bool enabled = true;
 
 protected:
-    /// Initialize 後にアクセス可能な永続サービスへのポインタ。
+    // Initialize 後にアクセス可能な永続サービスへのポインタ。
     const RenderServices* m_services = nullptr;
 };

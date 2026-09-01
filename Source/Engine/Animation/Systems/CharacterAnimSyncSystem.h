@@ -1,7 +1,6 @@
 #pragma once
-/// @file CharacterAnimSyncSystem.h
-/// @brief 物理(Jolt)や入力状態をアニメーションの「掲示板(AnimParameters)」に自動翻訳・転記するシステム。
-///        フットスライディング（足滑り）防止の動的再生速度スケーリングも担当する。
+// 物理(Jolt)や入力状態をアニメーションの「掲示板(AnimParameters)」に自動翻訳・転記するシステム。
+// フットスライディング（足滑り）防止の動的再生速度スケーリングも担当する。
 
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Physics/Components/Character/JoltCharacterHandleComponent.h"

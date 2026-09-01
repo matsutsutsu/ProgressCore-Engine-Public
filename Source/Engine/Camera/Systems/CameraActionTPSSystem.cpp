@@ -1,5 +1,4 @@
-/// @file CameraActionTPSSystem.cpp
-/// @brief CameraActionTPSSystem のUpdateロジック実装。
+// CameraActionTPSSystem のUpdateロジック実装。
 
 #include "Engine/Camera/Systems/CameraActionTPSSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"

@@ -230,9 +230,10 @@ void BindGraphResources(AnimStateGraph &g, ResourceManager &rm)
 }
 } // namespace
 
-/// @brief ステートマシン評価。ロード/束縛（シリアル）と評価（並列）を2フェーズに分離する。
-/// @details フェーズ1で全ポインタ(sequence/speedCurve)を束縛し、フェーズ2の並列評価から
-///          ResourceManager（共有シングルトン）・ファイルI/Oを完全に排除してレースを防ぐ。
+// ステートマシン評価。ロード/束縛（シリアル）と評価（並列）を2フェーズに分離する。
+//
+// フェーズ1で全ポインタ(sequence/speedCurve)を束縛し、フェーズ2の並列評価から
+// ResourceManager（共有シングルトン）・ファイルI/Oを完全に排除してレースを防ぐ。
 void AnimControllerSystem::Update(float dt)
 {
     ZoneScopedN("AnimControllerSystem::Update");

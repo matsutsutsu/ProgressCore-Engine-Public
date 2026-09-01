@@ -13,7 +13,7 @@
 //   同じ小隊へ並列に書き込むことになる。数の違う仕事は分けて、
 //   小隊の計算は小隊の数だけ回す。
 //
-// @note このシステムは単スレッド。SquadState への書き込みはここだけに閉じる。
+// このシステムは単スレッド。SquadState への書き込みはここだけに閉じる。
 #pragma once
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/AI/Drone/DroneComponent.h"
@@ -41,8 +41,9 @@ class SquadUpdateSystem : public CCL::ECS::IfSystem<
 
   private:
     // SquadRegistry が未登録なら作る。
-    // @note  シーンが World を作り直しても復帰できるよう、Update からも毎フレーム呼ぶ。
-    //        データを持つ側のシステムが自分で用意する形にして、シーン側に依存させない。
+    //
+    // シーンが World を作り直しても復帰できるよう、Update からも毎フレーム呼ぶ。
+    // データを持つ側のシステムが自分で用意する形にして、シーン側に依存させない。
     void EnsureRegistry();
 
     // 小隊1個ぶんのフェーズ遷移と頭の移動。
@@ -56,18 +57,20 @@ class SquadUpdateSystem : public CCL::ECS::IfSystem<
                      float                               dt);
 
     // 頭をプレイヤーへ向けて曲げる（旋回上限つき）。
-    // @note  無制限に追尾させないのが要点。避けても曲がって当たる攻撃になると
-    //        ジャスト回避というゲームの中心が成立しなくなる。
-    //        一定距離まで詰めたら曲がるのをやめ、そこから先は直線＝回避できる窓にする。
+    //
+    // 無制限に追尾させないのが要点。避けても曲がって当たる攻撃になると
+    // ジャスト回避というゲームの中心が成立しなくなる。
+    // 一定距離まで詰めたら曲がるのをやめ、そこから先は直線＝回避できる窓にする。
     void SteerTowardPlayer(SquadState                         &squad,
                            const DirectX::SimpleMath::Vector3 &playerPos,
                            const SquadTuning                  &tuning,
                            float                               dt) const;
 
     // 頭が床へ沈まないように高度を止める。全フェーズの移動計算の最後に必ず通す。
-    // @note  位置だけ止めても直らない。速度と向きの下向き成分も一緒に抜くこと。
-    //        追従機は「1つ前の機体の速度」を先渡しで受け取るので、頭の速度が
-    //        下を向いたままだと胴体が床へ押し込まれ続ける。
+    //
+    // 位置だけ止めても直らない。速度と向きの下向き成分も一緒に抜くこと。
+    // 追従機は「1つ前の機体の速度」を先渡しで受け取るので、頭の速度が
+    // 下を向いたままだと胴体が床へ押し込まれ続ける。
     void ClampAltitude(SquadState &squad, const SquadTuning &tuning) const;
 
     // ---- 調整値（グレーボックスで実測して詰める）----

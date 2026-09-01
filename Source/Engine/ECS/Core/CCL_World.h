@@ -55,8 +55,8 @@ namespace CCL::ECS
      */
     struct EntityLocation
     {
-        Chunk* chunk = nullptr; ///< どの Chunk か
-        size_t index = 0;       ///< その Chunk 内のインデックス
+        Chunk* chunk = nullptr; // どの Chunk か
+        size_t index = 0;       // その Chunk 内のインデックス
     };
 
 
@@ -82,7 +82,7 @@ namespace CCL::ECS
         World(const World&)            = delete;
         World& operator=(const World&) = delete;
 
-        /// @brief 全エンティティを削除し World を初期状態に戻す
+        // 全エンティティを削除し World を初期状態に戻す
         void Clear();
 
 
@@ -178,7 +178,7 @@ namespace CCL::ECS
             m_pendingOps.Add(op);
         }
 
-        /// @brief コンポーネント削除リクエスト（型版）
+        // コンポーネント削除リクエスト（型版）
         template <class T>
         void RequestRemoveComponent(EntityID entity)
         {
@@ -248,11 +248,11 @@ namespace CCL::ECS
         // Accessors（内部コンテナへの参照取得）
         // --------------------------------------------------------
 
-        /// @brief ChunkManager への参照を返す（System / Editor 用）
+        // ChunkManager への参照を返す（System / Editor 用）
         ChunkManager&       GetChunkManager()       { return m_chunkManager; }
         const ChunkManager& GetChunkManager() const { return m_chunkManager; }
 
-        /// @brief PendingOps への参照を返す（高度な利用向け）
+        // PendingOps への参照を返す（高度な利用向け）
         PendingOps& GetPendingOps() { return m_pendingOps; }
 
 
@@ -268,7 +268,7 @@ namespace CCL::ECS
          */
         inline bool IsEntityValid(EntityID entity) const;
 
-        /// @brief IsEntityValid のエイリアス（API 名の好み吸収用）
+        // IsEntityValid のエイリアス（API 名の好み吸収用）
         inline bool ValidateEntityGeneration(EntityID entity) const
         {
             return IsEntityValid(entity);
@@ -318,7 +318,7 @@ namespace CCL::ECS
             return static_cast<ResourceWrapper<T>*>(m_resourcesArray[id].get())->data;
         }
 
-        /// @brief リソース T が登録済みかを判定する
+        // リソース T が登録済みかを判定する
         template <typename T>
         bool HasResource() const
         {
@@ -338,14 +338,14 @@ namespace CCL::ECS
         template <class T>
         inline T* GetComponent(EntityID entity);
 
-        /// @brief 指定 Entity が Component T を持っているかを判定する
+        // 指定 Entity が Component T を持っているかを判定する
         template <class T>
         bool HasComponent(EntityID entity)
         {
             return GetComponent<T>(entity) != nullptr;
         }
 
-        /// @brief 動的型 (TypeID) 版の HasComponent
+        // 動的型 (TypeID) 版の HasComponent
         bool HasComponent(EntityID entity, TypeID tid);
 
 
@@ -364,7 +364,7 @@ namespace CCL::ECS
             return ComponentHandle<T>();
         }
 
-        /// @brief TypeID 指定の低レベル取得（エディタ・シリアライザ用）
+        // TypeID 指定の低レベル取得（エディタ・シリアライザ用）
         void* GetComponentOfEntity(EntityID entity, TypeID tid);
 
 
@@ -456,7 +456,7 @@ namespace CCL::ECS
                                   TypeData::MoveFunc                mover,
                                   const char*                       name);
 
-        /// @brief 非テンプレート版 RequestRemoveComponent
+        // 非テンプレート版 RequestRemoveComponent
         void RequestRemoveComponent(EntityID entity, TypeID tid);
 
 
@@ -499,13 +499,13 @@ namespace CCL::ECS
         // Event / Dirty フラグ
         // --------------------------------------------------------
 
-        /// @brief 「ECS 外との橋渡し」用の郵便局（イベントバス）
+        // 「ECS 外との橋渡し」用の郵便局（イベントバス）
         EventBus& GetEventBus() { return m_eventBus; }
 
-        /// @brief 構造変更が今フレーム発生したかを返す（最適化フラグ）
+        // 構造変更が今フレーム発生したかを返す（最適化フラグ）
         bool IsStructureDirty() const { return m_isStructureDirty; }
 
-        /// @brief Dirty フラグを下ろす（ECSContext が再解決後に呼ぶ）
+        // Dirty フラグを下ろす（ECSContext が再解決後に呼ぶ）
         void ResetStructureDirty() { m_isStructureDirty = false; }
 
 
@@ -514,7 +514,7 @@ namespace CCL::ECS
         // 内部ヘルパー
         // ----------------------------------------------------------
 
-        /// @brief デバッグ用フォールバック取得（キャッシュミス用）
+        // デバッグ用フォールバック取得（キャッシュミス用）
         template <class T>
         inline T* GetComponentDebug(EntityID entity);
 
@@ -530,19 +530,19 @@ namespace CCL::ECS
         // データメンバ
         // ----------------------------------------------------------
 
-        FrameAllocator m_frameAllocator; ///< フレーム単位リセット型の高速アロケータ
-        ChunkManager   m_chunkManager;   ///< Chunk 群の管理
-        PendingOps     m_pendingOps;     ///< 遅延実行キュー
-        EventBus       m_eventBus;       ///< World 専属のイベント配信ハブ
+        FrameAllocator m_frameAllocator; // フレーム単位リセット型の高速アロケータ
+        ChunkManager   m_chunkManager;   // Chunk 群の管理
+        PendingOps     m_pendingOps;     // 遅延実行キュー
+        EventBus       m_eventBus;       // World 専属のイベント配信ハブ
 
         // --- 世代管理 ---
-        std::vector<uint32_t> m_entityGenerations;     ///< インデックスごとの現世代
-        std::vector<uint32_t> m_freeIndices;           ///< 再利用待ちインデックス
-        uint32_t              m_nextUnusedIndex = 1;   ///< 未使用領域の先頭インデックス
+        std::vector<uint32_t> m_entityGenerations;     // インデックスごとの現世代
+        std::vector<uint32_t> m_freeIndices;           // 再利用待ちインデックス
+        uint32_t              m_nextUnusedIndex = 1;   // 未使用領域の先頭インデックス
 
-        bool m_isStructureDirty = true; ///< 構造変更フラグ（ECSContext と連動）
+        bool m_isStructureDirty = true; // 構造変更フラグ（ECSContext と連動）
 
-        /// @brief 型消去で保持されるリソース群（GridResource 等）
+        // 型消去で保持されるリソース群（GridResource 等）
         std::vector<std::unique_ptr<ResourceBase>> m_resourcesArray;
     };
 

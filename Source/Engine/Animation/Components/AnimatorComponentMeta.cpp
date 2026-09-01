@@ -1,5 +1,4 @@
-/// @file  AnimatorComponentMeta.cpp
-/// @brief アニメーション関連コンポーネントのシリアライズ/インスペクタ定義。
+// アニメーション関連コンポーネントのシリアライズ/インスペクタ定義。
 
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Animation/Components/AnimatorComponent.h"

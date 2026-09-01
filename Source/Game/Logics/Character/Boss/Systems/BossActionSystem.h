@@ -61,24 +61,27 @@ private:
                           const DirectX::SimpleMath::Vector3& playerPos, float dt);
 
     // 突進斬り。溜め → 固定方向へ踏み込み → 硬直、を actionTimer で切り替える。
-    // @note 踏み込みに入ったら旋回しない。最後まで追尾すると避けられない技になるため。
+    //
+    // 踏み込みに入ったら旋回しない。最後まで追尾すると避けられない技になるため。
     void ProcessDashSlash(BossActionComponent& bossDef, TransformComponent& trans,
                           CharacterMovementComponent& movement,
                           const JoltCharacterHandleComponent& joltHandle,
                           const DirectX::SimpleMath::Vector3& playerPos, float dt);
 
     // 跳躍斬り。溜め → 放物線で跳ぶ → 着地硬直。
-    // @note 滞空中は use3DVelocity で速度を直接与える。重力に任せると滞空時間が
-    //       キャラ設定(gravityScale 等)に左右され、着地の瞬間をアニメの斬撃フレームへ
-    //       合わせられない。着地時刻を先に決めて逆算するほうが演出を作れる。
+    //
+    // 滞空中は use3DVelocity で速度を直接与える。重力に任せると滞空時間が
+    // キャラ設定(gravityScale 等)に左右され、着地の瞬間をアニメの斬撃フレームへ
+    // 合わせられない。着地時刻を先に決めて逆算するほうが演出を作れる。
     void ProcessJumpAttack(BossActionComponent& bossDef, TransformComponent& trans,
                            CharacterMovementComponent& movement,
                            const JoltCharacterHandleComponent& joltHandle,
                            const DirectX::SimpleMath::Vector3& playerPos, float dt);
 
     // 後方ステップ。減速しながら後ろへ抜け、そのあと硬直する。
-    // @note 退きながらプレイヤーを向き続ける。背を向けると「逃げた」に見えてしまい、
-    //       間合いを切って仕切り直す技だと読めなくなる。
+    //
+    // 退きながらプレイヤーを向き続ける。背を向けると「逃げた」に見えてしまい、
+    // 間合いを切って仕切り直す技だと読めなくなる。
     void ProcessBackStep(BossActionComponent& bossDef, TransformComponent& trans,
                          CharacterMovementComponent& movement,
                          const JoltCharacterHandleComponent& joltHandle,
@@ -88,7 +91,8 @@ private:
     BossActionState TranslateAction(ActionID actionId) const;
 
     // 技に入った瞬間だけ走る処理。タイマーの初期化と、進行方向・着地点の確定。
-    // @note 方向をここで1回だけ決めるのが、突進と跳躍が「避けられる技」である根拠。
+    //
+    // 方向をここで1回だけ決めるのが、突進と跳躍が「避けられる技」である根拠。
     void OnEnterState(BossActionState next, BossActionComponent& bossDef,
                       const TransformComponent& trans,
                       const DirectX::SimpleMath::Vector3& playerPos) const;

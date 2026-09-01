@@ -14,9 +14,11 @@
 
 namespace CCL::AI::BT::BossActions
 {
-// 自分が出した行動要求だけを取り下げる。
-// @param expected 自分が書いた ActionID。別の行動が既に書き換えていたら触らない
-//        （同じフレームに次の技が要求を出している場合、それを消してしまわないため）。
+/**
+ * 自分が出した行動要求だけを取り下げる。
+ * @param expected 自分が書いた ActionID。別の行動が既に書き換えていたら触らない
+ *        （同じフレームに次の技が要求を出している場合、それを消してしまわないため）。
+ */
 inline void ClearCommandIfMine(BTContext &ctx, ActionID expected)
 {
     if (auto *cmd = ctx.world->GetComponent<BossCommandComponent>(ctx.entity))
@@ -27,8 +29,9 @@ inline void ClearCommandIfMine(BTContext &ctx, ActionID expected)
 // ① 待機系（汎用：bt の nodeTimers だけ使う。ボス非依存）
 // ====================================================================
 // 待つ。待ち時間はノードの param（秒）から取る。
-// @note  以前は「0.5秒」「1.0秒」…と12個の ActionID に分かれていた。
-//        引数をIDで表すとIDが増える一方で、しかも中間の値を作れない。
+//
+// 以前は「0.5秒」「1.0秒」…と12個の ActionID に分かれていた。
+// 引数をIDで表すとIDが増える一方で、しかも中間の値を作れない。
 struct WaitAction : public IBTAction
 {
     BTNodeState Execute(BTContext &ctx) override
@@ -238,4 +241,4 @@ inline void RegisterAll()
 #undef CCL_REGISTER_DRONE_ACTION
 }
 
-} // namespace CCL::AI::BT::BossActions
+} // namespace CCL::AI::BT::BossActions

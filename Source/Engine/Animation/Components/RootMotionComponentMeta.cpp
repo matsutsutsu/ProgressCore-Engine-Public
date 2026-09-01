@@ -1,9 +1,8 @@
-/// @file  RootMotionComponentMeta.cpp
-/// @brief RootMotionComponent のメタ定義。
-///
-/// 設計方針(Why):
-///   実行時(Runtime)データであるため、中身はシリアライズさせず
-///   パターンC（カスタムシリアライズ）を用いて空枠のみをセーブ・ロードする。
+// RootMotionComponent のメタ定義。
+//
+// 設計方針(Why):
+//   実行時(Runtime)データであるため、中身はシリアライズさせず
+//   パターンC（カスタムシリアライズ）を用いて空枠のみをセーブ・ロードする。
 
 #include "RootMotionComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
@@ -15,12 +14,6 @@
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #endif
-
-/**
- * @file RootMotionComponentMeta.cpp
- * @details RootMotionComponentは全て動的なパラメータで構成されているので
- * 　　　　 シリアライズでデータ保存はしない。
- */
 
 namespace ComponentMetaJson
 {

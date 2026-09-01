@@ -1,15 +1,14 @@
-/// @file  FormationEditorWindow.h
-/// @brief 陣形(FormationSpec)をパラメータで組み立てるエディタウィンドウ。
-///        役割     : Assets/Formations/*.json を見ながら編集・保存する。
-///        責務     : 割付/形/変換/時間/見せ/出力 の6ブロックと、その結果の可視化。
-///        位置付け : 既存 EditorWindow 群の一つ。Window メニューからトグルする。
-///        設計方針 : registry が持つ spec を直接触る。コピーを持たないので、
-///                   触った瞬間に実機の全ドローンへ反映される。
-///
-/// プレビューを実機と別に持つ理由:
-///   実機プレビューはボスとプレイヤーが居ないと動かない。形だけを詰めたい段階で
-///   シーンを立ち上げるのは重いので、ボス原点・プレイヤー正面という決め打ちの
-///   場でも同じ IFormation を評価して見せる。評価経路は実機とまったく同じ。
+// 陣形(FormationSpec)をパラメータで組み立てるエディタウィンドウ。
+//        役割     : Assets/Formations/*.json を見ながら編集・保存する。
+//        責務     : 割付/形/変換/時間/見せ/出力 の6ブロックと、その結果の可視化。
+//        位置付け : 既存 EditorWindow 群の一つ。Window メニューからトグルする。
+//        設計方針 : registry が持つ spec を直接触る。コピーを持たないので、
+//                   触った瞬間に実機の全ドローンへ反映される。
+//
+// プレビューを実機と別に持つ理由:
+//   実機プレビューはボスとプレイヤーが居ないと動かない。形だけを詰めたい段階で
+//   シーンを立ち上げるのは重いので、ボス原点・プレイヤー正面という決め打ちの
+//   場でも同じ IFormation を評価して見せる。評価経路は実機とまったく同じ。
 #pragma once
 #include "Editor/Core/EditorWindow.h"
 #include "Editor/Utils/CurveEditorWidget.h"
@@ -43,26 +42,28 @@ class FormationEditorWindow : public EditorWindow
     void DrawTellSection(Spec &spec);
     void DrawOutputSection(Spec &spec);
 
-    /// @brief ラベルの右に (?) を出し、ホバーで説明を見せる。
-    ///        用語（符号グループ・進行度など）を知らなくても触れるようにするため。
+    // ラベルの右に (?) を出し、ホバーで説明を見せる。
+    // 用語（符号グループ・進行度など）を知らなくても触れるようにするため。
     void Hint(const char *text);
 
-    /// @brief 割付の設定が実際に何機をどう並べるのかを1行で出す。
-    ///        数字を入れても結果が想像できないのがこのブロックの最大のつまずきどころ。
+    // 割付の設定が実際に何機をどう並べるのかを1行で出す。
+    // 数字を入れても結果が想像できないのがこのブロックの最大のつまずきどころ。
     void DrawAssignSummary(const Spec &spec);
 
     // ---- プレビュー（右ペイン）----
     void DrawPreviewPane(Data &formation);
 
-    /// @brief 指定の進行度で全機の座標と席を計算する。
+    // 指定の進行度で全機の座標と席を計算する。
     void EvaluatePoints(Data &formation, float progress);
 
-    /// @brief 1枚のキャンバスを描く。
-    /// @param axisH 横軸に使う成分（0=X/右, 2=Z/前）
-    /// @param axisV 縦軸に使う成分（1=Y/上, 2=Z/前）
+    /**
+     * @brief 1枚のキャンバスを描く。
+     * @param axisH 横軸に使う成分（0=X/右, 2=Z/前）
+     * @param axisV 縦軸に使う成分（1=Y/上, 2=Z/前）
+     */
     void DrawCanvas(const char *label, const char *caption, int axisH, int axisV, float height);
 
-    /// @brief 点の色。グループが複数あるならグループ別、1つなら並び順のグラデーション。
+    // 点の色。グループが複数あるならグループ別、1つなら並び順のグラデーション。
     unsigned int SeatColor(size_t index, const Data::Seat &seat) const;
 
     void DrawLegend();
@@ -71,12 +72,12 @@ class FormationEditorWindow : public EditorWindow
     void DrawBossControls(EditorContext &context, DroneFormationType type);
     void DrawAssetControls(EditorContext &context, Data &formation, const std::string &path);
 
-    /// @brief 保存済みの内容を控える。以後これとの差で「変更あり」を判定する。
+    // 保存済みの内容を控える。以後これとの差で「変更あり」を判定する。
     void CaptureBaseline(const Spec &spec);
 
-    /// @brief C++ 実装とデータ実装を同じ条件で走らせ、座標のずれを測る。
-    ///        データ化が正しいかは「見た目が変わらないこと」でしか確かめられないので、
-    ///        目視の前にまず数値で出しておく。
+    // C++ 実装とデータ実装を同じ条件で走らせ、座標のずれを測る。
+    // データ化が正しいかは「見た目が変わらないこと」でしか確かめられないので、
+    // 目視の前にまず数値で出しておく。
     void RunAbCheck(EditorContext &context, DroneFormationType type);
 
     // ---- 状態 ----

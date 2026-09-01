@@ -1,17 +1,16 @@
-/// @file  SSAOEffect.cpp
-/// @brief SSAOEffect の実装(4パス: 遮蔽値計算→深度考慮ブラーH/V→合成)。
-///
-///  Why 4パスなのか:
-///    半球サンプリング由来のノイズを、ぼかし無しでそのまま最終カラーに乗算していたため
-///    「地面全体がザラザラする」症状が出ていた。BloomEffectと同じ「多段パスで
-///    品質を作ってから最後に合成する」構成に変更し、深度考慮ブラー(バイラテラル)で
-///    輪郭を保ったままノイズだけ均す。
-///
-///  重要: 各中間RTは「RTVとして書いた直後」に解除してから「SRVとして読む」。
-///    D3D11ではRTVバインドが残ったままSRVとして読もうとするとハザード検知で
-///    強制的に0埋めされる(合成で scene * 0 = 真っ黒になる)。
-///    BloomEffect.cpp のダウン/アップサンプルループと同じく、各パス直後に
-///    OMSetRenderTargets(1, &nullRTV, nullptr) を挟む。
+// SSAOEffect の実装(4パス: 遮蔽値計算→深度考慮ブラーH/V→合成)。
+//
+// Why 4パスなのか:
+//   半球サンプリング由来のノイズを、ぼかし無しでそのまま最終カラーに乗算していたため
+//   「地面全体がザラザラする」症状が出ていた。BloomEffectと同じ「多段パスで
+//   品質を作ってから最後に合成する」構成に変更し、深度考慮ブラー(バイラテラル)で
+//   輪郭を保ったままノイズだけ均す。
+//
+// 重要: 各中間RTは「RTVとして書いた直後」に解除してから「SRVとして読む」。
+//   D3D11ではRTVバインドが残ったままSRVとして読もうとするとハザード検知で
+//   強制的に0埋めされる(合成で scene * 0 = 真っ黒になる)。
+//   BloomEffect.cpp のダウン/アップサンプルループと同じく、各パス直後に
+//   OMSetRenderTargets(1, &nullRTV, nullptr) を挟む。
 #include "SSAOEffect.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"

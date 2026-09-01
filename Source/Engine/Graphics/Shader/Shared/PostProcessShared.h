@@ -76,7 +76,7 @@ PP_STRUCT(CbVignetteData, SLOT_CB_VIGNETTE) {
 // PauseBlur パラメータレイアウト（合計16バイト）
 // ============================================================================
 PP_STRUCT(CbPauseBlurData, SLOT_CB_PAUSEBLUR) {
-  float pauseBlurRadius; ///< サンプル円の半径(UV単位)。0 で素通し。
+  float pauseBlurRadius; // サンプル円の半径(UV単位)。0 で素通し。
   float pauseBlurPad[3];
 };
 
