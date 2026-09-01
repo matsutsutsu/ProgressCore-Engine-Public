@@ -22,38 +22,43 @@ using namespace DirectX::SimpleMath;
 
 namespace
 {
-float WrapAngle(float angle)
-{
-    while (angle > DirectX::XM_PI)
-        angle -= DirectX::XM_2PI;
-    while (angle < -DirectX::XM_PI)
-        angle += DirectX::XM_2PI;
-    return angle;
-}
+    // 角度を -π～π の範囲にラップする
+    float WrapAngle(float angle)
+    {
+        while (angle > DirectX::XM_PI)
+            angle -= DirectX::XM_2PI;
+        while (angle < -DirectX::XM_PI)
+            angle += DirectX::XM_2PI;
+        return angle;
+    }
+    
+    // 目標方向を向く。lookDir はワールド座標系の方向ベクトル。
+    void TurnToward(TransformComponent &trans, const Vector3 &lookDir, float turnSpeed, float dt)
+    {
+        if (lookDir.LengthSquared() <= 0.001f) return;
+    
+        float targetYaw = atan2f(lookDir.x, lookDir.z);
+    
+        Vector3 currentForward = Vector3::Transform(Vector3::UnitZ, trans.rotation);
+        float   currentYaw     = atan2f(currentForward.x, currentForward.z);
+    
+        float diff   = WrapAngle(targetYaw - currentYaw);
+        float newYaw = currentYaw + diff * (std::min)(turnSpeed * dt, 1.0f);
+    
+        trans.rotation = Quaternion::CreateFromAxisAngle(Vector3::UnitY, newYaw);
+        trans.isDirty  = true;
+    }
+    
+    // Jolt の CharacterVirtual に TransformComponent の回転を反映する
+    void SyncCharacterRotation(const TransformComponent &trans, JPH::CharacterVirtual *character)
+    {
+        if (!character) return;
+    
+        character->SetRotation(JPH::Quat(trans.rotation.x, trans.rotation.y, trans.rotation.z, trans.rotation.w));
+    }
+} 
 
-void TurnToward(TransformComponent &trans, const Vector3 &lookDir, float turnSpeed, float dt)
-{
-    if (lookDir.LengthSquared() <= 0.001f) return;
 
-    float targetYaw = atan2f(lookDir.x, lookDir.z);
-
-    Vector3 currentForward = Vector3::Transform(Vector3::UnitZ, trans.rotation);
-    float   currentYaw     = atan2f(currentForward.x, currentForward.z);
-
-    float diff   = WrapAngle(targetYaw - currentYaw);
-    float newYaw = currentYaw + diff * (std::min)(turnSpeed * dt, 1.0f);
-
-    trans.rotation = Quaternion::CreateFromAxisAngle(Vector3::UnitY, newYaw);
-    trans.isDirty  = true;
-}
-
-void SyncCharacterRotation(const TransformComponent &trans, JPH::CharacterVirtual *character)
-{
-    if (!character) return;
-
-    character->SetRotation(JPH::Quat(trans.rotation.x, trans.rotation.y, trans.rotation.z, trans.rotation.w));
-}
-} // namespace
 
 void BossActionSystem::Update(float rawDt)
 {
@@ -70,8 +75,7 @@ void BossActionSystem::Update(float rawDt)
                 const JoltCharacterConfigComponent &config,
                 const JoltCharacterHandleComponent &joltHandle,
                 const TimeStateComponent &time) {
-        if (!joltHandle.character)
-            return;
+        if (!joltHandle.character) return;
 
         float dt = time.localDt;
 
@@ -80,8 +84,7 @@ void BossActionSystem::Update(float rawDt)
 
         // 入場処理：状態が変わったフレームだけ走る。
         //   突進・跳躍は「どこへ向かうか」をこの1回で決め、以後は更新しない。
-        if (next != bossDef.currentState)
-            OnEnterState(next, bossDef, trans, playerPos);
+        if (next != bossDef.currentState) OnEnterState(next, bossDef, trans, playerPos);
 
         bossDef.currentState = next;
         bossDef.actionTimer += dt;

@@ -21,7 +21,7 @@
 
 #ifdef ENABLE_EDITOR
 #include <imgui.h>
-// デバッグUIだけがボスを知る。製品ビルドではこの include ごと消える。
+// デバッグ用に使うのでここに置く
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
 #endif
  
@@ -72,7 +72,9 @@ void BehaviorTreeSystem::SyncAssets()
     //   ロガー呼び出しがワーカースレッドから同時に走っていた。
     ForEach([&](BehaviorTreeComponent    &btComp,
                 const TransformComponent & /*trans*/,
-                const TimeStateComponent & /*time*/) {
+                const TimeStateComponent & /*time*/)
+        {
+        // 1. パスに対応する木を受け取り直す
         std::shared_ptr<const BTAsset> desired =
             btComp.assetPath.empty() ? nullptr : cache.GetOrLoad(btComp.assetPath);
 
@@ -96,13 +98,12 @@ void BehaviorTreeSystem::SyncAssets()
 
 void BehaviorTreeSystem::Update(float rawDt)
 {
-    // カットシーン中(導入カメラ演出など)はAIを凍らせる。
-    //   並列 ForEach の外で1回だけ読む（中で毎回リソース検索しない、かつ
-    //   ワーカースレッドから同時にリソースを引かないため）。
-    const bool cinematic =
-        m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().cinematic;
+    if (!m_world->HasResource<GameFlowState>()) return;
 
-    // --- ① アセットの解決（直列）---
+    // カットシーン中(導入カメラ演出など)はAIの思考を止める
+    const bool cinematic = m_world->GetResource<GameFlowState>().cinematic;
+
+    // --- ① アセットの解決 ---
     //   木の読み込みは共有物の準備であって、個体ごとの処理ではない。
     //   並列ループへ持ち込まないことで、ファイルI/Oもログもメインスレッドに留まる。
     SyncAssets();

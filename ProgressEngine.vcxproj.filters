@@ -102,9 +102,6 @@
     <Filter Include="Source\Game\Logics\Character">
       <UniqueIdentifier>{f65da97b-1737-4ea7-aae7-9a3744c10e2c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Game\Logics\Character\Player">
-      <UniqueIdentifier>{ed9c166e-35f2-4b23-87b8-78bb1571fccb}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\Core\Math">
       <UniqueIdentifier>{35f72c6f-702f-48ae-9639-8585fb5adeb9}</UniqueIdentifier>
     </Filter>
@@ -399,12 +396,6 @@
     <Filter Include="Source\Game\Logics\GameEvent">
       <UniqueIdentifier>{23990d84-3342-4689-a3d4-461184605054}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Game\Logics\Character\Player\Components">
-      <UniqueIdentifier>{b32b3cba-14b1-49d4-a485-70088a470068}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\Character\Player\Systems">
-      <UniqueIdentifier>{edfdb3db-8c16-43a6-90ca-2bed32f4f008}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Game\Logics\AI\BehaviorTree\Actions">
       <UniqueIdentifier>{3135afad-6920-43ec-93d8-8f46096aaa44}</UniqueIdentifier>
     </Filter>
@@ -543,6 +534,15 @@
     </Filter>
     <Filter Include="Source\Engine\Camera\Systems\Core">
       <UniqueIdentifier>{757c0289-fe6f-444b-8c34-d73d583b4abb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\Character\Player">
+      <UniqueIdentifier>{ed9c166e-35f2-4b23-87b8-78bb1571fccb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\Character\Player\Components">
+      <UniqueIdentifier>{b32b3cba-14b1-49d4-a485-70088a470068}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\Character\Player\Systems">
+      <UniqueIdentifier>{edfdb3db-8c16-43a6-90ca-2bed32f4f008}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

@@ -7,16 +7,12 @@
 //   include していたのがその証拠）。敵の種類を増やすと、この1ファイルに
 //   敵ごとの出力フィールドが積み上がる。
 //   そこで「BTが読み書きする汎用データ」と「ボス固有の出力」を物理的に分けた。
-//
-// 書き手 / 読み手:
-//   書き手 … ボス用の IBTAction（BTActions_Boss.h）、BossPhaseSystem、デバッグUI
-//   読み手 … BossActionSystem（物理へ翻訳）、DroneCommandSystem（群れへ配布）
 #pragma once
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h" // ActionID
 #include "Game/Logics/AI/Drone/DroneComponent.h"               // DroneFormationType
 
 // AIシステムからの「出力」を受け取るコンポーネント。
-//        毎フレーム上書きされる使い捨てデータ（＝AIが今やってほしいこと）。
+//    毎フレーム上書きされる使い捨てデータ（＝AIが今やってほしいこと）。
 struct BossCommandComponent {
     DroneFormationType requestFormation = DroneFormationType::Hidden;
 

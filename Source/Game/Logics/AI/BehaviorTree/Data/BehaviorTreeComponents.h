@@ -1,15 +1,15 @@
 // ECSエンティティが保持するAIの状態管理コンポーネント。
 //
 // 役割:
-//   各エンティティ固有の「今どのノードを走っているか」と
-//   「判断材料（Blackboard）」を持つ。
+//   BTアセットのデータからその敵AIが「今どのノードを走っているか」
+// 　の情報と「判断材料（Blackboard）」を持つ。
 //
 // なぜこの形か:
 //   「思考の構造（アセット）」と「実行状態（コンポーネント）」を分けている。
 //   木の実体は BTAssetCache が同じパスに1本だけ持ち、全Entityで共有する。
 //   個体が抱えるのは実行状態だけなので、敵を増やしても木は増えない。
 //
-// ここに置いてよいものの境界:
+// 備考:
 //   どの敵でも意味を持つものだけ。特定の敵にしか無い概念は、その敵のコンポーネントへ置く。
 //     第2形態のBTパスとHP閾値 → BossPhaseComponent
 //     ボスの行動要求・陣形要求 → BossCommandComponent
@@ -55,18 +55,9 @@ struct AIBlackboard {
 };
 
 
-// BT1体ぶんの実行状態。
-//
-// 木を止める2つの手段（用途が違う）:
-//   debugPaused        … 評価だけ止める。パスは残るので、陣形やアニメの調整中に
-//                        指示が次のフレームで別の技に塗り潰されるのを防げる
-//   assetPath を空にする … 木ごと手放す。形態移行（BossPhaseSystem）はこちらを使う
-//   ※ debugPaused で止めても行動要求は残る。移動中に止めるとボスが歩き続けるので、
-//     止める側が併せて BossCommandComponent::currentActionId に 0 を書く
-//
-// debug〜 は実行時のみ・非シリアライズ。書き手はBTデバッガ（BehaviorTreeSystem::OnGui）。
+// BehaviorTreeの実行状態を保持するコンポーネント
 struct BehaviorTreeComponent {
-    // --- 使う木 ---
+    // --- ツリーデータ ---
     std::shared_ptr<const BTAsset> sharedAsset;  // 木の実体。BTAssetCache が全Entityで1本だけ持つ
     std::string assetPath;                       // 読み込むBTのパス。空なら評価しない
     std::string loadedAssetPath;                 // 実際に読み込めたパス。表示と差し替え判定に使う

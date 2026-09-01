@@ -7,12 +7,15 @@
 //   伝統的なポインタベースの木構造（OOP）を完全に排除。
 //   すべてのノードを固定長の構造体（BTNode）として定義し、配列（std::vector）に配置する。
 //   これにより、ポインタジャンプ（Pointer Chasing）をなくし、L1/L2キャッシュへの
-//   プリフェッチ効率を最大化している。
+//   プリフェッチ効率を最大化している
 #pragma once
 #include <cstdint>
 #include <vector>
 
 // 厳格な型付け
+// BTNodeID: ノードのインデックス（配列の添字）
+// ActionID: 行動・条件の種類を判別するID
+// AssetID: BTAssetの種類を判別するID
 using BTNodeID = uint16_t;
 using ActionID = uint16_t;
 using AssetID = uint32_t;
@@ -38,6 +41,8 @@ enum class BTDecoratorType : uint8_t {
 // Sequence: 子ノードを順番に評価し、最初に失敗した子ノードの結果を返す
 // Condition: 条件を評価し、成功/失敗を返す
 // Action: 行動を実行し、成功/失敗/実行中を返す
+// Decorator: 子ノードの結果を修飾する（Inverter, Cooldown, Retry, Async）
+// RandomSelector: 子ノードをランダムに評価し、最初に成功した子ノードの結果を返す
 enum class BTNodeType : uint8_t {
     Selector,
     Sequence,
@@ -57,12 +62,16 @@ enum class BTNodeState : uint8_t {
     Running
 };
 
-// 1つのノード定義。
+// 1つのノード定義
 struct BTNode {
-	BTNodeType type;                // ノードの種類（Selector, Sequence, Condition, Action）
-    ActionID   actionOrConditionId; // Action/Conditionの種類を判別するID
+    // ノードの種類（Selector, Sequence, Condition, Action）
+	BTNodeType type;
 
-    BTDecoratorType decoratorType;  // Decorator のときだけ意味を持つ
+    // Action/Conditionの種類を判別するID
+    ActionID   actionOrConditionId; 
+
+    // Action/Conditionの種類を判別するID
+    BTDecoratorType decoratorType;
 
     // このノードの数値パラメータ。意味はノードの種類が決める。
     //        Action     … その行動の引数（待機の秒数、近接の硬直など）
