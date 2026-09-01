@@ -1,6 +1,7 @@
 ﻿#include "JustEvadeSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Platform/Core/Logger.h"
+#include "Engine/Core/Components/EntityLabel.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
@@ -297,7 +298,8 @@ void JustEvadeSystem::CheckJustEvade(EntityID playerCandidate, EntityID otherCan
     // （カメラが JustEvadeSuccessEvent を直接購読すると Engine→Game 依存になるため）
     m_world->GetEventBus().Publish(CameraFovPunchRequestEvent{playerCandidate, 130.0f});
 
-    CCL_LOG_SUCCESS(LogCategory::Game, "JUST EVADE SUCCESS!! PlayerID: %llu  (CHAIN x%d)", playerCandidate, evade->chainCount);
+    CCL_LOG_SUCCESS(LogCategory::Game, "JUST EVADE SUCCESS!! Player: %s  (CHAIN x%d)",
+        CCL::EntityLabel(*m_world, playerCandidate).c_str(), evade->chainCount);
 }
 
 // 接触判定と同じ L05_Collision に置く。

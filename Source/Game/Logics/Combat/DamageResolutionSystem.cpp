@@ -28,6 +28,7 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Platform/Core/Logger.h"
+#include "Engine/Core/Components/EntityLabel.h"
 
 #include <algorithm>
 #include <cmath>
@@ -119,8 +120,8 @@ void DamageResolutionSystem::Update(float dt) {
                 health->invincibilityTimer = health->invincibilityDuration;
 
                 CCL_LOG_INFO(LogCategory::Game,
-                    "Entity %llu took %f damage. Remaining HP: %f",
-                    event.targetID, event.finalDamage,
+                    "%s took %f damage. Remaining HP: %f",
+                    CCL::EntityLabel(*m_world, event.targetID).c_str(), event.finalDamage,
                     health->currentHealth);
 
                 // --- ヒットストップ適用（被弾側＋攻撃側の双方を止める）---

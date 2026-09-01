@@ -6,6 +6,7 @@
 #include "Engine/Camera/CameraEvents.h"
 #include "Engine/Platform/Input/IInputAPI.h"
 #include "Engine/Platform/Core/Logger.h"
+#include "Engine/Core/Components/EntityLabel.h"
 #include "Engine/Core/App/GameFlowState.h"
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -251,9 +252,9 @@ void CameraIntroOrbitSystem::Update(float dt)
         if (!wasPlaying && intro.playing)
         {
             CCL_LOG_INFO(LogCategory::Game,
-                "[CameraIntroOrbit] 導入演出を開始 (camera=%llu, target=%llu, duration=%.2fs)",
-                static_cast<unsigned long long>(id),
-                static_cast<unsigned long long>(intro.target.id), intro.duration);
+                "[CameraIntroOrbit] 導入演出を開始 (camera=%s, target=%s, duration=%.2fs)",
+                CCL::EntityLabel(*m_world, id).c_str(),
+                CCL::EntityLabel(*m_world, intro.target.id).c_str(), intro.duration);
         }
 
         // 進行度。待ち時間中(playing=false かつ未終了)は 0 のまま＝開始位置で待機する。
@@ -266,8 +267,8 @@ void CameraIntroOrbitSystem::Update(float dt)
 
         if (justFinished)
         {
-            CCL_LOG_INFO(LogCategory::Game, "[CameraIntroOrbit] 導入演出が終了 (camera=%llu, skipped=%s)",
-                static_cast<unsigned long long>(id), intro.skipped ? "yes" : "no");
+            CCL_LOG_INFO(LogCategory::Game, "[CameraIntroOrbit] 導入演出が終了 (camera=%s, skipped=%s)",
+                CCL::EntityLabel(*m_world, id).c_str(), intro.skipped ? "yes" : "no");
 
             vcam.priority = intro.idlePriority; // ここで Brain が自動的に次のカメラへブレンドする
             finished.push_back({id, intro.skipped});

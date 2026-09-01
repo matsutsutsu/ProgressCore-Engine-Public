@@ -1,5 +1,6 @@
 #include "PlayerLockOnSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
+#include "Engine/Core/Components/EntityLabel.h"
 #include "Game/Logics/Character/Boss/Components/BossActionComponent.h" // 敵を標的にする
 #include "Game/Logics/Combat/DeadTag.h"         // 死亡確認用
 #include "Game/Logics/Combat/EnemyTag.h"        // ロックオン候補の絞り込み
@@ -75,7 +76,8 @@ void PlayerLockOnSystem::Update(float /*dt*/)
                 if (closestEnemyID != InvalidEntityID)
                 {
                     player.lockOnTargetID = closestEnemyID;
-                    CCL_LOG_SUCCESS(LogCategory::Game, "Lock-On Target Confirmed! Target EntityID: %llu", closestEnemyID);
+                    CCL_LOG_SUCCESS(LogCategory::Game, "Lock-On Target Confirmed! Target: %s",
+                        CCL::EntityLabel(*m_world, closestEnemyID).c_str());
                 }
             }
         }

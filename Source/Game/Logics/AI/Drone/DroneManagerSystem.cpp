@@ -15,6 +15,7 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Platform/Core/Logger.h"
+#include "Engine/Core/Components/EntityLabel.h"
 #include <SimpleMath.h>
 
 
@@ -545,13 +546,13 @@ bool DroneManagerSystem::DestroyDrone(EntityID droneId)
         return false;
     }
 
-    m_world->Destroy(droneId);
-
-    CCL_LOG_INFO(LogCategory::Game, "[DroneManager] ドローン破壊 id=%llu（残り %d 機）",
-        (unsigned long long)droneId, GetAliveCount() - 1);
+    // ログは Destroy より前に出す。破棄後は NameComponent を引けず、
+    // どのドローンだったのかが "Entity" に潰れてしまうため。
+    CCL_LOG_INFO(LogCategory::Game, "[DroneManager] ドローン破壊 %s（残り %d 機）",
+        CCL::EntityLabel(*m_world, droneId).c_str(), GetAliveCount() - 1);
     //   ↑ GetAliveCount() はまだ破棄が反映される前なので -1 して見た目のログを合わせている
-    //     （Destroy が即座に消えるか遅延キューかはエンジン仕様に依存。
-    //       次フレームの Update で正確な数に上書きされるので実害はない）
+
+    m_world->Destroy(droneId);
 
     return true;
 }

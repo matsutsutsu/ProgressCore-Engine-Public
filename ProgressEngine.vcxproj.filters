@@ -1185,6 +1185,9 @@
     <ClInclude Include="Source\Engine\Core\Components\DestroyTag.h">
       <Filter>Source\Engine\Core\Components</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Components\EntityLabel.h">
+      <Filter>Source\Engine\Core\Components</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Core\Components\NameComponent.h">
       <Filter>Source\Engine\Core\Components</Filter>
     </ClInclude>

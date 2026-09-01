@@ -7,6 +7,7 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Core/Math/StringHash.h"
 #include "Engine/Platform/Core/Logger.h"
+#include "Engine/Core/Components/EntityLabel.h"
 
 #include "Engine/UI/ECS/UIEvents.h"
 #include "Engine/UI/ECS/Components/UIAnimationComponent.h"
@@ -43,8 +44,8 @@ void UIButtonSystem::Update(float /*dt*/)
                                       : CCL::Utils::HashString(btn.onClickAction);
             m_world->GetEventBus().Publish(UIButtonClickedEvent{id, hash});
 
-            CCL_LOG_INFO(LogCategory::Game, "[UIButton] clicked entity=%llu action='%s'",
-                static_cast<unsigned long long>(id), btn.onClickAction.c_str());
+            CCL_LOG_INFO(LogCategory::Game, "[UIButton] clicked %s action='%s'",
+                CCL::EntityLabel(*m_world, id).c_str(), btn.onClickAction.c_str());
         }
     });
 }
