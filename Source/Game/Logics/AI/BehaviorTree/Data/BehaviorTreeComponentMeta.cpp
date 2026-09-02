@@ -103,16 +103,22 @@ template <> struct ComponentMeta<DroneComponent> {
 
     static const std::vector<FieldDescriptor> &Fields() {
         static const std::vector<FieldDescriptor> fields = {
+            // 保存するのは「所属」と「個体パラメータ」だけ。
+            //   下の _RT 群は書き手がシステムなので保存しない（CFIELD_RT の説明を参照）。
+            //   ドローンは必ず DroneManagerSystem::SpawnDrones 経由で生まれ、
+            //   localIndex / totalDrones はその中の ReindexAllDrones が振り直す。
+            //   シーンに手置きされたドローンは存在しないので、保存しなくても復元できる。
             CFIELD(ownerBossId, "親ボスID", "Hierarchy")
-            CFIELD(localIndex, "ローカルインデックス", "Formation")
-            CFIELD(totalDrones, "総ドローン数", "Formation")
-            CFIELD_ENUM_U8(currentFormation, "現在の指示", kDroneFormationNames.data(), kDroneFormationNames.size(), "State")
-            CFIELD_ENUM_U8(currentState, "現在ステート", DroneStateNames, std::size(DroneStateNames), "State")
-            CFIELD(hasReachedSlot, "スロット到着済み", "State")
-            CFIELD(stateTimer, "状態タイマー", "State")
-            CFIELD_FLOAT3_FAST(targetPosition, "目標座標", 0.1f, "State")
             CFIELD_FLOAT_RANGED(moveSpeed, "移動速度", 0.1f, 0.0f, 100.0f, "Stats")
-            CFIELD_FLOAT_RANGED(orbitRadius, "旋回半径", 0.1f, 0.0f, 100.0f, "Stats")};
+            CFIELD_FLOAT_RANGED(orbitRadius, "旋回半径", 0.1f, 0.0f, 100.0f, "Stats")
+
+            CFIELD_RT(localIndex, "ローカルインデックス", "Formation")
+            CFIELD_RT(totalDrones, "総ドローン数", "Formation")
+            CFIELD_ENUM_U8_RT(currentFormation, "現在の指示", kDroneFormationNames.data(), kDroneFormationNames.size(), "State")
+            CFIELD_ENUM_U8_RT(currentState, "現在ステート", DroneStateNames, std::size(DroneStateNames), "State")
+            CFIELD_RT(hasReachedSlot, "スロット到着済み", "State")
+            CFIELD_RT(stateTimer, "状態タイマー", "State")
+            CFIELD_FLOAT3_RT(targetPosition, "目標座標", 0.1f, "State")};
         return fields;
     }
 };

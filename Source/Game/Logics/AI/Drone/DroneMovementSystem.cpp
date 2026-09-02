@@ -32,25 +32,12 @@ void DroneMovementSystem::Update(float rawDt)
         //    「硬直しているか」の判断（タイマー管理）は DroneBrainSystem の仕事で、
         //    ここは決まった状態を動きに変換するだけに保つ。
 
-        // ====================================================================
-        // 【リード（Leash）によるスタック救済】ボスから遠すぎたら強制ワープ
-        // ====================================================================
-        //if (const auto *bossTrans = m_world->GetComponent<TransformComponent>(drone.ownerBossId))
-        //{
-        //    const float     distToBossSqr = (trans.position - bossTrans->position).LengthSquared();
-        //    constexpr float leashRadius   = 140.0f;
-
-        //    if (distToBossSqr > (leashRadius * leashRadius))
-        //    {
-        //        trans.position        = bossTrans->position + Vector3(0.0f, 15.0f, 0.0f);
-        //        drone.currentVelocity = Vector3::Zero;
-        //        drone.currentState    = DroneState::MoveToTarget;
-        //        trans.isDirty         = true;
-        //        trans.isTeleported    = true; // 瞬間移動なので Push 側に teleport と伝える
-        //    }
-        //}
-
+        // 位相を進めて 2π で巻き戻す。
+        //   放置すると単調増加し、震え(×100)側の実引数が数万ラジアンに達して
+        //   float の刻みが粗くなる＝長時間プレイで震えが量子化する。
         drone.hoverTimeOffset += dt;
+        if (drone.hoverTimeOffset >= kHoverPhasePeriod)
+            drone.hoverTimeOffset -= kHoverPhasePeriod;
 
         // --------------------------------------------------------------
         // 各ステートの「意思決定」：drone.currentVelocity / rotation を更新する
@@ -92,13 +79,13 @@ void DroneMovementSystem::Update(float rawDt)
 
 inline void DroneMovementSystem::ProcessMoveToTarget(TransformComponent &trans, DroneComponent &drone, float dt)
 {
-    float pGain   = 20.0f * SlotLag(drone);
-    float damping = 15.0f;
+    const float pGain   = kMoveToTargetGain * SlotLag(drone);
+    const float damping = kMoveToTargetDamping;
 
     Vector3 displacement   = drone.targetPosition - trans.position;
     Vector3 targetVelocity = displacement * pGain;
 
-    float maxSpeed = drone.moveSpeed * 2.5f;
+    const float maxSpeed = drone.moveSpeed * kMoveToTargetSpeedScale;
     if (targetVelocity.LengthSquared() > maxSpeed * maxSpeed)
     {
         targetVelocity.Normalize();
@@ -114,36 +101,36 @@ inline void DroneMovementSystem::ProcessMoveToTarget(TransformComponent &trans, 
         float      targetYaw   = atan2f(lookDir.x, -lookDir.z);
         float      targetPitch = asinf(std::clamp(lookDir.y, -1.0f, 1.0f));
         Quaternion targetRot   = Quaternion::CreateFromYawPitchRoll(targetYaw, targetPitch, 0.0f);
-        trans.rotation         = Quaternion::Slerp(trans.rotation, targetRot, (std::min)(25.0f * dt, 1.0f));
+        trans.rotation         = Quaternion::Slerp(trans.rotation, targetRot, (std::min)(kTurnMoveToTarget * dt, 1.0f));
     }
 }
 
 inline void DroneMovementSystem::ProcessIdle(TransformComponent &trans, DroneComponent &drone, float dt)
 {
-    Vector3 displacement   = drone.targetPosition - trans.position;
-    float   pGain          = 10.0f * SlotLag(drone);
-    float   damping        = 8.0f;
-    Vector3 targetVelocity = displacement * pGain;
+    Vector3     displacement   = drone.targetPosition - trans.position;
+    const float pGain          = kIdleGain * SlotLag(drone);
+    Vector3     targetVelocity = displacement * pGain;
 
-    float maxSpeed = drone.moveSpeed * 1.5f;
+    const float maxSpeed = drone.moveSpeed * kIdleSpeedScale;
     if (targetVelocity.LengthSquared() > maxSpeed * maxSpeed)
     {
         targetVelocity.Normalize();
         targetVelocity *= maxSpeed;
     }
 
-    drone.currentVelocity = Vector3::Lerp(drone.currentVelocity, targetVelocity, damping * dt);
+    drone.currentVelocity = Vector3::Lerp(drone.currentVelocity, targetVelocity,
+                                          (std::min)(kIdleDamping * dt, 1.0f));
 
-    // ホバー感（フワフワ）
-    float hoverFrequency = 1.0f;
-    float hoverAmplitude = 3.0f;
-    drone.currentVelocity.y += std::cos(drone.hoverTimeOffset * hoverFrequency) * hoverAmplitude * dt;
+    // ホバー感（フワフワ）。位相は個体ごとに違うので群れが同期して揺れない。
+    drone.currentVelocity.y +=
+        std::cos(drone.hoverTimeOffset * kHoverFrequency) * kHoverAmplitude * dt;
 
     if (drone.targetLookDirection.LengthSquared() > 0.001f)
     {
         float      targetYaw = atan2f(-drone.targetLookDirection.x, -drone.targetLookDirection.z);
         Quaternion targetRot = Quaternion::CreateFromAxisAngle(Vector3::UnitY, targetYaw);
-        trans.rotation       = Quaternion::Slerp(trans.rotation, targetRot, 15.0f * dt);
+        trans.rotation       = Quaternion::Slerp(trans.rotation, targetRot,
+                                                 (std::min)(kTurnIdle * dt, 1.0f));
     }
 }
 
@@ -175,7 +162,8 @@ inline void DroneMovementSystem::ProcessFireCharge(TransformComponent &trans, Dr
             float      targetYaw   = atan2f(lookDir.x, -lookDir.z);
             float      targetPitch = asinf(std::clamp(lookDir.y, -1.0f, 1.0f));
             Quaternion targetRot   = Quaternion::CreateFromYawPitchRoll(targetYaw, targetPitch, 0.0f);
-            trans.rotation         = Quaternion::Slerp(trans.rotation, targetRot, (std::min)(25.0f * dt, 1.0f));
+            trans.rotation         = Quaternion::Slerp(trans.rotation, targetRot,
+                                                       (std::min)(kTurnMoveToTarget * dt, 1.0f));
         }
         return;
     }
@@ -195,7 +183,8 @@ inline void DroneMovementSystem::ProcessFireCharge(TransformComponent &trans, Dr
         {
             float      targetYaw = atan2f(-drone.targetLookDirection.x, -drone.targetLookDirection.z);
             Quaternion targetRot = Quaternion::CreateFromAxisAngle(Vector3::UnitY, targetYaw);
-            trans.rotation       = Quaternion::Slerp(trans.rotation, targetRot, (std::min)(15.0f * dt, 1.0f));
+            trans.rotation       = Quaternion::Slerp(trans.rotation, targetRot,
+                                                     (std::min)(kTurnFireDelay * dt, 1.0f));
         }
         return;
     }
@@ -214,31 +203,30 @@ inline void DroneMovementSystem::ProcessFireCharge(TransformComponent &trans, Dr
         // ------------------------------------------------------------
         drone.stateTimer -= dt;
 
-        float drawbackSpeed   = 2.0f;
-        float upwardLiftSpeed = 4.0f;
-        float jitterAmplitude = 5.5f;
-        float jitterSpeed     = 100.0f;
+        drone.currentVelocity =
+            (drone.fireDirection * kWindupDrawback) + (Vector3::UnitY * kWindupLift);
 
-        drone.currentVelocity = (drone.fireDirection * drawbackSpeed) + (Vector3::UnitY * upwardLiftSpeed);
-        drone.currentVelocity.x += std::cos(drone.hoverTimeOffset * jitterSpeed) * jitterAmplitude;
-        drone.currentVelocity.y += std::sin(drone.hoverTimeOffset * (jitterSpeed * 1.2f)) * jitterAmplitude;
-        drone.currentVelocity.z += std::cos(drone.hoverTimeOffset * (jitterSpeed * 0.8f)) * jitterAmplitude;
+        // 3軸で角速度を変えて単純な往復に見せない。位相は個体ごとに違う。
+        drone.currentVelocity.x += std::cos(drone.hoverTimeOffset * kWindupJitterSpeedX) * kWindupJitter;
+        drone.currentVelocity.y += std::sin(drone.hoverTimeOffset * kWindupJitterSpeedY) * kWindupJitter;
+        drone.currentVelocity.z += std::cos(drone.hoverTimeOffset * kWindupJitterSpeedZ) * kWindupJitter;
 
         float      targetYaw = atan2f(-drone.targetLookDirection.x, -drone.targetLookDirection.z);
         Quaternion targetRot = Quaternion::CreateFromAxisAngle(Vector3::UnitY, targetYaw);
-        trans.rotation       = Quaternion::Slerp(trans.rotation, targetRot, 20.0f * dt);
+        trans.rotation       = Quaternion::Slerp(trans.rotation, targetRot,
+                                                 (std::min)(kTurnWindup * dt, 1.0f));
     }
     else
     {
         // ------------------------------------------------------------
         // [フェーズ2] リリース：高速直進。この間だけ「危険」＝ジャスト回避の対象。
         // ------------------------------------------------------------
-        float chargeSpeedMultiplier = 2.5f;
-        drone.currentVelocity       = drone.fireDirection * (drone.moveSpeed * chargeSpeedMultiplier);
+        drone.currentVelocity = drone.fireDirection * (drone.moveSpeed * kChargeSpeedScale);
 
         float      targetYaw = atan2f(-drone.targetLookDirection.x, -drone.targetLookDirection.z);
         Quaternion targetRot = Quaternion::CreateFromAxisAngle(Vector3::UnitY, targetYaw);
-        trans.rotation       = Quaternion::Slerp(trans.rotation, targetRot, 25.0f * dt);
+        trans.rotation       = Quaternion::Slerp(trans.rotation, targetRot,
+                                                 (std::min)(kTurnCharge * dt, 1.0f));
     }
 }
 
@@ -279,7 +267,8 @@ inline void DroneMovementSystem::ProcessChargeSoftFollow(TransformComponent &tra
         const float targetYaw   = atan2f(look.x, -look.z);
         const float targetPitch = asinf(std::clamp(look.y, -1.0f, 1.0f));
         Quaternion  targetRot   = Quaternion::CreateFromYawPitchRoll(targetYaw, targetPitch, 0.0f);
-        trans.rotation          = Quaternion::Slerp(trans.rotation, targetRot, (std::min)(12.0f * dt, 1.0f));
+        trans.rotation          = Quaternion::Slerp(trans.rotation, targetRot,
+                                                    (std::min)(kTurnSoftFollow * dt, 1.0f));
     }
 }
 
@@ -296,7 +285,7 @@ inline void DroneMovementSystem::ProcessStunned(TransformComponent &trans, Drone
 
     // 姿勢制御を失っている表現。目標方向へ向き直そうとしない（Slerp を掛けない）のが要点で、
     // 「命令を実行している機体」との違いがここで出る。
-    Quaternion tumble = Quaternion::CreateFromAxisAngle(Vector3::UnitY, 4.0f * dt);
+    Quaternion tumble = Quaternion::CreateFromAxisAngle(Vector3::UnitY, kStunTumbleRate * dt);
     trans.rotation    = Quaternion::Concatenate(trans.rotation, tumble);
 }
 
@@ -317,7 +306,8 @@ inline void DroneMovementSystem::ProcessReturning(TransformComponent &trans, Dro
         float      targetYaw   = atan2f(look.x, -look.z);
         float      targetPitch = asinf(std::clamp(look.y, -1.0f, 1.0f));
         Quaternion targetRot   = Quaternion::CreateFromYawPitchRoll(targetYaw, targetPitch, 0.0f);
-        trans.rotation         = Quaternion::Slerp(trans.rotation, targetRot, (std::min)(8.0f * dt, 1.0f));
+        trans.rotation         = Quaternion::Slerp(trans.rotation, targetRot,
+                                                   (std::min)(kTurnReturning * dt, 1.0f));
     }
 }
 

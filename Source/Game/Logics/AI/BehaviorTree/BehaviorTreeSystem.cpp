@@ -92,9 +92,6 @@ void BehaviorTreeSystem::VerifyRegistrations()
     //   GetAction が nullptr を返し、評価側は黙って Failure を返す。
     //   「エディタで選べるのに置いても何も起きない技」という、木を疑ってしまう
     //   一番たちの悪い形になる。辞書は手書きなので、この食い違いは必ず起きる前提で見張る。
-    //
-    // static_assert にできない理由:
-    //   登録は実行時（RegisterAll）なので、コンパイル時には分からない。
     const auto &reg = BTActionRegistry::Instance();
 
     int missing = 0;

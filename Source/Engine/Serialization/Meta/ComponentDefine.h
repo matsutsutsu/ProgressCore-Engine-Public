@@ -40,51 +40,52 @@ namespace ComponentMetaHelpers {
         size_t      offset,
         const char* category,
         const char* tooltip  = nullptr,
-        bool        readonly = false)
+        bool        readonly = false,
+        bool        serialize = true)
     {
         if constexpr (std::is_same_v<FieldT, float>)
         {
-            return FD_Float(displayName, jsonName, offset, 0.05f, 0, 0, category, true, tooltip, readonly);
+            return FD_Float(displayName, jsonName, offset, 0.05f, 0, 0, category, serialize, tooltip, readonly);
         }
         else if constexpr (std::is_same_v<FieldT, int>)
         {
-            return FD_Int(displayName, jsonName, offset, 0, 0, category, true, tooltip, readonly);
+            return FD_Int(displayName, jsonName, offset, 0, 0, category, serialize, tooltip, readonly);
         }
         else if constexpr (std::is_same_v<FieldT, bool>)
         {
-            return FD_Bool(displayName, jsonName, offset, category, true, tooltip, readonly);
+            return FD_Bool(displayName, jsonName, offset, category, serialize, tooltip, readonly);
         }
         else if constexpr (std::is_same_v<FieldT, uint8_t>)
         {
-            return FD_UInt8(displayName, jsonName, offset, 1.0f, 0, 0, category, true, tooltip, readonly);
+            return FD_UInt8(displayName, jsonName, offset, 1.0f, 0, 0, category, serialize, tooltip, readonly);
         }
         else if constexpr (std::is_same_v<FieldT, uint16_t>)
         {
-            return FD_UInt16(displayName, jsonName, offset, 1.0f, 0, 0, category, true, tooltip, readonly);
+            return FD_UInt16(displayName, jsonName, offset, 1.0f, 0, 0, category, serialize, tooltip, readonly);
         }
         else if constexpr (std::is_same_v<FieldT, uint32_t>)
         {
-            return FD_UInt32(displayName, jsonName, offset, 1.0f, 0, 0, category, true, tooltip, readonly);
+            return FD_UInt32(displayName, jsonName, offset, 1.0f, 0, 0, category, serialize, tooltip, readonly);
         }
         else if constexpr (std::is_same_v<FieldT, DirectX::XMFLOAT2>)
         {
-            return FD_Float2(displayName, jsonName, offset, 0.05f, category, true, tooltip, readonly);
+            return FD_Float2(displayName, jsonName, offset, 0.05f, category, serialize, tooltip, readonly);
         }
         else if constexpr (std::is_same_v<FieldT, DirectX::XMFLOAT3>)
         {
-            return FD_Float3(displayName, jsonName, offset, 0.05f, category, true, tooltip, readonly);
+            return FD_Float3(displayName, jsonName, offset, 0.05f, category, serialize, tooltip, readonly);
         }
         else if constexpr (std::is_same_v<FieldT, DirectX::XMFLOAT4>)
         {
-            return FD_Float4(displayName, jsonName, offset, 0.05f, category, true, tooltip, readonly);
+            return FD_Float4(displayName, jsonName, offset, 0.05f, category, serialize, tooltip, readonly);
         }
         else if constexpr (std::is_same_v<FieldT, std::string>)
         {
-            return FD_String(displayName, jsonName, offset, category, true, tooltip, readonly);
+            return FD_String(displayName, jsonName, offset, category, serialize, tooltip, readonly);
         }
         else if constexpr (std::is_same_v<FieldT, CCL::Serialization::EntityLink>)
         {
-            return FD_EntityLink(displayName, jsonName, offset, category, true, tooltip, readonly);
+            return FD_EntityLink(displayName, jsonName, offset, category, serialize, tooltip, readonly);
         }
         else {
             static_assert(!sizeof(FieldT*),
@@ -123,6 +124,37 @@ namespace ComponentMetaHelpers {
     ComponentMetaHelpers::MakeFieldAuto<ThisType,                                               \
         std::remove_cv_t<std::remove_reference_t<decltype(std::declval<ThisType&>().Field)>>>(  \
         Display, #Field, offsetof(ThisType, Field), Category, Tooltip, true),
+
+// =====================================================================
+// CFIELD_*_RT: 実行時専用フィールド。インスペクタには出すが JSON へは書き出さない。
+//
+// 何のためにあるか:
+//   書き手がシステムのフィールド（現在ステート・タイマー・計算済みの目標座標など）は、
+//   保存すると「たまたま保存した瞬間の実行時の値」がプレハブやシーンに焼き付く。
+//   次にそのプレハブから生成された個体は、その古い値を持って生まれてくる。
+//   実際に Drone.json には currentState=FireCharge が焼き付いていた。
+//
+// なぜ非表示にはしないか:
+//   インスペクタで今の状態を見られること自体はデバッグに要る。
+//   問題は「見えること」ではなく「保存されること」なので、保存だけを止める。
+//
+// FieldDescriptor::serialize は以前から Save/Load 両方で見られていたが、
+// それを渡せるマクロが無かったため使われていなかった。
+// =====================================================================
+#define CFIELD_RT(Field, Display, Category)                                                     \
+    ComponentMetaHelpers::MakeFieldAuto<ThisType,                                               \
+        std::remove_cv_t<std::remove_reference_t<decltype(std::declval<ThisType&>().Field)>>>(  \
+        Display, #Field, offsetof(ThisType, Field), Category, nullptr, false, false),
+
+// uint8 ベースの enum の実行時専用版
+#define CFIELD_ENUM_U8_RT(Field, Display, EnumNames, EnumCount, Category)                       \
+    FD_EnumU8(Display, #Field, offsetof(ThisType, Field), EnumNames,                            \
+              static_cast<int>(EnumCount), Category, false),
+
+// Float3 の実行時専用版
+#define CFIELD_FLOAT3_RT(Field, Display, Speed, Category)                                       \
+    FD_Float3(Display, #Field, offsetof(ThisType, Field), Speed, Category, false),
+
 
 // 色 (XMFLOAT4 を ColorEdit4 で): CFIELD_COLOR(field, "表示名", "カテゴリ")
 #define CFIELD_COLOR(Field, Display, Category)                                                  \

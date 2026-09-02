@@ -3,20 +3,9 @@
         {
             "components": {
                 "DroneComponent": {
-                    "currentFormation": 32,
-                    "currentState": 2,
-                    "hasReachedSlot": true,
-                    "localIndex": 24,
                     "moveSpeed": 30.0,
                     "orbitRadius": 8.0,
-                    "ownerBossId": 3,
-                    "stateTimer": 0.4000000059604645,
-                    "targetPosition": [
-                        30.486202239990234,
-                        12.574103355407715,
-                        36.91989517211914
-                    ],
-                    "totalDrones": 100
+                    "ownerBossId": 3
                 },
                 "Material": null,
                 "No Shadow": {},

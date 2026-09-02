@@ -137,6 +137,13 @@ enum class DroneAttackPhase : uint8_t
 };
 
 
+// ホバー揺れとタメの震えに使う位相の周期 [秒]。
+//
+// hoverTimeOffset をこの値で巻き戻す。掛ける係数（ホバー1.0 / 震え100・120・80）が
+// すべて整数なので、2π で折り返しても波形はどこも途切れない。
+// 係数を足すときは整数のままにすること。小数を混ぜると折り返しで段差が出る。
+inline constexpr float kHoverPhasePeriod = 6.28318530718f;
+
 // ドローン1機ぶんの状態。
 struct DroneComponent
 {
@@ -146,8 +153,8 @@ struct DroneComponent
 
     CCL::Serialization::EntityLink ownerBossId; // 所属ボス。生成時に設定
 
-    uint16_t localIndex  = 0;   // 群れ全体の通し番号。陣形が「何番目か」から座標を出す
-    uint16_t totalDrones = 1;   // 群れの総数。localIndex と対で使う（0除算を避けるため既定1）
+    uint16_t localIndex  = 0;   // [RT] 群れ全体の通し番号。陣形が「何番目か」から座標を出す
+    uint16_t totalDrones = 1;   // [RT] 群れの総数。localIndex と対で使う（0除算を避けるため既定1）
 
     // 所属小隊。SquadRegistry::kNoSquad(0xFF) は無所属。
     //
@@ -163,7 +170,7 @@ struct DroneComponent
     // ボスからの命令 ── 書き手=DroneCommandSystem
     // ================================================================
 
-    DroneFormationType currentFormation = DroneFormationType::Hidden; // 今どの形を作るか
+    DroneFormationType currentFormation = DroneFormationType::Hidden; // [RT] 今どの形を作るか
 
     bool wantsAttack = false;   // [RT] 「今撃て」命令。true で判断層が FireCharge へ遷移させる
 
@@ -175,7 +182,7 @@ struct DroneComponent
     // 陣形が書く目標 ── 書き手=Formation（IFormation 派生）
     // ================================================================
 
-    DirectX::SimpleMath::Vector3 targetPosition      = DirectX::SimpleMath::Vector3::Zero;  // 持ち場の座標
+    DirectX::SimpleMath::Vector3 targetPosition      = DirectX::SimpleMath::Vector3::Zero;  // [RT] 持ち場の座標
     DirectX::SimpleMath::Vector3 targetLookDirection = DirectX::SimpleMath::Vector3::UnitZ; // 機首を向けたい方向
     DirectX::SimpleMath::Vector3 fireDirection       = DirectX::SimpleMath::Vector3::Zero;  // 突撃方向。Straight 時にここへ直進する
 
@@ -204,7 +211,7 @@ struct DroneComponent
     // 個体の判断 ── 書き手=DroneBrainSystem
     // ================================================================
 
-    DroneState currentState = DroneState::Idle; // 今の物理ステート。移動層はこれだけを見る
+    DroneState currentState = DroneState::Idle; // [RT] 今の物理ステート。移動層はこれだけを見る
 
     // 陣形スロットへ初回到着したかのラッチ。
     //
@@ -215,7 +222,7 @@ struct DroneComponent
     //
     // true の間は、回転し続ける targetPosition との距離では MoveToTarget へ戻さない
     // （毎フレーム到着判定をすると Idle と MoveToTarget が点滅する）。
-    bool hasReachedSlot = false;
+    bool hasReachedSlot = false;  // [RT]
 
     float stateTimer   = 0.0f;  // [RT] 汎用の状態タイマー [秒]。突撃のタメ時間と離脱カーブの長さに使い回す
     float chargeTimer  = 0.0f;  // [RT] 突撃開始からの経過 [秒]。飛距離判定が成立しない時（壁際等）の保険
@@ -241,14 +248,20 @@ struct DroneComponent
 
     DirectX::SimpleMath::Vector3 currentVelocity = DirectX::SimpleMath::Vector3::Zero; // [RT] 現在速度。毎フレーム積分して座標を確定する
 
-    float hoverTimeOffset = 0.0f; // [RT] ホバー揺れの位相 [秒]。個体ごとにずれるので群れが同期して揺れない
+    // [RT] ホバー揺れとタメの震えの位相 [秒]。
+    //
+    // 例外的に書き手が2つある。蒔くのは DroneManagerSystem::SpawnDrones（生成時に1回）、
+    // 進めるのは DroneMovementSystem（毎フレーム）。生成と毎フレームで
+    // ステージが違うので競合しない。
+    // 0 のまま dt を足すだけだと全機の位相が一致し、群れが1枚の板として揺れる。
+    float hoverTimeOffset = 0.0f;
 
     // ================================================================
     // 個体パラメータ（インスペクタで調整）
     // ================================================================
 
     float moveSpeed   = 30.0f;  // 基準速度 [m/s]。各ステートがこれに倍率を掛けて上限にする
-    float orbitRadius =  8.0f;  // 旋回半径 [m]。※現在どの陣形も参照していない（削除候補）
+    float orbitRadius =  8.0f;  // 旋回半径 [m]。降下円陣(OrbitCircleFormation)が円の半径として読む
 };
 
 // 1000機ぶんが連続配置されるので、増やすほど帯域を食う。

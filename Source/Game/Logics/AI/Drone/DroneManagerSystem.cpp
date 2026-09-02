@@ -83,6 +83,16 @@ int DroneManagerSystem::GetAliveCount() const
     return count;
 }
 
+// 撃破後にこれを呼ばないのは意図的。
+//
+//   localIndex / totalDrones は陣形が「群れの何番目か」から座標を出すための番号で、
+//   振り直すと生き残った全機の持ち場が同時に変わる。1機落ちるたびに残り全機が
+//   円周上を滑って並び直すことになり、撃破の手応えが消える。
+//   呼ばないままにしておけば番号が据え置かれ、落ちた機の位置がそのまま穴として残る。
+//   ＝「削った」ことが見える。totalDrones が実数より多いのはこのための状態。
+//
+//   小隊のほうは別で、SquadUpdateSystem が毎フレーム memberValid を数え直すので
+//   欠員は自動的に詰まる。番号に依存するのは大技の陣形だけ。
 void DroneManagerSystem::ReindexAllDrones()
 {
     // まず総数を数える
@@ -192,6 +202,14 @@ int DroneManagerSystem::SpawnDrones(int count)
             d->currentFormation = DroneFormationType::HighOrbit;
             d->orbitRadius      = 8.0f;
             d->hasReachedSlot   = false;   // スポーン直後は必ず MoveToSlot から開始
+
+            // 揺れの位相を個体ごとに散らす。
+            //   EntityID を撹拌してから使う。連番のまま等間隔に配ると、遅いホバー(×1.0)は
+            //   ばらけても、速い震え(×100)の側では位相が一周ぶん進んで再び揃ってしまう。
+            //   撹拌しておけば、周波数が違う両方の用途で同時にばらける。
+            uint32_t phase = static_cast<uint32_t>(droneId) * 2654435761u;
+            phase ^= phase >> 15;
+            d->hoverTimeOffset = static_cast<float>(phase % 65536u) * (kHoverPhasePeriod / 65536.0f);
         }
         if (auto *tm = m_world->GetComponent<TimeStateComponent>(droneId))
         {
