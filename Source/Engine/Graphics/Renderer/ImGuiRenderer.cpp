@@ -3,7 +3,6 @@
 #include <imgui_impl_dx11.h>
 #include <ImGuizmo.h>
 #include "ImGuiRenderer.h"
-#include "implot.h"
 #include <tracy/Tracy.hpp>
 #include"Engine/UI/ImGui/ImGuiThemes.h"
 #endif
@@ -23,9 +22,6 @@ void ImGuiRenderer::Initialize(HWND hWnd, ID3D11Device* device, ID3D11DeviceCont
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
-
-	// ImPlot Setup
-	ImPlot::CreateContext();
 
 	// フォントの読み込み
     ImFontConfig config;
@@ -169,8 +165,6 @@ void ImGuiRenderer::Initialize(HWND hWnd, ID3D11Device* device, ID3D11DeviceCont
 void ImGuiRenderer::Finalize()
 {
     ZoneScopedN("ImGuiRenderer::Finalize");
-
-	ImPlot::DestroyContext();
 
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();

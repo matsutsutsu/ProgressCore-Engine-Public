@@ -133,14 +133,19 @@ void DroneFormationSystem::Update(float dt)
 
     m_elapsed += dt;
 
-    auto                  &registry = FormationRegistry::Instance();
-    const FormationContext ctx      = MakeContext(dt);
+    auto &registry = FormationRegistry::Instance();
+
+    // エディタが進行度を握っている間は dt=0 で回す（SetDebugProgress を参照）。
+    const bool             frozen = (m_debugProgress >= 0.0f);
+    const FormationContext ctx    = MakeContext(frozen ? 0.0f : dt);
 
     // --- 各ドローンの目標座標を計算 ---
     //   ポリモーフィズムは「陣形を引くとき」だけ。ループ自体は連続アクセス。
     ForEach([&](DroneComponent &drone) {
         IFormation *formation = registry.Get(drone.currentFormation);
         if (!formation) return; // 未登録の陣形（Hidden等）は何もしない
+
+        if (frozen) drone.attackProgress = m_debugProgress;
 
         formation->Calculate(drone, ctx); // targetPosition を書き込む
     });

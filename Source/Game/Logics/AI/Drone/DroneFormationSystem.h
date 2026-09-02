@@ -70,6 +70,21 @@ class DroneFormationSystem : public CCL::ECS::IfSystem<DroneFormationSystem,
     static int                       SpecAssetCount();
     static std::string               SpecAssetPath(const char *name);
 
+    /**
+     * 進行度をエディタ側が持つモード。負を渡すと通常動作へ戻る。
+     *
+     * 陣形は Calculate の中で attackProgress を dt×speed だけ進めてから
+     * 形を作る。この2つが同じ関数にあるので、外から進行度を書いても
+     * 次の Calculate が上書きしてしまう。
+     * そこで dt=0 を渡す。陣形は進めようがなくなり、進行度の持ち主が
+     * エディタへ移る。止めた形をそのまま実機で見られる。
+     *
+     * @param progress 0〜1 で固定したい進行度。負なら解除。
+     */
+    void  SetDebugProgress(float progress) { m_debugProgress = progress; }
+    float DebugProgress() const { return m_debugProgress; }
+
   private:
-    float m_elapsed = 0.0f; // 回転アニメ用の経過時間
+    float m_elapsed       = 0.0f;  // 回転アニメ用の経過時間
+    float m_debugProgress = -1.0f; // 負 = 通常動作（SetDebugProgress を参照）
 };
