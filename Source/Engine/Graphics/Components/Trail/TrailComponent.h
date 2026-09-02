@@ -116,6 +116,14 @@ struct TrailComponent
 
     uint32_t nextStamp = 0; // 次に刻む区間へ渡す通し番号
 
+    // ロジック相(60Hz固定)の TrailRecordSystem が毎ステップ立てる「1区間刻んでよい」印。
+    //
+    // 描画相の TrailSystem は、この印が立っているフレームだけ区間を刻み、必ず降ろす。
+    // 剣の振り＝ボーンの globalTransform はロジック相でしか更新されないため、描画レートで
+    // 刻むと 90Hz/144Hz 環境で「姿勢が前フレームと同一のフレーム」が生まれ、ルートの
+    // 補間移動ぶんだけずれた断面が重複記録されて尾が二重の線に見える。
+    bool sampleRequested = false;
+
     float width           = 1.0f; // トレイル全体の基本幅。1.0で元の太さ。
     float widthCurvePower = 1.5f; // 尾に向かって細くなる強さ。大きいほど急激に細くなる。
 

@@ -485,6 +485,7 @@
     <ClInclude Include="Source\Engine\Graphics\Components\Trail\TrailComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Renderer\TrailRenderer.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Trail\TrailSystem.h" />
+    <ClInclude Include="Source\Engine\Graphics\Systems\Trail\TrailRecordSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Trail\TrailAnimationSyncSystem.h" />
     <ClInclude Include="Source\Game\Logics\Effects\Components\ScreenImpactComponent.h" />
     <ClInclude Include="Source\Game\Logics\Effects\Systems\ScreenImpactSystem.h" />
@@ -1014,6 +1015,7 @@
     <ClCompile Include="Source\Engine\Graphics\Components\Trail\TrailComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Renderer\TrailRenderer.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Trail\TrailSystem.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Systems\Trail\TrailRecordSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Trail\TrailAnimationSyncSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Effects\Components\ScreenImpactComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Effects\Systems\ScreenImpactSystem.cpp" />

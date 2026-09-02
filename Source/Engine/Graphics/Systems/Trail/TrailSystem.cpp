@@ -7,6 +7,9 @@
 //     描画に見える位置に軌跡を合わせるため（ModelRenderSystem と同じ思想）。
 //   - 「速く振ったときだけ尾が出る」剣らしさのため、先端が minDistance 以上動いたときのみ
 //     新区間を刻む。静止時は追記されず、既存区間が lifeTime で自然に消える。
+//   - ただし刻む頻度は描画レートではなく TrailRecordSystem(ロジック相・60Hz固定)が握る。
+//     剣の振りはアニメーション＝ロジック相でしか進まないので、描画レートで刻むと
+//     高リフレッシュレート環境で同じ姿勢の断面が重複し、尾が二重の線になる。
 //   - リングは固定長。満杯時は最古を捨てて上書きし、ヒープ確保を避ける。
 //   - 「区間の補間(BuildRings)」と「形状の生成(Emit*)」を分けている。板1枚では面が
 //     視線と平行になった瞬間に線へ潰れるため、同じ断面列から十字・筒も作れるようにした。
@@ -562,10 +565,9 @@ void TrailSystem::Update(float dt)
 
     ForEach([&](const TransformComponent &transform, TrailComponent &trail) {
 
-        // 一時表示タイマーを更新
-        trail.UpdateBurstTimer(dt);
-
         // UVスクロールのオフセットを進める（桁あふれ防止で適当に wrap）。
+        //   これは尾の形状ではなく模様の流れなので、実時間(描画dt)で進めてよい。
+        //   高リフレッシュレートほど滑らかになるだけで、速度は環境によらず同じ。
         trail.uvScrollOffset.x = std::fmod(trail.uvScrollOffset.x + trail.uvScroll.x * dt, 1024.0f);
         trail.uvScrollOffset.y = std::fmod(trail.uvScrollOffset.y + trail.uvScroll.y * dt, 1024.0f);
 
@@ -580,20 +582,22 @@ void TrailSystem::Update(float dt)
 
         const int MAX = TrailComponent::MAX_SEGMENTS;
 
-        // ── 2. 既存区間を老化させ、寿命切れを最古側から破棄 ──
-        for (int i = 0; i < trail.count; ++i)
-        {
-            int idx = (trail.head + i) % MAX;
-            trail.segments[idx].age += dt;
-        }
-        while (trail.count > 0 && trail.segments[trail.head].age >= trail.lifeTime)
-        {
-            trail.head = (trail.head + 1) % MAX;
-            trail.count--;
-        }
+        // ── 2. 区間の老化と寿命切れ破棄は TrailRecordSystem(ロジック相)が行う ──
+        //   尾の長さを環境のリフレッシュレートから切り離すため、時間の進行は
+        //   固定 dt 側に一本化してある。ここでは触らない。
 
-        // ── 3. 新区間を刻むか判定（emitting かつ 先端が十分動いた／初回） ──
-        bool record = trail.emitting;
+        // ── 3. 新区間を刻むか判定 ──
+        //   刻む「頻度」はロジック相が決める(sampleRequested)。刻む「位置」は補間済みの
+        //   renderWorldMatrix、つまり実際に画面に見えている刃の位置で決める。
+        //
+        //   両方を描画相に置くと、ボーン姿勢が更新されないフレーム(90Hz なら3回に1回)で
+        //   ルートの補間移動ぶんだけずれた断面が重複記録され、尾が二重の線になる。
+        //   逆に両方をロジック相へ移すと、尾が補間中の刃から最大1ステップぶん離れる。
+        //   頻度だけを固定するのが、どちらの破綻も踏まない置き方。
+        const bool requested  = trail.sampleRequested;
+        trail.sampleRequested = false; // 印は立てた側に関わらず必ずここで降ろす
+
+        bool record = requested;
         if (record && trail.count > 0)
         {
             int      newest  = (trail.head + trail.count - 1) % MAX;

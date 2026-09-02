@@ -1245,6 +1245,9 @@
     <ClInclude Include="Source\Engine\Graphics\Systems\Trail\TrailSystem.h">
       <Filter>Source\Engine\Graphics\Systems\Trail</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Systems\Trail\TrailRecordSystem.h">
+      <Filter>Source\Engine\Graphics\Systems\Trail</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Systems\Trail\TrailAnimationSyncSystem.h">
       <Filter>Source\Engine\Graphics\Systems\Trail</Filter>
     </ClInclude>
@@ -2433,6 +2436,9 @@
       <Filter>Source\Engine\Graphics\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Systems\Trail\TrailSystem.cpp">
+      <Filter>Source\Engine\Graphics\Systems\Trail</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Systems\Trail\TrailRecordSystem.cpp">
       <Filter>Source\Engine\Graphics\Systems\Trail</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Systems\Trail\TrailAnimationSyncSystem.cpp">
