@@ -3,6 +3,9 @@
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
 #include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
+#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h" // debugPaused
+#include "Engine/Core/App/GameFlowState.h"                          // cinematic
+#include "Engine/ECS/Common/CCL_TypeInfo.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -58,6 +61,13 @@ namespace
 
 
 
+std::vector<CCL::ECS::TypeID> BossActionSystem::GetReadTypes() const
+{
+    auto types = Base::GetReadTypes();
+    types.push_back(CCL::ECS::TypeInfo<BehaviorTreeComponent>::ID());
+    return types;
+}
+
 void BossActionSystem::Update(float rawDt)
 {
     if (!m_world->HasResource<BattleContext>()) return;
@@ -66,19 +76,36 @@ void BossActionSystem::Update(float rawDt)
 
     Vector3 playerPos(battle.playerPos);
 
-    ForEach([&](CharacterMovementComponent &movement,
-                BossActionComponent &bossDef,
-                TransformComponent &trans,
-                const BossCommandComponent &cmd,
-                const JoltCharacterConfigComponent &config,
-                const JoltCharacterHandleComponent &joltHandle,
-                const TimeStateComponent &time) {
+    // 演出中は全個体まとめて止める。World リソースなので個体ループの外で1回だけ読む。
+    const bool cinematic = m_world->HasResource<GameFlowState>()
+                        && m_world->GetResource<GameFlowState>().cinematic;
+
+    ForEachWithID([&](EntityID entity,
+                      CharacterMovementComponent &movement,
+                      BossActionComponent &bossDef,
+                      TransformComponent &trans,
+                      const BossCommandComponent &cmd,
+                      const JoltCharacterConfigComponent &config,
+                      const JoltCharacterHandleComponent &joltHandle,
+                      const TimeStateComponent &time) {
         if (!joltHandle.character) return;
 
         float dt = time.localDt;
 
-        // AIの意図(currentActionId) → ボスの物理ステートへ翻訳
-        const BossActionState next = TranslateAction(cmd.currentActionId);
+        // 脳が止まっているか。
+        //   演出中(cinematic)と、エディタでの手動停止(debugPaused)の両方を見る。
+        //   BT は凍っても currentActionId を下ろさないので、ここで見ないと
+        //   止めた瞬間の技をそのまま実行し続ける。
+        const auto *bt     = m_world->GetComponent<BehaviorTreeComponent>(entity);
+        const bool  frozen = cinematic || (bt && bt->debugPaused);
+
+        // AIの意図(currentActionId) → ボスの物理ステートへ翻訳。
+        //   凍っている間は意図を読まず、待機へ倒す。ProcessIdle が
+        //   desiredVelocity を 0 にするので、その場に立ち止まる。
+        //   解除後は BT(L02_Update) がこの層(L02_PostUpdate)より先に走って
+        //   currentActionId を書き直すので、古い意図が復活することはない。
+        const BossActionState next = frozen ? BossActionState::None
+                                            : TranslateAction(cmd.currentActionId);
 
         // 入場処理：状態が変わったフレームだけ走る。
         //   突進・跳躍は「どこへ向かうか」をこの1回で決め、以後は更新しない。

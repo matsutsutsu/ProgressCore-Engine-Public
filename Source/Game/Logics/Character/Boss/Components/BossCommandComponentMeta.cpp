@@ -26,8 +26,13 @@ template <> struct ComponentMeta<BossCommandComponent> {
 
     static const std::vector<FieldDescriptor> &Fields() {
         static const std::vector<FieldDescriptor> fields = {
-            CFIELD(currentActionId, "現在のActionID", "Current Command")
-            CFIELD_ENUM_U8(requestFormation, "フォーメーション要求", kDroneFormationNames.data(), kDroneFormationNames.size(), "Drone Control")
+            // このコンポーネントは「AIが今フレーム何をやってほしいか」の伝票で、
+            // 全フィールドが毎フレーム上書きされる実行時の値。保存してはいけない。
+            //   実際に Muriel.json には currentActionId=1101(薙ぎ払い) と
+            //   requestFormation=5 が焼き付いており、ボスが「薙ぎ払いの最中」として
+            //   生まれてきていた。インスペクタでは見たいので、保存だけ止める。
+            CFIELD_RT(currentActionId, "現在のActionID", "Current Command")
+            CFIELD_ENUM_U8_RT(requestFormation, "フォーメーション要求", kDroneFormationNames.data(), kDroneFormationNames.size(), "Drone Control")
         };
         return fields;
     }

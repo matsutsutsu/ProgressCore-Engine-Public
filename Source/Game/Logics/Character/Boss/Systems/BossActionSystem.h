@@ -14,8 +14,19 @@
 //
 // 実行順序: BehaviorTreeSystem（脳・L02_Update）より後、
 //           JoltCharacterUpdateSystem（L03_PrePhysics）より前 = L02_PostUpdate。
+//
+// 「脳が止まったら筋肉も止める」:
+//   BT を凍らせても、それは「もう書かなくなる」だけで、最後に書かれた
+//   currentActionId は掛かったまま残る。この層は毎フレーム無条件にそれを
+//   実行するので、凍らせた後もボスは動き続けてしまう。
+//   実際、導入カメラ演出の1フレーム目に BT が接近(A_Move)を選ぶと、
+//   そのあと演出の数秒間ずっとプレイヤーへ歩いてきていた。
+//   脳が止まっている間は、この層も待機(None)に倒す。
 #pragma once
+#include <vector>
+
 #include "Engine/ECS/System/CCL_IfSystem.h"
+#include "Engine/ECS/Common/CCL_TypeInfo.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Physics/Components/Character/CharacterMovementComponent.h"
 #include "Engine/Physics/Components/Character/JoltCharacterConfigComponent.h"
@@ -35,12 +46,30 @@ class BossActionSystem : public CCL::ECS::IfSystem<
     CCL::ECS::Read<TimeStateComponent>
 >
 {
+    using Base = CCL::ECS::IfSystem<
+        BossActionSystem,
+        CCL::ECS::Write<CharacterMovementComponent>,
+        CCL::ECS::Write<BossActionComponent>,
+        CCL::ECS::Write<TransformComponent>,
+        CCL::ECS::Read<BossCommandComponent>,
+        CCL::ECS::Read<JoltCharacterConfigComponent>,
+        CCL::ECS::Read<JoltCharacterHandleComponent>,
+        CCL::ECS::Read<TimeStateComponent>>;
+
 public:
    BossActionSystem() : IfSystem("BossActionSystem") {}
     ~BossActionSystem() override = default;
- 
+
     void Update(float dt) override;
     void OnGui() override;
+
+    // Update が BehaviorTreeComponent::debugPaused を GetComponent で読む。
+    //
+    // テンプレート引数には足さない。あちらは ForEach の絞り込み条件も兼ねるため、
+    // 足すと「BTを持つ個体」だけが対象になる。BT を持たない検証用のボスを
+    // 置いたときに、この層が黙って動かなくなるほうが危ない。
+    // 宣言に出ていない読み取りは依存解析から消えるので、ここで明示する。
+    std::vector<CCL::ECS::TypeID> GetReadTypes() const override;
 
 private:
     void ProcessIdle(BossActionComponent& bossDef, TransformComponent& trans,

@@ -16,23 +16,16 @@
                 "BossActionComponent": {
                     "acceleration": 10.0,
                     "chargeSpeed": 25.0,
-                    "currentMoveSpeed": 0.0,
-                    "currentState": 2,
                     "deceleration": 15.0,
                     "idleTurnSpeed": 4.0,
                     "runSpeed": 8.0,
                     "turnSpeed": 10.0,
                     "walkSpeed": 3.0
                 },
-                "BossCommandComponent": {
-                    "currentActionId": 1101,
-                    "requestFormation": 5
-                },
+                "BossCommandComponent": {},
                 "BossPhaseComponent": {
                     "phase2AssetPath": "Assets/BehaviorTree/BossCombatPhase2.json",
-                    "phase2HealthThreshold": 50.0,
-                    "phase": 0,
-                    "timer": 0.0
+                    "phase2HealthThreshold": 50.0
                 },
                 "Character Movement": {
                     "currentVelocity": [

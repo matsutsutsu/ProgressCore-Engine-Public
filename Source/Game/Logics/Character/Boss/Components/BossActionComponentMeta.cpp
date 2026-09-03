@@ -38,8 +38,11 @@ template <> struct ComponentMeta<BossActionComponent> {
             CFIELD_FLOAT_RANGED(jumpMaxRange, "跳躍：最大水平距離 [m]", 0.5f, 0.0f, 60.0f, "Jump Attack")
             CFIELD_FLOAT_RANGED(backStepSpeed, "後退：踏み切り速度 [m/s]", 0.5f, 0.0f, 100.0f, "Back Step")
             CFIELD_FLOAT_RANGED(backStepTime, "後退：後退時間 [秒]", 0.01f, 0.01f, 2.0f, "Back Step")
-            CFIELD_FLOAT_RANGED(currentMoveSpeed, "現在の移動速度", 0.1f, 0.0f, 100.0f, "State")
-            CFIELD_ENUM_U8(currentState, "現在の状態", BossStateNames, std::size(BossStateNames), "State")
+            // ここから下は書き手が BossActionSystem の実行時の値。保存しない。
+            //   保存すると「たまたま保存した瞬間の技」がプレハブへ焼き付き、
+            //   次に生成された個体がその状態で生まれてくる。
+            CFIELD_RT(currentMoveSpeed, "現在の移動速度", "State")
+            CFIELD_ENUM_U8_RT(currentState, "現在の状態", BossStateNames, std::size(BossStateNames), "State")
         };
         return fields;
     }
