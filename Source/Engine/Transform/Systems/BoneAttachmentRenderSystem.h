@@ -26,4 +26,7 @@ private:
 
     // attach先のローカル小階層へ描画用worldを再伝播する。
     void PropagateRenderSubtree(CCL::ECS::EntityID firstChild, const DirectX::XMFLOAT4X4& parentRenderWorld);
+
+    // 当該エンティティが Model を持つなら、確定した描画用 world でノード行列を焼き直す。
+    void BakeModelIfPresent(CCL::ECS::EntityID id, const DirectX::XMFLOAT4X4& world);
 };

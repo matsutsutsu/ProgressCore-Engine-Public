@@ -30,7 +30,7 @@ class DxtkAudioManager : public IAudioAPI
 
     // ---- ライフサイクル ----
     void Initialize() override;
-    void Update() override;
+    void Update(float dt) override;
 
     // ---- データロード ----
     void LoadConfig(const std::string &configFilePath) override;

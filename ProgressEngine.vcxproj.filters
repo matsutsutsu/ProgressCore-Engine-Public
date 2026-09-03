@@ -1173,6 +1173,9 @@
     <ClInclude Include="Source\Engine\Audio\Systems\AudioSystem.h">
       <Filter>Source\Engine\Audio\Systems</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Audio\Systems\AudioEngineTickSystem.h">
+      <Filter>Source\Engine\Audio\Systems</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Camera\Components\VirtualCameraComponents.h">
       <Filter>Source\Engine\Camera\Components</Filter>
     </ClInclude>
@@ -2394,6 +2397,9 @@
       <Filter>Source\Engine\Audio\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Audio\Systems\AudioSystem.cpp">
+      <Filter>Source\Engine\Audio\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Audio\Systems\AudioEngineTickSystem.cpp">
       <Filter>Source\Engine\Audio\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Camera\Components\VirtualCameraComponentMeta.cpp">

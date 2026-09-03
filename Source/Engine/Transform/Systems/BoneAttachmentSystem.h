@@ -23,7 +23,4 @@ private:
 
     // attach 先のローカル小階層へ world を再伝播する（対象は小規模前提）。
     void PropagateSubtree(CCL::ECS::EntityID firstChild, const DirectX::XMFLOAT4X4& parentWorld);
-
-    // 当該エンティティが Model を持つなら world で bake し直す。
-    void BakeModelIfPresent(CCL::ECS::EntityID id, const DirectX::XMFLOAT4X4& world);
 };

@@ -83,6 +83,10 @@ namespace Priority {
         R07_PreMain = 700, // 描画前準備
         R08_Main = 800, // Model, Primitive などのメイン描画
         R09_PostProcess = 900, // Bloom, ToneMapping などの画面効果
-        R10_UI = 1000 // ImGui, UI描画
+        R10_UI = 1000, // ImGui, UI描画
+
+        R11_AudioTick = 1100 // オーディオエンジンの1フレーム更新（AudioEngineTickSystem）
+                             //   このフレームで決まった発音・リスナー位置・スロー度を
+                             //   すべて反映し終えた後に1回だけ叩きたいので、Render の最後段。
     };
 }

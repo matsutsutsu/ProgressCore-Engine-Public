@@ -36,6 +36,13 @@ public:
     static std::vector<CCL::ECS::EntityID> DeserializeRaw(
         CCL::ECS::World* world, const nlohmann::json& entitiesJson);
 
+    // ファイルを読み、magic/version を検証して entities 配列を outEntities へ取り出す。
+    //   Deserialize から「ディスク読み + パース + 検証」だけを切り出したもの。
+    //   Prefab 側がパース結果をキャッシュできるように公開している
+    //   （同じプレハブを撃つたびに 20KB 超の JSON を parse し直さないため）。
+    // 失敗時は false を返し、outEntities は変更しない。
+    static bool LoadEntitiesJson(const std::string& filepath, nlohmann::json& outEntities);
+
     // ---- 複製 (エディタ用) ----
     // 指定エンティティとその子孫を丸ごと複製し、生成された EntityID 群を返す
     // (先頭[0] が複製されたルート)。内部の親子/EntityLink 参照はサブツリー内で

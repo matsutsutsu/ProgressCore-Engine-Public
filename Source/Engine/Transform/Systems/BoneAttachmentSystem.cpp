@@ -53,7 +53,11 @@ void BoneAttachmentSystem::ResolveAttachment(EntityID id, TransformComponent& tr
     XMStoreFloat4x4(&world4, world);
     trans.worldMatrix = world4;          // 仮 world（Transform 側）を上書き
 
-    BakeModelIfPresent(id, world4);      // 自分が Model を持つなら正しい world で bake し直す
+    // モデルのノード行列(bake)はここでは焼かない。BoneAttachmentRenderSystem(R04)の仕事。
+    //   焼いた行列は描画にしか使われないのに、本システムは FixedUpdate 側で
+    //   1描画フレームに最大4回まわる（Framework::MAX_STEPS）。しかも Render の
+    //   ModelPoseUpdateSystem(R03) が全モデルを丸ごと焼き直すため、ここでの bake は
+    //   一度も読まれずに上書きされて消えていた。
     PropagateSubtree(trans.firstChildID, world4);  // 小階層へ再伝播
 }
 
@@ -83,8 +87,6 @@ void BoneAttachmentSystem::PropagateSubtree(EntityID firstChild, const XMFLOAT4X
         XMStoreFloat4x4(&world4, world);
         t->worldMatrix = world4;
 
-        BakeModelIfPresent(cid, world4);
-
         EntityID gc = t->firstChildID;
         while (gc != 0) {
             auto* gct = m_world->GetComponent<TransformComponent>(gc);
@@ -96,17 +98,8 @@ void BoneAttachmentSystem::PropagateSubtree(EntityID firstChild, const XMFLOAT4X
     }
 }
 
-void BoneAttachmentSystem::BakeModelIfPresent(EntityID id, const XMFLOAT4X4& world)
-{
-    // ModelPoseUpdateSystem は attach 先を「仮 world」で先に bake してしまうため、
-    // ここで正しい world に bake し直す（last-write-wins で同フレーム整合）。
-    if (auto* mc = m_world->GetComponent<ModelComponent>(id)) {
-        if (Model* m = mc->GetModel()) {
-            m->UpdateTransform(world);
-        }
-    }
-}
-
-// 必ず ModelPoseUpdateSystem より後のステージへ登録する。
-//    ボーン行列が確定する前に読むと、1フレーム前の姿勢に追従してしまう。
+// 当たり判定用の worldMatrix を確定させるロジック側の追従。
+//    読んでいる親のボーン行列(globalTransform)は Render の ModelPoseUpdateSystem(R03)が
+//    焼くので、ここで見えるのは前フレームの描画時点の姿勢になる（1フレーム遅れ）。
+//    見た目は BoneAttachmentRenderSystem(R04)が同フレームで別途解決している。
 REGISTER_LOGIC_SYSTEM(BoneAttachmentSystem, Priority::LogicStage::L03_PrePhysics);

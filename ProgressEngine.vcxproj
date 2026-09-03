@@ -401,6 +401,7 @@
     <ClInclude Include="Source\Engine\Audio\IAudioAPI.h" />
     <ClInclude Include="Source\Engine\Audio\Systems\AudioCleanupSystem.h" />
     <ClInclude Include="Source\Engine\Audio\Systems\AudioSystem.h" />
+    <ClInclude Include="Source\Engine\Audio\Systems\AudioEngineTickSystem.h" />
     <ClInclude Include="Source\Engine\Camera\CameraEvents.h" />
     <ClInclude Include="Source\Engine\Camera\Components\CameraBodyActionTPSComponent.h" />
     <ClInclude Include="Source\Engine\Camera\Components\CameraDollyCartComponent.h" />
@@ -969,6 +970,7 @@
     <ClCompile Include="Source\Engine\Audio\DirectXTKIntegration\DxtkAudioManager.cpp" />
     <ClCompile Include="Source\Engine\Audio\Systems\AudioCleanupSystem.cpp" />
     <ClCompile Include="Source\Engine\Audio\Systems\AudioSystem.cpp" />
+    <ClCompile Include="Source\Engine\Audio\Systems\AudioEngineTickSystem.cpp" />
     <ClCompile Include="Source\Engine\Camera\Components\CameraBodyActionTPSComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Camera\Components\CameraDollyCartComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Camera\Components\VirtualCameraComponentMeta.cpp" />

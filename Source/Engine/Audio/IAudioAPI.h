@@ -25,8 +25,16 @@ public:
     // バックエンドを起こす。Scene 遷移ごとに1度だけ呼ぶ。
     virtual void Initialize() = 0;
 
-    // 3D音響の再計算と、再生し終えたインスタンスの回収。毎フレーム必須。
-    virtual void Update() = 0;
+    // 3D音響の再計算と、再生し終えたインスタンスの回収。
+    //
+    // 【1描画フレームにつき必ず1回だけ呼ぶこと】
+    //   バックエンド(DXTK AudioEngine::Update 等)は「毎フレーム1回」を前提に
+    //   ボイス管理とデバイスロスト検出を行う。FixedUpdate から呼ぶと
+    //   1フレームに2〜4回走ってしまう(Framework::MAX_STEPS)ため、
+    //   呼び出しは AudioEngineTickSystem(Render / R11_AudioTick)に一本化している。
+    //
+    // @param dt このフレームの経過時間(秒)。内部の追従補間をフレーム時間非依存にするために使う。
+    virtual void Update(float dt) = 0;
 
     // ---- データロード ------------------------------------------------------
 

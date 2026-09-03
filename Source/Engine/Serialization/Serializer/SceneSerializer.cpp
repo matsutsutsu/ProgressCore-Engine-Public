@@ -199,20 +199,19 @@ void SceneSerializer::SerializeEntity(
 // =====================================================================
 // 読み込み (Deserialize)
 // =====================================================================
-std::vector<EntityID> SceneSerializer::Deserialize(World* world, const std::string& filepath)
+// ディスク読み + パース + フォーマット検証。entities 配列だけを取り出して返す。
+//   Prefab 側でこの結果をキャッシュできるように Deserialize から切り出してある。
+bool SceneSerializer::LoadEntitiesJson(const std::string& filepath, nlohmann::json& outEntities)
 {
-    ZoneScopedN("SceneSerializer::Deserialize");
+    ZoneScopedN("SceneSerializer::LoadEntitiesJson");
 
-    // ここは VFX::Play から「再生のたびに」通る。プレハブ1個ぶんとはいえ、
-    //   ディスク読み込みと JSON パースを毎回やっている。連撃中にどれだけ
-    //   積み上がるのかを Tracy で見えるようにしておく（対策を選ぶのは数字を見てから）。
     std::string jsonStr;
     {
         ZoneScopedN("SceneSerializer: ReadAllText (disk)");
         jsonStr = FileSystem::ReadAllText(filepath);
     }
     if (jsonStr.empty()) {
-        return {};
+        return false;
     }
 
     nlohmann::json root;
@@ -225,16 +224,15 @@ std::vector<EntityID> SceneSerializer::Deserialize(World* world, const std::stri
     {
         CCL_LOG_ERROR(LogCategory::Core,
             "[SceneSerializer] JSON parse failed (%s): %s", filepath.c_str(), e.what());
-        return {};
+        return false;
     }
 
-    // ---- バージョンチェック ----
     // ---- フォーマット検証 (新フォーマットのみ: magic 必須) ----
     if (!root.contains(CCL::Serialization::Keys::Magic))
     {
         CCL_LOG_ERROR(LogCategory::Core,
             "[SceneSerializer] missing magic — not a valid scene/prefab file: %s", filepath.c_str());
-        return {};
+        return false;
     }
     {
         uint32_t magic = root[CCL::Serialization::Keys::Magic].get<uint32_t>();
@@ -242,19 +240,35 @@ std::vector<EntityID> SceneSerializer::Deserialize(World* world, const std::stri
         {
             CCL_LOG_ERROR(LogCategory::Core,
                 "[SceneSerializer] magic mismatch: %s", filepath.c_str());
-            return {};
+            return false;
         }
         uint32_t ver = root.value(CCL::Serialization::Keys::Version, 0u);
         if (ver < CCL::Serialization::MinSupportedSceneVersion)
         {
             CCL_LOG_ERROR(LogCategory::Core,
                 "[SceneSerializer] unsupported version %u: %s", ver, filepath.c_str());
-            return {};
+            return false;
         }
     }
 
-    if (!root.contains(CCL::Serialization::Keys::Entities)) return {};
-    return DeserializeRaw(world, root[CCL::Serialization::Keys::Entities]);
+    if (!root.contains(CCL::Serialization::Keys::Entities)) return false;
+
+    outEntities = std::move(root[CCL::Serialization::Keys::Entities]);
+    return true;
+}
+
+std::vector<EntityID> SceneSerializer::Deserialize(World* world, const std::string& filepath)
+{
+    ZoneScopedN("SceneSerializer::Deserialize");
+
+    // 注意: ここは毎回ディスクを読んでパースする。シーン/レベルのロードのように
+    //   「1回しか通らない」用途を想定した関数。
+    //   同じファイルを繰り返し生成する用途（VFXプレハブ等）は Prefab::SpawnPrefab を
+    //   使うこと。あちらは LoadEntitiesJson の結果をキャッシュする。
+    nlohmann::json entities;
+    if (!LoadEntitiesJson(filepath, entities)) return {};
+
+    return DeserializeRaw(world, entities);
 }
 
 std::vector<EntityID> SceneSerializer::DeserializeRaw(World* world, const nlohmann::json& entitiesJson)
