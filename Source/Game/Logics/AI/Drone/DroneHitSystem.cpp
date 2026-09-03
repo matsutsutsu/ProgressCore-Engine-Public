@@ -11,6 +11,7 @@
 #include "DroneHitSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
+#include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"  // 陣形ごとの当たり方
 #include "Game/Logics/Combat/CombatComponents.h"   // DamageEventComponent
 #include "Game/Logics/Combat/HealthComponent.h"
 
@@ -21,18 +22,17 @@
 #include "Engine/Platform/Core/Logger.h"
 
 #include <SimpleMath.h>
+#include <cfloat>
 
 using namespace CCL::ECS;
 using DirectX::SimpleMath::Vector3;
 
 namespace
 {
-    // --- 調整項目(グレーボックスで実測して詰める) ---
-    constexpr float kHitRadius       = 2.5f;   // ドローンとプレイヤーの接触半径(m)
-    constexpr float kDamage          = 8.0f;   // 1ヒットの基礎ダメージ
-    constexpr float kKnockback       = 12.0f;  // ノックバック強さ(0で無効)
-    constexpr float kHitStopDuration = 0.05f;  // 命中時のヒットストップ(秒)
-    constexpr float kHitStopScale    = 0.0f;   // ヒットストップ中のタイムスケール(0=完全停止)
+    // 当たり半径・ダメージ・ノックバックは陣形ごとに持つ（IFormation::GetCombat）。
+    //   以前はここに定数で置いていたため全陣形が同じ 2.5m / 8ダメージで、
+    //   「大技は痛いが避けやすい／牽制は軽いが避けにくい」という強弱が作れなかった。
+    //   既定値は当時の定数そのままなので、上書きしない陣形の挙動は変わらない。
 
     // このドローンが「今まさに突撃していて危険」か。
     //        タメ(stateTimer>0)・発射待ち(fireDelay>0)は危険ではない。
@@ -66,23 +66,49 @@ void DroneHitSystem::Update(float /*dt*/)
 
     const Vector3 playerPos(battle.playerPos);
 
+    // 陣形ごとの当たり方を引く。
+    //   仮想呼び出しは「陣形の種類が変わったときだけ」に留める（IFormation.h の方針）。
+    //   実際には全機が同じ陣形なので、1フレームあたり1回で済む。
+    auto &registry = CCL::AI::Formation::FormationRegistry::Instance();
+
+    bool                            cacheValid = false;
+    DroneFormationType              cacheType  = DroneFormationType::Hidden;
+    CCL::AI::Formation::FormationCombat cacheCombat{};
+
+    auto combatOf = [&](DroneFormationType type) -> const CCL::AI::Formation::FormationCombat & {
+        if (!cacheValid || cacheType != type)
+        {
+            const auto *impl = registry.Get(type);
+            cacheCombat = impl ? impl->GetCombat() : CCL::AI::Formation::FormationCombat{};
+            cacheType   = type;
+            cacheValid  = true;
+        }
+        return cacheCombat;
+    };
+
     // --- 最も近い「危険ドローン」を1体だけ探す ---
+    //   半径が機体ごとに違いうるので、まず各機を自分の半径で足切りしてから
+    //   距離を比べる。共通の半径で初期化して比較する以前の形は使えない。
     EntityID hitDrone    = InvalidEntityID;
     Vector3  hitDronePos = Vector3::Zero;
-    float    bestDistSq  = kHitRadius * kHitRadius;
+    float    bestDistSq  = FLT_MAX;
+    CCL::AI::Formation::FormationCombat hitCombat{};
 
     ForEachWithID([&](EntityID id, const DroneComponent& d, const TransformComponent& t)
     {
         if (!IsDangerous(d)) return;
 
+        const auto   &combat = combatOf(d.currentFormation);
         const Vector3 dpos(t.position);
         const float   distSq = (dpos - playerPos).LengthSquared();
-        if (distSq <= bestDistSq)
-        {
-            bestDistSq  = distSq;
-            hitDrone    = id;
-            hitDronePos = dpos;
-        }
+
+        if (distSq > combat.hitRadius * combat.hitRadius) return; // この機の判定外
+        if (distSq >= bestDistSq) return;
+
+        bestDistSq  = distSq;
+        hitDrone    = id;
+        hitDronePos = dpos;
+        hitCombat   = combat;
     });
 
     if (hitDrone == InvalidEntityID) return;   // 誰も接触していない
@@ -94,7 +120,7 @@ void DroneHitSystem::Update(float /*dt*/)
     if (knockDir.LengthSquared() > 1e-6f)
     {
         knockDir.Normalize();
-        knockForce = kKnockback;
+        knockForce = hitCombat.knockback;
     }
 
     // --- DamageEvent を1個生成(HitboxCollisionSystem と同じ合流点) ---
@@ -104,16 +130,17 @@ void DroneHitSystem::Update(float /*dt*/)
     DamageEventComponent dmg{};
     dmg.targetID        = playerId;
     dmg.attackerID      = hitDrone;
-    dmg.finalDamage     = kDamage;
+    dmg.finalDamage     = hitCombat.damage;
     dmg.knockbackDir    = knockDir;
     dmg.knockbackForce  = knockForce;
-    dmg.hitStopDuration = kHitStopDuration;
-    dmg.hitStopScale    = kHitStopScale;
+    dmg.hitStopDuration = hitCombat.hitStopDuration;
+    dmg.hitStopScale    = hitCombat.hitStopScale;
     dmg.hitPosition     = (playerPos + hitDronePos) * 0.5f;
     ref.Set(dmg);
 
     CCL_LOG_INFO(LogCategory::Game,
-        "[DroneHit] drone %llu -> player %llu dmg=%.1f", hitDrone, playerId, kDamage);
+        "[DroneHit] drone %llu -> player %llu dmg=%.1f r=%.1f", hitDrone, playerId,
+        hitCombat.damage, hitCombat.hitRadius);
 }
 
 // L05_Collision: HitboxCollisionSystem と同じ判定ステージに置く。生成した DamageEvent は

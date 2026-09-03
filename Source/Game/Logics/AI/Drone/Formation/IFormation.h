@@ -45,6 +45,44 @@ enum class ChargeLifecycle : uint8_t
     Individual,
 };
 
+// ============================================================================
+// 技1つぶんの「性能」。形とは別に、当たり方と時間割を持つ。
+//
+// なぜ陣形が持つのか:
+//   これまで当たり半径とダメージは DroneHitSystem の定数で、全陣形共通だった。
+//   そのため「大技は痛いが避けやすい／牽制は軽いが避けにくい」という、ボス戦の
+//   強弱を作る一番基本的な対比が原理的に作れなかった。
+//   時間割も同様で、予告と硬直はBTグラフの Wait ノードに散っていたため、
+//   1つの技を調整するのに陣形JSONとBTグラフの2箇所を開く必要があった。
+//   「その技が何であるか」は陣形が持ち、「いつ使うか」はBTが持つ、と分ける。
+//
+// 既定値は従来のハードコード値そのまま。C++実装の陣形は1行も変えなくてよい。
+// ============================================================================
+
+// 当たり方と痛さ。
+struct FormationCombat
+{
+    float hitRadius       = 2.5f;  // ドローンとプレイヤーの接触半径 [m]
+    float damage          = 8.0f;  // 1ヒットの基礎ダメージ
+    float knockback       = 12.0f; // ノックバック強さ（0で無効）
+    float hitStopDuration = 0.05f; // 命中時のヒットストップ [秒]
+    float hitStopScale    = 0.0f;  // ヒットストップ中のタイムスケール（0=完全停止）
+};
+
+// 技の時間割。攻撃1回を 予告 → 攻撃 → 硬直 の3区間で表す。
+//
+//   予告(windup)   … 形を作って見せる。プレイヤーが読む時間。ここが避けやすさを決める
+//   攻撃(active)   … 実際に振り切る。当たり判定が有効
+//   硬直(recovery) … 振り切った後。プレイヤーの反撃の窓
+struct FormationTiming
+{
+    float windupTime   = 1.5f;
+    float activeTime   = 0.5f;
+    float recoveryTime = 1.5f;
+
+    float Total() const { return windupTime + activeTime + recoveryTime; }
+};
+
 // 陣形の基底。派生が「1機分の目標座標」を計算する。
 //
 // 設計方針：
@@ -67,6 +105,13 @@ struct IFormation
     //
     // DroneCommandSystem が陣形ごとに1回だけ引く（機体ごとには引かない）。
     virtual ChargeLifecycle GetLifecycle() const { return ChargeLifecycle::Broadcast; }
+
+    // 当たり方と痛さ。DroneHitSystem が引く。
+    //   既定は従来のハードコード値なので、上書きしない陣形は今までどおり動く。
+    virtual FormationCombat GetCombat() const { return {}; }
+
+    // 技の時間割。ボスBTの DroneAction が引く。
+    virtual FormationTiming GetTiming() const { return {}; }
 };
 
 } // namespace CCL::AI::Formation

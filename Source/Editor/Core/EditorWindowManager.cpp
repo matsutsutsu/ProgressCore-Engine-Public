@@ -34,7 +34,6 @@
 #include "Editor/Windows/CameraPathEditorWindow.h"
 #include "Editor/Windows/RenderDebugWindow.h"
 #include "Editor/Windows/BuildingScatterWindow.h"
-#include "Editor/Windows/FormationEditorWindow.h"
 
 #include "Engine/Serialization/Factory/Prefab.h"
 #include "Engine/Core/Components/PrefabInstanceComponent.h"
@@ -78,7 +77,6 @@ void EditorWindowManager::Initialize()
     RegisterWindow<GameViewWindow>();
     RegisterWindow<RenderDebugWindow>();
     RegisterWindow<BuildingScatterWindow>();
-    RegisterWindow<FormationEditorWindow>();
 }
 
 // =========================================================

@@ -11,45 +11,9 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
-#include "Engine/Platform/Core/FileSystem.h"
-
-#include <json.hpp>
 
 using namespace CCL::ECS;
 using namespace CCL::AI::Formation;
-
-namespace
-{
-// データ実装（JSON）を持つ陣形の一覧。
-//
-// ここに並んでいるのは「形が attackProgress の関数で決まる」技だけ。
-// カミカゼ（各機が飛距離で自分から切り上げる）と小隊突撃（1つ前の機体に追従する）は
-// 個体が状態をラッチするので、データにできない＝この表に載らない。
-constexpr FormationSpecAsset kSpecAssets[] = {
-    {DroneFormationType::GuillotineSlam,          "GuillotineSlam"         },
-    {DroneFormationType::ClapSlam,                "ClapSlam"               },
-    {DroneFormationType::SideSlapWhip,            "SideSlapWhip"           },
-    {DroneFormationType::TsunamiWave,             "TsunamiWave"            },
-    {DroneFormationType::TsunamiWave_RL,          "TsunamiWave_RL"         },
-    {DroneFormationType::MegaClapSlam_UpperFirst, "MegaClapSlam_UpperFirst"},
-    {DroneFormationType::MegaClapSlam_LowerFirst, "MegaClapSlam_LowerFirst"},
-};
-} // namespace
-
-const FormationSpecAsset *DroneFormationSystem::SpecAssets()
-{
-    return kSpecAssets;
-}
-
-int DroneFormationSystem::SpecAssetCount()
-{
-    return static_cast<int>(std::size(kSpecAssets));
-}
-
-std::string DroneFormationSystem::SpecAssetPath(const char *name)
-{
-    return std::string("Assets/Formations/") + name + ".json";
-}
 
 void DroneFormationSystem::Initialize()
 {
@@ -64,35 +28,7 @@ void DroneFormationSystem::Initialize()
     CCL::AI::Formation::Attack::RegisterAll(); // 攻撃陣形（縦割り等）
     CCL::AI::Formation::Squad::RegisterAll();  // 小隊陣形（5機編隊）
 
-    LoadSpecAssets(); // 同じ型のデータ実装。既定では C++ 側が使われる
-
     CCL_LOG_INFO(LogCategory::AI, "[DroneFormationSystem] 陣形クラス登録完了");
-}
-
-void DroneFormationSystem::LoadSpecAssets()
-{
-    auto &registry = FormationRegistry::Instance();
-
-    int loaded = 0;
-    for (const auto &asset : kSpecAssets)
-    {
-        const std::string path = SpecAssetPath(asset.name);
-        const std::string text = FileSystem::ReadAllText(path);
-        if (text.empty()) continue; // アセットが無くても C++ 実装で動く
-
-        try
-        {
-            FormationSpec spec = nlohmann::json::parse(text).get<FormationSpec>();
-            registry.RegisterSpec(asset.type, spec, path);
-            ++loaded;
-        }
-        catch (const std::exception &e)
-        {
-            CCL_LOG_ERROR(LogCategory::AI, "[FormationSpec] 読み込み失敗 %s: %s", path.c_str(), e.what());
-        }
-    }
-
-    CCL_LOG_INFO(LogCategory::AI, "[FormationSpec] データ実装 %d/%d 件を登録", loaded, SpecAssetCount());
 }
 
 FormationContext DroneFormationSystem::MakeContext(float dt) const
@@ -135,17 +71,13 @@ void DroneFormationSystem::Update(float dt)
 
     auto &registry = FormationRegistry::Instance();
 
-    // エディタが進行度を握っている間は dt=0 で回す（SetDebugProgress を参照）。
-    const bool             frozen = (m_debugProgress >= 0.0f);
-    const FormationContext ctx    = MakeContext(frozen ? 0.0f : dt);
+    const FormationContext ctx = MakeContext(dt);
 
     // --- 各ドローンの目標座標を計算 ---
     //   ポリモーフィズムは「陣形を引くとき」だけ。ループ自体は連続アクセス。
     ForEach([&](DroneComponent &drone) {
         IFormation *formation = registry.Get(drone.currentFormation);
         if (!formation) return; // 未登録の陣形（Hidden等）は何もしない
-
-        if (frozen) drone.attackProgress = m_debugProgress;
 
         formation->Calculate(drone, ctx); // targetPosition を書き込む
     });

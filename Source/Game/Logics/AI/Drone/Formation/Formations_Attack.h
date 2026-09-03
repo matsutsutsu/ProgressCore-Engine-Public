@@ -201,6 +201,9 @@ struct ClapSlamFormation : public IFormation
 // ====================================================================
 struct KamikazeSwarmFormation : public IFormation
 {
+    // 弾幕。撃ち出したら各機が独立に飛ぶので、硬直側を長く取る。
+    FormationTiming GetTiming() const override { return {1.2f, 0.2f, 4.0f}; }
+
     // 撃ち出したら各機が独立して飛ぶ技なので、終了判断は個体に持たせる。
     // （飛び切った機から順に離脱→隊列へ戻る＝「帰投がバラバラ」になる）
     ChargeLifecycle GetLifecycle() const override { return ChargeLifecycle::Individual; }

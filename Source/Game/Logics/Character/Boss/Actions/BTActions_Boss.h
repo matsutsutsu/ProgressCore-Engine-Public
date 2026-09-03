@@ -7,6 +7,7 @@
 #include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
 #include "Game/Logics/AI/Drone/DroneComponent.h"
+#include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"   // 陣形が持つ時間割
 #include "Engine/ECS/Core/CCL_World.h"                               // world->GetComponent
 #include "Engine/Animation/Components/AnimParametersComponent.h"     // SetTrigger（近接アニメ）
 #include "Engine/Core/Math/StringHash.h"                             // HashString
@@ -108,6 +109,24 @@ struct MoveAction : public IBTAction
 // ====================================================================
 // ④ ドローン系（2000番台）ボス固有：BossCommand を自分で取りに行く
 // ====================================================================
+// 技1回ぶんを、このノード1つで最後まで面倒を見る。
+//
+//   予告(windup) → 攻撃(active) → 硬直(recovery)
+//
+// なぜ1ノードにまとめたか:
+//   以前は  [陣形] [Wait 1.5] [Strike] [Wait 2.0]  という4ノードの並びで書いていた。
+//   つまり「予告の長さ」と「硬直の長さ」がBTグラフ側にあり、形は陣形JSON側にあった。
+//   1つの技を調整するのに2つのファイルを開く必要があり、しかも予告の長さは
+//   「見てから避けられるか」を決める、その技で一番大事な数字だった。
+//   時間割を陣形へ移したことで、技1つ = 1ファイルになり、BTグラフも短くなる。
+//
+// 時間は陣形が持つので param は使わない。
+//   陣形ごとに違う数字を、呼び出し側のノードで上書きできるようにすると
+//   「どっちが効いているのか」が分からなくなる。調整先は1つに保つ。
+//
+// 帰投は含めない:
+//   硬直の後どうするか（頭上へ退避する／別の技へ繋ぐ）は「いつ何をするか」の話で、
+//   技そのものの性質ではない。そこはBTグラフの領分として残す。
 struct DroneAction : public IBTAction
 {
     ActionID id;
@@ -120,27 +139,70 @@ struct DroneAction : public IBTAction
 
     BTNodeState Execute(BTContext &ctx) override
     {
+        auto &timers = ctx.bt->nodeTimers;
+        if (ctx.nodeId >= timers.size()) return BTNodeState::Failure;
+
         ctx.bt->lastLogActionId = id;
 
         // 対応する陣形を引く。ActionRegistry.h の DRONE_ACTION_LIST が唯一の対応表。
         DroneFormationType formation = DroneFormationType::Hidden;
         if (!TryGetDroneFormation(id, formation)) return BTNodeState::Failure;
 
-        // ボス固有の出力先（requestFormation）を自分で取得して書く
-        if (auto *cmd = ctx.world->GetComponent<BossCommandComponent>(ctx.entity)) {
-            cmd->requestFormation = formation;
+        auto *cmd = ctx.world->GetComponent<BossCommandComponent>(ctx.entity);
+        if (!cmd) return BTNodeState::Failure;
 
-            // 陣形の指示 = 「形を作る（予備動作/帰投）」フェーズなので攻撃信号は下ろす。
-            // 突撃（リリース）は後続の DroneStrikeAction が明示的に立てる。
+        // --- 終了：攻撃信号を下ろして次のノードへ ---
+        if (timers[ctx.nodeId] == 0.0f)
+        {
             cmd->droneAttackActive = false;
+            return BTNodeState::Success;
         }
-        return BTNodeState::Success;
+
+        // 陣形の時間割を引く（種類ごとに1回。IFormation.h の方針どおり）。
+        const auto *impl = CCL::AI::Formation::FormationRegistry::Instance().Get(formation);
+        const CCL::AI::Formation::FormationTiming timing =
+            impl ? impl->GetTiming() : CCL::AI::Formation::FormationTiming{};
+
+        const float total = timing.Total();
+
+        // --- 時間割を持たない陣形 = 隊形（円陣・退避）。構えを変えるだけで即完了 ---
+        //   周回や頭上退避は「技」ではないので、予告も硬直も持たない。
+        //   時間割がゼロかどうかで技と隊形を見分けられるようにしてある。
+        if (total <= 0.0f)
+        {
+            cmd->requestFormation  = formation;
+            cmd->droneAttackActive = false;
+            return BTNodeState::Success;
+        }
+
+        // --- 開始フレーム：全体の長さでタイマーを起動 ---
+        if (timers[ctx.nodeId] == -1.0f)
+            timers[ctx.nodeId] = total;
+
+        // 経過を出して、今どの区間かを決める。
+        //   タイマーは残り時間なので、全体から引いて経過に直す。
+        const float elapsed = total - timers[ctx.nodeId];
+
+        cmd->requestFormation = formation;
+
+        // 予告の間は形を作るだけ。攻撃信号は windup を過ぎてから active の間だけ立てる。
+        //   DroneHitSystem が見るのは FireCharge 中の機体なので、ここが
+        //   「当たり判定が出ている区間」とそのまま一致する。
+        cmd->droneAttackActive =
+            (elapsed >= timing.windupTime) && (elapsed < timing.windupTime + timing.activeTime);
+
+        return BTNodeState::Running;
     }
 };
 
 // ====================================================================
 // ⑤ ドローン攻撃リリース（Strike）ボス固有：BossCommand を自分で取りに行く
 //    「今撃て」信号を立てる。DroneCommandSystem 経由で各ドローンが FireCharge へ。
+//
+// 【非推奨】DroneAction が予告から硬直まで面倒を見るようになったので、
+//    通常のグラフでこれを置く必要は無い。信号を手で立てたいとき
+//    （デバッグ、あるいは陣形の時間割に乗らない特殊な繋ぎ）のために残してある。
+//    DroneAction の直後にこれを置くと、硬直中に信号が立ち直って二重に撃つ。
 // ====================================================================
 struct DroneStrikeAction : public IBTAction
 {
