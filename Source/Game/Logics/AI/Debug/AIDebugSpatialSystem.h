@@ -29,10 +29,10 @@ class AIDebugSpatialSystem : public CCL::ECS::IfSystem<
     void OnGui() override;
 
   private:
-    //bool  m_enabled  = true;
-    //bool  m_drawLine = true;   // ボス→プレイヤーの照準線
-    bool  m_enabled  = false;
-    bool  m_drawLine = false;  
+    bool  m_enabled  = true;
+    bool  m_drawLine = true;   // ボス→プレイヤーの照準線d
+    //bool  m_enabled  = false;
+    //bool  m_drawLine = false;  
     float m_ringNear = 8.0f;   // BTConditions::RangeMostClose (<8m) と対応。近接の的
     float m_ringFar  = 40.0f;  // BTConditions::RangeFar (>40m) と対応。接近(逃げ得)の境界
 };

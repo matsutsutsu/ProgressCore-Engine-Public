@@ -79,8 +79,13 @@ struct GuillotineSlamFormation : public IFormation
         const float height = row * spacing;                       // 下端(row0)=0＝軸
         const float side   = (col - (cols - 1) * 0.5f) * spacing; // 幅方向は中央揃え
 
-        // 回転軸（下端の中心）：ボス頭上のやや低い位置
-        const Vector3 hingeBase = ctx.bossPos + Vector3::UnitY * hingeHeight;
+        // 回転軸（下端の中心）：ボス頭上のやや低い位置を、プレイヤー側へ hingeForward だけ出す。
+        //
+        // @note hingeForward は宣言だけされていて式に入っていなかった。そのため刃の回転軸が
+        //       ボスの真上に来ており、壁がボスを跨いで生え、倒れ始めがボスの足元から
+        //       始まっていた（＝予備動作の「形」がボスと重なって読めない）。
+        const Vector3 hingeBase =
+            ctx.bossPos + Vector3::UnitY * hingeHeight + dir * hingeForward;
 
         // 高さベクトルを下端軸まわりに θ 回転（up → dir へ倒す）
         const Vector3 rotatedUp = Vector3::UnitY * (height * c) + dir * (height * s);
@@ -201,9 +206,6 @@ struct ClapSlamFormation : public IFormation
 // ====================================================================
 struct KamikazeSwarmFormation : public IFormation
 {
-    // 弾幕。撃ち出したら各機が独立に飛ぶので、硬直側を長く取る。
-    FormationTiming GetTiming() const override { return {1.2f, 0.2f, 4.0f}; }
-
     // 撃ち出したら各機が独立して飛ぶ技なので、終了判断は個体に持たせる。
     // （飛び切った機から順に離脱→隊列へ戻る＝「帰投がバラバラ」になる）
     ChargeLifecycle GetLifecycle() const override { return ChargeLifecycle::Individual; }

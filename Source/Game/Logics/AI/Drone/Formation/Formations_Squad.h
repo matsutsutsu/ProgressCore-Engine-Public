@@ -35,12 +35,6 @@ namespace CCL::AI::Formation::Squad
 // ====================================================================
 struct SquadAssaultFormation : public IFormation
 {
-    // 移行前の BossCombat.json が持っていた数字をそのまま移した
-    //   （[陣形] [Wait 2.0] [Strike] [Wait 10.0] の 2.0 と 10.0）。
-    // 個別寿命(Individual)なので、attack は号令の立ち上がりを拾えれば足りる。
-    // 残りは各機が飛んで帰ってくるまでの時間で、そこは硬直として数える。
-    FormationTiming GetTiming() const override { return {2.0f, 0.2f, 9.8f}; }
-
     void Calculate(DroneComponent &drone, const FormationContext &ctx) override
     {
         using namespace DirectX::SimpleMath;

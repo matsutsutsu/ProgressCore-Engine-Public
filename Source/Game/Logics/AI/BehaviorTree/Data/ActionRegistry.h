@@ -402,6 +402,17 @@ inline bool IsDroneAction(ActionID id)
     return TryGetDroneFormation(id, ignored);
 }
 
+// 当たり判定を持つ陣形（技）か。円陣・頭上円陣は隊形なので除く。
+//
+// 以前は「時間割がゼロかどうか」で見分けていたが、時間割をBTへ戻したので
+// 判断材料が消えた。隊形は2つだけなのでここで列挙する。
+inline bool IsDroneAttackFormation(ActionID id)
+{
+    return IsDroneAction(id)
+        && id != CCL::AI::A_DroneOrbit
+        && id != CCL::AI::A_DroneHighOrbit;
+}
+
 inline bool IsWaitAction(ActionID id) { return id == CCL::AI::A_Wait; }
 
 inline bool IsBossPhysicalAction(ActionID id) { return id == CCL::AI::A_Move; }
@@ -419,6 +430,22 @@ inline bool IsBossMeleeAction(ActionID id)
 
 // 後方ステップ（回避）か。攻撃ではないので上の近接判定には含めない。
 inline bool IsBossEvadeAction(ActionID id) { return id == CCL::AI::A_BossBackStep; }
+
+// この行動は Running を返しうるか（＝そのフレームで木を止められるか）。
+//
+// なぜこの判定が要るか:
+//   陣形指示・突撃信号・ダメージリセットはどれも即 Success を返す。これらだけで
+//   枝を作ると毎フレーム即 Success になり、Selector はそこで打ち切るので下に並ぶ枝が
+//   一度も評価されない。ボスは同じ命令を毎フレーム出し続けるだけになり、
+//   外からは「固まって何もしない」ように見える。
+//   単体の行動をぶら下げて動作確認するときに必ず踏むので、読み込み時に警告する。
+inline bool IsBlockingAction(ActionID id)
+{
+    return id == CCL::AI::A_Wait
+        || id == CCL::AI::A_Move
+        || IsBossMeleeAction(id)
+        || IsBossEvadeAction(id);
+}
 
 // この行動が使う param の意味。使わないなら nullptr。
 //

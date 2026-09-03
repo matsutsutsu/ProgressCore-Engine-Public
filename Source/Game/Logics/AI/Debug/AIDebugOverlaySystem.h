@@ -36,8 +36,8 @@ public:
     void OnGui() override;
 
 private:
-    //bool  m_enabled    = true;
-    bool  m_enabled    = false;
-    float m_fontSize   = 25.0f;
+    bool  m_enabled    = true;
+    //bool  m_enabled    = false; d
+    float m_fontSize   = 25.0f; 
     float m_headOffsetY = 15.0f; // キャラ原点からの頭上ワールドYオフセット（本体に被らせないよう調整）
 };

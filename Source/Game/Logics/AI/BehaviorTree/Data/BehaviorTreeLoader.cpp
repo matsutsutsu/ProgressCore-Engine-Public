@@ -151,6 +151,30 @@ void BehaviorTreeLoader::MigrateLegacyCondition(BTNode& node, const std::string&
 }
 
 
+namespace {
+// 枝の中に「Running を返しうる行動」が1つでもあるか。
+bool SubtreeCanBlock(const BTAsset& asset, BTNodeID nodeId)
+{
+    const BTNode& node = asset.nodes[nodeId];
+    if (node.type == BTNodeType::Action && IsBlockingAction(node.actionOrConditionId))
+        return true;
+    for (BTNodeID c : node.children)
+        if (SubtreeCanBlock(asset, c)) return true;
+    return false;
+}
+
+// 枝が条件を持つか（＝失敗して次の枝へ譲る可能性があるか）。
+bool SubtreeHasCondition(const BTAsset& asset, BTNodeID nodeId)
+{
+    const BTNode& node = asset.nodes[nodeId];
+    if (node.type == BTNodeType::Condition) return true;
+    for (BTNodeID c : node.children)
+        if (SubtreeHasCondition(asset, c)) return true;
+    return false;
+}
+} // namespace
+
+
 void BehaviorTreeLoader::ValidateNodes(const BTAsset& asset, const std::string& path)
 {
     // 「木としては読めるが、置いた本人の意図どおりには絶対に動かない」形をここで潰す。
@@ -178,6 +202,45 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset& asset, const std::string& 
             if (node.children.empty()) {
                 CCL_LOG_WARN(LogCategory::AI,
                     "[BT] nodes[%zu] のデコレーターに子が繋がっていない: %s", i, path.c_str());
+            }
+        }
+
+        // 選択系の子に「毎フレーム即 Success を返す枝」があると、そこから下が死ぬ。
+        //   条件も持たないので失敗して譲ることも無く、ボスはその枝の命令を毎フレーム
+        //   出し続けるだけになる（外からは固まって見える）。
+        if (node.type == BTNodeType::Selector || node.type == BTNodeType::RandomSelector) {
+            for (size_t k = 0; k + 1 < node.children.size(); ++k) {
+                const BTNodeID child = node.children[k];
+                if (SubtreeCanBlock(asset, child) || SubtreeHasCondition(asset, child)) continue;
+
+                CCL_LOG_ERROR(LogCategory::AI,
+                    "[BT] nodes[%zu] の %zu 番目の枝(nodes[%u])は毎フレーム即 Success を返す"
+                    "（待機も条件も無い）。この枝より下は一度も評価されない: %s",
+                    i, k, static_cast<unsigned>(child), path.c_str());
+            }
+        }
+
+        // 陣形指示だけを置いてリリースを忘れると、形を作って帰るだけになる。
+        //   DroneAction は「この形になれ」と言うだけで、撃つ合図は A_DroneStrike が出す。
+        //   形は組み上がるので見た目は正しく動いてしまい、当たらないことにだけ気づけない。
+        //   （円陣・頭上円陣は隊形なので除外。後続の枝に任せる中継もあるので WARN に留める。）
+        if (node.type == BTNodeType::Sequence) {
+            int lastFormation = -1;
+            for (const BTNodeID child : node.children) {
+                const BTNode& kid = asset.nodes[child];
+                if (kid.type != BTNodeType::Action) continue;
+                if (kid.actionOrConditionId == CCL::AI::A_DroneStrike) {
+                    lastFormation = -1;
+                }
+                else if (IsDroneAttackFormation(kid.actionOrConditionId)) {
+                    lastFormation = static_cast<int>(child);
+                }
+            }
+            if (lastFormation >= 0) {
+                CCL_LOG_WARN(LogCategory::AI,
+                    "[BT] nodes[%zu] の陣形指示 nodes[%u] の後ろに「ドローン：攻撃実行」が無い。"
+                    "形は組むが一度も撃たない: %s",
+                    i, static_cast<unsigned>(lastFormation), path.c_str());
             }
         }
 

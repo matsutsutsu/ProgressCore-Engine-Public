@@ -341,6 +341,57 @@ void DroneManagerSystem::OnGui()
             ImGui::Text("→ 期待戦術: %s", tactic);
         }
 
+        // ---- 攻撃パイプラインの可視化 ----
+        //   BTのログには「いつ指示が出たか」しか出ないので、群れが実際に形を
+        //   作れているのか（＝指示に個体が追いつけているのか）が判断できない。
+        //   陣形指示 → 予備動作 → 突撃 → 帰投 のどこに居るかを1画面で見る。
+        ImGui::Separator();
+        ImGui::TextColored(ImVec4(0.6f, 0.9f, 1.0f, 1.0f), "Attack Pipeline (指示と個体の追従)");
+
+        const EntityID bossId = FindBoss();
+        if (bossId != InvalidEntityID)
+        {
+            if (const auto *cmd = m_world->GetComponent<BossCommandComponent>(bossId))
+            {
+                const size_t f = static_cast<size_t>(cmd->requestFormation);
+                ImGui::Text("ボスの指示 : %s   /   突撃信号 %s",
+                            f < kDroneFormationSlotCount ? kDroneFormationNames[f] : "?",
+                            cmd->droneAttackActive ? "ON" : "OFF");
+            }
+        }
+
+        {
+            int   total = 0, wants = 0, reached = 0, moving = 0;
+            int   st[5] = {0, 0, 0, 0, 0};
+            float sumProgress = 0.0f;
+
+            auto droneView = m_world->View<DroneComponent>();
+            for (auto e : droneView)
+            {
+                const auto *d = m_world->GetComponent<DroneComponent>(e);
+                if (!d) continue;
+                ++total;
+                if (d->wantsAttack) ++wants;
+                if (d->hasReachedSlot) ++reached;
+                if (d->attackProgress > 0.01f) ++moving;
+                sumProgress += d->attackProgress;
+                const int s = static_cast<int>(d->currentState);
+                if (s >= 0 && s < 5) ++st[s];
+            }
+
+            if (total > 0)
+            {
+                // 「持ち場に着いた機」が総数に届かないうちに突撃信号が立っていたら、
+                // 形が組み上がる前に攻撃している＝予備動作の待ち時間が足りていない。
+                ImGui::Text("突撃したい機 %d / %d      持ち場に着いた機 %d / %d",
+                            wants, total, reached, total);
+                ImGui::Text("形が動いている機 %d      attackProgress 平均 %.2f",
+                            moving, sumProgress / total);
+                ImGui::Text("状態  Idle %d   Move %d   Fire %d   Stun %d   Return %d",
+                            st[0], st[1], st[2], st[3], st[4]);
+            }
+        }
+
         ImGui::Spacing();
 
         if (ImGui::Button("Spawn Drones", ImVec2(120, 30)))

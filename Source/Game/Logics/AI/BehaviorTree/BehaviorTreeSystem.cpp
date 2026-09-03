@@ -343,6 +343,21 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
         } else {
             result = BTNodeState::Failure;
         }
+
+        // 終わった行動は、自分のタイマーを「未実行」へ戻す。
+        //
+        // なぜエンジン側でやるか:
+        //   行動の多くは nodeTimers[nodeId] を「-1=未実行 / >0=実行中 / 0=完了」として使う。
+        //   これを -1 に戻す処理は Sequence の ResetChildActionsRecursive にしか無かったため、
+        //   Sequence の下に居ない行動（Selector や RandomSelector、Decorator の直下）は
+        //   一度完了すると 0 のままになり、以後ずっと即 Success を返す。
+        //   ＝ Wait が待たなくなる／攻撃が二度と再生されない／Move が動かない。
+        //   単体の行動をぶら下げて動作確認するときに必ず踏む。
+        //
+        // Running のときは戻さない（実行中なので当然）。
+        if (result != BTNodeState::Running && nodeId < btComp.nodeTimers.size()) {
+            btComp.nodeTimers[nodeId] = -1.0f;
+        }
         break;
     }
 
@@ -537,6 +552,34 @@ void BehaviorTreeSystem::DrawNodeRowRecursive(const BTAsset         &asset,
     }
     else if (const char *hint = FirstActionNameInSubtree(asset, nodeId)) {
         label += std::string(" [") + hint + "]";
+    }
+
+    // --- 実行状態を数字で出す ---
+    //
+    // 色（Success/Failure/Running）だけでは「なぜこのノードから進まないのか」が分からない。
+    //   行動 … 残り時間。0.00 なら待ち終わっている、-1 は未実行
+    //   複合 … 今どの子で止まっているか（しおり）。ここが動かない＝その子が Running のまま
+    //   Cooldown … 残りクールダウン。>0 の間はこの枝ごと Failure になる
+    char buf[64];
+    if (nodeId < btComp.nodeTimers.size()) {
+        const float t = btComp.nodeTimers[nodeId];
+        if (node.type == BTNodeType::Action && t >= 0.0f) {
+            std::snprintf(buf, sizeof(buf), "  残り %.2fs", t);
+            label += buf;
+        }
+        else if (node.type == BTNodeType::Decorator &&
+                 node.decoratorType == BTDecoratorType::Cooldown) {
+            std::snprintf(buf, sizeof(buf), "  CD残り %.2fs", (t > 0.0f) ? t : 0.0f);
+            label += buf;
+        }
+    }
+    if (nodeId < btComp.runningNodes.size() && !node.children.empty()) {
+        const int bookmark = btComp.runningNodes[nodeId];
+        if (bookmark >= 0) {
+            std::snprintf(buf, sizeof(buf), "  しおり %d/%d",
+                          bookmark + 1, static_cast<int>(node.children.size()));
+            label += buf;
+        }
     }
 
     ImGui::PushID(static_cast<int>(nodeId));

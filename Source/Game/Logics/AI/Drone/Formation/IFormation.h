@@ -69,20 +69,6 @@ struct FormationCombat
     float hitStopScale    = 0.0f;  // ヒットストップ中のタイムスケール（0=完全停止）
 };
 
-// 技の時間割。攻撃1回を 予告 → 攻撃 → 硬直 の3区間で表す。
-//
-//   予告(windup)   … 形を作って見せる。プレイヤーが読む時間。ここが避けやすさを決める
-//   攻撃(active)   … 実際に振り切る。当たり判定が有効
-//   硬直(recovery) … 振り切った後。プレイヤーの反撃の窓
-struct FormationTiming
-{
-    float windupTime   = 1.5f;
-    float activeTime   = 0.5f;
-    float recoveryTime = 1.5f;
-
-    float Total() const { return windupTime + activeTime + recoveryTime; }
-};
-
 // 陣形の基底。派生が「1機分の目標座標」を計算する。
 //
 // 設計方針：
@@ -109,9 +95,6 @@ struct IFormation
     // 当たり方と痛さ。DroneHitSystem が引く。
     //   既定は従来のハードコード値なので、上書きしない陣形は今までどおり動く。
     virtual FormationCombat GetCombat() const { return {}; }
-
-    // 技の時間割。ボスBTの DroneAction が引く。
-    virtual FormationTiming GetTiming() const { return {}; }
 };
 
 } // namespace CCL::AI::Formation

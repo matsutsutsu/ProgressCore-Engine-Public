@@ -13,9 +13,6 @@ namespace CCL::AI::Formation::Basic
 // ====================================================================
 struct OrbitCircleFormation : public IFormation
 {
-    // 隊形なので時間割を持たない（＝BTでは構えを変えるだけで即完了）。
-    FormationTiming GetTiming() const override { return {0.0f, 0.0f, 0.0f}; }
-
     void Calculate(DroneComponent &drone, const FormationContext &ctx) override
     {
         using namespace DirectX::SimpleMath;
@@ -60,9 +57,6 @@ struct OrbitCircleFormation : public IFormation
 // ====================================================================
 struct HighOrbitFormation : public IFormation
 {
-    // 隊形なので時間割を持たない。技の後の「引き上げ」に使う。
-    FormationTiming GetTiming() const override { return {0.0f, 0.0f, 0.0f}; }
-
     void Calculate(DroneComponent &drone, const FormationContext &ctx) override
     {
         using namespace DirectX::SimpleMath;

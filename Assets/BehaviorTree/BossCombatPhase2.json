@@ -62,21 +62,6 @@
             "startPin": 29
         },
         {
-            "endPin": 33,
-            "id": 124,
-            "startPin": 29
-        },
-        {
-            "endPin": 35,
-            "id": 125,
-            "startPin": 29
-        },
-        {
-            "endPin": 37,
-            "id": 126,
-            "startPin": 29
-        },
-        {
             "endPin": 39,
             "id": 127,
             "startPin": 29
@@ -94,21 +79,6 @@
         {
             "endPin": 46,
             "id": 130,
-            "startPin": 44
-        },
-        {
-            "endPin": 48,
-            "id": 131,
-            "startPin": 44
-        },
-        {
-            "endPin": 50,
-            "id": 132,
-            "startPin": 44
-        },
-        {
-            "endPin": 52,
-            "id": 133,
             "startPin": 44
         },
         {
@@ -132,21 +102,6 @@
             "startPin": 59
         },
         {
-            "endPin": 63,
-            "id": 138,
-            "startPin": 59
-        },
-        {
-            "endPin": 65,
-            "id": 139,
-            "startPin": 59
-        },
-        {
-            "endPin": 67,
-            "id": 140,
-            "startPin": 59
-        },
-        {
             "endPin": 69,
             "id": 141,
             "startPin": 59
@@ -164,21 +119,6 @@
         {
             "endPin": 76,
             "id": 144,
-            "startPin": 74
-        },
-        {
-            "endPin": 78,
-            "id": 145,
-            "startPin": 74
-        },
-        {
-            "endPin": 80,
-            "id": 146,
-            "startPin": 74
-        },
-        {
-            "endPin": 82,
-            "id": 147,
             "startPin": 74
         },
         {
@@ -202,21 +142,6 @@
             "startPin": 89
         },
         {
-            "endPin": 93,
-            "id": 152,
-            "startPin": 89
-        },
-        {
-            "endPin": 95,
-            "id": 153,
-            "startPin": 89
-        },
-        {
-            "endPin": 97,
-            "id": 154,
-            "startPin": 89
-        },
-        {
             "endPin": 99,
             "id": 155,
             "startPin": 89
@@ -234,21 +159,6 @@
         {
             "endPin": 163,
             "id": 164,
-            "startPin": 160
-        },
-        {
-            "endPin": 166,
-            "id": 167,
-            "startPin": 160
-        },
-        {
-            "endPin": 169,
-            "id": 170,
-            "startPin": 160
-        },
-        {
-            "endPin": 172,
-            "id": 173,
             "startPin": 160
         },
         {
@@ -320,6 +230,96 @@
             "id": 219,
             "startPin": 206,
             "endPin": 214
+        },
+        {
+            "id": 222,
+            "startPin": 29,
+            "endPin": 221
+        },
+        {
+            "id": 225,
+            "startPin": 29,
+            "endPin": 224
+        },
+        {
+            "id": 228,
+            "startPin": 29,
+            "endPin": 227
+        },
+        {
+            "id": 231,
+            "startPin": 44,
+            "endPin": 230
+        },
+        {
+            "id": 234,
+            "startPin": 44,
+            "endPin": 233
+        },
+        {
+            "id": 237,
+            "startPin": 44,
+            "endPin": 236
+        },
+        {
+            "id": 240,
+            "startPin": 59,
+            "endPin": 239
+        },
+        {
+            "id": 243,
+            "startPin": 59,
+            "endPin": 242
+        },
+        {
+            "id": 246,
+            "startPin": 59,
+            "endPin": 245
+        },
+        {
+            "id": 249,
+            "startPin": 74,
+            "endPin": 248
+        },
+        {
+            "id": 252,
+            "startPin": 74,
+            "endPin": 251
+        },
+        {
+            "id": 255,
+            "startPin": 74,
+            "endPin": 254
+        },
+        {
+            "id": 258,
+            "startPin": 89,
+            "endPin": 257
+        },
+        {
+            "id": 261,
+            "startPin": 89,
+            "endPin": 260
+        },
+        {
+            "id": 264,
+            "startPin": 89,
+            "endPin": 263
+        },
+        {
+            "id": 267,
+            "startPin": 160,
+            "endPin": 266
+        },
+        {
+            "id": 270,
+            "startPin": 160,
+            "endPin": 269
+        },
+        {
+            "id": 273,
+            "startPin": 160,
+            "endPin": 272
         }
     ],
     "editor_nodes": [
@@ -468,42 +468,6 @@
             "param": 0.0
         },
         {
-            "actionId": 112,
-            "id": 32,
-            "inputPinId": 33,
-            "name": "Wait(予備動作)",
-            "outputPinId": 0,
-            "posX": 2260.0,
-            "posY": 780.0,
-            "type": 4,
-            "param": 1.0,
-            "action": "A_Wait"
-        },
-        {
-            "actionId": 1006,
-            "id": 34,
-            "inputPinId": 35,
-            "name": "Strike(撃て)",
-            "outputPinId": 0,
-            "posX": 2520.0,
-            "posY": 780.0,
-            "type": 4,
-            "action": "A_DroneStrike",
-            "param": 0.0
-        },
-        {
-            "actionId": 112,
-            "id": 36,
-            "inputPinId": 37,
-            "name": "Wait(攻撃)",
-            "outputPinId": 0,
-            "posX": 2780.0,
-            "posY": 780.0,
-            "type": 4,
-            "param": 3.0,
-            "action": "A_Wait"
-        },
-        {
             "actionId": 2000,
             "id": 38,
             "inputPinId": 39,
@@ -548,42 +512,6 @@
             "type": 4,
             "action": "A_DroneTsunamiWave",
             "param": 0.0
-        },
-        {
-            "actionId": 112,
-            "id": 47,
-            "inputPinId": 48,
-            "name": "Wait(予備動作)",
-            "outputPinId": 0,
-            "posX": 3960.0,
-            "posY": 780.0,
-            "type": 4,
-            "param": 1.5,
-            "action": "A_Wait"
-        },
-        {
-            "actionId": 1006,
-            "id": 49,
-            "inputPinId": 50,
-            "name": "Strike(撃て)",
-            "outputPinId": 0,
-            "posX": 4220.0,
-            "posY": 780.0,
-            "type": 4,
-            "action": "A_DroneStrike",
-            "param": 0.0
-        },
-        {
-            "actionId": 112,
-            "id": 51,
-            "inputPinId": 52,
-            "name": "Wait(攻撃)",
-            "outputPinId": 0,
-            "posX": 4480.0,
-            "posY": 780.0,
-            "type": 4,
-            "param": 3.0,
-            "action": "A_Wait"
         },
         {
             "actionId": 2000,
@@ -632,42 +560,6 @@
             "param": 0.0
         },
         {
-            "actionId": 112,
-            "id": 62,
-            "inputPinId": 63,
-            "name": "Wait(予備動作)",
-            "outputPinId": 0,
-            "posX": 5660.0,
-            "posY": 780.0,
-            "type": 4,
-            "param": 1.5,
-            "action": "A_Wait"
-        },
-        {
-            "actionId": 1006,
-            "id": 64,
-            "inputPinId": 65,
-            "name": "Strike(撃て)",
-            "outputPinId": 0,
-            "posX": 5920.0,
-            "posY": 780.0,
-            "type": 4,
-            "action": "A_DroneStrike",
-            "param": 0.0
-        },
-        {
-            "actionId": 112,
-            "id": 66,
-            "inputPinId": 67,
-            "name": "Wait(攻撃)",
-            "outputPinId": 0,
-            "posX": 6180.0,
-            "posY": 780.0,
-            "type": 4,
-            "param": 3.0,
-            "action": "A_Wait"
-        },
-        {
             "actionId": 2000,
             "id": 68,
             "inputPinId": 69,
@@ -712,42 +604,6 @@
             "type": 4,
             "action": "A_DroneMegaClapLowerFirst",
             "param": 0.0
-        },
-        {
-            "actionId": 112,
-            "id": 77,
-            "inputPinId": 78,
-            "name": "Wait(予備動作)",
-            "outputPinId": 0,
-            "posX": 7360.0,
-            "posY": 780.0,
-            "type": 4,
-            "param": 1.5,
-            "action": "A_Wait"
-        },
-        {
-            "actionId": 1006,
-            "id": 79,
-            "inputPinId": 80,
-            "name": "Strike(撃て)",
-            "outputPinId": 0,
-            "posX": 7620.0,
-            "posY": 780.0,
-            "type": 4,
-            "action": "A_DroneStrike",
-            "param": 0.0
-        },
-        {
-            "actionId": 112,
-            "id": 81,
-            "inputPinId": 82,
-            "name": "Wait(攻撃)",
-            "outputPinId": 0,
-            "posX": 7880.0,
-            "posY": 780.0,
-            "type": 4,
-            "param": 2.0,
-            "action": "A_Wait"
         },
         {
             "actionId": 2000,
@@ -796,42 +652,6 @@
             "param": 0.0
         },
         {
-            "actionId": 112,
-            "id": 92,
-            "inputPinId": 93,
-            "name": "Wait(予備動作)",
-            "outputPinId": 0,
-            "posX": 9060.0,
-            "posY": 780.0,
-            "type": 4,
-            "param": 1.5,
-            "action": "A_Wait"
-        },
-        {
-            "actionId": 1006,
-            "id": 94,
-            "inputPinId": 95,
-            "name": "Strike(撃て)",
-            "outputPinId": 0,
-            "posX": 9320.0,
-            "posY": 780.0,
-            "type": 4,
-            "action": "A_DroneStrike",
-            "param": 0.0
-        },
-        {
-            "actionId": 112,
-            "id": 96,
-            "inputPinId": 97,
-            "name": "Wait(攻撃)",
-            "outputPinId": 0,
-            "posX": 9580.0,
-            "posY": 780.0,
-            "type": 4,
-            "param": 2.0,
-            "action": "A_Wait"
-        },
-        {
             "actionId": 2000,
             "id": 98,
             "inputPinId": 99,
@@ -876,42 +696,6 @@
             "type": 4,
             "action": "A_DroneSquadAssault",
             "param": 0.0
-        },
-        {
-            "actionId": 112,
-            "id": 165,
-            "inputPinId": 166,
-            "name": "Wait2.0(接近)",
-            "outputPinId": 0,
-            "posX": 11760.0,
-            "posY": 832.0,
-            "type": 4,
-            "param": 2.0,
-            "action": "A_Wait"
-        },
-        {
-            "actionId": 1006,
-            "id": 168,
-            "inputPinId": 169,
-            "name": "Strike(突入)",
-            "outputPinId": 0,
-            "posX": 12020.0,
-            "posY": 832.0,
-            "type": 4,
-            "action": "A_DroneStrike",
-            "param": 0.0
-        },
-        {
-            "actionId": 112,
-            "id": 171,
-            "inputPinId": 172,
-            "name": "Wait3.0(突入)",
-            "outputPinId": 0,
-            "posX": 12280.0,
-            "posY": 832.0,
-            "type": 4,
-            "param": 3.0,
-            "action": "A_Wait"
         },
         {
             "actionId": 2000,
@@ -1070,9 +854,225 @@
             "action": "A_BossBackStep",
             "actionId": 1104,
             "param": 0.8
+        },
+        {
+            "id": 220,
+            "type": 4,
+            "name": "Wait(予備動作)",
+            "posX": 2260.0,
+            "posY": 910.0,
+            "action": "A_Wait",
+            "actionId": 112,
+            "param": 1.2,
+            "inputPinId": 221,
+            "outputPinId": 0
+        },
+        {
+            "id": 223,
+            "type": 4,
+            "name": "攻撃実行",
+            "posX": 2520.0,
+            "posY": 910.0,
+            "action": "A_DroneStrike",
+            "actionId": 1006,
+            "param": 0.0,
+            "inputPinId": 224,
+            "outputPinId": 0
+        },
+        {
+            "id": 226,
+            "type": 4,
+            "name": "Wait(攻撃中)",
+            "posX": 2780.0,
+            "posY": 910.0,
+            "action": "A_Wait",
+            "actionId": 112,
+            "param": 4.2,
+            "inputPinId": 227,
+            "outputPinId": 0
+        },
+        {
+            "id": 229,
+            "type": 4,
+            "name": "Wait(予備動作)",
+            "posX": 3960.0,
+            "posY": 910.0,
+            "action": "A_Wait",
+            "actionId": 112,
+            "param": 1.5,
+            "inputPinId": 230,
+            "outputPinId": 0
+        },
+        {
+            "id": 232,
+            "type": 4,
+            "name": "攻撃実行",
+            "posX": 4220.0,
+            "posY": 910.0,
+            "action": "A_DroneStrike",
+            "actionId": 1006,
+            "param": 0.0,
+            "inputPinId": 233,
+            "outputPinId": 0
+        },
+        {
+            "id": 235,
+            "type": 4,
+            "name": "Wait(攻撃中)",
+            "posX": 4480.0,
+            "posY": 910.0,
+            "action": "A_Wait",
+            "actionId": 112,
+            "param": 2.0,
+            "inputPinId": 236,
+            "outputPinId": 0
+        },
+        {
+            "id": 238,
+            "type": 4,
+            "name": "Wait(予備動作)",
+            "posX": 5660.0,
+            "posY": 910.0,
+            "action": "A_Wait",
+            "actionId": 112,
+            "param": 1.5,
+            "inputPinId": 239,
+            "outputPinId": 0
+        },
+        {
+            "id": 241,
+            "type": 4,
+            "name": "攻撃実行",
+            "posX": 5920.0,
+            "posY": 910.0,
+            "action": "A_DroneStrike",
+            "actionId": 1006,
+            "param": 0.0,
+            "inputPinId": 242,
+            "outputPinId": 0
+        },
+        {
+            "id": 244,
+            "type": 4,
+            "name": "Wait(攻撃中)",
+            "posX": 6180.0,
+            "posY": 910.0,
+            "action": "A_Wait",
+            "actionId": 112,
+            "param": 2.0,
+            "inputPinId": 245,
+            "outputPinId": 0
+        },
+        {
+            "id": 247,
+            "type": 4,
+            "name": "Wait(予備動作)",
+            "posX": 7360.0,
+            "posY": 910.0,
+            "action": "A_Wait",
+            "actionId": 112,
+            "param": 1.5,
+            "inputPinId": 248,
+            "outputPinId": 0
+        },
+        {
+            "id": 250,
+            "type": 4,
+            "name": "攻撃実行",
+            "posX": 7620.0,
+            "posY": 910.0,
+            "action": "A_DroneStrike",
+            "actionId": 1006,
+            "param": 0.0,
+            "inputPinId": 251,
+            "outputPinId": 0
+        },
+        {
+            "id": 253,
+            "type": 4,
+            "name": "Wait(攻撃中)",
+            "posX": 7880.0,
+            "posY": 910.0,
+            "action": "A_Wait",
+            "actionId": 112,
+            "param": 2.0,
+            "inputPinId": 254,
+            "outputPinId": 0
+        },
+        {
+            "id": 256,
+            "type": 4,
+            "name": "Wait(予備動作)",
+            "posX": 9060.0,
+            "posY": 910.0,
+            "action": "A_Wait",
+            "actionId": 112,
+            "param": 1.5,
+            "inputPinId": 257,
+            "outputPinId": 0
+        },
+        {
+            "id": 259,
+            "type": 4,
+            "name": "攻撃実行",
+            "posX": 9320.0,
+            "posY": 910.0,
+            "action": "A_DroneStrike",
+            "actionId": 1006,
+            "param": 0.0,
+            "inputPinId": 260,
+            "outputPinId": 0
+        },
+        {
+            "id": 262,
+            "type": 4,
+            "name": "Wait(攻撃中)",
+            "posX": 9580.0,
+            "posY": 910.0,
+            "action": "A_Wait",
+            "actionId": 112,
+            "param": 2.0,
+            "inputPinId": 263,
+            "outputPinId": 0
+        },
+        {
+            "id": 265,
+            "type": 4,
+            "name": "Wait(予備動作)",
+            "posX": 11760.0,
+            "posY": 962.0,
+            "action": "A_Wait",
+            "actionId": 112,
+            "param": 2.0,
+            "inputPinId": 266,
+            "outputPinId": 0
+        },
+        {
+            "id": 268,
+            "type": 4,
+            "name": "攻撃実行",
+            "posX": 12020.0,
+            "posY": 962.0,
+            "action": "A_DroneStrike",
+            "actionId": 1006,
+            "param": 0.0,
+            "inputPinId": 269,
+            "outputPinId": 0
+        },
+        {
+            "id": 271,
+            "type": 4,
+            "name": "Wait(攻撃中)",
+            "posX": 12280.0,
+            "posY": 962.0,
+            "action": "A_Wait",
+            "actionId": 112,
+            "param": 10.0,
+            "inputPinId": 272,
+            "outputPinId": 0
         }
     ],
-    "last_id_counter": 219,
+    "last_id_counter": 273,
     "nodes": [
         {
             "type": "Selector",
@@ -1317,7 +1317,7 @@
         {
             "type": "Action",
             "action": "A_Wait",
-            "param": 1.0,
+            "param": 1.2,
             "actionOrConditionId": 112,
             "children": []
         },
@@ -1331,7 +1331,7 @@
         {
             "type": "Action",
             "action": "A_Wait",
-            "param": 3.0,
+            "param": 4.2,
             "actionOrConditionId": 112,
             "children": []
         },
@@ -1373,7 +1373,7 @@
         {
             "type": "Action",
             "action": "A_Wait",
-            "param": 3.0,
+            "param": 2.0,
             "actionOrConditionId": 112,
             "children": []
         },
@@ -1415,7 +1415,7 @@
         {
             "type": "Action",
             "action": "A_Wait",
-            "param": 3.0,
+            "param": 2.0,
             "actionOrConditionId": 112,
             "children": []
         },
@@ -1541,7 +1541,7 @@
         {
             "type": "Action",
             "action": "A_Wait",
-            "param": 3.0,
+            "param": 10.0,
             "actionOrConditionId": 112,
             "children": []
         },
