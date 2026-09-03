@@ -51,6 +51,14 @@ void UIInputSystem::Update(float /*dt*/)
     //   エディタ: GameView がRTをレターボックス縮小して貼るため、その表示矩形で正規化して戻す。
     float mx = static_cast<float>(mouse.GetPositionX());
     float my = static_cast<float>(mouse.GetPositionY());
+
+    // ゲーム画面が実際に出ているフレームか。出ていないなら入力を一切受けない。
+    //   エディタで GameView が別タブの裏に隠れていると、誰も矩形を書かないので
+    //   valid=false になる。そこで恒等写像へ落とすと、画面に出ていないボタンの矩形へ
+    //   生のクライアント座標が当たり、他のエディタウィンドウ上のクリックが
+    //   それを踏んでしまう（BTウィンドウのクリックがポーズメニューのQUITを押した）。
+    bool inputUsable = true;
+
     if (m_world->HasResource<GameViewportInfo>())
     {
         const GameViewportInfo &vp = m_world->GetResource<GameViewportInfo>();
@@ -58,6 +66,13 @@ void UIInputSystem::Update(float /*dt*/)
         {
             mx = (mx - vp.x) / vp.w * screenW; // 画像内ローカル → [0..1] → UI空間
             my = (my - vp.y) / vp.h * screenH;
+        }
+        else if (vp.editorVisible)
+        {
+            // エディタは動いているのに GameView が描かれていない。
+            //   キーの決定も止める。BTノードの名前入力中に Enter を押すと、
+            //   裏のUIボタンが決定されるのが同じ理屈で起きるため。
+            inputUsable = false;
         }
     }
 
@@ -67,8 +82,9 @@ void UIInputSystem::Update(float /*dt*/)
     const bool navDown  = kb.IsTriggered(VKEY_DOWN)  || gp.IsTriggered(GamePad::BTN_DOWN);
     const bool navLeft  = kb.IsTriggered(VKEY_LEFT)  || gp.IsTriggered(GamePad::BTN_LEFT);
     const bool navRight = kb.IsTriggered(VKEY_RIGHT) || gp.IsTriggered(GamePad::BTN_RIGHT);
-    const bool confirm  = kb.IsTriggered(VKEY_RETURN) || kb.IsTriggered(VKEY_SPACE) || gp.IsTriggered(GamePad::BTN_A);
-    const bool anyDir   = navUp || navDown || navLeft || navRight;
+    const bool confirm  = inputUsable
+                       && (kb.IsTriggered(VKEY_RETURN) || kb.IsTriggered(VKEY_SPACE) || gp.IsTriggered(GamePad::BTN_A));
+    const bool anyDir   = inputUsable && (navUp || navDown || navLeft || navRight);
 
     auto inRect = [&](const UITransformComponent &t) {
         return mx >= t.computedPos.x && mx <= t.computedPos.x + t.computedSize.x &&
@@ -86,8 +102,8 @@ void UIInputSystem::Update(float /*dt*/)
         CCL::UI::ComputeUIRect(*m_world, id, t, screenW, screenH); // 階層(Canvas offset/scale)込みで解決
         if (!inter.interactable) return;
 
-        // マウスヒット（最前面優先）
-        if (inRect(t) && (topID == InvalidEntityID || inter.priority >= topPriority))
+        // マウスヒット（最前面優先）。ゲーム画面が出ていないフレームは誰にも当てない。
+        if (inputUsable && inRect(t) && (topID == InvalidEntityID || inter.priority >= topPriority))
         {
             topID       = id;
             topPriority = inter.priority;

@@ -78,6 +78,9 @@ struct EditorBTNode {
     float width = 400.0f;
     float height = 400.0f;
 
+    // グループの色（kGroupPalette の添字）。役割ごとに塗り分けて見分けるため。
+    int groupColorIndex = 0;
+
     // デコレーター設定
     int decoratorType = 0;
 
@@ -152,6 +155,37 @@ private:
     void UpdateExecutionOrder();
 
     /**
+     * @brief 木構造を見て全ノードを自動で並べ直す
+     *
+     * なぜ「実行順が変わらない」と言えるか:
+     *   このエディタは子の実行順を X 座標の左右で表している（UE5 と同じ仕様）。
+     *   したがって整列でXを書き換えるのは、本来なら挙動を変える操作にあたる。
+     *   そこで配置前に各親の子を「現在のX順」で並べ、その順序のまま左から詰め直す。
+     *   相対順序が保存されるので、実行順は整列の前後で必ず一致する。
+     *
+     * @note 座標を書くだけで ed::SetNodePosition は呼ばない。positionInitialized を
+     *       false に戻し、描画ループ側の既存の反映経路に乗せる。
+     */
+    void AutoLayout();
+
+    /**
+     * @brief 選択中のノードをちょうど囲むサイズのコメントグループを作る
+     *
+     * 空のグループを置いてから手で広げる操作が要らなくなる。
+     * グループを「後から囲む道具」にすると、整理は書き終わってからで良くなる。
+     */
+    void GroupSelectedNodes();
+
+    /**
+     * @brief グループ枠の中に入っているノードのIDを集める
+     * @param groupId 対象のグループノードID
+     *
+     * 判定はノードの中心が枠内にあるかどうか。完全内包を要求すると、
+     * 枠ぎりぎりのノードが整列のたびに所属を出入りして枠が暴れる。
+     */
+    std::vector<uint32_t> CollectNodesInGroup(uint32_t groupId) const;
+
+    /**
      * @brief 現在選択されている複数のノードと内部リンクを丸ごと複製（コピー＆ペースト）する
      */
     void DuplicateSelectedNodes();
@@ -219,6 +253,10 @@ private:
     nlohmann::json m_lastSavedState;   // 直前のグラフ状態（Undo判定用）
 
     ImVec2 m_newNodeSpawnPos = { 0.0f, 0.0f }; // 右クリックした瞬間のスクリーン座標
+
+    // 整列の要求フラグ。ツールバーで押された時点では ed::Begin の外に居るため、
+    // その場で実行せず、キャンバス描画の頭まで持ち越す。
+    bool m_layoutRequested = false;
 
     bool m_autoFollow = false;         // 実行中ノードへの自動追従フラグ
     uint32_t m_lastTrackedNodeId = 0;  // 最後にカメラが追従したノードID

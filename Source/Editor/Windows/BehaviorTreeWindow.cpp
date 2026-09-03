@@ -6,7 +6,11 @@
 #include <imgui_node_editor.h>
 #include <imgui.h>
 #include <algorithm>
+#include <cfloat>
+#include <functional>
 #include <queue>
+#include <unordered_map>
+#include <unordered_set>
 #include <fstream>
 #include <cstring>
 #include <cstdio>
@@ -28,6 +32,64 @@ namespace {
 // ライブラリに預けているだけなので、切り詰めても情報は落ちない。
 // 各所で素の static_cast を書くと「なぜ安全か」が散らばるため1箇所に集める。
 inline uint32_t ToEditorId(uintptr_t id) { return static_cast<uint32_t>(id); }
+
+// コメントグループの配色。
+//   見出し帯・枠線・内側の塗りの3色で1組。役割ごと（索敵／近接／遠距離…）に
+//   塗り分けると、ノードが増えても「どの塊の話か」がズームアウトしたまま分かる。
+//
+// 見出し帯を一番濃くしている理由:
+//   内側の塗りは、下に敷かれるノード背景(StyleColor_NodeBg)と重なるうえ、
+//   面積が広いぶん濃くすると中のノードが読みにくくなる。結果としてどうしても
+//   薄くせざるを得ず、色の違いが分からない。帯は面積が小さく重なりも無いので、
+//   ここを濃くするのが一番効く。
+struct GroupPalette {
+    const char *name;
+    ImU32       header; // 見出し帯（一番目に入る）
+    ImU32       border; // 枠線
+    ImU32       bg;     // 内側の塗り
+};
+
+const GroupPalette kGroupPalette[] = {
+    {"グレー", IM_COL32( 78,  78,  84, 235), IM_COL32(150, 150, 158, 160), IM_COL32(32, 32, 36, 110)},
+    {"青",     IM_COL32( 42,  84, 140, 235), IM_COL32( 90, 160, 240, 190), IM_COL32(22, 34, 52, 110)},
+    {"緑",     IM_COL32( 40, 104,  60, 235), IM_COL32( 96, 200, 120, 190), IM_COL32(22, 42, 28, 110)},
+    {"黄",     IM_COL32(126, 104,  36, 235), IM_COL32(230, 196,  90, 190), IM_COL32(46, 40, 20, 110)},
+    {"赤",     IM_COL32(128,  50,  44, 235), IM_COL32(232, 110, 100, 190), IM_COL32(48, 24, 22, 110)},
+    {"紫",     IM_COL32( 98,  52, 122, 235), IM_COL32(196, 120, 226, 190), IM_COL32(40, 24, 48, 110)},
+};
+constexpr int kGroupPaletteCount = static_cast<int>(sizeof(kGroupPalette) / sizeof(kGroupPalette[0]));
+
+// 整列の間隔。
+constexpr float kLayoutHGap    = 40.0f;  // 兄弟どうしの間隔
+constexpr float kLayoutVGap    = 90.0f;  // 段と段の間隔
+constexpr float kLayoutTreeGap = 160.0f; // 根が複数あるときの木と木の間隔
+constexpr float kLayoutDefaultW = 200.0f; // まだ描かれておらずサイズ不明なノードの仮の幅
+constexpr float kLayoutDefaultH = 120.0f; // 同・仮の高さ
+
+// グループがノードを囲むときの余白と、見出し帯の高さ。
+constexpr float kGroupPad     = 24.0f;
+constexpr float kGroupHeaderH = 30.0f;
+
+// 「枠(GroupBounds)」と「ノード全体(Bounds)」のズレ。
+//
+// なぜ必要か:
+//   ライブラリはグループを ノード＝パディング＋見出し帯＋枠 という積み方で持つ。
+//   EditorBTNode::width/height は ed::SetGroupSize に渡す値なので「枠」の寸法で、
+//   ed::SetNodePosition に渡す posX/posY は「ノード全体」の左上。単位が違う。
+//   囲みたい矩形から両者を逆算するのに、この差分が要る。
+ImVec2 GroupFrameOffset()
+{
+    const ImVec4 pad = ed::GetStyle().NodePadding;
+    return ImVec2(pad.x, pad.y + kGroupHeaderH + ImGui::GetStyle().ItemSpacing.y);
+}
+
+// ノード全体の寸法 − 枠の寸法。
+ImVec2 GroupFrameExtra()
+{
+    const ImVec4 pad = ed::GetStyle().NodePadding;
+    const ImVec2 off = GroupFrameOffset();
+    return ImVec2(off.x + pad.z, off.y + pad.w);
+}
 } // namespace
 
 
@@ -278,6 +340,7 @@ nlohmann::json BehaviorTreeWindow::GetGraphStateAsJson() {
         if (node.type == EditorBTNodeType::Group) {
             jn["width"] = node.width;
             jn["height"] = node.height;
+            jn["groupColorIndex"] = node.groupColorIndex;
         }
 
         // デコレーター固有のデータ
@@ -347,6 +410,7 @@ void BehaviorTreeWindow::RestoreGraphState(const nlohmann::json& state) {
         if (node.type == EditorBTNodeType::Group) {
             node.width = jn.value("width", 400.0f);
             node.height = jn.value("height", 400.0f);
+            node.groupColorIndex = jn.value("groupColorIndex", 0);
         }
         if (node.type == EditorBTNodeType::Decorator) {
             node.decoratorType = jn.value("decoratorType", 0);
@@ -490,6 +554,22 @@ void BehaviorTreeWindow::DrawToolbar() {
     //    CreateNode(EditorBTNodeType::Decorator, "デコレーター (Decorator)", 600, 0);
 
     //ImGui::SameLine();
+    if (ImGui::Button("整列 (Auto Layout)"))
+        m_layoutRequested = true; // 実行はキャンバス描画の頭まで持ち越す
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("木の形に合わせて全ノードを並べ直します。\n"
+                          "子の左右の並び順は保たれるので、実行順は変わりません。\n"
+                          "コメント枠も、囲んでいたノードに合わせて追従します。");
+    }
+
+    ImGui::SameLine();
+    if (ImGui::Button("選択を囲む (Ctrl+G)"))
+        GroupSelectedNodes();
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("選択中のノードをちょうど囲むコメント枠を作ります。");
+    }
+
+    ImGui::SameLine();
     ImGui::Spacing();
     ImGui::SameLine();
     ImGui::Checkbox("自動追従 (Auto Follow)", &m_autoFollow);
@@ -559,6 +639,14 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext& context) {
     // ImVec2(0.0f, 0.0f) をやめ、安全が保証されたサイズを明示的に渡す
     ed::Begin("My Node Editor");
 
+    // 整列はここで実行する。
+    //   ed::GetNodeSize が前フレームの実サイズを返すので、種類ごとの高さの違いを
+    //   織り込んだ段組みができる。ed::Begin の外だと値が取れない。
+    if (m_layoutRequested)
+    {
+        AutoLayout();
+        m_layoutRequested = false;
+    }
 
     // =======================================================
     //  選択中のエンティティから、実行中のAI状態（デバッグ配列）を取得
@@ -574,6 +662,15 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext& context) {
     for (auto& node : m_nodes) {
         if (!node.positionInitialized) {
             ed::SetNodePosition(node.id, ImVec2(node.posX, node.posY));
+
+            // グループの大きさもここで一緒に流し込む。
+            //   ed::Group(size) の引数は、一度グループとして登録された後は無視され、
+            //   ライブラリが自分の m_GroupBounds を使う。外から変える口はこれだけ。
+            //   生成直後・読み込み・Undo・整列のどれもこの分岐を通るので、
+            //   ここに置いておけば呼び忘れる経路が無くなる。
+            if (node.type == EditorBTNodeType::Group)
+                ed::SetGroupSize(node.id, ImVec2(node.width, node.height));
+
             node.positionInitialized = true;
         }
 
@@ -583,15 +680,29 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext& context) {
         if (node.type == EditorBTNodeType::Group) {
 
             // --- A. 選択状態による動的なハイライト（UE5風オレンジ発光） ---
-            bool isSelected = ed::IsNodeSelected(node.id);
-            ImColor borderColor = isSelected ? ImColor(255, 165, 0, 255) : ImColor(150, 150, 150, 80);
-            ImColor bgColor = isSelected ? ImColor(40, 40, 40, 100) : ImColor(30, 30, 30, 60);
+            //   非選択時はグループごとの色を使う。役割で塗り分けると、
+            //   ズームアウトしたままでも「どの塊の話か」が読める。
+            const int      paletteIndex = (node.groupColorIndex >= 0 && node.groupColorIndex < kGroupPaletteCount)
+                                            ? node.groupColorIndex : 0;
+            const GroupPalette &palette  = kGroupPalette[paletteIndex];
 
+            bool    isSelected  = ed::IsNodeSelected(node.id);
+            ImColor borderColor = isSelected ? ImColor(255, 165, 0, 255) : ImColor(palette.border);
+            ImColor bgColor     = ImColor(palette.bg);
+            ImColor headerColor = isSelected ? ImColor(150, 95, 20, 245) : ImColor(palette.header);
+
+            // ノード背景は透明にする。
+            //   グループもノードなので、まず Bounds 全面に StyleColor_NodeBg
+            //   （既定 32,32,32,200）が敷かれる。その上に薄い枠色を重ねても
+            //   ほとんど色が出ない。これが「色分けが反映されない」の正体。
+            ed::PushStyleColor(ed::StyleColor_NodeBg, ImColor(0, 0, 0, 0));
             ed::PushStyleColor(ed::StyleColor_GroupBg, bgColor);
             ed::PushStyleColor(ed::StyleColor_GroupBorder, borderColor);
             ed::PushStyleVar(ed::StyleVar_NodeRounding, 8.0f);
+            ed::PushStyleVar(ed::StyleVar_GroupBorderWidth, isSelected ? 3.0f : 2.0f);
 
-            // BeginNode を先に呼ぶ
+            // 色は BeginNode の中で Node へ焼き込まれる（NodeBuilder::Begin）。
+            // 実際の描画は ed::End() なので、Push は必ず BeginNode より前に置くこと。
             ed::BeginNode(node.id);
             ImGui::PushID(node.id);
 
@@ -600,22 +711,30 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext& context) {
             ImVec2 labelScreenPos = ImGui::GetCursorScreenPos();
 
             // ===============================================================
-            // ヘッダーは Dummy で領域を取らず「絵」として描く。
-            // ノード幅ぶんの Dummy を置くと、その幅がさらにノード幅へ反映されて
-            // 毎フレーム膨張していくため、最小サイズに留める。
+            // 見出し帯は「高さだけ持つ」Dummy で場所を取る。
+            //
+            // 掴める範囲がここで決まる:
+            //   ライブラリはグループの Header 領域（＝ドラッグと選択ができる帯）を
+            //   「ノード上端から枠の上端まで」として計算する。枠の上端は、この
+            //   Dummy の下端で決まる。以前は Dummy(1,1) だったため、帯を28px描いて
+            //   いても掴めるのは1pxしかなかった。見た目と当たり判定が食い違う原因。
+            //
+            // 幅を1pxのままにする理由:
+            //   幅はそのままノード幅へ反映され、次のフレームの入力になって
+            //   毎フレーム膨張する。高さは枠の高さと足し合わされるだけなので安全。
             // ===============================================================
-            ImGui::Dummy(ImVec2(1.0f, 1.0f));
+            ImGui::Dummy(ImVec2(1.0f, kGroupHeaderH));
 
             ImDrawList* groupDrawList = ImGui::GetWindowDrawList();
 
-            // --- B. 背景グラフィックとしてのヘッダー帯の描画 ---
-            // ※ ダミーで領域を取るのではなく、文字の後ろに直接「絵」として描くことで膨張を防ぐ
-            float headerHeight = 28.0f;
-            ImVec2 headerMax = ImVec2(labelScreenPos.x + node.width, labelScreenPos.y + headerHeight);
+            // --- B. 見出し帯の描画。上で取った Dummy の範囲にぴったり重ねる ---
+            const ImVec4 nodePad   = ed::GetStyle().NodePadding;
+            const ImVec2 nodeMin   = ImVec2(labelScreenPos.x - nodePad.x, labelScreenPos.y - nodePad.y);
+            const float  bandBottom = labelScreenPos.y + kGroupHeaderH + ImGui::GetStyle().ItemSpacing.y;
+            const ImVec2 headerMax = ImVec2(nodeMin.x + node.width + GroupFrameExtra().x, bandBottom);
 
-            // ヘッダーの背景色と下部のライン
-            groupDrawList->AddRectFilled(labelScreenPos, headerMax, ImColor(50, 50, 50, 180), 8.0f, ImDrawFlags_RoundCornersTop);
-            groupDrawList->AddLine(ImVec2(labelScreenPos.x, headerMax.y), headerMax, ImColor(0, 0, 0, 150), 2.0f);
+            groupDrawList->AddRectFilled(nodeMin, headerMax, headerColor, 8.0f, ImDrawFlags_RoundCornersTop);
+            groupDrawList->AddLine(ImVec2(nodeMin.x, headerMax.y), headerMax, ImColor(0, 0, 0, 150), 2.0f);
 
             if (currentZoom < 0.6f) {
                 // ズームアウト時はフォントを拡大して視認性を保つ
@@ -626,13 +745,13 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext& context) {
 
                 groupDrawList->AddText(
                     ImGui::GetFont(), customFontSize,
-                    labelScreenPos, ImColor(220, 220, 220, 255),
+                    labelScreenPos, ImColor(235, 235, 235, 255),
                     node.name.c_str());
             }
             else {
-                // 通常時のテキスト（少し右下にズラして綺麗に配置）
-                ImVec2 textPos = ImVec2(labelScreenPos.x + 8, labelScreenPos.y + 6);
-                groupDrawList->AddText(textPos, ImColor(220, 220, 220, 255), ("// " + node.name).c_str());
+                // 通常時のテキスト（帯の中に収まる位置へ）
+                ImVec2 textPos = ImVec2(nodeMin.x + 10.0f, labelScreenPos.y + 4.0f);
+                groupDrawList->AddText(textPos, ImColor(240, 240, 240, 255), node.name.c_str());
             }
 
             // ed::Group() がリサイズハンドルを自動描画・管理する
@@ -641,15 +760,18 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext& context) {
             ImGui::PopID();
             ed::EndNode();
 
-            ed::PopStyleVar(1);
-            ed::PopStyleColor(2);
+            ed::PopStyleVar(2);
+            ed::PopStyleColor(3);
 
-            // EndNode 後にエディタが管理している実際のサイズを読み返す
-            ImVec2 actualSize = ed::GetNodeSize(node.id);
+            // EndNode 後に、ユーザーがハンドルで変えたサイズを読み返す。
+            //   GetNodeSize が返すのは「ノード全体」。width/height は
+            //   ed::SetGroupSize へ渡す「枠」の寸法なので、差分を引いて単位を合わせる。
+            //   引かずに入れると、保存と読み込みのたびに枠が余白ぶん太っていく。
+            ImVec2       actualSize = ed::GetNodeSize(node.id);
+            const ImVec2 extra      = GroupFrameExtra();
             if (actualSize.x > 10.0f && actualSize.y > 10.0f) {
-                // 最小サイズを下回らないようにガード
-                node.width = (std::max)(100.0f, actualSize.x);
-                node.height = (std::max)(50.0f, actualSize.y);
+                node.width  = (std::max)(100.0f, actualSize.x - extra.x);
+                node.height = (std::max)(50.0f,  actualSize.y - extra.y);
             }
 
             // 座標を更新して次のノードへ
@@ -989,6 +1111,11 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext& context) {
         if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_D)) {
             DuplicateSelectedNodes();
         }
+
+        // Ctrl + G で選択ノードをコメント枠で囲む
+        if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_G)) {
+            GroupSelectedNodes();
+        }
     }
 
 
@@ -1132,6 +1259,27 @@ void BehaviorTreeWindow::DrawInspector() {
             // ---------------------------------------------------------
             // 各種プロパティの編集とUndoフラグのセット
             // ---------------------------------------------------------
+            if (it->type == EditorBTNodeType::Group) {
+                ImGui::Text("枠の色:");
+                // 色見本を横に並べる。名前のコンボより、押した結果が想像しやすい。
+                for (int i = 0; i < kGroupPaletteCount; ++i) {
+                    if (i > 0) ImGui::SameLine();
+                    ImGui::PushID(i);
+                    const bool active = (it->groupColorIndex == i);
+                    if (ImGui::ColorButton(kGroupPalette[i].name,
+                                           ImGui::ColorConvertU32ToFloat4(kGroupPalette[i].header),
+                                           ImGuiColorEditFlags_NoAlpha,
+                                           ImVec2(active ? 28.0f : 22.0f, 22.0f))) {
+                        it->groupColorIndex = i;
+                        needsUndo   = true;
+                        undoMessage = "Change Group Color";
+                    }
+                    ImGui::PopID();
+                }
+                ImGui::TextDisabled("上の「名前 (Name)」がそのまま枠の見出しになります");
+                ImGui::Separator();
+            }
+
             if (it->type == EditorBTNodeType::Condition) {
                 ImGui::Separator();
                 ImGui::Text("条件設定 (Condition):");
@@ -1281,6 +1429,316 @@ void BehaviorTreeWindow::DeleteNodeAndLinks(uint32_t nodeId) {
     CCL_LOG_INFO(LogCategory::Editor, "Node(ID:%u) and its connected links were deleted.", nodeId);
 }
 
+
+// ====================================================================
+// 自動整列
+// ====================================================================
+std::vector<uint32_t> BehaviorTreeWindow::CollectNodesInGroup(uint32_t groupId) const
+{
+    std::vector<uint32_t> result;
+
+    const ImVec2 gPos  = ed::GetNodePosition(groupId);
+    const ImVec2 gSize = ed::GetNodeSize(groupId);
+    if (gSize.x <= 0.0f || gSize.y <= 0.0f) return result; // まだ一度も描かれていない
+
+    for (const auto &n : m_nodes)
+    {
+        if (n.id == groupId) continue;
+        if (n.type == EditorBTNodeType::Group) continue; // 入れ子は今は扱わない
+
+        const ImVec2 p = ed::GetNodePosition(n.id);
+        const ImVec2 s = ed::GetNodeSize(n.id);
+        const float  cx = p.x + s.x * 0.5f;
+        const float  cy = p.y + s.y * 0.5f;
+
+        if (cx >= gPos.x && cx <= gPos.x + gSize.x &&
+            cy >= gPos.y && cy <= gPos.y + gSize.y)
+            result.push_back(n.id);
+    }
+    return result;
+}
+
+void BehaviorTreeWindow::AutoLayout()
+{
+    if (m_nodes.empty()) return;
+
+    RecordStateForUndo("Auto Layout");
+
+    // IDからノードを引く表。毎回 find_if すると O(N^2) になる。
+    std::unordered_map<uint32_t, EditorBTNode *> byId;
+    for (auto &n : m_nodes) byId[n.id] = &n;
+
+    auto find = [&](uint32_t id) -> EditorBTNode * {
+        auto it = byId.find(id);
+        return (it == byId.end()) ? nullptr : it->second;
+    };
+
+    // 実サイズ。まだ描かれていないノードは仮値で置く。
+    auto sizeOf = [&](uint32_t id) {
+        const ImVec2 s = ed::GetNodeSize(id);
+        return ImVec2((s.x > 1.0f) ? s.x : kLayoutDefaultW,
+                      (s.y > 1.0f) ? s.y : kLayoutDefaultH);
+    };
+
+    // ---------------------------------------------------------------
+    // 1. グループが今どのノードを囲んでいるかを控える
+    //    ノードを動かした後では判定できないので、必ず動かす前に取る。
+    // ---------------------------------------------------------------
+    struct GroupSnapshot { uint32_t id; std::vector<uint32_t> members; };
+    std::vector<GroupSnapshot> groups;
+    for (const auto &n : m_nodes)
+        if (n.type == EditorBTNodeType::Group)
+            groups.push_back({n.id, CollectNodesInGroup(n.id)});
+
+    // ---------------------------------------------------------------
+    // 2. 親→子のリストを作る
+    // ---------------------------------------------------------------
+    std::unordered_map<uint32_t, std::vector<uint32_t>> childrenOf;
+    std::unordered_set<uint32_t>                        hasParent;
+
+    for (const auto &link : m_links)
+    {
+        const EditorBTNode *parent = nullptr;
+        const EditorBTNode *child  = nullptr;
+        for (const auto &n : m_nodes)
+        {
+            if (n.outputPin.id != 0 && n.outputPin.id == link.startPinId) parent = &n;
+            if (n.inputPin.id  != 0 && n.inputPin.id  == link.endPinId)   child  = &n;
+        }
+        if (!parent || !child) continue;
+
+        childrenOf[parent->id].push_back(child->id);
+        hasParent.insert(child->id);
+    }
+
+    // ここが整列の安全性の要。子を「今のX順」に並べてから配置するので、
+    // 相対順序が保たれ、実行順は整列の前後で変わらない。
+    for (auto &kv : childrenOf)
+    {
+        std::sort(kv.second.begin(), kv.second.end(), [&](uint32_t a, uint32_t b) {
+            const EditorBTNode *na = find(a);
+            const EditorBTNode *nb = find(b);
+            if (!na || !nb) return false;
+            return na->posX < nb->posX;
+        });
+    }
+
+    // ---------------------------------------------------------------
+    // 3. 部分木の幅と深さを求める（葉から根へ）
+    // ---------------------------------------------------------------
+    std::unordered_map<uint32_t, float> widthOf;
+    std::unordered_map<uint32_t, int>   depthOf;
+    std::unordered_set<uint32_t>        visited;
+
+    std::function<float(uint32_t, int)> measure = [&](uint32_t id, int depth) -> float {
+        // 循環リンクや、1つの子に複数の親が繋がった形でも止まるようにする。
+        if (!visited.insert(id).second) return 0.0f;
+
+        depthOf[id]      = depth;
+        const float own  = sizeOf(id).x;
+
+        auto it = childrenOf.find(id);
+        if (it == childrenOf.end() || it->second.empty())
+        {
+            widthOf[id] = own;
+            return own;
+        }
+
+        float sum = 0.0f;
+        for (uint32_t c : it->second)
+        {
+            const float w = measure(c, depth + 1);
+            if (w <= 0.0f) continue; // 既に別経路で置かれた子は幅を数えない
+            if (sum > 0.0f) sum += kLayoutHGap;
+            sum += w;
+        }
+
+        widthOf[id] = (std::max)(own, sum);
+        return widthOf[id];
+    };
+
+    // 根＝親を持たないノード。Root 型を必ず先頭に置く。
+    std::vector<uint32_t> roots;
+    for (const auto &n : m_nodes)
+    {
+        if (n.type == EditorBTNodeType::Group) continue;
+        if (hasParent.count(n.id) == 0) roots.push_back(n.id);
+    }
+    std::stable_sort(roots.begin(), roots.end(), [&](uint32_t a, uint32_t b) {
+        const EditorBTNode *na = find(a);
+        const EditorBTNode *nb = find(b);
+        const bool ra = (na && na->type == EditorBTNodeType::Root);
+        const bool rb = (nb && nb->type == EditorBTNodeType::Root);
+        return ra && !rb;
+    });
+
+    for (uint32_t r : roots) measure(r, 0);
+
+    // どの根からも辿れなかったノード（リンクが循環している塊など）も置き去りにしない。
+    for (const auto &n : m_nodes)
+    {
+        if (n.type == EditorBTNodeType::Group) continue;
+        if (visited.count(n.id)) continue;
+        roots.push_back(n.id);
+        measure(n.id, 0);
+    }
+
+    if (roots.empty()) return;
+
+    // ---------------------------------------------------------------
+    // 4. 段ごとの高さを揃える
+    //    ノードは種類で高さが違う（Actionのゲージ付きが一番高い）。
+    //    段の中の最大値で行の高さを決めると、線が斜めに交差しなくなる。
+    // ---------------------------------------------------------------
+    int maxDepth = 0;
+    for (const auto &kv : depthOf) maxDepth = (std::max)(maxDepth, kv.second);
+
+    std::vector<float> rowHeight(static_cast<size_t>(maxDepth) + 1, kLayoutDefaultH);
+    for (const auto &kv : depthOf)
+    {
+        const float h = sizeOf(kv.first).y;
+        float      &r = rowHeight[static_cast<size_t>(kv.second)];
+        if (h > r) r = h;
+    }
+
+    std::vector<float> rowTop(rowHeight.size(), 0.0f);
+    for (size_t d = 1; d < rowTop.size(); ++d)
+        rowTop[d] = rowTop[d - 1] + rowHeight[d - 1] + kLayoutVGap;
+
+    // ---------------------------------------------------------------
+    // 5. 根から葉へ配置する
+    // ---------------------------------------------------------------
+    std::unordered_set<uint32_t> placed;
+
+    std::function<void(uint32_t, float)> place = [&](uint32_t id, float left) {
+        if (!placed.insert(id).second) return;
+
+        EditorBTNode *n = find(id);
+        if (!n) return;
+
+        const ImVec2 sz = sizeOf(id);
+        const float  w  = widthOf.count(id) ? widthOf[id] : sz.x;
+
+        // 自分は割り当てられた領域の中央に置く。子の重心の上に来る。
+        n->posX = left + (w - sz.x) * 0.5f;
+        n->posY = rowTop[static_cast<size_t>(depthOf[id])];
+        n->positionInitialized = false; // 描画ループが ed::SetNodePosition を呼ぶ
+
+        auto it = childrenOf.find(id);
+        if (it == childrenOf.end()) return;
+
+        float cursor = left;
+        for (uint32_t c : it->second)
+        {
+            if (placed.count(c)) continue;
+            place(c, cursor);
+            cursor += (widthOf.count(c) ? widthOf[c] : kLayoutDefaultW) + kLayoutHGap;
+        }
+    };
+
+    float treeLeft = 0.0f;
+    for (uint32_t r : roots)
+    {
+        if (placed.count(r)) continue;
+        place(r, treeLeft);
+        treeLeft += (widthOf.count(r) ? widthOf[r] : kLayoutDefaultW) + kLayoutTreeGap;
+    }
+
+    // ---------------------------------------------------------------
+    // 6. グループ枠を、囲んでいたノードに合わせ直す
+    //    これをやらないと、整列でノードだけが動いて枠が空のまま取り残される。
+    // ---------------------------------------------------------------
+    for (const auto &g : groups)
+    {
+        if (g.members.empty()) continue; // 空の枠は動かしようがないので触らない
+
+        float minX = FLT_MAX, minY = FLT_MAX, maxX = -FLT_MAX, maxY = -FLT_MAX;
+        int   used = 0;
+        for (uint32_t m : g.members)
+        {
+            const EditorBTNode *n = find(m);
+            if (!n || !placed.count(m)) continue;
+            const ImVec2 s = sizeOf(m);
+            minX = (std::min)(minX, n->posX);
+            minY = (std::min)(minY, n->posY);
+            maxX = (std::max)(maxX, n->posX + s.x);
+            maxY = (std::max)(maxY, n->posY + s.y);
+            ++used;
+        }
+        if (used == 0) continue;
+
+        EditorBTNode *gn = find(g.id);
+        if (!gn) continue;
+
+        // width/height は「枠」、posX/posY は「ノード全体の左上」。
+        // 単位が違うので GroupFrameOffset のぶんだけ左上へずらす。
+        const ImVec2 off = GroupFrameOffset();
+        gn->posX   = minX - kGroupPad - off.x;
+        gn->posY   = minY - kGroupPad - off.y;
+        gn->width  = (maxX - minX) + kGroupPad * 2.0f;
+        gn->height = (maxY - minY) + kGroupPad * 2.0f;
+        // サイズの反映は positionInitialized=false に任せる（描画ループ側に集約済み）。
+        gn->positionInitialized = false;
+    }
+
+    m_executionOrderDirty = true;
+    CCL_LOG_INFO(LogCategory::Editor, "[BT] 整列しました（%zu ノード / %zu グループ）",
+                 placed.size(), groups.size());
+}
+
+// ====================================================================
+// 選択ノードをコメントで囲む
+// ====================================================================
+void BehaviorTreeWindow::GroupSelectedNodes()
+{
+    std::vector<ed::NodeId> selected;
+    selected.resize(ed::GetSelectedObjectCount());
+    const int count = ed::GetSelectedNodes(selected.data(), static_cast<int>(selected.size()));
+    if (count <= 0) return;
+
+    float minX = FLT_MAX, minY = FLT_MAX, maxX = -FLT_MAX, maxY = -FLT_MAX;
+    int   used = 0;
+
+    for (int i = 0; i < count; ++i)
+    {
+        const uint32_t id = ToEditorId(selected[i].Get());
+
+        auto it = std::find_if(m_nodes.begin(), m_nodes.end(),
+                               [&](const EditorBTNode &n) { return n.id == id; });
+        if (it == m_nodes.end()) continue;
+        if (it->type == EditorBTNodeType::Group) continue; // 枠で枠を囲まない
+
+        const ImVec2 p = ed::GetNodePosition(id);
+        const ImVec2 s = ed::GetNodeSize(id);
+        if (s.x <= 1.0f || s.y <= 1.0f) continue;
+
+        minX = (std::min)(minX, p.x);
+        minY = (std::min)(minY, p.y);
+        maxX = (std::max)(maxX, p.x + s.x);
+        maxY = (std::max)(maxY, p.y + s.y);
+        ++used;
+    }
+
+    if (used == 0)
+    {
+        CCL_LOG_WARN(LogCategory::Editor, "[BT] 囲めるノードが選択されていません");
+        return;
+    }
+
+    RecordStateForUndo("Group Selected Nodes");
+
+    // width/height は「枠」、座標は「ノード全体の左上」。単位を合わせる。
+    const ImVec2 off = GroupFrameOffset();
+    CreateNode(EditorBTNodeType::Group, "コメント",
+               minX - kGroupPad - off.x, minY - kGroupPad - off.y);
+
+    // サイズは描画ループが ed::SetGroupSize で反映する（CreateNode が
+    // positionInitialized=false で作るため、必ずその分岐を通る）。
+    EditorBTNode &g = m_nodes.back();
+    g.width  = (maxX - minX) + kGroupPad * 2.0f;
+    g.height = (maxY - minY) + kGroupPad * 2.0f;
+}
+
 // ====================================================================
 // 右クリックコンテキストメニュー処理
 // ====================================================================
@@ -1314,8 +1772,9 @@ void BehaviorTreeWindow::HandleContextMenu() {
         if (ImGui::MenuItem("コンディション (Condition)")) CreateNode(EditorBTNodeType::Condition, "コンディション (Condition)", canvasPos.x, canvasPos.y);
         if (ImGui::MenuItem("アクション (Action)")) CreateNode(EditorBTNodeType::Action, "アクション (Action)", canvasPos.x, canvasPos.y);
         ImGui::Separator();
-        // グループノード生成
-        if (ImGui::MenuItem("コメントグループ (Group)")) CreateNode(EditorBTNodeType::Group, "コメント (Comment)", canvasPos.x, canvasPos.y);
+        // 選択ノードを囲むのが本命。空の枠を置いてから手で広げるのは最後の手段。
+        if (ImGui::MenuItem("選択ノードをコメントで囲む", "Ctrl+G")) GroupSelectedNodes();
+        if (ImGui::MenuItem("空のコメント枠を置く")) CreateNode(EditorBTNodeType::Group, "コメント", canvasPos.x, canvasPos.y);
 
         ImGui::Separator();
         // 複数ノードの複製
@@ -1357,6 +1816,7 @@ void BehaviorTreeWindow::SaveGraph(const std::string& path) {
         if (node.type == EditorBTNodeType::Group) {
             jn["width"] = node.width;
             jn["height"] = node.height;
+            jn["groupColorIndex"] = node.groupColorIndex;
         }
         // デコレーターのパラメータを保存する
         if (node.type == EditorBTNodeType::Decorator) {
@@ -1545,6 +2005,7 @@ void BehaviorTreeWindow::LoadGraph(const std::string& path) {
         if (node.type == EditorBTNodeType::Group) {
             node.width = jn.value("width", 300.0f);
             node.height = jn.value("height", 200.0f);
+            node.groupColorIndex = jn.value("groupColorIndex", 0);
         }
 
         // =======================================================
