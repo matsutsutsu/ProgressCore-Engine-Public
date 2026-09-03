@@ -1128,6 +1128,9 @@
     <ClInclude Include="Source\Engine\Animation\Core\AnimGraphSerializer.h">
       <Filter>Source\Engine\Animation\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\Core\AnimPoseUtils.h">
+      <Filter>Source\Engine\Animation\Core</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Animation\Core\AnimSequence.h">
       <Filter>Source\Engine\Animation\Core</Filter>
     </ClInclude>
@@ -1141,6 +1144,9 @@
       <Filter>Source\Engine\Animation\Components</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\Systems\AnimationSystem.h">
+      <Filter>Source\Engine\Animation\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\Systems\AnimationPoseSystem.h">
       <Filter>Source\Engine\Animation\Systems</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\Systems\AnimControllerSystem.h">
@@ -2367,6 +2373,9 @@
       <Filter>Source\Engine\Animation\Components</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Animation\Systems\AnimationSystem.cpp">
+      <Filter>Source\Engine\Animation\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\Systems\AnimationPoseSystem.cpp">
       <Filter>Source\Engine\Animation\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Animation\Systems\AnimControllerSystem.cpp">

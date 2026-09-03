@@ -385,9 +385,11 @@
     <ClInclude Include="Source\Engine\Animation\Components\RootMotionComponent.h" />
     <ClInclude Include="Source\Engine\Animation\Core\AnimEventMessages.h" />
     <ClInclude Include="Source\Engine\Animation\Core\AnimGraphSerializer.h" />
+    <ClInclude Include="Source\Engine\Animation\Core\AnimPoseUtils.h" />
     <ClInclude Include="Source\Engine\Animation\Core\AnimSequence.h" />
     <ClInclude Include="Source\Engine\Animation\Core\AnimStateMachine.h" />
     <ClInclude Include="Source\Engine\Animation\Systems\AnimationSystem.h" />
+    <ClInclude Include="Source\Engine\Animation\Systems\AnimationPoseSystem.h" />
     <ClInclude Include="Source\Engine\Animation\Systems\AnimControllerSystem.h" />
     <ClInclude Include="Source\Engine\Animation\Systems\AnimSetupSystem.h" />
     <ClInclude Include="Source\Engine\Animation\Systems\CharacterAnimSyncSystem.h" />
@@ -957,6 +959,7 @@
     <ClCompile Include="Source\Engine\Animation\Components\RootMotionComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Animation\Core\AnimGraphSerializer.cpp" />
     <ClCompile Include="Source\Engine\Animation\Systems\AnimationSystem.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Systems\AnimationPoseSystem.cpp" />
     <ClCompile Include="Source\Engine\Animation\Systems\AnimControllerSystem.cpp" />
     <ClCompile Include="Source\Engine\Animation\Systems\AnimSetupSystem.cpp" />
     <ClCompile Include="Source\Engine\Animation\Systems\CharacterAnimSyncSystem.cpp" />

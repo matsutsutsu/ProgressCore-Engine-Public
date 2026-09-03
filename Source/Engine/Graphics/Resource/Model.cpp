@@ -360,7 +360,9 @@ void Model::UpdateTransform(const DirectX::XMFLOAT4X4 &worldTransform)
 //   ResourceManager 取得を含めないことで、vector 版がノード数ぶん引き直す無駄を無くす。
 void Model::ComputeNodePose(const ModelResource::Animation &animation, int nodeIndex, float time, NodePose &nodePose) const
 {
-    ZoneScopedN("Model::ComputeNodePose");
+    // ここに Tracy ゾーンは置かない。本関数はノード数ぶん(キャラ1体で77〜118回)
+    // 毎フレーム呼ばれるため、ゾーン発行のコストが計測対象そのものを膨らませる。
+    // 計測は呼び出し元の Model::ComputeAnimation 側の1ゾーンで足りる。
 
     const ModelResource::NodeAnim &nodeAnim = animation.nodeAnims.at(nodeIndex);
 
@@ -374,23 +376,27 @@ void Model::ComputeNodePose(const ModelResource::Animation &animation, int nodeI
     float rate;
 
     // --- 位置 (Translation) の評価 ---
-    const ModelResource::VectorKeyframe *posK0, *posK1;
-    EvaluateKeyframes(nodeAnim.positionKeyframes, time, rate, posK0, posK1);
-    if (posK0 && posK1)
-    {
-        DirectX::XMVECTOR V0 = DirectX::XMLoadFloat3(&posK0->value);
-        DirectX::XMVECTOR V1 = DirectX::XMLoadFloat3(&posK1->value);
-        DirectX::XMVECTOR V  = DirectX::XMVectorLerp(V0, V1, rate);
-        DirectX::XMStoreFloat3(&nodePose.position, V);
-    }
-
+    //
     // Translation Retargeting（プロポーション崩壊対策）。
     //   Root/Pelvis/Hips 系以外は、アニメの位置移動を無視してモデル本来の骨の長さ
-    //   (bindNode.position)で上書きする。対象かどうかはロード時に確定した isRootOrPelvis を
+    //   (bindNode.position)を使う。対象かどうかはロード時に確定した isRootOrPelvis を
     //   見るだけ（旧実装はここで骨名を毎フレーム小文字化＋部分一致しており処理落ちの主因だった）。
-    if (!bindNode.isRootOrPelvis)
+    //
+    //   非対象ノードでは結果を捨てるので、評価そのものを丸ごと飛ばす。
+    //   isRootOrPelvis が true なのはリグ全体で1〜3本だけなので、位置チャンネルの
+    //   キーフレーム探索と Lerp はほぼ全ノードで消える（旧実装は計算してから上書きしていた）。
+    //   nodePose.position は上でバインドポーズ済みなので、else 側の代入は不要。
+    if (bindNode.isRootOrPelvis)
     {
-        nodePose.position = bindNode.position;
+        const ModelResource::VectorKeyframe *posK0, *posK1;
+        EvaluateKeyframes(nodeAnim.positionKeyframes, time, rate, posK0, posK1);
+        if (posK0 && posK1)
+        {
+            DirectX::XMVECTOR V0 = DirectX::XMLoadFloat3(&posK0->value);
+            DirectX::XMVECTOR V1 = DirectX::XMLoadFloat3(&posK1->value);
+            DirectX::XMVECTOR V  = DirectX::XMVectorLerp(V0, V1, rate);
+            DirectX::XMStoreFloat3(&nodePose.position, V);
+        }
     }
 
     // --- 回転 (Rotation) の評価 ---

@@ -66,6 +66,16 @@ namespace Priority {
         R01b_CameraBrain = 150, // vCamを集約しMainCameraへ反映（必ずBodyの後）
 
         R02_Environment = 200, // Light, Fogの設定
+
+        R02b_SkeletalPose = 250, // 骨格ポーズの確定 (AnimationPoseSystem)
+                                 //   キーフレーム評価→ブレンド→Model::SetNodePoses まで。
+                                 //   ※ Logic(FixedUpdate) ではなく必ずここに置くこと。
+                                 //     FixedUpdate は1描画フレームで最大4回回る(Framework::MAX_STEPS)が、
+                                 //     ポーズを行列へ変換するのは下の R03_Animation ただ1つなので、
+                                 //     Logic 側に置くと最後のステップ以外の計算が丸ごと捨てられる。
+                                 //     時間進行とイベント発火(AnimationSystem)は固定ステップ精度が
+                                 //     必要なので Logic に残し、ポーズ計算だけをここへ分離している。
+
         R03_Animation = 300, // スケルタルメッシュ更新 (頂点が動く)
         R04_BoundsUpdate = 400, // TransformやAnimから正確なAABBを再計算
         R05_Culling = 500, // カメラ視錐台とAABBの交差判定 (フラグON/OFF)
