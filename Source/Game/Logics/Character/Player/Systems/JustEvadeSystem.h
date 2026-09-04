@@ -4,7 +4,6 @@
 #include "Game/Logics/Character/Player/Components/DashComponent.h"
 #include "Engine/Time/TimeState.h"
 #include "Engine/Physics/Components/Collision/JoltCollisionEvent.h"
-#include "Engine/Physics/Components/Character/CharacterMovementComponent.h"
 
 #include <vector>
 
@@ -15,7 +14,6 @@ struct DroneComponent; // ポインタ参照のみのため前方宣言で足り
 class JustEvadeSystem : public CCL::ECS::IfSystem<JustEvadeSystem,
                             CCL::ECS::Write<JustEvadeComponent>,
                             CCL::ECS::Write<DashComponent>,
-                            CCL::ECS::Write<CharacterMovementComponent>,
                             CCL::ECS::Write<TimeStateComponent>>
 {
   public:
@@ -26,7 +24,6 @@ class JustEvadeSystem : public CCL::ECS::IfSystem<JustEvadeSystem,
 
     void Initialize() override;
     void Update(float dt) override;
-    void OnGui() override;
 
     // 成立時のイベントハンドラが書く分をテンプレート宣言へ足す。
     //
@@ -42,7 +39,6 @@ class JustEvadeSystem : public CCL::ECS::IfSystem<JustEvadeSystem,
 
   private:
     void CheckJustEvade(CCL::ECS::EntityID playerCandidate, CCL::ECS::EntityID otherCandidate);
-    void BreakChain(CCL::ECS::EntityID playerID); // チェインを初期状態へ戻す
 
     // このフレームに届いた接触。コールバックが積み、Update が消費して空にする。
     //

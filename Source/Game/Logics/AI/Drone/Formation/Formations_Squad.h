@@ -35,6 +35,18 @@ namespace CCL::AI::Formation::Squad
 // ====================================================================
 struct SquadAssaultFormation : public IFormation
 {
+    // 予告の震えは出さない。
+    //
+    //   この技の予備動作は「編隊を組んだまま側面へ回り込んでくる」という動きそのもので、
+    //   プレイヤーはその軌道からどちらへ避けるかを読む。そこへ震えを重ねると、
+    //   読むべき手掛かりが2つになって、どちらを見ればよいのか分からなくなる。
+    //   縦割りのように「形が完成して止まっている」技だけが震えを必要とする。
+    //
+    //   加えて、震えは持ち場の座標を細かくずらす。数珠つなぎの隊列は
+    //   1つ前の機体の位置を基準に並ぶので、そのずれが後ろの席へ順に伝播して
+    //   隊列そのものがガタつく。止まっている陣形と違い、ここでは害のほうが大きい。
+    bool UsesShiverTelegraph() const override { return false; }
+
     void Calculate(DroneComponent &drone, const FormationContext &ctx) override
     {
         using namespace DirectX::SimpleMath;

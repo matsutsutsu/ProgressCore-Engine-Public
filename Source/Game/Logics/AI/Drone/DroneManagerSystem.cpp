@@ -5,7 +5,6 @@
 #include "Game/Logics/AI/Battle/BattleContext.h"
 #include "Game/Logics/AI/Drone/Squad/SquadState.h"
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
-#include "Game/Logics/Character/Player/Components/JustEvadeComponent.h" // チェイン段数の参照
 #include "Engine/Transform/Components/TransformComponent.h"
 #include <vector>
 #include "Engine/Serialization/Factory/Prefab.h"
@@ -24,13 +23,6 @@ using namespace DirectX::SimpleMath;
 
 // ドローンのプレハブパス
 static constexpr const char* kDronePrefab = "Assets/Prefabs/Enemy/Drone.json";
-
-void DroneManagerSystem::Initialize()
-{
-    ListenEvent<JustEvadeSuccessEvent>([this](const JustEvadeSuccessEvent &ev) {
-        OnJustEvadeSuccess(ev);
-    });
-}
 
 // ============================================================================
 // Update：生存数を数えて BattleContext に反映（毎フレーム）
@@ -561,77 +553,6 @@ void DroneManagerSystem::OnGui()
 
         ImGui::Unindent();
     }
-}
-
-// イベントハンドラ：ジャスト回避で攻撃元ドローンを破壊し、チェイン段数に応じて
-//                   その周囲の「攻撃中(FireCharge)」ドローンを巻き込み撃破する。
-void DroneManagerSystem::OnJustEvadeSuccess(const JustEvadeSuccessEvent &ev)
-{
-    // 撃破の中心＝回避した攻撃元の位置（ボス本体など座標が取れない/ドローンでない場合は単体処理のみ）。
-    Vector3 center;
-    bool    haveCenter = false;
-    if (auto *t = m_world->GetComponent<TransformComponent>(ev.attackerID))
-    {
-        center     = t->position;
-        haveCenter = true;
-    }
-
-    // まず攻撃元を破壊（DroneComponent を持たなければ内部で安全に弾かれる）。
-    DestroyDrone(ev.attackerID);
-
-    if (!haveCenter) return;
-
-    // プレイヤーのチェイン段数から撃破半径を決める（段数が上がるほど範囲が広がる＝リターン）。
-    int   chain = 1;
-    float rBase = 3.0f;
-    float rPer  = 2.0f;
-    if (auto *evade = m_world->GetComponent<JustEvadeComponent>(ev.playerID))
-    {
-        chain = (evade->chainCount > 0) ? evade->chainCount : 1;
-        rBase = evade->killRadiusBase;
-        rPer  = evade->killRadiusPerLevel;
-    }
-    const float radius   = rBase + (chain - 1) * rPer;
-    const float radiusSq = radius * radius;
-
-    // イテレート中の破棄を避けるため、対象を一旦集めてから破壊する。
-    std::vector<EntityID> toKill;
-    auto view = m_world->View<DroneComponent, TransformComponent>();
-    for (EntityID id : view)
-    {
-        if (id == ev.attackerID) continue;
-        auto *d = m_world->GetComponent<DroneComponent>(id);
-        if (!d || d->currentState != DroneState::FireCharge) continue; // 「攻撃中だけが弱点」を維持
-        auto *t = m_world->GetComponent<TransformComponent>(id);
-        if (!t) continue;
-        if (Vector3::DistanceSquared(center, t->position) <= radiusSq)
-            toKill.push_back(id);
-    }
-    for (EntityID id : toKill) DestroyDrone(id);
-
-    if (!toKill.empty())
-        CCL_LOG_INFO(LogCategory::Game, "[DroneManager] チェイン範囲撃破 chain=%d r=%.1f -> 追加%zu機",
-                     chain, radius, toKill.size());
-}
-
-// 指定した1機を破壊する
-bool DroneManagerSystem::DestroyDrone(EntityID droneId)
-{
-    // ドローンでないもの（ボス等）を誤って壊さないためのガード
-    if (!m_world->GetComponent<DroneComponent>(droneId))
-    {
-        return false;
-    }
-
-    // ログは Destroy より前に出す。破棄後は NameComponent を引けず、
-    // どのドローンだったのかが "Entity" に潰れてしまうため。
-    CCL_LOG_INFO(LogCategory::Game, "[DroneManager] ドローン破壊 %s（残り %d 機）",
-        CCL::EntityLabel(*m_world, droneId).c_str(), GetAliveCount() - 1);
-    //   ↑ GetAliveCount() はまだ破棄が反映される前なので -1 して見た目のログを合わせている
-
-    m_world->Destroy(droneId);
-
-    return true;
 }
 
 // L02_Update で計数（判断・陣形と同じステージ。順序は問わない）

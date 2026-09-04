@@ -24,7 +24,7 @@
                     "isRootMotionActive": true,
                     "jumpImpulse": false,
                     "overrideSpeed": -1.0,
-                    "speedMultiplier": 1.2400000095367432,
+                    "speedMultiplier": 1.0,
                     "use3DVelocity": false
                 },
                 "Cleave Component": {
@@ -108,16 +108,7 @@
                     "walkSpeed": 43.599998474121094
                 },
                 "Just Evade Component": {
-                    "chainCount": 3,
-                    "chainSpeedMax": 0.4000000059604645,
-                    "chainSpeedPerLevel": 0.07999999821186066,
-                    "idleBreakTime": 4.0,
-                    "isJustSuccess": false,
-                    "killRadiusBase": 3.0,
-                    "killRadiusPerLevel": 2.0,
-                    "maxChain": 5,
-                    "windowScaleMin": 0.5,
-                    "windowScalePerLevel": 0.10000000149011612
+                    "isJustSuccess": false
                 },
                 "Knockback": {
                     "duration": 0.18000000715255737,

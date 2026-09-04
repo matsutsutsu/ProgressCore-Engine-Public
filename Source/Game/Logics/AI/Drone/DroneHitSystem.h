@@ -1,48 +1,57 @@
-// 突撃(FireCharge リリース)中のドローンがプレイヤーに触れたら被弾させるシステム。
+// 突撃中のドローンの「当たり判定を開け閉めする」システム。
 //
-// 役割分担（判断・実行・当たり判定のうち、当たり判定を担う）:
+// 役割分担（判断・実行・当たり判定）:
 //   DroneBrainSystem       … いつ攻撃するか(currentState=FireCharge)を決める
 //   DroneMovementSystem    … タメ→リリースの物理挙動を動かす
-//   DroneHitSystem(本ファイル) … リリース中に触れたら DamageEvent を積む ← ここ
+//   DroneHitSystem(本ファイル) … 危険な区間だけ Hitbox を有効にする ← ここ
+//   HitboxCollisionSystem  … Jolt の接触報告を受けて DamageEvent を積む
 //
-// なぜ独立システムか / なぜ距離判定か:
-//   1000機ぶんの「攻撃用 Jolt センサー剛体」を持たせるのはコスト過大。ドローンは
-//   BattleContext のプレイヤー座標を見て距離判定するだけにし、命中は既存の戦闘
-//   パイプライン(DamageEvent→DamageResolution)へ1点合流させる。物理レイヤーや
-//   HitboxCollisionSystem には一切触れない。
+// なぜ自前の距離判定をやめたか:
+//   以前はここで「プレイヤーとの距離」を毎フレーム測っていた。理屈は単純だが、
+//   実際には当たらなかった。原因が積み重なっていたため。
+//     ・Transform.position はローカル座標なのに、それをそのまま比べていた
+//     ・プレイヤーの基準点が足元で、身長 9m ぶん下を測っていた
+//     ・突撃速度 165m/s では 1フレームに 2.75m 進み、点の判定では跨いで通り過ぎる
+//   どれも「座標系と離散化」の問題で、剣の判定が既に Jolt で解いているものと同じ。
+//   同じ問題を2箇所で別々に解くと、片方だけ壊れて原因が分からなくなる。
+//   ドローンにセンサー剛体を持たせて既存の経路へ合流させれば、当たり判定は1本になる。
+//
+// コストについて:
+//   「1000機ぶんの剛体は過大」という判断で以前は距離判定を選んだ。実際の同時出撃は
+//   12機(DroneManagerSystem::m_spawnCount)なので、その前提はもう成り立っていない。
+//   機数を大きく増やすときはここを再検討すること。
 #pragma once
 #include <vector>
 
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/ECS/Common/CCL_TypeInfo.h"
 #include "Game/Logics/AI/Drone/DroneComponent.h"
-#include "Game/Logics/Combat/HealthComponent.h"
-#include "Engine/Transform/Components/TransformComponent.h"
+#include "Game/Logics/Combat/CombatComponents.h"
 
-// 突撃中ドローン×プレイヤーの接触を距離で判定し、DamageEvent を生成する。
+// 危険な区間だけドローンの Hitbox を有効にする。
 class DroneHitSystem : public CCL::ECS::IfSystem<DroneHitSystem,
                            CCL::ECS::Read<DroneComponent>,
-                           CCL::ECS::Read<TransformComponent>>
+                           CCL::ECS::Write<HitboxComponent>>
 {
-    using Base = CCL::ECS::IfSystem<DroneHitSystem,
-                                    CCL::ECS::Read<DroneComponent>,
-                                    CCL::ECS::Read<TransformComponent>>;
-
 public:
     DroneHitSystem() : IfSystem("DroneHitSystem") {}
 
-    // Update がプレイヤーの HealthComponent を GetComponent で読む（無敵中は走査ごと飛ばす）。
-    //
-    // テンプレート引数には足せない。あちらは ForEach の絞り込み条件も兼ねているので、
-    // 足すと「ドローンかつ HealthComponent を持つ Entity」だけが対象になり1機も回らない。
-    // 今は L05_Collision に HealthComponent を書くシステムが居らずステージの壁で
-    // 直列化されているが、宣言に出ていない読み取りは依存解析から消えるので明示する。
-    std::vector<CCL::ECS::TypeID> GetReadTypes() const override
+    // 判定の開け閉めは、その突撃の状態が確定した後でなければ 1フレームずれる。
+    //   DroneMovementSystem が stateTimer を進めて「タメ→リリース」を切り替えるので、
+    //   その後に読む。
+    std::vector<const char *> GetRunAfter() const override
     {
-        auto types = Base::GetReadTypes();
-        types.push_back(CCL::ECS::TypeInfo<HealthComponent>::ID());
-        return types;
+        return {"DroneBrainSystem", "DroneMovementSystem"};
     }
 
     void Update(float dt) override;
+
+    // 判定が開いている機数を出す。当たらないときに
+    // 「判定が閉じている」のか「形状が届いていない」のかを切り分けるため。
+    void OnGui() override;
+
+  private:
+    int m_droneCount   = 0;
+    int m_activeCount  = 0;
+    int m_stateCount[5] = {0, 0, 0, 0, 0};
 };

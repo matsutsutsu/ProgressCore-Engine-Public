@@ -78,12 +78,22 @@ class DroneBrainSystem : public CCL::ECS::IfSystem<DroneBrainSystem,
     static constexpr float kRecoverStagger = 0.08f;
 
     // この距離を飛んだら突撃は終わり、と各機が判断する。
-    static constexpr float kChargeRange = 40.0f;
+    //
+    // 実質この値を使うのは弾幕（個別寿命の突撃）だけで、そこは遠距離用の技。
+    // 短くすると「届く前に突撃をやめる」ので、間合いから逆算して決めること。
+    //
+    //   発射地点はボスの 14m 上（頭上リング 20m − 中心へ降りる 6m）。
+    //   BT の発動条件は 距離>30m なので、必要な飛距離は
+    //     水平 30m → √(30² + 14²) ≒ 33m
+    //     水平 50m → √(50² + 14²) ≒ 52m
+    //   40m だと水平 38m 付近から届かなくなっていた。
+    //   56m あれば水平 54m まで貫ける（√(56² − 14²)）。
+    static constexpr float kChargeRange = 56.0f;
 
     // 突撃の最長時間（保険）。壁際やプレイヤーが遠い場合でも必ず終わらせる。
     static constexpr float kChargeTimeout = 2.0f;
 
     // 突き抜けた後、上方へ抜けながら減速する時間。
     //        ここを 0 にすると突撃の勢いのまま急旋回して不自然になる。
-    static constexpr float kBreakawayTime = 0.5f;
+    static constexpr float kBreakawayTime = 1.6f;
 };

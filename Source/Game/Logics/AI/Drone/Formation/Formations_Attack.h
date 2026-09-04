@@ -229,16 +229,21 @@ struct KamikazeSwarmFormation : public IFormation
     {
         using namespace DirectX::SimpleMath;
 
-        // --- 陣形が手を引くのは「撃った後」だけ ---
+        // --- 陣形が手を引くのは「飛び出した後」だけ ---
         //
-        //   以前は FireCharge に入った時点で return していた。順番待ちの機も
-        //   FireCharge なので、Strike の瞬間に輪の回転も狙いも凍っていた。
-        //   fireDelay が残っている間＝まだ撃っていない間は、陣形が動かし続ける。
+        //   順番待ち(fireDelay>0)も、中央でのタメ(stateTimer>0)も、まだ撃っていない。
+        //   その間は陣形が動かし続け、狙いも更新し続ける。
+        //
+        //   stateTimer まで見るのが要点:
+        //     以前は fireDelay が 0 になった時点で手を引いていた。そこから
+        //     タメ 0.4 秒＋飛行があるので、着弾の 0.5 秒以上前の座標を撃っていた。
+        //     プレイヤーの歩行速度は 40m/s 級なので 20m 以上後ろへ外れる
+        //     ＝普通に歩いているだけで当たらない、という状態だった。
         //
         //   ※ Returning（離脱中）はあえて凍結しない。帰る先の待機リングを
         //     更新し続け、離脱が終わった機がそのまま隊列へ吸い込まれるようにするため。
-        const bool launched =
-            (drone.currentState == DroneState::FireCharge) && (drone.fireDelay <= 0.0f);
+        const bool launched = (drone.currentState == DroneState::FireCharge) &&
+                              (drone.fireDelay <= 0.0f) && (drone.stateTimer <= 0.0f);
         if (launched) return;
 
         drone.chargeMode = ChargeMode::Straight; // dashモード（fireDirection直進）
@@ -259,7 +264,14 @@ struct KamikazeSwarmFormation : public IFormation
         //   二乗で寄せるのは、序盤をほぼ動かさず「直前にすっと吸い込まれる」
         //   形にするため。線形だと最初からじわじわ動いて、いつ撃つのか読めない。
         float gather = 0.0f;
-        if (drone.fireDelay > 0.0f && drone.fireDelay < kGatherTime)
+        if (drone.currentState == DroneState::FireCharge && drone.fireDelay <= 0.0f)
+        {
+            // 中央でのタメ中。持ち場は発射地点のまま。
+            //   ここを輪へ戻すと、下の飛翔時間の計算が「輪から撃つ」前提になり、
+            //   実際の発射地点（中央）とずれた先読みになる。
+            gather = 1.0f;
+        }
+        else if (drone.fireDelay > 0.0f && drone.fireDelay < kGatherTime)
         {
             const float t = 1.0f - (drone.fireDelay / kGatherTime);
             gather        = t * t;
@@ -267,15 +279,44 @@ struct KamikazeSwarmFormation : public IFormation
 
         drone.targetPosition = Vector3::Lerp(slot, muzzle, gather);
 
-        // --- 狙い：毎フレーム「今の」プレイヤーへ引き直す ---
-        //   発射した瞬間に陣形は手を引く（上の launched）ので、ここで更新が
-        //   止まる＝撃ち出した弾は直進する。狙い直すのは撃つ前だけ。
-        Vector3 toPlayer = ctx.playerPos - drone.targetPosition;
-        if (toPlayer.LengthSquared() > 0.001f) toPlayer.Normalize();
-        else                                   toPlayer = Vector3::UnitZ;
+        // --- 狙い：着弾までにプレイヤーが動く先を読む（偏差射撃）---
+        //
+        //   今いる場所を撃つと必ず後ろへ外れる。飛翔時間があるからで、
+        //   これは速度をいくら上げても消えない（速くすれば減るだけ）。
+        //   狙う先 ＝ 今の位置 ＋ 速度 × 着弾までの時間。
+        //
+        //   着弾までの時間 ＝ 中央でのタメの残り ＋ 飛翔時間(距離÷射出速度)。
+        //   距離は狙う先までなので、本当は自分自身を参照する式になる。
+        //   1回だけ計算し直して精度を上げる（2回目以降はほとんど動かない）。
+        //
+        //   kLeadFactor で読みの強さを決める。
+        //     0.0 … 先読みなし（今の実装＝ほぼ当たらない）
+        //     1.0 … 完全な迎撃。等速で動き続ける限り必ず当たる
+        //   撃った後は直進するので、飛んでくるのを見てから動きを変えれば外れる。
+        //   ＝「歩いているだけでは避けられないが、避ければ避けられる」に寄せる。
+        const float launchSpeed = drone.moveSpeed * kDroneChargeSpeedScale;
+        const float windupLeft  = (drone.stateTimer > 0.0f) ? drone.stateTimer : 0.0f;
 
-        drone.fireDirection       = toPlayer;
-        drone.targetLookDirection = toPlayer;
+        //   狙うのは足元(playerPos)ではなく体の中心(playerCenter)。
+        //   足元は地面なので、そこへ向けると身長ぶん下を撃って地面に刺さる。
+        Vector3 aimPoint = ctx.playerCenter;
+        if (launchSpeed > 0.001f)
+        {
+            for (int i = 0; i < 2; ++i)
+            {
+                const float flight =
+                    (aimPoint - drone.targetPosition).Length() / launchSpeed;
+                aimPoint = ctx.playerCenter +
+                           ctx.playerVelocity * ((windupLeft + flight) * kLeadFactor);
+            }
+        }
+
+        Vector3 toAim = aimPoint - drone.targetPosition;
+        if (toAim.LengthSquared() > 0.001f) toAim.Normalize();
+        else                                toAim = Vector3::UnitZ;
+
+        drone.fireDirection       = toAim;
+        drone.targetLookDirection = toAim;
 
         // --- 発射順（先頭ほど早い）---
         //   撃つ合図が出た後に書き直すと、待っている間ずっと順番がリセットされて
@@ -291,6 +332,12 @@ struct KamikazeSwarmFormation : public IFormation
     static constexpr float kFireWindow = 8.0f; // 全機を撃ち切るのにかける秒数。伸ばすほど発射レートが下がる
     static constexpr float kGatherTime = 0.6f; // 発射の何秒前から中心へ寄り始めるか
     static constexpr float kGatherDrop = 6.0f; // 輪の高さから何m下を発射地点にするか
+
+    // 先読みの強さ。0=今の位置を撃つ / 1=完全な迎撃。
+    //   1.0 のままだと等速移動には必ず当たるが、そこが狙いでよい。
+    //   狙いは発射の瞬間に凍るので、飛んできてから動きを変えれば抜けられる。
+    //   「歩くだけで避けられる」を潰しつつ「避ければ避けられる」を残す値。
+    static constexpr float kLeadFactor = 0.9f;
 };
 
 // ====================================================================

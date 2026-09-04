@@ -166,6 +166,10 @@ class DroneMovementSystem : public CCL::ECS::IfSystem<
 
     // 突撃（リリース）の速度倍率。moveSpeed(既定30) に掛ける。
     //
+    //   実体は DroneComponent.h の kDroneChargeSpeedScale。
+    //   弾幕の陣形が「飛翔時間 = 距離 ÷ 射出速度」を出すのに同じ値を使うので、
+    //   このクラスの private constexpr にはできない。
+    //
     //   【上げすぎると擦り抜ける】
     //   当たり判定は毎フレームの距離判定なので、1フレームの移動距離が
     //   当たり半径の2倍を超えると、判定される位置を跨いで通り過ぎる。
@@ -174,7 +178,7 @@ class DroneMovementSystem : public CCL::ECS::IfSystem<
     //   4.0 倍 = 120 m/s は1フレーム 2.0m なので、判定に2〜3フレーム乗る。
     //   ここより上げるなら、当たり半径(FormationCombat::hitRadius)も
     //   一緒に広げるか、線分での判定に変える必要がある。
-    static constexpr float kChargeSpeedScale = 5.5f;
+    static constexpr float kChargeSpeedScale = kDroneChargeSpeedScale;
 
     // --- 姿勢の追従速度（1/秒）。局面ごとに変える ---
     //   整列中は機敏に、待機はゆるく、突撃は最も速く、離脱は最も鈍く。
@@ -195,6 +199,12 @@ class DroneMovementSystem : public CCL::ECS::IfSystem<
 
     // 離脱中に上方向へ加える加速度。突撃の軌道から「抜ける」ための持ち上げ。
     static constexpr float kBreakawayLift = 18.0f;
+
+    // 浮き上がりを効かせ始める速さ [m/s]。これ以上の速度では持ち上げない。
+    //
+    //   全速のまま上向きの力を加えると、突き抜けた瞬間に軌道が跳ね上がる。
+    //   減速してから効かせると「勢いのまま少し進む → ふわりと持ち上がる」になる。
+    static constexpr float kBreakawayFastSpeed = 40.0f;
 
     // 離脱中の減速率（1/秒）。突撃速度を帰投できる速さまで落とす。
     static constexpr float kBreakawayDrag = 2.5f;

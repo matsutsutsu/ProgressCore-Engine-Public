@@ -25,9 +25,40 @@ struct BattleContext
     CCL::ECS::EntityID playerEntity = CCL::ECS::InvalidEntityID;
     CCL::ECS::EntityID bossEntity   = CCL::ECS::InvalidEntityID;
 
-    // プレイヤーとボスの座標
+    // プレイヤーとボスの座標。
+    //
+    // 【これは足元】
+    //   Transform の原点はキャラの足元にある。狙う／当てるのにそのまま使うと
+    //   身長ぶんまるごとずれる。プレイヤーのカプセルは
+    //   halfHeight 3.5 + radius 1.0 ＝ 全高 9m あるので、足元を基準にすると
+    //   胸を貫いても「4.5m 離れている」と判定される。
+    //   狙いと当たり判定には下の playerCenter を使うこと。
     DirectX::XMFLOAT3 playerPos = {0, 0, 0};
     DirectX::XMFLOAT3 bossPos   = {0, 0, 0};
+
+    // プレイヤーの体の中心。書き手は BattleContextSyncSystem。
+    //
+    //   足元 ＋ (halfHeight + radius)。この式は JoltCharacterSetupSystem が
+    //   カプセルを載せるときに使っている「足元→中心オフセット」と同じもの。
+    //   別々に決めると、判定の基準と実際の体の位置がずれる。
+    //
+    //   狙う・当てるのはすべてこちら。移動や設置の基準は playerPos のまま。
+    DirectX::XMFLOAT3 playerCenter = {0, 0, 0};
+
+    // プレイヤーの速度 [m/s]。書き手は BattleContextSyncSystem。
+    //
+    // 何に使うか:
+    //   「着弾までにプレイヤーがどこへ動くか」を読む＝偏差射撃。
+    //   弾幕のように飛翔時間のある攻撃は、今いる場所を撃つと必ず後ろへ外れる。
+    //
+    // なぜここに置くか:
+    //   誰から見ても同じ客観的な事実なので BattleContext の担当。
+    //   各AIが個別に前フレーム座標を覚えて差分を取ると、覚える場所が
+    //   AIの数だけ増えるうえ、平滑化の強さも別々になって挙動が揃わない。
+    //
+    // 座標の差分から出しているので、テレポートやノックバックでは
+    // 一瞬だけ大きな値が出る。平滑化と上限で均してある（実装側のコメント参照）。
+    DirectX::XMFLOAT3 playerVelocity = {0, 0, 0};
 
     // ドローンの生存数
     // 残数がそのままボスの体力を表す。DroneManagerSystem が毎フレーム数えて書き込む

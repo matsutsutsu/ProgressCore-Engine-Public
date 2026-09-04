@@ -349,11 +349,26 @@ inline void DroneMovementSystem::ProcessStunned(TransformComponent &trans, Drone
 // 離脱。突撃の勢いを残したまま上方へ抜け、減速しながら進行方向を向く。
 inline void DroneMovementSystem::ProcessReturning(TransformComponent &trans, DroneComponent &drone, float dt)
 {
-    drone.currentVelocity += Vector3::UnitY * (kBreakawayLift * dt);
-
+    // まず速度を抜く。
+    //   突き抜けた直後は突撃速度がそのまま残っている。ここで減速しきらないと、
+    //   次の MoveToTarget が高速のまま隊列へ引き戻すので、勢いよく飛んできた機が
+    //   その速さのまま急に向きを変えて帰る絵になる。
     float drag = 1.0f - kBreakawayDrag * dt;
     if (drag < 0.0f) drag = 0.0f;
     drone.currentVelocity = drone.currentVelocity * drag;
+
+    // 浮き上がりは「減速してから」効かせる。
+    //   全速のまま上向きの力を加えると、突き抜けた瞬間に軌道が跳ね上がって
+    //   刺さらずに逸れたように見える。速度が落ちるほど強く効かせると、
+    //   勢いのまま少し進んでから、ふわりと持ち上がる形になる。
+    //
+    //   減速しきった後もこの状態は続く（離脱時間 kBreakawayTime のあいだ）。
+    //   その「ほとんど止まって漂っている時間」が、突撃と帰投のあいだの間になる。
+    //   この間ドローンは FireCharge ではないので無害＝反撃してよい時間でもある。
+    const float speed = drone.currentVelocity.Length();
+    const float fast  = (std::min)(speed / kBreakawayFastSpeed, 1.0f);
+
+    drone.currentVelocity += Vector3::UnitY * (kBreakawayLift * (1.0f - fast) * dt);
 
     // 実際に進んでいる方向へ機首を向ける（目標ではなく速度を見る＝飛行機的な挙動）。
     Vector3 look = drone.currentVelocity;

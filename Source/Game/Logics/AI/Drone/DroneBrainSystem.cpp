@@ -142,9 +142,26 @@ bool DroneBrainSystem::HasFinishedCharge(const TransformComponent &trans,
                                          DroneComponent           &drone,
                                          float                     dt) const
 {
-    // 発射待ち中はまだ飛んでいない（順次発射の自分の番を待っている）。
-    //   ここで数え始めると、後ろの機が飛ぶ前に寿命切れになる。
-    if (drone.fireDelay > 0.0f) return false;
+    // --- まだ飛び出していない間は、飛距離の起点を今の位置に置き直し続ける ---
+    //
+    //   突撃の起点(chargeStartPos)は FireCharge へ入った瞬間＝「撃て」の合図の
+    //   瞬間に記録される。だが弾幕はそこから
+    //     順番待ち(fireDelay) → 輪から中央へ移動 → タメ(stateTimer)
+    //   と続いてから飛び出す。輪から中央までは約21m あるので、起点を合図の
+    //   位置のままにしておくと「発射した時点で既に21m飛んだ」ことになる。
+    //   その結果、飛距離の上限(kChargeRange)に早く到達して、プレイヤーへ届く前に
+    //   突撃を打ち切ってしまう。打ち切ると Returning＝無害になるので、
+    //   「重なっているのに当たらない」という形で表に出る。
+    //   遠いほど届かなくなるので、間合いが開いたときだけ再現した。
+    //
+    //   起点と時計をここで置き直せば、kChargeRange と kChargeTimeout は
+    //   どちらも「飛び出してから」の値になり、意味と数字が一致する。
+    if (drone.fireDelay > 0.0f || drone.stateTimer > 0.0f)
+    {
+        drone.chargeStartPos = Vector3(trans.position);
+        drone.chargeTimer    = 0.0f;
+        return false;
+    }
 
     drone.chargeTimer += dt;
 

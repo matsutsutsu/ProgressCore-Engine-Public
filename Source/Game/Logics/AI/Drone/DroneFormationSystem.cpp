@@ -55,7 +55,7 @@ FormationContext DroneFormationSystem::MakeContext(float dt)
         for (auto b : bossView)
         {
             if (auto *t = m_world->GetComponent<TransformComponent>(b))
-                ctx.bossPos = t->position;
+                ctx.bossPos = t->GetWorldPosition();   // position はローカル。陣形の中心はワールドで置く
             if (auto *c = m_world->GetComponent<BossCommandComponent>(b))
                 attackActive = c->droneAttackActive;
             break;
@@ -65,8 +65,10 @@ FormationContext DroneFormationSystem::MakeContext(float dt)
     // プレイヤー位置（BattleContext から）
     if (m_world->HasResource<BattleContext>())
     {
-        auto &battle  = m_world->GetResource<BattleContext>();
-        ctx.playerPos = battle.playerPos;
+        auto &battle       = m_world->GetResource<BattleContext>();
+        ctx.playerPos      = battle.playerPos;
+        ctx.playerCenter   = battle.playerCenter;
+        ctx.playerVelocity = battle.playerVelocity;
     }
 
     // 小隊の頭の位置（SquadUpdateSystem が今フレーム更新済み）。

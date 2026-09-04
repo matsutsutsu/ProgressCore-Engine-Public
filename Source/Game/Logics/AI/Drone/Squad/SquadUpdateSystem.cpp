@@ -51,7 +51,7 @@ void SquadUpdateSystem::Update(float dt)
                 attacking = cmd->droneAttackActive;
             }
             if (const auto *t = m_world->GetComponent<TransformComponent>(b))
-                bossPos = Vector3(t->position);
+                bossPos = Vector3(t->GetWorldPosition());   // position はローカル
             break;
         }
     }

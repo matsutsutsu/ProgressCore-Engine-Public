@@ -16,9 +16,6 @@
 #include "Game/Logics/Effects/Components/JustEvadeEffectComponent.h"
 #include "Engine/Physics/Components/RigidBody/JoltRigidBodyComponent.h" // 壁/地形との接触を除外するため
 
-#include <cstdio>
-#include <imgui.h>
-
 using namespace CCL::ECS;
 
 // そのドローンが「今ぶつかったらジャスト回避が成立する相手」かを判定する門番。
@@ -44,12 +41,6 @@ void JustEvadeSystem::Initialize()
     ListenEvent<JoltCollisionEvent>([this](const JoltCollisionEvent& ev) {
         m_pendingContacts.push_back(ev);
     });
-
-    // 被弾でチェイン切断（ボス／ドローンいずれの攻撃を食らっても初期化）
-    ListenEvent<DamageTakenEvent>([this](const DamageTakenEvent &ev) {
-        if (ev.isPlayer) BreakChain(ev.targetID);
-    });
-
 
     // JUST回避が成功した瞬間のイベントをリッスン
     ListenEvent<JustEvadeSuccessEvent>([this](const JustEvadeSuccessEvent &ev) {
@@ -122,7 +113,7 @@ void JustEvadeSystem::Update(float rawDt)
     // 2. フラグのクリーンアップ
     // イベントは同期的に飛んできてフラグを true にするため、
     // 次のフレームに成功判定が持ち越されないよう、フレームの最後に全フラグをリセットする。
-    ForEach([&](JustEvadeComponent &evade, DashComponent &dash, CharacterMovementComponent &movement, const TimeStateComponent &time) {
+    ForEach([&](JustEvadeComponent &evade, DashComponent &dash, const TimeStateComponent &time) {
         // 毎フレームリセットではなく、ダッシュが終わった瞬間にリセットする
         if (!dash.isDashing)
         {
@@ -142,98 +133,7 @@ void JustEvadeSystem::Update(float rawDt)
                 evade.lastEvadedTarget = CCL::ECS::InvalidEntityID;
             }
         }
-
-        // ==========================================================
-        //  チェイン: 段数に応じた効果を毎フレーム反映する
-        //   （速度上昇＝リターン / 受付窓の縮小＝リスク。撃破範囲は Drone 側で適用）
-        // ==========================================================
-        int chain = (evade.chainCount < 0) ? 0 : evade.chainCount;
-
-        // 移動速度上昇（上限 chainSpeedMax）。JoltCharacterUpdateSystem が walk/override 速度に掛ける。
-        float speedUp = chain * evade.chainSpeedPerLevel;
-        if (speedUp > evade.chainSpeedMax) speedUp = evade.chainSpeedMax;
-        movement.speedMultiplier = 1.0f + speedUp;
-
-        // ジャスト受付窓の厳しさ（下限 windowScaleMin）。PlayerDashSystem が窓幅に掛ける。
-        float wScale = 1.0f - chain * evade.windowScalePerLevel;
-        if (wScale < evade.windowScaleMin) wScale = evade.windowScaleMin;
-        dash.justEvadeWindowScale = wScale;
-
-        // ==========================================================
-        //  チェイン切断: 攻撃が来ていない状況での「ダラケた静止」
-        //   ※「攻撃予兆に対する正しい待機」との区別は未実装(暫定)。
-        //     誤爆を避けるため idleBreakTime は緩め、静止のみをカウントする。
-        // ==========================================================
-        if (evade.idleBreakTime > 0.0f && chain > 0)
-        {
-            bool moving = movement.desiredVelocity.LengthSquared() > 0.001f;
-            bool acting = dash.isDashing || dash.isApproaching;
-            if (moving || acting)
-            {
-                evade.idleTimer = 0.0f;
-            }
-            else
-            {
-                evade.idleTimer += time.localDt;
-                if (evade.idleTimer >= evade.idleBreakTime)
-                {
-                    evade.chainCount = 0;
-                    evade.idleTimer  = 0.0f;
-                }
-            }
-        }
-        else
-        {
-            evade.idleTimer = 0.0f;
-        }
     });
-}
-
-// チェインを初期状態へ戻す（被弾などで呼ぶ）。効果値(速度/窓)は次フレームの Update が 0 段基準へ戻す。
-//
-// ここだけは Update の外（DamageTakenEvent の発行元＝DamageResolutionSystem の
-// タスク・L06_DamageApply）で走る。書くのは chainCount/idleTimer だけで、
-// L06 に JustEvadeComponent を触るシステムは他に無いため競合しない。
-// バッファリングして次フレームに回すとチェイン切断が1フレーム遅れるので即時のままにする。
-void JustEvadeSystem::BreakChain(EntityID playerID)
-{
-    if (auto *evade = m_world->GetComponent<JustEvadeComponent>(playerID))
-    {
-        if (evade->chainCount != 0)
-            CCL_LOG_INFO(LogCategory::Game, "CHAIN BROKEN (was x%d)", evade->chainCount);
-        evade->chainCount = 0;
-        evade->idleTimer  = 0.0f;
-    }
-}
-
-// ============================================================================
-//  チェインHUD：段数を前面に大きく表示する（爽快感のフィードバック）
-// ============================================================================
-void JustEvadeSystem::OnGui()
-{
-    const JustEvadeComponent *found = nullptr;
-    ForEach([&](JustEvadeComponent &evade, DashComponent &, CharacterMovementComponent &, const TimeStateComponent &) {
-        if (!found) found = &evade;
-    });
-    if (!found || found->chainCount <= 0) return;
-
-    ImDrawList *dl = ImGui::GetForegroundDrawList();
-    ImGuiIO    &io = ImGui::GetIO();
-
-    // 段数が上がるほど熱い色（青→黄→赤）に寄せる
-    float t = (found->maxChain > 0) ? (float)found->chainCount / (float)found->maxChain : 0.0f;
-    if (t > 1.0f) t = 1.0f;
-    ImU32 col = IM_COL32((int)(120 + 135 * t), (int)(200 - 120 * t), (int)(255 - 235 * t), 255);
-
-    char buf[32];
-    std::snprintf(buf, sizeof(buf), "CHAIN x%d", found->chainCount);
-
-    // OVERDRIVE ゲージ(左下)と被らないよう、その少し上に表示する
-    const float x = 48.0f;
-    const float y = io.DisplaySize.y - 120.0f;
-    // 明るい背景でも数字が読めるよう、1px ずらした黒を先に敷いてから本体を重ねる
-    dl->AddText(ImGui::GetFont(), 34.0f, ImVec2(x + 1.0f, y + 1.0f), IM_COL32(0, 0, 0, 200), buf);
-    dl->AddText(ImGui::GetFont(), 34.0f, ImVec2(x, y), col, buf);
 }
 
 void JustEvadeSystem::CheckJustEvade(EntityID playerCandidate, EntityID otherCandidate)
@@ -281,20 +181,14 @@ void JustEvadeSystem::CheckJustEvade(EntityID playerCandidate, EntityID otherCan
     evade->lastEvadedTarget = otherCandidate;
     evade->resetTimer       = 1.0f;
 
-    // チェイン加算（上限で頭打ち）。撃破範囲・受付の厳しさ・移動速度は、この段数を
-    //    各所（DroneManagerの範囲撃破 / PlayerDashの受付窓 / 移動速度倍率）が参照する。
-    //    Publish より前に加算し、購読側が最新の段数を見られるようにする。
-    if (evade->chainCount < evade->maxChain) evade->chainCount++;
-    evade->idleTimer = 0.0f; // 成立したので静止タイマーをリセット
-
     m_world->GetEventBus().Publish(JustEvadeSuccessEvent{playerCandidate, otherCandidate});
 
     // カメラへは「画角を瞬間的に広げてほしい」という汎用要求だけを伝える。
     // （カメラが JustEvadeSuccessEvent を直接購読すると Engine→Game 依存になるため）
     m_world->GetEventBus().Publish(CameraFovPunchRequestEvent{playerCandidate, 130.0f});
 
-    CCL_LOG_SUCCESS(LogCategory::Game, "JUST EVADE SUCCESS!! Player: %s  (CHAIN x%d)",
-        CCL::EntityLabel(*m_world, playerCandidate).c_str(), evade->chainCount);
+    CCL_LOG_SUCCESS(LogCategory::Game, "JUST EVADE SUCCESS!! Player: %s",
+        CCL::EntityLabel(*m_world, playerCandidate).c_str());
 }
 
 // 接触判定と同じ L05_Collision に置く。

@@ -148,6 +148,15 @@ enum class DroneAttackPhase : uint8_t
 // 折り返しをまたいだ1フレームだけ揺れが飛ぶ、という壊れ方をする。
 inline constexpr float kHoverPhasePeriod = 6.28318530718f;
 
+// 突撃（リリース）時に moveSpeed へ掛ける倍率。
+//
+// なぜコンポーネント側に置くか:
+//   動かす側（DroneMovementSystem）だけでなく、狙いを決める側（弾幕の陣形）も
+//   この値を要る。飛翔時間 ＝ 距離 ÷ 射出速度 を出さないと偏差射撃が組めない。
+//   両方が同じ数字を見ていないと、狙った先と実際の着弾がずれる。
+//   kHoverPhasePeriod をここへ置いてあるのと同じ理由。
+inline constexpr float kDroneChargeSpeedScale = 5.5f;
+
 // ドローン1機ぶんの状態。
 struct DroneComponent
 {

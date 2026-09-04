@@ -21,7 +21,17 @@ namespace CCL::AI::Formation
 struct FormationContext
 {
     DirectX::SimpleMath::Vector3 bossPos   = {};   // ボスの位置（陣形の中心）
-    DirectX::SimpleMath::Vector3 playerPos = {};   // プレイヤーの位置（狙う系で使う）
+    DirectX::SimpleMath::Vector3 playerPos = {};   // プレイヤーの位置（足元。間合いの計算に使う）
+
+    // プレイヤーの体の中心。狙うのはこちら。
+    //   playerPos は足元なので、そこを狙うと身長ぶん（このゲームでは 4.5m）
+    //   下を撃つことになる。地面へ突き刺さって当たらない。
+    DirectX::SimpleMath::Vector3 playerCenter = {};
+
+    // プレイヤーの速度 [m/s]。飛翔時間のある技が偏差射撃に使う。
+    //   置き技（縦割り・挟み込み）は読まない。あちらは「撃つ瞬間の向きへ
+    //   コミットする」のが仕様なので、先を読むと回避が成立しなくなる。
+    DirectX::SimpleMath::Vector3 playerVelocity = {};
     float                        time      = 0.0f; // 経過時間（回転アニメ等に使う）
     float                        dt        = 0.0f; // このフレームの経過時間（攻撃の進行度を進めるのに使う）
 

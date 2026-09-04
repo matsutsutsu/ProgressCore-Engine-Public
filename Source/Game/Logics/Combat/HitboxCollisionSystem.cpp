@@ -150,7 +150,11 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
         auto *vicT = m_world->GetComponent<TransformComponent>(victimCandidate);
         if (atkT && vicT)
         {
-            Vector3 d = Vector3(vicT->position) - Vector3(atkT->position);
+            // position はローカル座標（親からの相対）。剣は手のボーン配下、
+            // ドローンは親なし、プレイヤーはプレハブ実体の配下、と親がばらばらなので、
+            // そのまま引き算すると別々の空間の値を混ぜることになる。
+            // TransformComponent.h の「ロジック判定には GetWorldPosition() を使うこと」に従う。
+            Vector3 d = Vector3(vicT->GetWorldPosition()) - Vector3(atkT->GetWorldPosition());
             d.y       = 0.0f; // 平面ステージ。吹っ飛びはXZのみ
             if (d.LengthSquared() > 1e-6f)
             {
