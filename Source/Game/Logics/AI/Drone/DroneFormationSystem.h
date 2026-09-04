@@ -43,7 +43,23 @@ class DroneFormationSystem : public CCL::ECS::IfSystem<DroneFormationSystem,
 
   private:
     // ボス位置・プレイヤー位置など「場の情報」を組み立てる。
-    CCL::AI::Formation::FormationContext MakeContext(float dt) const;
+    //
+    // 狙いの固定（下の m_lockedAimDir）を更新するので const ではない。
+    CCL::AI::Formation::FormationContext MakeContext(float dt);
 
     float m_elapsed = 0.0f; // 回転アニメ用の経過時間
+
+    // --- 狙う向きの固定 ---
+    //
+    // なぜ他システムではなくここが持つか:
+    //   立ち上がり検出は DroneCommandSystem も prevDroneAttackActive で持っているが、
+    //   そちらに相乗りすると「どちらが先に走ったか」で固定される向きが1フレームずれる。
+    //   陣形へ配るのはこのシステムなので、ここが自分で見て自分で焼く。
+    //   結果、同一ステージ内の実行順に依存しない。
+    //
+    // 単一のボスを前提にしている。MakeContext がボスを「最初の1体」しか
+    // 見ていないので、そこと同じ前提に揃えてある。
+    DirectX::SimpleMath::Vector3 m_lockedAimDir     = DirectX::SimpleMath::Vector3::UnitZ;
+    bool                         m_aimLocked        = false;
+    bool                         m_prevAttackActive = false;
 };

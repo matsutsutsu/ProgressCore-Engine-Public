@@ -188,6 +188,21 @@ struct DroneComponent
 
     float attackProgress = 0.0f; // [RT] 陣形攻撃の進行度 0→1。縦割りが倒れる等「形が動く」技の時間軸
 
+    // [RT] 予告の溜め時間 [秒]。書き手は DroneFormationSystem。
+    //
+    // 「持ち場に着いている（hasReachedSlot）が、まだ撃つ合図が来ていない」＝
+    // 予備動作の最中だけ進み、それ以外では 0 に戻る。DroneMovementSystem が
+    // この値から震えの振幅を出す（長く溜まるほど大きく震える）。
+    //
+    // なぜ振幅そのものではなく「溜まった秒数」を持つのか:
+    //   BT の Wait(予告) を伸ばせば自動で長く溜まり、縮めれば即撃ちになる。
+    //   予告の強さに専用の調整値を作らずに済み、調整先が予告の長さ1つに集まる。
+    //
+    // 機体ごとに持つのは hasReachedSlot が機体ごとに違うため。
+    // 突撃から帰る途中の機は false なので、帰りながら震えることはない。
+    // 隊列へ戻った機から順に震え始め、群れが「充電されていく」ように見える。
+    float windupTimer = 0.0f;
+
     ChargeMode chargeMode = ChargeMode::Straight; // [RT] FireCharge 中の移動方式。突撃開始時に判断層が Straight へ戻す
 
     // [RT] 発射待ち時間 [秒]。FireCharge に入っても >0 の間はその場で待ち、0 でタメ→リリースへ進む。

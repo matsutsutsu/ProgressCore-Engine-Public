@@ -29,6 +29,7 @@ template <> struct ComponentMeta<BossActionComponent> {
             CFIELD_FLOAT_RANGED(turnSpeed, "旋回速度(移動中)", 0.1f, 0.0f, 100.0f, "Stats")
             CFIELD_FLOAT_RANGED(acceleration, "加速度", 0.1f, 0.0f, 100.0f, "Inertia")
             CFIELD_FLOAT_RANGED(deceleration, "減速度", 0.1f, 0.0f, 100.0f, "Inertia")
+            CFIELD_FLOAT_RANGED(meleeTurnTime, "薙ぎ払い：追従して向く時間 [秒]", 0.01f, 0.0f, 3.0f, "Melee")
             CFIELD_FLOAT_RANGED(chargeSpeed, "突進速度", 0.5f, 0.0f, 200.0f, "Dash Slash")
             CFIELD_FLOAT_RANGED(dashWindupTime, "突進：溜め [秒]", 0.01f, 0.0f, 3.0f, "Dash Slash")
             CFIELD_FLOAT_RANGED(dashDriveTime, "突進：踏み込み [秒]", 0.01f, 0.0f, 3.0f, "Dash Slash")

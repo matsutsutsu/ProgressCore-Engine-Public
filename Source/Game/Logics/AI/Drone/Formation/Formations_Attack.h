@@ -43,11 +43,10 @@ struct GuillotineSlamFormation : public IFormation
         // 移動側にはそれを剛体追従させる（直進ではなく回転）。
         drone.chargeMode = ChargeMode::RigidFollow;
 
-        // --- ボス→プレイヤーの水平方向と、それに直交する「刃の幅」方向 ---
-        Vector3 dir = ctx.playerPos - ctx.bossPos;
-        dir.y = 0.0f;
-        if (dir.LengthSquared() < 0.001f) dir = Vector3::UnitZ;
-        dir.Normalize();
+        // --- 狙う向きと、それに直交する「刃の幅」方向 ---
+        //   playerPos を直接見ないこと。AimDirection() は「撃つと決めた瞬間」の
+        //   向きを返すので、倒れている最中にプレイヤーが横へ動いても刃は追わない。
+        const Vector3 dir = ctx.AimDirection();
 
         Vector3 right = Vector3::UnitY.Cross(dir);
         if (right.LengthSquared() < 0.001f) right = Vector3::UnitX;
@@ -137,11 +136,9 @@ struct ClapSlamFormation : public IFormation
 
         drone.chargeMode = ChargeMode::RigidFollow; // 腕が形を保ったまま閉じる（剛体スライド）
 
-        // ボス→プレイヤーの水平方向＝挟み込みの中心軸。腕はこの線上へ閉じる。
-        Vector3 centerDir = ctx.playerPos - ctx.bossPos;
-        centerDir.y = 0.0f;
-        if (centerDir.LengthSquared() < 0.001f) centerDir = Vector3::UnitZ;
-        centerDir.Normalize();
+        // 挟み込みの中心軸。腕はこの線上へ閉じる。
+        //   閉じ始めてからは追わない（AimDirection が撃つ瞬間の向きを返す）。
+        const Vector3 centerDir = ctx.AimDirection();
 
         // --- 左右どちらの腕か → 腕内番号 k を (距離セグメント × 高さ) へ割り付ける ---
         const bool isRight = (drone.localIndex % 2 == 0);
@@ -222,10 +219,7 @@ struct KamikazeSwarmFormation : public IFormation
 
         drone.chargeMode = ChargeMode::Straight; // dashモード（fireDirection直進）
 
-        Vector3 dir = ctx.playerPos - ctx.bossPos;
-        dir.y = 0.0f;
-        if (dir.LengthSquared() < 0.001f) dir = Vector3::UnitZ;
-        dir.Normalize();
+        const Vector3 dir = ctx.AimDirection();
 
         // --- forming：ボス頭上に「弾の供給リング」を作って待機させる ---
         const int   total = (drone.totalDrones > 0) ? drone.totalDrones : 1;
@@ -276,10 +270,7 @@ struct MegaClapSlamBase : public IFormation
 
         drone.chargeMode = ChargeMode::RigidFollow; // 壁が形を保ってスライド（follow-target）
 
-        Vector3 dir = ctx.playerPos - ctx.bossPos;
-        dir.y = 0.0f;
-        if (dir.LengthSquared() < 0.001f) dir = Vector3::UnitZ;
-        dir.Normalize();
+        const Vector3 dir = ctx.AimDirection();
         Vector3 right = Vector3::UnitY.Cross(dir);
         if (right.LengthSquared() < 0.001f) right = Vector3::UnitX;
         right.Normalize();
@@ -372,10 +363,7 @@ struct SideSlapWhipFormation : public IFormation
         using namespace DirectX::SimpleMath;
         drone.chargeMode = ChargeMode::RigidFollow;
 
-        Vector3 dir = ctx.playerPos - ctx.bossPos;
-        dir.y = 0.0f;
-        if (dir.LengthSquared() < 0.001f) dir = Vector3::UnitZ;
-        dir.Normalize();
+        const Vector3 dir = ctx.AimDirection();
         Vector3 right = Vector3::UnitY.Cross(dir);
         if (right.LengthSquared() < 0.001f) right = Vector3::UnitX;
         right.Normalize();
@@ -433,10 +421,7 @@ struct WaveGuillotineBase : public IFormation
         using namespace DirectX::SimpleMath;
         drone.chargeMode = ChargeMode::RigidFollow;
 
-        Vector3 dir = ctx.playerPos - ctx.bossPos;
-        dir.y = 0.0f;
-        if (dir.LengthSquared() < 0.001f) dir = Vector3::UnitZ;
-        dir.Normalize();
+        const Vector3 dir = ctx.AimDirection();
         Vector3 right = Vector3::UnitY.Cross(dir);
         if (right.LengthSquared() < 0.001f) right = Vector3::UnitX;
         right.Normalize();

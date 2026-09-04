@@ -220,11 +220,19 @@ void BossActionSystem::ProcessMeleeHold(BossActionComponent &bossDef, TransformC
     bossDef.currentMoveSpeed = 0.0f;
     movement.desiredVelocity    = Vector3::Zero;
 
-    // 斬る相手（プレイヤー）の方を向く（移動中と同じ速さでしっかり正対）
-    Vector3 dirToPlayer = playerPos - trans.position;
-    dirToPlayer.y       = 0.0f;
-    TurnToward(trans, dirToPlayer, bossDef.turnSpeed, dt);
-    SyncCharacterRotation(trans, joltHandle.character.GetPtr());
+    // 斬る相手の方を向くのは「振りかぶり」の間だけ。
+    //
+    //   ここで回り続けると、振り切っている最中も硬直中もプレイヤーを追うので、
+    //   横へ回り込んでも刃が付いてきて当たる。技を出したら向きは決め打ちにして、
+    //   避けた側に「後隙を狩る」余地を残す。
+    //   どこまで追うかは meleeTurnTime（既定 0.35 秒）で決める。
+    if (bossDef.actionTimer < bossDef.meleeTurnTime)
+    {
+        Vector3 dirToPlayer = playerPos - trans.position;
+        dirToPlayer.y       = 0.0f;
+        TurnToward(trans, dirToPlayer, bossDef.turnSpeed, dt);
+        SyncCharacterRotation(trans, joltHandle.character.GetPtr());
+    }
 }
 
 BossActionState BossActionSystem::TranslateAction(ActionID actionId) const

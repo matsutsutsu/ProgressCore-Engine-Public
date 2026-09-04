@@ -13,6 +13,9 @@ namespace CCL::AI::Formation::Basic
 // ====================================================================
 struct OrbitCircleFormation : public IFormation
 {
+    // 隊形（位置取り）であって技ではないので、予告の震えを出さない。
+    bool IsTechnique() const override { return false; }
+
     void Calculate(DroneComponent &drone, const FormationContext &ctx) override
     {
         using namespace DirectX::SimpleMath;
@@ -57,6 +60,9 @@ struct OrbitCircleFormation : public IFormation
 // ====================================================================
 struct HighOrbitFormation : public IFormation
 {
+    // 攻撃と攻撃の「あいだ」の中立。技ではないので震えない。
+    bool IsTechnique() const override { return false; }
+
     void Calculate(DroneComponent &drone, const FormationContext &ctx) override
     {
         using namespace DirectX::SimpleMath;

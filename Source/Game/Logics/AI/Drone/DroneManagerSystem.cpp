@@ -22,7 +22,7 @@
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
-// ドローンのプレハブパス（既存コードから）
+// ドローンのプレハブパス
 static constexpr const char* kDronePrefab = "Assets/Prefabs/Enemy/Drone.json";
 
 void DroneManagerSystem::Initialize()
@@ -363,7 +363,9 @@ void DroneManagerSystem::OnGui()
         {
             int   total = 0, wants = 0, reached = 0, moving = 0;
             int   st[5] = {0, 0, 0, 0, 0};
-            float sumProgress = 0.0f;
+            float sumProgress  = 0.0f;
+            int   telegraphing = 0;
+            float sumWindup    = 0.0f;
 
             auto droneView = m_world->View<DroneComponent>();
             for (auto e : droneView)
@@ -375,6 +377,8 @@ void DroneManagerSystem::OnGui()
                 if (d->hasReachedSlot) ++reached;
                 if (d->attackProgress > 0.01f) ++moving;
                 sumProgress += d->attackProgress;
+                if (d->windupTimer > 0.0f) ++telegraphing;
+                sumWindup += d->windupTimer;
                 const int s = static_cast<int>(d->currentState);
                 if (s >= 0 && s < 5) ++st[s];
             }
@@ -387,6 +391,10 @@ void DroneManagerSystem::OnGui()
                             wants, total, reached, total);
                 ImGui::Text("形が動いている機 %d      attackProgress 平均 %.2f",
                             moving, sumProgress / total);
+                // 予告の震えが鳴っているか。ここが 0 のまま突撃信号が立つなら、
+                // 予告の時間（BTの Wait）が短すぎて溜まる前に撃っている。
+                ImGui::Text("予告で震えている機 %d      溜め 平均 %.2f 秒",
+                            telegraphing, sumWindup / total);
                 ImGui::Text("状態  Idle %d   Move %d   Fire %d   Stun %d   Return %d",
                             st[0], st[1], st[2], st[3], st[4]);
             }
@@ -627,4 +635,4 @@ bool DroneManagerSystem::DestroyDrone(EntityID droneId)
 }
 
 // L02_Update で計数（判断・陣形と同じステージ。順序は問わない）
-REGISTER_LOGIC_SYSTEM(DroneManagerSystem, Priority::LogicStage::L02_Update)
+REGISTER_LOGIC_SYSTEM(DroneManagerSystem, Priority::LogicStage::L02_Update)

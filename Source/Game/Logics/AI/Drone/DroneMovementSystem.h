@@ -55,6 +55,19 @@ class DroneMovementSystem : public CCL::ECS::IfSystem<
     // 剛体追従と違って形が歪む。歪むことがこの技の見た目の核。
     inline void ProcessChargeSoftFollow(TransformComponent &trans, DroneComponent &drone, float dt);
 
+    // 震えの速度オフセット [m/s]。
+    //
+    //   突撃直前のタメ（ProcessFireCharge）と、陣形攻撃の予告（ProcessIdle）が
+    //   これを共有する。同じ震え方であることに意味があり、別々に書くと
+    //   片方だけ直る事故が起きる。
+    //   位相 hoverTimeOffset は生成時に個体ごとへ蒔いてあるので、乱数も
+    //   機体ごとの状態も持たずに全機がバラバラに震える。
+    static DirectX::SimpleMath::Vector3 Jitter(const DroneComponent &drone, float amplitude);
+
+    // 予告の震えの「位置オフセット」[m]。位相を引数に取るのは、前フレームぶんの
+    // オフセットを引いて差分だけ動かすため（ProcessIdle 参照）。
+    static DirectX::SimpleMath::Vector3 Shiver(float phase, float amplitude);
+
     // 切り払いで吹き飛ばされ、制御を失って漂う。通常の追従・突撃を一切行わない。
     //
     // タイマーの管理は DroneBrainSystem 側。ここは「漂って減衰する」動きだけを持つ。
@@ -95,6 +108,56 @@ class DroneMovementSystem : public CCL::ECS::IfSystem<
     static constexpr float kWindupJitterSpeedX = 100.0f;
     static constexpr float kWindupJitterSpeedY = 120.0f;
     static constexpr float kWindupJitterSpeedZ =  80.0f;
+
+    // --- 陣形攻撃の予告（震え）---
+    //
+    //   上のタメの震えは「直進する技（弾幕・カミカゼ）」でしか鳴っていなかった。
+    //   陣形技はすべて RigidFollow で、ProcessFireCharge の途中で return するため
+    //   タメのコードに到達しない。つまり縦割りも挟み込みも一度も震えていない。
+    //   さらにタメは「撃つ合図の後」なので、予告としては遅すぎる。
+    //   そこで、合図の前（持ち場に着いた／まだ撃たない）に震えを出す。
+    //
+    //   【単位が m/s ではなく m であること】
+    //   上のタメの震えは速度に足している。速度で揺らすと実際に動く幅は
+    //   「振幅 ÷ 角速度」になるので、kWindupJitter 5.5[m/s] ÷ 100[rad/s] ≒ 5cm
+    //   しか動かない。予告として画面で見える揺れを作るには桁が足りない。
+    //   予告は「何メートル震えるか」を直接指定できるよう、位置側で持つ。
+    //
+    //   振幅は drone.windupTimer（＝構えている秒数）で 0 から立ち上げる。
+    //   BT の Wait(予告) が長ければゆっくり大きく、短ければ即ビリッと震える。
+    static constexpr float kTelegraphAmplitude = 0.32f; // 溜め切ったときの振れ幅 [m]
+    static constexpr float kTelegraphRampTime  = 1.2f;  // この秒数で最大まで溜まる
+
+    //   震えの角速度 [rad/s]。
+    //
+    //   【3軸に別々の値を入れること】
+    //   3軸を同じ値にすると (cos, sin, cos) が同じ角度で動くので、機体は
+    //   決まった楕円をなぞって周回するだけになる。震えではなく「小さく回る」
+    //   動きに見え、速度を上げても回転が速くなるだけで小刻みにはならない。
+    //   互いに整数比にならない値を入れて、軌道を閉じさせないのが要点。
+    //
+    //   【上げられる上限がある】
+    //   60fps で折り返さずに表現できるのは π/dt ≒ 188 [rad/s]（≒30Hz）まで。
+    //   これを越えるとサンプリングの折り返しが起き、速く震えるどころか
+    //   ゆっくりした揺れに化ける。下の値はすべてその内側に収めてある。
+    //
+    //   kHoverPhasePeriod(2π) で位相を巻き戻すので、すべて整数のままにすること
+    //   （差分計算が折り返しをまたいでも連続するのはこの制約のおかげ）。
+    static constexpr float kTelegraphSpeedX = 97.0f;  // ≒15Hz
+    static constexpr float kTelegraphSpeedY = 113.0f; // ≒18Hz
+    static constexpr float kTelegraphSpeedZ = 89.0f;  // ≒14Hz
+
+    //   さらに角速度の違う波をもう1つ重ねる。
+    //   1軸1波だと、どれだけ軸ごとに値を変えても各軸は規則正しい往復のままで、
+    //   よく見ると「一定のリズムで揺れている」と分かってしまう。
+    //   整数比にならない波を足すと合成の周期が事実上戻ってこなくなり、
+    //   同じ振幅でも不規則な振動として読める。
+    static constexpr float kTelegraphSpeed2X = 151.0f; // ≒24Hz
+    static constexpr float kTelegraphSpeed2Y = 139.0f; // ≒22Hz
+    static constexpr float kTelegraphSpeed2Z = 167.0f; // ≒27Hz
+
+    //   第2成分を混ぜる比率。上げるほど荒れた震えになる。
+    static constexpr float kTelegraphSecondary = 0.45f;
 
     // 突撃（リリース）の速度倍率。moveSpeed に掛ける。
     static constexpr float kChargeSpeedScale = 2.5f;

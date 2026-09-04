@@ -13,6 +13,34 @@
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
+// 震えの速度オフセット。3軸で角速度を変えて単純な往復に見せない。
+//   位相 hoverTimeOffset は個体ごとに違うので、群れが1枚の板として震えない。
+Vector3 DroneMovementSystem::Jitter(const DroneComponent &drone, float amplitude)
+{
+    return {std::cos(drone.hoverTimeOffset * kWindupJitterSpeedX) * amplitude,
+            std::sin(drone.hoverTimeOffset * kWindupJitterSpeedY) * amplitude,
+            std::cos(drone.hoverTimeOffset * kWindupJitterSpeedZ) * amplitude};
+}
+
+// 予告の震えの位置オフセット。
+//
+//   1軸につき角速度の違う2つの波を重ねる。単独の正弦波だと3軸の合成が
+//   滑らかな閉曲線になり、小さく円を描いて回っているようにしか見えない。
+//   整数比にならない波を足すと合成周期が実質戻らなくなり、同じ振幅でも
+//   不規則な振動として読める。乱数は使わない（位相 hoverTimeOffset だけで
+//   決まるので、機体ごとの状態を持たずに全機がバラバラに震える）。
+Vector3 DroneMovementSystem::Shiver(float phase, float amplitude)
+{
+    const float a2 = amplitude * kTelegraphSecondary;
+
+    return {std::cos(phase * kTelegraphSpeedX) * amplitude
+                + std::cos(phase * kTelegraphSpeed2X) * a2,
+            std::sin(phase * kTelegraphSpeedY) * amplitude
+                + std::sin(phase * kTelegraphSpeed2Y) * a2,
+            std::cos(phase * kTelegraphSpeedZ) * amplitude
+                + std::cos(phase * kTelegraphSpeed2Z) * a2};
+}
+
 void DroneMovementSystem::Update(float rawDt)
 {
     // 小隊の調整値を写し取る（並列ループの中で resource を引かないため）
@@ -125,6 +153,41 @@ inline void DroneMovementSystem::ProcessIdle(TransformComponent &trans, DroneCom
     drone.currentVelocity.y +=
         std::cos(drone.hoverTimeOffset * kHoverFrequency) * kHoverAmplitude * dt;
 
+    // 予告の震え。構えている間だけ、溜まった秒数に応じて強くなる。
+    //
+    //   windupTimer は「持ち場に着いている／まだ撃つ合図が来ていない」間だけ
+    //   DroneFormationSystem が進める。合図が立った瞬間 0 に落ちるので、
+    //   震えは撃つのと同時にピタリと止み、そこから技の動きへ入れ替わる。
+    //
+    //   二乗で立ち上げるのは、序盤をほぼ無音にして「後半になって急に
+    //   ざわつき出す」形にするため。線形だと構えた瞬間から一様に震えてしまい、
+    //   どこが発生の直前なのかが読み取れない。
+    if (drone.windupTimer > 0.0f)
+    {
+        const float t   = (std::min)(1.0f, drone.windupTimer / kTelegraphRampTime);
+        const float amp = kTelegraphAmplitude * t * t;
+
+        // 速度ではなく座標を直接動かす。
+        //
+        //   なぜ速度に足さないか:
+        //     速度で揺らすと実際の振れ幅は「振幅 ÷ 角速度」まで縮む。
+        //     さらに Idle のバネ(kIdleGain)は低い周波数しか通さないので、
+        //     残ったぶんも打ち消される。指定した数字と見た目が一致しない。
+        //
+        //   なぜ差分（今フレーム − 前フレーム）にするか:
+        //     オフセットを毎フレーム足しっぱなしにすると座標へ溜まって
+        //     群れごと流れていく。差分なら足した量が次で戻るので溜まらず、
+        //     震えを止めた瞬間に持ち場の座標へそのまま収まる。
+        //
+        //   位相の巻き戻しについて:
+        //     hoverTimeOffset は 2π で折り返す。角速度がすべて整数なので、
+        //     折り返した直後に (位相 − dt) が負側へ回り込んでも
+        //     cos/sin の値は連続する。ここが整数縛りの効いている場所。
+        trans.position = Vector3(trans.position)
+                       + Shiver(drone.hoverTimeOffset, amp)
+                       - Shiver(drone.hoverTimeOffset - dt, amp);
+    }
+
     if (drone.targetLookDirection.LengthSquared() > 0.001f)
     {
         float      targetYaw = atan2f(-drone.targetLookDirection.x, -drone.targetLookDirection.z);
@@ -206,10 +269,7 @@ inline void DroneMovementSystem::ProcessFireCharge(TransformComponent &trans, Dr
         drone.currentVelocity =
             (drone.fireDirection * kWindupDrawback) + (Vector3::UnitY * kWindupLift);
 
-        // 3軸で角速度を変えて単純な往復に見せない。位相は個体ごとに違う。
-        drone.currentVelocity.x += std::cos(drone.hoverTimeOffset * kWindupJitterSpeedX) * kWindupJitter;
-        drone.currentVelocity.y += std::sin(drone.hoverTimeOffset * kWindupJitterSpeedY) * kWindupJitter;
-        drone.currentVelocity.z += std::cos(drone.hoverTimeOffset * kWindupJitterSpeedZ) * kWindupJitter;
+        drone.currentVelocity += Jitter(drone, kWindupJitter);
 
         float      targetYaw = atan2f(-drone.targetLookDirection.x, -drone.targetLookDirection.z);
         Quaternion targetRot = Quaternion::CreateFromAxisAngle(Vector3::UnitY, targetYaw);
@@ -312,4 +372,4 @@ inline void DroneMovementSystem::ProcessReturning(TransformComponent &trans, Dro
 }
 
 // L03_PrePhysics で確定させる（PushSystem より前に trans を仕上げる）
-REGISTER_LOGIC_SYSTEM(DroneMovementSystem, Priority::LogicStage::L03_PrePhysics);
+REGISTER_LOGIC_SYSTEM(DroneMovementSystem, Priority::LogicStage::L03_PrePhysics);
