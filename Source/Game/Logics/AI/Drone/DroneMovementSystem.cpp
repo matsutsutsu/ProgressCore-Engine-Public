@@ -13,27 +13,37 @@
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
-// 予告の震えの位置オフセット。
+// 予告の震えの位置オフセット。正弦波1本だけで作る。
 //
-//   1軸につき角速度の違う2つの波を重ねる。単独の正弦波だと3軸の合成が
-//   滑らかな閉曲線になり、小さく円を描いて回っているようにしか見えない。
-//   整数比にならない波を足すと合成周期が実質戻らなくなり、同じ振幅でも
-//   不規則な振動として読める。乱数は使わない（位相 hoverTimeOffset だけで
-//   決まるので、機体ごとの状態を持たずに全機がバラバラに震える）。
-Vector3 DroneMovementSystem::Shiver(float phase, float amplitude)
+// 1機1軸にする理由:
+//   3軸同時に揺らすと、軸ごとに周波数をずらさない限り小さな楕円をなぞるだけになる。
+//   ずらすには波を重ねることになり、値が6つ・三角関数1000機×12回／フレームに膨れる。
+//   隣同士で揺れる軸が違えば、1本の波でも形は崩れずに表面だけがざわつく。
+DirectX::SimpleMath::Vector3
+DroneMovementSystem::ShiverOffset(const DroneComponent &drone, float t, float amplitude) const
 {
-    const float a2 = amplitude * kTelegraphSecondary;
+    // 位相を機体ごとにずらす。揃っていると全機が同時に膨らんで「呼吸」に見える。
+    const float phase = t * m_shiver.frequency * DirectX::XM_2PI
+                      + drone.localIndex * kShiverPhaseStep * m_shiver.scatter;
 
-    return {std::cos(phase * kTelegraphSpeedX) * amplitude
-                + std::cos(phase * kTelegraphSpeed2X) * a2,
-            std::sin(phase * kTelegraphSpeedY) * amplitude
-                + std::sin(phase * kTelegraphSpeed2Y) * a2,
-            std::cos(phase * kTelegraphSpeedZ) * amplitude
-                + std::cos(phase * kTelegraphSpeed2Z) * a2};
+    const float v = std::sin(phase) * amplitude;
+
+    switch (drone.localIndex % 3)
+    {
+    case 0:  return {v, 0.0f, 0.0f};
+    case 1:  return {0.0f, v, 0.0f};
+    default: return {0.0f, 0.0f, v};
+    }
 }
 
 void DroneMovementSystem::Update(float rawDt)
 {
+    // 震えの調整値を写し取る。無ければ既定値で作る
+    //   （GUI を一度も開かなくても同じ見た目になる）。
+    if (!m_world->HasResource<DroneShiverTuning>())
+        m_world->AddResource<DroneShiverTuning>();
+    m_shiver = m_world->GetResource<DroneShiverTuning>();
+
     // 小隊の調整値を写し取る（並列ループの中で resource を引かないため）
     if (m_world->HasResource<SquadRegistry>())
     {
@@ -174,8 +184,8 @@ inline void DroneMovementSystem::ProcessIdle(TransformComponent &trans, DroneCom
     //   どこが発生の直前なのかが読み取れない。
     if (drone.windupTimer > 0.0f)
     {
-        const float t   = (std::min)(1.0f, drone.windupTimer / kTelegraphRampTime);
-        const float amp = kTelegraphAmplitude * t * t;
+        const float t   = (std::min)(1.0f, drone.windupTimer / m_shiver.rampTime);
+        const float amp = m_shiver.amplitude * t * t;
 
         // 速度ではなく座標を直接動かす。
         //
@@ -189,13 +199,13 @@ inline void DroneMovementSystem::ProcessIdle(TransformComponent &trans, DroneCom
         //     群れごと流れていく。差分なら足した量が次で戻るので溜まらず、
         //     震えを止めた瞬間に持ち場の座標へそのまま収まる。
         //
-        //   位相の巻き戻しについて:
-        //     hoverTimeOffset は 2π で折り返す。角速度がすべて整数なので、
-        //     折り返した直後に (位相 − dt) が負側へ回り込んでも
-        //     cos/sin の値は連続する。ここが整数縛りの効いている場所。
+        //   なぜ時間軸が windupTimer か:
+        //     構え始めてからの経過秒なので巻き戻らない。巻き戻る位相を使うと
+        //     折り返しで波が途切れないよう周波数を整数に固定する制約が付き、
+        //     スライダーで自由に変えられなくなる。
         trans.position = Vector3(trans.position)
-                       + Shiver(drone.hoverTimeOffset, amp)
-                       - Shiver(drone.hoverTimeOffset - dt, amp);
+                       + ShiverOffset(drone, drone.windupTimer, amp)
+                       - ShiverOffset(drone, drone.windupTimer - dt, amp);
     }
 
     if (drone.targetLookDirection.LengthSquared() > 0.001f)

@@ -55,9 +55,12 @@ class DroneMovementSystem : public CCL::ECS::IfSystem<
     // 剛体追従と違って形が歪む。歪むことがこの技の見た目の核。
     inline void ProcessChargeSoftFollow(TransformComponent &trans, DroneComponent &drone, float dt);
 
-    // 予告の震えの「位置オフセット」[m]。位相を引数に取るのは、前フレームぶんの
-    // オフセットを引いて差分だけ動かすため（ProcessIdle 参照）。
-    static DirectX::SimpleMath::Vector3 Shiver(float phase, float amplitude);
+    // 予告の震えの位置オフセット [m]。t は構え始めてからの経過秒。
+    //
+    // t を引数に取るのは、前フレームぶんを引いて差分だけ動かすため
+    // （足しっ本にすると座標に溜まって群れごと流れていく）。ProcessIdle 参照。
+    DirectX::SimpleMath::Vector3 ShiverOffset(const DroneComponent &drone, float t,
+                                              float amplitude) const;
 
     // 切り払いで吹き飛ばされ、制御を失って漂う。通常の追従・突撃を一切行わない。
     //
@@ -125,44 +128,23 @@ class DroneMovementSystem : public CCL::ECS::IfSystem<
     //
     //   【単位が m/s ではなく m であること】
     //   以前は速度に足していた。速度で揺らすと実際に動く幅は「振幅 ÷ 角速度」
-    //   になるので、5.5[m/s] ÷ 100[rad/s] ≒ 5cm しか動かず、画面ではまったく
-    //   見えなかった。「何メートル震えるか」を直接指定できるよう位置側で持つ。
+    //   になるので、指定した数字と見た目が一致しない。位置側で持つ。
     //
-    //   振幅は drone.windupTimer（＝構えている秒数）で 0 から立ち上げる。
-    //   BT の Wait(予告) が長ければゆっくり大きく、短ければ即ビリッと震える。
-    static constexpr float kTelegraphAmplitude = 0.32f; // 溜め切ったときの振れ幅 [m]
-    static constexpr float kTelegraphRampTime  = 1.2f;  // この秒数で最大まで溜まる
+    //   値は DroneShiverTuning（World リソース）が持ち、ドローンの GUI から
+    //   実行中に変えられる。震え方は目で見ないと決まらないので定数にしない。
+    //
+    //   【時間軸に windupTimer を使う理由】
+    //   以前は hoverTimeOffset（2π で巻き戻る）を使っていたため、巻き戻しで
+    //   波が途切れないよう角速度を整数に固定する制約があった（＝スライダーにできない）。
+    //   windupTimer は構え始めてからの経過秒で、巻き戻らず合図で 0 へ戻る。
+    //   周波数を自由な小数にできるのはこの付け替えのおかげ。
+    DroneShiverTuning m_shiver{};
 
-    //   震えの角速度 [rad/s]。
+    // 位相を機体ごとにずらす幅 [rad]。黄金角。
     //
-    //   【3軸に別々の値を入れること】
-    //   3軸を同じ値にすると (cos, sin, cos) が同じ角度で動くので、機体は
-    //   決まった楕円をなぞって周回するだけになる。震えではなく「小さく回る」
-    //   動きに見え、速度を上げても回転が速くなるだけで小刻みにはならない。
-    //   互いに整数比にならない値を入れて、軌道を閉じさせないのが要点。
-    //
-    //   【上げられる上限がある】
-    //   60fps で折り返さずに表現できるのは π/dt ≒ 188 [rad/s]（≒30Hz）まで。
-    //   これを越えるとサンプリングの折り返しが起き、速く震えるどころか
-    //   ゆっくりした揺れに化ける。下の値はすべてその内側に収めてある。
-    //
-    //   kHoverPhasePeriod(2π) で位相を巻き戻すので、すべて整数のままにすること
-    //   （差分計算が折り返しをまたいでも連続するのはこの制約のおかげ）。
-    static constexpr float kTelegraphSpeedX = 97.0f;  // ≒15Hz
-    static constexpr float kTelegraphSpeedY = 113.0f; // ≒18Hz
-    static constexpr float kTelegraphSpeedZ = 89.0f;  // ≒14Hz
-
-    //   さらに角速度の違う波をもう1つ重ねる。
-    //   1軸1波だと、どれだけ軸ごとに値を変えても各軸は規則正しい往復のままで、
-    //   よく見ると「一定のリズムで揺れている」と分かってしまう。
-    //   整数比にならない波を足すと合成の周期が事実上戻ってこなくなり、
-    //   同じ振幅でも不規則な振動として読める。
-    static constexpr float kTelegraphSpeed2X = 151.0f; // ≒24Hz
-    static constexpr float kTelegraphSpeed2Y = 139.0f; // ≒22Hz
-    static constexpr float kTelegraphSpeed2Z = 167.0f; // ≒27Hz
-
-    //   第2成分を混ぜる比率。上げるほど荒れた震えになる。
-    static constexpr float kTelegraphSecondary = 0.45f;
+    //   localIndex に掛けて足す。何機いても位相が一様にばらけ、
+    //   偶数・奇数で二分されるような偏りが出ない。
+    static constexpr float kShiverPhaseStep = 2.39996323f;
 
     // 突撃（リリース）の速度倍率。moveSpeed(既定30) に掛ける。
     //

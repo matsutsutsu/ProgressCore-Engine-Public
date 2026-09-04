@@ -484,6 +484,32 @@ void DroneManagerSystem::OnGui()
             setBossCmd(DroneFormationType::SquadAssault, true);
         ImGui::PopStyleColor();
 
+        // 予告の震えの調整。震え方は数字では決められないので実行中に見ながら合わせる。
+        {
+            if (!m_world->HasResource<DroneShiverTuning>())
+                m_world->AddResource<DroneShiverTuning>();
+            auto &shiver = m_world->GetResource<DroneShiverTuning>();
+
+            if (ImGui::TreeNodeEx("予告の震え", ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                ImGui::SliderFloat("振れ幅",   &shiver.amplitude, 0.0f,  1.0f, "%.2f m");
+                ImGui::SliderFloat("速さ",     &shiver.frequency, 0.5f, 20.0f, "%.1f Hz");
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("上げすぎるとノイズに見えて予告にならない。5〜8Hz が目安");
+                ImGui::SliderFloat("溜め時間", &shiver.rampTime,  0.1f,  4.0f, "%.1f s");
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("この秒数で振れ幅が最大になる。BT の Wait(予備動作) より短くすると、撃つ前に溜まり切る");
+                ImGui::SliderFloat("ばらつき", &shiver.scatter,   0.0f,  1.0f, "%.2f");
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("0 にすると全機が同じ拍で揺れて「呼吸」に見える。1 でバラバラの震え");
+
+                if (ImGui::Button("震えを既定値へ", ImVec2(140, 24)))
+                    shiver = DroneShiverTuning{};
+
+                ImGui::TreePop();
+            }
+        }
+
         // 小隊の調整（実行中に変えられる。しなり具合は目で見ないと決まらない）
         if (m_world->HasResource<SquadRegistry>())
         {
