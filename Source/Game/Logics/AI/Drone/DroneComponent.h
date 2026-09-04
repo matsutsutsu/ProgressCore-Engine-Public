@@ -137,11 +137,15 @@ enum class DroneAttackPhase : uint8_t
 };
 
 
-// ホバー揺れとタメの震えに使う位相の周期 [秒]。
+// ホバー揺れと予告の震えに使う位相の周期 [秒]。
 //
-// hoverTimeOffset をこの値で巻き戻す。掛ける係数（ホバー1.0 / 震え100・120・80）が
-// すべて整数なので、2π で折り返しても波形はどこも途切れない。
+// hoverTimeOffset をこの値で巻き戻す。掛ける係数（DroneMovementSystem の
+// kHoverFrequency と kTelegraphSpeed*）がすべて整数なので、2π で折り返しても
+// 波形はどこも途切れない。
+//
 // 係数を足すときは整数のままにすること。小数を混ぜると折り返しで段差が出る。
+// 予告の震えは「今フレームと前フレームの差」で座標を動かしているので、
+// 折り返しをまたいだ1フレームだけ揺れが飛ぶ、という壊れ方をする。
 inline constexpr float kHoverPhasePeriod = 6.28318530718f;
 
 // ドローン1機ぶんの状態。
@@ -263,7 +267,7 @@ struct DroneComponent
 
     DirectX::SimpleMath::Vector3 currentVelocity = DirectX::SimpleMath::Vector3::Zero; // [RT] 現在速度。毎フレーム積分して座標を確定する
 
-    // [RT] ホバー揺れとタメの震えの位相 [秒]。
+    // [RT] ホバー揺れと予告の震えの位相 [秒]。
     //
     // 例外的に書き手が2つある。蒔くのは DroneManagerSystem::SpawnDrones（生成時に1回）、
     // 進めるのは DroneMovementSystem（毎フレーム）。生成と毎フレームで

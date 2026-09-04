@@ -366,7 +366,6 @@
     <ClInclude Include="Source\Editor\Windows\NavMeshWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\TestLauncherWindow.h" />
     <ClInclude Include="Source\Editor\Windows\TextEditorWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
@@ -760,20 +759,6 @@
     <ClInclude Include="Source\Game\Logics\GameEvent\GameEvents.h" />
     <ClInclude Include="Source\Game\Logics\GameEvent\GameOverResource.h" />
     <ClInclude Include="Source\Game\Logics\GameEvent\GameStateMode.h" />
-    <ClInclude Include="Source\Game\Logics\Sandbox\BoidComponent.h" />
-    <ClInclude Include="Source\Game\Logics\Sandbox\BoidSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Sandbox\SceneInitializer.h" />
-    <ClInclude Include="Source\Game\Logics\Sandbox\ECSBenchmarkSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Sandbox\JoltSandboxGuiSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Sandbox\LissajousOrbitComponent.h" />
-    <ClInclude Include="Source\Game\Logics\Sandbox\LissajousOrbitSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Sandbox\OrbitBenchmarkComponent.h" />
-    <ClInclude Include="Source\Game\Logics\Sandbox\TornadoVortexComponent.h" />
-    <ClInclude Include="Source\Game\Logics\Sandbox\TornadoVortexSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Sandbox\VectorFlowComponent.h" />
-    <ClInclude Include="Source\Game\Logics\Sandbox\VectorFlowSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Sandbox\VoxelOceanComponent.h" />
-    <ClInclude Include="Source\Game\Logics\Sandbox\VoxelOceanSystem.h" />
     <ClInclude Include="Source\Engine\Scene\BaseScene.h" />
     <ClInclude Include="Source\Game\Scenes\EditorScene.h" />
     <ClInclude Include="Source\Game\Scenes\GameScene.h" />
@@ -932,9 +917,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\NavMeshWindow.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\TestLauncherWindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\TextEditorWindow.cpp">
@@ -1198,14 +1180,6 @@
     <ClCompile Include="Source\Game\Logics\Combat\HealthSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\HitboxCollisionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\SpawnHitboxSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Sandbox\BoidSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Sandbox\SceneInitializer.cpp" />
-    <ClCompile Include="Source\Game\Logics\Sandbox\ECSBenchmarkSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Sandbox\JoltSandboxGuiSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Sandbox\LissajousOrbitSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Sandbox\TornadoVortexSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Sandbox\VectorFlowSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Sandbox\VoxelOceanSystem.cpp" />
     <ClCompile Include="Source\Engine\Scene\BaseScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\EditorScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\GameScene.cpp" />

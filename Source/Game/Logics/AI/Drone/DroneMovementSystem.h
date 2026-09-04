@@ -55,15 +55,6 @@ class DroneMovementSystem : public CCL::ECS::IfSystem<
     // 剛体追従と違って形が歪む。歪むことがこの技の見た目の核。
     inline void ProcessChargeSoftFollow(TransformComponent &trans, DroneComponent &drone, float dt);
 
-    // 震えの速度オフセット [m/s]。
-    //
-    //   突撃直前のタメ（ProcessFireCharge）と、陣形攻撃の予告（ProcessIdle）が
-    //   これを共有する。同じ震え方であることに意味があり、別々に書くと
-    //   片方だけ直る事故が起きる。
-    //   位相 hoverTimeOffset は生成時に個体ごとへ蒔いてあるので、乱数も
-    //   機体ごとの状態も持たずに全機がバラバラに震える。
-    static DirectX::SimpleMath::Vector3 Jitter(const DroneComponent &drone, float amplitude);
-
     // 予告の震えの「位置オフセット」[m]。位相を引数に取るのは、前フレームぶんの
     // オフセットを引いて差分だけ動かすため（ProcessIdle 参照）。
     static DirectX::SimpleMath::Vector3 Shiver(float phase, float amplitude);
@@ -99,29 +90,43 @@ class DroneMovementSystem : public CCL::ECS::IfSystem<
     static constexpr float kHoverAmplitude = 3.0f;
 
     // --- 突撃のタメ（予備動作）---
-    //   後ろへ引き絞りながら持ち上がり、細かく震える。ジャスト回避を「読ませる」時間帯。
-    static constexpr float kWindupDrawback = 2.0f;   // fireDirection と逆向きに引く速さ
-    static constexpr float kWindupLift     = 4.0f;   // 同時に持ち上げる速さ
-    static constexpr float kWindupJitter   = 5.5f;   // 震えの振幅 [m/s]
-    //   震えの角速度。3軸で少しずつ変えて、単純な往復に見えないようにする。
-    //   kHoverPhasePeriod(2π) で位相を巻き戻すので、すべて整数のままにすること。
-    static constexpr float kWindupJitterSpeedX = 100.0f;
-    static constexpr float kWindupJitterSpeedY = 120.0f;
-    static constexpr float kWindupJitterSpeedZ =  80.0f;
+    //   自分の番が来た機が、撃つ方向へ踏み出しながら持ち上がり、細かく震える。
+    //   ジャスト回避を「読ませる」時間帯。
+    //
+    //   タメは「静止 → 加速」の2段になっている:
+    //
+    //     |<--------- DroneBrainSystem::kChargeWindup (0.4秒) --------->|
+    //     |<--- 静止（0.2秒）--->|<--- kWindupLungeTime (0.2秒) ------->| 射出
+    //
+    //   静止する長さは引き算で決まる（kChargeWindup − kWindupLungeTime）。
+    //   中央へ吸い込まれた機がそこで一度ピタリと止まることで、
+    //   「集まった」と「撃った」が別々の出来事として読める。止まらないと
+    //   集合の勢いのまま流れ出てしまい、どこが発射の瞬間か分からない。
+    //   ため時間を変えたいときは kChargeWindup、
+    //   出る勢いを変えたいときは下の2つを動かす。
+    //
+    //   加速にしてある理由:
+    //     定速だと「静止 → 一定速 → 射出速度」と速度の段差が2回でき、
+    //     1発ぶんの動きが繋がらずカクついて見える。
+    //
+    //   残り時間で判定するので、kChargeWindup を変えてもここは壊れない。
+    //   タメが長ければ静止する時間が延び、短ければ加速が途中までになる。
+    static constexpr float kWindupLungeTime  = 0.2f;  // 加速にかける長さ [秒]
+    static constexpr float kWindupLungeSpeed = 20.0f; // 加速の終速 [m/s]（前進 ≒2.0m）
 
     // --- 陣形攻撃の予告（震え）---
     //
-    //   上のタメの震えは「直進する技（弾幕・カミカゼ）」でしか鳴っていなかった。
-    //   陣形技はすべて RigidFollow で、ProcessFireCharge の途中で return するため
-    //   タメのコードに到達しない。つまり縦割りも挟み込みも一度も震えていない。
-    //   さらにタメは「撃つ合図の後」なので、予告としては遅すぎる。
-    //   そこで、合図の前（持ち場に着いた／まだ撃たない）に震えを出す。
+    //   縦割り・挟み込みのように「形は完成していて、あとは振り下ろすだけ」の技は、
+    //   予備動作の間ほとんど動かない。動かないものは予告にならないので、
+    //   撃つ合図の前（持ち場に着いた／まだ撃たない）に震えを出す。
+    //
+    //   動きで予告する技（弾幕）はこれを使わない。両方入れると予告が二重になり、
+    //   どちらを読めばよいのか分からなくなる（IFormation::UsesShiverTelegraph）。
     //
     //   【単位が m/s ではなく m であること】
-    //   上のタメの震えは速度に足している。速度で揺らすと実際に動く幅は
-    //   「振幅 ÷ 角速度」になるので、kWindupJitter 5.5[m/s] ÷ 100[rad/s] ≒ 5cm
-    //   しか動かない。予告として画面で見える揺れを作るには桁が足りない。
-    //   予告は「何メートル震えるか」を直接指定できるよう、位置側で持つ。
+    //   以前は速度に足していた。速度で揺らすと実際に動く幅は「振幅 ÷ 角速度」
+    //   になるので、5.5[m/s] ÷ 100[rad/s] ≒ 5cm しか動かず、画面ではまったく
+    //   見えなかった。「何メートル震えるか」を直接指定できるよう位置側で持つ。
     //
     //   振幅は drone.windupTimer（＝構えている秒数）で 0 から立ち上げる。
     //   BT の Wait(予告) が長ければゆっくり大きく、短ければ即ビリッと震える。
@@ -159,8 +164,17 @@ class DroneMovementSystem : public CCL::ECS::IfSystem<
     //   第2成分を混ぜる比率。上げるほど荒れた震えになる。
     static constexpr float kTelegraphSecondary = 0.45f;
 
-    // 突撃（リリース）の速度倍率。moveSpeed に掛ける。
-    static constexpr float kChargeSpeedScale = 2.5f;
+    // 突撃（リリース）の速度倍率。moveSpeed(既定30) に掛ける。
+    //
+    //   【上げすぎると擦り抜ける】
+    //   当たり判定は毎フレームの距離判定なので、1フレームの移動距離が
+    //   当たり半径の2倍を超えると、判定される位置を跨いで通り過ぎる。
+    //     当たり半径 2.5m → 1フレーム 5.0m まで
+    //     60fps なら 5.0 / (1/60) ≒ 300 m/s が上限の目安
+    //   4.0 倍 = 120 m/s は1フレーム 2.0m なので、判定に2〜3フレーム乗る。
+    //   ここより上げるなら、当たり半径(FormationCombat::hitRadius)も
+    //   一緒に広げるか、線分での判定に変える必要がある。
+    static constexpr float kChargeSpeedScale = 5.5f;
 
     // --- 姿勢の追従速度（1/秒）。局面ごとに変える ---
     //   整列中は機敏に、待機はゆるく、突撃は最も速く、離脱は最も鈍く。

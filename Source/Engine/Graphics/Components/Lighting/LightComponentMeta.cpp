@@ -26,7 +26,7 @@ template <> struct ComponentMeta<DirectionalLightComponent> {
     static bool CustomGui(DirectionalLightComponent& comp, unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr) {
         namespace mi = ComponentMetaImGui;
         bool changed = false;
-        // ★ 1行ヘルパーで「ラベル左・幅いっぱい」に統一。
+        // 1行ヘルパーで「ラベル左・幅いっぱい」に統一。
         changed |= mi::Color3   ("ライト色", &comp.color.x);
         changed |= mi::DragFloat("強度",     &comp.intensity, 0.05f, 0.0f, 100.0f);
         ImGui::Separator();

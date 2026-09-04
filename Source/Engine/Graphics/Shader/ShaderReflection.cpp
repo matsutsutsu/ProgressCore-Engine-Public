@@ -1,6 +1,6 @@
 #include "ShaderReflection.h"
+#include "Engine/Platform/Core/Logger.h"
 #include <fstream>
-#include <iostream>
 
 namespace ShaderReflect
 {
@@ -39,9 +39,7 @@ namespace ShaderReflect
         std::ifstream file(filename, std::ios::binary | std::ios::ate);
         if (!file.is_open())
         {
-            OutputDebugStringA("Failed to open compiled shader file: ");
-            OutputDebugStringA(filename);
-            OutputDebugStringA("\n");
+            CCL_LOG_ERROR(LogCategory::Render, "Failed to open compiled shader file: %s", filename);
             return false;
         }
 
@@ -71,7 +69,7 @@ namespace ShaderReflect
 
         if (FAILED(hr))
         {
-            OutputDebugStringA("Failed to create shader reflection\n");
+            CCL_LOG_ERROR(LogCategory::Render, "Failed to create shader reflection");
             return false;
         }
 
@@ -260,40 +258,32 @@ namespace ShaderReflect
 
     void ReflectionData::PrintInfo() const
     {
-        OutputDebugStringA("\n=== Shader Reflection Info ===\n");
+        CCL_LOG_INFO(LogCategory::Render, "=== Shader Reflection Info ===");
 
-        OutputDebugStringA("Constant Buffers:\n");
+        CCL_LOG_INFO(LogCategory::Render, "Constant Buffers:");
         for (const auto& cb : constantBuffers)
         {
-            char buf[256];
-            sprintf_s(buf, "  [%s] Slot: b%d, Size: %d bytes\n",
+            CCL_LOG_INFO(LogCategory::Render, "  [%s] Slot: b%d, Size: %d bytes",
                 cb.name.c_str(), cb.bindPoint, cb.size);
-            OutputDebugStringA(buf);
 
             for (const auto& var : cb.variables)
             {
-                sprintf_s(buf, "    - %s (Offset: %d, Size: %d)\n",
+                CCL_LOG_INFO(LogCategory::Render, "    - %s (Offset: %d, Size: %d)",
                     var.name.c_str(), var.offset, var.size);
-                OutputDebugStringA(buf);
             }
         }
 
-        OutputDebugStringA("\nTextures:\n");
+        CCL_LOG_INFO(LogCategory::Render, "Textures:");
         for (const auto& tex : textures)
         {
-            char buf[256];
-            sprintf_s(buf, "  [%s] Slot: t%d\n", tex.name.c_str(), tex.bindPoint);
-            OutputDebugStringA(buf);
+            CCL_LOG_INFO(LogCategory::Render, "  [%s] Slot: t%d", tex.name.c_str(), tex.bindPoint);
         }
 
-        OutputDebugStringA("\nSamplers:\n");
+        CCL_LOG_INFO(LogCategory::Render, "Samplers:");
         for (const auto& samp : samplers)
         {
-            char buf[256];
-            sprintf_s(buf, "  [%s] Slot: s%d\n", samp.name.c_str(), samp.bindPoint);
-            OutputDebugStringA(buf);
+            CCL_LOG_INFO(LogCategory::Render, "  [%s] Slot: s%d", samp.name.c_str(), samp.bindPoint);
         }
-        OutputDebugStringA("===============================\n\n");
     }
 
     const UnorderedAccessViewInfo *ReflectionData::FindUAV(const std::string &name) const

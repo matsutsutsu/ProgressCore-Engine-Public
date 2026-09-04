@@ -15,9 +15,9 @@
 // L02_AI_Think (220) : AIが目的地を決定した直後に、その道筋を計算する。
 //
 // [ ECSデータパイプライン ]
-// 📥 READ  : TransformComponent (現在地)
-// 📥 READ  : NavigationData     (NavMeshのリソースデータ)
-// 📤 WRITE : NavAgentComponent  (waypointsリストの更新、isPathRequestedのリセット)
+// READ  : TransformComponent (現在地)
+// READ  : NavigationData     (NavMeshのリソースデータ)
+// WRITE : NavAgentComponent  (waypointsリストの更新、isPathRequestedのリセット)
 // ===================================================================================
 
 void NavPathfindingSystem::Update(float dt) {

@@ -141,7 +141,7 @@ void BaseScene::Finalize()
             }
         }
 
-        // ★ DestroyTag を「今すぐ」適用する。AddComponent<DestroyTag> は遅延(pendingOps)なので、
+        // DestroyTag を「今すぐ」適用する。AddComponent<DestroyTag> は遅延(pendingOps)なので、
         //   これを挟まないと下の JoltCleanup が「DestroyTag付きチャンク」を1つも見つけられず、
         //   共有 Jolt 空間に前シーンの剛体が残る（再戦時に見えないコライダーで引っかかる原因）。
         m_worldPtr->ScrutinyAndApply();
@@ -149,7 +149,7 @@ void BaseScene::Finalize()
         // Jolt剛体の即時消去
         JoltCleanupSystem::ExecuteCleanup(*m_worldPtr);
 
-        // ★ 音の後始末は「共有オーディオエンジンを丸ごと黙らせる」StopAll に一本化する。
+        // 音の後始末は「共有オーディオエンジンを丸ごと黙らせる」StopAll に一本化する。
         //   このシーンの World はこの直後に完全破棄されるので、per-emitter の StopEvent
         //   （DestroyTagが正しく付き playingId が正確、という前提に依存＝取りこぼしやすい）
         //   ではなく、前提ゼロの StopAll で確実に止める。再戦時にBGMが二重に鳴る不具合の根治。
@@ -284,7 +284,7 @@ void BaseScene::DrawGUI()
  *  この実装では ECS ワールドを作り直して Initialize → Start を再呼び出しする。
  *  これにより ResourceManager にロードし直された新しいリソースで正常動作する。
  *
- *  ⚠️ ゲームの進行状態（エンティティ位置・HP など）はリセットされる。
+ *   ゲームの進行状態（エンティティ位置・HP など）はリセットされる。
  *  状態を保持したい場合は派生クラスでオーバーライドし、
  *  セーブデータから復元するなどの処理を追加してください。
  */

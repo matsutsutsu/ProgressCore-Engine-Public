@@ -50,7 +50,7 @@ template <> struct ComponentMeta<VignetteConfigComponent> {
         namespace mi = ComponentMetaImGui;
         bool changed = false;
 
-        // ★ 1行ヘルパーで「ラベル左・幅いっぱい」に統一（自動グリッドと同じ見た目）。
+        // 1行ヘルパーで「ラベル左・幅いっぱい」に統一（自動グリッドと同じ見た目）。
         changed |= mi::Checkbox("有効", &c.enable);
 
         ImGui::BeginDisabled(!c.enable);

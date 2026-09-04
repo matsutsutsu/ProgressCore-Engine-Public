@@ -11,6 +11,7 @@
 #pragma once
 #include "Game/Logics/AI/Drone/Formation/IFormation.h"
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
+#include "Game/Logics/AI/Drone/Formation/Formations_Basic.h" // 弾幕が頭上リングを借りる
 #include <cmath>
 #include <algorithm>
 
@@ -187,19 +188,33 @@ struct ClapSlamFormation : public IFormation
 
 // ====================================================================
 // 弾幕（KamikazeSwarm）※初めての dashモード攻撃
-//   ボス頭上にドローンを集め、プレイヤーへ向かって「順番に」高速で撃ち出す。
-//   プレイヤーはジャスト回避で凌ぐ。要求回避＝ジャスト回避。
+//   頭上の輪を回したまま、1機ずつ輪の中心へ降りてきて、そこからプレイヤーへ
+//   高速で撃ち出す。プレイヤーはジャスト回避で凌ぐ。要求回避＝ジャスト回避。
 //
-// 縦割り／挟み込みとの違い＝移動モードが逆:
-//   これらは ChargeMode::Straight のまま＝各機が fireDirection へ独立に直進する
-//   「弾（fire-and-forget）」。DroneMovementSystem の「タメ→リリース」がそのまま弾になる。
+// 1発ぶんの流れ（すべて自分の fireDelay を時計にしている）:
+//   ┌ 輪の上で待つ（回転し続ける）
+//   ├ 自分の番の kGatherTime 秒前：輪から中心＋やや下へ寄っていく ← これが予告
+//   └ fireDelay が 0：撃つ方向へ加速して発射（以降は直進）
+//
+// なぜ震えないのか（UsesShiverTelegraph = false）:
+//   縦割りのように「形は完成していて、あとは振り下ろすだけ」の技は止まって
+//   見えるので、震えが唯一の予告になる。こちらは中心へ集まる移動そのものが
+//   予告なので、震えを足すと予告が二重になって、どちらを読めばよいのか濁る。
+//
+// なぜ狙いを固定しないのか（ctx.AimDirection を使わない）:
+//   縦割り・挟み込みは「撃つと決めた瞬間の向きへコミットする置き技」で、
+//   固定しないと横へ回り込んでも刃が追ってきてしまう。
+//   弾幕は逆に「1発ずつ今のあなたを狙って撃つ」技にしたい。だから各機は
+//   発射する瞬間まで ctx.playerPos を毎フレーム見る。撃ち出した後だけは
+//   直進（＝ホーミングしない）なので、避ける余地はそこで担保される。
 //
 // 「順番に」の作り方:
 //   forming 中に localIndex から fireDelay を割り振る（先頭ほど早く撃つ）。
-//   全機が同時に FireCharge へ入っても、ProcessFireCharge が fireDelay の間その場で
-//   待機させるため、結果として順次発射になる。
-//   fireDelay = (localIndex / total) * kFireWindow で、機数に依らず常に kFireWindow 秒で
-//   撃ち切る（1000機でも一定時間で発射）。
+//   全機が同時に FireCharge へ入っても、ProcessFireCharge が fireDelay の間は
+//   陣形の指示に従わせるため、結果として順次発射になる。
+//   fireDelay = (localIndex / total) * kFireWindow で、機数に依らず常に
+//   kFireWindow 秒で撃ち切る（1000機でも一定時間で発射）。
+//   ＝ kFireWindow を伸ばすほど発射レートが下がる。
 // ====================================================================
 struct KamikazeSwarmFormation : public IFormation
 {
@@ -207,43 +222,75 @@ struct KamikazeSwarmFormation : public IFormation
     // （飛び切った機から順に離脱→隊列へ戻る＝「帰投がバラバラ」になる）
     ChargeLifecycle GetLifecycle() const override { return ChargeLifecycle::Individual; }
 
+    // 中心へ集まる移動そのものが予告なので、震えは出さない（上のコメント参照）。
+    bool UsesShiverTelegraph() const override { return false; }
+
     void Calculate(DroneComponent &drone, const FormationContext &ctx) override
     {
         using namespace DirectX::SimpleMath;
 
-        // 発射後は各機が独立して飛ぶので、撃ち出したら陣形は関与しない（凍結）。
-        //   ※ Returning（離脱中）はあえて凍結しない。帰る先の待機リングを更新し続け、
-        //     離脱が終わった機がそのまま隊列へ吸い込まれるようにするため。
-        if (drone.currentState == DroneState::FireCharge)
-            return;
+        // --- 陣形が手を引くのは「撃った後」だけ ---
+        //
+        //   以前は FireCharge に入った時点で return していた。順番待ちの機も
+        //   FireCharge なので、Strike の瞬間に輪の回転も狙いも凍っていた。
+        //   fireDelay が残っている間＝まだ撃っていない間は、陣形が動かし続ける。
+        //
+        //   ※ Returning（離脱中）はあえて凍結しない。帰る先の待機リングを
+        //     更新し続け、離脱が終わった機がそのまま隊列へ吸い込まれるようにするため。
+        const bool launched =
+            (drone.currentState == DroneState::FireCharge) && (drone.fireDelay <= 0.0f);
+        if (launched) return;
 
         drone.chargeMode = ChargeMode::Straight; // dashモード（fireDirection直進）
 
-        const Vector3 dir = ctx.AimDirection();
+        const int total = (drone.totalDrones > 0) ? drone.totalDrones : 1;
 
-        // --- forming：ボス頭上に「弾の供給リング」を作って待機させる ---
-        const int   total = (drone.totalDrones > 0) ? drone.totalDrones : 1;
-        const float angle = (2.0f * 3.14159265f) * (static_cast<float>(drone.localIndex) / static_cast<float>(total));
-        const float ringR = 3.5f;
-        const float ringH = 7.0f; // ボス頭上
+        // --- 待機位置：頭上円陣(HighOrbit)と同じ輪。回転位相まで共有する ---
+        //   同じ式を通すので、BT が 頭上円陣 → 弾幕 と切り替えてもドローンは動かない。
+        const Vector3 slot = ctx.bossPos + Basic::HighRing::SlotOffset(
+                                               drone.localIndex, drone.totalDrones, ctx.time);
 
-        Vector3 pos = ctx.bossPos + Vector3::UnitY * ringH
-                    + Vector3(std::cos(angle) * ringR, 0.0f, std::sin(angle) * ringR);
-        drone.targetPosition = pos;
+        // --- 発射地点：輪の中心の、少し下 ---
+        const Vector3 muzzle =
+            ctx.bossPos + Vector3::UnitY * (Basic::HighRing::kHeight - kGatherDrop);
 
-        // 発射方向：待機位置からプレイヤーへ（発射時にこの方向でロックされる）
-        Vector3 toPlayer = ctx.playerPos - pos;
+        // --- 自分の番が近づくほど中心へ寄る ---
+        //   fireDelay は残り時間なので、kGatherTime を切ってから寄り始める。
+        //   二乗で寄せるのは、序盤をほぼ動かさず「直前にすっと吸い込まれる」
+        //   形にするため。線形だと最初からじわじわ動いて、いつ撃つのか読めない。
+        float gather = 0.0f;
+        if (drone.fireDelay > 0.0f && drone.fireDelay < kGatherTime)
+        {
+            const float t = 1.0f - (drone.fireDelay / kGatherTime);
+            gather        = t * t;
+        }
+
+        drone.targetPosition = Vector3::Lerp(slot, muzzle, gather);
+
+        // --- 狙い：毎フレーム「今の」プレイヤーへ引き直す ---
+        //   発射した瞬間に陣形は手を引く（上の launched）ので、ここで更新が
+        //   止まる＝撃ち出した弾は直進する。狙い直すのは撃つ前だけ。
+        Vector3 toPlayer = ctx.playerPos - drone.targetPosition;
         if (toPlayer.LengthSquared() > 0.001f) toPlayer.Normalize();
-        else                                   toPlayer = dir;
+        else                                   toPlayer = Vector3::UnitZ;
+
         drone.fireDirection       = toPlayer;
         drone.targetLookDirection = toPlayer;
 
-        // 発射順（先頭ほど早い）。機数に依らず kFireWindow 秒で撃ち切る。
-        drone.fireDelay = (static_cast<float>(drone.localIndex) / static_cast<float>(total)) * kFireWindow;
+        // --- 発射順（先頭ほど早い）---
+        //   撃つ合図が出た後に書き直すと、待っている間ずっと順番がリセットされて
+        //   永久に撃てなくなる。まだ攻撃に入っていない間だけ割り振る。
+        if (drone.currentState != DroneState::FireCharge)
+        {
+            drone.fireDelay =
+                (static_cast<float>(drone.localIndex) / static_cast<float>(total)) * kFireWindow;
+        }
     }
 
     // --- 調整値（グレーボックスで実測して詰める）---
-    static constexpr float kFireWindow = 1.8f; // 全機を撃ち切るのにかける秒数（順次発射の総時間）
+    static constexpr float kFireWindow = 8.0f; // 全機を撃ち切るのにかける秒数。伸ばすほど発射レートが下がる
+    static constexpr float kGatherTime = 0.6f; // 発射の何秒前から中心へ寄り始めるか
+    static constexpr float kGatherDrop = 6.0f; // 輪の高さから何m下を発射地点にするか
 };
 
 // ====================================================================

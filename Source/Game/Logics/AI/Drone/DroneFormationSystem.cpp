@@ -139,7 +139,7 @@ void DroneFormationSystem::Update(float dt)
         //   長さとそのまま一致する。狙ってこうしてある。
         //   突撃から帰る途中だけは false に落ちるので、帰りながらは震えない。
         const bool telegraphing =
-            formation->IsTechnique() && drone.hasReachedSlot && !drone.wantsAttack;
+            formation->UsesShiverTelegraph() && drone.hasReachedSlot && !drone.wantsAttack;
 
         drone.windupTimer = telegraphing
                                 ? (std::min)(kWindupTimerCap, drone.windupTimer + dt)

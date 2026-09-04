@@ -7,6 +7,39 @@
 namespace CCL::AI::Formation::Basic
 {
 // ====================================================================
+// 頭上の待機リング。頭上円陣(HighOrbit)と弾幕(KamikazeSwarm)が共有する。
+//
+// なぜ共有するか:
+//   BT は必ず「頭上円陣 →（技）→ 頭上円陣」の順で指示する。弾幕もその輪の
+//   まま撃たせたい。半径と高さを技側へコピーすると、いつか片方だけ直って
+//   切り替えの瞬間に群れが横滑りする。出どころを1つにしておく。
+//
+// 回転位相まで揃えることに意味がある:
+//   半径と高さだけ合わせても ctx.time の項が違えば輪は別の位置にあり、
+//   陣形を切り替えた瞬間に全機が並び直してしまう。同じ式を通していれば
+//   切り替えでドローンは1ミリも動かず、「上空の形のまま」が成立する。
+// ====================================================================
+struct HighRing
+{
+    static constexpr float kRadius = 20.0f; // 円の半径 [m]（固定。機数に依らない）
+    static constexpr float kHeight = 20.0f; // ボス頭上の高さ [m]（地上の間合いを塞がない）
+    static constexpr float kSpin   = 0.5f;  // 回転速度 [rad/s]
+
+    // ボス位置からの相対オフセット。ボス位置を足せば持ち場の座標になる。
+    static DirectX::SimpleMath::Vector3 SlotOffset(uint16_t localIndex,
+                                                   uint16_t totalDrones,
+                                                   float    time)
+    {
+        const int   total     = (totalDrones > 0) ? totalDrones : 1;
+        const float baseAngle = (2.0f * 3.14159265f) *
+                                (static_cast<float>(localIndex) / static_cast<float>(total));
+        const float angle = baseAngle + time * kSpin;
+
+        return {std::cos(angle) * kRadius, kHeight, std::sin(angle) * kRadius};
+    }
+};
+
+// ====================================================================
 // 円陣（OrbitCircle）: ボスを中心に円を描いて並ぶ
 //   localIndex / totalDrones から自分の角度を決める。
 //   time を足すとゆっくり回転する。
@@ -14,7 +47,7 @@ namespace CCL::AI::Formation::Basic
 struct OrbitCircleFormation : public IFormation
 {
     // 隊形（位置取り）であって技ではないので、予告の震えを出さない。
-    bool IsTechnique() const override { return false; }
+    bool UsesShiverTelegraph() const override { return false; }
 
     void Calculate(DroneComponent &drone, const FormationContext &ctx) override
     {
@@ -61,22 +94,14 @@ struct OrbitCircleFormation : public IFormation
 struct HighOrbitFormation : public IFormation
 {
     // 攻撃と攻撃の「あいだ」の中立。技ではないので震えない。
-    bool IsTechnique() const override { return false; }
+    bool UsesShiverTelegraph() const override { return false; }
 
     void Calculate(DroneComponent &drone, const FormationContext &ctx) override
     {
         using namespace DirectX::SimpleMath;
 
-        const int   total     = (drone.totalDrones > 0) ? drone.totalDrones : 1;
-        const float baseAngle = (2.0f * 3.14159265f) *
-                                (static_cast<float>(drone.localIndex) / static_cast<float>(total));
-        const float angle = baseAngle + ctx.time * 0.5f;
-
-        // --- 半径：固定値（機数に依らず一定）---
-        const float r = kOrbitRadius;
-
-        Vector3 offset(std::cos(angle) * r, 0.0f, std::sin(angle) * r);
-        offset.y = kHighOrbitHeight; // ボスの頭上高く（地上の間合いを塞がない）
+        const Vector3 offset =
+            HighRing::SlotOffset(drone.localIndex, drone.totalDrones, ctx.time);
 
         drone.targetPosition = ctx.bossPos + offset;
 
@@ -92,9 +117,7 @@ struct HighOrbitFormation : public IFormation
         drone.chargeMode = ChargeMode::Straight;
     }
 
-    // --- 調整値 ---
-    static constexpr float kHighOrbitHeight = 20.0f; // ボス頭上の周回高さ（ボスの背丈に合わせて調整）
-    static constexpr float kOrbitRadius     = 20.0f; // 円の半径（固定。詰まる/広すぎるならここを変える）
+    // 調整値は HighRing が持つ（弾幕と共有しているため、ここには置かない）。
 };
 
 // … 陣形を1つ足すたびに1クラスずつここへ追加する …

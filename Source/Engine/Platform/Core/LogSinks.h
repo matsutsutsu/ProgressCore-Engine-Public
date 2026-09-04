@@ -132,7 +132,7 @@ public:
             if (m_path.has_parent_path())
                 std::filesystem::create_directories(m_path.parent_path(), ec);
 
-            // ★ 2世代ローテーション：前回起動の Engine.log が残っていれば
+            // 2世代ローテーション：前回起動の Engine.log が残っていれば
             //   Engine.prev.log へ退避してから新規に開く。これで「今回＋前回」を常に保持し、
             //   2回前(既存の prev)は破棄する。1つ前を見返したい時はこの prev を開けばよい。
             if (std::filesystem::exists(m_path, ec))

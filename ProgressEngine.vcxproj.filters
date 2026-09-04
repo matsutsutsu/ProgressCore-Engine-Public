@@ -684,9 +684,6 @@
     <ClInclude Include="Source\Engine\Serialization\Factory\Prefab.h">
       <Filter>Source\Engine\Serialization\Factory</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Sandbox\SceneInitializer.h">
-      <Filter>Source\Game\Logics\Sandbox</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Combat\HealthComponent.h">
       <Filter>Source\Game\Logics\Combat</Filter>
     </ClInclude>
@@ -852,18 +849,6 @@
     <ClInclude Include="Source\Engine\Serialization\Factory\EntityFactory.h">
       <Filter>Source\Engine\Serialization\Factory</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Sandbox\OrbitBenchmarkComponent.h">
-      <Filter>Source\Game\Logics\Sandbox</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Sandbox\ECSBenchmarkSystem.h">
-      <Filter>Source\Game\Logics\Sandbox</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Sandbox\VoxelOceanComponent.h">
-      <Filter>Source\Game\Logics\Sandbox</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Sandbox\VoxelOceanSystem.h">
-      <Filter>Source\Game\Logics\Sandbox</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderRegistry.h">
       <Filter>Source\Engine\Graphics\Shader</Filter>
     </ClInclude>
@@ -974,24 +959,6 @@
     </ClInclude>
     <ClInclude Include="External\imgui-node-editor\imgui_node_editor_internal.h">
       <Filter>External\imgui-node-editor</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Sandbox\LissajousOrbitComponent.h">
-      <Filter>Source\Game\Logics\Sandbox</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Sandbox\LissajousOrbitSystem.h">
-      <Filter>Source\Game\Logics\Sandbox</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Sandbox\TornadoVortexComponent.h">
-      <Filter>Source\Game\Logics\Sandbox</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Sandbox\TornadoVortexSystem.h">
-      <Filter>Source\Game\Logics\Sandbox</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Sandbox\VectorFlowComponent.h">
-      <Filter>Source\Game\Logics\Sandbox</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Sandbox\VectorFlowSystem.h">
-      <Filter>Source\Game\Logics\Sandbox</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\AnimationSequencerWindow.h">
       <Filter>Source\Editor\Windows\Animation</Filter>
@@ -1701,9 +1668,6 @@
     <ClInclude Include="Source\Engine\Core\Math\ScreenToWorld.h">
       <Filter>Source\Engine\Core\Math</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\TestLauncherWindow.h">
-      <Filter>Source\Editor\Windows\Game</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Player\Components\PlayerComponent.h">
       <Filter>Source\Game\Logics\Character\Player\Components</Filter>
     </ClInclude>
@@ -1841,15 +1805,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\Meta\ComponentCategories.h">
       <Filter>Source\Engine\Serialization\Meta</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Sandbox\JoltSandboxGuiSystem.h">
-      <Filter>Source\Game\Logics\Sandbox</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Sandbox\BoidComponent.h">
-      <Filter>Source\Game\Logics\Sandbox</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Sandbox\BoidSystem.h">
-      <Filter>Source\Game\Logics\Sandbox</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Battle\BattleContext.h">
       <Filter>Source\Game\Logics\AI\Battle</Filter>
@@ -2069,9 +2024,6 @@
     <ClCompile Include="Source\Engine\Serialization\Factory\Prefab.cpp">
       <Filter>Source\Engine\Serialization\Factory</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Sandbox\SceneInitializer.cpp">
-      <Filter>Source\Game\Logics\Sandbox</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Game\Scenes\EditorScene.cpp">
       <Filter>Source\Game\Scenes</Filter>
     </ClCompile>
@@ -2149,12 +2101,6 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Renderer\ParticleRenderer.cpp">
       <Filter>Source\Engine\Graphics\Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Sandbox\ECSBenchmarkSystem.cpp">
-      <Filter>Source\Game\Logics\Sandbox</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Sandbox\VoxelOceanSystem.cpp">
-      <Filter>Source\Game\Logics\Sandbox</Filter>
     </ClCompile>
     <ClCompile Include="External\RecastNavigation\Recast\Source\Recast.cpp">
       <Filter>External\RecastNavigation\Recast</Filter>
@@ -2260,15 +2206,6 @@
     </ClCompile>
     <ClCompile Include="External\imgui-node-editor\imgui_node_editor_api.cpp">
       <Filter>External\imgui-node-editor</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Sandbox\LissajousOrbitSystem.cpp">
-      <Filter>Source\Game\Logics\Sandbox</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Sandbox\TornadoVortexSystem.cpp">
-      <Filter>Source\Game\Logics\Sandbox</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Sandbox\VectorFlowSystem.cpp">
-      <Filter>Source\Game\Logics\Sandbox</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\AnimationSequencerWindow.cpp">
       <Filter>Source\Editor\Windows\Animation</Filter>
@@ -2753,9 +2690,6 @@
     <ClCompile Include="Source\Engine\Core\Math\ScreenToWorld.cpp">
       <Filter>Source\Engine\Core\Math</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\TestLauncherWindow.cpp">
-      <Filter>Source\Editor\Windows\Game</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\Components\PlayerComponentMeta.cpp">
       <Filter>Source\Game\Logics\Character\Player\Components</Filter>
     </ClCompile>
@@ -2866,12 +2800,6 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Transform\Systems\BoneAttachmentRenderSystem.cpp">
       <Filter>Source\Engine\Transform\Systems</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Sandbox\JoltSandboxGuiSystem.cpp">
-      <Filter>Source\Game\Logics\Sandbox</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Sandbox\BoidSystem.cpp">
-      <Filter>Source\Game\Logics\Sandbox</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\Drone\DroneFormationSystem.cpp">
       <Filter>Source\Game\Logics\AI\Drone</Filter>

@@ -41,7 +41,7 @@ void BoneAttachmentSystem::ResolveAttachment(EntityID id, TransformComponent& tr
     const auto& nodes = model->GetNodes();
     if (attach.cachedBoneIndex >= static_cast<int>(nodes.size())) return;  // 安全策
 
-    // boneWorld = ボーンのモデルローカル行列 × 親のworld（※旧実装と同順序）
+    // boneWorld = ボーンのモデルローカル行列 × 親のworld
     const XMMATRIX boneLocal = XMLoadFloat4x4(&nodes[attach.cachedBoneIndex].globalTransform);
     const XMMATRIX parentWorld = XMLoadFloat4x4(&parentTrans->worldMatrix);
     const XMMATRIX boneWorld = XMMatrixMultiply(boneLocal, parentWorld);

@@ -13,15 +13,6 @@
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
-// 震えの速度オフセット。3軸で角速度を変えて単純な往復に見せない。
-//   位相 hoverTimeOffset は個体ごとに違うので、群れが1枚の板として震えない。
-Vector3 DroneMovementSystem::Jitter(const DroneComponent &drone, float amplitude)
-{
-    return {std::cos(drone.hoverTimeOffset * kWindupJitterSpeedX) * amplitude,
-            std::sin(drone.hoverTimeOffset * kWindupJitterSpeedY) * amplitude,
-            std::cos(drone.hoverTimeOffset * kWindupJitterSpeedZ) * amplitude};
-}
-
 // 予告の震えの位置オフセット。
 //
 //   1軸につき角速度の違う2つの波を重ねる。単独の正弦波だと3軸の合成が
@@ -232,23 +223,19 @@ inline void DroneMovementSystem::ProcessFireCharge(TransformComponent &trans, Dr
     }
 
     // ------------------------------------------------------------
-    // [dashモード：発射待ち] fireDelay>0 の間はその場で静止して自分の順番を待つ。
+    // [dashモード：発射待ち] fireDelay>0 の間は自分の順番を待つ。
     //   弾幕(KamikazeSwarm)が localIndex から各機に発射順(fireDelay)を割り振り、
     //   「順番に飛ばす」を表現する。0 になったら下のタメ→リリースへ進む。
+    //
+    //   待っている間は陣形の指示（targetPosition）に従わせる。
+    //   ここで静止させると、Strike の瞬間に輪の回転まで止まり、撃つ機以外は
+    //   何もしていない置物になる。陣形が「輪を回しつつ、番が近い機だけ
+    //   中心へ寄せる」を書けるのは、ここが動いているからこそ成立する。
     // ------------------------------------------------------------
     if (drone.fireDelay > 0.0f)
     {
         drone.fireDelay -= dt;
-        drone.currentVelocity = Vector3::Zero;
-
-        // 待機中も狙い（発射方向）を向いておく＝溜めている見た目
-        if (drone.targetLookDirection.LengthSquared() > 0.001f)
-        {
-            float      targetYaw = atan2f(-drone.targetLookDirection.x, -drone.targetLookDirection.z);
-            Quaternion targetRot = Quaternion::CreateFromAxisAngle(Vector3::UnitY, targetYaw);
-            trans.rotation       = Quaternion::Slerp(trans.rotation, targetRot,
-                                                     (std::min)(kTurnFireDelay * dt, 1.0f));
-        }
+        ProcessMoveToTarget(trans, drone, dt);
         return;
     }
 
@@ -261,15 +248,25 @@ inline void DroneMovementSystem::ProcessFireCharge(TransformComponent &trans, Dr
     if (drone.stateTimer > 0.0f)
     {
         // ------------------------------------------------------------
-        // [フェーズ1] タメ（予備動作）：後ろに引き絞りつつ震える
-        //   ジャスト回避で狙う「読ませ」の時間帯。
+        // [フェーズ1] タメ：中央で一度止まってから、撃つ方向へ加速する区間。
+        //
+        //   予告は陣形側（中心へ集まる動き）が既に済ませているので、
+        //   ここは「止まって、押し出される」だけにする。震えも持ち上げも入れない。
+        //   足すと予告が二重になり、どちらを読めばよいのか分からなくなる。
+        //
+        //   この区間は当たり判定を持たない（DroneHitSystem が stateTimer>0 の
+        //   直進系を無害として弾く）。中央に溜まっている機に触れても痛くない。
         // ------------------------------------------------------------
         drone.stateTimer -= dt;
 
-        drone.currentVelocity =
-            (drone.fireDirection * kWindupDrawback) + (Vector3::UnitY * kWindupLift);
+        // 残り時間から進行度を出して 0 → kWindupLungeSpeed へ加速する。
+        //   残りが kWindupLungeTime より多い間は 0 のまま＝その場で静止する。
+        //   これが「中央で止まる」の実体で、専用のフラグもタイマーも要らない。
+        float lunge = 0.0f;
+        if (drone.stateTimer < kWindupLungeTime)
+            lunge = kWindupLungeSpeed * (1.0f - (std::max)(0.0f, drone.stateTimer) / kWindupLungeTime);
 
-        drone.currentVelocity += Jitter(drone, kWindupJitter);
+        drone.currentVelocity = drone.fireDirection * lunge;
 
         float      targetYaw = atan2f(-drone.targetLookDirection.x, -drone.targetLookDirection.z);
         Quaternion targetRot = Quaternion::CreateFromAxisAngle(Vector3::UnitY, targetYaw);

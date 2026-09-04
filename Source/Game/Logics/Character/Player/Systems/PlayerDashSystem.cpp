@@ -185,7 +185,7 @@ bool PlayerDashSystem::UpdateDash(DashComponent &dash, PlayerComponent &player, 
         dash.isJustEvadeWindowActive = false;
         dash.currentTimer            = dash.dashCooldown;
 
-        // ★ 回避バースト終了 → 歩きへは戻さず「走行(Run)」へ移行する。
+        // 回避バースト終了 → 歩きへは戻さず「走行(Run)」へ移行する。
         //   以降は地上ロコモーションが runSpeed を維持し、無入力が続いたら歩きへ自動解除する。
         //   ダッシュ攻撃はこの走行中ずっと出せる。
         player.isRunning    = true;

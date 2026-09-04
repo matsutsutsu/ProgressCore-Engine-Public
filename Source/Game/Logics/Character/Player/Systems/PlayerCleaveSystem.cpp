@@ -60,7 +60,7 @@ void PlayerCleaveSystem::Update(float rawDt)
         }
     }
 
-    // ★ hold(モノクロ演出)を実状態から確定させるための集計。
+    // hold(モノクロ演出)を実状態から確定させるための集計。
     //   誰か1人でも Ready 中なら true。ForEach 後にこの値で hold を上書きするため、
     //   準備中にプレイヤーが死亡/消滅して FSM が回らなくなっても hold が立ちっぱなしに
     //   ならない（＝「何もないのにモノクロ/ビネットが残り続ける」不具合の根治）。
@@ -145,7 +145,7 @@ void PlayerCleaveSystem::Update(float rawDt)
         if (cleave.phase == CleavePhase::Ready) anyReady = true;
     });
 
-    // ★ hold を毎フレーム実状態で確定させる（EnterReady/StartLunge/ExitToIdle の
+    // hold を毎フレーム実状態で確定させる（EnterReady/StartLunge/ExitToIdle の
     //   個別呼び出しに依存せず、ここが唯一の真実）。準備が中断されても確実に解除される。
     SetMonochrome(anyReady);
 }
