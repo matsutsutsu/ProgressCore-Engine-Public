@@ -16,14 +16,12 @@
 #include <array>
 #include <cstdint>
 #include "SimpleMath.h"
+#include "Game/Logics/AI/Drone/DroneComponent.h"
 
-// ステージ床のワールドY。小隊の高度制限の基準。
+// 小隊の高度制限の基準。全ドローン共通の床と同じものを見る。
 //
-// 頭を動かす側（SquadUpdateSystem）と持ち場を出す側（SquadAssaultFormation）の
-// 両方が使うので、どちらかのクラス内ではなくここへ置く。
-// 今のステージは平面1枚なので定数で足りる。起伏のあるステージを作るなら
-// ここをレイキャストへ差し替える（使う側の式は変わらない）。
-inline constexpr float kSquadGroundY = 0.0f;
+// 別の定数にすると、床の高さを変えたときに小隊だけ取り残される。
+inline constexpr float kSquadGroundY = kDroneGroundY;
 
 // 小隊の行動フェーズ。
 //

@@ -83,6 +83,25 @@ void DroneMovementSystem::Update(float rawDt)
         // 速度を積分して座標を確定する（Jolt へは Push が同期する）
         trans.position = trans.position + drone.currentVelocity * dt;
 
+        // 地面へ潜らせない。全ステート共通で、潜らない保証はここだけが持つ。
+        //
+        // 技ごとに目標を丸めない理由:
+        //   目標を丸めても、吹き飛ばし(Stunned)と剛体追従(RigidFollow)は
+        //   targetPosition を経由せずに trans.position へ直接書くので止まらない。
+        //   両方に置くと「どちらで止まったのか」が追えなくなるため、積分の直後1か所に集める。
+        //
+        // 小隊の高度制限（minAltitude）はこれと別物。
+        //   あちらは「地上2mを飛ぶ」という飛び方の規則で、埋没防止ではない。
+        const float floorY = kDroneGroundY + kDroneGroundClearance;
+        if (trans.position.y < floorY)
+        {
+            trans.position.y = floorY;
+
+            // 下向きの速度を残すと次のフレームも床へ押し付け続け、
+            // 得られた高度を毎回吐き出して地面に張り付いたまま滑る。
+            if (drone.currentVelocity.y < 0.0f) drone.currentVelocity.y = 0.0f;
+        }
+
         // 回転はクォータニオンのドリフトを毎フレーム正規化してから確定
         DirectX::XMVECTOR quatVec = DirectX::XMLoadFloat4(&trans.rotation);
         quatVec                   = DirectX::XMQuaternionNormalize(quatVec);

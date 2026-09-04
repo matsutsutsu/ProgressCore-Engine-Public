@@ -148,6 +148,18 @@ enum class DroneAttackPhase : uint8_t
 // 折り返しをまたいだ1フレームだけ揺れが飛ぶ、という壊れ方をする。
 inline constexpr float kHoverPhasePeriod = 6.28318530718f;
 
+// ステージ床のワールY と、そこから浮かせておく最低高度 [m]。
+//
+// 全ドローンの硬い床。陣形側のクランプは「刃が地面で止まる」という
+// 形の話だが、こちらは形とは無関係に「どの状態でも地面へ潜らない」を保証する。
+//   吹き飛ばし・帰投・バネ追従の行き過ぎは targetPosition を経由しないので、
+//   陣形側でいくらクランプしても止まらない。
+//
+// 今のステージは平面1枚なので定数で足りる。起伏のあるステージを作るなら
+// ここをレイキャストへ差し替える（使う側の式は変わらない）。
+inline constexpr float kDroneGroundY        = 0.0f;
+inline constexpr float kDroneGroundClearance = 0.5f; // 機体半径ぶん。埋没を防ぐ
+
 // 突撃（リリース）時に moveSpeed へ掛ける倍率。
 //
 // なぜコンポーネント側に置くか:
