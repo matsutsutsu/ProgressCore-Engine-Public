@@ -141,29 +141,51 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
     const Vector3 hitPos(contactPos);
 
 
-    // 5. ノックバック方向(攻撃者→被弾者のXZ方向)
+    // 5. ノックバック方向
+    //    定石（DMC/ベヨネッタ/GoW系）に倣い「攻撃が方向を決める」。衝突法線や剣先の一瞬の
+    //    位置を基準にすると、横薙ぎで相手の真横に剣がある瞬間に当たり“真横へ吹っ飛ぶ”違和感が
+    //    出る。そこで【攻撃者(キャラ本体)の前方】を主軸に、【攻撃者→被弾者の放射方向】を従で
+    //    ブレンドする。前方主軸で「振った向き＝前へ」飛ばしつつ、中心を外した被弾では放射成分で
+    //    自然なズレが残る。※基準は剣ボディ(attackerCandidate)ではなく攻撃の持ち主(ownerID)。
     Vector3 knockDir   = Vector3::Zero;
     float   knockForce = 0.0f;
     if (hitbox->knockback > 0.0f)
     {
-        auto *atkT = m_world->GetComponent<TransformComponent>(attackerCandidate);
+        const EntityID attackerOwner =
+            (hitbox->ownerID != InvalidEntityID) ? hitbox->ownerID : attackerCandidate;
+        auto *atkT = m_world->GetComponent<TransformComponent>(attackerOwner);
         auto *vicT = m_world->GetComponent<TransformComponent>(victimCandidate);
         if (atkT && vicT)
         {
-            // position はローカル座標（親からの相対）。剣は手のボーン配下、
-            // ドローンは親なし、プレイヤーはプレハブ実体の配下、と親がばらばらなので、
-            // そのまま引き算すると別々の空間の値を混ぜることになる。
-            // TransformComponent.h の「ロジック判定には GetWorldPosition() を使うこと」に従う。
-            Vector3 d = Vector3(vicT->GetWorldPosition()) - Vector3(atkT->GetWorldPosition());
-            d.y       = 0.0f; // 平面ステージ。吹っ飛びはXZのみ
-            if (d.LengthSquared() > 1e-6f)
+            // (a) 攻撃者の前方（技が意図する主方向）
+            Vector3 fwd(atkT->GetForward());
+            fwd.y = 0.0f;
+            if (fwd.LengthSquared() > 1e-6f) fwd.Normalize();
+            else                             fwd = Vector3::Zero;
+
+            // (b) 放射方向（攻撃者→被弾者）。GetWorldPosition() 基準で空間を揃える。
+            Vector3 radial = Vector3(vicT->GetWorldPosition()) - Vector3(atkT->GetWorldPosition());
+            radial.y = 0.0f;
+            if (radial.LengthSquared() > 1e-6f) radial.Normalize();
+            else                                radial = Vector3::Zero;
+
+            // 前方0.75 : 放射0.25 でブレンド（将来はHitBoxイベント側で技ごとに指定できるとよい）。
+            constexpr float kForwardWeight = 0.75f;
+            Vector3 blended = fwd * kForwardWeight + radial * (1.0f - kForwardWeight);
+            if (blended.LengthSquared() > 1e-6f)
             {
-                d.Normalize();
-                knockDir   = d;
+                blended.Normalize();
+                knockDir   = blended;
                 knockForce = hitbox->knockback;
             }
+            else if (fwd.LengthSquared() > 1e-6f)
+            {
+                // 前方と放射が打ち消し合った稀なケースは前方で代替。
+                knockDir   = fwd;
+                knockForce = hitbox->knockback;
+            }
+            // どちらも無効（真上重なり等）は knockForce=0 のまま(安全側)
         }
-        // 位置が取れない/真上重なり時は knockForce=0 のまま(安全側)
     }
 
     // 5. DamageEvent(一時エンティティ)を生成して結果を載せる。HPは触らない。

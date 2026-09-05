@@ -10,6 +10,7 @@
 #include "Game/Logics/AI/Drone/DroneComponent.h"
 
 #include "Game/Logics/GameEvent/GameEvents.h"
+#include "Game/Logics/Combat/CombatComponents.h" // HitboxComponent（攻撃判定がアクティブな時だけ成立させるため）
 #include "Engine/Camera/CameraEvents.h" // FOVパンチ要求（カメラへの演出指示）
 #include "Engine/Time/TimeState.h"
 #include "Engine/Time/TimeService.h" // 時間操作は意図ファサード経由
@@ -164,11 +165,24 @@ void JustEvadeSystem::CheckJustEvade(EntityID playerCandidate, EntityID otherCan
             return;
     }
 
-     // 相手がドローンで、かつ「攻撃中」でなければ成立させない
-    auto *otherDrone = m_world->GetComponent<DroneComponent>(otherCandidate);
-    if (otherDrone && !IsDroneHostile(otherDrone)) return;
-    //   → 攻撃中でない陣形ドローンに突っ込んでも回避は起きない
-    //   → otherDrone が nullptr（ボス本体の攻撃など）の場合は従来通り成立
+    // 4.【ガード条件】相手が「今このフレームに有効な攻撃」であるときだけ成立させる。
+    //   ・ドローン        : 突撃中(FireCharge)のみ危険。陣形待機中に突っ込んでも暴発しない。
+    //   ・Hitbox(ボスの剣) : その判定が今アクティブな時だけ。剣コライダーは振っていなくても
+    //                       常時存在するため、ここを見ないと「攻撃していない剣」にダッシュで
+    //                       突っ込んだだけでジャスト回避が暴発する（今回の修正対象）。
+    //   ・上記いずれでもない相手(ボス本体・障害物など)は攻撃ではないので成立させない。
+    if (auto *otherDrone = m_world->GetComponent<DroneComponent>(otherCandidate))
+    {
+        if (!IsDroneHostile(otherDrone)) return;
+    }
+    else if (auto *otherHitbox = m_world->GetComponent<HitboxComponent>(otherCandidate))
+    {
+        if (!otherHitbox->isActive) return; // 攻撃判定が開いていない剣は無害
+    }
+    else
+    {
+        return; // 攻撃判定を持たない相手にはジャスト回避を成立させない
+    }
 
 
     // =====================================================================

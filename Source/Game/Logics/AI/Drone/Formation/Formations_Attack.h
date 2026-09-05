@@ -230,7 +230,7 @@ struct KamikazeSwarmFormation : public IFormation
 
     // 先読みの強さ。0=今の位置を撃つ / 1=完全な迎撃。狙いは発射の瞬間に凍るので、
     // 「歩くだけで避けられる」を潰しつつ「避ければ避けられる」を残す値にする。
-    static constexpr float kLeadFactor = 0.9f;
+    static constexpr float kLeadFactor = 0.5f;
 };
 
 // 挟み込み2段（MegaClapSlam）── 「形を読む」を最も強く要求する技。
