@@ -52,6 +52,16 @@ struct AIBlackboard {
     //   連動してしまい、片方を触るともう片方が壊れる。
     float accumulatedDamage      = 0.0f; // 前回リセットからの被弾量（実数値）
     float accumulatedDamageRatio = 0.0f; // 上を最大HPで割ったもの [%]。書き手は BossPerceptionSystem
+
+    // --- 直近の被弾からの経過秒。書き手は BossPerceptionSystem ---
+    //
+    // 被弾は「今の行動」を中断しない。「次に何をするか」の判断にだけ影響させる。
+    //   残り時間ではなく経過時間を持つのは、待つ長さ（攻撃ヒット時待ち時間）を
+    //   BTノードの param で決めたいから。知覚側は「いつ殴られたか」だけを持ち、
+    //   「どれだけ待つか」は木が決める（形態や敵の種類で変えられる）。
+    //
+    // 初期値が大きいのは、戦闘開始時に「今殴られた」扱いにならないようにするため。
+    float timeSinceLastHit = 9999.0f;
 };
 
 

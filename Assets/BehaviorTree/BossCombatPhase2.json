@@ -27,26 +27,6 @@
             "startPin": 8
         },
         {
-            "endPin": 16,
-            "id": 117,
-            "startPin": 5
-        },
-        {
-            "endPin": 19,
-            "id": 118,
-            "startPin": 17
-        },
-        {
-            "endPin": 21,
-            "id": 119,
-            "startPin": 17
-        },
-        {
-            "endPin": 23,
-            "id": 120,
-            "startPin": 17
-        },
-        {
             "endPin": 25,
             "id": 121,
             "startPin": 5
@@ -320,6 +300,51 @@
             "id": 273,
             "startPin": 160,
             "endPin": 272
+        },
+        {
+            "id": 276,
+            "startPin": 206,
+            "endPin": 275
+        },
+        {
+            "id": 279,
+            "startPin": 206,
+            "endPin": 278
+        },
+        {
+            "id": 282,
+            "startPin": 206,
+            "endPin": 281
+        },
+        {
+            "id": 285,
+            "startPin": 206,
+            "endPin": 284
+        },
+        {
+            "id": 288,
+            "startPin": 206,
+            "endPin": 287
+        },
+        {
+            "id": 291,
+            "startPin": 206,
+            "endPin": 290
+        },
+        {
+            "id": 295,
+            "startPin": 5,
+            "endPin": 293
+        },
+        {
+            "id": 298,
+            "startPin": 294,
+            "endPin": 297
+        },
+        {
+            "id": 301,
+            "startPin": 294,
+            "endPin": 300
         }
     ],
     "editor_nodes": [
@@ -391,52 +416,6 @@
         },
         {
             "actionId": 0,
-            "id": 15,
-            "inputPinId": 16,
-            "name": "接近(逃げ得対策)",
-            "outputPinId": 17,
-            "posX": 1000.0,
-            "posY": 400.0,
-            "type": 2
-        },
-        {
-            "actionId": 10,
-            "id": 18,
-            "inputPinId": 19,
-            "name": "距離>40m",
-            "outputPinId": 0,
-            "posX": 1000.0,
-            "posY": 560.0,
-            "type": 3,
-            "condition": "C_DistanceGreaterThan",
-            "param": 40.0
-        },
-        {
-            "actionId": 1000,
-            "id": 20,
-            "inputPinId": 21,
-            "name": "Move",
-            "outputPinId": 0,
-            "posX": 1260.0,
-            "posY": 560.0,
-            "type": 4,
-            "action": "A_Move",
-            "param": 0.0
-        },
-        {
-            "actionId": 1000,
-            "id": 22,
-            "inputPinId": 23,
-            "name": "Move",
-            "outputPinId": 0,
-            "posX": 1520.0,
-            "posY": 560.0,
-            "type": 4,
-            "action": "A_Move",
-            "param": 0.0
-        },
-        {
-            "actionId": 0,
             "id": 24,
             "inputPinId": 25,
             "name": "猛攻(中距離)",
@@ -480,16 +459,16 @@
             "param": 0.0
         },
         {
-            "actionId": 112,
+            "actionId": 1106,
             "id": 40,
             "inputPinId": 41,
-            "name": "Wait(CD)",
+            "name": "詰めながら待つ",
             "outputPinId": 0,
             "posX": 3300.0,
             "posY": 780.0,
             "type": 4,
             "param": 2.0,
-            "action": "A_Wait"
+            "action": "A_BossAdvance"
         },
         {
             "actionId": 0,
@@ -526,16 +505,16 @@
             "param": 0.0
         },
         {
-            "actionId": 112,
+            "actionId": 1106,
             "id": 55,
             "inputPinId": 56,
-            "name": "Wait(CD)",
+            "name": "詰めながら待つ",
             "outputPinId": 0,
             "posX": 5000.0,
             "posY": 780.0,
             "type": 4,
             "param": 2.0,
-            "action": "A_Wait"
+            "action": "A_BossAdvance"
         },
         {
             "actionId": 0,
@@ -572,16 +551,16 @@
             "param": 0.0
         },
         {
-            "actionId": 112,
+            "actionId": 1106,
             "id": 70,
             "inputPinId": 71,
-            "name": "Wait(CD)",
+            "name": "詰めながら待つ",
             "outputPinId": 0,
             "posX": 6700.0,
             "posY": 780.0,
             "type": 4,
             "param": 3.0,
-            "action": "A_Wait"
+            "action": "A_BossAdvance"
         },
         {
             "actionId": 0,
@@ -618,16 +597,16 @@
             "param": 0.0
         },
         {
-            "actionId": 112,
+            "actionId": 1106,
             "id": 85,
             "inputPinId": 86,
-            "name": "Wait(CD)",
+            "name": "詰めながら待つ",
             "outputPinId": 0,
             "posX": 8400.0,
             "posY": 780.0,
             "type": 4,
             "param": 2.0,
-            "action": "A_Wait"
+            "action": "A_BossAdvance"
         },
         {
             "actionId": 0,
@@ -664,16 +643,16 @@
             "param": 0.0
         },
         {
-            "actionId": 112,
+            "actionId": 1106,
             "id": 100,
             "inputPinId": 101,
-            "name": "Wait(CD)",
+            "name": "詰めながら待つ",
             "outputPinId": 0,
             "posX": 10100.0,
             "posY": 780.0,
             "type": 4,
             "param": 2.0,
-            "action": "A_Wait"
+            "action": "A_BossAdvance"
         },
         {
             "actionId": 0,
@@ -710,16 +689,16 @@
             "param": 0.0
         },
         {
-            "actionId": 112,
+            "actionId": 1106,
             "id": 177,
             "inputPinId": 178,
-            "name": "Wait2.0(CD)",
+            "name": "詰めながら待つ",
             "outputPinId": 0,
             "posX": 12800.0,
             "posY": 832.0,
             "type": 4,
             "param": 2.0,
-            "action": "A_Wait"
+            "action": "A_BossAdvance"
         },
         {
             "id": 180,
@@ -1070,9 +1049,114 @@
             "param": 10.0,
             "inputPinId": 272,
             "outputPinId": 0
+        },
+        {
+            "id": 274,
+            "type": 4,
+            "name": "援護：縦割り",
+            "posX": -240.0,
+            "posY": 1932.0,
+            "action": "A_DroneGuillotineSlam",
+            "actionId": 2023,
+            "param": 0.0,
+            "inputPinId": 275,
+            "outputPinId": 0
+        },
+        {
+            "id": 277,
+            "type": 4,
+            "name": "Wait(予備動作)",
+            "posX": 20.0,
+            "posY": 1932.0,
+            "action": "A_Wait",
+            "actionId": 112,
+            "param": 0.6,
+            "inputPinId": 278,
+            "outputPinId": 0
+        },
+        {
+            "id": 280,
+            "type": 4,
+            "name": "攻撃実行",
+            "posX": 150.0,
+            "posY": 1932.0,
+            "action": "A_DroneStrike",
+            "actionId": 1006,
+            "param": 0.0,
+            "inputPinId": 281,
+            "outputPinId": 0
+        },
+        {
+            "id": 283,
+            "type": 4,
+            "name": "Wait(攻撃中)",
+            "posX": 280.0,
+            "posY": 1932.0,
+            "action": "A_Wait",
+            "actionId": 112,
+            "param": 2.0,
+            "inputPinId": 284,
+            "outputPinId": 0
+        },
+        {
+            "id": 286,
+            "type": 4,
+            "name": "Orbit(帰投)",
+            "posX": 410.0,
+            "posY": 1932.0,
+            "action": "A_DroneHighOrbit",
+            "actionId": 2004,
+            "param": 0.0,
+            "inputPinId": 287,
+            "outputPinId": 0
+        },
+        {
+            "id": 289,
+            "type": 4,
+            "name": "Wait(間)",
+            "posX": 540.0,
+            "posY": 1932.0,
+            "action": "A_Wait",
+            "actionId": 112,
+            "param": 3.0,
+            "inputPinId": 290,
+            "outputPinId": 0
+        },
+        {
+            "id": 292,
+            "type": 2,
+            "name": "遠ければ詰める",
+            "posX": 1000.0,
+            "posY": 400.0,
+            "inputPinId": 293,
+            "outputPinId": 294
+        },
+        {
+            "id": 296,
+            "type": 3,
+            "name": "距離>30m",
+            "posX": 870.0,
+            "posY": 2232.0,
+            "inputPinId": 297,
+            "outputPinId": 0,
+            "condition": "C_DistanceGreaterThan",
+            "actionId": 10,
+            "param": 30.0
+        },
+        {
+            "id": 299,
+            "type": 4,
+            "name": "詰めながら待つ",
+            "posX": 1130.0,
+            "posY": 2232.0,
+            "inputPinId": 300,
+            "outputPinId": 0,
+            "action": "A_BossAdvance",
+            "actionId": 1106,
+            "param": 1.5
         }
     ],
-    "last_id_counter": 273,
+    "last_id_counter": 301,
     "nodes": [
         {
             "type": "Selector",
@@ -1092,16 +1176,22 @@
                 6,
                 7,
                 8,
-                9
+                9,
+                10,
+                11,
+                12,
+                13,
+                14,
+                15
             ]
         },
         {
             "type": "Sequence",
             "actionOrConditionId": 0,
             "children": [
-                10,
-                11,
-                12
+                16,
+                17,
+                18
             ]
         },
         {
@@ -1110,28 +1200,27 @@
             "actionOrConditionId": 0,
             "decoratorType": 1,
             "children": [
-                13
+                19
             ]
         },
         {
             "type": "Sequence",
             "actionOrConditionId": 0,
             "children": [
-                14,
-                15,
-                16
+                20,
+                21
             ]
         },
         {
             "type": "RandomSelector",
             "actionOrConditionId": 0,
             "children": [
-                17,
-                18,
-                19,
-                20,
-                21,
-                22
+                22,
+                23,
+                24,
+                25,
+                26,
+                27
             ]
         },
         {
@@ -1157,9 +1246,51 @@
         },
         {
             "type": "Action",
+            "action": "A_DroneGuillotineSlam",
+            "param": 0.0,
+            "actionOrConditionId": 2023,
+            "children": []
+        },
+        {
+            "type": "Action",
             "action": "A_BossBackStep",
             "param": 0.8,
             "actionOrConditionId": 1104,
+            "children": []
+        },
+        {
+            "type": "Action",
+            "action": "A_Wait",
+            "param": 0.6,
+            "actionOrConditionId": 112,
+            "children": []
+        },
+        {
+            "type": "Action",
+            "action": "A_DroneStrike",
+            "param": 0.0,
+            "actionOrConditionId": 1006,
+            "children": []
+        },
+        {
+            "type": "Action",
+            "action": "A_Wait",
+            "param": 2.0,
+            "actionOrConditionId": 112,
+            "children": []
+        },
+        {
+            "type": "Action",
+            "action": "A_DroneHighOrbit",
+            "param": 0.0,
+            "actionOrConditionId": 2004,
+            "children": []
+        },
+        {
+            "type": "Action",
+            "action": "A_Wait",
+            "param": 3.0,
+            "actionOrConditionId": 112,
             "children": []
         },
         {
@@ -1187,102 +1318,95 @@
             "type": "Sequence",
             "actionOrConditionId": 0,
             "children": [
-                23,
-                24,
-                25
+                28,
+                29,
+                30
             ]
         },
         {
             "type": "Condition",
             "condition": "C_DistanceGreaterThan",
-            "param": 40.0,
+            "param": 30.0,
             "actionOrConditionId": 10,
             "children": []
         },
         {
             "type": "Action",
-            "action": "A_Move",
-            "param": 0.0,
-            "actionOrConditionId": 1000,
-            "children": []
-        },
-        {
-            "type": "Action",
-            "action": "A_Move",
-            "param": 0.0,
-            "actionOrConditionId": 1000,
+            "action": "A_BossAdvance",
+            "param": 1.5,
+            "actionOrConditionId": 1106,
             "children": []
         },
         {
             "type": "Sequence",
             "actionOrConditionId": 0,
             "children": [
-                26,
-                27,
-                28,
-                29,
-                30,
-                31
-            ]
-        },
-        {
-            "type": "Sequence",
-            "actionOrConditionId": 0,
-            "children": [
+                31,
                 32,
                 33,
                 34,
                 35,
-                36,
-                37
+                36
             ]
         },
         {
             "type": "Sequence",
             "actionOrConditionId": 0,
             "children": [
+                37,
                 38,
                 39,
                 40,
                 41,
-                42,
-                43
+                42
             ]
         },
         {
             "type": "Sequence",
             "actionOrConditionId": 0,
             "children": [
+                43,
                 44,
                 45,
                 46,
                 47,
-                48,
-                49
+                48
             ]
         },
         {
             "type": "Sequence",
             "actionOrConditionId": 0,
             "children": [
+                49,
                 50,
                 51,
                 52,
                 53,
-                54,
-                55
+                54
             ]
         },
         {
             "type": "Sequence",
             "actionOrConditionId": 0,
             "children": [
+                55,
                 56,
                 57,
                 58,
                 59,
-                60,
-                61
+                60
+            ]
+        },
+        {
+            "type": "Sequence",
+            "actionOrConditionId": 0,
+            "children": [
+                61,
+                62,
+                63,
+                64,
+                65,
+                66
             ]
         },
         {
@@ -1296,8 +1420,8 @@
             "type": "RandomSelector",
             "actionOrConditionId": 0,
             "children": [
-                62,
-                63
+                67,
+                68
             ]
         },
         {
@@ -1344,9 +1468,9 @@
         },
         {
             "type": "Action",
-            "action": "A_Wait",
+            "action": "A_BossAdvance",
             "param": 2.0,
-            "actionOrConditionId": 112,
+            "actionOrConditionId": 1106,
             "children": []
         },
         {
@@ -1386,9 +1510,9 @@
         },
         {
             "type": "Action",
-            "action": "A_Wait",
+            "action": "A_BossAdvance",
             "param": 2.0,
-            "actionOrConditionId": 112,
+            "actionOrConditionId": 1106,
             "children": []
         },
         {
@@ -1428,9 +1552,9 @@
         },
         {
             "type": "Action",
-            "action": "A_Wait",
+            "action": "A_BossAdvance",
             "param": 3.0,
-            "actionOrConditionId": 112,
+            "actionOrConditionId": 1106,
             "children": []
         },
         {
@@ -1470,9 +1594,9 @@
         },
         {
             "type": "Action",
-            "action": "A_Wait",
+            "action": "A_BossAdvance",
             "param": 2.0,
-            "actionOrConditionId": 112,
+            "actionOrConditionId": 1106,
             "children": []
         },
         {
@@ -1512,9 +1636,9 @@
         },
         {
             "type": "Action",
-            "action": "A_Wait",
+            "action": "A_BossAdvance",
             "param": 2.0,
-            "actionOrConditionId": 112,
+            "actionOrConditionId": 1106,
             "children": []
         },
         {
@@ -1554,9 +1678,9 @@
         },
         {
             "type": "Action",
-            "action": "A_Wait",
+            "action": "A_BossAdvance",
             "param": 2.0,
-            "actionOrConditionId": 112,
+            "actionOrConditionId": 1106,
             "children": []
         },
         {

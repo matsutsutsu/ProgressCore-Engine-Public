@@ -28,7 +28,12 @@ void BossPerceptionSystem::Initialize()
         if (ev.isPlayer) return; // プレイヤーの被弾は敵AIの判断材料ではない
 
         if (auto *bt = m_world->GetComponent<BehaviorTreeComponent>(ev.targetID))
+        {
             bt->blackboard.accumulatedDamage += ev.damageAmount;
+
+            // 被弾でモーションは止めない。止めるのは「次の技を選ぶ」判断だけ。
+            bt->blackboard.timeSinceLastHit = 0.0f;
+        }
     });
 }
 
@@ -42,7 +47,12 @@ void BossPerceptionSystem::Update(float /*rawDt*/)
     ForEach([&](BehaviorTreeComponent    &btComp,
                 const TransformComponent &trans,
                 const HealthComponent    &health,
-                const TimeStateComponent & /*time*/) {
+                const TimeStateComponent &time) {
+        // --- 被弾からの経過 ---
+        //   個体の時計で数える。ヒットストップ中は時間が止まるので、
+        //   「止まっている間に様子見が明ける」ということにならない。
+        btComp.blackboard.timeSinceLastHit += time.localDt;
+
         // --- HP割合の同期 ---
         if (health.maxHealth > 0.0f)
         {

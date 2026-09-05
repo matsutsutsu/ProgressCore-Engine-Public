@@ -6,6 +6,7 @@
 #include "Game/Logics/AI/BehaviorTree/Actions/BTActionRegistry.h"
 #include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
+#include "Game/Logics/Character/Boss/Components/BossActionComponent.h"  // 詰めるのを止める距離
 #include "Game/Logics/AI/Drone/DroneComponent.h"
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"   // 陣形が持つ時間割
 #include "Engine/ECS/Core/CCL_World.h"                               // world->GetComponent
@@ -64,6 +65,32 @@ struct ResetDamageAction : public IBTAction
 };
 
 // ====================================================================
+// ②-2 被弾後の様子見（攻撃ヒット時待ち時間）汎用：bt のみ
+//
+// 大原則：被弾は「今の行動」を中断しない。「次に何をするか」の判断にだけ影響する。
+//
+// なぜ Selector の先頭に置いても技を潰さないのか:
+//   Selector は Running 中の子を先に再開する（しおり）。技を出している間は
+//   この枝まで評価が降りてこないので、割り込みにはならない。
+//   技を出し切って「次を選べる」になった瞬間にだけここが効く。
+//
+// 怒り状態で OFF にするには、その木からこのノードを外すか param を 0 にする。
+// （必死さの表現は「待たない」ことそのものなので、フラグではなく木の形で表す）
+// ====================================================================
+struct HitWaitAction : public IBTAction
+{
+    BTNodeState Execute(BTContext &ctx) override
+    {
+        ctx.bt->lastLogActionId = ::CCL::AI::A_BossHitWait;
+
+        // 自分のタイマーを使わない。「いつ殴られたか」は知覚側が持っていて、
+        // ここはそれを param と見比べるだけ。途中でもう一発殴られたら自動で延びる。
+        return (ctx.bt->blackboard.timeSinceLastHit < ctx.param) ? BTNodeState::Running
+                                                                 : BTNodeState::Failure;
+    }
+};
+
+// ====================================================================
 // ③ 移動（Move）ボス固有：BossCommand を自分で取りに行く
 //    「移動してほしい」意図を currentActionId に書く。
 //    タイマー 0.5s で一旦 Success させ、BT に再評価させる。
@@ -102,6 +129,67 @@ struct MoveAction : public IBTAction
         if (auto *cmd = ctx.world->GetComponent<BossCommandComponent>(ctx.entity)) {
             cmd->currentActionId = ::CCL::AI::A_Move;
         }
+        return BTNodeState::Running;
+    }
+};
+
+// ====================================================================
+// ③-2 詰めながら待つ（Advance）ボス固有
+//
+// 技と技の間に入れる「間」。待機するだけの A_Wait と差し替えて使う。
+//
+// なぜ必要か:
+//   以前は技の後ろに Wait 3.0 が並んでいて、その間ボスは完全に棒立ちだった。
+//   さらに A_Move は「距離 > 40m」の枝にしか無く、上の枝が先に通るので
+//   実質一度も歩かなかった。結果、8〜40m の帯でボスは一歩も動かず、
+//   陣形だけを飛ばす置物になっていた（間合いの奪い合いが成立しない）。
+//
+// 近づき切ったら要求を出さない（≠完了する）:
+//   止めるのは足だけで、ノードは param 秒最後まで Running のまま。
+//   途中で Success にすると「近づいた瞬間に次の技が出る」になり、
+//   間の長さがプレイヤーの位置で変わって後隙が読めなくなる。
+// ====================================================================
+struct AdvanceAction : public IBTAction
+{
+    std::vector<CCL::ECS::TypeID> GetExtraWriteTypes() const override
+    {
+        return TypeIDsOf<BossCommandComponent>();
+    }
+
+    std::vector<CCL::ECS::TypeID> GetExtraReadTypes() const override
+    {
+        return TypeIDsOf<BossActionComponent>();
+    }
+
+    BTNodeState Execute(BTContext &ctx) override
+    {
+        auto &timers = ctx.bt->nodeTimers;
+        if (ctx.nodeId >= timers.size()) return BTNodeState::Failure;
+
+        ctx.bt->lastLogActionId = ::CCL::AI::A_BossAdvance;
+
+        if (timers[ctx.nodeId] == 0.0f)
+        {
+            ClearCommandIfMine(ctx, ::CCL::AI::A_Move);
+            return BTNodeState::Success;
+        }
+
+        if (timers[ctx.nodeId] == -1.0f)
+            timers[ctx.nodeId] = (ctx.param > 0.0f) ? ctx.param : 2.0f;
+
+        // 止める距離はボスの調整値。引けなければ薙ぎ払いの間合いを仮に使う。
+        float stopDistance = 7.0f;
+        if (const auto *act = ctx.world->GetComponent<BossActionComponent>(ctx.entity))
+            stopDistance = act->advanceStopDistance;
+
+        auto *cmd = ctx.world->GetComponent<BossCommandComponent>(ctx.entity);
+        if (!cmd) return BTNodeState::Running;
+
+        if (ctx.bt->blackboard.distanceToTarget > stopDistance)
+            cmd->currentActionId = ::CCL::AI::A_Move;   // 歩く（旋回も ProcessMove がやる）
+        else
+            ClearCommandIfMine(ctx, ::CCL::AI::A_Move); // 足を止めて構える（待機旋回へ戻る）
+
         return BTNodeState::Running;
     }
 };
@@ -277,6 +365,8 @@ inline void RegisterAll()
     reg.RegisterAction<ResetDamageAction>(::CCL::AI::A_ResetDamage);
     reg.RegisterAction<MoveAction>(::CCL::AI::A_Move);
     reg.RegisterAction<DroneStrikeAction>(::CCL::AI::A_DroneStrike);
+    reg.RegisterAction<HitWaitAction>(::CCL::AI::A_BossHitWait);
+    reg.RegisterAction<AdvanceAction>(::CCL::AI::A_BossAdvance);
 
     // 陣形指示は全部おなじ DroneAction。ActionRegistry.h の表から直接登録するので、
     // 技を足しても消してもここは触らない（連番ループだと欠番も登録してしまう）。

@@ -181,6 +181,18 @@ void BossActionSystem::ProcessIdle(BossActionComponent &bossDef, TransformCompon
 
     // 上書きは書かない＝config.walkSpeed 基準へ戻る（要求は読み手が毎フレーム消費する）。
     movement.desiredVelocity = Vector3::Zero;
+
+    // 足は止めるが、目は離さない。
+    //
+    //   技と技の間には数秒の間が入る。ここで旋回しないと、その間だけボスは
+    //   最後に向いた方向を見つめたままになり、背後へ回られても無反応になる。
+    //
+    //   旋回を移動中より遅くする（idleTurnSpeed 4.0 < turnSpeed 8.0）のが要点。
+    //   即座に正対すると背後を取る価値が消え、だかといって回らないと置物に見える。
+    Vector3 dirToPlayer = playerPos - trans.position;
+    dirToPlayer.y       = 0.0f;
+    TurnToward(trans, dirToPlayer, bossDef.idleTurnSpeed, dt);
+    SyncCharacterRotation(trans, joltHandle.character.GetPtr());
 }
 
 void BossActionSystem::ProcessMove(BossActionComponent &bossDef, TransformComponent &trans,
@@ -390,19 +402,35 @@ void BossActionSystem::ProcessBackStep(BossActionComponent &bossDef, TransformCo
         return;
     }
 
-    // --- 後退：踏み切った速度から直線的に 0 まで落とす ---
-    //   突進と違って溜めを持たない。被弾への反応なので、予備動作を入れると
+    // --- 後退：跡を放物線にして「強く引かれる」形にする ---
+    //
+    //   溜めを持たないのは突進と違う点。被弾への反応なので、予備動作を入れると
     //   「殴られてから0.3秒棒立ちして退く」になり、避けている感じが出ない。
-    const float u     = t / (std::max)(0.01f, bossDef.backStepTime);
+    //
+    //   地を蹴らず跳ぶ理由:
+    //     地上を滑らせると、どんなに速くしてもクリップの足と合わず「後ろ歩き」に見える。
+    //     空中にいる間は接地感が問われないので、同じクリップのままでも「引いた」に見える。
+    //
+    //   式は跳躍斬り（ProcessJumpAttack）と同じ。v(u) = 4h/T * (1 - 2u) は
+    //   積分すると踏み切り高さへちょうど戻るので、着地の時刻が backStepTime からずれない。
+    const float T = (std::max)(0.01f, bossDef.backStepTime);
+    const float u = t / T;
+
+    // 水平は直線減速のまま。退く距離 = backStepSpeed * backStepTime / 2 という
+    // 読める式を残したい（間合いの設計はこの数字でやる）。
     const float speed = bossDef.backStepSpeed * (1.0f - u);
+
+    Vector3 v = bossDef.lockedDirection * speed;
+    v.y       = (4.0f * bossDef.backStepHeight / T) * (1.0f - 2.0f * u);
+
+    // 重力と水平計算を止めて、この速度をそのまま使う。
+    //   こちらでは config.walkSpeed の頭打ちも掛からない。歩行上限で丸めると
+    //   「素早く退く」という技の中身が消えて、ただの後ずさりになる。
+    movement.use3DVelocity = true;
+    movement.velocity3D    = v;
 
     bossDef.currentMoveSpeed = speed;
     bossDef.moveDirection    = bossDef.lockedDirection;
-    movement.desiredVelocity = bossDef.lockedDirection;
-
-    // 突進と同じ理由で config.walkSpeed の頭打ちを掛けない。歩行上限で丸めると
-    // 「素早く退く」という技の中身が消えて、ただの後ずさりになる。
-    movement.overrideSpeed = speed;
 }
 
 

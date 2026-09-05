@@ -110,6 +110,19 @@ inline constexpr ActionID A_BossJumpAttack = 1103; // 跳躍斬り。放物線�
 // 桁は台帳であって分類ではない（このファイル冒頭の説明のとおり）。
 inline constexpr ActionID A_BossBackStep = 1104; // 後方ステップ。被弾がかさんだら間合いを切る
 
+// 攻撃ヒット時待ち時間。トリガーも物理も持たないので 1100 番台の他とは別の形。
+//
+// 被弾はモーションを中断しない。止めるのは「次の技を選ぶ」判断だけで、
+// その猫予を作るのがこの行動。Selector の先頭に置いて使う。
+inline constexpr ActionID A_BossHitWait  = 1105; // 被弾後の様子見。param 秒だけ次の技を選ばない
+
+// 詰めながら待つ。A_Move との違いは「待つことが目的」であること。
+//
+// A_Move は「遠いから歩いて追う」行動。こちらは技と技の間に入れて、
+// 待機時間を「棒立ち」から「圧をかける時間」へ変えるために使う。
+// 企画の共通原則「ボスに何もしていない瞬間を作らない」を木の上で表すもの。
+inline constexpr ActionID A_BossAdvance  = 1106; // 詰めながら待つ。param 秒
+
 // --- ドローン陣形技 (2000番台) ---
 #define CCL_BT_DEFINE_DRONE_ID(Name, Id, Formation, Display) inline constexpr ActionID Name = Id;
 BT_DRONE_ACTION_LIST(CCL_BT_DEFINE_DRONE_ID)
@@ -172,6 +185,8 @@ inline constexpr ActionEntry g_ActionRegistry[] = {
     { CCL::AI::A_BossDashSlash,  "A_BossDashSlash",  "ボス：突進斬り (Dash Slash)",  BTCategory::Boss,   "全体時間 [秒]" },
     { CCL::AI::A_BossJumpAttack, "A_BossJumpAttack", "ボス：跳躍斬り (Jump Attack)", BTCategory::Boss,   "全体時間 [秒]" },
     { CCL::AI::A_BossBackStep,   "A_BossBackStep",   "ボス：後方ステップ (Back Step)", BTCategory::Boss, "全体時間 [秒]" },
+    { CCL::AI::A_BossHitWait,    "A_BossHitWait",    "ボス：被弾後の様子見",           BTCategory::Boss, "待つ長さ [秒]" },
+    { CCL::AI::A_BossAdvance,    "A_BossAdvance",    "ボス：詰めながら待つ",           BTCategory::Boss, "長さ [秒]" },
 
     { CCL::AI::A_DroneStrike, "A_DroneStrike", "ドローン：攻撃実行 (Strike)", BTCategory::Drone,  ""              },
 
@@ -415,7 +430,10 @@ inline bool IsDroneAttackFormation(ActionID id)
 
 inline bool IsWaitAction(ActionID id) { return id == CCL::AI::A_Wait; }
 
-inline bool IsBossPhysicalAction(ActionID id) { return id == CCL::AI::A_Move; }
+inline bool IsBossPhysicalAction(ActionID id)
+{
+    return id == CCL::AI::A_Move || id == CCL::AI::A_BossAdvance;
+}
 
 // ボスの近接アクション（アニメトリガーで攻撃する系）か。
 //
@@ -442,6 +460,8 @@ inline bool IsBossEvadeAction(ActionID id) { return id == CCL::AI::A_BossBackSte
 inline bool IsBlockingAction(ActionID id)
 {
     return id == CCL::AI::A_Wait
+        || id == CCL::AI::A_BossHitWait
+        || id == CCL::AI::A_BossAdvance
         || id == CCL::AI::A_Move
         || IsBossMeleeAction(id)
         || IsBossEvadeAction(id);

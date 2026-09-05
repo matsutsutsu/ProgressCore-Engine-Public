@@ -17,62 +17,6 @@
             "targetStateHash": 1898928778
         },
         {
-            "blendDuration": 0.20000000298023224,
-            "conditions": [
-                {
-                    "op": 3,
-                    "paramHash": 1939215512,
-                    "paramName": "HitRight",
-                    "threshold": 0.0
-                }
-            ],
-            "logicType": 0,
-            "requiredCancelMask": 0,
-            "targetStateHash": 1939215512
-        },
-        {
-            "blendDuration": 0.20000000298023224,
-            "conditions": [
-                {
-                    "op": 3,
-                    "paramHash": 2671032551,
-                    "paramName": "HitLeft",
-                    "threshold": 0.0
-                }
-            ],
-            "logicType": 0,
-            "requiredCancelMask": 0,
-            "targetStateHash": 2671032551
-        },
-        {
-            "blendDuration": 0.20000000298023224,
-            "conditions": [
-                {
-                    "op": 3,
-                    "paramHash": 4038633241,
-                    "paramName": "HitBack",
-                    "threshold": 0.0
-                }
-            ],
-            "logicType": 0,
-            "requiredCancelMask": 0,
-            "targetStateHash": 4038633241
-        },
-        {
-            "blendDuration": 0.20000000298023224,
-            "conditions": [
-                {
-                    "op": 3,
-                    "paramHash": 448068029,
-                    "paramName": "HitFront",
-                    "threshold": 0.0
-                }
-            ],
-            "logicType": 0,
-            "requiredCancelMask": 0,
-            "targetStateHash": 448068029
-        },
-        {
             "blendDuration": 0.15,
             "conditions": [
                 {
