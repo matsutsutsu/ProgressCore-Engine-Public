@@ -404,6 +404,7 @@
     <ClInclude Include="Source\Engine\Camera\Components\CameraBodyIntroOrbitComponent.h" />
     <ClInclude Include="Source\Engine\Camera\Systems\CameraIntroOrbitSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\CameraTargetBindSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\BattleStartFacingSystem.h" />
     <ClInclude Include="Source\Engine\Camera\Systems\CameraBrainSystem.h" />
     <ClInclude Include="Source\Engine\Camera\Systems\CameraDollySystem.h" />
     <ClInclude Include="Source\Engine\Camera\Systems\CameraListenerSystem.h" />
@@ -1165,6 +1166,7 @@
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIAppearSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerAttackSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\CameraTargetBindSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\BattleStartFacingSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerAnimParamSyncSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerDashSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerCleaveSystem.cpp" />

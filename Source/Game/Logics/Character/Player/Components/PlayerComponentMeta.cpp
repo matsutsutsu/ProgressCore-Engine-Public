@@ -10,26 +10,30 @@
 // ===========================================================================
 COMPONENT_META_BEGIN_FULL(PlayerComponent, "Player Component", CCL::Categories::Gameplay, 130, false)
 
+// --- 調整パラメータ（人が決める値。保存する）-----------------------------
 CFIELD(turnSpeed, "旋回速度", "移動")
 
 CFIELD_FLOAT_RANGED(runSpeed, "走行速度", 0.5f, 0.0f, 200.0f, "移動")
 CFIELD_FLOAT_RANGED(runIdleReleaseTime, "走行の無入力解除時間", 0.05f, 0.0f, 5.0f, "移動")
-CFIELD(isRunning, "走行中", "状態")
+CFIELD_FLOAT_RANGED(airborneGraceTime, "空中判定の猶予", 0.01f, 0.0f, 1.0f, "移動")
 
 CFIELD(maxJumps, "最大ジャンプ回数", "ジャンプ設定")
-CFIELD(currentJumpCount, "現在のジャンプ回数", "ジャンプ状態")
-
-CFIELD(currentYaw, "現在のYaw角", "状態")
-CFIELD(currentRoll, "現在のRoll角", "状態")
-
-CFIELD(isAirborne, "空中状態", "状態")
-CFIELD(timeSinceGrounded, "接地離れ経過時間", "状態")
-
-CFIELD_FLOAT_RANGED(airborneGraceTime, "空中判定の猶予", 0.01f, 0.0f, 1.0f, "移動")
 
 CFIELD_FLOAT_RANGED(bankingMultiplier, "バンキング係数", 0.1f, 0.0f, 5.0f, "見た目")
 CFIELD_FLOAT_RANGED(maxBankingAngle, "最大バンキング角", 1.0f, 0.0f, 90.0f, "見た目")
 
 CFIELD_FLOAT_RANGED(attackFaceMaxDistance, "攻撃時オートフェイス距離", 0.5f, 0.0f, 30.0f, "攻撃")
+
+// --- 実行時状態（書き手はシステム。表示はするが保存しない）-----------------
+//   保存すると「たまたま保存した瞬間の値」がプレハブへ焼き付き、そこから生成した
+//   個体が古い値を持って生まれる。実際 Player.json には currentYaw=-48.23(rad)、
+//   つまり約116度ズレた向きが焼き付いていて、開始直後にプレイヤーが横を向いていた。
+//   向きは BattleStartFacingSystem がボスとの位置関係から毎回決め直す。
+CFIELD_RT(isRunning, "走行中", "状態")
+CFIELD_RT(currentJumpCount, "現在のジャンプ回数", "状態")
+CFIELD_RT(currentYaw, "現在のYaw角(rad)", "状態")
+CFIELD_RT(currentRoll, "現在のRoll角(rad)", "状態")
+CFIELD_RT(isAirborne, "空中状態", "状態")
+CFIELD_RT(timeSinceGrounded, "接地離れ経過時間", "状態")
 
 COMPONENT_META_END(PlayerComponent)

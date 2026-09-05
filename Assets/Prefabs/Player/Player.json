@@ -134,16 +134,10 @@
                     "airborneGraceTime": 0.47999998927116394,
                     "attackFaceMaxDistance": 15.0,
                     "bankingMultiplier": 0.5,
-                    "currentJumpCount": 0,
-                    "currentRoll": -6.134981985382894e-19,
-                    "currentYaw": -48.229366302490234,
-                    "isAirborne": false,
-                    "isRunning": false,
                     "maxBankingAngle": 30.0,
                     "maxJumps": 2,
                     "runIdleReleaseTime": 0.4000000059604645,
                     "runSpeed": 65.5,
-                    "timeSinceGrounded": 0.0,
                     "turnSpeed": 10.0
                 },
                 "Player Input": {
