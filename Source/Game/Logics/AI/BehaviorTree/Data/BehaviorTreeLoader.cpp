@@ -1,19 +1,9 @@
 // BTアセット（JSON）をランタイム用の BTAsset へ読み込む実装。
+// 行動・条件は保存キー（"A_BossSlash" などの文字列）で解決し、数値IDは旧アセット
+// 互換のフォールバックとしてのみ使う。
 //
-// 役割:
-//   エディタが書き出した JSON の nodes[] を、BTNode の配列へ変換する。
-//   行動・条件は保存キー（"A_BossSlash" などの文字列）で解決し、
-//   数値IDは旧アセット互換のフォールバックとしてのみ使う。
-//
-// なぜこの形か:
-//   数値IDを正にすると、IDを詰め直せない・JSONを開いても何の技か読めない・
-//   技を足すときに番号を取り合う、の3つが同時に起きる。名前を正にすると全部消える
-//   （経緯は ActionRegistry.h の冒頭にまとめてある）。
-//
-// 注意点:
-//   古い書式のアセットは、この読み込み時に新しい形へ読み替える
-//   （MigrateLegacyWait / MigrateLegacyCondition）。読み替わるのはメモリ上だけなので、
-//   ファイル自体を新形式にするにはBTエディタで開いて保存し直す必要がある。
+// 古い書式のアセットはここで新しい形へ読み替える。読み替わるのはメモリ上だけなので、
+// ファイル自体を新形式にするにはBTエディタで開いて保存し直す必要がある。
 #include "BehaviorTreeLoader.h"
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/Platform/Core/FileSystem.h"
@@ -51,7 +41,7 @@ bool BehaviorTreeLoader::LoadFromJson(const std::string& path, BTAsset& outAsset
 
             node.decoratorType = static_cast<BTDecoratorType>(jNode.value("decoratorType", 0));
 
-            // param は旧名 decoratorParam から引き継ぐ（Decorator しか値を持たなかった頃の名前）。
+            // decoratorParam は Decorator しか値を持たなかった頃の名前。
             node.param = jNode.value("param", jNode.value("decoratorParam", 0.0f));
 
             MigrateLegacyWait(node);
@@ -127,7 +117,7 @@ void BehaviorTreeLoader::MigrateLegacyCondition(BTNode& node, const std::string&
 {
     if (node.type != BTNodeType::Condition) return;
 
-    // 現行の条件として解決済みなら何もしない（キーが正、数値IDは保険）。
+    // 現行の条件として解決済みなら何もしない。
     const LegacyConditionEntry* legacy = FindLegacyCondition(savedKey, node.actionOrConditionId);
     if (!legacy) return;
 
@@ -135,9 +125,8 @@ void BehaviorTreeLoader::MigrateLegacyCondition(BTNode& node, const std::string&
     node.param               = legacy->param;
 
     if (legacy->ambiguous) {
-        // 「15〜40m」のような帯は1ノードでは表せない。上限だけを引き継いだので、
-        // 単独で置かれていた場合は意味が広がっている。黙って変えると気づけないため
-        // ファイル名つきで知らせる。
+        // 帯は1ノードでは表せず上限だけを引き継ぐので、単独で置かれていた場合は
+        // 意味が広がる。黙って変えると気づけないのでファイル名つきで知らせる。
         CCL_LOG_WARN(LogCategory::AI,
             "[BT] 旧条件 \"%s\" を「距離 < %.1fm」へ読み替えた: %s "
             "（元は帯だったので、下限が必要なら条件ノードを2つに分けること）",
@@ -152,7 +141,7 @@ void BehaviorTreeLoader::MigrateLegacyCondition(BTNode& node, const std::string&
 
 
 namespace {
-// 枝の中に「Running を返しうる行動」が1つでもあるか。
+/// 枝の中に「Running を返しうる行動」が1つでもあるか。
 bool SubtreeCanBlock(const BTAsset& asset, BTNodeID nodeId)
 {
     const BTNode& node = asset.nodes[nodeId];
@@ -163,7 +152,7 @@ bool SubtreeCanBlock(const BTAsset& asset, BTNodeID nodeId)
     return false;
 }
 
-// 枝が条件を持つか（＝失敗して次の枝へ譲る可能性があるか）。
+/// 枝が条件を持つか（＝失敗して次の枝へ譲る可能性があるか）。
 bool SubtreeHasCondition(const BTAsset& asset, BTNodeID nodeId)
 {
     const BTNode& node = asset.nodes[nodeId];
@@ -177,23 +166,21 @@ bool SubtreeHasCondition(const BTAsset& asset, BTNodeID nodeId)
 
 void BehaviorTreeLoader::ValidateNodes(const BTAsset& asset, const std::string& path)
 {
-    // 「木としては読めるが、置いた本人の意図どおりには絶対に動かない」形をここで潰す。
-    //   実行時に気づけない類のものだけを対象にする（評価はワーカースレッドで走るので
-    //   その場でログを出せないし、出しても毎フレーム流れて読めない）。
+    // 「木としては読めるが、置いた本人の意図どおりには絶対に動かない」形を潰す。
+    // 評価はワーカースレッドで走るので、実行時にはログを出せない。
     for (size_t i = 0; i < asset.nodes.size(); ++i) {
         const BTNode& node = asset.nodes[i];
 
         if (node.type == BTNodeType::Decorator) {
-            // クールダウン0秒＝毎フレーム通過。デコレーターを置いた意味が消える。
-            //   エディタで新規作成したデコレーターの param は 0 なので、
-            //   「Cooldown を選んだが待機時間を触っていない」だけでこの状態になる。
+            // クールダウン0秒＝毎フレーム通過。新規作成の param は 0 なので、
+            // 「Cooldown を選んだが待機時間を触っていない」だけでこうなる。
             if (node.decoratorType == BTDecoratorType::Cooldown && node.param <= 0.0f) {
                 CCL_LOG_WARN(LogCategory::AI,
                     "[BT] nodes[%zu] のクールダウンが %.2f 秒。0以下は毎フレーム素通りする"
                     "（＝クールダウンが効かない）: %s",
                     i, node.param, path.c_str());
             }
-            // 試行回数0＝子を一度も評価しない。実行時は常に Failure になる。
+            // 試行回数0＝子を一度も評価せず、常に Failure になる。
             if (node.decoratorType == BTDecoratorType::Retry && node.param < 1.0f) {
                 CCL_LOG_WARN(LogCategory::AI,
                     "[BT] nodes[%zu] のリトライ回数が %.0f。1未満は子を評価できない: %s",
@@ -206,8 +193,7 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset& asset, const std::string& 
         }
 
         // 選択系の子に「毎フレーム即 Success を返す枝」があると、そこから下が死ぬ。
-        //   条件も持たないので失敗して譲ることも無く、ボスはその枝の命令を毎フレーム
-        //   出し続けるだけになる（外からは固まって見える）。
+        // 失敗して譲ることも無いので、外からは固まって見える。
         if (node.type == BTNodeType::Selector || node.type == BTNodeType::RandomSelector) {
             for (size_t k = 0; k + 1 < node.children.size(); ++k) {
                 const BTNodeID child = node.children[k];
@@ -220,10 +206,9 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset& asset, const std::string& 
             }
         }
 
-        // 陣形指示だけを置いてリリースを忘れると、形を作って帰るだけになる。
-        //   DroneAction は「この形になれ」と言うだけで、撃つ合図は A_DroneStrike が出す。
-        //   形は組み上がるので見た目は正しく動いてしまい、当たらないことにだけ気づけない。
-        //   （円陣・頭上円陣は隊形なので除外。後続の枝に任せる中継もあるので WARN に留める。）
+        // 陣形指示だけを置いてリリースを忘れると、形を作って帰るだけになる。形は
+        // 組み上がるので見た目は正しく、当たらないことにだけ気づけない。
+        // 後続の枝に任せる中継もあるので WARN に留める。
         if (node.type == BTNodeType::Sequence) {
             int lastFormation = -1;
             for (const BTNodeID child : node.children) {
@@ -244,7 +229,7 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset& asset, const std::string& 
             }
         }
 
-        // 抽選バッファはスタック固定長。超えたぶんは実行時に黙って抽選から漏れる。
+        // 抽選バッファはスタック固定長。超えたぶんは黙って抽選から漏れる。
         if (node.type == BTNodeType::RandomSelector &&
             node.children.size() > static_cast<size_t>(kMaxRandomSelectorChildren)) {
             CCL_LOG_ERROR(LogCategory::AI,

@@ -1,27 +1,15 @@
 // AIの出力(BossCommandComponent)を読み取り、ボス本体の物理移動に変換する「筋肉」。
+// 脳（BehaviorTreeSystem）とは分離し、「意図を物理に変換するだけ」に責務を限る。
 //
-// 最小構成版
-//   Character/Boss/ に配置。AI（脳・BehaviorTreeSystem）とは明確に分離し、
-//   「AIの意図を物理に変換するだけ」の実行層としての責務に限定する。
-//
-// 対応するアクション:
-//   currentActionId == A_Move … プレイヤーへ向かって移動
-//   それ以外（0）             … 待機。プレイヤーの方をゆっくり向く
-//
-// 移動パイプライン:
 //   BossCommand → BossActionSystem → CharacterMovementComponent
 //   → JoltCharacterUpdateSystem（CharacterVirtual）
 //
-// 実行順序: BehaviorTreeSystem（脳・L02_Update）より後、
-//           JoltCharacterUpdateSystem（L03_PrePhysics）より前 = L02_PostUpdate。
+// 実行順序は L02_PostUpdate。脳(L02_Update)の後、物理(L03_PrePhysics)の前。
 //
-// 「脳が止まったら筋肉も止める」:
-//   BT を凍らせても、それは「もう書かなくなる」だけで、最後に書かれた
-//   currentActionId は掛かったまま残る。この層は毎フレーム無条件にそれを
-//   実行するので、凍らせた後もボスは動き続けてしまう。
-//   実際、導入カメラ演出の1フレーム目に BT が接近(A_Move)を選ぶと、
-//   そのあと演出の数秒間ずっとプレイヤーへ歩いてきていた。
-//   脳が止まっている間は、この層も待機(None)に倒す。
+// 脳が止まったら筋肉も止める。
+//   BTを凍らせても最後に書かれた currentActionId は残るので、この層は
+//   それを毎フレーム実行し続けてしまう（演出中にボスが歩いてくる事故が実際に出た）。
+//   凍っている間は待機(None)へ倒す。
 #pragma once
 #include <vector>
 
@@ -64,11 +52,8 @@ public:
     void OnGui() override;
 
     // Update が BehaviorTreeComponent::debugPaused を GetComponent で読む。
-    //
-    // テンプレート引数には足さない。あちらは ForEach の絞り込み条件も兼ねるため、
-    // 足すと「BTを持つ個体」だけが対象になる。BT を持たない検証用のボスを
-    // 置いたときに、この層が黙って動かなくなるほうが危ない。
-    // 宣言に出ていない読み取りは依存解析から消えるので、ここで明示する。
+    //   テンプレート引数には足さない（ForEach の絞り込みも兼ねるので、BTを持たない
+    //   検証用のボスでこの層が黙って動かなくなる）。申告だけをここで足す。
     std::vector<CCL::ECS::TypeID> GetReadTypes() const override;
 
 private:
@@ -98,10 +83,8 @@ private:
                           const DirectX::SimpleMath::Vector3& playerPos, float dt);
 
     // 跳躍斬り。溜め → 放物線で跳ぶ → 着地硬直。
-    //
-    // 滞空中は use3DVelocity で速度を直接与える。重力に任せると滞空時間が
-    // キャラ設定(gravityScale 等)に左右され、着地の瞬間をアニメの斬撃フレームへ
-    // 合わせられない。着地時刻を先に決めて逆算するほうが演出を作れる。
+    //   滞空中は use3DVelocity で速度を直接与える。重力に任せると滞空時間が
+    //   キャラ設定に左右され、着地の瞬間をアニメの斬撃へ合わせられない。
     void ProcessJumpAttack(BossActionComponent& bossDef, TransformComponent& trans,
                            CharacterMovementComponent& movement,
                            const JoltCharacterHandleComponent& joltHandle,

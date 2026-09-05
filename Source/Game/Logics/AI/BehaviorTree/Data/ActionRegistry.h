@@ -1,36 +1,14 @@
 // BTの語彙（行動・条件）の定義。ID・保存キー・表示名・分類をここで持つ。
 //
-// 【この書き方を選んだ理由】
-//   定義表をマクロ（X-macro）で持つと追加が1箇所で済むが、代償として
-//   F12（定義へ移動）が表の行に着かない・IntelliSense が弱る・エラー位置が
-//   表の行を指さない、という日常的なコストを常時払うことになる。
+// アセットに保存されるのは数値IDではなくキー文字列（例 "A_DroneGuillotineSlam"）。
+// 定数名そのものを綴りに使うので、grep でコードとアセットを突き合わせられる。
 //
-//   そこで「1行が何箇所に展開されるか」で使い分けている。
-//     条件 / 行動 / 分類 … 1行につき2箇所（定数と辞書）。手で2行書けば済むので素直に書く
-//     ドローン陣形技     … 1行につき4箇所（定数・辞書・陣形への変換・BTへの登録）。
-//                          しかも DroneFormationType との対応を保つ必要があり、
-//                          ずれてもコンパイルが通ってしまう。ここだけマクロにする
+// 数値IDは通し番号であって意味を持たない。100/1000/2000番台は空き番号を探すための
+// 台帳で、分類は category 列だけが持つ。IDは追加のみ（詰め直すと旧アセットの
+// 数値フォールバックが別の技を指す）。
 //
-//   つまり「重複が痛い所にだけ道具を使い、痛くない所は読みやすさを取る」。
-//   全部マクロにするのは、読む回数の多い側を犠牲にして書く回数の少ない側を守る取引になる。
-//
-// 【アセットに保存されるのは数値IDではなくキー文字列】
-//   例 "A_DroneGuillotineSlam"。数値IDは実行時だけの都合。
-//     なぜそうしたか:
-//       以前はBTアセットが生の数値（2023 など）を持っていた。IDを詰め直せず、
-//       JSONを開いても何の技か読めず、複数人で技を足すと同じ番号を取り合う。
-//       名前を正にするとこの3つが同時に消える。AnimGraph が paramName/paramHash で
-//       既に採っている形（名前が正・数値は派生）に合わせた。
-//     キーに定数名そのもの（#Name / 手書きなら同じ綴り）を使う理由:
-//       grep でコードとアセットを直接突き合わせられる。
-//       重複はビルド時の検査（下部の static_assert）で落とす。
-//
-// 【数値IDの位置づけ ── 通し番号であって、意味は持たない】
-//   100番台/1000番台/2000番台 という区切りは「次の空き番号を探しやすくする」ための
-//   割り当て台帳であって、分類ではない。分類は category 列だけが持つ。
-//   実際 A_DroneStrike は 1000番台にありながら分類は Drone で、桁と分類は一致しない。
-//   桁から分類を導く処理はコード上に1つも無い。
-//   IDは追加のみ。詰め直すと旧アセットの数値フォールバックが別の技を指す。
+// マクロは「1行が4箇所へ展開され、ずれてもコンパイルが通る」陣形技だけに使う。
+// 行動・条件は2箇所なので、F12 が効くよう手で書く。
 #pragma once
 #include <cstdint>
 #include <cstring>
@@ -38,27 +16,13 @@
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"
 #include "Game/Logics/AI/Drone/DroneComponent.h" // DroneFormationType
 
-// ============================================================================
-// ドローン陣形技の定義表 ── ここだけマクロ
-// ============================================================================
-// 列は (定数名, ID, 対応する陣形, 表示名)。
+// ドローン陣形技の定義表 (定数名, ID, 対応する陣形, 表示名)。
+// この1行から、定数・辞書エントリ・陣形への変換・BTへの登録の4つが作られる。
 //
-// この1行から4つが作られる:
-//   ① CCL::AI::A_Drone〜 の定数
-//   ② g_ActionRegistry のエントリ（キー・表示名・分類）
-//   ③ TryGetDroneFormation の変換（ActionID → DroneFormationType）
-//   ④ BTActions_Boss.h の DroneAction 登録
-//
-// 陣形を列に持たせている理由:
-//   以前は ActionID = 2000 + (陣形の値 - 1) という算術で変換していた。
-//   2つの enum が数式だけで結ばれていたので、片方を触ってもコンパイルは通り、
-//   実行時に黙って別の技が出た。対応を1行に並べれば目で確認できる。
-//
-// ここに載せてよいのは FormationRegistry に IFormation 実装がある技だけ。
-//   構想だけの技を置くと、候補には出るのに実行すると静止する状態になる。
-//
-// 行を足すときは、行末のバックスラッシュを他の行と縦に揃えること
-// （最終行だけ付けない）。ここが唯一、手で桁を合わせる必要がある場所。
+// 陣形を列に持つのは、以前 ActionID = 2000 + (陣形の値 - 1) という算術で変換していて、
+// 片方を触ってもコンパイルが通り実行時に黙って別の技が出たため。
+// 載せてよいのは FormationRegistry に IFormation 実装がある技だけ
+// （構想だけの技を置くと、候補には出るのに実行すると静止する）。
 #define BT_DRONE_ACTION_LIST(X)                                                                                \
     X(A_DroneOrbit,              2000, OrbitCircle,             "ドローン：降下円陣 (Orbit Circle)")           \
     X(A_DroneHighOrbit,          2004, HighOrbit,               "ドローン：頭上円陣 (High Orbit)")             \
@@ -72,19 +36,11 @@
     X(A_DroneTsunamiWaveRL,      2030, TsunamiWave_RL,          "ドローン：波状縦割り・右→左 (Wave)")          \
     X(A_DroneSquadAssault,       2031, SquadAssault,            "ドローン：小隊突撃 (Squad Assault)")
 
-// ============================================================================
-// ID定義
-// ============================================================================
 namespace CCL::AI
 {
 // --- 条件 (1〜99) ---
-//
-// 1(C_RangeClose) / 2(C_RangeMedium) / 5(C_RangeMostClose) / 7(C_RangeFar) は
-// 「距離 < 15m」のように間合いをIDへ焼き込んでいた頃の欠番。
-// 行動側で待機を A_Wait 1つへ畳んだのと同じ理由で、間合いは param へ移し、
-// C_DistanceLessThan / C_DistanceGreaterThan の2つに統合した。
-// 敵ごとに間合いが違うのは当たり前なので、IDで表すと敵の種類×間合いの数だけIDが増える。
-// 旧アセットは g_LegacyConditions（下部）が読み替えるので、開き直す必要はない。
+// 1/2/5/7 は間合いをIDへ焼き込んでいた頃の欠番。IDで表すと敵の種類×間合いの数だけ
+// IDが増えるので、距離は param へ移して2つの条件に統合した。
 inline constexpr ActionID C_IsPhase2                = 3;  // フェーズ >= 2
 inline constexpr ActionID C_ShouldTransitionPhase2  = 4;  // 第1形態 かつ HP <= 閾値
 inline constexpr ActionID C_DamageThresholdExceeded = 6;  // 蓄積被弾 >= 最大HPの param %
@@ -93,34 +49,23 @@ inline constexpr ActionID C_DistanceLessThan        = 9;  // ターゲットと�
 inline constexpr ActionID C_DistanceGreaterThan     = 10; // ターゲットとの距離 > param
 
 // --- 行動 ---
-//
-// 100〜111 は「待機0.5秒」〜「待機10.0秒」だった欠番。待ち時間は param へ移したので、
-// A_Wait 1つに畳んである（旧IDは BehaviorTreeLoader が読み替える）。
+// 100〜111 は「待機0.5秒」〜「待機10.0秒」だった欠番。param へ移して1つに畳んである。
 inline constexpr ActionID A_Wait        = 112;  // 待つ。秒数は param
 inline constexpr ActionID A_Move        = 1000; // プレイヤーへ移動。BossActionSystem が実行
 inline constexpr ActionID A_ResetDamage = 1005; // ブラックボードの蓄積ダメージをリセット
 inline constexpr ActionID A_DroneStrike = 1006; // ドローンへ「今撃て」信号（陣形攻撃のリリース）
-// 1100番台はボスの近接。すべて「アニメのトリガーを引き、param 秒だけBTを留める」
-// という同じ形（TriggeredMotionAction）で、違いは物理挙動だけ。
-// 物理の中身は BossActionSystem が ActionID ごとに分岐して担当する。
-inline constexpr ActionID A_BossSlash     = 1101; // 薙ぎ払い。足を止めて斬る自衛技
-inline constexpr ActionID A_BossDashSlash = 1102; // 突進斬り。方向を固定して踏み込み、間合いを詰める
+// 1100番台は「アニメのトリガーを引き、param 秒だけBTを留める」同じ形。
+// 違いは物理挙動だけで、それは BossActionSystem が ActionID ごとに分岐して担当する。
+inline constexpr ActionID A_BossSlash      = 1101; // 薙ぎ払い。足を止めて斬る自衛技
+inline constexpr ActionID A_BossDashSlash  = 1102; // 突進斬り。方向を固定して踏み込む
 inline constexpr ActionID A_BossJumpAttack = 1103; // 跳躍斬り。放物線で跳び、着地で斬る
-// 1104 は攻撃ではないが、同じ「トリガーを引いて param 秒留まる」形なので同居させる。
-// 桁は台帳であって分類ではない（このファイル冒頭の説明のとおり）。
-inline constexpr ActionID A_BossBackStep = 1104; // 後方ステップ。被弾がかさんだら間合いを切る
+inline constexpr ActionID A_BossBackStep   = 1104; // 後方ステップ。被弾がかさんだら間合いを切る
 
-// 攻撃ヒット時待ち時間。トリガーも物理も持たないので 1100 番台の他とは別の形。
-//
-// 被弾はモーションを中断しない。止めるのは「次の技を選ぶ」判断だけで、
-// その猫予を作るのがこの行動。Selector の先頭に置いて使う。
+// 被弾はモーションを中断せず、止めるのは「次の技を選ぶ」判断だけ。その猶予を作る。
 inline constexpr ActionID A_BossHitWait  = 1105; // 被弾後の様子見。param 秒だけ次の技を選ばない
 
-// 詰めながら待つ。A_Move との違いは「待つことが目的」であること。
-//
-// A_Move は「遠いから歩いて追う」行動。こちらは技と技の間に入れて、
-// 待機時間を「棒立ち」から「圧をかける時間」へ変えるために使う。
-// 企画の共通原則「ボスに何もしていない瞬間を作らない」を木の上で表すもの。
+// 技と技の間に入れて、待機時間を「棒立ち」から「圧をかける時間」へ変える
+// （A_Move は「遠いから追う」行動で、こちらは待つことが目的）。
 inline constexpr ActionID A_BossAdvance  = 1106; // 詰めながら待つ。param 秒
 
 // --- ドローン陣形技 (2000番台) ---
@@ -130,12 +75,7 @@ BT_DRONE_ACTION_LIST(CCL_BT_DEFINE_DRONE_ID)
 
 } // namespace CCL::AI
 
-// ============================================================================
-// 分類
-// ============================================================================
 // 行動・条件の分類。エディタのコンボの見出しに使う。
-//
-// Common/Boss/Drone は行動用、Range/State は条件用。
 // ActionEntry を行動と条件で共用しているので enum も1つにまとめている。
 enum class BTCategory : uint8_t
 {
@@ -160,9 +100,7 @@ inline const char *CategoryName(BTCategory c)
     return "?";
 }
 
-// ============================================================================
-// 辞書（エディタ表示とアセットの名前解決に共用）
-// ============================================================================
+// 辞書（エディタ表示とアセットの名前解決に共用）。
 struct ActionEntry
 {
     ActionID    id;
@@ -190,7 +128,6 @@ inline constexpr ActionEntry g_ActionRegistry[] = {
 
     { CCL::AI::A_DroneStrike, "A_DroneStrike", "ドローン：攻撃実行 (Strike)", BTCategory::Drone,  ""              },
 
-    // 陣形技はマクロから生成する（定数・変換・BT登録と同じ1行が出どころ）
 #define CCL_BT_DRONE_ENTRY(Name, Id, Formation, Display) \
     { CCL::AI::Name, #Name, Display, BTCategory::Drone, "" },
     BT_DRONE_ACTION_LIST(CCL_BT_DRONE_ENTRY)
@@ -211,39 +148,18 @@ inline constexpr ActionEntry g_ConditionRegistry[] = {
 };
 inline constexpr int g_ConditionRegistryCount = sizeof(g_ConditionRegistry) / sizeof(ActionEntry);
 
-// ============================================================================
-// 保存キーの読み替え（リネーム対応）
-// ============================================================================
-// 旧キー→新キー。定数名を変えたら、ここに1行足す。
-//
-// 何のためにあるか:
-//   保存キーは定数名と同じ綴りなので、C++側で改名するとアセットが指す先を失う。
-//   この表があれば、アセットを1つも開き直さずに改名できる。
-//   Unreal の ActiveClassRedirects と同じ役割。
-//
-// 使い終わったら消してよいか:
-//   全アセットをエディタで開いて保存し直せば新しいキーで書き直されるので消せる。
-//   ただしリポジトリ外のバックアップや作業中ブランチには古い木が残るため、
-//   消すのは「もう古い木は存在しない」と言い切れるときだけにする。
-//
-// 綴り間違い・改名し忘れは下部の static_assert が落とす。
+// 保存キーの読み替え（リネーム対応）。定数名を変えたら、ここに1行足す。
+// 保存キーは定数名と同じ綴りなので、これが無いとC++側の改名でアセットが指す先を失う。
+// Unreal の ActiveClassRedirects と同じ役割。綴り間違いは下部の static_assert が落とす。
 inline constexpr std::string_view RedirectKey(std::string_view key)
 {
     // 例: if (key == "A_BossSlash") return "A_BossSweep";
     return key;
 }
 
-// ============================================================================
-// 旧条件の読み替え（間合いがIDに焼き込まれていた頃 → param へ）
-// ============================================================================
-// 旧キー／旧数値ID から「新しいID + param」への対応表。
-//
-// RedirectKey ではなくこの表が要る理由:
-//   RedirectKey は「名前→名前」しか移せない。旧条件は名前の中に数値（8m/15m/40m）を
-//   持っていたので、読み替えと同時に param を与えないと意味が復元できない。
-//
-// 読み替えはビルド時ではなく読み込み時に効く。アセットを開いて保存し直せば
-// 新しいキーで書き直されるので、そのアセットはこの表を通らなくなる。
+// 旧条件（間合いがIDに焼き込まれていた頃）から「新しいID + param」への対応表。
+// RedirectKey は名前→名前しか移せず、旧条件は名前の中に数値を持っていたので、
+// 読み替えと同時に param を与えないと意味が復元できない。
 struct LegacyConditionEntry
 {
     const char *key;       // 旧アセットに書かれているキー
@@ -258,27 +174,22 @@ inline constexpr LegacyConditionEntry g_LegacyConditions[] = {
     { "C_RangeClose",     1, CCL::AI::C_DistanceLessThan,    15.0f, false },
     { "C_RangeFar",       7, CCL::AI::C_DistanceGreaterThan, 40.0f, false },
 
-    // C_RangeMedium は「15〜40m」という帯だった。上下2つの境界を1ノードでは表せないので、
-    // 上限（<40m）だけを引き継ぐ。近い順に並べた Selector の下では、手前の枝が
-    // 15m未満を先に拾うため挙動は変わらない。単独で置かれていた場合だけ意味が広がるので、
-    // 読み込み側がログを出して気づけるようにしてある（ambiguous）。
+    // C_RangeMedium は「15〜40m」の帯。上下2つの境界を1ノードでは表せないので上限だけ
+    // 引き継ぐ。近い順に並べた Selector の下なら挙動は変わらないが、単独で置かれていた
+    // 場合だけ意味が広がるので読み込み側がログを出す（ambiguous）。
     { "C_RangeMedium",    2, CCL::AI::C_DistanceLessThan,    40.0f, true  },
 };
 inline constexpr int g_LegacyConditionCount =
     sizeof(g_LegacyConditions) / sizeof(LegacyConditionEntry);
 
-/**
- * 旧条件なら読み替え先を返す。現行のキー/IDなら nullptr。
- * @param key       アセットの "condition" 文字列（無ければ空でよい）
- * @param numericId アセットの actionOrConditionId（キーが欠けている木のための保険）
- */
+/// 旧条件なら読み替え先を返す。現行のキー/IDなら nullptr。
+/// numericId はキーが欠けている古い木のための保険。
 inline const LegacyConditionEntry *FindLegacyCondition(std::string_view key, ActionID numericId)
 {
     for (int i = 0; i < g_LegacyConditionCount; ++i) {
         if (!key.empty() && key == g_LegacyConditions[i].key) return &g_LegacyConditions[i];
     }
-    // キーが無い木は数値IDで拾う。現行の条件と番号が衝突しないよう、
-    // 旧IDは g_ConditionRegistry から外したまま（＝欠番）にしてある。
+    // 現行の条件と番号が衝突しないよう、旧IDは g_ConditionRegistry から外してある。
     if (key.empty()) {
         for (int i = 0; i < g_LegacyConditionCount; ++i) {
             if (numericId == g_LegacyConditions[i].legacyId) return &g_LegacyConditions[i];
@@ -287,9 +198,6 @@ inline const LegacyConditionEntry *FindLegacyCondition(std::string_view key, Act
     return nullptr;
 }
 
-// ============================================================================
-// 引き当て
-// ============================================================================
 inline const ActionEntry *FindActionEntry(ActionID id)
 {
     for (int i = 0; i < g_ActionRegistryCount; ++i)
@@ -305,9 +213,7 @@ inline const ActionEntry *FindConditionEntry(ActionID id)
 }
 
 // 保存キーからIDを引く。改名済みのキーも読み替えて解決する。
-//
-// アセット読み込み時に1回だけ走るので線形探索で足りる。
-// 実行時の評価はIDのまま行うので、ここは速度要件に乗らない。
+// アセット読み込み時に1回だけ走るので線形探索で足りる（実行時の評価はIDのまま）。
 inline bool TryFindActionIdByKey(std::string_view key, ActionID &outId)
 {
     key = RedirectKey(key);
@@ -324,11 +230,8 @@ inline bool TryFindConditionIdByKey(std::string_view key, ActionID &outId)
     return false;
 }
 
-// ============================================================================
-// 検査
-//   表が育ってから壊れると原因を追えないので、すべてビルドで止める。
-//   手書きの表になったぶん、ここの検査が食い違いを防ぐ主役になる。
-// ============================================================================
+// --- 検査。手書きの表なので、食い違いはすべてビルドで止める ---
+
 // IDとキーが表の中で一意か。
 inline constexpr bool IsRegistryUnique(const ActionEntry *table, int count)
 {
@@ -344,10 +247,8 @@ static_assert(IsRegistryUnique(g_ActionRegistry, g_ActionRegistryCount),
 static_assert(IsRegistryUnique(g_ConditionRegistry, g_ConditionRegistryCount),
               "ConditionRegistry の ID かキーが重複している");
 
-// 分類ごとにまとまって並んでいるか。
-//
-// エディタのコンボは「分類が変わった所で見出しを打つ」作りなので、
-// 散らばっていると同じ見出しが何度も出る。並べ替えの事故を防ぐ。
+// 分類ごとにまとまって並んでいるか。エディタのコンボは「分類が変わった所で見出しを
+// 打つ」作りなので、散らばっていると同じ見出しが何度も出る。
 inline constexpr bool IsGroupedByCategory(const ActionEntry *table, int count)
 {
     for (int i = 1; i < count; ++i)
@@ -371,10 +272,7 @@ inline constexpr bool RegistryHasKey(std::string_view key)
     return false;
 }
 
-// 読み替えが健全か。
-//   読み替え先が存在しない … 綴り間違い。読み替えても解決できず無意味になる
-//   読み替え元がまだ現役   … 改名し忘れ。現行キーが読み替えで潰される
-//
+// 読み替えが健全か（先が無ければ綴り間違い、元がまだ現役なら改名し忘れ）。
 // RedirectKey に1行足したら、ここにも対応する1行を足す。
 inline constexpr bool IsRedirectValid(std::string_view oldKey, std::string_view newKey)
 {
@@ -392,14 +290,10 @@ inline constexpr bool DroneEntriesArePresent()
 }
 static_assert(DroneEntriesArePresent(), "ドローン技が辞書に載っていない");
 
-// ============================================================================
-// 種別の判定
-//   桁の範囲ではなく、表そのものを引く。桁で判定すると、番号の付け方を変えた
-//   瞬間に静かに壊れる。
-// ============================================================================
+// --- 種別の判定。桁の範囲ではなく表そのものを引く（桁で判定すると番号の付け方を
+//     変えた瞬間に静かに壊れる）---
+
 // ドローン技のActionIDから、作らせる陣形を引く。技でなければ false。
-//
-// DroneAction（BTActions_Boss.h）と BTウィンドウが共有する唯一の変換口。
 inline bool TryGetDroneFormation(ActionID id, DroneFormationType &outFormation)
 {
     switch (id) {
@@ -417,10 +311,7 @@ inline bool IsDroneAction(ActionID id)
     return TryGetDroneFormation(id, ignored);
 }
 
-// 当たり判定を持つ陣形（技）か。円陣・頭上円陣は隊形なので除く。
-//
-// 以前は「時間割がゼロかどうか」で見分けていたが、時間割をBTへ戻したので
-// 判断材料が消えた。隊形は2つだけなのでここで列挙する。
+// 当たり判定を持つ陣形（技）か。隊形である円陣・頭上円陣だけを除く。
 inline bool IsDroneAttackFormation(ActionID id)
 {
     return IsDroneAction(id)
@@ -435,10 +326,7 @@ inline bool IsBossPhysicalAction(ActionID id)
     return id == CCL::AI::A_Move || id == CCL::AI::A_BossAdvance;
 }
 
-// ボスの近接アクション（アニメトリガーで攻撃する系）か。
-//
-// 「近接かどうか」の判定であって、物理挙動の分岐ではない。
-// 足を止めるのか踏み込むのか跳ぶのかは BossActionSystem が ActionID ごとに決める。
+// ボスの近接アクションか。物理挙動の分岐ではない（それは BossActionSystem が決める）。
 inline bool IsBossMeleeAction(ActionID id)
 {
     return id == CCL::AI::A_BossSlash
@@ -449,14 +337,9 @@ inline bool IsBossMeleeAction(ActionID id)
 // 後方ステップ（回避）か。攻撃ではないので上の近接判定には含めない。
 inline bool IsBossEvadeAction(ActionID id) { return id == CCL::AI::A_BossBackStep; }
 
-// この行動は Running を返しうるか（＝そのフレームで木を止められるか）。
-//
-// なぜこの判定が要るか:
-//   陣形指示・突撃信号・ダメージリセットはどれも即 Success を返す。これらだけで
-//   枝を作ると毎フレーム即 Success になり、Selector はそこで打ち切るので下に並ぶ枝が
-//   一度も評価されない。ボスは同じ命令を毎フレーム出し続けるだけになり、
-//   外からは「固まって何もしない」ように見える。
-//   単体の行動をぶら下げて動作確認するときに必ず踏むので、読み込み時に警告する。
+// この行動は Running を返しうるか。陣形指示・突撃信号・リセットはどれも即 Success で、
+// これらだけで枝を作ると Selector がそこで打ち切り、下の枝が一度も評価されない
+// （外からは「固まって何もしない」に見えるので読み込み時に警告する）。
 inline bool IsBlockingAction(ActionID id)
 {
     return id == CCL::AI::A_Wait
@@ -467,9 +350,7 @@ inline bool IsBlockingAction(ActionID id)
         || IsBossEvadeAction(id);
 }
 
-// この行動が使う param の意味。使わないなら nullptr。
-//
-// エディタが入力欄を出すかの判定に使う。
+// この行動が使う param の意味。使わないなら nullptr（エディタの入力欄の有無）。
 inline const char *GetActionParamLabel(ActionID id)
 {
     const ActionEntry *e = FindActionEntry(id);
@@ -477,8 +358,6 @@ inline const char *GetActionParamLabel(ActionID id)
 }
 
 // この条件が使う param の意味。使わないなら nullptr。
-//
-// 行動側と同じ仕組み。距離条件をIDではなく引数で表すために足した。
 inline const char *GetConditionParamLabel(ActionID id)
 {
     const ActionEntry *e = FindConditionEntry(id);

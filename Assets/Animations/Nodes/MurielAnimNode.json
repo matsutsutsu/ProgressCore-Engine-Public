@@ -419,7 +419,7 @@
             "lockVerticalRootMotion": false,
             "nodePosX": 298.0,
             "nodePosY": 400.0,
-            "playbackSpeed": 1.0,
+            "playbackSpeed": 0.8,
             "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/JumpAttack.json",
             "sequenceName": "JumpAttack",

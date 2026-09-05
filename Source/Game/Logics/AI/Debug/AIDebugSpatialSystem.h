@@ -1,21 +1,14 @@
-// 敵AIの意思決定を「戦場そのもの」に3D描画するデバッグシステム。
+// 敵AIの意思決定を戦場そのものへ3D描画するデバッグシステム。
+// 地面の距離リングでBTの分岐しきい値（近接<8m / 接近>40m）を見せ、「なぜ今この枝を
+// 選んだか」を戦いながら読めるようにする。あわせてボス→プレイヤーの照準線を引く。
 //
-// 設計方針:
-//   AIDebugOverlaySystem が頭上に screen-space の ImGui テキストを描くのに対し、
-//   こちらは ShapeRenderer で world-space の図形（距離リング・ロックオン線）を描く。
-//   両者は描画機構もタイミングも異なる（ShapeRenderer はレンダーパスで消費される）ため、
-//   専用のレンダーシステムとして独立させる（NavMeshDebugDrawSystem と同じ流儀）。
-//
-// 何を見せるか:
-//   ・地面の距離リング … BTの分岐しきい値（近接<8m / 接近>40m）を可視化し、
-//     「なぜ今この枝を選んだか」を戦いを見ながら理解できるようにする。
-//   ・ロックオン線 … ボス→プレイヤーの照準線。
+// AIDebugOverlaySystem（頭上の ImGui テキスト）とは描画機構もタイミングも違うので、
+// 専用のレンダーシステムとして独立させてある。
 #pragma once
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Game/Logics/Character/Boss/Components/BossActionComponent.h"
 
-// ボスの間合いリングと照準線を ShapeRenderer で world 描画するデバッグ用レンダーシステム。
 class AIDebugSpatialSystem : public CCL::ECS::IfSystem<
                                 AIDebugSpatialSystem,
                                 CCL::ECS::Read<TransformComponent>,
@@ -24,7 +17,7 @@ class AIDebugSpatialSystem : public CCL::ECS::IfSystem<
   public:
     AIDebugSpatialSystem() : IfSystem("AIDebugSpatialSystem") {}
 
-    // ShapeRenderer への描画発行（毎フレーム）。
+    /// ShapeRenderer への描画発行（毎フレーム）。
     void Update(float dt) override;
     void OnGui() override;
 

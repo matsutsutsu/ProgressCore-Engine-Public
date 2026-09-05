@@ -763,7 +763,7 @@
             "outputPinId": 0,
             "action": "A_BossDashSlash",
             "actionId": 1102,
-            "param": 1.4
+            "param": 1.6
         },
         {
             "id": 195,
@@ -775,7 +775,7 @@
             "outputPinId": 0,
             "action": "A_BossJumpAttack",
             "actionId": 1103,
-            "param": 1.1
+            "param": 1.05
         },
         {
             "id": 204,
@@ -1686,14 +1686,14 @@
         {
             "type": "Action",
             "action": "A_BossDashSlash",
-            "param": 1.4,
+            "param": 1.6,
             "actionOrConditionId": 1102,
             "children": []
         },
         {
             "type": "Action",
             "action": "A_BossJumpAttack",
-            "param": 1.1,
+            "param": 1.05,
             "actionOrConditionId": 1103,
             "children": []
         }

@@ -615,7 +615,7 @@
             "inputPinId": 139,
             "name": "突進斬り",
             "outputPinId": 0,
-            "param": 1.399999976158142,
+            "param": 1.6,
             "posX": 2476.0,
             "posY": 1096.0,
             "type": 4
@@ -627,7 +627,7 @@
             "inputPinId": 141,
             "name": "跳躍斬り",
             "outputPinId": 0,
-            "param": 1.100000023841858,
+            "param": 1.05,
             "posX": 2853.0,
             "posY": 1096.0,
             "type": 4
@@ -1646,14 +1646,14 @@
         {
             "type": "Action",
             "action": "A_BossDashSlash",
-            "param": 1.399999976158142,
+            "param": 1.6,
             "actionOrConditionId": 1102,
             "children": []
         },
         {
             "type": "Action",
             "action": "A_BossJumpAttack",
-            "param": 1.100000023841858,
+            "param": 1.05,
             "actionOrConditionId": 1103,
             "children": []
         }

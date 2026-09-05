@@ -1,5 +1,4 @@
-// ドローンの生成・計数・破壊の実装。既存 DroneFormationSystem::OnGui の
-//        生成ロジックを移植し、BattleContext への計数反映を追加した。
+// ドローンの生成・計数・破壊の実装。
 #include "DroneManagerSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
@@ -24,34 +23,28 @@ using namespace DirectX::SimpleMath;
 // ドローンのプレハブパス
 static constexpr const char* kDronePrefab = "Assets/Prefabs/Enemy/Drone.json";
 
-// ============================================================================
-// Update：生存数を数えて BattleContext に反映（毎フレーム）
-// ============================================================================
+// Update：生存数を数えて BattleContext に反映する（毎フレーム）。
 void DroneManagerSystem::Update(float /*dt*/)
 {
-    // シーン開始時：ボスが揃い次第、初期ドローンを1回だけ配備する。
+    // ボスが揃い次第、初期ドローンを1回だけ配備する。
     TryAutoSpawnInitial();
 
     if (!m_world->HasResource<BattleContext>()) return;
     auto& battle = m_world->GetResource<BattleContext>();
 
-    // 生存ドローンを数える
     int alive = GetAliveCount();
 
-    // 「ドローン数 = ボスHP」を BattleContext に反映
-    // → これでボス側の戦術判断が本物の数を見る
+    // 「ドローン数 = ボスHP」。ボス側の戦術判断が本物の数を見る。
     battle.droneAliveCount = alive;
 }
 
 
-// ============================================================================
-// TryAutoSpawnInitial：シーン開始時の初期配備（1回だけ）
-// ============================================================================
+// シーン開始時の初期配備（1回だけ）。
 void DroneManagerSystem::TryAutoSpawnInitial()
 {
     if (!m_autoSpawnEnabled || m_autoSpawnDone) return;
 
-    // ボスが未生成のフレームは何もせず次フレームに再試行。
+    // ボスが未生成のフレームは何もせず次フレームに再試行する。
     if (FindBoss() == InvalidEntityID) return;
 
     int spawned = SpawnDrones(m_initialSpawnCount);
@@ -64,10 +57,7 @@ void DroneManagerSystem::TryAutoSpawnInitial()
 }
 
 
-// ============================================================================
-// GetAliveCount：数えるだけなので確保しない
-//   毎フレーム呼ばれる。View だと機数ぶんの vector を作ってから捨てることになる。
-// ============================================================================
+// 数えるだけなので確保しない（View だと機数ぶんの vector を作ってから捨てることになる）。
 int DroneManagerSystem::GetAliveCount() const
 {
     int count = 0;
@@ -75,29 +65,21 @@ int DroneManagerSystem::GetAliveCount() const
     return count;
 }
 
-// 撃破後にこれを呼ばないのは意図的。
-//
-//   localIndex / totalDrones は陣形が「群れの何番目か」から座標を出すための番号で、
-//   振り直すと生き残った全機の持ち場が同時に変わる。1機落ちるたびに残り全機が
-//   円周上を滑って並び直すことになり、撃破の手応えが消える。
-//   呼ばないままにしておけば番号が据え置かれ、落ちた機の位置がそのまま穴として残る。
-//   ＝「削った」ことが見える。totalDrones が実数より多いのはこのための状態。
-//
-//   小隊のほうは別で、SquadUpdateSystem が毎フレーム memberValid を数え直すので
-//   欠員は自動的に詰まる。番号に依存するのは大技の陣形だけ。
+// 撃破後にこれを呼ばないのは意図的。番号を振り直すと生き残った全機の持ち場が同時に
+// 変わり、1機落ちるたびに残り全機が円周上を滑って並び直して撃破の手応えが消える。
+// 据え置けば落ちた機の位置がそのまま穴として残る＝「削った」ことが見える
+// （totalDrones が実数より多いのはこのための状態）。
+// 小隊は SquadUpdateSystem が毎フレーム数え直すので欠員が自動的に詰まる。
 void DroneManagerSystem::ReindexAllDrones()
 {
-    // まず総数を数える
     int total = GetAliveCount();
     if (total <= 0) return;
 
-    // 1小隊は8機以下である前提でビットマスクを使う（空きスロット探索用）
+    // 1小隊は8機以下である前提でビットマスクを使う（空きスロット探索用）。
     static_assert(SquadRegistry::kSquadSize <= 8, "小隊の人数が uint8_t のビット数を超えている");
 
-    // --- 使用中のスロットを小隊ごとに集める ---
-    //   小隊の所属は一度決めたら維持する。撃破のたびに振り直すと、
-    //   生き残った機の所属まで入れ替わって毎回別の隊になってしまい、
-    //   「同じ5機で組んでいる部隊」に見えなくなる。
+    // 使用中のスロットを小隊ごとに集める。所属は一度決めたら維持する（振り直すと
+    // 生き残った機の所属まで入れ替わり、同じ部隊で組んでいるように見えない）。
     uint8_t usedSlots[SquadRegistry::kMaxSquads] = {};
     {
         auto scan = m_world->View<DroneComponent>();
@@ -112,7 +94,7 @@ void DroneManagerSystem::ReindexAllDrones()
         }
     }
 
-    // 連番を振る（0,1,2,... と totalDrones=total）
+    // 連番を振る。
     uint16_t idx  = 0;
     auto     view = m_world->View<DroneComponent>();
     for (auto e : view)
@@ -123,12 +105,10 @@ void DroneManagerSystem::ReindexAllDrones()
         d->localIndex  = idx++;
         d->totalDrones = static_cast<uint16_t>(total);
 
-        // 既に小隊へ入っている機はそのまま
         if (d->squadId < SquadRegistry::kMaxSquads) continue;
 
-        // --- 未所属の機を、空きスロットのある小隊へ入れる ---
-        //   欠員（撃破された機の位置）から先に埋めるので、
-        //   同じスロットに2機が重なることがない。
+        // 未所属の機を空きスロットのある小隊へ入れる。欠員から先に埋めるので、
+        // 同じスロットに2機が重なることはない。
         bool placed = false;
         for (uint8_t s = 0; s < SquadRegistry::kMaxSquads && !placed; ++s)
         {
@@ -143,15 +123,12 @@ void DroneManagerSystem::ReindexAllDrones()
                 break;
             }
         }
-        // 小隊が満杯（32小隊×5機＝160機を超える）なら無所属のまま。
-        // その機は従来どおり localIndex ベースの大技で使われる。
+        // 満杯（32小隊×5機＝160機超）なら無所属のまま。その機は大技で使われる。
     }
 }
  
 
-// ============================================================================
-// FindBoss：最初のボスを探す
-// ============================================================================
+// 最初のボスを探す。
 EntityID DroneManagerSystem::FindBoss() const
 {
     auto bossView = m_world->View<BossCommandComponent, TransformComponent>();
@@ -160,9 +137,7 @@ EntityID DroneManagerSystem::FindBoss() const
 }
 
 
-// ============================================================================
-// SpawnDrones：既存の生成ロジックを移植
-// ============================================================================
+
 int DroneManagerSystem::SpawnDrones(int count)
 {
     EntityID bossId = FindBoss();
@@ -190,15 +165,14 @@ int DroneManagerSystem::SpawnDrones(int count)
         if (auto *d = m_world->GetComponent<DroneComponent>(droneId))
         {
             d->ownerBossId = bossId;
-            // 生成時の初期陣形：ボスの頭上高くで旋回する HighOrbit。
+            // 生成時の初期陣形はボスの頭上高くで旋回する HighOrbit。
             d->currentFormation = DroneFormationType::HighOrbit;
             d->orbitRadius      = 8.0f;
             d->hasReachedSlot   = false;   // スポーン直後は必ず MoveToSlot から開始
 
-            // 揺れの位相を個体ごとに散らす。
-            //   EntityID を撹拌してから使う。連番のまま等間隔に配ると、遅いホバー(×1.0)は
-            //   ばらけても、速い震え(×100)の側では位相が一周ぶん進んで再び揃ってしまう。
-            //   撹拌しておけば、周波数が違う両方の用途で同時にばらける。
+            // 揺れの位相を個体ごとに散らす。EntityID を撹拌してから使うのは、連番の
+            // まま等間隔に配ると、遅いホバーはばらけても速い震えの側では位相が一周ぶん
+            // 進んで再び揃ってしまうため。
             uint32_t phase = static_cast<uint32_t>(droneId) * 2654435761u;
             phase ^= phase >> 15;
             d->hoverTimeOffset = static_cast<float>(phase % 65536u) * (kHoverPhasePeriod / 65536.0f);
@@ -211,11 +185,10 @@ int DroneManagerSystem::SpawnDrones(int count)
         ++spawned;
     }
 
-    // Prefab 生成の遅延反映（この後の View で新規ドローンを拾えるようにする）
+    // Prefab 生成の遅延反映。この後の View で新規ドローンを拾えるようにする。
     m_world->ScrutinyAndApply();
 
-    // スポーン後：全ドローンに localIndex / totalDrones を振り直す
-    //   （既存＋新規をまとめて連番にしないと円が歪む）
+    // 既存＋新規をまとめて連番にしないと円が歪む。
     ReindexAllDrones();
 
     CCL_LOG_INFO(LogCategory::Game, "[DroneManager] %d 機スポーン（合計 %d）",
@@ -224,9 +197,7 @@ int DroneManagerSystem::SpawnDrones(int count)
 }
 
 
-// ============================================================================
-// DestroyDrones：先頭から count 機破壊
-// ============================================================================
+// 先頭から count 機破壊する。
 int DroneManagerSystem::DestroyDrones(int count)
 {
     int destroyed = 0;
@@ -241,9 +212,6 @@ int DroneManagerSystem::DestroyDrones(int count)
 }
 
 
-// ============================================================================
-// DestroyAll
-// ============================================================================
 void DroneManagerSystem::DestroyAll()
 {
     auto view = m_world->View<DroneComponent>();
@@ -270,10 +238,9 @@ void DroneManagerSystem::SetAllDroneState(DroneState state)
                 d->hasReachedSlot = true;    // 手動 Idle = 到着済み扱い
             }
 
-            // FireCharge に切り替える場合、突撃に必要な最低限のデータを補う
+            // 突撃に必要な最低限のデータを補う。
             if (state == DroneState::FireCharge)
             {
-                // BattleContext からプレイヤー位置を取得して方向を計算
                 DirectX::SimpleMath::Vector3 dir = -DirectX::SimpleMath::Vector3::UnitZ; // フェイルセーフ
                 if (m_world->HasResource<BattleContext>())
                 {
@@ -297,9 +264,7 @@ void DroneManagerSystem::SetAllDroneState(DroneState state)
 }
 
 
-// ============================================================================
-// OnGui：生成・破壊・カウント確認のデバッグUI
-// ============================================================================
+// OnGui：生成・破壊・カウント確認のデバッグUI。
 void DroneManagerSystem::OnGui()
 {
     if (ImGui::CollapsingHeader("Drone Manager (Spawn / Count / Destroy)",
@@ -307,7 +272,6 @@ void DroneManagerSystem::OnGui()
     {
         ImGui::Indent();
 
-        // ---- シーン開始時の自動初期配備 ----
         ImGui::TextColored(ImVec4(0.5f, 1.0f, 0.6f, 1.0f), "Auto Initial Spawn (シーン開始時)");
         ImGui::Checkbox("Enable Auto Spawn", &m_autoSpawnEnabled);
         ImGui::SliderInt("Initial Count", &m_initialSpawnCount, 1, 1000);
@@ -319,7 +283,6 @@ void DroneManagerSystem::OnGui()
         ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "Spawn Settings");
         ImGui::SliderInt("Spawn Count", &m_spawnCount, 1, 100);
 
-        // 現在数を表示（BattleContext と View 両方）
         int alive = GetAliveCount();
         ImGui::Text("Current Active Drones: %d", alive);
 
@@ -333,10 +296,8 @@ void DroneManagerSystem::OnGui()
             ImGui::Text("→ 期待戦術: %s", tactic);
         }
 
-        // ---- 攻撃パイプラインの可視化 ----
-        //   BTのログには「いつ指示が出たか」しか出ないので、群れが実際に形を
-        //   作れているのか（＝指示に個体が追いつけているのか）が判断できない。
-        //   陣形指示 → 予備動作 → 突撃 → 帰投 のどこに居るかを1画面で見る。
+        // 攻撃パイプラインの可視化。BTのログには「いつ指示が出たか」しか出ないので、
+        // 群れが指示に追いつけているのかが判断できない。
         ImGui::Separator();
         ImGui::TextColored(ImVec4(0.6f, 0.9f, 1.0f, 1.0f), "Attack Pipeline (指示と個体の追従)");
 
@@ -377,14 +338,12 @@ void DroneManagerSystem::OnGui()
 
             if (total > 0)
             {
-                // 「持ち場に着いた機」が総数に届かないうちに突撃信号が立っていたら、
-                // 形が組み上がる前に攻撃している＝予備動作の待ち時間が足りていない。
+                // 総数に届かないうちに突撃信号が立つ＝予備動作の待ち時間が足りていない。
                 ImGui::Text("突撃したい機 %d / %d      持ち場に着いた機 %d / %d",
                             wants, total, reached, total);
                 ImGui::Text("形が動いている機 %d      attackProgress 平均 %.2f",
                             moving, sumProgress / total);
-                // 予告の震えが鳴っているか。ここが 0 のまま突撃信号が立つなら、
-                // 予告の時間（BTの Wait）が短すぎて溜まる前に撃っている。
+                // 0 のまま突撃信号が立つなら、予告の Wait が短すぎて溜まる前に撃っている。
                 ImGui::Text("予告で震えている機 %d      溜め 平均 %.2f 秒",
                             telegraphing, sumWindup / total);
                 ImGui::Text("状態  Idle %d   Move %d   Fire %d   Stun %d   Return %d",
@@ -425,13 +384,9 @@ void DroneManagerSystem::OnGui()
             SetAllDroneState(DroneState::FireCharge);
         ImGui::PopStyleColor();
 
-        // ================================================================
-        // 陣形攻撃テスト（縦割り）：BTを組まずに手動でパイプラインを検証する
-        //   ボスの BossCommandComponent へ直接命令を書き、
-        //   DroneCommandSystem → DroneBrainSystem → Formation の流れを確認する。
-        //   ※ボスBTが毎フレーム陣形を指示している場合はそちらに上書きされるので、
-        //     テスト時はボスBTを Move のみ等にしておくこと。
-        // ================================================================
+        // 陣形攻撃テスト。BTを組まずに BossCommandComponent へ直接命令を書き、
+        // DroneCommandSystem → DroneBrainSystem → Formation の流れを確認する。
+        // ボスBTが毎フレーム陣形を指示していると上書きされるので、テスト時は外すこと。
         ImGui::Spacing();
         ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.3f, 1.0f), "Formation Attack Test (縦割り)");
 
@@ -457,14 +412,10 @@ void DroneManagerSystem::OnGui()
         if (ImGui::Button("3) Return (周回へ)", ImVec2(140, 26)))
             setBossCmd(DroneFormationType::OrbitCircle, false);
 
-        // ================================================================
-        // 個別行動テスト
+        // 個別行動テスト。
         //   ①カミカゼ：出撃は一斉だが、飛び切った機から順に離脱して隊列へ戻る
-        //     （DroneAttackPhase による個別寿命の確認）
         //   ②小隊突撃：5機編隊が接近 → 先頭がプレイヤーを追って突入
-        //     （SquadUpdateSystem + SquadAssaultFormation の確認）
         //   ③硬直は切り払いを当てて確認する（Stunned → バラバラに復帰）
-        // ================================================================
         ImGui::Spacing();
         ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.8f, 1.0f), "個別行動テスト");
 
@@ -484,7 +435,7 @@ void DroneManagerSystem::OnGui()
             setBossCmd(DroneFormationType::SquadAssault, true);
         ImGui::PopStyleColor();
 
-        // 予告の震えの調整。震え方は数字では決められないので実行中に見ながら合わせる。
+        // 震え方は数字では決められないので実行中に見ながら合わせる。
         {
             if (!m_world->HasResource<DroneShiverTuning>())
                 m_world->AddResource<DroneShiverTuning>();
@@ -510,7 +461,7 @@ void DroneManagerSystem::OnGui()
             }
         }
 
-        // 小隊の調整（実行中に変えられる。しなり具合は目で見ないと決まらない）
+        // しなり具合は目で見ないと決まらないので実行中に変えられるようにする。
         if (m_world->HasResource<SquadRegistry>())
         {
             auto &tuning = m_world->GetResource<SquadRegistry>().tuning;
@@ -558,7 +509,7 @@ void DroneManagerSystem::OnGui()
             }
         }
 
-        // 小隊の中身（頭の位置とフェーズ）を見えるようにしておく
+        // 小隊の中身（頭の位置とフェーズ）。
         if (m_world->HasResource<SquadRegistry>())
         {
             const auto &reg = m_world->GetResource<SquadRegistry>();
@@ -581,5 +532,5 @@ void DroneManagerSystem::OnGui()
     }
 }
 
-// L02_Update で計数（判断・陣形と同じステージ。順序は問わない）
+// L02_Update で計数する（判断・陣形と同じステージ。順序は問わない）。
 REGISTER_LOGIC_SYSTEM(DroneManagerSystem, Priority::LogicStage::L02_Update)

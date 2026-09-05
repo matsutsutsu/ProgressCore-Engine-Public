@@ -19,20 +19,14 @@ using namespace CCL::AI::Formation;
 
 namespace
 {
-// 予告の溜めの上限 [秒]。振幅は DroneMovementSystem 側で早々に頭打ちになるので、
-// ここは「長く構えっぱなしにしても値が際限なく育たない」ための蓋にすぎない。
+// 予告の溜めの上限 [秒]。振幅は移動層で頭打ちになるので、値が際限なく育たないための蓋。
 constexpr float kWindupTimerCap = 10.0f;
 } // namespace
 
 void DroneFormationSystem::Initialize()
 {
-    // このシステムが評価する陣形クラス（IFormation）を登録する。
-    // 「DroneFormationSystem が動く」ということは「陣形クラスが必要」
-    // ということなので、ここに書くのが最も自然。
-    //
-    // 陣形を追加した時も、
-    // Formations_Basic.h の RegisterAll() に1行足すだけで、
-    // このシステムを持つ全シーンに自動反映される。
+    // このシステムが評価する陣形クラスを登録する。陣形を追加したときは
+    // 各 Formations_*.h の RegisterAll() に1行足せば全シーンへ自動反映される。
     CCL::AI::Formation::Basic::RegisterAll();
     CCL::AI::Formation::Attack::RegisterAll(); // 攻撃陣形（縦割り等）
     CCL::AI::Formation::Squad::RegisterAll();  // 小隊陣形（5機編隊）
@@ -46,10 +40,10 @@ FormationContext DroneFormationSystem::MakeContext(float dt)
     ctx.time = m_elapsed;
     ctx.dt   = dt; // 攻撃の進行度（ヒンジ回転など）を進めるのに使う
 
-    // 「今撃て」信号。狙いを焼くタイミングの判定に使う。
+    // 「今撃て」信号。狙いを焼くタイミングの判定に使う。ボス位置とあわせて
+    // BossCommandComponent を持つ最初のEntityから取る。
     bool attackActive = false;
 
-    // ボス位置と攻撃信号（BossCommandComponent を持つ最初のEntity）
     {
         auto bossView = m_world->View<BossCommandComponent, TransformComponent>();
         for (auto b : bossView)
@@ -62,7 +56,6 @@ FormationContext DroneFormationSystem::MakeContext(float dt)
         }
     }
 
-    // プレイヤー位置（BattleContext から）
     if (m_world->HasResource<BattleContext>())
     {
         auto &battle       = m_world->GetResource<BattleContext>();
@@ -71,17 +64,13 @@ FormationContext DroneFormationSystem::MakeContext(float dt)
         ctx.playerVelocity = battle.playerVelocity;
     }
 
-    // 小隊の頭の位置（SquadUpdateSystem が今フレーム更新済み）。
-    //   ここでは読むだけ。書き手を1つに固定しておくと、並列化しても壊れない。
+    // 小隊の頭（SquadUpdateSystem が今フレーム更新済み）。ここでは読むだけ。
     if (m_world->HasResource<SquadRegistry>())
         ctx.squads = &m_world->GetResource<SquadRegistry>();
 
-    // --- 狙う向きを「撃つと決めた瞬間」に1回だけ焼く ---
-    //
-    //   予備動作の間（信号が下りている間）は追い続ける。形がプレイヤーの方を
-    //   向くからこそ、プレイヤーは「どちらへ避けるか」を読める。
-    //   信号が立った瞬間に焼き、以降は動かさない。ここから先は避けた者勝ちにする。
-    //   信号が下りたら解除して、次の技のためにまた追えるようにする。
+    // 狙う向きを「撃つと決めた瞬間」に1回だけ焼く。予備動作の間は追い続ける
+    // （形がプレイヤーを向くからこそ、どちらへ避けるかを読める）。信号が立った
+    // 瞬間から先は動かさず、避けた者勝ちにする。
     if (attackActive && !m_prevAttackActive)
     {
         DirectX::SimpleMath::Vector3 aim = ctx.playerPos - ctx.bossPos;
@@ -114,32 +103,24 @@ void DroneFormationSystem::Update(float dt)
 
     const FormationContext ctx = MakeContext(dt);
 
-    // --- 各ドローンの目標座標を計算 ---
-    //   ポリモーフィズムは「陣形を引くとき」だけ。ループ自体は連続アクセス。
+    // ポリモーフィズムは「陣形を引くとき」だけ。ループ自体は連続アクセス。
     ForEach([&](DroneComponent &drone) {
         IFormation *formation = registry.Get(drone.currentFormation);
         if (!formation)
         {
-            // 未登録の陣形（Hidden等）は何もしない。
-            // 溜めだけは戻しておく。収納された機が前の技の溜めを抱えたままになると、
-            // 次に出てきた瞬間から全開で震える。
+            // 未登録の陣形（Hidden等）は何もしない。溜めだけは戻す（抱えたままだと
+            // 次に出てきた瞬間から全開で震える）。
             drone.windupTimer = 0.0f;
             return;
         }
 
         formation->Calculate(drone, ctx); // targetPosition を書き込む
 
-        // --- 予告（震え）の溜めを進める ---
-        //
-        //   技であり、持ち場に着いていて、まだ撃つ合図が来ていない。
-        //   この3つが揃っている時間帯が予備動作そのものにあたる。
-        //   撃った瞬間 wantsAttack が立って 0 に落ちるので、震えは合図と同時に止む。
-        //
-        //   hasReachedSlot は「一度でも持ち場へ着いたか」のラッチなので、
-        //   陣形を切り替えた直後（新しい形へ寄っていく途中）も true のままになる。
-        //   つまり溜めは BT が技の陣形を指示した時点から始まり、Wait(予告) の
-        //   長さとそのまま一致する。狙ってこうしてある。
-        //   突撃から帰る途中だけは false に落ちるので、帰りながらは震えない。
+        // 予告（震え）の溜めを進める。技であり、持ち場に着いていて、まだ撃つ合図が
+        // 来ていない——この3つが揃う時間帯が予備動作そのもの。
+        //   hasReachedSlot は「一度でも着いたか」のラッチなので陣形を切り替えた直後も
+        //   true のままで、溜めは BT が陣形を指示した時点から始まって Wait(予告) の
+        //   長さと一致する。突撃から帰る途中だけ false に落ちるので帰りながらは震えない。
         const bool telegraphing =
             formation->UsesShiverTelegraph() && drone.hasReachedSlot && !drone.wantsAttack;
 

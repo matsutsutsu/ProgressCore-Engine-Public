@@ -1,10 +1,6 @@
 // ボス固有の条件。BossPhaseComponent（大状態）を見るものだけがここに入る。
-//
-// 汎用側（BTConditions.h）と分けている理由:
-//   距離やHPは「どの敵でも意味がある」が、第2形態は1体のボスにしか無い概念。
-//   同じファイルに置くと、敵を増やしたときにどれが汎用でどれが固有か分からなくなる。
-//   BTActions_Boss.h と同じ考え方で、ボス固有のコンポーネントは
-//   Execute/Evaluate の中で world から自分で取りに行く（BTContext は汎用のまま）。
+// 距離やHPはどの敵でも意味があるが、第2形態は1体のボスにしか無い概念なので分ける。
+// BTActions_Boss.h と同じく、固有のコンポーネントは world から自分で取りに行く。
 #pragma once
 #include "Game/Logics/AI/BehaviorTree/Actions/BTAction.h"
 #include "Game/Logics/AI/BehaviorTree/Actions/BTActionRegistry.h"
@@ -14,11 +10,7 @@
 
 namespace CCL::AI::BT::BossConditions
 {
-// 第2形態か。
-//
-// 以前は blackboard.currentPhase（int）を BossPhaseSystem が毎フレーム
-// 同期して、それを読んでいた。大状態が唯一の情報源なので直接読む。
-// 写し替えが1つ減るぶん、ズレようがなくなる。
+// 第2形態か。大状態が唯一の情報源なので blackboard へ写さず直接読む。
 struct IsPhase2 : public IBTCondition
 {
     std::vector<CCL::ECS::TypeID> GetExtraReadTypes() const override
