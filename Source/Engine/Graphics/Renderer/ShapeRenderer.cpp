@@ -242,14 +242,23 @@ void ShapeRenderer::DrawWireframeCylinder(const DirectX::XMFLOAT3& position, flo
 
     DrawWireframeCircle(topPos, radius, color, xRotation);
     DrawWireframeCircle(btmPos, radius, color, xRotation);
-    DrawLine({ position.x - radius, topPos.y, position.z }, { position.x - radius, btmPos.y, position.z }, color);
-    DrawLine({ position.x + radius, topPos.y, position.z }, { position.x + radius, btmPos.y, position.z }, color);
-    DrawLine({ position.x, topPos.y, position.z - radius }, { position.x, btmPos.y, position.z - radius }, color);
-    DrawLine({ position.x, topPos.y, position.z + radius }, { position.x, btmPos.y, position.z + radius }, color);
+    DrawLineNoCull({ position.x - radius, topPos.y, position.z }, { position.x - radius, btmPos.y, position.z }, color);
+    DrawLineNoCull({ position.x + radius, topPos.y, position.z }, { position.x + radius, btmPos.y, position.z }, color);
+    DrawLineNoCull({ position.x, topPos.y, position.z - radius }, { position.x, btmPos.y, position.z - radius }, color);
+    DrawLineNoCull({ position.x, topPos.y, position.z + radius }, { position.x, btmPos.y, position.z + radius }, color);
 }
 
 void ShapeRenderer::DrawWireframeCircle(const DirectX::XMFLOAT3& center, float radius, const DirectX::XMFLOAT4& color, const DirectX::XMFLOAT4& rotation)
 {
+    // 円は「1つの形」として一度だけ判定する。線分ごとに判定すると、視錐台が1フレーム
+    // 古いぶんカメラを回したときに円が直線的に切れて見える（DrawLineNoCull の説明を参照）。
+    if (m_cullingEnabled) {
+        BoundingSphere bounds;
+        bounds.Center = center;
+        bounds.Radius = radius;
+        if (!m_frustum.Intersects(bounds)) return;
+    }
+
     const int segments = 24;
     const float step = XM_2PI / segments;
     XMVECTOR Q = XMLoadFloat4(&rotation);
@@ -268,7 +277,7 @@ void ShapeRenderer::DrawWireframeCircle(const DirectX::XMFLOAT3& center, float r
         XMFLOAT3 p1, p2;
         XMStoreFloat3(&p1, P_prev);
         XMStoreFloat3(&p2, P_curr);
-        DrawLine(p1, p2, color);
+        DrawLineNoCull(p1, p2, color);
         P_prev = P_curr;
     }
 }
@@ -333,6 +342,11 @@ void ShapeRenderer::DrawLine(const DirectX::XMFLOAT3& p1, const DirectX::XMFLOAT
         if (!m_frustum.Intersects(sphere)) return;
     }
 
+    DrawLineNoCull(p1, p2, color);
+}
+
+void ShapeRenderer::DrawLineNoCull(const DirectX::XMFLOAT3& p1, const DirectX::XMFLOAT3& p2, const DirectX::XMFLOAT4& color)
+{
     XMVECTOR V1 = XMLoadFloat3(&p1);
     XMVECTOR V2 = XMLoadFloat3(&p2);
     XMVECTOR Diff = XMVectorSubtract(V2, V1);

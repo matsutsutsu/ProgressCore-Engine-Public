@@ -37,6 +37,101 @@ namespace
 
     // これより低ければ壁にせず地面の円で描く。
     constexpr float kFlatRingThreshold = 0.05f;
+
+    // 塗りの分割。円周は DrawWireframeCircle と同じ 24 にして、線と面の輪郭を揃える。
+    constexpr int kWallSegments = 24;
+
+    // 縦の段数。色は面ごとにしか変えられないので、段を重ねて薄れさせる。
+    constexpr int kWallBands = 4;
+
+    // 地面の帯は輪郭の線より少しだけ下へ置く。同じ高さだとちらつく。
+    constexpr float kFillDrop = 0.02f;
+}
+
+
+void AIDebugSpatialSystem::DrawAnnulus(ShapeRenderer *renderer, const XMFLOAT3 &center,
+                                       float rInner, float rOuter, const XMFLOAT4 &color) const
+{
+    for (int seg = 0; seg < kWallSegments; ++seg)
+    {
+        const float a0 = XM_2PI * seg / kWallSegments;
+        const float a1 = XM_2PI * (seg + 1) / kWallSegments;
+
+        const float c0 = std::cos(a0), s0 = std::sin(a0);
+        const float c1 = std::cos(a1), s1 = std::sin(a1);
+
+        const XMFLOAT3 outer0(center.x + c0 * rOuter, center.y, center.z + s0 * rOuter);
+        const XMFLOAT3 outer1(center.x + c1 * rOuter, center.y, center.z + s1 * rOuter);
+
+        // 内半径が 0 のときは扇形1枚で足りる（内側の2点が重なって面にならない）。
+        if (rInner <= 0.01f)
+        {
+            renderer->DrawSolidTriangle({center.x, center.y, center.z}, outer0, outer1, color);
+            continue;
+        }
+
+        const XMFLOAT3 inner0(center.x + c0 * rInner, center.y, center.z + s0 * rInner);
+        const XMFLOAT3 inner1(center.x + c1 * rInner, center.y, center.z + s1 * rInner);
+
+        renderer->DrawSolidTriangle(inner0, outer0, outer1, color);
+        renderer->DrawSolidTriangle(inner0, outer1, inner1, color);
+    }
+}
+
+
+void AIDebugSpatialSystem::DrawGroundBands(ShapeRenderer *renderer, const XMFLOAT3 &footCenter) const
+{
+    const XMFLOAT3 ground(footCenter.x, footCenter.y - kFillDrop, footCenter.z);
+
+    float inner = 0.0f;
+    for (size_t i = 0; i < m_rings.size(); ++i)
+    {
+        const RangeRing &ring = m_rings[i];
+
+        // 帯の色は外側の境界線に合わせる。線と塗りで意味が食い違わないようにするため。
+        const bool isInside  = (ring.kinds & kInside)  != 0;
+        const bool isOutside = (ring.kinds & kOutside) != 0;
+        const XMFLOAT4 &base = (isInside && isOutside) ? kColBoth
+                             : isInside                ? kColInside
+                                                       : kColOutside;
+
+        // 外側の帯ほど薄くする。手前ほど濃いので「近いほど危ない」がそのまま形に出る。
+        const float t     = static_cast<float>(i) / static_cast<float>(m_rings.size());
+        const float alpha = m_fillAlpha * (1.0f - t * 0.6f);
+
+        DrawAnnulus(renderer, ground, inner, ring.radius, {base.x, base.y, base.z, alpha});
+        inner = ring.radius;
+    }
+}
+
+
+void AIDebugSpatialSystem::DrawRingWall(ShapeRenderer *renderer, const XMFLOAT3 &footCenter,
+                                        float radius, const XMFLOAT4 &color) const
+{
+    const float bandHeight = m_ringHeight / kWallBands;
+
+    for (int band = 0; band < kWallBands; ++band)
+    {
+        const float y0 = footCenter.y + bandHeight * band;
+        const float y1 = y0 + bandHeight;
+
+        const XMFLOAT4 c(color.x, color.y, color.z, m_wallAlpha);
+
+        for (int seg = 0; seg < kWallSegments; ++seg)
+        {
+            const float a0 = XM_2PI * seg / kWallSegments;
+            const float a1 = XM_2PI * (seg + 1) / kWallSegments;
+
+            const float x0 = footCenter.x + std::cos(a0) * radius;
+            const float z0 = footCenter.z + std::sin(a0) * radius;
+            const float x1 = footCenter.x + std::cos(a1) * radius;
+            const float z1 = footCenter.z + std::sin(a1) * radius;
+
+            // 四角形1枚を三角形2枚で。裏面も描かれる設定なので巻き方向は問わない。
+            renderer->DrawSolidTriangle({x0, y0, z0}, {x1, y0, z1}, {x0, y1, z0}, c);
+            renderer->DrawSolidTriangle({x1, y0, z1}, {x1, y1, z1}, {x0, y1, z0}, c);
+        }
+    }
 }
 
 
@@ -50,8 +145,11 @@ void AIDebugSpatialSystem::DrawRangeRing(ShapeRenderer *renderer, const XMFLOAT3
     }
 
     // シリンダーは中心を渡す仕様なので、足元から立ち上がるよう半分だけ持ち上げる。
+    //   線は輪郭として残す。塗りだけだと半径がどこなのかが曖昧になる。
     const XMFLOAT3 mid(footCenter.x, footCenter.y + m_ringHeight * 0.5f, footCenter.z);
     renderer->DrawWireframeCylinder(mid, radius, m_ringHeight, color);
+
+    if (m_wallAlpha > 0.001f) DrawRingWall(renderer, footCenter, radius, color);
 }
 
 
@@ -126,12 +224,15 @@ void AIDebugSpatialSystem::Update(float /*dt*/)
     ForEachWithID([&](EntityID entity,
                       const TransformComponent &trans,
                       const BossActionComponent & /*boss*/) {
-        // 地面にわずかに浮かせて Z ファイティングを避ける。
-        const XMFLOAT3 center(trans.position.x, trans.position.y + 0.05f, trans.position.z);
+        // 地面から浮かせて Z ファイティングを避ける。埋もれるときは GUI で上げる。
+        const XMFLOAT3 center(trans.position.x, trans.position.y + m_heightOffset, trans.position.z);
 
         const auto *bt = m_world->GetComponent<BehaviorTreeComponent>(entity);
         if (bt && bt->sharedAsset) CollectRings(*bt->sharedAsset);
         else                       { m_rings.clear(); m_edgeRings.clear(); }
+
+        // 塗りを先に置いてから線を重ねる。輪郭が帯に食われないようにするため。
+        if (m_groundFill) DrawGroundBands(renderer, center);
 
         for (const RangeRing &ring : m_rings)
         {
@@ -177,10 +278,15 @@ void AIDebugSpatialSystem::OnGui()
     ImGui::Checkbox("Show Range Rings", &m_enabled);
     ImGui::Checkbox("Show Lock-on Line", &m_drawLine);
     ImGui::Checkbox("Show Current Range", &m_drawNow);
+    ImGui::Checkbox("Fill Ground Bands", &m_groundFill);
+    ImGui::SliderFloat("Fill Alpha", &m_fillAlpha, 0.0f, 1.0f);
+    ImGui::SliderFloat("Height Offset (m)", &m_heightOffset, 0.0f, 5.0f);
+
     ImGui::SliderFloat("Ring Height (m)", &m_ringHeight, 0.0f, 20.0f);
+    if (m_ringHeight > 0.0f) ImGui::SliderFloat("Wall Alpha", &m_wallAlpha, 0.0f, 0.6f);
 
     ImGui::TextDisabled("半径は読み込み済みのBTから自動で拾う（手入力なし）");
-    ImGui::TextDisabled("高さ0で地面の円に戻る");
+    ImGui::TextDisabled("地面に埋もれるときは Height Offset を上げる");
 
     if (m_rings.empty() && m_edgeRings.empty())
     {

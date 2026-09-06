@@ -38,10 +38,6 @@ struct GuillotineSlamFormation : public IFormation
         const int col   = drone.localIndex % cols;
         const int row   = drone.localIndex / cols;
 
-        const float spacing      = 2.0f; // 刃の目の細かさ
-        const float hingeHeight  = 2.0f; // 回転軸（下端）の高さ
-        const float hingeForward = 5.0f; // ボスからプレイヤー側へ離す距離
-
         if (drone.wantsAttack)
             drone.attackProgress = (std::min)(1.0f, drone.attackProgress + ctx.dt * kSwingSpeed);
         else
@@ -52,13 +48,13 @@ struct GuillotineSlamFormation : public IFormation
         const float c = std::cos(theta);
         const float s = std::sin(theta);
 
-        const float height = row * spacing;                       // 下端(row0)=0＝軸
-        const float side   = (col - (cols - 1) * 0.5f) * spacing; // 幅方向は中央揃え
+        const float height = row * kRowSpacing;                       // 下端(row0)=0＝軸
+        const float side   = (col - (cols - 1) * 0.5f) * kColSpacing; // 幅方向は中央揃え
 
         // 回転軸はボスの真上ではなくプレイヤー側へ出す。真上に置くと壁がボスを跨いで
         // 生え、予備動作の形がボスと重なって読めない。
         const Vector3 hingeBase =
-            ctx.bossPos + Vector3::UnitY * hingeHeight + dir * hingeForward;
+            ctx.bossPos + Vector3::UnitY * kHingeHeight + dir * kHingeForward;
 
         // 高さベクトルを下端軸まわりに θ 回転（up → dir へ倒す）
         const Vector3 rotatedUp = Vector3::UnitY * (height * c) + dir * (height * s);
@@ -75,12 +71,30 @@ struct GuillotineSlamFormation : public IFormation
 
     static constexpr float kSwingSpeed = 2.5f; // 倒れ切りまで ≈0.4s
     static constexpr float kThetaMax   = 1.9f; // ≈109°。水平を少し越えて叩きつける
+
+    // 機体どうしの隙間。格子は sqrt(機数) 辺の正方形なので、100機なら
+    // 幅・高さとも 9 × 間隔 まで広がる（5.0 なら 45m 四方）。
+    // 上げるほど刃が粗く大きくなり、下げるほど密で小さくなる。
+    static constexpr float kColSpacing  = 2.5f; // 幅方向（横に並ぶ間隔）
+    static constexpr float kRowSpacing  = 2.5f; // 高さ方向（縦に積む間隔）
+
+    // 回転軸（下端）の高さ [m]。刃はこの高さを軸に倒れる。
+    static constexpr float kHingeHeight = 2.0f;
+
+    // 回転軸をボスからプレイヤー側へ出す距離 [m]。真上に置くと壁がボスを跨いで
+    // 生え、予備動作の形がボスと重なって読めない。
+    static constexpr float kHingeForward = 5.0f;
 };
 
 // 挟み込み1段（ClapSlam）── 要求回避＝ジャンプ。
 // ボス前方へ左右2本の腕（低い壁）を張り出し、真横から前方中央へ振り込んで挟む。
 // 配置は「回転させた腕方向 × 距離」で出す。奥行きをボス→プレイヤー軸に沿って
 // 伸ばすと、機数が増えたとき壁が前後に長い回廊になってしまう。
+//
+// 閉じ切りは角度ではなく横オフセットで作る。腕はボスを起点にした放射状の直線なので、
+// 角度を残したまま閉じると 2本の間隔が距離に比例して開き、先端ほど広いV字になる。
+// 角度を 0 まで戻して平行にし、そこへ一定の横幅を足せば、根元から先端まで同じ隙間で
+// 閉じる。
 struct ClapSlamFormation : public IFormation
 {
     void Calculate(DroneComponent &drone, const FormationContext &ctx) override
@@ -100,7 +114,7 @@ struct ClapSlamFormation : public IFormation
         const float distance = kBaseDistance + seg  * kDistanceStep;
         const float height   = kBaseHeight   + hRow * kHeightSpacing;
 
-        // 腕の角度を「真横(±kStartAngle)→前方中央(±kEndAngle)」へ閉じる。
+        // 腕の角度を「真横(±kStartAngle)→前方中央(0)」へ戻しながら閉じる。
         if (drone.wantsAttack)
             drone.attackProgress = (std::min)(1.0f, drone.attackProgress + ctx.dt * kClapSpeed);
         else
@@ -108,12 +122,22 @@ struct ClapSlamFormation : public IFormation
 
         const float eased = drone.attackProgress * drone.attackProgress; // easeIn（バチンと閉じる）
         const float sign  = isRight ? 1.0f : -1.0f;
-        const float angle = sign * (kStartAngle + (kEndAngle - kStartAngle) * eased);
+
+        // 角度は 0 まで戻し切る。ここに端数を残すと、その角度 × 距離ぶん先端が開く。
+        const float angle = sign * kStartAngle * (1.0f - eased);
 
         const Quaternion swing  = Quaternion::CreateFromAxisAngle(Vector3::UnitY, angle);
-        const Vector3    armDir  = Vector3::Transform(centerDir, swing);
+        const Vector3    armDir = Vector3::Transform(centerDir, swing);
 
-        drone.targetPosition = ctx.bossPos + armDir * distance + Vector3::UnitY * height;
+        // 平行になった 2本を離しておく横幅。開き始めは 0（腕が真横を向いていて
+        // そもそも重ならない）で、閉じるにつれて効かせる。
+        Vector3 side = Vector3::UnitY.Cross(centerDir);
+        if (side.LengthSquared() < 0.001f) side = Vector3::UnitX;
+        side.Normalize();
+
+        drone.targetPosition = ctx.bossPos + armDir * distance
+                             + side * (sign * kEndHalfGap * eased)
+                             + Vector3::UnitY * height;
 
         Vector3 look = ctx.playerPos - drone.targetPosition;  // 内向き
         look.y = 0.0f;
@@ -126,11 +150,24 @@ struct ClapSlamFormation : public IFormation
     static constexpr float kClapSpeed     = 3.0f;   // 閉じ切り ≈0.33s
     static constexpr int   kHeightRows    = 2;      // 低い壁（ジャンプで越えられる）
     static constexpr float kBaseDistance  = 3.0f;   // 最内の腕のボスからの距離
-    static constexpr float kDistanceStep  = 1.2f;   // 腕が前方へ伸びる間隔
+
+    // 腕に沿って並ぶ機体どうしの間隔 [m]。ここが機体間の実距離そのもの。
+    //
+    // 腕の長さ ＝ kBaseDistance ＋ (機数 ÷ 2 ÷ kHeightRows − 1) × kDistanceStep。
+    // 100機なら片腕25機ぶんなので 3.0 ＋ 24 × 1.8 ＝ 約46m。ステージ半径(≈48m)に
+    // 収まる上限がこのあたりで、これ以上広げると腕の先が場外へ出る。
+    static constexpr float kDistanceStep  = 1.8f;
+
     static constexpr float kBaseHeight    = 0.8f;   // 壁の下端（地面付近）
-    static constexpr float kHeightSpacing = 1.5f;   // 高さ段の間隔（低め）
+
+    // 高さ段の間隔 [m]。壁の天井は kBaseHeight ＋ (kHeightRows−1) × これ。
+    //   これはジャンプで越えられるかを直接決めるので、隙間を空ける目的では触らない。
+    static constexpr float kHeightSpacing = 1.5f;
     static constexpr float kStartAngle    = 1.5f;   // 開始角(rad)≈86°（ほぼ真横に開く）
-    static constexpr float kEndAngle      = 0.08f;  // 閉じ切り角(rad)≈5°（前方中央でほぼ接触）
+
+    // 閉じ切ったときの中心線から片側までの距離 [m]。2本の腕の隙間はこの2倍で、
+    // 距離によらず一定。0 にすると 2本が完全に重なって 1枚の壁になる。
+    static constexpr float kEndHalfGap    = 0.8f;
 };
 
 // 弾幕（KamikazeSwarm）── 要求回避＝ジャスト回避。

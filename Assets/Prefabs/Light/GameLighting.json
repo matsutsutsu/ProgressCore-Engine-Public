@@ -28,7 +28,7 @@
                 },
                 "ContactShadow": {
                     "bias": 0.019999999552965164,
-                    "enable": true,
+                    "enable": false,
                     "intensity": 0.699999988079071,
                     "maxDistance": 30.0,
                     "rayLength": 0.30000001192092896,
@@ -122,7 +122,7 @@
                     "chromaticStrength": 0.012000000104308128,
                     "duration": 0.2199999988079071,
                     "radialStrength": 0.3499999940395355,
-                    "shakeTrauma": 0.18
+                    "shakeTrauma": 0.18000000715255737
                 },
                 "ShadowMapConfig": {
                     "cascadeSplits": [

@@ -345,6 +345,11 @@
             "endPin": 320,
             "id": 356,
             "startPin": 5
+        },
+        {
+            "endPin": 358,
+            "id": 359,
+            "startPin": 105
         }
     ],
     "editor_nodes": [
@@ -383,11 +388,11 @@
             "condition": "C_DistanceLessThan",
             "id": 9,
             "inputPinId": 10,
-            "name": "距離<8m",
+            "name": "距離",
             "outputPinId": 0,
-            "param": 8.0,
-            "posX": 2704.0,
-            "posY": 676.0,
+            "param": 12.0,
+            "posX": 2702.0,
+            "posY": 670.0,
             "type": 3
         },
         {
@@ -522,7 +527,7 @@
             "inputPinId": 104,
             "name": "小隊突撃",
             "outputPinId": 105,
-            "posX": 11256.0,
+            "posX": 11448.0,
             "posY": 788.0,
             "type": 2
         },
@@ -534,7 +539,7 @@
             "name": "小隊突撃(編隊)",
             "outputPinId": 0,
             "param": 0.0,
-            "posX": 10576.0,
+            "posX": 10768.0,
             "posY": 1008.0,
             "type": 4
         },
@@ -546,7 +551,7 @@
             "name": "HighOrbit(帰投)",
             "outputPinId": 0,
             "param": 0.0,
-            "posX": 11592.0,
+            "posX": 11784.0,
             "posY": 1008.0,
             "type": 4
         },
@@ -558,7 +563,7 @@
             "name": "詰めながら待つ",
             "outputPinId": 0,
             "param": 3.0,
-            "posX": 11864.0,
+            "posX": 12056.0,
             "posY": 1008.0,
             "type": 4
         },
@@ -589,10 +594,10 @@
             "condition": "C_DistanceLessThan",
             "id": 131,
             "inputPinId": 132,
-            "name": "距離<25m",
+            "name": "距離",
             "outputPinId": 0,
-            "param": 16.0,
-            "posX": 3646.0,
+            "param": 20.0,
+            "posX": 3662.0,
             "posY": 878.0,
             "type": 3
         },
@@ -708,7 +713,7 @@
             "name": "小隊攻撃(CD25秒)",
             "outputPinId": 194,
             "param": 25.0,
-            "posX": 11256.0,
+            "posX": 11448.0,
             "posY": 546.0,
             "type": 6
         },
@@ -753,7 +758,7 @@
             "inputPinId": 211,
             "name": "距離>30m",
             "outputPinId": 0,
-            "param": 30.0,
+            "param": 40.0,
             "posX": 12464.0,
             "posY": 1008.0,
             "type": 3
@@ -920,7 +925,7 @@
             "name": "Wait(予備動作)",
             "outputPinId": 0,
             "param": 2.0,
-            "posX": 10874.0,
+            "posX": 11066.0,
             "posY": 1008.0,
             "type": 4
         },
@@ -932,7 +937,7 @@
             "name": "攻撃実行",
             "outputPinId": 0,
             "param": 0.0,
-            "posX": 11110.0,
+            "posX": 11302.0,
             "posY": 1008.0,
             "type": 4
         },
@@ -944,7 +949,7 @@
             "name": "Wait(攻撃中)",
             "outputPinId": 0,
             "param": 10.0,
-            "posX": 11356.0,
+            "posX": 11548.0,
             "posY": 1008.0,
             "type": 4
         },
@@ -1109,7 +1114,7 @@
             "inputPinId": 324,
             "name": "距離>25m",
             "outputPinId": 0,
-            "param": 25.0,
+            "param": 40.0,
             "posX": 14720.0,
             "posY": 836.0,
             "type": 3
@@ -1173,10 +1178,10 @@
             "inputPinId": 0,
             "name": "【ドローン】小隊陣形",
             "outputPinId": 0,
-            "posX": 10544.0,
+            "posX": 10512.0,
             "posY": 480.0,
             "type": 5,
-            "width": 1605.0
+            "width": 1829.0
         },
         {
             "actionId": 0,
@@ -1231,8 +1236,8 @@
             "width": 3506.0
         },
         {
-            "actionId": 9,
-            "condition": "C_DistanceLessThan",
+            "actionId": 10,
+            "condition": "C_DistanceGreaterThan",
             "id": 344,
             "inputPinId": 345,
             "name": "コンディション (Condition)",
@@ -1249,7 +1254,7 @@
             "inputPinId": 349,
             "name": "コンディション (Condition)",
             "outputPinId": 0,
-            "param": 30.0,
+            "param": 20.0,
             "posX": 7022.0,
             "posY": 1022.0,
             "type": 3
@@ -1261,13 +1266,25 @@
             "inputPinId": 352,
             "name": "コンディション (Condition)",
             "outputPinId": 0,
-            "param": 30.0,
+            "param": 40.0,
             "posX": 8766.0,
             "posY": 894.0,
             "type": 3
+        },
+        {
+            "actionId": 10,
+            "condition": "C_DistanceGreaterThan",
+            "id": 357,
+            "inputPinId": 358,
+            "name": "コンディション (Condition)",
+            "outputPinId": 0,
+            "param": 40.0,
+            "posX": 10542.0,
+            "posY": 1006.0,
+            "type": 3
         }
     ],
-    "last_id_counter": 356,
+    "last_id_counter": 359,
     "nodes": [
         {
             "actionOrConditionId": 0,
@@ -1434,7 +1451,7 @@
             "actionOrConditionId": 9,
             "children": [],
             "condition": "C_DistanceLessThan",
-            "param": 8.0,
+            "param": 12.0,
             "type": "Condition"
         },
         {
@@ -1507,20 +1524,21 @@
                 56,
                 57,
                 58,
-                59
+                59,
+                60
             ],
             "type": "Sequence"
         },
         {
             "actionOrConditionId": 0,
             "children": [
-                60,
                 61,
                 62,
                 63,
                 64,
                 65,
-                66
+                66,
+                67
             ],
             "type": "Sequence"
         },
@@ -1528,7 +1546,7 @@
             "actionOrConditionId": 10,
             "children": [],
             "condition": "C_DistanceGreaterThan",
-            "param": 25.0,
+            "param": 40.0,
             "type": "Condition"
         },
         {
@@ -1542,14 +1560,14 @@
             "actionOrConditionId": 9,
             "children": [],
             "condition": "C_DistanceLessThan",
-            "param": 16.0,
+            "param": 20.0,
             "type": "Condition"
         },
         {
             "actionOrConditionId": 0,
             "children": [
-                67,
-                68
+                68,
+                69
             ],
             "type": "RandomSelector"
         },
@@ -1561,9 +1579,9 @@
             "type": "Action"
         },
         {
-            "actionOrConditionId": 9,
+            "actionOrConditionId": 10,
             "children": [],
-            "condition": "C_DistanceLessThan",
+            "condition": "C_DistanceGreaterThan",
             "param": 30.0,
             "type": "Condition"
         },
@@ -1613,7 +1631,7 @@
             "actionOrConditionId": 9,
             "children": [],
             "condition": "C_DistanceLessThan",
-            "param": 30.0,
+            "param": 20.0,
             "type": "Condition"
         },
         {
@@ -1662,7 +1680,7 @@
             "actionOrConditionId": 9,
             "children": [],
             "condition": "C_DistanceLessThan",
-            "param": 30.0,
+            "param": 40.0,
             "type": "Condition"
         },
         {
@@ -1706,6 +1724,13 @@
             "children": [],
             "param": 3.0,
             "type": "Action"
+        },
+        {
+            "actionOrConditionId": 10,
+            "children": [],
+            "condition": "C_DistanceGreaterThan",
+            "param": 40.0,
+            "type": "Condition"
         },
         {
             "action": "A_DroneSquadAssault",
@@ -1753,7 +1778,7 @@
             "actionOrConditionId": 10,
             "children": [],
             "condition": "C_DistanceGreaterThan",
-            "param": 30.0,
+            "param": 40.0,
             "type": "Condition"
         },
         {

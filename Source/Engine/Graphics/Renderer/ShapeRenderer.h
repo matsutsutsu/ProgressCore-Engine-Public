@@ -55,6 +55,13 @@ private:
 	void CreateLineMesh(ID3D11Device* device);
 	void CreateTriangleFaceMesh(ID3D11Device* device);
 
+	// カリングを掛けずに線を1本積む。
+	//   円やカプセルのように「1つの形を線分の集合で表す」ものは、線分ごとに視錐台判定を
+	//   してはいけない。m_frustum は Render() でしか更新されず、積む側は必ず1フレーム前の
+	//   視錐台を見るので、カメラを回すと古い錐台の面に沿って形が直線的に切れる。
+	//   形の単位でまとめて判定し、内訳の線はこちらへ流す。
+	void DrawLineNoCull(const DirectX::XMFLOAT3& p1, const DirectX::XMFLOAT3& p2, const DirectX::XMFLOAT4& color);
+
 private:
 	Mesh boxMesh;
 	Mesh sphereMesh;
