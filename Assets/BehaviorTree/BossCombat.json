@@ -724,7 +724,7 @@
             "inputPinId": 198,
             "name": "縦割り(CD14秒)",
             "outputPinId": 199,
-            "param": 14.0,
+            "param": 7.0,
             "posX": 5972.0,
             "posY": 578.0,
             "type": 6
@@ -805,8 +805,8 @@
             "inputPinId": 232,
             "name": "横なぎ回転",
             "outputPinId": 233,
-            "posX": 7970.0,
-            "posY": 788.0,
+            "posX": 7966.0,
+            "posY": 782.0,
             "type": 2
         },
         {
@@ -1340,7 +1340,7 @@
                 23
             ],
             "decoratorType": 1,
-            "param": 14.0,
+            "param": 7.0,
             "type": "Decorator"
         },
         {

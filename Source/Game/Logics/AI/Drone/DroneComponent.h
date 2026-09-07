@@ -137,8 +137,8 @@ struct DroneComponent
 
     bool wantsAttack = false;   // [RT] 「今撃て」命令。true で判断層が FireCharge へ遷移させる
 
-    // [RT] 突撃1回ぶんの進行フェーズ。終了判断だけ DroneBrainSystem。
-    //      Broadcast 寿命の陣形では常に None。
+    // 突撃1回ぶんの進行フェーズ。終了判断だけ DroneBrainSystem。
+    // Broadcast 寿命の陣形では常に None。
     DroneAttackPhase attackPhase = DroneAttackPhase::None;
 
     // ---- 陣形が書く目標 ── 書き手=Formation（IFormation 派生）----
@@ -149,27 +149,27 @@ struct DroneComponent
 
     float attackProgress = 0.0f; // [RT] 陣形攻撃の進行度 0→1。「形が動く」技の時間軸
 
-    // [RT] 予告の溜め時間 [秒]。持ち場に着いていて、まだ撃つ合図が来ていない間だけ進む。
-    //      振幅ではなく秒数なので、BTの Wait(予告) を伸ばせば自動で長く震える。
+    // 予告の溜め時間 [秒]。持ち場に着いていて、まだ撃つ合図が来ていない間だけ進む。
+    // 振幅ではなく秒数なので、BTの Wait(予告) を伸ばせば自動で長く震える。
     float windupTimer = 0.0f;
 
     ChargeMode chargeMode = ChargeMode::Straight; // [RT] FireCharge 中の移動方式
 
-    // [RT] 発射待ち時間 [秒]。>0 の間はその場で待つ。弾幕が localIndex から
-    //      各機へ割り振り「順番に飛ばす」を作る。
+    // 発射待ち時間 [秒]。>0 の間はその場で待つ。弾幕が localIndex から
+    // 各機へ割り振り「順番に飛ばす」を作る。
     float fireDelay = 0.0f;
 
-    // [RT] SoftFollow で先渡しする速度。バネにはずれの補正だけをさせる。
-    //      渡すのは「1つ前の機体の速度」。小隊全体の速度を渡すと全機が同じ方向へ
-    //      同じ速さで飛び、「先頭に追従」ではなく「各自が突っ込む」絵になる。
+    // SoftFollow で先渡しする速度。バネにはずれの補正だけをさせる。
+    // 渡すのは「1つ前の機体の速度」。小隊全体の速度を渡すと全機が同じ方向へ
+    // 同じ速さで飛び、「先頭に追従」ではなく「各自が突っ込む」絵になる。
     DirectX::SimpleMath::Vector3 followFeedForward = DirectX::SimpleMath::Vector3::Zero;
 
     // ---- 個体の判断 ── 書き手=DroneBrainSystem ----
 
     DroneState currentState = DroneState::Idle; // [RT] 今の物理ステート。移動層はこれだけを見る
 
-    // [RT] 陣形スロットへ初回到着したかのラッチ。true の間は、回転し続ける
-    //      targetPosition との距離では MoveToTarget へ戻さない（点滅するため）。
+    // 陣形スロットへ初回到着したかのラッチ。true の間は、回転し続ける
+    // targetPosition との距離では MoveToTarget へ戻さない（点滅するため）。
     bool hasReachedSlot = false;
 
     float stateTimer   = 0.0f;  // [RT] 汎用の状態タイマー [秒]。タメ時間と離脱カーブに使い回す
@@ -180,8 +180,8 @@ struct DroneComponent
 
     // ---- 切り払い（CLEAVE）── 書き手=PlayerCleaveSystem ----
 
-    // [RT] 吹き飛ばされている残り時間 [秒]。>0 の間は Stunned で攻撃判定も被弾判定も失う
-    //      （押した先で自分に当たる理不尽を防ぎ、「切り開いた道は通れる」を保証する）。
+    // 吹き飛ばされている残り時間 [秒]。>0 の間は Stunned で攻撃判定も被弾判定も失う
+    // （押した先で自分に当たる理不尽を防ぎ、「切り開いた道は通れる」を保証する）。
     float knockbackTimer = 0.0f;
 
     DirectX::SimpleMath::Vector3 knockbackVelocity = DirectX::SimpleMath::Vector3::Zero; // [RT] 吹き飛ばし速度
@@ -190,8 +190,8 @@ struct DroneComponent
 
     DirectX::SimpleMath::Vector3 currentVelocity = DirectX::SimpleMath::Vector3::Zero; // [RT] 現在速度
 
-    // [RT] ホバー揺れの位相 [秒]。蒔くのは生成時、進めるのは移動層（ステージが違うので競合しない）。
-    //      0 のまま dt を足すと全機の位相が一致し、群れが1枚の板として揺れる。
+    // ホバー揺れの位相 [秒]。蒔くのは生成時、進めるのは移動層（ステージが違うので競合しない）。
+    // 0 のまま dt を足すと全機の位相が一致し、群れが1枚の板として揺れる。
     float hoverTimeOffset = 0.0f;
 
     // ---- 個体パラメータ（インスペクタで調整）----
