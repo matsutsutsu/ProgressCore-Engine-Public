@@ -244,6 +244,7 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
     const BTNode& node = asset.nodes[nodeId];
     BTNodeState result = BTNodeState::Failure;
 
+    // ノードの種類ごとに処理を分ける
     switch (node.type) {
 
     case BTNodeType::Selector: {

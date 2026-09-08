@@ -1,4 +1,4 @@
-// ActionID → アクション/条件クラスを解決するレジストリ。switch廃止の核。
+// ActionID → アクション/条件クラスを解決するレジストリ
 #pragma once
 #include <algorithm>
 #include <memory>
@@ -10,6 +10,7 @@
 
 namespace CCL::AI::BT
 {
+// BTActionRegistry は、BTのアクション・条件を ActionID から解決するための辞書
     class BTActionRegistry
     {
     public:
@@ -21,7 +22,7 @@ namespace CCL::AI::BT
             return reg;
         }
 
-        // --- 登録（既存 ActionRegistry.h の ID をそのままキーにする）---
+        // --- 登録 ---
         template<typename T>
         void RegisterAction(ActionID id)
         {
@@ -89,4 +90,4 @@ namespace CCL::AI::BT
         std::vector<TypeID> m_extraReads;
     };
 
-} // namespace CCL::AI::BT
+} 
