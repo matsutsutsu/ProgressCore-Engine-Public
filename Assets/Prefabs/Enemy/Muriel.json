@@ -33,7 +33,7 @@
                 },
                 "BossCommandComponent": null,
                 "BossPhaseComponent": {
-                    "phase2AssetPath": "Assets/BehaviorTree/BossCombatPhase2.json",
+                    "phase2AssetPath": "Assets/BehaviorTree/BossCombat.json",
                     "phase2HealthThreshold": 50.0
                 },
                 "Character Movement": {
@@ -55,9 +55,9 @@
                 },
                 "EnemyTag": null,
                 "HealthComponent": {
-                    "currentHealth": 970.0,
+                    "currentHealth": 500.0,
                     "invincibilityDuration": 0.20000000298023224,
-                    "maxHealth": 1000.0
+                    "maxHealth": 500.0
                 },
                 "Hurtbox": {
                     "damageMultiplier": 1.0

@@ -23,13 +23,18 @@ constexpr float kTextLeft = -476.0f; // 「OVER」の基準X
 constexpr float kIndent   = 80.0f;   // 2行目のインデント。斬線と同じ右下がりの流れを作る
 constexpr float kMenuX    = -408.0f; // ボタンの基準X（ラベルの左端が文字とほぼ揃う）
 
-// 群れが斬線を描き切る頃に文字が乗るよう、出現を遅らせる
-// （TitleSwarmSystem の kFormStart + kFormSpan ≒ 3.4秒）。
+// 各UIが現れるまでの待ち(秒)。0 にした要素は最初のフレームから出ている。
+// 計り始めはタイトルシーンの初回 Update（＝起動直後の明転とほぼ同時）で、
+// 実際に見え終わるのはここへ UIAppearComponent::duration(0.28秒) を足した頃。
+//
+// 以前は「群れが斬線を描き切るまで待つ」ために 3.4秒 も空けていたが、
+// 群れは最初から頭上円陣が完成している設計に変えたので、待つ理由が無くなった。
+// ロゴ→ボタン→ヒントの順に薄く重ねるだけの間隔にして、押せるまでを短くしている。
 constexpr float kAppearLogo1  = 0.5f;
 constexpr float kAppearLogo2  = 0.8f;
-constexpr float kAppearStart  = 3.4f;
-constexpr float kAppearQuit   = 3.55f;
-constexpr float kAppearHints  = 3.8f;
+constexpr float kAppearStart  = 1.3f;
+constexpr float kAppearQuit   = 1.45f;
+constexpr float kAppearHints  = 1.7f;
 
 // ヒント行の横移動。既定(0)だと画面中央に残り、左寄せしたメニューから離れて浮く。
 constexpr float kHintShiftX = -350.0f;
