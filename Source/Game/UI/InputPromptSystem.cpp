@@ -14,6 +14,7 @@
 #include "Engine/UI/ECS/Components/UITextComponent.h"
 #include "Game/UI/InputIconComponent.h"
 #include "Game/UI/MenuUiFactory.h" // SpawnCanvas / MakeUINode
+#include "Game/Logics/AI/Battle/BattleContext.h" // プレイヤーの有無で生成を決める
 
 #include <cstdio>
 #include <fstream>
@@ -119,7 +120,7 @@ void InputPromptSystem::ApplyLayout()
     }
 }
 
-void InputPromptSystem::Initialize()
+void InputPromptSystem::BuildRows()
 {
     std::vector<ConfigRow> rows;
     LoadConfig(rows);
@@ -179,6 +180,17 @@ void InputPromptSystem::Initialize()
 
 void InputPromptSystem::Update(float /*dt*/)
 {
+    // プレイヤーが居ない画面（タイトル等）には操作説明を出さない。
+    // 生成そのものを遅らせるので、UIエンティティも作られない。
+    if (!m_built)
+    {
+        if (!m_world->HasResource<BattleContext>()) return;
+        if (!m_world->GetResource<BattleContext>().HasPlayer()) return;
+
+        BuildRows();
+        m_built = true;
+    }
+
     // 行名の表示は、対になるアイコンが出ているかに合わせる。
     //   割り当ての無い操作（パッドに無い FreeLook 等）でアイコンだけ消えると、
     //   文字が宙に浮いて「アイコンの読み込みに失敗した」ように見えるため。

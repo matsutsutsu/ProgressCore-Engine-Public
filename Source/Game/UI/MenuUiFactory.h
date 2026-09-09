@@ -55,13 +55,25 @@ namespace CCL::GameUI
         return tr;
     }
 
-    // UI階層のルート「キャンバス」を生成する。矩形は常に画面全体。配下UIはこの子にする。
-    inline CCL::ECS::EntityID SpawnCanvas(CCL::ECS::World &world, const char *name)
+    /**
+     * @brief UI階層のルート「キャンバス」を生成する。矩形は常に画面全体。配下UIはこの子にする。
+     * @param offset 画面全体をこのぶん平行移動する(px)。**配下UIがまるごと動く**ので、
+     *        「メニュー全体を左下へ寄せる」のような調整を要素ごとに触らず1か所で決められる
+     *        （UILayoutUtil::ResolveUINode が Canvas を可動ルートとして特別扱いする）。
+     *        エディタでは Canvas の「UI Transform (矩形)」の Offset がこれに当たる。
+     *        ※3D の Transform は親子リンク専用で、動かしてもUIの位置には効かない。
+     */
+    inline CCL::ECS::EntityID SpawnCanvas(CCL::ECS::World &world, const char *name,
+        DirectX::XMFLOAT2 offset = {0.0f, 0.0f})
     {
         auto arch = CCL::ECS::ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
             UICanvasComponent>();
         auto e = EntityFactory::SpawnNamed(world, name, arch);
-        e.Set(MakeUINode(CCL::ECS::InvalidEntityID)).Set(UITransformComponent{}).Set(UICanvasComponent{});
+
+        UITransformComponent t;
+        t.offset = offset;
+
+        e.Set(MakeUINode(CCL::ECS::InvalidEntityID)).Set(t).Set(UICanvasComponent{});
         return e.ID();
     }
 
@@ -214,10 +226,13 @@ namespace CCL::GameUI
      *
      * @param yOffset 画面中央からの縦位置(px)。ボタン群の下に来る値を渡すこと。
      * @param out     生成したエンティティを積む（呼び出し側が一括破棄するため）。
+     * @param xOffset 行全体の横移動(px)。既定0＝画面中央。メニューを左寄せした画面
+     *        （タイトル）でヒントだけ中央に残らないようにするための逃げ道。
      * @note アイコンの実体は InputIconSystem が毎フレーム解決する。ここは種別を宣言するだけ。
      */
     inline void SpawnMenuHints(CCL::ECS::World &world, CCL::ECS::EntityID parent, float yOffset,
-        std::vector<CCL::ECS::EntityID> &out, int sortOrder = 230, float appearDelay = -1.0f)
+        std::vector<CCL::ECS::EntityID> &out, int sortOrder = 230, float appearDelay = -1.0f,
+        float xOffset = 0.0f)
     {
         using namespace CCL::ECS;
 
@@ -240,7 +255,7 @@ namespace CCL::GameUI
             UITransformComponent it;
             it.anchor = {0.5f, 0.5f};
             it.pivot  = {0.5f, 0.5f};
-            it.offset = {d.x, yOffset};
+            it.offset = {d.x + xOffset, yOffset};
             it.size   = {kIcon, kIcon};
 
             UIImageComponent img;
@@ -265,7 +280,7 @@ namespace CCL::GameUI
             UITransformComponent lt;
             lt.anchor = {0.5f, 0.5f};
             lt.pivot  = {0.5f, 0.5f};
-            lt.offset = {d.x + kIcon + 44.0f, yOffset - (kText * 0.5f)};
+            lt.offset = {d.x + xOffset + kIcon + 44.0f, yOffset - (kText * 0.5f)};
             lt.size   = {120.0f, kText};
 
             UITextComponent tx;

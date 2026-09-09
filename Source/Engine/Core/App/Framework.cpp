@@ -573,7 +573,7 @@ int Framework::Run()
 						pausedWorld->GetResource<TimeContext>().isPaused)
 						logicFrozen = true;
 
-			// ポーズメニューの QUIT 要求をメインスレッドで消化する。
+			// タイトル画面の QUIT 要求をメインスレッドで消化する。
 			//   システムの Update はジョブスケジューラ経由でワーカースレッドで走りうるため、
 			//   PostQuitMessage を各システムから直接呼ぶと WM_QUIT が別スレッドのキューに積まれ、
 			//   このメインループ(PeekMessage)が拾えず終了しない。フラグ経由で必ずここ(main)で呼ぶ。

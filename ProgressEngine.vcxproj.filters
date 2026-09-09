@@ -33,6 +33,9 @@
     <Filter Include="Source\Game\UI">
       <UniqueIdentifier>{17b35408-b58d-4cd1-af8f-6a2d86f44a1f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Title">
+      <UniqueIdentifier>{86b6134c-37dd-4d6c-9820-3a1745384c78}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Editor">
       <UniqueIdentifier>{8e4bd0f0-f06d-45d2-aa6a-12ea574eaac0}</UniqueIdentifier>
     </Filter>
@@ -767,6 +770,15 @@
     </ClInclude>
     <ClInclude Include="Source\Game\UI\TitleMenuSystem.h">
       <Filter>Source\Game\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Title\TitleComposition.h">
+      <Filter>Source\Game\Title</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Title\TitleCameraSystem.h">
+      <Filter>Source\Game\Title</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Title\TitleSwarmSystem.h">
+      <Filter>Source\Game\Title</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\MenuUiFactory.h">
       <Filter>Source\Game\UI</Filter>
@@ -2077,6 +2089,12 @@
     </ClCompile>
     <ClCompile Include="Source\Game\UI\TitleMenuSystem.cpp">
       <Filter>Source\Game\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Title\TitleCameraSystem.cpp">
+      <Filter>Source\Game\Title</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Title\TitleSwarmSystem.cpp">
+      <Filter>Source\Game\Title</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\GameResultSystem.cpp">
       <Filter>Source\Game\UI</Filter>

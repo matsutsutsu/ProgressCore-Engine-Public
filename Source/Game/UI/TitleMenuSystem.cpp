@@ -11,8 +11,46 @@
 #include "Engine/Core/App/GameFlowState.h"    // quitRequested（QUITはメインスレッドで消化する。下記参照）
 
 #include <cstdint>
+#include <vector>
 
 using namespace CCL::ECS;
+
+namespace
+{
+// 文字とボタンは画面左に寄せる。右半分は3D背景（斬線を組む群れ）の場所で、
+// ここへ文字を置くと群れと重なってどちらも読めなくなる。
+constexpr float kTextLeft = -476.0f; // 「OVER」の基準X
+constexpr float kIndent   = 80.0f;   // 2行目のインデント。斬線と同じ右下がりの流れを作る
+constexpr float kMenuX    = -408.0f; // ボタンの基準X（ラベルの左端が文字とほぼ揃う）
+
+// 群れが斬線を描き切る頃に文字が乗るよう、出現を遅らせる
+// （TitleSwarmSystem の kFormStart + kFormSpan ≒ 3.4秒）。
+constexpr float kAppearLogo1  = 0.5f;
+constexpr float kAppearLogo2  = 0.8f;
+constexpr float kAppearStart  = 3.4f;
+constexpr float kAppearQuit   = 3.55f;
+constexpr float kAppearHints  = 3.8f;
+
+// ヒント行の横移動。既定(0)だと画面中央に残り、左寄せしたメニューから離れて浮く。
+constexpr float kHintShiftX = -350.0f;
+
+// メニュー全体の寄せ。Canvas の offset は配下UIの基準点をまるごと動かすので、
+// 文字・ボタン・ヒントの座標を個別に触らずに、ここ1か所で構図を決められる。
+// 左下へ寄せているのは、画面の主役（頭上円陣のボスと手前のプレイヤー）が
+// 上と右に居るため。UIは対角の空いた側へ逃がす。
+constexpr DirectX::XMFLOAT2 kCanvasShift{-180.0f, 220.0f};
+
+// 上を暗く落とす膜。空が明るいステージなので、これが無いと白い雲の上に白い文字が乗る。
+// 下端をほぼ透明にしてあるので、床とボスの明るさはそのまま残る
+// （画面全体を均一に暗くすると絵が濁るだけで、コントラストは上がらない）。
+constexpr float kScrimW = 2560.0f; // 画面より大きく取り、解像度が変わっても端が出ないようにする
+constexpr float kScrimH = 1440.0f;
+
+// 下側の膜。UIを左下へ寄せたことで操作ヒントが明るい床の上に乗り、読めなくなったため足した。
+// 画面全体を均一に暗くすると絵が濁るので、上下から挟んで中央（像の顔と胴）は明るく残す。
+constexpr float kScrimBottomH = 760.0f;
+constexpr float kScrimBottomY = 240.0f; // 膜の上端が画面 y≒520px に来る位置
+} // namespace
 
 void TitleMenuSystem::Initialize()
 {
@@ -21,18 +59,6 @@ void TitleMenuSystem::Initialize()
     // 終了要求フラグの置き場を用意（メインスレッドの Run が毎フレーム参照する）。
     if (!world.HasResource<GameFlowState>())
         world.AddResource<GameFlowState>();
-
-    // --- タイトルロゴ ---
-    CCL::GameUI::SpawnLabel(world, "TitleLogo", "OVERCLEAVE", {-150.0f, -180.0f}, 56.0f);
-
-    // --- ボタン（START が初期フォーカス） ---
-    CCL::GameUI::SpawnButton(world, "BtnStart", "LblStart", "START", {0.0f, -20.0f}, "start_game", true);
-    CCL::GameUI::SpawnButton(world, "BtnQuit", "LblQuit", "QUIT", {0.0f, 70.0f}, "quit", false);
-
-    // --- 操作ヒント（[決定] [選択]） ---
-    //   タイトルのUIはシーンごと破棄されるので、個別のIDは持たない。
-    std::vector<CCL::ECS::EntityID> hints;
-    CCL::GameUI::SpawnMenuHints(world, CCL::ECS::InvalidEntityID, 160.0f, hints);
 
     // --- ボタンクリックの購読（actionHash で遷移を分岐） ---
     const uint32_t kStart = CCL::Utils::HashString("start_game");
@@ -59,4 +85,48 @@ void TitleMenuSystem::Initialize()
                     m_world->GetResource<GameFlowState>().quitRequested = true;
             }
         });
+}
+
+void TitleMenuSystem::SpawnMenu()
+{
+    World &world = *m_world;
+
+    // UI階層：Canvas を1枚立てて、以降の要素は全部その子にする。
+    // Canvas の矩形は常に画面全体なので、子の offset は親を付ける前と同じ値で通る。
+    const EntityID canvas = CCL::GameUI::SpawnCanvas(world, "TitleCanvas", kCanvasShift);
+
+    // --- 文字を読ませるための暗幕（最背面）---
+    const DirectX::XMFLOAT4 scrimBottom{0.0f, 0.0f, 0.0f, 0.06f};
+    //CCL::GameUI::SpawnPanel(world, "TitleScrim", {0.0f, 0.0f}, {kScrimW, kScrimH}, {0.0f, 0.0f, 0.02f, 0.55f}, 5, -1.0f, 0.0f, canvas, &scrimBottom);
+
+    // --- 下端の暗幕（同じく最背面）---
+    const DirectX::XMFLOAT4 scrimLowEnd{0.0f, 0.0f, 0.02f, 0.60f};
+    CCL::GameUI::SpawnPanel(world, "TitleScrimBottom", {0.0f, kScrimBottomY},
+        {kScrimW, kScrimBottomH}, {0.0f, 0.0f, 0.0f, 0.0f}, 5, -1.0f, 0.0f, canvas, &scrimLowEnd);
+
+    // --- タイトルロゴ ---
+    // 「OVER」「CLEAVE」を2行に割り、斬線（3D側の群れ）が2語を裂いている構図にする。
+    CCL::GameUI::SpawnLabel(world, "TitleLogoOver", "OVER", {kTextLeft, -276.0f}, 88.0f, 11,
+        kAppearLogo1, canvas);
+    CCL::GameUI::SpawnLabel(world, "TitleLogoCleave", "CLEAVE", {kTextLeft + kIndent, -176.0f},
+        88.0f, 11, kAppearLogo2, canvas);
+
+    // --- ボタン（START が初期フォーカス） ---
+    CCL::GameUI::SpawnButton(world, "BtnStart", "LblStart", "START", {kMenuX, 40.0f}, "start_game",
+        true, 10, kAppearStart, canvas);
+    CCL::GameUI::SpawnButton(world, "BtnQuit", "LblQuit", "QUIT", {kMenuX, 125.0f}, "quit", false,
+        10, kAppearQuit, canvas);
+
+    // --- 操作ヒント（[決定] [選択]） ---
+    //   タイトルのUIはシーンごと破棄されるので、個別のIDは持たない。
+    std::vector<CCL::ECS::EntityID> hints;
+    CCL::GameUI::SpawnMenuHints(world, canvas, 205.0f, hints, 230, kAppearHints, kHintShiftX);
+}
+
+void TitleMenuSystem::Update(float /*dt*/)
+{
+    if (m_menuSpawned) return; // 以降はイベント駆動なので毎フレーム処理は不要
+
+    SpawnMenu();
+    m_menuSpawned = true;
 }

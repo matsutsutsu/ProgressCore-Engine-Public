@@ -1,0 +1,50 @@
+{
+    "entities": [
+        {
+            "components": {
+                "Name": {
+                    "name": "TitleCamera"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 2,
+                    "position": [
+                        -3.9000000953674316,
+                        3.200000047683716,
+                        -55.0
+                    ],
+                    "rotation": [
+                        -0.06189868599176407,
+                        0.07968533784151077,
+                        0.0049577816389501095,
+                        0.9948840737342834
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "VirtualCamera": {
+                    "blendTime": 0.0,
+                    "farClip": 10000.0,
+                    "fov": 32.0,
+                    "nearClip": 0.10000000149011612,
+                    "priority": 500
+                }
+            },
+            "lid": 1
+        }
+    ],
+    "magic": 1397506883,
+    "name": "TitleCamera",
+    "version": 1
+}

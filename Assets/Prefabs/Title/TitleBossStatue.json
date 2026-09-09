@@ -1,0 +1,64 @@
+{
+    "entities": [
+        {
+            "components": {
+                "AnimParameters": null,
+                "AnimStateMachine": {
+                    "graphPath": "Assets/Animations/Nodes/MurielAnimNode.json"
+                },
+                "Animator": {
+                    "isLoop": true,
+                    "playbackSpeed": 1.0
+                },
+                "Material": {
+                    "customParams": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "paths": []
+                },
+                "Model": {
+                    "assetPath": "Assets/Models/Enemy/Muriel/Muriel.glb"
+                },
+                "Name": {
+                    "name": "TitleBossStatue"
+                },
+                "RootMotion": null,
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 2,
+                    "position": [
+                        2.700000047683716,
+                        -0.5,
+                        7.699999809265137
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.9813328981399536,
+                        0.0,
+                        0.19231633841991425
+                    ],
+                    "scale": [
+                        3.5,
+                        3.5,
+                        3.5
+                    ]
+                }
+            },
+            "lid": 1
+        }
+    ],
+    "magic": 1397506883,
+    "name": "TitleBossStatue",
+    "version": 1
+}

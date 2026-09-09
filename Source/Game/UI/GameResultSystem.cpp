@@ -21,16 +21,16 @@ using namespace CCL::ECS;
 
 void GameResultSystem::Initialize()
 {
-    // 終了要求フラグの置き場を用意（メインスレッドの Run が毎フレーム参照する）。
+    // ゲーム進行の共有状態の置き場を用意（ポーズ等と共有。無ければ作る）。
     if (!m_world->HasResource<GameFlowState>())
         m_world->AddResource<GameFlowState>();
 
     // ボタンクリックを購読（この世界ではリザルトのボタンだけが発火源）。
     const uint32_t kRetry = CCL::Utils::HashString("retry");
-    const uint32_t kQuit  = CCL::Utils::HashString("result_quit");
+    const uint32_t kTitle = CCL::Utils::HashString("result_title");
 
     ListenEvent<UIButtonClickedEvent>(
-        [this, kRetry, kQuit](const UIButtonClickedEvent &e) {
+        [this, kRetry, kTitle](const UIButtonClickedEvent &e) {
             if (m_transitioning) return;
 
             if (e.actionHash == kRetry)
@@ -38,15 +38,13 @@ void GameResultSystem::Initialize()
                 // ゲーム再読込（新しい世界を裏読み）。フェードは SceneManager が統括。
                 m_transitioning = SceneManager::Instance().RequestTransition("Game", true);
             }
-            else if (e.actionHash == kQuit)
+            else if (e.actionHash == kTitle)
             {
-                m_transitioning = true;
-                // 展示会用：タイトルへは戻さず、そのままアプリを終了する。
-                // この購読はワーカースレッドで走りうるため、直接 PostQuitMessage を
-                //    呼ぶと WM_QUIT が別スレッドに積まれメインループが拾えない。
-                //    → フラグだけ立て、メインスレッドの Run() が拾って終了する。
-                if (m_world->HasResource<GameFlowState>())
-                    m_world->GetResource<GameFlowState>().quitRequested = true;
+                // タイトルへ戻す。アプリ終了はタイトル画面の QUIT に集約したので、
+                // リザルトからは「もう一度」か「タイトルへ」の二択だけになる。
+                // この購読はワーカースレッドで走りうるため、World を畳む判断は
+                // ここではせず SceneManager に預ける。
+                m_transitioning = SceneManager::Instance().RequestTransition("Title", true);
             }
         });
 }
@@ -141,7 +139,8 @@ void GameResultSystem::ShowResultUI(bool win)
 
     // ボタン（RETRY が初期フォーカス）
     SpawnButton(w, "BtnRetry", "LblRetry", "RETRY", {0.0f, 0.0f}, "retry", true, 210, 0.16f, canvas);
-    SpawnButton(w, "BtnQuit", "LblQuit", "QUIT", {0.0f, 90.0f}, "result_quit", false, 210, 0.24f, canvas);
+    SpawnButton(w, "BtnResultTitle", "LblResultTitle", "TITLE", {0.0f, 90.0f}, "result_title",
+        false, 210, 0.24f, canvas);
 
     // 操作ヒント（[決定] [選択]）。Canvas の子なので、この画面を畳むときに一緒に消える。
     //   ここでは受け皿だけ用意する（Canvas ごと破棄するため個別のIDは持たない）。

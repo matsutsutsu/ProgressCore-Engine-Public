@@ -7,8 +7,10 @@
 //   - アイコンの張り替えは InputIconSystem の担当。本Systemは InputIconComponent を
 //     付けるところまでで手を引く（表現＝アイコン解決 / 供給＝画面構成 の分離）。
 //     この分離のおかげで、メニューの決定表示など他の画面が同じ解決経路に乗れる。
-//   - 生成は Initialize の1回だけ。持ち替えでエンティティを作り直さない
-//     （作り直すとレイアウトが1フレーム飛ぶ）。
+//   - 生成は「プレイヤーが居る」と分かってから1回だけ。持ち替えでエンティティを
+//     作り直さない（作り直すとレイアウトが1フレーム飛ぶ）。
+//     Initialize で組まないのは、タイトル画面も全システムを登録するため。
+//     プレイヤーの操作説明なので、プレイヤーが居ない画面には出してはいけない。
 //   - 見た目の調整値はメンバに持ち、OnGui から動かす。生成と配置計算を分けてあるので、
 //     値を変えてもエンティティは作り直さず矩形だけ書き換わる。
 #include "Engine/ECS/System/CCL_IfSystem.h"
@@ -26,7 +28,6 @@ class InputPromptSystem : public CCL::ECS::IfSystem<InputPromptSystem>
     {
     }
 
-    void Initialize() override;
     void Update(float dt) override;
     void OnGui() override;
 
@@ -39,6 +40,9 @@ class InputPromptSystem : public CCL::ECS::IfSystem<InputPromptSystem>
         std::string label;  // 画面に出す行名（ASCII のみ）
     };
 
+    // 操作説明の行を実際に組む。プレイヤーが現れた最初のフレームに1回だけ走る。
+    void BuildRows();
+
     // InputPromptConfig.json を読む。失敗時は既定の並びを返す。
     void LoadConfig(std::vector<ConfigRow> &outRows) const;
 
@@ -49,6 +53,8 @@ class InputPromptSystem : public CCL::ECS::IfSystem<InputPromptSystem>
 
     // 現在の調整値を、生成済みの全行へ反映する（OnGui から呼ぶ）。
     void ApplyLayout();
+
+    bool m_built = false; // 生成済みか（1回だけ組むためのラッチ）
 
     std::vector<CCL::ECS::EntityID> m_iconIDs;  // 各行のアイコン
     std::vector<CCL::ECS::EntityID> m_labelIDs; // 各行の行名
