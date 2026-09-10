@@ -29,7 +29,7 @@ RenderState::RenderState(ID3D11Device *device)
         desc.AddressW       = D3D11_TEXTURE_ADDRESS_WRAP;
         desc.Filter         = D3D11_FILTER_MIN_MAG_MIP_POINT;
         HRESULT hr          = device->CreateSamplerState(&desc,
-                     samplerStates[static_cast<int>(SamplerState::PointWrap)].GetAddressOf());
+                                                         samplerStates[static_cast<int>(SamplerState::PointWrap)].GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
     // ポイントサンプリング＆テクスチャ繰り返しなし
@@ -49,7 +49,7 @@ RenderState::RenderState(ID3D11Device *device)
         desc.AddressW       = D3D11_TEXTURE_ADDRESS_CLAMP;
         desc.Filter         = D3D11_FILTER_MIN_MAG_MIP_POINT;
         HRESULT hr          = device->CreateSamplerState(&desc,
-                     samplerStates[static_cast<int>(SamplerState::PointClamp)].GetAddressOf());
+                                                         samplerStates[static_cast<int>(SamplerState::PointClamp)].GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
     // リニアサンプリング＆テクスチャ繰り返しあり
@@ -69,7 +69,7 @@ RenderState::RenderState(ID3D11Device *device)
         desc.AddressW       = D3D11_TEXTURE_ADDRESS_WRAP;
         desc.Filter         = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
         HRESULT hr          = device->CreateSamplerState(&desc,
-                     samplerStates[static_cast<int>(SamplerState::LinearWrap)].GetAddressOf());
+                                                         samplerStates[static_cast<int>(SamplerState::LinearWrap)].GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
     // リニアサンプリング＆テクスチャ繰り返しなし
@@ -89,7 +89,7 @@ RenderState::RenderState(ID3D11Device *device)
         desc.AddressW       = D3D11_TEXTURE_ADDRESS_CLAMP;
         desc.Filter         = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
         HRESULT hr          = device->CreateSamplerState(&desc,
-                     samplerStates[static_cast<int>(SamplerState::LinearClamp)].GetAddressOf());
+                                                         samplerStates[static_cast<int>(SamplerState::LinearClamp)].GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
     // 異方性フィルタリング＆テクスチャ繰り返しあり（モデルの標準サンプラ）
@@ -109,7 +109,7 @@ RenderState::RenderState(ID3D11Device *device)
         desc.AddressW       = D3D11_TEXTURE_ADDRESS_WRAP;
         desc.Filter         = D3D11_FILTER_ANISOTROPIC;
         HRESULT hr          = device->CreateSamplerState(&desc,
-                     samplerStates[static_cast<int>(SamplerState::AnisotropicWrap)].GetAddressOf());
+                                                         samplerStates[static_cast<int>(SamplerState::AnisotropicWrap)].GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
     // 異方性フィルタリング＆テクスチャ繰り返しなし
@@ -129,7 +129,7 @@ RenderState::RenderState(ID3D11Device *device)
         desc.AddressW       = D3D11_TEXTURE_ADDRESS_CLAMP;
         desc.Filter         = D3D11_FILTER_ANISOTROPIC;
         HRESULT hr          = device->CreateSamplerState(&desc,
-                     samplerStates[static_cast<int>(SamplerState::AnisotropicClamp)].GetAddressOf());
+                                                         samplerStates[static_cast<int>(SamplerState::AnisotropicClamp)].GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
 
@@ -140,7 +140,7 @@ RenderState::RenderState(ID3D11Device *device)
         desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
         desc.DepthFunc      = D3D11_COMPARISON_LESS_EQUAL;
         HRESULT hr          = device->CreateDepthStencilState(&desc,
-                     depthStencilStates[static_cast<int>(DepthState::TestAndWrite)].GetAddressOf());
+                                                              depthStencilStates[static_cast<int>(DepthState::TestAndWrite)].GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
     // 深度テストあり＆深度書き込みなし
@@ -150,7 +150,7 @@ RenderState::RenderState(ID3D11Device *device)
         desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
         desc.DepthFunc      = D3D11_COMPARISON_LESS_EQUAL;
         HRESULT hr          = device->CreateDepthStencilState(&desc,
-                     depthStencilStates[static_cast<int>(DepthState::TestOnly)].GetAddressOf());
+                                                              depthStencilStates[static_cast<int>(DepthState::TestOnly)].GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
     // 深度テストなし＆深度書き込みあり
@@ -160,7 +160,7 @@ RenderState::RenderState(ID3D11Device *device)
         desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
         desc.DepthFunc      = D3D11_COMPARISON_ALWAYS;
         HRESULT hr          = device->CreateDepthStencilState(&desc,
-                     depthStencilStates[static_cast<int>(DepthState::WriteOnly)].GetAddressOf());
+                                                              depthStencilStates[static_cast<int>(DepthState::WriteOnly)].GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
     // 深度テストなし＆深度書き込みなし
@@ -170,7 +170,7 @@ RenderState::RenderState(ID3D11Device *device)
         desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
         desc.DepthFunc      = D3D11_COMPARISON_ALWAYS;
         HRESULT hr          = device->CreateDepthStencilState(&desc,
-                     depthStencilStates[static_cast<int>(DepthState::NoTestNoWrite)].GetAddressOf());
+                                                              depthStencilStates[static_cast<int>(DepthState::NoTestNoWrite)].GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
 
@@ -182,7 +182,7 @@ RenderState::RenderState(ID3D11Device *device)
         desc.DepthFunc      = D3D11_COMPARISON_LESS_EQUAL; // 1.0 <= 1.0 を許容する
         desc.StencilEnable  = false;
         HRESULT hr          = device->CreateDepthStencilState(&desc,
-                     depthStencilStates[static_cast<int>(DepthState::TestLessEqual)].GetAddressOf());
+                                                              depthStencilStates[static_cast<int>(DepthState::TestLessEqual)].GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
 
@@ -200,7 +200,7 @@ RenderState::RenderState(ID3D11Device *device)
         desc.RenderTarget[0].BlendOpAlpha          = D3D11_BLEND_OP_ADD;
         desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
         HRESULT hr                                 = device->CreateBlendState(&desc,
-                                            blendStates[static_cast<int>(BlendState::Opaque)].GetAddressOf());
+                                                                              blendStates[static_cast<int>(BlendState::Opaque)].GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
     // 通常合成
@@ -217,7 +217,7 @@ RenderState::RenderState(ID3D11Device *device)
         desc.RenderTarget[0].BlendOpAlpha          = D3D11_BLEND_OP_ADD;
         desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
         HRESULT hr                                 = device->CreateBlendState(&desc,
-                                            blendStates[static_cast<int>(BlendState::Transparency)].GetAddressOf());
+                                                                              blendStates[static_cast<int>(BlendState::Transparency)].GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
     // 加算合成
@@ -234,7 +234,7 @@ RenderState::RenderState(ID3D11Device *device)
         desc.RenderTarget[0].BlendOpAlpha          = D3D11_BLEND_OP_ADD;
         desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
         HRESULT hr                                 = device->CreateBlendState(&desc,
-                                            blendStates[static_cast<int>(BlendState::Additive)].GetAddressOf());
+                                                                              blendStates[static_cast<int>(BlendState::Additive)].GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
     // 減算合成
@@ -251,7 +251,7 @@ RenderState::RenderState(ID3D11Device *device)
         desc.RenderTarget[0].BlendOpAlpha          = D3D11_BLEND_OP_ADD;
         desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
         HRESULT hr                                 = device->CreateBlendState(&desc,
-                                            blendStates[static_cast<int>(BlendState::Subtraction)].GetAddressOf());
+                                                                              blendStates[static_cast<int>(BlendState::Subtraction)].GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
     // 乗算合成
@@ -268,7 +268,7 @@ RenderState::RenderState(ID3D11Device *device)
         desc.RenderTarget[0].BlendOpAlpha          = D3D11_BLEND_OP_ADD;
         desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
         HRESULT hr                                 = device->CreateBlendState(&desc,
-                                            blendStates[static_cast<int>(BlendState::Multiply)].GetAddressOf());
+                                                                              blendStates[static_cast<int>(BlendState::Multiply)].GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
     // UI用の通常合成（色はストレートα合成。ただしRTのアルファは書き換えない）
@@ -290,7 +290,7 @@ RenderState::RenderState(ID3D11Device *device)
         desc.RenderTarget[0].RenderTargetWriteMask =
             D3D11_COLOR_WRITE_ENABLE_RED | D3D11_COLOR_WRITE_ENABLE_GREEN | D3D11_COLOR_WRITE_ENABLE_BLUE;
         HRESULT hr = device->CreateBlendState(&desc,
-            blendStates[static_cast<int>(BlendState::UITransparency)].GetAddressOf());
+                                              blendStates[static_cast<int>(BlendState::UITransparency)].GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
 
@@ -308,7 +308,7 @@ RenderState::RenderState(ID3D11Device *device)
         desc.CullMode              = D3D11_CULL_NONE;
         desc.AntialiasedLineEnable = false;
         HRESULT hr                 = device->CreateRasterizerState(&desc,
-                            rasterizerStates[static_cast<int>(RasterizerState::SolidCullNone)].GetAddressOf());
+                                                                   rasterizerStates[static_cast<int>(RasterizerState::SolidCullNone)].GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
     // ベタ塗り＆裏面カリング
@@ -325,7 +325,7 @@ RenderState::RenderState(ID3D11Device *device)
         desc.CullMode              = D3D11_CULL_BACK;
         desc.AntialiasedLineEnable = false;
         HRESULT hr                 = device->CreateRasterizerState(&desc,
-                            rasterizerStates[static_cast<int>(RasterizerState::SolidCullBack)].GetAddressOf());
+                                                                   rasterizerStates[static_cast<int>(RasterizerState::SolidCullBack)].GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
     // ワイヤーフレーム＆カリングなし
@@ -342,7 +342,7 @@ RenderState::RenderState(ID3D11Device *device)
         desc.CullMode              = D3D11_CULL_NONE;
         desc.AntialiasedLineEnable = true;
         HRESULT hr                 = device->CreateRasterizerState(&desc,
-                            rasterizerStates[static_cast<int>(RasterizerState::WireCullNone)].GetAddressOf());
+                                                                   rasterizerStates[static_cast<int>(RasterizerState::WireCullNone)].GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
     // ワイヤーフレーム＆裏面カリング
@@ -359,7 +359,7 @@ RenderState::RenderState(ID3D11Device *device)
         desc.CullMode              = D3D11_CULL_BACK;
         desc.AntialiasedLineEnable = true;
         HRESULT hr                 = device->CreateRasterizerState(&desc,
-                            rasterizerStates[static_cast<int>(RasterizerState::WireCullBack)].GetAddressOf());
+                                                                   rasterizerStates[static_cast<int>(RasterizerState::WireCullBack)].GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
 
@@ -388,7 +388,7 @@ RenderState::RenderState(ID3D11Device *device)
         desc.AntialiasedLineEnable = false;
 
         HRESULT hr = device->CreateRasterizerState(&desc,
-            rasterizerStates[static_cast<int>(RasterizerState::ShadowCullBack)].GetAddressOf());
+                                                   rasterizerStates[static_cast<int>(RasterizerState::ShadowCullBack)].GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
 }

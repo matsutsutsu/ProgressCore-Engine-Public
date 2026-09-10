@@ -271,12 +271,12 @@ void ReflectionData::PrintInfo() const
     for (const auto &cb : constantBuffers)
     {
         CCL_LOG_INFO(LogCategory::Render, "  [%s] Slot: b%d, Size: %d bytes",
-            cb.name.c_str(), cb.bindPoint, cb.size);
+                     cb.name.c_str(), cb.bindPoint, cb.size);
 
         for (const auto &var : cb.variables)
         {
             CCL_LOG_INFO(LogCategory::Render, "    - %s (Offset: %d, Size: %d)",
-                var.name.c_str(), var.offset, var.size);
+                         var.name.c_str(), var.offset, var.size);
         }
     }
 

@@ -65,7 +65,7 @@ enum class RasterizerState
 // レンダーステート
 class RenderState
 {
-  public:
+public:
     RenderState(ID3D11Device *device);
     ~RenderState() = default;
 
@@ -93,7 +93,7 @@ class RenderState
         return rasterizerStates[static_cast<int>(state)].Get();
     }
 
-  private:
+private:
     Microsoft::WRL::ComPtr<ID3D11SamplerState>      samplerStates[static_cast<int>(SamplerState::EnumCount)];
     Microsoft::WRL::ComPtr<ID3D11DepthStencilState> depthStencilStates[static_cast<int>(DepthState::EnumCount)];
     Microsoft::WRL::ComPtr<ID3D11BlendState>        blendStates[static_cast<int>(BlendState::EnumCount)];

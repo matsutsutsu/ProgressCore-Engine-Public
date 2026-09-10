@@ -76,7 +76,7 @@ struct SamplerInfo
 // リフレクション結果を保持するクラス
 class ReflectionData
 {
-  public:
+public:
     ReflectionData() = default;
 
     // .csoファイルからリフレクション情報を取得
@@ -94,18 +94,9 @@ class ReflectionData
     void MergeFromBytecode(const void *bytecode, size_t bytecodeSize);
 
     // 情報取得
-    const std::vector<ConstantBufferInfo> &GetConstantBuffers() const
-    {
-        return constantBuffers;
-    }
-    const std::vector<TextureInfo> &GetTextures() const
-    {
-        return textures;
-    }
-    const std::vector<SamplerInfo> &GetSamplers() const
-    {
-        return samplers;
-    }
+    const std::vector<ConstantBufferInfo> &GetConstantBuffers() const { return constantBuffers; }
+    const std::vector<TextureInfo>        &GetTextures() const { return textures; }
+    const std::vector<SamplerInfo>        &GetSamplers() const { return samplers; }
 
     // 名前で検索
     const ConstantBufferInfo *FindConstantBuffer(const std::string &name) const;
@@ -136,13 +127,10 @@ class ReflectionData
     // デバッグ出力
     void PrintInfo() const;
 
-    const std::vector<UnorderedAccessViewInfo> &GetUAVs() const
-    {
-        return uavs;
-    }
-    const UnorderedAccessViewInfo *FindUAV(const std::string &name) const;
+    const std::vector<UnorderedAccessViewInfo> &GetUAVs() const { return uavs; }
+    const UnorderedAccessViewInfo              *FindUAV(const std::string &name) const;
 
-  private:
+private:
     void ExtractReflectionInfo(ID3D11ShaderReflection *reflection);
 
     std::vector<ConstantBufferInfo> constantBuffers;
@@ -155,7 +143,7 @@ class ReflectionData
 // 自動定数バッファ管理クラス
 class AutoConstantBuffer
 {
-  public:
+public:
     AutoConstantBuffer() = default;
 
     // 定数バッファを作成
@@ -202,18 +190,9 @@ class AutoConstantBuffer
     void BindCS(ID3D11DeviceContext *dc) const;
 
     // 情報取得
-    ID3D11Buffer *GetBuffer() const
-    {
-        return buffer.Get();
-    }
-    UINT GetBindPoint() const
-    {
-        return bufferInfo.bindPoint;
-    }
-    const ConstantBufferInfo &GetInfo() const
-    {
-        return bufferInfo;
-    }
+    ID3D11Buffer             *GetBuffer() const { return buffer.Get(); }
+    UINT                      GetBindPoint() const { return bufferInfo.bindPoint; }
+    const ConstantBufferInfo &GetInfo() const { return bufferInfo; }
 
     // 構造体などの生データを直接セットする
     void SetRawData(const void *data, size_t size);
@@ -229,7 +208,7 @@ class AutoConstantBuffer
         isDirty = true;
     }
 
-  private:
+private:
     Microsoft::WRL::ComPtr<ID3D11Buffer> buffer;
     ConstantBufferInfo                   bufferInfo;
     std::vector<BYTE>                    cpuBuffer;       // CPU側のバッファ

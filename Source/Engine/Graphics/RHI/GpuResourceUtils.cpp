@@ -16,7 +16,7 @@
 // ==========================================================
 class RootInclude : public ID3DInclude
 {
-  public:
+public:
     HRESULT __stdcall Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes) override
     {
         std::vector<std::string> searchPaths = {
@@ -44,7 +44,7 @@ class RootInclude : public ID3DInclude
 
             // CCL_LOG_ERRORマクロを使用
             CCL_LOG_ERROR(LogCategory::Render, "HLSL Include Failed!\nRequested File: %s\nCurrent Dir: %s\nChecked Paths:\n%s",
-                pFileName, currentDir, pathsInfo.c_str());
+                          pFileName, currentDir, pathsInfo.c_str());
 
             return E_FAIL;
         }
@@ -213,7 +213,7 @@ HRESULT GpuResourceUtils::LoadTexture(
 
     // シェーダーリソースビュー作成
     hr = DirectX::CreateShaderResourceView(device, scratch_image.GetImages(), scratch_image.GetImageCount(),
-        metadata, shaderResourceView);
+                                           metadata, shaderResourceView);
     _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 
     // デバッグ名設定
@@ -291,7 +291,7 @@ HRESULT GpuResourceUtils::LoadTexture(
 
     // シェーダーリソースビュー作成
     hr = DirectX::CreateShaderResourceView(device, scratch_image.GetImages(), scratch_image.GetImageCount(),
-        metadata, shaderResourceView);
+                                           metadata, shaderResourceView);
 
     // デバッグ名設定
     SetDebugName(*shaderResourceView, "Texture_SRV");
@@ -414,10 +414,10 @@ HRESULT GpuResourceUtils::CreateVertexBuffer(
 }
 
 // インデックスバッファ作成
-HRESULT GpuResourceUtils::CreateIndexBuffer(ID3D11Device *device,
-    const UINT                                           *data, // ここも合わせる
-    UINT                                                  size,
-    ID3D11Buffer                                        **buffer)
+HRESULT GpuResourceUtils::CreateIndexBuffer(ID3D11Device  *device,
+                                            const UINT    *data, // ここも合わせる
+                                            UINT           size,
+                                            ID3D11Buffer **buffer)
 {
     // 中身はそのまま
     D3D11_BUFFER_DESC desc{};
@@ -432,12 +432,12 @@ HRESULT GpuResourceUtils::CreateIndexBuffer(ID3D11Device *device,
     return device->CreateBuffer(&desc, &subData, buffer);
 }
 
-bool GpuResourceUtils::CompilePixelShader(ID3D11Device *device,
-    const std::wstring                                 &hlslPath,
-    const char                                         *entryPoint,
-    const char                                         *shaderModel,
-    ID3D11PixelShader                                 **pixelShader,
-    ID3DBlob                                          **outShaderBlob)
+bool GpuResourceUtils::CompilePixelShader(ID3D11Device       *device,
+                                          const std::wstring &hlslPath,
+                                          const char         *entryPoint,
+                                          const char         *shaderModel,
+                                          ID3D11PixelShader **pixelShader,
+                                          ID3DBlob          **outShaderBlob)
 {
     Microsoft::WRL::ComPtr<ID3DBlob> shaderBlob = nullptr;
     Microsoft::WRL::ComPtr<ID3DBlob> errorBlob  = nullptr;
@@ -448,14 +448,14 @@ bool GpuResourceUtils::CompilePixelShader(ID3D11Device *device,
     // 絶対パスに変換する必要はありません！相対パスのまま渡します。
     // そして D3D_COMPILE_STANDARD_FILE_INCLUDE の代わりに &rootInclude を渡します！
     HRESULT hr = D3DCompileFromFile(hlslPath.c_str(),
-        nullptr,
-        &rootInclude, // ココが最大のポイント！
-        entryPoint,
-        shaderModel,
-        D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG,
-        0,
-        &shaderBlob,
-        &errorBlob);
+                                    nullptr,
+                                    &rootInclude, // ココが最大のポイント！
+                                    entryPoint,
+                                    shaderModel,
+                                    D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG,
+                                    0,
+                                    &shaderBlob,
+                                    &errorBlob);
 
     // コンパイルエラー時の処理
     if (FAILED(hr))
@@ -490,18 +490,18 @@ bool GpuResourceUtils::CompilePixelShader(ID3D11Device *device,
 }
 
 // 頂点シェーダーの動的コンパイル (.hlsl)
-bool GpuResourceUtils::CompileVertexShader(ID3D11Device *device,
-    const std::wstring &hlslPath, const char *entryPoint, const char *shaderModel,
-    ID3D11VertexShader **vertexShader, ID3D11InputLayout **inputLayout,
-    const D3D11_INPUT_ELEMENT_DESC *inputElementDescs, UINT inputElementCount,
-    ID3DBlob **outShaderBlob)
+bool GpuResourceUtils::CompileVertexShader(ID3D11Device       *device,
+                                           const std::wstring &hlslPath, const char *entryPoint, const char *shaderModel,
+                                           ID3D11VertexShader **vertexShader, ID3D11InputLayout **inputLayout,
+                                           const D3D11_INPUT_ELEMENT_DESC *inputElementDescs, UINT inputElementCount,
+                                           ID3DBlob **outShaderBlob)
 {
     Microsoft::WRL::ComPtr<ID3DBlob> shaderBlob = nullptr;
     Microsoft::WRL::ComPtr<ID3DBlob> errorBlob  = nullptr;
     RootInclude                      rootInclude;
 
     HRESULT hr = D3DCompileFromFile(hlslPath.c_str(), nullptr, &rootInclude,
-        entryPoint, shaderModel, D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG, 0, &shaderBlob, &errorBlob);
+                                    entryPoint, shaderModel, D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG, 0, &shaderBlob, &errorBlob);
 
     if (FAILED(hr))
     {
@@ -516,7 +516,7 @@ bool GpuResourceUtils::CompileVertexShader(ID3D11Device *device,
     if (inputLayout && inputElementDescs && inputElementCount > 0)
     {
         hr = device->CreateInputLayout(inputElementDescs, inputElementCount,
-            shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), inputLayout);
+                                       shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), inputLayout);
         if (FAILED(hr)) return false;
     }
 
@@ -525,16 +525,16 @@ bool GpuResourceUtils::CompileVertexShader(ID3D11Device *device,
 }
 
 // ジオメトリシェーダーの動的コンパイル (.hlsl)
-bool GpuResourceUtils::CompileGeometryShader(ID3D11Device *device,
-    const std::wstring &hlslPath, const char *entryPoint, const char *shaderModel,
-    ID3D11GeometryShader **geometryShader, ID3DBlob **outShaderBlob)
+bool GpuResourceUtils::CompileGeometryShader(ID3D11Device       *device,
+                                             const std::wstring &hlslPath, const char *entryPoint, const char *shaderModel,
+                                             ID3D11GeometryShader **geometryShader, ID3DBlob **outShaderBlob)
 {
     Microsoft::WRL::ComPtr<ID3DBlob> shaderBlob = nullptr;
     Microsoft::WRL::ComPtr<ID3DBlob> errorBlob  = nullptr;
     RootInclude                      rootInclude;
 
     HRESULT hr = D3DCompileFromFile(hlslPath.c_str(), nullptr, &rootInclude,
-        entryPoint, shaderModel, D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG, 0, &shaderBlob, &errorBlob);
+                                    entryPoint, shaderModel, D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG, 0, &shaderBlob, &errorBlob);
 
     if (FAILED(hr))
     {
@@ -550,9 +550,9 @@ bool GpuResourceUtils::CompileGeometryShader(ID3D11Device *device,
 }
 
 // コンピュートシェーダーの動的コンパイル (.hlsl)
-bool GpuResourceUtils::CompileComputeShader(ID3D11Device *device,
-    const std::wstring &hlslPath, const char *entryPoint, const char *shaderModel,
-    ID3D11ComputeShader **computeShader, ID3DBlob **outShaderBlob)
+bool GpuResourceUtils::CompileComputeShader(ID3D11Device       *device,
+                                            const std::wstring &hlslPath, const char *entryPoint, const char *shaderModel,
+                                            ID3D11ComputeShader **computeShader, ID3DBlob **outShaderBlob)
 {
     Microsoft::WRL::ComPtr<ID3DBlob> shaderBlob = nullptr;
     Microsoft::WRL::ComPtr<ID3DBlob> errorBlob  = nullptr;
@@ -560,7 +560,7 @@ bool GpuResourceUtils::CompileComputeShader(ID3D11Device *device,
 
     // HLSLファイルのコンパイル
     HRESULT hr = D3DCompileFromFile(hlslPath.c_str(), nullptr, &rootInclude,
-        entryPoint, shaderModel, D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG, 0, &shaderBlob, &errorBlob);
+                                    entryPoint, shaderModel, D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG, 0, &shaderBlob, &errorBlob);
 
     // エラーハンドリング
     if (FAILED(hr))
@@ -569,7 +569,7 @@ bool GpuResourceUtils::CompileComputeShader(ID3D11Device *device,
         {
             // エラー内容をログに出力 (%ls は std::wstring 用のフォーマット指定子)
             CCL_LOG_ERROR(LogCategory::Render, "Compute Shader Compile Error [%ls]\n%s",
-                hlslPath.c_str(), (char *)errorBlob->GetBufferPointer());
+                          hlslPath.c_str(), (char *)errorBlob->GetBufferPointer());
         }
         else
         {

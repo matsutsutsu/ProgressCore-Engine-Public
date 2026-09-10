@@ -18,8 +18,7 @@
 using namespace CCL::ECS;
 using namespace DirectX;
 
-ModelRenderSystem::ModelRenderSystem()
-    : IfSystem("ModelRenderSystem")
+ModelRenderSystem::ModelRenderSystem() : IfSystem("ModelRenderSystem")
 {
     // 当たり判定専用ジオメトリ(NoRenderTag)は走査対象から除外する。
     //    描画ループ側に分岐を足さずに「透明な当たり判定」を実現する。

@@ -135,10 +135,10 @@ PrimitiveDrawList &PrimitiveRenderer::GetDrawList()
 // ====================================================================
 // 一括描画処理（インスタンシング ＆ PSO）
 // ====================================================================
-void PrimitiveRenderer::Render(ID3D11DeviceContext *dc,
-    const RenderServices                           &s,
-    const DirectX::XMFLOAT4X4                      &view,
-    const DirectX::XMFLOAT4X4                      &projection)
+void PrimitiveRenderer::Render(ID3D11DeviceContext       *dc,
+                               const RenderServices      &s,
+                               const DirectX::XMFLOAT4X4 &view,
+                               const DirectX::XMFLOAT4X4 &projection)
 {
     ZoneScopedN("PrimitiveRenderer::Render");
 

@@ -13,19 +13,19 @@ struct ToneMapConfigComponent;
 //   入力と出力が必ずしもフルスクリーン四角形とは限らないため。
 class ToneMapEffect
 {
-  public:
+public:
     ToneMapEffect()  = default;
     ~ToneMapEffect() = default;
 
     void Initialize(ID3D11Device *device);
 
     // HDR を受け取り、SDR に焼き付ける最終工程
-    void Process(ID3D11DeviceContext *dc,
-        ID3D11ShaderResourceView     *inputHDR,
-        ID3D11RenderTargetView       *outputSDR,
-        ToneMapConfigComponent       &config);
+    void Process(ID3D11DeviceContext      *dc,
+                 ID3D11ShaderResourceView *inputHDR,
+                 ID3D11RenderTargetView   *outputSDR,
+                 ToneMapConfigComponent   &config);
 
-  private:
+private:
     Microsoft::WRL::ComPtr<ID3D11VertexShader> m_vs;
     Microsoft::WRL::ComPtr<ID3D11PixelShader>  m_ps;
     Microsoft::WRL::ComPtr<ID3D11Buffer>       m_cbToneMap;

@@ -29,11 +29,11 @@ class Camera;
  */
 class Graphics
 {
-  private:
+private:
     Graphics()  = default;
     ~Graphics() = default;
 
-  public:
+public:
     static Graphics &Instance()
     {
         static Graphics instance;
@@ -59,20 +59,11 @@ class Graphics
     // ----------------------------------------------------------------
     //  D3D 操作（GraphicsDevice への薄いデリゲート）
     // ----------------------------------------------------------------
-    void Clear(float r, float g, float b, float a, bool useGameRTV)
-    {
-        m_gfxDevice.Clear(r, g, b, a, useGameRTV);
-    }
-    void SetRenderTargets(bool useGameRTV)
-    {
-        m_gfxDevice.SetRenderTargets(useGameRTV);
-    }
+    void Clear(float r, float g, float b, float a, bool useGameRTV) { m_gfxDevice.Clear(r, g, b, a, useGameRTV); }
+    void SetRenderTargets(bool useGameRTV) { m_gfxDevice.SetRenderTargets(useGameRTV); }
 
     // フレーム先頭で呼ぶ vsync待ちの集約点（Waitable スワップチェーン）。
-    void WaitForFrameLatency() const noexcept
-    {
-        m_gfxDevice.WaitForFrameLatency();
-    }
+    void WaitForFrameLatency() const noexcept { m_gfxDevice.WaitForFrameLatency(); }
 
     /**
      * @brief スワップチェーンを提示する。デバイスロスト検出時は false を返す。
@@ -83,96 +74,33 @@ class Graphics
     // ----------------------------------------------------------------
     //  アクセサ（GraphicsDevice デリゲート）
     // ----------------------------------------------------------------
-    HWND GetWindowHandle() noexcept
-    {
-        return m_gfxDevice.GetWindowHandle();
-    }
-    ID3D11Device *GetDevice() noexcept
-    {
-        return m_gfxDevice.GetDevice();
-    }
-    ID3D11DeviceContext *GetDeviceContext() noexcept
-    {
-        return m_gfxDevice.GetContext();
-    }
-    float GetScreenWidth() const noexcept
-    {
-        return m_gfxDevice.GetWidth();
-    }
-    float GetScreenHeight() const noexcept
-    {
-        return m_gfxDevice.GetHeight();
-    }
-    ID3D11DepthStencilView *GetDepthStencilView() noexcept
-    {
-        return m_gfxDevice.GetDepthStencilView();
-    }
-    ID3D11ShaderResourceView *GetDepthSRV() noexcept
-    {
-        return m_gfxDevice.GetDepthSRV();
-    }
-    ID3D11RenderTargetView *GetBackBufferRTV() noexcept
-    {
-        return m_gfxDevice.GetBackBufferRTV();
-    }
-    ID3D11Buffer *GetSceneConstantBuffer() noexcept
-    {
-        return m_gfxDevice.GetSceneConstantBuffer();
-    }
-    ID3D11RenderTargetView *GetGameRTV() noexcept
-    {
-        return m_gfxDevice.GetGameRTV();
-    }
-    ID3D11ShaderResourceView *GetGameSRV() noexcept
-    {
-        return m_gfxDevice.GetGameSRV();
-    }
+    HWND                      GetWindowHandle() noexcept { return m_gfxDevice.GetWindowHandle(); }
+    ID3D11Device             *GetDevice() noexcept { return m_gfxDevice.GetDevice(); }
+    ID3D11DeviceContext      *GetDeviceContext() noexcept { return m_gfxDevice.GetContext(); }
+    float                     GetScreenWidth() const noexcept { return m_gfxDevice.GetWidth(); }
+    float                     GetScreenHeight() const noexcept { return m_gfxDevice.GetHeight(); }
+    ID3D11DepthStencilView   *GetDepthStencilView() noexcept { return m_gfxDevice.GetDepthStencilView(); }
+    ID3D11ShaderResourceView *GetDepthSRV() noexcept { return m_gfxDevice.GetDepthSRV(); }
+    ID3D11RenderTargetView   *GetBackBufferRTV() noexcept { return m_gfxDevice.GetBackBufferRTV(); }
+    ID3D11Buffer             *GetSceneConstantBuffer() noexcept { return m_gfxDevice.GetSceneConstantBuffer(); }
+    ID3D11RenderTargetView   *GetGameRTV() noexcept { return m_gfxDevice.GetGameRTV(); }
+    ID3D11ShaderResourceView *GetGameSRV() noexcept { return m_gfxDevice.GetGameSRV(); }
 
     // Tracyコンテキストへのデリゲート（TracyD3D11Ctx は無効構成で void*）
-    TracyD3D11Ctx GetTracyContext() noexcept
-    {
-        return m_gfxDevice.GetTracyContext();
-    }
+    TracyD3D11Ctx GetTracyContext() noexcept { return m_gfxDevice.GetTracyContext(); }
 
     // ----------------------------------------------------------------
     //  アクセサ（描画サブシステム）
     // ----------------------------------------------------------------
-    RenderState *GetRenderState()
-    {
-        return m_renderState.get();
-    }
-    ModelConstantBuffers *GetModelConstantBuffers() const
-    {
-        return m_modelConstants.get();
-    }
-    PrimitiveRenderer *GetPrimitiveRenderer() const
-    {
-        return m_primitiveRenderer.get();
-    }
-    ShapeRenderer *GetShapeRenderer() const
-    {
-        return m_shapeRenderer.get();
-    }
-    ParticleRenderer *GetParticleRenderer() const
-    {
-        return m_particleRenderer.get();
-    }
-    ShadowMap *GetShadowMap() const
-    {
-        return m_shadowMap.get();
-    }
-    LightManager *GetLightManager() const
-    {
-        return m_lightManager.get();
-    }
-    PostProcessManager *GetPostProcessManager() const
-    {
-        return m_postProcess.get();
-    }
-    Camera *GetMainCamera() noexcept
-    {
-        return &m_mainCamera;
-    }
+    RenderState          *GetRenderState() { return m_renderState.get(); }
+    ModelConstantBuffers *GetModelConstantBuffers() const { return m_modelConstants.get(); }
+    PrimitiveRenderer    *GetPrimitiveRenderer() const { return m_primitiveRenderer.get(); }
+    ShapeRenderer        *GetShapeRenderer() const { return m_shapeRenderer.get(); }
+    ParticleRenderer     *GetParticleRenderer() const { return m_particleRenderer.get(); }
+    ShadowMap            *GetShadowMap() const { return m_shadowMap.get(); }
+    LightManager         *GetLightManager() const { return m_lightManager.get(); }
+    PostProcessManager   *GetPostProcessManager() const { return m_postProcess.get(); }
+    Camera               *GetMainCamera() noexcept { return &m_mainCamera; }
 
     // ----------------------------------------------------------------
     //  デバイスロスト対応
@@ -181,10 +109,7 @@ class Graphics
      * @brief デバイスロスト状態かどうかを返す。
      *        Present() が false を返した後にセットされる。
      */
-    bool IsDeviceLost() const noexcept
-    {
-        return m_deviceLost;
-    }
+    bool IsDeviceLost() const noexcept { return m_deviceLost; }
 
     /**
      * @brief デバイスロストからの復帰を試みる。
@@ -198,10 +123,7 @@ class Graphics
      * @brief パイプラインに渡された RenderServices への const 参照を返す。
      * @details EnvironmentSystem 等の pipeline 外システム向けアクセサ。
      */
-    const RenderServices &GetRenderServices() const noexcept
-    {
-        return m_pipeline.GetServices();
-    }
+    const RenderServices &GetRenderServices() const noexcept { return m_pipeline.GetServices(); }
 
     /**
      * @brief 現在の Graphics 状態から RenderFrameContext を構築するヘルパー。
@@ -209,20 +131,14 @@ class Graphics
      */
     RenderFrameContext MakeFrameContext(ID3D11RenderTargetView *overrideRTV = nullptr) noexcept;
 
-    void SetSceneNormalSRV(ID3D11ShaderResourceView *srv) noexcept
-    {
-        m_sceneNormalSRV = srv;
-    }
+    void SetSceneNormalSRV(ID3D11ShaderResourceView *srv) noexcept { m_sceneNormalSRV = srv; }
 
     // 現在フレームのスカイボックス背景 SRV を預ける（EnvironmentSystem が毎フレーム設定）。
     // MakeFrameContext がこれを RenderFrameContext.skyboxSRV へ渡し、SkyboxPass が使う。
     // 非所有ポインタ（実体は ResourceManager 側が保持）。
-    void SetSkyboxSRV(ID3D11ShaderResourceView *srv) noexcept
-    {
-        m_pendingSkyboxSRV = srv;
-    }
+    void SetSkyboxSRV(ID3D11ShaderResourceView *srv) noexcept { m_pendingSkyboxSRV = srv; }
 
-  private:
+private:
     // ---- カメラ（Graphics が唯一の所有者） ----
     // ユニークポインタにしない理由は、ECS システムが毎フレームこの Camera の内容を書き換えるため。参照の安定性を保ちたい。
     // ユニークにするとNullの可能性が出てきて面倒

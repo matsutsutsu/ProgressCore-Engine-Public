@@ -12,16 +12,11 @@
 
 class ShapeRenderer
 {
-  public:
+public:
     ShapeRenderer(ID3D11Device *device);
-    ~ShapeRenderer()
-    {
-    }
+    ~ShapeRenderer() {}
 
-    void SetCullingEnabled(bool enable)
-    {
-        m_cullingEnabled = enable;
-    }
+    void SetCullingEnabled(bool enable) { m_cullingEnabled = enable; }
 
     void DrawBox(const DirectX::XMFLOAT3 &position, const DirectX::XMFLOAT3 &angle, const DirectX::XMFLOAT3 &size, const DirectX::XMFLOAT4 &color);
     void DrawSphere(const DirectX::XMFLOAT3 &position, float radius, const DirectX::XMFLOAT4 &color);
@@ -39,7 +34,7 @@ class ShapeRenderer
 
     void Render(ID3D11DeviceContext *dc, const DirectX::XMFLOAT4X4 &view, const DirectX::XMFLOAT4X4 &projection);
 
-  private:
+private:
     DirectX::BoundingFrustum m_frustum;
     bool                     m_cullingEnabled = true;
 
@@ -68,7 +63,7 @@ class ShapeRenderer
     //   形の単位でまとめて判定し、内訳の線はこちらへ流す。
     void DrawLineNoCull(const DirectX::XMFLOAT3 &p1, const DirectX::XMFLOAT3 &p2, const DirectX::XMFLOAT4 &color);
 
-  private:
+private:
     Mesh boxMesh;
     Mesh sphereMesh;
     Mesh halfSphereMesh;

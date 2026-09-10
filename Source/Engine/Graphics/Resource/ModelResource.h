@@ -11,13 +11,9 @@
 
 class ModelResource
 {
-  public:
-    ModelResource()
-    {
-    }
-    virtual ~ModelResource()
-    {
-    }
+public:
+    ModelResource() {}
+    virtual ~ModelResource() {}
 
     static const std::vector<D3D11_INPUT_ELEMENT_DESC> InputElementDescs;
 
@@ -179,44 +175,17 @@ class ModelResource
     };
 
     // 各種データ取得
-    const std::vector<Mesh> &GetMeshes() const
-    {
-        return meshes;
-    }
-    const std::vector<Node> &GetNodes() const
-    {
-        return nodes;
-    }
-    const std::vector<Animation> &GetAnimations() const
-    {
-        return animations;
-    }
+    const std::vector<Mesh>      &GetMeshes() const { return meshes; }
+    const std::vector<Node>      &GetNodes() const { return nodes; }
+    const std::vector<Animation> &GetAnimations() const { return animations; }
     // 書き込み可能 (エディタ用)
-    std::vector<Animation> &GetAnimationsMutable()
-    {
-        return animations;
-    }
-    const std::vector<Material> &GetMaterials() const
-    {
-        return materials;
-    }
+    std::vector<Animation>      &GetAnimationsMutable() { return animations; }
+    const std::vector<Material> &GetMaterials() const { return materials; }
 
-    void SetMeshes(const std::vector<Mesh> &m)
-    {
-        meshes = m;
-    }
-    void SetNodes(const std::vector<Node> &n)
-    {
-        nodes = n;
-    }
-    void SetMaterials(const std::vector<Material> &m)
-    {
-        materials = m;
-    }
-    void SetAnimations(const std::vector<Animation> &a)
-    {
-        animations = a;
-    }
+    void SetMeshes(const std::vector<Mesh> &m) { meshes = m; }
+    void SetNodes(const std::vector<Node> &n) { nodes = n; }
+    void SetMaterials(const std::vector<Material> &m) { materials = m; }
+    void SetAnimations(const std::vector<Animation> &a) { animations = a; }
 
     // 読み込み
     void Load(ID3D11Device *device, const char *filename);
@@ -230,12 +199,9 @@ class ModelResource
     void ComputeModelLocalAABB();
 
     // モデル全体のバウンディング取得
-    const DirectX::BoundingBox &GetBoundingBox() const
-    {
-        return m_boundingBox;
-    }
+    const DirectX::BoundingBox &GetBoundingBox() const { return m_boundingBox; }
 
-  protected:
+protected:
     // モデルセットアップ
     void BuildModel(ID3D11Device *device, const char *dirname);
 
@@ -245,7 +211,7 @@ class ModelResource
     // デシリアライズ
     void Deserialize(const char *filename);
 
-  protected:
+protected:
     std::vector<Node>      nodes;
     std::vector<Material>  materials;
     std::vector<Mesh>      meshes;

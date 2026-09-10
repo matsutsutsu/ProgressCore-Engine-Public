@@ -106,18 +106,18 @@ template <class Archive>
 void ModelResource::Material::serialize(Archive &ar, int version)
 {
     ar(CEREAL_NVP(name),
-        CEREAL_NVP(baseTextureFileName),
-        CEREAL_NVP(normalTextureFileName),
-        CEREAL_NVP(emissiveTextureFileName),
-        CEREAL_NVP(occlusionTextureFileName),
-        CEREAL_NVP(metalnessRoughnessTextureFileName),
-        CEREAL_NVP(baseColor),
-        CEREAL_NVP(emissiveColor),
-        CEREAL_NVP(metalness),
-        CEREAL_NVP(roughness),
-        CEREAL_NVP(occlusionStrength),
-        CEREAL_NVP(alphaCutoff),
-        CEREAL_NVP(alphaMode));
+       CEREAL_NVP(baseTextureFileName),
+       CEREAL_NVP(normalTextureFileName),
+       CEREAL_NVP(emissiveTextureFileName),
+       CEREAL_NVP(occlusionTextureFileName),
+       CEREAL_NVP(metalnessRoughnessTextureFileName),
+       CEREAL_NVP(baseColor),
+       CEREAL_NVP(emissiveColor),
+       CEREAL_NVP(metalness),
+       CEREAL_NVP(roughness),
+       CEREAL_NVP(occlusionStrength),
+       CEREAL_NVP(alphaCutoff),
+       CEREAL_NVP(alphaMode));
 }
 
 template <class Archive>
@@ -450,12 +450,12 @@ void ModelResource::ComputeModelLocalAABB()
     if (hasMesh)
     {
         m_boundingBox.Center = XMFLOAT3((minP.x + maxP.x) * 0.5f,
-            (minP.y + maxP.y) * 0.5f,
-            (minP.z + maxP.z) * 0.5f);
+                                        (minP.y + maxP.y) * 0.5f,
+                                        (minP.z + maxP.z) * 0.5f);
 
         m_boundingBox.Extents = XMFLOAT3((maxP.x - minP.x) * 0.5f,
-            (maxP.y - minP.y) * 0.5f,
-            (maxP.z - minP.z) * 0.5f);
+                                         (maxP.y - minP.y) * 0.5f,
+                                         (maxP.z - minP.z) * 0.5f);
     }
     else
     {

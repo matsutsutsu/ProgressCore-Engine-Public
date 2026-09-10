@@ -38,13 +38,11 @@ struct PrimitiveDrawList
 
 class PrimitiveRenderer
 {
-  public:
+public:
     PrimitiveRenderer(ID3D11Device *device);
-    ~PrimitiveRenderer()
-    {
-    }
+    ~PrimitiveRenderer() {}
 
-  public:
+public:
     /**
 	 * @brief 積まれた描画コマンドを一括インスタンシング描画する。
 	 * @param dc   デバイスコンテキスト。
@@ -53,16 +51,13 @@ class PrimitiveRenderer
 	 * @param view 視点行列。視錐台カリング更新にも使用する。
 	 * @param projection 投影行列。視錐台構築に使用する。
 	 */
-    void Render(ID3D11DeviceContext *dc,
-        const RenderServices        &s,
-        const DirectX::XMFLOAT4X4   &view,
-        const DirectX::XMFLOAT4X4   &projection);
+    void Render(ID3D11DeviceContext       *dc,
+                const RenderServices      &s,
+                const DirectX::XMFLOAT4X4 &view,
+                const DirectX::XMFLOAT4X4 &projection);
 
     // カリングの有効/無効切り替え（デバッグで全部見たい時などに使う）
-    void SetCullingEnabled(bool enable)
-    {
-        m_cullingEnabled = enable;
-    }
+    void SetCullingEnabled(bool enable) { m_cullingEnabled = enable; }
 
     // ====================================================================
     // 描画登録関数の引数を変更（サイズ・半径は ECS 側で行列に焼き込む）
@@ -82,7 +77,7 @@ class PrimitiveRenderer
     void DrawCone(const DirectX::XMFLOAT4X4 &transform, const DirectX::XMFLOAT4 &color);
     void DrawWireframeCone(const DirectX::XMFLOAT4X4 &transform, const DirectX::XMFLOAT4 &color);
 
-  private:
+private:
     // カリング判定用ヘルパー
     bool IsVisible(const DirectX::BoundingSphere &sphere);
     bool IsVisible(const DirectX::BoundingOrientedBox &box);

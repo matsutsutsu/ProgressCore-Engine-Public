@@ -85,7 +85,7 @@ void Shader::UnbindResources(ID3D11DeviceContext *dc)
 
 // マテリアルのプロパティを定数バッファに転送し、テクスチャをバインドする
 void Shader::UpdateMaterialProperties(ID3D11DeviceContext *dc, const MaterialData &mat,
-    const MaterialData *fallbackMat)
+                                      const MaterialData *fallbackMat)
 {
     // 定数バッファにマテリアルのスカラー値とカラー値を流し込む
     for (auto &cbPair : m_constantBuffers)

@@ -90,7 +90,7 @@ Sprite::Sprite(ID3D11Device *device, const char *filename)
         // ダミーテクスチャ生成
         D3D11_TEXTURE2D_DESC desc;
         hr = GpuResourceUtils::CreateDummyTexture(device, 0xFFFFFFFF, shaderResourceView.GetAddressOf(),
-            &desc);
+                                                  &desc);
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 
         textureWidth  = static_cast<float>(desc.Width);
@@ -112,13 +112,13 @@ Sprite::Sprite(ID3D11Device *device, Microsoft::WRL::ComPtr<ID3D11ShaderResource
 
 // 描画実行
 void Sprite::Render(ID3D11DeviceContext *dc,
-    float dx, float dy,                        // 左上位置
-    float dz,                                  // 奥行
-    float dw, float dh,                        // 幅、高さ
-    float sx, float sy,                        // 画像切り抜き位置
-    float sw, float sh,                        // 画像切り抜きサイズ
-    float angle,                               // 角度
-    const DirectX::XMFLOAT4 (&cornerColors)[4] // 左上/右上/左下/右下 の色
+                    float dx, float dy,                        // 左上位置
+                    float dz,                                  // 奥行
+                    float dw, float dh,                        // 幅、高さ
+                    float sx, float sy,                        // 画像切り抜き位置
+                    float sw, float sh,                        // 画像切り抜きサイズ
+                    float angle,                               // 角度
+                    const DirectX::XMFLOAT4 (&cornerColors)[4] // 左上/右上/左下/右下 の色
 ) const
 {
     // 頂点座標
@@ -220,13 +220,13 @@ void Sprite::Render(ID3D11DeviceContext *dc,
 
 // 描画実行（単色。4隅に同じ色を渡して本体へ委譲する）
 void Sprite::Render(ID3D11DeviceContext *dc,
-    float dx, float dy,
-    float dz,
-    float dw, float dh,
-    float sx, float sy,
-    float sw, float sh,
-    float angle,
-    float r, float g, float b, float a) const
+                    float dx, float dy,
+                    float dz,
+                    float dw, float dh,
+                    float sx, float sy,
+                    float sw, float sh,
+                    float angle,
+                    float r, float g, float b, float a) const
 {
     const DirectX::XMFLOAT4 c          = {r, g, b, a};
     const DirectX::XMFLOAT4 corners[4] = {c, c, c, c};
@@ -235,11 +235,11 @@ void Sprite::Render(ID3D11DeviceContext *dc,
 
 // 描画実行（テクスチャ切り抜き指定なし）
 void Sprite::Render(ID3D11DeviceContext *dc,
-    float dx, float dy,                // 左上位置
-    float dz,                          // 奥行
-    float dw, float dh,                // 幅、高さ
-    float angle,                       // 角度
-    float r, float g, float b, float a // 色
+                    float dx, float dy,                // 左上位置
+                    float dz,                          // 奥行
+                    float dw, float dh,                // 幅、高さ
+                    float angle,                       // 角度
+                    float r, float g, float b, float a // 色
 ) const
 {
     Render(dc, dx, dy, dz, dw, dh, 0, 0, textureWidth, textureHeight, angle, r, g, b, a);

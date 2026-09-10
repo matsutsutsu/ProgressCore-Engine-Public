@@ -7,7 +7,7 @@
 // GPUリソースユーティリティ
 class GpuResourceUtils
 {
-  public:
+public:
     // 頂点シェーダー読み込み
     static HRESULT LoadVertexShader(
         ID3D11Device                  *device,
@@ -68,48 +68,48 @@ class GpuResourceUtils
         ID3D11Device *device, const void *data, UINT size, ID3D11Buffer **buffer);
 
     // インデックスバッファ作成
-    static HRESULT CreateIndexBuffer(ID3D11Device *device,
-        const UINT                                *data, // uint32_t を UINT に変更
-        UINT                                       size,
-        ID3D11Buffer                             **buffer);
+    static HRESULT CreateIndexBuffer(ID3D11Device  *device,
+                                     const UINT    *data, // uint32_t を UINT に変更
+                                     UINT           size,
+                                     ID3D11Buffer **buffer);
 
     // HLSLから直接ピクセルシェーダーをコンパイルする関数
-    static bool CompilePixelShader(ID3D11Device *device,
-        const std::wstring                      &hlslPath,
-        const char                              *entryPoint,
-        const char                              *shaderModel,
-        ID3D11PixelShader                      **pixelShader,
-        ID3DBlob                               **outShaderBlob = nullptr);
+    static bool CompilePixelShader(ID3D11Device       *device,
+                                   const std::wstring &hlslPath,
+                                   const char         *entryPoint,
+                                   const char         *shaderModel,
+                                   ID3D11PixelShader **pixelShader,
+                                   ID3DBlob          **outShaderBlob = nullptr);
 
     // --- Compile 系 (HLSLからの動的コンパイル) ---
-    static bool CompileVertexShader(ID3D11Device *device,
-        const std::wstring                       &hlslPath,
-        const char                               *entryPoint,
-        const char                               *shaderModel,
-        ID3D11VertexShader                      **vertexShader,
-        ID3D11InputLayout                       **inputLayout       = nullptr,
-        const D3D11_INPUT_ELEMENT_DESC           *inputElementDescs = nullptr,
-        UINT                                      inputElementCount = 0,
-        ID3DBlob                                **outShaderBlob     = nullptr);
+    static bool CompileVertexShader(ID3D11Device                   *device,
+                                    const std::wstring             &hlslPath,
+                                    const char                     *entryPoint,
+                                    const char                     *shaderModel,
+                                    ID3D11VertexShader            **vertexShader,
+                                    ID3D11InputLayout             **inputLayout       = nullptr,
+                                    const D3D11_INPUT_ELEMENT_DESC *inputElementDescs = nullptr,
+                                    UINT                            inputElementCount = 0,
+                                    ID3DBlob                      **outShaderBlob     = nullptr);
 
-    static bool CompileGeometryShader(ID3D11Device *device,
-        const std::wstring                         &hlslPath,
-        const char                                 *entryPoint,
-        const char                                 *shaderModel,
-        ID3D11GeometryShader                      **geometryShader,
-        ID3DBlob                                  **outShaderBlob = nullptr);
+    static bool CompileGeometryShader(ID3D11Device          *device,
+                                      const std::wstring    &hlslPath,
+                                      const char            *entryPoint,
+                                      const char            *shaderModel,
+                                      ID3D11GeometryShader **geometryShader,
+                                      ID3DBlob             **outShaderBlob = nullptr);
 
     // コンピュートシェーダーの動的コンパイル (.hlsl)
-    static bool CompileComputeShader(ID3D11Device *device,
-        const std::wstring                        &hlslPath,
-        const char                                *entryPoint,
-        const char                                *shaderModel,
-        ID3D11ComputeShader                      **computeShader,
-        ID3DBlob                                 **outShaderBlob = nullptr);
+    static bool CompileComputeShader(ID3D11Device         *device,
+                                     const std::wstring   &hlslPath,
+                                     const char           *entryPoint,
+                                     const char           *shaderModel,
+                                     ID3D11ComputeShader **computeShader,
+                                     ID3DBlob            **outShaderBlob = nullptr);
 
     // コンピュートシェーダー読み込み (.cso) : 事前コンパイル済みバイナリからそのまま生成する。
     // VS/PS/GS の Load* と同じ方式で、HLSLソース非同梱の製品(Shipping)でも動く。
-    static HRESULT LoadComputeShader(ID3D11Device *device,
-        const char                                *filename,
-        ID3D11ComputeShader                      **computeShader);
+    static HRESULT LoadComputeShader(ID3D11Device         *device,
+                                     const char           *filename,
+                                     ID3D11ComputeShader **computeShader);
 };
