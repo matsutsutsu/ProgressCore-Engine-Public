@@ -127,7 +127,6 @@ class Model
     void ComputeNodePose(const ModelResource::Animation &animation, int nodeIndex, float time, NodePose &nodePose) const;
 
   public:
-
     // ノードポーズ設定
     void SetNodePoses(const std::vector<NodePose> &nodePoses);
 

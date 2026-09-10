@@ -630,7 +630,7 @@
     <ClInclude Include="Source\Engine\Graphics\Renderer\InstanceBuffer.h">
       <Filter>Source\Engine\Graphics\Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Renderer\ModelRenderer.h">
+    <ClInclude Include="Source\Engine\Graphics\Renderer\ModelConstantBuffers.h">
       <Filter>Source\Engine\Graphics\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Renderer\PrimitiveRenderer.h">
@@ -1991,7 +1991,7 @@
     <ClCompile Include="Source\Engine\Graphics\Renderer\ImGuiRenderer.cpp">
       <Filter>Source\Engine\Graphics\Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Graphics\Renderer\ModelRenderer.cpp">
+    <ClCompile Include="Source\Engine\Graphics\Renderer\ModelConstantBuffers.cpp">
       <Filter>Source\Engine\Graphics\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Renderer\PrimitiveRenderer.cpp">

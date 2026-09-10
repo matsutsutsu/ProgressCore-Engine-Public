@@ -4,41 +4,11 @@
 #include <wrl/client.h>
 #include <Windows.h> // MultiByteToWideChar
 
-#include "Engine/Graphics/RHI/Graphics.h"
 #include "tracy/TracyD3D11.hpp"
-
-// パス登録用
-#include "Engine/Graphics/Pipeline/SetupPass.h"
-#include "Engine/Graphics/Pipeline/ShadowPass.h"
-#include "Engine/Graphics/Pipeline/OpaquePass.h"
-#include "Engine/Graphics/Pipeline/NormalPrepass.h"
-#include "Engine/Graphics/Pipeline/SkyboxPass.h"
-#include "Engine/Graphics/Pipeline/SceneColorGrabPass.h"
-#include "Engine/Graphics/Pipeline/TransparentPass.h"
-#include "Engine/Graphics/Pipeline/ParticlePass.h"
-#include "Engine/Graphics/Pipeline/TrailPass.h"
-#include "Engine/Graphics/Pipeline/PrimitivePass.h"
-#include "Engine/Graphics/Pipeline/PostProcessPass.h"
 
 void RenderPipeline::Initialize(const RenderServices& services)
 {
     m_services = services;
-}
-
-void RenderPipeline::BuildDefaultPipeline()
-{
-    // 描画パスを実行順に登録
-    AddPass<SetupPass>();       // 1. HDR バッファのクリアとバインド
-    AddPass<ShadowPass>();      // 2. シャドウマップ生成
-    AddPass<NormalPrepass>();   // 3. Z(深度)+法線プリパス：不透明の深度を先に確定させる
-    AddPass<OpaquePass>();      // 4. 不透明ジオメトリ（深度確定済み → early-Z で隠れピクセルの PBR を省略）
-    AddPass<SkyboxPass>();      // 5. スカイボックス
-    AddPass<SceneColorGrabPass>(); // 4.5 屈折用シーンカラーグラブ
-    AddPass<TransparentPass>(); // 5. 半透明
-    AddPass<ParticlePass>();    // 6. パーティクル
-    AddPass<TrailPass>();       // 6.5 武器トレイル(歪み+加算)。Bloom に拾わせるため PP の前
-    AddPass<PrimitivePass>();   // 7. デバッグプリミティブ
-    AddPass<PostProcessPass>(); // 8. ポストプロセス・最終出力
 }
 
 void RenderPipeline::Shutdown()
@@ -84,7 +54,7 @@ void RenderPipeline::Execute(const RenderFrameContext& ctx)
         // マクロを使わず、キャッシュした固有タグでGPU計測を実行する
         // =========================================================
 #if defined(TRACY_ENABLE)
-        if (auto tracyCtx = Graphics::Instance().GetTracyContext()) {
+        if (auto tracyCtx = m_services.tracyContext) {
 
             // TracyD3D11Zone マクロの内部実装を直接展開して、
             // 作成済みの pass->m_gpuSourceLocation を渡す。

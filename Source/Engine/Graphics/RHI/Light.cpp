@@ -7,25 +7,23 @@
 #endif
 
 // 初期化：定数バッファの作成
-void LightManager::Initialize(ID3D11Device* device)
+void LightManager::Initialize(ID3D11Device *device)
 {
-	// 定数バッファ作成
+    // 定数バッファ作成
     HRESULT hr = GpuResourceUtils::CreateDynamicConstantBuffer(
-		device,
-		sizeof(LightConstantBuffer),
-		constantBuffer.GetAddressOf());
+        device,
+        sizeof(LightConstantBuffer),
+        constantBuffer.GetAddressOf());
 
-    if (FAILED(hr)) {
+    if (FAILED(hr))
+    {
         // ここでエラーが出ていないか！？
         OutputDebugStringA("FAILED TO CREATE LIGHT CONSTANT BUFFER\n");
     }
 }
 
-
-
-
 // CPU上のデータをGPUの定数バッファに転送し、パイプラインにバインドする
-void LightManager::Bind(ID3D11DeviceContext* dc, int slot)
+void LightManager::Bind(ID3D11DeviceContext *dc, int slot)
 {
     if (!constantBuffer || slot < 0) return;
 
@@ -44,25 +42,25 @@ void LightManager::Bind(ID3D11DeviceContext* dc, int slot)
 
     // 2. GPUメモリへの転送
     // D3D11_USAGE_DYNAMIC で作成されていることを想定し Map/Unmap を使用
-	// UpdateResourceと違って高速に動作する
+    // UpdateResourceと違って高速に動作する
     D3D11_MAPPED_SUBRESOURCE mappedResource;
-    HRESULT hr = dc->Map(constantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+    HRESULT                  hr = dc->Map(constantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
     if (SUCCEEDED(hr))
     {
         memcpy(mappedResource.pData, &cbData, sizeof(LightConstantBuffer));
         dc->Unmap(constantBuffer.Get(), 0);
     }
-    else 
+    else
     {
-          // Mapに失敗しているなら、バッファの作成フラグ（USAGE）が間違っている可能性がある
-          OutputDebugStringA("MAP FAILED\n");
+        // Mapに失敗しているなら、バッファの作成フラグ（USAGE）が間違っている可能性がある
+        OutputDebugStringA("MAP FAILED\n");
     }
 
     // // Map/Unmapを捨てて、最も確実な転送方法を試す  定数バッファ作成をDEFAULTにした場合使う
     //dc->UpdateSubresource(constantBuffer.Get(), 0, nullptr, &cbData, 0, 0);
 
     // 3. PSSetConstantBuffers の引数は (slot, 数, バッファの配列)
-    ID3D11Buffer* buffers[] = { constantBuffer.Get() };
+    ID3D11Buffer *buffers[] = {constantBuffer.Get()};
     // CPU側でこのデータをGPUのslot番号「〇番」に置いてくれと命令するだけ
     // Hlsliファイルを知る必要はない
     dc->PSSetConstantBuffers((UINT)slot, 1, buffers);
@@ -86,8 +84,6 @@ void LightManager::DrawGUI()
         }
 
         ImGui::Separator();
-
-
 
         ImGui::Separator();
 
@@ -117,7 +113,8 @@ void LightManager::DrawGUI()
 
                 // active フラグの操作
                 bool isActive = pointLights[i].active > 0.5f;
-                if (ImGui::Checkbox(u8"##Active", &isActive)) {
+                if (ImGui::Checkbox(u8"##Active", &isActive))
+                {
                     pointLights[i].active = isActive ? 1.0f : 0.0f;
                 }
                 ImGui::SameLine();
@@ -165,7 +162,8 @@ void LightManager::DrawGUI()
                 ImGui::PushID(static_cast<int>(i + 100));
 
                 bool isActive = spotLights[i].active > 0.5f;
-                if (ImGui::Checkbox(u8"##Active", &isActive)) {
+                if (ImGui::Checkbox(u8"##Active", &isActive))
+                {
                     spotLights[i].active = isActive ? 1.0f : 0.0f;
                 }
                 ImGui::SameLine();

@@ -1,8 +1,8 @@
-#include "ModelRenderer.h"
+#include "ModelConstantBuffers.h"
 #include "Engine/Core/Math/Misc.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 
-ModelRenderer::ModelRenderer(ID3D11Device* device)
+ModelConstantBuffers::ModelConstantBuffers(ID3D11Device* device)
 {
     D3D11_BUFFER_DESC desc{};
     desc.ByteWidth = sizeof(CbSkeleton);
@@ -15,7 +15,7 @@ ModelRenderer::ModelRenderer(ID3D11Device* device)
     _ASSERT_EXPR(SUCCEEDED(hr), L"CbSkeleton バッファ生成失敗");
 }
 
-void ModelRenderer::BindAllGlobalConstantBuffers(ID3D11DeviceContext* dc)
+void ModelConstantBuffers::BindAllGlobalConstantBuffers(ID3D11DeviceContext* dc)
 {
     // CbScene (b8)
     if (m_sceneCB) {
@@ -29,7 +29,7 @@ void ModelRenderer::BindAllGlobalConstantBuffers(ID3D11DeviceContext* dc)
     }
 }
 
-void ModelRenderer::UpdateSkeletonConstants(ID3D11DeviceContext* dc,
+void ModelConstantBuffers::UpdateSkeletonConstants(ID3D11DeviceContext* dc,
     const Model::Mesh& mesh)
 {
     if (!m_cbSkeletonBuffer) return;

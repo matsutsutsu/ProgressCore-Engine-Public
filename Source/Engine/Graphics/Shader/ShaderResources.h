@@ -8,7 +8,7 @@
 //   Per-frame   毎フレーム1回   Graphics / EnvironmentSystem がバインド
 //   Per-pass    パスごと        各 IRenderPass がバインド（ポストプロセス等）
 //   Per-material 材質ごと        Shader::Update がバインド
-//   Per-object  ドローごと       ModelRenderer がバインド
+//   Per-object  ドローごと       ModelConstantBuffers がバインド
 //
 // 同じスロット番号を複数の名前が共有している箇所がある（例: b0 が
 // CbMaterial と CbBloom）。これは意図的で、2つの用途は時間的に排他
@@ -52,7 +52,7 @@
 #define SLOT_CB_SHADOW          10  // カスケード行列, バイアス
 #define SLOT_CB_FOG             11  // 高さフォグ, ノイズ, リム
 
-// --- Per-object (ModelRenderer がバインド) ---
+// --- Per-object (ModelConstantBuffers がバインド) ---
 #define SLOT_CB_SKELETON        12  // boneTransforms[256]
 
 // --- Per-emitter (GPUParticleUpdateSystem / ParticleRenderer がバインド) ---

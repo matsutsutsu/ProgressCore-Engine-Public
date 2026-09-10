@@ -1,7 +1,7 @@
 #include "EnvironmentSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
-#include "Engine/Graphics/Renderer/ModelRenderer.h"
+#include "Engine/Graphics/Renderer/ModelConstantBuffers.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 #include "Engine/Graphics/Shader/Shared/ShaderShared.h"
@@ -71,8 +71,8 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext* dc, const Rende
     // =================================================================
 
     // 1. CbScene (b8) / CbSkeleton (b12) をパイプラインにバインドする
-    if (m_world->HasResource<ModelRenderer*>()) {
-        if (auto* renderer = m_world->GetResource<ModelRenderer*>()) {
+    if (m_world->HasResource<ModelConstantBuffers*>()) {
+        if (auto* renderer = m_world->GetResource<ModelConstantBuffers*>()) {
             renderer->BindAllGlobalConstantBuffers(dc);
         }
     }

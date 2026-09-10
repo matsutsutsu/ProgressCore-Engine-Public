@@ -2,6 +2,9 @@
 #include <d3d11.h>
 #include <cstdint>
 
+// TracyD3D11Ctx（TRACY_ENABLE 無効構成では void* になる移植用エイリアス）
+#include "tracy/TracyD3D11.hpp"
+
 // ============================================================================
 //  前方宣言
 // ============================================================================
@@ -11,7 +14,7 @@ class RenderState;
 class Camera;
 class LightManager;
 class ShadowMap;
-class ModelRenderer;
+class ModelConstantBuffers;
 class ParticleRenderer;
 class PrimitiveRenderer;
 class ShapeRenderer;
@@ -39,8 +42,13 @@ struct RenderServices
     ShaderRegistry* shaders = nullptr;
     const RenderState* renderState = nullptr;
 
+    // GPU 計測用の Tracy コンテキスト（GraphicsDevice が所有）。
+    // これを Services に載せることで、RenderPipeline が Graphics シングルトンを
+    // 直接叩かずに済む＝コア層が上位のコーディネータを知らない状態を保てる。
+    TracyD3D11Ctx tracyContext = nullptr;
+
     // ---- 描画サブシステム（常駐レンダラ） ----
-    ModelRenderer* modelRenderer = nullptr;
+    ModelConstantBuffers* modelConstants = nullptr;
     ParticleRenderer* particleRenderer = nullptr;
     PrimitiveRenderer* primitiveRenderer = nullptr;
     ShapeRenderer* shapeRenderer = nullptr;

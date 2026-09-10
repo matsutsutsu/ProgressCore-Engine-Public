@@ -12,15 +12,15 @@
 #ifndef SHADER_SHARED_H
 #define SHADER_SHARED_H
 
-#include "Engine/Graphics/Shader/ShaderResources.h"  // SLOT_*, REG_CB
+#include "Engine/Graphics/Shader/ShaderResources.h" // SLOT_*, REG_CB
 
 // ==================================================================
 // 配列サイズ。C++ と HLSL で一致していないと定数バッファがずれるため、両者でこの定義を共有する。
 // ==================================================================
 #define MAX_POINT_LIGHTS 8
-#define MAX_SPOT_LIGHTS  8
-#define MAX_BONES        256
-#define SHADOW_CASCADE_COUNT 3   // カスケードシャドウの層数
+#define MAX_SPOT_LIGHTS 8
+#define MAX_BONES 256
+#define SHADOW_CASCADE_COUNT 3 // カスケードシャドウの層数
 
 // ==================================================================
 // 型エイリアスと修飾子（C++ / HLSL の差を吸収する）
@@ -33,21 +33,22 @@
 #include <cstdint>
 
 // C++の場合はfloat2などないのでusingで定義する
-namespace GpuData {
+namespace GpuData
+{
 
-    using float2 = DirectX::XMFLOAT2;
-    using float3 = DirectX::XMFLOAT3;
-    using float4 = DirectX::XMFLOAT4;
-    using float4x4 = DirectX::XMFLOAT4X4;   // 行優先ストレージ = HLSL の row_major と一致
-    using uint = uint32_t;
-	using uint2 = DirectX::XMUINT2;
+using float2   = DirectX::XMFLOAT2;
+using float3   = DirectX::XMFLOAT3;
+using float4   = DirectX::XMFLOAT4;
+using float4x4 = DirectX::XMFLOAT4X4; // 行優先ストレージ = HLSL の row_major と一致
+using uint     = uint32_t;
+using uint2    = DirectX::XMUINT2;
 
-#define ROW_MAJOR                                 // HLSLのrow_major、C++では無し
-    // C++では普通のstructになる
-	// struct "name" { ... } と定義されるので、Shader::name でアクセスできる
-#define CB_STRUCT(name, slot) struct name         
+#define ROW_MAJOR // HLSLのrow_major、C++では無し
+// C++では普通のstructになる
+// struct "name" { ... } と定義されるので、Shader::name でアクセスできる
+#define CB_STRUCT(name, slot) struct name
 
-	// HLSLの場合はfloat2などの型があるのでそのまま使う
+// HLSLの場合はfloat2などの型があるのでそのまま使う
 #else
 #define ROW_MAJOR row_major
 
@@ -67,8 +68,8 @@ struct DirectionalLight
     float  intensity;
     float3 color;
     float  padding;
-    float4 gSkyColor;     // rgb:色 a:強度（半球ライティング）
-    float4 gGroundColor;  // rgb:色 a:強度
+    float4 gSkyColor;    // rgb:色 a:強度（半球ライティング）
+    float4 gGroundColor; // rgb:色 a:強度
 };
 
 struct PointLight
@@ -107,7 +108,7 @@ struct SpotLight
 struct InstanceData
 {
     ROW_MAJOR float4x4 World;
-    float4 customParams; // x=ディゾルブ進行度など
+    float4             customParams; // x=ディゾルブ進行度など
 };
 
 // ==================================================================
@@ -118,16 +119,15 @@ CB_STRUCT(CbLight, SLOT_CB_LIGHT)
     DirectionalLight gDirLight;
     PointLight       gPointLights[MAX_POINT_LIGHTS];
     SpotLight        gSpotLights[MAX_SPOT_LIGHTS];
-    int    gPointLightCount;
-    int    gSpotLightCount;
-    float2 gPadding;
+    int              gPointLightCount;
+    int              gSpotLightCount;
+    float2           gPadding;
 };
 
 CB_STRUCT(CbSkeleton, SLOT_CB_SKELETON)
 {
     ROW_MAJOR float4x4 boneTransforms[MAX_BONES];
 };
-
 
 // ==================================================================
 // カメラ / シーン定数バッファ
@@ -137,11 +137,11 @@ CB_STRUCT(CbSkeleton, SLOT_CB_SKELETON)
 CB_STRUCT(CbScene, SLOT_CB_SCENE)
 {
     ROW_MAJOR float4x4 viewProjection;
-    float4 lightDirection;
-    float4 lightColor;
-    float4 cameraPosition;
-    ROW_MAJOR float4x4 gView;        // HLSL名: gView
-    ROW_MAJOR float4x4 gProjection;  // HLSL名: gProjection
+    float4             lightDirection;
+    float4             lightColor;
+    float4             cameraPosition;
+    ROW_MAJOR float4x4 gView;       // HLSL名: gView
+    ROW_MAJOR float4x4 gProjection; // HLSL名: gProjection
 
     // 時間パラメータ（Graphics::Update が毎フレーム書き込む）
     //   x: 経過秒(time)  y: デルタ秒(deltaTime)  z: sin(経過秒)  w: 予約
@@ -159,12 +159,12 @@ CB_STRUCT(CbScene, SLOT_CB_SCENE)
 CB_STRUCT(CbShadow, SLOT_CB_SHADOW)
 {
     ROW_MAJOR float4x4 light_view_projection[SHADOW_CASCADE_COUNT];
-    float4 cascadeSplits;
-    float4 shadow_color;
-    float  shadow_attenuation;
-    float  shadow_bias;
-    int    currentCascadeIndex;
-    float  shadow_padding;
+    float4             cascadeSplits;
+    float4             shadow_color;
+    float              shadow_attenuation;
+    float              shadow_bias;
+    int                currentCascadeIndex;
+    float              shadow_padding;
 };
 
 // ==================================================================
@@ -174,12 +174,12 @@ CB_STRUCT(CbShadow, SLOT_CB_SHADOW)
 CB_STRUCT(CbFog, SLOT_CB_FOG)
 {
     float4 gFogColor;
-    float4 gFogParams;      // x:start y:end z:heightStart w:heightDensity
+    float4 gFogParams; // x:start y:end z:heightStart w:heightDensity
     float4 gFogCenter;
     float4 gFogNoiseParams; // x:scale y:strength z:speedX w:speedY
     float4 gFogRimColor;
-    float4 gFogRimParams;   // x:power y:strength
-    float4 gSkyFogParams;   // x:horizon(フォグ開始の視線高 dir.y) y:softness(フェード幅)
+    float4 gFogRimParams; // x:power y:strength
+    float4 gSkyFogParams; // x:horizon(フォグ開始の視線高 dir.y) y:softness(フェード幅)
 };
 
 // ==================================================================

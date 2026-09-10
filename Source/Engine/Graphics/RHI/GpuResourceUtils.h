@@ -7,74 +7,73 @@
 // GPUリソースユーティリティ
 class GpuResourceUtils
 {
-public:
-	// 頂点シェーダー読み込み
-	static HRESULT LoadVertexShader(
-		ID3D11Device* device,
-		const char* filename,
-		const D3D11_INPUT_ELEMENT_DESC inputElementDescs[],
-		UINT inputElementCount,
-		ID3D11InputLayout** inputLayout,
-		ID3D11VertexShader** vertexShader);
+  public:
+    // 頂点シェーダー読み込み
+    static HRESULT LoadVertexShader(
+        ID3D11Device                  *device,
+        const char                    *filename,
+        const D3D11_INPUT_ELEMENT_DESC inputElementDescs[],
+        UINT                           inputElementCount,
+        ID3D11InputLayout            **inputLayout,
+        ID3D11VertexShader           **vertexShader);
 
-	// ピクセルシェーダー読み込み
-	static HRESULT LoadPixelShader(
-		ID3D11Device* device,
-		const char* filename,
-		ID3D11PixelShader** pixelShader);
+    // ピクセルシェーダー読み込み
+    static HRESULT LoadPixelShader(
+        ID3D11Device       *device,
+        const char         *filename,
+        ID3D11PixelShader **pixelShader);
 
-	// --- Load 系 (コンパイル済み .cso の読み込み) ---
-	static HRESULT LoadGeometryShader(
-		ID3D11Device* device,
-		const char* filename,
-		ID3D11GeometryShader** geometryShader);
+    // --- Load 系 (コンパイル済み .cso の読み込み) ---
+    static HRESULT LoadGeometryShader(
+        ID3D11Device          *device,
+        const char            *filename,
+        ID3D11GeometryShader **geometryShader);
 
-	// テクスチャ読み込み
-	static HRESULT LoadTexture(
-		ID3D11Device* device,
-		const char* filename,
-		ID3D11ShaderResourceView** shaderResourceView,
-		D3D11_TEXTURE2D_DESC* texture2dDesc = nullptr);
+    // テクスチャ読み込み
+    static HRESULT LoadTexture(
+        ID3D11Device              *device,
+        const char                *filename,
+        ID3D11ShaderResourceView **shaderResourceView,
+        D3D11_TEXTURE2D_DESC      *texture2dDesc = nullptr);
 
-	// テクスチャ読み込み
-	static HRESULT LoadTexture(
-		ID3D11Device* device,
-		const void* data,
-		size_t size,
-		ID3D11ShaderResourceView** shaderResourceView,
-		D3D11_TEXTURE2D_DESC* texture2dDesc = nullptr);
+    // テクスチャ読み込み
+    static HRESULT LoadTexture(
+        ID3D11Device              *device,
+        const void                *data,
+        size_t                     size,
+        ID3D11ShaderResourceView **shaderResourceView,
+        D3D11_TEXTURE2D_DESC      *texture2dDesc = nullptr);
 
-	// ダミーテクスチャ作成
-	static HRESULT CreateDummyTexture(
-		ID3D11Device* device,
-		UINT color,
-		ID3D11ShaderResourceView** shaderResourceView,
-		D3D11_TEXTURE2D_DESC* texture2dDesc = nullptr);
+    // ダミーテクスチャ作成
+    static HRESULT CreateDummyTexture(
+        ID3D11Device              *device,
+        UINT                       color,
+        ID3D11ShaderResourceView **shaderResourceView,
+        D3D11_TEXTURE2D_DESC      *texture2dDesc = nullptr);
 
-	// 定数バッファ作成
-	static HRESULT CreateConstantBuffer(
-		ID3D11Device* device,
-		UINT bufferSize,
-		ID3D11Buffer** constantBuffer);
+    // 定数バッファ作成
+    static HRESULT CreateConstantBuffer(
+        ID3D11Device  *device,
+        UINT           bufferSize,
+        ID3D11Buffer **constantBuffer);
 
-	// DYNAMIC用の定数バッファ作成
-	static HRESULT CreateDynamicConstantBuffer(
-		ID3D11Device* device,
-		UINT bufferSize,
-		ID3D11Buffer** constantBuffer);
+    // DYNAMIC用の定数バッファ作成
+    static HRESULT CreateDynamicConstantBuffer(
+        ID3D11Device  *device,
+        UINT           bufferSize,
+        ID3D11Buffer **constantBuffer);
 
-	// 頂点バッファ作成
+    // 頂点バッファ作成
     static HRESULT CreateVertexBuffer(
         ID3D11Device *device, const void *data, UINT size, ID3D11Buffer **buffer);
 
-	// インデックスバッファ作成
+    // インデックスバッファ作成
     static HRESULT CreateIndexBuffer(ID3D11Device *device,
         const UINT                                *data, // uint32_t を UINT に変更
         UINT                                       size,
         ID3D11Buffer                             **buffer);
 
-
-	// HLSLから直接ピクセルシェーダーをコンパイルする関数
+    // HLSLから直接ピクセルシェーダーをコンパイルする関数
     static bool CompilePixelShader(ID3D11Device *device,
         const std::wstring                      &hlslPath,
         const char                              *entryPoint,
@@ -82,36 +81,35 @@ public:
         ID3D11PixelShader                      **pixelShader,
         ID3DBlob                               **outShaderBlob = nullptr);
 
-	// --- Compile 系 (HLSLからの動的コンパイル) ---
-	static bool CompileVertexShader(ID3D11Device* device,
-		const std::wstring& hlslPath,
-		const char* entryPoint,
-		const char* shaderModel,
-		ID3D11VertexShader** vertexShader,
-		ID3D11InputLayout** inputLayout = nullptr,
-		const D3D11_INPUT_ELEMENT_DESC* inputElementDescs = nullptr,
-		UINT inputElementCount = 0,
-		ID3DBlob** outShaderBlob = nullptr);
+    // --- Compile 系 (HLSLからの動的コンパイル) ---
+    static bool CompileVertexShader(ID3D11Device *device,
+        const std::wstring                       &hlslPath,
+        const char                               *entryPoint,
+        const char                               *shaderModel,
+        ID3D11VertexShader                      **vertexShader,
+        ID3D11InputLayout                       **inputLayout       = nullptr,
+        const D3D11_INPUT_ELEMENT_DESC           *inputElementDescs = nullptr,
+        UINT                                      inputElementCount = 0,
+        ID3DBlob                                **outShaderBlob     = nullptr);
 
-	static bool CompileGeometryShader(ID3D11Device* device,
-		const std::wstring& hlslPath,
-		const char* entryPoint,
-		const char* shaderModel,
-		ID3D11GeometryShader** geometryShader,
-		ID3DBlob** outShaderBlob = nullptr);
+    static bool CompileGeometryShader(ID3D11Device *device,
+        const std::wstring                         &hlslPath,
+        const char                                 *entryPoint,
+        const char                                 *shaderModel,
+        ID3D11GeometryShader                      **geometryShader,
+        ID3DBlob                                  **outShaderBlob = nullptr);
 
-	// コンピュートシェーダーの動的コンパイル (.hlsl)
-	static bool CompileComputeShader(ID3D11Device* device,
-		const std::wstring& hlslPath,
-		const char* entryPoint,
-		const char* shaderModel,
-		ID3D11ComputeShader** computeShader,
-		ID3DBlob** outShaderBlob = nullptr);
+    // コンピュートシェーダーの動的コンパイル (.hlsl)
+    static bool CompileComputeShader(ID3D11Device *device,
+        const std::wstring                        &hlslPath,
+        const char                                *entryPoint,
+        const char                                *shaderModel,
+        ID3D11ComputeShader                      **computeShader,
+        ID3DBlob                                 **outShaderBlob = nullptr);
 
-	// コンピュートシェーダー読み込み (.cso) : 事前コンパイル済みバイナリからそのまま生成する。
-	// VS/PS/GS の Load* と同じ方式で、HLSLソース非同梱の製品(Shipping)でも動く。
-	static HRESULT LoadComputeShader(ID3D11Device* device,
-		const char* filename,
-		ID3D11ComputeShader** computeShader);
-
+    // コンピュートシェーダー読み込み (.cso) : 事前コンパイル済みバイナリからそのまま生成する。
+    // VS/PS/GS の Load* と同じ方式で、HLSLソース非同梱の製品(Shipping)でも動く。
+    static HRESULT LoadComputeShader(ID3D11Device *device,
+        const char                                *filename,
+        ID3D11ComputeShader                      **computeShader);
 };

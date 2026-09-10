@@ -2,9 +2,17 @@
 #include "Engine/Graphics/Pipeline/Core/IRenderPass.h"
 #include "Engine/Graphics/RHI/PipelineState.h"
 #include "Engine/Graphics/Renderer/InstanceBuffer.h"
+#include "Engine/Graphics/Resource/Model.h" // ヘルパの引数に Model::Mesh を使う（入れ子型のため前方宣言不可）
 
+#include <DirectXCollision.h>
 #include <cstdint>
 #include <vector>
+
+struct RenderKey;
+struct RenderCommand;
+struct MaterialData;
+class Shader;
+class IMaterialShader;
 
 /**
  * @brief 不透明ジオメトリを描画するレンダーパス。
@@ -17,10 +25,8 @@
  *  ワールド空間 AABB を視錐台判定し、視界外インスタンスを描画から除外する。
  *  可視インスタンスが 0 のメッシュはドローコールごとスキップする。
  *
- *  Services（永続）と FrameContext（揮発）を分離した新パイプライン規約に準拠。
- *  - Initialize : m_services の保持 + PSO / InstanceBuffer の生成
- *  - Execute    : ctx（フレームデータ）のみ受け取り、旧 Shader API には
- *                 MakeLegacyContext で構築した互換ビューを渡す（移行期）
+ *  Execute は「1 フレームの手順書」に徹し、各工程は private ヘルパへ委譲する。
+ *  読む順番は Execute → DrawBatch → 各ヘルパ、の順。
  */
 class OpaquePass : public IRenderPass
 {
@@ -56,6 +62,53 @@ class OpaquePass : public IRenderPass
     }
 
   private:
+    // ソート済みキー列のうち、同一バッチキーが連続している区間。
+    // count がそのままバッチ内のインスタンス数（＝同じモデルの配置数）になる。
+    struct BatchRange
+    {
+        size_t start = 0;
+        size_t count = 0;
+    };
+
+    // --- Execute から順に呼ばれるヘルパ群 -------------------------------
+
+    // シャドウマップ・サンプラー・既定 PSO など、全バッチ共通のバインドを行う。
+    void BindCommonResources(ID3D11DeviceContext *dc);
+
+    // cursor 位置から同一バッチキーが続く区間を切り出し、cursor をその先へ進める。
+    static BatchRange ConsumeBatch(const std::vector<RenderKey> &sortKeys, size_t &cursor);
+
+    // シェーダー固有 PSO があれば適用する。lastPso は実際に適用中のものを指す。
+    void ApplyShaderPso(ID3D11DeviceContext *dc, const Shader &shader, const PipelineState *&lastPso);
+
+    // 1 バッチが指すモデルの全メッシュを処理する（描画 or 半透明キューへの転送）。
+    void DrawBatch(const RenderFrameContext &ctx, const BatchRange &batch, const Shader &shader,
+                   IMaterialShader &matShader);
+
+    // meshIdx 番目のメッシュに適用する override マテリアル。無ければ nullptr。
+    MaterialData *ResolveOverrideMaterial(const RenderCommand &cmd, size_t meshIdx) const;
+
+    // 半透明メッシュを、距離ソートが必要な TransparentPass の遅延キューへ送る。
+    void ForwardMeshToTransparentQueue(const RenderFrameContext &ctx, const Model::Mesh &mesh, size_t meshIdx,
+                                       const BatchRange &batch, uint32_t shaderHash,
+                                       const DirectX::BoundingBox &localAABB, bool isSkinned);
+
+    // バッチ内のインスタンスから可視ぶんだけを m_instanceScratch に集める。
+    void BuildVisibleInstances(const RenderFrameContext &ctx, const Model::Mesh &mesh, const BatchRange &batch,
+                               const DirectX::BoundingBox &localAABB, bool isSkinned);
+
+    // 頂点／インデックスバッファとトポロジをセットする。
+    static void BindMeshIA(ID3D11DeviceContext *dc, const Model::Mesh &mesh);
+
+    // m_instanceScratch をバッファ容量ぶんずつ分割してインスタンシング描画する。
+    void DrawInstancedBatched(ID3D11DeviceContext *dc, const Model::Mesh &mesh);
+
+    // スキンドメッシュを 1 体ずつ描画する（ボーン定数がインスタンス間で共有できないため）。
+    void DrawSkinnedInstances(const RenderFrameContext &ctx, const Model::Mesh &mesh, size_t meshIdx,
+                              const BatchRange &batch);
+
+    // --- 状態 -----------------------------------------------------------
+
     PipelineState  m_psoOpaque;
     InstanceBuffer m_instanceBuffer;
 

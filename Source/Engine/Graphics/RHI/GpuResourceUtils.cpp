@@ -11,385 +11,390 @@
 // D3DCompiler ライブラリのリンク
 #pragma comment(lib, "d3dcompiler.lib")
 
-
 // ==========================================================
 // 常にプロジェクトルートから #include を解決するハンドラ
 // ==========================================================
-class RootInclude : public ID3DInclude {
-public:
-	HRESULT __stdcall Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID* ppData, UINT* pBytes) override
-	{
-		std::vector<std::string> searchPaths = {
-			pFileName,
-			std::string("Source/") + pFileName,
-			std::string("Assets/") + pFileName
-		};
+class RootInclude : public ID3DInclude
+{
+  public:
+    HRESULT __stdcall Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes) override
+    {
+        std::vector<std::string> searchPaths = {
+            pFileName,
+            std::string("Source/") + pFileName,
+            std::string("Assets/") + pFileName};
 
-		std::ifstream file;
-		for (const auto& path : searchPaths) {
-			file.open(path, std::ios::binary | std::ios::ate);
-			if (file.is_open()) break;
-		}
+        std::ifstream file;
+        for (const auto &path : searchPaths)
+        {
+            file.open(path, std::ios::binary | std::ios::ate);
+            if (file.is_open()) break;
+        }
 
-		if (!file.is_open()) {
-			char currentDir[MAX_PATH];
-			GetCurrentDirectoryA(MAX_PATH, currentDir);
+        if (!file.is_open())
+        {
+            char currentDir[MAX_PATH];
+            GetCurrentDirectoryA(MAX_PATH, currentDir);
 
-			std::string pathsInfo;
-			for (const auto& path : searchPaths) {
-				pathsInfo += "  - " + path + "\n";
-			}
+            std::string pathsInfo;
+            for (const auto &path : searchPaths)
+            {
+                pathsInfo += "  - " + path + "\n";
+            }
 
-			// CCL_LOG_ERRORマクロを使用
-			CCL_LOG_ERROR(LogCategory::Render, "HLSL Include Failed!\nRequested File: %s\nCurrent Dir: %s\nChecked Paths:\n%s",
-				pFileName, currentDir, pathsInfo.c_str());
+            // CCL_LOG_ERRORマクロを使用
+            CCL_LOG_ERROR(LogCategory::Render, "HLSL Include Failed!\nRequested File: %s\nCurrent Dir: %s\nChecked Paths:\n%s",
+                pFileName, currentDir, pathsInfo.c_str());
 
-			return E_FAIL;
-		}
+            return E_FAIL;
+        }
 
-		size_t size = file.tellg();
-		file.seekg(0, std::ios::beg);
-		char* buf = new char[size];
-		file.read(buf, size);
-		file.close();
+        size_t size = file.tellg();
+        file.seekg(0, std::ios::beg);
+        char *buf = new char[size];
+        file.read(buf, size);
+        file.close();
 
-		*ppData = buf;
-		*pBytes = static_cast<UINT>(size);
-		return S_OK;
-	}
+        *ppData = buf;
+        *pBytes = static_cast<UINT>(size);
+        return S_OK;
+    }
 
-	HRESULT __stdcall Close(LPCVOID pData) override
-	{
-		delete[] static_cast<const char*>(pData);
-		return S_OK;
-	}
+    HRESULT __stdcall Close(LPCVOID pData) override
+    {
+        delete[] static_cast<const char *>(pData);
+        return S_OK;
+    }
 };
 
 // ==========================================================
 
-
 // 頂点シェーダー読み込み
 HRESULT GpuResourceUtils::LoadVertexShader(
-	ID3D11Device* device,
-	const char* filename,
-	const D3D11_INPUT_ELEMENT_DESC inputElementDescs[],
-	UINT inputElementCount,
-	ID3D11InputLayout** inputLayout,
-	ID3D11VertexShader** vertexShader)
+    ID3D11Device                  *device,
+    const char                    *filename,
+    const D3D11_INPUT_ELEMENT_DESC inputElementDescs[],
+    UINT                           inputElementCount,
+    ID3D11InputLayout            **inputLayout,
+    ID3D11VertexShader           **vertexShader)
 {
-	// ファイルを開く
-	FILE* fp = nullptr;
-	fopen_s(&fp, filename, "rb");
-	_ASSERT_EXPR_A(fp, "Vertex Shader File not found");
+    // ファイルを開く
+    FILE *fp = nullptr;
+    fopen_s(&fp, filename, "rb");
+    _ASSERT_EXPR_A(fp, "Vertex Shader File not found");
 
-	// ファイルのサイズを求める
-	fseek(fp, 0, SEEK_END);
-	long size = ftell(fp);
-	fseek(fp, 0, SEEK_SET);
+    // ファイルのサイズを求める
+    fseek(fp, 0, SEEK_END);
+    long size = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
 
-	// メモリ上に頂点シェーダーデータを格納する領域を用意する
-	std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(size);
-	fread(data.get(), size, 1, fp);
-	fclose(fp);
+    // メモリ上に頂点シェーダーデータを格納する領域を用意する
+    std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(size);
+    fread(data.get(), size, 1, fp);
+    fclose(fp);
 
-	// 頂点シェーダー生成
-	HRESULT hr = device->CreateVertexShader(data.get(), size, nullptr, vertexShader);
-	_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+    // 頂点シェーダー生成
+    HRESULT hr = device->CreateVertexShader(data.get(), size, nullptr, vertexShader);
+    _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 
-	// 入力レイアウト
-	if (inputLayout != nullptr)
-	{
-		hr = device->CreateInputLayout(inputElementDescs, inputElementCount, data.get(), size, inputLayout);
-		_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
-	}
+    // 入力レイアウト
+    if (inputLayout != nullptr)
+    {
+        hr = device->CreateInputLayout(inputElementDescs, inputElementCount, data.get(), size, inputLayout);
+        _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+    }
 
-	return hr;
+    return hr;
 }
 
 // ピクセルシェーダー読み込み
 HRESULT GpuResourceUtils::LoadPixelShader(
-	ID3D11Device* device,
-	const char* filename,
-	ID3D11PixelShader** pixelShader)
+    ID3D11Device       *device,
+    const char         *filename,
+    ID3D11PixelShader **pixelShader)
 {
-	// ファイルを開く
-	FILE* fp = nullptr;
-	fopen_s(&fp, filename, "rb");
-	_ASSERT_EXPR_A(fp, "Pixel Shader File not found");
+    // ファイルを開く
+    FILE *fp = nullptr;
+    fopen_s(&fp, filename, "rb");
+    _ASSERT_EXPR_A(fp, "Pixel Shader File not found");
 
-	// ファイルのサイズを求める
-	fseek(fp, 0, SEEK_END);
-	long size = ftell(fp);
-	fseek(fp, 0, SEEK_SET);
+    // ファイルのサイズを求める
+    fseek(fp, 0, SEEK_END);
+    long size = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
 
-	// メモリ上に頂点シェーダーデータを格納する領域を用意する
-	std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(size);
-	fread(data.get(), size, 1, fp);
-	fclose(fp);
+    // メモリ上に頂点シェーダーデータを格納する領域を用意する
+    std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(size);
+    fread(data.get(), size, 1, fp);
+    fclose(fp);
 
-	// ピクセルシェーダー生成
-	HRESULT hr = device->CreatePixelShader(data.get(), size, nullptr, pixelShader);
-	_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+    // ピクセルシェーダー生成
+    HRESULT hr = device->CreatePixelShader(data.get(), size, nullptr, pixelShader);
+    _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 
-	return hr;
+    return hr;
 }
 
 // ジオメトリシェーダー読み込み (.cso)
 HRESULT GpuResourceUtils::LoadGeometryShader(
-	ID3D11Device* device,
-	const char* filename,
-	ID3D11GeometryShader** geometryShader)
+    ID3D11Device          *device,
+    const char            *filename,
+    ID3D11GeometryShader **geometryShader)
 {
-	FILE* fp = nullptr;
-	fopen_s(&fp, filename, "rb");
-	_ASSERT_EXPR_A(fp, "Geometry Shader File not found");
+    FILE *fp = nullptr;
+    fopen_s(&fp, filename, "rb");
+    _ASSERT_EXPR_A(fp, "Geometry Shader File not found");
 
-	fseek(fp, 0, SEEK_END);
-	long size = ftell(fp);
-	fseek(fp, 0, SEEK_SET);
+    fseek(fp, 0, SEEK_END);
+    long size = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
 
-	std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(size);
-	fread(data.get(), size, 1, fp);
-	fclose(fp);
+    std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(size);
+    fread(data.get(), size, 1, fp);
+    fclose(fp);
 
-	HRESULT hr = device->CreateGeometryShader(data.get(), size, nullptr, geometryShader);
-	_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+    HRESULT hr = device->CreateGeometryShader(data.get(), size, nullptr, geometryShader);
+    _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 
-	return hr;
+    return hr;
 }
 
 // テクスチャ読み込み
 HRESULT GpuResourceUtils::LoadTexture(
-	ID3D11Device* device,
-	const char* filename,
-	ID3D11ShaderResourceView** shaderResourceView,
-	D3D11_TEXTURE2D_DESC* texture2dDesc)
+    ID3D11Device              *device,
+    const char                *filename,
+    ID3D11ShaderResourceView **shaderResourceView,
+    D3D11_TEXTURE2D_DESC      *texture2dDesc)
 {
-	// 拡張子を取得
-	std::filesystem::path filepath(filename);
-	std::string extension = filepath.extension().string();
-	std::transform(extension.begin(), extension.end(), extension.begin(), tolower);	// 小文字化
+    // 拡張子を取得
+    std::filesystem::path filepath(filename);
+    std::string           extension = filepath.extension().string();
+    std::transform(extension.begin(), extension.end(), extension.begin(), tolower); // 小文字化
 
-	// ワイド文字に変換
-	std::wstring wfilename = filepath.wstring();
+    // ワイド文字に変換
+    std::wstring wfilename = filepath.wstring();
 
-	// フォーマット毎に画像読み込み処理
-	HRESULT hr;
-	DirectX::TexMetadata metadata;
-	DirectX::ScratchImage scratch_image;
-	if (extension == ".tga")
-	{
-		hr = DirectX::GetMetadataFromTGAFile(wfilename.c_str(), metadata);
-		_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+    // フォーマット毎に画像読み込み処理
+    HRESULT               hr;
+    DirectX::TexMetadata  metadata;
+    DirectX::ScratchImage scratch_image;
+    if (extension == ".tga")
+    {
+        hr = DirectX::GetMetadataFromTGAFile(wfilename.c_str(), metadata);
+        _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 
-		hr = DirectX::LoadFromTGAFile(wfilename.c_str(), &metadata, scratch_image);
-		_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
-	}
-	else if (extension == ".dds")
-	{
-		hr = DirectX::GetMetadataFromDDSFile(wfilename.c_str(), DirectX::DDS_FLAGS_NONE, metadata);
-		_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+        hr = DirectX::LoadFromTGAFile(wfilename.c_str(), &metadata, scratch_image);
+        _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+    }
+    else if (extension == ".dds")
+    {
+        hr = DirectX::GetMetadataFromDDSFile(wfilename.c_str(), DirectX::DDS_FLAGS_NONE, metadata);
+        _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 
-		hr = DirectX::LoadFromDDSFile(wfilename.c_str(), DirectX::DDS_FLAGS_NONE, &metadata, scratch_image);
-		_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
-	}
-	else if (extension == ".hdr")
-	{
-		hr = DirectX::GetMetadataFromHDRFile(wfilename.c_str(), metadata);
-		_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+        hr = DirectX::LoadFromDDSFile(wfilename.c_str(), DirectX::DDS_FLAGS_NONE, &metadata, scratch_image);
+        _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+    }
+    else if (extension == ".hdr")
+    {
+        hr = DirectX::GetMetadataFromHDRFile(wfilename.c_str(), metadata);
+        _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 
-		hr = DirectX::LoadFromHDRFile(wfilename.c_str(), &metadata, scratch_image);
-		_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
-	}
-	else
-	{
-		hr = DirectX::GetMetadataFromWICFile(wfilename.c_str(), DirectX::WIC_FLAGS_NONE, metadata);
-		_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+        hr = DirectX::LoadFromHDRFile(wfilename.c_str(), &metadata, scratch_image);
+        _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+    }
+    else
+    {
+        hr = DirectX::GetMetadataFromWICFile(wfilename.c_str(), DirectX::WIC_FLAGS_NONE, metadata);
+        _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 
-		hr = DirectX::LoadFromWICFile(wfilename.c_str(), DirectX::WIC_FLAGS_NONE, &metadata, scratch_image);
-		_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
-	}
+        hr = DirectX::LoadFromWICFile(wfilename.c_str(), DirectX::WIC_FLAGS_NONE, &metadata, scratch_image);
+        _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+    }
 
-	// シェーダーリソースビュー作成
-	hr = DirectX::CreateShaderResourceView(device, scratch_image.GetImages(), scratch_image.GetImageCount(),
-		metadata, shaderResourceView);
-	_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
-	
-	// デバッグ名設定
-	SetDebugName(*shaderResourceView, "Texture_SRV");
+    // シェーダーリソースビュー作成
+    hr = DirectX::CreateShaderResourceView(device, scratch_image.GetImages(), scratch_image.GetImageCount(),
+        metadata, shaderResourceView);
+    _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 
-	// テクスチャ情報取得
-	if (texture2dDesc != nullptr)
-	{
-		Microsoft::WRL::ComPtr<ID3D11Resource> resource;
-		(*shaderResourceView)->GetResource(resource.GetAddressOf());
+    // デバッグ名設定
+    SetDebugName(*shaderResourceView, "Texture_SRV");
 
-		Microsoft::WRL::ComPtr<ID3D11Texture2D> texture2d;
-		hr = resource->QueryInterface<ID3D11Texture2D>(texture2d.GetAddressOf());
-		_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
-		texture2d->GetDesc(texture2dDesc);
-	}
-	return hr;
+    // テクスチャ情報取得
+    if (texture2dDesc != nullptr)
+    {
+        Microsoft::WRL::ComPtr<ID3D11Resource> resource;
+        (*shaderResourceView)->GetResource(resource.GetAddressOf());
+
+        Microsoft::WRL::ComPtr<ID3D11Texture2D> texture2d;
+        hr = resource->QueryInterface<ID3D11Texture2D>(texture2d.GetAddressOf());
+        _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+        texture2d->GetDesc(texture2dDesc);
+    }
+    return hr;
 }
 
 // テクスチャ読み込み
 HRESULT GpuResourceUtils::LoadTexture(
-	ID3D11Device* device,
-	const void* data,
-	size_t size,
-	ID3D11ShaderResourceView** shaderResourceView,
-	D3D11_TEXTURE2D_DESC* texture2dDesc)
+    ID3D11Device              *device,
+    const void                *data,
+    size_t                     size,
+    ID3D11ShaderResourceView **shaderResourceView,
+    D3D11_TEXTURE2D_DESC      *texture2dDesc)
 {
-	// フォーマット毎に画像読み込み処理
-	HRESULT hr = E_FAIL;
-	DirectX::TexMetadata metadata;
-	DirectX::ScratchImage scratch_image;
+    // フォーマット毎に画像読み込み処理
+    HRESULT               hr = E_FAIL;
+    DirectX::TexMetadata  metadata;
+    DirectX::ScratchImage scratch_image;
 
-	const uint8_t *bytes = reinterpret_cast<const uint8_t *>(data);
+    const uint8_t *bytes = reinterpret_cast<const uint8_t *>(data);
 
-	// .tga
+    // .tga
+    {
+        hr = DirectX::GetMetadataFromTGAMemory(bytes, size, metadata);
+        if (SUCCEEDED(hr))
         {
-            hr = DirectX::GetMetadataFromTGAMemory(bytes, size, metadata);
-            if (SUCCEEDED(hr)) {
-                hr = DirectX::LoadFromTGAMemory(bytes, size, &metadata, scratch_image);
-            }
+            hr = DirectX::LoadFromTGAMemory(bytes, size, &metadata, scratch_image);
         }
+    }
 
-        // .dds
-        if (FAILED(hr)) {
-            hr = DirectX::GetMetadataFromDDSMemory(bytes, size, DirectX::DDS_FLAGS_NONE, metadata);
-            if (SUCCEEDED(hr)) {
-                hr = DirectX::LoadFromDDSMemory(
-                    bytes, size, DirectX::DDS_FLAGS_NONE, &metadata, scratch_image);
-            }
+    // .dds
+    if (FAILED(hr))
+    {
+        hr = DirectX::GetMetadataFromDDSMemory(bytes, size, DirectX::DDS_FLAGS_NONE, metadata);
+        if (SUCCEEDED(hr))
+        {
+            hr = DirectX::LoadFromDDSMemory(
+                bytes, size, DirectX::DDS_FLAGS_NONE, &metadata, scratch_image);
         }
+    }
 
-        // .hdr
-        if (FAILED(hr)) {
-            hr = DirectX::GetMetadataFromHDRMemory(bytes, size, metadata);
-            if (SUCCEEDED(hr)) {
-                hr = DirectX::LoadFromHDRMemory(bytes, size, &metadata, scratch_image);
-            }
+    // .hdr
+    if (FAILED(hr))
+    {
+        hr = DirectX::GetMetadataFromHDRMemory(bytes, size, metadata);
+        if (SUCCEEDED(hr))
+        {
+            hr = DirectX::LoadFromHDRMemory(bytes, size, &metadata, scratch_image);
         }
+    }
 
-        // WIC
-        if (FAILED(hr)) {
-            hr = DirectX::GetMetadataFromWICMemory(bytes, size, DirectX::WIC_FLAGS_NONE, metadata);
-            if (SUCCEEDED(hr)) {
-                hr = DirectX::LoadFromWICMemory(
-                    bytes, size, DirectX::WIC_FLAGS_NONE, &metadata, scratch_image);
-            }
+    // WIC
+    if (FAILED(hr))
+    {
+        hr = DirectX::GetMetadataFromWICMemory(bytes, size, DirectX::WIC_FLAGS_NONE, metadata);
+        if (SUCCEEDED(hr))
+        {
+            hr = DirectX::LoadFromWICMemory(
+                bytes, size, DirectX::WIC_FLAGS_NONE, &metadata, scratch_image);
         }
+    }
 
+    // シェーダーリソースビュー作成
+    hr = DirectX::CreateShaderResourceView(device, scratch_image.GetImages(), scratch_image.GetImageCount(),
+        metadata, shaderResourceView);
 
+    // デバッグ名設定
+    SetDebugName(*shaderResourceView, "Texture_SRV");
 
+    _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 
-	// シェーダーリソースビュー作成
-	hr = DirectX::CreateShaderResourceView(device, scratch_image.GetImages(), scratch_image.GetImageCount(),
-		metadata, shaderResourceView);
-	
-	// デバッグ名設定
-	SetDebugName(*shaderResourceView, "Texture_SRV");
+    // テクスチャ情報取得
+    if (texture2dDesc != nullptr)
+    {
+        Microsoft::WRL::ComPtr<ID3D11Resource> resource;
+        (*shaderResourceView)->GetResource(resource.GetAddressOf());
 
-	_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
-
-	// テクスチャ情報取得
-	if (texture2dDesc != nullptr)
-	{
-		Microsoft::WRL::ComPtr<ID3D11Resource> resource;
-		(*shaderResourceView)->GetResource(resource.GetAddressOf());
-
-		Microsoft::WRL::ComPtr<ID3D11Texture2D> texture2d;
-		hr = resource->QueryInterface<ID3D11Texture2D>(texture2d.GetAddressOf());
-		_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
-		texture2d->GetDesc(texture2dDesc);
-	}
-	return hr;
+        Microsoft::WRL::ComPtr<ID3D11Texture2D> texture2d;
+        hr = resource->QueryInterface<ID3D11Texture2D>(texture2d.GetAddressOf());
+        _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+        texture2d->GetDesc(texture2dDesc);
+    }
+    return hr;
 }
 
 // ダミーテクスチャ作成
 HRESULT GpuResourceUtils::CreateDummyTexture(
-	ID3D11Device* device,
-	UINT color,
-	ID3D11ShaderResourceView** shaderResourceView,
-	D3D11_TEXTURE2D_DESC* texture2dDesc)
+    ID3D11Device              *device,
+    UINT                       color,
+    ID3D11ShaderResourceView **shaderResourceView,
+    D3D11_TEXTURE2D_DESC      *texture2dDesc)
 {
-	D3D11_TEXTURE2D_DESC desc = { 0 };
-	desc.Width = 1;
-	desc.Height = 1;
-	desc.MipLevels = 1;
-	desc.ArraySize = 1;
-	desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	desc.SampleDesc.Count = 1;
-	desc.SampleDesc.Quality = 0;
-	desc.Usage = D3D11_USAGE_IMMUTABLE;
-	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	desc.CPUAccessFlags = 0;
-	desc.MiscFlags = 0;
-	D3D11_SUBRESOURCE_DATA data{};
-	data.pSysMem = &color;
-	data.SysMemPitch = desc.Width;
+    D3D11_TEXTURE2D_DESC desc = {0};
+    desc.Width                = 1;
+    desc.Height               = 1;
+    desc.MipLevels            = 1;
+    desc.ArraySize            = 1;
+    desc.Format               = DXGI_FORMAT_R8G8B8A8_UNORM;
+    desc.SampleDesc.Count     = 1;
+    desc.SampleDesc.Quality   = 0;
+    desc.Usage                = D3D11_USAGE_IMMUTABLE;
+    desc.BindFlags            = D3D11_BIND_SHADER_RESOURCE;
+    desc.CPUAccessFlags       = 0;
+    desc.MiscFlags            = 0;
+    D3D11_SUBRESOURCE_DATA data{};
+    data.pSysMem     = &color;
+    data.SysMemPitch = desc.Width;
 
-	Microsoft::WRL::ComPtr<ID3D11Texture2D>	texture;
-	HRESULT hr = device->CreateTexture2D(&desc, &data, texture.GetAddressOf());
-	_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+    Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
+    HRESULT                                 hr = device->CreateTexture2D(&desc, &data, texture.GetAddressOf());
+    _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 
-	hr = device->CreateShaderResourceView(texture.Get(), nullptr, shaderResourceView);
-	_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+    hr = device->CreateShaderResourceView(texture.Get(), nullptr, shaderResourceView);
+    _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 
-	// デバッグ名設定
-	SetDebugName(*shaderResourceView, "DummyTexture_SRV");
+    // デバッグ名設定
+    SetDebugName(*shaderResourceView, "DummyTexture_SRV");
 
-	// テクスチャ情報取得
-	if (texture2dDesc != nullptr)
-	{
-		Microsoft::WRL::ComPtr<ID3D11Resource> resource;
-		(*shaderResourceView)->GetResource(resource.GetAddressOf());
+    // テクスチャ情報取得
+    if (texture2dDesc != nullptr)
+    {
+        Microsoft::WRL::ComPtr<ID3D11Resource> resource;
+        (*shaderResourceView)->GetResource(resource.GetAddressOf());
 
-		Microsoft::WRL::ComPtr<ID3D11Texture2D> texture2d;
-		hr = resource->QueryInterface<ID3D11Texture2D>(texture2d.GetAddressOf());
-		_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
-		texture2d->GetDesc(texture2dDesc);
-	}
+        Microsoft::WRL::ComPtr<ID3D11Texture2D> texture2d;
+        hr = resource->QueryInterface<ID3D11Texture2D>(texture2d.GetAddressOf());
+        _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+        texture2d->GetDesc(texture2dDesc);
+    }
 
-	return hr;
+    return hr;
 }
 
 // 定数バッファ作成
 HRESULT GpuResourceUtils::CreateConstantBuffer(
-	ID3D11Device* device,
-	UINT bufferSize,
-	ID3D11Buffer** constantBuffer)
+    ID3D11Device  *device,
+    UINT           bufferSize,
+    ID3D11Buffer **constantBuffer)
 {
-	D3D11_BUFFER_DESC desc{};
-	desc.Usage = D3D11_USAGE_DEFAULT;
-	desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	desc.CPUAccessFlags = 0;
-	desc.MiscFlags = 0;
-	desc.ByteWidth = bufferSize;
-	desc.StructureByteStride = 0;
+    D3D11_BUFFER_DESC desc{};
+    desc.Usage               = D3D11_USAGE_DEFAULT;
+    desc.BindFlags           = D3D11_BIND_CONSTANT_BUFFER;
+    desc.CPUAccessFlags      = 0;
+    desc.MiscFlags           = 0;
+    desc.ByteWidth           = bufferSize;
+    desc.StructureByteStride = 0;
 
-	HRESULT hr = device->CreateBuffer(&desc, 0, constantBuffer);
-	_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+    HRESULT hr = device->CreateBuffer(&desc, 0, constantBuffer);
+    _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 
-	return hr;
+    return hr;
 }
 
-HRESULT GpuResourceUtils::CreateDynamicConstantBuffer(ID3D11Device* device, UINT bufferSize, ID3D11Buffer** constantBuffer)
+HRESULT GpuResourceUtils::CreateDynamicConstantBuffer(ID3D11Device *device, UINT bufferSize, ID3D11Buffer **constantBuffer)
 {
-	D3D11_BUFFER_DESC desc{};
-	desc.Usage = D3D11_USAGE_DYNAMIC;
-	desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	// DYNAMIC の場合は必ず D3D11_CPU_ACCESS_WRITE を指定しなければなりません
-	desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	desc.MiscFlags = 0;
-	desc.ByteWidth = bufferSize;
-	desc.StructureByteStride = 0;
+    D3D11_BUFFER_DESC desc{};
+    desc.Usage     = D3D11_USAGE_DYNAMIC;
+    desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    // DYNAMIC の場合は必ず D3D11_CPU_ACCESS_WRITE を指定しなければなりません
+    desc.CPUAccessFlags      = D3D11_CPU_ACCESS_WRITE;
+    desc.MiscFlags           = 0;
+    desc.ByteWidth           = bufferSize;
+    desc.StructureByteStride = 0;
 
-	HRESULT hr = device->CreateBuffer(&desc, 0, constantBuffer);
-	_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+    HRESULT hr = device->CreateBuffer(&desc, 0, constantBuffer);
+    _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 
-	return hr;
+    return hr;
 }
 
 // 頂点バッファ作成
@@ -427,7 +432,6 @@ HRESULT GpuResourceUtils::CreateIndexBuffer(ID3D11Device *device,
     return device->CreateBuffer(&desc, &subData, buffer);
 }
 
-
 bool GpuResourceUtils::CompilePixelShader(ID3D11Device *device,
     const std::wstring                                 &hlslPath,
     const char                                         *entryPoint,
@@ -454,12 +458,15 @@ bool GpuResourceUtils::CompilePixelShader(ID3D11Device *device,
         &errorBlob);
 
     // コンパイルエラー時の処理
-    if (FAILED(hr)) {
-        if (errorBlob) {
+    if (FAILED(hr))
+    {
+        if (errorBlob)
+        {
             OutputDebugStringA("\n[Shader Compile Error]\n");
             OutputDebugStringA((char *)errorBlob->GetBufferPointer());
         }
-        else {
+        else
+        {
             // ファイルが開けなかった場合
             OutputDebugStringA("\n[Shader Compile Error] File not found or cannot be opened: ");
             OutputDebugStringW(hlslPath.c_str());
@@ -474,7 +481,8 @@ bool GpuResourceUtils::CompilePixelShader(ID3D11Device *device,
     if (FAILED(hr)) return false;
 
     // 必要ならBlobを返す
-    if (outShaderBlob) {
+    if (outShaderBlob)
+    {
         *outShaderBlob = shaderBlob.Detach();
     }
 
@@ -482,129 +490,135 @@ bool GpuResourceUtils::CompilePixelShader(ID3D11Device *device,
 }
 
 // 頂点シェーダーの動的コンパイル (.hlsl)
-bool GpuResourceUtils::CompileVertexShader(ID3D11Device* device,
-	const std::wstring& hlslPath, const char* entryPoint, const char* shaderModel,
-	ID3D11VertexShader** vertexShader, ID3D11InputLayout** inputLayout,
-	const D3D11_INPUT_ELEMENT_DESC* inputElementDescs, UINT inputElementCount,
-	ID3DBlob** outShaderBlob)
+bool GpuResourceUtils::CompileVertexShader(ID3D11Device *device,
+    const std::wstring &hlslPath, const char *entryPoint, const char *shaderModel,
+    ID3D11VertexShader **vertexShader, ID3D11InputLayout **inputLayout,
+    const D3D11_INPUT_ELEMENT_DESC *inputElementDescs, UINT inputElementCount,
+    ID3DBlob **outShaderBlob)
 {
-	Microsoft::WRL::ComPtr<ID3DBlob> shaderBlob = nullptr;
-	Microsoft::WRL::ComPtr<ID3DBlob> errorBlob = nullptr;
-	RootInclude rootInclude;
+    Microsoft::WRL::ComPtr<ID3DBlob> shaderBlob = nullptr;
+    Microsoft::WRL::ComPtr<ID3DBlob> errorBlob  = nullptr;
+    RootInclude                      rootInclude;
 
-	HRESULT hr = D3DCompileFromFile(hlslPath.c_str(), nullptr, &rootInclude,
-		entryPoint, shaderModel, D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG, 0, &shaderBlob, &errorBlob);
+    HRESULT hr = D3DCompileFromFile(hlslPath.c_str(), nullptr, &rootInclude,
+        entryPoint, shaderModel, D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG, 0, &shaderBlob, &errorBlob);
 
-	if (FAILED(hr)) {
-		if (errorBlob) OutputDebugStringA((char*)errorBlob->GetBufferPointer());
-		return false;
-	}
+    if (FAILED(hr))
+    {
+        if (errorBlob) OutputDebugStringA((char *)errorBlob->GetBufferPointer());
+        return false;
+    }
 
-	hr = device->CreateVertexShader(shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), nullptr, vertexShader);
-	if (FAILED(hr)) return false;
+    hr = device->CreateVertexShader(shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), nullptr, vertexShader);
+    if (FAILED(hr)) return false;
 
-	// 入力レイアウトが要求されていれば作成
-	if (inputLayout && inputElementDescs && inputElementCount > 0) {
-		hr = device->CreateInputLayout(inputElementDescs, inputElementCount,
-			shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), inputLayout);
-		if (FAILED(hr)) return false;
-	}
+    // 入力レイアウトが要求されていれば作成
+    if (inputLayout && inputElementDescs && inputElementCount > 0)
+    {
+        hr = device->CreateInputLayout(inputElementDescs, inputElementCount,
+            shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), inputLayout);
+        if (FAILED(hr)) return false;
+    }
 
-	if (outShaderBlob) *outShaderBlob = shaderBlob.Detach();
-	return true;
+    if (outShaderBlob) *outShaderBlob = shaderBlob.Detach();
+    return true;
 }
 
 // ジオメトリシェーダーの動的コンパイル (.hlsl)
-bool GpuResourceUtils::CompileGeometryShader(ID3D11Device* device,
-	const std::wstring& hlslPath, const char* entryPoint, const char* shaderModel,
-	ID3D11GeometryShader** geometryShader, ID3DBlob** outShaderBlob)
+bool GpuResourceUtils::CompileGeometryShader(ID3D11Device *device,
+    const std::wstring &hlslPath, const char *entryPoint, const char *shaderModel,
+    ID3D11GeometryShader **geometryShader, ID3DBlob **outShaderBlob)
 {
-	Microsoft::WRL::ComPtr<ID3DBlob> shaderBlob = nullptr;
-	Microsoft::WRL::ComPtr<ID3DBlob> errorBlob = nullptr;
-	RootInclude rootInclude;
+    Microsoft::WRL::ComPtr<ID3DBlob> shaderBlob = nullptr;
+    Microsoft::WRL::ComPtr<ID3DBlob> errorBlob  = nullptr;
+    RootInclude                      rootInclude;
 
-	HRESULT hr = D3DCompileFromFile(hlslPath.c_str(), nullptr, &rootInclude,
-		entryPoint, shaderModel, D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG, 0, &shaderBlob, &errorBlob);
+    HRESULT hr = D3DCompileFromFile(hlslPath.c_str(), nullptr, &rootInclude,
+        entryPoint, shaderModel, D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG, 0, &shaderBlob, &errorBlob);
 
-	if (FAILED(hr)) {
-		if (errorBlob) OutputDebugStringA((char*)errorBlob->GetBufferPointer());
-		return false;
-	}
+    if (FAILED(hr))
+    {
+        if (errorBlob) OutputDebugStringA((char *)errorBlob->GetBufferPointer());
+        return false;
+    }
 
-	hr = device->CreateGeometryShader(shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), nullptr, geometryShader);
-	if (FAILED(hr)) return false;
+    hr = device->CreateGeometryShader(shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), nullptr, geometryShader);
+    if (FAILED(hr)) return false;
 
-	if (outShaderBlob) *outShaderBlob = shaderBlob.Detach();
-	return true;
+    if (outShaderBlob) *outShaderBlob = shaderBlob.Detach();
+    return true;
 }
 
 // コンピュートシェーダーの動的コンパイル (.hlsl)
-bool GpuResourceUtils::CompileComputeShader(ID3D11Device* device,
-	const std::wstring& hlslPath, const char* entryPoint, const char* shaderModel,
-	ID3D11ComputeShader** computeShader, ID3DBlob** outShaderBlob)
+bool GpuResourceUtils::CompileComputeShader(ID3D11Device *device,
+    const std::wstring &hlslPath, const char *entryPoint, const char *shaderModel,
+    ID3D11ComputeShader **computeShader, ID3DBlob **outShaderBlob)
 {
-	Microsoft::WRL::ComPtr<ID3DBlob> shaderBlob = nullptr;
-	Microsoft::WRL::ComPtr<ID3DBlob> errorBlob = nullptr;
-	RootInclude rootInclude;
+    Microsoft::WRL::ComPtr<ID3DBlob> shaderBlob = nullptr;
+    Microsoft::WRL::ComPtr<ID3DBlob> errorBlob  = nullptr;
+    RootInclude                      rootInclude;
 
-	// HLSLファイルのコンパイル
-	HRESULT hr = D3DCompileFromFile(hlslPath.c_str(), nullptr, &rootInclude,
-		entryPoint, shaderModel, D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG, 0, &shaderBlob, &errorBlob);
+    // HLSLファイルのコンパイル
+    HRESULT hr = D3DCompileFromFile(hlslPath.c_str(), nullptr, &rootInclude,
+        entryPoint, shaderModel, D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG, 0, &shaderBlob, &errorBlob);
 
-	// エラーハンドリング
-	if (FAILED(hr)) {
-		if (errorBlob) {
-			// エラー内容をログに出力 (%ls は std::wstring 用のフォーマット指定子)
-			CCL_LOG_ERROR(LogCategory::Render, "Compute Shader Compile Error [%ls]\n%s",
-				hlslPath.c_str(), (char*)errorBlob->GetBufferPointer());
-		}
-		else {
-			// ファイルが見つからない場合
-			CCL_LOG_ERROR(LogCategory::Render, "Compute Shader File not found or cannot be opened: %ls", hlslPath.c_str());
-		}
-		return false;
-	}
+    // エラーハンドリング
+    if (FAILED(hr))
+    {
+        if (errorBlob)
+        {
+            // エラー内容をログに出力 (%ls は std::wstring 用のフォーマット指定子)
+            CCL_LOG_ERROR(LogCategory::Render, "Compute Shader Compile Error [%ls]\n%s",
+                hlslPath.c_str(), (char *)errorBlob->GetBufferPointer());
+        }
+        else
+        {
+            // ファイルが見つからない場合
+            CCL_LOG_ERROR(LogCategory::Render, "Compute Shader File not found or cannot be opened: %ls", hlslPath.c_str());
+        }
+        return false;
+    }
 
-	// デバイス上にコンピュートシェーダーを作成
-	hr = device->CreateComputeShader(shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), nullptr, computeShader);
-	if (FAILED(hr)) return false;
+    // デバイス上にコンピュートシェーダーを作成
+    hr = device->CreateComputeShader(shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), nullptr, computeShader);
+    if (FAILED(hr)) return false;
 
-	// 必要に応じてコンパイル済みバイナリ（Blob）を返す
-	if (outShaderBlob) *outShaderBlob = shaderBlob.Detach();
+    // 必要に応じてコンパイル済みバイナリ（Blob）を返す
+    if (outShaderBlob) *outShaderBlob = shaderBlob.Detach();
 
-	return true;
+    return true;
 }
 
 // コンピュートシェーダー読み込み (.cso)
 //   VS/PS/GS の Load* と同じく、事前コンパイル済み .cso を読んでそのまま生成する。
 //   HLSL ソースを同梱しない製品(Shipping)ビルド向け。
 HRESULT GpuResourceUtils::LoadComputeShader(
-	ID3D11Device* device,
-	const char* filename,
-	ID3D11ComputeShader** computeShader)
+    ID3D11Device         *device,
+    const char           *filename,
+    ID3D11ComputeShader **computeShader)
 {
-	// ファイルを開く
-	FILE* fp = nullptr;
-	fopen_s(&fp, filename, "rb");
-	if (!fp)
-	{
-		CCL_LOG_ERROR(LogCategory::Render, "Compute Shader (.cso) not found: %s", filename);
-		return E_FAIL;
-	}
+    // ファイルを開く
+    FILE *fp = nullptr;
+    fopen_s(&fp, filename, "rb");
+    if (!fp)
+    {
+        CCL_LOG_ERROR(LogCategory::Render, "Compute Shader (.cso) not found: %s", filename);
+        return E_FAIL;
+    }
 
-	// ファイルのサイズを求める
-	fseek(fp, 0, SEEK_END);
-	long size = ftell(fp);
-	fseek(fp, 0, SEEK_SET);
+    // ファイルのサイズを求める
+    fseek(fp, 0, SEEK_END);
+    long size = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
 
-	// メモリ上にバイナリを格納
-	std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(size);
-	fread(data.get(), size, 1, fp);
-	fclose(fp);
+    // メモリ上にバイナリを格納
+    std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(size);
+    fread(data.get(), size, 1, fp);
+    fclose(fp);
 
-	// コンピュートシェーダー生成
-	HRESULT hr = device->CreateComputeShader(data.get(), size, nullptr, computeShader);
-	_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+    // コンピュートシェーダー生成
+    HRESULT hr = device->CreateComputeShader(data.get(), size, nullptr, computeShader);
+    _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 
-	return hr;
+    return hr;
 }

@@ -101,9 +101,8 @@ void LightSystem::Update(float dt)
         lightManager->AddSpotLight(gfxLight);
     }
 
-    // 5. GPUへ転送（Bind）は ModelRenderer::Render の中で呼んでもいいですが、
-    //    ここで準備完了としておくのが責務として綺麗
-    //    (※Bindに必要なContextが無い場合は、ここは省略してRenderer側で呼んでもOK)
+    // ここでは LightManager に値を積むところまで。
+    // GPU への転送（CbLight のバインド）は Graphics::Update が毎フレーム行う。
 }
 
 DirectX::XMFLOAT3 LightSystem::CalculateDirection(const DirectX::XMFLOAT4 &rotation)

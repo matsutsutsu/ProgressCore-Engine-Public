@@ -13,8 +13,12 @@
  * @brief 複数の RenderPass を順序付きで実行するパイプライン。
  * @details
  *  - パスの追加順 = 描画順
- *  - 各パスは独立しており、追加/削除がコンパイル時の影響を受けない
  *  - Debug ビルドでは GPU マーカーを自動挿入（Pix/RenderDoc から識別可能）
+ *
+ *  このクラスは「登録されたパスを順に回す器」に徹し、具象パスの型を一切知らない。
+ *  どのパスをどの順で積むかは描画全体を統括する Graphics 側の責務
+ *  （Graphics::BuildDefaultRenderPasses）。これにより、パスを増減しても
+ *  このファイルは再コンパイルされず、将来シーンごとに構成を差し替えることもできる。
  *
  *  典型的な使い方：
  *  @code
@@ -41,10 +45,6 @@ public:
      * @details 以降の AddPass に渡すサービス群をここで保持する。
      */
     void Initialize(const RenderServices& services);
-
-    // デフォルトの３Ｄシーンの構築用レンダーパス登録関数
-    // TODO: 今後ローディング画面用に最低限のパス関数を作成してシーンによって変更したりする
-    void BuildDefaultPipeline();
 
     /**
      * @brief 全パスを Shutdown して破棄する。パスは追加と逆順で破棄される。
@@ -115,7 +115,7 @@ public:
     /**
     * @brief 初期化時に渡されたサービス群への const 参照を返す。
     * @details EnvironmentSystem 等のパイプライン外システムが services を
-    *          参照できるようにするアクセサ。ModelRenderer::GetServices() 経由で公開する。
+    *          参照できるようにするアクセサ。Graphics::GetRenderServices() 経由で公開される。
     */
     const RenderServices& GetServices() const noexcept { return m_services; }
 

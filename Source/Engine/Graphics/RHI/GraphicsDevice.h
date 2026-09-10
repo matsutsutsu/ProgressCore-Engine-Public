@@ -18,7 +18,7 @@
  *  - Clear / SetRenderTargets / Present の実行
  *
  *  責務外:
- *  - 描画サブシステムの管理（ModelRenderer 等）→ Graphics が担う
+ *  - 描画サブシステムの管理（ModelConstantBuffers 等）→ Graphics が担う
  *  - シェーダー登録、ライト更新 → Graphics が担う
  */
 class GraphicsDevice
@@ -39,7 +39,7 @@ public:
     /**
      * @brief 全リソースを解放する。Graphics::Shutdown から呼ぶこと。
      * @details ClearState / Flush / デバッグレポート / ComPtr リセットを行う。
-     *          この前にサブシステム（ModelRenderer 等）を reset しておくこと。
+     *          この前にサブシステム（ModelConstantBuffers 等）を reset しておくこと。
      */
     void Shutdown();
 

@@ -1,5 +1,5 @@
 #include "ShadowPass.h"
-#include "Engine/Graphics/Renderer/ModelRenderer.h"
+#include "Engine/Graphics/Renderer/ModelConstantBuffers.h"
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
 #include "Engine/Graphics/RHI/Camera.h"
 #include "Engine/Graphics/RHI/Light.h"
@@ -23,8 +23,8 @@ void ShadowPass::Execute(const RenderFrameContext& ctx)
 
     // MakeLegacyContext 不要: m_services / ctx を直接参照
     RenderQueue* queue = m_services->renderQueue;
-    ModelRenderer* renderer = m_services->modelRenderer;
-    if (!queue || !renderer) return;
+    ModelConstantBuffers* modelConstants = m_services->modelConstants;
+    if (!queue || !modelConstants) return;
 
     const auto& shadowCommands = queue->GetShadowCommands();
     if (shadowCommands.empty()) return;
@@ -126,7 +126,7 @@ void ShadowPass::Execute(const RenderFrameContext& ctx)
 
             const bool isSkinned = !info.mesh->bones.empty();
             if (isSkinned) {
-                renderer->UpdateSkeletonConstants(dc, *info.mesh);
+                modelConstants->UpdateSkeletonConstants(dc, *info.mesh);
                 if (lastBound != info.mesh) {
                     UINT stride = sizeof(ModelResource::Vertex), offset = 0;
                     dc->IASetVertexBuffers(0, 1, info.mesh->data->vertexBuffer.GetAddressOf(), &stride, &offset);

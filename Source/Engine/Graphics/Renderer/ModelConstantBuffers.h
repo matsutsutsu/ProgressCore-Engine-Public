@@ -6,37 +6,40 @@
 #include "Engine/Graphics/Shader/Shared/ShaderShared.h"
 
 /**
- * @brief モデル描画に特化した GPU リソース管理クラス。
+ * @brief モデル描画で使う定数バッファ（CbSkeleton / CbScene）の保持とバインドを担う。
  *
  * @details
- *  【設計の責務】
- *   - スケルトン定数バッファ（CbSkeleton）の所有・更新
- *   - CbScene / CbSkeleton のパイプラインへのバインド
+ *  【責務】
+ *   - スケルトン定数バッファ CbSkeleton (b12) の所有・GPU 転送
+ *   - CbScene (b8) / CbSkeleton のパイプラインへのバインド
  *
  *  【責務外】
- *   - レンダリングパイプラインの管理  → Graphics が担う
+ *   - 描画そのもの（ドローコール発行）→ 各 IRenderPass が行う
  *   - パスの登録・実行               → Graphics が担う
  *
- *  @code
- *   // 呼び出し側（パスから）
- *   renderer->UpdateSkeletonConstants(dc, mesh);
+ *  @note このクラスはメッシュを 1 枚も描かない。定数バッファを用意するだけで、
+ *        ドローコールは各 IRenderPass が発行する。
  *
- *   // グローバルリソースのバインド（EnvironmentSystem から）
- *   renderer->BindAllGlobalConstantBuffers(dc);
+ *  @code
+ *   // 描画パスから（スキンドメッシュのボーン行列を送る）
+ *   modelConstants->UpdateSkeletonConstants(dc, mesh);
+ *
+ *   // EnvironmentSystem から（フレーム共通の定数バッファをまとめてバインド）
+ *   modelConstants->BindAllGlobalConstantBuffers(dc);
  *  @endcode
  */
-class ModelRenderer
+class ModelConstantBuffers
 {
 public:
     /**
      * @brief スケルトン定数バッファを生成する。
      * @note  パイプラインは別途 Graphics::SetupRenderPipeline() で構築する。
      */
-    explicit ModelRenderer(ID3D11Device* device);
-    ~ModelRenderer() = default;
+    explicit ModelConstantBuffers(ID3D11Device* device);
+    ~ModelConstantBuffers() = default;
 
-    ModelRenderer(const ModelRenderer&) = delete;
-    ModelRenderer& operator=(const ModelRenderer&) = delete;
+    ModelConstantBuffers(const ModelConstantBuffers&) = delete;
+    ModelConstantBuffers& operator=(const ModelConstantBuffers&) = delete;
 
     /**
      * @brief CbScene バッファポインタをキャッシュする（Graphics から 1 回だけ呼ぶ）。

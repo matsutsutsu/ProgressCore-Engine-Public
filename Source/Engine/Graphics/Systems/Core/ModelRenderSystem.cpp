@@ -2,8 +2,8 @@
 
 // 実装詳細で必要なインクルード
 #include "Engine/Graphics/Components/Lighting/FogComponent.h"
-#include "Engine/Graphics/Renderer/ModelRenderer.h"
-#include "Engine/Graphics/Resource/Model.h" // Modelポインタ用
+#include "Engine/Graphics/Renderer/ModelConstantBuffers.h"
+#include "Engine/Graphics/Resource/Model.h"              // Modelポインタ用
 #include "Engine/Graphics/Components/Core/NoRenderTag.h" // 当たり判定専用ジオメトリの除外用
 #include "Engine/Graphics/Shader/ShaderResources.h"
 #include <DirectXCollision.h> // 視錐台カリング用
@@ -18,7 +18,8 @@
 using namespace CCL::ECS;
 using namespace DirectX;
 
-ModelRenderSystem::ModelRenderSystem() : IfSystem("ModelRenderSystem")
+ModelRenderSystem::ModelRenderSystem()
+    : IfSystem("ModelRenderSystem")
 {
     // 当たり判定専用ジオメトリ(NoRenderTag)は走査対象から除外する。
     //    描画ループ側に分岐を足さずに「透明な当たり判定」を実現する。
@@ -29,53 +30,56 @@ void ModelRenderSystem::Update(float dt)
 {
 
     // 最適化 シングルトンへのアクセス(ロック等のオーバーヘッド)をループの外に出す
-    auto& resManager = ResourceManager::Instance();
-    auto& renderQueue = RenderQueue::Instance();
+    auto &resManager  = ResourceManager::Instance();
+    auto &renderQueue = RenderQueue::Instance();
 
     // TransformComponent と ModelComponent の組を全エンティティ分回す
-    ForEach([&](const TransformComponent& transform,
-        const ModelComponent& modelComp,
-        const MaterialComponent& mat,
-        const VisibilityComponent& vis) { 
-
+    ForEach([&](const TransformComponent  &transform,
+                const ModelComponent      &modelComp,
+                const MaterialComponent   &mat,
+                const VisibilityComponent &vis) {
         // 最重要：ここでカリング結果を見て、画面外なら即座に処理をスキップ（サボる）
         if (!vis.isVisible) return;
 
-        Model* model = modelComp.GetModel(); // ハンドルから取得
+        Model *model = modelComp.GetModel(); // ハンドルから取得
         if (!model) return;
 
-
         bool hasBones = false;
-        for (const auto &mesh : model->GetMeshes()) {
-            if (!mesh.bones.empty()) {
+        for (const auto &mesh : model->GetMeshes())
+        {
+            if (!mesh.bones.empty())
+            {
                 hasBones = true;
                 break;
             }
         }
-        
 
         // シェーダーID決定（リストの先頭を使うなどの簡易判定）
         uint32_t shaderHash = "Phong"_hash;
 
         // IsValid() でチケットを確認し、実体をもらう
         // Materialを個別に持っている場合の条件
-        if (!mat.overrideMaterials.empty() && mat.overrideMaterials[0].IsValid()) {
+        if (!mat.overrideMaterials.empty() && mat.overrideMaterials[0].IsValid())
+        {
             MaterialData *matData =
                 resManager.GetMaterial(mat.overrideMaterials[0]);
-            if (matData) {
-                shaderHash = matData->shaderHash; 
-            }
-		} // 共有マテリアルを使う場合の条件
-        else {
-            const auto &materials = model->GetMaterials();
-            if (!materials.empty() && materials[0].data) 
+            if (matData)
             {
-                shaderHash = materials[0].data->shaderHash; 
+                shaderHash = matData->shaderHash;
+            }
+        } // 共有マテリアルを使う場合の条件
+        else
+        {
+            const auto &materials = model->GetMaterials();
+            if (!materials.empty() && materials[0].data)
+            {
+                shaderHash = materials[0].data->shaderHash;
             }
         }
 
         // =========================================================
-        // 最重要変更：ModelRenderer::Draw() を呼ぶのをやめ、伝票を作って提出！
+        // ここでは描画せず、RenderCommand を RenderQueue に積むだけ。
+        // 実際のドローコールは OpaquePass 等がソート後にまとめて発行する。
         // =========================================================
         RenderCommand cmd;
         cmd.shaderHash = shaderHash;
@@ -93,22 +97,21 @@ void ModelRenderSystem::Update(float dt)
             cmd.assetHash = modelComp.assetHash; // ファイル由来は従来どおり
         }
 
-        cmd.model = model;
+        cmd.model       = model;
         cmd.worldMatrix = transform.renderWorldMatrix;
 
         // マテリアルオーバーライド配列のコピー
         cmd.overrideCount = static_cast<uint8_t>((std::min)(mat.overrideMaterials.size(), static_cast<size_t>(4)));
-        for (uint8_t j = 0; j < cmd.overrideCount; ++j) {
+        for (uint8_t j = 0; j < cmd.overrideCount; ++j)
+        {
             cmd.overrideMaterials[j] = mat.overrideMaterials[j];
         }
 
-		cmd.customParams = mat.customParams;
+        cmd.customParams = mat.customParams;
 
         // RenderQueueのカウンターに提出！
         renderQueue.SubmitOpaque(cmd);
-
     });
 }
-
 
 REGISTER_RENDER_SYSTEM(ModelRenderSystem, Priority::RenderStage::R08_Main);

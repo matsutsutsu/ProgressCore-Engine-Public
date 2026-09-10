@@ -98,7 +98,7 @@ void BaseScene::Initialize()
     m_worldPtr->AddResource<LightManager*>(gfx.GetLightManager());
     m_worldPtr->AddResource<PostProcessManager*>(gfx.GetPostProcessManager());
     m_worldPtr->AddResource<ShadowMap*>(gfx.GetShadowMap());
-    m_worldPtr->AddResource<ModelRenderer*>(gfx.GetModelRenderer());
+    m_worldPtr->AddResource<ModelConstantBuffers*>(gfx.GetModelConstantBuffers());
     m_worldPtr->AddResource<ParticleRenderer*>(gfx.GetParticleRenderer());
     m_worldPtr->AddResource<PrimitiveRenderer*>(gfx.GetPrimitiveRenderer());
     m_worldPtr->AddResource<ShapeRenderer*>(gfx.GetShapeRenderer());

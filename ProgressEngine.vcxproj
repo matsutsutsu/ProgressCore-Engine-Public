@@ -516,7 +516,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Renderer\InstanceBuffer.h" />
-    <ClInclude Include="Source\Engine\Graphics\Renderer\ModelRenderer.h" />
+    <ClInclude Include="Source\Engine\Graphics\Renderer\ModelConstantBuffers.h" />
     <ClInclude Include="Source\Engine\Graphics\Renderer\MeshCulling.h" />
     <ClInclude Include="Source\Engine\Graphics\Renderer\RenderDebugRegistry.h" />
     <ClInclude Include="Source\Engine\Graphics\Renderer\ParticleRenderer.h" />
@@ -1029,7 +1029,7 @@
     <ClCompile Include="Source\Engine\Graphics\Renderer\ImGuiRenderer.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Graphics\Renderer\ModelRenderer.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Renderer\ModelConstantBuffers.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Renderer\ParticleRenderer.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Renderer\PrimitiveRenderer.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Renderer\ShapeRenderer.cpp" />

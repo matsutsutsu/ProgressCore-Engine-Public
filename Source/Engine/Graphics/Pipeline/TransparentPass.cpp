@@ -1,5 +1,5 @@
 #include "TransparentPass.h"
-#include "Engine/Graphics/Renderer/ModelRenderer.h"
+#include "Engine/Graphics/Renderer/ModelConstantBuffers.h"
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
 #include "Engine/Graphics/Renderer/RenderQueue.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
@@ -18,8 +18,8 @@ void TransparentPass::Execute(const RenderFrameContext& ctx)
 
     ID3D11DeviceContext* dc = ctx.dc;
     RenderQueue* queue = m_services->renderQueue;
-    ModelRenderer* renderer = m_services->modelRenderer;
-    if (!queue || !renderer) return;
+    ModelConstantBuffers* modelConstants = m_services->modelConstants;
+    if (!queue || !modelConstants) return;
 
     if (m_services->shadowMap) {
         m_services->shadowMap->Bind(dc, SLOT_SRV_SHADOW, SLOT_SMP_SHADOW, SLOT_CB_SHADOW);
@@ -74,7 +74,7 @@ void TransparentPass::Execute(const RenderFrameContext& ctx)
         m_instanceBuffer.Write(dc, &singleData, 1);
         m_instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
 
-        if (isSkinned) renderer->UpdateSkeletonConstants(dc, mesh);
+        if (isSkinned) modelConstants->UpdateSkeletonConstants(dc, mesh);
 
         // override を明示的に渡す（mesh.material への書き込みゼロ）
         matShader->Update(dc, mesh, overrideMat);
