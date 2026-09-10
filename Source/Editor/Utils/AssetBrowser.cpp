@@ -4,7 +4,6 @@
 #include <wrl/client.h>
 #include <iostream>
 #include <algorithm>
-#include "Engine/Graphics/RHI/Graphics.h"
 #include <imgui_internal.h>
 #include "ShellIconLoader.h"
 #include "Engine/Platform/Core/Logger.h"

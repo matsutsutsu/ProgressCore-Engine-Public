@@ -5,7 +5,7 @@
 #include "Engine/Core/Math/Misc.h"
 #include "GpuResourceUtils.h"
 #include "Engine/Platform/Core/Logger.h"
-#include "Engine/Graphics/RHI/Graphics.h"
+#include "Engine/Graphics/RHI/DebugName.h"
 #include <windows.h>
 
 // D3DCompiler ライブラリのリンク

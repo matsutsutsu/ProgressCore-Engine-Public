@@ -1,5 +1,6 @@
 #include "GPUParticleUpdateSystem.h"
 #include "Engine/Graphics/RHI/Graphics.h"
+#include "Engine/Graphics/RHI/DebugName.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 #include "Engine/Graphics/Shader/Shared/ParticleShared.h"

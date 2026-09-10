@@ -6,7 +6,6 @@
 #endif
 
 #include "Engine/Graphics/RHI/GpuResourceUtils.h" // テクスチャロード用
-#include "Engine/Graphics/RHI/Graphics.h"         // デバイス取得用
 #include "Engine/Platform/Core/Dialog.h"              // ファイル選択ダイアログ用
 
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"

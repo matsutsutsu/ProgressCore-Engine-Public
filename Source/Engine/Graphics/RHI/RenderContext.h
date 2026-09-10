@@ -81,9 +81,7 @@ struct RenderFrameContext
     // SkyboxPass はこれを使って描画する（null なら SkyboxPass 側の既定にフォールバック）。
     ID3D11ShaderResourceView* skyboxSRV = nullptr;
 
-    // ---- メタ情報 ----
-    float    deltaTime = 0.0f;
-    uint64_t frameIndex = 0;
+    // ---- 描画先のサイズ（targetRTV の実寸） ----
     uint32_t viewportW = 0;
     uint32_t viewportH = 0;
 };

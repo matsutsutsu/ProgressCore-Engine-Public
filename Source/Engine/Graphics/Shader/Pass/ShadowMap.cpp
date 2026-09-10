@@ -3,7 +3,7 @@
 #include "Engine/Graphics/Shader/Shared/ShaderShared.h"
 #include "Engine/Core/Math/Misc.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
-#include "Engine/Graphics/RHI/Graphics.h"
+#include "Engine/Graphics/RHI/DebugName.h"
 
 
 // コンストラクタ

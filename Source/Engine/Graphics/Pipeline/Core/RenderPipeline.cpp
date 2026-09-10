@@ -91,10 +91,6 @@ void RenderPipeline::Execute(const RenderFrameContext& ctx)
             // 変数名の重複を避けるため、一意なローカル変数を定義する。
             tracy::D3D11ZoneScope __tracy_gpu_zone(tracyCtx, pass->m_gpuSourceLocation, true);
 
-            // ※もし上記で「true が多すぎる（引数エラー）」が出た場合は、
-            //   tracy::D3D11ZoneScope __tracy_gpu_zone(tracyCtx, pass->m_gpuSourceLocation); 
-            //   に戻しつつ、以下の #else のブロックを使ってください。
-
             pass->Execute(ctx);
         }
         else {

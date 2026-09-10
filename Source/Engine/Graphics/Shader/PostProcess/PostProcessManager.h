@@ -23,17 +23,14 @@
  *   - ToneMapping（1 入力のみ、bloom 合成は BloomEffect が完結）
  *
  *  【使い方】
+ *   - 実行順 = PostProcessManager::Initialize 内の AddEffect の並び順。
+ *     エフェクトを増やすときは、そこに 1 行足す。
+ *   - パラメータ更新は ECS 側（PostProcessSystem）から型で引いて行う。
  *  @code
- *   // Graphics::Initialize 等で登録（順序 = 実行順）
- *   auto* bloom = m_postProcess->AddEffect<BloomEffect>();
- *   bloom->intensity = 1.5f;
- *   m_postProcess->AddEffect<VignetteEffect>();
- *
- *   // ECS システムからパラメータ更新
- *   auto* bloom = m_postProcess->GetEffect<BloomEffect>();
- *   if (bloom) {
- *       bloom->threshold = component->threshold;
- *       bloom->SetEnabled(component->enable);
+ *   // PostProcessSystem から毎フレーム
+ *   if (auto* bloom = postProcess->GetEffect<BloomEffect>()) {
+ *       bloom->threshold = component.threshold;
+ *       bloom->SetEnabled(component.enable);
  *   }
  *  @endcode
  */
@@ -105,9 +102,9 @@ public:
     // ToneMap の露出値（ECS から更新）
     ToneMapConfigComponent toneMapConfig;
 
-    // 注: bloomConfig は廃止。BloomEffect のメンバを直接書き込む。
-    //   旧: m_postProcess->bloomConfig.intensity = 1.0f;
-    //   新: m_postProcess->GetEffect<BloomEffect>()->intensity = 1.0f;
+    // ToneMap 以外のエフェクトは設定用メンバを持たない。
+    // GetEffect<T>() で実体を引いて直接書き込む
+    // （例: GetEffect<BloomEffect>()->intensity = 1.0f;）。
 
 private:
     ID3D11Device* m_device = nullptr;

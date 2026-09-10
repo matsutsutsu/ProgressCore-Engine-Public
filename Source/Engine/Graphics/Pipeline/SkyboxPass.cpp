@@ -1,5 +1,4 @@
 #include "SkyboxPass.h"
-#include "Engine/Graphics/RHI/Graphics.h"    // _ASSERT_EXPR のため保持
 #include "Engine/Graphics/RHI/Camera.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 #include "Engine/Graphics/RHI/RenderState.h"

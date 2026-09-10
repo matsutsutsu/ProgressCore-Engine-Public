@@ -533,6 +533,7 @@
     <ClInclude Include="Source\Engine\Graphics\Resource\ResourceManager.h" />
     <ClInclude Include="Source\Engine\Graphics\Resource\ResourceTypes.h" />
     <ClInclude Include="Source\Engine\Graphics\RHI\Camera.h" />
+    <ClInclude Include="Source\Engine\Graphics\RHI\DebugName.h" />
     <ClInclude Include="Source\Engine\Graphics\RHI\GpuResourceUtils.h" />
     <ClInclude Include="Source\Engine\Graphics\RHI\Graphics.h" />
     <ClInclude Include="Source\Engine\Graphics\RHI\GraphicsDevice.h" />

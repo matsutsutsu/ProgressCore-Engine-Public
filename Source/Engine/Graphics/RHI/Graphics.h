@@ -17,20 +17,6 @@
 
 class Camera;
 
-// D3D デバッグレイヤーでオブジェクト名を設定するヘルパー関数
-template <typename T>
-void SetDebugName(T* child, const std::string& name)
-{
-    if (!child) return;
-    // 既に別サイズの名前が付いている状態で上書きすると
-    // "SETPRIVATEDATA_CHANGINGPARAMS" 警告が出る（例: GpuResourceUtils::LoadTexture が
-    // 汎用名を付けた直後に、呼び出し元がファイル名入りの具体名で付け直すケース）。
-    // 上書き前に一度クリアしておけば、サイズ違いとして検出されず警告が出ない。
-    child->SetPrivateData(WKPDID_D3DDebugObjectName, 0, nullptr);
-    child->SetPrivateData(WKPDID_D3DDebugObjectName,
-        static_cast<UINT>(name.size()), name.c_str());
-}
-
 /**
  * @brief 描画サブシステムのコーディネーター（シングルトン）。
  *

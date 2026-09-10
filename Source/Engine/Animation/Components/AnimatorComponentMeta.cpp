@@ -10,7 +10,6 @@
 
 #include "Engine/Animation/Core/AnimGraphSerializer.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
-#include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Platform/Core/Dialog.h"
 #include "Engine/Platform/Core/FileSystem.h"
 
