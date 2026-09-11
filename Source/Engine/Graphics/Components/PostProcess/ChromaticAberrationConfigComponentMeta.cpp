@@ -1,5 +1,4 @@
-/// @file  ChromaticAberrationConfigComponentMeta.cpp
-/// @brief ChromaticAberrationConfigComponent のシリアライズ/インスペクタ定義(パターンC)。
+// ChromaticAberrationConfigComponent のシリアライズ/インスペクタ定義(パターンC)。
 #include "Engine/Graphics/Components/PostProcess/ChromaticAberrationConfigComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"

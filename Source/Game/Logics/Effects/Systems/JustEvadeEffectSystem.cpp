@@ -33,8 +33,8 @@ using namespace DirectX;
 
 namespace
 {
-/// スロットの識別子と重ね順。エンジンは中身を知らないので、名前と優先度は使う側が決める。
-/// 命中バースト(10)より強くしておき、同時に出たら回避側が前に出るようにする。
+// スロットの識別子と重ね順。エンジンは中身を知らないので、名前と優先度は使う側が決める。
+// 命中バースト(10)より強くしておき、同時に出たら回避側が前に出るようにする。
 const uint32_t kSource   = CCL::Utils::HashString("JustEvade");
 constexpr int  kPriority = 20;
 

@@ -1,11 +1,11 @@
-/// @file CameraIntroOrbitSystem.cpp
-/// @brief CameraIntroOrbitSystem の実装。
+// CameraIntroOrbitSystem の実装。
 
 #include "Engine/Camera/Systems/CameraIntroOrbitSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Camera/CameraEvents.h"
 #include "Engine/Platform/Input/IInputAPI.h"
 #include "Engine/Platform/Core/Logger.h"
+#include "Engine/Core/Components/EntityLabel.h"
 #include "Engine/Core/App/GameFlowState.h"
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -23,16 +23,17 @@ using namespace DirectX::SimpleMath;
 
 namespace
 {
-/// @brief スキップ入力を受け付けるまでの猶予(秒)。
-///        シーン開始直後にボタンを押しっぱなしだと事故で飛んでしまうため。
+// スキップ入力を受け付けるまでの猶予(秒)。
+// シーン開始直後にボタンを押しっぱなしだと事故で飛んでしまうため。
 constexpr float kSkipGraceSeconds = 0.5f;
 
-/// @brief 注視対象が見つかるまで待つ上限(秒)。
-///        これを超えたら演出を諦めてゲームを進行させる。
-/// @note  実測(Debug)で、レベルロード完了から対象の解決まで約1.1秒かかった。
-///        ロード直後の1フレーム目は dt が大きく跳ねるため、短すぎると遅い環境で
-///        「ボスを見つける前に諦める」事故になる。待ちが長引いて困るのは
-///        対象が本当に存在しない時だけなので、余裕を持たせるほうが安全側。
+// 注視対象が見つかるまで待つ上限(秒)。
+// これを超えたら演出を諦めてゲームを進行させる。
+//
+// 実測(Debug)で、レベルロード完了から対象の解決まで約1.1秒かかった。
+// ロード直後の1フレーム目は dt が大きく跳ねるため、短すぎると遅い環境で
+// 「ボスを見つける前に諦める」事故になる。待ちが長引いて困るのは
+// 対象が本当に存在しない時だけなので、余裕を持たせるほうが安全側。
 constexpr float kTargetResolveTimeout = 5.0f;
 } // namespace
 
@@ -251,9 +252,9 @@ void CameraIntroOrbitSystem::Update(float dt)
         if (!wasPlaying && intro.playing)
         {
             CCL_LOG_INFO(LogCategory::Game,
-                "[CameraIntroOrbit] 導入演出を開始 (camera=%llu, target=%llu, duration=%.2fs)",
-                static_cast<unsigned long long>(id),
-                static_cast<unsigned long long>(intro.target.id), intro.duration);
+                "[CameraIntroOrbit] 導入演出を開始 (camera=%s, target=%s, duration=%.2fs)",
+                CCL::EntityLabel(*m_world, id).c_str(),
+                CCL::EntityLabel(*m_world, intro.target.id).c_str(), intro.duration);
         }
 
         // 進行度。待ち時間中(playing=false かつ未終了)は 0 のまま＝開始位置で待機する。
@@ -266,8 +267,8 @@ void CameraIntroOrbitSystem::Update(float dt)
 
         if (justFinished)
         {
-            CCL_LOG_INFO(LogCategory::Game, "[CameraIntroOrbit] 導入演出が終了 (camera=%llu, skipped=%s)",
-                static_cast<unsigned long long>(id), intro.skipped ? "yes" : "no");
+            CCL_LOG_INFO(LogCategory::Game, "[CameraIntroOrbit] 導入演出が終了 (camera=%s, skipped=%s)",
+                CCL::EntityLabel(*m_world, id).c_str(), intro.skipped ? "yes" : "no");
 
             vcam.priority = intro.idlePriority; // ここで Brain が自動的に次のカメラへブレンドする
             finished.push_back({id, intro.skipped});

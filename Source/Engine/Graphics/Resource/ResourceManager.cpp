@@ -5,6 +5,7 @@
 
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/Graphics/RHI/Graphics.h"
+#include "Engine/Graphics/RHI/DebugName.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 
 #include "Engine/Platform/Core/FileSystem.h" // ユーザー指定のパス

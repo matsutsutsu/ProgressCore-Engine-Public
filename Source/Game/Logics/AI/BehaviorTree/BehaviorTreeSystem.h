@@ -1,20 +1,7 @@
-/// @file  BehaviorTreeSystem.h
-/// @brief 汎用の BehaviorTree 評価エンジン。BossAISystem から抽出した。
-///
-/// 役割
-///   BehaviorTreeComponent を持つ「どんなエンティティ」でも評価する。
-///   ボス固有の概念（BossCommand/BossAction）を一切知らない。
-///   Action/Condition は BTActionRegistry から引く（switch廃止）。
-///
-/// ボス固有処理はどこへ行ったか
-///   「移動してほしい」「この陣形にしてほしい」等の出力は、
-///   各 IBTAction（BTActions_Boss.h）が world から BossCommandComponent を
-///   自分で取得して書き込む。エンジンは関与しない。
-///
-/// フィルタ
-///   Write<BehaviorTreeComponent>, Read<TransformComponent>, Read<TimeStateComponent>
-///   のみ。HealthComponent や BossActionComponent への依存を外したので、
-///   それらを持たないエンティティ（将来のドローン等）でも動く。
+// 汎用の BehaviorTree 評価エンジン。
+//   BehaviorTreeComponent を持つどんなエンティティでも評価し、
+//   ボス固有の概念（BossCommand/BossAction）を一切知らない。
+//   Action/Condition は BTActionRegistry から引く（switch廃止）。
 #pragma once
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"
@@ -30,6 +17,12 @@ class BehaviorTreeSystem : public CCL::ECS::IfSystem<
                                CCL::ECS::Read<TimeStateComponent>>
 {
   public:
+    /// 申告の集約で基底の実装を呼ぶために別名を付ける（テンプレート引数の再掲を避ける）。
+    using Base = CCL::ECS::IfSystem<BehaviorTreeSystem,
+                                    CCL::ECS::Write<BehaviorTreeComponent>,
+                                    CCL::ECS::Read<TransformComponent>,
+                                    CCL::ECS::Read<TimeStateComponent>>;
+
     BehaviorTreeSystem();
     virtual ~BehaviorTreeSystem() override = default;
 
@@ -38,9 +31,30 @@ class BehaviorTreeSystem : public CCL::ECS::IfSystem<
 
     void OnGui() override;
 
+    // スケジューラへの申告。
+    //   アクションが GetComponent<T>() で行う読み書きはテンプレート引数に現れず、
+    //   放っておくとスケジューラが「BehaviorTreeComponent しか触らない」と誤解して、
+    //   同じものを書く別システムと並列に走らせてしまう。
+    //   レジストリが集めた申告をここで足すことで、「BTエンジンは敵の種類を知らない」を
+    //   保ったまま依存解析を正しくする。
+    std::vector<CCL::ECS::TypeID> GetReadTypes()  const override;
+    std::vector<CCL::ECS::TypeID> GetWriteTypes() const override;
+
+    // アニメのトリガーを引くのはBTなので、消費側より前に走る必要がある。
+    //   逆向きに書かない（あちらはエンジン、こちらはゲーム）。
+    std::vector<const char *> GetRunBefore() const override { return {"AnimControllerSystem"}; }
+
   private:
-    /// @brief 木を再帰的に評価する汎用エンジン。
-    ///        Action/Condition は registry から引いて実行する。
+    /// 各エンティティに「パスに対応する木」を配り直す（直列）。読み込みは BTAssetCache
+    /// が持ち、ここは配布と実行状態の破棄だけ。並列ループの手前で呼ぶ。
+    void SyncAssets();
+
+    /// 辞書（ActionRegistry.h）に載っている行動・条件がすべて実装登録されているか調べる。
+    /// @note 手書きの辞書と実行時登録がずれると「エディタで選べるのに何も起きない技」になる。
+    ///       ずれても動いてしまうので、起動時に一度だけ声を上げる。
+    static void VerifyRegistrations();
+
+    /// 木を再帰的に評価する。Action/Condition は registry から引いて実行する。
     BTNodeState EvaluateTreeRecursive(
         BTNodeID                  nodeId,
         BehaviorTreeComponent    &btComp,
@@ -49,16 +63,13 @@ class BehaviorTreeSystem : public CCL::ECS::IfSystem<
         CCL::ECS::EntityID        entity,
         float                     dt);
 
-#ifdef ENABLE_EDITOR
-    /// @brief デバッグUI：木を一覧にして「この枝を今すぐ実行」を選ばせる。
-    /// @note  技を出す条件（距離・抽選）を待たずに狙った攻撃だけを確認するためのもの。
-    ///        木のデータは書き換えず、評価の開始ノードを差し替えるだけ。
+    /// デバッグUI：木を一覧にして「この枝を今すぐ実行」を選ばせる。
+    /// 木のデータは書き換えず、評価の開始ノードを差し替えるだけ。
     void DrawForcedNodeGui(BehaviorTreeComponent &btComp, CCL::ECS::EntityID entity);
 
-    /// @brief 上の再帰部分。1ノード=1行を描き、実行ボタンを添える。
+    /// 上の再帰部分。1ノード=1行を描き、実行ボタンを添える。
     void DrawNodeRowRecursive(const BTAsset         &asset,
                               BTNodeID               nodeId,
                               BehaviorTreeComponent &btComp,
                               CCL::ECS::EntityID     entity);
-#endif
 };

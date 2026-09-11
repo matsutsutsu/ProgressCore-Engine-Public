@@ -29,9 +29,9 @@ struct AnimatorComponent {
 
     // --- アニメーション状態（時計） ---
     float currentTimer = 0.0f;
-    /// @brief 前フレームの再生時刻（このフレームで進める前の currentTimer）。
-    ///        区間イベント(HitBox)のスイープ判定に使う：1フレームで [start,end] を飛び越しても
-    ///        [previousFrameTimer, currentTimer] と重なれば当たったと見なせる。AnimationSystem が毎フレーム設定。
+    // 前フレームの再生時刻（このフレームで進める前の currentTimer）。
+    // 区間イベント(HitBox)のスイープ判定に使う：1フレームで [start,end] を飛び越しても
+    // [previousFrameTimer, currentTimer] と重なれば当たったと見なせる。AnimationSystem が毎フレーム設定。
     float previousFrameTimer = 0.0f;
     float playbackSpeed = 1.0f;
     bool  isLoop = true;
@@ -61,10 +61,11 @@ struct AnimatorComponent {
     // エディタからの強制制御フラグ
     bool isEditorOverride = false;
 
-    /// @brief Play() に渡す再生パラメータ群。
-    /// @details bool と float が並ぶ引数列は暗黙変換で容易に取り違えるため、
-    ///          構造体＋C++20指示付き初期化子で呼び出しを自己文書化する。
-    ///          メンバの宣言順（blendTime → loop → speed → curve）で初期化すること。
+    // Play() に渡す再生パラメータ群。
+    //
+    // bool と float が並ぶ引数列は暗黙変換で容易に取り違えるため、
+    // 構造体＋C++20指示付き初期化子で呼び出しを自己文書化する。
+    // メンバの宣言順（blendTime → loop → speed → curve）で初期化すること。
     struct PlayParams
     {
         float                 blendTime = 0.2f;    // クロスフェード時間（秒）。0なら即時切替
@@ -75,7 +76,7 @@ struct AnimatorComponent {
         bool                  lockVerticalRootMotion = false;   // Force Root LockでYも固定するか（ステートから伝播）
     };
 
-    /// @brief 新しいシーケンスの再生を開始する（必要ならクロスフェード）。
+    // 新しいシーケンスの再生を開始する（必要ならクロスフェード）。
     void Play(const AnimSequence *sequence, const PlayParams &params = {})
     {
         if (currentSequence != sequence)
@@ -147,10 +148,11 @@ struct AnimatorComponent {
         lockVerticalRootMotion = params.lockVerticalRootMotion;
     }
 
-    /// @brief イベント発火用の栞(nextEventIndex)を、現在の再生時刻に合わせて再同期する。
-    /// @details 逆再生やシーク（手動での時間移動）で再生時刻が巻き戻った際に呼ぶ。
-    ///          現在時刻より手前のイベントを「発火済み」として扱うため、順方向へ
-    ///          再開したときに過去のイベントが二重発火しない。
+    // イベント発火用の栞(nextEventIndex)を、現在の再生時刻に合わせて再同期する。
+    //
+    // 逆再生やシーク（手動での時間移動）で再生時刻が巻き戻った際に呼ぶ。
+    // 現在時刻より手前のイベントを「発火済み」として扱うため、順方向へ
+    // 再開したときに過去のイベントが二重発火しない。
     void SyncEventCursor()
     {
         nextEventIndex = 0;

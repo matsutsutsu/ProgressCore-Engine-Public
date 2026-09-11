@@ -121,7 +121,7 @@ public:
         m_batchesBuilt = true;
     }
 
-    // シェフ(ModelRenderer)が読み取るためのゲッター
+    // 各 RenderPass が読み取るためのゲッター
     const std::vector<RenderCommand>& GetOpaqueCommands() const { return m_opaqueCommands; }
     const std::vector<RenderKey>& GetSortedKeys() const { return m_sortKeys; }
     const std::vector<TransparencyCommand>& GetDeferredTransparentCommands() const { return m_deferredTransparentCommands; }

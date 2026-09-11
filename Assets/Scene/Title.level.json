@@ -1,0 +1,140 @@
+{
+    "instances": [
+        {
+            "position": [
+                0.0,
+                -50.0,
+                0.0
+            ],
+            "prefab": "Assets/Prefabs/Particles/StageParticle.json",
+            "rotation": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "position": [
+                -3.9000000953674316,
+                3.200000047683716,
+                -55.0
+            ],
+            "prefab": "Assets/Prefabs/Title/TitleCamera.json",
+            "rotation": [
+                -0.06189868599176407,
+                0.07968533784151077,
+                0.0049577816389501095,
+                0.9948840737342834
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "position": [
+                0.0,
+                5.0,
+                0.0
+            ],
+            "prefab": "Assets/Prefabs/Light/TitleLighting.json",
+            "rotation": [
+                0.2165140062570572,
+                0.08248099684715271,
+                0.0,
+                0.9727889895439148
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "position": [
+                4.0,
+                9.399999618530273,
+                -6.0
+            ],
+            "prefab": "Assets/Prefabs/Title/TitleLookTarget.json",
+            "rotation": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "position": [
+                0.0,
+                -0.5,
+                0.0
+            ],
+            "prefab": "Assets/Prefabs/Title/TitleBossStatue.json",
+            "rotation": [
+                0.0,
+                0.9813328981399536,
+                0.0,
+                0.19231633841991425
+            ],
+            "scale": [
+                3.5,
+                3.5,
+                3.5
+            ]
+        },
+        {
+            "position": [
+                6.260000228881836,
+                0.0,
+                -34.70000076293945
+            ],
+            "prefab": "Assets/Prefabs/Title/TitlePlayerStatue.json",
+            "rotation": [
+                0.0,
+                -0.06258149445056915,
+                0.0,
+                0.9980398416519165
+            ],
+            "scale": [
+                3.5,
+                3.5,
+                3.5
+            ]
+        },
+         {
+            "position": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "prefab": "./Assets\\Prefabs\\Audio\\BGM_Title.json",
+            "rotation": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        }
+    ],
+    "scene": "Title.scene.json",
+    "type": "level",
+    "version": 1
+}

@@ -1,11 +1,11 @@
-/// @file DxtkAudioManager.cpp
-/// 役割・設計方針は DxtkAudioManager.h を参照。
+// 役割・設計方針は DxtkAudioManager.h を参照。
 
 #include "DxtkAudioManager.h"
 
 #include <Audio.h> // DirectXTK for Audio（DirectXTK.lib に実装が入っている / xaudio2.lib はリンク済み）
 
 #include "Engine/Platform/Core/Logger.h"
+#include "Engine/Core/Math/Interpolation.h" // Damp(): フレームレート非依存の追従係数
 #include "Engine/Platform/Core/FileSystem.h"
 
 #include <json.hpp>
@@ -35,8 +35,12 @@ namespace
 {
 // スロー最大時のピッチ低下量（オクターブ単位。DXTKの SetPitch は [-1,1]=±1オクターブ）。
 constexpr float kSlowMaxPitch = 0.8f; // slow=1 で約 2^-0.8≒0.57倍speed の“ｳﾞｫﾜｰﾝ”
-// スロー度をスナップさせず滑らかに追従させるための1更新あたりの補間率。
-constexpr float kSlowSmooth = 0.25f;
+// スロー度をスナップさせず滑らかに追従させるための追従速度(1秒あたり)。Damp(rate, dt) 経由で使う。
+//   旧実装は「呼ばれるたびに 0.25 ずつ寄る」係数だったが、呼び出し元が FixedUpdate に
+//   あったため、1フレームに固定ステップが何回走ったかで追従の速さが変わっていた
+//   （60fps なら1回、処理落ちで2〜4回）。1秒あたりの割合へ直してフレーム非依存にする。
+//   17.26 = -60 * ln(1 - 0.25) ＝ 60Hz で毎ステップ 0.25 ずつ寄っていた頃と同じ体感。
+constexpr float kSlowSmoothRate = 17.26f;
 // スロー中にリバーブを掛け始めるしきい値。
 constexpr float kReverbSlowThreshold = 0.15f;
 
@@ -150,14 +154,14 @@ struct DxtkAudioManager::Impl
     struct Playing
     {
         std::unique_ptr<SoundEffectInstance> inst;
-        AudioEmitter emitter;         ///< 3D用（is3D=false のときは未使用）
-        float        userPitch = 0.0f; ///< SetEventParameter("pitch") で設定したピッチ（スロー分は別途加算）
+        AudioEmitter emitter;         // 3D用（is3D=false のときは未使用）
+        float        userPitch = 0.0f; // SetEventParameter("pitch") で設定したピッチ（スロー分は別途加算）
         bool         is3D      = false;
     };
 
     std::unique_ptr<AudioEngine> engine;
     bool                         ready     = false;
-    bool                         mfStarted = false; ///< Media Foundation 初期化済み（mp3等のデコードに必要）
+    bool                         mfStarted = false; // Media Foundation 初期化済み（mp3等のデコードに必要）
 
     // イベント名ハッシュ → ロード済みWAV。
     std::unordered_map<uint32_t, std::unique_ptr<SoundEffect>> sounds;
@@ -175,11 +179,11 @@ struct DxtkAudioManager::Impl
     AudioListener listener;
 
     // スロー演出。
-    float slow       = 0.0f; ///< 現在値（補間後）
-    float slowTarget = 0.0f; ///< 目標値
+    float slow       = 0.0f; // 現在値（補間後）
+    float slowTarget = 0.0f; // 目標値
     bool  reverbOn   = false;
 
-    std::mutex mtx; ///< sounds/playing/oneShot3D を保護（AudioSystem が並列から呼ぶため）
+    std::mutex mtx; // sounds/playing/oneShot3D を保護（AudioSystem が並列から呼ぶため）
 
     // スロー分を加味した実効ピッチを1インスタンスへ適用する。
     void ApplyPitch(Playing &p, float slowOffset) const
@@ -252,12 +256,13 @@ void DxtkAudioManager::Initialize()
     }
 }
 
-void DxtkAudioManager::Update()
+void DxtkAudioManager::Update(float dt)
 {
     if (!m_impl->ready || !m_impl->engine) return;
 
     // --- スロー度を滑らかに追従（スナップ防止） ---
-    m_impl->slow += (m_impl->slowTarget - m_impl->slow) * kSlowSmooth;
+    //   フレーム時間非依存にするため係数は Damp() 経由で求める。
+    m_impl->slow += (m_impl->slowTarget - m_impl->slow) * CCL::Math::Damp(kSlowSmoothRate, dt);
     const float slowOffset = -kSlowMaxPitch * m_impl->slow;
 
     {

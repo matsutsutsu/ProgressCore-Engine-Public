@@ -1,6 +1,5 @@
-/// @file  CameraDollyCartComponentMeta.cpp
-/// @brief CameraDollyCartComponent のシリアライズ/インスペクタ定義。
-///        ファイルダイアログからの軌道データ選択と、相対パス変換を提供する。
+// CameraDollyCartComponent のシリアライズ/インスペクタ定義。
+// ファイルダイアログからの軌道データ選択と、相対パス変換を提供する。
 
 #include "Engine/Camera/Components/CameraDollyCartComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"

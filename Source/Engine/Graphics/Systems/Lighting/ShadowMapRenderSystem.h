@@ -8,7 +8,7 @@
 #include "Engine/Graphics/Components//Culling/CullingComponents.h"
 
 // 前方宣言
-class ModelRenderer;
+class ModelConstantBuffers;
 class Camera;
 class LightManager;
 

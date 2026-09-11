@@ -15,7 +15,18 @@ namespace Priority {
         L01_TimeSetup = 110, // 動的なTimeStateの付与 (TimeScaleSetupSystem)
         L01_TimeScale = 120, // 全エンティティの実効dtの計算 (TimeScaleSystem)
 
-		L02_PreUpdate = 150, // AIの感知前に必要なシステムをここに配置 (例: 視界の更新など)
+        // 世界の事実の集計フェーズ
+        L01_WorldState = 130, // 「誰から見ても同じ値」を確定させる (BattleContextSyncSystem)
+                              //   AI層(L02〜)が読むより厳密に前でなければならない。
+                              //   ※ L02_PreUpdate に置いてはいけない: DroneBrainSystem が
+                              //     同ステージで BattleContext を読むため、書き手と読み手が
+                              //     同居して順序が決まらなくなる。しかもリソースへのアクセスは
+                              //     IfSystem の Read<>/Write<> 申告に載らないので、
+                              //     スケジューラはこの依存を検出できない。
+
+		L02_PreUpdate = 150, // AIの感知フェーズ。L02_Update の入力を確定させるものをここへ。
+                             //   例: 知覚(BossPerceptionSystem) / 大状態(BossPhaseSystem) /
+                             //       個体判断(DroneBrainSystem)
 
         L02_Update = 200, // AI、移動、弾の更新など (並列化の主戦場)
 
@@ -55,6 +66,16 @@ namespace Priority {
         R01b_CameraBrain = 150, // vCamを集約しMainCameraへ反映（必ずBodyの後）
 
         R02_Environment = 200, // Light, Fogの設定
+
+        R02b_SkeletalPose = 250, // 骨格ポーズの確定 (AnimationPoseSystem)
+                                 //   キーフレーム評価→ブレンド→Model::SetNodePoses まで。
+                                 //   ※ Logic(FixedUpdate) ではなく必ずここに置くこと。
+                                 //     FixedUpdate は1描画フレームで最大4回回る(Framework::MAX_STEPS)が、
+                                 //     ポーズを行列へ変換するのは下の R03_Animation ただ1つなので、
+                                 //     Logic 側に置くと最後のステップ以外の計算が丸ごと捨てられる。
+                                 //     時間進行とイベント発火(AnimationSystem)は固定ステップ精度が
+                                 //     必要なので Logic に残し、ポーズ計算だけをここへ分離している。
+
         R03_Animation = 300, // スケルタルメッシュ更新 (頂点が動く)
         R04_BoundsUpdate = 400, // TransformやAnimから正確なAABBを再計算
         R05_Culling = 500, // カメラ視錐台とAABBの交差判定 (フラグON/OFF)
@@ -62,6 +83,10 @@ namespace Priority {
         R07_PreMain = 700, // 描画前準備
         R08_Main = 800, // Model, Primitive などのメイン描画
         R09_PostProcess = 900, // Bloom, ToneMapping などの画面効果
-        R10_UI = 1000 // ImGui, UI描画
+        R10_UI = 1000, // ImGui, UI描画
+
+        R11_AudioTick = 1100 // オーディオエンジンの1フレーム更新（AudioEngineTickSystem）
+                             //   このフレームで決まった発音・リスナー位置・スロー度を
+                             //   すべて反映し終えた後に1回だけ叩きたいので、Render の最後段。
     };
 }

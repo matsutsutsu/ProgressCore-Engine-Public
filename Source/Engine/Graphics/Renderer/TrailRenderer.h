@@ -32,15 +32,16 @@ struct RenderFrameContext;
 class TrailRenderer
 {
 public:
-    /// @brief トレイルの1頂点（ワールド座標＋頂点カラー）。
-    /// @note  color の意味はレイヤで異なる。
-    ///        加算レイヤ: rgb=加算色 / a=強度(尾ほど小さくフェード)
-    ///        歪みレイヤ: r=歪み量(px) / g=色ズレ / b=陽炎ゆらぎ / a=尾のフェード
+    // トレイルの1頂点（ワールド座標＋頂点カラー）。
+    //
+    // color の意味はレイヤで異なる。
+    // 加算レイヤ: rgb=加算色 / a=強度(尾ほど小さくフェード)
+    // 歪みレイヤ: r=歪み量(px) / g=色ズレ / b=陽炎ゆらぎ / a=尾のフェード
     struct Vertex
     {
         DirectX::XMFLOAT3 position;
         DirectX::XMFLOAT4 color;
-        DirectX::XMFLOAT2 uv; ///< x=尾の長さ方向, y=幅方向。テクスチャ貼付け用。
+        DirectX::XMFLOAT2 uv; // x=尾の長さ方向, y=幅方向。テクスチャ貼付け用。
     };
 
     static TrailRenderer& Instance()
@@ -49,20 +50,22 @@ public:
         return instance;
     }
 
-    /// @brief ECS(TrailSystem)から加算レイヤの三角形頂点を積む（スレッド安全）。
-    /// @note  vertexCount は3の倍数を想定。容量超過分は三角形境界で切り捨てる。
-    /// @param texture このトレイルに貼るテクスチャSRV。null なら白（＝従来の単色）。
-    ///               全トレイルを1バッファに詰めつつ、SRV 単位でドローを分けて描く。
+    /**
+     * @brief ECS(TrailSystem)から加算レイヤの三角形頂点を積む（スレッド安全）。
+     * @note  vertexCount は3の倍数を想定。容量超過分は三角形境界で切り捨てる。
+     * @param texture このトレイルに貼るテクスチャSRV。null なら白（＝従来の単色）。
+     *               全トレイルを1バッファに詰めつつ、SRV 単位でドローを分けて描く。
+     */
     void SubmitTriangleList(const Vertex* verts, size_t vertexCount,
                             ID3D11ShaderResourceView* texture = nullptr);
 
-    /// @brief 歪みレイヤの三角形頂点を積む（スレッド安全）。形状は加算と同一。
+    // 歪みレイヤの三角形頂点を積む（スレッド安全）。形状は加算と同一。
     void SubmitDistortTriangleList(const Vertex* verts, size_t vertexCount);
 
-    /// @brief TrailPass から毎フレーム呼ばれる。溜めた頂点を描画してリストを空にする。
+    // TrailPass から毎フレーム呼ばれる。溜めた頂点を描画してリストを空にする。
     void Render(const RenderServices& services, const RenderFrameContext& ctx);
 
-    /// @brief GPU リソースを解放する（エンジン終了時）。
+    // GPU リソースを解放する（エンジン終了時）。
     void Shutdown();
 
 private:
@@ -71,15 +74,15 @@ private:
     TrailRenderer(const TrailRenderer&) = delete;
     TrailRenderer& operator=(const TrailRenderer&) = delete;
 
-    /// @brief 初回のみ device からシェーダ/入力レイアウト/動的バッファ/PSO を生成。
+    // 初回のみ device からシェーダ/入力レイアウト/動的バッファ/PSO を生成。
     void EnsureInitialized(ID3D11Device* device);
 
-    /// @brief m_mutex 保持前提。上限に収まる追加数を返す（三角形境界で丸める）。
+    // m_mutex 保持前提。上限に収まる追加数を返す（三角形境界で丸める）。
     size_t ClampToCapacity(size_t vertexCount) const;
 
-    /// @brief 1フレーム上限（2レイヤー合算）。筒(Tube)は1本で約3,300頂点使い、
-    ///        歪みを付けるとその2倍積むため、板だけの頃の 8192 では全く足りない。
-    ///        49152頂点でも動的VBは約1.3MB。
+    // 1フレーム上限（2レイヤー合算）。筒(Tube)は1本で約3,300頂点使い、
+    // 歪みを付けるとその2倍積むため、板だけの頃の 8192 では全く足りない。
+    // 49152頂点でも動的VBは約1.3MB。
     static constexpr size_t MAX_VERTICES = 49152;
 
     bool m_initialized = false;
@@ -88,24 +91,24 @@ private:
     Microsoft::WRL::ComPtr<ID3D11PixelShader>  m_pixelShader;
     Microsoft::WRL::ComPtr<ID3D11PixelShader>  m_distortPixelShader;
     Microsoft::WRL::ComPtr<ID3D11InputLayout>  m_inputLayout;
-    Microsoft::WRL::ComPtr<ID3D11Buffer>       m_vertexBuffer;   ///< DYNAMIC 頂点バッファ
-    Microsoft::WRL::ComPtr<ID3D11Buffer>       m_constantBuffer; ///< b0: viewProjection
+    Microsoft::WRL::ComPtr<ID3D11Buffer>       m_vertexBuffer;   // DYNAMIC 頂点バッファ
+    Microsoft::WRL::ComPtr<ID3D11Buffer>       m_constantBuffer; // b0: viewProjection
 
-    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_whiteTex; ///< テクスチャ無しトレイル用の1x1白
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_whiteTex; // テクスチャ無しトレイル用の1x1白
 
-    PipelineState m_pso;        ///< 加算 / TestOnly / CullNone / TriangleList
-    PipelineState m_distortPso; ///< αブレンド(RGBのみ) / TestOnly / CullNone
+    PipelineState m_pso;        // 加算 / TestOnly / CullNone / TriangleList
+    PipelineState m_distortPso; // αブレンド(RGBのみ) / TestOnly / CullNone
 
-    /// @brief 加算レイヤの「テクスチャ単位ドロー範囲」。頂点は m_vertices に連続で詰め、
-    ///        SRV が変わる境界で1バッチにする（加算は順序非依存なので分割自由）。
+    // 加算レイヤの「テクスチャ単位ドロー範囲」。頂点は m_vertices に連続で詰め、
+    // SRV が変わる境界で1バッチにする（加算は順序非依存なので分割自由）。
     struct AddBatch
     {
-        ID3D11ShaderResourceView* srv = nullptr; ///< null は白テクスチャ
-        size_t                    count = 0;     ///< この範囲の頂点数
+        ID3D11ShaderResourceView* srv = nullptr; // null は白テクスチャ
+        size_t                    count = 0;     // この範囲の頂点数
     };
 
-    std::vector<Vertex>   m_vertices;        ///< フレーム内の加算レイヤ頂点（全バッチ連結）
-    std::vector<AddBatch> m_addBatches;      ///< m_vertices を SRV 単位に分ける範囲
-    std::vector<Vertex>   m_distortVertices; ///< フレーム内の歪みレイヤ頂点
+    std::vector<Vertex>   m_vertices;        // フレーム内の加算レイヤ頂点（全バッチ連結）
+    std::vector<AddBatch> m_addBatches;      // m_vertices を SRV 単位に分ける範囲
+    std::vector<Vertex>   m_distortVertices; // フレーム内の歪みレイヤ頂点
     std::mutex            m_mutex;
 };

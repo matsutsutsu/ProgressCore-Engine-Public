@@ -107,6 +107,30 @@ public:
         return GetAxis(CCL::Utils::HashString(axisName)); 
     }
 
+    // =======================================================
+    // 表示用：アクションに割り当てられたキーを引く
+    //   操作説明UIが「Attack は何のボタンか」をアイコンに変換するために使う。
+    //   UI側でアイコンを直接持たせない理由: InputConfig.json でキーを変えた瞬間に
+    //   説明だけが古い操作を出し続ける（＝嘘をつくUI）ため。割り当ての情報源は1つに保つ。
+    // =======================================================
+
+    /**
+     * @brief アクションに割り当てられたバインドのうち、指定デバイス側の「代表1件」を返す。
+     * @param device      KeyboardMouse なら Keyboard/Mouse_Button、GamePad ならパッド系から選ぶ。
+     * @param outBinding  見つかった割り当て。false のときは書き換えない。
+     * @return 割り当てが1件も無ければ false（そのデバイスでは操作できないアクション）。
+     * @note  複数割り当てがある場合は「先に登録されたもの」を代表とする。JSON の記載順が
+     *        そのまま優先順になるので、見せたい方を上に書けばよい。
+     */
+    virtual bool GetPrimaryBinding(uint32_t actionHash, ActiveDeviceType device,
+                                   InputBinding &outBinding) const = 0;
+
+    bool GetPrimaryBinding(const char *actionName, ActiveDeviceType device,
+                           InputBinding &outBinding) const
+    {
+        return GetPrimaryBinding(CCL::Utils::HashString(actionName), device, outBinding);
+    }
+
     // コントローラーを振動させる (0.0f ~ 1.0f)
     virtual void SetVibration(float leftMotor, float rightMotor, float duration) = 0;
 };

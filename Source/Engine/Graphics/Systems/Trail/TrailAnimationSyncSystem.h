@@ -20,7 +20,7 @@
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Graphics/Components/Trail/TrailComponent.h"
 
-/// @brief Trail アニメイベント区間で TrailComponent::emitting を駆動するシステム。
+// Trail アニメイベント区間で TrailComponent::emitting を駆動するシステム。
 class TrailAnimationSyncSystem
     : public CCL::ECS::IfSystem<TrailAnimationSyncSystem,
           CCL::ECS::Read<TransformComponent>,

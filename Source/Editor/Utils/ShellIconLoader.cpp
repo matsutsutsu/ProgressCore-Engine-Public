@@ -5,7 +5,6 @@
 #include <vector>
 #include <algorithm>
 #include <filesystem>
-#include "Engine/Graphics/RHI/Graphics.h"
 
 using namespace Microsoft::WRL;
 namespace fs = std::filesystem;

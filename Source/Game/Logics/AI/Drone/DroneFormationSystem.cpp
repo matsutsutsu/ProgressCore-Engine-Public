@@ -1,9 +1,8 @@
-/// @file  DroneFormationSystem.cpp
-/// @brief IFormation 方式の陣形計算。registry から陣形を引いて targetPosition を計算。
+// IFormation 方式の陣形計算。registry から陣形を引いて targetPosition を計算。
 #include "DroneFormationSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
-#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h" // BossCommandComponent
+#include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
 #include "Game/Logics/AI/Drone/Formation/Formations_Attack.h"
 #include "Game/Logics/AI/Drone/Formation/Formations_Basic.h"
@@ -12,118 +11,84 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
-#include "Engine/Platform/Core/FileSystem.h"
 
-#include <json.hpp>
+#include <algorithm>
 
 using namespace CCL::ECS;
 using namespace CCL::AI::Formation;
 
 namespace
 {
-/// @brief データ実装（JSON）を持つ陣形の一覧。
-///
-/// ここに並んでいるのは「形が attackProgress の関数で決まる」技だけ。
-/// カミカゼ（各機が飛距離で自分から切り上げる）と小隊突撃（1つ前の機体に追従する）は
-/// 個体が状態をラッチするので、データにできない＝この表に載らない。
-constexpr FormationSpecAsset kSpecAssets[] = {
-    {DroneFormationType::GuillotineSlam,          "GuillotineSlam"         },
-    {DroneFormationType::ClapSlam,                "ClapSlam"               },
-    {DroneFormationType::SideSlapWhip,            "SideSlapWhip"           },
-    {DroneFormationType::TsunamiWave,             "TsunamiWave"            },
-    {DroneFormationType::TsunamiWave_RL,          "TsunamiWave_RL"         },
-    {DroneFormationType::MegaClapSlam_UpperFirst, "MegaClapSlam_UpperFirst"},
-    {DroneFormationType::MegaClapSlam_LowerFirst, "MegaClapSlam_LowerFirst"},
-};
+// 予告の溜めの上限 [秒]。振幅は移動層で頭打ちになるので、値が際限なく育たないための蓋。
+constexpr float kWindupTimerCap = 10.0f;
 } // namespace
-
-const FormationSpecAsset *DroneFormationSystem::SpecAssets()
-{
-    return kSpecAssets;
-}
-
-int DroneFormationSystem::SpecAssetCount()
-{
-    return static_cast<int>(std::size(kSpecAssets));
-}
-
-std::string DroneFormationSystem::SpecAssetPath(const char *name)
-{
-    return std::string("Assets/Formations/") + name + ".json";
-}
 
 void DroneFormationSystem::Initialize()
 {
-    // このシステムが評価する陣形クラス（IFormation）を登録する。
-    // 「DroneFormationSystem が動く」ということは「陣形クラスが必要」
-    // ということなので、ここに書くのが最も自然。
-    //
-    // 陣形を追加した時（例：DeathRingFormation等）も、
-    // Formations_Basic.h の RegisterAll() に1行足すだけで、
-    // このシステムを持つ全シーンに自動反映される。
+    // このシステムが評価する陣形クラスを登録する。陣形を追加したときは
+    // 各 Formations_*.h の RegisterAll() に1行足せば全シーンへ自動反映される。
     CCL::AI::Formation::Basic::RegisterAll();
     CCL::AI::Formation::Attack::RegisterAll(); // 攻撃陣形（縦割り等）
     CCL::AI::Formation::Squad::RegisterAll();  // 小隊陣形（5機編隊）
 
-    LoadSpecAssets(); // 同じ型のデータ実装。既定では C++ 側が使われる
-
     CCL_LOG_INFO(LogCategory::AI, "[DroneFormationSystem] 陣形クラス登録完了");
 }
 
-void DroneFormationSystem::LoadSpecAssets()
-{
-    auto &registry = FormationRegistry::Instance();
-
-    int loaded = 0;
-    for (const auto &asset : kSpecAssets)
-    {
-        const std::string path = SpecAssetPath(asset.name);
-        const std::string text = FileSystem::ReadAllText(path);
-        if (text.empty()) continue; // アセットが無くても C++ 実装で動く
-
-        try
-        {
-            FormationSpec spec = nlohmann::json::parse(text).get<FormationSpec>();
-            registry.RegisterSpec(asset.type, spec, path);
-            ++loaded;
-        }
-        catch (const std::exception &e)
-        {
-            CCL_LOG_ERROR(LogCategory::AI, "[FormationSpec] 読み込み失敗 %s: %s", path.c_str(), e.what());
-        }
-    }
-
-    CCL_LOG_INFO(LogCategory::AI, "[FormationSpec] データ実装 %d/%d 件を登録", loaded, SpecAssetCount());
-}
-
-FormationContext DroneFormationSystem::MakeContext(float dt) const
+FormationContext DroneFormationSystem::MakeContext(float dt)
 {
     FormationContext ctx;
     ctx.time = m_elapsed;
     ctx.dt   = dt; // 攻撃の進行度（ヒンジ回転など）を進めるのに使う
 
-    // ボス位置（BossCommandComponent を持つ最初のEntity）
+    // 「今撃て」信号。狙いを焼くタイミングの判定に使う。ボス位置とあわせて
+    // BossCommandComponent を持つ最初のEntityから取る。
+    bool attackActive = false;
+
     {
         auto bossView = m_world->View<BossCommandComponent, TransformComponent>();
         for (auto b : bossView)
         {
             if (auto *t = m_world->GetComponent<TransformComponent>(b))
-                ctx.bossPos = t->position;
+                ctx.bossPos = t->GetWorldPosition();   // position はローカル。陣形の中心はワールドで置く
+            if (auto *c = m_world->GetComponent<BossCommandComponent>(b))
+                attackActive = c->droneAttackActive;
             break;
         }
     }
 
-    // プレイヤー位置（BattleContext から）
     if (m_world->HasResource<BattleContext>())
     {
-        auto &battle  = m_world->GetResource<BattleContext>();
-        ctx.playerPos = battle.playerPos;
+        auto &battle       = m_world->GetResource<BattleContext>();
+        ctx.playerPos      = battle.playerPos;
+        ctx.playerCenter   = battle.playerCenter;
+        ctx.playerVelocity = battle.playerVelocity;
     }
 
-    // 小隊の頭の位置（SquadUpdateSystem が今フレーム更新済み）。
-    //   ここでは読むだけ。書き手を1つに固定しておくと、並列化しても壊れない。
+    // 小隊の頭（SquadUpdateSystem が今フレーム更新済み）。ここでは読むだけ。
     if (m_world->HasResource<SquadRegistry>())
         ctx.squads = &m_world->GetResource<SquadRegistry>();
+
+    // 狙う向きを「撃つと決めた瞬間」に1回だけ焼く。予備動作の間は追い続ける
+    // （形がプレイヤーを向くからこそ、どちらへ避けるかを読める）。信号が立った
+    // 瞬間から先は動かさず、避けた者勝ちにする。
+    if (attackActive && !m_prevAttackActive)
+    {
+        DirectX::SimpleMath::Vector3 aim = ctx.playerPos - ctx.bossPos;
+        aim.y = 0.0f;
+        if (aim.LengthSquared() < 0.001f) aim = DirectX::SimpleMath::Vector3::UnitZ;
+        aim.Normalize();
+
+        m_lockedAimDir = aim;
+        m_aimLocked    = true;
+    }
+    else if (!attackActive)
+    {
+        m_aimLocked = false;
+    }
+    m_prevAttackActive = attackActive;
+
+    ctx.aimLocked = m_aimLocked;
+    ctx.aimDir    = m_lockedAimDir;
 
     return ctx;
 }
@@ -134,16 +99,34 @@ void DroneFormationSystem::Update(float dt)
 
     m_elapsed += dt;
 
-    auto                  &registry = FormationRegistry::Instance();
-    const FormationContext ctx      = MakeContext(dt);
+    auto &registry = FormationRegistry::Instance();
 
-    // --- 各ドローンの目標座標を計算 ---
-    //   ポリモーフィズムは「陣形を引くとき」だけ。ループ自体は連続アクセス。
+    const FormationContext ctx = MakeContext(dt);
+
+    // ポリモーフィズムは「陣形を引くとき」だけ。ループ自体は連続アクセス。
     ForEach([&](DroneComponent &drone) {
         IFormation *formation = registry.Get(drone.currentFormation);
-        if (!formation) return; // 未登録の陣形（Hidden等）は何もしない
+        if (!formation)
+        {
+            // 未登録の陣形（Hidden等）は何もしない。溜めだけは戻す（抱えたままだと
+            // 次に出てきた瞬間から全開で震える）。
+            drone.windupTimer = 0.0f;
+            return;
+        }
 
         formation->Calculate(drone, ctx); // targetPosition を書き込む
+
+        // 予告（震え）の溜めを進める。技であり、持ち場に着いていて、まだ撃つ合図が
+        // 来ていない——この3つが揃う時間帯が予備動作そのもの。
+        //   hasReachedSlot は「一度でも着いたか」のラッチなので陣形を切り替えた直後も
+        //   true のままで、溜めは BT が陣形を指示した時点から始まって Wait(予告) の
+        //   長さと一致する。突撃から帰る途中だけ false に落ちるので帰りながらは震えない。
+        const bool telegraphing =
+            formation->UsesShiverTelegraph() && drone.hasReachedSlot && !drone.wantsAttack;
+
+        drone.windupTimer = telegraphing
+                                ? (std::min)(kWindupTimerCap, drone.windupTimer + dt)
+                                : 0.0f;
     });
 }
 

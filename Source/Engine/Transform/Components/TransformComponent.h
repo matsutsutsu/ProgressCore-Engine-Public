@@ -9,7 +9,7 @@
 // SetPositionAndRotation() を使用する。
 // - これにより内部で isTeleported フラグが立ち、JoltPushSystem
 // が安全に物理空間を上書きする。
-// - ❌ 物理演算で動く物体（弾、キャラクター）の移動に SetPosition
+// -  物理演算で動く物体（弾、キャラクター）の移動に SetPosition
 // を毎フレーム使ってはいけない！
 // ===================================================================================
 
@@ -129,8 +129,9 @@ struct TransformComponent {
     }
 
     // TransformComponent.h に追加すると各カメラ系で使い回せる
-    /// @brief 描画補間済みのワールド座標を返す。カメラ追従など「見た目に追従させたい」用途専用。
-    /// @note ロジック判定には GetWorldPosition()（worldMatrix基準）を使うこと。
+    // 描画補間済みのワールド座標を返す。カメラ追従など「見た目に追従させたい」用途専用。
+    //
+    // ロジック判定には GetWorldPosition()（worldMatrix基準）を使うこと。
     DirectX::XMFLOAT3 GetRenderWorldPosition() const
     {
         return {renderWorldMatrix._41, renderWorldMatrix._42, renderWorldMatrix._43};

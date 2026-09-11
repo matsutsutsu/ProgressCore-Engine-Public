@@ -48,7 +48,21 @@ void BoneAttachmentRenderSystem::ResolveRenderAttachment(EntityID id, TransformC
     XMStoreFloat4x4(&world4, world);
     trans.renderWorldMatrix = world4; // 描画専用行列にのみ書き込む（worldMatrixは触らない）
 
+    BakeModelIfPresent(id, world4);   // 自分が Model を持つなら、確定した world で焼き直す
     PropagateRenderSubtree(trans.firstChildID, world4);
+}
+
+// ModelPoseUpdateSystem(R03) は attach 先も「前フレームの renderWorldMatrix」で
+// 先に焼いてしまう。本システム(R04)で正しい renderWorldMatrix が確定した後に
+// 焼き直すことで、last-write-wins で同フレーム整合を取る。
+//   ※ これをやらないと、武器などのアタッチ物だけ描画が1フレーム遅れる。
+void BoneAttachmentRenderSystem::BakeModelIfPresent(EntityID id, const XMFLOAT4X4& world)
+{
+    if (auto* mc = m_world->GetComponent<ModelComponent>(id)) {
+        if (Model* m = mc->GetModel()) {
+            m->UpdateTransform(world);
+        }
+    }
 }
 
 void BoneAttachmentRenderSystem::PropagateRenderSubtree(EntityID firstChild, const XMFLOAT4X4& parentRenderWorld)
@@ -75,6 +89,8 @@ void BoneAttachmentRenderSystem::PropagateRenderSubtree(EntityID firstChild, con
         XMFLOAT4X4 world4;
         XMStoreFloat4x4(&world4, world);
         t->renderWorldMatrix = world4; // 描画専用のみ
+
+        BakeModelIfPresent(cid, world4);
 
         EntityID gc = t->firstChildID;
         while (gc != 0) {

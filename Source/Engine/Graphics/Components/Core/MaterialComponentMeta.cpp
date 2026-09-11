@@ -1,5 +1,4 @@
-/// @file  MaterialComponentMeta.cpp
-/// @brief MaterialComponent のシリアライズ/インスペクタ定義。
+// MaterialComponent のシリアライズ/インスペクタ定義。
 
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Graphics/Components/Core/MaterialComponent.h"
@@ -245,10 +244,14 @@ struct ComponentMeta<MaterialComponent>
                 {
                     if (auto path = FileDialog::SavePreset("Material", "Assets/Materials", "mat.json", Graphics::Instance().GetWindowHandle()))
                     {
-                        if (rm.SaveMaterialAsset(matHandle, path->string()))
+                        // ダイアログが返すのは絶対パス。ここで記録した文字列はそのまま
+                        // シーン/プレハブJSONへ永続化されるので、必ず相対へ直してから持つ。
+                        // 絶対のまま焼くと別PCで解決に失敗し、無効ハンドル＝共有マテリアルへ
+                        // 黙って落ちるだけなので、見た目が変わるまで誰も気付けない。
+                        const std::string rel = FileDialog::ConvertToRelativePath(*path);
+                        if (rm.SaveMaterialAsset(matHandle, rel))
                         {
-                            // 保存したパスをアセット参照として記録→シーン保存で永続化される
-                            comp->SetData(i, matHandle, path->string());
+                            comp->SetData(i, matHandle, rel);
                             changed = true;
                         }
                     }
@@ -258,10 +261,13 @@ struct ComponentMeta<MaterialComponent>
                 {
                     if (auto path = FileDialog::OpenPreset("Material", "マテリアルを選択", Graphics::Instance().GetWindowHandle()))
                     {
-                        MaterialHandle newHandle = rm.LoadMaterialAsset(path->string());
+                        // 記録用と読み込み用で同じ文字列を使う。片方を絶対にすると
+                        // 同じ .mat.json が絶対/相対の2キーでキャッシュに載る。
+                        const std::string rel       = FileDialog::ConvertToRelativePath(*path);
+                        MaterialHandle    newHandle = rm.LoadMaterialAsset(rel);
                         if (newHandle.IsValid())
                         {
-                            comp->SetData(i, newHandle, path->string());
+                            comp->SetData(i, newHandle, rel);
                             changed = true;
                         }
                     }
@@ -297,7 +303,9 @@ struct ComponentMeta<MaterialComponent>
                         {
                             if (auto path = FileDialog::OpenPreset("Texture", "Select Texture", Graphics::Instance().GetWindowHandle()))
                             {
-                                const auto s = path->string();
+                                // この文字列は .mat.json の assetPath として保存され、
+                                // 次回ロードで LoadTexture へ渡される。相対で持つ理由は保存側と同じ。
+                                const std::string s = FileDialog::ConvertToRelativePath(*path);
                                 matPtr->SetTexture(slotHash, rm.LoadTexture(s.c_str()), s);
                                 changed = true;
                             }

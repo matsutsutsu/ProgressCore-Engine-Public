@@ -51,23 +51,25 @@ public:
     virtual ~JoltCharacterUpdateSystem() = default;
 
 
-    /// @brief 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
-    ///        Setup が生成した JoltCharacterHandle を使う。生成が後に回ると1フレーム空振りする。
+    // 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
+    // Setup が生成した JoltCharacterHandle を使う。生成が後に回ると1フレーム空振りする。
     std::vector<const char *> GetRunAfter() const override { return {"JoltCharacterSetupSystem"}; }
 
     void Update(float dt) override;
 
-    /// @brief 強制ワープフラグが立っていればJoltを即座に移動させる
+    // 強制ワープフラグが立っていればJoltを即座に移動させる
     void ApplyTeleportIfNeeded(TransformComponent &trans, JPH::CharacterVirtual *ch);
 
-    /// @brief 重力積分とジャンプ処理を行い、新たなY軸の速度を返す。
-    /// @note  jumpImpulse をここで消費する（1フレーム限りの命令）。
+    // 重力積分とジャンプ処理を行い、新たなY軸の速度を返す。
+    //
+    // jumpImpulse をここで消費する（1フレーム限りの命令）。
     float CalculateVerticalVelocity(float safeDt, float currentVy, const JoltCharacterConfigComponent &config, CharacterMovementComponent &movement, bool isGrounded, float gravityY);
 
-    /// @brief 慣性の引き継ぎ(Exponential Decay)を計算し、新たな水平速度ベクトルを返す。
-    /// @note  overrideSpeed をここで消費する（1フレーム限りの依頼）。
+    // 慣性の引き継ぎ(Exponential Decay)を計算し、新たな水平速度ベクトルを返す。
+    //
+    // overrideSpeed をここで消費する（1フレーム限りの依頼）。
     DirectX::SimpleMath::Vector3 CalculateHorizontalVelocity(float safeDt, const JoltCharacterConfigComponent &config, CharacterMovementComponent &movement);
 
-    /// @brief 地形干渉計算を実行し、結果をTransformやKinematic剛体へ書き戻す
+    // 地形干渉計算を実行し、結果をTransformやKinematic剛体へ書き戻す
     void UpdatePhysicsAndSync(float safeDt, float moveDt, JoltPhysicsManager *joltManager, JPH::CharacterVirtual *ch, const JoltCharacterConfigComponent &config, TransformComponent &trans, CCL::ECS::EntityID id);
 };

@@ -1,5 +1,4 @@
-/// @file JoltCharacterConfigComponent.cpp
-/// @brief JoltCharacterConfigComponent のシリアライズおよびインスペクタGUI定義
+// JoltCharacterConfigComponent のシリアライズおよびインスペクタGUI定義
 
 #include "JoltCharacterConfigComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"

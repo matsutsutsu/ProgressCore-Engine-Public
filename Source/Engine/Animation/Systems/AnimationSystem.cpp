@@ -7,6 +7,7 @@
 #include <tracy/Tracy.hpp>
 
 #include "Engine/Animation/Core/AnimEventMessages.h"
+#include "Engine/Animation/Core/AnimPoseUtils.h"
 #include "Engine/Core/Math/CurveData.h"
 
 #include "Engine/Graphics/Components/Core/ModelComponent.h"
@@ -33,7 +34,7 @@ namespace
 // -----------------------------------------------------------------------------------
 
 // TODO: 実行中にこの部分の処理負荷がとてつもないフレームがあったから後で調べる まれに出てくる
-/// @brief 速度カーブによる時間の歪み(Time Warping)を考慮した実効再生速度を返す。
+// 速度カーブによる時間の歪み(Time Warping)を考慮した実効再生速度を返す。
 float ComputeEffectiveSpeed(const AnimatorComponent &animator, const AnimSequence *seq)
 {
     ZoneScopedN("Anim::ComputeEffectiveSpeed");
@@ -50,8 +51,10 @@ float ComputeEffectiveSpeed(const AnimatorComponent &animator, const AnimSequenc
     return animator.playbackSpeed * curveMultiplier;
 }
 
-/// @brief currentTimer（と、ブレンド中なら previousTimer）を dt ぶん進める。
-/// @return 順方向に進んだか（逆再生・シーク検出用。イベント発火可否の判定に使う）。
+/**
+ * @brief currentTimer（と、ブレンド中なら previousTimer）を dt ぶん進める。
+ * @return 順方向に進んだか（逆再生・シーク検出用。イベント発火可否の判定に使う）。
+ */
 bool AdvanceTimers(AnimatorComponent &animator, const AnimSequence *seq, float localDt)
 {
     ZoneScopedN("Anim::AdvanceTimers");
@@ -99,7 +102,7 @@ bool AdvanceTimers(AnimatorComponent &animator, const AnimSequence *seq, float l
     return movedForward;
 }
 
-/// @brief duration境界でのループ/終了判定。currentTimer を正規化する。
+// duration境界でのループ/終了判定。currentTimer を正規化する。
 void ResolveLoopAndFinish(AnimatorComponent &animator, const AnimSequence *seq)
 {
     ZoneScopedN("Anim::ResolveLoopAndFinish");
@@ -133,35 +136,9 @@ void ResolveLoopAndFinish(AnimatorComponent &animator, const AnimSequence *seq)
     }
 }
 
-/// @brief ルートボーンのXZ（と条件付きでY）を基準姿勢へピン留めする共通ヘルパー。
-/// @details XZは常に「対象クリップ自身の0秒目」を基準にする（前進量を殺す目的なので
-///          クリップごとの基準で正しい）。Yは lockVertical が true のときだけ、
-///          ModelResource のバインドポーズ（実行中不変の基準姿勢）を基準にする。
-///          クリップ自身の0秒目のYを基準にすると、そこが既に膝を曲げた姿勢の場合
-///          アニメ全体がその分浮く/沈む不具合になるため（過去に実際に発生した不具合）。
-/// @note    旧実装ではこのロジックがブレンド中の過去/現在バッファ・非ブレンド確定後の
-///          計3箇所にほぼ同一のコードとして重複していた。ここに一本化する。
-void PinRootMotionNode(Model *model, int animIndex, int rootNodeIndex,
-    std::vector<Model::NodePose> &poseBuffer, bool lockVertical)
-{
-    ZoneScopedN("Anim::PinRootMotionNode");
-
-    if (!model || rootNodeIndex < 0 || rootNodeIndex >= (int)poseBuffer.size())
-        return;
-
-    // 0秒ポーズ（前進量を殺すためのXZ基準）はクリップ不変。キャッシュから取得して毎フレーム再計算を避ける。
-    const Model::NodePose &initPose = model->GetPinnedPoseAtZero(animIndex, rootNodeIndex);
-    poseBuffer[rootNodeIndex].position.x = initPose.position.x;
-    poseBuffer[rootNodeIndex].position.z = initPose.position.z;
-
-    if (lockVertical)
-    {
-        const ModelResource *modelRes = model->GetResource();
-        if (modelRes && rootNodeIndex < (int)modelRes->GetNodes().size())
-            poseBuffer[rootNodeIndex].position.y = modelRes->GetNodes()[rootNodeIndex].translate.y;
-    }
-}
 } // namespace
+
+using CCL::Anim::PinRootMotionNode;
 
 AnimationSystem::AnimationSystem()
     : IfSystem("AnimationSystem")
@@ -170,9 +147,11 @@ AnimationSystem::AnimationSystem()
 
 void AnimationSystem::Update(float dt)
 {
-    // 直列実行。Model は共有インスタンスを書き換える(SetNodePoses)ため、
-    // 安易な並列化はポーズの競合を招く。並列化する場合は Model のポーズ書き込みを
-    // エンティティ単位に分離してから行うこと。
+    // 直列実行。DispatchPointEvents が EventBus へ Publish するため、
+    // 並列化するならまず EventBus 側のスレッド安全性を確保すること。
+    //
+    // ModelComponent はクエリの絞り込み（Model を持つキャラだけを対象にする）目的でのみ
+    // 受け取っており、ここでは触らない。ポーズ計算は AnimationPoseSystem が行う。
     ForEachWithID([this](CCL::ECS::EntityID id, AnimatorComponent &animator, ModelComponent &modelComp, const TimeStateComponent &time) {
 
         // 台本（Sequence）がセットされていなければ何もしない
@@ -192,9 +171,11 @@ void AnimationSystem::Update(float dt)
         // 3. ループと終了の判定
         ResolveLoopAndFinish(animator, seq);
 
-        // 4. 描画側(Model)への計算依頼
-        if (modelComp.GetModel())
-            ComputeAndApplyPose(id, animator, modelComp.GetModel(), seq);
+        // 4. 骨格ポーズの計算はここでは行わない。
+        //    AnimationPoseSystem（Render / R02b_SkeletalPose）が1描画フレームに1回だけ実行する。
+        //    本システムは FixedUpdate 側なので最大4回まわるが、ポーズを行列へ変換するのは
+        //    描画1回きり＝ここで計算すると最後のステップ以外が丸ごと捨てられるため。
+        (void)modelComp;
     });
 }
 
@@ -259,81 +240,6 @@ void AnimationSystem::DispatchPointEvents(CCL::ECS::EntityID id, AnimatorCompone
         }
 
         animator.nextEventIndex++;
-    }
-}
-
-void AnimationSystem::ComputeAndApplyPose(CCL::ECS::EntityID id, AnimatorComponent &animator,
-    Model *model, const AnimSequence *seq)
-{
-    ZoneScopedN("AnimationSystem::ComputeAndApplyPose");
-
-    int animIndex = model->GetAnimationIndex(seq->targetAnimName.c_str());
-    if (animIndex == -1) return;
-
-    // 数学的アプローチによる真のルートボーン特定
-    const int rootNodeIndex = model->FindRealRootMotionNodeIndex(animIndex);
-
-    if (animator.isBlending && animator.previousSequence)
-    {
-        ZoneScopedN("AnimationSystem::ComputeAndApplyPose::Blend");
-
-        int prevAnimIndex = model->GetAnimationIndex(animator.previousSequence->targetAnimName.c_str());
-        if (prevAnimIndex != -1)
-        {
-            // バッファサイズの同期
-            size_t nodeCount = animator.poseBufferA.size();
-            if (animator.poseBufferB.size() != nodeCount)
-                animator.poseBufferB.resize(nodeCount);
-
-            // 過去と現在のポーズを計算
-            model->ComputeAnimation(prevAnimIndex, animator.previousTimer, animator.poseBufferB);
-            model->ComputeAnimation(animIndex, animator.currentTimer, animator.poseBufferA);
-
-            // Force Root Lock (ブレンド中の過去・現在両方のピン留め)
-            //   非ブレンド経路と同じく「真のルートボーン」のXZだけを0秒姿勢へ固定する。
-            //   [0]固定にすると、rootNodeIndex が0番以外(通常Hips=1)のリグでは遷移
-            //   ブレンド中だけ焼き込み前進が漏れ、ブレンド終了でその場へ戻る「前に出て
-            //   すぐ戻る」不具合になる。過去バッファは別クリップ(=別のルートボーン番号)
-            //   なので個別に特定してピン留めする。
-            const int prevRootNodeIndex = model->FindRealRootMotionNodeIndex(prevAnimIndex);
-            PinRootMotionNode(model, prevAnimIndex, prevRootNodeIndex, animator.poseBufferB, animator.lockVerticalRootMotion);
-            PinRootMotionNode(model, animIndex, rootNodeIndex, animator.poseBufferA, animator.lockVerticalRootMotion);
-
-            float blendRate = (animator.blendDuration > 0.0f) ? (animator.currentBlendTime / animator.blendDuration) : 1.0f;
-            blendRate       = std::clamp(blendRate, 0.0f, 1.0f);
-
-            // クリーンアップされたポーズ同士をブレンド
-            Model::BlendAnimations(animator.poseBufferB, animator.poseBufferA, blendRate, animator.poseBufferA);
-        }
-        else
-        {
-            model->ComputeAnimation(animIndex, animator.currentTimer, animator.poseBufferA);
-        }
-    }
-    else
-    {
-        ZoneScopedN("AnimationSystem::ComputeAndApplyPose::Model->ComputeAnimation");
-
-        // ブレンドしていない通常再生
-        model->ComputeAnimation(animIndex, animator.currentTimer, animator.poseBufferA);
-    }
-
-    // Force Root Lock (真のルートボーンのピン留め)
-    //   ルートモーション対応キャラ(RootMotionComponent 保持)は、
-    //   「位置の権威は常に Transform 側」なので enabled に関係なく必ずピン留めする。
-    //     ・enabled  : 抽出した差分が Transform を動かす → ピンしないと二重に前進する
-    //     ・disabled : プログラム(ダッシュ等)が Transform を動かす → ピンしないと
-    //                  クリップに焼き込まれた前進でモデルだけが滑っていく
-    //   ※以前は enabled 時のみピン留めしていたため、ブレンド中(下の分岐では無条件に
-    //     ピン留め)は正常なのに、ブレンド終了と同時にダッシュのモデルが滑り出していた。
-    auto *rootMotion = m_world->GetComponent<RootMotionComponent>(id);
-    if (rootMotion && !animator.poseBufferA.empty())
-        PinRootMotionNode(model, animIndex, rootNodeIndex, animator.poseBufferA, animator.lockVerticalRootMotion);
-
-    // 最終確定したポーズを行列へ反映（SetNodePosesはここに1回だけ！）
-    {
-        ZoneScopedN("AnimationSystem::SetNodePoses");
-        model->SetNodePoses(animator.poseBufferA);
     }
 }
 

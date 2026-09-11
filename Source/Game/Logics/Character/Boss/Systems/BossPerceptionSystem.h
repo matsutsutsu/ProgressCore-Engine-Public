@@ -1,17 +1,8 @@
-/// @file  BossPerceptionSystem.h
-/// @brief ボスの「状況認識」をBlackboardへ書き込む専用システム。
-///
-/// 役割分担（BehaviorTreeSystemを汎用のまま保つための分離）:
-///   BossPerceptionSystem（このファイル） … ボス固有の「今の状況」を認識する
-///     - HP割合を blackboard.healthPercentage に
-///     - プレイヤーとの距離を blackboard.distanceToTarget に
-///   BehaviorTreeSystem（汎用）           … blackboard を読んで判断するだけ
-///
-/// これにより BehaviorTreeSystem は HealthComponent や「プレイヤー検索」を
-/// 一切知らないままでいられる（ドローン等、HPや対象の概念が違うAIにも使い回せる）。
-///
-/// 実行順序: BehaviorTreeSystem (L02_Update) より前に blackboard を最新化する必要がある。
-///           L01_Input に置き、判断より前の「前処理」層とする。
+// ボスの「状況認識」をBlackboardへ書き込む専用システム。ここが HP割合・距離・被弾を
+// 担うことで、BT 側は HealthComponent もプレイヤー検索も知らずに済む。
+//
+// 被弾の蓄積は DamageTakenEvent の購読で積む（積む=ここ／読む=C_DamageThresholdExceeded
+// ／戻す=A_ResetDamage）。イベント経由なので Combat 側は BT を知らないままでいられる。
 #pragma once
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"
@@ -30,5 +21,9 @@ class BossPerceptionSystem : public CCL::ECS::IfSystem<
 {
 public:
     BossPerceptionSystem() : IfSystem("BossPerceptionSystem") {}
+
+    // DamageTakenEvent の購読を張る。
+    void Initialize() override;
+
     void Update(float dt) override;
 };

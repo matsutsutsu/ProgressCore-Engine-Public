@@ -20,8 +20,13 @@ struct AnimSequence;
 //
 // [ Update() の内部構成（Tracyゾーンと対応） ]
 //   1. DispatchPointEvents : 点イベント(Sound/Effect/SpawnHitbox)の発火判定
-//   2. ComputeAndApplyPose : ブレンド計算・Force Root Lock・骨格ポーズの確定と適用
 //   （時間の進行とループ/終了判定は、m_world 非依存の純粋関数として .cpp 側に隔離）
+//
+// [ ポーズ計算はここには無い ]
+// 骨格ポーズの確定と適用は AnimationPoseSystem（Render / R02b_SkeletalPose）が担う。
+// 本システムは FixedUpdate 側で1描画フレームに最大4回まわる（Framework::MAX_STEPS）が、
+// ポーズを消費するのは描画1回きりなので、ここで計算すると2〜4倍の捨て仕事になる。
+// 時間進行とイベント発火だけは固定ステップ精度が必要なので、ここに残している。
 // ===================================================================================
 
 class AnimationSystem : public CCL::ECS::IfSystem<AnimationSystem,
@@ -41,13 +46,10 @@ class AnimationSystem : public CCL::ECS::IfSystem<AnimationSystem,
   private:
     // --- Update() を構成する各フェーズ（m_world アクセスが必要なもののみメンバ関数化） ---
 
-    /// @brief 台本の点イベント(Sound/Effect/SpawnHitbox)を EventBus 経由で発火する。
-    /// @details 区間状態イベント(HitBox/Trail/Blackboard)はここでは発火しない
-    ///          （専用システムが区間ポーリングで読む）。
+    // 台本の点イベント(Sound/Effect/SpawnHitbox)を EventBus 経由で発火する。
+    //
+    // 区間状態イベント(HitBox/Trail/Blackboard)はここでは発火しない
+    // （専用システムが区間ポーリングで読む）。
     void DispatchPointEvents(CCL::ECS::EntityID id, AnimatorComponent &animator,
         const AnimSequence *seq, bool movedForward);
-
-    /// @brief ブレンド計算・Force Root Lock を経て、最終的な骨格ポーズを Model へ適用する。
-    void ComputeAndApplyPose(CCL::ECS::EntityID id, AnimatorComponent &animator,
-        Model *model, const AnimSequence *seq);
 };

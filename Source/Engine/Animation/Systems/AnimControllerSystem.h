@@ -27,13 +27,12 @@ public:
     // 基底クラスのコンストラクタ呼び出しもフルパスで指定
     AnimControllerSystem() : IfSystem("AnimControllerSystem") 
     {
-        hasGui = true;    
     }
     virtual ~AnimControllerSystem() = default;
 
 
-    /// @brief 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
-    ///        AnimSetup が不足コンポーネントを付与してから状態遷移を評価する。
+    // 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
+    // AnimSetup が不足コンポーネントを付与してから状態遷移を評価する。
     std::vector<const char *> GetRunAfter() const override { return {"AnimSetupSystem"}; }
 
     void Update(float dt) override;
@@ -42,8 +41,6 @@ public:
     void OnGui() override;
 
   private:
-#ifdef ENABLE_EDITOR
     // 状態遷移ログを出力するかどうかのフラグ（デフォルトOFFでコンソール汚染を防ぐ）
     bool m_enableTransitionLog = false;
-#endif
 };

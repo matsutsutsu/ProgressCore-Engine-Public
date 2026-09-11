@@ -1,6 +1,7 @@
 ﻿#include "PostProcessManager.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
+#include "Engine/Platform/Core/Logger.h"
 
 #include <d3d11_1.h> // GPUマーカー用
 
@@ -114,6 +115,23 @@ ID3D11ShaderResourceView* PostProcessManager::EndScene(ID3D11DeviceContext* dc,
     RenderTarget* outputSDR = ResourceManager::Instance().GetRenderTarget(m_outputSDR);
     if (!outputSDR) return nullptr;
 
+    // HDR バッファは「同じ 2 枚を交互に読み書きする」だけなので、ループ内で毎回
+    // ハンドルから引き直す必要がない。先頭で 1 回だけ解決しておくことで、
+    //   ・null チェックをこの 1 箇所に集約できる（ループ内の裸の -> を無くす）
+    //   ・エフェクト数ぶんの ResourceManager 検索が消える
+    // の両方が同時に片付く。
+    RenderTarget* hdr[2] = {
+        ResourceManager::Instance().GetRenderTarget(m_hdrBuffers[0]),
+        ResourceManager::Instance().GetRenderTarget(m_hdrBuffers[1]),
+    };
+    if (!hdr[0] || !hdr[1]) {
+        // ここに来るのは Resize が失敗して RT が作られていないケース。
+        // BeginScene も同じ理由で描画をスキップしているため、絵は元から無い。
+        CCL_LOG_ERROR(LogCategory::Render,
+            "PostProcessManager::EndScene: HDR バッファが未生成のためポストプロセスを中止します。");
+        return nullptr;
+    }
+
     // RTV 登録を解除
     ID3D11RenderTargetView* nullRTV = nullptr;
     dc->OMSetRenderTargets(1, &nullRTV, nullptr);
@@ -132,10 +150,10 @@ ID3D11ShaderResourceView* PostProcessManager::EndScene(ID3D11DeviceContext* dc,
     int writeIdx = 1;
 
 
-    // 描画ループの直前・直後でこれを確認してください
+    // エフェクトチェーン共通のフル解像度ビューポート（各エフェクトの直前で復帰させる）
     D3D11_VIEWPORT vpHDR = {};
-    vpHDR.Width = static_cast<float>(m_width);  // メンバ変数の幅
-    vpHDR.Height = static_cast<float>(m_height); // メンバ変数の高さ
+    vpHDR.Width = static_cast<float>(m_width);
+    vpHDR.Height = static_cast<float>(m_height);
     vpHDR.MinDepth = 0.0f;
     vpHDR.MaxDepth = 1.0f;
     dc->RSSetViewports(1, &vpHDR);
@@ -158,13 +176,12 @@ ID3D11ShaderResourceView* PostProcessManager::EndScene(ID3D11DeviceContext* dc,
         }
 #endif
 
-        RenderTarget* readRT = ResourceManager::Instance().GetRenderTarget(m_hdrBuffers[readIdx]);
-        RenderTarget* writeRT = ResourceManager::Instance().GetRenderTarget(m_hdrBuffers[writeIdx]);
-
+        // BloomEffect は内部で縮小 RT に切り替えるため viewport を変えたまま返す。
+        // 後続エフェクトがフル解像度で描けるよう、毎回ここで戻す（冗長ではない）。
         dc->RSSetViewports(1, &vpHDR);
 
         // A を読み込み B に書く
-        effect->Process(dc, readRT->GetSRV(), writeRT->GetRTV());
+        effect->Process(dc, hdr[readIdx]->GetSRV(), hdr[writeIdx]->GetRTV());
 
         // マーカー終了
 #if defined(ENABLE_EDITOR)
@@ -182,7 +199,7 @@ ID3D11ShaderResourceView* PostProcessManager::EndScene(ID3D11DeviceContext* dc,
     ID3D11ShaderResourceView* nullNormal = nullptr;
     dc->PSSetShaderResources(SLOT_SRV_SCENE_NORMAL, 1, &nullNormal);
 
-    RenderTarget* finalHDR = ResourceManager::Instance().GetRenderTarget(m_hdrBuffers[readIdx]);
+    RenderTarget* finalHDR = hdr[readIdx]; // 上で null チェック済み
 
     // ================================================================
     // ToneMapping (分離したクラスに委譲)

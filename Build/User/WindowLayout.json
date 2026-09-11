@@ -57,10 +57,6 @@
             "visible": false
         },
         {
-            "name": "Test Launcher",
-            "visible": false
-        },
-        {
             "name": "Game View",
             "visible": true
         },
@@ -70,10 +66,6 @@
         },
         {
             "name": "Building Scatter",
-            "visible": false
-        },
-        {
-            "name": "Formation Editor",
             "visible": false
         }
     ]

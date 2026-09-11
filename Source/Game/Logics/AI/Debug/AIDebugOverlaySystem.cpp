@@ -1,8 +1,7 @@
-/// @file  AIDebugOverlaySystem.cpp
-/// @brief 敵AIの状態（戦術/行動/ステータス）をキャラ頭上に3Dテキストで表示する。
-///        描画は ImGui::NewFrame 後に走る「レンダーステージの Update」で行うため、
-///        System Manager のヘッダ開閉に依存せず m_enabled の間ずっと表示される。
-///        位置は GameViewportInfo（エディタのゲーム画像矩形）で正しく写像する。
+// 敵AIの状態（戦術/行動/ステータス）をキャラ頭上に3Dテキストで表示する。
+//        描画は ImGui::NewFrame 後に走る「レンダーステージの Update」で行うため、
+//        System Manager のヘッダ開閉に依存せず m_enabled の間ずっと表示される。
+//        位置は GameViewportInfo（エディタのゲーム画像矩形）で正しく写像する。
 #include "AIDebugOverlaySystem.h"
 
 #include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
@@ -17,9 +16,7 @@
 #include <SimpleMath.h>
 #include <algorithm>
 
-#ifdef ENABLE_EDITOR
 #include <imgui.h>
-#endif
 
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
@@ -27,7 +24,6 @@ using namespace DirectX::SimpleMath;
 // 頭上テキスト本体の描画（毎フレーム・NewFrame後のレンダーステージで呼ばれる）。
 void AIDebugOverlaySystem::Update(float /*dt*/)
 {
-#ifdef ENABLE_EDITOR
     if (!m_enabled) return;
 
     const auto *camera = m_world->HasResource<Camera *>() ? m_world->GetResource<Camera *>() : nullptr;
@@ -149,10 +145,8 @@ void AIDebugOverlaySystem::Update(float /*dt*/)
             y += sizes[i].y;
         }
     }
-#endif
 }
 
-#ifdef ENABLE_EDITOR
 void AIDebugOverlaySystem::OnGui()
 {
     // 別ウィンドウは作らず、System Manager の各システム欄（このヘッダ配下）に直接出す。
@@ -161,10 +155,12 @@ void AIDebugOverlaySystem::OnGui()
     ImGui::SliderFloat("Head Offset Y", &m_headOffsetY, 0.0f, 15.0f);
     ImGui::TextDisabled("ボス頭上に 大状態/行動/HP・ドローン数 を常時表示");
 }
-#else
-void AIDebugOverlaySystem::OnGui() {}
-#endif
 
 // ImGui::NewFrame 後（SceneManager::Render 内）に走らせる必要があるためレンダーステージへ。
 // R10_UI は最後段なので頭上テキストが他の描画に隠れない。
+//
+// 登録ごと切ることで「製品ビルドには存在しない」を1行で言い切る。
+// 中身を #ifdef で刻むと、動かないコードが実行順の解決対象としてだけ残る。
+#ifdef ENABLE_EDITOR
 REGISTER_RENDER_SYSTEM(AIDebugOverlaySystem, Priority::RenderStage::R10_UI);
+#endif

@@ -1,5 +1,4 @@
-/// @file  NormalPrepassShader.h
-/// @brief 法線プリパス専用の軽量シェーダー(ShadowMapShader と同型)。
+// 法線プリパス専用の軽量シェーダー(ShadowMapShader と同型)。
 #pragma once
 #include "Engine/Graphics/Shader/Core/Shader.h"
 

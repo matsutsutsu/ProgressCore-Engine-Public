@@ -3,7 +3,7 @@
 #include "Engine/Graphics/Components/Lighting/ShadowMapConfigComponent.h"
 #include "Engine/Graphics/RHI/Camera.h"
 #include "Engine/Graphics/RHI/Light.h"
-#include "Engine/Graphics/Renderer/ModelRenderer.h"
+#include "Engine/Graphics/Renderer/ModelConstantBuffers.h"
 #include "Engine/Graphics/Resource/Model.h"
 #include "Engine/Graphics/Components/Core/NoRenderTag.h" // 当たり判定専用ジオメトリの除外用
 #include "Engine/Graphics/Components/Core/NoShadowTag.h" // 影を落とさせないものの除外用

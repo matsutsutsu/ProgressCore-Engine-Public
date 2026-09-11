@@ -1,5 +1,4 @@
-/// @file UILayoutSystem.cpp
-/// 役割・設計方針は UILayoutSystem.h を参照。
+// 役割・設計方針は UILayoutSystem.h を参照。
 #include "UILayoutSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"

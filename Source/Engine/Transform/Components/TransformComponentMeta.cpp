@@ -1,5 +1,4 @@
-/// @file  TransformComponentMeta.cpp
-/// @brief TransformComponent のシリアライズ/インスペクタ定義。
+// TransformComponent のシリアライズ/インスペクタ定義。
 
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"

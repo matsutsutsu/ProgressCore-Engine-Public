@@ -1,8 +1,7 @@
-/// @file TextRenderer.cpp
-/// 役割・設計方針は TextRenderer.h を参照。
-///
-/// stb_truetype はこの翻訳単位でのみ実装展開する。STBTT_STATIC で関数を static 化し、
-/// ImGui が内部に持つ同名 stb 実装とリンク衝突しないようにする。
+// 役割・設計方針は TextRenderer.h を参照。
+//
+// stb_truetype はこの翻訳単位でのみ実装展開する。STBTT_STATIC で関数を static 化し、
+// ImGui が内部に持つ同名 stb 実装とリンク衝突しないようにする。
 #define STB_TRUETYPE_IMPLEMENTATION
 #define STBTT_STATIC
 #include "stb_truetype.h"

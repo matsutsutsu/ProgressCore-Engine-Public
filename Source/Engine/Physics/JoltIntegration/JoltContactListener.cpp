@@ -6,9 +6,10 @@
 
 namespace
 {
-/// @brief 攻撃判定に関わる接触だけを計測対象にする。
-/// @note  地面や壁との接触まで出すとログが埋まって読めなくなるため、
-///        センサー(＝Hitbox の剣)が絡む対だけに絞る。
+// 攻撃判定に関わる接触だけを計測対象にする。
+//
+// 地面や壁との接触まで出すとログが埋まって読めなくなるため、
+// センサー(＝Hitbox の剣)が絡む対だけに絞る。
 bool IsAttackContact(const JPH::Body &a, const JPH::Body &b)
 {
     return a.IsSensor() || b.IsSensor();

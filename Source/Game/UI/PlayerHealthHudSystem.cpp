@@ -1,5 +1,4 @@
-/// @file PlayerHealthHudSystem.cpp
-/// 役割・設計方針は PlayerHealthHudSystem.h を参照。
+// 役割・設計方針は PlayerHealthHudSystem.h を参照。
 #include "PlayerHealthHudSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"

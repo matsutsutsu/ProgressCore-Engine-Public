@@ -1,14 +1,12 @@
-/// @file  BehaviorTreeSystem.cpp
-/// @brief 汎用 BehaviorTree 評価エンジンの実装。
-///        BossAISystem のエンジン部分を registry 駆動で書き直した。
-///        ExecuteAction/EvaluateCondition の巨大switchは廃止。
+// 汎用 BehaviorTree 評価エンジンの実装。行動・条件は registry から引く（switch廃止）。
 #include "BehaviorTreeSystem.h"
 
-#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeLoader.h"
+#include "Game/Logics/AI/BehaviorTree/Data/BTAssetCache.h"
 #include "Game/Logics/AI/BehaviorTree/Actions/BTActionRegistry.h"
 
-#include "Game/Logics/AI/BehaviorTree/Actions/BTConditions.h"
-#include "Game/Logics/Character/Boss/Data/BTActions_Boss.h"
+#include "Game/Logics/AI/BehaviorTree/Actions/BTConditions.h"       // 汎用条件
+#include "Game/Logics/Character/Boss/Actions/BTConditions_Boss.h"   // ボス固有条件
+#include "Game/Logics/Character/Boss/Actions/BTActions_Boss.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -17,10 +15,11 @@
 #include "Engine/Core/App/GameFlowState.h" // カットシーン中はAIを止める
 
 #include <algorithm>
+#include <cstdio>
 
-#ifdef ENABLE_EDITOR
 #include <imgui.h>
-#endif
+// デバッグ用に使うのでここに置く
+#include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
  
 
 using namespace CCL::ECS;
@@ -28,7 +27,25 @@ using namespace CCL::AI;
 using namespace CCL::AI::BT;
 
 namespace {
-    // 特定のサブツリー配下の Action ノードのタイマーだけをリセットする
+    // xorshift32。質は要らないが再現性は要る。状態を BehaviorTreeComponent が
+    // 持つので個体ごとに独立し、ワーカースレッドをまたいでも列が混ざらない。
+    uint32_t NextRandom(uint32_t &state)
+    {
+        state ^= state << 13;
+        state ^= state >> 17;
+        state ^= state << 5;
+        return state;
+    }
+
+    // 0 は「未初期化」の印なので必ず非ゼロにする。
+    void SeedRandomIfNeeded(BehaviorTreeComponent &btComp, CCL::ECS::EntityID entity)
+    {
+        if (btComp.rngState != 0) return;
+        btComp.rngState = (static_cast<uint32_t>(entity) * 2654435761u) ^ 0x9E3779B9u;
+        if (btComp.rngState == 0) btComp.rngState = 0x6D2B79F5u;
+    }
+
+    /// 特定のサブツリー配下の Action ノードのタイマーだけをリセットする。
     void ResetChildActionsRecursive(BTNodeID nodeId, BehaviorTreeComponent& btComp, const BTAsset& asset)
     {
         const auto& node = asset.nodes[nodeId];
@@ -44,25 +61,120 @@ namespace {
 
 BehaviorTreeSystem::BehaviorTreeSystem() : IfSystem("BehaviorTreeSystem")
 {
-    hasGui = true;
 }
 
 void BehaviorTreeSystem::Initialize()
 {
+    // 敵の種類を足したら、その敵の RegisterAll をここに1行足す。自己登録マクロにも
+    // できるが、「どの敵の行動が生きているか」が1画面で分かる利点のほうが大きい。
+    BT::CommonConditions::RegisterAll();
     BT::BossConditions::RegisterAll();
     BT::BossActions::RegisterAll();
+
+    VerifyRegistrations();
+
     CCL_LOG_INFO(LogCategory::AI, "[BehaviorTreeSystem] BTノード登録完了");
+}
+
+
+void BehaviorTreeSystem::VerifyRegistrations()
+{
+    // 辞書（ActionRegistry.h）と実装レジストリの突き合わせ。辞書に載っていれば
+    // エディタの候補には出るが、RegisterAll に書き忘れると評価側が黙って Failure を
+    // 返す＝「選べるのに置いても何も起きない技」という一番たちの悪い形になる。
+    const auto &reg = BTActionRegistry::Instance();
+
+    int missing = 0;
+    for (int i = 0; i < g_ActionRegistryCount; ++i) {
+        const ActionEntry &e = g_ActionRegistry[i];
+        if (e.id == 0) continue; // None は実装を持たない
+        if (reg.HasAction(e.id)) continue;
+
+        CCL_LOG_ERROR(LogCategory::AI,
+            "[BT] 行動 \"%s\"(ID %u) は辞書にあるが実装が登録されていない。"
+            "木に置いても何も起きず Failure になる（RegisterAll への追加漏れ）",
+            e.key, static_cast<unsigned>(e.id));
+        ++missing;
+    }
+    for (int i = 0; i < g_ConditionRegistryCount; ++i) {
+        const ActionEntry &e = g_ConditionRegistry[i];
+        if (e.id == 0) continue;
+        if (reg.HasCondition(e.id)) continue;
+
+        CCL_LOG_ERROR(LogCategory::AI,
+            "[BT] 条件 \"%s\"(ID %u) は辞書にあるが実装が登録されていない。"
+            "常に false になる（RegisterAll への追加漏れ）",
+            e.key, static_cast<unsigned>(e.id));
+        ++missing;
+    }
+
+    if (missing == 0) {
+        CCL_LOG_INFO(LogCategory::AI,
+            "[BT] 辞書と実装の突き合わせOK（行動 %d / 条件 %d）。"
+            "スケジューラへの追加申告: 書き込み %zu 型 / 読み取り %zu 型",
+            g_ActionRegistryCount - 1, g_ConditionRegistryCount - 1,
+            reg.ExtraWriteTypes().size(), reg.ExtraReadTypes().size());
+    }
+}
+
+
+std::vector<CCL::ECS::TypeID> BehaviorTreeSystem::GetReadTypes() const
+{
+    auto types = Base::GetReadTypes();
+    const auto &extra = BTActionRegistry::Instance().ExtraReadTypes();
+    types.insert(types.end(), extra.begin(), extra.end());
+    return types;
+}
+
+std::vector<CCL::ECS::TypeID> BehaviorTreeSystem::GetWriteTypes() const
+{
+    auto types = Base::GetWriteTypes();
+    const auto &extra = BTActionRegistry::Instance().ExtraWriteTypes();
+    types.insert(types.end(), extra.begin(), extra.end());
+    return types;
+}
+
+
+void BehaviorTreeSystem::SyncAssets()
+{
+    auto &cache = BTAssetCache::Instance();
+
+    // 直列で回す。やるのは「パスに対応する木を受け取り直す」だけで、変化が無ければ
+    // ポインタ比較1回で終わる（以前は並列ForEachの内側でファイルI/Oが走っていた）。
+    ForEach([&](BehaviorTreeComponent    &btComp,
+                const TransformComponent & /*trans*/,
+                const TimeStateComponent & /*time*/)
+        {
+        std::shared_ptr<const BTAsset> desired =
+            btComp.assetPath.empty() ? nullptr : cache.GetOrLoad(btComp.assetPath);
+
+        if (desired == btComp.sharedAsset) return; // 大半のフレームはここで終わる
+
+        btComp.sharedAsset     = desired;
+        btComp.loadedAssetPath = desired ? btComp.assetPath : std::string();
+
+        // 木が入れ替わったら実行状態は捨てる。前の木の途中経過を持ち越すと差し替え直後の
+        // 1回だけ挙動がおかしくなる。バッファ確保もここに集約し、評価側（並列）は確保しない。
+        const size_t nodeCount = desired ? desired->nodes.size() : 0;
+        btComp.debugNodeStates.assign(nodeCount, BTDebugState::None);
+        btComp.nodeTimers.assign(nodeCount, -1.0f);
+        btComp.runningNodes.assign(nodeCount, -1);
+        btComp.runningNodeId = 0xFFFF;
+    });
 }
 
 
 void BehaviorTreeSystem::Update(float rawDt)
 {
-    // カットシーン中(導入カメラ演出など)はAIを凍らせる。
-    //   並列 ForEach の外で1回だけ読む（中で毎回リソース検索しない、かつ
-    //   ワーカースレッドから同時にリソースを引かないため）。
-    const bool cinematic =
-        m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().cinematic;
+    if (!m_world->HasResource<GameFlowState>()) return;
 
+    // カットシーン中はAIの思考を止める。
+    const bool cinematic = m_world->GetResource<GameFlowState>().cinematic;
+
+    // ① アセットの解決。並列ループへ持ち込まないことでファイルI/Oもログもメインに留まる。
+    SyncAssets();
+
+    // ② 評価（並列）。
     ForEachWithIDParallel([this, cinematic](EntityID entity,
                                  BehaviorTreeComponent& btComp,
                                  const TransformComponent& trans,
@@ -70,48 +182,25 @@ void BehaviorTreeSystem::Update(float rawDt)
     {
         float dt = time.localDt;
 
-        // --- 動的ロード（assetPath が変わったら読み直す）---
-        if (btComp.assetPath != btComp.loadedAssetPath) {
-            if (!btComp.assetPath.empty()) {
-                if (!btComp.sharedAsset) {
-                    btComp.sharedAsset = std::make_shared<BTAsset>();
-                }
-                if (BehaviorTreeLoader::LoadFromJson(btComp.assetPath, *btComp.sharedAsset)) {
-                    btComp.loadedAssetPath = btComp.assetPath;
-                }
-                else {
-                    CCL_LOG_WARN(LogCategory::AI,
-                        "[BehaviorTreeSystem] BTロード失敗のため再試行可能: %s",
-                        btComp.assetPath.c_str());
-                }
-            }
-            else {
-                btComp.loadedAssetPath.clear();
-            }
-        }
         if (!btComp.sharedAsset || btComp.sharedAsset->nodes.empty()) return;
 
-        // --- バッファ確保 ---
-        size_t nodeCount = btComp.sharedAsset->nodes.size();
-        if (btComp.debugNodeStates.size() != nodeCount) {
-            btComp.debugNodeStates.resize(nodeCount, BTDebugState::None);
-            btComp.nodeTimers.resize(nodeCount, -1.0f);
-            btComp.runningNodes.resize(nodeCount, -1);
-        }
+        const size_t nodeCount = btComp.sharedAsset->nodes.size();
 
-        // --- デバッグ：評価を止める ---
-        //   タイマー減算より前に抜ける。止めている間も Wait が進むと、再開した瞬間に
-        //   溜まった分が一気に消化されて枝が飛ぶ。木は「凍る」のが正しい。
-        //   状態表示だけは消しておかないと、BTウィンドウに緑が残って動いて見える。
-        //   カットシーン中も同じ扱い（凍らせる）。演出を見ている間にボスが
-        //   攻撃を始めていると、演出が明けた瞬間に被弾している事故が起きる。
-        if (btComp.debugPaused || cinematic) {
+        // バッファは SyncAssets が揃えてある。並列ループ内で伸ばさず、ずれていたら見送る。
+        if (btComp.nodeTimers.size() != nodeCount) return;
+
+        // 評価を止める。タイマー減算より前に抜けないと、止めている間に進んだ Wait が
+        // 再開の瞬間に一気に消化されて枝が飛ぶ（木は「凍る」のが正しい）。
+        // 状態表示も消さないと BTウィンドウに緑が残って動いて見える。
+        // 「強制実行」中は止めない。両方有効だと「実行」を押しても何も起きなくなる。
+        const bool forcing = (btComp.debugForcedNodeId >= 0);
+        if ((btComp.debugPaused && !forcing) || cinematic) {
             std::fill(btComp.debugNodeStates.begin(), btComp.debugNodeStates.end(), BTDebugState::None);
             btComp.runningNodeId = 0xFFFF;
             return;
         }
 
-        // --- タイマー減算 ---
+        // タイマー減算。
         for (size_t i = 0; i < btComp.nodeTimers.size(); ++i) {
             if (btComp.nodeTimers[i] > 0.0f) {
                 btComp.nodeTimers[i] -= dt;
@@ -120,22 +209,21 @@ void BehaviorTreeSystem::Update(float rawDt)
         }
         std::fill(btComp.debugNodeStates.begin(), btComp.debugNodeStates.end(), BTDebugState::None);
 
-        // --- Running しおりのリセット ---
-        btComp.previousRunningNodeId = btComp.runningNodeId;
+        // Running しおりのリセット。
         btComp.runningNodeId = 0xFFFF;
 
-        // --- デバッグ：強制ノードが切り替わったら実行状態を捨てる ---
-        //   前の技の「途中まで進んだシーケンス」や Wait の残り時間が新しい枝へ
-        //   持ち越されると、1回目だけ挙動がおかしくなって原因が分からなくなる。
+        // 抽選の種は個体ごとに1回だけ蒔く。
+        SeedRandomIfNeeded(btComp, entity);
+
+        // 強制ノードが切り替わったら実行状態を捨てる（前の技の途中経過が新しい枝へ
+        // 持ち越されると、1回目だけ挙動がおかしくなる）。
         if (btComp.debugForcedNodeId != btComp.debugAppliedForcedNodeId) {
             btComp.debugAppliedForcedNodeId = btComp.debugForcedNodeId;
             std::fill(btComp.runningNodes.begin(), btComp.runningNodes.end(), -1);
             std::fill(btComp.nodeTimers.begin(),   btComp.nodeTimers.end(),   -1.0f);
         }
 
-        // --- 評価実行 ---
-        //   強制指定があればその枝から、無ければ通常どおりルート(0)から。
-        //   エンジン側の変更はこの1行だけで、木の構造には一切触れない。
+        // 強制指定があればその枝から、無ければルート(0)から。木の構造には触れない。
         BTNodeID startNode = 0;
         if (btComp.debugForcedNodeId >= 0 && btComp.debugForcedNodeId < static_cast<int>(nodeCount)) {
             startNode = static_cast<BTNodeID>(btComp.debugForcedNodeId);
@@ -156,6 +244,7 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
     const BTNode& node = asset.nodes[nodeId];
     BTNodeState result = BTNodeState::Failure;
 
+    // ノードの種類ごとに処理を分ける
     switch (node.type) {
 
     case BTNodeType::Selector: {
@@ -198,7 +287,13 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
     }
 
     case BTNodeType::Condition: {
-        // registry から条件クラスを引いて評価（switch廃止）
+        // 強制実行中は無条件に通す。間合いの条件が付いた枝はその場の距離次第で失敗し、
+        // 「実行」を押しても無反応に見えてしまう。
+        if (btComp.debugForcedNodeId >= 0) {
+            result = BTNodeState::Success;
+            break;
+        }
+
         IBTCondition* cond = BTActionRegistry::Instance().GetCondition(node.actionOrConditionId);
         if (cond) {
             BTContext ctx;
@@ -208,6 +303,7 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
             ctx.myTransform = &myTrans;
             ctx.nodeId      = nodeId;
             ctx.dt          = dt;
+            ctx.param       = node.param;
             result = cond->Evaluate(ctx) ? BTNodeState::Success : BTNodeState::Failure;
         } else {
             result = BTNodeState::Failure;
@@ -216,7 +312,6 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
     }
 
     case BTNodeType::Action: {
-        // registry からアクションクラスを引いて実行（switch廃止）
         IBTAction* action = BTActionRegistry::Instance().GetAction(node.actionOrConditionId);
         if (action) {
             BTContext ctx;
@@ -226,49 +321,76 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
             ctx.myTransform = &myTrans;
             ctx.nodeId      = nodeId;
             ctx.dt          = dt;
+            ctx.param       = node.param;
             result = action->Execute(ctx);
         } else {
             result = BTNodeState::Failure;
+        }
+
+        // 終わった行動は自分のタイマーを「未実行(-1)」へ戻す。以前はこれが Sequence の
+        // 中にしか無く、Selector や Decorator の直下に置いた行動は一度完了すると 0 のまま
+        // ＝以後ずっと即 Success（Wait が待たない／攻撃が二度と出ない）になっていた。
+        if (result != BTNodeState::Running && nodeId < btComp.nodeTimers.size()) {
+            btComp.nodeTimers[nodeId] = -1.0f;
         }
         break;
     }
 
     case BTNodeType::Decorator: {
-        int decType = static_cast<int>(node.decoratorType);
-        if (decType == 1 && btComp.nodeTimers[nodeId] > 0.0f) {   // Cooldown中
+        // 生の int ではなく enum で分岐する（数値だとどれがどの修飾か読めない）。
+        const BTDecoratorType decType = node.decoratorType;
+
+        // クールダウン中は子を評価せず即 Failure。タイマーは Action の残り時間と
+        // 同じ配列を共有するが、添字がノードIDなので衝突しない。
+        // 強制実行中は塞がない（押したのに何も起きないと見たいものが見られない）。
+        if (decType == BTDecoratorType::Cooldown && btComp.nodeTimers[nodeId] > 0.0f &&
+            btComp.debugForcedNodeId < 0) {
             result = BTNodeState::Failure;
             break;
         }
-        if (!node.children.empty()) {
-            BTNodeID childId = node.children[0];
-            if (decType == 2) {   // Retry
-                int retryCount = static_cast<int>(node.decoratorParam);
-                for (int r = 0; r < retryCount; ++r) {
-                    result = EvaluateTreeRecursive(childId, btComp, myTrans, asset, entity, dt);
-                    if (result != BTNodeState::Failure) break;
-                }
-            } else {
-                result = EvaluateTreeRecursive(childId, btComp, myTrans, asset, entity, dt);
-            }
 
-            if (decType == 0) {   // Inverter
-                if (result == BTNodeState::Success)      result = BTNodeState::Failure;
-                else if (result == BTNodeState::Failure) result = BTNodeState::Success;
+        if (node.children.empty()) break;
+
+        const BTNodeID childId = node.children[0];
+
+        if (decType == BTDecoratorType::Retry) {
+            // param は試行回数。0 だと一度も子を評価しないので最低1回は回す。
+            const int retryCount = (std::max)(1, static_cast<int>(node.param));
+            for (int r = 0; r < retryCount; ++r) {
+                result = EvaluateTreeRecursive(childId, btComp, myTrans, asset, entity, dt);
+                if (result != BTNodeState::Failure) break;
             }
-            else if (decType == 1) {   // Cooldown（成功時にタイマー開始）
-                if (result == BTNodeState::Success) btComp.nodeTimers[nodeId] = node.decoratorParam;
+        }
+        else {
+            result = EvaluateTreeRecursive(childId, btComp, myTrans, asset, entity, dt);
+        }
+
+        switch (decType) {
+        case BTDecoratorType::Inverter:
+            if (result == BTNodeState::Success)      result = BTNodeState::Failure;
+            else if (result == BTNodeState::Failure) result = BTNodeState::Success;
+            break;
+
+        case BTDecoratorType::Cooldown:
+            // 子が「やり切った」ときだけ待ち時間を開始する。Running で始めると技の途中から
+            // 減って体感の間隔が短くなり、Failure で始めると出していない技に待ちがかかる。
+            if (result == BTNodeState::Success) btComp.nodeTimers[nodeId] = node.param;
+            break;
+
+        case BTDecoratorType::Async: {
+            if (result != BTNodeState::Running) break;
+            const BTNode &childNode = asset.nodes[childId];
+            if (childNode.type == BTNodeType::Action) {
+                result = (btComp.nodeTimers[childId] != -1.0f)
+                             ? BTNodeState::Success : BTNodeState::Running;
+            } else {
+                result = BTNodeState::Success;
             }
-            else if (decType == 3) {   // Async
-                if (result == BTNodeState::Running) {
-                    const BTNode& childNode = asset.nodes[childId];
-                    if (childNode.type == BTNodeType::Action) {
-                        result = (btComp.nodeTimers[childId] != -1.0f)
-                            ? BTNodeState::Success : BTNodeState::Running;
-                    } else {
-                        result = BTNodeState::Success;
-                    }
-                }
-            }
+            break;
+        }
+
+        case BTDecoratorType::Retry:
+            break; // 上のループで結果は確定済み
         }
         break;
     }
@@ -281,11 +403,14 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
             btComp.runningNodes[nodeId] = -1;
             break;
         }
-        constexpr int MAX_CHILDREN = 16;
-        BTNodeID shuffled[MAX_CHILDREN];
-        int count = (std::min)((int)node.children.size(), MAX_CHILDREN);
+        // 上限を超える木は読み込み時に警告済み（黙って切り捨てると実行中に気づけない）。
+        BTNodeID shuffled[kMaxRandomSelectorChildren];
+        int count = (std::min)((int)node.children.size(), kMaxRandomSelectorChildren);
         for (int i = 0; i < count; ++i) shuffled[i] = node.children[i];
-        for (int i = count - 1; i > 0; --i) { int j = rand() % (i + 1); std::swap(shuffled[i], shuffled[j]); }
+        for (int i = count - 1; i > 0; --i) {
+            const int j = static_cast<int>(NextRandom(btComp.rngState) % static_cast<uint32_t>(i + 1));
+            std::swap(shuffled[i], shuffled[j]);
+        }
 
         result = BTNodeState::Failure;
         for (int i = 0; i < count; ++i) {
@@ -317,9 +442,8 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
 }
 
 
-#ifdef ENABLE_EDITOR
 namespace {
-    /// @brief ActionRegistry.h の辞書から表示名を逆引きする。見つからなければ nullptr。
+    /// ActionRegistry.h の辞書から表示名を逆引きする。見つからなければ nullptr。
     const char *LookupEntryName(const ActionEntry *table, int count, ActionID id)
     {
         for (int i = 0; i < count; ++i) {
@@ -328,11 +452,8 @@ namespace {
         return nullptr;
     }
 
-    /// @brief この枝で最初に見つかる Action の表示名。
-    /// @note  Sequence や Selector は名前を持たない（名前はエディタのグラフ側にしか無い）ので、
-    ///        「その枝が何をする枝なのか」を中身の先頭アクションで示す。
-    ///        ドローン攻撃は必ず「陣形指示 → Wait → Strike → …」の順なので、
-    ///        先頭アクション名がそのまま技名になる。
+    /// この枝で最初に見つかる Action の表示名。Sequence や Selector は名前を持たないので、
+    /// 「その枝が何をする枝なのか」を中身の先頭アクションで示す。
     const char *FirstActionNameInSubtree(const BTAsset &asset, BTNodeID nodeId)
     {
         const BTNode &node = asset.nodes[nodeId];
@@ -343,6 +464,14 @@ namespace {
             if (const char *name = FirstActionNameInSubtree(asset, child)) return name;
         }
         return nullptr;
+    }
+
+    /// param を短く整形する。小数第1位まで（10.0 → "10.0"）。
+    std::string FormatParam(float v)
+    {
+        char buf[32];
+        std::snprintf(buf, sizeof(buf), "%.1f", v);
+        return buf;
     }
 
     const char *NodeTypeName(BTNodeType type)
@@ -367,39 +496,69 @@ void BehaviorTreeSystem::DrawNodeRowRecursive(const BTAsset         &asset,
 {
     const BTNode &node = asset.nodes[nodeId];
 
-    // --- 行のラベル（種類＋中身が分かる名前）---
+    // 行のラベル（種類＋中身が分かる名前）。
     std::string label = NodeTypeName(node.type);
     if (node.type == BTNodeType::Action) {
         const char *name = LookupEntryName(g_ActionRegistry, g_ActionRegistryCount, node.actionOrConditionId);
         label += name ? std::string(" : ") + name
                       : std::string(" : id=") + std::to_string(node.actionOrConditionId);
+        if (GetActionParamLabel(node.actionOrConditionId))
+            label += " (" + FormatParam(node.param) + ")";
     }
     else if (node.type == BTNodeType::Condition) {
         const char *name = LookupEntryName(g_ConditionRegistry, g_ConditionRegistryCount, node.actionOrConditionId);
         label += name ? std::string(" : ") + name
                       : std::string(" : id=") + std::to_string(node.actionOrConditionId);
+        // param を出さないと「距離が N m 未満」が並ぶだけで何mの判定か分からない。
+        if (GetConditionParamLabel(node.actionOrConditionId))
+            label += " (" + FormatParam(node.param) + ")";
     }
     else if (const char *hint = FirstActionNameInSubtree(asset, nodeId)) {
         label += std::string(" [") + hint + "]";
     }
 
+    // 実行状態を数字で出す。色だけでは「なぜこのノードから進まないのか」が分からない。
+    //   行動 … 残り時間。0.00 なら待ち終わっている、-1 は未実行
+    //   複合 … 今どの子で止まっているか（しおり）。動かない＝その子が Running のまま
+    //   Cooldown … 残りクールダウン。>0 の間はこの枝ごと Failure
+    char buf[64];
+    if (nodeId < btComp.nodeTimers.size()) {
+        const float t = btComp.nodeTimers[nodeId];
+        if (node.type == BTNodeType::Action && t >= 0.0f) {
+            std::snprintf(buf, sizeof(buf), "  残り %.2fs", t);
+            label += buf;
+        }
+        else if (node.type == BTNodeType::Decorator &&
+                 node.decoratorType == BTDecoratorType::Cooldown) {
+            std::snprintf(buf, sizeof(buf), "  CD残り %.2fs", (t > 0.0f) ? t : 0.0f);
+            label += buf;
+        }
+    }
+    if (nodeId < btComp.runningNodes.size() && !node.children.empty()) {
+        const int bookmark = btComp.runningNodes[nodeId];
+        if (bookmark >= 0) {
+            std::snprintf(buf, sizeof(buf), "  しおり %d/%d",
+                          bookmark + 1, static_cast<int>(node.children.size()));
+            label += buf;
+        }
+    }
+
     ImGui::PushID(static_cast<int>(nodeId));
 
-    // --- 実行ボタン（もう一度押すと解除）---
+    // 実行ボタン（もう一度押すと解除）。
     const bool isForced = (btComp.debugForcedNodeId == static_cast<int>(nodeId));
     if (ImGui::SmallButton(isForced ? "解除" : "実行")) {
         btComp.debugForcedNodeId = isForced ? -1 : static_cast<int>(nodeId);
 
-        // 切り替えの後始末：前の技の「今撃て」信号が残ると、止めたはずのドローンが
-        // 飛び続けて何を見ているのか分からなくなる。
-        // 評価エンジン側はボス固有の概念を持たない方針なので、これはデバッグUIだけで行う。
+        // 前の技の「今撃て」信号が残ると、止めたはずのドローンが飛び続ける。
+        // 評価エンジンはボス固有の概念を持たない方針なので、後始末はデバッグUIだけで行う。
         if (auto *cmd = m_world->GetComponent<BossCommandComponent>(entity)) {
             cmd->droneAttackActive = false;
         }
     }
     ImGui::SameLine();
 
-    // --- 今フレームの評価結果で色を変える（走っている枝が一目で分かる）---
+    // 今フレームの評価結果で色を変える（走っている枝が一目で分かる）。
     ImVec4 color(0.75f, 0.75f, 0.75f, 1.0f);
     if (nodeId < btComp.debugNodeStates.size()) {
         switch (btComp.debugNodeStates[nodeId]) {
@@ -437,8 +596,7 @@ void BehaviorTreeSystem::DrawForcedNodeGui(BehaviorTreeComponent &btComp, Entity
         return;
     }
 
-    // 木を凍らせる。調整中の指示が次のフレームで別の技に塗り潰されるのを止める。
-    //   移動中に止めるとボスが歩き続けるので、行動要求も併せて切る。
+    // 木を凍らせる。移動中に止めるとボスが歩き続けるので、行動要求も併せて切る。
     bool paused = btComp.debugPaused;
     if (ImGui::Checkbox("AIを止める（調整に集中）", &paused)) {
         btComp.debugPaused = paused;
@@ -450,7 +608,10 @@ void BehaviorTreeSystem::DrawForcedNodeGui(BehaviorTreeComponent &btComp, Entity
     }
     if (btComp.debugPaused) {
         ImGui::SameLine();
-        ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "停止中（陣形指示は保持される）");
+        ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f),
+                           (btComp.debugForcedNodeId >= 0)
+                               ? "強制実行中はこのチェックは効かない"
+                               : "停止中（陣形指示は保持される）");
     }
 
     if (btComp.debugForcedNodeId >= 0) {
@@ -468,7 +629,8 @@ void BehaviorTreeSystem::DrawForcedNodeGui(BehaviorTreeComponent &btComp, Entity
         ImGui::TextDisabled("通常評価（ルートから）");
     }
 
-    ImGui::TextDisabled("「実行」を押した枝だけを繰り返し評価します（条件・抽選を無視）。");
+    ImGui::TextDisabled("「実行」を押した枝だけを繰り返し評価します。");
+    ImGui::TextDisabled("強制中は間合いなどの条件をすべて通し、クールダウンも無視します。");
     ImGui::TextDisabled("技を丸ごと見るなら Sequence の行を、単発で見るなら Action の行を押す。");
     ImGui::Separator();
 
@@ -490,7 +652,7 @@ void BehaviorTreeSystem::OnGui()
         ImGui::Text("Entity ID: %llu", (unsigned long long)e);
         ImGui::Text("Asset Path: %s", btComp->assetPath.c_str());
 
-        // lastLogActionId から行動名を逆引き（ActionRegistry.hの辞書を利用）
+        // lastLogActionId から行動名を逆引きする。
         std::string actionName = "Idle";
         for (int i = 0; i < g_ActionRegistryCount; ++i)
         {
@@ -505,7 +667,7 @@ void BehaviorTreeSystem::OnGui()
         ImGui::Text("Distance To Target: %.2fm", btComp->blackboard.distanceToTarget);
         ImGui::Text("HP: %.1f%%", btComp->blackboard.healthPercentage);
 
-        // 木を並べて「この技を今すぐ出す」を選べるようにする
+        // 木を並べて「この技を今すぐ出す」を選べるようにする。
         if (ImGui::TreeNodeEx("強制実行（デバッグ）", ImGuiTreeNodeFlags_DefaultOpen)) {
             DrawForcedNodeGui(*btComp, e);
             ImGui::TreePop();
@@ -514,9 +676,6 @@ void BehaviorTreeSystem::OnGui()
         ImGui::PopID();
     }
 }
-#else
-void BehaviorTreeSystem::OnGui() {}
-#endif
 
 
 REGISTER_LOGIC_SYSTEM(BehaviorTreeSystem, Priority::LogicStage::L02_Update);

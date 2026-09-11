@@ -1,5 +1,4 @@
-/// @file  DepthOfFieldEffect.h
-/// @brief 被写界深度(DoF)ポストエフェクト。
+// 被写界深度(DoF)ポストエフェクト。
 #pragma once
 #include "IPostEffect.h"
 #include "Engine/Graphics/Shader/Shared/PostProcessShared.h"

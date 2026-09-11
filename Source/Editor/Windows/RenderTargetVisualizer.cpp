@@ -1,5 +1,4 @@
-/// @file RenderTargetVisualizer.cpp
-/// @brief 中間バッファを可視化用 RT へ焼く実装（FullScreenVS + RenderTargetDebugPS）。
+// 中間バッファを可視化用 RT へ焼く実装（FullScreenVS + RenderTargetDebugPS）。
 #include "RenderTargetVisualizer.h"
 #include "Engine/Graphics/RHI/RenderTarget.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"

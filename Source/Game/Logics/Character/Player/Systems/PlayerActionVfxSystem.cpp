@@ -1,5 +1,4 @@
-/// @file PlayerActionVfxSystem.cpp
-/// 役割・設計方針は PlayerActionVfxSystem.h を参照。
+// 役割・設計方針は PlayerActionVfxSystem.h を参照。
 #include "PlayerActionVfxSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"

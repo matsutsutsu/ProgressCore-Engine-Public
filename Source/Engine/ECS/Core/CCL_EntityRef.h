@@ -8,7 +8,7 @@
 // EntityRef 自体は (World*, EntityID) の2フィールドだけの構造体で、
 // 寿命管理は行いません。完全に「使い捨ての操作チケット」として使います。
 //
-// @note
+//
 //   メンバ関数 Set / Patch の実装は World::AddComponent などのテンプレートを
 //   呼び出すため、CCL_World.h の完全定義が必要です。そのため宣言だけここに
 //   置き、定義は CCL_World.h の末尾（World 定義後）にインライン実装しています。
@@ -77,10 +77,10 @@ namespace CCL::ECS
         // EntityID への暗黙変換 / 明示取得
         // ------------------------------------------------------------
 
-        /// @brief `EntityID e = world.Spawn(...);` のように暗黙変換を許す
+        // `EntityID e = world.Spawn(...);` のように暗黙変換を許す
         operator EntityID() const { return id; }
 
-        /// @brief 明示的に EntityID を取り出す
+        // 明示的に EntityID を取り出す
         EntityID ID() const { return id; }
     };
 

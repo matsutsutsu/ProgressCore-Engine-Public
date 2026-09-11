@@ -1,7 +1,7 @@
 #pragma once
 #include "Engine/Graphics/Pipeline/Core/IRenderPass.h"
 
-/// @brief HDR→SDR 変換・ブルーム合成を行い、最終出力先（targetRTV）に書き出すパス。
+// HDR→SDR 変換・ブルーム合成を行い、最終出力先（targetRTV）に書き出すパス。
 class PostProcessPass : public IRenderPass
 {
 public:

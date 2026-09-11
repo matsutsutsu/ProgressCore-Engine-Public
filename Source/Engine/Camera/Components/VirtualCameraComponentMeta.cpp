@@ -1,5 +1,4 @@
-/// @file  VirtualCameraComponentMeta.cpp
-/// @brief VirtualCamera関連コンポーネントのシリアライズ/インスペクタ定義。
+// VirtualCamera関連コンポーネントのシリアライズ/インスペクタ定義。
 
 #include "Engine/Camera/Components/VirtualCameraComponents.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"

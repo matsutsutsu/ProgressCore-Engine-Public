@@ -7,12 +7,12 @@
 // Modelコンポーネントを持っているが、カリング用コンポーネントを持たないエンティティに
 // 自動的に付与を行うシステム
 class ModelCullingSetupSystem : public CCL::ECS::IfSystem<ModelCullingSetupSystem,
-    CCL::ECS::Read<ModelComponent>>
+                                                          CCL::ECS::Read<ModelComponent>>
 {
 public:
-    ModelCullingSetupSystem() : IfSystem("ModelCullingSetupSystem") 
-    {    
-		SetExclude<BoundingBoxComponent, VisibilityComponent>();
+    ModelCullingSetupSystem() : IfSystem("ModelCullingSetupSystem")
+    {
+        SetExclude<BoundingBoxComponent, VisibilityComponent>();
     }
 
     virtual ~ModelCullingSetupSystem() = default;
@@ -23,10 +23,10 @@ public:
 // Primitiveコンポーネントを持っているが、カリング用コンポーネントを持たないエンティティに
 // 自動的に付与を行うシステム
 class PrimitiveCullingSetupSystem : public CCL::ECS::IfSystem<PrimitiveCullingSetupSystem,
-    CCL::ECS::Read<PrimitiveComponent>>
+                                                              CCL::ECS::Read<PrimitiveComponent>>
 {
 public:
-    PrimitiveCullingSetupSystem() : IfSystem("PrimitiveCullingSetupSystem") 
+    PrimitiveCullingSetupSystem() : IfSystem("PrimitiveCullingSetupSystem")
     {
         SetExclude<BoundingBoxComponent, VisibilityComponent>();
     }

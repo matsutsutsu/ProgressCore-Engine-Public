@@ -9,14 +9,14 @@
 
 #include "Engine/Core/Math/Misc.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
-#include "Engine/Graphics/RHI/Graphics.h"
+#include "Engine/Graphics/RHI/DebugName.h"
 #include "GLTFImporter.h"
 #include "Engine/Graphics/Resource/GraphicsTypes.h"
 
 bool LoadImageData(tinygltf::Image *, const int, std::string *,
-    std::string *, int, int,
-    const unsigned char *, int,
-    void *user_pointer)
+                   std::string *, int, int,
+                   const unsigned char *, int,
+                   void *user_pointer)
 {
     return true;
 }

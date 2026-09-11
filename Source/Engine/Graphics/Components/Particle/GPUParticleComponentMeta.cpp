@@ -1,5 +1,4 @@
-/// @file  GPUParticleComponentMeta.cpp
-/// @brief GPUParticleComponent のシリアライズ/インスペクタ定義 (タブ最適化版)。
+// GPUParticleComponent のシリアライズ/インスペクタ定義 (タブ最適化版)。
 
 #include "Engine/Graphics/Components/Particle/GPUParticleComponent.h"
 #include "Engine/Graphics/RHI/Graphics.h"
@@ -155,7 +154,7 @@ namespace ComponentMetaJson
 template <>
 struct ComponentSerializer<GPUParticleComponent>
 {
-    /// @brief 保存は常に新フォーマット（emitters 配列）で書く。
+    // 保存は常に新フォーマット（emitters 配列）で書く。
     static void Save(json &j, const GPUParticleComponent &comp, SaveContext * /*ctx*/)
     {
         json arr = json::array();
@@ -169,10 +168,11 @@ struct ComponentSerializer<GPUParticleComponent>
         j["animControlled"] = comp.animControlled; // 発生をアニメ区間で駆動するか
     }
 
-    /// @brief 読み込みは新旧どちらのフォーマットも受け付ける。
-    /// @note 旧フォーマットはエミッタ設定がトップレベルにベタ書きされている
-    ///       （emitters 配列が無い）。既存プレハブを作り直さずに済むよう、
-    ///       その場合は「エミッタ1個のエフェクト」として読む。
+    // 読み込みは新旧どちらのフォーマットも受け付ける。
+    //
+    // 旧フォーマットはエミッタ設定がトップレベルにベタ書きされている
+    // （emitters 配列が無い）。既存プレハブを作り直さずに済むよう、
+    // その場合は「エミッタ1個のエフェクト」として読む。
     static void Load(const json &j, GPUParticleComponent &comp, LoadContext * /*ctx*/)
     {
         comp.emitters.clear();
@@ -237,19 +237,21 @@ struct ComponentMeta<GPUParticleComponent>
     //   関数ジャンプで辿れて「どこで何を描いているか」を探しやすい。
     // -----------------------------------------------------------------
 
-    /// @brief 「最小〜最大」の対を1行で編集する。
-    /// @note  DragFloat2 と違い、どちらが最小かが画面に出て、かつ ImGui 側が
-    ///        最小>最大への入れ替わりを抑えてくれる。呼び出し側で毎回書いていた
-    ///        手動クランプ( if (x > y) y = x; )が不要になる。
+    // 「最小〜最大」の対を1行で編集する。
+    //
+    // DragFloat2 と違い、どちらが最小かが画面に出て、かつ ImGui 側が
+    // 最小>最大への入れ替わりを抑えてくれる。呼び出し側で毎回書いていた
+    // 手動クランプ( if (x > y) y = x; )が不要になる。
     static bool RangeDrag(const char *label, GpuData::float2 &range,
                           float speed, float lo, float hi, const char *fmt)
     {
         return ImGui::DragFloatRange2(label, &range.x, &range.y, speed, lo, hi, fmt, fmt);
     }
 
-    /// @brief ラジアン保持の角度範囲を「度」で編集する。
-    /// @note  データはラジアンのまま。UI だけ度にする。
-    ///        「0.30 rad」と出ていても何度なのか分からないため。
+    // ラジアン保持の角度範囲を「度」で編集する。
+    //
+    // データはラジアンのまま。UI だけ度にする。
+    // 「0.30 rad」と出ていても何度なのか分からないため。
     static bool AngleRangeDrag(const char *label, GpuData::float2 &radians, float maxDeg)
     {
         constexpr float kRadToDeg = 57.2957795f;
@@ -266,8 +268,8 @@ struct ComponentMeta<GPUParticleComponent>
         return true;
     }
 
-    /// @brief 「(?)」ヘルプは MetaImGui の標準機能へ移設済み。ここは委譲するだけ
-    ///        （既存の多数の呼び出し `Help("...")` を壊さないための薄いラッパ）。
+    // 「(?)」ヘルプは MetaImGui の標準機能へ移設済み。ここは委譲するだけ
+    // （既存の多数の呼び出し `Help("...")` を壊さないための薄いラッパ）。
     static void Help(const char *text) { ComponentMetaImGui::Help(text); }
 
     static bool CustomGui(GPUParticleComponent &compRef, unsigned long long /*entityID*/ = 0, void * /*worldPtr*/ = nullptr)

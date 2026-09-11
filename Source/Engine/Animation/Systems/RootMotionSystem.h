@@ -26,10 +26,11 @@ class RootMotionSystem : public CCL::ECS::IfSystem<RootMotionSystem,
     {
     }
 
-    /// @brief 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
-    ///        AnimController が決めた遷移結果に対してルートモーションを適用する。
-    /// @note PlayerDashSystem と同一ステージで CharacterMovement を奪い合う。
-    ///       ダッシュ側が rm.externallyDriven を書いてから読む必要があるため後に走らせる。
+    // 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
+    // AnimController が決めた遷移結果に対してルートモーションを適用する。
+    //
+    // PlayerDashSystem と同一ステージで CharacterMovement を奪い合う。
+    // ダッシュ側が rm.externallyDriven を書いてから読む必要があるため後に走らせる。
     std::vector<const char *> GetRunAfter() const override
     {
         return {"AnimControllerSystem", "PlayerDashSystem"};

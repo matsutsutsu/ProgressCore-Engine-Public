@@ -1,5 +1,4 @@
-/// @file CameraActionTPSSystem.cpp
-/// @brief CameraActionTPSSystem のUpdateロジック実装。
+// CameraActionTPSSystem のUpdateロジック実装。
 
 #include "Engine/Camera/Systems/CameraActionTPSSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
@@ -85,8 +84,18 @@ void CameraActionTPSSystem::Update(float dt)
         m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().paused;
     const bool flowUiInteract =
         m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().uiInteract;
+
     const bool cursorFreeOverride =
         flowPaused || flowUiInteract || !inputAPI->IsGameInputActive();
+
+    // 導入カメラ演出などのカットシーン中は視点入力を一切受けない。
+    //   ここを塞がないと、演出を見ている5秒の間にスティック/マウスを動かした分だけ
+    //   currentYaw が回り続け、演出明けにカメラが明後日を向く。
+    //   PlayerInputSystem は cinematic で入力を落としているが、本システムは
+    //   IInputAPI を直接読むので同じ条件がここにも要る。
+    //   カーソルロックは維持する（解放するとフルスクリーンでポインタが窓外へ逃げる）。
+    const bool blockLookInput =
+        m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().cinematic;
 
     // このフレーム、いずれかのTPSカメラがマウスルック中ならカーソルをロックしたい。
     bool wantCursorLock = false;
@@ -128,42 +137,6 @@ void CameraActionTPSSystem::Update(float dt)
         }
 
         // ===================================================================
-        // プレイヤーによるカメラ操作
-        //
-        // ロックオン中でも基本的に操作可能。
-        // ロックオンは「カメラを奪う」のではなく「補助する」。
-        // ===================================================================
-
-        if (tps.lockOnAllowManualCamera || !enemyTrans)
-        {
-            // ---------------------------------------------------------------
-            // ゲームパッド
-            // ---------------------------------------------------------------
-
-            tps.currentYaw -= lookX * tps.lookSpeedX * dt;
-            tps.currentPitch += lookY * tps.lookSpeedY * dt;
-
-            // ---------------------------------------------------------------
-            // マウス
-            // ---------------------------------------------------------------
-
-            if ((!tps.mouseLookRequiresButton || rmbHeld) &&
-                !cursorFreeOverride)
-            {
-                float invert =
-                    tps.mouseInvertY ? -1.0f : 1.0f;
-
-                tps.currentYaw -=
-                    mouseDX * tps.mouseSensitivityX;
-
-                tps.currentPitch +=
-                    (-mouseDY) *
-                    tps.mouseSensitivityY *
-                    invert;
-            }
-        }
-
-        // ===================================================================
         // 3. オービット（回転角）の決定
         //
         // ロックオン中もプレイヤーのカメラ操作を許可する。
@@ -174,7 +147,7 @@ void CameraActionTPSSystem::Update(float dt)
         // 3-1. プレイヤーによる手動カメラ操作
         // ===================================================================
 
-        if (!enemyTrans || tps.lockOnAllowManualCamera)
+        if ((!enemyTrans || tps.lockOnAllowManualCamera) && !blockLookInput)
         {
             // ---------------------------------------------------------------
             // ゲームパッド

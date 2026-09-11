@@ -11,47 +11,53 @@
                     "playbackSpeed": 1.0
                 },
                 "BehaviorTreeComponent": {
-                    "assetPath": "Assets/BehaviorTree/BossCombat.json",
-                    "phase2AssetPath": "Assets/BehaviorTree/BossCombatPhase2.json",
-                    "phase2HealthThreshold": 50.0
+                    "assetPath": "Assets/BehaviorTree/BossCombat.json"
                 },
                 "BossActionComponent": {
                     "acceleration": 10.0,
-                    "chargeSpeed": 25.0,
-                    "currentMoveSpeed": 0.0,
-                    "currentState": 2,
+                    "advanceStopDistance": 7.0,
+                    "backStepHeight": 2.0,
+                    "backStepSpeed": 40.0,
+                    "backStepTime": 1.0,
+                    "chargeSpeed": 30.5,
+                    "dashDriveTime": 0.4,
+                    "dashWindupTime": 0.5699999928474426,
                     "deceleration": 15.0,
-                    "idleTurnSpeed": 4.0,
-                    "runSpeed": 8.0,
+                    "jumpFlightTime": 0.6899999976158142,
+                    "jumpHeight": 4.599999904632568,
+                    "jumpMaxRange": 35.5,
+                    "jumpWindupTime": 0.15,
+                    "meleeTurnTime": 0.3499999940395355,
                     "turnSpeed": 10.0,
                     "walkSpeed": 3.0
                 },
-                "BossCommandComponent": {
-                    "currentActionId": 1101,
-                    "requestFormation": 5,
-                    "targetPlayerId": 0
-                },
+                "BossCommandComponent": null,
                 "BossPhaseComponent": {
-                    "phase": 0,
-                    "timer": 0.0
+                    "phase2AssetPath": "Assets/BehaviorTree/BossCombat.json",
+                    "phase2HealthThreshold": 50.0
                 },
                 "Character Movement": {
                     "currentVelocity": [
-                        0.0,
-                        0.0,
-                        0.0
+                        21.869781494140625,
+                        -18.164236068725586,
+                        -43.815589904785156
                     ],
                     "desiredVelocity": [
                         0.0,
                         0.0,
                         0.0
                     ],
-                    "overrideSpeed": -1.0
+                    "isRootMotionActive": false,
+                    "jumpImpulse": false,
+                    "overrideSpeed": -1.0,
+                    "speedMultiplier": 1.0,
+                    "use3DVelocity": false
                 },
+                "EnemyTag": null,
                 "HealthComponent": {
-                    "currentHealth": 1000.0,
+                    "currentHealth": 500.0,
                     "invincibilityDuration": 0.20000000298023224,
-                    "maxHealth": 1000.0
+                    "maxHealth": 500.0
                 },
                 "Hurtbox": {
                     "damageMultiplier": 1.0
@@ -85,21 +91,22 @@
                     "walkSpeed": 30.0
                 },
                 "Just Evade Component": {
-                    "chainCount": 0,
-                    "chainSpeedMax": 0.4000000059604645,
-                    "chainSpeedPerLevel": 0.07999999821186066,
-                    "idleBreakTime": 4.0,
-                    "isJustSuccess": false,
-                    "killRadiusBase": 3.0,
-                    "killRadiusPerLevel": 2.0,
-                    "maxChain": 5,
-                    "windowScaleMin": 0.5,
-                    "windowScalePerLevel": 0.10000000149011612
+                    "isJustSuccess": false
                 },
                 "Knockback": {
-                    "duration": 0.18000000715255737
+                    "duration": 0.18000000715255737,
+                    "stunDuration": 0.3499999940395355,
+                    "stunTimer": 0.0
                 },
-                "Material": null,
+                "Material": {
+                    "customParams": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "paths": []
+                },
                 "Model": {
                     "assetPath": "Assets/Models/Enemy/Muriel/Muriel.glb"
                 },
@@ -119,15 +126,15 @@
                     "isStatic": false,
                     "parent": 3,
                     "position": [
-                        -29.04907989501953,
-                        0.17921487987041473,
-                        29.291643142700195
+                        -28.975801467895508,
+                        2.3448922634124756,
+                        -23.771148681640625
                     ],
                     "rotation": [
-                        -0.0,
-                        -0.3307424485683441,
-                        -0.0,
-                        0.9437210559844971
+                        0.0,
+                        0.973700761795044,
+                        0.0,
+                        0.2278304398059845
                     ],
                     "scale": [
                         3.5,
@@ -144,11 +151,11 @@
                     "boneName": "hand_r"
                 },
                 "Hitbox": {
-                    "damageAmount": 5.0,
-                    "hitStopDuration": 0.20000000298023224,
+                    "damageAmount": 9.0,
+                    "hitStopDuration": 0.25,
                     "hitStopScale": 0.0,
                     "isActive": false,
-                    "knockback": 14.0
+                    "knockback": 22.0
                 },
                 "Jolt Capsule Collider": {
                     "halfHeight": 3.700000047683716,
@@ -178,7 +185,15 @@
                     "restitution": 0.0,
                     "useCCD": false
                 },
-                "Material": null,
+                "Material": {
+                    "customParams": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "paths": []
+                },
                 "Model": {
                     "assetPath": "Assets/Models/Weapon/MurielSword/MurielSword.gltf"
                 },
@@ -236,6 +251,7 @@
                     "minDistance": 0.019999999552965164,
                     "rimPower": 0.699999988079071,
                     "shape": 0,
+                    "texturePath": "",
                     "thickness": 0.0,
                     "tipOffset": [
                         0.0,
@@ -244,8 +260,20 @@
                     ],
                     "tubeSides": 6,
                     "useInterpolation": true,
+                    "useZigZag": false,
+                    "uvScroll": [
+                        0.0,
+                        0.0
+                    ],
+                    "uvTiling": [
+                        1.0,
+                        1.0
+                    ],
                     "width": 1.0,
-                    "widthCurvePower": 0.5
+                    "widthCurvePower": 0.5,
+                    "zigZagAmplitude": 0.5,
+                    "zigZagFrequency": 2,
+                    "zigZagSeed": 1337
                 }
             },
             "lid": 2

@@ -1,4 +1,5 @@
 #include "DefeatSlowMotionSystem.h"
+#include "Game/Logics/Combat/EnemyTag.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -6,7 +7,7 @@
 #include "Engine/Time/TimeService.h" // 全体スローは意図ファサード経由
 
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"   // プレイヤー識別
-#include "Game/Logics/Character/Boss/Data/BossActionComponent.h"      // ボス識別
+#include "Game/Logics/Character/Boss/Components/BossActionComponent.h"      // ボス識別
 
 using namespace CCL::ECS;
 
@@ -22,16 +23,20 @@ void DefeatSlowMotionSystem::Update(float dt)
     int  aliveEnemies  = 0;     // 生存中の敵数（プレイヤー除く）
 
     ForEachWithID([&](EntityID id, HealthComponent &hp) {
-        const bool isPlayer = m_world->HasComponent<PlayerComponent>(id);
-        const bool dead     = (hp.currentHealth <= 0.0f);
+        // 「敵かどうか」は EnemyTag が唯一の情報源。
+        //   以前は「PlayerComponent を持たない HealthComponent」＝敵としていた。
+        //   ボス1体のうちは成立したが、壊せる置物や味方NPCにHPを持たせた瞬間、
+        //   それが敵として数えられてワールドクリア判定が成立しなくなる。
+        const bool isEnemy = m_world->HasComponent<Tag::EnemyTag>(id);
+        const bool dead    = (hp.currentHealth <= 0.0f);
 
-        if (!isPlayer && !dead) ++aliveEnemies;
+        if (isEnemy && !dead) ++aliveEnemies;
 
         // まだ演出していない死亡を「1回だけ」拾う。
         if (!hp.deathFxFired && dead)
         {
             hp.deathFxFired = true;
-            if (!isPlayer)
+            if (isEnemy)
             {
                 sawEnemyDeath = true;
                 normalKill    = true;

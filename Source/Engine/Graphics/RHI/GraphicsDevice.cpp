@@ -1,7 +1,7 @@
 #include "GraphicsDevice.h"
 #include "Engine/Core/Math/Misc.h"
 #include "Engine/Graphics/Shader/Shared/ShaderShared.h"  // _ASSERT_EXPR, HRTrace
-#include "Engine/Graphics/RHI/Graphics.h"
+#include "Engine/Graphics/RHI/DebugName.h"
 #include "Engine/Platform/Core/Logger.h"
 #include <dxgi1_6.h> // IDXGIFactory6::EnumAdapterByGpuPreference (高性能GPUの明示選択)
 #pragma comment(lib, "dxgi.lib")
@@ -183,9 +183,15 @@ void GraphicsDevice::Initialize(HWND hWnd)
         t.SampleDesc = { 1, 0 };
         t.Usage = D3D11_USAGE_DEFAULT;
         t.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-        m_device->CreateTexture2D(&t, nullptr, m_gameTex.GetAddressOf());
-        m_device->CreateRenderTargetView(m_gameTex.Get(), nullptr, m_gameRTV.GetAddressOf());
-        m_device->CreateShaderResourceView(m_gameTex.Get(), nullptr, m_gameSRV.GetAddressOf());
+        // この 3 つだけ HRESULT を見ていなかった。生成に失敗すると null の RTV を
+        // OMSetRenderTargets し続けることになり、「何も映らないが落ちもしない」という
+        // 最も原因を追いにくい壊れ方をするため、他のリソースと同じ流儀で検査する。
+        hr = m_device->CreateTexture2D(&t, nullptr, m_gameTex.GetAddressOf());
+        _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+        hr = m_device->CreateRenderTargetView(m_gameTex.Get(), nullptr, m_gameRTV.GetAddressOf());
+        _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+        hr = m_device->CreateShaderResourceView(m_gameTex.Get(), nullptr, m_gameSRV.GetAddressOf());
+        _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
         SetDebugName(m_gameSRV.Get(), "GameView_SRV");
     }
 

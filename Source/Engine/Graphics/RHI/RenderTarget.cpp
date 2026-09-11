@@ -3,7 +3,7 @@
 // 既存のロガーを使用。CCL_LOG_ERROR / LogCategory がプロジェクト側で定義されている前提。
 // 別ロガーを使う場合はここを差し替える。
 #include "Engine/Platform/Core/Logger.h"
-#include "Engine/Graphics/RHI/Graphics.h"
+#include "Engine/Graphics/RHI/DebugName.h"
 
 RenderTarget::~RenderTarget()
 {
@@ -77,12 +77,13 @@ bool RenderTarget::Create(ID3D11Device* device, UINT width, UINT height, DXGI_FO
 
     hr = device->CreateShaderResourceView(m_texture.Get(), &srvDesc,
         m_srv.ReleaseAndGetAddressOf());
-	SetDebugName(m_srv.Get(), "RenderTarget_SRV");
     if (FAILED(hr)) {
         CCL_LOG_ERROR(LogCategory::Render, "CreateSRV failed: hr=0x%08X", hr);
         Release();
         return false;
     }
+    // 生成に成功してから名前を付ける（失敗時は m_srv が null で無意味なため）。
+    SetDebugName(m_srv.Get(), "RenderTarget_SRV");
 
     // 4. ビューポート設定
     m_viewport.Width = static_cast<float>(width);

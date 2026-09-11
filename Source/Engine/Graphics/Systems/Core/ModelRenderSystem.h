@@ -8,7 +8,7 @@
 #include "Engine/Transform/Components/TransformComponent.h"
 
 // 前方宣言
-class ModelRenderer;
+class ModelConstantBuffers;
 
 // 描画に必要なコンポーネント (TransformComponent, ModelComponent) をフィルタするシステム
 class ModelRenderSystem : public CCL::ECS::IfSystem<ModelRenderSystem,

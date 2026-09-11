@@ -1,10 +1,14 @@
 #pragma once
 #include <algorithm>
 #include <cstdint>
+#include <cstring>
 #include <functional>
 #include <memory>
+#include <typeinfo>
 #include <unordered_map>
 #include <vector>
+
+#include <tracy/Tracy.hpp>
 
 /**
  * @brief イベントバス (EventBus) の主な役割は、異なるシステム間でのイベント通信を管理することです。
@@ -34,6 +38,55 @@ namespace CCL::ECS {
             return id;
         }
     };
+
+    // =======================================================
+    // 1b. Publish の Tracy ゾーン（イベント型ごとに自動で名前が付く）
+    // =======================================================
+    //
+    // EventBus::Publish は同期呼び出しで、購読者のコールバックを発行元の
+    // コールスタック上でそのまま実行する。つまり購読者がやった重い仕事は
+    // Tracy 上では「発行した System」の中身として計上される
+    //  （例: PlayerMoveSystem の中に SceneSerializer::Deserialize が現れる）。
+    // どのイベントが何を連れてきたのかを追えるように、Publish 自体へゾーンを置く。
+    //
+    // イベント種別ごとにマクロを書かなくて済むように、
+    //   ・テンプレートなので EventType ごとに別々の static が実体化される
+    //   ・その static に SourceLocationData を1個だけ持たせ、名前を型名にする
+    // という形にしている。新しいイベント型を足しても、こちら側の作業はゼロ。
+    //
+    // Tracy は SourceLocationData をポインタで同一視するので、名前の文字列が
+    // ネットワークへ流れるのは型ごとに1回だけ。毎回の発行コストはゾーン1個ぶん。
+#ifdef TRACY_ENABLE
+    // typeid(T).name() は静的な寿命を持つ文字列。MSVC は "struct Foo" を返すので
+    // 接頭辞だけ飛ばして読みやすくする（ポインタを進めるだけなのでコピーは不要）。
+    template <typename T> inline const char *EventZoneName()
+    {
+        static const char *const name = [] {
+            const char *n = typeid(T).name();
+            if (std::strncmp(n, "struct ", 7) == 0) return n + 7;
+            if (std::strncmp(n, "class ", 6) == 0) return n + 6;
+            return n;
+        }();
+        return name;
+    }
+
+    template <typename T> inline const tracy::SourceLocationData *EventPublishSrcLoc()
+    {
+        static const tracy::SourceLocationData loc{
+            EventZoneName<T>(), // ゾーン名 = イベント型名
+            "EventBus::Publish",
+            __FILE__,
+            static_cast<uint32_t>(__LINE__),
+            0x8844CC // 紫系。イベント経由の処理だと一目で分かるように
+        };
+        return &loc;
+    }
+
+    // Publish 1回ぶんのスコープ。TRACY_ENABLE が無ければ丸ごと消える。
+    #define CCL_EVENTBUS_PUBLISH_ZONE(EventT)         tracy::ScopedZone _ccl_publish_zone(CCL::ECS::EventPublishSrcLoc<EventT>())
+#else
+    #define CCL_EVENTBUS_PUBLISH_ZONE(EventT) (void)0
+#endif
 
     // 購読解除用のチケット
     using EventSubscriptionID = uint64_t;
@@ -136,6 +189,11 @@ namespace CCL::ECS {
         // 手紙を投函する (全員に配る)
         template <typename EventType> void Publish(const EventType &eventData)
         {
+            // ここは同期呼び出し。購読者のコストは呼び出し元のゾーンに乗る。
+            //   イベント型ごとに別名のゾーンが自動で出るので、Tracy 上で
+            //   「このスパイクはどのイベントが連れてきたのか」を辿れる。
+            CCL_EVENTBUS_PUBLISH_ZONE(EventType);
+
             uint32_t typeId = EventTypeIDGenerator::GetID<EventType>();
 
             if (m_subscribers.find(typeId) != m_subscribers.end()) {

@@ -22,7 +22,7 @@
 class JoltCharacterContactListener : public JPH::CharacterContactListener
 {
   private:
-    JoltContactListener *m_sink; ///< 収集先バッファ（剛体側と共有）
+    JoltContactListener *m_sink; // 収集先バッファ（剛体側と共有）
     CCL::ECS::EntityID   m_playerID;
     JPH::BodyInterface  *m_bodyInterface;
 
@@ -38,11 +38,12 @@ class JoltCharacterContactListener : public JPH::CharacterContactListener
         JPH::Vec3Arg                                         inContactNormal,
         JPH::CharacterContactSettings                       &ioSettings) override;
 
-    /// @brief 接触継続フレームに呼ばれる。Added と全く同じ扱いにする。
-    /// @note  CharacterVirtual は前フレームの接触を mListenerContacts に持ち越し、
-    ///        既知の対を Added ではなく Persisted に回す(CharacterVirtual.cpp)。
-    ///        ここを実装しないと重なり続けている間の接触が全て消え、攻撃判定の窓より
-    ///        先に武器が相手へ入っているケース（突進攻撃など）が丸ごと不発になる。
+    // 接触継続フレームに呼ばれる。Added と全く同じ扱いにする。
+    //
+    // CharacterVirtual は前フレームの接触を mListenerContacts に持ち越し、
+    // 既知の対を Added ではなく Persisted に回す(CharacterVirtual.cpp)。
+    // ここを実装しないと重なり続けている間の接触が全て消え、攻撃判定の窓より
+    // 先に武器が相手へ入っているケース（突進攻撃など）が丸ごと不発になる。
     virtual void OnContactPersisted(const JPH::CharacterVirtual *inCharacter,
         const JPH::BodyID                                       &inBodyID2,
         const JPH::SubShapeID                                   &inSubShapeID2,
@@ -50,22 +51,26 @@ class JoltCharacterContactListener : public JPH::CharacterContactListener
         JPH::Vec3Arg                                             inContactNormal,
         JPH::CharacterContactSettings                           &ioSettings) override;
 
-    /// @brief 接触が解消された時に呼ばれる。
-    /// @note  計測ログのみ。接触が正しく解放されているかの確認用で、判定には使わない。
+    // 接触が解消された時に呼ばれる。
+    //
+    // 計測ログのみ。接触が正しく解放されているかの確認用で、判定には使わない。
     virtual void OnContactRemoved(const JPH::CharacterVirtual *inCharacter,
         const JPH::BodyID                                     &inBodyID2,
         const JPH::SubShapeID                                 &inSubShapeID2) override;
 
   private:
-    /// @brief Added / Persisted 共通の実体。接触1件をイベント化して sink へ積む。
-    /// @param inPhase 計測ログ用の表示ラベル("Add" / "Persist")。判定には影響しない。
+    /**
+     * @brief Added / Persisted 共通の実体。接触1件をイベント化して sink へ積む。
+     * @param inPhase 計測ログ用の表示ラベル("Add" / "Persist")。判定には影響しない。
+     */
     void EmitContactEvent(const JPH::CharacterVirtual *inCharacter,
         const JPH::BodyID                             &inBodyID2,
         JPH::RVec3Arg                                  inContactPosition,
         JPH::Vec3Arg                                   inContactNormal,
         const char                                    *inPhase);
 
-    /// @brief 攻撃レイヤー(PLAYER_ATTACK / BOSS_ATTACK)との接触かを判定する。
-    /// @note  地面・壁・相手本体まで出すとログが埋まるため、計測は攻撃判定だけに絞る。
+    // 攻撃レイヤー(PLAYER_ATTACK / BOSS_ATTACK)との接触かを判定する。
+    //
+    // 地面・壁・相手本体まで出すとログが埋まるため、計測は攻撃判定だけに絞る。
     bool IsAttackLayer(const JPH::BodyID &bodyID) const;
 };

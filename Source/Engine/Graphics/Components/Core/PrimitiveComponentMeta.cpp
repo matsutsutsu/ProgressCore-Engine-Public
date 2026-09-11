@@ -1,5 +1,4 @@
-/// @file  PrimitiveComponentMeta.cpp
-/// @brief プリミティブ描画用コンポーネントのシリアライズおよびインスペクタ定義。
+// プリミティブ描画用コンポーネントのシリアライズおよびインスペクタ定義。
 
 #include "PrimitiveComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"

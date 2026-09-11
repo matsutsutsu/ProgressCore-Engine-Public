@@ -1,11 +1,9 @@
-/**
- * @file BehaviorTreeWindow.h
- * @brief ビヘイビアツリーを視覚的に構築・編集するためのエディタウィンドウ
- * @note 【設計思想】
- * ランタイム（DOD向けフラット配列）とは完全に切り離された「エディタ専用のデータ構造」を持ちます。
- * 人間が編集しやすいグラフ構造（ノードとリンクの網目）を管理し、
- * 最終的にこれを機械が読みやすい配列（JSON）に変換（Bake）する役割を担います。
- */
+// ビヘイビアツリーを視覚的に構築・編集するためのエディタウィンドウ
+//
+// 【設計思想】
+// ランタイム（DOD向けフラット配列）とは完全に切り離された「エディタ専用のデータ構造」を持ちます。
+// 人間が編集しやすいグラフ構造（ノードとリンクの網目）を管理し、
+// 最終的にこれを機械が読みやすい配列（JSON）に変換（Bake）する役割を担います。
 #pragma once
 #include "Editor/Core/EditorWindow.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"
@@ -20,14 +18,14 @@ namespace ax { namespace NodeEditor { struct EditorContext; } }
  * @brief エディタ上で視覚的に区別されるノードの種類
  */
 enum class EditorBTNodeType {
-    Root,      ///< 始点（1グラフに1つのみ）。入力ピンを持たない。
-    Selector,  ///< 複合ノード：子を順番に実行し、1つでも成功すれば成功。
-    Sequence,  ///< 複合ノード：子を順番に実行し、1つでも失敗すれば失敗。
-    Condition, ///< 葉ノード：Blackboardの値を評価し、真偽を返す。出力ピンを持たない。
-    Action,    ///< 葉ノード：実際の行動（攻撃、移動）を行う。出力ピンを持たない。
-    Group,     ///< コメント用グループノード（機能的な実行順序は持たない）
-    Decorator, ///< デコレータノード（子ノードの挙動を修飾する。例: Inverter, Cooldown, Retryなど）
-    RandomSelector ///< ランダムセレクター
+    Root,      // 始点（1グラフに1つのみ）。入力ピンを持たない。
+    Selector,  // 複合ノード：子を順番に実行し、1つでも成功すれば成功。
+    Sequence,  // 複合ノード：子を順番に実行し、1つでも失敗すれば失敗。
+    Condition, // 葉ノード：Blackboardの値を評価し、真偽を返す。出力ピンを持たない。
+    Action,    // 葉ノード：実際の行動（攻撃、移動）を行う。出力ピンを持たない。
+    Group,     // コメント用グループノード（機能的な実行順序は持たない）
+    Decorator, // デコレータノード（子ノードの挙動を修飾する。例: Inverter, Cooldown, Retryなど）
+    RandomSelector // ランダムセレクター
 };
 
 /**
@@ -35,9 +33,9 @@ enum class EditorBTNodeType {
  * @brief ノード同士を接続するための「接続口」のデータ
  */
 struct BTPin {
-    uint32_t id;       ///< ピンのユニークID（ImGui Node Editorで必須）
-    uint32_t nodeId;   ///< このピンが属しているノードのID
-    bool isInput;      ///< true なら左側の入力ピン、false なら右側の出力ピン
+    uint32_t id;       // ピンのユニークID（ImGui Node Editorで必須）
+    uint32_t nodeId;   // このピンが属しているノードのID
+    bool isInput;      // true なら左側の入力ピン、false なら右側の出力ピン
 };
 
 /**
@@ -45,9 +43,9 @@ struct BTPin {
  * @brief ピンとピンを繋ぐ「線（リンク）」のデータ
  */
 struct BTLink {
-    uint32_t id;               ///< リンクのユニークID
-    uint32_t startPinId;  ///< 接続元の出力ピンID
-    uint32_t endPinId;    ///< 接続先の入力ピンID
+    uint32_t id;               // リンクのユニークID
+    uint32_t startPinId;  // 接続元の出力ピンID
+    uint32_t endPinId;    // 接続先の入力ピンID
 };
 
 /**
@@ -55,16 +53,16 @@ struct BTLink {
  * @brief エディタ上で描画・操作される「付箋（ノード）」の実体
  */
 struct EditorBTNode {
-    uint32_t id;               ///< ノードのユニークID
-    EditorBTNodeType type;     ///< ノードの種類
-    std::string name;          ///< UI上に表示される名前
+    uint32_t id;               // ノードのユニークID
+    EditorBTNodeType type;     // ノードの種類
+    std::string name;          // UI上に表示される名前
 
     // ランタイム用の設定値（インスペクタで編集する）
     ActionID actionOrConditionId = 0;
 
     // UI用の接続口
-    BTPin inputPin;            ///< 親から繋がれる入力ピン
-    BTPin outputPin;           ///< 子へ繋ぐための出力ピン（複数の子へ線を伸ばせる）
+    BTPin inputPin;            // 親から繋がれる入力ピン
+    BTPin outputPin;           // 子へ繋ぐための出力ピン（複数の子へ線を伸ばせる）
 
     // エディタ空間の座標
     float posX = 0.0f;
@@ -80,12 +78,16 @@ struct EditorBTNode {
     float width = 400.0f;
     float height = 400.0f;
 
-    float paramValue1 = 0.0f; // 例: 突進速度
-    std::string targetKey = "Player"; // 例: Blackboardのキー
+    // グループの色（kGroupPalette の添字）。役割ごとに塗り分けて見分けるため。
+    int groupColorIndex = 0;
 
     // デコレーター設定
     int decoratorType = 0;
-    float decoratorParam = 0.0f;
+
+    // このノードの数値パラメータ。BTNode::param と1対1で対応する。
+    // Action    … 行動の引数（待機の秒数、近接の硬直など）
+    // Decorator … クールダウン秒数 / リトライ回数
+    float param = 0.0f;
 
     // ランタイム側のノードと対応付けるためのインデックス。
     // Bake 時に「フラット配列の何番目になったか」を記憶しておく
@@ -153,6 +155,37 @@ private:
     void UpdateExecutionOrder();
 
     /**
+     * @brief 木構造を見て全ノードを自動で並べ直す
+     *
+     * なぜ「実行順が変わらない」と言えるか:
+     *   このエディタは子の実行順を X 座標の左右で表している（UE5 と同じ仕様）。
+     *   したがって整列でXを書き換えるのは、本来なら挙動を変える操作にあたる。
+     *   そこで配置前に各親の子を「現在のX順」で並べ、その順序のまま左から詰め直す。
+     *   相対順序が保存されるので、実行順は整列の前後で必ず一致する。
+     *
+     * @note 座標を書くだけで ed::SetNodePosition は呼ばない。positionInitialized を
+     *       false に戻し、描画ループ側の既存の反映経路に乗せる。
+     */
+    void AutoLayout();
+
+    /**
+     * @brief 選択中のノードをちょうど囲むサイズのコメントグループを作る
+     *
+     * 空のグループを置いてから手で広げる操作が要らなくなる。
+     * グループを「後から囲む道具」にすると、整理は書き終わってからで良くなる。
+     */
+    void GroupSelectedNodes();
+
+    /**
+     * @brief グループ枠の中に入っているノードのIDを集める
+     * @param groupId 対象のグループノードID
+     *
+     * 判定はノードの中心が枠内にあるかどうか。完全内包を要求すると、
+     * 枠ぎりぎりのノードが整列のたびに所属を出入りして枠が暴れる。
+     */
+    std::vector<uint32_t> CollectNodesInGroup(uint32_t groupId) const;
+
+    /**
      * @brief 現在選択されている複数のノードと内部リンクを丸ごと複製（コピー＆ペースト）する
      */
     void DuplicateSelectedNodes();
@@ -193,34 +226,38 @@ private:
      */
     nlohmann::json BuildBakedNodes();
 
-    /// @brief ActionRegistry から表示名を引く（未登録IDはフォールバック文字列）
+    // ActionRegistry から表示名を引く（未登録IDはフォールバック文字列）
     static const char* GetActionDisplayName(ActionID id);
 
-    /// @brief ConditionRegistry から表示名を引く
+    // ConditionRegistry から表示名を引く
     static const char* GetConditionDisplayName(ActionID id);
 
-    /// @brief カテゴリ別プルダウンで ActionID を選択させる
+    // カテゴリ別プルダウンで ActionID を選択させる
     bool DrawActionCombo(const char* label, ActionID& currentId);
 
-    /// @brief カテゴリ別プルダウンで ConditionID を選択させる
+    // カテゴリ別プルダウンで ConditionID を選択させる
     bool DrawConditionCombo(const char* label, ActionID& currentId);
 
 private:
-    ax::NodeEditor::EditorContext* m_nodeContext = nullptr; ///< Node Editorの内部状態（キャンバスのズーム等）
+    ax::NodeEditor::EditorContext* m_nodeContext = nullptr; // Node Editorの内部状態（キャンバスのズーム等）
 
-    std::vector<EditorBTNode> m_nodes; ///< 画面上の全付箋（ノード）
-    std::vector<BTLink> m_links;       ///< 画面上の全接続線（リンク）
-    uint32_t m_idCounter = 1;          ///< IDを被らせないためのカウンター
+    std::vector<EditorBTNode> m_nodes; // 画面上の全付箋（ノード）
+    std::vector<BTLink> m_links;       // 画面上の全接続線（リンク）
+    uint32_t m_idCounter = 1;          // IDを被らせないためのカウンター
 
-    std::string m_currentFilePath = "Assets/AI/BossAI_Graph.json"; ///< 現在開いているファイルのパス
-    bool m_needInitialZoom = true;     ///< 初回起動時にカメラを全体に合わせるためのフラグ
+    std::string m_currentFilePath = "Assets/AI/BossAI_Graph.json"; // 現在開いているファイルのパス
+    bool m_needInitialZoom = true;     // 初回起動時にカメラを全体に合わせるためのフラグ
     int m_framesSinceOpen = 0; // ウィンドウを開いてからのフレーム数を数える
 
-    bool m_executionOrderDirty = true; ///< 毎フレームのソートループを防ぐための最適化フラグ
-    nlohmann::json m_lastSavedState;   ///< 直前のグラフ状態（Undo判定用）
+    bool m_executionOrderDirty = true; // 毎フレームのソートループを防ぐための最適化フラグ
+    nlohmann::json m_lastSavedState;   // 直前のグラフ状態（Undo判定用）
 
-    ImVec2 m_newNodeSpawnPos = { 0.0f, 0.0f }; ///< 右クリックした瞬間のスクリーン座標
+    ImVec2 m_newNodeSpawnPos = { 0.0f, 0.0f }; // 右クリックした瞬間のスクリーン座標
 
-    bool m_autoFollow = false;         ///< 実行中ノードへの自動追従フラグ
-    uint32_t m_lastTrackedNodeId = 0;  ///< 最後にカメラが追従したノードID
+    // 整列の要求フラグ。ツールバーで押された時点では ed::Begin の外に居るため、
+    // その場で実行せず、キャンバス描画の頭まで持ち越す。
+    bool m_layoutRequested = false;
+
+    bool m_autoFollow = false;         // 実行中ノードへの自動追従フラグ
+    uint32_t m_lastTrackedNodeId = 0;  // 最後にカメラが追従したノードID
 };

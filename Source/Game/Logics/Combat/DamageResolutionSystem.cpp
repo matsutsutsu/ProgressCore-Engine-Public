@@ -28,6 +28,7 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Platform/Core/Logger.h"
+#include "Engine/Core/Components/EntityLabel.h"
 
 #include <algorithm>
 #include <cmath>
@@ -52,9 +53,9 @@ namespace
         CCL::Utils::HashString("HitLeft"),
         CCL::Utils::HashString("HitRight")};
     
-    /// @brief 被弾方向から前後左右のヒットリアクションを選んで再生する。
-    ///        アニメーターを持たない相手（ドローン等）は自動でスキップされる。
-    ///        方向元は「攻撃者の位置」を最優先、無ければノックバック方向の反転を使う。
+    // 被弾方向から前後左右のヒットリアクションを選んで再生する。
+    // アニメーターを持たない相手（ドローン等）は自動でスキップされる。
+    // 方向元は「攻撃者の位置」を最優先、無ければノックバック方向の反転を使う。
     void FireHitReaction(World *world, const DamageEventComponent &ev)
     {
         // アニメーターが無ければ何もしない（1000機のドローン等はここで弾かれる）。
@@ -119,8 +120,8 @@ void DamageResolutionSystem::Update(float dt) {
                 health->invincibilityTimer = health->invincibilityDuration;
 
                 CCL_LOG_INFO(LogCategory::Game,
-                    "Entity %llu took %f damage. Remaining HP: %f",
-                    event.targetID, event.finalDamage,
+                    "%s took %f damage. Remaining HP: %f",
+                    CCL::EntityLabel(*m_world, event.targetID).c_str(), event.finalDamage,
                     health->currentHealth);
 
                 // --- ヒットストップ適用（被弾側＋攻撃側の双方を止める）---

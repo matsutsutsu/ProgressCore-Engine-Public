@@ -1,5 +1,5 @@
 #include "ParticleRenderer.h"
-#include "Engine/Graphics/RHI/Graphics.h"
+#include "Engine/Graphics/RHI/DebugName.h"
 #include "Engine/Graphics/RHI/RenderState.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 #include "Engine/Graphics/Shader/ShaderRegistry.h"

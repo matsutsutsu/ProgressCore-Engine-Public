@@ -1,9 +1,6 @@
-/**
- * @file JoltCollisionEventSystem.cpp
- * @brief JoltContactListenerに蓄積された衝突イベントを回収し、ECSのEventBusへ配送するシステム
- *
- * @note このシステムは必ずJoltの物理更新（Step）が完了した後の L05_Collision ステージで実行されなければならない。
- */
+// JoltContactListenerに蓄積された衝突イベントを回収し、ECSのEventBusへ配送するシステム
+//
+// このシステムは必ずJoltの物理更新（Step）が完了した後の L05_Collision ステージで実行されなければならない。
 #include "JoltCollisionEventSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"

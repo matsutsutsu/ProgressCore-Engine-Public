@@ -2,7 +2,7 @@
   "_comment": "DirectXTK Audio 用の設定。event はコード/シリアライズで使うイベント名、file は再生する音声ファイル。WAVはそのまま、mp3/wma/aac/mp4 は起動時に Media Foundation で PCM へ自動デコードして読み込む。ファイルが無い/デコード不可の項目は警告してスキップ（クラッシュしない）。",
   "sounds": [
     { "event": "bgm:/game",         "file": "Assets/Audio/BGM/GameBGM.mp3" },
-    { "event": "bgm:/shop",         "file": "Assets/Audio/BGM/ShopBGM.mp3" },
+    { "event": "bgm:/title",         "file": "Assets/Audio/BGM/TitleBGM.mp3" },
     { "event": "sfx:/can",          "file": "Assets/Audio/sei_ge_kan_koro01.mp3" },
     { "event": "sfx:/fall",         "file": "Assets/Audio/sen_ge_taoreru05.mp3" }
   ]

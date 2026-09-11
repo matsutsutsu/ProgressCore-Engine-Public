@@ -35,11 +35,10 @@ class HealthSystem : public CCL::ECS::IfSystem<HealthSystem,
 public:
     HealthSystem() : IfSystem("HealthSystem")
     {
-        hasGui = true; 
     }
 
     void Update(float dt) override;
 
-    /// 全エンティティのHP状態をImGuiで一覧表示する。
+    // 全エンティティのHP状態をImGuiで一覧表示する。
     void OnGui() override;
 };

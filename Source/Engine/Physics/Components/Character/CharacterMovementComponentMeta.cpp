@@ -1,9 +1,9 @@
-/// @file CharacterMovementComponentMeta.cpp
-/// @brief CharacterMovementComponent のシリアライズおよびインスペクタGUI定義
-/// @note  上書き要求(overrideSpeed/use3DVelocity/jumpImpulse)と結果(currentVelocity)は
-///        毎フレーム作り直される実行時状態なので、インスペクタでは読み取り専用にする。
-///        ここを編集可能にすると、手で入れた値が次のフレームに消えるだけでなく、
-///        プレハブへ実行中の値が焼き付いて「起動直後だけ速度が違う」といった事故になる。
+// CharacterMovementComponent のシリアライズおよびインスペクタGUI定義
+//
+// 上書き要求(overrideSpeed/use3DVelocity/jumpImpulse)と結果(currentVelocity)は
+// 毎フレーム作り直される実行時状態なので、インスペクタでは読み取り専用にする。
+// ここを編集可能にすると、手で入れた値が次のフレームに消えるだけでなく、
+// プレハブへ実行中の値が焼き付いて「起動直後だけ速度が違う」といった事故になる。
 
 #include "CharacterMovementComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"

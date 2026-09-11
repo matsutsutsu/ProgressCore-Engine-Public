@@ -8,12 +8,19 @@ AlignConsecutiveAssignments: true
 # 連続する変数宣言を縦に揃える（読みやすさ向上）
 AlignConsecutiveDeclarations: true
 
-# 関数呼び出しの括弧の後での整列を禁止
-# → VS の初期スタイルに近く、勝手に整列されて崩れるのを防ぐ
-AlignAfterOpenBracket: DontAlign
+# 関数呼び出しの引数を開き括弧の位置に揃える
+# → ColumnLimit: 0 と DontAlign の組み合わせでは継続行がどこにも揃わない
+#   中途半端なインデントになるため Align にしている
+AlignAfterOpenBracket: Align
 
 # if (!flag) return; を 1 行のまま維持
-AllowShortIfStatementsOnASingleLine: true   
+AllowShortIfStatementsOnASingleLine: true
+
+# 1 行で書いた短い関数（単純なゲッター等）を 1 行のまま維持する
+# → None だと `int GetX() const { return x; }` が必ず 4 行に展開され、
+#   アクセサが並ぶヘッダの一覧性が落ちる。
+#   なお「複数行で書かれた関数を 1 行に潰す」ことはしないので、既存の書き方は壊れない。
+AllowShortFunctionsOnASingleLine: All
 
 # include の並び替えを無効化
 # → VS の初期コードや手動で整理した順番を壊さない
@@ -29,4 +36,10 @@ ColumnLimit: 0
 
 # IndentCaseLabels: false        # switch-case のインデントを VS と同じに
 SpaceBeforeParens: ControlStatements  # if/for だけスペース、関数呼び出しは詰める
-PointerAlignment: Right        # int* p の形を維持
+PointerAlignment: Right        # 実際の出力は `int *p`（`int* p` にしたい場合は Left）
+
+# アクセス指定子のインデント（メンバのインデント 4 から何文字戻すか）
+# → Microsoft スタイル既定の -2 は `  public:` という中途半端な位置になる。
+#   -4 にすると `public:` が class と同じ列 0 に並び、VS の既定の見た目と一致する。
+#   このプロジェクトの既存コードも列 0 が多数派（98 箇所 対 18 箇所）。
+AccessModifierOffset: -4

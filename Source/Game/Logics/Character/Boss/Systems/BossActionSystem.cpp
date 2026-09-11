@@ -1,11 +1,11 @@
-/**
- * @file BossActionSystem.cpp
- * @brief ボスアクションシステムの実装（最小構成：待機・移動のみ）。
- */
+// ボスアクションシステムの実装。
 #include "BossActionSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
 #include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
+#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h" // debugPaused
+#include "Engine/Core/App/GameFlowState.h"                          // cinematic
+#include "Engine/ECS/Common/CCL_TypeInfo.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -16,47 +16,56 @@
 #include <cmath>
 #include <algorithm>
 
-#ifdef ENABLE_EDITOR
 #include <imgui.h>
-#endif
 
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
 namespace
 {
-float WrapAngle(float angle)
+    float WrapAngle(float angle)
+    {
+        while (angle > DirectX::XM_PI)
+            angle -= DirectX::XM_2PI;
+        while (angle < -DirectX::XM_PI)
+            angle += DirectX::XM_2PI;
+        return angle;
+    }
+    
+    /// 目標方向を向く。lookDir はワールド座標系の方向ベクトル。
+    void TurnToward(TransformComponent &trans, const Vector3 &lookDir, float turnSpeed, float dt)
+    {
+        if (lookDir.LengthSquared() <= 0.001f) return;
+    
+        float targetYaw = atan2f(lookDir.x, lookDir.z);
+    
+        Vector3 currentForward = Vector3::Transform(Vector3::UnitZ, trans.rotation);
+        float   currentYaw     = atan2f(currentForward.x, currentForward.z);
+    
+        float diff   = WrapAngle(targetYaw - currentYaw);
+        float newYaw = currentYaw + diff * (std::min)(turnSpeed * dt, 1.0f);
+    
+        trans.rotation = Quaternion::CreateFromAxisAngle(Vector3::UnitY, newYaw);
+        trans.isDirty  = true;
+    }
+    
+    /// Jolt の CharacterVirtual に TransformComponent の回転を反映する。
+    void SyncCharacterRotation(const TransformComponent &trans, JPH::CharacterVirtual *character)
+    {
+        if (!character) return;
+    
+        character->SetRotation(JPH::Quat(trans.rotation.x, trans.rotation.y, trans.rotation.z, trans.rotation.w));
+    }
+} 
+
+
+
+std::vector<CCL::ECS::TypeID> BossActionSystem::GetReadTypes() const
 {
-    while (angle > DirectX::XM_PI)
-        angle -= DirectX::XM_2PI;
-    while (angle < -DirectX::XM_PI)
-        angle += DirectX::XM_2PI;
-    return angle;
+    auto types = Base::GetReadTypes();
+    types.push_back(CCL::ECS::TypeInfo<BehaviorTreeComponent>::ID());
+    return types;
 }
-
-void TurnToward(TransformComponent &trans, const Vector3 &lookDir, float turnSpeed, float dt)
-{
-    if (lookDir.LengthSquared() <= 0.001f) return;
-
-    float targetYaw = atan2f(lookDir.x, lookDir.z);
-
-    Vector3 currentForward = Vector3::Transform(Vector3::UnitZ, trans.rotation);
-    float   currentYaw     = atan2f(currentForward.x, currentForward.z);
-
-    float diff   = WrapAngle(targetYaw - currentYaw);
-    float newYaw = currentYaw + diff * (std::min)(turnSpeed * dt, 1.0f);
-
-    trans.rotation = Quaternion::CreateFromAxisAngle(Vector3::UnitY, newYaw);
-    trans.isDirty  = true;
-}
-
-void SyncCharacterRotation(const TransformComponent &trans, JPH::CharacterVirtual *character)
-{
-    if (!character) return;
-
-    character->SetRotation(JPH::Quat(trans.rotation.x, trans.rotation.y, trans.rotation.z, trans.rotation.w));
-}
-} // namespace
 
 void BossActionSystem::Update(float rawDt)
 {
@@ -66,25 +75,35 @@ void BossActionSystem::Update(float rawDt)
 
     Vector3 playerPos(battle.playerPos);
 
-    ForEach([&](CharacterMovementComponent &movement,
-                BossActionComponent &bossDef,
-                TransformComponent &trans,
-                const BossCommandComponent &cmd,
-                const JoltCharacterConfigComponent &config,
-                const JoltCharacterHandleComponent &joltHandle,
-                const TimeStateComponent &time) {
-        if (!joltHandle.character)
-            return;
+    // 演出中は全個体まとめて止める。World リソースなので個体ループの外で1回だけ読む。
+    const bool cinematic = m_world->HasResource<GameFlowState>()
+                        && m_world->GetResource<GameFlowState>().cinematic;
+
+    ForEachWithID([&](EntityID entity,
+                      CharacterMovementComponent &movement,
+                      BossActionComponent &bossDef,
+                      TransformComponent &trans,
+                      const BossCommandComponent &cmd,
+                      const JoltCharacterConfigComponent &config,
+                      const JoltCharacterHandleComponent &joltHandle,
+                      const TimeStateComponent &time) {
+        if (!joltHandle.character) return;
 
         float dt = time.localDt;
 
-        // AIの意図(currentActionId) → ボスの物理ステートへ翻訳
-        if (cmd.currentActionId == ::CCL::AI::A_Move)
-            bossDef.currentState = BossActionState::Move;
-        else if (::IsBossMeleeAction(cmd.currentActionId))
-            bossDef.currentState = BossActionState::Melee;
-        else
-            bossDef.currentState = BossActionState::None;
+        // BT は凍っても currentActionId を下ろさないので、ここで見ないと止めた瞬間の技を
+        // そのまま実行し続ける。凍っている間は意図を読まず待機へ倒す。
+        const auto *bt     = m_world->GetComponent<BehaviorTreeComponent>(entity);
+        const bool  frozen = cinematic || (bt && bt->debugPaused);
+
+        const BossActionState next = frozen ? BossActionState::None
+                                            : TranslateAction(cmd.currentActionId);
+
+        // 突進・跳躍は「どこへ向かうか」をこの1回で決め、以後は更新しない。
+        if (next != bossDef.currentState) OnEnterState(next, bossDef, trans, playerPos);
+
+        bossDef.currentState = next;
+        bossDef.actionTimer += dt;
 
         switch (bossDef.currentState)
         {
@@ -92,8 +111,16 @@ void BossActionSystem::Update(float rawDt)
             ProcessMove(bossDef, trans, movement, config, joltHandle, playerPos, dt);
             break;
         case BossActionState::Melee:
-            // 近接攻撃中：足を止めて斬る（アニメ本体は BT の SetTrigger で再生済み）
             ProcessMeleeHold(bossDef, trans, movement, joltHandle, playerPos, dt);
+            break;
+        case BossActionState::DashSlash:
+            ProcessDashSlash(bossDef, trans, movement, joltHandle, playerPos, dt);
+            break;
+        case BossActionState::JumpAttack:
+            ProcessJumpAttack(bossDef, trans, movement, joltHandle, playerPos, dt);
+            break;
+        case BossActionState::BackStep:
+            ProcessBackStep(bossDef, trans, movement, joltHandle, playerPos, dt);
             break;
         default:
             ProcessIdle(bossDef, trans, movement, joltHandle, playerPos, dt);
@@ -103,7 +130,6 @@ void BossActionSystem::Update(float rawDt)
 }
 
 
-#ifdef ENABLE_EDITOR
 void BossActionSystem::OnGui()
 {
     if (!ImGui::CollapsingHeader("Boss Action (Position Debugger)"))
@@ -135,9 +161,6 @@ void BossActionSystem::OnGui()
         ImGui::PopID();
     }
 }
-#else
-void BossActionSystem::OnGui() {}
-#endif
 
 void BossActionSystem::ProcessIdle(BossActionComponent &bossDef, TransformComponent &trans,
     CharacterMovementComponent &movement, const JoltCharacterHandleComponent &joltHandle,
@@ -146,13 +169,15 @@ void BossActionSystem::ProcessIdle(BossActionComponent &bossDef, TransformCompon
     bossDef.currentMoveSpeed = (std::max)(0.0f,
         bossDef.currentMoveSpeed - bossDef.deceleration * dt);
 
-    // 上書きは書かない＝config.walkSpeed 基準へ戻る（要求は読み手が毎フレーム消費する）。
+    // 上書きは書かない＝config.walkSpeed 基準へ戻る。
     movement.desiredVelocity = Vector3::Zero;
 
-    //Vector3 dirToPlayer = playerPos - trans.position;
-    //dirToPlayer.y       = 0.0f;
-    //TurnToward(trans, dirToPlayer, bossDef.idleTurnSpeed, dt);
-    //SyncCharacterRotation(trans, joltHandle.character.GetPtr());
+    // 足は止めるが目は離さない。旋回を移動中より遅くする（idleTurnSpeed < turnSpeed）のが
+    // 要点で、即座に正対すると背後を取る価値が消え、回らないと置物に見える。
+    Vector3 dirToPlayer = playerPos - trans.position;
+    dirToPlayer.y       = 0.0f;
+    TurnToward(trans, dirToPlayer, bossDef.idleTurnSpeed, dt);
+    SyncCharacterRotation(trans, joltHandle.character.GetPtr());
 }
 
 void BossActionSystem::ProcessMove(BossActionComponent &bossDef, TransformComponent &trans,
@@ -171,7 +196,6 @@ void BossActionSystem::ProcessMove(BossActionComponent &bossDef, TransformCompon
     }
 
     dirToPlayer.Normalize();
-    bossDef.moveDirection = dirToPlayer;
 
     bossDef.currentMoveSpeed = (std::min)(bossDef.walkSpeed,
         bossDef.currentMoveSpeed + bossDef.acceleration * dt);
@@ -187,18 +211,197 @@ void BossActionSystem::ProcessMeleeHold(BossActionComponent &bossDef, TransformC
     CharacterMovementComponent &movement, const JoltCharacterHandleComponent &joltHandle,
     const Vector3 &playerPos, float dt)
 {
-    // 近接攻撃中は足を止めて踏ん張る（薙ぎ払い）。
-    //   アニメ本体は BT の SetTrigger で再生済み。当たり判定はアニメ内 HitBox イベントが握る。
-    //   将来 踏み込み/突進 を足すときは、ここで cmd.currentActionId により前進を分岐する。
+    // 足を止めて踏ん張る。アニメ本体は BT の SetTrigger で再生済みで、当たり判定は
+    // アニメ内の HitBox イベントが握る。
     bossDef.currentMoveSpeed = 0.0f;
     movement.desiredVelocity    = Vector3::Zero;
 
-    // 斬る相手（プレイヤー）の方を向く（移動中と同じ速さでしっかり正対）
-    Vector3 dirToPlayer = playerPos - trans.position;
-    dirToPlayer.y       = 0.0f;
-    TurnToward(trans, dirToPlayer, bossDef.turnSpeed, dt);
-    SyncCharacterRotation(trans, joltHandle.character.GetPtr());
+    // 相手の方を向くのは「振りかぶり」の間だけ。回り続けると横へ回り込んでも刃が
+    // 付いてきて当たり、避けた側に後隙を狩る余地が残らない。
+    if (bossDef.actionTimer < bossDef.meleeTurnTime)
+    {
+        Vector3 dirToPlayer = playerPos - trans.position;
+        dirToPlayer.y       = 0.0f;
+        TurnToward(trans, dirToPlayer, bossDef.turnSpeed, dt);
+        SyncCharacterRotation(trans, joltHandle.character.GetPtr());
+    }
 }
 
-// BehaviorTreeSystem(L02) の後、JoltCharacterUpdateSystem(L03) の前
+BossActionState BossActionSystem::TranslateAction(ActionID actionId) const
+{
+    if (actionId == ::CCL::AI::A_Move)           return BossActionState::Move;
+    if (actionId == ::CCL::AI::A_BossSlash)      return BossActionState::Melee;
+    if (actionId == ::CCL::AI::A_BossDashSlash)  return BossActionState::DashSlash;
+    if (actionId == ::CCL::AI::A_BossJumpAttack) return BossActionState::JumpAttack;
+    if (actionId == ::CCL::AI::A_BossBackStep)   return BossActionState::BackStep;
+    return BossActionState::None;
+}
+
+
+void BossActionSystem::OnEnterState(BossActionState next, BossActionComponent &bossDef,
+                                    const TransformComponent &trans,
+                                    const Vector3 &playerPos) const
+{
+    bossDef.actionTimer = 0.0f;
+
+    // 進行方向はここで1回だけ決める。以降プレイヤーが動いても追わない。
+    Vector3     toPlayer = playerPos - Vector3(trans.position);
+    toPlayer.y           = 0.0f;
+    const float distance = toPlayer.Length();
+    if (distance > 0.001f)
+    {
+        toPlayer /= distance;
+        bossDef.lockedDirection = toPlayer;
+    }
+
+    // 後方ステップだけは進行方向が逆（lockedDirection は常に「進む向き」）。
+    if (next == BossActionState::BackStep)
+        bossDef.lockedDirection = -bossDef.lockedDirection;
+
+    if (next == BossActionState::JumpAttack)
+    {
+        // 着地点も踏み切り前に確定させる。真上へ吸い付くと回避不能になるので、
+        // 「ここへ跳ぶ」を先に決めて退く時間を与える。
+        bossDef.jumpTakeoffPos = Vector3(trans.position);
+        const float reach      = (std::min)(distance, bossDef.jumpMaxRange);
+        bossDef.jumpLandingPos = bossDef.jumpTakeoffPos + bossDef.lockedDirection * reach;
+    }
+}
+
+
+void BossActionSystem::ProcessDashSlash(BossActionComponent &bossDef, TransformComponent &trans,
+    CharacterMovementComponent &movement, const JoltCharacterHandleComponent &joltHandle,
+    const Vector3 &playerPos, float dt)
+{
+    const float t = bossDef.actionTimer;
+
+    // 溜め：足を止めて正対する。踏み込む方向はこの間だけ更新し続ける。
+    if (t < bossDef.dashWindupTime)
+    {
+        bossDef.currentMoveSpeed = 0.0f;
+        movement.desiredVelocity = Vector3::Zero;
+
+        Vector3 dirToPlayer = playerPos - trans.position;
+        dirToPlayer.y       = 0.0f;
+        TurnToward(trans, dirToPlayer, bossDef.turnSpeed, dt);
+        SyncCharacterRotation(trans, joltHandle.character.GetPtr());
+
+        if (dirToPlayer.LengthSquared() > 0.001f)
+        {
+            dirToPlayer.Normalize();
+            bossDef.lockedDirection = dirToPlayer; // 溜め終了時の向きが最終的な突進方向になる
+        }
+        return;
+    }
+
+    // 踏み込み：方向は固定。旋回しないので横へ抜ければ避けられる。
+    if (t < bossDef.dashWindupTime + bossDef.dashDriveTime)
+    {
+        bossDef.currentMoveSpeed = bossDef.chargeSpeed;
+        bossDef.moveDirection    = bossDef.lockedDirection;
+        movement.desiredVelocity = bossDef.lockedDirection;
+
+        // config.walkSpeed で頭打ちにしない。歩行上限で丸めると踏み込みが消える。
+        movement.overrideSpeed = bossDef.chargeSpeed;
+        return;
+    }
+
+    // 硬直。後隙の長さは BT が param 秒この技に留まることで決まる。
+    bossDef.currentMoveSpeed = 0.0f;
+    movement.desiredVelocity = Vector3::Zero;
+}
+
+
+void BossActionSystem::ProcessJumpAttack(BossActionComponent &bossDef, TransformComponent &trans,
+    CharacterMovementComponent &movement, const JoltCharacterHandleComponent &joltHandle,
+    const Vector3 &playerPos, float dt)
+{
+    const float t = bossDef.actionTimer;
+
+    // 溜め：踏み切るまで足を止めて正対する。
+    if (t < bossDef.jumpWindupTime)
+    {
+        bossDef.currentMoveSpeed = 0.0f;
+        movement.desiredVelocity = Vector3::Zero;
+
+        Vector3 dirToPlayer = playerPos - trans.position;
+        dirToPlayer.y       = 0.0f;
+        TurnToward(trans, dirToPlayer, bossDef.turnSpeed, dt);
+        SyncCharacterRotation(trans, joltHandle.character.GetPtr());
+        return;
+    }
+
+    const float flightTime    = (std::max)(0.05f, bossDef.jumpFlightTime);
+    const float elapsedFlight = t - bossDef.jumpWindupTime;
+
+    // 滞空：着地時刻から逆算した放物線を速度として与える。
+    if (elapsedFlight <= flightTime)
+    {
+        Vector3 horizontal = bossDef.jumpLandingPos - bossDef.jumpTakeoffPos;
+        horizontal.y       = 0.0f;
+
+        // 水平は等速。垂直の v(u) = 4h/T * (1 - 2u) は積分すると踏み切り高さへ
+        // ちょうど戻るので、着地フレームがずれない。
+        const float u  = elapsedFlight / flightTime;
+        Vector3     v  = horizontal / flightTime;
+        v.y            = (4.0f * bossDef.jumpHeight / flightTime) * (1.0f - 2.0f * u);
+
+        movement.use3DVelocity = true;  // 重力・水平計算を止めてこの速度をそのまま使う
+        movement.velocity3D    = v;
+
+        bossDef.currentMoveSpeed = horizontal.Length() / flightTime;
+        bossDef.moveDirection    = bossDef.lockedDirection;
+        return;
+    }
+
+    // 着地硬直。use3DVelocity を書かない＝重力が戻り、地面へ落ち着く。
+    bossDef.currentMoveSpeed = 0.0f;
+    movement.desiredVelocity = Vector3::Zero;
+}
+
+
+void BossActionSystem::ProcessBackStep(BossActionComponent &bossDef, TransformComponent &trans,
+    CharacterMovementComponent &movement, const JoltCharacterHandleComponent &joltHandle,
+    const Vector3 &playerPos, float dt)
+{
+    const float t = bossDef.actionTimer;
+
+    // 退く間も正対し続ける。向いていないと、間合いを切って仕切り直す技ではなく
+    // 「逃げ出した」に見える。
+    TurnToward(trans, -bossDef.lockedDirection, bossDef.turnSpeed, dt);
+    SyncCharacterRotation(trans, joltHandle.character.GetPtr());
+
+    // 硬直。長さは技の全体時間(BTノードの param)から backStepTime を引いたぶん。
+    if (t >= bossDef.backStepTime)
+    {
+        bossDef.currentMoveSpeed = 0.0f;
+        movement.desiredVelocity = Vector3::Zero;
+        return;
+    }
+
+    // 後退。弧を描いて「強く引かれる」形にする。地上を滑らせるとどんなに速くしても
+    // クリップの足と合わず「後ろ歩き」に見えるが、空中なら接地感が問われない。
+    // 溜めを持たないのは被弾への反応だから（予備動作を入れると避けている感じが出ない）。
+    // 式は跳躍斬りと同じで、着地の時刻が backStepTime からずれない。
+    const float T = (std::max)(0.01f, bossDef.backStepTime);
+    const float u = t / T;
+
+    // 水平は直線減速のまま。退く距離 = backStepSpeed * backStepTime / 2 という
+    // 読める式を残す（間合いの設計はこの数字でやる）。
+    const float speed = bossDef.backStepSpeed * (1.0f - u);
+
+    Vector3 v = bossDef.lockedDirection * speed;
+    v.y       = (4.0f * bossDef.backStepHeight / T) * (1.0f - 2.0f * u);
+
+    // 重力と水平計算を止めてこの速度をそのまま使う。歩行上限で丸めると
+    // 「素早く退く」という技の中身が消えてただの後ずさりになる。
+    movement.use3DVelocity = true;
+    movement.velocity3D    = v;
+
+    bossDef.currentMoveSpeed = speed;
+    bossDef.moveDirection    = bossDef.lockedDirection;
+}
+
+
+// BehaviorTreeSystem(L02) の後、JoltCharacterUpdateSystem(L03) の前。
 REGISTER_LOGIC_SYSTEM(BossActionSystem, Priority::LogicStage::L02_PostUpdate);

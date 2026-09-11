@@ -1,6 +1,7 @@
 #include "TimeScaleSetupSystem.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
+#include "Engine/Core/Components/EntityLabel.h"
 
 using namespace CCL::ECS;
 
@@ -24,8 +25,9 @@ void TimeScaleSetupSystem::Update(float dt)
 
         // 警告ログを出すことで、プログラマにプレハブの修正を促す（DODの観点から重要）
         CCL_LOG_WARN(LogCategory::Game,
-            "TimeState was automatically added to Entity %llu. "
-            "To avoid chunk fragmentation, please add TimeState in the Editor Prefab.", id);
+            "TimeState was automatically added to %s. "
+            "To avoid chunk fragmentation, please add TimeState in the Editor Prefab.",
+            CCL::EntityLabel(*m_world, id).c_str());
     }
 }
 

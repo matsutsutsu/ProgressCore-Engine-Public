@@ -3,6 +3,48 @@
 #include <fstream>
 #include <sstream>
 
+#include <chrono>
+#include <cstdio>
+#include <tracy/Tracy.hpp>
+
+// ===========================================================================
+// ランタイム中のディスクアクセスを1箇所で可視化する。
+//
+// ゲーム中に突然 100ms 級のフレーム落ちが出たとき、犯人がファイル読みなら
+// 必ずここを通る（プレハブ / AnimSequence / カーブ / 設定 / モデル …）。
+// 呼び出し元ごとにゾーンを仕込んで回らなくても、この2関数を押さえれば
+// 「いつ・どのファイルが・何ms」が Tracy に残る。
+//
+//  ・ゾーンにファイルパスを ZoneText で貼る → タイムライン上でゾーンを掴めば読める
+//  ・閾値を超えた読み込みは TracyMessage も出す → メッセージ一覧から一発で探せる
+//    （タイムラインを目視で探し回らなくて済む。稀にしか出ないスパイク向け）
+// ===========================================================================
+namespace
+{
+// これを超えたら「フレーム落ちの原因になりうる読み込み」として記録する。
+constexpr double kSlowFileReadMs = 2.0;
+
+// 遅い読み込みだけメッセージ一覧へ流す。
+//   ※ ファイルパスの添付(ZoneText)はここでは行えない。ZoneText は同一スコープの
+//     ゾーン変数(___tracy_scoped_zone)を参照するマクロなので、必ず呼び出し側に置く。
+void ReportSlowFileRead(const std::string &virtualPath, double elapsedMs, size_t bytes)
+{
+#ifdef TRACY_ENABLE
+    if (elapsedMs >= kSlowFileReadMs)
+    {
+        char msg[512];
+        const int len = std::snprintf(msg, sizeof(msg),
+            "[SLOW FILE READ] %.2f ms / %zu bytes : %s",
+            elapsedMs, bytes, virtualPath.c_str());
+        if (len > 0)
+            TracyMessage(msg, static_cast<size_t>(len));
+    }
+#else
+    (void)virtualPath; (void)elapsedMs; (void)bytes;
+#endif
+}
+} // namespace
+
 void FileSystem::Initialize()
 {
     // 将来的にはここで
@@ -30,6 +72,10 @@ bool FileSystem::Exists(const std::string& virtualPath)
 std::string FileSystem::ReadAllText(const std::string& virtualPath)
 {
     // TODO: Shipping構成時は .pak から展開したメモリブロックを std::string にして返す処理に分岐
+    ZoneScopedN("FileSystem::ReadAllText");
+    ZoneText(virtualPath.c_str(), virtualPath.size()); // どのファイルかをゾーンに貼る
+
+    const auto t0 = std::chrono::steady_clock::now();
 
     auto physicalPath = ResolvePhysicalPath(virtualPath);
 
@@ -42,7 +88,13 @@ std::string FileSystem::ReadAllText(const std::string& virtualPath)
     // ストリームバッファ全体を一気に文字列として読み込む高速な手法
     std::ostringstream ss;
     ss << file.rdbuf();
-    return ss.str();
+    std::string result = ss.str();
+
+    const std::chrono::duration<double, std::milli> elapsed =
+        std::chrono::steady_clock::now() - t0;
+    ReportSlowFileRead(virtualPath, elapsed.count(), result.size());
+
+    return result;
 }
 
 bool FileSystem::WriteAllText(const std::string& virtualPath, const std::string& content)
@@ -73,6 +125,10 @@ bool FileSystem::WriteAllText(const std::string& virtualPath, const std::string&
 std::vector<uint8_t> FileSystem::ReadAllBytes(const std::string& virtualPath)
 {
     // TODO: Shipping構成時は .pak から解凍したバイト配列を返す処理に分岐
+    ZoneScopedN("FileSystem::ReadAllBytes");
+    ZoneText(virtualPath.c_str(), virtualPath.size()); // どのファイルかをゾーンに貼る
+
+    const auto t0 = std::chrono::steady_clock::now();
 
     auto physicalPath = ResolvePhysicalPath(virtualPath);
 
@@ -88,6 +144,9 @@ std::vector<uint8_t> FileSystem::ReadAllBytes(const std::string& virtualPath)
 
     std::vector<uint8_t> buffer(size);
     if (file.read(reinterpret_cast<char*>(buffer.data()), size)) {
+        const std::chrono::duration<double, std::milli> elapsed =
+            std::chrono::steady_clock::now() - t0;
+        ReportSlowFileRead(virtualPath, elapsed.count(), buffer.size());
         return buffer;
     }
 

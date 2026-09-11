@@ -47,7 +47,7 @@ class RaycastBodyFilter final : public JPH::BodyFilter
 } // namespace
 
 // =======================================================
-// 🔵 Linear (直進)
+// Linear (直進)
 // =======================================================
 void JoltPhysicsFacade::AddForce(CCL::ECS::EntityID entity, const XMFLOAT3 &force)
 {
@@ -85,7 +85,7 @@ XMFLOAT3 JoltPhysicsFacade::GetLinearVelocity(CCL::ECS::EntityID entity)
 }
 
 // =======================================================
-// 🟢 Angular (回転)
+// Angular (回転)
 // =======================================================
 void JoltPhysicsFacade::AddTorque(CCL::ECS::EntityID entity, const XMFLOAT3 &torque)
 {
@@ -123,7 +123,7 @@ XMFLOAT3 JoltPhysicsFacade::GetAngularVelocity(CCL::ECS::EntityID entity)
 }
 
 // =======================================================
-// 🟡 Kinematic Warp (強制制御)
+// Kinematic Warp (強制制御)
 // =======================================================
 void JoltPhysicsFacade::SetPosition(CCL::ECS::EntityID entity, const XMFLOAT3 &position)
 {
@@ -165,7 +165,7 @@ void JoltPhysicsFacade::SetLookDirection(CCL::ECS::EntityID entity, const Direct
 }
 
 // =======================================================
-// 🔴 Queries (レイキャスト・接地)
+// Queries (レイキャスト・接地)
 // =======================================================
 bool JoltPhysicsFacade::CheckGrounded(CCL::ECS::EntityID entity, float distance)
 {
@@ -279,7 +279,7 @@ PhysicsHitInfo JoltPhysicsFacade::RayCastStatic(const XMFLOAT3 &origin, const XM
 }
 
 // =======================================================
-// 🟣 Character Queries (CharacterVirtual)
+// Character Queries (CharacterVirtual)
 // =======================================================
 bool JoltPhysicsFacade::IsCharacterGrounded(CCL::ECS::EntityID entity)
 {

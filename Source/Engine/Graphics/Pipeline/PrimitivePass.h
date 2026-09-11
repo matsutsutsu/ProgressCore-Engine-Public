@@ -1,7 +1,7 @@
 #pragma once
 #include "Engine/Graphics/Pipeline/Core/IRenderPass.h"
 
-/// @brief ShapeRenderer / PrimitiveRenderer によるデバッグ描画パス（ワールド空間の末尾）。
+// ShapeRenderer / PrimitiveRenderer によるデバッグ描画パス（ワールド空間の末尾）。
 class PrimitivePass : public IRenderPass
 {
 public:

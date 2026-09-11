@@ -1,124 +1,94 @@
-/// @file  SquadState.h
-/// @brief 小隊（5機編隊）の共有状態。ドローン個体ではなく「小隊」の側に持たせるデータ。
-///
-/// なぜ実体のリーダー機を持たないのか（設計の核）:
-///   先頭のドローン個体をリーダーにすると、
-///     ・撃破された瞬間に小隊が崩壊する
-///     ・追従機がリーダーの Transform を毎フレーム参照する＝ランダムアクセス＋更新順依存
-///   になる。そこで「先頭の位置」を純粋なデータ（anchor）として持ち、
-///   slot 0 の機体をそこに座らせる。見た目は「先頭機に4機が追従」のままで、
-///   先頭機が落ちても aliveCount が減るだけで隊列は生き続ける。
-///
-/// 並列実行での約束:
-///   このデータを書くのは SquadUpdateSystem（単スレッド）だけ。
-///   DroneFormationSystem / DroneMovementSystem の並列ループからは読むだけにする。
-///   （並列ループから同じ小隊へ書くとデータ競合になる）
+// 小隊（5機編隊）の共有状態。書き手は SquadUpdateSystem（単スレッド）だけで、
+// 陣形・移動の並列ループからは読むだけにする。
+//
+// 実体のリーダー機を持たないのが設計の核。先頭の個体をリーダーにすると撃破された
+// 瞬間に小隊が崩壊し、追従機がリーダーの Transform を毎フレーム参照することになる。
+// 「先頭の位置」を純粋なデータ(anchor)として持てば、先頭機が落ちても隊列は生きる。
 #pragma once
 #include <array>
 #include <cstdint>
 #include "SimpleMath.h"
+#include "Game/Logics/AI/Drone/DroneComponent.h"
 
-/// @brief 小隊の行動フェーズ。
-/// @note  「予備動作を読ませてから当てる」という企画の骨格に合わせて、
-///        接近（読ませる）と突入（当てる）を必ず分ける。
+// 小隊の高度制限の基準。床の高さを変えたときに小隊だけ取り残されないよう共有する。
+inline constexpr float kSquadGroundY = kDroneGroundY;
+
+// 小隊の行動フェーズ。接近（読ませる）と突入（当てる）を必ず分ける。
 enum class SquadPhase : uint8_t
 {
-    Regroup,  ///< ボス頭上の待機点で編隊を組み直す（命令が来ていない間）
-    Approach, ///< プレイヤーの側面へ回り込む。ここが予備動作＝回避方向を読ませる時間
-    Strike,   ///< 先頭がプレイヤーを追って突っ込む（旋回上限つきホーミング）
+    Regroup,  // ボス頭上の待機点で編隊を組み直す（命令が来ていない間）
+    Approach, // プレイヤーの側面へ回り込む。ここが予備動作＝回避方向を読ませる時間
+    Strike,   // 先頭がプレイヤーを追って突っ込む（旋回上限つきホーミング）
 };
 
-/// @brief 小隊1個ぶんの状態。
+// 小隊1個ぶんの状態。書き手はすべて SquadUpdateSystem。
 struct SquadState
 {
-    /// @brief 先頭機の目標位置＝小隊の「頭」。追従機はここからのオフセットで並ぶ。
+    // 先頭機の目標位置＝小隊の「頭」。追従機はここからのオフセットで並ぶ。
     DirectX::SimpleMath::Vector3 anchorPos = DirectX::SimpleMath::Vector3::Zero;
 
-    /// @brief 進行方向。編隊オフセットを回す基底になる（機首の向き）。
+    // 進行方向。編隊オフセットを回す基底になる（機首の向き）。
     DirectX::SimpleMath::Vector3 anchorForward = DirectX::SimpleMath::Vector3::UnitZ;
 
-    /// @brief 現在の速度。急に瞬間移動させないためにバネで寄せる対象。
+    // 現在の速度。急に瞬間移動させないためにバネで寄せる対象。
     DirectX::SimpleMath::Vector3 anchorVelocity = DirectX::SimpleMath::Vector3::Zero;
 
-    /// @brief フェーズ滞在タイマー（秒）。突入時間の管理に使う。
+    // フェーズ滞在タイマー（秒）。突入時間の管理に使う。
     float phaseTimer = 0.0f;
 
-    /// @brief 現在のフェーズ。書き手は SquadUpdateSystem のみ。
     SquadPhase phase = SquadPhase::Regroup;
 
-    /// @brief 各スロットの機体の「前フレームの実位置」。
-    /// @note  追従機は頭からの固定オフセットではなく、自分の前の機体のここを追う。
-    ///        1フレーム古い値をあえてそのまま使う。鎖の1リンクごとに遅れが積もり、
-    ///        頭が曲がると後ろほど遅れて曲がる＝隊列がしなる。
-    ///        書き手は SquadUpdateSystem（毎フレーム全機を走査して更新）。
+    // 各スロットの機体の「前フレームの実位置」。追従機は頭からの固定オフセットでなく
+    // 自分の前の機体のここを追う。1フレーム古い値をあえて使うことで、鎖の1リンクごとに
+    // 遅れが積もり、頭が曲がると後ろほど遅れて曲がる＝隊列がしなる。
     std::array<DirectX::SimpleMath::Vector3, 5> memberPos{};
 
-    /// @brief 各スロットの機体の「前フレームの実速度」。
-    /// @note  追従機はこれを2つの用途で使う。
-    ///          ① 並ぶ向き   … 前の機体の進行方向の真後ろに付く
-    ///          ② 速度の継承 … 前の機体と同じ速度をまず出し、差分だけをバネで直す
-    ///        小隊全体の速度（anchorVelocity）を全機に配ってはいけない。
-    ///        それをやると全機が同じ方向へ同じ速さで飛ぶ＝「先頭ではなくプレイヤーに
-    ///        各自が向かっている」ようにしか見えなくなる（追従が消える）。
-    ///        書き手は SquadUpdateSystem。
+    // 各スロットの機体の「前フレームの実速度」。前の機体と同じ速度をまず出し、
+    // 差分だけをバネで直す。小隊全体の速度(anchorVelocity)を全機に配ってはいけない
+    // （全機が同じ方向へ飛び、「先頭に追従」ではなく「各自が向かう」絵になる）。
     std::array<DirectX::SimpleMath::Vector3, 5> memberVel{};
 
-    /// @brief 上の値が有効か（その席の機体が生存しているか）。
-    ///        撃破されて欠けた席を追ってしまうと、隊列が原点へ吸い込まれる。
+    // 上の値が有効か。撃破されて欠けた席を追うと隊列が原点へ吸い込まれる。
     std::array<bool, 5> memberValid{};
 
-    /// @brief 生存機数。0 になった小隊は計算をスキップする。
-    uint8_t aliveCount = 0;
+    uint8_t aliveCount = 0;      // 生存機数。0 の小隊は計算をスキップ
 
-    /// @brief 頭の位置を一度でも決めたか。
-    /// @note  false の間は目標へ瞬間移動させる。これが無いと、初回だけ
-    ///        ワールド原点から目標へ飛んでくる不自然な動きが見える。
+    // 頭の位置を一度でも決めたか。false の間は目標へ瞬間移動させる
+    // （無いと初回だけワールド原点から飛んでくる）。
     bool initialized = false;
 };
 
-/// @brief 小隊の見た目を決める調整値。
-///
-/// なぜ実行時に変えられるようにするか:
-///   「隊列がどれくらいしなるか」は数字を見ても決まらず、動かして目で見るしかない。
-///   constexpr のままだと1回の調整に毎回ビルドが要る。
-///   BTのWait秒数をエディタ側で完結させているのと同じ理由でここも実行時に触れるようにする。
+// 小隊の見た目を決める調整値。「どれくらいしなるか」は動かして目で見るしかないので、
+// constexpr にせず実行時に触れるようにする。
 struct SquadTuning
 {
-    // --- 隊列の形 ---
-    float chainGap = 2.5f;   ///< 前の機体との間隔 [m]。小さいほど蛇が詰まって見える
+    float chainGap = 2.5f;   // 前の機体との間隔 [m]。小さいほど蛇が詰まって見える
 
-    // --- しなり ---
-    float followGain     = 10.0f; ///< 間隔のずれを直す強さ。小さいほど胴体が伸び縮みする
-    float slotLagPerSlot = 0.06f; ///< 1つ後ろの席ごとにバネを弱める割合。大きいほど尾が遅れて曲がる
+    float followGain     = 10.0f; // 間隔のずれを直す強さ。小さいほど胴体が伸び縮みする
+    float slotLagPerSlot = 0.06f; // 後ろの席ほどバネを弱める割合。大きいほど尾が遅れて曲がる
 
-    // --- 突入 ---
-    float strikeSpeed      = 42.0f;  ///< 突入速度 [m/s]
-    float strikeDuration   = 1.6f;   ///< 突入の継続時間 [秒]
-    float approachMinTime  = 1.6f;   ///< 次の突入までに接近へ留まる最低時間 [秒]
-    float maxTurnRateDeg   = 100.0f; ///< 突入中に曲がれる角度の上限 [度/秒]
-    float terminalLockDist = 8.0f;   ///< この距離まで詰めたら追尾をやめ直線に固定 [m]
+    float strikeSpeed      = 42.0f;  // 突入速度 [m/s]
+    float strikeDuration   = 1.6f;   // 突入の継続時間 [秒]
+    float approachMinTime  = 1.6f;   // 次の突入までに接近へ留まる最低時間 [秒]
+    float maxTurnRateDeg   = 100.0f; // 突入中に曲がれる角度の上限 [度/秒]
+    float terminalLockDist = 8.0f;   // この距離まで詰めたら追尾をやめ直線に固定 [m]
 
-    // --- 接近 ---
-    float approachRadius = 26.0f; ///< プレイヤーからどれだけ離れて構えるか [m]
-    float approachHeight =  9.0f; ///< 接近時の高度（プレイヤー基準）[m]
+    float approachRadius = 26.0f; // プレイヤーからどれだけ離れて構えるか [m]
+    float approachHeight =  9.0f; // 接近時の高度（プレイヤー基準）[m]
+
+    // 床からの最低高度 [m]。突入は地面の高さへ直進し通り過ぎても走り続けるので必ず
+    // 床を突き抜ける。物理で押し返さず、頭の高度を先に止めて隊列ごと床を這わせる。
+    float minAltitude = 2.0f;
 };
 
-/// @brief 全小隊の状態をまとめた World リソース。
-/// @note  密配列。小隊数は数十なので、ドローン側からの squads[squadId] 参照は
-///        実質 L1 に載る。エンティティIDからの検索を挟まないのが要点。
+// 全小隊の状態をまとめた World リソース。密配列にしてエンティティIDからの検索を挟まない。
 struct SquadRegistry
 {
-    /// @brief 小隊の最大数。
     static constexpr uint8_t kMaxSquads = 32;
+    static constexpr uint8_t kSquadSize = 5;   // 先頭1機＋追従4機
 
-    /// @brief 1小隊の編成人数（先頭1機＋追従4機）。
-    static constexpr uint8_t kSquadSize = 5;
-
-    /// @brief 無所属を表す squadId。128機を使う大技はこちらのまま動く。
-    static constexpr uint8_t kNoSquad = 0xFF;
+    static constexpr uint8_t kNoSquad = 0xFF;  // 無所属。大技はこちらのまま動く
 
     std::array<SquadState, kMaxSquads> squads{};
-
-    /// @brief 全小隊で共有する調整値（ImGui から実行中に変更できる）。
     SquadTuning tuning{};
 };

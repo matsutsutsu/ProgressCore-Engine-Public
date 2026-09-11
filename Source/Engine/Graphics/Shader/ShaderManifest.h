@@ -1,8 +1,7 @@
-/// @file  ShaderManifest.h
-/// @brief シェーダー登録をデータ駆動化する仕組み。
-///        Assets/Shader/shaders.json を読み、記載されたシェーダーを
-///        ShaderRegistry へ一括登録する。マテリアルシェーダーは C++ を
-///        一切書かずに JSON へ1行足すだけで追加できる（Graphics.cpp Phase3 の置換）。
+// シェーダー登録をデータ駆動化する仕組み。
+// Assets/Shader/shaders.json を読み、記載されたシェーダーを
+// ShaderRegistry へ一括登録する。マテリアルシェーダーは C++ を
+// 一切書かずに JSON へ1行足すだけで追加できる（Graphics.cpp Phase3 の置換）。
 #pragma once
 #include <string>
 

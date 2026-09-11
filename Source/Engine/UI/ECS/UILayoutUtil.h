@@ -1,10 +1,9 @@
 #pragma once
-/// @file UILayoutUtil.h
-/// @brief アンカー方式のUI矩形→画面ピクセルの計算（画像/テキスト/ゲージ収集で共用）。
-///        親子(TransformComponent 階層)に対応し、子は親の computed 矩形と実効スケールを基準に配置する。
-///        - Canvas(UICanvasComponent): 画面全体を基準にしつつ、自身の offset で平行移動・scale で拡縮する
-///          「可動ルート」。Canvas を動かすと配下UIがまとめて動く。
-///        - scale は階層継承する：子の実効scale = 親の実効scale × 自身のローカルscale。
+// アンカー方式のUI矩形→画面ピクセルの計算（画像/テキスト/ゲージ収集で共用）。
+// 親子(TransformComponent 階層)に対応し、子は親の computed 矩形と実効スケールを基準に配置する。
+// - Canvas(UICanvasComponent): 画面全体を基準にしつつ、自身の offset で平行移動・scale で拡縮する
+//   「可動ルート」。Canvas を動かすと配下UIがまとめて動く。
+// - scale は階層継承する：子の実効scale = 親の実効scale × 自身のローカルscale。
 #include "Engine/UI/ECS/Components/UITransformComponent.h"
 #include "Engine/UI/ECS/Components/UICanvasComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
@@ -12,24 +11,24 @@
 
 namespace CCL::UI
 {
-/// @brief UI矩形（画面px。左上原点）。
+// UI矩形（画面px。左上原点）。
 struct UIRect
 {
     float x = 0.0f, y = 0.0f, w = 0.0f, h = 0.0f;
 };
 
-/// @brief 矩形解決の結果。rect は画面px矩形、scale はそのノードの「実効スケール」
-///        （親から継承した倍率×自身のローカルscale）。子はこの scale をさらに継承する。
+// 矩形解決の結果。rect は画面px矩形、scale はそのノードの「実効スケール」
+// （親から継承した倍率×自身のローカルscale）。子はこの scale をさらに継承する。
 struct UIResolved
 {
     UIRect rect;
     float  scale = 1.0f;
 };
 
-/// @brief エンティティのUI矩形と実効スケールを、親(TransformComponent.parent)をたどって解決する。
-///        - UICanvasComponent → 画面全体を offset で平行移動・scale で拡縮した「可動ルート」。
-///        - 親が UITransformComponent を持つ → その親矩形・親スケールを基準に入れ子配置。
-///        - それ以外（親なし/UIでない）→ 画面全体を親矩形・scale=1 とする（後方互換の画面基準）。
+// エンティティのUI矩形と実効スケールを、親(TransformComponent.parent)をたどって解決する。
+// - UICanvasComponent → 画面全体を offset で平行移動・scale で拡縮した「可動ルート」。
+// - 親が UITransformComponent を持つ → その親矩形・親スケールを基準に入れ子配置。
+// - それ以外（親なし/UIでない）→ 画面全体を親矩形・scale=1 とする（後方互換の画面基準）。
 inline UIResolved ResolveUINode(CCL::ECS::World &world, CCL::ECS::EntityID id,
     const UITransformComponent &t, float screenW, float screenH)
 {
@@ -72,7 +71,7 @@ inline UIResolved ResolveUINode(CCL::ECS::World &world, CCL::ECS::EntityID id,
     return {{pivotPxX - t.pivot.x * w, pivotPxY - t.pivot.y * h, w, h}, eff};
 }
 
-/// @brief UITransform の computed* を階層解決した矩形で埋める（収集系が描画前に呼ぶ）。
+// UITransform の computed* を階層解決した矩形で埋める（収集系が描画前に呼ぶ）。
 inline void ComputeUIRect(CCL::ECS::World &world, CCL::ECS::EntityID id,
     UITransformComponent &t, float screenW, float screenH)
 {
@@ -81,7 +80,7 @@ inline void ComputeUIRect(CCL::ECS::World &world, CCL::ECS::EntityID id,
     t.computedSize = {r.w, r.h};
 }
 
-/// @brief 【後方互換】親を考慮しない従来の画面基準計算（親なし相当・scale継承なし）。
+// 【後方互換】親を考慮しない従来の画面基準計算（親なし相当・scale継承なし）。
 inline void ComputeUIRect(UITransformComponent &t, float screenW, float screenH)
 {
     const float w = t.size.x * t.scale;

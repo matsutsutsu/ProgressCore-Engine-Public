@@ -381,10 +381,6 @@ namespace CCL::ECS
         // 誰が入っているか名簿に記録
         m_ownerEntities[index] = entity;
 
-        // 旧コードではここにあった m_components へのアクセスや
-        // メモリのresize処理は、事前一括確保済みのため完全に不要です。
-        // エンティティの数を1つ増やすだけで完了します。
-
         // エンティティ数カウンタを +1 するだけ。メモリ確保は発生しない。
         m_entityCount++;
         return index; // ① インデックスを返す

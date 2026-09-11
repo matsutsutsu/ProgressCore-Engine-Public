@@ -21,19 +21,21 @@
 // =========================================================================
 struct ParticleEmitterDesc
 {
-    /// @brief このエミッタが何を担当しているかの表示名（「火花」「残り火」等）。
-    /// @note  絵には一切影響しない、編集のためだけの情報。1エフェクトが複数の層で
-    ///        できていると、モードと個数だけでは開くまで中身が分からないため。
-    ///        texturePath と同じく固定長配列（desc を素直にコピーできる形を保つ）。
+    // このエミッタが何を担当しているかの表示名（「火花」「残り火」等）。
+    //
+    // 絵には一切影響しない、編集のためだけの情報。1エフェクトが複数の層で
+    // できていると、モードと個数だけでは開くまで中身が分からないため。
+    // texturePath と同じく固定長配列（desc を素直にコピーできる形を保つ）。
     char            name[32]          = "";
 
     // ---- 発生形状 ----
     GpuData::float2 emitRadius        = { 0.0f, 0.5f };    // emit_radius    発生半径 min/max
     GpuData::float2 emitSize          = { 0.1f, 0.05f };   // emit_size      サイズ 誕生/消滅
 
-    /// @brief サイズのランダム量。0 = emitSize ちょうどで固定、1 = 0〜emitSize の一様ランダム。
-    /// @note  既定 1 は従来の挙動（乱数がシェーダに固定で入っていた）と同じ。
-    ///        衝撃波のように毎回同じ大きさで出したい効果は 0 にする。
+    // サイズのランダム量。0 = emitSize ちょうどで固定、1 = 0〜emitSize の一様ランダム。
+    //
+    // 既定 1 は従来の挙動（乱数がシェーダに固定で入っていた）と同じ。
+    // 衝撃波のように毎回同じ大きさで出したい効果は 0 にする。
     float           sizeRandom        = 1.0f;              // size_random
     GpuData::float2 coneAngle         = { 0.0f, 0.3f };    // cone_angle     放出角度範囲 (rad)
     GpuData::float2 emitSpeed         = { 1.0f, 3.0f };    // emit_speed     初速度範囲
@@ -58,9 +60,10 @@ struct ParticleEmitterDesc
 
     // ---- 物理 ----
     float           gravity           = 0.0f;
-    /// @brief 速度の上限 (units/s)。0以下 = 無制限。
-    /// @note  既定の 10 は、以前シェーダにハードコードされていた値。既存アセットの
-    ///        見た目を変えないためこの値にしてある。速い火花を作るなら上げること。
+    // 速度の上限 (units/s)。0以下 = 無制限。
+    //
+    // 既定の 10 は、以前シェーダにハードコードされていた値。既存アセットの
+    // 見た目を変えないためこの値にしてある。速い火花を作るなら上げること。
     float           maxSpeed          = 10.0f;              // max_speed
     float           velocityStretch   = 0.0f;
     float           noiseScale        = 1.0f;
@@ -122,21 +125,23 @@ struct ParticleEmitter
     bool  staticDirty   = true;             // true  → staticCB を再 upload する
     float burstTrigger  = 0.0f;             // TriggerBurst() で立て、UpdateSystem が消費
 
-    /// @brief このエミッタ実体の乱数種。GPU へ instance_seed として渡る。
-    /// @note  0 は「未割り当て」。UpdateSystem が最初の更新で採番し、以降は変えない。
-    ///        これにより、同じプレハブから出した VFX でも粒子の配置が個体ごとに変わる。
-    ///        非シリアライズ（保存すると全インスタンスが同じ種を共有してしまうため）。
+    // このエミッタ実体の乱数種。GPU へ instance_seed として渡る。
+    //
+    // 0 は「未割り当て」。UpdateSystem が最初の更新で採番し、以降は変えない。
+    // これにより、同じプレハブから出した VFX でも粒子の配置が個体ごとに変わる。
+    // 非シリアライズ（保存すると全インスタンスが同じ種を共有してしまうため）。
     GpuData::uint instanceSeed = 0;
 
     // ---- アニメ連動の発生ゲート（TrailComponent と同じ区間ゲート方式） ----
     // emitting=false の間、UpdateSystem は emit_enabled=0 を GPU へ渡し、
     // 継続モードの粒子の「再生成」だけを止める（既存粒子は寿命まで生きて尾を引いて消える）。
-    bool emitting = true;                   ///< 発生マスタースイッチ。GPUへ emit_enabled として渡る。
+    bool emitting = true;                   // 発生マスタースイッチ。GPUへ emit_enabled として渡る。
 
-    /// @brief インスペクタでの表示 ON/OFF。false の間は描画コマンドを積まない。
-    /// @note  「どの層がどれか」を確かめるためのプレビュー用スイッチ。非シリアライズ。
-    ///        保存対象にすると、消したまま出荷して層が欠けたことに気付けなくなる。
-    ///        シミュレーションは止めないので、戻せば続きから見える。
+    // インスペクタでの表示 ON/OFF。false の間は描画コマンドを積まない。
+    //
+    // 「どの層がどれか」を確かめるためのプレビュー用スイッチ。非シリアライズ。
+    // 保存対象にすると、消したまま出荷して層が欠けたことに気付けなくなる。
+    // シミュレーションは止めないので、戻せば続きから見える。
     bool previewVisible = true;
 };
 
@@ -152,18 +157,18 @@ struct ParticleEmitter
 // =========================================================================
 struct GPUParticleComponent
 {
-    /// @brief このエフェクトを構成するエミッタ群。常に1個以上（エディタで増減）。
+    // このエフェクトを構成するエミッタ群。常に1個以上（エディタで増減）。
     std::vector<ParticleEmitter> emitters{ ParticleEmitter{} };
 
     // ---- 効果全体で共通のランタイム状態 ----
-    float time = 0.0f;                      ///< 累積経過時間（エミッタ間で共有）
+    float time = 0.0f;                      // 累積経過時間（エミッタ間で共有）
 
-    /// @brief true: 祖先(Animator)の Particle 区間イベントで emitting を自動駆動する。
-    ///        false: emitting は手動（常時ON）。既定は手動。※これのみシリアライズ対象。
+    // true: 祖先(Animator)の Particle 区間イベントで emitting を自動駆動する。
+    // false: emitting は手動（常時ON）。既定は手動。※これのみシリアライズ対象。
     bool animControlled = false;
 
-    /// @brief animControlled 時に解決した「Animator を持つ祖先」。Invalid は未解決(非シリアライズ)。
-    ///        ParticleAnimationSyncSystem が親を辿って一度だけ解決しキャッシュする。
+    // animControlled 時に解決した「Animator を持つ祖先」。Invalid は未解決(非シリアライズ)。
+    // ParticleAnimationSyncSystem が親を辿って一度だけ解決しキャッシュする。
     CCL::ECS::EntityID ownerEntity = CCL::ECS::InvalidEntityID;
 
     // ---- サブフレーム補間用: 前フレームの姿勢(runtime・非シリアライズ) ----
@@ -176,12 +181,12 @@ struct GPUParticleComponent
 
     GPUParticleComponent() = default;
 
-    /// @brief 全エミッタのバーストを1フレームだけ発動させる。
+    // 全エミッタのバーストを1フレームだけ発動させる。
     void TriggerBurst() { for (auto& e : emitters) e.burstTrigger = 1.0f; }
 
-    /// @brief desc を変更した後に呼ぶ。次フレームで staticCB が再 upload される。
+    // desc を変更した後に呼ぶ。次フレームで staticCB が再 upload される。
     void MarkDescChanged() { for (auto& e : emitters) e.staticDirty = true; }
 
-    /// @brief 全エミッタの発生ゲートを一括で開閉する（アニメ連動用）。
+    // 全エミッタの発生ゲートを一括で開閉する（アニメ連動用）。
     void SetEmitting(bool on) { for (auto& e : emitters) e.emitting = on; }
 };

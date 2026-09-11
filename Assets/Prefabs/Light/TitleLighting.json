@@ -1,0 +1,189 @@
+{
+    "entities": [
+        {
+            "components": {
+                "BloomConfig": {
+                    "data.intensity": 1.0,
+                    "data.radius": 1.0,
+                    "data.softKnee": 0.20000000298023224,
+                    "data.threshold": 1.0,
+                    "enable": true
+                },
+                "ChromaticAberration": {
+                    "centerX": 0.5,
+                    "centerY": 0.5,
+                    "enable": true,
+                    "falloff": 2.0,
+                    "strength": 0.0
+                },
+                "ColorGrading": {
+                    "brightness": 0.949999988079071,
+                    "contrast": 1.1200000047683716,
+                    "enable": true,
+                    "mixAmount": 1.0,
+                    "saturation": 0.8500000238418579,
+                    "tintB": 1.059999942779541,
+                    "tintG": 0.9700000286102295,
+                    "tintR": 0.9399999976158142
+                },
+                "ContactShadow": {
+                    "bias": 0.019999999552965164,
+                    "enable": false,
+                    "intensity": 0.699999988079071,
+                    "maxDistance": 30.0,
+                    "rayLength": 0.30000001192092896,
+                    "thickness": 0.10000000149011612
+                },
+                "DirectionalLight": {
+                    "color": [
+                        1.0,
+                        0.9599999785423279,
+                        0.8999999761581421
+                    ],
+                    "groundColor": [
+                        0.019999999552965164,
+                        0.019999999552965164,
+                        0.029999999329447746,
+                        0.6000000238418579
+                    ],
+                    "intensity": 1.149999976158142,
+                    "skyColor": [
+                        0.0,
+                        0.12999999523162842,
+                        0.4000000059604645,
+                        1.0
+                    ]
+                },
+                "Fog": {
+                    "color": [
+                        0.11583012342453003,
+                        0.11583012342453003,
+                        0.11583012342453003,
+                        1.0
+                    ],
+                    "enabled": true,
+                    "end": 800.0,
+                    "heightDensity": 0.14000000059604645,
+                    "heightStart": -70.0,
+                    "noiseScale": 0.10000000149011612,
+                    "noiseSpeed": [
+                        0.10000000149011612,
+                        0.05000000074505806
+                    ],
+                    "noiseStrength": 0.0,
+                    "rimColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "rimPower": 3.0,
+                    "rimStrength": 0.0,
+                    "skyFogHeight": -0.10999999940395355,
+                    "skyFogSoftness": 0.20999999344348907,
+                    "start": 120.0
+                },
+                "Just Evade Effect": {
+                    "attackTime": 0.029999999329447746,
+                    "chromaPeak": 0.019999999552965164,
+                    "duration": 0.5,
+                    "gradeMixPeak": 0.8999999761581421,
+                    "radialPeak": 0.3499999940395355,
+                    "releaseTime": 0.18000000715255737,
+                    "spikeDecay": 0.18000000715255737,
+                    "style": 2,
+                    "vignettePeak": 0.6000000238418579,
+                    "vignettePulse": 5.0
+                },
+                "Name": {
+                    "name": "TitleLighting"
+                },
+                "RadialBlur": {
+                    "centerX": 0.5,
+                    "centerY": 0.5,
+                    "enable": false,
+                    "falloff": 2.0,
+                    "strength": 0.0
+                },
+                "SSAO": {
+                    "bias": 0.019999999552965164,
+                    "enable": true,
+                    "intensity": 0.800000011920929,
+                    "maxDistance": 50.0,
+                    "radius": 0.5
+                },
+                "Screen Impact": {
+                    "chromaticStrength": 0.012000000104308128,
+                    "duration": 0.2199999988079071,
+                    "radialStrength": 0.3499999940395355,
+                    "shakeTrauma": 0.18000000715255737
+                },
+                "ShadowMapConfig": {
+                    "cascadeSplits": [
+                        7.0,
+                        50.0,
+                        100.0
+                    ],
+                    "shadowBias": 0.00019999999494757503,
+                    "shadowColor": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.5
+                    ]
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "ToneMapConfig": {
+                    "data.chromaticAberration": 0.0,
+                    "data.colorTint": [
+                        1.0,
+                        1.0,
+                        1.0,
+                        0.0
+                    ],
+                    "data.exposure": 0.44999998807907104
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 2,
+                    "position": [
+                        0.0,
+                        5.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.2165140062570572,
+                        0.08248099684715271,
+                        0.0,
+                        0.9727889895439148
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "Vignette": {
+                    "colorB": 0.0,
+                    "colorG": 0.0,
+                    "colorR": 0.0,
+                    "enable": true,
+                    "intensity": 0.6200000047683716,
+                    "pulseSpeed": 0.0,
+                    "radius": 0.47999998927116394,
+                    "softness": 0.41999998688697815
+                }
+            },
+            "lid": 1
+        }
+    ],
+    "magic": 1397506883,
+    "name": "TitleLighting",
+    "version": 1
+}

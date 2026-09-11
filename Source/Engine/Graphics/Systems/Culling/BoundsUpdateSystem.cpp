@@ -61,10 +61,13 @@ void PrimitiveBoundsUpdateSystem::Update(float dt)
         float maxLocalScale = (std::max)({ prim.size.x, prim.size.y, prim.size.z, prim.radius, prim.height });
 
         // ワールド行列からスケール成分を抽出して掛け合わせる（簡易的なAABB半径）
-        DirectX::XMVECTOR scale, rot, pos;
-        DirectX::XMMatrixDecompose(&scale, &rot, &pos, DirectX::XMLoadFloat4x4(&trans.worldMatrix));
-        float worldScale = DirectX::XMVectorGetX(scale);
-        float finalExtents = maxLocalScale * worldScale;
+        //   ここで欲しいのは「X軸方向のスケール」と「平行移動」だけ。
+        //   XMMatrixDecompose は回転を求めるために反復的な極分解を回すので、
+        //   この用途には桁違いに重い。基底ベクトルの長さと平行移動行を直接読む。
+        const DirectX::XMMATRIX world = DirectX::XMLoadFloat4x4(&trans.worldMatrix);
+        const DirectX::XMVECTOR pos   = world.r[3];
+        const float worldScale   = DirectX::XMVectorGetX(DirectX::XMVector3Length(world.r[0]));
+        const float finalExtents = maxLocalScale * worldScale;
 
         DirectX::XMStoreFloat3(&bounds.worldAABB.Center, pos);
         bounds.worldAABB.Extents = { finalExtents, finalExtents, finalExtents };

@@ -39,8 +39,8 @@ struct JoltCharacterConfigComponent
     // --- 加減速の手触り（水平移動の速度追従レート） ---
     // 目標速度へ寄せる Lerp レート。加速と減速で別々に持たせ、ハイスピードの
     // 「キビキビ加速して、狙ったぶんだけ滑って止まる」を作れるようにする。
-    float acceleration = 12.0f; ///< 加速の速さ（高いほど即最高速へ乗る）
-    float deceleration = 8.0f;  ///< 減速の速さ（低いほどダッシュ後によく滑る）
+    float acceleration = 12.0f; // 加速の速さ（高いほど即最高速へ乗る）
+    float deceleration = 8.0f;  // 減速の速さ（低いほどダッシュ後によく滑る）
 
     // --- 空中のタメ（Apex Hang Time）パラメータ ---
     float apexGravityScale      = 0.3f; // 頂点付近での重力倍率（軽いほどフワッとする）

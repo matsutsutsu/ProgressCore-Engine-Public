@@ -1,9 +1,8 @@
-/// @file  NormalPrepass.cpp
-/// @brief NormalPrepass の実装。ShadowPass と同型の「専用シェーダー二度描き」パターン。
+// NormalPrepass の実装。ShadowPass と同型の「専用シェーダー二度描き」パターン。
 #include "NormalPrepass.h"
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Graphics/RHI/Camera.h"
-#include "Engine/Graphics/Renderer/ModelRenderer.h"
+#include "Engine/Graphics/Renderer/ModelConstantBuffers.h"
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
 #include "Engine/Graphics/Renderer/RenderQueue.h"
 #include "Engine/Graphics/Renderer/RenderDebugRegistry.h" // デバッグテクスチャ登録
@@ -53,8 +52,8 @@ void NormalPrepass::Execute(const RenderFrameContext& ctx)
     if (!dc) return;
 
     RenderQueue* queue = m_services->renderQueue;
-    ModelRenderer* renderer = m_services->modelRenderer;
-    if (!queue || !renderer) return;
+    ModelConstantBuffers* modelConstants = m_services->modelConstants;
+    if (!queue || !modelConstants) return;
 
     // OpaquePass より前に実行されるため、ソート済みキーをここで構築する。
     // フレーム内で既に構築済みなら RenderQueue 側のガードで no-op になる（二重ソート防止）。
@@ -78,7 +77,7 @@ void NormalPrepass::Execute(const RenderFrameContext& ctx)
     m_normalBuffer.Activate(dc, ctx.targetDSV);
     m_pso.Apply(dc, m_services->renderState);
 
-    renderer->BindAllGlobalConstantBuffers(dc);
+    modelConstants->BindAllGlobalConstantBuffers(dc);
 
     shader->Begin(dc, *m_services, ctx);
     dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -154,7 +153,7 @@ void NormalPrepass::Execute(const RenderFrameContext& ctx)
                     const auto& cmd = opaqueCommands[sortKeys[batchStart + k].originalIndex];
                     m_instanceBuffer.Write(dc, &m_instanceScratch[k], 1);
                     m_instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
-                    renderer->UpdateSkeletonConstants(dc, cmd.model->GetMeshes()[meshIdx]);
+                    modelConstants->UpdateSkeletonConstants(dc, cmd.model->GetMeshes()[meshIdx]);
                     dc->DrawIndexedInstanced(static_cast<UINT>(mesh.data->indices.size()), 1, 0, 0, 0);
                 }
             }

@@ -1,4 +1,3 @@
-/// @file CameraBodyActionTPSComponentMeta.cpp
 
 #include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"

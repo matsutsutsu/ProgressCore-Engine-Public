@@ -2,6 +2,7 @@
 
 // タグ
 #include "Game/Logics/Combat/DeadTag.h"
+#include "Game/Logics/Combat/EnemyTag.h"
 
 // 追加したコンポーネントをここで記述するオールヘッダー
 #include "Engine/Transform/Components/TransformComponent.h"

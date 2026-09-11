@@ -10,7 +10,6 @@
 //     エミッタを持つプレハブが無言で描画されない罠になっていた。よって撤去。
 // ===========================================================================
 #include "GPUParticleRenderSystem.h"
-#include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Graphics/Renderer/ParticleRenderer.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"

@@ -1,5 +1,4 @@
-/// @file  ColorGradingEffect.h
-/// @brief カラーグレーディング(色調整/カラーフィルター)ポストエフェクト。
+// カラーグレーディング(色調整/カラーフィルター)ポストエフェクト。
 #pragma once
 #include "IPostEffect.h"
 #include "Engine/Graphics/Shader/Shared/PostProcessShared.h"

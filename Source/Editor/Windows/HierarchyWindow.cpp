@@ -1,6 +1,7 @@
 #include "Editor/Windows/HierarchyWindow.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Core/Components/NameComponent.h"
+#include "Engine/Core/Components/EntityLabel.h"
 #include <algorithm>
 #include <string>
 #include "Engine/Transform/Components/PendingParentComponent.h"
@@ -190,9 +191,8 @@ void HierarchyWindow::DrawContents(EditorContext& context)
             else {
                 context.world->AddComponent<PendingParentComponent>(draggedEntity);
             }
-            // EntityID は 64bit なので %u ではなく %llu（%u だと世代が落ちる）
-            CCL_LOG_INFO(LogCategory::Editor, "Unparenting: Entity %llu is now root",
-                static_cast<unsigned long long>(draggedEntity));
+            CCL_LOG_INFO(LogCategory::Editor, "Unparenting: %s is now root",
+                CCL::EntityLabel(*context.world, draggedEntity).c_str());
         }
         ImGui::EndDragDropTarget();
     }
@@ -304,10 +304,9 @@ void HierarchyWindow::DrawFlatNode(
 					ppc.parentID = targetParent;
                     context.world->AddComponent<PendingParentComponent>(draggedEntity, ppc);
                 }
-                // EntityID は 64bit なので %u ではなく %llu（%u だと世代が落ちる）
-                CCL_LOG_INFO(LogCategory::Editor, "Parenting: Entity %llu is now child of %llu",
-                    static_cast<unsigned long long>(draggedEntity),
-                    static_cast<unsigned long long>(targetParent));
+                CCL_LOG_INFO(LogCategory::Editor, "Parenting: %s is now child of %s",
+                    CCL::EntityLabel(*context.world, draggedEntity).c_str(),
+                    CCL::EntityLabel(*context.world, targetParent).c_str());
             }
         }
         else {

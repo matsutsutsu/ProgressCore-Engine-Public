@@ -1,9 +1,8 @@
-/// @file  SquadUpdateSystem.cpp
-/// @brief 小隊の頭（anchor）を動かす実装。フェーズ遷移＋1小隊ぶんの移動計算。
+// 小隊の頭（anchor）を動かす実装。フェーズ遷移＋1小隊ぶんの移動計算。
 #include "SquadUpdateSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
-#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h" // BossCommandComponent
+#include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -38,7 +37,7 @@ void SquadUpdateSystem::Update(float dt)
 
     m_elapsed += dt;
 
-    // --- ボスの命令と位置（1v1 なのでボスは1体）---
+    // ボスの命令と位置（1v1 なのでボスは1体）。
     DroneFormationType formation = DroneFormationType::Hidden;
     bool               attacking = false;
     Vector3            bossPos   = Vector3::Zero;
@@ -52,7 +51,7 @@ void SquadUpdateSystem::Update(float dt)
                 attacking = cmd->droneAttackActive;
             }
             if (const auto *t = m_world->GetComponent<TransformComponent>(b))
-                bossPos = Vector3(t->position);
+                bossPos = Vector3(t->GetWorldPosition());   // position はローカル
             break;
         }
     }
@@ -61,9 +60,8 @@ void SquadUpdateSystem::Update(float dt)
     if (m_world->HasResource<BattleContext>())
         playerPos = Vector3(m_world->GetResource<BattleContext>().playerPos);
 
-    // --- 生存機数と、各席の実位置を取り直す ---
-    //   撃破で小隊が痩せるので毎フレーム数える。0機の小隊は計算そのものを飛ばす。
-    //   実位置は「追従機が自分の前の機体を追う」ために要る。
+    // 生存機数と各席の実位置を毎フレーム取り直す（撃破で小隊が痩せるため）。
+    // 実位置は「追従機が自分の前の機体を追う」ために要る。
     for (auto &s : reg.squads)
     {
         s.aliveCount = 0;
@@ -83,7 +81,7 @@ void SquadUpdateSystem::Update(float dt)
         }
     });
 
-    // --- 小隊の数だけ回す（ドローンの数ではない）---
+    // 小隊の数だけ回す（ドローンの数ではない）。
     const bool ordered = (formation == DroneFormationType::SquadAssault);
 
     for (uint8_t i = 0; i < SquadRegistry::kMaxSquads; ++i)
@@ -106,9 +104,7 @@ void SquadUpdateSystem::UpdateSquad(SquadState        &squad,
 {
     if (squad.phaseTimer > 0.0f) squad.phaseTimer -= dt;
 
-    // ------------------------------------------------------------
-    // フェーズ遷移（優先度順。上から最初に成立したものが勝つ）
-    // ------------------------------------------------------------
+    // フェーズ遷移（優先度順。上から最初に成立したものが勝つ）。
     SquadPhase next;
     if (ordered == false)
     {
@@ -116,15 +112,13 @@ void SquadUpdateSystem::UpdateSquad(SquadState        &squad,
     }
     else if (squad.phase == SquadPhase::Strike)
     {
-        // 突入は「始まったら時間で必ず終わる」。
-        //   信号が落ちた瞬間に急停止すると「突っ込んできたのに止まる」不自然さが出るので
-        //   通り抜けるまでは走らせ、逆に信号が上がりっぱなしでも時間で切り上げる
-        //   （そうしないとステージ外まで直進し続ける）。
+        // 突入は始まったら時間で必ず終わる。信号が落ちた瞬間に急停止すると「突っ込んで
+        // きたのに止まる」ので通り抜けるまで走らせ、上がりっぱなしでも時間で切り上げる。
         next = (squad.phaseTimer > 0.0f) ? SquadPhase::Strike : SquadPhase::Approach;
     }
     else if (attacking && squad.phaseTimer <= 0.0f)
     {
-        // 接近の最低時間を過ぎるまでは突入しない＝予備動作を読ませる窓を必ず作る。
+        // 接近の最低時間を過ぎるまで突入しない＝予備動作を読ませる窓を必ず作る。
         next = SquadPhase::Strike;
     }
     else
@@ -143,41 +137,36 @@ void SquadUpdateSystem::UpdateSquad(SquadState        &squad,
         }
         else if (prev == SquadPhase::Strike)
         {
-            // 突入直後だけ次の突入までの間隔を空ける（連続体当たりの防止）。
+            // 突入直後だけ間隔を空ける（連続体当たりの防止）。
             squad.phaseTimer = tuning.approachMinTime;
         }
         else
         {
-            // 隊列を組んだ直後は即座に突入できる状態にしておく。
-            //   予備動作をどれだけ読ませるかは BT の Wait が決める（既存の攻撃と同じ作法）。
-            //   ここでも待たせると BT の Wait と二重に効いて、Wait が短いと
-            //   Strike 信号が落ちた後に突入が始まる／そもそも突入しない、という噛み合わせ事故になる。
+            // 隊列を組んだ直後は即座に突入できる状態にする。予備動作の長さは BT の Wait が
+            // 決めるので、ここでも待たせると二重に効いて噛み合わせ事故になる。
             squad.phaseTimer = 0.0f;
         }
     }
 
-    // ------------------------------------------------------------
-    // 突入：頭がプレイヤーを追い、編隊ごと引っ張っていく
-    // ------------------------------------------------------------
+    // 突入：頭がプレイヤーを追い、編隊ごと引っ張っていく。
     if (squad.phase == SquadPhase::Strike)
     {
         SteerTowardPlayer(squad, playerPos, tuning, dt);
         squad.anchorVelocity = squad.anchorForward * tuning.strikeSpeed;
         squad.anchorPos      = squad.anchorPos + squad.anchorVelocity * dt;
+        ClampAltitude(squad, tuning);
         return;
     }
 
-    // ------------------------------------------------------------
-    // 待機／接近：目標点をバネで追う
-    // ------------------------------------------------------------
-    //   小隊ごとに角度をずらすので、複数小隊が別方向から包囲する形に自然になる。
+    // 待機／接近：目標点をバネで追う。小隊ごとに角度をずらすので、複数小隊が
+    // 別方向から包囲する形に自然になる。
     const float phaseAngle = (kTwoPi * static_cast<float>(squadId)) /
                              static_cast<float>(SquadRegistry::kMaxSquads);
 
     Vector3 desired;
     if (squad.phase == SquadPhase::Approach)
     {
-        // 真正面には来ない。斜め横から回り込むことで「側面から迫られる」圧を作る。
+        // 斜め横から回り込むことで「側面から迫られる」圧を作る。
         const float a = phaseAngle + m_elapsed * kApproachDrift;
         desired       = playerPos + Vector3(std::cos(a) * tuning.approachRadius,
                                             tuning.approachHeight,
@@ -191,7 +180,7 @@ void SquadUpdateSystem::UpdateSquad(SquadState        &squad,
                                           std::sin(a) * kRegroupRadius);
     }
 
-    // 初回だけ目標へ瞬間移動させる（ワールド原点から飛んでくるのを防ぐ）
+    // 初回だけ目標へ瞬間移動させる（ワールド原点から飛んでくるのを防ぐ）。
     if (squad.initialized == false)
     {
         squad.initialized    = true;
@@ -209,7 +198,7 @@ void SquadUpdateSystem::UpdateSquad(SquadState        &squad,
                                          (std::min)(kAnchorDamping * dt, 1.0f));
     squad.anchorPos = squad.anchorPos + squad.anchorVelocity * dt;
 
-    // 機首の向き：接近中はプレイヤーを睨む（これから来ると読ませる）、待機中は進行方向。
+    // 接近中はプレイヤーを睨む（これから来ると読ませる）、待機中は進行方向。
     Vector3 face = squad.anchorVelocity;
     if (squad.phase == SquadPhase::Approach)
     {
@@ -226,6 +215,31 @@ void SquadUpdateSystem::UpdateSquad(SquadState        &squad,
             squad.anchorForward = blended;
         }
     }
+
+    ClampAltitude(squad, tuning);
+}
+
+
+void SquadUpdateSystem::ClampAltitude(SquadState &squad, const SquadTuning &tuning) const
+{
+    const float floorY = kSquadGroundY + tuning.minAltitude;
+    if (squad.anchorPos.y >= floorY) return;
+
+    squad.anchorPos.y = floorY;
+
+    // 位置を止めるだけでは直らない。速度が下を向いたままだと、追従機がそれを
+    // followFeedForward として受け取って床へ押し込まれ続ける。
+    if (squad.anchorVelocity.y < 0.0f) squad.anchorVelocity.y = 0.0f;
+
+    // 向きも寝かせる。真下を向いたまま突入速度を掛けると、速度の大半が止められた
+    // 縦方向に消えて床に貼り付く。水平成分だけ残せば床すれすれを這って通り過ぎる。
+    if (squad.anchorForward.y < 0.0f)
+    {
+        squad.anchorForward.y = 0.0f;
+        if (squad.anchorForward.LengthSquared() < 0.001f)
+            squad.anchorForward = Vector3::UnitZ;   // 真下を向いていた場合の退避
+        squad.anchorForward.Normalize();
+    }
 }
 
 
@@ -237,14 +251,13 @@ void SquadUpdateSystem::SteerTowardPlayer(SquadState        &squad,
     Vector3     toPlayer = playerPos - squad.anchorPos;
     const float dist     = toPlayer.Length();
 
-    // 終末ロック：ここから先は曲がらない。
-    //   突入の最後を直線に固定することで、プレイヤーが「読んで避ける」窓が必ず残る。
-    //   ここを外して完全追尾にすると、避けても曲がって当たる＝ジャスト回避が死ぬ。
+    // 終末ロック。突入の最後を直線に固定することで「読んで避ける」窓が必ず残る
+    // （完全追尾にすると、避けても曲がって当たる＝ジャスト回避が死ぬ）。
     if (dist <= tuning.terminalLockDist || dist < 0.001f) return;
 
     toPlayer /= dist;
 
-    // 1フレームで曲がれる角度に上限を掛ける（ミサイル的な旋回制限）
+    // 1フレームで曲がれる角度に上限を掛ける。
     const float maxRad = DirectX::XMConvertToRadians(tuning.maxTurnRateDeg) * dt;
     const float cosA   = std::clamp(squad.anchorForward.Dot(toPlayer), -1.0f, 1.0f);
     const float angle  = std::acos(cosA);
@@ -264,5 +277,5 @@ void SquadUpdateSystem::SteerTowardPlayer(SquadState        &squad,
     }
 }
 
-// L02_Update：伝令(DroneCommandSystem)の後、振付師(DroneFormationSystem)の前。
+// 伝令(DroneCommandSystem)の後、振付師(DroneFormationSystem)の前。
 REGISTER_LOGIC_SYSTEM(SquadUpdateSystem, Priority::LogicStage::L02_Update)

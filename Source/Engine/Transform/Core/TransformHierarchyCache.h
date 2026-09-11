@@ -22,17 +22,17 @@ public:
     }
     size_t              Count()              const { return m_order.size(); }
     CCL::ECS::EntityID  EntityAt(int i)      const { return m_order[i]; }
-    int                 ParentInOrderOf(int i) const { return m_parentInOrder[i]; } ///< -1=親はルート
-    CCL::ECS::EntityID  ParentIdOf(int i)    const { return m_parentId[i]; }        ///< 親EntityID（常時）
+    int                 ParentInOrderOf(int i) const { return m_parentInOrder[i]; } // -1=親はルート
+    CCL::ECS::EntityID  ParentIdOf(int i)    const { return m_parentId[i]; }        // 親EntityID（常時）
 
     // --- solve 用スクラッチ（dense） ---
     void StoreWorld(int i, DirectX::FXMMATRIX m) { DirectX::XMStoreFloat4x4(&m_worldScratch[i], m); }
     DirectX::XMMATRIX WorldAt(int i)       const { return DirectX::XMLoadFloat4x4(&m_worldScratch[i]); }
 
 private:
-    std::vector<CCL::ECS::EntityID>  m_order;          ///< 非ルートのみ（親が必ず前に来る）
-    std::vector<int>                 m_parentInOrder;   ///< 親の order index（親がルートなら -1）
-    std::vector<CCL::ECS::EntityID>  m_parentId;        ///< 親 EntityID（ルート親 fetch & 変化検出）
-    std::vector<int>                 m_idToOrder;       ///< pure index -> order（-1=非登録）
-    std::vector<DirectX::XMFLOAT4X4> m_worldScratch;    ///< solve 中間結果（子が親を読む）
+    std::vector<CCL::ECS::EntityID>  m_order;          // 非ルートのみ（親が必ず前に来る）
+    std::vector<int>                 m_parentInOrder;   // 親の order index（親がルートなら -1）
+    std::vector<CCL::ECS::EntityID>  m_parentId;        // 親 EntityID（ルート親 fetch & 変化検出）
+    std::vector<int>                 m_idToOrder;       // pure index -> order（-1=非登録）
+    std::vector<DirectX::XMFLOAT4X4> m_worldScratch;    // solve 中間結果（子が親を読む）
 };

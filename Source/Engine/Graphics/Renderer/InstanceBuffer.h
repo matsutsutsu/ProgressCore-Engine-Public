@@ -67,15 +67,8 @@ public:
     {
         if (data.empty()) return;
 
-        // バッファサイズを超えないように制限
+        // 容量を超えたぶんは切り捨てる（描画されない）
         size_t count = (std::min)(data.size(), m_maxInstances);
-
-        //// 足りない場合は、現在の2倍のサイズで作り直す（動的リサイズ）
-        //if (data.size() > m_maxInstances)
-        //{
-        //    size_t newSize = std::max(data.size(), m_maxInstances * 2);
-        //    Create(device, newSize); // 新しいサイズで再確保
-        //}
 
         InstanceData* ptr = Map(dc);
         if (ptr)
@@ -111,7 +104,6 @@ public:
         dc->VSSetShaderResources(slot, 1, &nullSRV);
     }
 
-    // InstanceBuffer.h に追加
     size_t GetMaxInstances() const { return m_maxInstances; }
 
 private:

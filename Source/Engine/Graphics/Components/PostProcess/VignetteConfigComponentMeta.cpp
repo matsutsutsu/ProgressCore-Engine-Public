@@ -1,6 +1,5 @@
-/// @file  VignetteConfigComponentMeta.cpp
-/// @brief VignetteConfigComponent のシリアライズ/インスペクタ定義(パターンC)。
-///        画面端の減光/着色パラメータを編集可能にする。
+// VignetteConfigComponent のシリアライズ/インスペクタ定義(パターンC)。
+// 画面端の減光/着色パラメータを編集可能にする。
 #include "Engine/Graphics/Components/PostProcess/VignetteConfigComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
@@ -51,7 +50,7 @@ template <> struct ComponentMeta<VignetteConfigComponent> {
         namespace mi = ComponentMetaImGui;
         bool changed = false;
 
-        // ★ 1行ヘルパーで「ラベル左・幅いっぱい」に統一（自動グリッドと同じ見た目）。
+        // 1行ヘルパーで「ラベル左・幅いっぱい」に統一（自動グリッドと同じ見た目）。
         changed |= mi::Checkbox("有効", &c.enable);
 
         ImGui::BeginDisabled(!c.enable);

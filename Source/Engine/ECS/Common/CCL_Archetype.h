@@ -94,7 +94,7 @@ namespace CCL::ECS
             return index;
         }
 
-        /// @brief 型 T を Archetype から削除する
+        // 型 T を Archetype から削除する
         template <class T>
         void Sub()
         {

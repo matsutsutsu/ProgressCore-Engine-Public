@@ -19,10 +19,10 @@ using namespace CCL::ECS;
 // L02_AI_Act (230) : 経路が確定し、速度指示が出た後に、具体的な移動ベクトルを算出する。
 //
 // [ ECSデータパイプライン ]
-// 📤 WRITE : TransformComponent (現在地)
-// 📥 WRITE : NavAgentComponent  (waypoints, currentDesiredSpeed)
-// 📤 WRITE : CharacterMovementComponent (物理エンジンへの入力速度)
-// 📤 WRITE : NavAgentComponent  (currentWaypointIndex の更新)
+// WRITE : TransformComponent (現在地)
+// WRITE : NavAgentComponent  (waypoints, currentDesiredSpeed)
+// WRITE : CharacterMovementComponent (物理エンジンへの入力速度)
+// WRITE : NavAgentComponent  (currentWaypointIndex の更新)
 // ===================================================================================
 
 void NavSteeringSystem::Update(float dt) {

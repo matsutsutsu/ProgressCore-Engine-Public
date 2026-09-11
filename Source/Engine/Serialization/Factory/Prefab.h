@@ -13,6 +13,12 @@ namespace Prefab {
     // 終了処理
     void Cleanup();
 
+    // プレハブ JSON のパース結果キャッシュを捨てる。
+    //   SpawnPrefab は同じプレハブの再生成が速くなるよう、検証済みの entities を
+    //   パスごとに保持している。シーンを切り替えるときなど、持ち越したくない
+    //   タイミングで呼ぶ（Cleanup からも呼ばれる）。
+    void ClearPrefabCache();
+
     // 初期化 (デバイス保持など)
     void Initialize(ID3D11Device *device);
 

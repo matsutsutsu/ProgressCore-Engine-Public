@@ -1,5 +1,4 @@
-/// @file RenderDebugWindow.cpp
-/// @brief RenderDebugRegistry の一覧を、種別に応じて可視化して ImGui サムネイル表示する（v2）。
+// RenderDebugRegistry の一覧を、種別に応じて可視化して ImGui サムネイル表示する（v2）。
 #include "RenderDebugWindow.h"
 #include "Engine/Graphics/Renderer/RenderDebugRegistry.h"
 

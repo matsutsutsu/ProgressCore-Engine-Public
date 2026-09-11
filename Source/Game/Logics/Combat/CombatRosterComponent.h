@@ -7,7 +7,7 @@
 //   std::map ではなく固定長配列にしてPOD化し、チャンクへ直接載せられるようにしている。
 //   AnimationSequencerWindow は、この tag 一覧を通知イベントの武器指定プルダウンに使う。
 struct CombatRosterComponent {
-    /// @brief 同時に登録できる部位の数。増やすとコンポーネントのサイズが直接増える。
+    // 同時に登録できる部位の数。増やすとコンポーネントのサイズが直接増える。
     static constexpr int kMaxEntries = 4;
 
     struct Entry {
@@ -17,9 +17,10 @@ struct CombatRosterComponent {
     int   count = 0;
     Entry entries[kMaxEntries];
 
-    /// @brief タグに対応するエンティティを返す。見つからなければ InvalidEntityID。
-    /// @note  「無し」を 0 で返してはいけない。このエンジンは ID=0 を実エンティティに
-    ///        割り当てるため、0 を返すと無関係な先頭エンティティを指してしまう。
+    // タグに対応するエンティティを返す。見つからなければ InvalidEntityID。
+    //
+    // 「無し」を 0 で返してはいけない。このエンジンは ID=0 を実エンティティに
+    // 割り当てるため、0 を返すと無関係な先頭エンティティを指してしまう。
     CCL::ECS::EntityID Find(const char* targetTag) const {
         if (!targetTag) return CCL::ECS::InvalidEntityID;
         for (int i = 0; i < count; ++i) {

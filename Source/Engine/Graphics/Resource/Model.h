@@ -14,7 +14,7 @@
 
 class Model
 {
-  public:
+public:
     Model(ID3D11Device *device, const char *filename, float sampleRate = 60);
 
     struct Node
@@ -121,13 +121,12 @@ class Model
     void ComputeAnimation(int animationIndex, int nodeIndex, float time, NodePose &nodePose) const;
     void ComputeAnimation(int animationIndex, float time, std::vector<NodePose> &nodePoses) const;
 
-  private:
+private:
     // 単一ノードのポーズ評価の実体。既に取得済みの Animation を受け取ることで、
     // vector 版がノード数ぶん ResourceManager を引き直す無駄を無くす（呼び出し側で1回だけ取得する）。
     void ComputeNodePose(const ModelResource::Animation &animation, int nodeIndex, float time, NodePose &nodePose) const;
 
-  public:
-
+public:
     // ノードポーズ設定
     void SetNodePoses(const std::vector<NodePose> &nodePoses);
 
@@ -157,10 +156,10 @@ class Model
     }
 
     // 頂点・インデックス配列からモデルを生成する静的関数
-    static std::shared_ptr<Model> CreateFromData(ID3D11Device *device,
-        const std::vector<ModelResource::Vertex>              &vertices,
-        const std::vector<uint32_t>                           &indices,
-        std::shared_ptr<MaterialData>                          baseMaterial);
+    static std::shared_ptr<Model> CreateFromData(ID3D11Device                             *device,
+                                                 const std::vector<ModelResource::Vertex> &vertices,
+                                                 const std::vector<uint32_t>              &indices,
+                                                 std::shared_ptr<MaterialData>             baseMaterial);
 
     // ルートモーションの抽出と固定の対象となる、真のルートボーンを探して返す
     int GetRootMotionNodeIndex() const;
@@ -173,7 +172,7 @@ class Model
     //   初回だけ ComputeAnimation で計算し、以降は再利用してホットパスの再計算を消す。
     const NodePose &GetPinnedPoseAtZero(int animIndex, int nodeIndex) const;
 
-  private:
+private:
     // shared_ptrで持つことで、外部に配ってもデータは消えない
     std::vector<Material> materials;
 
@@ -181,7 +180,7 @@ class Model
     float                           animationTime    = 0.0f;
     bool                            loop             = true;
 
-  private:
+private:
     std::string filePath; // 読み込み元ファイルを保存
 
     // ModelHandle ではなく元の型を直接指定する

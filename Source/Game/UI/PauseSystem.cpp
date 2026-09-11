@@ -1,5 +1,4 @@
-/// @file PauseSystem.cpp
-/// 役割・設計方針は PauseSystem.h を参照。
+// 役割・設計方針は PauseSystem.h を参照。
 
 #include "PauseSystem.h"
 
@@ -33,25 +32,26 @@ void PauseSystem::Initialize()
 
     // ポーズメニューのボタン購読。
     const uint32_t kResume = CCL::Utils::HashString("resume");
-    const uint32_t kQuit   = CCL::Utils::HashString("pause_quit");
+    const uint32_t kTitle  = CCL::Utils::HashString("pause_title");
 
     ListenEvent<UIButtonClickedEvent>(
-        [this, kResume, kQuit](const UIButtonClickedEvent &e) {
+        [this, kResume, kTitle](const UIButtonClickedEvent &e) {
             if (e.actionHash == kResume)
             {
                 ClosePause();
             }
-            else if (e.actionHash == kQuit)
+            else if (e.actionHash == kTitle)
             {
-                if (m_transitioning) return;
-                m_transitioning = true;
-                // 展示会用：タイトルへは戻さず、そのままアプリを終了する。
-                // ここは（ジョブスケジューラ経由の）ワーカースレッドで走りうるため、
-                //    直接 PostQuitMessage を呼ぶと WM_QUIT が別スレッドのキューに積まれ、
-                //    メインスレッドの PeekMessage が拾えず終了しない。
-                //    → 終了要求フラグだけ立て、メインループ(Run)が拾って終了処理を行う。
-                if (m_world->HasResource<GameFlowState>())
-                    m_world->GetResource<GameFlowState>().quitRequested = true;
+                if (m_transitioning) return; // 遷移予約後は無視（二重遷移防止）
+
+                // 「タイトルへ行きたい」と頼むだけ。フェード・裏読み・World 破棄の
+                // 順序は SceneManager が統括する（この購読はワーカースレッドで
+                // 走りうるので、ここで World を畳んではいけない）。
+                //
+                // ポーズを解除しないのは、暗転の裏でゲームが動き出すと
+                // 「止めたはずの世界」が数百ms進んでしまうため。世界時計も
+                // GameFlowState も World ごとなので、遷移先には持ち越されない。
+                m_transitioning = SceneManager::Instance().RequestTransition("Title", true);
             }
         });
 }
@@ -109,10 +109,15 @@ void PauseSystem::OpenPause()
     m_overlay.push_back(resume.button);
     m_overlay.push_back(resume.label);
 
-    auto quit = SpawnButton(w, "BtnPauseQuit", "LblPauseQuit", "QUIT", {0.0f, 90.0f},
-        "pause_quit", false, 210, 0.24f, canvas);
-    m_overlay.push_back(quit.button);
-    m_overlay.push_back(quit.label);
+    // 抜け道はタイトルへ戻すだけにする。アプリ終了はタイトル画面の QUIT に集約した
+    // （ゲーム中から即終了できると、押し間違えたときに戻る手段が無い）。
+    auto toTitle = SpawnButton(w, "BtnPauseTitle", "LblPauseTitle", "TITLE", {0.0f, 90.0f},
+        "pause_title", false, 210, 0.24f, canvas);
+    m_overlay.push_back(toTitle.button);
+    m_overlay.push_back(toTitle.label);
+
+    // 操作ヒント（[決定] [選択]）。ボタンより一拍遅らせて出す。
+    SpawnMenuHints(w, canvas, 175.0f, m_overlay, 230, 0.32f);
 }
 
 void PauseSystem::ClosePause()

@@ -49,12 +49,14 @@ void SceneManager::Initialize()
 	// ここでは名前で参照するだけなので、具体シーンのヘッダは不要。
 
 	// 最初に表示するシーン。
-	// 展示会用：タイトルは見せず、起動直後に GameScene(=BossBattleStage) の戦闘へ直行する。
-	// （Shipping で発生していたタイトルの緑点滅もタイトルを経由しないことで回避される。）
-	// 従来の編集用 EditorScene / TitleScene はメニューやコードから任意に開ける
-	//constexpr const char *kStartupScene = "Game";
+	// 製品ビルドは TitleScene から始める。展示会ビルドで Game 直行にしていたのは
+	// 待ち時間を削るためだったが、企業提出は「起動して最初に何が出るか」も作品の一部なので、
+	// タイトル（軽量レベル＋群れの演出）を挟む。
+    #ifdef SHIPPING_BUILD
+	constexpr const char *kStartupScene = "Title";
+    #else
 	constexpr const char *kStartupScene = "Editor";
-
+    #endif
 	ChangeSceneAsync(kStartupScene);
 
 	// 起動直後は黒から表示へフェードイン（初回のローディング画面のポップインを隠す）。

@@ -48,13 +48,13 @@ namespace CCL::ECS
     // 意図がそのまま型名に出る uint64_t を使い、下の static_assert で固定します。
     // ------------------------------------------------------------------
 
-    /// @brief 個々のエンティティを識別するID。上位32bitに世代、下位32bitにIndex。
+    // 個々のエンティティを識別するID。上位32bitに世代、下位32bitにIndex。
     using EntityID    = uint64_t;
 
-    /// @brief コンポーネント型（クラス）を識別するID（Position(1), Velocity(2)など）
+    // コンポーネント型（クラス）を識別するID（Position(1), Velocity(2)など）
     using TypeID      = uint16_t;
 
-    /// @brief 個々のシステムを識別するID
+    // 個々のシステムを識別するID
     using SystemID    = uint16_t;
 
 
@@ -89,16 +89,16 @@ namespace CCL::ECS
     // 多重定義エラーになりません（マクロより型安全）。
     // ------------------------------------------------------------------
 
-    /// @brief 無効な EntityID（全ビット1）
+    // 無効な EntityID（全ビット1）
     constexpr EntityID    InvalidEntityID    = static_cast<EntityID>(-1);
 
-    /// @brief 無効な TypeID（全ビット1）
+    // 無効な TypeID（全ビット1）
     constexpr TypeID      InvalidTypeID      = static_cast<TypeID>(-1);
 
-    /// @brief 無効な SystemID（全ビット1）
+    // 無効な SystemID（全ビット1）
     constexpr SystemID    InvalidSystemID    = static_cast<SystemID>(-1);
 
-    /// @brief 配列・チャンク内インデックスの無効値（size_t 用）
+    // 配列・チャンク内インデックスの無効値（size_t 用）
     constexpr size_t      InvalidIndex       = static_cast<size_t>(-1);
 
 
@@ -122,15 +122,16 @@ namespace CCL::ECS
      */
     struct EntityHandle
     {
-        /// @brief 下位32bit抽出用マスク
-		/// @details 0xFFFFFFFFULLは下位32bitが1で上位32bitが0の64bit定数
-		///          論理積（AND）を取ることで、EntityIDの下位32bit（配列インデックス）だけを取り出せる
+        // 下位32bit抽出用マスク
+        //
+        // 0xFFFFFFFFULLは下位32bitが1で上位32bitが0の64bit定数
+        // 論理積（AND）を取ることで、EntityIDの下位32bit（配列インデックス）だけを取り出せる
         static constexpr EntityID INDEX_MASK = 0xFFFFFFFFULL;
 
-        /// @brief 世代部のシフト量（32bit分上にずらす）
+        // 世代部のシフト量（32bit分上にずらす）
         static constexpr EntityID GEN_SHIFT  = 32;
 
-        /// @brief EntityID から配列インデックス部を取り出す
+        // EntityID から配列インデックス部を取り出す
         static uint32_t GetIndex(EntityID id)
         {
 			// 64bitのEntityIDをINDEX_MASKとビットANDすることで、
@@ -139,7 +140,7 @@ namespace CCL::ECS
             return static_cast<uint32_t>(id & INDEX_MASK);
         }
 
-        /// @brief EntityID から世代カウンタ部を取り出す
+        // EntityID から世代カウンタ部を取り出す
         static uint32_t GetGeneration(EntityID id)
         {
 			// 32bit右シフトすることで、上位32bitの世代カウンタだけが残る
@@ -147,7 +148,7 @@ namespace CCL::ECS
             return static_cast<uint32_t>(id >> GEN_SHIFT);
         }
 
-        /// @brief Index と Generation から EntityID を合成する
+        // Index と Generation から EntityID を合成する
         static EntityID Combine(uint32_t index, uint32_t gen)
         {
             // 世代のbitを左に32bitずらして上位32bitの位置にセットする

@@ -1,6 +1,5 @@
-/// @file  SkyboxComponentMeta.cpp
-/// @brief SkyboxComponent のシリアライズ/インスペクタ定義。
-///        空(スカイボックス)と IBL(IEM/PMREM) を1セットで差し替えるための設定。
+// SkyboxComponent のシリアライズ/インスペクタ定義。
+// 空(スカイボックス)と IBL(IEM/PMREM) を1セットで差し替えるための設定。
 
 #include "Engine/Graphics/Components/Lighting/SkyboxComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"

@@ -1,5 +1,4 @@
-/// @file  ChromaticAberrationEffect.h
-/// @brief 放射状の色収差(クロマティックアベレーション)ポストエフェクト。
+// 放射状の色収差(クロマティックアベレーション)ポストエフェクト。
 #pragma once
 #include "IPostEffect.h"
 #include "Engine/Graphics/Shader/Shared/PostProcessShared.h"

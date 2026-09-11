@@ -1,6 +1,5 @@
-/// @file  JoltPhysicsComponentMeta.cpp
-/// @brief Jolt Physics 関連コンポーネント (Collider, Rigidbody) のメタ定義。
-///        すべて標準的なデータ構造のため、パターンA (全自動マクロ) でシリアライズとGUIを構築する。
+// Jolt Physics 関連コンポーネント (Collider, Rigidbody) のメタ定義。
+// すべて標準的なデータ構造のため、パターンA (全自動マクロ) でシリアライズとGUIを構築する。
 
 #include "Engine/Physics/Components/Collision/JoltBoxColliderComponent.h"
 #include "Engine/Physics/Components/Collision/JoltSphereColliderComponent.h"

@@ -18,6 +18,19 @@
 // デバッグ用のエラーシェーダー（シェーダーコンパイル失敗時にこれを描画する）
 #include "Engine/Graphics/Shader/Material/ErrorShader.h"
 
+// レンダーパス（BuildDefaultRenderPasses で登録する具象パス群）
+#include "Engine/Graphics/Pipeline/SetupPass.h"
+#include "Engine/Graphics/Pipeline/ShadowPass.h"
+#include "Engine/Graphics/Pipeline/NormalPrepass.h"
+#include "Engine/Graphics/Pipeline/OpaquePass.h"
+#include "Engine/Graphics/Pipeline/SkyboxPass.h"
+#include "Engine/Graphics/Pipeline/SceneColorGrabPass.h"
+#include "Engine/Graphics/Pipeline/TransparentPass.h"
+#include "Engine/Graphics/Pipeline/ParticlePass.h"
+#include "Engine/Graphics/Pipeline/TrailPass.h"
+#include "Engine/Graphics/Pipeline/PrimitivePass.h"
+#include "Engine/Graphics/Pipeline/PostProcessPass.h"
+
 #include "tracy/TracyD3D11.hpp"
 
 // ============================================================
@@ -38,7 +51,7 @@ void Graphics::Initialize(HWND hWnd)
     m_renderState = std::make_unique<RenderState>(device);
     m_primitiveRenderer = std::make_unique<PrimitiveRenderer>(device);
     m_shapeRenderer = std::make_unique<ShapeRenderer>(device);
-    m_modelRenderer = std::make_unique<ModelRenderer>(device);
+    m_modelConstants = std::make_unique<ModelConstantBuffers>(device);
     m_shadowMap = std::make_unique<ShadowMap>(device, 2048, 2048);
     m_particleRenderer = std::make_unique<ParticleRenderer>();
     m_particleRenderer->Initialize(device);
@@ -47,34 +60,11 @@ void Graphics::Initialize(HWND hWnd)
     m_postProcess = std::make_unique<PostProcessManager>();
     m_postProcess->Initialize(device, m_gfxDevice.GetWidthU(), m_gfxDevice.GetHeightU());
 
-    // ModelRenderer に CbScene ポインタを渡す（BindAllGlobalConstantBuffers 用）
-    m_modelRenderer->SetSceneConstantBuffer(m_gfxDevice.GetSceneConstantBuffer());
+    // ModelConstantBuffers に CbScene ポインタを渡す（BindAllGlobalConstantBuffers 用）
+    m_modelConstants->SetSceneConstantBuffer(m_gfxDevice.GetSceneConstantBuffer());
 
     // ---- Phase 3: シェーダー登録 ----
     auto& reg = ShaderRegistry::Instance();
-
-    //reg.RegisterShader<ErrorShader>("Error"_hash);  
-
-    //reg.RegisterMaterialShader("PBR"_hash,
-    //    "Assets/Shader/PBR_VS.cso", L"Shader/Material/PBR/PBR_VS.hlsl",
-    //    "Assets/Shader/PBR_PS.cso", L"Shader/Material/PBR/PBR_PS.hlsl");
-    //reg.RegisterMaterialShader("Phong"_hash,
-    //    "Assets/Shader/PhongVS.cso", L"Shader/Material/Phong/PhongVS.hlsl",
-    //    "Assets/Shader/PhongPS.cso", L"Shader/Material/Phong/PhongPS.hlsl");
-    //reg.RegisterMaterialShader("Lambert"_hash,
-    //    "Assets/Shader/LambertVS.cso", L"Shader/Material/Lambert/LambertVS.hlsl",
-    //    "Assets/Shader/LambertPS.cso", L"Shader/Material/Lambert/LambertPS.hlsl");
-    //reg.RegisterMaterialShader("Basic"_hash,
-    //    "Assets/Shader/BasicVS.cso", L"Shader/Material/Basic/BasicVS.hlsl",
-    //    "Assets/Shader/BasicPS.cso", L"Shader/Material/Basic/BasicPS.hlsl");
-    //reg.RegisterMaterialShader("Toon"_hash,
-    //    "Assets/Shader/ToonVS.cso", L"Shader/Material/Toon/ToonVS.hlsl",
-    //    "Assets/Shader/ToonPS.cso", L"Shader/Material/Toon/ToonPS.hlsl");
-    //reg.RegisterShader<OutlineShader>("Outline"_hash);
-    //reg.RegisterShader<ShadowMapShader>("ShadowMap"_hash);
-
-    //// Graphics.cpp の Phase 3 に追加
-    //reg.RegisterShader<ParticleShader>("Particle"_hash);
 
     // マテリアルは Assets/Shader/shaders.json に1行足すだけ（C++・再ビルド不要）
     ShaderManifest::LoadAndRegister("Assets/Shader/shaders.json",
@@ -92,7 +82,7 @@ void Graphics::SetupRenderPipeline()
     m_renderServices.renderState = m_renderState.get();
     m_renderServices.resources = &ResourceManager::Instance();
     m_renderServices.shaders = &ShaderRegistry::Instance();
-    m_renderServices.modelRenderer = m_modelRenderer.get();
+    m_renderServices.modelConstants = m_modelConstants.get();
     m_renderServices.primitiveRenderer = m_primitiveRenderer.get();
     m_renderServices.shapeRenderer = m_shapeRenderer.get();
     m_renderServices.particleRenderer = m_particleRenderer.get();
@@ -102,17 +92,39 @@ void Graphics::SetupRenderPipeline()
     m_renderServices.postProcess = m_postProcess.get();
     m_renderServices.screenWidth = m_gfxDevice.GetWidthU();
     m_renderServices.screenHeight = m_gfxDevice.GetHeightU();
+    m_renderServices.tracyContext = m_gfxDevice.GetTracyContext();
 
-    // (I) RenderQueue に ShaderRegistry を注入（ホットパス singleton ゼロ）
+    // RenderQueue にも ShaderRegistry を注入し、ソート処理から singleton 参照を無くす
     RenderQueue::Instance().Initialize(m_renderServices.shaders);
 
     // パイプライン初期化（AddPass の前に必ず呼ぶ）
     m_pipeline.Initialize(m_renderServices);
 
     // レンダーパスの構築
-	m_pipeline.BuildDefaultPipeline();
-   
+    BuildDefaultRenderPasses();
+
     OutputDebugStringA("[Graphics] RenderPipeline initialized.\n");
+}
+
+// ============================================================
+//  BuildDefaultRenderPasses
+//  既定の 3D シーン用パス構成。登録順がそのまま実行順になる。
+//  TODO: ローディング画面など軽量な構成が要るシーン向けに、
+//        別の Build*RenderPasses を用意して切り替えられるようにする。
+// ============================================================
+void Graphics::BuildDefaultRenderPasses()
+{
+    m_pipeline.AddPass<SetupPass>();          //  1. HDR バッファのクリアとバインド
+    m_pipeline.AddPass<ShadowPass>();         //  2. シャドウマップ生成
+    m_pipeline.AddPass<NormalPrepass>();      //  3. Z(深度)+法線プリパス：不透明の深度を先に確定
+    m_pipeline.AddPass<OpaquePass>();         //  4. 不透明ジオメトリ（深度確定済 → early-Z が効く）
+    m_pipeline.AddPass<SkyboxPass>();         //  5. スカイボックス
+    m_pipeline.AddPass<SceneColorGrabPass>(); //  6. 屈折用のシーンカラーグラブ
+    m_pipeline.AddPass<TransparentPass>();    //  7. 半透明（距離ソート）
+    m_pipeline.AddPass<ParticlePass>();       //  8. パーティクル
+    m_pipeline.AddPass<TrailPass>();          //  9. 武器トレイル。Bloom に拾わせるため PP より前
+    m_pipeline.AddPass<PrimitivePass>();      // 10. デバッグプリミティブ
+    m_pipeline.AddPass<PostProcessPass>();    // 11. ポストプロセス・最終出力
 }
 
 // ============================================================
@@ -185,7 +197,7 @@ void Graphics::Update()
 }
 
 // ============================================================
-//  Render（毎フレーム） ← 旧 ModelRenderer::Render
+//  Render（毎フレーム）
 // ============================================================
 void Graphics::Render(const RenderFrameContext& ctx)
 {
@@ -266,7 +278,7 @@ void Graphics::Shutdown()
     m_shadowMap.reset();
     m_shapeRenderer.reset();
     m_primitiveRenderer.reset();
-    m_modelRenderer.reset();
+    m_modelConstants.reset();
     m_renderState.reset();
 
     // D3D11 RHI 層を最後に解放

@@ -29,7 +29,6 @@ public:
         m_undoStack.push_back(std::move(cmd));
         m_redoStack.clear(); // 新しい操作をしたら未来は消える
 
-        // 🔍 【足跡 4】スタックに積まれたことを確認
         CCL_LOG_INFO(LogCategory::Editor, "[CommandHistory] Command Executed. UndoStack Size: %zu", m_undoStack.size());
     }
 
@@ -44,7 +43,6 @@ public:
         cmd->Undo();
         m_redoStack.push_back(std::move(cmd));
 
-        // 🔍 【足跡 5】Undoの成功を確認
         CCL_LOG_SUCCESS(LogCategory::Editor, "[CommandHistory] UNDO Performed. Remaining Undo: %zu, Redo: %zu", m_undoStack.size(), m_redoStack.size());
     }
 
@@ -60,7 +58,6 @@ public:
         cmd->Execute();
         m_undoStack.push_back(std::move(cmd));
 
-        // 🔍 【足跡 6】Redoの成功を確認
         CCL_LOG_SUCCESS(LogCategory::Editor, "[CommandHistory] REDO Performed. Remaining Undo: %zu, Redo: %zu", m_undoStack.size(), m_redoStack.size());
     }
 

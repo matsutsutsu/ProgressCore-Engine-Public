@@ -9,8 +9,9 @@
 using namespace CCL::ECS;
 using namespace DirectX;
 
-/// @brief ローカルのprevPosition/positionをalphaで補間し、ローカル行列を合成する。
-/// @note 静的物体は補間不要のため、現在のローカル値をそのまま使う。
+// ローカルのprevPosition/positionをalphaで補間し、ローカル行列を合成する。
+//
+// 静的物体は補間不要のため、現在のローカル値をそのまま使う。
 static inline XMMATRIX ComposeLocalRender(const TransformComponent &t, float alpha)
 {
     if (t.isStatic) {

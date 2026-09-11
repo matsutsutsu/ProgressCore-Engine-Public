@@ -1,0 +1,41 @@
+{
+    "_comment": [
+        "画面右上の操作説明。どのアクションを・どんな名前で出すかだけを持つ。",
+        "Action  : InputConfig.json の割り当てからアイコンを導出する（リバインドに追従）。",
+        "Icon    : 割り当てに依らない固定アイコン。Move / Camera。",
+        "          軸は D キー・A キーと個別に割り当てられているため導出だと1方向しか出せず、",
+        "          「4方向に動ける」が伝わればよいので合成アイコンを固定で使う。",
+        "Label   : ASCII のみ。UIのフォントアトラスが ASCII 範囲しか焼いていないため",
+        "          （TextRenderer.cpp の kFirst=32）、日本語を書いても表示されない。"
+    ],
+    "Prompts": [
+        {
+            "Icon": "Move",
+            "Label": "MOVE"
+        },
+        {
+            "Icon": "Camera",
+            "Label": "CAMERA"
+        },
+        {
+            "Action": "Attack",
+            "Label": "ATTACK"
+        },
+        {
+            "Action": "Cleave",
+            "Label": "CLEAVE"
+        },
+        {
+            "Action": "Dash",
+            "Label": "DODGE"
+        },
+        {
+            "Action": "Jump",
+            "Label": "JUMP"
+        },
+        {
+            "Action": "LockOn",
+            "Label": "LOCK ON"
+        }
+    ]
+}

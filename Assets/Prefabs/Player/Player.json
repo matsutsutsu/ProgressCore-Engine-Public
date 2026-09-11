@@ -12,14 +12,14 @@
                 },
                 "Character Movement": {
                     "currentVelocity": [
-                        1.8810491561889648,
+                        23.588422775268555,
                         0.0,
-                        -26.327669143676758
+                        -11.84360122680664
                     ],
                     "desiredVelocity": [
-                        0.07126595079898834,
+                        0.8936775326728821,
                         0.0,
-                        -0.9974573850631714
+                        -0.44870996475219727
                     ],
                     "isRootMotionActive": true,
                     "jumpImpulse": false,
@@ -56,12 +56,12 @@
                     "approachPlayerScale": 1.0,
                     "approachSpeed": 60.0,
                     "approachStopRange": 4.0,
-                    "currentTimer": -0.006666665896773338,
-                    "dashCooldown": 0.1599999964237213,
+                    "currentTimer": -0.003333514556288719,
+                    "dashCooldown": 0.47999998927116394,
                     "dashDirection": [
-                        0.39009982347488403,
+                        0.9875395894050598,
                         0.0,
-                        -0.9207726120948792
+                        0.15737098455429077
                     ],
                     "dashDuration": 0.1599999964237213,
                     "dashSpeed": 114.0,
@@ -108,16 +108,7 @@
                     "walkSpeed": 43.599998474121094
                 },
                 "Just Evade Component": {
-                    "chainCount": 0,
-                    "chainSpeedMax": 0.4000000059604645,
-                    "chainSpeedPerLevel": 0.07999999821186066,
-                    "idleBreakTime": 4.0,
-                    "isJustSuccess": false,
-                    "killRadiusBase": 3.0,
-                    "killRadiusPerLevel": 2.0,
-                    "maxChain": 5,
-                    "windowScaleMin": 0.5,
-                    "windowScalePerLevel": 0.10000000149011612
+                    "isJustSuccess": false
                 },
                 "Knockback": {
                     "duration": 0.18000000715255737,
@@ -143,16 +134,10 @@
                     "airborneGraceTime": 0.47999998927116394,
                     "attackFaceMaxDistance": 15.0,
                     "bankingMultiplier": 0.5,
-                    "currentJumpCount": 0,
-                    "currentRoll": 2.802596928649634e-45,
-                    "currentYaw": -78.61114501953125,
-                    "isAirborne": false,
-                    "isRunning": false,
                     "maxBankingAngle": 30.0,
                     "maxJumps": 2,
                     "runIdleReleaseTime": 0.4000000059604645,
                     "runSpeed": 65.5,
-                    "timeSinceGrounded": 0.0,
                     "turnSpeed": 10.0
                 },
                 "Player Input": {
@@ -175,15 +160,15 @@
                     "isStatic": false,
                     "parent": 5,
                     "position": [
-                        -7.267144680023193,
-                        -0.25490307807922363,
-                        -75.06671142578125
+                        32.49012756347656,
+                        0.013852653093636036,
+                        -44.84500503540039
                     ],
                     "rotation": [
-                        -1.401298464324817e-45,
-                        -0.9993641376495361,
-                        0.0,
-                        -0.03565564751625061
+                        -2.610712552657774e-19,
+                        0.8510904908180237,
+                        -1.6104913135783934e-19,
+                        0.525019109249115
                     ],
                     "scale": [
                         3.5,
@@ -253,6 +238,7 @@
                     "minDistance": 1.0,
                     "rimPower": 0.0,
                     "shape": 2,
+                    "texturePath": "",
                     "thickness": 0.8999999761581421,
                     "tipOffset": [
                         0.0,
@@ -262,6 +248,14 @@
                     "tubeSides": 4,
                     "useInterpolation": false,
                     "useZigZag": false,
+                    "uvScroll": [
+                        0.0,
+                        0.0
+                    ],
+                    "uvTiling": [
+                        1.0,
+                        1.0
+                    ],
                     "width": 0.3400000035762787,
                     "widthCurvePower": 0.10000000149011612,
                     "zigZagAmplitude": 0.5,
@@ -330,6 +324,7 @@
                     "minDistance": 1.0,
                     "rimPower": 0.0,
                     "shape": 2,
+                    "texturePath": "",
                     "thickness": 0.8999999761581421,
                     "tipOffset": [
                         0.0,
@@ -339,6 +334,14 @@
                     "tubeSides": 4,
                     "useInterpolation": false,
                     "useZigZag": false,
+                    "uvScroll": [
+                        0.0,
+                        0.0
+                    ],
+                    "uvTiling": [
+                        1.0,
+                        1.0
+                    ],
                     "width": 0.3400000035762787,
                     "widthCurvePower": 0.10000000149011612,
                     "zigZagAmplitude": 0.5,
@@ -495,7 +498,7 @@
                         0.0
                     ],
                     "paths": [
-                        "C:\\Users\\2240209\\Desktop\\ProgressCore-Engine\\Assets\\Textures\\Materials\\SwordMaterial.json"
+                        "Assets/Materials/SwordMaterial.json"
                     ]
                 },
                 "Model": {
@@ -547,7 +550,7 @@
                         0.0,
                         1.0
                     ],
-                    "distortion": 0.0,
+                    "distortion": 5.0,
                     "distortionChroma": 0.0,
                     "distortionNoise": 0.0,
                     "emitting": false,
@@ -555,6 +558,7 @@
                     "minDistance": 0.019999999552965164,
                     "rimPower": 0.699999988079071,
                     "shape": 0,
+                    "texturePath": "Assets/Textures/VFX/Trail/T_Trail_Sword_02.png",
                     "thickness": 0.0,
                     "tipOffset": [
                         0.0,
@@ -564,6 +568,14 @@
                     "tubeSides": 6,
                     "useInterpolation": true,
                     "useZigZag": false,
+                    "uvScroll": [
+                        0.0,
+                        0.0
+                    ],
+                    "uvTiling": [
+                        1.0,
+                        1.0
+                    ],
                     "width": 1.0,
                     "widthCurvePower": 0.10000000149011612,
                     "zigZagAmplitude": 0.5,

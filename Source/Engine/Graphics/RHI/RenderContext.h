@@ -2,6 +2,9 @@
 #include <d3d11.h>
 #include <cstdint>
 
+// TracyD3D11Ctx（TRACY_ENABLE 無効構成では void* になる移植用エイリアス）
+#include "tracy/TracyD3D11.hpp"
+
 // ============================================================================
 //  前方宣言
 // ============================================================================
@@ -11,7 +14,7 @@ class RenderState;
 class Camera;
 class LightManager;
 class ShadowMap;
-class ModelRenderer;
+class ModelConstantBuffers;
 class ParticleRenderer;
 class PrimitiveRenderer;
 class ShapeRenderer;
@@ -32,15 +35,20 @@ struct RenderServices
 {
     // ---- RHI / アセット ----
     ID3D11Device* device = nullptr;
-    /// @brief CbScene 定数バッファ (b8)。Graphics が所有し lifetime を管理する。
+    // CbScene 定数バッファ (b8)。Graphics が所有し lifetime を管理する。
     ID3D11Buffer* sceneConstantBuffer = nullptr;
 
     ResourceManager* resources = nullptr;
     ShaderRegistry* shaders = nullptr;
     const RenderState* renderState = nullptr;
 
+    // GPU 計測用の Tracy コンテキスト（GraphicsDevice が所有）。
+    // これを Services に載せることで、RenderPipeline が Graphics シングルトンを
+    // 直接叩かずに済む＝コア層が上位のコーディネータを知らない状態を保てる。
+    TracyD3D11Ctx tracyContext = nullptr;
+
     // ---- 描画サブシステム（常駐レンダラ） ----
-    ModelRenderer* modelRenderer = nullptr;
+    ModelConstantBuffers* modelConstants = nullptr;
     ParticleRenderer* particleRenderer = nullptr;
     PrimitiveRenderer* primitiveRenderer = nullptr;
     ShapeRenderer* shapeRenderer = nullptr;
@@ -76,14 +84,12 @@ struct RenderFrameContext
     ID3D11ShaderResourceView* sceneDepthSRV = nullptr;
     ID3D11ShaderResourceView* sceneNormalSRV = nullptr;
 
-    /// @brief 現在のスカイボックス背景 SRV（SkyboxComponent 由来 or 既定）。
-    ///        EnvironmentSystem が解決して Graphics に預け、MakeFrameContext がここへ渡す。
-    ///        SkyboxPass はこれを使って描画する（null なら SkyboxPass 側の既定にフォールバック）。
+    // 現在のスカイボックス背景 SRV（SkyboxComponent 由来 or 既定）。
+    // EnvironmentSystem が解決して Graphics に預け、MakeFrameContext がここへ渡す。
+    // SkyboxPass はこれを使って描画する（null なら SkyboxPass 側の既定にフォールバック）。
     ID3D11ShaderResourceView* skyboxSRV = nullptr;
 
-    // ---- メタ情報 ----
-    float    deltaTime = 0.0f;
-    uint64_t frameIndex = 0;
+    // ---- 描画先のサイズ（targetRTV の実寸） ----
     uint32_t viewportW = 0;
     uint32_t viewportH = 0;
 };

@@ -32,8 +32,10 @@ class CameraBrainSystem
     void Update(float dt) override;
 
   private:
-    /// @brief 採用可能な vCam のうち、最も優先度の高いものを選ぶ。
-    /// @param outID   選ばれた vCam のエンティティID（見つからなければ InvalidEntityID）
-    /// @return        選ばれた vCam。見つからなければ nullptr。
+    /**
+     * @brief 採用可能な vCam のうち、最も優先度の高いものを選ぶ。
+     * @param outID   選ばれた vCam のエンティティID（見つからなければ InvalidEntityID）
+     * @return        選ばれた vCam。見つからなければ nullptr。
+     */
     const VirtualCamera *SelectHighestPriorityCamera(CCL::ECS::EntityID &outID);
 };

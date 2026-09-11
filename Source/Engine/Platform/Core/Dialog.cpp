@@ -18,7 +18,7 @@ namespace
 {
     //--- 文字コード変換 ---------------------------------------------------
 
-    /// UTF-8 -> UTF-16
+    // UTF-8 -> UTF-16
     std::wstring Utf8ToWide(std::string_view utf8)
     {
         if (utf8.empty()) return {};
@@ -31,7 +31,7 @@ namespace
         return out;
     }
 
-    /// UTF-16 -> UTF-8
+    // UTF-16 -> UTF-8
     std::string WideToUtf8(std::wstring_view w)
     {
         if (w.empty()) return {};
@@ -46,10 +46,10 @@ namespace
 
     //--- グローバル状態 ---------------------------------------------------
 
-    /// 履歴: contextId -> 最後に開いたディレクトリ
+    // 履歴: contextId -> 最後に開いたディレクトリ
     std::unordered_map<std::string, std::filesystem::path> s_history;
 
-    /// プリセット: contextId -> 設定
+    // プリセット: contextId -> 設定
     std::unordered_map<std::string, FileDialogPreset> s_presets;
 
     //--- フィルタ文字列構築 ----------------------------------------------
@@ -86,7 +86,7 @@ namespace
 
     //--- ヘルパー --------------------------------------------------------
 
-    /// 履歴キー解決 : contextId > title > "Default"
+    // 履歴キー解決 : contextId > title > "Default"
     std::string ResolveContextId(const FileDialogParams& params)
     {
         if (!params.contextId.empty()) return params.contextId;
@@ -131,7 +131,7 @@ namespace
         return {};
     }
 
-    /// 履歴に保存する (選択されたパスからディレクトリ部分のみ)
+    // 履歴に保存する (選択されたパスからディレクトリ部分のみ)
     void StoreHistory(const std::string& contextId, const std::filesystem::path& selected)
     {
         if (selected.empty()) return;
@@ -139,7 +139,7 @@ namespace
         s_history[contextId] = dir;
     }
 
-    /// パス区切りを Windows 用 (バックスラッシュ) に正規化
+    // パス区切りを Windows 用 (バックスラッシュ) に正規化
     std::wstring NormalizeSeparatorW(std::wstring s)
     {
         for (auto& c : s) if (c == L'/') c = L'\\';

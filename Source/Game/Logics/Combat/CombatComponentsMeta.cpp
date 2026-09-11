@@ -1,5 +1,4 @@
-/// @file  CombatComponentsMeta.cpp
-/// @brief 戦闘関連コンポーネントのシリアライズ/インスペクタ定義。
+// 戦闘関連コンポーネントのシリアライズ/インスペクタ定義。
 
 #include "Engine/ECS/Core/CCL_World.h"
 #include <algorithm> // for std::clamp

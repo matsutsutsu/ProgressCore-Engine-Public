@@ -1,5 +1,4 @@
-/// @file  CameraDollySystem.cpp
-/// @brief CameraDollySystemの実装。弧長パラメータ化を用いた等速移動レールカメラ。
+// CameraDollySystemの実装。弧長パラメータ化を用いた等速移動レールカメラ。
 
 #include "Engine/Camera/Systems/CameraDollySystem.h"
 #include "Engine/ECS/Core/CCL_World.h"

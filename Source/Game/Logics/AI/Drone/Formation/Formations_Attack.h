@@ -1,71 +1,43 @@
-/// @file  Formations_Attack.h
-/// @brief 攻撃系の陣形クラス（予備動作フェーズで「形」を作り、fireDirection を仕込む）。
-///        Formations_Basic.h（周回・待機系）と対に、攻撃技をここへ1クラスずつ追加する。
-///
-/// 攻撃陣形の責務:
-///   - 予備動作フェーズ（currentState != FireCharge）中に targetPosition で「形」を作る。
-///     プレイヤーはこの形から回避方向を読み取る。これがゲームの中心的な体験にあたる。
-///   - 同時に fireDirection（突撃方向）を仕込んでおく。FireCharge へ移った瞬間、
-///     DroneMovementSystem が fireDirection に沿って「タメ→リリース」を行う。
-///   - FireCharge 中は座標・方向を凍結し、コミットした直進を保証する
-///     （ホーミングさせない＝ジャスト回避で抜けられる）。
+// 攻撃系の陣形クラス。Formations_Basic.h（周回・待機系）と対になる。
+//
+// 責務は3つ。予備動作の間に targetPosition で「形」を作る（プレイヤーはこの形から
+// 回避方向を読む）、同時に fireDirection を仕込む、撃った後は狙いを凍結する
+// （ホーミングさせない＝ジャスト回避で抜けられる）。
 #pragma once
 #include "Game/Logics/AI/Drone/Formation/IFormation.h"
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
+#include "Game/Logics/AI/Drone/Formation/Formations_Basic.h" // 弾幕が頭上リングを借りる
 #include <cmath>
 #include <algorithm>
 
 namespace CCL::AI::Formation::Attack
 {
-// ====================================================================
-// 縦割り（GuillotineSlam）
-//   ボス頭上に「縦の刃（壁）」を立て、下端を回転軸に、橋が倒れるように
-//   プレイヤー側へ振り下ろす。要求回避＝横回避。
-//
-// 動きの核心＝ヒンジ回転（剛体）:
-//   各機の "刃ローカル座標" は固定（下端からの高さ height と、幅方向 side）。
-//   刃全体を下端の軸まわりに角度 θ 回転させる。
-//     θ=0   : 直立（up 方向）        ← 予備動作（読ませる形）
-//     θ=90° : 前方へ水平（dir 方向）  ← 倒れきった状態
-//   回転後の高さベクトル = up*height*cos(θ) + dir*height*sin(θ)
-//   → 下端(height=0)は θ に依らず不動＝軸。上段ほど大きく前へ倒れる。
-//
-//   θ は attackProgress(0→1) から求める。倒れは重力的に加速させたいので easeIn。
-//   移動は ChargeMode::RigidFollow で「targetPosition を剛体追従」させる
-//   （fireDirection 直進ではなく、壁が形を保ったまま回る）。
-// ====================================================================
+// 縦割り（GuillotineSlam）── 要求回避＝横回避。
+// ボス前方に縦の刃を立て、下端を軸に橋が倒れるように振り下ろす。
+// θ=0 が直立（読ませる形）、θ=90° で前方へ水平。下端は θ に依らず不動＝回転軸。
 struct GuillotineSlamFormation : public IFormation
 {
     void Calculate(DroneComponent &drone, const FormationContext &ctx) override
     {
         using namespace DirectX::SimpleMath;
 
-        // この攻撃は「陣形自体が動く」ので、突撃中も targetPosition を更新し続ける。
-        // 移動側にはそれを剛体追従させる（直進ではなく回転）。
+        // 陣形自体が動く技なので、突撃中も targetPosition を更新して剛体追従させる。
         drone.chargeMode = ChargeMode::RigidFollow;
 
-        // --- ボス→プレイヤーの水平方向と、それに直交する「刃の幅」方向 ---
-        Vector3 dir = ctx.playerPos - ctx.bossPos;
-        dir.y = 0.0f;
-        if (dir.LengthSquared() < 0.001f) dir = Vector3::UnitZ;
-        dir.Normalize();
+        // playerPos を直接見ないこと。AimDirection() は「撃つと決めた瞬間」の向きを
+        // 返すので、倒れている最中にプレイヤーが横へ動いても刃は追わない。
+        const Vector3 dir = ctx.AimDirection();
 
         Vector3 right = Vector3::UnitY.Cross(dir);
         if (right.LengthSquared() < 0.001f) right = Vector3::UnitX;
         right.Normalize();
 
-        // --- localIndex を (col, row) の格子へ割り付けて「壁」を作る ---
+        // localIndex を (col, row) の格子へ割り付けて壁を作る。
         const int total = (drone.totalDrones > 0) ? drone.totalDrones : 1;
         const int cols  = (std::max)(1, static_cast<int>(std::floor(std::sqrt(static_cast<float>(total)))));
         const int col   = drone.localIndex % cols;
         const int row   = drone.localIndex / cols;
 
-        const float spacing      = 2.0f; // 刃の目の細かさ
-        const float hingeHeight  = 2.0f; // 回転軸（下端）の高さ
-        const float hingeForward = 5.0f; // ボスからプレイヤー側へ離す距離（押し出し回避＋間合い）
-
-        // --- 攻撃の進行度 θ を更新する ---
-        //   wantsAttack 中だけ進め、非攻撃時は 0 に戻して直立を保つ。
         if (drone.wantsAttack)
             drone.attackProgress = (std::min)(1.0f, drone.attackProgress + ctx.dt * kSwingSpeed);
         else
@@ -76,22 +48,18 @@ struct GuillotineSlamFormation : public IFormation
         const float c = std::cos(theta);
         const float s = std::sin(theta);
 
-        // --- 刃ローカル：下端からの高さ height と、幅方向オフセット side ---
-        const float height = row * spacing;                       // 下端(row0)=0＝軸
-        const float side   = (col - (cols - 1) * 0.5f) * spacing; // 幅方向は中央揃え
+        const float height = row * kRowSpacing;                       // 下端(row0)=0＝軸
+        const float side   = (col - (cols - 1) * 0.5f) * kColSpacing; // 幅方向は中央揃え
 
-        // 回転軸（下端の中心）：ボス頭上のやや低い位置
-        const Vector3 hingeBase = ctx.bossPos + Vector3::UnitY * hingeHeight;
+        // 回転軸はボスの真上ではなくプレイヤー側へ出す。真上に置くと壁がボスを跨いで
+        // 生え、予備動作の形がボスと重なって読めない。
+        const Vector3 hingeBase =
+            ctx.bossPos + Vector3::UnitY * kHingeHeight + dir * kHingeForward;
 
         // 高さベクトルを下端軸まわりに θ 回転（up → dir へ倒す）
         const Vector3 rotatedUp = Vector3::UnitY * (height * c) + dir * (height * s);
 
         drone.targetPosition = hingeBase + right * side + rotatedUp;
-
-        // 地面へのめり込み防止：水平を越えて振り下ろすと刃先が地面下へ潜るため、
-        // ボス足元(地面)から kGroundClearance より下へは行かせない（刃が地面で止まる）。
-        const float floorY = ctx.bossPos.y + kGroundClearance;
-        if (drone.targetPosition.y < floorY) drone.targetPosition.y = floorY;
 
         // 向き：倒れていく接線方向（-up*sin + dir*cos）を向かせる
         Vector3 look = Vector3::UnitY * (-s) + dir * c;
@@ -101,30 +69,32 @@ struct GuillotineSlamFormation : public IFormation
         drone.targetLookDirection = look;
     }
 
-    // --- 調整値（グレーボックスで実測して詰める）---
-    static constexpr float kSwingSpeed = 2.5f;               // attackProgress の増加速度（1/秒）→ 倒れ切りまで ≈0.4s
-    static constexpr float kThetaMax   = 1.9f;               // 最大回転角（rad）≈109°（水平を少し越えて叩きつける）
-    static constexpr float kGroundClearance = 0.5f;          // 地面クランプ高さ（ドローン半径ぶん浮かせて埋没を防ぐ）
+    static constexpr float kSwingSpeed = 2.5f; // 倒れ切りまで ≈0.4s
+    static constexpr float kThetaMax   = 1.9f; // ≈109°。水平を少し越えて叩きつける
+
+    // 機体どうしの隙間。格子は sqrt(機数) 辺の正方形なので、100機なら
+    // 幅・高さとも 9 × 間隔 まで広がる（5.0 なら 45m 四方）。
+    // 上げるほど刃が粗く大きくなり、下げるほど密で小さくなる。
+    static constexpr float kColSpacing  = 2.5f; // 幅方向（横に並ぶ間隔）
+    static constexpr float kRowSpacing  = 2.5f; // 高さ方向（縦に積む間隔）
+
+    // 回転軸（下端）の高さ [m]。刃はこの高さを軸に倒れる。
+    static constexpr float kHingeHeight = 2.0f;
+
+    // 回転軸をボスからプレイヤー側へ出す距離 [m]。真上に置くと壁がボスを跨いで
+    // 生え、予備動作の形がボスと重なって読めない。
+    static constexpr float kHingeForward = 5.0f;
 };
 
-// ====================================================================
-// 挟み込み1段（ClapSlam）
-//   ボスの「前方」に左右2本の腕（低い壁）を張り出し、真横に開いた状態から
-//   前方中央（プレイヤー方向の軸）へ振り込んでバチンと挟む。壁は低いので
-//   ジャンプで越えて避ける。要求回避＝ジャンプ。
+// 挟み込み1段（ClapSlam）── 要求回避＝ジャンプ。
+// ボス前方へ左右2本の腕（低い壁）を張り出し、真横から前方中央へ振り込んで挟む。
+// 配置は「回転させた腕方向 × 距離」で出す。奥行きをボス→プレイヤー軸に沿って
+// 伸ばすと、機数が増えたとき壁が前後に長い回廊になってしまう。
 //
-// 設計変更（前作ソースを参照して調整）:
-//   旧実装は壁の奥行きをボス→プレイヤー軸(dir)に沿って伸ばしていたため、
-//   機数が増えると壁がボスの「前後」に長い回廊になり、ボスを取り巻いて見えた。
-//   本実装は前作方式に合わせ、各機を「プレイヤー方向を軸に回転させた腕方向 armDir」
-//   × 距離 で配置する。腕は常にボスの前方に張り出し、角度を 横→中央 へ閉じる。
-//   前後には伸ばさない。
-//
-// 動きの核心＝左右の腕が前方中央へ振れて閉じる（剛体スライド）:
-//   localIndex 偶数＝右腕／奇数＝左腕。腕内の番号 k を (距離セグメント × 高さ) に割付。
-//   進行度 attackProgress(0→1) で腕の角度を kStartAngle(真横)→kEndAngle(前方中央) へ。
-//   ChargeMode::RigidFollow で targetPosition を剛体追従させる。
-// ====================================================================
+// 閉じ切りは角度ではなく横オフセットで作る。腕はボスを起点にした放射状の直線なので、
+// 角度を残したまま閉じると 2本の間隔が距離に比例して開き、先端ほど広いV字になる。
+// 角度を 0 まで戻して平行にし、そこへ一定の横幅を足せば、根元から先端まで同じ隙間で
+// 閉じる。
 struct ClapSlamFormation : public IFormation
 {
     void Calculate(DroneComponent &drone, const FormationContext &ctx) override
@@ -133,13 +103,9 @@ struct ClapSlamFormation : public IFormation
 
         drone.chargeMode = ChargeMode::RigidFollow; // 腕が形を保ったまま閉じる（剛体スライド）
 
-        // ボス→プレイヤーの水平方向＝挟み込みの中心軸。腕はこの線上へ閉じる。
-        Vector3 centerDir = ctx.playerPos - ctx.bossPos;
-        centerDir.y = 0.0f;
-        if (centerDir.LengthSquared() < 0.001f) centerDir = Vector3::UnitZ;
-        centerDir.Normalize();
+        const Vector3 centerDir = ctx.AimDirection();  // 腕はこの線上へ閉じる
 
-        // --- 左右どちらの腕か → 腕内番号 k を (距離セグメント × 高さ) へ割り付ける ---
+        // 左右どちらの腕か → 腕内番号 k を (距離セグメント × 高さ) へ割り付ける。
         const bool isRight = (drone.localIndex % 2 == 0);
         const int  k       = drone.localIndex / 2;
         const int  hRow    = k % kHeightRows;         // 高さ（低い壁＝ジャンプで越える）
@@ -148,7 +114,7 @@ struct ClapSlamFormation : public IFormation
         const float distance = kBaseDistance + seg  * kDistanceStep;
         const float height   = kBaseHeight   + hRow * kHeightSpacing;
 
-        // --- 進行度で腕の角度を「真横(±kStartAngle)→前方中央(±kEndAngle)」へ閉じる ---
+        // 腕の角度を「真横(±kStartAngle)→前方中央(0)」へ戻しながら閉じる。
         if (drone.wantsAttack)
             drone.attackProgress = (std::min)(1.0f, drone.attackProgress + ctx.dt * kClapSpeed);
         else
@@ -156,16 +122,24 @@ struct ClapSlamFormation : public IFormation
 
         const float eased = drone.attackProgress * drone.attackProgress; // easeIn（バチンと閉じる）
         const float sign  = isRight ? 1.0f : -1.0f;
-        const float angle = sign * (kStartAngle + (kEndAngle - kStartAngle) * eased);
 
-        // centerDir を Y 軸まわりに angle 回転＝この機の「腕方向」。常にボス前方に張り出す。
+        // 角度は 0 まで戻し切る。ここに端数を残すと、その角度 × 距離ぶん先端が開く。
+        const float angle = sign * kStartAngle * (1.0f - eased);
+
         const Quaternion swing  = Quaternion::CreateFromAxisAngle(Vector3::UnitY, angle);
-        const Vector3    armDir  = Vector3::Transform(centerDir, swing);
+        const Vector3    armDir = Vector3::Transform(centerDir, swing);
 
-        drone.targetPosition = ctx.bossPos + armDir * distance + Vector3::UnitY * height;
+        // 平行になった 2本を離しておく横幅。開き始めは 0（腕が真横を向いていて
+        // そもそも重ならない）で、閉じるにつれて効かせる。
+        Vector3 side = Vector3::UnitY.Cross(centerDir);
+        if (side.LengthSquared() < 0.001f) side = Vector3::UnitX;
+        side.Normalize();
 
-        // 向き：中心軸（相手方向）を向かせる＝内向き
-        Vector3 look = ctx.playerPos - drone.targetPosition;
+        drone.targetPosition = ctx.bossPos + armDir * distance
+                             + side * (sign * kEndHalfGap * eased)
+                             + Vector3::UnitY * height;
+
+        Vector3 look = ctx.playerPos - drone.targetPosition;  // 内向き
         look.y = 0.0f;
         if (look.LengthSquared() < 0.001f) look = centerDir;
         look.Normalize();
@@ -173,114 +147,150 @@ struct ClapSlamFormation : public IFormation
         drone.targetLookDirection = look;
     }
 
-    // --- 調整値（グレーボックスで実測して詰める）---
-    static constexpr float kClapSpeed     = 3.0f;   // 閉じ速度（1/秒）→ 閉じ切り ≈0.33s
+    static constexpr float kClapSpeed     = 3.0f;   // 閉じ切り ≈0.33s
     static constexpr int   kHeightRows    = 2;      // 低い壁（ジャンプで越えられる）
     static constexpr float kBaseDistance  = 3.0f;   // 最内の腕のボスからの距離
-    static constexpr float kDistanceStep  = 1.2f;   // 腕が前方へ伸びる間隔
+
+    // 腕に沿って並ぶ機体どうしの間隔 [m]。ここが機体間の実距離そのもの。
+    //
+    // 腕の長さ ＝ kBaseDistance ＋ (機数 ÷ 2 ÷ kHeightRows − 1) × kDistanceStep。
+    // 100機なら片腕25機ぶんなので 3.0 ＋ 24 × 1.8 ＝ 約46m。ステージ半径(≈48m)に
+    // 収まる上限がこのあたりで、これ以上広げると腕の先が場外へ出る。
+    static constexpr float kDistanceStep  = 1.8f;
+
     static constexpr float kBaseHeight    = 0.8f;   // 壁の下端（地面付近）
-    static constexpr float kHeightSpacing = 1.5f;   // 高さ段の間隔（低め）
+
+    // 高さ段の間隔 [m]。壁の天井は kBaseHeight ＋ (kHeightRows−1) × これ。
+    //   これはジャンプで越えられるかを直接決めるので、隙間を空ける目的では触らない。
+    static constexpr float kHeightSpacing = 1.5f;
     static constexpr float kStartAngle    = 1.5f;   // 開始角(rad)≈86°（ほぼ真横に開く）
-    static constexpr float kEndAngle      = 0.08f;  // 閉じ切り角(rad)≈5°（前方中央でほぼ接触）
+
+    // 閉じ切ったときの中心線から片側までの距離 [m]。2本の腕の隙間はこの2倍で、
+    // 距離によらず一定。0 にすると 2本が完全に重なって 1枚の壁になる。
+    static constexpr float kEndHalfGap    = 0.8f;
 };
 
-// ====================================================================
-// 弾幕（KamikazeSwarm）※初めての dashモード攻撃
-//   ボス頭上にドローンを集め、プレイヤーへ向かって「順番に」高速で撃ち出す。
-//   プレイヤーはジャスト回避で凌ぐ。要求回避＝ジャスト回避。
+// 弾幕（KamikazeSwarm）── 要求回避＝ジャスト回避。
+// 頭上の輪を回したまま1機ずつ中心へ降り、そこからプレイヤーへ高速で撃ち出す。
+//   輪の上で待つ → 自分の番の kGatherTime 秒前に中心へ寄る（これが予告）
+//   → fireDelay が 0 で発射（以降は直進）
 //
-// 縦割り／挟み込みとの違い＝移動モードが逆:
-//   これらは ChargeMode::Straight のまま＝各機が fireDirection へ独立に直進する
-//   「弾（fire-and-forget）」。DroneMovementSystem の「タメ→リリース」がそのまま弾になる。
-//
-// 「順番に」の作り方:
-//   forming 中に localIndex から fireDelay を割り振る（先頭ほど早く撃つ）。
-//   全機が同時に FireCharge へ入っても、ProcessFireCharge が fireDelay の間その場で
-//   待機させるため、結果として順次発射になる。
-//   fireDelay = (localIndex / total) * kFireWindow で、機数に依らず常に kFireWindow 秒で
-//   撃ち切る（1000機でも一定時間で発射）。
-// ====================================================================
+// 置き技（縦割り・挟み込み）と違い、発射の瞬間まで狙い続ける「1発ずつ今のあなたを
+// 狙う」技。撃ち出した後は直進するので避ける余地はそこで担保される。
 struct KamikazeSwarmFormation : public IFormation
 {
-    /// 撃ち出したら各機が独立して飛ぶ技なので、終了判断は個体に持たせる。
-    /// （飛び切った機から順に離脱→隊列へ戻る＝「帰投がバラバラ」になる）
+    // 撃ち出したら各機が独立して飛ぶので、終了判断は個体に持たせる（帰投がバラバラになる）。
     ChargeLifecycle GetLifecycle() const override { return ChargeLifecycle::Individual; }
+
+    // 中心へ集まる移動そのものが予告。足すと予告が二重になってどちらを読むか濁る。
+    bool UsesShiverTelegraph() const override { return false; }
 
     void Calculate(DroneComponent &drone, const FormationContext &ctx) override
     {
         using namespace DirectX::SimpleMath;
 
-        // 発射後は各機が独立して飛ぶので、撃ち出したら陣形は関与しない（凍結）。
-        //   ※ Returning（離脱中）はあえて凍結しない。帰る先の待機リングを更新し続け、
-        //     離脱が終わった機がそのまま隊列へ吸い込まれるようにするため。
-        if (drone.currentState == DroneState::FireCharge)
-            return;
+        // 陣形が手を引くのは「飛び出した後」だけ。順番待ちも中央でのタメもまだ撃って
+        // いないので狙いを更新し続ける（stateTimer を見落とすと着弾の 0.5 秒以上前の
+        // 座標を撃つことになり、歩いているだけで当たらなくなる）。
+        const bool launched = (drone.currentState == DroneState::FireCharge) &&
+                              (drone.fireDelay <= 0.0f) && (drone.stateTimer <= 0.0f);
+        if (launched) return;
 
-        drone.chargeMode = ChargeMode::Straight; // dashモード（fireDirection直進）
+        drone.chargeMode = ChargeMode::Straight;
 
-        Vector3 dir = ctx.playerPos - ctx.bossPos;
-        dir.y = 0.0f;
-        if (dir.LengthSquared() < 0.001f) dir = Vector3::UnitZ;
-        dir.Normalize();
+        const int total = (drone.totalDrones > 0) ? drone.totalDrones : 1;
 
-        // --- forming：ボス頭上に「弾の供給リング」を作って待機させる ---
-        const int   total = (drone.totalDrones > 0) ? drone.totalDrones : 1;
-        const float angle = (2.0f * 3.14159265f) * (static_cast<float>(drone.localIndex) / static_cast<float>(total));
-        const float ringR = 3.5f;
-        const float ringH = 7.0f; // ボス頭上
+        // 待機位置は頭上円陣と同じ輪。回転位相まで共有するので、BT が
+        // 頭上円陣 → 弾幕 と切り替えてもドローンは動かない。
+        const Vector3 slot = ctx.bossPos + Basic::HighRing::SlotOffset(
+                                               drone.localIndex, drone.totalDrones, ctx.time);
 
-        Vector3 pos = ctx.bossPos + Vector3::UnitY * ringH
-                    + Vector3(std::cos(angle) * ringR, 0.0f, std::sin(angle) * ringR);
-        drone.targetPosition = pos;
+        // 発射地点は輪の中心の少し下。
+        const Vector3 muzzle =
+            ctx.bossPos + Vector3::UnitY * (Basic::HighRing::kHeight - kGatherDrop);
 
-        // 発射方向：待機位置からプレイヤーへ（発射時にこの方向でロックされる）
-        Vector3 toPlayer = ctx.playerPos - pos;
-        if (toPlayer.LengthSquared() > 0.001f) toPlayer.Normalize();
-        else                                   toPlayer = dir;
-        drone.fireDirection       = toPlayer;
-        drone.targetLookDirection = toPlayer;
+        // 自分の番が近づくほど中心へ寄る。二乗で寄せるのは、序盤をほぼ動かさず
+        // 「直前にすっと吸い込まれる」形にするため（線形だといつ撃つのか読めない）。
+        float gather = 0.0f;
+        if (drone.currentState == DroneState::FireCharge && drone.fireDelay <= 0.0f)
+        {
+            // 中央でのタメ中は持ち場を発射地点のままにする。輪へ戻すと下の飛翔時間が
+            // 「輪から撃つ」前提になり、実際の発射地点とずれた先読みになる。
+            gather = 1.0f;
+        }
+        else if (drone.fireDelay > 0.0f && drone.fireDelay < kGatherTime)
+        {
+            const float t = 1.0f - (drone.fireDelay / kGatherTime);
+            gather        = t * t;
+        }
 
-        // 発射順（先頭ほど早い）。機数に依らず kFireWindow 秒で撃ち切る。
-        drone.fireDelay = (static_cast<float>(drone.localIndex) / static_cast<float>(total)) * kFireWindow;
+        drone.targetPosition = Vector3::Lerp(slot, muzzle, gather);
+
+        // 偏差射撃。今いる場所を撃つと飛翔時間ぶん必ず後ろへ外れるので、
+        // 狙う先 ＝ 今の位置 ＋ 速度 × (タメの残り ＋ 距離÷射出速度) を解く。
+        // 距離が狙う先に依存する循環なので、1回だけ計算し直して精度を上げる。
+        const float launchSpeed = drone.moveSpeed * kDroneChargeSpeedScale;
+        const float windupLeft  = (drone.stateTimer > 0.0f) ? drone.stateTimer : 0.0f;
+
+        // 足元(playerPos)ではなく体の中心を狙う（足元は地面なので身長ぶん下に刺さる）。
+        Vector3 aimPoint = ctx.playerCenter;
+        if (launchSpeed > 0.001f)
+        {
+            for (int i = 0; i < 2; ++i)
+            {
+                const float flight =
+                    (aimPoint - drone.targetPosition).Length() / launchSpeed;
+                aimPoint = ctx.playerCenter +
+                           ctx.playerVelocity * ((windupLeft + flight) * kLeadFactor);
+            }
+        }
+
+        Vector3 toAim = aimPoint - drone.targetPosition;
+        if (toAim.LengthSquared() > 0.001f) toAim.Normalize();
+        else                                toAim = Vector3::UnitZ;
+
+        drone.fireDirection       = toAim;
+        drone.targetLookDirection = toAim;
+
+        // 発射順（先頭ほど早い）。撃つ合図が出た後に書き直すと順番がリセットされ続けて
+        // 永久に撃てなくなるので、まだ攻撃に入っていない間だけ割り振る。
+        if (drone.currentState != DroneState::FireCharge)
+        {
+            drone.fireDelay =
+                (static_cast<float>(drone.localIndex) / static_cast<float>(total)) * kFireWindow;
+        }
     }
 
-    // --- 調整値（グレーボックスで実測して詰める）---
-    static constexpr float kFireWindow = 1.8f; // 全機を撃ち切るのにかける秒数（順次発射の総時間）
+    static constexpr float kFireWindow = 8.0f; // 全機を撃ち切る秒数。伸ばすほど発射レートが下がる
+    static constexpr float kGatherTime = 0.6f; // 発射の何秒前から中心へ寄り始めるか
+    static constexpr float kGatherDrop = 6.0f; // 輪の高さから何m下を発射地点にするか
+
+    // 先読みの強さ。0=今の位置を撃つ / 1=完全な迎撃。狙いは発射の瞬間に凍るので、
+    // 「歩くだけで避けられる」を潰しつつ「避ければ避けられる」を残す値にする。
+    static constexpr float kLeadFactor = 0.5f;
 };
 
-// ====================================================================
-// 挟み込み2段（MegaClapSlam）※「形を読む」を最も強く要求する技
-//   挟み込み1段の上下2段版。上下どちらの段が先に閉じるかを、予備動作の
-//   「震え(shiver)」で読ませる。プレイヤーはジャンプのタイミングを読み替える:
-//     下段が先 → 下段をジャンプで避け、着地してから上段をやり過ごす
-//     上段が先 → 接地のままやり過ごし、後から来る下段をジャンプ
-//
-//   実装＝ClapSlam(左右の壁が寄る follow-target)の2段版:
-//     4グループ =(下段/上段)×(左/右)。attackProgress を2フェーズに割り、
-//     先段は 0.0→0.5、後段は 0.5→1.0 で gap を閉じる。
-//     「先に閉じる段」だけ forming 中に左右へ震える＝どちらが先かの tell。
-//   上下で先攻が違う2種を用意（UpperFirst / LowerFirst）。ボスはランダムに選ぶ想定。
-// ====================================================================
+// 挟み込み2段（MegaClapSlam）── 「形を読む」を最も強く要求する技。
+// 1段版の上下2段版で、どちらの段が先に閉じるかを予備動作の震えで読ませる。
+//   下段が先 → ジャンプで避け、着地してから上段をやり過ごす
+//   上段が先 → 接地のままやり過ごし、後から来る下段をジャンプ
+// 4グループ =(下段/上段)×(左/右)。先段は 0.0→0.5、後段は 0.5→1.0 で間隔を閉じる。
 struct MegaClapSlamBase : public IFormation
 {
-    /// @brief 上段が先に閉じるか（派生で指定）。
     virtual bool UpperFirst() const = 0;
 
     void Calculate(DroneComponent &drone, const FormationContext &ctx) override
     {
         using namespace DirectX::SimpleMath;
 
-        drone.chargeMode = ChargeMode::RigidFollow; // 壁が形を保ってスライド（follow-target）
+        drone.chargeMode = ChargeMode::RigidFollow; // 壁が形を保ってスライド
 
-        Vector3 dir = ctx.playerPos - ctx.bossPos;
-        dir.y = 0.0f;
-        if (dir.LengthSquared() < 0.001f) dir = Vector3::UnitZ;
-        dir.Normalize();
+        const Vector3 dir = ctx.AimDirection();
         Vector3 right = Vector3::UnitY.Cross(dir);
         if (right.LengthSquared() < 0.001f) right = Vector3::UnitX;
         right.Normalize();
 
-        // --- 4グループへ割付：g=0下段左 / 1下段右 / 2上段左 / 3上段右 ---
+        // 4グループへ割付：g=0下段左 / 1下段右 / 2上段左 / 3上段右。
         const int total = (drone.totalDrones > 0) ? drone.totalDrones : 1;
         const int per   = (std::max)(1, total / 4);
         int g = drone.localIndex / per; if (g > 3) g = 3;
@@ -299,13 +309,12 @@ struct MegaClapSlamBase : public IFormation
         const float lowerBase     = 0.4f; // 下段の下端（接地で当たる／ジャンプで越える）
         const float upperBase     = 2.8f; // 上段の下端（ジャンプ頂点で当たる／接地でくぐる）
 
-        // --- 進行度を進める（2フェーズ共通の時間軸）---
         if (drone.wantsAttack)
             drone.attackProgress = (std::min)(1.0f, drone.attackProgress + ctx.dt * kSpeed);
         else
             drone.attackProgress = 0.0f;
 
-        // この段が「先に閉じる段」か → 担当フェーズを決める
+        // この段が「先に閉じる段」か → 担当フェーズを決める。
         const bool  firstTier  = (isUpper == UpperFirst());
         const float phaseStart = firstTier ? 0.0f : 0.5f;
         const float closeP     = std::clamp((drone.attackProgress - phaseStart) / 0.5f, 0.0f, 1.0f);
@@ -336,10 +345,9 @@ struct MegaClapSlamBase : public IFormation
         drone.targetLookDirection = look;
     }
 
-    // --- 調整値（グレーボックスで実測して詰める）---
-    //   特に lowerBase/upperBase の高さは「接地で下段に当たり・ジャンプ頂点で上段に当たる」
-    //     関係になるよう、プレイヤーのジャンプ高さと合わせて実測して決める。
-    static constexpr float kSpeed      = 1.2f;  // 2フェーズ合計の速度 → 全閉まで ≈0.83s
+    // lowerBase/upperBase の高さは「接地で下段に当たり・ジャンプ頂点で上段に当たる」
+    // 関係になるよう、プレイヤーのジャンプ高さと合わせて実測して決める。
+    static constexpr float kSpeed      = 1.2f;  // 全閉まで ≈0.83s
     static constexpr float kStartGap   = 12.0f; // 開始の左右間隔
     static constexpr float kEndGap     = 1.2f;  // 閉じ切りの左右間隔
     static constexpr float kShiverFreq = 10.0f; // tell の震えの速さ（追従で消えない程度に低め）
@@ -349,18 +357,9 @@ struct MegaClapSlamBase : public IFormation
 struct MegaClapUpperFirstFormation : public MegaClapSlamBase { bool UpperFirst() const override { return true;  } };
 struct MegaClapLowerFirstFormation : public MegaClapSlamBase { bool UpperFirst() const override { return false; } };
 
-// ====================================================================
-// 横なぎ回転（SideSlapWhip）※ジャスト回避を誘う技
-//   ボスの片側に「横長・縦に少し幅」の腕（ドローンの長方形配列）を作り、
-//   ボス中心の縦軸まわりに回転して正面を横へ薙ぎ払う。
-//   回転と逆に走れば無効化できてしまうため、払いにダッシュを合わせる
-//   ＝ジャスト回避を誘う設計（回避成立で無敵通過＋接近）。
-//
-//   実装＝縦軸まわりの剛体回転（follow-target）:
-//     各機は腕上の (半径 col, 高さ row) に固定。腕全体の角度 a を進行度で回す。
-//       a = kStartAngle + kSweepAngle * easeIn(progress)   （右後方→前→左後方）
-//     armDir(a) = dir*cos(a) + right*sin(a)   （dir=ボス→プレイヤー）
-// ====================================================================
+// 横なぎ回転（SideSlapWhip）── ジャスト回避を誘う技。
+// ボスの片側に横長の腕を作り、縦軸まわりに回転して正面を薙ぎ払う。
+// 回転と逆に走れば無効化できるので、払いにダッシュを合わせさせる狙い。
 struct SideSlapWhipFormation : public IFormation
 {
     void Calculate(DroneComponent &drone, const FormationContext &ctx) override
@@ -368,10 +367,7 @@ struct SideSlapWhipFormation : public IFormation
         using namespace DirectX::SimpleMath;
         drone.chargeMode = ChargeMode::RigidFollow;
 
-        Vector3 dir = ctx.playerPos - ctx.bossPos;
-        dir.y = 0.0f;
-        if (dir.LengthSquared() < 0.001f) dir = Vector3::UnitZ;
-        dir.Normalize();
+        const Vector3 dir = ctx.AimDirection();
         Vector3 right = Vector3::UnitY.Cross(dir);
         if (right.LengthSquared() < 0.001f) right = Vector3::UnitX;
         right.Normalize();
@@ -409,19 +405,12 @@ struct SideSlapWhipFormation : public IFormation
     static constexpr float kSweepSpeed = 1.6f;   // 進行度の速度（速い＝一気に薙ぐ）
 };
 
-// ====================================================================
-// 波状縦割り（TsunamiWave）※横方向の読み合い（挟み込み2段と対になる技）
-//   縦割りの刃を横方向に複数並べ、波のように順次倒す。プレイヤーは波に合わせて
-//   横へ走り続ける。どちら向きに波が来るかを予備動作の「震え」で読ませる。
-//
-//   実装＝複数刃のヒンジ倒れ（follow-target）を横位置で時間差発火:
-//     bladeIndex(横位置)ごとに WaveT(0..1)を決め、fallStart = WaveT*(1-幅) で
-//     倒れ始めをずらす。leading（WaveT小）の刃だけ forming 中に上下へ震える＝方向tell。
-//   左→右(LtoR)と右→左(RtoL)の2種を用意（ボスがランダムに選ぶ想定）。
-// ====================================================================
+// 波状縦割り（TsunamiWave）── 横方向の読み合い（挟み込み2段と対になる技）。
+// 縦割りの刃を横に並べ、波のように順次倒す。どちら向きに波が来るかを予備動作の
+// 震えで読ませ、プレイヤーは波に合わせて横へ走り続ける。
 struct WaveGuillotineBase : public IFormation
 {
-    /// @brief この刃の「波内位置」(0=最初に倒れる, 1=最後)。派生が向きを決める。
+    /// この刃の「波内位置」(0=最初に倒れる, 1=最後)。派生が波の向きを決める。
     virtual float WaveT(int bladeIndex, int numBlades) const = 0;
 
     void Calculate(DroneComponent &drone, const FormationContext &ctx) override
@@ -429,15 +418,12 @@ struct WaveGuillotineBase : public IFormation
         using namespace DirectX::SimpleMath;
         drone.chargeMode = ChargeMode::RigidFollow;
 
-        Vector3 dir = ctx.playerPos - ctx.bossPos;
-        dir.y = 0.0f;
-        if (dir.LengthSquared() < 0.001f) dir = Vector3::UnitZ;
-        dir.Normalize();
+        const Vector3 dir = ctx.AimDirection();
         Vector3 right = Vector3::UnitY.Cross(dir);
         if (right.LengthSquared() < 0.001f) right = Vector3::UnitX;
         right.Normalize();
 
-        // 刃＝縦の列。localIndex を (bladeIndex 横位置, heightIdx 高さ) へ割付
+        // 刃＝縦の列。localIndex を (bladeIndex 横位置, heightIdx 高さ) へ割付。
         const int total       = (drone.totalDrones > 0) ? drone.totalDrones : 1;
         const int bladeHeight = 3;
         const int numBlades   = (std::max)(1, total / bladeHeight);
@@ -468,17 +454,12 @@ struct WaveGuillotineBase : public IFormation
         const Vector3 rotatedUp = Vector3::UnitY * (height * std::cos(theta)) + dir * (height * std::sin(theta));
         Vector3       pos       = hingeBase + rotatedUp;
 
-        // 方向tell：最初に倒れる刃(waveT小)だけ forming 中に上下へ震える
+        // 方向tell：最初に倒れる刃だけ forming 中に上下へ震える。
         if (drone.attackProgress <= 0.0f && waveT < 0.18f)
         {
             const float sh = std::sin(ctx.time * 12.0f + static_cast<float>(drone.localIndex)) * 0.5f;
             pos += Vector3::UnitY * sh;
         }
-
-        // 地面へのめり込み防止：水平を越えて倒れると刃先が地面下へ潜るため、
-        // ボス足元(地面)から kGroundClearance より下へは行かせない。
-        const float floorY = ctx.bossPos.y + kGroundClearance;
-        if (pos.y < floorY) pos.y = floorY;
 
         drone.targetPosition = pos;
         Vector3 look = Vector3::UnitY * (-std::sin(theta)) + dir * std::cos(theta);
@@ -490,14 +471,11 @@ struct WaveGuillotineBase : public IFormation
 
     static constexpr float kWaveSpeed = 1.0f;  // 波全体の進行速度
     static constexpr float kThetaMax  = 1.9f;  // 各刃の最大倒れ角
-    static constexpr float kGroundClearance = 0.5f; // 地面クランプ高さ（埋没防止）
 };
 struct WaveGuillotineLtoR : public WaveGuillotineBase { float WaveT(int i, int n) const override { return (n <= 1) ? 0.0f : static_cast<float>(i) / (n - 1); } };
 struct WaveGuillotineRtoL : public WaveGuillotineBase { float WaveT(int i, int n) const override { return (n <= 1) ? 0.0f : 1.0f - static_cast<float>(i) / (n - 1); } };
 
-// ====================================================================
-// 登録（DroneFormationSystem::Initialize から呼ぶ）
-// ====================================================================
+// 登録（DroneFormationSystem::Initialize から呼ぶ）。
 inline void RegisterAll()
 {
     auto &reg = FormationRegistry::Instance();

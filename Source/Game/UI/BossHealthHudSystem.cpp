@@ -1,5 +1,4 @@
-/// @file BossHealthHudSystem.cpp
-/// 役割・設計方針は BossHealthHudSystem.h を参照。
+// 役割・設計方針は BossHealthHudSystem.h を参照。
 #include "BossHealthHudSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"

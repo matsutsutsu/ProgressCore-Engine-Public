@@ -24,6 +24,23 @@ public:
         return m_rawInput ? m_rawInput->GetActiveDeviceType() : ActiveDeviceType::KeyboardMouse;
     }
 
+    // 表示用：アクションの割り当てを1件引く（操作説明UIのアイコン選択に使う）
+    bool GetPrimaryBinding(uint32_t actionHash, ActiveDeviceType device,
+                           InputBinding &outBinding) const override
+    {
+        const auto it = m_actionBindings.find(actionHash);
+        if (it == m_actionBindings.end()) return false;
+
+        for (const InputBinding &b : it->second)
+        {
+            const bool isPad = (b.deviceType != InputDeviceType::Keyboard
+                             && b.deviceType != InputDeviceType::Mouse_Button);
+            const bool want  = (device == ActiveDeviceType::GamePad) ? isPad : !isPad;
+            if (want) { outBinding = b; return true; }
+        }
+        return false;
+    }
+
     // GUI用：現在登録されている全アクション名を取得
     const std::vector<std::string>& GetActionNames() const { return m_actionNames; }
     const std::vector<std::string>& GetAxisNames() const { return m_axisNames; }

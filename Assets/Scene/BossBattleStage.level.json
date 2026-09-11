@@ -98,8 +98,8 @@
         {
             "position": [
                 0.0,
-                0.49624866247177124,
-                -5.699999809265137
+                0.0,
+                5.0
             ],
             "prefab": "./Assets\\Prefabs\\Enemy\\Muriel.json",
             "rotation": [

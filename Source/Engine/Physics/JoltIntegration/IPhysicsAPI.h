@@ -16,7 +16,7 @@ public:
     virtual ~IPhysicsAPI() = default;
 
     // =======================================================
-    // 🔵 直進の力と速度 (Linear)
+    // 直進の力と速度 (Linear)
     // =======================================================
     // 継続的な力を加える（アクセル、風など）
     virtual void AddForce(CCL::ECS::EntityID entity, const DirectX::XMFLOAT3& force) = 0;
@@ -27,7 +27,7 @@ public:
     virtual DirectX::XMFLOAT3 GetLinearVelocity(CCL::ECS::EntityID entity) = 0;
 
     // =======================================================
-    // 🟢 回転の力と速度 (Angular)
+    // 回転の力と速度 (Angular)
     // =======================================================
     // 継続的な回転力を加える
     virtual void AddTorque(CCL::ECS::EntityID entity, const DirectX::XMFLOAT3& torque) = 0;
@@ -38,7 +38,7 @@ public:
     virtual DirectX::XMFLOAT3 GetAngularVelocity(CCL::ECS::EntityID entity) = 0;
 
     // =======================================================
-    // 🟡 強制的な姿勢制御 (Kinematic Warp)
+    // 強制的な姿勢制御 (Kinematic Warp)
     // =======================================================
     // 物理法則を無視して指定座標にワープさせる（リスポーン時など）
     virtual void SetPosition(CCL::ECS::EntityID entity, const DirectX::XMFLOAT3& position) = 0;
@@ -48,7 +48,7 @@ public:
     virtual void SetLookDirection(CCL::ECS::EntityID entity, const DirectX::XMFLOAT3& direction) = 0;
 
     // =======================================================
-    // 🔴 空間クエリ (Queries)
+    // 空間クエリ (Queries)
     // =======================================================
     // 剛体(JoltHandleComponent)に対する真下への接地レイキャスト。
     // ※ CharacterVirtual を持つキャラの接地判定にはこれを使わないこと。
@@ -64,7 +64,7 @@ public:
     virtual PhysicsHitInfo RayCastStatic(const DirectX::XMFLOAT3& origin, const DirectX::XMFLOAT3& direction, float maxDistance) = 0;
 
     // =======================================================
-    // 🟣 キャラクター専用クエリ (CharacterVirtual)
+    // キャラクター専用クエリ (CharacterVirtual)
     // =======================================================
     /**
      * @brief CharacterVirtual の権威ある接地状態を返す。

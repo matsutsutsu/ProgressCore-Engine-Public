@@ -1,7 +1,6 @@
-/// @file  CullingComponentMeta.cpp
-/// @brief カリング関連コンポーネント (BoundingBox, Visibility) のメタ定義。
-///        ランタイム専用データとして扱うため、isSerializable = false に設定し、
-///        インスペクタ表示のみを自動有効化する。
+// カリング関連コンポーネント (BoundingBox, Visibility) のメタ定義。
+// ランタイム専用データとして扱うため、isSerializable = false に設定し、
+// インスペクタ表示のみを自動有効化する。
 
 #include "CullingComponents.h"
 #include "Engine/Graphics/Components/Core/NoRenderTag.h" // 当たり判定専用ジオメトリ用タグ

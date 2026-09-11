@@ -29,12 +29,10 @@
 #include "Editor/Windows/AnimGraphWindow.h"
 #include "Editor/Windows/BehaviorTreeWindow.h"
 #include "Editor/Windows/MemoryAnalyzerWindow.h"
-#include "Editor/Windows/TestLauncherWindow.h"
 #include "Editor/Windows/CurveEditorWindow.h"
 #include "Editor/Windows/CameraPathEditorWindow.h"
 #include "Editor/Windows/RenderDebugWindow.h"
 #include "Editor/Windows/BuildingScatterWindow.h"
-#include "Editor/Windows/FormationEditorWindow.h"
 
 #include "Engine/Serialization/Factory/Prefab.h"
 #include "Engine/Core/Components/PrefabInstanceComponent.h"
@@ -74,11 +72,9 @@ void EditorWindowManager::Initialize()
     RegisterWindow<InputEditorWindow>();
     RegisterWindow<NavMeshWindow>();
     RegisterWindow<MemoryAnalyzerWindow>();
-    RegisterWindow<TestLauncherWindow>();
     RegisterWindow<GameViewWindow>();
     RegisterWindow<RenderDebugWindow>();
     RegisterWindow<BuildingScatterWindow>();
-    RegisterWindow<FormationEditorWindow>();
 }
 
 // =========================================================
@@ -220,10 +216,19 @@ void EditorWindowManager::Draw(EditorContext &context)
     // 窓が閉じている等で更新されない場合に前フレームの値が残らないよう先にクリア。
     context.gameViewFocused = false;
 
-    // ゲーム画像の表示矩形も同様に毎フレーム無効化。GameView が描いたフレームだけ再び valid=true
-    // になる。全画面(F1)や窓を閉じた時は valid=false のまま → UIクリック判定は恒等写像に戻る。
+    // ゲーム画像の表示矩形も毎フレーム無効化。GameView が描いたフレームだけ再び valid=true になる。
+    //
+    // editorVisible も併せて書く。valid=false には
+    //   「全画面/Shipping なので恒等写像でよい」と
+    //   「エディタは出ているが GameView が隠れていてゲーム画面が無い」
+    // の2つが混ざっており、後者で恒等写像に落とすと、画面に出ていないボタンを
+    // 他のウィンドウ上のクリックが踏む（GameViewportInfo.h の説明を参照）。
     if (context.world && context.world->HasResource<GameViewportInfo>())
-        context.world->GetResource<GameViewportInfo>().valid = false;
+    {
+        auto &vp         = context.world->GetResource<GameViewportInfo>();
+        vp.valid         = false;
+        vp.editorVisible = m_isVisible;
+    }
 
     if (!m_isVisible)
     {

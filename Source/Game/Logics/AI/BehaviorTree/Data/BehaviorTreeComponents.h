@@ -1,110 +1,63 @@
+// AIの実行状態コンポーネント。「思考の構造（アセット）」と分けてあり、木の実体は
+// BTAssetCache が全Entityで共有する。個体が抱えるのは実行状態と判断材料だけ。
+//
+// ここに置くのはどの敵でも意味を持つものだけ。特定の敵にしか無い概念はその敵の
+// コンポーネントへ置く（第2形態の閾値→BossPhase、行動要求→BossCommand）。
 #pragma once
 #include <cstdint>
 #include <memory>
+#include <string>
+#include <vector>
 #include "SimpleMath.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"
-#include "Game/Logics/AI/Drone/DroneComponent.h"
+#include "Engine/ECS/Common/CCL_Types.h"
 
-#include "Engine/Serialization/Core/EntityLink.h"
 
-/**
- * @file BehaviorTreeComponents.h
- * @brief ECSエンティティが保持するAIの状態管理コンポーネント
- * * 役割：
- * 各エンティティ固有の「現在の思考位置」や「判断材料（Blackboard）」を管理する。
- * * 設計思想：
- * 「思考（Data）」と「状態（Component）」を分離。
- * コンポーネントには実行時のみ必要な最小限の状態のみを持たせ、
- * 巨大な木構造自体はアセットとして全Entityで共有する（メモリ節約）。
- */
-
- // AIの判断材料を格納するブラックボード（Blackboard）
+// AIの判断材料（ブラックボード）。
+//   知覚システムが毎フレーム書き、BTの条件・行動が読む。書き手はその1系統だけ。
 struct AIBlackboard {
-    // --- 座標・空間データ ---
-    DirectX::SimpleMath::Vector3 targetPosition; // ターゲットの座標
-    float distanceToTarget = 0.0f;               // ターゲットとの距離
+    // 座標だけでなくIDを持つのは、行動側が座標以外（HPや状態）も引けるようにするため。
+    CCL::ECS::EntityID           targetEntity     = CCL::ECS::InvalidEntityID; // 狙っている相手
+    DirectX::SimpleMath::Vector3 targetPosition;                               // その座標
+    float                        distanceToTarget = 0.0f;                      // そこまでの距離
 
-    // --- ステータス・フェーズデータ ---
-    float healthPercentage = 100.0f;             // 自分の残りHP
-    int currentPhase = 1;                        // ボスの現在のフェーズ（1=前半戦, 2=後半戦）
+    float healthPercentage = 100.0f;    // 残りHPの割合（0〜100）
 
-    // --- ダメージ蓄積・回避システム ---
-    float accumulatedDamage = 0.0f;              // 現在溜まっているダメージ量
-    float evadeDamageThreshold = 20.0f;          // いくつダメージを受けたら逃げるかの閾値
+    // 被弾の蓄積。閾値はここに持たずBTノードの param（最大HPに対する％）で決める。
+    // 絶対量で見ると、最大HPを増やした瞬間に「1%削っただけで退く」になる。
+    float accumulatedDamage      = 0.0f; // 前回リセットからの被弾量（実数値）
+    float accumulatedDamageRatio = 0.0f; // 上を最大HPで割ったもの [%]
+
+    // 直近の被弾からの経過秒。被弾は「今の行動」を中断せず、「次に何をするか」の
+    // 判断にだけ影響させる。残り時間でなく経過時間なのは、待つ長さを木が決めるため。
+    float timeSinceLastHit = 9999.0f;
 };
 
-// AIの内部状態とブラックボード（直列化対象）
-// 例えば、どのノードを実行中か、どのアセットを使うかなどの情報を持つ
+
+// BehaviorTreeの実行状態を保持するコンポーネント
 struct BehaviorTreeComponent {
-    // --- 巨大なオブジェクト群 (ポインタ/コンテナ系) ---
-    std::shared_ptr<BTAsset> sharedAsset;
+    // --- ツリーデータ ---
+    std::shared_ptr<const BTAsset> sharedAsset;  // 木の実体。BTAssetCache が全Entityで1本だけ持つ
+    std::string assetPath;                       // 読み込むBTのパス。空なら評価しない
+    std::string loadedAssetPath;                 // 実際に読み込めたパス。表示と差し替え判定に使う
 
-    std::string assetPath = "Data/BehaviorTree/BossAI.json";
-    std::string loadedAssetPath = "";
-    std::string phase2AssetPath = "Data/BehaviorTree/BossAI_Phase2.json";
-    std::string lastFrameTreeLog = "";
-
-    std::vector<BTDebugState> debugNodeStates;
-    std::vector<float> nodeTimers;
-    std::vector<int> runningNodes;
-
-    // --- 構造体 ---
+    // --- 判断材料 ---
     AIBlackboard blackboard;
 
-    // --- プリミティブ型 (4バイト) ---
-    AssetID assetId = 0;
-    float phase2HealthThreshold = 50.0f;
+    // --- 実行状態（配列は木と同じ長さ。確保は BehaviorTreeSystem::SyncAssets）---
+    std::vector<float> nodeTimers;               // ノードごとの残り時間。-1 は未開始
+    std::vector<int>   runningNodes;             // 複合ノードのしおり。次にどの子から再開するか
+    BTNodeID           runningNodeId = 0;        // 今フレーム Running を返した最初のノード
 
-    // --- デバッグ専用（実行時のみ・非シリアライズ）---
-    /// @brief この BTNodeID の枝「だけ」を評価する。-1 で通常どおりルートから評価する。
-    ///        狙った技をその場で出して確認するためのもので、木そのものは書き換えない。
-    ///        書き手はデバッグUI（BehaviorTreeSystem::OnGui）。
-    int debugForcedNodeId = -1;
+    /// RandomSelector の抽選に使う乱数の状態。0 は「まだ種を蒔いていない」。
+    /// 個体ごとに持つのは、評価がワーカースレッドで走るため。グローバルな乱数列だと
+    /// 引く順がスレッドのタイミングで変わり、同じ状況を再現できない。
+    uint32_t rngState = 0;
 
-    /// @brief 上を適用済みかの記録。切り替わった瞬間に実行状態をリセットするために使う。
-    ///        書き手は BehaviorTreeSystem。
-    int debugAppliedForcedNodeId = -1;
-
-    /// @brief 木の評価を止める。BossCommandComponent が上書きされなくなるので、
-    ///        エディタから書いた指示（陣形など）がそのまま残る。
-    ///
-    /// なぜ要るか:
-    ///   陣形やアニメを詰めている間もボスは技を選び続けるので、調整中の指示が
-    ///   次のフレームに別の技で塗り潰される。assetPath を空にすれば止まるが
-    ///   （BossPhaseSystem の第2形態移行がその手）、パスを失うので調整用途には使えない。
-    ///
-    /// @note 止めても currentActionId は保持される。移動中に止めるとボスが歩き続けるので、
-    ///       止める側が併せて 0 を書く（＝BossActionSystem が Idle になる）。
-    ///       書き手はデバッグUI（BehaviorTreeSystem::OnGui / FormationEditorWindow）。
-    bool debugPaused = false;
-
-    // --- プリミティブ型 (2バイト) ---
-    BTNodeID runningNodeId = 0;
-    BTNodeID previousRunningNodeId = 0xFFFF;
-    ActionID lastLogActionId = 0xFFFF;
-};
-
-
-
-// AIシステムからの「出力」を受け取るコンポーネント（毎フレームリセットされる使い捨てデータ）
-// 例えば、AIが「近接攻撃してほしい」「ここに移動してほしい」といった命令をこのコンポーネントに書き込む
-struct BossCommandComponent {
-    CCL::Serialization::EntityLink targetPlayerId; // 誰を狙うか
-
-    DroneFormationType requestFormation = DroneFormationType::Hidden;
-
-    // AIが現在「筋肉にやってほしい」と要求しているActionIDをそのまま渡す
-    ActionID currentActionId = 0;
-
-    /// @brief ドローン陣形攻撃の「今撃て」信号（実行時専用・非シリアライズ）。
-    ///        BTの DroneStrikeAction が true、DroneAction(陣形指示) が false にする。
-    ///        DroneCommandSystem が各ドローンの wantsAttack へ配布する。
-    bool droneAttackActive = false;
-
-    /// @brief 前フレームの droneAttackActive（実行時専用・非シリアライズ）。
-    ///        書き手は DroneCommandSystem のみ。信号の「立ち上がり」を検出して
-    ///        個別寿命の突撃（DroneAttackPhase::Charging）を1回だけ発火させるために使う。
-    ///        これが無いと、信号が立っている間ずっと全機が攻撃へ引き戻され、
-    ///        飛び切った機の個別帰投が成立しない。
-    bool prevDroneAttackActive = false;
+    // --- デバッグ（実行時のみ・非シリアライズ）---
+    std::vector<BTDebugState> debugNodeStates;   // 今フレームの評価結果。BTウィンドウの色分けに使う
+    ActionID lastLogActionId          = 0xFFFF;  // 最後に実行した行動。デバッガの見出しに出す
+    int      debugForcedNodeId        = -1;      // この枝だけを評価する。-1 で通常どおりルートから
+    int      debugAppliedForcedNodeId = -1;      // 上を適用済みか。切り替わった瞬間に実行状態を捨てる
+    bool     debugPaused              = false;   // 木を凍らせる（強制実行中は無効）
 };

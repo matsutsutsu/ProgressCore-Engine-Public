@@ -1,4 +1,3 @@
-/// @file GameViewWindow.cpp
 
 #include "GameViewWindow.h"
 #include "Engine/Graphics/RHI/Camera.h"

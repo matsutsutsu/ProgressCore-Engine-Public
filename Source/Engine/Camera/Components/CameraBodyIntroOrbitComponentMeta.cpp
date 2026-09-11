@@ -1,5 +1,4 @@
-/// @file  CameraBodyIntroOrbitComponentMeta.cpp
-/// @brief CameraBodyIntroOrbit のシリアライズ/インスペクタ定義。
+// CameraBodyIntroOrbit のシリアライズ/インスペクタ定義。
 
 #include "Engine/Camera/Components/CameraBodyIntroOrbitComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"

@@ -1,5 +1,4 @@
-/// @file PauseBlurEffect.cpp
-/// 役割・設計方針は PauseBlurEffect.h を参照。
+// 役割・設計方針は PauseBlurEffect.h を参照。
 #include "PauseBlurEffect.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"

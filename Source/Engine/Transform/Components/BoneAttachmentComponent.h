@@ -7,6 +7,6 @@
  *       ローカル変換をオフセットとして適用した位置へ追従する。
  */
 struct BoneAttachmentComponent {
-    std::string boneName = "";  ///< "mixamorig:RightHand" 等
-    int         cachedBoneIndex = -1; ///< 初回解決後にキャッシュ。-1=未解決
+    std::string boneName = "";  // "mixamorig:RightHand" 等
+    int         cachedBoneIndex = -1; // 初回解決後にキャッシュ。-1=未解決
 };

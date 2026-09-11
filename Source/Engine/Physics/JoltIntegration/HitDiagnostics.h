@@ -28,7 +28,7 @@
 // ===========================================================================
 #include "Engine/Platform/Core/Logger.h"
 
-/// @brief 1 で計測ログ有効。原因特定後は 0 に戻すこと。
+// 1 で計測ログ有効。原因特定後は 0 に戻すこと。
 #define HITBOX_DIAGNOSTICS 0
 
 #if HITBOX_DIAGNOSTICS

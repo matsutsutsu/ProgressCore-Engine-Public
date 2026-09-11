@@ -42,53 +42,56 @@ class VFXSystem : public CCL::ECS::IfSystem<VFXSystem,
     {
     }
 
-    /// @brief 自身を World Resource に登録する(VFX::Play から引くため)。
+    // 自身を World Resource に登録する(VFX::Play から引くため)。
     void Initialize() override;
 
-    /// @brief 破棄待ちVFXの残り時間を減らし、尽きたものを破棄する。
+    // 破棄待ちVFXの残り時間を減らし、尽きたものを破棄する。
     void Update(float dt) override;
 
-    /// @brief 指定位置にVFXを1つ出す。
-    /// @return 生成したEntityID。失敗時は InvalidEntityID。
-    /// @note   継続放出を含む場合は自動破棄されない。戻り値を保持して Stop() すること。
-    ///         全エミッタが Burst なら戻り値は捨ててよい。
+    /**
+     * @brief 指定位置にVFXを1つ出す。
+     * @return 生成したEntityID。失敗時は InvalidEntityID。
+     * @note   継続放出を含む場合は自動破棄されない。戻り値を保持して Stop() すること。
+     *         全エミッタが Burst なら戻り値は捨ててよい。
+     */
     CCL::ECS::EntityID Play(const std::string &path, const DirectX::XMFLOAT3 &worldPos);
 
-    /// @brief 再生中のVFXを止める。
-    /// @note  発生だけ止め、既にいる粒子は寿命まで生かしてから破棄する
-    ///        （即座に消すと粒子がブツッと途切れて不自然なため）。
-    ///        既に破棄待ちのVFXに対しては何もしない（毎フレーム呼ばれても寿命が延びない）。
+    // 再生中のVFXを止める。
+    //
+    // 発生だけ止め、既にいる粒子は寿命まで生かしてから破棄する
+    // （即座に消すと粒子がブツッと途切れて不自然なため）。
+    // 既に破棄待ちのVFXに対しては何もしない（毎フレーム呼ばれても寿命が延びない）。
     void Stop(CCL::ECS::EntityID handle);
 
   private:
-    /// @brief 破棄待ちのVFX1件（EntityIDと残り時間）。
+    // 破棄待ちのVFX1件（EntityIDと残り時間）。
     struct ActiveVFX
     {
         CCL::ECS::EntityID id     = CCL::ECS::InvalidEntityID;
-        float              remain = 0.0f; ///< 残り時間(秒)
+        float              remain = 0.0f; // 残り時間(秒)
     };
 
-    /// @brief 継続放出(emitMode==0)のエミッタを含むか。含むなら自動破棄しない。
+    // 継続放出(emitMode==0)のエミッタを含むか。含むなら自動破棄しない。
     bool HasContinuousEmitter(const GPUParticleComponent &particle) const;
 
-    /// @brief いま生きている粒子が全部消えるまでの時間(秒)。
+    // いま生きている粒子が全部消えるまでの時間(秒)。
     float CalcParticleLifetime(const GPUParticleComponent &particle) const;
 
-    /// @brief handle が既に破棄待ちに入っているか。
+    // handle が既に破棄待ちに入っているか。
     bool IsPendingDestroy(CCL::ECS::EntityID handle) const;
 
     std::vector<ActiveVFX> m_active;
 
-    /// 破棄までに足す余裕(秒)。バーストは生成の次フレームに出るので、その分を吸収する。
+    // 破棄までに足す余裕(秒)。バーストは生成の次フレームに出るので、その分を吸収する。
     static constexpr float kLifetimeMargin = 0.2f;
 };
 
-/// @brief 呼び出し側向けの入口。World を渡すだけで使える。
+// 呼び出し側向けの入口。World を渡すだけで使える。
 namespace VFX
 {
-/// @brief 指定位置にVFXを1つ出す。@see VFXSystem::Play
+// 指定位置にVFXを1つ出す。実体は VFXSystem::Play
 CCL::ECS::EntityID Play(CCL::ECS::World &world, const std::string &path, const DirectX::XMFLOAT3 &worldPos);
 
-/// @brief 再生中のVFXを止める。@see VFXSystem::Stop
+// 再生中のVFXを止める。実体は VFXSystem::Stop
 void Stop(CCL::ECS::World &world, CCL::ECS::EntityID handle);
 } // namespace VFX

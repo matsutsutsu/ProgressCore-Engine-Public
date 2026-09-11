@@ -22,7 +22,7 @@
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include <DirectXMath.h>
 
-/// @brief ジャスト回避演出（ウィッチタイムのPP群）を駆動するシステム。
+// ジャスト回避演出（ウィッチタイムのPP群）を駆動するシステム。
 class JustEvadeEffectSystem : public CCL::ECS::SystemBase
 {
 public:
@@ -30,18 +30,19 @@ public:
 
     std::vector<CCL::ECS::TypeID> GetReadTypes() const override;
 
-    /// @note 触る PP 設定はすべて書き換えるので Write として申告する（並列実行の競合防止）。
+    // 触る PP 設定はすべて書き換えるので Write として申告する（並列実行の競合防止）。
     std::vector<CCL::ECS::TypeID> GetWriteTypes() const override;
 
-    /// @note ScreenImpactSystem と同一ステージで同じ PP を書くため、順序を確定させる。
-    ///       スロットが別なので結果は順序に依存しないが、順序不定の警告を出さないため。
+    // ScreenImpactSystem と同一ステージで同じ PP を書くため、順序を確定させる。
+    // スロットが別なので結果は順序に依存しないが、順序不定の警告を出さないため。
     std::vector<const char *> GetRunAfter() const override { return {"ScreenImpactSystem"}; }
 
     void Update(float dt) override;
 
 private:
-    /// @brief 前フレームで演出が出ていたか（立ち下がりで自分のスロットを手放すため）。
-    /// @note  素の PP 設定を退避するメンバは持たない。各スロットへ「目標値と weight」を
-    ///        書くだけで、素の設定との合成は PostProcessSystem の Resolve() が行う。
+    // 前フレームで演出が出ていたか（立ち下がりで自分のスロットを手放すため）。
+    //
+    // 素の PP 設定を退避するメンバは持たない。各スロットへ「目標値と weight」を
+    // 書くだけで、素の設定との合成は PostProcessSystem の Resolve() が行う。
     bool m_wasActive = false;
 };

@@ -1,5 +1,4 @@
-/// @file  TimeComponentMeta.cpp
-/// @brief TimeStateComponent のシリアライズ/インスペクタ定義。
+// TimeStateComponent のシリアライズ/インスペクタ定義。
 
 #include "TimeState.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
