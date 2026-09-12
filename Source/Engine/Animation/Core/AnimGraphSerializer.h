@@ -12,4 +12,10 @@ public:
     // JSONファイルからグラフを読み込む
     // 引数 availableSequences: ポインタを紐付けるための実体リスト（あるいはResourceManager）
     static bool LoadFromJSON(AnimStateGraph& outGraph, const std::string& filepath, const std::vector<AnimSequence>& availableSequences);
+
+private:
+    // sequence ポインタの束縛をサブマシンの子グラフまで再帰で行う。
+    //   束縛経路が2つあって挙動が違うのを避ける。
+    static void BindSequencesRecursive(
+        AnimStateGraph& graph, const std::vector<AnimSequence>& availableSequences);
 };

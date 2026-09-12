@@ -33,7 +33,17 @@ struct AnimatorComponent {
     // 区間イベント(HitBox)のスイープ判定に使う：1フレームで [start,end] を飛び越しても
     // [previousFrameTimer, currentTimer] と重なれば当たったと見なせる。AnimationSystem が毎フレーム設定。
     float previousFrameTimer = 0.0f;
+    // ステートが持つ再生速度（AnimState.playbackSpeed）。Play() が設定する。
     float playbackSpeed = 1.0f;
+
+    // 足滑り防止の再生速度倍率（CharacterAnimSyncSystem が毎フレーム設定）。
+    //
+    // playbackSpeed とは別フィールドにする。以前は両者が同じ playbackSpeed を
+    // 奪い合っており、ループするステートでは遷移したフレームだけステートの速度が効き、
+    // 次のフレームには足滑り補正に上書きされる、という不安定な状態だった。
+    // 実効速度は AnimationSystem が playbackSpeed × footSlideMultiplier で合成する。
+    float footSlideMultiplier = 1.0f;
+
     bool  isLoop = true;
     bool  isFinished = false;
 
@@ -74,14 +84,28 @@ struct AnimatorComponent {
         const CurveData    *curve           = nullptr; // 速度カーブ（nullで等速）
         const CurveData    *rootMotionCurve = nullptr; // ルートモーション量カーブ（nullでボーン駆動）
         bool                  lockVerticalRootMotion = false;   // Force Root LockでYも固定するか（ステートから伝播）
+
+        // 同じクリップでも頭から再生し直すか。
+        //
+        // ステートマシンが「ステートに入る」ときは必ず true。
+        // 比較しているのがステートではなく【クリップのポインタ】なので、これが無いと
+        // 「別ステートだが同じクリップ」で Play が何もせず、再生位置・isFinished・
+        // イベント栞・ブレンドが前のステートから丸ごと引き継がれる。
+        //   例: Muriel の HitFront と HitBack は同じ Hit_Front.json を指しており、
+        //       連続被弾で HitFront→HitBack に入ると isFinished が true のままなので
+        //       次フレームに Finished 条件が成立し、リアクションが丸ごと飛ぶ。
+        bool                  restart = false;
     };
 
     // 新しいシーケンスの再生を開始する（必要ならクロスフェード）。
     void Play(const AnimSequence *sequence, const PlayParams &params = {})
     {
-        if (currentSequence != sequence)
+        if (currentSequence != sequence || params.restart)
         {
-            // 前のアニメーションを「過去」として記録し、ブレンドを開始する
+            // 前のアニメーションを「過去」として記録し、ブレンドを開始する。
+            //   restart による同一クリップの再生し直しでは previousSequence == sequence に
+            //   なるが、参照する時刻が違う（previousTimer と 0秒）ので自分自身との
+            //   クロスフェードとして正しく成立する。
             if (currentSequence && params.blendTime > 0.001f)
             {
                 previousSequence = currentSequence;

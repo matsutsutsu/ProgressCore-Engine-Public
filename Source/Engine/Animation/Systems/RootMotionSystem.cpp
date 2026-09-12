@@ -139,10 +139,14 @@ void RootMotionSystem::Update(float /*rawDt*/)
 
             const float speed = dist / ldt; // 前進速度(m/s)。負値=後退
 
+            // overrideSpeed は書かない。isRootMotionActive を立てると、消費側の
+            //   JoltCharacterUpdateSystem::CalculateHorizontalVelocity が
+            //   rootMotionVelocity で早期 return するため overrideSpeed は必ず捨てられる。
+            //   書くと「速度を指定している」と読めてしまうので置かない。
+            //   （desiredVelocity は PlayerAnimParamSyncSystem が読むので必要）
             movement.desiredVelocity    = forward;
-            movement.overrideSpeed      = speed;
             movement.isRootMotionActive = true;
-            movement.rootMotionVelocity = forward * speed;
+            movement.rootMotionVelocity = forward * speed; // 負値=後退もこの1本で表現される
             return; // ボーン抽出はスキップ
         }
 
@@ -231,8 +235,8 @@ void RootMotionSystem::Update(float /*rawDt*/)
             forward.Normalize();
         }
 
+        // overrideSpeed は書かない（上のカーブ駆動側と同じ理由。必ず捨てられる）。
         movement.desiredVelocity = forward;
-        movement.overrideSpeed   = speed;
 
         // ダッシュ用の変数を汚染せず、専用領域に書き込む
         movement.isRootMotionActive = true;

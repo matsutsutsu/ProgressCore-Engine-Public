@@ -47,7 +47,20 @@ bool AnimGraphSerializer::LoadFromJSON(AnimStateGraph &outGraph, const std::stri
     //   注意: availableSequences の要素アドレスを保持するため、
     //   この vector は呼び出し側でロード後も生存している必要がある。
     //   呼び出し側が空(ResourceManager経由で後から紐付け)の場合は nullptr のまま。
-    for (auto &state : outGraph.states)
+    BindSequencesRecursive(outGraph, availableSequences);
+
+    return true;
+}
+
+// サブマシンの子グラフまで再帰して束縛する。
+//   トップ階層だけ束縛していたため、階層ステートマシンでは子グラフのステートが
+//   nullptr のまま残っていた。ランタイムは AnimControllerSystem の
+//   BindGraphResources（再帰する）を別途通るので実害は出ていなかったが、
+//   束縛経路が2つあって挙動が違うのは罠なので揃える。
+void AnimGraphSerializer::BindSequencesRecursive(
+    AnimStateGraph &graph, const std::vector<AnimSequence> &availableSequences)
+{
+    for (auto &state : graph.states)
     {
         state.sequence = nullptr;
         for (const auto &seq : availableSequences)
@@ -58,7 +71,8 @@ bool AnimGraphSerializer::LoadFromJSON(AnimStateGraph &outGraph, const std::stri
                 break;
             }
         }
-    }
 
-    return true;
+        if (state.isSubMachine && state.subGraph)
+            BindSequencesRecursive(*state.subGraph, availableSequences);
+    }
 }

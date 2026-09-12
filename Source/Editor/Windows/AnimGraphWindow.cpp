@@ -1166,7 +1166,9 @@ void AnimGraphWindow::DrawToolbar()
                 CCL_LOG_ERROR(LogCategory::Editor, "[Anim Editor] Failed to open file for text dump: %s", txtPath.c_str());
             }
         }
-        catch (const std::exception &e)
+        // CCL_LOG_WARN は非Debug構成で ((void)0) に潰れるため、e が未使用になる。
+        //   maybe_unused を付けて構成差で警告が出ないようにする。
+        catch ([[maybe_unused]] const std::exception &e)
         {
             CCL_LOG_WARN(LogCategory::Editor, "[Anim Editor] Failed to export text dump: %s", e.what());
         }

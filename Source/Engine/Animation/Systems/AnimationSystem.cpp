@@ -33,12 +33,22 @@ namespace
 //        単体テストしやすく、ヘッダにも公開しない（実装詳細のため匿名namespaceに隔離）。
 // -----------------------------------------------------------------------------------
 
-// TODO: 実行中にこの部分の処理負荷がとてつもないフレームがあったから後で調べる まれに出てくる
 // 速度カーブによる時間の歪み(Time Warping)を考慮した実効再生速度を返す。
+//
+// 実効速度 = ステートの速度 × 足滑り補正 × 速度カーブ。
+//   playbackSpeed(ステート由来)と footSlideMultiplier(CharacterAnimSyncSystem 由来)を
+//   別フィールドに分けて、ここで掛け合わせる。同じ変数を2つのシステムで奪い合うと、
+//   ループするステートで「遷移フレームだけステートの速度が効く」状態になる。
+//
+// 旧 TODO「まれにこの部分の処理負荷がとてつもないフレームがある」について:
+//   ここに ZoneScopedN を置いていたのが原因で、コードの問題ではなかった。
+//   ・CurveData::Evaluate は std::upper_bound の O(log n)（キー数は高々数十）
+//   ・AnimatorComponent を持つのは Player と Muriel の2体だけ（ドローンは Model のみ）
+//   つまり計測対象は数十ナノ秒の処理で、Tracy のゾーン自体のコストと同程度。
+//   まれに出る巨大値は OS がスレッドをプリエンプトした時間を拾っているだけなので、
+//   ゾーンは意味のある粒度(AnimationSystem::Update / ComputeAndApplyPose)に留める。
 float ComputeEffectiveSpeed(const AnimatorComponent &animator, const AnimSequence *seq)
 {
-    ZoneScopedN("Anim::ComputeEffectiveSpeed");
-
     float curveMultiplier = 1.0f;
     if (animator.activeCurve)
     {
@@ -48,7 +58,7 @@ float ComputeEffectiveSpeed(const AnimatorComponent &animator, const AnimSequenc
         progress        = std::clamp(progress, 0.0f, 1.0f);
         curveMultiplier = animator.activeCurve->Evaluate(progress);
     }
-    return animator.playbackSpeed * curveMultiplier;
+    return animator.playbackSpeed * animator.footSlideMultiplier * curveMultiplier;
 }
 
 /**
@@ -57,8 +67,6 @@ float ComputeEffectiveSpeed(const AnimatorComponent &animator, const AnimSequenc
  */
 bool AdvanceTimers(AnimatorComponent &animator, const AnimSequence *seq, float localDt)
 {
-    ZoneScopedN("Anim::AdvanceTimers");
-
     const float effectiveSpeed = ComputeEffectiveSpeed(animator, seq);
     const float prevTime       = animator.currentTimer;
 
@@ -105,8 +113,6 @@ bool AdvanceTimers(AnimatorComponent &animator, const AnimSequence *seq, float l
 // duration境界でのループ/終了判定。currentTimer を正規化する。
 void ResolveLoopAndFinish(AnimatorComponent &animator, const AnimSequence *seq)
 {
-    ZoneScopedN("Anim::ResolveLoopAndFinish");
-
     if (seq->duration <= 0.0f) return;
 
     if (animator.currentTimer >= seq->duration)
@@ -147,6 +153,8 @@ AnimationSystem::AnimationSystem()
 
 void AnimationSystem::Update(float dt)
 {
+    ZoneScopedN("AnimationSystem::Update");
+
     // 直列実行。DispatchPointEvents が EventBus へ Publish するため、
     // 並列化するならまず EventBus 側のスレッド安全性を確保すること。
     //
