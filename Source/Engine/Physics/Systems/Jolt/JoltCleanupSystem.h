@@ -3,13 +3,13 @@
 #include "Engine/Core/Components/DestroyTag.h"
 #include "Engine/Physics/Components/Jolt/JoltHandleComponent.h"
 
-// DestroyTagがついたEntityのJoltの剛体を削除するシステム
+// このフレームで消えるEntity（DestroyTagの起点＋その子孫）のJolt剛体を削除するシステム
 //
-// HierarchyCleanupSystemとの順番は実はどっちでもいい
-//   実際に消されたとしても遅延実行なので問題なく剛体削除処理は通るので
-// 、HierarchyCleanupSystemが先に走っても問題ない
+// HierarchyCleanupSystem より先に走る必要がある（向こうが RunAfter で宣言している）。
+//   ECSの構造を壊す前に外部リソースを解放する、という順序を明示しておく。
+//   bodyID は破棄の証拠として書き戻すので、申告は Write。
 class JoltCleanupSystem : public CCL::ECS::IfSystem<JoltCleanupSystem,
-    CCL::ECS::Read<Tag::DestroyTag>, CCL::ECS::Read<JoltHandleComponent>> {
+    CCL::ECS::Read<Tag::DestroyTag>, CCL::ECS::Write<JoltHandleComponent>> {
 public:
     JoltCleanupSystem() : IfSystem("JoltCleanupSystem") {}
     void Update(float dt) override;

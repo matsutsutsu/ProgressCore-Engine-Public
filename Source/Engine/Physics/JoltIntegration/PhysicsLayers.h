@@ -62,6 +62,31 @@ namespace PhysicsLayers {
         #undef X
     };
     static constexpr int LayerCount = static_cast<int>(NUM_LAYERS);
+
+    // X-Macro の値が 0,1,2,... と連番であることの検証。
+    //   NUM_LAYERS は「行数」を数えているだけなので、飛び番(例: X(FOO, 9, "FOO"))を
+    //   書くと BPLayerInterfaceImpl::mObjectToBroadPhase[] の範囲外アクセスになる。
+    //   JPH_ASSERT は Release/Development では消えるため、コンパイル時に止める。
+    #define X(name, value, str) static_assert(name < NUM_LAYERS,         #name " の値が NUM_LAYERS 以上です。PHYSICS_OBJECT_LAYER_LIST の値は 0 から連番にしてください");
+    PHYSICS_OBJECT_LAYER_LIST(X)
+    #undef X
+
+    /**
+     * @brief 「動かない背景」レイヤーか？（＝接触イベントを発行する価値がないか）
+     *
+     * @details
+     *  壁・床・落下防止の見えない壁は、キャラが押し付けられている間ずっと接触が続く。
+     *  OnContactPersisted は接触が継続する限り毎フレーム呼ばれるため、ここを弾かないと
+     *  イベントバッファが背景との接触で埋まる（購読側は全イベントを自前のvectorへ
+     *  コピーしてから絞り込むので、コストは二重に乗る）。
+     *
+     * @note レイヤーを増やしたときは PhysicsLayers.cpp の3フィルタに加えて
+     *       【この関数も】見直すこと。「背景なのに判定が漏れている」と静かに重くなる。
+     */
+    inline constexpr bool IsStaticWorldLayer(JPH::ObjectLayer layer)
+    {
+        return layer == NON_MOVING || layer == INVISIBLE_WALL;
+    }
 } // namespace PhysicsLayers
 
 // ──────────────────────────────────────────────

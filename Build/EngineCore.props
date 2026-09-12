@@ -35,6 +35,27 @@
 			</PreprocessorDefinitions>
 
 			<!-- ========================================================= -->
+			<!-- Debug 構成だけ JPH_ENABLE_ASSERTS を足す -->
+			<!--
+			     このマクロは Jolt の「アサートを有効にするか」ではなく、構造体の
+			     レイアウトそのものを変える。Mutex は mLockedThreadID を、Body /
+			     FixedSizeFreeList も検証用メンバを増やす（Jolt/Core/Mutex.h 参照）。
+			     したがって「リンクする Jolt.lib と同じ定義」でなければならない。
+
+			     lib/Debug/Jolt.lib はアサート有効でビルドされている（AssertFailed を
+			     持つ）のに、こちら側は未定義のままだった。つまり sizeof(PhysicsSystem)
+			     が lib と本体で食い違ったまま make_unique していたことになる。
+			     ここで揃える。
+
+			     lib/Release と lib/Distribution はアサート無効でビルドされているので、
+			     Release / Development 側では絶対に定義しないこと。
+			-->
+			<PreprocessorDefinitions Condition="$(Configuration.Contains('Debug'))">
+				JPH_ENABLE_ASSERTS;
+				%(PreprocessorDefinitions)
+			</PreprocessorDefinitions>
+
+			<!-- ========================================================= -->
 			<!-- 2. Development 構成 (アサートなし / Release DLL / JoltデバッグON) -->
 			<!-- ========================================================= -->
 			<PreprocessorDefinitions Condition="!$(Configuration.Contains('Debug')) and '$(Configuration)'!='Shipping'">

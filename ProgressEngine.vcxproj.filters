@@ -1464,6 +1464,9 @@
     <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsManager.h">
       <Filter>Source\Engine\Physics\JoltIntegration</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltShapeFactory.h">
+      <Filter>Source\Engine\Physics\JoltIntegration</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Transform\Components\BoneAttachmentComponent.h">
       <Filter>Source\Engine\Transform\Components</Filter>
     </ClInclude>
@@ -2565,6 +2568,9 @@
       <Filter>Source\Engine\Physics\JoltIntegration</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltPhysicsManager.cpp">
+      <Filter>Source\Engine\Physics\JoltIntegration</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltShapeFactory.cpp">
       <Filter>Source\Engine\Physics\JoltIntegration</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Transform\Components\TransformComponentMeta.cpp">

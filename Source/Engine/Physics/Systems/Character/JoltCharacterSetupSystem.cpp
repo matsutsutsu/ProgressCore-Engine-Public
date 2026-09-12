@@ -1,6 +1,7 @@
 #include "JoltCharacterSetupSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"
+#include "Engine/Physics/JoltIntegration/JoltShapeFactory.h"
 
 #include "Engine/Physics/Components/Collision/JoltCapsuleColliderComponent.h" // カプセルコライダーを使用前提
 #include "Engine/Physics/Components/Jolt/JoltHandleComponent.h"               // presenceプロキシのHandle
@@ -41,7 +42,9 @@ void JoltCharacterSetupSystem::Update(float dt)
                 JPH::Quat::sIdentity(),
                 capsuleSettings);
 
-        JPH::RefConst<JPH::Shape> characterShape = rotTransSettings->Create().Get();
+        JPH::RefConst<JPH::Shape> characterShape =
+            JoltShapeFactory::CreateChecked(*rotTransSettings, static_cast<uint64_t>(id), "Character Capsule");
+        if (characterShape == nullptr) return; // 失敗はログ済み。キャラを作らずスキップする
 
         // ===============================================================
         // 2. CharacterVirtual の設定と生成

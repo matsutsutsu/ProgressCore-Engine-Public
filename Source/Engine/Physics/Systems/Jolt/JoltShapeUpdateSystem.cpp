@@ -1,6 +1,7 @@
 #include "JoltShapeUpdateSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"
+#include "Engine/Physics/JoltIntegration/JoltShapeFactory.h"
 
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
@@ -34,7 +35,8 @@ void JoltBoxShapeUpdateSystem::Update(float dt) {
 
         // 1. ベースの箱を作成
         JPH::BoxShapeSettings baseSettings(JPH::Vec3(box.halfExtent.x, box.halfExtent.y, box.halfExtent.z));
-        JPH::ShapeRefC baseShape = baseSettings.Create().Get();
+        JPH::ShapeRefC baseShape = JoltShapeFactory::CreateChecked(baseSettings, id, "Box");
+        if (baseShape == nullptr) { box.isDirty = false; return; } // 毎フレーム失敗ログを出さないよう畳む
 
         // 2. オフセットと回転を適用したラッパー(包み紙)を作成！
         JPH::RotatedTranslatedShapeSettings offsetSettings(
@@ -42,8 +44,10 @@ void JoltBoxShapeUpdateSystem::Update(float dt) {
             EulerDegreeToJoltQuat(box.localRotationEuler),
             baseShape
         );
+        JPH::ShapeRefC finalShape = JoltShapeFactory::CreateChecked(offsetSettings, id, "Box(offset)");
+        if (finalShape == nullptr) { box.isDirty = false; return; }
 
-        bodyInterface.SetShape(handle.bodyID, offsetSettings.Create().Get(), true, JPH::EActivation::Activate);
+        bodyInterface.SetShape(handle.bodyID, finalShape, true, JPH::EActivation::Activate);
         box.isDirty = false;
     });
 }
@@ -59,7 +63,8 @@ void JoltSphereShapeUpdateSystem::Update(float dt) {
         if (!sphere.isDirty) return; 
 
         JPH::SphereShapeSettings baseSettings(sphere.radius);
-        JPH::ShapeRefC baseShape = baseSettings.Create().Get();
+        JPH::ShapeRefC baseShape = JoltShapeFactory::CreateChecked(baseSettings, id, "Sphere");
+        if (baseShape == nullptr) { sphere.isDirty = false; return; }
 
         // 球は回転させても意味がないため、位置ズレのみ適用
         JPH::RotatedTranslatedShapeSettings offsetSettings(
@@ -67,8 +72,10 @@ void JoltSphereShapeUpdateSystem::Update(float dt) {
             JPH::Quat::sIdentity(),
             baseShape
         );
+        JPH::ShapeRefC finalShape = JoltShapeFactory::CreateChecked(offsetSettings, id, "Sphere(offset)");
+        if (finalShape == nullptr) { sphere.isDirty = false; return; }
 
-        bodyInterface.SetShape(handle.bodyID, offsetSettings.Create().Get(), true, JPH::EActivation::Activate);
+        bodyInterface.SetShape(handle.bodyID, finalShape, true, JPH::EActivation::Activate);
         sphere.isDirty = false;
     });
 }
@@ -84,15 +91,18 @@ void JoltCapsuleShapeUpdateSystem::Update(float dt) {
         if (!capsule.isDirty) return; 
 
         JPH::CapsuleShapeSettings baseSettings(capsule.halfHeight, capsule.radius);
-        JPH::ShapeRefC baseShape = baseSettings.Create().Get();
+        JPH::ShapeRefC baseShape = JoltShapeFactory::CreateChecked(baseSettings, id, "Capsule");
+        if (baseShape == nullptr) { capsule.isDirty = false; return; }
 
         JPH::RotatedTranslatedShapeSettings offsetSettings(
             JPH::Vec3(capsule.localOffset.x, capsule.localOffset.y, capsule.localOffset.z),
             EulerDegreeToJoltQuat(capsule.localRotationEuler),
             baseShape
         );
+        JPH::ShapeRefC finalShape = JoltShapeFactory::CreateChecked(offsetSettings, id, "Capsule(offset)");
+        if (finalShape == nullptr) { capsule.isDirty = false; return; }
 
-        bodyInterface.SetShape(handle.bodyID, offsetSettings.Create().Get(), true, JPH::EActivation::Activate);
+        bodyInterface.SetShape(handle.bodyID, finalShape, true, JPH::EActivation::Activate);
         capsule.isDirty = false;
     });
 }

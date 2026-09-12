@@ -4,6 +4,8 @@
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Physics/Components/Jolt/JoltHandleComponent.h"
 
+#include <Jolt/Physics/Collision/Shape/Shape.h> // ShapeRefC / ShapeSettings
+
 // ===================================================================================
 // ファイル名: JoltBodySetupSystem.h
 // 役割:
@@ -34,4 +36,23 @@ class JoltBodySetupSystem : public CCL::ECS::IfSystem<JoltBodySetupSystem,
     virtual ~JoltBodySetupSystem() = default;
 
     void Update(float dt) override;
+
+  private:
+    /**
+     * @brief 形状を生成する唯一の窓口。Result を必ず検証してから取り出す。
+     *
+     * @details
+     *  JPH::Result::Get() は中身が union で、エラー時は値が【構築されていない】。
+     *      const Type & Get() const { JPH_ASSERT(IsValid()); return mResult; }
+     *  つまり失敗した Result に対して Get() を呼ぶと、未初期化の ShapeRefC を
+     *  コピーすることになり、そのコピーコンストラクタが野良ポインタに AddRef() する。
+     *  JPH_ASSERT は Release/Development では消えるので、何の警告もなく壊れる。
+     *
+     *  特にメッシュコライダーはモデル次第で普通に失敗する（退化三角形・三角形数の上限）。
+     *  そのため Create().Get() を直書きせず、必ずこの関数を通す。
+     *
+     * @return 失敗時は nullptr。呼び側の「shape が nullptr ならスキップ」に合流する。
+     */
+    JPH::ShapeRefC CreateShapeChecked(
+        const JPH::ShapeSettings &settings, CCL::ECS::EntityID id, const char *what);
 };

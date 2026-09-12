@@ -30,11 +30,9 @@ void HierarchyCleanupSystem::Update(float dt)
 // =========================================================================
 // 実際のクリーンアップ処理 (static)
 // =========================================================================
-void HierarchyCleanupSystem::ExecuteCleanup(CCL::ECS::World& world)
+void HierarchyCleanupSystem::CollectDoomedEntities(
+    CCL::ECS::World& world, std::vector<EntityID>& outList)
 {
-    std::vector<EntityID> executionList;
-    executionList.reserve(64);
-
     // 1. DestroyTag を持つ「削除起点」を見つけ、子も収集する(チャンク手動走査)。
     auto& chunks = world.GetChunkManager().GetChunks();
     for (auto& chunkPtr : chunks) {
@@ -48,16 +46,24 @@ void HierarchyCleanupSystem::ExecuteCleanup(CCL::ECS::World& world)
         for (size_t i = 0; i < count; ++i) {
             if (chunk->IsEntityDestroyed(i)) continue;
             EntityID id = entityIDs[i];
-            executionList.push_back(id);
+            outList.push_back(id);
             if (world.HasComponent<TransformComponent>(id)) {
-                CollectChildrenRecursive(world, id, executionList);
+                CollectChildrenRecursive(world, id, outList);
             }
         }
     }
 
     // 2. 重複排除。
-    std::sort(executionList.begin(), executionList.end());
-    executionList.erase(std::unique(executionList.begin(), executionList.end()), executionList.end());
+    std::sort(outList.begin(), outList.end());
+    outList.erase(std::unique(outList.begin(), outList.end()), outList.end());
+}
+
+void HierarchyCleanupSystem::ExecuteCleanup(CCL::ECS::World& world)
+{
+    std::vector<EntityID> executionList;
+    executionList.reserve(64);
+
+    CollectDoomedEntities(world, executionList);
 
     // 3. 削除の実行。
     for (EntityID targetID : executionList) {

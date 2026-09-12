@@ -29,11 +29,15 @@ void JoltCharacterContactListener::EmitContactEvent(const JPH::CharacterVirtual 
 {
     // =================================================================================
     // イベントストームの遮断
-    // 相手が「動かない背景（壁や床）」なら、イベントを発行せずここで即座に捨てる
+    // 相手が「動かない背景（壁・床・落下防止の見えない壁）」なら、
+    // イベントを発行せずここで即座に捨てる。
+    //   判定を PhysicsLayers::IsStaticWorldLayer に預けているのは、レイヤーを増やした
+    //   ときにここの条件を足し忘れないため。実際 INVISIBLE_WALL は後から追加された際に
+    //   NON_MOVING 直書きの条件から漏れ、壁に押し付けている間ずっとイベントが出ていた。
     // =================================================================================
     JPH::ObjectLayer hitLayer = m_bodyInterface->GetObjectLayer(inBodyID2);
 
-    if (hitLayer == PhysicsLayers::NON_MOVING)  return;
+    if (PhysicsLayers::IsStaticWorldLayer(hitLayer)) return;
 
     // 相手の BodyID から ECSの EntityID を復元
     uint64_t userData    = m_bodyInterface->GetUserData(inBodyID2);
