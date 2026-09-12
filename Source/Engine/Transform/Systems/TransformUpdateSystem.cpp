@@ -257,6 +257,87 @@ void TransformUpdateSystem::DestroyEntityWithHierarchy(World& world, EntityID en
     world.RequestDestroyEntity(entity);
 }
 
+// =========================================================================
+// ワールド値 → ローカル欄への書き戻し (static)
+// =========================================================================
+void TransformUpdateSystem::WriteWorldTransform(World& world, EntityID entity,
+    TransformComponent& trans, const DirectX::XMFLOAT3& worldPos,
+    const DirectX::XMFLOAT4& worldRot)
+{
+    using namespace DirectX;
+
+    const EntityID parentID = trans.parent.id;
+
+    // 親がいなければローカル＝ワールド。大多数はここで終わる（追加コストなし）。
+    if (parentID == 0) {
+        trans.position = worldPos;
+        trans.rotation = worldRot;
+        trans.isStatic = false;
+        return;
+    }
+
+    const auto* parentTrans = world.GetComponent<TransformComponent>(parentID);
+    if (!parentTrans) {
+        // 親リンクが切れている（破棄直後など）。ワールド値のまま置くのが最も無難。
+        trans.position = worldPos;
+        trans.rotation = worldRot;
+        trans.isStatic = false;
+        return;
+    }
+
+    const XMMATRIX parentWorld = XMLoadFloat4x4(&parentTrans->worldMatrix);
+
+    // 位置: 親のワールド行列の逆行列を通す
+    XMVECTOR localPos = XMVector3Transform(
+        XMVectorSet(worldPos.x, worldPos.y, worldPos.z, 1.0f),
+        XMMatrixInverse(nullptr, parentWorld));
+    XMStoreFloat3(&trans.position, localPos);
+
+    // 回転: 親のワールド回転の逆をかける
+    XMVECTOR pScale, pRot, pTrans;
+    if (XMMatrixDecompose(&pScale, &pRot, &pTrans, parentWorld)) {
+        XMVECTOR localRot = XMQuaternionMultiply(
+            XMLoadFloat4(&worldRot), XMQuaternionInverse(pRot));
+        XMStoreFloat4(&trans.rotation, XMQuaternionNormalize(localRot));
+    }
+    else {
+        // 分解できない行列（スケール0など）。回転は触らず位置だけ反映しておく。
+        trans.rotation = worldRot;
+    }
+
+    trans.isStatic = false;
+}
+
+void TransformUpdateSystem::WriteWorldPosition(World& world, EntityID entity,
+    TransformComponent& trans, const DirectX::XMFLOAT3& worldPos)
+{
+    // 回転を据え置くため、現在のローカル回転を「そのまま維持する」ように渡す。
+    //   親がいる場合は WriteWorldTransform が rotation を書き換えてしまうので、
+    //   ここでは位置だけを自前で処理する。
+    using namespace DirectX;
+
+    const EntityID parentID = trans.parent.id;
+    if (parentID == 0) {
+        trans.position = worldPos;
+        trans.isStatic = false;
+        return;
+    }
+
+    const auto* parentTrans = world.GetComponent<TransformComponent>(parentID);
+    if (!parentTrans) {
+        trans.position = worldPos;
+        trans.isStatic = false;
+        return;
+    }
+
+    const XMMATRIX parentWorld = XMLoadFloat4x4(&parentTrans->worldMatrix);
+    XMVECTOR localPos = XMVector3Transform(
+        XMVectorSet(worldPos.x, worldPos.y, worldPos.z, 1.0f),
+        XMMatrixInverse(nullptr, parentWorld));
+    XMStoreFloat3(&trans.position, localPos);
+    trans.isStatic = false;
+}
+
 void TransformUpdateSystem::MarkForDestruction(World& world, EntityID entity, bool destroyChildren)
 {
     if (!world.IsEntityValid(entity)) return;

@@ -3,6 +3,8 @@
 #include <Jolt/Jolt.h>
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
+#include "Engine/ECS/Core/CCL_World.h"
+#include "Engine/Transform/Systems/TransformUpdateSystem.h"
 
 void JoltStepSystem::Update(float dt)
 {
@@ -43,12 +45,12 @@ void JoltPullSystem::Update(float dt)
         JPH::Quat  rot;
         bodyInterface.GetPositionAndRotation(joltBody.bodyID, pos, rot);
 
-        // ECSのTransformを上書き
-        trans.position = {pos.GetX(), pos.GetY(), pos.GetZ()};
-        trans.rotation = {rot.GetX(), rot.GetY(), rot.GetZ(), rot.GetW()};
-
-        // TransformUpdateSystemに変更を知らせて行列を再計算させる
-        trans.isStatic = false;
+        // ECSのTransformを上書き。
+        //   Jolt が返すのはワールド値、position/rotation はローカル欄なので、
+        //   親を持つEntityでは変換が要る（中で isStatic=false も立てる）。
+        TransformUpdateSystem::WriteWorldTransform(*m_world, id, trans,
+            {pos.GetX(), pos.GetY(), pos.GetZ()},
+            {rot.GetX(), rot.GetY(), rot.GetZ(), rot.GetW()});
     });
 }
 

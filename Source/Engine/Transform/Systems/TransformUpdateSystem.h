@@ -52,6 +52,29 @@ class TransformUpdateSystem : public CCL::ECS::IfSystem<TransformUpdateSystem,CC
     static void MarkForDestruction(
         CCL::ECS::World &world, CCL::ECS::EntityID entity, bool destroyChildren = true);
 
+    /**
+     * @brief 物理から返ってきた「ワールド座標・回転」を position/rotation へ正しく書き戻す。
+     *
+     * @details
+     *  position / rotation は **親からの相対値(Local)**。Jolt が返すのはワールド値なので、
+     *  親を持つ Entity にそのまま代入すると親の変換が二重に掛かって飛ぶ。
+     *  親がいるときだけ親の worldMatrix の逆変換を通してローカルへ落とす。
+     *
+     *  生成側(JoltBodySetupSystem / JoltPushSystem)は GetWorldPosition() /
+     *  GetWorldRotation() を使ってワールドで出し入れしているのに、戻す側だけが
+     *  ローカル欄へワールド値を直接書いていた。その非対称をここで閉じる。
+     *
+     * @note 親の worldMatrix を読む。L05(Pull)の時点で worldMatrix を書くシステムは
+     *       無いため、並列ループから呼んでも安全。
+     */
+    static void WriteWorldTransform(CCL::ECS::World &world, CCL::ECS::EntityID entity,
+        TransformComponent &trans, const DirectX::XMFLOAT3 &worldPos,
+        const DirectX::XMFLOAT4 &worldRot);
+
+    /// 回転は変えずワールド座標だけ書き戻す版（CharacterVirtual 用）。
+    static void WriteWorldPosition(CCL::ECS::World &world, CCL::ECS::EntityID entity,
+        TransformComponent &trans, const DirectX::XMFLOAT3 &worldPos);
+
   private:
     // 保留中の親子関係を適用する関数
     void ProcessPendingParents();

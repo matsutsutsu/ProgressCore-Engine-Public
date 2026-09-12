@@ -6,6 +6,7 @@
 #include "Engine/Physics/Components/Jolt/JoltHandleComponent.h"
 #include "Engine/Physics/Components/Character/KnockbackComponent.h"
 #include <Jolt/Physics/Body/BodyFilter.h>
+#include "Engine/Transform/Systems/TransformUpdateSystem.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include <SimpleMath.h>
@@ -115,8 +116,12 @@ void JoltCharacterUpdateSystem::ApplyTeleportIfNeeded(TransformComponent &trans,
 {
     if (trans.isTeleported)
     {
-        ch->SetPosition(JPH::RVec3(trans.position.x, trans.position.y, trans.position.z));
-        ch->SetRotation(JPH::Quat(trans.rotation.x, trans.rotation.y, trans.rotation.z, trans.rotation.w));
+        // Jolt はワールド座標で受け取る。trans.position はローカル欄なので、
+        // 親を持つキャラでも正しくなるよう worldMatrix 由来の値を渡す。
+        const DirectX::XMFLOAT3 worldPos = trans.GetWorldPosition();
+        const DirectX::XMFLOAT4 worldRot = trans.GetWorldRotation();
+        ch->SetPosition(JPH::RVec3(worldPos.x, worldPos.y, worldPos.z));
+        ch->SetRotation(JPH::Quat(worldRot.x, worldRot.y, worldRot.z, worldRot.w).Normalized());
         trans.isTeleported = false;
     }
 }
@@ -192,7 +197,12 @@ DirectX::SimpleMath::Vector3 JoltCharacterUpdateSystem::CalculateHorizontalVeloc
     const float curSpeed = movement.currentVelocity.Length();
     const float tgtSpeed = targetVelocity.Length();
     const float rate     = (tgtSpeed >= curSpeed) ? config.acceleration : config.deceleration;
-    movement.currentVelocity = Vector3::Lerp(movement.currentVelocity, targetVelocity, rate * safeDt);
+
+    // Lerp の係数は [0,1] に収める。rate * safeDt が 1 を超えると目標を通り越して
+    //   逆方向へ飛び、係数が大きいほど発振する（rate=30, dt=0.0333 で既に 1.0）。
+    //   config で加減速を上げたときに「速くなる」ではなく「暴れる」になるのを防ぐ。
+    const float t        = (std::min)(rate * safeDt, 1.0f);
+    movement.currentVelocity = Vector3::Lerp(movement.currentVelocity, targetVelocity, t);
 
     return movement.currentVelocity;
 }
@@ -222,8 +232,10 @@ void JoltCharacterUpdateSystem::UpdatePhysicsAndSync(float safeDt, float moveDt,
     ch->SetListener(nullptr);
 
     JPH::RVec3 pos = ch->GetPosition();
-    trans.position = {pos.GetX(), pos.GetY(), pos.GetZ()};
-    trans.isStatic = false;
+    // CharacterVirtual が返すのはワールド座標。position はローカル欄なので変換して書く
+    // （回転はゲーム層が別途 ch->SetRotation で流しているのでここでは触らない）。
+    TransformUpdateSystem::WriteWorldPosition(*m_world, id, trans,
+        {pos.GetX(), pos.GetY(), pos.GetZ()});
 
     // presence プロキシ（Kinematic 剛体）を CharacterVirtual に追従させる。
     //   SetPosition のテレポートではなく MoveKinematic を使うことで、

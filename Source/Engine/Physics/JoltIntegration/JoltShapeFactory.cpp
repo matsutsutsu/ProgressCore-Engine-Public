@@ -1,6 +1,8 @@
 #include "Engine/Physics/JoltIntegration/JoltShapeFactory.h"
 #include "Engine/Platform/Core/Logger.h"
 
+#include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
+
 namespace JoltShapeFactory {
 
 JPH::ShapeRefC CreateChecked(
@@ -23,6 +25,29 @@ JPH::ShapeRefC CreateChecked(
     }
 
     return result.Get();
+}
+
+JPH::Quat EulerDegreeToJoltQuat(const DirectX::XMFLOAT3 &eulerDegree)
+{
+    const float pitch = DirectX::XMConvertToRadians(eulerDegree.x);
+    const float yaw   = DirectX::XMConvertToRadians(eulerDegree.y);
+    const float roll  = DirectX::XMConvertToRadians(eulerDegree.z);
+    return JPH::Quat::sEulerAngles(JPH::Vec3(pitch, yaw, roll));
+}
+
+JPH::ShapeRefC CreateOffsetShape(
+    const JPH::ShapeSettings &base, const DirectX::XMFLOAT3 &localOffset,
+    const DirectX::XMFLOAT3 &localEuler, uint64_t ownerId, const char *what)
+{
+    JPH::ShapeRefC baseShape = CreateChecked(base, ownerId, what);
+    if (baseShape == nullptr) return nullptr;
+
+    JPH::RotatedTranslatedShapeSettings offsetSettings(
+        JPH::Vec3(localOffset.x, localOffset.y, localOffset.z),
+        EulerDegreeToJoltQuat(localEuler),
+        baseShape);
+
+    return CreateChecked(offsetSettings, ownerId, what);
 }
 
 } // namespace JoltShapeFactory

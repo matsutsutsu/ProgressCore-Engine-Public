@@ -3,6 +3,7 @@
 #include <utility>                  // std::swap
 
 #include "Engine/Physics/JoltIntegration/HitDiagnostics.h" // 計測ログ(暫定)
+#include "Engine/Physics/JoltIntegration/PhysicsLayers.h"   // IsStaticWorldLayer
 
 namespace
 {
@@ -13,6 +14,23 @@ namespace
 bool IsAttackContact(const JPH::Body &a, const JPH::Body &b)
 {
     return a.IsSensor() || b.IsSensor();
+}
+
+// 背景（壁・床・見えない壁）が絡む接触か。
+//
+// OnContactPersisted は接触が続く限り毎フレーム呼ばれるため、地面に載っている
+// 剛体があるだけでイベントバッファが背景との接触で埋まる。購読側
+// (HitboxCollisionSystem / JustEvadeSystem) は全イベントを自前の vector へ
+// コピーしてから絞り込むので、コストは二重に乗る。
+//
+// 背景との接触を必要とする購読者は存在しない（攻撃レイヤーは pair フィルタで
+// そもそも壁と当たらない）ので、ここで捨てて良い。
+// キャラ側の JoltCharacterContactListener には元から同じ遮断があり、
+// 剛体側にだけ無かったものを揃える。
+bool IsStaticWorldContact(const JPH::Body &a, const JPH::Body &b)
+{
+    return PhysicsLayers::IsStaticWorldLayer(a.GetObjectLayer())
+           || PhysicsLayers::IsStaticWorldLayer(b.GetObjectLayer());
 }
 } // namespace
 
@@ -26,6 +44,9 @@ void JoltContactListener::EmitContactEvent(const JPH::Body& inBody1, const JPH::
 
     // 両方とも正しくEntityIDが取れなかった場合は無視（壁同士など）
     if (entityA == 0 && entityB == 0) return;
+
+    // 背景が絡む接触はイベント化しない（上の IsStaticWorldContact のコメント参照）
+    if (IsStaticWorldContact(inBody1, inBody2)) return;
 
     // 2. 衝突座標と法線を計算
     JPH::RVec3 pos    = inManifold.mBaseOffset + inManifold.mRelativeContactPointsOn1[0];

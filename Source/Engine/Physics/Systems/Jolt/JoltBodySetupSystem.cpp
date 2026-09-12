@@ -26,23 +26,6 @@
 
 using namespace DirectX;
 
-namespace {
-    // ヘルパー：Degree(度)から JoltのQuaternion への変換（UpdateSystemと同じもの）
-    inline JPH::Quat EulerDegreeToJoltQuat(const XMFLOAT3& eulerDegree) {
-        float pitch = XMConvertToRadians(eulerDegree.x);
-        float yaw = XMConvertToRadians(eulerDegree.y);
-        float roll = XMConvertToRadians(eulerDegree.z);
-        return JPH::Quat::sEulerAngles(JPH::Vec3(pitch, yaw, roll));
-    }
-}
-
-JPH::ShapeRefC JoltBodySetupSystem::CreateShapeChecked(
-    const JPH::ShapeSettings &settings, CCL::ECS::EntityID id, const char *what)
-{
-    // 検証の実体は JoltShapeFactory に集約してある（ShapeUpdate / CharacterSetup と共有）。
-    return JoltShapeFactory::CreateChecked(settings, static_cast<uint64_t>(id), what);
-}
-
 void JoltBodySetupSystem::Update(float dt)
 {
     if (!m_world->HasResource<JoltPhysicsManager*>()) return;
@@ -65,49 +48,28 @@ void JoltBodySetupSystem::Update(float dt)
         // 1. Box Collider の生成
         // =======================================================
         if (auto* box = m_world->GetComponent<JoltBoxColliderComponent>(id)) {
+            // オフセットと回転を適用したラッパー(包み紙)でくるむところまで一括
             JPH::BoxShapeSettings baseSettings(JPH::Vec3(box->halfExtent.x, box->halfExtent.y, box->halfExtent.z));
-            JPH::ShapeRefC baseShape = CreateShapeChecked(baseSettings, id, "Box");
-            if (baseShape == nullptr) return;
-
-            // オフセットと回転を適用したラッパー(包み紙)でくるむ
-            JPH::RotatedTranslatedShapeSettings offsetSettings(
-                JPH::Vec3(box->localOffset.x, box->localOffset.y, box->localOffset.z),
-                EulerDegreeToJoltQuat(box->localRotationEuler),
-                baseShape
-            );
-            shape = CreateShapeChecked(offsetSettings, id, "Box(offset)");
+            shape = JoltShapeFactory::CreateOffsetShape(
+                baseSettings, box->localOffset, box->localRotationEuler, id, "Box");
         }
         // =======================================================
         // 2. Sphere Collider の生成
         // =======================================================
         else if (auto* sphere = m_world->GetComponent<JoltSphereColliderComponent>(id)) {
-            JPH::SphereShapeSettings baseSettings(sphere->radius);
-            JPH::ShapeRefC baseShape = CreateShapeChecked(baseSettings, id, "Sphere");
-            if (baseShape == nullptr) return;
-
             // 球は回転の影響を受けないため、位置ズレのみ適用
-            JPH::RotatedTranslatedShapeSettings offsetSettings(
-                JPH::Vec3(sphere->localOffset.x, sphere->localOffset.y, sphere->localOffset.z),
-                JPH::Quat::sIdentity(),
-                baseShape
-            );
-            shape = CreateShapeChecked(offsetSettings, id, "Sphere(offset)");
+            JPH::SphereShapeSettings baseSettings(sphere->radius);
+            shape = JoltShapeFactory::CreateOffsetShape(
+                baseSettings, sphere->localOffset, {0.0f, 0.0f, 0.0f}, id, "Sphere");
         }
         // =======================================================
         // 3. Capsule Collider の生成
         // =======================================================
         else if (auto* capsule = m_world->GetComponent<JoltCapsuleColliderComponent>(id)) {
-            JPH::CapsuleShapeSettings baseSettings(capsule->halfHeight, capsule->radius);
-            JPH::ShapeRefC baseShape = CreateShapeChecked(baseSettings, id, "Capsule");
-            if (baseShape == nullptr) return;
-
             // オフセットと回転を適用
-            JPH::RotatedTranslatedShapeSettings offsetSettings(
-                JPH::Vec3(capsule->localOffset.x, capsule->localOffset.y, capsule->localOffset.z),
-                EulerDegreeToJoltQuat(capsule->localRotationEuler),
-                baseShape
-            );
-            shape = CreateShapeChecked(offsetSettings, id, "Capsule(offset)");
+            JPH::CapsuleShapeSettings baseSettings(capsule->halfHeight, capsule->radius);
+            shape = JoltShapeFactory::CreateOffsetShape(
+                baseSettings, capsule->localOffset, capsule->localRotationEuler, id, "Capsule");
         }
         // =======================================================
         // 4. Mesh Collider (地形) の自動抽出と生成
@@ -150,7 +112,7 @@ void JoltBodySetupSystem::Update(float dt)
 
             // 3. Joltの「純粋なメッシュ形状」を作成
             JPH::MeshShapeSettings meshSettings(joltVertices, joltTriangles);
-            JPH::ShapeRefC rawMeshShape = CreateShapeChecked(meshSettings, id, "Mesh");
+            JPH::ShapeRefC rawMeshShape = JoltShapeFactory::CreateChecked(meshSettings, id, "Mesh");
             if (rawMeshShape == nullptr) return;
 
             // 4. 最重要: Transform のスケールを物理メッシュに適用する！
@@ -159,7 +121,7 @@ void JoltBodySetupSystem::Update(float dt)
                 rawMeshShape,
                 JPH::Vec3(trans.scale.x, trans.scale.y, trans.scale.z)
             );
-            shape = CreateShapeChecked(scaledSettings, id, "Mesh(scaled)");
+            shape = JoltShapeFactory::CreateChecked(scaledSettings, id, "Mesh(scaled)");
         }
 
         // コライダーコンポーネントが一つも無い場合は物理実体を作れないのでスキップ

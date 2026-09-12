@@ -16,10 +16,17 @@
 
 using namespace JPH;
 
+// 物理世界の「予算」を切り替えるスイッチ。
+//   名前が示す通りの意味しか持たない: 1 なら大量の剛体を想定した上限とスクラッチメモリ、
+//   0 ならサンプル規模。パフォーマンスカウンタの類とは無関係（旧名
+//   PhysicsPerformanceCounters は実態と違うので改名した）。
+//
+// 注意: Debug が 0 側なので剛体上限が 1024 になる。ドローンを増やすと Debug でだけ
+//   上限に触れることがある。踏んだ場合は JoltBodySetupSystem が ERROR ログを出す。
 #ifdef _DEBUG
-#define PhysicsPerformanceCounters 0 // パフォーマンスを最低限対応にする
+#define PHYSICS_LARGE_WORLD_BUDGET 0
 #else
-#define PhysicsPerformanceCounters 1 // パフォーマンスを最大限対応にする
+#define PHYSICS_LARGE_WORLD_BUDGET 1
 #endif
 
 // --- デバッグ用コールバック ---
@@ -102,7 +109,7 @@ void JoltPhysicsManager::Initialize(CCL::ECS::JobSystem *inSharedPool)
     // TempAllocatorは毎フレーム出る衝突点のリストなどの一時的なデータを
     // 確保するためで毎回newせずに、フレームの最後に一括でリセットして再利用するスタイル
 
-    #if PhysicsPerformanceCounters
+    #if PHYSICS_LARGE_WORLD_BUDGET
     // 50 * 1024 * 1024 = 約50MBの計算用スクラッチメモリ
     m_tempAllocator = std::make_unique<JPH::TempAllocatorImpl>(50 * 1024 * 1024);
     #else
@@ -196,7 +203,7 @@ void JoltPhysicsManager::Initialize(CCL::ECS::JobSystem *inSharedPool)
     }
 
     // 4. 物理システムのパラメータ設定
-    #if PhysicsPerformanceCounters
+    #if PHYSICS_LARGE_WORLD_BUDGET
     // 大量の剛体を想定した上限値
     const uint cMaxBodies             = 65536; // 最大6万体まで許容
     const uint cNumBodyMutexes        = 0;     // デフォルトのミューテックス数
