@@ -21,6 +21,16 @@ struct AIBlackboard {
     DirectX::SimpleMath::Vector3 targetPosition;                               // その座標
     float                        distanceToTarget = 0.0f;                      // そこまでの距離
 
+    // 自分の正面から見た相手の角度 [度]。正=右、負=左、±180=真後ろ。
+    // 距離だけだと「正面8m」と「背後8m」が同じ値になり、回り込まれたことに気付けない。
+    // 背後を取られたら振り向く・正面に捉えている間だけ突進する、はこれが無いと書けない。
+    float angleToTarget = 0.0f;
+
+    // 相手が自分へ詰めてくる速さ [m/s]。正=接近、負=後退。
+    // 自分の移動は混ぜない。混ぜると、逃げる相手を追いかけている自分の速度が乗って
+    // 「相手が詰めてきている」と誤認する。読みたいのは相手の意思なので相手の速度だけ。
+    float targetClosingSpeed = 0.0f;
+
     float healthPercentage = 100.0f;    // 残りHPの割合（0〜100）
 
     // 被弾の蓄積。閾値はここに持たずBTノードの param（最大HPに対する％）で決める。

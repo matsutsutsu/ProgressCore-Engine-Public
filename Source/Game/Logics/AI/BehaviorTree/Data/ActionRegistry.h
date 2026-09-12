@@ -47,6 +47,12 @@ inline constexpr ActionID C_DamageThresholdExceeded = 6;  // 蓄積被弾 >= 最
 inline constexpr ActionID C_IsAtStageEdge           = 8;  // 原点から param m 以上
 inline constexpr ActionID C_DistanceLessThan        = 9;  // ターゲットとの距離 < param
 inline constexpr ActionID C_DistanceGreaterThan     = 10; // ターゲットとの距離 > param
+// 位置関係。距離だけだと「正面8m」と「背後8m」が同じ状況になり、回り込みにも
+// 踏み込みにも反応できない。角度・接近速度も param で持つ（距離と同じ理由）。
+inline constexpr ActionID C_TargetAngleLessThan     = 11; // 相手が正面 ±param 度の内側
+inline constexpr ActionID C_TargetAngleGreaterThan  = 12; // 相手が正面 ±param 度の外側
+inline constexpr ActionID C_TargetApproaching       = 13; // 相手が param m/s 以上で接近
+inline constexpr ActionID C_TargetRetreating        = 14; // 相手が param m/s 以上で後退
 
 // --- 行動 ---
 // 100〜111 は「待機0.5秒」〜「待機10.0秒」だった欠番。param へ移して1つに畳んである。
@@ -83,8 +89,9 @@ enum class BTCategory : uint8_t
     Common, // どのAIでも使う汎用
     Boss,   // ボス本体の行動
     Drone,  // ドローン群への指示
-    Range,  // 条件：距離
-    State,  // 条件：状態
+    Range,   // 条件：距離
+    Spatial, // 条件：位置関係（角度・接近速度）
+    State,   // 条件：状態
 };
 
 inline const char *CategoryName(BTCategory c)
@@ -94,8 +101,9 @@ inline const char *CategoryName(BTCategory c)
     case BTCategory::Common: return "汎用";
     case BTCategory::Boss:   return "ボス本体";
     case BTCategory::Drone:  return "ドローン";
-    case BTCategory::Range:  return "条件：距離";
-    case BTCategory::State:  return "条件：状態";
+    case BTCategory::Range:   return "条件：距離";
+    case BTCategory::Spatial: return "条件：位置関係";
+    case BTCategory::State:   return "条件：状態";
     }
     return "?";
 }
@@ -140,6 +148,11 @@ inline constexpr ActionEntry g_ConditionRegistry[] = {
 
     { CCL::AI::C_DistanceLessThan,        "C_DistanceLessThan",        "距離が N m 未満",                        BTCategory::Range, "距離 [m]"              },
     { CCL::AI::C_DistanceGreaterThan,     "C_DistanceGreaterThan",     "距離が N m 超",                          BTCategory::Range, "距離 [m]"              },
+
+    { CCL::AI::C_TargetAngleLessThan,     "C_TargetAngleLessThan",     "相手が正面 ±N 度の内側",                BTCategory::Spatial, "角度 [度]"           },
+    { CCL::AI::C_TargetAngleGreaterThan,  "C_TargetAngleGreaterThan",  "相手が正面 ±N 度の外側（回り込み）",    BTCategory::Spatial, "角度 [度]"           },
+    { CCL::AI::C_TargetApproaching,       "C_TargetApproaching",       "相手が N m/s 以上で詰めてきている",      BTCategory::Spatial, "速さ [m/s]"          },
+    { CCL::AI::C_TargetRetreating,        "C_TargetRetreating",        "相手が N m/s 以上で離れている",          BTCategory::Spatial, "速さ [m/s]"          },
 
     { CCL::AI::C_IsPhase2,                "C_IsPhase2",                "フェーズ >= 2",                          BTCategory::State, ""                      },
     { CCL::AI::C_ShouldTransitionPhase2,  "C_ShouldTransitionPhase2",  "第2形態移行条件 (HP半分以下 & 第1形態)", BTCategory::State, ""                      },

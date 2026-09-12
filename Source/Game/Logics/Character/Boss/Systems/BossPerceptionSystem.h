@@ -9,6 +9,7 @@
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Game/Logics/Combat/HealthComponent.h"
 #include "Engine/Time/TimeState.h"
+#include <SimpleMath.h>
 
 
 class BossPerceptionSystem : public CCL::ECS::IfSystem<
@@ -26,4 +27,16 @@ public:
     void Initialize() override;
 
     void Update(float dt) override;
+
+private:
+    /// 自分の正面から見た相手の角度 [度]。正=右、負=左、±180=真後ろ。
+    /// 真上から見た角度だけを測る（見上げ角は間合いの判断に使わない）。
+    float SignedAngleToTargetDeg(const TransformComponent           &trans,
+                                 const DirectX::SimpleMath::Vector3 &targetPos) const;
+
+    /// 相手が自分へ詰めてくる速さ [m/s]。正=接近、負=後退。
+    /// 相手の速度を「相手→自分」の向きへ射影するだけ。自分の速度は入れない。
+    float TargetClosingSpeed(const DirectX::SimpleMath::Vector3 &myPos,
+                             const DirectX::SimpleMath::Vector3 &targetPos,
+                             const DirectX::SimpleMath::Vector3 &targetVelocity) const;
 };

@@ -665,6 +665,13 @@ void BehaviorTreeSystem::OnGui()
         ImGui::TextColored(ImVec4(0.4f, 1.0f, 1.0f, 1.0f), "Current Action: %s", actionName.c_str());
 
         ImGui::Text("Distance To Target: %.2fm", btComp->blackboard.distanceToTarget);
+
+        // 角度と接近速度は符号に意味があるので、読み方を横に出す（右か左か、詰めか引きか）。
+        ImGui::Text("Angle To Target  : %+.1f deg  [%s]", btComp->blackboard.angleToTarget,
+                    (btComp->blackboard.angleToTarget >= 0.0f) ? "右" : "左");
+        ImGui::Text("Closing Speed    : %+.2f m/s  [%s]", btComp->blackboard.targetClosingSpeed,
+                    (btComp->blackboard.targetClosingSpeed >= 0.0f) ? "接近" : "後退");
+
         ImGui::Text("HP: %.1f%%", btComp->blackboard.healthPercentage);
 
         // 木を並べて「この技を今すぐ出す」を選べるようにする。
