@@ -41,10 +41,14 @@ ModelBoundsUpdateSystem::ModelBoundsUpdateSystem() : IfSystem("ModelBoundsUpdate
 
 void ModelBoundsUpdateSystem::Update(float dt)
 {
+    // 基準は renderWorldMatrix（補間済み）。ModelRenderSystem が描画に使うのと同じ行列。
+    //   以前は worldMatrix（固定ステップ）から AABB を作っていたため、カリング判定が
+    //   「実際に見えている位置」ではなく最大1固定ステップぶん古い位置を見ていた。
+    //   ※ Primitive 側は描画も worldMatrix なので、あちらは揃っている（変更しない）。
     ForEachParallel([&](const TransformComponent& trans, const ModelComponent& modelComp, BoundingBoxComponent& bounds) {
         Model* model = modelComp.GetModel();
         if (model && model->GetResource()) {
-            bounds.worldAABB = CalculateAccurateWorldAABB(model->GetResource()->GetBoundingBox(), trans.worldMatrix);
+            bounds.worldAABB = CalculateAccurateWorldAABB(model->GetResource()->GetBoundingBox(), trans.renderWorldMatrix);
         }
         });
 }

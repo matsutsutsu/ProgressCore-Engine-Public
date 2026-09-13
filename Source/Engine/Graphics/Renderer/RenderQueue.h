@@ -2,10 +2,13 @@
 #include <vector>
 #include <array>
 #include <algorithm>
+#include <cstdint>
+#include <unordered_map>
 #include <DirectXMath.h>
 #include "Engine/Graphics/Resource/Model.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
+#include "Engine/Graphics/Renderer/InstanceBuffer.h" // InstanceData（可視インスタンス共有用）
 
 // ---------------------------------------------------------
 // 伝票（重いデータ）
@@ -73,6 +76,47 @@ public:
         m_shadowCommands.clear();
         m_sortKeys.clear();
         m_batchesBuilt = false; // このフレームのソートはまだ未構築
+
+        m_visibleArena.clear();
+        m_visibleIndex.clear();
+    }
+
+    // ---------------------------------------------------------
+    // メッシュ単位の可視インスタンス列（Zプリパス → 不透明パスの受け渡し）
+    //
+    //   NormalPrepass と OpaquePass は「同じソート済みキー列を、同じバッチ区切りで、
+    //   同じ MeshCull で」走査する。つまり各(バッチ, メッシュ)の可視インスタンス列は
+    //   完全に同一なのに、両者が独立に計算していた（＝全不透明ジオメトリぶん2周）。
+    //   先に走る NormalPrepass の結果をここへ置き、OpaquePass が読む。
+    //
+    //   書き手は NormalPrepass だけ、読み手は OpaquePass だけ、と決めてある。
+    //   OpaquePass が書き足さないので、読み出し中に m_visibleArena が再確保されて
+    //   返したポインタが宙に浮く、という事故が起こらない。
+    //
+    //   見つからなければ読み手が自分で計算する（＝キャッシュミスは常に安全）。
+    //   NormalPrepass は cutout や blend 有効のバッチを飛ばすし、エディタから
+    //   パス自体を無効化もできるので、ミスは正常な経路として起こりうる。
+    // ---------------------------------------------------------
+
+    // (バッチ先頭インデックス, メッシュ番号) から一意なキーを作る。
+    static uint64_t MakeVisibleKey(size_t batchStart, size_t meshIndex) {
+        return (static_cast<uint64_t>(batchStart) << 32) | static_cast<uint32_t>(meshIndex);
+    }
+
+    void StoreVisibleInstances(uint64_t key, const InstanceData* data, size_t count) {
+        if (!data) return;
+        const uint32_t offset = static_cast<uint32_t>(m_visibleArena.size());
+        m_visibleArena.insert(m_visibleArena.end(), data, data + count);
+        m_visibleIndex[key] = { offset, static_cast<uint32_t>(count) };
+    }
+
+    // 見つかれば outData/outCount を埋めて true。count==0（全数カリング済み）も正当なヒット。
+    bool FindVisibleInstances(uint64_t key, const InstanceData*& outData, size_t& outCount) const {
+        const auto it = m_visibleIndex.find(key);
+        if (it == m_visibleIndex.end()) return false;
+        outData  = m_visibleArena.data() + it->second.offset;
+        outCount = it->second.count;
+        return true;
     }
 
     // ECS(ウェイター)から注文を受け取る
@@ -132,6 +176,12 @@ public:
 
 
 private:
+    // 可視インスタンス列の実体（アリーナ）と、キー → 区間 の索引。
+    // 毎フレーム clear するだけで容量は維持されるため、数フレームで確保が収束する。
+    struct VisibleSpan { uint32_t offset; uint32_t count; };
+    std::vector<InstanceData>                   m_visibleArena;
+    std::unordered_map<uint64_t, VisibleSpan>   m_visibleIndex;
+
     ShaderRegistry* m_shaderRegistry = nullptr;
 
     bool                             m_batchesBuilt = false; // 当該フレームで SortAndBuildBatches 済みか

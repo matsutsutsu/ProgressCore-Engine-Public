@@ -457,9 +457,6 @@
     <Filter Include="Shader\Material\Refraction">
       <UniqueIdentifier>{00601cf2-b82d-479c-b444-dafa34ba8bfc}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shader\Material\Grass">
-      <UniqueIdentifier>{bbb7eb73-54f8-4baa-b812-64de1367e851}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Shader\Material\GhostPBR">
       <UniqueIdentifier>{2ed6532d-2763-44c1-ad75-6dcc87492a5e}</UniqueIdentifier>
     </Filter>
@@ -3182,12 +3179,6 @@
     </FxCompile>
     <FxCompile Include="Shader\Material\Water\WaterVS.hlsl">
       <Filter>Shader\Material\Water</Filter>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\Grass\GrassPS.hlsl">
-      <Filter>Shader\Material\Grass</Filter>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\Grass\GrassVS.hlsl">
-      <Filter>Shader\Material\Grass</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\GhostPBR\GhostPBRPS.hlsl">
       <Filter>Shader\Material\GhostPBR</Filter>

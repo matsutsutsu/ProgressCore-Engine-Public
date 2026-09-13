@@ -193,11 +193,10 @@ void PrimitiveRenderer::Render(ID3D11DeviceContext       *dc,
             size_t drawOffset = 0;
             while (drawOffset < totalCount)
             {
-                size_t                    drawCount = (std::min)(totalCount - drawOffset, InstanceBuffer::MAX_INSTANCES);
-                std::vector<InstanceData> chunk(
-                    instances.begin() + drawOffset,
-                    instances.begin() + drawOffset + drawCount);
-                m_instanceBuffer.Write(dc, chunk);
+                // チャンク幅はバッファの実容量から取る（静的定数との二重管理を廃止）。
+                // 部分列の vector コピーも廃止し、ポインタ＋個数版の Write へ直接渡す。
+                size_t drawCount = (std::min)(totalCount - drawOffset, m_instanceBuffer.GetMaxInstances());
+                m_instanceBuffer.Write(dc, instances.data() + drawOffset, drawCount);
                 m_instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
                 dc->DrawIndexedInstanced(geo.indexCount, static_cast<UINT>(drawCount), 0, 0, 0);
                 drawOffset += drawCount;

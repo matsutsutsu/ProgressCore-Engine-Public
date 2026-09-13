@@ -93,6 +93,11 @@ class OpaquePass : public IRenderPass
                                        const BatchRange &batch, uint32_t shaderHash,
                                        const DirectX::BoundingBox &localAABB, bool isSkinned);
 
+    // このメッシュの可視インスタンス列を確定し、m_visibleData / m_visibleCount を指す。
+    // NormalPrepass が同じ区切りで計算済みならそれを使い、無ければ自分で組み立てる。
+    void ResolveVisibleInstances(const RenderFrameContext &ctx, const Model::Mesh &mesh, const BatchRange &batch,
+                                 size_t meshIdx, const DirectX::BoundingBox &localAABB, bool isSkinned);
+
     // バッチ内のインスタンスから可視ぶんだけを m_instanceScratch に集める。
     void BuildVisibleInstances(const RenderFrameContext &ctx, const Model::Mesh &mesh, const BatchRange &batch,
                                const DirectX::BoundingBox &localAABB, bool isSkinned);
@@ -114,7 +119,14 @@ class OpaquePass : public IRenderPass
 
     // インスタンスデータ構築用のスクラッチ領域。メッシュ単位で再利用する。
     // 関数 static を避け、可読性と将来のマルチスレッド化に配慮してメンバ化。
+    // NormalPrepass の結果を使えたフレームでは、ここは埋まらない。
     std::vector<InstanceData> m_instanceScratch;
+
+    // 実際に描くインスタンス列。RenderQueue のアリーナ内か m_instanceScratch のどちらかを指す。
+    //   本パスはアリーナへ書き足さない（書き手は NormalPrepass のみ）ので、
+    //   読み出し中に再確保されてこのポインタが宙に浮くことはない。
+    const InstanceData *m_visibleData  = nullptr;
+    size_t              m_visibleCount = 0;
 
     // フラスタムカリングの統計（デバッグ確認用。ImGui やウォッチで参照）。
     uint32_t m_stat_drawnMeshes  = 0;

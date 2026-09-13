@@ -81,7 +81,8 @@ bool ParseDepth(const std::string& s, DepthState& out)
     if (s == "testOnly"  || s == "readOnly")      { out = DepthState::TestOnly;      return true; } // 書き込みなし
     if (s == "writeOnly")                         { out = DepthState::WriteOnly;     return true; }
     if (s == "none"      || s == "noTestNoWrite") { out = DepthState::NoTestNoWrite; return true; } // 常に最前面
-    if (s == "testLessEqual")                     { out = DepthState::TestLessEqual; return true; }
+    // testLessEqual は TestOnly と同一記述だったため統合済み。既存の json 互換で残す。
+    if (s == "testLessEqual")                     { out = DepthState::TestOnly;      return true; }
     return false;
 }
 

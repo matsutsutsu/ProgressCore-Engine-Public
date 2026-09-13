@@ -43,15 +43,10 @@ void ModelRenderSystem::Update(float dt)
         Model *model = modelComp.GetModel(); // ハンドルから取得
         if (!model) return;
 
-        bool hasBones = false;
-        for (const auto &mesh : model->GetMeshes())
-        {
-            if (!mesh.bones.empty())
-            {
-                hasBones = true;
-                break;
-            }
-        }
+        // ここには「全メッシュを走査して hasBones を求める」ループがあったが、
+        //   求めた結果は一度も読まれていなかった。スキンドかどうかの判定は
+        //   描画側（OpaquePass / ShadowPass）がメッシュ単位で mesh.bones を見て行う。
+        //   ドローン1000機ぶん毎フレーム捨てるためだけに回っていたので削除。
 
         // シェーダーID決定（リストの先頭を使うなどの簡易判定）
         uint32_t shaderHash = "Phong"_hash;

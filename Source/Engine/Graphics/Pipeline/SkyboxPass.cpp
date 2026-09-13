@@ -72,7 +72,8 @@ void SkyboxPass::Execute(const RenderFrameContext& ctx)
     const RenderState* rs = m_services->renderState;
 
     dc->OMSetBlendState(rs->GetBlendState(BlendState::Opaque), nullptr, 0xFFFFFFFF);
-    dc->OMSetDepthStencilState(rs->GetDepthStencilState(DepthState::TestLessEqual), 0);
+    // 深度は書かず LESS_EQUAL で通す（Z=1.0 の奥底に描くため 1.0 <= 1.0 を許容する）
+    dc->OMSetDepthStencilState(rs->GetDepthStencilState(DepthState::TestOnly), 0);
     dc->RSSetState(rs->GetRasterizerState(RasterizerState::SolidCullNone));
 
     dc->Draw(3, 0);

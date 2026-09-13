@@ -25,7 +25,7 @@ class ShaderRegistry;
  *     "materialShaders": [
  *       { "name": "PBR" },                                    // 通常の不透明
  *       { "name": "GlowSigil", "blend": "additive" },         // 加算発光（深度書込なし/両面が既定に）
- *       { "name": "Grass",     "cull":  "none" },             // 両面描画
+ *       { "name": "Banner",    "cull":  "none" },             // 両面描画
  *       { "name": "Marker",    "depth": "none" }              // 常に最前面
  *     ],
  *     "customShaders": [

@@ -26,10 +26,15 @@ enum class SamplerState
 enum class DepthState
 {
     TestAndWrite,
+
+    // テストあり(LESS_EQUAL)・書き込みなし。
+    //   Skybox が Z=1.0 の奥底へ描くのもこれ（1.0 <= 1.0 が通る）。
+    //   以前は同じ記述の TestLessEqual が別枠であり、同一のステートオブジェクトが
+    //   2つ作られて Apply のたびに無駄な切り替えが起きていたので統合した。
     TestOnly,
+
     WriteOnly,
     NoTestNoWrite,
-    TestLessEqual, // Z=1.0の奥底に描画するためのステート
 
     EnumCount
 };

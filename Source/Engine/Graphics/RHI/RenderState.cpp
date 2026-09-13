@@ -143,7 +143,8 @@ RenderState::RenderState(ID3D11Device *device)
                                                               depthStencilStates[static_cast<int>(DepthState::TestAndWrite)].GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
-    // 深度テストあり＆深度書き込みなし
+    // 深度テストあり（LESS_EQUAL）＆深度書き込みなし
+    //   Skybox の「Z=1.0 の奥底へ描く」用途もこれで賄える（1.0 <= 1.0 が通る）。
     {
         D3D11_DEPTH_STENCIL_DESC desc{};
         desc.DepthEnable    = true;
@@ -174,17 +175,6 @@ RenderState::RenderState(ID3D11Device *device)
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
 
-    // テストあり（LessEqual）＆ 書き込みなし（Skybox用）
-    {
-        D3D11_DEPTH_STENCIL_DESC desc{};
-        desc.DepthEnable    = true;
-        desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO; // 深度は書き込まない
-        desc.DepthFunc      = D3D11_COMPARISON_LESS_EQUAL; // 1.0 <= 1.0 を許容する
-        desc.StencilEnable  = false;
-        HRESULT hr          = device->CreateDepthStencilState(&desc,
-                                                              depthStencilStates[static_cast<int>(DepthState::TestLessEqual)].GetAddressOf());
-        _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
-    }
 
     // 合成なし
     {

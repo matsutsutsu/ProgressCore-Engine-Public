@@ -3,6 +3,7 @@
 #include <wrl.h>
 #include <vector>
 #include <DirectXMath.h>
+#include "Engine/Platform/Core/Logger.h"
 
 // GPUに送る1個分のインスタンスデータ
 struct InstanceData
@@ -15,10 +16,13 @@ struct InstanceData
 class InstanceBuffer
 {
 public:
-    // 外部から参照できる定数
-    static const size_t MAX_INSTANCES = 4096;
-
     // 初期化（最大インスタンス数を指定）
+    //
+    // 容量の問い合わせは必ず GetMaxInstances() を使うこと。
+    //   以前は static 定数 MAX_INSTANCES=4096 も公開しており、描画側はそちらを見て
+    //   チャンク幅を決めていた。この既定引数を変えるだけで両者が食い違い、Write が
+    //   切り詰めた先を DrawInstanced が読む（＝未初期化のインスタンスが描かれる）。
+    //   エラーは一切出ないため、容量の二重管理そのものを無くしてある。
     void Create(ID3D11Device* device, size_t maxInstances = 4096)
     {
         m_maxInstances = maxInstances;
@@ -32,7 +36,13 @@ public:
         desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
         desc.StructureByteStride = sizeof(InstanceData);
 
-        device->CreateBuffer(&desc, nullptr, m_buffer.GetAddressOf());
+        if (FAILED(device->CreateBuffer(&desc, nullptr, m_buffer.GetAddressOf()))) {
+            // 生成に失敗すると Map が毎回 null を返し、描画が無言で消える。
+            CCL_LOG_ERROR(LogCategory::Render,
+                "[InstanceBuffer] インスタンスバッファの生成に失敗しました (max=%zu)", maxInstances);
+            m_maxInstances = 0;
+            return;
+        }
 
         // シェーダーリソースビュー (SRV) の作成
         D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -41,7 +51,10 @@ public:
         srvDesc.Buffer.FirstElement = 0;
         srvDesc.Buffer.NumElements = static_cast<UINT>(maxInstances);
 
-        device->CreateShaderResourceView(m_buffer.Get(), &srvDesc, m_srv.GetAddressOf());
+        if (FAILED(device->CreateShaderResourceView(m_buffer.Get(), &srvDesc, m_srv.GetAddressOf()))) {
+            CCL_LOG_ERROR(LogCategory::Render, "[InstanceBuffer] インスタンス SRV の生成に失敗しました。");
+            m_maxInstances = 0;
+        }
     }
 
     // マップ（書き込み開始）

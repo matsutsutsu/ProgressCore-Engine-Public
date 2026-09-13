@@ -78,10 +78,24 @@ void OpaquePass::Execute(const RenderFrameContext &ctx)
             continue;
         }
 
+        // 透明判定はバッチ単位（シェーダー単位）で決まるので、GPU 状態を触る前に済ませる。
+        //   半透明バッチは TransparentPass へ転送するだけで 1 ドローも出さない。
+        //   Begin / PSO 適用 / End はそのぶん丸ごと無駄になっていた。
+        const PipelineState *batchPso         = shader->GetPSO();
+        const bool           batchIsTransparent = batchPso && batchPso->IsBlendEnabled();
+
+        const BatchRange batch = ConsumeBatch(sortKeys, cursor);
+
+        if (batchIsTransparent)
+        {
+            // 転送のみ。GPU 状態に触れないので lastPso も据え置きでよい。
+            DrawBatch(ctx, batch, *shader, *matShader);
+            continue;
+        }
+
         matShader->Begin(dc, *m_services, ctx);
         ApplyShaderPso(dc, *shader, lastPso);
 
-        const BatchRange batch = ConsumeBatch(sortKeys, cursor);
         DrawBatch(ctx, batch, *shader, *matShader);
 
         matShader->End(dc, *m_services);
@@ -146,6 +160,9 @@ void OpaquePass::DrawBatch(const RenderFrameContext &ctx, const BatchRange &batc
     const auto          &commands = m_services->renderQueue->GetOpaqueCommands();
     const RenderCommand &first    = commands[sortKeys[batch.start].originalIndex];
 
+    // NormalPrepass 側は同じ位置で null チェックしている。片方だけ無防備にしない。
+    if (!first.model) return;
+
     // 透明判定：シェーダー PSO の blend 設定で行う（cbuffer 変数名に依存しない）。
     // シェーダーはバッチ単位で決まるため、メッシュごとに判定し直す必要はない。
     const PipelineState *matPso             = shader.GetPSO();
@@ -174,11 +191,11 @@ void OpaquePass::DrawBatch(const RenderFrameContext &ctx, const BatchRange &batc
             continue; // 半透明はここで完了（不透明描画へは進まない）
         }
 
-        BuildVisibleInstances(ctx, mesh, batch, localAABB, isSkinned);
+        ResolveVisibleInstances(ctx, mesh, batch, meshIdx, localAABB, isSkinned);
 
         // 可視インスタンスが 0 個なら、このメッシュを丸ごとスキップする。
         // ここが最重要：ドローコール・マテリアル更新・IA 設定・Map/Unmap を全て回避。
-        if (m_instanceScratch.empty())
+        if (m_visibleCount == 0)
         {
             ++m_stat_culledMeshes;
             continue;
@@ -246,6 +263,31 @@ void OpaquePass::ForwardMeshToTransparentQueue(const RenderFrameContext &ctx, co
 }
 
 // ----------------------------------------------------------------------------
+//  不透明：可視インスタンス列の確定
+//
+//  NormalPrepass（Zプリパス）は本パスと同じソート済みキー列を同じ区切りで走査し、
+//  同じ MeshCull でカリングしている。つまり各(バッチ, メッシュ)の可視インスタンス列は
+//  完全に同一なので、向こうの結果をそのまま使えば行列合成とフラスタム判定を丸ごと省ける。
+//  ドローンのように「同一モデルを大量配置」する構成ほど効く。
+//
+//  見つからない場合は自分で組み立てる。ミスは異常ではなく、
+//    ・blend 有効のバッチは NormalPrepass が飛ばす
+//    ・エディタから NormalPrepass 自体を無効化できる
+//  という正常な経路で起こる。
+// ----------------------------------------------------------------------------
+void OpaquePass::ResolveVisibleInstances(const RenderFrameContext &ctx, const Model::Mesh &mesh,
+                                         const BatchRange &batch, size_t meshIdx,
+                                         const DirectX::BoundingBox &localAABB, bool isSkinned)
+{
+    const uint64_t key = RenderQueue::MakeVisibleKey(batch.start, meshIdx);
+    if (m_services->renderQueue->FindVisibleInstances(key, m_visibleData, m_visibleCount)) return;
+
+    BuildVisibleInstances(ctx, mesh, batch, localAABB, isSkinned);
+    m_visibleData  = m_instanceScratch.data();
+    m_visibleCount = m_instanceScratch.size();
+}
+
+// ----------------------------------------------------------------------------
 //  不透明：インスタンスデータ構築（非スキンドはここでカリング）
 // ----------------------------------------------------------------------------
 void OpaquePass::BuildVisibleInstances(const RenderFrameContext &ctx, const Model::Mesh &mesh, const BatchRange &batch,
@@ -292,12 +334,12 @@ void OpaquePass::BindMeshIA(ID3D11DeviceContext *dc, const Model::Mesh &mesh)
 // インスタンスバッファの容量を超える場合は複数回に分けて発行する。
 void OpaquePass::DrawInstancedBatched(ID3D11DeviceContext *dc, const Model::Mesh &mesh)
 {
-    const size_t visibleCount = m_instanceScratch.size();
+    const size_t visibleCount = m_visibleCount;
     size_t       curOffset    = 0;
     while (curOffset < visibleCount)
     {
         const size_t drawCount = (std::min)(visibleCount - curOffset, m_instanceBuffer.GetMaxInstances());
-        m_instanceBuffer.Write(dc, m_instanceScratch.data() + curOffset, drawCount);
+        m_instanceBuffer.Write(dc, m_visibleData + curOffset, drawCount);
         m_instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
         dc->DrawIndexedInstanced(static_cast<UINT>(mesh.data->indices.size()), static_cast<UINT>(drawCount), 0, 0, 0);
         curOffset += drawCount;
@@ -305,7 +347,7 @@ void OpaquePass::DrawInstancedBatched(ID3D11DeviceContext *dc, const Model::Mesh
 }
 
 // ボーン行列は 1 体ごとに異なるためインスタンシングでまとめられない。1 体ずつ描く。
-// スキンドはカリングしていないため m_instanceScratch.size() == batch.count。
+// スキンドはカリングしていないため m_visibleCount == batch.count。
 void OpaquePass::DrawSkinnedInstances(const RenderFrameContext &ctx, const Model::Mesh &mesh, size_t meshIdx,
                                       const BatchRange &batch)
 {
@@ -314,10 +356,10 @@ void OpaquePass::DrawSkinnedInstances(const RenderFrameContext &ctx, const Model
     const auto           &sortKeys       = m_services->renderQueue->GetSortedKeys();
     const auto           &commands       = m_services->renderQueue->GetOpaqueCommands();
 
-    for (size_t k = 0; k < m_instanceScratch.size(); ++k)
+    for (size_t k = 0; k < m_visibleCount; ++k)
     {
         const RenderCommand &cmd = commands[sortKeys[batch.start + k].originalIndex];
-        m_instanceBuffer.Write(dc, &m_instanceScratch[k], 1);
+        m_instanceBuffer.Write(dc, m_visibleData + k, 1);
         m_instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
         modelConstants->UpdateSkeletonConstants(dc, cmd.model->GetMeshes()[meshIdx]);
         dc->DrawIndexedInstanced(static_cast<UINT>(mesh.data->indices.size()), 1, 0, 0, 0);

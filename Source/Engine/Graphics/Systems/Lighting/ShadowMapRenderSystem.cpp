@@ -128,7 +128,11 @@ void ShadowMapRenderSystem::RenderShadowMap()
         if (cascadeOBBs[2].Intersects(bounds.worldAABB)) modelMask |= (1 << 2);
         if (modelMask == 0) return; // 全カスケード外：影に一切寄与しない
 
-        const DirectX::XMMATRIX entityWorld = DirectX::XMLoadFloat4x4(&trans.worldMatrix);
+        // 基準は renderWorldMatrix（補間済み）。ModelRenderSystem が描画に使うのと同じ行列。
+        //   worldMatrix（固定ステップ）を使うと、影だけが最大1固定ステップぶん
+        //   本体から遅れる。BoneAttachmentRenderSystem(R04) が本システム(R06)より
+        //   先に走るので、この時点で renderWorldMatrix は確定している。
+        const DirectX::XMMATRIX entityWorld = DirectX::XMLoadFloat4x4(&trans.renderWorldMatrix);
 
         // --- (B) メッシュ単位の絞り込み ----------------------------------
         // Sponza のような巨大単一モデルは、モデル全体 AABB では全カスケードに
@@ -172,7 +176,8 @@ void ShadowMapRenderSystem::RenderShadowMap()
             cmd.mesh = &mesh;
             // worldMatrix は「エンティティのワールド行列」をそのまま積む。
             //   node の合成は ShadowPass 側で行う仕様なので、ここでは合成しない。
-            cmd.worldMatrix = trans.worldMatrix;
+            //   上の entityWorld と同じ renderWorldMatrix を使うこと（判定と描画の一致）。
+            cmd.worldMatrix = trans.renderWorldMatrix;
             cmd.cascadeMask = meshMask; // メッシュ個別のカスケードマスク
 
             renderQueue.SubmitShadow(cmd);

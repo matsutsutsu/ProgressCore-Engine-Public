@@ -21,6 +21,9 @@ public:
     ID3D11ShaderResourceView* GetNormalSRV() const noexcept { return m_normalBuffer.GetSRV(); }
 
 private:
+    // 現在の法線バッファ SRV を Graphics へ預ける（生成・再生成の直後に呼ぶ）。
+    void PublishNormalSRV();
+
     PipelineState  m_pso;
     InstanceBuffer m_instanceBuffer;
     NormalBuffer   m_normalBuffer;

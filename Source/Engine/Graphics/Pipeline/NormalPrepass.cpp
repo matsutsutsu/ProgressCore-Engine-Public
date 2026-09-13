@@ -8,22 +8,20 @@
 #include "Engine/Graphics/Renderer/RenderDebugRegistry.h" // デバッグテクスチャ登録
 #include "Engine/Graphics/Renderer/MeshCulling.h" // メッシュ単位カリング（OpaquePass と共有）
 #include "Engine/Graphics/Shader/ShaderResources.h"
-#include "Engine/Core/Math/StringHash.h" // "Grass"_hash 用
 #include <DirectXCollision.h> // メッシュ単位フラスタムカリング用
 #include <wrl/client.h>
 #include <algorithm>
 
-namespace
-{
-    // アルファクリップ(cutout)を行う不透明マテリアルの判定。
-    // Z プリパスの共有 PS はクリップしないため、これらは深度を書かせず
-    // OpaquePass 側の自前描画に委ねる。将来 cutout シェーダーを追加したら
-    // ここに hash を足す（または manifest に cutout フラグを設ける）。
-    inline bool IsCutoutShader(uint32_t shaderHash)
-    {
-        return shaderHash == "Grass"_hash;
-    }
-}
+// [ cutout(アルファクリップ)マテリアルを足すときの注意 ]
+//   このパスの共有 PS は clip() を行わない。つまり「テクスチャのアルファで
+//   切り抜く」マテリアルをここに通すと、切り捨てられるはずの透明な部分にも
+//   深度が書き込まれる。草の葉と葉の隙間や金網の網目から背景が見えるべき所が
+//   塞がって穴になり、しかも OpaquePass 側の絵は正しいので原因が見えにくい。
+//
+//   以前は唯一の cutout だった Grass シェーダーをここで除外していたが、
+//   Grass 自体を削除したため判定ごと外した。cutout を再導入する場合は、
+//   そのマテリアルを本パスから除外して OpaquePass の自前描画に委ねること
+//   （early-Z の恩恵は失うが、cutout では元々ほぼ効かない）。
 
 void NormalPrepass::Initialize(const RenderServices& services)
 {
@@ -37,13 +35,28 @@ void NormalPrepass::Initialize(const RenderServices& services)
 
     m_instanceBuffer.Create(services.device, 8192);
     m_normalBuffer.Create(services.device, services.screenWidth, services.screenHeight);
+
+    // 法線バッファの SRV は「生成された時点」で登録する。
+    //   Graphics::MakeFrameContext はパイプライン実行の *前* に ctx を組み立てるので、
+    //   Execute の末尾で登録していた頃は ctx.sceneNormalSRV が必ず1フレーム古かった
+    //  （初回フレームは null）。SRV は生成時以外変わらないので、ここで渡しておけば
+    //   初回から正しい値が入り、かつ「古い SRV を掴んだまま作り直される」窓も消える。
+    PublishNormalSRV();
 }
 
 void NormalPrepass::OnResize(uint32_t width, uint32_t height)
 {
     if (m_services && m_services->device) {
         m_normalBuffer.Resize(m_services->device, width, height);
+        // Resize は SRV を作り直す。登録しなおさないと解放済みの SRV が残る。
+        PublishNormalSRV();
     }
+}
+
+// 現在の法線バッファ SRV を Graphics へ預ける（MakeFrameContext が ctx へ渡す）。
+void NormalPrepass::PublishNormalSRV()
+{
+    Graphics::Instance().SetSceneNormalSRV(m_normalBuffer.GetSRV());
 }
 
 void NormalPrepass::Execute(const RenderFrameContext& ctx)
@@ -97,13 +110,6 @@ void NormalPrepass::Execute(const RenderFrameContext& ctx)
 
         if (!current.model) continue;
 
-        // アルファクリップ(cutout)マテリアルは Z プリパスから除外する。
-        // このパスの共有 PS はクリップを行わないため、含めると草などの
-        // 透明テクセル部分まで深度を書き込み、背景が抜けて穴になる。
-        // 除外したメッシュは OpaquePass 側で自前の深度書き込み＋clip により
-        // 従来どおり正しく描画される（early-Z の恩恵は無いが cutout では元々ほぼ効かない）。
-        if (IsCutoutShader(current.shaderHash)) continue;
-
         Shader* matShader = m_services->shaders->GetShader(current.shaderHash, m_services->device);
         if (matShader) {
             const PipelineState* matPso = matShader->GetPSO();
@@ -139,6 +145,14 @@ void NormalPrepass::Execute(const RenderFrameContext& ctx)
                     m_instanceScratch.push_back(data);
                 }
             }
+
+            // このメッシュの可視インスタンス列を OpaquePass へ渡す。
+            //   同じバッチ区切り・同じ MeshCull で走査しているので結果は完全に一致し、
+            //   OpaquePass 側は行列合成とフラスタム判定を丸ごと省ける。
+            //   空（全数カリング済み）も正当な結果なので、その事実ごと渡す。
+            queue->StoreVisibleInstances(
+                RenderQueue::MakeVisibleKey(batchStart, meshIdx),
+                m_instanceScratch.data(), m_instanceScratch.size());
 
             // 可視インスタンスが 0 個なら、このメッシュの IA 設定・Map/Unmap・ドローを丸ごと回避する。
             if (m_instanceScratch.empty()) continue;
@@ -180,9 +194,10 @@ void NormalPrepass::Execute(const RenderFrameContext& ctx)
     dc->OMSetRenderTargets(1, oldRTV.GetAddressOf(), oldDSV.Get());
     dc->RSSetViewports(1, &oldVP);
 
+    // 後続パスのシェーダーが t6 から読めるようにバインドする
+    //（Graphics への登録は Initialize / OnResize 済み）。
     ID3D11ShaderResourceView* normalSRV = m_normalBuffer.GetSRV();
     dc->PSSetShaderResources(SLOT_SRV_SCENE_NORMAL, 1, &normalSRV);
-    Graphics::Instance().SetSceneNormalSRV(normalSRV);
 
     // デバッグ表示へ登録（RTV は上で解除済み。SRV として安全に読める）
     RenderDebugRegistry::Instance().Register({

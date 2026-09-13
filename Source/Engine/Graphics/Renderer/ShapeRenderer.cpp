@@ -610,10 +610,13 @@ void ShapeRenderer::Render(ID3D11DeviceContext* dc, const DirectX::XMFLOAT4X4& v
 
             size_t drawOffset = 0;
             while (drawOffset < totalCount) {
-                size_t drawCount = (std::min)(totalCount - drawOffset, InstanceBuffer::MAX_INSTANCES);
-                std::vector<InstanceData> chunk(instances.begin() + drawOffset, instances.begin() + drawOffset + drawCount);
+                // チャンク幅はバッファの実容量から取る（静的定数との二重管理を廃止）。
+                size_t drawCount = (std::min)(totalCount - drawOffset, m_instanceBuffer.GetMaxInstances());
 
-                m_instanceBuffer.Write(dc, chunk);
+                // 部分列を vector へコピーしてから渡していたが、これはチャンクごとに
+                //   ヒープ確保とコピーが走る（線は数万本積まれるので毎フレーム十数回）。
+                //   InstanceBuffer にはポインタ＋個数版の Write があるのでそのまま渡す。
+                m_instanceBuffer.Write(dc, instances.data() + drawOffset, drawCount);
                 m_instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
 
                 // インデックスバッファ無しで描画
