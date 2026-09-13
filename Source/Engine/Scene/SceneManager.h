@@ -98,6 +98,12 @@ public:
 
 	Scene* GetCurrentScene() const { return dynamic_cast<Scene*>(currentScene); }
 
+    // シーンが切り替わるたびに増える通し番号。
+    //   「前回見たときから変わったか」を呼び出し側が1つの整数比較で判定できる。
+    //   World* の比較だと、新しい World がたまたま同じ番地に確保されたときに
+    //   取りこぼす。エディタ側の Undo 履歴・選択の破棄がこれを見る。
+    uint32_t GetSceneSerial() const noexcept { return m_sceneSerial; }
+
 
 private:
     // フェードの進行を1ステップ進める（黒の瞬間に予約された切替を発火する）。
@@ -138,6 +144,9 @@ private:
 
     // 現在のシーン名を保持する変数
     std::string m_currentSceneName = "";
+
+    // シーン切替のたびに +1（GetSceneSerial 参照）。
+    uint32_t m_sceneSerial = 0;
 
     // シーン非同期ロード専用のスレッドプール（毎フレーム並列とは別インスタンス）。
     // ※ 各Worldの JobSystem はそのWorld自身をロードできない（鶏卵問題）ため、

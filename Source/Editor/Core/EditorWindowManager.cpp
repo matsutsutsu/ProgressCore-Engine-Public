@@ -352,11 +352,14 @@ void EditorWindowManager::DrawEntityMenu(EditorContext &context)
     ZoneScopedN("EditorWindowManager::DrawEntityMenu");
     if (ImGui::BeginMenu("Entity"))
     {
+        // world が無い（シーン未ロード）間は生成できない。他のメニューは確認している。
+        ImGui::BeginDisabled(context.world == nullptr);
         if (ImGui::MenuItem("Add Empty Entity"))
         {
             Archetype arch = ArchetypeHelper::Generate<TransformComponent>();
             context.world->RequestSpawnEntity(arch);
         }
+        ImGui::EndDisabled();
         ImGui::EndMenu();
     }
 }
@@ -469,6 +472,11 @@ void EditorWindowManager::DrawSceneMenu(EditorContext &context)
                 //   RequestTransition(async=true): 暗転 → 黒の裏で対象シーンを裏読み
                 //   → 読み込み完了後に1回だけ明転。メインスレッドを止めない。
                 sceneMgr.RequestTransition(name, /*async*/ true);
+
+                // 遷移先では World もエンティティも作り直される。古い EntityID を
+                // 掴んだままだと、暗転中の数フレーム Inspector が無効な対象を描く。
+                //   （Undo 履歴の破棄は切替が実際に起きた瞬間に Framework が行う）
+                context.ClearSelection();
             }
             ImGui::EndDisabled();
         }

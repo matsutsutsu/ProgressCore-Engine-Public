@@ -57,6 +57,13 @@ void InspectorWindow::DrawContents(EditorContext &context)
         return;
     }
 
+    // world は「アクティブなシーンが無い」ときに nullptr になる（Framework が毎フレーム設定）。
+    //   以降は無条件に world-> を辿るので、ここで必ず止める。
+    if (!world) {
+        ImGui::TextColored(ImVec4(1, 1, 0, 1), "シーンが読み込まれていません");
+        return;
+    }
+
     // =========================================================
     // Entity メタデータ編集エリア (名前・ID)
     // =========================================================

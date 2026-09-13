@@ -118,6 +118,7 @@ void BehaviorTreeWindow::RecordStateForUndo(const std::string& commandName) {
     nlohmann::json newState = GetGraphStateAsJson();
     // 状態が変わっていればコマンドをスタックに積む
     if (m_lastSavedState != newState) {
+        m_dirty = true; // グラフ変更はすべてここを通る
         EditorCommandHistory::Instance().ExecuteCommand(
             std::make_unique<BTGraphChangeCommand>(this, commandName, m_lastSavedState, newState)
         );
@@ -516,8 +517,7 @@ void BehaviorTreeWindow::DrawContents(EditorContext& context) {
 // ====================================================================
 void BehaviorTreeWindow::DrawToolbar() {
     if (ImGui::Button("保存 ( Save )")) {
-        char path[MAX_PATH] = "";
-        auto picked         = FileDialog::SavePreset("BehaviorTreeNode", "Save Behavior Tree", "BossAI.json");
+        auto picked = FileDialog::SavePreset("BehaviorTreeNode", "Save Behavior Tree", "BossAI.json");
         if (picked)
         {
             std::string rel = FileDialog::ConvertToRelativePath(*picked);
@@ -526,13 +526,43 @@ void BehaviorTreeWindow::DrawToolbar() {
     }
     ImGui::SameLine();
     if (ImGui::Button("開く (Open...)")) {
-        char path[MAX_PATH] = "";
-        auto picked         = FileDialog::OpenPreset("BehaviorTreeNode", "Open Behavior Tree");
+        auto picked = FileDialog::OpenPreset("BehaviorTreeNode", "Open Behavior Tree");
         if (picked)
         {
             std::string rel = FileDialog::ConvertToRelativePath(*picked);
-            LoadGraph(rel);
+            // 未保存の変更があるなら、いきなり捨てずに確認する。
+            //   ここには Undo で戻す手段が無い（読み込んだ時点で履歴の基準も引き直す）。
+            if (m_dirty) m_pendingOpenPath = rel;
+            else         LoadGraph(rel);
         }
+    }
+
+    // 未保存の表示。ウィンドウ名に "*" を足す手もあるが、ImGui はウィンドウ名を
+    //   ID に使っているため、名前を変えるとドッキング配置が別物として扱われる。
+    //   だからツールバー側に出す。
+    if (m_dirty) {
+        ImGui::SameLine();
+        ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.2f, 1.0f), "● 未保存");
+    }
+
+    // 未保存のまま「開く」を押したときの確認。
+    if (!m_pendingOpenPath.empty()) ImGui::OpenPopup("BTOpenConfirm");
+    if (ImGui::BeginPopupModal("BTOpenConfirm", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("保存していない変更があります。");
+        ImGui::TextDisabled("%s", m_pendingOpenPath.c_str());
+        ImGui::Separator();
+        if (ImGui::Button("破棄して開く", ImVec2(140, 0))) {
+            const std::string path = m_pendingOpenPath;
+            m_pendingOpenPath.clear();
+            ImGui::CloseCurrentPopup();
+            LoadGraph(path);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("やめる", ImVec2(140, 0))) {
+            m_pendingOpenPath.clear();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
     }
 
     ImGui::Separator();
@@ -1849,7 +1879,12 @@ void BehaviorTreeWindow::SaveGraph(const std::string& path) {
     // ファイル書き込みは FileSystem 経由で行う
     std::string jsonStr = root.dump(4);
     if (FileSystem::WriteAllText(path, jsonStr)) {
+        m_dirty = false;
         CCL_LOG_SUCCESS(LogCategory::Editor, "AIグラフを保存＆Bakeしました: %s", path.c_str());
+    }
+    else {
+        // 失敗時に何も出ていなかった。保存できたつもりで編集を続けるのが一番まずい。
+        CCL_LOG_ERROR(LogCategory::Editor, "AIグラフの保存に失敗しました: %s", path.c_str());
     }
 
 }
@@ -2040,6 +2075,17 @@ void BehaviorTreeWindow::LoadGraph(const std::string& path) {
     BuildBakedNodes();
 
     m_needInitialZoom = true;
+
+    // Undo の基準をこのグラフに引き直す。
+    //   これを忘れると m_lastSavedState は「前に開いていたBT」のままなので、
+    //   ロード後の最初の編集で積まれるコマンドの『戻し先』が別のBTになる。
+    //   Ctrl+Z を押すとこのエディタに前のグラフが載り、そのまま保存すると
+    //   今開いているファイルが前のBTで上書きされる。
+    //   （セッション最初の1本では既定構築の null が入っており、
+    //     RestoreGraphState の contains ガードに弾かれて「最初のUndoだけ無反応」になる）
+    m_lastSavedState = GetGraphStateAsJson();
+    m_dirty          = false;
+
     CCL_LOG_SUCCESS(LogCategory::Editor, "AIグラフをロードしました: %s", path.c_str());
 }
 

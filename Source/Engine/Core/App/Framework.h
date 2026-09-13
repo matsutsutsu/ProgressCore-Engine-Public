@@ -53,6 +53,10 @@ private:
 #ifdef ENABLE_EDITOR
 	std::unique_ptr<EditorWindowManager> m_editorWindowManager;
 	EditorContext                        m_editorContext;
+
+	// 直近に見た SceneManager の切替通し番号。
+	//   これが変わったフレームで Undo 履歴と選択を破棄する（Framework.cpp を参照）。
+	uint32_t                             m_lastSceneSerial = 0;
 #endif
 };
 

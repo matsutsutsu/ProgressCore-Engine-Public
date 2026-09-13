@@ -91,6 +91,11 @@ void SceneManager::Update(float elapsedTime)
 		//古いシーンを終了処理
 		Clear();
 
+		// 切替の通し番号を進める。World もエンティティも作り直されるので、
+		// 前のシーンを指していた参照（エディタの Undo 履歴・選択）は
+		// ここを境に全部無効になる。
+		++m_sceneSerial;
+
 		//新しいシーンを設定
 		currentScene = nextScene;
 		nextScene = nullptr;

@@ -1201,7 +1201,11 @@ void AnimGraphWindow::SaveGraph(const std::string &path)
         view.anyStatePosY = anyPos.y;
     }
     // 保存はツリー全体（root）を書き出す（サブマシンの中身も再帰的に含まれる）。
-    AnimGraphSerializer::SaveToJSON(m_rootGraph, path);
+    //   戻り値を捨てていたため、失敗しても画面には何も出ていなかった。
+    if (AnimGraphSerializer::SaveToJSON(m_rootGraph, path))
+        CCL_LOG_SUCCESS(LogCategory::Editor, "アニメグラフを保存しました: %s", path.c_str());
+    else
+        CCL_LOG_ERROR(LogCategory::Editor, "アニメグラフの保存に失敗しました: %s", path.c_str());
 }
 
 void AnimGraphWindow::LoadGraph(const std::string& path) {

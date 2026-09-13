@@ -30,6 +30,7 @@
 #ifdef ENABLE_EDITOR
 #include <imgui.h>
 #include "Editor/Core/EditorWindowManager.h"
+#include "Editor/Core/EditorCommandHistory.h" // シーン切替時の履歴破棄
 #include "Editor/Core/EditorContext.h"
 #include "Editor/Windows/ConsoleWindow.h"        // ConsoleWindow は編集時のみ使用（GetWindow<ConsoleWindow>）
 #include "Engine/Graphics/Renderer/ImGuiRenderer.h"
@@ -286,6 +287,25 @@ void Framework::Update(float elapsedTime)
  
 		ZoneScopedN("Framework::EditorUpdate");
 
+
+		// シーンが切り替わったら、前のシーンを指していたエディタ側の参照を全部捨てる。
+		//
+		//   Undo 履歴は ChangeComponentCommand が World* を生ポインタで、対象を
+		//   EntityID で持つ。シーン切替は SceneManager::Clear() が currentScene ごと
+		//   delete するので、残したまま Ctrl+Z を押すと解放済みメモリを書きに行く。
+		//   EntityID の世代も World ごとに 1 から振り直されるため、番地が生きていても
+		//   別のエンティティに命中する。選択(selectedEntity)も同じ理由で無効になる。
+		//
+		//   SceneManager は Engine 層なので Editor を include できない。切替の検知だけ
+		//   通し番号で受け取り、破棄はエディタ側を知っているここで行う。
+		{
+			const uint32_t serial = SceneManager::Instance().GetSceneSerial();
+			if (serial != m_lastSceneSerial) {
+				m_lastSceneSerial = serial;
+				EditorCommandHistory::Instance().Clear();
+				m_editorContext.ClearSelection();
+			}
+		}
 
 		// 重要: 現在アクティブなシーンの情報をエディタに供給する（オブザーバー的アプローチ）
 		// ※ SceneManager に GetCurrentScene() などのアクセス関数を追加する必要があります

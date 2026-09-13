@@ -381,7 +381,14 @@ namespace ComponentMetaImGui {
         bool anyChanged = false;
 
         // UI 操作は同時に 1 つしか行われないため、編集前状態を static で保持できる。
+        //
+        // ただし「同時に 1 つ」が守るのは同時編集だけで、選択の切り替わりは守らない。
+        // CustomGui 側は !IsAnyItemActive() になるまでコミットを遅らせるので、その間に
+        // 別のエンティティを選ぶと「A のバックアップ・B のエンティティ」という
+        // 食い違ったコマンドが積まれ、Undo で B に A の値が書き込まれる。
+        // バックアップと一緒に持ち主の EntityID も控え、食い違ったら捨てる。
         static T s_backupState;
+        static unsigned long long s_backupOwner = 0;
 
         ImGui::PushID(ComponentMeta<T>::displayName);
         ImGui::Indent(4.0f);
@@ -400,17 +407,24 @@ namespace ComponentMetaImGui {
                 guiChanged = ComponentMeta<T>::CustomGui(component);
             }
 
+            // 編集の途中で選択が別のエンティティへ移ったら、その編集は捨てる。
+            //   ここで打ち切らないと、下のコミットが別人のバックアップを使ってしまう。
+            if (s_isEditing && s_backupOwner != entity) {
+                s_isEditing = false;
+            }
+
             if (guiChanged) {
                 anyChanged = true;
                 if (!s_isEditing) {
                     s_backupState = preState; // 編集開始時にバックアップを確定
+                    s_backupOwner = entity;
                     s_isEditing = true;
                 }
             }
 
             // クリックを離した/入力完了した瞬間に Undo コマンドを発行
             if (s_isEditing && !ImGui::IsAnyItemActive()) {
-                if (world && entity != 0) {
+                if (world && entity != 0 && s_backupOwner == entity) {
                     auto* ecsWorld = static_cast<CCL::ECS::World*>(world);
                     auto ecsEntity = static_cast<CCL::ECS::EntityID>(entity);
                     EditorCommandHistory::Instance().ExecuteCommand(
@@ -486,9 +500,10 @@ namespace ComponentMetaImGui {
 
                     if (ImGui::IsItemActivated()) {
                         s_backupState = component; // ドラッグ開始時の値をバックアップ
+                        s_backupOwner = entity;
                     }
                     if (ImGui::IsItemDeactivatedAfterEdit()) { // 編集完了時に Undo 発行
-                        if (world && entity != 0) {
+                        if (world && entity != 0 && s_backupOwner == entity) {
                             auto* ecsWorld = static_cast<CCL::ECS::World*>(world);
                             auto ecsEntity = static_cast<CCL::ECS::EntityID>(entity);
                             EditorCommandHistory::Instance().ExecuteCommand(

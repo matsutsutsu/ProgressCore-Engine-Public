@@ -119,6 +119,14 @@ bool FileSystem::WriteAllText(const std::string& virtualPath, const std::string&
     }
 
     file.write(content.data(), content.size());
+    file.flush();
+
+    // write/flush の成否を見ずに true を返していた。ディスク不足などで
+    // 途中までしか書けていなくても「保存できた」と報告されてしまう。
+    if (!file) {
+        CCL_LOG_ERROR(LogCategory::Core, "[FileSystem] Write failed (disk full?): %s", virtualPath.c_str());
+        return false;
+    }
     return true;
 }
 

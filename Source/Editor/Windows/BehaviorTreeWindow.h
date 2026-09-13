@@ -252,6 +252,16 @@ private:
     bool m_executionOrderDirty = true; // 毎フレームのソートループを防ぐための最適化フラグ
     nlohmann::json m_lastSavedState;   // 直前のグラフ状態（Undo判定用）
 
+    // 保存していない変更があるか。
+    //   RecordStateForUndo がグラフ変更の集約点なので、そこで立てて保存/読込で寝かせる。
+    //   ノードを「動かしただけ」は RecordStateForUndo を通らないため検出できない
+    //   （保存内容には座標も含まれる）。取りこぼす側に倒してあるのは、
+    //   誤検出で毎回警告が出ると警告そのものを読まなくなるため。
+    bool m_dirty = false;
+
+    // 未保存のまま「開く」を押したときの確認ポップアップで使う、開く予定のパス。
+    std::string m_pendingOpenPath;
+
     ImVec2 m_newNodeSpawnPos = { 0.0f, 0.0f }; // 右クリックした瞬間のスクリーン座標
 
     // 整列の要求フラグ。ツールバーで押された時点では ed::Begin の外に居るため、
