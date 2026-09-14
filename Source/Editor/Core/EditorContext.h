@@ -157,4 +157,9 @@ struct EditorContext {
      //   各外部ウィンドウは個別スワップチェーンを毎フレーム Present するため、
      //   負荷が気になる場面では false にして描画を止められる。既定は有効。
      bool renderExternalWindows = true;
+
+     // 切り離した OS ウィンドウを、操作していない間だけ低頻度で描くか。
+     //   触っていない窓をゲームと同じ 60fps で Present し続けるのをやめる。
+     //   プレイ中に別画面の数値を滑らかに眺めたいときは false にする。既定は有効。
+     bool throttleExternalWindows = true;
 };

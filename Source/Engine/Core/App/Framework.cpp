@@ -451,6 +451,7 @@ void Framework::Render(float elapsedTime)
 			    m_editorWindowManager->IsVisible() &&
 			    m_editorContext.renderExternalWindows; // pause縛りを外し、UI表示中は常に外部ウィンドウを描画
 			ImGuiRenderer::SetPlatformWindowsEnabled(allowPlatformWindows);
+			ImGuiRenderer::SetPlatformWindowsThrottled(m_editorContext.throttleExternalWindows);
 
 			// IMGUI描画
 			ImGuiRenderer::Render(dc);

@@ -9,9 +9,23 @@
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+// 操作をやめてからフル描画を続ける時間。
+//   ホバーの色が戻る・ツールチップが消えるといった「余韻」が数フレーム残るので、
+//   入力が切れた瞬間に間引くと最後の1コマが画面に残って見える。
+static constexpr float kPlatformActiveTail = 0.4f;
+
+// 放置中の再描画間隔（約15fps）。完全に止めないのは、FPS表示などが固まって
+//   「ハングした」ように見えるのを避けるため。負荷と見た目のつまみはここ1箇所。
+static constexpr float kPlatformIdleInterval = 1.0f / 15.0f;
+
 // 静的メンバ変数の実体定義
 ImFont *ImGuiRenderer::s_editorFont             = nullptr;
 bool    ImGuiRenderer::s_platformWindowsEnabled = true;
+
+bool  ImGuiRenderer::s_platformWindowsThrottled = true;
+float ImGuiRenderer::s_platformIdleTime         = 0.0f;
+float ImGuiRenderer::s_platformIdleAccum        = 0.0f;
+int   ImGuiRenderer::s_platformViewportCount    = 0;
 
 // 初期化
 void ImGuiRenderer::Initialize(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *dc)
@@ -139,6 +153,20 @@ void ImGuiRenderer::Initialize(HWND hWnd, ID3D11Device *device, ID3D11DeviceCont
     ImGui_ImplWin32_Init(hWnd);
     ImGui_ImplDX11_Init(device, dc);
 
+    // [ 切り離し OS 窓のスワップチェーンについて（計測済み・変更しないこと） ]
+    //
+    //   DX11 バックエンドの既定は BufferCount=1 / DXGI_SWAP_EFFECT_DISCARD の旧 BLT モデル。
+    //   ImGui_ImplDX11_SetSwapChainDescs() でフリップモデル(FLIP_DISCARD/BufferCount=2)へ
+    //   差し替えられる（DX12 バックエンドは元から FLIP_DISCARD）。
+    //   実際に差し替えて、モニタ2枚・外部窓4枚・垂直同期オフで計測した結果:
+    //
+    //     間引きON + フリップ  3.97 / 3.91 ms      間引きON + 既定  3.93 / 3.93 ms
+    //
+    //   差は出なかった。Present の回数を間引き(ShouldRenderPlatformWindows)で
+    //   減らしてしまえば、1回あたりの方式の差は埋もれる。
+    //   一方で CreateSwapChain が失敗する環境だと、IM_ASSERT は NDEBUG で消えるため
+    //   null の SwapChain を Present して落ちる。得が無く risk だけ残るので入れていない。
+
     // Load Fonts
     // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
     // - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
@@ -235,7 +263,9 @@ void ImGuiRenderer::Render(ID3D11DeviceContext *context)
             ZoneScopedN("ImGui::UpdatePlatformWindows");
             ImGui::UpdatePlatformWindows();
         }
-        if (s_platformWindowsEnabled)
+        // UpdatePlatformWindows() は OS 窓の生成/破棄/移動なので毎フレーム必須。
+        //   間引けるのは描画と Present だけ。
+        if (s_platformWindowsEnabled && ShouldRenderPlatformWindows())
         {
             ZoneScopedN("ImGui::RenderPlatformWindowsDefault");
             ImGui::RenderPlatformWindowsDefault();
@@ -243,9 +273,72 @@ void ImGuiRenderer::Render(ID3D11DeviceContext *context)
     }
 }
 
+/// 今フレーム、切り離し OS 窓を描き直すべきか。
+///   市販エディタ（Unity の Repaint 駆動、Unreal の Slate Invalidation）は
+///   「変化した窓しか描かない」。ImGui にその仕組みは無いので、
+///   「操作中はフル、放置中は低頻度」という粗い近似で代用する。
+bool ImGuiRenderer::ShouldRenderPlatformWindows()
+{
+    if (!s_platformWindowsThrottled) return true;
+
+    ImGuiIO &io = ImGui::GetIO();
+
+    // 窓が増減したフレームは必ず描く。
+    //   切り離した直後の窓は一度も Present されておらず、ここを飛ばすと
+    //   次に描かれるまで中身が出ない。
+    const int viewportCount = ImGui::GetPlatformIO().Viewports.Size;
+    if (viewportCount != s_platformViewportCount)
+    {
+        s_platformViewportCount = viewportCount;
+        s_platformIdleTime      = 0.0f;
+        s_platformIdleAccum     = 0.0f;
+        return true;
+    }
+
+    // 「操作中」の判定にマウス移動やボタンを直接見てはいけない。
+    //   プレイ中はマウス視点で常に動き、攻撃でボタンも押されるため、
+    //   それらを条件にすると一番間引きたい場面で常時フル描画になる。
+    //   WantCaptureMouse は「カーソルが ImGui のウィンドウ上にある」ときだけ真で、
+    //   ゲームビュー(PassthruCentralNode)の上では偽になる。
+    //   ImGui が掴んでいる間（ドラッグ・リサイズ・スライダー操作）も真のままなので、
+    //   窓の外へカーソルが出る操作もこれ1つで拾える。
+    const bool active = io.WantCaptureMouse || io.WantTextInput || ImGui::IsAnyItemActive();
+    if (active)
+    {
+        s_platformIdleTime  = 0.0f;
+        s_platformIdleAccum = 0.0f;
+        return true;
+    }
+
+    s_platformIdleTime += io.DeltaTime;
+    if (s_platformIdleTime < kPlatformActiveTail) return true;
+
+    // 放置中。止めきらず低頻度で回す。
+    //   Present を飛ばしたフレームは DWM が直前に受け取った絵をそのまま合成し続けるので、
+    //   描かなくてもちらつかない（窓が黒くなるのは Present ごと止める
+    //   renderExternalWindows=false のときだけ）。
+    s_platformIdleAccum += io.DeltaTime;
+    if (s_platformIdleAccum >= kPlatformIdleInterval)
+    {
+        s_platformIdleAccum = 0.0f;
+        return true;
+    }
+    return false;
+}
+
 void ImGuiRenderer::SetPlatformWindowsEnabled(bool enabled)
 {
     s_platformWindowsEnabled = enabled;
+}
+
+void ImGuiRenderer::SetPlatformWindowsThrottled(bool enabled)
+{
+    if (s_platformWindowsThrottled == enabled) return;
+    s_platformWindowsThrottled = enabled;
+
+    // OFF→ON の切り替え直後に間引きの位相が残っていると、最初の1回が遅れて見える。
+    s_platformIdleTime  = 0.0f;
+    s_platformIdleAccum = 0.0f;
 }
 
 // WIN32メッセージハンドラー

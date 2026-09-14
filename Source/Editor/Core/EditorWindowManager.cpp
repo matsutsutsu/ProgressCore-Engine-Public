@@ -498,6 +498,10 @@ void EditorWindowManager::DrawWindowMenu(EditorContext &context)
         //   OFF にすると Exe 外のウィンドウは黒くなる代わりに負荷が下がる。
         ImGui::MenuItem("外部ウィンドウを描画", nullptr, &context.renderExternalWindows);
 
+        // 触っていない外部ウィンドウを約15fpsまで落とす。別画面の数値を
+        //   滑らかに眺めたいときだけ OFF にする（そのぶんFPSは下がる）。
+        ImGui::MenuItem("外部ウィンドウを間引く", nullptr, &context.throttleExternalWindows);
+
         ImGui::Separator();
         for (auto &window : m_windows)
         {
