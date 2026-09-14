@@ -1,5 +1,17 @@
-// ビヘイビアツリーの静的データ構造。ポインタベースの木ではなく固定長のノードを
-// 配列に並べるので、ポインタジャンプが消えてプリフェッチが効く。
+// ビヘイビアツリーの静的データ構造。
+//
+// 子をポインタではなく配列の添字(BTNodeID)で持つ。理由は3つ。
+//   ・JSONにそのまま書ける。ポインタは保存できないので、ポインタ木にすると
+//     保存と読み込みのたびに「ポインタ⇔添字」の変換が要る
+//   ・ノードIDがそのまま添字になるので、個体ごとの実行状態を木と同じ長さの
+//     配列（BehaviorTreeComponent の nodeTimers / runningNodes）で持てる
+//   ・ノード本体の確保が「ノードの数だけ」から1回にまとまり、添字の近い
+//     ノードが同じキャッシュラインに載る
+//
+// 誇張しないための但し書き。children は std::vector なので、子を辿るときの
+// ヒープ参照はノードごとに1回残る（確保回数は N → 1+N であって 1 ではない）。
+// また木の走査は深さ優先で添字が飛ぶため、連続アクセスを前提とする
+// ハードウェアプリフェッチが効く形ではない。効いているのは空間的局所性の方。
 #pragma once
 #include <cstdint>
 #include <vector>
@@ -19,8 +31,8 @@ enum class BTDebugState : uint8_t {
 enum class BTDecoratorType : uint8_t {
     Inverter = 0, // 結果を反転 (Success <-> Failure)
     Cooldown = 1, // クールダウン (指定秒数経過するまでFailure)
-    Retry = 2,     // 失敗しても指定回数リトライする
-    Async = 3     // 非同期実行（筋肉を待たずに即Successを返す）
+    Retry    = 2, // 失敗しても指定回数リトライする
+    Async    = 3  // 非同期実行（筋肉を待たずに即Successを返す）
 };
 
 enum class BTNodeType : uint8_t {
@@ -61,6 +73,12 @@ struct BTNode {
 };
 
 // 全Entityで共有される不変データ（アセット）。
+//
+// 実行状態（残り時間・どの子まで進んだか）をここへ置いてはいけない。同じ木を使う
+// 個体が1つの変数を奪い合い、片方が始めた待機がもう片方のぶんまで減る。評価は
+// 並列で走るので、同じ float への同時書き込みにもなる。
+// 状態は個体側（BehaviorTreeComponent）が、ノードIDをそのまま添字にした配列で持つ。
+// BTAssetCache が const で配ることで、「書けない」ことを型で守っている。
 struct BTAsset {
     AssetID id;
     std::vector<BTNode> nodes;

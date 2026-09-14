@@ -145,9 +145,12 @@ void BehaviorTreeSystem::SyncAssets()
                 const TransformComponent & /*trans*/,
                 const TimeStateComponent & /*time*/)
         {
+        // パスが空の場合はnullptrを返す 
+        // パスがあれば実際にファイルを読み込んでアセットを取得する
         std::shared_ptr<const BTAsset> desired =
             btComp.assetPath.empty() ? nullptr : cache.GetOrLoad(btComp.assetPath);
 
+            // アセットが変更されていなければ何もしない
         if (desired == btComp.sharedAsset) return; // 大半のフレームはここで終わる
 
         btComp.sharedAsset     = desired;

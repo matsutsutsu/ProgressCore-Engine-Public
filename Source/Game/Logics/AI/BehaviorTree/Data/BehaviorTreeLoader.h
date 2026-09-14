@@ -6,9 +6,8 @@
 
 class BehaviorTreeLoader {
 public:
-// JSONファイルからBTAssetを読み込む
+    // JSONファイルからBTAssetを読み込む
     static bool LoadFromJson(const std::string& path, BTAsset& outAsset);
-
 
 private:
     static BTNodeType StringToNodeType(const std::string& typeStr);

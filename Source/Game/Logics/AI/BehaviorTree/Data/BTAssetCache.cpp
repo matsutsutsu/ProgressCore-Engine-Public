@@ -35,8 +35,14 @@ std::shared_ptr<const BTAsset> BTAssetCache::Reload(const std::string &path)
 
     std::lock_guard<std::mutex> lock(m_mutex);
 
-    // 失敗の記録も消す。「直したから読み直してほしい」という指示なので、
-    // ここで消さないと直した後も永久に読まれない。
+    // 失敗の記録も消して、m_assets と m_failed に同じパスが入らない状態を保つ。
+    //
+    //   消し忘れても読み直し自体は成功する。Reload は GetOrLoad を経由せず
+    //   LoadLocked を直接呼ぶので、m_failed の関所（毎フレーム再試行しないための
+    //   足切り）を通らないため。
+    //   ただし両方にパスが残り、「m_assets を先に見る」という GetOrLoad の順番に
+    //   依存して動いているだけの状態になる。順番を入れ替えた瞬間に
+    //   「直したのに読まれない」が本当に起きる。
     m_assets.erase(path);
     m_failed.erase(path);
 
