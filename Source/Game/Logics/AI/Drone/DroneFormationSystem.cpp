@@ -6,6 +6,7 @@
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
 #include "Game/Logics/AI/Drone/Formation/Formations_Attack.h"
 #include "Game/Logics/AI/Drone/Formation/Formations_Basic.h"
+#include "Game/Logics/AI/Drone/Formation/Formations_DataDriven.h"
 #include "Game/Logics/AI/Drone/Formation/Formations_Squad.h"
 
 #include "Engine/Core/Systems/SystemPriority.h"
@@ -30,6 +31,10 @@ void DroneFormationSystem::Initialize()
     CCL::AI::Formation::Basic::RegisterAll();
     CCL::AI::Formation::Attack::RegisterAll(); // 攻撃陣形（縦割り等）
     CCL::AI::Formation::Squad::RegisterAll();  // 小隊陣形（5機編隊）
+
+    // データ陣形は最後。C++ 実装の枠を上書きしないことを登録側でも確かめられる
+    // （Has() で埋まっている枠を弾くので、順序が逆だと検出できない）。
+    CCL::AI::Formation::Data::RegisterAll();
 
     CCL_LOG_INFO(LogCategory::AI, "[DroneFormationSystem] 陣形クラス登録完了");
 }

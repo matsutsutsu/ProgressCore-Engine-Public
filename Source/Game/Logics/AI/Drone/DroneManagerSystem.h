@@ -73,6 +73,16 @@ class DroneManagerSystem : public CCL::ECS::IfSystem<DroneManagerSystem,
     /// シーン内の最初のボス（BossCommandComponent 保持）を探す。
     CCL::ECS::EntityID FindBoss() const;
 
+    /// 陣形テストUI。BT を組まずに、選んだ陣形の「形成 → 撃つ → 戻す」を手で送る。
+    void DrawFormationTest();
+
+    /// ボスへ直接命令を入れる。BT が上書きするので、確認は BT を止めてから行う。
+    void SetBossCommand(DroneFormationType formation, bool attack);
+
+    /// インスペクタに出す陣形名。データ陣形は枠番号ではなくアセットが名乗る名前を返す
+    /// （"[データ] 枠0" のままでは、どの技を選んでいるのか画面から分からない）。
+    const char *FormationDisplayName(DroneFormationType type) const;
+
     // GUI 用パラメータ。
     int   m_spawnCount  = 12;
     float m_spawnRadius = 8.0f;
@@ -81,6 +91,12 @@ class DroneManagerSystem : public CCL::ECS::IfSystem<DroneManagerSystem,
     bool m_autoSpawnEnabled = true;  // シーン開始時に初期ドローンを自動配備するか
     bool m_autoSpawnDone    = false; // 初回配備が完了したか（1回だけ実行するためのラッチ）
     int  m_initialSpawnCount = 100;  // 初期配備数（展示会向け。スペックに応じて調整可）
+
+    // 陣形テストで選んでいる陣形と、その1つ前。
+    //   C++実装とデータ実装が同じ絵になるかは、交互に出して目で見比べるしかない。
+    //   毎回コンボを開き直すと形が崩れる前に切り替えられないので、往復を1ボタンにする。
+    DroneFormationType m_testFormation     = DroneFormationType::GuillotineSlam;
+    DroneFormationType m_testPrevFormation = DroneFormationType::DataSlot00;
 
   public:
     void OnGui() override; // 生成/破壊のデバッグUI

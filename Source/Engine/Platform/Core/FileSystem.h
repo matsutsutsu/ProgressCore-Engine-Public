@@ -51,6 +51,20 @@ public:
      */
     static bool Exists(const std::string& virtualPath);
 
+    /**
+     * @brief ディレクトリ直下のファイルを列挙します（再帰しません）。
+     * @param virtualDir 仮想ルートからの相対パス (例: "Assets/Formations")
+     * @param extension  絞り込む拡張子。"." を含めた小文字で指定 (例: ".json")。空なら全件
+     * @return 見つかったファイルの仮想パスの配列。ディレクトリが無ければ空
+     * @details 「フォルダに置けば増える」形のアセット向け。個々のパスをコードに
+     *          書かずに済むので、陣形を1つ増やすのにリビルドが要らなくなります。
+     * @warning 走査はランタイムのディスクアクセスなので、毎フレームではなく
+     *          起動時・リロード時にだけ呼んでください。
+     *          .pak 化したときはここが目次の列挙に置き換わります。
+     */
+    static std::vector<std::string> ListFiles(const std::string& virtualDir,
+                                              const std::string& extension);
+
 private:
     /**
      * @brief 仮想パスをOSの物理パスに変換します。

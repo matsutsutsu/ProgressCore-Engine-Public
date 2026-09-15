@@ -1,6 +1,9 @@
-#include "FileSystem.h"
+﻿#include "FileSystem.h"
 #include "Engine/Platform/Core/Logger.h" // ログ機能 (CCL_LOG等) に合わせて変更してください
 #include <fstream>
+#include <algorithm>
+#include <cctype>
+#include <system_error>
 #include <sstream>
 
 #include <chrono>
@@ -67,6 +70,39 @@ bool FileSystem::Exists(const std::string& virtualPath)
 {
     // 将来的には .pak 内の目次 (Trie木など) を検索する処理に分岐する
     return std::filesystem::exists(ResolvePhysicalPath(virtualPath));
+}
+
+std::vector<std::string> FileSystem::ListFiles(const std::string& virtualDir,
+                                               const std::string& extension)
+{
+    std::vector<std::string> result;
+
+    const auto dir = ResolvePhysicalPath(virtualDir);
+
+    // ディレクトリが無いのは異常ではない（その種類のアセットをまだ作っていないだけ）。
+    std::error_code ec;
+    if (!std::filesystem::is_directory(dir, ec)) return result;
+
+    for (const auto& entry : std::filesystem::directory_iterator(dir, ec))
+    {
+        if (!entry.is_regular_file()) continue;
+
+        if (!extension.empty())
+        {
+            // 拡張子の大小は OS によって揺れる。呼び出し側に小文字を強制させず、ここで畳む。
+            std::string ext = entry.path().extension().string();
+            for (char& c : ext) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+            if (ext != extension) continue;
+        }
+
+        // 物理パスではなく仮想パスで返す。呼び出し側がそのまま ReadAllText へ渡せる。
+        result.push_back(virtualDir + "/" + entry.path().filename().string());
+    }
+
+    // ファイルシステムの列挙順は保証がない。並びが実行のたびに変わると、
+    // 「どのアセットが先に登録されたか」に依存する不具合が再現しなくなる。
+    std::sort(result.begin(), result.end());
+    return result;
 }
 
 std::string FileSystem::ReadAllText(const std::string& virtualPath)

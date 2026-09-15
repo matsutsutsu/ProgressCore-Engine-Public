@@ -23,6 +23,11 @@
 // 片方を触ってもコンパイルが通り実行時に黙って別の技が出たため。
 // 載せてよいのは FormationRegistry に IFormation 実装がある技だけ
 // （構想だけの技を置くと、候補には出るのに実行すると静止する）。
+//
+// データ枠(2032〜)だけはこの規則の例外で、対応する JSON が無ければ実装も無い。
+// それでも先に載せているのは、陣形を1つ作るたびにこの表を編集してリビルドするなら
+// エディタで組む意味が半分消えるため。空き枠を選んだときに気づけるよう、
+// 起動時に「どの枠が埋まったか」をログへ出している（Formations_DataDriven）。
 #define BT_DRONE_ACTION_LIST(X)                                                                                \
     X(A_DroneOrbit,              2000, OrbitCircle,             "ドローン：降下円陣 (Orbit Circle)")           \
     X(A_DroneHighOrbit,          2004, HighOrbit,               "ドローン：頭上円陣 (High Orbit)")             \
@@ -34,7 +39,23 @@
     X(A_DroneMegaClapUpperFirst, 2026, MegaClapSlam_UpperFirst, "ドローン：挟み込み2段・上段先攻 (Mega Clap)") \
     X(A_DroneMegaClapLowerFirst, 2027, MegaClapSlam_LowerFirst, "ドローン：挟み込み2段・下段先攻 (Mega Clap)") \
     X(A_DroneTsunamiWaveRL,      2030, TsunamiWave_RL,          "ドローン：波状縦割り・右→左 (Wave)")          \
-    X(A_DroneSquadAssault,       2031, SquadAssault,            "ドローン：小隊突撃 (Squad Assault)")
+    X(A_DroneSquadAssault,       2031, SquadAssault,            "ドローン：小隊突撃 (Squad Assault)")           \
+    X(A_DroneDataSlot00,         2032, DataSlot00,              "ドローン：[データ] 枠0")                      \
+    X(A_DroneDataSlot01,         2033, DataSlot01,              "ドローン：[データ] 枠1")                      \
+    X(A_DroneDataSlot02,         2034, DataSlot02,              "ドローン：[データ] 枠2")                      \
+    X(A_DroneDataSlot03,         2035, DataSlot03,              "ドローン：[データ] 枠3")                      \
+    X(A_DroneDataSlot04,         2036, DataSlot04,              "ドローン：[データ] 枠4")                      \
+    X(A_DroneDataSlot05,         2037, DataSlot05,              "ドローン：[データ] 枠5")                      \
+    X(A_DroneDataSlot06,         2038, DataSlot06,              "ドローン：[データ] 枠6")                      \
+    X(A_DroneDataSlot07,         2039, DataSlot07,              "ドローン：[データ] 枠7")                      \
+    X(A_DroneDataSlot08,         2040, DataSlot08,              "ドローン：[データ] 枠8")                      \
+    X(A_DroneDataSlot09,         2041, DataSlot09,              "ドローン：[データ] 枠9")                      \
+    X(A_DroneDataSlot10,         2042, DataSlot10,              "ドローン：[データ] 枠10")                     \
+    X(A_DroneDataSlot11,         2043, DataSlot11,              "ドローン：[データ] 枠11")                     \
+    X(A_DroneDataSlot12,         2044, DataSlot12,              "ドローン：[データ] 枠12")                     \
+    X(A_DroneDataSlot13,         2045, DataSlot13,              "ドローン：[データ] 枠13")                     \
+    X(A_DroneDataSlot14,         2046, DataSlot14,              "ドローン：[データ] 枠14")                     \
+    X(A_DroneDataSlot15,         2047, DataSlot15,              "ドローン：[データ] 枠15")
 
 namespace CCL::AI
 {

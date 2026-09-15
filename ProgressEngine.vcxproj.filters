@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="External">
@@ -1860,6 +1860,15 @@
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\IFormation.h">
       <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\FormationAssetIO.h">
+      <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_DataDriven.h">
+      <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\FormationAsset.h">
+      <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\FormationRegistry.h">
       <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
     </ClInclude>
@@ -2827,6 +2836,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Transform\Systems\BoneAttachmentRenderSystem.cpp">
       <Filter>Source\Engine\Transform\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\Drone\Formation\FormationAssetIO.cpp">
+      <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\Drone\DroneFormationSystem.cpp">
       <Filter>Source\Game\Logics\AI\Drone</Filter>

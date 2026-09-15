@@ -22,10 +22,16 @@ class FormationRegistry
     }
 
     // 陣形タイプに実装を登録する。
+    //
+    // 生成したインスタンスを返すのは、データ陣形が「登録してからアセットを流し込む」
+    // ためだけ。C++ 実装の陣形は既定構築で完成しているので戻り値を捨ててよい。
     template <typename T>
-    void Register(DroneFormationType type)
+    T *Register(DroneFormationType type)
     {
-        m_formations[static_cast<size_t>(type)] = std::make_unique<T>();
+        auto  instance = std::make_unique<T>();
+        T    *raw      = instance.get();
+        m_formations[static_cast<size_t>(type)] = std::move(instance);
+        return raw;
     }
 
     // 実際に評価される陣形を引く。未登録なら nullptr。

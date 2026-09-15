@@ -3,6 +3,8 @@
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
 #include "Game/Logics/AI/Drone/Squad/SquadState.h"
+#include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
+#include "Game/Logics/AI/Drone/Formation/Formations_DataDriven.h" // 陣形テストの名前表示
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include <vector>
@@ -220,6 +222,91 @@ void DroneManagerSystem::DestroyAll()
     CCL_LOG_INFO(LogCategory::Game, "[DroneManager] 全機破壊");
 }
 
+void DroneManagerSystem::SetBossCommand(DroneFormationType formation, bool attack)
+{
+    if (auto *cmd = m_world->GetComponent<BossCommandComponent>(FindBoss()))
+    {
+        cmd->requestFormation  = formation;
+        cmd->droneAttackActive = attack;
+    }
+}
+
+const char *DroneManagerSystem::FormationDisplayName(DroneFormationType type) const
+{
+    // データ陣形は枠番号ではなくアセットの名前を出す。"[データ] 枠0" のままだと、
+    // 枠に何を入れたかを覚えていないと選べない。
+    if (auto *f = CCL::AI::Formation::FormationRegistry::Instance().Get(type))
+    {
+        if (auto *data = dynamic_cast<CCL::AI::Formation::Data::DataDrivenFormation *>(f))
+            return data->GetAsset().name.c_str();
+    }
+
+    const size_t slot = static_cast<size_t>(type);
+    return (slot < kDroneFormationSlotCount) ? kDroneFormationNames[slot] : "(不明)";
+}
+
+// 陣形テスト。BT を組まずに「形成 → 撃つ → 戻す」を手で送る。
+//
+// 一覧に出すのは FormationRegistry に実装がある陣形だけ。enum には実装の無い枠
+// （データの空き枠・欠番）が含まれていて、それを選ぶと静止するだけになる。
+void DroneManagerSystem::DrawFormationTest()
+{
+    ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.3f, 1.0f), "陣形テスト");
+
+    auto &registry = CCL::AI::Formation::FormationRegistry::Instance();
+
+    if (ImGui::BeginCombo("陣形", FormationDisplayName(m_testFormation)))
+    {
+        for (size_t slot = 0; slot < kDroneFormationSlotCount; ++slot)
+        {
+            const auto type = static_cast<DroneFormationType>(slot);
+            if (!registry.Has(type)) continue;
+
+            const bool selected = (type == m_testFormation);
+            if (ImGui::Selectable(FormationDisplayName(type), selected))
+            {
+                // 直前の選択を控える。C++実装とデータ実装の見比べは往復が要るので、
+                // 切り替えのたびにコンボを開き直していると形が崩れる前に間に合わない。
+                m_testPrevFormation = m_testFormation;
+                m_testFormation     = type;
+            }
+            if (selected) ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+
+    ImGui::SameLine();
+    if (ImGui::Button("直前と入替", ImVec2(120, 0)))
+    {
+        std::swap(m_testFormation, m_testPrevFormation);
+
+        // 攻撃信号は維持したまま形だけ差し替える。止めてしまうと進行度が0に戻り、
+        // 「振り切った姿勢どうしの見比べ」ができない。
+        if (auto *cmd = m_world->GetComponent<BossCommandComponent>(FindBoss()))
+            SetBossCommand(m_testFormation, cmd->droneAttackActive);
+    }
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("直前に選んだ「%s」と往復する。同じ絵になるかを見比べる用",
+                          FormationDisplayName(m_testPrevFormation));
+
+    if (ImGui::Button("1) 形を作る", ImVec2(180, 26)))
+        SetBossCommand(m_testFormation, false);
+
+    ImGui::SameLine();
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.9f, 0.3f, 0.2f, 1.0f));
+    if (ImGui::Button("2) 撃つ！", ImVec2(180, 26)))
+        SetBossCommand(m_testFormation, true);
+    ImGui::PopStyleColor();
+
+    ImGui::SameLine();
+    if (ImGui::Button("3) 周回へ戻す", ImVec2(140, 26)))
+        SetBossCommand(DroneFormationType::OrbitCircle, false);
+
+    // ボスBTが動いていると、次のフレームに requestFormation を上書きされて
+    // 押しても戻る。原因が分かりにくいので画面に出しておく。
+    ImGui::TextDisabled("注意: ボスBTが動いていると上書きされる。Behavior Tree の強制実行を解除しておく");
+}
+
 void DroneManagerSystem::SetAllDronesArrived(bool treatAsArrived)
 {
     int  count = 0;
@@ -367,29 +454,7 @@ void DroneManagerSystem::OnGui()
         // DroneCommandSystem → DroneBrainSystem → Formation の流れを確認する。
         // ボスBTが毎フレーム陣形を指示していると上書きされるので、テスト時は外すこと。
         ImGui::Spacing();
-        ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.3f, 1.0f), "Formation Attack Test (縦割り)");
-
-        auto setBossCmd = [this](DroneFormationType f, bool attack) {
-            EntityID boss = FindBoss();
-            if (auto *cmd = m_world->GetComponent<BossCommandComponent>(boss))
-            {
-                cmd->requestFormation  = f;
-                cmd->droneAttackActive = attack;
-            }
-        };
-
-        if (ImGui::Button("1) Form Blade (刃を形成)", ImVec2(180, 26)))
-            setBossCmd(DroneFormationType::GuillotineSlam, false);
-
-        ImGui::SameLine();
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.9f, 0.3f, 0.2f, 1.0f));
-        if (ImGui::Button("2) Strike! (振り下ろし)", ImVec2(180, 26)))
-            setBossCmd(DroneFormationType::GuillotineSlam, true);
-        ImGui::PopStyleColor();
-
-        ImGui::SameLine();
-        if (ImGui::Button("3) Return (周回へ)", ImVec2(140, 26)))
-            setBossCmd(DroneFormationType::OrbitCircle, false);
+        DrawFormationTest();
 
         // 個別行動テスト。
         //   ①カミカゼ：出撃は一斉だが、飛び切った機から順に離脱して隊列へ戻る
@@ -399,19 +464,19 @@ void DroneManagerSystem::OnGui()
         ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.8f, 1.0f), "個別行動テスト");
 
         if (ImGui::Button("カミカゼ：構え", ImVec2(150, 26)))
-            setBossCmd(DroneFormationType::KamikazeSwarm, false);
+            SetBossCommand(DroneFormationType::KamikazeSwarm, false);
         ImGui::SameLine();
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.9f, 0.3f, 0.2f, 1.0f));
         if (ImGui::Button("カミカゼ：発射", ImVec2(150, 26)))
-            setBossCmd(DroneFormationType::KamikazeSwarm, true);
+            SetBossCommand(DroneFormationType::KamikazeSwarm, true);
         ImGui::PopStyleColor();
 
         if (ImGui::Button("小隊：接近", ImVec2(150, 26)))
-            setBossCmd(DroneFormationType::SquadAssault, false);
+            SetBossCommand(DroneFormationType::SquadAssault, false);
         ImGui::SameLine();
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.9f, 0.3f, 0.2f, 1.0f));
         if (ImGui::Button("小隊：突入", ImVec2(150, 26)))
-            setBossCmd(DroneFormationType::SquadAssault, true);
+            SetBossCommand(DroneFormationType::SquadAssault, true);
         ImGui::PopStyleColor();
 
         // 震え方は数字では決められないので実行中に見ながら合わせる。
