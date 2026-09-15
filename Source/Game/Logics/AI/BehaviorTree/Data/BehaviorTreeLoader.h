@@ -12,6 +12,12 @@ public:
 private:
     static BTNodeType StringToNodeType(const std::string& typeStr);
 
+    /// 木として辿れる形になっているかを確認する。通らなければ読み込みを中止する。
+    /// @note ValidateNodes も EvaluateTreeRecursive も asset.nodes[...] を範囲チェック
+    ///       せずに辿り、しかも再帰で降りる。壊れた木はログではなく異常終了で出るので、
+    ///       ここだけは「警告して続行」ではなく「読まない」にする。
+    static bool ValidateStructure(const BTAsset& asset, const std::string& path);
+
     /// 読み込めたが意図どおりには動かない形を報告する。
     /// @note 評価は並列で走るため実行時には気づけない。単一スレッドで、しかも
     ///       ファイル名を言えるここが唯一の検出場所。

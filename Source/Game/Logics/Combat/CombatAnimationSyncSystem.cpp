@@ -50,8 +50,13 @@ void CombatAnimationSyncSystem::Update(float /*dt*/)
         //   未設定なら親を辿って Animator 保持の祖先(=キャラ)を自動解決しキャッシュする。
         //   剣はキャラの子孫なので解決できる。空間生成の判定球は親が無く解決不能＝
         //   ownerEntity=Invalid のまま「常時判定の弾」として下でスキップされる。
-        if (hb.ownerEntity == InvalidEntityID)
-            hb.ownerEntity = ResolveAnimatorOwner(m_world, hitboxID);
+        // 「解決できなかった」も結果として覚える。覚えないと、親を持たない判定
+        //   （空間生成の弾・ドローン）が毎フレーム親を辿り直すことになる。
+        if (!hb.ownerResolved)
+        {
+            hb.ownerEntity   = ResolveAnimatorOwner(m_world, hitboxID);
+            hb.ownerResolved = true;
+        }
 
         if (hb.ownerEntity == InvalidEntityID)
             return;

@@ -1,8 +1,10 @@
 // ドローンの「生死・数」を管理する司令塔システム。生成・計数・破壊だけを持ち、
 // 陣形計算は DroneFormationSystem、個体の判断は DroneBrainSystem が担う。
 //
-// 生存数を BattleContext.droneAliveCount に書くことで「ドローン数 = ボスHP」になり、
-// ボスの戦術がその数で切り替わる。
+// 生存数を BattleContext.droneAliveCount に書く。
+//   「ドローン数 = ボスHP」という構想の受け皿だが、現時点では読み手がデバッグ表示
+//   だけで、BT の条件にも他のシステムにも繋がっていない。加えてドローンを減らす
+//   経路そのものが無い（Drone_Guide.md §9）ので、この値は常に初期配備数のまま。
 #pragma once
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/AI/Drone/DroneComponent.h"
@@ -20,6 +22,17 @@ class DroneManagerSystem : public CCL::ECS::IfSystem<DroneManagerSystem,
     DroneManagerSystem()
         : IfSystem("DroneManagerSystem")
     {
+    }
+
+    // 同じ L02_Update に居る他のドローン系との前後を宣言する。
+    //   スポーン時に ReindexAllDrones() が localIndex / totalDrones / squadId /
+    //   slotInSquad を書き、陣形はそれを読んで持ち場の座標を出す。順序が入れ替わると
+    //   配備した最初のフレームだけ古い通し番号で円が組まれる。
+    //   DroneCommandSystem との間に実データ依存は無いが、生成(構造変更)を挟むので
+    //   毎回同じ順で走るよう固定しておく。
+    std::vector<const char *> GetRunAfter() const override
+    {
+        return {"DroneCommandSystem"};
     }
 
     /// 毎フレーム、生存ドローンを数えて BattleContext.droneAliveCount に書く。
@@ -43,8 +56,14 @@ class DroneManagerSystem : public CCL::ECS::IfSystem<DroneManagerSystem,
     /// 全ドローンに対して localIndex / totalDrones を振り直す。
     void ReindexAllDrones();
 
-    /// 全ドローンの currentState を一括変更する（デバッグ用）。
-    void SetAllDroneState(DroneState state);
+    /// 全ドローンの「持ち場に着いた扱い」を一括で切り替える（デバッグ用）。
+    ///
+    /// currentState を直接代入する版は廃止した。判断層(DroneBrainSystem)が
+    /// 毎フレーム全経路で currentState を書き直すため、外から入れた値は次の
+    /// フレームに必ず消える＝押しても何も起きないボタンになっていた。
+    /// 実際に効くのは、判断層が入力として読むこのラッチだけ。
+    /// @param treatAsArrived true=到着済み扱い(Idleで留まる) / false=再接近させる
+    void SetAllDronesArrived(bool treatAsArrived);
 
   private:
     /// ボスが準備でき次第、初期ドローンを1回だけ配備する。シーン開始直後はボス未生成の

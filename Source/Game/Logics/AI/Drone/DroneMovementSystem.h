@@ -37,6 +37,22 @@ class DroneMovementSystem : public CCL::ECS::IfSystem<
     // 隊列を組んだままの突入。剛体追従と違って形が歪む。歪むのがこの技の見た目の核。
     inline void ProcessChargeSoftFollow(TransformComponent &trans, DroneComponent &drone, float dt);
 
+    // 進行方向 → 姿勢。yaw の式をここ1箇所に閉じ込める。
+    //
+    //   ドローンのモデルは前方が -Z。CreateFromYawPitchRoll は行ベクトルで
+    //   v·Rx(pitch)·Ry(yaw) の順に掛かるので、
+    //     (0,0,-1)·Rx(p) = (0, +sin p, -cos p)        ← pitch = asin(look.y) と一致する
+    //     ここへ Ry(θ) = (-cos p·sin θ, sin p, -cos p·cos θ)
+    //   となり、look と突き合わせると θ = atan2(-x, -z)。
+    //   +Z 前提の atan2(x, z) や、以前ここにあった atan2(x, -z) と混ぜると
+    //   Z軸に対する鏡像になり、状態が切り替わるたびに機首が最大180°反転する
+    //   （±Z を向いているときだけ一致するので気づきにくい）。
+    //
+    //   includePitch=false は Idle のように「水平だけ向かせたい」場面用。
+    //   includePitch=true のときだけ look の正規化が要る（asin に渡すため）。
+    DirectX::SimpleMath::Quaternion LookToRotation(const DirectX::SimpleMath::Vector3 &look,
+                                                   bool includePitch) const;
+
     // 予告の震えの位置オフセット [m]。t は構え始めてからの経過秒。
     //   t を取るのは前フレームぶんを引いて差分だけ動かすため（足しっぱなしにすると
     //   座標へ溜まって群れごと流れていく）。

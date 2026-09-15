@@ -87,6 +87,10 @@ void DroneHitSystem::Update(float /*dt*/)
         box.isActive = dangerous;
         box.ownerID  = owner;
 
+        // ダメージの帰属はボスのまま、のけぞり・ノックバックの向きだけは
+        // 実際に当てたこの機体から取らせる（機体はボスから数十m離れている）。
+        box.useSelfAsHitOrigin = true;
+
         if (!dangerous) return;
 
         // 痛さは陣形が持つ（IFormation::GetCombat）。

@@ -73,10 +73,17 @@ namespace
         const Vector3 right(fwd.z, 0.0f, -fwd.x);
     
         // 攻撃が「来た方向」（被弾者→攻撃者側）を求める。
-        //   優先: 攻撃者の位置 → 無ければ -knockbackDir（ノックバックは攻撃者から離れる向き）。
+        //   基準は attackerID（帰属先）ではなく hitOriginID（実際に当てた体）。
+        //   ドローンの攻撃は帰属がボスなので、attackerID を使うと背後から
+        //   突っ込まれても「正面から食らった」のけぞりになる。
+        //   優先: 原点の位置 → 無ければ -knockbackDir（攻撃者から離れる向き）。
+        //   座標はローカルではなくワールドで揃える（親を持つ相手だとずれる）。
+        const CCL::ECS::EntityID originID =
+            (ev.hitOriginID != CCL::ECS::InvalidEntityID) ? ev.hitOriginID : ev.attackerID;
+
         Vector3 fromAttacker = Vector3::Zero;
-        if (auto *atk = world->GetComponent<TransformComponent>(ev.attackerID))
-            fromAttacker = Vector3(atk->position) - Vector3(vtrans->position);
+        if (auto *atk = world->GetComponent<TransformComponent>(originID))
+            fromAttacker = Vector3(atk->GetWorldPosition()) - Vector3(vtrans->GetWorldPosition());
         else if (ev.knockbackDir.LengthSquared() > 1e-6f)
             fromAttacker = -ev.knockbackDir;
         fromAttacker.y = 0.0f;

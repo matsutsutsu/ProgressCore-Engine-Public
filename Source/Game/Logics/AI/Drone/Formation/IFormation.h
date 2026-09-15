@@ -52,13 +52,17 @@ struct FormationContext
 enum class ChargeLifecycle : uint8_t
 {
     Broadcast,  // 信号が立っている間ずっと攻撃。陣形自体が動く技（縦割り等）は必ずこちら
-    Individual, // 各機が飛距離／経過時間で自分から切り上げる。弾幕・小隊突撃
+    Individual, // 各機が飛距離／経過時間で自分から切り上げる。弾幕のみ
+                //   （小隊突撃は隊列を保ったまま動き切る必要があるので Broadcast）
 };
 
 // 技1つぶんの「当たり方」。形とは別に持つ。全陣形共通の定数だった頃は
 // 「大技は痛いが避けやすい／牽制は軽いが避けにくい」という対比が作れなかった。
 struct FormationCombat
 {
+    // ※ 現在このフィールドは誰も読んでいない。実際の接触半径はプレハブの
+    //    Jolt Sphere Collider が持つ（Drone.json の radius）。技ごとに変えたいなら
+    //    DroneHitSystem から JoltSphereColliderComponent へ書く配線が要る。
     float hitRadius       = 2.5f;  // ドローンとプレイヤーの接触半径 [m]
     float damage          = 8.0f;  // 1ヒットの基礎ダメージ
     float knockback       = 12.0f; // ノックバック強さ（0で無効）

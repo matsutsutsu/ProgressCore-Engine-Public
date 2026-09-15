@@ -56,9 +56,19 @@ void SquadUpdateSystem::Update(float dt)
         }
     }
 
+    // プレイヤー不在時は接近も突入も目標が無い。原点へ向かわせないよう、
+    // 座標を取れたかどうかを持ち回る。
     Vector3 playerPos = Vector3::Zero;
+    bool    hasPlayer = false;
     if (m_world->HasResource<BattleContext>())
-        playerPos = Vector3(m_world->GetResource<BattleContext>().playerPos);
+    {
+        const auto &battle = m_world->GetResource<BattleContext>();
+        if (battle.HasPlayer())
+        {
+            playerPos = Vector3(battle.playerPos);
+            hasPlayer = true;
+        }
+    }
 
     // 生存機数と各席の実位置を毎フレーム取り直す（撃破で小隊が痩せるため）。
     // 実位置は「追従機が自分の前の機体を追う」ために要る。
@@ -82,7 +92,8 @@ void SquadUpdateSystem::Update(float dt)
     });
 
     // 小隊の数だけ回す（ドローンの数ではない）。
-    const bool ordered = (formation == DroneFormationType::SquadAssault);
+    //   プレイヤーが居なければ小隊行動そのものを解除する（Regroup へ落ちる）。
+    const bool ordered = hasPlayer && (formation == DroneFormationType::SquadAssault);
 
     for (uint8_t i = 0; i < SquadRegistry::kMaxSquads; ++i)
     {

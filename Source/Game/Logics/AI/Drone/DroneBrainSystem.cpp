@@ -17,8 +17,16 @@ void DroneBrainSystem::Update(float /*dt*/)
     if (m_world->HasResource<BattleContext>())
     {
         const auto &battle = m_world->GetResource<BattleContext>();
-        playerPos = Vector3(battle.playerPos);
-        hasPlayer = true;
+
+        // リソースの有無ではなくプレイヤーの実在を見る。BattleContextSyncSystem が
+        // 起動時に必ずリソースを作るので、ここを HasResource で済ませると
+        // プレイヤーが居ないフレーム（タイトル・シーン遷移中）に playerPos の
+        // 初期値=原点へ向かって突撃方向が決まる。
+        if (battle.HasPlayer())
+        {
+            playerPos = Vector3(battle.playerPos);
+            hasPlayer = true;
+        }
     }
 
     // 各機の時計を使う（被弾でヒットストップがかかった機はタイマーも止まる）。

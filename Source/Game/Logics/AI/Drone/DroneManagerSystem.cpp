@@ -34,7 +34,8 @@ void DroneManagerSystem::Update(float /*dt*/)
 
     int alive = GetAliveCount();
 
-    // 「ドローン数 = ボスHP」。ボス側の戦術判断が本物の数を見る。
+    // 「ドローン数 = ボスHP」の受け皿。ただし現状これを読むのはデバッグ表示だけで、
+    //   減る経路も無いため値は動かない（詳細は Drone_Guide.md §9）。
     battle.droneAliveCount = alive;
 }
 
@@ -219,7 +220,7 @@ void DroneManagerSystem::DestroyAll()
     CCL_LOG_INFO(LogCategory::Game, "[DroneManager] 全機破壊");
 }
 
-void DroneManagerSystem::SetAllDroneState(DroneState state)
+void DroneManagerSystem::SetAllDronesArrived(bool treatAsArrived)
 {
     int  count = 0;
     auto view  = m_world->View<DroneComponent>();
@@ -227,40 +228,12 @@ void DroneManagerSystem::SetAllDroneState(DroneState state)
     {
         if (auto *d = m_world->GetComponent<DroneComponent>(e))
         {
-            d->currentState = state;
-
-            if (state == DroneState::MoveToTarget)
-            {
-                d->hasReachedSlot = false;   // 再接近を許可
-            }
-            else if (state == DroneState::Idle)
-            {
-                d->hasReachedSlot = true;    // 手動 Idle = 到着済み扱い
-            }
-
-            // 突撃に必要な最低限のデータを補う。
-            if (state == DroneState::FireCharge)
-            {
-                DirectX::SimpleMath::Vector3 dir = -DirectX::SimpleMath::Vector3::UnitZ; // フェイルセーフ
-                if (m_world->HasResource<BattleContext>())
-                {
-                    auto                        &battle   = m_world->GetResource<BattleContext>();
-                    DirectX::SimpleMath::Vector3 toPlayer = battle.playerPos - d->targetPosition;
-                    toPlayer.y                            = 0.0f; // 水平方向のみ
-                    if (toPlayer.LengthSquared() > 0.001f)
-                    {
-                        toPlayer.Normalize();
-                        dir = toPlayer;
-                    }
-                }
-                d->fireDirection       = dir;
-                d->targetLookDirection = dir; // 見た目の向きも合わせる
-                d->stateTimer          = 0.5f;
-            }
+            d->hasReachedSlot = treatAsArrived;
             ++count;
         }
     }
-    CCL_LOG_INFO(LogCategory::Game, "[DroneManager] 全 %d 機の State を %d に変更", count, (int)state);
+    CCL_LOG_INFO(LogCategory::Game, "[DroneManager] 全 %d 機を %s 扱いにした",
+                 count, treatAsArrived ? "到着済み" : "未到着(再接近)");
 }
 
 
@@ -289,11 +262,13 @@ void DroneManagerSystem::OnGui()
         if (m_world->HasResource<BattleContext>()) {
             auto& b = m_world->GetResource<BattleContext>();
             ImGui::Text("BattleContext.droneAliveCount: %d", b.droneAliveCount);
+            // 構想上の段階分け。これを読む BT 条件はまだ無く、ドローンも減らないので
+            //   実際の挙動は変わらない（初期配備100機なら常に "Final"）。
             const char* tactic =
                 b.droneAliveCount <= 100 ? "Final" :
                 b.droneAliveCount <= 400 ? "Aggressive" :
                 b.droneAliveCount <= 700 ? "Pressure" : "Control";
-            ImGui::Text("→ 期待戦術: %s", tactic);
+            ImGui::TextDisabled("→ 想定戦術(未接続): %s", tactic);
         }
 
         // 攻撃パイプラインの可視化。BTのログには「いつ指示が出たか」しか出ないので、
@@ -371,18 +346,22 @@ void DroneManagerSystem::OnGui()
          ImGui::Spacing();
         ImGui::TextColored(ImVec4(0.6f, 0.8f, 1.0f, 1.0f), "State Debug (動作確認用)");
 
-        if (ImGui::Button("All -> Idle", ImVec2(110, 26)))
-            SetAllDroneState(DroneState::Idle);
+        // currentState は判断層が毎フレーム決める。ここから触れるのは、
+        //   判断層が入力として読む「到着したか」のラッチだけ。
+        if (ImGui::Button("持ち場へ戻す (再接近)", ImVec2(170, 26)))
+            SetAllDronesArrived(false);
 
         ImGui::SameLine();
-        if (ImGui::Button("All -> MoveToTarget", ImVec2(140, 26)))
-            SetAllDroneState(DroneState::MoveToTarget);
+        if (ImGui::Button("到着済みにする", ImVec2(140, 26)))
+            SetAllDronesArrived(true);
 
         ImGui::SameLine();
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.9f, 0.3f, 0.2f, 1.0f));
-        if (ImGui::Button("All -> FireCharge (突撃!)", ImVec2(180, 26)))
-            SetAllDroneState(DroneState::FireCharge);
-        ImGui::PopStyleColor();
+        ImGui::TextDisabled("(?)");
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip(
+                "突撃させたいときは下の「カミカゼ：発射」を使うこと。\n"
+                "currentState を直接代入するボタンは廃止した："
+                "DroneBrainSystem が毎フレーム書き直すので効かなかった。");
 
         // 陣形攻撃テスト。BTを組まずに BossCommandComponent へ直接命令を書き、
         // DroneCommandSystem → DroneBrainSystem → Formation の流れを確認する。

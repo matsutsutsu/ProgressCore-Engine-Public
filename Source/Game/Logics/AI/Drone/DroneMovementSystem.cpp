@@ -31,6 +31,19 @@ DroneMovementSystem::ShiverOffset(const DroneComponent &drone, float t, float am
     }
 }
 
+// 進行方向 → 姿勢。式の根拠はヘッダのコメントを参照（前方 -Z なので atan2(-x,-z)）。
+DirectX::SimpleMath::Quaternion
+DroneMovementSystem::LookToRotation(const DirectX::SimpleMath::Vector3 &look, bool includePitch) const
+{
+    const float yaw = atan2f(-look.x, -look.z);
+
+    if (!includePitch)
+        return Quaternion::CreateFromAxisAngle(Vector3::UnitY, yaw);
+
+    const float pitch = asinf(std::clamp(look.y, -1.0f, 1.0f));
+    return Quaternion::CreateFromYawPitchRoll(yaw, pitch, 0.0f);
+}
+
 void DroneMovementSystem::Update(float rawDt)
 {
     // 震えの調整値を写し取る。無ければ既定値で作る（GUI を開かなくても同じ見た目になる）。
@@ -120,10 +133,8 @@ inline void DroneMovementSystem::ProcessMoveToTarget(TransformComponent &trans, 
     {
         Vector3 lookDir = drone.targetLookDirection;
         lookDir.Normalize();
-        float      targetYaw   = atan2f(lookDir.x, -lookDir.z);
-        float      targetPitch = asinf(std::clamp(lookDir.y, -1.0f, 1.0f));
-        Quaternion targetRot   = Quaternion::CreateFromYawPitchRoll(targetYaw, targetPitch, 0.0f);
-        trans.rotation         = Quaternion::Slerp(trans.rotation, targetRot, (std::min)(kTurnMoveToTarget * dt, 1.0f));
+        const Quaternion targetRot = LookToRotation(lookDir, /*includePitch*/ true);
+        trans.rotation = Quaternion::Slerp(trans.rotation, targetRot, (std::min)(kTurnMoveToTarget * dt, 1.0f));
     }
 }
 
@@ -164,10 +175,9 @@ inline void DroneMovementSystem::ProcessIdle(TransformComponent &trans, DroneCom
 
     if (drone.targetLookDirection.LengthSquared() > 0.001f)
     {
-        float      targetYaw = atan2f(-drone.targetLookDirection.x, -drone.targetLookDirection.z);
-        Quaternion targetRot = Quaternion::CreateFromAxisAngle(Vector3::UnitY, targetYaw);
-        trans.rotation       = Quaternion::Slerp(trans.rotation, targetRot,
-                                                 (std::min)(kTurnIdle * dt, 1.0f));
+        const Quaternion targetRot = LookToRotation(drone.targetLookDirection, /*includePitch*/ false);
+        trans.rotation = Quaternion::Slerp(trans.rotation, targetRot,
+                                           (std::min)(kTurnIdle * dt, 1.0f));
     }
 }
 
@@ -220,11 +230,9 @@ inline void DroneMovementSystem::ProcessFireCharge(TransformComponent &trans, Dr
         {
             Vector3 lookDir = drone.targetLookDirection;
             lookDir.Normalize();
-            float      targetYaw   = atan2f(lookDir.x, -lookDir.z);
-            float      targetPitch = asinf(std::clamp(lookDir.y, -1.0f, 1.0f));
-            Quaternion targetRot   = Quaternion::CreateFromYawPitchRoll(targetYaw, targetPitch, 0.0f);
-            trans.rotation         = Quaternion::Slerp(trans.rotation, targetRot,
-                                                       (std::min)(kTurnMoveToTarget * dt, 1.0f));
+            const Quaternion targetRot = LookToRotation(lookDir, /*includePitch*/ true);
+            trans.rotation = Quaternion::Slerp(trans.rotation, targetRot,
+                                               (std::min)(kTurnMoveToTarget * dt, 1.0f));
         }
         return;
     }
@@ -261,20 +269,18 @@ inline void DroneMovementSystem::ProcessFireCharge(TransformComponent &trans, Dr
 
         drone.currentVelocity = drone.fireDirection * lunge;
 
-        float      targetYaw = atan2f(-drone.targetLookDirection.x, -drone.targetLookDirection.z);
-        Quaternion targetRot = Quaternion::CreateFromAxisAngle(Vector3::UnitY, targetYaw);
-        trans.rotation       = Quaternion::Slerp(trans.rotation, targetRot,
-                                                 (std::min)(kTurnWindup * dt, 1.0f));
+        const Quaternion targetRot = LookToRotation(drone.targetLookDirection, /*includePitch*/ false);
+        trans.rotation = Quaternion::Slerp(trans.rotation, targetRot,
+                                           (std::min)(kTurnWindup * dt, 1.0f));
     }
     else
     {
         // [フェーズ2] リリース：高速直進。この間だけ「危険」＝ジャスト回避の対象。
         drone.currentVelocity = drone.fireDirection * (drone.moveSpeed * kChargeSpeedScale);
 
-        float      targetYaw = atan2f(-drone.targetLookDirection.x, -drone.targetLookDirection.z);
-        Quaternion targetRot = Quaternion::CreateFromAxisAngle(Vector3::UnitY, targetYaw);
-        trans.rotation       = Quaternion::Slerp(trans.rotation, targetRot,
-                                                 (std::min)(kTurnCharge * dt, 1.0f));
+        const Quaternion targetRot = LookToRotation(drone.targetLookDirection, /*includePitch*/ false);
+        trans.rotation = Quaternion::Slerp(trans.rotation, targetRot,
+                                           (std::min)(kTurnCharge * dt, 1.0f));
     }
 }
 
@@ -304,11 +310,9 @@ inline void DroneMovementSystem::ProcessChargeSoftFollow(TransformComponent &tra
     if (look.LengthSquared() > 0.01f)
     {
         look.Normalize();
-        const float targetYaw   = atan2f(look.x, -look.z);
-        const float targetPitch = asinf(std::clamp(look.y, -1.0f, 1.0f));
-        Quaternion  targetRot   = Quaternion::CreateFromYawPitchRoll(targetYaw, targetPitch, 0.0f);
-        trans.rotation          = Quaternion::Slerp(trans.rotation, targetRot,
-                                                    (std::min)(kTurnSoftFollow * dt, 1.0f));
+        const Quaternion targetRot = LookToRotation(look, /*includePitch*/ true);
+        trans.rotation = Quaternion::Slerp(trans.rotation, targetRot,
+                                           (std::min)(kTurnSoftFollow * dt, 1.0f));
     }
 }
 
@@ -349,11 +353,9 @@ inline void DroneMovementSystem::ProcessReturning(TransformComponent &trans, Dro
     if (look.LengthSquared() > 0.001f)
     {
         look.Normalize();
-        float      targetYaw   = atan2f(look.x, -look.z);
-        float      targetPitch = asinf(std::clamp(look.y, -1.0f, 1.0f));
-        Quaternion targetRot   = Quaternion::CreateFromYawPitchRoll(targetYaw, targetPitch, 0.0f);
-        trans.rotation         = Quaternion::Slerp(trans.rotation, targetRot,
-                                                   (std::min)(kTurnReturning * dt, 1.0f));
+        const Quaternion targetRot = LookToRotation(look, /*includePitch*/ true);
+        trans.rotation = Quaternion::Slerp(trans.rotation, targetRot,
+                                           (std::min)(kTurnReturning * dt, 1.0f));
     }
 }
 

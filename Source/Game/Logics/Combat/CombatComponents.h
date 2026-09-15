@@ -28,11 +28,25 @@ struct HitboxComponent
     CCL::ECS::EntityID       hitTargets[MAX_HIT_TARGETS] = {}; // ヒット済み対象のID
     uint8_t                  hitCount                    = 0;  // 現在ヒットした数
 
+    // ノックバック方向・のけぞり方向を決めるときの幾何の原点。
+    //   false(既定) = ownerID。剣は持ち主の子なので、持ち主の前方を主軸にすると
+    //                 「振った向きへ飛ぶ」が成立する。
+    //   true        = この判定自身。ドローンのように攻撃体が持ち主から遠く離れる
+    //                 場合、ownerID を原点にすると背後から突っ込まれても
+    //                 「ボスの正面から食らった」向きに吹き飛ぶ。
+    //   ダメージの帰属(ownerID)は変えない。分けたいのは幾何だけ。
+    bool useSelfAsHitOrigin = false;
+
     // --- CombatAnimationSyncSystem による Hitbox 駆動用 ---
     // ownerEntity = Animator + CombatRoster を持つルート(剣→キャラの逆引き)。
     // tagHash     = roster.entries[i].tag のハッシュ("RightHand"等)。
     CCL::ECS::EntityID ownerEntity = CCL::ECS::InvalidEntityID;
     uint32_t           tagHash     = 0;
+
+    // ownerEntity の逆引きを試したか。
+    //   「解決できなかった」も結果なので覚えておく。覚えないと、親を持たない判定
+    //   （空間生成の弾・ドローン）は毎フレーム親を辿り直すことになる。
+    bool ownerResolved = false;
 
     // --- ヒットストップ(命中時に時間制御側へ伝える受け皿。配線は別途) ---
     float hitStopDuration = 0.0f; // 命中時のヒットストップ時間(秒)
@@ -51,8 +65,13 @@ struct HurtboxComponent
 struct DamageEventComponent
 {
     CCL::ECS::EntityID targetID    = CCL::ECS::InvalidEntityID; // 誰がダメージを受けるか
-    CCL::ECS::EntityID attackerID  = CCL::ECS::InvalidEntityID; // 誰が攻撃したか
+    CCL::ECS::EntityID attackerID  = CCL::ECS::InvalidEntityID; // 誰が攻撃したか（帰属）
     float              finalDamage = 0.0f;                      // 計算済み最終ダメージ
+
+    // 「どこから来た攻撃か」の幾何の原点。剣なら持ち主、ドローンならその機体。
+    //   attackerID（帰属先）と別に持つのは、ドローンの攻撃をボスの手柄にしたまま
+    //   のけぞり方向だけは実際に当てた機体から取りたいため。
+    CCL::ECS::EntityID hitOriginID = CCL::ECS::InvalidEntityID;
 
     DirectX::SimpleMath::Vector3 knockbackDir   = DirectX::SimpleMath::Vector3::Zero;
     float                        knockbackForce = 0.0f;

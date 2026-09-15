@@ -21,9 +21,12 @@ class DroneFormationSystem : public CCL::ECS::IfSystem<DroneFormationSystem,
     void Initialize() override;
 
     // DroneCommand が drone.currentFormation を書き、こちらがそれを読む。
+    //   DroneManagerSystem を足してあるのは、スポーン時の ReindexAllDrones() が
+    //   localIndex / totalDrones を書き直すため（陣形はそれを添字にして座標を出す）。
     std::vector<const char *> GetRunAfter() const override
     {
-        return {"BehaviorTreeSystem", "DroneCommandSystem", "SquadUpdateSystem"};
+        return {"BehaviorTreeSystem", "DroneCommandSystem", "SquadUpdateSystem",
+                "DroneManagerSystem"};
     }
 
     // MakeContext がボスの Transform と BossCommandComponent を View で引くので申告する

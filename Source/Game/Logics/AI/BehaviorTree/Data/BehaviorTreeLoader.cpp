@@ -10,6 +10,10 @@
 #include <json.hpp>
 #include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
 
+#include <cstdint>
+#include <utility>
+#include <vector>
+
 using json = nlohmann::json;
 
 
@@ -60,6 +64,12 @@ bool BehaviorTreeLoader::LoadFromJson(const std::string& path, BTAsset& outAsset
     if (outAsset.nodes.empty()) {
         CCL_LOG_ERROR(LogCategory::AI,
             "BT file has no runtime nodes[]: %s (editor_nodes のみの可能性)", path.c_str());
+        return false;
+    }
+
+    // 構造が壊れている木は、この先の ValidateNodes が範囲外を読む。必ず先に通す。
+    if (!ValidateStructure(outAsset, path)) {
+        outAsset.nodes.clear();
         return false;
     }
 
@@ -162,6 +172,92 @@ bool SubtreeHasCondition(const BTAsset& asset, BTNodeID nodeId)
     return false;
 }
 } // namespace
+
+
+bool BehaviorTreeLoader::ValidateStructure(const BTAsset& asset, const std::string& path)
+{
+    const size_t n = asset.nodes.size();
+
+    // --- 1) 子インデックスの範囲 ---
+    //   1つでも範囲外があると、この直後の ValidateNodes が asset.nodes[child] を
+    //   そのまま読む。std::vector::operator[] なので検出もされない。
+    bool ranged = true;
+    for (size_t i = 0; i < n; ++i) {
+        for (const BTNodeID c : asset.nodes[i].children) {
+            if (static_cast<size_t>(c) < n) continue;
+            CCL_LOG_ERROR(LogCategory::AI,
+                "[BT] nodes[%zu] の子 %u がノード数 %zu の範囲外。木が壊れている "
+                "（BTエディタで開き直して保存すると直ることが多い）: %s",
+                i, static_cast<unsigned>(c), n, path.c_str());
+            ranged = false;
+        }
+    }
+    if (!ranged) return false;
+
+    // --- 2) 循環 ---
+    //   評価(EvaluateTreeRecursive)も検証(SubtreeCanBlock)も再帰で降りるので、
+    //   1周でもあるとスタックが尽きて落ちる。
+    //   ここ自体は再帰を使わない。壊れた入力から守る側が同じ穴に落ちては意味がない。
+    enum : uint8_t { kWhite = 0, kGray = 1, kBlack = 2 };
+    std::vector<uint8_t> color(n, kWhite);
+    std::vector<std::pair<size_t, size_t>> stack; // (ノード, 次に見る子の添字)
+
+    for (size_t root = 0; root < n; ++root) {
+        if (color[root] != kWhite) continue;
+
+        color[root] = kGray;
+        stack.push_back({root, 0});
+
+        while (!stack.empty()) {
+            const size_t node = stack.back().first;
+            const size_t idx  = stack.back().second;
+            const auto  &kids = asset.nodes[node].children;
+
+            if (idx >= kids.size()) {
+                color[node] = kBlack;
+                stack.pop_back();
+                continue;
+            }
+            stack.back().second = idx + 1; // push_back で参照が無効になる前に進める
+
+            const BTNodeID c = kids[idx];
+            if (color[c] == kGray) {
+                CCL_LOG_ERROR(LogCategory::AI,
+                    "[BT] nodes[%zu] から nodes[%u] への辺が循環になっている。"
+                    "評価に入るとスタックが尽きる: %s",
+                    node, static_cast<unsigned>(c), path.c_str());
+                return false;
+            }
+            if (color[c] == kWhite) {
+                color[c] = kGray;
+                stack.push_back({static_cast<size_t>(c), 0});
+            }
+        }
+    }
+
+    // --- 3) root(0) から辿り着けないノード ---
+    //   落ちはしないが、置いたのに繋ぎ忘れた枝がここで分かる。
+    //   （デバッグの「強制実行」だけは任意のノードから始められるので ERROR にはしない）
+    std::vector<bool> seen(n, false);
+    std::vector<size_t> work{0};
+    while (!work.empty()) {
+        const size_t u = work.back();
+        work.pop_back();
+        if (seen[u]) continue;
+        seen[u] = true;
+        for (const BTNodeID c : asset.nodes[u].children) work.push_back(static_cast<size_t>(c));
+    }
+    size_t unreachable = 0;
+    for (size_t i = 0; i < n; ++i) if (!seen[i]) ++unreachable;
+    if (unreachable > 0) {
+        CCL_LOG_WARN(LogCategory::AI,
+            "[BT] root(nodes[0]) から辿れないノードが %zu 個ある。"
+            "繋ぎ忘れた枝は一度も評価されない: %s",
+            unreachable, path.c_str());
+    }
+
+    return true;
+}
 
 
 void BehaviorTreeLoader::ValidateNodes(const BTAsset& asset, const std::string& path)

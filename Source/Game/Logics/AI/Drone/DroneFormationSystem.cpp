@@ -56,12 +56,16 @@ FormationContext DroneFormationSystem::MakeContext(float dt)
         }
     }
 
+    // プレイヤーが居ないフレームは playerPos を配らない（既定のまま＝原点を狙わせない）。
     if (m_world->HasResource<BattleContext>())
     {
-        auto &battle       = m_world->GetResource<BattleContext>();
-        ctx.playerPos      = battle.playerPos;
-        ctx.playerCenter   = battle.playerCenter;
-        ctx.playerVelocity = battle.playerVelocity;
+        auto &battle = m_world->GetResource<BattleContext>();
+        if (battle.HasPlayer())
+        {
+            ctx.playerPos      = battle.playerPos;
+            ctx.playerCenter   = battle.playerCenter;
+            ctx.playerVelocity = battle.playerVelocity;
+        }
     }
 
     // 小隊の頭（SquadUpdateSystem が今フレーム更新済み）。ここでは読むだけ。

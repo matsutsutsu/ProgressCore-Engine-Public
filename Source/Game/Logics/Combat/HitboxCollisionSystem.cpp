@@ -146,14 +146,21 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
     //    位置を基準にすると、横薙ぎで相手の真横に剣がある瞬間に当たり“真横へ吹っ飛ぶ”違和感が
     //    出る。そこで【攻撃者(キャラ本体)の前方】を主軸に、【攻撃者→被弾者の放射方向】を従で
     //    ブレンドする。前方主軸で「振った向き＝前へ」飛ばしつつ、中心を外した被弾では放射成分で
-    //    自然なズレが残る。※基準は剣ボディ(attackerCandidate)ではなく攻撃の持ち主(ownerID)。
+    //    自然なズレが残る。※剣の場合の基準は剣ボディではなく攻撃の持ち主(ownerID)。
+    //
+    // 幾何の原点。ownerID は「誰の手柄か」であって「どこから来たか」ではない。
+    //   剣は持ち主の子なので owner でよいが、ドローンは持ち主から数十m離れた
+    //   攻撃体なので自分自身を原点にする（useSelfAsHitOrigin）。
+    const EntityID hitOrigin =
+        (hitbox->useSelfAsHitOrigin || hitbox->ownerID == InvalidEntityID)
+            ? attackerCandidate
+            : hitbox->ownerID;
+
     Vector3 knockDir   = Vector3::Zero;
     float   knockForce = 0.0f;
     if (hitbox->knockback > 0.0f)
     {
-        const EntityID attackerOwner =
-            (hitbox->ownerID != InvalidEntityID) ? hitbox->ownerID : attackerCandidate;
-        auto *atkT = m_world->GetComponent<TransformComponent>(attackerOwner);
+        auto *atkT = m_world->GetComponent<TransformComponent>(hitOrigin);
         auto *vicT = m_world->GetComponent<TransformComponent>(victimCandidate);
         if (atkT && vicT)
         {
@@ -170,7 +177,10 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
             else                                radial = Vector3::Zero;
 
             // 前方0.75 : 放射0.25 でブレンド（将来はHitBoxイベント側で技ごとに指定できるとよい）。
-            constexpr float kForwardWeight = 0.75f;
+            //   攻撃体自身が原点のとき(ドローン)は前方を混ぜない。原点が接触点の
+            //   すぐそばに在るので放射方向がそのまま進行方向になり、かつ機体の
+            //   forward 軸がモデルの前方と一致している保証も要らなくなる。
+            const float kForwardWeight = hitbox->useSelfAsHitOrigin ? 0.0f : 0.75f;
             Vector3 blended = fwd * kForwardWeight + radial * (1.0f - kForwardWeight);
             if (blended.LengthSquared() > 1e-6f)
             {
@@ -178,9 +188,13 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
                 knockDir   = blended;
                 knockForce = hitbox->knockback;
             }
-            else if (fwd.LengthSquared() > 1e-6f)
+            else if (!hitbox->useSelfAsHitOrigin && fwd.LengthSquared() > 1e-6f)
             {
                 // 前方と放射が打ち消し合った稀なケースは前方で代替。
+                //   攻撃体自身が原点のときは代替しない。GetForward() は +Z 基準だが
+                //   ドローンのモデルは前方が -Z なので、ここで拾うと真後ろへ飛ばす。
+                //   （放射がゼロ＝ほぼ完全に重なっている状況なので、
+                //     knockForce=0 のまま押さない方が安全側）
                 knockDir   = fwd;
                 knockForce = hitbox->knockback;
             }
@@ -195,6 +209,7 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
     DamageEventComponent dmg{};
     dmg.targetID       = victimCandidate;
     dmg.attackerID     = hitbox->ownerID;
+    dmg.hitOriginID    = hitOrigin;
     dmg.finalDamage    = finalDamage;
     dmg.knockbackDir   = knockDir;
     dmg.knockbackForce = knockForce;
