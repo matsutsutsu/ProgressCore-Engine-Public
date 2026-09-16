@@ -1,5 +1,5 @@
 #include "EditorScene.h"
-#include "Engine/Scene/SceneFactory.h" // REGISTER_SCENE（ファイル末尾で自己登録）
+#include "Engine/Scene/SceneFactory.h"
 #include "tracy/Tracy.hpp"
 
 #include "Engine/Serialization/Factory/Prefab.h"
@@ -32,7 +32,7 @@ void EditorScene::Initialize()
 
 void EditorScene::Finalize() 
 {
-    BaseScene::Finalize(); // 共通終了化
+    BaseScene::Finalize(); 
 }
 
 void EditorScene::RegisterSystems()
@@ -53,8 +53,6 @@ void EditorScene::RegisterSystems()
 
 void EditorScene::FixedUpdate(float dt) 
 {
-    // B. 通常プレイ中
-    // 親クラスの処理を呼んで、通常通り世界を動かす
     BaseScene::FixedUpdate(dt);
 }
 
@@ -71,6 +69,4 @@ void EditorScene::Render()
 }
 
 
-
-// SceneFactory への自動登録（SceneManager が本クラスを include せずに済むようにする）
 REGISTER_SCENE(EditorScene, "Editor")

@@ -1923,6 +1923,10 @@
     <ClInclude Include="Source\Engine\Graphics\Components\Lighting\SkyboxComponent.h">
       <Filter>Source\Engine\Graphics\Components\Lighting</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\RHI\DebugName.h" />
+    <ClInclude Include="Source\Editor\Windows\FormationEditorWindow.h">
+      <Filter>Source\Editor\Windows\Game</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Data\BTAssetCache.cpp">
@@ -2905,6 +2909,9 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeComponentMeta.cpp">
       <Filter>Source\Game\Logics\AI\BehaviorTree\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\FormationEditorWindow.cpp">
+      <Filter>Source\Editor\Windows\Game</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

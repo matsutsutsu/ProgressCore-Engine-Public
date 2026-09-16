@@ -1,39 +1,75 @@
 {
   "name": "挟み込み1段（データ）",
   "slot": 35,
-
   "assign": {
-    "sideGroups": 2, "tierGroups": 1, "split": "Interleaved",
-    "rows": 2, "fillOrder": "RowFirst"
+    "sideGroups": 2,
+    "tierGroups": 1,
+    "split": "Interleaved",
+    "rows": 2,
+    "fillOrder": "RowFirst"
   },
-
   "layout": {
-    "columnAxis": "Forward", "centerColumns": false,
-    "baseA": 3.0, "spacingA": 1.8,
-    "baseB": 0.8, "spacingB": 1.5, "tierStepB": 0.0
+    "columnAxis": "Forward",
+    "centerColumns": false,
+    "baseA": 3.0,
+    "spacingA": 1.8,
+    "baseB": 0.8,
+    "spacingB": 1.5,
+    "tierStepB": 0.0
   },
-
   "layers": [
     {
-      "type": "Rotate", "axis": "Up",
-      "from": 85.943669, "to": 0.0,
-      "window": [0.0, 1.0], "duration": 1.0,
-      "phase": { "source": "None", "reverse": false }, "mirror": true
+      "type": "Rotate",
+      "axis": "Up",
+      "from": 85.943669,
+      "to": 0.0,
+      "window": [
+        0.0,
+        1.0
+      ],
+      "duration": 1.0,
+      "phase": {
+        "source": "None",
+        "reverse": false
+      },
+      "mirror": true
     },
     {
-      "type": "Translate", "axis": "Right",
-      "from": 0.0, "to": 0.8,
-      "window": [0.0, 1.0], "duration": 1.0,
-      "phase": { "source": "None", "reverse": false }, "mirror": true
+      "type": "Translate",
+      "axis": "Right",
+      "from": 0.0,
+      "to": 0.8,
+      "window": [
+        0.0,
+        1.0
+      ],
+      "duration": 1.0,
+      "phase": {
+        "source": "None",
+        "reverse": false
+      },
+      "mirror": true
     }
   ],
-
-  "origin": { "forward": 0.0, "up": 0.0, "right": 0.0 },
-  "timing": { "speed": 3.0 },
+  "origin": {
+    "forward": 0.0,
+    "up": 0.0,
+    "right": 0.0
+  },
+  "timing": {
+    "attackSeconds": 0.3333
+  },
   "output": {
-    "look": "ToPlayer", "chargeMode": "RigidFollow",
-    "clampToGround": false, "useShiverTelegraph": true,
-    "combat": { "hitRadius": 2.5, "damage": 8.0, "knockback": 12.0,
-                "hitStopDuration": 0.05, "hitStopScale": 0.0 }
+    "look": "ToPlayer",
+    "chargeMode": "RigidFollow",
+    "clampToGround": false,
+    "useShiverTelegraph": true,
+    "combat": {
+      "hitRadius": 2.5,
+      "damage": 8.0,
+      "knockback": 12.0,
+      "hitStopDuration": 0.05,
+      "hitStopScale": 0.0
+    }
   }
 }

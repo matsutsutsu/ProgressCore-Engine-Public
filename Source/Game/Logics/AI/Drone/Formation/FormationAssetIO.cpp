@@ -157,7 +157,7 @@ static void to_json(nlohmann::json &j, const FormationAsset &a)
                 {"up", a.origin.up},
                 {"right", a.origin.right},
             }},
-        {"timing", {{"speed", a.speed}}},
+        {"timing", {{"attackSeconds", a.attackSeconds}}},
         {"output",
             {
                 {"look", a.output.look},
@@ -208,7 +208,7 @@ static void from_json(const nlohmann::json &j, FormationAsset &a)
         a.origin.right   = s.value("right", 0.0f);
     }
 
-    if (j.contains("timing")) a.speed = j["timing"].value("speed", 2.5f);
+    if (j.contains("timing")) a.attackSeconds = j["timing"].value("attackSeconds", 0.4f);
 
     if (j.contains("output"))
     {
@@ -257,15 +257,15 @@ bool FormationAssetIO::Validate(FormationAsset &asset, const std::string &contex
         repaired          = true;
     }
 
-    // speed が0以下だと attackProgress が進まず、形が永久に完成しない。
+    // 0以下だと attackProgress が進まず、形が永久に完成しない。
     // 「撃ったのに何も起きない」は原因が最も分かりにくい壊れ方なので必ず直す。
-    if (asset.speed <= 0.0f)
+    if (asset.attackSeconds <= 0.0f)
     {
         CCL_LOG_ERROR(LogCategory::AI,
-            "[Formation] %s: timing.speed=%.3f が0以下。進行度が進まないため 2.5 に直した",
-            ctx, asset.speed);
-        asset.speed = 2.5f;
-        repaired    = true;
+            "[Formation] %s: attackSeconds=%.3f が0以下。進行度が進まないため 0.4 に直した",
+            ctx, asset.attackSeconds);
+        asset.attackSeconds = 0.4f;
+        repaired            = true;
     }
 
     for (size_t i = 0; i < asset.layers.size(); ++i)
@@ -360,6 +360,9 @@ bool FormationAssetIO::Load(const std::string &virtualPath, FormationAsset &outA
                       virtualPath.c_str(), e.what());
         return false;
     }
+
+    // 保存先を覚えさせるのは読み込み側の仕事（from_json は JSON しか知らない）。
+    outAsset.sourcePath = virtualPath;
 
     Validate(outAsset, virtualPath);
     return true;

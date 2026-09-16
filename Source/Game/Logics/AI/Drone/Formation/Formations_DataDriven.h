@@ -61,6 +61,19 @@ class DataDrivenFormation : public IFormation
     FormationCombat GetCombat() const override { return m_asset.output.combat; }
     bool UsesShiverTelegraph() const override { return m_asset.output.useShiverTelegraph; }
 
+    /// 進行度を外から固定する（エディタの手送り）。負で通常どおり dt で進む。
+    ///
+    /// ランタイムには存在しない状態をここへ置いているのは、「陣形が attackProgress を
+    /// 毎フレーム書く」という規約を破らずに止める方法が他に無いため。外から
+    /// DroneComponent へ書いても、次のフレームに陣形が上書きしてしまう。
+    void  SetProgressOverride(float progress) { m_progressOverride = progress; }
+    void  ClearProgressOverride() { m_progressOverride = -1.0f; }
+    float GetProgressOverride() const { return m_progressOverride; }
+
+    /// 席の格子の大きさ。エディタが「何列×何行になるか」を出すのに使う。
+    /// 割付と同じ式をエディタ側で書き直すと、片方だけ直したときに嘘の数字が出る。
+    static void GridSize(const FormationAsset &asset, int totalDrones, int &outCols, int &outRows);
+
   private:
     using Vector3 = DirectX::SimpleMath::Vector3;
 
@@ -84,6 +97,9 @@ class DataDrivenFormation : public IFormation
         Vector3 &local, Vector3 &look) const;
 
     FormationAsset m_asset;
+
+    /// エディタが進行度を握っている間だけ 0〜1。負なら通常どおり dt で進む。
+    float m_progressOverride = -1.0f;
 };
 
 // ---------------------------------------------------------------------------
@@ -96,6 +112,34 @@ inline DataDrivenFormation::Vector3 DataDrivenFormation::AxisVector(AssetAxis ax
     case AssetAxis::Forward: return Vector3::UnitZ;
     default:                 return Vector3::UnitX; // Right
     }
+}
+
+// 席の格子の大きさ。割付とエディタ表示で同じ式を使うため切り出してある。
+inline void DataDrivenFormation::GridSize(
+    const FormationAsset &asset, int totalDrones, int &outCols, int &outRows)
+{
+    const FormationAssign &as = asset.assign;
+
+    const int total      = (totalDrones > 0) ? totalDrones : 1;
+    const int sideCount  = (std::max)(1, as.sideGroups);
+    const int groupCount = (std::max)(1, sideCount * (std::max)(1, as.tierGroups));
+    const int perGroup   = (std::max)(1, total / groupCount);
+
+    int rows = as.rows;
+    int cols = 1;
+    if (rows <= 0)
+    {
+        // 「正方に近い自動格子」。縦割りが sqrt から出していた形。
+        cols = (std::max)(1, static_cast<int>(std::floor(std::sqrt(static_cast<float>(perGroup)))));
+        rows = (std::max)(1, (perGroup + cols - 1) / cols);
+    }
+    else
+    {
+        cols = (std::max)(1, (perGroup + rows - 1) / rows);
+    }
+
+    outCols = cols;
+    outRows = rows;
 }
 
 // ① localIndex → 席
@@ -129,18 +173,8 @@ inline Seat DataDrivenFormation::AssignSeat(const DroneComponent &drone) const
     seat.side = group % sideCount; // 左右が先に変わる（挟み込み2段の 下左/下右/上左/上右）
     seat.tier = group / sideCount;
 
-    // 格子。rows=0 は「正方に近い自動格子」で、縦割りが sqrt から出していた形。
-    int rows = as.rows;
-    int cols = 1;
-    if (rows <= 0)
-    {
-        cols = (std::max)(1, static_cast<int>(std::floor(std::sqrt(static_cast<float>(perGroup)))));
-        rows = (std::max)(1, (perGroup + cols - 1) / cols);
-    }
-    else
-    {
-        cols = (std::max)(1, (perGroup + rows - 1) / rows);
-    }
+    int cols = 1, rows = 1;
+    GridSize(m_asset, total, cols, rows);
 
     if (as.fillOrder == AssetFillOrder::ColumnFirst)
     {
@@ -265,8 +299,10 @@ inline void DataDrivenFormation::Calculate(DroneComponent &drone, const Formatio
 
     // 撃つ合図が来るまで進行度を0に張り付け、予備動作の「形」で待つ。
     // プレイヤーはこの静止した形から回避方向を読む。
-    if (drone.wantsAttack)
-        drone.attackProgress = (std::min)(1.0f, drone.attackProgress + ctx.dt * m_asset.speed);
+    if (m_progressOverride >= 0.0f)
+        drone.attackProgress = (std::min)(1.0f, m_progressOverride); // エディタの手送り
+    else if (drone.wantsAttack)
+        drone.attackProgress = (std::min)(1.0f, drone.attackProgress + ctx.dt / m_asset.attackSeconds);
     else
         drone.attackProgress = 0.0f;
 

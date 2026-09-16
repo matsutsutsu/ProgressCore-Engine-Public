@@ -28,6 +28,7 @@
 #include "Editor/Windows/NavMeshWindow.h"
 #include "Editor/Windows/AnimGraphWindow.h"
 #include "Editor/Windows/BehaviorTreeWindow.h"
+#include "Editor/Windows/FormationEditorWindow.h"
 #include "Editor/Windows/MemoryAnalyzerWindow.h"
 #include "Editor/Windows/CurveEditorWindow.h"
 #include "Editor/Windows/CameraPathEditorWindow.h"
@@ -65,6 +66,7 @@ void EditorWindowManager::Initialize()
     RegisterWindow<AnimationSequencerWindow>();
     RegisterWindow<AnimGraphWindow>();
     RegisterWindow<BehaviorTreeWindow>();
+    RegisterWindow<FormationEditorWindow>();
     RegisterWindow<CameraPathEditorWindow>();
     RegisterWindow<CurveEditorWindow>();
 

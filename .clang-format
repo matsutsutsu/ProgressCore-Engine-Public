@@ -2,6 +2,12 @@
 # → LLVM よりも VS の初期フォーマットに近く、余計な変更が少ない
 BasedOnStyle: Microsoft
 
+# namespace の中身をインデントする
+# → Microsoft スタイルの既定は None（LLVM 由来）で、名前空間の開き括弧と中身が
+#   同じ列に並ぶ。囲みが見えず、どこまでが名前空間かを目で追えない。
+#   このプロジェクトの既存コードも 73 対 51 でインデントしている側が多数派。
+NamespaceIndentation: All
+
 # 連続する代入文を縦に揃える（読みやすさ向上）
 AlignConsecutiveAssignments: true
 

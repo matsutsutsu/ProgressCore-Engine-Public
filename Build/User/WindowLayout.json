@@ -33,6 +33,10 @@
             "visible": false
         },
         {
+            "name": "Formation Editor",
+            "visible": true
+        },
+        {
             "name": "Camera Path Editor",
             "visible": false
         },

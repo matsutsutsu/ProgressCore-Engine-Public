@@ -1,7 +1,6 @@
 {
   "name": "縦割り（データ）",
   "slot": 33,
-
   "assign": {
     "sideGroups": 1,
     "tierGroups": 1,
@@ -9,7 +8,6 @@
     "rows": 0,
     "fillOrder": "ColumnFirst"
   },
-
   "layout": {
     "columnAxis": "Right",
     "centerColumns": true,
@@ -19,28 +17,32 @@
     "spacingB": 2.5,
     "tierStepB": 0.0
   },
-
   "layers": [
     {
       "type": "Rotate",
       "axis": "Right",
       "from": 0.0,
       "to": 108.862,
-      "window": [0.0, 1.0],
+      "window": [
+        0.0,
+        1.0
+      ],
       "duration": 1.0,
-      "phase": { "source": "None", "reverse": false },
+      "phase": {
+        "source": "None",
+        "reverse": false
+      },
       "mirror": false
     }
   ],
-
   "origin": {
     "forward": 5.0,
     "up": 2.0,
     "right": 0.0
   },
-
-  "timing": { "speed": 2.5 },
-
+  "timing": {
+    "attackSeconds": 0.4
+  },
   "output": {
     "look": "Auto",
     "chargeMode": "RigidFollow",
