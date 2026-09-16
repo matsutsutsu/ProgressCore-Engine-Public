@@ -201,9 +201,9 @@ void JustEvadeSystem::CheckJustEvade(EntityID playerCandidate, EntityID otherCan
 }
 
 // 接触判定と同じ L05_Collision に置く。
-//   以前は L07_Cleanup だったが、判定本体は JoltCollisionEvent のコールバック＝L05 で
-//   走っており、申告した Write 型が実際の実行箇所に効いていなかった。判定を Update へ
-//   移したうえでステージも L05 に合わせ、申告と実行を一致させる。
+//   判定は JoltCollisionEvent のコールバックではなく Update で行う。コールバック内で
+//   判定すると、申告した Write 型が実際の実行箇所に効かない。申告と実行を一致させる
+//   ため、ステージもコールバックが走る L05 に合わせてある。
 //   後始末(フラグ/チェイン)の消費側は DroneManagerSystem・PlayerDashSystem いずれも
 //   L02_Update なので、L05 でも L07 でも「次フレームで反映」となり挙動は変わらない。
 REGISTER_LOGIC_SYSTEM(JustEvadeSystem, Priority::LogicStage::L05_Collision);

@@ -10,12 +10,12 @@
 // XAudio2 のデバイスロスト復帰がここで走る。
 //
 // [ なぜ Logic ではなく Render なのか ]
-// 以前は AudioSystem（Logic / L06_Resolution）の末尾で呼んでいた。
-// しかし Logic は FixedUpdate 側で1描画フレームに最大4回まわる（Framework::MAX_STEPS）。
+// Logic 側（AudioSystem の末尾など）で呼んではいけない。Logic は FixedUpdate 側で
+// 1描画フレームに最大4回まわる（Framework::MAX_STEPS）。
 //   ・DXTK の AudioEngine::Update は「毎フレーム1回」を前提にしたAPI
 //   ・再生中の全ボイスへピッチを掛け直すループも回数ぶん重複する
-//   ・スロー度の追従が dt ではなく「呼ばれた回数」で進むため、
-//     処理落ちするほどスロー演出のピッチ変化が速くなっていた
+//   ・スロー度の追従が dt ではなく「呼ばれた回数」で進み、
+//     処理落ちするほどスロー演出のピッチ変化が速くなる
 // エンティティを走査しないリソース専用システムなので、CameraListenerSystem と同じく
 // SystemBase を直接継承する。
 //

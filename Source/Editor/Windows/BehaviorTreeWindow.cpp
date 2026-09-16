@@ -252,7 +252,6 @@ namespace
             j["action"] = SaveKeyOf(node.type, node.actionOrConditionId);
 
         // Condition も param を持つ（距離条件の間合いなど）。
-        //   以前は行動とデコレータしか引数を持たなかったので条件は書き出していなかった。
         if (node.type == EditorBTNodeType::Action || node.type == EditorBTNodeType::Decorator ||
             node.type == EditorBTNodeType::Condition)
             j["param"] = node.param;
@@ -811,8 +810,8 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext &context)
             // 掴める範囲がここで決まる:
             //   ライブラリはグループの Header 領域（＝ドラッグと選択ができる帯）を
             //   「ノード上端から枠の上端まで」として計算する。枠の上端は、この
-            //   Dummy の下端で決まる。以前は Dummy(1,1) だったため、帯を28px描いて
-            //   いても掴めるのは1pxしかなかった。見た目と当たり判定が食い違う原因。
+            //   Dummy の下端で決まる。高さは帯の描画高と必ず揃えること。Dummy(1,1) の
+            //   ように縮めると、帯を28px描いていても掴めるのは1pxになる。
             //
             // 幅を1pxのままにする理由:
             //   幅はそのままノード幅へ反映され、次のフレームの入力になって

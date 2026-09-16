@@ -1,4 +1,4 @@
-// 汎用 BehaviorTree 評価エンジンの実装。行動・条件は registry から引く（switch廃止）。
+// 汎用 BehaviorTree 評価エンジンの実装。行動・条件は registry から引く（switch は使わない）。
 #include "BehaviorTreeSystem.h"
 
 #include "Game/Logics/AI/BehaviorTree/Data/BTAssetCache.h"
@@ -141,7 +141,8 @@ void BehaviorTreeSystem::SyncAssets()
     auto &cache = BTAssetCache::Instance();
 
     // 直列で回す。やるのは「パスに対応する木を受け取り直す」だけで、変化が無ければ
-    // ポインタ比較1回で終わる（以前は並列ForEachの内側でファイルI/Oが走っていた）。
+    // ポインタ比較1回で終わる。ここを並列にしてはいけない（キャッシュが外れた瞬間、
+    // GetOrLoad のファイルI/Oがワーカースレッドから走る）。
     ForEach([&](BehaviorTreeComponent &btComp,
                 const TransformComponent & /*trans*/,
                 const TimeStateComponent & /*time*/) {
@@ -357,9 +358,9 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
             result = BTNodeState::Failure;
         }
 
-        // 終わった行動は自分のタイマーを「未実行(-1)」へ戻す。以前はこれが Sequence の
-        // 中にしか無く、Selector や Decorator の直下に置いた行動は一度完了すると 0 のまま
-        // ＝以後ずっと即 Success（Wait が待たない／攻撃が二度と出ない）になっていた。
+        // 終わった行動は自分のタイマーを「未実行(-1)」へ戻す。この戻しを Sequence の
+        // 中だけに置いてはいけない。Selector や Decorator の直下の行動が一度完了すると
+        // 0 のまま＝以後ずっと即 Success（Wait が待たない／攻撃が二度と出ない）になる。
         if (result != BTNodeState::Running && nodeId < btComp.nodeTimers.size())
         {
             btComp.nodeTimers[nodeId] = -1.0f;

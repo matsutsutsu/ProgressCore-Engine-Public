@@ -1,7 +1,7 @@
 // 汎用の BehaviorTree 評価エンジン。
 //   BehaviorTreeComponent を持つどんなエンティティでも評価し、
 //   ボス固有の概念（BossCommand/BossAction）を一切知らない。
-//   Action/Condition は BTActionRegistry から引く（switch廃止）。
+//   Action/Condition は BTActionRegistry から引く（switch は使わない）。
 #pragma once
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"

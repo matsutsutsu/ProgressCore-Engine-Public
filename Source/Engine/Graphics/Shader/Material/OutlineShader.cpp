@@ -41,7 +41,8 @@ void OutlineShader::Update(ID3D11DeviceContext *dc, const Model::Mesh &mesh, con
 
 void OutlineShader::End(ID3D11DeviceContext *dc, const RenderServices &s)
 {
-    // Graphics::Instance() を廃止し、s.renderState 経由でラスタライザを復元する。
+    // 後続の描画のためにラスタライザを既定へ戻す。取得は RenderServices 経由で、
+    // シングルトンは参照しない（シェーダは描画コンテキストを引数でしか知らない）。
     if (s.renderState)
     {
         dc->RSSetState(s.renderState->GetRasterizerState(RasterizerState::SolidCullBack));

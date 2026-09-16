@@ -1,5 +1,5 @@
 // DroneFormationType → IFormation クラスを解決するレジストリ。
-//        BTActionRegistry と同じ設計。switch を廃止する核。
+//        BTActionRegistry と同じ設計。switch を使わずに済ませるための核。
 //
 // 陣形の実装は C++ クラス1つ＝1陣形。追加するときは Formations_*.h に
 // クラスを書き、そのファイルの RegisterAll() へ1行足すだけでよい。

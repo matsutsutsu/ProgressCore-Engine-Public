@@ -39,9 +39,9 @@ struct AnimatorComponent
 
     // 足滑り防止の再生速度倍率（CharacterAnimSyncSystem が毎フレーム設定）。
     //
-    // playbackSpeed とは別フィールドにする。以前は両者が同じ playbackSpeed を
-    // 奪い合っており、ループするステートでは遷移したフレームだけステートの速度が効き、
-    // 次のフレームには足滑り補正に上書きされる、という不安定な状態だった。
+    // playbackSpeed と統合してはいけない。1つのフィールドを2者で奪い合うと、ループする
+    // ステートでは遷移したフレームだけステートの速度が効き、次のフレームには足滑り補正に
+    // 上書きされる。
     // 実効速度は AnimationSystem が playbackSpeed × footSlideMultiplier で合成する。
     float footSlideMultiplier = 1.0f;
 

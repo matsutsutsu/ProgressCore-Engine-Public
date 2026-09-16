@@ -8,9 +8,8 @@
 // 概要: 骨格ポーズの後処理のうち、実行時(AnimationPoseSystem)とエディタプレビュー
 //       (AnimationSystem::UpdateManual)の両方から使う共通ヘルパー。
 //
-// 以前は AnimationSystem.cpp の匿名 namespace に置いていたが、ポーズ計算を
-// Render グループ(AnimationPoseSystem)へ分離した際に呼び出し元が2つの .cpp へ
-// 分かれたため、ここへ引き上げて実装の重複を避ける。
+// 呼び出し元が2つの .cpp にまたがるのでヘッダへ出してある。どちらかの .cpp の
+// 匿名 namespace へ戻すと、もう一方に同じ実装が要る。
 // ===================================================================================
 
 namespace CCL::Anim

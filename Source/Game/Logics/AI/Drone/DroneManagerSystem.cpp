@@ -442,8 +442,8 @@ void DroneManagerSystem::OnGui()
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip(
                 "突撃させたいときは下の「カミカゼ：発射」を使うこと。\n"
-                "currentState を直接代入するボタンは廃止した："
-                "DroneBrainSystem が毎フレーム書き直すので効かなかった。");
+                "状態を直接指定する操作は無い："
+                "DroneBrainSystem が毎フレーム書き直すので効かない。");
 
         // 陣形攻撃テスト。BTを組まずに BossCommandComponent へ直接命令を書き、
         // DroneCommandSystem → DroneBrainSystem → Formation の流れを確認する。

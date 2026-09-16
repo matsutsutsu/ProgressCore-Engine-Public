@@ -90,7 +90,7 @@ private:
     Microsoft::WRL::ComPtr<ID3D11PixelShader>  pixelShader;
     Microsoft::WRL::ComPtr<ID3D11InputLayout>  inputLayout;
 
-    // バラバラだったステートを廃止し、2つの「金型」に集約
+    // デバッグ描画が使う PSO はこの2つだけ。個別のステートは持たず、これを切り替える。
     PipelineState m_psoOpaque;
     PipelineState m_psoWireframe;
 

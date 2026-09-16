@@ -175,7 +175,6 @@ void CameraBrainSystem::Update(float dt)
     XMStoreFloat3(&fLook, finalLook);
 
     // Up は各 vCam が申告した値を使う（ダッチアングル等の傾け演出に対応するため）。
-    // 以前は {0,1,0} を直書きしていたので resultUp が完全な死にフィールドだった。
     // 補間の結果ゼロベクトルに縮退した場合だけワールド上向きへフォールバックする。
     finalUp = XMVector3Normalize(finalUp);
     if (XMVector3Equal(finalUp, XMVectorZero()) || XMVector3IsNaN(finalUp))

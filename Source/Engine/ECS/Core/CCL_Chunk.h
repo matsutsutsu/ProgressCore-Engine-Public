@@ -171,12 +171,10 @@ namespace CCL::ECS
         // 削除予定のエンティティインデックスリスト
         std::vector<size_t> m_destroyedEntities;
 
-        // Chunkの中身（実データ）
-        //  ・外側のvector: コンポーネントの種類ごと
-        //  ・内側のvector: そのコンポーネントの全エンティティ分の生データ
-        //std::vector<std::vector<uint8_t>> m_components; // SoA配列
-
-        // 核心的修正：ネストしたvectorを廃止し、1Dメモリとオフセット管理に移行
+        // Chunkの中身（実データ）。
+        //   1本の連続メモリに種類ごとの列を並べた SoA。各列の先頭位置は
+        //   m_componentOffsets が持つ。種類ごとに vector を分けないのは、
+        //   走査が1本の連続領域で済むようにするため。
         std::vector<uint8_t> m_memoryBlock;
         std::vector<size_t>  m_componentOffsets;
 

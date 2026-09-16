@@ -163,7 +163,6 @@ public:
         {
             const auto &cmd = m_opaqueCommands[i];
 
-            // (I) ShaderRegistry::Instance() を廃止 → 注入済みポインタを使用
             uint64_t shaderPart = (m_shaderRegistry != nullptr)
                                       ? static_cast<uint64_t>(m_shaderRegistry->GetSortID(cmd.shaderHash)) & 0xFF
                                       : 0;

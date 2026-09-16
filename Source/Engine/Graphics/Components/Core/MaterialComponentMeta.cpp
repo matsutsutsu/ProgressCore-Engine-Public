@@ -185,8 +185,8 @@ struct ComponentMeta<MaterialComponent>
             ShaderList sl = GatherShaders(0);
             if (!sl.names.empty())
             {
-                // static を廃止し ImGui のper-IDストレージへ。
-                //   （複数エンティティ間で選択が混線するバグを回避）
+                // 選択中の添字を static で持ってはいけない。ウィンドウは使い回されるので
+                //   複数エンティティ間で選択が混線する。ImGui の per-ID ストレージに置く。
                 ImGuiStorage *store = ImGui::GetStateStorage();
                 ImGuiID       key   = ImGui::GetID("batchShaderIdx");
                 int           idx   = store->GetInt(key, 0);

@@ -450,9 +450,9 @@ void AnimGraphWindow::DrawNodeWorkspace()
     }
 
     // ノード中心をライブ座標で取得する。
-    //   旧実装は保存済みの nodePosX/Y を使っていたため、ノードをドラッグした直後は
-    //   「保存前の古い位置」から線が伸びてしまっていた（見た目バグ）。
-    //   ed::GetNodePosition / GetNodeSize で現在の実座標・実サイズを使い解消する。
+    //   保存済みの nodePosX/Y を使ってはいけない。ノードをドラッグした直後、
+    //   「保存前の古い位置」から線が伸びる。
+    //   ed::GetNodePosition / GetNodeSize で現在の実座標・実サイズを取ること。
     //   返り値は「キャンバス座標」。スクリーン変換は呼び出し側で行う。
     auto GetNodeCenter = [&](uint32_t hash) -> ImVec2 {
         int nodeId;

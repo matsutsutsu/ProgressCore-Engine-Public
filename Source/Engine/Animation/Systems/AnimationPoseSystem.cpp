@@ -105,8 +105,8 @@ void AnimationPoseSystem::ComputeAndApplyPose(CCL::ECS::EntityID id, AnimatorCom
     //     ・enabled  : 抽出した差分が Transform を動かす → ピンしないと二重に前進する
     //     ・disabled : プログラム(ダッシュ等)が Transform を動かす → ピンしないと
     //                  クリップに焼き込まれた前進でモデルだけが滑っていく
-    //   ※以前は enabled 時のみピン留めしていたため、ブレンド中(上の分岐では無条件に
-    //     ピン留め)は正常なのに、ブレンド終了と同時にダッシュのモデルが滑り出していた。
+    //   ※ enabled のときだけピン留めしてはいけない。ブレンド中(上の分岐では無条件に
+    //     ピン留め)は正常なのに、ブレンド終了と同時にダッシュのモデルが滑り出す。
     auto *rootMotion = m_world->GetComponent<RootMotionComponent>(id);
     if (rootMotion && !animator.poseBufferA.empty())
         PinRootMotionNode(model, animIndex, rootNodeIndex, animator.poseBufferA, animator.lockVerticalRootMotion);

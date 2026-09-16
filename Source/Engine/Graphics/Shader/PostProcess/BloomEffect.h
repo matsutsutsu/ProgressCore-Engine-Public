@@ -9,16 +9,12 @@
 #include <memory>
 
 /**
- * @brief Bloom エフェクト。旧 BloomPass を IPostEffect として完全再設計。
+ * @brief Bloom エフェクト（IPostEffect 実装）。
  *
  * @details
- *  【旧設計からの変更点】
- *   - static g_bloomResources（グローバル）を廃止 → メンバとして所有
- *   - Graphics::Instance() 依存を廃止 → 独自の OpaqueBlendState を保持
- *   - Process() の返値が「シーン + グロー合成済み HDR」になった
- *     旧: グローのみを返し Tone Mapper が 2 入力で合成
- *     新: BloomEffect が合成まで完結 → Tone Mapper は 1 入力で済む
- *   - BloomConfigComponent のコピーは不要。フィールドを直接書き込む
+ *  Process() の返値は「シーン + グロー」を合成済みの HDR。グローだけを返すのでは
+ *  ないので、後段の Tone Mapper は 1 入力で受けること。
+ *  リソースとブレンドステートは自前で所有する（グローバル・シングルトンを見ない）。
  *
  *  【内部パイプライン】
  *  @code

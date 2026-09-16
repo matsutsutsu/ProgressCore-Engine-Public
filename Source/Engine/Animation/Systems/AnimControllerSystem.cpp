@@ -162,11 +162,11 @@ namespace
     //
     // @return 実際に遷移したか。false のとき fsm / params は【一切変更していない】。
     //
-    // 順序が重要。以前は「トリガー消費 → path 切り詰め → 解決」の順だったため、
-    // 解決に失敗すると "トリガーは消えた・path は壊れた・ステートは変わらない" で抜けていた。
-    // プレイヤーから見ると「ボタンを押したのに何も起きず、入力だけ消える」になり、
-    // しかも壊れた path は次フレームの再構築が黙って直すので痕跡が残らない。
-    // 失敗しうる処理を先に済ませ、確定してから状態を触る。
+    // 順序が重要。「トリガー消費 → path 切り詰め → 解決」の順にしてはいけない。解決に
+    // 失敗すると "トリガーは消えた・path は壊れた・ステートは変わらない" で抜ける。
+    // プレイヤーから見ると「ボタンを押したのに何も起きず、入力だけ消える」で、しかも
+    // 壊れた path は次フレームの再構築が黙って直すので痕跡が残らない。
+    // 失敗しうる処理を先に済ませ、確定してから状態を触ること。
     bool FireTransition(const AnimStateGraph &graph, int level, const AnimTransition &t,
                         AnimStateMachineComponent &fsm, AnimatorComponent &animator,
                         AnimParametersComponent &params, bool enableLog)

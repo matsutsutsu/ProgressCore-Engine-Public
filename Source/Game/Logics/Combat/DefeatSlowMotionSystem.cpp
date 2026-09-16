@@ -24,9 +24,9 @@ void DefeatSlowMotionSystem::Update(float dt)
 
     ForEachWithID([&](EntityID id, HealthComponent &hp) {
         // 「敵かどうか」は EnemyTag が唯一の情報源。
-        //   以前は「PlayerComponent を持たない HealthComponent」＝敵としていた。
-        //   ボス1体のうちは成立したが、壊せる置物や味方NPCにHPを持たせた瞬間、
-        //   それが敵として数えられてワールドクリア判定が成立しなくなる。
+        //   「PlayerComponent を持たない HealthComponent」で代用してはいけない。
+        //   壊せる置物や味方NPCにHPを持たせた瞬間、それが敵として数えられて
+        //   ワールドクリア判定が成立しなくなる。
         const bool isEnemy = m_world->HasComponent<Tag::EnemyTag>(id);
         const bool dead    = (hp.currentHealth <= 0.0f);
 

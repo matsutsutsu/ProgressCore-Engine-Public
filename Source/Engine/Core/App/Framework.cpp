@@ -790,8 +790,8 @@ LRESULT CALLBACK Framework::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LP
     case WM_CREATE:
         break;
     case WM_KEYDOWN:
-        // ※ 以前は ESC でウィンドウを閉じていたが、ESC は「ポーズ」に割り当てたため終了処理は撤去。
-        //    アプリ終了はウィンドウの×ボタン（WM_CLOSE→WM_DESTROY）で行う。
+        // キー入力はここでは扱わない（ESC のポーズも含めて InputSystem 側）。
+        // アプリ終了はウィンドウの×ボタン（WM_CLOSE→WM_DESTROY）だけ。
         break;
     case WM_ENTERSIZEMOVE:
         // WM_EXITSIZEMOVE is sent when the user grabs the resize bars.

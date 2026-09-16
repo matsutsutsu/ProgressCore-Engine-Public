@@ -155,7 +155,6 @@ void PrimitiveRenderer::Render(ID3D11DeviceContext       *dc,
     dc->IASetInputLayout(inputLayout.Get());
 
     // 3. CbScene (b8) をバインド
-    //    Graphics::Instance() を廃止し s.sceneConstantBuffer を使用する。
     //    CbScene は Graphics::Update() で内容更新済み、EnvironmentSystem でもバインド済みだが、
     //    PrimitiveRenderer が pipeline 外から呼ばれる場合に備えて安全のため再バインドする。
     if (s.sceneConstantBuffer)
@@ -193,8 +192,9 @@ void PrimitiveRenderer::Render(ID3D11DeviceContext       *dc,
             size_t drawOffset = 0;
             while (drawOffset < totalCount)
             {
-                // チャンク幅はバッファの実容量から取る（静的定数との二重管理を廃止）。
-                // 部分列の vector コピーも廃止し、ポインタ＋個数版の Write へ直接渡す。
+                // チャンク幅はバッファの実容量から取る（容量を表す定数を別に持たない）。
+                // 部分列は vector へコピーせず、ポインタ＋個数版の Write へ直接渡す
+                //   （コピーするとチャンクごとにヒープ確保が走る）。
                 size_t drawCount = (std::min)(totalCount - drawOffset, m_instanceBuffer.GetMaxInstances());
                 m_instanceBuffer.Write(dc, instances.data() + drawOffset, drawCount);
                 m_instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);

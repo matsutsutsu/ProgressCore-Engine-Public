@@ -115,7 +115,7 @@ public:
     //  material/custom を問わず、JSON に書かれた登録順を保持する。
     //  これにより、新しいシェーダーを shaders.json に足すだけで
     //  エディタのドロップダウンにも自動で反映される
-    //  （MaterialComponentMeta.cpp の手書き配列を廃止するための土台）。
+    //  エディタ側は一覧を持たず、この登録順をそのまま使う。
     // ============================================================
     void RegisterName(uint32_t shaderHash, const std::string &name)
     {

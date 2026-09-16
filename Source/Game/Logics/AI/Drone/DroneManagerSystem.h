@@ -58,10 +58,9 @@ public:
 
     /// 全ドローンの「持ち場に着いた扱い」を一括で切り替える（デバッグ用）。
     ///
-    /// currentState を直接代入する版は廃止した。判断層(DroneBrainSystem)が
-    /// 毎フレーム全経路で currentState を書き直すため、外から入れた値は次の
-    /// フレームに必ず消える＝押しても何も起きないボタンになっていた。
-    /// 実際に効くのは、判断層が入力として読むこのラッチだけ。
+    /// 判断層(DroneBrainSystem)が毎フレーム currentState を書き直すので、状態を
+    /// 外から直接代入しても次のフレームで消える。外から効かせられるのは、判断層が
+    /// 入力として読むこのラッチだけ。
     /// @param treatAsArrived true=到着済み扱い(Idleで留まる) / false=再接近させる
     void SetAllDronesArrived(bool treatAsArrived);
 

@@ -668,12 +668,12 @@ void ShapeRenderer::Render(ID3D11DeviceContext *dc, const DirectX::XMFLOAT4X4 &v
             size_t drawOffset = 0;
             while (drawOffset < totalCount)
             {
-                // チャンク幅はバッファの実容量から取る（静的定数との二重管理を廃止）。
+                // チャンク幅はバッファの実容量から取る（容量を表す定数を別に持たない）。
                 size_t drawCount = (std::min)(totalCount - drawOffset, m_instanceBuffer.GetMaxInstances());
 
-                // 部分列を vector へコピーしてから渡していたが、これはチャンクごとに
-                //   ヒープ確保とコピーが走る（線は数万本積まれるので毎フレーム十数回）。
-                //   InstanceBuffer にはポインタ＋個数版の Write があるのでそのまま渡す。
+                // 部分列は vector へコピーせず、ポインタ＋個数版の Write へ直接渡す。
+                //   コピーするとチャンクごとにヒープ確保が走る
+                //   （線は数万本積まれるので毎フレーム十数回）。
                 m_instanceBuffer.Write(dc, instances.data() + drawOffset, drawCount);
                 m_instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
 

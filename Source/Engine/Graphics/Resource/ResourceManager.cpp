@@ -365,7 +365,7 @@ const AnimSequence *ResourceManager::LoadAnimSequence(const char *filename)
             return seq;
     }
 
-    // Cereal を廃止し、nlohmann::json でロードする
+    // アニメシーケンスは JSON（モデル本体の .cereal キャッシュとは別形式）。
     std::string jsonStr = FileSystem::ReadAllText(filename);
     if (jsonStr.empty())
         return nullptr;

@@ -203,8 +203,6 @@ void CameraShakeSystem::Update(float dt)
 
         // 2. 時間駆動ノイズでオフセット生成
         //    経過時間 × 周波数 を位相にするので、fps が変わっても波形は同じ。
-        //    以前は毎フレーム rand() を引いていたため、144fps では 60fps の
-        //    2倍以上の周波数で震え、環境ごとに手触りが変わっていた。
         //    チャンネルごとにシードをずらし、軸が同じ動きをしないようにする。
         shake.elapsed += dt;
         const float phase = shake.elapsed * shake.frequency;

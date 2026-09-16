@@ -18,9 +18,8 @@
 //   深度が書き込まれる。草の葉と葉の隙間や金網の網目から背景が見えるべき所が
 //   塞がって穴になり、しかも OpaquePass 側の絵は正しいので原因が見えにくい。
 //
-//   以前は唯一の cutout だった Grass シェーダーをここで除外していたが、
-//   Grass 自体を削除したため判定ごと外した。cutout を再導入する場合は、
-//   そのマテリアルを本パスから除外して OpaquePass の自前描画に委ねること
+//   現在このパスに cutout は1つも通っていないので、除外の判定も置いていない。
+//   cutout を足すときは、そのマテリアルを本パスから除外して OpaquePass の自前描画に委ねること
 //   （early-Z の恩恵は失うが、cutout では元々ほぼ効かない）。
 
 void NormalPrepass::Initialize(const RenderServices &services)

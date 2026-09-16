@@ -165,9 +165,9 @@ float JoltCharacterUpdateSystem::CalculateVerticalVelocity(float safeDt, float c
 DirectX::SimpleMath::Vector3 JoltCharacterUpdateSystem::CalculateHorizontalVelocity(float safeDt, const JoltCharacterConfigComponent &config, CharacterMovementComponent &movement)
 {
     // 速度上書きは1フレーム限りの依頼として、読んだ時点で既定へ戻す。
-    //   上書きしたい側は「効かせたいフレームに毎回書く」だけでよくなり、離脱経路ごとに
-    //   -1.0f を書き戻す必要が消える。以前は解除の書き忘れが「ずっと速い／ずっと止まる」
-    //   として残り続けていた（RootMotionSystem の早期 return が典型）。
+    //   上書きしたい側は「効かせたいフレームに毎回書く」だけでよく、離脱経路ごとに
+    //   -1.0f を書き戻す必要がない（早期 return で書き忘れると「ずっと速い／ずっと
+    //   止まる」が残り続ける）。
     const float requestedSpeed = movement.overrideSpeed;
     movement.overrideSpeed     = -1.0f;
 

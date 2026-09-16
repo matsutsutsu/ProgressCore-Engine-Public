@@ -56,9 +56,9 @@ void GraphicsDevice::Initialize(HWND hWnd)
     }
 
     // ---- デバイス（スワップチェーンは後で waitable 付きで別途生成する）----
-    // 以前は D3D11CreateDeviceAndSwapChain で一括生成していたが、vsync待ちを明示制御する
-    // FRAME_LATENCY_WAITABLE_OBJECT は CreateSwapChainForHwnd 経由でしか使えないため、
-    // 「デバイス生成」と「スワップチェーン生成」を分離する。
+    // D3D11CreateDeviceAndSwapChain で一括生成してはいけない。vsync待ちを明示制御する
+    // FRAME_LATENCY_WAITABLE_OBJECT は CreateSwapChainForHwnd 経由でしか使えないので、
+    // 「デバイス生成」と「スワップチェーン生成」は分ける必要がある。
     {
         UINT createDeviceFlags = 0;
 #if defined(DEBUG) || defined(_DEBUG)

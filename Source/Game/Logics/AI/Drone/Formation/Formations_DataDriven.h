@@ -11,8 +11,8 @@
 //
 // 既存の C++ 陣形（Formations_Attack.h）との関係:
 //   同じ技を両方に持たせない。JSON が名乗れるのは kDataFormationSlotFirst〜Last の
-//   予約枠だけで、C++ 実装のある枠は上書きできない。2026-08 の実装は1つの型に
-//   C++ 実装とデータ実装を同居させて片方が腐ったので、そこを構造で塞いでいる。
+//   予約枠だけで、C++ 実装のある枠は登録時に弾く。同じ技の定義が2箇所に並ぶと、
+//   片方だけ更新されたときに気づけないため。
 #pragma once
 #include <algorithm>
 #include <cmath>
@@ -132,7 +132,7 @@ namespace CCL::AI::Formation::Data
         int cols = 1;
         if (rows <= 0)
         {
-            // 「正方に近い自動格子」。縦割りが sqrt から出していた形。
+            // rows 未指定なら、機数の平方根から正方に近い格子を組む。
             cols = (std::max)(1, static_cast<int>(std::floor(std::sqrt(static_cast<float>(perGroup)))));
             rows = (std::max)(1, (perGroup + cols - 1) / cols);
         }

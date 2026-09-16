@@ -408,9 +408,9 @@ void PlayerFeedbackSystem::OnPlayerAttackHit(
 void PlayerFeedbackSystem::StartDamageCameraShake(
     float damageAmount)
 {
-    // 以前はここから全ての VirtualCamera へ直接 SetShake していたため、
-    // 着地の揺れを被弾の揺れが上書きして消していた。要求を出すだけにすると、
-    // 受け側(CameraShakeSystem)が蓄積して1つの揺れにまとめてくれる。
+    // ここから VirtualCamera へ直接書いてはいけない。上書きになるので、着地の揺れを
+    // 被弾の揺れが消す。要求を出すだけにすれば、受け側(CameraShakeSystem)が蓄積して
+    // 1つの揺れにまとめてくれる。
     const float trauma =
         std::clamp(
             damageAmount * m_traumaPerDamage,

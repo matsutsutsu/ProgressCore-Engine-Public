@@ -57,10 +57,7 @@ void TransparentPass::Execute(const RenderFrameContext &ctx)
 
         const Model::Mesh &mesh = *info.mesh;
 
-        // =========================================================
-        // F: const_cast 廃止
-        //    override は引数として取得し、mesh.material を書き換えない。
-        // =========================================================
+        // override は引数から取る。mesh.material は書き換えない（共有データなので波及する）。
         MaterialData *overrideMat = nullptr;
         if (info.overrideMaterial.IsValid())
         {

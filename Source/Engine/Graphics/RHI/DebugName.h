@@ -9,13 +9,12 @@
 //  この関数は「D3D オブジェクトに名前を付ける」だけの葉ユーティリティであり、
 //  Graphics（描画サブシステムのコーディネータ）とは無関係なので独立させている。
 //
-//  以前は Graphics.h に置いていたが、その結果
+//  Graphics.h へ移してはいけない。そうすると
 //    ・GraphicsDevice.cpp / RenderTarget.cpp（Graphics の“下位”にあたる RHI 層）が
-//      名前を付けたいだけで Graphics.h を include する
+//      名前を付けたいだけで Graphics.h を include することになる
 //    ・= RHI 層 → コーディネータ という依存の逆流・循環が生まれる
 //    ・Graphics.h は RenderPipeline / 全 Renderer / PostProcessManager を巻き込むため
 //      無関係なファイルまで巨大な依存を背負う
-//  という問題が起きていた。
 // ============================================================================
 
 /**

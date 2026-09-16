@@ -34,8 +34,8 @@ using namespace DirectX::SimpleMath;
 namespace
 {
     // スプライン評価と LUT 構築は CameraDollySystem の public static を使う。
-    // 以前はここに丸ごと複製があり、CameraDollySystem 側に isLoop を足しても
-    // エディタのプレビュー線だけ旧仕様のまま、という食い違いが発生していた。
+    // ここへ複製してはいけない。CameraDollySystem 側に手を入れても、エディタの
+    // プレビュー線だけ旧仕様のまま、という食い違いが起きる。
 
     // =========================================================================
     // レイ-AABB による最近傍エンティティ選択(ピッキング)

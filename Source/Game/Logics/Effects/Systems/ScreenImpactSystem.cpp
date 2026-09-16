@@ -6,10 +6,10 @@
 //   - 強さ strength = (timer/duration) * power。残り時間で線形に減衰し、命中直後が最大。
 //   - dt はフレーム実時間。ヒットストップ中(ゲーム時間停止)でもバーストは進むため、
 //     「時が止まって画面だけ荒れる」定番の手触りになる。
-//   - 画面の揺れはここでは扱わない。以前は MainCamera を直接書いていたが、
-//     CameraBrain が確定させた結果の上に加算する形になり、CameraShake 経由の
-//     他の揺れ（着地・被弾）とは別の合成規則になっていた。今は命中時に
-//     DamageResolutionSystem が CameraShakeRequestEvent を出す1本に揃えてある。
+//   - 画面の揺れはここでは扱わない。MainCamera を直接書くと CameraBrain が確定させた
+//     結果の上に加算する形になり、CameraShake 経由の他の揺れ（着地・被弾）と合成規則が
+//     食い違う。命中時の揺れは DamageResolutionSystem が CameraShakeRequestEvent を
+//     出す1本に揃えてある。
 // ===========================================================================
 #include "ScreenImpactSystem.h"
 

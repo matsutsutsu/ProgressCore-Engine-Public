@@ -28,9 +28,8 @@ public:
     }
 
     // 履歴の上限。超えたぶんは古い方から捨てる。
-    //
-    // 以前は無制限だった。BTGraphChangeCommand は1編集ごとにグラフ全体の JSON を
-    // 2枚（編集前・編集後）抱えるため、長時間の編集セッションで際限なく積み上がる。
+    //   上限を外してはいけない。BTGraphChangeCommand は1編集ごとにグラフ全体の JSON を
+    //   2枚（編集前・編集後）抱えるため、長時間の編集セッションで際限なく積み上がる。
     static constexpr size_t kMaxHistory = 128;
 
     void ExecuteCommand(std::unique_ptr<IEditorCommand> cmd)

@@ -17,8 +17,8 @@
 
 // ヘルパー関数：大文字小文字を無視した部分一致。
 //   ロード時に「Root/Pelvis/Hips 系ボーンか」を一度だけ判定するために使う。
-//   ※ 旧実装はこの判定を ComputeAnimation 内で骨ごと・毎フレーム実行しており、
-//     std::string のヒープ確保が積み重なって処理落ちの主要因になっていた。
+//   ※ 毎フレームの経路から呼ばないこと。std::string のヒープ確保が
+//     骨数×フレームぶん積み上がり、処理落ちの主要因になる。
 static bool ContainsCI(const std::string &name, const char *needle)
 {
     std::string lower = name;
@@ -115,7 +115,7 @@ Model::Model(ID3D11Device *device, const char *filename, float sampleRate)
         dst.rotation = src.rotate;
         dst.scale    = src.scale;
 
-        // 位置リターゲット対象フラグをここで一度だけ確定（毎フレームの文字列判定を廃止）。
+        // 位置リターゲット対象フラグはロード時にここで確定させる（毎フレーム文字列判定をしない）。
         //   index 0（ルート）と Pelvis/Hips/Root 系ボーンだけがアニメの位置移動をそのまま使う。
         dst.isRootOrPelvis = (i == 0) ||
                              ContainsCI(src.name, "pelvis") ||
@@ -380,11 +380,12 @@ void Model::ComputeNodePose(const ModelResource::Animation &animation, int nodeI
     // Translation Retargeting（プロポーション崩壊対策）。
     //   Root/Pelvis/Hips 系以外は、アニメの位置移動を無視してモデル本来の骨の長さ
     //   (bindNode.position)を使う。対象かどうかはロード時に確定した isRootOrPelvis を
-    //   見るだけ（旧実装はここで骨名を毎フレーム小文字化＋部分一致しており処理落ちの主因だった）。
+    //   見るだけ。ここで骨名から判定し直してはいけない（小文字化＋部分一致が
+    //   毎フレーム×骨数ぶん走る）。
     //
     //   非対象ノードでは結果を捨てるので、評価そのものを丸ごと飛ばす。
     //   isRootOrPelvis が true なのはリグ全体で1〜3本だけなので、位置チャンネルの
-    //   キーフレーム探索と Lerp はほぼ全ノードで消える（旧実装は計算してから上書きしていた）。
+    //   キーフレーム探索と Lerp はほぼ全ノードで消える。
     //   nodePose.position は上でバインドポーズ済みなので、else 側の代入は不要。
     if (bindNode.isRootOrPelvis)
     {
@@ -444,7 +445,7 @@ void Model::ComputeAnimation(int animationIndex, float time, std::vector<NodePos
         nodePoses.resize(nodes.size());
     }
 
-    // ResourceManager 取得と Animation 参照はループ外で1回だけ（旧実装はノード数ぶん引き直していた）。
+    // ResourceManager 取得と Animation 参照はループ外で1回だけ。ループ内で引き直さないこと。
     const auto                     &animations = ResourceManager::Instance().GetModel(resource)->GetAnimations();
     const ModelResource::Animation &animation  = animations.at(animationIndex);
 

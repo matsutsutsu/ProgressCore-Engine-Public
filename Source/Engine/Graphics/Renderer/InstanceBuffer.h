@@ -19,10 +19,9 @@ public:
     // 初期化（最大インスタンス数を指定）
     //
     // 容量の問い合わせは必ず GetMaxInstances() を使うこと。
-    //   以前は static 定数 MAX_INSTANCES=4096 も公開しており、描画側はそちらを見て
-    //   チャンク幅を決めていた。この既定引数を変えるだけで両者が食い違い、Write が
-    //   切り詰めた先を DrawInstanced が読む（＝未初期化のインスタンスが描かれる）。
-    //   エラーは一切出ないため、容量の二重管理そのものを無くしてある。
+    //   容量を表す定数を別に公開してはいけない。この既定引数と食い違った瞬間、
+    //   Write が切り詰めた先を DrawInstanced が読む（＝未初期化のインスタンスが
+    //   描かれる）。エラーは一切出ないので、気付けるのは目視だけ。
     void Create(ID3D11Device *device, size_t maxInstances = 4096)
     {
         m_maxInstances = maxInstances;

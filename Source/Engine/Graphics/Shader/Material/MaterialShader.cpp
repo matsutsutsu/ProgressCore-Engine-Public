@@ -47,7 +47,7 @@ void MaterialShader::Update(ID3D11DeviceContext *dc,
                             const MaterialData  *overrideMaterial)
 {
     // overrideMaterial が非 null ならそちらを優先する。
-    // mesh.material を書き換えない（const_cast 廃止）。
+    // mesh.material は書き換えない（共有データなので他のインスタンスに波及する）。
     const MaterialData *baseMat = (mesh.material && mesh.material->data) ? mesh.material->data.get() : nullptr;
     const MaterialData *mat     = overrideMaterial ? overrideMaterial : baseMat;
 

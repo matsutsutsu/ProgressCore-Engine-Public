@@ -72,7 +72,9 @@ struct AnimTransition
     float               blendDuration   = 0.2f;
     AnimTransitionLogic logicType       = AnimTransitionLogic::AND;
 
-    // 文字列を完全に廃止し、ビットマスクに変更
+    // この遷移を受け付けてよいキャンセル窓。0 = 常時許可。
+    //   非0なら、再生中クリップの ComboWindow/CancelWindow イベントのうち
+    //   ビットが1つでも重なる区間の中にいるときだけ遷移できる。
     uint32_t requiredCancelMask = 0;
 
     // 軽量サブステートマシン用。0=どこからでも（従来の anyState）。

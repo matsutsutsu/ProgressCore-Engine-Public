@@ -52,7 +52,7 @@ COMPONENT_META_END(JoltMeshColliderComponent)
 namespace
 {
     const char *const MotionTypeNames[] = {"Static", "Kinematic", "Dynamic"};
-    // ObjectLayer の名前は PhysicsLayers::LayerNames を使う（手書き配列を廃止）。
+    // ObjectLayer の名前は PhysicsLayers::LayerNames を使う（ここに手書き配列を置かない）。
     //   レイヤーを増やしても PhysicsLayers.h の X-Macro に1行足すだけで自動反映される。
 } // namespace
 
